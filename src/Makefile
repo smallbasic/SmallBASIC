@@ -22,7 +22,7 @@ SHEXE      = -Wl,-export-dynamic
 CPPFLAGS   = -g -D_UnixOS -DUSE_PCRE -Wall $(PTRCHECK) $(SHOBJ)
 CFLAGS     = $(CPPFLAGS)
 ULIBS=$(SHEXE) -lm -ldl -lpthread -lncurses -lreadline -lpcre
-LIBDIR=/usr/local/lib
+LIBDIR=/usr/lib
 
 ##########################################
 #
@@ -62,8 +62,8 @@ BDTW32=../data/dos
 BACKUPDIR=../backup
 
 # Install
-INSTALLBIN=/usr/local/bin
-INSTALLDOC=/usr/local/doc/SmallBASIC
+INSTALLBIN=/usr/bin
+INSTALLDOC=/usr/share/doc/SmallBASIC
 
 sources=\
 	brun.c ceval.c eval.c str.c match.c fmt.c kw.c sberr.c \
@@ -363,8 +363,8 @@ install: $(BINDIR)/bas2pdb $(BINDIR)/bas2pdb
 	cp $(BINDIR)/bas2pdb $(INSTALLBIN)
 	cp $(BINDIR)/pdb2bas $(INSTALLBIN)
 	cp $(BINDIR)/mkpdb $(INSTALLBIN)
-	ln -svf $(INSTALLDIR)/fbsbasic     $(INSTALLBIN)/sbasic
-	ln -svf $(INSTALLBIN)/sbasic       /usr/bin/sbasic
+	ln -svf $(INSTALLDIR)/sdlsbasic     $(INSTALLBIN)/sbasic
+#	ln -svf $(INSTALLBIN)/sbasic       /usr/bin/sbasic
 
 putils: $(BINDIR)/bas2pdb $(BINDIR)/mkpdb
 	cp $(BINDIR)/bas2pdb $(INSTALLBIN)
