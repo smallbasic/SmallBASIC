@@ -18,7 +18,7 @@
 #define	LNX_EXTLIB
 #endif
 
-#if defined(_CygWin)
+#if defined(__CYGWIN__)
 #include <w32api/windows.h>
 #include <sys/cygwin.h>
 #define WIN_EXTLIB
@@ -270,7 +270,7 @@ int		slib_llopen(slib_t *lib)
   if  ( lib->handle == NULL )
     panic("SB-LibMgr: error on loading %s\n%s", lib->name, dlerror());
   return (lib->handle != NULL);
-#elif defined(_CygWin)
+#elif defined(__CYGWIN__)
    char win32Path[1024];
    cygwin_conv_to_full_win32_path(lib->fullname, win32Path);
    lib->handle = LoadLibrary(win32Path);
@@ -489,7 +489,7 @@ void	sblmgr_init(int mcount, const char *mlist)
 		if	( all )	{
 #if defined(LNX_EXTLIB)
        sblmgr_scanlibs("/usr/local/lib/sbasic/modules/");
-#elif defined(_CygWin) 
+#elif defined(__CYGWIN__) 
        // the -m argument specifies the location of all modules
        sblmgr_scanlibs(opt_modlist);
 #elif defined(WIN_EXTLIB)

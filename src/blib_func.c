@@ -898,7 +898,7 @@ long	cmd_imath1(long funcCode, var_t *arg)
 					while ( is_digit(*p) )	p ++;
 					*p = '\0';	p ++;
 
-					#if defined(_CygWin)
+					#if defined(__CYGWIN__)
 					vals[i] = atol(ps);	
 					#else
 					vals[i] = atoll(ps);

@@ -31,7 +31,7 @@
 #include "var.h"
 #endif
 
-#if defined(_UnixOS) && !defined(_FLTK)
+#if defined(_UnixOS) && !defined(__CYGWIN__)
 #include <termios.h>
 #endif
 
@@ -807,7 +807,7 @@ typedef struct {
     byte    *drv_data;					/**< driver data used by low-level driver authors, (don't forget to set it to null on close()) */
     dword   drv_dw[4];     				/**< driver data used by low-level driver authors */
 
-#if defined(_UnixOS) && !defined(_FLTK)
+#if defined(_UnixOS) && !defined(__CYGWIN__)
 	struct termios oldtio, newtio;		/**< termios info */
 #endif
 

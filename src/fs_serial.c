@@ -31,7 +31,7 @@
 #endif
 #include "fs_serial.h"
 
-#ifdef _CygWin
+#ifdef __CYGWIN__
 #include <windows.h>
 #endif
 
@@ -49,7 +49,7 @@ int		serial_open(dev_file_t *f)
 		rt_raise("SEROPEN() ERROR %d", f->last_error);
 	return (f->last_error == 0);
 
-    #elif defined(_UnixOS) && !defined(_CygWin)
+    #elif defined(_UnixOS) && !defined(__CYGWIN__)
 	///////////////////////////////////////////////////////////////////////////////////////////
 	//	Unix
 	sprintf(f->name, "/dev/ttyS%d", f->port);
@@ -90,7 +90,7 @@ int		serial_open(dev_file_t *f)
 	if	( f->handle < 0 )
 		err_file((f->last_error = errno));
 	return (f->handle >= 0);
-    #elif defined(_Win32) || defined(_CygWin)
+    #elif defined(_Win32) || defined(__CYGWIN__)
 	///////////////////////////////////////////////////////////////////////////////////////////
 	//	Win32
 	DCB		dcb;
@@ -147,7 +147,7 @@ int		serial_close(dev_file_t *f)
 		rt_raise("SERCLOSE() ERROR %d", f->last_error);
 	return (f->last_error == 0);
 
-	#elif defined(_UnixOS) && !defined(_CygWin)
+	#elif defined(_UnixOS) && !defined(__CYGWIN__)
 	tcsetattr(f->handle, TCSANOW, &f->oldtio);
 	close(f->handle);
 	f->handle = -1;
@@ -158,7 +158,7 @@ int		serial_close(dev_file_t *f)
 	f->handle = (FileHand) -1;
 	return 1;
 
-    #elif defined(_Win32) || defined(_CygWin)
+    #elif defined(_Win32) || defined(__CYGWIN__)
     CloseHandle((HANDLE) f->handle);
 	f->handle = -1;
 	return 1;

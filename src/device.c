@@ -720,7 +720,7 @@ void	dev_input_clreol(int cx, int cy)
 		}
 }
 
-#if !defined(_FRANKLIN_EBM) && !defined(_FLTK)
+#if !defined(_FLTK)
 
 /*
 *	gets a string (INPUT)

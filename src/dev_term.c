@@ -22,7 +22,7 @@
 #include <sys/time.h>		// struct timeval
 #include <unistd.h>
 #if defined(_UnixOS)
-	#if !defined(_CygWin)
+	#if !defined(__CYGWIN__)
 		#include <term.h>
 	#else
 		#include <termcap.h>
@@ -65,7 +65,7 @@ static struct termios saved_stderr_attributes;
 #if defined(_UnixOS)
 static int	termcap_is_alive;			// true = use termcap
 static char	termcap_buf[8192];			// used for termcap
-#if defined(_CygWin)
+#if defined(__CYGWIN__)
 static char	*tctemp_buf;
 #endif
 #endif
@@ -293,14 +293,14 @@ static void	term_build_kbtable()
 	char	*altkeys     = " `1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./";
 	char	*altkeys_cap = " ~!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?";
 	
-	#if defined(_CygWin)
+	#if defined(__CYGWIN__)
 	tctemp_buf = (char *) malloc(1024);
 	#endif
 
 	if	( termcap_is_alive )	{
 		for	( i = 0; termcapkeys[i].scode[0] != '\0'; i ++ )	{
 			// tgetstr() with NULL parameters does not work on cygwin!
-			#if !defined(_CygWin)
+			#if !defined(__CYGWIN__)
 			if	( tgetstr(termcapkeys[i].scode, NULL) )	
 				term_addkey(tgetstr(termcapkeys[i].scode, NULL), termcapkeys[i].icode);
 			#else
@@ -364,7 +364,7 @@ static void	term_build_cmds()
 
 	if	( termcap_is_alive )	{
 		for	( i = 0; termcapstrs[i].func != tc_null; i ++ )	{
-			#if !defined(_CygWin)
+			#if !defined(__CYGWIN__)
 			if	( tgetstr(termcapstrs[i].scode, NULL) )	
 				strcpy(termcapstrs[i].str, tgetstr(termcapstrs[i].scode, NULL));
 			#else

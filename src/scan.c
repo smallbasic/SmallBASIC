@@ -3315,7 +3315,7 @@ char	*comp_load(const char *file_name)
 	strcpy(comp_file_name, file_name);
 	h = open(comp_file_name, O_BINARY | O_RDWR, 0660);
 	if	( h == -1 )	{
-		#if defined(_CygWin)
+		#if defined(__CYGWIN__)
 		char	temp[1024];
 		getcwd(temp, 1024);
 		panic(MSG_CANT_OPEN_FILE_AT, comp_file_name, temp);

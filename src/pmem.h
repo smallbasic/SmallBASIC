@@ -71,7 +71,7 @@ typedef	unsigned int	dword;
 #endif
 
 // old code
-#if !defined(_Win32) && !defined(_VTOS) && !defined(_CygWin)
+#if !defined(_Win32) && !defined(_VTOS) && !defined(__CYGWIN__)
 typedef	dword	DWORD;
 typedef	word	WORD;
 typedef	byte	BYTE;
@@ -107,7 +107,7 @@ typedef int32			fcode_t;
 typedef int32			pcode_t;
 typedef int32			bid_t;
 
-#ifndef _CygWin
+#ifndef __CYGWIN__
 typedef dword	        addr_t;
 #endif
 

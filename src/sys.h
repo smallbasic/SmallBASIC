@@ -21,7 +21,7 @@ extern "C" {
 #pragma warn -8012	// comparing signed & unsinged
 #endif
 
-#if defined(_CygWin)
+#if defined(__CYGWIN__)
 #define __addr_t_defined
 typedef unsigned int	addr_t;
 
