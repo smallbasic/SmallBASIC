@@ -18,6 +18,18 @@
 #define	LNX_EXTLIB
 #endif
 
+#if defined(_CygWin)
+#include <w32api/windows.h>
+#include <sys/cygwin.h>
+#define WIN_EXTLIB
+#endif
+
+#ifdef LNX_EXTLIB
+#define LIB_EXT ".so"
+#else
+#define LIB_EXT ".dll"
+#endif
+
 #if defined(LNX_EXTLIB)
 #include <dlfcn.h>
 #include <dirent.h>
@@ -185,11 +197,7 @@ int		slib_get_module_id(const char *name)
 	slib_t	*lib;
 
 	strcpy(xname, name);
-	#if defined(_UnixOS)
-	strcat(xname, ".so");
-	#elif defined(_Win32)
-	strcat(xname, ".dll");
-	#endif
+    strcat(xname, LIB_EXT);
 	for ( i = 0; i < slib_count; i ++ )	{
 		lib = &slib_table[i];
 //		printf("slib: %s=%s\n",  lib->name, name);
@@ -258,17 +266,24 @@ void    *slib_getptr(slib_t *lib, const char *name)
 int		slib_llopen(slib_t *lib)
 {
 #if defined(LNX_EXTLIB)
-	lib->handle = dlopen(lib->fullname, RTLD_NOW);
-	if	( lib->handle == NULL )
-		panic("SB-LibMgr: error on loading %s\n%s", lib->name, dlerror());
-	return (lib->handle != NULL);
+  lib->handle = dlopen(lib->fullname, RTLD_NOW);
+  if  ( lib->handle == NULL )
+    panic("SB-LibMgr: error on loading %s\n%s", lib->name, dlerror());
+  return (lib->handle != NULL);
+#elif defined(_CygWin)
+   char win32Path[1024];
+   cygwin_conv_to_full_win32_path(lib->fullname, win32Path);
+   lib->handle = LoadLibrary(win32Path);
+   if ( lib->handle == NULL )
+       panic("SB-LibMgr: error on loading %s\n", win32Path);
+   return (lib->handle != NULL);
 #elif defined(WIN_EXTLIB)
-	lib->handle = LoadLibrary(lib->fullname);
-	if	( lib->handle == NULL )
-		panic("SB-LibMgr: error on loading %s\n", lib->name);
-	return (lib->handle != NULL);
+   lib->handle = LoadLibrary(lib->fullname);
+   if ( lib->handle == NULL )
+       panic("SB-LibMgr: error on loading %s\n", lib->name);
+   return (lib->handle != NULL);
 #else
-	return 0;
+   return 0;
 #endif
 }
 
@@ -414,20 +429,19 @@ void	sblmgr_scanlibs(const char *path)
 	char			*name, *p;
 	char			full[1024], libname[256];
 
-	if	( (dp = opendir(path)) == NULL )
+    if  ( (dp = opendir(path)) == NULL ) {
+        if  ( !opt_quite) {
+            printf("SB-LibMgr: module path %s not found.\n", path);
+        }
 		return;
+    }
 
 	while ( (e = readdir(dp)) != NULL )	{
 		name = e->d_name;
 		if	( (strcmp(name, ".") == 0) || (strcmp(name, "..") == 0) )
 			continue;
-		#if defined(LNX_EXTLIB)
-		if	( (p = strstr(name, ".so")) != NULL )	{
-			if	( strcmp(p, ".so") == 0 )	{
-		#elif defined(WIN_EXTLIB)
-		if	( (p = strstr(name, ".dll")) != NULL )	{
-			if	( strcmp(p, ".dll") == 0 )	{
-		#endif
+        if  ( (p = strstr(name, LIB_EXT)) != NULL )  {
+            if  ( strcmp(p, LIB_EXT) == 0 )  {
 				// store it
 				
 				strcpy(libname, name);
@@ -435,6 +449,9 @@ void	sblmgr_scanlibs(const char *path)
 				*p = '\0';
 
 				strcpy(full, path);
+        if (path[strlen(path)-1] != '/') {
+            strcat(full, "/"); // add trailing separator
+        }
 				strcat(full, name);
 
 				slib_import(libname, full);
@@ -470,13 +487,15 @@ void	sblmgr_init(int mcount, const char *mlist)
 			all = 1;
 
 		if	( all )	{
-			#if defined(LNX_EXTLIB)
-			sblmgr_scanlibs("/usr/lib/sbasic/modules/");
-//			sblmgr_scanlibs("/usr/local/lib/sbasic/modules/");
-			#elif defined(WIN_EXTLIB)
-			sblmgr_scanlibs("c:\\sbasic\\modules");
-			sblmgr_scanlibs("sbasic\\modules");
-			#endif
+#if defined(LNX_EXTLIB)
+       sblmgr_scanlibs("/usr/local/lib/sbasic/modules/");
+#elif defined(_CygWin) 
+       // the -m argument specifies the location of all modules
+       sblmgr_scanlibs(opt_modlist);
+#elif defined(WIN_EXTLIB)
+       sblmgr_scanlibs("c:\\sbasic\\modules");
+       sblmgr_scanlibs("sbasic\\modules");
+#endif
 			}
 		}
 	if	( !opt_quite )

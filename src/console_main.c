@@ -144,10 +144,15 @@ int	main(int argc, char *argv[])
 					break;
 				case 'm':
 					// load run-time modules (linux only, shared libraries)
-					#if defined(__linux__)
+          #if defined(__linux__)
 					opt_loadmod = 1;
 					strcpy(opt_modlist, argv[i]+2);
-					#else
+          #elif defined(_CygWin)
+					opt_loadmod = 1;
+          if (i+1<argc) {
+              strcpy(opt_modlist, argv[++i]);
+          }
+          #else
 					printf("\n\a* Modules are supported only on Linux platform\n\n");
 					#endif
 					break;
