@@ -10,10 +10,12 @@ all:   sbfltk.exe
 linux: sbfltk
 
 SOURCE =                                        \
-	Fl_Ansi_Window.cpp                          \
-	MainWindow.cpp                              \
-	EditorWindow.cpp                            \
+    Fl_Ansi_Window.cpp                          \
+    Fl_Help_Widget.cpp                          \
+    MainWindow.cpp                              \
+    EditorWindow.cpp                            \
     dev_fltk.cpp                                \
+    StringLib.cpp                               \
     blib_fltk_ui.cpp                            \
 
 COMMON=                                         \
@@ -60,7 +62,7 @@ COMMON=                                         \
     var.c                                       \
     vmt.c                                       \
 
-MAKEDEPEND	= /usr/X11R6/bin/makedepend -Y
+MAKEDEPEND  = /usr/X11R6/bin/makedepend -Y
 OPTIM =  -O2 -Wall -Wunused -fno-exceptions
 DEBUG_OPTIM = -g -O0 -Wall -Wunused -fno-exceptions 
 PLATFORM=-D_UnixOS -D_FLTK
@@ -110,6 +112,9 @@ sbfltk.res : sbfltk.rc
 #unit test
 Fl_Ansi_Window.exe: Fl_Ansi_Window.o 
 	gcc ${OPTIM} $< ${LDLIBS} -o $@
+
+Fl_Help_Widget.exe: Fl_Help_Widget.o 
+	gcc ${DEBUG_OPTIM} $< ${LDLIBS} objs/StringLib.o -o $@
 
 clean:
 	-rm -f sbfltk sbfui.cxx sbfui.h build_kwpc kwp.cxx kwp objs/*.o

@@ -5,6 +5,28 @@ during my boring train ride to/from work. Initially built
 using cygwin under w2k.
 
 ===============================================================================
+[FLTK patches - 0.9.6.1]
+compose.cxx: disabled right-ctrl from deleting the current selection
+// See if they type the compose prefix key:
+//   if (i == RightCtrlKey || i == 0xff20/* Multi-Key */) {
+//     compose_state = 1;
+//     return true;
+//   }
+
+scrollrect.cxx: 
+in is_visible() - comments suggest the test should be for NOT-unicode, 
+since this would be the case with Win98:
+
+  if (!has_unicode()) {
+
+===============================================================================
+[0.9.6.1 enhancements]
+
+1. save screen region as jpeg. save entire screen from menu command
+
+2. mode-less forms
+
+===============================================================================
 [Issues following 0.9.6.0 release]
 
 1. File with DOS newlines open with <cr> - should be pre-processed and
@@ -32,6 +54,8 @@ using cygwin under w2k.
 10. Toolbar
 
 11. Remove any error in the status bar before running a program.
+
+12. Status bar text outside bounds
 
 ===============================================================================
 [Tasks for 0.9.6.0 release]
@@ -120,5 +144,5 @@ using cygwin under w2k.
 .><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º>  .,,.·´¯`·.. ¸><((((º>¸.  
    .....,,.><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º> .·´¯`·.. ¸><((((º>¸.  
 
-$Id: README.TXT,v 1.13 2005-01-20 03:27:40 zeeb90au Exp $
+$Id: README.TXT,v 1.14 2005-03-07 22:34:17 zeeb90au Exp $
 
