@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.4 2004-11-10 22:19:57 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.5 2004-11-11 22:31:33 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -37,8 +37,7 @@
 
 using namespace fltk;
 
-TextDisplay::StyleTableEntry
-styletable[] = { // Style table
+TextDisplay::StyleTableEntry styletable[] = { // Style table
     { BLACK,           COURIER,        14 }, // A - Plain
     { color(0,0,128),  COURIER_ITALIC, 14 }, // B - Line comments
     { color(0,0,64),   COURIER_ITALIC, 14 }, // C - Block comments
@@ -52,7 +51,6 @@ styletable[] = { // Style table
 TextBuffer *stylebuf = 0;
 TextBuffer *textbuf = 0;
 char filename[256];
-char title[256];
 int dirty = 0;
 int loading = 0;
 
@@ -214,10 +212,8 @@ void style_init(void) {
     }
 
     style_parse(text, style, textbuf->length());
-
     stylebuf->text(style);
     delete[] style;
-    //free(text);
 }
 
 // 'style_unfinished_cb()' - Update unfinished styles.
@@ -302,23 +298,6 @@ void style_update(int pos,        // I - Position of update
     }
 
     delete[] style;
-}
-
-void set_title() {
-    if (filename[0] == '\0') {
-        strcpy(title, "Untitled");
-    } else {
-        char *slash = strrchr(filename, '/');
-        if (slash != NULL) {
-            strcpy(title, slash + 1);
-        } else {
-            strcpy(title, filename);
-        }
-    }
-
-    if (dirty) {
-        strcat(title, " (modified)");
-    }
 }
 
 int check_save(bool discard) {
@@ -602,13 +581,11 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
 
     search[0] = 0;
     filename[0] = 0; 
-    title[0] = 0;
     mainWnd = 0;
     dirty = 0;
     loading = 0;
     textbuf = new TextBuffer;
     style_init();
-    set_title();
 
     begin();
     editor = new TextEditor(0, 0, w, h);
@@ -622,19 +599,10 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
 
     textbuf->add_modify_callback(style_update, editor);
     textbuf->add_modify_callback(changed_cb, this);
-    textbuf->call_modify_callbacks();
 }
 
 EditorWindow::~EditorWindow() {
     delete replaceDlg;
-}
-
-const char* EditorWindow::get_filename() {
-    return filename;
-}
-
-const char* EditorWindow::get_title() {
-    return title;
 }
 
 bool EditorWindow::is_dirty() {

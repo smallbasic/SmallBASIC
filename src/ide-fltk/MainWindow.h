@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.3 2004-11-10 22:19:57 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.4 2004-11-11 22:31:33 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -29,15 +29,8 @@ struct MainWindow : public Window {
 
     bool isTurboMode(void)  { return isTurbo; }
     bool wasBreakEv(void);
-    void updateStatusBar();
-    void run(const char* file);
-    void resetPen() {
-        penX = 0;
-        penY = 0;
-        penDownX = 0;
-        penDownY = 0;
-        penState = 0;
-    }
+    void updateStatusBar(const char* title);
+    void resetPen();
 
     int penX;
     int penY;
@@ -55,7 +48,6 @@ struct MainWindow : public Window {
     Group* textOutputGroup;
     Group* statusBar;
     TabGroup* tabGroup;
-    char statusText[256];
 };
 
 #endif

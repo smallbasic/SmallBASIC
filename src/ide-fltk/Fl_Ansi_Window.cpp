@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.6 2004-11-10 22:19:57 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.7 2004-11-11 22:31:33 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -25,7 +25,11 @@ using namespace fltk;
 // make Fl_Ansi_Window.exe
 // #define UNIT_TEST 1
 
-#define begin_offscreen() initOffscreen(); ImageDraw imageDraw(img);
+#define begin_offscreen()   \
+  initOffscreen();          \
+  ImageDraw imageDraw(img); \
+  setfont(labelfont(), labelsize());
+
 #define end_offscreen() redraw();
 
 Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) : 
@@ -58,7 +62,7 @@ void Fl_Ansi_Window::initOffscreen() {
         ImageDraw imageDraw(img);
         setcolor(color());
         fillrect(0, 0, w(), h());
-        setfont(font, labelsize());
+        setfont(labelfont(), labelsize());
         curY = textHeight();
     }
 }
@@ -72,8 +76,9 @@ void Fl_Ansi_Window::reset() {
     italic = false;
     color(WHITE); // bg
     labelcolor(BLACK); // fg
-    font = COURIER;
+    labelfont(COURIER);
     labelsize(11);
+    // TODO: use user defaults
 }
 
 void Fl_Ansi_Window::layout() {
@@ -193,6 +198,7 @@ Color Fl_Ansi_Window::ansiToFltk(long color) const {
     case 11: return MAGENTA;
     case 12: return CYAN;
         // TODO: fix 13,14
+        // TODO: use color(0,0,128) etc
     case 13: return CYAN;
     case 14: return CYAN;
     default : return WHITE;
@@ -315,15 +321,14 @@ bool Fl_Ansi_Window::doEscape(unsigned char* &p) {
     }
 
     if (setGraphicsRendition(*p, escValue)) {
-        //Font* font = labelfont();
-        Font* newFont = font;
+        Font* font = labelfont();
         if (bold) {
-            newFont = newFont->bold();
+            font = font->bold();
         }
         if (italic) {
-            newFont = newFont->italic();
+            font = font->italic();
         }
-        setfont(newFont, labelsize());
+        setfont(font, labelsize());
     }
     
     if (*p == ';') {

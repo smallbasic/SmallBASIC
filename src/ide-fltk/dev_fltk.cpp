@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.4 2004-11-10 22:19:57 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.5 2004-11-11 22:31:33 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -30,7 +30,13 @@ const int menuSleep = 400000;
 
 int osd_devinit() {
     wnd->resetPen();
-	setsysvar_str(SYSVAR_OSNAME, "Unix/FLTK");
+    os_graphics = 1;
+    os_graf_mx = wnd->out->w();
+    os_graf_my = wnd->out->h();
+    os_ver = 0x20000; // FLTK version
+    os_color = 1;
+    os_color_depth = 16;
+	setsysvar_str(SYSVAR_OSNAME, "FLTK");
     return 1;
 }
 
@@ -67,10 +73,11 @@ int osd_events(int wait_flag) {
     if (wnd->wasBreakEv()) {
         return -2;
     }
+
     return 0;
     // this may call osd_events() again but it will fall out before 
     // reaching here a second time since we just ate the event
-    //    return dev_kbhit();
+    //return dev_kbhit();
 }
 
 void osd_setpenmode(int enable) {
