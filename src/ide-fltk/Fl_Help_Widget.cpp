@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.3 2005-03-09 23:00:59 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.4 2005-03-10 22:39:55 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -33,29 +33,30 @@
 #define ANCHOR_COLOR fltk::color(0,0,128)
 #define FONT_SIZE 11
 #define SCROLL_W 17
+#define CELL_SPACING 4
 
 Color getColor(const char *n);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
+const char* skipWhite(const char* s);
 struct AnchorNode;
 
 static char* dot_xpm[] = {
-"5 5 3 1",
-"   c None",
-".  c #F4F4F4",
-"+  c #000000",
-".+++.",
-"+++++",
-"+++++",
-"+++++",
-".+++."};
+    "5 5 3 1",
+    "   c None",
+    ".  c #F4F4F4",
+    "+  c #000000",
+    ".+++.",
+    "+++++",
+    "+++++",
+    "+++++",
+    ".+++."};
 
 static xpmImage dotImage(dot_xpm);
 
 //--MetaNode--------------------------------------------------------------------
 
 struct MetaNode {
-    S16 x;
-    S16 y;
+    S16 x,y;
     U16 height;
     U16 width;
     U16 lineHeight;
@@ -65,16 +66,39 @@ struct MetaNode {
     U8 uline;
     U8 center;
     U8 inTR;
+    U8 textOut;
     Font* font;
     Color color;
     Color background;
     Group* wnd;
     AnchorNode* anchor;
 
-    void newRow(U16 nrows) {
+    void newRow(U16 nrows=1) {
         x = indent;
         y += nrows*lineHeight;
         lines += nrows;
+    }
+};
+
+//--Attributes------------------------------------------------------------------
+
+struct Attributes : public Properties {
+    Attributes(int growSize) : Properties(growSize) {}
+    String* getValue() {
+        return get("value");
+    }
+    String* getName() {
+        return get("name");
+    }
+    String* getHref() {
+        return get("href");
+    }
+    String* getType() {
+        return get("type");
+    }
+    int getSize() {
+        String* s = get("size");
+        return (s != null ? s->toInteger() : -1);
     }
 };
 
@@ -152,7 +176,7 @@ struct BrNode : public BaseNode {
 //--AnchorNode------------------------------------------------------------------
 
 struct AnchorNode : public BaseNode {
-    AnchorNode(Properties& p) : BaseNode() {
+    AnchorNode(Attributes& p) : BaseNode() {
         String* prop;
         prop = p.get("name");
         if (prop != null) {
@@ -177,7 +201,7 @@ struct AnchorNode : public BaseNode {
         setcolor(ANCHOR_COLOR);
     }
 
-    U8 ptInSegment(int x, int y) {
+    bool ptInSegment(int x, int y) {
         if (y >= y1 && y <= y2) {
             // found row
             if ((x < x1 && y < y1+lineHeight) ||
@@ -194,7 +218,7 @@ struct AnchorNode : public BaseNode {
 
     String name;
     String href;
-    U16 x1,x2,y1,y2;
+    S16 x1,x2,y1,y2;
     U16 lineHeight;
     U8 wrapxy; // begin on page boundary
     U8 pushed;
@@ -262,6 +286,7 @@ struct TextNode : public BaseNode {
     }
 
     void display(MetaNode* mn) {
+        mn->textOut = true;
         if (width == 0) {
             width = (int)getwidth(s, textlen);
         }
@@ -281,8 +306,8 @@ struct TextNode : public BaseNode {
                 if (linepx == -1) {
                     // no break point - create new line if required
                     linepx = (int)getwidth(p, linelen);
-                    if (linepx+2 > mn->width-mn->x) {
-                        mn->newRow(1);
+                    if (linepx > mn->width-mn->x) {
+                        mn->newRow();
 
                         // let anchor know where it really starts
                         if (mn->anchor && mn->anchor->wrapxy == false) {
@@ -306,7 +331,7 @@ struct TextNode : public BaseNode {
                 if (mn->x+linepx < mn->width) {
                     mn->x += linepx;
                 } else {
-                    mn->newRow(1);
+                    mn->newRow();
                 }
             }
         }
@@ -332,7 +357,7 @@ struct TextNode : public BaseNode {
     const char* s; // 4
     U16 textlen;   // 4
     U16 width;     // 4
-    U16 ybegin;    // 4
+    S16 ybegin;    // 4
 };
 
 //--HrNode----------------------------------------------------------------------
@@ -356,43 +381,55 @@ struct HrNode : public BaseNode {
 //--TableNode-------------------------------------------------------------------
 
 struct TableNode : public BaseNode {
-    TableNode(U8 begin) : BaseNode() {
-        this->begin = begin;
+    TableNode() : BaseNode() {
+        rows = 0;
     }
+
     void display(MetaNode* mn) {
         nextCol = 0;
         nextRow = 0;
-        mn->newRow(1);
         mn->lineHeight = (int)(getascent()+getdescent());
-
-        if (begin) {
-            x = mn->x;
-            y = mn->y;
-            width = mn->width;
-            indent = mn->indent;
-        } else {
-            mn->x = x;
-            mn->y = y;
-            mn->width = width;
-            mn->indent = indent;
-        }
+        indent = mn->indent;
+        width = mn->width-indent;
+        x = indent;
+        y = mn->y;
+        rowY = y;
     }
-    U16 cols;
     U16 rows;
-    U16 indent;
     U16 nextCol;
     U16 nextRow;
+    U16 indent;
     U16 width;
-    U16 x, y;
-    U8 begin;
+    S16 x, y, rowY;
+};
+
+struct TableEndNode : public BaseNode {
+    TableEndNode(TableNode* tableNode) : BaseNode() {
+        this->table = tableNode;
+    }
+    void display(MetaNode* mn) {
+        if (table == 0) {
+            return;
+        }
+        mn->width = table->width;
+        mn->indent = table->indent;
+        mn->x = table->indent;
+        mn->y = table->y;
+        if (mn->textOut) {
+            mn->newRow();
+        }
+        mn->textOut = false;
+    }
+    TableNode* table;    
 };
 
 //--TrNode----------------------------------------------------------------------
 
 struct TrNode : public BaseNode {
-    TrNode(Object* tableNode, U8 begin) : BaseNode() {
+    TrNode(TableNode* tableNode, U8 begin) : BaseNode() {
         this->begin = begin;
-        this->table = (TableNode*)tableNode;
+        this->table = tableNode;
+        this->cols = 0;
         if (table && begin) {
             table->rows++;
         }
@@ -401,50 +438,58 @@ struct TrNode : public BaseNode {
         if (table == 0) {
             return;
         }
-        table->nextCol = 0;
-        table->nextRow++;
-        
         if (begin) {
-            table->y = mn->y;
+            if (mn->textOut) {
+                table->y += mn->lineHeight;
+                table->x = table->indent;
+            }
+            mn->textOut = false;
+            table->nextCol = 0;
+            table->nextRow++;
+            table->rowY = table->y;
         }
-
         mn->inTR = begin;
     }
     TableNode* table;
+    U16 cols;
     U8 begin;
 };
 
 //--TdNode----------------------------------------------------------------------
 
 struct TdNode : public BaseNode {
-    TdNode(Object* tableNode, U8 begin) : BaseNode() {
+    TdNode(TrNode* trNode, U8 begin) : BaseNode() {
         this->begin = begin;
-        this->table = (TableNode*)tableNode;
-        if (table && begin) {
-            table->cols++;
+        this->tr = trNode;
+        if (tr && begin) {
+            tr->cols++;
         }
     }
     void display(MetaNode* mn) {
-        if (table == 0) {
+        if (tr == 0 || tr->table == 0) {
             return;
         }
+        TableNode* table = tr->table;
         if (begin) {
-            mn->width = table->width/table->cols;
-            mn->x = table->x + (table->nextCol*mn->width);
+            int cellWidth = table->width/tr->cols;
+            mn->x = table->x + (table->nextCol*cellWidth);
+            mn->y = table->rowY;
+            mn->width = mn->x + cellWidth - CELL_SPACING;
             mn->indent = mn->x;
+            mn->textOut = false;
             table->nextCol++;
         } else if (mn->y > table->y) {
             table->y = mn->y;
         }
     }
-    TableNode* table;
+    TrNode* tr;
     U8 begin;
 };
 
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-    ImageNode(const Style* style, Properties& p) : BaseNode() {
+    ImageNode(const Style* style, Attributes& p) : BaseNode() {
         this->style = style;
         this->image = 0;
     }
@@ -457,7 +502,7 @@ struct ImageNode : public BaseNode {
 //--ButtonNode------------------------------------------------------------------
 
 struct ButtonNode : public BaseNode {
-    ButtonNode(Group* wnd, Properties& p, Font* font);
+    ButtonNode(Group* wnd, Attributes& p, Font* font);
 
     void display(MetaNode* mn) {
         button->x(mn->x);
@@ -480,39 +525,28 @@ struct ButtonNode : public BaseNode {
         delete button;
     }
     Widget* button;
-    String title;
+    String value;
 };
 
-ButtonNode::ButtonNode(Group* wnd, Properties& p, Font* font) : BaseNode() {
-    String* prop;
-    prop = p.get("value");
-    if (prop != null) {
-        title.append(prop->toString());
-    }
-    prop = p.get("checked");
-    int checked=-1;
-    if (prop != null) {
-        checked = prop->toInteger();
-    }
-    prop = p.get("type");
+ButtonNode::ButtonNode(Group* wnd, Attributes& p, Font* font) : BaseNode() {
+    String* prop = 0;
     if (prop == null || prop->equals("text")) {
-//         button = new CTextEdit(ID_TEXTBOX, rc.width, rc.height, 
-//                                TEXTOPTION_ONELINE);
-//         if (title.length()) {
-//             ((CTextEdit*)button)->SetText(title);
-//         }
-//         button->SetFont(font);
+        //         button = new CTextEdit(ID_TEXTBOX, rc.width, rc.height, 
+        //                                TEXTOPTION_ONELINE);
+        //         if (title.length()) {
+        //             ((CTextEdit*)button)->SetText(title);
+        //         }
+        //         button->SetFont(font);
     } else if (prop->equals("checkbox")) {
-//         button = new CCheckbox(ID_CHKBOX, 0, 0, title);
-//         button->SetFont(font);
-//         if (checked != -1) {
-//             ((CCheckbox*)button)->SetDownStatus(true);
-//         }
-    } else if (prop->equals("option")) {
-//         button = new OptionBox(new OptionMenu(p), checked);
-    } else {
- //        button = new CButton(ID_BUTTON, 0, 0, title);
-//         button->SetFont(font);
+        //         button = new CCheckbox(ID_CHKBOX, 0, 0, title);
+        //         button->SetFont(font);
+        //         if (checked != -1) {
+        //             ((CCheckbox*)button)->SetDownStatus(true);
+        //         }
+    } else if (prop->equals("radio")) {
+        //         button = new OptionBox(new OptionMenu(p), checked);
+        //        button = new CButton(ID_BUTTON, 0, 0, title);
+        //         button->SetFont(font);
     }
     prop = p.get("size");
     if (prop != null) {
@@ -614,7 +648,7 @@ const char* HelpWidget::getInputValue(Widget* button) {
     for (int i=0; i<len; i++) {
         ni = (NamedInput*)list[i];
         if (ni->input->button == button) {
-            return ni->input->title.toString();
+            return ni->input->value.toString();
         }
     }
     return null;
@@ -759,10 +793,11 @@ void HelpWidget::draw() {
     mn.color = FOREGROUND_COLOR;
     mn.background = BACKGROUND_COLOR;
     mn.height = h();
-    mn.width = w()-SCROLL_W;
     mn.x = DEFAULT_INDENT;
+    mn.width = w()-(SCROLL_W+DEFAULT_INDENT);
     mn.indent = DEFAULT_INDENT;
     mn.inTR = false;
+    mn.textOut = false;
     mn.lines = 0;
 
     // must call setfont() before getascent() etc
@@ -777,7 +812,7 @@ void HelpWidget::draw() {
     }
     
     setcolor(mn.background);
-    fillrect(Rectangle(mn.width, mn.height));
+    fillrect(Rectangle(mn.x+mn.width, mn.height));
     setcolor(mn.color);
 
     Object** list = nodeList.getList();
@@ -815,7 +850,7 @@ U8 HelpWidget::find(const char* s, U8 matchCase) {
 
 void HelpWidget::onMove(int event) {
     if (selectedAnchor && event == fltk::DRAG) {
-        U8 pushed = selectedAnchor->ptInSegment(fltk::event_x(), 
+        bool pushed = selectedAnchor->ptInSegment(fltk::event_x(), 
                                                   fltk::event_y());
         if (selectedAnchor->pushed != pushed) {
             Widget::cursor(fltk::CURSOR_HAND);
@@ -898,7 +933,7 @@ void HelpWidget::compileHTML() {
 
     Stack tableStack(10);
     Stack trStack(10);
-    Properties p(10);
+    Attributes p(10);
     String* prop;
     BaseNode* node;
 
@@ -907,11 +942,11 @@ void HelpWidget::compileHTML() {
     const char* tagEnd = text;
     const char* tag;
 
-#define ADD_PREV_SEGMENT  \
-    prevlen = i-pindex;   \
-    if (prevlen > 0) {    \
-        newline = false;  \
-        nodeList.append(new TextNode(p, prevlen)); \
+#define ADD_PREV_SEGMENT                            \
+    prevlen = i-pindex;                             \
+    if (prevlen > 0) {                              \
+        newline = false;                            \
+        nodeList.append(new TextNode(p, prevlen));  \
     }
 
     while (text && *text) {
@@ -967,7 +1002,8 @@ void HelpWidget::compileHTML() {
                     if (pre) {
                         nodeList.append(new BrNode(0));
                     }
-                    if (isWhite(text[i+1]) == false && newline == false) {
+                    if (isWhite(text[i+1]) == false && 
+                        text[i+1] != '<' && newline == false) {
                         // replace with single space
                         nodeList.append(new TextNode(" ", 1));
                         newline = false;
@@ -1042,17 +1078,21 @@ void HelpWidget::compileHTML() {
                     uline = false;
                     nodeList.append(new StyleNode(uline, center));
                 } else if (0 == strnicmp(tag, "td", 2)) {
-                    nodeList.append(new TdNode(tableStack.peek(), false));
+                    nodeList.append(new TdNode((TrNode*)trStack.peek(), false));
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "tr", 2)) {
-                    nodeList.append(new TrNode(tableStack.peek(), false));
+                    node = new TrNode((TableNode*)tableStack.peek(), false);
+                    nodeList.append(node);
                     trStack.pop();
                     newline = true;
                     numRows++;
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "table", 5)) {
-                    nodeList.append(new TableNode(false));
-                    tableStack.pop();
+                    node = new TableEndNode((TableNode*)tableStack.pop());
+                    nodeList.append(node);
                     newline = true;
                     numRows++;
+                    text = skipWhite(tagEnd+1);
                 }
             } else {
                 if (0 == strnicmp(tag, "br", 2)) {
@@ -1075,8 +1115,7 @@ void HelpWidget::compileHTML() {
                     newline = true;
                     numRows++;
                 } else if (0 == strnicmp(tag, "title", 5)) {
-                    // skip past </title>
-                    tagEnd = strchr(tagEnd+1, '>');
+                    tagEnd = strchr(tagEnd+1, '>'); // skip past </title>
                     text = tagEnd+1;
                 } else if (0 == strnicmp(tag, "pre", 3)) {
                     pre = true;
@@ -1085,17 +1124,20 @@ void HelpWidget::compileHTML() {
                 } else if (0 == strnicmp(tag, "p", 1)) {
                     // paragraph
                 } else if (0 == strnicmp(tag, "td", 2)) {
-                    nodeList.append(new TdNode(tableStack.peek(), true));
+                    nodeList.append(new TdNode((TrNode*)trStack.peek(), true));
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "tr", 2)) {
-                    node = new TrNode(tableStack.peek(), true);
+                    node = new TrNode((TableNode*)tableStack.peek(), true);
                     nodeList.append(node);
                     trStack.push(node);
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "table", 5)) {
-                    node = new TableNode(true);
+                    node = new TableNode();
                     nodeList.append(node);
                     tableStack.push(node);
                     newline = true;
                     numRows++;
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "ul>", 3)) {
                     nodeList.append(new BrNode(0));
                     newline = true;
@@ -1275,6 +1317,17 @@ void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
     }
 }
 
+/**
+ * skip white space between tags: 
+ * <table>-skip-<tr>-skip-<td></td>-skip</tr>-skip-</table>
+ */
+const char* skipWhite(const char* s) {
+    while (isWhite(*s)) {
+        s++;
+    }
+    return s;
+}
+
 Color getColor(const char *n) {
     if (!n || !n[0]) {
         return 0;
@@ -1351,11 +1404,9 @@ void trace(const char *format, ...) {
     va_start(args, format);
     p += vsnprintf(p, sizeof buf - 1, format, args);
     va_end(args);
-    
     while (p > buf && isspace(p[-1])) {
         *--p = '\0';
     }
-    
     *p++ = '\r';
     *p++ = '\n';
     *p   = '\0';
