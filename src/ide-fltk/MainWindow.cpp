@@ -1,18 +1,15 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.3 2004-11-09 22:06:18 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
-/*                  _.-_:\
-//                 /      \
-//                 \_.--*_/
-//                       v
-*/
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
+
+#include "sys.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -33,6 +30,7 @@
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
+#include "sbapp.h"
 
 using namespace fltk;
 
@@ -49,21 +47,18 @@ void quit_cb(Widget*, void* v) {
 }
 
 void about_cb(Widget*, void* v) {
-    exit(0);
+    message("SmallBASIC 0.9.4.5");
 }
 
 void break_cb(Widget*, void* v) {
-    exit(0);
+    MainWindow* wnd = (MainWindow*)v;
+    wnd->isBreak = true;
 }
 
 void run_cb(Widget*, void* v) {
     MainWindow* wnd = (MainWindow*)v;
-    if (wnd->out->visible()) {
-        wnd->out->hide();
-    } else {
-        wnd->out->print("\nshowing...");
-        wnd->out->show();
-    }
+    wnd->tabGroup->selected_child(wnd->outputGroup);
+    sbasic_main(wnd->editWnd->get_filename());
 }
 
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
@@ -71,6 +66,17 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int statusHeight = mnuHeight;
     int groupHeight = h-mnuHeight-statusHeight;
     int tabHeight = mnuHeight;
+
+    menuActive = 0;
+    isTurbo = 0;
+    isBreak = 0;
+	opt_graphics = 0;
+	opt_quite = 0;
+	opt_ide = 0;
+	opt_command[0] = '\0';
+	opt_pref_width = 0;
+    opt_pref_height = 0;
+    opt_pref_bpp = 0;
 
     begin();
     MenuBar* m = new MenuBar(0, 0, w, mnuHeight);
@@ -98,10 +104,10 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Search/Replace &Again",CTRL+'t', (Callback*)replace2_cb);
     m->add("&About...",             CTRL+'f', (Callback*)about_cb);
 
-    TabGroup* tabGroup = new TabGroup(0, mnuHeight, w, groupHeight);
+    tabGroup = new TabGroup(0, mnuHeight, w, groupHeight);
     tabGroup->begin();
 
-    Group* editGroup = new Group(0, 0, w, groupHeight-tabHeight, "Editor");
+    editGroup = new Group(0, 0, w, groupHeight-tabHeight, "Editor");
     editGroup->begin();
     editWnd = new EditorWindow(2, 2, w-4, groupHeight-tabHeight-4);
     if (fileName[0] != 0) {
@@ -111,21 +117,19 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup->end();
     tabGroup->resizable(editGroup);
 
-    Group* helpGroup = new Group(0, 0, w, groupHeight-tabHeight, "Help");
+    helpGroup = new Group(0, 0, w, groupHeight-tabHeight, "Help");
     helpGroup->hide();
     helpGroup->begin();
     // TODO: add help control
     helpGroup->end();
 
-    Group* outputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Output");
-    outputGroup->hide();
+    outputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Output");
     outputGroup->begin();
     out = new Fl_Ansi_Window(2, 2, w-4, groupHeight-tabHeight-4);
-    out->print("SmallBASIC");
     outputGroup->resizable(out);
     outputGroup->end();
 
-    Group* textOutputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Text Output");
+    textOutputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Text Output");
     textOutputGroup->hide();
     textOutputGroup->begin();
     // TODO: add text output control
@@ -134,9 +138,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     tabGroup->end();
     resizable(tabGroup);
 
-    Group* statusBar = new Group(0, h-mnuHeight, w, mnuHeight);
-
-
+    editWnd->mainWnd = this;
+    editWnd->statusBar = new Group(0, h-mnuHeight, w, mnuHeight);
     end();
 }
 

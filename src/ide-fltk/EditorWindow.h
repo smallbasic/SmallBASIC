@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.3 2004-11-09 22:06:18 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -26,10 +26,17 @@
 
 using namespace fltk;
 
-class EditorWindow : public DoubleBufferWindow {
+class EditorWindow : public Group { //DoubleBufferWindow {
     public:
     EditorWindow(int x, int y, int w, int h);
     ~EditorWindow();
+
+    // environment access
+    Group* statusBar;
+    Window* mainWnd;
+
+    // internal access
+    const char* get_filename();
 
     Window          *replaceDlg;
     Input           *replaceFind;

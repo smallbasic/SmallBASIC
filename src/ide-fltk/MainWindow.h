@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.1 2004-11-07 23:01:14 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.2 2004-11-09 22:06:18 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -20,7 +20,7 @@
 struct MainWindow : public Window {
     MainWindow(int w, int h);
     ~MainWindow();
-    
+
     bool wasBreakEv(void)   { return isBreak; }
     bool isTurboMode(void)  { return isTurbo; }
     bool isMenuActive(void) { return menuActive; }
@@ -41,12 +41,17 @@ struct MainWindow : public Window {
     int penDownY;
     int penState;
     bool menuActive;
-    Fl_Ansi_Window *out;
-    EditorWindow* editWnd;
-
-    private:
     bool isTurbo;
     bool isBreak;
+
+    // screen parts
+    Fl_Ansi_Window *out;
+    EditorWindow* editWnd;
+    Group* outputGroup;
+    Group* helpGroup;
+    Group* editGroup;
+    Group* textOutputGroup;
+    TabGroup* tabGroup;
 };
 
 #endif

@@ -79,6 +79,8 @@ OBJDIR = ./objs/
 OBJS += $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(SOURCE)))) \
         $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(COMMON))))
 
+##.SILENT:
+
 sbfui.cxx: sbfui.fl
 	fluid -c sbfui.fl
 
@@ -115,3 +117,5 @@ ${OBJDIR}%.o: %.cxx
 
 ${OBJDIR}%.o: %.c
 	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+
+MainWindow.o: EditorWindow.h MainWindow.h

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.3 2004-11-09 22:06:18 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -20,6 +20,7 @@
 #include <errno.h>
 
 #include <fltk/ask.h>
+#include <fltk/events.h>
 #include <fltk/file_chooser.h>
 #include <fltk/Flags.h>
 #include <fltk/FileChooser.h>
@@ -36,7 +37,7 @@
 using namespace fltk;
 
 TextDisplay::StyleTableEntry
-    styletable[] = { // Style table
+styletable[] = { // Style table
     { BLACK,      COURIER,        14 }, // A - Plain
     { GREEN, COURIER_ITALIC, 14 }, // B - Line comments
     { GREEN, COURIER_ITALIC, 14 }, // C - Block comments
@@ -67,16 +68,16 @@ void style_parse(const char *text, char *style, int length) {
     char *bufptr;
     const char *temp;
 
-    for (current = *style, col = 0, last = 0; length > 0; length --, text ++) {
+    for (current = *style, col = 0, last = 0; length > 0; length--, text ++) {
         if (current == 'B') current = 'A';
         if (current == 'A') {
-            // Check for directives, comments, strings, and keywords...
+            // check for directives, comments, strings, and keywords
             if (col == 0 && *text == '#') {
-                // Set style to directive
+                // set style to directive
                 current = 'E';
             } else if (strncmp(text, "//", 2) == 0) {
                 current = 'B';
-                for (; length > 0 && *text != '\n'; length --, text ++) {
+                for (; length > 0 && *text != '\n'; length--, text ++) {
                     *style++ = 'B';
                 }
                 if (length == 0) {
@@ -85,17 +86,17 @@ void style_parse(const char *text, char *style, int length) {
             } else if (strncmp(text, "/*", 2) == 0) {
                 current = 'C';
             } else if (strncmp(text, "\\\"", 2) == 0) {
-                // Quoted quote...
+                // quoted quote
                 *style++ = current;
                 *style++ = current;
                 text ++;
-                length --;
+                length--;
                 col += 2;
                 continue;
             } else if (*text == '\"') {
                 current = 'D';
             } else if (!last && islower(*text)) {
-                // Might be a keyword...
+                // might be a keyword
                 for (temp = text, bufptr = buf;
                      islower(*temp) && bufptr < (buf + sizeof(buf) - 1);
                      *bufptr++ = *temp++);
@@ -109,12 +110,12 @@ void style_parse(const char *text, char *style, int length) {
                                 sizeof(code_functions[0]), compare_keywords)) {
                         while (text < temp) {
                             *style++ = 'F';
-                            text ++;
-                            length --;
-                            col ++;
+                            text++;
+                            length--;
+                            col++;
                         }
-                        text --;
-                        length ++;
+                        text--;
+                        length++;
                         last = 1;
                         continue;
                     } else if (bsearch(&bufptr, code_keywords,
@@ -122,13 +123,13 @@ void style_parse(const char *text, char *style, int length) {
                                        sizeof(code_keywords[0]), compare_keywords)) {
                         while (text < temp) {
                             *style++ = 'G';
-                            text ++;
-                            length --;
-                            col ++;
+                            text++;
+                            length--;
+                            col++;
                         }
 
-                        text --;
-                        length ++;
+                        text--;
+                        length++;
                         last = 1;
                         continue;
                     } else if (bsearch(&bufptr, code_procedures,
@@ -136,57 +137,57 @@ void style_parse(const char *text, char *style, int length) {
                                        sizeof(code_procedures[0]), compare_keywords)) {
                         while (text < temp) {
                             *style++ = 'G';
-                            text ++;
-                            length --;
-                            col ++;
+                            text++;
+                            length--;
+                            col++;
                         }
 
-                        text --;
-                        length ++;
+                        text--;
+                        length++;
                         last = 1;
                         continue;
                     }
                 }
             }
         } else if (current == 'C' && strncmp(text, "*/", 2) == 0) {
-            // Close a C comment...
+            // close a C comment
             *style++ = current;
             *style++ = current;
-            text ++;
-            length --;
+            text++;
+            length--;
             current = 'A';
             col += 2;
             continue;
         } else if (current == 'D') {
-            // Continuing in string...
+            // continuing in string
             if (strncmp(text, "\\\"", 2) == 0) {
-                // Quoted end quote...
+                // quoted end quote
                 *style++ = current;
                 *style++ = current;
-                text ++;
-                length --;
+                text++;
+                length--;
                 col += 2;
                 continue;
             } else if (*text == '\"') {
-                // End quote...
+                // End quote
                 *style++ = current;
-                col ++;
+                col++;
                 current = 'A';
                 continue;
             }
         }
 
-        // Copy style info...
+        // copy style info
         if (current == 'A' && (*text == '{' || *text == '}')) {
             *style++ = 'G';
         } else {
             *style++ = current;
         }
-        col ++;
+        col++;
         last = isalnum(*text) || *text == '.';
 
         if (*text == '\n') {
-            // Reset column and possibly reset the style
+            // reset column and possibly reset the style
             col = 0;
             if (current == 'B' || current == 'E') {
                 current = 'A';
@@ -195,7 +196,7 @@ void style_parse(const char *text, char *style, int length) {
     }
 }
 
-// 'style_init()' - Initialize the style buffer...
+// 'style_init()' - Initialize the style buffer
 void style_init(void) {
     char *style = new char[textbuf->length() + 1];
     const char *text = textbuf->text();
@@ -217,52 +218,58 @@ void style_init(void) {
 // 'style_unfinished_cb()' - Update unfinished styles.
 void style_unfinished_cb() {}
 
-// 'style_update()' - Update the style buffer...
-void style_update(int        pos,        // I - Position of update
-                  int        nInserted,  // I - Number of inserted chars
-                  int        nDeleted,   // I - Number of deleted chars
-                  int        /*nRestyled*/,  // I - Number of restyled chars
+char* get_style_range(int start, int end) {
+    const char* s = stylebuf->text_range(start, end);
+    char *style = new char[strlen(s) + 1];
+    strcpy(style, s);
+    return style;
+}
+
+// 'style_update()' - Update the style buffer
+void style_update(int pos,        // I - Position of update
+                  int nInserted,  // I - Number of inserted chars
+                  int nDeleted,   // I - Number of deleted chars
+                  int /*nRestyled*/,  // I - Number of restyled chars
                   const char * /*deletedText*/,// I - Text that was deleted
-                  void       *cbArg) {   // I - Callback data
+                  void *cbArg) {   // I - Callback data
 
     int start;              // Start of text
     int end;                // End of text
     char  last;             // Last style on line
-    const char *text;             // Text data
-    const char *style;             // Text data
+    const char *text;       // Text data
+    char *style;             // Text data
 
-    // If this is just a selection change, just unselect the style buffer...
+    // if this is just a selection change, just unselect the style buffer
     if (nInserted == 0 && nDeleted == 0) {
         stylebuf->unselect();
         return;
     }
 
-    // Track changes in the text buffer...
+    // track changes in the text buffer
     if (nInserted > 0) { 
-        // Insert characters into the style buffer...
+        // insert characters into the style buffer
         char *stylex = new char[nInserted + 1];
         memset(stylex, 'A', nInserted);
         stylex[nInserted] = '\0';
         stylebuf->replace(pos, pos + nDeleted, stylex);
         delete[] stylex;
     } else {
-        // Just delete characters in the style buffer...
+        // just delete characters in the style buffer
         stylebuf->remove(pos, pos + nDeleted);
     }
 
-    // Select the area that was just updated to avoid unnecessary
-    // callbacks...
+    // Select the area that was just updated to avoid unnecessary callbacks
     stylebuf->select(pos, pos + nInserted - nDeleted);
 
-    // Re-parse the changed region; we do this by parsing from the
+    // re-parse the changed region; we do this by parsing from the
     // beginning of the line of the changed region to the end of
-    // the line of the changed region...  Then we check the last
+    // the line of the changed region  Then we check the last
     // style character and keep updating if we have a multi-line
-    // comment character...
+    // comment character
     start = textbuf->line_start(pos);
     end   = textbuf->line_end(pos + nInserted);
     text  = textbuf->text_range(start, end);
-    style = stylebuf->text_range(start, end);
+    style = get_style_range(start, end);
     last  = style[end - start - 1];
 
     //  printf("start = %d, end = %d, text = \"%s\", style = \"%s\"...\n",
@@ -276,22 +283,43 @@ void style_update(int        pos,        // I - Position of update
     ((TextEditor *)cbArg)->redisplay_range(start, end);
 
     if (last != style[end - start - 1]) {
-        // The last character on the line changed styles, so reparse the
-        // remainder of the buffer...
-        //free(text);
-        //free(style);
+        // the last character on the line changed styles, 
+        // so reparse the remainder of the buffer
+        delete[] style;
 
         end   = textbuf->length();
         text  = textbuf->text_range(start, end);
-        style = stylebuf->text_range(start, end);
+        style = get_style_range(start, end);
 
-        //style_parse(text, style, end - start);
+        style_parse(text, style, end - start);
         stylebuf->replace(start, end, style);
         ((TextEditor *)cbArg)->redisplay_range(start, end);
     }
 
-    //free(text);
-    //free(style);
+    delete[] style;
+}
+
+void set_title(EditorWindow *w) {
+    if (w->mainWnd == 0) {
+        return;
+    }
+
+    if (filename[0] == '\0') {
+        strcpy(title, "Untitled");
+    } else {
+        char *slash = strrchr(filename, '/');
+        if (slash != NULL) {
+            strcpy(title, slash + 1);
+        } else {
+            strcpy(title, filename);
+        }
+    }
+
+    if (dirty) {
+        strcat(title, " (modified)");
+    }
+    strcat(title, " - SmallBASIC");
+    w->mainWnd->label(title);
 }
 
 int check_save(void) {
@@ -304,7 +332,7 @@ int check_save(void) {
                    "Cancel", "Save", "Discard");
 
     if (r == 1) {
-        save_cb(); // Save the file...
+        save_cb(); // Save the file
         return !dirty;
     }
 
@@ -325,6 +353,7 @@ void load_file(char *newfile, int ipos) {
     } else {
         r = textbuf->insertfile(newfile, ipos);
     }
+
     if (r) {
         alert("Error reading from file \'%s\':\n%s.", newfile, strerror(errno));
     } else {
@@ -365,7 +394,7 @@ void find_cb(Widget* w, void* v) {
 
     const char *val = input("Search String:", e->search);
     if (val != NULL) {
-        // User entered a string - go find it!
+        // user entered a string - go find it!
         strcpy(e->search, val);
         find2_cb(w, v);
     }
@@ -374,7 +403,7 @@ void find_cb(Widget* w, void* v) {
 void find2_cb(Widget* w, void* v) {
     EditorWindow* e = (EditorWindow*)v;
     if (e->search[0] == '\0') {
-        // Search string is blank; get a new one...
+        // search string is blank; get a new one
         find_cb(w, v);
         return;
     }
@@ -382,33 +411,13 @@ void find2_cb(Widget* w, void* v) {
     int pos = e->editor->insert_position();
     int found = textbuf->search_forward(pos, e->search, &pos);
     if (found) {
-        // Found a match; select and update the position...
+        // Found a match; select and update the position
         textbuf->select(pos, pos+strlen(e->search));
         e->editor->insert_position(pos+strlen(e->search));
         e->editor->show_insert_position();
     } else {
         alert("No occurrences of \'%s\' found!", e->search);
     }
-}
-
-void set_title(Window* w) {
-    if (filename[0] == '\0') {
-        strcpy(title, "Untitled");
-    } else {
-        char *slash;
-        slash = strrchr(filename, '/');
-        if (slash != NULL) {
-            strcpy(title, slash + 1);
-        } else {
-            strcpy(title, filename);
-        }
-    }
-
-    if (dirty) {
-        strcat(title, " (modified)");
-    }
-
-    w->label(title);
 }
 
 void changed_cb(int, int nInserted, int nDeleted,int, const char*, void* v) {
@@ -418,13 +427,16 @@ void changed_cb(int, int nInserted, int nDeleted,int, const char*, void* v) {
 
     EditorWindow *w = (EditorWindow *)v;
     set_title(w);
+
     if (loading) {
         w->editor->show_insert_position();
     }
 }
 
 void new_cb(Widget*, void*) {
-    if (!check_save()) return;
+    if (!check_save()) {
+        return;
+    }
 
     filename[0] = '\0';
     textbuf->select(0, textbuf->length());
@@ -438,14 +450,14 @@ void open_cb(Widget*, void*) {
         return;
     }
 
-    char *newfile = file_chooser("Open File?", "*", filename);
+    char *newfile = file_chooser("Open File?", "*.bas", filename);
     if (newfile != NULL) {
         load_file(newfile, -1);
     }
 }
 
 void insert_cb(Widget*, void *v) {
-    char *newfile = file_chooser("Insert File?", "*", filename);
+    char *newfile = file_chooser("Insert File?", "*.bas", filename);
     EditorWindow *w = (EditorWindow *)v;
     if (newfile != NULL) {
         load_file(newfile, w->editor->insert_position());
@@ -487,7 +499,7 @@ void replace2_cb(Widget*, void* v) {
     const char *replace = e->replaceWith->value();
 
     if (find[0] == '\0') {
-        // Search string is blank; get a new one...
+        // search string is blank; get a new one
         e->replaceDlg->show();
         return;
     }
@@ -498,7 +510,7 @@ void replace2_cb(Widget*, void* v) {
     int found = textbuf->search_forward(pos, find, &pos);
 
     if (found) {
-        // Found a match; update the position and replace text...
+        // found a match; update the position and replace text
         textbuf->select(pos, pos+strlen(find));
         textbuf->remove_selection();
         textbuf->insert(pos, replace);
@@ -517,7 +529,7 @@ void replall_cb(Widget*, void* v) {
 
     find = e->replaceFind->value();
     if (find[0] == '\0') {
-        // Search string is blank; get a new one...
+        // search string is blank; get a new one
         e->replaceDlg->show();
         return;
     }
@@ -526,13 +538,13 @@ void replall_cb(Widget*, void* v) {
     e->editor->insert_position(0);
     int times = 0;
 
-    // Loop through the whole string
+    // loop through the whole string
     for (int found = 1; found;) {
         int pos = e->editor->insert_position();
         found = textbuf->search_forward(pos, find, &pos);
 
         if (found) {
-            // Found a match; update the position and replace text...
+            // found a match; update the position and replace text
             textbuf->select(pos, pos+strlen(find));
             textbuf->remove_selection();
             textbuf->insert(pos, replace);
@@ -556,7 +568,7 @@ void replcan_cb(Widget*, void* v) {
 
 void save_cb() {
     if (filename[0] == '\0') {
-        // No filename - get one!
+        // no filename - get one!
         saveas_cb();
         return;
     } else {
@@ -565,34 +577,33 @@ void save_cb() {
 }
 
 void saveas_cb() {
-    char *newfile;
-
-    newfile = file_chooser("Save File As?", "*", filename);
+    char* newfile = file_chooser("Save File As?", "*.bas", filename);
     if (newfile != NULL) {
         save_file(newfile);
     }
 }
 
-EditorWindow::EditorWindow(int x, int y, int w, int h) : DoubleBufferWindow(x, y, w, h) {
+EditorWindow::EditorWindow(int x, int y, int w, int h) : 
+    //DoubleBufferWindow(x, y, w, h) {
+    Group(x, y, w, h) {
+
     replaceDlg = new Window(300, 105, "Replace");
     replaceFind = new Input(80, 10, 210, 25, "Find:");
     replaceFind->align(ALIGN_LEFT);
-
     replaceWith = new Input(80, 40, 210, 25, "Replace:");
     replaceWith->align(ALIGN_LEFT);
-
     replaceAll = new Button(10, 70, 90, 25, "Replace All");
     replaceAll->callback((Callback *)replall_cb, this);
-
     replaceNext = new ReturnButton(105, 70, 120, 25, "Replace Next");
     replaceNext->callback((Callback *)replace2_cb, this);
-
     replaceCancel = new Button(230, 70, 60, 25, "Cancel");
     replaceCancel->callback((Callback *)replcan_cb, this);
     replaceDlg->end();
     replaceDlg->set_non_modal();
-    *search = (char)0;
 
+    search[0] = 0;
+    mainWnd = 0;
+    statusBar = 0;
     dirty = 0;
     loading = 0;
     textbuf = new TextBuffer;
@@ -617,3 +628,6 @@ EditorWindow::~EditorWindow() {
     delete replaceDlg;
 }
 
+const char* EditorWindow::get_filename() {
+    return filename;
+}

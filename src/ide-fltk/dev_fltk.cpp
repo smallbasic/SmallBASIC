@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.3 2004-11-09 22:06:18 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -73,10 +73,10 @@ int osd_events(int wait_flag) {
     if (wnd->wasBreakEv()) {
         return -2;
     }
-
+    return 0;
     // this may call osd_events() again but it will fall out before 
     // reaching here a second time since we just ate the event
-    return dev_kbhit();
+    //    return dev_kbhit();
 }
 
 void osd_setpenmode(int enable) {
