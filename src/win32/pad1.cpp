@@ -404,8 +404,22 @@ void	reg_file_types()
 	r->WriteString("SmallBASIC","","SmallBASIC Source File");
 	r->WriteString("SmallBASIC\\DefaultIcon", "", appico);
 	r->WriteString("SmallBASIC\\Shell","","Open");
-	r->WriteString("SmallBASIC\\Shell\\Open","","Open with SmallBASIC");
+	r->WriteString("SmallBASIC\\Shell\\Open","","");
 	r->WriteString("SmallBASIC\\Shell\\Open\\command","", appcmd);
+	r->WriteString("SmallBASIC\\Shell","","Open");
+
+	if	( r->ReadString(".bas","","SmallBASIC") == AnsiString("SmallBASIC") )	
+		r->WriteString(".bas","","SmallBASIC");
+	else	{
+		if ( r->ReadString(".bas\\OpenWithList","","0") == AnsiString("0") )
+			r->WriteString(".bas\\OpenWithList","","");
+		if	( r->ReadString(".bas\\OpenWithList\\SmallBASIC","","SmallBASIC") != AnsiString("SmallBASIC") )
+			r->WriteString(".bas\\OpenWithList\\SmallBASIC","","SmallBASIC");
+		}
+
+	appcmd = app + AnsiString(" -r \"%1\"");
+	r->WriteString("SmallBASIC\\Shell\\Run","","");
+	r->WriteString("SmallBASIC\\Shell\\Run\\command","", appcmd);
 	
 	delete r;
 }
@@ -448,6 +462,17 @@ __fastcall TFMain::TFMain(TComponent* Owner)
 	bcb_vwidth  = ini->ReadInteger("PAD", "VW", 1024);
 	bcb_vheight = ini->ReadInteger("PAD", "VH", 768);
 
+	// window position
+	if	( ini->ReadInteger("PAD", "WinMax", 0) == 1 )
+		this->WindowState = wsMaximized;
+	else	{
+		this->Left   = ini->ReadInteger("PAD", "WinLeft", this->Left);
+		this->Top    = ini->ReadInteger("PAD", "WinTop", this->Top);
+		this->Width  = ini->ReadInteger("PAD", "WinWidth", this->Width);
+		this->Height = ini->ReadInteger("PAD", "WinHeight", this->Height);
+		}
+
+	//
 	chkCapture->Checked = bcb_capture;
 
 	// last used files
@@ -516,6 +541,16 @@ void __fastcall TFMain::OnClose(TObject *Sender, TCloseAction &Action)
 		ini->WriteInteger("PAD", "Capture", bcb_capture);
 		ini->WriteInteger("PAD", "VW", bcb_vwidth);
 		ini->WriteInteger("PAD", "VH", bcb_vheight);
+
+		if	( this->WindowState == wsMaximized )
+			ini->WriteInteger("PAD", "WinMax", 1);
+		else	{
+			ini->WriteInteger("PAD", "WinLeft", this->Left);
+			ini->WriteInteger("PAD", "WinTop", this->Top);
+			ini->WriteInteger("PAD", "WinWidth", this->Width);
+			ini->WriteInteger("PAD", "WinHeight", this->Height);
+			ini->WriteInteger("PAD", "WinMax", 0);
+			}
 
 		// last used files
 		for ( i = 0; i < 8; i ++ )	{
@@ -693,20 +728,22 @@ void __fastcall TFMain::Break1Click(TObject *Sender)
 void __fastcall TFMain::outOnMouseMove(TObject *Sender, TShiftState Shift,
 	  int X, int Y)
 {
-	event_t	ev;
+	if	( running )	{
+		event_t	ev;
 
-	ev.type = EVMOUSE;
-	ev.button = 0;
-	if	( Shift.Contains(ssLeft) )
-		ev.button |= 1;
-	if	( Shift.Contains(ssRight) )
-		ev.button |= 2;
-	if	( Shift.Contains(ssMiddle) )
-		ev.button |= 4;
+		ev.type = EVMOUSE;
+		ev.button = 0;
+		if	( Shift.Contains(ssLeft) )
+			ev.button |= 1;
+		if	( Shift.Contains(ssRight) )
+			ev.button |= 2;
+		if	( Shift.Contains(ssMiddle) )
+			ev.button |= 4;
 
-	ev.x = X;
-	ev.y = Y;
-	w32_evpush(&ev);
+		ev.x = X;
+		ev.y = Y;
+		w32_evpush(&ev);
+		}
 }
 //---------------------------------------------------------------------------
 
@@ -728,25 +765,27 @@ void __fastcall TFMain::outOnKeyPress(TObject *Sender, char &Key)
 void __fastcall TFMain::outOnMouseUp(TObject *Sender, TMouseButton Button,
       TShiftState Shift, int X, int Y)
 {
-	event_t	ev;
+	if	( running )	{
+		event_t	ev;
 
-    ev.type = EVMOUSE;
-    ev.button = 0;
-    if	( Shift.Contains(ssLeft) )
-    	ev.button |= 1;
-    if	( Shift.Contains(ssRight) )
-    	ev.button |= 2;
-    if	( Shift.Contains(ssMiddle) )
-    	ev.button |= 4;
-        
-    if	( ev.button )
-        imgOut->OnMouseMove = outOnMouseMove;
-	else
-        imgOut->OnMouseMove = NULL;
+		ev.type = EVMOUSE;
+		ev.button = 0;
+		if	( Shift.Contains(ssLeft) )
+			ev.button |= 1;
+		if	( Shift.Contains(ssRight) )
+			ev.button |= 2;
+		if	( Shift.Contains(ssMiddle) )
+			ev.button |= 4;
+		
+		if	( ev.button )
+			imgOut->OnMouseMove = outOnMouseMove;
+		else
+			imgOut->OnMouseMove = NULL;
 
-    ev.x = X;
-    ev.y = Y;
-    w32_evpush(&ev);
+		ev.x = X;
+		ev.y = Y;
+		w32_evpush(&ev);
+		}
 }
 //---------------------------------------------------------------------------
 
@@ -956,6 +995,7 @@ void __fastcall TFMain::OnShow(TObject *Sender)
 	DIR		*dir;
 	struct dirent *ent;
 	int		opt_ihavename = 0, opt_nomore = 0;
+	bool	opt_runit = false;
 	
 	// create local dir
 	strcpy(dir_sb, Application->ExeName.c_str());
@@ -1006,12 +1046,16 @@ void __fastcall TFMain::OnShow(TObject *Sender)
 						// the following parameters are going to script (COMMAND$)
 						opt_nomore = 1;
 						break;
+					case 'r':
+						// run it
+						opt_runit = true;
+						break;
 					case 'g':
 						// run in graphics mode
 						opt_graphics = 2;
 						if	( (_argv[i][2] >= '1') && (_argv[i][2] <= '9') )	{
 							char	*slash;
-                            char	cwd[1024];
+							char	cwd[1024];
 							
 							// setup graphics mode
 							slash = &_argv[i][2];
@@ -1050,8 +1094,13 @@ void __fastcall TFMain::OnShow(TObject *Sender)
 				}
 			}
 			
-		if	( opt_ihavename )
+		if	( opt_ihavename )	{
 			load_source();
+			if	( opt_runit )	{
+				::PostMessage(this->Handle, WM_KEYDOWN, VK_F9, 0);
+				::PostMessage(this->Handle, WM_KEYUP, VK_F9, 0);
+				}
+			}
 		}	
 }
 //---------------------------------------------------------------------------
@@ -1471,20 +1520,31 @@ void __fastcall TFMain::outOnKeyUp(TObject *Sender, WORD &Key,
 
 void TFMain::CompProg(int pass, int pmin, int pmax)
 {
-	char	buf[1024];
+	static char	buf[1024];
+	static bool lastWasErr = false;
 
-	if	( pass == 0 )	
+	if	( pass == 0 )	{
 		sprintf(buf, "Preparing...");
-	if	( pass == 1 )	
+		lastWasErr = false;
+		}
+	else if	( pass == 1 )	
 		sprintf(buf, "Pass1, Line %d", pmin);
 	else if	( pass == 2 )	
 		sprintf(buf, "Pass2, Node %d / %d", pmin, pmax);
-	else if ( pass == 3 )	
-		sprintf(buf, "%s", (pmin)? "Success" : "Error");
-	else if ( pass == 4 )	
+	else if ( pass == 3 )	{
+		if	( !lastWasErr )
+			sprintf(buf, "Success");
+		}
+	else if ( pass == 4 )
 		sprintf(buf, "Running...");
-	else if ( pass == 5 )	
-		sprintf(buf, "Stopped!");
+	else if ( pass == 5 )	{
+		if	( !lastWasErr )
+			sprintf(buf, "Finish!");
+		}
+	else if	( pass == -1 )	{		// error
+		lastWasErr = true;
+		sprintf(buf, "ERROR AT %d, %s", pmin, gsb_last_errmsg);
+		}
 	else
 		sprintf(buf, "");
 		

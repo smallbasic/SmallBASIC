@@ -15,6 +15,10 @@
 #include <errno.h>
 #endif
 
+#if defined(_WinBCB)
+extern void bcb_comp(int pass, int pmin, int pmax);	// Win32GUI progress
+#endif
+
 /*
 */
 void	err_common_msg(const char *seg, const char *file, int line, const char *descr) SEC(TRASH);
@@ -48,6 +52,10 @@ void	err_common_msg(const char *seg, const char *file, int line, const char *des
 			}
 		#endif
 		}
+
+	#if defined(_WinBCB)
+	bcb_comp(-1, line, 0);
+	#endif
 }
 
 /*

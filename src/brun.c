@@ -758,8 +758,8 @@ void	bc_loop(int isf)
 		now = TimGetTicks();
 		#elif defined(_FRANKLIN_EBM)
 		now = time_get_onOS();
-        #elif defined(_Win32)
-        now = GetTickCount();
+		#elif defined(_Win32)
+		now = GetTickCount();
 		#else
 		now = clock();
 		#endif

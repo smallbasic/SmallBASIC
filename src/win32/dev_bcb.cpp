@@ -654,7 +654,7 @@ int	 _cdecl	osd_getpen(int code)
 			r = mouse_down_y;
 			break;		
 		case	3:	// vert. 1 = down, 0 = up .... unsupported
-			r = 0;
+			r = mouse_b & 1;
 			break;
 		case	4:	// last x
 			r = mouse_pc_x;
