@@ -1,9 +1,82 @@
+# SmallBASIC for FLTK
+# Copyright(C) 2001-2002 Chris Warren-Smith. Gawler, South Australia
+# cwarrens@twpo.com.au
 #
+# This program is distributed under the terms of the GPL v2.0 or later
+# Download the GNU Public License (GPL) from www.gnu.org
+# 
 
-all: sbfltk
+all:    sbfltk
+cygwin: sbfltk
 
-psrc = sbfltk.cxx sbfui.cxx ../bas2pdb.cc 
-csrc = dev_fltk.c ../device.c ../dev_genfb.c 
+SOURCE =                                        \
+	Fl_Ansi_Window.cpp                          \
+	MainWindow.cpp                              \
+	EditorWindow.cpp                            \
+    dev_fltk.cpp
+
+COMMON=                                         \
+    bc.c                                        \
+    blib.c                                      \
+    blib_db.c                                   \
+    blib_func.c                                 \
+    blib_graph.c                                \
+    blib_math.c                                 \
+    blib_sound.c                                \
+    blib_ui.c                                   \
+    brun.c                                      \
+    ceval.c                                     \
+    circle.c                                    \
+    console_main.c                              \
+    decomp.c                                    \
+    device.c                                    \
+    eval.c                                      \
+    extlib.c                                    \
+    file.c                                      \
+    ffill.c                                     \
+    fmt.c                                       \
+    fs_irda.c                                   \
+    fs_memo.c                                   \
+    fs_pdoc.c                                   \
+    fs_serial.c                                 \
+    fs_socket_client.c                          \
+    fs_stream.c                                 \
+    g_bmp.c                                     \
+    g_line.c                                    \
+    geom.c                                      \
+    inet.c                                      \
+    kw.c                                        \
+    match.c                                     \
+    mem.c                                       \
+    panic.c                                     \
+    pfill.c                                     \
+    plot.c                                      \
+    proc.c                                      \
+    sberr.c                                     \
+    scan.c                                      \
+    str.c                                       \
+    tasks.c                                     \
+    units.c                                     \
+    unx_memmgr.c                                \
+    var.c                                       \
+    vmt.c                                       \
+
+OPTIM =  -O2 -Wall -Wunused -fno-exceptions
+##OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions
+PLATFORM=-D_UnixOS -D_CygWin -D_Fltk
+
+## patched fltk-config to remove -mwindows
+LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
+
+CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
+
+linux: PLATFORM=-D_UnixOS
+debug: OPTIM = -g -O0 -Wall -Wunused -fno-exceptions
+
+OBJDIR = ./objs/
+
+OBJS += $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(SOURCE)))) \
+        $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(COMMON))))
 
 sbfui.cxx: sbfui.fl
 	fluid -c sbfui.fl
@@ -15,14 +88,27 @@ build_kwpc: build_kwpc.c
 kwp.cxx: build_kwpc
 	./build_kwpc
 
-sbfltk: $(csrc) $(psrc) kwp.cxx
-	gcc -c -D_UnixOS -D_GUI -I.. dev_fltk.c -o dev_fltk.o
-	gcc -c -D_UnixOS -D_GUI -I.. ../device.c -o device.o
-	gcc -c -D_UnixOS -D_GUI -I.. ../dev_genfb.c -o dev_genfb.o
-	g++ -D_UnixOS -D_GUI -I/usr/include -I/usr/X11/include -I.. $(psrc) dev_fltk.o device.o dev_genfb.o -o sbfltk -L/usr/X11/lib \
-		-lsbasic -lm -ldl -lncurses -lX11 -lXt -lXpm -lXext -lfltk -lpcre
-	cp sbfltk bin
+sbfltk: $(OBJS)
+	gcc $(OBJS) ${LDLIBS} -o $@
+
+#unit test
+Fl_Ansi_Window.exe: Fl_Ansi_Window.o 
+	gcc ${OPTIM} $< ${LDLIBS} -o $@
 
 clean:
-	-rm -f sbfltk sbfui.cxx sbfui.h build_kwpc kwp.cxx kwp
+	-rm -f sbfltk sbfui.cxx sbfui.h build_kwpc kwp.cxx kwp objs/*.o
 
+${OBJDIR}:
+	mkdir -p $@
+
+${OBJDIR}%.o: ../%.c
+	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+
+${OBJDIR}%.o: %.cpp
+	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+
+${OBJDIR}%.o: %.cxx
+	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+
+${OBJDIR}%.o: %.c
+	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
