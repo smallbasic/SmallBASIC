@@ -16,7 +16,7 @@
 #include "smbas.h"
 #include "fmt.h"
 
-#if (defined(_UnixOS) || defined(_DOS)) && !defined(_Fltk)
+#if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
 #define USE_TERM_IO 1
 #endif
 

@@ -51,7 +51,7 @@ static word keybuff[PCKBSIZE];
 static int	keyhead;
 static int	keytail;
 
-#if (defined(_UnixOS) || defined(_DOS)) && !defined(_Fltk)
+#if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
 #define USE_TERM_IO 1
 #endif
 
@@ -384,7 +384,7 @@ int		dev_restore()
 */
 int		dev_events(int waitf)
 {
-	#if !defined(_PalmOS) && !defined(_FRANKLIN_EBM) && !defined(_Fltk)
+	#if !defined(_PalmOS) && !defined(_FRANKLIN_EBM) && !defined(_FLTK)
 	if	( os_graphics )
 		osd_refresh();
 	#endif
@@ -399,7 +399,7 @@ int		dev_events(int waitf)
 		}
 	#endif
 
-	#if	defined(_FRANKLIN_EBM) || defined(_Fltk)
+	#if	defined(_FRANKLIN_EBM) || defined(_FLTK)
 	return osd_events(waitf);
 	#else
 
@@ -516,7 +516,7 @@ int		dev_kbhit()
 	if ( keytail != keyhead )
 		return 1;
 
-#if defined(_FRANKLIN_EBM) || defined(_Fltk)
+#if defined(_FRANKLIN_EBM) || defined(_FLTK)
     // conserve battery power
 	code = dev_events(1);
 #else
@@ -710,7 +710,7 @@ void	dev_input_clreol(int cx, int cy)
 		dev_clreol();
 	else	{
 		if	( os_graphics )	{
-			osd_setcolor(dev_bgcolor);
+            osd_setcolor(dev_bgcolor);
 			osd_rect(x, y, x+cx+1, y+cy, 1);
 			osd_setcolor(color);
 			}
@@ -720,7 +720,7 @@ void	dev_input_clreol(int cx, int cy)
 		}
 }
 
-#if !defined(_FRANKLIN_EBM)
+#if !defined(_FRANKLIN_EBM) && !defined(_FLTK)
 
 /*
 *	gets a string (INPUT)
@@ -1417,7 +1417,7 @@ void	dev_beep()
 	if	( os_graphics )
 		osd_refresh();
 
-	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_Fltk)
+	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_FLTK)
  	osd_beep();
 	#else
 		#if defined(DRV_SOUND)
@@ -1436,7 +1436,7 @@ void	dev_beep()
 */
 void	dev_sound(int frq, int ms, int vol, int bgplay)
 {
-	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_Fltk)
+	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_FLTK)
 	osd_sound(frq, ms, vol, bgplay);
 	#else
 
@@ -1898,7 +1898,7 @@ char	*dev_getenv_n(int n)
 
 #endif
 
-#if !defined(_FRANKLIN_EBM) && !defined(_Fltk)
+#if !defined(_FRANKLIN_EBM) && !defined(_FLTK)
 
 // empty implementations
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
