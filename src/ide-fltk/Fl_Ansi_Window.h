@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.1 2004-10-27 23:31:47 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.2 2004-10-28 23:34:20 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -54,6 +54,7 @@ class Fl_Ansi_Window : public Fl_Widget {
 
     private:
     void init();
+    void initOffscreen();
     bool setGraphicsRendition(char c, int escValue);
     Fl_Color ansiToFltk(long color) const;
     bool doEscape(unsigned char *&p);
