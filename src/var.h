@@ -527,6 +527,16 @@ void	v_setstr        (var_t *var, const char *string)		SEC(BLIB);
 /**
 *	@ingroup var
 *
+*	sets a string value to variable 'var' to the given length
+*
+*	@param var is the variable
+*	@param string is the string
+*/
+void	v_setstrn        (var_t *var, const char *string, int len)		SEC(BLIB);
+
+/**
+*	@ingroup var
+*
 *	Sets a string value to variable 'var'.
 *	printf() style. Avoid to use on low-memory systems (like PalmOS 3.3).
 *	The buffer size is limited to 1KB for OS_LIMITED, otherwise 64KB.

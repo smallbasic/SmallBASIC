@@ -707,6 +707,16 @@ void	v_setstr(var_t *var, const char *string)
 	strcpy(var->v.p.ptr, string);
 }
 
+void	v_setstrn(var_t *var, const char *string, int len)
+{
+	v_free(var);
+	var->type = V_STR;
+	var->v.p.size = len+1;
+	var->v.p.ptr  = tmp_alloc(var->v.p.size);
+	strncpy(var->v.p.ptr, string, len);
+    var->v.p.ptr[len] = 0;
+}
+
 /*
 *	set the value of 'var' to string
 */
