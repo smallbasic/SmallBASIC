@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.22 2005-01-09 00:13:22 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.23 2005-02-06 22:57:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -19,6 +19,7 @@
 #include <fltk/SharedImage.h>
 #include <fltk/FL_VERSION.h>
 #include <fltk/HelpView.h>
+#include <fltk/Rectangle.h>
 
 #include "MainWindow.h"
 
@@ -188,13 +189,7 @@ void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
 }
 
 void osd_beep() {
-#ifdef WIN32
-   MessageBeep(MB_ICONASTERISK);
-#elif defined(__APPLE__)
-   SysBeep(30);
-#else
-   //   XBell(fl_display, 100);
-#endif // WIN32
+    wnd->out->beep();
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
@@ -261,7 +256,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
 }
 
 // image factory based on file extension
-Image* loadImage(const char* name, uchar* buff) {
+SharedImage* loadImage(const char* name, uchar* buff) {
     int len = strlen(name);
     if (strcasecmp(name+(len-4), ".jpg") == 0 ||
         strcasecmp(name+(len-5), ".jpeg") == 0) {
@@ -283,7 +278,7 @@ Image* getImage(int handle, int index) {
     }
 
     // check for cached imaged
-    Image* image = loadImage(filep->name, 0);
+    SharedImage* image = loadImage(filep->name, 0);
     if (image && image->drawn()) {
         return image;
     }
@@ -320,7 +315,7 @@ Image* getImage(int handle, int index) {
     image = loadImage(filep->name, buff);
     if (image) {
         // force SharedImage::_draw() to call image->read()
-        image->draw(0,0,0,0,0,0);
+        image->draw(fltk::Rectangle(0,0),0,0);
     }
 
     return image;
@@ -328,22 +323,35 @@ Image* getImage(int handle, int index) {
 
 void dev_image(int handle, int index, int x, int y, 
                int sx, int sy, int w, int h) {
+    int imgw = -1;
+    int imgh = -1;
     Image* img = getImage(handle, index);
     if (img != 0) {
+        img->measure(imgw, imgh);
         wnd->out->drawImage(img, x, y, sx, sy, 
-                            (w==0 ? img->w() : w), 
-                            (h==0 ? img->h() : h));
+                            (w==0 ? imgw : w),
+                            (h==0 ? imgh : h));
     }
 }
 
 int dev_image_width(int handle, int index) {
+    int imgw = -1;
+    int imgh = -1;
     Image* img = getImage(handle, index);
-    return (img != 0 ? img->w() : -1);
+    if (img) {
+        img->measure(imgw, imgh);
+    }
+    return imgw;
 }
 
 int dev_image_height(int handle, int index) {
+    int imgw = -1;
+    int imgh = -1;
     Image* img = getImage(handle, index);
-    return (img != 0 ? img->h() : -1);
+    if (img) {
+        img->measure(imgw, imgh);
+    }
+    return imgh;
 }
 
 void enter_cb(Widget*, void* v) {

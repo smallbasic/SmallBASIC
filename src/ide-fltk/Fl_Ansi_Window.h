@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.13 2005-01-09 00:13:22 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.14 2005-02-06 22:52:48 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -47,6 +47,7 @@ class Fl_Ansi_Window : public Widget {
     int getHeight() {return h();}
     void fontSize(int i) {font_size=i;}
     int fontSize() {return font_size;}
+    void beep() const;
 
     private:
     void init();

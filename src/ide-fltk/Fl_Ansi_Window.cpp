@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.19 2005-01-17 19:55:35 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.20 2005-02-06 22:52:48 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -15,6 +15,7 @@
 #include <fltk/Image.h>
 #include <fltk/events.h>
 #include <fltk/Font.h>
+#include <fltk/Rectangle.h>
 
 #include "Fl_Ansi_Window.h"
 
@@ -64,7 +65,7 @@ void Fl_Ansi_Window::initImage() {
         img = new Image(w(), h());
         ImageDraw imageDraw(img);
         setcolor(color());
-        fillrect(0, 0, w(), h());
+        fillrect(Rectangle(w(), h()));
         setfont(labelfont(), labelsize());
     }
 }
@@ -104,9 +105,9 @@ void Fl_Ansi_Window::layout() {
         img = new Image(W, H);
         ImageDraw imageDraw(img);
         setcolor(color());
-        fillrect(0, 0, W, H);
+        fillrect(Rectangle(W, H));
         setfont(labelfont(), labelsize());
-        old->draw(0, 0, old->w(), old->h(), 0, OUTPUT);
+        old->draw(Rectangle(old->w(), old->h()), 0, OUTPUT);
         old->destroy_cache();
         delete old;
         redraw();
@@ -116,10 +117,10 @@ void Fl_Ansi_Window::layout() {
 
 void Fl_Ansi_Window::draw() {
     if (img) {
-        img->draw(0, 0, w(), h(), 0, OUTPUT);
+        img->draw(Rectangle(w(), h()), 0, OUTPUT);
     } else {
         setcolor(color());
-        fillrect(0, 0, w(), h());
+        fillrect(Rectangle(w(), h()));
     }
 }
 
@@ -128,7 +129,7 @@ void Fl_Ansi_Window::clearScreen() {
         init();
         begin_offscreen();
         setcolor(color());
-        fillrect(0, 0, w(), h());
+        fillrect(Rectangle(w(), h()));
         end_offscreen();
     }
 }
@@ -152,7 +153,7 @@ void Fl_Ansi_Window::drawLine(int x1, int y1, int x2, int y2) {
 void Fl_Ansi_Window::drawRectFilled(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
-    fillrect(x1, y1, x2-x1, y2-y1);
+    fillrect(Rectangle(x1, y1, x2-x1, y2-y1));
     end_offscreen();
 }
 
@@ -169,7 +170,7 @@ void Fl_Ansi_Window::drawRect(int x1, int y1, int x2, int y2) {
 void Fl_Ansi_Window::drawImage(Image* image, int x, int y, int sx, int sy, 
                                int width, int height) {
     begin_offscreen();
-    image->copy(x, y, width, height, sx, sy);
+    image->copy(Rectangle(x, y, width, height), sx, sy);
     end_offscreen();
 }
 
@@ -203,6 +204,16 @@ int Fl_Ansi_Window::getPixel(int x, int y) {
 #endif
 }
 
+void Fl_Ansi_Window::beep() const {
+#ifdef WIN32
+   MessageBeep(MB_ICONASTERISK);
+#elif defined(__APPLE__)
+   SysBeep(30);
+#else
+   //   XBell(fl_display, 100);
+#endif // WIN32
+}
+
 int Fl_Ansi_Window::textWidth(const char* s) {
     begin_offscreen();
     int w = (int)getwidth(s);
@@ -218,10 +229,10 @@ int Fl_Ansi_Window::textHeight(void) {
 }
 
 // callback for fl_scroll
-void eraseBottomLine(void* data, int x, int y, int w, int h) {
+void eraseBottomLine(void* data, const fltk::Rectangle& r) {
     Fl_Ansi_Window* out = (Fl_Ansi_Window*)data;
     setcolor(out->color());
-    fillrect(x, y, w, h);
+    fillrect(r);
 }
 
 void Fl_Ansi_Window::newLine() {
@@ -230,7 +241,7 @@ void Fl_Ansi_Window::newLine() {
 
     curX = INITXY;
     if (curY+(fontHeight*2) >= height) {
-        scrollrect(0, 0, w(), height, 0, -fontHeight, eraseBottomLine, this);
+        scrollrect(Rectangle(w(), height), 0, -fontHeight, eraseBottomLine, this);
         // TODO: patched is_visible() in fl_scroll_area.cxx 
         // commented out OffsetRgn()
     } else {
@@ -281,7 +292,7 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
     switch (c) {
     case 'K': // \e[K - clear to eol
         setcolor(color());
-        fillrect(curX, curY, w()-curX, (int)(getascent()+getdescent()));
+        fillrect(Rectangle(curX, curY, w()-curX, (int)(getascent()+getdescent())));
         break;
     case 'G': // move to column
         curX = escValue;
@@ -448,7 +459,7 @@ void Fl_Ansi_Window::print(const char *str) {
     while (*p) {
         switch (*p) {
         case '\a':   // beep
-            //fl_beep();
+            beep();
             break;
         case '\t':
             curX = calcTab(curX+1);
@@ -456,7 +467,7 @@ void Fl_Ansi_Window::print(const char *str) {
         case '\xC':
             init();
             setcolor(color());
-            fillrect(0, 0, w(), h());
+            fillrect(Rectangle(w(), h()));
             break;
         case '\033':  // ESC ctrl chars
             if (*(p+1) == '[' ) {
@@ -474,7 +485,7 @@ void Fl_Ansi_Window::print(const char *str) {
         case '\r': // return
             curX = INITXY;
             setcolor(color());
-            fillrect(0, curY, w(), fontHeight);
+            fillrect(Rectangle(0, curY, w(), fontHeight));
             break;
         default:
             int numChars = 1; // print minimum of one character
@@ -498,12 +509,12 @@ void Fl_Ansi_Window::print(const char *str) {
             
             if (invert) {
                 setcolor(labelcolor());
-                fillrect(curX, curY, cx, fontHeight);
+                fillrect(Rectangle(curX, curY, cx, fontHeight));
                 setcolor(color());
                 drawtext((const char*)p, numChars, curX, curY+ascent);
             } else {
                 setcolor(color());
-                fillrect(curX, curY, cx, fontHeight);
+                fillrect(Rectangle(curX, curY, cx, fontHeight));
                 setcolor(labelcolor());
                 drawtext((const char*)p, numChars, curX, curY+ascent);
             }

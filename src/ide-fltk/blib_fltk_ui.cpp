@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.6 2005-01-09 00:13:22 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.7 2005-02-06 22:50:56 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -22,6 +22,7 @@
 #include <fltk/CheckButton.h>
 #include <fltk/RadioButton.h>
 #include <fltk/events.h>
+#include <fltk/Rectangle.h>
 
 #include "MainWindow.h"
 
@@ -53,13 +54,15 @@ struct AnchorLink : public Button {
         int by = 0;
         int bw = w();
         int bh = h();
-        box()->inset(bx, by, bw, bh);
+        Rectangle r(bx,by,bw,bh);
+        box()->inset(r);
         draw_background();
         setcolor(labelcolor());
-        draw_label(bx, by-2, bw, bh, style(), ALIGN_INSIDE|ALIGN_BOTTOMLEFT);
+        draw_label(Rectangle(bx, by-2, bw, bh), 
+                   style(), ALIGN_INSIDE|ALIGN_BOTTOMLEFT);
         drawline(2, bh-2, 2+(int)getwidth(label()), bh-2);
-        focusbox()->draw(bx+1, by+1, bw-2, bh-2, style(), 
-                         current_flags_highlight());
+        focusbox()->draw(Rectangle(bx+1, by+1, bw-2, bh-2), 
+                         style(), current_flags_highlight());
     }
 };
 
