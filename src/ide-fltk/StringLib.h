@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.6 2005-03-23 22:29:20 zeeb90au Exp $
+// $Id: StringLib.h,v 1.7 2005-03-28 23:17:52 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -86,11 +86,11 @@ struct String : public Object {
     int indexOf(const String &s, int fromIndex) const;
     int lastIndexOf(char chr, int untilIndex) const;
     void empty();
+    void trim();
     char charAt(int i) const;
     int indexOf(char chr, int fromIndex) const;
     String lvalue();
     String rvalue();
-    String trim() const;
     String substring(int beginIndex) const;
     String substring(int beginIndex, int endIndex) const;
     String replaceAll(const char* srch, const char* repl);
@@ -143,7 +143,7 @@ struct Stack : public List{
 
 //--Properties------------------------------------------------------------------
 
-struct Properties {
+struct Properties : public List {
     Properties();
     Properties(int growSize);
     virtual ~Properties();
@@ -151,17 +151,14 @@ struct Properties {
     void load(const char* s);
     void load(const char* s, int len);
     String* get(const char* key);
-    String* get(int i) const {return (String*)list[(i*2)+1];}
-    String* getKey(int i) const {return (String*)list[i*2];}
+    String* get(int i) const;
+    String* getKey(int i) const;
+    int length() const {return count/2;}
     void get(const char* key, List* arrayValues);
     void operator=(Properties& p);
     void put(String& key, String& value);
     void put(const char* key, const char* value);
-    void removeAll() {list.removeAll();}
-    int length() {return list.length();}
     String toString();
-    private:
-    List list;
 };
 
 }

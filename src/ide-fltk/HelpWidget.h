@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.10 2005-03-23 22:27:47 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.11 2005-03-28 23:17:51 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -45,12 +45,14 @@ public:
     void navigateTo(const char* fileName);
     void scrollTo(const char* anchorName);
     void scrollTo(int vscroll);
-    U8 find(const char* s, U8 matchCase);
+    bool find(const char* s, bool matchCase);
     Widget* getInput(const char* name);
     const char* getInputValue(Widget* button);
+    const char* getInputValue(int i);
     const char* getInputName(Widget* button);
     const char* getAction() {return action.toString();}
-    void getInputProperties(Properties& p);
+    void getInputProperties(Properties* p);
+    void setCookies(Properties* p) {cookies=p;}
     bool setInputValue(const char* assignment);
     void copyText(int begin, int end);
 
@@ -76,6 +78,7 @@ public:
     strlib::List namedInputs;
     strlib::List inputs;
     strlib::List anchors;
+    strlib::Properties *cookies;
     strlib::String htmlStr;
     strlib::String action;
     strlib::String fileName;

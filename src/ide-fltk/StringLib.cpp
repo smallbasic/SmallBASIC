@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.6 2005-03-23 22:29:18 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.7 2005-03-28 23:17:52 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -309,10 +309,10 @@ void String::empty() {
     buffer=0;
 }
 
-String String::trim() const {
+void String::trim() {
     int len = length();
     if (len == 0) {
-        return *this;
+        return;
     }
     int ibegin = 0;
     while (isWhite(buffer[ibegin])) {
@@ -322,7 +322,9 @@ String String::trim() const {
     while (isWhite(buffer[iend-1])) {
         iend--;
     }
-    return substring(ibegin, iend);
+    String s = substring(ibegin, iend);
+    empty();
+    append(s);
 }
 
 String String::lvalue() {
@@ -437,7 +439,6 @@ const char** List::toArray() {
 //--Stack-----------------------------------------------------------------------
 
 Stack::Stack() : List() {}
-
 Stack::Stack(int growSize) : List(growSize) {}
 
 Object* Stack::peek() {
@@ -460,12 +461,8 @@ void Stack::push(Object* o) {
 
 //--Properties------------------------------------------------------------------
 
-Properties::Properties(int growSize) : 
-    list(growSize) {
-}
-
+Properties::Properties(int growSize) : List(growSize) {}
 Properties::Properties() {}
-
 Properties::~Properties() {}
 
 void Properties::load(const char *s) {
@@ -545,20 +542,19 @@ void Properties::load(const char *s, int slen) {
 
         value.append(s+iBegin, i-iBegin);
         // append (put) to list
-        list.append(new String(attr));
-        list.append(new String(value));
+        append(new String(attr));
+        append(new String(value));
         i++;
     }
 }
 
 String* Properties::get(const char* key) {
-    list.iterateInit();
-    while (list.hasNext()) {
-        String *nextKey = (String*)list.next();
-        if (nextKey == null || list.hasNext()==false) {
+    for (int i=0; i<count; i++) {
+        String *nextKey = (String*)head[i++];
+        if (nextKey == null || i == count) {
             return null;
         }
-        String *nextValue = (String*)list.next();
+        String *nextValue = (String*)head[i];
         if (nextValue == null) {
             return null;
         }
@@ -569,14 +565,23 @@ String* Properties::get(const char* key) {
     return null;
 }
 
+String* Properties::get(int i) const {
+    int index = (i*2)+1;
+    return index < count ? (String*)head[index] : 0;
+}
+
+String* Properties::getKey(int i) const {
+    int index = i*2;
+    return index < count ? (String*)head[index] : 0;
+}
+
 void Properties::get(const char* key, List* arrayValues) {
-    list.iterateInit();
-    while (list.hasNext()) {
-        String *nextKey = (String*)list.next();
-        if (nextKey == null || list.hasNext()==false) {
+    for (int i=0; i<count; i++) {
+        String *nextKey = (String*)head[i++];
+        if (nextKey == null || i == count) {
             break;
         }
-        String *nextValue = (String*)list.next();
+        String *nextValue = (String*)head[i];
         if (nextValue == null) {
             break;
         }
@@ -592,8 +597,8 @@ void Properties::put(String& key, String& value) {
         prev->empty();
         prev->append(value);
     } else {
-        list.append(new String(key));
-        list.append(new String(value));
+        append(new String(key));
+        append(new String(value));
     }
 }
 
@@ -607,21 +612,19 @@ void Properties::put(const char* key, const char* value) {
         String* v = new String();
         k->append(key);
         v->append(value);
-        list.append(k);
-        list.append(v);
+        append(k);
+        append(v);
     }
 }
 
 String Properties::toString() {
     String s;
-    list.iterateInit();
-    while (list.hasNext()) {
-        String *nextKey = (String*)list.next();
-        if (nextKey == null || nextKey->length() == 0 ||
-            list.hasNext()==false) {
+    for (int i=0; i<count; i++) {
+        String *nextKey = (String*)head[i++];
+        if (nextKey == null || nextKey->length() == 0 || i == count) {
             break;
         }
-        String *nextValue = (String*)list.next();
+        String *nextValue = (String*)head[i];
         if (nextValue != null && nextValue->length() > 0) {
             s.append(nextKey->toString());
             s.append("='");
@@ -633,12 +636,11 @@ String Properties::toString() {
 }
 
 void Properties::operator=(Properties& p) {
-    list.removeAll();
-    p.list.iterateInit();
-    while (p.list.hasNext()) {
-        list.append(p.list.next());
+    removeAll();
+    for (int i=0; i<p.count; i++) {
+        append(p.head[i]);
     }
-    p.list.emptyList();
+    p.emptyList();
 }
 
 #ifdef UNIT_TEST

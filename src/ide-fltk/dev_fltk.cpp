@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.28 2005-03-23 22:31:06 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.29 2005-03-28 23:17:52 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -35,6 +35,7 @@ C_LINKAGE_BEGIN
 extern MainWindow *wnd;
 HelpWidget* helpView = 0;
 const char* anchor = 0;
+Properties env;
 void closeHelp();
 
 //--ANSI Output-----------------------------------------------------------------
@@ -202,46 +203,33 @@ void osd_write(const char *s) {
 
 //--HTML------------------------------------------------------------------------
 
-void closeHelp() {
-    if (helpView) {
-        helpView->parent()->remove(helpView);
-        helpView->parent(0);
-        delete helpView;
-        helpView = 0;
-        wnd->out->redraw();
-    }
-}
-
 int dev_putenv(const char *s) {
     if (helpView && helpView->setInputValue(s)) {
         return 1;
     }
-    return putenv(strdup(s));
+    env.load(s);
+    return 1;
 }
 
 char* dev_getenv(const char *s) {
     if (helpView) {
-        char* value = (char*)helpView->getInputValue(helpView->getInput(s));
-        if (value) {
-            return value;
+        char* var = (char*)(helpView->getInputValue(helpView->getInput(s)));
+        if (var) {
+            return var;
         }
     }
-
-    return getenv(s);
-}
-
-int dev_env_count() {
-    int count = 0;
-    while (environ[count]) count++;
-    return count;
+    String* str = env.get(s);
+    return str ? (char*)str->toString() : getenv(s);
 }
 
 char* dev_getenv_n(int n) {
-    int count = 0;
-
     if (helpView) {
-        Properties p;
-        helpView->getInputProperties(p);
+        return (char*)(helpView->getInputValue(n));
+    }
+    
+    int count = env.length();
+    if (n < count) {
+        return (char*)env.get(n)->toString();
     }
 
     while (environ[count]) {
@@ -251,6 +239,28 @@ char* dev_getenv_n(int n) {
         count++;
     }
     return 0;
+}
+
+int dev_env_count() {
+    if (helpView) {
+        Properties p;
+        helpView->getInputProperties(&p);
+        return p.length();
+    }
+    int count = env.length();
+    while (environ[count]) count++;
+    return count;
+}
+
+void closeHelp() {
+    if (helpView) {
+        helpView->parent()->remove(helpView);
+        helpView->parent(0);
+        helpView->getInputProperties(&env);
+        delete helpView;
+        helpView = 0;
+        wnd->out->redraw();
+    }
 }
 
 void doAnchor(void*) {
@@ -263,42 +273,55 @@ void doAnchor(void*) {
 void anchor_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
         anchor = strdup(helpView->getAction());
-        closeHelp();
         fltk::add_check(doAnchor); // post message
     }
 }
 
 void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
-
-    // fit within output window
-    x += wnd->out->x();
-    y += wnd->out->y();
-
-    if (x+w > wnd->out->w()) {
-        w = wnd->out->w()-x; 
-    }
-    if (y+h > wnd->out->h()) {
-        h = wnd->out->h()-y; 
-    }
-
-    if (helpView) {
-        if (!html || !html[0] || x<0 || y<0) {
-            closeHelp();
-            return;
+    if (helpView && (!html || !html[0])) {
+        closeHelp();
+    } else if (t && t[0]) {
+        // offset from main window
+        x += wnd->x();
+        y += wnd->y();
+        Group::current(0);
+        Window window(x, y, w, h, t);
+        window.begin();
+        HelpWidget out(0, 0, w, h);
+        if (strnicmp("file:", html, 5) == 0) {
+            out.loadFile(html+5);
+        } else {
+            out.loadBuffer(html);
         }
-        helpView->x(x);
-        helpView->y(y);
-        helpView->w(w);
-        helpView->h(h);
+        window.resizable(&out);
+        window.end();
+        window.exec(wnd);
+        out.getInputProperties(&env);
     } else {
-        wnd->outputGroup->begin();
-        helpView = new HelpWidget(x, y, w, h);
-        wnd->outputGroup->end();
-        helpView->callback(anchor_cb);
+        if (helpView == 0) {
+            // fit within output window
+            x += wnd->out->x();
+            y += wnd->out->y();
+            
+            if (x+w > wnd->out->w() || w == 0) {
+                w = wnd->out->w()-x; 
+            } 
+            if (y+h > wnd->out->h() || h == 0) {
+                h = wnd->out->h()-y; 
+            }
+            wnd->outputGroup->begin();
+            helpView = new HelpWidget(x, y, w, h);
+            wnd->outputGroup->end();
+            helpView->callback(anchor_cb);
+        }
+        if (strnicmp("file:", html, 5) == 0) {
+            helpView->loadFile(html+5);
+        } else {
+            helpView->loadBuffer(html);
+        }
+        helpView->take_focus();
+        helpView->show();
     }
-    helpView->loadBuffer(html);
-    helpView->take_focus();
-    helpView->show();
 }
 
 //--IMAGE-----------------------------------------------------------------------
@@ -452,6 +475,7 @@ char *dev_gets(char *dest, int size) {
     in->textsize(wnd->out->labelsize());
 
     wnd->setModal(true);
+
     while (wnd->isModal()) {
         fltk::wait();
     }
@@ -469,6 +493,11 @@ char *dev_gets(char *dest, int size) {
     // reposition x to adjust for input box
     wnd->out->setXY(wnd->out->getX()+4, wnd->out->getY());
     wnd->out->print(dest);
+
+    if (helpView) {
+        helpView->redraw();
+    }
+
     return dest;
 }
 

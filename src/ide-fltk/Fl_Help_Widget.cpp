@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.12 2005-03-23 22:27:21 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.13 2005-03-28 23:17:51 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <io.h>
+#include <stdlib.h>
 
 #include <fltk/ask.h>
 #include <fltk/draw.h>
@@ -35,7 +36,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-#define UNIT_TEST 1
+//#define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -310,14 +311,14 @@ struct LiNode : public BaseNode {
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-    ImageNode(const Style* style, String* fileName, Attributes& p) : 
+    ImageNode(const Style* style, String* fileName, Attributes* a) : 
         BaseNode() {
         this->style = style;
-        String* src = p.getSrc();
+        String* src = a->getSrc();
         image = loadImage(src == 0 ? 0 : fileName->getPath(src->toString()));
         image->measure(w, h);
-        w = p.getWidth(w);
-        h = p.getHeight(h);
+        w = a->getWidth(w);
+        h = a->getHeight(h);
     }
 
     void display(Display* out) {
@@ -374,7 +375,7 @@ struct TextNode : public BaseNode {
             const char* p = s;
             while (len > 0) {
                 lineBreak(p, len, out->width-out->x, linelen, linepx);
-                if (linepx == -1) {
+                if (linepx < 0) {
                     // no break point - create new line if required
                     linepx = (int)getwidth(p, linelen);
                     if (linepx > out->width-out->x) {
@@ -658,18 +659,22 @@ struct TdEndNode : public BaseNode {
 //--InputNode-------------------------------------------------------------------
 
 struct InputNode : public BaseNode {
-    InputNode(Group* parent, Font* font);
-    InputNode(Group* parent, Font* font, const char* v, int len);
-    InputNode(Group* parent, Attributes& p, Font* font);
+    InputNode(Group* parent);
+    InputNode(Group* parent, const char* v, int len);
+    InputNode(Group* parent, Properties* env, Attributes* a);
 
     void display(Display* out) {
+        if (button == 0) {
+            return;
+        }
+        
         bool select = false;
         switch ((int)button->user_data()) {
         case ID_OPTION:
             select = true;
             break;
         case ID_BUTTON:
-            if (button->w() == 0) {
+            if (button->w() == 0 && button->label()) {
                 button->w(10+(int)getwidth(button->label()));
             }
             break;
@@ -683,6 +688,8 @@ struct InputNode : public BaseNode {
         button->y(out->y-(int)getascent()-(select?1:0));
         button->h(out->lineHeight-2);
         button->textfont(out->font);
+        button->textsize(out->fontSize);
+        button->labelsize(out->fontSize);
         button->show();
         out->x += button->w() + INPUT_SPACING;
         out->content = true;
@@ -690,11 +697,16 @@ struct InputNode : public BaseNode {
     Widget* button;
 };
 
-InputNode::InputNode(Group* parent, Attributes& p, Font* font)
-    : BaseNode() {
+InputNode::InputNode(Group* parent, Properties* env, Attributes* a) : 
+    BaseNode() {
     parent->begin();
-    String* value = p.getValue();
-    String* type = p.getType();
+    String* value = a->getValue();
+    String* name = a->getName();
+    if (value == 0 && name != 0 && env) {
+        // use external attributes
+        value = env->get(name->toString());
+    }
+    String* type = a->getType();
     if (type != null && type->equals("text")) {
         button = new Input(0, 0, INPUT_WIDTH, 0);
         button->box(NO_BOX);
@@ -712,35 +724,31 @@ InputNode::InputNode(Group* parent, Attributes& p, Font* font)
         button = new Button(0,0,0,0);
         if (value && value->length()) {
             button->copy_label(value->toString());
+        } else {
+            button->copy_label(" ");
         }
         button->user_data((void*)ID_BUTTON);
         button->labelcolor(ANCHOR_COLOR);
     }
-    int size = p.getSize();
+    int size = a->getSize();
     if (size != -1) {
         button->w(size);
     }
-    if (button) {
-        button->color(BUTTON_COLOR);
-        button->textcolor(ANCHOR_COLOR);
-        button->textfont(font);
-    }
+    button->color(BUTTON_COLOR);
+    button->textcolor(ANCHOR_COLOR);
     parent->end();
 }
 
-InputNode::InputNode(Group* parent, Font* font)
-    : BaseNode() {
+InputNode::InputNode(Group* parent) : BaseNode() {
     parent->begin();
     button = new Choice(0, 0, INPUT_WIDTH, 0);
     button->color(BUTTON_COLOR);
     button->textcolor(ANCHOR_COLOR);
-    button->textfont(font);
     button->user_data((void*)ID_OPTION);
     parent->end();
 }
 
-InputNode::InputNode(Group* parent, Font* font, const char* v, int len) 
-    : BaseNode() {
+InputNode::InputNode(Group* parent, const char* v, int len) : BaseNode() {
     parent->begin();
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->box(NO_BOX);
@@ -752,7 +760,6 @@ InputNode::InputNode(Group* parent, Font* font, const char* v, int len)
     button->user_data((void*)ID_TEXTBOX);
     button->color(BUTTON_COLOR);
     button->textcolor(ANCHOR_COLOR);
-    button->textfont(font);
     button->user_data((void*)ID_OPTION);
     parent->end();
 }
@@ -769,6 +776,27 @@ void createDropList(InputNode* node, strlib::List* options) {
     }
     menu->end();
 }
+
+//--EnvNode---------------------------------------------------------------------
+
+struct EnvNode : public TextNode {
+    EnvNode(Properties* p, const char* s, U16 textlen) : TextNode(0,0) {
+        String var;
+        var.append(s, textlen);
+        var.trim();
+        if (p) {
+            String* s = p->get(var.toString());
+            value.append(s);
+        }
+        if (value.length() == 0) {
+            value.append(getenv(var.toString()));
+        }
+        this->s = value.toString();
+        this->textlen = value.length();
+    }
+    // here to provide value cleanup
+    String value;
+};
 
 //--NamedInput------------------------------------------------------------------
 
@@ -805,6 +833,7 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     end();
     callback(anchor_callback);
     init();
+    cookies = 0;
 }
 
 HelpWidget::~HelpWidget() {
@@ -836,11 +865,6 @@ void HelpWidget::cleanup() {
     anchors.emptyList();
     nodeList.removeAll();
     namedInputs.removeAll();
-}
-
-void HelpWidget::loadBuffer(const char* str) {
-    htmlStr = str;
-    reloadPage();
 }
 
 void HelpWidget::reloadPage() {
@@ -882,6 +906,17 @@ const char* HelpWidget::getInputValue(Widget* widget) {
     return null;
 }
 
+// return the nth form value
+const char* HelpWidget::getInputValue(int i) {
+    int len = namedInputs.length();
+    if (i < len) {
+        Object** list = namedInputs.getList();
+        NamedInput* ni = (NamedInput*)list[i];
+        return getInputValue(ni->input->button);
+    }
+    return 0;
+}
+
 // return the name of the given button control
 const char* HelpWidget::getInputName(Widget* button) {
     Object** list = namedInputs.getList();
@@ -896,14 +931,14 @@ const char* HelpWidget::getInputName(Widget* button) {
 }
 
 // return all of the forms names and values
-void HelpWidget::getInputProperties(Properties& p) {
+void HelpWidget::getInputProperties(Properties* p) {
     Object** list = namedInputs.getList();
     int len = namedInputs.length();
     for (int i=0; i<len; i++) {
         NamedInput* ni = (NamedInput*)list[i];
         const char* value = getInputValue(ni->input->button);
-        if (value) {
-            p.put(ni->name.toString(), value);
+        if (value && p) {
+            p->put(ni->name.toString(), value);
         }
     }
 }
@@ -1224,8 +1259,8 @@ void HelpWidget::compose() {
 #define ADD_PREV_SEGMENT                            \
     prevlen = i-pindex;                             \
     if (prevlen > 0) {                              \
-        newline = false;                            \
         nodeList.append(new TextNode(p, prevlen));  \
+        newline = false;                            \
     }
 
     while (text && *text) {
@@ -1292,6 +1327,19 @@ void HelpWidget::compose() {
                     }
 
                     // skip white-char character
+                    pindex = i+1;
+                    p = text+pindex;
+                    break;
+
+                case '-':
+                case '~':
+                case ':':
+                    // break into separate segments to cause line-breaks
+                    prevlen = i-pindex+1;
+                    if (prevlen > 0) {
+                        nodeList.append(new TextNode(p, prevlen));
+                        newline = false;
+                    }
                     pindex = i+1;
                     p = text+pindex;
                     break;
@@ -1383,8 +1431,7 @@ void HelpWidget::compose() {
                     newline = true;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "textarea", 8) && tagPair) {
-                    inputNode = new
-                        InputNode(this, font, tagPair, tagBegin-tagPair);
+                    inputNode = new InputNode(this, tagPair, tagBegin-tagPair);
                     nodeList.append(inputNode);
                     inputs.append(inputNode);
                     prop = p.getName();
@@ -1394,7 +1441,7 @@ void HelpWidget::compose() {
                     tagPair = 0;
                     p.removeAll();
                 } else if (0 == strnicmp(tag, "select", 6) && tagPair) {
-                    inputNode = new InputNode(this, font);
+                    inputNode = new InputNode(this);
                     createDropList(inputNode, &options);
                     nodeList.append(inputNode);
                     inputs.append(inputNode);
@@ -1409,7 +1456,7 @@ void HelpWidget::compose() {
                     option->append(tagPair, tagBegin-tagPair);
                     options.append(option);
                 }
-            } else if (isalpha(tag[0]) || tag[0] == '?' || tag[0] == '!') {
+            } else if (isalpha(tag[0]) || tag[0] == '!') {
                 // process the start of the tag
                 if (0 == strnicmp(tag, "br", 2) ||
                     0 == strnicmp(tag, "p>", 2)) {
@@ -1499,7 +1546,7 @@ void HelpWidget::compose() {
                 } else if (0 == strnicmp(tag, "input ", 6)) {
                     p.removeAll();
                     p.load(tag+6, taglen-6);
-                    inputNode = new InputNode(this, p, font);
+                    inputNode = new InputNode(this, cookies, &p);
                     nodeList.append(inputNode);
                     inputs.append(inputNode);
                     prop = p.getName();
@@ -1518,7 +1565,7 @@ void HelpWidget::compose() {
                 } else if (0 == strnicmp(tag, "img ", 4)) {
                     p.removeAll();
                     p.load(tag+4, taglen-4);
-                    node = new ImageNode(style(), &fileName, p);
+                    node = new ImageNode(style(), &fileName, &p);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "body ", 5)) {
                     p.removeAll();
@@ -1532,6 +1579,8 @@ void HelpWidget::compose() {
                         foreground = getColor(prop->toString());
                     }
                 }
+            } else if (tag[0] == '?') {
+                nodeList.append(new EnvNode(cookies, tag+1, taglen-1));
             } else {
                 // '<' is a literal character
                 nodeList.append(new TextNode(anglestr, 1));
@@ -1539,7 +1588,7 @@ void HelpWidget::compose() {
                 text = tagBegin+1;
             } // end if-start, else-end tag
         } // if found a tag
-        tagBegin = *tagEnd == 0 ? 0 : tagEnd+1;
+        tagBegin = *tagEnd == 0 ? tagEnd : tagEnd+1;
     }
 
     // prevent nodes from being auto-deleted
@@ -1552,7 +1601,7 @@ void HelpWidget::compose() {
     }
 }
 
-U8 HelpWidget::find(const char* s, U8 matchCase) {
+bool HelpWidget::find(const char* s, bool matchCase) {
     if (s == 0 || s[0] == 0) {
         return false;
     }
@@ -1615,6 +1664,11 @@ void HelpWidget::copyText(int begin, int end) {
 void HelpWidget::navigateTo(const char* s) {
     // search for target using the path of the current file
     loadFile(fileName.getPath(s).toString());
+}
+
+void HelpWidget::loadBuffer(const char* str) {
+    htmlStr = str;
+    reloadPage();
 }
 
 void HelpWidget::loadFile(const char *f) {
@@ -1689,18 +1743,19 @@ void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
         ibreak = i;
         breakWidth = txtWidth;
         while (i<slen) {
-            if (s[i++] == ' ') {
+            if (s[++i] == ' ') {
                 break;
             }
         }
         txtWidth += (int)getwidth(s+ibreak, i-ibreak);
     }
-    
+
     if (txtWidth < width) {
+        // entire segment fits
         linelen = slen;
         linepx = txtWidth;
     } else {
-        // doesn't fit
+        // if (breakWidth == -1) break-char > width
         linelen = ibreak;
         linepx = breakWidth;
     }

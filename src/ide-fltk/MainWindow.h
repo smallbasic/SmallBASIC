@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.13 2005-01-09 00:13:22 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.14 2005-03-28 23:17:52 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -49,7 +49,7 @@ struct MainWindow : public Window {
     bool modalLoop;
 
     // main output
-    Fl_Ansi_Window *out;
+    AnsiWindow *out;
     EditorWindow* editWnd;
 
     // tabs

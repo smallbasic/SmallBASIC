@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.20 2005-02-06 22:52:48 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.21 2005-03-28 23:17:51 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -18,6 +18,7 @@
 #include <fltk/Rectangle.h>
 
 #include "Fl_Ansi_Window.h"
+void trace(const char *format, ...);
 
 #if defined(WIN32) 
 #include <fltk/win32.h>
@@ -30,7 +31,7 @@ extern HDC fl_bitmap_dc;
 using namespace fltk;
 
 // uncomment for unit testing and then run:
-// make Fl_Ansi_Window.exe
+// make AnsiWindow.exe
 //#define UNIT_TEST 1
 
 #define begin_offscreen()   \
@@ -40,18 +41,18 @@ using namespace fltk;
 
 #define end_offscreen() redraw();
 
-Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) : 
+AnsiWindow::AnsiWindow(int x, int y, int w, int h) : 
     Widget(x, y, w, h, 0) {
     font_size = 11;
     init();
     img = 0;
 }
 
-Fl_Ansi_Window::~Fl_Ansi_Window() {
+AnsiWindow::~AnsiWindow() {
     destroyImage();
 }
 
-void Fl_Ansi_Window::destroyImage() {
+void AnsiWindow::destroyImage() {
     if (img) {
         img->destroy_cache();
         delete img;
@@ -59,7 +60,7 @@ void Fl_Ansi_Window::destroyImage() {
     }
 }
 
-void Fl_Ansi_Window::initImage() {
+void AnsiWindow::initImage() {
     // can only be called following Fl::check() or Fl::run()
     if (img == 0) {
         img = new Image(w(), h());
@@ -70,14 +71,14 @@ void Fl_Ansi_Window::initImage() {
     }
 }
 
-void Fl_Ansi_Window::init() {
+void AnsiWindow::init() {
     curY = INITXY; // allow for input control border
     curX = INITXY;
     tabSize = 40; // tab size in pixels (160/32 = 5)
     reset();
 }
 
-void Fl_Ansi_Window::reset() {
+void AnsiWindow::reset() {
     curYSaved = 0;
     curXSaved = 0;
     invert = false;
@@ -90,7 +91,7 @@ void Fl_Ansi_Window::reset() {
     labelsize(font_size);
 }
 
-void Fl_Ansi_Window::layout() {
+void AnsiWindow::layout() {
     if (img && (layout_damage() & LAYOUT_WH)) { 
         int W = img->w();
         int H = img->h();
@@ -115,7 +116,7 @@ void Fl_Ansi_Window::layout() {
     Widget::layout();
 }
 
-void Fl_Ansi_Window::draw() {
+void AnsiWindow::draw() {
     if (img) {
         img->draw(Rectangle(w(), h()), 0, OUTPUT);
     } else {
@@ -124,7 +125,7 @@ void Fl_Ansi_Window::draw() {
     }
 }
 
-void Fl_Ansi_Window::clearScreen() {
+void AnsiWindow::clearScreen() {
     if (img != 0) {
         init();
         begin_offscreen();
@@ -134,30 +135,30 @@ void Fl_Ansi_Window::clearScreen() {
     }
 }
 
-void Fl_Ansi_Window::setTextColor(long fg, long bg) {
+void AnsiWindow::setTextColor(long fg, long bg) {
     labelcolor(ansiToFltk(fg));
     color(ansiToFltk(bg));
 }
 
-void Fl_Ansi_Window::setColor(long fg) {
+void AnsiWindow::setColor(long fg) {
     labelcolor(ansiToFltk(fg));
 }
 
-void Fl_Ansi_Window::drawLine(int x1, int y1, int x2, int y2) {
+void AnsiWindow::drawLine(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
     drawline(x1, y1, x2, y2);
     end_offscreen();
 }
 
-void Fl_Ansi_Window::drawRectFilled(int x1, int y1, int x2, int y2) {
+void AnsiWindow::drawRectFilled(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
     fillrect(Rectangle(x1, y1, x2-x1, y2-y1));
     end_offscreen();
 }
 
-void Fl_Ansi_Window::drawRect(int x1, int y1, int x2, int y2) {
+void AnsiWindow::drawRect(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
     drawline(x1, y1, x1, y2);
@@ -167,14 +168,14 @@ void Fl_Ansi_Window::drawRect(int x1, int y1, int x2, int y2) {
     end_offscreen();
 }
 
-void Fl_Ansi_Window::drawImage(Image* image, int x, int y, int sx, int sy, 
+void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy, 
                                int width, int height) {
     begin_offscreen();
     image->copy(Rectangle(x, y, width, height), sx, sy);
     end_offscreen();
 }
 
-void Fl_Ansi_Window::setPixel(int x, int y, int c) {
+void AnsiWindow::setPixel(int x, int y, int c) {
 #if defined(WIN32) 
     begin_offscreen();
     if (c < 0) {
@@ -193,7 +194,7 @@ void Fl_Ansi_Window::setPixel(int x, int y, int c) {
 #endif
 }
 
-int Fl_Ansi_Window::getPixel(int x, int y) {
+int AnsiWindow::getPixel(int x, int y) {
 #if defined(WIN32) 
     begin_offscreen();
     COLORREF c = ::GetPixel(fl_bitmap_dc, x, y);
@@ -204,7 +205,7 @@ int Fl_Ansi_Window::getPixel(int x, int y) {
 #endif
 }
 
-void Fl_Ansi_Window::beep() const {
+void AnsiWindow::beep() const {
 #ifdef WIN32
    MessageBeep(MB_ICONASTERISK);
 #elif defined(__APPLE__)
@@ -214,14 +215,14 @@ void Fl_Ansi_Window::beep() const {
 #endif // WIN32
 }
 
-int Fl_Ansi_Window::textWidth(const char* s) {
+int AnsiWindow::textWidth(const char* s) {
     begin_offscreen();
     int w = (int)getwidth(s);
     end_offscreen();
     return w;
 }
 
-int Fl_Ansi_Window::textHeight(void) {
+int AnsiWindow::textHeight(void) {
     begin_offscreen();
     int h = (int)(getascent()+getdescent());
     end_offscreen();
@@ -230,12 +231,12 @@ int Fl_Ansi_Window::textHeight(void) {
 
 // callback for fl_scroll
 void eraseBottomLine(void* data, const fltk::Rectangle& r) {
-    Fl_Ansi_Window* out = (Fl_Ansi_Window*)data;
+    AnsiWindow* out = (AnsiWindow*)data;
     setcolor(out->color());
     fillrect(r);
 }
 
-void Fl_Ansi_Window::newLine() {
+void AnsiWindow::newLine() {
     int height = h();
     int fontHeight = (int)(getascent()+getdescent());
 
@@ -249,7 +250,7 @@ void Fl_Ansi_Window::newLine() {
     }
 }
 
-int Fl_Ansi_Window::calcTab(int x) const {
+int AnsiWindow::calcTab(int x) const {
     int c = 1;
     while (x > tabSize) {
         x -= tabSize;
@@ -258,7 +259,7 @@ int Fl_Ansi_Window::calcTab(int x) const {
     return c * tabSize;
 }
 
-Color Fl_Ansi_Window::ansiToFltk(long c) const {
+Color AnsiWindow::ansiToFltk(long c) const {
     if (c < 0) {
         // windows style RGB packing
         int r = (c) & 0xFF;
@@ -288,7 +289,7 @@ Color Fl_Ansi_Window::ansiToFltk(long c) const {
     }
 }
 
-bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
+bool AnsiWindow::setGraphicsRendition(char c, int escValue) {
     switch (c) {
     case 'K': // \e[K - clear to eol
         setcolor(color());
@@ -404,7 +405,7 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
     return false;
 }
 
-bool Fl_Ansi_Window::doEscape(unsigned char* &p) {
+bool AnsiWindow::doEscape(unsigned char* &p) {
     int escValue = 0;
     while (isdigit(*p)) {
         escValue = (escValue * 10) + (*p - '0');
@@ -445,7 +446,7 @@ bool Fl_Ansi_Window::doEscape(unsigned char* &p) {
  *   \e[24m  set underline off
  *   \e[27m  set reverse off
  */
-void Fl_Ansi_Window::print(const char *str) {
+void AnsiWindow::print(const char *str) {
     int len = strlen(str);
     if (len <= 0) {
         return;
@@ -537,7 +538,7 @@ void Fl_Ansi_Window::print(const char *str) {
     end_offscreen();
 }
 
-int Fl_Ansi_Window::handle(int e) {
+int AnsiWindow::handle(int e) {
     if (e == FOCUS) {
         return 2;
     }
@@ -551,7 +552,7 @@ int main(int argc, char **argv) {
     int h = 200;
     Window window(w, h, "SmallBASIC");
     window.begin();
-    Fl_Ansi_Window out(0, 0, w, h);
+    AnsiWindow out(0, 0, w, h);
     window.resizable(&out);
     window.end();
     window.show(argc,argv);

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.31 2005-02-06 22:53:38 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.32 2005-03-28 23:17:51 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -76,7 +76,7 @@ const char aboutText[] =
 //--Menu callbacks--------------------------------------------------------------
 
 void getHomeDir(char* fileName) {
-    sprintf(fileName, "%s/.smallbasic/", dev_getenv("HOME"));
+    sprintf(fileName, "%s/.smallbasic/", getenv("HOME"));
 	mkdir(fileName, 0777);
 }
 
@@ -191,8 +191,12 @@ void basicMain(const char* filename) {
     wnd->tabGroup->selected_child(wnd->outputGroup);
     wnd->out->clearScreen();
     runMode = run_state;
+
+    wnd->fileStatus->label("Choose Program/Break to end");
     wnd->runStatus->label("RUN");
+    wnd->fileStatus->redraw();
     wnd->runStatus->redraw();
+
     int success = sbasic_main(filename);
 
     if (runMode == quit_state) {
@@ -206,11 +210,15 @@ void basicMain(const char* filename) {
             gsb_last_errmsg[len-1] = 0;
         }
         wnd->fileStatus->copy_label(gsb_last_errmsg);
+        wnd->runStatus->label("ERR");
+    } else {
+        wnd->fileStatus->label("Done");
+        wnd->runStatus->label("");
     }
 
-    wnd->runStatus->label(success ? " " : "ERR");
+    wnd->runStatus->redraw();
+    wnd->fileStatus->redraw();
     wnd->editWnd->readonly(false);
-    wnd->redraw();
     runMode = edit_state;
 }
 
@@ -293,7 +301,6 @@ void setTitle(const char* filename) {
         wnd->label("SmallBASIC");
     }
     wnd->fileStatus->redraw();
-    wnd->redraw();
 
 #if defined(WIN32) 
     ::SetFocus(xid(Window::first()));
@@ -564,7 +571,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     outputGroup->box(THIN_DOWN_BOX);
     outputGroup->hide();
     outputGroup->begin();
-    out = new Fl_Ansi_Window(2, 2, w-4, pageHeight-4);
+    out = new AnsiWindow(2, 2, w-4, pageHeight-4);
     outputGroup->resizable(out);
     outputGroup->end();
     tabGroup->end();

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.14 2005-02-06 22:52:48 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.15 2005-03-28 23:17:51 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -17,10 +17,10 @@
 
 using namespace fltk;
 
-class Fl_Ansi_Window : public Widget {
+class AnsiWindow : public Widget {
     public:
-    Fl_Ansi_Window(int x, int y, int w, int h);
-    virtual ~Fl_Ansi_Window();
+    AnsiWindow(int x, int y, int w, int h);
+    virtual ~AnsiWindow();
 
     // inherited methods
     void draw();
