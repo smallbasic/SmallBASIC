@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.10 2004-12-02 21:56:23 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.11 2004-12-05 11:13:22 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -340,6 +340,13 @@ struct CodeEditor : public TextEditor {
     }
 
     void gotoLine(int line) {
+        int numLines = buffer()->count_lines(0, buffer()->length());
+        if (line < 1) {
+            line = 1;
+        } else if (line > numLines) {
+            line = numLines;
+        }
+
         scroll(line-(mNVisibleLines/2), 0);
         insert_position(buffer()->skip_lines(0, line-1));
     }

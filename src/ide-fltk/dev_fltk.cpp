@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.14 2004-12-03 19:27:47 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.15 2004-12-05 11:13:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -198,6 +198,11 @@ void osd_beep() {
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
+#ifdef WIN32
+	if (!bgplay) {
+		::Beep(frq, ms);
+    }
+#endif // WIN32
 }
 
 void osd_clear_sound_queue() {
@@ -208,7 +213,9 @@ void osd_write(const char *s) {
 }
 
 void doAnchor(void*) {
-    wnd->execLink(anchor);
+    if (access(anchor, 0) == 0) {
+        wnd->execLink(anchor);
+    }
     free((void*)anchor);
     anchor = 0;
 }

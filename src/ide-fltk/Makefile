@@ -15,6 +15,7 @@ SOURCE =                                        \
 	EditorWindow.cpp                            \
     dev_fltk.cpp                                \
     blib_fltk_ui.c                              \
+    sbfui.cxx                                   \
 
 COMMON=                                         \
     bc.c                                        \
@@ -61,13 +62,12 @@ COMMON=                                         \
     vmt.c                                       \
 
 MAKEDEPEND	= /usr/X11R6/bin/makedepend -Y
-##OPTIM =  -O2 -Wall -Wunused -fno-exceptions
-OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions 
+OPTIM =  -O2 -Wall -Wunused -fno-exceptions
+##OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions 
 PLATFORM=-D_UnixOS -D_CygWin -D_FLTK
 
 ## patched fltk-config to remove -mwindows
-##LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
-LDLIBS = -L/usr/lib -lm -lgcc -lreadline -ltermcap `fltk-config --ldflags` -lcygwin
+LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
 RESOURCES = sbfltk.res
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.16 2004-12-03 19:27:47 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.17 2004-12-05 11:13:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -56,9 +56,9 @@ int px,py,pw,ph;
 
 const char aboutText[] =
     "About SmallBASIC...\n\n"
-    "Copyright (c) 2000-2004 Nicholas Christopoulos,\n"
-    "Chris Warren-Smith.\n\n"
-    "FLTK Version 0.9.6.0\n\n"
+    "Copyright (c) 2000-2004 Nicholas Christopoulos\n\n"
+    "FLTK Version 0.9.6.0\n"
+    "Copyright (c) 2004 Chris Warren-Smith.\n\n"
     "http://smallbasic.sourceforge.net\n\n"
     "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
     "This program is free software; you can use it\n"
@@ -109,6 +109,15 @@ void fullscreen_cb(Widget *w, void* v) {
 
 void turbo_cb(Widget* w, void* v) {
     wnd->isTurbo = w->value();
+}
+
+void goto_cb(Widget* w, void* v) {
+    char line[250];
+    line[0] = 0;
+    const char *val = input("Go To Line:", line);
+    if (val != NULL) {
+        wnd->editWnd->gotoLine(atoi(val));
+    }
 }
 
 void basicMain(const char* filename) {
@@ -310,6 +319,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/&Copy",        CTRL+'c', (Callback*)EditorWindow::copy_cb);
     m->add("&Edit/&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
     m->add("&Edit/_&Delete",     0, (Callback*)EditorWindow::delete_cb);
+    m->add("&Edit/_&Go To...",    CTRL+'g', (Callback*)goto_cb);
     m->add("&Edit/&Full Screen", 0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&Edit/&Turbo",       0, (Callback*)turbo_cb)->type(Item::TOGGLE);
     //m->add("&Edit/&Settings",   0, (Callback*)EditorWindow::settings_cb);
@@ -319,7 +329,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Search/Find A&gain",CTRL+'g', (Callback*)EditorWindow::find2_cb);
     m->add("&Search/&Replace...",0,        (Callback*)EditorWindow::replace_cb);
     m->add("&Search/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
-    m->add("&Help/About...",     CTRL+'f',    (Callback*)about_cb);
+    m->add("&Help/About...",     0,        (Callback*)about_cb);
 
     callback(quit_cb);
 
@@ -433,6 +443,9 @@ int MainWindow::handle(int e) {
             dev_pushkey(13);
             break;
         default:
+            if (k>= LeftShiftKey && k<= RightAltKey) {
+                break; // ignore caps+shift+ctrl+alt
+            }
             dev_pushkey(k);
             break;
         }
