@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.8 2005-03-21 22:29:44 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.9 2005-03-22 22:36:52 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -66,7 +66,7 @@ public:
     int handle(int event);
 
     private:
-    Color background;
+    Color background,foreground;
     Scrollbar* scrollbar;
     S16 vscroll,hscroll;
     U16 scrollHeight;
@@ -94,6 +94,36 @@ static char* dot_xpm[] = {
     ".+++."};
 
 static xpmImage dotImage(dot_xpm);
+
+static const char *broken_xpm[] = {
+  "16 18 4 1",
+  "@ c #000000",
+  "  c #ffffff",
+  "+ c none",
+  "x c #ff0000",
+  // pixels
+  "@@@@@@@+++++++++",
+  "@    @++++++++++",
+  "@   @+++++++++++",
+  "@   @++@++++++++",
+  "@    @@+++++++++",
+  "@     @+++@+++++",
+  "@     @++@@++++@",
+  "@ xxx  @@  @++@@",
+  "@  xxx    xx@@ @",
+  "@   xxx  xxx   @",
+  "@    xxxxxx    @",
+  "@     xxxx     @",
+  "@    xxxxxx    @",
+  "@   xxx  xxx   @",
+  "@  xxx    xxx  @",
+  "@ xxx      xxx @",
+  "@              @",
+  "@@@@@@@@@@@@@@@@",
+  NULL
+};
+
+static xpmImage brokenImage(broken_xpm);
 
 struct {
     const char* ent;

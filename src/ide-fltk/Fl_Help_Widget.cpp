@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.10 2005-03-21 22:29:44 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.11 2005-03-22 22:36:52 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -14,6 +14,7 @@
 #include <io.h>
 #include <ctype.h>
 
+#include <fltk/ask.h>
 #include <fltk/draw.h>
 #include <fltk/layout.h>
 #include <fltk/Rectangle.h>
@@ -33,7 +34,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-// #define UNIT_TEST 1
+#define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -46,19 +47,20 @@
 #define SCROLL_W 17
 #define CELL_SPACING 4
 #define INPUT_SPACING 2
-#define TH_SPACING 5
 #define INPUT_WIDTH 90
 #define SCROLL_SIZE 1000
+#define HSCROLL_STEP 20
 
+void trace(const char *format, ...);
 Color getColor(const char *n);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 const char* skipWhite(const char* s);
+Image* loadImage(String* fileName, String* imgSrc);
 struct AnchorNode;
 static char truestr[] = "true";
 static char falsestr[] = "false";
 static char spacestr[] = " ";
 static char anglestr[] = "<";
-void trace(const char *format, ...);
 
 //--Display---------------------------------------------------------------------
 
@@ -74,7 +76,7 @@ struct Display {
     U8 uline;
     U8 center;
     U8 inTR;
-    U8 textOut;
+    U8 content;
     U8 exposed;
     U8 measure;
     Font* font;
@@ -97,16 +99,17 @@ struct Attributes : public Properties {
     String* getName() {return get("name");}
     String* getHref() {return get("href");}
     String* getType() {return get("type");}
+    String* getSrc() {return get("src");}
     void getValue(String& s) {s.append(getValue());}
     void getName(String& s) {s.append(getName());}
     void getHref(String& s) {s.append(getHref());}
     void getType(String& s) {s.append(getType());}
-    int getSize() {return getIntValue("size");}
-    int getWidth() {return getIntValue("width");}
-    int getHeight() {return getIntValue("height");}
-    int getIntValue(const char* attr) {
+    int getSize(int def=-1) {return getIntValue("size", def);}
+    int getWidth(int def=-1) {return getIntValue("width",def);}
+    int getHeight(int def=-1) {return getIntValue("height",def);}
+    int getIntValue(const char* attr, int def) {
         String* s = get(attr);
-        return (s != null ? s->toInteger() : -1);
+        return (s != null ? s->toInteger() : def);
     }
 };
 
@@ -144,14 +147,12 @@ struct FontNode : public BaseNode {
         if (color) {
             setcolor(color);
         }
-
         int oldLineHeight = out->lineHeight;
         out->lineHeight = (int)(getascent()+getdescent());
         if (out->lineHeight > oldLineHeight) {
             out->y += (out->lineHeight - oldLineHeight);
         }
         out->font = font;
-        out->color = color;
         out->fontSize = fontSize;
     }
 
@@ -209,7 +210,6 @@ struct AnchorNode : public BaseNode {
                 // outside row start or end
                 return false;
             }
-
             return true;
         }
         return false;
@@ -260,28 +260,17 @@ struct StyleNode : public BaseNode {
 
 //--LiNode----------------------------------------------------------------------
 
-struct LiNode : public BaseNode {
-    LiNode(const Style* style) {
-        this->style = style;
-    }
-    void display(Display* out) {
-        out->x = out->indent;
-        out->y += out->lineHeight;
-        int x = out->x-(LI_INDENT-DEFAULT_INDENT);
-        int y = out->y-(int)(getascent()-getdescent());
-        if (out->measure == false) {
-            dotImage.draw(Rectangle(x, y, 5, 5), style, OUTPUT);
-        }
-    }
-    const Style* style;
-};
-
 struct UlNode : public BaseNode {
-    UlNode() {}
+    UlNode(bool ordered) {
+        this->ordered = ordered;
+    }
     void display(Display* out) {
+        nextId = 0;
         out->newRow(1);
         out->indent += LI_INDENT;
     }
+    bool ordered;
+    int nextId;
 };
 
 struct UlEndNode : public BaseNode {
@@ -290,6 +279,65 @@ struct UlEndNode : public BaseNode {
         out->indent -= LI_INDENT;
         out->newRow(2);
     }
+};
+
+struct LiNode : public BaseNode {
+    LiNode(const Style* style, UlNode* ulNode) {
+        this->style = style;
+        this->ulNode = ulNode;
+    }
+    void display(Display* out) {
+        out->content = true;
+        out->x = out->indent;
+        out->y += out->lineHeight;
+        int x = out->x-(LI_INDENT-DEFAULT_INDENT);
+        int y = out->y-(int)(getascent()-getdescent());
+        if (out->measure == false) {
+            if (ulNode && ulNode->ordered) {
+                char t[10];
+                sprintf(t, "%d.", ++ulNode->nextId);
+                drawtext(t, 2, x, out->y);
+            } else {
+                dotImage.draw(Rectangle(x, y, 5, 5), style, OUTPUT);
+            }
+        }
+    }
+    const Style* style;
+    UlNode* ulNode;
+};
+
+//--ImageNode-------------------------------------------------------------------
+
+struct ImageNode : public BaseNode {
+    ImageNode(const Style* style, String* fileName, Attributes& p) : 
+        BaseNode() {
+        this->style = style;
+        image = loadImage(fileName, p.getSrc());
+        image->measure(w, h);
+        w = p.getWidth(w);
+        h = p.getHeight(h);
+    }
+
+    void display(Display* out) {
+        if (image == 0) {
+            return;
+        }
+        if (w+DEFAULT_INDENT > out->width-out->x) {
+            out->newRow();
+        }
+        int x = out->x+DEFAULT_INDENT;
+        int y = out->y - (int)getascent();
+        if (out->measure == false) {
+            image->draw(Rectangle(x, y, w, h), style, OUTPUT);
+        }
+        out->x += w+DEFAULT_INDENT;
+        if (h > out->lineHeight) {
+            out->lineHeight = h;
+        }
+    }
+    const Image* image;
+    const Style* style;
+    int w,h;
 };
 
 //--TextNode--------------------------------------------------------------------
@@ -304,7 +352,7 @@ struct TextNode : public BaseNode {
 
     void display(Display* out) {
         ybegin = out->y;
-        out->textOut = true;
+        out->content = true;
 
         if (width == 0) {
             width = (int)getwidth(s, textlen);
@@ -423,7 +471,7 @@ struct TableNode : public BaseNode {
         initY = ryt = ryb = out->y;
         nodeId = out->nodeId;
 
-        if (out->textOut) {
+        if (out->content) {
             initY += out->lineHeight;
         }
         if (cols && (out->exposed || columns == 0)) {
@@ -465,10 +513,10 @@ struct TableNode : public BaseNode {
         out->indent = initX;
         out->x = initX;
         out->y = ryb;
-        if (out->textOut) {
+        if (out->content) {
             out->newRow();
         }
-        out->textOut = false;
+        out->content = false;
         out->tableLevel--;
 
         if (cols && columns && out->exposed && tagWidth == 0) {
@@ -541,7 +589,7 @@ struct TrNode : public BaseNode {
         if (table == 0) {
             return;
         }
-        if (out->textOut) {
+        if (out->content) {
             // move bottom of <tr> to next line
             table->ryb += out->lineHeight;
         }
@@ -549,7 +597,7 @@ struct TrNode : public BaseNode {
         table->nextRow++;
         table->ryt = table->ryb;
         out->inTR = true;
-        out->textOut = false;
+        out->content = false;
     }
     TableNode* table;
     U16 cols;
@@ -605,20 +653,6 @@ struct TdEndNode : public BaseNode {
     TdNode* td;
 };
 
-//--ImageNode-------------------------------------------------------------------
-
-struct ImageNode : public BaseNode {
-    ImageNode(const Style* style, Attributes& p) : BaseNode() {
-        this->style = style;
-        this->image = 0;
-    }
-
-    void display(Display* out) {
-    }
-    const Image* image;
-    const Style* style;
-};
-
 //--InputNode-------------------------------------------------------------------
 
 struct InputNode : public BaseNode {
@@ -648,7 +682,7 @@ struct InputNode : public BaseNode {
         button->textfont(out->font);
         button->show();
         out->x += button->w() + INPUT_SPACING;
-        out->textOut = true;
+        out->content = true;
     }
     Widget* button;
 };
@@ -777,6 +811,7 @@ void HelpWidget::init() {
     hscroll = 0;
     scrollHeight = h();
     background = BACKGROUND_COLOR;
+    foreground = FOREGROUND_COLOR;
 }
 
 void HelpWidget::cleanup() {
@@ -917,7 +952,7 @@ void HelpWidget::scrollTo(const char* anchorName) {
         AnchorNode* p = (AnchorNode*)list[i];
         if (p->name.equals(anchorName)) {
             vscroll = -p->getY();
-            redraw(DAMAGE_ALL);
+            redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
             return;
         }
     }
@@ -948,14 +983,14 @@ void HelpWidget::draw() {
     out.anchor = 0;
     out.font = HELVETICA;
     out.fontSize = FONT_SIZE;
-    out.color = FOREGROUND_COLOR;
+    out.color = foreground;
     out.background = background;
     out.height = h();
     out.indent = DEFAULT_INDENT+hscroll;
     out.x = out.indent;
-    out.width = w()-(SCROLL_W+DEFAULT_INDENT);
+    out.width = w()-(DEFAULT_INDENT+SCROLL_W)+hscroll;
     out.inTR = false;
-    out.textOut = false;
+    out.content = false;
     out.measure = false;
     out.exposed = (damage()&DAMAGE_EXPOSE) ? 1:0;
     out.tableLevel = 0;
@@ -974,7 +1009,10 @@ void HelpWidget::draw() {
     }
     
     setcolor(out.background);
-    fillrect(Rectangle(0, 0, out.x+out.width, out.height));
+    fillrect(Rectangle(0, 0, w()-SCROLL_W, out.height));
+    //show selection range
+    //setcolor(color());
+    //fillrect(Rectangle(hscroll, 100+vscroll, w()-SCROLL_W, out.lineHeight));
     setcolor(out.color);
 
     Object** list = nodeList.getList();
@@ -1009,6 +1047,7 @@ void HelpWidget::draw() {
         int height = h();
         int scrollH = pageHeight-height;
         if (scrollH < 1) {
+            // nothing to scroll
             scrollHeight = height;
             scrollbar->deactivate();
             scrollbar->slider_size(10);
@@ -1041,22 +1080,6 @@ void HelpWidget::draw() {
         pop_clip();
     }
     pop_clip();
-}
-
-U8 HelpWidget::find(const char* s, U8 matchCase) {
-    Object** list = nodeList.getList();
-    int len = nodeList.length();
-    for (int i=0; i<len; i++) {
-        BaseNode* p = (BaseNode*)list[i];
-        if (p->getY() > -vscroll) {
-            // start looking from this point onwards
-            if (p->indexOf(s, matchCase) != -1) {
-                scrollTo(-p->getY());
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 int HelpWidget::onMove(int event) {
@@ -1118,22 +1141,23 @@ int HelpWidget::handle(int event) {
         return 1;
 
     case fltk::KEY:
-//         if (event_key_state(LeftKey) && hscroll == 0) {
-//             hscroll = -w()/2;
-//             redraw();
-//             return 1;
-//         }
-//         if (event_key_state(RightKey) && hscroll != 0) {
-//             hscroll = 0;
-//             redraw();
-//             return 1;
-//         }
+        if (event_key_state(RightKey) && -hscroll < w()/2) {
+            hscroll -= HSCROLL_STEP;
+            redraw();
+            return 1;
+        }
+        if (event_key_state(LeftKey) && hscroll < 0) {
+            hscroll += HSCROLL_STEP;
+            redraw();
+            return 1;
+        }
         if (event_key_state(RightCtrlKey) || event_key_state(LeftCtrlKey)) {
             switch (event_key()) {
             case 'r': // reload
                 reloadPage();
                 break;
             case 'f': // find
+                find(fltk::input("Find:"), false);
                 break;
             }
             return 1;
@@ -1170,7 +1194,7 @@ void HelpWidget::compose() {
     U8 uline = false;
 
     Font *font = fltk::HELVETICA;
-    Color color = FOREGROUND_COLOR;
+    Color color = 0;
     int fontSize = FONT_SIZE;
     int taglen = 0;
     int textlen = 0;
@@ -1179,6 +1203,7 @@ void HelpWidget::compose() {
     Stack tableStack(10);
     Stack trStack(10);
     Stack tdStack(10);
+    Stack olStack(10);
     Attributes p(10);
     String* prop;
     BaseNode* node;
@@ -1318,17 +1343,18 @@ void HelpWidget::compose() {
                     }
                     font = fltk::HELVETICA;
                     fontSize = FONT_SIZE;
-                    color = FOREGROUND_COLOR;
-                    node = new FontNode(font, fontSize, color, bold, italic);
+                    node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "pre", 3)) {
                     pre = false;
-                    node = new FontNode(font, fontSize, color, bold, italic);
+                    node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "a", 1)) {
                     nodeList.append(new AnchorEndNode());
-                } else if (0 == strnicmp(tag, "ul", 2)) {
+                } else if (0 == strnicmp(tag, "ul", 2) ||
+                           0 == strnicmp(tag, "ol", 2)) {
                     nodeList.append(new UlEndNode());
+                    olStack.pop();
                     newline = true;
                 } else if (0 == strnicmp(tag, "u", 1)) {
                     uline = false;
@@ -1372,7 +1398,7 @@ void HelpWidget::compose() {
                     text = tagEnd+1;
                 } else if (0 == strnicmp(tag, "pre", 3)) {
                     pre = true;
-                    node = new FontNode(COURIER, fontSize, color, bold, italic);
+                    node = new FontNode(COURIER, fontSize, 0, bold, italic);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "td", 2)) {
                     node = new TdNode((TrNode*)trStack.peek());
@@ -1393,15 +1419,20 @@ void HelpWidget::compose() {
                     // continue the font in case we resize
                     node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.append(node);
-                } else if (0 == strnicmp(tag, "ul>", 3)) {
-                    nodeList.append(new UlNode());
+                } else if (0 == strnicmp(tag, "ul>", 3) ||
+                           0 == strnicmp(tag, "ol>", 3)) {
+                    node = new UlNode(tag[0]=='o'||tag[0]=='O');
+                    olStack.push(node);
+                    nodeList.append(node);
                     newline = true;
                 } else if (0 == strnicmp(tag, "u>", 2)) {
                     uline = true;
                     nodeList.append(new StyleNode(uline, center));
                 } else if (0 == strnicmp(tag, "li>", 3)) {
-                    nodeList.append(new LiNode(style()));
+                    node = new LiNode(style(), (UlNode*)olStack.peek());
+                    nodeList.append(node);
                     newline = true;
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "a ", 2)) {
                     p.load(tag+2, taglen-2);
                     node = new AnchorNode(p);
@@ -1415,9 +1446,7 @@ void HelpWidget::compose() {
                         fontSize = prop->toInteger();
                     }
                     prop = p.get("color");
-                    if (prop != null) {
-                        color = getColor(prop->toString());
-                    }
+                    color = prop == null ? 0 : getColor(prop->toString());
                     prop = p.get("face");
                     if (prop != null) {
                         font = fltk::font(*prop->toString());
@@ -1427,13 +1456,13 @@ void HelpWidget::compose() {
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "h", 1)) {
                     fontSize = FONT_SIZE_H1-(tag[1]-'1'); // <h1> etc
-                    node = new FontNode(font, fontSize, color, ++bold, italic);
+                    node = new FontNode(font, fontSize, 0, ++bold, italic);
                     nodeList.append(node);
                     nodeList.append(new BrNode());
                     newline = true;
                 } else if (0 == strnicmp(tag, "input ", 6)) {
                     p.load(tag+6, taglen-6);
-                    InputNode *node = new InputNode(this, p, font);
+                    InputNode* node = new InputNode(this, p, font);
                     nodeList.append(node);
                     inputs.append(node);
                     prop = p.getName();
@@ -1454,13 +1483,18 @@ void HelpWidget::compose() {
                     text = tagEnd+1;                    
                 } else if (0 == strnicmp(tag, "img ", 4)) {
                     p.load(tag+4, taglen-4);
-                    nodeList.append(new ImageNode(style(), p));
+                    node = new ImageNode(style(), &fileName, p);
+                    nodeList.append(node);
                     p.removeAll();
                 } else if (0 == strnicmp(tag, "body ", 5)) {
                     p.load(tag+5, taglen-5);
                     prop = p.get("bgcolor");
                     if (prop != null) {
                         background = getColor(prop->toString());
+                    }
+                    prop = p.get("fgcolor");
+                    if (prop != null) {
+                        foreground = getColor(prop->toString());
                     }
                     p.removeAll();
                 }
@@ -1475,12 +1509,48 @@ void HelpWidget::compose() {
     }
     
     // prevent nodes from being auto-deleted
+    olStack.emptyList();
     tdStack.emptyList();
     trStack.emptyList();
     while (tableStack.peek()) {
         node = new TableEndNode((TableNode*)tableStack.pop());
         nodeList.append(node);
     }
+}
+
+U8 HelpWidget::find(const char* s, U8 matchCase) {
+    if (s == 0 || s[0] == 0) {
+        return false;
+    }
+
+    Object** list = nodeList.getList();
+    int len = nodeList.length();
+    int foundRow = 0;
+    int lineHeight = (int)(getascent()+getdescent());
+    for (int i=0; i<len; i++) {
+        BaseNode* p = (BaseNode*)list[i];
+        if (p->indexOf(s, matchCase) != -1) {
+            foundRow = p->getY()-vscroll;
+            if (foundRow > -vscroll+lineHeight) {
+                break;
+            }
+        }
+    }
+    if (-vscroll == foundRow) {
+        return false;
+    }
+
+    vscroll = -foundRow;
+    // check scroll bounds
+    if (foundRow) {
+        vscroll += lineHeight;
+    }
+    if (-vscroll > scrollHeight) {
+        vscroll = -scrollHeight;
+    }
+    
+    redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
+    return true;
 }
 
 void HelpWidget::copyText(int begin, int end) {
@@ -1595,7 +1665,6 @@ void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
     while (i<slen && txtWidth < width) {
         ibreak = i;
         breakWidth = txtWidth;
-
         while (i<slen) {
             if (s[i++] == ' ') {
                 break;
@@ -1677,6 +1746,10 @@ Color getColor(const char *n) {
     }
 }
 
+Image* loadImage(String* fileName, String* imgSrc) {
+    return &brokenImage;
+}
+
 #ifdef UNIT_TEST
 #include <fltk/Window.h>
 #include <fltk/run.h>
@@ -1688,8 +1761,8 @@ int main(int argc, char **argv) {
     Window window(w, h, "Browse");
     window.begin();
     HelpWidget out(0, 0, w, h);
-    //out.loadFile("t.html#there");
-    out.loadFile("help/8_5.html");
+    out.loadFile("t.html#there");
+    //out.loadFile("help/8_5.html");
     window.resizable(&out);
     window.end();
     window.show(argc,argv);
