@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.3 2004-11-04 19:55:06 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.4 2004-11-07 22:59:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -13,15 +13,16 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <FL/Fl.H>
-#include <FL/Fl_Window.H>
-#include <FL/fl_draw.H>
+#include <fltk/Widget.H>
+#include <fltk/draw.H>
 #include <fltk/Image.h>
 
 #ifndef FL_ANSI_WINDOW
 #define FL_ANSI_WINDOW
 
-class Fl_Ansi_Window : public Fl_Widget {
+using namespace fltk;
+
+class Fl_Ansi_Window : public Widget {
     public:
     Fl_Ansi_Window(int x, int y, int w, int h);
     virtual ~Fl_Ansi_Window();
@@ -51,8 +52,8 @@ class Fl_Ansi_Window : public Fl_Widget {
     int getX() {return curX;}
     int getY() {return curY;}
     void setXY(int x, int y) {curX=x; curY=y;}
-    int textWidth(const char* s) {return (int)fl_width(s);}
-    int textHeight(void) {return (int)fl_height();}
+    int textWidth(const char* s) {return (int)getwidth(s);}
+    int textHeight(void) {return (int)(getascent()+getdescent());}
     int getWidth()  {return w();}
     int getHeight() {return h();}
 
@@ -60,13 +61,13 @@ class Fl_Ansi_Window : public Fl_Widget {
     void init();
     void initOffscreen();
     bool setGraphicsRendition(char c, int escValue);
-    Fl_Color ansiToFltk(long color) const;
+    Color ansiToFltk(long color) const;
     bool doEscape(unsigned char *&p);
     int calcTab(int x) const;
     void newLine();
     void reset();
 
-    fltk::Image* img;
+    Image* img;
     bool underline;
     bool invert;
     bool bold;
