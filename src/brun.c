@@ -21,6 +21,7 @@
 #include "var.h"
 #include "scan.h"
 #include "smbas.h"
+#include "messages.h"
 
 #include "device.h"
 #include "pproc.h"
@@ -1593,14 +1594,16 @@ int		brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
 			} // i
 
 		// check symbol mapping
-		for ( i = 0; i < prog_symcount; i ++ )	{
-			if	( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 1 )
-				panic("Symbol (unit) '%s' missing\n", prog_symtable[i].symbol);
-			if	( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 0 )	{	
-				if	( prog_symtable[j].exp_idx == -1 )
-					panic("Symbol (module) '%s' missing\n", prog_symtable[i].symbol);
-				}
-			}
+//		if	( !opt_decomp )	{
+//			for ( i = 0; i < prog_symcount; i ++ )	{
+//				if	( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 1 )
+//					panic("Symbol (unit) '%s' missing\n", prog_symtable[i].symbol);
+//				if	( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 0 )	{	
+//					if	( prog_symtable[j].exp_idx == -1 )
+//						panic("Symbol (module) '%s' missing\n", prog_symtable[i].symbol);
+//					}
+//				}
+//			}
 		}
 
 	//

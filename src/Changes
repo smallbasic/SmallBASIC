@@ -1,7 +1,7 @@
 SmallBASIC
 Current version: 0.9.0
 
-Platform:	PalmOS 3.1+
+Platform:	PalmOS 3.1+, PalmOS 5
 			Unix (console, framebuffer, svgalib, sdl, X)
 			Win32 (GUI, console)
 			DOS (djgpp)
@@ -15,10 +15,19 @@ Gary A. Clark				clarkg@fireserve.net				gac
 Bob Riess					riessb@usa.net						bob
 Chris Warren-Smith          cwarrens@twpo.com.au				cws
 Earle F. Philhower III		earle@ziplabel.com					efp
+Laurent Poujoulat			lpoujoulat@wanadoo.fr				lap
 
 --------------------------------------------------------------------------------------------------------------------------------
 VERSION 0.9.0
 --------------------------------------------------------------------------------------------------------------------------------
+2004-05-01: ndc
+	Human language depented files for messages and keywords.
+	The messages and the keywords can be easily translated to another language.
+	This is not suggested because that means incompatible source-code but it is very usefull for education purposes;
+	I believe that, the kids will work better if they are using their natural language 
+	(and we are very sensitive on that matter).
+	I suggest to the "translators" to be very carefull, there is no mean on a word-to-word translation.
+
 2003-03-10: ndc
 	new c-modules: mod_gdbm, mod_mysql
 

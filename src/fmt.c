@@ -36,6 +36,7 @@
 #include "fmt.h"
 #include "device.h"
 #include "pproc.h"
+#include "messages.h"
 
 //#define	FMT_USE_f64
                   
@@ -234,7 +235,7 @@ void	bestfta_p(double x, char *dest, double minx, double maxx)
 
 	if	( x >= 1E308 ) {
 		*d = '\0';
-		strcat(d, "INF");
+		strcat(d, WORD_INF);
 		return;
 		}
 	else if	( x <= 1E-307 ) 	{
@@ -945,7 +946,7 @@ void	fmt_printN(double x, int output, int handle)
 	char		buf[64];
 
 	if	( fmt_count == 0 )	{
-		rt_raise("FORMAT: NO FORMAT");
+		rt_raise(ERR_FORMAT_INVALID_FORMAT);
 		}
 	else	{
 		#if defined(_TEST)
@@ -973,7 +974,7 @@ void	fmt_printN(double x, int output, int handle)
 				}
 			}
 		else	{
-			rt_raise("FORMAT: WRONG TYPE");
+			rt_raise(ERR_FORMAT_INVALID_FORMAT);
 			}
 		}
 }
@@ -995,7 +996,7 @@ void	fmt_printS(const char *str, int output, int handle)
 	#endif
 
 	if	( fmt_count == 0 )	{
-		rt_raise("FORMAT: NO FORMAT");
+		rt_raise(ERR_FORMAT_INVALID_FORMAT);
 		}
 	else	{
 		#if defined(_TEST)
@@ -1023,7 +1024,7 @@ void	fmt_printS(const char *str, int output, int handle)
 				}
 			}
 		else	{
-			rt_raise("FORMAT: WRONG TYPE");
+			rt_raise(ERR_FORMAT_INVALID_FORMAT);
 			}
 		}
 }

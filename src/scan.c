@@ -16,6 +16,7 @@
 #include "smbas.h"
 #include "units.h"
 #include "extlib.h"
+#include "messages.h"
 
 #if defined(_UnixOS)
 #include <assert.h>
@@ -26,19 +27,19 @@
 #endif
 
 void	err_wrongproc(const char *name)		SEC(BCSC2);
-void	err_wrongproc(const char *name)		{	sc_raise("Wrong procedure/function name: %s", name); }
+void	err_wrongproc(const char *name)		{	sc_raise(MSG_WRONG_PROCNAME, name); }
 void	err_comp_missing_q()				SEC(BCSC2);
-void	err_comp_missing_q()				{	sc_raise("Expression: Missing (\"), string remains open");	}
+void	err_comp_missing_q()				{	sc_raise(MSG_EXP_MIS_DQ);	}
 void	err_comp_missing_rp()				SEC(BCSC2);
-void	err_comp_missing_rp()				{	sc_raise("Expression: Missing \')\'");	}
+void	err_comp_missing_rp()				{	sc_raise(MSG_EXP_MIS_RP);	}
 void	err_comp_missing_lp()				SEC(BCSC2);
-void	err_comp_missing_lp()				{	sc_raise("Expression: Missing \'(\'");	}
+void	err_comp_missing_lp()				{	sc_raise(MSG_EXP_MIS_LP);	}
 void	err_comp_label_not_def(const char *name)	SEC(BCSC2);
 void	err_comp_label_not_def(const char *name)
-											{	sc_raise("Label '%s' is not defined", name); }
+											{	sc_raise(MSG_LABEL_NOT_DEFINED, name); }
 void	err_comp_unknown_unit(const char *name)		SEC(BCSC2);
 void	err_comp_unknown_unit(const char *name)
-											{	sc_raise("Unknown unit '%s'; use IMPORT\n", name); }
+											{	sc_raise(MSG_WRONG_UNIT, name); }
 
 void	comp_text_line(char *text) 					SEC(BCSC3);
 int		comp_single_line_if(char *text) 				SEC(BCSC3);
@@ -48,443 +49,7 @@ extern void	expr_parser(bc_t *bc)			 	SEC(BCSCAN);
 
 /* ----------------------------------------------------------------------------------------------------------------------- */
 
-/*
-*	GENERIC KEYWORDS (basic bc-types & oldest code)
-*
-*	This table is limited to 256 elements
-*/
-struct keyword_s keyword_table[] = {
-/* real commands */
-{ "LOCAL", 		kwLOCAL	},
-{ "SUB", 		kwPROC	},
-{ "FUNC", 		kwFUNC	},
-{ "DEF", 		kwFUNC	},
-{ "BYREF",		kwBYREF	},
-{ "DECLARE",	kwDECLARE	},
-{ "IMPORT",		kwIMPORT	},
-{ "EXPORT",		kwEXPORT	},
-{ "UNIT",		kwUNIT	},
-
-{ "LET", 		kwLET	},
-{ "CONST", 		kwCONST	},
-{ "DIM", 		kwDIM	},
-{ "REDIM", 		kwREDIM	},
-{ "STOP",		kwSTOP	},
-{ "END",		kwEND	},
-{ "PRINT",		kwPRINT	},
-{ "SPRINT",		kwSPRINT },
-{ "INPUT",		kwINPUT	},
-{ "SINPUT",		kwSINPUT	},
-{ "REM",		kwREM	},
-{ "CHAIN",		kwCHAIN	},
-{ "ON",			kwON	},
-
-{ "LABEL",		kwLABEL	},
-{ "GOTO",		kwGOTO	},
-{ "IF",			kwIF	},
-{ "THEN",		kwTHEN	},
-{ "ELSE",		kwELSE	},
-{ "ELIF",		kwELIF	},
-{ "ELSEIF",		kwELIF	},
-{ "ENDIF",		kwENDIF	},
-{ "FI",			kwENDIF	},
-{ "FOR",		kwFOR	},
-{ "TO",			kwTO	},
-{ "STEP",		kwSTEP	},
-{ "NEXT",		kwNEXT	},
-{ "WHILE",		kwWHILE	},
-{ "WEND",		kwWEND	},
-{ "REPEAT",		kwREPEAT	},
-{ "UNTIL",		kwUNTIL	},
-{ "GOSUB",		kwGOSUB	},
-{ "RETURN",		kwRETURN	},
-{ "READ",		kwREAD	},
-{ "DATA",		kwDATA	},
-{ "RESTORE",	kwRESTORE	},
-{ "EXIT",		kwEXIT	},
-
-{ "ERASE", 		kwERASE	},
-{ "USE",		kwUSE	},
-{ "USING",		kwUSING		},
-{ "USG",		kwUSING		},
-
-{ "LINE",		kwLINE	},
-{ "COLOR",		kwCOLOR	},
-
-{ "RUN",		kwRUN	},
-{ "EXEC",		kwEXEC	},
-
-{ "OPEN", 		kwOPEN	},
-{ "APPEND",		kwAPPEND	},
-{ "AS",			kwAS },		// OPEN's args
-{ "CLOSE", 		kwCLOSE  },
-{ "LINEINPUT", 	kwLINEINPUT },		// The QB's keyword is "LINE INPUT"
-{ "LINPUT", 	kwLINEINPUT },		// The QB's keyword is "LINE INPUT"
-{ "SEEK", 		kwSEEK	},
-{ "WRITE", 		kwFILEWRITE	},
-//{ "READ", 	kwFILEREAD	},
-//{ "INPUT", 		kwFINPUT },	// not needed
-
-{ "INSERT",		kwINSERT },
-{ "DELETE",		kwDELETE },
-
-/* DEBUG */
-{ "TRON",		kwTRON	},
-{ "TROFF",		kwTROFF	},
-{ "OPTION",		kwOPTION },
-
-{ "BG",		kwBACKG },
-
-/* for debug */
-/* by using small letters, */
-/* the keywords are invisible by compiler */
-{ "$i32", 		kwTYPE_INT		},
-{ "$r64",		kwTYPE_NUM		},
-{ "$str",		kwTYPE_STR		},
-{ "$log",		kwTYPE_LOGOPR	},
-{ "$cmp",		kwTYPE_CMPOPR	},
-{ "$add",		kwTYPE_ADDOPR	},
-{ "$mul",		kwTYPE_MULOPR	},
-{ "$pow",		kwTYPE_POWOPR	},
-{ "$unr",		kwTYPE_UNROPR	},
-{ "$var",		kwTYPE_VAR	},
-{ "$tln",		kwTYPE_LINE	},
-{ "$lpr",		kwTYPE_LEVEL_BEGIN	},
-{ "$rpr",		kwTYPE_LEVEL_END	},
-{ "$crv",		kwTYPE_CRVAR	},
-{ "$sep",		kwTYPE_SEP		},
-{ "$biF",		kwTYPE_CALLF	},
-{ "$biP",		kwTYPE_CALLP	},
-{ "$exF",		kwTYPE_CALLEXTF	},
-{ "$exP",		kwTYPE_CALLEXTP	},
-{ "$ret",		kwTYPE_RET	},
-{ "$udp",		kwTYPE_CALL_UDP	},
-{ "$udf",		kwTYPE_CALL_UDF	},
-
-{ "", 0 }
-};
-
-/* ----------------------------------------------------------------------------------------------------------------------- */
-
-/*
-*	OPERATORS (not the symbols)
-*/
-struct opr_keyword_s opr_table[] = {
-{ "AND",   kwTYPE_LOGOPR, '&' 		 },
-{ "OR",    kwTYPE_LOGOPR, '|' 		 },
-{ "BAND",  kwTYPE_LOGOPR, OPLOG_BAND },
-{ "BOR",   kwTYPE_LOGOPR, OPLOG_BOR	 },
-{ "XOR",   kwTYPE_LOGOPR, '~'        },
-{ "NOT",   kwTYPE_UNROPR, '!'        },
-{ "MOD",   kwTYPE_MULOPR, OPLOG_MOD	 },
-{ "MDL",   kwTYPE_MULOPR, OPLOG_MDL	 },
-{ "EQV",   kwTYPE_LOGOPR, OPLOG_EQV	 },
-{ "IMP",   kwTYPE_LOGOPR, OPLOG_IMP	 },
-{ "NAND",  kwTYPE_LOGOPR, OPLOG_NAND },
-{ "NOR",   kwTYPE_LOGOPR, OPLOG_NOR	 },
-{ "XNOR",  kwTYPE_LOGOPR, OPLOG_NOR	 },
-{ "IN",    kwTYPE_CMPOPR, OPLOG_IN	 },
-{ "LIKE",  kwTYPE_CMPOPR, OPLOG_LIKE },
-
-{ "", 0, 0 }
-};
-
-/* ----------------------------------------------------------------------------------------------------------------------- */
-
-/*
-*	SPECIAL SEPERATORS
-*/
-struct spopr_keyword_s spopr_table[] = {
-{ "COLOR",		kwCOLOR 	},
-{ "FILLED",		kwFILLED	},
-{ "FOR",		kwFORSEP	},
-{ "INPUT",		kwINPUTSEP	},
-{ "OUTPUT",		kwOUTPUTSEP	},
-{ "APPEND",		kwAPPENDSEP	},
-{ "ACCESS",		kwACCESS	},
-{ "USING",		kwUSING		},
-{ "USG",		kwUSING		},
-{ "SHARED",		kwSHARED	},
-{ "AS",			kwAS		},
-{ "TO",			kwTO		},
-{ "DO",			kwDO		},
-{ "STEP",		kwSTEP		},
-{ "THEN",		kwTHEN		},
-{ "SUB", 		kwPROCSEP	},
-{ "FUNC", 		kwFUNCSEP	},
-{ "DEF", 		kwFUNCSEP	},
-{ "LOOP", 		kwLOOPSEP	},
-{ "ON",			kwON		},
-{ "OFF",		kwOFF		},
-{ "USE",		kwUSE		},
-{ "BG",			kwBACKG 	},
-
-{ "", 0 }
-};
-
-/* ----------------------------------------------------------------------------------------------------------------------- */
-
-/*
-*	BUILDIN-FUNCTIONS
-*/
-struct func_keyword_s func_table[] = {
-///1234567890123456
-{ "ASC",			kwASC },
-{ "VAL",			kwVAL },
-{ "CHR",			kwCHR },
-{ "STR",			kwSTR },
-{ "OCT",			kwOCT },
-{ "HEX",			kwHEX },
-{ "LCASE",			kwLCASE },
-{ "LOWER",			kwLCASE },
-{ "UCASE",			kwUCASE },
-{ "UPPER",			kwUCASE },
-{ "LTRIM",			kwLTRIM },
-{ "RTRIM",			kwRTRIM },
-{ "SPACE",			kwSPACE }, 
-{ "SPC",			kwSPACE }, 
-{ "TAB",			kwTAB },
-{ "CAT",			kwCAT },
-{ "ENVIRON",		kwENVIRONF },
-{ "ENV",			kwENVIRONF },
-{ "TRIM",			kwTRIM },
-{ "STRING",			kwSTRING },
-{ "SQUEEZE",		kwSQUEEZE },
-{ "LEFT",			kwLEFT },
-{ "RIGHT",			kwRIGHT },
-{ "LEFTOF",			kwLEFTOF },
-{ "RIGHTOF",		kwRIGHTOF },
-{ "LEFTOFLAST",		kwLEFTOFLAST },
-{ "RIGHTOFLAST",	kwRIGHTOFLAST },
-{ "MID",			kwMID },
-{ "REPLACE",		kwREPLACE },
-{ "RUN",			kwRUNF },
-{ "INKEY",			kwINKEY },
-{ "TIME",			kwTIME },
-{ "DATE",			kwDATE },
-{ "INSTR",			kwINSTR },
-{ "RINSTR",			kwINSTR },
-{ "LBOUND",			kwLBOUND },
-{ "UBOUND",			kwUBOUND },
-{ "LEN",			kwLEN },
-{ "EMPTY",			kwEMPTY },
-{ "ISARRAY",		kwISARRAY },
-{ "ISNUMBER",		kwISNUMBER },
-{ "ISSTRING",		kwISSTRING },
-{ "ATAN2",			kwATAN2 },
-{ "POW",			kwPOW },
-{ "ROUND",			kwROUND },
-{ "COS",			kwCOS },
-{ "SIN",			kwSIN },
-{ "TAN",			kwTAN },
-{ "COSH",			kwCOSH },
-{ "SINH",			kwSINH },
-{ "TANH",			kwTANH },
-{ "ACOS",			kwACOS },
-{ "ASIN",			kwASIN },
-{ "ATAN",			kwATAN },
-{ "ATN",			kwATAN },
-{ "ACOSH",			kwACOSH },
-{ "ASINH",	   		kwASINH },
-{ "ATANH",			kwATANH },
-
-{ "SEC",			kwSEC },
-{ "ASEC",			kwASEC },
-{ "SECH",			kwSECH },
-{ "ASECH",			kwASECH },
-
-{ "CSC",			kwCSC },
-{ "ACSC",			kwACSC },
-{ "CSCH",			kwCSCH },
-{ "ACSCH",			kwACSCH },
-
-{ "COT",			kwCOT },
-{ "ACOT",			kwACOT },
-{ "COTH",			kwCOTH },
-{ "ACOTH",			kwACOTH },
-
-{ "SQR",	   		kwSQR },
-{ "ABS",			kwABS },
-{ "EXP",			kwEXP },
-{ "LOG",			kwLOG },
-{ "LOG10",			kwLOG10 },
-{ "FIX",			kwFIX },
-{ "INT",			kwINT },
-{ "CDBL",			kwCDBL },
-{ "CREAL",			kwCDBL },
-{ "DEG",			kwDEG },
-{ "RAD",			kwRAD },
-{ "PEN",			kwPENF },
-{ "FLOOR",			kwFLOOR },
-{ "CEIL",			kwCEIL },
-{ "FRAC",			kwFRAC },
-{ "FRE",			kwFRE },
-{ "SGN",			kwSGN },
-{ "CINT",			kwCINT },
-{ "EOF",			kwEOF },
-{ "SEEK",			kwSEEKF },
-{ "LOF",			kwLOF },
-{ "RND",			kwRND },
-{ "MAX",			kwMAX },
-{ "MIN",			kwMIN },
-{ "ABSMAX",			kwABSMAX },
-{ "ABSMIN",			kwABSMIN },
-{ "SUM",			kwSUM },
-{ "SUMSQ",			kwSUMSV },
-{ "STATMEAN",		kwSTATMEAN },
-{ "STATMEANDEV",	kwSTATMEANDEV },
-{ "STATSPREADS",	kwSTATSPREADS },
-{ "STATSPREADP",	kwSTATSPREADP },
-{ "SEGCOS",			kwSEGCOS },
-{ "SEGSIN",			kwSEGSIN },
-{ "SEGLEN",			kwSEGLEN },
-{ "POLYAREA",		kwPOLYAREA },
-{ "POLYCENT",		kwPOLYCENT },
-{ "PTDISTSEG",		kwPTDISTSEG },
-{ "PTSIGN",	   		kwPTSIGN },
-{ "PTDISTLN",		kwPTDISTLN },
-{ "POINT",			kwPOINT },
-{ "XPOS",			kwXPOS },
-{ "YPOS",			kwYPOS },
-{ "INPUT",			kwINPUTF },
-{ "ARRAY",			kwCODEARRAY }, 
-{ "LINEQN",			kwGAUSSJORDAN },
-{ "FILES",			kwFILES },
-{ "INVERSE",		kwINVERSE },
-{ "DETERM",			kwDETERM },
-{ "JULIAN",			kwJULIAN },
-{ "DATEFMT",		kwDATEFMT },
-{ "WEEKDAY",		kwWDAY },
-{ "IF",				kwIFF },
-{ "IFF",			kwIFF },
-{ "FORMAT",			kwFORMAT },
-{ "FREEFILE",		kwFREEFILE },
-{ "TICKS",			kwTICKS },
-{ "TICKSPERSEC",	kwTICKSPERSEC },
-{ "TIMER", 			kwTIMER }, 
-{ "PROGLINE",		kwPROGLINE },
-{ "RUN",			kwRUNF	},
-{ "TXTW",			kwTEXTWIDTH },
-{ "TXTH",			kwTEXTHEIGHT },
-{ "TEXTWIDTH", 		kwTEXTWIDTH },
-{ "TEXTHEIGHT",		kwTEXTHEIGHT },
-{ "EXIST",			kwEXIST },
-{ "ISFILE",			kwISFILE },
-{ "ISDIR",			kwISDIR },
-{ "ISLINK",			kwISLINK },
-{ "ACCESS",			kwACCESSF },
-{ "RGB",			kwRGB },
-{ "RGBF",			kwRGBF },
-{ "BIN",			kwBIN },
-{ "ENCLOSE",		kwENCLOSE },
-{ "DISCLOSE",		kwDISCLOSE },
-{ "TRANSLATE",		kwTRANSLATEF },
-{ "CHOP",			kwCHOP },
-{ "BGETC",			kwBGETC },
-{ "BALLOC",			kwBALLOC },
-{ "MALLOC",			kwBALLOC },
-{ "PEEK32",			kwPEEK32 },
-{ "PEEK16",			kwPEEK16 },
-{ "PEEK",			kwPEEK },
-{ "VADR",			kwVADDR },
-
-{ "SEQ",			kwSEQ },
-
-{ "CBS",			kwCBS },
-{ "BCS",			kwBCS },
-
-{ "LOADLIB",		kwLOADLIB },
-{ "CALL",			kwCALLCF },
-
-{ "", 0 }
-};
-
-/* ----------------------------------------------------------------------------------------------------------------------- */
-
-/*
-*	BUILD-IN PROCEDURES
-*/
-struct proc_keyword_s proc_table[] = {
-///1234567890123456
-{ "CLS",		kwCLS	},
-{ "RTE",		kwRTE	},
-//kwSHELL,
-{ "ENVIRON",	kwENVIRON },
-{ "ENV",		kwENVIRON },
-{ "LOCATE",		kwLOCATE	},
-{ "AT",			kwAT		},
-{ "PEN",		kwPEN	},
-{ "DATEDMY",	kwDATEDMY },
-{ "BEEP",		kwBEEP	},
-{ "SOUND",		kwSOUND	},
-{ "NOSOUND",	kwNOSOUND	},
-{ "PSET",		kwPSET	},
-{ "RECT",		kwRECT	},
-{ "CIRCLE",		kwCIRCLE	},
-{ "RANDOMIZE",	kwRANDOMIZE	},
-{ "SPLIT",		kwSPLIT },
-{ "WSPLIT",		kwWSPLIT },
-{ "JOIN",		kwWJOIN	},
-{ "PAUSE",		kwPAUSE	},
-{ "DELAY",		kwDELAY	},
-{ "ARC",		kwARC	},
-{ "DRAW",		kwDRAW	},
-{ "PAINT",		kwPAINT	},
-{ "PLAY",		kwPLAY	},
-{ "SORT",		kwSORT	},
-{ "SEARCH",		kwSEARCH },
-{ "ROOT",		kwROOT },
-{ "DIFFEQN",	kwDIFFEQ },
-{ "CHART",		kwCHART	},
-{ "WINDOW",		kwWINDOW },
-{ "VIEW",		kwVIEW },
-{ "DRAWPOLY",	kwDRAWPOLY },
-{ "M3IDENT",	kwM3IDENT },
-{ "M3ROTATE",	kwM3ROTATE },
-{ "M3SCALE", 	kwM3SCALE },
-{ "M3TRANS",	kwM3TRANSLATE },
-{ "M3APPLY",	kwM3APPLY },
-{ "INTERSECT",	kwSEGINTERSECT },
-{ "POLYEXT",	kwPOLYEXT },
-{ "DERIV",		kwDERIV },
-{ "KILL", 		kwKILL	 },
-{ "RENAME", 	kwRENAME	},
-{ "COPY", 		kwCOPY	},
-{ "CHDIR", 		kwCHDIR	},
-{ "MKDIR", 		kwMKDIR	},
-{ "RMDIR", 		kwRMDIR	},
-{ "TLOAD",	 	kwLOADLN },
-{ "TSAVE",		kwSAVELN },
-{ "LOCK",		kwFLOCK },
-{ "CHMOD",		kwCHMOD },
-{ "PLOT2",		kwPLOT2 },
-{ "PLOT",		kwPLOT },
-{ "LOGPRINT",	kwLOGPRINT	},
-{ "SWAP",		kwSWAP	},
-{ "BUTTON",		kwBUTTON	},
-{ "TEXT",		kwTEXT	},
-{ "DOFORM",		kwDOFORM	},
-{ "DIRWALK",	kwDIRWALK	},
-{ "BPUTC",		kwBPUTC	},
-{ "POKE32",		kwPOKE32 },
-{ "POKE16",		kwPOKE16 },
-{ "POKE",		kwPOKE },
-{ "BCOPY",		kwBCOPY },
-{ "BLOAD",		kwBLOAD },
-{ "BSAVE",		kwBSAVE },
-{ "USRCALL",	kwCALLADR },
-{ "IMGGET",		kwIMGGET },
-{ "IMGPUT",		kwIMGPUT },
-{ "TIMEHMS",	kwTIMEHMS },
-{ "EXPRSEQ",	kwEXPRSEQ },
-{ "UNLOADLIB",	kwUNLOADLIB },
-{ "CALL",		kwCALLCP },
-#if !defined(OS_LIMITED)
-{ "STKDUMP",	kwSTKDUMP	},
-#endif
-
-{ "", 0 }
-};
+#include "keywords.c"
 
 /* ----------------------------------------------------------------------------------------------------------------------- */
 
@@ -708,7 +273,7 @@ bid_t	comp_label_getID(const char *label_name)
 	if	( idx == -1 )	{
 		#if !defined(OS_LIMITED)
 		if	( opt_verbose )	
-			dev_printf("%d: new label [%s], index %d\n", comp_line, name, comp_labcount);
+			dev_printf(MSG_NEW_LABEL, comp_line, name, comp_labcount);
 		#endif
 		strcpy(label.name, name);
 		label.ip = INVALID_ADDR;
@@ -854,7 +419,7 @@ bid_t	comp_add_udp(const char *proc_name)
 		else	{
 			#if !defined(OS_LIMITED)
 			if	( opt_verbose )	
-				dev_printf("%d: new UDP/F [%s], index %d\n", comp_line, name, comp_udpcount);
+				dev_printf(MSG_NEW_UDP, comp_line, name, comp_udpcount);
 			#endif
 			comp_udptable[comp_udpcount].name = tmp_alloc(strlen(name)+1);
 			comp_udptable[comp_udpcount].ip = INVALID_ADDR; //bc_prog.count;
@@ -1038,7 +603,7 @@ int		comp_create_var(const char *name)
 	int		idx = -1;
 	
 	if	( !(is_alpha(name[0]) || name[0] == '_') )
-		sc_raise("Wrong variable name: %s", name);
+		sc_raise(MSG_WRONG_VARNAME, name);
 	else	{
 		// realloc table if it is needed
 		if ( comp_varcount >= comp_varsize ) {
@@ -1048,7 +613,7 @@ int		comp_create_var(const char *name)
 
 		#if !defined(OS_LIMITED)
 		if	( opt_verbose )	
-			dev_printf("%d: new VAR [%s], index %d\n", comp_line, name, comp_varcount);
+			dev_printf(MSG_NEW_VAR, comp_line, name, comp_varcount);
 		#endif
 		comp_vartable[comp_varcount].name = tmp_alloc(strlen(name)+1);
 		strcpy(comp_vartable[comp_varcount].name, name);
@@ -1121,7 +686,7 @@ bid_t	comp_var_getID(const char *var_name)
 					}
 				}
 
-			sc_raise("Unit has no member named '%s'\n", tmp);
+			sc_raise(MSG_MEMBER_DOES_NOT_EXISTS, tmp);
 			}
 
 		return 0;
@@ -1339,14 +904,14 @@ const char	*comp_next_word(const char *text, char *dest)
 	while ( is_space(*p) )	p ++;
 
 	if	( *p == '?' )	{
-		strcpy(dest, "PRINT");
+		strcpy(dest, LCN_PRINT);
 		p ++;
 		while ( is_space(*p) )	p ++;
 		return p;
 		}
 
 	if	( *p == '\'' || *p == '#' )	{
-		strcpy(dest, "REM");
+		strcpy(dest, LCN_REM);
 		p ++;
 		while ( is_space(*p) )	p ++;
 		return p;
@@ -1411,7 +976,7 @@ void	comp_expression(char *expr, byte no_parser)
 				bc_add_creal(&bc, dv);
 				continue;
 			default:
-				sc_raise("Error on numeric expression");
+				sc_raise(MSG_EXP_GENERR);
 				}
 			}
 		else if ( *ptr == '\'' /* || *ptr == '#' */ )	{ // remarks
@@ -1436,7 +1001,7 @@ void	comp_expression(char *expr, byte no_parser)
 				*/
 				if	( !kw_noarg_func(idx) )	{
 					if	( *comp_next_char(ptr) != '(' )
-						sc_raise("buildin function %s: without parameters", comp_bc_name);
+						sc_raise(MSG_BF_ARGERR, comp_bc_name);
 					}
 				bc_add_fcode(&bc, idx);
 				check_udf ++;
@@ -1465,7 +1030,7 @@ void	comp_expression(char *expr, byte no_parser)
 								strcpy(comp_do_close_cmd, "");
 								}
 							else
-								sc_raise("Keyword DO not allowed here");
+								sc_raise(MSG_KEYWORD_DO_ERR);
 							}
 						break;
 						}
@@ -1499,7 +1064,7 @@ void	comp_expression(char *expr, byte no_parser)
 								idx = comp_is_proc(comp_bc_name);
 
 							if	( idx != -1 )	{
-								sc_raise("Statement %s must be on the left side (the first keyword of the line)", comp_bc_name);
+								sc_raise(MSG_STATEMENT_ON_RIGHT, comp_bc_name);
 								}
 							else	{
 								/*
@@ -1610,7 +1175,7 @@ void	comp_expression(char *expr, byte no_parser)
 					strcat(comp_bc_tmp2, ptr);
 					}
 				else
-					sc_raise("operator << not allowed here");
+					sc_raise(MSG_OPR_APPEND_ERR);
 
 				break;
 				}
@@ -1640,7 +1205,7 @@ void	comp_expression(char *expr, byte no_parser)
 				bc_add_code(&bc, *ptr);
 				}
 			else
-				sc_raise("Unknown operator: '%c'", *ptr);
+				sc_raise(MSG_WRONG_OPR, *ptr);
 
 			ptr ++;
 			}
@@ -1648,7 +1213,7 @@ void	comp_expression(char *expr, byte no_parser)
 
 	///////////////////////////
 	if	( level )
-		sc_raise("Missing ')'");
+		sc_raise(MSG_EXP_MIS_RP);
 
 	if	( !comp_error )	{
 		
@@ -1757,7 +1322,7 @@ void	comp_data_seg(char *source)
 					bc_add_creal(&comp_data, dv * sign);
 					break;
 				default:
-					sc_raise("Error on numeric expression");
+					sc_raise(MSG_EXP_GENERR);
 					}
 				}
 			else	{
@@ -1805,7 +1370,7 @@ int		comp_getlist(char *source, char_p_t *args, char *delims, int maxarg)
 			count ++;
 			if	( count == maxarg )	{
 				if	( *ps )
-					sc_raise("Paremeters limit: %d", maxarg);
+					sc_raise(MSG_PARNUM_LIMIT, maxarg);
 				return count;
 				}
 			ps = p+1;
@@ -1872,11 +1437,11 @@ char	*comp_getlist_insep(char *source, char_p_t *args, char *sep, char *delims, 
 				if	( strlen(ps) )	
 					*count = comp_getlist(ps, args, delims, maxarg);
 				else
-					sc_raise("'Empty' parameters are not allowed");
+					sc_raise(MSG_NIL_PAR_ERR);
 				}
 			}
 		else	
-			sc_raise("Missing '%c'", sep[1]);
+			sc_raise(MSG_MISSING_CHAR, sep[1]);
 		}
 	else
 		p = source;
@@ -1903,12 +1468,12 @@ int		comp_single_line_if(char *text)
 
 	pthen = p;
 	do	{
-		pthen = strstr(pthen+1, " THEN ");
+		pthen = strstr(pthen+1, LCN_THEN_WS);
 		if	( pthen )	{
 			// store the expression
 			while ( *p == ' ' )	p ++;
 			strcpy(buf, p);
-			p = strstr(buf, " THEN ");
+			p = strstr(buf, LCN_THEN_WS);
 			*p = '\0';
 
 			// check for ':'
@@ -1931,7 +1496,7 @@ int		comp_single_line_if(char *text)
 				while ( *p == ' ' )	p ++;
 				if	( is_digit(*p) )	{
 					// add goto
-					strcpy(buf, "GOTO ");
+					strcpy(buf, LCN_GOTO_WRS);
 					strcat(buf, p);
 					}
 				else
@@ -1939,7 +1504,7 @@ int		comp_single_line_if(char *text)
 
 				// ELSE command
 				// If there are more inline-ifs (nested) the ELSE belongs to the first IF (that's an error)
-				pelse = strstr(buf+1, "ELSE");
+				pelse = strstr(buf+1, LCN_ELSE);
 				if	( pelse )	{
 					do	{
 						if	( (*(pelse-1) == ' ' || *(pelse-1) == '\t') &&
@@ -1953,12 +1518,13 @@ int		comp_single_line_if(char *text)
 							bc_eoc(&comp_prog);
 
 							// auto-goto
-							strcpy(buf, "ELSE:");
+							strcpy(buf, LCN_ELSE);
+							strcat(buf, ":");
 							p = pelse + 4;
 							while ( *p == ' ' || *p == '\t' )	p ++;
 							if	( is_digit(*p) )	{
 								// add goto
-								strcat(buf, "GOTO ");
+								strcat(buf, LCN_GOTO_WRS);
 								strcat(buf, p);
 								}
 							else
@@ -1968,7 +1534,7 @@ int		comp_single_line_if(char *text)
 							break;
 							}
 						else
-							pelse = strstr(pelse+1, "ELSE");
+							pelse = strstr(pelse+1, LCN_ELSE);
 						} while ( pelse != NULL );
 					}
 
@@ -2019,7 +1585,7 @@ void	comp_array_params(char *src)
 				se = p;
 				// store this index
 				if	( !ss )	
-					sc_raise("Array: syntax error");
+					sc_raise(MSG_ARRAY_SE);
 				else	{
 					*ss = ' ';	*se = '\0';
 	
@@ -2039,9 +1605,9 @@ void	comp_array_params(char *src)
 
 	//
 	if ( level > 0 )	
-		sc_raise("Array: Missing ')', (left side of expression)");
+		sc_raise(MSG_ARRAY_MIS_RP);
 	else if ( level < 0 )
-		sc_raise("Array: Missing '(', (left side of expression)");
+		sc_raise(MSG_ARRAY_MIS_LP);
 }
 
 /*
@@ -2053,43 +1619,43 @@ void	comp_cmd_option(char *src)
 {
 	char	*p = src;
 
-	if	( CHKOPT("UICS ") )	{	
+	if	( CHKOPT(LCN_UICS_WRS) )	{	
 		bc_add_code(&comp_prog, kwOPTION);
 		bc_add_code(&comp_prog, OPTION_UICS);
 
 		p += 5;
 		while ( is_space(*p) )	p ++;
-		if	( CHKOPT("CHARS") )
+		if	( CHKOPT(LCN_CHARS) )
 			bc_add_addr(&comp_prog, OPTION_UICS_CHARS);
-		else if	( CHKOPT("PIXELS") )
+		else if	( CHKOPT(LCN_PIXELS) )
 			bc_add_addr(&comp_prog, OPTION_UICS_PIXELS);
 		else
-			sc_raise("Syntax error: OPTION UICS {CHARS|PIXELS}");
+			sc_raise(MSG_OPT_UICS_ERR);
 		}
-	else if	( CHKOPT("BASE ") )	{	
+	else if	( CHKOPT(LCN_BASE_WRS) )	{	
 		bc_add_code(&comp_prog, kwOPTION);
 		bc_add_code(&comp_prog, OPTION_BASE);
 		bc_add_addr(&comp_prog, xstrtol(src+5));
 		}
-	else if	( CHKOPT("MATCH PCRE CASELESS") )	{
+	else if	( CHKOPT(LCN_PCRE_CASELESS) )	{
 		bc_add_code(&comp_prog, kwOPTION);
 		bc_add_code(&comp_prog, OPTION_MATCH);
 		bc_add_addr(&comp_prog, 2);
 		}
-	else if	( CHKOPT("MATCH PCRE") )	{
+	else if	( CHKOPT(LCN_PCRE) )	{
 		bc_add_code(&comp_prog, kwOPTION);
 		bc_add_code(&comp_prog, OPTION_MATCH);
 		bc_add_addr(&comp_prog, 1);
 		}
-	else if	( CHKOPT("MATCH SIMPLE") )	{
+	else if	( CHKOPT(LCN_SIMPLE) )	{
 		bc_add_code(&comp_prog, kwOPTION);
 		bc_add_code(&comp_prog, OPTION_MATCH);
 		bc_add_addr(&comp_prog, 0);
 		}
-	else if	( CHKOPT("PREDEF ") || CHKOPT("IMPORT ") )
+	else if	( CHKOPT(LCN_PREDEF_WRS) || CHKOPT(LCN_IMPORT_WRS) )
 		; /* ignore it */
 	else
-		sc_raise("OPTION: Unrecognized option '%s'", src);
+		sc_raise(MSG_OPTION_ERR, src);
 }
 #undef CHKOPT
 
@@ -2104,7 +1670,7 @@ int		comp_error_if_keyword(const char *name)
 			  ( comp_is_keyword(name) >= 0 ) ||
 			  (comp_is_operator(name) >= 0) )
 
-		sc_raise("%s: is keyword (left side of expression)", name);
+		sc_raise(MSG_IT_IS_KEYWORD, name);
 		}
 	return comp_error;
 }
@@ -2241,7 +1807,7 @@ void	comp_text_line(char *text)
 		if	( idx == -1 )	idx = comp_is_proc(comp_bc_name);
 		strcpy(comp_bc_parm, p);
 		if	( idx != kwPROC && idx != kwFUNC )	{
-			sc_raise("Use DECLARE with SUB or FUNC keyword");
+			sc_raise(MSG_USE_DECL);
 			return;
 			}
 		}
@@ -2261,7 +1827,7 @@ void	comp_text_line(char *text)
 			ladd || linc || ldec || leqop
 			) && (idx != -1) )	{
 
-		sc_raise("%s: is keyword (left side of expression)", comp_bc_name);
+		sc_raise(MSG_IT_IS_KEYWORD, comp_bc_name);
 		return;
 		}
 	else if	( (idx == kwCONST)
@@ -2330,7 +1896,7 @@ void	comp_text_line(char *text)
 				char	*p = strchr(parms, '=');
 			
 				if	( !p )	
-					sc_raise("LET/CONST/APPEND: Missing '='");
+					sc_raise(MSG_LET_MISSING_EQ);
 				else	{
 					if	( *comp_next_char(parms+1) == ')' )	{
 						// its the variable's name only
@@ -2374,7 +1940,7 @@ void	comp_text_line(char *text)
 					if	( idx == kwFORSEP || idx == kwLOOPSEP || idx == kwPROCSEP || idx == kwFUNCSEP )	
 						bc_add_code(&comp_prog, idx);
 					else
-						sc_raise("Use EXIT [FOR|LOOP|SUB|FUNC]");
+						sc_raise(MSG_EXIT_ERR);
 					}
 				else
 					bc_add_code(&comp_prog, 0);
@@ -2412,7 +1978,7 @@ void	comp_text_line(char *text)
 				else	{
 					// func/sub
 					if	( comp_udp_getip(pname) != INVALID_ADDR )
-						sc_raise("The SUB/FUNC %s is already defined", pname);
+						sc_raise(MSG_UDP_ALREADY_EXISTS, pname);
 					else {
 
 						// setup routine's address (and get an id)
@@ -2468,7 +2034,7 @@ void	comp_text_line(char *text)
 
 								for ( i = 0; i < count; i ++ )	{
 									if	( 
-										( strncmp(pars[i], "BYREF ", 6) == 0 ) ||
+										( strncmp(pars[i], LCN_BYREF_WRS, 6) == 0 ) ||
 										( pars[i][0] == '@' )	)	{
 
 										if	( pars[i][0] == '@' )
@@ -2509,14 +2075,14 @@ void	comp_text_line(char *text)
 									char	*macro;
 
 									macro = tmp_alloc(SB_SOURCELINE_SIZE+1);
-									sprintf(macro, "%s=%s:END", pname, eq_ptr);
+									sprintf(macro, "%s=%s:%s", pname, eq_ptr, LCN_END);
 
 									//	run comp_text_line again
 									comp_text_line(macro);
 									tmp_free(macro);
 									}
 								else
-									sc_raise("FUNC/DEF it has an '=' on declaration, but I didn't found the body!");
+									sc_raise(MSG_MISSING_UDP_BODY);
 								}
 							}
 						}
@@ -2548,7 +2114,7 @@ void	comp_text_line(char *text)
 				if	( comp_unit_flag )
 					bc_store_exports(comp_bc_parm);
 				else
-					sc_raise("EXPORT: Unit name is not defined");
+					sc_raise(MSG_UNIT_NAME_MISSING);
 				}
 			else if ( idx == kwOPTION )		
 				comp_cmd_option(comp_bc_parm);
@@ -2568,7 +2134,7 @@ void	comp_text_line(char *text)
 			//	IF
 			//
 			else if ( idx == kwIF )	{
-				strcpy(comp_do_close_cmd, "ENDIF");
+				strcpy(comp_do_close_cmd, LCN_ENDIF);
 
 				// from here, we can scan for inline IF
 				if	( comp_single_line_if(last_cmd) )	{
@@ -2601,7 +2167,7 @@ void	comp_text_line(char *text)
 				comp_push(comp_prog.count);
 				bc_add_ctrl(&comp_prog, idx, 0, 0);
 
-				if	( (p = strstr(comp_bc_parm, " GOTO ")) != NULL )	{
+				if	( (p = strstr(comp_bc_parm, LCN_GOTO_WS)) != NULL )	{
 					bc_add_code(&comp_prog, kwGOTO);	// the command
 					*p = '\0'; p += 6;
 					keep_ip = comp_prog.count;
@@ -2617,14 +2183,14 @@ void	comp_text_line(char *text)
 						bc_add_addr(&comp_prog, comp_label_getID(pars[i]));	// IDs
 
 					if	( count == 0 )
-						sc_raise("ON x GOTO WHERE?");
+						sc_raise(MSG_ON_GOTO_ERR);
 					else	
 						comp_prog.ptr[keep_ip] = count;
 
 					comp_expression(comp_bc_parm, 0);	// the expression
 					bc_eoc(&comp_prog);
 					}
-				else if	( (p = strstr(comp_bc_parm, " GOSUB ")) != NULL )	{
+				else if	( (p = strstr(comp_bc_parm, LCN_GOSUB_WS)) != NULL )	{
 					bc_add_code(&comp_prog, kwGOSUB);	// the command
 					*p = '\0';	p += 7;
 					keep_ip = comp_prog.count;
@@ -2640,7 +2206,7 @@ void	comp_text_line(char *text)
 						bc_add_addr(&comp_prog, comp_label_getID(pars[i]));
 
 					if	( count == 0 )
-						sc_raise("ON x GOSUB WHERE?");
+						sc_raise(MSG_ON_GOSUB_ERR);
 					else	
 						comp_prog.ptr[keep_ip] = count;
 
@@ -2648,14 +2214,14 @@ void	comp_text_line(char *text)
 					bc_eoc(&comp_prog);
 					}
 				else
-					sc_raise("ON WHAT?");
+					sc_raise(MSG_ON_NOTHING);
 				}
 			//
 			//	FOR
 			//
 			else if ( idx == kwFOR )	{
 				char	*p = strchr(comp_bc_parm, '=');
-				char	*p_do = strstr(comp_bc_parm, " DO ");
+				char	*p_do = strstr(comp_bc_parm, LCN_DO_WS);
 				char	*p_lev;
 				char	*n;
 
@@ -2666,7 +2232,7 @@ void	comp_text_line(char *text)
 					}
 
 				//
-				strcpy(comp_do_close_cmd, "NEXT");
+				strcpy(comp_do_close_cmd, LCN_NEXT);
 
 				comp_block_level ++; comp_block_id ++;
 				comp_push(comp_prog.count);	
@@ -2674,20 +2240,20 @@ void	comp_text_line(char *text)
 
 				if	( !p )	{
 					// FOR [EACH] X IN Y
-					if	( (p = strstr(comp_bc_parm, " IN ")) == NULL )
-						sc_raise("FOR: Missing '=' OR 'IN'");
+					if	( (p = strstr(comp_bc_parm, LCN_IN_WS)) == NULL )
+						sc_raise(MSG_FOR_NOTHING);
 					else	{
 						*p = '\0';
 						n = p;
 						strcpy(comp_bc_name, comp_bc_parm);
 						str_alltrim(comp_bc_name);
 						if	( !is_alpha(*comp_bc_name) )
-							sc_raise("FOR: %s is not a variable", comp_bc_name);
+							sc_raise(MSG_FOR_COUNT_ERR, comp_bc_name);
 						else	{
 							p_lev = comp_bc_name;
 							while ( is_alnum(*p_lev) || *p_lev == ' ' )	p_lev ++;
 							if	( *p_lev == '(' )	
-								sc_raise("FOR: %s is an array. Arrays are not allowed", comp_bc_name);
+								sc_raise(MSG_FOR_ARR_COUNT, comp_bc_name);
 							else	{
 								if	( !comp_error_if_keyword(comp_bc_name) )	{
 									bc_add_code(&comp_prog, kwTYPE_VAR);
@@ -2709,12 +2275,12 @@ void	comp_text_line(char *text)
 					strcpy(comp_bc_name, comp_bc_parm);
 					str_alltrim(comp_bc_name);
 					if	( !is_alpha(*comp_bc_name) )
-						sc_raise("FOR: %s is not a variable", comp_bc_name);
+						sc_raise(MSG_FOR_COUNT_ERR, comp_bc_name);
 					else	{
 						p_lev = comp_bc_name;
 						while ( is_alnum(*p_lev) || *p_lev == ' ' )	p_lev ++;
 						if	( *p_lev == '(' )	
-							sc_raise("FOR: %s is an array. Arrays are not allowed", comp_bc_name);
+							sc_raise(MSG_FOR_ARR_COUNT, comp_bc_name);
 						else	{
 							if	( !comp_error_if_keyword(comp_bc_name) )	{
 								bc_add_code(&comp_prog, kwTYPE_VAR);
@@ -2731,7 +2297,7 @@ void	comp_text_line(char *text)
 			//	WHILE - REPEAT
 			//
 			else if ( idx == kwWHILE )	{
-				strcpy(comp_do_close_cmd, "WEND");
+				strcpy(comp_do_close_cmd, LCN_WEND);
 
 				comp_block_level ++; comp_block_id ++;
 				comp_push(comp_prog.count);	
@@ -2751,7 +2317,7 @@ void	comp_text_line(char *text)
 				comp_expression(comp_bc_parm, 0);
 				}
 			else if ( idx == kwENDIF || idx == kwNEXT 
-					|| (idx == kwEND && strncmp(comp_bc_parm, "IF", 2) == 0) )	{
+					|| (idx == kwEND && strncmp(comp_bc_parm, LCN_IF, 2) == 0) )	{
 				if	(idx == kwEND )		idx = kwENDIF;
 				comp_push(comp_prog.count);	
 				bc_add_ctrl(&comp_prog, idx, 0, 0);
@@ -2766,7 +2332,7 @@ void	comp_text_line(char *text)
 			else if (  idx == kwSTEP || idx == kwTO || idx == kwIN || idx == kwTHEN 
 					|| idx == kwCOS  || idx == kwSIN || idx == kwLEN || idx == kwLOOP  )		// functions...
 				{
-				sc_raise("%s: Wrong position", comp_bc_name);
+				sc_raise(MSG_SPECIAL_KW_ERR, comp_bc_name);
 				}
 			else if ( idx == kwRESTORE )	{
 				comp_push(comp_prog.count);
@@ -2810,7 +2376,7 @@ void	comp_text_line(char *text)
 				bc_add_code(&comp_prog, kwFILEPRINT);
 				comp_expression(comp_bc_parm, 0);
 				}
-			else if ( idx == kwLINE  && strncmp(comp_bc_parm, "INPUT ", 6) == 0  )	{
+			else if ( idx == kwLINE  && strncmp(comp_bc_parm, LCN_INPUT_WRS, 6) == 0  )	{
 				bc_add_code(&comp_prog, kwLINEINPUT);
 				comp_expression(comp_bc_parm+6, 0);
 				}
@@ -3052,8 +2618,8 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 	*	search for closest keyword (forward)
 	*/	
 #if !defined(OS_LIMITED)
-	fprintf(stderr, "Detailed report (y/N) ?");
-	details = (fgetc(stdin) == 'y');
+	fprintf(stderr, MSG_DETAILED_REPORT_Q);
+	details = (fgetc(stdin) == LOWER_CHAR_FOR_YES);
 	if	( details )	{
 		ip = comp_search_bc_stack(pos+1, code, level - 1);
 		if	( ip == INVALID_ADDR )	{
@@ -3216,7 +2782,7 @@ void	comp_pass2_scan()
 		#if defined(_UnixOS)
 		if ( isatty (STDOUT_FILENO) ) 
 		#endif
-		dev_printf("\rPASS2: Node %d/%d", i, comp_sp);
+		dev_printf(MSG_PASS2_COUNT, i, comp_sp);
 		}
 
 	// for each node in stack
@@ -3227,7 +2793,7 @@ void	comp_pass2_scan()
 			if ( isatty (STDOUT_FILENO) ) 
 			#endif
 			if	( (i % SB_KEYWORD_SIZE) == 0 )
-				dev_printf("\rPASS2: Node %d/%d", i, comp_sp);
+				dev_printf(MSG_PASS2_COUNT, i, comp_sp);
 			}
 
 		dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
@@ -3259,7 +2825,7 @@ void	comp_pass2_scan()
 			// update start's GOTO
 			true_ip = comp_search_bc_stack(i+1, kwTYPE_RET, node.level) + 1;
 			if	( true_ip == INVALID_ADDR )	{
-				sc_raise("SUB/FUNC: Missing END on the same level");
+				sc_raise(MSG_UDP_MISSING_END);
 				print_pass2_stack(i, kwTYPE_RET, node.level);
 				return;
 				}
@@ -3327,15 +2893,15 @@ void	comp_pass2_scan()
 			false_ip = comp_search_bc_stack(i+1, kwNEXT, node.level);
 
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("FOR: Missing NEXT on the same level");
+				sc_raise(MSG_MISSING_NEXT);
 				print_pass2_stack(i, kwNEXT, node.level);
 				return;
 				}
 			if	( a_ip > false_ip || a_ip == INVALID_ADDR )	{
 				if	( b_ip != INVALID_ADDR )
-					sc_raise("FOR: Missing IN");
+					sc_raise(MSG_MISSING_IN);
 				else
-					sc_raise("FOR: Missing TO");
+					sc_raise(MSG_MISSING_TO);
 				return;
 				}
 
@@ -3345,7 +2911,7 @@ void	comp_pass2_scan()
 			false_ip = comp_search_bc_stack(i+1, kwWEND, node.level);
 
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("WHILE: Missing WEND on the same level");
+				sc_raise(MSG_MISSING_WEND);
 				print_pass2_stack(i, kwWEND, node.level);
 				return;
 				}
@@ -3357,7 +2923,7 @@ void	comp_pass2_scan()
 			false_ip = comp_search_bc_stack(i+1, kwUNTIL, node.level);
 
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("REPEAT: Missing UNTIL on the same level");
+				sc_raise(MSG_MISSING_UNTIL);
 				print_pass2_stack(i, kwUNTIL, node.level);
 				return;
 				}
@@ -3383,7 +2949,7 @@ void	comp_pass2_scan()
 			if	( c_ip != INVALID_ADDR && c_ip < false_ip ) false_ip = c_ip;
 
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("IF: Missing ELIF/ELSE/ENDIF on the same level");
+				sc_raise(MSG_MISSING_ENDIF_OR_ELSE);
 				print_pass2_stack(i, kwENDIF, node.level);
 				return;
 				}
@@ -3395,7 +2961,7 @@ void	comp_pass2_scan()
 			false_ip = comp_search_bc_stack(i+1, kwENDIF, node.level);
 
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("(ELSE) IF: Missing ENDIF on the same level");
+				sc_raise(MSG_MISSING_ENDIF);
 				print_pass2_stack(i, kwENDIF, node.level);
 				return;
 				}
@@ -3413,7 +2979,7 @@ void	comp_pass2_scan()
 		case kwWEND:
 			false_ip = comp_search_bc_stack_backward(i-1, kwWHILE, node.level);
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("WEND: Missing WHILE on the same level");
+				sc_raise(MSG_MISSING_WHILE);
 				print_pass2_stack(i, kwWHILE, node.level);
 				return;
 				}
@@ -3422,7 +2988,7 @@ void	comp_pass2_scan()
 		case kwUNTIL:
 			false_ip = comp_search_bc_stack_backward(i-1, kwREPEAT, node.level);
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("UNTIL: Missing REPEAT on the same level");
+				sc_raise(MSG_MISSING_REPEAT);
 				print_pass2_stack(i, kwREPEAT, node.level);
 				return;
 				}
@@ -3431,7 +2997,7 @@ void	comp_pass2_scan()
 		case kwNEXT:
 			false_ip = comp_search_bc_stack_backward(i-1, kwFOR, node.level);
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("NEXT: Missing FOR on the same level");
+				sc_raise(MSG_MISSING_FOR);
 				print_pass2_stack(i, kwFOR, node.level);
 				return;
 				}
@@ -3440,7 +3006,7 @@ void	comp_pass2_scan()
 		case kwENDIF:
 			false_ip = comp_search_bc_stack_backward(i-1, kwIF, node.level);
 			if	( false_ip == INVALID_ADDR )	{
-				sc_raise("ENDIF: Missing IF on the same level");
+				sc_raise(MSG_MISSING_IF);
 				print_pass2_stack(i, kwIF, node.level);
 				return;
 				}
@@ -3449,8 +3015,10 @@ void	comp_pass2_scan()
 			};
 		}
 
-	if	( !opt_quite && !opt_interactive )
-		dev_printf("\rPASS2: Node %d/%d\n", comp_sp, comp_sp);
+	if	( !opt_quite && !opt_interactive )	{
+		dev_printf(MSG_PASS2_COUNT, comp_sp, comp_sp);
+		dev_printf("\n");
+		}
 }
 
 /*
@@ -3522,24 +3090,24 @@ void	comp_init()
 	/*
 	*	create system variables
 	*/
-	comp_var_getID("OSVER");
-	comp_vartable[comp_var_getID("OSNAME")].dolar_sup = 1;
-	comp_var_getID("SBVER");
-	comp_var_getID("PI");
-	comp_var_getID("XMAX");
-	comp_var_getID("YMAX");
-	comp_var_getID("BPP");
-	comp_var_getID("TRUE");
-	comp_var_getID("FALSE");
-	comp_var_getID("LINECHART");
-	comp_var_getID("BARCHART");
-	comp_vartable[comp_var_getID("CWD")].dolar_sup = 1;
-	comp_vartable[comp_var_getID("HOME")].dolar_sup = 1;
-	comp_vartable[comp_var_getID("COMMAND")].dolar_sup = 1;
-	comp_var_getID("X");	// USE keyword
-	comp_var_getID("Y");	// USE keyword
-	comp_var_getID("Z");	// USE keyword
-	comp_var_getID("VIDADR"); 
+	comp_var_getID(LCN_SV_OSVER);
+	comp_vartable[comp_var_getID(LCN_SV_OSNAME)].dolar_sup = 1;
+	comp_var_getID(LCN_SV_SBVER);
+	comp_var_getID(LCN_SV_PI);
+	comp_var_getID(LCN_SV_XMAX);
+	comp_var_getID(LCN_SV_YMAX);
+	comp_var_getID(LCN_SV_BPP);
+	comp_var_getID(LCN_SV_TRUE);
+	comp_var_getID(LCN_SV_FALSE);
+	comp_var_getID(LCN_SV_LINECHART);
+	comp_var_getID(LCN_SV_BARCHART);
+	comp_vartable[comp_var_getID(LCN_SV_CWD)].dolar_sup = 1;
+	comp_vartable[comp_var_getID(LCN_SV_HOME)].dolar_sup = 1;
+	comp_vartable[comp_var_getID(LCN_SV_COMMAND)].dolar_sup = 1;
+	comp_var_getID(LCN_SV_X);	// USE keyword
+	comp_var_getID(LCN_SV_Y);	// USE keyword
+	comp_var_getID(LCN_SV_Z);	// USE keyword
+	comp_var_getID(LCN_SV_VADR); 
 }
 
 /*
@@ -3736,9 +3304,9 @@ char	*comp_load(const char *file_name)
 		#if defined(_CygWin)
 		char	temp[1024];
 		getcwd(temp, 1024);
-		panic("Can't open '%s' at '%s'\n", comp_file_name, temp);
+		panic(MSG_CANT_OPEN_FILE_AT, comp_file_name, temp);
 		#else
-		panic("Can't open '%s'\n", comp_file_name);
+		panic(MSG_CANT_OPEN_FILE, comp_file_name);
 		#endif
 		}
 	else	{
@@ -3843,10 +3411,10 @@ char	*comp_format_text(const char *source)
 
 			default:
 				if	( 
-					(strncasecmp(p, ":rem ", 5) == 0) ||
-					(strncasecmp(p, ":rem\t", 5) == 0) ||
-					(strncasecmp(p, "rem ", 4) == 0 && last_ch == '\n') ||
-					(strncasecmp(p, "rem\n", 4) == 0 && last_ch == '\n')
+					(strncasecmp(p, LCN_REM_1, 5) == 0) ||
+					(strncasecmp(p, LCN_REM_2, 5) == 0) ||
+					(strncasecmp(p, LCN_REM_3, 4) == 0 && last_ch == '\n') ||
+					(strncasecmp(p, LCN_REM_4, 4) == 0 && last_ch == '\n')
 					)	{
 
 					// skip the rest line
@@ -3896,7 +3464,7 @@ void	err_grmode()
 {
 	// dev_printf() instead of sc_raise()... it is just a warning...
 	#if !defined(OS_LIMITED)
-	dev_printf("GRMODE, usage:<width>x<height>[x<bits-per-pixel>]\nExample: OPTION PREDEF GRMODE=640x480x4\n");
+	dev_printf(MSG_GRMODE_ERR);
 	#endif
 }
 
@@ -4011,12 +3579,12 @@ void	comp_preproc_import(const char *slist)
 		else	{ 										// SB unit
 			uid = open_unit(buf);
 			if	( uid < 0 )	{
-				sc_raise("Unit %s.sbu not found", buf);
+				sc_raise(MSG_UNIT_NOT_FOUND, buf);
 				return;
 				}
 
 			if	( import_unit(uid) < 0 )	{
-				sc_raise("Unit %s.sbu, import failed", buf);
+				sc_raise(MSG_IMPORT_FAILED, buf);
 				close_unit(uid);
 				return;
 				}
@@ -4072,7 +3640,7 @@ void	comp_preproc_unit(char *name)
 	d = comp_unit_name;
 	while ( *p == ' ' || *p == '\t' )	p ++;
 	if	( !is_alpha(*p) )	
-		sc_raise("Invalid unit name");
+		sc_raise(MSG_INVALID_UNIT_NAME);
 
 	while ( is_alpha(*p) || *p == '_' )	
 		*d ++ = *p ++;
@@ -4082,7 +3650,7 @@ void	comp_preproc_unit(char *name)
 	while ( *p == ' ' || *p == '\t' )	p ++;
 
 	if	( *p != '\n' && *p != ':' )
-		sc_raise("Unit name alread defined");
+		sc_raise(MSG_UNIT_ALREADY_DEFINED);
 }
 
 /**
@@ -4101,7 +3669,7 @@ int		comp_pass1(const char *section, const char *text)
 	if	( section )
 		strncpy(comp_bc_sec, section, SB_KEYWORD_SIZE);
 	else
-		strncpy(comp_bc_sec, "Main", SB_KEYWORD_SIZE);
+		strncpy(comp_bc_sec, SYS_MAIN_SECTION_NAME, SB_KEYWORD_SIZE);
 
 	new_text = comp_format_text(text);
 
@@ -4119,33 +3687,47 @@ int		comp_pass1(const char *section, const char *text)
 	comp_proc_level = 0;
 	*comp_bc_proc = '\0';
 
+	int	len_option, len_import, len_unit, len_unit_path, len_inc;
+	int	len_sub, len_func, len_def, len_end;
+
+	len_option = strlen(LCN_OPTION);
+	len_import = strlen(LCN_IMPORT_WRS);
+	len_unit = strlen(LCN_UNIT_WRS);
+	len_unit_path = strlen(LCN_UNIT_PATH);
+	len_inc = strlen(LCN_INC);
+
+	len_sub  = strlen(LCN_SUB_WRS);
+	len_func = strlen(LCN_FUNC_WRS);
+	len_def  = strlen(LCN_DEF_WRS);
+	len_end  = strlen(LCN_END_WRS);
+
 	while ( *p )	{
 
 		/*
 		*	OPTION environment parameters
 		*/
-		if	( strncmp("OPTION", p, 6) == 0 )	{
-			p += 6;
+		if	( strncmp(LCN_OPTION, p, len_option) == 0 )	{
+			p += len_option;
 			while ( *p == ' ' )	p ++;
 
-			if	( strncmp("PREDEF", p, 6) == 0 )	{
-				p += 6;
+			if	( strncmp(LCN_PREDEF, p, strlen(LCN_PREDEF)) == 0 )	{
+				p += strlen(LCN_PREDEF);
 				while ( *p == ' ' )	p ++;
-				if	( strncmp("QUITE", p, 5) == 0 )
+				if	( strncmp(LCN_QUITE, p, strlen(LCN_QUITE)) == 0 )
 					opt_quite = 1;
-				else if	( strncmp("GRMODE", p, 6) == 0 )	{
-					p += 6;
+				else if	( strncmp(LCN_GRMODE, p, strlen(LCN_GRMODE)) == 0 )	{
+					p += strlen(LCN_GRMODE);
 					comp_preproc_grmode(p);
 					opt_graphics = 1;
 					}
-				else if	( strncmp("TEXTMODE", p, 8) == 0 )
+				else if	( strncmp(LCN_TEXTMODE, p, strlen(LCN_TEXTMODE)) == 0 )
 					opt_graphics = 0;
-				else if	( strncmp("CSTR", p, 4) == 0 )
+				else if	( strncmp(LCN_CSTR, p, strlen(LCN_CSTR)) == 0 )
 					opt_cstr = 1;
-				else if	( strncmp("COMMAND", p, 7) == 0 )	{
+				else if	( strncmp(LCN_COMMAND, p, strlen(LCN_COMMAND)) == 0 )	{
 					char	*pe;
 
-					p += 7;
+					p += strlen(LCN_COMMAND);
 					while ( *p == ' ' )	p ++;
 
 					pe = p;
@@ -4162,37 +3744,37 @@ int		comp_pass1(const char *section, const char *text)
 					*pe = lc;
 					}
 				else
-					sc_raise("OPTION PREDEF: Unrecognized option '%s'", p);
+					sc_raise(MSG_OPT_PREDEF_ERR, p);
 				}
 			}
 
 		/*
 		*	IMPORT units
 		*/
-		else if	( strncmp("IMPORT ", p, 7) == 0 )	{
-			comp_preproc_import(p+7);
+		else if	( strncmp(LCN_IMPORT_WRS, p, len_import) == 0 )	{
+			comp_preproc_import(p+len_import);
 			comp_preproc_remove_line(p, 1);
 			}
 		/*
 		*	UNIT name
 		*/
-		else if	( strncmp("UNIT ", p, 5) == 0 )	{
+		else if	( strncmp(LCN_UNIT_WRS, p, len_unit) == 0 )	{
 			if	( comp_unit_flag )
-				sc_raise("Use 'Unit' keyword only once");
+				sc_raise(MSG_MANY_UNIT_DECL);
 			else
-				comp_preproc_unit(p+5);
+				comp_preproc_unit(p+len_unit);
 			comp_preproc_remove_line(p, 1);
 			}
 		/*
 		*	UNIT-PATH name
 		*/
-		else if	( strncmp("#UNIT-PATH:", p, 11) == 0 )	{
+		else if	( strncmp(LCN_UNIT_PATH, p, len_unit_path) == 0 )	{
 			#if defined(_UnixOS) || defined(_DOS) || defined(_Win32)
 			char	upath[SB_SOURCELINE_SIZE+1], *up;
 			char	*ps;
 
 			ps = p;
-			p += 11;
+			p += len_unit_path;
 			while ( *p == ' ' )	p ++;
 
 			if	( *p == '\"' )
@@ -4217,10 +3799,10 @@ int		comp_pass1(const char *section, const char *text)
 			*	INCLUDE FILE
 			*	this is not a normal way but needs less memory
 			*/
-			if	( strncmp("#INC:", p, 5) == 0 )	{
+			if	( strncmp(LCN_INC, p, len_inc) == 0 )	{
 				char	*crp  = NULL;
 
-				p += 5;
+				p += len_inc;
 				if	( *p == '\"' )	{
 					p ++;
 
@@ -4229,7 +3811,7 @@ int		comp_pass1(const char *section, const char *text)
 						crp ++;
 
 					if	( *crp == '\0' )	{
-						sc_raise("#INC: Missing \"");
+						sc_raise(MSG_INC_MIS_DQ);
 						break;
 						}
 
@@ -4248,7 +3830,7 @@ int		comp_pass1(const char *section, const char *text)
 				{
 				#else
 				if	( !comp_bas_exist(code_line) )	
-					sc_raise("File %s: File %s does not exist", comp_file_name, code_line);
+					sc_raise(MSG_INC_FILE_DNE, comp_file_name, code_line);
 				else	{
 				#endif
 					#if defined(_PalmOS) 
@@ -4272,14 +3854,16 @@ int		comp_pass1(const char *section, const char *text)
 			/*
 			*	SUB/FUNC/DEF - Automatic declaration - BEGIN
 			*/
-			if	( (strncmp("SUB ", p, 4) == 0) || (strncmp("FUNC ", p, 5) == 0) || (strncmp("DEF ", p, 4) == 0) )	{
+			if	( (strncmp(LCN_SUB_WRS, p, len_sub) == 0) || (strncmp(LCN_FUNC_WRS, p, len_func) == 0) || (strncmp(LCN_DEF_WRS, p, len_def) == 0) )	{
 				char	*dp;
 				int		single_line_f = 0;
 
-				if	( *p == 'S' || *p == 'D' )
-					p += 4;
+				if	( strncmp(LCN_SUB_WRS, p, len_sub) == 0 )
+					p += len_sub;
+				else if	( strncmp(LCN_FUNC_WRS, p, len_func) == 0 )
+					p += len_func;
 				else
-					p += 5;
+					p += len_def;
 
 				// skip spaces
 				while ( *p == ' ' )		p ++;
@@ -4301,7 +3885,7 @@ int		comp_pass1(const char *section, const char *text)
 				if	( comp_udp_getip(pname) == INVALID_ADDR )
 					comp_add_udp(pname);
 				else
-					sc_raise("SUB/FUNC %s already defined", pname);
+					sc_raise(MSG_UDP_ALREADY_DECL, pname);
 
 				// func/proc name (also, update comp_bc_proc)
 				if	( comp_proc_level )	{
@@ -4333,7 +3917,7 @@ int		comp_pass1(const char *section, const char *text)
 			*	SUB/FUNC/DEF - Automatic declaration - END
 			*/
 			else if ( comp_proc_level )	{
-				if	( strncmp("END ", p, 4) == 0 || strncmp("END\n", p, 4) == 0 )	{
+				if	( strncmp(LCN_END_WRS, p, len_end) == 0 || strncmp(LCN_END_WNL, p, len_end) == 0 )	{
 					char	*dol;
 
 					dol = strrchr(comp_bc_proc, '/');
@@ -4358,7 +3942,7 @@ int		comp_pass1(const char *section, const char *text)
 		}
 
 	if	( comp_proc_level )
-		sc_raise("File %s: SUB/FUNC: Missing END (possibly in %s)", comp_file_name, comp_bc_proc);
+		sc_raise(MSG_UDP_MIS_END_2, comp_file_name, comp_bc_proc);
 
 	comp_proc_level = 0;
 	*comp_bc_proc = '\0';
@@ -4366,13 +3950,13 @@ int		comp_pass1(const char *section, const char *text)
 	if	( !opt_quite && !opt_interactive )	{
 		#if defined(_UnixOS)
 		if ( !isatty (STDOUT_FILENO) ) 
-			fprintf(stdout, "File: %s\n", comp_file_name);
+			fprintf(stdout, "%s: %s\n", WORD_FILE, comp_file_name);
 		else
-			dev_printf("File: \033[1m%s\033[0m\n", comp_file_name);
+			dev_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
 		#elif defined(_PalmOS)	// if (code-sections)
-		dev_printf("File: \033[1m%s\033[0m\n\033[80mSection: \033[1m%s\033[0m\033[80m\n", comp_file_name, comp_bc_sec);
+		dev_printf("%s: \033[1m%s\033[0m\n\033[80m%s: \033[1m%s\033[0m\033[80m\n", WORD_FILE, comp_file_name, WORD_SECTION, comp_bc_sec);
 		#else
-		dev_printf("File: \033[1m%s\033[0m\n", comp_file_name);
+		dev_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
 		#endif
 		}
 
@@ -4384,11 +3968,11 @@ int		comp_pass1(const char *section, const char *text)
 		if	( !opt_quite && !opt_interactive )	{
 			#if defined(_UnixOS)
 			if ( !isatty (STDOUT_FILENO) ) 
-				fprintf(stdout, "Pass1...\n");
+				fprintf(stdout, MSG_PASS1);
 			else	{
 			#endif
 
-			dev_printf("PASS1: Line %d", comp_line+1);
+			dev_printf(MSG_PASS1_COUNT, comp_line+1);
 
 			#if defined(_UnixOS)
 				}
@@ -4410,7 +3994,7 @@ int		comp_pass1(const char *section, const char *text)
 					#if defined(_PalmOS)
 					if	( (comp_line % 16) == 0 )	{
 						if	( (comp_line % 64) == 0 )	
-							dev_printf("\rPASS1: Line %d", comp_line);
+							dev_printf(MSG_PASS1_COUNT, comp_line);
 						if	( dev_events(0) < 0 )	{
 							dev_print("\n\n\a*** interrupted ***\n");
 							comp_error = -1;
@@ -4418,7 +4002,7 @@ int		comp_pass1(const char *section, const char *text)
 						}
 					#else
 					if	( (comp_line % 256) == 0 )	
-						dev_printf("\rPASS1: Line %d", comp_line);
+						dev_printf(MSG_PASS1_COUNT, comp_line);
 					#endif
 
 					#if defined(_UnixOS)
@@ -4455,7 +4039,7 @@ int		comp_pass1(const char *section, const char *text)
 		for ( i = 0; i < comp_udpcount; i ++ )	{
 			if	( comp_udptable[i].ip == INVALID_ADDR )	{
 				comp_line = comp_udptable[i].pline;
-				sc_raise("Undefined SUB/FUNC code: %s", comp_udptable[i].name);
+				sc_raise(MSG_UNDEFINED_UDP, comp_udptable[i].name);
 				}
 			}
 		}
@@ -4464,7 +4048,7 @@ int		comp_pass1(const char *section, const char *text)
 	bc_resize(&comp_prog, comp_prog.count);
 	if	( !comp_error )	{
 		if	( !opt_quite && !opt_interactive )	{
-			dev_printf("\rPASS1: Line %d; finished\n", comp_line+1);
+			dev_printf(MSG_PASS1_FIN, comp_line+1);
 			#if !defined(_PalmOS)
 			#if	!defined(MALLOC_LIMITED)
 			dev_printf("\rSB-MemMgr: Maximum use of memory: %dKB\n", (memmgr_getmaxalloc()+512) / 1024);
@@ -4516,7 +4100,7 @@ int		comp_pass2_exports()
 				sym.vid = j;
 				}
 			else	{
-				sc_raise("Export symbol '%s' not found", sym.symbol);
+				sc_raise(MSG_EXP_SYM_NOT_FOUND, sym.symbol);
 				return 0;
 				}
 			}
@@ -4539,7 +4123,7 @@ int		comp_pass2()
 			else	{
 			#endif
 
-			dev_printf("PASS2...");
+			dev_printf(MSG_PASS2);
 
 			#if defined(_UnixOS)
 				}
@@ -4547,7 +4131,7 @@ int		comp_pass2()
 			}
 
 	if	( comp_proc_level )	
-		sc_raise("SUB/FUNC: Missing END");
+		sc_raise(MSG_MISSING_END_3);
 	else	{
 		bc_add_code(&comp_prog, kwSTOP);
 		comp_first_data_ip = comp_prog.count;
@@ -4556,7 +4140,7 @@ int		comp_pass2()
 		}
 
 	if	( comp_block_level && (comp_error==0) )	
-		sc_raise("%d loop(s) remains open", comp_block_level);
+		sc_raise(MSG_LOOPS_OPEN, comp_block_level);
 	if	( comp_data.count )	
 		bc_append(&comp_prog, &comp_data);
 
@@ -4582,9 +4166,9 @@ mem_t	comp_create_bin()
 
 	if	( !opt_quite && !opt_interactive )	{
 		if	( comp_unit_flag )
-			dev_printf("\nCreating Unit %s...\n", comp_unit_name);
+			dev_printf(MSG_CREATING_UNIT, comp_unit_name);
 		else
-			dev_printf("Creating byte-code...\n");
+			dev_printf(MSG_CREATING_BC);
 		}
 
 	//
@@ -4695,16 +4279,16 @@ mem_t	comp_create_bin()
 	// print statistics
 	if	( !opt_quite && !opt_interactive )	{
 		dev_printf("\n");
-		dev_printf("Number of variables %d (%d)\n", comp_varcount, comp_varcount - 18 /* - system variables */);
-		dev_printf("Number of labels    %d\n", comp_labcount);
-		dev_printf("Number of UDFs/UDPs %d\n", comp_udpcount);
-		dev_printf("Code size           %d\n", comp_prog.count);
+		dev_printf(RES_NUMBER_OF_VARS, comp_varcount, comp_varcount - 18 /* - system variables */);
+		dev_printf(RES_NUMBER_OF_LABS, comp_labcount);
+		dev_printf(RES_NUMBER_OF_UDPS, comp_udpcount);
+		dev_printf(RES_CODE_SIZE, comp_prog.count);
 		dev_printf("\n");
-		dev_printf("Imported libraries  %d\n", comp_libcount);
-		dev_printf("Imported symbols    %d\n", comp_impcount);
-		dev_printf("Exported symbols    %d\n", comp_expcount);
+		dev_printf(RES_IMPORTED_LIBS, comp_libcount);
+		dev_printf(RES_IMPORTED_SYMS, comp_impcount);
+		dev_printf(RES_EXPORTED_SYMS, comp_expcount);
 		dev_printf("\n");
-		dev_printf("Final size          %d\n", size);
+		dev_printf(RES_FINAL_SIZE, size);
 		dev_printf("\n");
 		}
 
@@ -4737,7 +4321,7 @@ int		comp_save_bin(mem_t h_bc)
 			#else
 			if	( strncmp(fname, comp_file_name, strlen(fname) ) != 0 )
 			#endif
-				dev_printf("Warning: unit's file name is different than source\n");
+				dev_printf(MSG_UNIT_NAME_DIF_THAN_SRC);
 			}
 
 		strcat(fname, ".sbu");	// add ext
@@ -4760,10 +4344,10 @@ int		comp_save_bin(mem_t h_bc)
 		mem_unlock(h_bc);
  
 		if	( !opt_quite && !opt_interactive )
-			dev_printf("BC file '%s' created!\n", fname);
+			dev_printf(MSG_BC_FILE_CREATED, fname);
 		}
 	else
-		panic("Can't create binary file\n");
+		panic(MSG_BC_FILE_ERROR);
 
 
 	return 1;

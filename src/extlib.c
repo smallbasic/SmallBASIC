@@ -86,6 +86,9 @@ static int	slib_add_external_proc(const char *proc_name, int lib_id)
 	strcpy(extproctable[extproccount].name, buf);
 	strupr(extproctable[extproccount].name);
 
+	if	( opt_verbose )	
+		printf("LID: %d, Idx: %d, PROC '%s'\n", lib_id, extproccount, extproctable[extproccount].name);
+
 	extproccount ++;
 	return extproccount-1;
 }
@@ -114,6 +117,9 @@ static int	slib_add_external_func(const char *func_name, int lib_id)
 	extfunctable[extfunccount].symbol_index = 0;
 	strcpy(extfunctable[extfunccount].name, buf);
 	strupr(extfunctable[extfunccount].name);
+
+	if	( opt_verbose )	
+		printf("LID: %d, Idx: %d, FUNC '%s'\n", lib_id, extfunccount, extfunctable[extfunccount].name);
 
 	extfunccount ++;
 	return extfunccount-1;
@@ -295,10 +301,13 @@ int		slib_llclose(slib_t *lib)
 void	slib_import_routines(slib_t *lib)
 {
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
-	int		i, count;
+	int		i, count, fc, pc;
 	char	buf[SB_KEYWORD_SIZE];
 	int		(*fgetname)(int,char*);
 	int		(*fcount)(void);
+
+	lib->first_proc = extproccount;
+	lib->first_func = extfunccount;
 
 	fcount   = (int (*)(void)) slib_getoptptr(lib, "sblib_proc_count");
 	fgetname = (int	(*)(int,char*)) slib_getoptptr(lib, "sblib_proc_getname");
@@ -694,7 +703,7 @@ int		sblmgr_procexec(int lib_id, int index)
 
 	// exec
 	v_init(&ret);
-	success = pexec(index, pcount, ptable, &ret);
+	success = pexec(index - lib->first_proc, pcount, ptable, &ret);
 	
 	// error
 	if	( !success )	{
@@ -755,7 +764,7 @@ int		sblmgr_funcexec(int lib_id, int index, var_t *ret)
 
 	// exec
 	v_init(ret);
-	success = pexec(index, pcount, ptable, ret);
+	success = pexec(index - lib->first_func, pcount, ptable, ret);
 	
 	// error
 	if	( !success )	{

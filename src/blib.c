@@ -18,6 +18,7 @@
 #if defined(_UnixOS) || defined(_DOS)
 #include "dev_term.h"
 #endif
+#include "messages.h"
 
 //
 //	LET v[(x)] = any
@@ -458,7 +459,7 @@ void	cmd_print(int output)
 			eval(&var);
 			if	( prog_error )		return;
 			if	( var.type != V_STR )	{
-				rt_raise("WRONG FORMAT");
+				rt_raise(ERR_FORMAT_INVALID_FORMAT);
 				v_free(&var);
 				return;
 				}
@@ -626,7 +627,7 @@ void	cmd_input(int input)
 	*/
 	pcount = par_getpartable(&ptable, ",;");
 	if	( pcount == 0 )	
-		rt_raise("INPUT without variables");
+		rt_raise(ERR_INPUT_NO_VARS);
 
 	/*
 	*	the INPUT itself
@@ -773,13 +774,13 @@ void	cmd_input(int input)
 				/* standard input case */
 				if ( !os_graphics )	{
 					if	( term_israw() ) 
-						fprintf(stdout, "\n\a* REDO FROM START *\n");
+						fprintf(stdout, "\n\a* %s *\n", WORD_INPUT_REDO);
 					else
-						dev_print("\n\a\033[7m * REDO FROM START * \033[0m\n");
+						dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
 					}
 				else
 				#endif
-				dev_print("\n\a\033[7m * REDO FROM START * \033[0m\n");
+				dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
 				}
 			else
 				redo = 0;
@@ -819,7 +820,7 @@ void	cmd_RTE()
 	byte	last_op = 0, exitf = 0;
 	var_t	var;
 
-	dev_printf("\n\aERROR AT %s:%d: ", prog_file, prog_line);
+	dev_printf("\n\a%s %s:%d: ", WORD_ERROR_AT, prog_file, prog_line);
 	do	{
 		code = code_peek();
 		switch ( code )	{
@@ -884,7 +885,7 @@ void	cmd_on_go()
 		}
 	else if	( (int) index < 0 )	{
 		// QB: run-time-error on < 0 or > 255
-		rt_raise("ON x %s: OUT OF RANGE", (command==kwGOTO)?"GOTO":"GOSUB");
+		rt_raise(ERR_ONGOTO_RANGE, (command==kwGOTO)?WORD_GOTO:WORD_GOSUB);
 		}
 	else	{
 		// default
@@ -1361,9 +1362,9 @@ int		cmd_exit()
 				}
 			else	{
 				if	( code == kwFORSEP )
-					rt_raise("EXIT FOR: NO 'FOR' INSIDE SUB/FUNC");
+					rt_raise(ERR_EXITFOR);
 				else
-					rt_raise("EXIT LOOP: NO 'LOOP' INSIDE SUB/FUNC");
+					rt_raise(ERR_EXITLOOP);
 				}
 			break;
 			};
@@ -1839,7 +1840,7 @@ void	cmd_read()
 	var_t	*vp = NULL;
 
 	if	( prog_dp == INVALID_ADDR )	{
-		rt_raise("READ: USE RESTORE [label]");
+		rt_raise(ERR_READ_DATA_START);
 		return;
 		}
 
@@ -1862,7 +1863,7 @@ void	cmd_read()
 				v_free(vp);
 
 				if	( prog_dp >= prog_length )	{
-					rt_raise("READ: OUT OF RANGE(DATA)");
+					rt_raise(ERR_READ_DATA_INDEX);
 					return;
 					}
 
@@ -1907,7 +1908,7 @@ void	cmd_read()
 					}
 					break;
 				default:
-					rt_raise("READ: OUT OF RANGE(DATA) IDX=%d", prog_dp);
+					rt_raise(ERR_READ_DATA_INDEX_FMT, prog_dp);
 					return;
 					}
 
@@ -1924,7 +1925,7 @@ void	cmd_read()
 //
 void	cmd_data()
 {
-	rt_raise("DATA: CANNOT EXECUTE DATA");
+	rt_raise("CANNOT EXECUTE DATA");	// if you see it, I did something stupid
 }
 
 //
@@ -2356,7 +2357,7 @@ void	cmd_environ()
 	par_getstr(&str);
 	if	( prog_error )	return;
 	if	( dev_putenv((char *) str.v.p.ptr) == -1 )
-		rt_raise("ENV failed");
+		rt_raise(ERR_PUTENV);
 	v_free(&str);
 }
 
@@ -2778,7 +2779,7 @@ void	cmd_exprseq(void)
 	if	( !prog_error )	{
 		// is there a use keyword ?
 		if	( code_peek() != kwUSE )	{
-			rt_raise("EXPRSEQ: missing expression");
+			rt_raise(ERR_EXPRSEQ_WITHOUT_EXPR);
 			return;
 			}
 

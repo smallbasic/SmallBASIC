@@ -1545,6 +1545,10 @@ void	intm_type(int pc, const char *orgfile)
 
 /*
 */
+
+// we must do something about this. any "law" info?
+#define SB_STR_CPR	"Free Software Foundation, Nicholas Christopoulos"
+
 int		interactive_mode(const char *fname)
 {
 	static char *buf = NULL, *parstr;
@@ -1560,7 +1564,7 @@ int		interactive_mode(const char *fname)
 	intm_init();
 
 	if	( !opt_quite )	{
-		printf("SmallBASIC VERSION %s\n\tCopyright (c) 2000-2003 Nicholas Christopoulos\n\n", SB_STR_VER);
+		printf("SmallBASIC VERSION %s\n\tCopyright (c) 2000-2003 %s\n\n", SB_STR_VER, SB_STR_CPR);
 		printf("Type 'HELP' for help; type 'BYE' or press Ctrl+C for exit.\n\n");
 		}
 

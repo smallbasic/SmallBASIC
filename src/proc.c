@@ -9,6 +9,7 @@
 
 #include "sys.h"
 #include "pproc.h"
+#include "messages.h"
 #include <limits.h>
 
 /*
@@ -575,7 +576,7 @@ pt_t	par_getpt()
 		if	( var->type == V_ARRAY )	{
 			// array
 			if	( var->v.a.size != 2 )
-				rt_raise("Parsing point: type mismatch!");
+				rt_raise(ERR_POLY_POINT);
 			else	{
 				pt.x = v_getreal(v_elem(var, 0));
 				pt.y = v_getreal(v_elem(var, 1));
@@ -629,7 +630,7 @@ ipt_t	par_getipt()
 		if	( var->type == V_ARRAY )	{
 			// array
 			if	( var->v.a.size != 2 )
-				rt_raise("Parsing point: type mismatch!");
+				rt_raise(ERR_POLY_POINT);
 			else	{
 				pt.x = v_getint(v_elem(var, 0));
 				pt.y = v_getint(v_elem(var, 1));

@@ -17,6 +17,7 @@
 #include "pproc.h"
 #include "match.h"
 #include "extlib.h"
+#include "messages.h"
 #if defined(_PalmOS)
 	#include <FileStream.h>
 	#include <SerialMgrOld.h>
@@ -109,7 +110,7 @@ int		dev_freefilehandle()
 			return i+1;		// Warning: BASIC's handles starting from 1
 		}
 
-	rt_raise("FS: TOO MANY OPEN FILES");
+	rt_raise(FSERR_TOO_MANY_FILES);
 	return -1;
 }
 
@@ -120,7 +121,7 @@ dev_file_t*	dev_getfileptr(int handle)
 	handle --;				// Warning: BASIC's handles starting from 1
 
 	if	( handle < 0 || handle >= OS_FILEHANDLES )	{
-		rt_raise("FS: INVALID USER HANDLE");
+		rt_raise(FSERR_HANDLE);
 		return NULL;		
 		}
 
@@ -239,7 +240,7 @@ int		dev_fopen(int sb_handle, const char *name, int flags)
 				f->vfslib = sblmgr_getvfs(f->name);
 				if	( f->vfslib == -1 )
 					// no such driver
-					rt_raise("UNKNOWN DEVICE OR FS");
+					rt_raise(FSERR_WRONG_DRIVER);
 				else
 					f->type = ft_vfslib;
 				return 0;
@@ -506,7 +507,7 @@ int		dev_fremove(const char *file)
 		success = (remove(file) == 0);
 	#endif
 	if	( !success )	
-		rt_raise("FS: CANNOT KILL FILE");
+		rt_raise(FSERR_ACCESS);
 	return success;
 }
 

@@ -121,6 +121,8 @@ typedef struct {
 
 	int		proc_count;		/**< if lang.ext.; number of procedures */
 	int		func_count;		/**< if lang.ext.; number of functions */
+	int		first_proc;
+	int		first_func;
 
 	/* ------------------ VFS driver ------------------ */
 

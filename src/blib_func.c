@@ -18,6 +18,7 @@
 #include "blib_math.h"
 #include "fmt.h"
 #include "geom.h"
+#include "messages.h"
 #if defined(_UnixOS)
 //#include <sys/sysinfo.h>
 #include <unistd.h>
@@ -39,16 +40,16 @@ extern int		gra_y;
 
 // date
 static char *date_wd3_table[] =
-{ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+TABLE_WEEKDAYS_3C;
 
 static char *date_wdN_table[] =
-{ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+TABLE_WEEKDAYS_FULL;
 
 static char *date_m3_table[] =
-{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+TABLE_MONTH_3C;
 
 static char *date_mN_table[] =
-{ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+TABLE_MONTH_FULL;
 
 /*
 */
@@ -197,19 +198,19 @@ void	date_str2dmy(char *str, long *d, long *m, long *y)
 			case	0:	// day
 				*d = xstrtol(tmp);
 				if	( *d < 1 || *d > 31 )	{
-					rt_raise("DATE ERROR");
+					rt_raise(ERR_DATE);
 					return;
 					}
 				break;
 			case	1:	// month
 				*m = xstrtol(tmp);
 				if	( *m < 1 || *m > 12 )	{
-					rt_raise("DATE ERROR");
+					rt_raise(ERR_DATE);
 					return;
 					}
 				break;
 			default:
-				rt_raise("DATE ERROR");
+				rt_raise(ERR_DATE);
 				return;
 				};
 			mode ++;
@@ -223,7 +224,7 @@ void	date_str2dmy(char *str, long *d, long *m, long *y)
 		}
 
 	if	( mode != 2 )	{
-		rt_raise("DATE ERROR");
+		rt_raise(ERR_DATE);
 		return;
 		}
 
@@ -250,19 +251,19 @@ void	date_str2hms(char *str, long *h, long *m, long *s)
 			case	0:	// hour
 				*h = xstrtol(tmp);
 				if	( *h < 0 || *h > 23 )	{
-					rt_raise("TIME ERROR");
+					rt_raise(ERR_TIME);
 					return;
 					}
 				break;
 			case	1:	// min
 				*m = xstrtol(tmp);
 				if	( *m < 0 || *m > 59 )	{
-					rt_raise("TIME ERROR");
+					rt_raise(ERR_TIME);
 					return;
 					}
 				break;
 			default:
-				rt_raise("TIME ERROR");
+				rt_raise(ERR_TIME);
 				return;
 				};
 			mode ++;
@@ -276,14 +277,14 @@ void	date_str2hms(char *str, long *h, long *m, long *s)
 		}
 
 	if	( mode != 2 )	{
-		rt_raise("TIME ERROR");
+		rt_raise(ERR_TIME);
 		return;
 		}
 
 	tmp[count] = '\0';
 	*s = xstrtol(tmp);
 	if	( *s < 0 || *s > 59 )
-		rt_raise("TIME ERROR");
+		rt_raise(ERR_TIME);
 }
 
 /*
@@ -332,11 +333,11 @@ void	date_fmt(char *fmt, char *buf, long d, long m, long y)
 	if	( !(*p) )
 		return;
 	while ( 1 )	{
-		if	( *p == 'D' || *p == 'd' )	
+		if	( *p == DATEFMT_DAY_U || *p == DATEFMT_DAY_L )	
 			dc ++;
-		else if	( *p == 'M' || *p == 'm' )	
+		else if	( *p == DATEFMT_MONTH_U || *p == DATEFMT_MONTH_L )	
 			mc ++;
-		else if	( *p == 'Y' || *p == 'y' )	
+		else if	( *p == DATEFMT_YEAR_U || *p == DATEFMT_YEAR_L )	
 			yc ++;
 		else	{
 			//
@@ -1773,7 +1774,7 @@ void	cmd_strN(long funcCode, var_t *r)
             #endif	// bcb or not
 			else	{
 				v_zerostr(r);				
-				rt_raise("RUN(\"%s\"): FAILED", arg1.v.p.ptr);
+				rt_raise(ERR_RUNFUNC_FILE, arg1.v.p.ptr);
 				}
 			#endif	// non palmos
 			}
@@ -2174,11 +2175,11 @@ void	cmd_intN(long funcCode, var_t *r)
 					if	( l >= 0 && l < var_p->v.a.maxdim )
 						r->v.i = var_p->v.a.lbound[l];
 					else
-						rt_raise("LBOUND: Array of %d dimensions (%d)", var_p->v.a.maxdim, l);
+						rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim, l);
 					}
 				}
 			else
-				rt_raise("LBOUND: Variable is not an array");
+				rt_raise(ERR_BOUND_VAR);
 			}
 		else
 			err_typemismatch();
@@ -2209,11 +2210,11 @@ void	cmd_intN(long funcCode, var_t *r)
 					if	( l >= 0 && l < var_p->v.a.maxdim )
 						r->v.i = var_p->v.a.ubound[l];
 					else	 
-						rt_raise("UBOUND: Array of %d dimensions", var_p->v.a.maxdim);
+						rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim);
 					}
 				}
 			else
-				rt_raise("UBOUND: Variable is not an array");
+				rt_raise(ERR_BOUND_VAR);
 			}
 		else
 			err_typemismatch();
@@ -2388,7 +2389,7 @@ void	cmd_genfunc(long funcCode, var_t *r)
 		if	( !prog_error )	{
 			par_getcomma();	if ( prog_error )	break;
 			if	( arg.type != V_STR )	{
-				rt_raise("WRONG FORMAT");
+				rt_raise(ERR_FORMAT_INVALID_FORMAT);
 				v_free(&arg);
 				}
 			else	{
@@ -2623,9 +2624,9 @@ void	cmd_genfunc(long funcCode, var_t *r)
 			v_setreal(v_getelemptr(r, 0), x);
 			v_setreal(v_getelemptr(r, 1), y);
 			if	( err == 2 && area == 0 )
-				rt_raise("CENTROID IS UNDEFINED");
+				rt_raise(ERR_CENTROID);
 			else
-				rt_raise("POLYGON IS WRONG");
+				rt_raise(ERR_WRONG_POLY);
 
 			// hmm.... closed ?
 			tmp_free(poly);
@@ -2682,7 +2683,7 @@ void	cmd_genfunc(long funcCode, var_t *r)
 					r->v.i = gra_y;
 					break;
 				default:
-					rt_raise("POINT() Invalid parameter");
+					rt_raise(ERR_POINT);
 					}
 				}
 			else	{
@@ -2962,7 +2963,7 @@ void	cmd_genfunc(long funcCode, var_t *r)
 			m1 = mat_toc(a, &rows, &cols);
 			if	( rows != cols || cols < 2 )	{
 				if	( m1 )	tmp_free(m1);
-				rt_raise("MATRIX A WRONG DIM %dx%d", rows, cols);
+				rt_raise(ERR_LINEEQN_ADIM, rows, cols);
 				}
 			else	{
 				n = rows;
@@ -2982,7 +2983,7 @@ void	cmd_genfunc(long funcCode, var_t *r)
 				if	( rows != n || cols != 1 )	{
 					if	( m1 )	tmp_free(m1);
 					if	( m2 )	tmp_free(m2);
-					rt_raise("MATRIX B WRONG DIM %dx%d", rows, cols);
+					rt_raise(ERR_LINEEQN_BDIM, rows, cols);
 					return;
 					}
 
@@ -3016,7 +3017,7 @@ void	cmd_genfunc(long funcCode, var_t *r)
 			m1 = mat_toc(a, &rows, &cols);
 			if	( rows != cols || cols < 2 )	{
 				if	( m1 )	tmp_free(m1);
-				rt_raise("MATRIX: WRONG DIM %dx%d", rows, cols);
+				rt_raise(ERR_WRONG_MAT, rows, cols);
 				}
 			else	{
 				n = rows;
@@ -3046,7 +3047,7 @@ void	cmd_genfunc(long funcCode, var_t *r)
 			m1 = mat_toc(a, &rows, &cols);
 			if	( rows != cols || cols < 2 )	{
 				if	( m1 )	tmp_free(m1);
-				rt_raise("DETERM: WRONG DIM %dx%d", rows, cols);
+				rt_raise(ERR_WRONG_MAT, rows, cols);
 				}
 			else	{
 				n = rows;

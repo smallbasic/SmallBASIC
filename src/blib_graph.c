@@ -14,6 +14,7 @@
 #include "var.h"
 #include "blib.h"
 #include "pproc.h"
+#include "messages.h"
 
 // graphics - relative coordinates
 int		gra_x;
@@ -664,7 +665,7 @@ void	cmd_draw()
 
 			p = draw_getval(p, &x);
 			if	( *p != ',' )	{
-				rt_raise("DRAW: MISSING ,");
+				rt_raise(ERR_DRAW_SEP);
 				v_free(&var);
 				return;
 				}
@@ -694,7 +695,7 @@ void	cmd_draw()
 			dev_setcolor(x);
 			continue;
 		default:
-			rt_raise("DRAW: '%c' UNSUPPORTED", *p);
+			rt_raise(ERR_DRAW_CMD, *p);
 			v_free(&var);
 			return;
 			}

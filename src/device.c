@@ -10,6 +10,7 @@
 #include "osd.h"
 #include "smbas.h"
 #include "sberr.h"
+#include "messages.h"
 #if !defined(_PalmOS)
 	#include <signal.h>
 	#include <stdio.h>
@@ -152,7 +153,7 @@ void	termination_handler (int signum)
 	prog_error = -2;
 	ctrlc_count ++;
 	if	( ctrlc_count == 1 )	
-		dev_printf("\n\n\033[0m\033[7m\a * BREAK AT LINE %d * \033[0m\n", prog_line);
+		dev_printf("\n\n\033[0m\033[7m\a * %s %d * \033[0m\n", WORD_BREAK_AT, prog_line);
 	else if ( ctrlc_count == 3 )	{
 		dev_restore();
 	   	memmgr_setabort(1);
@@ -1355,7 +1356,7 @@ void	dev_viewport(int x1, int y1, int x2, int y2)
 			( y1 >= os_graf_my ) ||	( y2 >= os_graf_my )
 			)	{
 
-			rt_raise("Viewport out of screen");
+			rt_raise(ERR_VP_POS);
 			}
 
 		dev_Vx1 = x1;
@@ -1367,7 +1368,7 @@ void	dev_viewport(int x1, int y1, int x2, int y2)
 		dev_Vdy = ABS(y2-y1);
 
 		if	( dev_Vdx == 0 || dev_Vdy == 0 )
-			rt_raise("Viewport of zero size"); 
+			rt_raise(ERR_VP_ZERO); 
 		}
 
 	// reset window
@@ -1399,7 +1400,7 @@ void	dev_window(int x1, int y1, int x2, int y2)
 		dev_Wdy = y2-y1;
 
 		if	( dev_Wdx == 0 || dev_Wdy == 0 )
-			rt_raise("Window of zero size");
+			rt_raise(ERR_WIN_ZERO);
 		}
 }
 

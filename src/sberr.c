@@ -9,6 +9,7 @@
 
 #include "smbas.h"
 #include "pproc.h"
+#include "messages.h"
 #if !defined(_PalmOS)
 #include <string.h>
 #include <errno.h>
@@ -30,14 +31,14 @@ void	err_common_msg(const char *seg, const char *file, int line, const char *des
 		#if defined(_UnixOS)
 		if ( !isatty (STDOUT_FILENO) ) {
 			// hm... out or err ?
-			fprintf(stdout, "\n* %s-ERROR AT %s:%d # %s\n", seg, file, line, descr);
+			fprintf(stdout, "\n* %s-%s %s:%d # %s\n", seg, WORD_ERROR_AT, file, line, descr);
 			}
 		else	{
 		#endif
 
 		dev_printf("\n\033[0m\033[80m\n");
-		dev_printf("\033[7m * %s-ERROR AT %s:%d * \033[0m\a\n\n", seg, file, line);
-		dev_printf("\033[4mDescription:\033[0m\n%s\n", descr);
+		dev_printf("\033[7m * %s-%s %s:%d * \033[0m\a\n\n", seg, WORD_ERROR_AT, file, line);
+		dev_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
 		#if defined(_PalmOS)
 		dev_printf("\n\033[4mPress '.' to return...\033[0m\n");
 		#endif
@@ -55,7 +56,7 @@ void	err_common_msg(const char *seg, const char *file, int line, const char *des
 void	sc_raise2(const char *sec, int scline, const char *buff)
 {
 	prog_error = 0x40;
-	err_common_msg("COMP", sec, scline, buff);
+	err_common_msg(WORD_COMP, sec, scline, buff);
 }
 
 /*
@@ -77,7 +78,7 @@ void	rt_raise(const char *fmt, ...)
 	#endif
 	va_end(ap);
 	
-	err_common_msg("RT", prog_file, prog_line, buff);
+	err_common_msg(WORD_RTE, prog_file, prog_line, buff);
 
 	tmp_free(buff);
 }
@@ -88,55 +89,55 @@ void	err_file(dword code)
 	#if defined(_PalmOS)
 	switch ( code )	{
 	case	fileErrMemError:
-		rt_raise("FS: Out of memory");
+		rt_raise(FSERR_OUT_OF_MEMORY);
 		break;
 	case	fileErrInvalidParam:
-		rt_raise("FS: Invalid parameter");
+		rt_raise(FSERR_INVALID_PARAMETER);
 		break;
 	case	fileErrCorruptFile:
-		rt_raise("FS: File is corrupted or invalid");
+		rt_raise(FSERR_CORRUPTED);
 		break;
 	case	fileErrNotFound:
-		rt_raise("FS: File not found");
+		rt_raise(FSERR_NOT_FOUND);
 		break;
 	case	fileErrTypeCreatorMismatch:
-		rt_raise("FS: Type or creator not what was specified");
+		rt_raise(FSERR_TYPE_MSM);
 		break;
 	case	fileErrReplaceError:
-		rt_raise("FS: Coundn't replace existing file");
+		rt_raise(FSERR_OVERWRITE);
 		break;
 	case	fileErrCreateError:
-		rt_raise("FS: Couldn't create new file");
+		rt_raise(FSERR_CREATE);
 		break;
 	case	fileErrOpenError:
-		rt_raise("FS: Generic open error");
+		rt_raise(FSERR_OPEN);
 		break;
 	case	fileErrInUse:
-		rt_raise("FS: File is in use");
+		rt_raise(FSERR_USED);
 		break;
 	case	fileErrReadOnly:
-		rt_raise("FS: File is read-only");
+		rt_raise(FSERR_READ_ONLY);
 		break;
 	case	fileErrInvalidDescriptor:
-		rt_raise("FS: Invalid file handle");
+		rt_raise(FSERR_HANDLE);
 		break;
 	case	fileErrCloseError:
-		rt_raise("FS: Error closing file");
+		rt_raise(FSERR_CLOSE);
 		break;
 	case	fileErrOutOfBounds:
-		rt_raise("FS: Past end of file");
+		rt_raise(FSERR_EOF);
 		break;
 	case	fileErrPermissionDenied:
-		rt_raise("FS: Access denied");
+		rt_raise(FSERR_ACCESS);
 		break;
 	case	fileErrIOError:
-		rt_raise("FS: Generic I/O error");
+		rt_raise(FSERR_GENERIC);
 		break;
 	case	fileErrEOF:
-		rt_raise("FS: End-Of-File error!");
+		rt_raise(FSERR_PALM_EOF);
 		break;
 	case	fileErrNotStream:
-		rt_raise("FS: File is not a stream");
+		rt_raise(FSERR_ANOMALO);
 		}
 	#else
 	char	buf[1024], *p;
@@ -147,77 +148,77 @@ void	err_file(dword code)
 		*p = to_upper(*p);
 		p ++;
 		}
-	rt_raise("FS(%d): %s", code, buf);
+	rt_raise(FSERR_FMT, code, buf);
 	#endif
 }
 
 
 #if defined(OS_LIMITED)
-void	err_missing_rp(void)		{	rt_raise("Missing ')' OR invalid number of parameters"); }
-void	err_matdim(void)			{	rt_raise("Matrix dimension error"); 					}
-void	err_syntax(void) 	   		{ 	rt_raise("Syntax error");  						}
-void	err_syntaxsep(int c)		{ 	rt_raise("Missing separator '%c'", c);  		}
-void	err_parm_num(void)			{	rt_raise("Error number of parameters");			}
+void	err_missing_rp(void)		{	rt_raise(ERR_MISSING_RP); }
+void	err_matdim(void)			{	rt_raise(ERR_MATRIX_DIM); 					}
+void	err_syntax(void) 	   		{ 	rt_raise(ERR_SYNTAX);  						}
+void	err_syntaxsep(int c)		{ 	rt_raise(ERR_MISSING_SEP, c);  		}
+void	err_parm_num(void)			{	rt_raise(ERR_PARCOUNT);			}
 #endif
 
-void	err_stackoverflow(void)		{	rt_raise("Stack overflow");						}
-void	err_stackunderflow(void)	{	rt_raise("Stack underflow");					}
-void	err_stackmess()				{ 	rt_raise("Stack mess!");  						}
+void	err_stackoverflow(void)		{	rt_raise(ERR_STACK_OVERFLOW);						}
+void	err_stackunderflow(void)	{	rt_raise(ERR_STACK_UNDERFLOW);					}
+void	err_stackmess()				{ 	rt_raise(ERR_STACK);  						}
 
-void	err_arrmis_lp(void)			{	rt_raise("Array: Missing '('"); 				}
-void	err_arrmis_rp(void)			{	rt_raise("Array: Missing ')'"); 				}
-void	err_arridx(void)			{	rt_raise("Array: Index out of range");			}
-void	err_typemismatch(void)		{	rt_raise("Type mismatch");						}
-void	err_argerr(void)			{	rt_raise("Invalid parameter");					}
+void	err_arrmis_lp(void)			{	rt_raise(ERR_ARRAY_MISSING_LP); 				}
+void	err_arrmis_rp(void)			{	rt_raise(ERR_ARRAY_MISSING_RP); 				}
+void	err_arridx(void)			{	rt_raise(ERR_ARRAY_RANGE);			}
+void	err_typemismatch(void)		{	rt_raise(ERR_TYPE);						}
+void	err_argerr(void)			{	rt_raise(ERR_PARAM);					}
 
-void	err_varisarray(void)		{	rt_raise("Eval: Variable is an array"); 		}
-void	err_varisnotarray(void)		{	rt_raise("Eval: Variable is NOT an array (Use DIM)"); }
-void	err_vararridx(void)			{	rt_raise("Eval: Array: Index out of range"); 	}
-void	err_varnotnum(void)			{	rt_raise("Eval: Not a number"); 				}
-void	err_evsyntax(void)			{	rt_raise("Eval: Syntax error"); 				}
-void	err_evtype(void)			{	rt_raise("Eval: Type mismatch"); 				}
-void	err_evargerr(void)			{	rt_raise("Eval: Invalid parameter"); 			}
-void	err_unsup(void)				{	rt_raise("Unsupported"); 						}
-void	err_const(void)				{	rt_raise("LET: Cannot change a constant");		}
-void	err_notavar(void)			{	rt_raise("Not a variable");						}
+void	err_varisarray(void)		{	rt_raise(EVAL_VAR_IS_ARRAY); 		}
+void	err_varisnotarray(void)		{	rt_raise(EVAL_VAR_IS_NOT_ARRAY); }
+void	err_vararridx(void)			{	rt_raise(ERR_ARRAY_RANGE); 	}
+void	err_varnotnum(void)			{	rt_raise(EVAL_NOT_A_NUM); 				}
+void	err_evsyntax(void)			{	rt_raise(EVAL_SYNTAX); 				}
+void	err_evtype(void)			{	rt_raise(EVAL_TYPE); 				}
+void	err_evargerr(void)			{	rt_raise(EVAL_PARAM); 			}
+void	err_unsup(void)				{	rt_raise(ERR_UNSUPPORTED); 						}
+void	err_const(void)				{	rt_raise(ERR_CONST);		}
+void	err_notavar(void)			{	rt_raise(ERR_NOT_A_VAR);						}
 
-void	err_notarray(void)			{	rt_raise("NOT an array OR function"); 			}
-void	err_out_of_range(void)		{	rt_raise("Out of range"); 						}
-void	err_missing_sep(void)		{	rt_raise("Missing separator OR parenthesis"); 	}
-void	err_division_by_zero(void)	{	rt_raise("Division by zero"); 					}
-void	err_matop(void)				{	rt_raise("Operator NOT allowed"); 				}
-void	err_matsig(void)			{	rt_raise("Matrix singular"); 					}
-void	err_missing_lp(void)		{	rt_raise("Missing '('"); 						}
+void	err_notarray(void)			{	rt_raise(ERR_NOT_ARR_OR_FUNC); 			}
+void	err_out_of_range(void)		{	rt_raise(ERR_RANGE); 						}
+void	err_missing_sep(void)		{	rt_raise(ERR_MISSING_SEP_OR_PAR); 	}
+void	err_division_by_zero(void)	{	rt_raise(ERR_DIVZERO); 					}
+void	err_matop(void)				{	rt_raise(ERR_OPERATOR); 				}
+void	err_matsig(void)			{	rt_raise(ERR_MATSIG); 					}
+void	err_missing_lp(void)		{	rt_raise(ERR_MISSING_LP); 						}
 
-void	err_parfmt(const char *fmt)	{	rt_raise("Parameters count/format error (%s)", fmt); }
-void	err_parm_byref(int n)		{ 	rt_raise("Parameter %d cannot BYREF", n);  		}
+void	err_parfmt(const char *fmt)	{	rt_raise(ERR_PARFMT, fmt); }
+void	err_parm_byref(int n)		{ 	rt_raise(ERR_BYREF, n);  		}
 
-void	err_stridx(void)			{	rt_raise("String: Index out of range"); 		}
-void	err_fopen(void)				{	rt_raise("VFS: Bad file number (Use OPEN)");	}
+void	err_stridx(void)			{	rt_raise(ERR_STR_RANGE); 		}
+void	err_fopen(void)				{	rt_raise(ERR_BAD_FILE_HANDLE);	}
 void	err_syntaxanysep(const char *seps)
-									{	rt_raise("No separator found (missing %s)", seps); }
-void	err_parsepoly(int idx, int mark)		{	rt_raise("Parsing polyline: type mismatch! (element: %d, info: %d)", idx, mark); }
+									{	rt_raise(ERR_SEP_FMT, seps); }
+void	err_parsepoly(int idx, int mark)		{	rt_raise(ERR_POLY, idx, mark); }
 
 void	err_bfn_err(long code)
-		{	rt_raise("Unsupported buildin function call %ld, please report this bug", code); }
+		{	rt_raise(ERR_CRITICAL_MISSING_FUNC, code); }
 
 void	err_gpf(addr_t addr, int bc)
 {
-	dev_printf("\n\aOUT OF ADDRESS SPACE\n");
+	dev_printf(ERR_GPF);
 	rt_raise("SEG:CODE[%d]=%02X", addr, bc);
 }
 
 void	err_pcode_err(long pcode)
-{	rt_raise("Unsupported buildin procedure call %ld, please report this bug", pcode);	}
+{	rt_raise(ERR_CRITICAL_MISSING_PROC, pcode);	}
 
 void	err_chain_err(const char *file)
-									{	rt_raise("CHAIN: FILE '%s' DOES NOT EXIST", file);	}
+									{	rt_raise(ERR_CHAIN_FILE, file);	}
 
 void	err_run_err(const char *file)
-									{	rt_raise("RUN/EXEC\"%s\" FAILED", file);	}
+									{	rt_raise(ERR_RUN_FILE, file);	}
 
 void	err_invkw(addr_t addr, byte code)
-									{		rt_raise("PARAM COUNT ERROR @%d=%X", addr, (int) code);	}
+									{		rt_raise(ERR_PARCOUNT_SP, addr, (int) code);	}
 
 /*
 *	the DONE message
@@ -226,7 +227,7 @@ void	inf_done()
 {
 	#if defined(_UnixOS)
 	if ( !isatty (STDOUT_FILENO) ) 
-		fprintf(stdout, "\n* DONE *\n");
+		fprintf(stdout, "\n* %s *\n", WORD_DONE);
 	else {
 	#endif
 
@@ -234,9 +235,9 @@ void	inf_done()
 	dev_print("\a\n");
 	dev_settextcolor(15,0);
 	dev_setxy(0,os_graf_my-9);
-	dev_print("\033[91m\033[0m\033[7m * DONE * - Press '.' to return\4 \033[80m\033[0m");
+	dev_printf("\033[91m\033[0m\033[7m * %s * - Press '.' to return\4 \033[80m\033[0m", WORD_DONE);
 	#else
-	dev_print("\n\033[0m\033[80m\a\033[7m * DONE * \033[0m\n");
+	dev_printf("\n\033[0m\033[80m\a\033[7m * %s * \033[0m\n", WORD_DONE);
 	#endif
 
 	#if defined(_UnixOS)
@@ -251,7 +252,7 @@ void	inf_break(int pline)
 {
 	#if defined(_UnixOS)
 	if ( !isatty (STDOUT_FILENO) ) 
-		fprintf(stdout, "\n* BREAK AT %d *\n", pline);
+		fprintf(stdout, "\n* %s %d *\n", WORD_BREAK_AT, pline);
 	else {
 	#endif
 
@@ -259,9 +260,9 @@ void	inf_break(int pline)
 	#if defined(_PalmOS)
 	dev_print("\a\n");
 	dev_setxy(0,os_graf_my-9);
-	dev_printf("\033[91m\033[0m\033[7m * BREAK AT %d * - Press '.' to return\4 \033[80m\033[0m", pline);
+	dev_printf("\033[91m\033[0m\033[7m * %s %d * - Press '.' to return\4 \033[80m\033[0m", WORD_BREAK_AT, pline);
 	#else
-	dev_printf("\n\033[0m\033[80m\a\033[7m * BREAK AT LINE %d * \033[0m\n", pline);
+	dev_printf("\n\033[0m\033[80m\a\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT, pline);
 	#endif
 
 	#if defined(_UnixOS)
