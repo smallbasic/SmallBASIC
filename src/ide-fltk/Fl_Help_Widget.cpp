@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.11 2005-03-22 22:36:52 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.12 2005-03-23 22:27:21 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -11,8 +11,8 @@
 //
 
 #include <errno.h>
-#include <io.h>
 #include <ctype.h>
+#include <io.h>
 
 #include <fltk/ask.h>
 #include <fltk/draw.h>
@@ -28,6 +28,7 @@
 #include <fltk/Choice.h>
 #include <fltk/Item.h>
 #include <fltk/Input.h>
+#include <fltk/SharedImage.h>
 
 #define FL_HELP_WIDGET_RESOURCES
 #include "HelpWidget.h"
@@ -55,7 +56,7 @@ void trace(const char *format, ...);
 Color getColor(const char *n);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 const char* skipWhite(const char* s);
-Image* loadImage(String* fileName, String* imgSrc);
+Image* loadImage(const char* imgSrc);
 struct AnchorNode;
 static char truestr[] = "true";
 static char falsestr[] = "false";
@@ -312,7 +313,8 @@ struct ImageNode : public BaseNode {
     ImageNode(const Style* style, String* fileName, Attributes& p) : 
         BaseNode() {
         this->style = style;
-        image = loadImage(fileName, p.getSrc());
+        String* src = p.getSrc();
+        image = loadImage(src == 0 ? 0 : fileName->getPath(src->toString()));
         image->measure(w, h);
         w = p.getWidth(w);
         h = p.getHeight(h);
@@ -657,6 +659,7 @@ struct TdEndNode : public BaseNode {
 
 struct InputNode : public BaseNode {
     InputNode(Group* parent, Font* font);
+    InputNode(Group* parent, Font* font, const char* v, int len);
     InputNode(Group* parent, Attributes& p, Font* font);
 
     void display(Display* out) {
@@ -687,7 +690,8 @@ struct InputNode : public BaseNode {
     Widget* button;
 };
 
-InputNode::InputNode(Group* parent, Attributes& p, Font* font) : BaseNode() {
+InputNode::InputNode(Group* parent, Attributes& p, Font* font)
+    : BaseNode() {
     parent->begin();
     String* value = p.getValue();
     String* type = p.getType();
@@ -724,7 +728,8 @@ InputNode::InputNode(Group* parent, Attributes& p, Font* font) : BaseNode() {
     parent->end();
 }
 
-InputNode::InputNode(Group* parent, Font* font) {
+InputNode::InputNode(Group* parent, Font* font)
+    : BaseNode() {
     parent->begin();
     button = new Choice(0, 0, INPUT_WIDTH, 0);
     button->color(BUTTON_COLOR);
@@ -734,35 +739,35 @@ InputNode::InputNode(Group* parent, Font* font) {
     parent->end();
 }
 
-InputNode* createDropList(Group* parent, Font* font, const char*& tagEnd) {
-    InputNode* node = new InputNode(parent, font);
+InputNode::InputNode(Group* parent, Font* font, const char* v, int len) 
+    : BaseNode() {
+    parent->begin();
+    button = new Input(0, 0, INPUT_WIDTH, 0);
+    button->box(NO_BOX);
+    if (v && len) {
+        String value;
+        value.append(v, len);
+        ((Input*)button)->value(value.toString());
+    }
+    button->user_data((void*)ID_TEXTBOX);
+    button->color(BUTTON_COLOR);
+    button->textcolor(ANCHOR_COLOR);
+    button->textfont(font);
+    button->user_data((void*)ID_OPTION);
+    parent->end();
+}
+
+void createDropList(InputNode* node, strlib::List* options) {
     Choice* menu = (Choice*)node->button;
     menu->begin();
-
-    const char* t = tagEnd+1;
-    const char* selectEnd = strstr(t, "</select>");
-    tagEnd = selectEnd+8;
-
-    while (t && t[0]) {
-        const char* option = strstr(t, "<option>");
-        if (option == 0 || *(option+8) == 0 || option > selectEnd) {
-            break; // no more options
-        }
-        option += 8; // <option>
-        const char* optionEnd = strstr(option, "</option>");
-        if (optionEnd == 0 || optionEnd < option) {
-            break; // invalid end tag
-        }
-        t = optionEnd+9; // </option>
-
-        String s;
-        s.append(option, optionEnd-option);
+    Object** list = options->getList();
+    int len = options->length();
+    for (int i=0; i<len; i++) {
+        String* s = (String*)list[i];
         Item* item = new Item();
-        item->copy_label(s.toString());
+        item->copy_label(s->toString());
     }
-
     menu->end();
-    return node;
 }
 
 //--NamedInput------------------------------------------------------------------
@@ -1200,18 +1205,21 @@ void HelpWidget::compose() {
     int textlen = 0;
     U8 newline = false;
 
-    Stack tableStack(10);
-    Stack trStack(10);
-    Stack tdStack(10);
-    Stack olStack(10);
+    strlib::Stack tableStack(10);
+    strlib::Stack trStack(10);
+    strlib::Stack tdStack(10);
+    strlib::Stack olStack(10);
+    strlib::List options(10);
     Attributes p(10);
     String* prop;
     BaseNode* node;
+    InputNode* inputNode;
 
     const char* text = htmlStr.toString();
     const char* tagBegin = text;
     const char* tagEnd = text;
     const char* tag;
+    const char* tagPair = 0;
 
 #define ADD_PREV_SEGMENT                            \
     prevlen = i-pindex;                             \
@@ -1239,7 +1247,7 @@ void HelpWidget::compose() {
         }
 
         // process open text leading to the found tag 
-        if (tagBegin > text) {
+        if (tagBegin > text && tagPair == 0) {
             textlen = tagBegin - text;
             const char* p = text;
             int pindex = 0;
@@ -1310,8 +1318,10 @@ void HelpWidget::compose() {
                 nodeList.append(new TextNode(p, len));
                 newline = false;
             }
-            text = *tagEnd == 0 ? 0 : tagEnd+1;
         }
+
+        // move to after end tag
+        text = *tagEnd == 0 ? 0 : tagEnd+1;
 
         // process the tag
         newline = false;
@@ -1372,6 +1382,32 @@ void HelpWidget::compose() {
                     nodeList.append(node);
                     newline = true;
                     text = skipWhite(tagEnd+1);
+                } else if (0 == strnicmp(tag, "textarea", 8) && tagPair) {
+                    inputNode = new
+                        InputNode(this, font, tagPair, tagBegin-tagPair);
+                    nodeList.append(inputNode);
+                    inputs.append(inputNode);
+                    prop = p.getName();
+                    if (prop != null) {
+                        namedInputs.append(new NamedInput(inputNode, prop));
+                    }
+                    tagPair = 0;
+                    p.removeAll();
+                } else if (0 == strnicmp(tag, "select", 6) && tagPair) {
+                    inputNode = new InputNode(this, font);
+                    createDropList(inputNode, &options);
+                    nodeList.append(inputNode);
+                    inputs.append(inputNode);
+                    prop = p.getName();
+                    if (prop != null) {
+                        namedInputs.append(new NamedInput(inputNode, prop));
+                    }
+                    tagPair = 0;
+                    p.removeAll();
+                } else if (0 == strnicmp(tag, "option", 6) && tagPair) {
+                    String* option = new String();
+                    option->append(tagPair, tagBegin-tagPair);
+                    options.append(option);
                 }
             } else if (isalpha(tag[0]) || tag[0] == '?' || tag[0] == '!') {
                 // process the start of the tag
@@ -1434,12 +1470,13 @@ void HelpWidget::compose() {
                     newline = true;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "a ", 2)) {
+                    p.removeAll();
                     p.load(tag+2, taglen-2);
                     node = new AnchorNode(p);
                     nodeList.append(node);
                     anchors.append(node);
-                    p.removeAll();
                 } else if (0 == strnicmp(tag, "font ", 5)) {
+                    p.removeAll();
                     p.load(tag+5, taglen-5);
                     prop = p.get("size");
                     if (prop != null) {
@@ -1451,7 +1488,6 @@ void HelpWidget::compose() {
                     if (prop != null) {
                         font = fltk::font(*prop->toString());
                     }
-                    p.removeAll();
                     node = new FontNode(font, fontSize, color, bold, italic);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "h", 1)) {
@@ -1461,32 +1497,31 @@ void HelpWidget::compose() {
                     nodeList.append(new BrNode());
                     newline = true;
                 } else if (0 == strnicmp(tag, "input ", 6)) {
+                    p.removeAll();
                     p.load(tag+6, taglen-6);
-                    InputNode* node = new InputNode(this, p, font);
-                    nodeList.append(node);
-                    inputs.append(node);
+                    inputNode = new InputNode(this, p, font);
+                    nodeList.append(inputNode);
+                    inputs.append(inputNode);
                     prop = p.getName();
                     if (prop != null) {
-                        namedInputs.append(new NamedInput(node, prop));
+                        namedInputs.append(new NamedInput(inputNode, prop));
                     }
-                    p.removeAll();
+                } else if (0 == strnicmp(tag, "textarea", 8)) {
+                    p.load(tag+8, taglen-8);
+                    tagPair = text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "select", 6)) {
-                    InputNode *node = createDropList(this, font, tagEnd);
-                    nodeList.append(node);
-                    inputs.append(node);
                     p.load(tag+6, taglen-6);
-                    prop = p.getName();
-                    if (prop != null) {
-                        namedInputs.append(new NamedInput(node, prop));
-                    }
-                    p.removeAll();
-                    text = tagEnd+1;                    
+                    tagPair = text = skipWhite(tagEnd+1);
+                    options.removeAll();
+                } else if (0 == strnicmp(tag, "option", 6)) {
+                    tagPair = text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "img ", 4)) {
+                    p.removeAll();
                     p.load(tag+4, taglen-4);
                     node = new ImageNode(style(), &fileName, p);
                     nodeList.append(node);
-                    p.removeAll();
                 } else if (0 == strnicmp(tag, "body ", 5)) {
+                    p.removeAll();
                     p.load(tag+5, taglen-5);
                     prop = p.get("bgcolor");
                     if (prop != null) {
@@ -1496,7 +1531,6 @@ void HelpWidget::compose() {
                     if (prop != null) {
                         foreground = getColor(prop->toString());
                     }
-                    p.removeAll();
                 }
             } else {
                 // '<' is a literal character
@@ -1507,7 +1541,7 @@ void HelpWidget::compose() {
         } // if found a tag
         tagBegin = *tagEnd == 0 ? 0 : tagEnd+1;
     }
-    
+
     // prevent nodes from being auto-deleted
     olStack.emptyList();
     tdStack.emptyList();
@@ -1580,18 +1614,7 @@ void HelpWidget::copyText(int begin, int end) {
 
 void HelpWidget::navigateTo(const char* s) {
     // search for target using the path of the current file
-    int i = fileName.lastIndexOf('/', 0);
-    if (i != -1) {
-        String path = fileName.substring(0, i+1);
-        path.append(s);
-        if (access(path.toString(), 0) == 0) {
-            loadFile(path.toString());
-            return;
-        }
-    }
-
-    // search using the given target name
-    loadFile(s);
+    loadFile(fileName.getPath(s).toString());
 }
 
 void HelpWidget::loadFile(const char *f) {
@@ -1688,6 +1711,9 @@ void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
  * <table>-skip-<tr>-skip-<td></td>-skip</tr>-skip-</table>
  */
 const char* skipWhite(const char* s) {
+    if (s == 0 || s[0] == 0) {
+        return 0;
+    }
     while (isWhite(*s)) {
         s++;
     }
@@ -1746,8 +1772,28 @@ Color getColor(const char *n) {
     }
 }
 
-Image* loadImage(String* fileName, String* imgSrc) {
-    return &brokenImage;
+// image factory based on file extension
+SharedImage* loadImage(const char* name, uchar* buff) {
+    int len = strlen(name);
+    if (strcasecmp(name+(len-4), ".jpg") == 0 ||
+        strcasecmp(name+(len-5), ".jpeg") == 0) {
+        return jpegImage::get(name, buff);
+    } else if (strcasecmp(name+(len-4), ".gif") == 0) {
+        return gifImage::get(name, buff);
+    } else if (strcasecmp(name+(len-4), ".png") == 0) {
+        return pngImage::get(name, buff);
+    } else if (strcasecmp(name+(len-4), ".xpm") == 0) {
+        return xpmFileImage::get(name, buff);
+    }
+    return 0;
+}
+
+Image* loadImage(const char* imgSrc) {
+    if (imgSrc == 0 || access(imgSrc, 0) != 0) {
+        return &brokenImage;
+    }
+    Image* image = loadImage(imgSrc, 0);
+    return image != 0 ? image : &brokenImage;
 }
 
 #ifdef UNIT_TEST
