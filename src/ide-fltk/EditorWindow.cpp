@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.7 2004-11-22 22:20:03 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.8 2004-11-23 22:46:16 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -475,6 +475,10 @@ void EditorWindow::findNext() {
 }
 
 void EditorWindow::newFile() {
+    if (readonly()) {
+        return;
+    }
+
     if (!checkSave(true)) {
         return;
     }
@@ -488,6 +492,10 @@ void EditorWindow::newFile() {
 }
 
 void EditorWindow::openFile() {
+    if (readonly()) {
+        return;
+    }
+
     if (!checkSave(true)) {
         return;
     }
@@ -499,6 +507,10 @@ void EditorWindow::openFile() {
 }
 
 void EditorWindow::insertFile() {
+    if (readonly()) {
+        return;
+    }
+
     char *newfile = file_chooser("Insert File?", "*.bas", filename);
     if (newfile != NULL) {
         loadFile(newfile, editor->insert_position());
@@ -506,6 +518,10 @@ void EditorWindow::insertFile() {
 }
 
 void EditorWindow::replaceNext() {
+    if (readonly()) {
+        return;
+    }
+
     const char *find = replaceFind->value();
     const char *replace = replaceWith->value();
 
@@ -534,6 +550,10 @@ void EditorWindow::replaceNext() {
 }
 
 void EditorWindow::replaceAll() {
+    if (readonly()) {
+        return;
+    }
+
     const char *find = replaceFind->value();
     const char *replace = replaceWith->value();
 

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.11 2004-11-22 22:20:03 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.12 2004-11-23 22:46:17 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -33,6 +33,10 @@
 #include "MainWindow.h"
 #include "EditorWindow.h"
 #include "sbapp.h"
+
+#ifdef __CYGWIN__
+#include <fltk/win32.h>
+#endif
 
 using namespace fltk;
 
@@ -125,14 +129,15 @@ void setRowCol(int row, int col) {
     char t[20];
     sprintf(t, "%d", row);
     wnd->rowStatus->copy_label(t);
+    wnd->rowStatus->redraw();
     sprintf(t, "%d", col);
     wnd->colStatus->copy_label(t);
-    wnd->layout();
-    wnd->redraw();     
+    wnd->colStatus->redraw();
 }
 
 void setModified(bool dirty) {
     wnd->modStatus->label(dirty?"MOD":"");
+    wnd->modStatus->redraw();
 }
 
 int arg_cb(int argc, char **argv, int &i) {
@@ -186,8 +191,12 @@ int main(int argc, char **argv) {
 
     wnd = new MainWindow(600, 400);
     wnd->show(argc, argv);
-    check();
 
+#ifdef __CYGWIN__
+    wnd->icon((char *)LoadIcon(xdisplay, MAKEINTRESOURCE(103)));
+#endif
+
+    check();
     switch (runMode) {
     case run_state:
         wnd->editWnd->loadFile(runfile, -1);
@@ -280,14 +289,14 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     outputGroup->resizable(out);
     outputGroup->end();
 
-    helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
-    helpGroup->hide();
-    helpGroup->begin();
+    //helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
+    //helpGroup->hide();
+    //helpGroup->begin();
     //HelpView* helpView = new HelpView(2, 2, w-4, pageHeight-4);
     //helpView->load("../doc/sbasic.html");
     //helpGroup->resizable(helpView);
-    helpGroup->end();
-
+    //helpGroup->end();
+    
     tabGroup->end();
     resizable(tabGroup);
 

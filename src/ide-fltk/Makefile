@@ -68,10 +68,11 @@ PLATFORM=-D_UnixOS -D_CygWin -D_FLTK
 ## patched fltk-config to remove -mwindows
 ##LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
 LDLIBS = -lm -lgcc -lreadline -ltermcap `fltk-config --ldflags`
+RESOURCES = sbfltk.res
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
 
-linux: PLATFORM=-D_UnixOS
+linux: PLATFORM=-D_UnixOS RESOURCES=
 debug: OPTIM = -g -O0 -Wall -Wunused -fno-exceptions
 
 OBJDIR = ./objs/
@@ -100,8 +101,11 @@ EditorWindow.cpp:kwp.cxx
 kwp.cxx: build_kwpc
 	./build_kwpc
 
-sbfltk: $(OBJS)
-	gcc $(OBJS) ${LDLIBS} -o $@
+sbfltk: $(OBJS) ${RESOURCES}
+	gcc $(OBJS) ${LDLIBS} ${RESOURCES} -o $@
+
+sbfltk.res : sbfltk.rc
+	windres $< -O coff -o $@
 
 #unit test
 Fl_Ansi_Window.exe: Fl_Ansi_Window.o 

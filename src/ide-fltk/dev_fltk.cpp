@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.9 2004-11-22 22:20:03 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.10 2004-11-23 22:46:29 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -15,6 +15,7 @@
 
 #include <fltk/run.h>
 #include <fltk/events.h>
+#include <fltk/SharedImage.h>
 #include <fltk/FL_VERSION.h>
 
 #include "MainWindow.h"
@@ -35,6 +36,7 @@ int osd_devinit() {
     os_color = 1;
     os_color_depth = 16;
     setsysvar_str(SYSVAR_OSNAME, "FLTK");
+    SharedImage::clear_cache();
     return 1;
 }
 
@@ -181,16 +183,42 @@ void osd_write(const char *s) {
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
 }
 
+SharedImage* getImage(int handle, int index) {
+    dev_file_t*	file_type = dev_getfileptr(handle);
+    if (file_type == 0) {
+        return 0;
+    }
+    //switch (file_type.type) {
+    //case ft_http:
+    //case ft_stream:
+    // default:
+    //    return 0;
+    //}
+
+    return SharedImage::get(gifImage::create, file_type->name);
+}
+
 void dev_image(int handle, int index, int x, int y, 
                int sx, int sy, int w, int h) {
+    SharedImage* img = getImage(handle, index);
+    if (img != 0) {
+        // todo: draw into the Fl_Ansi_Window
+//         out.DrawImage(x, y, img, 0, 0, sx, sy, 
+//                       w == 0 ? img->img_width : w, 
+//                       h == 0 ? img->img_height: h, 
+//                       IMG_CMB_IOR);
+        
+    }
 }
 
 int dev_image_width(int handle, int index) {
-    return -1;
+    SharedImage* img = getImage(handle, index);
+    return (img != 0 ? img->w() : -1);
 }
 
 int dev_image_height(int handle, int index) {
-    return -1;
+    SharedImage* img = getImage(handle, index);
+    return (img != 0 ? img->h() : -1);
 }
 
 void enter_cb(Widget*, void* v) {

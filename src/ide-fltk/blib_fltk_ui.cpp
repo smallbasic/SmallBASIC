@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.3 2004-11-22 22:20:03 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.4 2004-11-23 22:46:17 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -72,10 +72,10 @@ void closeButton(Widget* w, void* v) {
 void createForm() {
     if (form == 0) {
         wnd->outputGroup->begin();
-        form = new Group(wnd->out->x(), 
-                         wnd->out->y(), 
-                         wnd->out->w(), 
-                         wnd->out->h());
+        form = new Group(wnd->out->x()+1, 
+                         wnd->out->y()+1, 
+                         wnd->out->w()-2, 
+                         wnd->out->h()-2);
         form->resizable(0);
         form->color(color(152,152,152));
         wnd->outputGroup->end(); 

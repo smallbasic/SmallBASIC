@@ -15,12 +15,13 @@ Tasks for initial release:
   - status bar and title heading. include some indication program is 
     running. *done*
   - read-only when program is running but scrollbars still function *done*
-  - Grey/disable/handle editor menus when in run mode
+  - Grey/disable/handle editor menus when in run mode *done*
   - selectable colors like in the "input" fltk sample
   - toggle menu for turbo mode like in the "menu" fltk sample
   - tabs along top or bottom *done*
   - multiple editor tabs
   - undo (ask FLTK team)
+  - full screen menu option
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
@@ -31,6 +32,7 @@ Tasks for initial release:
    - sound ?
    - updated DRAW code *done*
    - handle "repeat key$ = inkey until len(key$) > 0" w/out high cpu use *done*
+   - modules - ensure that the flite speach synth works (under cygwin)
 
 3. Help Tab
    - using FLTK help widget - doesn't appear to be completed. 
@@ -56,4 +58,4 @@ Tasks for initial release:
 
 10. Linux build
 
-$Id: README.TXT,v 1.4 2004-11-22 22:20:03 zeeb90au Exp $
+$Id: README.TXT,v 1.5 2004-11-23 22:46:17 zeeb90au Exp $
