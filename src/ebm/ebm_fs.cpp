@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_fs.cpp,v 1.4 2004-05-21 09:48:00 zeeb90au Exp $
+// $Id: ebm_fs.cpp,v 1.5 2004-07-03 23:06:57 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -21,11 +21,18 @@
 #include "sberr.h"
 #include <rs232.h>
 
+#include "ebm_main.h"
+
 EXTERN_C_BEGIN
 
 #include "match.h"
 
+extern SBWindow out;
+extern bool needUpdate;
 static File* ftab[OS_FILEHANDLES];
+
+byte* image = 0;
+const PKG* imagePkg = 0;
 
 struct ComportFile {
     ComportFile();
@@ -167,6 +174,15 @@ struct FileSystem {
     }
 } fileSystem;
 
+
+void closeImage() {
+    if (image != 0) {
+        free(image);
+    }
+    image = 0;
+    imagePkg = 0;
+}
+
 File* getFile(int handle) {
     if (handle == comport.handle) {
         return null;
@@ -196,6 +212,7 @@ void dev_closefs(void) {
     }
 
     comport.close();
+    closeImage();
 }
 
 void dev_chdir(const char *dir) {
@@ -331,6 +348,8 @@ int dev_fopen(int handle, const char *name, int flags) {
             return 0;
         }
     }
+
+    closeImage();
     File *f = ftab[handle] = new File;
 
     if (flags == DEV_FILE_APPEND) {
@@ -620,5 +639,66 @@ int pclose(FILE *stream) {
     return 0;
 }
 
+const IMAGE* getImage(int handle, int index) {
+    File *f = getFile(handle);
+
+    if (f == null || f->length() == 0 || 
+        f->isMode(File::readMode) == false) {
+        rt_raise("FS: IMAGE LIB NOT OPEN FOR READING");
+        return 0;
+    }
+
+    if (imagePkg == 0) {
+        if (f->isFileMMC()) {
+            image = (byte*)malloc(f->length());
+            if (f->read(image, f->length())) {
+                imagePkg = (const PKG*)image;
+            } else {
+                closeImage();
+            }
+        } else {
+            imagePkg = (const PKG*)f->getPtr();
+        }
+    }
+
+    if (imagePkg == 0) {
+        rt_raise("FS: IMAGE LIB IS EMPTY");
+        return 0;
+    }
+
+    if ((U16)index >= imagePkg->numobjects) {
+        rt_raise("FS: INVALID IMAGE INDEX");
+        return 0;
+    }
+
+    const struct X {
+        U32 magic;
+        IMAGE img;
+    } *blk = (const struct X *)PKG_String(imagePkg, index);
+    if (blk->magic != 0x31424946) {
+        rt_raise("FS: INDEX TO NON IMAGE");
+        return 0;
+    } else {
+        return &blk->img;
+    }
+}
+
+int dev_image_width(int handle, int index) {
+    const IMAGE* img = getImage(handle, index);
+    return (img != 0 ? img->img_width : -1);
+}
+
+int dev_image_height(int handle, int index) {
+    const IMAGE* img = getImage(handle, index);
+    return (img != 0 ? img->img_height : -1);    
+}
+
+void dev_image(int handle, int index, int x, int y) {
+    const IMAGE* img = getImage(handle, index);
+    if (img != 0) {
+        out.DrawImage(x, y, img);
+        needUpdate = true;
+    }
+}
 
 EXTERN_C_END

@@ -1,4 +1,4 @@
-SmallBASIC for eBookman version 0.9.0h
+SmallBASIC for eBookman version 0.9.0i
 
 http://smallbasic.sourceforge.net
 
@@ -29,6 +29,72 @@ suggestions.
 You can also use this site for sharing your SmallBASIC programs.
 
 RELEASE HISTORY:
+
+0.9.0i - 4 July 2004
+
+- Fixed one more problem relating to editing files that had been copied 
+  from the desktop. Random chars appearing after the end of the file.
+  TapWrite 1.3 will also contain this fix.
+
+- The open/launch page now allows basic source files with any cAsE for the
+  file name extension.
+
+- Updates for PEN(0), PEN(3). This should work more or less as expected now.
+  You need to call PEN ON for these to have any effect. 
+
+- The point(x,y) function now returns the correct colour. 
+
+Thanks to Snoopy42 for finding and reporting the two above problems.
+
+- Minor updates to osd_events() to help conserve battery power.
+
+- Fixed the display of the "Opening ..." message when opening large 
+  text files in the editor.
+
+- Added a new procedure and two new functions:
+
+  image #n, index, x, y  -- Paints an image from an image library
+  imagew #n, index       -- Returns the image width
+  imageh #n, index       -- Returns the image height
+
+  For the ebookman platform the image library should contain images in the 
+  package file format. You can create this file using SnarfWriter as follows: 
+
+  1. Create your program images and save as either JPG, GIF or PNG
+     in a clean directory (GIMP is a powerful image editor).
+
+  2. Create a file imagelib.snarf with the following text:
+   
+     make-index-page=false
+     site-name=imagelib
+     out-path=
+     site=file://./index.html
+     read-images=true
+
+  3. Create an index.html file like this:
+     
+     <img src=pic1.jpg>
+     <img src=pic2.jpg>
+     <img src=pic3.jpg>
+
+  4. Run SnarfWriter like this:
+
+     java -jar SnarfWriter.jar imagelib.snarf
+   
+  5. Upload the resulting imagelib.mhtml to your ebookman
+
+  6. Your BASIC program with look something like this:
+
+     open "globe.mhtml" for input as #1
+     repeat
+        for index = 2 to 11
+          image #1, index, 10, 10
+        next index
+     until 
+     close #1
+  
+  7. Cre8 cools games and share them with the SmallBASIC community :-)
+
 
 0.9.0h - 30 April 2004
 

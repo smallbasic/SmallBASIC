@@ -102,7 +102,7 @@ debug: sa
 	@chmod a+x $@.tmp
 	./$@.tmp
 
-sync: ${APPNAME}.seb
+install: ${APPNAME}.seb
 	/ebm/ebmsync/ebmsync -M 1 -p ${APPNAME}.seb
 
 help:

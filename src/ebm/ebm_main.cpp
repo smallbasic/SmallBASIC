@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_main.cpp,v 1.5 2004-04-18 22:53:16 zeeb90au Exp $
+// $Id: ebm_main.cpp,v 1.6 2004-07-03 23:06:57 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -252,24 +252,6 @@ S32 SBWindow::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
             break;
         }
         return 1;
-
-    case MSG_PEN_DOWN:
-    case MSG_PEN_DOUBLECLICK:
-    case MSG_PEN_TRACK:
-        penX = data >> 16;
-        penY = data;
-        penUpdate = true;
-        if (type == MSG_PEN_DOWN) {
-            penDownX = penX;
-            penDownY = penY;
-            penDown = true;
-        }
-        return 1;
-    case MSG_PEN_UP:
-        penUpdate = true;
-        penDown = false;
-        return 1;
-
     default:
         break;
     }

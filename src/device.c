@@ -1893,3 +1893,21 @@ char	*dev_getenv_n(int n)
 	#endif
 }
 
+#ifndef _FRANKLIN_EBM
+// empty implementations
+void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
+}
+
+void dev_image(int handle, int index, int x, int y) {
+}
+
+int dev_image_width(int handle, int index) {
+    return -1;
+}
+
+int dev_image_height(int handle, int index) {
+    return -1;
+}
+
+#endif
+

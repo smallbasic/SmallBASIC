@@ -924,6 +924,7 @@ void	eval(var_t *r)
 			case kwISNUMBER:
 			case kwISSTRING:
 			case kwRGB:	case kwRGBF:
+            case kwIMGW: case kwIMGH:
 				V_FREE(r);
 
 				if	( CODE_PEEK() != kwTYPE_LEVEL_BEGIN )

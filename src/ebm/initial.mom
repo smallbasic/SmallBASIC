@@ -10,10 +10,7 @@ object sim README TXT README.TXT
 object sim test sbx test.sbx
 object sim test.bas sbx test.bas.sbx
 object sim test txt test.txt
-object sim a bas a.bas
-object sim z bas z.bas
-object sim a sbx a.sbx
-object sim z sbx z.sbx
+object sim test mhtml test.mhtml
 
 object sim SmallBASIC help SmallBASIC.help
 object sim SmallBASIC fxe SmallBASIC.fxe
@@ -22,21 +19,4 @@ object sim _cmd bas _cmd.bas
 object sim _cmd sbx _cmd.sbx
 object sim SmallBASIC ini SmallBASIC.ini
 
-
-object sim a1 bas a1.bas
-object sim a2 bas a2.bas
-object sim a3 bas a3.bas
-object sim a4 bas a4.bas
-object sim a5 bas a5.bas
-object sim a6 bas a6.bas
-object sim a7 bas a7.bas
-object sim a8 bas a8.bas
-object sim a9 bas a9.bas
-object sim a10 bas a10.bas
-object sim a11 bas a11.bas
-object sim a12 bas a12.bas
-object sim a13 bas a13.bas
-object sim a14 bas a14.bas
-object sim a15 bas a15.bas
-object sim a16 bas a16.bas
 

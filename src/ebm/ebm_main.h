@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_main.h,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// $Id: ebm_main.h,v 1.3 2004-07-03 23:06:57 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -35,19 +35,15 @@ struct SBWindow : public AnsiWindow {
         penY = 0;
         penDownX = 0;
         penDownY = 0;
-        penDown = false;
-        penUpdate = 0;
         penState = 0;
         menuActive = 0;
     }
 
-    S16 penX;
-    S16 penY;
-    S16 penDownX;
-    S16 penDownY;
-    S16 penUpdate;
-    S16 penState;
-    bool penDown;
+    U16 penX;
+    U16 penY;
+    U16 penDownX;
+    U16 penDownY;
+    U16 penState;
     bool menuActive;
     S32 MsgHandler(MSG_TYPE type, CViewable *from, S32 data);
 

@@ -197,7 +197,7 @@ int		open_unit(const char *file)
 		}
 
 	// open unit
-	h = open(unitname, O_RDWR | O_BINARY);
+	h = open(unitname, O_RDWR | O_BINARY, 0660);
 	if	( h == -1 )	
 		return -1;
 

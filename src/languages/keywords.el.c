@@ -367,6 +367,9 @@ struct func_keyword_s func_table[] = {
 { "LOADLIB",		kwLOADLIB },
 { "CALL",			kwCALLCF },
 
+{ "IMAGEW",			kwIMGW },
+{ "IMAGEH",			kwIMGH },
+
 { "", 0 }
 };
 
@@ -450,6 +453,9 @@ struct proc_keyword_s proc_table[] = {
 { "EXPRSEQ",	kwEXPRSEQ },
 { "UNLOADLIB",	kwUNLOADLIB },
 { "CALL",		kwCALLCP },
+{ "HTML",		kwHTML },
+{ "IMAGE",		kwIMAGE },
+
 #if !defined(OS_LIMITED)
 { "STKDUMP",	kwSTKDUMP	},
 #endif

@@ -1172,6 +1172,12 @@ void	bc_loop(int isf)
 					prog_error = -1;	// end of program
 					break;
 				#endif
+                case kwHTML:
+                    cmd_html();
+                    break;
+                case kwIMAGE:
+                    cmd_image();
+                    break;
 				default:
 					err_pcode_err(pcode);
 					}
@@ -1247,9 +1253,12 @@ void	bc_loop(int isf)
 			case	kwFILEREAD:
 				cmd_fread();
 				break;
+#ifndef _FRANKLIN_EBM
+/* avoid compilation error: duplicate case value */
 			case kwLOGPRINT:
 				cmd_print(PV_LOG);
 				break;
+#endif
 			case	kwFILEPRINT:
 				cmd_print(PV_FILE);
 				break;
@@ -1437,7 +1446,7 @@ int		brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
 			return search_task(fname);
 
 		// open & load
-		h = open(fname, O_RDWR | O_BINARY);
+		h = open(fname, O_RDWR | O_BINARY, 0660);
 		if	( h == -1 )	
 			panic("File '%s' not found", fname);
 			
@@ -1777,11 +1786,12 @@ void	exec_sync_variables(int dir)
 void	sys_before_comp()	SEC(TRASH);
 void	sys_before_comp()
 {
-	#if defined(OS_LIMITED)
-	opt_nosave = 0;			// create .sbx;
-	#else
-	opt_nosave = 1;			// don't create .sbx; however it will create any unit file (.sbu)
-	#endif
+ 	// opt_nosave is a user controlled variable (chris 4/7/04)
+    //#if defined(OS_LIMITED)
+	// opt_nosave = 0;			// create .sbx;
+	//#else
+	// opt_nosave = 1;			// don't create .sbx; however it will create any unit file (.sbu)
+	//#endif
 
 	#if defined(SONY_CLIE)
 	if	( use_sony_clie )	{
@@ -1971,6 +1981,10 @@ int		sbasic_compile(const char *file)
 {
 	int		comp_rq = 0;	// compilation required = 0
 	int		success = 1;
+
+    if (strstr(file, ".sbx") == file+strlen(file)-4) {
+        return success; // file is an executable
+    }
 
 	if ( opt_nosave )
 		comp_rq = 1;

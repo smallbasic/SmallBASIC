@@ -87,7 +87,7 @@
 #define MSG_UNIT_NOT_FOUND		"Unit %s.sbu not found"
 #define MSG_IMPORT_FAILED		"Unit %s.sbu, import failed"
 #define MSG_INVALID_UNIT_NAME	"Invalid unit name"
-#define MSG_UNIT_ALREADY_DEFINED "Unit name alread defined"
+#define MSG_UNIT_ALREADY_DEFINED "Unit name already defined"
 #define MSG_OPT_PREDEF_ERR		"OPTION PREDEF: Unrecognized option '%s'"
 #define MSG_MANY_UNIT_DECL		"Use 'Unit' keyword only once"
 #define MSG_INC_MIS_DQ			"#INC: Missing \""

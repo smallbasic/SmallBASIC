@@ -1041,6 +1041,57 @@ char_p_t    *dev_create_file_list(const char *wc, int *count)       SEC(BIO);
 */
 void    	dev_destroy_file_list(char_p_t *list, int count)          SEC(BIO);
 
+/**
+*	@html
+*
+*	displays html text
+*
+*	@param html code
+*	@param title display title
+*	@param x window coordinates
+*	@param y
+*	@param w
+*	@param h
+*   
+*/
+void    	dev_html(const char* html, const char* title, int x, int y, int w, int h)  SEC(BIO);
+
+/**
+*	@image
+*
+*	displays an image from an image library
+*
+*	@param file handle 
+*	@param image index
+*	@param x window coordinates
+*	@param y
+*   
+*/
+void    	dev_image(int handle, int index, int x, int y) SEC(BIO);
+
+/**
+*	@imagew
+*
+*	return the width of an image in an image library
+*
+*	@param file handle 
+*	@param image index
+*   
+*/
+int    	dev_image_width(int handle, int index) SEC(BIO);
+
+/**
+*	@imageh
+*
+*	return the height of an image in an image library
+*
+*	@param file handle 
+*	@param image index
+*   
+*/
+int    	dev_image_height(int handle, int index) SEC(BIO);
+
+
 #if defined(__cplusplus)
 }
 #endif

@@ -598,7 +598,7 @@ void	lwrite(const char *buf)
 		sprintf(log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
 		#endif
 
-		log_dev = open(log_name, O_RDWR);
+		log_dev = open(log_name, O_RDWR, 0660);
 		lseek(log_dev, 0, SEEK_END);
 		if	( log_dev == -1 )	log_dev = open(log_name, O_CREAT | O_RDWR, 0660);
 		if	( log_dev == -1 )	panic("LOG: Error on creating log file");

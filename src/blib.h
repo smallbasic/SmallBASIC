@@ -162,6 +162,9 @@ void	cmd_bputc(void)					SEC(BIO2);
 void	cmd_bload(void)					SEC(BIO2);
 void	cmd_bsave(void)					SEC(BIO2);
 
+void    cmd_html(void)                  SEC(BMATH);
+void    cmd_image(void)                 SEC(BMATH);
+
 // blib_func
 
 /**

@@ -3313,7 +3313,7 @@ char	*comp_load(const char *file_name)
 	int		h;
 	
 	strcpy(comp_file_name, file_name);
-	h = open(comp_file_name, O_BINARY | O_RDWR);
+	h = open(comp_file_name, O_BINARY | O_RDWR, 0660);
 	if	( h == -1 )	{
 		#if defined(_CygWin)
 		char	temp[1024];

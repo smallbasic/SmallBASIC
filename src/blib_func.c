@@ -2269,6 +2269,30 @@ void	cmd_intN(long funcCode, var_t *r)
 			r->v.i = -r->v.i;
 		}
 		break;
+        
+    case kwIMGW:
+        {
+            // image width 
+            int h,i;
+            par_getsharp();        if (prog_error) break;
+            h = par_getint();      if (prog_error) break;
+            par_getcomma();        if (prog_error) break;
+            i = par_getint();      if (prog_error) break;
+            r->v.i = dev_image_width(h, i);
+        }
+        break;
+
+    case kwIMGH:
+        {
+            // image height
+            int h,i;
+            par_getsharp();        if (prog_error) break;
+            h = par_getint();      if (prog_error) break;
+            par_getcomma();        if (prog_error) break;
+            i = par_getint();      if (prog_error) break;
+            r->v.i = dev_image_height(h, i);
+        }
+        break;
 	default:
 		rt_raise("Unsupported buildin function call %ld, please report this bug (9)", funcCode);
 		}

@@ -139,16 +139,20 @@ double	v_getval(var_t *v)
 */
 long	v_igetval(var_t *v)
 {
-	switch ( v->type )	{
-	case V_INT:
-		return v->v.i;
-	case V_NUM:
-		return v->v.n;
-	case V_STR:
-		return numexpr_strtol((char *) v->v.p.ptr);
-	default:
-		err_varisarray();
+    if (v == 0) {
+        err_evsyntax();
+    } else {
+        switch ( v->type )	{
+        case V_INT:
+            return v->v.i;
+        case V_NUM:
+            return v->v.n;
+        case V_STR:
+            return numexpr_strtol((char *) v->v.p.ptr);
+        default:
+            err_varisarray();
 		}
+    }
 	return 0;
 }
 
@@ -393,6 +397,11 @@ int		v_compare(var_t *a, var_t *b)
 	long	di;
 	int		i, ci;
 	var_t	*ea, *eb;
+
+    if (a == 0 || b == 0) {
+        err_evsyntax();
+        return 0;
+    }
 
 	if	( a->type == V_INT && b->type == V_INT )	{
 		di = (a->v.i - b->v.i); 

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_osd.cpp,v 1.4 2004-04-17 00:24:05 zeeb90au Exp $
+// $Id: ebm_osd.cpp,v 1.5 2004-07-03 23:06:57 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -20,12 +20,16 @@
 #include "ebm_main.h"
 #include <evnt_fun.h>
 
-const int longSleep = 200000;
+const int longSleep = 250000; // input should still be responsive
 const int turboSleep = 4000;
-const int menuSleep = 100000;
+const int menuSleep = 400000;
 
 EXTERN_C_BEGIN
 #include <piezo.h>
+#include <ereader_hostio.h>
+
+#define PEN_ON  2
+#define PEN_OFF 0
 
 extern SBWindow out;
 bool needUpdate=false;
@@ -79,6 +83,11 @@ int osd_events(int wait_flag) {
 
     if (!EVNT_IsWaiting()) {
         if ((*guiFlags & GUIFLAG_NEED_FLUSH) == 0) {
+            if (wait_flag == 0 && out.penState == PEN_ON) {
+                // typically in a "while 1" loop checking for a pen 
+                // event with pen(0). need to conserve battery here
+                usleep(out.isTurboMode() ? turboSleep : longSleep);
+            }
             return out.wasBreakEv() ? -2 : 0; // no redraw required
         }
         if (wait_flag == 1 || ++ticks==ticksPerRedraw) {
@@ -87,6 +96,15 @@ int osd_events(int wait_flag) {
             imgUpdate(); // defered text update
         }
         return out.wasBreakEv() ? -2 : 0;
+    }
+
+    if (out.penState == PEN_ON && PEN_IsDown()) {
+        U16 x,y;
+        PEN_GetPosition(&x, &y);
+        if (y < out.getHeight()) {
+            return 0; 
+        }
+        // else pump event for system messages
     }
 
     GUI_EventLoop(0);
@@ -99,38 +117,48 @@ int osd_events(int wait_flag) {
     if (out.wasBreakEv()) {
         return -2;
     }
+
+    // this may call osd_events() again but it will fall out before 
+    // reaching here a second time since we just ate the event
     return dev_kbhit();
 }
 
 void osd_setpenmode(int enable) {
-    out.penState = (enable ? 2 : 0);
+    out.penState = (enable ? PEN_ON : PEN_OFF);
 }
 
 int osd_getpen(int code) {
-    if (out.penState == 0) {
+    if (out.penState == PEN_OFF) {
         usleep(out.isTurboMode() ? turboSleep : longSleep);
         return 0;
     }
-    int r = 0;
+
     switch (code) {
-    case 0:  // bool: status changed
-        if (osd_events(1) < 0) {
-            brun_break();
-            return 0;
-        }
-        r = out.penUpdate;
-        out.penUpdate = false;
-        return r;
+    case 0:  // return true if there is a waiting pen event
+        return PEN_IsDown();
     case 1:  // last pen-down x
         return out.penDownX;
     case 2:  // last pen-down y
         return out.penDownY;
-    case 3:  // vert. 1 = down, 0 = up
-        return out.penDown;
-    case 4:  // last x
-        return out.penX;
-    case 5:  // last y
-        return out.penY;
+    case 3:  // returns true if the pen is down (and save curpos)
+        if (PEN_GetPosition(&out.penX, &out.penY)) {
+            out.penDownX = out.penX;
+            out.penDownY = out.penY;
+            return 1;
+        } else {
+            return 0;
+        }
+        
+    case 4:  // cur pen-down x
+        if (PEN_GetPosition(&out.penX, &out.penY)) {
+            out.penDownX = out.penX;
+        }
+        return out.penDownX;
+    case 5:  // cur pen-down y
+        if (PEN_GetPosition(&out.penX, &out.penY)) {
+            out.penDownY = out.penY;
+        }
+        return out.penDownY;
     }
     return 0;
 }
@@ -165,7 +193,7 @@ void osd_setpixel(int x, int y) {
 }
 
 long osd_getpixel(int x, int y) {
-    return imgPixelGetColor(imgGetBase(), x,y);
+    return 15-imgPixelGetColor(imgGetBase(), x,y);
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {

@@ -250,6 +250,8 @@ kwTIMEHMS,
 kwEXPRSEQ,
 kwUNLOADLIB,
 kwCALLCP,
+kwHTML,
+kwIMAGE,
 
 kwNULLPROC
 };
@@ -420,6 +422,8 @@ kwBCS,
 
 kwLOADLIB,
 kwCALLCF,
+kwIMGW,
+kwIMGH,
 
 kwNULLFUNC
 };

@@ -2814,3 +2814,56 @@ void	cmd_exprseq(void)
 		}
 }
 
+//
+// HTML html, [title,] [x,y,w,h]
+// Display html text
+//
+void do_cmd_html(var_t* html, var_t* title) {
+   
+    int x=-1, y=-1, w=-1, h=-1;
+
+    par_getstr(html);              if (prog_error) return;
+    if (code_peek() == kwTYPE_SEP) {
+        par_getcomma();            if (prog_error) return;
+        par_getstr(&title);
+        if (code_peek() == kwTYPE_SEP) {
+            par_getcomma();        if (prog_error) return;
+            x = par_getint();      if (prog_error) return;
+            par_getcomma();        if (prog_error) return;
+            y = par_getint();      if (prog_error) return;
+            par_getcomma();        if (prog_error) return;
+            w = par_getint();      if (prog_error) return;
+            par_getcomma();        if (prog_error) return;
+            h = par_getint();      if (prog_error) return;
+        }
+    }
+    dev_html(html->v.p.ptr, title->v.p.ptr, x, y, w, h);
+}
+
+void cmd_html() {
+    var_t html, title;
+    do_cmd_html(&html, &title);
+    v_free(&html);
+    v_free(&title);    
+}
+
+//
+// IMAGE handle, index, x, y
+// Display html text
+//
+void cmd_image() {
+   
+    int h,i,x,y;
+
+	par_getsharp();        if (prog_error) return;
+    h = par_getint();      if (prog_error) return;
+    par_getcomma();        if (prog_error) return;
+    i = par_getint();      if (prog_error) return;
+    par_getcomma();        if (prog_error) return;
+    x = par_getint();      if (prog_error) return;
+    par_getcomma();        if (prog_error) return;
+    y = par_getint();      if (prog_error) return;
+
+    dev_image(h, i, x, y);
+}
+
