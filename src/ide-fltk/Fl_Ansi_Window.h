@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.11 2004-12-08 22:40:48 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.12 2004-12-09 22:32:27 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -45,7 +45,8 @@ class Fl_Ansi_Window : public Widget {
     int textHeight(void);
     int getWidth()  {return w();}
     int getHeight() {return h();}
-    void setFontSize(int i) {fontSize=i;}
+    void fontSize(int i) {font_size=i;}
+    int fontSize() {return font_size;}
 
     private:
     void init();
@@ -68,7 +69,7 @@ class Fl_Ansi_Window : public Widget {
     int curYSaved;
     int curXSaved;
     int tabSize;
-    int fontSize;
+    int font_size;
 };
 
 #endif

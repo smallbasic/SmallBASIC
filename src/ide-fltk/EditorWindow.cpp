@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.13 2004-12-08 22:40:48 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.14 2004-12-09 22:32:26 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -340,6 +340,28 @@ struct CodeEditor : public TextEditor {
         position_to_linecol(mCursorPos, row, col);
     }
 
+    void getSelStartRowCol(int *row, int *col) {
+        int start = buffer()->primary_selection()->start();
+        int end = buffer()->primary_selection()->end();
+        if (start == end) {
+            *row = -1;
+            *col = -1;
+        } else {
+            position_to_linecol(start, row, col);
+        }
+    }
+
+    void getSelEndRowCol(int *row, int *col) {
+        int start = buffer()->primary_selection()->start();
+        int end = buffer()->primary_selection()->end();
+        if (start == end) {
+            *row = -1;
+            *col = -1;
+        } else {
+            position_to_linecol(end, row, col);
+        }
+    }
+
     int position() {
         return mCursorPos;
     }
@@ -671,5 +693,12 @@ void EditorWindow::position(int pos) {
     editor->show_insert_position();
 }
 
+void EditorWindow::getSelStartRowCol(int *row, int *col) {
+    return ((CodeEditor*)editor)->getSelStartRowCol(row, col);
+}
+
+void EditorWindow::getSelEndRowCol(int *row, int *col) {
+    return ((CodeEditor*)editor)->getSelEndRowCol(row, col);
+}
 
 //--EndOfFile-------------------------------------------------------------------
