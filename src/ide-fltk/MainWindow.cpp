@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.8 2004-11-16 23:04:50 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.9 2004-11-17 22:31:44 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -38,8 +38,13 @@ using namespace fltk;
 MainWindow* wnd;
 
 enum ExecState {
-    init_state, edit_state, run_state, break_state, quit_state
-        } runMode = edit_state;
+    init_state, 
+    edit_state, 
+    run_state, 
+    modal_state,
+    break_state, 
+    quit_state
+} runMode = edit_state;
 
 extern char filename[]; // in EditorWindow
 
@@ -48,9 +53,15 @@ void quit_cb(Widget*, void* v) {
         if (check_save(true)) {
             exit(0);
         }
-    } else if (ask("Close running program?")) {
-        dev_pushkey(SB_KEY_BREAK);
-        runMode = quit_state;
+    } else {
+        switch (choice("Terminate running program?",
+                       "Exit", "Break", "Cancel")) {
+        case 0:
+            exit(0);
+        case 1:
+            dev_pushkey(SB_KEY_BREAK);
+            runMode = break_state;
+        }
     }
 }
 
@@ -234,6 +245,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     outputGroup->hide();
     outputGroup->begin();
     out = new Fl_Ansi_Window(2, 2, w-4, groupHeight-tabHeight-4);
+    //out = new Fl_Ansi_Window(0, 0, w, groupHeight-tabHeight);
     outputGroup->resizable(out);
     outputGroup->end();
 
@@ -266,8 +278,16 @@ void MainWindow::updateStatusBar(const char* title) {
     redraw();
 }
 
-bool MainWindow::wasBreakEv(void) {
+bool MainWindow::isBreakExec(void) {
     return (runMode == break_state || runMode == quit_state);
+}
+
+void MainWindow::setModal(bool modal) {
+    runMode = modal ? modal_state : run_state;
+}
+
+bool MainWindow::isModal() {
+    return (runMode == modal_state);
 }
 
 void MainWindow::resetPen() {

@@ -27,7 +27,6 @@ COMMON=                                         \
     brun.c                                      \
     ceval.c                                     \
     circle.c                                    \
-    console_main.c                              \
     decomp.c                                    \
     device.c                                    \
     eval.c                                      \
@@ -64,7 +63,7 @@ COMMON=                                         \
 MAKEDEPEND	= /usr/X11R6/bin/makedepend -Y
 ##OPTIM =  -O2 -Wall -Wunused -fno-exceptions
 OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions
-PLATFORM=-D_UnixOS -D_CygWin -D_Fltk
+PLATFORM=-D_UnixOS -D_CygWin -D_FLTK
 
 ## patched fltk-config to remove -mwindows
 ##LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`

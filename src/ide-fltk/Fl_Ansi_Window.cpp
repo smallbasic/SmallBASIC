@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.8 2004-11-16 23:04:48 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.9 2004-11-17 22:31:43 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -38,26 +38,6 @@ using namespace fltk;
 
 #define end_offscreen() redraw();
 
-// see: http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
-Color colors[] = {
-    BLACK,              // 0 black
-    color(0,0,128),     // 1 blue
-    color(0,128,0),     // 2 green
-    color(0,128,128),   // 3 cyan
-    color(128,0,0),     // 4 red
-    color(128,0,128),   // 5 magenta
-    color(128,128,0),   // 6 yellow
-    color(192,192,192), // 7 white
-    color(128,128,128), // 8 gray
-    color(0,0,255),     // 9 light blue
-    color(0,255,0),     // 10 light green
-    color(0,255,255),   // 11 light cyan
-    color(255,0,0),     // 12 light red
-    color(255,0,255),   // 13 light magenta
-    color(255,255,0),   // 14 light yellow
-    WHITE               // 15 bright white
-};
-
 Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) : 
     Widget(x, y, w, h, 0) {
     init();
@@ -75,7 +55,7 @@ void Fl_Ansi_Window::init() {
         delete img;
     }
     img = 0;
-    curY = 0;
+    curY = 1; // allow for input control border
     curX = 0;
     tabSize = 40; // tab size in pixels (160/32 = 5)
     reset();
@@ -243,8 +223,26 @@ int Fl_Ansi_Window::calcTab(int x) const {
     return c * tabSize;
 }
 
-Color Fl_Ansi_Window::ansiToFltk(long color) const {
-    return color > -1 && color < 16 ? colors[color] : BLACK;
+Color Fl_Ansi_Window::ansiToFltk(long c) const {
+    // see: http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
+    switch (c) {
+    case 0:  return fltk::BLACK;             // 0 black
+    case 1:  return fltk::color(0,0,128);    // 1 blue
+    case 2:  return fltk::color(0,128,0);    // 2 green
+    case 3:  return fltk::color(0,128,128);  // 3 cyan
+    case 4:  return fltk::color(128,0,0);    // 4 red
+    case 5:  return fltk::color(128,0,128);  // 5 magenta
+    case 6:  return fltk::color(128,128,0);  // 6 yellow
+    case 7:  return fltk::color(192,192,192);// 7 white
+    case 8:  return fltk::color(128,128,128);// 8 gray
+    case 9:  return fltk::color(0,0,255);    // 9 light blue
+    case 10: return fltk::color(0,255,0);    // 10 light green
+    case 11: return fltk::color(0,255,255);  // 11 light cyan
+    case 12: return fltk::color(255,0,0);    // 12 light red
+    case 13: return fltk::color(255,0,255);  // 13 light magenta
+    case 14: return fltk::color(255,255,0);  // 14 light yellow
+    default: return fltk::WHITE;             // 15 bright white
+    }
 }
 
 bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.7 2004-11-16 23:04:51 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.8 2004-11-17 22:31:46 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -69,7 +69,7 @@ int osd_events(int wait_flag) {
     }
 
     fltk::check();
-    return wnd->wasBreakEv() ? -2 : 0;
+    return wnd->isBreakExec() ? -2 : 0;
 }
 
 void osd_setpenmode(int enable) {
@@ -89,7 +89,7 @@ int osd_getpen(int code) {
         }
         if (event_state() & ANY_BUTTON) {
             fltk::get_mouse(wnd->penDownX, wnd->penDownY);
-            // convert mouse screen rect to out client rect
+            // convert mouse screen rect to out-client rect
             wnd->penDownX -= wnd->x() + wnd->out->x();
             wnd->penDownY -= wnd->y() + wnd->out->y();
             wnd->penDownY -= wnd->tabGroup->y();
@@ -110,15 +110,6 @@ int osd_getpen(int code) {
     case 5:  // cur pen-down y
         wnd->penY = wnd->penDownY;
         return wnd->penDownY;
-
-//     case 6: // wait for a mouse click
-//         fltk::modal(wnd->out, false);
-//         while (fltk::modal() && !event_is_click()) {
-//             fltk::wait();
-//         }
-//         wnd->penDownX = fltk::event_x();
-//         wnd->penDownY = fltk::event_y();
-//         return 1;
     }
     return 0;
 }
@@ -195,6 +186,63 @@ int dev_image_width(int handle, int index) {
 
 int dev_image_height(int handle, int index) {
     return -1;
+}
+
+void enter_cb(Widget*, void* v) {
+    wnd->setModal(false);
+}
+
+struct LineInput : public fltk::Input {
+    LineInput(int def_w) : 
+        fltk::Input(wnd->out->getX()+2, 
+                    wnd->out->getY()+1, 
+                    def_w,
+                    wnd->out->textHeight()+4) {
+        this->def_w = def_w;
+    }
+    bool replace(int b, int e, const char* text, int ilen) {
+        // grow the input box width
+        if (ilen) {
+            int strw = (int)getwidth(value())+def_w;
+            if (strw > w()) {
+                w(strw);
+                redraw();
+            }
+        }
+        return Input::replace(b, e, text, ilen);
+    }
+    int def_w;
+};
+
+char *dev_gets(char *dest, int size) {
+    wnd->outputGroup->begin();
+    LineInput* in = new LineInput(20);
+    wnd->outputGroup->end();
+    in->callback(enter_cb);
+    in->when(WHEN_ENTER_KEY_ALWAYS);
+    in->box(BORDER_BOX);
+    in->color(color(220,220,220));
+    in->take_focus();
+    in->reserve(size);
+    in->textfont(wnd->out->labelfont());
+    in->textsize(wnd->out->labelsize());
+
+    wnd->setModal(true);
+    while (wnd->isModal()) {
+        wait();
+    }
+
+    if (wnd->isBreakExec()) {
+        brun_break();
+    }
+
+    wnd->outputGroup->remove(in);
+    int len = in->size() < size ? in->size() : size;
+    strncpy(dest, in->value(), len);
+    dest[len] = 0;
+    delete in;
+
+    return dest;
 }
 
 C_LINKAGE_END
