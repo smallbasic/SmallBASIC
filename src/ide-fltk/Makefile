@@ -14,8 +14,7 @@ SOURCE =                                        \
 	MainWindow.cpp                              \
 	EditorWindow.cpp                            \
     dev_fltk.cpp                                \
-    blib_fltk_ui.c                              \
-    sbfui.cxx                                   \
+    blib_fltk_ui.cpp                            \
 
 COMMON=                                         \
     bc.c                                        \
