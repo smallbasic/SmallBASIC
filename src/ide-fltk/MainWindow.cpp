@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.22 2004-12-14 22:26:04 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.23 2004-12-15 22:06:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -95,7 +95,7 @@ void about_cb(Widget*, void* v) {
 }
 
 void busyMessage() {
-    wnd->fileStatus->label("Selection unavailable while program running.");
+    wnd->fileStatus->label("Selection unavailable while program is running.");
     wnd->fileStatus->redraw();
 }
 
@@ -205,6 +205,7 @@ void editor_cb(Widget* w, void* v) {
             wnd->runStatus->label("RUN");
             wnd->runStatus->redraw();
             int success = sbasic_main((const char* )v);
+            wnd->tabGroup->selected_child(wnd->editGroup);
             wnd->runStatus->label(success ? " " : "ERR");
             wnd->editWnd->loadFile(filename, -1);
             wnd->editWnd->position(pos);
@@ -583,14 +584,26 @@ void MainWindow::execLink(const char* file) {
         fclose(fp);
 
         // run the remote program
+        wnd->editWnd->loadFile(localFile, -1);
         setTitle(file);
         addHistory(file);
         basicMain(localFile);
-    } else if (file[0] == '!' && access(file+1, 0) == 0) {
-        basicMain(file+1);
-    } else {
-        wnd->tabGroup->selected_child(wnd->editGroup);        
+        return;
+    }
+
+    char* colon = strrchr(file, ':');
+    if (colon && colon-1 != file) {
+        file = colon+1; // clean 'file:' but not 'c:'
+    }
+
+    if (access(file, 0) == 0) {
         wnd->editWnd->loadFile(file, -1);
+        setTitle(file);
+        basicMain(file);
+    } else {
+        sprintf(buff, "Failed to open %s", file);
+        wnd->fileStatus->copy_label(buff);
+        wnd->fileStatus->redraw();
     }
 }
 

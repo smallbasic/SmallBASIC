@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.4 2004-11-23 22:46:17 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.5 2004-12-15 22:06:47 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -148,7 +148,8 @@ void cmd_button() {
         }
 
         // prime input field from variable
-        if (v->type == V_STR && v->v.p.ptr) {
+        if (v->type == V_STR && v->v.p.ptr &&
+            strcmp((const char*)v->v.p.ptr, "1") == 0) {
             if (inf->type == ctrl_check || 
                 inf->type == ctrl_radio) {
                 widget->value(true);
@@ -228,7 +229,8 @@ void cmd_doform() {
     } else {
         form->box(ENGRAVED_BOX);
     }
-    
+
+    wnd->tabGroup->selected_child(wnd->outputGroup);
     form->take_focus();
     form->show();
 

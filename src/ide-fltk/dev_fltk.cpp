@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.18 2004-12-14 22:26:04 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.19 2004-12-15 22:06:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -389,6 +389,7 @@ struct LineInput : public fltk::Input {
 };
 
 char *dev_gets(char *dest, int size) {
+    wnd->tabGroup->selected_child(wnd->outputGroup);
     wnd->outputGroup->begin();
     LineInput* in = new LineInput(20);
     wnd->outputGroup->end();
