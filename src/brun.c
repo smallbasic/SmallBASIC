@@ -965,7 +965,8 @@ void	bc_loop(int isf)
 				pcode = code_getaddr();
 				switch ( pcode )	{
 				case kwCLS:
-					dev_cls();
+                    // cdw-s 19/11/2004
+					// dev_cls(); called in graph_reset()
 					graph_reset();
 					break;
 				case kwRTE:
@@ -1178,6 +1179,13 @@ void	bc_loop(int isf)
                 case kwIMAGE:
                     cmd_image();
                     break;
+                case kwLOGPRINT: 
+                    // move from the switch(code) block near 
+                    // kwFILEREAD cdw-s 20/11/2004
+                    // I think this was why the ebm platform was 
+                    // giving a duplicate case label error
+                    cmd_print(PV_LOG);
+                    break;
 				default:
 					err_pcode_err(pcode);
 					}
@@ -1253,12 +1261,6 @@ void	bc_loop(int isf)
 			case	kwFILEREAD:
 				cmd_fread();
 				break;
-#ifndef _FRANKLIN_EBM
-/* avoid compilation error: duplicate case value */
-			case kwLOGPRINT:
-				cmd_print(PV_LOG);
-				break;
-#endif
 			case	kwFILEPRINT:
 				cmd_print(PV_FILE);
 				break;
