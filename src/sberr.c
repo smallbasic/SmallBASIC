@@ -32,7 +32,7 @@ void	err_common_msg(const char *seg, const char *file, int line, const char *des
 	strcpy(gsb_last_errmsg, prog_errmsg);
 
 	if	( opt_ide == IDE_NONE )	{
-		#if defined(_UnixOS)
+        #if defined(_UnixOS) && !defined(_FLTK)
 		if ( !isatty (STDOUT_FILENO) ) {
 			// hm... out or err ?
 			fprintf(stdout, "\n* %s-%s %s:%d # %s\n", seg, WORD_ERROR_AT, file, line, descr);
@@ -48,10 +48,10 @@ void	err_common_msg(const char *seg, const char *file, int line, const char *des
 		#endif
 		dev_printf("\033[80m\033[0m");
 
-		#if defined(_UnixOS)
+		#if defined(_UnixOS) && !defined(_FLTK)
 			}
 		#endif
-		}
+    }
 
 	#if defined(_WinBCB)
 	bcb_comp(-1, line, 0);
