@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.cpp,v 1.3 2004-04-17 00:24:05 zeeb90au Exp $
+// $Id: Browser.cpp,v 1.4 2004-04-18 22:27:49 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -30,7 +30,7 @@
 #define MSG_SHOW_OUT  ((enum MSG_TYPE)(MSG_USER+14))
 
 const char aboutHTML[] =
-    "<font size=2>SmallBASIC for <u>e</u><i>Book</i><b>Man</b>"
+    "<br><font size=2>SmallBASIC for <u>e</u><i>Book</i><b>Man</b>"
     "<br>Version 0.9.0g<br><br><font size=1>"
     "Copyright (c) 2000-2004 Nicholas Christopoulos, "
     "Chris Warren-Smith<br>"
@@ -40,7 +40,34 @@ const char aboutHTML[] =
     "you can use it redistribute it and/or modify "
     "it under the terms of the GNU General "
     "Public License version 2 as published by "
-    "the Free Software Foundation.";
+    "the Free Software Foundation."
+    "<br><br><br><center><input type=button value=OK>";
+
+const char helpHTML[] =
+    "<i>Running a BASIC program</i> "
+    "<br>Select the Open page then tap the <u>bas</u> link alongside "
+    "the program you wish to run. Follow any on-screen program "
+    "instructions. Tap the Turbo menu option to increase execution "
+    "speed (at the expense of increased battery drain). Tap the "
+    "Break menu option to end the program and return to the Open "
+    "screen or Tap exit to close SmallBASIC. "
+    "<p>If the 'Pause on completion' option has been selected the output "
+    "window will remain displayed until you tap anywhere on the screen. "
+    "The output screen can later be redisplayed using the Output menu "
+    "option. "
+    "<p>If the 'Create SBX' option has been selected you can run the "
+    "same program again by tapping the <u>sbx</u> link. This reduces "
+    "the program load time and saves battery drain by avoiding the "
+    "program compilation stage. Note if the program is on MMC you must "
+    "de-select this option. "
+    "<p><i>Editing a BASIC program</i> "
+    "<p>Select the Open page then tap the <u>edit</u> link alongside "
+    "the program name or press <u>New</u> to create a new program. "
+    "<p>Make your desired program changes and then press the Run menu. "
+    "After the program has ended, control will return to the edit window "
+    "if the 'Resume edit on completion' option has been selected. "
+    "<p>Please use the SmallBASIC forums at " 
+    "<u>http://smallbasic.sourceforge.net</u> for further assistance. ";
 
 const char title[] = "SmallBASIC v0.9.0g";
 
@@ -61,9 +88,9 @@ struct HelpWindow : public HTMLWindow {
 };
 
 HelpWindow::HelpWindow() : 
-    HTMLWindow("SmallBASIC.help not found", title, 
+    HTMLWindow("SmallBASIC.mhtml not found", title, 
                0, 0, LCD_QueryWidth(), LCD_QueryHeight()) {
-    ebo_name_t pkgHelp = {"", "", "SmallBASIC", "help"};
+    ebo_name_t pkgHelp = {"", "", "SmallBASIC", "mhtml"};
     if (hostIO_is_simulator()) {
         strcpy(pkgHelp.publisher, "sim");
     }
@@ -226,10 +253,9 @@ S32 CodeEditor::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
             toggleKeypad();
             break;
 
-        case mnuHelp:
+        case mnuHelpIndex:
             GUI_EventLoop(new HelpWindow());
             break;
-
         }
         return 1;
         
@@ -312,8 +338,10 @@ S32 BrowserWnd::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
             Close();
             break;
             
-        case mnuHelp:
-            GUI_EventLoop(new HelpWindow());
+        case mnuAbout:
+            dlg.activeTab = tabSplash;
+            dlg.makeActivePage();
+            htmlView->loadPage(dlg.html.toString());
             break;
         }
         return 1;
@@ -413,7 +441,7 @@ void BrowserWnd::doAnchor(CViewable *from) {
             dlg.activeTab = tabSettings;
             break;
         case '3':
-            dlg.activeTab = tabAbout;
+            dlg.activeTab = tabHelp;
             break;
         }
 
@@ -618,7 +646,7 @@ void Browser::createProgramsPage() {
 }
 
 void Browser::createRunPage() {
-    html.append("Program statement:<br><input type=text name=prog ");
+    html.append("<i>Line statement:</i><br><input type=text name=prog ");
     html.append(" size=185><br><br>[ <a href=kb>Keyboard...</a> ]");
     html.append("<br><br><input type=button value=Run>");
 }
@@ -627,7 +655,7 @@ void Browser::createSettingsPage() {
     createCheckBox("Turbo mode", "turbo", turbo);
     createCheckBox("Pause on completion", "pause", pause);
     createCheckBox("Verbose output", "verbose", verbose);
-    createCheckBox("Save output", "save", save);
+    createCheckBox("Create SBX files", "save", save);
     createCheckBox("Resume edit on completion", "resume", resumeEdit);
     html.append("[ <a href=font>Font...</a> ]<br>");
 }
@@ -646,14 +674,12 @@ void Browser::makeActivePage() {
     html.empty();
 
     if (activeTab == tabSplash) {
-        html.append("<br>");
         html.append(aboutHTML);
-        html.append("<br><br><br><center><input type=button value=OK>");
         return;
     }
     
     const char* tabs[] = {
-        "Open", "Run", "Setup", "About", 0
+        "Open", "Run", "Setup", "Help", 0
     };
 
     // create tabs
@@ -677,10 +703,11 @@ void Browser::makeActivePage() {
         html.append(" | ");
     }
     html.append(" ]<hr>");
-    html.append("<font size=1><br>");
+    html.append("<font size=1>");
     // create page
     switch (activeTab) {
     case tabPrograms:
+        html.append("<i>Programs:</i><br>");
         createProgramsPage();
         break;
         
@@ -689,11 +716,12 @@ void Browser::makeActivePage() {
         break;
 
     case tabSettings:
+        html.append("<i>Run-time settings:</i><br>");
         createSettingsPage();
         break;
         
-    case tabAbout:
-        html.append(aboutHTML);
+    case tabHelp:
+        html.append(helpHTML);
         break;
     default:
         break;
@@ -720,7 +748,6 @@ void Browser::show() {
     makeActivePage();
     fileName.empty();
     reset = false;
-    //launching = false;
     GUI_EventLoop(new BrowserWnd(*this, html));
 }
 

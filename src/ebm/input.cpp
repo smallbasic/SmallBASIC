@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: input.cpp,v 1.3 2004-04-17 00:24:05 zeeb90au Exp $
+// $Id: input.cpp,v 1.4 2004-04-18 22:27:49 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -84,11 +84,9 @@ S32 InputHTMLWindow::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
             return 1;
         }
 
-        switch ((U16)data) {
-        case mnuBreak:
-            out.MsgHandler(type, from, data);
+        out.MsgHandler(type, from, data);
+        if (data == mnuBreak) {
             Close();
-            break;
         }
         return 1;
 

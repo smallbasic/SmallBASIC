@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.h,v 1.1 2004-04-12 00:25:03 zeeb90au Exp $
+// $Id: Browser.h,v 1.2 2004-04-18 22:27:49 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -23,7 +23,7 @@ enum ActiveTab {
     tabPrograms=0,
     tabRun=1,
     tabSettings=2,
-    tabAbout=3,
+    tabHelp=3,
     tabSplash=4
 };
 

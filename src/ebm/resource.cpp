@@ -371,7 +371,7 @@ CMenuBar* createMenubar(CWindow* wnd, U16 wndId)
         CMenu *menu0 = new CMenu(0);
         menu0->SetNumRows(4);
         menu0->SetRow(0,mnuShowOutput,"Output");
-        menu0->SetRow(1,mnuHelp,"Help");
+        menu0->SetRow(1,mnuAbout,"About");
         menu0->SetSeparatorRow(2);
         menu0->SetRow(3,mnuExit,"Exit");
         menuBar->AddButton(new CPushButton(0,0,0,"-"), menu0);
@@ -422,7 +422,7 @@ CMenuBar* createMenubar(CWindow* wnd, U16 wndId)
         menuBar->AddButton(new CPushButton(2,0,0,"View"), menu2);
         CMenu *menu3 = new CMenu(3);
         menu3->SetNumRows(1);
-        menu3->SetRow(0,mnuHelp,"Index");
+        menu3->SetRow(0,mnuHelpIndex,"Index");
         menuBar->AddButton(new CPushButton(3,0,0,"Help"), menu3);
         return menuBar;
     }
@@ -454,7 +454,7 @@ CMenu* createMenu(CWindow* wnd, U16 wndId)
         CMenu * mnu = new CMenu(ID_MAINWND,0,-1,0,wnd);
         mnu->SetNumRows(4);
         mnu->SetRow(0,mnuShowOutput,"Output");
-        mnu->SetRow(1,mnuHelp,"Help");
+        mnu->SetRow(1,mnuAbout,"About");
         mnu->SetSeparatorRow(2);
         mnu->SetRow(3,mnuExit,"Exit");
         return mnu;

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_main.cpp,v 1.3 2004-04-17 00:24:05 zeeb90au Exp $
+// $Id: ebm_main.cpp,v 1.4 2004-04-18 22:27:49 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -107,10 +107,10 @@ void SBWindow::doShell() {
     Browser dlg(fontOptions);
     dlg.verbose = !opt_quite;
     dlg.save = !opt_nosave;
-    dlg.turbo = isTurbo;
     dlg.pause = false;
 
     while (true) {
+        dlg.turbo = isTurbo;
         dlg.show();
 
         if (dlg.quit) {
@@ -205,12 +205,12 @@ S32 SBWindow::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
         
     case MSG_KEY:
         switch (data) {
-        case K_MENU: {
+        case K_MENU: 
             menuActive = true;
             menu->SetRow(2, mnuTurbo, isTurbo ? "Turbo Off" : "Turbo On");
             menu->Show();
-        }
             break;
+
         case K_KEYBOARD:
             return 0;
         case K_JOG_UP:
