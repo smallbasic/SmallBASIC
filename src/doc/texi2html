@@ -36,7 +36,7 @@ require 5.0;
 #--##############################################################################
 
 # CVS version:
-# $Id: texi2html,v 1.1.1.1 2003-09-27 01:37:42 wired_gr Exp $
+# $Id: texi2html,v 1.2 2004-03-14 19:35:57 wired_gr Exp $
 
 # Homepage:
 $T2H_HOMEPAGE = <<EOT;
@@ -92,7 +92,7 @@ eval { ($T2H_USER = (getpwuid ($<))[6]) =~ s/,.*//;}; # Who am i
 # Copy this file and make changes to it, if you like.
 # Afterwards, either, load it with command-line option -init_file <your_init_file>
 #
-# $Id: texi2html,v 1.1.1.1 2003-09-27 01:37:42 wired_gr Exp $
+# $Id: texi2html,v 1.2 2004-03-14 19:35:57 wired_gr Exp $
 
 ######################################################################
 # stuff which can also be set by command-line options
@@ -1538,7 +1538,7 @@ package Getopt::MySimple;
 
 # --------------------------------------------------------------------------
 # Locally modified by obachman (Display type instead of env, order by cmp)
-# $Id: texi2html,v 1.1.1.1 2003-09-27 01:37:42 wired_gr Exp $
+# $Id: texi2html,v 1.2 2004-03-14 19:35:57 wired_gr Exp $
 
 # use strict;
 # no strict 'refs';
@@ -1938,7 +1938,7 @@ $index_properties =
 	      'file', '"TT',		# will put quotes, cf. &apply_style
 	      'i', 'I',
 	      'kbd', 'KBD',
-	      'key', 'KBD',
+	      'key', 'SPAN CLASS=KEY',
 	      'math', '&do_math',
 	      'option', '"SAMP',        # will put quotes, cf. &apply_style
 	      'r', '',			# unsupported
@@ -1951,7 +1951,7 @@ $index_properties =
 	      'titlefont', '',		# useless
 	      'uref', '&do_uref',       # insert a clickable URL
 	      'url', '&do_url',         # insert a clickable URL
-	      'var', 'VAR',
+	      'var', 'SPAN CLASS=VAR',
 	      'w', '',			# unsupported
 	      'H', '&do_accent',
 	      'dotaccent', '&do_accent',

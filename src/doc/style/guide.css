@@ -275,9 +275,9 @@ dfn {
 var:before	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\2039"; }
 var:after	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\203A"; }
 */
-var:before	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\2329"; }
-var:after	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\232A"; }
-var	{
+.var:before, var:before	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\2329"; }
+.var:after, var:after	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\232A"; }
+.var, var	{
 	font-family: serif;
 	font-style: italic;
 	}
@@ -291,10 +291,6 @@ code	{
 	font-weight: bold;
 	}
 
-/*
-kbd:before	{ font-family: serif; font-style: normal; content: "\2018"; }
-kbd:after	{ font-family: serif; font-style: normal; content: "\2019"; }
-*/
 kbd		{ font-family: monospace; font-style: italic; font-weight: bold; }
 
 samp:before	{ font-family: serif; font-weight: normal; font-style: normal; content: "\2018"; }
