@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.7 2005-03-16 22:48:37 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.8 2005-03-17 22:30:33 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -9,9 +9,6 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// TODO:
-// <img src width height> tag
-// sb integration
 
 #include <errno.h>
 #include <fltk/draw.h>
@@ -26,20 +23,21 @@
 #include <fltk/RadioButton.h>
 #include <fltk/Choice.h>
 #include <fltk/Item.h>
+#include <fltk/Input.h>
 
+#define FL_HELP_WIDGET_RESOURCES
 #include "HelpWidget.h"
-#include "MainWindow.h"
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-#define UNIT_TEST 1
+//#define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
 #define ANCHOR_COLOR fltk::color(0,0,128)
 #define BUTTON_COLOR fltk::color(220,220,220)
 #define DEFAULT_INDENT 2
-#define LI_INDENT 14
+#define LI_INDENT 18
 #define FONT_SIZE 11
 #define FONT_SIZE_H1 17
 #define SCROLL_W 17
@@ -53,19 +51,6 @@ Color getColor(const char *n);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 const char* skipWhite(const char* s);
 struct AnchorNode;
-
-static char* dot_xpm[] = {
-    "5 5 3 1",
-    "   c None",
-    ".  c #F4F4F4",
-    "+  c #000000",
-    ".+++.",
-    "+++++",
-    "+++++",
-    "+++++",
-    ".+++."};
-
-static xpmImage dotImage(dot_xpm);
 
 //--Display---------------------------------------------------------------------
 
@@ -271,17 +256,31 @@ struct LiNode : public BaseNode {
         this->style = style;
     }
     void display(Display* out) {
-        // TODO: use relative indentation
-        int x = 2+DEFAULT_INDENT;
-        int y = out->y+ (int)(getascent()-getdescent());
+        out->x = out->indent;
+        out->y += out->lineHeight;
+        int x = out->x-(LI_INDENT-DEFAULT_INDENT);
+        int y = out->y-(int)(getascent()-getdescent());
         if (out->measure == false) {
             dotImage.draw(Rectangle(x, y, 5, 5), style, OUTPUT);
         }
-        out->y += out->lineHeight;
-        out->x = x+LI_INDENT;
-        out->indent = out->x;
     }
     const Style* style;
+};
+
+struct UlNode : public BaseNode {
+    UlNode() {}
+    void display(Display* out) {
+        out->newRow(1);
+        out->indent += LI_INDENT;
+    }
+};
+
+struct UlEndNode : public BaseNode {
+    UlEndNode() {}
+    void display(Display* out) {
+        out->indent -= LI_INDENT;
+        out->newRow(2);
+    }
 };
 
 //--TextNode--------------------------------------------------------------------
@@ -742,8 +741,8 @@ static void scrollbar_callback(Widget* s, void *wnd) {
     ((HelpWidget*)wnd)->navigateTo(((Scrollbar*)s)->value());
 }
 
-HelpWidget::HelpWidget(const char* str, int width, int height) :
-    Group(0, 0, width, height), 
+HelpWidget::HelpWidget(int x, int y, int width, int height) :
+    Group(x, y, width, height), 
     nodeList(100), namedInputs(10), inputs(10), anchors(10) {
     user_data((void*)ID_MAIN_WND);
     begin();
@@ -753,7 +752,6 @@ HelpWidget::HelpWidget(const char* str, int width, int height) :
     scrollbar->user_data(this);
     scrollbar->callback(scrollbar_callback);
     scrollbar->show();
-    loadPage(str);
 }
 
 HelpWidget::~HelpWidget() {
@@ -910,7 +908,9 @@ void HelpWidget::draw() {
     out.lineHeight = out.y+(int)getdescent();
     out.y += vscroll;
 
+    push_clip(Rectangle(w(), h()));
     if (selectedAnchor && (damage()&DAMAGE_PUSHED)) {
+        // draw anchor push
         int h = (selectedAnchor->y2-selectedAnchor->y1)+out.lineHeight;
         push_clip(Rectangle(0, selectedAnchor->y1, out.width, h));
     }
@@ -979,6 +979,10 @@ void HelpWidget::draw() {
     push_clip(Rectangle(0,0, w()-SCROLL_W, h()));
     Group::draw();
     pop_clip();
+
+    if (selectedAnchor && (damage()&DAMAGE_PUSHED)) {
+        pop_clip();
+    }
     pop_clip();
 }
 
@@ -1065,13 +1069,18 @@ int HelpWidget::handle(int event) {
     case fltk::RELEASE:
         if (selectedAnchor) {
             Widget::cursor(fltk::CURSOR_DEFAULT);
+            bool pushed = selectedAnchor->pushed;
             selectedAnchor->pushed = false;
             redraw(DAMAGE_PUSHED);
-            do_callback();
+            if (pushed) {
+                anchor.empty();
+                anchor.append(selectedAnchor->href.toString());
+                do_callback();
+            }
             return 1;
         }
     }
-    return scrollbar->handle(event);
+    return scrollbar->active() ? scrollbar->handle(event) : 0;
 }
 
 void HelpWidget::compileHTML() {
@@ -1233,7 +1242,7 @@ void HelpWidget::compileHTML() {
                 } else if (0 == strnicmp(tag, "a", 1)) {
                     nodeList.append(new HTMLAnchorEndNode());
                 } else if (0 == strnicmp(tag, "ul", 2)) {
-                    nodeList.append(new BrNode(-LI_INDENT, 2));
+                    nodeList.append(new UlEndNode());
                     newline = true;
                 } else if (0 == strnicmp(tag, "u", 1)) {
                     uline = false;
@@ -1297,7 +1306,7 @@ void HelpWidget::compileHTML() {
                     node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "ul>", 3)) {
-                    nodeList.append(new BrNode(0));
+                    nodeList.append(new UlNode());
                     newline = true;
                 } else if (0 == strnicmp(tag, "u>", 2)) {
                     uline = true;
@@ -1572,7 +1581,7 @@ int main(int argc, char **argv) {
     int h = 200;
     Window window(w, h, "Browse");
     window.begin();
-    HelpWidget out("", w, h);
+    HelpWidget out(0, 0, w, h);
     out.load("t.html#there");
     window.resizable(&out);
     window.end();

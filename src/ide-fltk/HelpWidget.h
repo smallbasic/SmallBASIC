@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.5 2005-03-14 22:20:31 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.6 2005-03-17 22:30:35 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -8,8 +8,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef FL_HTM_WINDOW
-#define FL_HTM_WINDOW
+#ifndef FL_HELP_WIDGET
+#define FL_HELP_WIDGET
 
 #include <fltk/Widget.h>
 #include <fltk/draw.h>
@@ -33,12 +33,9 @@
 using namespace fltk;
 using namespace strlib;
 
-////////////////////////////////////////////////////////////////////////////////
-// class HelpWidget
-
 class HelpWidget : public Group {
 public:
-    HelpWidget(const char* str, int width, int height);
+    HelpWidget(int x, int y, int width, int height);
     virtual ~HelpWidget();
 
     void loadPage(const char* str);
@@ -49,6 +46,7 @@ public:
     Widget* getInput(const char* name);
     const char* getInputValue(Widget* button);
     const char* getInputName(Widget* button);
+    const char* getAnchor() {return anchor.toString();}
     void getInputProperties(Properties& p);
     void copyText(int begin, int end);
     void load(const char *f);
@@ -76,10 +74,24 @@ public:
     strlib::List inputs;
     strlib::List anchors;
     strlib::String htmlStr;
+    strlib::String anchor;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// entityMap+entityMapLen
+#ifdef FL_HELP_WIDGET_RESOURCES
+// somewhere to keep this clutter
+
+static char* dot_xpm[] = {
+    "5 5 3 1",
+    "   c None",
+    ".  c #F4F4F4",
+    "+  c #000000",
+    ".+++.",
+    "+++++",
+    "+++++",
+    "+++++",
+    ".+++."};
+
+static xpmImage dotImage(dot_xpm);
 
 struct {
     const char* ent;
@@ -190,5 +202,7 @@ struct {
 };
 
 int entityMapLen=(int)(sizeof(entityMap)/sizeof(entityMap[0]));
+
+#endif
 
 #endif

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.24 2005-03-14 22:20:31 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.25 2005-03-17 22:30:35 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -18,10 +18,10 @@
 #include <fltk/events.h>
 #include <fltk/SharedImage.h>
 #include <fltk/FL_VERSION.h>
-#include <fltk/HelpView.h>
 #include <fltk/Rectangle.h>
 
 #include "MainWindow.h"
+#include "HelpWidget.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -33,18 +33,11 @@ C_LINKAGE_BEGIN
 #define PEN_OFF 0
 
 extern MainWindow *wnd;
-HelpView* helpView = 0;
+HelpWidget* helpView = 0;
 const char* anchor = 0;
+void closeHelp();
 
-void closeHelp() {
-    if (helpView) {
-        helpView->parent()->remove(helpView);
-        helpView->parent(0);
-        delete helpView;
-        helpView = 0;
-        wnd->out->redraw();
-    }
-}
+//--ANSI Output-----------------------------------------------------------------
 
 int osd_devinit() {
     wnd->resetPen();
@@ -194,8 +187,8 @@ void osd_beep() {
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
 #ifdef WIN32
-	if (!bgplay) {
-		::Beep(frq, ms);
+    if (!bgplay) {
+        ::Beep(frq, ms);
     }
 #endif // WIN32
 }
@@ -207,6 +200,52 @@ void osd_write(const char *s) {
     wnd->out->print(s);
 }
 
+//--HTML------------------------------------------------------------------------
+
+void closeHelp() {
+    if (helpView) {
+        helpView->parent()->remove(helpView);
+        helpView->parent(0);
+        delete helpView;
+        helpView = 0;
+        wnd->out->redraw();
+    }
+}
+
+int dev_putenv(const char *s) {
+//     if (helpView) {
+//         Widget* widget = helpView->getInput(s);
+//         if (widget) {
+//             widget->value(s);
+//             return strlen(s);
+//         } 
+//         return 0;
+//     }
+//    trace("putenv %s", s);
+    return putenv(strdup(s));
+}
+
+char* dev_getenv(const char *s) {
+    return getenv(s);
+}
+
+int dev_env_count() {
+    int count = 0;
+    while (environ[count]) count++;
+    return count;
+}
+
+char* dev_getenv_n(int n) {
+    int count = 0;
+    while (environ[count]) {
+        if (n == count) {
+            return environ[count];
+        }
+        count++;
+    }
+    return 0;
+}
+
 void doAnchor(void*) {
     wnd->execLink(anchor);
     free((void*)anchor);
@@ -215,7 +254,7 @@ void doAnchor(void*) {
 
 void anchor_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        anchor = strdup((const char*)v);
+        anchor = strdup(helpView->getAnchor());
         closeHelp();
         fltk::add_timeout(0.5, doAnchor); // post message
     }
@@ -245,15 +284,16 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         helpView->h(h);
     } else {
         wnd->outputGroup->begin();
-        //helpView = new HelpView(x, y, w, h);
+        helpView = new HelpWidget(x, y, w, h);
         wnd->outputGroup->end();
-        helpView->box(SHADOW_BOX);
         helpView->callback(anchor_cb);
     }
-    //helpView->value(html);
+    helpView->loadPage(html);
     helpView->take_focus();
     helpView->show();
 }
+
+//--IMAGE-----------------------------------------------------------------------
 
 // image factory based on file extension
 SharedImage* loadImage(const char* name, uchar* buff) {
@@ -360,6 +400,8 @@ int dev_image_height(int handle, int index) {
     }
     return imgh;
 }
+
+//--INPUT-----------------------------------------------------------------------
 
 void enter_cb(Widget*, void* v) {
     wnd->setModal(false);
