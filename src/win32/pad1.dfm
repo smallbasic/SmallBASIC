@@ -517,7 +517,7 @@ object FMain: TFMain
       Left = 77
       Top = 0
       Hint = 'Find'
-      Caption = '&Find'
+      Caption = '&Find or Replace'
       ImageIndex = 2
       MenuItem = Finx1
     end
@@ -680,10 +680,10 @@ object FMain: TFMain
     end
   end
   object dlgOpen: TOpenDialog
-    DefaultExt = '.bas'
+    DefaultExt = '.sb'
     Filter = 
-      'SmallBASIC source files (*.bas)|*.bas|SmallBASIC PalmOS files (*' +
-      '.pdb)|*.pdb|Text files (*.txt)|*.txt'
+      'SmallBASIC source files (*.bas;*.sb)|*.bas;*.sb|SmallBASIC PalmO' +
+      'S files (*.pdb)|*.pdb|Text files (*.txt)|*.txt'
     Left = 594
     Top = 2
   end
@@ -1245,10 +1245,10 @@ object FMain: TFMain
       000000000000}
   end
   object dlgSave: TSaveDialog
-    DefaultExt = 'bas'
+    DefaultExt = 'sb'
     Filter = 
-      'SmallBASIC files (*.bas)|*.bas|SmallBASIC PalmOS file (*.pdb)|*.' +
-      'pdb|Text files (*.txt)|*.txt'
+      'SmallBASIC files (*.bas;*.sb)|*.bas;*.sb|SmallBASIC PalmOS file ' +
+      '(*.pdb)|*.pdb|Text files (*.txt)|*.txt'
     Options = [ofEnableSizing]
     Left = 530
     Top = 12

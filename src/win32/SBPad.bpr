@@ -31,7 +31,7 @@
     <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
     <RELEASELIBPATH value="$(BCB)\lib\release"/>
     <LINKER value="ilink32"/>
-    <USERDEFINES value="_Win32;_WinBCB"/>
+    <USERDEFINES value="_Win32;_WinBCB;_DEBUG"/>
     <SYSDEFINES value="NO_STRICT"/>
     <MAINSOURCE value="SBPad.cpp"/>
     <INCLUDEPATH value="..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;$(BCB)\include;$(BCB)\include\vcl"/>
@@ -43,11 +43,11 @@
     <IDLCFLAGS value="-I..\. -I.. -IC:\USR\CBuilder5\CBuilder5\bin\. 
       -IC:\usr\CBuilder5\Projects\. -I$(BCB)\include -I$(BCB)\include\vcl 
       -src_suffix cpp -D_Win32 -D_WinBCB -D_DEBUG -boa"/>
-    <CFLAG1 value="-O2 -Vx -Ve -fp -X- -a4 -5 -b- -k- -vi -c -tW -tWM"/>
-    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+    <CFLAG1 value="-Od -Vx -Ve -fp -X- -r- -a4 -5 -b- -k -y -v -vi- -c -tW -tWM"/>
+    <PFLAGS value="-$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
     <RFLAGS value=""/>
-    <AFLAGS value="/mx /w2 /zn"/>
-    <LFLAGS value="-D&quot;&quot; -S:0x400000 -Sc:0x220000 -aa -Tpe -m -Gn"/>
+    <AFLAGS value="/mx /w2 /zi"/>
+    <LFLAGS value="-D&quot;&quot; -S:0x400000 -Sc:0x220000 -aa -Tpe -m -Gn -v"/>
     <OTHERFILES value=""/>
   </OPTIONS>
   <LINKER>
@@ -118,7 +118,7 @@ AutoIncBuild=1
 MajorVer=0
 MinorVer=9
 Release=0
-Build=1
+Build=2
 Debug=1
 PreRelease=1
 Special=0
@@ -130,7 +130,7 @@ CodePage=1253
 [Version Info Keys]
 CompanyName=Nicholas Christopoulos
 FileDescription=SmallBASIC Pad for Win32
-FileVersion=0.9.0.1
+FileVersion=0.9.0.2
 InternalName=
 LegalCopyright=GNU GPL 2
 LegalTrademarks=GNU
@@ -141,59 +141,61 @@ Comments=GPL 2
 PrivateBuild=
 
 [HistoryLists\hlIncludePath]
-Count=24
-Item0=..\;$(BCB)\Imports;..\editor;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item1=$(BCB)\Imports;..\editor;..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item2=..\;..;SynEdit\Source\;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item3=..\editor;..\;..;SynEdit;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item4=..\;SynEdit\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item5=..\;..\editor;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item6=..\editor;..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item7=..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item8=..\;C:\Program Files\Borland\CBuilder6\Projects;..;$(BCB)\include;$(BCB)\include\vcl
-Item9=C:\Program Files\Borland\CBuilder6\Projects;..\;..;$(BCB)\include;$(BCB)\include\vcl
-Item10=..\;..;$(BCB)\include;$(BCB)\include\vcl
-Item11=..\;..;C:\USR\CBuilder5\CBuilder5\bin;C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item12=..\;..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item13=..\;..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item14=..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item15=..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item16=..\;C:\USR\CBuilder5\CBuilder5\bin\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item17=C:\USR\CBuilder5\CBuilder5\bin;..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item18=..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item19=..;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item20=..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item21=C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
-Item22=C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl
-Item23=$(BCB)\include;$(BCB)\include\vcl
+Count=25
+Item0=..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item1=..\;$(BCB)\Imports;..\editor;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item2=$(BCB)\Imports;..\editor;..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item3=..\;..;SynEdit\Source\;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item4=..\editor;..\;..;SynEdit;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item5=..\;SynEdit\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item6=..\;..\editor;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item7=..\editor;..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item8=..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item9=..\;C:\Program Files\Borland\CBuilder6\Projects;..;$(BCB)\include;$(BCB)\include\vcl
+Item10=C:\Program Files\Borland\CBuilder6\Projects;..\;..;$(BCB)\include;$(BCB)\include\vcl
+Item11=..\;..;$(BCB)\include;$(BCB)\include\vcl
+Item12=..\;..;C:\USR\CBuilder5\CBuilder5\bin;C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item13=..\;..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item14=..\;..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item15=..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item16=..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item17=..\;C:\USR\CBuilder5\CBuilder5\bin\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item18=C:\USR\CBuilder5\CBuilder5\bin;..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item19=..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item20=..;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item21=..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item22=C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item23=C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item24=$(BCB)\include;$(BCB)\include\vcl
 
 [HistoryLists\hlLibraryPath]
-Count=25
-Item0=..\;$(BCB)\Imports;..\editor;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item1=$(BCB)\Imports;..\editor;..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item2=..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item3=..\editor;..\;..;SynEdit;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item4=..\;SynEdit\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item5=..\;..\editor;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item6=..\editor;..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item7=..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item8=..\;C:\Program Files\Borland\CBuilder6\Projects;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item9=C:\Program Files\Borland\CBuilder6\Projects;..\;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item10=..\;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
-Item11=..\;$(BCB)\Projects\Lib;..;$(BCB)\lib\obj;$(BCB)\lib
-Item12=..\;$(BCB)\Projects\Lib;..;C:\USR\CBuilder5\CBuilder5\bin;C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib
-Item13=$(BCB)\Projects\Lib;..\;..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item14=..\;..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item15=..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item16=..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item17=..\;C:\USR\CBuilder5\CBuilder5\bin\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item18=C:\USR\CBuilder5\CBuilder5\bin;..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item19=..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item20=..;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item21=..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item22=C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
-Item23=C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib
-Item24=$(BCB)\lib\obj;$(BCB)\lib
+Count=26
+Item0=..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item1=..\;$(BCB)\Imports;..\editor;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item2=$(BCB)\Imports;..\editor;..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item3=..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item4=..\editor;..\;..;SynEdit;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item5=..\;SynEdit\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item6=..\;..\editor;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item7=..\editor;..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item8=..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item9=..\;C:\Program Files\Borland\CBuilder6\Projects;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item10=C:\Program Files\Borland\CBuilder6\Projects;..\;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item11=..\;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item12=..\;$(BCB)\Projects\Lib;..;$(BCB)\lib\obj;$(BCB)\lib
+Item13=..\;$(BCB)\Projects\Lib;..;C:\USR\CBuilder5\CBuilder5\bin;C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib
+Item14=$(BCB)\Projects\Lib;..\;..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item15=..\;..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item16=..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item17=..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item18=..\;C:\USR\CBuilder5\CBuilder5\bin\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item19=C:\USR\CBuilder5\CBuilder5\bin;..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item20=..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item21=..;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item22=..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item23=C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item24=C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib
+Item25=$(BCB)\lib\obj;$(BCB)\lib
 
 [HistoryLists\hlDebugSourcePath]
 Count=1
@@ -201,8 +203,8 @@ Item0=$(BCB)\source\vcl
 
 [HistoryLists\hlConditionals]
 Count=4
-Item0=_Win32;_WinBCB
-Item1=_Win32;_WinBCB;_DEBUG
+Item0=_Win32;_WinBCB;_DEBUG
+Item1=_Win32;_WinBCB
 Item2=_DEBUG;_Win32;_WinBCB
 Item3=_DEBUG
 

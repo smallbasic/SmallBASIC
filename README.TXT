@@ -1,3 +1,50 @@
+Installation from source step-by-step
+-------------------------------------
+
+1. Unpack files to a directory
+
+	for example /usr/src/sbasic
+
+2. Enter to sync directory
+	
+	# cd /usr/src/sbasic/sync
+
+3. Run build-script
+	
+	# make menuconfig
+
+4. select "build compiler"
+
+5. select one driver
+
+	SB now its created and installed
+
+	# sbasic
+
+6. optional -> select "build modules"
+
+7. optional -> select "build documents"
+
+	7.1. select "info pages"
+
+		Now, you can browse info pages by 
+
+		# info sbasic
+
+	7.2. select "html pages"
+
+		Now, you can read the documentation from a web browser
+
+	7.3. select "man page"
+
+		Now, you can browse man-page by 
+
+		# man sbasic
+
+
+Directories
+-----------
+
 sync/
 The source code directory tree
 
@@ -5,7 +52,9 @@ bin/
 Final binaries
 
 ext/ 
-Contains extra packages
+Contains extra packages.
+Those packages may be required.
+
 
 
 

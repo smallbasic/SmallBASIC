@@ -63,7 +63,7 @@ typedef struct {
 static hkw_t hkw_table[HELP_MAX_KW];
 static int	hkw_count;
 
-#include "../doc/help_text.c"
+#include "../help_subsys.c"
 
 //---------------------------------------------------------------------------
 TFMain *FMain;

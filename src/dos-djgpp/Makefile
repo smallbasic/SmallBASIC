@@ -14,7 +14,7 @@ sources=\
 	extlib.c blib_ui.c plot.c tasks.c units.c \
     fs_stream.c fs_serial.c fs_memo.c fs_pdoc.c fs_socket_client.c fs_irda.c \
 	unx_memmgr.c dev_term.c g_line.c decomp.c console_main.c \
-	consedit.c geom.c
+	interactive_mode.c help_subsys.c geom.c
 
 com_sources = $(addprefix ../, $(sources))
 com_objects = $(addsuffix .o,  $(basename $(sources)))

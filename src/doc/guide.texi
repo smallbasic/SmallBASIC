@@ -48,9 +48,9 @@
 
 @c -----------------------------------
 @copying
-Copyright @copyright{} 2000, 2001, 2002, 2003 SmallBASIC Project.
+Copyright @copyright{} 2000, 2001, 2002, 2003, 2004 SmallBASIC Project.
 @*
-Copyright @copyright{} 1991, 2003 Free Software Foundation, Inc.
+Copyright @copyright{} 1991, 2004 Free Software Foundation, Inc.
 @sp 2
 
 This is Edition @value{EDITION} of @cite{@value{TITLE}: @value{SUBTITLE}},
@@ -125,11 +125,9 @@ Helio (VTOS) version@*
 @node Top
 @top Welcome to SmallBASIC
 
-SmallBASIC (SB) is a simple computer language,
-featuring a clean interface, strong mathematics and
-string library.
-We feel it is an ideal tool for experimenting with simple
-algorithms, for having fun.
+SmallBASIC (SB) is a simple computer language, featuring a clean interface,
+strong mathematics and string library.
+We feel it is an ideal tool for experimenting with simple algorithms, for having fun.
 
 @end ifnottex
 
@@ -170,11 +168,11 @@ algorithms, for having fun.
 @c MAN .TH sbasic 1 "Aug 2003" SF "SmallBASIC User's Guide"
 @c MAN .SH NAME
 @c MAN sbasic \- SmallBASIC interpreter
-@c MAN 
+@c MAN
 @c MAN .SH SYNOPSIS
 @c MAN .B sbasic [\fRoptions\fB] \fRsource-file\fB [--] [\fRprogram parameters\fB]
-@c MAN 
- 
+@c MAN
+
 @c ------------------------------------------------------------------------------------------------------------
 @node Introduction
 @chapter Introduction
@@ -240,12 +238,12 @@ algebra functions, powerfull string library, etc.
 @subsubsection Purpose
 @strong{BASIC is easy to learn and simple to use, and this is the spirit of SB}.
 Instead of other BASIC versions, as VB, our version
-intent to sucrifice everything in the alter
-of simplicity.
+intent to sucrifice everything in the altar of simplicity.
 
-The world is full of languages, SB does not offers
-something new, but intents to offer what is lost in our
-days. A simple tool for easy to write programs.
+The world is full of languages, SB does not offers something new,
+but intents to offer what is lost in our days.
+A simple tool for easy to write programs, an easy way to do some maths
+and build some scripts.
 
 Our priorities are to build
 @itemize @bullet
@@ -266,6 +264,9 @@ such Linux, DOS, Win32, EBM and VTOS. An mechanism
 had inserted and porting to different platforms
 is an easy task. For this reason, SB claims that
 it is a cross-platform language.
+
+However, SB is based primary on Unix systems.
+A lot of feautures (for example, Units, C-Modules) does not implemented on other systems yet.
 
 @c ------------------------------------------------------------------------------------------------------------
 @section Useful notes for beginners
@@ -1302,6 +1303,8 @@ END
 
 @c -------------------------------------------
 @section Units (SB libraries)
+
+* Linux ONLY for now *
 
 Units are a set of procedures, functions and/or variables that can
 be used by another SB program or SB unit.
@@ -4376,6 +4379,8 @@ System events are checked every 50ms
 @c -----------------------------------------------------------------------------
 @node Writting Modules
 @appendix Writting Modules
+
+* Modules are working only at Linux for now *
 
 Modules are dynamic-linked libraries. The modules are "connected" with the
 SmallBASIC with a two-way style. That means, the module can execute functions

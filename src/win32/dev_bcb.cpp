@@ -23,7 +23,7 @@ static int	mouse_mode, mouse_x, mouse_y, mouse_b, mouse_upd, mouse_down_x, mouse
 
 static TCanvas	*canvas;
 static TColor	cmap[16];
-static TColor	dcolor;
+static TColor	dcolor, dbgcolor;
 static int		font_h = 16, font_w = 8, maxline = 11;
 
 // console/fonts
@@ -51,6 +51,8 @@ static dword vga16[] =
 
 extern String bcb_xf;
 extern void	bcb_strfont(String s, String &name, int &size, int &charset);
+
+#define SWAPRB(c)	( (((c) & 0xFF) << 16) | ((c) & 0xFF00) | (((c) & 0xFF0000) >> 16) )
 
 /*
 *	write vram to window
@@ -90,7 +92,7 @@ void w32_stdout_open()
 	r = canvas->ClipRect;
 	dev_width  = (r.right - r.left) + 1;
 	dev_height = (r.bottom - r.top) + 1;
-	dev_depth  = 8;
+	dev_depth  = 32;
 
 
 	// build pens
@@ -103,6 +105,7 @@ void w32_stdout_open()
 */
 		cmap[i] = (TColor) vga16[i];
 		}
+	dbgcolor = cmap[15];
 
 	// select font
 	canvas->Brush->Color = (TColor) 0xFFFFFF;
@@ -184,7 +187,7 @@ void _cdecl	osd_cls()
 {
 	cur_x = cur_y = 0;
 	TRect r = canvas->ClipRect;
-    canvas->Brush->Color = (TColor) cmap[dev_bgcolor];
+	canvas->Brush->Color = (TColor) dbgcolor;
 	canvas->FillRect(r);
 	bcb_refresh_rq = 1;
 }
@@ -239,7 +242,7 @@ static void	osd_nextln(void)
 		rs.right = dev_width - 1;
 		rs.top = cur_y;
 		rs.bottom = dev_height - 1;
-		canvas->Brush->Color = (TColor) cmap[dev_bgcolor];
+		canvas->Brush->Color = (TColor) dbgcolor;
 		canvas->FillRect(rs);
 		}
 }
@@ -525,12 +528,12 @@ void _cdecl	osd_write(const char *str)
 			// TODO: ??? SJIS on Linux ???
 			if	( !con_use_reverse )	{
 				if	( con_use_bold )	canvas->Font->Style = TFontStyles() << fsBold;
-				direct_drawchar(cur_x, cur_y, *p, 1, cmap[dev_fgcolor], cmap[dev_bgcolor]);
+				direct_drawchar(cur_x, cur_y, *p, 1, dcolor, dbgcolor);
 				if	( con_use_bold )	canvas->Font->Style = TFontStyles() >> fsBold;
 				}
 			else	{
 				if	( con_use_bold )	canvas->Font->Style = TFontStyles() << fsBold;
-				direct_drawchar(cur_x, cur_y, *p, 1, cmap[dev_bgcolor], cmap[dev_fgcolor]);
+				direct_drawchar(cur_x, cur_y, *p, 1, dbgcolor, dcolor);
 				if	( con_use_bold )	canvas->Font->Style = TFontStyles() >> fsBold;
 				}
 
@@ -557,10 +560,14 @@ void _cdecl	osd_setcolor(long color)
 	if	( color >= 0 && color < 16 )	{
 		dev_fgcolor = color;
 		dcolor = cmap[dev_fgcolor];
-
-        canvas->Pen->Color = (TColor) dcolor;
-        canvas->Font->Color = (TColor) dcolor;
 		}
+	else if ( color < -1 )	
+		dcolor = SWAPRB(-color);
+	else if ( color > 16 )	
+		dcolor = SWAPRB(color);
+
+	canvas->Pen->Color = (TColor) dcolor;
+	canvas->Font->Color = (TColor) dcolor;
 }
 
 /*	Sets the current drawing color and the background color (used for text) */
@@ -569,8 +576,14 @@ void  _cdecl	osd_settextcolor(long fg, long bg)
 	osd_setcolor(fg);
 	if	( bg >= 0 && bg < 16 )	{
 		dev_bgcolor = bg;
-        canvas->Brush->Color = cmap[dev_bgcolor];
+		dbgcolor = cmap[dev_bgcolor];
 		}
+	else if ( bg < -1 )
+		dbgcolor = SWAPRB(-bg);
+	else if ( bg > 16 )
+		dbgcolor = SWAPRB(bg);
+
+	canvas->Brush->Color = dbgcolor;
 }
 
 // line
