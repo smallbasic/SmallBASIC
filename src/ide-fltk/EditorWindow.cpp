@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.6 2004-11-21 22:38:23 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.7 2004-11-22 22:20:03 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -300,8 +300,13 @@ void style_update(int pos,        // I - Position of update
 //--CodeEditor------------------------------------------------------------------
 
 struct CodeEditor : public TextEditor {
-    CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {}
+    CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
+        readonly = false;
+    }
     int handle(int e) {
+        if (readonly && (e == KEY || e == PASTE)) {
+            return 0;
+        }
         int r = TextEditor::handle(e);
         if (e == KEYUP || e == RELEASE) {
             int row, col;
@@ -310,6 +315,7 @@ struct CodeEditor : public TextEditor {
         }
         return r;
     }
+    bool readonly;
 };
 
 //--EditorWindow----------------------------------------------------------------
@@ -335,8 +341,8 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
 
     search[0] = 0;
     filename[0] = 0; 
-    dirty = 0;
-    loading = 0;
+    dirty = false;
+    loading = false;
     textbuf = new TextBuffer();
     style_init();
 
@@ -347,6 +353,7 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
                            sizeof(styletable) / sizeof(styletable[0]),
                            'A', style_unfinished_cb, 0);
     editor->textfont(COURIER);
+    editor->box(THIN_DOWN_BOX);
     editor->cursor_style(TextDisplay::BLOCK_CURSOR);
     editor->selection_color(fltk::color(192,192,192));
     end();
@@ -360,6 +367,16 @@ EditorWindow::~EditorWindow() {
     delete replaceDlg;
     textbuf->remove_modify_callback(style_update, editor);
     textbuf->remove_modify_callback(changed_cb, this);
+}
+
+bool EditorWindow::readonly() {
+    return ((CodeEditor*)editor)->readonly;
+}
+
+void EditorWindow::readonly(bool is_readonly) {
+    editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR : 
+                         TextDisplay::BLOCK_CURSOR);
+    ((CodeEditor*)editor)->readonly = is_readonly;
 }
 
 void EditorWindow::doChange(int inserted, int deleted) {
@@ -393,7 +410,7 @@ bool EditorWindow::checkSave(bool discard) {
 }
 
 void EditorWindow::loadFile(const char *newfile, int ipos) {
-    loading = 1;
+    loading = true;
     int insert = (ipos != -1);
     dirty = insert;
     if (!insert) {
@@ -414,7 +431,7 @@ void EditorWindow::loadFile(const char *newfile, int ipos) {
             strcpy(filename, newfile);
         }
     }
-    loading = 0;
+    loading = false;
     textbuf->call_modify_callbacks();
     setTitle(filename);
 }

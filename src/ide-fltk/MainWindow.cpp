@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.10 2004-11-21 22:38:23 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.11 2004-11-22 22:20:03 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -28,6 +28,7 @@
 #include <fltk/events.h>
 #include <fltk/string.h>
 #include <fltk/damage.h>
+//#include <fltk/HelpView.h>
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
@@ -76,17 +77,22 @@ void break_cb(Widget*, void* v) {
 }
 
 void basicMain(const char* filename) {
-    wnd->editWnd->deactivate();
+    wnd->editWnd->readonly(true);
     wnd->tabGroup->selected_child(wnd->outputGroup);
     wnd->out->clearScreen();
     wnd->out->set_visible();
     wnd->out->activate();
     runMode = run_state;
-    sbasic_main(filename);
+    wnd->runStatus->label("RUN");
+    wnd->runStatus->redraw();
+    int success = sbasic_main(filename);
+    wnd->runStatus->label(success ? " " : "ERR");
     if (runMode == quit_state) {
         exit(0);
     }
-    wnd->editWnd->activate();
+    wnd->editWnd->readonly(false);
+    wnd->editWnd->redraw();
+    wnd->redraw();
     runMode = edit_state;
 }
 
@@ -100,19 +106,19 @@ void run_cb(Widget*, void*) {
 }
 
 void setTitle(const char* filename) {
-    char title[256];
+//     char title[256];
+//     title[0] = 0;
+//     if (filename[0]) {
+//         char *slash = strrchr(filename, '/');
+//         if (slash != NULL) {
+//             strcpy(title, slash + 1);
+//         } else {
+//             strcpy(title, runfile);
+//         }
+//     }
 
-    title[0] = 0;
-    if (filename && filename[0]) {
-        char *slash = strrchr(filename, '/');
-        if (slash != NULL) {
-            strcpy(title, slash + 1);
-        } else {
-            strcpy(title, runfile);
-        }
-    }
-    wnd->fileStatus->copy_label(title[0] ? title : "Untitled");
-    wnd->redraw();     
+    wnd->fileStatus->label(filename&&filename[0] ? filename : "Untitled");
+    wnd->redraw();
 }
 
 void setRowCol(int row, int col) {
@@ -121,11 +127,12 @@ void setRowCol(int row, int col) {
     wnd->rowStatus->copy_label(t);
     sprintf(t, "%d", col);
     wnd->colStatus->copy_label(t);
+    wnd->layout();
     wnd->redraw();     
 }
 
 void setModified(bool dirty) {
-    
+    wnd->modStatus->label(dirty?"MOD":"");
 }
 
 int arg_cb(int argc, char **argv, int &i) {
@@ -214,8 +221,10 @@ struct TabPage : public Group {
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int mnuHeight = 20;
     int statusHeight = mnuHeight;
-    int groupHeight = h-mnuHeight-statusHeight;
+    int groupHeight = h-mnuHeight-statusHeight-3;
     int tabHeight = mnuHeight;
+    int tabBegin = mnuHeight; // if zero tabs will be at the bottom
+    int pageHeight = groupHeight-tabHeight;
 
     isTurbo = 0;
     opt_graphics = 1;
@@ -253,36 +262,38 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     tabGroup = new TabGroup(0, mnuHeight, w, groupHeight);
     tabGroup->begin();
 
-    TabPage* eg = new TabPage(0, 0, w, groupHeight-tabHeight, "Editor");
+    TabPage* eg = new TabPage(0, tabBegin, w, pageHeight, "Editor");
     editGroup = eg;
     editGroup->begin();
-    editWnd = new EditorWindow(2, 2, w-4, groupHeight-tabHeight-4);
+    editWnd = new EditorWindow(2, 2, w-4, pageHeight-4);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
 
     editGroup->resizable(editWnd);
     editGroup->end();
     tabGroup->resizable(editGroup);
 
-    TabPage* og = new TabPage(0, 0, w, groupHeight-tabHeight, "Output");
+    TabPage* og = new TabPage(0, tabBegin, w, pageHeight, "Output");
     outputGroup = og;
     outputGroup->hide();
     outputGroup->begin();
-    out = new Fl_Ansi_Window(2, 2, w-4, groupHeight-tabHeight-4);
+    out = new Fl_Ansi_Window(2, 2, w-4, pageHeight-4);
     outputGroup->resizable(out);
     outputGroup->end();
 
-    helpGroup = new Group(0, 0, w, groupHeight-tabHeight, "Help");
+    helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
     helpGroup->hide();
     helpGroup->begin();
-    // TODO: add help control
+    //HelpView* helpView = new HelpView(2, 2, w-4, pageHeight-4);
+    //helpView->load("../doc/sbasic.html");
+    //helpGroup->resizable(helpView);
     helpGroup->end();
 
     tabGroup->end();
     resizable(tabGroup);
 
-    Group* statusBar = new Group(0, h-mnuHeight+1, w, mnuHeight);
-    statusBar->align(ALIGN_INSIDE_LEFT);
+    Group* statusBar = new Group(0, h-mnuHeight+1, w, mnuHeight-2);
     statusBar->begin();
+    statusBar->box(NO_BOX);
     fileStatus = new Widget(0,0, w-122, mnuHeight-2);
     modStatus = new Widget(w-120, 0, 28, mnuHeight-2);
     runStatus = new Widget(w-90, 0, 28, mnuHeight-2);
@@ -296,29 +307,13 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
         w->color(GRAY75);
     }
 
-    fileStatus->box(ENGRAVED_BOX);
+    fileStatus->align(ALIGN_INSIDE_LEFT);
     statusBar->resizable(fileStatus);
     statusBar->end();
     end();
 }
 
 MainWindow::~MainWindow() {}
-
-// void MainWindow::updateStatusBar(const char* title) {
-//     char statusText[256];
-//     int row, col;
-    
-//     //editWnd->getRowCol(&row, &col);
-//     row=col=0;
-//     sprintf(statusText, 
-//             "--%s-- %s: %s ----L%d--C%d----", 
-//             editWnd->isDirty()? "**":"--",
-//             runMode == init_state || runMode == edit_state ? 
-//             "Editing":"Running",
-//             title&&title[0] ? title : "Untitled", row, col+1);
-//     //statusBar->copy_label(statusText);
-//     redraw();
-// }
 
 bool MainWindow::isBreakExec(void) {
     return (runMode == break_state || runMode == quit_state);
@@ -333,8 +328,6 @@ bool MainWindow::isModal() {
 }
 
 void MainWindow::resetPen() {
-    penX = 0;
-    penY = 0;
     penDownX = 0;
     penDownY = 0;
     penState = 0;

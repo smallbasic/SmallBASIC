@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.7 2004-11-21 22:38:23 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.8 2004-11-22 22:20:03 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -34,8 +34,6 @@ struct MainWindow : public Window {
     void setModal(bool modal);
     void resetPen();
 
-    int penX;
-    int penY;
     int penDownX;
     int penDownY;
     int penState;

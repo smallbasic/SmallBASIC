@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.8 2004-11-17 22:31:46 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.9 2004-11-22 22:20:03 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -76,6 +76,14 @@ void osd_setpenmode(int enable) {
     wnd->penState = (enable ? PEN_ON : PEN_OFF);
 }
 
+void get_mouse_xy() {
+    fltk::get_mouse(wnd->penDownX, wnd->penDownY);
+    // convert mouse screen rect to out-client rect
+    wnd->penDownX -= wnd->x() + wnd->out->x();
+    wnd->penDownY -= wnd->y() + wnd->out->y();
+    wnd->penDownY -= 40; // wnd->tabGroup->y();
+}
+
 int osd_getpen(int code) {
     if (wnd->penState == PEN_OFF) {
         fltk::wait();
@@ -88,28 +96,25 @@ int osd_getpen(int code) {
             wait();
         }
         if (event_state() & ANY_BUTTON) {
-            fltk::get_mouse(wnd->penDownX, wnd->penDownY);
-            // convert mouse screen rect to out-client rect
-            wnd->penDownX -= wnd->x() + wnd->out->x();
-            wnd->penDownY -= wnd->y() + wnd->out->y();
-            wnd->penDownY -= wnd->tabGroup->y();
+            get_mouse_xy();
             return 1;
         }
         return 0;
 
     case 1:  // last pen-down x
-        return wnd->penX;
+        return wnd->penDownX;
 
     case 2:  // last pen-down y
-        return wnd->penY;
-       
+        return wnd->penDownY;
+
     case 4:  // cur pen-down x
-        wnd->penX = wnd->penDownX;
+        get_mouse_xy();
         return wnd->penDownX;
 
     case 5:  // cur pen-down y
-        wnd->penY = wnd->penDownY;
+        get_mouse_xy();
         return wnd->penDownY;
+
     }
     return 0;
 }

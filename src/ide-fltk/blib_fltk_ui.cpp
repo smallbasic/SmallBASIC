@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.2 2004-11-21 22:38:23 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.3 2004-11-22 22:20:03 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -217,7 +217,13 @@ void cmd_doform() {
         form->box(SHADOW_BOX);
         form->x(x);
         form->y(y);
+        if (x+w > form->w()) {
+            w = form->w()-x;
+        }
         form->w(w);
+        if (y+h > form->h()) {
+            h = form->h()-y;
+        }
         form->h(h);
     } else {
         form->box(ENGRAVED_BOX);

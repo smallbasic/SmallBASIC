@@ -4,18 +4,23 @@ Commenced sometime around early Nov 2004. Mostly coded
 during my boring train ride to/from work. Initially built
 using cygwin under w2k.
 
-TODO:
+Tasks for initial release:
 
 1. editor
   - update display/selection colours
   - Display the row+column number of the cursor    
     TextDisplay.h:
-    int position_to_linecol(mCursorPos, int* lineNum, int* column);
-  - experiment with alternative caret
+    int position_to_linecol(mCursorPos, int* lineNum, int* column); *done*
+  - experiment with alternative caret- used TextDisplay::BLOCK_CURSOR *done*
   - status bar and title heading. include some indication program is 
-    running.
-  - read-only when program is running but scrollbars still function
+    running. *done*
+  - read-only when program is running but scrollbars still function *done*
   - Grey/disable/handle editor menus when in run mode
+  - selectable colors like in the "input" fltk sample
+  - toggle menu for turbo mode like in the "menu" fltk sample
+  - tabs along top or bottom *done*
+  - multiple editor tabs
+  - undo (ask FLTK team)
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
@@ -24,9 +29,12 @@ TODO:
    - Load .bas from web server
    - html text using fltk help control
    - sound ?
+   - updated DRAW code *done*
+   - handle "repeat key$ = inkey until len(key$) > 0" w/out high cpu use *done*
 
 3. Help Tab
-   - using FLTK help widget
+   - using FLTK help widget - doesn't appear to be completed. 
+     convert ebm help/help widget?
 
 4. Output Text Tab (removed)
 
@@ -44,7 +52,8 @@ TODO:
 
 9. Release packaging. Do we include cygwin1.dll in windows release?
     (mingw does not contain all the api's required for full build).
+   - latest FLTK code
 
 10. Linux build
 
-$Id: README.TXT,v 1.3 2004-11-21 22:38:23 zeeb90au Exp $
+$Id: README.TXT,v 1.4 2004-11-22 22:20:03 zeeb90au Exp $

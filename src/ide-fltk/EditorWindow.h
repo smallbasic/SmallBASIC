@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.6 2004-11-21 22:38:23 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.7 2004-11-22 22:20:03 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -106,6 +106,8 @@ class EditorWindow : public Group {
     }
 
     TextEditor *editor;
+    bool readonly();
+    void readonly(bool is_readonly);
 
     private:
     char filename[256];
