@@ -40,7 +40,7 @@ h2 {
 <h2>SmallBASIC</h2>
 
 <p>Copyright (c) 2000-2004 Nicholas Christopoulos.
-<p>FLTK Version 0.9.6.0
+<p>FLTK/Cygwin Version 0.9.6.0
 <p>Copyright (c) 2004 Chris Warren-Smith.<br>
 <p>SmallBASIC comes with ABSOLUTELY NO WARRANTY.
 This program is free software; you can use it
@@ -52,10 +52,9 @@ the Free Software Foundation.</p>
 <h1>Features</h1>
 
 <ul>
-<li>Based on FLTK library version 2.x. This is a cross-platform GUI API
-allowing simple re-targeting for the Windows, Linux and Mac platforms.
-<li>reduced CPU utilisation while programs are running.
-<li>syntax high-lighting:
+<li>Based on FLTK library version 2.x. FLTK provides hosting on the Windows, Linux and Mac platforms.
+<li>Reduced CPU utilisation while a program is running.
+<li>Syntax high-lighting:
 <table>
 <tr>
    <td style="color:#800000">keywords</td>
@@ -89,6 +88,8 @@ Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in t
    <td>Displays html text. The output is modeless, meaning 
   the command returns immediately while the output remains displayed. 
   Syntax: HTML html, [title,] [x,y,w,h] &nbsp; <i>(title not used in this release)</i>
+  Anchor links can be used to open or edit another SmallBASIC program once the 
+  currently running program has completed.
   </td>
 </tr>
 <tr>
@@ -114,7 +115,7 @@ Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in t
 </table>
 </li>
 
-<li>Support for modules. Module location is specifed on the command line
+<li>Support for modules. The module directory is specifed on the command line
 using the -m switch. 
 
 <li>Support for Plugins. Allows the editor to be extended using program written in SmallBASIC.
@@ -131,8 +132,10 @@ An alternative plugin home-directory may be specified on the command line using 
 <h1>Links</h1>
 <ul>
  <li><a href="help/0.html">SmallBASIC guide</a>
- <li><a href=http://smallbasic.sourceforge.net>SmallBASIC home</a>
- <li><a href=http://www.twpo.com.au/cwarrens/ebm>eBookMan tools</a>
+ <li><a href="http://smallbasic.sourceforge.net">SmallBASIC home</a>
+ <li><a href="http://www.fltk.org/">FLTK Home</a>
+ <li><a href="http://www.cygwin.com/">Cygwin Home</a>
+ <li><a href="http://www.twpo.com.au/cwarrens/ebm">eBookMan tools</a>
 </ul>
 
 </body>

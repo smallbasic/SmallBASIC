@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.17 2004-12-13 22:27:47 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.18 2004-12-14 22:26:04 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -227,6 +227,11 @@ void anchor_cb(Widget* w, void* v) {
 }
 
 void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
+
+    // fit within output window
+    x += wnd->out->x();
+    y += wnd->out->y();
+
     if (x+w > wnd->out->w()) {
         w = wnd->out->w()-x; 
     }
