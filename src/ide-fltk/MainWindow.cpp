@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.34 2005-04-01 00:07:08 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.35 2005-04-01 23:09:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -663,8 +663,8 @@ void MainWindow::execLink(char* file) {
     }
 
     bool execFile = false;
-    if (file[0] == '!') {
-        execFile = true;
+    if (file[0] == '!' || file[0] == '|') {
+        execFile = true; // exec flag passed with name
         file++;
     }
 

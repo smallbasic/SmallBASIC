@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.31 2005-04-01 00:07:08 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.32 2005-04-01 23:09:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -38,6 +38,7 @@ char* eventName = 0;
 Properties env;
 String envs;
 void closeHelp();
+bool activeForm = 0;
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -53,7 +54,10 @@ int osd_devinit() {
     if (SharedImage::first_image) {
         SharedImage::first_image->clear_cache();
     }
-    closeHelp();
+    if (activeForm == 0) {
+        closeHelp();
+    }
+    activeForm = 0;
     return 1;
 }
 
@@ -274,27 +278,28 @@ void closeHelp() {
     }
 }
 
-void doCloseEvent(void*) {
-    fltk::remove_check(doCloseEvent);
-    closeHelp();
-    wnd->execLink(eventName);
-    free((void*)eventName);
-    eventName = 0;
-}
-
 void doEvent(void*) {
     fltk::remove_check(doEvent);
+    if (eventName[0] == '|') {
+        activeForm = true;
+    } else {
+        closeHelp();
+    }
     wnd->execLink(eventName);
     free((void*)eventName);
     eventName = 0;
 }
 
-void anchor_cb(Widget* w, void* v) {
+void modeless_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        // post message
         eventName = strdup(helpView->getEventName());
-        fltk::add_check(helpView->isCloseEvent() ? doCloseEvent : doEvent);
+        fltk::add_check(doEvent); // post message
     }
+}
+
+void modal_cb(Widget* w, void* v) {
+    fltk::exit_modal();
+    dev_putenv(((HelpWidget*)w)->getEventName());
 }
 
 void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
@@ -313,6 +318,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         } else {
             out.loadBuffer(html);
         }
+        out.callback(modal_cb);
         window.resizable(&out);
         window.end();
         window.exec(wnd);
@@ -337,7 +343,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         wnd->outputGroup->begin();
         helpView = new HelpWidget(x, y, w, h);
         wnd->outputGroup->end();
-        helpView->callback(anchor_cb);
+        helpView->callback(modeless_cb);
         if (strnicmp("file:", html, 5) == 0) {
             helpView->loadFile(html+5);
         } else {

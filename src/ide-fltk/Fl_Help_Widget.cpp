@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.15 2005-04-01 00:07:07 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.16 2005-04-01 23:09:46 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -76,6 +76,8 @@ struct Display {
     U16 fontSize;
     U16 tableLevel;
     U16 nodeId;
+    S16 imgY;
+    U16 imgIndent;
     U8 uline;
     U8 center;
     U8 inTR;
@@ -363,10 +365,10 @@ struct ImageNode : public BaseNode {
         if (out->measure == false) {
             image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
         }
-        if (ih > out->lineHeight) {
-            out->lineHeight = ih;
-        }
+        out->imgY = out->y+ih;
+        out->imgIndent = out->indent;
         out->x += iw+DEFAULT_INDENT;
+        out->indent = out->x;
     }
     const Image* image;
     const Style* style;
@@ -384,6 +386,16 @@ struct TextNode : public BaseNode {
     }
 
     void display(Display* out) {
+
+        if (out->imgY != -1 && out->y > out->imgY) {
+            // handle text flow around images
+            out->imgY = -1;
+            out->indent = out->imgIndent;
+            if (out->x != out->indent) {
+                out->newRow();
+            }
+        }
+
         ybegin = out->y;
         out->content = true;
 
@@ -505,8 +517,13 @@ struct TableNode : public BaseNode {
         nodeId = out->nodeId;
 
         if (out->content) {
+            // update table initial row position- we remember content
+            // state on re-visiting the table via the value of initY 
             initY += out->lineHeight;
+            ryt = ryb = initY;
         }
+        out->content = false;
+
         if (cols && (out->exposed || columns == 0)) {
             // prepare default column widths
             if (out->tableLevel == 0 && tagWidth == 0) {
@@ -522,7 +539,10 @@ struct TableNode : public BaseNode {
                 sizes[i] = 0;
             }
         }
-        out->lineHeight = (int)(getascent()+getdescent());
+        int lineHeight =  (int)(getascent()+getdescent());
+        if (lineHeight > out->lineHeight) {
+            out->lineHeight = lineHeight;
+        }
         out->tableLevel++;
     }
 
@@ -704,6 +724,11 @@ static void onclick_callback(Widget* button, void *buttonId) {
     ((HelpWidget*)button->parent())->onclick(button);
 }
 
+static void def_button_callback(Widget* button, void *buttonId) {
+    // need to supply "onclick=fff" to make it it do something useful
+    fltk::exit_modal(); 
+}
+
 struct InputNode : public BaseNode {
     InputNode(Group* parent);
     InputNode(Group* parent, const char* v, int len);
@@ -746,7 +771,7 @@ struct InputNode : public BaseNode {
 };
 
 InputNode::InputNode(Group* parent, Properties* env, Attributes* a) : 
-    // creates either a text, checkbox, radio or button control
+    // creates either a text, checkbox, radio, hidden or button control
     BaseNode() {
     parent->begin();
     String* value = a->getValue();
@@ -769,6 +794,8 @@ InputNode::InputNode(Group* parent, Properties* env, Attributes* a) :
     } else if (type != null && type->equals("radio")) {
         button = new RadioButton(0,0,18,0);
         button->user_data((void*)ID_RADIO);
+    } else if (type != null && type->equals("hidden")) {
+        button = 0;
     } else {
         button = new Button(0,0,0,0);
         if (value && value->length()) {
@@ -778,13 +805,16 @@ InputNode::InputNode(Group* parent, Properties* env, Attributes* a) :
         }
         button->user_data((void*)ID_BUTTON);
         button->labelcolor(ANCHOR_COLOR);
+        button->callback(def_button_callback);
     }
-    int size = a->getSize();
-    if (size != -1) {
-        button->w(size);
+    if (button) {
+        int size = a->getSize();
+        if (size != -1) {
+            button->w(size);
+        }
+        button->color(BUTTON_COLOR);
+        button->textcolor(ANCHOR_COLOR);
     }
-    button->color(BUTTON_COLOR);
-    button->textcolor(ANCHOR_COLOR);
     parent->end();
 }
 
@@ -883,7 +913,6 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     callback(anchor_callback); // default callback
     init();
     cookies = 0;
-    closeEvent = true;
 }
 
 HelpWidget::~HelpWidget() {
@@ -1084,6 +1113,8 @@ void HelpWidget::draw() {
     out.measure = false;
     out.exposed = (damage()&DAMAGE_EXPOSE) ? 1:0;
     out.tableLevel = 0;
+    out.imgY = -1;
+    out.imgIndent = out.indent;
 
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
@@ -1266,7 +1297,6 @@ int HelpWidget::handle(int event) {
             pushedAnchor->pushed = false;
             redraw(DAMAGE_PUSHED);
             if (pushed) {
-                closeEvent = true;
                 this->event.empty();
                 this->event.append(pushedAnchor->href.toString());
                 user_data((void*)this->event.toString());
@@ -1719,7 +1749,6 @@ void HelpWidget::copyText(int begin, int end) {
 
 void HelpWidget::navigateTo(const char* s) {
     // search for target using the path of the current file
-    trace("navigateTo=%s", s);
     loadFile(fileName.getPath(s).toString());
 }
 

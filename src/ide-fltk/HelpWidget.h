@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.13 2005-04-01 00:07:08 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.14 2005-04-01 23:09:47 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -47,7 +47,6 @@ public:
     const char* getInputValue(int i);
     const char* getInputName(Widget* button);
     const char* getEventName() {return event.toString();}
-    bool isCloseEvent() {return closeEvent;}
     void getInputProperties(Properties* p);
     void setCookies(Properties* p) {cookies=p;}
     bool setInputValue(const char* assignment);
@@ -72,7 +71,6 @@ public:
     Scrollbar* scrollbar;
     S16 vscroll,hscroll;
     U16 scrollHeight;
-    U16 closeEvent;
     strlib::List nodeList;
     strlib::List namedInputs;
     strlib::List inputs;
