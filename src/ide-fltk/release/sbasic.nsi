@@ -61,7 +61,7 @@ SectionEnd
 Section "Create .BAS file association"
   WriteRegStr HKCR ".bas" "" "SmallBASIC"
   WriteRegStr HKCR "SmallBASIC" "" "SmallBASIC"
-  WriteRegStr HKCR "SmallBASIC\DefaultIcon" "" "$INSTDIR\sbfltk.exe,1"
+  WriteRegStr HKCR "SmallBASIC\DefaultIcon" "" "$INSTDIR\sbfltk.exe,0"
   WriteRegStr HKCR "SmallBASIC\shell" "" "open"
   WriteRegStr HKCR "SmallBASIC\shell\open\command" "" '"$INSTDIR\sbfltk.exe" -e "%1"'
   WriteRegStr HKCR "SmallBASIC\shell" "" "run"
@@ -72,6 +72,7 @@ Section "SmallBASIC (FLTK/Cygwin)" SecMain
   SetOutPath "$INSTDIR"
   File sbfltk.exe
   File cygwin1.dll
+  File cygwin_mount.reg
   File readme.html
   File welcome.bas
   SetOutPath $INSTDIR\Help
@@ -107,6 +108,7 @@ Section "Uninstall"
   ; Remove files and uninstaller
   Delete $INSTDIR\sbfltk.exe
   Delete $INSTDIR\cygwin1.dll
+  Delete $INSTDIR\cygwin_mount.reg
   Delete $INSTDIR\readme.html
   Delete $INSTDIR\welcome.bas
   Delete $INSTDIR\Uninstall.exe
