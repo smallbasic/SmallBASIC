@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.5 2005-03-20 23:36:01 zeeb90au Exp $
+// $Id: StringLib.h,v 1.6 2005-03-23 22:29:20 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -94,6 +94,7 @@ struct String : public Object {
     String substring(int beginIndex) const;
     String substring(int beginIndex, int endIndex) const;
     String replaceAll(const char* srch, const char* repl);
+    String getPath(const char* fileName);
     
     protected:
     void init() {buffer=0;owner=true;}

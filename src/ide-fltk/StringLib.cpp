@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.5 2005-03-20 23:36:01 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.6 2005-03-23 22:29:18 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <io.h>
 
 // uncomment for unit testing and then run:
 // g++ StringLib.cpp;./a.exe
@@ -338,6 +339,24 @@ String String::rvalue() {
         return *this;
     }
     return substring(endIndex+1, length());
+}
+
+/**
+ * extract the directory path from this string and append fileName
+ */
+String String::getPath(const char* fileName) {
+    String path;
+    int i = lastIndexOf('/', 0);
+    if (i != -1) {
+        path = substring(0, i+1);
+        path.append(fileName);
+        if (access(path.toString(), 0) == 0) {
+            return path;
+        }
+    }
+    path.empty();
+    path.append(fileName);
+    return path;
 }
 
 //--List------------------------------------------------------------------------
