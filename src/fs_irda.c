@@ -30,6 +30,10 @@
 #endif
 #include "fs_irda.h"
 
+#ifdef _CygWin
+#include <windows.h>
+#endif
+
 /*
 */
 int		irda_open(dev_file_t *f)
@@ -52,7 +56,7 @@ int		irda_open(dev_file_t *f)
 
 	return (f->last_error == 0);
 
-	#elif defined(_UnixOS)
+    #elif defined(_UnixOS) && !defined(_CygWin)
 	///////////////////////////////////////////////////////////////////////////////////////////
 	//	Unix
 	sprintf(f->name, "/dev/irda%d", f->port);
@@ -84,7 +88,7 @@ int		irda_open(dev_file_t *f)
 	if	( f->handle < 0 )
 		err_file((f->last_error = errno));
 	return (f->handle >= 0);
-    #elif defined(_Win32)
+    #elif defined(_Win32) || defined(_CygWin)
 	///////////////////////////////////////////////////////////////////////////////////////////
 	//	Win32
 	DCB		dcb;
@@ -141,7 +145,7 @@ int		irda_close(dev_file_t *f)
 		rt_raise("IRCLOSE() ERROR %d", f->last_error);
 	return (f->last_error == 0);
 
-	#elif defined(_UnixOS)
+	#elif defined(_UnixOS) && !defined(_CygWin)
 	tcsetattr(f->handle, TCSANOW, &f->oldtio);
 	close(f->handle);
 	f->handle = -1;
@@ -152,7 +156,7 @@ int		irda_close(dev_file_t *f)
 	f->handle = -1;
 	return 1;
 
-    #elif defined(_Win32)
+    #elif defined(_Win32) || defined(_CygWin)
     CloseHandle((HANDLE) f->handle);
 	f->handle = -1;
 	return 1;
