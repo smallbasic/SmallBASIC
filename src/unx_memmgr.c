@@ -9,11 +9,12 @@
 *	Download the GNU Public License (GPL) from www.gnu.org
 */
 
+#include "sys.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "sys.h"
+
 #define	UMM_MODULE
 #include "unx_memmgr.h"
 #include "panic.h"

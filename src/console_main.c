@@ -8,9 +8,11 @@
 */
 
 #include "sbapp.h"
-#include "help_subsys.h"
-#include "interactive_mode.h"
 
+#ifndef _CygWin
+#include "interactive_mode.h"
+#include "help_subsys.h"
+#endif
 
 #if defined(_UnixOS) || defined(_DOS)
 // global the filename (its needed for CTRL+C signal - delete temporary)
@@ -165,7 +167,12 @@ int	main(int argc, char *argv[])
 						char	*command = argv[i]+3;
 
 						if ( argv[i][2] == '-' ) 
+#ifdef _CygWin
+              fprintf(stderr, "Please refer to the online help in the GUI application");
+#else
 							help_printinfo(command);
+#endif
+
 						else if ( argv[i][2] == 'x' )	{
 							// print all
 							//printf("%s\n", help_text);
@@ -267,9 +274,10 @@ int	main(int argc, char *argv[])
 
 		if	( opt_interactive )	{
 			// get it from console
+#ifndef _CygWin
 			memmgr_init();
-
 			interactive_mode(g_file);
+#endif
 			}
 		else	{
 			// get it from stdin

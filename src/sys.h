@@ -22,6 +22,9 @@ extern "C" {
 #endif
 
 #if defined(_CygWin)
+#define __addr_t_defined
+typedef unsigned int	addr_t;
+
 // there is conflict on cygwin's headers sys/types.h
 // they reserve the 'addr_t' (sys/types.h:typedef char * addr_t)
 // I did a grep -r -w at /usr/include to find if it is used somewhere else
