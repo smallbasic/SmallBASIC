@@ -561,10 +561,10 @@ int		LoadSBPDB(const char *fname, char_p *rtext)
 void	usage()
 {
 #if	defined(_PDB2BAS)
-	printf("SmallBASIC utilities: PDB to BAS (text), version 0.6\n");
+	printf("SmallBASIC utilities: PDB to BAS (text), version 0.9\n");
 	printf("%% pdb2bas file\n");
 #else
-	printf("SmallBASIC utilities: BAS (text) to PDB, version 0.6\n");
+	printf("SmallBASIC utilities: BAS (text) to PDB, version 0.9\n");
 	printf("%% bas2pdb file\n");
 #endif
 }

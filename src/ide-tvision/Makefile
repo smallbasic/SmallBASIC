@@ -1,9 +1,7 @@
-cc=gcc
-cflags=-D_UnixOS -I.. -I. -I/usr/include/rhtvision
+cc=g++
+cflags=-D_UnixOS $(shell rhtv-config --include) $(shell rhtv-config --cppflags)
 csb=-lsbasic -lsbfbdrv 
-clibs=$(csb) -lrhtv -lm -lstdc++ -lncurses -lgpm -ldl 
-#csb=-lsbasic -lsbsdldrv 
-#clibs=$(csb) -lrhtv -lm -lstdc++ -lncurses -lgpm -ldl -lSDL
+clibs=$(csb) $(shell rhtv-config --dlibs)
 exe=tsbide
 
 all: $(exe)

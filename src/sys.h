@@ -240,6 +240,33 @@ typedef unsigned int	addr_t;
 	#include <fcntl.h>
 	#include <dos.h>
 	#include <dirent.h>
+#elif defined(_AMIDOS) 
+/* ------------------------------------------------------------------------------------ */
+
+/*
+*   AMIGA
+*/
+	#define	CPU_LITTLEENDIAN
+	#define MALLOC_LIMITED
+
+	#define	OS_PATHNAME_SIZE	1024
+	#define	OS_FILENAME_SIZE	256
+	#define	OS_FILEHANDLES		256
+
+	#define	OS_NAME		"AMIDOS"
+	#define	OS_DIRSEP	'/'   
+
+	#include <stdio.h>
+	#include <stdarg.h>
+	#include <stdlib.h>
+	#include <math.h>
+	#include <math.h>
+	#include <time.h>
+	#include <io.h>
+	#include <unistd.h>    
+	#include <sys/stat.h>
+	#include <fcntl.h>
+	#include <dirent.h>
 #else
 /* ------------------------------------------------------------------------------------ */
 
@@ -326,8 +353,8 @@ typedef unsigned int	addr_t;
 *	SB's constants
 */
 
-#define	SB_STR_VER		"0.9.0"
-#define	SB_DWORD_VER	0x900	// 00 (major) 08 (minor) 03 (patch) 
+#define	SB_STR_VER		"0.9.4"
+#define	SB_DWORD_VER	0x904	// 00 (major) 08 (minor) 03 (patch) 
 
 #if defined(OS_LIMITED)
 	#define	SB_PANICMSG_SIZE	255		

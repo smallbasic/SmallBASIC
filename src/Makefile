@@ -2,11 +2,14 @@
 #	SmallBASIC makefile for Unices, PalmOS, DOS (cross-tools), Win32 (cross-tools)
 #
 
+SBVER=0.9.4
+
 ##########################################
 #
 #   Unix
 #
 UCC=gcc
+UCCP=g++
 
 # CHECK_PTRS_LEV2 is a very slowly algorithm to check pointers, needed only for debug
 PTRCHECK   =
@@ -197,7 +200,7 @@ $(BINDIR)/sdlsbasic: $(unix_obj) dev_sdl.c device.c $(help_files)
 $(LIBDIR)/libsbasic.so: $(ulib_obj)
 	-rm -f $(LIBDIR)/libsbasic.a
 	ar rcs $(LIBDIR)/libsbasic.a $(ulib_obj)
-	gcc -shared -Wl,-soname,libsbasic.so -o $(LIBDIR)/libsbasic.so.0.8.3 $(ulib_obj) -lm -lncurses -ldl
+	gcc -shared -Wl,-soname,libsbasic.so -o $(LIBDIR)/libsbasic.so.$(SBVER) $(ulib_obj) -lm -lncurses -ldl
 	-ldconfig
 	-@printf "\n\033[7m * %s * \033[0m\n\n" "Library! Version ready"
 
@@ -205,7 +208,7 @@ $(LIBDIR)/libsbasic.so: $(ulib_obj)
 $(LIBDIR)/libsbfbdrv.so: $(fbdrv_obj)
 	-rm -f $(LIBDIR)/libsbfbdrv.a
 	ar rcs $(LIBDIR)/libsbfbdrv.a $(fbdrv_obj)
-	gcc -shared -Wl,-soname,libsbfbdrv.so -o $(LIBDIR)/libsbfbdrv.so.0.8.3 $(fbdrv_obj) -lpthread -lm
+	gcc -shared -Wl,-soname,libsbfbdrv.so -o $(LIBDIR)/libsbfbdrv.so.$(SBVER) $(fbdrv_obj) -lpthread -lm
 	-ldconfig
 	-@printf "\n\033[7m * %s * \033[0m\n\n" "FrameBuffer library driver ready"
 
@@ -213,7 +216,7 @@ $(LIBDIR)/libsbfbdrv.so: $(fbdrv_obj)
 $(LIBDIR)/libsbsdldrv.so: $(sdldrv_obj)
 	-rm -f $(LIBDIR)/libsbsdldrv.a
 	ar rcs $(LIBDIR)/libsbsdldrv.a $(sdldrv_obj)
-	gcc -shared -Wl,-soname,libsbsdldrv.so -o $(LIBDIR)/libsbsdldrv.so.0.8.3 $(sdldrv_obj) -lpthread -lm -lSDL
+	gcc -shared -Wl,-soname,libsbsdldrv.so -o $(LIBDIR)/libsbsdldrv.so.$(SBVER) $(sdldrv_obj) -lpthread -lm -lSDL
 	-ldconfig
 	-@printf "\n\033[7m * %s * \033[0m\n\n" "SDL library driver ready"
 
@@ -304,8 +307,8 @@ $(BINDIR)/mkpdb32.exe: mkpdb.c
 
 # Unix
 $(BINDIR)/bas2pdb: bas2pdb.cc
-	$(UCC) $(CFLAGS) -D_BAS2PDB bas2pdb.cc -o $(BINDIR)/bas2pdb
-	$(UCC) $(CFLAGS) -D_PDB2BAS bas2pdb.cc -o $(BINDIR)/pdb2bas
+	$(UCCP) $(CFLAGS) -D_BAS2PDB bas2pdb.cc -o $(BINDIR)/bas2pdb
+	$(UCCP) $(CFLAGS) -D_PDB2BAS bas2pdb.cc -o $(BINDIR)/pdb2bas
 
 $(BINDIR)/mkpdb: mkpdb.c
 	$(UCC) $(CFLAGS) mkpdb.c -o $(BINDIR)/mkpdb

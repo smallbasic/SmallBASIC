@@ -240,8 +240,7 @@ int		main(int argc, char *argv[])
 	int		i;
 	char	creator[64], type[64];
 
-	printf("mkpdb version 0.0.1\n");
-	printf("written by Nicholas Christopoulos (wired_gr@yahoo.com)\n");
+	printf("mkpdb version 0.9\n");
 
 	strcpy(creator, "none");
 	strcpy(type, "DATA");
