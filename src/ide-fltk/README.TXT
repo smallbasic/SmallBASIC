@@ -19,13 +19,14 @@ Tasks for initial release:
   - selectable colors like in the "input" fltk sample
   - toggle menu for turbo mode like in the "menu" fltk sample *done*
   - tabs along top or bottom *done*
-  - multiple editor tabs
-  - undo (ask FLTK team)
+  - multiple editor tabs 
+  - undo (ask FLTK team) *done*
   - full screen menu option *done*
   - startup argument to run in "application" mode *done* tabs at the bottom
   - right-control deletes selection- modified Fl_compose.cxx
-  - some kind of bookmark system allowing the user to easily return
-    to a favourite application -- bookmark tab using html widget
+  * some kind of bookmark system allowing the user to easily return
+    to a favourite application. what if the bookmark program was a .bas?
+  - jump to the line number of the error when compilation fails *done*
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
@@ -33,8 +34,9 @@ Tasks for initial release:
    - Load and display images  - ask FLTK group why no JPG and PNG support 
    - Load images from http server *done* - apart from blocking/lockpup when
      host not found
-   - Load .bas from http server
-   - html text using fltk help control
+   - Load .bas from http server - not quite so simple since SB is single 
+     threaded and blocking sockets block for a very long time. (in windoze)
+   - html text using fltk help control *done* (for html command)
    - sound ?
    - updated DRAW code *done*
    - handle "repeat key$ = inkey until len(key$) > 0" w/out high cpu use *done*
@@ -52,7 +54,7 @@ Tasks for initial release:
 5. Program icon in windows *done* 
 
 6. About Box
-   - what version will this be?
+   * what version will this be?
 
 7. Settings dialog
    - setting for turbo mode *done*
@@ -63,8 +65,8 @@ Tasks for initial release:
 
 9. Release packaging. Do we include cygwin1.dll in windows release?
     (mingw does not contain all the api's required for full build).
-   - latest FLTK code
+   * latest FLTK code
 
 10. Linux build
 
-$Id: README.TXT,v 1.7 2004-11-30 22:46:22 zeeb90au Exp $
+$Id: README.TXT,v 1.8 2004-12-02 21:56:23 zeeb90au Exp $

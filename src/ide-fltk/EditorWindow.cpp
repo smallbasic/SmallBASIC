@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.9 2004-11-30 22:46:22 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.10 2004-12-02 21:56:23 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -302,20 +302,52 @@ void style_update(int pos,        // I - Position of update
 struct CodeEditor : public TextEditor {
     CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
         readonly = false;
+        undoBuff = 0;
+        curBuff = 0;
     }
     int handle(int e) {
         if (readonly && (e == KEY || e == PASTE)) {
             return 0;
         }
+
         int r = TextEditor::handle(e);
         if (e == KEYUP || e == RELEASE) {
             int row, col;
             position_to_linecol(mCursorPos, &row, &col);
-            setRowCol(row, col+1);
+            if (row < 9999 && col < 9999) {
+                setRowCol(row, col+1);
+            }
         }
         return r;
     }
+
+    void saveUndo() {
+        if (undoBuff) {
+            free(undoBuff);
+        }
+        undoBuff = curBuff;
+        curBuff = strdup(buffer()->text());
+        oldCursorPos = mCursorPos;
+    }       
+
+    void undo() {
+        if (undoBuff) {
+            buffer()->text(undoBuff);
+            free(undoBuff);
+            undoBuff = 0;
+            mCursorPos = oldCursorPos;
+        }
+    }
+
+    void gotoLine(int line) {
+        scroll(line-(mNVisibleLines/2), 0);
+        insert_position(buffer()->skip_lines(0, line-1));
+    }
+
+    int oldCursorPos;
     bool readonly;
+    char* undoBuff;
+    char* curBuff;
 };
 
 //--EditorWindow----------------------------------------------------------------
@@ -380,15 +412,16 @@ void EditorWindow::readonly(bool is_readonly) {
 }
 
 void EditorWindow::doChange(int inserted, int deleted) {
-    trace("%d %d",inserted, deleted);// editor->buffer()->text());
     if ((inserted || deleted) && !loading) {
         dirty = 1;
-        setModified(dirty);
+        ((CodeEditor*)editor)->saveUndo();
     }
 
     if (loading) {
         editor->show_insert_position();
     }
+    
+    setModified(dirty);
 }
 
 bool EditorWindow::checkSave(bool discard) {
@@ -444,6 +477,7 @@ void EditorWindow::doSaveFile(char *newfile) {
     }
     dirty = 0;
     textbuf->call_modify_callbacks();
+    setTitle(newfile);
 }
 
 void EditorWindow::find() {
@@ -614,6 +648,14 @@ void EditorWindow::saveFileAs() {
 
 void EditorWindow::doDelete() {
     textbuf->remove_selection();
+}
+
+void EditorWindow::undo() {
+    ((CodeEditor*)editor)->undo();
+}
+
+void EditorWindow::gotoLine(int line) {
+    ((CodeEditor*)editor)->gotoLine(line);
 }
 
 //--EndOfFile-------------------------------------------------------------------

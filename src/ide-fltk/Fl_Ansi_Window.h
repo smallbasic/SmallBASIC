@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.9 2004-11-30 22:46:22 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.10 2004-12-02 21:56:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -31,19 +31,11 @@ class Fl_Ansi_Window : public Widget {
     void clearScreen();
     void print(const char *str);
     void drawLine(int x1, int y1, int x2, int y2);
-    void drawFGRectFilled(int x, int y, int width, int height);
-    void drawBGRectFilled(int x, int y, int width, int height);
-    void drawFGRect(int x, int y, int width, int height);
-    void drawBGRect(int x, int y, int width, int height);
+    void drawRectFilled(int x1, int y1, int x2, int y2);
+    void drawRect(int x1, int y1, int x2, int y2);
     void drawImage(Image* img, int x, int y, int sx, int sy, int w, int h);
-
-    void setTextColor(long fg, long bg) {
-        labelcolor(ansiToFltk(fg));
-        color(ansiToFltk(bg));
-    }
-    void setColor(long color) {
-        labelcolor(ansiToFltk(color));
-    }
+    void setTextColor(long fg, long bg);
+    void setColor(long color);
     int getX() {return curX;}
     int getY() {return curY;}
     void setPixel(int x, int y, int c);
@@ -56,7 +48,8 @@ class Fl_Ansi_Window : public Widget {
 
     private:
     void init();
-    void initOffscreen();
+    void destroyImage();
+    void initImage();
     bool setGraphicsRendition(char c, int escValue);
     Color ansiToFltk(long color) const;
     bool doEscape(unsigned char *&p);

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.13 2004-11-30 22:46:22 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.14 2004-12-02 21:56:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -16,13 +16,15 @@
 #include <fltk/Font.h>
 
 #include "Fl_Ansi_Window.h"
+#include "MainWindow.h"
 
 #if defined(WIN32) 
 #include <fltk/win32.h>
+#include <wingdi.h>
 extern HDC fl_bitmap_dc;
 #endif
 
-#define INITXY 4
+#define INITXY 2
 
 using namespace fltk;
 
@@ -31,7 +33,7 @@ using namespace fltk;
 //#define UNIT_TEST 1
 
 #define begin_offscreen()   \
-  initOffscreen();          \
+  initImage();              \
   ImageDraw imageDraw(img); \
   setfont(labelfont(), labelsize());
 
@@ -43,24 +45,30 @@ Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) :
 }
 
 Fl_Ansi_Window::~Fl_Ansi_Window() {
-    if (img) {
-        delete img;
-        img = 0;
-    }
+    destroyImage();
 }
 
 void Fl_Ansi_Window::init() {
-    if (img) {
-        delete img;
-    }
-    img = 0;
+    destroyImage();
     curY = INITXY; // allow for input control border
     curX = INITXY;
     tabSize = 40; // tab size in pixels (160/32 = 5)
     reset();
 }
 
-void Fl_Ansi_Window::initOffscreen() {
+void Fl_Ansi_Window::destroyImage() {
+    if (img) {
+        img->destroy_cache();
+        delete img;
+        img = 0;
+    }
+}
+
+void Fl_Ansi_Window::clearScreen() {
+    init();
+}
+
+void Fl_Ansi_Window::initImage() {
     // can only be called following Fl::check() or Fl::run()
     if (img == 0) {
         img = new Image(w(), h());
@@ -87,12 +95,25 @@ void Fl_Ansi_Window::reset() {
 
 void Fl_Ansi_Window::layout() {
     if (img && (layout_damage() & LAYOUT_WH)) { 
+        int W = img->w();
+        int H = img->h();
+        if (w() > W) {
+            W = w();
+        }
+        if (h() > H) {
+            H = h();
+        }
+
         Image* old = img;
-        img = 0;
-        begin_offscreen();
-        old->draw(0, 0, w(), h(), 0, OUTPUT);
+        img = new Image(W, H);
+        ImageDraw imageDraw(img);
+        setcolor(color());
+        fillrect(0, 0, W, H);
+        setfont(labelfont(), labelsize());
+        old->draw(0, 0, old->w(), old->h(), 0, OUTPUT);
+        old->destroy_cache();
         delete old;
-        end_offscreen();
+        redraw();
     }
     Widget::layout();
 }
@@ -104,10 +125,15 @@ void Fl_Ansi_Window::draw() {
         setcolor(color());
         fillrect(0, 0, w(), h());
     }
-    // border
-    setcolor(GRAY33);
-    drawline(0, 0, w()-2, 0);
-    drawline(0, 0, 0, h()-2);
+}
+
+void Fl_Ansi_Window::setTextColor(long fg, long bg) {
+    labelcolor(ansiToFltk(fg));
+    color(ansiToFltk(bg));
+}
+
+void Fl_Ansi_Window::setColor(long fg) {
+    labelcolor(ansiToFltk(fg));
 }
 
 void Fl_Ansi_Window::drawLine(int x1, int y1, int x2, int y2) {
@@ -117,31 +143,20 @@ void Fl_Ansi_Window::drawLine(int x1, int y1, int x2, int y2) {
     end_offscreen();
 }
 
-void Fl_Ansi_Window::drawFGRectFilled(int x, int y, int width, int height) {
+void Fl_Ansi_Window::drawRectFilled(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
-    fillrect(x, y, width, height);
+    fillrect(x1, y1, x2-x1, y2-y1);
     end_offscreen();
 }
 
-void Fl_Ansi_Window::drawBGRectFilled(int x, int y, int width, int height) {
-    begin_offscreen();
-    setcolor(color());
-    fillrect(x, y, width, height);
-    end_offscreen();
-}
-
-void Fl_Ansi_Window::drawFGRect(int x, int y, int width, int height) {
+void Fl_Ansi_Window::drawRect(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
-    strokerect(x, y, width, height);
-    end_offscreen();
-}
-
-void Fl_Ansi_Window::drawBGRect(int x, int y, int width, int height) {
-    begin_offscreen();
-    setcolor(color());
-    strokerect(x, y, width, height);
+    drawline(x1, y1, x1, y2);
+    drawline(x1, y2, x2, y2);
+    drawline(x2, y2, x2, y1);
+    drawline(x2, y1, x1, y1);
     end_offscreen();
 }
 
@@ -155,7 +170,15 @@ void Fl_Ansi_Window::drawImage(Image* image, int x, int y, int sx, int sy,
 void Fl_Ansi_Window::setPixel(int x, int y, int c) {
 #if defined(WIN32) 
     begin_offscreen();
-    ::SetPixel(fl_bitmap_dc, x,y, c);
+    if (c < 0) {
+        ::SetPixel(fl_bitmap_dc, x,y, -c);
+    } else {
+        Color fltkColor = ansiToFltk(c);
+        int r = (fltkColor>>24) & 0xFF;
+        int g = (fltkColor>>16) & 0xFF;
+        int b = (fltkColor>>8) & 0xFF;
+        ::SetPixel(fl_bitmap_dc, x,y, RGB(r,g,b));
+    }
     end_offscreen();
 #else
     // TODO: fix linux set/get pixel
@@ -186,14 +209,6 @@ int Fl_Ansi_Window::textHeight(void) {
     int h = (int)(getascent()+getdescent());
     end_offscreen();
     return h;
-}
-
-void Fl_Ansi_Window::clearScreen() {
-    init();
-    begin_offscreen();
-    setcolor(color());
-    fillrect(0, 0, w(), h());
-    end_offscreen();
 }
 
 // callback for fl_scroll
@@ -227,6 +242,14 @@ int Fl_Ansi_Window::calcTab(int x) const {
 }
 
 Color Fl_Ansi_Window::ansiToFltk(long c) const {
+    if (c < 0) {
+        // windows style RGB packing
+        int r = (c) & 0xFF;
+        int g = (c>>8) & 0xFF;
+        int b = (c>>16) & 0xFF;
+        return fltk::color(r, g, b);
+    }
+
     // see: http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
     switch (c) {
     case 0:  return fltk::BLACK;             // 0 black

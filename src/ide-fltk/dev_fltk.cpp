@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.12 2004-11-30 22:46:22 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.13 2004-12-02 21:56:23 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -36,7 +36,7 @@ HelpView* helpView = 0;
 
 void closeHelp() {
     if (helpView) {
-        wnd->outputGroup->remove(helpView);
+        helpView->parent()->remove(helpView);
         helpView->parent(0);
         delete helpView;
         helpView = 0;
@@ -180,9 +180,9 @@ void osd_line(int x1, int y1, int x2, int y2) {
 
 void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
     if (bFill) {
-        wnd->out->drawFGRectFilled(x1, y1, x2-x1, y2-y1);
+        wnd->out->drawRectFilled(x1, y1, x2, y2);
     } else {
-        wnd->out->drawFGRect(x1, y1, x2-x1, y2-y1);
+        wnd->out->drawRect(x1, y1, x2, y2);
     }
 }
 
@@ -225,7 +225,6 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
             closeHelp();
             return;
         }
-        
         helpView->x(x);
         helpView->y(y);
         helpView->w(w);

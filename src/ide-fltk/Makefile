@@ -14,7 +14,6 @@ SOURCE =                                        \
 	MainWindow.cpp                              \
 	EditorWindow.cpp                            \
     dev_fltk.cpp                                \
-    ebjlib.cpp                                  \
     blib_fltk_ui.c                              \
 
 COMMON=                                         \
