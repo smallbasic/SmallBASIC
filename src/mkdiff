@@ -1,0 +1,15 @@
+#!/bin/tcsh
+
+rm diff.lst
+
+set import_dir=../gac
+set c_sources=`ls *.[ch] *.cc sbpad.rcp`
+
+echo "############################################################################# <= import >= working" >> diff.lst
+foreach f ( ${c_sources} )
+	echo "############################################################################# " ${f} >> diff.lst
+	diff ${import_dir}/${f} ${f} >> diff.lst
+end
+
+less diff.lst
+

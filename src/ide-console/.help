@@ -1,0 +1,95 @@
+  _________________________________________________________________________
+                                                 SmallBASIC IDE for Console
+                                                 
+  Platform notes:
+  >> on Linux, shift+movement keys are used by console/xterm
+  
+  Cursor keys			Movement
+  Home					Jump to begin of line  
+  Home+Home				Previous page								(brief)
+  Home+Home+Home		Jump to begin of file						(brief)
+  End					Jump to end of line 
+  End+End				Next page								    (brief)
+  End+End+End			Jump to end of file							(brief)
+
+  Alt+G					Go to line									(brief)
+  Alt+1..9				Set bookmark [1..9] to current position		(brief)
+  Alt+J					Jump to bookmark							(brief)
+   
+  Delete				Deletes block or the next character
+  NumPad Delete			(the same as Delete)
+  Backspace				Deletes block or the previous character
+  Alt+K					Delete to end-of-line					(dos,brief)
+  
+  Alt+D/Ctrl+Y			Delete line							(dos,brief,joe)
+  
+  Ctrl+Z				Undo										  (win)
+  NumPad */Alt+U		Undo										(brief)
+  Alt+*					Same as NumPad - (good for xterm w/o numpad)
+  
+  NumPad 5				Center to screen
+  Ctrl+L				Redraw screen
+  _________________________________________________________________________
+                                                                    Generic
+  F5,Ctrl+F				Search 								(dos,win,brief)
+  						In the prompt, enter < as first character to search
+  						backward, > or none to search forward.
+  
+  F3,Ctrl+N,Shift+F5	Find next							(dos,win,brief)
+
+  Ctrl+P				Find previous
+  _________________________________________________________________________
+                                                             Find & Replace  
+  Alt+I					Toggles overwrite/insert mode
+  Ctrl+A				Toggle auto-indent mode
+  _________________________________________________________________________
+                                                                       Mode
+  Alt+M					Simple selection (also, shift+movement keys)(brief)
+  Shift+Cursor keys/PgDn/PgUp/Home/End (same as Alt+M)			  (dos,win)
+  
+  Alt+L					Line selection								(brief)
+  
+  NumPad -				Cut or line-cut if no selection				(brief)
+  Alt+-					Same as NumPad - (good for xterm w/o numpad)
+  NumPad + 				Copy or line-copy if no selection			(brief)
+  Alt+=					Same as NumPad + (good for xterm w/o numpad)
+  Insert				Paste										(brief)
+
+  Ctrl+C				Copy or line-copy if no selection		  (dos,win)
+  Ctrl+V				Paste									  (dos,win)
+  Ctrl+X				Cut or line-cut if no selection			  (dos,win)
+  _________________________________________________________________________
+                                                                  Clipboard  
+  Alt+E					Edit file (open file)						(brief)
+  Alt+O					Change filename (rename file)				(brief)
+  Alt+W					Save										(brief)
+  Alt+X					Exit									(dos,brief)
+  Alt+B					Select buffer (files)						(brief)
+  Alt+P					Previous buffer								(brief)
+  Alt+N					Next buffer									(brief)
+  _________________________________________________________________________
+                                                              Files/Buffers
+  F11					Save & compile
+  						The result will be stored on ~/.output buffer
+  						
+  F12					Save, compile & run
+  						Compiler's output will be stored on ~/.output
+  						buffer
+  						
+  F1/Alt+H				Keyword search (keyword on cursor)
+  _________________________________________________________________________
+                                                       Compiler/interpreter
+  Shift+F1				This screen
+  F9					Macros prompt
+  F10					Command prompt
+  _________________________________________________________________________
+                                                                      Extra
+
+  SmallBASIC IDE for Text Consoles
+  Copyright (c) 2002, Nicholas Christopoulos
+
+  This program is distributed under the terms of the GPL v2.0 or later
+  Download the GNU Public License (GPL) from www.gnu.org
+  _________________________________________________________________________
+                                                 SmallBASIC IDE for Console
+  

@@ -1,0 +1,509 @@
+#include "sbpad.h"
+
+FORM MainForm 0 0 160 160
+MENUID MainMenuID
+NOFRAME
+USABLE
+SAVEBEHIND
+BEGIN
+    TITLE "SmallBASIC"
+
+	POPUPTRIGGER "- Category -" ID trgCat AT (65 1 72 AUTO) LEFTANCHOR
+	LIST "All" ID lstCat AT (PrevLeft PrevTop 62 1) NONUSABLE VISIBLEITEMS 9
+	POPUPLIST trgCat lstCat
+
+	LIST "- no files -"	ID lstBROWSE AT(0 15 160 148) USABLE VISIBLEITEMS 12 FONT 1
+
+	BUTTON "NEW"     ID btnNEW     AT(  1 150 30 10)   USABLE LEFTANCHOR NOFRAME   FONT 1
+	BUTTON "EDIT"    ID btnOPEN    AT( 41 150 30 10)   USABLE LEFTANCHOR NOFRAME   FONT 1
+	BUTTON "DEL"  	 ID btnDELETE  AT( 81 150 30 10)   USABLE LEFTANCHOR NOFRAME   FONT 1
+	BUTTON "RUN"	 ID btnRUN     AT(121 150 30 10)   USABLE LEFTANCHOR NOFRAME   FONT 1
+
+	BUTTON "X"       ID btnCLOSE   AT(144   1 16 11) USABLE LEFTANCHOR NOFRAME FONT 1
+END
+
+FORM ViewForm 0 0 160 160
+MENUID ViewMenuID
+NOFRAME
+USABLE
+SAVEBEHIND
+BEGIN
+    TITLE "Source"
+
+/* 143 */
+	FIELD ID fldTEXT AT(0 16 160 130) MULTIPLELINES /* UNDERLINED */ USABLE MAXCHARS 0x7fff
+
+/*
+	PUSHBUTTON "A" ID btnFONT0  AT(  1 147 14 11) USABLE FONT 0
+	PUSHBUTTON "A" ID btnFONT1  AT( 16 147 14 11) USABLE FONT 1
+	PUSHBUTTON "A" ID btnFONT2  AT( 31 147 14 11) USABLE FONT 2
+	PUSHBUTTON "A" ID btnFONT7  AT( 46 147 14 11) USABLE FONT 7
+*/
+	POPUPTRIGGER "- Section -" ID trgSection AT (70 1 62 AUTO) LEFTANCHOR
+	LIST "" ID lstSection AT (PrevLeft PrevTop 62 1) NONUSABLE VISIBLEITEMS 8
+	POPUPLIST trgSection lstSection
+
+	BUTTON "X"     ID btnCLOSE  AT(144   1 16 11) USABLE LEFTANCHOR NOFRAME FONT 1
+
+	BUTTON "S&R"   ID btnQRUN	AT(  1 147 32 11) USABLE LEFTANCHOR NOFRAME FONT 1
+	BUTTON "1"     ID labLN     AT( 34 147 30 11) USABLE LEFTANCHOR NOFRAME FONT 1
+	BUTTON "\3"    ID btnSFT	AT( 64 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 4
+	BUTTON "\5"    ID btnPGUP   AT( 80 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 3
+	BUTTON "\6"    ID btnPGDN   AT( 96 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 3
+	BUTTON "\1"    ID btnUP     AT(112 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 5
+	BUTTON "\2"    ID btnDOWN   AT(128 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 5
+/*
+	BUTTON "H"     ID btnHELPKW AT(144 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 1
+*/
+	GRAFFITISTATEINDICATOR AT (146 146)
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+FORM FSVForm 0 0 160 160
+MENUID FSVMenuID
+NOFRAME
+USABLE
+SAVEBEHIND
+BEGIN
+    TITLE "FileViewer"
+
+/* 143 */
+	FIELD ID fldTEXT AT(0 16 160 130) MULTIPLELINES /* UNDERLINED */ USABLE MAXCHARS 0x7fff
+
+	BUTTON "S"     ID btnSAVE	AT(  1 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 1
+
+	POPUPTRIGGER "- Section -" ID trgSection AT (70 1 62 AUTO) LEFTANCHOR
+	LIST "" ID lstSection AT (PrevLeft PrevTop 62 1) NONUSABLE VISIBLEITEMS 8
+	POPUPLIST trgSection lstSection
+
+	BUTTON "X"     ID btnCLOSE  AT(144   1 16 11) USABLE LEFTANCHOR NOFRAME FONT 1
+
+	BUTTON "\5"    ID btnPGUP   AT( 80 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 3
+	BUTTON "\6"    ID btnPGDN   AT( 96 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 3
+	BUTTON "\1"    ID btnUP     AT(112 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 5
+	BUTTON "\2"    ID btnDOWN   AT(128 147 16 11) USABLE LEFTANCHOR NOFRAME FONT 5
+	GRAFFITISTATEINDICATOR AT (146 146)
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+FORM SBOutForm 0 0 160 160
+MENUID OutMenuID
+NOFRAME
+USABLE
+BEGIN
+/*    TITLE "Output"
+	BUTTON "X"     ID btnCLOSE  AT(144   1 16 11) USABLE LEFTANCHOR NOFRAME FONT 1
+*/
+END
+
+FORM DetForm 2 80 154 76
+USABLE
+MODAL
+BEGIN
+    TITLE "File details"
+
+	LABEL "Category:" ID 9999 AT(4 17) USABLE FONT 1
+	POPUPTRIGGER "- Category -" ID trgCat AT (60 17 72 AUTO) LEFTANCHOR
+	LIST "All" ID lstCat AT (PrevLeft PrevTop 62 1) NONUSABLE VISIBLEITEMS 6
+	POPUPLIST trgCat lstCat
+	CHECKBOX "PalmOS \"script\""    ID chkSDKDRAW AT(4 32 AUTO AUTO) 
+
+	BUTTON "OK"   		ID btnOK      6 60 40 12
+	BUTTON "Cancel"		ID btnCANCEL 52 60 45 12
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+FORM SBPREF_FORM 2 16 156 140
+USABLE
+MODAL
+BEGIN
+    TITLE "Options"
+
+	LABEL "Charset" ID 2999 6 16
+	POPUPTRIGGER "- Charset -" ID trgCHAR AT (50 16 100 AUTO) LEFTANCHOR
+	LIST "European (UTF8)" "Japanese (SJIS)" "Chinese (BIG5)" "Generic multibyte" ID lstCHAR AT (PrevLeft PrevTop 100 1) NONUSABLE VISIBLEITEMS 4
+	POPUPLIST ID trgCHAR lstCHAR
+
+	CHECKBOX "Delete logfile at startup" ID chkDELLOG  AT(6 30 AUTO AUTO) 
+	CHECKBOX "Keep bytecode files"       ID chkDELSBVM AT(6 44 AUTO AUTO) 
+	CHECKBOX "Use VMT for compilation"   ID chkSDKDRAW AT(6 58 AUTO AUTO) 
+
+	LABEL "Compiler cache" ID 3000 6 77 FONT 1
+	LABEL "    Label nodes" ID 3001 6 87
+	FIELD ID fldCLABS1 AT(120 86 32 11) UNDERLINED USABLE RIGHTALIGN NUMERIC MAXCHARS 4
+
+	LABEL "    Pass2 stack nodes" ID 3002 6 101
+	FIELD ID fldCPASS2 AT(120 100 32 11) UNDERLINED USABLE RIGHTALIGN NUMERIC MAXCHARS 4
+
+	BUTTON "OK"   		ID btnOK      6 120 40 12
+	BUTTON "Cancel"		ID btnCANCEL 52 120 45 12
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+FORM EditCatForm 12 38 136 110
+MODAL
+USABLE
+BEGIN
+    TITLE "Categories"
+
+	LIST "All" ID lstCat AT (6 16 78 98) USABLE VISIBLEITEMS 8
+	POPUPLIST trgCat lstCat
+
+	BUTTON "New"   		ID btnNEW	  AT(90 16 40 12) USABLE LEFTANCHOR FRAME FONT 0
+	BUTTON "Del"   		ID btnDELETE  AT(90 32 40 12) USABLE LEFTANCHOR FRAME FONT 0
+	BUTTON "Ren"   		ID btnRUN	  AT(90 48 40 12) USABLE LEFTANCHOR FRAME FONT 0
+
+	BUTTON "OK"   		ID btnOK      AT(90 91 40 12) USABLE LEFTANCHOR FRAME FONT 0	/* 75 */
+/*	BUTTON "Cancel"		ID btnCANCEL  AT(90 91 40 12) USABLE LEFTANCHOR FRAME FONT 0 */
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+FORM InputBoxForm 2 109 156 49
+MODAL
+DEFAULTBTNID btnOK
+BEGIN
+	TITLE "Input"
+	FIELD ID fldInputBox AT ( 8 15 142 22 ) SINGLELINE EDITABLE UNDERLINED MAXCHARS 63 USABLE
+	BUTTON "OK"   		ID btnOK      6 33 40 12
+	BUTTON "Cancel"		ID btnCANCEL 50 33 45 12
+	GRAFFITISTATEINDICATOR AT (140 33)
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+FORM KeybForm 2 97 156 61
+MODAL
+BEGIN
+	TITLE "Input"
+	FIELD ID fldInputBox AT ( 8 15 142 22 ) MULTIPLELINES EDITABLE UNDERLINED MAXCHARS 255 USABLE
+	BUTTON "OK"   		ID btnOK      6 45 40 12
+	BUTTON "Cancel"		ID btnCANCEL 50 45 45 12
+	GRAFFITISTATEINDICATOR AT (140 45)
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+MENU ID MainMenuID
+BEGIN
+	PULLDOWN "File"
+    BEGIN
+		MENUITEM "New"				mnuNew
+		MENUITEM "Edit"				mnuEdit			"E"
+		MENUITEM "Copy"				mnuCopyFile
+		MENUITEM "Rename"			mnuRename
+		MENUITEM "Delete"			mnuDelete
+		MENUITEM "Beam"				mnuBeam			"B"
+	    MENUITEM SEPARATOR
+		MENUITEM "Run"				mnuRun			"R"
+	    MENUITEM SEPARATOR
+		MENUITEM "Close"			mnuClose
+    END
+    PULLDOWN "Edit"
+    BEGIN
+		MENUITEM "File Details"		mnuDetails		"D"
+	    MENUITEM SEPARATOR
+		MENUITEM "UserFile Viewer"	mnuFSV
+	    MENUITEM SEPARATOR
+		MENUITEM "Import Memo"		mnuMEMOImport
+		MENUITEM "Export Memo"		mnuMEMOExport
+		MENUITEM "Import PDOC"		mnuPDOCImport
+		MENUITEM "Export PDOC"		mnuPDOCExport
+	    MENUITEM SEPARATOR
+		MENUITEM "Remove all BIN"	mnuRemoveAllBIN
+    END
+	PULLDOWN "Pref"
+    BEGIN
+		MENUITEM "Options"		   	mnuSBPREF
+	    MENUITEM SEPARATOR
+		MENUITEM "Categories"		mnuEditCat
+    END
+    PULLDOWN "Info"
+    BEGIN
+	    MENUITEM "The Language"			mnuHelpC1		"H"
+	    MENUITEM "The Commands" 		mnuHelpC2
+	    MENUITEM "The Console" 			mnuHelpC3
+	    MENUITEM "Graphics & Sound"		mnuHelpC4
+	    MENUITEM "Mathematics"			mnuHelpC5
+	    MENUITEM "Strings" 				mnuHelpC6
+	    MENUITEM "File System" 			mnuHelpC7
+	    MENUITEM "System"				mnuHelpC8
+	    MENUITEM "Miscellaneous"		mnuHelpC9
+	    MENUITEM "About SB"				mnuAbout  
+    END
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+MENU ID ViewMenuID
+BEGIN
+	PULLDOWN "File"
+    BEGIN
+		MENUITEM "New"       		mnuNew 
+		MENUITEM "Open"      		mnuEdit
+		MENUITEM "Save"		 		mnuSave 		"W"
+		MENUITEM "Save As.." 		mnuSaveAs
+		MENUITEM "Beam"				mnuBeam			"B"
+	    MENUITEM SEPARATOR
+		MENUITEM "Run"				mnuRun			"R"
+	    MENUITEM SEPARATOR
+		MENUITEM "New Section"		mnuNewSec
+		MENUITEM "Rename Section"	mnuChangeSec
+		MENUITEM "Delete Section"	mnuDelSec
+	    MENUITEM SEPARATOR
+		MENUITEM "Close"     		mnuClose
+    END
+	PULLDOWN "Edit"
+    BEGIN
+		MENUITEM "GoTo..."      	mnuGoto			"G"
+		MENUITEM "Search..."    	mnuSearch		"S"
+		MENUITEM "Search again"	 	mnuSearchAgain	"N"
+	    MENUITEM SEPARATOR
+		MENUITEM "Undo"       		mnuUndo		"U"
+		MENUITEM "Cut"       		mnuCut		"X"
+		MENUITEM "Copy"      		mnuCopy		"C"
+	    MENUITEM "Paste"     		mnuPaste	"P"
+	    MENUITEM "Select All"  		mnuSelAll	"A"
+	    MENUITEM SEPARATOR
+	    MENUITEM "Keyboard"  		mnuKeyboard "K"
+	    MENUITEM "Graffiti Help"	mnuGraffiti
+    END
+	PULLDOWN "Pref"
+    BEGIN
+		MENUITEM "Normal Font"     	mnuFont0
+		MENUITEM "Bold Font"      	mnuFont1
+		MENUITEM "Large Font"      	mnuFont2
+		MENUITEM "Large Bold Font"	mnuFont7
+	    MENUITEM SEPARATOR
+		MENUITEM "SB-VAR ?x9"		mnuFontSM10
+		MENUITEM "SB-DOS 5x9"		mnuFontDOS
+		MENUITEM "SB-DOS 4x9"		mnuFontDOS4
+		MENUITEM "HK40 4x6"			mnuFontHK
+    END
+    PULLDOWN "Info"
+    BEGIN
+	    MENUITEM "The Language"			mnuHelpC1		"H"
+	    MENUITEM "The Commands" 		mnuHelpC2
+	    MENUITEM "The Console" 			mnuHelpC3
+	    MENUITEM "Graphics & Sound"		mnuHelpC4
+	    MENUITEM "Mathematics"			mnuHelpC5
+	    MENUITEM "Strings" 				mnuHelpC6
+	    MENUITEM "File System" 			mnuHelpC7
+	    MENUITEM "System"				mnuHelpC8
+	    MENUITEM "Miscellaneous"		mnuHelpC9
+	    MENUITEM "About SB"				mnuAbout  
+    END
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+MENU ID OutMenuID
+BEGIN
+	PULLDOWN "File"
+    BEGIN
+		MENUITEM "Restart"		mnuRun		"R"
+		MENUITEM "Break"		mnuBreak	"B"
+	    MENUITEM SEPARATOR
+		MENUITEM "Close"		mnuClose	"C"
+    END
+    PULLDOWN "Info"
+    BEGIN
+	    MENUITEM "The Language"			mnuHelpC1		"H"
+	    MENUITEM "The Commands" 		mnuHelpC2
+	    MENUITEM "The Console" 			mnuHelpC3
+	    MENUITEM "Graphics & Sound"		mnuHelpC4
+	    MENUITEM "Mathematics"			mnuHelpC5
+	    MENUITEM "Strings" 				mnuHelpC6
+	    MENUITEM "File System" 			mnuHelpC7
+	    MENUITEM "System"				mnuHelpC8
+	    MENUITEM "Miscellaneous"		mnuHelpC9
+	    MENUITEM "About SB"				mnuAbout  
+    END
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+MENU ID FSVMenuID
+BEGIN
+	PULLDOWN "File"
+    BEGIN
+		MENUITEM "New"       		mnuNew 
+		MENUITEM "Open"      		mnuEdit
+		MENUITEM "Save"		 		mnuSave 		"W"
+		MENUITEM "Save As.." 		mnuSaveAs
+		MENUITEM "Beam"				mnuBeam			"B"
+		MENUITEM "Delete"			mnuDelete
+	    MENUITEM SEPARATOR
+		MENUITEM "Close"     		mnuClose
+    END
+	PULLDOWN "Edit"
+    BEGIN
+		MENUITEM "GoTo..."      	mnuGoto			"G"
+		MENUITEM "Search..."    	mnuSearch		"S"
+		MENUITEM "Search again"	 	mnuSearchAgain	"N"
+	    MENUITEM SEPARATOR
+		MENUITEM "Undo"       		mnuUndo		"U"
+		MENUITEM "Cut"       		mnuCut		"X"
+		MENUITEM "Copy"      		mnuCopy		"C"
+	    MENUITEM "Paste"     		mnuPaste	"P"
+	    MENUITEM "Select All"  		mnuSelAll	"A"
+	    MENUITEM SEPARATOR
+	    MENUITEM "Keyboard"  		mnuKeyboard "K"
+	    MENUITEM "Graffiti Help"	mnuGraffiti
+    END
+	PULLDOWN "Pref"
+    BEGIN
+		MENUITEM "Normal Font"     	mnuFont0
+		MENUITEM "Bold Font"      	mnuFont1
+		MENUITEM "Large Font"      	mnuFont2
+		MENUITEM "Large Bold Font"	mnuFont7
+	    MENUITEM SEPARATOR
+		MENUITEM "SB-VAR ?x9"		mnuFontSM10
+		MENUITEM "SB-DOS 5x9"		mnuFontDOS
+		MENUITEM "SB-DOS 4x9"		mnuFontDOS4
+		MENUITEM "HK40 4x6"			mnuFontHK
+    END
+    PULLDOWN "Info"
+    BEGIN
+	    MENUITEM "About SB"			mnuAbout  
+    END
+END
+
+/* ------------------------------------------------------------------------------------- */
+
+ALERT ID ConfAlertID
+CONFIRMATION
+BEGIN
+  TITLE "Warning"
+  MESSAGE "^1^2^3"
+  BUTTONS "Yes" "No"
+END
+
+ALERT ID InfoAlertID
+INFORMATION
+BEGIN
+  TITLE "Warning"
+  MESSAGE "^1^2^3"
+  BUTTONS "OK"
+END
+
+ALERT ID AlertWantReset
+CONFIRMATION
+BEGIN
+    TITLE "Reset Pilot?"
+    MESSAGE "This database contains a flag which recommends that you perform a soft reset after it is installed. " \
+			"A soft reset should not erase any data from your Pilot. Do you want to do this?"
+    BUTTONS "Don't Reset" "Reset"
+END
+
+ALERT ID AlertArgOpen
+CONFIRMATION
+BEGIN
+    TITLE "OpenDB"
+	MESSAGE "You cannot open this type of database with SmallBASIC."
+	BUTTONS "OK"
+END
+
+ALERT ID AlertCFontMB
+CONFIRMATION
+BEGIN
+    TITLE "UTF8 Fonts"
+	MESSAGE "You cannot use UTF8 fonts on multibyte PalmOS."
+	BUTTONS "OK"
+END
+
+ALERT ID AlertMathLib
+CONFIRMATION
+BEGIN
+    TITLE "Missing library"
+	MESSAGE "Mathlib 1.1+ required"
+	BUTTONS "OK"
+END
+
+STRING HelpC1TID	"SBREF - The Language"
+STRING HelpC1ID FILE "doc/x-intro.txt"
+
+STRING HelpC2TID	"SBREF - The Commands"
+STRING HelpC2ID FILE "doc/x-commands.txt"
+
+STRING HelpC3TID	"SBREF - The Console"
+STRING HelpC3ID FILE "doc/x-console.txt"
+
+STRING HelpC4TID "SBREF - Graphics & Sound"
+STRING HelpC4ID FILE "doc/x-graphics.txt"
+
+STRING HelpC5TID	"SBREF - Mathematics"
+STRING HelpC5ID FILE "doc/x-mathematics.txt"
+
+STRING HelpC6TID	"SBREF - Strings"
+STRING HelpC6ID FILE "doc/x-strings.txt"
+
+STRING HelpC7TID	"SBREF - File system"
+STRING HelpC7ID FILE "doc/x-filesystem.txt"
+
+STRING HelpC8TID	"SBREF - System"
+STRING HelpC8ID FILE "doc/x-system.txt"
+
+STRING HelpC9TID	"SBREF - Miscellaneous"
+STRING HelpC9ID FILE "doc/x-miscellaneous.txt"
+
+FORM ID FormHelpID AT (2 2 156 156)
+MODAL
+BEGIN
+	TITLE "Help"
+	FIELD ID HelpTextField AT (4 16 140 120) FONT 129 /* FONT DOSCustomFont */ NONEDITABLE MULTIPLELINES MAXCHARS 16000 HASSCROLLBAR
+	SCROLLBAR ID HelpScrBar AT (PREVRIGHT+1 PREVTOP 7 120)
+	BUTTON "OK" ID btnOK AT (4 140 40 12)
+END
+
+FORM ID AboutForm2 AT (2 2 156 156)
+MODAL
+BEGIN
+	TITLE "About SmallBASIC"
+	FORMBITMAP AT(2 16) BITMAP IconBitmap
+	LABEL "Version 0.8.3" ID 9999 AT (50 23) USABLE FONT 1
+	FIELD ID AboutField AT (4 44 138 94) NONEDITABLE MULTIPLELINES MAXCHARS 2048 HASSCROLLBAR FONT DOSCustomFont
+	SCROLLBAR ID AboutScrBar AT (PREVRIGHT+1 PREVTOP 7 94)
+	BUTTON "OK" ID btnOK AT (4 140 40 12)
+END
+
+STRING AboutStrID
+"SmallBASIC - BASIC interpreter\n" \
+"http://smallbasic.sf.net\n" \
+"\n" \
+"Written by\n" \
+"Nicholas Christopoulos\n(inachus@freemail.gr)\n" \
+"\n" \
+"VTOS (Helio) port by\n" \
+"Earle F. Philhower\n" \
+"http://www.ziplabel.com\n" \
+"\n" \
+"Franklin's eBookman port by\n" \
+"Chris Warren-Smith\n" \
+"http://www.twpo.com.au/cwarrens/ebm\n" \
+"\n" \
+"This is a GPL software\ncomes without any warranty!" 
+
+VERSION ID 1 "0.8.3"
+
+FONT ID SM10FONT FONTID SM10CustomFont "data/sm9.pfn"
+FONT ID DOSFONT  FONTID DOSCustomFont  "data/DOS5x9.pfn"
+FONT ID DOS4FONT FONTID DOS4CustomFont "data/DOS4x9.pfn"
+FONT ID STATFONT FONTID STATCustomFont "data/STAT.pfn"
+
+/* ------------------------------------------------------------------------------------- */
+
+BITMAP ID IconBitmap "images/sbpad1.bmp"
+BITMAP ID IconGo  	 "images/sbgo.bmp"
+BITMAP ID IconGoSm	 "images/sbgo-small.bmp"
+APPLICATION ID 1 "SmBa"
+/* APPLICATIONICONNAME 1000 "SmallBASIC" */
+/* ICON "images/sbpad4.bmp" */
+ICONFAMILY "images/sbpad1.bmp" "images/sbpad2.bmp" "images/sbpad4.bmp" "images/sbpad8.bmp" TRANSPARENCY 255 255 255
+SMALLICONFAMILY "images/sbpad-small.bmp" "" "" ""
+
+

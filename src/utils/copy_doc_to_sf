@@ -1,0 +1,3 @@
+#!/bin/sh
+
+scp -C -r ../doc/xs-*.html wired_gr@smallbasic.sf.net:/home/groups/s/sm/smallbasic/htdocs/doc/

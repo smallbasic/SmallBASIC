@@ -1,0 +1,322 @@
+Graphics & Sound
+----------------------------
+The SB's Graphics commands are working only with integers.
+(Of course, 2D algebra commands are working with reals)
+That is different of QB, but its much faster.
+
+The colors
+----------------------------
+
+Color-mode Colors
+
+Monochrome 0 = black, 15 = white
+
+2bit (4 colors) 0 = black, 15 = white,
+1-6, 8 = dark-gray,
+7, 9-14 = light-gray
+
+4bit (16 colors) 16 Standard VGA colors
+16 colors of gray (on PalmOS)
+
+8bit (256 paletted colors)
+16 Standard VGA colors
+The rest colors are ignored
+
+15bit (32K colors), 16bit (64K colors) and 24bit (1.7M colors)
+
+color 0..15 is the standard VGA colors
+full 24-bit RGB colors can be passed by using negative number.
+
+
+The points
+----------------------------
+
+Any point can be specified by an array of 2 elements or
+by 2 parameters
+
+Example:
+
+LINE x1, y1, x2, y2
+or
+LINE [x1, y1],[x2, y2]
+
+Also, the polylines can work with the same way.
+DIM poly(10)
+...
+poly[0]=[x, y]
+
+
+The STEP keyword
+----------------------------
+
+The STEP keyword calculates the next x,y parameters relative to current
+position. That position can be returned by using the POINT(0) and
+POINT(1) functions.
+
+
+The 'aspect' parameter
+----------------------------
+
+The x/y factor.
+
+
+The FILLED keyword
+----------------------------
+
+The FILLED keyword fills the result of the command with the drawing
+color.
+
+----------------------------
+Arc
+Syntax:
+ARC [STEP] x,y,r,astart,aend [,aspect [,color]][COLOR color]
+
+Draws an arc
+
+astart,aend = first,last angle in radians.
+----------------------------
+Chart
+Syntax:
+CHART {LINECHART|BARCHART}, array()[,{0|1|2|3}[, x1, y1, x2, y2]]
+
+Draws a chart of array values in the rectangular area x1,y1,x2,y2
+
+type:
+0 = simple
+1 = with marks
+2 = with ruler
+3 = with marks & ruler
+----------------------------
+Plot
+Syntax:
+PLOT xmin, xmax USE f(x)
+
+Graph of f(x)
+
+Example:
+PLOT 0, 2*PI USE SIN(x)
+----------------------------
+Circle
+Syntax:
+CIRCLE [STEP] x,y,r [,aspect [, color]][COLOR color][FILLED]
+
+x,y - the circle's center
+
+r - the radius
+
+Draws a circle (or an ellipse if the aspect is specified).
+----------------------------
+Color
+Syntax: COLOR foreground-color [, background-color]
+
+Specifies the foreground and background colors
+----------------------------
+DrawPoly
+Syntax:
+DRAWPOLY array
+[,x-origin,y-origin [, scalef [, color]]][COLOR color][FILLED]
+
+Draws a polyline
+
+even elements for x (starting from 0), odd elements for y
+----------------------------
+Draw
+Syntax: DRAW string
+
+Draws an object according to instructions specified as a string.
+
+string - A string expression containing commands in the BASIC graphics
+definition language.
+
+Graphics Definition Language
+
+In the movement instructions below, n specifies a distance to move.
+The number of pixels moved is equal to n multiplied by the current
+scaling factor, which is set by the S command.
+
+Un Move up.
+
+Dn Move down.
+
+Ln Move left.
+
+Rn Move right.
+
+En Move diagonally up and right.
+
+Fn Move diagonally down and right.
+
+Gn Move diagonally down and left.
+
+Hn Move diagonally up and left.
+
+Mx,y Move to coordinate x,y. If x is preceded by a + or -, the
+movement is relative to the last point referenced.
+
+B A prefix command. Next movement command moves but doesn't
+plot.
+
+N A prefix command. Next movement command moves, but returns
+immediately to previous point.
+
+Notes:
+* This command it is had not tested, please report any
+bug or incompatibility.
+----------------------------
+Line
+Syntax:
+LINE [STEP] x,y [{,|STEP} x2,y2][, color | COLOR color]
+
+Draws a line
+----------------------------
+PSet
+Syntax: PSET [STEP] x,y [, color | COLOR color]
+
+Draw a pixel
+----------------------------
+Rect
+Syntax: RECT [STEP] x,y [{,|STEP} x2,y2][, color | COLOR color][FILLED]
+
+Draws a rectangular parallelogram
+----------------------------
+TxtW()/TxtH()/TextWidth()/TextHeight()
+Syntax:
+TXTW(s), TXTH(s)
+or
+TEXTWIDTH(s), TEXTHEIGHT(s)
+
+Returns the text width or height of string s in pixels
+----------------------------
+XPos()/YPos()
+Syntax:
+XPOS
+YPOS
+
+Returns the current position of the cursor in "characters".
+----------------------------
+Point()
+Syntax: POINT(x[,y])
+
+Returns the color of the pixel at x,y
+
+if y does not specified x contains the info-code
+0 = returns the current X graphics position
+1 = returns the current Y graphics position
+----------------------------
+Paint
+Syntax: PAINT [STEP] x, y [,color [,border]]
+
+Fills an enclosed area on the graphics screen with a specific color.
+
+x,y - Screen coordinate (column, row) within the area that is
+to be filled.
+
+color - The fill-color
+
+border - The boundary-color
+
+if the border-color is specified then the PAINT will fill all the
+area which is specified by the border-color.
+(fill-until, color!=point(x,y)
+
+if the border-color is NOT specified then the PAINT will fill all
+the are with the same color as the pixel at x,y.
+(fill-while, color=point(x,y))
+----------------------------
+View
+Syntax:
+VIEW [x1,y1,x2,y2 [,color [,border-color]]]
+
+Defines a viewport.
+
+x1,y1,x2,y2 - Corner coordinates of the viewport.
+color - If included, BASIC fills the viewport with the
+specified color.
+border-color - If included, BASIC draws a border, in a specified
+color, around the defined viewport.
+
+The viewport defined by VIEW is disabled by a VIEW command with no
+parameters.
+----------------------------
+Window
+Syntax: WINDOW [x1,y1,x2,y2]
+
+Specifies "world" coordinates for the screen.
+
+x1,y1,x2,y2 The corner coordinates of the world space.
+
+The WINDOW command allows you to redefine the corners of the display
+screen as a pair of "world" coordinates.
+
+The world space defined by WINDOW is disabled by a WINDOW command with
+no parameters.
+----------------------------
+RGB()/RGBF()
+Syntax:
+RGB(r,g,b)
+RGBF(r,g,b)
+
+The RGB functions returns the RGB color codes for the specified values
+
+The RGB() takes values 0..255 for each of the color.
+The RGBF() takes values 0..1 for each of the color.
+
+The return value is a negative 24bit value to by used by drawing
+functions.
+----------------------------
+Beep
+Syntax: BEEP
+
+Generates a beep sound
+----------------------------
+Play
+Syntax: PLAY string
+
+Play musical notes
+
+A-G[-|+|#][nnn][.]
+Play note A..G
++|#- sharp
+-- flat
+.- multiplier 1.5
+
+On - Octave 0..6
+<- Moves down one octave
+>- Moves up one octave
+
+Nnn - Play note 0..84 (0 = pause)
+Pnnn - Pause 1..64
+Lnnn - Length of note 1..64 (1/nnn)
+Tnnn - Tempo 32..255. Number of 1/4 notes per minute.
+
+MS - Staccato (1/2)
+MN - Normal (3/4)
+ML - Legato
+
+Vnnn - Volume 0..100
+
+MF - Play on foreground
+MB - Play on background
+
+Q - Clear sound queue
+----------------------------
+Sound
+Syntax: SOUND freq, dur_ms [, vol][BG]
+
+Plays a sound
+
+freq - The frequency
+
+dur_ms - The duration in milliseconds
+
+vol - The volume in 1/100 units
+
+BG - Play it in background
+
+----------------------------
+NoSound
+Syntax: NOSOUND
+
+Stops background sound.
+Also, clears the sound queue.
+----------------------------

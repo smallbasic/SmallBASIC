@@ -1,0 +1,134 @@
+/*
+*	'Working Draft' Style
+*
+*	based on W3C style
+*/
+
+body {
+  margin-left: 60px;
+  margin-right: 50px;
+  margin-top: 26px;
+  margin-bottom: 60px;
+  font-family: verdana, trebuchet ms, sans-serif;
+  color: black;
+  background-position: top left;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+:link { color: #00C; background: transparent }
+:visited { color: #00C; background: transparent }
+a:active { color: #C00; background: transparent }
+
+a:link img, a:visited img { border-style: none } /* no border on img links */
+
+a img { color: white; }        /* trick to hide the border in Netscape 4 */
+@media all {                   /* hide the next rule from Netscape 4 */
+  a img { color: inherit; }    /* undo the color change above */
+}
+
+a		{ font-weight: bold; }
+
+caption, li, th, td { /* ns 4, ie 5 */
+  font-family: trebuchet ms, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 { text-align: left; }
+h1, h2, h3 { color: #005A9C; }
+h1 { font-size: 3.6em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h2 { font-size: 2.8em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h3 { font-size: 2.2em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h4 { font-size: 1.6em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h5 { font-size: 1em;   font-weight: normal; font-style: italic; font-family: trebuchet ms, sans-serif; }
+h6 { font: small-caps 1em sans-serif }
+
+.hide { display: none }
+
+div.head 			{ margin-bottom: 1em }
+div.head table 		{ margin-left: 2em; margin-top: 2em }
+
+.head h1 { font-size: 1.9em; }
+
+p.copyright 		{ font-size: small }
+p.copyright small	{ font-size: small }
+
+/* a[href]:hover { background: #ffa } */
+
+pre {
+	margin-left: 2em;
+	margin-right: 2em;
+	}
+
+pre.xmp	{
+	color: green;
+	font-weight: bold;
+	font-family: Courier New, Courier, monospace;
+	background-color: #f0f0f0;
+	padding: 1.6em;
+	}
+
+pre.scr	{
+	color: black;
+	font-family: Courier New, Courier, monospace;
+	background-color: #ffffff;
+	padding: 1.6em;
+	border: 1px solid black;
+	}
+
+pre.example {
+	border-top: 1px solid #606060;
+	border-bottom: 1px solid #606060;
+	padding: 1em;
+	}
+
+pre.result {
+	color: green;
+	background-color: #f0f0f0;
+	border: 1px solid #c0c0c0;
+	padding: 1em;
+	}
+
+dt, dd	{ margin-top: 0; margin-bottom: 0 } /* opera 3.50 */
+dt 		{ font-weight: bold }
+
+pre, code { font-family: monospace } /* navigator 4 requires this */
+
+ul.toc {
+  list-style: disc;		/* Mac NS has problem with 'none' */
+  list-style: none;
+	}
+
+body {
+	background-image: url(guide.png);
+	}
+
+table.params {
+  	border-top: 1px solid black;
+  	border-bottom: 1px solid black;
+	}
+
+table.tex, table.latex {
+  	border-top: 1px solid black;
+  	border-bottom: 1px solid black;
+	}
+
+.tex caption, .latex caption {
+  	font-family: sans-serif;
+	font-style: italic;
+	}
+
+li { margin: 0.75em; }
+
+.note {
+	border-top: 1px solid #d0d0d0;
+	color: #808080;
+	}
+
+/* TexInfo 2 HTML : Navigation bar (div with table) */
+div.T2HNAV {
+	float: right;
+	}
+.T2HNAV td {
+	font-size: 0.8em;
+	}
+

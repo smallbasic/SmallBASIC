@@ -1,0 +1,54 @@
+
+MENU ID SB_MAIN_WND
+BEGIN
+    PULLDOWN "File"
+    BEGIN
+        MENUITEM "Run"          mnuList
+        MENUITEM "Keyboard"     mnuKeyboard
+        MENUITEM SEPARATOR
+        MENUITEM "Close"        mnuClose
+    END
+
+    PULLDOWN "Help"
+    BEGIN
+        MENUITEM "Index"            mnuHelp
+        MENUITEM "About SB"         mnuAbout  
+    END
+END
+
+MENU ID SB_RUN_WND
+BEGIN
+    PULLDOWN "File"
+    BEGIN
+        MENUITEM "Break"        mnuBreak
+        MENUITEM "Keyboard"     mnuKeyboard
+        MENUITEM "Turbo"        mnuTurbo
+        MENUITEM SEPARATOR
+        MENUITEM "About"        mnuAboutBasFile
+        MENUITEM SEPARATOR
+        MENUITEM "Close"        mnuClose
+    END
+END
+
+FORM ID ID_FILE_OPEN AT(5 34 190 182)
+BEGIN
+  TITLE "Run"
+  LIST "" ID ID_FILE_LIST AT(1 15 185 132)  FONT 0
+  GADGET ID AUTOID AT (0 148 186 1) BORDER 1 
+  BUTTON "Open" ID ID_OPEN AT(101 163 40 15)  FONT 0
+  BUTTON "Cancel" ID ID_CANCEL AT(143 163 40 15) FONT 0
+  LIST "BAS" "SBX" ID ID_TYPE_LIST 
+    AT(23 63 59 27)  FONT 0
+  POPUPTRIGGER "" ID ID_POPLIST AT(28 165 62 15)  FONT 0
+  POPUPLIST ID ID_POPLIST ID_TYPE_LIST
+  LABEL "File name:" ID AUTOID AT(2 151) FONT 0
+  LABEL "Type:" ID AUTOID AT(2 166) USABLE FONT 0
+  FIELD ID ID_FILE_NAME AT(48 151 185 15) FONT 0
+END
+
+FORM ID ID_LIST_WND AT (10 10 180 215)
+BEGIN
+	TITLE "Run"
+    LIST ID ID_FILE_LIST AT (0 15 176 197) FONT 0
+END
+

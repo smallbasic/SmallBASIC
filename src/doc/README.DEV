@@ -1,0 +1,493 @@
+SmallBASIC
+Information for developers
+For SB version 0.6.2+
+
+-----------------------------------------------------------------------
+HOWTO: HOWTO
+-----------------------------------------------------------------------
+Information can be found:
+
+var.h	- code & variables API/information
+pproc.h	- RTL & parameters API/information
+
+-----------------------------------------------------------------------
+HOWTO: Source code convertion for DOS to Unix and backward
+-----------------------------------------------------------------------
+
+a) Unix users
+Note: The Unix format is the default, so the following process does
+not needed
+
+	cd utils
+	make
+	make install
+	rehash 			# for tcsh only
+	cd ..
+	./ForUnix
+
+b) Win32 users (you'll find bugs)
+
+	cd utils
+	nmake -f Makefile.nmk
+	copy d2u.exe c:\windows\command
+	copy u2d.exe c:\windows\command
+	copy mksmall.exe c:\windows\command
+	cd ..
+
+    run u2d for each source file (sorry but wildcards are automatic 
+    only on unix shells)
+
+-----------------------------------------------------------------------
+FAQ: I have a lot of warnings about memset() (compilation for PalmOS)
+-----------------------------------------------------------------------
+
+This is problem of prc-tools. There is a small conflict between SDK's
+and prc-tools, about the memset() declaration (maybe code too).
+
+Anyway SB has no problem with that.
+
+If you want to not see it again, you must fix the string.h file which
+is included with prc-tools.
+
+-----------------------------------------------------------------------
+HOWTO: Sony CLIE SDK
+-----------------------------------------------------------------------
+I have tried to port SB for Sony CLIE (actually I want to use the HiRes
+only). That was unsuccesfull.
+
+For Sony Clie we will need the Sony's SDK (I have Rel2)
+
+1. Create a directory under palmdev/sdk/include directory with the name
+'sony'
+
+Example:
+/opt/palmdev/sdk/include/sony/
+
+2. Copy the files from Sony's Incs/ directory to sony/ 
+
+Example:
+/opt/palmdev/sdk/include/sony/SonyCLIE.h
+
+3. under the directories 
+/opt/palmdev/sdk/include/sony/
+/opt/palmdev/sdk/include/sony/Libraries/
+/opt/palmdev/sdk/include/sony/System/
+
+run the command 'd2u *' which converts the files from DOS to Unix
+text format.
+
+The d2u is located at SB's directory sync/utils/
+
+Note: At this point I was got a lot of warnings. So, for PalmOS
+I am not using the warnings any more (-w).
+
+4. Edit the Makefile and remove remark from the SONYSDK variable
+(if you like less warnings change the WARN variable too)
+
+-----------------------------------------------------------------------
+HOWTO: Add a new procedure into BASIC's system library
+-----------------------------------------------------------------------
+
+### Step 1. create the code
+blib.c:
+	...
+	void new_basic_proc()
+	{
+		pcprintf("Hello, world!");
+	}
+
+### Step 2. declare your procedure 
+blib.h:
+	...
+	void	new_basic_proc() SEC(BLIB);
+	...
+
+### Step 3: take an ID for your procedure
+kw.h:
+	...
+	enum keyword	{
+	...
+	kwNEWBASICPROC,
+	...
+
+### Step 4: update the compiler
+scan.c:
+...
+static struct keyword_s keyword_table[] = {
+{ "MYPROC", kwNEWBASICPROC },
+...
+
+Step 5:	update the "executor"
+brun.c:
+	...
+	void	brun(char* file)
+	...
+	/**
+	*	DO NOT CREATE FUNCTION-PTR-TABLE
+	*	function tables does not works with multiseg
+	*/
+	...
+	switch ( code )	{
+	case	kwNEWBASICPROC:
+		new_basic_proc();
+		break;
+	...
+
+### Step 6: test it
+% cat myproc-test.bas:
+myproc
+
+% make unix
+% ./sbasic myproc-test.bas
+Hello, world!
+
+* DONE *
+
+%
+
+### Step 7: update the "help" of SmallBASIC IDE
+doc/sbgen.txt:
+...
+MYPROC	- displays the text "hello, world!"
+...
+
+-----------------------------------------------------------------------
+HOWTO: Add an device driver
+-----------------------------------------------------------------------
+
+Please read osd.h (API)
+
+You must implement all these routines to a C module.
+You can do not add sound and/or mouse driver if you want to use
+add-on drivers (dev_oss.c, dev_gpm.c) for these devices.
+
+you must add your C module to Makefile:
+
+Example (MY_DRIVER.c is your code and MYsbasic the new SB executor):
+
+$(BINDIR)/MYsbasic: $(unix_obj) MY_DRIVER.c device.c
+	$(UCC) -g -D_UnixOS device.c MY_DRIVER.c $(unix_obj) -o $(BINDIR)/MYsbasic
+
+-----------------------------------------------------------------------
+HOWTO: Add an add-on sound driver
+-----------------------------------------------------------------------
+
+Please read drvsound.h (API)
+
+You must implement all these routines to a C module.
+
+You must define the DRV_SOUND and you must 
+add your C module to Makefile:
+
+Example for svgalib executable (MY_SOUND_DRIVER.c is your code):
+
+$(BINDIR)/svgasbasic: $(unix_obj) dev_uvga.c unix/rom16.c MY_SOUND_DRIVER.c device.c
+	$(UCC) -g -DUSE_SVGALIB -DDRV_SOUND -D_UnixOS device.c dev_uvga.c MY_SOUND_DRIVER.c $(unix_obj) -o $(BINDIR)/svgasbasic -lm -lvga -lvgagl -lpthread
+
+-----------------------------------------------------------------------
+HOWTO: Add an add-on mouse driver
+-----------------------------------------------------------------------
+
+Please read drvmouse.h (API)
+
+You must implement all these routines to a C module.
+
+You must define the DRV_MOUSE and you must 
+add your C module to Makefile:
+
+Example for ndcfb executable (MY_MOUSE_DRIVER.c is your code):
+
+$(BINDIR)/fbsbasic: $(unix_obj) dev_ndcfb.c device.c dev_oss.c MY_MOUSE_DRIVER.c
+	$(UCC) -g -D_UnixOS -DDRV_SOUND -DDRV_MOUSE dev_ndcfb.c dev_oss.c MY_MOUSE_DRIVER.c device.c $(unix_obj) -o $(BINDIR)/fbsbasic -lm -lpthread
+
+-----------------------------------------------------------------------
+HOWTO: Add a virtual file-system driver (like MEMO: or COMx:)
+-----------------------------------------------------------------------
+
+Virtual file system drivers are more tricky than graphics drivers.
+This is a problem of multi-segment code limits (I can't use pointers of
+routines).
+
+The file.c provides an API for all file-system related routines that
+are needed for SB RTL.
+
+Example:
+int		dev_fremove(const char *file)
+int		dev_fread(int sb_handle, byte *data, dword size)
+...
+
+These routines are calling the low-level fs-driver routines
+
+Example: 
+// The standard write() 
+int		dev_fwrite(int sb_handle, byte *data, dword size)
+{
+	dev_file_t *f;
+
+	if	( (f = dev_getfileptr(sb_handle)) == NULL )
+		return 0;
+
+	switch ( f->type )	{
+	case	ft_memo: 
+	// MemoDB driver
+		return memo_write(f, data, size);
+	case	ft_stream:  
+	// classic file-stream
+		return stream_write(f, data, size);
+	case	ft_serial_port2:
+	case	ft_serial_port1: 
+	// Serial I/O
+		return serial_write(f, data, size);
+	default:
+		err_unsup();
+		};
+	return 0;
+}
+
+In the meantime you can call from your driver the routines from
+another driver (perhaps the fs_stream). That is very common on
+Unix serial I/O driver witch a lot of calls are similar to 
+file-streams.
+
+See fs_memo.c and fs_serial.c, these sources are an excellent
+example.
+
+Finally add your driver to sources variable in Makefile
+
+Notes:
+
+* DO NOT FORGET TO ADD CODE FOR OTHER OSes (just return an error)
+
+* dev_file_t handle member must got a value != (FileHand) -1
+  after 'open' routine is completed otherwise the SB will think that
+  the file is not opened.
+
+* The dev_file_t members drv_data and drv_dw are used by low-level
+  driver. That means you are free to store whatever you like in 
+  these members.
+
+-----------------------------------------------------------------------
+HOWTO: Port SmallBASIC to any OS
+-----------------------------------------------------------------------
+
+//// English:
+
+From version 0.5.6, SB supports OS drivers.
+
+
+[SmallBASIC code] 
+	// generic device driver
+	---> [device.c]
+	     // low-level graphics driver 
+	     +--> [dev_palm.c]
+	     +--> or [dev_ndcfb.c]
+	     +--> or [dev_x.c]
+	     +--> or [dev_uvga.c]
+	     +--> or [dev_sdl.c]
+	     +--> ...
+
+	     // add-on drivers 
+	     +--> [dev_oss.c] - OSS sound
+	     +--> [dev_gpm.c] - GPM mouse
+
+	  // file system
+	  ---> [file.c] --- files, virtual file systems
+	     +--> [fs_stream.c] - classic file-streams
+	     +--> [fs_serial.c] - serial I/O
+	     +--> [fs_memo.c]   - MemoDB (PalmOS)
+	     +--> ...
+
+The basic OS API described in osd.h (console, graphics & sound)
+
+The FILE I/O API described in file.c 
+   This is the file I/O code based on standard C, but can be updated
+   (with preprocessor's macros) to support OS specific calls.
+
+In future will be more APIs for serial, parallel and IRDA I/O
+
+The sys.h has the special configuration
+
+CPU's FLAGS
+-----------
+CPU_BIGENDIAN  		--- The words are stored reversed;
+		    first the low-byte followed by high-byte (Intel x86)
+CPU_LITTLEENDIAN	--- The words are stored normal; first the high-byte
+		    followed by low-byte (Motorola 68K)
+CPU_CODESEG64K		--- 64KB code size limit
+CPU_REG16			--- 16bit registers (64KB code|data segments)
+			(there will be many problems with 64KB 
+			code+data segments)
+
+OS FLAGS
+--------
+OS_PATHNAME_SIZE	--- Maximum full-path name size (DOS=64,Unix/Win32=1024)
+OS_FILENAME_SIZE	--- Maximum filename size (DOS=12,Unix/Win32=256)
+OS_NAME				--- OS name!
+OS_DIRSEP			--- OS directory separator (unix=/, win=\\)
+OS_LIMITED			--- Use few resources (use it for handhelds or DOS)
+OS_ADDR16			--- Use 16bit memory address range
+OS_ADDR32			--- Use 32bit memory address range
+
+Of course you'll find too many bugs. This has not tested yet.
+
+=======================================================================
+-----------------------------------------------------------------------
+=======================================================================
+
+Greek:
+
+Από την έκδοση 0.5.6 και μετά, στην SB υπάρχει ένας σχεδιασμός για
+υποστήριξη πολλαπλών Λ.Σ. ή βιβλιοθηκών.
+
+Όλος ο κώδικας της SB λειτουργεί πάνω στο API που παρέχει το device.c
+Δεν υπάρχει (και ούτε πρέπει) καμμία εντολή προς το Λ.Σ. μέσα στον
+υπόλοιπο κώδικα.
+
+Το device.c (διαβάστε τα σχόλια στο device.h) είναι ένα "κέλυφος"
+για τις πραγματικές κλήσεις προς το Λ.Σ. Οι πραγματικοί "drivers"
+είναι απλά C modules που υλοποιούν τις ρουτίνες που περιγράφονται
+στο osd.h. Έτσι κατά την δημιουργία του executable απλώς συνδέουμε
+τον νέο C module-driver.
+
+Παράδειγμα απο το Makefile
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+unix_obj=brun.o scan.o ...
+
+# unix console/svgalib (dev_uvga.c is the driver, rom16.c is the font-data)
+sbasic: $(unix_obj) dev_uvga.c unix/rom16.c
+	gcc -g -D_UnixOS dev_uvga.c $(unix_obj) -o sbasic -lm -lvga -lvgagl
+
+# unix console/framebuffer (dev_ufb.c is the driver)
+fb_sbasic: $(unix_obj) dev_ufb.c
+	gcc -g -D_UnixOS dev_ufb.c $(unix_obj) -o fb_sbasic -lm -lofbis
+
+# unix console/XWin (dev_x.c is the driver)
+xsbasic: $(unix_obj) dev_x.c
+	gcc -g -D_UnixOS dev_x.c $(unix_obj) -o xsbasic -L/usr/X11/lib -lm -lX11 -lXext
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-----------------------------------------------------------------------
+
+Graphics, sound, mouse drivers
+
+Οποσδήποτε η SB πρέπει κάπου να γράφει ή/καί να σχεδιάζει. Ένας τέτοιος
+οδηγός πρέπει οποσδήποτε να είναι ενσωματομένος.
+Υπάρχουν οδηγοί που υποστηρίζουν εκτός από console και γραφικά, ήχο
+και mouse (όπως η SDL). Σε περιπτώσεις όμως που κάτι τέτοιο δεν
+υποστιρίζεται απο το βασικό driver, μπορούμε να χρησιμοποιήσουμε
+κάποιον πρόσθετο (βλ. add-on drivers) 
+
+Μπορείτε να δείτε για παράδειγμα τα
+dev_palm.c	--- PalmOS platform driver
+dev_uvga.c	--- Unix+SVGALIB platform driver
+dev_sdl.c	--- Unix/Win32+SDL platform driver
+dev_ndcfb.c	--- Unix/framebuffer platform driver
+* Also SDL used by MacOS, MacOS X, Win32, BeOS
+  Port to any of these OSes must be easy.
+
+Οι παραπάνω "drivers" λειτουργούν πλήρως.
+
+Υπάρχουν και μη-ολοκληρωμένοι όπως
+dev_fb.c	--- Unix/OFBIS (framebuffer)
+dev_x.c		--- Unix/X
+
+-----------------------------------------------------------------------
+Generic framebuffer driver
+
+Ειδική περίπτωση αποτελεί αυτός ο driver. Πρόκειτε για την υλοποίηση
+του μεγαλύτερου μέρους των κλησεων της SB για graphics & console. Όλα
+τα γραφικα λειτουργούν πάνω σε μια εικονική video-ram.
+
+Το αποτέλεσμα αυτής της ιστορίας είναι ότι πολύ εύκολα μπορεί να
+προστεθεί graphics driver. Με αυτό τον τρόπο λειτουργούν οι 
+drivers dev_xf.c (XFree86), dev_dos (DOS/DJGPP direct access),
+dev_ndcfb (Linux framebffer).
+
+Τί χρειάζεται να υλοποιηθεί σε ενα νέο driver:
+
+int		osd_devinit()	// initialization
+{
+	...
+	// init & create virtual video ram
+	gfb_init(dev_width, dev_height, dev_depth);	
+	...
+}
+
+int		osd_devrestore()
+{
+	...
+	// free virtual video ram
+	gfb_close();
+}
+
+void	osd_refresh()
+{
+	// copy virtual video ram to real video ram
+	memcpy(real_video_ram_address, gfb_vram(), gfb_vramsize());
+}
+
+// τα events
+void	osd_setpenmode(int enable);
+int		osd_getpen(int code);
+int		osd_events(int wait_flag);
+
+Αυτό ήταν...
+Όλες οι υπόλοιπες ρουτίνες τώρα πια υποστηρίζονται απο το gfb
+(line, set/get pixel, print, gettext height/width, rect, setcolor, etc)
+
+Επίσης ο driver αυτός υποστηρίζει και πολλαπλές video pages (ουσιαστικά
+πολλαπλές virtual video ram).
+
+byte	*gfb_alloc(void);		// create a new vram
+byte	*gfb_clone(void);		// create a clone of the active vram
+void	gfb_free(byte *buf);	// free vram
+byte	*gfb_switch(byte *buf);	// set the active vram
+								// δηλαδή που θα σχεδιάζουν οι ρουτίνες
+
+Άλλο ένα χαρακτηριστικό είναι ότι μπορεί να αλλαχτεί το μέγεθος της 
+vrum κατά το run-time. Κάτι τέτοιο είναι χρήσιμο όταν ο parent-driver
+απευθύνεται σε windows (XFree or Win32).
+
+-----------------------------------------------------------------------
+Add-on drivers
+
+Αυτή η κατηγορία οδηγών χρησιμοποιήται σαν πρόσθετα πάνω σε ένα ήδη
+υπάρχον οδηγό για γραφικά.
+
+Παράδειγμα:
+Οι οδηγοί για X και framebuffer δεν διαθέτουν εντολές για ήχο. Έτσι
+προσθέτοντας τον driver για OSS (βασικά η συσκευή /dev/dsp) προσθέτουμε
+υποστήριξη ήχου.
+
+βλ. dev_oss.c, dev_gpm.c
+
+-----------------------------------------------------------------------
+Virtual file-system drivers
+
+Αυτή η κατηγορία οδηγών επιτρέπουν στην SB να εκμεταλεύεται τις
+υπάρχουσες εντολές για την υποστήριξη διάφορων συσκευών ή file-formats
+ή δεν ξέρω τι άλλο...
+
+Παράδειγμα
+Οι εντολές OPEN,CLOSE,PRINT,INPUT μπορούν να χρησιμοποιηθούν για
+να γράψουμε σε αρχείο, στην σειριακή πόρτα, στην παράλληλη, στο σημιω-
+ματάριο του Palm, σε PDOC, κ.λπ.
+
+Έτσι ο χρήστης δεν χρειάζεται να μάθει τίποτα παραπάνω για να δουλέψει
+όλα αυτά.
+
+βλ. fs_stream.c, fs_serial.c, fs_memo.c
+
+-----------------------------------------------------------------------
+
+Οποιαδήποτε βοήθεια όπως διορθώσεις bugs, νέες ρουτίνες, σημειώσεις
+ασυμβατότητας (με QB), νέοι platform drivers, κ.λπ. είναι αποδεκτή.
+
+Θα πρέπει όμως να επικοινωνήσετε πρώτα μαζί μου (wired_gr@yahoo.com)
+α) για να προμηθευτείτε την τελευταία έκδοση του κώδικα (alpha)
+β) για να μην υπάρχουν και άλλοι που δουλεύουν πάνω στο ίδιο τμήμα
+
+
+

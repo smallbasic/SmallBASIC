@@ -1,0 +1,8 @@
+Known bugs
+----------
+
+CHAIN:
+    It has a small memory leak (~200 bytes)
+
+NOSOUND:
+	It is clears the queue but actually does not stops the current played background sound

@@ -1,0 +1,46 @@
+SmallBASIC cross-platform main document (SB reference)
+v2 - ndc, 7 Oct 2002
+
+SB's default reference
+_______________________________________________________________________________
+
+In SB there is only one file. The doc/ref.txt
+The PalmOS resources, the HTML pages and the command-line help files are
+created from that document.
+
+1. PalmOS, help-files.
+   In the directory palmos/doc/ use the ref2res.bas to create the PalmOS 
+   resources.
+
+2. Other formats (html, tex (info), groff (man), sgml).
+   In the directory doc/ use the ref2*.bas
+
+3. command-line help files
+   In the directory doc/ use the ref2c.bas to create the C source files.
+
+
+The REF.TXT structure
+_______________________________________________________________________________
+
+All keywords must starts at the first column
+There is no required to exists or not of any keyword;
+feel free to write as you like.
+
+|Book: title of the document
+|Version: version of the subject and/or this book
+
+|Chapter: current chapter
+|Section: section of the chapter
+|Command: command name; used as unique key
+|Function: function name; used as unique key
+|Syntax: syntax of the command
+|InfoFor: keywords on this section; used for search by keyword
+|Links: related keywords
+
+SB Intern
+_______________________________________________________________________________
+
+That document is created automatically by doxygen from C-header's (.h) files
+remarks.
+
+Please, read doxygen's documentation.

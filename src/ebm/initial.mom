@@ -1,0 +1,15 @@
+object  Franklin  _GUI     pkg    _GUI.pkg
+object  Franklin  _Default fnt    _Default.fnt
+object  Franklin  _System  fnt    _System.fnt
+object  Franklin  _jingles piezo  _jingles.dat
+sobject Franklin  _alarms  timer  _alarms.dat
+sobject Franklin  _SysSet_ dat    _settings.dat
+
+object Developer test bas test.bas
+object Developer README TXT README.TXT
+object Developer test sbx test.sbx
+object Developer test txt test.txt
+object Developer SmallBASIC help SmallBASIC.help
+object Developer SmallBASIC fxe SmallBASIC.fxe
+object Developer SmallBASIC cmd SmallBASIC.cmd
+object Developer SmallBASIC ini SmallBASIC.ini

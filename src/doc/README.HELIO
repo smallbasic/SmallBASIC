@@ -1,0 +1,44 @@
+README.HELIO - Earle F. Philhower, III - earle@ziplabel.com
+
+-----------------------------------------------------------------------
+Installation of the Application
+-----------------------------------------------------------------------
+  Copy SmallBASIC.APP to "C:\Program Files\VTech\Helio Desktop 2.0\1\Acc"
+  Hotsync to transfer (it will take some time, the APP is large)
+
+
+-----------------------------------------------------------------------
+Transferring BAS Files To Helio
+-----------------------------------------------------------------------
+From a DOS prompt, execute the included MAKEZHDB with the proper
+arguments, and copt the resulting HDB file to your Acc directory:
+    makezhdb "filename.bas" "DB Name In Helio" "BASIC" "filename.hdb"
+
+ex: makezhdb samples\games\BlackJack.BAS "BlackJack" "BASIC" "BJ.HDB"
+    copy BJ.HDB "C:\Program Files\VTech\Helio Desktop 2.0\1\Acc"
+
+
+-----------------------------------------------------------------------
+Transferring BAS Files From Helio
+-----------------------------------------------------------------------
+You will need the application Y-MODEM.APP, available at 
+http://www.ziplabel.com/helio and a terminal program.
+
+
+-----------------------------------------------------------------------
+Customizing the Font in Helio
+-----------------------------------------------------------------------
+This program allows you to import PALM(tm) PDB font files and use
+them to run your BASIC applications.
+
+. Download any Palm PDB formatted font (only 1 font per PDB is allowed)
+. Run MAKEZHDB with filetype as FontPDB
+      ex: makezhdb HKFONT.PDB "HK Font 40x26" "FontPDB" hkfont.hdb
+. Hotsync the resulting HDB file and you're set!
+. Check out
+        http://www.rainerzenz.de/palm/alphafonts.html
+  for some good, free Palm fonts to try.
+  And get the font HKFONT from
+        http://www.rainerzenz.de/palm/alphafontothers.html
+  to play the Z-CODE abusers in 40x25 glory!
+

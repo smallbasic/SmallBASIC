@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+<title>SmallBASIC Draft - Screen/Graphics Advanced User Interface</title>
+<link rel="stylesheet" href="../style/draft.css">
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="head">
+	<h1>Screen/Graphics Advanced User Interface</h1>
+
+	<dl>
+	<dt>Version
+	<dd>1
+	<dt>Authors:
+	<dd>Nicholas Christopoulos
+	</dl>
+
+	<p class="copyright">Copyright &#169;2001-2003 SmallBASIC Project</p>
+</div>
+
+<!-- ABSTRACT -->
+<div class="abstract">
+	<h2>Abstract</h2>
+	<p>
+	This paper is a purpose for an advanced library for
+	Screen/Graphics Advanced User Interface
+</div>
+
+<!-- BODY -->
+<h2>Introduction</h2>
+
+<p>
+This problem isn't hard but, also, not easy at all.
+There are several parts that we must think.
+
+<ol type=a>
+<li>SB works on several environments. Others have a GUI others have not.
+<li>SB must support a similar interface on all of them.
+<li>Using 'events' mechanism isn't a good choice for novices.
+</ol>
+
+<p>
+By studing old interfaces like TI BASIC, dBase and Clipper.
+I suggest the following mechanism.
+
+<p>
+There must be only one form, next versions of the library may be a lot of forms.
+This form is the whole screen, next versions of the library may be a window.
+
+<h4>Characteristics</h4>
+<ul>
+<li>User's UI commands are stored automatically in a list.
+<li>This list executed when an 'run-ui-commands' like command is called.
+<li>Similar there will must be a 'reset-ui-list' command.
+    If scroll is required, scroll bars must be created automatically by SB.
+<li>SB must creates a virtual buffer to be used for UI-commands.
+<li>This buffer must be scrolled if doesn't fit on screen.
+<li>User must can move to each ACCEPT/BUTTON commands by using arrows, mouse and pen.
+</ul>
+
+<p>
+In next versions, as I said, there must be a dynamic list of forms.
+Multiple elements of the same structures can solve the problem.
+The default will be the whole screen and with this way the code will remain the same.
+One problem is how to use multiple forms together.
+
+
+<!-- Interface -->
+<h2>Interface</h2>
+
+<!-- Section -->
+<h3>Input</h3>
+
+<pre class="syntax">
+ACCEPT [AT/LC x,y;] [{USING format; | SIZE n;}] [prompt;] @var [VALID expr]
+alias USING = USG
+alias VALID = VALIDATE
+</pre>
+
+<p>
+Similar to INPUT, the ACCEPT reads a string from stdin.
+The difference is that ACCEPT and DISPLAY commands are stored
+in ui-list.
+
+<h4>ACCEPT parameters</h4>
+
+<dl>
+<dt>AT/LC x,y
+<dd>Position; default = next row from previous ACCEPT/DISPLAY.
+    There must be supported both units, virtual-characters and pixels.
+	So, LC stands for pseudo-character mode, and AT for pixels.
+<dt>USING format
+<dd>Input mask
+<dt>SIZE n
+<dd>Size of field in bytes
+<dt>prompt
+<dd>prompt...
+<dt>var
+<dd>the variable
+<dt>VALID
+<dd>USE-like validation expression/function.
+    If the 'validation' returns false, there must be no exit from this.
+</dl>
+
+<!-- Section -->
+<h3>Output</h3>
+
+<pre class="syntax">
+DISPLAY [AT/LC x,y;] [{USING format; | SIZE n;}] string [USE UDP]
+alias USING = USG
+</pre>
+
+<dl>
+<dt>AT x,y
+<dd>position; default = next row from previous ACCEPT/DISPLAY
+<dt>USING format
+<dd>Output mask
+<dt>SIZE n
+<dd>Size of field in bytes
+<dt>USE...
+<dd>Interaction
+</dl>
+
+<!-- Section -->
+<h3>Buttons</h3>
+
+<pre class="syntax">
+BUTTON x,y [,width,height]; text [{USE udf}|ID id}]
+</pre>
+
+<dl>
+<dt>USE
+<dd>If click/[ENTER] then executed
+<dt>ID
+<dd>Returned id
+</dl>
+
+<!-- Section -->
+<h3>Generic</h3>
+
+<pre class="syntax">
+FRMEXEC @id
+</pre>
+
+<p>
+Runs a set of UI commands (accept,display,button)
+
+<p>
+Returns
+<pre>
+id =  0 = normal exit
+id = -1 = cancel/escape exit
+any other = button ID
+</pre>
+
+<pre class="syntax">
+FRMRESET
+</pre>
+
+<p>
+Clears all UI-elements from memory
+
+</body>
+</html>

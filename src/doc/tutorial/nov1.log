@@ -1,0 +1,626 @@
+This is TeX, Version 3.14159 (Web2C 7.4.5) (format=latex 2003.7.23)  26 AUG 2003 14:15
+**nov1.tex
+(./nov1.tex
+LaTeX2e <2001/06/01>
+Babel <v3.7h> and hyphenation patterns for american, french, german, ngerman, n
+ohyphenation, loaded.
+(/usr/share/texmf/tex/latex/base/article.cls
+Document Class: article 2001/04/21 v1.4e Standard LaTeX document class
+(/usr/share/texmf/tex/latex/base/size10.clo
+File: size10.clo 2001/04/21 v1.4e Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf/tex/latex/preprint/fullpage.sty
+Package: fullpage 1999/02/23 1.1 (PWD)
+\FP@margin=\skip43
+)
+(/usr/share/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 2001/07/07 v1.0n Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2001/08/31 v1.1 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: dvips.def on input line 80.
+
+(/usr/share/texmf/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+\Gin@req@height=\dimen103
+\Gin@req@width=\dimen104
+)
+(/usr/share/texmf/tex/latex/html/url.sty
+Package: url 1999/03/02  ver 1.4  Verb mode for urls, email addresses, and file
+ names
+)
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.7 ^^Ib
+        ody \{
+? 
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 7.
+(/usr/share/texmf/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 7.
+
+Overfull \hbox (6.71376pt too wide) in paragraph at lines 7--20
+\OT1/cmr/m/n/10 back-ground: white; background-position: top left; background-a
+ttachment: fixed;
+ []
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.21 ^^Ia
+         :link img, a:visited img \{ border-style: none \} /* no border on i...
+
+? 
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.23 ^^Ia
+          img \{ color: white; \}        /* trick to hide the border in Nets...
+
+? 
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.28 ^^Ic
+         aption, li, th, td \{ /* ns 4, ie 5 */
+? q
+OK, entering \batchmode...
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.32 ^^Ih
+         1, h2, h3, h4, h5, h6 \{ text-align: left; font-family: sans-serif; \}
+
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.35 ^^I.
+         hide \{ display: none \}
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.37 ^^Id
+         iv.head ^^I^^I^^I\{ margin-bottom: 1em \}
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.40 ^^Ip
+         .copyright ^^I^^I\{ font-size: small \}
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.43 ^^Ia
+         [href]:hover \{ background: \#ffa \}
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.45 ^^Ip
+         re.example \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Overfull \hbox (8.95451pt too wide) in paragraph at lines 45--50
+[]\OT1/cmr/m/n/10 pre.example \OMS/cmsy/m/n/10 f \OT1/cmr/m/n/10 border-top: 1p
+x solid #d0d0d0; border-bottom: 1px solid #d0d0d0;
+ []
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.51 ^^Ip
+         re.result \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.59 ^^Id
+         t, dd^^I\{ margin-top: 0; margin-bottom: 0 \} /* opera 3.50 */
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.62 ^^Ip
+         re, code \{ font-family: monospace \} /* navigator 4 requires this */
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.64 ^^Il
+         i \{ margin: 0.75em; \}
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.66 ^^I.
+         note \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.71 ^^I.
+         subtitle \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.79 ^^I.
+         author \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.84 ^^I.
+         example img \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.88 ^^Id
+         fn \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.92 ^^Ic
+         ode \{
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+No file nov1.aux.
+\openout1 = `nov1.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 97.
+LaTeX Font Info:    ... okay on input line 97.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 97.
+LaTeX Font Info:    ... okay on input line 97.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 97.
+LaTeX Font Info:    ... okay on input line 97.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 97.
+LaTeX Font Info:    ... okay on input line 97.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 97.
+LaTeX Font Info:    ... okay on input line 97.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 97.
+LaTeX Font Info:    ... okay on input line 97.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 98.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 98.
+
+Overfull \vbox (367.14575pt too high) has occurred while \output is active []
+
+ [1
+
+]
+
+! LaTeX Error: Cannot determine size of graphic in ./syntax1.png (no BoundingBo
+x).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.203  \includegraphics[scale=1]{./syntax1.png}
+                                               
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: ./syntax1.png Graphic file (type eps)
+ <./syntax1.png> [2]
+
+! LaTeX Error: Cannot determine size of graphic in ./syntax2.png (no BoundingBo
+x).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.213  \includegraphics[scale=1]{./syntax2.png}
+                                               
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: ./syntax2.png Graphic file (type eps)
+ <./syntax2.png>
+Missing character: There is no Ô in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no Ý in font cmtt10!
+Missing character: There is no ë in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no ç in font cmtt10!
+Missing character: There is no ò in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ñ in font cmtt10!
+Missing character: There is no ü in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no è in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ç in font cmtt10!
+Missing character: There is no ò in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no Ô in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no Ý in font cmtt10!
+Missing character: There is no ë in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no ç in font cmtt10!
+Missing character: There is no ò in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ñ in font cmtt10!
+Missing character: There is no ü in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no è in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ç in font cmtt10!
+Missing character: There is no ò in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no é in font cmtt10!
+
+! LaTeX Error: Cannot determine size of graphic in ./div.png (no BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.268 \includegraphics[scale=1]{./div.png}
+                                          
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: ./div.png Graphic file (type eps)
+ <./div.png> [3]
+
+! LaTeX Error: Cannot determine size of graphic in ./div2.png (no BoundingBox).
+
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.275 \includegraphics[scale=1]{./div2.png}
+                                             = ((3+3)*2)/3 \subsubsection*{\...
+
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: ./div2.png Graphic file (type eps)
+ <./div2.png>
+Missing character: There is no Á in font cmtt10!
+ [4]
+
+! LaTeX Error: Cannot determine size of graphic in ./a-b.png (no BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.319 \includegraphics[scale=1]{./a-b.png}
+                                          
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: ./a-b.png Graphic file (type eps)
+ <./a-b.png>
+Missing character: There is no Ï in font cmtt10!
+Missing character: There is no ñ in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no æ in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ñ in font cmtt10!
+Missing character: There is no ü in font cmtt10!
+Missing character: There is no ã in font cmtt10!
+Missing character: There is no ñ in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ò in font cmtt10!
+Missing character: There is no ü in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no â in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no è in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no è in font cmtt10!
+Missing character: There is no Ý in font cmtt10!
+Missing character: There is no ë in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no ñ in font cmtt10!
+Missing character: There is no Ý in font cmtt10!
+Missing character: There is no ø in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no é in font cmtt10!
+ [5]
+Missing character: There is no Ä in font cmtt10!
+Missing character: There is no ç in font cmtt10!
+Missing character: There is no ë in font cmtt10!
+Missing character: There is no þ in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ë in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ã in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no ü in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no Ê in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no þ in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ð in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no Ý in font cmtt10!
+Missing character: There is no ë in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no Ï in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no â in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no è in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no Ö in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no ñ in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no Ü in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no ô in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no í in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no é in font cmtt10!
+Missing character: There is no â in font cmtt10!
+Missing character: There is no á in font cmtt10!
+Missing character: There is no è in font cmtt10!
+Missing character: There is no ì in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no Ê in font cmtt10!
+Missing character: There is no å in font cmtt10!
+Missing character: There is no ë in font cmtt10!
+Missing character: There is no ó in font cmtt10!
+Missing character: There is no ß in font cmtt10!
+Missing character: There is no ï in font cmtt10!
+Missing character: There is no õ in font cmtt10!
+ [6] (./nov1.aux) ) 
+Here is how much of TeX's memory you used:
+ 646 strings out of 95847
+ 7369 string characters out of 1195962
+ 59987 words of memory out of 1000001
+ 3625 multiletter control sequences out of 10000+50000
+ 5672 words of font info for 21 fonts, out of 500000 for 1000
+ 14 hyphenation exceptions out of 1000
+ 25i,5n,19p,1381b,301s stack positions out of 1500i,500n,5000p,200000b,5000s
+
+Output written on nov1.dvi (6 pages, 40584 bytes).

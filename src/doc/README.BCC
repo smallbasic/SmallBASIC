@@ -1,0 +1,28 @@
+Q: How do I use SDL with free Borland C++? 
+
+A: This howto was contributed by Chris Dion: 
+
+
+Here's a step-by-step run through of what I did. I haven't used .dll's and such before, so you'll have to excuse me if I'm not using the right terminology. 
+
+Run the IMPLIB utility on SDL.DLL to make a new SDL.LIB import library. Use the -a and -c switches. 
+You still need the SDL_MAIN.LIB file, so that you don't need to define WinMain() and all that junky windows stuff. You have no .dll file to build this .lib from, and COFF2OMF creates a empty .lib (you can check with TDUMP, another utillity that comes with the compiler). Get the Win32 version of the SDL_main.c file from the source, and dump it in with the rest of your project, 
+Compile your source (including SDL_main.c) into object files using BCC32 with the following compiler options: 
+  -c (Don't link)
+  -tW (Create windows app)
+  -DWIN32 (Define WIN32, this is needed in the SDL_main.h file, and maybe others)
+
+Link the.obj files together using ILINK32 with the following options: 
+  -aa (Create windows app, sounds redundant, but...)
+  -Tpe (Target = windows exe)
+  -c (case sensitive linking, may be the default...)
+and the following additional files (order is important) 
+sdl.lib (created in step 1) 
+import32.lib 
+c0w32.obj 
+cw32.lib 
+If all goes well, you should have a working .exe file. The help files that come with the command line tools are missing detailed descriptions of the various compiler/linker switches. You can download a complete help file from the Borland ftp site here: 
+ftp://ftp.borland.com/pub/bcppbuilder/techpubs/bcb5/b5std.zip 
+
+
+--------------------------------------------------------------------------------

@@ -1,0 +1,61 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0100 
+header_name {.h} 
+code_name {.cc}
+Function {make_window()} {open
+} {
+  Fl_Window {} {
+    label BAS2PDB open selected
+    xywh {326 195 420 392} labelsize 12 resizable visible
+  } {
+    Fl_Input f_src {
+      label {Source file}
+      callback {strcpy(srcfile, o->value());
+src_update();}
+      xywh {70 10 305 25} box PLASTIC_DOWN_BOX labelsize 12 align 68 textsize 12
+      code0 {\#include "fmcb.h"}
+    }
+    Fl_Input f_trg {
+      label {Target file}
+      callback {strcpy(trgfile, o->value());}
+      xywh {70 40 305 25} box PLASTIC_DOWN_BOX labelsize 12 textsize 12
+    }
+    Fl_Text_Display f_dispcode {
+      label {Code preview}
+      xywh {10 125 400 155} box PLASTIC_DOWN_FRAME labelsize 12 textfont 4 textsize 12
+    }
+    Fl_Button {} {
+      label {...}
+      callback {char *f;
+f = fl_file_chooser("Source file",
+	"SB PDB Files(*.pdb)\\tSB Source Files (*.bas)\\tAll Files (*)",
+	srcfile);
+if ( f )	{
+	strcpy(srcfile, f);
+	f_src->value(srcfile);
+	src_update();
+	}}
+      xywh {385 10 25 25} box DIAMOND_UP_BOX down_box DIAMOND_UP_BOX labelsize 12
+      code0 {\#include <FL/Fl_File_Chooser.h>}
+    }
+    Fl_Button {} {
+      label {...}
+      callback {char *f;
+f = fl_file_chooser("Target file","*",trgfile);
+if ( f )	{
+	strcpy(trgfile, f);
+	f_trg->value(trgfile);
+	}}
+      xywh {385 40 25 25} box DIAMOND_UP_BOX labelsize 12
+    }
+    Fl_Button {} {
+      label Convert
+      callback {convert();}
+      xywh {300 80 110 25} box ROUND_UP_BOX labelsize 12
+    }
+    Fl_Text_Display f_console {
+      label Console
+      xywh {10 305 400 75} box PLASTIC_DOWN_FRAME labelsize 12 textsize 12
+    }
+  }
+} 

@@ -1,0 +1,98 @@
+This is a very simple 1-commport at a time library for serial
+port communications using DJGPP 2.0.  No string input/output
+routines were implemented because I figured there were way
+too many ways to do it.  If you want them, just ask and tell me what
+you need.  The library is Copyright (c) 1996 Samuel Vincent, but
+you may freely use it in your programs without paying me anything.
+Contributions will be accepted of course. ;)
+If you really wish to do this, or you have any comments or questions,
+just email me at svincent@cs.sonoma.edu or post/send mail to the
+DJGPP newsgroup/mailing list and I will reply as soon as I can.
+(I get lots of email.)
+
+I do request that you let me know if you find these routines
+remotely useful.  Thanks!
+
+-Sam Vincent
+
+
+10-27-96
+Fixed DPMI-bug and added SVAsyncInBin() function to read
+binaries (including the 0x00 character).
+-Anton Helm
+
+
+
+This is a short description of the library functions:
+
+int SVAsyncInit(unsigned int CommPort);
+void SVAsyncStop(void);        
+These functions start and stop the interrupt handlers.  No characters can be
+recieved before it is started, and the system will crash if they are not 
+stopped before the program is exited.  The paramater 'CommPort' is the COM port
+to use, there are #defines in the header file that defines the values to be
+used.  It is recommended that you call SVAsyncStop via the atexit()
+function.
+
+SVAsyncInit() will return a non-zero value upon an error (when the COM port is
+not there).
+
+
+int SVAsyncFifoInit(void);
+Detects UART type, enables FIFO if it exists.
+Returns 0 if 16550 UART and FIFO enabled.
+Returns 1 if 16450 UART.
+Returns 2 if less than 16450 UART.
+
+If you don't use this function, or if don't have a 16550 UART and hence
+don't have a FIFO, you may experience loss of characters at high baud
+rates and low cpu speeds.
+
+
+void SVAsyncClear(void);
+Clears the internal buffers.
+
+
+void SVAsyncOut(unsigned char CharOut);
+Sends out a character.
+
+
+unsigned char SVAsyncIn(void);        
+Returns the next character in the buffer or a NULL upon an empty buffer.  Use
+SVAsyncInStat() to check for the number of characters in the buffer.
+
+
+int SVAsyncInBin(unsigned char *BinIn);
+Takes a pointer to the memory where the input value should be stored.
+This pointer must point to a valid memory location.
+If there is a character in the buffer, it will be stored in this memory.
+Returns 0 upon an empty buffer or 1 otherwise.
+Use SVAsyncInStat() to check for the number of characters in the buffer.
+
+
+void SVAsyncHand(unsigned int Hand);
+Sets the status of the handshaking lines.  The values are defined in the 
+header file and can be or'd together.  This routine needs the whole set
+of flags upon each invocation.  A typical call would look like this:
+	SVAsyncHand( DTR | RTS);
+
+
+void SVAsyncSet(unsigned int Baud, unsigned int Control);    
+This sets the baud rate, parity, etc, of the serial line.  The paramater 'Baud'
+is the baud rate (ie 1200, 2400, 9600, etc.. up to 115200), and 'control' is a 
+number that represents parity, length and stop bits.  There are defines for 
+this in SVASYNC.H, but here are a few commonly used examples:
+
+	SVAsyncSet( 2400, BITS_8 | STOP_1 | NO_PARITY )   for 2400 baud 8N1.
+	SVAsyncSet( 9600, BITS_7 | STOP_1 | EVEN_PARITY)  for 9600 baud 7E1.
+
+
+int SVAsyncInStat(void);
+This function returns the number of characters in the input buffer.
+
+
+int SVAsyncOutStat(void);        
+Returns the number of characters in the output buffer.
+Currently, there is no output buffer as I have not implemented interrupt
+driven output yet.  This just returns 0 if the serial port is ready
+to accept more output and 1 if it is busy.

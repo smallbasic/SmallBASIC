@@ -1,0 +1,23 @@
+SB-BASE, ndc
+
+Some things to be added
+
+hex-str <- BINTOSTR(bin)
+
+Returns a hex-string of the binary data 'bin'
+
+bin <- HEXTOBIN(hex-str)
+
+converts hex-string to binary
+
+ON x CALL UDF1 [, ...]
+
+ON KEY x GOTO label
+ON KEY x USE UDF
+
+ON ERROR [{GOTO label | USE UDF}]
+RESUME
+ON ERROR RESUME
+ON ERROR STOP
+
+ON BREAK {GOTO label | STOP | IGNORE}

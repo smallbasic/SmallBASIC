@@ -1,0 +1,392 @@
+/**
+*   @mainpage SmallBASIC Intern
+*
+*   This document includes information for SB's developers team. We suppose that you are using Unix.
+*
+*   The code of SB is big enough, there are a lot of remarks in code files and a huge number of
+*   routines (~1.5 MB of C code). A lot of them are CPU/OS or driver specific.
+*
+*   I do my best to write or convert remarks to doxygen format.
+*
+*   At this time the most usefull routines are documented, but there are a lot more.
+*
+*	There are also a lot of text to add/modify. My English are bad, so, please fix any
+*	syntax error and update the CVS.
+*
+*   <ul>
+*   <li><a href="../../doc/xs-intro.html">SB's RTL Reference Guide</a></li>
+*   <li>@ref sbcvs</li>
+*   <li>@ref sbdoc</li>
+*   <li>@ref sbstr</li>
+*   <li>@ref sbvar</li>
+*   <li>@ref sbpar</li>
+*   <li>@ref sbprg</li>
+*   <li>@ref htprc</li>
+*   <li>@ref htfnc</li>
+*   <li>@ref htmod</li>
+*   <li>@ref htdrv</li>
+*   <li>@ref htsdd</li>
+*   <li>@ref htmsd</li>
+*   <li>@ref htvfs</li>
+*   <li>@ref htprt</li>
+*   </ul>
+*/
+/**
+*   @page sbcvs SourceForge CVS
+*   <pre>
+@htmlinclude HOWTO-CVS.TXT
+*   </pre>
+*/
+/**
+*   @page sbdoc SB's documentation
+*   <pre>
+@htmlinclude HOWTO-DOCUMENT.TXT
+*   </pre>
+*/
+/**
+*   @page sbstr SB structure
+*
+*	Because my first version of SB was mostly a clever
+*	expression calculator with some more functions (like PRINT, LINE, etc),
+*	SB suffered by design problems.
+*
+*	The code is separated to specific "sections"
+*
+*	<b>a) the system</b>
+*
+*	sys.h - system specific declarations. (CPU,FILENAMES,etc)
+*
+*	panic.c - error handling sub-system.
+*
+*	extlib.c - module's manager (external libraries).
+*
+*	str.c - string-related code.
+*
+*	fmt.c - string/number format-related code.
+*
+*	inet.c - network-related code.
+*
+*	mem.c - memory manager.
+*
+*	unx_memmgr.c - advanced memory manager (used by mem.c on non-limited OSes, like Linux and Win32)
+*
+*	match.h/match.c - simple regular-expression code. Actually the code that required for filename-matching and for the LIKE operator.
+*
+*	<b>b) the compiler</b>
+*
+*	scan.c - the pseudo compiler itself
+*
+*	bc.c - the bytecode segment API, used by scan.c
+*
+*	ceval.c - expressions optimizer, converts expressions bytecode from
+*	simple form to PUSH/POP style. That speed-ups the execution a lot.
+*
+*	kw.h/kw.c - keyword definitions. The codes that are used for each keyword.
+*
+*	sberr.c - some common compile-time (and run-tile) errors.
+*
+*	<b>c) the executor</b>
+*
+*	brun.c - the executor itself. Also, in that module there exists the decompiler.
+*
+*	eval.c - the expression executor.
+*
+*	proc.c - the parameter's interface.
+*
+*	var.c - the variable's interface.
+*
+*	sberr.c - some common run-time (and compile-tile) errors.
+*
+*	<b>d) the system driver</b>
+*
+*	device.c - the system's driver. that one is a the shell to OSD routines
+*
+*	dev_*.c - low-level, OS specific drivers (OSD routines).
+*
+*	dev_genfb.c - generic low-level driver that uses a memory block instead of graphics-adapter.
+*	It can be used for fast develop of an OSD driver. It used on framebuffer driver.
+*
+*	circle.c/pfill.c/ffill.c - some additional code for graphics that calls the device.c's routines
+*
+*	g_*.c - some common graphics related code that can be used in OSD routines (like Bresenham's line algorithm)
+*
+*	<b>e) the file-system driver</b>
+*
+*	file.c - the file-system shell driver. that one is a shell to vfs-drivers.
+*
+*	fs_*.c - the low-level virtual-file-system drivers.
+*
+*	<b>f) the Run-Time-Library</b>
+*
+*	blib.c - basic commands (FOR,IF,DIM,etc).
+*
+*	blib_func.c - basic functions (almost all the functions).
+*
+*	blib_graph.c - graphics commands.
+*
+*	blib_sound.c - sound commands.
+*
+*	blib_math.c - some mathematical/date-time procedures.
+*
+*	blib_db.c - file I/O commands.
+*
+*	blib_ui.c - the new commands for the GUI. (unfinished)
+*
+*	<b>g) the rest</b>
+*
+*	help_text.c - about and help strings (also check doc/x-*.c). Actually the CLI's help texts.
+*
+*	mathlib.c - PalmOS shell to mathlib 1.1
+*
+*	mkpdb.c - utility that builds PDB from binary-files.
+*
+*	sbpad.c/ui.c - the PalmOS IDE.
+*
+*	sbgo_icons.c/build_sbgo_icons.c - PalmOS script-icons.
+*
+*	xpm2xbm.c - utility for convertion from xpm to xbm (image formats), used for icons.
+*
+*
+*	<b>The compiler</b>
+*
+*	The basic job of the compiler is to take the source code and builds an encoded form of it
+*	by using numbers instead of texts. That numbers are the keyword codes that are specified
+*	on kw.h.
+*
+*	The compiler checks for syntax errors, missing loop/func ends, etc. Also, it expands some specific code
+*	(like DO, <<, +=, single-line IF's) to simplest forms.
+*
+*	For the expressions, analyzes the priorities and stores the expression in a suitable form (like all the
+*	compilers do).
+*
+*	For the 'DATA', it is creates another byte-code segment to store them. Finally it will append that segment
+*	to the main-segment, because the executor it does not recognize segments yet.
+*
+*	<b>The executor</b>
+*
+*	The executor takes the result of the compiler and executes. That bytecode is similar to a much-much advanced
+*	assembly language. There are a few stacks, there is an IP (instruction pointer), a SP (stack pointer),
+*	there are two more specific accu-registers (L (from left) and R (from right)), and some lesser internals like
+*	read/data-pointer (READ-DATA), eval's stack pointer.
+*
+*	Unfortunately, when I was create the SB it was meanless to build a real VM for an expression-calculator.
+*	Yes, the SB was an advanced calculator and nothing more. Sorry about that...
+*
+*	So, the executor, executes the byte-code almost like a CPU do, and calls the functions, or changes the IP like a CPU.
+*
+*	Because this is not a real VM, there are important differences which are fullfilled by the library.
+*
+*	The parameters are not stored in stack, but in BC, and the command must check them by using the parameter's
+*	interface.
+*
+*	The variables are no in some data-segment but there are a global-table of var_t pointers. Use
+*	the variable's interface to manipulate them.
+*
+*	The stack is not stores bytes, but a specified structure (union), and actually is no suggested to be
+*	used by new programmers.
+*
+*	Executor recognizes different keywords when it is called to execute an expression code. That means
+*	you can't store a function-call inside the BC. The functions calls are included only in expression
+*	code-blocks and are recognized only by eval(). eval() is called by procedures or functions to evaluate
+*	the a parameters or a variable.
+*
+*	There are 4 families of codes, actually only the first is the real byte-code.
+*
+*	kw.h: enum keyword --- the real codes, limited to 255. Any special thing is goes here (CALL,REPEAT,GOTO,integer,string,etc)
+*
+*	kw.h: #define OPxxx --- operators, parameter of kwTYPE_xxxOPR codes.
+*
+*	kw.h: enum proc_keywords --- the buildin procedures, limited to 32K, parameter of kwTYPE_CALLP. That is where you'll work.
+*
+*	kw.h: enum func_keywords --- the buildin functions, limited to 32K, parameter of kwTYPE_CALLF. That is where you'll work.
+*
+*	Anyway, possibly, you are need to known nothing about that.
+*	The parameter and variable interface will help you.
+*
+*	That knownledge is needed in the cases
+*	a) add/modify a special keyword which uses stack or changes the IP (manually) like GOTO,IF,FOR, etc,
+*	b) add/modify an operator or an non-common-syntax-style command (like the IN,DO,DECLARE).
+*
+*	<b>Important notes:</b>
+*
+*	There are 4 families of keywords, but you'll need only the 2 of them (except if you want to do something special).
+*
+*	The build-in procedures family and the build-in functions family. You can add you keyword here and fear nothing.
+*
+*	All the procedures must be written on blib_*.c and declared in blib.h.
+*	Its keyword is defined in kw.h, the name is defined in scan.c (there is a table name<->keyword, easy to find:).
+*	Its keyword must be used in brun.c to do the call.
+*
+*	All the functions must be written on blib_func.c.
+*	Its keyword is defined in kw.h, the name is defined in scan.c.
+*	Its keyword must be used in eval.c to do the call.
+*
+*	<b>The drivers</b>
+*
+*	All the SB's code is using the device.h routines to do any I/O with the computer.
+*	The device.c's routines can handle the most request, but uses the OSD.h's routines to do the low-level.
+*
+*	The drivers are actually the OSD.h's routines.
+*
+*	So, the drivers are C modules which contains the code of the OSD.h's routines.
+*
+*	One of those drivers must be included in the link-time to produce the final executable.
+*
+*	That is. Simple enough.
+*
+*	Anyway there are a lot of weird systems, which does not support standard things like open/close command set,
+*	not even the malloc/free set! In that case read the @ref htprt
+*/
+/**
+*   @page sbvar SB's variables
+*/
+/**
+*   @page sbpar SB's parameters
+*/
+/**
+*   @page htprc How-to add a build-in procedure
+*/
+/**
+*   @page htfnc How-to add a build-in function
+*/
+/**
+*   @page htmod How-to add an external library/vfs-driver (module)
+*   @ref moddoc
+*/
+/**
+*   @page htdrv How-to add graphics/sound driver
+*/
+/**
+*   @page htsdd How-to add an add-on sound driver
+*/
+/**
+*   @page htmsd How-to add an add-on mouse driver
+*/
+/**
+*   @page htvfs How-to add a VFS driver
+*/
+/**
+*   @page htprt How-to port
+*
+*   Read first:
+*   <ul>
+*   <li>@ref sbsys</li>
+*   </ul>
+*
+*   Related links:
+*   <ul>
+*   <li>@ref lgraf (OS driver API)</li>
+*   </ul>
+*
+*   <pre>
+@htmlinclude HOWTO-PORT.TXT
+*   </pre>
+*/
+/**
+*   @page sbprg Notes on programming for SB
+*
+*   SB is a language that it happens to be used on a lot of handhelds.
+*   There are versions for PalmOS 3.1, VTOS, and Franklins.
+*
+*   Keep the code small, in a lot of cases the RAM is very limited.
+*   I have as limit the PalmOS 3.1. This weird OS (actually, the
+*   PalmOS is good enough, the limitations are belongs to hardware)
+*   is using a code-size of 32KB and a dynamic-heap less than 64KB.
+*   It has a CPU at 16MHz on which we must use it to do compilation.
+*
+*   <b>Use small and fast code</b>
+*
+*   a) Code-segments
+*
+*   Anyone who remember that ? A few years before, in DOS era...
+*   The ghost is still alive. In PalmOS the code-segments are
+*   limited in 32KB size. So, SB must use the segments.
+*   For each function, in its declaration, you must declare the
+*   code-segment by using the keyword SEC().
+*
+*   The available code-segment names are declared in sbpad.def,
+*   feel free to add more segments.
+*
+*   b) Do not use function pointers
+*      
+*   This is my *bigest* problem. You can't use function pointers.
+*   You (and the compiler) don't known on what code segment they are 
+*   stored. You can't swap to that segment.
+*
+*   You'll need to use big, ungly and stupid switch()...
+*
+*   Btw, that is why the brun() uses a large switch(), and that is
+*   why the fs-drivers are looking so weird.
+*
+*   c) Use small variable-size whenever you can
+*
+*   Local variables of 1024 bytes are unacceptable. There is a 20KB stack
+*   size and that limit is not easy to increased. PalmOS 3.3 leaves about
+*   64KB of dynamic heap and the stack is located there.
+*
+*   Don't use an 'int' variable when you need a simple 'byte'.
+*
+*   When a large buffer is needed, use dynamic allocation or use 
+*   a buffer that is shared between a lot of procedures.
+*   Best for code-size and speed, is to use a global pointer,
+*   allocate it once and use it in a lot of routines.
+*   Just keep in mind, the eval() can do recursion. So,
+*   use that buffer after you got the values of parameters.
+*
+*   d) Put strings in different segment
+*
+*   Strings takes a lot of code-size if are stored in code segment.
+*   To avoid this (and you must), you must use different functions.
+*
+*   This is a common "wrong" code
+@code
+    void    my_func()
+    {
+        ...
+        if ( failed )
+            rt_raise("One more error here, use ...")
+    }
+@endcode
+*
+*   This is the same but we can select where to store the string
+@code
+    void    my_func_err1()          SEC(TRASH);
+    void    my_func_err1()
+    {
+            rt_raise("One more error here, use ...")
+    }
+
+    void    my_func()
+    {
+        ...
+        if ( failed )
+            my_func_err1();
+    }
+@endcode
+*
+*   The string and the call to rt_raise() is now stored in code-segment TRASH.
+*   That leaves more free size in the main segment (or the whatever segment the
+*   my_func() is located).
+*
+*   Use tmp/palm/sbpad.map to see where is located what, and what size is takes.
+*
+*   e) Keep main code-segment as small as you can
+*
+*   The main code-segment is very crusial, there are code that must stored on
+*   that. Avoid to use it, except there are *very* good reasons to do it.
+*
+*   <b>Your code can't be used for a specific OS</b>
+*
+*   As I was said, SB is used on a o lot of handhelds. That means SB is
+*   designed and must running on a lot of different OSes.
+*
+*   There are must be no OS specific routines. For example, if you want
+*   to add a routine for Palm's battery, you must also find how to
+*   support it in other OSes, at least PC OSes (i.e. APM for PCs).
+*
+*   If you can use an ANSI-C function, do it instead of using an OS API.
+*
+*   If your OS has no support for an ANSI-C function, write something
+*   to emulate it instead of use blocks of OS specific code.
+*/
+

@@ -1,0 +1,101 @@
+SmallBASIC
+Information for Unix users
+For SB version 0.7.1+
+
+--------------------------------------------------------------
+
+>>> SmallBASIC for Unix with SVGALIB
+
+% make svga
+
+This will create the svgasbasic, and make it default link
+of /usr/local/bin/sbasic
+
+Notes:
+
+* The default graphics mode of SVGAlib is the G800x600x64K
+You can use a different mode by setting the
+SVGALIB_DEFAULT_MODE (see: 'man vga_getdefaultmode')
+
+* The default graphics mode of SDL is the 800x600x16b
+You can select a different graphics mode by using the
+SB_SDLMODE environment variable (setenv SB_SDLMODE 640x480x16)
+
+>>> SmallBASIC for Linux with framebuffer
+
+% make fb
+
+This will create the fbsbasic, and make it default link
+of /usr/local/bin/sbasic
+
+>>> SmallBASIC for Unix with SDL
+
+% make sdl
+
+This will create the sdlsbasic, and make it default link
+of /usr/local/bin/sbasic
+
+--------------------------------------------------------------
+
+Run in console:
+
+% ./sbasic myprog.bas
+
+Run in graphics
+
+% ./sbasic myprog.bas -g
+
+--------------------------------------------------------------
+
+Fonts for the graphics mode
+
+We can convert the console fonts.
+Only the bitmap fonts 8x16 can be converted (also the 
+pseudo-9x16).
+You can check it. If the uncompressed filesize is
+4096 bytes long then it is ok.
+
+Example:
+% cd unix
+% cp /usr/lib/kbd/consolefonts/myfonts
+% ./chr2c *
+% cp myfonts.c rom16.c
+% cd ..
+% make
+
+If you convert any non-english font to that form,
+please send me a copy to include it :)
+
+--------------------------------------------------------------
+
+Invoking SB
+
+% sbasic myprog.bas
+
+% sbasic -q myprog.bas -- -q
+
+% sbasic myprog.bas my_arg1 my_arg2
+
+Use the -- command-line option to pass your options to your
+  script.
+Use the -g command-line option to run SB in graphics
+Use the -q command-line option to avoid compiler/executor
+  messages.
+
+SB can be used for CGI scripts :)
+
+--------------------------------------------------------------
+
+Creating SmallBASIC executable on Unix
+
+% cat myexe
+#!/usr/local/bin/sbasic -g -q
+print "Hello, world!"
+
+% chmod +x myexe
+% ./myexe
+
+See also: sync/samples/pdocview
+
+
+

@@ -1,0 +1,3 @@
+Asynchronous serial port library with full source for DJGPP 2.0.  Can also
+be used as reference for hooking hardware interrupts and AT&T assembly syntax.
+

@@ -1,0 +1,5340 @@
+\input texinfo.tex
+@setfilename sbasic.info
+@settitle SmallBASIC Guide
+
+@c --
+@c -- THIS FILE IS THE SOURCE OF SB GUIDE
+@c --
+
+@c -- notes --
+@c html2db had problems with line-commands that does not starting at BOL
+
+@set TITLE SmallBASIC Guide
+@set SUBTITLE A User's Guide for SmallBASIC
+
+@set VERSION 0.9.0
+@set EDITION Alpha
+@set UPMONTH August 2003
+
+@footnotestyle separate
+
+@macro sgnote{n, x}
+@*
+@b{\n\} @i{\x\}
+@end macro
+
+@dircategory Programming
+@direntry
+* SmallBASIC: (sbasic).           SmallBASIC Guide.
+@end direntry
+
+@c merge the function and variable indexes into the concept index
+@ifinfo
+@synindex fn cp
+@synindex vr cp
+@end ifinfo
+@iftex
+@syncodeindex fn cp
+@syncodeindex vr cp
+@end iftex
+@ifhtml
+@syncodeindex fn cp
+@syncodeindex vr cp
+@end ifhtml
+
+@iftex
+@finalout
+@end iftex
+
+@c -----------------------------------
+@copying
+Copyright @copyright{} 2000, 2001, 2002, 2003 SmallBASIC Project.
+@*
+Copyright @copyright{} 1991, 2003 Free Software Foundation, Inc.
+@sp 2
+
+This is Edition @value{EDITION} of @cite{@value{TITLE}: @value{SUBTITLE}},
+for the @value{VERSION} (or later) version of the SmallBASIC language.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'', the Front-Cover
+texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+@enumerate a
+@item
+``A GNU Manual''
+
+@item
+``You have freedom to copy and modify this GNU Manual, like GNU
+software.''
+@end enumerate
+@end copying
+
+@c -----------------------------------
+@titlepage
+@sp 2
+@title @value{TITLE}
+@subtitle @value{SUBTITLE}
+@subtitle Edition @value{EDITION}, for SmallBASIC Version @value{VERSION}
+@subtitle @value{UPMONTH}.
+@vskip 0pt plus 1filll
+@author Nicholas D. Christopoulos
+
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+@page
+@vskip 0pt plus 1filll
+@title The SmallBASIC Team
+@sp 1
+@b{Nicholas Christopoulos}@*
+@email{nereus@@freemail.gr}, Athens - Greece.@*
+Original author and project manager.
+@sp 1
+@b{Tim Corcoran}@*
+@email{tim@@whdl.com}, USA.@*
+Sony Clie version, and SB developer
+@sp 1
+@b{Chris Warren-Smith}@*
+@email{chris.warren-smith@@team.telstra.com}, Adelaide - South Australia.@*
+Franklin's eBookMan version, and SB developer@*
+@url{http://www.twpo.com.au/cwarrens/ebm}
+@sp 1
+@b{Earle F. Philhower}@*
+@email{earle@@ziplabel.com}, USA.@*
+Helio (VTOS) version@*
+@url{http://www.ziplabel.com/}
+@sp 4
+@b{Web Site}@*
+@url{http://smallbasic.sf.net}
+@sp 1
+@b{Forum}@*
+@url{http://smallbasic.sf.net/forum}
+
+@end titlepage
+
+@paragraphindent 0
+
+@c ------------------------------------------------------------------------------------------------------------
+@ifnottex
+@node Top
+@top Welcome to SmallBASIC
+
+SmallBASIC (SB) is a simple computer language,
+featuring a clean interface, strong mathematics and
+string library.
+We feel it is an ideal tool for experimenting with simple
+algorithms, for having fun.
+
+@end ifnottex
+
+@c --- MENU -------------------------------------------------------------------------
+
+@ifinfo
+@menu
+* Introduction ::
+* The language ::
+* Commands ::
+* System ::
+* Graphics & Sound ::
+* Miscellaneous ::
+* File system ::
+* Mathematics ::
+* 2D Algebra ::
+* Strings ::
+* Console ::
+* Limits ::
+* Interactive Mode ::
+* MySQL Module ::
+* GDBM Module ::
+* Writting Modules ::
+* Glossary ::
+* GNU Free Documentation License ::
+* Command Index ::
+* Variable Index ::
+@end menu
+@end ifinfo
+
+@c ------------------------------------------------------------------------------------------------------------
+
+@contents
+
+@c ------------------------------------------------------------------------------------------------------------
+@c --- texi2man data ---
+
+@c MAN .TH sbasic 1 "Aug 2003" SF "SmallBASIC User's Guide"
+@c MAN .SH NAME
+@c MAN sbasic \- SmallBASIC interpreter
+@c MAN 
+@c MAN .SH SYNOPSIS
+@c MAN .B sbasic [\fRoptions\fB] \fRsource-file\fB [--] [\fRprogram parameters\fB]
+@c MAN 
+ 
+@c ------------------------------------------------------------------------------------------------------------
+@node Introduction
+@chapter Introduction
+
+@section Welcome to SmallBASIC
+
+SmallBASIC (SB) is a simple computer language,
+featuring a clean interface, strong mathematics
+and string library.
+We feel it is an ideal tool for experimenting
+with simple algorithms, for having fun.
+
+@subsection About BASIC
+BASIC is a very simple language and it is
+a perfect tool for calculations or utilities.
+Its name stands for (B)eginners (A)ll-purpose (S)ymbolic
+(I)nstruction (C)ode. It was developed by John Kemeny
+and Thomas Kurtz at Dartmouth College during the
+middle of 1960, and was one of the most popular
+languages for several decades.
+
+However, at the last decades it was upgraded to
+survive on the new programming environments. It
+was modernized and that was hard required.
+
+In the first upgrade, BASIC was transformed to
+a structured language. As far, as I known, the
+first structured BASIC was the QuickBASIC (QB),
+a Microsoft product. Several structured dialects
+was followed from other companies.
+
+In the second upgrade, BASIC was transformed to
+an (almost) object-oriented language. As far, as I known,
+the first OO BASIC was the VisualBASIC (VB),
+a Microsoft product. In that stage BASIC was become
+very problematic, since, Microsoft was introduced
+ObjectPascal and C++ technologies in a language with
+very different design and purpose of existance!
+
+Anyway, we strongly disagree with the "new" feautures
+and the way that are implemented in VB.
+Every language created for specified purposes,
+BASIC for beginners, C for low-level programming,
+Prolog for AI, etc.
+VB it is not object-oriented nor a simple language
+(anymore),
+but it is a bad designed mix of other languages.
+
+@subsection About SmallBASIC
+SmallBASIC was created by Nicholas Christopoulos
+in May of 2000, to be used as an advanced calculator for
+his Palm IIIx handheld device.
+In Jan of 2001, SB moved to the web as an GPL project.
+
+Because SB was designed for that small device (Palm IIIx),
+and because was small compared to desktop-computer BASICs,
+it takes the prefix 'Small'.
+
+SB is a structured version of BASIC and
+includes a lot of new feautures such matrices,
+algebra functions, powerfull string library, etc.
+
+@subsubsection Purpose
+@strong{BASIC is easy to learn and simple to use, and this is the spirit of SB}.
+Instead of other BASIC versions, as VB, our version
+intent to sucrifice everything in the alter
+of simplicity.
+
+The world is full of languages, SB does not offers
+something new, but intents to offer what is lost in our
+days. A simple tool for easy to write programs.
+
+Our priorities are to build
+@itemize @bullet
+@item An extremly easy learned language
+@item An extremly easy to use language
+@item An ideal tool for experimenting on programming
+@end itemize
+
+SB isn't object oriented and it is not intent to be.
+We find OOP hard to learn and hard to use by beginners;
+and that is opposite of the spirit of BASIC. On the other
+hand the 'units' can serve a similar scope pretty good for
+a simple language as the SB.
+
+@subsubsection Cross-platform
+Now, SB can run on more platforms than PalmOS,
+such Linux, DOS, Win32, EBM and VTOS. An mechanism
+had inserted and porting to different platforms
+is an easy task. For this reason, SB claims that
+it is a cross-platform language.
+
+@c ------------------------------------------------------------------------------------------------------------
+@section Useful notes for beginners
+
+@subsection What we must already know
+
+@table @b
+
+@item Integer Number
+  A number that does not have a fractional part.
+
+@item Floating-Point Number
+@itemx Real Number
+  Often referred to in mathematical terms as real number,
+  this is just a number that can have a fractional part.
+
+@item Numeric Constants
+  Numeric constants may be entered with any number of digits. For extremly large
+  or small numbers, it is usually more convenient to use scientific notation.
+
+  In scientific notation, a number is given as a mantissa (a number with one
+  place to the left of the decimal point) times 10 raised to an integer power.
+
+  Scientific Notation Examples@sc{:}
+@example
+  15    is expressed as 1.5*10^1,  is typed as 1.5E+1
+  150   is expressed as 1.5*10^2,  is typed as 1.5E+2
+  1500  is expressed as 1.5*10^3,  is typed as 1.5E+3
+  1500  is expressed as -1.5*10^3, is typed as -1.5E+3
+  0.15  is expressed as 1.5*10^-1, is typed as 1.5E-1
+@end example
+
+@item Numeric Expressions
+  Numeric expressions are constructed from numeric constants, variables,
+  and functions using the arithmetic operators for addition (+),
+  substraction (-), multiplication (*), division (/) and exponentiation (^).
+
+  The minus sign (-) can be used either to indicate subtraction or as a unary
+  minus.
+
+  The normal hierarchy for evaluating a numeric expression is exponentiation,
+  followed by multiplication and division, and then by addition and
+  subtraction. However, any part of a numeric expression that is enclosed in
+  parenthesis is evaluated first.
+
+  In SB more operators are supported. For further reading please see 'Operators'
+  section.
+
+@item String
+  A datum consisting of a sequence of characters, such as @samp{I am a
+  string}.
+
+@item String Constants
+  String constants are the texts enclosed in double quotation marks,
+  like this@sc{:}
+@example
+  "I am a string constant!"
+@end example
+
+@item String Expressions
+  String expressions are constructed from string variables, string constants,
+  and function references using the operation for concatenation (+) to combine
+  strings.
+
+  Example@sc{:}
+@example
+  x = "HI" + " THERE!"
+@end example
+  In this example, the @var{x} is equal to "HI THERE!".
+
+@item Relational Expressions
+  Relational expressions are most often used in the IF-THEN statement,
+  but may be used anywhere that numeric expressions are allowed. A
+  relational expression has a value of non-zero if it is true and a value
+  of 0 if it is false. Relational operators are performed, from left to right,
+  after all arithmetic operations are completed. The most usual relational operators
+  are:
+
+@example
+  Equal to (=),     Not equal to (<>)
+  Less than (<),    Less than or equal to (<=)
+  Greater than (>), Greater than or equal to (>=)
+@end example
+
+@item Boolean Expressions (also known as Logical Expressions)
+  Named after the English mathematician Boole.
+
+  Logical expressions are used usual with relational expressions. The logical
+  operators are AND, OR and NOT. If true, logical expressions are given
+  a value of non-zero. If false, they are given a value of 0.
+
+  A logical expression using @code{AND} is true if both its left and right clauses are true.
+
+  A logical expression using @code{OR} is true if either its left or its right, or both, clauses are true.
+
+  A logical expression using @code{NOT} is true if the following clause it is not true.
+
+@item Variable
+  A variable is a name which represents a value.
+  Actually the value exists in memory, a variable represent the memory space
+  that holds the value.
+
+@item Array
+  A grouping of multiple values under the same variable.
+
+@item Keyword
+  In a language, a keyword is a word that has special meaning.
+  Keywords are reserved and may not be used as variable names.
+
+@item Statement
+  An important unit of the language
+
+@item Command
+  Also, known as build-in procedure
+
+@item Comment
+  ...
+
+@item Assignment
+  An expression that changes the value of some variable.
+  The value that you can assign to is called an @dfn{lvalue}.
+  The assigned values are called @dfn{rvalues}.
+
+@item Procedure
+@itemx Routine
+@itemx SubRoutine
+  A specialized group of statements used to encapsulate general
+  or program-specific tasks. SB has a number of built-in
+  procedures, and also allows you to define your own.
+
+  In older times those groups of statements was called routines.
+  This is why the 'procedures' are called @code{SUB}(routines) in
+  @dfn{BASIC}.
+
+@item Function
+  A specialized group of statements used to encapsulate general
+  or program-specific tasks. SB has a number of built-in
+  functions, and also allows you to define your own.
+
+  The difference between function and procedure is that,
+  function can return a value and can be used inside expressions.
+  Procedure can't do that.
+
+@item Space
+  The character generated by hitting the space bar on the keyboard.
+
+@item Tab
+  The character generated by hitting the @key{TAB} key on the keyboard.
+  It usually expands to up to eight or four spaces upon output.
+
+@item Whitespace
+  A sequence of space, TAB, vertical tab, from-feed, or newline characters occurring inside
+  an input record or a string.
+
+@end table
+
+@c ----
+@subsection How to read the syntax
+
+@itemize @bullet
+@item Everything is written inside of [ ] characters are optional values.
+@item Everything is written inside of @{ @} characters means you must select one of them.
+@item The symbol | means OR.
+@item The symbols ... means you can repeat the previous syntax.
+@item The keywords are written with capital letters.
+@item The parameters are written with lower letters.
+@item The keywords with suffix ( ) are functions.
+@item The parameters with suffix ( ) are arrays.
+@end itemize
+
+Example #1@sc{:}
+@verbatim
+FOO     <- This is keyword
+FOO()   <- This is function
+foo     <- This is variable/parameter
+foo()   <- This is array/parameter
+{A|B}   <- This means that you must type A or B
+[{A|B}] <- This means that you must use A or B or nothing
+@end verbatim
+
+Example #2@sc{:}
+@verbatim
+FOO a[, x]
+@end verbatim
+
+This means that you must give the first parameter (a)
+but you can use the second (x) only if you want to. But if
+you want to use the (x) you must also separate it from (a)
+with a comma.
+
+Example #3@sc{:}
+@verbatim
+FOO var [{,|;} var2 [...]]
+@end verbatim
+
+This means that you must use the first parameter. You can
+also use second parameter but you must separate it with ','
+or ';'. You can also repeat the last syntax more times
+
+The following code respects this syntax
+@verbatim
+FOO a
+FOO a, b
+FOO a; b
+FOO a, b; c
+FOO a, b, c
+FOO a; b; c, d; e, f, g
+@end verbatim
+
+@sp 1
+Example #4@sc{:}
+@verbatim
+' Syntax: TEST {1|2}
+TEST 1
+TEST 2
+
+' Syntax: TEST [HI]
+TEST
+TEST HI
+@end verbatim
+
+@section Running SB Interactively
+
+Interactive mode is supported only on console mode (Unix, DOS or Win32 Console).
+The SmallBASIC is started by typing @command{sbasic}.
+When the SB starts, a prompt appears at which we can run any OS command
+or starting typing the program.
+
+@cartouche
+@example
+# sbasic
+SmallBASIC VERSION 0.9.0
+        Copyright (c) 2000-2003 Nicholas Christopoulos
+
+Type 'HELP' for help; type 'BYE' or press Ctrl+C for exit.
+
+* READY *
+
+/home/nikosc>
+@end example
+@end cartouche
+
+Type the following program, pressing @key{ENTER} at the end of each program line.
+
+@example
+10 PRINT "Are you ready"
+20 PRINT "to learn BASIC?"
+30 END
+@end example
+
+Check the program now to see if there are any typing mistakes.
+If there are, use @key{up-arrow} or @key{down-arrow} to find the previously typed lines.
+Use @key{right-arrow} or @key{left-arrow} to move inside the line.
+Fix the problem and press @key{ENTER}.
+
+When you are ready to see the program in action, type @kbd{CLS@key{ENTER}}.
+The screen will be cleared.
+
+Now, type @kbd{RUN@key{ENTER}}.
+
+@cartouche
+@example
+/home/nikosc> run
+
+Are you ready
+to learn BASIC?
+
+ * DONE *
+/home/nikosc>
+@end example
+@end cartouche
+
+Now, type @kbd{LIST@key{ENTER}} to see your program lines.
+
+@cartouche
+@example
+/home/nikosc> list
+  10: PRINT "Are you ready"
+  20: PRINT "to learn BASIC?"
+  30: END
+/home/nikosc>
+@end example
+@end cartouche
+
+This is the simpliest way to run SB, usefull when we want to do some
+temporary calculations. It is also give us a taste of the old times.
+
+@section Running SB
+
+The usual way is type our program to an editor and save that in a file.
+Typically an SB program file must be terminated with @file{.sb} or @file{.bas}.
+That helps the OS to understand the type of the file.
+
+Create a file with an editor like @command{joe}, @command{kate} or @command{EDIT}.
+Give to them a name, for example @file{myprog.sb}.
+Type some commands like our previous example, save it and exit from the editor.
+Now, run SB by using the file-name as parameter.
+
+@cartouche
+@example
+# sbasic -q myprog.sb
+Hello, world!
+#
+@end example
+@end cartouche
+
+The -q option tells to SB to be quite.
+
+There are also more advanced ways to run a program with SB.
+For example, type a program that prints out SB commands!
+
+myprog.sb
+@example
+PRINT "PRINT 3/4"
+@end example
+
+Now, run it by using | (pipe) symbol.
+
+@cartouche
+@example
+# sbasic -q myprog.sb | sbasic -q
+0.75
+#
+@end example
+@end cartouche
+
+We did something very simple.
+The first sbasic runs the @file{myprog.sb}, this program prints out the @code{PRINT 3/4} text.
+The second @command{sbasic} was execute the result of the first @command{sbasic} which was the code @code{PRINT 3/4}.
+
+@subsection Unix script executables
+In Unices we can create script executables. Those script are working similar
+to the common executables.
+
+We need only two things.
+
+a) A line at the beginning of our program@*
+@code{#!/usr/bin/sbasic -q}
+
+b) And sets the executable attribute of the file@*
+@code{# chmod 0777 myprog.sb}
+
+Now we can run it as usual.
+
+@cartouche
+@example
+# ./myprog.sb
+Hello, world!
+#
+@end example
+@end cartouche
+
+We can find more on scripts, paths and Unix attributes on Unix manuals.
+
+@c ------------------------------------------------------------------------------------------------------------
+@node The language
+@chapter The language
+
+This chapter documents language structure.
+
+@section Constants and Variables
+
+@itemize @bullet{}
+@item All user variables (include arrays) are 'Variant'. That means the data-type is invisible to user.
+@item User-defined data types are not allowed.
+@item Arrays are always dynamic, even if you had declared their size, with dynamic size and type of elements.
+@end itemize
+
+However, SmallBASIC uses, internally, 4 data-types
+
+@enumerate
+@item Integer  (32bit)
+@item Real     (64bit)
+@item String   (<32KB on 16bit / 2GB on 32bit)
+@item Array    (~2970 elements on 16bit / ~50M elements on 32bit)
+@end enumerate
+
+Convertions between those types are performed internaly. In anycase there are functions for the user to do it manualy.
+
+@subsection Variable names
+
+Variable names can use any alphanumeric characters, extended characters
+(ASCII codes 128-255 for non-English languages) the symbol '_', and the symbol '$'.
+
+The first character of the name cannot be a digit nor a '$'.
+
+@subsection About the dollar-symbol
+
+The symbol '$' is supported for compatibility. Since in SmallBASIC there are no
+data-types its use is meaningless.
+
+The dollar in function names will be ignored
+
+The dollar in variable names will be count as part of the name
+(that means v and v$ are two different variables). It can be used only
+as the last character of the name, and only one allowed.
+
+The dollar in system variables names will be ignore it
+(that means COMMAND and COMMAND$ is the same)
+
+Example of variable names@sc{:}
+
+@example
+abc, a_c, _bc, ab2c, abc$ -> valid names
+1cd, a$b, $abc            -> invalid names
+@end example
+
+@subsection Integers
+
+This is the default data type. You can declare integers in decimal,
+hexadecimal, octal and binary form.
+@*
+
+@example
+x = 256   '
+x = 0x100 ' Hexadecimal form 1
+x = &h100 ' Hexadecimal form 2
+@*
+x = 0o400 ' Octal form 1
+x = &o400 ' Octal form 2
+@*
+x = 0b111 ' Binary form 1
+x = &b111 ' Binary form 2
+@end example
+
+@subsection Reals
+
+Any number which out-bounds the limits or an 'integer' or had decimal
+digits will be converted automatically to real.
+
+@example
+x = .25
+x = 1.2
+@end example
+
+Reals can be also written by using scientific notation.
+1E+2 or 1E-+2, 5E--2, 2.6E-0.25, etc
+
+@subsection Strings
+
+Strings may be appended to one another using the + operator.
+
+@example
+b = "Hello, " + "world!"
+@end example
+
+@subsection Constants
+
+Constant variables can be declared by using the keyword CONST
+
+@example
+CONST my_pi = 3.14
+@end example
+
+@c ---------------------------------------------------
+@section System Variables
+
+System variables, are constant variables for the programmer.
+Those variables get values or modified at run-time by the SB's
+subsystem.
+
+@vtable @var
+@item OSNAME
+Operating System name
+@item OSVER
+Operating System Version (0xAABBCC (A=major, B=minor, C=patch))
+@item SBVER
+SmallBASIC Version (0xAABBCC)
+@item PI
+3.14..
+@item XMAX
+Graphics display, maximum x (width-1)
+@item YMAX
+Graphics display, maximum y (height-1) value
+@item BPP
+Graphics display@sc{:} bits per pixel (color resolution)
+@item VIDADR
+Video RAM address (only on specific drivers)
+@item CWD
+Current Working Directory
+@item HOME
+User's home directory
+@item COMMAND
+Command-line parameters
+@item TRUE
+The value 1
+@item FALSE
+The value 0
+@end vtable
+
+@c ---------------------------------------------------
+@section Operators
+
+Sorted by priority
+@multitable @columnfractions 0.1 0.56
+@item ( )           @tab Parenthesis
+@item               @tab
+@item +, -          @tab Unary
+@item ~             @tab bitwise NOT
+@item NOT or !      @tab Logical NOT  (NOT false = true)
+@item               @tab
+@item ^             @tab Exponentiation
+@item               @tab
+@item *, /, \       @tab Multiplication, Division, Integer Division
+@item % or MOD      @tab Reminder (QB compatible@sc{:} a=int(a), b=int(b), a-b*(a/b))
+@item MDL           @tab Modulus  (a%b+b*(sgn(a)<>sgn(b)))
+@item               @tab
+@item +, -          @tab Addition/Concatenation, Subtraction
+@item               @tab
+@item =             @tab Equal
+@item <> or !=      @tab Not Equal
+@item >,    <       @tab Less Than, Greater Than
+@item =>,   =<      @tab Less or Equal, Greater or Equal
+@item >=,   <=      @tab Less or Equal, Greater or Equal
+@item IN            @tab In/set (see "The IN operator")
+@item LIKE          @tab Regular expression match (see "The LIKE operator")
+@item               @tab
+@item AND or &&     @tab Logical AND
+@item OR  or ||     @tab Logical OR
+@item BAND or &     @tab bitwise AND
+@item BOR  or |     @tab bitwise OR
+@item EQV           @tab bitwise EQV
+@item IMP           @tab bitwise IMP
+@item XOR           @tab bitwise XOR
+@item NAND          @tab bitwise NAND
+@item NOR           @tab bitwise NOR
+@item XNOR          @tab bitwise XNOR
+@end multitable
+
+@c ---------------------------------------------------
+@section Special Characters
+
+@multitable @columnfractions 0.07 0.93
+@item &h or 0x     @tab Prefix for hexadecimal constant (0x1F,   &h3C)
+@item &o or 0o     @tab Prefix for octal constant       (0o33,   &o33)
+@item &b or 0b     @tab Prefix for binary constant      (0b1010, &b1110)
+@item [,;]         @tab Array definition (function ARRAY())                    ($1)
+@item <<           @tab Appends to an array (command APPEND)                   ($1)
+@item ++           @tab Increase a value by 1 (x = x + 1)                      ($1)
+@item --           @tab Decrease a value by 1 (x = x - 1)                      ($1)
+@item p=           @tab Another LET macro (x = x p ...). Where p any character of -+/\*^%&
+@item @sc{:}       @tab Separates commands typed on the same line
+@item &            @tab Join code lines (if its the last character of the line). The result line its must not exceed the max. line size.
+@item #            @tab Meta-command (if its the first character of the line) or prefix for file handle
+@item @@            @tab The 'at' symbol can by used instead of BYREF          ($1)
+@item '            @tab Remarks
+@end multitable
+
+@sgnote{$1, Pseudo operators. These operators are replaced by compiler with a command or an expression.}
+
+@section The OPTION keyword
+
+@deffn Statement OPTION keyword parameters
+This special command is used to pass parameters to the SB-environment.
+There are two styles for that, the run-time (like BASE) which can
+change the value at run-time, and the compile-time (like PREDEF) which
+used only in compile-time and the value cannot be changed on run-time.
+@end deffn
+
+@subsection Run-Time
+
+@deffn Statement OPTION BASE lower-bound
+The @command{OPTION BASE} statement sets the lowest allowable subscript of
+arrays to @var{lower-bound}. The default is zero. The @command{OPTION BASE}
+statement can be used in any place in the source code but that is the wrong
+use of this except if we have a @strong{good} reason.
+In most cases the @command{OPTION BASE} must declared at first lines of the program
+before any @command{DIM} declaration.
+@end deffn
+
+@deffn Statement OPTION MATCH @{PCRE [CASELESS]|SIMPLE@}
+Sets as default matching algorithm to (P)erl-(C)ompatible (R)egular (E)xpressions library
+or back to simple one. Matching-algorithm is used in @command{LIKE} and @command{FILES}.
+
+PRCE works only in systems with this library and it must be linked with.
+Also, there is no extra code on compiler which means that SB compiles the pattern
+everytime it is used.
+@end deffn
+
+@subsection Compile-Time
+
+@deffn Statement OPTION PREDEF parameter
+Sets parameters of the compiler. Where @var{parameter}
+@table @samp
+@item QUITE
+Sets the quite flag (-q option)
+@item COMMAND cmdstr
+Sets the @command{COMMAND$} string to @var{cmdstr} (useful for debug reasons)
+@item GRMODE [widthxheight[xbpp]]
+Sets the graphics mode flag (-g option) or sets the prefered screen resolution.
+Example@sc{:} (Clie HiRes)
+@example
+OPTION PREDEF GRMODE 320x320x16
+@end example
+@item TEXTMODE
+Sets the text mode flag (-g- option)
+@item CSTR
+Sets as default string style the C-style special character encoding ('\')
+@end table
+@end deffn
+
+@c ------------------------------------------
+@section Meta-commands
+
+@defmac #!...
+Used by Unix to make source runs as a script executable
+@end defmac
+
+@defmac #sec: section-name
+Used internally to store the section name. Sections names are used
+at limited OSes like PalmOS for multiple 32kB source code sections.
+With a few words @strong{DO NOT USE IT}!
+@end defmac
+
+@defmac #inc: file
+Used to include a SmallBASIC source file into the current BASIC code
+@end defmac
+
+@defmac #unit-path: path
+Used to setup additional directories for searching for unit-files
+This meta does nothing more than to setting up the environment
+variable SB_UNIT_PATH. Directories on Unix must separated by '@sc{:}',
+and on DOS/Windows by ';'
+@end defmac
+
+Examples
+@example
+...
+#inc:"mylib.bas"
+...
+MyLibProc "Hi"
+@end example
+
+@c ------------------------------------
+@section Arrays and Matrices
+
+Define a 3x2 matrix
+
+@example
+A = [11, 12; 21, 22; 31, 32]
+@end example
+
+That creates the array
+
+@example
+| 11  12 |
+| 21  22 | = A
+| 31  32 |
+@end example
+
+The comma used to separate column items; the semi-colon used to
+separate rows. Values between columns can be omitted.
+
+@example
+A = [ ; ; 1, 2 ; 3, 4, 5]
+@end example
+
+This creates the array
+
+@example
+| 0  0  0 |
+| 1  2  0 | = A
+| 3  4  5 |
+@end example
+
+Supported operators@sc{:}
+
+Add/sub@sc{:}
+
+@example
+B = [1, 2; 3, 4]: C = [5, 6; 7, 8]
+
+A = B + C
+C = A - B
+@end example
+
+Equal@sc{:}
+
+@example
+bool=(A=B)
+@end example
+
+Unary@sc{:}
+
+@example
+A2 = -A
+@end example
+
+Multiplication@sc{:}
+
+@example
+A = [1, 2; 3, 4]: B = [5 ; 6]
+C = A * B
+D = 0.8 * A
+@end example
+
+Inverse@sc{:}
+
+@example
+A = [ 1, -1, 1; 2, -1, 2; 3, 2, -1]
+? INVERSE(A)
+@end example
+
+Gauss-Jordan@sc{:}
+
+@example
+? "Solve this:"
+? "  5x - 2y + 3z = -2"
+? " -2x + 7y + 5z =  7"
+? "  3x + 5y + 6z =  9"
+?
+A = [ 5, -2, 3; -2, 7, 5; 3, 5, 6]
+B = [ -2; 7; 9]
+C = LinEqn(A, B)
+? "[x;y;z] = "; C
+@end example
+
+There is a problem with 1 dimension arrays, because 1-dim arrays does not specify how SmallBASIC must see them.
+
+@example
+DIM A(3)
+
+| 1 2 3 | = A
+
+or
+
+| 1 |
+| 2 | = A
+| 3 |
+@end example
+
+And because this is not the same thing. (ex. for multiplication)
+So the default is columns
+
+@example
+DIM A(3) ' or A(1,3)
+
+| 1 2 3 | = A
+@end example
+
+For vertical arrays you must declare it as 2-dim arrays Nx1
+
+@example
+DIM A(3,1)
+
+| 1 |
+| 2 | = A
+| 3 |
+@end example
+
+@section Nested arrays
+
+Nested arrays are allowed
+
+@example
+A = [[1,2] , [3,4]]
+B = [1, 2, 3]
+C = [4, 5]
+B(2) = C
+print B
+@end example
+
+This will be printed
+
+@example
+[1, 2, [4, 5], 3]
+@end example
+
+You can access them by using a second (or third, etc) pair of
+parenthesis.
+
+@example
+B(2)(1) = 16
+print B(2)(1)
+
+Result:
+    16
+@end example
+
+@c -------------------------------------------------------------
+@section The operator IN
+
+IN operator is used to compare if the left-expression belongs to
+right-expression
+
+@example
+' Using it with arrays
+print 1 in [2,3]        :REM FALSE
+print 1 in [1,2]        :REM TRUE
+...
+' Using it with strings
+print "na" in "abcde"   :REM FALSE
+print "cd" in "abcde"   :REM TRUE
+...
+' Using it with number (true only if left = right)
+print 11 in 21          :REM FALSE
+print 11 in 11          :REM TRUE
+...
+' special case
+' auto-convert integers/reals
+print 12 in "234567"    :REM FALSE
+print 12 in "341256"    :REM TRUE
+@end example
+
+@c ------------------------------------------------
+@section The operator LIKE
+
+LIKE is a regular-expression operator.
+It is compares the left part of the expression with the pattern (right
+part).
+Since the original regular expression code is too big (for handhelds),
+I use only a subset of it, based on an excellent old stuff by
+J. Kercheval (match.c, public-domain, 1991).
+The same code is used for filenames (FILES(), DIRWALK)
+
+In the pattern string@sc{:}
+@multitable @columnfractions 0.25 0.75
+@item *       @tab matches any sequence of characters (zero or more)
+@item ?       @tab matches any character
+@item [SET]   @tab matches any character in the specified set,
+@item [!SET] or [^SET] @tab matches any character not in the specified set.
+@end multitable
+
+A set is composed of characters or ranges; a range looks like
+character hyphen character (as in 0-9 or A-Z). [0-9a-zA-Z_] is the
+minimal set of characters allowed in the [..] pattern construct.
+
+To suppress the special syntactic significance of any of `[]*?!^-\',
+and match the character exactly, precede it with a `\'.
+
+@example
+? "Hello" LIKE "*[oO]" : REM TRUE
+? "Hello" LIKE "He??o" : REM TRUE
+? "Hello" LIKE "hello" : REM FALSE
+? "Hello" LIKE "[Hh]*" : REM TRUE
+@end example
+
+@section The pseudo-operator <<
+
+This operator can be used to append elements to an array.
+
+@example
+A << 1
+A << 2
+A << 3
+
+? A(1)
+@end example
+
+@c ------------------------------------
+@section Subroutines and Functions
+
+@b{Syntax of procedure (SUB) statements}
+@example
+SUB name [([BYREF] par1 [, ...[BYREF] parN)]]
+  [LOCAL var[, var[, ...]]]
+  [EXIT SUB]
+  ...
+END
+@end example
+
+@b{Syntax of function (FUNC) statements}
+@example
+FUNC name[([BYREF] par1 [, ...[BYREF] parN)]]
+  [LOCAL var[, var[, ...]]]
+  [EXIT FUNC]
+  ...
+  name=return-value
+END
+@end example
+
+On functions you must use the function's name to return the value.
+That is, the function-name acts like a variable and it is the
+function's returned value.
+
+The parameters are 'by value' by default.
+Passing parameters by value means the executor makes a copy of the
+parameter to stack. The value in caller's code will not be changed.
+
+Use @command{BYREF} keyword for passing parameters 'by reference'.
+Passing parameters by reference means the executor push the pointer
+of variable into the stack. The value in caller's code will be the
+changed.
+
+@example
+' Passing 'x' by value
+SUB F(x)
+  x=1
+END
+@*
+x=2
+F x
+? x:REM displays 2
+@end example
+
+@example
+' Passing 'x' by reference
+SUB F(BYREF x)
+  x=1
+END
+@*
+x=2
+F x
+? x:REM displays 1
+@end example
+
+You can use the symbol '@@' instead of @command{BYREF}.
+There is no difference between @@ and @command{BYREF}.
+
+@example
+SUB F(@@x)
+  x=1
+END
+@end example
+
+On a multi-section (PalmOS) applications sub/funcs needs
+declaration on the main section.
+
+@example
+#sec:Main
+declare func f(x)
+
+#sec:another section
+func f(x)
+...
+end
+@end example
+
+Use the @command{LOCAL} keyword for local variables.
+@command{LOCAL} creates variables (dynamic) at routine's code.
+
+@example
+SUB MYPROC
+  LOCAL N:REM LOCAL VAR
+  N=2
+  ? N:REM displays 2
+END
+
+N=1:REM GLOBAL VAR
+MYPROC
+? N:REM displays 1
+@end example
+
+You can send arrays as parameters.
+
+When using arrays as parameters its better to use them as @command{BYREF};
+otherwise their data will be duplicated in memory space.
+
+@example
+SUB FBR(BYREF tbl)
+  ? FRE(0)
+  ...
+END
+
+SUB FBV(tbl)
+  ? FRE(0)
+  ...
+END
+
+' MAIN
+DIM dt(128)
+...
+? FRE(0)
+FBR dt
+? FRE(0)
+FBV dt
+? FRE(0)
+@end example
+
+Passing & returning arrays, using local arrays.
+
+@example
+func fill(a)
+  local b, i
+
+  dim b(16)
+  for i=0 to 16
+    b(i)=16-a(i)
+  next
+  fill=b
+end
+
+DIM v()
+v=fill(v)
+@end example
+
+@c ---------------------------------------------------------
+@section Single-line Functions
+There is also an alternative @command{FUNC}/@command{DEF} syntax (single-line functions).
+This is actually a macro for compatibility with the BASIC's DEF FN
+command, but quite usefull.
+
+@b{Syntax}:
+@example
+FUNC name[(par1[,...])] = expression
+or
+DEF name[(par1[,...])] = expression
+@end example
+
+@example
+DEF MySin(x) = SIN(x)
+? MySin(pi/2)
+@end example
+
+@c -----------------------------------------------------
+@section Nested procedures and functions
+One nice feauture, are the nested procedures/functions.
+The nested procedures/functions are visible only inside the "parent"
+procedure/function.
+
+There is no way to access a global procedure with the same name of
+a local... yet...
+
+@example
+FUNC f(x)
+    Rem Function: F/F1()
+    FUNC f1(x)
+        Rem Function: F/F1/F2()
+        FUNC f2(x)
+            f2=cos(x)
+        END
+        f1 = f2(x)/4
+    END
+    Rem Function: F/F3()
+    FUNC f3
+        f3=f1(pi/2)
+    END
+REM
+? f1(pi) : REM OK
+? f2(pi) : REM ERROR
+f = x + f1(pi) + f3 : REM OK
+END
+@end example
+
+@c -------------------------------------------
+@section Units (SB libraries)
+
+Units are a set of procedures, functions and/or variables that can
+be used by another SB program or SB unit.
+The main section of the unit (commands out of procedure or function bodies)
+is the initialization code.
+
+A unit declared by the use of @command{UNIT} keyword.
+
+@example
+UNIT MyUnit
+@end example
+
+The functions, procedure or variables which we want to be visible to
+another programs must be declared with the @command{EXPORT} keyword.
+
+@example
+UNIT MyUnit
+EXPORT MyF
+...
+FUNC MyF(x)
+...
+END
+@end example
+
+@sgnote{*, Keep file-name and unit-name the same. That helps the SB to
+automatically recompile the required units when it is needed.}
+
+To link a program with a unit we must use the @command{IMPORT} keyword.
+
+@example
+IMPORT MyUnit
+@end example
+
+To access a member of a unit we must use the unit-name,
+a point and the name of the member.
+
+@example
+IMPORT MyUnit
+...
+PRINT MyUnit.MyF(1/1.6)
+@end example
+
+Full example@sc{:}
+
+file my_unit.bas@sc{:}
+@example
+UNIT MyUnit
+
+EXPORT F, V
+
+REM a shared function
+FUNC F(x)
+    F = x*x
+END
+
+REM a non-shared function
+FUNC I(x)
+    I = x+x
+END
+
+REM Initialization code
+V="I am a shared variable"
+L="I am invisible to the application"
+PRINT "Unit 'MyUnit' initialized :)"
+@end example
+
+file my_app.bas@sc{:}
+@example
+IMPORT MyUnit
+
+PRINT MyUnit.V
+PRINT MyUnit.F(2)
+@end example
+
+@c -------------------------------------------
+@section The pseudo-operators ++/--/p=
+
+The ++ and -- operators are used to increase or decrease the value of a
+variable by 1.
+
+@example
+x = 4
+x ++ : REM x <- x + 1 = 5
+x -- : REM x <- x - 1 = 4
+@end example
+
+The generic p= operators are used as in C
+Where p any character of -+/\*^%&|
+
+@example
+x += 4 : REM x <- x + 4
+x *= 4 : REM x <- x * 4
+@end example
+
+All these pseudo-operators are not allowed inside of expressions
+
+@example
+y = x ++ ' ERROR
+z = (y+=4)+5 ' ALSO ERROR
+@end example
+
+@c --------------------------------
+@section The USE keyword
+
+This keyword is used on specific commands to passing a user-defined
+expression.
+
+Example@sc{:}
+
+@example
+SPLIT s," ",v USE TRIM(x)
+@end example
+
+In that example, every element of V() will be 'trimmed'.
+
+Use the x variable to specify the parameter of the expression.
+If the expression needs more parameter, you can use also the names
+y and z
+
+@c -----------------------------------
+@section The DO keyword
+
+This keyword is used to declare single-line commands.
+It can be used with WHILE and FOR-family commands.
+
+Example@sc{:}
+
+@example
+FOR f IN files("*.txt") DO PRINT f
+...
+WHILE i < 4 DO i ++
+@end example
+
+Also, it can be used by IF command (instead of THEN), but is not
+suggested.
+
+@c --------------------------------------
+@section Programming Tips
+
+@c --c--
+@subsection Using @code{LOCAL} variables
+When a variable is not declared it is by default a global variable.
+A usual problem is that name may be used again in a function or procedure.
+
+@example
+FUNC F(x)
+  FOR i=1 TO 6
+    ...
+  NEXT
+END
+
+FOR i=1 TO 10
+  PRINT F(i)
+NEXT
+@end example
+In this example, the result is a real mess, because the @var{i} of the main loop will
+always (except the first time) have the value 6!
+
+This problem can be solved if we use the @code{LOCAL} keyword to declare the @var{i}
+in the function body.
+@example
+FUNC F(x)
+  LOCAL i
+
+  FOR i=1 TO 6
+    ...
+  NEXT
+END
+
+FOR i=1 TO 10
+  PRINT F(i)
+NEXT
+@end example
+
+It is good to declare all local variables on the top of the function.
+
+@c --c--
+@subsection Loops and variables
+When we write loops it is much better to initialize
+the counters on the top of the loop instead of the
+top of the program or nowhere.
+
+@example
+i = 0
+REPEAT
+  ...
+  i = i + 1
+UNTIL i > 10
+@end example
+
+Initializing the variables at the top of the loop,
+can make code better readable, and can protect us from
+usual pitfalls such as forgeting to giving init
+value or re-run the loop without reset the variables.
+
+@c --c--
+@subsection Loops and expressions
+FOR-like commands are evaluate the 'destination' everytime.
+Also, loops are evaluate the exit-expression everytime too.
+
+@example
+FOR i=0 TO LEN(FILES("*.txt"))-1
+    PRINT i
+NEXT
+@end example
+
+In that example the 'destination' is the LEN(FILES("*.txt"))-1
+For each value of i the destination will be evaluated.
+That is WRONG but it is supported by BASIC and many other languages.
+
+So, it is much better to be rewritten as
+
+@example
+idest=LEN(FILES("*.txt"))-1
+FOR i=0 TO idest
+    PRINT i
+NEXT
+@end example
+
+Of course, it is much faster too.
+
+@c ------------------------------------------------------------------------------------------------------------
+@node Commands
+@chapter Commands
+
+@c -----------
+@deffn Statement REM comment
+Adds explanatory text to a program listing. @var{comment} commentary text,
+ignored by BASIC.
+
+Instead of the keyword we can use the symbol ' or the #. The # can be used as remarks only
+if its in the first character of the line.
+
+Example@sc{:}
+
+@example
+' That text-line is just a few remarks
+...
+REM another comment
+...
+# one more comment
+@end example
+@end deffn
+
+@c -----------
+@deffn Statement LET var = expr
+Assigns the value of an expression to a variable. The @command{LET} is optional.
+
+@table @var
+@item  var
+A valid variable name.
+@item  expr
+The value assigned to variable.
+@end table
+
+Example@sc{:}
+
+@example
+LET x = 4
+x = 1               ' Without the LET keyword
+z = "String data"   ' Assign string
+...
+DIM v(4)
+z=v                 ' Assign array (z = clone of v)
+@end example
+@end deffn
+
+@c -----------
+@deffn Statement CONST name = expr
+Declares a constant.
+
+@table @var
+@item  name
+An identifier that follows the rules for naming BASIC variables.
+@item  expr
+An expression consisting of literals, with or without operators, only.
+@end table
+
+Example@sc{:}
+
+@example
+COSNT G = 6.67259E-11
+@end example
+@end deffn
+
+@c -----------
+@deffn Statement DIM var([lower TO] upper [, ...]) [, ...]
+
+The @command{DIM} statement reserves space in computer's memory for arrays.
+The array will have (upper-lower)+1 elements. If the @var{lower} is not specified,
+and the @command{OPTION BASE} hasn't used, the arrays are starting from 0.
+
+Example@sc{:}
+
+@example
+REM One dimension array of 7 elements, starting from 0
+DIM A(6)
+...
+REM One dimension array of 6 elements, starting from 1
+DIM A(1 TO 6)
+...
+REM Three dimension array
+DIM A(1 TO 6, 1 TO 4, 1 TO 8)
+...
+REM Allocating zero-length arrays:
+DIM z()
+...
+IF LEN(Z)=0 THE APPEND Z, "The first element"
+@end example
+@end deffn
+
+@c ----
+@deffn Statement LABEL name
+Defines a label. A label is a mark at this position of the code.
+
+There are two kinds of labels, the 'numeric' and the 'alphanumeric'.
+
+'Numeric' labels does not needed the keyword @command{LABEL}, but 'alphanumeric'
+does.
+
+Example@sc{:}
+
+@example
+1000 ? "Hello"
+...
+LABEL AlphaLabel: ? "Hello"
+...
+GOTO 1000
+GOTO AlphaLabel
+@end example
+@end deffn
+
+@c ----
+@deffn Statement GOTO label
+Causes program execution to branch to a specified position (label).
+@end deffn
+
+@c ------
+@deffn Statement GOSUB label
+
+Causes program execution to branch to the specified label; when the
+@command{RETURN} command is encountered, execution branches to the command
+immediately following the most recent @command{GOSUB} command.
+@end deffn
+
+@c ----
+@deffn Statement RETURN
+Execution branches to the command immediately following the most recent @command{GOSUB} command.
+
+@example
+...
+GOSUB my_routine
+PRINT "RETURN sent me here"
+...
+LABEL my_routine
+PRINT "I am in my routine"
+RETURN
+@end example
+@end deffn
+
+@c ----
+@deffn Statement ON {GOTO|GOSUB} label1 [, ..., labelN]
+Causes BASIC to branch to one of a list of labels.
+
+@table @var
+@item expr
+A numeric expression in the range 0 to 255. Upon execution of
+         the ON...GOTO command (or ON...GOSUB), BASIC branches to the nth
+         item in the list of labels that follows the keyword GOTO
+         (or GOSUB).
+@end table
+@end deffn
+
+@c ----
+@deffn Statement FOR counter = start TO end [STEP incr] ... NEXT
+Begins the definition of a FOR/NEXT loop.
+
+@table @var
+@item  counter
+A numeric variable to be used as the loop counter.
+@item  start
+A numeric expression; the starting value of counter.
+@item  end
+A numeric expression; the ending value of counter.
+@item  incr
+A numeric expression; the value by which counter is
+            incremented or decremented with each iteration of the loop.
+            The default value is +1.
+@end table
+
+BASIC begins processing of the FOR/NEXT block by setting counter equal
+to start. Then, if 'incr' is positive and counter is not greater than
+end, the commands between the FOR and the NEXT are executed.
+
+When the NEXT is encountered, counter is increased by 'incr', and the
+process is repeated. Execution passes to the command following the NEXT
+if counter is greater than end.
+
+If increment is negative, execution of the FOR/NEXT loop is terminated
+whenever counter becomes less than end.
+
+FOR/NEXT loops may be nested to any level of complexity, but there
+must be a NEXT for each FOR.
+
+Example@sc{:}
+@example
+FOR C=1 TO 9
+    PRINT C
+NEXT
+@end example
+@end deffn
+
+@c -----
+@deffn Statement FOR element IN array ... NEXT
+Begins the definition of a FOR/NEXT loop.
+
+@table @var
+@item  element
+A variable to be used as the copy of the current element.
+@item  array
+An array expression
+@end table
+
+The commands-block will repeated for LEN(array) times. Each time
+the 'element' will holds the value of the current element of the array.
+
+FOR/NEXT loops may be nested to any level of complexity, but there
+must be a NEXT for each FOR.
+
+Example@sc{:}
+@example
+A=[1,2,3]
+FOR E IN A
+    PRINT E
+NEXT
+...
+' This is the same with that
+A=[1,2,3]
+FOR I=LBOUND(A) TO UBOUND(A)
+    E=A(I)
+    PRINT E
+NEXT
+@end example
+@end deffn
+
+@c ---
+@deffn Statement WHILE expr ... WEND
+
+Begins the definition of a WHILE/WEND loop.
+
+@table @var
+@item  expr
+An expression
+@end table
+
+BASIC starts by evaluating expression. If expression is nonzero (true),
+the next command is executed. If expression is zero (false), control
+passes to the first command following the next @command{WEND} command.
+
+When BASIC encounters the @command{WEND} command, it reevaluates the expression
+parameter to the most recent @command{WHILE}. If that parameter is still nonzero
+(true), the process is repeated; otherwise, execution continues at the
+next command.
+
+WHILE/WEND loops may be nested to any level of complexity, but there
+must be a WEND for each WHILE.
+
+Example@sc{:}
+@example
+C=1
+WHILE C<10
+    PRINT C
+    C=C+1
+WEND
+...
+' This is the same with that
+FOR C=1 TO 9
+    PRINT C
+NEXT
+@end example
+@end deffn
+
+@c ------
+@deffn Statement REPEAT ... UNTIL expr
+Begins the definition of a REPEAT/UNTIL loop.
+
+@table @var
+@item  expr
+An expression
+@end table
+
+BASIC starts executing the commands between the REPEAT and UNTIL
+commands. When BASIC encounters the UNTIL command, it evaluates the
+expression parameter. If that parameter is zero (false), the process
+will be repeated; otherwise, execution continues at the next command.
+
+REPEAT/UNTIL loops may be nested to any level of complexity, but there
+must be an UNTIL for each REPEAT.
+
+Example@sc{:}
+@example
+C=1
+REPEAT
+    PRINT C
+    C=C+1
+UNTIL C=10
+...
+' This is the same with that
+FOR C=1 TO 9
+    PRINT C
+NEXT
+@end example
+@end deffn
+
+@c ------
+@deffn Statement IF ...
+@b{Syntax}:
+@example
+IF expression1 [THEN]
+    .
+    . [commands]
+    .
+[ [ELSEIF | ELIF] expression2 [THEN]
+    .
+    . [commands]
+    .
+]
+[ELSE
+    .
+    . [commands]
+    .
+]
+@{ ENDIF | FI @}
+@end example
+
+Block-style IF.
+
+Causes BASIC to make a decision based on the value of an expression.
+
+@table @var
+@item  expression
+An expression; 0 is equivalent to FALSE, while all
+               other values are equivalent to TRUE.
+@item  commands
+One or more commands.
+@end table
+
+Each expression in the IF/ELSEIF construct is tested in order.
+As soon as an expression is found to be TRUE, then its corresponding
+commands are executed. If no expressions are TRUE, then the commands
+following the ELSE keyword are executed. If ELSE is not specified, then
+execution continues with the command following the ENDIF.
+
+IF, ELSE, ELSEIF, and ENDIF must all be the first keywords on their
+respective lines.
+
+THEN is optional, but if its defined it must be the last keyword on its
+line; if anything other than a comment follows on the same line with
+THEN, BASIC thinks it's reading a single-line IF/THEN/ELSE construct.
+
+IF blocks may be nested.
+
+Example@sc{:}
+
+@example
+x=1
+IF x=1 THEN
+    PRINT "true"
+ELSE
+    PRINT "false"
+ENDIF
+...
+' Alternate syntax:
+x=1
+IF x=1
+    PRINT "true"
+ELSE
+    PRINT "false"
+FI
+@end example
+
+Single-line IF.
+
+@b{Syntax}:
+@example
+IF expression THEN [num-label]|[command] [ELSE [num-label]|[command]]
+@end example
+
+Causes BASIC to make a decision based on the value of an expression.
+
+@table @var
+@item  expression
+An expression; 0 is equivalent to FALSE, while all
+               other values are equivalent to TRUE.
+@item  command
+Any legal command or a numeric label. If a number is
+               specified, it is equivalent to a GOTO command with
+               the specified numeric-label.
+@end table
+
+Example@sc{:}
+@example
+' Single-line IF
+x=1
+IF x=1 THEN PRINT "true" ELSE PRINT "false"
+...
+IF x=1 THEN 1000
+...
+1000 PRINT "true"
+@end example
+@end deffn
+
+@c ----
+@deffn Function IF (expression, true-value, false-value)
+Returns a value based on the value of an expression.
+
+Example@sc{:}
+@example
+x=0
+PRINT IF(x<>0,"true","false") : REM prints false
+@end example
+@end deffn
+
+@c ----
+@deffn Statement END [error]
+@deffnx Statement STOP [error]
+Terminates execution of a program, closes all files opened by the
+program, and returns control to the operating system.
+
+@table @var
+@item  error
+A numeric expression.
+@end table
+
+The @var{error} is the value which will returned to operating system;
+if its not specified the BASIC will return 0.
+
+@sgnote{DOS/Windows, The 'error' value is very well known as ERRORLEVEL value.}
+@end deffn
+
+@deffn Statement RESTORE label
+Specifies the position of the next data to be read.
+
+@table @var
+@item  label
+A valid label.
+@end table
+@end deffn
+
+@c ----
+@deffn Command READ var[, var ...]
+Assigns values in DATA items to specified variables.
+
+@table @var
+@item  var
+Any variable.
+@end table
+
+Unless a RESTORE command is executed, BASIC moves to the next DATA
+item with each READ assignment. If BASIC runs out of DATA items to
+READ, an run-time error occurs.
+
+Example@sc{:}
+
+@example
+FOR c=1 TO 6
+    READ x
+    PRINT x
+NEXT
+...
+DATA "a,b,c", 2
+DATA 3, 4
+DATA "fifth", 6
+@end example
+@end deffn
+
+@c ----
+@deffn Statement DATA constant1 [,constant2]...
+Stores one or more constants, of any type, for subsequent access via
+READ command.
+
+DATA commands are nonexecutable statements that supply a stream of data
+constants for use by READ commands. All the items supplied by all the
+DATA commands in a program make up one continuous "string" of
+information that is accessed in order by your program's READ commands.
+
+Example@sc{:}
+@example
+RESTORE MyDataBlock
+FOR I=1 TO 3
+    READ v
+    PRINT v
+NEXT
+END
+...
+LABEL MyDataBlock
+DATA 1,2,3
+@end example
+@end deffn
+
+@c ----
+@deffn Statement ERASE var[, var[, ... var]]
+
+@table @var
+@item  var
+Any variable.
+@end table
+
+Deallocates the memory used by the specified arrays or variables.
+After that these variables turned to simple integers with zero value.
+
+Example@sc{:}
+@example
+DIM x(100)
+...
+PRINT FRE(0)
+ERASE x
+PRINT FRE(0)
+PRINT x(1):REM ERROR
+@end example
+@end deffn
+
+@c ----
+@deffn Statement EXIT [FOR|LOOP|SUB|FUNC]
+Exits a multiline function definition, a loop, or a subprogram.
+By default (if no parameter is specified) exits from last command block
+(loop, for-loop or routine).
+
+@table @var
+@item  FOR
+Exit from the last FOR-NEXT loop
+@item  LOOP
+Exit from the last WHILE-WEND or REPEAT-UNTIL loop
+@item  SUB
+Return from the current routine
+@item  FUNC
+Return from the current function
+@end table
+@end deffn
+
+@c ----
+@deffn Function LEN (x)
+@table @var
+@item  x
+Any variable.
+@end table
+
+If x is a string, returns the length of the string.
+If x is an array, returns the number of the elements.
+If x is an number, returns the length of the STR(x).
+@end deffn
+
+@c ----
+@deffn Function EMPTY (x)
+@table @var
+@item  x
+Any variable.
+@end table
+
+If x is a string, returns true if the len(x) is 0.
+If x is an integer or a real returns true if the x = 0.
+If x is an array, returns true if x is a zero-length array (array
+without elements).
+@end deffn
+
+@c ----
+@deffn Function ISARRAY (x)
+@table @var
+@item  x
+Any variable.
+@end table
+
+Returns true if the x is an array.
+@end deffn
+
+@c ---
+@deffn Function ISNUMBER (x)
+@table @var
+@item  x
+Any variable.
+@end table
+
+Returns true if the x is a number (or it can be converted to a number)
+
+Example@sc{:}
+@example
+? ISNUMBER(12)          :REM true
+? ISNUMBER("12")        :REM true
+? ISNUMBER("12E+2")     :REM true
+? ISNUMBER("abc")       :REM false
+? ISNUMBER("1+2")       :REM false
+? ISNUMBER("int(2.4)")  :REM false
+@end example
+@end deffn
+
+@deffn Function ISSTRING (x)
+@table @var
+@item  x
+Any variable.
+@end table
+
+Returns true if the x is a string (and cannot be converted to a number)
+
+Example@sc{:}
+@example
+? ISSTRING(12)      :REM false
+? ISSTRING("12")    :REM false
+? ISSTRING("12E+2") :REM false
+? ISSTRING("abc")   :REM true
+? ISSTRING("1+2")   :REM true
+@end example
+@end deffn
+
+@deffn Command APPEND a, val [, val [, ...]]
+@table @var
+@item  a
+An array-variable.
+@item  val
+Any value or expression
+@end table
+
+Inserts the values at the end of the specified array.
+@end deffn
+
+@deffn Command INSERT a, idx, val [, val [, ...]]]
+@table @var
+@item  a
+An array-variable.
+@item  idx
+Position in the array.
+@item  val
+Any value or expression.
+@end table
+
+Inserts the values to the specified array at the position idx.
+@end deffn
+
+@deffn Command DELETE a, idx [, count]
+@table @var
+@item  a
+An array-variable.
+@item  idx
+Position in the array.
+@item  count
+The number of the elements to be deleted.
+@end table
+
+Deletes 'count' elements at position 'idx' of array A
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node System
+@chapter System
+
+@deffn Function FRE (x)
+Returns system information
+
+Where x@sc{:}
+
+QB-standard@sc{:}
+@multitable @columnfractions 0.07 0.93
+@item   0  @tab  free memory
+@item  -1  @tab  largest block of integers
+@item  -2  @tab  free stack
+@item  -3  @tab  largest free block
+@end multitable
+
+Our standard (it is optional for now)@sc{:}
+@multitable @columnfractions 0.13 0.88
+@item -10  @tab  total physical memory
+@item -11  @tab  used physical memory
+@item -12  @tab  free physical memory
+@end multitable
+
+Optional-set #1@sc{:}
+@multitable @columnfractions 0.11 0.89
+@item -13  @tab  shared memory size
+@item -14  @tab  buffers
+@item -15  @tab  cached
+@item -16  @tab  total virtual memory size
+@item -17  @tab  used virtual memory
+@item -18  @tab  free virtual memory
+@end multitable
+
+Optional-set #2@sc{:}
+@multitable @columnfractions 0.09 0.91
+@item -40  @tab  battery voltage * 1000
+@item -41  @tab  battery percent
+@item -42  @tab  critical voltage value (*1000)
+@item -43  @tab  warning voltage value (*1000)
+@end multitable
+
+The optional values will returns 0 if are not supported.
+@end deffn
+
+@deffn Command RTE [info [, ...]]
+Creates a Run-Time-Error.
+The parameters will be displayed on error-line.
+@end deffn
+
+@deffn Function TICKS
+Returns the system-ticks. The tick value is depended on operating
+system.
+@end deffn
+
+@deffn Function TICKSPERSEC
+Returns the number of ticks per second
+@end deffn
+
+@deffn Function TIMER
+Returns the number of seconds from midnight
+@end deffn
+
+@deffn Function TIME
+Returns the current time as string "HH@sc{:}MM@sc{:}SS"
+@end deffn
+
+@deffn Command TIMEHMS hms | timer, BYREF h, BYREF m, BYREF s
+Converts a time-value to hours, minutes and seconds integer values
+@end deffn
+
+@deffn Function DATE
+Returns the current day as string "DD/MM/YYYY"
+@end deffn
+
+@deffn Function JULIAN (dmy | (d,m,y))
+Returns the Julian date.
+(dates must be greater than 1/1/100 AD)
+
+Example@sc{:}
+@example
+PRINT Julian(DATE)
+PRINT Julian(31, 12, 2001)
+@end example
+@end deffn
+
+@deffn Command DATEDMY dmy | julian_date, BYREF d, BYREF m, BYREF y
+Returns the day, month and the year as integers.
+@end deffn
+
+@deffn Function WEEKDAY (dmy | (d,m,y) | julian_date)
+Returns the day of the week (0 = Sunday)
+
+@example
+PRINT WeekDay(DATE)
+PRINT WeekDay(Julian(31, 12, 2001))
+PRINT WeekDay(31, 12, 2001)
+@end example
+@end deffn
+
+@deffn Function DATEFMT (format, dmy | (d,m,y) | julian_date)
+Returns formated date string
+
+Format@sc{:}
+@multitable @columnfractions 0.14 0.86
+@item D  @tab  one or two digits of Day
+@item DD  @tab  2-digit day
+@item DDD  @tab  3-char day name
+@item DDDD  @tab  full day name
+@item M  @tab  1 or 2 digits of month
+@item MM  @tab  2-digit month
+@item MMM  @tab  3-char month name
+@item MMMM  @tab  full month name
+@item YY  @tab  2-digit year (2K)
+@item YYYY  @tab  4-digit year
+@end multitable
+
+@example
+PRINT DATEFMT("ddd dd, mm/yy", "23/11/2001")
+REM prints "Fri 23, 11/01"
+@end example
+@end deffn
+
+@deffn Command DELAY ms
+Delay for a specified amount of milliseconds.
+This 'delay' is also depended to system clock.
+@end deffn
+
+@deffn Command SORT array [USE cmpfunc]
+Sorts an array.
+
+The cmpfunc (if its specified) it takes 2 vars to compare.
+cmpfunc must returns
+
+-1 if x < y, +1 if x > y, 0 if x = y
+
+@example
+FUNC qscmp(x,y)
+IF x=y
+    qscmp=0
+ELIF x>y
+    qscmp=1
+ELSE
+    qscmp=-1
+ENDIF
+END
+...
+DIM A(5)
+FOR i=0 TO 5
+    A(i)=RND
+NEXT
+SORT A USE qscmp(x,y)
+@end example
+@end deffn
+
+@deffn Command SEARCH A, key, BYREF ridx [USE cmpfunc]
+Scans an array for the key.
+If key is not found the SEARCH command returns (in ridx) the value
+(LBOUND(A)-1). In default-base arrays that means -1.
+
+The cmpfunc (if its specified) it takes 2 vars to compare.
+It must return 0 if x = y; non-zero if x <> y
+
+@example
+FUNC cmp(x,y)
+  cmp=!(x=y)
+END
+...
+DIM A(5)
+FOR i=0 TO 5
+    A(i)=5-i
+NEXT
+SEARCH A, 4, r USE cmp(x,y)
+PRINT r:REM prints 1
+PRINT A(r): REM prints 4
+@end example
+@end deffn
+
+@deffn Command CHAIN file
+Transfers control to another SmallBASIC program.
+
+file - A string expression that follows OS file naming conventions;
+The file must be a SmallBASIC source code file.
+
+@example
+CHAIN "PROG2.BAS"
+@end example
+@end deffn
+
+@deffn Command EXEC file
+Transfers control to another program
+
+This routine works like CHAIN with the exception the file can
+be any executable file.
+
+EXEC never returns
+@end deffn
+
+@deffn Command ENVIRON "expr"
+@deffnx Command ENV "expr"
+Adds a variable to or deletes a variable from the current environment
+variable-table.
+
+@table @var
+@item  expr
+A string expression of the form "name=parameter"
+@end table
+
+If name already exists in the environment table, its current setting is
+replaced with the new setting. If name does not exist, the new variable
+is added.
+
+@sgnote{PalmOS, SB emulates environment variables.}
+@end deffn
+
+@deffn Function ENV ("var")
+@deffnx Function ENVIRON ("var")
+Returns the value of a specified entry in the current environment
+table. If the parameter is empty ("") then returns an array of
+the envirment variables (in var=value form)
+
+@table @var
+@item  var
+A string expression of the form "var"
+@end table
+
+@sgnote{PalmOS, SB emulates environment variables.}
+@end deffn
+
+@deffn Command RUN cmdstr
+Loads a secondary copy of system's shell and, executes an program, or
+an shell command.
+
+@table @var
+@item  cmdstr
+Shell's specific command string
+@end table
+
+After the specified shell command or program terminates, control is
+returned to the line following the RUN command.
+
+@sgnote{PalmOS, The 'cmdstr' is the Creator-ID.}
+@sgnote{PalmOS, The RUN never returns.}
+@end deffn
+
+@deffn Function RUN ("command")
+RUN() is the function version of the RUN command. The difference is
+that, the RUN() returns a string with the output of the 'command' as
+an array of strings (each text-line is one element).
+
+@sgnote{PalmOS, The RUN() does not supported.}
+@sgnote{Windows, The stdout and stderr are separated! First is the stdout output and following the stderr.}
+@end deffn
+
+@deffn Command TRON
+@deffnx Command TROFF
+TRACE ON/OFF. When trace mechanism is ON, the SB displays each line
+number as the program is executed
+@end deffn
+
+@deffn Command LOGPRINT ...
+PRINT to SB's logfile. The syntax is the same with the PRINT command.
+@end deffn
+
+@deffn Function MALLOC (size)
+@deffnx Function BALLOC (size)
+Allocates a memory block.
+
+@sgnote{*, The variable can be freed by using ERASE.}
+@end deffn
+
+@deffn Function VADR (var)
+Returns the memory address of the variable's data.
+@end deffn
+
+@deffn Function PEEK[@{16|32@}] (addr)
+Returns the byte, word or dword at a specified memory address.
+@end deffn
+
+@deffn Command POKE[@{16|32@}] addr, value
+Writes a specified byte, word or dword at a specified memory address.
+@end deffn
+
+@deffn Command USRCALL addr
+Transfers control to an assembly language subroutine.
+
+The USRCALL is equal to@sc{:}
+@example
+void (*f)(void);
+f = (void (*)(void)) addr;
+f();
+@end example
+@end deffn
+
+@deffn Command BCOPY src_addr, dst_addr, length
+Copies a memory block from 'src_addr' to 'dst_addr'
+@end deffn
+
+@deffn Command BLOAD filename[, address]
+Loads a specified memory image file into memory.
+@end deffn
+
+@deffn Command BSAVE filename, address, length
+Copies a specified portion of memory to a specified file.
+@end deffn
+
+@deffn Command STKDUMP
+Displays the SB's internal executor's stack
+
+@sgnote{*, For debug purposes; it is not supported on "limited" OSes.}
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node Graphics & Sound
+@chapter Graphics & Sound
+
+The SB's Graphics commands are working only with integers.
+(Of course, 2D algebra commands are working with reals)
+That is different of QB, but its much faster.
+
+@section The colors
+@table @emph
+@item  Monochrome
+0 = black, 15 = white
+@item  2bit (4 colors)
+0 = black, 15 = white, 1-6, 8  = dark-gray, 7, 9-14 = light-gray
+@item  4bit (16 colors)
+16 Standard VGA colors, 16 colors of gray (on PalmOS)
+@item  8bit (256 paletted colors)
+16 Standard VGA colors. The rest colors are ignored.
+@item  15bit (32K colors), 16bit (64K colors) and 24bit (1.7M colors)
+Color 0..15 is the standard VGA colors, full 24-bit RGB colors can be passed by using negative number.
+@end table
+
+@section The points
+Any point can be specified by an array of 2 elements or
+by 2 parameters
+
+Example@sc{:}
+@example
+LINE x1, y1, x2, y2
+or
+LINE [x1, y1], [x2, y2]
+@end example
+
+Also, the polylines can work with the same way.
+
+@example
+DIM poly(10)
+...
+poly[0] = [x, y]
+@end example
+
+@section The STEP keyword
+The STEP keyword calculates the next x,y parameters relative to current
+position. That position can be returned by using the POINT(0) and
+POINT(1) functions.
+
+@section The 'aspect' parameter
+The x/y factor.
+
+@section The FILLED keyword
+The FILLED keyword fills the result of the command with the drawing color.
+
+@section Graphics Commands
+
+@deffn Command ARC [STEP] x,y,r,astart,aend [,aspect [,color]] [COLOR color]
+Draws an arc.
+astart,aend = first,last angle in radians.
+@end deffn
+
+@deffn Command CHART {LINECHART|BARCHART}, array() [, type [, x1, y1, x2, y2]]
+Draws a chart of array values in the rectangular area x1,y1,x2,y2
+
+Where 'type'@sc{:}
+@multitable @columnfractions 0.05 0.95
+@item 0  @tab  simple
+@item 1  @tab  with marks
+@item 2  @tab  with ruler
+@item 3  @tab  with marks & ruler
+@end multitable
+@end deffn
+
+@deffn Command PLOT xmin, xmax USE f(x)
+Graph of f(x)
+
+Example@sc{:}
+@example
+PLOT 0, 2*PI USE SIN(x)
+@end example
+@end deffn
+
+@deffn Command CIRCLE [STEP] x,y,r [,aspect [, color]] [COLOR color] [FILLED]
+@table @var
+@item x
+@itemx y
+the circle's center
+@item  r
+the radius
+@end table
+
+Draws a circle (or an ellipse if the aspect is specified).
+@end deffn
+
+@deffn Command COLOR foreground-color [, background-color]
+Specifies the foreground and background colors
+@end deffn
+
+@deffn Command DRAWPOLY array [,x-origin,y-origin [, scalef [, color]]] [COLOR color] [FILLED]
+Draws a polyline
+
+If the array does not uses points as element arrays, then even elements for x (starting from 0), odd elements for y
+@end deffn
+
+@deffn Command DRAW string
+Draws an object according to instructions specified as a string.
+
+string - A string expression containing commands in the BASIC graphics
+definition language.
+
+Graphics Definition Language
+
+In the movement instructions below, n specifies a distance to move.
+The number of pixels moved is equal to n multiplied by the current
+scaling factor, which is set by the S command.
+@multitable @columnfractions 0.46 0.54
+@item   Un     @tab Move up.
+@item   Dn     @tab Move down.
+@item   Ln     @tab Move left.
+@item   Rn     @tab Move right.
+@item   En     @tab Move diagonally up and right.
+@item   Fn     @tab Move diagonally down and right.
+@item   Gn     @tab Move diagonally down and left.
+@item   Hn     @tab Move diagonally up and left.
+@item Mx,y     @tab Move to coordinate x,y. If x is preceded by a + or -, the movement is relative to the last point referenced.
+@item    B     @tab A prefix command. Next movement command moves but doesn't plot.
+@item    N     @tab A prefix command. Next movement command moves, but returns immediately to previous point.
+@end multitable
+
+@sgnote{*, This command it is had not tested - please report any bug or incompatibility.}
+@end deffn
+
+@deffn Command LINE [STEP] x,y [{,|STEP} x2,y2] [, color | COLOR color]
+Draws a line
+@end deffn
+
+@deffn Command PSET [STEP] x,y [, color | COLOR color]
+Draw a pixel
+@end deffn
+
+@deffn Command RECT [STEP] x,y [{,|STEP} x2,y2] [, color | COLOR color] [FILLED]
+Draws a rectangular parallelogram
+@end deffn
+
+@deffn Function TXTW (s)
+@deffnx Function TEXTWIDTH (s)
+Returns the text width of string s in pixels
+@end deffn
+
+@deffn Function TXTH (s)
+@deffnx Function TEXTHEIGHT (s)
+Returns the text height of string s in pixels
+@end deffn
+
+@deffn Function XPOS
+@deffnx Function YPOS
+Returns the current position of the cursor in "characters".
+@end deffn
+
+@deffn Function POINT (x [, y])
+Returns the color of the pixel at x,y
+
+if y does not specified x contains the info-code@*
+0 = returns the current X graphics position@*
+1 = returns the current Y graphics position@*
+@end deffn
+
+@deffn Command PAINT [STEP] x, y [,color [,border]]
+Fills an enclosed area on the graphics screen with a specific color.
+@table @var
+@item  x
+@itemx y
+Screen coordinate (column, row) within the area that is to be filled.
+@item  color
+The fill-color
+@item  border
+The boundary-color
+@end table
+
+if the border-color is specified then the PAINT will fill all the
+area which is specified by the border-color.
+(fill-until, color!=point(x,y)
+
+if the border-color is NOT specified then the PAINT will fill all
+the are with the same color as the pixel at x,y.
+(fill-while, color=point(x,y))
+@end deffn
+
+@deffn Command VIEW [x1,y1,x2,y2 [,color [,border-color]]]
+Defines a viewport.
+@table @var
+@item  x1
+@itemx y1
+@itemx x2
+@itemx y2
+Corner coordinates of the viewport.
+@item  color
+If included, BASIC fills the viewport with the
+                  specified color.
+@item  border-color
+If included, BASIC draws a border, in a specified
+                  color, around the defined viewport.
+@end table
+
+The viewport defined by VIEW is disabled by a VIEW command with no
+parameters.
+@end deffn
+
+@deffn Command WINDOW [x1,y1,x2,y2]
+Specifies "world" coordinates for the screen.
+@table @var
+@item  x1
+@itemx y1
+@itemx x2
+@itemx y2
+The corner coordinates of the world space.
+@end table
+
+The WINDOW command allows you to redefine the corners of the display
+screen as a pair of "world" coordinates.
+
+The world space defined by WINDOW is disabled by a WINDOW command with
+no parameters.
+@end deffn
+
+@deffn Function RGB (r, g, b)
+The RGB functions returns the RGB color codes for the specified values
+The RGB() takes values 0..255 for each of the color.
+
+The return value is a negative 24bit value to by used by drawing
+functions.
+@end deffn
+
+@deffn Function RGBF (r, g, b)
+The RGBF functions returns the RGB color codes for the specified values
+The RGBF() takes values 0..1 for each of the color.
+
+The return value is a negative 24bit value to by used by drawing
+functions.
+@end deffn
+
+@deffn Command BEEP
+Generates a beep sound
+@end deffn
+
+@deffn Command PLAY string
+Play musical notes
+
+@table @code
+@item A-G[-|+|#][nnn][.]
+Play note A..G, +|# is sharp, - is flat, . is multiplier 1.5
+@item On
+Octave 0..6, < moves down one octave, > moves up one octave
+@item Nnn
+Play note 0..84 (0 = pause)
+@item Pnnn
+Pause 1..64
+@item Lnnn
+Length of note 1..64 (1/nnn)
+@item Tnnn
+Tempo 32..255. Number of 1/4 notes per minute.
+@item MS
+Staccato (1/2)
+@item MN
+Normal (3/4)
+@item ML
+Legato
+@item Vnnn
+Volume 0..100
+@item MF
+Play on foreground
+@item MB
+Play on background
+@item Q
+Clear sound queue
+@end table
+@end deffn
+
+@deffn Command SOUND freq, dur_ms [, vol] [BG]
+Plays a sound
+
+@table @var
+@item freq
+The frequency
+@item dur_ms
+The duration in milliseconds
+@item vol
+The volume in 1/100 units
+@item BG
+Play it in background
+@end table
+@end deffn
+
+@deffn Command NOSOUND
+Stops background sound.
+Also, clears the sound queue.
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node Miscellaneous
+@chapter Miscellaneous
+
+@deffn Command RANDOMIZE [int]
+Seeds the random number generator
+@end deffn
+
+@deffn Function RND
+Returns a random number from the range 0 to 1
+@end deffn
+
+@deffn Function UBOUND (array [, dim])
+Returns the upper bound of the 'array'
+@end deffn
+
+@deffn Function LBOUND (array [, dim])
+Returns the lower bound of the 'array'
+
+The parameter 'dim' is the array dimension whose bound is returned
+
+@example
+DIM v1(-4 TO 7)
+DIM v2(1 TO 2, 3 TO 4)
+...
+PRINT LBOUND(v1)   : REM -4
+PRINT UBOUND(v1)   : REM 7
+...
+PRINT LBOUND(v2)   : REM 1
+PRINT LBOUND(v2,2) : REM 3
+@end example
+@end deffn
+
+@deffn Function CINT (x)
+Converts x to 32b integer
+Meaningless. Used for compatibility.
+@end deffn
+
+@deffn Function CREAL (x)
+Convert x to 64b real number.
+Meaningless. Used for compatibility.
+@end deffn
+
+@deffn Function CDBL (x)
+Convert x to 64b real number.
+Meaningless. Used for compatibility.
+@end deffn
+
+@deffn Command PEN ON|OFF
+Enables/Disables the PEN/MOUSE mechanism.
+@end deffn
+
+@c ------------------
+@deffn Function PEN (0..14)
+Returns the PEN/MOUSE data.
+
+Values@sc{:}
+@table @var
+@item 0
+true (non zero) if there is a new pen or mouse event
+@item 1
+PEN@sc{:} last pen down x; MOUSE@sc{:} last mouse button down x
+@item 2
+Same as 1 for y
+@item 3
+true if the PEN is down; MOUSE@sc{:} mouse left button is pressed
+@item 4
+PEN@sc{:} last/current x, MOUSE@sc{:} the current x position only if the left mouse button is pressed (like PEN is down)
+@item 5
+Same as PEN(4) for y
+@end table
+
+Mouse specific (non PalmOS)@sc{:}
+@table @var
+@item 10
+current mouse x pos
+@item 11
+current mouse y pos
+@item 12
+true if the left mouse button is pressed
+@item 13
+true if the right mouse button is pressed
+@item 14
+true if the middle mouse button is pressed
+@end table
+
+@sgnote{*, The driver must be enabled before use this function (see Pen command)}
+@end deffn
+
+@deffn Command PAUSE [secs]
+Pauses the execution for a specified length of time, or until user hit the keyboard.
+@end deffn
+
+@deffn Command SWAP a, b
+Exchanges the values of two variables. The parameters may be variables of any type.
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node File system
+@chapter File system
+
+@section Special Device Names
+
+@table @code
+@item "COM1@sc{:}[speed]"
+  Serial port 1
+@item "COM2@sc{:}[speed]"
+  Serial port 2
+@item "PDOC@sc{:}filename"
+  Compressed PDOC files for PalmOS or PDB/PDOC files on other systems.
+  PDOCFS opens and uncompress the file on OPEN; and compress the
+  file on CLOSE. So, it will use a lot of memory and time (its depended
+  on size of the data).
+@item "MEMO@sc{:}memo-title"
+  MemoDB of PalmOS or regular file on other systems.
+  Memo records (virtual files) are limited to 3935 bytes
+@item "SOCL@sc{:}server@sc{:}port"
+  Socket client. Actually a telnet client.
+@item "MMC@sc{:}filename"
+  eBookMan only. Opens an MMC file.
+@end table
+
+Example@sc{:}
+OPEN "COM1@sc{:}" AS #1@*
+OPEN "COM2@sc{:}38400" AS #2
+
+@section File System Commands
+
+@deffn Function FREEFILE
+Returns an unused file handle
+@end deffn
+
+@deffn Command OPEN file [FOR {INPUT|OUTPUT|APPEND}] AS #fileN
+Makes a file or device available for sequential input, sequential output.
+
+@table @var
+@item  file
+A string expression that follows OS file naming conventions.
+@item  fileN
+A file-handle (integer 1 to 256).
+@item  FOR -
+@multitable @columnfractions 0.12 0.88
+@item       INPUT     @tab Sequential input
+@item       OUTPUT    @tab Sequential output
+@item       APPEND    @tab Sequential output, beginning at current EOF
+@end multitable
+@end table
+
+The files are always opened as shared.
+@end deffn
+
+@deffn Command CLOSE #fileN
+Close a file or device
+@end deffn
+
+@deffn Command TLOAD file, BYREF var [, type]
+Loads a text file into array variable. Each text-line is an array element.
+@table @var
+@item  file
+A string expression that follows OS file naming conventions.
+@item  var
+Any variable
+@item  type
+0 = load into array (default), 1 = load into string
+@end table
+@end deffn
+
+@deffn Command TSAVE file, var
+Writes an array to a text file. Each array element is a text-line.
+@table @var
+@item  file
+A string expression that follows OS file naming conventions.
+@item  var
+An array variable or a string variable. Expressions are
+         not allowed for memory reasons.
+@end table
+@end deffn
+
+@deffn Function EXIST (file)
+Returns true if the file exists
+
+@table @var
+@item  file
+A string expression that follows OS file naming conventions.
+@end table
+@end deffn
+
+@deffn Function ACCESS (file)
+Returns the access rights of the file.
+
+@table @var
+@item  file
+A string expression that follows OS file naming conventions.
+@end table
+
+The return-value is the permissions of the file as them as specified
+on GNU's manual (chmod() and stat() system calls)
+
+The bits (in octal)@sc{:}
+@multitable @columnfractions 0.17 0.83
+@item 04000  @tab set user ID on execution
+@item 02000  @tab set group ID on execution
+@item 01000  @tab sticky bit
+@item 00400  @tab read by owner
+@item 00200  @tab write by owner
+@item 00100  @tab execute/search by owner
+@item 00040  @tab read by group
+@item 00020  @tab write by group
+@item 00010  @tab execute/search by group
+@item 00004  @tab read by others
+@item 00002  @tab write by others
+@item 00001  @tab execute/search by others
+@end multitable
+
+@sgnote{PalmOS, The return value is always 0777.}
+@sgnote{DOS, The return value is depended on DJGPP's stat() function. Possible Unix compatible.}
+@sgnote{Windows, The return value is depended on Cygnus's stat() function. Possible Unix compatible.}
+
+@example
+IF ACCESS("/bin/sh") AND 0o4 THEN
+    PRINT "I can read it!"
+ENDIF
+@end example
+@end deffn
+
+@deffn Function ISFILE (file)
+Returns true if the @var{file} is a regular file.
+@end deffn
+
+@deffn Function ISDIR (file)
+Returns true if the @var{file} is a directory.
+@end deffn
+
+@deffn Function ISLINK (file)
+Returns true if the @var{file} is a link.
+@end deffn
+
+@deffn Command CHMOD file, mode
+Change permissions of a file
+
+@table @var
+@item  file
+A string expression that follows OS file naming conventions.
+@item  mode
+The mode is compatible with the chmod()'s 'mode' parameter as its described on GNU's manual.  See ACCESS() for more information.
+@end table
+
+@example
+' Make myfile available to anyone (read/write)
+CHMOD "myfile.bas", 0o666
+...
+' Make myfile available to anyone (execute/read/write)
+CHMOD "myfile.bas", 0o777
+@end example
+@end deffn
+
+@deffn Function EOF (fileN)
+Returns true if the file pointer is at end of the file.
+For COMx and SOCL VFS it returns true if the connection is broken.
+@end deffn
+
+@deffn Command PRINT# fileN, [USING...] ...
+Write string to a file. The syntax is the same with the PRINT command.
+
+@sgnote{*, We can use 'USG' instead of 'USING'.}
+@end deffn
+
+@deffn Command LINPUT# [fileN@{,|;@}] var
+@deffnx Command LINEINPUT# [#fileN@{,|;@}] var
+@deffnx Command LINE@tie{}INPUT# [fileN@{,|;@}] var
+Reads a whole text line from file or console.
+@end deffn
+
+@deffn Function INPUT (len [, fileN])
+This function is similar to INPUT. Reads 'len' bytes from file or console (if fileN is omitted).
+This function is a low-level function. That means does not convert the data, and does not remove the spaces.
+@end deffn
+
+@deffn Command INPUT# fileN; var1 [,delim] [, var2 [,delim]] ...
+Reads data from file
+@end deffn
+
+@deffn Function BGETC (fileN)
+(Binary mode) Reads and returns a byte from file or device.
+@end deffn
+
+@deffn Command BPUTC# fileN; byte
+(Binary mode) Writes a byte on file or device
+@end deffn
+
+@deffn Command SEEK# fileN; pos
+Sets file position for the next read/write
+@end deffn
+
+@deffn Function SEEK (fileN)
+Returns the current file position
+@end deffn
+
+@deffn Function LOF (fileN)
+Returns the length of file in bytes. For other devices, it returns the number of available data.
+@end deffn
+
+@deffn Command KILL "file"
+Deletes the specified file
+@end deffn
+
+@deffn Command WRITE# fileN; var1 [, ...]
+@deffnx Command READ# fileN; var1 [, ...]
+The READ/WRITE command set is used to store variables to a file as
+binary data.
+
+The common problem with INPUT/PRINT set is there are many conflicts
+with data.
+
+@example
+PRINT #1; "Hello, world"
+@end example
+
+You have wrote only one string and you want read it in one variable,
+but this is impossible for INPUT command to understand it, because
+INPUT finds the separator comma, so it thinks there are two variables
+not one.
+
+So, now, you can store arrays, strings etc and what is you write is
+what you will read the next time.
+
+BTW its faster too.
+
+@sgnote{*, The parameters can be variables ONLY.}
+@sgnote{*, Its very bad idea to mixed READ/WRITE commands with INPUT/PRINT commands in the same file.}
+@end deffn
+
+
+@deffn Command COPY "file", "newfile"
+Makes a copy of specified file to the 'newfile'
+@end deffn
+
+
+@deffn Command RENAME "file", "newname"
+Renames the specified file
+@end deffn
+
+
+@deffn Command MKDIR dir
+Create a directory. This does not working on PalmOS.
+@end deffn
+
+@deffn Command CHDIR dir
+Changes the current working directory. This does not working on PalmOS.
+@end deffn
+
+@deffn Command RMDIR dir
+Removes a directory. This does not working on PalmOS.
+@end deffn
+
+
+@deffn Command DIRWALK directory [, wildcards] [USE ...]
+Walk through the directories.
+The user-defined function must returns zero to stop the process.
+
+@example
+FUNC PRNF(x)
+    ? x
+    PRNF=TRUE
+END
+...
+DIRWALK "." USE PRNF(x)
+@end example
+
+@sgnote{PalmOS, Not supported.}
+@end deffn
+
+
+@deffn Function FILES (wildcards)
+Returns an array with the filenames.
+If there is no files returns an empty array.
+
+@example
+? FILES("*")
+@end example
+
+@sgnote{PalmOS, Returns only the user-files.}
+@sgnote{*, To use file on MEMO or PDOC or any other virtual file system you must use FILES("VFSx@sc{:}*")}
+
+@example
+PRINT FILES("MEMO@sc{:}*")
+@end example
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node Mathematics
+@chapter Mathematics
+
+All angles are in radians.
+
+@deffn Function ABS (x)
+Returns the absolute value of @var{x}.
+@end deffn
+
+@deffn Function MAX (...)
+@deffnx Function ABSMAX (...)
+@deffnx Function MIN (...)
+@deffnx Function ABSMIN (...)
+Maximum/Minimum value of parameters. Parameters can be anything
+(arrays, ints, reals, strings).
+ABSMIN/ABSMAX returns the absolute min/max value.
+
+@example
+? MAX(3,4,8)
+? MIN(array(),2,3)
+? MAX("abc","def")
+@end example
+@end deffn
+
+@deffn Function SEQ (xmin, xmax, count)
+Returns an array with 'count' elements.
+Each element had the x value of its position.
+
+@example
+? SEQ(0,1,11)
+@end example
+@end deffn
+
+@deffn Command EXPRSEQ BYREF array, xmin, xmax, count USE expression
+Returns an array with 'count' elements.
+Each element had the 'y' value of its position as it is
+returned by the expression.
+
+@example
+REM same as v=SEQ(0,1,11)
+EXPRSEQ v, 0, 1, 11 USE x
+@end example
+@end deffn
+
+@deffn Function POW (x, y)
+x raised to power of y
+@end deffn
+
+@deffn Function SQR (x)
+Square root of x
+@end deffn
+
+@deffn Function SGN (x)
+Sign of x (+1 for positive, -1 for negative and 0 for zero)
+@end deffn
+
+@section Unit convertion
+
+@deffn Function DEG (x)
+Radians to degrees
+@end deffn
+
+@deffn Function RAD (x)
+Degrees to radians
+@end deffn
+
+@section Round
+
+@deffn Function INT (x)
+Rounds x downwards to the nearest integer
+@end deffn
+
+@deffn Function FIX (x)
+Rounds x upwards to the nearest integer
+@end deffn
+
+@deffn Function FLOOR (x)
+Largest integer value not greater than x
+@end deffn
+
+@deffn Function CEIL (x)
+Smallest integral value not less than x
+@end deffn
+
+@deffn Function FRAC (x)
+Fractional part of x
+@end deffn
+
+@deffn Function ROUND (x [, decs])
+Rounds the x to the nearest integer or number
+with 'decs' decimal digits.
+@end deffn
+
+@section Trigonometry
+
+@deffn Function COS (x)
+Cosine
+@end deffn
+
+@deffn Function SIN (x)
+Sine
+@end deffn
+
+@deffn Function TAN (x)
+Tangent
+@end deffn
+
+@deffn Function ACOS (x)
+Inverse cosine
+@end deffn
+
+@deffn Function ASIN (x)
+Inverse sine
+@end deffn
+
+@deffn Function ATAN (x)
+@deffnx Function ATN (x)
+Inverse tangent
+@end deffn
+
+@deffn Function ATAN2 (x, y)
+Inverse tangent (x,y)
+@end deffn
+
+
+@deffn Function COSH (x)
+@end deffn
+
+@deffn Function SINH (x)
+@end deffn
+
+@deffn Function TANH (x)
+@end deffn
+
+
+@deffn Function ACOSH (x)
+@end deffn
+
+@deffn Function ASINH (x)
+@end deffn
+
+@deffn Function ATANH (x)
+@end deffn
+
+
+@deffn Function SEC (x)
+Secant
+@end deffn
+
+@deffn Function CSC (x)
+Cosecant
+@end deffn
+
+@deffn Function COT (x)
+Cotangent
+@end deffn
+
+@deffn Function ASEC (x)
+Inverse secant
+@end deffn
+
+@deffn Function ACSC (x)
+Inverse cosecant
+@end deffn
+
+@deffn Function ACOT (x)
+Inverse cotangent
+@end deffn
+
+@deffn Function SECH (x)
+@end deffn
+
+@deffn Function CSCH (x)
+@end deffn
+
+@deffn Function COTH (x)
+@end deffn
+
+@deffn Function ASECH (x)
+@end deffn
+
+@deffn Function ACSCH (x)
+@end deffn
+
+@deffn Function ACOTH (x)
+@end deffn
+
+@section Logarithms
+
+@deffn Function EXP (x)
+Returns the value of e raised to the power of @var{x}.
+@end deffn
+
+@deffn Function LOG (x)
+Returns the natural logarithm of @var{x}.
+@end deffn
+
+@deffn Function LOG10 (x)
+Returns the base-10 logarithm of @var{x}.
+@end deffn
+
+@section Statistics
+Sample standard deviation@sc{:}     SQR(STATSPREADS(array))
+Population standard deviation@sc{:} SQR(STATSPREADP(array))
+
+@deffn Function SUM (...)
+Sum of value
+@end deffn
+
+@deffn Function SUMSQ (...)
+Sum of square value
+@end deffn
+
+@deffn Function STATMEAN (...)
+Arithmetical mean
+@end deffn
+
+@deffn Function STATMEANDEV (...)
+Mean deviation
+@end deffn
+
+@deffn Function STATSPREADS (...)
+Sample spread
+@end deffn
+
+@deffn Function STATSPREADP (...)
+Population spread
+@end deffn
+
+@section Equations
+
+@deffn Function LINEQN (a, b [, toler])
+Returns an array with the values of the unknowns.
+This function solves equations by using the Gauss-Jordan method.
+
+@table @var
+@item b
+	equations
+@item b
+	results
+@item toler
+	tolerance number.
+    (the absolute value of the lowest acceptable number)
+    default = 0 = none...
+
+    |x| <= toler @sc{:} x = 0
+@end table
+
+@sgnote{*, The result is a matrix Nx1. For the SB that array is
+      two-dimension array.}
+@end deffn
+
+
+@deffn Function INVERSE (A)
+returns the inverse matrix of @var{A}.
+@end deffn
+
+
+@deffn Function DETERM (A[, toler])
+Determinant of A
+
+toler = tolerance number
+  (the absolute value of the lowest acceptable number)
+  default = 0 = none
+
+  |x| <= toler @sc{:} x = 0
+@end deffn
+
+
+@deffn Command ROOT low, high, segs, maxerr, BYREF result, BYREF errcode USE expr
+Roots of F(x)
+
+@table @var
+@item  low
+the lower limit
+@item  high
+the upper limit
+@item  segs
+the number of segments (spaces)
+@item  maxerr
+tolerance (IF ABS(F(x)) < maxerr THEN OK)
+@item  errcode
+0 for success; otherwise calculation error
+@item  result
+the result
+@end table
+
+@example
+FUNC F(x)
+ F = SIN(x)
+END
+...
+ROOT 1, 5, 500, 0.00001, result, errcode USE F(x)
+@end example
+@end deffn
+
+
+@deffn Command DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE expr
+Calculation of derivative
+
+@table @var
+@item  x
+value of x
+@item  maxtries
+maximum number of retries
+@item  maxerr
+tolerance
+@item  errcode
+0 for success; otherwise calculation error
+@item  result
+the result
+@end table
+@end deffn
+
+@deffn Command DIFFEQN x0, y0, xf, maxseg, maxerr, BYREF yf, BYREF errcode USE expr
+Differential equation - Runge-Kutta method
+
+@table @var
+@item  x0
+@itemx y0
+initial x,y
+@item xf
+x final
+@item  maxseg
+maximum number of segments on x
+@item  maxerr
+tolerance (acceptable error between the last 2 times)
+@item  errcode
+0 for success; otherwise calculation error
+@item  yf
+the result
+@end table
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node 2D Algebra
+@chapter 2D Algebra
+
+@deffn Function SEGCOS (Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+@deffnx Function SEGSIN (Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+Sinus or cosine of 2 line segments (A->B, C->D).
+@end deffn
+
+@deffn Function PTDISTSEG (Bx,By,Cx,Cy,Ax,Ay)
+Distance of point A from line segment B-C
+@end deffn
+
+@deffn Function PTDISTLN (Bx,By,Cx,Cy,Ax,Ay)
+Distance of point A from line B, C
+@end deffn
+
+
+@deffn Function PTSIGN (Ax,Ay,Bx,By,Qx,Qy)
+The sign of point Q from line segment A->B
+@end deffn
+
+
+@deffn Function SEGLEN (Ax,Ay,Bx,By)
+Length of line segment
+@end deffn
+
+
+@deffn Function POLYAREA (poly)
+Returns the area of the polyline @var{poly}.
+@end deffn
+
+
+@deffn Command POLYEXT poly(), BYREF xmin, BYREF ymin, BYREF xmax, BYREF ymax
+Returns the polyline's extents
+@end deffn
+
+
+@deffn Command INTERSECT Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, BYREF type, BYREF Rx, BYREF Ry
+Calculates the intersection of the two line segments A-B and C-D
+
+Returns@sc{:}
+Rx,Ry = cross
+
+type = cross-type
+
+@table @code
+@item 0
+  No cross (R = external cross)
+@item 1
+  One cross
+@item 2
+  Parallel
+@item 3
+  Parallel (many crosses)
+@item 4
+  The cross is one of the line segments edges.
+@end table
+@end deffn
+
+@c -----------------------------------------
+@section 2D & 3D graphics transformations
+2D & 3D graphics transformations can represented as matrices.
+
+(c=cosè, s=sinè)
+
+
+@deffn Command M3IDENT	BYREF m3x3
+Resets matrix (Identity)
+
+@verbatim
+|  1  0  0 |
+|  0  1  0 |
+|  0  0  1 |
+@end verbatim
+@end deffn
+
+
+@deffn Command M3ROTATE BYREF m3x3, angle [, x, y]
+Rotate by angle with center x,y
+
+@verbatim
+|  c  s  0 |
+| -s  c  0 |
+|  *  *  1 |
+@end verbatim
+@end deffn
+
+@deffn Command M3SCALE BYREF m3x3, x, y, Sx, Sy
+Scaling
+
+@verbatim
+| Sx  0  0 |
+|  0 Sy  0 |
+|  *  *  1 |
+@end verbatim
+@end deffn
+
+@deffn Command M3TRANS BYREF m3x3, Tx, Ty
+Translation
+
+@verbatim
+|  1  0  0 |
+|  0  1  0 |
+| Tx Ty  1 |
+@end verbatim
+@end deffn
+
+@deffn Command M3APPLY m3x3, BYREF poly
+Apply matrice to poly-line
+
+Additional information@sc{:}
+
+@verbatim
+|  1  0  0 |
+|  0 -1  0 | = reflection on x
+|  0  0  1 |
+
+| -1  0  0 |
+|  0  1  0 | = reflection on y
+|  0  0  1 |
+@end verbatim
+
+3D-Graphics Matrices@sc{:}
+
+@verbatim
+|  1  0  0 Tx |
+|  0  1  0 Ty | = translation
+|  0  0  1 Tz |
+|  0  0  0  1 |
+
+| Sx  0  0  0 |
+|  0 Sy  0  0 | = scaling
+|  0  0 Sz  0 |
+|  0  0  0  1 |
+
+|  1  0  0  0 |
+|  0  c -s  0 | = rotation on x
+|  0  s  c  0 |
+|  0  0  0  1 |
+
+|  c  0  s  0 |
+|  0  1  0  0 | = rotation on y
+| -s  0  c  0 |
+|  0  0  0  1 |
+
+|  c -s  0  0 |
+|  s  c  0  0 | = rotation on z
+|  0  0  1  0 |
+|  0  0  0  1 |
+@end verbatim
+
+Any change to matrix will combined with its previous value.
+
+@example
+DIM poly(24)
+DIM M(2,2)
+...
+M3IDENT M
+M3ROTATE M, pi/2, 0, 0
+M3SCALE M, 0, 0, 1.24, 1.24
+...
+' Draw the original polyline
+DRAWPOLY poly
+...
+' Draw the polyline
+' rotated by pi/2 from 0,0 and scaled by 1.24
+M3APPLY M, poly
+DRAWPOLY poly
+@end example
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node Strings
+@chapter Strings
+
+@deffn Function SPC (n)
+@deffnx Function SPACE (n)
+returns a string of 'n' spaces
+@end deffn
+
+@deffn Function BIN (x)
+Returns the binary value of x as string.
+@end deffn
+
+@deffn Function OCT (x)
+Returns the octal value of x as string.
+@end deffn
+
+@deffn Function HEX (x)
+Returns the hexadecimal value of x as string.
+@end deffn
+
+@deffn Function VAL (s)
+Returns the numeric value of string @var{s}.
+@end deffn
+
+@deffn Function STR (x)
+Returns the string value of @var{x}.
+@end deffn
+
+
+@deffn Function CBS (s)
+@deffnx Function BCS (s)
+CBS() - converts (C)-style strings to (B)ASIC-style (S)trings
+
+BCS() - converts (B)ASIC-style strings to (C)-style (S)trings
+
+C-Style string means strings with \ codes
+
+@sgnote{*, On CBS() we cannot use the \" character but we can replace it with \x22 or \042.}
+@end deffn
+
+@deffn Function ASC (s)
+Returns the ASCII code of first character of the string @var{s}.
+@end deffn
+
+@deffn Function CHR (x)
+Returns one-char string of character with ASCII code x.
+@end deffn
+
+@deffn Function LOWER (s)
+@deffnx Function LCASE (s)
+@deffnx Function UPPER (s)
+@deffnx Function UCASE (s)
+Converts the string s to lower/upper case
+
+@example
+? LOWER("Hi"):REM hi
+? UPPER("Hi"):REM HI
+@end example
+@end deffn
+
+
+@deffn Function LTRIM (s)
+Removes leading white-spaces from string s
+
+@example
+? LEN(LTRIM("  Hi")):REM 2
+@end example
+@end deffn
+
+@deffn Function RTRIM (s)
+Removes trailing white-spaces from string s
+@end deffn
+
+@deffn Function TRIM (s)
+Removes leading and trailing white-spaces from string @var{s}.
+@command{TRIM} is equal to @code{LTRIM(RTRIM(s))}
+@end deffn
+
+
+@deffn Function SQUEEZE (s)
+Removes the leading/trailing and duplicated white-spaces
+
+@example
+? "["; SQUEEZE(" Hi  there "); "]"
+' Result: [Hi there]
+@end example
+@end deffn
+
+
+@deffn Function ENCLOSE (str[, pair])
+Encloses a string.
+The default pair is ""
+
+@example
+? enclose("abc", "()")
+' Result: (abc)
+@end example
+@end deffn
+
+
+@deffn Function DISCLOSE (str[, pairs [, ignore-pairs]])
+Discloses a string.
+
+Default pairs and ignore pairs
+
+@example
+First
+non white-space
+character           Check   Ignore
+--------------------------------------------
+"                   ""      ''
+'                   ''      ""
+(                   ()      ""''
+[                   []      ""''
+@{                   @{@}      ""''
+<                   <>      ""''
+@*
+Otherwise:
+"                   ""      ''
+@end example
+
+@example
+s = "abc (abc)"
+? s; tab(26); disclose(s, "()")
+' prints abc
+s = "abc (a(bc))"
+? s; tab(26); disclose(s, "()"); tab(40); disclose(disclose(s, "()"), "()")
+' prints a(bc), bc
+s = "abc (a='(bc)')"
+? s; tab(26); disclose(s, "()", "''"); tab(40); &
+    disclose(disclose(s, "()", "''"), "()", "''")
+' prints a='(bc)', nothing
+@end example
+@end deffn
+
+
+@deffn Function LEFT (s [,n])
+@deffnx Function RIGHT (s[,n])
+Returns the n number of leftmost/rightmost chars of string s
+If n is not specified, the SB uses 1
+@end deffn
+
+
+
+@deffn Function LEFTOF (s1, s2)
+@deffnx Function RIGHTOF (s1, s2)
+Returns the left/right part of s1 at the position of the first
+occurrence of the string s2 into string s1
+
+@sgnote{*, s2 does not included on new string.}
+@end deffn
+
+
+@deffn Function LEFTOFLAST (s1, s2)
+@deffnx Function RIGHTOFLAST (s1, s2)
+Returns the left/right part of s1 at the position of the last
+occurrence of the string s2 into string s1
+
+@sgnote{*, s2 does not included on new string.}
+@end deffn
+
+
+@deffn Function MID (s, start [,length])
+Returns the part (length) of the string s starting from 'start'
+position
+
+If the 'length' parameter is omitted, MID returns the whole string
+from the position 'start'.
+@end deffn
+
+
+@deffn Function INSTR ([start,] s1, s2)
+Returns the position of the first occurrence of the string s2 into
+string s1 (starting from the position 'start')
+
+If there is no match, INSTR returns 0
+@end deffn
+
+@deffn Function RINSTR ([start,] s1, s2)
+Returns the position of the last occurrence of the string s2 into
+string s1 (starting from the position 'start')
+
+If there is no match, RINSTR returns 0
+@end deffn
+
+
+@deffn Function REPLACE (source, pos, str [, len])
+Writes the 'str' into 'pos' of 'source' and returns the new string.
+
+This function replaces only 'len' characters. The default value of
+'len' is the length of 'str'.
+
+@example
+s="123456"
+...
+' Cut
+? replace(s,3,"",len(s))
+...
+' Replace
+? replace(s,2,"bcd")
+...
+' Insert
+? replace(s,3,"cde",0)
+...
+' Replace & insert
+? replace(s,2,"RRI",2)
+@end example
+@end deffn
+
+
+@deffn Function TRANSLATE (source, what [, with])
+Translates all occurrences of the string 'what' found in the 'source'
+with the string 'with' and returns the new string.
+
+@example
+? Translate("Hello world", "o", "O")
+' displays: HellO wOrld
+@end example
+@end deffn
+
+
+@deffn Function CHOP (source)
+Chops off the last character of the string 'source' and returns
+the result.
+@end deffn
+
+
+@deffn Function STRING (len, @{ascii|str@})
+Returns a string containing 'len' times of string 'str' or the
+character 'ascii'.
+@end deffn
+
+
+@deffn Function FORMAT (format, val)
+Returns a formated string.
+
+Numbers@sc{:}
+@table @code
+@item #
+  Digit or space
+@item 0
+  Digit or zero
+@item ^
+  Stores a number in exponential format. Unlike QB's USING format this is a place-holder like the #.
+@item .
+  The position of the decimal point.
+@item ,
+  Separator.
+@item -
+  Stores minus if the number is negative.
+@item +
+  Stores the sign of the number.
+@end table
+
+Strings@sc{:}
+@table @code
+@item &
+  Stores a string expression without reformatting it.
+@item !
+  Stores only the first character of a string expression.
+@item \  \
+  Stores only the first n + 2 characters of a string expression, where n is the number of spaces between the
+  two backslashes. Unlike QB, there can be literals inside the \ \. These
+  literals are inserted in the final string.
+@end table
+
+@example
+? FORMAT("#,##0", 1920.6) : REM prints 1,921
+? FORMAT("\  - \", "abcde") : REM prints "abc-de"
+@end example
+@end deffn
+
+
+@deffn Command SPRINT var; [USING...;] ...
+Create formated string and storing it to var
+The syntax is the same with the PRINT command.
+
+@example
+SPRINT s; 12.34; TAB(12); 11.23;
+@end example
+
+@sgnote{*, You can use 'USG' instead of 'USING'.}
+@end deffn
+
+
+@deffn Command SINPUT src; var [, delim] [,var [, delim]] ...
+Splits the string 'src' into variables which are separated by
+delimiters.
+
+@example
+SINPUT "if x>1 then y"; vif, " ", vcond, "then", vdo
+? vcond, vdo
+' result in monitor
+' x>1   y
+@end example
+@end deffn
+
+
+@deffn Command SPLIT string, delimiters, words() [, pairs] [USE expr]
+Returns the words of the specified string into array 'words'
+
+Example@sc{:}
+@example
+s="/etc/temp/filename.ext"
+SPLIT s, "/.", v()
+FOR i=0 TO UBOUND(v)
+  PRINT i;" [";v(i);"]"
+NEXT
+'
+displays:
+0 []
+1 [etc]
+2 [temp]
+3 [filename]
+4 [ext]
+@end example
+@end deffn
+
+
+@deffn Command JOIN words(), delimiters, string
+Returns the words of the specified string into array 'words'
+
+Example@sc{:}
+@example
+s="/etc/temp/filename.ext"
+SPLIT s, "/.", v()
+JOIN v(), "/", s
+PRINT "[";s;"]"
+'
+displays:
+[/etc/temp/filename/ext]
+@end example
+@end deffn
+
+@c ------------------------------------------------------------------------------------------------------------
+@node Console
+@chapter Console
+
+@section Supported console codes
+@sgnote{*, \e = CHR(27)}
+
+@multitable @columnfractions 0.14 0.86
+@item \t		     @tab tab (32 pixels)
+@item \a		     @tab beep
+@item \r\n	     @tab new line (cr/lf)
+@item \xC		     @tab clear screen
+@item \e[K	     @tab clear to EOL
+@item \e[nG	     @tab moves cursor to specified column
+@item \e[0m	     @tab reset all attributes to their defaults
+@item \e[1m	     @tab set bold on
+@item \e[4m	     @tab set underline on
+@item \e[7m	     @tab reverse video
+@item \e[21m	     @tab set bold off
+@item \e[24m	     @tab set underline off
+@item \e[27m	     @tab set reverse off
+@item \e[3nm       @tab set foreground
+@item              @tab color. where n@sc{:}
+@item 			 @tab
+@item              @tab 0 black
+@item              @tab 1 red
+@item              @tab 2 green
+@item              @tab 3 brown
+@item              @tab 4 blue
+@item              @tab 5 magenta
+@item              @tab 6 cyan
+@item              @tab 7 white
+@item 			 @tab
+@item \e[4nm       @tab set background color.
+@item              @tab (see set foreground)
+@end multitable
+
+PalmOS only@sc{:}
+@multitable @columnfractions 0.18 0.82
+@item \e[8nm	     @tab (n=0..7) select system font
+@item \e[9nm	     @tab (n=0..3) select buildin font
+@end multitable
+
+eBookMan only@sc{:}
+@multitable @columnfractions 0.13 0.87
+@item \e[50m       @tab select 9pt font
+@item \e[51m       @tab select 12pt font
+@item \e[52m       @tab select 16pt font
+@item \e[nT        @tab move to n/80th screen character position
+@end multitable
+
+@section Console Commands
+
+@deffn Command PRINT [USING [format];] [expr|str [@{,|;@} [expr|str]] ...
+Displays a text or the value of an expression.
+
+@b{PRINT SEPARATORS}
+@multitable @columnfractions 0.1 0.9
+@item TAB(n)   @tab Moves cursor position to the nth column.
+@item SPC(n)   @tab Prints a number of spaces specified by n.
+@item ;        @tab Carriage return/line feed suppressed after printing.
+@item ,        @tab Carriage return/line feed suppressed after printing.
+@item          @tab A TAB character is placed.
+@end multitable
+
+@b{The PRINT USING}
+
+Print USING, is using the FORMAT() to display numbers and strings.
+Unlike the FORMAT, this one can include literals, too.
+
+@multitable @columnfractions 0.5 0.5
+@item _        @tab Print next character as a literal. The combination _#, for
+@item         example, allows you to include a number sign as a literal
+@item         in your numeric format.
+@item [other]  @tab Characters other than the foregoing may be included as
+@item         literals in the format string.
+@end multitable
+
+@sgnote{*, When a PRINT USING command is executed the format will remains
+      on the memory until a new format is passed.
+	  Calling a PRINT USING without a new format specified the PRINT
+      will use the format of previous call.}
+
+
+Examples@sc{:}
+
+@example
+PRINT USING "##: #,###,##0.00";
+FOR i=0 TO 20
+    PRINT USING; i+1, A(i)
+NEXT
+....
+PRINT USING "Total ###,##0 of \ \"; number, "bytes"
+@end example
+
+@sgnote{*, The symbol ? can be used instead of keyword PRINT
+You can use 'USG' instead of 'USING'.}
+@end deffn
+
+
+@deffn Function CAT (x)
+Returns a console codes
+
+@multitable @columnfractions 0.13 0.87
+@item 0   @tab  reset
+@item 1   @tab  bold on
+@item -1  @tab  bold off
+@item 2   @tab  underline on
+@item -2  @tab  underline off
+@item 3   @tab  reverse on
+@item -3  @tab  reverse off
+@end multitable
+
+PalmOS only@sc{:}
+@multitable @columnfractions 0.25 0.75
+@item 80..87  @tab  select system font
+@item 90..93  @tab  select custom font
+@end multitable
+
+Example@sc{:}
+
+@example
+? cat(1);"Bold";cat(0)
+@end example
+@end deffn
+
+
+@deffn Command INPUT [prompt @{,|;@}] var[, var [, ...]]
+Reads from "keyboard" a text and store it to variable.
+@end deffn
+
+
+@deffn Command LINPUT var
+@deffnx Command LINEINPUT var
+@deffnx Command LINE@tie{}INPUT var
+Reads a whole text line from console.
+@end deffn
+
+
+@deffn Function INKEY
+This function returns the last key-code in keyboard buffer, or
+an empty string if there are no keys.
+
+Special key-codes like the function-keys (PC) or the hardware-buttons
+(PalmOS) are returned as 2-byte string.
+
+Example@sc{:}
+
+@example
+k=INKEY
+IF LEN(k)
+  IF LEN(k)=2
+    ? "H/W #"+ASC(RIGHT(k,1))
+  ELSE
+    ? k; " "; ASC(k)
+  FI
+ELSE
+  ? "keyboard buffer is empty"
+FI
+@end example
+@end deffn
+
+@deffn Command CLS
+Clears the screen.
+@end deffn
+
+@deffn Command AT x, y
+Moves the console cursor to the specified position.
+x,y are in pixels
+@end deffn
+
+@deffn Command LOCATE y, x
+Moves the console cursor to the specified position.
+x,y are in character cells.
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@node Interactive Mode
+@appendix Interactive Mode
+Like a shell, SB can run interactively. The @dfn{Interactive Mode} offers
+an old-style coding taste.
+Also, it is offers a quick editing/testing tool for console mode versions of SB.
+
+The @dfn{Interactive Mode} can be used as a normal command-line @dfn{shell}.
+It executes shell commands as a normal shell, but also, it can store/edit and run SB programs.
+However we @emph{suggest to use an editor}.
+
+@itemize @bullet
+@item We can use the [TAB] for autocompletion (re-edit program lines or filename completition).
+@item We can use [ARROWS] for history.
+@item There is no need to type line numbers, there will be inserted automagically if you use '+' in the beginning of the line.
+@item There is no need to type line numbers, use @command{NUM}.
+@item Line numbers are not labels, are used only for editing. Use keyword @command{LABEL} to define a label.
+@item Line numbers are not saved in files.
+@end itemize
+
+@section Interactive Mode Commands
+
+@deffn Command HELP [sb-keyword]
+Interactive mode help screen. The symbol '?' does the same.
+@end deffn
+
+@deffn Command BYE
+@deffnx Command QUIT
+@deffnx Command EXIT
+The BYE command ends SmallBASIC and returns the control to the Operating System.
+@end deffn
+
+@deffn Command NEW
+The NEW command clears the memory and screen and prepares the computer for a new program.
+Be sure to save the program that you have been working on before you enter NEW as it is
+unrecoverable by any means once NEW has been entered.
+@end deffn
+
+@deffn Command RUN [filename]
+The RUN command, which can also be used as a statement, starts program execution.
+@end deffn
+
+@deffn Command CLS
+Clears the screen.
+@end deffn
+
+@deffn Command LIST @{ [start-line] - [end-line] @}
+The LIST command allows you to display program lines.
+If LIST is entered with no numbers following it, the entire program in memory is listed.
+If a number follows the LIST, the line with that number is listed.
+If a number followed by hyphen follows LIST, that line and all lines following it are listed.
+If a number preceeded by a hyphen follows LIST, all lines preceeding it and that line are listed.
+If two numbers separated by a hyphen follow LIST, the indicated lines and all lines between them are listed.
+@end deffn
+
+@deffn Command RENUM @{ [initial-line] [,] [increment] @}
+The RENUM command allows you to reassign line numbers.
+@end deffn
+
+@deffn Command ERA @{ [start-line] - [end-line] @}
+The ERA command allows you to erase program lines.
+If ERA is entered with no numbers following it, the entire program in memory is erased.
+If a number follows the ERA, the line with that number is erased.
+If a number followed by hyphen follows ERA, that line and all lines following it are erased.
+If a number preceeded by a hyphen follows ERA, all lines preceeding it and that line are erased.
+If two numbers separated by a hyphen follow ERA, the indicated lines and all lines between them are erased.
+@end deffn
+
+@deffn Command NUM [initial-line [, increment]]
+The NUM command sets the values for the autonumbering.
+If the 'initial-line' and 'increment' are not specified,
+the line numbers start at 10 and increase in increments of 10.
+@end deffn
+
+@deffn Command SAVE program-name
+The SAVE command allows you to copy the program in memory to a file.
+By using the LOAD command, you can later recall the program into memory.
+@end deffn
+
+@deffn Command LOAD program-name
+The LOAD command loads 'program-name' file into memory.
+The program must first have been put on file using the SAVE command.
+LOAD removes the program currently in memory before loading 'program-name'.
+@end deffn
+
+@deffn Command MERGE program-name, line-number
+The MERGE command merges lines in 'program-name' file into the program lines already
+in the computer's memory. Use 'line-number' to specify the position where the lines
+will be inserted.
+@end deffn
+
+@deffn Command CD [path]
+Changed the current directory. Without arguments, displays the current directory.
+@end deffn
+
+@deffn Command DIR [regexp]
+@deffnx Command DIRE [regexp]
+@deffnx Command DIRD [regexp]
+@deffnx Command DIRB [regexp]
+Displays the list of files. You can use DIRE for executables only or DIRD for directories only, or DIRB for BASIC sources.
+@end deffn
+
+@deffn Command TYPE filename
+Displays the contents of the file.
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@node MySQL Module
+@appendix MySQL Module
+
+@deffn Function MYSQL.CONNECT (host, database, user, [password])
+Connects/reconnects to the server
+@end deffn
+
+@deffn Function MYSQL.QUERY (handle, sqlstr)
+Send command to mysql server
+@end deffn
+
+@deffn Function MYSQL.DBS (handle)
+Get a list of the databases
+@end deffn
+
+@deffn Function MYSQL.TABLES (handle)
+Get a list of the tables
+@end deffn
+
+@deffn Function MYSQL.FIELDS (handle, table)
+Get a list of the fields of a table
+@end deffn
+
+@deffn Command MYSQL.DISCONNECT handle
+Disconnects
+@end deffn
+
+@deffn Command MYSQL.USE handle, database
+Changes the current database
+@end deffn
+
+@sp 1
+Example@sc{:}
+@example
+import mysql
+
+h = mysql.connect("localhost", "mydatabase", "user", "password")
+? "Handle = "; h
+? "DBS    = "; mysql.dbs(h)
+? "TABLES = "; mysql.tables(h)
+? "Query  = "; mysql.query(h, "SELECT * FROM sbx_counters")
+mysql.disconnect h
+@end example
+
+@c -----------------------------------------------------------------------------
+@node GDBM Module
+@appendix GDBM Module
+
+Example@sc{:}
+@example
+import gdbm
+
+const GDBM_WRCREAT = 2		' A writer.  Create the db if needed.
+
+' TEST
+h = gdbm.open("dbtest.db", 512, GDBM_WRCREAT, 0o666)
+? "Handle = "; h
+? "Store returns = "; gdbm.store(h, "key1", "data1....")
+? "Store returns = "; gdbm.store(h, "key2", "data2....")
+? "Fetch returns = "; gdbm.fetch(h, "key1")
+gdbm.close h
+@end example
+
+@c ---------------------
+@node Limits
+@appendix Limits
+
+@section Typical 32bit system
+@multitable @columnfractions 0.39 0.61
+@item Bytecode size @tab 						4 GB
+@item Length of text lines @tab  			4095 characters
+@item User-defined keyword length @tab  	128 characters
+@item Maximum number of parameters @tab 	256
+@item Numeric value range @tab 			64 bit FPN (-/+ 1E+308)
+@item Maximum string size @tab  				2 GB
+@item Number of file handles @tab  			256
+@item Number of array-dimensions @tab  		6
+@item Number of colors @tab 					24 bit (0-15=VGA, <0=RGB)
+@item Background sound queue size @tab 		256 notes
+@item INPUT (console) @tab 					1023 characters per call, up to 16 variables
+@item COMMAND$ @tab 							1023 bytes
+@end multitable
+
+System events are checked every 50ms
+
+@section PalmOS (Typical 16bit system)
+@multitable @columnfractions 0.37 0.63
+@item Length of text lines @tab            511 characters
+@item Maximum number of parameters @tab     32
+@item User-defined keyword length @tab      32 characters
+@item Number of array-dimensions @tab        3
+@item Maximum string size @tab             <32 KB
+@item Number of file handles @tab           16
+@item Number of elements/array @tab       2970 (that means 64KB of memory)
+@item Bytecode size @tab                   <64 KB (by using CHAIN you can run progs > 64KB)
+@item INPUT (console) @tab  255 characters per call, up to 16 variables
+@item COMMAND$ @tab                        127 bytes
+@end multitable
+
+@c -----------------------------------------------------------------------------
+@node Writting Modules
+@appendix Writting Modules
+
+Modules are dynamic-linked libraries. The modules are "connected" with the
+SmallBASIC with a two-way style. That means, the module can execute functions
+of SB's library.
+
+Module programmers will need to use variable's API to process parameters, and
+return values. Also, the device's API must be used because SB can run in
+different environments, of course module authors can use other C or other-lib
+functions to do their jobs.
+
+Every module must implements the following C functions.
+@table @b
+@item int sblib_proc_count()
+  Returns the number of procedures of the module.
+@item int sblib_func_count()
+  Returns the number of functions of the module.
+@item int sblib_proc_getname(int index, char *name)
+  Fills the 'name' variable with the name of the 'index'-th procedure.
+  Returns 1 on success or 0 on error.
+@item int sblib_func_getname(int index, char *name)
+  Fills the 'name' variable with the name of the 'index'-th function.
+  Returns 1 on success or 0 on error.
+@item int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retval)
+  Executes the 'index' procedure.
+  Returns 1 on success or 0 on error.
+@item int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval)
+  Executes the 'index' function.
+  Returns 1 on success or 0 on error.
+@end table
+
+The slib_par_t structure contains two fields.
+The @var{var_p} which is a var_t structure (a SB variable),
+and the @var{byref} which is true if the variable can be used
+as by-reference.
+
+@c -- var --
+@section Variables API
+
+Variables had 4 types.
+This type is described in .type field.
+
+Values of .type
+@table @var
+@item V_STR
+  String. The value can be accessed at @var{.v.p.ptr}.
+@item V_INT
+  Integer. The value can be accessed at @var{.v.i}.
+@item V_REAL
+  Real-number. The value can be accessed at @var{.v.n}.
+@item V_ARRAY
+  Array. 
+  The .v.a.ptr is the data pointer (sizeof(var_t) * size).
+  The .v.a.size is the number of elements.
+  The .v.a.lbound[MAXDIM] is the lower bound values.
+  The .v.a.ubound[MAXDIM] is the upper bound values.
+  The .v.a.maxdim is the number of dimensions.
+@end table
+
+Example@sc{:}
+@verbatim
+/*
+*   Displays variable data.
+*   If the variable is an array, then this function
+*   runs recursive, and the 'level' parameter is used.
+*/
+static void print_variable(int level, var_t *variable)
+{
+    int i;
+
+    /* if recursive; place tabs */
+    for ( i = 0; i < level; i ++ )
+        dev_printf("\t");
+
+    /* print variable */
+    switch ( variable->type )  {
+    case V_STR:
+        dev_printf("String =\"%s\"\n", variable->v.p.ptr);
+        break;
+    case V_INT:
+        dev_printf("Integer = %ld\n", variable->v.i);
+        break;
+    case V_REAL:
+        dev_printf("Real = %.2f\n",  variable->v.n);
+        break;
+    case V_ARRAY:
+        dev_printf("Array of %d elements\n", variable->v.a.size);
+        for ( i = 0; i < variable->v.a.size; i ++ ) {
+            var_t *element_p;
+
+            element_p = (var_t *) (variable->v.a.ptr + sizeof(var_t) * i);
+            print_variable(level+1, element_p);
+            }
+        break;
+        }
+}
+@end verbatim
+
+@subsection Gereric
+
+@table @b
+@item void v_free(var_t *var)
+  This function resets the variable to 0 integer.
+@item void v_free(var_t *var)
+  This function deletes the contents of varible @var{var}.
+@item var_t* v_new()
+  Creates a new variable and returns it.
+  The returned variable it must be freed with both, v_free() and free() functions.
+@item var_t *v_clone(const var_t *source)
+  Returns a new variable which is a clone of @var{source}.
+  The returned variable it must be freed with both, v_free() and free() functions.
+@item void v_set(var_t *dest, const var_t *src)
+  Copies the @var{src} to @var{dest}.
+@end table
+
+Example
+@verbatim
+void	myfunc()
+{
+	var_t	myvar;
+
+	v_init(&myvar);
+	...
+	v_free(&myvar);
+}
+@end verbatim
+
+@subsection Real Numbers
+@table @b
+@item double v_getreal(var_t *variable)
+  Returns the floating-point value of a variable.
+  if @var{variable} is string it will converted to double.
+@item void v_setreal(var_t *var, double number)
+  Sets the @var{number} real-number value to @var{var} variable.
+@end table
+
+@subsection Integer Numbers
+
+@table @b
+@item double v_igetnum(var_t *variable)
+  Returns the floating-point value of a variable.
+  if @var{variable} is string it will converted to double.
+@item void v_setint(var_t *var, int32 number)
+  Sets the @var{number} integer-number value to @var{var} variable.
+@end table
+
+@subsection Strings
+
+@table @b
+@item void v_tostr(var_t *arg)
+  Converts variable @var{arg} to string.
+@item char*	v_getstr(var_t *var)
+  Returns the string-pointer of variable @var{var}.
+  If the @var{var} is not a string, it must be converted
+  to string with the v_tostr() function.
+@item void v_zerostr(var_t *var)
+  Resets the variable @var{var} to a zero-length string.
+@item void v_setstr(var_t *var, const char *string)
+  Sets the string value @var{string} to the variable @var{var}.
+@item void v_strcat(var_t *var, const char *string)
+  Adds the string @var{string} to string-variable @var{var}.
+@item void v_setstrf(var_t *var, const char *fmt, ...)
+  Sets a string value to variable @var{var} using printf() style.
+  The buffer size is limited to 1KB for OS_LIMITED (PalmOS), otherwise 64kB.
+@end table
+
+@subsection Arrays
+
+SB arrays are always one-dimension.
+The multiple dimensions positions are calculated at run-time.
+Each element of the arrays is a @samp{var_t} object.
+
+@table @b
+@item var_t* v_elem(var_t *array, int index)
+  Returns the variable pointer of the element @var{index}
+  of the @var{array}. @var{index} is a zero-based, one dimention, index.
+@item int v_asize(var_t *array)
+  Returns the number of the elements of the @var{array}.
+@item void v_resize_array(var_t *array, int size)
+  Resizes the 1-dimention @var{array}.
+@item void v_tomatrix(var_t *var, int r, int c)
+  Converts the variable @var{var} to an array of @var{r} rows and @var{c} columns.
+@item void v_toarray1(var_t *var, int n)
+  Converts the variable @var{var} to an array of @var{n} elements.
+@item void v_setintarray(var_t *var, int32 *itable, int count)
+  Makes variable @var{var} an integer array of @var{count} elements.
+  The values are specified in @var{itable}.
+@item void v_setrealarray(var_t *var, double *rtable, int count)
+  Makes variable @var{var} a real-number array of @var{count} elements.
+  The values are specified in @var{rtable}.
+@item void v_setstrarray(var_t *var, char **ctable, int count)
+  Makes variable @var{var} a string array of @var{count} elements.
+  The values (which are copied) are specified in @var{ctable}.
+@end table
+
+Example
+@verbatim
+void	myfunc()
+{
+	int		c_array[] = { 10, 20, 30 };
+	var_t	myvar;
+
+	v_init(&myvar);
+	v_setintarray(&myvar, c_array, 3);
+	v_free(&myvar);
+}
+@end verbatim
+
+@section Typical Module Source
+This is a typical example of a module with one Function and and one Command.
+The command "CMDA" displays its parameters, and the function "FUNCA" returns
+a string.
+
+--- mymod.c ---
+
+@verbatim
+#include <extlib.h>
+
+/*
+*   Displays variable data.
+*   If the variable is an array, then runs recursive, the
+*   'level' parameter is the call level.
+*/
+static void print_variable(int level, var_t *param)
+{
+    int i;
+
+    /* if recursive; place tabs */
+    for ( i = 0; i < level; i ++ )
+        dev_printf("\t");
+
+    /* print variable */
+    switch ( param->type )  {
+    case V_STR:
+        dev_printf("String =\"%s\"\n", param->v.p.ptr);
+        break;
+    case V_INT:
+        dev_printf("Integer = %ld\n", param->v.i);
+        break;
+    case V_REAL:
+        dev_printf("Real = %.2f\n",  param->v.n);
+        break;
+    case V_ARRAY:
+        dev_printf("Array of %d elements\n", param->v.a.size);
+        for ( i = 0; i < param->v.a.size; i ++ ) {
+            var_t *element_p;
+
+            element_p = (var_t *) (param->v.a.ptr + sizeof(var_t) * i);
+            print_variable(level+1, element_p);
+            }
+        break;
+        }
+}
+
+/* typical command */
+void m_cmdA(int param_count, slib_par_t *params, var_t *retval)
+{
+    int i;
+
+    for ( i = 0; i < param_count; i ++ ) {
+        param = params[i].var_p;
+        print_variable(0, param);
+        }
+}
+
+/* typical function */
+int m_funcA(int param_count, slib_par_t *params, var_t *retval)
+{
+    v_setstr(retval, "funcA() works!");
+    return 1;        /* success */
+}
+
+/* the node-type of function/procedure tables */
+typedef struct {
+        char *name;  /* the name of the function */
+        int  (*command)(slib_par_t *, int, var_t *);
+        } mod_kw;
+
+/* functions table */
+static mod_kw func_names[] =
+{
+{ "FUNCA", m_funcA }, // function A
+{ NULL, NULL }
+};
+
+/* commands table */
+static mod_kw proc_names[] =
+{
+{ "CMDA", m_cmdA }, // command A
+{ NULL, NULL }
+};
+
+/* returns the number of the procedures */
+int sblib_proc_count(void)
+{
+    int i;
+
+    for ( i = 0; proc_names[i].name; i ++ );
+    return i;
+}
+
+/* returns the number of the functions */
+int sblib_func_count(void)
+{
+    int i;
+
+    for ( i = 0; func_names[i].name; i ++ );
+    return i;
+}
+
+/* returns the 'index' procedure name */
+int sblib_proc_getname(int index, char *proc_name)
+{
+    strcpy(proc_name, proc_names[index].name);
+    return 1;
+}
+
+/* returns the 'index' function name */
+int sblib_func_getname(int index, char *proc_name)
+{
+    strcpy(proc_name, func_names[index].name);
+    return 1;
+}
+
+/* execute the 'index' procedure */
+int sblib_proc_exec(int index, int param_count,
+                                slib_par_t *params, var_t *retval)
+{ return proc_names[index].command(params, param_count, retval); }
+
+/* execute the 'index' function */
+int sblib_func_exec(int index, int param_count,
+                                slib_par_t *params, var_t *retval)
+{ return func_names[index].command(params, param_count, retval); }
+@end verbatim
+
+
+@section Typical Module Makefile
+This is a typical Makefile. In our example the module name
+is 'mymod' and its source is the 'mymod.c'. Also, our module
+is requires the 'mysqlclient' library to be linked together.
+
+The variables of Makefile
+@table @var
+@item MODNAME
+  The name of the module
+@item MODLIBS
+  The libraries that are required by the module.
+@item MODIDIR
+  The SB's module directory. There will be installed the module.
+@item CINC
+  'Include' path. This must points to the SB source files.
+@item CFLAGS
+  Compilers flags.
+@end table
+
+--- Makefile ---
+
+@verbatim
+MODNAME=mymod
+MODLIBS=-lmysqlclient
+MODIDIR=/usr/lib/sbasic/modules
+CINC=-I/opt/sbasic/source
+CFLAGS=-Wall -fPIC $(CINC) -D_UnixOS -DLNX_EXTLIB
+
+all: $(MODIDIR)/$(MODNAME).so
+
+$(MODIDIR)/$(MODNAME).so: $(MODNAME).c
+    -mkdir -p $(MODIDIR)
+    gcc $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
+    gcc -shared -Wl,-soname,$(MODNAME).so -o $(MODNAME).so $(MODNAME).o $(MODLIBS)
+    mv $(MODNAME).so $(MODIDIR)
+    ldconfig -n $(MODIDIR)
+
+clean:
+    -rm -f *.so *.o $(MODIDIR)/$(MODNAME).so
+@end verbatim
+
+@c ------------------------------------------------------------------------------------------------------------
+@node Glossary
+@appendix Glossary
+
+What it could be good to know.
+
+@table @b
+@item ANSI
+  The American National Standards Institute.  This organization produces
+  many standards, among them the standards for the C and C++ programming
+  languages. See also "ISO".
+
+@item Program
+  An program consists of a series of @dfn{commands}, @dfn{statements},
+  and @dfn{expressions}. The program executed by an interpreted language
+  command by command until it ends.
+
+@item Script
+  Another name for an program.
+  ...
+
+@item Bit
+  Short for "Binary Digit".
+  All values in computer memory ultimately reduce to binary digits: values
+  that are either zero or one.
+
+  Computers are often defined by how many bits they use to represent integer
+  values.  Typical systems are 32-bit systems, but 64-bit systems are
+  becoming increasingly popular, and 16-bit systems are waning in
+  popularity.
+
+@item Character Set
+  The set of numeric codes used by a computer system to represent the
+  characters (letters, numbers, punctuation, etc.) of a particular country
+  or place. The most common character set in use today is ASCII (American
+  Standard Code for Information Interchange).  Many European
+  countries use an extension of ASCII known as ISO-8859-1 (ISO Latin-1).
+
+@item Compiler
+  A program that translates human-readable source code into
+  machine-executable object code.  The object code is then executed
+  directly by the computer or by a virtual-machine.
+  See also "Interpreter".
+
+@item Deadlock
+  The situation in which two communicating processes are each waiting
+  for the other to perform an action.
+
+@item Environment Variables
+  A collection of strings, of the form @var{name@code{=}val}, that each
+  program has available to it. Users generally place values into the
+  environment in order to provide information to various programs. Typical
+  examples are the environment variables @env{HOME} and @env{PATH}.
+
+@item Escape Sequences
+  A special sequence of characters used for describing nonprinting
+  characters, such as @samp{\n} for newline or @samp{\033} for the ASCII
+  ESC (Escape) character.
+
+@item Flag
+  A variable whose truth value indicates the existence or nonexistence
+  of some condition.
+
+@item Free Software Foundation
+@itemx FSF
+  A nonprofit organization dedicated
+  to the production and distribution of freely distributable software.
+  It was founded by Richard M.@: Stallman.
+
+@item GNU General Public License
+@itemx GNU GPL
+  This document describes the terms under which binary library archives
+  or shared objects, and their source code may be distributed.
+
+  With few words, GPL allows source code and binary forms to be used
+  copied and modified freely.
+
+@item GMT
+  "Greenwich Mean Time". It is the time of day used as the
+  epoch for Unix and POSIX systems.
+
+@item GNU
+  "GNU's not Unix".  An on-going project of the Free Software Foundation
+  to create a complete, freely distributable, POSIX-compliant computing
+  environment.
+
+@item GNU/Linux
+  A variant of the GNU system using the Linux kernel, instead of the
+  Free Software Foundation's Hurd kernel.
+  Linux is a stable, efficient, full-featured clone of Unix that has
+  been ported to a variety of architectures.
+  It is most popular on PC-class systems, but runs well on a variety of
+  other systems too.
+  The Linux kernel source code is available under the terms of the GNU General
+  Public License, which is perhaps its most important aspect.
+
+@item Hexadecimal
+  Base 16 notation, where the digits are @code{0}--@code{9} and @code{A}--@code{F},
+  with @samp{A} representing 10, @samp{B} representing 11, and so on, up to
+  @samp{F} for 15.
+  Hexadecimal numbers are written in SB using a leading @samp{0x} or @samp{&H},
+  to indicate their base.  Thus, @code{0x12} is 18 (1 times 16 plus 2).
+
+@item I/O
+  Abbreviation for "Input/Output", the act of moving data into and/or
+  out of a running program.
+
+@item Interpreter
+  A program that reads and executes human-readable source code directly.
+  It uses the instructions in it to process data and produce results.
+
+@item ISO
+  The International Standards Organization.
+  This organization produces international standards for many things, including
+  programming languages, such as C and C++.
+
+@item Lesser General Public License
+@itemx LGPL
+  This document describes the terms under which binary library archives
+  or shared objects, and their source code may be distributed.
+
+@item Octal
+  Base-eight notation, where the digits are @code{0}--@code{7}.
+  Octal numbers are written in SB using a leading @samp{&o},
+  to indicate their base. Thus, @code{&o13} is 11 (one times 8 plus 3).
+
+@item POSIX
+  The name for a series of standards that specify a Portable Operating System
+  interface.  The "IX" denotes the Unix heritage of these standards.
+
+@item Private
+  Variables and/or functions that are meant for use exclusively by this
+  level of functions and not for the main program.
+  See @code{LOCAL}, "Nested Functions".
+
+@item Recursion
+  When a function calls itself, either directly or indirectly.
+
+@item Redirection
+  Redirection means performing input from something other than the standard input
+  stream, or performing output to something other than the standard output stream.
+
+  In Unices, you can redirect the output of the @code{print} statements
+  to a file or a system command, using the @samp{>}, @samp{>>}, @samp{|}, and
+  @samp{|&} operators. You can redirect input to the @code{INPUT} statement using
+  the @samp{<}, @samp{|}, and @samp{|&} operators.
+
+@item RegExp
+@itemx Regulat Expression
+  Short for @dfn{regular expression}.  A regexp is a pattern that denotes a
+  set of strings, possibly an infinite set.  For example, the regexp
+  @samp{R.*xp} matches any string starting with the letter @samp{R}
+  and ending with the letters @samp{xp}.
+
+@item Search Path
+  In SB, a list of directories to search for SB program files.
+  In the shell, a list of directories to search for executable programs.
+
+@item Seed
+  The initial value, or starting point, for a sequence of random numbers.
+
+@item Shell
+  The command interpreter for Unix, POSIX-compliant systems,
+  DOS and WinNT/2K/XP (CMD).
+  The shell works both interactively, and as a programming language
+  for batch files, or shell scripts.
+
+@item Unix
+  A computer operating system originally developed in the early 1970's at
+  AT&T Bell Laboratories.  It initially became popular in universities around
+  the world and later moved into commercial environments as a software
+  development system and network server system. There are many commercial
+  versions of Unix, as well as several work-alike systems whose source code
+  is freely available (such as GNU/Linux, NetBSD, FreeBSD, and OpenBSD).
+
+@end table
+
+@c ------------------------------------------------------------------------------------------------------------
+@node GNU Free Documentation License
+@appendix GNU Free Documentation License
+@center Version 1.1, March 2000
+
+@display
+Copyright (C) 2000  Free Software Foundation, Inc.
+59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.
+@end display
+@sp 1
+@enumerate 0
+@item
+PREAMBLE
+
+The purpose of this License is to make a manual, textbook, or other
+written document ``free'' in the sense of freedom: to assure everyone
+the effective freedom to copy and redistribute it, with or without
+modifying it, either commercially or noncommercially.  Secondarily,
+this License preserves for the author and publisher a way to get
+credit for their work, while not being considered responsible for
+modifications made by others.
+
+This License is a kind of ``copyleft'', which means that derivative
+works of the document must themselves be free in the same sense.  It
+complements the GNU General Public License, which is a copyleft
+license designed for free software.
+
+We have designed this License in order to use it for manuals for free
+software, because free software needs free documentation: a free
+program should come with manuals providing the same freedoms that the
+software does.  But this License is not limited to software manuals;
+it can be used for any textual work, regardless of subject matter or
+whether it is published as a printed book.  We recommend this License
+principally for works whose purpose is instruction or reference.
+
+@sp 1
+@item
+APPLICABILITY AND DEFINITIONS
+
+This License applies to any manual or other work that contains a
+notice placed by the copyright holder saying it can be distributed
+under the terms of this License.  The ``Document'', below, refers to any
+such manual or work.  Any member of the public is a licensee, and is
+addressed as ``you''.
+
+A ``Modified Version'' of the Document means any work containing the
+Document or a portion of it, either copied verbatim, or with
+modifications and/or translated into another language.
+
+A ``Secondary Section'' is a named appendix or a front-matter section of
+the Document that deals exclusively with the relationship of the
+publishers or authors of the Document to the Document's overall subject
+(or to related matters) and contains nothing that could fall directly
+within that overall subject.  (For example, if the Document is in part a
+textbook of mathematics, a Secondary Section may not explain any
+mathematics.)  The relationship could be a matter of historical
+connection with the subject or with related matters, or of legal,
+commercial, philosophical, ethical or political position regarding
+them.
+
+The ``Invariant Sections'' are certain Secondary Sections whose titles
+are designated, as being those of Invariant Sections, in the notice
+that says that the Document is released under this License.
+
+The ``Cover Texts'' are certain short passages of text that are listed,
+as Front-Cover Texts or Back-Cover Texts, in the notice that says that
+the Document is released under this License.
+
+A ``Transparent'' copy of the Document means a machine-readable copy,
+represented in a format whose specification is available to the
+general public, whose contents can be viewed and edited directly and
+straightforwardly with generic text editors or (for images composed of
+pixels) generic paint programs or (for drawings) some widely available
+drawing editor, and that is suitable for input to text formatters or
+for automatic translation to a variety of formats suitable for input
+to text formatters.  A copy made in an otherwise Transparent file
+format whose markup has been designed to thwart or discourage
+subsequent modification by readers is not Transparent.  A copy that is
+not ``Transparent'' is called ``Opaque''.
+
+Examples of suitable formats for Transparent copies include plain
+ASCII without markup, Texinfo input format, LaTeX input format, SGML
+or XML using a publicly available DTD, and standard-conforming simple
+HTML designed for human modification.  Opaque formats include
+PostScript, PDF, proprietary formats that can be read and edited only
+by proprietary word processors, SGML or XML for which the DTD and/or
+processing tools are not generally available, and the
+machine-generated HTML produced by some word processors for output
+purposes only.
+
+The ``Title Page'' means, for a printed book, the title page itself,
+plus such following pages as are needed to hold, legibly, the material
+this License requires to appear in the title page.  For works in
+formats which do not have any title page as such, ``Title Page'' means
+the text near the most prominent appearance of the work's title,
+preceding the beginning of the body of the text.
+@sp 1
+@item
+VERBATIM COPYING
+
+You may copy and distribute the Document in any medium, either
+commercially or noncommercially, provided that this License, the
+copyright notices, and the license notice saying this License applies
+to the Document are reproduced in all copies, and that you add no other
+conditions whatsoever to those of this License.  You may not use
+technical measures to obstruct or control the reading or further
+copying of the copies you make or distribute.  However, you may accept
+compensation in exchange for copies.  If you distribute a large enough
+number of copies you must also follow the conditions in section 3.
+
+You may also lend copies, under the same conditions stated above, and
+you may publicly display copies.
+@sp 1
+@item
+COPYING IN QUANTITY
+
+If you publish printed copies of the Document numbering more than 100,
+and the Document's license notice requires Cover Texts, you must enclose
+the copies in covers that carry, clearly and legibly, all these Cover
+Texts: Front-Cover Texts on the front cover, and Back-Cover Texts on
+the back cover.  Both covers must also clearly and legibly identify
+you as the publisher of these copies.  The front cover must present
+the full title with all words of the title equally prominent and
+visible.  You may add other material on the covers in addition.
+Copying with changes limited to the covers, as long as they preserve
+the title of the Document and satisfy these conditions, can be treated
+as verbatim copying in other respects.
+
+If the required texts for either cover are too voluminous to fit
+legibly, you should put the first ones listed (as many as fit
+reasonably) on the actual cover, and continue the rest onto adjacent
+pages.
+
+If you publish or distribute Opaque copies of the Document numbering
+more than 100, you must either include a machine-readable Transparent
+copy along with each Opaque copy, or state in or with each Opaque copy
+a publicly-accessible computer-network location containing a complete
+Transparent copy of the Document, free of added material, which the
+general network-using public has access to download anonymously at no
+charge using public-standard network protocols.  If you use the latter
+option, you must take reasonably prudent steps, when you begin
+distribution of Opaque copies in quantity, to ensure that this
+Transparent copy will remain thus accessible at the stated location
+until at least one year after the last time you distribute an Opaque
+copy (directly or through your agents or retailers) of that edition to
+the public.
+
+It is requested, but not required, that you contact the authors of the
+Document well before redistributing any large number of copies, to give
+them a chance to provide you with an updated version of the Document.
+@sp 1
+@item
+MODIFICATIONS
+
+You may copy and distribute a Modified Version of the Document under
+the conditions of sections 2 and 3 above, provided that you release
+the Modified Version under precisely this License, with the Modified
+Version filling the role of the Document, thus licensing distribution
+and modification of the Modified Version to whoever possesses a copy
+of it.  In addition, you must do these things in the Modified Version:
+
+@enumerate A
+@item
+Use in the Title Page (and on the covers, if any) a title distinct
+from that of the Document, and from those of previous versions
+(which should, if there were any, be listed in the History section
+of the Document).  You may use the same title as a previous version
+if the original publisher of that version gives permission.
+
+@item
+List on the Title Page, as authors, one or more persons or entities
+responsible for authorship of the modifications in the Modified
+Version, together with at least five of the principal authors of the
+Document (all of its principal authors, if it has less than five).
+
+@item
+State on the Title page the name of the publisher of the
+Modified Version, as the publisher.
+
+@item
+Preserve all the copyright notices of the Document.
+
+@item
+Add an appropriate copyright notice for your modifications
+adjacent to the other copyright notices.
+
+@item
+Include, immediately after the copyright notices, a license notice
+giving the public permission to use the Modified Version under the
+terms of this License, in the form shown in the Addendum below.
+
+@item
+Preserve in that license notice the full lists of Invariant Sections
+and required Cover Texts given in the Document's license notice.
+
+@item
+Include an unaltered copy of this License.
+
+@item
+Preserve the section entitled ``History'', and its title, and add to
+it an item stating at least the title, year, new authors, and
+publisher of the Modified Version as given on the Title Page.  If
+there is no section entitled ``History'' in the Document, create one
+stating the title, year, authors, and publisher of the Document as
+given on its Title Page, then add an item describing the Modified
+Version as stated in the previous sentence.
+
+@item
+Preserve the network location, if any, given in the Document for
+public access to a Transparent copy of the Document, and likewise
+the network locations given in the Document for previous versions
+it was based on.  These may be placed in the ``History'' section.
+You may omit a network location for a work that was published at
+least four years before the Document itself, or if the original
+publisher of the version it refers to gives permission.
+
+@item
+In any section entitled ``Acknowledgements'' or ``Dedications'',
+preserve the section's title, and preserve in the section all the
+substance and tone of each of the contributor acknowledgements
+and/or dedications given therein.
+
+@item
+Preserve all the Invariant Sections of the Document,
+unaltered in their text and in their titles.  Section numbers
+or the equivalent are not considered part of the section titles.
+
+@item
+Delete any section entitled ``Endorsements''.  Such a section
+may not be included in the Modified Version.
+
+@item
+Do not retitle any existing section as ``Endorsements''
+or to conflict in title with any Invariant Section.
+@end enumerate
+
+If the Modified Version includes new front-matter sections or
+appendices that qualify as Secondary Sections and contain no material
+copied from the Document, you may at your option designate some or all
+of these sections as invariant.  To do this, add their titles to the
+list of Invariant Sections in the Modified Version's license notice.
+These titles must be distinct from any other section titles.
+
+You may add a section entitled ``Endorsements'', provided it contains
+nothing but endorsements of your Modified Version by various
+parties--for example, statements of peer review or that the text has
+been approved by an organization as the authoritative definition of a
+standard.
+
+You may add a passage of up to five words as a Front-Cover Text, and a
+passage of up to 25 words as a Back-Cover Text, to the end of the list
+of Cover Texts in the Modified Version.  Only one passage of
+Front-Cover Text and one of Back-Cover Text may be added by (or
+through arrangements made by) any one entity.  If the Document already
+includes a cover text for the same cover, previously added by you or
+by arrangement made by the same entity you are acting on behalf of,
+you may not add another; but you may replace the old one, on explicit
+permission from the previous publisher that added the old one.
+
+The author(s) and publisher(s) of the Document do not by this License
+give permission to use their names for publicity for or to assert or
+imply endorsement of any Modified Version.
+@sp 1
+@item
+COMBINING DOCUMENTS
+
+You may combine the Document with other documents released under this
+License, under the terms defined in section 4 above for modified
+versions, provided that you include in the combination all of the
+Invariant Sections of all of the original documents, unmodified, and
+list them all as Invariant Sections of your combined work in its
+license notice.
+
+The combined work need only contain one copy of this License, and
+multiple identical Invariant Sections may be replaced with a single
+copy.  If there are multiple Invariant Sections with the same name but
+different contents, make the title of each such section unique by
+adding at the end of it, in parentheses, the name of the original
+author or publisher of that section if known, or else a unique number.
+Make the same adjustment to the section titles in the list of
+Invariant Sections in the license notice of the combined work.
+
+In the combination, you must combine any sections entitled ``History''
+in the various original documents, forming one section entitled
+``History''; likewise combine any sections entitled ``Acknowledgements'',
+and any sections entitled ``Dedications''.  You must delete all sections
+entitled ``Endorsements.''
+@sp 1
+@item
+COLLECTIONS OF DOCUMENTS
+
+You may make a collection consisting of the Document and other documents
+released under this License, and replace the individual copies of this
+License in the various documents with a single copy that is included in
+the collection, provided that you follow the rules of this License for
+verbatim copying of each of the documents in all other respects.
+
+You may extract a single document from such a collection, and distribute
+it individually under this License, provided you insert a copy of this
+License into the extracted document, and follow this License in all
+other respects regarding verbatim copying of that document.
+@sp 1
+@item
+AGGREGATION WITH INDEPENDENT WORKS
+
+A compilation of the Document or its derivatives with other separate
+and independent documents or works, in or on a volume of a storage or
+distribution medium, does not as a whole count as a Modified Version
+of the Document, provided no compilation copyright is claimed for the
+compilation.  Such a compilation is called an ``aggregate'', and this
+License does not apply to the other self-contained works thus compiled
+with the Document, on account of their being thus compiled, if they
+are not themselves derivative works of the Document.
+
+If the Cover Text requirement of section 3 is applicable to these
+copies of the Document, then if the Document is less than one quarter
+of the entire aggregate, the Document's Cover Texts may be placed on
+covers that surround only the Document within the aggregate.
+Otherwise they must appear on covers around the whole aggregate.
+@sp 1
+@item
+TRANSLATION
+
+Translation is considered a kind of modification, so you may
+distribute translations of the Document under the terms of section 4.
+Replacing Invariant Sections with translations requires special
+permission from their copyright holders, but you may include
+translations of some or all Invariant Sections in addition to the
+original versions of these Invariant Sections.  You may include a
+translation of this License provided that you also include the
+original English version of this License.  In case of a disagreement
+between the translation and the original English version of this
+License, the original English version will prevail.
+@sp 1
+@item
+TERMINATION
+
+You may not copy, modify, sublicense, or distribute the Document except
+as expressly provided for under this License.  Any other attempt to
+copy, modify, sublicense or distribute the Document is void, and will
+automatically terminate your rights under this License.  However,
+parties who have received copies, or rights, from you under this
+License will not have their licenses terminated so long as such
+parties remain in full compliance.
+@sp 1
+@item
+FUTURE REVISIONS OF THIS LICENSE
+
+The Free Software Foundation may publish new, revised versions
+of the GNU Free Documentation License from time to time.  Such new
+versions will be similar in spirit to the present version, but may
+differ in detail to address new problems or concerns.  See
+@uref{http://www.gnu.org/copyleft/}.
+
+Each version of the License is given a distinguishing version number.
+If the Document specifies that a particular numbered version of this
+License ``or any later version'' applies to it, you have the option of
+following the terms and conditions either of that specified version or
+of any later version that has been published (not as a draft) by the
+Free Software Foundation.  If the Document does not specify a version
+number of this License, you may choose any version ever published (not
+as a draft) by the Free Software Foundation.
+
+@end enumerate
+
+@section ADDENDUM: How to use this License for your documents
+
+To use this License in a document you have written, include a copy of
+the License in the document and put the following copyright and
+license notices just after the title page:
+
+@smallexample
+@group
+
+  Copyright (C)  @var{year}  @var{your name}.
+  Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1
+  or any later version published by the Free Software Foundation;
+  with the Invariant Sections being @var{list their titles}, with the
+  Front-Cover Texts being @var{list}, and with the Back-Cover Texts being @var{list}.
+  A copy of the license is included in the section entitled ``GNU
+  Free Documentation License''.
+@end group
+@end smallexample
+If you have no Invariant Sections, write ``with no Invariant Sections''
+instead of saying which ones are invariant.  If you have no
+Front-Cover Texts, write ``no Front-Cover Texts'' instead of
+``Front-Cover Texts being @var{list}''; likewise for Back-Cover Texts.
+
+If your document contains nontrivial examples of program code, we
+recommend releasing these examples in parallel under your choice of
+free software license, such as the GNU General Public License,
+to permit their use in free software.
+
+@c ------------------------------------------------------------------------------------------------------------
+
+@node Command Index
+@appendix Command Index
+@printindex fn
+
+@node Variable Index
+@appendix Variable Index
+@printindex vr
+
+@bye
+

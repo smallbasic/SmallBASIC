@@ -1,0 +1,793 @@
+Welcome to SmallBASIC
+----------------------------
+
+SmallBASIC (SB) is a BASIC-like interpreter.
+It is targeting to non-IT users.
+It has advanced mathematics, string and graphics library.
+It is not, and it will never be, a developer tool by the meaning
+of giving tools.
+
+----------------------------
+Useful notes for beginners
+----------------------------
+
+How to read the syntax:
+
+Everything is written inside of [] characters are optional values.
+Everything is written inside of {} characters means you must select one
+of them.
+The symbol | means OR.
+The symbols ... means you can repeat the previous syntax.
+The keywords are written with capital letters.
+Keywords with suffix () are functions.
+
+Example:
+' Syntax: TEST {1|2}
+' Valid calls:
+TEST 1
+TEST 2
+...
+' Syntax: TEST [HI]
+' Valid calls:
+TEST
+TEST HI
+
+----------------------------
+Limits
+----------------------------
+
+Bytecode size: 4 GB
+Length of text lines: 4095 characters
+User-defined keyword length: 128 characters
+Maximum number of parameters: 256
+Numeric value range: 64 bit FPN (-/+ 1E+308)
+Maximum string size: 2 GB
+Number of file handles: 256
+Number of array-dimensions: 6
+Number of colors: 24 bit (0-15=VGA,<0=RGB)
+Background sound queue size: 256 notes
+INPUT (console): 1023 characters per call, up to 16 variables
+COMMAND$ 1023 bytes
+
+System events are checked every 50ms
+
+=== PalmOS only (or other limited OS):
+Length of text lines: 511 characters
+Maximum number of parameters: 32
+User-defined keyword length: 32 characters
+Number of array-dimensions: 3
+Maximum string size:<32 KB
+Number of file handles: 16
+Number of elements/array: 2970 (that means 64KB of memory)
+Bytecode size:<64 KB
+(by using CHAIN you can run progs > 64KB)
+INPUT (console): 255 characters per call, up to 16 variables
+COMMAND$ 127 bytes
+
+----------------------------
+Constants and Variables
+----------------------------
+
+SmallBASIC uses internally 4 data-types
+1. Integer (32bit)
+2. Real (64bit)
+3. String (<32KB on 16bit / 2GB on 32bit)
+4. Array (~2970 elements on 16bit /~50M elements on 32bit)
+
+Reals can be also written by using scientific notation.
+1E+2, 1E-3, 2.6E-0.25, etc
+
+All user variables (include arrays) are 'VARIANT'. That means the
+data-type is invisible to user.
+
+Variable names can use any alphanumeric characters, extended
+characters (ASCII codes 128-255 for non-English languages) the symbol
+'_', and the symbol '$'.
+
+The first character of the name cannot be a digit nor a '$'.
+
+About the dollar-symbol:
+The symbol '$' is supported for compatibility.
+Since in SmallBASIC there are no data-types its use is meaningless.
+
+The dollar in function names will be ignored
+The dollar in variable names will be count as part of the name
+(that means v and v$ are two different variables)
+The dollar in system variables names will be ignore it
+(that means COMMAND and COMMAND$ is the same)
+
+abc, a_c,_bc, ab2c, abc$-> valid names
+1cd, a$b,$abc -> invalid names
+
+Strings may be appended to one another using the + operator.
+
+b ="Hello,"+"world!"
+
+Constant variables can be declared by using the keyword CONST
+
+CONST ð = 3.14
+
+----------------------------
+System Variables
+----------------------------
+
+OSNAME - Operating System name
+OSVER - Operating System Version (0xAABBCC
+(A=major, B=minor, C=patch)
+SBVER - SmallBASIC Version (0xAABBCC)
+
+PI - 3.14..
+
+XMAX,YMAX - Graphics display: maximum x (width-1), y (height-1) value
+BPP - Graphics display: bits per pixel (color resolution)
+VIDADR - Video RAM address (only on specific drivers)
+
+CWD - Current Working Directory
+HOME - User's directory
+COMMAND - Command-line parameters
+
+TRUE - The value 1
+FALSE - The value 0
+
+----------------------------
+Operators - by priority
+----------------------------
+
+() Parenthesis
+
++,- Unary
+~ bitwise NOT
+NOT or ! Logical NOT (NOT false = true)
+
+^ Exponentiation
+
+*,/,\ Multiplication, Division, Integer Division
+% or MOD Reminder (like QB's; a=int(a), b=int(b), a-b*(a/b))
+MDL Modulus (a%b+b*(sgn(a)<>sgn(b)))
+
++,- Addition/Concatenation, Subtraction
+
+= Equal
+<> or != Not Equal
+>,< Less Than, Greater Than
+=>,=< Less or Equal, Greater or Equal
+>=,<= Less or Equal, Greater or Equal
+IN see "The IN operator"
+LIKE see "The LIKE operator"
+
+AND or && Logical AND
+OR or || Logical OR
+BAND or & bitwise AND
+BOR or | bitwise OR
+EQV bitwise EQV
+IMP bitwise IMP
+XOR bitwise XOR
+NAND bitwise NAND
+NOR bitwise NOR
+XNOR bitwise XNOR
+
+----------------------------
+Special Characters
+----------------------------
+
+&h or 0x Prefix for hexadecimal constant (0x1F,&h3C)
+&o or 0o Prefix for octal constant (0o33,&o33)
+&b or 0b Prefix for binary constant (0b1010,&b1110)
+
+[,;] Array definition (function ARRAY())($1)
+
+<< Appends to an array (command APPEND)($1)
+
+++ Increase a value by 1 (x = x + 1)($1)
+
+-- Decrease a value by 1 (x = x - 1)($1)
+
+p= Another LET macro (x = x p ...)($1)
+Where p any character of -+/\*^%&|
+
+: Separates commands typed on the same line
+
+& Join code lines (if its the last character of the line)
+The result line its must not exceed the max. line size.
+
+# Meta-command (if its the first character of the line)
+or prefix for file handle
+
+@ The 'at' symbol can by used instead of BYREF ($1)
+
+' Remarks
+
+Notes:
+($1)= Pseudo operators. These operators are replaced by compiler with
+a command or an expression.
+
+----------------------------
+The OPTION keyword
+----------------------------
+
+Syntax:
+OPTION keyword parameters
+
+This special command is used to pass parameters to the SB-environment.
+There are two styles for that, the run-time (like BASE) which can
+change the value at run-time, and the compile-time (like PREDEF)
+which used only in compile-time and the value cannot be changed
+on run-time.
+
+Keyword: BASE (run-time)
+
+OPTION BASE lower-bound
+
+Sets the default lower bound for arrays.
+
+Keyword: PREDEF (compile-time)
+
+OPTION PREDEF {QUITE|COMMAND cmdstr|GRMODE}
+
+Sets parameters of the compiler
+
+QUITE
+sets quite flag (-q option)
+
+COMMAND cmdstr
+sets the COMMAND$ string (useful for debug reasons)
+
+GRMODE [WIDTHxHEIGHT[xBPP]]
+sets the graphics mode flag (-g option)
+or sets the prefered screen resolution.
+
+Example:
+
+(Clie HiRes)
+OPTION PREDEF GRMODE 320x320x16
+
+TEXTMODE
+sets the text mode flag (-g- option)
+
+CSTR
+support c-style special character encoding ('\')
+
+----------------------------
+Meta-commands
+----------------------------
+
+#!...
+Used by Unix to make source runs as a script executable
+
+#sec:section name
+Used internally to store the section name. DO NOT USE IT!
+
+#inc:"file"
+or
+#inc:file
+Used to include a SmallBASIC source file into the current BASIC code
+
+Example:
+...
+#inc:"mylib.bas"
+...
+MyLibProc "Hi"
+
+----------------------------
+Arrays and Matrices
+----------------------------
+
+Define a 3x2 matrix
+
+A =[11, 12; 21, 22; 31, 32]
+
+That creates the array
+
+| 11 12 |
+| 21 22 |= A
+| 31 32 |
+
+The comma used to separate column items; the semi-colon used to
+separate rows. Values between columns can be omitted.
+
+Example:
+
+A =[;; 1, 2 ; 3, 4, 5]
+
+This creates the array
+
+| 0 0 0 |
+| 1 2 0 |= A
+| 3 4 5 |
+
+Supported operators:
+
+Add/sub:
+B =[1, 2; 3, 4]: C =[5, 6; 7, 8]
+
+A = B + C
+C = A - B
+
+Equal:
+bool=(A=B)
+
+Unary:
+A2 =-A
+
+Multiplication:
+
+A =[1, 2; 3, 4]: B =[5 ; 6]
+C = A * B
+D = 0.8 * A
+
+Inverse:
+A =[ 1,-1, 1; 2,-1, 2; 3, 2,-1]
+? INVERSE(A)
+
+Gauss-Jordan:
+
+?"Solve this:"
+?" 5x - 2y + 3z =-2"
+?"-2x + 7y + 5z = 7"
+?" 3x + 5y + 6z = 9"
+?
+A =[ 5,-2, 3;-2, 7, 5; 3, 5, 6]
+B =[-2; 7; 9]
+C = LinEqn(A, B)
+?"[x;y;z]="; C
+
+Note:
+There is a problem with 1 dimension arrays, because 1-dim arrays does
+not specify how SmallBASIC must see them.
+
+Example:
+
+DIM A(3)
+
+| 1 2 3 |= A
+
+or
+
+| 1 |
+| 2 |= A
+| 3 |
+
+And because this is not the same thing.(ex. for multiplication)
+
+So the default is columns
+
+DIM A(3)' or A(1,3)
+
+| 1 2 3 |= A
+
+For vertical arrays you must declare it as 2-dim arrays Nx1
+
+DIM A(3,1)
+
+| 1 |
+| 2 |= A
+| 3 |
+
+----------------------------
+Nested arrays
+----------------------------
+
+Nested arrays are allowed
+
+Example:
+
+A =[[1,2],[3,4]]
+B =[1, 2, 3]
+C =[4, 5]
+B(2)= C
+print B
+
+This will be printed
+[1, 2,[4, 5], 3]
+
+You can access them by using a second (or third, etc) pair of
+parenthesis.
+
+B(2)(1)= 16
+print B(2)(1)
+
+Result:
+16
+
+----------------------------
+The operator IN
+----------------------------
+
+IN operator is used to compare if the left-expression belongs to
+right-expression
+
+Example:
+' Using it with arrays
+print 1 in [2,3]:REM FALSE
+print 1 in [1,2]:REM TRUE
+...
+' Using it with strings
+print "na" in "abcde":REM FALSE
+print "cd" in "abcde":REM TRUE
+...
+' Using it with number (true only if left = right)
+print 11 in 21 :REM FALSE
+print 11 in 11 :REM TRUE
+...
+' special case
+' auto-convert integers/reals
+print 12 in "234567":REM FALSE
+print 12 in "341256":REM TRUE
+
+----------------------------
+The operator LIKE
+----------------------------
+
+LIKE is a regular-expression operator.
+It is compares the left part of the expression with the pattern (right
+part).
+Since the original regular expression code is too big (for handhelds),
+I use only a subset of it, based on an excellent old stuff by
+J. Kercheval (match.c, public-domain, 1991).
+The same code is used for filenames (FILES(), DIRWALK)
+
+In the pattern string:
+* matches any sequence of characters (zero or more)
+? matches any character
+[SET] matches any character in the specified set,
+[!SET] or [^SET] matches any character not in the specified set.
+
+A set is composed of characters or ranges; a range looks like
+character hyphen character (as in 0-9 or A-Z).[0-9a-zA-Z_] is the
+minimal set of characters allowed in the [..] pattern construct.
+
+To suppress the special syntactic significance of any of `[]*?!^-\',
+and match the character exactly, precede it with a `\'.
+
+Example:
+?"Hello" LIKE "*[oO]": REM TRUE
+?"Hello" LIKE "He??o": REM TRUE
+?"Hello" LIKE "hello": REM FALSE
+?"Hello" LIKE "[Hh]*": REM TRUE
+
+----------------------------
+The pseudo-operator <<
+----------------------------
+
+This operator can be used to append elements to an array.
+
+Example:
+
+A << 1
+A << 2
+A << 3
+
+? A(1)
+
+----------------------------
+Subroutines and Functions
+----------------------------
+
+Syntax:
+SUB name [([BYREF] par1 [,...[BYREF] parN)]]
+[LOCAL var[, var[,...]]]
+[EXIT SUB]
+...
+END
+
+Syntax:
+FUNC name[([BYREF] par1 [,...[BYREF] parN)]]
+[LOCAL var[, var[,...]]]
+[EXIT FUNC]
+...
+name=return-value
+END
+
+Use function's name to return the value.
+
+Alternative FUNC/DEF syntax (single-line functions)
+This is a macro for compatibility with the BASIC's DEF FN command.
+
+Syntax:
+FUNC name[(par1[,...])]= expression
+or
+DEF name[(par1[,...])]= expression
+
+Example:
+
+DEF FNSin(x)= SIN(x)
+? FNSin(pi/2)
+
+Nested procedures/functions are allowed (like Pascal).
+
+Example:
+
+FUNC f(x)
+Rem Function: F/F1
+FUNC f1(x)
+Rem Function: F/F1/F2
+FUNC f2(x)
+f2=cos(x)
+END
+f1 = f2(x)/4
+END
+Rem Function: F/F3
+FUNC f3
+f3=f1(pi/2)
+END
+REM
+? f1(pi): REM OK
+? f2(pi): REM ERROR
+f = x + f1(pi)+ f3 : REM OK
+END
+
+The parameters are 'by value' by default.
+Passing parameters by value means the executor makes a copy of the
+parameter to stack. The value in caller's code will not be changed.
+
+Use BYREF keyword for passing parameters 'by reference'.
+Passing parameters by reference means the executor push the pointer
+of variable into the stack. The value in caller's code will be the
+changed.
+
+Example:
+
+' Passing 'x' by value
+SUB F(x)
+x=1
+END
+
+x=2
+F x
+? x:REM displays 2
+----------------------------
+
+' Passing 'x' by reference
+SUB F(BYREF x)
+x=1
+END
+
+x=2
+F x
+? x:REM displays 1
+
+You can use the symbol '@' instead of BYREF. There is no
+difference between @ and BYREF.
+
+SUB F(@x)
+x=1
+END
+
+On a multi-section applications sub/funcs needs declaration on the main
+section.
+
+Example:
+
+#sec:Main
+declare func f(x)
+
+#sec:another section
+func f(x)
+...
+end
+
+Use the LOCAL keyword for local variables.
+LOCAL creates variables (dynamic) at routine's code.
+
+Example:
+
+SUB MYPROC
+LOCAL N:REM LOCAL VAR
+N=2
+? N:REM displays 2
+END
+
+N=1:REM GLOBAL VAR
+MYPROC
+? N:REM displays 1
+
+You can send arrays as parameters.
+
+When using arrays as parameters its better to use them as BYREF;
+otherwise their data will be duplicated.
+
+Example:
+
+SUB FBR(BYREF tbl)
+? FRE(0)
+...
+END
+
+SUB FBV(tbl)
+? FRE(0)
+...
+END
+
+' MAIN
+DIM dt(128)
+...
+? FRE(0)
+FBR dt
+? FRE(0)
+FBV dt
+? FRE(0)
+
+Passing & returning arrays, using local arrays.
+
+Example:
+
+func fill(a)
+local b, i
+
+dim b(16)
+for i=0 to 16
+b(i)=16-a(i)
+next
+fill=b
+end
+
+DIM v(4)
+v=fill(v)
+
+----------------------------
+Units (SB libraries)
+----------------------------
+
+Units are a set of procedures, functions and/or variables that can
+be used by another SB program or SB unit.
+The main section of the unit (commands out of procedures or functions)
+is the initialization code.
+
+A unit declared by the use of 'UNIT' keyword.
+
+UNIT MyUnit
+
+The functions, procedure or variables which we want to be visible to
+another programs must be declared with the 'EXPORT' keyword.
+
+UNIT MyUnit
+EXPORT MyF
+...
+FUNC MyF(x)
+...
+END
+
+Note:
+Keep file-name and unit-name the same. That helps the SB to
+automatically recompile the required units when it is needed.
+
+To link a program with a unit we must use the 'IMPORT' keyword.
+
+IMPORT MyUnit
+
+To access a member of a unit we must use the unit-name,
+a point and the name of the member.
+
+IMPORT MyUnit
+...
+PRINT MyUnit.MyF(1/1.6)
+
+
+Example:
+
+----------------------------
+file my_unit.bas:
+----------------------------
+UNIT MyUnit
+
+EXPORT F, V
+
+REM a shared function
+FUNC F(x)
+F = x*x
+END
+
+REM a non-shared function
+FUNC I(x)
+I = x+x
+END
+
+REM Initialization code
+V="I am a shared variable"
+L="I am invisible to the application"
+PRINT "Unit 'MyUnit' initialized :)"
+
+----------------------------
+file my_app.bas:
+----------------------------
+IMPORT MyUnit
+
+PRINT MyUnit.V
+PRINT MyUnit.F(2)
+
+----------------------------
+The pseudo-operators ++/--/p=
+----------------------------
+
+The ++ and -- operators are used to increase or decrease the value of a
+variable by 1.
+
+x = 4
+x ++: REM x <- x + 1 = 5
+x --: REM x <- x - 1 = 4
+
+The generic p= operators are used as in C
+Where p any character of -+/\*^%&|
+
+x += 4 : REM x <- x + 4
+x *= 4 : REM x <- x * 4
+
+All these pseudo-operators are not allowed inside of expressions
+
+y = x ++' ERROR
+z =(y+=4)+5 ' ALSO ERROR
+
+----------------------------
+The USE keyword
+----------------------------
+
+This keyword is used on specific commands to passing a user-defined
+expression.
+
+Example:
+
+SPLIT s,"",v USE TRIM(x)
+
+In that example, every element of V() will be 'trimmed'.
+
+Use the x variable to specify the parameter of the expression.
+If the expression needs more parameter, you can use also the names
+y and z
+
+----------------------------
+The DO keyword
+----------------------------
+
+This keyword is used to declare single-line commands.
+It can be used with WHILE and FOR-family commands.
+
+Example:
+FOR f IN files("*.txt") DO PRINT f
+...
+WHILE i < 4 DO i ++
+
+Also, it can be used by IF command (instead of THEN), but is not
+suggested.
+
+----------------------------
+Uncategorized
+----------------------------
+
+* White-spaces
+
+The white-spaces in the SmallBASIC and in "C" are:
+space, form-feed ('\f'), new-line ('\n'), carriage-return ('\r'),
+horizontal-tab ('\t'), and vertical tab ('\v').
+
+The 'white-spaces' are used by routines like SQUEEZE.
+
+* The '$' is an unused character. You can use it as suffix to
+functions names. SB will ignore it.
+
+x=LEFT("abcd", 2)
+y=LEFT$("abcd",2)
+
+Both calls are correct and are the same.
+
+* Notes on FOR-commands
+
+These commands are evaluate the 'destination' everytime.
+
+FOR i=0 TO LEN(FILES("*.txt"))-1
+PRINT i
+NEXT
+
+In that example the 'destination' is the LEN(FILES("*.txt"))-1
+For each value of i the destination will be evaluated.
+That is WRONG but it is supported by BASIC and many other languages.
+
+So, it is much better to be rewritten as
+
+idest=LEN(FILES("*.txt"))-1
+FOR i=0 TO idest
+PRINT i
+NEXT
+
+Of course, it is much faster too.
+
+----------------------------

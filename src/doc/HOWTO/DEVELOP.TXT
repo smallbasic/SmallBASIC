@@ -1,0 +1,290 @@
+#!/usr/bin/less
+
+SmallBASIC
+Information for developers
+For SB version 0.8.0+
+
+-----------------------------------------------------------------------
+HOWTO: HOWTO
+-----------------------------------------------------------------------
+Information can be found:
+
+var.h	- code & variables API/information
+pproc.h	- RTL & parameters API/information
+
+-----------------------------------------------------------------------
+HOWTO: Source code convertion for DOS to Unix and backward
+-----------------------------------------------------------------------
+
+a) Unix users
+Note: The Unix format is the default, so the following process does
+not needed
+
+	cd utils
+	make
+	make install
+	rehash 			# for tcsh only
+	cd ..
+	./ForUnix
+
+b) Win32 users (you'll find bugs)
+
+	cd utils
+	nmake -f Makefile.nmk
+	copy d2u.exe c:\windows\command
+	copy u2d.exe c:\windows\command
+	copy mksmall.exe c:\windows\command
+	cd ..
+
+    run u2d for each source file (sorry but wildcards are automatic 
+    only on unix shells)
+
+-----------------------------------------------------------------------
+FAQ: I have a lot of warnings about memset() (compilation for PalmOS)
+-----------------------------------------------------------------------
+
+This is problem of prc-tools. There is a small conflict between SDK's
+and prc-tools, about the memset() declaration (maybe code too).
+
+Anyway SB has no problem with that.
+
+If you want to not see it again, you must fix the string.h file which
+is included with prc-tools.
+
+-----------------------------------------------------------------------
+HOWTO: Sony CLIE SDK
+-----------------------------------------------------------------------
+I have tried to port SB for Sony CLIE (actually I want to use the HiRes
+only). That was unsuccesfull.
+
+For Sony Clie we will need the Sony's SDK (I have Rel2)
+
+1. Create a directory under palmdev/sdk/include directory with the name
+'sony'
+
+Example:
+/opt/palmdev/sdk/include/sony/
+
+2. Copy the files from Sony's Incs/ directory to sony/ 
+
+Example:
+/opt/palmdev/sdk/include/sony/SonyCLIE.h
+
+3. under the directories 
+/opt/palmdev/sdk/include/sony/
+/opt/palmdev/sdk/include/sony/Libraries/
+/opt/palmdev/sdk/include/sony/System/
+
+run the command 'd2u *' which converts the files from DOS to Unix
+text format.
+
+The d2u is located at SB's directory sync/utils/
+
+Note: At this point I was got a lot of warnings. So, for PalmOS
+I am not using the warnings any more (-w).
+
+4. Edit the Makefile and remove remark from the SONYSDK variable
+(if you like less warnings change the WARN variable too)
+
+-----------------------------------------------------------------------
+HOWTO: Add a new procedure into BASIC's system library
+-----------------------------------------------------------------------
+
+### Step 1. create the code
+blib.c:
+	...
+	void new_basic_proc()
+	{
+		pcprintf("Hello, world!");
+	}
+
+### Step 2. declare your procedure 
+blib.h:
+	...
+	void	new_basic_proc() SEC(BLIB);
+	...
+
+### Step 3: take an ID for your procedure
+kw.h:
+	...
+	enum proc_keywords	{
+	...
+	kwNEWBASICPROC,
+	...
+
+### Step 4: update the compiler
+scan.c:
+...
+
+struct proc_keyword_s proc_table[] = {
+...
+{ "MYPROC", kwNEWBASICPROC },
+...
+
+Step 5:	update the "executor"
+brun.c:
+	...
+	void	brun(char* file)
+	...
+	/**
+	*	DO NOT CREATE FUNCTION-PTR-TABLE
+	*	function tables does not works with multiseg
+	*/
+	...
+    /* -----------------------------------------
+    *       buildin procedures -- BEGIN
+    */
+    case    kwTYPE_CALLP:
+        pcode = code_getaddr();
+        switch ( pcode )        {
+        case kwNEWBASICPROC:
+            new_basic_proc();
+            break;
+	...
+
+### Step 6: test it
+% cat myproc-test.bas:
+myproc
+
+% make clean ; make unix
+% ./sbasic -q myproc-test.bas
+Hello, world!
+
+* DONE *
+
+%
+
+### Step 7: update the "help" of SmallBASIC IDE
+doc/ref.txt:
+...
+MYPROC	- displays the text "hello, world!"
+...
+
+-----------------------------------------------------------------------
+HOWTO: Add an device driver
+-----------------------------------------------------------------------
+
+Please read osd.h (API)
+
+You must implement all these routines to a C module.
+You can do not add sound and/or mouse driver if you want to use
+add-on drivers (dev_oss.c, dev_gpm.c) for these devices.
+
+you must add your C module to Makefile:
+
+Example (MY_DRIVER.c is your code and MYsbasic the new SB executor):
+
+$(BINDIR)/MYsbasic: $(unix_obj) MY_DRIVER.c device.c
+	$(UCC) -g -D_UnixOS device.c MY_DRIVER.c $(unix_obj) -o $(BINDIR)/MYsbasic
+
+If I had the option to use function pointers, the drivers will be a
+very easy task. 
+Unfortunately that is no working on multi-segment :(
+
+-----------------------------------------------------------------------
+HOWTO: Add an add-on sound driver
+-----------------------------------------------------------------------
+
+Please read drvsound.h (API)
+
+You must implement all these routines to a C module.
+
+You must define the DRV_SOUND and you must 
+add your C module to Makefile:
+
+Example for svgalib executable (MY_SOUND_DRIVER.c is your code):
+
+$(BINDIR)/svgasbasic: $(unix_obj) dev_uvga.c unix/rom16.c MY_SOUND_DRIVER.c device.c
+	$(UCC) -g -DUSE_SVGALIB -DDRV_SOUND -D_UnixOS device.c dev_uvga.c MY_SOUND_DRIVER.c $(unix_obj) -o $(BINDIR)/svgasbasic -lm -lvga -lvgagl -lpthread
+
+-----------------------------------------------------------------------
+HOWTO: Add an add-on mouse driver
+-----------------------------------------------------------------------
+
+Please read drvmouse.h (API)
+
+You must implement all these routines to a C module.
+
+You must define the DRV_MOUSE and you must 
+add your C module to Makefile:
+
+Example for ndcfb executable (MY_MOUSE_DRIVER.c is your code):
+
+$(BINDIR)/fbsbasic: $(unix_obj) dev_ndcfb.c device.c dev_oss.c MY_MOUSE_DRIVER.c
+	$(UCC) -g -D_UnixOS -DDRV_SOUND -DDRV_MOUSE dev_ndcfb.c dev_oss.c MY_MOUSE_DRIVER.c device.c $(unix_obj) -o $(BINDIR)/fbsbasic -lm -lpthread
+
+-----------------------------------------------------------------------
+HOWTO: Add a virtual file-system driver (like MEMO: or COMx:)
+-----------------------------------------------------------------------
+
+Virtual file system drivers are more tricky than graphics drivers.
+This is a problem of multi-segment code limits (I can't use pointers of
+routines).
+
+The file.c provides an API for all file-system related routines that
+are needed for SB RTL.
+
+Example:
+int		dev_fremove(const char *file)
+int		dev_fread(int sb_handle, byte *data, dword size)
+...
+
+These routines are calling the low-level fs-driver routines
+
+Example: 
+// The standard write() 
+int		dev_fwrite(int sb_handle, byte *data, dword size)
+{
+	dev_file_t *f;
+
+	if	( (f = dev_getfileptr(sb_handle)) == NULL )
+		return 0;
+
+	switch ( f->type )	{
+	case	ft_memo: 
+	// MemoDB driver
+		return memo_write(f, data, size);
+	case	ft_stream:  
+	// classic file-stream
+		return stream_write(f, data, size);
+	case	ft_serial_port2:
+	case	ft_serial_port1: 
+	// Serial I/O
+		return serial_write(f, data, size);
+	default:
+		err_unsup();
+		};
+	return 0;
+}
+
+In the meantime you can call from your driver the routines from
+another driver (perhaps the fs_stream). That is very common on
+Unix serial I/O driver witch a lot of calls are similar to 
+file-streams.
+
+See fs_memo.c and fs_serial.c, these sources are an excellent
+example.
+
+Finally add your driver to sources variable in Makefile
+
+Notes:
+
+* DO NOT FORGET TO ADD CODE FOR OTHER OSes (just return an error)
+
+* dev_file_t handle member must got a value != (FileHand) -1
+  after 'open' routine is completed otherwise the SB will think that
+  the file is not opened.
+
+* The dev_file_t members drv_data and drv_dw are used by low-level
+  driver. That means you are free to store whatever you like in 
+  these members.
+
+-----------------------------------------------------------------------
+
+More info can be found on HOWTO-PORT.TXT
+
+-----------------------------------------------------------------------
+
+
+
+

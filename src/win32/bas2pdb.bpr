@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="bas2pdb.exe"/>
+    <OBJFILES value="bas2pdb.obj conv_main.obj conv_view.obj pdb.obj"/>
+    <RESFILES value="bas2pdb.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) conv_main.dfm conv_view.dfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value="vclx.lib vcl.lib rtl.lib"/>
+    <SPARELIBS value="rtl.lib vcl.lib vclx.lib"/>
+    <PACKAGES value="rtl.bpi vcl.bpi vclx.bpi bcbsmp.bpi dbrtl.bpi vcldb.bpi adortl.bpi 
+      ibsmp.bpi bdertl.bpi vcldbx.bpi qrpt.bpi teeui.bpi teedb.bpi tee.bpi 
+      dss.bpi teeqr.bpi ibxpress.bpi dsnap.bpi vclie.bpi inetdb.bpi inet.bpi 
+      nmfast.bpi webdsnap.bpi bcbie.bpi dclocx.bpi bcb97axserver.bpi"/>
+    <PATHCPP value=".;"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value="_Win32;_GUI"/>
+    <SYSDEFINES value="NO_STRICT"/>
+    <MAINSOURCE value="bas2pdb.cpp"/>
+    <INCLUDEPATH value="C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <WARNINGS value="-w-par"/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <IDLCFLAGS value="-IC:\usr\CBuilder5\Projects\. -I$(BCB)\include -I$(BCB)\include\vcl 
+      -src_suffix cpp -boa"/>
+    <CFLAG1 value="-O2 -H=c:\PROGRA~1\borland\CBUILD~2\lib\vcl60.csm -Hc -Vx -Ve -X- -a8 -5 
+      -b- -k- -vi -c -tW -tWM"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -Sc:0x20000 -aa -Tpe -x -Gn"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="bas2pdb.cpp" FORMNAME="" UNITNAME="bas2pdb" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="bas2pdb.res" FORMNAME="" UNITNAME="bas2pdb" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="conv_main.cpp" FORMNAME="FCSMain" UNITNAME="conv_main" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="conv_view.cpp" FORMNAME="frmView" UNITNAME="conv_view" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="pdb.cpp" FORMNAME="" UNITNAME="pdb" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=1
+AutoIncBuild=1
+MajorVer=0
+MinorVer=8
+Release=3
+Build=3
+Debug=1
+PreRelease=1
+Special=0
+Private=1
+DLL=0
+Locale=1032
+CodePage=1253
+
+[Version Info Keys]
+CompanyName=Nicholas Christopoulos
+FileDescription=PDB2BAS,BAS2PDB
+FileVersion=0.8.3.3
+InternalName=
+LegalCopyright=GNU
+LegalTrademarks=GNU
+OriginalFilename=
+ProductName=
+ProductVersion=1.0.0.0
+Author=Nicholas Christopoulos
+PrivateBuild=
+
+[HistoryLists\hlIncludePath]
+Count=3
+Item0=C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item1=C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item2=$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=3
+Item0=C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib
+Item1=C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item2=$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[HistoryLists\hlConditionals]
+Count=2
+Item0=_Win32;_GUI
+Item1=_DEBUG
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=0
+LinkCGLIB=0
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+  </IDEOPTIONS>
+</PROJECT>

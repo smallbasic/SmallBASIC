@@ -1,0 +1,10 @@
+Powerfull enough cross-platform editor.
+
+The TED class is the whole code, but it is the base class.
+An "parent" class required to do all the IO (see virtual 
+IO methods, (gotoxy, addch, clrscr)...
+
+Keys are defined on the parent class.
+
+
+

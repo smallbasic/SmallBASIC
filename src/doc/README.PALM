@@ -1,0 +1,67 @@
+-----------------------------------------------------------------------
+Free Memory
+-----------------------------------------------------------------------
+
+The available free memory of SB it is depented by PalmOS version and
+the size of the installed RAM.
+Its stupid enough but the PalmOS separates the same RAM chip into
+two different categories (one for dynamic heap (something like RAM
+for PCs), and one for storage heap (something like disk for PCs)).
+
+Examples:
+With PalmOS 3.3
+2MB there are ~30KB free memory
+4MB there are ~92KB free memory
+8MB there are ~200KB free memory
+
+I have noticed that the PalmOS 3.5 versions gaves more memory.
+
+The main problem with that is I can't write to 'storage' RAM by
+using simple pointers (because they had locked it). The result is
+very limited free memory for SB, and, the virtual memory of SB's
+compiler swapping memory blocks in the same chip! (also, its using
+a lot more memory and of course, this task reduce the speed).
+
+See how much available RAM you have:
+
+? "Total free memory:",round(fre(0)/1024);" KB"
+? "Largest free memory block:",round(fre(-3)/1024);" KB"
+
+////////////////////////////////////////////////////////////////////
+
+-----------------------------------------------------------------------
+Ελευθερη μνημη
+-----------------------------------------------------------------------
+
+Το PalmOS διαχωρίζει την μνήμη σε δύο τομείς 
+α) Dynamic: το τμήμα της RAM που λειτουργεί σαν RAM!
+β) Storage: το τμήμα της RAM που λειτουργεί σαν δίσκος.
+
+Το μέγεθος της δυναμικής μνήμης του PalmOS καθορίζεται κατά την
+εκκίνηση του PalmOS και εξαρτάται απόλυτα απο το σύνολο της μνήμης του
+Palm.
+
+Π.χ.
+Σε PalmOS 3.3
+με 2MB θα έχετε γύρω στα 30KB ελεύθερη μνήμη στην SB
+με 4MB θα έχετε γύρω στα 92KB ελεύθερη μνήμη στην SB
+με 8MB θα έχετε γύρω στα 200KB ελεύθερη μνήμη στην SB
+
+Η δυναμική μνήμη είναι ακριβώς το ίδιο με την μνήμη για αποθήκευση, η
+διαφορά δημιουργήτε στο τρόπο λειτουργίας του PalmOS και όχι απο το
+hardware (για το hardware η Dynamic και η Storage RAM, είναι το ίδιο
+chip).
+
+Αν και είναι εύκολη υπόθεση μια τέτοια ρύθμιση για την εταιρεία
+κατασκευής του PalmOS, εμείς δυστυχώς θα πρέπει να patch-αρουμε το ίδιο
+το OS, πράγμα που εκτός απο δύσκολο είναι και επικίνδυνο.
+
+Με τις παρακάτω εντολές μπορείτε να δείτε πόση μνήμη σας δίνετε απο το
+PalmOS
+
+? "Total free memory:",round(fre(0)/1024);" KB"
+? "Largest free memory block:",round(fre(-3)/1024);" KB"
+
+
+
+

@@ -1,0 +1,107 @@
+/*
+*	'Working Draft' Style
+*
+*	based on W3C style
+*/
+
+body {
+  margin: 4em;
+  margin-left: 4em;
+  font-family: sans-serif;
+  color: black;
+  background: white;
+  background-position: top left;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+:link { color: #00C; }
+:visited { color: #609; }
+a:active { color: #C00; }
+
+a:link img, a:visited img { border-style: none } /* no border on img links */
+
+a img { color: white; }        /* trick to hide the border in Netscape 4 */
+@media all {                   /* hide the next rule from Netscape 4 */
+  a img { color: inherit; }    /* undo the color change above */
+}
+
+caption, li, th, td { /* ns 4, ie 5 */
+  font-family: sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 { text-align: left; margin-left: -1em; font-family: sans-serif; }
+h1, h2, h3 { color: #005A9C; }
+
+.hide { display: none }
+
+div.head 			{ margin-bottom: 1em }
+div.head table 		{ margin-left: 2em; margin-top: 2em }
+
+p.copyright 		{ font-size: small }
+p.copyright small	{ font-size: small }
+
+a[href]:hover { background: #ffa }
+
+pre {
+	margin-left: 2em;
+	margin-right: 2em;
+	}
+
+pre.example {
+	border-top: 1px solid #d0d0d0;
+	border-bottom: 1px solid #d0d0d0;
+	}
+
+pre.result {
+	color: green;
+	background-color: #f0f0f0;
+	border: 1px solid #c0c0c0;
+	}
+
+dt, dd	{ margin-top: 0; margin-bottom: 0 } /* opera 3.50 */
+dt 		{ font-weight: bold }
+
+pre, code { font-family: monospace } /* navigator 4 requires this */
+
+ul.toc {
+  list-style: disc;		/* Mac NS has problem with 'none' */
+  list-style: none;
+	}
+
+body {
+	background-image: url(draft.png);
+	}
+
+table.latex {
+  	border-top: 1px solid black;
+  	border-bottom: 1px solid black;
+	}
+
+.latex caption {
+  	font-family: sans-serif;
+	font-style: italic;
+	}
+
+li { margin: 0.75em; }
+
+.note {
+	border-top: 1px solid #d0d0d0;
+	color: #808080;
+	}
+
+.subtitle {
+	font-size: 1.2em;
+	font-weight: bold;
+	font-style: italic;
+	border-top: 1px solid black;
+	text-align: right;
+	}
+
+.author {
+	text-align: right;
+	font-style: italic;
+	}
+
+img {
+	border: 1px solid black;
+	}

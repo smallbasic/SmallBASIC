@@ -1,0 +1,4 @@
+#!/bin/sh
+
+indent -ts4 -br -bli4 -bad -i4 -ppi4 -l128 $*
+

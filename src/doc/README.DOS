@@ -1,0 +1,29 @@
+Required:
+CPU 80386 or newer
+4MB RAM or more
+DPMI driver required (windows has already one)
+
+---------------------------------------------------------------------
+
+You can change the default graphics mode by using
+GRX's environment variable:
+
+SET GRX20DRV=<driver> gw <width> gh <height> nc <colors>
+
+or by using SB's environment variable:
+
+SET SBGRAF=<width>x<height>x<bits-per-pixel>
+
+Example:
+SET SBGRAF=1024x768x16
+That means the default graphics mode will be 1024x768 with 64K colors
+
+---------------------------------------------------------------------
+
+Network devices (like OPEN "SOCL:...") does not working on DOS
+
+You can use only one serial port per time. (do not open com2 while
+com1 is already open)
+
+Long filenames are supported only under Windows
+

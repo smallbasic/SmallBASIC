@@ -1,0 +1,234 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="SBPad.exe"/>
+    <OBJFILES value="SBPad.obj pad1.obj ..\bc.obj ..\blib.obj ..\blib_db.obj ..\blib_func.obj 
+      ..\blib_graph.obj ..\blib_sound.obj ..\brun.obj ..\ceval.obj ..\circle.obj 
+      ..\device.obj ..\eval.obj ..\ffill.obj ..\file.obj ..\fs_memo.obj 
+      ..\fs_pdoc.obj ..\fs_serial.obj ..\fs_socket_client.obj ..\fs_stream.obj 
+      ..\inet.obj ..\match.obj ..\mem.obj ..\panic.obj ..\pfill.obj ..\proc.obj 
+      ..\scan.obj ..\str.obj ..\unx_memmgr.obj ..\var.obj dev_bcb.obj fabt.obj 
+      fsrc.obj fsettngs.obj pdb.obj dev_winsnd.obj ..\extlib.obj ..\fs_irda.obj 
+      ..\sberr.obj ..\blib_ui.obj ..\kw.obj ..\blib_math.obj ..\fmt.obj 
+      ..\plot.obj ..\vmt.obj ..\units.obj ..\tasks.obj ..\decomp.obj ..\geom.obj"/>
+    <RESFILES value="SBPad.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) pad1.dfm fabt.dfm fsrc.dfm fsettngs.dfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value="bcbie.lib dclusr.lib vcldb.lib dbrtl.lib SynEdit_BCB6.lib vclx.lib vcl.lib 
+      rtl.lib"/>
+    <SPARELIBS value="rtl.lib vcl.lib vclx.lib SynEdit_BCB6.lib dbrtl.lib vcldb.lib dclusr.lib 
+      bcbie.lib"/>
+    <PACKAGES value="rtl.bpi vcl.bpi vclx.bpi bcbsmp.bpi"/>
+    <PATHCPP value=".;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;.."/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value="_Win32;_WinBCB"/>
+    <SYSDEFINES value="NO_STRICT"/>
+    <MAINSOURCE value="SBPad.cpp"/>
+    <INCLUDEPATH value="..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <WARNINGS value="-w-par"/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <IDLCFLAGS value="-I..\. -I.. -IC:\USR\CBuilder5\CBuilder5\bin\. 
+      -IC:\usr\CBuilder5\Projects\. -I$(BCB)\include -I$(BCB)\include\vcl 
+      -src_suffix cpp -D_Win32 -D_WinBCB -D_DEBUG -boa"/>
+    <CFLAG1 value="-O2 -Vx -Ve -fp -X- -a4 -5 -b- -k- -vi -c -tW -tWM"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -S:0x400000 -Sc:0x220000 -aa -Tpe -m -Gn"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="SBPad.cpp" FORMNAME="" UNITNAME="SBPad" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="SBPad.res" FORMNAME="" UNITNAME="SBPad" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="pad1.cpp" FORMNAME="FMain" UNITNAME="pad1" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\bc.c" FORMNAME="" UNITNAME="bc" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\blib.c" FORMNAME="" UNITNAME="blib" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\blib_db.c" FORMNAME="" UNITNAME="blib_db" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\blib_func.c" FORMNAME="" UNITNAME="blib_func" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\blib_graph.c" FORMNAME="" UNITNAME="blib_graph" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\blib_sound.c" FORMNAME="" UNITNAME="blib_sound" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\brun.c" FORMNAME="" UNITNAME="brun" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\ceval.c" FORMNAME="" UNITNAME="ceval" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\circle.c" FORMNAME="" UNITNAME="circle" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\device.c" FORMNAME="" UNITNAME="device" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\eval.c" FORMNAME="" UNITNAME="eval" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\ffill.c" FORMNAME="" UNITNAME="ffill" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\file.c" FORMNAME="" UNITNAME="file" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\fs_memo.c" FORMNAME="" UNITNAME="fs_memo" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\fs_pdoc.c" FORMNAME="" UNITNAME="fs_pdoc" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\fs_serial.c" FORMNAME="" UNITNAME="fs_serial" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\fs_socket_client.c" FORMNAME="" UNITNAME="fs_socket_client" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\fs_stream.c" FORMNAME="" UNITNAME="fs_stream" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\inet.c" FORMNAME="" UNITNAME="inet" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\match.c" FORMNAME="" UNITNAME="match" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mem.c" FORMNAME="" UNITNAME="mem" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\panic.c" FORMNAME="" UNITNAME="panic" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\pfill.c" FORMNAME="" UNITNAME="pfill" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\proc.c" FORMNAME="" UNITNAME="proc" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\scan.c" FORMNAME="" UNITNAME="scan" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\str.c" FORMNAME="" UNITNAME="str.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\unx_memmgr.c" FORMNAME="" UNITNAME="unx_memmgr" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\var.c" FORMNAME="" UNITNAME="var" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="dev_bcb.cpp" FORMNAME="" UNITNAME="dev_bcb" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="fabt.cpp" FORMNAME="FAbout" UNITNAME="fabt" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="fsrc.cpp" FORMNAME="FSearch" UNITNAME="fsrc" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="fsettngs.cpp" FORMNAME="FSets" UNITNAME="fsettngs" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="pdb.cpp" FORMNAME="" UNITNAME="pdb" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="dev_winsnd.cpp" FORMNAME="" UNITNAME="dev_winsnd" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\extlib.c" FORMNAME="" UNITNAME="extlib.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\fs_irda.c" FORMNAME="" UNITNAME="fs_irda.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\sberr.c" FORMNAME="" UNITNAME="sberr.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\blib_ui.c" FORMNAME="" UNITNAME="blib_ui.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\kw.c" FORMNAME="" UNITNAME="kw.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\blib_math.c" FORMNAME="" UNITNAME="blib_math.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\fmt.c" FORMNAME="" UNITNAME="fmt.c" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\plot.c" FORMNAME="" UNITNAME="plot" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\vmt.c" FORMNAME="" UNITNAME="vmt" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\units.c" FORMNAME="" UNITNAME="units" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\tasks.c" FORMNAME="" UNITNAME="tasks" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\decomp.c" FORMNAME="" UNITNAME="decomp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\geom.c" FORMNAME="" UNITNAME="geom" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=1
+AutoIncBuild=1
+MajorVer=0
+MinorVer=9
+Release=0
+Build=1
+Debug=1
+PreRelease=1
+Special=0
+Private=1
+DLL=0
+Locale=1032
+CodePage=1253
+
+[Version Info Keys]
+CompanyName=Nicholas Christopoulos
+FileDescription=SmallBASIC Pad for Win32
+FileVersion=0.9.0.1
+InternalName=
+LegalCopyright=GNU GPL 2
+LegalTrademarks=GNU
+OriginalFilename=sbpad.exe
+ProductName=
+ProductVersion=1.0.0.0
+Comments=GPL 2
+PrivateBuild=
+
+[HistoryLists\hlIncludePath]
+Count=24
+Item0=..\;$(BCB)\Imports;..\editor;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item1=$(BCB)\Imports;..\editor;..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item2=..\;..;SynEdit\Source\;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item3=..\editor;..\;..;SynEdit;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item4=..\;SynEdit\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item5=..\;..\editor;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item6=..\editor;..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item7=..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item8=..\;C:\Program Files\Borland\CBuilder6\Projects;..;$(BCB)\include;$(BCB)\include\vcl
+Item9=C:\Program Files\Borland\CBuilder6\Projects;..\;..;$(BCB)\include;$(BCB)\include\vcl
+Item10=..\;..;$(BCB)\include;$(BCB)\include\vcl
+Item11=..\;..;C:\USR\CBuilder5\CBuilder5\bin;C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item12=..\;..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item13=..\;..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item14=..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item15=..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item16=..\;C:\USR\CBuilder5\CBuilder5\bin\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item17=C:\USR\CBuilder5\CBuilder5\bin;..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item18=..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item19=..;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item20=..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item21=C:\usr\CBuilder5\Projects\;$(BCB)\include;$(BCB)\include\vcl
+Item22=C:\usr\CBuilder5\Projects;$(BCB)\include;$(BCB)\include\vcl
+Item23=$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=25
+Item0=..\;$(BCB)\Imports;..\editor;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item1=$(BCB)\Imports;..\editor;..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item2=..\;..;SynEdit\Source;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item3=..\editor;..\;..;SynEdit;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item4=..\;SynEdit\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item5=..\;..\editor;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item6=..\editor;..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item7=..\;..;C:\Program Files\Borland\CBuilder6\Projects;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item8=..\;C:\Program Files\Borland\CBuilder6\Projects;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item9=C:\Program Files\Borland\CBuilder6\Projects;..\;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item10=..\;..;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib
+Item11=..\;$(BCB)\Projects\Lib;..;$(BCB)\lib\obj;$(BCB)\lib
+Item12=..\;$(BCB)\Projects\Lib;..;C:\USR\CBuilder5\CBuilder5\bin;C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib
+Item13=$(BCB)\Projects\Lib;..\;..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item14=..\;..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item15=..;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item16=..\..\sync;C:\USR\CBuilder5\CBuilder5\bin\;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item17=..\;C:\USR\CBuilder5\CBuilder5\bin\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item18=C:\USR\CBuilder5\CBuilder5\bin;..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item19=..\;..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item20=..;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item21=..\..\sync;C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item22=C:\usr\CBuilder5\Projects\;$(BCB)\lib\obj;$(BCB)\lib
+Item23=C:\usr\CBuilder5\Projects;$(BCB)\lib\obj;$(BCB)\lib
+Item24=$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[HistoryLists\hlConditionals]
+Count=4
+Item0=_Win32;_WinBCB
+Item1=_Win32;_WinBCB;_DEBUG
+Item2=_DEBUG;_Win32;_WinBCB
+Item3=_DEBUG
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=0
+LinkCGLIB=0
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+  </IDEOPTIONS>
+</PROJECT>

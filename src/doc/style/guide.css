@@ -1,0 +1,428 @@
+/*
+*	SB Book Style
+*
+*	Nicholas Christopoulos
+*
+*	(GPL)
+*/
+
+body {
+  margin-left: 60px;
+  margin-right: 50px;
+  margin-top: 26px;
+  margin-bottom: 60px;
+  font-family: sans-serif;
+  color: black;
+  background-position: top left;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+:link { color: #00C; background: transparent }
+:visited { color: #00C; background: transparent }
+a:active { color: #C00; background: transparent }
+
+a:link img, a:visited img { border-style: none } /* no border on img links */
+
+a		{ font-weight: bold; }
+
+caption, li, th, td { /* ns 4, ie 5 */
+  font-family: trebuchet ms, sans-serif;
+}
+
+hide, .hide { display: none }
+
+pre, code, samp  { font-family: monospace }
+
+pre {
+	margin-left: 2em;
+	margin-right: 2em;
+	}
+
+ol.greek	{ list-style-type: lower-greek; }
+li { margin: 0.75em; }
+
+dt, dd	{ margin-top: 0; margin-bottom: 0 } /* opera 3.50 */
+dt 		{ font-weight: bold }
+
+h1, h2, h3, h4, h5, h6 { text-align: left; }
+h1, h2, h3 { color: #005A9C; }
+h1 { font-size: 3.0em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h2 { font-size: 2.4em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h3 { font-size: 1.9em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h4 { font-size: 1.6em; font-weight: bold; font-family: trebuchet ms, sans-serif; }
+h5 { font-size: 1em;   font-weight: normal; font-style: italic; font-family: trebuchet ms, sans-serif; }
+h6 { font: small-caps 1em sans-serif }
+
+/*
+*	head 
+*/
+div.head 			{ margin-bottom: 1em }
+div.head table 		{ margin-left: 2em; margin-top: 2em }
+div.head .subtitle	{ font-weight: bold; }
+.head h1 { font-size: 1.9em; }
+.head p.copyright 		{ font-size: small }
+.head p.copyright small	{ font-size: small }
+
+/*
+*	abstract 
+*/
+div.abstract		{
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+	padding-bottom: 2ex;
+	}
+
+div.abstract h1		{ font-size: 160%; }
+div.abstract h2		{ font-size: 140%; }
+div.abstract h3		{ font-size: 120%; }
+div.abstract h4		{ font-size: 110%; }
+
+/*
+*	TOC
+*/
+ul.toc {
+	list-style: disc;
+	list-style: none;
+	}
+
+/*
+*	main
+*/
+pre.example {
+	padding: 2ex;
+	border-top: 1px solid #d0d0d0;
+	border-bottom: 1px solid #d0d0d0;
+	}
+
+.screen {
+	padding: 2ex;
+	color: green;
+	font-weight: bold;
+	border-top: 1px solid #d0d0d0;
+	border-bottom: 1px solid #d0d0d0;
+	}
+
+.xmp, .scrout, pre.xmp {
+	padding: 2ex;
+	color: green;
+	font-weight: bold;
+	background-color: #f0f0f0;
+	}
+
+div.result, pre.result {
+	margin-left: 2em;
+	margin-right: 2em;
+	margin-top: 1ex;
+	margin-bottom: 1ex;
+	padding: 3ex;
+	border: 1px dashed gray;
+	}
+
+table.params {
+  	border-top: 1px solid black;
+  	border-bottom: 1px solid black;
+	}
+
+table.latex {
+  	border-top: 1px solid black;
+  	border-bottom: 1px solid black;
+	}
+
+.latex caption {
+  	font-family: sans-serif;
+	font-style: italic;
+	caption-side: bottom;
+	}
+
+.note {
+	border-top: 1px solid #d0d0d0;
+	color: #808080;
+	}
+
+div.note, p.note {
+	border-top: 1px solid #d0d0d0;
+	color: #808080;
+	margin-top: 1ex;
+	margin-bottom: 1ex;
+	padding-left: 6em;
+	font-size: 92%;
+	}
+
+div.note:before, p.note:before {
+/* αν και παράδειγμα του CSS2 δεν λειτουργεί πουθενά σωστά.
+	display: marker;
+	content: url("ico-note.png") " Σημ. " counter(note-counter) ":";
+	counter-increment: note-counter;
+*/
+	text-align: left;
+	width: 6em;
+	}
+
+div.warning, p.warning {
+	border: 1px solid red;
+	font-size: 96%;
+	color: #f06020;
+	font-weight: bold;
+	margin-top: 1ex;
+	margin-bottom: 1ex;
+	padding: 1ex;
+	}
+
+div.attn, p.attn {
+	border: 1px solid black;
+	font-weight: bold;
+	margin-left: 10%;
+	margin-right: 10%;
+	margin-top: 1ex;
+	margin-bottom: 1ex;
+	padding: 2ex;
+	}
+
+/* footnotes */
+/* reference footnote (<cite class=fnote>1</cite>) */
+cite.fnote, ft {
+	font-family: sans-serif;
+	font-weight: normal;
+	font-style: normal;
+	font-size: 1.4ex;
+	color: #20f040;
+	vertical-align: text-top;
+	}
+
+/* */
+div.fnote	{
+	margin: 0px;
+	margin-top: 1ex;
+	padding: 0px;
+	border-top: 1px solid black;
+ 	font-size: 1.75ex;
+	}
+
+div.fnote li {
+	margin: 0.05ex;
+	padding: 0ex;
+	}
+div.fnote ol {
+	margin-top: 0ex;
+	margin-left: 0em;
+	padding-top: 0ex;
+	padding-left: 2em;
+	}
+
+/* quote */
+.quote:before, qq:before	{ content: "«"; }
+.quote:after,  qq:after		{ content: "»"; }
+
+div.quote, p.quote, blockquote.quote {
+	margin-left: 4%;
+	margin-right: 4%;
+	padding: 2ex;
+	border-top: 1px solid #d0d0d0;
+	border-bottom: 1px solid #d0d0d0;
+	margin-top: 1ex;
+	margin-bottom: 1ex;
+	}
+
+.quote, qq {
+	font-family: serif;
+	font-style: italic;
+	}
+
+/* compact definition list, an kai example of CSS 2, bug everywhere ektos opera7 */
+.dlshort dt { display: compact; }
+.dlshort dd { margin-left: 5em; }
+
+/* logical text-tags */
+
+acronym {
+	font-weight: bold;
+	color: #406080;
+	}
+
+address {
+	font-style: italic;
+	color: #808080;
+	}
+
+q:before { content: "«"; }
+q:after  { content: "»"; }
+
+strong	{
+	font-weight: bolder;
+	font-style: normal;
+	}
+
+em	{
+	font-weight: normal;
+	font-style: italic;
+	}
+
+cite:before	{ font-family: serif; font-style: normal; font-size: 120%; color: #808080;	content: "["; }
+cite:after	{ font-family: serif; font-style: normal; font-size: 120%; color: #808080;	content: "]"; }
+cite		{ font-family: serif; font-style: italic; }
+cite.fnote:before { content: ""; }
+cite.fnote:after  { content: ""; }
+
+dfn {
+	font-family: sans-serif;
+	font-style: italic;
+	font-weight: bold;
+	color: #406080;
+	}
+
+/*
+var:before	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\2039"; }
+var:after	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\203A"; }
+*/
+var:before	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\2329"; }
+var:after	{ font-family: serif; font-style: normal; font-size: 110%; color: #808080;	content: "\232A"; }
+var	{
+	font-family: serif;
+	font-style: italic;
+	}
+
+/*
+code:before	{ font-family: serif;	font-weight: normal;	content: "\2018"; }
+code:after	{ font-family: serif;	font-weight: normal;	content: "\2019"; }
+*/
+code	{
+	font-family: monospace;
+	font-weight: bold;
+	}
+
+/*
+kbd:before	{ font-family: serif; font-style: normal; content: "\2018"; }
+kbd:after	{ font-family: serif; font-style: normal; content: "\2019"; }
+*/
+kbd		{ font-family: monospace; font-style: italic; font-weight: bold; }
+
+samp:before	{ font-family: serif; font-weight: normal; font-style: normal; content: "\2018"; }
+samp:after	{ font-family: serif; font-weight: normal; font-style: normal; content: "\2019"; }
+samp		{ font-family: monospace; }
+
+/* user-defined tags */
+
+.file:before, file:before	{ font-family: serif;	font-style: normal; content: "\2018"; }
+.file:after,  file:after	{ font-family: serif;	font-style: normal; content: "\2019"; }
+.file, 		  file		{ font-family: monospace; }
+
+.opt:before, opt:before	{ font-family: serif;	font-style: normal; content: "\2018"; }
+.opt:after,  opt:after	{ font-family: serif;	font-style: normal; content: "\2019"; }
+.opt, opt			{ font-family: monospace; }
+
+.lsq:before, lsq:before	{ content: "\2018";	}
+.lsq:after, lsq:after	{ content: "\2019"; }
+
+.lq:before, lq:before	{ content: "\201C"; }
+.lq:after, lq:after		{ content: "\201D"; }
+
+.key, key	{
+	font-family: sans-serif;
+	text-transform: uppercase;
+	padding-left: 1ex;
+	padding-right: 1ex;
+	font-style: normal;
+	font-size: 76%;
+	font-weight: bold;
+
+	background-color: #b0b0b0;
+	border-top: 2px solid #e0e0e0;
+	border-left: 2px solid #e0e0e0;
+	border-bottom: 2px solid black;
+	border-right: 2px solid black;
+
+/*	border: medium outset; */
+	}
+
+command, .command	{ font-family: monospace; }
+env,	 .env		{ font-family: monospace; }
+email,	 .email		{ font-family: monospace; font-weight: bold; }
+url,	 .url		{ font-family: monospace; font-weight: bold; }
+
+/*
+*	bibliography 
+*/
+.eitem	{					/* just a link */
+	font-style: italic;
+	margin-left: 3em;
+	text-indent: -3em;
+	}
+p.eitem a		{
+	color: blue;
+	text-decoration: underline;
+	font-weight: bold;
+	}
+.eitem code:before	{ font: 130% sans-serif; content: "["; }
+.eitem code:after	{ font: 130% sans-serif; content: "]"; }
+.eitem code			{ font: 100% sans-serif; }
+
+.bibitem, .bibliography p {	/* typical item */
+	font-style: italic;
+	margin-left: 3em;
+	text-indent: -3em;
+	}
+p.bibitem a, .bibliography a {
+	color: #204060;
+/*	text-decoration: underline; */
+	text-decoration: none;
+	font-weight: bold;
+	}
+
+p.bibitem:first-line, .bibliography p:first-line {
+	color: #707000;
+	font-weight: bold;
+	font-family: sans-serif;
+	font-size: 1.1em;
+/*	text-decoration: underline; */
+	}
+
+.bibitem code:before, .bibliography code:before,
+.bibitem a[name]:before, .bibliography a[name]:before,
+.eitem code:before
+{ font: 120% sans-serif; content: "["; }
+
+.bibitem code:after,  .bibliography code:after,
+.bibitem a[name]:after,  .bibliography a[name]:after,
+.eitem code:after
+{ font: 120% sans-serif; content: "]"; }
+
+.bibitem code,        .bibliography code,
+.bibitem a[name],        .bibliography a[name],
+.eitem code		{ font: lighter 100% sans-serif; vertical-align: center; }
+
+/*
+*	glossary 
+*/
+.glossary dl {
+	margin-left: 2em;
+	}
+
+/* ---------------------------------- */
+/* TexInfo -> HTML                    */
+/* Navigation bar (div with table)    */
+/* ---------------------------------- */
+div.T2HNAV {
+	float: right;
+	}
+.T2HNAV td {
+	font-size: 0.8em;
+	}
+
+/* ---------------------------------- */
+/* finaly                             */
+/* ---------------------------------- */
+
+body {
+	background-image: url(guide.png);
+	}
+
+/* IE 5-6 bug & fix */
+* html		{ font-size: 11px; font-family: verdana; }
+* html li	{ font-size: 11px; font-family: verdana; }
+* html td	{ font-size: 11px; font-family: verdana; }
+* html th	{ font-size: 11px; font-family: verdana; }
+* html caption { font-size: 11px; font-family: verdana; }
+* html body { font-size: 11px; font-family: verdana; }
+
+

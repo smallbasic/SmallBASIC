@@ -1,0 +1,648 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+<title>SmallBASIC Paper - File System</title>
+<link rel="stylesheet" href="../style/paper.css">
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="head">
+	<h1>File System</h1>
+
+	<dl>
+	<dt>Version
+	<dd>2.1 - 30 Aug 2003
+	<dt>Authors:
+	<dd>Nicholas Christopoulos
+	</dl>
+
+	<p class="copyright">Copyright &#169;2001-2003 SmallBASIC Project</p>
+</div>
+
+<!-- ABSTRACT -->
+<div class="abstract">
+	<h2>Abstract</h2>
+	<p>This paper is the prototype of the file-system capabilities of
+	<acronym title="SmallBASIC">SB</acronym>
+</div>
+
+<!-- BODY -->
+<h2>Introduction</h2>
+
+<h2>Interface</h2>
+
+<h3>Block commands</h3>
+<blockquote>
+
+<!------- BLOAD -------------------->
+<h4>Load Binary File (QB comp.)</h4>
+<blockquote>
+<pre class="syntax">
+BLOAD filespec [,address]
+</pre>
+
+<p>
+Loads a specified memory-image file into memory.
+
+<dl>
+<dt>filespec
+<dd>A string expression that follows OS file naming conventions; may include any device, except "KYBD:".
+<dt>address
+<dd>Specifies the memory address at which filespec is loaded.
+	If address is not specified, the address of BSAVE is used.
+</dl>
+</blockquote>
+
+<!------- BSAVE -------------------->
+<h4>Save a Binary File (QB comp.)</h4>
+<blockquote>
+<pre class="syntax">
+BSAVE filespec, address, length
+</pre>
+
+<p>
+Copies a specified portion of memory to a specified file.
+
+<dl>
+<dt>filespec
+<dd>A string expression that follows OS file naming conventions; may include a device name and path.
+<dt>address
+<dd>Specifies the address from which the memory image will be saved.
+<dt>length
+<dd>Specifies the number of bytes to be saved.
+</dl>
+</blockquote>
+
+<!------- TLOAD -------------------->
+<h4>Loads a Text File</h4>
+<blockquote>
+<pre class="syntax">
+TLOAD filespec {INTO | , } variable [{ {AS ARRAY| AS STRING} | , type}]
+</pre>
+
+<p>
+Loads a whole text-file into memory.
+
+<dl>
+<dt>filespec
+<dd>A string expression that follows OS file naming conventions.
+<dt>address
+<dd>Specifies the memory address at which filespec is loaded.
+	If address is not specified, the address of BSAVE is used.
+<dt>type
+<dd>It can be 0 for array or 1 for string.
+    The default is to build an array from text-lines.
+	The other way is to load as a string.
+</dl>
+
+<p class="note">
+Notes:
+<br>
+In the case of 'string', the CR/LFs must be converted to Unix style which is the default.
+<br><br>
+In the case of 'array', the CR/LFs must removed.
+</blockquote>
+
+<!------- TSAVE -------------------->
+<h4>Saves a Text File</h4>
+<blockquote>
+<pre class="syntax">
+TSAVE filespec {FROM | ,} variable
+</pre>
+
+<p>
+Creates a text file and stores the contents of 'variable'.
+
+<dl>
+<dt>filespec
+<dd>A string expression that follows OS file naming conventions.
+<dt>variable
+<dd>Data to be written.
+    If the variable is an array, each element represents a text line.
+</dl>
+
+<p class="note">
+Notes:
+<br>
+By default the carriage-return character will be not used,
+except if the C library supports it (fopen(...,"wt")).
+</blockquote>
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>OPEN</h3>
+<blockquote>
+
+<h4>Syntax for Sequential I/O</h4>
+<pre class="syntax">
+OPEN filespec [FOR mode] AS #filenum [ACCESS [access]] [share]
+</pre>
+
+<h4>Syntax for Random I/O</h4>
+<pre class="syntax">
+OPEN filespec FOR RANDOM AS #filenum {LEN|STRUCT}=recl [ACCESS [access]] [share]
+</pre>
+
+<h4>Syntax for Simple Database</h4>
+<pre class="syntax">
+OPEN DATABASE filespec AS #filenum [ACCESS [access]] [share]
+</pre>
+
+<h4>Alternative syntax</h4>
+<pre class="syntax">
+filenum = OPEN(filespec, modestr[, recl])
+</pre>
+
+<p>
+Makes a file or device available for sequential input, sequential output, random access (either input or output).
+Also, it can open a simple database file.
+
+<dl>
+<dt>filespec
+<dd>A string expression that follows OS file naming conventions.
+<dt>filenum
+<dd>A free file number (see FREEFILE).
+<dt>mode
+<dd>File I/O mode
+	<dl>
+	<dt>INPUT
+	<dd>Sequential input
+	<dt>OUTPUT
+	<dd>Sequential output
+	<dt>APPEND
+	<dd>Sequential output, beginning at current EOF
+	<dt>RANDOM
+	<dd>Random input/output
+	</dl>
+<dt>access
+<dd>If included, must be one of the following:
+	<dl>
+	<dt>READ
+	<dd>File is opened for reading only.
+	<dt>WRITE
+	<dd>File is opened for writing only.
+	<dt>READWRITE
+	<dd>File is opened for both reading and writing. (this is the default)
+	</dl>
+<dt>share
+<dd>If included, must be one of the following:
+	<dl>
+	<dt>SHARED
+	<dd>Any process may read from or write to the file. (this is the default)
+	<dt>DENYREAD
+	<dd>No other process is granted read access to the file.
+	<dt>DENYWRITE
+	<dd>No other process is granted write access to the file.
+	<dt>EXCLUSIVE
+	<dd>No other process is granted either read or write access to the file.
+	</dl>
+<dt>recl
+<dd>Sets the record length for random files.
+    Also, instead of record-length, we can use a structure name.
+<dt>modestr
+<dd>A string which can had the following attributes:
+	<dl>
+	<dt>r
+	<dd>Sequential input. If recl is specified then it is used for random input.
+	<dt>w
+	<dd>Sequential output. If recl is specified then it is used for random output.
+	<dt>a
+	<dd>Sequential output, beginning at current EOF. If recl is specified then it is used for random input.
+	<dt>+
+	<dd>Ignored, since r/w is the default.
+	<dt>a:{r|w|+}
+	<dd>What access, (r)ead, (w)rite, or both (+). (default "a:+")
+	<dt>s:{{-|x}|r|w|+}
+	<dd>What access for other processes, (-) none or e(x)clusive, (r)ead, (w)rite, or both (+). (default "s:+")
+	</dl>
+</dl>
+
+<p class="note">
+Notes:
+<br>
+'output' modes are creating the file. The default attributes for Unices are 0664.
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>CLOSE</h3>
+<blockquote>
+
+<pre class="syntax">
+CLOSE #filenum
+</pre>
+
+<p>
+Closes file or device.
+
+<dl>
+<dt>filenum
+<dd>The file number.
+</dl>
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>FREEFILE</h3>
+<blockquote>
+
+<pre class="syntax">
+filenum = FREEFILE
+</pre>
+
+<p>
+Returns an unused filenum.
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>EOF</h3>
+<blockquote>
+
+<pre class="syntax">
+bool = EOF(filenum)
+</pre>
+
+<p>
+Checks for end of file. For devices, EOF returns -1 when connection is lost or the "session" (whatever) is closed.
+<dl>
+<dt>filenum
+<dd>The number under which the file was OPENed.
+</dl>
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>LOF</h3>
+<blockquote>
+
+<pre class="syntax">
+n = LOF(filenum)
+</pre>
+
+<p>
+Returns the length of the file.
+If the file is RANDOM, then returns the number of the records.
+If the file is a device/driver, then returns the remaining bytes in the input buffer.
+
+<dl>
+<dt>filenum
+<dd>The number under which the file was OPENed.
+</dl>
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>SEEK()/LOC()</h3>
+<blockquote>
+
+<pre class="syntax">
+n = SEEK(filenum)
+</pre>
+
+<p>
+Returns the current position on file.
+If the file is RANDOM, then returns the number of the current record starting from 0.
+If the file is a device/driver, then returns the "received" bytes.
+The keyword LOC() is used for compatibility with QB.
+
+<dl>
+<dt>filenum
+<dd>The number under which the file was OPENed.
+</dl>
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>SEEK#</h3>
+<blockquote>
+
+<pre class="syntax">
+SEEK #filenum, position
+</pre>
+
+<p>
+Moves the file-pointer to specified position of the file.
+If the file is RANDOM, then position represents the record number.
+If the file is a device/driver, then its moves the file-pointer to the next 'position' bytes.
+
+<dl>
+<dt>filenum
+<dd>The number under which the file was OPENed.
+<dt>position
+<dd>Position in the file.
+</dl>
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>Sequential I/O</h3>
+<blockquote>
+
+<h4>Get Input from Sequential File or Device</h4>
+<blockquote>
+<pre class="syntax">
+INPUT #filenum, variable [,variable]...
+</pre>
+
+<p>
+Receives input from a sequential file or device and assigns it to one or more numeric or string variables.
+
+<dl>
+<dt>filenum
+<dd>The number under which the input file was OPENed. It may refer to a disk file, a other-device file.
+<dt>variable
+<dd>The name of a variable (string or numeric) that will receive input.
+</dl>
+
+<p class="note">
+Notes:
+<br>
+String input need not be enclosed within quote marks, unless it contains one or more line feeds or a
+double quote mark or comma.
+<br><br>
+When receiving input, BASIC looks for the first character other than a space, line feed, or carriage
+return. If that character is a quote mark, BASIC considers the string to be everything from the character
+following the quote mark up to the next quote mark. If the first character is not a quote mark, BASIC terminates
+the string when it encounters a line feed, a comma or when it has received 1024 characters.
+<br><br>
+For compatibility between Unix and DOS systems. Carriage return character must be ignored.
+</blockquote>
+
+<!--- LINPUT --->
+<h4>Read Line from File, Ignoring Delimiters</h4>
+<blockquote>
+<pre class="syntax">
+LINE INPUT # filenum, stringvar
+</pre>
+
+<p>
+Assigns a line of input (up to 1024 characters) from a sequential file or device to a string variable.
+
+<dl>
+<dt>filenum
+<dd>The number under which the file was opened.
+<dt>stringvar
+<dd>The name of a string variable that will receive input.
+</dl>
+
+<p class="note">
+Notes:
+<br>
+LINE INPUT # treats all commas and quote marks as part of the input string. Input is terminated by a line-feed
+(the line feed are included in the string variable assignment).
+<br><br>
+For compatibility between Unix and DOS systems. Carriage return character must be ignored.
+</blockquote>
+
+<!-- PRINT/WRITE -->
+<h4>Output to Sequential File (QB comp.)</h4>
+
+<blockquote>
+<pre class="syntax">
+PRINT #filenum; var [...]
+</pre>
+
+<p>
+Writes one or more expressions. Same as screens output.
+</blockquote>
+
+<blockquote>
+<pre class="syntax">
+WRITE #filenum; var [...]
+</pre>
+
+<p>
+Writes one or more expressions.
+
+<dl>
+<dt>var
+<dd>BASIC outputs a line feed at the end of the list.
+    If no items are included, a blank line is written.
+</dl>
+
+<p class="note">
+Notes:
+<br>
+WRITE# differs from PRINT# in the following ways:
+<br>
+* The data items (at disk) are separated by a comma.
+<br>
+* The String expressions are output enclosed in double-quote marks.
+</blockquote>
+
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h3>Random I/O</h3>
+<blockquote>
+
+<h4>Set Record Structure (Optional)</h4>
+<blockquote>
+<pre class="syntax">
+STRUCT name; { field=[type]len [, ...] | array }
+</pre>
+
+<p>
+Setting structure of record for the file 'filenum'.
+Because we want to use the same commands for databases,
+this command uses extented syntax.
+
+<dl>
+<dt>name
+<dd>a name for the structure
+<dt>field
+<dd>The name of the field.
+    Field names are following the same rules as the variable names.
+<dt>type
+<dd>Field type can be one of the following
+    <dl>
+	<dt>C
+	<dd>String
+	<dt>N or R
+	<dd>Real number
+	<dt>I
+	<dd>Integer (32bit or bigger)
+	<dt>D
+	<dd>Date
+	<dt>M
+	<dd>Memo (same as C but in some drivers may be needed for big-length fields)
+	<dt>B
+	<dd>Boolean
+	</dl>
+<dt>len
+<dd>The size of the field
+</dl>
+
+<p>
+When an array is used instead of fields, each element is a field description.
+Each field description had two elements, the first is the name and the second is the len (with or without the type).
+
+<p>
+Structure variables must be applied on strings too.
+
+<pre class="example">
+REM A Structure
+STRUCT myrec; ID=4, NAME=32, PHONE=12
+h = OPEN("my.db", "r", myrec)
+' while
+WHILE !EOF(h)
+	IF FLD(h, "name") = "NDC" THEN PUT #f; "name" = "Nicholas"
+	NEXT #h
+WEND
+' for
+FOR i = 0 TO LOF(h)-1
+	IF FLD(h, i, "name") = "NDC" THEN PUT #h; "name" = "Nicholas"
+NEXT
+' for #2
+FOR i = 0 TO LOF(h)-1
+	r = REC(h, i)
+	IF r(1) = "NDC" THEN r(1) = "Nicholas" : PUT #h; r
+NEXT
+'
+CLOSE #h
+</pre>
+
+</blockquote>
+
+<h4>Get Input from Random File or Device</h4>
+<blockquote>
+<pre class="syntax">
+variable = REC(filenum[, index])
+</pre>
+
+<p>
+Returns the data of the 'index' record. If 'index' is omitted then the current record (SEEK)
+is used. If record contains more than one field then an array is returned.
+</blockquote>
+
+<h4>Writes to Random File or Device</h4>
+<blockquote>
+
+<pre class="syntax">
+PUT #filenum; [index,] field=var [, field=var [...]]
+</pre>
+
+<pre class="syntax">
+PUT #filenum; [index,] array
+</pre>
+
+<p>
+Writes the data on the 'index' record.
+If 'index' is omitted then the current record (SEEK) is used.
+If record does not exists it creates one.
+If the 'index' is biggest than the number of records, then blank records will be inserted.
+</blockquote>
+
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h2>Standard non-disk Devices/Drivers</h2>
+<blockquote>
+
+<h3>Standard Input, Output and Error streams</h3>
+
+<dl>
+<dt>STDIN:
+<dd>Standard input
+<dt>STDOUT:
+<dd>Standard output
+<dt>STDERR:
+<dd>Standard error
+</dl>
+
+<h3>Serial Ports</h3>
+
+<dl>
+<dt>COM1:[speed[,parity-data-stop]]
+<dd>Serial port 1...
+<dt>COM2: - COM9:
+<dd>Other devices if are exists
+</dl>
+
+<h3>Socket-client (telnet) Driver</h3>
+
+<dl>
+<dt>SOCL:server[,port]
+<dd>Socket client
+</dl>
+
+<h3>MEMO-DB emulation driver</h3>
+
+<dl>
+<dt>MEMO:[category/]memo-title
+<dd>Memo database
+    On PalmOS this is the memopad,
+	on Linux the KNotes.
+	If there is no a standard memo application, then a database file is used.
+</dl>
+
+<h3>CONTACT-DB emulation driver</h3>
+
+<dl>
+<dt>CONTACT:[category/]name
+<dd>Contacts database.
+    On PalmOS this is the address book,
+	on Linux the KAddressBook,
+	on Windows the Address book of Outlook express.
+	If there is no a standard address book, then a database file is used.
+</dl>
+
+<h3>PDOC emulation driver</h3>
+
+<dl>
+<dt>PDOC:file
+<dd>Compressed PalmOS Documents.
+    If the basic file-stream module it is works then there is no need for more coding.
+</dl>
+
+<h3>GZIP emulation driver</h3>
+
+<dl>
+<dt>GZIP:file
+<dd>Compressed files using zlib.
+    If the basic file-stream module it is works and the zlib exists then there is no need for more coding.
+	If there is no such library, then, a PDOC can be used as a temporary replacement.
+</dl>
+
+
+</blockquote>
+<!--- =-=-=-= ---->
+<h2>The Rest Commands/Functions</h2>
+<p>
+There must be exists a lot of other commands that are usual on an OS.
+GNU/Linux file systems are our prototypes, if some capabilities are not
+supported by an OS, must emulated.
+
+<dl>
+<dt>EXIST(file)
+<dd>Returns true if the 'file' exists.
+<dt>ACCESS(file)
+<dd>Returns the attributes of the 'file'. For details see chmod manual.
+<dt>CHMOD file, attributes
+<dd>Sets the attributes of the 'file'. For details see chmod manual.
+<dt>ISFILE(file)
+<dd>Returns true if the 'file' is a regular file.
+<dt>ISDIR(file)
+<dd>Returns true if the 'file' is a directory.
+<dt>ISLINK(file)
+<dd>Returns true if the 'file' is a link.
+<dt>BGETC(filenum)
+<dd>Returns the next byte of the stream.
+<dt>INPUT(filenum[, len)
+<dd>Returns one or more bytes from the file. Similar to BGETC but used for text-files.
+<dt>BPUTC #filenum, byte
+<dd>Writes a byte at the stream.
+<dt>KILL file
+<dd>Removes a regular file.
+<dt>COPY old-name, new-name
+<dd>Copies a file
+<dt>RENAME old-name, new-name
+<dd>Renames(or moves if it is supported) a file
+<dt>CHDIR dir
+<dd>Changes the current working directory to 'dir'.
+<dt>MKDIR dir
+<dd>Creates a directory (default attributes are the parent directory or 0664)
+<dt>RMDIR dir
+<dd>Removes the subdirectory 'dir'.
+<dt>DIRWALK directory [, wildcards] [USE UDF(name)]
+<dd>Walks throughs subdirectories.
+<dt>FILES(wildcards)
+<dd>Returns the list of the files of the current directory.
+</dl>

@@ -1,0 +1,109 @@
+! ndc -> texi2man
+
+!	.\" dummy line\n\
+!	.TH sbasic 1 "31 August 1990" GPL "SmallBASIC Man Page"\n\
+!	.UC 4\n\
+!	.SH NAME SmallBASIC\n\
+!	.SH +1;
+
+@set{lm;}
+
+! Special case
+\@c MAN *\N=*
+
+! ignore blocks
+\\input*\N=;
+\@copying*\@end copying=;
+\@macro*\@end macro=;
+\@c *\N=;
+\@titlepage*\@end titlepage=;
+\@settitle *\N=;
+\@setfilename *\N=;
+\@set *\N=;
+\@foot*\N=;
+\@ifinfo*\@end ifinfo=;
+\@ifhtml*\@end ifhtml=;
+\@iftex*\@end iftex=;
+\@ifnotinfo*\@end ifnotinfo=;
+\@ifnothtml*\@end ifnothtml=;
+\@ifnottex*\@end ifnottex=;
+\@dircategory *\N=;
+\@direntry*\@end direntry=;
+\@paragraph*\N=;
+\@contents*\N=;
+\@node *\N=;
+
+! symbols
+\@bullet\{\}=\*;
+\@bullet=\*;
+
+\@\@=\@;
+\@\{=\{;
+\@\}=\};
+
+! text elements
+\@b\{*\}=\n.B *\n;
+\@i\{*\}=\n.I *\n;
+\@url\{*\}=*;
+\@email\{*\}=*;
+\@sc\{*\}=*;
+\@strong\{*\}=\n.B *\n;
+\@dfn\{*\}=\n.I *\n;
+\@samp\{*\}=*;
+\@code\{*\}='*';
+\@var\{*\}='*';
+\@key\{*\}=[*];
+\@kbd\{*\}=[*];
+\@command\{*\}=*;
+\@COMMAND\{*\}=*;
+\@file\{*\}=*;
+\@option\{*\}=*;
+\@tie\{\}= ;
+
+! text structure
+\@chapter *\N=.SH @upcase{*}
+\@section *\N=.SS @upcase{*}
+\@subsection *\N=.SS *
+\@subsubsection *\N=.SS *
+\@itemize \@bullet*\N=@set{lm;\* }.Bl -compact
+\@itemize=@set{lm; }.Bl -item -compact
+\@table \@b=@set{lm;.B }.Bl -item -compact
+\@table=@set{lm;.B }.Bl -item -compact
+\@multitable*\N=@set{lm;.B }.Bl -item -compact
+\@vtable *\N=@set{lm;.B }.Bl -item -compact
+\@enumerate *\N=@set{lm;}.Bl -enum -compact
+\@end itemize=.El\n.LP
+\@end enumerate=.El\n.LP
+\@end table=.El\n.LP
+\@end multitable=.El\n.LP
+\@end vtable=.El\n.LP
+\@item *\N=\n.It\n${lm;} *;
+\@itemx *\N=\n.It\n${lm;} *;
+\@tab=\n;
+
+\@example*\@end example=\n---------------\n.nf\n*\n.fi;
+\@smallexample*\@end smallexample=\n.nf\n*\n.fi;
+\@verbatim*\@end verbatim=\n----------------\n.nf\n*\n.fi;
+\@cartouche=;
+\@end cartouche=;
+\@bye=;
+\@appendix Command Index=;
+\@appendix Variable Index=;
+\@printindex*\N=;
+\@group=;
+\@end group=;
+
+! spaces
+\@sp *\N=\n.sp\n
+\@sp\N=\n.sp\n
+\@\*=\n.br\n;
+\@defmac*\N=\n.B Macro *\n.br\n;
+\@deffn <A> <T>\N=\n.SS $2\n[$1]\n;
+\@deffnx <A> <T>\N=\n.SS $2\n[$1]\n;
+\@end deffn=;
+\@end defmac=;
+
+! custom
+\@sgnote\{*,*\}=Note:\n.B [*]\n*;
+
+

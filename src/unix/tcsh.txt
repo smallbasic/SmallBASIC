@@ -1,0 +1,5 @@
+
+# completition
+complete sbasic	n/*/f:*.{bas,BAS,Bas}/
+
+

@@ -1,0 +1,4764 @@
+.topic Index
+SmallBASIC
+Overview Documentation for SmallBASIC
+ 
+Nicholas Christopoulos, original author and project manager
+Chris Warren-Smith, ports and maintains the Franklin's eBookMan version
+Earle F. Philhower, ports and maintains the Helio (VTOS) version
+Tim Corcoran, ports and maintains the Sony Clie version
+ 
+SmallBASIC site http://smallbasic.sourceforge.net
+ 
+Copyright (C) 2000-2002 Nicholas Christopoulos
+ 
+ Use letters and arrow-keys
+ 
+ {Welcome to SmallBASIC:_Welcome0to0SmallBASIC}
+ {Commands:_Commands}
+ {System:_System}
+ {Graphics & Sound:_Graphics0&0Sound}
+ {Miscellaneous:_Miscellaneous}
+ {File system:_File0system}
+ {Mathematics:_Mathematics}
+ {2D Algebra:_2D0Algebra}
+ {Strings:_Strings}
+ {Console:_Console}
+ 
+.topic _Welcome0to0SmallBASIC
+Welcome to SmallBASIC
+
+ {About keywords on REF.TXT (source of this document):EF.TXT0(source0of0this0document)}
+ {Useful notes for beginners:_Useful0notes0for0beginners}
+ {Limits:_Limits}
+ {Constants and Variables:_Constants0and0Variables}
+ {System Variables:_System0Variables}
+ {Operators - by priority:_Operators010by0priority}
+ {Special Characters:_Special0Characters}
+ {The OPTION keyword:_The0OPTION0keyword}
+ {Meta-commands:_Meta1commands}
+ {Arrays and Matrices:_Arrays0and0Matrices}
+ {Nested arrays:_Nested0arrays}
+ {The operator IN:_The0operator0IN}
+ {The operator LIKE:_The0operator0LIKE}
+ {The pseudo-operator <<:_pop_ii}
+ {Subroutines and Functions:_Subroutines0and0Functions}
+ {Units (SB libraries):_Units0(SB0libraries)}
+ {The pseudo-operators ++/--/p=:_pop_p}
+ {The USE keyword:_The0USE0keyword}
+ {The DO keyword:_The0DO0keyword}
+ {Uncategorized:_Uncategorized}
+
+  SmallBASIC (SB) is a BASIC-like interpreter.
+  It is targeting to non-IT users.
+  It has advanced mathematics, string and graphics library.
+  It is not, and it will never be, a developer tool by the meaning
+  of giving tools.
+
+
+.topic EF.TXT0(source0of0this0document)
+About keywords on REF.TXT (source of this document)
+
+  There is no required to exists or not of any keyword;
+  feel free to write as you like, the ref.bas will read all that.
+
+  But if you like you can use the keywords.
+  The keywords must starts at the first column.
+  (remove | from the following examples)
+
+  |Book: title of the document
+  |Version: version of the subject and/or this book
+  |Author: declare an author
+
+  |Chapter: current chapter
+  |Section: section of the chapter
+  |Command: command name; used as unique key
+  |Function: function name; used as unique key
+  |Syntax: syntax of the command
+  |InfoFor: keywords on this section; used for "search-by-keyword"
+  |Links: related keywords
+
+  The syntax and the example section captures the following text
+  until an empty line found. If you want to use that words inside
+  your texts, in the first column, as simple text, just leave
+  an empty line.
+
+  Because we need unique name for sections, when you need to
+  write a section for more than one functions/commands use
+  the '/' as separator. 
+
+  In the InfoFor and the Links, use space as separator.
+
+
+.topic _Useful0notes0for0beginners
+Useful notes for beginners
+
+  How to read the syntax:
+
+  Everything is written inside of \[ \] characters are optional values.
+  Everything is written inside of \{ \} characters means you must select one
+  of them.
+  The symbol | means OR.
+  The symbols ... means you can repeat the previous syntax.
+  The keywords are written with capital letters.
+  Keywords with suffix ( ) are functions.
+
+
+
+
+Example
+
+  ' Syntax: TEST \{1|2\}
+  ' Valid calls:
+  TEST 1
+  TEST 2
+  ...
+  ' Syntax: TEST \[HI\]
+  ' Valid calls:
+  TEST
+  TEST HI
+
+.topic _Limits
+Limits
+
+  Bytecode size:                    4 GB
+  Length of text lines:          4095 characters
+  User-defined keyword length:    128 characters
+  Maximum number of parameters:   256
+  Numeric value range:             64 bit FPN (-/+ 1E+308)
+  Maximum string size:              2 GB
+  Number of file handles:         256
+  Number of array-dimensions:       6
+  Number of colors:                24 bit (0-15=VGA, <0=RGB)
+  Background sound queue size:    256 notes
+  INPUT (console): 1023 characters per call, up to 16 variables
+  COMMAND$                       1023 bytes
+
+  System events are checked every 50ms
+
+  === PalmOS only (or other limited OS):
+  Length of text lines:           511 characters
+  Maximum number of parameters:    32
+  User-defined keyword length:     32 characters
+  Number of array-dimensions:       3
+  Maximum string size:            <32 KB
+  Number of file handles:          16
+  Number of elements/array:      2970 (that means 64KB of memory)
+  Bytecode size:                  <64 KB
+                        (by using CHAIN you can run progs > 64KB)
+  INPUT (console): 255 characters per call, up to 16 variables
+  COMMAND$                        127 bytes
+
+
+.topic _Constants0and0Variables
+Constants and Variables
+
+  SmallBASIC uses internally 4 data-types
+  1. Integer  (32bit)
+  2. Real     (64bit)
+  3. String   (<32KB on 16bit / 2GB on 32bit)
+  4. Array    (~2970 elements on 16bit / ~50M elements on 32bit)
+
+  Reals can be also written by using scientific notation.
+  1E+2, 1E-3, 2.6E-0.25, etc
+
+  All user variables (include arrays) are 'VARIANT'. That means the 
+  data-type is invisible to user.
+
+  Variable names can use any alphanumeric characters, extended
+  characters (ASCII codes 128-255 for non-English languages) the symbol
+  '_', and the symbol '$'.
+
+  The first character of the name cannot be a digit nor a '$'.
+
+  About the dollar-symbol:
+  The symbol '$' is supported for compatibility.
+  Since in SmallBASIC there are no data-types its use is meaningless.
+
+  The dollar in function names will be ignored
+  The dollar in variable names will be count as part of the name
+  (that means v and v$ are two different variables)
+  The dollar in system variables names will be ignore it
+  (that means COMMAND and COMMAND$ is the same)
+
+  abc, a_c, _bc, ab2c, abc$ -> valid names
+  1cd, a$b, $abc            -> invalid names
+
+  Strings may be appended to one another using the + operator.
+
+  b = "Hello, " + "world!"
+
+  Constant variables can be declared by using the keyword CONST
+
+  CONST ð = 3.14
+
+
+.topic _System0Variables
+System Variables
+
+  OSNAME      - Operating System name
+  OSVER       - Operating System Version (0xAABBCC
+                (A=major, B=minor, C=patch)
+  SBVER       - SmallBASIC Version (0xAABBCC)
+
+  PI          - 3.14..
+
+  XMAX,YMAX   - Graphics display: maximum x (width-1), y (height-1) value
+  BPP         - Graphics display: bits per pixel (color resolution)
+  VIDADR      - Video RAM address (only on specific drivers)
+
+  CWD         - Current Working Directory
+  HOME        - User's directory
+  COMMAND     - Command-line parameters
+
+  TRUE        - The value 1
+  FALSE       - The value 0
+
+
+.topic _Operators010by0priority
+Operators - by priority
+
+  ( )          Parenthesis
+
+  +, -         Unary
+  ~            bitwise NOT
+  NOT or !     Logical NOT  (NOT false = true)
+
+  ^            Exponentiation
+
+  *, /, \      Multiplication, Division, Integer Division
+  % or MOD     Reminder (like QB's; a=int(a), b=int(b), a-b*(a/b))
+  MDL          Modulus  (a%b+b*(sgn(a)<>sgn(b)))
+
+  +, -         Addition/Concatenation, Subtraction
+
+  =            Equal
+  <> or !=     Not Equal
+  >,    <      Less Than, Greater Than
+  =>,   =<     Less or Equal, Greater or Equal
+  >=,   <=     Less or Equal, Greater or Equal
+  IN           see "The IN operator"
+  LIKE         see "The LIKE operator"
+
+  AND or &&    Logical AND  
+  OR  or ||    Logical OR
+  BAND or &    bitwise AND
+  BOR  or |    bitwise OR
+  EQV          bitwise EQV
+  IMP          bitwise IMP
+  XOR          bitwise XOR
+  NAND         bitwise NAND
+  NOR          bitwise NOR
+  XNOR         bitwise XNOR
+
+
+.topic _Special0Characters
+Special Characters
+
+  &h or 0x    Prefix for hexadecimal constant (0x1F,   &h3C)
+  &o or 0o    Prefix for octal constant       (0o33,   &o33)
+  &b or 0b    Prefix for binary constant      (0b1010, &b1110)
+
+  \[,;\]        Array definition (function ARRAY())                    ($1)
+
+  <<          Appends to an array (command APPEND)                   ($1)
+
+  ++          Increase a value by 1 (x = x + 1)                      ($1)
+
+  --          Decrease a value by 1 (x = x - 1)                      ($1)
+
+  p=          Another LET macro (x = x p ...)                        ($1)
+              Where p any character of -+/\*^%&|
+
+  :           Separates commands typed on the same line
+
+  &           Join code lines (if its the last character of the line)
+              The result line its must not exceed the max. line size.
+
+  #           Meta-command (if its the first character of the line)
+              or prefix for file handle
+
+  @           The 'at' symbol can by used instead of BYREF          ($1)
+
+  '           Remarks
+
+  Notes:
+  ($1) = Pseudo operators. These operators are replaced by compiler with
+  a command or an expression.
+
+
+.topic _The0OPTION0keyword
+The OPTION keyword
+Syntax
+  OPTION keyword parameters
+
+Description
+
+
+  This special command is used to pass parameters to the SB-environment.
+  There are two styles for that, the run-time (like BASE) which can
+  change the value at run-time, and the compile-time (like PREDEF)
+  which used only in compile-time and the value cannot be changed
+  on run-time.
+
+  Keyword: BASE (run-time)
+
+      OPTION BASE lower-bound
+
+      Sets the default lower bound for arrays.
+
+  Keyword: PREDEF (compile-time)
+
+      OPTION PREDEF \{QUITE|COMMAND cmdstr|GRMODE\}
+
+      Sets parameters of the compiler
+
+          QUITE
+          sets quite flag (-q option)
+
+          COMMAND cmdstr
+          sets the COMMAND$ string (useful for debug reasons)
+
+          GRMODE \[WIDTHxHEIGHT\[xBPP\]\]
+          sets the graphics mode flag (-g option)
+          or sets the prefered screen resolution.
+
+          Example: 
+
+              (Clie HiRes)
+              OPTION PREDEF GRMODE 320x320x16
+
+          TEXTMODE
+          sets the text mode flag (-g- option)
+
+          CSTR
+          support c-style special character encoding ('\')
+
+
+.topic _Meta1commands
+Meta-commands
+
+  #!...       
+  Used by Unix to make source runs as a script executable
+
+  #sec:section name
+  Used internally to store the section name. DO NOT USE IT!
+
+  #inc:"file"
+  or
+  #inc:file
+  Used to include a SmallBASIC source file into the current BASIC code
+
+  #unit-path:path
+  or
+  #unit-path:"path"
+  Used to setup additional directories for searching for unit-files
+  This meta does nothing more than to setting up the environment
+  variable SB_UNIT_PATH. Directories on Unix must separated by ':',
+  and on DOS/Windows by ';'
+
+
+
+
+Example
+
+  ...
+  #inc:"mylib.bas"
+  ...
+  MyLibProc "Hi"
+
+.topic _Arrays0and0Matrices
+Arrays and Matrices
+
+  Define a 3x2 matrix
+
+  A = \[11, 12; 21, 22; 31, 32\]
+
+  That creates the array
+
+  | 11  12 |
+  | 21  22 | = A
+  | 31  32 |
+
+  The comma used to separate column items; the semi-colon used to 
+  separate rows. Values between columns can be omitted.
+
+
+  A = \[ ; ; 1, 2 ; 3, 4, 5\]
+
+  This creates the array
+
+  | 0  0  0 |
+  | 1  2  0 | = A
+  | 3  4  5 |
+
+  Supported operators:
+
+  Add/sub:
+  B = \[1, 2; 3, 4\]: C = \[5, 6; 7, 8\]
+
+  A = B + C
+  C = A - B
+
+  Equal: 
+  bool=(A=B)
+
+  Unary:
+  A2 = -A
+
+  Multiplication:
+
+  A = \[1, 2; 3, 4\]: B = \[5 ; 6\]
+  C = A * B
+  D = 0.8 * A
+
+  Inverse:
+  A = \[ 1, -1, 1; 2, -1, 2; 3, 2, -1\]
+  ? INVERSE(A)
+
+  Gauss-Jordan:
+
+  ? "Solve this:"
+  ? "  5x - 2y + 3z = -2"
+  ? " -2x + 7y + 5z =  7"
+  ? "  3x + 5y + 6z =  9"
+  ?
+  A = \[ 5, -2, 3; -2, 7, 5; 3, 5, 6\]
+  B = \[ -2; 7; 9\]
+  C = LinEqn(A, B)
+  ? "\[x;y;z\] = "; C
+
+  Note:
+  There is a problem with 1 dimension arrays, because 1-dim arrays does
+  not specify how SmallBASIC must see them.
+
+
+  DIM A(3)
+
+  | 1 2 3 | = A
+
+  or
+
+  | 1 |
+  | 2 | = A
+  | 3 |
+
+  And because this is not the same thing. (ex. for multiplication)
+
+  So the default is columns
+
+  DIM A(3) ' or A(1,3)
+
+  | 1 2 3 | = A
+
+  For vertical arrays you must declare it as 2-dim arrays Nx1
+
+  DIM A(3,1)
+
+  | 1 |
+  | 2 | = A
+  | 3 |
+
+
+.topic _Nested0arrays
+Nested arrays
+
+  Nested arrays are allowed
+
+
+  A = \[\[1,2\] , \[3,4\]\]
+  B = \[1, 2, 3\]
+  C = \[4, 5\]
+  B(2) = C
+  print B
+
+  This will be printed
+  \[1, 2, \[4, 5\], 3\]
+
+  You can access them by using a second (or third, etc) pair of
+  parenthesis.
+
+  B(2)(1) = 16
+  print B(2)(1)
+
+  Result:
+      16
+
+
+.topic _The0operator0IN
+The operator IN
+
+  IN operator is used to compare if the left-expression belongs to 
+  right-expression
+
+
+
+
+Example
+
+  ' Using it with arrays
+  print 1 in \[2,3\]        :REM FALSE
+  print 1 in \[1,2\]        :REM TRUE
+  ...
+  ' Using it with strings
+  print "na" in "abcde"   :REM FALSE
+  print "cd" in "abcde"   :REM TRUE
+  ...
+  ' Using it with number (true only if left = right)
+  print 11 in 21          :REM FALSE
+  print 11 in 11          :REM TRUE
+  ...
+  ' special case
+  ' auto-convert integers/reals
+  print 12 in "234567"    :REM FALSE
+  print 12 in "341256"    :REM TRUE
+
+.topic _The0operator0LIKE
+The operator LIKE
+
+  LIKE is a regular-expression operator.
+  It is compares the left part of the expression with the pattern (right
+  part).
+  Since the original regular expression code is too big (for handhelds),
+  I use only a subset of it, based on an excellent old stuff by 
+  J. Kercheval (match.c, public-domain, 1991).
+  The same code is used for filenames (FILES(), DIRWALK)
+
+  In the pattern string:
+  *      matches any sequence of characters (zero or more)
+  ?      matches any character
+  \[SET\]  matches any character in the specified set,
+  \[!SET\] or \[^SET\] matches any character not in the specified set.
+
+  A set is composed of characters or ranges; a range looks like
+  character hyphen character (as in 0-9 or A-Z). \[0-9a-zA-Z_\] is the
+  minimal set of characters allowed in the \[..\] pattern construct.
+
+  To suppress the special syntactic significance of any of `\[\]*?!^-\',
+  and match the character exactly, precede it with a `\'.
+
+
+
+
+Example
+
+  ? "Hello" LIKE "*\[oO\]" : REM TRUE
+  ? "Hello" LIKE "He??o" : REM TRUE
+  ? "Hello" LIKE "hello" : REM FALSE
+  ? "Hello" LIKE "\[Hh\]*" : REM TRUE
+
+.topic _pop_ii
+The pseudo-operator <<
+
+  This operator can be used to append elements to an array.
+
+
+  A << 1
+  A << 2
+  A << 3
+
+  ? A(1)
+
+
+.topic _Subroutines0and0Functions
+Subroutines and Functions
+Syntax
+  SUB name \[(\[BYREF\] par1 \[, ...\[BYREF\] parN)\]\]
+    \[LOCAL var\[, var\[, ...\]\]\]
+    \[EXIT SUB\]
+    ...
+  END
+  FUNC name\[(\[BYREF\] par1 \[, ...\[BYREF\] parN)\]\]
+    \[LOCAL var\[, var\[, ...\]\]\]
+    \[EXIT FUNC\]
+    ...
+    name=return-value
+  END
+  FUNC name\[(par1\[,...\])\] = expression
+  or
+  DEF name\[(par1\[,...\])\] = expression
+
+Description
+
+
+
+  Use function's name to return the value.
+
+  Alternative FUNC/DEF syntax (single-line functions)
+  This is a macro for compatibility with the BASIC's DEF FN command.
+
+
+
+  DEF FNSin(x) = SIN(x)
+  ? FNSin(pi/2)
+
+  Nested procedures/functions are allowed (like Pascal).
+
+
+  FUNC f(x)
+      Rem Function: F/F1
+      FUNC f1(x)
+          Rem Function: F/F1/F2
+          FUNC f2(x)
+              f2=cos(x)
+          END
+          f1 = f2(x)/4
+      END
+      Rem Function: F/F3
+      FUNC f3
+          f3=f1(pi/2)
+      END
+  REM
+  ? f1(pi) : REM OK
+  ? f2(pi) : REM ERROR
+  f = x + f1(pi) + f3 : REM OK
+  END
+
+  The parameters are 'by value' by default.
+  Passing parameters by value means the executor makes a copy of the
+  parameter to stack. The value in caller's code will not be changed.
+
+  Use BYREF keyword for passing parameters 'by reference'. 
+  Passing parameters by reference means the executor push the pointer
+  of variable into the stack. The value in caller's code will be the
+  changed.
+
+
+  ' Passing 'x' by value
+  SUB F(x)
+    x=1
+  END
+
+  x=2
+  F x
+  ? x:REM displays 2
+  ____________________________
+
+  ' Passing 'x' by reference
+  SUB F(BYREF x)
+    x=1
+  END
+
+  x=2
+  F x
+  ? x:REM displays 1
+
+  You can use the symbol '@' instead of BYREF. There is no
+  difference between @ and BYREF.
+
+  SUB F(@x)
+    x=1
+  END
+
+  On a multi-section applications sub/funcs needs declaration on the main
+  section.
+
+
+  #sec:Main
+  declare func f(x)
+
+  #sec:another section
+  func f(x)
+  ...
+  end
+
+  Use the LOCAL keyword for local variables.
+  LOCAL creates variables (dynamic) at routine's code.
+
+
+  SUB MYPROC
+    LOCAL N:REM LOCAL VAR
+    N=2
+    ? N:REM displays 2
+  END
+
+  N=1:REM GLOBAL VAR
+  MYPROC
+  ? N:REM displays 1
+
+  You can send arrays as parameters.
+
+  When using arrays as parameters its better to use them as BYREF;
+  otherwise their data will be duplicated.
+
+
+  SUB FBR(BYREF tbl)
+    ? FRE(0)
+    ...
+  END
+
+  SUB FBV(tbl)
+    ? FRE(0)
+    ...
+  END
+
+  ' MAIN
+  DIM dt(128)
+  ...
+  ? FRE(0)
+  FBR dt
+  ? FRE(0)
+  FBV dt
+  ? FRE(0)
+
+  Passing & returning arrays, using local arrays.
+
+
+  func fill(a)
+    local b, i
+
+    dim b(16)
+    for i=0 to 16
+      b(i)=16-a(i)
+    next
+    fill=b
+  end
+
+  DIM v(4)
+  v=fill(v)
+
+
+.topic _Units0(SB0libraries)
+Units (SB libraries)
+
+  Units are a set of procedures, functions and/or variables that can
+  be used by another SB program or SB unit.
+  The main section of the unit (commands out of procedures or functions)
+  is the initialization code. 
+
+  A unit declared by the use of 'UNIT' keyword.
+
+  UNIT MyUnit
+
+  The functions, procedure or variables which we want to be visible to
+  another programs must be declared with the 'EXPORT' keyword.
+
+  UNIT MyUnit
+  EXPORT MyF
+  ...
+  FUNC MyF(x)
+  ...
+  END
+
+  Note:
+  Keep file-name and unit-name the same. That helps the SB to 
+  automatically recompile the required units when it is needed.
+
+  To link a program with a unit we must use the 'IMPORT' keyword.
+
+  IMPORT MyUnit
+
+  To access a member of a unit we must use the unit-name,
+  a point and the name of the member.
+
+  IMPORT MyUnit
+  ...
+  PRINT MyUnit.MyF(1/1.6)
+
+
+
+  -----------------
+  file my_unit.bas:
+  -----------------
+  UNIT MyUnit
+
+  EXPORT F, V
+
+  REM a shared function
+  FUNC F(x)
+      F = x*x
+  END
+
+  REM a non-shared function
+  FUNC I(x)
+      I = x+x
+  END
+
+  REM Initialization code
+  V="I am a shared variable"
+  L="I am invisible to the application"
+  PRINT "Unit 'MyUnit' initialized :)"
+
+  ----------------
+  file my_app.bas:
+  ----------------
+  IMPORT MyUnit
+
+  PRINT MyUnit.V
+  PRINT MyUnit.F(2)
+
+
+.topic _pop_p
+The pseudo-operators ++/--/p=
+
+  The ++ and -- operators are used to increase or decrease the value of a
+  variable by 1.
+
+  x = 4
+  x ++ : REM x <- x + 1 = 5
+  x -- : REM x <- x - 1 = 4
+
+  The generic p= operators are used as in C
+  Where p any character of -+/\*^%&|
+
+  x += 4 : REM x <- x + 4
+  x *= 4 : REM x <- x * 4
+
+  All these pseudo-operators are not allowed inside of expressions
+
+  y = x ++ ' ERROR
+  z = (y+=4)+5 ' ALSO ERROR
+
+
+.topic _The0USE0keyword
+The USE keyword
+
+  This keyword is used on specific commands to passing a user-defined
+  expression.
+
+
+  SPLIT s," ",v USE TRIM(x)
+
+  In that example, every element of V() will be 'trimmed'.
+
+  Use the x variable to specify the parameter of the expression.
+  If the expression needs more parameter, you can use also the names
+  y and z
+
+
+.topic _The0DO0keyword
+The DO keyword
+
+  This keyword is used to declare single-line commands.
+  It can be used with WHILE and FOR-family commands.
+
+
+  Also, it can be used by IF command (instead of THEN), but is not
+  suggested.
+
+
+
+Example
+
+  FOR f IN files("*.txt") DO PRINT f
+  ...
+  WHILE i < 4 DO i ++
+
+.topic _Uncategorized
+Uncategorized
+
+  * White-spaces
+
+  The white-spaces in the SmallBASIC and in "C" are:
+  space, form-feed ('\f'), new-line  ('\n'), carriage-return ('\r'),
+  horizontal-tab ('\t'), and vertical tab ('\v').
+
+  The 'white-spaces' are used by routines like SQUEEZE.
+
+  * The '$' is an unused character. You can use it as suffix to
+  functions names. SB will ignore it.
+
+  x=LEFT("abcd", 2)
+  y=LEFT$("abcd",2)
+
+  Both calls are correct and are the same.
+
+  * Notes on FOR-commands
+
+  These commands are evaluate the 'destination' everytime.
+
+  FOR i=0 TO LEN(FILES("*.txt"))-1
+      PRINT i
+  NEXT
+
+  In that example the 'destination' is the LEN(FILES("*.txt"))-1
+  For each value of i the destination will be evaluated.
+  That is WRONG but it is supported by BASIC and many other languages.
+
+  So, it is much better to be rewritten as
+
+  idest=LEN(FILES("*.txt"))-1
+  FOR i=0 TO idest
+      PRINT i
+  NEXT
+
+  Of course, it is much faster too.
+
+
+.topic _Commands
+Commands
+
+ {Rem:_Rem}
+ {Let:_Let}
+ {Const:_Const}
+ {Dim:_Dim}
+ {Label:_Label}
+ {GoTo:_GoTo}
+ {GoSub-Return:_GoSub1Return}
+ {On-GoTo/On-GoSub:_On1GoTo4On1GoSub}
+ {For-To-Step-Next:_For1To1Step1Next}
+ {For-In-Next:_For1In1Next}
+ {While-Wend:_While1Wend}
+ {Repeat-Until:_Repeat1Until}
+ {If-Then-Else-ElIf-EndIf-FI:_If1Then1Else1ElIf1EndIf1FI}
+ {If():_If5}
+ {End/Stop:_End4Stop}
+ {Restore:_Restore}
+ {Read:_Read}
+ {Data:_Data}
+ {Erase:_Erase}
+ {Exit:_Exit}
+ {Len():_Len5}
+ {Empty():_Empty5}
+ {IsArray():_IsArray5}
+ {IsNumber():_IsNumber5}
+ {IsString():_IsString5}
+ {Append:_Append}
+ {Insert:_Insert}
+ {Delete:_Delete}
+
+.topic _Rem
+Rem
+Syntax
+  '|#|REM \[remark\]
+
+Description
+
+  Adds explanatory text to a program listing. 'remark' commentary text,
+  ignored by BASIC.
+
+  The # can be used as remarks only if its in the first character of the
+  line.
+
+
+
+Example
+
+  ' That text-line is just a few remarks
+  ...
+  REM another comment
+  ...
+  # one more comment
+
+.topic _Let
+Let
+Syntax
+  \[LET\] var = expr
+
+Description
+
+  Assigns the value of an expression to a variable.
+
+  var  - A valid variable name.
+  expr - The value assigned to variable.
+
+
+
+Example
+
+  LET x = 4
+  x = 1               ' Without the LET keyword
+  z = "String data"   ' Assign string
+  ...
+  DIM v(4)
+  z=v                 ' Assign array (z = clone of v)
+
+
+See also
+  {Const:_Const}
+.topic _Const
+Const
+Syntax
+  CONST name = expr
+
+Description
+
+  Declares one constant.
+
+  name - An identifier that follows the rules for naming BASIC variables.
+
+  expr - An expression consisting of literals, with or without operators,
+         only. 
+
+
+
+Example
+
+  COSNT G = 6.67259E-11
+
+
+See also
+  {Let:_Let}
+.topic _Dim
+Dim
+Syntax
+  DIM var(\[lower TO\] upper \[, ...\]) \[, ...\]
+
+Description
+
+  Creates an array of (upper-lower)+1 elements.
+  If the 'lower' is not specified, the arrays are starting from 0
+
+
+
+Example
+
+  REM One dimension array of 7 elements, starting from 0
+  DIM A(6)
+  ...
+  REM One dimension array of 6 elements, starting from 1
+  DIM A(1 TO 6)
+  ...
+  REM Three dimension array
+  DIM A(1 TO 6, 1 TO 4, 1 TO 8)
+  ...
+  REM Allocating zero-length arrays:
+  DIM z()
+  ...
+  IF LEN(Z)=0 THE APPEND Z, "The first element"
+
+
+See also
+  {Erase:_Erase}
+  {Len():_Len5}
+  {LBound()/UBound():_LBound54UBound5}
+  {IsArray():_IsArray5}
+.topic _Label
+Label
+Syntax
+  \[LABEL\] label
+
+Description
+
+  Defines a label. There are two kinds of labels. Numeric and 
+  alphanumeric.
+
+  Numeric labels does not needed the keyword LABEL, but alphanumeric
+  does.
+
+
+
+Example
+
+  1000 ? "Hello"
+  ...
+  LABEL AlphaLabel: ? "Hello"
+  ...
+  GOTO 1000
+  GOTO AlphaLabel
+
+
+See also
+  {GoTo:_GoTo}
+  {GoSub-Return:_GoSub1Return}
+.topic _GoTo
+GoTo
+Syntax
+  GOTO label
+
+Description
+
+  Causes program execution to branch to a specified position (label).
+
+
+See also
+  {Label:_Label}
+  {GoSub-Return:_GoSub1Return}
+  {On-GoTo/On-GoSub:_On1GoTo4On1GoSub}
+.topic _GoSub1Return
+GoSub-Return
+Syntax
+  GOSUB label
+  .
+  . \[commands\]
+  .
+  RETURN
+
+Description
+
+
+  Causes program execution to branch to the specified label; when the 
+  RETURN command is encountered, execution branches to the command 
+  immediately following the most recent GOSUB command.
+
+
+See also
+  {Label:_Label}
+  {GoTo:_GoTo}
+  {On-GoTo/On-GoSub:_On1GoTo4On1GoSub}
+.topic _On1GoTo4On1GoSub
+On-GoTo/On-GoSub
+Syntax
+  ON expr GOTO label1 \[, ... labelN\]
+  ON expr GOSUB label1 \[, ... labelN\]
+
+Description
+
+
+  Causes BASIC to branch to one of a list of labels.
+
+  expr - A numeric expression in the range 0 to 255. Upon execution of
+         the ON...GOTO command (or ON...GOSUB), BASIC branches to the nth
+         item in the list of labels that follows the keyword GOTO 
+         (or GOSUB).
+
+
+See also
+  {Label:_Label}
+  {GoSub-Return:_GoSub1Return}
+  {GoTo:_GoTo}
+.topic _For1To1Step1Next
+For-To-Step-Next
+Syntax
+  FOR counter = start TO end \[STEP incr\]
+      .
+      . \[commands\]
+      .
+      . \[EXIT FOR\]
+      .
+  NEXT
+
+Description
+
+
+  Begins the definition of a FOR/NEXT loop.
+
+  counter - A numeric variable to be used as the loop counter. 
+
+  start   - A numeric expression; the starting value of counter.
+
+  end     - A numeric expression; the ending value of counter.
+
+  incr    - A numeric expression; the value by which counter is
+            incremented or decremented with each iteration of the loop.
+            The default value is +1.
+
+  BASIC begins processing of the FOR/NEXT block by setting counter equal
+  to start. Then, if 'incr' is positive and counter is not greater than
+  end, the commands between the FOR and the NEXT are executed.
+
+  When the NEXT is encountered, counter is increased by 'incr', and the
+  process is repeated. Execution passes to the command following the NEXT
+  if counter is greater than end.
+
+  If increment is negative, execution of the FOR/NEXT loop is terminated
+  whenever counter becomes less than end.
+
+  FOR/NEXT loops may be nested to any level of complexity, but there
+  must be a NEXT for each FOR.
+
+
+
+Example
+
+  FOR C=1 TO 9
+      PRINT C
+  NEXT
+
+
+See also
+  {For-In-Next:_For1In1Next}
+  {Exit:_Exit}
+  {While-Wend:_While1Wend}
+  {Repeat-Until:_Repeat1Until}
+.topic _For1In1Next
+For-In-Next
+Syntax
+  FOR element IN array
+      .
+      . \[commands\]
+      .
+      . \[EXIT \[FOR\]\]
+      .
+  NEXT
+
+Description
+
+  Begins the definition of a FOR/NEXT loop. 
+
+  element - A variable to be used as the copy of the current element. 
+
+  array   - An array expression
+
+  The commands-block will repeated for LEN(array) times. Each time
+  the 'element' will holds the value of the current element of the array.
+
+  FOR/NEXT loops may be nested to any level of complexity, but there
+  must be a NEXT for each FOR.
+
+
+
+Example
+
+  A=\[1,2,3\]
+  FOR E IN A
+      PRINT E
+  NEXT
+  ...
+  ' This is the same with that
+  A=\[1,2,3\]
+  FOR I=LBOUND(A) TO UBOUND(A)
+      E=A(I)
+      PRINT E
+  NEXT
+
+
+See also
+  {For-To-Step-Next:_For1To1Step1Next}
+  {Exit:_Exit}
+  {While-Wend:_While1Wend}
+  {Repeat-Until:_Repeat1Until}
+.topic _While1Wend
+While-Wend
+Syntax
+  WHILE expression
+      .
+      . \[commands\]
+      .
+      . \[EXIT \[LOOP\]\]
+      .
+  WEND
+
+Description
+
+  Begins the definition of a WHILE/WEND loop.
+
+  expression - An expression
+
+  BASIC starts by evaluating expression. If expression is nonzero (true),
+  the next command is executed. If expression is zero (false), control
+  passes to the first command following the next WEND command.
+
+  When BASIC encounters the WEND command, it reevaluates the expression
+  parameter to the most recent WHILE. If that parameter is still nonzero
+  (true), the process is repeated; otherwise, execution continues at the
+  next command.
+
+  WHILE/WEND loops may be nested to any level of complexity, but there
+  must be a WEND for each WHILE.
+
+
+
+Example
+
+  C=1
+  WHILE C<10
+      PRINT C
+      C=C+1
+  WEND
+  ...
+  ' This is the same with that
+  FOR C=1 TO 9
+      PRINT C
+  NEXT
+
+
+See also
+  {For-To-Step-Next:_For1To1Step1Next}
+  {For-In-Next:_For1In1Next}
+  {Repeat-Until:_Repeat1Until}
+  {Exit:_Exit}
+.topic _Repeat1Until
+Repeat-Until
+Syntax
+  REPEAT
+      .
+      . \[commands\]
+      .
+      . \[EXIT \[LOOP\]\]
+      .
+  UNTIL expression
+
+Description
+
+  Begins the definition of a REPEAT/UNTIL loop.
+
+  expression - An expression
+
+  BASIC starts executing the commands between the REPEAT and UNTIL
+  commands. When BASIC encounters the UNTIL command, it evaluates the
+  expression parameter. If that parameter is zero (false), the process
+  will be repeated; otherwise, execution continues at the next command.
+
+  REPEAT/UNTIL loops may be nested to any level of complexity, but there
+  must be an UNTIL for each REPEAT.
+
+
+
+Example
+
+  C=1
+  REPEAT
+      PRINT C
+      C=C+1
+  UNTIL C=10
+  ...
+  ' This is the same with that
+  FOR C=1 TO 9
+      PRINT C
+  NEXT
+
+
+See also
+  {For-To-Step-Next:_For1To1Step1Next}
+  {For-In-Next:_For1In1Next}
+  {While-Wend:_While1Wend}
+  {Exit:_Exit}
+.topic _If1Then1Else1ElIf1EndIf1FI
+If-Then-Else-ElIf-EndIf-FI
+Syntax
+  IF expression1 \[THEN\]
+      .
+      . \[commands\]
+      .
+  \[ \[ELSEIF | ELIF\] expression2 \[THEN\]
+      .
+      . \[commands\]
+      .
+  \]
+  \[ELSE
+      .
+      . \[commands\]
+      .
+  \]
+  \{ ENDIF | FI \}
+  ' Single-line IF
+  IF expression THEN \[num-label\]|\[command\] \[ELSE \[num-label\]|\[command\]\]
+
+Description
+
+
+  Block-style IF.
+
+  Causes BASIC to make a decision based on the value of an expression.
+
+  expression - An expression; 0 is equivalent to FALSE, while all
+               other values are equivalent to TRUE.
+
+  commands   - One or more commands.
+
+  Each expression in the IF/ELSEIF construct is tested in order.  
+  As soon as an expression is found to be TRUE, then its corresponding
+  commands are executed. If no expressions are TRUE, then the commands
+  following the ELSE keyword are executed. If ELSE is not specified, then
+  execution continues with the command following the ENDIF.
+
+  IF, ELSE, ELSEIF, and ENDIF must all be the first keywords on their
+  respective lines.
+
+  THEN is optional, but if its defined it must be the last keyword on its
+  line; if anything other than a comment follows on the same line with
+  THEN, BASIC thinks it's reading a single-line IF/THEN/ELSE construct.
+
+  IF blocks may be nested.
+
+
+  Single-line IF.
+
+  Causes BASIC to make a decision based on the value of an expression.
+
+  expression - An expression; 0 is equivalent to FALSE, while all
+               other values are equivalent to TRUE.
+
+  command    - Any legal command or a numeric label. If a number is
+               specified, it is equivalent to a GOTO command with
+               the specified numeric-label.
+
+
+
+Example
+
+  x=1
+  IF x=1 THEN
+      PRINT "true"
+  ELSE
+      PRINT "false"
+  ENDIF
+  ...
+  ' Alternate syntax:
+  x=1
+  IF x=1
+      PRINT "true"
+  ELSE
+      PRINT "false"
+  FI
+  ' Single-line IF
+  x=1
+  IF x=1 THEN PRINT "true" ELSE PRINT "false"
+  ...
+  IF x=1 THEN 1000
+  ...
+  1000 PRINT "true"
+
+
+See also
+  {If():_If5}
+.topic _If5
+If()
+Syntax
+  IF(expression,true-value,false-value)
+
+Description
+
+  Returns a value based on the value of an expression.
+
+
+
+Example
+
+  x=0
+  PRINT IF(x<>0,"true","false") : REM prints false
+
+
+See also
+  {If-Then-Else-ElIf-EndIf-FI:_If1Then1Else1ElIf1EndIf1FI}
+.topic _End4Stop
+End/Stop
+Syntax
+  STOP \[error\]
+  or
+  END \[error\]
+
+Description
+
+  Terminates execution of a program, closes all files opened by the
+  program, and returns control to the operating system.
+
+  error - A numeric expression.
+
+  The 'error' is the value which will returned to operating system;
+  if its not specified the BASIC will return 0.
+
+  Note:
+    The 'error' value is very well known as ERRORLEVEL value 
+    on DOS/Windows systems
+
+
+See also
+  {RTE:_RTE}
+.topic _Restore
+Restore
+Syntax
+  RESTORE label
+
+Description
+
+  Specifies the position of the next data to be read.
+
+  label - A valid label.
+
+
+See also
+  {Read:_Read}
+  {Data:_Data}
+.topic _Read
+Read
+Syntax
+  READ var\[, var ...\]
+
+Description
+
+  Assigns values in DATA items to specified variables.
+
+  var - Any variable.
+
+  Unless a RESTORE command is executed, BASIC moves to the next DATA
+  item with each READ assignment. If BASIC runs out of DATA items to
+  READ, an run-time error occurs.
+
+
+
+Example
+
+  FOR c=1 TO 6
+      READ x
+      PRINT x
+  NEXT
+  ...
+  DATA "a,b,c", 2
+  DATA 3, 4
+  DATA "fifth", 6
+
+
+See also
+  {Data:_Data}
+  {Restore:_Restore}
+.topic _Data
+Data
+Syntax
+  DATA constant1 \[,constant2\]...
+
+Description
+
+  Stores one or more constants, of any type, for subsequent access via
+  READ command.
+
+  DATA commands are nonexecutable statements that supply a stream of data
+  constants for use by READ commands. All the items supplied by all the
+  DATA commands in a program make up one continuous "string" of
+  information that is accessed in order by your program's READ commands.
+
+
+
+Example
+
+  RESTORE MyDataBlock
+  FOR I=1 TO 3
+      READ v
+      PRINT v
+  NEXT
+  END
+  ...
+  LABEL MyDataBlock
+  DATA 1,2,3
+
+
+See also
+  {Read:_Read}
+  {Restore:_Restore}
+.topic _Erase
+Erase
+Syntax
+  ERASE var\[, var\[, ... var\]\]
+
+Description
+
+  var - Any variable.
+
+  Deallocates the memory used by the specified arrays or variables. 
+  After that these variables turned to simple integers with zero value.
+
+
+
+Example
+
+  DIM x(100)
+  ...
+  PRINT FRE(0)
+  ERASE x
+  PRINT FRE(0)
+  PRINT x(1):REM ERROR
+
+
+See also
+  {Dim:_Dim}
+  {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+.topic _Exit
+Exit
+Syntax
+  EXIT \[FOR|LOOP|SUB|FUNC\]
+
+Description
+
+  Exits a multiline function definition, a loop, or a subprogram.
+  By default (if no parameter is specified) exits from last command block
+  (loop, for-loop or routine).
+
+  FOR     - Exit from the last FOR-NEXT loop
+  LOOP    - Exit from the last WHILE-WEND or REPEAT-UNTIL loop
+  SUB     - Return from the current routine
+  FUNC    - Return from the current function
+
+
+See also
+  {For-To-Step-Next:_For1To1Step1Next}
+  {For-In-Next:_For1In1Next}
+  {While-Wend:_While1Wend}
+  {Repeat-Until:_Repeat1Until}
+  {Subroutines and Functions:_Subroutines0and0Functions}
+.topic _Len5
+Len()
+Syntax
+  LEN(x)
+
+Description
+
+  x - Any variable.
+
+  If x is a string, returns the length of the string.
+  If x is an array, returns the number of the elements.
+  If x is an number, returns the length of the STR(x).
+
+
+See also
+  {Empty():_Empty5}
+.topic _Empty5
+Empty()
+Syntax
+  EMPTY(x)
+
+Description
+
+  x - Any variable.
+
+  If x is a string, returns true if the len(x) is 0.
+  If x is an integer or a real returns true if the x = 0.
+  If x is an array, returns true if x is a zero-length array (array
+  without elements).
+
+
+See also
+  {Len():_Len5}
+.topic _IsArray5
+IsArray()
+Syntax
+  ISARRAY(x)
+
+Description
+
+  x - Any variable.
+
+  Returns true if the x is an array.
+
+
+See also
+  {Dim:_Dim}
+  {LBound()/UBound():_LBound54UBound5}
+  {IsNumber():_IsNumber5}
+  {IsArray():_IsArray5}
+.topic _IsNumber5
+IsNumber()
+Syntax
+  ISNUMBER(x)
+
+Description
+
+  x - Any variable.
+
+  Returns true if the x is a number (or it can be converted to a number)
+
+
+
+Example
+
+  ? ISNUMBER(12)          :REM true
+  ? ISNUMBER("12")        :REM true
+  ? ISNUMBER("12E+2")     :REM true
+  ? ISNUMBER("abc")       :REM false
+  ? ISNUMBER("1+2")       :REM false
+  ? ISNUMBER("int(2.4)")  :REM false
+
+
+See also
+  {IsString():_IsString5}
+  {IsArray():_IsArray5}
+  {Val()/Str():_Val54Str5}
+.topic _IsString5
+IsString()
+Syntax
+  ISSTRING(x)
+
+Description
+
+  x - Any variable.
+
+  Returns true if the x is a string (and cannot be converted to a number)
+
+
+
+Example
+
+  ? ISSTRING(12)      :REM false
+  ? ISSTRING("12")    :REM false
+  ? ISSTRING("12E+2") :REM false
+  ? ISSTRING("abc")   :REM true
+  ? ISSTRING("1+2")   :REM true
+
+
+See also
+  {IsNumber():_IsNumber5}
+  {IsArray():_IsArray5}
+  {Val()/Str():_Val54Str5}
+.topic _Append
+Append
+Syntax
+  APPEND A, val \[, val \[, ...\]\]
+
+Description
+
+  A   - An array-variable.
+
+  val - Any value or expression
+
+  Inserts the values at the end of the specified array.
+
+
+See also
+  {Dim:_Dim}
+  {Insert:_Insert}
+  {Delete:_Delete}
+  {Erase:_Erase}
+.topic _Insert
+Insert
+Syntax
+  INSERT A, idx, val \[, val \[, ...\]\]\]
+
+Description
+
+  A   - An array-variable.
+
+  idx - Position in the array.
+
+  val - Any value or expression.
+
+  Inserts the values to the specified array at the position idx.
+
+
+See also
+  {Dim:_Dim}
+  {Append:_Append}
+  {Delete:_Delete}
+  {Erase:_Erase}
+.topic _Delete
+Delete
+Syntax
+  DELETE A, idx \[, count\]
+
+Description
+
+  A       - An array-variable.
+
+  idx     - Position in the array.
+
+  count   - The number of the elements to be deleted.
+
+  Deletes 'count' elements at position 'idx' of array A
+
+
+See also
+  {Dim:_Dim}
+  {Insert:_Insert}
+  {Append:_Append}
+  {Erase:_Erase}
+.topic _System
+System
+
+ {Fre():_Fre5}
+ {RTE:_RTE}
+ {Ticks():_Ticks5}
+ {TicksPerSec():_TicksPerSec5}
+ {Timer():_Timer5}
+ {Time():_Time5}
+ {TimeHMS:_TimeHMS}
+ {Date():_Date5}
+ {Julian():_Julian5}
+ {DateDMY:_DateDMY}
+ {WeekDay():_WeekDay5}
+ {DateFMT():_DateFMT5}
+ {Delay:_Delay}
+ {Sort:_Sort}
+ {Search:_Search}
+ {Chain:_Chain}
+ {Exec:_Exec}
+ {Env/Environ:_Env4Environ}
+ {Env()/Environ():_Env54Environ5}
+ {Run:_Run}
+ {Run():_Run5}
+ {TrOn/TrOff:_TrOn4TrOff}
+ {LogPrint:_LogPrint}
+ {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+ {VAdr():_VAdr5}
+ {Peek()/Peek16()/Peek32():_Peek54Peek1654Peek325}
+ {Poke/Poke16/Poke32:_Poke4Poke164Poke32}
+ {UsrCall:_UsrCall}
+ {BCopy:_BCopy}
+ {BLoad:_BLoad}
+ {BSave:_BSave}
+ {StkDump:_StkDump}
+
+.topic _Fre5
+Fre()
+Syntax
+  FRE(x)
+
+Description
+
+  Returns system information
+
+  Where x:
+
+  QB-standard:
+    0 - free memory
+   -1 - largest block of integers
+   -2 - free stack
+   -3 - largest free block
+
+  Our standard (it is optional for now):
+  -10 - total physical memory
+  -11 - used physical memory
+  -12 - free physical memory
+
+  Optional-set #1:
+  -13 - shared memory size
+  -14 - buffers
+  -15 - cached
+  -16 - total virtual memory size
+  -17 - used virtual memory
+  -18 - free virtual memory
+
+  Optional-set #2:
+  -40 - battery voltage * 1000
+  -41 - battery percent
+  -42 - critical voltage value (*1000)
+  -43 - warning voltage value (*1000)
+
+  The optional values will returns 0 if are not supported.
+
+.topic _RTE
+RTE
+Syntax
+  RTE \[info \[, ...\]\]
+
+Description
+
+  Creates a Run-Time-Error.
+  The parameters will be displayed on error-line.
+
+.topic _Ticks5
+Ticks()
+Syntax
+  TICKS()
+
+Description
+
+  Returns the system-ticks. The tick value is depended on operating
+  system. 
+
+
+See also
+  {TicksPerSec():_TicksPerSec5}
+  {Timer():_Timer5}
+  {Delay:_Delay}
+.topic _TicksPerSec5
+TicksPerSec()
+Syntax
+  TICKSPERSEC()
+
+Description
+
+  Returns the number of ticks per second
+
+
+See also
+  {Ticks():_Ticks5}
+  {Delay:_Delay}
+.topic _Timer5
+Timer()
+Syntax
+  TIMER
+
+Description
+
+  Returns the number of seconds from midnight
+
+
+See also
+  {Ticks():_Ticks5}
+  {TicksPerSec():_TicksPerSec5}
+  {Delay:_Delay}
+  {Randomize:_Randomize}
+.topic _Time5
+Time()
+Syntax
+  TIME
+
+Description
+
+  Returns the current time as string "HH:MM:SS"
+
+
+See also
+  {Date():_Date5}
+  {DateDMY:_DateDMY}
+  {TimeHMS:_TimeHMS}
+  {Timer():_Timer5}
+  {Ticks():_Ticks5}
+  {WeekDay():_WeekDay5}
+.topic _TimeHMS
+TimeHMS
+Syntax
+  TIMEHMS hms | timer, BYREF h, BYREF m, BYREF s
+
+Description
+
+  Converts a time-value to hours, minutes and seconds integer values
+
+
+See also
+  {Julian():_Julian5}
+  {DateDMY:_DateDMY}
+  {Time():_Time5}
+  {WeekDay():_WeekDay5}
+.topic _Date5
+Date()
+Syntax
+  DATE
+
+Description
+
+  Returns the current day as string "DD/MM/YYYY"
+
+
+See also
+  {Julian():_Julian5}
+  {DateDMY:_DateDMY}
+  {Time():_Time5}
+  {TimeHMS:_TimeHMS}
+  {WeekDay():_WeekDay5}
+  {DateFMT():_DateFMT5}
+.topic _Julian5
+Julian()
+Syntax
+  JULIAN(dmy | (d,m,y))
+
+Description
+
+  Returns the Julian date.
+  (dates must be greater than 1/1/100 AD)
+
+
+
+Example
+
+  PRINT Julian(DATE)
+  PRINT Julian(31, 12, 2001)
+
+
+See also
+  {Date():_Date5}
+  {DateDMY:_DateDMY}
+  {Time():_Time5}
+  {TimeHMS:_TimeHMS}
+  {WeekDay():_WeekDay5}
+  {DateFMT():_DateFMT5}
+.topic _DateDMY
+DateDMY
+Syntax
+  DATEDMY dmy | julian_date, BYREF d, BYREF m, BYREF y
+
+Description
+
+  Returns the day, month and the year as integers.
+
+
+See also
+  {Date():_Date5}
+  {Julian():_Julian5}
+  {Time():_Time5}
+  {TimeHMS:_TimeHMS}
+  {WeekDay():_WeekDay5}
+  {DateFMT():_DateFMT5}
+.topic _WeekDay5
+WeekDay()
+Syntax
+  WEEKDAY(dmy | (d,m,y) | julian_date)
+
+Description
+
+  Returns the day of the week (0 = Sunday)
+
+
+
+Example
+
+  PRINT WeekDay(DATE)
+  PRINT WeekDay(Julian(31, 12, 2001))
+  PRINT WeekDay(31, 12, 2001)
+
+
+See also
+  {Date():_Date5}
+  {Julian():_Julian5}
+  {Time():_Time5}
+  {TimeHMS:_TimeHMS}
+  {DateFMT():_DateFMT5}
+.topic _DateFMT5
+DateFMT()
+Syntax
+  DATEFMT(format, dmy | (d,m,y) | julian_date)
+
+Description
+
+  Returns formated date string
+
+  Format:
+  D = one or two digits of Day
+  DD = 2-digit day
+  DDD = 3-char day name
+  DDDD = full day name
+  M = 1 or 2 digits of month
+  MM = 2-digit month
+  MMM = 3-char month name
+  MMMM = full month name
+  YY = 2-digit year (2K)
+  YYYY = 4-digit year
+
+
+
+Example
+
+  PRINT DATEFMT("ddd dd, mm/yy", "23/11/2001")
+  REM prints "Fri 23, 11/01"
+
+
+See also
+  {Date():_Date5}
+  {Julian():_Julian5}
+  {Time():_Time5}
+  {TimeHMS:_TimeHMS}
+.topic _Delay
+Delay
+Syntax
+  DELAY ms
+
+Description
+
+  Delay for a specified amount of milliseconds.
+  This 'delay' is also depended to system clock.
+
+
+See also
+  {Ticks():_Ticks5}
+  {TicksPerSec():_TicksPerSec5}
+.topic _Sort
+Sort
+Syntax
+  SORT array \[USE cmpfunc\]
+
+Description
+
+  Sorts an array.
+
+  The cmpfunc (if its specified) it takes 2 vars to compare. 
+  cmpfunc must returns
+  -1 if x < y
+  +1 if x > y
+   0 if x = y
+
+
+
+Example
+
+  FUNC qscmp(x,y)
+  IF x=y 
+      qscmp=0
+  ELIF x>y
+      qscmp=1
+  ELSE
+      qscmp=-1
+  ENDIF
+  END
+  ...
+  DIM A(5)
+  FOR i=0 TO 5
+      A(i)=RND
+  NEXT
+  SORT A USE qscmp(x,y)
+
+
+See also
+  {Search:_Search}
+.topic _Search
+Search
+Syntax
+  SEARCH A, key, BYREF ridx \[USE cmpfunc\]
+
+Description
+
+  Scans an array for the key.
+  If key is not found the SEARCH command returns (in ridx) the value 
+  (LBOUND(A)-1). In default-base arrays that means -1.
+
+  The cmpfunc (if its specified) it takes 2 vars to compare. 
+  It must return 0 if x = y; non-zero if x <> y
+
+
+
+Example
+
+  FUNC cmp(x,y)
+    cmp=!(x=y)
+  END
+  ...
+  DIM A(5)
+  FOR i=0 TO 5
+      A(i)=5-i
+  NEXT
+  SEARCH A, 4, r USE cmp(x,y)
+  PRINT r:REM prints 1
+  PRINT A(r): REM prints 4
+
+
+See also
+  {Sort:_Sort}
+.topic _Chain
+Chain
+Syntax
+  CHAIN file
+
+Description
+
+  Transfers control to another SmallBASIC program.
+
+  file - A string expression that follows OS file naming conventions;
+  The file must be a SmallBASIC source code file.
+
+
+
+Example
+
+  CHAIN "PROG2.BAS"
+
+
+See also
+  {Exec:_Exec}
+  {Run:_Run}
+  {Run():_Run5}
+.topic _Exec
+Exec
+Syntax
+  EXEC file
+
+Description
+
+  Transfers control to another program
+
+  This routine works like CHAIN with the exception the file can
+  be any executable file.
+
+  EXEC never returns
+
+
+See also
+  {Run:_Run}
+  {Run():_Run5}
+  {Chain:_Chain}
+.topic _Env4Environ
+Env/Environ
+Syntax
+  ENVIRON "expr"
+  or
+  ENV "expr"
+
+Description
+
+  Adds a variable to or deletes a variable from the current environment
+  variable-table.
+
+  expr - A string expression of the form "name=parameter"
+
+  If name already exists in the environment table, its current setting is
+  replaced with the new setting. If name does not exist, the new variable
+  is added.
+
+  Notes: PalmOS: SB emulates environment variables
+
+
+See also
+  {Env()/Environ():_Env54Environ5}
+.topic _Env54Environ5
+Env()/Environ()
+Syntax
+  ENVIRON("var")
+  or
+  ENV("var")
+
+Description
+
+  Returns the value of a specified entry in the current environment
+  table. If the parameter is empty ("") then returns an array of
+  the envirment variables (in var=value form)
+
+  var  - A string expression of the form "var"
+
+  Notes: PalmOS: SB emulates environment variables
+
+
+See also
+  {Env/Environ:_Env4Environ}
+.topic _Run
+Run
+Syntax
+  RUN cmdstr
+
+Description
+
+  Loads a secondary copy of system's shell and, executes an program, or 
+  an shell command.
+
+  cmdstr - Shell's specific command string
+
+  After the specified shell command or program terminates, control is
+  returned to the line following the RUN command.
+
+  Notes:
+      * PalmOS: The 'cmdstr' is the Creator-ID
+      * PalmOS: The RUN never returns
+
+
+See also
+  {Exec:_Exec}
+  {Chain:_Chain}
+  {Run():_Run5}
+.topic _Run5
+Run()
+Syntax
+  RUN("command")
+
+Description
+
+  RUN() is the function version of the RUN command. The difference is
+  that, the RUN() returns a string with the output of the 'command' as
+  an array of strings (each text-line is one element).
+
+  Notes:
+      * PalmOS: The RUN() does not supported.
+      * Windows: The stdout and stderr are separated! First is the 
+        stdout output and following the stderr.
+
+
+See also
+  {Run:_Run}
+  {Exec:_Exec}
+  {Chain:_Chain}
+.topic _TrOn4TrOff
+TrOn/TrOff
+Syntax
+  TRON/TROFF
+
+Description
+
+  TRACE ON/OFF. When trace mechanism is ON, the SB displays each line 
+  number as the program is executed
+
+.topic _LogPrint
+LogPrint
+Syntax
+  LOGPRINT ...
+
+Description
+
+  PRINT to SB's logfile. The syntax is the same with the PRINT command.
+
+
+See also
+  {Print:_Print}
+.topic _MAlloc54BAlloc5
+MAlloc()/BAlloc()
+Syntax
+  MALLOC(size)
+  BALLOC(size)
+
+Description
+
+  Allocates a memory block.
+
+  Note: the variable can be freed by using ERASE
+
+
+See also
+  {Erase:_Erase}
+.topic _VAdr5
+VAdr()
+Syntax
+  VADR(var)
+
+Description
+
+  Returns the memory address of the variable's data.
+
+
+See also
+  {Peek()/Peek16()/Peek32():_Peek54Peek1654Peek325}
+  {Poke/Poke16/Poke32:_Poke4Poke164Poke32}
+  {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+  {UsrCall:_UsrCall}
+.topic _Peek54Peek1654Peek325
+Peek()/Peek16()/Peek32()
+Syntax
+  PEEK(addr)
+  PEEK16(addr)
+  PEEK32(addr)
+
+Description
+
+  Returns the byte, word or dword at a specified memory address.
+
+
+See also
+  {VAdr():_VAdr5}
+  {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+  {Poke/Poke16/Poke32:_Poke4Poke164Poke32}
+  {UsrCall:_UsrCall}
+.topic _Poke4Poke164Poke32
+Poke/Poke16/Poke32
+Syntax
+  POKE   addr, byte
+  POKE16 addr, word
+  POKE32 addr, dword
+
+Description
+
+  Writes a specified byte, word or dword at a specified memory address.
+
+
+See also
+  {Peek()/Peek16()/Peek32():_Peek54Peek1654Peek325}
+  {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+  {VAdr():_VAdr5}
+  {UsrCall:_UsrCall}
+.topic _UsrCall
+UsrCall
+Syntax
+  USRCALL addr
+
+Description
+
+  Transfers control to an assembly language subroutine.
+
+  The USRCALL is equal to:
+
+  void (*f)(void);
+  f = (void (*)(void)) addr;
+  f();
+
+.topic _BCopy
+BCopy
+Syntax
+  BCOPY src_addr, dst_addr, length
+
+Description
+
+  Copies a memory block from 'src_addr' to 'dst_addr'
+
+
+See also
+  {BLoad:_BLoad}
+  {BSave:_BSave}
+  {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+  {VAdr():_VAdr5}
+  {Peek()/Peek16()/Peek32():_Peek54Peek1654Peek325}
+  {Poke/Poke16/Poke32:_Poke4Poke164Poke32}
+.topic _BLoad
+BLoad
+Syntax
+  BLOAD filename\[, address\]
+
+Description
+
+  Loads a specified memory image file into memory.
+
+
+See also
+  {BSave:_BSave}
+  {BCopy:_BCopy}
+  {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+  {VAdr():_VAdr5}
+  {Peek()/Peek16()/Peek32():_Peek54Peek1654Peek325}
+  {Poke/Poke16/Poke32:_Poke4Poke164Poke32}
+.topic _BSave
+BSave
+Syntax
+  BSAVE filename, address, length
+
+Description
+
+  Copies a specified portion of memory to a specified file.
+
+
+See also
+  {BLoad:_BLoad}
+  {BCopy:_BCopy}
+  {MAlloc()/BAlloc():_MAlloc54BAlloc5}
+  {VAdr():_VAdr5}
+  {Peek()/Peek16()/Peek32():_Peek54Peek1654Peek325}
+  {Poke/Poke16/Poke32:_Poke4Poke164Poke32}
+.topic _StkDump
+StkDump
+Syntax
+  STKDUMP
+
+Description
+
+  Displays the SB's internal executor's stack
+
+  Note:
+      For debug purposes; it is not supported on "limited" OSes
+
+.topic _Graphics0&0Sound
+Graphics & Sound
+
+ {The colors:_The0colors}
+ {The points:_The0points}
+ {The STEP keyword:_The0STEP0keyword}
+ {The 'aspect' parameter:_The02aspect20parameter}
+ {The FILLED keyword:_The0FILLED0keyword}
+ {Arc:_Arc}
+ {Chart:_Chart}
+ {Plot:_Plot}
+ {Circle:_Circle}
+ {Color:_Color}
+ {DrawPoly:_DrawPoly}
+ {Draw:_Draw}
+ {Line:_Line}
+ {PSet:_PSet}
+ {Rect:_Rect}
+ {TxtW()/TxtH()/TextWidth()/TextHeight():tW54TxtH54TextWidth54TextHeight5}
+ {XPos()/YPos():_XPos54YPos5}
+ {Point():_Point5}
+ {Paint:_Paint}
+ {View:_View}
+ {Window:_Window}
+ {RGB()/RGBF():_RGB54RGBF5}
+ {Beep:_Beep}
+ {Play:_Play}
+ {Sound:_Sound}
+ {NoSound:_NoSound}
+  The SB's Graphics commands are working only with integers.
+  (Of course, 2D algebra commands are working with reals)
+  That is different of QB, but its much faster.
+
+
+.topic _The0colors
+The colors
+  ____________________________
+
+  Color-mode              Colors
+
+  Monochrome              0 = black, 15 = white
+
+  2bit (4 colors)         0 = black, 15 = white,  
+                          1-6,  8  = dark-gray,
+                          7, 9-14 = light-gray
+
+  4bit (16 colors)        16 Standard VGA colors
+                          16 colors of gray (on PalmOS)
+
+  8bit (256 paletted colors)
+                          16 Standard VGA colors
+                          The rest colors are ignored
+
+  15bit (32K colors), 16bit (64K colors) and 24bit (1.7M colors)
+
+           color 0..15 is the standard VGA colors
+           full 24-bit RGB colors can be passed by using negative number.
+
+
+
+.topic _The0points
+The points
+  ____________________________
+
+  Any point can be specified by an array of 2 elements or
+  by 2 parameters
+
+
+  LINE x1, y1, x2, y2
+  or
+  LINE \[x1, y1\], \[x2, y2\]
+
+  Also, the polylines can work with the same way.
+  DIM poly(10)
+  ...
+  poly\[0\] = \[x, y\]
+
+
+
+.topic _The0STEP0keyword
+The STEP keyword
+  ____________________________
+
+  The STEP keyword calculates the next x,y parameters relative to current
+  position. That position can be returned by using the POINT(0) and 
+  POINT(1) functions.
+
+
+
+.topic _The02aspect20parameter
+The 'aspect' parameter
+  ____________________________
+
+  The x/y factor.
+
+
+
+.topic _The0FILLED0keyword
+The FILLED keyword
+  ____________________________
+
+  The FILLED keyword fills the result of the command with the drawing
+  color.
+
+
+.topic _Arc
+Arc
+Syntax
+  ARC \[STEP\] x,y,r,astart,aend \[,aspect \[,color\]\] \[COLOR color\]
+
+Description
+
+  Draws an arc
+
+  astart,aend = first,last angle in radians.
+
+
+See also
+  {Circle:_Circle}
+.topic _Chart
+Chart
+Syntax
+  CHART \{LINECHART|BARCHART\}, array() \[, \{0|1|2|3\} \[, x1, y1, x2, y2\]\]
+
+Description
+
+  Draws a chart of array values in the rectangular area x1,y1,x2,y2
+
+  type:
+  0 = simple
+  1 = with marks
+  2 = with ruler
+  3 = with marks & ruler
+
+
+See also
+  {Plot:_Plot}
+.topic _Plot
+Plot
+Syntax
+  PLOT xmin, xmax USE f(x)
+
+Description
+
+  Graph of f(x)
+
+
+
+Example
+
+  PLOT 0, 2*PI USE SIN(x)
+
+
+See also
+  {Chart:_Chart}
+.topic _Circle
+Circle
+Syntax
+  CIRCLE \[STEP\] x,y,r \[,aspect \[, color\]\] \[COLOR color\] \[FILLED\]
+
+Description
+
+  x,y - the circle's center
+
+  r   - the radius
+
+  Draws a circle (or an ellipse if the aspect is specified).
+
+
+See also
+  {Arc:_Arc}
+.topic _Color
+Color
+Syntax
+  COLOR foreground-color \[, background-color\]
+
+Description
+
+  Specifies the foreground and background colors 
+
+.topic _DrawPoly
+DrawPoly
+Syntax
+  DRAWPOLY array
+      \[,x-origin,y-origin \[, scalef \[, color\]\]\] \[COLOR color\] \[FILLED\]
+
+Description
+
+  Draws a polyline
+
+  even elements for x (starting from 0), odd elements for y
+
+
+See also
+  {M3Ident/M3Rotate/M3Scale/M3Trans/M3Apply:M3Rotate4M3Scale4M3Trans4M3Apply}
+.topic _Draw
+Draw
+Syntax
+  DRAW string
+
+Description
+
+  Draws an object according to instructions specified as a string.
+
+  string - A string expression containing commands in the BASIC graphics
+  definition language.
+
+  Graphics Definition Language 
+
+  In the movement instructions below, n specifies a distance to move.
+  The number of pixels moved is equal to n multiplied by the current
+  scaling factor, which is set by the S command.
+
+    Un    Move up.
+
+    Dn    Move down.
+
+    Ln    Move left.
+
+    Rn    Move right.
+
+    En    Move diagonally up and right.
+
+    Fn    Move diagonally down and right.
+
+    Gn    Move diagonally down and left.
+
+    Hn    Move diagonally up and left.
+
+  Mx,y    Move to coordinate x,y. If x is preceded by a + or -, the
+          movement is relative to the last point referenced.
+
+     B    A prefix command. Next movement command moves but doesn't
+          plot.
+
+     N    A prefix command. Next movement command moves, but returns
+          immediately to previous point.
+
+  Notes:
+      * This command it is had not tested, please report any
+        bug or incompatibility.
+
+.topic _Line
+Line
+Syntax
+  LINE \[STEP\] x,y \[\{,|STEP\} x2,y2\] \[, color | COLOR color\]
+
+Description
+
+  Draws a line
+
+
+See also
+  {PSet:_PSet}
+  {Rect:_Rect}
+  {Circle:_Circle}
+  {Arc:_Arc}
+.topic _PSet
+PSet
+Syntax
+  PSET \[STEP\] x,y \[, color | COLOR color\]
+
+Description
+
+  Draw a pixel
+
+
+See also
+  {Line:_Line}
+  {Rect:_Rect}
+.topic _Rect
+Rect
+Syntax
+  RECT \[STEP\] x,y \[\{,|STEP\} x2,y2\] \[, color | COLOR color\] \[FILLED\]
+
+Description
+
+  Draws a rectangular parallelogram
+
+
+See also
+  {Line:_Line}
+  {PSet:_PSet}
+  {Circle:_Circle}
+  {Arc:_Arc}
+.topic tW54TxtH54TextWidth54TextHeight5
+TxtW()/TxtH()/TextWidth()/TextHeight()
+Syntax
+  TXTW(s), TXTH(s)
+  or
+  TEXTWIDTH(s), TEXTHEIGHT(s)
+
+Description
+
+  Returns the text width or height of string s in pixels
+
+.topic _XPos54YPos5
+XPos()/YPos()
+Syntax
+  XPOS
+  YPOS
+
+Description
+
+  Returns the current position of the cursor in "characters".
+
+.topic _Point5
+Point()
+Syntax
+  POINT(x\[,y\])
+
+Description
+
+  Returns the color of the pixel at x,y
+
+  if y does not specified x contains the info-code
+  0 = returns the current X graphics position
+  1 = returns the current Y graphics position
+
+.topic _Paint
+Paint
+Syntax
+  PAINT \[STEP\] x, y \[,color \[,border\]\]
+
+Description
+
+  Fills an enclosed area on the graphics screen with a specific color.
+
+  x,y     - Screen coordinate (column, row) within the area that is
+            to be filled.
+
+  color   - The fill-color
+
+  border  - The boundary-color
+
+  if the border-color is specified then the PAINT will fill all the
+  area which is specified by the border-color. 
+  (fill-until, color!=point(x,y)
+
+  if the border-color is NOT specified then the PAINT will fill all
+  the are with the same color as the pixel at x,y.
+  (fill-while, color=point(x,y))
+
+.topic _View
+View
+Syntax
+  VIEW \[x1,y1,x2,y2 \[,color \[,border-color\]\]\]
+
+Description
+
+  Defines a viewport.
+
+  x1,y1,x2,y2     - Corner coordinates of the viewport.
+  color           - If included, BASIC fills the viewport with the
+                    specified color. 
+  border-color    - If included, BASIC draws a border, in a specified
+                    color, around the defined viewport.
+
+  The viewport defined by VIEW is disabled by a VIEW command with no 
+  parameters.
+
+
+See also
+  {Window:_Window}
+.topic _Window
+Window
+Syntax
+  WINDOW \[x1,y1,x2,y2\]
+
+Description
+
+  Specifies "world" coordinates for the screen.
+
+  x1,y1,x2,y2    The corner coordinates of the world space.
+
+  The WINDOW command allows you to redefine the corners of the display
+  screen as a pair of "world" coordinates.
+
+  The world space defined by WINDOW is disabled by a WINDOW command with
+  no parameters.
+
+
+See also
+  {View:_View}
+.topic _RGB54RGBF5
+RGB()/RGBF()
+Syntax
+  RGB(r,g,b)
+  RGBF(r,g,b)
+
+Description
+
+  The RGB functions returns the RGB color codes for the specified values
+
+  The RGB() takes values 0..255 for each of the color.
+  The RGBF() takes values 0..1 for each of the color.
+
+  The return value is a negative 24bit value to by used by drawing 
+  functions.
+
+.topic _Beep
+Beep
+Syntax
+  BEEP
+
+Description
+
+  Generates a beep sound
+
+
+See also
+  {Sound:_Sound}
+  {NoSound:_NoSound}
+  {Play:_Play}
+.topic _Play
+Play
+Syntax
+  PLAY string
+
+Description
+
+  Play musical notes
+
+  A-G\[-|+|#\]\[nnn\]\[.\]      
+          Play note A..G
+          +|# - sharp
+          - - flat
+          . - multiplier 1.5
+
+  On      - Octave 0..6
+          <  - Moves down one octave
+          >  - Moves up one octave
+
+  Nnn     - Play note 0..84 (0 = pause)
+  Pnnn    - Pause 1..64
+  Lnnn    - Length of note 1..64 (1/nnn)
+  Tnnn    - Tempo 32..255. Number of 1/4 notes per minute.
+
+  MS      - Staccato (1/2)
+  MN      - Normal (3/4)
+  ML      - Legato
+
+  Vnnn    - Volume 0..100
+
+  MF      - Play on foreground
+  MB      - Play on background
+
+  Q       - Clear sound queue
+
+
+See also
+  {Sound:_Sound}
+  {NoSound:_NoSound}
+  {Beep:_Beep}
+.topic _Sound
+Sound
+Syntax
+  SOUND freq, dur_ms \[, vol\] \[BG\]
+
+Description
+
+  Plays a sound
+
+  freq    - The frequency
+
+  dur_ms  - The duration in milliseconds
+
+  vol     - The volume in 1/100 units
+
+  BG      - Play it in background
+
+
+
+See also
+  {Beep:_Beep}
+  {NoSound:_NoSound}
+  {Play:_Play}
+.topic _NoSound
+NoSound
+Syntax
+  NOSOUND
+
+Description
+
+  Stops background sound.
+  Also, clears the sound queue.
+
+
+See also
+  {Sound:_Sound}
+  {Beep:_Beep}
+  {Play:_Play}
+.topic _Miscellaneous
+Miscellaneous
+
+ {Randomize:_Randomize}
+ {Rnd():_Rnd5}
+ {LBound()/UBound():_LBound54UBound5}
+ {CInt()/CReal()/CDbl():_CInt54CReal54CDbl5}
+ {Pen:_Pen}
+ {Pen():_Pen5}
+ {Pause:_Pause}
+ {Swap:_Swap}
+
+.topic _Randomize
+Randomize
+Syntax
+  RANDOMIZE \[int\]
+
+Description
+
+  Seeds the random number generator
+
+
+See also
+  {Rnd():_Rnd5}
+  {Timer():_Timer5}
+.topic _Rnd5
+Rnd()
+Syntax
+  RND
+
+Description
+
+  Returns a random number from the range 0 to 1
+
+
+See also
+  {Randomize:_Randomize}
+.topic _LBound54UBound5
+LBound()/UBound()
+Syntax
+  LBOUND(array \[, dim\])
+  UBOUND(array \[, dim\])
+
+Description
+
+  Returns the lower/upper bound of the 'array'
+
+  The parameter 'dim' is the array dimension whose bound is returned
+
+
+
+Example
+
+  DIM v1(-4 TO 7)
+  DIM v2(1 TO 2, 3 TO 4)
+  ...
+  PRINT LBOUND(v1)   : REM -4
+  PRINT UBOUND(v1)   : REM 7
+  ...
+  PRINT LBOUND(v2)   : REM 1
+  PRINT LBOUND(v2,2) : REM 3
+
+
+See also
+  {Dim:_Dim}
+.topic _CInt54CReal54CDbl5
+CInt()/CReal()/CDbl()
+Syntax
+  CINT(x) - convert x to 32b integer
+  CREAL(x) or CDBL(x) - convert x to 64b real number
+
+Description
+
+  Meaningless. Used for compatibility.
+
+
+See also
+  {Val()/Str():_Val54Str5}
+.topic _Pen
+Pen
+Syntax
+  PEN ON|OFF
+
+Description
+
+  Enables/Disables the PEN/MOUSE mechanism.
+
+
+See also
+  {Pen():_Pen5}
+.topic _Pen5
+Pen()
+Syntax
+  PEN(0..14)
+
+Description
+
+  Returns the PEN/MOUSE data.
+
+  Values:
+  0 - true (non zero) if there is a new pen or mouse event
+  1 - PEN: last pen-down x; 
+      MOUSE: last mouse button down x 
+  2 - Same as 1 for y 
+  3 - true if the PEN is down; 
+      MOUSE: mouse left-button is pressed
+  4 - PEN: last/current x, 
+      MOUSE: the current x position only if the left
+        mouse button is pressed (like PEN is down)
+  5 - Same as PEN(4) for y 
+
+  Mouse specific (non PalmOS):
+
+  10 - current mouse x pos.
+  11 - current mouse y pos.
+  12 - true if the left mouse button is pressed
+  13 - true if the right mouse button is pressed
+  14 - true if the middle mouse button is pressed
+
+  Note:
+      The driver must be enabled before use this function
+      (see Pen command)
+
+
+
+See also
+  {Pen:_Pen}
+.topic _Pause
+Pause
+Syntax
+  PAUSE \[secs\]
+
+Description
+
+  Pauses the execution for a specified length of time, or until user hit
+  the keyboard.
+
+
+See also
+  {Delay:_Delay}
+.topic _Swap
+Swap
+Syntax
+  SWAP a, b
+
+Description
+
+  Exchanges the values of two variables. The parameters may be variables
+  of any type.
+
+.topic _File0system
+File system
+
+ {FreeFile():_FreeFile5}
+ {Open#:_Open3}
+ {Close#:_Close3}
+ {TLoad:_TLoad}
+ {TSave:_TSave}
+ {Exist():_Exist5}
+ {Access():_Access5}
+ {IsFile()/IsDir()/IsLink():_IsFile54IsDir54IsLink5}
+ {ChMod:_ChMod}
+ {EOF():_EOF5}
+ {Print#:_Print3}
+ {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+ {Input():_Input5}
+ {Input#:_Input3}
+ {BGetC():_BGetC5}
+ {BPutC#:_BPutC3}
+ {Seek#:_Seek3}
+ {Seek():_Seek5}
+ {LOF():_LOF5}
+ {Kill:_Kill}
+ {Write#/Read#:_Write34Read3}
+ {Copy:_Copy}
+ {Rename:_Rename}
+ {MkDir/ChDir/RmDir:_MkDir4ChDir4RmDir}
+ {DirWalk:_DirWalk}
+ {Files():_Files5}
+  Special file names:
+
+  "COM1:\[speed\]" - Serial port 1
+  "COM2:\[speed\]" - Serial port 2
+                   The same for COM3..COM9
+
+  "PDOC:filename"
+    Compressed PDOC files for PalmOS or PDB/PDOC files on other systems.
+    PDOCFS opens and uncompress the file on OPEN; and compress the
+    file on CLOSE. So, it will use a lot of memory and time (its depended
+    on size of the data).
+
+  "MEMO:memo-title"
+    MemoDB of PalmOS or regular file on other systems.
+    Memo records (virtual files) are limited to 3935 bytes
+
+  "SOCL:server:port"
+    Socket client. Actually a telnet client.
+
+  "MMC:filename"
+    eBookMan only. Opens an MMC file.
+
+
+  OPEN "COM1:" AS #1
+
+  OPEN "COM2:38400" AS #2
+
+.topic _FreeFile5
+FreeFile()
+Syntax
+  FREEFILE
+
+Description
+
+  Returns an unused file handle
+
+.topic _Open3
+Open#
+Syntax
+  OPEN file \[FOR \{INPUT|OUTPUT|APPEND\}\] AS #fileN
+
+Description
+
+  Makes a file or device available for sequential input, sequential
+  output.
+
+  file   - A string expression that follows OS file naming conventions.
+
+  fileN  - A file-handle (integer 1 to 256).
+
+  FOR -
+        INPUT    Sequential input
+        OUTPUT   Sequential output
+        APPEND   Sequential output, beginning at current EOF
+
+  The files are always opened as shared.
+
+
+See also
+  {Close#:_Close3}
+  {Print#:_Print3}
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {Write#/Read#:_Write34Read3}
+  {FreeFile():_FreeFile5}
+  {Exist():_Exist5}
+.topic _Close3
+Close#
+Syntax
+  CLOSE #fileN
+
+Description
+
+  Close a file or device
+
+
+See also
+  {Open#:_Open3}
+  {Print#:_Print3}
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {Write#/Read#:_Write34Read3}
+  {FreeFile():_FreeFile5}
+.topic _TLoad
+TLoad
+Syntax
+  TLOAD file, BYREF var \[, type\]
+
+Description
+
+  Loads a text file into array variable.
+  Each text-line is an array element.
+
+  file   - A string expression that follows OS file naming conventions.
+
+  var    - Any variable
+
+  type   - 0 = load into array (default)
+           1 = load into string
+
+
+See also
+  {TSave:_TSave}
+.topic _TSave
+TSave
+Syntax
+  TSAVE file, var
+
+Description
+
+  Writes an array to a text file.
+  Each array element is a text-line.
+
+  file   - A string expression that follows OS file naming conventions.
+
+  var    - An array variable or a string variable. Expressions are
+           not allowed for memory reasons.
+
+
+See also
+  {TLoad:_TLoad}
+.topic _Exist5
+Exist()
+Syntax
+  EXIST(file)
+
+Description
+
+  Returns true if the file exists
+
+  file   - A string expression that follows OS file naming conventions.
+
+.topic _Access5
+Access()
+Syntax
+  ACCESS(file)
+
+Description
+
+  Returns the access rights of the file.
+
+  file   - A string expression that follows OS file naming conventions.
+
+  The return-value is the permissions of the file as them as specified
+  on GNU's manual (chmod() and stat() system calls)
+
+  The bits (in octal):
+  04000 set user ID on execution
+  02000 set group ID on execution
+  01000 sticky bit
+  00400 read by owner
+  00200 write by owner
+  00100 execute/search by owner
+  00040 read by group
+  00020 write by group
+  00010 execute/search by group
+  00004 read by others
+  00002 write by others
+  00001 execute/search by others
+
+  Notes:
+      * PalmOS: the return value is always 0777
+      * DOS: the return value is depended on DJGPP's stat() function
+        Possible, Unix compatible.
+      * Windows: the return value is depended on Cygnus's stat() function
+        Possible, Unix compatible.
+
+
+
+Example
+
+  IF ACCESS("/bin/sh") AND 0o4 THEN
+      PRINT "I can read it!"
+  ENDIF
+
+
+See also
+  {IsFile()/IsDir()/IsLink():_IsFile54IsDir54IsLink5}
+.topic _IsFile54IsDir54IsLink5
+IsFile()/IsDir()/IsLink()
+Syntax
+  ISFILE(file) - Returns true if the file is a regular file
+  ISDIR(file)  - Returns true if the filename is a directory
+  ISLINK(file) - Returns true if the filename is a link
+
+Description
+
+  file   - A string expression that follows OS file naming conventions.
+
+.topic _ChMod
+ChMod
+Syntax
+  CHMOD file, mode
+
+Description
+
+  Change permissions of a file
+
+  file   - A string expression that follows OS file naming conventions.
+
+  mode   - The mode is compatible with the chmod()'s 'mode' parameter
+           as its described on GNU's manual.
+           See ACCESS() for more information.
+
+
+
+Example
+
+  ' Make myfile available to anyone (read/write)
+  CHMOD "myfile.bas", 0o666
+  ...
+  ' Make myfile available to anyone (execute/read/write)
+  CHMOD "myfile.bas", 0o777
+
+
+See also
+  {IsFile()/IsDir()/IsLink():_IsFile54IsDir54IsLink5}
+.topic _EOF5
+EOF()
+Syntax
+  EOF(fileN)
+
+Description
+
+  Returns true if the file pointer is at end of the file.
+
+  For COMx and SOCL VFS it returns true if the connection is broken.
+
+.topic _Print3
+Print#
+Syntax
+  PRINT #fileN, \[USING...\] ...
+
+Description
+
+  Write string to a file
+
+  The syntax is the same with the PRINT command.
+
+  Note: you can use 'USG' instead of 'USING'
+
+
+See also
+  {Print:_Print}
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {Format():_Format5}
+.topic _LInput34LineInput34Line1Input3
+LInput#/LineInput#/Line-Input#
+Syntax
+  LINE INPUT \[#fileN\{,|;\}\] var
+  or
+  LINEINPUT \[#fileN\{,|;\}\] var
+  or
+  LINPUT \[#fileN\{,|;\}\] var (TI syntax)
+
+Description
+
+  Reads a whole text line from file or console.
+
+
+See also
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {Input():_Input5}
+  {Print#:_Print3}
+.topic _Input5
+Input()
+Syntax
+  INPUT(len\[,fileN\])
+
+Description
+
+  This function is similar to INPUT.
+
+  Reads 'len' bytes from file or console (if fileN is omitted).
+
+  This function is a low-level function. That means does not convert the
+  data, and does not remove the spaces.
+
+
+See also
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {Input():_Input5}
+  {Print#:_Print3}
+.topic _Input3
+Input#
+Syntax
+  INPUT #fileN; var1 \[,delim\] \[, var2 \[,delim\]\] ...
+
+Description
+
+  Reads data from file
+
+
+See also
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {Input():_Input5}
+  {Input:_Input}
+.topic _BGetC5
+BGetC()
+Syntax
+  BGETC(fileN)
+
+Description
+
+  (Binary mode)
+  Reads and returns a byte from file or device.
+
+
+See also
+  {BPutC#:_BPutC3}
+.topic _BPutC3
+BPutC#
+Syntax
+  BPUTC #fileN; byte
+
+Description
+
+  (Binary mode)
+  Writes a byte on file or device
+
+.topic _Seek3
+Seek#
+Syntax
+  SEEK #fileN; pos
+
+Description
+
+  Sets file position for the next read/write
+
+
+See also
+  {Seek():_Seek5}
+.topic _Seek5
+Seek()
+Syntax
+  SEEK(fileN)
+
+Description
+
+  Returns the current file position
+
+
+See also
+  {Seek#:_Seek3}
+.topic _LOF5
+LOF()
+Syntax
+  LOF(fileN)
+
+Description
+
+  Returns the length of file in bytes
+
+  For devices; returns the number of available data
+
+.topic _Kill
+Kill
+Syntax
+  KILL "file"
+
+Description
+
+  Deletes the specified file
+
+.topic _Write34Read3
+Write#/Read#
+Syntax
+  WRITE #fileN; var1 \[, ...\]
+  READ #fileN; var1 \[, ...\]
+
+Description
+
+  The READ/WRITE command set is used to store variables to a file as
+  binary data.
+
+  The common problem with INPUT/PRINT set is there are many conflicts
+  with data. 
+
+
+  PRINT #1; "Hello, world"
+
+  You have wrote only one string and you want read it in one variable,
+  but this is impossible for INPUT command to understand it, because
+  INPUT finds the separator comma, so it thinks there are two variables
+  not one.
+
+  So, now, you can store arrays, strings etc and what is you write is
+  what you will read the next time.
+
+  BTW its faster too.
+
+  Notes:
+  * The parameters can be variables ONLY.
+  * Its very bad idea to mixed READ/WRITE commands with INPUT/PRINT
+    commands in the same file.
+
+
+See also
+  {Print#:_Print3}
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+.topic _Copy
+Copy
+Syntax
+  COPY "file", "newfile"
+
+Description
+
+  Makes a copy of specified file to the 'newfile'
+
+
+See also
+  {Rename:_Rename}
+.topic _Rename
+Rename
+Syntax
+  RENAME "file", "newfile"
+
+Description
+
+  Renames the specified file
+
+
+See also
+  {Copy:_Copy}
+.topic _MkDir4ChDir4RmDir
+MkDir/ChDir/RmDir
+Syntax
+  MKDIR dir
+  CHDIR dir
+  RMDIR dir
+
+Description
+
+  Notes:
+  Non-PalmOS only.
+
+.topic _DirWalk
+DirWalk
+Syntax
+  DIRWALK directory \[, wildcards\] \[USE ...\]
+
+Description
+
+  Walk through the directories.
+
+  The user-defined function must returns zero to stop the process.
+
+
+  Notes:
+  * PalmOS: not supported
+
+
+Example
+
+  FUNC PRNF(x)
+      ? x
+      PRNF=TRUE
+  END
+  ...
+  DIRWALK "." USE PRNF(x)
+
+.topic _Files5
+Files()
+Syntax
+  FILES(wildcards)
+
+Description
+
+  Returns an array with the filenames.
+
+  If there is no files returns an empty array.
+
+
+  Notes: 
+  * For PalmOS returns only the user-files.
+  * To use file on MEMO or PDOC or any other virtual file system you must
+    use FILES("VFSx:*")
+
+    Example:
+    PRINT FILES("MEMO:*")
+
+
+Example
+
+  ? FILES("*")
+
+.topic _Mathematics
+Mathematics
+
+ {Abs()/Pow()/Sqr()/Sgn():_Abs54Pow54Sqr54Sgn5}
+ {Int()/Fix()/Floor()/Ceil()/Frac()/Round():54Fix54Floor54Ceil54Frac54Round5}
+ {Deg()/Rad():_Deg54Rad5}
+ {Sin()/Cos()/Tan():_Sin54Cos54Tan5}
+ {ATn()/ATan()/ATan2()/ASin()/ACos():_ATn54ATan54ATan254ASin54ACos5}
+ {CosH()/SinH()/TanH():_CosH54SinH54TanH5}
+ {ACosH()/ASinH()/ATanH():_ACosH54ASinH54ATanH5}
+ {Sec()/Csc()/Cot():_Sec54Csc54Cot5}
+ {ASec()/ACsc()/ACot():_ASec54ACsc54ACot5}
+ {SecH()/CscH()/CotH():_SecH54CscH54CotH5}
+ {ASecH()/ACscH()/ACotH():_ASecH54ACscH54ACotH5}
+ {Exp()/Log()/Log10():_Exp54Log54Log105}
+ {Min()/Max()/AbsMin()/AbsMax():_Min54Max54AbsMin54AbsMax5}
+ {Seq():_Seq5}
+ {ExprSeq:_ExprSeq}
+ {Sum()/SumSq()/StatMean()/StatMeanDev()/StatSpreadS()/StatSpreadP():anDev54StatSpreadS54StatSpreadP5}
+ {LinEqn():_LinEqn5}
+ {Inverse():_Inverse5}
+ {Determ():_Determ5}
+ {Root:_Root}
+ {Deriv:_Deriv}
+ {DifEqn:_DifEqn}
+  All angles are in radians.
+
+
+.topic _Abs54Pow54Sqr54Sgn5
+Abs()/Pow()/Sqr()/Sgn()
+
+  ABS(x)              - Absolute value of x
+  POW(x,y)            - x raised to power of y
+  SQR(x)              - square root of x
+  SGN(x)              - sign of x (+1 for positive, -1 for negative
+                        and 0 for zero)
+
+
+.topic 54Fix54Floor54Ceil54Frac54Round5
+Int()/Fix()/Floor()/Ceil()/Frac()/Round()
+
+  INT(x)              - rounds x downwards to the nearest integer
+
+  FIX(x)              - rounds x upwards to the nearest integer
+  FLOOR(x)            - largest integer value not greater than x
+  CEIL(x)             - smallest integral value not less than x
+  FRAC(x)             - fractional part of x
+
+  ROUND(x\[,decs\])     - rounds the x to the nearest integer or number 
+                        with 'decs' decimal digits.
+
+
+.topic _Deg54Rad5
+Deg()/Rad()
+
+  DEG(x)              - radians to degrees
+  RAD(x)              - degrees to radians
+
+
+.topic _Sin54Cos54Tan5
+Sin()/Cos()/Tan()
+
+  SIN(x)              - Sine 
+  COS(x)              - Cosine
+  TAN(x)              - Tangent
+
+
+.topic _ATn54ATan54ATan254ASin54ACos5
+ATn()/ATan()/ATan2()/ASin()/ACos()
+
+  ATN(x) or ATAN(x)   - Inverse tangent 
+  ATAN2(x,y)          - Inverse tangent (x,y)
+
+  ASIN(x)             - Inverse sine
+  ACOS(x)             - Inverse cosine
+
+
+.topic _CosH54SinH54TanH5
+CosH()/SinH()/TanH()
+
+  Hyperbolic form
+
+  COSH(x),  SINH(x),  TANH(x)
+
+
+.topic _ACosH54ASinH54ATanH5
+ACosH()/ASinH()/ATanH()
+
+  Hyperbolic form
+
+
+.topic _Sec54Csc54Cot5
+Sec()/Csc()/Cot()
+
+  SEC(x)              - Secant
+  CSC(x)              - Cosecant
+  COT(x)              - Cotangent
+
+
+.topic _ASec54ACsc54ACot5
+ASec()/ACsc()/ACot()
+
+  ASEC(x)             - Inverse secant
+  ACSC(x)             - Inverse cosecant
+  ACOT(x)             - Inverse cotangent
+
+
+.topic _SecH54CscH54CotH5
+SecH()/CscH()/CotH()
+
+  Hyperbolic form
+
+
+.topic _ASecH54ACscH54ACotH5
+ASecH()/ACscH()/ACotH()
+
+  Hyperbolic form
+
+
+.topic _Exp54Log54Log105
+Exp()/Log()/Log10()
+
+  Logarithms
+
+  EXP(x)              - the value of e raised to the power of x
+  LOG(x)              - natural logarithm of x
+  LOG10(x)            - the base-10 logarithm of x
+
+
+.topic _Min54Max54AbsMin54AbsMax5
+Min()/Max()/AbsMin()/AbsMax()
+Syntax
+  MAX(...), MIN(...)
+  ABSMIN(...), ABSMAX(...)
+
+Description
+
+  Maximum/Minimum value of parameters. Parameters can be anything 
+  (arrays, ints, reals, strings).
+
+  ABSMIN/ABSMAX returns the absolute min/max value.
+
+
+
+Example
+
+  ? MAX(3,4,8)
+  ? MIN(array(),2,3)
+  ? MAX("abc","def")
+
+.topic _Seq5
+Seq()
+Syntax
+  SEQ(xmin, xmax, count)
+
+Description
+
+  Returns an array with 'count' elements.
+  Each element had the x value of its position.
+
+
+
+Example
+
+  ? SEQ(0,1,11)
+
+
+See also
+  {ExprSeq:_ExprSeq}
+.topic _ExprSeq
+ExprSeq
+Syntax
+  EXPRSEQ BYREF array, xmin, xmax, count USE expression
+
+Description
+
+  Returns an array with 'count' elements.
+  Each element had the 'y' value of its position as it is
+  returned by the expression.
+
+
+
+Example
+
+  REM same as v=SEQ(0,1,11)
+  EXPRSEQ v, 0, 1, 11 USE x
+
+
+See also
+  {Seq():_Seq5}
+.topic anDev54StatSpreadS54StatSpreadP5
+Sum()/SumSq()/StatMean()/StatMeanDev()/StatSpreadS()/StatSpreadP()
+
+  SUM(...)                - Sum of value
+  SUMSQ(...)              - Sum of square value 
+  STATMEAN(...)           - Arithmetical mean
+  STATMEANDEV(...)        - Mean deviation
+  STATSPREADS(...)        - Sample spread
+  STATSPREADP(...)        - Population spread
+
+  Notes:
+  Sample standard deviation:     SQR(STATSPREADS(array))
+  Population standard deviation: SQR(STATSPREADP(array))
+
+.topic _LinEqn5
+LinEqn()
+Syntax
+  LINQN(A, B \[, toler\])
+
+Description
+
+  Returns an array with the values of the unknowns.
+  This function solves equations by using the Gauss-Jordan method.
+
+  A = equations
+  B = results
+  toler = tolerance number 
+      (the absolute value of the lowest acceptable number)
+      default = 0 = none
+
+      |x| <= toler : x = 0
+
+  Note: The result is a matrix Nx1. For the SB that array is 
+        two-dimension array.
+
+.topic _Inverse5
+Inverse()
+Syntax
+  INVERSE(A)
+
+Description
+
+  returns the inverse matrix of A.
+
+.topic _Determ5
+Determ()
+Syntax
+  DETERM(A\[, toler\])
+
+Description
+
+  Determinant of A
+
+  toler = tolerance number
+    (the absolute value of the lowest acceptable number)
+    default = 0 = none
+
+    |x| <= toler : x = 0
+
+.topic _Root
+Root
+Syntax
+  ROOT low, high, segs, maxerr, BYREF result, BYREF errcode USE expr
+
+Description
+
+  Roots of F(x)
+
+  low     = the lower limit
+  high    = the upper limit
+  segs    = the number of segments (spaces)
+  maxerr  = tolerance (IF ABS(F(x)) < maxerr THEN OK)
+  errcode = 0 for success; otherwise calculation error
+  result  = the result
+
+
+
+Example
+
+  FUNC F(x)
+   F = SIN(x)
+  END
+  ...
+  ROOT 1, 5, 500, 0.00001, result, errcode USE F(x)
+
+.topic _Deriv
+Deriv
+Syntax
+  DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE expr
+
+Description
+
+  calculation of derivative
+
+  x = value of x
+  maxtries = maximum number of retries
+  maxerr = tolerance
+  errcode = 0 for success; otherwise calculation error
+  result  = the result
+
+.topic _DifEqn
+DifEqn
+Syntax
+  DIFFEQN x0, y0, xf, maxseg, maxerr, BYREF yf, BYREF errcode USE expr
+
+Description
+
+  Differential equation - Runge-Kutta method
+
+  x0, y0  = initial x,y
+  xf      = x final
+  maxseg  = maximum number of segments on x
+  maxerr  = tolerance (acceptable error between the last 2 times)
+  errcode = 0 for success; otherwise calculation error
+  yf      = the result
+
+.topic _2D0Algebra
+2D Algebra
+
+ {SegCos()/SegSin():_SegCos54SegSin5}
+ {PtDistSeg():_PtDistSeg5}
+ {PtDistLn:_PtDistLn}
+ {PtSign():_PtSign5}
+ {SegLen():_SegLen5}
+ {PolyArea():_PolyArea5}
+ {PolyExt:_PolyExt}
+ {Intersect:_Intersect}
+ {M3Ident/M3Rotate/M3Scale/M3Trans/M3Apply:M3Rotate4M3Scale4M3Trans4M3Apply}
+
+.topic _SegCos54SegSin5
+SegCos()/SegSin()
+Syntax
+  SEGCOS(Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+  SEGSIN(Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+
+Description
+
+  Sinus or cosine of 2 line segments (A->B, C->D).
+
+.topic _PtDistSeg5
+PtDistSeg()
+Syntax
+  PTDISTSEG(Bx,By,Cx,Cy,Ax,Ay)
+
+Description
+
+  Distance of point A from line segment B-C
+
+.topic _PtDistLn
+PtDistLn
+Syntax
+  PTDISTLN(Bx,By,Cx,Cy,Ax,Ay)
+
+Description
+
+  Distance of point A from line B, C
+
+.topic _PtSign5
+PtSign()
+Syntax
+  PTSIGN(Ax,Ay,Bx,By,Qx,Qy)
+
+Description
+
+  The sign of point Q from line segment A->B
+
+.topic _SegLen5
+SegLen()
+Syntax
+  SEGLEN(Ax,Ay,Bx,By)
+
+Description
+
+  Length of line segment
+
+.topic _PolyArea5
+PolyArea()
+Syntax
+  POLYAREA(poly)
+
+Description
+
+  Area of polyline
+
+.topic _PolyExt
+PolyExt
+Syntax
+  POLYEXT poly(), BYREF xmin, BYREF ymin, BYREF xmax, BYREF ymax
+
+Description
+
+  Returns the polyline's extents
+
+.topic _Intersect
+Intersect
+Syntax
+  INTERSECT Ax, Ay, Bx, By,
+            Cx, Cy, Dx, Dy,
+            BYREF type, BYREF Rx, BYREF Ry
+
+Description
+
+  Calculates the intersection of the two line segments A-B and C-D
+
+  Returns:
+  Rx,Ry = cross
+
+  type = cross-type
+  0 = No cross (R = external cross)
+  1 = One cross
+  2 = Parallel
+  3 = Parallel (many crosses)
+  4 = The cross is one of the line segments edges.
+
+.topic M3Rotate4M3Scale4M3Trans4M3Apply
+M3Ident/M3Rotate/M3Scale/M3Trans/M3Apply
+
+  2D & 3D graphics transformations can represented as matrices.
+
+  (c=cosè, s=sinè)
+
+  M3IDENT	BYREF m3x3
+  Resets matrix (Identity)
+
+  |  1  0  0 |
+  |  0  1  0 |
+  |  0  0  1 |
+
+  M3ROTATE BYREF m3x3, angle \[, x, y\]
+  Rotate by angle with center x,y
+
+  |  c  s  0 |
+  | -s  c  0 |
+  |  *  *  1 |
+
+  M3SCALE BYREF m3x3, x, y, Sx, Sy
+  Scaling
+
+  | Sx  0  0 |
+  |  0 Sy  0 |
+  |  *  *  1 |
+
+  M3TRANS BYREF m3x3, x, y
+  Translation
+
+  |  1  0  0 |
+  |  0  1  0 |
+  | Tx Ty  1 |
+
+  M3APPLY m3x3, BYREF poly
+  Apply matrice to poly-line
+
+  Additional information:
+
+  |  1  0  0 |
+  |  0 -1  0 | = reflection on x
+  |  0  0  1 |
+
+  | -1  0  0 |
+  |  0  1  0 | = reflection on y
+  |  0  0  1 |
+
+  3D-Graphics Matrices:
+
+  |  1  0  0 Tx |
+  |  0  1  0 Ty | = translation
+  |  0  0  1 Tz |
+  |  0  0  0  1 |
+
+  | Sx  0  0  0 |
+  |  0 Sy  0  0 | = scaling
+  |  0  0 Sz  0 |
+  |  0  0  0  1 |
+
+  |  1  0  0  0 |
+  |  0  c -s  0 | = rotation on x
+  |  0  s  c  0 |
+  |  0  0  0  1 |
+
+  |  c  0  s  0 |
+  |  0  1  0  0 | = rotation on y
+  | -s  0  c  0 |
+  |  0  0  0  1 |
+
+  |  c -s  0  0 |
+  |  s  c  0  0 | = rotation on z
+  |  0  0  1  0 |
+  |  0  0  0  1 |
+
+  Any change to matrix will combined with its previous value.
+
+
+
+Example
+
+  DIM poly(24)
+  DIM M(2,2)
+  ...
+  M3IDENT M
+  M3ROTATE M, pi/2, 0, 0
+  M3SCALE M, 0, 0, 1.24, 1.24
+  ...
+  ' Draw the original polyline
+  DRAWPOLY poly
+  ...
+  ' Draw the polyline
+  ' rotated by pi/2 from 0,0 and scaled by 1.24
+  M3APPLY M, poly
+  DRAWPOLY poly
+
+
+See also
+  {DrawPoly:_DrawPoly}
+.topic _Strings
+Strings
+
+ {Spc()/Space():_Spc54Space5}
+ {Bin()/Oct()/Hex():_Bin54Oct54Hex5}
+ {Val()/Str():_Val54Str5}
+ {CBS()/BCS():_CBS54BCS5}
+ {Chr()/Asc():_Chr54Asc5}
+ {Lower()/Upper()/LCase()/UCase():_Lower54Upper54LCase54UCase5}
+ {LTrim()/RTrim()/Trim():_LTrim54RTrim54Trim5}
+ {Squeeze():_Squeeze5}
+ {Enclose()/Disclose():_Enclose54Disclose5}
+ {Disclose():_Disclose5}
+ {Left()/Right():_Left54Right5}
+ {LeftOf()/RightOf():_LeftOf54RightOf5}
+ {LeftOfLast()/RightOfLast():_LeftOfLast54RightOfLast5}
+ {Mid():_Mid5}
+ {InStr():_InStr5}
+ {RInStr():_RInStr5}
+ {Replace():_Replace5}
+ {Translate():_Translate5}
+ {Chop():_Chop5}
+ {String():_String5}
+ {Format():_Format5}
+ {SPrint:_SPrint}
+ {SInput:_SInput}
+ {Split:_Split}
+ {Join:_Join}
+
+.topic _Spc54Space5
+Spc()/Space()
+Syntax
+  SPC(n)/SPACE(n)
+
+Description
+
+  returns a string of 'n' spaces
+
+.topic _Bin54Oct54Hex5
+Bin()/Oct()/Hex()
+
+  BIN(x)              - binary string-value of x
+  OCT(x)              - octal string-value of x
+  HEX(x)              - hexadecimal string-value of x
+
+.topic _Val54Str5
+Val()/Str()
+
+  VAL(s)              - numeric value of string s
+  STR(x)              - convert x to string
+
+.topic _CBS54BCS5
+CBS()/BCS()
+
+  CBS() - converts (C)-style strings to (B)ASIC-style (S)trings
+  BCS() - converts (B)ASIC-style strings to (C)-style (S)trings
+
+  C-Style string means strings with \ codes
+
+  Note:
+      On CBS() we cannot use the \" character, but we can replace
+      it with \x22 or \042.
+
+.topic _Chr54Asc5
+Chr()/Asc()
+
+  ASC(s)              - ASCII code of first character of s
+  CHR(x)              - returns one-char string of character with
+                        ASCII code x
+
+.topic _Lower54Upper54LCase54UCase5
+Lower()/Upper()/LCase()/UCase()
+Syntax
+  LOWER(s), UPPER(s)
+  or
+  LCASE(s), UCASE(s)
+
+Description
+
+  Converts the string s to lower/upper case
+
+
+
+Example
+
+  ? LOWER("Hi"):REM hi
+  ? UPPER("Hi"):REM HI
+
+.topic _LTrim54RTrim54Trim5
+LTrim()/RTrim()/Trim()
+
+  LTRIM(s)    - Removes leading white-spaces from string s
+  RTRIM(s)    - Removes /trailing white-spaces from string s
+  TRIM(s)     - Removes leading/trailing white-spaces from string s
+
+
+  TRIM is equal to LTRIM(RTRIM(s))
+
+
+Example
+
+  ? LEN(LTRIM("  Hi")):REM 2
+
+.topic _Squeeze5
+Squeeze()
+Syntax
+  SQUEEZE(s)
+
+Description
+
+  Removes the leading/trailing and duplicated white-spaces
+
+
+
+Example
+
+  ? "\["; SQUEEZE(" Hi  there "); "\]"
+  ' Result: \[Hi there\]
+
+.topic _Enclose54Disclose5
+Enclose()/Disclose()
+Syntax
+  ENCLOSE(str\[, pair\])
+
+Description
+
+  Encloses a string.
+  The default pair is ""
+
+
+
+Example
+
+  ? enclose("abc", "()")
+  ' Result: (abc)
+
+.topic _Disclose5
+Disclose()
+Syntax
+  DISCLOSE(str\[, pairs \[, ignore-pairs\]\])
+
+Description
+
+  Discloses a string.
+
+  Default pairs and ignore pairs
+
+  First 
+  non white-space 
+  character           Check   Ignore
+  "                   ""      ''
+  '                   ''      ""
+  (                   ()      ""''
+  \[                   \[\]      ""''
+  \{                   \{\}      ""''
+  <                   <>      ""''
+
+  Otherwise:
+  "                   ""      ''
+
+
+
+Example
+
+  s = "abc (abc)"
+  ? s; tab(26); disclose(s, "()")
+  ' prints abc
+  s = "abc (a(bc))"
+  ? s; tab(26); disclose(s, "()"); tab(40); disclose(disclose(s, "()"), "()")
+  ' prints a(bc), bc
+  s = "abc (a='(bc)')"
+  ? s; tab(26); disclose(s, "()", "''"); tab(40); &
+      disclose(disclose(s, "()", "''"), "()", "''")
+  ' prints a='(bc)', nothing
+
+
+See also
+  {Enclose()/Disclose():_Enclose54Disclose5}
+.topic _Left54Right5
+Left()/Right()
+Syntax
+  LEFT(s\[,n\]), RIGHT(s\[,n\])
+
+Description
+
+  Returns the n number of leftmost/rightmost chars of string s
+  If n is not specified, the SB uses 1
+
+.topic _LeftOf54RightOf5
+LeftOf()/RightOf()
+Syntax
+  LEFTOF(s1,s2),
+  RIGHTOF(s1,s2)
+
+Description
+
+  Returns the left/right part of s1 at the position of the first 
+  occurrence of the string s2 into string s1
+
+  Note: s2 does not included on new string.
+
+.topic _LeftOfLast54RightOfLast5
+LeftOfLast()/RightOfLast()
+Syntax
+  LEFTOFLAST(s1,s2),
+  RIGHTOFLAST(s1,s2)
+
+Description
+
+  Returns the left/right part of s1 at the position of the last 
+  occurrence of the string s2 into string s1
+
+  Note: s2 does not included on new string.
+
+.topic _Mid5
+Mid()
+Syntax
+  MID(s, start \[,length\])
+
+Description
+
+  Returns the part (length) of the string s starting from 'start'
+  position
+
+  If the 'length' parameter is omitted, MID returns the whole string
+  from the position 'start'.
+
+.topic _InStr5
+InStr()
+Syntax
+  INSTR(\[start,\] s1, s2)
+
+Description
+
+  Returns the position of the first occurrence of the string s2 into
+  string s1 (starting from the position 'start')
+
+  If there is no match, INSTR returns 0
+
+.topic _RInStr5
+RInStr()
+Syntax
+  RINSTR(\[start,\] s1, s2)
+
+Description
+
+  Returns the position of the last occurrence of the string s2 into
+  string s1 (starting from the position 'start')
+
+  If there is no match, RINSTR returns 0
+
+.topic _Replace5
+Replace()
+Syntax
+  REPLACE(source, pos, str \[, len\])
+
+Description
+
+  Writes the 'str' into 'pos' of 'source' and returns the new string.
+
+  This function replaces only 'len' characters. The default value of
+  'len' is the length of 'str'.
+
+  Examples:
+  s="123456"
+  ...
+  ' Cut
+  ? replace(s,3,"",len(s))
+  ...
+  ' Replace
+  ? replace(s,2,"bcd")
+  ...
+  ' Insert
+  ? replace(s,3,"cde",0)
+  ...
+  ' Replace & insert
+  ? replace(s,2,"RRI",2)
+
+.topic _Translate5
+Translate()
+Syntax
+  TRANSLATE(source, what \[, with\])
+
+Description
+
+  Translates all occurrences of the string 'what' found in the 'source'
+  with the string 'with' and returns the new string.
+
+
+
+Example
+
+  ? Translate("Hello world", "o", "O")
+  ' displays: HellO wOrld
+
+.topic _Chop5
+Chop()
+Syntax
+  CHOP(source)
+
+Description
+
+  Chops off the last character of the string 'source' and returns 
+  the result.
+
+.topic _String5
+String()
+Syntax
+  STRING(len,\{ascii|str\})
+
+Description
+
+  Returns a string containing 'len' times of string 'str' or the 
+  character 'ascii'.
+
+.topic _Format5
+Format()
+Syntax
+  FORMAT(format, val)
+
+Description
+
+  Returns a formated string.
+
+  Numbers:
+  #       Digit or space
+
+  0       Digit or zero
+
+  ^       Stores a number in exponential format. 
+          Unlike QB's USING format this is a place-holder like the #.
+
+  .       The position of the decimal point.
+
+  ,       Separator.
+
+  -       Stores minus if the number is negative. 
+
+  +       Stores the sign of the number.
+
+  Strings:
+  &       Stores a string expression without reformatting it.
+
+  !       Stores only the first character of a string expression.
+
+  \  \    Stores only the first n + 2 characters of a string
+          expression, where n is the number of spaces between the
+          two backslashes. 
+          Unlike QB, there can be literals inside the \ \. These
+          literals are inserted in the final string.
+
+
+
+Example
+
+  ? FORMAT("#,##0", 1920.6) : REM prints 1,921
+  ? FORMAT("\  - \", "abcde") : REM prints "abc-de"
+
+.topic _SPrint
+SPrint
+Syntax
+  SPRINT var; \[USING...;\] ...
+
+Description
+
+  Create formated string and storing it to var
+
+  The syntax is the same with the PRINT command.
+
+
+  Note: you can use 'USG' instead of 'USING'
+
+
+Example
+
+  SPRINT s; 12.34; TAB(12); 11.23;
+
+
+See also
+  {Print:_Print}
+  {SInput:_SInput}
+  {Split:_Split}
+  {Join:_Join}
+.topic _SInput
+SInput
+Syntax
+  SINPUT src; var \[, delim\] \[,var \[, delim\]\] ...
+
+Description
+
+  Splits the string 'src' into variables which are separated by 
+  delimiters.
+
+
+
+Example
+
+  SINPUT "if x>1 then y"; vif, " ", vcond, "then", vdo
+  ? vcond, vdo
+  ' result in monitor
+  ' x>1   y
+
+
+See also
+  {Input:_Input}
+  {SPrint:_SPrint}
+  {Split:_Split}
+  {Join:_Join}
+.topic _Split
+Split
+Syntax
+  SPLIT string, delimiters, words() \[, pairs\] \[USE expr\]
+
+Description
+
+  Returns the words of the specified string into array 'words'
+
+
+
+Example
+
+  s="/etc/temp/filename.ext"
+  SPLIT s, "/.", v()
+  FOR i=0 TO UBOUND(v)
+    PRINT i;" \[";v(i);"\]"
+  NEXT
+  '
+  displays:
+  0 \[\]
+  1 \[etc\]
+  2 \[temp\]
+  3 \[filename\]
+  4 \[ext\]
+
+
+See also
+  {Join:_Join}
+  {SInput:_SInput}
+.topic _Join
+Join
+Syntax
+  JOIN words(), delimiters, string
+
+Description
+
+  Returns the words of the specified string into array 'words'
+
+
+
+Example
+
+  s="/etc/temp/filename.ext"
+  SPLIT s, "/.", v()
+  JOIN v(), "/", s
+  PRINT "\[";s;"\]"
+  '
+  displays:
+  \[/etc/temp/filename/ext\]
+
+
+See also
+  {Split:_Split}
+  {SPrint:_SPrint}
+.topic _Console
+Console
+
+ {Print:_Print}
+ {Cat():_Cat5}
+ {Input:_Input}
+ {LInput/LineInput/Line-Input:_LInput4LineInput4Line1Input}
+ {InKey():_InKey5}
+ {CLS:_CLS}
+ {At:_At}
+ {Locate:_Locate}
+  Supported console codes
+  Note: \e = CHR(27)
+
+  \t		    tab (32 pixels)
+  \a		    beep
+  \r\n	    new line (cr/lf)
+  \xC		    clear screen
+  \e\[K	    clear to EOL
+  \e\[nG	    moves cursor to specified column
+  \e\[0m	    reset all attributes to their defaults
+  \e\[1m	    set bold on
+  \e\[4m	    set underline on
+  \e\[7m	    reverse video
+  \e\[21m	    set bold off
+  \e\[24m	    set underline off
+  \e\[27m	    set reverse off
+  \e\[3nm      set foreground
+              color. where n:
+
+              0 black
+              1 red
+              2 green
+              3 brown
+              4 blue
+              5 magenta
+              6 cyan
+              7 white
+
+  \e\[4nm      set background color.
+              (see set foreground)
+
+  PalmOS only:
+
+  \e\[8nm	    (n=0..7) select system font
+  \e\[9nm	    (n=0..3) select buildin font
+
+  eBookMan only:
+  \e\[50m      select 9pt font
+  \e\[51m      select 12pt font
+  \e\[52m      select 16pt font
+  \e\[nT       move to n/80th screen character position
+
+.topic _Print
+Print
+Syntax
+  PRINT \[USING \[format\];\] \[expr|str \[\{,|;\} \[expr|str\]\] ...
+
+Description
+
+  Displays a text or the value of an expression.
+
+  PRINT SEPARATORS
+  ________________
+
+  TAB(n)  Moves cursor position to the nth column.
+  SPC(n)  Prints a number of spaces specified by n.
+  ;       Carriage return/line feed suppressed after printing.
+  ,       Carriage return/line feed suppressed after printing.
+          A TAB character is placed.
+
+
+  The PRINT USING
+  _______________
+
+  Print USING, is using the FORMAT() to display numbers and strings.
+  Unlike the FORMAT, this one can include literals, too.
+
+  _       Print next character as a literal. The combination _#, for 
+          example, allows you to include a number sign as a literal 
+          in your numeric format.
+
+  \[other\] Characters other than the foregoing may be included as
+          literals in the format string. 
+
+  Notes:
+      * When a PRINT USING command is executed, the format will remains
+        on the memory until a new format is passed. 
+        Calling a PRINT USING without a new format specified, the PRINT
+        will use the format of previous call.
+
+  Examples:
+  PRINT USING "##: #,###,##0.00";
+  FOR i=0 TO 20
+      PRINT USING; i+1, A(i)
+  NEXT
+  ....
+  PRINT USING "Total ###,##0 of \ \"; number, "bytes"
+
+  Notes:
+  The symbol ? can be used instead of keyword PRINT
+  You can use 'USG' instead of 'USING'
+
+
+See also
+  {SPrint:_SPrint}
+  {Print#:_Print3}
+  {LogPrint:_LogPrint}
+  {Format():_Format5}
+  {Input:_Input}
+  {SInput:_SInput}
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {LInput/LineInput/Line-Input:_LInput4LineInput4Line1Input}
+  {Input():_Input5}
+  {Split:_Split}
+  {Join:_Join}
+.topic _Cat5
+Cat()
+Syntax
+  CAT(x)
+
+Description
+
+  Returns console codes
+
+  0  - reset
+  1  - bold on
+  -1 - bold off
+  2  - underline on
+  -2 - underline off
+  3  - reverse on
+  -3 - reverse off
+
+  PalmOS only:
+  80..87 - select system font
+  90..93 - select custom font
+
+
+
+Example
+
+  ? cat(1);"Bold";cat(0)
+
+.topic _Input
+Input
+Syntax
+  INPUT \[prompt \{,|;\}\] var\[, var \[, ...\]\]
+
+Description
+
+  Reads from "keyboard" a text and store it to variable.
+
+
+See also
+  {Print:_Print}
+  {SPrint:_SPrint}
+  {Print#:_Print3}
+  {LogPrint:_LogPrint}
+  {Format():_Format5}
+  {SInput:_SInput}
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {LInput/LineInput/Line-Input:_LInput4LineInput4Line1Input}
+  {Input():_Input5}
+  {Split:_Split}
+  {Join:_Join}
+  {InKey():_InKey5}
+.topic _LInput4LineInput4Line1Input
+LInput/LineInput/Line-Input
+Syntax
+  LINE INPUT var
+  or
+  LINEINPUT var
+
+Description
+
+  Reads a whole text line from console.
+
+
+See also
+  {Print:_Print}
+  {SPrint:_SPrint}
+  {Print#:_Print3}
+  {LogPrint:_LogPrint}
+  {Format():_Format5}
+  {SInput:_SInput}
+  {Input:_Input}
+  {LInput#/LineInput#/Line-Input#:_LInput34LineInput34Line1Input3}
+  {Input():_Input5}
+  {Split:_Split}
+  {Join:_Join}
+  {InKey():_InKey5}
+.topic _InKey5
+InKey()
+Syntax
+  INKEY
+
+Description
+
+  This function returns the last key-code in keyboard buffer, or
+  an empty string if there are no keys.
+
+  Special key-codes like the function-keys (PC) or the hardware-buttons
+  (PalmOS) are returned as 2-byte string.
+
+
+
+Example
+
+  k=INKEY
+  IF LEN(k)
+    IF LEN(k)=2
+      ? "H/W #"+ASC(RIGHT(k,1))
+    ELSE
+      ? k; " "; ASC(k)
+    FI
+  ELSE
+    ? "keyboard buffer is empty"
+  FI
+
+.topic _CLS
+CLS
+Syntax
+  CLS
+
+Description
+
+  Clears the screen.
+
+.topic _At
+At
+Syntax
+  AT x,y (in pixels)
+
+Description
+
+  Moves the console cursor to the specified position.
+
+  x,y are in pixels
+
+
+See also
+  {Locate:_Locate}
+.topic _Locate
+Locate
+Syntax
+  LOCATE y,x
+
+Description
+
+  Moves the console cursor to the specified position.
+
+  x,y are in character cells.
+
+
+
+See also
+  {At:_At}

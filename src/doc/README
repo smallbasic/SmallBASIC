@@ -1,0 +1,207 @@
+SmallBASIC
+http://smallbasic.sourceforge.net
+
+README.DEV  --- Information for developers
+README.PALM --- Notes for PalmOS 
+README.UNIX --- Notes for Unices
+README.W32  --- Notes for Win32
+LICENSE     --- GNU GENERAL PUBLIC LICENSE
+
+-----------------------------------------------------------------------
+Unix version requirements
+-----------------------------------------------------------------------
+
+    gcc 2.x.x
+
+    Graphics:
+    ---------
+    kernel 2.4.x framebuffer device              (/dev/fb0 must exists)
+    OR
+	SVGALib 1.9.6                                 (www.svgalib.org)
+    OR
+	SDL library (SDL works under X or framebuffer) (www.libsdl.org)
+
+    Sound:
+    ------
+    OSS compatible card/driver                  (/dev/dsp must exists)
+
+    Mice:
+    -----
+    Mouse is supported on SDL and SVGALIB drivers
+
+-----------------------------------------------------------------------
+PalmOS version requirements
+-----------------------------------------------------------------------
+
+    pilrc version 2.7+
+
+    MathLib.prc version 1.1+
+
+    A Palm with PalmOS 3.1 or newer
+    Recommended: PalmOS 3.3 with 4MB RAM
+
+For developers:
+    prc-tools version 2.0.90-1 (GNU)
+
+    PalmOS v3.5 SDK  
+
+-----------------------------------------------------------------------
+DOS version requirements
+-----------------------------------------------------------------------
+
+	MSDOS 5.0+ with DJGPP memory manager (www.delorie.com)
+
+For developers:
+	Linux PC, with msdos-djgpp cross compiler
+
+-----------------------------------------------------------------------
+Win32 version requirements
+-----------------------------------------------------------------------
+
+	Windows 9x/ME or NT
+
+	Sound Card
+
+For developers:
+	GUI version: Borland C++ Builder 6+
+	console version: Linux PC, with mingw32 cross compiler
+
+-----------------------------------------------------------------------
+Easy installation for Unix: Default configuration
+-----------------------------------------------------------------------
+
+    Driver: framebuffer (graphics), OSS sound, no-mouse 
+
+    Go to sync/ directory and type the following commands
+
+    make fb
+    make install
+
+-----------------------------------------------------------------------
+Easy installation for Unix: Other configurations
+-----------------------------------------------------------------------
+
+    -----------------------------------------------------------------
+    svgalib (graphics), OSS sound, svgalib's mouse
+    -----------------------------------------------------------------
+
+    make svga
+    make install
+    ln -svf /usr/local/bin/svgasbasic /usr/local/bin/sbasic
+
+    -----------------------------------------------------------------
+    SDL (graphics), SDL sound, SDL's mouse
+    -----------------------------------------------------------------
+
+    make sdl
+    make install
+    ln -svf /usr/local/bin/sdlsbasic /usr/local/bin/sbasic
+
+    -----------------------------------------------------------------
+    * Not suggested * : X (graphics), OSS sound, X's mouse
+    -----------------------------------------------------------------
+
+    make x
+    make install
+    ln -svf /usr/local/bin/xsbasic /usr/local/bin/sbasic
+
+    -----------------------------------------------------------------
+    * Not suggested * : X (graphics), OSS sound, X's mouse
+    -----------------------------------------------------------------
+
+    make xf
+    make install
+    ln -svf /usr/local/bin/xsbasic /usr/local/bin/sbasic
+
+    -----------------------------------------------------------------
+    * Not suggested * : OFBIS (graphics), OSS sound, OFBIS mouse
+    -----------------------------------------------------------------
+
+    make ofb
+    make install
+    ln -svf /usr/local/bin/ofbsbasic /usr/local/bin/sbasic
+
+-----------------------------------------------------------------------
+Compilation for PalmOS
+-----------------------------------------------------------------------
+
+* SmallBASIC for PalmOS
+
+    make palm
+
+* Install SmallBASIC to Palm
+
+    make send
+
+    Note: pilot-link required
+
+-----------------------------------------------------------------------
+Utilities
+-----------------------------------------------------------------------
+
+Unix:
+    u2d              --- convert unix text files (like the sources) to
+			 win/dos
+    d2u              --- convert dos text files to unix
+    mksmall          --- convert all filenames to lowercase
+
+    Unix & PalmOS:
+    bas2pdb          --- convert .bas text files to .pdb
+    pdb2bas          --- convert .pdb files to .bas text
+    mkpdb            --- creates a pdb from BINs
+
+Win32:
+    u2d              --- convert unix text files (like the sources) to
+			 win/dos
+    d2u              --- convert dos text files to unix
+    mksmall          --- convert all filenames to lowercase
+    win32/sb         --- under development (SB/PalmOS EMU IDE)
+
+    Win32 & PalmOS:
+    bas2pdb          --- convert .bas text files to .pdb
+    pdb2bas          --- convert .pdb files to .bas text
+    win32/bas2pdb    --- GUI convertor (PDB to BAS and BAS to PDB)
+
+PalmOS:
+    palm/            --- a few fonts
+
+
+-----------------------------------------------------------------------
+Notes:
+-----------------------------------------------------------------------
+
+About Manual:
+------------
+
+a) The original manual is the doc/ref.txt (source-code version)
+
+b) There is a copy of the manual inside the code.
+Try sbasic -h for more information (PC)
+Or the help-menu (PalmOS)
+
+c) Almost, the same text is on the SmallBASIC's site (which it is 
+converted to html)
+
+
+About Speed:
+------------
+
+The drivers dev_xf, dev_w32, dev_w32f, dev_ndcfb, dev_dos
+are using double-buffer technique. 
+
+This technique updates the video RAM every 50ms (20fps); that means its
+needs fast machines or small video resolutions.
+
+Do not use these drivers on 200MHz CPUs.
+
+PC version can speed-up a lot of times if the SB is compiled with
+the MALLOC_LIMITED. Also, that method uses less memory but unfortunately 
+cannot protected you from memory-leaks or other memory problems.
+
+-----------------------------------------------------------------------
+Bug reports
+-----------------------------------------------------------------------
+
+Try the webboard (I prefer it).
+Or send mail to inachus@freemail.gr
+
