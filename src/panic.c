@@ -14,7 +14,9 @@
 //	defined by PalmOpt...h
 	#include "sbpad.h"
 	#include "smbas.h"
-#elif defined(_WinGUI) || defined(_Win32)
+#elif defined(_WinGUI) || defined(_Win32) 
+	#include <windows.h>
+#elif defined (_FLTK) && defined(__CYGWIN__)
 	#include <windows.h>
 #endif
 #if defined(_BCB_W32_IDE)
@@ -48,8 +50,11 @@ void	panic(const char *fmt, ...)
 	
 	#if defined(_BCB_W32_IDE)
 	bcb_mgrerr("%s", preload_panic_buffer);
-	#elif defined(_WinGUI) || defined(_Win32)
+    #elif defined(_WinGUI) || defined(_Win32)
 	MessageBox(NULL, preload_panic_buffer, "SB Panic", MB_OK);
+    #elif defined (_FLTK) && defined(__CYGWIN__)
+	MessageBox(NULL, preload_panic_buffer, "SB Panic", MB_OK);
+    exit(1);
 	#elif defined(_VTOS)
 	MessageBox("FATAL PANIC", preload_panic_buffer, TRUE);
     #elif defined(_FRANKLIN_EBM)
