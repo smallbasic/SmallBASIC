@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_main.cpp,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// $Id: ebm_main.cpp,v 1.3 2004-04-17 00:24:05 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -100,6 +100,7 @@ void SBWindow::run(const char* fileName) {
     isBreak = false;
     menuActive = false;
     sbasic_main(fileName);
+    GUI_UpdateNow();
 }
 
 void SBWindow::doShell() {

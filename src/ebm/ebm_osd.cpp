@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_osd.cpp,v 1.3 2004-04-14 23:04:43 zeeb90au Exp $
+// $Id: ebm_osd.cpp,v 1.4 2004-04-17 00:24:05 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -48,7 +48,7 @@ void osd_settextcolor(long fg, long bg) {
 
 void osd_refresh() {
     GUIFLAGS *guiFlags = GUI_Flags_ptr();
-	if (needUpdate || *guiFlags & GUIFLAG_NEED_FLUSH) {
+	if (needUpdate || (*guiFlags & GUIFLAG_NEED_FLUSH)) {
         *guiFlags &= ~GUIFLAG_NEED_FLUSH;
 		imgUpdate();
 	}

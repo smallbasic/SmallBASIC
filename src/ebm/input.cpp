@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: input.cpp,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// $Id: input.cpp,v 1.3 2004-04-17 00:24:05 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -197,3 +197,5 @@ char *dev_gets(char *dest, int size) {
 }
 
 EXTERN_C_END
+
+//--EndOfFile-------------------------------------------------------------------

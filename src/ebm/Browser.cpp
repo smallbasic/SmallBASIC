@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.cpp,v 1.2 2004-04-14 23:04:43 zeeb90au Exp $
+// $Id: Browser.cpp,v 1.3 2004-04-17 00:24:05 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -293,8 +293,9 @@ S32 BrowserWnd::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
     case MSG_KEY:
         if (dlg.activeTab != tabSplash && data == K_MENU && menu != null) {
             menu->Show();
+            return 1;
         }
-        return 1;
+        break;
 
     case MSG_MENU_SELECT:
         if (data == -1) {
