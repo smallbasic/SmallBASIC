@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.9 2004-11-17 22:31:43 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.10 2004-11-18 23:00:36 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -56,7 +56,7 @@ void Fl_Ansi_Window::init() {
     }
     img = 0;
     curY = 1; // allow for input control border
-    curX = 0;
+    curX = 1;
     tabSize = 40; // tab size in pixels (160/32 = 5)
     reset();
 }
@@ -204,7 +204,7 @@ void Fl_Ansi_Window::newLine() {
     int height = h();
     int fontHeight = (int)(getascent()+getdescent());
 
-    curX = 0;
+    curX = 1;
     if (curY+(fontHeight*2) >= height) {
         scrollrect(0, 0, w(), height, 0, -fontHeight, eraseBottomLine, this);
         // TODO: patched is_visible() in fl_scroll_area.cxx 
@@ -440,7 +440,7 @@ void Fl_Ansi_Window::print(const char *str) {
             newLine();
             break;
         case '\r': // return
-            curX = 0;
+            curX = 1;
             setcolor(color());
             fillrect(0, curY, w(), fontHeight);
             break;

@@ -13,7 +13,8 @@ SOURCE =                                        \
 	Fl_Ansi_Window.cpp                          \
 	MainWindow.cpp                              \
 	EditorWindow.cpp                            \
-    dev_fltk.cpp
+    dev_fltk.cpp                                \
+    blib_fltk_ui.c                              \
 
 COMMON=                                         \
     bc.c                                        \
@@ -23,7 +24,6 @@ COMMON=                                         \
     blib_graph.c                                \
     blib_math.c                                 \
     blib_sound.c                                \
-    blib_ui.c                                   \
     brun.c                                      \
     ceval.c                                     \
     circle.c                                    \
@@ -79,15 +79,12 @@ OBJDIR = ./objs/
 OBJS += $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(SOURCE)))) \
         $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(COMMON))))
 
-
 # Make dependencies, excluding standard include directories
 depend:
 	$(MAKEDEPEND) -fmakedepend -I.. -I. -I/usr/include `fltk-config --cxxflags` $(SOURCE)
 
 # Include automatically generated dependencies
 include makedepend
-
-dev_fltk.o: Fl_Ansi_Window.h
 
 ##.SILENT:
 
