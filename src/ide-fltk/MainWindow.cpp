@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.28 2005-01-17 19:55:36 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.29 2005-01-19 03:08:23 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -105,11 +105,19 @@ void browseFile(const char* url) {
 #if defined(WIN32) 
     ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
 #else  
-    // TODO: find a functional equivalent in linux ...
-    // BROWSER="netscape -raise -remote \"openURL(%s,new-window)\":lynx"
-    // http://www.catb.org/~esr/BROWSER/
-    //  system("/path/to/your/browser URL"); man execl
-    // http://forum.java.sun.com/thread.jsp?forum=422&thread=497079
+    if (fork() == 0) {
+        // Close on exec of file descriptor
+        //fcntl(fd,F_SETFD,TRUE);
+        fclose(0);
+        fclose(1);
+        fclose(2);
+        
+        // Start command and pass it the filename
+        execlp("htmlview", "htmlview", url, NULL);
+        
+        // Just in case we failed to execute the command
+        ::exit(0);
+    }
 #endif
 }
 
