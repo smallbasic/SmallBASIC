@@ -88,6 +88,8 @@ depend:
 # Include automatically generated dependencies
 include makedepend
 
+dev_fltk.o: Fl_Ansi_Window.h
+
 ##.SILENT:
 
 sbfui.cxx: sbfui.fl

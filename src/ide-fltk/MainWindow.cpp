@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.7 2004-11-15 22:48:09 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.8 2004-11-16 23:04:50 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -44,14 +44,11 @@ enum ExecState {
 extern char filename[]; // in EditorWindow
 
 void quit_cb(Widget*, void* v) {
-    trace("quit_cb %d", runMode);
-    if (runMode == edit_state) {
+    if (runMode == edit_state || runMode == quit_state) {
         if (check_save(true)) {
             exit(0);
         }
-    } else {
-        // close after executor returns
-        // TODO: confirm close running program
+    } else if (ask("Close running program?")) {
         dev_pushkey(SB_KEY_BREAK);
         runMode = quit_state;
     }
@@ -66,16 +63,18 @@ void break_cb(Widget*, void* v) {
 }
 
 void run_cb(Widget*, void*) {
-    if (check_save(false) && filename[0]) {
+    if (runMode == edit_state && check_save(false) && filename[0]) {
+        wnd->editWnd->deactivate();
         wnd->tabGroup->selected_child(wnd->outputGroup);
-        //wnd->out->take_focus();
-        focus(wnd->out);
         wnd->out->clearScreen();
+        wnd->out->set_visible();
+        wnd->out->activate();
         runMode = run_state;
         sbasic_main(filename);
         if (runMode == quit_state) {
             exit(0);
         }
+        wnd->editWnd->activate();
         runMode = edit_state;
     }
 }
@@ -155,14 +154,15 @@ int main(int argc, char **argv) {
     return run();
 }
 
-struct EditGroup : public Group {
-    EditGroup(int x, int y, int w, int h, const char * s) : 
+struct TabPage : public Group {
+    TabPage(int x, int y, int w, int h, const char * s) : 
         Group(x, y, w, h, s) {}
-        EditorWindow* editWnd;
         int handle(int event) {
             // TextDisplay::layout() does nothing when not visible
             if (event == SHOW) {
-                editWnd->layout();
+                Widget* w = child(0);
+                w->layout();
+                w->take_focus();
             }
             return Group::handle(event);
         }
@@ -210,11 +210,10 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     tabGroup = new TabGroup(0, mnuHeight, w, groupHeight);
     tabGroup->begin();
 
-    EditGroup* eg = new EditGroup(0, 0, w, groupHeight-tabHeight, "Editor");
+    TabPage* eg = new TabPage(0, 0, w, groupHeight-tabHeight, "Editor");
     editGroup = eg;
     editGroup->begin();
     editWnd = new EditorWindow(2, 2, w-4, groupHeight-tabHeight-4);
-    eg->editWnd = editWnd;
     m->user_data(editWnd); // the EditorWindow is callback user data
 
     if (filename[0] != 0) {
@@ -230,7 +229,9 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     // TODO: add help control
     helpGroup->end();
 
-    outputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Output");
+    TabPage* og = new TabPage(0, 0, w, groupHeight-tabHeight, "Output");
+    outputGroup = og;
+    outputGroup->hide();
     outputGroup->begin();
     out = new Fl_Ansi_Window(2, 2, w-4, groupHeight-tabHeight-4);
     outputGroup->resizable(out);

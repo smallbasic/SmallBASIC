@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.6 2004-11-11 22:31:33 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.7 2004-11-16 23:04:49 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -26,6 +26,7 @@ class Fl_Ansi_Window : public Widget {
     // inherited methods
     void draw();
     void layout();
+    int handle(int e);
 
     // public api
     void clearScreen();
@@ -47,9 +48,11 @@ class Fl_Ansi_Window : public Widget {
     }
     int getX() {return curX;}
     int getY() {return curY;}
+    void setPixel(int x, int y, int c);
+    int getPixel(int x, int y);
     void setXY(int x, int y) {curX=x; curY=y;}
-    int textWidth(const char* s) {return (int)getwidth(s);}
-    int textHeight(void) {return (int)(getascent()+getdescent());}
+    int textWidth(const char* s);
+    int textHeight(void);
     int getWidth()  {return w();}
     int getHeight() {return h();}
 

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.7 2004-11-11 22:31:33 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.8 2004-11-16 23:04:48 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -16,14 +16,20 @@
 #include <fltk/ask.H>
 #include <fltk/layout.h>
 #include <fltk/Style.h>
+#include <fltk/events.h>
 
 #include "Fl_Ansi_Window.h"
+
+#if defined(WIN32) 
+#include <fltk/win32.h>
+extern HDC fl_bitmap_dc;
+#endif
 
 using namespace fltk;
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-// #define UNIT_TEST 1
+//#define UNIT_TEST 1
 
 #define begin_offscreen()   \
   initOffscreen();          \
@@ -31,6 +37,26 @@ using namespace fltk;
   setfont(labelfont(), labelsize());
 
 #define end_offscreen() redraw();
+
+// see: http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
+Color colors[] = {
+    BLACK,              // 0 black
+    color(0,0,128),     // 1 blue
+    color(0,128,0),     // 2 green
+    color(0,128,128),   // 3 cyan
+    color(128,0,0),     // 4 red
+    color(128,0,128),   // 5 magenta
+    color(128,128,0),   // 6 yellow
+    color(192,192,192), // 7 white
+    color(128,128,128), // 8 gray
+    color(0,0,255),     // 9 light blue
+    color(0,255,0),     // 10 light green
+    color(0,255,255),   // 11 light cyan
+    color(255,0,0),     // 12 light red
+    color(255,0,255),   // 13 light magenta
+    color(255,255,0),   // 14 light yellow
+    WHITE               // 15 bright white
+};
 
 Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) : 
     Widget(x, y, w, h, 0) {
@@ -63,7 +89,6 @@ void Fl_Ansi_Window::initOffscreen() {
         setcolor(color());
         fillrect(0, 0, w(), h());
         setfont(labelfont(), labelsize());
-        curY = textHeight();
     }
 }
 
@@ -137,6 +162,42 @@ void Fl_Ansi_Window::drawBGRect(int x, int y, int width, int height) {
     end_offscreen();
 }
 
+void Fl_Ansi_Window::setPixel(int x, int y, int c) {
+#if defined(WIN32) 
+    begin_offscreen();
+    ::SetPixel(fl_bitmap_dc, x,y, c);
+    end_offscreen();
+#else
+    // TODO: fix linux set/get pixel
+    // XDrawPoint(x_disp, x_win, x_gc, x, y);
+#endif
+}
+
+int Fl_Ansi_Window::getPixel(int x, int y) {
+#if defined(WIN32) 
+    begin_offscreen();
+    COLORREF c = ::GetPixel(fl_bitmap_dc, x, y);
+    end_offscreen();
+    return c;
+#else
+    return 0;
+#endif
+}
+
+int Fl_Ansi_Window::textWidth(const char* s) {
+    begin_offscreen();
+    int w = (int)getwidth(s);
+    end_offscreen();
+    return w;
+}
+
+int Fl_Ansi_Window::textHeight(void) {
+    begin_offscreen();
+    int h = (int)(getascent()+getdescent());
+    end_offscreen();
+    return h;
+}
+
 void Fl_Ansi_Window::clearScreen() {
     init();
     begin_offscreen();
@@ -161,10 +222,10 @@ void eraseBottomLine(void* data, int x, int y, int w, int h) {
 
 void Fl_Ansi_Window::newLine() {
     int height = h();
-    int fontHeight = textHeight();
+    int fontHeight = (int)(getascent()+getdescent());
 
     curX = 0;
-    if (curY+fontHeight+getdescent() >= height) {
+    if (curY+(fontHeight*2) >= height) {
         scrollrect(0, 0, w(), height, 0, -fontHeight, eraseBottomLine, this);
         // TODO: patched is_visible() in fl_scroll_area.cxx 
         // commented out OffsetRgn()
@@ -183,35 +244,14 @@ int Fl_Ansi_Window::calcTab(int x) const {
 }
 
 Color Fl_Ansi_Window::ansiToFltk(long color) const {
-    switch (color) {
-    case 0: return BLACK;
-    case 1: return RED;
-    case 2: return GREEN;
-    case 3: return YELLOW;
-    case 4: return BLUE;
-    case 5: return MAGENTA;
-    case 6: return CYAN;
-    case 7: return RED;
-    case 8: return GREEN;
-    case 9: return YELLOW;
-    case 10: return BLUE;
-    case 11: return MAGENTA;
-    case 12: return CYAN;
-        // TODO: fix 13,14
-        // TODO: use color(0,0,128) etc
-    case 13: return CYAN;
-    case 14: return CYAN;
-    default : return WHITE;
-    }
+    return color > -1 && color < 16 ? colors[color] : BLACK;
 }
 
 bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
     switch (c) {
-    case 'K': {// \e[K - clear to eol
-        int fontHeight = textHeight();
+    case 'K': // \e[K - clear to eol
         setcolor(color());
-        fillrect(curX, (int)(curY-fontHeight+getdescent()), w()-curX, fontHeight);
-        }
+        fillrect(curX, curY, w()-curX, (int)(getascent()+getdescent()));
         break;
     case 'G': // move to column
         curX = escValue;
@@ -244,8 +284,14 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
         case 4: // set underline on
             underline = true;
             break;
+        case 5: // set blink on
+            break;
+        case 6: // rapid blink on
+            break;
         case 7: // reverse video on
             invert = true;
+            break;
+        case 8: // conceal on
             break;
         case 21: // set bold off
             bold = false;
@@ -269,7 +315,7 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
         case 32: // set green fg
             labelcolor(ansiToFltk(2));
             return true;
-        case 33: // set brown fg
+        case 33: // set yellow fg
             labelcolor(ansiToFltk(6));
             return true;
         case 34: // set blue fg
@@ -293,7 +339,7 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
         case 42: // set green bg
             color(ansiToFltk(2));
             return true;
-        case 43: // set brown bg
+        case 43: // set yellow bg
             color(ansiToFltk(6));
             return true;
         case 44: // set blue bg
@@ -306,8 +352,12 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
             color(ansiToFltk(3));
             return true;
         case 47: // set white bg
-            color(ansiToFltk(7));
+            color(ansiToFltk(15));
             return true;
+        case 48: // subscript on
+            break;
+        case 49: // superscript
+            break;
         };                        
     }
     return false;
@@ -361,8 +411,10 @@ void Fl_Ansi_Window::print(const char *str) {
     }
 
     begin_offscreen();
-    int fontHeight = textHeight();
+    int ascent = (int)getascent();
+    int fontHeight = (int)(ascent+getdescent());
     unsigned char *p = (unsigned char*)str;
+
     while (*p) {
         switch (*p) {
         case '\a':   // beep
@@ -392,7 +444,7 @@ void Fl_Ansi_Window::print(const char *str) {
         case '\r': // return
             curX = 0;
             setcolor(color());
-            fillrect(0, (int)(curY-fontHeight+getdescent()), w(), fontHeight);
+            fillrect(0, curY, w(), fontHeight);
             break;
         default:
             int numChars = 1; // print minimum of one character
@@ -416,17 +468,16 @@ void Fl_Ansi_Window::print(const char *str) {
             
             if (invert) {
                 setcolor(labelcolor());
-                fillrect(curX, (int)(curY-fontHeight+getdescent()), 
-                         cx, fontHeight);
+                fillrect(curX, curY, cx, fontHeight);
                 setcolor(color());
-                drawtext((const char*)p, numChars, curX, curY);
+                drawtext((const char*)p, numChars, curX, curY+ascent);
             } else {
                 setcolor(labelcolor());
-                drawtext((const char*)p, numChars, curX, curY);
+                drawtext((const char*)p, numChars, curX, curY+ascent);
             }
 
             if (underline) {
-                drawline(curX, curY+1, curX+cx, curY+1);
+                drawline(curX, curY+ascent+1, curX+cx, curY+ascent+1);
             }
             
             // advance
@@ -443,6 +494,13 @@ void Fl_Ansi_Window::print(const char *str) {
     end_offscreen();
 }
 
+int Fl_Ansi_Window::handle(int e) {
+    if (e == FOCUS) {
+        return 2;
+    }
+    return Widget::handle(e);
+}
+
 #ifdef UNIT_TEST
 #include <fltk/run.h>
 int main(int argc, char **argv) {
@@ -455,11 +513,14 @@ int main(int argc, char **argv) {
     window.end();
     window.show(argc,argv);
     check();
-    for (int i=0; i<100; i++) {
-        out.print("\033[3mitalic\033[23moff\033[4munderline\033[24moff");
-        out.print("\033[7minverse\033[27moff");
-        out.print("\033[1mbold\033[21moff");
-    }
+    out.print("1\n2\n3\n4\n5\n6\n7\n8\n");
+    out.print("1\n2\n3\n4\n5\n6 six\n7 sevent\neight");
+     out.print("what the!\rhuh\033[Kclear");
+     for (int i=0; i<100; i++) {
+         out.print("\033[3mitalic\033[23moff\033[4munderline\033[24moff");
+         out.print("\033[7minverse\033[27moff");
+         out.print("\033[1mbold\033[21moff");
+     }
     return run();
 }
 #endif

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.6 2004-11-14 22:36:29 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.7 2004-11-16 23:04:51 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -148,10 +148,11 @@ int osd_textheight(const char *str) {
 }
 
 void osd_setpixel(int x, int y) {
+    wnd->out->setPixel(x, y, dev_fgcolor);
 }
 
 long osd_getpixel(int x, int y) {
-    return 15;
+    return wnd->out->getPixel(x,y);
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
