@@ -2137,8 +2137,10 @@ int		sbasic_exec(const char *file)
 			}
 		}
 	#endif
-	return gsb_last_error;
-}
+
+    // cdw-s 22/11/2004 return as failure for compilation errors
+	return !success ? 0 : !gsb_last_error;
+} 
 
 /**
 *	this is the main routine; its work depended on opt_xxx flags
