@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.18 2005-04-06 00:39:00 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.19 2005-04-06 23:56:36 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -36,7 +36,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-#define UNIT_TEST 1
+//#define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -52,6 +52,8 @@
 #define INPUT_WIDTH 90
 #define SCROLL_SIZE 1000
 #define HSCROLL_STEP 20
+#define ELIPSE_LEN 10
+#define IMG_TEXT_BORDER 25
 
 void trace(const char *format, ...);
 Color getColor(String* s, Color def);
@@ -200,21 +202,23 @@ struct FontNode : public BaseNode {
 //--BrNode----------------------------------------------------------------------
 
 struct BrNode : public BaseNode {
-    BrNode(S16 indent=0, U16 nrows=1) {
-        this->indent = indent;
-        this->nrows = nrows;
+    BrNode(U8 premode) {
+        this->premode = premode;
     }
     
     void display(Display* out) {
-        if (indent != 0) {
-            out->indent += indent;
+        // when <pre> is active don't flow text around images
+        if (premode && out->imgY != -1) {
+            out->indent = out->imgIndent;
+            out->x = out->indent;
+            out->y = out->imgY+1;
+            out->imgY = -1;
+        } else {
+            out->newRow(1);
         }
-        out->newRow(nrows);
         out->lineHeight = (int)(getascent()+getdescent());
     }
-    
-    S16 indent;
-    U16 nrows;
+    U8 premode;
 };
 
 //--AnchorNode------------------------------------------------------------------
@@ -354,10 +358,13 @@ struct ImageNode : public BaseNode {
         w = a->getWidth(w.value);
         h = a->getHeight(h.value);
         background = false;
+        fixed = false;
     }
 
-    ImageNode(const Style* style, String* fileName, String* src) : BaseNode() {
+    ImageNode(const Style* style, String* fileName, String* src, bool fixed) : 
+        BaseNode() {
         this->style = style;
+        this->fixed = fixed;
         image = loadImage(fileName->getPath(src->toString()));
         image->measure(w.value, h.value);
         w.relative = 0;
@@ -372,18 +379,11 @@ struct ImageNode : public BaseNode {
         int iw = w.relative ? (w.value*(out->width-out->x)/100) : 
             w.value < out->width ? w.value : out->width;
         int ih = h.relative ? (h.value*(out->wnd->h()-out->y)/100) : h.value;
-        if (iw+DEFAULT_INDENT > out->width-out->x) {
-            out->newRow();
-        }
-        int x = out->x+DEFAULT_INDENT;
-        int y = out->y - (int)getascent();
-        if (out->anchor && out->anchor->pushed) {
-            x += 1;
-            y += 1;
-        }
         if (out->measure == false) {
             if (background) {
-                // tile image within x,y,tabW,tabH
+                // tile image inside rect x,y,tabW,tabH
+                int x = out->x-1;
+                int y = fixed ? 0 : out->y-(int)getascent();
                 int y1 = y;
                 int x1 = x;
                 int numHorz = out->tabW/w.value;
@@ -408,21 +408,33 @@ struct ImageNode : public BaseNode {
                     y1 += h.value;
                 }
             } else {
+                int x = out->x+DEFAULT_INDENT;
+                int y = out->y - (int)getascent();
+                if (out->anchor && out->anchor->pushed) {
+                    x += 1;
+                    y += 1;
+                }
                 image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
             }
         }
         if (background == 0) {
             out->content = true;
-            out->imgY = out->y+ih;
-            out->imgIndent = out->indent;
-            out->x += iw+DEFAULT_INDENT;
-            out->indent = out->x;
+            if (iw+IMG_TEXT_BORDER > out->width) {
+                out->x = out->indent;
+                out->y += ih;
+                out->imgY = -1;
+            } else {
+                out->imgY = out->y+ih;
+                out->imgIndent = out->indent;
+                out->indent = out->x;
+                out->x += iw+DEFAULT_INDENT;
+            }
         }
     }
     const Image* image;
     const Style* style;
     Value w,h;
-    U8 background;
+    U8 background, fixed;
 };
 
 //--TextNode--------------------------------------------------------------------
@@ -464,9 +476,8 @@ struct TextNode : public BaseNode {
             while (len > 0) {
                 lineBreak(p, len, out->width-out->x, linelen, linepx);
                 cliplen = linelen;
-                if (linepx < 0) {
+                if (linepx > out->width-out->x) {
                     // no break point - create new line if required
-                    linepx = (int)getwidth(p, linelen);
                     if (out->x != out->indent && linepx > out->width-out->x) {
                         out->newRow();
                         // anchor now starts on a new line
@@ -478,7 +489,7 @@ struct TextNode : public BaseNode {
                     }
 
                     // clip long text - leave room for elipses
-                    int cellW = out->width-out->indent-6;
+                    int cellW = out->width-out->indent-ELIPSE_LEN;
                     if (linepx > cellW) {
                         linepx = 0;
                         cliplen = 0;
@@ -624,6 +635,8 @@ struct TableNode : public BaseNode {
             // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
             sizes[index] = out->x+CELL_SPACING+CELL_SPACING+2;
         }
+        // close image flow to prevent bleeding into previous cell
+        out->imgY = -1;
     }
 
     void doEndTable(Display* out) {
@@ -1503,7 +1516,7 @@ void HelpWidget::compose() {
                 case '\n':
                     ADD_PREV_SEGMENT;
                     if (pre) {
-                        nodeList.append(new BrNode());
+                        nodeList.append(new BrNode(pre));
                     }
                     if (newline == false && text[i+1] != '<') {
                         // replace newline with single space
@@ -1582,7 +1595,7 @@ void HelpWidget::compose() {
                 } else if (0 == strnicmp(tag, "font", 4) ||
                            0 == strnicmp(tag, "h", 1)) { // </h1>
                     if (0 == strnicmp(tag, "h", 1)) {
-                        nodeList.append(new BrNode());
+                        nodeList.append(new BrNode(pre));
                         newline = true;
                         if (bold > 0) {
                             bold--;
@@ -1643,7 +1656,7 @@ void HelpWidget::compose() {
                 // process the start of the tag
                 if (0 == strnicmp(tag, "br", 2) ||
                     0 == strnicmp(tag, "p>", 2)) {
-                    nodeList.append(new BrNode());
+                    nodeList.append(new BrNode(pre));
                     newline = true;
                 } else if (0 == strnicmp(tag, "b>", 2)) {
                     bold = true;
@@ -1691,7 +1704,7 @@ void HelpWidget::compose() {
                     nodeList.append(node);
                     prop = p.getBackground();
                     if (prop != null) {
-                        node = new ImageNode(style(), &fileName, prop);
+                        node = new ImageNode(style(), &fileName, prop, false);
                         nodeList.append(node);
                     }
                 } else if (0 == strnicmp(tag, "ul>", 3) ||
@@ -1728,11 +1741,11 @@ void HelpWidget::compose() {
                     }
                     node = new FontNode(font, fontSize, color, bold, italic);
                     nodeList.append(node);
-                } else if (0 == strnicmp(tag, "h", 1)) {
+                } else if (taglen == 2 && 0 == strnicmp(tag, "h", 1)) {
                     fontSize = FONT_SIZE_H1-(tag[1]-'1'); // <h1> etc
                     node = new FontNode(font, fontSize, 0, ++bold, italic);
                     nodeList.append(node);
-                    nodeList.append(new BrNode());
+                    nodeList.append(new BrNode(pre));
                     newline = true;
                 } else if (0 == strnicmp(tag, "input ", 6)) {
                     p.removeAll();
@@ -1763,7 +1776,7 @@ void HelpWidget::compose() {
                     background = getColor(p.getBgColor(), background);
                     prop = p.getBackground();
                     if (prop != null) {
-                        node = new ImageNode(style(), &fileName, prop);
+                        node = new ImageNode(style(), &fileName, prop, true);
                         nodeList.append(node);
                     }
                 }
@@ -1910,9 +1923,9 @@ void HelpWidget::loadFile(const char *f) {
  */
 void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
     // find the end of the first word
-    int ibreak = -1;
     int i = 0;
-    int txtWidth = 0;
+    int txtWidth;
+    int ibreak = -1;
     int breakWidth = -1;
 
     while (i<slen) {
@@ -1922,20 +1935,23 @@ void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
         }
     }
 
-    // truncate if no break point found
+    // no break point found
     if (ibreak == -1) {
         linelen = slen;
-        linepx = -1;
+        linepx = (int)getwidth(s, slen);
         return;
     }
 
-    // scan forwards to find the break point
+    // find the last break-point within the available width
     txtWidth = (int)getwidth(s, i);
+    ibreak = i;
+    breakWidth = txtWidth;
+
     while (i<slen && txtWidth < width) {
         ibreak = i;
         breakWidth = txtWidth;
         while (i<slen) {
-            if (s[++i] == ' ') {
+            if (s[i++] == ' ') {
                 break;
             }
         }
@@ -1947,7 +1963,7 @@ void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
         linelen = slen;
         linepx = txtWidth;
     } else {
-        // if (breakWidth == -1) break-char > width
+        // first break-point is after boundary
         linelen = ibreak;
         linepx = breakWidth;
     }

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.36 2005-04-04 00:24:21 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.37 2005-04-06 23:56:36 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -266,7 +266,7 @@ void editor_cb(Widget* w, void* v) {
             int success = sbasic_main(buff);
             wnd->tabGroup->selected_child(wnd->editGroup);
             wnd->runStatus->label(success ? " " : "ERR");
-            wnd->editWnd->loadFile(filename, -1);
+            wnd->editWnd->loadFile(filename, -1, true);
             wnd->editWnd->position(pos);
             wnd->editWnd->take_focus();
             runMode = edit_state;
@@ -469,13 +469,19 @@ int main(int argc, char **argv) {
     check();
     switch (runMode) {
     case run_state:
-        wnd->editWnd->loadFile(runfile, -1);
+        wnd->editWnd->loadFile(runfile, -1, true);
         basicMain(runfile);
         break;
     case edit_state:
-        wnd->editWnd->loadFile(runfile, -1);
+        wnd->editWnd->loadFile(runfile, -1, true);
         break;
     default:
+        getHomeDir(buff);
+        strcat(buff, "untitled.bas");
+        if (access(buff, 0) == 0) {
+            // continue editing scratch buffer
+            wnd->editWnd->loadFile(buff, -1, false);
+        }
         setTitle(0);
         runMode = edit_state;
     }
@@ -627,6 +633,7 @@ void MainWindow::execLink(char* file) {
 
     // execute a link from the html window
     if (0 == strncasecmp(file, "http://", 7)) {
+        // TODO: move this to a separate thread
         char line[1024];
         char localFile[PATH_MAX];
         dev_file_t df;
@@ -654,11 +661,19 @@ void MainWindow::execLink(char* file) {
         sockcl_close(&df);
         fclose(fp);
 
-        // run the remote program
-        wnd->editWnd->loadFile(localFile, -1);
-        setTitle(file);
-        addHistory(file);
-        basicMain(localFile);
+        char* extn = strrchr(file, '.');
+        if (extn && 0 == strnicmp(extn, ".bas", 4)) {
+            // run the remote program
+            wnd->editWnd->loadFile(localFile, -1, false);
+            setTitle(file);
+            addHistory(file);
+            basicMain(localFile);
+        } else {
+            // try to show in help window
+            trace("load %s", localFile);
+            wnd->helpWnd->loadFile(localFile);
+            wnd->tabGroup->selected_child(wnd->helpGroup);
+        }
         return;
     }
 
@@ -680,7 +695,7 @@ void MainWindow::execLink(char* file) {
     }
 
     if (access(file, 0) == 0) {
-        wnd->editWnd->loadFile(file, -1);
+        wnd->editWnd->loadFile(file, -1, true);
         setTitle(file);
         if (execFile) {
             basicMain(file);
@@ -743,7 +758,7 @@ int MainWindow::handle(int e) {
 // see http://www.sysinternals.com/ntw2k/utilities.shtml
 // for the free DebugView program
 #include <windows.h>
-void trace(const char *format, ...) {
+extern "C" void trace(const char *format, ...) {
     char    buf[4096],*p = buf;
     va_list args;
     

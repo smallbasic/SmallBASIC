@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.14 2005-01-17 19:55:35 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.15 2005-04-06 23:56:36 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -42,7 +42,7 @@ class EditorWindow : public Group {
     void doSaveFile(const char *newfile, bool updateUI);
     void doChange(int inserted, int deleted);
     bool checkSave(bool discard);
-    void loadFile(const char *newfile, int ipos);
+    void loadFile(const char *newfile, int ipos, bool updateUI);
     void newFile();
     void openFile();
     void insertFile();

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.16 2005-04-01 00:07:08 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.17 2005-04-06 23:56:36 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -29,7 +29,7 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
-void trace(const char *format, ...);
+extern "C" void trace(const char *format, ...);
 
 struct MainWindow : public Window {
     MainWindow(int w, int h);
