@@ -325,7 +325,7 @@ var_t	*code_getvarptr_arridx(var_t *basevar_p)
 		code_skipnext();	// '('
 		array_index = getarrayidx(basevar_p);
 		if	( !prog_error )	{
-			if	( (int) array_index < basevar_p->v.a.size )	{
+			if	( (int) array_index < basevar_p->v.a.size && (int) array_index >= 0 )	{
 				var_p = (var_t*) (basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
 
 				if	( code_peek() == kwTYPE_LEVEL_END )		{

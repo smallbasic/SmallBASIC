@@ -30,6 +30,7 @@
 #pragma link "SynHighlighterGeneral"
 #pragma link "SynHighlighterMulti"
 #pragma link "SHDocVw_OCX"
+#pragma link "SynEditOptionsDialog"
 #pragma resource "*.dfm"
 
 #define	F_OK	0
@@ -526,6 +527,7 @@ __fastcall TFMain::TFMain(TComponent* Owner)
 	editor->Font->Name = s;
 	editor->Font->Size = n;
 	editor->Font->Charset = cs;
+
 	txtLog->Font->Name = s;
 	txtLog->Font->Size = n;
 	txtLog->Font->Charset = cs;
@@ -563,40 +565,46 @@ void __fastcall TFMain::OnClose(TObject *Sender, TCloseAction &Action)
 		Action = caFree;
 
 		// write default vals
-		ini = new TIniFile(ChangeFileExt(Application->ExeName, ".INI"));
-		ini->WriteString("PAD", "EF", bcb_ef);
-		ini->WriteString("PAD", "XF", bcb_xf);
-		ini->WriteInteger("PAD", "VS", bcb_vs);
-		ini->WriteInteger("PAD", "MMSound", bcb_use_mm);
-		ini->WriteInteger("PAD", "Sound", bcb_use_snd);
-		ini->WriteInteger("PAD", "Capture", bcb_capture);
-		ini->WriteInteger("PAD", "VW", bcb_vwidth);
-		ini->WriteInteger("PAD", "VH", bcb_vheight);
 
-		if	( this->WindowState == wsMaximized )
-			ini->WriteInteger("PAD", "WinMax", 1);
-		else	{
-			ini->WriteInteger("PAD", "WinLeft", this->Left);
-			ini->WriteInteger("PAD", "WinTop", this->Top);
-			ini->WriteInteger("PAD", "WinWidth", this->Width);
-			ini->WriteInteger("PAD", "WinHeight", this->Height);
-			ini->WriteInteger("PAD", "WinMax", 0);
-			}
+		try {		
+			ini = new TIniFile(ChangeFileExt(Application->ExeName, ".INI"));
+			ini->WriteString("PAD", "EF", bcb_ef);
+			ini->WriteString("PAD", "XF", bcb_xf);
+			ini->WriteInteger("PAD", "VS", bcb_vs);
+			ini->WriteInteger("PAD", "MMSound", bcb_use_mm);
+			ini->WriteInteger("PAD", "Sound", bcb_use_snd);
+			ini->WriteInteger("PAD", "Capture", bcb_capture);
+			ini->WriteInteger("PAD", "VW", bcb_vwidth);
+			ini->WriteInteger("PAD", "VH", bcb_vheight);
 
-		// last used files
-		for ( i = 0; i < 8; i ++ )	{
-			entry.printf("%d", i);
-			if	( i < lastUsedFiles->Count )	{
-				if	( FileExists(lastUsedFiles->Strings[i]) )
-					ini->WriteString("LastUsedFiles", entry, lastUsedFiles->Strings[i]);
+			if	( this->WindowState == wsMaximized )
+				ini->WriteInteger("PAD", "WinMax", 1);
+			else	{
+				ini->WriteInteger("PAD", "WinLeft", this->Left);
+				ini->WriteInteger("PAD", "WinTop", this->Top);
+				ini->WriteInteger("PAD", "WinWidth", this->Width);
+				ini->WriteInteger("PAD", "WinHeight", this->Height);
+				ini->WriteInteger("PAD", "WinMax", 0);
+				}
+
+			// last used files
+			for ( i = 0; i < 8; i ++ )	{
+				entry.printf("%d", i);
+				if	( i < lastUsedFiles->Count )	{
+					if	( FileExists(lastUsedFiles->Strings[i]) )
+						ini->WriteString("LastUsedFiles", entry, lastUsedFiles->Strings[i]);
+					else
+						ini->WriteString("LastUsedFiles", entry, "");
+					}
 				else
 					ini->WriteString("LastUsedFiles", entry, "");
 				}
-			else
-				ini->WriteString("LastUsedFiles", entry, "");
-			}
 
-		delete ini;
+			delete ini;
+			}
+		catch ( ... ) {
+			Application->MessageBox("Can't write .ini file", "Error", MB_OK);
+			}
 
 		delete lastUsedFiles;
 		}
@@ -613,9 +621,9 @@ void __fastcall TFMain::Quit1Click(TObject *Sender)
 void __fastcall TFMain::Load1Click(TObject *Sender)
 {
 	TIniFile *ini;
-    String	 dir, s;
-    char	*p;
-    int		r;
+	String	 dir, s;
+	char	*p;
+	int		r;
 
 	if	( editor->Modified )	{
 		String	s;
@@ -642,9 +650,12 @@ void __fastcall TFMain::Load1Click(TObject *Sender)
 		p = strrchr(bcb_srcfile, '\\');
 		if	( p )	{
 			*p = '\0';
-			ini = new TIniFile(ChangeFileExt(Application->ExeName, ".INI"));
-			ini->WriteString("PAD", "LoadDir", bcb_srcfile);
-			delete ini;
+			try {
+				ini = new TIniFile(ChangeFileExt(Application->ExeName, ".INI"));
+				ini->WriteString("PAD", "LoadDir", bcb_srcfile);
+				delete ini;
+				}
+			catch ( ... ) { }
 			*p = '\\';
 			}
 
@@ -1588,3 +1599,4 @@ void TFMain::CompProg(int pass, int pmin, int pmax)
 	StatBar->SimpleText = buf;
 	Application->ProcessMessages();
 }
+

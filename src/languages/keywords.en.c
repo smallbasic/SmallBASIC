@@ -98,6 +98,7 @@ struct keyword_s keyword_table[] = {
 { "OPTION",		kwOPTION },
 
 { "BG",		kwBACKG },
+{ "LOGPRINT",	kwLOGPRINT },
 
 /* for debug */
 /* by using small letters, */
@@ -433,7 +434,6 @@ struct proc_keyword_s proc_table[] = {
 { "CHMOD",		kwCHMOD },
 { "PLOT2",		kwPLOT2 },
 { "PLOT",		kwPLOT },
-{ "LOGPRINT",	kwLOGPRINT	},
 { "SWAP",		kwSWAP	},
 { "BUTTON",		kwBUTTON	},
 { "TEXT",		kwTEXT	},

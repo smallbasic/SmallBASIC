@@ -353,8 +353,8 @@ typedef unsigned int	addr_t;
 *	SB's constants
 */
 
-#define	SB_STR_VER		"0.9.4"
-#define	SB_DWORD_VER	0x904	// 00 (major) 08 (minor) 03 (patch) 
+#define	SB_STR_VER		"0.9.5"
+#define	SB_DWORD_VER	0x905	// 00 (major) 08 (minor) 03 (patch) 
 
 #if defined(OS_LIMITED)
 	#define	SB_PANICMSG_SIZE	255		
@@ -378,8 +378,8 @@ typedef unsigned int	addr_t;
 #define	SB_SOURCELINE_SIZE	511			// compiler - max. text line
 #define	SB_TEXTLINE_SIZE	255			// RTL
 #else
-#define	SB_SOURCELINE_SIZE	4095		// compiler
-#define	SB_TEXTLINE_SIZE	1023		// RTL
+#define	SB_SOURCELINE_SIZE	65536		// compiler
+#define	SB_TEXTLINE_SIZE	8192		// RTL
 #endif
 
 #define	SB_EXEC_STACK_SIZE	256			// executor's stack size

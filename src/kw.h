@@ -166,6 +166,7 @@ kwSPRINT,
 kwDO,
 kwOPTION,
 kwBACKG,
+kwLOGPRINT,
 
 kwNULL
 };
@@ -229,7 +230,6 @@ kwFLOCK,
 kwCHMOD,
 kwPLOT2,
 kwPLOT,
-kwLOGPRINT,
 kwSTKDUMP,
 kwSWAP,
 kwBUTTON,

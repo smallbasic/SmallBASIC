@@ -19,6 +19,7 @@
 #include "SynHighlighterMulti.hpp"
 #include <OleCtrls.hpp>
 #include "SHDocVw_OCX.h"
+#include "SynEditOptionsDialog.hpp"
 //---------------------------------------------------------------------------
 class TFMain : public TForm
 {

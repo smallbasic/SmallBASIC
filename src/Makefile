@@ -2,7 +2,7 @@
 #	SmallBASIC makefile for Unices, PalmOS, DOS (cross-tools), Win32 (cross-tools)
 #
 
-SBVER=0.9.4
+SBVER=0.9.5
 
 ##########################################
 #
@@ -18,8 +18,8 @@ SHOBJ      = -fPIC
 SHEXE      = -Wl,-export-dynamic
 
 #-pedantic 
-#CPPFLAGS   = -g -O2 -DUNIX_MEMMGR -DUSE_PCRE -D_UnixOS -Wall -I/usr/local/include $(PTRCHECK) $(SHOBJ)
-CPPFLAGS   = -g -D_UnixOS -DUSE_PCRE -Wall $(PTRCHECK) $(SHOBJ)
+CPPFLAGS   = -g -O2 -DUNIX_MEMMGR -DUSE_PCRE -D_UnixOS -Wall -I/usr/local/include $(PTRCHECK) $(SHOBJ)
+#CPPFLAGS   = -g -D_UnixOS -DUSE_PCRE -Wall $(PTRCHECK) $(SHOBJ)
 CFLAGS     = $(CPPFLAGS)
 ULIBS=$(SHEXE) -lm -ldl -lpthread -lncurses -lreadline -lpcre
 LIBDIR=/usr/lib

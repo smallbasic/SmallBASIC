@@ -4415,7 +4415,7 @@ int		comp_compile(const char *sb_file_name)
 
 	if	( opt_nosave )
 		bytecode_h = h_bc;	// update task's bytecode
-	else	
+	else if ( h_bc )	
 		mem_free(h_bc);
 
 	#if defined(_WinBCB)

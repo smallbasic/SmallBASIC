@@ -124,7 +124,7 @@ BEGIN
 
 	LABEL "Charset" ID 2999 6 16
 	POPUPTRIGGER "- Charset -" ID trgCHAR AT (50 16 100 AUTO) LEFTANCHOR
-	LIST "European (UTF8)" "Japanese (SJIS)" "Chinese (BIG5)" "Generic multibyte" ID lstCHAR AT (PrevLeft PrevTop 100 1) NONUSABLE VISIBLEITEMS 4
+	LIST "European (8bit)" "Japanese (SJIS)" "Chinese (BIG5)" "Generic multibyte" ID lstCHAR AT (PrevLeft PrevTop 100 1) NONUSABLE VISIBLEITEMS 4
 	POPUPLIST ID trgCHAR lstCHAR
 
 	CHECKBOX "Delete logfile at startup" ID chkDELLOG  AT(6 30 AUTO AUTO) 
@@ -413,8 +413,8 @@ END
 ALERT ID AlertCFontMB
 CONFIRMATION
 BEGIN
-    TITLE "UTF8 Fonts"
-	MESSAGE "You cannot use UTF8 fonts on multibyte PalmOS."
+    TITLE "8bit Fonts"
+	MESSAGE "You cannot use 8bit fonts on multibyte PalmOS."
 	BUTTONS "OK"
 END
 

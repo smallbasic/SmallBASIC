@@ -426,7 +426,8 @@ void	mem_free(mem_t h)
 {
 	if	( h == 0 )
 		err_memfree();
-	tmp_free((void *) h);
+	else
+		tmp_free((void *) h);
 }
 #elif defined(_PalmOS)
 void	mem_free(mem_t h)
