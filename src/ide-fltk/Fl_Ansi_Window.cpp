@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.14 2004-12-02 21:56:23 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.15 2004-12-03 19:28:57 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -16,7 +16,6 @@
 #include <fltk/Font.h>
 
 #include "Fl_Ansi_Window.h"
-#include "MainWindow.h"
 
 #if defined(WIN32) 
 #include <fltk/win32.h>

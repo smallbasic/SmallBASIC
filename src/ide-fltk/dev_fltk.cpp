@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.13 2004-12-02 21:56:23 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.14 2004-12-03 19:27:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -33,6 +33,7 @@ C_LINKAGE_BEGIN
 
 extern MainWindow *wnd;
 HelpView* helpView = 0;
+const char* anchor = 0;
 
 void closeHelp() {
     if (helpView) {
@@ -206,10 +207,19 @@ void osd_write(const char *s) {
     wnd->out->print(s);
 }
 
-static void anchor_cb(Widget* w, void* v) {
-    //char *slash = strrchr((const char*)v, '/');
-    //trace("anchor called %s", slash?slash:v);
-    closeHelp();
+void doAnchor(void*) {
+    wnd->execLink(anchor);
+    free((void*)anchor);
+    anchor = 0;
+}
+
+void anchor_cb(Widget* w, void* v) {
+    if (wnd->isEdit()) {
+        const char *slash = strrchr((const char*)v, '/');
+        anchor = strdup((const char*)(slash?slash+1:v));
+        closeHelp();
+        fltk::add_timeout(1.0, doAnchor); // post message
+    }
 }
 
 void dev_html(const char* html, const char* t, int x, int y, int w, int h) {

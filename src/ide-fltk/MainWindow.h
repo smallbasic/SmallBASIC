@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.11 2004-12-02 21:56:23 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.12 2004-12-03 19:27:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -30,8 +30,10 @@ struct MainWindow : public Window {
     int handle(int e);
     bool isBreakExec(void);
     bool isModal();
+    bool isEdit();
     void setModal(bool modal);
     void resetPen();
+    void execLink(const char* file);
 
     int penDownX;
     int penDownY;
@@ -47,7 +49,7 @@ struct MainWindow : public Window {
     TabGroup* tabGroup;
     Group* editGroup;
     Group* outputGroup;
-    Group* bmGroup;
+    Group* browseGroup;
 
     // status bar
     Widget* fileStatus;

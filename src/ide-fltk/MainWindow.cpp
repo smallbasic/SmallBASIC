@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.15 2004-12-02 21:56:23 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.16 2004-12-03 19:27:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -51,7 +51,20 @@ enum ExecState {
 } runMode = init_state;
 
 const char* runfile = 0;
+bool reload = false;
 int px,py,pw,ph;
+
+const char aboutText[] =
+    "About SmallBASIC...\n\n"
+    "Copyright (c) 2000-2004 Nicholas Christopoulos,\n"
+    "Chris Warren-Smith.\n\n"
+    "FLTK Version 0.9.6.0\n\n"
+    "http://smallbasic.sourceforge.net\n\n"
+    "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
+    "This program is free software; you can use it\n"
+    "redistribute it and/or modify it under the terms of the\n"
+    "GNU General Public License version 2 as published by\n"
+    "the Free Software Foundation.";
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
@@ -71,7 +84,7 @@ void quit_cb(Widget*, void* v) {
 }
 
 void about_cb(Widget*, void* v) {
-    message("SmallBASIC 0.9.5.3");
+    message(aboutText);
 }
 
 void break_cb(Widget*, void* v) {
@@ -114,7 +127,12 @@ void basicMain(const char* filename) {
     if (success == false && gsb_last_line) {
         wnd->editWnd->gotoLine(gsb_last_line);
         wnd->fileStatus->label(gsb_last_errmsg);
+    } else if (reload && 0 != strcmp(runfile, filename)) {
+        runMode = run_state;
+        setTitle(runfile);
+        success = sbasic_main(runfile);
     }
+
     wnd->runStatus->label(success ? " " : "ERR");
     wnd->editWnd->readonly(false);
     wnd->editWnd->redraw();
@@ -135,7 +153,7 @@ void setTitle(const char* filename) {
     char *slash;
 
     if (filename && filename[0]) {
-        wnd->fileStatus->label(filename);
+        wnd->fileStatus->copy_label(filename);
         slash = strrchr(filename, '/');
         sprintf(title, "%s - SmallBASIC", (slash?slash+1:filename));
         wnd->copy_label(title);
@@ -168,12 +186,15 @@ int arg_cb(int argc, char **argv, int &i) {
 
     switch (argv[i][1]) {
     case 'e':
-        runfile = argv[i+1];
+        runfile = strdup(argv[i+1]);
         runMode = edit_state;
         i+=2;
         return 1;
+    case 'a':
+        reload = true;
+        //fallthru
     case 'r':
-        runfile = argv[i+1];
+        runfile = strdup(argv[i+1]);
         runMode = run_state;
         i+=2;
         return 1;
@@ -213,6 +234,7 @@ int main(int argc, char **argv) {
     int i=0;
     if (args(argc, argv, i, arg_cb) < argc) {
         fatal("Options are:\n -r[un] file.bas\n"
+              " -a[uto-run] file.bas\n"
               " -e[dit] file.bas\n"
               " -m module-home\n\n%s", help);
     }
@@ -282,22 +304,22 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&File/_&Insert File...",CTRL+'i', (Callback*)EditorWindow::insert_cb);
     m->add("&File/&Save File",      CTRL+'s', (Callback*)EditorWindow::save_cb);
     m->add("&File/Save File &As...",CTRL+SHIFT+'S', (Callback*)EditorWindow::saveas_cb);
-    m->add("&File/E&xit",       CTRL+'q', (Callback*)quit_cb);
+    m->add("&File/E&xit",        CTRL+'q', (Callback*)quit_cb);
     m->add("&Edit/_&Undo",       CTRL+'z', (Callback*)EditorWindow::undo_cb);
-    m->add("&Edit/Cu&t",        CTRL+'x', (Callback*)EditorWindow::cut_cb);
-    m->add("&Edit/&Copy",       CTRL+'c', (Callback*)EditorWindow::copy_cb);
-    m->add("&Edit/&Paste",      CTRL+'v', (Callback*)EditorWindow::paste_cb);
-    m->add("&Edit/_&Delete",    0, (Callback*)EditorWindow::delete_cb);
-    m->add("&Edit/&Full Screen",0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
-    m->add("&Edit/&Turbo",      0, (Callback*)turbo_cb)->type(Item::TOGGLE);
+    m->add("&Edit/Cu&t",         CTRL+'x', (Callback*)EditorWindow::cut_cb);
+    m->add("&Edit/&Copy",        CTRL+'c', (Callback*)EditorWindow::copy_cb);
+    m->add("&Edit/&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
+    m->add("&Edit/_&Delete",     0, (Callback*)EditorWindow::delete_cb);
+    m->add("&Edit/&Full Screen", 0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
+    m->add("&Edit/&Turbo",       0, (Callback*)turbo_cb)->type(Item::TOGGLE);
     //m->add("&Edit/&Settings",   0, (Callback*)EditorWindow::settings_cb);
-    m->add("&Program/&Run",     CTRL+'r', (Callback*)run_cb);
-    m->add("&Program/&Break",   CTRL+'b', (Callback*)break_cb);
-    m->add("&Search/&Find...",  CTRL+'f', (Callback*)EditorWindow::find_cb);
-    m->add("&Search/Find A&gain",   CTRL+'g', (Callback*)EditorWindow::find2_cb);
-    m->add("&Search/&Replace...",   0,        (Callback*)EditorWindow::replace_cb);
+    m->add("&Program/&Run",      CTRL+'r', (Callback*)run_cb);
+    m->add("&Program/&Break",    CTRL+'b', (Callback*)break_cb);
+    m->add("&Search/&Find...",   CTRL+'f', (Callback*)EditorWindow::find_cb);
+    m->add("&Search/Find A&gain",CTRL+'g', (Callback*)EditorWindow::find2_cb);
+    m->add("&Search/&Replace...",0,        (Callback*)EditorWindow::replace_cb);
     m->add("&Search/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
-    m->add("&About...",             CTRL+'f', (Callback*)about_cb);
+    m->add("&Help/About...",     CTRL+'f',    (Callback*)about_cb);
 
     callback(quit_cb);
 
@@ -361,10 +383,23 @@ bool MainWindow::isModal() {
     return (runMode == modal_state);
 }
 
+bool MainWindow::isEdit() {
+    return (runMode == edit_state);
+}
+
 void MainWindow::resetPen() {
     penDownX = 0;
     penDownY = 0;
     penState = 0;
+}
+
+void MainWindow::execLink(const char* file) {
+    if (reload == false) {
+        wnd->editWnd->loadFile(file, -1);
+    } else {
+        setTitle(file);
+    }
+    basicMain(file);
 }
 
 int MainWindow::handle(int e) {

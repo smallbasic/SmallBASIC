@@ -27,6 +27,8 @@ Tasks for initial release:
   * some kind of bookmark system allowing the user to easily return
     to a favourite application. what if the bookmark program was a .bas?
   - jump to the line number of the error when compilation fails *done*
+  - autorun.bas file which launches after 
+
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
@@ -69,4 +71,4 @@ Tasks for initial release:
 
 10. Linux build
 
-$Id: README.TXT,v 1.8 2004-12-02 21:56:23 zeeb90au Exp $
+$Id: README.TXT,v 1.9 2004-12-03 19:27:47 zeeb90au Exp $
