@@ -86,7 +86,7 @@ void	cmd_window()
 //
 void	cmd_pset()
 {
-	int		color = dev_fgcolor, step1 = 0;
+	int32		color = dev_fgcolor, step1 = 0;
 	ipt_t	pt;
 
 	/* [STEP] x, y */
@@ -129,7 +129,7 @@ void	cmd_line()
 {
 	ipt_t	p1, p2;
 	byte	step = 0;
-	int		color = dev_fgcolor;
+	int32	color = dev_fgcolor;
 
 	/* [STEP] x, y */
 	if	( code_peek() == kwSTEP )	{
@@ -176,7 +176,7 @@ void	cmd_line()
 	gra_y = p2.y;
 
 	if	( color != dev_fgcolor )	{
-		int		prev_color = dev_fgcolor;
+		int32		prev_color = dev_fgcolor;
 
 		dev_setcolor(color);
 		dev_line(p1.x, p1.y, p2.x, p2.y);
@@ -192,7 +192,7 @@ void	cmd_line()
 void	cmd_rect()
 {
 	ipt_t	p1, p2;
-	int		color = dev_fgcolor;
+	int32		color = dev_fgcolor;
 	byte	fill = 0, step = 0;
 
 	/* [STEP] x, y */
@@ -264,8 +264,8 @@ void	cmd_drawpoly()
 {
 	int		i, count;
 	double	xorg = 0, yorg = 0;
-	int		prev_color = dev_fgcolor;
-	int		color = dev_fgcolor;
+	int32		prev_color = dev_fgcolor;
+	int32		color = dev_fgcolor;
 	byte	filled = 0, scalef = 0;
 	double	scale = 1.0;
 	ipt_t	*poly;
@@ -369,7 +369,7 @@ void	cmd_drawpoly()
 //
 void	cmd_circle()
 {
-	int		color = dev_fgcolor;
+	int32		color = dev_fgcolor;
 	byte	fill = 0, step = 0;
 	ipt_t	pt;
 	int		r;
@@ -415,7 +415,7 @@ void	cmd_circle()
 		}
 
 	if	( color != dev_fgcolor )	{
-		int		prev_color = dev_fgcolor;
+		int32		prev_color = dev_fgcolor;
 
 		dev_setcolor(color);
 		dev_ellipse(pt.x, pt.y, r, r, aspect, fill);
@@ -430,7 +430,7 @@ void	cmd_circle()
 //
 void	cmd_arc()
 {
-	int		color = dev_fgcolor;
+	int32		color = dev_fgcolor;
 	byte	step = 0;
 	int		r;
 	double	as, ae, aspect = 1.0;
@@ -479,7 +479,7 @@ void	cmd_arc()
 		}
 
 	if	( color != dev_fgcolor )	{
-		int		prev_color = dev_fgcolor;
+		int32		prev_color = dev_fgcolor;
 
 		dev_setcolor(color);
 		dev_arc(pt.x, pt.y, r, as, ae, aspect);
@@ -494,10 +494,10 @@ void	cmd_arc()
 //
 void	cmd_paint()
 {
-	int		prev_color = dev_fgcolor;
-	int		color = dev_fgcolor;
+	int32		prev_color = dev_fgcolor;
+	int32		color = dev_fgcolor;
 	byte	step = 0;
-	int		fc = dev_fgcolor, bc = -1;
+	int32		fc = dev_fgcolor, bc = -1;
 	byte	code;
 	ipt_t	pt;
 
@@ -560,7 +560,7 @@ void	cmd_draw()
 {
 	register int draw=1, update=1;
 	int		x, y, r;
-	int		prev_color = dev_fgcolor;
+	int32		prev_color = dev_fgcolor;
 	char	*p;
 	var_t	var;
 
@@ -766,7 +766,7 @@ void	chart_draw(int x1, int y1, int x2, int y2, double *vals, int count, double 
 	int		rx1, dx, dy, i;
 	double	vmin, vmax, lx, ly;
 	char	buf[32];
-	int		color = 0;
+	int32		color = 0;
 
 	rx1 = x1;
 
@@ -1032,8 +1032,8 @@ void	cmd_chart()
 	var_t	*var_p, *elem_p;
 	int		i, count;
 	double	*vals;
-	int		prev_fgcolor = dev_fgcolor;
-	int		prev_bgcolor = dev_bgcolor;
+	int32		prev_fgcolor = dev_fgcolor;
+	int32		prev_bgcolor = dev_bgcolor;
 
 	// parameters
 	int		chart = 0, marks = 0;

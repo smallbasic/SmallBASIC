@@ -3663,6 +3663,9 @@ int		comp_pass1(const char *section, const char *text)
 	char	pname[SB_KEYWORD_SIZE+1];
 	char	*code_line;
 	char	*new_text;
+        
+        int	len_option, len_import, len_unit, len_unit_path, len_inc;
+	int	len_sub, len_func, len_def, len_end;
 
 	code_line = tmp_alloc(SB_SOURCELINE_SIZE+1);
 	memset(comp_bc_sec, 0, SB_KEYWORD_SIZE+1);
@@ -3687,8 +3690,7 @@ int		comp_pass1(const char *section, const char *text)
 	comp_proc_level = 0;
 	*comp_bc_proc = '\0';
 
-	int	len_option, len_import, len_unit, len_unit_path, len_inc;
-	int	len_sub, len_func, len_def, len_end;
+
 
 	len_option = strlen(LCN_OPTION);
 	len_import = strlen(LCN_IMPORT_WRS);
