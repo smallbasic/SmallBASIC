@@ -12,17 +12,52 @@
 # 
 
 APPNAME = SmallBASIC
-SRCS_CPP = ebm_fs.cpp ebm_osd.cpp ebm_main.cpp AnsiWindow.cpp  \
-           ebjlib.cpp resource.cpp HTMLWindow.cpp input.cpp ebm_mem.cpp \
-           Dialog.cpp FileDlg.cpp
 
-SRCS_C = brun.c ceval.c eval.c str.c match.c \
-   panic.c blib.c bc.c blib_db.c blib_math.c \
-   var.c proc.c blib_func.c blib_sound.c  \
-   blib_graph.c circle.c ffill.c pfill.c \
-   device.c scan.c fmt.c kw.c sberr.c \
-   extlib.c g_line.c mem.c blib_ui.c 
+SRCS_CPP = \
+resource.cpp                                    \
+Browser.cpp                                     \
+ebm_fs.cpp                                      \
+ebm_main.cpp                                    \
+ebm_mem.cpp                                     \
+ebm_osd.cpp                                     \
+input.cpp
 
+SRCS_C = \
+bc.c                                            \
+blib.c                                          \
+blib_db.c                                       \
+blib_func.c                                     \
+blib_graph.c                                    \
+blib_math.c                                     \
+blib_sound.c                                    \
+blib_ui.c                                       \
+brun.c                                          \
+ceval.c                                         \
+circle.c                                        \
+decomp.c                                        \
+device.c                                        \
+eval.c                                          \
+extlib.c                                        \
+ffill.c                                         \
+fmt.c                                           \
+g_bmp.c                                         \
+g_line.c                                        \
+geom.c                                          \
+kw.c                                            \
+match.c                                         \
+mem.c                                           \
+panic.c                                         \
+pfill.c                                         \
+plot.c                                          \
+proc.c                                          \
+sberr.c                                         \
+scan.c                                          \
+str.c                                           \
+tasks.c                                         \
+units.c                                         \
+var.c
+
+EBJLIB_HOME     = /home/src/ebjlib
 HEAPSPACE       = 1024000
 MAINSTACKSPACE  = 16384
 TIMERSTACKSPACE = 4096
@@ -33,10 +68,12 @@ GUI_LANGUAGE    = GUI_Amr.pkg
 OS_BASEDIR      = ../../../os
 GUI_BASEDIR     = ../source
 ERROR           = -Werror
+DEBUG_DIRS      = ${GDBDIRS} -dir ../ -dir ${EBJLIB_HOME}
+CLEANLIST      += resource.cpp app_resource.h
+
 include ${EBOOKMAN_SDK}/ebsdk.uses
 include ${ESDK_TARGET_INC}/Makefile.GUI
-INCFLAGS       += -I../ -I.
-ZIP             = ${APPNAME}.tgz
+INCFLAGS       += -I../ -I. -I${EBJLIB_HOME}
 OBJS            = ${SRCS_CPP:%.cpp=${OBJDIR}/%.o} ${SRCS_C:%.c=${OBJDIR}/%.o} 
 
 ${OBJDIR}/%.o :: %.cpp
@@ -46,46 +83,41 @@ ${OBJDIR}/%.o :: ../%.c
 	${ESDK_GCC32_EXE} -b sneak32 -g -D_FRANKLIN_EBM -O2 -fno-defer-pop\
  -Wmissing-declarations ${INCFLAGS} -o $@ -c $<
 
-sGDB: Makefile
+resource.cpp:resource.rcp
+	rcp2ebm.sh resource.rcp -header > app_resource.h
+	rcp2ebm.sh resource.rcp -include resource.h > resource.cpp
+
+all: ${EBJLIB_HOME}/ebjlib.lib resource.cpp os
+
+debug_sa: ./lib.snk32/piezo.o
+	ar rs debug_lib.lib $<
+	rm SmallBASIC_sa.coff
+
+# To run this you need to first add the following line to libraries.link
+# LIBRARY debug_lib.lib
+# and then make clean; make debug
+debug: sa
 	@echo "#! /bin/sh" > $@.tmp
-	@echo "${ESDK_INSIGHT_EXE} ${APPNAME}_sa.coff ${GDBDIRS} -dir ../" >> $@.tmp
+	@echo "${ESDK_INSIGHT_EXE} ${APPNAME}_sa.coff ${DEBUG_DIRS}" >> $@.tmp
 	@chmod a+x $@.tmp
-	@mv $@.tmp $@
-
-lib.snk32/ebm_main.o: ebjlib.h ebm_main.h AnsiWindow.h HTMLWindow.h
-
-all: os
-
-# To run this you need to first edit lib.snk32\objects.link
-# and add the line:
-# OBJECT  ./lib.snk32/piezo
-debug: ./lib.snk32/piezo.o sa
-	./sGDB
-
-objs:${OBJS}
+	./$@.tmp
 
 sync: ${APPNAME}.seb
-	cp -p ${APPNAME}.seb /sync
-
-res:
-	rcp2ebm.sh resource.rcp -header > resource.h
-	rcp2ebm.sh resource.rcp > resource.cpp
-
-resource.cpp:resource.rcp
-	rcp2ebm.sh resource.rcp > resource.cpp
-
-sb:
-	mkdir lib.snk32
-	make -f Makefile.sb
+	/ebm/ebmsync/ebmsync -M 1 -p ${APPNAME}.seb
 
 help:
 	${EBOOKMAN_SDK}/${ARCH}/bin/binpkg.exe doc/files.pkg \
         doc/strings.txt ${APPNAME}.help
 
-backup:
-	make clean
-	touch $(ZIP)
-	rm $(ZIP)
-	tar -zcvf $(ZIP) *
-	cp $(ZIP) /mnt/floppy
+${OBJDIR}/objects.link: libraries.link
+	@echo "Processing link files..."
+	@echo "marker ram 2 _HEAP_START ${HEAPSPACE}" > $@.tmp
+	@echo "marker ram 2 _HEAP_END" >> $@.tmp
+	@for tt in $(OBJS:%.o=%) ; \
+	do \
+		echo "OBJECT " $$tt >> $@.tmp ; \
+	done
+	cat libraries.link >> $@.tmp
+	@mv $@.tmp $@
+
 

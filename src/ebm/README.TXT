@@ -1,79 +1,81 @@
-SmallBASIC
-Current version: 0.8.2b
-
-Platform:   PalmOS 3.1+
-            Unix (console, framebuffer, svgalib, sdl, X)
-            Win32 (GUI, console)
-            DOS (djgpp)
-            eBookman (2.0+)
+SmallBASIC for eBookman version 0.9.0g
 
 http://smallbasic.sourceforge.net
 
-DEVELOPERS:
---------------------------------------------------------------------------
-Nicholas Christopoulos      wired_gr@yahoo.com
-Gary A. Clark               clarkg@fireserve.net
-Bob Reiss                   reissb@usa.net
-Chris Warren-Smith          cwarrens@twpo.com.au
+BASIC for the eBookMan
 
---------------------------------------------------------------------------
-CVS FILES
+Copy .bas source files onto your machine. Load SmallBASIC and
+then click the desired .bas file; the program will be compiled 
+and executed.
 
-AnsiWindow.cpp
-AnsiWindow.h
-Dialog.cpp
-Dialog.h
-ebjlib.cpp
-ebjlib.h
-ebm.h
-ebm_fs.cpp
-ebm_main.cpp
-ebm_main.h
-ebm_mem.cpp
-ebm_osd.cpp
-FileDlg.cpp
-FileDlg.h
-Form.cpp
-Form.h
-HTMLWindow.cpp
-HTMLWindow.h
-initial.mom
-input.cpp
-libraries.link
-Makefile
-os.def
-os.link
-piezo.cpp
-resource.cpp
-resource.h
-resource.rcp
-SmallBASIC.atts
-SmallBASIC_icon.bmp
-standalone.link
+Once in a running program the following system options are available:
+  Break        - stop executing the program and return to the sb prompt.
+  Keyboard     - eBookman popup keyboard. Used while executing the
+                 input statement.
+  Turbo On/Off - Turbo On allows for faster execution at the expense 
+                 of greater battery drain.
+  Close        - Quit SmallBASIC.
 
-Note that files that are part of the EbjLib library may
-not be the latest available versions. 
+When you return to the file list, you should find a matching .sbx file 
+for the previously executed program. This contains compiled SmallBASIC
+byte-code allowing you to return to the application without re-compilation.
 
---------------------------------------------------------------------------
+Be aware that SmallBASIC for the eBookman will place a heavy demand on your
+batteries so please use re-chargables ---- REDUCE, RECYCLE AND REUSE ----
+
+Use the forum on http://smallbasic.sourceforge.net for comments or 
+suggestions. 
+
+You can also use this site for sharing your SmallBASIC programs.
+
 RELEASE HISTORY:
---------------------------------------------------------------------------
 
-2 June 2002 Release 0.8.2c
+0.9.0g - xx April 2004
+
+- Based on Nicholas' 0.9 series basic kernel
+- Implemented fancy new IDE interface incorporating the TapWrite edit function
+
+0.8.2f - 26 July 2003
+
+- Fixed display problems in the help system
+
+0.8.2e - 16 July 2003
+
+- Added selectable font support
+- Improved ANSI driver performance
+- New look file open dialog
+- Added RS232 Support. Tested with this:
+
+print "Press 'q' for exit..." 
+open "com1:57600" AS #2
+while !eof(2) 
+  ' receive 
+  if lof(2) 
+    k=input$(1000,2) 
+    print k; 
+  fi 
+  ' send 
+  k=inkey$ 
+  if k != 0 then
+     if k="q" then exit
+     print #2, k; 
+     print cat(1);k;cat(0); 
+  fi 
+wend 
+close #2
+
+0.8.2c - 2 June 2002
 
 - Added flush image escape to ansi driver \033[F. This causes imgUpdate()
   to be called.
 - Sorted file names in File Dialog
 
---------------------------------------------------------------------------
-
-25 May 2002 Release 0.8.2b
+0.8.2b - 25 May 2002
 
 - Improved "Run" dialog
 - Further improved ANSI text out performance
 
---------------------------------------------------------------------------
-
-12 May 2002 Release 0.2 (0.8.2)    [0.8.2a]
+0.8.2a - 12 May 2002 
 
 - New SB commands - BPUTC, BGETC
 - Implemented FILES command - dev_create_file_list()
@@ -102,39 +104,8 @@ RELEASE HISTORY:
 - Experimental new forms mode commands - BUTTON, TEXT and 
   DOFORM (not yet working correctly)
 
---------------------------------------------------------------------------
-26 January 2002 - Australia Day
+0.1 - 26 January 2002
 
-Release 0.1 for eBookman - By Chris Warren-Smith
-
-The first non c/c++ programming environment for the Franklin eBookman
-is finally here!
-
-This release is based on SmallBASIC 0.8.0.
-
-Synchronise .bas source files onto your machine. Load SmallBASIC and
-then choose File/List. Click the desired .bas file and the program 
-will be compiled and executed.
-
-Once in a running program the following system options are available:
-  Break        - stop executing the program and return to the sb prompt.
-  Keyboard     - eBookman popup keyboard. Used while executing the
-                 input statement.
-  Turbo On/Off - Turbo On allows for faster execution at the expense 
-                 of greater battery drain.
-  Close        - Quit SmallBASIC.
-
-When you return to the file list, you should find a matching .sbx file 
-for the previously executed program. This contains compiled SmallBASIC
-byte codes allowing you to return to the application without re-compilation.
-
-Note some of the file system verbs are not yet fully implemented. Refer to
-ebm_fs.cpp in the source release.
-
-Be aware that SmallBASIC for the eBookman will place a heavy demand on your
-batteries so please use re-chargables - reduce, recycle and reuse. 
-
-Use the forum on http://smallbasic.sourceforge.net for comments or suggestions. 
-You can also use this site for sharing your SmallBASIC programs.
+- First release
 
 

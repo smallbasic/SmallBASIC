@@ -1,3 +1,7 @@
-LIBRARY %LIBM_LIBFILE%
-LIBRARY %LIBDATABASES_LIBFILE%
-LIBRARY %LIBHEAPS_LIBFILE%
+LIBRARY /ebm/sneak32/lib/libasm.a
+LIBRARY /ebm/sneak32/lib/libm.a
+LIBRARY /home/src/ebjlib/ebjlib.lib
+
+
+
+

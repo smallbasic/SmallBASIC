@@ -1,32 +1,160 @@
-/**
- * -*- c-file-style: "java" -*-
- * SmallBASIC for eBookMan
- * Copyright(C) 2001-2002 Chris Warren-Smith. Gawler, South Australia
- * cwarrens@twpo.com.au
- *
- *                  _.-_:\
- *                 /      \
- *                 \_.--*_/
- *                       v
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- * 
- */
+// -*- c-file-style: "java" -*-
+// $Id: ebm_fs.cpp,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// This file is part of SmallBASIC
+//
+// Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
+// cwarrens@twpo.com.au
+//
+/*                  _.-_:\
+//                 /      \
+//                 \_.--*_/
+//                       v
+*/
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
 
 #define FS_MODULE
 
 #include "ebjlib.h"
-// #include "sys.h"
 #include "device.h"
+#include "sberr.h"
+#include <rs232.h>
 
 EXTERN_C_BEGIN
 
 #include "match.h"
 
 static File* ftab[OS_FILEHANDLES];
-static Properties env;
-extern int prog_error;
+
+struct ComportFile {
+    ComportFile();
+
+    int open(int handle, const char* name);
+    void close();
+    void send(byte *buffer, dword length);
+    void read(byte *buffer, dword length);
+    dword length();
+
+    int handle;
+    dword bufferLen;
+    bool eof;
+    byte buffer[256];
+} comport;
+
+ComportFile::ComportFile() {
+    handle = -2;
+    eof = true;
+    bufferLen = 0;
+    buffer[0] = 0;
+}
+
+void ComportFile::close() {
+    if (handle != -2) {
+        handle = -2;
+        eof = true;
+        bufferLen = 0;
+        RS232_Close(RS232_PORTID_0);
+    }
+}
+
+int ComportFile::open(int handle, const char* name) {
+    if (this->handle != -2) {
+        rt_raise("FS: RS232 PORT ALREADY OPEN");
+        return 0;
+    }
+        
+    RS232_BAUDRATE baud = RS232_BAUD_9600;
+    if (strlen(name) > 5) {
+        switch (atoi(name+5)) {
+        case 9600: 
+            baud = RS232_BAUD_9600;
+            break;
+        case 19200:
+            baud = RS232_BAUD_19200;
+            break;
+        case 38400:
+            baud = RS232_BAUD_38400;
+            break;
+        case 57600:
+            baud = RS232_BAUD_57600;
+            break;
+        case 67187:
+            baud = RS232_BAUD_67187_5;
+            break;
+        case 115200:
+            baud = RS232_BAUD_115200;
+            break;
+        case 230400:
+            baud = RS232_BAUD_230400;
+            break;
+        case 460800:
+            baud = RS232_BAUD_460800;
+        }
+    }
+    if (RS232_Open(RS232_PORTID_0, baud, 4096) == RS232_NO_ERROR) {
+        this->handle = handle;
+        eof = false;
+        bufferLen = 0;
+        return handle;
+    } else {
+        rt_raise("FS: RS232 PORT NOT READY");
+        return 0;
+    }
+}
+
+void ComportFile::send(byte *buffer, dword length) {
+    if (RS232_SendBytes(RS232_PORTID_0, (U8*)buffer, length) != 
+        RS232_NO_ERROR) {
+        eof = true;
+    }
+}
+
+void ComportFile::read(byte *buffer, dword length) {
+    int maxCopy = min(length, bufferLen);
+    if (bufferLen > 0) {
+        memcpy(buffer, this->buffer, maxCopy);
+        buffer[maxCopy] = 0;
+        bufferLen -= maxCopy;
+        return;
+    }
+    
+    U16 bytesRead;
+    RS232_ERRORCODE err = 
+        RS232_GetBytes(RS232_PORTID_0, (U8*)buffer, length, 
+                       &bytesRead, 5000);
+    if (err == RS232_RX_BUFF_EMPTY) {
+        buffer[0] = 0;
+        return;
+    }
+    if (err == RS232_NO_ERROR) {
+        buffer[bytesRead]= 0;
+    } else {
+        eof = true;
+    }
+}
+
+dword ComportFile::length() {
+    if (eof) {
+        return 0;
+    }
+    
+    if (bufferLen > 0) {
+        return bufferLen;
+    }
+    
+    U16 bytesRead;
+    RS232_ERRORCODE err = 
+        RS232_GetBytes(RS232_PORTID_0, (U8*)buffer, sizeof(buffer),
+                       &bytesRead, 0);
+    if (err == RS232_RX_BUFF_EMPTY) {
+        bufferLen = 0;
+    } else {
+        bufferLen = bytesRead;
+        buffer[bufferLen] = 0;
+    }
+    return bufferLen;
+}
 
 struct FileSystem {
     FileSystem() {
@@ -40,7 +168,11 @@ struct FileSystem {
 } fileSystem;
 
 File* getFile(int handle) {
-    handle--; // BASIC's handles starting from 1
+    if (handle == comport.handle) {
+        return null;
+    }
+    
+    handle--; // BASIC's handles start from 1
     if (handle < 0 || handle >= OS_FILEHANDLES)  {
         rt_raise("FS: INVALID USER HANDLE");
         return null;
@@ -50,7 +182,7 @@ File* getFile(int handle) {
 }
 
 int dev_initfs(void) {
-    env.removeAll();
+    //env.removeAll();
     // this is called in brun after we have started using 
     // the file system methods
     return 1;
@@ -62,6 +194,8 @@ void dev_closefs(void) {
             dev_fclose(i+1);
         }
     }
+
+    comport.close();
 }
 
 void dev_chdir(const char *dir) {
@@ -133,7 +267,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
         }
         list = 0;
     }
-
+    
     return list;
 }
 
@@ -144,10 +278,43 @@ void dev_destroy_file_list(char_p_t *list, int count) {
     tmp_free(list); 
 }
 
+// replacement for open() - this is used to open .bas files for
+// reading or .sbx files for writing
+int brun_fopen(const char *name, int flags) {
+    int handle = -1;
+    for (int i = OS_FILEHANDLES-1; i>-1; i--) {
+        if (ftab[i] == null) {
+            handle = i;
+            break;
+        }
+    }
+
+    if (handle == -1) {
+        return -1;
+    }
+
+    File *f = ftab[handle] = new File;
+    File::mode fileMode = File::readMode;
+    if  (flags & O_CREAT) {
+        fileMode = File::writeMode; // create
+    }
+
+    if (f->open(name, fileMode)) {
+        return handle + 1;
+    } else {
+        return -1;
+    }
+
+}
+
 int dev_fopen(int handle, const char *name, int flags) {
+    if (strncmpi(name, "com1:", 5) == 0) {
+        return comport.open(handle, name);
+    }
+
     if (handle == -1) {
         // open() semantics
-        for (int i = 0; i<OS_FILEHANDLES; i++) {
+        for (int i = OS_FILEHANDLES-1; i>-1; i--) {
             if (ftab[i] == null) {
                 handle = i;
                 break;
@@ -166,7 +333,7 @@ int dev_fopen(int handle, const char *name, int flags) {
     }
     File *f = ftab[handle] = new File;
     File::mode fileMode = File::readMode;
-    switch(flags) {
+    switch (flags) {
     case DEV_FILE_OUTPUT:
         fileMode = File::writeMode; // create
         break;
@@ -183,6 +350,10 @@ int dev_fopen(int handle, const char *name, int flags) {
 }
 
 int dev_fclose(int handle) {
+    if (handle == comport.handle) {
+        comport.close();
+        return 1;
+    }
     File *f = getFile(handle);
     if (f == null) {
         return 0;
@@ -193,6 +364,15 @@ int dev_fclose(int handle) {
 }
 
 int dev_fwrite(int handle, byte *buffer, dword length) {
+    if (length == 0) {
+        return 0;
+    }
+    
+    if (handle == comport.handle) {
+        comport.send(buffer, length);
+        return 0;
+    }
+
     File *f = getFile(handle);
     if (f == null || f->write(buffer, length) == false) {
         rt_raise("FS: FAILED TO UPDATE FILE");
@@ -201,6 +381,11 @@ int dev_fwrite(int handle, byte *buffer, dword length) {
 }
 
 int dev_fread(int handle, byte *buffer, dword length) {
+    if (handle == comport.handle) {
+        comport.read(buffer, length);
+        return 0;
+    }
+
     File *f = getFile(handle);
     if (f == null || f->read(buffer, length) == false) {
         rt_raise("FS: FAILED TO READ FILE");
@@ -217,6 +402,10 @@ void* dev_get_record(int handle, int index) {
 }
 
 int dev_feof(int handle) {
+    if (handle == comport.handle) {
+        return comport.eof;
+    }
+
     File *f = getFile(handle);
     if (f == null) {
         return 1;
@@ -225,11 +414,47 @@ int dev_feof(int handle) {
 }
 
 dword dev_flength(int handle) {
+    if (handle == comport.handle) {
+        return comport.length();
+    }
+
     File *f = getFile(handle);
     if (f == null) {
         return 0;
     }
-    return f->getLength();
+    return f->length();
+}
+
+
+dword dev_lseek(int handle, dword offset, int whence) {
+    File *f = getFile(handle);
+    if (f == null) {
+        return 0;
+    }
+
+    dword pos = 0;
+    switch (whence) {
+    case SEEK_SET:
+        // set file offset to offset bytes
+        pos = offset;
+        break;
+
+    case SEEK_CUR:
+        // set file offset to current plus offset
+        pos = f->ftell() + offset;        
+        break;
+
+    case SEEK_END:
+        // set file offset to EOF plus offset
+        pos = f->length() + offset;
+        break;
+    }
+
+    // set file offset to offset
+    if (f->seek(pos) == false) {
+        return 0;
+    }
+    return f->ftell();
 }
 
 dword dev_fseek(int handle, dword offset) {
@@ -237,13 +462,20 @@ dword dev_fseek(int handle, dword offset) {
     if (f == null) {
         return 0;
     }
-    return (f->seek(offset));
+    if (f->seek(offset) == false) {
+        return 0;
+    }
+    return f->ftell();
 }
 
 /** 
  * Returns zero to indicate file is NOT already open 
  */
 int dev_fstatus(int handle) {
+    if (handle == comport.handle) {
+        return 1;
+    }
+
     return (getFile(handle) == null ? 0 : 1);
 }
 
@@ -259,7 +491,7 @@ int dev_stat(const char *path, struct stat *buf) {
     memset(buf, 0, sizeof(struct stat));
     File f;
     f.open(path);
-    buf->st_size = f.getLength();
+    buf->st_size = f.length();
     return 0;
 }
 
@@ -349,32 +581,6 @@ int dev_freefilehandle() {
     return -1;
 }
 
-int putenv(const char *s) {
-    Properties p;
-    p.load(s);
-    String* key = p.getKey(0);
-    if (key == null) {
-        return 0;
-    }
-
-    String* value = env.get(key->toString());
-    if (value != null) {
-        // property already exists
-        String* newValue = p.get(key->toString());
-        value->empty();
-        value->append(newValue->toString());
-    } else {
-        // new property
-        env.load(s);
-    }
-    return 1;
-}
-
-char* getenv(const char *s) {
-    String* str = env.get(s);
-    return (str ? (char*)str->toString() : null);
-}
-
 char* getcwd(char *s, size_t i) {
     return 0;
 }
@@ -399,5 +605,6 @@ FILE *popen(const char *command, const char *mode) {
 int pclose(FILE *stream) {
     return 0;
 }
+
 
 EXTERN_C_END

@@ -1,19 +1,32 @@
+// -*- c-file-style: "java" -*-
+// $Id: ebm_main.h,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// This file is part of SmallBASIC
+//
+// Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
+// cwarrens@twpo.com.au
+//
+/*                  _.-_:\
+//                 /      \
+//                 \_.--*_/
+//                       v
+*/
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+// 
+
 #ifndef EBM_MAIN_HH
 #define EBM_MAIN_HH
 
 #include <gui.h>
-#include <pkg.h>
 #include "AnsiWindow.h"
 
 struct SBWindow : public AnsiWindow {
     SBWindow();
-    ~SBWindow() {}
+    ~SBWindow();
     
-    bool wasBreakEv(void) {return runState==rsBreak;}
-    bool isTurbo(void) {return bIsTurbo;}
-    bool isMenuActive(void) {return menuActive;}
-    bool isRunning(void) {return runState==rsBrun;}
-    bool isInShell(void) {return runState==rsShell;}
+    bool wasBreakEv(void)   { return isBreak; }
+    bool isTurboMode(void)  { return isTurbo; }
+    bool isMenuActive(void) { return menuActive; }
 
     void run(const char* file);
     void doShell();
@@ -36,21 +49,15 @@ struct SBWindow : public AnsiWindow {
     S16 penState;
     bool penDown;
     bool menuActive;
+    S32 MsgHandler(MSG_TYPE type, CViewable *from, S32 data);
 
     private:
-    CMenuBar *runMenu;
-    CMenuBar *shellMenu;
-    bool bIsTurbo;
-    bool bGenExe;
-    const PKG *pkg;
-    enum {rsIdle, rsShell, rsShellCmd, 
-          rsBrun, rsBreak, rsSelFile, rsAbout} runState;
+    bool isTurbo;
+    bool isBreak;
+    CMenu *menu;
 
-    S32 MsgHandler(MSG_TYPE type, CViewable *from, S32 data);
     void doKey(S32 key);
-    void doAbout();
     void doAboutBasFile();
-    void doHelp();
     void doKeyboard();
     void doList();
     void sendKeys(const char* s);

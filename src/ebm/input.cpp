@@ -1,24 +1,120 @@
-/**
- * -*- c-file-style: "java" -*-
- * SmallBASIC for eBookMan
- * Copyright(C) 2001-2002 Chris Warren-Smith. Gawler, South Australia
- * cwarrens@twpo.com.au
- *
- *                  _.-_:\
- *                 /      \
- *                 \_.--*_/
- *                       v
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- * 
- */
+// -*- c-file-style: "java" -*-
+// $Id: input.cpp,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// This file is part of SmallBASIC
+//
+// Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
+// cwarrens@twpo.com.au
+//
+/*                  _.-_:\
+//                 /      \
+//                 \_.--*_/
+//                       v
+*/
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+// 
 
+#include <ebjlib.h>
 #include "sys.h"
 #include "device.h"
 #include "smbas.h"
+#include "ebm_main.h"
+
+#include "resource.h"
+#include <FontOptions.h>
+#include <HTMLWindow.h>
 
 EXTERN_C_BEGIN
+
+static Properties env;
+extern SBWindow out; // in ebm_main
+
+int putenv(const char *s) {
+    Properties p;
+    p.load(s);
+    String* key = p.getKey(0);
+    if (key == null) {
+        return 0;
+    }
+
+    String* value = env.get(key->toString());
+    if (value != null) {
+        // property already exists
+        String* newValue = p.get(key->toString());
+        value->empty();
+        value->append(newValue->toString());
+    } else {
+        // new property
+        env.load(s);
+    }
+    return 1;
+}
+
+char* getenv(const char *s) {
+    String* str = env.get(s);
+    return (str ? (char*)str->toString() : null);
+}
+
+struct InputHTMLWindow : public HTMLWindow {
+    InputHTMLWindow(const char* s, const char* title, RECT rc) :
+        HTMLWindow(s, title, rc) {
+        menu = createMenu(this, SB_RUN_WND);
+    }
+    InputHTMLWindow(const char* s, const char* title, 
+                    S16 x, S16 y, U16 w, U16 h) :
+        HTMLWindow(s, title, x, y, w, h) {
+        menu = createMenu(this, SB_RUN_WND);
+    }
+    void Close();
+    CMenu* menu;
+    S32 MsgHandler(MSG_TYPE type, CViewable *from, S32 data);
+};
+
+S32 InputHTMLWindow::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
+    switch (type) {
+    case MSG_KEY:
+        if (data == K_MENU) {
+            menu->Show();
+            return 1;
+        }
+        break;
+
+    case MSG_MENU_SELECT:
+        if (data == -1) {
+            return 1;
+        }
+
+        switch ((U16)data) {
+        case mnuBreak:
+            out.MsgHandler(type, from, data);
+            Close();
+            break;
+        }
+        return 1;
+
+    default:
+        break;
+    }
+
+    return HTMLWindow::MsgHandler(type, from, data);
+}
+
+void InputHTMLWindow::Close() {
+    htmlView->getInputProperties(env);    
+    HTMLWindow::Close();
+}
+
+void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
+    InputHTMLWindow* wnd;
+    if (x == -1 || y == -1 || w == -1 || h == -1) {
+        wnd = new InputHTMLWindow(html, title, HTMLWindow::popupRect());
+    } else {
+        wnd = new InputHTMLWindow(html, title, x,y,w,h);
+    }
+    out.saveScreen();
+    GUI_EventLoop(wnd); 
+    out.restoreScreen();
+}
 
 /**
  * gets a string (INPUT)

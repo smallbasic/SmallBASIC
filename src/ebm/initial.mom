@@ -5,11 +5,19 @@ object  Franklin  _jingles piezo  _jingles.dat
 sobject Franklin  _alarms  timer  _alarms.dat
 sobject Franklin  _SysSet_ dat    _settings.dat
 
-object Developer test bas test.bas
-object Developer README TXT README.TXT
-object Developer test sbx test.sbx
-object Developer test txt test.txt
-object Developer SmallBASIC help SmallBASIC.help
-object Developer SmallBASIC fxe SmallBASIC.fxe
-object Developer SmallBASIC cmd SmallBASIC.cmd
-object Developer SmallBASIC ini SmallBASIC.ini
+object sim test bas test.bas
+object sim README TXT README.TXT
+object sim test sbx test.sbx
+object sim test.bas sbx test.bas.sbx
+object sim test txt test.txt
+object sim a bas a.bas
+object sim z bas z.bas
+object sim a sbx a.sbx
+object sim z sbx z.sbx
+
+object sim SmallBASIC help SmallBASIC.help
+object sim SmallBASIC fxe SmallBASIC.fxe
+object sim SmallBASIC sbx SmallBASIC.sbx
+object sim _cmd bas _cmd.bas
+object sim _cmd sbx _cmd.sbx
+object sim SmallBASIC ini SmallBASIC.ini
