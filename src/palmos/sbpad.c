@@ -2555,7 +2555,6 @@ Boolean		OutFormHandleEventSEG(EventPtr e)
 			dev_print("\033[4mPlease, wait...\n\033[0m\n");
 			}
 
-//		brun(cur_file_name, 1);
 		sbasic_main(cur_file_name);
 		handled = true;
 		break;
@@ -2583,7 +2582,6 @@ Boolean		OutFormHandleEventSEG(EventPtr e)
 
 		switch(e->data.menu.itemID) {
 		case	mnuRun:
-//			brun(cur_file_name, 1);
 			sbasic_main(cur_file_name);
 			handled = true;
 			break;
@@ -2594,23 +2592,20 @@ Boolean		OutFormHandleEventSEG(EventPtr e)
 			if	( !auto_run )	
 				break;
 			else	{
-				if	( (prog_error > 0) || comp_error )	
+				if	( gsb_last_error > 0 )	
 					break;
 				}
 
 			// else continue with 'mnuClose'
 		case	mnuClose:
-			if	( (prog_error > 0) || comp_error )	{
+			if	( gsb_last_error > 0 )	{
 				//
 				//	normal or script, there is an error so jump to editor
 				//
 				auto_run = 0;
 				opt_quite = 0;
 
-				if	( comp_error )
-					last_err_doc_line = comp_line;
-				else
-					last_err_doc_line = prog_line;
+				last_err_doc_line = gsb_last_line;
 
 				FrmGotoForm(ViewForm);
 				}

@@ -1607,212 +1607,6 @@ int		brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
 	return tid;
 }
 
-/*
-*	compile
-*
-*	@param file the source file
-*	@return non-zero on success
-int		old_load_and_compile(char *file)
-{
-#if defined(_FRANKLIN_EBM)
-	// --- EBM --------------------------------------------------
-	{
-
-    int saveExe = !opt_nosave;
-    int isExe = (0 != strstr(fileName, ".sbx"));
-    nocomp = isExe;
-    bytecode_fp = 0;
-
-	if	( !nocomp )	{
-		bc_init();
-
-		//	compile - pass1
-		bc_load(fileName);
-
-		// compile - pass2 & binary
-		bytecode_h = 0;
-		if	( !bc_get_error() )	{
-			bc_pass2();
-			if	( !bc_get_error() )	{
-				bc_check_labels();
-				if	( !bc_get_error() )	
-					bytecode_h = bc_createbin();
-				}
-			}
-		bc_close();
-
-		// run
-		if	( bytecode_h )	{
-            if (saveExe) {
-                char *p = strrchr(fileName, '.');
-                if (p) *p = 0;
-                strcat(fileName, ".sbx");
-                bytecode_fp = dev_fopen(-1,  fileName, DEV_FILE_OUTPUT);
-                dev_fwrite(bytecode_fp, bytecode_h, MemHandleSize(bytecode_h));
-                dev_fseek(bytecode_fp, 0);
-                mem_unlock(bytecode_h);
-                mem_free(bytecode_h);
-                bytecode_h = dev_get_record(bytecode_fp, 0);
-            }
-
-			brun_init(bytecode_h);
-			}
-		else
-			prog_error = -32;
-		}
-	else	{
-		// restart
-        bytecode_fp = dev_fopen(-1,  fileName, DEV_FILE_INPUT);
-        bytecode_h = dev_get_record(bytecode_fp, 0);
-        brun_init(bytecode_h);
-		}
-
-	}
-#elif defined(_PalmOS)
-	{
-	// --- PalmOS -------------------------------------------------- 
-
-	DmOpenRef	fp;
-	LocalID		lidbin, lidbas;
-	word		recIndex;
-	char		*exename;		// executable filename
-	bc_head_t	*bc;
-	int			comp_rq = 0;	// compilation required flag
-	UInt32		tbas, tbin;
-
-	exename = tmp_strdup(fileName);
-	chgfilename(exename, fileName, NULL, NULL, ".sbx", NULL);	// change extention
-	bytecode_h = 0;
-
-	// load source or executable
-	lidbas = DmFindDatabase(0, fileName);
-	lidbin = DmFindDatabase(0, exename);
-
-	if	( lidbin && nocomp )	{		// if there is an executable and recompile it is not suggested
-		// check file-dates --- source file
-		tbas = tbin = 0L;
-		if	( lidbas )	
-			DmDatabaseInfo(0, lidbas, NULL, NULL, NULL, NULL, &tbas, NULL, NULL, NULL, NULL, NULL, NULL);
-
-		// check file-dates --- binary file
-		DmDatabaseInfo(0, lidbin, NULL, NULL, NULL, NULL, &tbin, NULL, NULL, NULL, NULL, NULL, NULL);
-
-		// check file-dates
-		nocomp = (tbin >= tbas);
-
-		if	( nocomp )	{
-			fp = DmOpenDatabase(0, lidbin, dmModeReadWrite);
-			recIndex = 0;
-
-			// globals
-			bytecode_fp = fp;
-			bytecode_recidx = recIndex;
-			bytecode_h = DmGetRecord(bytecode_fp, bytecode_recidx);
-
-			bc = (bc_head_t *) mem_lock(bytecode_h);
-			comp_rq = (bc->sbver != SB_DWORD_VER);		// if the keyword codes are differrent
-														// (it was created by older version) it must rebuild
-			mem_unlock(bytecode_h);
-			if	( comp_rq )	{
-				inf_comprq_dv();
-				DmReleaseRecord(bytecode_fp, bytecode_recidx, 1);
-				DmCloseDatabase(bytecode_fp);
-				}
-			}
-		else	{
-			comp_rq = 1;								// compile it
-			inf_comprq_dt();
-			}
-		}
-	else	{
-		comp_rq = 1;								// compile it
-		inf_comprq_prq();
-		}
-
-	// compile
-	if	( comp_rq )	{	// it must compiled
-		bc_init();
-
-		// compile - load & pass1
-		bc_load(fileName);
-
-		// compile - pass2 & binary
-		if	( !bc_get_error() )	{
-			bc_pass2();	// pass2
-			if	( !bc_get_error() )	{
-				bc_check_labels();	// 
-				if	( !bc_get_error() )	
-					bytecode_h = bc_createbin(); // create binary
-				}
-			}
-		bc_close();	// close compiler
-
-		// save binary
-		if	( bytecode_h )	{
-			mem_t		rec_h;
-			char		*prevrec, *newrec;
-
-			// delete previous if it is exists
-			lidbin = DmFindDatabase(0, exename);
-			if	( lidbin )	DmDeleteDatabase(0, lidbin);
-
-			// create file
-			DmCreateDatabase(0, exename, ID_SmBa, ID_DATA, 0);
-			lidbin = DmFindDatabase(0, exename);
-			fp = DmOpenDatabase(0, lidbin, dmModeReadWrite);
-
-			// save bytecode_h
-			recIndex = dmMaxRecordIndex;
-			rec_h = DmNewRecord(fp, &recIndex, MemHandleSize(bytecode_h));
-
-			newrec = mem_lock(bytecode_h);
-			prevrec = mem_lock(rec_h);
-			DmWrite(prevrec, 0, newrec, MemHandleSize(bytecode_h));
-			mem_unlock(rec_h);
-			mem_unlock(bytecode_h);
-			DmReleaseRecord(fp, recIndex, 1);
-
-			//	PalmOS - Memory optimization
-			//	We'll free 'bytecode' memory by using a database record handle
-			//	Because 'bytecode' it is working as read-only we have no problems
-			//	using record's memory handle instead of a dynamic-RAM handle
-			mem_free(bytecode_h);
-
-			// globals
-			bytecode_h = DmGetRecord(fp, recIndex);
-			bytecode_fp = fp;
-			bytecode_recidx = recIndex;
-
-			}	// save
-		}	// comp_rq
-
-	//
-	tmp_free(exename);
-
-	// try to execute
-	if	( bytecode_h )	{
-		// try to defrag dynamic memory
-		MemHeapCompact(0);
-
-		// execute it
-		brun_init(bytecode_h);
-		EvtWakeup();		// !@$!@#$@#!$#@#$$!
-		}
-	else
-		prog_error = -32;
-
-	}
-#else
-	/// --- Default --------------------------------------------------------------------
-
-	if	( comp_compile(file) )	{			// compilation passed; now run it
-		if	( !opt_syntaxcheck )			// this is a command-line flag to syntax-check only
-			exec_run(file, bytecode_h);		// 
-		}
-#endif
-}
-*/
-
 /**
 *	clean up the current task's (executor's) data
 */
@@ -1872,19 +1666,7 @@ int		exec_close_task()
 
 		// clean up - the rest
 		mem_unlock(bytecode_h);
-
-//		#if defined(_PalmOS)
-//		DmReleaseRecord(bytecode_fp, bytecode_recidx, 1);
-//		DmCloseDatabase(bytecode_fp);
-//        #elif defined(_FRANKLIN_EBM)
-//        if (bytecode_fp) {
-//            dev_fclose(bytecode_fp);
-//        } else {
-//            mem_free(bytecode_h);
-//        }
-//		#else
 		mem_free(bytecode_h);
-//		#endif
 
 		bytecode_h = 0;
 		}
@@ -2015,7 +1797,8 @@ void	sys_after_comp()
  	#endif
 
 	#if defined(_PalmOS)
-	dev_restore();				// restore device
+	dev_restore();
+	dbt_close(env_table);
 	#endif
 }
 
@@ -2025,6 +1808,10 @@ void	sys_after_comp()
 void	sys_before_run()		SEC(TRASH);
 void	sys_before_run()
 {
+	#if defined(_PalmOS)
+	// setup environment emulation
+	env_table = dbt_create("SBI-ENV", 0);
+	#endif
 }
 
 /**
@@ -2034,14 +1821,8 @@ void	sys_after_run()		SEC(TRASH);
 void	sys_after_run()
 {
 	#if defined(_PalmOS)
-	EventType	e;
-
-	e.eType = menuEvent;
-	e.data.menu.itemID = 1601;	// SBFinishNotify;
-	EvtAddEventToQueue(&e);
 	dbt_close(env_table);
 	#endif
-
 }
 
 /**
@@ -2152,7 +1933,7 @@ void	sbasic_dump_bytecode(int tid, FILE *output)
 int		sbasic_compile(const char *file)	SEC(BEXEC);
 int		sbasic_compile(const char *file)
 {
-	int		comp_rq = 0;
+	int		comp_rq = 0;	// compilation required = 0
 	int		success = 1;
 
 	if ( opt_nosave )
@@ -2282,7 +2063,7 @@ int		sbasic_exec(const char *file)
 		exec_close(exec_tid);		// clean up executor's garbages
 		dev_restore();				// restore device
 
-		sys_before_run();			// system specific things; after run
+		sys_after_run();			// system specific things; after run
 		}
 
 	#if !defined(OS_LIMITED)
@@ -2336,5 +2117,16 @@ int		sbasic_main(const char *file)
 	unit_mgr_close();					// shutdown SB's unit manager
 	sblmgr_close();						// shutdown C-coded modules
 	destroy_tasks();					// closes all remaining tasks
+
+	#if defined(_PalmOS)
+	{
+	EventType	e;
+
+	e.eType = menuEvent;
+	e.data.menu.itemID = 1601;	// SBFinishNotify;
+	EvtAddEventToQueue(&e);
+	}
+	#endif
+
 	return success;
 }

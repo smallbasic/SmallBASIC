@@ -110,7 +110,7 @@ void	debug(const char *fmt, ...)
 	#if defined(_WinGUI) || defined(_Win32)
 	MessageBox(NULL, preload_panic_buffer, "SB Debug", MB_OK);
 	#elif defined(_PalmOS)
-	ErrNonFatalDisplay(preload_panic_buffer);
+	SysFatalAlert(preload_panic_buffer);
 	#elif defined(_VTOS)
 	MessageBox("WARNING", preload_panic_buffer, FALSE);
     #elif defined(_FRANKLIN_EBM)

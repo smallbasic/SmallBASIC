@@ -61,7 +61,7 @@ int		open(const char *pathname, int flags, ...)
 		}
 
 	//
-	if	( strncmp(pathname, "SBI-", 4) == 0 )	
+	if	( strncmp(pathname, "SBI-", 4) == 0 || strstr(pathname, ".sbx") )	
 		f_handles[handle] = FileOpen(0, (char *) pathname, ID_DATA, ID_SmBa, osflags, &last_error);
 	else
 		f_handles[handle] = FileOpen(0, (char *) pathname, ID_UFST, ID_SmBa, osflags, &last_error);
