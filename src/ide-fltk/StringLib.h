@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.2 2005-03-08 23:00:03 zeeb90au Exp $
+// $Id: StringLib.h,v 1.3 2005-03-09 23:01:00 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -49,8 +49,7 @@ struct Object {
 
 //--String----------------------------------------------------------------------
 
-class String : public Object {
-    public:
+struct String : public Object {
     virtual ~String();
     String();
     String(const char* s);
@@ -75,10 +74,10 @@ class String : public Object {
     int length() const;
     String substring(int beginIndex) const;
     String substring(int beginIndex, int endIndex) const;
-    String replace(char a, char b) const;
+    void replaceAll(char a, char b);
     String replaceAll(const char* srch, const char* repl);
-    String toUpperCase() const;
-    String toLowerCase() const;
+    void toUpperCase();
+    void toLowerCase();
     String trim() const;
     int toInteger() const;
     double toNumber() const;
@@ -103,7 +102,6 @@ class String : public Object {
 //--List------------------------------------------------------------------------
 
 struct List {
-public:    
     List(int growSize=20);
     virtual ~List();
     void removeAll(); // Removes the list and the list contents
@@ -120,8 +118,8 @@ public:
     // convert the String contents into a char* array - you are
     // responsible for ensuring the array is deleted
     const char** toArray();
-
-private:
+    
+    protected:
     void init();
     Object** head;
     int growSize;
@@ -132,20 +130,12 @@ private:
 
 //--Stack-----------------------------------------------------------------------
 
-struct Stack {
+struct Stack : public List{
     Stack();
     Stack(int growSize);
-    virtual ~Stack();
-
     Object* peek();
     Object* pop();
     void push(Object* o);
-    void removeAll() {list.removeAll();}
-    void emptyList() {list.emptyList();}
-    int length() const {return list.length();}
-
-    private:
-    List list;    
 };
 
 //--Properties------------------------------------------------------------------

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.2 2005-03-08 23:00:03 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.3 2005-03-09 23:01:00 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -51,14 +51,13 @@ public:
     void reloadPage();
     void navigateTo(const char* anchorName);
     void navigateTo(int vscroll);
-    bool find(const char* s, bool matchCase);
-    int getScroll() {return vscroll;}
+    U8 find(const char* s, U8 matchCase);
     Widget* getInput(const char* name);
     const char* getInputValue(Widget* button);
     const char* getInputName(Widget* button);
     void getInputProperties(Properties& p);
     void copyText(int begin, int end);
-    int load(const char *f);
+    void load(const char *f);
 
     protected:
     void compileHTML();
@@ -75,10 +74,10 @@ public:
     void cleanup();
 
     Scrollbar* scrollbar;
-    int vscroll;
-    int pageHeight;
-    int maxTextHeight;
-    int numRows;
+    S16 vscroll;
+    U16 pageHeight;
+    U16 maxTextHeight;
+    U16 numRows;
     ::List nodeList;
     ::List namedInputs;
     ::List buttons;

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.2 2005-03-08 23:00:03 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.3 2005-03-09 23:00:59 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -54,31 +54,36 @@ static xpmImage dotImage(dot_xpm);
 //--MetaNode--------------------------------------------------------------------
 
 struct MetaNode {
-    int x;
-    int y;
-    int height;
-    int width;
-    int lineHeight;
-    int indent;
-    bool uline;
-    bool center;
-    int fontSize;
+    S16 x;
+    S16 y;
+    U16 height;
+    U16 width;
+    U16 lineHeight;
+    U16 indent;
+    U16 lines;
+    U16 fontSize;
+    U8 uline;
+    U8 center;
+    U8 inTR;
     Font* font;
     Color color;
     Color background;
     Group* wnd;
     AnchorNode* anchor;
+
+    void newRow(U16 nrows) {
+        x = indent;
+        y += nrows*lineHeight;
+        lines += nrows;
+    }
 };
 
 //--BaseNode--------------------------------------------------------------------
 
-enum nodeType {t_tag, t_table, t_tr, t_td};
-
 struct BaseNode : public Object {
     virtual void display(MetaNode* mn) {}
-    virtual int indexOf(const char* sFind, bool matchCase) {return -1;}
+    virtual int indexOf(const char* sFind, U8 matchCase) {return -1;}
     virtual int getY() {return -1;}
-    virtual nodeType getType() {return t_tag;}
 };
 
 //--FontNode--------------------------------------------------------------------
@@ -87,8 +92,8 @@ struct FontNode : public BaseNode {
     FontNode(Font* font,
              int fontSize,
              Color color, 
-             bool bold, 
-             bool italic) {
+             U8 bold, 
+             U8 italic) {
         this->font = font;
         this->fontSize = fontSize;
         this->color = color;
@@ -112,6 +117,7 @@ struct FontNode : public BaseNode {
         mn->lineHeight = (int)(getascent()+getdescent());
         if (mn->lineHeight > oldLineHeight) {
             mn->y += (mn->lineHeight - oldLineHeight);
+            mn->lines++;
         }
         mn->font = font;
         mn->color = color;
@@ -119,29 +125,28 @@ struct FontNode : public BaseNode {
     }
 
     Font* font; // includes face,bold,italic
-    int fontSize;
+    U16 fontSize;
     Color color;
 };
 
 //--BrNode----------------------------------------------------------------------
 
 struct BrNode : public BaseNode {
-    BrNode(U16 indent, U16 nlines=1) {
+    BrNode(U16 indent, U16 nrows=1) {
         this->indent = indent;
-        this->nlines = nlines;
+        this->nrows = nrows;
     }
     
     void display(MetaNode* mn) {
         if (indent) {
             mn->indent = indent;
         }
-        mn->x = mn->indent;
-        mn->y += (nlines*mn->lineHeight);
+        mn->newRow(nrows);
         mn->lineHeight = (int)(getascent()+getdescent());
     }
     
     U16 indent;
-    U16 nlines;
+    U16 nrows;
 };
 
 //--AnchorNode------------------------------------------------------------------
@@ -172,27 +177,27 @@ struct AnchorNode : public BaseNode {
         setcolor(ANCHOR_COLOR);
     }
 
-    bool ptInSegment(int x, int y) {
+    U8 ptInSegment(int x, int y) {
         if (y >= y1 && y <= y2) {
             // found row
             if ((x < x1 && y < y1+lineHeight) ||
                 (x > x2 && y > y2-lineHeight)) {
                 // outside row start or end
-                return 0;
+                return false;
             }
-            return this;
+            return true;
         }
-        return 0;
+        return false;
     }
 
     int getY() {return y1;}
 
     String name;
     String href;
-    int x1,x2,y1,y2;
-    int lineHeight;
-    bool wrapxy; // begin on page boundary
-    bool pushed;
+    U16 x1,x2,y1,y2;
+    U16 lineHeight;
+    U8 wrapxy; // begin on page boundary
+    U8 pushed;
 };
 
 AnchorNode* selectedAnchor = 0;
@@ -241,6 +246,7 @@ struct LiNode : public BaseNode {
         mn->y += mn->lineHeight;
         mn->x = x + 10;
         mn->indent = mn->x;
+        mn->lines++;
     }
     const Style* style;
 };
@@ -276,8 +282,7 @@ struct TextNode : public BaseNode {
                     // no break point - create new line if required
                     linepx = (int)getwidth(p, linelen);
                     if (linepx+2 > mn->width-mn->x) {
-                        mn->x = mn->indent;
-                        mn->y += mn->lineHeight;
+                        mn->newRow(1);
 
                         // let anchor know where it really starts
                         if (mn->anchor && mn->anchor->wrapxy == false) {
@@ -301,18 +306,17 @@ struct TextNode : public BaseNode {
                 if (mn->x+linepx < mn->width) {
                     mn->x += linepx;
                 } else {
-                    mn->x = mn->indent;
-                    mn->y += mn->lineHeight;
+                    mn->newRow(1);
                 }
             }
         }
     }
 
-    int indexOf(const char* sFind, bool matchCase) {
+    int indexOf(const char* sFind, U8 matchCase) {
         int numMatch = 0;
         int findLen = strlen(sFind);
         for (int i=0; i<textlen; i++) {
-            bool equals = matchCase ? 
+            U8 equals = matchCase ? 
                 s[i] == sFind[numMatch] :
                 toupper(s[i]) == toupper(sFind[numMatch]);
             numMatch = (equals ? numMatch+1 : 0);
@@ -345,63 +349,104 @@ struct HrNode : public BaseNode {
         drawline(mn->x, mn->y+2, mn->x+mn->width-6, mn->y+2);
         setcolor(mn->color);
         mn->y += mn->lineHeight+2;
+        mn->lines++;
     }
 };
 
 //--TableNode-------------------------------------------------------------------
 
 struct TableNode : public BaseNode {
-    TableNode(bool begin) : BaseNode() {
+    TableNode(U8 begin) : BaseNode() {
         this->begin = begin;
     }
     void display(MetaNode* mn) {
         nextCol = 0;
+        nextRow = 0;
+        mn->newRow(1);
+        mn->lineHeight = (int)(getascent()+getdescent());
+
+        if (begin) {
+            x = mn->x;
+            y = mn->y;
+            width = mn->width;
+            indent = mn->indent;
+        } else {
+            mn->x = x;
+            mn->y = y;
+            mn->width = width;
+            mn->indent = indent;
+        }
     }
-    nodeType getType() {return t_table;}
     U16 cols;
     U16 rows;
+    U16 indent;
     U16 nextCol;
-    bool begin;
+    U16 nextRow;
+    U16 width;
+    U16 x, y;
+    U8 begin;
 };
 
 //--TrNode----------------------------------------------------------------------
 
 struct TrNode : public BaseNode {
-    TrNode(bool begin) : BaseNode() {
+    TrNode(Object* tableNode, U8 begin) : BaseNode() {
         this->begin = begin;
-    }
-    void display(MetaNode* mn) {
-        if (tableNode) {
-            tableNode->nextCol = 0;
+        this->table = (TableNode*)tableNode;
+        if (table && begin) {
+            table->rows++;
         }
     }
-    nodeType getType() {return t_tr;}
-    TableNode* tableNode;
-    bool begin;
+    void display(MetaNode* mn) {
+        if (table == 0) {
+            return;
+        }
+        table->nextCol = 0;
+        table->nextRow++;
+        
+        if (begin) {
+            table->y = mn->y;
+        }
+
+        mn->inTR = begin;
+    }
+    TableNode* table;
+    U8 begin;
 };
 
 //--TdNode----------------------------------------------------------------------
 
 struct TdNode : public BaseNode {
-    TdNode(bool begin) : BaseNode() {
+    TdNode(Object* tableNode, U8 begin) : BaseNode() {
         this->begin = begin;
-    }
-    void display(MetaNode* mn) {
-        if (tableNode) {
-            
+        this->table = (TableNode*)tableNode;
+        if (table && begin) {
+            table->cols++;
         }
     }
-    nodeType getType() {return t_td;}
-    TableNode* tableNode;
-    bool begin;
+    void display(MetaNode* mn) {
+        if (table == 0) {
+            return;
+        }
+        if (begin) {
+            mn->width = table->width/table->cols;
+            mn->x = table->x + (table->nextCol*mn->width);
+            mn->indent = mn->x;
+            table->nextCol++;
+        } else if (mn->y > table->y) {
+            table->y = mn->y;
+        }
+    }
+    TableNode* table;
+    U8 begin;
 };
 
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-    ImageNode(Image* image, const Style* style, Properties& p) : BaseNode() {
-        this->image = image;
+    ImageNode(const Style* style, Properties& p) : BaseNode() {
         this->style = style;
+        this->image = 0;
     }
     void display(MetaNode* mn) {
     }
@@ -500,6 +545,7 @@ HelpWidget::HelpWidget(const char* str, int width, int height) :
     scrollbar = new Scrollbar(width-SCROLL_W, 0, SCROLL_W, height);
     scrollbar->set_vertical();
     scrollbar->value(0, 1, 0, 100);
+    scrollbar->pagesize(10);
     scrollbar->user_data(this);
     scrollbar->callback(scrollbar_callback);
     scrollbar->show();
@@ -690,10 +736,10 @@ void HelpWidget::navigateTo(const char* anchorName) {
 }
 
 void HelpWidget::navigateTo(int scroll) {
-    //if (scroll < 1 && scroll > -pageHeight && vscroll != scroll) {
+    if (vscroll != scroll) {
         vscroll = -scroll;
         redraw(DAMAGE_ALL);
-        //}
+    }
 }
 
 void HelpWidget::layout() {
@@ -716,6 +762,8 @@ void HelpWidget::draw() {
     mn.width = w()-SCROLL_W;
     mn.x = DEFAULT_INDENT;
     mn.indent = DEFAULT_INDENT;
+    mn.inTR = false;
+    mn.lines = 0;
 
     // must call setfont() before getascent() etc
     setfont(mn.font, mn.fontSize);
@@ -728,7 +776,6 @@ void HelpWidget::draw() {
         push_clip(Rectangle(0, selectedAnchor->y1, mn.width, h));
     }
     
-    update_child(*scrollbar);
     setcolor(mn.background);
     fillrect(Rectangle(mn.width, mn.height));
     setcolor(mn.color);
@@ -739,14 +786,16 @@ void HelpWidget::draw() {
     for (int i=0; i<len; i++) {
         p = (BaseNode*)list[i];
         p->display(&mn);
-        if (mn.y > mn.height) {
+        if (mn.y > mn.height && mn.inTR == false) {
             break;
         }
     }
+    //scrollbar->value(0, -vscroll, 0, mn.lines);
+    update_child(*scrollbar);
     pop_clip();
 }
 
-bool HelpWidget::find(const char* s, bool matchCase) {
+U8 HelpWidget::find(const char* s, U8 matchCase) {
     BaseNode* p = 0;
     Object** list = nodeList.getList();
     int len = nodeList.length();
@@ -766,7 +815,7 @@ bool HelpWidget::find(const char* s, bool matchCase) {
 
 void HelpWidget::onMove(int event) {
     if (selectedAnchor && event == fltk::DRAG) {
-        bool pushed = selectedAnchor->ptInSegment(fltk::event_x(), 
+        U8 pushed = selectedAnchor->ptInSegment(fltk::event_x(), 
                                                   fltk::event_y());
         if (selectedAnchor->pushed != pushed) {
             Widget::cursor(fltk::CURSOR_HAND);
@@ -833,24 +882,10 @@ int HelpWidget::handle(int event) {
     return 0;
 }
 
-
-// TODO: use a Stack - push each <table>
-// as encountered. then on <td><tr> tags - peek the stack
-// and attach the matching table
-// pop the table on </table>
-//     <table> -- push 
-//     <tr> 
-//       <td><table> -- push
-//            <tr><td></td></tr></table> --pop
-//       </td>
-//     </tr>
-//     </table> -- pop
-
-
 void HelpWidget::compileHTML() {
-    bool pre = false;
-    bool bold = false;
-    bool italic = false;
+    U8 pre = false;
+    U8 bold = false;
+    U8 italic = false;
     U8 center = false;
     U8 uline = false;
 
@@ -859,8 +894,10 @@ void HelpWidget::compileHTML() {
     int fontSize = FONT_SIZE;
     int taglen = 0;
     int textlen = 0;
-    bool newline = false;
+    U8 newline = false;
 
+    Stack tableStack(10);
+    Stack trStack(10);
     Properties p(10);
     String* prop;
     BaseNode* node;
@@ -1005,13 +1042,15 @@ void HelpWidget::compileHTML() {
                     uline = false;
                     nodeList.append(new StyleNode(uline, center));
                 } else if (0 == strnicmp(tag, "td", 2)) {
-                    nodeList.append(new TdNode(false));
+                    nodeList.append(new TdNode(tableStack.peek(), false));
                 } else if (0 == strnicmp(tag, "tr", 2)) {
-                    nodeList.append(new TrNode(false));
+                    nodeList.append(new TrNode(tableStack.peek(), false));
+                    trStack.pop();
                     newline = true;
                     numRows++;
                 } else if (0 == strnicmp(tag, "table", 5)) {
                     nodeList.append(new TableNode(false));
+                    tableStack.pop();
                     newline = true;
                     numRows++;
                 }
@@ -1045,14 +1084,18 @@ void HelpWidget::compileHTML() {
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "p", 1)) {
                     // paragraph
+                } else if (0 == strnicmp(tag, "td", 2)) {
+                    nodeList.append(new TdNode(tableStack.peek(), true));
+                } else if (0 == strnicmp(tag, "tr", 2)) {
+                    node = new TrNode(tableStack.peek(), true);
+                    nodeList.append(node);
+                    trStack.push(node);
                 } else if (0 == strnicmp(tag, "table", 5)) {
-                    nodeList.append(new TableNode(true));
+                    node = new TableNode(true);
+                    nodeList.append(node);
+                    tableStack.push(node);
                     newline = true;
                     numRows++;
-                } else if (0 == strnicmp(tag, "tr", 2)) {
-                    nodeList.append(new TrNode(true));
-                } else if (0 == strnicmp(tag, "td", 2)) {
-                    nodeList.append(new TdNode(true));
                 } else if (0 == strnicmp(tag, "ul>", 3)) {
                     nodeList.append(new BrNode(0));
                     newline = true;
@@ -1098,12 +1141,18 @@ void HelpWidget::compileHTML() {
                     }
                     p.removeAll();
                 } else if (0 == strnicmp(tag, "img ", 4)) {
-                    // image tag
+                    p.load(tag+4, taglen-4);
+                    nodeList.append(new ImageNode(style(), p));
+                    p.removeAll();
                 }
             } // end if-start, else-end tag
         } // if found a tag
         tagBegin = *tagEnd == 0 ? 0 : tagEnd+1;
     }
+    
+    // don't delete nodes
+    trStack.emptyList();
+    tableStack.emptyList();
 }
 
 void HelpWidget::copyText(int begin, int end) {
@@ -1134,125 +1183,48 @@ void HelpWidget::copyText(int begin, int end) {
     }
 }
 
-// O - 0 on success, -1 on error
-// I - Filename to load (may also have target)
-int HelpWidget::load(const char *f) {
-    FILE *fp;                     // File to read from
-    long len;                     // Length of file
-    char *target;                 // Target in file
-    //char *slash;                  // Directory separator
-    const char *localname;        // Local filename
-    char error[1024];             // Error buffer
-    char newname[1024];           // New filename buffer
-    
-    strlcpy(newname, f, sizeof (newname));
-    if ((target = strrchr (newname, '#')) != NULL) {
-        *target++ = '\0';
-    }
-    //if (link_) {
-        //localname = (*link_) (this, newname);
-    //} else {
-        //localname = filename_;
-    //}
+void HelpWidget::load(const char *f) {
+    FILE *fp;
+    long len;
+    String buffer;
 
-    //if (!localname) {
-    //return (0);
-    //}
-    localname = f;
-    
-    //    strlcpy (filename_, newname, sizeof (filename_));
-    //    strlcpy (directory_, newname, sizeof (directory_));
-    
-    // Note: We do not support Windows backslashes, since they are illegal
-    //       in URLs...
-//     if ((slash = strrchr (directory_, '/')) == NULL) {
-//         directory_[0] = '\0';
-//     } else if (slash > directory_ && slash[-1] != '/') {
-//         *slash = '\0';
-//     }
+    const char* target = strrchr(f, '#');
+    len = target != null ? target-f : strlen(f);
+    buffer.append(f, len);
+    buffer.replaceAll('\\', '/');
 
-    if (strncmp(localname, "ftp:", 4) == 0 ||
-        strncmp(localname, "http:", 5) == 0 ||
-        strncmp(localname, "https:", 6) == 0 ||
-        strncmp(localname, "ipp:", 4) == 0 ||
-        strncmp(localname, "mailto:", 7) == 0 ||
-        strncmp(localname, "news:", 5) == 0) {
-        // remote link wasn't resolved
-        snprintf (error, sizeof (error),
-                  "<HTML><HEAD><TITLE>Error</TITLE></HEAD>"
-                  "<BODY><H1>Error</H1>"
-                  "<P>Unable to follow the link \"%s\" - "
-                  "no handler exists for this URI scheme.</P></BODY>", localname);
-        htmlStr = error;
-    } else {
-        if (strncmp (localname, "file:", 5) == 0) {
+    const char* localname = buffer.toString();
+    htmlStr.empty();
+    if (buffer.indexOf(':', 0) != -1) {
+        if (strncmp(localname, "file:", 5) == 0) {
             localname += 5; // adjust for local filename
-        }
-        
-        if ((fp = fopen (localname, "rb")) != NULL) {
-            fseek (fp, 0, SEEK_END);
-            len = ftell(fp);
-            rewind(fp);
-            htmlStr.empty();
-            htmlStr.append(fp, len);
-            fclose(fp);
         } else {
-            snprintf (error, sizeof (error),
-                      "<HTML><HEAD><TITLE>Error</TITLE></HEAD>"
-                      "<BODY><H1>Error</H1>"
-                      "<P>Unable to follow the link \"%s\" - "
-                      "%s.</P></BODY>", localname, strerror (errno));
-            htmlStr = error;
+            htmlStr.append("Unable to follow the link \"");
+            htmlStr.append(localname);
+            htmlStr.append("\"");
         }
+    }
+        
+    if ((fp = fopen (localname, "rb")) != NULL) {
+        fseek (fp, 0, SEEK_END);
+        len = ftell(fp);
+        rewind(fp);
+        htmlStr.append(fp, len);
+        fclose(fp);
+    } else {
+        htmlStr.append("Unable to follow the link \"");
+        htmlStr.append(localname);
+        htmlStr.append("\" - ");
+        htmlStr.append(strerror(errno));
     }
 
     reloadPage();
-
-//     if (target)
-//         topline (target);
-//     else
-//         topline (0);
-
-    return 0;
+    if (target) {
+        navigateTo(target);
+    }
 }
 
 //--Helper functions------------------------------------------------------------
-
-#ifdef UNIT_TEST
-#include <fltk/run.h>
-#include <stdarg.h>
-#include <windows.h>
-int main(int argc, char **argv) {
-    int w = 210; // must be > 104
-    int h = 200;
-    Window window(w, h, "Browse");
-    window.begin();
-    HelpWidget out("", w, h);
-    out.load("t.html");
-    window.resizable(&out);
-    window.end();
-    window.show(argc,argv);
-    return run();
-}
-
-void trace(const char *format, ...) {
-    char    buf[4096],*p = buf;
-    va_list args;
-    
-    va_start(args, format);
-    p += vsnprintf(p, sizeof buf - 1, format, args);
-    va_end(args);
-    
-    while (p > buf && isspace(p[-1])) {
-        *--p = '\0';
-    }
-    
-    *p++ = '\r';
-    *p++ = '\n';
-    *p   = '\0';
-    OutputDebugString(buf);
-}
-#endif
 
 /**
  * Returns the number of characters that will fit within
@@ -1354,5 +1326,41 @@ Color getColor(const char *n) {
         return 0;
     }
 }
+
+#ifdef UNIT_TEST
+#include <fltk/run.h>
+#include <stdarg.h>
+#include <windows.h>
+int main(int argc, char **argv) {
+    int w = 210; // must be > 104
+    int h = 200;
+    Window window(w, h, "Browse");
+    window.begin();
+    HelpWidget out("", w, h);
+    out.load("t.html#there");
+    window.resizable(&out);
+    window.end();
+    window.show(argc,argv);
+    return run();
+}
+
+void trace(const char *format, ...) {
+    char    buf[4096],*p = buf;
+    va_list args;
+    
+    va_start(args, format);
+    p += vsnprintf(p, sizeof buf - 1, format, args);
+    va_end(args);
+    
+    while (p > buf && isspace(p[-1])) {
+        *--p = '\0';
+    }
+    
+    *p++ = '\r';
+    *p++ = '\n';
+    *p   = '\0';
+    OutputDebugString(buf);
+}
+#endif
 
 //--EndOfFile-------------------------------------------------------------------

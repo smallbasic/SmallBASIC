@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.2 2005-03-08 23:00:03 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.3 2005-03-09 23:01:00 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -174,15 +174,13 @@ String String::substring(int beginIndex, int endIndex) const {
     return out;
 }
 
-String String::replace(char a, char b) const {
-    String s(buffer);
-    int len = s.length();
+void String::replaceAll(char a, char b) {
+    int len = length();
     for (int i=0; i<len; i++) {
-        if (s.buffer[i]==a) {
-            s.buffer[i]=b;
+        if (buffer[i]==a) {
+            buffer[i]=b;
         }
     }
-    return s;
 }
 
 String String::replaceAll(const char* srch, const char* repl) {
@@ -212,22 +210,18 @@ String String::replaceAll(const char* srch, const char* repl) {
     return out;
 }
 
-String String::toUpperCase() const {
-    String s(buffer);
-    int len = s.length();
+void String::toUpperCase() {
+    int len = length();
     for (int i=0; i<len; i++) {
-        s.buffer[i] = toupper(s.buffer[i]);
+        buffer[i] = toupper(buffer[i]);
     }
-    return s;
 }
 
-String String::toLowerCase() const {
-    String s(buffer);
-    int len = s.length();
+void String::toLowerCase() {
+    int len = length();
     for (int i=0; i<len; i++) {
-        s.buffer[i] = tolower(s.buffer[i]);
+        buffer[i] = tolower(buffer[i]);
     }
-    return s;
 }
 
 int String::toInteger() const {
@@ -420,22 +414,26 @@ const char** List::toArray() {
 
 //--Stack-----------------------------------------------------------------------
 
-Stack::Stack() {}
+Stack::Stack() : List() {}
 
-Stack::Stack(int growSize) : list(growSize) {}
-
-Stack::~Stack() {}
+Stack::Stack(int growSize) : List(growSize) {}
 
 Object* Stack::peek() {
-    return 0;
+    if (count == 0) {
+        return 0;
+    }
+    return head[count-1];
 }
 
 Object* Stack::pop() {
-    return 0;
+    if (count == 0) {
+        return 0;
+    }
+    return head[--count];
 }
 
 void Stack::push(Object* o) {
-
+    append(o);
 }
 
 //--Properties------------------------------------------------------------------
