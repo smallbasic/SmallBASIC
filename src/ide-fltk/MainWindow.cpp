@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.23 2004-12-15 22:06:47 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.24 2004-12-16 22:15:13 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -199,7 +199,7 @@ void editor_cb(Widget* w, void* v) {
             wnd->editWnd->getRowCol(&row, &col);
             wnd->editWnd->getSelStartRowCol(&s1r, &s1c);
             wnd->editWnd->getSelEndRowCol(&s2r, &s2c);
-            sprintf(opt_command, "%s %d %d %d %d %d %d", 
+            sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
                     filename, row-1, col, s1r-1, s1c, s2r-1, s2c);
             runMode = run_state;
             wnd->runStatus->label("RUN");
@@ -300,10 +300,13 @@ void scanPlugIns(Menu* menu) {
     int numFiles = filename_list(toolhome, &files);
 
     for (int i=0; i<numFiles; i++) {
-        if (strstr(files[i]->d_name, ".bas") != 0) {
+        const char* filename = (const char*)files[i]->d_name;
+        int len = strlen(filename);
+        if (stricmp(filename+len-4, ".bas") == 0) {
             strcpy(buffer, toolhome);
-            strcat(buffer, files[i]->d_name);
+            strcat(buffer, filename);
             file = fopen(buffer, "r");
+
             if (!file) {
                 continue;
             }
@@ -314,14 +317,14 @@ void scanPlugIns(Menu* menu) {
             }
             
             bool editorTool = false;
-            if (strcmp("'editor-plug-in\n", buffer) == 0) {
+            if (strcmp("'tool-plug-in\n", buffer) == 0) {
                 editorTool = true;
-            } else if (strcmp("'tool-plug-in\n", buffer) != 0) {
+            } else if (strcmp("'app-plug-in\n", buffer) != 0) {
                 fclose(file);
                 continue;
             }
             
-            if (fgets(buffer, 1024, file) &&
+            if (fgets(buffer, 1024, file) && 
                 strncmp("'menu", buffer, 5) == 0) {
                 int offs = 6;
                 buffer[strlen(buffer)-1] = 0; // trim new-line
@@ -331,14 +334,15 @@ void scanPlugIns(Menu* menu) {
                 }
                 sprintf(label, "&Basic/%s", buffer+offs);
                 strcpy(buffer, toolhome);
-                strcat(buffer, files[i]->d_name);
+                strcat(buffer, filename);
                 menu->add(label, 0, (Callback*)
                           (editorTool ? editor_cb : tool_cb), 
                           strdup(buffer));
             }
             fclose(file);
         }
-        free(files[i]);        
+        //this causes a stackdump
+        //free(files[i]);
     }
     free(files);
 }
@@ -503,7 +507,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     out = new Fl_Ansi_Window(2, 2, w-4, pageHeight-4);
     outputGroup->resizable(out);
     outputGroup->end();
-
     tabGroup->end();
     resizable(tabGroup);
 

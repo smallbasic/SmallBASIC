@@ -1,7 +1,7 @@
-'editor-plug-in
+'tool-plug-in
 'menu Edit/Indent
 
-split command, " ", args() use trim(x)
+split command, "|", args() use trim(x)
 local inbuf, outbuf
 fname = args(0)
 indSize= 4

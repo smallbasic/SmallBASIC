@@ -1,7 +1,7 @@
-'editor-plug-in
+'tool-plug-in
 'menu Edit/Uncomment Region
 
-split command, " ", args() use trim(x)
+split command, "|", args() use trim(x)
 local inbuf, outbuf
 fname = args(0)
 row = args(1)
