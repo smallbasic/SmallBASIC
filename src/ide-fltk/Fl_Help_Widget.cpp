@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.17 2005-04-04 00:24:21 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.18 2005-04-06 00:39:00 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -36,7 +36,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-//#define UNIT_TEST 1
+#define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -54,7 +54,7 @@
 #define HSCROLL_STEP 20
 
 void trace(const char *format, ...);
-Color getColor(const char *n);
+Color getColor(String* s, Color def);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 const char* skipWhite(const char* s);
 Image* loadImage(const char* imgSrc);
@@ -69,8 +69,8 @@ static char anglestr[] = "<";
 
 struct Display {
     S16 x,y;
-    U16 height;
-    U16 width;
+    U16 height,width;
+    U16 tabW, tabH;
     U16 lineHeight;
     U16 indent;
     U16 fontSize;
@@ -117,6 +117,9 @@ struct Attributes : public Properties {
     String* getType() {return get("type");}
     String* getSrc() {return get("src");}
     String* getOnclick() {return get("onclick");}
+    String* getBgColor() {return get("bgcolor");}
+    String* getFgColor() {return get("fgcolor");}
+    String* getBackground() {return get("background");}
     void getValue(String& s) {s.append(getValue());}
     void getName(String& s) {s.append(getName());}
     void getHref(String& s) {s.append(getHref());}
@@ -124,6 +127,7 @@ struct Attributes : public Properties {
     Value getWidth(int def=-1) {return getValue("width", def);}
     Value getHeight(int def=-1) {return getValue("height", def);}
     int getSize(int def=-1) {return getIntValue("size", def);}
+    int getBorder(int def=-1) {return getIntValue("border", def);}
     int getIntValue(const char* attr, int def);
     Value getValue(const char* attr, int def);
 };
@@ -349,13 +353,22 @@ struct ImageNode : public BaseNode {
         image->measure(w.value, h.value);
         w = a->getWidth(w.value);
         h = a->getHeight(h.value);
+        background = false;
+    }
+
+    ImageNode(const Style* style, String* fileName, String* src) : BaseNode() {
+        this->style = style;
+        image = loadImage(fileName->getPath(src->toString()));
+        image->measure(w.value, h.value);
+        w.relative = 0;
+        h.relative = 0;
+        background = true;
     }
 
     void display(Display* out) {
         if (image == 0) {
             return;
         }
-        out->content = true;
         int iw = w.relative ? (w.value*(out->width-out->x)/100) : 
             w.value < out->width ? w.value : out->width;
         int ih = h.relative ? (h.value*(out->wnd->h()-out->y)/100) : h.value;
@@ -369,16 +382,47 @@ struct ImageNode : public BaseNode {
             y += 1;
         }
         if (out->measure == false) {
-            image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
+            if (background) {
+                // tile image within x,y,tabW,tabH
+                int y1 = y;
+                int x1 = x;
+                int numHorz = out->tabW/w.value;
+                int numVert = out->tabH/h.value;
+                for (int iy=0; iy<=numVert; iy++) {
+                    x1 = x;
+                    for (int ix=0; ix<=numHorz; ix++) {
+                        if (x1+w.value > x+out->tabW) {
+                            iw = out->tabW-(x1-x);
+                        } else {
+                            iw = w.value;
+                        }
+                        if (y1+h.value > y+out->tabH) {
+                            ih = out->tabH-(y1-y);
+                        } else {
+                            ih = h.value;
+                        }
+                        Rectangle rc(x1, y1, iw, ih);
+                        image->draw(rc, style, OUTPUT);
+                        x1 += w.value;
+                    }
+                    y1 += h.value;
+                }
+            } else {
+                image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
+            }
         }
-        out->imgY = out->y+ih;
-        out->imgIndent = out->indent;
-        out->x += iw+DEFAULT_INDENT;
-        out->indent = out->x;
+        if (background == 0) {
+            out->content = true;
+            out->imgY = out->y+ih;
+            out->imgIndent = out->indent;
+            out->x += iw+DEFAULT_INDENT;
+            out->indent = out->x;
+        }
     }
     const Image* image;
     const Style* style;
     Value w,h;
+    U8 background;
 };
 
 //--TextNode--------------------------------------------------------------------
@@ -414,28 +458,45 @@ struct TextNode : public BaseNode {
             }
             out->x += width;
         } else {
-            int linelen, linepx;
+            int linelen, linepx, cliplen;
             int len = textlen;
             const char* p = s;
             while (len > 0) {
                 lineBreak(p, len, out->width-out->x, linelen, linepx);
+                cliplen = linelen;
                 if (linepx < 0) {
                     // no break point - create new line if required
                     linepx = (int)getwidth(p, linelen);
-                    if (linepx > out->width-out->x) {
+                    if (out->x != out->indent && linepx > out->width-out->x) {
                         out->newRow();
-                        // let anchor know where it really starts
+                        // anchor now starts on a new line
                         if (out->anchor && out->anchor->wrapxy == false) {
                             out->anchor->x1 = out->x;
                             out->anchor->y1 = out->y - out->lineHeight;
                             out->anchor->wrapxy = true;
                         }
                     }
+
+                    // clip long text - leave room for elipses
+                    int cellW = out->width-out->indent-6;
+                    if (linepx > cellW) {
+                        linepx = 0;
+                        cliplen = 0;
+                        do {
+                            linepx += (int)getwidth(p+cliplen, 1);
+                            cliplen++;
+                        } while (linepx < cellW);
+                    } 
                 }
                 if (out->measure == false) {
-                    drawtext(p, linelen, out->x, out->y);
+                    drawtext(p, cliplen, out->x, out->y);
                     if (out->uline) {
                         drawline(out->x, out->y+1, out->x+linepx, out->y+1);
+                    }
+                    if (cliplen != linelen) {
+                        drawpoint(out->x+linepx, out->y);
+                        drawpoint(out->x+linepx+2, out->y);
+                        drawpoint(out->x+linepx+4, out->y);
                     }
                 }
                 p += linelen;
@@ -457,7 +518,7 @@ struct TextNode : public BaseNode {
         int numMatch = 0;
         int findLen = strlen(sFind);
         for (int i=0; i<textlen; i++) {
-            U8 equals = matchCase ? 
+            U8 equals = matchCase ?
                 s[i] == sFind[numMatch] :
                 toupper(s[i]) == toupper(sFind[numMatch]);
             numMatch = (equals ? numMatch+1 : 0);
@@ -498,12 +559,13 @@ struct HrNode : public BaseNode {
 //--TableNode-------------------------------------------------------------------
 
 struct TableNode : public BaseNode {
-    TableNode() : BaseNode() {
+    TableNode(Attributes* a) : BaseNode() {
         rows = 0;
         cols = 0;
         columns = 0;
         sizes = 0;
         tagWidth = 0;
+        border = a->getBorder();
     }
 
     ~TableNode() {
@@ -550,16 +612,17 @@ struct TableNode : public BaseNode {
 
     // called from </td> to prepare for wrapping and resizing
     void doEndTD(Display* out) {
+        int index = nextCol-1;
         if (out->y > ryb) {
             ryb = out->y; // wrapped cell
-            sizes[nextCol-1] = -1; // veto column changes
+            sizes[index] = -1; // veto column changes
         } else if (ryt == out->y &&
-                   out->x < columns[nextCol-1] &&
-                   out->x > sizes[nextCol-1] &&
-                   sizes[nextCol-1] != -1) {
+                   out->x < columns[index] &&
+                   out->x > sizes[index] &&
+                   sizes[index] != -1) {
             // largest <td></td> on same line, less than the default width
             // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
-            sizes[nextCol-1] = out->x+CELL_SPACING+CELL_SPACING+2;
+            sizes[index] = out->x+CELL_SPACING+CELL_SPACING+2;
         }
     }
 
@@ -573,6 +636,8 @@ struct TableNode : public BaseNode {
         }
         out->content = false;
         out->tableLevel--;
+        out->tabH = out->y-initY;
+        out->tabW = width;
 
         if (cols && columns && out->exposed && tagWidth == 0) {
             // adjust columns for best fit (left align)
@@ -614,6 +679,7 @@ struct TableNode : public BaseNode {
     U16 nodeId;
     U16 initX, initY; // start of table
     S16 ryt, ryb; // current row y top+bottom
+    S16 border;
 };
 
 struct TableEndNode : public BaseNode {
@@ -633,13 +699,12 @@ struct TableEndNode : public BaseNode {
 
 struct TrNode : public BaseNode {
     TrNode(TableNode* tableNode) : BaseNode() {
-        this->table = tableNode;
-        this->cols = 0;
+        table = tableNode;
+        y1=y2=cols = 0;
         if (table) {
             table->rows++;
         }
     }
-
     void display(Display* out) {
         if (table == 0) {
             return;
@@ -651,59 +716,84 @@ struct TrNode : public BaseNode {
         table->nextCol = 0;
         table->nextRow++;
         table->ryt = table->ryb;
+        y1 = table->ryt-(int)getascent();
         out->inTR = true;
         out->content = false;
     }
     TableNode* table;
     U16 cols;
+    S16 y1,y2;
 };
 
 struct TrEndNode : public BaseNode {
-    TrEndNode(TrNode* tr) : BaseNode() {
+    TrEndNode(TrNode* trNode) : BaseNode() {
+        tr = trNode;
         if (tr && tr->table && tr->cols > tr->table->cols) {
             tr->table->cols = tr->cols;
         }
     }
-
     void display(Display* out) {
         out->inTR = false;
+        if (tr && tr->table && out->measure) {
+            // measure the row height - the table is not revisited
+            // during scrolling, so need to save height on first pass
+            tr->y2 = tr->table->ryb-tr->y1+(int)getdescent()+1;
+        }
     }
+    TrNode* tr;
 };
 
 //--TdNode----------------------------------------------------------------------
 
 struct TdNode : public BaseNode {
-    TdNode(TrNode* trNode) : BaseNode() {
-        this->tr = trNode;
+    TdNode(TrNode* trNode, Attributes* a) : BaseNode() {
+        tr = trNode;
         if (tr) {
             tr->cols++;
         }
+        foreground = getColor(a->getFgColor(), 0);
+        background = getColor(a->getBgColor(), 0);
     }
 
     void display(Display* out) {
-        if (tr == 0 || tr->table == 0) {
-            return;
-        }
+        if (tr == 0 || tr->table == 0 || tr->table->cols == 0) {
+            return; // invalid table model
+        } 
         TableNode* table = tr->table;
-        out->x = table->initX + (table->nextCol == 0 ? 0 : 
+        out->x = table->initX + (table->nextCol == 0 ? 0 :
                                  table->columns[table->nextCol-1]);
         out->y = table->ryt; // top+left of next cell
         out->width = table->columns[table->nextCol]-CELL_SPACING;
-        out->indent = out->x;
+        out->indent = out->x; 
         table->nextCol++;
+        if (out->measure == false) {
+            int x1 = out->indent-DEFAULT_INDENT;
+            int x2 = out->width-out->indent+7;
+            Rectangle rc(x1, tr->y1, x2, tr->y2);
+            if (background) {
+                setcolor(background);
+                fillrect(rc);
+            }
+            if (table->border > 0) {
+                setcolor(BLACK);
+                strokerect(rc);
+            }
+        }
+        setcolor(foreground ? foreground : out->color);
     }
     TrNode* tr;
+    Color background, foreground;
 };
 
 struct TdEndNode : public BaseNode {
     TdEndNode(TdNode* tdNode) : BaseNode() {
-        this->td = tdNode;
+        td = tdNode;
     }
-
     void display(Display* out) {
         if (td && td->tr && td->tr->table) {
             td->tr->table->doEndTD(out);
         }
+        setcolor(out->color);
     }
     TdNode* td;
 };
@@ -727,7 +817,7 @@ static void onclick_callback(Widget* button, void *buttonId) {
 }
 
 static void def_button_callback(Widget* button, void *buttonId) {
-    // need to supply "onclick=fff" to make it it do something useful
+    // supply "onclick=fff" to make it do something useful
     fltk::exit_modal(); 
 }
 
@@ -1117,6 +1207,8 @@ void HelpWidget::draw() {
     out.tableLevel = 0;
     out.imgY = -1;
     out.imgIndent = out.indent;
+    out.tabW = out.width;
+    out.tabH = out.height;    
 
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
@@ -1575,7 +1667,9 @@ void HelpWidget::compose() {
                     node = new FontNode(COURIER, fontSize, 0, bold, italic);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "td", 2)) {
-                    node = new TdNode((TrNode*)trStack.peek());
+                    p.removeAll();
+                    p.load(tag+2, taglen-2);
+                    node = new TdNode((TrNode*)trStack.peek(), &p);
                     nodeList.append(node);
                     tdStack.push(node);
                     text = skipWhite(tagEnd+1);
@@ -1585,7 +1679,9 @@ void HelpWidget::compose() {
                     trStack.push(node);
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strnicmp(tag, "table", 5)) {
-                    node = new TableNode();
+                    p.removeAll();
+                    p.load(tag+5, taglen-5);
+                    node = new TableNode(&p);
                     nodeList.append(node);
                     tableStack.push(node);
                     newline = true;
@@ -1593,6 +1689,11 @@ void HelpWidget::compose() {
                     // continue the font in case we resize
                     node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.append(node);
+                    prop = p.getBackground();
+                    if (prop != null) {
+                        node = new ImageNode(style(), &fileName, prop);
+                        nodeList.append(node);
+                    }
                 } else if (0 == strnicmp(tag, "ul>", 3) ||
                            0 == strnicmp(tag, "ol>", 3)) {
                     node = new UlNode(tag[0]=='o'||tag[0]=='O');
@@ -1616,12 +1717,11 @@ void HelpWidget::compose() {
                 } else if (0 == strnicmp(tag, "font ", 5)) {
                     p.removeAll();
                     p.load(tag+5, taglen-5);
+                    color = getColor(p.get("color"),0);
                     prop = p.get("size");
                     if (prop != null) {
                         fontSize = prop->toInteger();
                     }
-                    prop = p.get("color");
-                    color = prop == null ? 0 : getColor(prop->toString());
                     prop = p.get("face");
                     if (prop != null) {
                         font = fltk::font(*prop->toString());
@@ -1658,13 +1758,13 @@ void HelpWidget::compose() {
                 } else if (0 == strnicmp(tag, "body ", 5)) {
                     p.removeAll();
                     p.load(tag+5, taglen-5);
-                    prop = p.get("bgcolor");
+                    text = skipWhite(tagEnd+1);
+                    foreground = getColor(p.getFgColor(), foreground);
+                    background = getColor(p.getBgColor(), background);
+                    prop = p.getBackground();
                     if (prop != null) {
-                        background = getColor(prop->toString());
-                    }
-                    prop = p.get("fgcolor");
-                    if (prop != null) {
-                        foreground = getColor(prop->toString());
+                        node = new ImageNode(style(), &fileName, prop);
+                        nodeList.append(node);
                     }
                 }
             } else if (tag[0] == '?') {
@@ -1867,56 +1967,56 @@ const char* skipWhite(const char* s) {
     return s;
 }
 
-Color getColor(const char *n) {
-    if (!n || !n[0]) {
-        return 0;
+Color getColor(String* s, Color def) {
+    if (s == 0 || s->length() == 0) {
+        return def; 
     }
-    
+
+    const char* n = s->toString();
     if (n[0] == '#') {
         // do hex color lookup
         int rgb = strtol (n + 1, NULL, 16);
         int r = rgb >> 16;
         int g = (rgb >> 8) & 255;
         int b = rgb & 255;
-        return (fltk::color ((uchar) r, (uchar) g, (uchar) b));
+        return fltk::color ((uchar) r, (uchar) g, (uchar) b);
     } else if (stricmp(n, "black") == 0) {
-        return (BLACK);
+        return BLACK;
     } else if (stricmp(n, "red") == 0) {
-        return (RED);
+        return RED;
     } else if (stricmp(n, "green") == 0) {
-        return (fltk::color (0, 0x80, 0));
+        return fltk::color (0, 0x80, 0);
     } else if (stricmp(n, "yellow") == 0) {
-        return (YELLOW);
+        return YELLOW;
     } else if (stricmp(n, "blue") == 0) {
-        return (BLUE);
+        return BLUE;
     } else if (stricmp(n, "magenta") == 0 || 
                stricmp(n, "fuchsia") == 0) {
-        return (MAGENTA);
+        return MAGENTA;
     } else if (stricmp(n, "cyan") == 0 || 
                stricmp(n, "aqua") == 0) {
-        return (CYAN);
+        return CYAN;
     } else if (stricmp(n, "white") == 0) {
-        return (WHITE);
+        return WHITE;
     } else if (stricmp(n, "gray") == 0 || 
                stricmp(n, "grey") == 0) {
-        return (fltk::color (0x80, 0x80, 0x80));
+        return fltk::color (0x80, 0x80, 0x80);
     } else if (stricmp(n, "lime") == 0) {
-        return (GREEN);
+        return GREEN;
     } else if (stricmp(n, "maroon") == 0) {
-        return (fltk::color (0x80, 0, 0));
+        return fltk::color (0x80, 0, 0);
     } else if (stricmp(n, "navy") == 0) {
-        return (fltk::color (0, 0, 0x80));
+        return fltk::color (0, 0, 0x80);
     } else if (stricmp(n, "olive") == 0) {
-        return (fltk::color (0x80, 0x80, 0));
+        return fltk::color (0x80, 0x80, 0);
     } else if (stricmp(n, "purple") == 0) {
-        return (fltk::color (0x80, 0, 0x80));
+        return fltk::color (0x80, 0, 0x80);
     } else if (stricmp(n, "silver") == 0) {
-        return (fltk::color (0xc0, 0xc0, 0xc0));
+        return fltk::color (0xc0, 0xc0, 0xc0);
     } else if (stricmp(n, "teal") == 0) {
-        return (fltk::color (0, 0x80, 0x80));
-    } else {
-        return 0;
+        return fltk::color (0, 0x80, 0x80);
     }
+    return def;
 }
 
 // image factory based on file extension

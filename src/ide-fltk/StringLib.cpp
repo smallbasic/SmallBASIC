@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.7 2005-03-28 23:17:52 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.8 2005-04-06 00:39:00 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -558,7 +558,7 @@ String* Properties::get(const char* key) {
         if (nextValue == null) {
             return null;
         }
-        if (nextKey->equals(key)) {
+        if (nextKey->equalsIgnoreCase(key)) {
             return nextValue;
         }
     }
@@ -585,7 +585,7 @@ void Properties::get(const char* key, List* arrayValues) {
         if (nextValue == null) {
             break;
         }
-        if (nextKey->equals(key)) {
+        if (nextKey->equalsIgnoreCase(key)) {
             arrayValues->append(new String(*nextValue));
         }
     }

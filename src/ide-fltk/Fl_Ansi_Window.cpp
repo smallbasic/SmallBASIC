@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.23 2005-04-04 00:24:21 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.24 2005-04-06 00:38:55 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -37,10 +37,7 @@ using namespace fltk;
 
 #define begin_offscreen()   \
   initImage();              \
-  ImageDraw imageDraw(img); \
-  setfont(labelfont(), labelsize());
-
-#define end_offscreen() redraw();
+  ImageDraw imageDraw(img);
 
 AnsiWindow::AnsiWindow(int x, int y, int w, int h) : 
     Widget(x, y, w, h, 0) {
@@ -140,7 +137,7 @@ void AnsiWindow::clearScreen() {
         begin_offscreen();
         setcolor(color());
         fillrect(Rectangle(w(), h()));
-        end_offscreen();
+        redraw();
     }
 }
 
@@ -157,14 +154,14 @@ void AnsiWindow::drawLine(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
     drawline(x1, y1, x2, y2);
-    end_offscreen();
+    redraw();
 }
 
 void AnsiWindow::drawRectFilled(int x1, int y1, int x2, int y2) {
     begin_offscreen();
     setcolor(labelcolor());
     fillrect(Rectangle(x1, y1, x2-x1, y2-y1));
-    end_offscreen();
+    redraw();
 }
 
 void AnsiWindow::drawRect(int x1, int y1, int x2, int y2) {
@@ -174,14 +171,14 @@ void AnsiWindow::drawRect(int x1, int y1, int x2, int y2) {
     drawline(x1, y2, x2, y2);
     drawline(x2, y2, x2, y1);
     drawline(x2, y1, x1, y1);
-    end_offscreen();
+    redraw();
 }
 
 void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy, 
                                int width, int height) {
     begin_offscreen();
     image->copy(Rectangle(x, y, width, height), sx, sy);
-    end_offscreen();
+    redraw();
 }
 
 void AnsiWindow::setPixel(int x, int y, int c) {
@@ -196,7 +193,7 @@ void AnsiWindow::setPixel(int x, int y, int c) {
         int b = (fltkColor>>8) & 0xFF;
         ::SetPixel(fl_bitmap_dc, x,y, RGB(r,g,b));
     }
-    end_offscreen();
+    redraw();
 #else
     // TODO: fix linux set/get pixel
     // XDrawPoint(x_disp, x_win, x_gc, x, y);
@@ -207,7 +204,6 @@ int AnsiWindow::getPixel(int x, int y) {
 #if defined(WIN32) 
     begin_offscreen();
     COLORREF c = ::GetPixel(fl_bitmap_dc, x, y);
-    end_offscreen();
     return c;
 #else
     return 0;
@@ -226,16 +222,14 @@ void AnsiWindow::beep() const {
 
 int AnsiWindow::textWidth(const char* s) {
     begin_offscreen();
-    int w = (int)getwidth(s);
-    end_offscreen();
-    return w;
+    setfont(labelfont(), labelsize());
+    return (int)getwidth(s);
 }
 
 int AnsiWindow::textHeight(void) {
     begin_offscreen();
-    int h = (int)(getascent()+getdescent());
-    end_offscreen();
-    return h;
+    setfont(labelfont(), labelsize());
+    return (int)(getascent()+getdescent());
 }
 
 // callback for fl_scroll
@@ -272,9 +266,9 @@ Color AnsiWindow::ansiToFltk(long c) const {
     if (c < 0) {
         // windows style RGB packing
         c = -c;
-        int r = (c) & 0xFF;
+        int r = (c>>16) & 0xFF;
         int g = (c>>8) & 0xFF;
-        int b = (c>>16) & 0xFF;
+        int b = (c) & 0xFF;
         return fltk::color(r, g, b);
     }
 
@@ -463,6 +457,7 @@ void AnsiWindow::print(const char *str) {
     }
 
     begin_offscreen();
+    setfont(labelfont(), labelsize());
     int ascent = (int)getascent();
     int fontHeight = (int)(ascent+getdescent());
     unsigned char *p = (unsigned char*)str;
@@ -545,7 +540,7 @@ void AnsiWindow::print(const char *str) {
         p++;
     }
 
-    end_offscreen();
+    redraw();
 }
 
 int AnsiWindow::handle(int e) {
