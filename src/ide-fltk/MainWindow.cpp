@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.25 2004-12-18 06:15:50 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.26 2005-01-06 23:23:13 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -61,9 +61,9 @@ int px,py,pw,ph;
 
 const char aboutText[] =
     "About SmallBASIC...\n\n"
-    "Copyright (c) 2000-2004 Nicholas Christopoulos.\n\n"
-    "FLTK Version 0.9.6.0\n"
-    "Copyright (c) 2004 Chris Warren-Smith.\n\n"
+    "Copyright (c) 2000-2005 Nicholas Christopoulos.\n\n"
+    "FLTK Version 0.9.6.1\n"
+    "Copyright (c) 2005 Chris Warren-Smith.\n\n"
     "http://smallbasic.sourceforge.net\n\n"
     "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
     "This program is free software; you can use it\n"
@@ -253,7 +253,7 @@ void setTitle(const char* filename) {
         wnd->fileStatus->label("Untitled");
         wnd->label("SmallBASIC");
     }
-    wnd->redraw();
+    wnd->fileStatus->redraw();
 }
 
 void setRowCol(int row, int col) {
@@ -444,9 +444,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int mnuHeight = 20;
     int statusHeight = mnuHeight;
     int groupHeight = h-mnuHeight-statusHeight-3;
-    int tabHeight = mnuHeight;
     int tabBegin = 0; // =mnuHeight for top position tabs
-    int pageHeight = groupHeight-tabHeight;
+    int pageHeight = groupHeight-mnuHeight;
 
     isTurbo = 0;
     opt_graphics = 1;
@@ -501,7 +500,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup->begin();
     editWnd = new EditorWindow(2, 2, w-4, pageHeight-4);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
-
+    
+    editWnd->box(THIN_UP_BOX);
     editGroup->resizable(editWnd);
     editGroup->end();
     tabGroup->resizable(editGroup);
@@ -564,7 +564,7 @@ void MainWindow::resetPen() {
 
 void MainWindow::execLink(const char* file) {
     // execute a link from the html window
-    if (0 == strncmpi(file, "http://", 7)) {
+    if (0 == strncasecmp(file, "http://", 7)) {
         char line[1024];
         char localFile[PATH_MAX];
         dev_file_t df;

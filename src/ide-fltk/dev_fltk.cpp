@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.20 2004-12-18 06:15:50 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.21 2005-01-06 23:23:13 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -265,11 +265,11 @@ Image* loadImage(const char* name, uchar* buff) {
     int len = strlen(name);
     if (strcmpi(name+(len-4), ".jpg") == 0 ||
         strcmpi(name+(len-5), ".jpeg") == 0) {
-        //image = jpegImage::get(filep->name);
+        return jpegImage::get(name, buff);
     } else if (strcmpi(name+(len-4), ".gif") == 0) {
         return gifImage::get(name, buff);
     } else if (strcmpi(name+(len-4), ".png") == 0) {
-        //image = pngImage::get(filep->name);
+        return pngImage::get(name, buff);
     } else if (strcmpi(name+(len-4), ".xpm") == 0) {
         return xpmFileImage::get(name, buff);
     }

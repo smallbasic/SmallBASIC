@@ -67,7 +67,8 @@ PLATFORM=-D_UnixOS -D_CygWin -D_FLTK
 
 ## patched fltk-config to remove -mwindows 
 ## release with -s
-LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
+IMAGELIBS=-lfltk_images -lpng -ljpeg
+LDLIBS = -s `fltk-config --ldflags` ${IMAGELIBS}
 RESOURCES = sbfltk.res
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
