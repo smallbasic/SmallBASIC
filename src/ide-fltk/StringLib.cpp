@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.1 2005-03-07 22:34:17 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.2 2005-03-08 23:00:03 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -14,14 +14,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-//////////////////////////////////////////////////////////////////////////////
-// class Object
+using namespace strlib;
+
+//--Object----------------------------------------------------------------------
 
 Object::Object() {}
 Object::~Object() {}
 
-//////////////////////////////////////////////////////////////////////////////
-// class String
+//--String----------------------------------------------------------------------
 
 String::String(const char* s)  {
     owner=false;
@@ -142,7 +142,8 @@ void String::append(const char *s, int numCopy) {
 void String::append(FILE *fp, long filelen) {
     int len = length();
     buffer = (char*)realloc(buffer, len+filelen + 1);
-    fread((void *)(buffer+len), 1, filelen, fp);
+    fread((void *)(len+buffer), 1, filelen, fp);
+    buffer[len+filelen] = 0;
 }
 
 const char* String::toString() const {
@@ -342,8 +343,7 @@ String String::rvalue() {
     return substring(endIndex+1, length());
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// class List
+//--List------------------------------------------------------------------------
 
 List::List(int growSize) {
     this->growSize = growSize;
@@ -418,8 +418,27 @@ const char** List::toArray() {
     return 0;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// class Properties
+//--Stack-----------------------------------------------------------------------
+
+Stack::Stack() {}
+
+Stack::Stack(int growSize) : list(growSize) {}
+
+Stack::~Stack() {}
+
+Object* Stack::peek() {
+    return 0;
+}
+
+Object* Stack::pop() {
+    return 0;
+}
+
+void Stack::push(Object* o) {
+
+}
+
+//--Properties------------------------------------------------------------------
 
 Properties::Properties(int growSize) : 
     list(growSize) {
@@ -600,101 +619,6 @@ void Properties::operator=(Properties& p) {
         list.append(p.list.next());
     }
     p.list.emptyList();
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// class File
-
-File::File() {
-    filep = 0;
-}
-
-File::~File() {
-    close();
-}
-
-void File::close() {
-    if (filep != 0) {
-        fclose(filep);
-    }
-}
-
-bool File::open(const char* fileName) {
-    return open(fileName, readMode);
-}
-
-bool File::open(const char* fileName, mode mode) {
-    openMode = mode;
-    filep = fopen(fileName, mode==readMode?"r":"w");
-    return (filep != NULL);
-}
-
-bool File::seek(unsigned curpos) {
-    fseek(filep, curpos, SEEK_SET);
-    return true;
-}
-
-bool File::exists(const char *fileName) { 
-    return (access(fileName, R_OK) == 0);
-}
-
-U32 File::length() {
-    long curpos, fileLength;
-
-    if (openMode == closedMode) {
-        return 0;
-    }
-
-    curpos = ftell(filep);
-    fseek(filep, 0, SEEK_END);
-    fileLength = ftell(filep);
-    fseek(filep, curpos, SEEK_SET);
-   
-    return fileLength;
-}
-
-bool File::read(void* buffer, U32 length) {
-    if (openMode != readMode) {
-        return 0;
-    }
-    size_t n = fread(buffer, 1, length, filep);
-    return (n == length);
-}
-
-bool File::write(void* buffer, U32 length) {
-    if (openMode != writeMode) {
-        return 0;
-    }
-    return (length == fwrite(buffer, 1, length, filep));
-}
-
-String File::readLine() {
-    String out;
-    char* line = NULL;
-    size_t len = 0;
-    size_t read;
-
-    if (openMode != readMode) {
-        return 0;
-    }
-
-    setlinebuf(filep);
-#ifdef __CYGWIN__
-    // todo: read line in cygwin
-#else
-    read = getline(&line, &len, filep);
-#endif
-    
-    if (line) {
-        len = strlen(line);
-        if (line[len-1] == '\n') {
-            len--;
-        }
-        out.append(line, len);
-        free(line);
-    }
-    
-    return out;
 }
 
 //--EndOfFile-------------------------------------------------------------------

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.1 2005-03-07 22:34:17 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.2 2005-03-08 23:00:03 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -18,6 +18,7 @@
 #include <fltk/events.h>
 #include <fltk/Cursor.h>
 #include <fltk/damage.h>
+#include <fltk/xpmImage.h>
 
 #include "HelpWidget.h"
 #include "MainWindow.h"
@@ -26,17 +27,29 @@
 // make Fl_Ansi_Window.exe
 #define UNIT_TEST 1
 
-static const char* bullet = " * ";
 #define DEFAULT_INDENT 2
-#define BULLET_INDENT  5
-#define FOREGROUND_COLOR fltk::color(0,0,128)
+#define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
+#define ANCHOR_COLOR fltk::color(0,0,128)
 #define FONT_SIZE 11
 #define SCROLL_W 17
 
 Color getColor(const char *n);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 struct AnchorNode;
+
+static char* dot_xpm[] = {
+"5 5 3 1",
+"   c None",
+".  c #F4F4F4",
+"+  c #000000",
+".+++.",
+"+++++",
+"+++++",
+"+++++",
+".+++."};
+
+static xpmImage dotImage(dot_xpm);
 
 //--MetaNode--------------------------------------------------------------------
 
@@ -59,9 +72,13 @@ struct MetaNode {
 
 //--BaseNode--------------------------------------------------------------------
 
+enum nodeType {t_tag, t_table, t_tr, t_td};
+
 struct BaseNode : public Object {
     virtual void display(MetaNode* mn) {}
     virtual int indexOf(const char* sFind, bool matchCase) {return -1;}
+    virtual int getY() {return -1;}
+    virtual nodeType getType() {return t_tag;}
 };
 
 //--FontNode--------------------------------------------------------------------
@@ -101,32 +118,33 @@ struct FontNode : public BaseNode {
         mn->fontSize = fontSize;
     }
 
-    Font* font; // covers face,bold,italic
+    Font* font; // includes face,bold,italic
     int fontSize;
     Color color;
 };
 
-//--BrNode---------------------------------------------------------------------
+//--BrNode----------------------------------------------------------------------
 
 struct BrNode : public BaseNode {
-    BrNode(U16 indent, U16 newline) {
+    BrNode(U16 indent, U16 nlines=1) {
         this->indent = indent;
-        this->newline = newline;
+        this->nlines = nlines;
     }
     
     void display(MetaNode* mn) {
-        if (newline) {
-            mn->x = mn->indent+indent;
-            mn->y += (mn->lineHeight*newline);
-            mn->lineHeight = (int)(getascent()+getdescent());
+        if (indent) {
+            mn->indent = indent;
         }
+        mn->x = mn->indent;
+        mn->y += (nlines*mn->lineHeight);
+        mn->lineHeight = (int)(getascent()+getdescent());
     }
     
-    U16 newline;
     U16 indent;
+    U16 nlines;
 };
 
-//--AnchorNode--------------------------------------------------------------
+//--AnchorNode------------------------------------------------------------------
 
 struct AnchorNode : public BaseNode {
     AnchorNode(Properties& p) : BaseNode() {
@@ -151,6 +169,7 @@ struct AnchorNode : public BaseNode {
         x1 = mn->x;
         y1 = mn->y - mn->lineHeight;
         wrapxy = 0;
+        setcolor(ANCHOR_COLOR);
     }
 
     bool ptInSegment(int x, int y) {
@@ -165,6 +184,8 @@ struct AnchorNode : public BaseNode {
         }
         return 0;
     }
+
+    int getY() {return y1;}
 
     String name;
     String href;
@@ -187,19 +208,51 @@ struct HTMLAnchorEndNode : public BaseNode {
         }
         mn->uline = false;
         mn->anchor = 0;
+        setcolor(mn->color);
     }
     AnchorNode* beginNode;
+};
+
+//--StyleNode-------------------------------------------------------------------
+
+struct StyleNode : public BaseNode {
+    StyleNode(U8 uline, U8 center) {
+        this->uline = uline;
+        this->center = center;
+    }
+    void display(MetaNode* mn) {
+        mn->uline = uline;
+        mn->center = center;
+    }
+    U8 uline;   // 2
+    U8 center;  // 2
+};
+
+//--LiNode----------------------------------------------------------------------
+
+struct LiNode : public BaseNode {
+    LiNode(const Style* style) {
+        this->style = style;
+    }
+    void display(MetaNode* mn) {
+        int x = DEFAULT_INDENT+3;
+        int y = mn->y+ (int)(getascent()-getdescent());
+        dotImage.draw(Rectangle(x, y, 5, 5), style, OUTPUT);
+        mn->y += mn->lineHeight;
+        mn->x = x + 10;
+        mn->indent = mn->x;
+    }
+    const Style* style;
 };
 
 //--TextNode--------------------------------------------------------------------
 
 struct TextNode : public BaseNode {
-    TextNode(const char* s, U16 textlen, U8 uline, U8 center) {
+    TextNode(const char* s, U16 textlen) {
         this->s = s;
         this->textlen = textlen;
-        this->uline = uline;
-        this->center = center;
         this->width = 0;
+        this->ybegin = 0;
     }
 
     void display(MetaNode* mn) {
@@ -209,7 +262,7 @@ struct TextNode : public BaseNode {
         if (width < mn->width-mn->x) {
             // simple non-wrapping textout
             drawtext(s, textlen, mn->x, mn->y);
-            if (uline || mn->uline) {
+            if (mn->uline) {
                 drawline(mn->x, mn->y+1, mn->x+width, mn->y+1);
             }
             mn->x += width;
@@ -235,7 +288,7 @@ struct TextNode : public BaseNode {
                     }
                 }
                 drawtext(p, linelen, mn->x, mn->y);
-                if (uline || mn->uline) {
+                if (mn->uline) {
                     drawline(mn->x, mn->y+1, mn->x+linepx, mn->y+1);
                 }
                 p += linelen;
@@ -253,8 +306,6 @@ struct TextNode : public BaseNode {
                 }
             }
         }
-        mn->uline = uline;
-        mn->center = center;
     }
 
     int indexOf(const char* sFind, bool matchCase) {
@@ -272,53 +323,93 @@ struct TextNode : public BaseNode {
         return -1;
     }
 
+    int getY() {return ybegin;}
+
     const char* s; // 4
     U16 textlen;   // 4
     U16 width;     // 4
-    U8 uline;      // 2
-    U8 center;     // 2
+    U16 ybegin;    // 4
 };
 
-//--HrNode------------------------------------------------------------------
+//--HrNode----------------------------------------------------------------------
 
 struct HrNode : public BaseNode {
     HrNode() : BaseNode() {}
 
     void display(MetaNode* mn) {
         mn->x = mn->indent;
-        mn->y += mn->lineHeight;
+        mn->y += 4;
         setcolor(GRAY45);
         drawline(mn->x, mn->y+1, mn->x+mn->width-6, mn->y+1);
         setcolor(GRAY99);        
         drawline(mn->x, mn->y+2, mn->x+mn->width-6, mn->y+2);
         setcolor(mn->color);
-        mn->y+=4;
+        mn->y += mn->lineHeight+2;
     }
 };
 
-//--TdNode------------------------------------------------------------------
+//--TableNode-------------------------------------------------------------------
+
+struct TableNode : public BaseNode {
+    TableNode(bool begin) : BaseNode() {
+        this->begin = begin;
+    }
+    void display(MetaNode* mn) {
+        nextCol = 0;
+    }
+    nodeType getType() {return t_table;}
+    U16 cols;
+    U16 rows;
+    U16 nextCol;
+    bool begin;
+};
+
+//--TrNode----------------------------------------------------------------------
+
+struct TrNode : public BaseNode {
+    TrNode(bool begin) : BaseNode() {
+        this->begin = begin;
+    }
+    void display(MetaNode* mn) {
+        if (tableNode) {
+            tableNode->nextCol = 0;
+        }
+    }
+    nodeType getType() {return t_tr;}
+    TableNode* tableNode;
+    bool begin;
+};
+
+//--TdNode----------------------------------------------------------------------
 
 struct TdNode : public BaseNode {
-    TdNode(int col) : BaseNode() {
-        this->col = col;
+    TdNode(bool begin) : BaseNode() {
+        this->begin = begin;
     }
-    void display(MetaNode* mn) {}
-    U16 col;
+    void display(MetaNode* mn) {
+        if (tableNode) {
+            
+        }
+    }
+    nodeType getType() {return t_td;}
+    TableNode* tableNode;
+    bool begin;
 };
 
-//--ImageNode---------------------------------------------------------------
+//--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-    ImageNode(Image* image) : 
-        BaseNode() {
+    ImageNode(Image* image, const Style* style, Properties& p) : BaseNode() {
         this->image = image;
+        this->style = style;
     }
     void display(MetaNode* mn) {
     }
     const Image* image;
+    const Style* style;
 };
 
-//--ButtonNode--------------------------------------------------------------
+//--ButtonNode------------------------------------------------------------------
 
 struct ButtonNode : public BaseNode {
     ButtonNode(Group* wnd, Properties& p, Font* font);
@@ -347,8 +438,7 @@ struct ButtonNode : public BaseNode {
     String title;
 };
 
-ButtonNode::ButtonNode(Group* wnd, Properties& p, Font* font)
-    : BaseNode() {
+ButtonNode::ButtonNode(Group* wnd, Properties& p, Font* font) : BaseNode() {
     String* prop;
     prop = p.get("value");
     if (prop != null) {
@@ -399,14 +489,19 @@ struct NamedInput : public Object {
 
 //--HelpWidget------------------------------------------------------------------
 
+static void scrollbar_callback(Widget* s, void *wnd) {
+    ((HelpWidget*)wnd)->navigateTo(((Scrollbar*)s)->value());
+}
+
 HelpWidget::HelpWidget(const char* str, int width, int height) :
     Group(0, 0, width, height), 
     nodeList(100), namedInputs(10), buttons(10), anchors(10) {
     user_data((void*)ID_MAIN_WND);
     scrollbar = new Scrollbar(width-SCROLL_W, 0, SCROLL_W, height);
     scrollbar->set_vertical();
-    scrollbar->value(0, height, 0, 1);
-    scrollbar->step(8.0);
+    scrollbar->value(0, 1, 0, 100);
+    scrollbar->user_data(this);
+    scrollbar->callback(scrollbar_callback);
     scrollbar->show();
     loadPage(str);
 }
@@ -417,19 +512,17 @@ HelpWidget::~HelpWidget() {
 
 void HelpWidget::init() {
     vscroll = 0;
+    numRows = 0;
+
     pageHeight = 0;
-    maxObjectHeight = 0;
     maxTextHeight = 0;
-    nextPageDown = 0;
-    nextPageUp = 0;
-    numLines = 0;
-    titleText.empty();
 }
 
 void HelpWidget::cleanup() {
-    buttons.iterateInit();
-    while (buttons.hasNext()) {
-        ButtonNode* p = (ButtonNode*)nodeList.next();
+    int len = buttons.length();
+    Object** list = buttons.getList();
+    for (int i=0; i<len; i++) {
+        ButtonNode* p = (ButtonNode*)list[i];        
         p->deleteChild(this);
     }
 
@@ -453,10 +546,12 @@ void HelpWidget::reloadPage() {
 
 // returns the control with the given name
 Widget* HelpWidget::getInput(const char* name) {
-    namedInputs.iterateInit();
+    Object** list = namedInputs.getList();
+    int len = namedInputs.length();
     NamedInput* ni = 0;
-    while (namedInputs.hasNext()) {
-        ni = (NamedInput*)namedInputs.next();
+
+    for (int i=0; i<len; i++) {
+        ni = (NamedInput*)list[i];
         if (ni->name.equals(name)) {
             return ni->input->button;
         }
@@ -466,10 +561,12 @@ Widget* HelpWidget::getInput(const char* name) {
 
 // return the value of the given button control
 const char* HelpWidget::getInputValue(Widget* button) {
-    namedInputs.iterateInit();
+    Object** list = namedInputs.getList();
+    int len = namedInputs.length();
     NamedInput* ni = 0;
-    while (namedInputs.hasNext()) {
-        ni = (NamedInput*)namedInputs.next();
+
+    for (int i=0; i<len; i++) {
+        ni = (NamedInput*)list[i];
         if (ni->input->button == button) {
             return ni->input->title.toString();
         }
@@ -479,10 +576,12 @@ const char* HelpWidget::getInputValue(Widget* button) {
 
 // return the name of the given button control
 const char* HelpWidget::getInputName(Widget* button) {
-    namedInputs.iterateInit();
+    Object** list = namedInputs.getList();
+    int len = namedInputs.length();
     NamedInput* ni = 0;
-    while (namedInputs.hasNext()) {
-        ni = (NamedInput*)namedInputs.next();
+
+    for (int i=0; i<len; i++) {
+        ni = (NamedInput*)list[i];
         if (ni->input->button == button) {
             return ni->name.toString();
         }
@@ -491,11 +590,12 @@ const char* HelpWidget::getInputName(Widget* button) {
 }
 
 void HelpWidget::getInputProperties(Properties& p) {
-    namedInputs.iterateInit();
+    Object** list = namedInputs.getList();
+    int len = namedInputs.length();
     NamedInput* ni = 0;
 
-    while (namedInputs.hasNext()) {
-        ni = (NamedInput*)namedInputs.next();
+    for (int i=0; i<len; i++) {
+        ni = (NamedInput*)list[i];
         switch ((int)ni->input->button->user_data()) {
         case ID_TEXTBOX:
             //            p.put(ni->name.toString(), (const char*)
@@ -518,7 +618,6 @@ void HelpWidget::home() {
     if (vscroll != 0) {
         vscroll = 0;
         redraw();
-        nextPageUp = 0;
     }
 }
     
@@ -527,7 +626,6 @@ void HelpWidget::end() {
     if (pageHeight > height) {
         vscroll = (-pageHeight+height)-(maxTextHeight*2);
         redraw();
-        nextPageUp = 0;
     }
 }
 
@@ -535,30 +633,24 @@ void HelpWidget::pageUp() {
     int height = h();
     int y = 0;
     BaseNode* p = 0;
+    Object** list = nodeList.getList();
+    int len = nodeList.length();
 
     if (vscroll < 0) {
-        if (nextPageUp != 0) {
-            vscroll = nextPageUp;
-        } else {
-            // find the start of the previous page
-            nodeList.iterateInit();
-            //height = h();
-            while (nodeList.hasNext()) {
-                p = (BaseNode*)nodeList.next();
-                //y = p->getY();
-                if (y >= -vscroll-height) {
-                    vscroll = -y;
-                    break;
-                }
+        // find the start of the previous page
+        for (int i=0; i<len; i++) {
+            p = (BaseNode*)list[i];
+            y = p->getY();
+            if (y >= -vscroll-height) {
+                vscroll = -y;
+                break;
             }
-           
         }
-        nextPageUp = 0;
+        
         if (vscroll > 0) {
             vscroll = 0;
         }
         redraw();
-        nextPageUp = 0;
     }
 }
 
@@ -569,7 +661,6 @@ void HelpWidget::lineUp() {
             vscroll = 0;
         }
         redraw();
-        nextPageUp = 0;
     }
 }
 
@@ -577,13 +668,8 @@ void HelpWidget::pageDown() {
     int height = h();
     if (pageHeight > height) {
         if (vscroll-height >= -pageHeight+(height/4)) {
-            nextPageUp = vscroll;
-            if (nextPageDown != 0) {
-                vscroll = nextPageDown;
-            } else {
-                // scroll down
-                vscroll -= height-maxTextHeight;
-            }
+            // scroll down
+            vscroll -= height-maxTextHeight;
         } else {
             // goto the end
             vscroll = (-pageHeight+height)-(maxTextHeight*2);
@@ -604,10 +690,10 @@ void HelpWidget::navigateTo(const char* anchorName) {
 }
 
 void HelpWidget::navigateTo(int scroll) {
-    if (scroll < 1 && scroll > -pageHeight && vscroll != scroll) {
-        vscroll = scroll;
-        redraw();
-    }
+    //if (scroll < 1 && scroll > -pageHeight && vscroll != scroll) {
+        vscroll = -scroll;
+        redraw(DAMAGE_ALL);
+        //}
 }
 
 void HelpWidget::layout() {
@@ -631,24 +717,27 @@ void HelpWidget::draw() {
     mn.x = DEFAULT_INDENT;
     mn.indent = DEFAULT_INDENT;
 
-    // must call setfont() before getascent()
+    // must call setfont() before getascent() etc
     setfont(mn.font, mn.fontSize);
-    mn.y = (int)getascent()+vscroll;
-    mn.lineHeight = mn.y + (int)+getdescent();
+    mn.y = (int)getascent();
+    mn.lineHeight = mn.y+(int)getdescent();
+    mn.y += vscroll;
 
     if (selectedAnchor && (damage()&DAMAGE_PUSHED)) {
         int h = (selectedAnchor->y2-selectedAnchor->y1)+mn.lineHeight;
         push_clip(Rectangle(0, selectedAnchor->y1, mn.width, h));
     }
-
+    
     update_child(*scrollbar);
     setcolor(mn.background);
-    fillrect(Rectangle(w(), h()));
+    fillrect(Rectangle(mn.width, mn.height));
     setcolor(mn.color);
 
-    nodeList.iterateInit();
-    while (nodeList.hasNext()) {
-        p = (BaseNode*)nodeList.next();
+    Object** list = nodeList.getList();
+    int len = nodeList.length();
+
+    for (int i=0; i<len; i++) {
+        p = (BaseNode*)list[i];
         p->display(&mn);
         if (mn.y > mn.height) {
             break;
@@ -658,17 +747,19 @@ void HelpWidget::draw() {
 }
 
 bool HelpWidget::find(const char* s, bool matchCase) {
-    nodeList.iterateInit();
     BaseNode* p = 0;
-    while (nodeList.hasNext()) {
-        p = (BaseNode*)nodeList.next();
-//         if (p->getY() > -vscroll) {
-//             // start looking from this point onwards
-//             if (p->indexOf(s, matchCase) != -1) {
-//                 navigateTo(-p->getY());
-//                 return true;
-//             }
-//         }
+    Object** list = nodeList.getList();
+    int len = nodeList.length();
+
+    for (int i=0; i<len; i++) {
+        p = (BaseNode*)list[i];
+        if (p->getY() > -vscroll) {
+            // start looking from this point onwards
+            if (p->indexOf(s, matchCase) != -1) {
+                navigateTo(-p->getY());
+                return true;
+            }
+        }
     }
     return false;
 }
@@ -683,10 +774,12 @@ void HelpWidget::onMove(int event) {
             redraw(DAMAGE_PUSHED);
         }
     } else {
-        anchors.iterateInit();
+        int len = anchors.length();
+        Object** list = anchors.getList();
         AnchorNode* p = 0;
-        while (anchors.hasNext()) {
-            p = (AnchorNode*)anchors.next();
+
+        for (int i=0; i<len; i++) {
+            p = (AnchorNode*)list[i];
             if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
                 Widget::cursor(fltk::CURSOR_HAND);
                 return;
@@ -698,10 +791,13 @@ void HelpWidget::onMove(int event) {
 
 void HelpWidget::onPush(int event) {
     selectedAnchor = 0;
-    anchors.iterateInit();
+
+    Object** list = anchors.getList();
+    int len = anchors.length();
     AnchorNode* p = 0;
-    while (anchors.hasNext()) {
-        p = (AnchorNode*)anchors.next();
+
+    for (int i=0; i<len; i++) {
+        p = (AnchorNode*)list[i];
         if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
             selectedAnchor = p;
             selectedAnchor->pushed = true;
@@ -737,6 +833,20 @@ int HelpWidget::handle(int event) {
     return 0;
 }
 
+
+// TODO: use a Stack - push each <table>
+// as encountered. then on <td><tr> tags - peek the stack
+// and attach the matching table
+// pop the table on </table>
+//     <table> -- push 
+//     <tr> 
+//       <td><table> -- push
+//            <tr><td></td></tr></table> --pop
+//       </td>
+//     </tr>
+//     </table> -- pop
+
+
 void HelpWidget::compileHTML() {
     bool pre = false;
     bool bold = false;
@@ -749,6 +859,7 @@ void HelpWidget::compileHTML() {
     int fontSize = FONT_SIZE;
     int taglen = 0;
     int textlen = 0;
+    bool newline = false;
 
     Properties p(10);
     String* prop;
@@ -759,11 +870,11 @@ void HelpWidget::compileHTML() {
     const char* tagEnd = text;
     const char* tag;
 
-#define ADD_PREV_SEGMENT                                \
-    prevlen = i-pindex;                                 \
-    if (prevlen > 0) {                                  \
-        node = new TextNode(p, prevlen, uline, center); \
-        nodeList.append(node);                          \
+#define ADD_PREV_SEGMENT  \
+    prevlen = i-pindex;   \
+    if (prevlen > 0) {    \
+        newline = false;  \
+        nodeList.append(new TextNode(p, prevlen)); \
     }
 
     while (text && *text) {
@@ -787,7 +898,6 @@ void HelpWidget::compileHTML() {
         // process open text leading to the found tag 
         if (tagBegin > text) {
             textlen = tagBegin - text;
-
             const char* p = text;
             int pindex = 0;
             int prevlen,ispace;
@@ -801,8 +911,7 @@ void HelpWidget::compileHTML() {
                                           entityMap[j].elen-1)) {
                             ADD_PREV_SEGMENT;
                             // save entity replacement
-                            node = new TextNode(&entityMap[j].xlat, 1,
-                                                uline, center);
+                            node = new TextNode(&entityMap[j].xlat, 1);
                             nodeList.append(node);
                             // skip past entity
                             i += entityMap[j].elen;
@@ -819,8 +928,12 @@ void HelpWidget::compileHTML() {
                 case '\n':
                     ADD_PREV_SEGMENT;
                     if (pre) {
-                        node = new BrNode(0, 1);
-                        nodeList.append(node);
+                        nodeList.append(new BrNode(0));
+                    }
+                    if (isWhite(text[i+1]) == false && newline == false) {
+                        // replace with single space
+                        nodeList.append(new TextNode(" ", 1));
+                        newline = false;
                     }
                     // skip newline character
                     pindex = i+1;
@@ -828,9 +941,11 @@ void HelpWidget::compileHTML() {
                     break;
                     
                 case ' ':
+                case '\t':
                     // skip multiple whitespaces
                     ispace = i;
-                    while (ispace<textlen && text[ispace+1] == ' ') {
+                    while (ispace<textlen && (text[ispace+1] == ' ' || 
+                                              text[ispace+1] == '\t')) {
                         ispace++;
                     }
                     if (ispace > i) {
@@ -844,13 +959,14 @@ void HelpWidget::compileHTML() {
 
             int len = textlen-pindex;
             if (len) {
-                node = new TextNode(p, len, uline, center);
-                nodeList.append(node);
+                newline = false;
+                nodeList.append(new TextNode(p, len));
             }
             text = *tagEnd == 0 ? 0 : tagEnd+1;
         }
 
         // process the tag
+        newline = false;
         taglen = tagEnd - tagBegin - 1;
         if (taglen > 0) {
             tag = tagBegin+1;
@@ -866,6 +982,7 @@ void HelpWidget::compileHTML() {
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "center", 6)) {
                     center = false;
+                    nodeList.append(new StyleNode(uline, center));
                 } else if (0 == strnicmp(tag, "font", 4)) {
                     font = fltk::HELVETICA;
                     fontSize = FONT_SIZE;
@@ -874,23 +991,35 @@ void HelpWidget::compileHTML() {
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "pre", 3)) {
                     pre = false;
+                    node = new FontNode(font, fontSize, color, bold, italic);
+                    nodeList.append(node);
                 } else if (0 == strnicmp(tag, "p", 1)) {
                     // end paragraph
                 } else if (0 == strnicmp(tag, "a", 1)) {
                     nodeList.append(new HTMLAnchorEndNode());
                 } else if (0 == strnicmp(tag, "ul", 2)) {
-                    nodeList.append(new BrNode(0, 2));
+                    nodeList.append(new BrNode(DEFAULT_INDENT, 2));
+                    newline = true;
+                    numRows++;
                 } else if (0 == strnicmp(tag, "u", 1)) {
                     uline = false;
+                    nodeList.append(new StyleNode(uline, center));
                 } else if (0 == strnicmp(tag, "td", 2)) {
-                    // end td
+                    nodeList.append(new TdNode(false));
                 } else if (0 == strnicmp(tag, "tr", 2)) {
-                    nodeList.append(new BrNode(0, 1));
+                    nodeList.append(new TrNode(false));
+                    newline = true;
+                    numRows++;
                 } else if (0 == strnicmp(tag, "table", 5)) {
+                    nodeList.append(new TableNode(false));
+                    newline = true;
+                    numRows++;
                 }
             } else {
                 if (0 == strnicmp(tag, "br", 2)) {
-                    nodeList.append(new BrNode(0, 1));
+                    nodeList.append(new BrNode(0));
+                    newline = true;
+                    numRows++;
                 } else if (0 == strnicmp(tag, "b", 1)) {
                     bold = true;
                     node = new FontNode(font, fontSize, 0, bold, italic);
@@ -901,30 +1030,40 @@ void HelpWidget::compileHTML() {
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "center", 6)) {
                     center = true;
+                    nodeList.append(new StyleNode(uline, center));
                 } else if (0 == strnicmp(tag, "hr", 2)) {
                     nodeList.append(new HrNode());
+                    newline = true;
+                    numRows++;
                 } else if (0 == strnicmp(tag, "title", 5)) {
                     // skip past </title>
                     tagEnd = strchr(tagEnd+1, '>');
                     text = tagEnd+1;
                 } else if (0 == strnicmp(tag, "pre", 3)) {
                     pre = true;
+                    node = new FontNode(COURIER, fontSize, color, bold, italic);
+                    nodeList.append(node);
                 } else if (0 == strnicmp(tag, "p", 1)) {
                     // paragraph
                 } else if (0 == strnicmp(tag, "table", 5)) {
-                    nodeList.append(new BrNode(0, 1));
+                    nodeList.append(new TableNode(true));
+                    newline = true;
+                    numRows++;
                 } else if (0 == strnicmp(tag, "tr", 2)) {
-                    // tr
+                    nodeList.append(new TrNode(true));
                 } else if (0 == strnicmp(tag, "td", 2)) {
-                    nodeList.append(new TdNode(0));
+                    nodeList.append(new TdNode(true));
                 } else if (0 == strnicmp(tag, "ul>", 3)) {
-                    nodeList.append(new BrNode(0, 1));
+                    nodeList.append(new BrNode(0));
+                    newline = true;
+                    numRows++;
                 } else if (0 == strnicmp(tag, "u>", 2)) {
                     uline = true;
+                    nodeList.append(new StyleNode(uline, center));
                 } else if (0 == strnicmp(tag, "li>", 3)) {
-                    nodeList.append(new BrNode(BULLET_INDENT, 1));
-                    node = new TextNode(bullet, strlen(bullet), uline, center);
-                    nodeList.append(node);
+                    nodeList.append(new LiNode(style()));
+                    newline = true;
+                    numRows++;
                 } else if (0 == strnicmp(tag, "a ", 2)) {
                     p.load(tag+2, taglen-2);
                     node = new AnchorNode(p);
@@ -969,7 +1108,6 @@ void HelpWidget::compileHTML() {
 
 void HelpWidget::copyText(int begin, int end) {
     String out;
-    nodeList.iterateInit();
     TextNode* p = 0;
     if (begin > end) {
         int i = end;
@@ -977,17 +1115,22 @@ void HelpWidget::copyText(int begin, int end) {
         begin = i;
     }
     begin -= maxTextHeight;
-    while (nodeList.hasNext()) {
-        p = (TextNode*)nodeList.next();
-//         if (p->getY() > end) {
-//             break;
-//         } else if (p->getY() >= begin) {
-//             out.append(p->s, p->textlen);
-//             out.append(" ", 1);
-//         }
+
+    Object** list = nodeList.getList();
+    int len = nodeList.length();
+
+    for (int i=0; i<len; i++) {
+        p = (TextNode*)list[i];
+        if (p->getY() > end) {
+            break;
+        } else if (p->getY() >= begin) {
+            out.append(p->s, p->textlen);
+            out.append(" ", 1);
+        }
     }
 
     if (out.length() > 0) {
+        fltk::copy(out.toString(), out.length(), true);
     }
 }
 
@@ -1084,21 +1227,8 @@ int main(int argc, char **argv) {
     int h = 200;
     Window window(w, h, "Browse");
     window.begin();
-    const char html[] = "hello<p>rrr&bull;<i><pre><i>"
-        "<HTML><HEAD><TITLE>Error</TITLE></HEAD><center>"
-        "<font size=40>Big!</font>"
-        "<br><font face=Webdings color=red size=20>Big!</font>"
-        "Unable</i> to &bull; xxx &bull;&bull;old\nnew?"
-        "Unable[     ]to <!--follow the--> link &bull;&bull; " 
-        "before link<a href=gothere.html>Link</a>after link"
-        "Unable[     ]to <!--follow the--> link &bull;&bull; " 
-        "xxx &bull;&bull;  </P></BODY>x";
-    const char html2 [] = 
-        "<link href=help.css rel=stylesheet type=text/css><title>SmallBASIC Guide</title>&amp;"
-        "<a href=0.html><b>Introduction</b></a> | <a href=1.html>The language</a> | <a href=2.html>Programming Tips</a>";
-    //HelpWidget out(html2, w, h);
     HelpWidget out("", w, h);
-    out.load("help/0.html");
+    out.load("t.html");
     window.resizable(&out);
     window.end();
     window.show(argc,argv);
@@ -1179,7 +1309,7 @@ Color getColor(const char *n) {
     }
     
     if (n[0] == '#') {
-        // Do hex color lookup
+        // do hex color lookup
         int rgb = strtol (n + 1, NULL, 16);
         int r = rgb >> 16;
         int g = (rgb >> 8) & 255;

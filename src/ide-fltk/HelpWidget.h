@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.1 2005-03-07 22:34:17 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.2 2005-03-08 23:00:03 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -31,6 +31,7 @@
 #define ID_CTRL_END   ID_OPTION
 
 using namespace fltk;
+using namespace strlib;
 
 ////////////////////////////////////////////////////////////////////////////////
 // class HelpWidget
@@ -51,7 +52,6 @@ public:
     void navigateTo(const char* anchorName);
     void navigateTo(int vscroll);
     bool find(const char* s, bool matchCase);
-    const char* getTitle() {return titleText.toString();}
     int getScroll() {return vscroll;}
     Widget* getInput(const char* name);
     const char* getInputValue(Widget* button);
@@ -76,19 +76,15 @@ public:
 
     Scrollbar* scrollbar;
     int vscroll;
-    int nextPageDown;
-    int nextPageUp;
     int pageHeight;
     int maxTextHeight;
-    int maxObjectHeight;
-    int numLines;
+    int numRows;
     ::List nodeList;
     ::List namedInputs;
     ::List buttons;
     ::List anchors;
     ::Properties localAnchors;
     ::String htmlStr;
-    ::String titleText;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
