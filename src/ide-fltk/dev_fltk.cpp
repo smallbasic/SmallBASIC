@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.19 2004-12-15 22:06:47 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.20 2004-12-18 06:15:50 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -417,6 +417,9 @@ char *dev_gets(char *dest, int size) {
     dest[len] = 0;
     delete in;
 
+    // reposition x to adjust for input box
+    wnd->out->setXY(wnd->out->getX()+4, wnd->out->getY());
+    wnd->out->print(dest);
     return dest;
 }
 

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.24 2004-12-16 22:15:13 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.25 2004-12-18 06:15:50 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -72,6 +72,11 @@ const char aboutText[] =
     "the Free Software Foundation.";
 
 //--Menu callbacks--------------------------------------------------------------
+
+void getHomeDir(char* fileName) {
+    sprintf(fileName, "%s/.smallbasic/", dev_getenv("HOME"));
+	mkdir(fileName, 0777);
+}
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
@@ -176,11 +181,17 @@ void basicMain(const char* filename) {
 }
 
 void run_cb(Widget*, void*) {
-    const char* filename = wnd->editWnd->getFileName();
+    const char* filename = wnd->editWnd->getFilename();
     if (runMode == edit_state) {
-        if (wnd->editWnd->checkSave(false) && filename[0]) {
-            basicMain(filename);
+        if (filename == 0 || filename[0] == 0) {
+            getHomeDir(buff);
+            strcat(buff, "untitled.bas");
+            filename = buff;
+            wnd->editWnd->doSaveFile(filename, false);
+        } else {
+            wnd->editWnd->doSaveFile(filename, true);
         }
+        basicMain(filename);
     } else {
         busyMessage();
     }
@@ -190,7 +201,7 @@ void run_cb(Widget*, void*) {
 // program will be changing the contents of the editor buffer
 void editor_cb(Widget* w, void* v) {
     char filename[256];
-    strcpy(filename, wnd->editWnd->getFileName());
+    strcpy(filename, wnd->editWnd->getFilename());
 
     if (runMode == edit_state) {
         if (wnd->editWnd->checkSave(false) && filename[0]) {
@@ -223,7 +234,7 @@ void tool_cb(Widget* w, void* v) {
         strcpy(opt_command, toolhome);
         setTitle((const char*)v);
         basicMain((const char*)v);
-        setTitle(wnd->editWnd->getFileName());
+        setTitle(wnd->editWnd->getFilename());
         opt_command[0] = 0;
     } else {
         busyMessage();
@@ -257,11 +268,6 @@ void setRowCol(int row, int col) {
 void setModified(bool dirty) {
     wnd->modStatus->label(dirty?"MOD":"");
     wnd->modStatus->redraw();
-}
-
-void getHomeDir(char* fileName) {
-    sprintf(fileName, "%s/.smallbasic/", dev_getenv("HOME"));
-	mkdir(fileName, 0777);
 }
 
 void addHistory(const char* fileName) {

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.17 2004-12-15 22:06:47 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.18 2004-12-18 06:15:50 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -495,7 +495,7 @@ void EditorWindow::loadFile(const char *newfile, int ipos) {
     addHistory(filename);
 }
 
-void EditorWindow::doSaveFile(char *newfile) {
+void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
     char basfile[PATH_MAX];
     strcpy(basfile, newfile);
     int len = strlen(basfile);
@@ -505,12 +505,15 @@ void EditorWindow::doSaveFile(char *newfile) {
 
     if (textbuf->savefile(basfile)) {
         alert("Error writing to file \'%s\':\n%s.", basfile, strerror(errno));
-    } else {
-        strcpy(filename, basfile);
+        return;
     }
-    dirty = 0;
-    textbuf->call_modify_callbacks();
-    setTitle(basfile);
+
+    if (updateUI) {
+        dirty = 0;
+        strcpy(filename, basfile);
+        textbuf->call_modify_callbacks();
+        setTitle(basfile);
+    }
 }
 
 void EditorWindow::find() {
@@ -668,7 +671,7 @@ void EditorWindow::saveFile() {
         saveFileAs();
         return;
     } else {
-        doSaveFile(filename);
+        doSaveFile(filename, true);
     }
 }
 
@@ -680,7 +683,7 @@ void EditorWindow::saveFileAs() {
         if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
             return;
         }
-        doSaveFile(newfile);
+        doSaveFile(newfile, true);
     }
 }
 
