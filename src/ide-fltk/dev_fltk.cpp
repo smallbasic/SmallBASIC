@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.30 2005-03-29 23:45:07 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.31 2005-04-01 00:07:08 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -34,7 +34,7 @@ C_LINKAGE_BEGIN
 
 extern MainWindow *wnd;
 HelpWidget* helpView = 0;
-const char* eventName = 0;
+char* eventName = 0;
 Properties env;
 String envs;
 void closeHelp();
@@ -53,6 +53,7 @@ int osd_devinit() {
     if (SharedImage::first_image) {
         SharedImage::first_image->clear_cache();
     }
+    closeHelp();
     return 1;
 }
 
@@ -297,7 +298,7 @@ void anchor_cb(Widget* w, void* v) {
 }
 
 void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
-    if (helpView && (!html || !html[0])) {
+    if (html == 0 || html[0] == 0) {
         closeHelp();
     } else if (t && t[0]) {
         // offset from main window
@@ -317,29 +318,33 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         window.exec(wnd);
         out.getInputProperties(&env);
     } else {
-        if (helpView == 0) {
-            // fit within output window
-            x += wnd->out->x();
-            y += wnd->out->y();
-            
-            if (x+w > wnd->out->w() || w == 0) {
-                w = wnd->out->w()-x; 
-            } 
-            if (y+h > wnd->out->h() || h == 0) {
-                h = wnd->out->h()-y; 
-            }
-            wnd->outputGroup->begin();
-            helpView = new HelpWidget(x, y, w, h);
-            wnd->outputGroup->end();
-            helpView->callback(anchor_cb);
+        // fit within output window
+        if (x < wnd->out->x()) {
+            x = wnd->out->x();
         }
+        if (y < wnd->out->y()) {
+            y = wnd->out->y();
+        }
+        int wmax = wnd->out->x()+wnd->out->w()-x;
+        int hmax = wnd->out->y()+wnd->out->h()-y;
+        if (w > wmax || w == 0) {
+            w = wmax;
+        } 
+        if (h > hmax || h == 0) {
+            h = hmax;
+        }
+        closeHelp();
+        wnd->outputGroup->begin();
+        helpView = new HelpWidget(x, y, w, h);
+        wnd->outputGroup->end();
+        helpView->callback(anchor_cb);
         if (strnicmp("file:", html, 5) == 0) {
             helpView->loadFile(html+5);
         } else {
             helpView->loadBuffer(html);
         }
-        helpView->take_focus();
         helpView->show();
+        helpView->take_focus();
     }
 }
 

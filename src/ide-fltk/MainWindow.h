@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.15 2005-03-29 23:45:07 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.16 2005-04-01 00:07:08 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -17,6 +17,7 @@
 
 #include "Fl_Ansi_Window.h"
 #include "EditorWindow.h"
+#include "HelpWidget.h"
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
@@ -32,7 +33,7 @@ void trace(const char *format, ...);
 
 struct MainWindow : public Window {
     MainWindow(int w, int h);
-    ~MainWindow();
+    ~MainWindow() {};
 
     int handle(int e);
     bool isBreakExec(void);
@@ -41,7 +42,7 @@ struct MainWindow : public Window {
     void setModal(bool modal);
     void setBreak();
     void resetPen();
-    void execLink(const char* file);
+    void execLink(char* file);
 
     int penDownX;
     int penDownY;
@@ -52,12 +53,13 @@ struct MainWindow : public Window {
     // main output
     AnsiWindow *out;
     EditorWindow* editWnd;
+    HelpWidget* helpWnd;
 
     // tabs
     TabGroup* tabGroup;
     Group* editGroup;
     Group* outputGroup;
-    Group* browseGroup;
+    Group* helpGroup;
 
     // status bar
     Widget* fileStatus;

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.14 2005-03-29 23:45:07 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.15 2005-04-01 00:07:07 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -36,7 +36,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-// #define UNIT_TEST 1
+//#define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -46,7 +46,7 @@
 #define LI_INDENT 18
 #define FONT_SIZE 11
 #define FONT_SIZE_H1 22
-#define SCROLL_W 17
+#define SCROLL_W 15
 #define CELL_SPACING 4
 #define INPUT_SPACING 2
 #define INPUT_WIDTH 90
@@ -59,6 +59,7 @@ void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 const char* skipWhite(const char* s);
 Image* loadImage(const char* imgSrc);
 struct AnchorNode;
+struct InputNode;
 static char truestr[] = "true";
 static char falsestr[] = "false";
 static char spacestr[] = " ";
@@ -107,6 +108,7 @@ struct Attributes : public Properties {
     String* getHref() {return get("href");}
     String* getType() {return get("type");}
     String* getSrc() {return get("src");}
+    String* getOnclick() {return get("onclick");}
     void getValue(String& s) {s.append(getValue());}
     void getName(String& s) {s.append(getName());}
     void getHref(String& s) {s.append(getHref());}
@@ -247,7 +249,7 @@ struct AnchorNode : public BaseNode {
     U8 pushed;
 };
 
-AnchorNode* selectedAnchor = 0;
+AnchorNode* pushedAnchor = 0;
 
 struct AnchorEndNode : public BaseNode {
     AnchorEndNode() : BaseNode() {}
@@ -345,18 +347,23 @@ struct ImageNode : public BaseNode {
         if (image == 0) {
             return;
         }
-        int iw = w.relative ? (w.value*(out->width-out->x)/100) : w.value;
+        out->content = true;
+        int iw = w.relative ? (w.value*(out->width-out->x)/100) : 
+            w.value < out->width ? w.value : out->width;
         int ih = h.relative ? (h.value*(out->wnd->h()-out->y)/100) : h.value;
-        
         if (iw+DEFAULT_INDENT > out->width-out->x) {
             out->newRow();
         }
         int x = out->x+DEFAULT_INDENT;
         int y = out->y - (int)getascent();
+        if (out->anchor && out->anchor->pushed) {
+            x += 1;
+            y += 1;
+        }
         if (out->measure == false) {
             image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
         }
-        if (ih > out->lineHeight) {// && out->x != out->indent) {
+        if (ih > out->lineHeight) {
             out->lineHeight = ih;
         }
         out->x += iw+DEFAULT_INDENT;
@@ -466,7 +473,7 @@ struct HrNode : public BaseNode {
         if (out->measure == false) {
             setcolor(GRAY45);
             drawline(out->x, out->y+1, out->x+out->width-6, out->y+1);
-            setcolor(GRAY99);        
+            setcolor(GRAY99);
             drawline(out->x, out->y+2, out->x+out->width-6, out->y+2);
             setcolor(out->color);
         }
@@ -679,12 +686,29 @@ struct TdEndNode : public BaseNode {
     TdNode* td;
 };
 
+//--NamedInput------------------------------------------------------------------
+
+struct NamedInput : public Object {
+    NamedInput(InputNode* node, String* name) {
+        this->input = node;
+        this->name.append(name->toString());
+    }
+    ~NamedInput() {}
+    InputNode* input;
+    String name;
+};
+
 //--InputNode-------------------------------------------------------------------
+
+static void onclick_callback(Widget* button, void *buttonId) {
+    ((HelpWidget*)button->parent())->onclick(button);
+}
 
 struct InputNode : public BaseNode {
     InputNode(Group* parent);
     InputNode(Group* parent, const char* v, int len);
     InputNode(Group* parent, Properties* env, Attributes* a);
+    void updateProperties(strlib::List* namedInputs, Attributes* a);
 
     void display(Display* out) {
         if (button == 0) {
@@ -693,7 +717,7 @@ struct InputNode : public BaseNode {
         
         bool select = false;
         switch ((int)button->user_data()) {
-        case ID_OPTION:
+        case ID_SELECT:
             select = true;
             break;
         case ID_BUTTON:
@@ -718,9 +742,11 @@ struct InputNode : public BaseNode {
         out->content = true;
     }
     Widget* button;
+    String onclick;
 };
 
 InputNode::InputNode(Group* parent, Properties* env, Attributes* a) : 
+    // creates either a text, checkbox, radio or button control
     BaseNode() {
     parent->begin();
     String* value = a->getValue();
@@ -762,16 +788,8 @@ InputNode::InputNode(Group* parent, Properties* env, Attributes* a) :
     parent->end();
 }
 
-InputNode::InputNode(Group* parent) : BaseNode() {
-    parent->begin();
-    button = new Choice(0, 0, INPUT_WIDTH, 0);
-    button->color(BUTTON_COLOR);
-    button->textcolor(ANCHOR_COLOR);
-    button->user_data((void*)ID_OPTION);
-    parent->end();
-}
-
 InputNode::InputNode(Group* parent, const char* v, int len) : BaseNode() {
+    // creates a textarea control
     parent->begin();
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->box(NO_BOX);
@@ -783,7 +801,16 @@ InputNode::InputNode(Group* parent, const char* v, int len) : BaseNode() {
     button->user_data((void*)ID_TEXTBOX);
     button->color(BUTTON_COLOR);
     button->textcolor(ANCHOR_COLOR);
-    button->user_data((void*)ID_OPTION);
+    parent->end();
+}
+
+InputNode::InputNode(Group* parent) : BaseNode() {
+    // creates a select control
+    parent->begin();
+    button = new Choice(0, 0, INPUT_WIDTH, 0);
+    button->color(BUTTON_COLOR);
+    button->textcolor(ANCHOR_COLOR);
+    button->user_data((void*)ID_SELECT);
     parent->end();
 }
 
@@ -798,6 +825,17 @@ void createDropList(InputNode* node, strlib::List* options) {
         item->copy_label(s->toString());
     }
     menu->end();
+}
+
+void InputNode::updateProperties(strlib::List* namedInputs, Attributes* a) {
+    String* name = a->getName();
+    if (name != null) {
+        namedInputs->append(new NamedInput(this, name));
+    }
+    onclick.append(a->getOnclick());
+    if (button && onclick.length()) {
+        button->callback(onclick_callback);
+    }
 }
 
 //--EnvNode---------------------------------------------------------------------
@@ -821,18 +859,6 @@ struct EnvNode : public TextNode {
     String value;
 };
 
-//--NamedInput------------------------------------------------------------------
-
-struct NamedInput : public Object {
-    NamedInput(InputNode* node, String* name) {
-        this->input = node;
-        this->name.append(name->toString());
-    }
-    ~NamedInput() {}
-    InputNode* input;
-    String name;
-};
-
 //--HelpWidget------------------------------------------------------------------
 
 static void scrollbar_callback(Widget* scrollBar, void *helpWidget) {
@@ -854,7 +880,7 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     scrollbar->callback(scrollbar_callback);
     scrollbar->show();
     end();
-    callback(anchor_callback);
+    callback(anchor_callback); // default callback
     init();
     cookies = 0;
     closeEvent = true;
@@ -896,7 +922,7 @@ void HelpWidget::reloadPage() {
     init();
     compose();
     redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
-    selectedAnchor = 0;
+    pushedAnchor = 0;
 }
 
 // returns the control with the given name
@@ -923,7 +949,7 @@ const char* HelpWidget::getInputValue(Widget* widget) {
     case ID_RADIO:
     case ID_CHKBOX:
         return ((RadioButton*)widget)->value() ? truestr : falsestr;
-    case ID_OPTION:
+    case ID_SELECT:
         widget = ((Choice*)widget)->item();
         return widget ? widget->label() : null;
     }
@@ -995,7 +1021,7 @@ bool HelpWidget::setInputValue(const char* assignment) {
                 ((RadioButton*)button)->value(value.equals(truestr) ||
                                               value.equals("1"));
                 break;
-            case ID_OPTION:
+            case ID_SELECT:
                 choice = (Choice*)button;
                 item = choice->find(value.toString());
                 if (item) {
@@ -1066,10 +1092,10 @@ void HelpWidget::draw() {
     out.y += vscroll;
 
     push_clip(Rectangle(w(), h()));
-    if (selectedAnchor && (damage() == DAMAGE_PUSHED)) {
-        // just draw anchor push
-        int h = (selectedAnchor->y2-selectedAnchor->y1)+out.lineHeight;
-        push_clip(Rectangle(0, selectedAnchor->y1, out.width, h));
+    if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
+        // just draw the anchor-push
+        int h = (pushedAnchor->y2-pushedAnchor->y1)+pushedAnchor->lineHeight;
+        push_clip(Rectangle(0, pushedAnchor->y1, out.width, h));
     }
     
     setcolor(out.background);
@@ -1140,19 +1166,19 @@ void HelpWidget::draw() {
     Group::draw();
     pop_clip();
 
-    if (selectedAnchor && (damage() == DAMAGE_PUSHED)) {
+    if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
         pop_clip();
     }
     pop_clip();
 }
 
 int HelpWidget::onMove(int event) {
-    if (selectedAnchor && event == fltk::DRAG) {
-        bool pushed = selectedAnchor->ptInSegment(fltk::event_x(), 
-                                                  fltk::event_y());
-        if (selectedAnchor->pushed != pushed) {
+    if (pushedAnchor && event == fltk::DRAG) {
+        bool pushed = pushedAnchor->ptInSegment(fltk::event_x(), 
+                                                fltk::event_y());
+        if (pushedAnchor->pushed != pushed) {
             Widget::cursor(fltk::CURSOR_HAND);
-            selectedAnchor->pushed = pushed;
+            pushedAnchor->pushed = pushed;
             redraw(DAMAGE_PUSHED);
             return 1;
         }
@@ -1174,12 +1200,12 @@ int HelpWidget::onMove(int event) {
 int HelpWidget::onPush(int event) {
     Object** list = anchors.getList();
     int len = anchors.length();
-    selectedAnchor = 0;
+    pushedAnchor = 0;
     for (int i=0; i<len; i++) {
         AnchorNode* p = (AnchorNode*)list[i];
         if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
-            selectedAnchor = p;
-            selectedAnchor->pushed = true;
+            pushedAnchor = p;
+            pushedAnchor->pushed = true;
             Widget::cursor(fltk::CURSOR_HAND);
             redraw(DAMAGE_PUSHED);
             return 1;
@@ -1218,15 +1244,14 @@ int HelpWidget::handle(int event) {
             switch (event_key()) {
             case 'r': // reload
                 reloadPage();
-                break;
+                return 1;
             case 'f': // find
                 find(fltk::input("Find:"), false);
-                break;
-            case 'q': // quit popup
+                return 1;
+            case 'b': // break popup
                 fltk::exit_modal();
-                break;
+                break; // handle in default
             }
-            return 1;
         }
         break;
         
@@ -1235,15 +1260,15 @@ int HelpWidget::handle(int event) {
         return onMove(event);
 
     case fltk::RELEASE:
-        if (selectedAnchor) {
+        if (pushedAnchor) {
             Widget::cursor(fltk::CURSOR_DEFAULT);
-            bool pushed = selectedAnchor->pushed;
-            selectedAnchor->pushed = false;
+            bool pushed = pushedAnchor->pushed;
+            pushedAnchor->pushed = false;
             redraw(DAMAGE_PUSHED);
             if (pushed) {
                 closeEvent = true;
                 this->event.empty();
-                this->event.append(selectedAnchor->href.toString());
+                this->event.append(pushedAnchor->href.toString());
                 user_data((void*)this->event.toString());
                 do_callback();
             }
@@ -1251,6 +1276,22 @@ int HelpWidget::handle(int event) {
         }
     }
     return scrollbar->active() ? scrollbar->handle(event) : 0;
+}
+
+// handle click from form button
+void HelpWidget::onclick(Widget* button) {
+    int len = inputs.length();
+    Object** list = inputs.getList();
+    for (int i=0; i<len; i++) {
+        InputNode* p = (InputNode*)list[i];
+        if (p->button == button) {
+            this->event.empty();
+            this->event.append(p->onclick.toString());
+            user_data((void*)this->event.toString());
+            do_callback();
+            return;
+        }
+    }
 }
 
 void HelpWidget::compose() {
@@ -1295,12 +1336,10 @@ void HelpWidget::compose() {
         while (*tagBegin != 0 && *tagBegin != '<') {
             tagBegin++;
         }
-
         tagEnd = tagBegin;
         while (*tagEnd != 0 && *tagEnd != '>') {
             tagEnd++;
         }
-        
         if (tagBegin == text) {
             if (*tagEnd == 0) {
                 break; // no tag closure
@@ -1314,7 +1353,6 @@ void HelpWidget::compose() {
             const char* p = text;
             int pindex = 0;
             int prevlen,ispace;
-            
             for (int i=0; i<textlen; i++) {
                 switch (text[i]) {
                 case '&':
@@ -1461,10 +1499,7 @@ void HelpWidget::compose() {
                     inputNode = new InputNode(this, tagPair, tagBegin-tagPair);
                     nodeList.append(inputNode);
                     inputs.append(inputNode);
-                    prop = p.getName();
-                    if (prop != null) {
-                        namedInputs.append(new NamedInput(inputNode, prop));
-                    }
+                    inputNode->updateProperties(&namedInputs, &p);
                     tagPair = 0;
                     p.removeAll();
                 } else if (0 == strnicmp(tag, "select", 6) && tagPair) {
@@ -1472,10 +1507,7 @@ void HelpWidget::compose() {
                     createDropList(inputNode, &options);
                     nodeList.append(inputNode);
                     inputs.append(inputNode);
-                    prop = p.getName();
-                    if (prop != null) {
-                        namedInputs.append(new NamedInput(inputNode, prop));
-                    }
+                    inputNode->updateProperties(&namedInputs, &p);
                     tagPair = 0;
                     p.removeAll();
                 } else if (0 == strnicmp(tag, "option", 6) && tagPair) {
@@ -1576,10 +1608,7 @@ void HelpWidget::compose() {
                     inputNode = new InputNode(this, cookies, &p);
                     nodeList.append(inputNode);
                     inputs.append(inputNode);
-                    prop = p.getName();
-                    if (prop != null) {
-                        namedInputs.append(new NamedInput(inputNode, prop));
-                    }
+                    inputNode->updateProperties(&namedInputs, &p);
                 } else if (0 == strnicmp(tag, "textarea", 8)) {
                     p.load(tag+8, taglen-8);
                     tagPair = text = skipWhite(tagEnd+1);
@@ -1690,6 +1719,7 @@ void HelpWidget::copyText(int begin, int end) {
 
 void HelpWidget::navigateTo(const char* s) {
     // search for target using the path of the current file
+    trace("navigateTo=%s", s);
     loadFile(fileName.getPath(s).toString());
 }
 
@@ -1705,8 +1735,12 @@ void HelpWidget::loadFile(const char *f) {
     fileName.empty();
     htmlStr.empty();
 
+    if (strnicmp(f, "file:///", 8) == 0) {
+        // only supports file protocol
+        f += 8;
+    }
+    
     if (strstr(f, "://") != 0) {
-        // only supports relative file names
         htmlStr.append("Invalid path syntax: ");
         htmlStr.append(f);
         reloadPage();

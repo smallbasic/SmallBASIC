@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.21 2005-03-28 23:17:51 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.22 2005-04-01 00:07:06 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -16,6 +16,7 @@
 #include <fltk/events.h>
 #include <fltk/Font.h>
 #include <fltk/Rectangle.h>
+#include <fltk/Group.h>
 
 #include "Fl_Ansi_Window.h"
 void trace(const char *format, ...);
@@ -117,6 +118,14 @@ void AnsiWindow::layout() {
 }
 
 void AnsiWindow::draw() {
+    // ensure this widget has lowest z-order
+    int siblings = parent()->children();
+    for (int n = 0; n < siblings; n++) {
+        Widget* w = parent()->child(n);
+        if (w != this) {
+            w->redraw();
+        }
+    }
     if (img) {
         img->draw(Rectangle(w(), h()), 0, OUTPUT);
     } else {

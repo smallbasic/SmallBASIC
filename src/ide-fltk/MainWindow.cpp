@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.33 2005-03-29 23:45:07 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.34 2005-04-01 00:07:08 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -26,11 +26,13 @@
 #include <fltk/Item.h>
 #include <fltk/Group.h>
 #include <fltk/TabGroup.h>
+#include <fltk/TiledGroup.h>
 #include <fltk/MenuBar.h>
 #include <fltk/filename.h>
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
+#include "HelpWidget.h"
 #include "sbapp.h"
 
 extern "C" {
@@ -43,8 +45,6 @@ extern "C" {
 #endif
 
 using namespace fltk;
-
-MainWindow* wnd;
 
 enum ExecState {
     init_state,
@@ -60,17 +60,18 @@ char *startDir;
 char *runfile = 0;
 const char* toolhome = "./Bas-Home/";
 int px,py,pw,ph;
+MainWindow* wnd;
 
 const char aboutText[] =
-    "About SmallBASIC...\n\n"
-    "Copyright (c) 2000-2005 Nicholas Christopoulos.\n\n"
-    "FLTK Version 0.9.6.1\n"
-    "Copyright (c) 2005 Chris Warren-Smith.\n\n"
-    "http://smallbasic.sourceforge.net\n\n"
-    "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
-    "This program is free software; you can use it\n"
-    "redistribute it and/or modify it under the terms of the\n"
-    "GNU General Public License version 2 as published by\n"
+    "<b>About SmallBASIC...</b><br><br>"
+    "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
+    "FLTK Version 0.9.6.1<br>"
+    "Copyright (c) 2005 Chris Warren-Smith.<br><br>"
+    "<u>http://smallbasic.sourceforge.net</u><br><br>"
+    "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
+    "This program is free software; you can use it "
+    "redistribute it and/or modify it under the terms of the "
+    "GNU General Public License version 2 as published by "
     "the Free Software Foundation.";
 
 //--Menu callbacks--------------------------------------------------------------
@@ -97,10 +98,6 @@ void quit_cb(Widget*, void* v) {
     }
 }
 
-void help_about_cb(Widget*, void* v) {
-    message(aboutText);
-}
-
 void browseFile(const char* url) {
 #if defined(WIN32) 
     ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
@@ -124,13 +121,20 @@ void help_home_cb(Widget*, void* v) {
 }
 
 void help_contents_cb(Widget*, void* v) {
-    snprintf(buff, sizeof(buff), "file:///%s/help/index.html", startDir);
-    browseFile(buff);
+    snprintf(buff, sizeof(buff), "file:///%s/help/0_0.html", startDir);
+    wnd->helpWnd->loadFile(buff);
+    wnd->tabGroup->selected_child(wnd->helpGroup);
 }
 
 void help_readme_cb(Widget*, void* v) {
     snprintf(buff, sizeof(buff), "file:///%s/readme.html", startDir);
-    browseFile(buff);
+    wnd->helpWnd->loadFile(buff);
+    wnd->tabGroup->selected_child(wnd->helpGroup);
+}
+
+void help_about_cb(Widget*, void* v) {
+    wnd->helpWnd->loadBuffer(aboutText);
+    wnd->tabGroup->selected_child(wnd->helpGroup);
 }
 
 void busyMessage() {
@@ -475,23 +479,8 @@ int main(int argc, char **argv) {
         setTitle(0);
         runMode = edit_state;
     }
-
-    return run();
+    run();
 }
-
-struct TabPage : public Group {
-    TabPage(int x, int y, int w, int h, const char * s) : 
-        Group(x, y, w, h, s) {}
-    int handle(int event) {
-        // TextDisplay::layout() does nothing when not visible
-        if (event == SHOW) {
-            Widget* w = child(0);
-            w->layout();
-            w->take_focus();
-        }
-        return Group::handle(event);
-    }
-};
 
 //--MainWindow methods----------------------------------------------------------
 
@@ -543,9 +532,9 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Program/&Run",       F9Key,    (Callback*)run_cb);
     m->add("&Program/&Break",     CTRL+'b', (Callback*)break_cb);
     m->add("&Help/&Help Contents",       0, (Callback*)help_contents_cb);
-    m->add("&Help/_&Release Notes",       0,(Callback*)help_readme_cb);
-    m->add("&Help/_&Home Page",           0,(Callback*)help_home_cb);
-    m->add("&Help/&About SmallBASIC...", 0, (Callback*)help_about_cb);
+    m->add("&Help/_&Release Notes",      0,(Callback*)help_readme_cb);
+    m->add("&Help/_&Home Page",          0,(Callback*)help_home_cb);
+    m->add("&Help/&About SmallBASIC",    0, (Callback*)help_about_cb);
 
     callback(quit_cb);
     shortcut(0); // remove default EscapeKey shortcut
@@ -553,27 +542,33 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     tabGroup = new TabGroup(0, mnuHeight, w, groupHeight);
     tabGroup->begin();
 
-    TabPage* eg = new TabPage(0, tabBegin, w, pageHeight, "Editor");
-    editGroup = eg;
+    editGroup = new Group(0, tabBegin, w, pageHeight, "Editor");
     editGroup->begin();
     editGroup->box(THIN_DOWN_BOX);
     editWnd = new EditorWindow(2, 2, w-4, pageHeight-4);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
-    
     editWnd->box(NO_BOX);
     editWnd->editor->box(NO_BOX);
     editGroup->resizable(editWnd);
     editGroup->end();
     tabGroup->resizable(editGroup);
+
+    helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
+    helpGroup->box(THIN_DOWN_BOX);
+    helpGroup->hide();
+    helpGroup->begin();
+    helpWnd = new HelpWidget(2, 2, w-4, pageHeight-4);
+    helpGroup->resizable(helpWnd);
+    helpGroup->end();
     
-    TabPage* og = new TabPage(0, tabBegin, w, pageHeight, "Output");
-    outputGroup = og;
+    outputGroup = new Group(0, tabBegin, w, pageHeight, "Output");
     outputGroup->box(THIN_DOWN_BOX);
     outputGroup->hide();
     outputGroup->begin();
     out = new AnsiWindow(2, 2, w-4, pageHeight-4);
     outputGroup->resizable(out);
     outputGroup->end();
+
     tabGroup->end();
     resizable(tabGroup);
 
@@ -593,13 +588,11 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
         w->color(GRAY75);
     }
 
-    fileStatus->align(ALIGN_INSIDE_LEFT);
+    fileStatus->align(ALIGN_INSIDE_LEFT|ALIGN_CLIP);
     statusBar->resizable(fileStatus);
     statusBar->end();
     end();
 }
-
-MainWindow::~MainWindow() {}
 
 bool MainWindow::isBreakExec(void) {
     return (runMode == break_state || runMode == quit_state);
@@ -627,7 +620,11 @@ void MainWindow::resetPen() {
     penState = 0;
 }
 
-void MainWindow::execLink(const char* file) {
+void MainWindow::execLink(char* file) {
+    if (file == 0 || file[0] == 0) {
+        return;
+    }
+
     // execute a link from the html window
     if (0 == strncasecmp(file, "http://", 7)) {
         char line[1024];
@@ -665,15 +662,32 @@ void MainWindow::execLink(const char* file) {
         return;
     }
 
+    bool execFile = false;
+    if (file[0] == '!') {
+        execFile = true;
+        file++;
+    }
+
     char* colon = strrchr(file, ':');
     if (colon && colon-1 != file) {
         file = colon+1; // clean 'file:' but not 'c:'
     }
 
+    char* extn = strrchr(file, '.');
+    if (extn && 0 == strnicmp(extn, ".bas ", 5)) {
+        strcpy(opt_command, extn+5);
+        extn[4] = 0;
+    }
+
     if (access(file, 0) == 0) {
         wnd->editWnd->loadFile(file, -1);
         setTitle(file);
-        basicMain(file);
+        if (execFile) {
+            basicMain(file);
+        } else {
+            // show editor
+            wnd->tabGroup->selected_child(wnd->editGroup);
+        }
     } else {
         sprintf(buff, "Failed to open %s", file);
         wnd->fileStatus->copy_label(buff);

@@ -7,10 +7,10 @@ if (exist(historyFile)) then
    open historyFile for input as #1
    while not eof (1)
       lineinput #1, a
-      htxt += "<a href='"+a+"'>"+a+"</a><br>"
+      htxt += "<a href='!"+a+"'>"+a+"</a><br>"
    wend
    close #1
-   html htxt, "", 2, 2, xmax, ymax
+   html htxt, "", 2, 2, xmax+1, ymax+1
 else 
    ? "Unable to open history file: "; historyFile
 fi

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.12 2005-03-29 23:45:07 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.13 2005-04-01 00:07:08 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -14,21 +14,17 @@
 #include <fltk/Widget.h>
 #include <fltk/draw.h>
 #include <fltk/Image.h>
+#include <fltk/SharedImage.h>
 #include <fltk/Group.h>
 #include <fltk/Scrollbar.h>
 
 #include "StringLib.h"
 
-#define ID_MAIN_WND 1
-#define ID_ANCHOR   2
-#define ID_IANCHOR  3
-#define ID_BUTTON   4
-#define ID_TEXTBOX  5
-#define ID_CHKBOX   6
-#define ID_RADIO    7
-#define ID_OPTION   8
-#define ID_CTRL_BEGIN ID_ANCHOR
-#define ID_CTRL_END   ID_OPTION
+#define ID_BUTTON   1
+#define ID_TEXTBOX  2
+#define ID_CHKBOX   3
+#define ID_RADIO    4
+#define ID_SELECT   5
 
 using namespace fltk;
 using namespace strlib;
@@ -56,6 +52,7 @@ public:
     void setCookies(Properties* p) {cookies=p;}
     bool setInputValue(const char* assignment);
     void copyText(int begin, int end);
+    void onclick(Widget* button); // private
 
     protected:
     void compose();
