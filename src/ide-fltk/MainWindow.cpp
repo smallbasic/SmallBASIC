@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.30 2005-01-20 03:27:40 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.31 2005-02-06 22:53:38 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -489,7 +489,7 @@ struct TabPage : public Group {
 //--MainWindow methods----------------------------------------------------------
 
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
-    int mnuHeight = 20;
+    int mnuHeight = 22;
     int statusHeight = mnuHeight;
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabBegin = 0; // =mnuHeight for top position tabs
@@ -719,7 +719,7 @@ int MainWindow::handle(int e) {
 // for the free DebugView program
 #include <windows.h>
 void trace(const char *format, ...) {
-    char    buf[4096], *p = buf;
+    char    buf[4096],*p = buf;
     va_list args;
     
     va_start(args, format);
