@@ -2,6 +2,7 @@ LIBRARY /ebm/sneak32/lib/libasm.a
 LIBRARY /ebm/sneak32/lib/libm.a
 LIBRARY /home/src/ebjlib/ebjlib.lib
 
+LIBRARY debug_lib.lib
 
 
 

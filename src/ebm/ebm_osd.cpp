@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_osd.cpp,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// $Id: ebm_osd.cpp,v 1.3 2004-04-14 23:04:43 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -72,21 +72,21 @@ int osd_events(int wait_flag) {
 
     GUIFLAGS *guiFlags = GUI_Flags_ptr();
     if (needUpdate) {
-        needUpdate=false;
+        needUpdate = false;
         imgUpdate(); // update graphics operation
         *guiFlags &= ~GUIFLAG_NEED_FLUSH;
     }
 
     if (!EVNT_IsWaiting()) {
-        if (*guiFlags & GUIFLAG_NEED_FLUSH == 0) {
-            return 0; // no redraw required
+        if ((*guiFlags & GUIFLAG_NEED_FLUSH) == 0) {
+            return out.wasBreakEv() ? -2 : 0; // no redraw required
         }
         if (wait_flag == 1 || ++ticks==ticksPerRedraw) {
             ticks=0;
             *guiFlags &= ~GUIFLAG_NEED_FLUSH;
             imgUpdate(); // defered text update
         }
-        return 0;
+        return out.wasBreakEv() ? -2 : 0;
     }
 
     GUI_EventLoop(0);

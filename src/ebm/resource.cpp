@@ -417,10 +417,13 @@ CMenuBar* createMenubar(CWindow* wnd, U16 wndId)
         menu1->SetRow(9,mnuWhatLine,"What Line");
         menuBar->AddButton(new CPushButton(1,0,0,"Edit"), menu1);
         CMenu *menu2 = new CMenu(2);
-        menu2->SetNumRows(2);
-        menu2->SetRow(0,mnuAbout,"About");
-        menu2->SetRow(1,mnuHelp,"Index");
-        menuBar->AddButton(new CPushButton(2,0,0,"Help"), menu2);
+        menu2->SetNumRows(1);
+        menu2->SetRow(0,mnuToggleKeypad,"Toggle Keypad");
+        menuBar->AddButton(new CPushButton(2,0,0,"View"), menu2);
+        CMenu *menu3 = new CMenu(3);
+        menu3->SetNumRows(1);
+        menu3->SetRow(0,mnuHelp,"Index");
+        menuBar->AddButton(new CPushButton(3,0,0,"Help"), menu3);
         return menuBar;
     }
 
