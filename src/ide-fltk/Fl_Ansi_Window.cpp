@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.2 2004-10-28 23:34:20 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.3 2004-10-29 00:16:17 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -163,12 +163,11 @@ void Fl_Ansi_Window::newLine() {
     int fontHeight = fl_height();
 
     curX = 0;
-    curY += fontHeight;
-
-    if (curY >= height) {
+    if (curY+fontHeight+fl_descent() >= height) {
         fl_scroll(0, 0, width, height, 0, -fontHeight, eraseBottomLine, this);
-        curY -= fontHeight;
         fl_color(labelcolor());
+    } else {
+        curY += fontHeight;
     }
 }
 
@@ -431,8 +430,8 @@ void Fl_Ansi_Window::print(const char *str) {
 
 #ifdef UNIT_TEST
 int main(int argc, char **argv) {
-    int w = 120;
-    int h = 116;
+    int w = 420;
+    int h = 416;
 
     AllocConsole();
     freopen("conin$", "r", stdin);
@@ -446,12 +445,13 @@ int main(int argc, char **argv) {
     window.show(argc,argv);
     
     Fl::check();
-    out.print("\033[1m");
-    out.print("the quick brown fox jumps over the lazy dog from the future");
-    out.print("\033[21m");
-    out.print("the quick brown fox\033[3m jumps over\033[7m the lazye\033[0m dogs back");
-    out.print("abcdefghiklmnop enouf text to force it over the line");
-
+    for (int i=0; i<20; i++) {
+        out.print("\033[1m");
+        out.print("the quick bROWN FOX JUMPS OVER THE_lazy dog from the future");
+        out.print("\033[21m");
+        out.print("the quick brown fox\033[3m jumps over\033[7m the lazye\033[0m dogs back");
+        out.print("abcdefghiklmnop enouf text to fgrce it gver the line");
+    }
     return Fl::run();
 }
 #endif
