@@ -602,14 +602,28 @@ void	format_num(char *dest, const char *fmt_cnst, double x)
 		}
 
 	// sign in format
-	if	( sign )	{
-		p = strchr(dest, '+');
-		if	( p )	
-			*p = (sign > 0) ? '+' : '-';
+	if	( sign )	{		// 24/6 Snoopy42 modifications
+		char	*e;	
+	
+		e = strchr(dest, 'E');
+		if ( e )   {  // special treatment for E format 
+			p = strchr(dest, '+'); 
+			if   ( p && p < e ) // the sign bust be before the E    
+				*p = (sign > 0) ? '+' : '-';    
 
-		p = strchr(dest, '-');
-		if	( p )	
-			*p = (sign > 0) ? ' ' : '-';
+			p = strchr(dest, '-'); 
+			if   ( p && p < e )    
+				*p = (sign > 0) ? ' ' : '-'; 
+      		}
+		else   { // no E format		
+			p = strchr(dest, '+');
+			if	( p )	
+				*p = (sign > 0) ? '+' : '-';
+
+			p = strchr(dest, '-');
+			if	( p )	
+				*p = (sign > 0) ? ' ' : '-';
+			}
 		}
 
 	// cleanup
