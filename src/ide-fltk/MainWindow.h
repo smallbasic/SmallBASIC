@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.2 2004-11-09 22:06:18 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.3 2004-11-10 22:19:57 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -13,18 +13,23 @@
 #define MAIN_WINDOW_H
 
 #include <fltk/Window.h>
+#include <fltk/TabGroup.h>
 
 #include "Fl_Ansi_Window.h"
 #include "EditorWindow.h"
+
+#define C_LINKAGE_BEGIN extern "C" {
+#define C_LINKAGE_END }
+
+void trace(const char *format, ...);
 
 struct MainWindow : public Window {
     MainWindow(int w, int h);
     ~MainWindow();
 
-    bool wasBreakEv(void)   { return isBreak; }
     bool isTurboMode(void)  { return isTurbo; }
-    bool isMenuActive(void) { return menuActive; }
-
+    bool wasBreakEv(void);
+    void updateStatusBar();
     void run(const char* file);
     void resetPen() {
         penX = 0;
@@ -32,7 +37,6 @@ struct MainWindow : public Window {
         penDownX = 0;
         penDownY = 0;
         penState = 0;
-        menuActive = 0;
     }
 
     int penX;
@@ -40,9 +44,7 @@ struct MainWindow : public Window {
     int penDownX;
     int penDownY;
     int penState;
-    bool menuActive;
     bool isTurbo;
-    bool isBreak;
 
     // screen parts
     Fl_Ansi_Window *out;
@@ -51,7 +53,9 @@ struct MainWindow : public Window {
     Group* helpGroup;
     Group* editGroup;
     Group* textOutputGroup;
+    Group* statusBar;
     TabGroup* tabGroup;
+    char statusText[256];
 };
 
 #endif

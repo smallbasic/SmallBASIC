@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.3 2004-11-09 22:06:18 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.4 2004-11-10 22:19:57 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -32,19 +32,21 @@
 #include <fltk/TextEditor.h>
 
 #include "EditorWindow.h"
+#include "MainWindow.h"
 #include "kwp.cxx"
 
 using namespace fltk;
 
 TextDisplay::StyleTableEntry
 styletable[] = { // Style table
-    { BLACK,      COURIER,        14 }, // A - Plain
-    { GREEN, COURIER_ITALIC, 14 }, // B - Line comments
-    { GREEN, COURIER_ITALIC, 14 }, // C - Block comments
-    { BLUE,       COURIER,        14 }, // D - Strings
-    { RED,   COURIER,        14 }, // E - Directives
-    { RED,   COURIER_BOLD,   14 }, // F - Types
-    { BLUE,       COURIER_BOLD,   14 }  // G - Keywords
+    { BLACK,           COURIER,        14 }, // A - Plain
+    { color(0,0,128),  COURIER_ITALIC, 14 }, // B - Line comments
+    { color(0,0,64),   COURIER_ITALIC, 14 }, // C - Block comments
+    { color(0,64,128), COURIER,        14 }, // D - Strings
+    { color(128,0,0),  COURIER,        14 }, // E - Directives
+    { color(64,0,0),   COURIER_BOLD,   14 }, // F - Types
+    { color(64,64,0),  COURIER_BOLD,   14 }, // G - Keywords
+    { color(64,0,64),  COURIER_BOLD,   14 }  // H - procedures
 };
 
 TextBuffer *stylebuf = 0;
@@ -69,7 +71,10 @@ void style_parse(const char *text, char *style, int length) {
     const char *temp;
 
     for (current = *style, col = 0, last = 0; length > 0; length--, text ++) {
-        if (current == 'B') current = 'A';
+        if (current == 'B') { 
+            current = 'A';
+        }
+
         if (current == 'A') {
             // check for directives, comments, strings, and keywords
             if (col == 0 && *text == '#') {
@@ -136,7 +141,7 @@ void style_parse(const char *text, char *style, int length) {
                                        sizeof(code_procedures) / sizeof(code_procedures[0]),
                                        sizeof(code_procedures[0]), compare_keywords)) {
                         while (text < temp) {
-                            *style++ = 'G';
+                            *style++ = 'H';
                             text++;
                             length--;
                             col++;
@@ -299,11 +304,7 @@ void style_update(int pos,        // I - Position of update
     delete[] style;
 }
 
-void set_title(EditorWindow *w) {
-    if (w->mainWnd == 0) {
-        return;
-    }
-
+void set_title() {
     if (filename[0] == '\0') {
         strcpy(title, "Untitled");
     } else {
@@ -318,18 +319,16 @@ void set_title(EditorWindow *w) {
     if (dirty) {
         strcat(title, " (modified)");
     }
-    strcat(title, " - SmallBASIC");
-    w->mainWnd->label(title);
 }
 
-int check_save(void) {
+int check_save(bool discard) {
     if (!dirty) {
         return 1;
     }
 
     int r = choice("The current file has not been saved.\n"
                    "Would you like to save it now?",
-                   "Cancel", "Save", "Discard");
+                   "Cancel", "Save", discard? "Discard": 0);
 
     if (r == 1) {
         save_cb(); // Save the file
@@ -425,16 +424,16 @@ void changed_cb(int, int nInserted, int nDeleted,int, const char*, void* v) {
         dirty = 1;
     }
 
-    EditorWindow *w = (EditorWindow *)v;
-    set_title(w);
+    set_title();
 
     if (loading) {
+        EditorWindow *w = (EditorWindow *)v;
         w->editor->show_insert_position();
     }
 }
 
 void new_cb(Widget*, void*) {
-    if (!check_save()) {
+    if (!check_save(true)) {
         return;
     }
 
@@ -446,7 +445,7 @@ void new_cb(Widget*, void*) {
 }
 
 void open_cb(Widget*, void*) {
-    if (!check_save()) {
+    if (!check_save(true)) {
         return;
     }
 
@@ -471,7 +470,7 @@ void paste_cb(Widget*, void* v) {
 
 void close_cb(Widget*, void* v) {
     Window* w = (Window*)v;
-    if (!check_save()) {
+    if (!check_save(true)) {
         return;
     }
 
@@ -584,10 +583,10 @@ void saveas_cb() {
 }
 
 EditorWindow::EditorWindow(int x, int y, int w, int h) : 
-    //DoubleBufferWindow(x, y, w, h) {
     Group(x, y, w, h) {
 
     replaceDlg = new Window(300, 105, "Replace");
+    replaceDlg->begin();
     replaceFind = new Input(80, 10, 210, 25, "Find:");
     replaceFind->align(ALIGN_LEFT);
     replaceWith = new Input(80, 40, 210, 25, "Replace:");
@@ -602,12 +601,14 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
     replaceDlg->set_non_modal();
 
     search[0] = 0;
+    filename[0] = 0; 
+    title[0] = 0;
     mainWnd = 0;
-    statusBar = 0;
     dirty = 0;
     loading = 0;
     textbuf = new TextBuffer;
     style_init();
+    set_title();
 
     begin();
     editor = new TextEditor(0, 0, w, h);
@@ -630,4 +631,12 @@ EditorWindow::~EditorWindow() {
 
 const char* EditorWindow::get_filename() {
     return filename;
+}
+
+const char* EditorWindow::get_title() {
+    return title;
+}
+
+bool EditorWindow::is_dirty() {
+    return dirty;
 }

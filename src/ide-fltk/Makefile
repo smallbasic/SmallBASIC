@@ -61,6 +61,7 @@ COMMON=                                         \
     var.c                                       \
     vmt.c                                       \
 
+MAKEDEPEND	= /usr/X11R6/bin/makedepend -Y
 ##OPTIM =  -O2 -Wall -Wunused -fno-exceptions
 OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions
 PLATFORM=-D_UnixOS -D_CygWin -D_Fltk
@@ -78,6 +79,14 @@ OBJDIR = ./objs/
 
 OBJS += $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(SOURCE)))) \
         $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(COMMON))))
+
+
+# Make dependencies, excluding standard include directories
+depend:
+	$(MAKEDEPEND) -fmakedepend -I.. -I. -I/usr/include `fltk-config --cxxflags` $(SOURCE)
+
+# Include automatically generated dependencies
+include makedepend
 
 ##.SILENT:
 
@@ -118,4 +127,3 @@ ${OBJDIR}%.o: %.cxx
 ${OBJDIR}%.o: %.c
 	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
 
-MainWindow.o: EditorWindow.h MainWindow.h

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.5 2004-11-07 22:59:23 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.6 2004-11-10 22:19:57 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -13,12 +13,9 @@
 #include <string.h>
 
 #include <fltk/Window.H>
-#include <fltk/draw.H>
 #include <fltk/ask.H>
-#include <fltk/Image.h>
 #include <fltk/layout.h>
 #include <fltk/Style.h>
-#include <fltk/Font.h>
 
 #include "Fl_Ansi_Window.h"
 
@@ -61,7 +58,7 @@ void Fl_Ansi_Window::initOffscreen() {
         ImageDraw imageDraw(img);
         setcolor(color());
         fillrect(0, 0, w(), h());
-        setfont(labelfont(), labelsize());
+        setfont(font, labelsize());
         curY = textHeight();
     }
 }
@@ -75,7 +72,7 @@ void Fl_Ansi_Window::reset() {
     italic = false;
     color(WHITE); // bg
     labelcolor(BLACK); // fg
-    labelfont(COURIER);
+    font = COURIER;
     labelsize(11);
 }
 
@@ -318,14 +315,15 @@ bool Fl_Ansi_Window::doEscape(unsigned char* &p) {
     }
 
     if (setGraphicsRendition(*p, escValue)) {
-        Font* font = labelfont();
+        //Font* font = labelfont();
+        Font* newFont = font;
         if (bold) {
-            font = font->bold();
+            newFont = newFont->bold();
         }
         if (italic) {
-            font = font->italic();
+            newFont = newFont->italic();
         }
-        setfont(font, labelsize());
+        setfont(newFont, labelsize());
     }
     
     if (*p == ';') {

@@ -1,14 +1,9 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.4 2004-11-07 22:59:23 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.5 2004-11-10 22:19:57 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
-/*                  _.-_:\
-//                 /      \
-//                 \_.--*_/
-//                       v
-*/
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
@@ -16,6 +11,7 @@
 #include <fltk/Widget.H>
 #include <fltk/draw.H>
 #include <fltk/Image.h>
+#include <fltk/Font.h>
 
 #ifndef FL_ANSI_WINDOW
 #define FL_ANSI_WINDOW
@@ -68,6 +64,7 @@ class Fl_Ansi_Window : public Widget {
     void reset();
 
     Image* img;
+    Font* font;
     bool underline;
     bool invert;
     bool bold;

@@ -1,15 +1,10 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.3 2004-11-09 22:06:18 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.4 2004-11-10 22:19:57 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
-/*                  _.-_:\
-//                 /      \
-//                 \_.--*_/
-//                       v
-*/
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
@@ -21,7 +16,6 @@
 #include <fltk/run.h>
 
 #include "MainWindow.h"
-#include "cplusplus.h"
 
 C_LINKAGE_BEGIN
 
