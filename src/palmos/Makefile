@@ -13,7 +13,7 @@ IMGS=images/sbpad-small.bmp \
 #SONYSDK=-DSONY_CLIE
 #WARNS=-w -Wimplicit-function-declaration -Wtraditional -Wbad-function-cast -Wpointer-arith -Wconversion -Wstrict-prototypes -Wredundant-decls -Wmissing-declarations -Wmissing-prototypes
 WARNS=-Wall
-SDK=-palmos3.5
+#SDK=-palmos3.5
 PIMGS=images/sbpad1.bmp images/sbpad2.bmp images/sbpad4.bmp images/sbpad8.bmp
 
 PCFLAGS =-I.. -I. -Os -D_PalmOS $(SDK) $(SONYSDK) $(WARNS)

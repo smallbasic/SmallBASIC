@@ -750,7 +750,7 @@ mem_t	bas_loadsec(word secIndex) SEC(IDE);
 mem_t	bas_loadsec(word secIndex)
 {
 	word		len, rec_n;
-	sec_t		*sec_p;
+	//sec_t		*sec_p;
 	mem_t		h;
 	char		*ptr;
 
@@ -758,7 +758,7 @@ mem_t	bas_loadsec(word secIndex)
 	fatal(secIndex > sec_count, "bas_loadsec(): page out of range");
 
 	rec_n = secIndex + 1;
-	sec_p = &sec_list[secIndex];
+	//sec_p = &sec_list[secIndex]; dead code ???
 	len = db_rec_size(cur_file, rec_n);
 
 	h = mem_alloc(len - sizeof(sec_t));
@@ -2287,6 +2287,15 @@ Boolean		fsv_eventloopSEG(EventPtr e)
 
 			uf_close();
 			FrmGotoForm(MainForm);
+			break;
+		case mnuRun:
+			last_doc_pos=text_getpos();
+			fv_savestatus(cur_uf_name,last_doc_pos,last_doc_font);
+			uf_savecheck();
+			uf_close();
+			return_to_form = MainForm; //is this right?
+			StrCopy(cur_file_name,cur_uf_name);
+			FrmGotoForm(SBOutForm);
 			break;
 		case mnuGoto:
 			if	( BasicInputBox("Go to line...", temp, 64, 0) )	{

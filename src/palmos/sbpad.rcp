@@ -338,6 +338,8 @@ BEGIN
 		MENUITEM "Beam"				mnuBeam			"B"
 		MENUITEM "Delete"			mnuDelete
 	    MENUITEM SEPARATOR
+		MENUITEM "Run"     		mnuRun
+	    MENUITEM SEPARATOR
 		MENUITEM "Close"     		mnuClose
     END
 	PULLDOWN "Edit"

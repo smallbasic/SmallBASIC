@@ -132,7 +132,8 @@ int		osd_devinit()
         }
     else {
 		ScrDisplayMode(scrDisplayModeGetSupportedDepths, NULL, NULL, &sup_depth, NULL);
-		if      (sup_depth & 0x0080) os_color_depth = 8;
+		if      (sup_depth & 0x8000) os_color_depth = 16;
+		else if (sup_depth & 0x0080) os_color_depth = 8;
 		else if (sup_depth & 0x0008) os_color_depth = 4;
 		else if (sup_depth & 0x0002) os_color_depth = 2;
 		else                         os_color_depth = 1;

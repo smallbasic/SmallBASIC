@@ -15,7 +15,7 @@
 
 int		errno;
 
-#define	MAX_FILE_HANDLES	16
+#define	MAX_FILE_HANDLES	32
 static FileHand	f_handles[MAX_FILE_HANDLES];
 
 /*
@@ -37,7 +37,7 @@ int		open(const char *pathname, int flags, ...)
 	if	( flags & O_APPEND )	
 		osflags |= fileModeAppend;
 	else if	( flags & O_RDWR || flags & O_WRONLY )	
-	 	osflags |= fileModeReadWrite;
+	 	osflags |= fileModeUpdate;
 	else if	( flags & O_RDONLY )	
 	 	osflags |= fileModeReadOnly;
 	else

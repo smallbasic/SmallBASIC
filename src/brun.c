@@ -1392,7 +1392,10 @@ int		brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
 	else	{
 		// prepare filename
 		if	( !libf )	{
+			char *p;
 			strcpy(fname, filename); 
+			p=strrchr(fname,'.');
+			if (p) *p='\0';
 			strcat(fname, ".sbx");
 			}
 		else
@@ -2310,6 +2313,7 @@ int		sbasic_exec(const char *file)
 *	@param file the source file
 *	@return true on success
 */
+int sbasic_main(const char *file) SEC(BEXEC);
 int		sbasic_main(const char *file)
 {
 	int		success;

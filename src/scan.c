@@ -44,7 +44,7 @@ void	comp_text_line(char *text) 					SEC(BCSC3);
 int		comp_single_line_if(char *text) 				SEC(BCSC3);
 addr_t	comp_search_bc(addr_t ip, code_t code) 			SEC(BCSC3);
 
-extern void	expr_parser(bc_t *bc)			 	SEC(BCSC3);
+extern void	expr_parser(bc_t *bc)			 	SEC(BCSCAN);
 
 /* ----------------------------------------------------------------------------------------------------------------------- */
 
