@@ -101,7 +101,7 @@ Original author and project manager.
 Sony Clie version, and SB developer
 @sp 1
 @b{Chris Warren-Smith}@*
-@email{chris.warren-smith@@team.telstra.com}, Adelaide - South Australia.@*
+@email{cwarrens@twpo.com.au}, Adelaide - South Australia.@*
 Franklin's eBookMan version, and SB developer@*
 @url{http://www.twpo.com.au/cwarrens/ebm}
 @sp 1
