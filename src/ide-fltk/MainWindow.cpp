@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.12 2004-11-23 22:46:17 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.13 2004-11-25 11:13:25 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -18,6 +18,7 @@
 
 #include <fltk/run.h>
 #include <fltk/error.h>
+#include <fltk/Item.h>
 #include <fltk/ask.H>
 #include <fltk/Window.h>
 #include <fltk/Group.h>
@@ -52,6 +53,8 @@ enum ExecState {
 } runMode = init_state;
 
 const char* runfile = 0;
+int px,py,pw,ph;
+Window* fullscreen = 0;
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
@@ -78,6 +81,25 @@ void break_cb(Widget*, void* v) {
     if (runMode == run_state || runMode == modal_state) {
         runMode = break_state;
     }
+}
+
+void fullscreen_cb(Widget *w, void* v) {
+    if (w->value()) {
+        // store current geometry of the window
+        px = wnd->x(); 
+        py = wnd->y();
+        pw = wnd->w(); 
+        ph = wnd->h();
+        wnd->fullscreen();
+    } else {
+        // restore geometry to the window and turn fullscreen off
+        wnd->fullscreen_off(px,py,pw,ph);
+    }
+}
+
+void turbo_cb(Widget* w, void* v) {
+    wnd->isTurbo = w->value();
+    trace("turbo=%d", wnd->isTurbo);
 }
 
 void basicMain(const char* filename) {
@@ -232,7 +254,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int statusHeight = mnuHeight;
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabHeight = mnuHeight;
-    int tabBegin = mnuHeight; // if zero tabs will be at the bottom
+    // if tabBegin is zero tabs will be at the bottom
+    int tabBegin = runMode == run_state ? 0 : mnuHeight; 
     int pageHeight = groupHeight-tabHeight;
 
     isTurbo = 0;
@@ -252,15 +275,17 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&File/_&Insert File...",CTRL+'i', (Callback*)EditorWindow::insert_cb);
     m->add("&File/&Save File",      CTRL+'s', (Callback*)EditorWindow::save_cb);
     m->add("&File/Save File &As...",CTRL+SHIFT+'S', (Callback*)EditorWindow::saveas_cb);
-    m->add("&File/E&xit",           CTRL+'q', (Callback*)quit_cb);
-    m->add("&Edit/Cu&t",            CTRL+'x', (Callback*)EditorWindow::cut_cb);
-    m->add("&Edit/&Copy",           CTRL+'c', (Callback*)EditorWindow::copy_cb);
-    m->add("&Edit/&Paste",          CTRL+'v', (Callback*)EditorWindow::paste_cb);
-    m->add("&Edit/_&Delete",        0,        (Callback*)EditorWindow::delete_cb);
-    m->add("&Edit/&Settings",       0,        (Callback*)EditorWindow::delete_cb);
-    m->add("&Program/&Run",         CTRL+'r', (Callback*)run_cb);
-    m->add("&Program/&Break",       CTRL+'b', (Callback*)break_cb);
-    m->add("&Search/&Find...",      CTRL+'f', (Callback*)EditorWindow::find_cb);
+    m->add("&File/E&xit",       CTRL+'q', (Callback*)quit_cb);
+    m->add("&Edit/Cu&t",        CTRL+'x', (Callback*)EditorWindow::cut_cb);
+    m->add("&Edit/&Copy",       CTRL+'c', (Callback*)EditorWindow::copy_cb);
+    m->add("&Edit/&Paste",      CTRL+'v', (Callback*)EditorWindow::paste_cb);
+    m->add("&Edit/_&Delete",    0, (Callback*)EditorWindow::delete_cb);
+    m->add("&Edit/&Full Screen",0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
+    m->add("&Edit/&Turbo",      0, (Callback*)turbo_cb)->type(Item::TOGGLE);
+    m->add("&Edit/&Settings",   0, (Callback*)EditorWindow::delete_cb);
+    m->add("&Program/&Run",     CTRL+'r', (Callback*)run_cb);
+    m->add("&Program/&Break",   CTRL+'b', (Callback*)break_cb);
+    m->add("&Search/&Find...",  CTRL+'f', (Callback*)EditorWindow::find_cb);
     m->add("&Search/Find A&gain",   CTRL+'g', (Callback*)EditorWindow::find2_cb);
     m->add("&Search/&Replace...",   0,        (Callback*)EditorWindow::replace_cb);
     m->add("&Search/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);

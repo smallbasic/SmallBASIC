@@ -22,17 +22,22 @@ Tasks for initial release:
   - multiple editor tabs
   - undo (ask FLTK team)
   - full screen menu option
+  - startup argument to run in "application" mode
+  - right-control deletes selection- modified Fl_compose.cxx
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
      partially completed 18/11, more or less completed 20/11
-   - Load and display images
-   - Load .bas from web server
+   - Load and display images  - ask FLTK group why no JPG and PNG support 
+   - Load images from http server *done* - apart from blocking/lockpup when
+     host not found
+   - Load .bas from http server
    - html text using fltk help control
    - sound ?
    - updated DRAW code *done*
    - handle "repeat key$ = inkey until len(key$) > 0" w/out high cpu use *done*
    - modules - ensure that the flite speach synth works (under cygwin)
+   - update do_cmd_html(), cmd_image to use par_massget
 
 3. Help Tab
    - using FLTK help widget - doesn't appear to be completed. 
@@ -58,4 +63,4 @@ Tasks for initial release:
 
 10. Linux build
 
-$Id: README.TXT,v 1.5 2004-11-23 22:46:17 zeeb90au Exp $
+$Id: README.TXT,v 1.6 2004-11-25 11:13:25 zeeb90au Exp $

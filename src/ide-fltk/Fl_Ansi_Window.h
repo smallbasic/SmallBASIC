@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.7 2004-11-16 23:04:49 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.8 2004-11-25 11:13:25 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -38,6 +38,7 @@ class Fl_Ansi_Window : public Widget {
     void drawBGRectFilled(int x, int y, int width, int height);
     void drawFGRect(int x, int y, int width, int height);
     void drawBGRect(int x, int y, int width, int height);
+    void drawImage(Image* img, int x, int y, int sx, int sy, int w, int h);
 
     void setTextColor(long fg, long bg) {
         labelcolor(ansiToFltk(fg));

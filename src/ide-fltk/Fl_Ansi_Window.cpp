@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.11 2004-11-21 22:38:23 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.12 2004-11-25 11:13:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -16,9 +16,11 @@
 #include <fltk/ask.H>
 #include <fltk/layout.h>
 #include <fltk/Style.h>
+#include <fltk/Image.h>
 #include <fltk/events.h>
 
 #include "Fl_Ansi_Window.h"
+#include "MainWindow.h"
 
 #if defined(WIN32) 
 #include <fltk/win32.h>
@@ -139,6 +141,13 @@ void Fl_Ansi_Window::drawBGRect(int x, int y, int width, int height) {
     begin_offscreen();
     setcolor(color());
     strokerect(x, y, width, height);
+    end_offscreen();
+}
+
+void Fl_Ansi_Window::drawImage(Image* image, int x, int y, int sx, int sy, 
+                               int width, int height) {
+    begin_offscreen();
+    image->copy(x, y, width, height, sx, sy);
     end_offscreen();
 }
 

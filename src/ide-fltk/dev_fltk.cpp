@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.10 2004-11-23 22:46:29 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.11 2004-11-25 11:13:25 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -13,6 +13,7 @@
 #include "device.h"
 #include "smbas.h"
 
+#include <sys/socket.h>
 #include <fltk/run.h>
 #include <fltk/events.h>
 #include <fltk/SharedImage.h>
@@ -36,7 +37,9 @@ int osd_devinit() {
     os_color = 1;
     os_color_depth = 16;
     setsysvar_str(SYSVAR_OSNAME, "FLTK");
-    SharedImage::clear_cache();
+    if (SharedImage::first_image) {
+        SharedImage::first_image->clear_cache();
+    }
     return 1;
 }
 
@@ -83,7 +86,7 @@ void get_mouse_xy() {
     // convert mouse screen rect to out-client rect
     wnd->penDownX -= wnd->x() + wnd->out->x();
     wnd->penDownY -= wnd->y() + wnd->out->y();
-    wnd->penDownY -= 40; // wnd->tabGroup->y();
+    wnd->penDownY -= wnd->tabGroup->y() + wnd->outputGroup->y();
 }
 
 int osd_getpen(int code) {
@@ -183,41 +186,89 @@ void osd_write(const char *s) {
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
 }
 
-SharedImage* getImage(int handle, int index) {
-    dev_file_t*	file_type = dev_getfileptr(handle);
-    if (file_type == 0) {
+// image factory based on file extension
+Image* loadImage(const char* name, uchar* buff) {
+    int len = strlen(name);
+    if (strcmpi(name+(len-4), ".jpg") == 0 ||
+        strcmpi(name+(len-5), ".jpeg") == 0) {
+        //image = jpegImage::get(filep->name);
+    } else if (strcmpi(name+(len-4), ".gif") == 0) {
+        return gifImage::get(name, buff);
+    } else if (strcmpi(name+(len-4), ".png") == 0) {
+        //image = pngImage::get(filep->name);
+    } else if (strcmpi(name+(len-4), ".xpm") == 0) {
+        return xpmFileImage::get(name, buff);
+    }
+    return 0;
+}
+
+Image* getImage(int handle, int index) {
+    dev_file_t* filep = dev_getfileptr(handle);
+    if (filep == 0) {
         return 0;
     }
-    //switch (file_type.type) {
-    //case ft_http:
-    //case ft_stream:
-    // default:
-    //    return 0;
-    //}
 
-    return SharedImage::get(gifImage::create, file_type->name);
+    // check for cached imaged
+    Image* image = loadImage(filep->name, 0);
+    if (image && image->drawn()) {
+        return image;
+    }
+
+    uchar* buff = 0;
+    unsigned blockSize = 1024;
+    unsigned size = blockSize;
+    unsigned len = 0;
+
+    // read image from web server
+    switch (filep->type) {
+    case ft_http_client:
+        // open "http://localhost/image1.gif" as #1
+        buff = (uchar*)tmp_alloc(size);
+        while (true) {
+            unsigned bytes = recv(filep->handle, buff+len, blockSize, 0);
+            len += bytes;
+            if (bytes == 0 || bytes < blockSize) {
+                break; // no more data
+            }
+            size += blockSize;
+            buff = (uchar*)tmp_realloc(buff, size);
+        }
+        if (strstr((const char*)buff, "<title>404")) {
+            return 0;
+        }
+        break;
+    case ft_stream:
+        break;
+    default:
+        return 0;
+    }
+
+    image = loadImage(filep->name, buff);
+    if (image) {
+        // force SharedImage::_draw() to call image->read()
+        image->draw(0,0,0,0,0,0);
+    }
+
+    return image;
 }
 
 void dev_image(int handle, int index, int x, int y, 
                int sx, int sy, int w, int h) {
-    SharedImage* img = getImage(handle, index);
+    Image* img = getImage(handle, index);
     if (img != 0) {
-        // todo: draw into the Fl_Ansi_Window
-//         out.DrawImage(x, y, img, 0, 0, sx, sy, 
-//                       w == 0 ? img->img_width : w, 
-//                       h == 0 ? img->img_height: h, 
-//                       IMG_CMB_IOR);
-        
+        wnd->out->drawImage(img, x, y, sx, sy, 
+                            (w==0 ? img->w() : w), 
+                            (h==0 ? img->h() : h));
     }
 }
 
 int dev_image_width(int handle, int index) {
-    SharedImage* img = getImage(handle, index);
+    Image* img = getImage(handle, index);
     return (img != 0 ? img->w() : -1);
 }
 
 int dev_image_height(int handle, int index) {
-    SharedImage* img = getImage(handle, index);
+    Image* img = getImage(handle, index);
     return (img != 0 ? img->h() : -1);
 }
 
