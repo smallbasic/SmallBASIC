@@ -154,12 +154,13 @@ help_node_t help_data[] = {
 "\n"
 "2.9 The operator IN\n"
 "\n"
-"   IN operator is used to compare if the left-expression belongs to\n"
-"   right-expression\n"
+"   IN operator is used to compare if the left-value belongs to\n"
+"   right-value.\n"
 "\n"
 "\' Using it with arrays\n"
 "print 1 in [2,3]        :REM FALSE\n"
 "print 1 in [1,2]        :REM TRUE\n"
+"print \"b\" in [\"a\", \"b\", \"c\"] :REM TRUE\n"
 "...\n"
 "\' Using it with strings\n"
 "print \"na\" in \"abcde\"   :REM FALSE\n"
@@ -180,8 +181,11 @@ help_node_t help_data[] = {
 "   of the expression with the pattern (right part). Since the original\n"
 "   regular expression code is too big (for handhelds), I use only a\n"
 "   subset of it, based on an excellent old stuff by J. Kercheval\n"
-"   (match.c, public-domain, 1991). The same code is used for filenames\n"
-"   (FILES(), DIRWALK)\n"
+"   (match.c, public-domain, 1991). But there is an option to use PCRE\n"
+"   (Perl-Compatible Regular Expression library) on systems that is\n"
+"   supported (Linux); (see OPTION).\n"
+"\n"
+"   The same code is used for filenames (FILES(), DIRWALK) too.\n"
 "\n"
 "   In the pattern string:\n"
 "\n"
@@ -490,9 +494,12 @@ help_node_t help_data[] = {
 "   Also, it can be used by IF command (instead of THEN), but is not\n"
 "   suggested.\n"
 "\n"
-"2.19 Programming Tips\n"
+"                             3. Programming Tips\n"
 "\n"
-"  2.19.1 Using LOCAL variables\n"
+"   Programmers must use clean and logical code. Weird code may be faster\n"
+"   but it is not good.\n"
+"\n"
+"3.1 Using LOCAL variables\n"
 "\n"
 "   When a variable is not declared it is by default a global variable. A\n"
 "   usual problem is that name may be used again in a function or\n"
@@ -527,8 +534,11 @@ help_node_t help_data[] = {
 "NEXT\n"
 "\n"
 "   It is good to declare all local variables on the top of the function.\n"
+"   For compatibility reasons, the func./proc. variables are not declared\n"
+"   as \'local\' by default. That it is WRONG but as I said ...\n"
+"   compatibility.\n"
 "\n"
-"  2.19.2 Loops and variables\n"
+"3.2 Loops and variables\n"
 "\n"
 "   When we write loops it is much better to initialize the counters on\n"
 "   the top of the loop instead of the top of the program or nowhere.\n"
@@ -544,7 +554,7 @@ help_node_t help_data[] = {
 "   forgeting to giving init value or re-run the loop without reset the\n"
 "   variables.\n"
 "\n"
-"  2.19.3 Loops and expressions\n"
+"3.3 Loops and expressions\n"
 "\n"
 "   FOR-like commands are evaluate the \'destination\' everytime. Also,\n"
 "   loops are evaluate the exit-expression everytime too.\n"
@@ -566,7 +576,7 @@ help_node_t help_data[] = {
 "\n"
 "   Of course, it is much faster too.\n"
 "\n"
-"                                 3. Commands\n"
+"                                 4. Commands\n"
 "\n"
 },
 
@@ -1164,7 +1174,7 @@ help_node_t help_data[] = {
 "\n"
 "          Deletes \'count\' elements at position \'idx\' of array A\n"
 "\n"
-"                                  4. System\n"
+"                                  5. System\n"
 "\n"
 },
 
@@ -1366,13 +1376,13 @@ help_node_t help_data[] = {
 "\n"
 "          _\b* _\bF_\bo_\br_\b _\bd_\be_\bb_\bu_\bg_\b _\bp_\bu_\br_\bp_\bo_\bs_\be_\bs_\b;_\b _\bi_\bt_\b _\bi_\bs_\b _\bn_\bo_\bt_\b _\bs_\bu_\bp_\bp_\bo_\br_\bt_\be_\bd_\b _\bo_\bn_\b _\b\"_\bl_\bi_\bm_\bi_\bt_\be_\bd_\b\"_\b _\bO_\bS_\be_\bs_\b.\n"
 "\n"
-"                             5. Graphics & Sound\n"
+"                             6. Graphics & Sound\n"
 "\n"
 "   The SB\'s Graphics commands are working only with integers. (Of\n"
 "   course, 2D algebra commands are working with reals) That is different\n"
 "   of QB, but its much faster.\n"
 "\n"
-"5.1 The colors\n"
+"6.1 The colors\n"
 "\n"
 "   _\bM_\bo_\bn_\bo_\bc_\bh_\br_\bo_\bm_\be\n"
 "          0 = black, 15 = white\n"
@@ -1387,7 +1397,7 @@ help_node_t help_data[] = {
 "          Color 0..15 is the standard VGA colors, full 24-bit RGB colors\n"
 "          can be passed by using negative number.\n"
 "\n"
-"5.2 The points\n"
+"6.2 The points\n"
 "\n"
 "   Any point can be specified by an array of 2 elements or by 2\n"
 "   parameters\n"
@@ -1404,22 +1414,22 @@ help_node_t help_data[] = {
 "...\n"
 "poly[0] = [x, y]\n"
 "\n"
-"5.3 The STEP keyword\n"
+"6.3 The STEP keyword\n"
 "\n"
 "   The STEP keyword calculates the next x,y parameters relative to\n"
 "   current position. That position can be returned by using the POINT(0)\n"
 "   and POINT(1) functions.\n"
 "\n"
-"5.4 The \'aspect\' parameter\n"
+"6.4 The \'aspect\' parameter\n"
 "\n"
 "   The x/y factor.\n"
 "\n"
-"5.5 The FILLED keyword\n"
+"6.5 The FILLED keyword\n"
 "\n"
 "   The FILLED keyword fills the result of the command with the drawing\n"
 "   color.\n"
 "\n"
-"5.6 Graphics Commands\n"
+"6.6 Graphics Commands\n"
 "\n"
 },
 
@@ -1660,7 +1670,7 @@ help_node_t help_data[] = {
 "_\bN_\bO_\bS_\bO_\bU_\bN_\bD", 
 "          Stops background sound. Also, clears the sound queue.\n"
 "\n"
-"                               6. Miscellaneous\n"
+"                               7. Miscellaneous\n"
 "\n"
 },
 
@@ -1688,9 +1698,9 @@ help_node_t help_data[] = {
 "          Exchanges the values of two variables. The parameters may be\n"
 "          variables of any type.\n"
 "\n"
-"                                7. File system\n"
+"                                8. File system\n"
 "\n"
-"7.1 Special Device Names\n"
+"8.1 Special Device Names\n"
 "\n"
 "   \"COM1:[speed]\"\n"
 "          Serial port 1\n"
@@ -1712,7 +1722,7 @@ help_node_t help_data[] = {
 "   Example: OPEN \"COM1:\" AS #1\n"
 "   OPEN \"COM2:38400\" AS #2\n"
 "\n"
-"7.2 File System Commands\n"
+"8.2 File System Commands\n"
 "\n"
 },
 
@@ -1991,7 +2001,7 @@ help_node_t help_data[] = {
 "        yf\n"
 "               the result\n"
 "\n"
-"                                9. 2D Algebra\n"
+"                                10. 2D Algebra\n"
 "\n"
 },
 
@@ -2023,7 +2033,7 @@ help_node_t help_data[] = {
 "        4\n"
 "               The cross is one of the line segments edges.\n"
 "\n"
-"9.1 2D & 3D graphics transformations\n"
+"10.1 2D & 3D graphics transformations\n"
 "\n"
 "   2D & 3D graphics transformations can represented as matrices.\n"
 "\n"
@@ -2129,7 +2139,7 @@ help_node_t help_data[] = {
 "M3APPLY M, poly\n"
 "DRAWPOLY poly\n"
 "\n"
-"                                 10. Strings\n"
+"                                 11. Strings\n"
 "\n"
 },
 
@@ -2191,9 +2201,9 @@ help_node_t help_data[] = {
 "displays:\n"
 "[/etc/temp/filename/ext]\n"
 "\n"
-"                                 11. Console\n"
+"                                 12. Console\n"
 "\n"
-"11.1 Supported console codes\n"
+"12.1 Supported console codes\n"
 "\n"
 "   _\b* _\b\\_\be_\b _\b=_\b _\bC_\bH_\bR_\b(_\b2_\b7_\b)\n"
 "\n"
@@ -2235,7 +2245,7 @@ help_node_t help_data[] = {
 "   \\e[52m select 16pt font\n"
 "   \\e[nT  move to n/80th screen character position\n"
 "\n"
-"11.2 Console Commands\n"
+"12.2 Console Commands\n"
 "\n"
 },
 
@@ -3932,7 +3942,7 @@ help_node_t help_data[] = {
 "\n"
 "PRINT FILES(\"MEMO:*\")\n"
 "\n"
-"                                8. Mathematics\n"
+"                                9. Mathematics\n"
 "\n"
 "   All angles are in radians.\n"
 "\n"
@@ -3996,7 +4006,7 @@ help_node_t help_data[] = {
 "_\bS_\bG_\bN _\b(_\bx_\b)", 
 "          Sign of x (+1 for positive, -1 for negative and 0 for zero)\n"
 "\n"
-"8.1 Unit convertion\n"
+"9.1 Unit convertion\n"
 "\n"
 },
 
@@ -4010,7 +4020,7 @@ help_node_t help_data[] = {
 "_\bR_\bA_\bD _\b(_\bx_\b)", 
 "          Degrees to radians\n"
 "\n"
-"8.2 Round\n"
+"9.2 Round\n"
 "\n"
 },
 
@@ -4049,7 +4059,7 @@ help_node_t help_data[] = {
 "          Rounds the x to the nearest integer or number with \'decs\'\n"
 "          decimal digits.\n"
 "\n"
-"8.3 Trigonometry\n"
+"9.3 Trigonometry\n"
 "\n"
 },
 
@@ -4194,7 +4204,7 @@ help_node_t help_data[] = {
 { "ACOTH", "FUNCTION", 
 "_\bA_\bC_\bO_\bT_\bH _\b(_\bx_\b)", 
 "\n"
-"8.4 Logarithms\n"
+"9.4 Logarithms\n"
 "\n"
 },
 
@@ -4214,7 +4224,7 @@ help_node_t help_data[] = {
 "_\bL_\bO_\bG_\b1_\b0 _\b(_\bx_\b)", 
 "          Returns the base-10 logarithm of x.\n"
 "\n"
-"8.5 Statistics\n"
+"9.5 Statistics\n"
 "\n"
 "   Sample standard deviation: SQR(STATSPREADS(array)) Population\n"
 "   standard deviation: SQR(STATSPREADP(array))\n"
@@ -4255,7 +4265,7 @@ help_node_t help_data[] = {
 "_\bS_\bT_\bA_\bT_\bS_\bP_\bR_\bE_\bA_\bD_\bP _\b(_\b._\b._\b._\b)", 
 "          Population spread\n"
 "\n"
-"8.6 Equations\n"
+"9.6 Equations\n"
 "\n"
 },
 

@@ -670,7 +670,7 @@ char_p_t	*dev_create_file_list(const char *wc, int *count)
 	*/
 	{
 		#if defined(_PalmOS)
-		int			db_count, i, vfslib;
+		int			db_count, i;
 		dword		type, creator;
 		LocalID		LID;
 		char		temp[65];

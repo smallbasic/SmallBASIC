@@ -755,8 +755,7 @@ object FMain: TFMain
     Top = 2
   end
   object Timer1: TTimer
-    Enabled = False
-    Interval = 100
+    Interval = 500
     OnTimer = Timer1Timer
     Left = 658
     Top = 2

@@ -56,7 +56,6 @@ int bcb_vwidth;
 int bcb_vheight;
 int	timer_key;
 int	timer_ctrl;
-int	timer_time;
 
 #define	HELP_MAX_KW		1024
 
@@ -106,11 +105,27 @@ void bcb_lwrite(char *s)
 	FMain->lwrite(s);
 }
 
+/*
+*	Information from C code to main form --- status
+*/
 void bcb_comp(int pass, int pmin, int pmax)	// Win32GUI progress
 {
 	FMain->CompProg(pass, pmin, pmax);
 }
+
+/*
+*	Removes the READ-ONLY flag from a file
+*/
+void bcb_remove_readonly(const char *name)
+{
+	int attrs;
+
+	attrs = FileGetAttr(name);
+	if ( attrs & faReadOnly )
+		FileSetAttr(name, attrs & !faReadOnly);	
 }
+
+}	// extern "C"
 
 /*
 *	converts string of font to values
@@ -148,7 +163,7 @@ void	bcb_strfont(String s, String &name, int &size, int &charset)
 */
 void _cdecl w32_copybmp()
 {
-	if	( stdout_init )
+	if	( stdout_init )	
 		FMain->imgOut->Canvas->Draw(0,0,bmp);
 }
 
@@ -167,6 +182,16 @@ TCanvas* _cdecl	w32_canvas(void)
 {
 	if	( bmp )
 		return bmp->Canvas;
+	return NULL;
+}
+
+/*
+*	return the canvas of bmp
+*/
+void* _cdecl w32_video_ptr(int line)
+{
+	if	( bmp )
+		return bmp->ScanLine[line];
 	return NULL;
 }
 
@@ -316,6 +341,7 @@ void	reset_dev()
 
 	bmp->Height = rbmp.Height();
 	bmp->Width  = rbmp.Width();
+	bmp->PixelFormat = pf32bit;
 	bmp->Canvas->Brush->Color = (TColor) 0xFFFFFF;
 	bmp->Canvas->FillRect(rbmp);
 
@@ -440,7 +466,7 @@ __fastcall TFMain::TFMain(TComponent* Owner)
 	lastUsedFiles = new TStringList;
 
 	//
-	sclOut->DoubleBuffered = true;
+	sclOut->DoubleBuffered = false;
 	strcpy(bcb_dir, Application->ExeName.c_str());
 	p = strrchr(bcb_dir, '\\');
 	*p = '\0';
@@ -680,8 +706,11 @@ void TFMain::update_sbar()
 //---------------------------------------------------------------------------
 void __fastcall TFMain::Timer1Timer(TObject *Sender)
 {
-	if	( timer_time )
-		timer_time = 0;
+	// save icon
+	if	( editor->Modified == true && ToolButton2->Enabled == false )
+		ToolButton2->Enabled = true; 
+	else if ( editor->Modified == false && ToolButton2->Enabled == true )
+		ToolButton2->Enabled = false; 
 }
 //---------------------------------------------------------------------------
 
@@ -924,11 +953,13 @@ void TFMain::load_source()
 			editor->ClearAll();
 			editor->Text = buf;
 			free(buf);
+			editor->Modified = false;
 			}
 		}
 	else	{
 		// open file
 		editor->Lines->LoadFromFile(bcb_srcfile);
+		editor->Modified = false;
 		updateLastUsedFiles(bcb_srcfile);
 		}
 
@@ -959,6 +990,7 @@ void TFMain::save_source()
 	else
 		editor->Lines->SaveToFile(bcb_srcfile);
 		
+	editor->Modified = false;
 	updateLastUsedFiles(bcb_srcfile);
 }
 

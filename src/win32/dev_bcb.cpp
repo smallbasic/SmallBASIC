@@ -17,11 +17,14 @@
 
 //typedef unsigned short int	word;
 
+typedef int* int_ptr_t;
+
 static dword	dev_width, dev_height, dev_depth;
 
 static int	mouse_mode, mouse_x, mouse_y, mouse_b, mouse_upd, mouse_down_x, mouse_down_y, mouse_pc_x, mouse_pc_y;
 
 static TCanvas	*canvas;
+static int_ptr_t *video;
 static TColor	cmap[16];
 static TColor	dcolor, dbgcolor;
 static int		font_h = 16, font_w = 8, maxline = 11;
@@ -53,6 +56,7 @@ static dword vga16[] =
 
 extern String bcb_xf;
 extern void	bcb_strfont(String s, String &name, int &size, int &charset);
+extern void* _cdecl w32_video_ptr(int line);
 
 #define SWAPRB(c)	( (((c) & 0xFF) << 16) | ((c) & 0xFF00) | (((c) & 0xFF0000) >> 16) )
 
@@ -92,21 +96,13 @@ void w32_stdout_open()
 	canvas = w32_canvas();
 
 	r = canvas->ClipRect;
-	dev_width  = (r.right - r.left) + 1;
-	dev_height = (r.bottom - r.top) + 1;
+	dev_width  = (r.right - r.left);
+	dev_height = (r.bottom - r.top);
 	dev_depth  = 32;
 
-
 	// build pens
-	for ( i = 0; i < 16; i ++ )	{
-/*		int	r,g,b;
-		r = (vga16[i] & 0xFF0000) >> 16;
-		g = (vga16[i] & 0xFF00) >> 8;
-		b = (vga16[i] & 0xFF);
-		cmap[i] = RGB(r,g,b);
-*/
+	for ( i = 0; i < 16; i ++ )	
 		cmap[i] = (TColor) vga16[i];
-		}
 	dbgcolor = cmap[15];
 
 	// select font
@@ -125,6 +121,10 @@ void w32_stdout_open()
 	os_color_depth = dev_depth;
 	os_color       = (dev_depth >= 8);
 
+	video = (int_ptr_t *) malloc(dev_height * sizeof(int_ptr_t));
+	for ( i = 0; i < dev_height; i ++ )
+		video[i] = (int_ptr_t) w32_video_ptr(i);
+
 	drvsound_init();
 	w32_evstate(1);
 
@@ -136,6 +136,7 @@ void  w32_stdout_close()
 {
 	w32_evstate(0);
 	drvsound_close();
+	free(video);
 }
 
 /*
@@ -170,6 +171,7 @@ long  _cdecl	osd_getpixel(int x, int y)
 	int			i;
 
 	color = canvas->Pixels[x][y];
+//	color = video[y][x];
 	for ( i = 0; i < 16; i ++ )	{
 		if	( cmap[i] == color )
 			return i;
@@ -180,17 +182,23 @@ long  _cdecl	osd_getpixel(int x, int y)
 // setpixel
 void  _cdecl	osd_setpixel(int x, int y)
 {
-	canvas->Pixels[x][y] = dcolor;
+	video[y][x] = dcolor;
+//	canvas->Pixels[x][y] = dcolor;
 	bcb_refresh_rq = 1;
 }
 
 // cls
 void _cdecl	osd_cls()
 {
+	int		i, mw;
+
 	cur_x = cur_y = 0;
 	TRect r = canvas->ClipRect;
-	canvas->Brush->Color = (TColor) dbgcolor;
-	canvas->FillRect(r);
+//	canvas->Brush->Color = (TColor) dbgcolor;
+//	canvas->FillRect(r);
+	mw = dev_width * 4;
+	for ( i = 0; i < dev_height; i ++ )	
+		memset(video[i], 0xff, mw);
 	bcb_refresh_rq = 1;
 }
 
@@ -592,7 +600,8 @@ void  _cdecl	osd_settextcolor(long fg, long bg)
 void  _cdecl	osd_line(int x1, int y1, int x2, int y2)
 {
 	canvas->MoveTo(x1, y1);
-	canvas->Pixels[x1][y1] = dcolor;
+//	canvas->Pixels[x1][y1] = dcolor;
+	video[y1][x1] = dcolor;
 	canvas->LineTo(x2, y2);
 	bcb_refresh_rq = 1;
 }

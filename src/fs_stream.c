@@ -37,6 +37,10 @@
 #define	O_BINARY	0
 #endif
 
+#if defined(_WinBCB)
+void	bcb_remove_readonly(const char *name);
+#endif
+
 #include "fs_stream.h"
 
 /*
@@ -95,6 +99,10 @@ int		stream_close(dev_file_t *f)
 	f->handle = -1;
 	if	( r )
 		err_file((f->last_error = errno));
+	#if defined(_WinBCB)
+	if	( f->open_flags & DEV_FILE_OUTPUT )	
+		bcb_remove_readonly(f->name);
+	#endif
 	return (r == 0);
 }
 

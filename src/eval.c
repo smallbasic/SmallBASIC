@@ -148,7 +148,7 @@ void	mat_op2(var_t *l, var_t *r, int op)
 	double	*m1, *m2, *m = NULL;
 	int		lr, lc, rr, rc, pos;
 	int		i, j;
-	
+
 	m1 = mat_toc(l, &lr, &lc);
 	if	( m1 )	{
 		m2 = mat_toc(r, &rr, &rc);
@@ -163,7 +163,8 @@ void	mat_op2(var_t *l, var_t *r, int op)
 						if	( op == '+' )
 							m[pos] = m1[pos] + m2[pos];
 						else
-							m[pos] = m1[pos] - m2[pos];
+//							m[pos] = m1[pos] - m2[pos];
+							m[pos] = m2[pos] - m1[pos];	// array is comming reversed because of where to store
 						}
 					}
 				}
@@ -172,7 +173,10 @@ void	mat_op2(var_t *l, var_t *r, int op)
 			tmp_free(m1);
 			tmp_free(m2);
 			if	( m )	{
-				mat_tov(l, m, lr, lc, 1);
+				if	( r->v.a.maxdim == 1 )	
+					mat_tov(l, m, lc, 1, 0);
+				else
+					mat_tov(l, m, lr, lc, 1);
 				tmp_free(m);
 				}
 			}

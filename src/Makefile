@@ -157,6 +157,12 @@ $(BINDIR)/svgasbasic: $(unix_obj) dev_uvga.c unix/rom16.c dev_oss.c device.c $(h
 	ln -svf $(BINDIR)/svgasbasic $(BINDIR)/sbasic
 	-@printf "\n\033[7m * %s * \033[0m\n\n" "SVGA Version ready"
 
+# unix console/GGI with OSS sound (dev_ggi.c is the driver, rom16.c is the font)
+$(BINDIR)/ggisbasic: $(unix_obj) dev_ggi.c unix/rom16.c dev_oss.c device.c $(help_files)
+	$(UCC) $(CFLAGS) -DDRV_SOUND device.c dev_ggi.c dev_oss.c $(unix_obj) -o $(BINDIR)/ggisbasic $(ULIBS) -lggi -lgii
+	ln -svf $(BINDIR)/ggisbasic $(BINDIR)/sbasic
+	-@printf "\n\033[7m * %s * \033[0m\n\n" "GGI Version ready"
+
 # unix console/framebuffer
 $(BINDIR)/fbsbasic: $(unix_obj) dev_ndcfb.c dev_genfb.c device.c dev_oss.c $(help_files)
 	$(UCC) $(CFLAGS) -DDRV_SOUND dev_ndcfb.c dev_genfb.c dev_oss.c device.c $(unix_obj) -o $(BINDIR)/fbsbasic $(ULIBS)
@@ -213,6 +219,7 @@ $(LIBDIR)/libsbsdldrv.so: $(sdldrv_obj)
 
 ######################
 svga: $(BINDIR)/svgasbasic
+ggi: $(BINDIR)/ggisbasic
 x: $(BINDIR)/xsbasic
 xf: $(BINDIR)/xfsbasic
 sdl: $(BINDIR)/sdlsbasic
@@ -367,6 +374,7 @@ devinstall: all
 	ln -svf $(BINDIR)/sbasic     $(INSTALLBIN)/sbasic
 	ln -svf $(BINDIR)/mkpdb     $(INSTALLBIN)/mkpdb
 	ln -svf $(BINDIR)/svgasbasic $(INSTALLBIN)/svgasbasic
+	ln -svf $(BINDIR)/ggisbasic $(INSTALLBIN)/ggisbasic
 	ln -svf $(BINDIR)/fbsbasic   $(INSTALLBIN)/fbsbasic
 	ln -svf $(BINDIR)/sdlsbasic  $(INSTALLBIN)/sdlsbasic
 	ln -svf $(BINDIR)/xsbasic    $(INSTALLBIN)/xsbasic
@@ -384,6 +392,7 @@ help:
 	-@printf "\033[4m%s\033[0m\n" "console: make svga      --- Unix version (with SVGALIB) & utilities (recommended)"
 	-@printf "\033[4m%s\033[0m\n" "console: make fb        --- Unix version with my FB lib (recommended/default)"
 	-@printf "\033[4m%s\033[0m\n" "XFree86: make sdl       --- Unix version with SDL lib (recommended)"
+	-@printf "\033[4m%s\033[0m\n" "XFree86: make ggi       --- Unix version with GGI lib (recommended)"
 	-@printf "\nOther platforms\n"
 	-@printf "\033[4m%s\033[0m\n" "PalmOS:  make palm      --- PalmOS version"
 	-@printf "\033[4m%s\033[0m\n" "VTOS:    make vtos      --- VTOS version"

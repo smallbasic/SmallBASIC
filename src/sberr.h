@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+void	sc_raise2(const char *sec, int scline, const char *buff);
 void	rt_raise(const char *fmt, ...);
 
 #if defined(OS_LIMITED)

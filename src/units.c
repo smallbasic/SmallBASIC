@@ -20,6 +20,8 @@
 static unit_t	*units;
 static int		unit_count = 0;
 
+int		find_unit_source(const char *name, char *file)		SEC(BEXEC);
+
 /**
 *	initialization
 */
@@ -71,7 +73,7 @@ int		find_unit_source(const char *name, char *file)
 			"/usr/local/lib/sbasic/units:"
 			"/usr/local/share/sbasic/units:"
 			"/usr/local/share/lib/sbasic/units";
-	#else
+	#elif !defined(_PalmOS)
 	char	*def_path =
 			".\\;"
 			".\\units;"
@@ -126,7 +128,7 @@ int		find_unit(const char *name, char *file)
 			"/usr/local/lib/sbasic/units:"
 			"/usr/local/share/sbasic/units:"
 			"/usr/local/share/lib/sbasic/units";
-	#else
+	#elif !defined(_PalmOS)
 	char	*def_path =
 			".\\;"
 			".\\units;"

@@ -12,6 +12,8 @@
 #include "messages.h"
 #include <limits.h>
 
+int		par_massget_type_check(char fmt, par_t *par)	SEC(BLIB);
+
 /*
 *	returns the last-modified time of the file
 *

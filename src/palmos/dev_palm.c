@@ -59,7 +59,7 @@ static int16	pen_update;
 static byte		pen_down = 0;	// boolean
 static int16	pen_state = 0;
 
-static byte*	video_base = NULL;		// Video RAM pointer
+static byte 	*video_base = 0L;		// Video RAM pointer
 
 static int		vga35[16];				// PalmOS 3.5 color-index value
 static int		vga35tra[16];			// Real color value
@@ -68,7 +68,6 @@ static int		vga35tra[16];			// Real color value
 static void		(*directsetpixel)(int,int);
 static long		dcolor;
 
-#if	PALMOS_SDK_VERSION < 0x0500
 static void	palm_directsetpixel_1(int x, int y);
 static void	palm_directsetpixel_2(int x, int y);
 static void	palm_directsetpixel_4(int x, int y);
@@ -79,7 +78,8 @@ static void	palm_sony_directsetpixel_8(int x, int y);
 static void	palm_directsetpixel_16(int x, int y);
 static void	palm_directsetpixel_24(int x, int y);
 static void	palm_directsetpixel_32(int x, int y);
-#endif
+static void	palm_directhline(int x, int x2, int y);
+
 static long	palm_directcolor(long vgacolor);
 static void	palm_sdk_setpixel(int x, int y);
 static long	palm_sdk_getpixel(int x, int y);
@@ -91,8 +91,6 @@ int		osd_devinit()
 {
 	dword	romVersion;
 	dword	sup_depth;
-//	word	keydelay[3];
-//	byte	keyq;
 	word	wmx, wmy;
 	#if defined(SONY_CLIE)
 	UInt32	width, height;
@@ -101,32 +99,32 @@ int		osd_devinit()
 	/* OS INFO */
     FtrGet(sysFtrCreator, sysFtrNumROMVersion, &romVersion);
 	if	( romVersion >= sysVersion35 )	
-		os_ver = (sysGetROMVerMajor(romVersion) << 8) | (sysGetROMVerMinor(romVersion) << 4) | sysGetROMVerFix(romVersion);
+		os_ver = (sysGetROMVerMajor(romVersion) << 16) | (sysGetROMVerMinor(romVersion) << 8) | sysGetROMVerFix(romVersion);
 	else if	( romVersion > sysVersion31 )
-		os_ver = 0x330;
+		os_ver = 0x3030;
 	else if	( romVersion == sysVersion31 )
-		os_ver = 0x310;
+		os_ver = 0x3010;
 	else
-		os_ver = 0x300;
+		os_ver = 0x3000;
 
 	/* initialize keyboard (hardware keys) */
 	pdev_prev_keymask = KeySetMask(0x7F);
 	KeyRates(0, &pdev_keydelay[0], &pdev_keydelay[1], &pdev_keydelay[2], &pdev_keyq);
-//	keydelay[0] = keydelay[1] = keydelay[2] = 0; keyq = 0;
-//	KeyRates(-1, &keydelay[0], &keydelay[1], &keydelay[2], &keyq);
 
-	// PalmOS 3.5+, use SDK to access screen
-	#if	PALMOS_SDK_VERSION < 0x0500
-    if ( os_ver >= 0x350 ) 
+	/*
+	*	For Palm devices with OS < 3.5
+	*	We need to use direct-access to LCD
+	*
+	*	opt_safedraw = 1 for OS >= 3.5
+	*	opt_safedraw = 0 for OS <= 3.3
+	*/
+    if ( os_ver >= 0x3050 ) 
 		opt_safedraw = 1;
-	else // otherwise (PalmOS < 3.5) use direct access
+	else
 		opt_safedraw = 0;
-	#else
-	opt_safedraw = 1;
-	#endif
 
 	/* initialize colors */
-    if ( os_ver < 0x310 ) {
+    if ( os_ver < 0x3010 ) {
         os_color_depth = 1;  // no system support for gray or colors.
         os_color = 0;
         }
@@ -141,11 +139,9 @@ int		osd_devinit()
 		if	( use_sony_clie )	{
 			width = hrWidth;
 			height = hrHeight;
-//			width = opt_pref_width;
-//			height = opt_pref_height;
 			HRWinScreenMode(sony_refHR, winScreenModeSet, &width, &height, &os_color_depth, NULL);
-//			HRWinScreenMode(sony_refHR, winScreenModeSet, &width, &height, &opt_pref_bpp, NULL);
-		        HRWinScreenMode(sony_refHR, winScreenModeGet, &width, &height, &sup_depth, NULL);			}
+	        HRWinScreenMode(sony_refHR, winScreenModeGet, &width, &height, &sup_depth, NULL);			
+			}
 		else
 		{
 	#endif
@@ -166,9 +162,9 @@ int		osd_devinit()
 	else
 		{
 	#endif
-	#if	PALMOS_SDK_VERSION < 0x0500
+
 	if	( !opt_safedraw )	{
-		video_base = (byte *) WinGetDrawWindow()->displayAddrV20;
+		#warning PalmOS <= 3.3 version disabled because of video_base = (byte *) WinGetDrawWindow()->displayAddrV20 isnt working. WHY ?
 		setsysvar_int(SYSVAR_VIDADR, (int32) video_base);
 
 		switch ( os_color_depth )	{
@@ -196,14 +192,10 @@ int		osd_devinit()
 			}
 		}
 	else	{
-	#endif
 		video_base = NULL;
 		setsysvar_int(SYSVAR_VIDADR, (int32) video_base);
-
 		directsetpixel = palm_sdk_setpixel;
-	#if	PALMOS_SDK_VERSION < 0x0500
 		}
-	#endif
 		
 	#if defined(SONY_CLIE)
 		}
@@ -230,7 +222,7 @@ int		osd_devinit()
 	pen_update = 0;
 	cur_x = cur_y = 0;
 
-	if ( os_ver >= 0x350 )	{	
+	if ( os_ver >= 0x3050 )	{	
 		//
 		// PalmOS ver 3.5+
 		//	Palette
@@ -469,7 +461,7 @@ int		osd_catch(EventType *ev)
 			case vchrMenu:
 				return 0;
 			case vchrLowBattery:
-//				if	( os_ver >= 0x350 )
+//				if	( os_ver >= 0x3050 )
 //					inf_low_battery();
 				return 0;
 			case vchrFind:
@@ -1190,7 +1182,7 @@ void	osd_spec_setcolor(long color, long bg)
 			else
 				WinSetColors(&rgb, 0, 0, 0);
 			}
-		else  if ( os_ver >= 0x350 )	{		// PalmOS ver 3.5+
+		else  if ( os_ver >= 0x3050 )	{		// PalmOS ver 3.5+
 			if	( bg )
 				WinSetBackColor(vga35[color]);
 			else	{
@@ -1280,7 +1272,6 @@ static long palm_sdk_getpixel(int x, int y)
 	return WinGetPixel(x, y);
 }
 
-#if	PALMOS_SDK_VERSION < 0x0500
 /*
 *	1bit mode - setpixel
 */
@@ -1396,17 +1387,14 @@ static void	palm_directsetpixel_32(int x, int y)
 	offset = (y*(os_graf_mx<<2))+(x<<2);
 	memcpy(video_base+offset, &dcolor, 4);
 }
-#endif	// SDK < 5
 
 /*
 */
-void	palm_directhline(int x, int x2, int y)
+static void	palm_directhline(int x, int x2, int y)
 {
-#if	PALMOS_SDK_VERSION < 0x0500
 	long	offset, i, len;
 	long	co;
 	byte	l[2];
-#endif
 
 	if	( opt_safedraw )	{
 		WinDrawLine(x, y, x2, y);
@@ -1420,7 +1408,6 @@ void	palm_directhline(int x, int x2, int y)
 		}
 	#endif
 
-#if	PALMOS_SDK_VERSION < 0x0500
 	if	( x > x2 )	{
 		i  = x;
 		x  = x2;
@@ -1458,7 +1445,6 @@ void	palm_directhline(int x, int x2, int y)
 	default:
 		WinDrawLine(x, y, x2, y);
 		};
-#endif
 }
 
 /*

@@ -26,6 +26,15 @@
 #include "device.h"
 #include "pproc.h"
 
+int		brun_create_task(const char *filename, mem_t preloaded_bc, int libf)	SEC(BEXEC);
+int		exec_close_task()														SEC(BEXEC);
+void	exec_setup_predefined_variables()										SEC(BEXEC);
+var_t	*code_isvar_arridx(var_t *basevar_p)									SEC(BEXEC);
+var_t	*code_getvarptr_arridx(var_t *basevar_p)								SEC(BEXEC);
+void	code_pop_until(int type)												SEC(BEXEC);
+void	code_pop_and_free(stknode_t *node)										SEC(BEXEC);
+stknode_t*	code_stackpeek()													SEC(BEXEC);
+
 #define	DEBUG_OUT(x)
 //#define	DEBUG_OUT(x)	dev_printf((x))
 
