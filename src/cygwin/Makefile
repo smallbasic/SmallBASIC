@@ -1,11 +1,13 @@
 # CYGWIN
 
-all: sbnull.exe bas2pdb.exe mkpdb.exe
+all: sbnull.exe
+debug:sbnull.exe
 
 DCC = gcc
-DCPPFLAGS = -g -O2 -Wall -D_UnixOS -D_CygWin -I.. -I.
+DCPPFLAGS = -O2 -Os -Wall -D_UnixOS -D_CygWin -I.. -I.
+debug: DCPPFLAGS = -g -O1 -Wall -D_UnixOS -D_CygWin -I.. -I.
 DCFLAGS   = $(DCPPFLAGS)
-CLIBS = -lm -lgcc -lreadline -ldl
+CLIBS = -lm -lgcc -lreadline -ltermcap  -s
 
 # Common sources
 sources=\
@@ -15,9 +17,10 @@ sources=\
 	blib_graph.c scan.c circle.c ffill.c pfill.c g_bmp.c \
 	extlib.c blib_ui.c plot.c tasks.c units.c \
     fs_stream.c fs_serial.c fs_memo.c fs_pdoc.c fs_socket_client.c fs_irda.c \
-	unx_memmgr.c dev_term.c g_line.c decomp.c interactive_mode.c help_subsys.c \
+	unx_memmgr.c dev_term.c g_line.c decomp.c  \
 	geom.c
 
+#
 com_sources = $(addprefix ../, $(sources))
 com_objects = $(addsuffix .o,  $(basename $(sources)))
 
