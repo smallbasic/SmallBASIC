@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.10 2004-12-09 22:32:27 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.11 2004-12-13 22:27:47 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -30,6 +30,7 @@ using namespace fltk;
 void setTitle(const char* filename);
 void setRowCol(int row, int col);
 void setModified(bool dirty);
+void addHistory(const char* fileName);
 
 class EditorWindow : public Group {
     public:
@@ -60,7 +61,7 @@ class EditorWindow : public Group {
     void position(int p);
     void getSelStartRowCol(int *row, int *col);
     void getSelEndRowCol(int *row, int *col);
-   
+  
     // editor callback functions
     static void new_cb(Widget*, void* v) {
         ((EditorWindow*)v)->newFile();

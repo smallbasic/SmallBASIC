@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.16 2004-12-07 22:29:05 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.17 2004-12-13 22:27:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -213,19 +213,16 @@ void osd_write(const char *s) {
 }
 
 void doAnchor(void*) {
-    if (access(anchor, 0) == 0) {
-        wnd->execLink(anchor);
-    }
+    wnd->execLink(anchor);
     free((void*)anchor);
     anchor = 0;
 }
 
 void anchor_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        const char *slash = strrchr((const char*)v, '/');
-        anchor = strdup((const char*)(slash?slash+1:v));
+        anchor = strdup((const char*)v);
         closeHelp();
-        fltk::add_timeout(1.0, doAnchor); // post message
+        fltk::add_timeout(0.5, doAnchor); // post message
     }
 }
 

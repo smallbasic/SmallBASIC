@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.20 2004-12-09 22:32:27 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.21 2004-12-13 22:27:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -15,24 +15,27 @@
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <ctype.h>
+#include <limits.h>
 
 #include <fltk/run.h>
 #include <fltk/error.h>
 #include <fltk/ask.H>
 #include <fltk/events.h>
-#include <fltk/string.h>
-#include <fltk/damage.h>
 #include <fltk/Window.h>
 #include <fltk/Item.h>
 #include <fltk/Group.h>
 #include <fltk/TabGroup.h>
 #include <fltk/MenuBar.h>
-#include <fltk/Button.h>
 #include <fltk/filename.h>
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
 #include "sbapp.h"
+
+extern "C" {
+#include "fs_socket_client.h"
+}
 
 #ifdef __CYGWIN__
 #include <fltk/win32.h>
@@ -51,14 +54,14 @@ enum ExecState {
     quit_state
 } runMode = init_state;
 
-char buff[250];
+char buff[PATH_MAX];
 const char* runfile = 0;
-const char* toolhome = 0;
+const char* toolhome = "./Bas-Home/";
 int px,py,pw,ph;
 
 const char aboutText[] =
     "About SmallBASIC...\n\n"
-    "Copyright (c) 2000-2004 Nicholas Christopoulos\n\n"
+    "Copyright (c) 2000-2004 Nicholas Christopoulos.\n\n"
     "FLTK Version 0.9.6.0\n"
     "Copyright (c) 2004 Chris Warren-Smith.\n\n"
     "http://smallbasic.sourceforge.net\n\n"
@@ -67,6 +70,8 @@ const char aboutText[] =
     "redistribute it and/or modify it under the terms of the\n"
     "GNU General Public License version 2 as published by\n"
     "the Free Software Foundation.";
+
+//--Menu callbacks--------------------------------------------------------------
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
@@ -157,6 +162,10 @@ void basicMain(const char* filename) {
 
     if (success == false && gsb_last_line) {
         wnd->editWnd->gotoLine(gsb_last_line);
+        int len = strlen(gsb_last_errmsg);
+        if (gsb_last_errmsg[len-1] == '\n') {
+            gsb_last_errmsg[len-1] = 0;
+        }
         wnd->fileStatus->copy_label(gsb_last_errmsg);
     }
 
@@ -176,6 +185,8 @@ void run_cb(Widget*, void*) {
         busyMessage();
     }
 }
+
+//--EditWindow functions--------------------------------------------------------
 
 void setTitle(const char* filename) {
     if (filename && filename[0]) {
@@ -203,6 +214,39 @@ void setModified(bool dirty) {
     wnd->modStatus->label(dirty?"MOD":"");
     wnd->modStatus->redraw();
 }
+
+void getHomeDir(char* fileName) {
+    sprintf(fileName, "%s/.smallbasic/", dev_getenv("HOME"));
+	mkdir(fileName, 0777);
+}
+
+void addHistory(const char* fileName) {
+    getHomeDir(buff);
+    strcat(buff, "history.txt");
+
+    FILE* fp = fopen(buff, "r");
+    if (fp) {
+        // don't add the item if it already exists
+        char buffer[1024];        
+        while (feof(fp) == 0) {
+            if (fgets(buffer, 1024, fp) && 
+                strncmp(fileName, buffer, strlen(fileName)-1) == 0) { 
+                fclose(fp);
+                return;
+            }
+        }
+        fclose(fp);
+    }
+
+    fp = fopen(buff, "a");
+    if (fp) {
+        fwrite(fileName, strlen(fileName), 1, fp);
+        fwrite("\n", 1, 1, fp);
+        fclose(fp);
+    }
+}
+
+//--Startup functions-----------------------------------------------------------
 
 int arg_cb(int argc, char **argv, int &i) {
     if (i+1 >= argc) {
@@ -257,6 +301,7 @@ void editor_cb(Widget* w, void* v) {
             wnd->editWnd->position(pos);
             wnd->editWnd->take_focus();
             runMode = edit_state;
+            opt_command[0] = 0;
         }
     } else {
         busyMessage();
@@ -265,7 +310,11 @@ void editor_cb(Widget* w, void* v) {
 
 void tool_cb(Widget* w, void* v) {
     if (runMode == edit_state) {
+        strcpy(opt_command, toolhome);
+        setTitle((const char*)v);
         basicMain((const char*)v);
+        setTitle(wnd->editWnd->getFileName());
+        opt_command[0] = 0;
     } else {
         busyMessage();
     }
@@ -274,14 +323,13 @@ void tool_cb(Widget* w, void* v) {
 void scanPlugIns(Menu* menu) {
     dirent **files;
     FILE* file;
-    const char* home = toolhome ? toolhome : "./Bas-Home/";
     char buffer[1024];
     char label[1024];
-    int numFiles = filename_list(home, &files);
+    int numFiles = filename_list(toolhome, &files);
 
     for (int i=0; i<numFiles; i++) {
         if (strstr(files[i]->d_name, ".bas") != 0) {
-            strcpy(buffer, home);
+            strcpy(buffer, toolhome);
             strcat(buffer, files[i]->d_name);
             file = fopen(buffer, "r");
             if (!file) {
@@ -303,13 +351,17 @@ void scanPlugIns(Menu* menu) {
             
             if (fgets(buffer, 1024, file) &&
                 strncmp("'menu", buffer, 5) == 0) {
-                int len = strlen(buffer);
-                buffer[len-1] = 0; // trim new-line
-                sprintf(label, "&Tools/%s", buffer+6);
-                strcpy(buffer, home);
+                int offs = 6;
+                buffer[strlen(buffer)-1] = 0; // trim new-line
+                while (buffer[offs] && (buffer[offs] == '\t' ||
+                                        buffer[offs] == ' ')) {
+                    offs++;
+                }
+                sprintf(label, "&Basic/%s", buffer+offs);
+                strcpy(buffer, toolhome);
                 strcat(buffer, files[i]->d_name);
                 menu->add(label, 0, (Callback*)
-                          (editorTool ? editor_cb : tool_cb),
+                          (editorTool ? editor_cb : tool_cb), 
                           strdup(buffer));
             }
             fclose(file);
@@ -367,6 +419,8 @@ struct TabPage : public Group {
     }
 };
 
+//--MainWindow methods----------------------------------------------------------
+
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int mnuHeight = 20;
     int statusHeight = mnuHeight;
@@ -380,7 +434,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     opt_quite = 1;
     opt_nosave = 1;
     opt_ide = IDE_NONE; // for sberr.c
-    opt_command[0] = '\0';
+    opt_command[0] = 0;
     opt_pref_width = 0;
     opt_pref_height = 0;
     opt_pref_bpp = 0;
@@ -391,21 +445,20 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&File/&Open File...",   CTRL+'o', (Callback*)EditorWindow::open_cb);
     m->add("&File/_&Insert File...",CTRL+'i', (Callback*)EditorWindow::insert_cb);
     m->add("&File/&Save File",      CTRL+'s', (Callback*)EditorWindow::save_cb);
-    m->add("&File/Save File &As...",CTRL+SHIFT+'S', (Callback*)EditorWindow::saveas_cb);
+    m->add("&File/_Save File &As...",CTRL+SHIFT+'S', (Callback*)EditorWindow::saveas_cb);
     m->add("&File/E&xit",        CTRL+'q', (Callback*)quit_cb);
     m->add("&Edit/_&Undo",       CTRL+'z', (Callback*)EditorWindow::undo_cb);
     m->add("&Edit/Cu&t",         CTRL+'x', (Callback*)EditorWindow::cut_cb);
     m->add("&Edit/&Copy",        CTRL+'c', (Callback*)EditorWindow::copy_cb);
-    m->add("&Edit/&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
-    m->add("&Edit/_&Delete",     0, (Callback*)EditorWindow::delete_cb);
+    m->add("&Edit/_&Paste",      CTRL+'v', (Callback*)EditorWindow::paste_cb);
     m->add("&Edit/&Find...",     CTRL+'f', (Callback*)EditorWindow::find_cb);
     m->add("&Edit/Find A&gain",  CTRL+'a', (Callback*)EditorWindow::find2_cb);
     m->add("&Edit/&Replace...",  0,        (Callback*)EditorWindow::replace_cb);
-    m->add("&Edit/Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
-    m->add("&View/&Goto Line...",  0, (Callback*)goto_cb);
-    m->add("&View/_Output Size...",0, (Callback*)font_size_cb);
-    m->add("&View/&Full Screen", 0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
-    m->add("&View/&Turbo",       0, (Callback*)turbo_cb)->type(Item::TOGGLE);
+    m->add("&Edit/_Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
+    m->add("&Edit/&Goto Line...",  0, (Callback*)goto_cb);
+    m->add("&Edit/Output Size...",0, (Callback*)font_size_cb);
+    m->add("&View/&Full Screen",  0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
+    m->add("&View/&Turbo",        0, (Callback*)turbo_cb)->type(Item::TOGGLE);
     scanPlugIns(m);
     m->add("&Program/&Run",      CTRL+'r', (Callback*)run_cb);
     m->add("&Program/&Break",    CTRL+'b', (Callback*)break_cb);
@@ -485,8 +538,44 @@ void MainWindow::resetPen() {
 
 void MainWindow::execLink(const char* file) {
     // execute a link from the html window
-    wnd->editWnd->loadFile(file, -1);
-    basicMain(file);
+    if (0 == strncmpi(file, "http://", 7)) {
+        char line[1024];
+        char localFile[PATH_MAX];
+        dev_file_t df;
+        FILE* fp;
+
+        getHomeDir(localFile);
+        strcat(localFile, "scratch.bas");
+        fp = fopen(localFile, "w");
+        if (fp == 0) {
+            return;
+        }
+
+        strcpy(df.name, file);
+        if (http_open(&df) == 0) {
+            fclose(fp);
+            return;
+        }
+
+        while (!sockcl_eof(&df)) {
+            sockcl_read(&df, (unsigned char*)line, sizeof(line));
+            fwrite(line, strlen(line), 1, fp);
+        }
+        
+        // cleanup
+        sockcl_close(&df);
+        fclose(fp);
+
+        // run the remote program
+        setTitle(file);
+        addHistory(file);
+        basicMain(localFile);
+    } else if (file[0] == '!' && access(file+1, 0) == 0) {
+        basicMain(file+1);
+    } else {
+        wnd->tabGroup->selected_child(wnd->editGroup);        
+        wnd->editWnd->loadFile(file, -1);
+    }
 }
 
 int MainWindow::handle(int e) {
@@ -531,6 +620,8 @@ int MainWindow::handle(int e) {
     return Window::handle(e);
 }
 
+//--Debug support---------------------------------------------------------------
+
 #if defined(__CYGWIN__)
 // see http://www.sysinternals.com/ntw2k/utilities.shtml
 // for the free DebugView program
@@ -553,3 +644,5 @@ void trace(const char *format, ...) {
     OutputDebugString(buf);
 }
 #endif
+
+//--EndOfFile-------------------------------------------------------------------

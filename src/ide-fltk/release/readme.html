@@ -1,0 +1,139 @@
+<html>
+<head>
+<title>SmallBASIC (FLTK/Cygwin)- readme.html</title>
+<style type="text/css">
+BODY {
+  font-family: verdana,arial,helvetica,sans-serif;
+  font-size: 9pt;
+  background-color: #f4f4f4;
+  border: 2px solid #376EAB;
+  padding: 8px;
+  text-align: left;
+}
+
+TABLE { 
+  font-family: verdana,arial,helvetica,sans-serif;
+  font-size: 9pt;
+}
+
+A {
+  color: #294F75;
+  text-decoration: none;
+}
+
+h1 {
+  font-size: 20px;
+  color: #7A7272;
+  font-weight: normal;
+}
+
+h2 {
+  font-size: 22px;
+  color: #7A7272;
+  font-weight: bold;
+}
+
+</style>
+</head>
+<body>
+
+<h2>SmallBASIC</h2>
+
+<p>Copyright (c) 2000-2004 Nicholas Christopoulos.
+<p>FLTK Version 0.9.6.0
+<p>Copyright (c) 2004 Chris Warren-Smith.<br>
+<p>SmallBASIC comes with ABSOLUTELY NO WARRANTY.
+This program is free software; you can use it
+redistribute it and/or modify it under the terms of the
+GNU General Public License version 2 as published by
+the Free Software Foundation.</p>
+
+<hr>
+<h1>Features</h1>
+
+<ul>
+<li>Based on FLTK library version 2.x. This is a cross-platform GUI API
+allowing simple re-targeting for the Windows, Linux and Mac platforms.
+<li>reduced CPU utilisation while programs are running.
+<li>syntax high-lighting:
+<table>
+<tr>
+   <td style="color:#800000">keywords</td>
+   <td style="color:#808000">functions</td>
+   <td style="color:#008080">procedures</td>
+   <td style="color:#008000">comments</td>
+</tr>
+</table>
+
+<li>New/updated commands:
+<table cellspacing=3>
+<tr>
+   <td style="vertical-align:top;color:#008080">IMAGE</td>
+   <td>Allows you to display an .GIF image with code such as:
+<pre>open "logo.gif" as #1
+image #1, 0, 1,25
+close #1</pre>
+Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in this release)</i>
+  </td>
+</tr>
+<tr>
+   <td style="vertical-align:top;color:#808000">IMAGEW</td>
+   <td>Returns the width of an image</td>
+</tr>
+<tr>
+   <td style="vertical-align:top;color:#808000">IMAGEH</td>
+   <td>Returns the height of an image</td>
+</tr>
+<tr>
+   <td style="vertical-align:top;color:#008080">HTML</td>
+   <td>Displays html text. The output is modeless, meaning 
+  the command returns immediately while the output remains displayed. 
+  Syntax: HTML html, [title,] [x,y,w,h] &nbsp; <i>(title not used in this release)</i>
+  </td>
+</tr>
+<tr>
+   <td style="vertical-align:top;color:#008080">BUTTON</td>
+   <td>
+   Syntax: BUTTON x, y, w, h, variable, caption [,type]<br>
+
+   type can optionally be 'radio' | 'checkbox' | 'link' | 'label'
+   variable is set to 1 if a button or link was pressed (which 
+   will have closed the form, or if a radio or checkbox was 
+   selected when the form was closed.</td>
+<tr>
+   <td style="vertical-align:top;color:#008080">TEXT</td>
+   <td>
+   Syntax: TEXT x, y, w, h, variable<br>
+   When DOFORM returns the variable contains the user entered value.</td>
+</tr>
+<tr>
+   <td style="vertical-align:top;color:#008080">DOFORM</td>
+   <td>syntax: DOFORM [x,y,w,h]<br>
+   Executes the form.</td>
+</tr>
+</table>
+</li>
+
+<li>Support for modules. Module location is specifed on the command line
+using the -m switch. 
+
+<li>Support for Plugins. Allows the editor to be extended using program written in SmallBASIC.
+An alternative plugin home-directory may be specified on the command line using the -t switch.
+</ul>
+
+<hr>
+<h1>Version History</h1>
+<ul>
+<li>Version 0.9.6.0 - Released Sunday 19 Dec 2004
+</ul>
+
+<hr>
+<h1>Links</h1>
+<ul>
+ <li><a href="help/0.html">SmallBASIC guide</a>
+ <li><a href=http://smallbasic.sourceforge.net>SmallBASIC home</a>
+ <li><a href=http://www.twpo.com.au/cwarrens/ebm>eBookMan tools</a>
+</ul>
+
+</body>
+</html>
