@@ -1,8 +1,8 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.3 2005-03-09 23:01:00 zeeb90au Exp $
-// This file is part of EBjLib
+// $Id: StringLib.cpp,v 1.4 2005-03-13 22:25:22 zeeb90au Exp $
+// This file was part of EBjLib
 //
-// Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -13,6 +13,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+// uncomment for unit testing and then run:
+// g++ StringLib.cpp;./a.exe
+// #define UNIT_TEST 1
 
 using namespace strlib;
 
@@ -93,6 +97,12 @@ void String::append(const String& s) {
     append(s.buffer);
 }
 
+void String::append(const String* s) {
+    if (s && s->length()) {
+        append(s->buffer);
+    }
+}
+
 void String::append(int i) {
     char t[20];
     sprintf(t, "%i", i);
@@ -117,7 +127,7 @@ void String::append(int i, int padding) {
 }
 
 void String::append(const char *s) {
-    if (s != null && owner) {
+    if (s != null && s[0] && owner) {
         int len = length();
         buffer = (char*)realloc(buffer, len + strlen(s) + 1);
         strcpy(buffer+len, s);
@@ -290,41 +300,25 @@ void String::empty() {
 }
 
 String String::trim() const {
-    String s(buffer);
-    int len = s.length();
-    bool whiteSp = false;
-    for (int i=0; i<len; i++) {
-        if (s.buffer[i] == '\r' ||
-            s.buffer[i] == '\n' ||
-            s.buffer[i] == '\t') {
-            s.buffer[i] = ' ';
-            whiteSp = true;
-        } else if (i<len-1 &&
-            s.buffer[i] == ' ' && 
-            s.buffer[i+1] == ' ') {
-            whiteSp = true;
-        }
+    int len = length();
+    if (len == 0) {
+        return *this;
     }
-    String b(s.buffer);
-    if (whiteSp) {
-        int iAppend=0;
-        for (int i=0; i<len; i++) {
-            if (i<len-1 &&
-                s.buffer[i] == ' ' && 
-                s.buffer[i+1] == ' ') {
-                continue;
-            }
-            b.buffer[iAppend++] = s.buffer[i];
-        }
-        b.buffer[iAppend] = '\0';
+    int ibegin = 0;
+    while (isWhite(buffer[ibegin])) {
+        ibegin++;
     }
-    return b;
+    int iend = len;
+    while (isWhite(buffer[iend-1])) {
+        iend--;
+    }
+    return substring(ibegin, iend);
 }
 
 String String::lvalue() {
     int endIndex = indexOf('=', 0);
     if (endIndex == -1) {
-        return null;
+        return *this;
     }
     return substring(0, endIndex);
 }
@@ -332,7 +326,7 @@ String String::lvalue() {
 String String::rvalue() {
     int endIndex = indexOf('=', 0);
     if (endIndex == -1) {
-        return null;
+        return *this;
     }
     return substring(endIndex+1, length());
 }
@@ -618,6 +612,17 @@ void Properties::operator=(Properties& p) {
     }
     p.list.emptyList();
 }
+
+#ifdef UNIT_TEST
+#include <stdio.h>
+int main(int argc, char **argv) {
+    String s = " test string ";
+    String trim = s.trim();
+    printf("'%s'\n", trim.toString());
+    String r = trim.replaceAll("s", "S");
+    printf("'%s'\n", r.toString());
+}
+#endif
 
 //--EndOfFile-------------------------------------------------------------------
 

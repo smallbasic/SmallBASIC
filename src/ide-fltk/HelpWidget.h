@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.3 2005-03-09 23:01:00 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.4 2005-03-13 22:25:22 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -41,12 +41,6 @@ public:
     HelpWidget(const char* str, int width, int height);
     virtual ~HelpWidget();
 
-    void home();
-    void end();
-    void pageUp();
-    void lineUp();
-    void pageDown();
-    void lineDown();
     void loadPage(const char* str);
     void reloadPage();
     void navigateTo(const char* anchorName);
@@ -75,15 +69,12 @@ public:
 
     Scrollbar* scrollbar;
     S16 vscroll;
-    U16 pageHeight;
-    U16 maxTextHeight;
-    U16 numRows;
-    ::List nodeList;
-    ::List namedInputs;
-    ::List buttons;
-    ::List anchors;
-    ::Properties localAnchors;
-    ::String htmlStr;
+    U16 scrollHeight;
+    strlib::List nodeList;
+    strlib::List namedInputs;
+    strlib::List inputs;
+    strlib::List anchors;
+    strlib::String htmlStr;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

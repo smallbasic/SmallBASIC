@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.3 2005-03-09 23:01:00 zeeb90au Exp $
+// $Id: StringLib.h,v 1.4 2005-03-13 22:25:22 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -63,6 +63,7 @@ struct String : public Object {
     const String operator+(int i);
     const String& operator=(int i);
     void append(const String& s);
+    void append(const String* s);
     void append(int i);
     void append(double d);
     void append(int i, int padding);
@@ -72,13 +73,9 @@ struct String : public Object {
     operator const char* () const {return buffer;}
     const char* toString() const;
     int length() const;
-    String substring(int beginIndex) const;
-    String substring(int beginIndex, int endIndex) const;
     void replaceAll(char a, char b);
-    String replaceAll(const char* srch, const char* repl);
     void toUpperCase();
     void toLowerCase();
-    String trim() const;
     int toInteger() const;
     double toNumber() const;
     bool equals(const String &s) const;
@@ -92,6 +89,10 @@ struct String : public Object {
     int indexOf(char chr, int fromIndex) const;
     String lvalue();
     String rvalue();
+    String trim() const;
+    String substring(int beginIndex) const;
+    String substring(int beginIndex, int endIndex) const;
+    String replaceAll(const char* srch, const char* repl);
     
     protected:
     void init() {buffer=0;owner=true;}
