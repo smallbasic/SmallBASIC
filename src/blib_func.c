@@ -1361,7 +1361,7 @@ void	cmd_str1(long funcCode, var_t *arg, var_t *r)
 		*r->v.p.ptr = '\0';
 		r->v.p.size = 16;
 		
-#if defined (_FRANKLIN_EBM)
+#if defined (_FRANKLIN_EBM) || defined (_FLTK)
         // based on quick basic documentation for tab()
         // move to the n/80th pixel of screen 
 		sprintf(r->v.p.ptr, "\033[%dT", (int)l);
