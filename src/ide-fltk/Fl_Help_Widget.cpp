@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.16 2005-04-01 23:09:46 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.17 2005-04-04 00:24:21 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -93,6 +93,12 @@ struct Display {
     void newRow(U16 nrows=1) {
         x = indent;
         y += nrows*lineHeight;
+
+        if (imgY != -1 && y > imgY) {
+            // handle text flow around images
+            imgY = -1;
+            x = indent = imgIndent;
+        }
     }
 };
 
@@ -386,16 +392,6 @@ struct TextNode : public BaseNode {
     }
 
     void display(Display* out) {
-
-        if (out->imgY != -1 && out->y > out->imgY) {
-            // handle text flow around images
-            out->imgY = -1;
-            out->indent = out->imgIndent;
-            if (out->x != out->indent) {
-                out->newRow();
-            }
-        }
-
         ybegin = out->y;
         out->content = true;
 
@@ -404,6 +400,12 @@ struct TextNode : public BaseNode {
         }
         if (width < out->width-out->x) {
             // simple non-wrapping textout
+            if (out->center) {
+                int xctr = ((out->width-out->x)-width)/2;
+                if (xctr > out->x) {
+                    out->x = xctr;
+                }
+            }
             if (out->measure == false) {
                 drawtext(s, textlen, out->x, out->y);
                 if (out->uline) {

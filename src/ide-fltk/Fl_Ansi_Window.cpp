@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.22 2005-04-01 00:07:06 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.23 2005-04-04 00:24:21 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -271,6 +271,7 @@ int AnsiWindow::calcTab(int x) const {
 Color AnsiWindow::ansiToFltk(long c) const {
     if (c < 0) {
         // windows style RGB packing
+        c = -c;
         int r = (c) & 0xFF;
         int g = (c>>8) & 0xFF;
         int b = (c>>16) & 0xFF;

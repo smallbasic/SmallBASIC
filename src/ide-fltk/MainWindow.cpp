@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.35 2005-04-01 23:09:47 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.36 2005-04-04 00:24:21 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -522,19 +522,19 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
     m->add("&Edit/&Find...",      CTRL+'f', (Callback*)EditorWindow::find_cb);
     m->add("&Edit/Find A&gain",   F3Key,    (Callback*)EditorWindow::find2_cb);
-    m->add("&Edit/&Replace...",   0,        (Callback*)EditorWindow::replace_cb);
+    m->add("&Edit/&Replace...",   F2Key,    (Callback*)EditorWindow::replace_cb);
     m->add("&Edit/_Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
-    m->add("&Edit/&Goto Line...", 0,        (Callback*)goto_cb);
-    m->add("&Edit/Output Size...",0,        (Callback*)font_size_cb);
-    m->add("&View/&Full Screen",  0,        (Callback*)fullscreen_cb)->type(Item::TOGGLE);
-    m->add("&View/&Turbo",        0,        (Callback*)turbo_cb)->type(Item::TOGGLE);
+    m->add("&Edit/&Goto Line...", F4Key,    (Callback*)goto_cb);
+    m->add("&Edit/Output Size...",F5Key,    (Callback*)font_size_cb);
+    m->add("&View/&Full Screen",  F6Key,    (Callback*)fullscreen_cb)->type(Item::TOGGLE);
+    m->add("&View/&Turbo",        F7Key,    (Callback*)turbo_cb)->type(Item::TOGGLE);
     scanPlugIns(m);
     m->add("&Program/&Run",       F9Key,    (Callback*)run_cb);
     m->add("&Program/&Break",     CTRL+'b', (Callback*)break_cb);
-    m->add("&Help/&Help Contents",       0, (Callback*)help_contents_cb);
-    m->add("&Help/_&Release Notes",      0,(Callback*)help_readme_cb);
-    m->add("&Help/_&Home Page",          0,(Callback*)help_home_cb);
-    m->add("&Help/&About SmallBASIC",    0, (Callback*)help_about_cb);
+    m->add("&Help/&Help Contents",   F1Key, (Callback*)help_contents_cb);
+    m->add("&Help/_&Release Notes",  F10Key,(Callback*)help_readme_cb);
+    m->add("&Help/_&Home Page",      F11Key,(Callback*)help_home_cb);
+    m->add("&Help/&About SmallBASIC",F12Key,(Callback*)help_about_cb);
 
     callback(quit_cb);
     shortcut(0); // remove default EscapeKey shortcut
