@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.12 2004-12-03 19:27:47 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.13 2005-01-09 00:13:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -20,6 +20,13 @@
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
+
+#ifndef max
+#define max(a,b) ((a<b) ? (b) : (a))
+#endif
+#ifndef min
+#define min(a,b) ((a>b) ? (b) : (a))
+#endif
 
 void trace(const char *format, ...);
 

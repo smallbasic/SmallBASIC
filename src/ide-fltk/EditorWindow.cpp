@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.19 2005-01-06 23:23:13 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.20 2005-01-09 00:13:14 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <io.h>
+#include <unistd.h>
 
 #include <fltk/ask.h>
 #include <fltk/events.h>
@@ -52,7 +52,7 @@ TextBuffer *textbuf = 0;
 
 // 'compare_keywords()' - Compare two keywords
 int compare_keywords(const void *a, const void *b) {
-    return (strcmpi(*((const char **)a), *((const char **)b)));
+    return (strcasecmp(*((const char **)a), *((const char **)b)));
 }
 
 // 'style_parse()' - Parse text and produce style data.
@@ -499,7 +499,7 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
     char basfile[PATH_MAX];
     strcpy(basfile, newfile);
     int len = strlen(basfile);
-    if (stricmp(basfile+len-4, ".bas") != 0) {
+    if (strcasecmp(basfile+len-4, ".bas") != 0) {
         strcat(basfile, ".bas");
     }
 

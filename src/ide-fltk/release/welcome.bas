@@ -1,5 +1,5 @@
-REM $Id: welcome.bas,v 1.2 2004-12-16 22:15:27 zeeb90au Exp $
-? "Welcome to SmallBASIC (FLTK) 0.9.6.0"
+REM $Id: welcome.bas,v 1.3 2005-01-09 00:13:23 zeeb90au Exp $
+? "Welcome to SmallBASIC (FLTK) 0.9.6.1"
 img= "./Bas-Home/logo.gif"
 if (exist(img)) then
     open img as #1

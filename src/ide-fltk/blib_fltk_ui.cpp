@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.5 2004-12-15 22:06:47 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.6 2005-01-09 00:13:22 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -236,7 +236,7 @@ void cmd_doform() {
 
     wnd->setModal(true);
     while (wnd->isModal()) {
-        wait();
+        fltk::wait();
     }
 
     if (wnd->isBreakExec()) {

@@ -62,20 +62,18 @@ COMMON=                                         \
 
 MAKEDEPEND	= /usr/X11R6/bin/makedepend -Y
 OPTIM =  -O2 -Wall -Wunused -fno-exceptions
-##OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions 
-PLATFORM=-D_UnixOS -D_CygWin -D_FLTK
+DEBUG_OPTIM = -g -O0 -Wall -Wunused -fno-exceptions 
+PLATFORM=-D_UnixOS -D_FLTK
 
 ## patched fltk-config to remove -mwindows 
 ## release with -s
 IMAGELIBS=-lfltk_images -lpng -ljpeg
 LDLIBS = -s `fltk-config --ldflags` ${IMAGELIBS}
+
+#use make -e RESOURCE= for linux build
 RESOURCES = sbfltk.res
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
-
-linux: PLATFORM=-D_UnixOS RESOURCES=
-debug: OPTIM = -g -O0 -Wall -Wunused -fno-exceptions
-
 OBJDIR = ./objs/
 
 OBJS += $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(SOURCE)))) \
@@ -87,8 +85,6 @@ depend:
 
 # Include automatically generated dependencies
 include makedepend
-
-##.SILENT:
 
 sbfui.cxx: sbfui.fl
 	fluid -c sbfui.fl

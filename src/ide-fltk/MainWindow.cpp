@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.26 2005-01-06 23:23:13 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.27 2005-01-09 00:13:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -20,7 +20,7 @@
 
 #include <fltk/run.h>
 #include <fltk/error.h>
-#include <fltk/ask.H>
+#include <fltk/ask.h>
 #include <fltk/events.h>
 #include <fltk/Window.h>
 #include <fltk/Item.h>
@@ -254,6 +254,7 @@ void setTitle(const char* filename) {
         wnd->label("SmallBASIC");
     }
     wnd->fileStatus->redraw();
+    wnd->redraw();
 }
 
 void setRowCol(int row, int col) {
@@ -308,7 +309,7 @@ void scanPlugIns(Menu* menu) {
     for (int i=0; i<numFiles; i++) {
         const char* filename = (const char*)files[i]->d_name;
         int len = strlen(filename);
-        if (stricmp(filename+len-4, ".bas") == 0) {
+        if (strcasecmp(filename+len-4, ".bas") == 0) {
             strcpy(buffer, toolhome);
             strcat(buffer, filename);
             file = fopen(buffer, "r");
@@ -356,7 +357,7 @@ void scanPlugIns(Menu* menu) {
 int arg_cb(int argc, char **argv, int &i) {
     const char* s = argv[i];
     int len = strlen(s);
-    if (stricmp(s+len-4, ".bas") == 0 && 
+    if (strcasecmp(s+len-4, ".bas") == 0 && 
         access(s, 0) == 0) {
         runfile = strdup(s);
         runMode = run_state;

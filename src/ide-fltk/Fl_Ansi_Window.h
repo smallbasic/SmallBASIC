@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.12 2004-12-09 22:32:27 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.13 2005-01-09 00:13:22 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -11,8 +11,8 @@
 #ifndef FL_ANSI_WINDOW
 #define FL_ANSI_WINDOW
 
-#include <fltk/Widget.H>
-#include <fltk/draw.H>
+#include <fltk/Widget.h>
+#include <fltk/draw.h>
 #include <fltk/Image.h>
 
 using namespace fltk;

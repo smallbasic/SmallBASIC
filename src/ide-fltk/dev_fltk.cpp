@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.21 2005-01-06 23:23:13 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.22 2005-01-09 00:13:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -117,7 +117,7 @@ int osd_getpen(int code) {
     case 0: // return true if there is a waiting pen event
     case 3: // returns true if the pen is down (and save curpos)
         if (wnd->isTurbo == false) {
-            wait();
+            fltk::wait();
         }
         if (event_state() & ANY_BUTTON) {
             get_mouse_xy();
@@ -193,7 +193,7 @@ void osd_beep() {
 #elif defined(__APPLE__)
    SysBeep(30);
 #else
-   XBell(fl_display, 100);
+   //   XBell(fl_display, 100);
 #endif // WIN32
 }
 
@@ -263,14 +263,14 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
 // image factory based on file extension
 Image* loadImage(const char* name, uchar* buff) {
     int len = strlen(name);
-    if (strcmpi(name+(len-4), ".jpg") == 0 ||
-        strcmpi(name+(len-5), ".jpeg") == 0) {
+    if (strcasecmp(name+(len-4), ".jpg") == 0 ||
+        strcasecmp(name+(len-5), ".jpeg") == 0) {
         return jpegImage::get(name, buff);
-    } else if (strcmpi(name+(len-4), ".gif") == 0) {
+    } else if (strcasecmp(name+(len-4), ".gif") == 0) {
         return gifImage::get(name, buff);
-    } else if (strcmpi(name+(len-4), ".png") == 0) {
+    } else if (strcasecmp(name+(len-4), ".png") == 0) {
         return pngImage::get(name, buff);
-    } else if (strcmpi(name+(len-4), ".xpm") == 0) {
+    } else if (strcasecmp(name+(len-4), ".xpm") == 0) {
         return xpmFileImage::get(name, buff);
     }
     return 0;
@@ -404,7 +404,7 @@ char *dev_gets(char *dest, int size) {
 
     wnd->setModal(true);
     while (wnd->isModal()) {
-        wait();
+        fltk::wait();
     }
 
     if (wnd->isBreakExec()) {
