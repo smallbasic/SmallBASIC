@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.33 2005-04-04 00:24:21 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.34 2005-04-04 00:41:49 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -69,7 +69,7 @@ void osd_settextcolor(long fg, long bg) {
     wnd->out->setTextColor(fg, bg);
 }
 
-void osd_refresh() { trace("osd_refresh");
+void osd_refresh() {
     wnd->out->redraw();
 }
 
@@ -85,7 +85,6 @@ int osd_devrestore() {
  *    -2 stop running basic application
  */
 int osd_events(int wait_flag) {
-    trace("osd_events");
     if ((wait_flag && wnd->isTurbo == false) ||
         (wnd->penState == PEN_ON && fltk::ready() == false)) {
         // in a "while 1" loop checking for a pen/mouse
