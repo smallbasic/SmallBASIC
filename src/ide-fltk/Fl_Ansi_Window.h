@@ -1,6 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.2 2004-10-28 23:34:20 zeeb90au Exp $
-// This file is part of EBjLib
+// $Id: Fl_Ansi_Window.h,v 1.3 2004-11-04 19:55:06 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -14,6 +13,11 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/fl_draw.H>
+#include <fltk/Image.h>
+
 #ifndef FL_ANSI_WINDOW
 #define FL_ANSI_WINDOW
 
@@ -24,7 +28,7 @@ class Fl_Ansi_Window : public Fl_Widget {
 
     // inherited methods
     void draw();
-    void resize(int x, int y, int width, int height);
+    void layout();
 
     // public api
     void clearScreen();
@@ -47,8 +51,8 @@ class Fl_Ansi_Window : public Fl_Widget {
     int getX() {return curX;}
     int getY() {return curY;}
     void setXY(int x, int y) {curX=x; curY=y;}
-    double textWidth(const char* s) {return fl_width(s);}
-    int textHeight(void) {return fl_height();}
+    int textWidth(const char* s) {return (int)fl_width(s);}
+    int textHeight(void) {return (int)fl_height();}
     int getWidth()  {return w();}
     int getHeight() {return h();}
 
@@ -62,9 +66,11 @@ class Fl_Ansi_Window : public Fl_Widget {
     void newLine();
     void reset();
 
-    Fl_Offscreen img;
+    fltk::Image* img;
     bool underline;
     bool invert;
+    bool bold;
+    bool italic;
     int curY;
     int curX;
     int curYSaved;

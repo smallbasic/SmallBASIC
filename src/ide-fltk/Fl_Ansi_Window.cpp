@@ -1,6 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.3 2004-10-29 00:16:17 zeeb90au Exp $
-// This file is part of EBjLib
+// $Id: Fl_Ansi_Window.cpp,v 1.4 2004-11-04 19:55:03 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -18,28 +17,20 @@
 #include <FL/Fl_Window.H>
 #include <FL/fl_draw.H>
 #include <FL/fl_ask.H>
-#include <FL/Fl_Return_Button.H>
-#include <FL/x.H>
+#include <fltk/Image.h>
+#include <fltk/layout.h>
 #include <ctype.h>
-
-#include <windows.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <string.h>
 
 #include "Fl_Ansi_Window.h"
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-#define UNIT_TEST 1
+// #define UNIT_TEST 1
 
-#define begin_offscreen()                       \
-    initOffscreen();                            \
-    fl_begin_offscreen(img);
-
-#define end_offscreen()                         \
-    fl_end_offscreen();                         \
-    redraw();
+#define begin_offscreen() initOffscreen(); fltk::ImageDraw imageDraw(img);
+#define end_offscreen() redraw();
 
 Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) : 
     Fl_Widget(x, y, w, h, 0) {
@@ -48,13 +39,14 @@ Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) :
 
 Fl_Ansi_Window::~Fl_Ansi_Window() {
     if (img) {
-        fl_delete_offscreen(img);
+        delete img;
+        img = 0;
     }
 }
 
 void Fl_Ansi_Window::init() {
     if (img) {
-        fl_delete_offscreen(img);
+        delete img;
     }
     img = 0;
     curY = 0;
@@ -66,14 +58,12 @@ void Fl_Ansi_Window::init() {
 void Fl_Ansi_Window::initOffscreen() {
     // can only be called following Fl::check() or Fl::run()
     if (img == 0) {
-        img = fl_create_offscreen(w(), h());
-        fl_begin_offscreen(img);
+        img = new fltk::Image(w(), h());
+        fltk::ImageDraw imageDraw(img);
         fl_color(color());
         fl_rectf(0, 0, w(), h());
-        fl_color(labelcolor());
         fl_font(labelfont(), labelsize());
-        curY = fl_height();
-        fl_end_offscreen();
+        curY = (int)fl_height();
     }
 }
 
@@ -82,28 +72,29 @@ void Fl_Ansi_Window::reset() {
     curXSaved = 0;
     invert = false;
     underline = false;
+    bold = false;
+    italic = false;
     color(FL_WHITE); // bg
     labelcolor(FL_BLACK); // fg
     labelfont(FL_COURIER);
     labelsize(11);
 }
 
-void Fl_Ansi_Window::resize(int x, int y, int width, int height) {
-    Fl_Widget::resize(x, y, width, height);
-    if (img) {
-        // preserve old image
-        Fl_Offscreen old = img;
+void Fl_Ansi_Window::layout() {
+    if (img && (layout_damage() & fltk::LAYOUT_WH)) {
+        fltk::Image* old = img;
         img = 0;
         begin_offscreen();
-        fl_copy_offscreen(0, 0, w(), h(), old, 0, 0);
+        old->draw(0, 0, w(), h(), 0, fltk::OUTPUT);
+        delete old;
         end_offscreen();
-        fl_delete_offscreen(old);
     }
+    Fl_Widget::layout();
 }
 
 void Fl_Ansi_Window::draw() {
     if (img) {
-        fl_copy_offscreen(0, 0, w(), h(), img, 0, 0);
+        img->draw(0, 0, w(), h(), 0, fltk::OUTPUT);
     }
 }
 
@@ -159,13 +150,13 @@ void eraseBottomLine(void* data, int x, int y, int w, int h) {
 
 void Fl_Ansi_Window::newLine() {
     int height = h();
-    int width = w();
-    int fontHeight = fl_height();
+    int fontHeight = (int)fl_height();
 
     curX = 0;
     if (curY+fontHeight+fl_descent() >= height) {
-        fl_scroll(0, 0, width, height, 0, -fontHeight, eraseBottomLine, this);
-        fl_color(labelcolor());
+        fl_scroll(0, 0, w(), height, 0, -fontHeight, eraseBottomLine, this);
+        // TODO: patched is_visible() in fl_scroll_area.cxx 
+        // commented out OffsetRgn()
     } else {
         curY += fontHeight;
     }
@@ -205,7 +196,8 @@ Fl_Color Fl_Ansi_Window::ansiToFltk(long color) const {
 bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
     switch (c) {
     case 'K': // \e[K - clear to eol
-        fl_rectf(curX, curY, w()-curX, fl_height(), color());
+        fl_rectf(curX, (int)(curY-fl_height()+fl_descent()), 
+                 w()-curX, (int)fl_height(), color());
         break;
     case 'G': // move to column
         curX = escValue;
@@ -228,12 +220,12 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
             reset();
             break;
         case 1: // set bold on
-            labelfont(labelfont()+FL_BOLD);
+            bold = true;
             return true;
         case 2: // set faint on
             break;
         case 3: // set italic on
-            labelfont(labelfont()+FL_ITALIC);
+            italic = true;
             return true;
         case 4: // set underline on
             underline = true;
@@ -242,10 +234,10 @@ bool Fl_Ansi_Window::setGraphicsRendition(char c, int escValue) {
             invert = true;
             break;
         case 21: // set bold off
-            labelfont(labelfont()-FL_BOLD);
+            bold = false;
             return true;
         case 23:
-            labelfont(labelfont()-FL_ITALIC);
+            italic = false;
             return true;
         case 24: // set underline off
             underline = false;
@@ -315,8 +307,14 @@ bool Fl_Ansi_Window::doEscape(unsigned char* &p) {
     }
 
     if (setGraphicsRendition(*p, escValue)) {
-        fl_color(labelcolor());
-        fl_font(labelfont(), labelsize());
+        fltk::Font* font = labelfont();
+        if (bold) {
+            font = font->plus(fltk::BOLD);
+        }
+        if (italic) {
+            font = font->plus(fltk::ITALIC);
+        }
+        fl_font(font, labelsize());
     }
     
     if (*p == ';') {
@@ -349,11 +347,12 @@ void Fl_Ansi_Window::print(const char *str) {
     }
 
     begin_offscreen();
+    int fontHeight = (int)fl_height();
     unsigned char *p = (unsigned char*)str;
     while (*p) {
         switch (*p) {
         case '\a':   // beep
-            fl_beep();
+            //fl_beep();
             break;
         case '\t':
             curX = calcTab(curX+1);
@@ -377,13 +376,13 @@ void Fl_Ansi_Window::print(const char *str) {
             break;
         case '\r': // return
             curX = 0;
-            fl_rectf(0, curY, w(), fl_height(), color());
+            fl_rectf(0, (int)(curY-fontHeight+fl_descent()), 
+                     w(), fontHeight, color());
             break;
         default:
             int numChars = 1; // print minimum of one character
             int cx = (int)fl_width((const char*)p, 1);
             int width = w()-1;
-            int fontHeight = fl_height();
 
             if (curX + cx >= width) {
                 newLine();
@@ -401,17 +400,17 @@ void Fl_Ansi_Window::print(const char *str) {
             }
             
             if (invert) {
-                fl_rectf(curX, curY-fontHeight+fl_descent(), cx,
-                         fontHeight, labelcolor());
+                fl_rectf(curX, (int)(curY-fontHeight+fl_descent()), 
+                         cx, fontHeight, labelcolor());
                 fl_color(color());
                 fl_draw((const char*)p, numChars, curX, curY);
-                fl_color(labelcolor());
             } else {
+                fl_color(labelcolor());
                 fl_draw((const char*)p, numChars, curX, curY);
             }
 
             if (underline) {
-                fl_line(curX, curY+fontHeight-1, curX+cx, curY+fontHeight-1);
+                fl_line(curX, curY+1, curX+cx, curY+1);
             }
             
             // advance
@@ -430,27 +429,18 @@ void Fl_Ansi_Window::print(const char *str) {
 
 #ifdef UNIT_TEST
 int main(int argc, char **argv) {
-    int w = 420;
-    int h = 416;
-
-    AllocConsole();
-    freopen("conin$", "r", stdin);
-    freopen("conout$", "w", stdout);
-    freopen("conout$", "w", stderr);
-
+    int w = 210; // must be > 104
+    int h = 200;
     Fl_Window window(w, h, "SmallBASIC");
     Fl_Ansi_Window out(0, 0, w, h);
     window.resizable(&out);
     window.end();
     window.show(argc,argv);
-    
     Fl::check();
-    for (int i=0; i<20; i++) {
-        out.print("\033[1m");
-        out.print("the quick bROWN FOX JUMPS OVER THE_lazy dog from the future");
-        out.print("\033[21m");
-        out.print("the quick brown fox\033[3m jumps over\033[7m the lazye\033[0m dogs back");
-        out.print("abcdefghiklmnop enouf text to fgrce it gver the line");
+    for (int i=0; i<100; i++) {
+        out.print("\033[3mitalic\033[23moff\033[4munderline\033[24moff");
+        out.print("\033[7minverse\033[27moff");
+        out.print("\033[1mbold\033[21moff");
     }
     return Fl::run();
 }
