@@ -24,11 +24,23 @@ Tasks for initial release:
   - full screen menu option *done*
   - startup argument to run in "application" mode *done* tabs at the bottom
   - right-control deletes selection- modified Fl_compose.cxx
-  * some kind of bookmark system allowing the user to easily return
+  - some kind of bookmark system allowing the user to easily return
     to a favourite application. what if the bookmark program was a .bas?
+    added capability to do this as a smallbasic program
   - jump to the line number of the error when compilation fails *done*
   - autorun.bas file which launches after 
-
+  - idea from audacity program - scan .bas files in $HOME/Plug-Ins (or such)
+    for each file: scan for special comment lines at the start of file, eg
+    'editor-plug-in  -or-
+    'output-plug-in
+    'menu &Edit/&Paste
+    ...
+    in the menu callback
+     - determine which .bas was invoked
+     - check if program already running
+     - if edit option, set opt_command to the name of the currently edited file
+       invoke executor, redraw the edit window
+       if output option, normal exec
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
@@ -71,4 +83,4 @@ Tasks for initial release:
 
 10. Linux build
 
-$Id: README.TXT,v 1.9 2004-12-03 19:27:47 zeeb90au Exp $
+$Id: README.TXT,v 1.10 2004-12-07 22:29:05 zeeb90au Exp $

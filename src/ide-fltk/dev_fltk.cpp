@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.15 2004-12-05 11:13:22 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.16 2004-12-07 22:29:05 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -297,7 +297,7 @@ Image* getImage(int handle, int index) {
         // open "http://localhost/image1.gif" as #1
         buff = (uchar*)tmp_alloc(size);
         while (true) {
-            unsigned bytes = recv(filep->handle, buff+len, blockSize, 0);
+            unsigned bytes = recv(filep->handle, (char*)buff+len, blockSize, 0);
             len += bytes;
             if (bytes == 0 || bytes < blockSize) {
                 break; // no more data

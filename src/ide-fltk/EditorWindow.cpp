@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.11 2004-12-05 11:13:22 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.12 2004-12-07 22:29:05 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -38,14 +38,12 @@
 using namespace fltk;
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
-    { BLACK,           COURIER,        14 }, // A - Plain
-    { color(0,0,128),  COURIER_ITALIC, 14 }, // B - Line comments
-    { color(0,0,64),   COURIER_ITALIC, 14 }, // C - Block comments
-    { color(0,64,128), COURIER,        14 }, // D - Strings
-    { color(128,0,0),  COURIER,        14 }, // E - Directives
-    { color(64,0,0),   COURIER_BOLD,   14 }, // F - Types
-    { color(64,64,0),  COURIER_BOLD,   14 }, // G - Keywords
-    { color(64,0,64),  COURIER_BOLD,   14 }  // H - procedures
+    { BLACK,            COURIER, 14 }, // A - Plain
+    { color(0,128,0),   COURIER, 14 }, // B - Ccomments
+    { color(0,0,192),   COURIER, 14 }, // C - Strings
+    { color(128,0,0),   COURIER_BOLD, 14 }, // D - code_keywords
+    { color(128,128,0), COURIER_BOLD, 14 }, // E - code_functions
+    { color(0,128,128), COURIER_BOLD, 14 }  // F - code_procedures
 };
 
 TextBuffer *stylebuf = 0;
@@ -53,29 +51,27 @@ TextBuffer *textbuf = 0;
 
 // 'compare_keywords()' - Compare two keywords
 int compare_keywords(const void *a, const void *b) {
-    return (strcmp(*((const char **)a), *((const char **)b)));
+    return (strcmpi(*((const char **)a), *((const char **)b)));
 }
 
 // 'style_parse()' - Parse text and produce style data.
 void style_parse(const char *text, char *style, int length) {
-    char current;
-    int  col;
-    int  last;
+    char current = 'A';
+    int  col = 0;
+    int  last = 0;
     char  buf[255];
     char *bufptr;
     const char *temp;
 
-    for (current = *style, col = 0, last = 0; length > 0; length--, text ++) {
+    for (;length > 0; length--, text++) {
         if (current == 'B') { 
             current = 'A';
         }
-
+        
         if (current == 'A') {
             // check for directives, comments, strings, and keywords
-            if (col == 0 && *text == '#') {
-                // set style to directive
-                current = 'E';
-            } else if (strncmp(text, "//", 2) == 0) {
+            if (*text == '#' || *text == '\'' || strncmpi(text, "rem", 3) == 0) {
+                // basic comment
                 current = 'B';
                 for (; length > 0 && *text != '\n'; length--, text ++) {
                     *style++ = 'B';
@@ -83,8 +79,6 @@ void style_parse(const char *text, char *style, int length) {
                 if (length == 0) {
                     break;
                 }
-            } else if (strncmp(text, "/*", 2) == 0) {
-                current = 'C';
             } else if (strncmp(text, "\\\"", 2) == 0) {
                 // quoted quote
                 *style++ = current;
@@ -94,71 +88,64 @@ void style_parse(const char *text, char *style, int length) {
                 col += 2;
                 continue;
             } else if (*text == '\"') {
-                current = 'D';
-            } else if (!last && islower(*text)) {
+                current = 'C';
+            } else if (!last) {
                 // might be a keyword
-                for (temp = text, bufptr = buf;
-                     islower(*temp) && bufptr < (buf + sizeof(buf) - 1);
-                     *bufptr++ = *temp++);
+                temp = text;
+                bufptr = buf;
+                while (*temp != 0 && *temp != ' ' && *temp != '\n' && 
+                       bufptr < (buf + sizeof(buf) - 1)) {
+                    *bufptr++ = *temp++;
+                }
+                
+                *bufptr = '\0';
+                bufptr = buf;
 
-                if (!islower(*temp)) {
-                    *bufptr = '\0';
-                    bufptr = buf;
-
-                    if (bsearch(&bufptr, code_functions,
-                                sizeof(code_functions) / sizeof(code_functions[0]),
-                                sizeof(code_functions[0]), compare_keywords)) {
-                        while (text < temp) {
-                            *style++ = 'F';
-                            text++;
-                            length--;
-                            col++;
-                        }
-                        text--;
-                        length++;
-                        last = 1;
-                        continue;
-                    } else if (bsearch(&bufptr, code_keywords,
-                                       sizeof(code_keywords) / sizeof(code_keywords[0]),
-                                       sizeof(code_keywords[0]), compare_keywords)) {
-                        while (text < temp) {
-                            *style++ = 'G';
-                            text++;
-                            length--;
-                            col++;
-                        }
-
-                        text--;
-                        length++;
-                        last = 1;
-                        continue;
-                    } else if (bsearch(&bufptr, code_procedures,
-                                       sizeof(code_procedures) / sizeof(code_procedures[0]),
-                                       sizeof(code_procedures[0]), compare_keywords)) {
-                        while (text < temp) {
-                            *style++ = 'H';
-                            text++;
-                            length--;
-                            col++;
-                        }
-
-                        text--;
-                        length++;
-                        last = 1;
-                        continue;
+                if (bsearch(&bufptr, code_keywords,
+                            sizeof(code_keywords) / sizeof(code_keywords[0]),
+                            sizeof(code_keywords[0]), compare_keywords)) {
+                   
+                    while (text < temp) {
+                        *style++ = 'D';
+                        text++;
+                        length--;
+                        col++;
                     }
+                    text--;
+                    length++;
+                    last = 1;
+                    continue;
+                } else if (bsearch(&bufptr, code_functions,
+                                   sizeof(code_functions) / sizeof(code_functions[0]),
+                                   sizeof(code_functions[0]), compare_keywords)) {
+                    while (text < temp) {
+                        *style++ = 'E';
+                        text++;
+                        length--;
+                        col++;
+                    }
+
+                    text--;
+                    length++;
+                    last = 1;
+                    continue;
+                } else if (bsearch(&bufptr, code_procedures,
+                                   sizeof(code_procedures) / sizeof(code_procedures[0]),
+                                   sizeof(code_procedures[0]), compare_keywords)) {
+                    while (text < temp) {
+                        *style++ = 'F';
+                        text++;
+                        length--;
+                        col++;
+                    }
+
+                    text--;
+                    length++;
+                    last = 1;
+                    continue;
                 }
             }
-        } else if (current == 'C' && strncmp(text, "*/", 2) == 0) {
-            // close a C comment
-            *style++ = current;
-            *style++ = current;
-            text++;
-            length--;
-            current = 'A';
-            col += 2;
-            continue;
-        } else if (current == 'D') {
+        } else if (current == 'C') {
             // continuing in string
             if (strncmp(text, "\\\"", 2) == 0) {
                 // quoted end quote
@@ -179,7 +166,7 @@ void style_parse(const char *text, char *style, int length) {
 
         // copy style info
         if (current == 'A' && (*text == '{' || *text == '}')) {
-            *style++ = 'G';
+            *style++ = 'E';
         } else {
             *style++ = current;
         }
@@ -187,11 +174,8 @@ void style_parse(const char *text, char *style, int length) {
         last = isalnum(*text) || *text == '.';
 
         if (*text == '\n') {
-            // reset column and possibly reset the style
-            col = 0;
-            if (current == 'B' || current == 'E') {
-                current = 'A';
-            }
+            col = 0; // reset column 
+            current = 'A'; // basic lines do not continue
         }
     }
 }
@@ -235,7 +219,7 @@ void style_update(int pos,        // I - Position of update
     int end;                // End of text
     char  last;             // Last style on line
     const char *text;       // Text data
-    char *style;             // Text data
+    char *style;            // Text data
 
     // if this is just a selection change, just unselect the style buffer
     if (nInserted == 0 && nDeleted == 0) {
@@ -305,11 +289,12 @@ struct CodeEditor : public TextEditor {
         undoBuff = 0;
         curBuff = 0;
     }
+    
     int handle(int e) {
         if (readonly && (e == KEY || e == PASTE)) {
             return 0;
         }
-
+        
         int r = TextEditor::handle(e);
         if (e == KEYUP || e == RELEASE) {
             int row, col;
@@ -320,7 +305,7 @@ struct CodeEditor : public TextEditor {
         }
         return r;
     }
-
+    
     void saveUndo() {
         if (undoBuff) {
             free(undoBuff);
@@ -329,7 +314,7 @@ struct CodeEditor : public TextEditor {
         curBuff = strdup(buffer()->text());
         oldCursorPos = mCursorPos;
     }       
-
+    
     void undo() {
         if (undoBuff) {
             buffer()->text(undoBuff);
@@ -338,7 +323,7 @@ struct CodeEditor : public TextEditor {
             mCursorPos = oldCursorPos;
         }
     }
-
+    
     void gotoLine(int line) {
         int numLines = buffer()->count_lines(0, buffer()->length());
         if (line < 1) {
@@ -346,11 +331,11 @@ struct CodeEditor : public TextEditor {
         } else if (line > numLines) {
             line = numLines;
         }
-
+        
         scroll(line-(mNVisibleLines/2), 0);
         insert_position(buffer()->skip_lines(0, line-1));
     }
-
+    
     int oldCursorPos;
     bool readonly;
     char* undoBuff;

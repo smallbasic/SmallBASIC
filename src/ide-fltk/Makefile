@@ -65,8 +65,9 @@ OPTIM =  -O2 -Wall -Wunused -fno-exceptions
 ##OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions 
 PLATFORM=-D_UnixOS -D_CygWin -D_FLTK
 
-## patched fltk-config to remove -mwindows
-LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
+## patched fltk-config to remove -mwindows 
+## release with -s
+LDLIBS = -lm -lgcc -lreadline -ltermcap `fltk-config --ldflags`
 RESOURCES = sbfltk.res
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`

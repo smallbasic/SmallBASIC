@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.17 2004-12-05 11:13:22 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.18 2004-12-07 22:29:05 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -28,6 +28,7 @@
 #include <fltk/TabGroup.h>
 #include <fltk/MenuBar.h>
 #include <fltk/Button.h>
+#include <fltk/filename.h>
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
@@ -51,7 +52,7 @@ enum ExecState {
 } runMode = init_state;
 
 const char* runfile = 0;
-bool reload = false;
+const char* toolhome = 0;
 int px,py,pw,ph;
 
 const char aboutText[] =
@@ -130,16 +131,14 @@ void basicMain(const char* filename) {
     wnd->runStatus->label("RUN");
     wnd->runStatus->redraw();
     int success = sbasic_main(filename);
+
     if (runMode == quit_state) {
         exit(0);
     }
+
     if (success == false && gsb_last_line) {
         wnd->editWnd->gotoLine(gsb_last_line);
-        wnd->fileStatus->label(gsb_last_errmsg);
-    } else if (reload && 0 != strcmp(runfile, filename)) {
-        runMode = run_state;
-        setTitle(runfile);
-        success = sbasic_main(runfile);
+        wnd->fileStatus->copy_label(gsb_last_errmsg);
     }
 
     wnd->runStatus->label(success ? " " : "ERR");
@@ -199,12 +198,13 @@ int arg_cb(int argc, char **argv, int &i) {
         runMode = edit_state;
         i+=2;
         return 1;
-    case 'a':
-        reload = true;
-        //fallthru
     case 'r':
         runfile = strdup(argv[i+1]);
         runMode = run_state;
+        i+=2;
+        return 1;
+    case 't':
+        toolhome = strdup(argv[i+1]);
         i+=2;
         return 1;
     case 'm':
@@ -216,36 +216,85 @@ int arg_cb(int argc, char **argv, int &i) {
     return 0;
 }
 
-#if defined(__CYGWIN__)
-// see http://www.sysinternals.com/ntw2k/utilities.shtml
-// for the free DebugView program
-#include <windows.h>
-void trace(const char *format, ...) {
-    char    buf[4096], *p = buf;
-    va_list args;
-    
-    va_start(args, format);
-    p += vsnprintf(p, sizeof buf - 1, format, args);
-    va_end(args);
-    
-    while (p > buf && isspace(p[-1])) {
-        *--p = '\0';
+// callback for editor-plug-in plug-ins. we assume the target
+// program will be changing the contents of the editor buffer
+void editor_cb(Widget* w, void* v) {
+    const char* filename = wnd->editWnd->getFileName();
+    if (runMode == edit_state && 
+        wnd->editWnd->checkSave(false) && filename[0]) {
+        runMode = run_state;
+        wnd->runStatus->label("RUN");
+        wnd->runStatus->redraw();
+        int success = sbasic_main((const char* )v);
+        wnd->runStatus->label(success ? " " : "ERR");
+        wnd->editWnd->loadFile(filename, -1);
+        wnd->redraw();
+        runMode = edit_state;
     }
-    
-    *p++ = '\r';
-    *p++ = '\n';
-    *p   = '\0';
-    OutputDebugString(buf);
 }
-#endif
+
+void tool_cb(Widget* w, void* v) {
+    if (runMode == edit_state) {
+        basicMain((const char*)v);
+    }
+}
+
+void scanPlugIns(Menu* menu) {
+    dirent **files;
+    FILE* file;
+    const char* home = toolhome ? toolhome : "./Bas-Home/";
+    int numFiles = filename_list(home, &files);
+    char buffer[1024];
+    char label[1024];
+
+    for (int i=0; i<numFiles; i++) {
+        if (strstr(files[i]->d_name, ".bas") != 0) {
+            strcpy(buffer, home);
+            strcat(buffer, files[i]->d_name);
+            file = fopen(buffer, "r");
+            if (!file) {
+                continue;
+            }
+            
+            if (!fgets(buffer, 1024, file)) {
+                fclose(file);
+                continue;
+            }
+            
+            bool editorTool = false;
+            if (strcmp("'editor-plug-in\n", buffer) == 0) {
+                editorTool = true;
+            } else if (strcmp("'tool-plug-in\n", buffer) != 0) {
+                fclose(file);
+                continue;
+            }
+            
+            if (fgets(buffer, 1024, file) &&
+                strncmp("'menu", buffer, 5) == 0) {
+                int len = strlen(buffer);
+                buffer[len-1] = 0; // trim new-line
+                sprintf(label, "&Tools/%s", buffer+6);
+                strcpy(buffer, home);
+                strcat(buffer, files[i]->d_name);
+                menu->add(label, 0, (Callback*)
+                          (editorTool ? editor_cb : tool_cb),
+                          strdup(buffer));
+            }
+            fclose(file);
+        }
+        free(files[i]);        
+    }
+    free(files);
+}
 
 int main(int argc, char **argv) {
     int i=0;
     if (args(argc, argv, i, arg_cb) < argc) {
-        fatal("Options are:\n -r[un] file.bas\n"
-              " -a[uto-run] file.bas\n"
+        fatal("Options are:\n"
               " -e[dit] file.bas\n"
-              " -m module-home\n\n%s", help);
+              " -r[run] file.bas\n"
+              " -t[ool]-home\n"
+              " -m[odule]-home\n\n%s", help);
     }
 
     wnd = new MainWindow(600, 400);
@@ -291,9 +340,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int statusHeight = mnuHeight;
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabHeight = mnuHeight;
-    // if tabBegin is zero tabs will be at the bottom
-    //int tabBegin = runMode == run_state ? 0 : mnuHeight; 
-    int tabBegin = 0;
+    int tabBegin = 0; // =mnuHeight for top position tabs
     int pageHeight = groupHeight-tabHeight;
 
     isTurbo = 0;
@@ -319,16 +366,16 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/&Copy",        CTRL+'c', (Callback*)EditorWindow::copy_cb);
     m->add("&Edit/&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
     m->add("&Edit/_&Delete",     0, (Callback*)EditorWindow::delete_cb);
-    m->add("&Edit/_&Go To...",    CTRL+'g', (Callback*)goto_cb);
-    m->add("&Edit/&Full Screen", 0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
-    m->add("&Edit/&Turbo",       0, (Callback*)turbo_cb)->type(Item::TOGGLE);
-    //m->add("&Edit/&Settings",   0, (Callback*)EditorWindow::settings_cb);
+    m->add("&Edit/&Find...",   CTRL+'f', (Callback*)EditorWindow::find_cb);
+    m->add("&Edit/Find A&gain",CTRL+'g', (Callback*)EditorWindow::find2_cb);
+    m->add("&Edit/&Replace...",0,        (Callback*)EditorWindow::replace_cb);
+    m->add("&Edit/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
+    m->add("&View/_&Goto Line...",    CTRL+'g', (Callback*)goto_cb);
+    m->add("&View/&Full Screen", 0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
+    m->add("&View/&Turbo",       0, (Callback*)turbo_cb)->type(Item::TOGGLE);
+    scanPlugIns(m);
     m->add("&Program/&Run",      CTRL+'r', (Callback*)run_cb);
     m->add("&Program/&Break",    CTRL+'b', (Callback*)break_cb);
-    m->add("&Search/&Find...",   CTRL+'f', (Callback*)EditorWindow::find_cb);
-    m->add("&Search/Find A&gain",CTRL+'g', (Callback*)EditorWindow::find2_cb);
-    m->add("&Search/&Replace...",0,        (Callback*)EditorWindow::replace_cb);
-    m->add("&Search/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
     m->add("&Help/About...",     0,        (Callback*)about_cb);
 
     callback(quit_cb);
@@ -404,11 +451,8 @@ void MainWindow::resetPen() {
 }
 
 void MainWindow::execLink(const char* file) {
-    if (reload == false) {
-        wnd->editWnd->loadFile(file, -1);
-    } else {
-        setTitle(file);
-    }
+    // execute a link from the html window
+    wnd->editWnd->loadFile(file, -1);
     basicMain(file);
 }
 
@@ -453,3 +497,26 @@ int MainWindow::handle(int e) {
     }
     return Window::handle(e);
 }
+
+#if defined(__CYGWIN__)
+// see http://www.sysinternals.com/ntw2k/utilities.shtml
+// for the free DebugView program
+#include <windows.h>
+void trace(const char *format, ...) {
+    char    buf[4096], *p = buf;
+    va_list args;
+    
+    va_start(args, format);
+    p += vsnprintf(p, sizeof buf - 1, format, args);
+    va_end(args);
+    
+    while (p > buf && isspace(p[-1])) {
+        *--p = '\0';
+    }
+    
+    *p++ = '\r';
+    *p++ = '\n';
+    *p   = '\0';
+    OutputDebugString(buf);
+}
+#endif
