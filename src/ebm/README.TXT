@@ -1,4 +1,4 @@
-SmallBASIC for eBookman version 0.9.0j
+SmallBASIC for eBookman version 0.9.2j
 
 http://smallbasic.sourceforge.net
 
@@ -30,22 +30,30 @@ You can also use this site for sharing your SmallBASIC programs.
 
 RELEASE HISTORY:
 
-0.9.2j - ???
+0.9.3k - 
+
+- Fix for crash on start when no .bas files present on system
+
+0.9.2j - 14 August 2004
+
+- Updated help file
 
 - Built with updated HTMLWindow widget
 
 - PEN() returns a value even if PEN OFF in active
 
 - Implemented dev_env_count() and *dev_getenv_n() so you can 
-  now call env("") to return all properties as an array
+  now call env("") to return all environment properties as an array
 
-- Fixed problem with html title
+- Fixed problem with title display in html command
 
 - image command now uses IMG_CMB_IOR which causes the draw
   operation to only change pixels for the visible part of the image
 
 - image command now support option source x,y and image width,height
-  arguments
+  arguments. The command is now:
+
+  image #n, index, x, y [,sx,sy [,w,h]]
 
 0.9.0i - 4 July 2004
 

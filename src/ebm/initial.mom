@@ -5,11 +5,11 @@ object  Franklin  _jingles piezo  _jingles.dat
 sobject Franklin  _alarms  timer  _alarms.dat
 sobject Franklin  _SysSet_ dat    _settings.dat
 
-object sim test bas test.bas
-object sim anothertest bas anothertest.bas
+
+
 object sim README TXT README.TXT
 object sim test sbx test.sbx
-object sim test.bas sbx test.bas.sbx
+object sim test bas test.bas
 object sim test txt test.txt
 object sim test mhtml test.mhtml
 

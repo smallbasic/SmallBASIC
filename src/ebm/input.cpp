@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: input.cpp,v 1.5 2004-08-13 11:33:19 zeeb90au Exp $
+// $Id: input.cpp,v 1.6 2005-01-08 23:51:14 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -126,6 +126,7 @@ void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
     out.restoreScreen();
 }
 
+#if 0
 /**
  * gets a string (INPUT)
  */
@@ -205,6 +206,8 @@ char *dev_gets(char *dest, int size) {
     dev_print("\n");
     return dest;     
 }
+
+#endif
 
 EXTERN_C_END
 

@@ -300,8 +300,13 @@ bool createWindow(CWindow* wnd)
     case ID_EDITOR: {
         wnd->SetX(-2);
         wnd->SetY(-2);
-        wnd->SetWidth(204);
-        wnd->SetHeight(244);
+        if (GUI_GetOrientation() == 0) {
+           wnd->SetWidth(244);
+           wnd->SetHeight(204);
+        } else {
+           wnd->SetWidth(204);
+           wnd->SetHeight(244);
+        }
         const FONT* font0 = getFont(0);
         CTextEdit* field1 = new 
                 CTextEdit(ID_EDIT,200,120,TEXTOPTION_NOUNDERLINE);
