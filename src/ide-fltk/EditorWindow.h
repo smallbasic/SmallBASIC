@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.1 2004-11-07 23:01:14 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -57,5 +57,6 @@ void find_cb(Widget* w, void* v);
 void find2_cb(Widget* w, void* v);
 void replace_cb(Widget*, void* v);
 void replace2_cb(Widget*, void* v);
+void load_file(char *newfile, int ipos);
 
 #endif

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.1 2004-11-07 23:01:14 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -21,6 +21,8 @@
 #include <errno.h>
 
 #include <fltk/run.h>
+#include <fltk/error.h>
+#include <fltk/ask.H>
 #include <fltk/Window.h>
 #include <fltk/Group.h>
 #include <fltk/TabGroup.h>
@@ -35,6 +37,12 @@
 using namespace fltk;
 
 MainWindow* wnd;
+
+enum ExecMode {
+    run_mode, edit_mode, init_mode
+} runMode = init_mode;
+
+char fileName[256];
 
 void quit_cb(Widget*, void* v) {
     exit(0);
@@ -60,6 +68,9 @@ void run_cb(Widget*, void* v) {
 
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int mnuHeight = 20;
+    int statusHeight = mnuHeight;
+    int groupHeight = h-mnuHeight-statusHeight;
+    int tabHeight = mnuHeight;
 
     begin();
     MenuBar* m = new MenuBar(0, 0, w, mnuHeight);
@@ -87,30 +98,34 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Search/Replace &Again",CTRL+'t', (Callback*)replace2_cb);
     m->add("&About...",             CTRL+'f', (Callback*)about_cb);
 
-    TabGroup* tabGroup = new TabGroup(0, mnuHeight, w, h-mnuHeight);
+    TabGroup* tabGroup = new TabGroup(0, mnuHeight, w, groupHeight);
     tabGroup->begin();
 
-    Group* editGroup = new Group(0, mnuHeight, w, h, "Editor");
+    Group* editGroup = new Group(0, 0, w, groupHeight-tabHeight, "Editor");
     editGroup->begin();
-    editWnd = new EditorWindow(2, 1, w-4, h-(2*mnuHeight)-4);
+    editWnd = new EditorWindow(2, 2, w-4, groupHeight-tabHeight-4);
+    if (fileName[0] != 0) {
+        load_file(fileName, 0);
+    }
+    editGroup->resizable(editWnd);
     editGroup->end();
     tabGroup->resizable(editGroup);
-    
-    Group* helpGroup = new Group(0, mnuHeight, w, h, "Help");
+
+    Group* helpGroup = new Group(0, 0, w, groupHeight-tabHeight, "Help");
     helpGroup->hide();
     helpGroup->begin();
     // TODO: add help control
     helpGroup->end();
 
-    Group* outputGroup = new Group(0, mnuHeight, w, h, "Output");
+    Group* outputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Output");
     outputGroup->hide();
     outputGroup->begin();
-    out = new Fl_Ansi_Window(2, 1, w-4, h-(2*mnuHeight)-4);
+    out = new Fl_Ansi_Window(2, 2, w-4, groupHeight-tabHeight-4);
     out->print("SmallBASIC");
     outputGroup->resizable(out);
     outputGroup->end();
 
-    Group* textOutputGroup = new Group(0, mnuHeight, w, h, "Text Output");
+    Group* textOutputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Text Output");
     textOutputGroup->hide();
     textOutputGroup->begin();
     // TODO: add text output control
@@ -118,12 +133,42 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
 
     tabGroup->end();
     resizable(tabGroup);
+
+    Group* statusBar = new Group(0, h-mnuHeight, w, mnuHeight);
+
+
     end();
 }
 
 MainWindow::~MainWindow() {}
 
+int arg_cb(int argc, char **argv, int &i) {
+    if (i+1 >= argc) {
+        return false;
+    }
+
+    switch (argv[i][1]) {
+    case 'e':
+        strcpy(fileName, argv[i+1]);
+        runMode = edit_mode;
+        i+=2;
+        return 1;
+    case 'r':
+        strcpy(fileName, argv[i+1]);
+        runMode = run_mode;
+        i+=2;
+        return 1;
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    fileName[0] = 0;
+    int i=0;
+    if (args(argc, argv, i, arg_cb) < argc) {
+        fatal("Options are:\n -r[un] file.bas\n -e[dit] file.bas\n%s", help);
+    }
+
     wnd = new MainWindow(600, 400);
     wnd->show(argc, argv);
     return run();

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.1 2004-11-07 23:01:14 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -18,8 +18,9 @@
 #include "device.h"
 #include "smbas.h"
 
-#include <FL/fl_ask.H>
-#include "Sb_Window.h"
+#include <fltk/run.h>
+
+#include "MainWindow.h"
 #include "cplusplus.h"
 
 C_LINKAGE_BEGIN
@@ -27,7 +28,7 @@ C_LINKAGE_BEGIN
 #define PEN_ON  2
 #define PEN_OFF 0
 
-extern Sb_Window *wnd;
+extern MainWindow *wnd;
 
 const int longSleep = 250000; // input should still be responsive
 const int turboSleep = 4000;
@@ -67,7 +68,7 @@ int osd_events(int wait_flag) {
         sleep(wnd->isTurboMode() ? turboSleep : longSleep);
     }
 
-    Fl::check();
+    fltk::check();
 
     if (wnd->wasBreakEv()) {
         return -2;

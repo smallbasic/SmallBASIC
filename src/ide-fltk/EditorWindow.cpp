@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.1 2004-11-07 23:01:13 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.2 2004-11-08 22:22:51 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -50,7 +50,7 @@ TextBuffer *stylebuf = 0;
 TextBuffer *textbuf = 0;
 char filename[256];
 char title[256];
-int changed = 0;
+int dirty = 0;
 int loading = 0;
 
 // 'compare_keywords()' - Compare two keywords
@@ -59,10 +59,7 @@ int compare_keywords(const void *a, const void *b) {
 }
 
 // 'style_parse()' - Parse text and produce style data.
-void style_parse(const char *text,  
-                 char *style,
-                 int length) {
-
+void style_parse(const char *text, char *style, int length) {
     char current;
     int  col;
     int  last;
@@ -218,8 +215,7 @@ void style_init(void) {
 }
 
 // 'style_unfinished_cb()' - Update unfinished styles.
-void style_unfinished_cb(int, void*) {
-}
+void style_unfinished_cb() {}
 
 // 'style_update()' - Update the style buffer...
 void style_update(int        pos,        // I - Position of update
@@ -242,7 +238,7 @@ void style_update(int        pos,        // I - Position of update
     }
 
     // Track changes in the text buffer...
-    if (nInserted > 0) {
+    if (nInserted > 0) { 
         // Insert characters into the style buffer...
         char *stylex = new char[nInserted + 1];
         memset(stylex, 'A', nInserted);
@@ -272,7 +268,7 @@ void style_update(int        pos,        // I - Position of update
     //  printf("start = %d, end = %d, text = \"%s\", style = \"%s\"...\n",
     //         start, end, text, style);
 
-    //style_parse(text, style, end - start);
+    style_parse(text, style, end - start);
 
     //  printf("new style = \"%s\"...\n", style);
 
@@ -299,7 +295,7 @@ void style_update(int        pos,        // I - Position of update
 }
 
 int check_save(void) {
-    if (!changed) {
+    if (!dirty) {
         return 1;
     }
 
@@ -309,7 +305,7 @@ int check_save(void) {
 
     if (r == 1) {
         save_cb(); // Save the file...
-        return !changed;
+        return !dirty;
     }
 
     return (r == 2) ? 1 : 0;
@@ -318,7 +314,7 @@ int check_save(void) {
 void load_file(char *newfile, int ipos) {
     loading = 1;
     int insert = (ipos != -1);
-    changed = insert;
+    dirty = insert;
     if (!insert) {
         strcpy(filename, "");
     }
@@ -346,7 +342,7 @@ void save_file(char *newfile) {
     } else {
         strcpy(filename, newfile);
     }
-    changed = 0;
+    dirty = 0;
     textbuf->call_modify_callbacks();
 }
 
@@ -408,7 +404,7 @@ void set_title(Window* w) {
         }
     }
 
-    if (changed) {
+    if (dirty) {
         strcat(title, " (modified)");
     }
 
@@ -417,7 +413,7 @@ void set_title(Window* w) {
 
 void changed_cb(int, int nInserted, int nDeleted,int, const char*, void* v) {
     if ((nInserted || nDeleted) && !loading) {
-        changed = 1;
+        dirty = 1;
     }
 
     EditorWindow *w = (EditorWindow *)v;
@@ -433,7 +429,7 @@ void new_cb(Widget*, void*) {
     filename[0] = '\0';
     textbuf->select(0, textbuf->length());
     textbuf->remove_selection();
-    changed = 0;
+    dirty = 0;
     textbuf->call_modify_callbacks();
 }
 
@@ -597,7 +593,7 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : DoubleBufferWindow(x, y
     replaceDlg->set_non_modal();
     *search = (char)0;
 
-    //changed = 0;
+    dirty = 0;
     loading = 0;
     textbuf = new TextBuffer;
     style_init();
@@ -605,9 +601,9 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : DoubleBufferWindow(x, y
     begin();
     editor = new TextEditor(0, 0, w, h);
     editor->buffer(textbuf);
-    //editor->highlight_data(stylebuf, styletable,
-    //sizeof(styletable) / sizeof(styletable[0]),
-    //'A', style_unfinished_cb, 0);
+    editor->highlight_data(stylebuf, styletable,
+                           sizeof(styletable) / sizeof(styletable[0]),
+                           'A', style_unfinished_cb, 0);
     editor->textfont(COURIER);
     end();
     resizable(editor);

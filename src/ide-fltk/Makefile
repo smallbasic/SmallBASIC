@@ -61,12 +61,13 @@ COMMON=                                         \
     var.c                                       \
     vmt.c                                       \
 
-OPTIM =  -O2 -Wall -Wunused -fno-exceptions
-##OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions
+##OPTIM =  -O2 -Wall -Wunused -fno-exceptions
+OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions
 PLATFORM=-D_UnixOS -D_CygWin -D_Fltk
 
 ## patched fltk-config to remove -mwindows
-LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
+##LDLIBS = -lm -lgcc -lreadline -ltermcap -s `fltk-config --ldflags`
+LDLIBS = -lm -lgcc -lreadline -ltermcap `fltk-config --ldflags`
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
 
@@ -84,6 +85,8 @@ sbfui.cxx: sbfui.fl
 build_kwpc: build_kwpc.c
 	g++ build_kwpc.c -o build_kwpc
 	-rm -f kwp
+
+EditorWindow.cpp:kwp.cxx
 
 kwp.cxx: build_kwpc
 	./build_kwpc
