@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.23 2005-02-06 22:57:47 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.24 2005-03-14 22:20:31 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -245,12 +245,12 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         helpView->h(h);
     } else {
         wnd->outputGroup->begin();
-        helpView = new HelpView(x, y, w, h);
+        //helpView = new HelpView(x, y, w, h);
         wnd->outputGroup->end();
         helpView->box(SHADOW_BOX);
         helpView->callback(anchor_cb);
     }
-    helpView->value(html);
+    //helpView->value(html);
     helpView->take_focus();
     helpView->show();
 }
@@ -303,10 +303,12 @@ Image* getImage(int handle, int index) {
             buff = (uchar*)tmp_realloc(buff, size);
         }
         if (strstr((const char*)buff, "<title>404")) {
+            tmp_free(buff);
             return 0;
         }
         break;
     case ft_stream:
+        // loaded in SharedImage
         break;
     default:
         return 0;
@@ -316,6 +318,11 @@ Image* getImage(int handle, int index) {
     if (image) {
         // force SharedImage::_draw() to call image->read()
         image->draw(fltk::Rectangle(0,0),0,0);
+    }
+
+    if (filep->type == ft_http_client) {
+        // cleanup
+        tmp_free(buff);
     }
 
     return image;

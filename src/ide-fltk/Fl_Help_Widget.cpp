@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.5 2005-03-13 22:25:22 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.6 2005-03-14 22:20:31 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -40,8 +40,9 @@
 #define SCROLL_W 17
 #define CELL_SPACING 4
 #define INPUT_SPACING 2
+#define TH_SPACING 5
 #define INPUT_WIDTH 90
-#define SCROLL_SIZE 100
+#define SCROLL_SIZE 1000
 
 Color getColor(const char *n);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
@@ -377,25 +378,34 @@ struct TableNode : public BaseNode {
     TableNode() : BaseNode() {
         rows = 0;
         cols = 0;
-        colWidths = 0;
+        columns = 0;
     }
     ~TableNode() {
-        if (colWidths) {
-            free(colWidths);
+        if (columns) {
+            free(columns);
         }
     }
     void display(Display* out) {
         nextCol = 0;
         nextRow = 0;
-        out->lineHeight = (int)(getascent()+getdescent());
         indent = out->indent;
         width = out->width-indent;
         x = indent;
         y = out->y;
         rowY = y;
+        out->lineHeight = (int)(getascent()+getdescent());
+
+        if (cols && columns == 0) {
+            // prepare default column widths
+            columns = (U16*)malloc(sizeof(U16)*cols);
+            int cellW = width/cols;
+            for (int i=0; i<cols; i++) {
+                columns[i] = cellW*(i+1);
+            }
+        }
     }
     U16 rows, cols;
-    U16* colWidths;
+    U16* columns;
     U16 nextCol;
     U16 nextRow;
     U16 indent;
@@ -406,11 +416,6 @@ struct TableNode : public BaseNode {
 struct TableEndNode : public BaseNode {
     TableEndNode(TableNode* tableNode) : BaseNode() {
         table = tableNode;
-        if (table) {
-            int len = sizeof(U16)*table->cols;
-            table->colWidths = (U16*)malloc(len);
-            memset(table->colWidths, 0, len);
-        }
     }
     void display(Display* out) {
         if (table == 0) {
@@ -481,10 +486,10 @@ struct TdNode : public BaseNode {
             return;
         }
         TableNode* table = tr->table;
-        int cellWidth = table->width/tr->cols;
-        out->x = table->x + (table->nextCol*cellWidth);
+        out->x = table->x + (table->nextCol == 0 ? 0 : 
+                             table->columns[table->nextCol-1]);
         out->y = table->rowY;
-        out->width = out->x + cellWidth - CELL_SPACING;
+        out->width = out->x + table->columns[table->nextCol]-CELL_SPACING;
         out->indent = out->x;
         table->nextCol++;
     }
@@ -499,7 +504,12 @@ struct TdEndNode : public BaseNode {
         if (td && td->tr && td->tr->table) {
             TableNode* table = td->tr->table;        
             if (out->y > table->y) {
-                table->y = out->y;
+                table->y = out->y; // wrapped cell
+            } else if (table->nextRow == 1 && 
+                       table->nextCol < table->cols &&
+                       out->x < table->columns[table->nextCol-1]) {
+                // non-std header cells determine column widths
+                table->columns[table->nextCol-1] = out->x+TH_SPACING;
             }
         }
     }
@@ -668,6 +678,7 @@ HelpWidget::~HelpWidget() {
 void HelpWidget::init() {
     vscroll = 0;
     scrollHeight = h();
+    background = BACKGROUND_COLOR;
 }
 
 void HelpWidget::cleanup() {
@@ -798,7 +809,7 @@ void HelpWidget::draw() {
     out.font = HELVETICA;
     out.fontSize = FONT_SIZE;
     out.color = FOREGROUND_COLOR;
-    out.background = BACKGROUND_COLOR;
+    out.background = background;
     out.height = h();
     out.x = DEFAULT_INDENT;
     out.width = w()-(SCROLL_W+DEFAULT_INDENT);
@@ -834,15 +845,28 @@ void HelpWidget::draw() {
     }
 
     if (exposed) {
-        int scrollH = ((out.y-vscroll)+out.lineHeight)-h();
+        // size has changed
+        int pageHeight = (out.y-vscroll)+out.lineHeight;
+        int height = h();
+        int scrollH = pageHeight-height;
         if (scrollH < 1) {
-            scrollHeight = h();
+            scrollHeight = height;
             scrollbar->deactivate();
+            scrollbar->slider_size(10);
+            scrollbar->value(0, 1, 0, SCROLL_SIZE);
             vscroll = 0;
         } else {
+            int value = SCROLL_SIZE* -vscroll/scrollH;
+            int sliderH = height* height/pageHeight;
             scrollHeight = scrollH;
             scrollbar->activate();
-            scrollbar->pagesize((h()*SCROLL_SIZE/scrollHeight)-1);
+            scrollbar->value(value, 1, 0, SCROLL_SIZE);
+            scrollbar->pagesize(SCROLL_SIZE* height/scrollH);
+            scrollbar->linesize(SCROLL_SIZE* out.lineHeight/scrollH);
+            scrollbar->slider_size(max(10, min(sliderH, height-40)));
+            if (height-vscroll > pageHeight) {
+                vscroll = -(pageHeight-height);
+            }
         }
     }
     
@@ -872,7 +896,7 @@ U8 HelpWidget::find(const char* s, U8 matchCase) {
     return false;
 }
 
-void HelpWidget::onMove(int event) {
+int HelpWidget::onMove(int event) {
     if (selectedAnchor && event == fltk::DRAG) {
         bool pushed = selectedAnchor->ptInSegment(fltk::event_x(), 
                                                   fltk::event_y());
@@ -880,6 +904,7 @@ void HelpWidget::onMove(int event) {
             Widget::cursor(fltk::CURSOR_HAND);
             selectedAnchor->pushed = pushed;
             redraw(DAMAGE_PUSHED);
+            return 1;
         }
     } else {
         int len = anchors.length();
@@ -889,14 +914,15 @@ void HelpWidget::onMove(int event) {
             AnchorNode* p = (AnchorNode*)list[i];
             if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
                 Widget::cursor(fltk::CURSOR_HAND);
-                return;
+                return 1;
             }
         }
         Widget::cursor(fltk::CURSOR_DEFAULT);
     }
+    return 0;
 }
 
-void HelpWidget::onPush(int event) {
+int HelpWidget::onPush(int event) {
     Object** list = anchors.getList();
     int len = anchors.length();
     selectedAnchor = 0;
@@ -908,9 +934,10 @@ void HelpWidget::onPush(int event) {
             selectedAnchor->pushed = true;
             Widget::cursor(fltk::CURSOR_HAND);
             redraw(DAMAGE_PUSHED);
-            break;
+            return 1;
         }
     }
+    return 0;
 }
 
 int HelpWidget::handle(int event) {
@@ -920,27 +947,28 @@ int HelpWidget::handle(int event) {
     }
         
     switch (event) {
+    case fltk::FOCUS:
+        return 2; // aquire focus
+        
     case fltk::PUSH:
-        onPush(event);
-        return 1;
+        return onPush(event);
 
     case fltk::ENTER:
         return 1;
 
     case fltk::MOVE:
     case fltk::DRAG:
-        onMove(event);
-        return 1;
+        return onMove(event);
 
     case fltk::RELEASE:
         if (selectedAnchor) {
             Widget::cursor(fltk::CURSOR_DEFAULT);
             selectedAnchor->pushed = false;
             redraw(DAMAGE_PUSHED);
+            return 1;
         }
-        return 1;
     }
-    return 0;
+    return scrollbar->handle(event);
 }
 
 void HelpWidget::compileHTML() {
@@ -1121,7 +1149,7 @@ void HelpWidget::compileHTML() {
                 if (0 == strnicmp(tag, "br", 2)) {
                     nodeList.append(new BrNode(0));
                     newline = true;
-                } else if (0 == strnicmp(tag, "b", 1)) {
+                } else if (0 == strnicmp(tag, "b>", 2)) {
                     bold = true;
                     node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.append(node);
@@ -1217,6 +1245,13 @@ void HelpWidget::compileHTML() {
                     p.load(tag+4, taglen-4);
                     nodeList.append(new ImageNode(style(), p));
                     p.removeAll();
+                } else if (0 == strnicmp(tag, "body ", 5)) {
+                    p.load(tag+5, taglen-5);
+                    prop = p.get("bgcolor");
+                    if (prop != null) {
+                        background = getColor(prop->toString());
+                    }
+                    p.removeAll();
                 }
             } // end if-start, else-end tag
         } // if found a tag
@@ -1237,8 +1272,6 @@ void HelpWidget::copyText(int begin, int end) {
         end = begin;
         begin = i;
     }
-    //begin -= maxTextHeight;
-
     Object** list = nodeList.getList();
     int len = nodeList.length();
     for (int i=0; i<len; i++) {

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.4 2005-03-13 22:25:22 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.5 2005-03-14 22:20:31 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -59,14 +59,15 @@ public:
     // fltk methods
     void draw();
     void layout();
-    void onMove(int event);
-    void onPush(int event);
+    int onMove(int event);
+    int onPush(int event);
     int handle(int event);
 
     private:
     void init();
     void cleanup();
 
+    Color background;
     Scrollbar* scrollbar;
     S16 vscroll;
     U16 scrollHeight;
