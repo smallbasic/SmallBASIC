@@ -106,7 +106,11 @@ typedef unsigned int	addr_t;
 typedef int32			fcode_t;
 typedef int32			pcode_t;
 typedef int32			bid_t;
+
+#ifndef _CygWin
 typedef dword	        addr_t;
+#endif
+
 #endif
 #define INVALID_ADDR    0xFFFFFFFF
 #define	OS_ADDRSZ		4			// size of address pointer (always 4 for 32b addresses)
