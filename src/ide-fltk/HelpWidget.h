@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.7 2005-03-20 23:36:01 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.8 2005-03-21 22:29:44 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -53,7 +53,7 @@ public:
     void copyText(int begin, int end);
 
     protected:
-    void compileHTML();
+    void compose();
     void reloadPage();
     void init();
     void cleanup();
@@ -68,7 +68,7 @@ public:
     private:
     Color background;
     Scrollbar* scrollbar;
-    S16 vscroll;
+    S16 vscroll,hscroll;
     U16 scrollHeight;
     strlib::List nodeList;
     strlib::List namedInputs;

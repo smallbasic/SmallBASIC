@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.26 2005-03-20 23:34:56 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.27 2005-03-21 22:29:44 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -257,13 +257,14 @@ void doAnchor(void*) {
     wnd->execLink(anchor);
     free((void*)anchor);
     anchor = 0;
+    fltk::remove_check(doAnchor);
 }
 
 void anchor_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        anchor = strdup(helpView->getTarget());
+        anchor = strdup(helpView->getAction());
         closeHelp();
-        fltk::add_timeout(0.5, doAnchor); // post message
+        fltk::add_check(doAnchor); // post message
     }
 }
 

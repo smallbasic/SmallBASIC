@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.9 2005-03-20 23:36:01 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.10 2005-03-21 22:29:44 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -33,7 +33,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-#define UNIT_TEST 1
+// #define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -42,7 +42,7 @@
 #define DEFAULT_INDENT 2
 #define LI_INDENT 18
 #define FONT_SIZE 11
-#define FONT_SIZE_H1 17
+#define FONT_SIZE_H1 22
 #define SCROLL_W 17
 #define CELL_SPACING 4
 #define INPUT_SPACING 2
@@ -56,6 +56,8 @@ const char* skipWhite(const char* s);
 struct AnchorNode;
 static char truestr[] = "true";
 static char falsestr[] = "false";
+static char spacestr[] = " ";
+static char anglestr[] = "<";
 void trace(const char *format, ...);
 
 //--Display---------------------------------------------------------------------
@@ -161,7 +163,7 @@ struct FontNode : public BaseNode {
 //--BrNode----------------------------------------------------------------------
 
 struct BrNode : public BaseNode {
-    BrNode(S16 indent, U16 nrows=1) {
+    BrNode(S16 indent=0, U16 nrows=1) {
         this->indent = indent;
         this->nrows = nrows;
     }
@@ -454,7 +456,7 @@ struct TableNode : public BaseNode {
                    sizes[nextCol-1] != -1) {
             // largest <td></td> on same line, less than the default width
             // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
-            sizes[nextCol-1] = out->x+CELL_SPACING+CELL_SPACING;
+            sizes[nextCol-1] = out->x+CELL_SPACING+CELL_SPACING+2;
         }
     }
 
@@ -772,6 +774,7 @@ HelpWidget::~HelpWidget() {
 
 void HelpWidget::init() {
     vscroll = 0;
+    hscroll = 0;
     scrollHeight = h();
     background = BACKGROUND_COLOR;
 }
@@ -803,7 +806,7 @@ void HelpWidget::loadBuffer(const char* str) {
 void HelpWidget::reloadPage() {
     cleanup();
     init();
-    compileHTML();
+    compose();
     redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
     selectedAnchor = 0;
 }
@@ -948,9 +951,9 @@ void HelpWidget::draw() {
     out.color = FOREGROUND_COLOR;
     out.background = background;
     out.height = h();
-    out.x = DEFAULT_INDENT;
+    out.indent = DEFAULT_INDENT+hscroll;
+    out.x = out.indent;
     out.width = w()-(SCROLL_W+DEFAULT_INDENT);
-    out.indent = DEFAULT_INDENT;
     out.inTR = false;
     out.textOut = false;
     out.measure = false;
@@ -971,7 +974,7 @@ void HelpWidget::draw() {
     }
     
     setcolor(out.background);
-    fillrect(Rectangle(out.x+out.width, out.height));
+    fillrect(Rectangle(0, 0, out.x+out.width, out.height));
     setcolor(out.color);
 
     Object** list = nodeList.getList();
@@ -993,7 +996,6 @@ void HelpWidget::draw() {
                 p->display(&out);
             }
             out.exposed = (damage()&DAMAGE_EXPOSE) ? 1:0;
-            out.indent = DEFAULT_INDENT;
         }
         if (out.exposed == false && out.inTR == false &&
             out.y-out.lineHeight > out.height) {
@@ -1116,6 +1118,16 @@ int HelpWidget::handle(int event) {
         return 1;
 
     case fltk::KEY:
+//         if (event_key_state(LeftKey) && hscroll == 0) {
+//             hscroll = -w()/2;
+//             redraw();
+//             return 1;
+//         }
+//         if (event_key_state(RightKey) && hscroll != 0) {
+//             hscroll = 0;
+//             redraw();
+//             return 1;
+//         }
         if (event_key_state(RightCtrlKey) || event_key_state(LeftCtrlKey)) {
             switch (event_key()) {
             case 'r': // reload
@@ -1150,7 +1162,7 @@ int HelpWidget::handle(int event) {
     return scrollbar->active() ? scrollbar->handle(event) : 0;
 }
 
-void HelpWidget::compileHTML() {
+void HelpWidget::compose() {
     U8 pre = false;
     U8 bold = false;
     U8 italic = false;
@@ -1234,11 +1246,11 @@ void HelpWidget::compileHTML() {
                 case '\n':
                     ADD_PREV_SEGMENT;
                     if (pre) {
-                        nodeList.append(new BrNode(0));
+                        nodeList.append(new BrNode());
                     }
                     if (newline == false && text[i+1] != '<') {
                         // replace newline with single space
-                        nodeList.append(new TextNode(" ", 1));
+                        nodeList.append(new TextNode(spacestr, 1));
                         newline = false;
                         // skip white space
                         while (i<textlen && (isWhite(text[i+1]))) {
@@ -1281,13 +1293,8 @@ void HelpWidget::compileHTML() {
         taglen = tagEnd - tagBegin - 1;
         if (taglen > 0) {
             tag = tagBegin+1;
-            // TODO - check for angle-literal character chars such 
-            // as < or space following '<' de-tagify the character.
-//             if (isalpha(tag[0]) == false) {
-//                 nodeList.append(new TextNode("<", 1));
-//             } else if (tag[0] == '/') {
-            
             if (tag[0] == '/') {
+                // process the end of tag
                 tag++;
                 if (0 == strnicmp(tag, "b", 1)) {
                     bold = false;
@@ -1303,9 +1310,11 @@ void HelpWidget::compileHTML() {
                 } else if (0 == strnicmp(tag, "font", 4) ||
                            0 == strnicmp(tag, "h", 1)) { // </h1>
                     if (0 == strnicmp(tag, "h", 1)) {
-                        nodeList.append(new BrNode(0, 2));
+                        nodeList.append(new BrNode());
                         newline = true;
-                        bold--;
+                        if (bold > 0) {
+                            bold--;
+                        }
                     }
                     font = fltk::HELVETICA;
                     fontSize = FONT_SIZE;
@@ -1338,10 +1347,11 @@ void HelpWidget::compileHTML() {
                     newline = true;
                     text = skipWhite(tagEnd+1);
                 }
-            } else {
+            } else if (isalpha(tag[0]) || tag[0] == '?' || tag[0] == '!') {
+                // process the start of the tag
                 if (0 == strnicmp(tag, "br", 2) ||
                     0 == strnicmp(tag, "p>", 2)) {
-                    nodeList.append(new BrNode(0));
+                    nodeList.append(new BrNode());
                     newline = true;
                 } else if (0 == strnicmp(tag, "b>", 2)) {
                     bold = true;
@@ -1415,13 +1425,11 @@ void HelpWidget::compileHTML() {
                     p.removeAll();
                     node = new FontNode(font, fontSize, color, bold, italic);
                     nodeList.append(node);
-                } else if (0 == strnicmp(tag, "h1", 2) ||
-                           0 == strnicmp(tag, "h2", 2) ||
-                           0 == strnicmp(tag, "h3", 2)) {
-                    fontSize = FONT_SIZE_H1;
+                } else if (0 == strnicmp(tag, "h", 1)) {
+                    fontSize = FONT_SIZE_H1-(tag[1]-'1'); // <h1> etc
                     node = new FontNode(font, fontSize, color, ++bold, italic);
                     nodeList.append(node);
-                    nodeList.append(new BrNode(0));
+                    nodeList.append(new BrNode());
                     newline = true;
                 } else if (0 == strnicmp(tag, "input ", 6)) {
                     p.load(tag+6, taglen-6);
@@ -1456,6 +1464,11 @@ void HelpWidget::compileHTML() {
                     }
                     p.removeAll();
                 }
+            } else {
+                // '<' is a literal character
+                nodeList.append(new TextNode(anglestr, 1));
+                tagEnd = tagBegin;
+                text = tagBegin+1;
             } // end if-start, else-end tag
         } // if found a tag
         tagBegin = *tagEnd == 0 ? 0 : tagEnd+1;
@@ -1675,8 +1688,8 @@ int main(int argc, char **argv) {
     Window window(w, h, "Browse");
     window.begin();
     HelpWidget out(0, 0, w, h);
-    out.loadFile("t.html#there");
-    //out.loadFile("help/8_5.html");
+    //out.loadFile("t.html#there");
+    out.loadFile("help/8_5.html");
     window.resizable(&out);
     window.end();
     window.show(argc,argv);
