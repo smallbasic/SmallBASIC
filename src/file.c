@@ -229,7 +229,7 @@ int		dev_fopen(int sb_handle, const char *name, int flags)
 				}
 			else if	( strncmp(f->name, "SOCL:", 5) == 0 )
 				f->type = ft_socket_client;
-			else if	( strncmpi(f->name, "HTTP:", 5) == 0 )
+			else if	( strncasecmp(f->name, "HTTP:", 5) == 0 )
 				f->type = ft_http_client;
 			else if	(
 					strncmp(f->name, "SOUT:", 5) == 0 ||

@@ -63,7 +63,7 @@ int http_open(dev_file_t *f) {
 	char host[250];
 
     // check for http://
-    if (0 != strncmpi(f->name, "http://", 7)) {
+    if (0 != strncasecmp(f->name, "http://", 7)) {
         rt_raise("HTTP: INVALID URL");
         return 0;
     }
