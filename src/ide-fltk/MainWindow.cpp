@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.5 2004-11-11 22:31:33 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.6 2004-11-14 22:36:29 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -44,6 +44,7 @@ enum ExecState {
 extern char filename[]; // in EditorWindow
 
 void quit_cb(Widget*, void* v) {
+    trace("quit called");
     if (runMode == edit_state) {
         if (check_save(true)) {
             exit(0);
@@ -51,6 +52,7 @@ void quit_cb(Widget*, void* v) {
     } else {
         // close after executor returns
         // TODO: confirm close running program
+        trace("quit requested");
         runMode = quit_state;
     }
 }
@@ -146,7 +148,6 @@ int main(int argc, char **argv) {
 
     if (runMode == run_state) {
         // run the application now
-
     }
 
     return run();
@@ -202,7 +203,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Search/Replace &Again",CTRL+'t', (Callback*)replace2_cb);
     m->add("&About...",             CTRL+'f', (Callback*)about_cb);
 
-    //todo fixme
     callback(quit_cb);
 
     tabGroup = new TabGroup(0, mnuHeight, w, groupHeight);

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.5 2004-11-11 22:31:33 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.6 2004-11-14 22:36:29 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -14,6 +14,8 @@
 #include "smbas.h"
 
 #include <fltk/run.h>
+#include <fltk/events.h>
+#include <fltk/FL_VERSION.h>
 
 #include "MainWindow.h"
 
@@ -24,19 +26,15 @@ C_LINKAGE_BEGIN
 
 extern MainWindow *wnd;
 
-const int longSleep = 250000; // input should still be responsive
-const int turboSleep = 4000;
-const int menuSleep = 400000;
-
 int osd_devinit() {
     wnd->resetPen();
     os_graphics = 1;
     os_graf_mx = wnd->out->w();
     os_graf_my = wnd->out->h();
-    os_ver = 0x20000; // FLTK version
+    os_ver = FL_MAJOR_VERSION+FL_MINOR_VERSION+FL_PATCH_VERSION;
     os_color = 1;
     os_color_depth = 16;
-	setsysvar_str(SYSVAR_OSNAME, "FLTK");
+    setsysvar_str(SYSVAR_OSNAME, "FLTK");
     return 1;
 }
 
@@ -64,20 +62,14 @@ int osd_devrestore() {
  *    -2 stop running basic application
  */
 int osd_events(int wait_flag) {
-    if (wait_flag == 1) {
-        sleep(wnd->isTurboMode() ? turboSleep : longSleep);
+    if (wait_flag || (wnd->penState == PEN_ON && fltk::ready() == false)) {
+        // in a "while 1" loop checking for a pen/mouse
+        // event with pen(0) or executing input statement. 
+        fltk::wait();
     }
 
     fltk::check();
-
-    if (wnd->wasBreakEv()) {
-        return -2;
-    }
-
-    return 0;
-    // this may call osd_events() again but it will fall out before 
-    // reaching here a second time since we just ate the event
-    //return dev_kbhit();
+    return wnd->wasBreakEv() ? -2 : 0;
 }
 
 void osd_setpenmode(int enable) {
@@ -86,36 +78,47 @@ void osd_setpenmode(int enable) {
 
 int osd_getpen(int code) {
     if (wnd->penState == PEN_OFF) {
-        sleep(wnd->isTurboMode() ? turboSleep : longSleep);
+        fltk::wait();
     }
 
     switch (code) {
-    case 0:  // return true if there is a waiting pen event
-        return 0;// PEN_IsDown();
-    case 1:  // last pen-down x
-        return wnd->penDownX;
-    case 2:  // last pen-down y
-        return wnd->penDownY;
-    case 3:  // returns true if the pen is down (and save curpos)
+    case 0: // return true if there is a waiting pen event
+    case 3: // returns true if the pen is down (and save curpos)
+        if (wnd->isTurboMode() == false) {
+            wait();
+        }
+        if (event_state() & ANY_BUTTON) {
+            fltk::get_mouse(wnd->penDownX, wnd->penDownY);
+            // convert mouse screen rect to out client rect
+            wnd->penDownX -= wnd->x() + wnd->out->x();
+            wnd->penDownY -= wnd->y() + wnd->out->y();
+            wnd->penDownY -= wnd->tabGroup->y();
+            return 1;
+        }
         return 0;
-//         if (PEN_GetPosition(&out->penX, &out->penY)) {
-//             out->penDownX = out->penX;
-//             out->penDownY = out->penY;
-//             return 1;
-//         } else {
-//             return 0;
-//         }
-        
+
+    case 1:  // last pen-down x
+        return wnd->penX;
+
+    case 2:  // last pen-down y
+        return wnd->penY;
+       
     case 4:  // cur pen-down x
-//         if (PEN_GetPosition(&out->penX, &out->penY)) {
-//             out->penDownX = out->penX;
-//         }
+        wnd->penX = wnd->penDownX;
         return wnd->penDownX;
+
     case 5:  // cur pen-down y
-//         if (PEN_GetPosition(&out->penX, &out->penY)) {
-//             out->penDownY = out->penY;
-//         }
+        wnd->penY = wnd->penDownY;
         return wnd->penDownY;
+
+//     case 6: // wait for a mouse click
+//         fltk::modal(wnd->out, false);
+//         while (fltk::modal() && !event_is_click()) {
+//             fltk::wait();
+//         }
+//         wnd->penDownX = fltk::event_x();
+//         wnd->penDownY = fltk::event_y();
+//         return 1;
     }
     return 0;
 }
