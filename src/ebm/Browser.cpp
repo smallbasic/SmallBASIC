@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.cpp,v 1.6 2004-04-30 23:40:26 zeeb90au Exp $
+// $Id: Browser.cpp,v 1.7 2004-05-21 09:48:00 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -31,7 +31,7 @@
 
 const char aboutHTML[] =
     "<br><font size=2>SmallBASIC for <u>e</u><i>Book</i><b>Man</b>"
-    "<br>Version 0.9.0h<br><br><font size=1>"
+    "<br>Version 0.9.0i<br><br><font size=1>"
     "Copyright (c) 2000-2004 Nicholas Christopoulos, "
     "Chris Warren-Smith<br>"
     "<u>http://smallbasic.sourceforge.net</u><br>"
@@ -69,7 +69,8 @@ const char helpHTML[] =
     "<p>Please use the SmallBASIC forums at " 
     "<u>http://smallbasic.sourceforge.net</u> for further assistance. ";
 
-const char title[] = "SmallBASIC v0.9.0h";
+const char title[] = "SmallBASIC v0.9.0i";
+const char cmdFile[] = "_cmd.bas";
 char msgBuffer[20];
 
 CViewable* browseWnd=0;
@@ -284,7 +285,7 @@ struct BrowserWnd : public HTMLWindow {
         browseWnd = this;
 
         File f;
-        if (f.open("_cmd.bas", File::readMode)) {
+        if (f.open(cmdFile, File::readMode)) {
             basCommand = f.readLine();
         }
         if (dlg.resumeEdit && launching) {
@@ -408,7 +409,7 @@ void BrowserWnd::updateCommand() {
 
 void BrowserWnd::saveCommand() {
     File f;
-    if (basCommand.length() > 0 && f.open("_cmd.bas", File::writeMode)) {
+    if (basCommand.length() > 0 && f.open(cmdFile, File::writeMode)) {
         f.writeLine(basCommand);
     }
 }
@@ -505,7 +506,7 @@ void BrowserWnd::doButton(CViewable *from) {
         updateCommand();
         saveCommand();
         if (basCommand.length()) {
-            dlg.fileName = "_cmd.bas";
+            dlg.fileName = cmdFile;
             Close();
         }
         return;
@@ -569,17 +570,19 @@ void Browser::doKeyboard(CTextEdit* te, String& cmd) {
 }
 
 void Browser::createLink(const char* fileName, bool basFile, bool sbxFile) {
-    if (strcmp(fileName, "_cmd") == 0) {
+    int len = (strchr(fileName, '.')-fileName);
+
+    if (fileName[0] == '_') {
         return;
     }
 
     html.append("<tr><td>");
-    html.append(fileName);
+    html.append(fileName, len);
     html.append("</td><td offs=18>[ ");
 
     if (sbxFile) {
         html.append("<a href=F");
-        html.append(fileName);
+        html.append(fileName, len);
         html.append(".sbx>sbx</a>");
     } else {
         html.append("sbx");
@@ -591,14 +594,36 @@ void Browser::createLink(const char* fileName, bool basFile, bool sbxFile) {
         // show edit link
         html.append("<a href=F");
         html.append(fileName);
-        html.append(".bas>bas</a> | <a href=E");
+        html.append(">bas</a> | <a href=E");
         html.append(fileName);
-        html.append(".bas>edit</a>");
+        html.append(">edit</a>");
     } else {
         html.append("bas");
     }
 
     html.append(" ]</td></tr>");
+}
+
+int Browser::compareFiles(const char* f1, const char* f2) {
+    int index1 = 0;
+    int index2 = 0;
+    char c1,c2;
+
+    // compare up to the file name extension
+    while (f1[index1] != '.' && f2[index2] != '.') {
+        c1 = toupper(f1[index1]);
+        c2 = toupper(f2[index2]);
+                     
+        if (c1 < c2) {
+            return -1;
+        } else if (c1 > c2) {
+            return 1;
+        }
+        index1++;
+        index2++;
+    }
+    return (f1[index1] == '.' && f2[index2] == '.' ? 0 : 
+            f1[index1] != '.' ? 1 : -1);
 }
 
 void Browser::createProgramsPage() {
@@ -608,31 +633,38 @@ void Browser::createProgramsPage() {
     int basLen = basFiles.length();
     int sbxLen = sbxFiles.length();
     int basi = 0;
+    int basCmp = 0;
 
     for (int sbxi=0; sbxi<sbxLen; sbxi++) {
         sbxItem = sbxFiles.get(sbxi);
-        int basCmp = 0;
+        if (sbxItem[0] == '_') {
+            continue;
+        }
+        basCmp = 0;
         
         // process bas files prior to the next sbx file
-        while (basi < basLen) {
+        for (;basi < basLen; basi++) {
             basItem = basFiles.get(basi);
-            basCmp = stricmp(basItem, sbxItem);
+            if (basItem[0] == '_') {
+                continue;
+            }
+
+            basCmp = compareFiles(basItem, sbxItem);
             if (basCmp >= 0) {
                 // bas file same or after sbx file
                 break;
             }
             createLink(basItem, true, false);
-            basi++;
         }
 
-        // process the sbx file
-        if (basi < basLen) {
-            createLink(sbxItem, (basCmp==0), true);
-            if (basCmp == 0) {
-                basi++;
-            }
+        // process the bas/sbx file
+        if (basi < basLen && basCmp == 0) {
+            // bas with matching sbx
+            createLink(basItem, true, true);
+            basi++;
         } else {
-            createLink(sbxItem, false, true);            
+            // remaining sbx item
+            createLink(sbxItem, false, true);
         }
     }
 
@@ -740,12 +772,12 @@ void Browser::makeActivePage() {
 
 void Browser::updateFileList() {
     if (sbxFiles.length() == 0 || save) {
-        sbxFiles.create("sbx", MMC_ACCESS, false);
+        sbxFiles.create("sbx", MMC_ACCESS, true);
         openPage.empty();
     }
     
     if (basFiles.length() == 0) {
-        basFiles.create("bas", MMC_ACCESS, false);
+        basFiles.create("bas", MMC_ACCESS, true);
         openPage.empty();
     }
 }

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_fs.cpp,v 1.3 2004-04-30 23:40:27 zeeb90au Exp $
+// $Id: ebm_fs.cpp,v 1.4 2004-05-21 09:48:00 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -576,9 +576,10 @@ int dev_fremove(const char *file) {
 }
 
 int dev_frename(const char *file, const char *newname) {
-    ebo_name_t oldFile = File::getName(file);
-    ebo_name_t newFile = File::getName(newname);
-    return (ebo_rename(&oldFile, &newFile, 1) == EBO_OK);
+	if (dev_fcopy(file, newname)) {
+		return dev_fremove(file);
+    }
+	return 0;
 }
 
 /**

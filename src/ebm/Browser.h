@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.h,v 1.3 2004-04-30 23:40:27 zeeb90au Exp $
+// $Id: Browser.h,v 1.4 2004-05-21 09:48:00 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -58,6 +58,7 @@ struct Browser {
     void createRunPage();
     void createSettingsPage();
     void createCheckBox(const char* label, const char* name, bool active);
+    int compareFiles(const char* f1, const char* f2);
 
     FileList basFiles;
     FileList sbxFiles;
