@@ -34,6 +34,7 @@ RELEASE HISTORY:
 
 - Based on Nicholas' 0.9 series basic kernel
 - Implemented fancy new IDE interface incorporating the TapWrite edit function
+- ebjlib files are now maintained in the TapWrite source forge cvs 
 
 0.8.2f - 26 July 2003
 
