@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.9 2004-11-17 22:31:44 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.10 2004-11-21 22:38:23 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -38,19 +38,19 @@ using namespace fltk;
 MainWindow* wnd;
 
 enum ExecState {
-    init_state, 
+    init_state,
     edit_state, 
     run_state, 
     modal_state,
     break_state, 
     quit_state
-} runMode = edit_state;
+} runMode = init_state;
 
-extern char filename[]; // in EditorWindow
+const char* runfile = 0;
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
-        if (check_save(true)) {
+        if (wnd->editWnd->checkSave(true)) {
             exit(0);
         }
     } else {
@@ -70,39 +70,62 @@ void about_cb(Widget*, void* v) {
 }
 
 void break_cb(Widget*, void* v) {
-    runMode = break_state;
-}
-
-void run_cb(Widget*, void*) {
-    if (runMode == edit_state && check_save(false) && filename[0]) {
-        wnd->editWnd->deactivate();
-        wnd->tabGroup->selected_child(wnd->outputGroup);
-        wnd->out->clearScreen();
-        wnd->out->set_visible();
-        wnd->out->activate();
-        runMode = run_state;
-        sbasic_main(filename);
-        if (runMode == quit_state) {
-            exit(0);
-        }
-        wnd->editWnd->activate();
-        runMode = edit_state;
+    if (runMode == run_state || runMode == modal_state) {
+        runMode = break_state;
     }
 }
 
-void set_title() {
+void basicMain(const char* filename) {
+    wnd->editWnd->deactivate();
+    wnd->tabGroup->selected_child(wnd->outputGroup);
+    wnd->out->clearScreen();
+    wnd->out->set_visible();
+    wnd->out->activate();
+    runMode = run_state;
+    sbasic_main(filename);
+    if (runMode == quit_state) {
+        exit(0);
+    }
+    wnd->editWnd->activate();
+    runMode = edit_state;
+}
+
+void run_cb(Widget*, void*) {
+    const char* filename = wnd->editWnd->getFileName();
+    if (runMode == edit_state && 
+        wnd->editWnd->checkSave(false) && 
+        filename[0]) {
+        basicMain(filename);
+    }
+}
+
+void setTitle(const char* filename) {
     char title[256];
 
     title[0] = 0;
-    if (filename[0]) {
+    if (filename && filename[0]) {
         char *slash = strrchr(filename, '/');
         if (slash != NULL) {
             strcpy(title, slash + 1);
         } else {
-            strcpy(title, filename);
+            strcpy(title, runfile);
         }
     }
-    wnd->updateStatusBar(title);
+    wnd->fileStatus->copy_label(title[0] ? title : "Untitled");
+    wnd->redraw();     
+}
+
+void setRowCol(int row, int col) {
+    char t[20];
+    sprintf(t, "%d", row);
+    wnd->rowStatus->copy_label(t);
+    sprintf(t, "%d", col);
+    wnd->colStatus->copy_label(t);
+    wnd->redraw();     
+}
+
+void setModified(bool dirty) {
+    
 }
 
 int arg_cb(int argc, char **argv, int &i) {
@@ -112,12 +135,12 @@ int arg_cb(int argc, char **argv, int &i) {
 
     switch (argv[i][1]) {
     case 'e':
-        strcpy(filename, argv[i+1]);
+        runfile = argv[i+1];
         runMode = edit_state;
         i+=2;
         return 1;
     case 'r':
-        strcpy(filename, argv[i+1]);
+        runfile = argv[i+1];
         runMode = run_state;
         i+=2;
         return 1;
@@ -149,7 +172,6 @@ void trace(const char *format, ...) {
 #endif
 
 int main(int argc, char **argv) {
-    filename[0] = 0;
     int i=0;
     if (args(argc, argv, i, arg_cb) < argc) {
         fatal("Options are:\n -r[un] file.bas\n -e[dit] file.bas\n%s", help);
@@ -157,9 +179,19 @@ int main(int argc, char **argv) {
 
     wnd = new MainWindow(600, 400);
     wnd->show(argc, argv);
+    check();
 
-    if (runMode == run_state) {
-        // run the application now
+    switch (runMode) {
+    case run_state:
+        wnd->editWnd->loadFile(runfile, -1);
+        basicMain(runfile);
+        break;
+    case edit_state:
+        wnd->editWnd->loadFile(runfile, -1);
+        break;
+    default:
+        setTitle(0);
+        runMode = edit_state;
     }
 
     return run();
@@ -189,7 +221,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     opt_graphics = 1;
     opt_quite = 1;
     opt_nosave = 1;
-    opt_ide = 1;
+    opt_ide = IDE_NONE; // for sberr.c
     opt_command[0] = '\0';
     opt_pref_width = 0;
     opt_pref_height = 0;
@@ -197,23 +229,23 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     
     begin();
     MenuBar* m = new MenuBar(0, 0, w, mnuHeight);
-    m->add("&File/&New File",       0,        (Callback*)new_cb);
-    m->add("&File/&Open File...",   CTRL+'o', (Callback*)open_cb);
-    m->add("&File/_&Insert File...",CTRL+'i', (Callback*)insert_cb);
-    m->add("&File/&Save File",      CTRL+'s', (Callback*)save_cb);
-    m->add("&File/Save File &As...",CTRL+SHIFT+'S', (Callback*)saveas_cb);
+    m->add("&File/&New File",       0,        (Callback*)EditorWindow::new_cb);
+    m->add("&File/&Open File...",   CTRL+'o', (Callback*)EditorWindow::open_cb);
+    m->add("&File/_&Insert File...",CTRL+'i', (Callback*)EditorWindow::insert_cb);
+    m->add("&File/&Save File",      CTRL+'s', (Callback*)EditorWindow::save_cb);
+    m->add("&File/Save File &As...",CTRL+SHIFT+'S', (Callback*)EditorWindow::saveas_cb);
     m->add("&File/E&xit",           CTRL+'q', (Callback*)quit_cb);
-    m->add("&Edit/Cu&t",            CTRL+'x', (Callback*)cut_cb);
-    m->add("&Edit/&Copy",           CTRL+'c', (Callback*)copy_cb);
-    m->add("&Edit/&Paste",          CTRL+'v', (Callback*)paste_cb);
-    m->add("&Edit/_&Delete",        0,        (Callback*)delete_cb);
-    m->add("&Edit/&Settings",       0,        (Callback*)delete_cb);
+    m->add("&Edit/Cu&t",            CTRL+'x', (Callback*)EditorWindow::cut_cb);
+    m->add("&Edit/&Copy",           CTRL+'c', (Callback*)EditorWindow::copy_cb);
+    m->add("&Edit/&Paste",          CTRL+'v', (Callback*)EditorWindow::paste_cb);
+    m->add("&Edit/_&Delete",        0,        (Callback*)EditorWindow::delete_cb);
+    m->add("&Edit/&Settings",       0,        (Callback*)EditorWindow::delete_cb);
     m->add("&Program/&Run",         CTRL+'r', (Callback*)run_cb);
     m->add("&Program/&Break",       CTRL+'b', (Callback*)break_cb);
-    m->add("&Search/&Find...",      CTRL+'f', (Callback*)find_cb);
-    m->add("&Search/Find A&gain",   CTRL+'g', (Callback*)find2_cb);
-    m->add("&Search/&Replace...",   0,        (Callback*)replace_cb);
-    m->add("&Search/Replace &Again",CTRL+'t', (Callback*)replace2_cb);
+    m->add("&Search/&Find...",      CTRL+'f', (Callback*)EditorWindow::find_cb);
+    m->add("&Search/Find A&gain",   CTRL+'g', (Callback*)EditorWindow::find2_cb);
+    m->add("&Search/&Replace...",   0,        (Callback*)EditorWindow::replace_cb);
+    m->add("&Search/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
     m->add("&About...",             CTRL+'f', (Callback*)about_cb);
 
     callback(quit_cb);
@@ -225,14 +257,19 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup = eg;
     editGroup->begin();
     editWnd = new EditorWindow(2, 2, w-4, groupHeight-tabHeight-4);
-    m->user_data(editWnd); // the EditorWindow is callback user data
+    m->user_data(editWnd); // the EditorWindow is callback user data (void*)
 
-    if (filename[0] != 0) {
-        load_file(filename, 0);
-    }
     editGroup->resizable(editWnd);
     editGroup->end();
     tabGroup->resizable(editGroup);
+
+    TabPage* og = new TabPage(0, 0, w, groupHeight-tabHeight, "Output");
+    outputGroup = og;
+    outputGroup->hide();
+    outputGroup->begin();
+    out = new Fl_Ansi_Window(2, 2, w-4, groupHeight-tabHeight-4);
+    outputGroup->resizable(out);
+    outputGroup->end();
 
     helpGroup = new Group(0, 0, w, groupHeight-tabHeight, "Help");
     helpGroup->hide();
@@ -240,43 +277,48 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     // TODO: add help control
     helpGroup->end();
 
-    TabPage* og = new TabPage(0, 0, w, groupHeight-tabHeight, "Output");
-    outputGroup = og;
-    outputGroup->hide();
-    outputGroup->begin();
-    out = new Fl_Ansi_Window(2, 2, w-4, groupHeight-tabHeight-4);
-    //out = new Fl_Ansi_Window(0, 0, w, groupHeight-tabHeight);
-    outputGroup->resizable(out);
-    outputGroup->end();
-
-    textOutputGroup = new Group(0, 0, w, groupHeight-tabHeight, "Text Output");
-    textOutputGroup->hide();
-    textOutputGroup->begin();
-    // TODO: add text output control
-    textOutputGroup->end();
-
     tabGroup->end();
     resizable(tabGroup);
 
-    editWnd->mainWnd = this;
-    statusBar = new Group(0, h-mnuHeight, w, mnuHeight);
+    Group* statusBar = new Group(0, h-mnuHeight+1, w, mnuHeight);
     statusBar->align(ALIGN_INSIDE_LEFT);
-    statusBar->labelfont(COURIER);
-    updateStatusBar(0);
+    statusBar->begin();
+    fileStatus = new Widget(0,0, w-122, mnuHeight-2);
+    modStatus = new Widget(w-120, 0, 28, mnuHeight-2);
+    runStatus = new Widget(w-90, 0, 28, mnuHeight-2);
+    rowStatus = new Widget(w-60, 0, 28, mnuHeight-2);
+    colStatus = new Widget(w-30, 0, 28, mnuHeight-2);
+
+    for (int n=0; n<statusBar->children(); n++) {
+        Widget* w = statusBar->child(n);
+        w->labelfont(HELVETICA);
+        w->box(THIN_DOWN_BOX);
+        w->color(GRAY75);
+    }
+
+    fileStatus->box(ENGRAVED_BOX);
+    statusBar->resizable(fileStatus);
+    statusBar->end();
     end();
 }
 
 MainWindow::~MainWindow() {}
 
-void MainWindow::updateStatusBar(const char* title) {
-    char statusText[256];
-    sprintf(statusText, 
-            "--%s-- SmallBASIC: %s ----L%d--C%d----", 
-            editWnd->is_dirty()? "**":"--",
-            title&&title[0] ? title : "Untitled", 0,0);
-    statusBar->copy_label(statusText);
-    redraw();
-}
+// void MainWindow::updateStatusBar(const char* title) {
+//     char statusText[256];
+//     int row, col;
+    
+//     //editWnd->getRowCol(&row, &col);
+//     row=col=0;
+//     sprintf(statusText, 
+//             "--%s-- %s: %s ----L%d--C%d----", 
+//             editWnd->isDirty()? "**":"--",
+//             runMode == init_state || runMode == edit_state ? 
+//             "Editing":"Running",
+//             title&&title[0] ? title : "Untitled", row, col+1);
+//     //statusBar->copy_label(statusText);
+//     redraw();
+// }
 
 bool MainWindow::isBreakExec(void) {
     return (runMode == break_state || runMode == quit_state);
@@ -329,9 +371,6 @@ int MainWindow::handle(int e) {
             dev_pushkey(13);
             break;
         default:
-            //if (data >= 0xf700 && data <= 0xf900) {
-            // return 0; // Ignore any remaining function keys
-            //}
             dev_pushkey(k);
             break;
         }

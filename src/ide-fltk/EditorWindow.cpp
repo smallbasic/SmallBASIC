@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.5 2004-11-11 22:31:33 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.6 2004-11-21 22:38:23 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -50,9 +50,6 @@ TextDisplay::StyleTableEntry styletable[] = { // Style table
 
 TextBuffer *stylebuf = 0;
 TextBuffer *textbuf = 0;
-char filename[256];
-int dirty = 0;
-int loading = 0;
 
 // 'compare_keywords()' - Compare two keywords
 int compare_keywords(const void *a, const void *b) {
@@ -300,24 +297,102 @@ void style_update(int pos,        // I - Position of update
     delete[] style;
 }
 
-int check_save(bool discard) {
-    if (!dirty) {
-        return 1;
+//--CodeEditor------------------------------------------------------------------
+
+struct CodeEditor : public TextEditor {
+    CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {}
+    int handle(int e) {
+        int r = TextEditor::handle(e);
+        if (e == KEYUP || e == RELEASE) {
+            int row, col;
+            position_to_linecol(mCursorPos, &row, &col);
+            setRowCol(row, col+1);
+        }
+        return r;
     }
+};
 
-    int r = choice("The current file has not been saved.\n"
-                   "Would you like to save it now?",
-                   "Cancel", "Save", discard? "Discard": 0);
+//--EditorWindow----------------------------------------------------------------
 
-    if (r == 1) {
-        save_cb(); // Save the file
-        return !dirty;
-    }
+EditorWindow::EditorWindow(int x, int y, int w, int h) : 
+    Group(x, y, w, h) {
 
-    return (r == 2) ? 1 : 0;
+    replaceDlg = new Window(300, 105, "Replace");
+    replaceDlg->begin();
+    replaceFind = new Input(80, 10, 210, 25, "Find:");
+    replaceFind->align(ALIGN_LEFT);
+    replaceWith = new Input(80, 40, 210, 25, "Replace:");
+    replaceWith->align(ALIGN_LEFT);
+    Button* replaceAll = new Button(10, 70, 90, 25, "Replace All");
+    replaceAll->callback((Callback *)replall_cb, this);
+    ReturnButton* replaceNext = 
+        new ReturnButton(105, 70, 120, 25, "Replace Next");
+    replaceNext->callback((Callback *)replace2_cb, this);
+    Button* replaceCancel = new Button(230, 70, 60, 25, "Cancel");
+    replaceCancel->callback((Callback *)replcan_cb, this);
+    replaceDlg->end();
+    replaceDlg->set_non_modal();
+
+    search[0] = 0;
+    filename[0] = 0; 
+    dirty = 0;
+    loading = 0;
+    textbuf = new TextBuffer();
+    style_init();
+
+    begin();
+    editor = new CodeEditor(0, 0, w, h);
+    editor->buffer(textbuf);
+    editor->highlight_data(stylebuf, styletable,
+                           sizeof(styletable) / sizeof(styletable[0]),
+                           'A', style_unfinished_cb, 0);
+    editor->textfont(COURIER);
+    editor->cursor_style(TextDisplay::BLOCK_CURSOR);
+    editor->selection_color(fltk::color(192,192,192));
+    end();
+    resizable(editor);
+
+    textbuf->add_modify_callback(style_update, editor);
+    textbuf->add_modify_callback(changed_cb, this);
 }
 
-void load_file(char *newfile, int ipos) {
+EditorWindow::~EditorWindow() {
+    delete replaceDlg;
+    textbuf->remove_modify_callback(style_update, editor);
+    textbuf->remove_modify_callback(changed_cb, this);
+}
+
+void EditorWindow::doChange(int inserted, int deleted) {
+    if ((inserted || deleted) && !loading) {
+        dirty = 1;
+    }
+
+    if (loading) {
+        editor->show_insert_position();
+    }
+
+    setModified(dirty);
+}
+
+bool EditorWindow::checkSave(bool discard) {
+    if (!dirty) {
+        return true; // continue next operation
+    }
+
+    const char* msg = "The current file has not been saved.\n"
+        "Would you like to save it now?";
+    int r = discard ? 
+        choice(msg, "Save", "Discard", "Cancel") :
+        choice(msg, "Save", "Cancel", 0);
+
+    if (r == 0) {
+        saveFile(); // Save the file
+        return !dirty;
+    }
+    return (discard && r==1);
+}
+
+void EditorWindow::loadFile(const char *newfile, int ipos) {
     loading = 1;
     int insert = (ipos != -1);
     dirty = insert;
@@ -341,9 +416,10 @@ void load_file(char *newfile, int ipos) {
     }
     loading = 0;
     textbuf->call_modify_callbacks();
+    setTitle(filename);
 }
 
-void save_file(char *newfile) {
+void EditorWindow::doSaveFile(char *newfile) {
     if (textbuf->savefile(newfile)) {
         alert("Error writing to file \'%s\':\n%s.", newfile, strerror(errno));
     } else {
@@ -353,66 +429,36 @@ void save_file(char *newfile) {
     textbuf->call_modify_callbacks();
 }
 
-void copy_cb(Widget*, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    TextEditor::kf_copy(0, e->editor);
-}
-
-void cut_cb(Widget*, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    TextEditor::kf_cut(0, e->editor);
-}
-
-void delete_cb(Widget*, void*) {
-    textbuf->remove_selection();
-}
-
-void find_cb(Widget* w, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-
-    const char *val = input("Search String:", e->search);
+void EditorWindow::find() {
+    const char *val = input("Search String:", search);
     if (val != NULL) {
-        // user entered a string - go find it!
-        strcpy(e->search, val);
-        find2_cb(w, v);
+        // user entered a string - go find it
+        strcpy(search, val);
+        findNext();
     }
 }
 
-void find2_cb(Widget* w, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    if (e->search[0] == '\0') {
+void EditorWindow::findNext() {
+    if (search[0] == '\0') {
         // search string is blank; get a new one
-        find_cb(w, v);
+        find();
         return;
     }
 
-    int pos = e->editor->insert_position();
-    int found = textbuf->search_forward(pos, e->search, &pos);
+    int pos = editor->insert_position();
+    int found = textbuf->search_forward(pos, search, &pos);
     if (found) {
         // Found a match; select and update the position
-        textbuf->select(pos, pos+strlen(e->search));
-        e->editor->insert_position(pos+strlen(e->search));
-        e->editor->show_insert_position();
+        textbuf->select(pos, pos+strlen(search));
+        editor->insert_position(pos+strlen(search));
+        editor->show_insert_position();
     } else {
-        alert("No occurrences of \'%s\' found!", e->search);
+        alert("No occurrences of \'%s\' found!", search);
     }
 }
 
-void changed_cb(int, int nInserted, int nDeleted,int, const char*, void* v) {
-    if ((nInserted || nDeleted) && !loading) {
-        dirty = 1;
-    }
-
-    set_title();
-
-    if (loading) {
-        EditorWindow *w = (EditorWindow *)v;
-        w->editor->show_insert_position();
-    }
-}
-
-void new_cb(Widget*, void*) {
-    if (!check_save(true)) {
+void EditorWindow::newFile() {
+    if (!checkSave(true)) {
         return;
     }
 
@@ -421,70 +467,40 @@ void new_cb(Widget*, void*) {
     textbuf->remove_selection();
     dirty = 0;
     textbuf->call_modify_callbacks();
+    setTitle(0);
 }
 
-void open_cb(Widget*, void*) {
-    if (!check_save(true)) {
+void EditorWindow::openFile() {
+    if (!checkSave(true)) {
         return;
     }
 
     char *newfile = file_chooser("Open File?", "*.bas", filename);
     if (newfile != NULL) {
-        load_file(newfile, -1);
+        loadFile(newfile, -1);
     }
 }
 
-void insert_cb(Widget*, void *v) {
+void EditorWindow::insertFile() {
     char *newfile = file_chooser("Insert File?", "*.bas", filename);
-    EditorWindow *w = (EditorWindow *)v;
     if (newfile != NULL) {
-        load_file(newfile, w->editor->insert_position());
+        loadFile(newfile, editor->insert_position());
     }
 }
 
-void paste_cb(Widget*, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    TextEditor::kf_paste(0, e->editor);
-}
-
-void close_cb(Widget*, void* v) {
-    Window* w = (Window*)v;
-    if (!check_save(true)) {
-        return;
-    }
-
-    w->hide();
-    textbuf->remove_modify_callback(changed_cb, w);
-    delete w;
-    exit(0);
-}
-
-// void quit_cb(Widget*, void*) {
-//     if (changed && !check_save())
-//         return;
-
-//     exit(0);
-// }
-
-void replace_cb(Widget*, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    e->replaceDlg->show();
-}
-
-void replace2_cb(Widget*, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    const char *find = e->replaceFind->value();
-    const char *replace = e->replaceWith->value();
+void EditorWindow::replaceNext() {
+    const char *find = replaceFind->value();
+    const char *replace = replaceWith->value();
 
     if (find[0] == '\0') {
         // search string is blank; get a new one
-        e->replaceDlg->show();
+        replaceDlg->show();
         return;
     }
 
-    e->replaceDlg->hide();
+    replaceDlg->hide();
 
-    int pos = e->editor->insert_position();
+    int pos = editor->insert_position();
     int found = textbuf->search_forward(pos, find, &pos);
 
     if (found) {
@@ -493,32 +509,31 @@ void replace2_cb(Widget*, void* v) {
         textbuf->remove_selection();
         textbuf->insert(pos, replace);
         textbuf->select(pos, pos+strlen(replace));
-        e->editor->insert_position(pos+strlen(replace));
-        e->editor->show_insert_position();
+        editor->insert_position(pos+strlen(replace));
+        editor->show_insert_position();
     } else {
         alert("No occurrences of \'%s\' found!", find);
     }
 }
 
-void replall_cb(Widget*, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    const char *find = e->replaceFind->value();
-    const char *replace = e->replaceWith->value();
+void EditorWindow::replaceAll() {
+    const char *find = replaceFind->value();
+    const char *replace = replaceWith->value();
 
-    find = e->replaceFind->value();
+    find = replaceFind->value();
     if (find[0] == '\0') {
         // search string is blank; get a new one
-        e->replaceDlg->show();
+        replaceDlg->show();
         return;
     }
 
-    e->replaceDlg->hide();
-    e->editor->insert_position(0);
+    replaceDlg->hide();
+    editor->insert_position(0);
     int times = 0;
 
     // loop through the whole string
     for (int found = 1; found;) {
-        int pos = e->editor->insert_position();
+        int pos = editor->insert_position();
         found = textbuf->search_forward(pos, find, &pos);
 
         if (found) {
@@ -526,8 +541,8 @@ void replall_cb(Widget*, void* v) {
             textbuf->select(pos, pos+strlen(find));
             textbuf->remove_selection();
             textbuf->insert(pos, replace);
-            e->editor->insert_position(pos+strlen(replace));
-            e->editor->show_insert_position();
+            editor->insert_position(pos+strlen(replace));
+            editor->show_insert_position();
             times++;
         }
     }
@@ -539,72 +554,29 @@ void replall_cb(Widget*, void* v) {
     }
 }
 
-void replcan_cb(Widget*, void* v) {
-    EditorWindow* e = (EditorWindow*)v;
-    e->replaceDlg->hide();
+void EditorWindow::cancelReplace() {
+    replaceDlg->hide();
 }
 
-void save_cb() {
+void EditorWindow::saveFile() {
     if (filename[0] == '\0') {
         // no filename - get one!
-        saveas_cb();
+        saveFileAs();
         return;
     } else {
-        save_file(filename);
+        doSaveFile(filename);
     }
 }
 
-void saveas_cb() {
+void EditorWindow::saveFileAs() {
     char* newfile = file_chooser("Save File As?", "*.bas", filename);
     if (newfile != NULL) {
-        save_file(newfile);
+        doSaveFile(newfile);
     }
 }
 
-EditorWindow::EditorWindow(int x, int y, int w, int h) : 
-    Group(x, y, w, h) {
-
-    replaceDlg = new Window(300, 105, "Replace");
-    replaceDlg->begin();
-    replaceFind = new Input(80, 10, 210, 25, "Find:");
-    replaceFind->align(ALIGN_LEFT);
-    replaceWith = new Input(80, 40, 210, 25, "Replace:");
-    replaceWith->align(ALIGN_LEFT);
-    replaceAll = new Button(10, 70, 90, 25, "Replace All");
-    replaceAll->callback((Callback *)replall_cb, this);
-    replaceNext = new ReturnButton(105, 70, 120, 25, "Replace Next");
-    replaceNext->callback((Callback *)replace2_cb, this);
-    replaceCancel = new Button(230, 70, 60, 25, "Cancel");
-    replaceCancel->callback((Callback *)replcan_cb, this);
-    replaceDlg->end();
-    replaceDlg->set_non_modal();
-
-    search[0] = 0;
-    filename[0] = 0; 
-    mainWnd = 0;
-    dirty = 0;
-    loading = 0;
-    textbuf = new TextBuffer;
-    style_init();
-
-    begin();
-    editor = new TextEditor(0, 0, w, h);
-    editor->buffer(textbuf);
-    editor->highlight_data(stylebuf, styletable,
-                           sizeof(styletable) / sizeof(styletable[0]),
-                           'A', style_unfinished_cb, 0);
-    editor->textfont(COURIER);
-    end();
-    resizable(editor);
-
-    textbuf->add_modify_callback(style_update, editor);
-    textbuf->add_modify_callback(changed_cb, this);
+void EditorWindow::doDelete() {
+    textbuf->remove_selection();
 }
 
-EditorWindow::~EditorWindow() {
-    delete replaceDlg;
-}
-
-bool EditorWindow::is_dirty() {
-    return dirty;
-}
+//--EndOfFile-------------------------------------------------------------------

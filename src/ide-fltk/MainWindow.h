@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.6 2004-11-17 22:31:46 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.7 2004-11-21 22:38:23 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -32,8 +32,6 @@ struct MainWindow : public Window {
     bool isBreakExec(void);
     bool isModal();
     void setModal(bool modal);
-
-    void updateStatusBar(const char* title);
     void resetPen();
 
     int penX;
@@ -44,15 +42,22 @@ struct MainWindow : public Window {
     bool isTurbo;
     bool modalLoop;
 
-    // screen parts
+    // main output
     Fl_Ansi_Window *out;
     EditorWindow* editWnd;
+
+    // tabs
+    TabGroup* tabGroup;
+    Group* editGroup;
     Group* outputGroup;
     Group* helpGroup;
-    Group* editGroup;
-    Group* textOutputGroup;
-    Group* statusBar;
-    TabGroup* tabGroup;
+
+    // status bar
+    Widget* fileStatus;
+    Widget* rowStatus;
+    Widget* colStatus;
+    Widget* runStatus;
+    Widget* modStatus;
 };
 
 #endif

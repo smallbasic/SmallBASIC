@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.5 2004-11-11 22:31:33 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.6 2004-11-21 22:38:23 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -26,47 +26,95 @@
 
 using namespace fltk;
 
+// implemented in MainWindow
+void setTitle(const char* filename);
+void setRowCol(int row, int col);
+void setModified(bool dirty);
+
 class EditorWindow : public Group {
     public:
     EditorWindow(int x, int y, int w, int h);
     ~EditorWindow();
 
-    // environment access
-    Window* mainWnd;
+    bool isDirty() { return dirty; }
+    const char* getFileName() { return filename; }
+    void doSaveFile(char *newfile);
+    void doChange(int inserted, int deleted);
+    bool checkSave(bool discard);
+    void loadFile(const char *newfile, int ipos);
+    void newFile();
+    void openFile();
+    void insertFile();
+    void saveFile();
+    void saveFileAs();
+    void findNext();
+    void find();
+    void replaceNext();
+    void replaceAll();
+    void doDelete();
+    void cancelReplace();
+   
+    // editor callback functions
+    static void new_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->newFile();
+    }
+    static void open_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->openFile();
+    }
+    static void insert_cb(Widget*, void *v) {
+        ((EditorWindow*)v)->insertFile();
+    }
+    static void save_cb(Widget*, void *v) {
+        ((EditorWindow*)v)->saveFile();
+    }
+    static void saveas_cb(Widget*, void *v) {
+        ((EditorWindow*)v)->saveFileAs();
+    }
+    static void find_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->find();
+    }
+    static void find2_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->findNext();
+    }
+    static void cut_cb(Widget*, void* v) {
+        TextEditor::kf_cut(0, ((EditorWindow*)v)->editor);
+    }
+    static void paste_cb(Widget*, void* v) {
+        TextEditor::kf_paste(0, ((EditorWindow*)v)->editor);
+    }
+    static void copy_cb(Widget*, void* v) {
+        TextEditor::kf_copy(00, ((EditorWindow*)v)->editor);
+    }
+    static void delete_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->doDelete();
+    }
+    static void replace_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->replaceDlg->show();
+    }
+    static void replace2_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->replaceNext();
+    }
+    static void replall_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->replaceAll();
+    }
+    static void replcan_cb(Widget*, void* v) {
+        ((EditorWindow*)v)->cancelReplace();
+    }
+    static void changed_cb(int, int inserted, int deleted, 
+                           int, const char*, void* v) {
+        ((EditorWindow*)v)->doChange(inserted, deleted);
+    }
 
-    // internal access
-    bool is_dirty();
+    TextEditor *editor;
 
-    Window          *replaceDlg;
-    Input           *replaceFind;
-    Input           *replaceWith;
-    Button          *replaceAll;
-    ReturnButton    *replaceNext;
-    Button          *replaceCancel;
-    TextEditor      *editor;
-    char            search[256];
+    private:
+    char filename[256];
+    char search[256];
+    bool dirty;
+    bool loading;
+    Window *replaceDlg;
+    Input *replaceFind;
+    Input *replaceWith;
 };
-
-// editor callback functions
-void save_cb();
-void saveas_cb();
-void find2_cb(Widget*, void*);
-void new_cb(Widget*, void*);
-void open_cb(Widget*, void*);
-void insert_cb(Widget*, void *v);
-void save_cb();
-void cut_cb(Widget*, void* v);
-void paste_cb(Widget*, void* v);
-void copy_cb(Widget*, void* v);
-void delete_cb(Widget*, void*);
-void find_cb(Widget* w, void* v);
-void find2_cb(Widget* w, void* v);
-void replace_cb(Widget*, void* v);
-void replace2_cb(Widget*, void* v);
-void load_file(char *newfile, int ipos);
-int check_save(bool discard);
-
-// implemented in MainWindow
-void set_title();
 
 #endif

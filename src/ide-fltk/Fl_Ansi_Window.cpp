@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.10 2004-11-18 23:00:36 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.11 2004-11-21 22:38:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -87,7 +87,7 @@ void Fl_Ansi_Window::reset() {
 }
 
 void Fl_Ansi_Window::layout() {
-    if (img && (layout_damage() & LAYOUT_WH)) {
+    if (img && (layout_damage() & LAYOUT_WH)) { 
         Image* old = img;
         img = 0;
         begin_offscreen();
@@ -513,12 +513,12 @@ int main(int argc, char **argv) {
     check();
     out.print("1\n2\n3\n4\n5\n6\n7\n8\n");
     out.print("1\n2\n3\n4\n5\n6 six\n7 sevent\neight");
-     out.print("what the!\rhuh\033[Kclear");
-     for (int i=0; i<100; i++) {
-         out.print("\033[3mitalic\033[23moff\033[4munderline\033[24moff");
-         out.print("\033[7minverse\033[27moff");
-         out.print("\033[1mbold\033[21moff");
-     }
+    out.print("what the!\rhuh\033[Kclear");
+    for (int i=0; i<100; i++) {
+        out.print("\033[3mitalic\033[23moff\033[4munderline\033[24moff");
+        out.print("\033[7minverse\033[27moff");
+        out.print("\033[1mbold\033[21moff");
+    }
     return run();
 }
 #endif

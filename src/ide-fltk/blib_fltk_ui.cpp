@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.1 2004-11-18 23:00:37 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.2 2004-11-21 22:38:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -29,9 +29,7 @@ C_LINKAGE_BEGIN
 
 #include "blib_ui.h"
 
-void enter_cb(Widget*, void* v); // in dev_fltk
 extern MainWindow *wnd;
-
 Group* form = 0;
 
 enum ControlType {
@@ -39,13 +37,37 @@ enum ControlType {
     ctrl_link,
     ctrl_radio,
     ctrl_check,
-    ctrl_text
+    ctrl_text,
+    ctrl_label
 };
 
 struct WidgetInfo {
     ControlType type;
-	var_t* var;    
+    var_t* var;
 };
+
+struct AnchorLink : public Button {
+    AnchorLink(int x, int y, int w, int h) : Button(x, y, w, h) {}
+    void draw() {
+        int bx = 0;
+        int by = 0;
+        int bw = w();
+        int bh = h();
+        box()->inset(bx, by, bw, bh);
+        draw_background();
+        setcolor(labelcolor());
+        draw_label(bx, by-2, bw, bh, style(), ALIGN_INSIDE|ALIGN_BOTTOMLEFT);
+        drawline(2, bh-2, 2+(int)getwidth(label()), bh-2);
+        focusbox()->draw(bx+1, by+1, bw-2, bh-2, style(), 
+                         current_flags_highlight());
+    }
+};
+
+void closeButton(Widget* w, void* v) {
+    WidgetInfo* inf = (WidgetInfo*)v;
+    v_setstrn(inf->var, "1", 1);
+    wnd->setModal(false);
+}
 
 void createForm() {
     if (form == 0) {
@@ -54,6 +76,8 @@ void createForm() {
                          wnd->out->y(), 
                          wnd->out->w(), 
                          wnd->out->h());
+        form->resizable(0);
+        form->color(color(152,152,152));
         wnd->outputGroup->end(); 
     }
     form->begin();
@@ -61,11 +85,11 @@ void createForm() {
 
 void ui_reset() {
     if (form != 0) {
-
+        form->hide();
         int n = form->children();
         for (int i=0; i<n; i++) {
-            WidgetInfo* widgetInf = (WidgetInfo*)form->child(i)->user_data();
-            delete widgetInf;
+            WidgetInfo* inf = (WidgetInfo*)form->child(i)->user_data();
+            delete inf;
         }
 
         form->clear();
@@ -73,7 +97,10 @@ void ui_reset() {
         form->parent(0);
         delete form;
         form = 0;
-    }    
+    }
+    wnd->out->show();
+    wnd->out->take_focus();
+    wnd->out->redraw();
 }
 
 // BUTTON x, y, w, h, variable, caption [,type] 
@@ -85,43 +112,56 @@ void ui_reset() {
 // 
 void cmd_button() {
     int x, y, w, h;
-	var_t* v = 0;
+    var_t* v = 0;
     char* caption = 0;
     char* type = 0;
 
     if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
         createForm();
-        Widget* widget = 0;
-        WidgetInfo* widgetInf = new WidgetInfo();
-        widgetInf->var = v;
-
-        // TODO prime field from var_t
+        Button* widget = 0;
+        WidgetInfo* inf = new WidgetInfo();
+        inf->var = v;
 
         if (type) {
             if (strncmp("radio", type, 5) == 0) {
-                widget = (Widget*)new RadioButton(x, y, w, h);
-                widgetInf->type = ctrl_radio;
+                widget = new RadioButton(x, y, w, h);
+                inf->type = ctrl_radio;
             } else if (strncmp("checkbox", type, 8) == 0) {
-                widget = (Widget*)new CheckButton(x, y, w, h);
-                widgetInf->type = ctrl_check;
-            } else if (strncmp("link", type, 4) == 0) {
-                widget = (Widget*)new Button(x, y, w, h);
-                widget->callback(enter_cb);
+                widget = new CheckButton(x, y, w, h);
+                inf->type = ctrl_check;
+            } else if (strncmp("label", type, 8) == 0) {
+                widget = (Button*)new Widget(x, y, w, h);
                 widget->box(NO_BOX);
-                widgetInf->type = ctrl_link;
+                inf->type = ctrl_label;
+            } else if (strncmp("link", type, 4) == 0) {
+                widget = (Button*)new AnchorLink(x, y, w, h);
+                widget->callback(closeButton);
+                widget->box(NO_BOX);
+                widget->labelcolor(color(150,0,0));
+                inf->type = ctrl_link;
             }
         }
         if (widget == 0) {
-            widget = (Widget*)new Button(x, y, w, h);
-            widget->callback(enter_cb);
-            widgetInf->type = ctrl_button;
+            widget = new Button(x, y, w, h);
+            widget->callback(closeButton);
+            inf->type = ctrl_button;
+        }
+
+        // prime input field from variable
+        if (v->type == V_STR && v->v.p.ptr) {
+            if (inf->type == ctrl_check || 
+                inf->type == ctrl_radio) {
+                widget->value(true);
+            } else {
+                widget->value((const char*)v->v.p.ptr);
+            }
         }
 
         widget->copy_label(caption);
-        widget->user_data(widgetInf);
+        widget->user_data(inf);
         form->end();
     }
-	pfree2(caption, type);
+    pfree2(caption, type);
 }
 
 // TEXT x, y, w, h, variable
@@ -129,7 +169,7 @@ void cmd_button() {
 //
 void cmd_text() {
     int x, y, w, h;
-	var_t* v = 0;
+    var_t* v = 0;
 
     if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {
         createForm();
@@ -137,27 +177,52 @@ void cmd_text() {
         widget->box(BORDER_BOX);
         widget->color(color(220,220,220));
 
-        // TODO prime field from var_t
+        // prime field from var_t
+        if (v->type == V_STR && v->v.p.ptr) {
+            widget->value((const char*)v->v.p.ptr);
+        }
 
-        WidgetInfo* widgetInf = new WidgetInfo();
-        widgetInf->var = v;
-        widgetInf->type = ctrl_text;
-        widget->user_data(widgetInf);
+        WidgetInfo* inf = new WidgetInfo();
+        inf->var = v;
+        inf->type = ctrl_text;
+        widget->user_data(inf);
 
         form->end();
     }
 }
 
-// DOFORM
+// DOFORM [x,y,w,h [,border-style]]
 // Executes the form
 // 
 void cmd_doform() {
+    int x, y, w, h;
+    int numArgs;
+
     if (form == 0) {
-        rt_raise("UI: NO FIELDS DEFINED");
+        ui_reset();
+        rt_raise("UI: NO FORM FIELDS DEFINED");
         return;
     } 
 
-    wnd->out->hide();
+    x = y = w = h = 0;
+    numArgs = par_massget("iiii", &x, &y, &w, &h);
+
+    if (numArgs != 0 && numArgs != 4) {
+        ui_reset();
+        rt_raise("UI: INVALID FORM COORDINATES: %d", numArgs);
+        return;
+    }
+
+    if (numArgs > 0) {
+        form->box(SHADOW_BOX);
+        form->x(x);
+        form->y(y);
+        form->w(w);
+        form->h(h);
+    } else {
+        form->box(ENGRAVED_BOX);
+    }
+    
     form->take_focus();
     form->show();
 
@@ -173,30 +238,22 @@ void cmd_doform() {
     int n = form->children();
     for (int i=0; i<n; i++) {
         Widget* w = form->child(i);
-        WidgetInfo* widgetInf = (WidgetInfo*)w->user_data();
-        switch (widgetInf->type) {
-        case ctrl_button:
-            break;
-        case ctrl_link:
-            break;
+        WidgetInfo* inf = (WidgetInfo*)w->user_data();
+        switch (inf->type) {
         case ctrl_check:
-            break;
         case ctrl_radio:
+            if (((Button*)w)->value()) {
+                v_setstrn(inf->var, "1", 1);
+            }
             break;
-        case ctrl_text:  {
+        case ctrl_text:
             // copy input data into variable
-            Input* in = (Input*)w;
-            int size = in->size();
-            widgetInf->var->type = V_STR;
-            widgetInf->var->v.p.ptr = (unsigned char*)tmp_alloc(size+1);
-            strncpy((char*)widgetInf->var->v.p.ptr, in->value(), size);
-            widgetInf->var->v.p.ptr[size] = 0;  }
+            v_setstrn(inf->var, ((Input*)w)->value(), ((Input*)w)->size());
+            break;
+        default:
             break;
         }
     }
-
-    form->hide();
-    wnd->out->show();
 
     ui_reset();
 }
