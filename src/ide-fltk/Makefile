@@ -71,6 +71,7 @@ PLATFORM=-D_UnixOS -D_FLTK
 ## release with -s
 IMAGELIBS=-lfltk_images -lpng -ljpeg
 LDLIBS = -s `fltk-config --ldflags` ${IMAGELIBS}
+DEBUG_LDLIBS = `fltk-config --ldflags` ${IMAGELIBS}
 RESOURCES = sbfltk.res
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
@@ -114,7 +115,7 @@ Fl_Ansi_Window.exe: Fl_Ansi_Window.o
 	gcc ${OPTIM} $< ${LDLIBS} -o $@
 
 Fl_Help_Widget.exe: Fl_Help_Widget.o 
-	gcc ${DEBUG_OPTIM} $< ${LDLIBS} objs/StringLib.o -o $@
+	gcc ${DEBUG_OPTIM} $< ${DEBUG_LDLIBS} objs/StringLib.o -o $@
 
 clean:
 	-rm -f sbfltk sbfui.cxx sbfui.h build_kwpc kwp.cxx kwp objs/*.o
