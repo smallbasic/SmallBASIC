@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.27 2005-03-21 22:29:44 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.28 2005-03-23 22:31:06 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -302,22 +302,6 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
 }
 
 //--IMAGE-----------------------------------------------------------------------
-
-// image factory based on file extension
-SharedImage* loadImage(const char* name, uchar* buff) {
-    int len = strlen(name);
-    if (strcasecmp(name+(len-4), ".jpg") == 0 ||
-        strcasecmp(name+(len-5), ".jpeg") == 0) {
-        return jpegImage::get(name, buff);
-    } else if (strcasecmp(name+(len-4), ".gif") == 0) {
-        return gifImage::get(name, buff);
-    } else if (strcasecmp(name+(len-4), ".png") == 0) {
-        return pngImage::get(name, buff);
-    } else if (strcasecmp(name+(len-4), ".xpm") == 0) {
-        return xpmFileImage::get(name, buff);
-    }
-    return 0;
-}
 
 Image* getImage(int handle, int index) {
     dev_file_t* filep = dev_getfileptr(handle);
