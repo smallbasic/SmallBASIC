@@ -32,6 +32,8 @@ RELEASE HISTORY:
 
 0.9.0i - 4 July 2004
 
+- Built with the latest common code from CVS
+
 - Fixed one more problem relating to editing files that had been copied 
   from the desktop. Random chars appearing after the end of the file.
   TapWrite 1.3 will also contain this fix.
