@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_fs.cpp,v 1.5 2004-07-03 23:06:57 zeeb90au Exp $
+// $Id: ebm_fs.cpp,v 1.6 2004-08-13 11:33:19 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -198,7 +198,6 @@ File* getFile(int handle) {
 }
 
 int dev_initfs(void) {
-    //env.removeAll();
     // this is called in brun after we have started using 
     // the file system methods
     return 1;
@@ -693,10 +692,14 @@ int dev_image_height(int handle, int index) {
     return (img != 0 ? img->img_height : -1);    
 }
 
-void dev_image(int handle, int index, int x, int y) {
+void dev_image(int handle, int index, int x, int y, 
+               int sx, int sy, int w, int h) {
     const IMAGE* img = getImage(handle, index);
     if (img != 0) {
-        out.DrawImage(x, y, img);
+        out.DrawImage(x, y, img, 0, 0, sx, sy, 
+                      w == 0 ? img->img_width : w, 
+                      h == 0 ? img->img_height: h, 
+                      IMG_CMB_IOR);
         needUpdate = true;
     }
 }

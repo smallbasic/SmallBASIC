@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.cpp,v 1.7 2004-05-21 09:48:00 zeeb90au Exp $
+// $Id: Browser.cpp,v 1.8 2004-08-13 11:33:19 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -31,7 +31,7 @@
 
 const char aboutHTML[] =
     "<br><font size=2>SmallBASIC for <u>e</u><i>Book</i><b>Man</b>"
-    "<br>Version 0.9.0i<br><br><font size=1>"
+    "<br>Version 0.9.2j<br><br><font size=1>"
     "Copyright (c) 2000-2004 Nicholas Christopoulos, "
     "Chris Warren-Smith<br>"
     "<u>http://smallbasic.sourceforge.net</u><br>"
@@ -69,7 +69,7 @@ const char helpHTML[] =
     "<p>Please use the SmallBASIC forums at " 
     "<u>http://smallbasic.sourceforge.net</u> for further assistance. ";
 
-const char title[] = "SmallBASIC v0.9.0i";
+const char title[] = "SmallBASIC v0.9.2j";
 const char cmdFile[] = "_cmd.bas";
 char msgBuffer[20];
 
@@ -578,7 +578,7 @@ void Browser::createLink(const char* fileName, bool basFile, bool sbxFile) {
 
     html.append("<tr><td>");
     html.append(fileName, len);
-    html.append("</td><td offs=18>[ ");
+    html.append("</td><td>[ ");
 
     if (sbxFile) {
         html.append("<a href=F");
@@ -635,6 +635,7 @@ void Browser::createProgramsPage() {
     int basi = 0;
     int basCmp = 0;
 
+    html.append("<table right=18>");
     for (int sbxi=0; sbxi<sbxLen; sbxi++) {
         sbxItem = sbxFiles.get(sbxi);
         if (sbxItem[0] == '_') {
@@ -673,7 +674,7 @@ void Browser::createProgramsPage() {
         createLink(basFiles.get(basi++), true, false);
     }
 
-    html.append("<br>[ <a href=N>New</a> | <a href=R>Refresh</a> ]");
+    html.append("</table><br>[ <a href=N>New</a> | <a href=R>Refresh</a> ]");
 }
 
 void Browser::createRunPage() {

@@ -89,6 +89,9 @@ resource.cpp:resource.rcp
 
 all: ${EBJLIB_HOME}/ebjlib.lib resource.cpp os
 
+${APPNAME}_sa.coff: ${EBJLIB_HOME}/ebjlib.lib
+${APPNAME}.seb: ${EBJLIB_HOME}/ebjlib.lib
+
 debug_sa: ./lib.snk32/piezo.o
 	ar rs debug_lib.lib $<
 	rm SmallBASIC_sa.coff

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: input.cpp,v 1.4 2004-04-18 22:27:49 zeeb90au Exp $
+// $Id: input.cpp,v 1.5 2004-08-13 11:33:19 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -55,6 +55,15 @@ char* getenv(const char *s) {
     return (str ? (char*)str->toString() : null);
 }
 
+int dev_env_count() {
+    return env.length() / 2;
+}
+
+char *dev_getenv_n(int n) {
+    String* s = env.get(n);
+    return (char*)(s == 0 || s->toString() == 0 ? "" : s->toString());
+}
+
 struct InputHTMLWindow : public HTMLWindow {
     InputHTMLWindow(const char* s, const char* title, RECT rc) :
         HTMLWindow(s, title, rc) {
@@ -104,6 +113,9 @@ void InputHTMLWindow::Close() {
 
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
     InputHTMLWindow* wnd;
+    if (title && title[0] == 0) {
+        title = 0; // make empty string null
+    }
     if (x == -1 || y == -1 || w == -1 || h == -1) {
         wnd = new InputHTMLWindow(html, title, HTMLWindow::popupRect());
     } else {

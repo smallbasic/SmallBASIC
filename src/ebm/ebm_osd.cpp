@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_osd.cpp,v 1.5 2004-07-03 23:06:57 zeeb90au Exp $
+// $Id: ebm_osd.cpp,v 1.6 2004-08-13 11:33:19 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -130,7 +130,6 @@ void osd_setpenmode(int enable) {
 int osd_getpen(int code) {
     if (out.penState == PEN_OFF) {
         usleep(out.isTurboMode() ? turboSleep : longSleep);
-        return 0;
     }
 
     switch (code) {
