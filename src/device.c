@@ -1843,6 +1843,8 @@ char	*dev_getenv(const char *str)
 	#endif
 }
 
+#ifndef _FRANKLIN_EBM
+
 /*
 *	returns the number of environment variables
 */
@@ -1850,7 +1852,7 @@ int		dev_env_count()
 {
 	#if defined(_PalmOS) 
 	return dbt_count(env_table);
-	#elif defined(_VTOS) || defined(_FRANKLIN_EBM)
+	#elif defined(_VTOS)
 	return 0;
 	#else
 	int		count = 0;
@@ -1879,7 +1881,7 @@ char	*dev_getenv_n(int n)
 		return retptr;
 		}
 	return NULL;
-	#elif defined(_VTOS) || defined(_FRANKLIN_EBM)
+	#elif defined(_VTOS)
 	return NULL;
 	#else
 	int		count = 0;
@@ -1893,12 +1895,11 @@ char	*dev_getenv_n(int n)
 	#endif
 }
 
-#ifndef _FRANKLIN_EBM
 // empty implementations
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
 }
 
-void dev_image(int handle, int index, int x, int y) {
+void dev_image(int handle, int index, int x, int y, int, int, int, int) {
 }
 
 int dev_image_width(int handle, int index) {
