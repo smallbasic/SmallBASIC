@@ -1,4 +1,4 @@
-SmallBASIC for eBookman version 0.9.0g
+SmallBASIC for eBookman version 0.9.0h
 
 http://smallbasic.sourceforge.net
 
@@ -29,6 +29,47 @@ suggestions.
 You can also use this site for sharing your SmallBASIC programs.
 
 RELEASE HISTORY:
+
+0.9.0h - 30 April 2004
+
+- Fixed the problem with saving files that had been copied from the desktop. 
+  This was caused by a bug in the ebjlib 'File' class, also causing the same 
+  problem in TapWrite.
+  
+  More info in case you are interested...
+  In the File::Open() method using readMode, the ebo_locate_object() 
+  function is called to first determine the file length. This length value 
+  was later used as the size argument in the call to ebo_unmap() to close 
+  the file. For desktop files, this length value is shorter than the value 
+  that ebo_mapin() allocates and returns. This meant that ebo_unmap() was 
+  not completely unmapping the file. When the file was later opened for 
+  writing, ebo_new() returned the error EBO_DESTROY_IN_USE. 
+  The solution was to always unmap using the value returned by mapin();
+
+- Fixed a display problem in the Open file list where sbx/bas files were
+  sometimes not lining up correctly.
+- Improved Open file list redisplay time (by caching the html text).
+- The editor delete key now behaves like a normal delete key and not a 
+  backspace key.
+- Opening a file in append mode now works (only for text files). This 
+  allows you to code something like this:
+
+open "temp.txt" for output as #1
+print #1, "hello"
+close #1
+
+rem time passes...
+open "temp.txt" for append as #1
+print #1, "hello again"
+close #1
+
+open "temp.txt" for input as #1
+while not eof(1)
+ input #1; s
+ ? s
+wend
+close #1
+
 
 0.9.0g - 19 April 2004
 

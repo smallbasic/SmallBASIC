@@ -333,9 +333,8 @@ bool createWindow(CWindow* wnd)
         button4->SetFont(font0);
         wnd->AddChild(button4,143,148);
         CMenu *list5 = new CMenu(ID_TYPE_LIST);
-        list5->SetNumRows(2);
+        list5->SetNumRows(1);
         list5->SetRow(0,0,"BAS");
-        list5->SetRow(1,1,"SBU");
         CPopupTrigger *popuptrigger6 = new CPopupTrigger(ID_POPLIST,0,0,list5);
         popuptrigger6->SetCurrentRow(0);
         wnd->AddChild(popuptrigger6,28,150);
@@ -421,8 +420,9 @@ CMenuBar* createMenubar(CWindow* wnd, U16 wndId)
         menu2->SetRow(0,mnuToggleKeypad,"Toggle Keypad");
         menuBar->AddButton(new CPushButton(2,0,0,"View"), menu2);
         CMenu *menu3 = new CMenu(3);
-        menu3->SetNumRows(1);
-        menu3->SetRow(0,mnuHelpIndex,"Index");
+        menu3->SetNumRows(2);
+        menu3->SetRow(0,mnuAbout,"About");
+        menu3->SetRow(1,mnuHelpIndex,"Index");
         menuBar->AddButton(new CPushButton(3,0,0,"Help"), menu3);
         return menuBar;
     }

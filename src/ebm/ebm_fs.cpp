@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_fs.cpp,v 1.2 2004-04-12 00:21:41 zeeb90au Exp $
+// $Id: ebm_fs.cpp,v 1.3 2004-04-30 23:40:27 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -332,15 +332,28 @@ int dev_fopen(int handle, const char *name, int flags) {
         }
     }
     File *f = ftab[handle] = new File;
-    File::mode fileMode = File::readMode;
-    switch (flags) {
-    case DEV_FILE_OUTPUT:
-        fileMode = File::writeMode; // create
-        break;
-    case DEV_FILE_APPEND:  // if not exists first create; open for append
-        fileMode = File::appendMode;
+
+    if (flags == DEV_FILE_APPEND) {
+        File xf;
+        if (xf.open(name, File::readMode)) {
+            // copy previous file content
+            int len = xf.length();
+            if (len) {
+                void* buffer = malloc(len);
+                xf.read((void*)buffer, len);
+                xf.close();
+
+                f->open(name, File::writeMode);
+                f->write(buffer, strlen((char*)buffer));
+                free(buffer);
+                return handle + 1;
+            }
+        }
+        // else fall thru to write-mode
     }
 
+    File::mode fileMode = (flags == DEV_FILE_INPUT) ? 
+        File::readMode : File::writeMode;
     if (f->open(name, fileMode)) {
         return handle + 1;
     } else {

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.cpp,v 1.5 2004-04-18 22:53:16 zeeb90au Exp $
+// $Id: Browser.cpp,v 1.6 2004-04-30 23:40:26 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -31,7 +31,7 @@
 
 const char aboutHTML[] =
     "<br><font size=2>SmallBASIC for <u>e</u><i>Book</i><b>Man</b>"
-    "<br>Version 0.9.0g<br><br><font size=1>"
+    "<br>Version 0.9.0h<br><br><font size=1>"
     "Copyright (c) 2000-2004 Nicholas Christopoulos, "
     "Chris Warren-Smith<br>"
     "<u>http://smallbasic.sourceforge.net</u><br>"
@@ -45,7 +45,7 @@ const char aboutHTML[] =
 
 const char helpHTML[] =
     "<i>Running a BASIC program</i> "
-    "<br>Select the Open page then tap the <u>bas</u> link alongside "
+    "<br>Select the Open screen then tap the <u>bas</u> link alongside "
     "the program you wish to run. Follow any on-screen program "
     "instructions. Tap the Turbo menu option to increase execution "
     "speed (at the expense of increased battery drain). Tap the "
@@ -61,7 +61,7 @@ const char helpHTML[] =
     "program compilation stage. Note this setting has no effect if the "
     "program resides on the MMC card. "
     "<p><i>Editing a BASIC program</i> "
-    "<p>Select the Open page then tap the <u>edit</u> link alongside "
+    "<p>Select the Open screen then tap the <u>edit</u> link alongside "
     "the program name or press <u>New</u> to create a new program. "
     "<p>Make your desired program changes and then press the Run menu. "
     "After the program has ended, control will return to the edit window "
@@ -69,7 +69,8 @@ const char helpHTML[] =
     "<p>Please use the SmallBASIC forums at " 
     "<u>http://smallbasic.sourceforge.net</u> for further assistance. ";
 
-const char title[] = "SmallBASIC v0.9.0g";
+const char title[] = "SmallBASIC v0.9.0h";
+char msgBuffer[20];
 
 CViewable* browseWnd=0;
 CViewable* editor = 0;
@@ -88,7 +89,7 @@ struct HelpWindow : public HTMLWindow {
 };
 
 HelpWindow::HelpWindow() : 
-    HTMLWindow("SmallBASIC.mhtml not found", title, 
+    HTMLWindow("SmallBASIC.mhtml not found", ::title, 
                0, 0, LCD_QueryWidth(), LCD_QueryHeight()) {
     ebo_name_t pkgHelp = {"", "", "SmallBASIC", "mhtml"};
     if (hostIO_is_simulator()) {
@@ -147,7 +148,9 @@ S32 HelpWindow::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
 struct CodeEditor : public Editor {
     CodeEditor() : Editor("SmallBASIC") {
         menuBar = createMenubar(this, ID_EDITOR);
+        newFile = false;
     }
+    bool newFile;
     S32 MsgHandler(MSG_TYPE type, CViewable *from, S32 data);
 };
 
@@ -190,7 +193,10 @@ S32 CodeEditor::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
         case mnuOpen:
             if (promptSave()) {
                 launching = false;
-                browseWnd->MsgHandler(MSG_REFRESH, this, 0);
+                if (newFile) {
+                    browseWnd->MsgHandler(MSG_REFRESH, this, 0);
+                }
+                fileNew();
                 Hide();
             }
             break;
@@ -242,15 +248,18 @@ S32 CodeEditor::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
             editFind(true);
             break;
 
-        case mnuWhatLine: {
-            char t[20];
-            sprintf(t, "Line %d", currentLine()+1);
-            GUI_Alert(ALERT_INFO, t);
+        case mnuWhatLine:
+            sprintf(msgBuffer, "Line %d", currentLine()+1);
+            GUI_Alert(ALERT_INFO, msgBuffer);
             break;
-        }
 
         case mnuToggleKeypad:
             toggleKeypad();
+            break;
+
+        case mnuAbout:
+            GUI_EventLoop(new HTMLWindow(aboutHTML, ::title, 0,0,
+                                         LCD_QueryWidth(), LCD_QueryHeight()));
             break;
 
         case mnuHelpIndex:
@@ -269,7 +278,7 @@ S32 CodeEditor::MsgHandler(MSG_TYPE type, CViewable *from, S32 data) {
 
 struct BrowserWnd : public HTMLWindow {
     BrowserWnd(Browser& dlg, const char* html) : 
-        HTMLWindow(html, title, 0, 0, 
+        HTMLWindow(html, ::title, 0, 0, 
                    LCD_QueryWidth(), LCD_QueryHeight(), false), dlg(dlg) {
         menu = createMenu(this, ID_MAINWND);
         browseWnd = this;
@@ -530,6 +539,7 @@ void Browser::editFile(const char* fileName) {
         ed->doLoad(fileName);
     }
     launching = false;
+    ed->newFile = false;
     ed->Show();
 }
 
@@ -538,6 +548,7 @@ void Browser::newFile() {
     if (ed->promptSave() == false) {
         return;
     }
+    ed->newFile = true;
     ed->fileNew();
     ed->Show();
 }
@@ -562,20 +573,8 @@ void Browser::createLink(const char* fileName, bool basFile, bool sbxFile) {
         return;
     }
 
-    String basName;
-    basName.append(fileName);
-    basName.append(".bas");
-    bool loaded = ((CodeEditor*)editor)->isLoaded(basName);
-
     html.append("<tr><td>");
-    if (loaded) {
-        html.append("<b>");
-        html.append(fileName);
-        html.append("</b>");
-    } else {
-        html.append(fileName);
-    }
-    
+    html.append(fileName);
     html.append("</td><td offs=18>[ ");
 
     if (sbxFile) {
@@ -617,7 +616,7 @@ void Browser::createProgramsPage() {
         // process bas files prior to the next sbx file
         while (basi < basLen) {
             basItem = basFiles.get(basi);
-            basCmp = strcmp(basItem, sbxItem);
+            basCmp = stricmp(basItem, sbxItem);
             if (basCmp >= 0) {
                 // bas file same or after sbx file
                 break;
@@ -673,9 +672,18 @@ void Browser::createCheckBox(const char* label, const char* name, bool active) {
 void Browser::makeActivePage() {
     html.empty();
 
-    if (activeTab == tabSplash) {
+    switch (activeTab) {
+    case tabSplash:
         html.append(aboutHTML);
         return;
+    case tabPrograms:
+        if (openPage.length() > 0) {
+            html.append(openPage);
+            return;
+        }
+        break;
+    default:
+        break;
     }
     
     const char* tabs[] = {
@@ -704,11 +712,13 @@ void Browser::makeActivePage() {
     }
     html.append(" ]<hr>");
     html.append("<font size=1>");
+
     // create page
     switch (activeTab) {
     case tabPrograms:
         html.append("<i>Programs:</i><br>");
         createProgramsPage();
+        openPage.append(html);
         break;
         
     case tabRun:
@@ -731,10 +741,12 @@ void Browser::makeActivePage() {
 void Browser::updateFileList() {
     if (sbxFiles.length() == 0 || save) {
         sbxFiles.create("sbx", MMC_ACCESS, false);
+        openPage.empty();
     }
     
     if (basFiles.length() == 0) {
         basFiles.create("bas", MMC_ACCESS, false);
+        openPage.empty();
     }
 }
 

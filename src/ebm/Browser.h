@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.h,v 1.2 2004-04-18 22:27:49 zeeb90au Exp $
+// $Id: Browser.h,v 1.3 2004-04-30 23:40:27 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -61,6 +61,7 @@ struct Browser {
 
     FileList basFiles;
     FileList sbxFiles;
+    String openPage;
 };
 
 #endif

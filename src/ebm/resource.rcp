@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: resource.rcp,v 1.4 2004-04-18 22:27:49 zeeb90au Exp $
+// $Id: resource.rcp,v 1.5 2004-04-30 23:40:27 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -68,6 +68,7 @@ BEGIN
   END
   PULLDOWN "Help"
   BEGIN
+    MENUITEM "About"              mnuAbout
     MENUITEM "Index"              mnuHelpIndex
   END
 END
@@ -145,9 +146,8 @@ BEGIN
   GADGET ID AUTOID AT (0 148 186 1) BORDER 1 DISABLED
   BUTTON "Open" ID ID_OPEN AT(101 163 40 15)  FONT 0
   BUTTON "Cancel" ID ID_CANCEL AT(143 163 40 15) FONT 0
-  LIST "BAS" "SBU" ID ID_TYPE_LIST 
-    AT(23 63 59 27)  FONT 0
-  POPUPTRIGGER "" ID ID_POPLIST AT(28 165 62 15)  FONT 0
+  LIST "BAS" ID ID_TYPE_LIST AT(23 63 59 27)  FONT 0
+  POPUPTRIGGER "" ID ID_POPLIST AT(28 165 62 15) FONT 0
   POPUPLIST ID ID_POPLIST ID_TYPE_LIST
   LABEL "File name:" ID AUTOID AT(2 151) FONT 0
   LABEL "Type:" ID AUTOID AT(2 166) USABLE FONT 0
