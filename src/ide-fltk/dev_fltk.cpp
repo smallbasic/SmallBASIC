@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.25 2005-03-17 22:30:35 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.26 2005-03-20 23:34:56 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -213,19 +213,20 @@ void closeHelp() {
 }
 
 int dev_putenv(const char *s) {
-//     if (helpView) {
-//         Widget* widget = helpView->getInput(s);
-//         if (widget) {
-//             widget->value(s);
-//             return strlen(s);
-//         } 
-//         return 0;
-//     }
-//    trace("putenv %s", s);
+    if (helpView && helpView->setInputValue(s)) {
+        return 1;
+    }
     return putenv(strdup(s));
 }
 
 char* dev_getenv(const char *s) {
+    if (helpView) {
+        char* value = (char*)helpView->getInputValue(helpView->getInput(s));
+        if (value) {
+            return value;
+        }
+    }
+
     return getenv(s);
 }
 
@@ -237,6 +238,12 @@ int dev_env_count() {
 
 char* dev_getenv_n(int n) {
     int count = 0;
+
+    if (helpView) {
+        Properties p;
+        helpView->getInputProperties(p);
+    }
+
     while (environ[count]) {
         if (n == count) {
             return environ[count];
@@ -254,7 +261,7 @@ void doAnchor(void*) {
 
 void anchor_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        anchor = strdup(helpView->getAnchor());
+        anchor = strdup(helpView->getTarget());
         closeHelp();
         fltk::add_timeout(0.5, doAnchor); // post message
     }
@@ -288,7 +295,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         wnd->outputGroup->end();
         helpView->callback(anchor_cb);
     }
-    helpView->loadPage(html);
+    helpView->loadBuffer(html);
     helpView->take_focus();
     helpView->show();
 }
