@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.27 2005-01-09 00:13:22 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.28 2005-01-17 19:55:36 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -37,8 +37,9 @@ extern "C" {
 #include "fs_socket_client.h"
 }
 
-#ifdef __CYGWIN__
+#if defined(WIN32) 
 #include <fltk/win32.h>
+#include <shellapi.h>
 #endif
 
 using namespace fltk;
@@ -55,6 +56,7 @@ enum ExecState {
 } runMode = init_state;
 
 char buff[PATH_MAX];
+char *startDir;
 char *runfile = 0;
 const char* toolhome = "./Bas-Home/";
 int px,py,pw,ph;
@@ -95,8 +97,35 @@ void quit_cb(Widget*, void* v) {
     }
 }
 
-void about_cb(Widget*, void* v) {
+void help_about_cb(Widget*, void* v) {
     message(aboutText);
+}
+
+void browseFile(const char* url) {
+#if defined(WIN32) 
+    ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
+#else  
+    // TODO: find a functional equivalent in linux ...
+    // BROWSER="netscape -raise -remote \"openURL(%s,new-window)\":lynx"
+    // http://www.catb.org/~esr/BROWSER/
+    //  system("/path/to/your/browser URL"); man execl
+    // http://forum.java.sun.com/thread.jsp?forum=422&thread=497079
+#endif
+}
+
+void help_home_cb(Widget*, void* v) {
+    strcpy(buff, "http://smallbasic.sf.net");
+    browseFile(buff);
+}
+
+void help_contents_cb(Widget*, void* v) {
+    snprintf(buff, sizeof(buff), "file:///%s/help/index.html", startDir);
+    browseFile(buff);
+}
+
+void help_readme_cb(Widget*, void* v) {
+    snprintf(buff, sizeof(buff), "file:///%s/readme.html", startDir);
+    browseFile(buff);
 }
 
 void busyMessage() {
@@ -215,7 +244,9 @@ void editor_cb(Widget* w, void* v) {
             runMode = run_state;
             wnd->runStatus->label("RUN");
             wnd->runStatus->redraw();
-            int success = sbasic_main((const char* )v);
+            strcpy(buff, startDir);
+            strcat(buff, (const char*)v);
+            int success = sbasic_main(buff);
             wnd->tabGroup->selected_child(wnd->editGroup);
             wnd->runStatus->label(success ? " " : "ERR");
             wnd->editWnd->loadFile(filename, -1);
@@ -231,9 +262,12 @@ void editor_cb(Widget* w, void* v) {
 
 void tool_cb(Widget* w, void* v) {
     if (runMode == edit_state) {
-        strcpy(opt_command, toolhome);
+        strcpy(opt_command, startDir);
+        strcat(opt_command, toolhome+1);
         setTitle((const char*)v);
-        basicMain((const char*)v);
+        strcpy(buff, startDir);
+        strcat(buff, (const char*)v);
+        basicMain(buff);
         setTitle(wnd->editWnd->getFilename());
         opt_command[0] = 0;
     } else {
@@ -255,6 +289,10 @@ void setTitle(const char* filename) {
     }
     wnd->fileStatus->redraw();
     wnd->redraw();
+
+#if defined(WIN32) 
+    ::SetFocus(xid(Window::first()));
+#endif
 }
 
 void setRowCol(int row, int col) {
@@ -278,10 +316,10 @@ void addHistory(const char* fileName) {
     FILE* fp = fopen(buff, "r");
     if (fp) {
         // don't add the item if it already exists
-        char buffer[1024];        
+        char buffer[1024];
         while (feof(fp) == 0) {
-            if (fgets(buffer, 1024, fp) && 
-                strncmp(fileName, buffer, strlen(fileName)-1) == 0) { 
+            if (fgets(buffer, 1024, fp) &&
+                strncmp(fileName, buffer, strlen(fileName)-1) == 0) {
                 fclose(fp);
                 return;
             }
@@ -340,7 +378,7 @@ void scanPlugIns(Menu* menu) {
                     offs++;
                 }
                 sprintf(label, "&Basic/%s", buffer+offs);
-                strcpy(buffer, toolhome);
+                strcpy(buffer, toolhome+1); // use an absolute path
                 strcat(buffer, filename);
                 menu->add(label, 0, (Callback*)
                           (editorTool ? editor_cb : tool_cb), 
@@ -404,9 +442,13 @@ int main(int argc, char **argv) {
     wnd = new MainWindow(600, 400);
     wnd->show(argc, argv);
 
-#ifdef __CYGWIN__
+#if defined(WIN32) 
     wnd->icon((char *)LoadIcon(xdisplay, MAKEINTRESOURCE(101)));
+    GetCurrentDirectory(sizeof(buff), buff);
+#else
+    getcwd(buff, sizeof (buff));
 #endif
+    startDir = strdup(buff);
 
     check();
     switch (runMode) {
@@ -478,7 +520,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/&Copy",         CTRL+'c', (Callback*)EditorWindow::copy_cb);
     m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
     m->add("&Edit/&Find...",      CTRL+'f', (Callback*)EditorWindow::find_cb);
-    m->add("&Edit/Find A&gain",   CTRL+'a', (Callback*)EditorWindow::find2_cb);
+    m->add("&Edit/Find A&gain",   F3Key,    (Callback*)EditorWindow::find2_cb);
     m->add("&Edit/&Replace...",   0,        (Callback*)EditorWindow::replace_cb);
     m->add("&Edit/_Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
     m->add("&Edit/&Goto Line...", 0,        (Callback*)goto_cb);
@@ -486,9 +528,12 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&View/&Full Screen",  0,        (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&View/&Turbo",        0,        (Callback*)turbo_cb)->type(Item::TOGGLE);
     scanPlugIns(m);
-    m->add("&Program/&Run",       CTRL+'r', (Callback*)run_cb);
+    m->add("&Program/&Run",       F9Key,    (Callback*)run_cb);
     m->add("&Program/&Break",     CTRL+'b', (Callback*)break_cb);
-    m->add("&Help/About...",      0,        (Callback*)about_cb);
+    m->add("&Help/&Help Contents",       0, (Callback*)help_contents_cb);
+    m->add("&Help/_&Release Notes",       0,(Callback*)help_readme_cb);
+    m->add("&Help/_&Home Page",           0,(Callback*)help_home_cb);
+    m->add("&Help/&About SmallBASIC...", 0, (Callback*)help_about_cb);
 
     callback(quit_cb);
     shortcut(0); // remove default EscapeKey shortcut
@@ -520,11 +565,11 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     Group* statusBar = new Group(0, h-mnuHeight+1, w, mnuHeight-2);
     statusBar->begin();
     statusBar->box(NO_BOX);
-    fileStatus = new Widget(0,0, w-122, mnuHeight-2);
-    modStatus = new Widget(w-120, 0, 28, mnuHeight-2);
-    runStatus = new Widget(w-90, 0, 28, mnuHeight-2);
-    rowStatus = new Widget(w-60, 0, 28, mnuHeight-2);
-    colStatus = new Widget(w-30, 0, 28, mnuHeight-2);
+    fileStatus = new Widget(0,0, w-137, mnuHeight-2);
+    modStatus = new Widget(w-136, 0, 33, mnuHeight-2);
+    runStatus = new Widget(w-102, 0, 33, mnuHeight-2);
+    rowStatus = new Widget(w-68, 0, 33, mnuHeight-2);
+    colStatus = new Widget(w-34, 0, 33, mnuHeight-2);
 
     for (int n=0; n<statusBar->children(); n++) {
         Widget* w = statusBar->child(n);
@@ -661,7 +706,7 @@ int MainWindow::handle(int e) {
 
 //--Debug support---------------------------------------------------------------
 
-#if defined(__CYGWIN__)
+#if defined(WIN32)
 // see http://www.sysinternals.com/ntw2k/utilities.shtml
 // for the free DebugView program
 #include <windows.h>
@@ -681,6 +726,14 @@ void trace(const char *format, ...) {
     *p++ = '\n';
     *p   = '\0';
     OutputDebugString(buf);
+}
+#else
+void trace(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    fprintf(stderr, format, args);
+    fprintf(stderr, "\n");
+    va_end(args);
 }
 #endif
 

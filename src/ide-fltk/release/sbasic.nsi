@@ -13,10 +13,10 @@
   OutFile "sbasic.exe"
 
   ;Default installation folder
-  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.9.6.0"
+  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.9.6.1"
   
   ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.9.6.0" ""
+  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.9.6.1" ""
 
 ;--------------------------------
 ;Interface Settings
@@ -40,12 +40,12 @@
 
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcut"
-  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.9.6.0"
+  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.9.6.1"
   SetOutPath $INSTDIR
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.0\SmallBASIC.lnk" "$INSTDIR\sbfltk.exe" "-r welcome.bas"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.0\Readme.lnk" "$INSTDIR\readme.html" "" "$INSTDIR\sbfltk.exe" 0
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.0\Guide.lnk" "$INSTDIR\help\0.html" "" "$INSTDIR\sbfltk.exe" 0
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.0\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\SmallBASIC.lnk" "$INSTDIR\sbfltk.exe" "-r welcome.bas"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\Readme.lnk" "$INSTDIR\readme.html" "" "$INSTDIR\sbfltk.exe" 0
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\Guide.lnk" "$INSTDIR\help\0.html" "" "$INSTDIR\sbfltk.exe" 0
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "Quick Launch Shortcut"
@@ -81,7 +81,7 @@ Section "SmallBASIC (FLTK/Cygwin)" SecMain
   File "Bas-Home\*.*"
 
   ;Store installation folder
-  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.9.6.0" "" $INSTDIR
+  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.9.6.1" "" $INSTDIR
   
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -103,7 +103,7 @@ SectionEnd
 
 Section "Uninstall"
   ; Remove registry keys
-  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.9.6.0"
+  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.9.6.1"
 
   ; Remove files and uninstaller
   Delete $INSTDIR\sbfltk.exe
@@ -116,12 +116,12 @@ Section "Uninstall"
   Delete $INSTDIR\Bas-Home\*.*
 
   ; Remove shortcuts, if any
-  Delete "$SMPROGRAMS\SmallBASIC 0.9.6.0\*.*"
+  Delete "$SMPROGRAMS\SmallBASIC 0.9.6.1\*.*"
   Delete "$QUICKLAUNCH\SmallBASIC (FLTK).lnk"
   Delete "$DESKTOP\SmallBASIC (FLTK).lnk"
 
   ; Remove directories used
-  RMDir "$SMPROGRAMS\SmallBASIC 0.9.6.0"
+  RMDir "$SMPROGRAMS\SmallBASIC 0.9.6.1"
   RMDir "$INSTDIR\Help"
   RMDir "$INSTDIR\Bas-Home"
   RMDir "$INSTDIR"

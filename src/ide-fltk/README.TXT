@@ -4,7 +4,37 @@ Commenced sometime around early Nov 2004. Mostly coded
 during my boring train ride to/from work. Initially built
 using cygwin under w2k.
 
-Tasks for initial release:
+===============================================================================
+[Issues following 0.9.6.0 release]
+
+1. File with DOS newlines open with <cr> - should be pre-processed and
+   removed (perhaps FLTK enhancement)
+
+2. Indent.bas - handle if/then on same line with chars following "then"
+
+3. Update DRAW command as per instructions by Keijo
+
+4. Linux release:
+   o    minor compilation problems. fixed
+   o    
+
+5. Apparently runs crappy on Win98 - update the installer to only accept
+   Win2K or XP (sorry folks - why don't you try fedora core or slackware)
+
+6. Current FLTK build seems to have problems (as at 12/1/2005)
+
+7. Try to use same function keys as sbpad.
+
+8. Help menu commands to launch html help and release notes
+
+9. Font and colour menu commands
+
+10. Toolbar
+
+11. Remove any error in the status bar before running a program.
+
+===============================================================================
+[Tasks for 0.9.6.0 release]
 
 1. editor
   - update display/selection colours
@@ -85,4 +115,10 @@ Tasks for initial release:
 
 10. Linux build
 
-$Id: README.TXT,v 1.11 2004-12-08 22:40:48 zeeb90au Exp $
+===============================================================================
+  .,,.·´¯`·.. ¸><((((º>¸.  .·´¯`·.. ¸><((((º>¸.  .·´¯`·.. ¸><((((º>¸.  
+.><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º>  .,,.·´¯`·.. ¸><((((º>¸.  
+   .....,,.><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º> .·´¯`·.. ¸><((((º>¸.  
+
+$Id: README.TXT,v 1.12 2005-01-17 19:55:37 zeeb90au Exp $
+

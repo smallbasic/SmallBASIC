@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.20 2005-01-09 00:13:14 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.21 2005-01-17 19:55:34 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -37,6 +37,8 @@
 #include "kwp.cxx"
 
 using namespace fltk;
+
+//bool loading;
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
     { BLACK,            COURIER, 14 }, // A - Plain
@@ -95,7 +97,8 @@ void style_parse(const char *text, char *style, int length) {
                 // might be a keyword
                 temp = text;
                 bufptr = buf;
-                while (*temp != 0 && *temp != ' ' && *temp != '\n' && 
+                while (*temp != 0 && *temp != ' ' && 
+                       *temp != '\n' && *temp != '\r' && 
                        *temp != '(' && *temp != ')' && *temp != '=' &&
                        bufptr < (buf + sizeof(buf) - 1)) {
                     *bufptr++ = *temp++;
@@ -224,6 +227,8 @@ void style_update(int pos,        // I - Position of update
     const char *text;       // Text data
     char *style;            // Text data
 
+    TextEditor* editor = (TextEditor*)cbArg;
+
     // if this is just a selection change, just unselect the style buffer
     if (nInserted == 0 && nDeleted == 0) {
         stylebuf->unselect();
@@ -265,7 +270,7 @@ void style_update(int pos,        // I - Position of update
     //  printf("new style = \"%s\"...\n", style);
 
     stylebuf->replace(start, end, style);
-    ((TextEditor *)cbArg)->redisplay_range(start, end);
+    editor->redisplay_range(start, end);
 
     if (last != style[end - start - 1]) {
         // the last character on the line changed styles, 
@@ -278,7 +283,7 @@ void style_update(int pos,        // I - Position of update
 
         style_parse(text, style, end - start);
         stylebuf->replace(start, end, style);
-        ((TextEditor *)cbArg)->redisplay_range(start, end);
+        editor->redisplay_range(start, end);
     }
 
     delete[] style;
@@ -437,15 +442,15 @@ void EditorWindow::readonly(bool is_readonly) {
 }
 
 void EditorWindow::doChange(int inserted, int deleted) {
-    if ((inserted || deleted) && !loading) {
+    if (loading) {
+        return; // do nothing while file load in progress
+    }
+
+    if (inserted || deleted) {
         dirty = 1;
         ((CodeEditor*)editor)->saveUndo();
     }
 
-    if (loading) {
-        editor->show_insert_position();
-    }
-    
     setModified(dirty);
 }
 
@@ -489,8 +494,10 @@ void EditorWindow::loadFile(const char *newfile, int ipos) {
             strcpy(filename, newfile);
         }
     }
+
     loading = false;
     textbuf->call_modify_callbacks();
+    editor->show_insert_position();
     setTitle(filename);
     addHistory(filename);
 }

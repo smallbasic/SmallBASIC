@@ -6,8 +6,8 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-all:    sbfltk
-cygwin: sbfltk
+all:   sbfltk.exe
+linux: sbfltk
 
 SOURCE =                                        \
 	Fl_Ansi_Window.cpp                          \
@@ -69,8 +69,6 @@ PLATFORM=-D_UnixOS -D_FLTK
 ## release with -s
 IMAGELIBS=-lfltk_images -lpng -ljpeg
 LDLIBS = -s `fltk-config --ldflags` ${IMAGELIBS}
-
-#use make -e RESOURCE= for linux build
 RESOURCES = sbfltk.res
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
@@ -98,9 +96,13 @@ EditorWindow.cpp:kwp.cxx
 kwp.cxx: build_kwpc
 	./build_kwpc
 
-sbfltk: $(OBJS) ${RESOURCES}
+sbfltk.exe: $(OBJS) ${RESOURCES}
 	gcc $(OBJS) ${LDLIBS} ${RESOURCES} -o $@ 
-	cp $@.exe release/
+	cp $@ release/
+
+sbfltk: $(OBJS)
+	gcc $(OBJS) ${LDLIBS} -o $@ 
+	cp $@ release/
 
 sbfltk.res : sbfltk.rc
 	windres $< -O coff -o $@

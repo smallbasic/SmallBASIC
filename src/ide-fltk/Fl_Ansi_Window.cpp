@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.18 2005-01-09 00:13:22 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.19 2005-01-17 19:55:35 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -43,18 +43,11 @@ Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) :
     Widget(x, y, w, h, 0) {
     font_size = 11;
     init();
+    img = 0;
 }
 
 Fl_Ansi_Window::~Fl_Ansi_Window() {
     destroyImage();
-}
-
-void Fl_Ansi_Window::init() {
-    destroyImage();
-    curY = INITXY; // allow for input control border
-    curX = INITXY;
-    tabSize = 40; // tab size in pixels (160/32 = 5)
-    reset();
 }
 
 void Fl_Ansi_Window::destroyImage() {
@@ -63,10 +56,6 @@ void Fl_Ansi_Window::destroyImage() {
         delete img;
         img = 0;
     }
-}
-
-void Fl_Ansi_Window::clearScreen() {
-    init();
 }
 
 void Fl_Ansi_Window::initImage() {
@@ -78,6 +67,13 @@ void Fl_Ansi_Window::initImage() {
         fillrect(0, 0, w(), h());
         setfont(labelfont(), labelsize());
     }
+}
+
+void Fl_Ansi_Window::init() {
+    curY = INITXY; // allow for input control border
+    curX = INITXY;
+    tabSize = 40; // tab size in pixels (160/32 = 5)
+    reset();
 }
 
 void Fl_Ansi_Window::reset() {
@@ -124,6 +120,16 @@ void Fl_Ansi_Window::draw() {
     } else {
         setcolor(color());
         fillrect(0, 0, w(), h());
+    }
+}
+
+void Fl_Ansi_Window::clearScreen() {
+    if (img != 0) {
+        init();
+        begin_offscreen();
+        setcolor(color());
+        fillrect(0, 0, w(), h());
+        end_offscreen();
     }
 }
 
