@@ -5,6 +5,14 @@ Create a directory (ex: c:\sbwin)
 
 Extract the zip file on that directory
 
+* In some LANs, 
+  there are restricted registry access
+
+Disable SB's file registration by adding in SBPAD.INI
+----------------
+[PAD]
+RegSBFileType=0
+----------------
 
 Win32 version, notes:
 ---------------------

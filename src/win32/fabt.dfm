@@ -23,7 +23,7 @@ object FAbout: TFAbout
     Height = 17
     Alignment = taRightJustify
     AutoSize = False
-    Caption = 'Copyright © 2001 Nicholas Christopoulos'
+    Caption = 'Copyright '#169' 2001 Nicholas Christopoulos'
     Font.Charset = GREEK_CHARSET
     Font.Color = clGray
     Font.Height = -11

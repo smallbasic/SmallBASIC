@@ -158,10 +158,10 @@ public:
 	void __fastcall UnhookAttrChangeEvent(Classes::TNotifyEvent ANotifyEvent);
 	__property Synedittypes::TSynIdentChars IdentChars = {read=GetIdentChars};
 	__property Synedittypes::TSynIdentChars WordBreakChars = {read=fWordBreakChars, write=SetWordBreakChars};
-	__property AnsiString LanguageName = {read=GetLanguageName};
+//	__property AnsiString LanguageName = {read=GetLanguageName};
 	__property int AttrCount = {read=GetAttribCount, nodefault};
 	__property TSynHighlighterAttributes* Attribute[int idx] = {read=GetAttribute};
-	__property TSynHighlighterCapabilities Capabilities = {read=GetCapabilities, nodefault};
+//	__property TSynHighlighterCapabilities Capabilities = {read=GetCapabilities, nodefault};
 	__property AnsiString SampleSource = {read=GetSampleSource, write=SetSampleSource};
 	__property TSynHighlighterAttributes* CommentAttribute = {read=GetDefaultAttribute, index=0};
 	__property TSynHighlighterAttributes* IdentifierAttribute = {read=GetDefaultAttribute, index=1};

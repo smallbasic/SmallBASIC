@@ -425,29 +425,32 @@ void	reg_file_types()
 	// SB
 //	appcmd = app + AnsiString(" -tsc \"%1\"");
 	appcmd = app + AnsiString("\"%1\"");
-	r->RootKey = HKEY_CLASSES_ROOT;
-	r->WriteString(".sb","","SmallBASIC");
-	r->WriteString("SmallBASIC","","SmallBASIC Source File");
-	r->WriteString("SmallBASIC\\DefaultIcon", "", appico);
-	r->WriteString("SmallBASIC\\Shell","","Open");
-	r->WriteString("SmallBASIC\\Shell\\Open","","");
-	r->WriteString("SmallBASIC\\Shell\\Open\\command","", appcmd);
-	r->WriteString("SmallBASIC\\Shell","","Open");
+	try {
+		r->RootKey = HKEY_CLASSES_ROOT;
+		r->WriteString(".sb","","SmallBASIC");
+		r->WriteString("SmallBASIC","","SmallBASIC Source File");
+		r->WriteString("SmallBASIC\\DefaultIcon", "", appico);
+		r->WriteString("SmallBASIC\\Shell","","Open");
+		r->WriteString("SmallBASIC\\Shell\\Open","","");
+		r->WriteString("SmallBASIC\\Shell\\Open\\command","", appcmd);
+		r->WriteString("SmallBASIC\\Shell","","Open");
 
-	if	( r->ReadString(".bas","","SmallBASIC") == AnsiString("SmallBASIC") )	
-		r->WriteString(".bas","","SmallBASIC");
-	else	{
-		if ( r->ReadString(".bas\\OpenWithList","","0") == AnsiString("0") )
-			r->WriteString(".bas\\OpenWithList","","");
-		if	( r->ReadString(".bas\\OpenWithList\\SmallBASIC","","SmallBASIC") != AnsiString("SmallBASIC") )
-			r->WriteString(".bas\\OpenWithList\\SmallBASIC","","SmallBASIC");
+		if	( r->ReadString(".bas","","SmallBASIC") == AnsiString("SmallBASIC") )	
+			r->WriteString(".bas","","SmallBASIC");
+		else	{
+			if ( r->ReadString(".bas\\OpenWithList","","0") == AnsiString("0") )
+				r->WriteString(".bas\\OpenWithList","","");
+			if	( r->ReadString(".bas\\OpenWithList\\SmallBASIC","","SmallBASIC") != AnsiString("SmallBASIC") )
+				r->WriteString(".bas\\OpenWithList\\SmallBASIC","","SmallBASIC");
+			}
+
+		appcmd = app + AnsiString(" -r \"%1\"");
+		r->WriteString("SmallBASIC\\Shell\\Run","","");
+		r->WriteString("SmallBASIC\\Shell\\Run\\command","", appcmd);
 		}
-
-	appcmd = app + AnsiString(" -r \"%1\"");
-	r->WriteString("SmallBASIC\\Shell\\Run","","");
-	r->WriteString("SmallBASIC\\Shell\\Run\\command","", appcmd);
-	
-	delete r;
+	__finally {
+		delete r;
+		}
 }
 
 
@@ -460,7 +463,6 @@ __fastcall TFMain::TFMain(TComponent* Owner)
 	int			n, cs, i;
 	TIniFile	*ini;
 
-	reg_file_types();
 
 	//
 	lastUsedFiles = new TStringList;
@@ -487,6 +489,9 @@ __fastcall TFMain::TFMain(TComponent* Owner)
 	bcb_capture = ini->ReadInteger("PAD", "Capture", 0);
 	bcb_vwidth  = ini->ReadInteger("PAD", "VW", 1024);
 	bcb_vheight = ini->ReadInteger("PAD", "VH", 768);
+
+	if	( ini->ReadInteger("PAD", "RegSBFileType", 1) )
+		reg_file_types();
 
 	// window position
 	if	( ini->ReadInteger("PAD", "WinMax", 0) == 1 )
