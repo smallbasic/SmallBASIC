@@ -1899,7 +1899,8 @@ char	*dev_getenv_n(int n)
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
 }
 
-void dev_image(int handle, int index, int x, int y, int, int, int, int) {
+void dev_image(int handle, int index, int x, int y, 
+               int sx, int sy, int w, int h) {
 }
 
 int dev_image_width(int handle, int index) {

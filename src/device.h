@@ -1054,7 +1054,7 @@ void    	dev_destroy_file_list(char_p_t *list, int count)          SEC(BIO);
 *	@param h
 *   
 */
-void    	dev_html(const char* html, const char* title, int x, int y, int w, int h)  SEC(BIO);
+void dev_html(const char* html, const char* title, int x, int y, int w, int h)  SEC(BIO);
 
 /**
 *	@image
@@ -1067,7 +1067,7 @@ void    	dev_html(const char* html, const char* title, int x, int y, int w, int 
 *	@param y
 *   
 */
-void    	dev_image(int handle, int index, int x, int y) SEC(BIO);
+void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h) SEC(BIO);
 
 /**
 *	@imagew
@@ -1078,7 +1078,7 @@ void    	dev_image(int handle, int index, int x, int y) SEC(BIO);
 *	@param image index
 *   
 */
-int    	dev_image_width(int handle, int index) SEC(BIO);
+int dev_image_width(int handle, int index) SEC(BIO);
 
 /**
 *	@imageh
