@@ -1,0 +1,360 @@
+Mathematics
+----------------------------
+All angles are in radians.
+
+Abs()/Pow()/Sqr()/Sgn()
+
+ABS(x)- Absolute value of x
+POW(x,y)- x raised to power of y
+SQR(x)- square root of x
+SGN(x)- sign of x (+1 for positive,-1 for negative
+and 0 for zero)
+
+Int()/Fix()/Floor()/Ceil()/Frac()/Round()
+
+INT(x)- rounds x downwards to the nearest integer
+
+FIX(x)- rounds x upwards to the nearest integer
+FLOOR(x)- largest integer value not greater than x
+CEIL(x)- smallest integral value not less than x
+FRAC(x)- fractional part of x
+
+ROUND(x[,decs])- rounds the x to the nearest integer or number
+with 'decs' decimal digits.
+
+Deg()/Rad()
+
+DEG(x)- radians to degrees
+RAD(x)- degrees to radians
+
+Sin()/Cos()/Tan()
+
+SIN(x)- Sine
+COS(x)- Cosine
+TAN(x)- Tangent
+
+ATn()/ATan()/ATan2()/ASin()/ACos()
+
+ATN(x) or ATAN(x)- Inverse tangent
+ATAN2(x,y)- Inverse tangent (x,y)
+
+ASIN(x)- Inverse sine
+ACOS(x)- Inverse cosine
+
+CosH()/SinH()/TanH()
+
+Hyperbolic form
+
+COSH(x), SINH(x), TANH(x)
+
+ACosH()/ASinH()/ATanH()
+
+Hyperbolic form
+
+Sec()/Csc()/Cot()
+
+SEC(x)- Secant
+CSC(x)- Cosecant
+COT(x)- Cotangent
+
+ASec()/ACsc()/ACot()
+
+ASEC(x)- Inverse secant
+ACSC(x)- Inverse cosecant
+ACOT(x)- Inverse cotangent
+
+SecH()/CscH()/CotH()
+
+Hyperbolic form
+
+ASecH()/ACscH()/ACotH()
+
+Hyperbolic form
+
+Exp()/Log()/Log10()
+
+Logarithms
+
+EXP(x)- the value of e raised to the power of x
+LOG(x)- natural logarithm of x
+LOG10(x)- the base-10 logarithm of x
+
+----------------------------
+Min()/Max()/AbsMin()/AbsMax()
+Syntax:
+MAX(...), MIN(...)
+ABSMIN(...), ABSMAX(...)
+
+Maximum/Minimum value of parameters. Parameters can be anything
+(arrays, ints, reals, strings).
+
+ABSMIN/ABSMAX returns the absolute min/max value.
+
+Example:
+? MAX(3,4,8)
+? MIN(array(),2,3)
+? MAX("abc","def")
+----------------------------
+Seq()
+Syntax:
+SEQ(xmin, xmax, count)
+
+Returns an array with 'count' elements.
+Each element had the x value of its position.
+
+Example:
+? SEQ(0,1,11)
+----------------------------
+ExprSeq
+Syntax:
+EXPRSEQ BYREF array, xmin, xmax, count USE expression
+
+Returns an array with 'count' elements.
+Each element had the 'y' value of its position as it is
+returned by the expression.
+
+Example:
+REM same as v=SEQ(0,1,11)
+EXPRSEQ v, 0, 1, 11 USE x
+----------------------------
+Sum()/SumSq()/StatMean()/StatMeanDev()/StatSpreadS()/StatSpreadP()
+
+SUM(...)- Sum of value
+SUMSQ(...)- Sum of square value
+STATMEAN(...)- Arithmetical mean
+STATMEANDEV(...)- Mean deviation
+STATSPREADS(...)- Sample spread
+STATSPREADP(...)- Population spread
+
+Notes:
+Sample standard deviation: SQR(STATSPREADS(array))
+Population standard deviation: SQR(STATSPREADP(array))
+----------------------------
+LinEqn()
+Syntax: LINQN(A, B [, toler])
+
+Returns an array with the values of the unknowns.
+This function solves equations by using the Gauss-Jordan method.
+
+A = equations
+B = results
+toler = tolerance number
+(the absolute value of the lowest acceptable number)
+default = 0 = none
+
+|x|<= toler : x = 0
+
+Note: The result is a matrix Nx1. For the SB that array is
+two-dimension array.
+----------------------------
+Inverse()
+Syntax: INVERSE(A)
+
+returns the inverse matrix of A.
+----------------------------
+Determ()
+Syntax: DETERM(A[, toler])
+
+Determinant of A
+
+toler = tolerance number
+(the absolute value of the lowest acceptable number)
+default = 0 = none
+
+|x|<= toler : x = 0
+----------------------------
+Root
+Syntax:
+ROOT low, high, segs, maxerr, BYREF result, BYREF errcode USE expr
+
+Roots of F(x)
+
+low = the lower limit
+high = the upper limit
+segs = the number of segments (spaces)
+maxerr = tolerance (IF ABS(F(x))< maxerr THEN OK)
+errcode = 0 for success; otherwise calculation error
+result = the result
+
+Example:
+FUNC F(x)
+F = SIN(x)
+END
+...
+ROOT 1, 5, 500, 0.00001, result, errcode USE F(x)
+----------------------------
+Deriv
+Syntax:
+DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE expr
+
+calculation of derivative
+
+x = value of x
+maxtries = maximum number of retries
+maxerr = tolerance
+errcode = 0 for success; otherwise calculation error
+result = the result
+----------------------------
+DifEqn
+Syntax:
+DIFFEQN x0, y0, xf, maxseg, maxerr, BYREF yf, BYREF errcode USE expr
+
+Differential equation - Runge-Kutta method
+
+x0, y0 = initial x,y
+xf = x final
+maxseg = maximum number of segments on x
+maxerr = tolerance (acceptable error between the last 2 times)
+errcode = 0 for success; otherwise calculation error
+yf = the result
+----------------------------
+2D Algebra
+----------------------------
+SegCos()/SegSin()
+Syntax:
+SEGCOS(Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+SEGSIN(Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+
+Sinus or cosine of 2 line segments (A->B, C->D).
+----------------------------
+PtDistSeg()
+Syntax: PTDISTSEG(Bx,By,Cx,Cy,Ax,Ay)
+
+Distance of point A from line segment B-C
+----------------------------
+PtDistLn
+Syntax: PTDISTLN(Bx,By,Cx,Cy,Ax,Ay)
+
+Distance of point A from line B, C
+----------------------------
+PtSign()
+Syntax: PTSIGN(Ax,Ay,Bx,By,Qx,Qy)
+
+The sign of point Q from line segment A->B
+----------------------------
+SegLen()
+Syntax: SEGLEN(Ax,Ay,Bx,By)
+
+Length of line segment
+----------------------------
+PolyArea()
+Syntax: POLYAREA(poly)
+
+Area of polyline
+----------------------------
+PolyExt
+Syntax:
+POLYEXT poly(), BYREF xmin, BYREF ymin, BYREF xmax, BYREF ymax
+
+Returns the polyline's extents
+----------------------------
+Intersect
+Syntax:
+INTERSECT Ax, Ay, Bx, By,
+Cx, Cy, Dx, Dy,
+BYREF type, BYREF Rx, BYREF Ry
+
+Calculates the intersection of the two line segments A-B and C-D
+
+Returns:
+Rx,Ry = cross
+
+type = cross-type
+0 = No cross (R = external cross)
+1 = One cross
+2 = Parallel
+3 = Parallel (many crosses)
+4 = The cross is one of the line segments edges.
+----------------------------
+M3Ident/M3Rotate/M3Scale/M3Trans/M3Apply
+
+2D & 3D graphics transformations can represented as matrices.
+
+(c=cosè, s=sinè)
+
+M3IDENT BYREF m3x3
+Resets matrix (Identity)
+
+| 1 0 0 |
+| 0 1 0 |
+| 0 0 1 |
+
+M3ROTATE BYREF m3x3, angle [, x, y]
+Rotate by angle with center x,y
+
+| c s 0 |
+|-s c 0 |
+|** 1 |
+
+M3SCALE BYREF m3x3, x, y, Sx, Sy
+Scaling
+
+| Sx 0 0 |
+| 0 Sy 0 |
+|** 1 |
+
+M3TRANS BYREF m3x3, x, y
+Translation
+
+| 1 0 0 |
+| 0 1 0 |
+| Tx Ty 1 |
+
+M3APPLY m3x3, BYREF poly
+Apply matrice to poly-line
+
+Additional information:
+
+| 1 0 0 |
+| 0 -1 0 |= reflection on x
+| 0 0 1 |
+
+|-1 0 0 |
+| 0 1 0 |= reflection on y
+| 0 0 1 |
+
+3D-Graphics Matrices:
+
+| 1 0 0 Tx |
+| 0 1 0 Ty |= translation
+| 0 0 1 Tz |
+| 0 0 0 1 |
+
+| Sx 0 0 0 |
+| 0 Sy 0 0 |= scaling
+| 0 0 Sz 0 |
+| 0 0 0 1 |
+
+| 1 0 0 0 |
+| 0 c -s 0 |= rotation on x
+| 0 s c 0 |
+| 0 0 0 1 |
+
+| c 0 s 0 |
+| 0 1 0 0 |= rotation on y
+|-s 0 c 0 |
+| 0 0 0 1 |
+
+| c -s 0 0 |
+| s c 0 0 |= rotation on z
+| 0 0 1 0 |
+| 0 0 0 1 |
+
+Any change to matrix will combined with its previous value.
+
+Example:
+DIM poly(24)
+DIM M(2,2)
+...
+M3IDENT M
+M3ROTATE M, pi/2, 0, 0
+M3SCALE M, 0, 0, 1.24, 1.24
+...
+' Draw the original polyline
+DRAWPOLY poly
+...
+' Draw the polyline
+' rotated by pi/2 from 0,0 and scaled by 1.24
+M3APPLY M, poly
+DRAWPOLY poly
+----------------------------

@@ -1,0 +1,310 @@
+File system
+----------------------------
+Special file names:
+
+"COM1:[speed]"- Serial port 1
+"COM2:[speed]"- Serial port 2
+The same for COM3..COM9
+
+"PDOC:filename"
+Compressed PDOC files for PalmOS or PDB/PDOC files on other systems.
+PDOCFS opens and uncompress the file on OPEN; and compress the
+file on CLOSE. So, it will use a lot of memory and time (its depended
+on size of the data).
+
+"MEMO:memo-title"
+MemoDB of PalmOS or regular file on other systems.
+Memo records (virtual files) are limited to 3935 bytes
+
+"SOCL:server:port"
+Socket client. Actually a telnet client.
+
+"MMC:filename"
+eBookMan only. Opens an MMC file.
+
+Example:
+
+OPEN "COM1:" AS #1
+
+OPEN "COM2:38400" AS #2
+----------------------------
+FreeFile()
+Syntax: FREEFILE
+
+Returns an unused file handle
+----------------------------
+Open#
+Syntax: OPEN file [FOR {INPUT|OUTPUT|APPEND}] AS #fileN
+
+Makes a file or device available for sequential input, sequential
+output.
+
+file - A string expression that follows OS file naming conventions.
+
+fileN - A file-handle (integer 1 to 256).
+
+FOR -
+INPUT Sequential input
+OUTPUT Sequential output
+APPEND Sequential output, beginning at current EOF
+
+The files are always opened as shared.
+----------------------------
+Close#
+Syntax: CLOSE #fileN
+
+Close a file or device
+----------------------------
+TLoad
+Syntax: TLOAD file, BYREF var [, type]
+
+Loads a text file into array variable.
+Each text-line is an array element.
+
+file - A string expression that follows OS file naming conventions.
+
+var - Any variable
+
+type - 0 = load into array (default)
+1 = load into string
+----------------------------
+TSave
+Syntax: TSAVE file, var
+
+Writes an array to a text file.
+Each array element is a text-line.
+
+file - A string expression that follows OS file naming conventions.
+
+var - An array variable or a string variable. Expressions are
+not allowed for memory reasons.
+----------------------------
+Exist()
+Syntax: EXIST(file)
+
+Returns true if the file exists
+
+file - A string expression that follows OS file naming conventions.
+----------------------------
+Access()
+Syntax: ACCESS(file)
+
+Returns the access rights of the file.
+
+file - A string expression that follows OS file naming conventions.
+
+The return-value is the permissions of the file as them as specified
+on GNU's manual (chmod() and stat() system calls)
+
+The bits (in octal):
+04000 set user ID on execution
+02000 set group ID on execution
+01000 sticky bit
+00400 read by owner
+00200 write by owner
+00100 execute/search by owner
+00040 read by group
+00020 write by group
+00010 execute/search by group
+00004 read by others
+00002 write by others
+00001 execute/search by others
+
+Notes:
+* PalmOS: the return value is always 0777
+* DOS: the return value is depended on DJGPP's stat() function
+Possible, Unix compatible.
+* Windows: the return value is depended on Cygnus's stat() function
+Possible, Unix compatible.
+
+Example:
+IF ACCESS("/bin/sh") AND 0o4 THEN
+PRINT "I can read it!"
+ENDIF
+----------------------------
+IsFile()/IsDir()/IsLink()
+Syntax:
+ISFILE(file)- Returns true if the file is a regular file
+ISDIR(file)- Returns true if the filename is a directory
+ISLINK(file)- Returns true if the filename is a link
+
+file - A string expression that follows OS file naming conventions.
+----------------------------
+ChMod
+Syntax: CHMOD file, mode
+
+Change permissions of a file
+
+file - A string expression that follows OS file naming conventions.
+
+mode - The mode is compatible with the chmod()'s 'mode' parameter
+as its described on GNU's manual.
+See ACCESS() for more information.
+
+Example:
+' Make myfile available to anyone (read/write)
+CHMOD "myfile.bas", 0o666
+...
+' Make myfile available to anyone (execute/read/write)
+CHMOD "myfile.bas", 0o777
+----------------------------
+EOF()
+Syntax: EOF(fileN)
+
+Returns true if the file pointer is at end of the file.
+
+For COMx and SOCL VFS it returns true if the connection is broken.
+----------------------------
+Print#
+Syntax: PRINT #fileN,[USING...]...
+
+Write string to a file
+
+The syntax is the same with the PRINT command.
+
+Note: you can use 'USG' instead of 'USING'
+----------------------------
+LInput#/LineInput#/Line-Input#
+Syntax:
+LINE INPUT [#fileN{,|;}] var
+or
+LINEINPUT [#fileN{,|;}] var
+or
+LINPUT [#fileN{,|;}] var (TI syntax)
+
+Reads a whole text line from file or console.
+----------------------------
+Input()
+Syntax: INPUT(len[,fileN])
+
+This function is similar to INPUT.
+
+Reads 'len' bytes from file or console (if fileN is omitted).
+
+This function is a low-level function. That means does not convert the
+data, and does not remove the spaces.
+----------------------------
+Input#
+Syntax: INPUT #fileN; var1 [,delim][, var2 [,delim]]...
+
+Reads data from file
+----------------------------
+BGetC()
+Syntax: BGETC(fileN)
+
+(Binary mode)
+Reads and returns a byte from file or device.
+----------------------------
+BPutC#
+Syntax: BPUTC #fileN; byte
+
+(Binary mode)
+Writes a byte on file or device
+----------------------------
+Seek#
+Syntax: SEEK #fileN; pos
+
+Sets file position for the next read/write
+----------------------------
+Seek()
+Syntax: SEEK(fileN)
+
+Returns the current file position
+----------------------------
+LOF()
+Syntax: LOF(fileN)
+
+Returns the length of file in bytes
+
+For devices; returns the number of available data
+----------------------------
+Kill
+Syntax: KILL "file"
+
+Deletes the specified file
+----------------------------
+Write#/Read#
+Syntax:
+WRITE #fileN; var1 [,...]
+READ #fileN; var1 [,...]
+
+The READ/WRITE command set is used to store variables to a file as
+binary data.
+
+The common problem with INPUT/PRINT set is there are many conflicts
+with data.
+
+Example:
+
+PRINT #1;"Hello, world"
+
+You have wrote only one string and you want read it in one variable,
+but this is impossible for INPUT command to understand it, because
+INPUT finds the separator comma, so it thinks there are two variables
+not one.
+
+So, now, you can store arrays, strings etc and what is you write is
+what you will read the next time.
+
+BTW its faster too.
+
+Notes:
+* The parameters can be variables ONLY.
+* Its very bad idea to mixed READ/WRITE commands with INPUT/PRINT
+commands in the same file.
+----------------------------
+Copy
+Syntax: COPY "file","newfile"
+
+Makes a copy of specified file to the 'newfile'
+----------------------------
+Rename
+Syntax: RENAME "file","newfile"
+
+Renames the specified file
+----------------------------
+MkDir/ChDir/RmDir
+Syntax:
+MKDIR dir
+CHDIR dir
+RMDIR dir
+
+Notes:
+Non-PalmOS only.
+----------------------------
+DirWalk
+Syntax: DIRWALK directory [, wildcards][USE ...]
+
+Walk through the directories.
+
+The user-defined function must returns zero to stop the process.
+
+Example:
+FUNC PRNF(x)
+? x
+PRNF=TRUE
+END
+...
+DIRWALK "." USE PRNF(x)
+
+Notes:
+* PalmOS: not supported
+----------------------------
+Files()
+Syntax: FILES(wildcards)
+
+Returns an array with the filenames.
+
+If there is no files returns an empty array.
+
+Example:
+? FILES("*")
+
+Notes:
+* For PalmOS returns only the user-files.
+* To use file on MEMO or PDOC or any other virtual file system you must
+use FILES("VFSx:*")
+
+Example:
+PRINT FILES("MEMO:*")
+----------------------------
