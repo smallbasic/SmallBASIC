@@ -41,14 +41,76 @@ int		sockcl_open(dev_file_t *f)
 	port = xstrtol(p+1);
 	f->drv_dw[0] = 1;
 	
-	(long) f->handle = net_connect(server, port);
-	if	( (long) f->handle <= 0 )	{
+	f->handle = (int)net_connect(server, port);
+	if	(f->handle <= 0 )	{
 		f->handle = -1;
-    f->drv_dw[0] = 0;
+        f->drv_dw[0] = 0;
 		//rt_raise("SOCL: CONNECTION ERROR");
 		return 0;
-		}
+    }
 
+	return 1;
+	#endif
+}
+
+int http_open(dev_file_t *f) {
+	#if defined(_VTOS)
+	err_unsup();
+	return 0;
+	#else
+
+	int port = 0;
+	char host[250];
+
+    // check for http://
+    if (0 != strncmpi(f->name, "http://", 7)) {
+        rt_raise("HTTP: INVALID URL");
+        return 0;
+    }
+
+    // check for end of host delimeter
+	char* colon = strchr(f->name+7, ':');
+    char* slash = strchr(f->name+7, '/');
+
+    if (colon) {
+        // http://host:port/resource or http://host:port
+        if (slash) {
+            *slash = 0;
+            port = xstrtol(colon+1);
+            *slash = '/';
+        } else {
+            port = xstrtol(colon+1);
+        }
+
+        *colon = 0;
+        strcpy(host, f->name+7);
+        *colon = ':';
+    } else if (slash) {
+        // http://host/resource or http://host/
+        *slash = 0;
+        strcpy(host, f->name+7);
+        *slash = '/';
+    } else {
+        // http://host
+        strcpy(host, f->name+7);
+    }
+
+    f->drv_dw[0] = 1;
+    if (port == 0) {
+        port = 80;
+    }
+  
+    f->handle = (int)net_connect(host, port);
+    if (f->handle <= 0) {
+        f->handle = -1;
+        f->drv_dw[0] = 0;
+        return 0;
+    }
+
+	net_print((socket_t)(long)f->handle, "GET ");
+    net_print((socket_t)(long)f->handle, slash?slash:"/");
+	net_print((socket_t)(long)f->handle, "\n");
+    
 	return 1;
 	#endif
 }

@@ -786,6 +786,7 @@ typedef enum {
 
     ft_socket_client,           /**< SCLT:address:port, socket client */
     ft_socket_server,           // SSVR:address:port
+    ft_http_client,
     ft_ftp_client,              // FTP is a good example also
     ft_mail_client,             // MAIL (at least SMTP)
     ft_memo, 

@@ -229,6 +229,8 @@ int		dev_fopen(int sb_handle, const char *name, int flags)
 				}
 			else if	( strncmp(f->name, "SOCL:", 5) == 0 )
 				f->type = ft_socket_client;
+			else if	( strncmpi(f->name, "HTTP:", 5) == 0 )
+				f->type = ft_http_client;
 			else if	(
 					strncmp(f->name, "SOUT:", 5) == 0 ||
 					strncmp(f->name, "SDIN:", 5) == 0 ||
@@ -274,6 +276,8 @@ int		dev_fopen(int sb_handle, const char *name, int flags)
 		return pdoc_open(f);
 	case	ft_socket_client:
 		return sockcl_open(f);
+	case	ft_http_client:
+		return http_open(f);
 	case	ft_serial_port:
 		return serial_open(f);
 	case	ft_irda_port:
@@ -309,6 +313,7 @@ int		dev_fclose(int sb_handle)
 	case	ft_pdoc:
 		return pdoc_close(f);
 	case	ft_socket_client:
+    case 	ft_http_client:
 		return sockcl_close(f);
 	case	ft_vfslib:
 		return sblmgr_vfsexec(lib_vfs_close, f);
@@ -339,6 +344,7 @@ int		dev_fwrite(int sb_handle, byte *data, dword size)
 	case	ft_irda_port:
 		return irda_write(f, data, size);
 	case	ft_socket_client:
+    case 	ft_http_client:
 		return sockcl_write(f, data, size);
 	case	ft_vfslib:
 		return sblmgr_vfsexec(lib_vfs_write, f, data, size);
@@ -369,6 +375,7 @@ int		dev_fread(int sb_handle, byte *data, dword size)
 	case	ft_irda_port:
 		return irda_read(f, data, size);
 	case	ft_socket_client:
+    case 	ft_http_client:
 		return sockcl_read(f, data, size);
 	case	ft_vfslib:
 		return sblmgr_vfsexec(lib_vfs_read, f, data, size);
@@ -418,6 +425,7 @@ dword		dev_flength(int sb_handle)
 	case	ft_memo:
 		return memo_length(f);
 	case	ft_socket_client:
+    case 	ft_http_client:
 		return sockcl_length(f);
 	case	ft_vfslib:
 		return sblmgr_vfsexec(lib_vfs_length, f);
@@ -469,7 +477,8 @@ int		dev_feof(int sb_handle)
 		return serial_eof(f);
 	case	ft_irda_port:
 		return irda_eof(f);
-	case	ft_socket_client:
+	case 	ft_socket_client:
+    case 	ft_http_client:
 		return	sockcl_eof(f);
 	case	ft_vfslib:
 		return sblmgr_vfsexec(lib_vfs_eof, f);
