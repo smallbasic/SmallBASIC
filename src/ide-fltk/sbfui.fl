@@ -1,99 +1,27 @@
-# data file for the Fltk User Interface Designer (fluid)
-version 1.0100 
+# data file for the FLTK User Interface Designer (FLUID)
+version 2.0002 
 header_name {.h} 
-code_name {.cxx}
-class UserInterface {open
+code_name {.cxx} 
+gridx 5 
+gridy 5 
+snap 3
+Function {onGotoLine()} {open
 } {
-  Function {make_window()} {open
+  {fltk::Window} {} {
+    label {Goto Line} open
+    xywh {470 112 140 77} modal visible
   } {
-    Fl_Window {} {
-      label SBFLTK open
-      xywh {93 68 735 525} labelsize 12 resizable visible
-    } {
-      Fl_Menu_Bar {} {open
-        xywh {0 5 735 25} align 1
-      } {
-        submenu {} {
-          label {&File} open
-          xywh {0 0 100 20} labelsize 12
-        } {
-          menuitem {} {
-            label {&New}
-            callback {new_cb();}
-            xywh {0 0 100 20} labelsize 12
-            code0 {\#include "sbfui_cb.h"}
-          }
-          menuitem {} {
-            label {&Open}
-            callback {open_cb();}
-            xywh {10 10 100 20} shortcut 0x80065 labelsize 12
-            code0 {\#include "sbfui_cb.h"}
-          }
-          menuitem {} {
-            label {&Save}
-            callback {save_cb();}
-            xywh {20 20 100 20} shortcut 0x80077 labelsize 12
-            code0 {\#include "sbfui_cb.h"}
-          }
-          menuitem {} {
-            label {Save &as...}
-            callback {saveas_cb();}
-            xywh {30 30 100 20} labelsize 12
-            code0 {\#include "sbfui_cb.h"}
-          }
-          menuitem {} {
-            label {E&xit}
-            callback {quit_cb();}
-            xywh {40 40 100 20} shortcut 0x80078 labelsize 12
-            code0 {\#include "sbfui_cb.h"}
-          }
-        }
-        submenu {} {
-          label {&Edit} open
-          xywh {0 0 100 20} labelsize 12
-        } {}
-        submenu {} {
-          label {&Run} open
-          xywh {10 10 100 20} labelsize 12
-        } {
-          menuitem {} {
-            label {&Run}
-            xywh {0 0 100 20} shortcut 0xffc6 labelsize 12
-          }
-          menuitem {} {
-            label {&Break}
-            xywh {10 10 100 20} shortcut 0x1ff13 labelsize 12
-          }
-        }
-      }
-      Fl_Tabs {} {open
-        xywh {0 35 735 490} labelsize 12
-      } {
-        Fl_Tile {} {
-          label Editor open
-          xywh {5 55 725 470} labelsize 12
-        } {
-          Fl_Text_Editor editor {
-            xywh {5 60 725 460} labelsize 12 align 0 textfont 4 textsize 12 resizable
-          }
-        }
-        Fl_Tile {} {
-          label Help open
-          xywh {5 60 730 465} labelsize 12 hide
-        } {
-          Fl_Text_Display helpvw {selected
-            xywh {5 60 725 460} labelfont 4 labelsize 12 textfont 4 textsize 12 resizable
-          }
-        }
-        Fl_Tile {} {
-          label Output open
-          xywh {5 60 725 460} labelsize 12 hide
-        } {
-          Fl_Box output {
-            xywh {5 65 500 295} labelsize 12 resizable
-          }
-        }
-      }
+    {fltk::Button} {} {
+      label Cancel
+      xywh {70 45 65 25}
+    }
+    {fltk::ReturnButton} {} {
+      label Goto selected
+      xywh {70 15 65 25} when ENTER_KEY shortcut 0xff0d
+    }
+    {fltk::ValueInput} {} {
+      label {Line:}
+      xywh {35 15 25 25}
     }
   }
 } 

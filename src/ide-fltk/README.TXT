@@ -20,7 +20,7 @@ using cygwin under w2k.
 
 5. Apparently runs crappy on Win98 - update the installer to only accept
    Win2K or XP (sorry folks - why don't you try fedora core or slackware)
-
+   
 6. Current FLTK build seems to have problems (as at 12/1/2005)
 
 7. Try to use same function keys as sbpad.
@@ -120,5 +120,5 @@ using cygwin under w2k.
 .><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º>  .,,.·´¯`·.. ¸><((((º>¸.  
    .....,,.><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º> .·´¯`·.. ¸><((((º>¸.  
 
-$Id: README.TXT,v 1.12 2005-01-17 19:55:37 zeeb90au Exp $
+$Id: README.TXT,v 1.13 2005-01-20 03:27:40 zeeb90au Exp $
 

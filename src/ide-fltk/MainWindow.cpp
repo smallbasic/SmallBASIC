@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.29 2005-01-19 03:08:23 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.30 2005-01-20 03:27:40 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -104,19 +104,16 @@ void help_about_cb(Widget*, void* v) {
 void browseFile(const char* url) {
 #if defined(WIN32) 
     ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
-#else  
+#else 
+    wnd->fileStatus->label("Launching htmlview script...");
+    wnd->fileStatus->redraw();
+
     if (fork() == 0) {
-        // Close on exec of file descriptor
-        //fcntl(fd,F_SETFD,TRUE);
-        fclose(0);
-        fclose(1);
-        fclose(2);
-        
-        // Start command and pass it the filename
+        fclose(stderr);
+        fclose(stdin);
+        fclose(stdout);
         execlp("htmlview", "htmlview", url, NULL);
-        
-        // Just in case we failed to execute the command
-        ::exit(0);
+        ::exit(0); // in case exec failed 
     }
 #endif
 }
@@ -552,16 +549,19 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     TabPage* eg = new TabPage(0, tabBegin, w, pageHeight, "Editor");
     editGroup = eg;
     editGroup->begin();
+    editGroup->box(THIN_DOWN_BOX);
     editWnd = new EditorWindow(2, 2, w-4, pageHeight-4);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
     
-    editWnd->box(THIN_UP_BOX);
+    editWnd->box(NO_BOX);
+    editWnd->editor->box(NO_BOX);
     editGroup->resizable(editWnd);
     editGroup->end();
     tabGroup->resizable(editGroup);
-
+    
     TabPage* og = new TabPage(0, tabBegin, w, pageHeight, "Output");
     outputGroup = og;
+    outputGroup->box(THIN_DOWN_BOX);
     outputGroup->hide();
     outputGroup->begin();
     out = new Fl_Ansi_Window(2, 2, w-4, pageHeight-4);
