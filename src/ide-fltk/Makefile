@@ -14,6 +14,7 @@ SOURCE =                                        \
 	MainWindow.cpp                              \
 	EditorWindow.cpp                            \
     dev_fltk.cpp                                \
+    ebjlib.cpp                                  \
     blib_fltk_ui.c                              \
 
 COMMON=                                         \
@@ -62,7 +63,7 @@ COMMON=                                         \
 
 MAKEDEPEND	= /usr/X11R6/bin/makedepend -Y
 ##OPTIM =  -O2 -Wall -Wunused -fno-exceptions
-OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions
+OPTIM =  -g -O0 -Wall -Wunused -fno-exceptions 
 PLATFORM=-D_UnixOS -D_CygWin -D_FLTK
 
 ## patched fltk-config to remove -mwindows

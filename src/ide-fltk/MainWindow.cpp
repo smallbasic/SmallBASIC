@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.13 2004-11-25 11:13:25 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.14 2004-11-30 22:46:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -18,18 +18,16 @@
 
 #include <fltk/run.h>
 #include <fltk/error.h>
-#include <fltk/Item.h>
 #include <fltk/ask.H>
-#include <fltk/Window.h>
-#include <fltk/Group.h>
-#include <fltk/TabGroup.h>
-#include <fltk/MenuBar.h>
-#include <fltk/ScrollGroup.h>
-#include <fltk/Button.h>
 #include <fltk/events.h>
 #include <fltk/string.h>
 #include <fltk/damage.h>
-//#include <fltk/HelpView.h>
+#include <fltk/Window.h>
+#include <fltk/Item.h>
+#include <fltk/Group.h>
+#include <fltk/TabGroup.h>
+#include <fltk/MenuBar.h>
+#include <fltk/Button.h>
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
@@ -54,7 +52,6 @@ enum ExecState {
 
 const char* runfile = 0;
 int px,py,pw,ph;
-Window* fullscreen = 0;
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
@@ -99,7 +96,6 @@ void fullscreen_cb(Widget *w, void* v) {
 
 void turbo_cb(Widget* w, void* v) {
     wnd->isTurbo = w->value();
-    trace("turbo=%d", wnd->isTurbo);
 }
 
 void basicMain(const char* filename) {
@@ -125,8 +121,7 @@ void basicMain(const char* filename) {
 void run_cb(Widget*, void*) {
     const char* filename = wnd->editWnd->getFileName();
     if (runMode == edit_state && 
-        wnd->editWnd->checkSave(false) && 
-        filename[0]) {
+        wnd->editWnd->checkSave(false) && filename[0]) {
         basicMain(filename);
     }
 }
@@ -178,6 +173,11 @@ int arg_cb(int argc, char **argv, int &i) {
         runMode = run_state;
         i+=2;
         return 1;
+    case 'm':
+        opt_loadmod = 1;
+        strcpy(opt_modlist, argv[i+1]);
+        i+=2;
+        return 1;
     }
     return 0;
 }
@@ -208,14 +208,16 @@ void trace(const char *format, ...) {
 int main(int argc, char **argv) {
     int i=0;
     if (args(argc, argv, i, arg_cb) < argc) {
-        fatal("Options are:\n -r[un] file.bas\n -e[dit] file.bas\n%s", help);
+        fatal("Options are:\n -r[un] file.bas\n"
+              " -e[dit] file.bas\n"
+              " -m module-home\n\n%s", help);
     }
 
     wnd = new MainWindow(600, 400);
     wnd->show(argc, argv);
 
 #ifdef __CYGWIN__
-    wnd->icon((char *)LoadIcon(xdisplay, MAKEINTRESOURCE(103)));
+    wnd->icon((char *)LoadIcon(xdisplay, MAKEINTRESOURCE(101)));
 #endif
 
     check();
@@ -238,15 +240,15 @@ int main(int argc, char **argv) {
 struct TabPage : public Group {
     TabPage(int x, int y, int w, int h, const char * s) : 
         Group(x, y, w, h, s) {}
-        int handle(int event) {
-            // TextDisplay::layout() does nothing when not visible
-            if (event == SHOW) {
-                Widget* w = child(0);
-                w->layout();
-                w->take_focus();
-            }
-            return Group::handle(event);
+    int handle(int event) {
+        // TextDisplay::layout() does nothing when not visible
+        if (event == SHOW) {
+            Widget* w = child(0);
+            w->layout();
+            w->take_focus();
         }
+        return Group::handle(event);
+    }
 };
 
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
@@ -255,7 +257,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabHeight = mnuHeight;
     // if tabBegin is zero tabs will be at the bottom
-    int tabBegin = runMode == run_state ? 0 : mnuHeight; 
+    //int tabBegin = runMode == run_state ? 0 : mnuHeight; 
+    int tabBegin = 0;
     int pageHeight = groupHeight-tabHeight;
 
     isTurbo = 0;
@@ -282,7 +285,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/_&Delete",    0, (Callback*)EditorWindow::delete_cb);
     m->add("&Edit/&Full Screen",0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&Edit/&Turbo",      0, (Callback*)turbo_cb)->type(Item::TOGGLE);
-    m->add("&Edit/&Settings",   0, (Callback*)EditorWindow::delete_cb);
+    //m->add("&Edit/&Settings",   0, (Callback*)EditorWindow::delete_cb);
     m->add("&Program/&Run",     CTRL+'r', (Callback*)run_cb);
     m->add("&Program/&Break",   CTRL+'b', (Callback*)break_cb);
     m->add("&Search/&Find...",  CTRL+'f', (Callback*)EditorWindow::find_cb);
@@ -314,14 +317,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     outputGroup->resizable(out);
     outputGroup->end();
 
-    //helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
-    //helpGroup->hide();
-    //helpGroup->begin();
-    //HelpView* helpView = new HelpView(2, 2, w-4, pageHeight-4);
-    //helpView->load("../doc/sbasic.html");
-    //helpGroup->resizable(helpView);
-    //helpGroup->end();
-    
     tabGroup->end();
     resizable(tabGroup);
 

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.9 2004-11-25 11:13:25 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.10 2004-11-30 22:46:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -28,7 +28,6 @@ struct MainWindow : public Window {
     ~MainWindow();
 
     int handle(int e);
-    bool isTurboMode(void)  { return isTurbo; }
     bool isBreakExec(void);
     bool isModal();
     void setModal(bool modal);
@@ -48,7 +47,7 @@ struct MainWindow : public Window {
     TabGroup* tabGroup;
     Group* editGroup;
     Group* outputGroup;
-    //Group* helpGroup;
+    Group* helpGroup;
 
     // status bar
     Widget* fileStatus;

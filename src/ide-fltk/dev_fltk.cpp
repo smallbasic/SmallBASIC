@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.11 2004-11-25 11:13:25 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.12 2004-11-30 22:46:22 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -18,8 +18,13 @@
 #include <fltk/events.h>
 #include <fltk/SharedImage.h>
 #include <fltk/FL_VERSION.h>
+#include <fltk/HelpView.h>
 
 #include "MainWindow.h"
+
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 C_LINKAGE_BEGIN
 
@@ -27,6 +32,17 @@ C_LINKAGE_BEGIN
 #define PEN_OFF 0
 
 extern MainWindow *wnd;
+HelpView* helpView = 0;
+
+void closeHelp() {
+    if (helpView) {
+        wnd->outputGroup->remove(helpView);
+        helpView->parent(0);
+        delete helpView;
+        helpView = 0;
+        wnd->out->redraw();
+    }
+}
 
 int osd_devinit() {
     wnd->resetPen();
@@ -40,6 +56,7 @@ int osd_devinit() {
     if (SharedImage::first_image) {
         SharedImage::first_image->clear_cache();
     }
+    closeHelp();
     return 1;
 }
 
@@ -67,7 +84,8 @@ int osd_devrestore() {
  *    -2 stop running basic application
  */
 int osd_events(int wait_flag) {
-    if (wait_flag || (wnd->penState == PEN_ON && fltk::ready() == false)) {
+    if ((wait_flag && wnd->isTurbo == false) ||
+        (wnd->penState == PEN_ON && fltk::ready() == false)) {
         // in a "while 1" loop checking for a pen/mouse
         // event with pen(0) or executing input statement. 
         fltk::wait();
@@ -97,7 +115,7 @@ int osd_getpen(int code) {
     switch (code) {
     case 0: // return true if there is a waiting pen event
     case 3: // returns true if the pen is down (and save curpos)
-        if (wnd->isTurboMode() == false) {
+        if (wnd->isTurbo == false) {
             wait();
         }
         if (event_state() & ANY_BUTTON) {
@@ -169,7 +187,13 @@ void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
 }
 
 void osd_beep() {
-    //    fl_beep();
+#ifdef WIN32
+   MessageBeep(MB_ICONASTERISK);
+#elif defined(__APPLE__)
+   SysBeep(30);
+#else
+   XBell(fl_display, 100);
+#endif // WIN32
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
@@ -182,8 +206,40 @@ void osd_write(const char *s) {
     wnd->out->print(s);
 }
 
-// empty implementations
-void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
+static void anchor_cb(Widget* w, void* v) {
+    //char *slash = strrchr((const char*)v, '/');
+    //trace("anchor called %s", slash?slash:v);
+    closeHelp();
+}
+
+void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
+    if (x+w > wnd->out->w()) {
+        w = wnd->out->w()-x; 
+    }
+    if (y+h > wnd->out->h()) {
+        h = wnd->out->h()-y; 
+    }
+
+    if (helpView) {
+        if (!html || !html[0] || x<0 || y<0) {
+            closeHelp();
+            return;
+        }
+        
+        helpView->x(x);
+        helpView->y(y);
+        helpView->w(w);
+        helpView->h(h);
+    } else {
+        wnd->outputGroup->begin();
+        helpView = new HelpView(x, y, w, h);
+        wnd->outputGroup->end();
+        helpView->box(SHADOW_BOX);
+        helpView->callback(anchor_cb);
+    }
+    helpView->value(html);
+    helpView->take_focus();
+    helpView->show();
 }
 
 // image factory based on file extension
@@ -283,6 +339,10 @@ struct LineInput : public fltk::Input {
                     def_w,
                     wnd->out->textHeight()+4) {
         this->def_w = def_w;
+        this->orig_x = x();
+        this->orig_y = y();
+        this->orig_w = w();
+        this->orig_h = h();
     }
     bool replace(int b, int e, const char* text, int ilen) {
         // grow the input box width
@@ -290,11 +350,23 @@ struct LineInput : public fltk::Input {
             int strw = (int)getwidth(value())+def_w;
             if (strw > w()) {
                 w(strw);
+                orig_w = strw;
                 redraw();
             }
         }
         return Input::replace(b, e, text, ilen);
     }
+    void layout() {
+        fltk::Input::layout();
+        // veto the layout changes
+        x(orig_x);
+        y(orig_y);
+        w(orig_w);
+        h(orig_h);
+    }
+
+    int orig_x, orig_y;
+    int orig_w, orig_h;
     int def_w;
 };
 

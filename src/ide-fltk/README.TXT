@@ -17,13 +17,15 @@ Tasks for initial release:
   - read-only when program is running but scrollbars still function *done*
   - Grey/disable/handle editor menus when in run mode *done*
   - selectable colors like in the "input" fltk sample
-  - toggle menu for turbo mode like in the "menu" fltk sample
+  - toggle menu for turbo mode like in the "menu" fltk sample *done*
   - tabs along top or bottom *done*
   - multiple editor tabs
   - undo (ask FLTK team)
-  - full screen menu option
-  - startup argument to run in "application" mode
+  - full screen menu option *done*
+  - startup argument to run in "application" mode *done* tabs at the bottom
   - right-control deletes selection- modified Fl_compose.cxx
+  - some kind of bookmark system allowing the user to easily return
+    to a favourite application -- bookmark tab using html widget
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
@@ -36,22 +38,24 @@ Tasks for initial release:
    - sound ?
    - updated DRAW code *done*
    - handle "repeat key$ = inkey until len(key$) > 0" w/out high cpu use *done*
-   - modules - ensure that the flite speach synth works (under cygwin)
+   - modules - ensure that the flite speech synth works (under cygwin)
+     runs fine using -m switch but the speech does not run on subsequent invokations
    - update do_cmd_html(), cmd_image to use par_massget
+   - scrollable output window - too many problems with input fields
 
 3. Help Tab
-   - using FLTK help widget - doesn't appear to be completed. 
-     convert ebm help/help widget?
+   - using FLTK help widget - doesn't appear to be completed (confirmed on 
+     FLTK group by matthiasm) - patched/fixed
 
 4. Output Text Tab (removed)
 
-5. Program icon in windows
+5. Program icon in windows *done* 
 
 6. About Box
    - what version will this be?
 
 7. Settings dialog
-   - setting for turbo mode
+   - setting for turbo mode *done*
    - build with fluid
 
 8. Scrollable output window
@@ -63,4 +67,4 @@ Tasks for initial release:
 
 10. Linux build
 
-$Id: README.TXT,v 1.6 2004-11-25 11:13:25 zeeb90au Exp $
+$Id: README.TXT,v 1.7 2004-11-30 22:46:22 zeeb90au Exp $

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.8 2004-11-25 11:13:25 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.9 2004-11-30 22:46:22 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -8,13 +8,12 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#ifndef FL_ANSI_WINDOW
+#define FL_ANSI_WINDOW
+
 #include <fltk/Widget.H>
 #include <fltk/draw.H>
 #include <fltk/Image.h>
-#include <fltk/Font.h>
-
-#ifndef FL_ANSI_WINDOW
-#define FL_ANSI_WINDOW
 
 using namespace fltk;
 
@@ -30,8 +29,6 @@ class Fl_Ansi_Window : public Widget {
 
     // public api
     void clearScreen();
-    void saveScreen();
-    void restoreScreen();
     void print(const char *str);
     void drawLine(int x1, int y1, int x2, int y2);
     void drawFGRectFilled(int x, int y, int width, int height);

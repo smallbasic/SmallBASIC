@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.12 2004-11-25 11:13:23 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.13 2004-11-30 22:46:22 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -9,23 +9,20 @@
 //
 
 #include <ctype.h>
-#include <stdio.h>
-#include <string.h>
 
-#include <fltk/Window.H>
-#include <fltk/ask.H>
 #include <fltk/layout.h>
-#include <fltk/Style.h>
 #include <fltk/Image.h>
 #include <fltk/events.h>
+#include <fltk/Font.h>
 
 #include "Fl_Ansi_Window.h"
-#include "MainWindow.h"
 
 #if defined(WIN32) 
 #include <fltk/win32.h>
 extern HDC fl_bitmap_dc;
 #endif
+
+#define INITXY 4
 
 using namespace fltk;
 
@@ -57,8 +54,8 @@ void Fl_Ansi_Window::init() {
         delete img;
     }
     img = 0;
-    curY = 1; // allow for input control border
-    curX = 1;
+    curY = INITXY; // allow for input control border
+    curX = INITXY;
     tabSize = 40; // tab size in pixels (160/32 = 5)
     reset();
 }
@@ -107,6 +104,10 @@ void Fl_Ansi_Window::draw() {
         setcolor(color());
         fillrect(0, 0, w(), h());
     }
+    // border
+    setcolor(GRAY33);
+    drawline(0, 0, w()-2, 0);
+    drawline(0, 0, 0, h()-2);
 }
 
 void Fl_Ansi_Window::drawLine(int x1, int y1, int x2, int y2) {
@@ -195,13 +196,6 @@ void Fl_Ansi_Window::clearScreen() {
     end_offscreen();
 }
 
-void Fl_Ansi_Window::saveScreen() {
-}
-
-void Fl_Ansi_Window::restoreScreen() {
-    redraw();
-}
-
 // callback for fl_scroll
 void eraseBottomLine(void* data, int x, int y, int w, int h) {
     Fl_Ansi_Window* out = (Fl_Ansi_Window*)data;
@@ -213,7 +207,7 @@ void Fl_Ansi_Window::newLine() {
     int height = h();
     int fontHeight = (int)(getascent()+getdescent());
 
-    curX = 1;
+    curX = INITXY;
     if (curY+(fontHeight*2) >= height) {
         scrollrect(0, 0, w(), height, 0, -fontHeight, eraseBottomLine, this);
         // TODO: patched is_visible() in fl_scroll_area.cxx 
@@ -449,7 +443,7 @@ void Fl_Ansi_Window::print(const char *str) {
             newLine();
             break;
         case '\r': // return
-            curX = 1;
+            curX = INITXY;
             setcolor(color());
             fillrect(0, curY, w(), fontHeight);
             break;
@@ -479,6 +473,8 @@ void Fl_Ansi_Window::print(const char *str) {
                 setcolor(color());
                 drawtext((const char*)p, numChars, curX, curY+ascent);
             } else {
+                setcolor(color());
+                fillrect(curX, curY, cx, fontHeight);
                 setcolor(labelcolor());
                 drawtext((const char*)p, numChars, curX, curY+ascent);
             }

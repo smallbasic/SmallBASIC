@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.8 2004-11-23 22:46:16 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.9 2004-11-30 22:46:22 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -380,15 +380,15 @@ void EditorWindow::readonly(bool is_readonly) {
 }
 
 void EditorWindow::doChange(int inserted, int deleted) {
+    trace("%d %d",inserted, deleted);// editor->buffer()->text());
     if ((inserted || deleted) && !loading) {
         dirty = 1;
+        setModified(dirty);
     }
 
     if (loading) {
         editor->show_insert_position();
     }
-
-    setModified(dirty);
 }
 
 bool EditorWindow::checkSave(bool discard) {
