@@ -15,9 +15,15 @@
 #include "pproc.h"
 #include "smbas.h"
 #include "fmt.h"
-#if defined(_UnixOS) || defined(_DOS)
+
+#if (defined(_UnixOS) || defined(_DOS)) && !defined(_Fltk)
+#define USE_TERM_IO 1
+#endif
+
+#ifdef USE_TERM_IO
 #include "dev_term.h"
 #endif
+
 #include "messages.h"
 
 //
@@ -770,7 +776,7 @@ void	cmd_input(int input)
 
 				redo = 1;
 				tmp_free(inps);
-				#if defined(_UnixOS) || defined(_DOS)
+                #if defined(USE_TERM_IO)
 				/* standard input case */
 				if ( !os_graphics )	{
 					if	( term_israw() ) 
@@ -779,7 +785,7 @@ void	cmd_input(int input)
 						dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
 					}
 				else
-				#endif
+                #endif
 				dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
 				}
 			else
@@ -793,7 +799,7 @@ void	cmd_input(int input)
 	*/
 	if	( input == PV_CONSOLE )	{
 		if	( print_crlf && (prog_error == 0) )	{
-			#if defined(_UnixOS) || defined(_DOS)
+            #if defined(USE_TERM_IO)
 			/* standard input case */
 			if ( !os_graphics )	{
 				if	( !term_israw() ) 

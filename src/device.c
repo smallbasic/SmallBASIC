@@ -45,13 +45,19 @@ static int drvsound_ok;
 static int drvmouse_ok;
 #endif
 
-#include "dev_term.h"
-
 //	Keyboard buffer
 #define	PCKBSIZE	256
 static word keybuff[PCKBSIZE];
 static int	keyhead;
 static int	keytail;
+
+#if (defined(_UnixOS) || defined(_DOS)) && !defined(_Fltk)
+#define USE_TERM_IO 1
+#endif
+
+#ifdef USE_TERM_IO
+#include "dev_term.h"
+#endif
 
 ///////////////////////////////////////////////
 //////////////////////////////// INIT & RESTORE
@@ -186,9 +192,8 @@ int		dev_init(int mode, int flags)
 	#else
 	dev_bgcolor = (os_graphics) ? 15 : 0;
 	#endif
-	#if defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	osd_devinit();
-	#else
+
+    #if defined(USE_TERM_IO)
 	os_graphics = mode;
 	term_init();	// by default
 	if	( mode )	{
@@ -215,6 +220,8 @@ int		dev_init(int mode, int flags)
 			exit(1);
             #endif
 		}
+	#else
+	osd_devinit();
 	#endif
 
 	dev_viewport(0,0,0,0);
@@ -230,8 +237,7 @@ int		dev_init(int mode, int flags)
 	else	{
 		dev_fgcolor = 7;
 		dev_bgcolor = 0;
-		#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-		#else
+        #if defined(USE_TERM_IO)
 //		term_settextcolor(dev_fgcolor, dev_bgcolor);
 		#endif
 		}
@@ -329,7 +335,7 @@ int		dev_init(int mode, int flags)
     }
     #endif
 
-#if defined(_UnixOS) || defined(_DOS)
+#if defined(USE_TERM_IO)
 	signal(SIGINT, termination_handler);
 	signal(SIGQUIT, termination_handler);
 #endif
@@ -357,12 +363,11 @@ int		dev_restore()
 	dev_closefs();
 	if	( os_graphics )
 		osd_devrestore();
-	#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	#else
+    #if defined(USE_TERM_IO)
 	term_restore();	// by default
 	#endif
 
-#if defined(_UnixOS) || defined(_DOS)
+#if defined(USE_TERM_IO)
    	signal(SIGINT, SIG_DFL);
    	signal(SIGQUIT, SIG_DFL);
 #endif
@@ -379,12 +384,12 @@ int		dev_restore()
 */
 int		dev_events(int waitf)
 {
-	#if !defined(_PalmOS) && !defined(_FRANKLIN_EBM)
+	#if !defined(_PalmOS) && !defined(_FRANKLIN_EBM) && !defined(_Fltk)
 	if	( os_graphics )
 		osd_refresh();
 	#endif
 
-	#if defined(_UnixOS) || defined(_DOS)
+    #if defined(USE_TERM_IO)
 	//
 	//	standard input case
 	//
@@ -394,7 +399,7 @@ int		dev_events(int waitf)
 		}
 	#endif
 
-	#if	defined(_FRANKLIN_EBM)
+	#if	defined(_FRANKLIN_EBM) || defined(_Fltk)
 	return osd_events(waitf);
 	#else
 
@@ -424,6 +429,7 @@ int		dev_events(int waitf)
 		#if defined(DRV_SOUND)
 		drvsound_event();
 		#endif
+
 		#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) 
 		return	osd_events();
 		#else
@@ -502,15 +508,15 @@ int		dev_kbhit()
 {
 	int		code;
 
-#if defined(_UnixOS) || defined(_DOS)
+    #if defined(USE_TERM_IO)
 	if	( !os_graphics && term_israw() )
 		return !feof(stdin);
-#endif
+    #endif
 	
 	if ( keytail != keyhead )
 		return 1;
 
-#ifdef _FRANKLIN_EBM
+#if defined(_FRANKLIN_EBM) || defined(_Fltk)
     // conserve battery power
 	code = dev_events(1);
 #else
@@ -529,10 +535,10 @@ long int	dev_getch()
 {
 	word	ch = 0;
 
-#if defined(_UnixOS) || defined(_DOS)
+    #if defined(USE_TERM_IO)
 	if	( !os_graphics && term_israw() )
 		return fgetc(stdin);
-#endif
+    #endif
 	
 	while ( (dev_kbhit() == 0) && (prog_error == 0) )	{
 		int		evc;
@@ -730,7 +736,7 @@ char	*dev_gets(char *dest, int size)
 	int			code;
 	int			cx = 1;
 
-	#if defined(_DOS) || defined(_UnixOS)
+    #if defined(USE_TERM_IO)
 	if	( !os_graphics )	{
 		if	( term_israw() )	{
 			//	standard input
@@ -778,8 +784,8 @@ char	*dev_gets(char *dest, int size)
 	dev_clrkb();
 
 	pos = 0;
-	#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	#else
+
+    #if defined(USE_TERM_IO)
 	if	( !os_graphics )
 		term_getsdraw(dest, 0, 0);
 	#endif
@@ -789,8 +795,7 @@ char	*dev_gets(char *dest, int size)
 		len = strlen(dest);
 
 		// draw
-		#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-		#else
+        #if defined(USE_TERM_IO)
 		if	( !os_graphics )
 			term_getsdraw(dest, pos, 1);
 		else	{
@@ -821,8 +826,7 @@ char	*dev_gets(char *dest, int size)
 
 			dev_setxy(disp_x, disp_y);
 			dev_drawcursor(disp_x, disp_y);
-		#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-		#else
+        #if defined(USE_TERM_IO)
 			}
 		#endif
 
@@ -905,8 +909,7 @@ char	*dev_gets(char *dest, int size)
 		} while ( ch != '\n' && ch != '\r' );
 	dest[len] = '\0';
 
-	#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	#else
+    #if defined(USE_TERM_IO)
 	if	( !os_graphics )	
 		term_getsdraw(dest, strlen(dest), 2);
 	else	{
@@ -914,12 +917,12 @@ char	*dev_gets(char *dest, int size)
 		dev_setxy(prev_x, prev_y);
 		dev_print(dest);
 		dev_input_clreol(cx, cy);
-	#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	#else
+    #if defined(USE_TERM_IO)
 		}
 	#endif
 	return dest;	 
 }
+
 #endif // _FRANKLIN_EBM
 
 /*
@@ -958,12 +961,12 @@ void	dev_clreol()
 */
 int		dev_getx()
 {
-	#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	return osd_getx();
-	#else
+    #if defined(USE_TERM_IO)
 	if ( os_graphics )	
 		return osd_getx();
 	return term_getx();
+	#else
+	return osd_getx();
 	#endif
 }
 
@@ -972,12 +975,12 @@ int		dev_getx()
 */
 int		dev_gety()
 {
-	#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	return osd_gety();
-	#else
+    #if defined(USE_TERM_IO)
 	if ( os_graphics )	
 		return osd_gety();
 	return term_gety();
+	#else
+	return osd_gety();
 	#endif
 }
 
@@ -992,13 +995,13 @@ void	dev_setxy(int x, int y)
 	if	( y < 0 || y > os_graf_my )
 		return;
 
-	#if	defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	osd_setxy(x, y);
-	#else
+    #if defined(USE_TERM_IO)
 	if ( os_graphics )	
 		osd_setxy(x, y);
 	else
 		term_setxy(x, y);
+	#else
+	osd_setxy(x, y);
 	#endif
 }
 
@@ -1008,7 +1011,7 @@ void	dev_setxy(int x, int y)
 */
 void	dev_settextcolor(long fg, long bg)
 {
-	#if !defined(_Win32) && !defined(_PalmOS) && !defined(_WinBCB) && !defined(_VTOS) && !defined(_FRANKLIN_EBM)
+    #if defined(USE_TERM_IO)
  	if ( os_graphics )	{
 	#endif
 		if	( bg == -1 )
@@ -1022,7 +1025,7 @@ void	dev_settextcolor(long fg, long bg)
 		else
 			osd_settextcolor((dev_fgcolor=fg), (dev_bgcolor=bg));	
 
-	#if !defined(_Win32) && !defined(_PalmOS) && !defined(_WinBCB) && !defined(_VTOS) && !defined(_FRANKLIN_EBM)
+    #if defined(USE_TERM_IO)
 		}
 	else
 		term_settextcolor(fg, bg);
@@ -1033,13 +1036,13 @@ void	dev_settextcolor(long fg, long bg)
 //	prints a string
 void	dev_print(const char *str)
 {
-	#if defined(_Win32) || defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
- 	osd_write(str);
-	#else
+    #if defined(USE_TERM_IO)
 	if ( os_graphics )	
 		osd_write(str);
 	else
 		term_print(str);
+	#else
+	osd_write(str);
 	#endif
 }
 
@@ -1081,13 +1084,13 @@ void	dev_printf(const char *fmt, ...)
 */
 void	dev_cls()
 {
-	#if defined(_PalmOS) || defined(_Win32) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	osd_cls();
-	#else
+    #if defined(USE_TERM_IO)
 	if	( os_graphics )
 		osd_cls();
 	else	
 		term_cls();
+	#else
+	osd_cls();
 	#endif
 }
 
@@ -1124,16 +1127,14 @@ int		dev_textheight(const char *str)
 */
 void	dev_setcolor(long color)
 {
-	#if defined(_Win32) || defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
- 	#else
+    #if defined(USE_TERM_IO)
 	if ( os_graphics )	{
 	#endif
 		if	( color <= 15 && color >= 0 )
 			osd_setcolor(dev_fgcolor = color);
 		else if ( color < 0 )
 			osd_setcolor((dev_fgcolor = color));
-	#if defined(_Win32) || defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-	#else
+    #if defined(USE_TERM_IO)
 		}
 	else	{
 		if	( color <= 15 && color >= 0 )
@@ -1151,13 +1152,13 @@ void	dev_setpixel(int x, int y)
 	y = W2Y(y);
 	if	( x >= dev_Vx1 && x <= dev_Vx2 )	{
 		if	( y >= dev_Vy1 && y <= dev_Vy2 )	{
-			#if defined(_Win32) || defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
- 			osd_setpixel(x,y);
-			#else
+            #if defined(USE_TERM_IO)
 			if ( os_graphics )	
 	 			osd_setpixel(x,y);
 			else
 				term_drawpoint(x,y);
+			#else
+			osd_setpixel(x,y);
 			#endif
 			}
 		}
@@ -1172,13 +1173,13 @@ long	dev_getpixel(int x, int y)
 	y = W2Y(y);
 	if	( x >= dev_Vx1 && x <= dev_Vx2 )	{
 		if	( y >= dev_Vy1 && y <= dev_Vy2 )	{
-			#if defined(_Win32) || defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
- 			return osd_getpixel(x,y);
-			#else
+            #if defined(USE_TERM_IO)
 			if ( os_graphics )	
 	 			return osd_getpixel(x,y);
 			else
 				return term_getpoint(x, y);
+			#else
+ 			return osd_getpixel(x,y);
 			#endif
 			}
 		}
@@ -1260,13 +1261,13 @@ void	dev_line(int x1, int y1, int x2, int y2)
 	// clip_line
 	dev_clipline(&x1, &y1, &x2, &y2, &visible);
 	if	( visible )	{
-		#if defined(_Win32) || defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-		osd_line(x1, y1, x2, y2);
-		#else
+        #if defined(USE_TERM_IO)
 		if ( os_graphics )	
 			osd_line(x1, y1, x2, y2);
 		else	
 			term_drawline(x1, y1, x2, y2);
+		#else
+		osd_line(x1, y1, x2, y2);
 		#endif
 		}
 }
@@ -1304,13 +1305,14 @@ void	dev_rect(int x1, int y1, int x2, int y2, int fill)
 		/*
 		*	its inside
 		*/
-		#if defined(_Win32) || defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-		osd_rect(x1, y1, x2, y2, fill);
-		#else
+
+        #if defined(USE_TERM_IO)
 		if ( os_graphics )	
 			osd_rect(x1, y1, x2, y2, fill);
 		else
 			term_drawrect(x1, y1, x2, y2, fill);
+		#else
+		osd_rect(x1, y1, x2, y2, fill);
 		#endif
 		}
 	else {
@@ -1404,7 +1406,6 @@ void	dev_window(int x1, int y1, int x2, int y2)
 		}
 }
 
-
 ///////////////////////////////////////////////
 ///////////////////////////////////////// SOUND
 
@@ -1416,7 +1417,7 @@ void	dev_beep()
 	if	( os_graphics )
 		osd_refresh();
 
-	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM)
+	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_Fltk)
  	osd_beep();
 	#else
 		#if defined(DRV_SOUND)
@@ -1435,7 +1436,7 @@ void	dev_beep()
 */
 void	dev_sound(int frq, int ms, int vol, int bgplay)
 {
-	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM)
+	#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_Fltk)
 	osd_sound(frq, ms, vol, bgplay);
 	#else
 
@@ -1843,7 +1844,7 @@ char	*dev_getenv(const char *str)
 	#endif
 }
 
-#ifndef _FRANKLIN_EBM
+#if !defined(_FRANKLIN_EBM)
 
 /*
 *	returns the number of environment variables
@@ -1894,6 +1895,10 @@ char	*dev_getenv_n(int n)
 	return NULL;
 	#endif
 }
+
+#endif
+
+#if !defined(_FRANKLIN_EBM) && !defined(_Fltk)
 
 // empty implementations
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
