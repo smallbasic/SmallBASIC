@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.6 2004-11-14 22:36:29 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.7 2004-11-15 22:48:09 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -39,12 +39,12 @@ MainWindow* wnd;
 
 enum ExecState {
     init_state, edit_state, run_state, break_state, quit_state
-} runMode = edit_state;
+        } runMode = edit_state;
 
 extern char filename[]; // in EditorWindow
 
 void quit_cb(Widget*, void* v) {
-    trace("quit called");
+    trace("quit_cb %d", runMode);
     if (runMode == edit_state) {
         if (check_save(true)) {
             exit(0);
@@ -52,7 +52,7 @@ void quit_cb(Widget*, void* v) {
     } else {
         // close after executor returns
         // TODO: confirm close running program
-        trace("quit requested");
+        dev_pushkey(SB_KEY_BREAK);
         runMode = quit_state;
     }
 }
@@ -68,6 +68,8 @@ void break_cb(Widget*, void* v) {
 void run_cb(Widget*, void*) {
     if (check_save(false) && filename[0]) {
         wnd->tabGroup->selected_child(wnd->outputGroup);
+        //wnd->out->take_focus();
+        focus(wnd->out);
         wnd->out->clearScreen();
         runMode = run_state;
         sbasic_main(filename);
@@ -118,8 +120,8 @@ int arg_cb(int argc, char **argv, int &i) {
 // for the free DebugView program
 #include <windows.h>
 void trace(const char *format, ...) {
-    char	buf[4096], *p = buf;
-    va_list	args;
+    char    buf[4096], *p = buf;
+    va_list args;
     
     va_start(args, format);
     p += vsnprintf(p, sizeof buf - 1, format, args);
@@ -156,14 +158,14 @@ int main(int argc, char **argv) {
 struct EditGroup : public Group {
     EditGroup(int x, int y, int w, int h, const char * s) : 
         Group(x, y, w, h, s) {}
-    EditorWindow* editWnd;
-    int handle(int event) {
-        // TextDisplay::layout() does nothing when not visible
-        if (event == SHOW) {
-            editWnd->layout();
+        EditorWindow* editWnd;
+        int handle(int event) {
+            // TextDisplay::layout() does nothing when not visible
+            if (event == SHOW) {
+                editWnd->layout();
+            }
+            return Group::handle(event);
         }
-        return Group::handle(event);
-    }
 };
 
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
@@ -173,12 +175,12 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int tabHeight = mnuHeight;
 
     isTurbo = 0;
-	opt_graphics = 1;
-	opt_quite = 1;
+    opt_graphics = 1;
+    opt_quite = 1;
     opt_nosave = 1;
-	opt_ide = 1;
-	opt_command[0] = '\0';
-	opt_pref_width = 0;
+    opt_ide = 1;
+    opt_command[0] = '\0';
+    opt_pref_width = 0;
     opt_pref_height = 0;
     opt_pref_bpp = 0;
     
@@ -273,4 +275,46 @@ void MainWindow::resetPen() {
     penDownX = 0;
     penDownY = 0;
     penState = 0;
+}
+
+int MainWindow::handle(int e) {
+    if (runMode == run_state && e == KEY && !event_key_state(RightCtrlKey)) {
+        int k;
+        k = event_key();
+        switch (k) {
+        case PageUpKey:
+            dev_pushkey(SB_KEY_PGUP);
+            break;
+        case PageDownKey:
+            dev_pushkey(SB_KEY_PGDN);
+            break;
+        case UpKey:
+            dev_pushkey(SB_KEY_UP);
+            break;
+        case DownKey:
+            dev_pushkey(SB_KEY_DN);
+            break;
+        case LeftKey:
+            dev_pushkey(SB_KEY_LEFT);
+            break;
+        case RightKey:
+            dev_pushkey(SB_KEY_RIGHT);
+            break;
+        case BackSpaceKey: 
+        case DeleteKey:
+            dev_pushkey(SB_KEY_BACKSPACE);
+            break;
+        case ReturnKey:
+            dev_pushkey(13);
+            break;
+        default:
+            //if (data >= 0xf700 && data <= 0xf900) {
+            // return 0; // Ignore any remaining function keys
+            //}
+            dev_pushkey(k);
+            break;
+        }
+        return 1;
+    }
+    return Window::handle(e);
 }

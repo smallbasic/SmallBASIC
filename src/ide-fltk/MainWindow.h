@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.4 2004-11-11 22:31:33 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.5 2004-11-15 22:48:09 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -27,6 +27,7 @@ struct MainWindow : public Window {
     MainWindow(int w, int h);
     ~MainWindow();
 
+    int handle(int e);
     bool isTurboMode(void)  { return isTurbo; }
     bool wasBreakEv(void);
     void updateStatusBar(const char* title);
