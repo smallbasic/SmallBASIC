@@ -568,22 +568,24 @@ void	cmd_draw()
 	p = (char *) var.v.p.ptr;
 	while ( *p )	{
 
-		// commands prefix
-		while ( strchr("BbNn", *p) )	{
+        // 'N' command must affect only the next drawing command.
+        update = 1;
+
+        // commands prefix
+		while ( strchr("BbNn", *p) ) {
 			if	( *p == 'B' || *p == 'b' )	{	// do not draw
 				draw = 0;
 				p ++;
-				}
-			else
+            } else {
 				draw = 1;
-
-			if	( *p == 'N' || *p == 'n' )	{	// do not update the position
+            }
+			if ( *p == 'N' || *p == 'n' ) {	// do not update the position
 				update = 0;
 				p ++;
-				}
-			else
-				update = 1;
-			}
+            } else {
+                update = 1;
+            }
+        }
 
 		// commands
 		switch ( *p )	{
