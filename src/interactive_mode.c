@@ -1051,7 +1051,7 @@ void	intm_dirwalk(const char *dir, const char *wc, int inside, int (*f)(const ch
         else {
             sprintf(name, "%s%c%s", dir, OS_DIRSEP, dp->d_name);
 			#if defined(_DOS)
-			strlwr(name);
+			strlower(name);
 			#endif
 
 			/* check filename */
@@ -1671,7 +1671,7 @@ int		interactive_mode(const char *fname)
 							char	*command;
 							
 							command = parstr;
-							strlwr(command);
+							strlower(command);
 
 							hs = help_getallinfo(command);
 							if	( hs )	{

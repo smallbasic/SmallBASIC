@@ -29,18 +29,18 @@ double geo_seglen(double Ax, double Ay, double Bx, double By)
 */
 double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx, double Cy)
 {
-	double	Px, Py;	// projection of C on AB
-	double	L, r, s;
+	double	L, s;
+//	double	r;
+//	double	Px, Py;	// projection of C on AB
 
 	L = geo_seglen(Ax, Ay, Bx, By);
 
 	if	( L == 0.0 )	// A,B are the same point, TODO: tolerance
 		return geo_seglen(Ax, Ay, Cx, Cy);
 
-	r = ((Ay-Cy) * (Ay-By) - (Ax-Cx) * (Bx-Ax)) / (L * L);
-
-	Px = Ax + r * (Bx - Ax);
-	Py = Ay + r * (By - Ay);
+//	r = ((Ay-Cy) * (Ay-By) - (Ax-Cx) * (Bx-Ax)) / (L * L);
+//	Px = Ax + r * (Bx - Ax);
+//	Py = Ay + r * (By - Ay);
 
 	s = ((Ay-Cy) * (Bx-Ax) - (Ax-Cx) * (By-Ay)) / (L * L);
 	return s * L;
@@ -51,7 +51,7 @@ double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx, d
 */
 double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx, double Cy)
 {
-	double	Px, Py;	// projection of C on AB
+//	double	Px, Py;	// projection of C on AB
 	double	L, r, s;
 	double	ca, cb;
 
@@ -63,8 +63,8 @@ double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx, do
 	r = ((Ay-Cy) * (Ay-By) - (Ax-Cx) * (Bx-Ax)) / (L * L);
 
 	if	( r >= 0.0 && r <= 1.0 )	{	// TODO: tolerance
-		Px = Ax + r * (Bx - Ax);
-		Py = Ay + r * (By - Ay);
+//		Px = Ax + r * (Bx - Ax);
+//		Py = Ay + r * (By - Ay);
 
 		s = ((Ay-Cy) * (Bx-Ax) - (Ax-Cx) * (By-Ay)) / (L * L);
 		return s * L;

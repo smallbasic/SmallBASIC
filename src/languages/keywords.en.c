@@ -1,7 +1,15 @@
 /*
 *	SB Keywords in English - Latin1
 *
-*	names 15 chars max. Always capitals (lowers means invisible keywords)
+*	Rules:
+*	* Names can be 15 chars long. (defined on scan.h)
+* 	* Names must defined always with capitals. lower-case means invisible keywords.
+*	* Spaces are not allowed. Only letters, digits and the character '_'.
+*	* Alias supported just repeat the keyword.
+*	  Example:
+*		{ "GOTO",		kwGOTO	},
+*		{ "GOTHERE",	kwGOTO	},
+*	  This means the command GOTO it is known to the compiler with the names "GOTO" and "GOTHERE".
 */
 
 /*

@@ -90,9 +90,8 @@ void	cmd_pen()
 }
 
 /*
-*	ARRAY ROUTINES
-*
-*	FIRST ELEMENT
+*	ARRAY ROUTINES - First element
+*	funcCode is the function code, r is the return value of the function, elem_p is the element
 */
 void	dar_first(long funcCode, var_t *r, var_t *elem_p)		SEC(BMATH);
 void	dar_first(long funcCode, var_t *r, var_t *elem_p)
@@ -122,9 +121,8 @@ void	dar_first(long funcCode, var_t *r, var_t *elem_p)
 }
 
 /*
-*	ARRAY ROUTINES
-*
-*	NEXT (each) ELEMENT
+*	ARRAY ROUTINES - Next (each) element
+*	funcCode is the function code, r is the return value of the function, elem_p is the current element
 */
 void	dar_next(long funcCode, var_t *r, var_t *elem_p)	SEC(BMATH);
 void	dar_next(long funcCode, var_t *r, var_t *elem_p)
@@ -166,9 +164,8 @@ void	dar_next(long funcCode, var_t *r, var_t *elem_p)
 }
 
 /*
-*	ARRAY ROUTINES
-*
-*	FINAL
+*	ARRAY ROUTINES - Last element
+*	funcCode is the function code, r is the return value of the function, elem_p is the element
 */
 void	dar_final(long funcCode, var_t *r, int count)	SEC(BMATH);
 void	dar_final(long funcCode, var_t *r, int count)

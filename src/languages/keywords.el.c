@@ -1,7 +1,15 @@
 /*
 *	SB Keywords in Greek - ISO-8859-7
 *
-*	names 15 chars max. Always capitals (lowers means invisible keywords)
+*	Rules:
+*	* Names can be 15 chars long. (defined on scan.h)
+* 	* Names must defined always with capitals. lower-case means invisible keywords.
+*	* Spaces are not allowed. Only letters, digits and the character '_'.
+*	* Alias supported just repeat the keyword.
+*	  Example:
+*		{ "GOTO",		kwGOTO	},
+*		{ "GOTHERE",	kwGOTO	},
+*	  This means the command GOTO it is known to the compiler with the names "GOTO" and "GOTHERE".
 */
 
 /*
@@ -10,10 +18,11 @@
 *	This table is limited to 256 elements
 */
 struct keyword_s keyword_table[] = {
-/* real commands */
-{ "LOCAL", 		kwLOCAL	},
-{ "SUB", 		kwPROC	},
-{ "FUNC", 		kwFUNC	},
+//{ Command-Name, Command-Code },
+///1234567890123456
+{ "топий╧", 		kwLOCAL	},
+{ "диадийас╨а", 		kwPROC	},
+{ "сум╤ятгсг", 		kwFUNC	},
 { "DEF", 		kwFUNC	},
 { "BYREF",		kwBYREF	},
 { "DECLARE",	kwDECLARE	},
@@ -23,41 +32,42 @@ struct keyword_s keyword_table[] = {
 
 { "LET", 		kwLET	},
 { "CONST", 		kwCONST	},
-{ "DIM", 		kwDIM	},
+{ "п╨майас", 		kwDIM	},
 { "REDIM", 		kwREDIM	},
-{ "STOP",		kwSTOP	},
-{ "END",		kwEND	},
-{ "PRINT",		kwPRINT	},
+{ "стал╤та", kwSTOP	},
+{ "т╦кос",		kwEND	},
+{ "т╬пысе",		kwPRINT	},
 { "SPRINT",		kwSPRINT },
-{ "INPUT",		kwINPUT	},
+{ "ф╧тгсе",		kwINPUT	},
 { "SINPUT",		kwSINPUT	},
-{ "REM",		kwREM	},
+{ "сгл",		kwREM	},
 { "CHAIN",		kwCHAIN	},
 { "ON",			kwON	},
 
 { "LABEL",		kwLABEL	},
-{ "GOTO",		kwGOTO	},
-{ "IF",			kwIF	},
-{ "THEN",		kwTHEN	},
-{ "ELSE",		kwELSE	},
+{ "п╧цаиме",		kwGOTO	},
+{ "ам",			kwIF	},
+{ "т╪те",		kwTHEN	},
+{ "акки©с",		kwELSE	},
 { "ELIF",		kwELIF	},
 { "ELSEIF",		kwELIF	},
-{ "ENDIF",		kwENDIF	},
-{ "FI",			kwENDIF	},
-{ "FOR",		kwFOR	},
-{ "TO",			kwTO	},
+{ "т╦костоуам",		kwENDIF	},
+{ "т╦косам",		kwENDIF	},
+{ "там",			kwENDIF	},
+{ "циа",		kwFOR	},
+{ "╦ыс",			kwTO	},
 { "STEP",		kwSTEP	},
-{ "NEXT",		kwNEXT	},
-{ "WHILE",		kwWHILE	},
-{ "WEND",		kwWEND	},
-{ "REPEAT",		kwREPEAT	},
-{ "UNTIL",		kwUNTIL	},
+{ "еп╪лемо",		kwNEXT	},
+{ "еж╪сом",		kwWHILE	},
+{ "теж",		kwWEND	},
+{ "епам╦кабе",	kwREPEAT	},
+{ "л╦вяи",		kwUNTIL	},
 { "GOSUB",		kwGOSUB	},
 { "RETURN",		kwRETURN	},
 { "READ",		kwREAD	},
 { "DATA",		kwDATA	},
 { "RESTORE",	kwRESTORE	},
-{ "EXIT",		kwEXIT	},
+{ "бцес",		kwEXIT	},
 
 { "ERASE", 		kwERASE	},
 { "USE",		kwUSE	},
@@ -126,20 +136,20 @@ struct keyword_s keyword_table[] = {
 *	OPERATORS (not the symbols)
 */
 struct opr_keyword_s opr_table[] = {
-{ "AND",   kwTYPE_LOGOPR, '&' 		 },
-{ "OR",    kwTYPE_LOGOPR, '|' 		 },
+{ "йаи",   kwTYPE_LOGOPR, '&' 		 },
+{ "╧",    kwTYPE_LOGOPR, '|' 		 },
 { "BAND",  kwTYPE_LOGOPR, OPLOG_BAND },
 { "BOR",   kwTYPE_LOGOPR, OPLOG_BOR	 },
 { "XOR",   kwTYPE_LOGOPR, '~'        },
 { "NOT",   kwTYPE_UNROPR, '!'        },
-{ "MOD",   kwTYPE_MULOPR, OPLOG_MOD	 },
+{ "уп╪коипо",   kwTYPE_MULOPR, OPLOG_MOD	 },
 { "MDL",   kwTYPE_MULOPR, OPLOG_MDL	 },
 { "EQV",   kwTYPE_LOGOPR, OPLOG_EQV	 },
 { "IMP",   kwTYPE_LOGOPR, OPLOG_IMP	 },
 { "NAND",  kwTYPE_LOGOPR, OPLOG_NAND },
 { "NOR",   kwTYPE_LOGOPR, OPLOG_NOR	 },
 { "XNOR",  kwTYPE_LOGOPR, OPLOG_NOR	 },
-{ "IN",    kwTYPE_CMPOPR, OPLOG_IN	 },
+{ "ам╧йеи",    kwTYPE_CMPOPR, OPLOG_IN	 },
 { "LIKE",  kwTYPE_CMPOPR, OPLOG_LIKE },
 
 { "", 0, 0 }
@@ -158,8 +168,8 @@ struct opr_keyword_s opr_table[] = {
 *	open x FOR INPUT ...
 */
 struct spopr_keyword_s spopr_table[] = {
-{ "COLOR",		kwCOLOR 	},
-{ "FILLED",		kwFILLED	},
+{ "левя©ла",		kwCOLOR 	},
+{ "цел╤то",		kwFILLED	},
 { "FOR",		kwFORSEP	},
 { "INPUT",		kwINPUTSEP	},
 { "OUTPUT",		kwOUTPUTSEP	},
@@ -169,10 +179,10 @@ struct spopr_keyword_s spopr_table[] = {
 { "USG",		kwUSING		},
 { "SHARED",		kwSHARED	},
 { "AS",			kwAS		},
-{ "TO",			kwTO		},
+{ "╦ыс",		kwTO		},
 { "DO",			kwDO		},
 { "STEP",		kwSTEP		},
-{ "THEN",		kwTHEN		},
+{ "т╪те",		kwTHEN		},
 { "SUB", 		kwPROCSEP	},
 { "FUNC", 		kwFUNCSEP	},
 { "DEF", 		kwFUNCSEP	},
@@ -193,9 +203,9 @@ struct spopr_keyword_s spopr_table[] = {
 struct func_keyword_s func_table[] = {
 ///1234567890123456
 { "ASC",			kwASC },
-{ "VAL",			kwVAL },
+{ "аяихл",			kwVAL },
 { "CHR",			kwCHR },
-{ "STR",			kwSTR },
+{ "йе╨л",			kwSTR },
 { "OCT",			kwOCT },
 { "HEX",			kwHEX },
 { "LCASE",			kwLCASE },
@@ -272,7 +282,7 @@ struct func_keyword_s func_table[] = {
 { "LOG",			kwLOG },
 { "LOG10",			kwLOG10 },
 { "FIX",			kwFIX },
-{ "INT",			kwINT },
+{ "ай╦яаиос",			kwINT },
 { "CDBL",			kwCDBL },
 { "CREAL",			kwCDBL },
 { "DEG",			kwDEG },
@@ -287,7 +297,7 @@ struct func_keyword_s func_table[] = {
 { "EOF",			kwEOF },
 { "SEEK",			kwSEEKF },
 { "LOF",			kwLOF },
-{ "RND",			kwRND },
+{ "тува╨ос",			kwRND },
 { "MAX",			kwMAX },
 { "MIN",			kwMIN },
 { "ABSMAX",			kwABSMAX },
@@ -327,10 +337,8 @@ struct func_keyword_s func_table[] = {
 { "TIMER", 			kwTIMER }, 
 { "PROGLINE",		kwPROGLINE },
 { "RUN",			kwRUNF	},
-{ "TXTW",			kwTEXTWIDTH },
-{ "TXTH",			kwTEXTHEIGHT },
-{ "TEXTWIDTH", 		kwTEXTWIDTH },
-{ "TEXTHEIGHT",		kwTEXTHEIGHT },
+{ "пк╤тосй",		kwTEXTWIDTH },
+{ "╬ьосй",			kwTEXTHEIGHT },
 { "EXIST",			kwEXIST },
 { "ISFILE",			kwISFILE },
 { "ISDIR",			kwISDIR },
@@ -456,12 +464,12 @@ struct proc_keyword_s proc_table[] = {
 *	_WS = With spaces (one left and one right)
 *	_WRS = With one space at right
 */
-#define LCN_PRINT		"PRINT"
-#define LCN_REM			"REM"
-#define LCN_THEN_WS		" THEN "
-#define LCN_GOTO_WRS	"GOTO "
-#define LCN_GOTO_WS		" GOTO "
-#define LCN_ELSE		"ELSE"
+#define LCN_PRINT		"т╬пысе"
+#define LCN_REM			"сгл"
+#define LCN_THEN_WS		" т╪те "
+#define LCN_GOTO_WRS	"п╧цаиме "
+#define LCN_GOTO_WS		" п╧цаиме "
+#define LCN_ELSE		"акки©с"
 #define LCN_UICS_WRS	"UICS "
 #define LCN_CHARS		"CHARS"
 #define LCN_PIXELS		"PIXELS"
@@ -473,15 +481,15 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_IMPORT_WRS	"IMPORT "
 #define LCN_UNIT_WRS	"UNIT "
 #define LCN_BYREF_WRS	"BYREF "
-#define LCN_END			"END"
-#define LCN_ENDIF		"ENDIF"
+#define LCN_END			"т╦кос"
+#define LCN_ENDIF		"т╦косам"
 #define LCN_GOSUB_WS	" GOSUB "
 #define LCN_DO_WS		" DO "
-#define LCN_NEXT		"NEXT"
+#define LCN_NEXT		"еп╪лемо"
 #define LCN_IN_WS		" IN "
-#define LCN_WEND		"WEND"
-#define LCN_IF			"IF"
-#define LCN_INPUT_WRS	"INPUT "
+#define LCN_WEND		"теж"
+#define LCN_IF			"ам"
+#define LCN_INPUT_WRS	"ф╧тгсе "
 #define LCN_OPTION		"OPTION"
 #define LCN_PREDEF		"PREDEF"
 #define LCN_QUITE		"QUITE"
@@ -491,19 +499,19 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_UNIT_PATH	"#UNIT-PATH:"
 #define LCN_COMMAND		"COMMAND"
 #define LCN_INC			"#INC:"
-#define	LCN_SUB_WRS		"SUB "
-#define	LCN_FUNC_WRS	"FUNC "
+#define	LCN_SUB_WRS		"диадийас╨а "
+#define	LCN_FUNC_WRS	"сум╤ятгсг "
 #define	LCN_DEF_WRS		"DEF "
-#define LCN_END_WRS		"END "
-#define LCN_END_WNL		"END\n"
+#define LCN_END_WRS		"т╦кос "
+#define LCN_END_WNL		"т╦кос\n"
 
 /* system variables */
 #define LCN_SV_OSVER	"OSVER"
 #define LCN_SV_OSNAME	"OSNAME"
 #define LCN_SV_SBVER	"SBVER"
-#define LCN_SV_PI		"PI"
-#define LCN_SV_XMAX		"XMAX"
-#define LCN_SV_YMAX		"YMAX"
+#define LCN_SV_PI		"п"
+#define LCN_SV_XMAX		"л╦цистов"
+#define LCN_SV_YMAX		"л╦цистоь"
 #define LCN_SV_BPP		"BPP"	// Bits Per Pixel
 #define LCN_SV_TRUE		"TRUE"
 #define LCN_SV_FALSE	"FALSE"
@@ -521,9 +529,9 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_SV_VADR		"VIDADR" // video-ram address
 
 // fast cut of comments (pp)
-#define LCN_REM_1		":rem "
-#define LCN_REM_2		":rem\t"
-#define LCN_REM_3		"rem "
-#define LCN_REM_4		"rem\n"
+#define LCN_REM_1		":СГЛ "
+#define LCN_REM_2		":СГЛ\t"
+#define LCN_REM_3		"СГЛ "
+#define LCN_REM_4		"СГЛ\n"
 
-#define SYS_MAIN_SECTION_NAME	"Main"
+#define SYS_MAIN_SECTION_NAME	"йЕМТЯИЙч"

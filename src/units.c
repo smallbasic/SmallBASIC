@@ -80,7 +80,7 @@ int		find_unit_source(const char *name, char *file)
 	#endif
 
 	strcpy(lname, name);
-	strlwr(lname);
+	strlower(lname);
 	sprintf(file, "%s.bas", lname);
 	
 	#if defined(_UnixOS) || defined(_DOS) || defined(_Win32)
@@ -135,7 +135,7 @@ int		find_unit(const char *name, char *file)
 	#endif
 
 	strcpy(lname, name);
-	strlwr(lname);
+	strlower(lname);
 	sprintf(file, "%s.sbu", lname);
 	
 	#if defined(_UnixOS) || defined(_DOS) || defined(_Win32)

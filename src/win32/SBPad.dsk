@@ -1,39 +1,45 @@
 [Closed Files]
-File_0=SourceModule,'P:\cvs\SB2003\sync\win32\dev_bcb.cpp',0,1,544,1,559,0,0
-File_1=SourceModule,'c:\usr\bcb6\include\vcl\Forms.hpp',0,1,918,1,930,0,0
-File_2=SourceModule,'P:\cvs\SB2003\sync\win32\SynEdit\Source\SynEditHighlighter.hpp',0,1,149,3,164,0,0
-File_3=SourceModule,'P:\cvs\SB2003\sync\kw.c',0,1,153,53,165,0,0
-File_4=SourceModule,'P:\cvs\SB2003\sync\editor\ted.cpp',0,1,4392,25,4399,0,0
-File_5=SourceModule,'P:\cvs\SB2003\sync\win32\SynEdit.hpp',0,1,1,11,14,0,0
-File_6=SourceModule,'P:\cvs\SB2003\sync\geom.c',0,1,1,1,1,0,0
-File_7=SourceModule,'P:\cvs\SB2003\sync\str.c',0,1,1168,34,1168,0,0
-File_8=SourceModule,'P:\cvs\SB2003\sync\str.h',0,1,435,27,455,0,0
-File_9=SourceModule,'c:\usr\bcb6\include\winsock2.h',0,1,97,15,109,0,0
+File_0=SourceModule,'P:\cvs\sbrs3\sync\win32\icons\sb4w.ico',0,1,1,1,1,0,0
+File_1=SourceModule,'P:\cvs\SB2003\sync\win32\fsrc.cpp',0,1,1,52,28,0,0
+File_2=SourceModule,'P:\cvs\sbrs3\sync\fs_stream.c',0,1,1,1,1,0,0
+File_3=SourceModule,'P:\cvs\SB2003\sync\win32\dev_winsnd.cpp',0,1,350,66,337,0,0
+File_4=SourceModule,'P:\cvs\sbrs3\sync\device.c',0,1,412,1,424,0,0
+File_5=SourceModule,'P:\cvs\sbrs3\sync\eval.c',0,1,900,45,908,0,0
+File_6=SourceModule,'P:\cvs\SB2003\sync\brun.c',0,1,1992,31,2091,0,0
 
 [Modules]
-Module0=P:\cvs\SB2003\sync\win32\dev_winsnd.cpp
-Module1=P:\cvs\sbrs3\sync\units.c
-Module2=P:\cvs\sbrs3\sync\win32\pad1.cpp
-Module3=P:\cvs\sbrs3\sync\win32\SBPad.bpr
+Module0=P:\cvs\sbrs3\sync\bc.c
+Module1=P:\cvs\sbrs3\sync\win32\fsettngs.cpp
+Module2=P:\cvs\sbrs3\sync\win32\fcoprog.cpp
+Module3=P:\cvs\sbrs3\sync\win32\pad1.cpp
 Module4=P:\cvs\sbrs3\sync\win32\dev_bcb.cpp
-Module5=P:\cvs\SB2003\sync\brun.c
-Module6=P:\cvs\sbrs3\sync\brun.c
-Module7=P:\cvs\sbrs3\sync\device.c
-Module8=P:\cvs\SB2003\sync\win32\pad1.cpp
-Module9=P:\cvs\SB2003\sync\win32\fsrc.cpp
-Module10=P:\cvs\sbrs3\sync\bc.c
-Count=11
+Module5=P:\cvs\sbrs3\sync\win32\dev_winsnd.cpp
+Module6=P:\cvs\sbrs3\sync\proc.c
+Module7=P:\cvs\sbrs3\sync\mem.c
+Module8=P:\cvs\sbrs3\sync\brun.c
+Module9=P:\cvs\sbrs3\sync\vmt.c
+Module10=P:\cvs\sbrs3\sync\units.c
+Module11=P:\cvs\sbrs3\sync\geom.c
+Module12=P:\cvs\sbrs3\sync\scan.c
+Module13=P:\cvs\sbrs3\sync\fs_socket_client.c
+Module14=P:\cvs\sbrs3\sync\win32\SBPad.bpr
+Count=15
 EditWindowCount=1
 PackageWindowCount=1
 
-[P:\cvs\SB2003\sync\win32\dev_winsnd.cpp]
+[P:\cvs\sbrs3\sync\bc.c]
 ModuleType=SourceModule
 FormState=0
 FormOnTop=0
 
-[P:\cvs\sbrs3\sync\units.c]
+[P:\cvs\sbrs3\sync\win32\fsettngs.cpp]
 ModuleType=SourceModule
-FormState=0
+FormState=1
+FormOnTop=0
+
+[P:\cvs\sbrs3\sync\win32\fcoprog.cpp]
+ModuleType=SourceModule
+FormState=1
 FormOnTop=0
 
 [P:\cvs\sbrs3\sync\win32\pad1.cpp]
@@ -41,17 +47,22 @@ ModuleType=SourceModule
 FormState=1
 FormOnTop=0
 
-[P:\cvs\sbrs3\sync\win32\SBPad.bpr]
-ModuleType=SourceModule
-FormState=0
-FormOnTop=0
-
 [P:\cvs\sbrs3\sync\win32\dev_bcb.cpp]
 ModuleType=SourceModule
 FormState=0
 FormOnTop=0
 
-[P:\cvs\SB2003\sync\brun.c]
+[P:\cvs\sbrs3\sync\win32\dev_winsnd.cpp]
+ModuleType=SourceModule
+FormState=0
+FormOnTop=0
+
+[P:\cvs\sbrs3\sync\proc.c]
+ModuleType=SourceModule
+FormState=0
+FormOnTop=0
+
+[P:\cvs\sbrs3\sync\mem.c]
 ModuleType=SourceModule
 FormState=0
 FormOnTop=0
@@ -61,22 +72,32 @@ ModuleType=SourceModule
 FormState=0
 FormOnTop=0
 
-[P:\cvs\sbrs3\sync\device.c]
+[P:\cvs\sbrs3\sync\vmt.c]
 ModuleType=SourceModule
 FormState=0
 FormOnTop=0
 
-[P:\cvs\SB2003\sync\win32\pad1.cpp]
+[P:\cvs\sbrs3\sync\units.c]
 ModuleType=SourceModule
 FormState=0
 FormOnTop=0
 
-[P:\cvs\SB2003\sync\win32\fsrc.cpp]
+[P:\cvs\sbrs3\sync\geom.c]
 ModuleType=SourceModule
 FormState=0
 FormOnTop=0
 
-[P:\cvs\sbrs3\sync\bc.c]
+[P:\cvs\sbrs3\sync\scan.c]
+ModuleType=SourceModule
+FormState=0
+FormOnTop=0
+
+[P:\cvs\sbrs3\sync\fs_socket_client.c]
+ModuleType=SourceModule
+FormState=0
+FormOnTop=0
+
+[P:\cvs\sbrs3\sync\win32\SBPad.bpr]
 ModuleType=SourceModule
 FormState=0
 FormOnTop=0
@@ -90,8 +111,8 @@ FormState=0
 FormOnTop=0
 
 [EditWindow0]
-ViewCount=11
-CurrentView=5
+ViewCount=15
+CurrentView=12
 View0=0
 View1=1
 View2=2
@@ -103,6 +124,10 @@ View7=7
 View8=8
 View9=9
 View10=10
+View11=11
+View12=12
+View13=13
+View14=14
 CodeExplorer=CodeExplorer@EditWindow0
 MessageView=MessageView@EditWindow0
 ClassHierarchy=ClassHierarchy@EditWindow0
@@ -114,11 +139,11 @@ Top=0
 Width=1024
 Height=742
 MaxLeft=-4
-MaxTop=100
+MaxTop=97
 MaxWidth=1032
-MaxHeight=644
+MaxHeight=647
 ClientWidth=1024
-ClientHeight=617
+ClientHeight=620
 LeftPanelSize=178
 LeftPanelClients=DockSite0
 LeftPanelData=0000040000000000000000000000000000000000000000000001000000000000000009000000446F636B5369746530FFFFFFFF
@@ -128,80 +153,108 @@ BottomPanelClients=DockSite1
 BottomPanelData=00000400000000008E0000000000000001000400000000000001000000000E0000000000000001000000028E00000000000000020000000000000000000000000200000000000400000000000002000000000004000009000000446F636B5369746531FFFFFFFF
 
 [View0]
-Module=P:\cvs\SB2003\sync\win32\pad1.cpp
-CursorX=31
-CursorY=381
-TopLine=359
+Module=P:\cvs\sbrs3\sync\win32\SBPad.cpp
+CursorX=33
+CursorY=30
+TopLine=1
 LeftCol=1
 
 [View1]
-Module=P:\cvs\SB2003\sync\win32\fsrc.cpp
-CursorX=31
-CursorY=8
-TopLine=19
+Module=P:\cvs\sbrs3\sync\win32\pad1.cpp
+CursorX=29
+CursorY=916
+TopLine=900
 LeftCol=1
 
 [View2]
-Module=P:\cvs\sbrs3\sync\win32\SBPad.cpp
-CursorX=33
-CursorY=28
-TopLine=13
+Module=P:\cvs\sbrs3\sync\win32\fcoprog.cpp
+CursorX=1
+CursorY=10
+TopLine=1
 LeftCol=1
 
 [View3]
-Module=P:\cvs\sbrs3\sync\win32\pad1.cpp
-CursorX=95
-CursorY=302
-TopLine=293
+Module=P:\cvs\sbrs3\sync\fs_socket_client.c
+CursorX=1
+CursorY=1
+TopLine=1
 LeftCol=1
 
 [View4]
-Module=P:\cvs\sbrs3\sync\bc.c
+Module=P:\cvs\sbrs3\sync\scan.c
 CursorX=1
-CursorY=384
-TopLine=373
+CursorY=48
+TopLine=46
 LeftCol=1
 
 [View5]
-Module=P:\cvs\SB2003\sync\win32\dev_winsnd.cpp
+Module=P:\cvs\sbrs3\sync\geom.c
 CursorX=1
-CursorY=245
-TopLine=280
+CursorY=35
+TopLine=1
 LeftCol=1
 
 [View6]
 Module=P:\cvs\sbrs3\sync\units.c
-CursorX=25
-CursorY=273
-TopLine=204
+CursorX=20
+CursorY=184
+TopLine=169
 LeftCol=1
 
 [View7]
-Module=P:\cvs\sbrs3\sync\win32\dev_bcb.cpp
-CursorX=35
-CursorY=417
-TopLine=741
+Module=P:\cvs\sbrs3\sync\vmt.c
+CursorX=10
+CursorY=533
+TopLine=488
 LeftCol=1
 
 [View8]
 Module=P:\cvs\sbrs3\sync\brun.c
 CursorX=1
-CursorY=2044
-TopLine=2033
+CursorY=34
+TopLine=24
 LeftCol=1
 
 [View9]
-Module=P:\cvs\sbrs3\sync\device.c
-CursorX=1
-CursorY=224
-TopLine=213
+Module=P:\cvs\sbrs3\sync\mem.c
+CursorX=13
+CursorY=153
+TopLine=168
 LeftCol=1
 
 [View10]
-Module=P:\cvs\SB2003\sync\brun.c
-CursorX=31
-CursorY=2091
-TopLine=2079
+Module=P:\cvs\sbrs3\sync\proc.c
+CursorX=33
+CursorY=190
+TopLine=193
+LeftCol=1
+
+[View11]
+Module=P:\cvs\sbrs3\sync\win32\fsettngs.cpp
+CursorX=19
+CursorY=58
+TopLine=46
+LeftCol=1
+
+[View12]
+Module=P:\cvs\sbrs3\sync\bc.c
+CursorX=1
+CursorY=385
+TopLine=373
+LeftCol=1
+
+[View13]
+Module=P:\cvs\sbrs3\sync\win32\dev_winsnd.cpp
+CursorX=39
+CursorY=258
+TopLine=246
+LeftCol=1
+
+[View14]
+Module=P:\cvs\sbrs3\sync\win32\dev_bcb.cpp
+CursorX=1
+CursorY=503
+TopLine=700
 LeftCol=1
 
 [PackageWindow0]
@@ -389,19 +442,19 @@ Create=1
 Visible=1
 State=0
 Left=2
-Top=110
-Width=240
-Height=607
+Top=112
+Width=235
+Height=605
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=232
-ClientHeight=583
+ClientWidth=227
+ClientHeight=581
 TBDockHeight=367
 LRDockWidth=190
 Dockable=1
 SplitPos=99
 ArrangeBy=Name
-SelectedItem=HelpContext
+SelectedItem=Name
 ExpandedItems=Comments,EdgeBorders,Highlighter.Comments,Options
 HiddenCategories=
 
@@ -475,7 +528,7 @@ ClassViewDisplayMode=0
 
 [MessageView@EditWindow0]
 Create=1
-Visible=0
+Visible=1
 State=0
 Left=0
 Top=0
@@ -529,6 +582,6 @@ TBDockHeight=142
 LRDockWidth=283
 Dockable=1
 TabPosition=0
-ActiveTab=Call Stack
+ActiveTab=Messages
 TabDockClients=MessageView@EditWindow0,ToDo List,CodeguardLog,CallStackWindow
 

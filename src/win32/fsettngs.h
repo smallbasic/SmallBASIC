@@ -33,9 +33,14 @@ __published:	// IDE-managed Components
 	TPanel *Panel1;
 	TImage *Image1;
 	TFontDialog *dlgFont;
+	TCheckBox *chkSound;
+	TBevel *Bevel2;
+	TCheckBox *chkMMSound;
 	void __fastcall btnEFClick(TObject *Sender);
 	void __fastcall btnXFClick(TObject *Sender);
 	void __fastcall chkVSClick(TObject *Sender);
+	void __fastcall chkSoundClick(TObject *Sender);
+	void __fastcall OnShow(TObject *Sender);
 private:	// User declarations
 public:		// User declarations
 	__fastcall TFSets(TComponent* Owner);

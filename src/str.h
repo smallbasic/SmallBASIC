@@ -36,14 +36,7 @@ extern "C" {
 #define IsGMB2Font(x)           ((x) >= 0x21 && (x) <= 0xff)										/**< generic-multibyte charset, true if the second character is belongs to gmb encode @ingroup str */
 #define IsGMBFont(x)            (IsGMB1Font((x >> 8) & 0xff) && IsGMB2Font(x & 0xff))				/**< generic-multibyte charset, true if the character is belongs to gmb encode @ingroup str */
 
-#define	is_digit(c)	((c) >= 48 && (c) <= 57)												/**< true if the character is a digit @ingroup str */
-#define	is_upper(c)	((c) >= 65 && (c) <= 90)												/**< true if the character is upper-case @ingroup str */
-#define	is_lower(c)	((c) >= 97 && (c) <= 122)												/**< true if the character is lower-case @ingroup str */
-#define	to_upper(c)	(((c) >= 97 && (c) <= 122) ? (c) - 32 : (c))							/**< returns the upper-case character @ingroup str */
-#define	to_lower(c)	(((c) >= 65 && (c) <= 90) ? (c) + 32 : (c))								/**< returns the lower-case character @ingroup str */
-#define	is_hexdigit(c)	(is_digit((c)) || (to_upper((c)) >= 65 && to_upper((c)) <= 70))		/**< true if the character is a hexadecimal digit @ingroup str */
-#define	is_octdigit(c)	((c) >= '0' && (c) <= '7')											/**< true if the character is an octadecimal digit @ingroup str */
-#define	to_hexdigit(c)	( ( ((c) & 0xF) > 9)? ((c)-10)+'A' : (c)+'0' )								/**< returns the hex-digit of the 4-bit number c @ingroup str */
+#include "languages/chars.en.h"
 
 /**
 *	@ingroup str
@@ -115,7 +108,6 @@ int		is_keyword(const char *name)	SEC(BCSCAN);
 */
 int		is_number(const char *str)		SEC(BCSCAN);
 
-#if !defined(_Win32)
 /**
 *	@ingroup str
 *
@@ -124,7 +116,7 @@ int		is_number(const char *str)		SEC(BCSCAN);
 *	@param str the string
 *	@return the str
 */
-char	*strupr(char *str)				SEC(BIO3);
+char	*strupper(char *str)				SEC(BIO3);
 
 /**
 *	@ingroup str
@@ -134,8 +126,7 @@ char	*strupr(char *str)				SEC(BIO3);
 *	@param str the string
 *	@return the str
 */
-char	*strlwr(char *str)				SEC(BIO3);
-#endif
+char	*strlower(char *str)				SEC(BIO3);
 
 /**
 *	@ingroup str
@@ -254,6 +245,9 @@ char	*ftostr(double num, char *dest)	SEC(BIO3);
 *	@return a pointer to dest
 */
 char	*ltostr(long num, char *dest)	SEC(BIO3);
+
+int		strcaseless(const char *s1, const char *s2)			SEC(BIO3);
+int		strcaselessn(const char *s1, const char *s2, int len)	SEC(BIO3);
 
 /**
 *	@ingroup str
@@ -446,6 +440,10 @@ char	*bstrdup(const char *source) SEC(BIO3);
 *	@return pointer to base
 */
 const char *baseof(const char *source, int delim)	SEC(BIO3);
+
+/*
+*/
+char	char_table_replace(const char *what_table, int ch, const char *replace_table) SEC(BIO3);
 
 #if defined(_WinBCB)
 #define	strncasecmp(a,b,n)	strnicmp(a,b,n)

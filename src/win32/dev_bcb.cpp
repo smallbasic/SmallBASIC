@@ -26,6 +26,8 @@ static TColor	cmap[16];
 static TColor	dcolor, dbgcolor;
 static int		font_h = 16, font_w = 8, maxline = 11;
 
+static int		bcb_break_flag = 0;
+
 // console/fonts
 static int	cur_x = 0;
 static int	cur_y = 0;
@@ -718,7 +720,7 @@ int	 _cdecl	osd_events_wait(int wait_flag)
 				}
 			else	{
 				// keyboard
-				if	( ev.ch == SB_KEY_BREAK )	// CTRL+C (break)
+				if	( ev.ch == 3 )	// CTRL+C (break)
 					return -2;
 				if	( ev.ch == '\r' )
 					dev_pushkey('\n');
@@ -737,8 +739,16 @@ int	 _cdecl	osd_events_wait(int wait_flag)
 
 int	 _cdecl	osd_events()
 {
+	if	( bcb_break_flag )
+		return -2;
 	return osd_events_wait(0);
 }
+
+void osd_bcb_breakoff()
+{ bcb_break_flag = 0; }
+
+void osd_bcb_breakon()
+{ bcb_break_flag = 1; }
 
 //////////
 

@@ -3,7 +3,7 @@ object FSets: TFSets
   Top = 219
   BorderStyle = bsDialog
   Caption = 'Settings'
-  ClientHeight = 241
+  ClientHeight = 301
   ClientWidth = 364
   Color = clBtnFace
   Font.Charset = GREEK_CHARSET
@@ -13,6 +13,7 @@ object FSets: TFSets
   Font.Style = []
   OldCreateOrder = False
   Position = poDesktopCenter
+  OnShow = OnShow
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -84,6 +85,12 @@ object FSets: TFSets
     Caption = 'Height'
     Layout = tlCenter
   end
+  object Bevel2: TBevel
+    Left = 8
+    Top = 248
+    Width = 345
+    Height = 2
+  end
   object txtEF: TEdit
     Left = 136
     Top = 24
@@ -102,23 +109,23 @@ object FSets: TFSets
   end
   object Button1: TButton
     Left = 168
-    Top = 208
+    Top = 264
     Width = 89
     Height = 25
     Caption = 'OK'
     Default = True
     ModalResult = 1
-    TabOrder = 7
+    TabOrder = 9
   end
   object Button2: TButton
     Left = 272
-    Top = 208
+    Top = 264
     Width = 81
     Height = 25
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
-    TabOrder = 8
+    TabOrder = 10
   end
   object chkVS: TCheckBox
     Left = 136
@@ -170,7 +177,7 @@ object FSets: TFSets
     Height = 225
     BevelOuter = bvLowered
     Color = clGray
-    TabOrder = 9
+    TabOrder = 11
     object Image1: TImage
       Left = 1
       Top = 1
@@ -1226,6 +1233,24 @@ object FSets: TFSets
         9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B
         9B9B9B9B9B9B9B000000}
     end
+  end
+  object chkSound: TCheckBox
+    Left = 136
+    Top = 200
+    Width = 217
+    Height = 17
+    Caption = 'Enable sound'
+    TabOrder = 7
+    OnClick = chkSoundClick
+  end
+  object chkMMSound: TCheckBox
+    Left = 160
+    Top = 224
+    Width = 121
+    Height = 17
+    Caption = 'MM Sound'
+    TabOrder = 8
+    OnClick = chkVSClick
   end
   object dlgFont: TFontDialog
     Font.Charset = DEFAULT_CHARSET

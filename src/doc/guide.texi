@@ -96,14 +96,18 @@ software.''
 @email{nereus@@freemail.gr}, Athens - Greece.@*
 Original author and project manager.
 @sp 1
+@b{Chris Warren-Smith}@*
+@email{cwarrens@@twpo.com.au}, Adelaide - South Australia.@*
+Franklin's eBookMan version, and SB developer@*
+@url{http://www.twpo.com.au/cwarrens/ebm}
+@sp 1
+@b{Laurent Poujoulat}@*
+@email{lpoujoulat@@wanadoo.fr}, Bondy - France.@*
+PalmOS 5 version, and SB developer
+@sp 1
 @b{Tim Corcoran}@*
 @email{tim@@whdl.com}, USA.@*
 Sony Clie version, and SB developer
-@sp 1
-@b{Chris Warren-Smith}@*
-@email{cwarrens@twpo.com.au}, Adelaide - South Australia.@*
-Franklin's eBookMan version, and SB developer@*
-@url{http://www.twpo.com.au/cwarrens/ebm}
 @sp 1
 @b{Earle F. Philhower}@*
 @email{earle@@ziplabel.com}, USA.@*
@@ -234,29 +238,25 @@ it takes the prefix 'Small'.
 SB is a structured version of BASIC and
 includes a lot of new feautures such matrices,
 algebra functions, powerfull string library, etc.
+A lot of its feautures does not exists in the most languages,
+but on the other hand, SB does not supports GUI and other
+feautures that are common in today languages.
 
 @subsubsection Purpose
 @strong{BASIC is easy to learn and simple to use, and this is the spirit of SB}.
-Instead of other BASIC versions, as VB, our version
-intent to sucrifice everything in the altar of simplicity.
+Instead of other BASIC versions, as VB, our version intent to sucrifice everything in the altar of simplicity.
 
-The world is full of languages, SB does not offers something new,
-but intents to offer what is lost in our days.
-A simple tool for easy to write programs, an easy way to do some maths
-and build some scripts.
+The world is full of languages, SB does not offers something new, but intents to offer what is lost in our days.
+A simple tool for easy to write programs, an easy way to do some maths and build some scripts.
 
 Our priorities are to build
 @itemize @bullet
-@item An extremly easy learned language
-@item An extremly easy to use language
-@item An ideal tool for experimenting on programming
+@item An extremly easy learned language.
+@item An extremly easy to use language.
+@item An ideal tool for experimenting on programming.
+@item An excellent tool for mathematics.
+@item An excellent tool for shell-scripts.
 @end itemize
-
-SB isn't object oriented and it is not intent to be.
-We find OOP hard to learn and hard to use by beginners;
-and that is opposite of the spirit of BASIC. On the other
-hand the 'units' can serve a similar scope pretty good for
-a simple language as the SB.
 
 @subsubsection Cross-platform
 Now, SB can run on more platforms than PalmOS,
@@ -781,7 +781,7 @@ Sorted by priority
 @item >,    <       @tab Less Than, Greater Than
 @item =>,   =<      @tab Less or Equal, Greater or Equal
 @item >=,   <=      @tab Less or Equal, Greater or Equal
-@item IN            @tab In/set (see "The IN operator")
+@item IN            @tab belongs to ... (see "The IN operator")
 @item LIKE          @tab Regular expression match (see "The LIKE operator")
 @item               @tab
 @item AND or &&     @tab Logical AND
@@ -1049,13 +1049,14 @@ Result:
 @c -------------------------------------------------------------
 @section The operator IN
 
-IN operator is used to compare if the left-expression belongs to
-right-expression
+IN operator is used to compare if the left-value belongs to
+right-value.
 
 @example
 ' Using it with arrays
 print 1 in [2,3]        :REM FALSE
 print 1 in [1,2]        :REM TRUE
+print "b" in ["a", "b", "c"] :REM TRUE
 ...
 ' Using it with strings
 print "na" in "abcde"   :REM FALSE
@@ -1079,8 +1080,11 @@ It is compares the left part of the expression with the pattern (right
 part).
 Since the original regular expression code is too big (for handhelds),
 I use only a subset of it, based on an excellent old stuff by
-J. Kercheval (match.c, public-domain, 1991).
-The same code is used for filenames (FILES(), DIRWALK)
+J. Kercheval (match.c, public-domain, 1991). But there is an option to 
+use PCRE (Perl-Compatible Regular Expression library) on systems
+that is supported (Linux); (see OPTION).
+
+The same code is used for filenames (FILES(), DIRWALK) too.
 
 In the pattern string@sc{:}
 @multitable @columnfractions 0.25 0.75
@@ -1442,10 +1446,12 @@ Also, it can be used by IF command (instead of THEN), but is not
 suggested.
 
 @c --------------------------------------
-@section Programming Tips
+@chapter Programming Tips
+
+Programmers must use clean and logical code. Weird code may be faster but it is not good.
 
 @c --c--
-@subsection Using @code{LOCAL} variables
+@section Using @code{LOCAL} variables
 When a variable is not declared it is by default a global variable.
 A usual problem is that name may be used again in a function or procedure.
 
@@ -1480,9 +1486,11 @@ NEXT
 @end example
 
 It is good to declare all local variables on the top of the function.
+For compatibility reasons, the func./proc. variables are not declared as 'local' by default. 
+That it is WRONG but as I said ... compatibility.
 
 @c --c--
-@subsection Loops and variables
+@section Loops and variables
 When we write loops it is much better to initialize
 the counters on the top of the loop instead of the
 top of the program or nowhere.
@@ -1501,7 +1509,7 @@ usual pitfalls such as forgeting to giving init
 value or re-run the loop without reset the variables.
 
 @c --c--
-@subsection Loops and expressions
+@section Loops and expressions
 FOR-like commands are evaluate the 'destination' everytime.
 Also, loops are evaluate the exit-expression everytime too.
 

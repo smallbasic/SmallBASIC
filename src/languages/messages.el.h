@@ -67,7 +67,7 @@
 #define MSG_FOR_ARR_COUNT		"FOR: %s is an array. Arrays are not allowed"
 #define MSG_SPECIAL_KW_ERR		"%s: Wrong position"
 #define MSG_DETAILED_REPORT_Q	"Detailed report (y/N) ?"
-#define MSG_PASS2_COUNT			"\rPASS2: Node %d/%d"
+#define MSG_PASS2_COUNT			"\rΦάση 2: Κόμβος %d/%d"
 #define MSG_UDP_MISSING_END		"SUB/FUNC: Missing END on the same level"
 #define MSG_MISSING_NEXT		"FOR: Missing NEXT on the same level"
 #define MSG_MISSING_IN			"FOR: Missing IN"
@@ -214,4 +214,7 @@
 
 #define ERR_DRAW_SEP			"DRAW: MISSING ,"
 #define ERR_DRAW_CMD			"DRAW: '%c' UNSUPPORTED"
+
+// memory manager
+#define	MEM_OUT_OF_MEM			"Δεν υπάρχει αρκετή μνήμη"
 

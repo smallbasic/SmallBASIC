@@ -70,7 +70,7 @@ static int	slib_add_external_proc(const char *proc_name, int lib_id)
 	char	buf[256];
 
 	sprintf(buf,"%s.%s", slib_table[lib_id].name, proc_name);
-	strupr(buf);
+	strupper(buf);
 
 	if	( extproctable == NULL )	{
 		extprocsize   = 16;
@@ -84,7 +84,7 @@ static int	slib_add_external_proc(const char *proc_name, int lib_id)
 	extproctable[extproccount].lib_id = lib_id;
 	extproctable[extproccount].symbol_index = 0;
 	strcpy(extproctable[extproccount].name, buf);
-	strupr(extproctable[extproccount].name);
+	strupper(extproctable[extproccount].name);
 
 	if	( opt_verbose )	
 		printf("LID: %d, Idx: %d, PROC '%s'\n", lib_id, extproccount, extproctable[extproccount].name);
@@ -101,7 +101,7 @@ static int	slib_add_external_func(const char *func_name, int lib_id)
 	char	buf[256];
 
 	sprintf(buf,"%s.%s", slib_table[lib_id].name, func_name);
-	strupr(buf);
+	strupper(buf);
 
 	// TODO: scan for conflicts
 	if	( extfunctable == NULL )	{
@@ -116,7 +116,7 @@ static int	slib_add_external_func(const char *func_name, int lib_id)
 	extfunctable[extfunccount].lib_id = lib_id;
 	extfunctable[extfunccount].symbol_index = 0;
 	strcpy(extfunctable[extfunccount].name, buf);
-	strupr(extfunctable[extfunccount].name);
+	strupper(extfunctable[extfunccount].name);
 
 	if	( opt_verbose )	
 		printf("LID: %d, Idx: %d, FUNC '%s'\n", lib_id, extfunccount, extfunctable[extfunccount].name);

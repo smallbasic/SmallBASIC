@@ -12,17 +12,18 @@
       ..\scan.obj ..\str.obj ..\unx_memmgr.obj ..\var.obj dev_bcb.obj fabt.obj 
       fsrc.obj fsettngs.obj pdb.obj dev_winsnd.obj ..\extlib.obj ..\fs_irda.obj 
       ..\sberr.obj ..\blib_ui.obj ..\kw.obj ..\blib_math.obj ..\fmt.obj 
-      ..\plot.obj ..\vmt.obj ..\units.obj ..\tasks.obj ..\decomp.obj ..\geom.obj"/>
+      ..\plot.obj ..\vmt.obj ..\units.obj ..\tasks.obj ..\decomp.obj ..\geom.obj 
+      fcoprog.obj"/>
     <RESFILES value="SBPad.res"/>
     <IDLFILES value=""/>
     <IDLGENFILES value=""/>
     <DEFFILE value=""/>
-    <RESDEPEN value="$(RESFILES) pad1.dfm fabt.dfm fsrc.dfm fsettngs.dfm"/>
+    <RESDEPEN value="$(RESFILES) pad1.dfm fabt.dfm fsrc.dfm fsettngs.dfm fcoprog.dfm"/>
     <LIBFILES value=""/>
-    <LIBRARIES value="bcbie.lib dclusr.lib vcldb.lib dbrtl.lib SynEdit_BCB6.lib vclx.lib vcl.lib 
-      rtl.lib"/>
+    <LIBRARIES value="inet.lib bcbie.lib dclusr.lib vcldb.lib dbrtl.lib SynEdit_BCB6.lib 
+      vclx.lib vcl.lib rtl.lib"/>
     <SPARELIBS value="rtl.lib vcl.lib vclx.lib SynEdit_BCB6.lib dbrtl.lib vcldb.lib dclusr.lib 
-      bcbie.lib"/>
+      bcbie.lib inet.lib"/>
     <PACKAGES value="rtl.bpi vcl.bpi vclx.bpi bcbsmp.bpi"/>
     <PATHCPP value=".;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;..;.."/>
     <PATHPAS value=".;"/>
@@ -34,8 +35,8 @@
     <USERDEFINES value="_Win32;_WinBCB;_DEBUG"/>
     <SYSDEFINES value="NO_STRICT"/>
     <MAINSOURCE value="SBPad.cpp"/>
-    <INCLUDEPATH value="..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;$(BCB)\include;$(BCB)\include\vcl"/>
-    <LIBPATH value="..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <INCLUDEPATH value="$(BCB)\Projects;..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="$(BCB)\Projects;..\;..;$(BCB)\Imports;..\editor;SynEdit\Source;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;$(BCB)\Projects\Lib;$(BCB)\lib\obj;$(BCB)\lib"/>
     <WARNINGS value="-w-par"/>
     <OTHERFILES value=""/>
   </MACROS>
@@ -107,6 +108,7 @@
       <FILE FILENAME="..\tasks.c" FORMNAME="" UNITNAME="tasks" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\decomp.c" FORMNAME="" UNITNAME="decomp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\geom.c" FORMNAME="" UNITNAME="geom" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="fcoprog.cpp" FORMNAME="FCompProg" UNITNAME="fcoprog" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -118,7 +120,7 @@ AutoIncBuild=1
 MajorVer=0
 MinorVer=9
 Release=0
-Build=2
+Build=3
 Debug=1
 PreRelease=1
 Special=0
@@ -130,14 +132,14 @@ CodePage=1253
 [Version Info Keys]
 CompanyName=Nicholas Christopoulos
 FileDescription=SmallBASIC Pad for Win32
-FileVersion=0.9.0.2
+FileVersion=0.9.0.3
 InternalName=
 LegalCopyright=GNU GPL 2
 LegalTrademarks=GNU
 OriginalFilename=sbpad.exe
 ProductName=
 ProductVersion=1.0.0.0
-Comments=GPL 2
+Comments=
 PrivateBuild=
 
 [HistoryLists\hlIncludePath]

@@ -78,6 +78,13 @@ __published:	// IDE-managed Components
 	TMenuItem *mnuReopen8;
 	TPanel *Panel2;
 	TCppWebBrowser *browser;
+	TTabSheet *pgTextOut;
+	TPanel *Panel3;
+	TButton *btnLogClear;
+	TCheckBox *chkCapture;
+	TPanel *Panel4;
+	TMemo *txtLog;
+	TStatusBar *StatBar;
 	void __fastcall Quit1Click(TObject *Sender);
 	void __fastcall Load1Click(TObject *Sender);
 	void __fastcall srcOnKeyUp(TObject *Sender, WORD &Key, TShiftState Shift);
@@ -103,12 +110,16 @@ __published:	// IDE-managed Components
 	void __fastcall mnuReopenX(TObject *Sender);
 	void __fastcall Finx1Click(TObject *Sender);
 	void __fastcall Find1Click(TObject *Sender);
+	void __fastcall btnLogClearClick(TObject *Sender);
+	void __fastcall chkCaptureClick(TObject *Sender);
+	void __fastcall outOnKeyDown(TObject *Sender, WORD &Key,
+          TShiftState Shift);
+	void __fastcall outOnKeyUp(TObject *Sender, WORD &Key, TShiftState Shift);
 private:	// User declarations
 	char	dir_sb[1024];
 	char	username[512];
-	char	dir_user[1024];
 	TStringList	*lastUsedFiles;
-	
+
 public:		// User declarations
 	__fastcall TFMain(TComponent* Owner);
 	void update_sbar();
@@ -119,6 +130,8 @@ public:		// User declarations
 	void rebuildLastUsedFiles();
 	void updateLastUsedFiles(const char * name);
 	void __fastcall textSearchAndReplace(bool replace, bool back);
+	void lwrite(const char * s);
+	void CompProg(int pass, int pmin, int pmax);
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TFMain *FMain;

@@ -13,6 +13,7 @@
 #include "pmem.h"
 #include "panic.h"
 #include "smbas.h"
+#include "messages.h"
 
 #if defined(_PalmOS) || defined(_VTOS)
 #include "lopen_bridge.h"
@@ -79,7 +80,7 @@ static dword	vm_fsize;				/* VMM data-file size; speed optimization */
 
 /* ERROR MESSAGES */
 void	err_outofmem(void)					SEC(TRASH);
-void	err_outofmem(void)					{	panic("OUT OF MEMORY"); }
+void	err_outofmem(void)					{	panic(MEM_OUT_OF_MEM); }
 
 void	err_tmpalloc(dword size)			SEC(TRASH);
 #if defined(_PalmOS)
@@ -569,12 +570,13 @@ tmpnode_t	*tmplist_add(tmplist_t* lst, void *data, int size)
 *	LOGFILE
 *
 */
-
 //
 void	lwrite(const char *buf)
 {
 	#if defined(_PalmOS)
 	Err		ferr;
+	#elif defined(_Win32)
+	char	*p;
 	#endif
 
 	////////
@@ -588,7 +590,10 @@ void	lwrite(const char *buf)
 	fseek(log_dev, 0, SEEK_END);
 	#else
 		#if defined(_Win32)
-		sprintf(log_name, "c:%csb.log", OS_DIRSEP);
+		if	( getenv("SBLOG") )	
+			strcpy(log_name, getenv("SBLOG"));
+		else
+			sprintf(log_name, "c:%csb.log", OS_DIRSEP);
 		#else	/* a real OS */
 		sprintf(log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
 		#endif

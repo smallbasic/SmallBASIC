@@ -157,17 +157,17 @@ $(BINDIR)/svgasbasic: $(unix_obj) dev_uvga.c unix/rom16.c dev_oss.c device.c $(h
 	ln -svf $(BINDIR)/svgasbasic $(BINDIR)/sbasic
 	-@printf "\n\033[7m * %s * \033[0m\n\n" "SVGA Version ready"
 
-# unix console/framebuffer OFBIS lib (dev_ufb.c is the driver) 
-$(BINDIR)/ofbsbasic: $(unix_obj) dev_ufb.c device.c dev_oss.c $(help_files)
-	$(UCC) $(CFLAGS) -DDRV_SOUND dev_ufb.c dev_oss.c device.c $(unix_obj) -o $(BINDIR)/ofbsbasic $(ULIBS) -lofbis
-	ln -svf $(BINDIR)/ofbsbasic $(BINDIR)/sbasic
-	-@printf "\n\033[7m * %s * \033[0m\n\n" "OFBIS Version ready"
-
 # unix console/framebuffer
 $(BINDIR)/fbsbasic: $(unix_obj) dev_ndcfb.c dev_genfb.c device.c dev_oss.c $(help_files)
 	$(UCC) $(CFLAGS) -DDRV_SOUND dev_ndcfb.c dev_genfb.c dev_oss.c device.c $(unix_obj) -o $(BINDIR)/fbsbasic $(ULIBS)
 	ln -svf $(BINDIR)/fbsbasic $(BINDIR)/sbasic
 	-@printf "\n\033[7m * %s * \033[0m\n\n" "FrameBuffer Version ready"
+
+# unix console/lcgi(x)
+$(BINDIR)/lcgisbasic: $(unix_obj) dev_lcgi.c device.c dev_oss.c $(help_files)
+	$(UCC) $(CFLAGS) -DDRV_SOUND dev_lcgi.c dev_oss.c device.c $(unix_obj) -o $(BINDIR)/lcgisbasic $(ULIBS) -llcgi
+	ln -svf $(BINDIR)/lcgisbasic $(BINDIR)/sbasic
+	-@printf "\n\033[7m * %s * \033[0m\n\n" "LCGI Version ready"
 
 # unix console/XWin (dev_x.c is the driver)
 $(BINDIR)/xsbasic: $(unix_obj) dev_x.c device.c dev_oss.c $(help_files)
@@ -217,6 +217,7 @@ x: $(BINDIR)/xsbasic
 xf: $(BINDIR)/xfsbasic
 sdl: $(BINDIR)/sdlsbasic
 fb: $(BINDIR)/fbsbasic
+lcgi: $(BINDIR)/lcgisbasic
 ofb: $(BINDIR)/ofbsbasic
 w32: $(BINDIR)/sbrw32.exe $(BINDIR)/bas2pdb32.exe $(BINDIR)/mkpdb32.exe
 w32f: $(BINDIR)/sbrw32f.exe $(BINDIR)/bas2pdb32.exe $(BINDIR)/mkpdb32.exe

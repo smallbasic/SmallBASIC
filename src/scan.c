@@ -22,10 +22,6 @@
 #include <assert.h>
 #endif
 
-#if defined(_WinBCB)
-#define	strcasecmp	stricmp
-#endif
-
 void	err_wrongproc(const char *name)		SEC(BCSC2);
 void	err_wrongproc(const char *name)		{	sc_raise(MSG_WRONG_PROCNAME, name); }
 void	err_comp_missing_q()				SEC(BCSC2);
@@ -46,6 +42,10 @@ int		comp_single_line_if(char *text) 				SEC(BCSC3);
 addr_t	comp_search_bc(addr_t ip, code_t code) 			SEC(BCSC3);
 
 extern void	expr_parser(bc_t *bc)			 	SEC(BCSCAN);
+
+#if defined(_WinBCB)
+extern void bcb_comp(int pass, int pmin, int pmax);	// Win32GUI progress
+#endif
 
 /* ----------------------------------------------------------------------------------------------------------------------- */
 
@@ -90,7 +90,7 @@ int		comp_add_external_proc(const char *proc_name, int lib_id)
 	comp_extproctable[comp_extproccount].lib_id = lib_id;
 	comp_extproctable[comp_extproccount].symbol_index = comp_impcount;
 	strcpy(comp_extproctable[comp_extproccount].name, proc_name);
-	strupr(comp_extproctable[comp_extproccount].name);
+	strupper(comp_extproctable[comp_extproccount].name);
 
 	// update imports table
 	{
@@ -128,7 +128,7 @@ int		comp_add_external_func(const char *func_name, int lib_id)
 	comp_extfunctable[comp_extfunccount].lib_id = lib_id;
 	comp_extfunctable[comp_extfunccount].symbol_index = comp_impcount;
 	strcpy(comp_extfunctable[comp_extfunccount].name, func_name);
-	strupr(comp_extfunctable[comp_extfunccount].name);
+	strupper(comp_extfunctable[comp_extfunccount].name);
 
 	// update imports table
 	{
@@ -2784,6 +2784,10 @@ void	comp_pass2_scan()
 		#endif
 		dev_printf(MSG_PASS2_COUNT, i, comp_sp);
 		}
+		
+	#if defined(_WinBCB)
+	bcb_comp(2, i, comp_sp);
+	#endif
 
 	// for each node in stack
 	for ( i = 0; i < comp_sp; i ++ )	{
@@ -2792,9 +2796,15 @@ void	comp_pass2_scan()
 			#if defined(_UnixOS)
 			if ( isatty (STDOUT_FILENO) ) 
 			#endif
-			if	( (i % SB_KEYWORD_SIZE) == 0 )
+			if	( (i % SB_KEYWORD_SIZE) == 0 )	{
 				dev_printf(MSG_PASS2_COUNT, i, comp_sp);
+				}
 			}
+
+		#if defined(_WinBCB)
+		if	( (i % SB_KEYWORD_SIZE) == 0 )	
+			bcb_comp(2, i, comp_sp);
+		#endif
 
 		dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
 
@@ -3019,6 +3029,10 @@ void	comp_pass2_scan()
 		dev_printf(MSG_PASS2_COUNT, comp_sp, comp_sp);
 		dev_printf("\n");
 		}
+
+	#if defined(_WinBCB)
+	bcb_comp(2, comp_sp, comp_sp);
+	#endif
 }
 
 /*
@@ -3411,10 +3425,10 @@ char	*comp_format_text(const char *source)
 
 			default:
 				if	( 
-					(strncasecmp(p, LCN_REM_1, 5) == 0) ||
-					(strncasecmp(p, LCN_REM_2, 5) == 0) ||
-					(strncasecmp(p, LCN_REM_3, 4) == 0 && last_ch == '\n') ||
-					(strncasecmp(p, LCN_REM_4, 4) == 0 && last_ch == '\n')
+					(strcaselessn(p, LCN_REM_1, 5) == 0) ||
+					(strcaselessn(p, LCN_REM_2, 5) == 0) ||
+					(strcaselessn(p, LCN_REM_3, 4) == 0 && last_ch == '\n') ||
+					(strcaselessn(p, LCN_REM_4, 4) == 0 && last_ch == '\n')
 					)	{
 
 					// skip the rest line
@@ -3425,7 +3439,7 @@ char	*comp_format_text(const char *source)
 					break;
 					}
 				else	{
-					if	( (*p > ' ') || (*p & 0x80) )	{	// simple code-character
+					if	( (*p > ' ') || (*p < 0) )	{	// simple code-character
 						last_nonsp_ptr = ps;
 						*ps ++ = last_ch = to_upper(*p);
 						p ++;
@@ -3435,7 +3449,6 @@ char	*comp_format_text(const char *source)
 					// else ignore it
 					}
 				}
-
 			}
 		else	{	// in quotes
 			if	( *p == '\"' )	
@@ -3449,7 +3462,7 @@ char	*comp_format_text(const char *source)
 	*ps = '\0';
 
 	// debug
-	//printf("%s", new_text);
+	//	printf("%s", new_text);
 
 	return new_text;
 }
@@ -3565,7 +3578,7 @@ void	comp_preproc_import(const char *slist)
 		*d = '\0';
 
 		// import name
-		strlwr(buf);
+		strlower(buf);
 		if	( (uid = slib_get_module_id(buf)) != -1 )	{	// C module
 			// store lib-record
 			strcpy(imlib.lib, buf);
@@ -3663,8 +3676,7 @@ int		comp_pass1(const char *section, const char *text)
 	char	pname[SB_KEYWORD_SIZE+1];
 	char	*code_line;
 	char	*new_text;
-        
-        int	len_option, len_import, len_unit, len_unit_path, len_inc;
+	int	len_option, len_import, len_unit, len_unit_path, len_inc;
 	int	len_sub, len_func, len_def, len_end;
 
 	code_line = tmp_alloc(SB_SOURCELINE_SIZE+1);
@@ -3689,8 +3701,6 @@ int		comp_pass1(const char *section, const char *text)
 	p = ps = new_text;
 	comp_proc_level = 0;
 	*comp_bc_proc = '\0';
-
-
 
 	len_option = strlen(LCN_OPTION);
 	len_import = strlen(LCN_IMPORT_WRS);
@@ -3981,6 +3991,10 @@ int		comp_pass1(const char *section, const char *text)
 			#endif
 			}
 
+		#if defined(_WinBCB)
+		bcb_comp(1, comp_line+1, 0);
+		#endif
+
 		ps = p = new_text;
 		while ( *p )	{
 			if	( *p == '\n' )	{
@@ -4003,8 +4017,9 @@ int		comp_pass1(const char *section, const char *text)
 							}
 						}
 					#else
-					if	( (comp_line % 256) == 0 )	
+					if	( (comp_line % 256) == 0 )	{
 						dev_printf(MSG_PASS1_COUNT, comp_line);
+						}
 					#endif
 
 					#if defined(_UnixOS)
@@ -4012,6 +4027,11 @@ int		comp_pass1(const char *section, const char *text)
 					#endif
 					}
 
+				#if defined(_WinBCB)
+				if	( (comp_line % 256) == 0 )	
+					bcb_comp(1, comp_line+1, 0);
+				#endif
+				
 				// add debug info: line-number
 				bc_add_code(&comp_prog, kwTYPE_LINE);
 				bc_add_addr(&comp_prog, comp_line);
@@ -4119,18 +4139,18 @@ int		comp_pass2_exports()
 int		comp_pass2()
 {
 	if	( !opt_quite && !opt_interactive )	{
-			#if defined(_UnixOS)
-			if ( !isatty (STDOUT_FILENO) ) 
-				fprintf(stdout, "Pass2...\n");
-			else	{
-			#endif
+		#if defined(_UnixOS)
+		if ( !isatty (STDOUT_FILENO) ) 
+			fprintf(stdout, "Pass2...\n");
+		else	{
+		#endif
 
-			dev_printf(MSG_PASS2);
+		dev_printf(MSG_PASS2);
 
-			#if defined(_UnixOS)
-				}
-			#endif
+		#if defined(_UnixOS)
 			}
+		#endif
+		}
 
 	if	( comp_proc_level )	
 		sc_raise(MSG_MISSING_END_3);
@@ -4315,7 +4335,7 @@ int		comp_save_bin(mem_t h_bc)
 
 	if	( comp_unit_flag )	{
 		strcpy(fname, comp_unit_name);
-		strlwr(fname);
+		strlower(fname);
 
 		if	( !opt_quite && !opt_interactive  )	{
 			#if defined(_Win32) || defined(_DOS)
@@ -4368,6 +4388,10 @@ int		comp_compile(const char *sb_file_name)
 	int		success = 0;
 	mem_t	h_bc = 0;
 
+	#if defined(_WinBCB)
+	bcb_comp(0, 0, 0);
+	#endif
+
 	tid = create_task(sb_file_name);
 	prev_tid = activate_task(tid);
 
@@ -4394,5 +4418,9 @@ int		comp_compile(const char *sb_file_name)
 	else	
 		mem_free(h_bc);
 
+	#if defined(_WinBCB)
+	bcb_comp(3, success, 0);
+	#endif
+	
 	return success;
 }

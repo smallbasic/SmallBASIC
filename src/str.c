@@ -54,6 +54,51 @@ void	str_alltrim(char *str)
 }
 
 /*
+*	caseless string compare
+*/
+int		strcaseless(const char *s1, const char *s2)
+{
+	const char	*p1 = s1;
+	const char	*p2 = s2;
+	int			ch1, ch2;
+
+	while ( *p1 )	{
+		if	( *p1 == '\0' && *p2 != '\0' )	return -1;
+		if	( *p2 == '\0' && *p1 != '\0' )	return 1;
+		ch1 = to_upper(*p1);
+		ch2 = to_upper(*p2);
+		if	( ch1 < ch2 )	return -1;
+		if	( ch1 > ch2 )	return 1;
+		p1 ++;	p2 ++;
+		}
+	return 0;
+}
+
+/*
+*	caseless string compare
+*/
+int		strcaselessn(const char *s1, const char *s2, int len)
+{
+	const char	*p1 = s1;
+	const char	*p2 = s2;
+	int			ch1, ch2, count;
+
+	count = 0;
+	while ( *p1 )	{
+		if	( count == len )	return 0;
+		if	( *p1 == '\0' && *p2 != '\0' )	return -1;
+		if	( *p2 == '\0' && *p1 != '\0' )	return 1;
+		ch1 = to_upper(*p1);
+		ch2 = to_upper(*p2);
+		if	( ch1 < ch2 )	return -1;
+		if	( ch1 > ch2 )	return 1;
+		p1 ++;	p2 ++;
+		count ++;
+		}
+	return 0;
+}
+
+/*
 *	strstr with ignore case
 */
 char	*stristr(const char *s1, const char *s2)
@@ -64,11 +109,7 @@ char	*stristr(const char *s1, const char *s2)
 	p = (char *) s1;
 	l2 = strlen(s2);
 	while ( *p )	{
-		#if defined(MALLOC_LIMITED)
-		if	( strncasecmp(p, s2, l2) == 0 )
-		#else
-		if	( StrNCaselessCompare(p, s2, l2) == 0 )
-		#endif
+		if	( strcaselessn(p, s2, l2) == 0 )
 			return p;
 		p ++;
 		}
@@ -239,8 +280,7 @@ int		is_keyword(const char *name)
 /*
 *	converts the 'str' string to uppercase
 */
-#if !defined(_Win32)
-char*	strupr(char *str)
+char*	strupper(char *str)
 {
 	char	*p = str;
 
@@ -254,7 +294,10 @@ char*	strupr(char *str)
 	return str;
 }
 
-char*	strlwr(char *str)
+/*
+*	converts the 'str' string to lowercase
+*/
+char*	strlower(char *str)
 {
 	char	*p = str;
 
@@ -267,7 +310,6 @@ char*	strlwr(char *str)
 		}
 	return str;
 }
-#endif
 
 /*
 */
@@ -1164,5 +1206,16 @@ const char *baseof(const char *source, int delim)
 	if	( p )
 		return p+1;
 	return source;
+}
+
+/*
+*/
+char	char_table_replace(const char *what_table, int ch, const char *replace_table)
+{
+	const char *p;
+
+	p = strchr(what_table, ch);
+	if	( !p )	return ch;
+	return *(replace_table + (p - what_table));
 }
 

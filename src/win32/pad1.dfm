@@ -15,7 +15,9 @@ object FMain: TFMain
   OldCreateOrder = False
   Position = poDesktopCenter
   OnClose = OnClose
+  OnKeyDown = outOnKeyDown
   OnKeyPress = outOnKeyPress
+  OnKeyUp = outOnKeyUp
   OnShow = OnShow
   PixelsPerInch = 96
   TextHeight = 13
@@ -23,7 +25,7 @@ object FMain: TFMain
     Left = 0
     Top = 29
     Width = 800
-    Height = 474
+    Height = 457
     Align = alClient
     BevelOuter = bvNone
     BorderStyle = bsSingle
@@ -33,7 +35,7 @@ object FMain: TFMain
       Left = 0
       Top = 0
       Width = 796
-      Height = 470
+      Height = 453
       ActivePage = pgEdit
       Align = alClient
       HotTrack = True
@@ -48,7 +50,7 @@ object FMain: TFMain
           Left = 0
           Top = 0
           Width = 788
-          Height = 442
+          Height = 425
           Cursor = crIBeam
           Align = alClient
           Font.Charset = DEFAULT_CHARSET
@@ -408,7 +410,7 @@ object FMain: TFMain
           Left = 0
           Top = 0
           Width = 788
-          Height = 442
+          Height = 425
           Align = alClient
           BevelOuter = bvNone
           Caption = 'Panel2'
@@ -417,11 +419,11 @@ object FMain: TFMain
             Left = 0
             Top = 0
             Width = 788
-            Height = 442
+            Height = 425
             Align = alClient
             TabOrder = 0
             ControlData = {
-              4C00000071510000AF2D00000000000000000000000000000000000000000000
+              4C00000071510000ED2B00000000000000000000000000000000000000000000
               000000004C000000000000000000000001000000E0D057007335CF11AE690800
               2B2E126209000000000000004C0000000114020000000000C000000000000046
               8000000000000000000000000000000000000000000000000000000000000000
@@ -436,7 +438,7 @@ object FMain: TFMain
           Left = 0
           Top = 0
           Width = 788
-          Height = 442
+          Height = 425
           Align = alClient
           BevelOuter = bvLowered
           BorderWidth = 6
@@ -447,7 +449,7 @@ object FMain: TFMain
             Left = 7
             Top = 7
             Width = 774
-            Height = 428
+            Height = 411
             Align = alClient
             BorderStyle = bsNone
             Color = clWindow
@@ -457,12 +459,69 @@ object FMain: TFMain
               Left = 0
               Top = 0
               Width = 774
-              Height = 428
+              Height = 411
               Align = alClient
               OnMouseDown = outOnMouseUp
               OnMouseUp = outOnMouseUp
               OnPaint = outOnPaint
             end
+          end
+        end
+      end
+      object pgTextOut: TTabSheet
+        Caption = 'Text Output'
+        ImageIndex = 3
+        object Panel3: TPanel
+          Left = 0
+          Top = 391
+          Width = 788
+          Height = 34
+          Align = alBottom
+          BevelOuter = bvNone
+          TabOrder = 0
+          object btnLogClear: TButton
+            Left = 144
+            Top = 8
+            Width = 65
+            Height = 22
+            Caption = 'Clear'
+            TabOrder = 0
+            OnClick = btnLogClearClick
+          end
+          object chkCapture: TCheckBox
+            Left = 8
+            Top = 10
+            Width = 129
+            Height = 17
+            Caption = 'Capture output'
+            Checked = True
+            State = cbChecked
+            TabOrder = 1
+            OnClick = chkCaptureClick
+          end
+        end
+        object Panel4: TPanel
+          Left = 0
+          Top = 0
+          Width = 788
+          Height = 391
+          Align = alClient
+          BevelOuter = bvNone
+          BorderWidth = 4
+          BorderStyle = bsSingle
+          Color = clWindow
+          TabOrder = 1
+          object txtLog: TMemo
+            Left = 4
+            Top = 4
+            Width = 776
+            Height = 379
+            Align = alClient
+            BevelInner = bvNone
+            BorderStyle = bsNone
+            ScrollBars = ssVertical
+            TabOrder = 0
+            WantTabs = True
           end
         end
       end
@@ -569,6 +628,14 @@ object FMain: TFMain
       ImageIndex = 6
       MenuItem = Settings1
     end
+  end
+  object StatBar: TStatusBar
+    Left = 0
+    Top = 486
+    Width = 800
+    Height = 17
+    Panels = <>
+    SimplePanel = False
   end
   object MainMenu1: TMainMenu
     Images = ImageList1

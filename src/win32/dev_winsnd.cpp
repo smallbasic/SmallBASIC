@@ -12,6 +12,8 @@
 #include "drvsound.h"
 
 volatile int audio_init = 0;
+static bool use_sound_driver = true;
+static bool use_sound = true;
 
 typedef struct {
 	int		frq;
@@ -532,13 +534,15 @@ CSinGenerator	devssg;
 */
 int _cdecl	drvsound_init()
 {
-	if	( devssg.OpenOutput() != 0 )	{
-		audio_init = 0;
-        return 0;
-		}
+	if	( use_sound_driver )	{
+		if	( devssg.OpenOutput() != 0 )	{
+			audio_init = 0;
+			return 0;
+			}
 
-	audio_qhead = audio_qtail = 0;
-	audio_init = 1;
+		audio_qhead = audio_qtail = 0;
+		audio_init = 1;
+		}
 
 	return 1;
 }
@@ -547,10 +551,12 @@ int _cdecl	drvsound_init()
 */
 void _cdecl drvsound_close()
 {
-	if	( audio_init )	{
-		audio_init = 0;
-		audio_qhead = audio_qtail;	// clear queue
-        devssg.CloseOutput();
+	if	( use_sound_driver )	{
+		if	( audio_init )	{
+			audio_init = 0;
+			audio_qhead = audio_qtail;	// clear queue
+			devssg.CloseOutput();
+			}
 		}
 }
 
@@ -559,51 +565,55 @@ void _cdecl drvsound_close()
 */
 void osd_realsound(int freq, int time_ms, int vol)
 {
-	if	( !audio_init )
-		return;
+	if	( use_sound_driver )	{
+		if	( !audio_init )
+			return;
 
-	if	( freq )
-		devssg.SBStart(freq, vol * 160);
-	else
-	    devssg.SBStop();
+		if	( freq )
+			devssg.SBStart(freq, vol * 160);
+		else
+			devssg.SBStop();
+		}			
 }
 
 /*
 */
 void	osd_backsound(__int64 dif)
 {
-	audio_node	*node;
-	__int64		now, tps;
+	if	( use_sound_driver )	{
+		audio_node	*node;
+		__int64		now, tps;
 
-	if	( audio_qhead != audio_qtail )	{
-    	node = &audio_queue[audio_qhead];
-		QueryPerformanceCounter((LARGE_INTEGER *) &now);
+		if	( audio_qhead != audio_qtail )	{
+			node = &audio_queue[audio_qhead];
+			QueryPerformanceCounter((LARGE_INTEGER *) &now);
 
-		if	( node->status == 1 )	{	// I am playing
-			if	( now >= node->end )	{
-				audio_qhead ++;
-				if	( audio_qhead >= AUDIO_QSIZE )
-					audio_qhead = 0;
+			if	( node->status == 1 )	{	// I am playing
+				if	( now >= node->end )	{
+					audio_qhead ++;
+					if	( audio_qhead >= AUDIO_QSIZE )
+						audio_qhead = 0;
 
-				osd_backsound(now - node->end);	// read next NOW
+					osd_backsound(now - node->end);	// read next NOW
+					}
+				}
+			else	{	// next cmd
+				QueryPerformanceFrequency((LARGE_INTEGER *) &tps);
+
+				node->start = now + dif;
+				node->end = node->start + ((node->dur * tps) / 1000);
+
+				if	( node->frq )
+					osd_realsound(node->frq, node->dur, node->vol);	// start play
+				else
+					devssg.StopOutput();
+
+				node->status = 1;
 				}
 			}
-		else	{	// next cmd
-			QueryPerformanceFrequency((LARGE_INTEGER *) &tps);
-
-			node->start = now + dif;
-			node->end = node->start + ((node->dur * tps) / 1000);
-
-			if	( node->frq )
-				osd_realsound(node->frq, node->dur, node->vol);	// start play
-            else
-            	devssg.StopOutput();
-
-			node->status = 1;
-			}
+		else
+			devssg.CloseOutput();
 		}
-    else
-		devssg.CloseOutput();
 }
 
 /*
@@ -611,29 +621,35 @@ void	osd_backsound(__int64 dif)
 */
 void _cdecl drvsound_sound(int frq, int  ms, int vol, int bgplay)
 {
-	audio_node	*node;
+	if	( use_sound_driver )	{
+		audio_node	*node;
 
-	if	( audio_init )	{
-    	if	( bgplay )	{
-            node = &audio_queue[audio_qtail];
+		if	( audio_init )	{
+			if	( bgplay )	{
+				node = &audio_queue[audio_qtail];
 
-            node->status = 0;
-            node->frq = frq;
-            node->dur = ms;
-            node->vol = vol;
+				node->status = 0;
+				node->frq = frq;
+				node->dur = ms;
+				node->vol = vol;
 
-            audio_qtail ++;
-            if ( audio_qtail >= AUDIO_QSIZE )
-                audio_qtail = 0;
+				audio_qtail ++;
+				if ( audio_qtail >= AUDIO_QSIZE )
+					audio_qtail = 0;
 
-            if	( !bgplay )
-                Sleep(ms);
-        	}
-        else	{
-			devssg.SBStart(frq, vol * 160);
-			Sleep(ms);
-		    devssg.CloseOutput();
-        	}
+				if	( !bgplay )
+					Sleep(ms);
+				}
+			else	{
+				devssg.SBStart(frq, vol * 160);
+				Sleep(ms);
+				devssg.CloseOutput();
+				}
+			}
+		}
+	else if ( !bgplay )	{
+		if	( use_sound )
+			::Beep(frq, ms);
 		}
 }
 
@@ -649,7 +665,8 @@ void _cdecl drvsound_beep()
 */
 void _cdecl drvsound_event()
 {
-	osd_backsound(0);
+	if	( use_sound_driver )
+		osd_backsound(0);
 }
 
 /*
@@ -657,6 +674,18 @@ void _cdecl drvsound_event()
 */
 void _cdecl drvsound_clear_queue()
 {
-	audio_qhead = audio_qtail = 0;
+	if	( use_sound_driver )
+		audio_qhead = audio_qtail = 0;
 }
+
+void	drvsound_soundcard_driveroff()
+{	use_sound_driver = false; use_sound = true;	}
+
+void	drvsound_soundcard_driveron()
+{	use_sound = use_sound_driver = true;	}
+
+void	drvsound_nosound_at_all()
+{	use_sound = false;			}
+
+
 

@@ -186,6 +186,10 @@ void	exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip)
 /*
 *	Write string to output device
 */
+#if defined(_WinBCB)
+extern void bcb_lwrite(char *s);
+#endif
+
 #if defined(_PalmOS)
 void	pv_write(char *str, int method, unsigned long int handle)
 #else
@@ -213,6 +217,9 @@ void	pv_write(char *str, int method, int handle)
 		break;
 	default:
 		dev_print(str);
+		#if defined(_WinBCB)
+		bcb_lwrite(str);
+		#endif
 		}
 }
 

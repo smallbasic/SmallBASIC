@@ -31,6 +31,10 @@
 
 //#define _CHECK_STACK
 
+#if defined(_WinBCB)
+extern void bcb_comp(int pass, int pmin, int pmax);	// Win32GUI progress
+#endif
+
 #if defined(SONY_CLIE)
 extern int font_h;
 extern int maxline;
@@ -565,18 +569,32 @@ void	exec_setup_predefined_variables()
 	else
 		setsysvar_str(SYSVAR_HOME, "c:/");	// djgpp uses /
 	#elif defined(_Win32)
-	    #if defined(_WinBCB)
-		setsysvar_str(SYSVAR_HOME, "c:\\");
-	    #else
 		if	( dev_getenv("HOME") )	// this works on cygwin
 			strcpy(homedir, dev_getenv("HOME"));
 		else	{
-			if	( OS_DIRSEP == '/' )
-				setsysvar_str(SYSVAR_HOME, "c:/");	// mingw32
-			else
-				setsysvar_str(SYSVAR_HOME, "c:\\");
+			char	*p;
+			
+			GetModuleFileName(NULL, homedir, 1024);
+			p = strrchr(homedir, '\\');
+			*p = '\0';
+			strcat(homedir, "\\");
+			
+			if	( OS_DIRSEP == '/' )	{
+				p = homedir;
+				while ( *p )	{
+					if	( *p == '\\' )
+						*p = '/';
+					p ++;
+					}
+				}
 			}
-	    #endif
+		setsysvar_str(SYSVAR_HOME, homedir);	// mingw32
+
+		{
+			static char	stupid_os_envsblog[1024];	// it must be static at least by default on DOS or Win32(BCB)
+			sprintf(stupid_os_envsblog, "SBLOG=%s%csb.log", homedir, OS_DIRSEP);
+			putenv(stupid_os_envsblog);
+		}
 	#else
 	setsysvar_str(SYSVAR_HOME, "");
 	#endif
@@ -1815,6 +1833,9 @@ void	sys_before_run()
 	// setup environment emulation
 	env_table = dbt_create("SBI-ENV", 0);
 	#endif
+	#if defined(_WinBCB)
+	bcb_comp(4, 0, 0);
+	#endif
 }
 
 /**
@@ -1825,6 +1846,9 @@ void	sys_after_run()
 {
 	#if defined(_PalmOS)
 	dbt_close(env_table);
+	#endif
+	#if defined(_WinBCB)
+	bcb_comp(5, 0, 0);
 	#endif
 }
 

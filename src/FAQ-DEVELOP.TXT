@@ -1,0 +1,45 @@
+FAQ for developers
+
+* Apology to developers
+
+	The SB was a small interpreter.
+	It was builded to serve some mathematical calculations for my palm, my old Palm IIIx with OS 3.3.
+	This weird beginning produced weird problems.
+
+	a) PalmOS 3.3 is extremly limited on resources such memory, and speed.
+
+		1) The compiler (and parts of RTL) is based to use less resource as it can.
+			That means, a few static buffers that will reused (very dangerous) instead of
+			other types such as stack or "heap". It is a very bad technique but required.
+
+		2) Use of custom memory manager for virtual-memory techniques.
+
+		3) Use of arrays instead of lists. That is prefered because lists need one more element per node
+			(the 'next' pointer) 
+			plus some OS-related data used internaly by the OS for each "node" (because it is dynamic allocation).
+			In 32kB of PalmOS 3.3 that was useless spend of a very rare resource. So, by using arrays with "realloc"
+			when it was needed, I solve the problem with dynamic data. I am still thinking how to do a 
+			mixed way depented on the target OS.
+
+		5) The work for driver-developers it was possible to be extremly easy if I had the 
+			power to use function-pointer. But that was actually impossible since Palm version of SB is
+			multi-segment code (function-pointer had no info about the code-segment in run-time stage).
+
+	b) From a toy to a language.
+
+		1) I must rewrite evaluation-code because it is a bit mess (source-code) but produces excellent
+			output like a normal compiler. That happened because SB was interpreter.
+
+		2) Classical definitions such as lexer, scanner etc... does not exists on SB.
+			Part of its history and part of PalmOS 3.3 problems, those parts are not
+			written with a good structure nor are separated enough.
+
+
+* What is the SEC() on header files?
+	The SEC(code-segment-name) declares on which code-segment will be stored the function.
+	That is usefull only for PalmOS. So, forget it, on linux this declared as "nothing".
+
+* Virtual-file-driver?
+	
+	See fs_serial.c and after that the file.c
+

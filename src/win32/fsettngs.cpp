@@ -76,8 +76,20 @@ void __fastcall TFSets::chkVSClick(TObject *Sender)
 {
 	int		chk = chkVS->Checked;
 
-    txtVW->Enabled = chk;
-    txtVH->Enabled = chk;	
+	txtVW->Enabled = chk;
+	txtVH->Enabled = chk;	
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFSets::chkSoundClick(TObject *Sender)
+{
+	chkMMSound->Enabled = chkSound->Checked;	
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFSets::OnShow(TObject *Sender)
+{
+	chkMMSound->Enabled = chkSound->Checked;	
 }
 //---------------------------------------------------------------------------
 
