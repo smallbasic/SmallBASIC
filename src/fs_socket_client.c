@@ -44,7 +44,8 @@ int		sockcl_open(dev_file_t *f)
 	(long) f->handle = net_connect(server, port);
 	if	( (long) f->handle <= 0 )	{
 		f->handle = -1;
-		rt_raise("SOCL: CONNECTION ERROR");
+    f->drv_dw[0] = 0;
+		//rt_raise("SOCL: CONNECTION ERROR");
 		return 0;
 		}
 
@@ -83,7 +84,7 @@ int		sockcl_read(dev_file_t *f, byte *data, dword size)
 */
 int		sockcl_eof(dev_file_t *f)
 {
-	return (((long) f->drv_dw[0]) <= 0) ? 1 : 0;
+  return (((long) f->drv_dw[0]) <= 0) ? 1 : 0;
 }
 
 /*
