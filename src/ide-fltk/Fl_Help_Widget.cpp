@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.13 2005-03-28 23:17:51 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.14 2005-03-29 23:45:07 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -36,7 +36,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-//#define UNIT_TEST 1
+// #define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -95,6 +95,11 @@ struct Display {
 
 //--Attributes------------------------------------------------------------------
 
+struct Value {
+    bool relative;
+    int value;
+};
+
 struct Attributes : public Properties {
     Attributes(int growSize) : Properties(growSize) {}
     String* getValue() {return get("value");}
@@ -106,14 +111,33 @@ struct Attributes : public Properties {
     void getName(String& s) {s.append(getName());}
     void getHref(String& s) {s.append(getHref());}
     void getType(String& s) {s.append(getType());}
+    Value getWidth(int def=-1) {return getValue("width", def);}
+    Value getHeight(int def=-1) {return getValue("height", def);}
     int getSize(int def=-1) {return getIntValue("size", def);}
-    int getWidth(int def=-1) {return getIntValue("width",def);}
-    int getHeight(int def=-1) {return getIntValue("height",def);}
-    int getIntValue(const char* attr, int def) {
-        String* s = get(attr);
-        return (s != null ? s->toInteger() : def);
-    }
+    int getIntValue(const char* attr, int def);
+    Value getValue(const char* attr, int def);
 };
+
+int Attributes::getIntValue(const char* attr, int def) {
+    String* s = get(attr);
+    return (s != null ? s->toInteger() : def);
+}
+
+Value Attributes::getValue(const char* attr, int def) {
+    Value val;
+    val.relative = false;
+    String* s = get(attr);
+    if (s) {
+        int ipc = s->indexOf('%', 0);
+        if (ipc != -1) {
+            val.relative = true;
+        }
+        val.value = s->toInteger();
+    } else {
+        val.value = def;
+    }
+    return val;
+}
 
 //--BaseNode--------------------------------------------------------------------
 
@@ -126,11 +150,7 @@ struct BaseNode : public Object {
 //--FontNode--------------------------------------------------------------------
 
 struct FontNode : public BaseNode {
-    FontNode(Font* font,
-             int fontSize,
-             Color color, 
-             U8 bold, 
-             U8 italic) {
+    FontNode(Font* font, int fontSize, Color color, bool bold, bool italic) {
         this->font = font;
         this->fontSize = fontSize;
         this->color = color;
@@ -316,31 +336,34 @@ struct ImageNode : public BaseNode {
         this->style = style;
         String* src = a->getSrc();
         image = loadImage(src == 0 ? 0 : fileName->getPath(src->toString()));
-        image->measure(w, h);
-        w = a->getWidth(w);
-        h = a->getHeight(h);
+        image->measure(w.value, h.value);
+        w = a->getWidth(w.value);
+        h = a->getHeight(h.value);
     }
 
     void display(Display* out) {
         if (image == 0) {
             return;
         }
-        if (w+DEFAULT_INDENT > out->width-out->x) {
+        int iw = w.relative ? (w.value*(out->width-out->x)/100) : w.value;
+        int ih = h.relative ? (h.value*(out->wnd->h()-out->y)/100) : h.value;
+        
+        if (iw+DEFAULT_INDENT > out->width-out->x) {
             out->newRow();
         }
         int x = out->x+DEFAULT_INDENT;
         int y = out->y - (int)getascent();
         if (out->measure == false) {
-            image->draw(Rectangle(x, y, w, h), style, OUTPUT);
+            image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
         }
-        out->x += w+DEFAULT_INDENT;
-        if (h > out->lineHeight) {
-            out->lineHeight = h;
+        if (ih > out->lineHeight) {// && out->x != out->indent) {
+            out->lineHeight = ih;
         }
+        out->x += iw+DEFAULT_INDENT;
     }
     const Image* image;
     const Style* style;
-    int w,h;
+    Value w,h;
 };
 
 //--TextNode--------------------------------------------------------------------
@@ -834,6 +857,7 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     callback(anchor_callback);
     init();
     cookies = 0;
+    closeEvent = true;
 }
 
 HelpWidget::~HelpWidget() {
@@ -1169,7 +1193,6 @@ int HelpWidget::handle(int event) {
     if (handled) {
         return handled;
     }
-        
     switch (event) {
     case fltk::FOCUS:
         return 2; // aquire focus
@@ -1199,6 +1222,9 @@ int HelpWidget::handle(int event) {
             case 'f': // find
                 find(fltk::input("Find:"), false);
                 break;
+            case 'q': // quit popup
+                fltk::exit_modal();
+                break;
             }
             return 1;
         }
@@ -1215,9 +1241,10 @@ int HelpWidget::handle(int event) {
             selectedAnchor->pushed = false;
             redraw(DAMAGE_PUSHED);
             if (pushed) {
-                action.empty();
-                action.append(selectedAnchor->href.toString());
-                user_data((void*)action.toString());
+                closeEvent = true;
+                this->event.empty();
+                this->event.append(selectedAnchor->href.toString());
+                user_data((void*)this->event.toString());
                 do_callback();
             }
             return 1;

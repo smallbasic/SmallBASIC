@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.29 2005-03-28 23:17:52 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.30 2005-03-29 23:45:07 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -34,8 +34,9 @@ C_LINKAGE_BEGIN
 
 extern MainWindow *wnd;
 HelpWidget* helpView = 0;
-const char* anchor = 0;
+const char* eventName = 0;
 Properties env;
+String envs;
 void closeHelp();
 
 //--ANSI Output-----------------------------------------------------------------
@@ -52,7 +53,6 @@ int osd_devinit() {
     if (SharedImage::first_image) {
         SharedImage::first_image->clear_cache();
     }
-    closeHelp();
     return 1;
 }
 
@@ -88,7 +88,11 @@ int osd_events(int wait_flag) {
     }
 
     fltk::check();
-    return wnd->isBreakExec() ? -2 : 0;
+    if (wnd->isBreakExec()) {
+        closeHelp();
+        return -2;
+    }
+    return 0;
 }
 
 void osd_setpenmode(int enable) {
@@ -207,7 +211,9 @@ int dev_putenv(const char *s) {
     if (helpView && helpView->setInputValue(s)) {
         return 1;
     }
-    env.load(s);
+    envs.empty();
+    envs.append(s);
+    env.put(envs.lvalue(), envs.rvalue());
     return 1;
 }
 
@@ -229,7 +235,11 @@ char* dev_getenv_n(int n) {
     
     int count = env.length();
     if (n < count) {
-        return (char*)env.get(n)->toString();
+        envs.empty();
+        envs.append(env.getKey(n));
+        envs.append("=");
+        envs.append(env.get(n));
+        return (char*)envs.toString();
     }
 
     while (environ[count]) {
@@ -263,17 +273,26 @@ void closeHelp() {
     }
 }
 
-void doAnchor(void*) {
-    wnd->execLink(anchor);
-    free((void*)anchor);
-    anchor = 0;
-    fltk::remove_check(doAnchor);
+void doCloseEvent(void*) {
+    fltk::remove_check(doCloseEvent);
+    closeHelp();
+    wnd->execLink(eventName);
+    free((void*)eventName);
+    eventName = 0;
+}
+
+void doEvent(void*) {
+    fltk::remove_check(doEvent);
+    wnd->execLink(eventName);
+    free((void*)eventName);
+    eventName = 0;
 }
 
 void anchor_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        anchor = strdup(helpView->getAction());
-        fltk::add_check(doAnchor); // post message
+        // post message
+        eventName = strdup(helpView->getEventName());
+        fltk::add_check(helpView->isCloseEvent() ? doCloseEvent : doEvent);
     }
 }
 
@@ -455,6 +474,16 @@ struct LineInput : public fltk::Input {
         h(orig_h);
     }
 
+    int handle(int event) {
+        if (event == fltk::KEY &&
+            (event_key_state(LeftCtrlKey) || 
+             event_key_state(RightCtrlKey)) &&
+            event_key() == 'b') {
+            wnd->setBreak();
+        }
+        return fltk::Input::handle(event);
+    }
+
     int orig_x, orig_y;
     int orig_w, orig_h;
     int def_w;
@@ -481,6 +510,7 @@ char *dev_gets(char *dest, int size) {
     }
 
     if (wnd->isBreakExec()) {
+        closeHelp();
         brun_break();
     }
 

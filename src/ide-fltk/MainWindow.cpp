@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.32 2005-03-28 23:17:51 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.33 2005-03-29 23:45:07 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -607,6 +607,10 @@ bool MainWindow::isBreakExec(void) {
 
 void MainWindow::setModal(bool modal) {
     runMode = modal ? modal_state : run_state;
+}
+
+void MainWindow::setBreak() {
+    runMode = break_state;
 }
 
 bool MainWindow::isModal() {
