@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.6 2005-03-17 22:30:35 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.7 2005-03-20 23:36:01 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -38,21 +38,25 @@ public:
     HelpWidget(int x, int y, int width, int height);
     virtual ~HelpWidget();
 
-    void loadPage(const char* str);
-    void reloadPage();
-    void navigateTo(const char* anchorName);
-    void navigateTo(int vscroll);
+    void loadBuffer(const char* buffer);
+    void loadFile(const char* fileName);
+    void navigateTo(const char* fileName);
+    void scrollTo(const char* anchorName);
+    void scrollTo(int vscroll);
     U8 find(const char* s, U8 matchCase);
     Widget* getInput(const char* name);
     const char* getInputValue(Widget* button);
     const char* getInputName(Widget* button);
-    const char* getAnchor() {return anchor.toString();}
+    const char* getAction() {return action.toString();}
     void getInputProperties(Properties& p);
+    bool setInputValue(const char* assignment);
     void copyText(int begin, int end);
-    void load(const char *f);
 
     protected:
     void compileHTML();
+    void reloadPage();
+    void init();
+    void cleanup();
 
     // fltk methods
     void draw();
@@ -62,9 +66,6 @@ public:
     int handle(int event);
 
     private:
-    void init();
-    void cleanup();
-
     Color background;
     Scrollbar* scrollbar;
     S16 vscroll;
@@ -74,7 +75,8 @@ public:
     strlib::List inputs;
     strlib::List anchors;
     strlib::String htmlStr;
-    strlib::String anchor;
+    strlib::String action;
+    strlib::String fileName;
 };
 
 #ifdef FL_HELP_WIDGET_RESOURCES

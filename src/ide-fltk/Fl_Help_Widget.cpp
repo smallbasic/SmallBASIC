@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.8 2005-03-17 22:30:33 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.9 2005-03-20 23:36:01 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -11,6 +11,9 @@
 //
 
 #include <errno.h>
+#include <io.h>
+#include <ctype.h>
+
 #include <fltk/draw.h>
 #include <fltk/layout.h>
 #include <fltk/Rectangle.h>
@@ -30,7 +33,7 @@
 
 // uncomment for unit testing and then run:
 // make Fl_Ansi_Window.exe
-//#define UNIT_TEST 1
+#define UNIT_TEST 1
 
 #define FOREGROUND_COLOR fltk::color(32,32,32)
 #define BACKGROUND_COLOR fltk::color(230,230,230)
@@ -51,6 +54,9 @@ Color getColor(const char *n);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 const char* skipWhite(const char* s);
 struct AnchorNode;
+static char truestr[] = "true";
+static char falsestr[] = "false";
+void trace(const char *format, ...);
 
 //--Display---------------------------------------------------------------------
 
@@ -187,8 +193,8 @@ struct AnchorNode : public BaseNode {
             out->uline = true;
         }
         out->anchor = this;
-        x1 = out->x;
-        y1 = out->y - out->lineHeight;
+        x1 = x2 = out->x;
+        y1 = y2 = out->y - out->lineHeight;
         wrapxy = 0;
         setcolor(ANCHOR_COLOR);
     }
@@ -201,6 +207,7 @@ struct AnchorNode : public BaseNode {
                 // outside row start or end
                 return false;
             }
+
             return true;
         }
         return false;
@@ -218,8 +225,8 @@ struct AnchorNode : public BaseNode {
 
 AnchorNode* selectedAnchor = 0;
 
-struct HTMLAnchorEndNode : public BaseNode {
-    HTMLAnchorEndNode() : BaseNode() {}
+struct AnchorEndNode : public BaseNode {
+    AnchorEndNode() : BaseNode() {}
     void display(Display* out) {
         beginNode = out->anchor;
         if (beginNode) {
@@ -642,18 +649,17 @@ struct InputNode : public BaseNode {
         out->textOut = true;
     }
     Widget* button;
-    String value;
 };
 
 InputNode::InputNode(Group* parent, Attributes& p, Font* font) : BaseNode() {
     parent->begin();
-    p.getValue(value);
+    String* value = p.getValue();
     String* type = p.getType();
     if (type != null && type->equals("text")) {
         button = new Input(0, 0, INPUT_WIDTH, 0);
         button->box(NO_BOX);
-        if (value.length()) {
-            ((Input*)button)->value(value.toString());
+        if (value && value->length()) {
+            ((Input*)button)->value(value->toString());
         }
         button->user_data((void*)ID_TEXTBOX);
     } else if (type != null && type->equals("checkbox")) {
@@ -664,8 +670,8 @@ InputNode::InputNode(Group* parent, Attributes& p, Font* font) : BaseNode() {
         button->user_data((void*)ID_RADIO);
     } else {
         button = new Button(0,0,0,0);
-        if (value.length()) {
-            button->copy_label(value.toString());
+        if (value && value->length()) {
+            button->copy_label(value->toString());
         }
         button->user_data((void*)ID_BUTTON);
         button->labelcolor(ANCHOR_COLOR);
@@ -737,14 +743,17 @@ struct NamedInput : public Object {
 
 //--HelpWidget------------------------------------------------------------------
 
-static void scrollbar_callback(Widget* s, void *wnd) {
-    ((HelpWidget*)wnd)->navigateTo(((Scrollbar*)s)->value());
+static void scrollbar_callback(Widget* scrollBar, void *helpWidget) {
+    ((HelpWidget*)helpWidget)->scrollTo(((Scrollbar*)scrollBar)->value());
+}
+
+static void anchor_callback(Widget* helpWidget, void *target) {
+    ((HelpWidget*)helpWidget)->navigateTo((const char*)target);
 }
 
 HelpWidget::HelpWidget(int x, int y, int width, int height) :
     Group(x, y, width, height), 
     nodeList(100), namedInputs(10), inputs(10), anchors(10) {
-    user_data((void*)ID_MAIN_WND);
     begin();
     scrollbar = new Scrollbar(width-SCROLL_W, 0, SCROLL_W, height);
     scrollbar->set_vertical();
@@ -752,6 +761,9 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     scrollbar->user_data(this);
     scrollbar->callback(scrollbar_callback);
     scrollbar->show();
+    end();
+    callback(anchor_callback);
+    init();
 }
 
 HelpWidget::~HelpWidget() {
@@ -767,7 +779,6 @@ void HelpWidget::init() {
 void HelpWidget::cleanup() {
     int len = inputs.length();
     Object** list = inputs.getList();
-
     for (int i=0; i<len; i++) {
         InputNode* p = (InputNode*)list[i];
         if (p->button) {
@@ -784,7 +795,7 @@ void HelpWidget::cleanup() {
     namedInputs.removeAll();
 }
 
-void HelpWidget::loadPage(const char* str) {
+void HelpWidget::loadBuffer(const char* str) {
     htmlStr = str;
     reloadPage();
 }
@@ -793,6 +804,8 @@ void HelpWidget::reloadPage() {
     cleanup();
     init();
     compileHTML();
+    redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
+    selectedAnchor = 0;
 }
 
 // returns the control with the given name
@@ -808,15 +821,20 @@ Widget* HelpWidget::getInput(const char* name) {
     return null;
 }
 
-// return the value of the given button control
-const char* HelpWidget::getInputValue(Widget* button) {
-    Object** list = namedInputs.getList();
-    int len = namedInputs.length();
-    for (int i=0; i<len; i++) {
-        NamedInput* ni = (NamedInput*)list[i];
-        if (ni->input->button == button) {
-            return ni->input->value.toString();
-        }
+// return the value of the given control
+const char* HelpWidget::getInputValue(Widget* widget) {
+    if (widget == 0) {
+        return null;
+    }
+    switch ((int)widget->user_data()) {
+    case ID_TEXTBOX:
+        return ((Input*)widget)->value();
+    case ID_RADIO:
+    case ID_CHKBOX:
+        return ((RadioButton*)widget)->value() ? truestr : falsestr;
+    case ID_OPTION:
+        widget = ((Choice*)widget)->item();
+        return widget ? widget->label() : null;
     }
     return null;
 }
@@ -834,38 +852,75 @@ const char* HelpWidget::getInputName(Widget* button) {
     return null;
 }
 
+// return all of the forms names and values
 void HelpWidget::getInputProperties(Properties& p) {
     Object** list = namedInputs.getList();
     int len = namedInputs.length();
-    Widget* w;
-
     for (int i=0; i<len; i++) {
         NamedInput* ni = (NamedInput*)list[i];
-        switch ((int)ni->input->button->user_data()) {
-        case ID_TEXTBOX:
-            p.put(ni->name.toString(), (const char*)
-                  ((Input*)ni->input->button)->value());
-            break;
-        case ID_RADIO:
-        case ID_CHKBOX:
-            p.put(ni->name.toString(), (const char*)
-                  ((RadioButton*)ni->input->button)->value() ? 
-                  "true" : "false");
-            break;
-        case ID_OPTION:
-            w = ((Choice*)ni->input->button)->item();
-            if (w) {
-                p.put(ni->name.toString(), (const char*)w->label());
-            }
-            break;
+        const char* value = getInputValue(ni->input->button);
+        if (value) {
+            p.put(ni->name.toString(), value);
         }
     }
 }
 
-void HelpWidget::navigateTo(const char* anchorName) {
+// update a widget's display value
+bool HelpWidget::setInputValue(const char* assignment) {
+    String s = assignment;
+    String name = s.lvalue();
+    String value = s.rvalue();
+    Object** list = namedInputs.getList();
+    int len = namedInputs.length();
+    Choice* choice;
+    Widget* item;
+
+    if (value.length() == 0) {
+        return false;
+    }
+
+    for (int i=0; i<len; i++) {
+        NamedInput* ni = (NamedInput*)list[i];
+        if (ni->name.equals(name)) {
+            Widget* button = ni->input->button;
+
+            switch ((int)button->user_data()) {
+            case ID_TEXTBOX:
+                ((Input*)button)->value(value.toString());
+                break;
+            case ID_RADIO:
+            case ID_CHKBOX:
+                ((RadioButton*)button)->value(value.equals(truestr) ||
+                                              value.equals("1"));
+                break;
+            case ID_OPTION:
+                choice = (Choice*)button;
+                item = choice->find(value.toString());
+                if (item) {
+                    choice->set_focus(item);
+                }
+                break;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
-void HelpWidget::navigateTo(int scroll) {
+void HelpWidget::scrollTo(const char* anchorName) {
+    int len = anchors.length();
+    Object** list = anchors.getList();
+    for (int i=0; i<len; i++) {
+        AnchorNode* p = (AnchorNode*)list[i];
+        if (p->name.equals(anchorName)) {
+            vscroll = -p->getY();
+            redraw(DAMAGE_ALL);
+            return;
+        }
+    }
+}
+
+void HelpWidget::scrollTo(int scroll) {
     if (vscroll != scroll) {
         vscroll = -(scroll*scrollHeight/SCROLL_SIZE);
         redraw(DAMAGE_ALL);
@@ -901,7 +956,7 @@ void HelpWidget::draw() {
     out.measure = false;
     out.exposed = (damage()&DAMAGE_EXPOSE) ? 1:0;
     out.tableLevel = 0;
-    
+
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
     out.y = (int)getascent();
@@ -909,8 +964,8 @@ void HelpWidget::draw() {
     out.y += vscroll;
 
     push_clip(Rectangle(w(), h()));
-    if (selectedAnchor && (damage()&DAMAGE_PUSHED)) {
-        // draw anchor push
+    if (selectedAnchor && (damage() == DAMAGE_PUSHED)) {
+        // just draw anchor push
         int h = (selectedAnchor->y2-selectedAnchor->y1)+out.lineHeight;
         push_clip(Rectangle(0, selectedAnchor->y1, out.width, h));
     }
@@ -980,7 +1035,7 @@ void HelpWidget::draw() {
     Group::draw();
     pop_clip();
 
-    if (selectedAnchor && (damage()&DAMAGE_PUSHED)) {
+    if (selectedAnchor && (damage() == DAMAGE_PUSHED)) {
         pop_clip();
     }
     pop_clip();
@@ -994,7 +1049,7 @@ U8 HelpWidget::find(const char* s, U8 matchCase) {
         if (p->getY() > -vscroll) {
             // start looking from this point onwards
             if (p->indexOf(s, matchCase) != -1) {
-                navigateTo(-p->getY());
+                scrollTo(-p->getY());
                 return true;
             }
         }
@@ -1015,7 +1070,6 @@ int HelpWidget::onMove(int event) {
     } else {
         int len = anchors.length();
         Object** list = anchors.getList();
-
         for (int i=0; i<len; i++) {
             AnchorNode* p = (AnchorNode*)list[i];
             if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
@@ -1032,7 +1086,6 @@ int HelpWidget::onPush(int event) {
     Object** list = anchors.getList();
     int len = anchors.length();
     selectedAnchor = 0;
-
     for (int i=0; i<len; i++) {
         AnchorNode* p = (AnchorNode*)list[i];
         if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
@@ -1062,6 +1115,19 @@ int HelpWidget::handle(int event) {
     case fltk::ENTER:
         return 1;
 
+    case fltk::KEY:
+        if (event_key_state(RightCtrlKey) || event_key_state(LeftCtrlKey)) {
+            switch (event_key()) {
+            case 'r': // reload
+                reloadPage();
+                break;
+            case 'f': // find
+                break;
+            }
+            return 1;
+        }
+        break;
+        
     case fltk::MOVE:
     case fltk::DRAG:
         return onMove(event);
@@ -1073,8 +1139,9 @@ int HelpWidget::handle(int event) {
             selectedAnchor->pushed = false;
             redraw(DAMAGE_PUSHED);
             if (pushed) {
-                anchor.empty();
-                anchor.append(selectedAnchor->href.toString());
+                action.empty();
+                action.append(selectedAnchor->href.toString());
+                user_data((void*)action.toString());
                 do_callback();
             }
             return 1;
@@ -1169,13 +1236,17 @@ void HelpWidget::compileHTML() {
                     if (pre) {
                         nodeList.append(new BrNode(0));
                     }
-                    if (isWhite(text[i+1]) == false && 
-                        text[i+1] != '<' && newline == false) {
-                        // replace with single space
+                    if (newline == false && text[i+1] != '<') {
+                        // replace newline with single space
                         nodeList.append(new TextNode(" ", 1));
                         newline = false;
+                        // skip white space
+                        while (i<textlen && (isWhite(text[i+1]))) {
+                            i++; // ends on final white-char
+                        }
                     }
-                    // skip newline character
+
+                    // skip white-char character
                     pindex = i+1;
                     p = text+pindex;
                     break;
@@ -1199,8 +1270,8 @@ void HelpWidget::compileHTML() {
 
             int len = textlen-pindex;
             if (len) {
-                newline = false;
                 nodeList.append(new TextNode(p, len));
+                newline = false;
             }
             text = *tagEnd == 0 ? 0 : tagEnd+1;
         }
@@ -1210,6 +1281,12 @@ void HelpWidget::compileHTML() {
         taglen = tagEnd - tagBegin - 1;
         if (taglen > 0) {
             tag = tagBegin+1;
+            // TODO - check for angle-literal character chars such 
+            // as < or space following '<' de-tagify the character.
+//             if (isalpha(tag[0]) == false) {
+//                 nodeList.append(new TextNode("<", 1));
+//             } else if (tag[0] == '/') {
+            
             if (tag[0] == '/') {
                 tag++;
                 if (0 == strnicmp(tag, "b", 1)) {
@@ -1240,7 +1317,7 @@ void HelpWidget::compileHTML() {
                     node = new FontNode(font, fontSize, color, bold, italic);
                     nodeList.append(node);
                 } else if (0 == strnicmp(tag, "a", 1)) {
-                    nodeList.append(new HTMLAnchorEndNode());
+                    nodeList.append(new AnchorEndNode());
                 } else if (0 == strnicmp(tag, "ul", 2)) {
                     nodeList.append(new UlEndNode());
                     newline = true;
@@ -1262,7 +1339,8 @@ void HelpWidget::compileHTML() {
                     text = skipWhite(tagEnd+1);
                 }
             } else {
-                if (0 == strnicmp(tag, "br", 2)) {
+                if (0 == strnicmp(tag, "br", 2) ||
+                    0 == strnicmp(tag, "p>", 2)) {
                     nodeList.append(new BrNode(0));
                     newline = true;
                 } else if (0 == strnicmp(tag, "b>", 2)) {
@@ -1417,44 +1495,58 @@ void HelpWidget::copyText(int begin, int end) {
     }
 }
 
-void HelpWidget::load(const char *f) {
+void HelpWidget::navigateTo(const char* s) {
+    // search for target using the path of the current file
+    int i = fileName.lastIndexOf('/', 0);
+    if (i != -1) {
+        String path = fileName.substring(0, i+1);
+        path.append(s);
+        if (access(path.toString(), 0) == 0) {
+            loadFile(path.toString());
+            return;
+        }
+    }
+
+    // search using the given target name
+    loadFile(s);
+}
+
+void HelpWidget::loadFile(const char *f) {
     FILE *fp;
     long len;
-    String buffer;
+
+    fileName.empty();
+    htmlStr.empty();
+
+    if (strstr(f, "://") != 0) {
+        // only supports relative file names
+        htmlStr.append("Invalid path syntax: ");
+        htmlStr.append(f);
+        reloadPage();
+        return;
+    }
 
     const char* target = strrchr(f, '#');
     len = target != null ? target-f : strlen(f);
-    buffer.append(f, len);
-    buffer.replaceAll('\\', '/');
+    fileName.append(f, len);
+    fileName.replaceAll('\\', '/');
 
-    const char* localname = buffer.toString();
-    htmlStr.empty();
-    if (buffer.indexOf(':', 0) != -1) {
-        if (strncmp(localname, "file:", 5) == 0) {
-            localname += 5; // adjust for local filename
-        } else {
-            htmlStr.append("Unable to follow the link \"");
-            htmlStr.append(localname);
-            htmlStr.append("\"");
-        }
-    }
-        
-    if ((fp = fopen (localname, "rb")) != NULL) {
+    if ((fp = fopen(fileName.toString(), "rb")) != NULL) {
         fseek (fp, 0, SEEK_END);
         len = ftell(fp);
         rewind(fp);
         htmlStr.append(fp, len);
         fclose(fp);
     } else {
-        htmlStr.append("Unable to follow the link \"");
-        htmlStr.append(localname);
+        htmlStr.append("File not found: \"");
+        htmlStr.append(fileName.toString());
         htmlStr.append("\" - ");
         htmlStr.append(strerror(errno));
     }
 
     reloadPage();
     if (target) {
-        navigateTo(target);
+        scrollTo(target);
     }
 }
 
@@ -1573,16 +1665,18 @@ Color getColor(const char *n) {
 }
 
 #ifdef UNIT_TEST
+#include <fltk/Window.h>
 #include <fltk/run.h>
 #include <stdarg.h>
 #include <windows.h>
 int main(int argc, char **argv) {
     int w = 210; // must be > 104
-    int h = 200;
+    int h = 400;
     Window window(w, h, "Browse");
     window.begin();
     HelpWidget out(0, 0, w, h);
-    out.load("t.html#there");
+    out.loadFile("t.html#there");
+    //out.loadFile("help/8_5.html");
     window.resizable(&out);
     window.end();
     window.show(argc,argv);

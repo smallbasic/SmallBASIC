@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.4 2005-03-13 22:25:22 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.5 2005-03-20 23:36:01 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -282,6 +282,15 @@ int String::indexOf(char chr, int fromIndex) const {
         return -1;
     }
     char* c = strchr(buffer+fromIndex, chr);
+    return (c==NULL ? -1 : (c-buffer));
+}
+
+int String::lastIndexOf(char chr, int untilIndex) const {
+    int len = length();
+    if (untilIndex>=len || untilIndex < 0) {
+        return -1;
+    }
+    char* c = strrchr(buffer+untilIndex, chr);
     return (c==NULL ? -1 : (c-buffer));
 }
 

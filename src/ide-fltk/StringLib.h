@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.4 2005-03-13 22:25:22 zeeb90au Exp $
+// $Id: StringLib.h,v 1.5 2005-03-20 23:36:01 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -84,6 +84,7 @@ struct String : public Object {
     bool startsWith(const String &s) const;
     bool startsWithIgnoreCase(const String &s) const;
     int indexOf(const String &s, int fromIndex) const;
+    int lastIndexOf(char chr, int untilIndex) const;
     void empty();
     char charAt(int i) const;
     int indexOf(char chr, int fromIndex) const;
