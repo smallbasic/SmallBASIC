@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.8 2004-12-02 21:56:23 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.9 2004-12-08 22:40:48 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -55,6 +55,9 @@ class EditorWindow : public Group {
     void cancelReplace();
     void undo();
     void gotoLine(int line);
+    void getRowCol(int* row, int* col);
+    int position();
+    void position(int p);
    
     // editor callback functions
     static void new_cb(Widget*, void* v) {

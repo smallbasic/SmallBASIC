@@ -41,6 +41,8 @@ Tasks for initial release:
      - if edit option, set opt_command to the name of the currently edited file
        invoke executor, redraw the edit window
        if output option, normal exec
+  - View/Edit Font Size/9-10-11-12
+    View/Output Font Size/9-10-11-12
 
 2. run-time
    - Forms commands (input types, checkbox radio, text hyperlink, button)
@@ -83,4 +85,4 @@ Tasks for initial release:
 
 10. Linux build
 
-$Id: README.TXT,v 1.10 2004-12-07 22:29:05 zeeb90au Exp $
+$Id: README.TXT,v 1.11 2004-12-08 22:40:48 zeeb90au Exp $

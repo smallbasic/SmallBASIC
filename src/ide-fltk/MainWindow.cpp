@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.18 2004-12-07 22:29:05 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.19 2004-12-08 22:40:48 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -51,6 +51,7 @@ enum ExecState {
     quit_state
 } runMode = init_state;
 
+char buff[250];
 const char* runfile = 0;
 const char* toolhome = 0;
 int px,py,pw,ph;
@@ -113,9 +114,8 @@ void turbo_cb(Widget* w, void* v) {
 }
 
 void goto_cb(Widget* w, void* v) {
-    char line[250];
-    line[0] = 0;
-    const char *val = input("Go To Line:", line);
+    buff[0] = 0;
+    const char *val = input("Go To Line:", buff);
     if (val != NULL) {
         wnd->editWnd->gotoLine(atoi(val));
     }
@@ -125,8 +125,6 @@ void basicMain(const char* filename) {
     wnd->editWnd->readonly(true);
     wnd->tabGroup->selected_child(wnd->outputGroup);
     wnd->out->clearScreen();
-    wnd->out->set_visible();
-    wnd->out->activate();
     runMode = run_state;
     wnd->runStatus->label("RUN");
     wnd->runStatus->redraw();
@@ -143,7 +141,6 @@ void basicMain(const char* filename) {
 
     wnd->runStatus->label(success ? " " : "ERR");
     wnd->editWnd->readonly(false);
-    wnd->editWnd->redraw();
     wnd->redraw();
     runMode = edit_state;
 }
@@ -157,14 +154,11 @@ void run_cb(Widget*, void*) {
 }
 
 void setTitle(const char* filename) {
-    char title[256];
-    char *slash;
-
     if (filename && filename[0]) {
         wnd->fileStatus->copy_label(filename);
-        slash = strrchr(filename, '/');
-        sprintf(title, "%s - SmallBASIC", (slash?slash+1:filename));
-        wnd->copy_label(title);
+        char* slash = strrchr(filename, '/');
+        sprintf(buff, "%s - SmallBASIC", (slash?slash+1:filename));
+        wnd->copy_label(buff);
     } else {
         wnd->fileStatus->label("Untitled");
         wnd->label("SmallBASIC");
@@ -173,12 +167,11 @@ void setTitle(const char* filename) {
 }
 
 void setRowCol(int row, int col) {
-    char t[20];
-    sprintf(t, "%d", row);
-    wnd->rowStatus->copy_label(t);
+    sprintf(buff, "%d", row);
+    wnd->rowStatus->copy_label(buff);
     wnd->rowStatus->redraw();
-    sprintf(t, "%d", col);
-    wnd->colStatus->copy_label(t);
+    sprintf(buff, "%d", col);
+    wnd->colStatus->copy_label(buff);
     wnd->colStatus->redraw();
 }
 
@@ -216,19 +209,34 @@ int arg_cb(int argc, char **argv, int &i) {
     return 0;
 }
 
+void font_size_cb(Widget* w, void* v) {
+    if (runMode == edit_state) {
+        wnd->out->setFontSize((int)v);
+        sprintf(buff, "Size %d", (int)v);
+        wnd->fileStatus->copy_label(buff);
+        wnd->fileStatus->redraw();
+    }
+}
+
 // callback for editor-plug-in plug-ins. we assume the target
 // program will be changing the contents of the editor buffer
 void editor_cb(Widget* w, void* v) {
-    const char* filename = wnd->editWnd->getFileName();
+    char filename[256];
+    strcpy(filename, wnd->editWnd->getFileName());
     if (runMode == edit_state && 
         wnd->editWnd->checkSave(false) && filename[0]) {
+        int pos = wnd->editWnd->position();
+        int row, col;
+        wnd->editWnd->getRowCol(&row, &col);
+        sprintf(opt_command, "%s %d %d", filename, row, col+1);
         runMode = run_state;
         wnd->runStatus->label("RUN");
         wnd->runStatus->redraw();
         int success = sbasic_main((const char* )v);
         wnd->runStatus->label(success ? " " : "ERR");
         wnd->editWnd->loadFile(filename, -1);
-        wnd->redraw();
+        wnd->editWnd->position(pos);
+        wnd->editWnd->take_focus();
         runMode = edit_state;
     }
 }
@@ -367,10 +375,14 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
     m->add("&Edit/_&Delete",     0, (Callback*)EditorWindow::delete_cb);
     m->add("&Edit/&Find...",   CTRL+'f', (Callback*)EditorWindow::find_cb);
-    m->add("&Edit/Find A&gain",CTRL+'g', (Callback*)EditorWindow::find2_cb);
+    m->add("&Edit/Find A&gain",CTRL+'a', (Callback*)EditorWindow::find2_cb);
     m->add("&Edit/&Replace...",0,        (Callback*)EditorWindow::replace_cb);
     m->add("&Edit/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
     m->add("&View/_&Goto Line...",    CTRL+'g', (Callback*)goto_cb);
+    for (int i=9; i<22; i++) {
+        sprintf(buff, "&View/Output Size/%d", i);
+        m->add(buff, 0, (Callback*)font_size_cb, (void*)i);
+    }
     m->add("&View/&Full Screen", 0, (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&View/&Turbo",       0, (Callback*)turbo_cb)->type(Item::TOGGLE);
     scanPlugIns(m);

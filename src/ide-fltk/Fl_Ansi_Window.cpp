@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.15 2004-12-03 19:28:57 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.16 2004-12-08 22:40:48 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -40,6 +40,7 @@ using namespace fltk;
 
 Fl_Ansi_Window::Fl_Ansi_Window(int x, int y, int w, int h) : 
     Widget(x, y, w, h, 0) {
+    fontSize = 11;
     init();
 }
 
@@ -88,8 +89,7 @@ void Fl_Ansi_Window::reset() {
     color(WHITE); // bg
     labelcolor(BLACK); // fg
     labelfont(COURIER);
-    labelsize(11);
-    // TODO: use user defaults
+    labelsize(fontSize);
 }
 
 void Fl_Ansi_Window::layout() {
