@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Browser.cpp,v 1.4 2004-04-18 22:27:49 zeeb90au Exp $
+// $Id: Browser.cpp,v 1.5 2004-04-18 22:53:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -57,9 +57,9 @@ const char helpHTML[] =
     "option. "
     "<p>If the 'Create SBX' option has been selected you can run the "
     "same program again by tapping the <u>sbx</u> link. This reduces "
-    "the program load time and saves battery drain by avoiding the "
-    "program compilation stage. Note if the program is on MMC you must "
-    "de-select this option. "
+    "program load time and saves battery drain by avoiding the "
+    "program compilation stage. Note this setting has no effect if the "
+    "program resides on the MMC card. "
     "<p><i>Editing a BASIC program</i> "
     "<p>Select the Open page then tap the <u>edit</u> link alongside "
     "the program name or press <u>New</u> to create a new program. "

@@ -30,11 +30,21 @@ You can also use this site for sharing your SmallBASIC programs.
 
 RELEASE HISTORY:
 
-0.9.0g - xx April 2004
+0.9.0g - 19 April 2004
 
 - Based on Nicholas' 0.9 series basic kernel
 - Implemented fancy new IDE interface incorporating the TapWrite edit function
 - ebjlib files are now maintained in the TapWrite source forge cvs 
+- linked with libasm for increased performace
+- added a html command. This allows you to write a program like this:
+
+s="<font size=2><input type=button value=hello><br>what about that?"
+s+="<input type=text name=foo>"
+html s,"hello",15,55,190,90
+? "you entered "+env("foo")
+
+  Note, the title and window coordinates arguments are optional
+
 
 0.8.2f - 26 July 2003
 

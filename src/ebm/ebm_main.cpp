@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: ebm_main.cpp,v 1.4 2004-04-18 22:27:49 zeeb90au Exp $
+// $Id: ebm_main.cpp,v 1.5 2004-04-18 22:53:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -128,6 +128,9 @@ void SBWindow::doShell() {
         isTurbo = dlg.turbo;
         
         if (dlg.fileName.length() > 0) {
+            if (dlg.fileName.startsWith("mmc:")) {
+                opt_nosave = true;
+            }
             run(dlg.fileName);
             saveScreen();
         }
