@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.8 2005-04-06 00:39:00 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.9 2005-04-10 23:29:53 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -72,6 +72,13 @@ const void String::operator+=(const String& s) {
 
 const void String::operator+=(const char* s) {
     append(s);
+}
+
+const char String::operator[](int index) {
+    if (index < length()) {
+        return buffer[index];
+    }
+    return 0;
 }
 
 const String String::operator+(const String& s) {
@@ -255,12 +262,12 @@ bool String::equalsIgnoreCase(const char* s) const {
     return (stricmp(buffer, s) == 0);
 }
 
-bool String::startsWith(const String &s) const {
-    return (strnicmp(buffer, s.buffer, s.length()) == 0);
-}
-
-bool String::startsWithIgnoreCase(const String &s) const {
-    return (strnicmp(buffer, s.buffer, s.length()) == 0);
+bool String::startsWith(const char* s, bool ignoreCase) const {
+    if (s == 0 || s[0] == 0) {
+        return (buffer == 0 || buffer[0] == 0);
+    }
+    return (ignoreCase ? strnicmp(buffer, s, strlen(s)) == 0 :
+            strncmp(buffer, s, strlen(s)) == 0);
 }
 
 int String::indexOf(const String &s, int fromIndex) const {
@@ -307,6 +314,7 @@ void String::empty() {
         free(buffer);
     }
     buffer=0;
+    owner=true;
 }
 
 void String::trim() {
@@ -647,10 +655,14 @@ void Properties::operator=(Properties& p) {
 #include <stdio.h>
 int main(int argc, char **argv) {
     String s = " test string ";
-    String trim = s.trim();
-    printf("'%s'\n", trim.toString());
-    String r = trim.replaceAll("s", "S");
+    printf("'%s'\n", s.substring(2,6).toString());
+    s.trim();
+    printf("'%s'\n", s.toString());
+    String r = s.replaceAll("s", "S");
     printf("'%s'\n", r.toString());
+    String x = "http://blah";
+    printf("starts=%d\n", x.startsWith("http://"));
+    printf("starts=%d\n", x.startsWith("sshttp://"));
 }
 #endif
 

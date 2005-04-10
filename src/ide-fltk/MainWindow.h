@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.17 2005-04-06 23:56:36 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.18 2005-04-10 23:29:53 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -42,13 +42,14 @@ struct MainWindow : public Window {
     void setModal(bool modal);
     void setBreak();
     void resetPen();
-    void execLink(char* file);
+    void execLink(const char* file);
 
     int penDownX;
     int penDownY;
     int penState;
     bool isTurbo;
     bool modalLoop;
+    String docHost;
 
     // main output
     AnsiWindow *out;

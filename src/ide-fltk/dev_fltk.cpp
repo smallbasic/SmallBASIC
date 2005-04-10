@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.34 2005-04-04 00:41:49 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.35 2005-04-10 23:29:53 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -34,9 +34,9 @@ C_LINKAGE_BEGIN
 
 extern MainWindow *wnd;
 HelpWidget* helpView = 0;
-char* eventName = 0;
 Properties env;
 String envs;
+String eventName;
 void closeHelp();
 bool activeForm = 0;
 
@@ -285,14 +285,29 @@ void doEvent(void*) {
     } else {
         closeHelp();
     }
-    wnd->execLink(eventName);
-    free((void*)eventName);
-    eventName = 0;
+    wnd->execLink(eventName.toString());
 }
 
 void modeless_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        eventName = strdup(helpView->getEventName());
+        const String& action = helpView->getEventName();
+        eventName.empty();
+        if (action[0] != '!' && 
+            action[0] != '|' &&
+            action.startsWith("http://") == false &&
+            wnd->docHost.length() > 0) {
+            int i = wnd->docHost.indexOf('/', 7); // docHost root
+            if (action.startsWith("/") && i != -1) {
+                // add to absolute path from http://hostname/
+                eventName.append(wnd->docHost.substring(0,i));
+            } else {
+                eventName.append(wnd->docHost);
+            }
+            if (eventName[eventName.length()-1] != '/') {
+                eventName.append("/");
+            }
+        }
+        eventName.append(action);
         fltk::add_check(doEvent); // post message
     }
 }

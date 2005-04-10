@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.37 2005-04-06 23:56:36 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.38 2005-04-10 23:29:53 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -98,13 +98,37 @@ void quit_cb(Widget*, void* v) {
     }
 }
 
+void statusMsg(const char* msg) {
+    wnd->fileStatus->copy_label(msg);
+    wnd->fileStatus->redraw();
+}
+
+void runMsg(const char * msg) {
+    wnd->runStatus->copy_label(msg);
+    wnd->runStatus->redraw();
+}
+
+void busyMessage() {
+    statusMsg("Selection unavailable while program is running.");
+}
+
+void showEditTab() {
+    wnd->tabGroup->selected_child(wnd->editGroup);
+}
+
+void showHelpTab() {
+    wnd->tabGroup->selected_child(wnd->helpGroup);
+}
+
+void showOutputTab() {
+    wnd->tabGroup->selected_child(wnd->outputGroup);
+}
+
 void browseFile(const char* url) {
 #if defined(WIN32) 
     ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
 #else 
-    wnd->fileStatus->label("Launching htmlview script...");
-    wnd->fileStatus->redraw();
-
+    statusMsg("Launching htmlview script...");
     if (fork() == 0) {
         fclose(stderr);
         fclose(stdin);
@@ -123,23 +147,18 @@ void help_home_cb(Widget*, void* v) {
 void help_contents_cb(Widget*, void* v) {
     snprintf(buff, sizeof(buff), "file:///%s/help/0_0.html", startDir);
     wnd->helpWnd->loadFile(buff);
-    wnd->tabGroup->selected_child(wnd->helpGroup);
+    showHelpTab();
 }
 
 void help_readme_cb(Widget*, void* v) {
     snprintf(buff, sizeof(buff), "file:///%s/readme.html", startDir);
     wnd->helpWnd->loadFile(buff);
-    wnd->tabGroup->selected_child(wnd->helpGroup);
+    showHelpTab();
 }
 
 void help_about_cb(Widget*, void* v) {
     wnd->helpWnd->loadBuffer(aboutText);
-    wnd->tabGroup->selected_child(wnd->helpGroup);
-}
-
-void busyMessage() {
-    wnd->fileStatus->label("Selection unavailable while program is running.");
-    wnd->fileStatus->redraw();
+    showHelpTab();
 }
 
 void break_cb(Widget*, void* v) {
@@ -182,8 +201,7 @@ void font_size_cb(Widget* w, void* v) {
         if (val != NULL) {
             wnd->out->fontSize(min(30, max(1, atoi(val))));
             sprintf(buff, "Size %d", wnd->out->fontSize());
-            wnd->fileStatus->copy_label(buff);
-            wnd->fileStatus->redraw();
+            statusMsg(buff);
         }
     } else {
         busyMessage();
@@ -192,14 +210,12 @@ void font_size_cb(Widget* w, void* v) {
 
 void basicMain(const char* filename) {
     wnd->editWnd->readonly(true);
-    wnd->tabGroup->selected_child(wnd->outputGroup);
+    showOutputTab();
     wnd->out->clearScreen();
     runMode = run_state;
 
-    wnd->fileStatus->label("Choose Program/Break to end");
-    wnd->runStatus->label("RUN");
-    wnd->fileStatus->redraw();
-    wnd->runStatus->redraw();
+    statusMsg("Choose Program/Break to end");
+    runMsg("RUN");
 
     int success = sbasic_main(filename);
 
@@ -213,15 +229,13 @@ void basicMain(const char* filename) {
         if (gsb_last_errmsg[len-1] == '\n') {
             gsb_last_errmsg[len-1] = 0;
         }
-        wnd->fileStatus->copy_label(gsb_last_errmsg);
-        wnd->runStatus->label("ERR");
+        statusMsg(gsb_last_errmsg);
+        runMsg("ERR");
     } else {
-        wnd->fileStatus->label("Done");
-        wnd->runStatus->label("");
+        statusMsg("Ready");
+        runMsg("");
     }
 
-    wnd->runStatus->redraw();
-    wnd->fileStatus->redraw();
     wnd->editWnd->readonly(false);
     runMode = edit_state;
 }
@@ -259,13 +273,12 @@ void editor_cb(Widget* w, void* v) {
             sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
                     filename, row-1, col, s1r-1, s1c, s2r-1, s2c);
             runMode = run_state;
-            wnd->runStatus->label("RUN");
-            wnd->runStatus->redraw();
+            runMsg("RUN");
             strcpy(buff, startDir);
             strcat(buff, (const char*)v);
             int success = sbasic_main(buff);
-            wnd->tabGroup->selected_child(wnd->editGroup);
-            wnd->runStatus->label(success ? " " : "ERR");
+            showEditTab();
+            runMsg(success ? " " : "ERR");
             wnd->editWnd->loadFile(filename, -1, true);
             wnd->editWnd->position(pos);
             wnd->editWnd->take_focus();
@@ -296,15 +309,14 @@ void tool_cb(Widget* w, void* v) {
 
 void setTitle(const char* filename) {
     if (filename && filename[0]) {
-        wnd->fileStatus->copy_label(filename);
+        statusMsg(filename);
         char* slash = strrchr(filename, '/');
         sprintf(buff, "%s - SmallBASIC", (slash?slash+1:filename));
         wnd->copy_label(buff);
     } else {
-        wnd->fileStatus->label("Untitled");
+        statusMsg("Untitled");
         wnd->label("SmallBASIC");
     }
-    wnd->fileStatus->redraw();
 
 #if defined(WIN32) 
     ::SetFocus(xid(Window::first()));
@@ -626,61 +638,145 @@ void MainWindow::resetPen() {
     penState = 0;
 }
 
-void MainWindow::execLink(char* file) {
+void MainWindow::execLink(const char* file) {
     if (file == 0 || file[0] == 0) {
         return;
     }
 
+    docHost.empty();
+    bool execFile = false;
+    if (file[0] == '!' || file[0] == '|') {
+        execFile = true; // exec flag passed with name
+        file++;
+    }
+
     // execute a link from the html window
     if (0 == strncasecmp(file, "http://", 7)) {
-        // TODO: move this to a separate thread
-        char line[1024];
         char localFile[PATH_MAX];
+        char rxbuff[1024];
         dev_file_t df;
         FILE* fp;
 
+        char* urlHome = strchr(file+7, '/');
+        char* resHome = strrchr(file+7, '/');
+
         getHomeDir(localFile);
-        strcat(localFile, "download.bas");
+        strcat(localFile, "cache/");
+
+        if (urlHome != 0 && urlHome != resHome) {
+            strncat(localFile, ++urlHome, resHome-urlHome);
+        }
+        // 1/2/3 todo:fixme
+        while () {
+            urlHome
+            mkdir(localFile, 0777);
+        }
+        if (resHome == 0 || resHome[1] == 0 || resHome[1] == '?') {
+            strcat(localFile, "index.html");
+        } else {
+            strcat(localFile, resHome+1);
+        }
+          
         fp = fopen(localFile, "w");
         if (fp == 0) {
+            sprintf(buff, "Failed to open cache file: %s", localFile);
+            statusMsg(buff);
             return;
         }
 
         strcpy(df.name, file);
         if (http_open(&df) == 0) {
             fclose(fp);
+            sprintf(buff, "Failed to open URL: %s", file);
+            statusMsg(buff);
             return;
         }
-
-        while (!sockcl_eof(&df)) {
-            sockcl_read(&df, (unsigned char*)line, sizeof(line));
-            fwrite(line, strlen(line), 1, fp);
-        }
         
+        bool inHeader = true;
+        bool httpOK = false;
+        bool imageContent = false;
+        int len = strlen(localFile);
+
+        if (strcasecmp(localFile+len-4, ".gif") == 0 ||
+            strcasecmp(localFile+len-4, ".jpeg") == 0 ||
+            strcasecmp(localFile+len-4, ".jpg") == 0) {
+            imageContent = true;
+        }
+
+        // TODO: move this to a separate thread
+        while (true) {
+            int bytes = recv(df.handle, (char*)rxbuff, sizeof(rxbuff), 0);
+            if (bytes == 0) {
+                break; // no more data
+            }
+            // assumes http header < 1024 bytes
+            if (inHeader) {
+                int i = 0;
+                while (true) {
+                    int iattr = i;
+                    while (rxbuff[i] != 0 && rxbuff[i] != '\n') {
+                        i++;
+                    }
+                    if (rxbuff[i] == 0) {
+                        inHeader = false;
+                        break; // no end delimiter
+                    } 
+                    if (rxbuff[i+2] == '\n') {
+                        fwrite(rxbuff+i+3, bytes-i-3, 1, fp);
+                        inHeader = false;
+                        break; // found start of content
+                    }
+                    // null terminate attribute (in \r)
+                    rxbuff[i-1] = 0;
+                    i++;
+                    if (strstr(rxbuff+iattr, "200 OK") != 0) {
+                        httpOK = true;
+                    }
+                    if (strncmp(rxbuff+iattr, "Content-Type: image", 19) == 0) {
+                        imageContent = true;
+                    }
+                    if (strncmp(rxbuff+iattr, "Location: ", 10) == 0) {
+                        // handle redirection
+                        shutdown(df.handle, df.handle);
+                        strcpy(df.name, rxbuff+iattr+10);
+                        if (http_open(&df) == 0) {
+                            fclose(fp);
+                            sprintf(buff, "Redirection failed: %s", file);
+                            statusMsg(buff);
+                            return;
+                        }
+                        break; // scan next header
+                    }
+                }
+            } else {
+                fwrite(rxbuff, bytes, 1, fp);
+            }
+        }
+
         // cleanup
-        sockcl_close(&df);
+        shutdown(df.handle, df.handle);
         fclose(fp);
 
         char* extn = strrchr(file, '.');
-        if (extn && 0 == strnicmp(extn, ".bas", 4)) {
+        if (httpOK && extn && 0 == strncasecmp(extn, ".bas", 4)) {
             // run the remote program
             wnd->editWnd->loadFile(localFile, -1, false);
             setTitle(file);
             addHistory(file);
             basicMain(localFile);
         } else {
-            // try to show in help window
-            trace("load %s", localFile);
-            wnd->helpWnd->loadFile(localFile);
-            wnd->tabGroup->selected_child(wnd->helpGroup);
+            // display as html
+            if (imageContent) {
+                sprintf(buff, "<img src=%s>", localFile);                
+            } else {
+                sprintf(buff, "file:%s", localFile);
+            }
+            docHost.append(df.name, df.drv_dw[1]);
+            statusMsg(docHost.toString());
+            dev_html(buff, 0, 0,0,0,0);
+            showOutputTab();
         }
         return;
-    }
-
-    bool execFile = false;
-    if (file[0] == '!' || file[0] == '|') {
-        execFile = true; // exec flag passed with name
-        file++;
     }
 
     char* colon = strrchr(file, ':');
@@ -689,9 +785,9 @@ void MainWindow::execLink(char* file) {
     }
 
     char* extn = strrchr(file, '.');
-    if (extn && 0 == strnicmp(extn, ".bas ", 5)) {
+    if (extn && 0 == strncasecmp(extn, ".bas ", 5)) {
         strcpy(opt_command, extn+5);
-        extn[4] = 0;
+        extn[4] = 0; // make args available to bas program
     }
 
     if (access(file, 0) == 0) {
@@ -700,13 +796,11 @@ void MainWindow::execLink(char* file) {
         if (execFile) {
             basicMain(file);
         } else {
-            // show editor
-            wnd->tabGroup->selected_child(wnd->editGroup);
+            showEditTab();
         }
     } else {
-        sprintf(buff, "Failed to open %s", file);
-        wnd->fileStatus->copy_label(buff);
-        wnd->fileStatus->redraw();
+        sprintf(buff, "Failed to open: %s", file);
+        statusMsg(buff);
     }
 }
 

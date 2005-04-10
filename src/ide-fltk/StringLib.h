@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.7 2005-03-28 23:17:52 zeeb90au Exp $
+// $Id: StringLib.h,v 1.8 2005-04-10 23:29:53 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -59,6 +59,7 @@ struct String : public Object {
     const String& operator=(const char c);
     const void operator+=(const String& s);
     const void operator+=(const char* s);
+    const char operator[](int index);
     const String operator+(const String& s);
     const String operator+(int i);
     const String& operator=(int i);
@@ -81,8 +82,7 @@ struct String : public Object {
     bool equals(const String &s) const;
     bool equals(const char* s) const;
     bool equalsIgnoreCase(const char* s) const;
-    bool startsWith(const String &s) const;
-    bool startsWithIgnoreCase(const String &s) const;
+    bool startsWith(const char* s, bool ignoreCase=true) const;
     int indexOf(const String &s, int fromIndex) const;
     int lastIndexOf(char chr, int untilIndex) const;
     void empty();

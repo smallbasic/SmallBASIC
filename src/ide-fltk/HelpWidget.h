@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.14 2005-04-01 23:09:47 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.15 2005-04-10 23:29:53 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -46,7 +46,7 @@ public:
     const char* getInputValue(Widget* button);
     const char* getInputValue(int i);
     const char* getInputName(Widget* button);
-    const char* getEventName() {return event.toString();}
+    const String getEventName() {return event;}
     void getInputProperties(Properties* p);
     void setCookies(Properties* p) {cookies=p;}
     bool setInputValue(const char* assignment);
