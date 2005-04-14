@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.20 2005-04-10 23:29:53 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.21 2005-04-14 23:26:13 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -82,7 +82,6 @@ struct Display {
     U16 imgIndent;
     U8 uline;
     U8 center;
-    U8 inTR;
     U8 content;
     U8 exposed;
     U8 measure;
@@ -95,11 +94,19 @@ struct Display {
     void newRow(U16 nrows=1) {
         x = indent;
         y += nrows*lineHeight;
-
+        // flow around images
         if (imgY != -1 && y > imgY) {
-            // handle text flow around images
             imgY = -1;
             x = indent = imgIndent;
+        }
+    }
+    void endImageFlow() {
+        // end text flow around images
+        if (imgY != -1) {
+            indent = imgIndent;
+            x = indent;
+            y = imgY+1;
+            imgY = -1;
         }
     }
 };
@@ -209,10 +216,7 @@ struct BrNode : public BaseNode {
     void display(Display* out) {
         // when <pre> is active don't flow text around images
         if (premode && out->imgY != -1) {
-            out->indent = out->imgIndent;
-            out->x = out->indent;
-            out->y = out->imgY+1;
-            out->imgY = -1;
+            out->endImageFlow();
         } else {
             out->newRow(1);
         }
@@ -349,11 +353,12 @@ struct LiNode : public BaseNode {
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-    ImageNode(const Style* style, String* fileName, Attributes* a) : 
-        BaseNode() {
+    ImageNode(const Style* style, String* siteHome, Attributes* a) : BaseNode() {
         this->style = style;
-        String* src = a->getSrc();
-        image = loadImage(src == 0 ? 0 : fileName->getPath(src->toString()));
+        path.append(siteHome);
+        path.append(a->getSrc()); // <img src=blah/images/g.gif>
+        // load image relative to the loaded files location
+        image = loadImage(path.toString());
         image->measure(w.value, h.value);
         w = a->getWidth(w.value);
         h = a->getHeight(h.value);
@@ -361,15 +366,29 @@ struct ImageNode : public BaseNode {
         fixed = false;
     }
 
-    ImageNode(const Style* style, String* fileName, String* src, bool fixed) : 
-        BaseNode() {
+    ImageNode(const Style* style, String* siteHome, String* src, bool fixed)
+        : BaseNode() {
         this->style = style;
         this->fixed = fixed;
-        image = loadImage(fileName->getPath(src->toString()));
+        path.append(siteHome);
+        path.append(src->toString());
+        image = loadImage(path.toString());
         image->measure(w.value, h.value);
         w.relative = 0;
         h.relative = 0;
         background = true;
+    }
+
+    void reload() {
+        int iw,ih;
+        image = loadImage(path.toString());
+        image->measure(iw, ih);
+        if (w.relative == 0) {
+            w.value = iw;
+        }
+        if (h.relative == 0) {
+            h.value = ih;
+        }
     }
 
     void display(Display* out) {
@@ -433,6 +452,7 @@ struct ImageNode : public BaseNode {
     }
     const Image* image;
     const Style* style;
+    String path;
     Value w,h;
     U8 background, fixed;
 };
@@ -555,10 +575,8 @@ struct HrNode : public BaseNode {
 
     void display(Display* out) {
         if (out->imgY != -1) {
-            // end flow around images
-            out->indent = out->imgIndent;
-            out->y = out->imgY - out->lineHeight;
-            out->imgY = -1;
+            out->endImageFlow();
+            out->y -= out->lineHeight;
         }
         out->y += 4;
         out->x = out->indent;
@@ -592,6 +610,7 @@ struct TableNode : public BaseNode {
     void display(Display* out) {
         nextCol = 0;
         nextRow = 0;
+        out->endImageFlow();
         width = out->width-out->indent;
         initX = out->indent;
         initY = ryt = ryb = out->y;
@@ -736,7 +755,6 @@ struct TrNode : public BaseNode {
         table->nextRow++;
         table->ryt = table->ryb;
         y1 = table->ryt-(int)getascent();
-        out->inTR = true;
         out->content = false;
     }
     TableNode* table;
@@ -752,7 +770,6 @@ struct TrEndNode : public BaseNode {
         }
     }
     void display(Display* out) {
-        out->inTR = false;
         if (tr && tr->table && out->measure) {
             // measure the row height - the table is not revisited
             // during scrolling, so need to save height on first pass
@@ -872,7 +889,7 @@ struct InputNode : public BaseNode {
         button->textfont(out->font);
         button->textsize(out->fontSize);
         button->labelsize(out->fontSize);
-        if (button->y()+button->h() < out->height && button->y() > 0) {
+        if (button->y()+button->h() < out->height && button->y() >= 0) {
             button->show();
         } else {
             // draw a fake control in case partially visible
@@ -977,7 +994,7 @@ void createDropList(InputNode* node, strlib::List* options) {
 void InputNode::updateProperties(strlib::List* namedInputs, Attributes* a) {
     String* name = a->getName();
     if (name != null) {
-        namedInputs->append(new NamedInput(this, name));
+        namedInputs->add(new NamedInput(this, name));
     }
     onclick.append(a->getOnclick());
     if (button && onclick.length()) {
@@ -1018,7 +1035,7 @@ static void anchor_callback(Widget* helpWidget, void *target) {
 
 HelpWidget::HelpWidget(int x, int y, int width, int height) :
     Group(x, y, width, height), 
-    nodeList(100), namedInputs(10), inputs(10), anchors(10) {
+    nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5) {
     begin();
     scrollbar = new Scrollbar(width-SCROLL_W, 0, SCROLL_W, height);
     scrollbar->set_vertical();
@@ -1030,6 +1047,7 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     callback(anchor_callback); // default callback
     init();
     cookies = 0;
+    siteHome.empty();
 }
 
 HelpWidget::~HelpWidget() {
@@ -1059,6 +1077,7 @@ void HelpWidget::cleanup() {
     // button/anchor items destroyed in nodeList    
     inputs.emptyList();
     anchors.emptyList();
+    images.emptyList();
     nodeList.removeAll();
     namedInputs.removeAll();
 }
@@ -1225,7 +1244,6 @@ void HelpWidget::draw() {
     out.indent = DEFAULT_INDENT+hscroll;
     out.x = out.indent;
     out.width = w()-(DEFAULT_INDENT+SCROLL_W)+hscroll;
-    out.inTR = false;
     out.content = false;
     out.measure = false;
     out.exposed = (damage()&DAMAGE_EXPOSE) ? 1:0;
@@ -1286,7 +1304,6 @@ void HelpWidget::draw() {
             out.exposed = (damage()&DAMAGE_EXPOSE) ? 1:0;
         }
         if (out.exposed == false && 
-            out.inTR == false &&
             out.tableLevel == 0 &&
             out.y-out.lineHeight > out.height) {
             // clip remaining content
@@ -1486,11 +1503,11 @@ void HelpWidget::compose() {
     const char* tag;
     const char* tagPair = 0;
 
-#define ADD_PREV_SEGMENT                            \
-    prevlen = i-pindex;                             \
-    if (prevlen > 0) {                              \
-        nodeList.append(new TextNode(p, prevlen));  \
-        newline = false;                            \
+#define ADD_PREV_SEGMENT                         \
+    prevlen = i-pindex;                          \
+    if (prevlen > 0) {                           \
+        nodeList.add(new TextNode(p, prevlen));  \
+        newline = false;                         \
     }
 
     while (text && *text) {
@@ -1525,7 +1542,7 @@ void HelpWidget::compose() {
                             ADD_PREV_SEGMENT;
                             // save entity replacement
                             node = new TextNode(&entityMap[j].xlat, 1);
-                            nodeList.append(node);
+                            nodeList.add(node);
                             // skip past entity
                             i += entityMap[j].elen;
                             pindex = i;
@@ -1541,11 +1558,11 @@ void HelpWidget::compose() {
                 case '\n':
                     ADD_PREV_SEGMENT;
                     if (pre) {
-                        nodeList.append(new BrNode(pre));
+                        nodeList.add(new BrNode(pre));
                     }
                     if (newline == false && text[i+1] != '<') {
                         // replace newline with single space
-                        nodeList.append(new TextNode(spacestr, 1));
+                        nodeList.add(new TextNode(spacestr, 1));
                         newline = false;
                         // skip white space
                         while (i<textlen && (isWhite(text[i+1]))) {
@@ -1564,7 +1581,7 @@ void HelpWidget::compose() {
                     // break into separate segments to cause line-breaks
                     prevlen = i-pindex+1;
                     if (prevlen > 0) {
-                        nodeList.append(new TextNode(p, prevlen));
+                        nodeList.add(new TextNode(p, prevlen));
                         newline = false;
                     }
                     pindex = i+1;
@@ -1593,7 +1610,7 @@ void HelpWidget::compose() {
 
             int len = textlen-pindex;
             if (len) {
-                nodeList.append(new TextNode(p, len));
+                nodeList.add(new TextNode(p, len));
                 newline = false;
             }
         }
@@ -1612,18 +1629,18 @@ void HelpWidget::compose() {
                 if (0 == strncasecmp(tag, "b", 1)) {
                     bold = false;
                     node = new FontNode(font, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "i", 1)) {
                     italic = false;
                     node = new FontNode(font, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "center", 6)) {
                     center = false;
-                    nodeList.append(new StyleNode(uline, center));
+                    nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "font", 4) ||
                            0 == strncasecmp(tag, "h", 1)) { // </h1>
                     if (0 == strncasecmp(tag, "h", 1)) {
-                        nodeList.append(new BrNode(pre));
+                        nodeList.add(new BrNode(pre));
                         newline = true;
                         if (bold > 0) {
                             bold--;
@@ -1632,129 +1649,130 @@ void HelpWidget::compose() {
                     font = fltk::HELVETICA;
                     fontSize = FONT_SIZE;
                     node = new FontNode(font, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "pre", 3)) {
                     pre = false;
                     node = new FontNode(font, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "a", 1)) {
-                    nodeList.append(new AnchorEndNode());
+                    nodeList.add(new AnchorEndNode());
                 } else if (0 == strncasecmp(tag, "ul", 2) ||
                            0 == strncasecmp(tag, "ol", 2)) {
-                    nodeList.append(new UlEndNode());
+                    nodeList.add(new UlEndNode());
                     olStack.pop();
                     newline = true;
                 } else if (0 == strncasecmp(tag, "u", 1)) {
                     uline = false;
-                    nodeList.append(new StyleNode(uline, center));
+                    nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "td", 2)) {
-                    nodeList.append(new TdEndNode((TdNode*)tdStack.pop()));
+                    nodeList.add(new TdEndNode((TdNode*)tdStack.pop()));
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "tr", 2)) {
                     node = new TrEndNode((TrNode*)trStack.pop());
-                    nodeList.append(node);
+                    nodeList.add(node);
                     newline = true;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "table", 5)) {
                     node = new TableEndNode((TableNode*)tableStack.pop());
-                    nodeList.append(node);
+                    nodeList.add(node);
                     newline = true;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "textarea", 8) && tagPair) {
                     inputNode = new InputNode(this, tagPair, tagBegin-tagPair);
-                    nodeList.append(inputNode);
-                    inputs.append(inputNode);
+                    nodeList.add(inputNode);
+                    inputs.add(inputNode);
                     inputNode->updateProperties(&namedInputs, &p);
                     tagPair = 0;
                     p.removeAll();
                 } else if (0 == strncasecmp(tag, "select", 6) && tagPair) {
                     inputNode = new InputNode(this);
                     createDropList(inputNode, &options);
-                    nodeList.append(inputNode);
-                    inputs.append(inputNode);
+                    nodeList.add(inputNode);
+                    inputs.add(inputNode);
                     inputNode->updateProperties(&namedInputs, &p);
                     tagPair = 0;
                     p.removeAll();
                 } else if (0 == strncasecmp(tag, "option", 6) && tagPair) {
                     String* option = new String();
                     option->append(tagPair, tagBegin-tagPair);
-                    options.append(option);
+                    options.add(option);
                 }
             } else if (isalpha(tag[0]) || tag[0] == '!') {
                 // process the start of the tag
                 if (0 == strncasecmp(tag, "br", 2) ||
                     0 == strncasecmp(tag, "p>", 2)) {
-                    nodeList.append(new BrNode(pre));
+                    nodeList.add(new BrNode(pre));
                     newline = true;
                 } else if (0 == strncasecmp(tag, "b>", 2)) {
                     bold = true;
                     node = new FontNode(font, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "i>", 2)) {
                     italic = true;
                     node = new FontNode(font, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "center", 6)) {
                     center = true;
-                    nodeList.append(new StyleNode(uline, center));
+                    nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "hr", 2)) {
-                    nodeList.append(new HrNode());
+                    nodeList.add(new HrNode());
                     newline = true;
                 } else if (0 == strncasecmp(tag, "title", 5)) {
                     tagEnd = strchr(tagEnd+1, '>'); // skip past </title>
-                    text = tagEnd+1;
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "pre", 3)) {
                     pre = true;
                     node = new FontNode(COURIER, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "td", 2)) {
                     p.removeAll();
                     p.load(tag+2, taglen-2);
                     node = new TdNode((TrNode*)trStack.peek(), &p);
-                    nodeList.append(node);
+                    nodeList.add(node);
                     tdStack.push(node);
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "tr", 2)) {
                     node = new TrNode((TableNode*)tableStack.peek());
-                    nodeList.append(node);
+                    nodeList.add(node);
                     trStack.push(node);
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "table", 5)) {
                     p.removeAll();
                     p.load(tag+5, taglen-5);
                     node = new TableNode(&p);
-                    nodeList.append(node);
+                    nodeList.add(node);
                     tableStack.push(node);
                     newline = true;
                     text = skipWhite(tagEnd+1);
                     // continue the font in case we resize
                     node = new FontNode(font, fontSize, 0, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                     prop = p.getBackground();
                     if (prop != null) {
-                        node = new ImageNode(style(), &fileName, prop, false);
-                        nodeList.append(node);
+                        node = new ImageNode(style(), &siteHome, prop, false);
+                        nodeList.add(node);
+                        images.add(node);
                     }
                 } else if (0 == strncasecmp(tag, "ul>", 3) ||
                            0 == strncasecmp(tag, "ol>", 3)) {
                     node = new UlNode(tag[0]=='o'||tag[0]=='O');
                     olStack.push(node);
-                    nodeList.append(node);
+                    nodeList.add(node);
                     newline = true;
                 } else if (0 == strncasecmp(tag, "u>", 2)) {
                     uline = true;
-                    nodeList.append(new StyleNode(uline, center));
+                    nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "li>", 3)) {
                     node = new LiNode(style(), (UlNode*)olStack.peek());
-                    nodeList.append(node);
+                    nodeList.add(node);
                     newline = true;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "a ", 2)) {
                     p.removeAll();
                     p.load(tag+2, taglen-2);
                     node = new AnchorNode(p);
-                    nodeList.append(node);
-                    anchors.append(node);
+                    nodeList.add(node);
+                    anchors.add(node);
                 } else if (0 == strncasecmp(tag, "font ", 5)) {
                     p.removeAll();
                     p.load(tag+5, taglen-5);
@@ -1768,19 +1786,19 @@ void HelpWidget::compose() {
                         font = fltk::font(*prop->toString());
                     }
                     node = new FontNode(font, fontSize, color, bold, italic);
-                    nodeList.append(node);
+                    nodeList.add(node);
                 } else if (taglen == 2 && 0 == strncasecmp(tag, "h", 1)) {
                     fontSize = FONT_SIZE_H1-(tag[1]-'1'); // <h1> etc
                     node = new FontNode(font, fontSize, 0, ++bold, italic);
-                    nodeList.append(node);
-                    nodeList.append(new BrNode(pre));
+                    nodeList.add(new BrNode(pre));
+                    nodeList.add(node);
                     newline = true;
                 } else if (0 == strncasecmp(tag, "input ", 6)) {
                     p.removeAll();
                     p.load(tag+6, taglen-6);
                     inputNode = new InputNode(this, cookies, &p);
-                    nodeList.append(inputNode);
-                    inputs.append(inputNode);
+                    nodeList.add(inputNode);
+                    inputs.add(inputNode);
                     inputNode->updateProperties(&namedInputs, &p);
                 } else if (0 == strncasecmp(tag, "textarea", 8)) {
                     p.load(tag+8, taglen-8);
@@ -1794,8 +1812,9 @@ void HelpWidget::compose() {
                 } else if (0 == strncasecmp(tag, "img ", 4)) {
                     p.removeAll();
                     p.load(tag+4, taglen-4);
-                    node = new ImageNode(style(), &fileName, &p);
-                    nodeList.append(node);
+                    node = new ImageNode(style(), &siteHome, &p);
+                    nodeList.add(node);
+                    images.add(node);
                 } else if (0 == strncasecmp(tag, "body ", 5)) {
                     p.removeAll();
                     p.load(tag+5, taglen-5);
@@ -1804,18 +1823,19 @@ void HelpWidget::compose() {
                     background = getColor(p.getBgColor(), background);
                     prop = p.getBackground();
                     if (prop != null) {
-                        node = new ImageNode(style(), &fileName, prop, true);
-                        nodeList.append(node);
+                        node = new ImageNode(style(), &siteHome, prop, true);
+                        nodeList.add(node);
+                        images.add(node);
                     }
                 } else {
                     // unknown tag
                     text = skipWhite(tagEnd+1);
                 }
             } else if (tag[0] == '?') {
-                nodeList.append(new EnvNode(cookies, tag+1, taglen-1));
+                nodeList.add(new EnvNode(cookies, tag+1, taglen-1));
             } else {
                 // '<' is a literal character
-                nodeList.append(new TextNode(anglestr, 1));
+                nodeList.add(new TextNode(anglestr, 1));
                 tagEnd = tagBegin;
                 text = tagBegin+1;
             } // end if-start, else-end tag
@@ -1829,7 +1849,7 @@ void HelpWidget::compose() {
     trStack.emptyList();
     while (tableStack.peek()) {
         node = new TableEndNode((TableNode*)tableStack.pop());
-        nodeList.append(node);
+        nodeList.add(node);
     }
 }
 
@@ -1894,13 +1914,19 @@ void HelpWidget::copyText(int begin, int end) {
 }
 
 void HelpWidget::navigateTo(const char* s) {
-    // search for target using the path of the current file
-    loadFile(fileName.getPath(s).toString());
+    String path;
+    path.append(siteHome);
+    path.append(s);
+    loadFile(path.toString());
 }
 
 void HelpWidget::loadBuffer(const char* str) {
-    htmlStr = str;
-    reloadPage();
+    if (strnicmp("file:", str, 5) == 0) {
+        loadFile(str+5);
+    } else {
+        htmlStr = str;
+        reloadPage();
+    }
 }
 
 void HelpWidget::loadFile(const char *f) {
@@ -1927,6 +1953,18 @@ void HelpWidget::loadFile(const char *f) {
     fileName.append(f, len);
     fileName.replaceAll('\\', '/');
 
+    // update siteHome using the given file-name
+    if (siteHome.length() == 0) {
+        int i = fileName.lastIndexOf('/', 0);
+        if (i != -1) {
+            siteHome = fileName.substring(0, i+1);
+        } else {
+            siteHome.append("./");
+        }
+        if (siteHome[siteHome.length()-1] != '/') {
+            siteHome.append("/");
+        }
+    }
     if ((fp = fopen(fileName.toString(), "rb")) != NULL) {
         fseek (fp, 0, SEEK_END);
         len = ftell(fp);
@@ -1944,6 +1982,34 @@ void HelpWidget::loadFile(const char *f) {
     if (target) {
         scrollTo(target);
     }
+}
+
+void HelpWidget::getImageNames(strlib::List* nameList) {
+    nameList->removeAll();
+    Object** list = images.getList();
+    int len = images.length();
+    for (int i=0; i<len; i++) {
+        ImageNode* imageNode = (ImageNode*)list[i];
+        nameList->addSet(&imageNode->path);
+    }
+}
+
+// reload broken images 
+void HelpWidget::reloadImages() {
+    Object** list = images.getList();
+    int len = images.length();
+    for (int i=0; i<len; i++) {
+        ImageNode* imageNode = (ImageNode*)list[i];
+        if (imageNode->image == &brokenImage) {
+            imageNode->reload();
+        }
+    }
+    redraw();
+}
+
+void HelpWidget::setSiteHome(const char* s) {
+    siteHome.empty();
+    siteHome.append(s);
 }
 
 //--Helper functions------------------------------------------------------------

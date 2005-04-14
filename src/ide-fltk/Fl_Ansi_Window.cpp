@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.24 2005-04-06 00:38:55 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.25 2005-04-14 23:26:13 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -14,12 +14,13 @@
 #include <fltk/layout.h>
 #include <fltk/Image.h>
 #include <fltk/events.h>
+#include <fltk/draw.h>
 #include <fltk/Font.h>
 #include <fltk/Rectangle.h>
 #include <fltk/Group.h>
 
 #include "Fl_Ansi_Window.h"
-void trace(const char *format, ...);
+extern "C" void trace(const char *format, ...);
 
 #if defined(WIN32) 
 #include <fltk/win32.h>
@@ -35,9 +36,10 @@ using namespace fltk;
 // make AnsiWindow.exe
 //#define UNIT_TEST 1
 
-#define begin_offscreen()   \
-  initImage();              \
-  ImageDraw imageDraw(img);
+#define begin_offscreen()                       \
+    initImage();                                \
+    GSave gsave;                                \
+    img->make_current();
 
 AnsiWindow::AnsiWindow(int x, int y, int w, int h) : 
     Widget(x, y, w, h, 0) {
@@ -62,7 +64,8 @@ void AnsiWindow::initImage() {
     // can only be called following Fl::check() or Fl::run()
     if (img == 0) {
         img = new Image(w(), h());
-        ImageDraw imageDraw(img);
+        GSave gsave;
+        img->make_current();
         setcolor(color());
         fillrect(Rectangle(w(), h()));
         setfont(labelfont(), labelsize());
@@ -102,7 +105,8 @@ void AnsiWindow::layout() {
 
         Image* old = img;
         img = new Image(W, H);
-        ImageDraw imageDraw(img);
+        GSave gsave;
+        img->make_current();
         setcolor(color());
         fillrect(Rectangle(W, H));
         setfont(labelfont(), labelsize());
@@ -175,15 +179,15 @@ void AnsiWindow::drawRect(int x1, int y1, int x2, int y2) {
 }
 
 void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy, 
-                               int width, int height) {
+                           int width, int height) {
     begin_offscreen();
     image->copy(Rectangle(x, y, width, height), sx, sy);
     redraw();
 }
 
 void AnsiWindow::setPixel(int x, int y, int c) {
-#if defined(WIN32) 
     begin_offscreen();
+#if defined(WIN32) 
     if (c < 0) {
         ::SetPixel(fl_bitmap_dc, x,y, -c);
     } else {
@@ -193,30 +197,32 @@ void AnsiWindow::setPixel(int x, int y, int c) {
         int b = (fltkColor>>8) & 0xFF;
         ::SetPixel(fl_bitmap_dc, x,y, RGB(r,g,b));
     }
-    redraw();
 #else
-    // TODO: fix linux set/get pixel
-    // XDrawPoint(x_disp, x_win, x_gc, x, y);
+    setcolor(ansiToFltk(c));
+    drawpoint(x,y);
 #endif
+    redraw();
 }
 
 int AnsiWindow::getPixel(int x, int y) {
 #if defined(WIN32) 
     begin_offscreen();
     COLORREF c = ::GetPixel(fl_bitmap_dc, x, y);
-    return c;
+    return -c;
 #else
-    return 0;
+    int pixel = 0;
+    readimage((uchar*)&pixel, RGB, Rectangle(x, y, 1, 1));
+    return -pixel;
 #endif
 }
 
 void AnsiWindow::beep() const {
 #ifdef WIN32
-   MessageBeep(MB_ICONASTERISK);
+    MessageBeep(MB_ICONASTERISK);
 #elif defined(__APPLE__)
-   SysBeep(30);
+    SysBeep(30);
 #else
-   //   XBell(fl_display, 100);
+    //   XBell(fl_display, 100);
 #endif // WIN32
 }
 

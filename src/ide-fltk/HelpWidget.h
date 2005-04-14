@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.15 2005-04-10 23:29:53 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.16 2005-04-14 23:26:13 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -52,6 +52,9 @@ public:
     bool setInputValue(const char* assignment);
     void copyText(int begin, int end);
     void onclick(Widget* button); // private
+    void setSiteHome(const char* home);
+    void getImageNames(strlib::List*);
+    void reloadImages();
 
     protected:
     void compose();
@@ -75,10 +78,12 @@ public:
     strlib::List namedInputs;
     strlib::List inputs;
     strlib::List anchors;
+    strlib::List images;
     strlib::Properties *cookies;
     strlib::String htmlStr;
     strlib::String event;
     strlib::String fileName;
+    strlib::String siteHome;
 };
 
 #ifdef FL_HELP_WIDGET_RESOURCES

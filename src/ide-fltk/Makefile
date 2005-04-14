@@ -87,9 +87,6 @@ depend:
 # Include automatically generated dependencies
 include makedepend
 
-sbfui.cxx: sbfui.fl
-	fluid -c sbfui.fl
-
 build_kwpc: build_kwpc.c
 	g++ build_kwpc.c -o build_kwpc
 	-rm -f kwp
@@ -118,7 +115,7 @@ Fl_Help_Widget.exe: Fl_Help_Widget.o
 	gcc ${DEBUG_OPTIM} $< ${DEBUG_LDLIBS} objs/StringLib.o -o $@
 
 clean:
-	-rm -f sbfltk sbfui.cxx sbfui.h build_kwpc kwp.cxx kwp objs/*.o
+	-rm -f sbfltk  build_kwpc kwp.cxx kwp objs/*.o
 
 ${OBJDIR}:
 	mkdir -p $@

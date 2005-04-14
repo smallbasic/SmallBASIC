@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.9 2005-04-10 23:29:53 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.10 2005-04-14 23:26:13 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -250,16 +250,14 @@ double String::toNumber() const {
     return (buffer == 0 ? 0 : atof(buffer));
 }
 
-bool String::equals(const String &s) const {
-    return (buffer == 0 ? s.buffer == 0 : strcmp(buffer, s.buffer) == 0);
+bool String::equals(const String &s, bool ignoreCase) const {
+    return (buffer == 0 ? s.buffer == 0 : ignoreCase ? 
+            stricmp(buffer, s.buffer) == 0 : strcmp(buffer, s.buffer) == 0);
 }
 
-bool String::equals(const char* s) const {
-    return (buffer == 0 ? s == 0 : strcmp(buffer, s) == 0);
-}
-
-bool String::equalsIgnoreCase(const char* s) const {
-    return (stricmp(buffer, s) == 0);
+bool String::equals(const char* s, bool ignoreCase) const {
+    return (buffer == 0 ? s == 0 : ignoreCase ? 
+            stricmp(buffer, s) == 0 : strcmp(buffer, s) == 0);
 }
 
 bool String::startsWith(const char* s, bool ignoreCase) const {
@@ -411,12 +409,26 @@ Object* List::get(const int index) const {
     return index < count ? head[index] : 0;
 }
 
-void List::append(Object* object) {
+void List::add(Object* object) {
     if (++count > size) {
         size += growSize;
         head = (Object**)realloc(head, sizeof(Object*)*size);
     }
     head[count-1] = object;
+}
+
+// append unique strings
+void List::addSet(String* s) { 
+    if (s == 0 || s->length() == 0) {
+        return;
+    }
+    for (int i=0; i<count; i++) {
+        String* item = (String*)head[i];
+        if (item->equals(s->toString())) {
+            return;
+        }
+    }
+    add(new String(*s));
 }
 
 void List::iterateInit(int ibegin /*=0*/) {
@@ -464,7 +476,7 @@ Object* Stack::pop() {
 }
 
 void Stack::push(Object* o) {
-    append(o);
+    add(o);
 }
 
 //--Properties------------------------------------------------------------------
@@ -550,8 +562,8 @@ void Properties::load(const char *s, int slen) {
 
         value.append(s+iBegin, i-iBegin);
         // append (put) to list
-        append(new String(attr));
-        append(new String(value));
+        add(new String(attr));
+        add(new String(value));
         i++;
     }
 }
@@ -566,7 +578,7 @@ String* Properties::get(const char* key) {
         if (nextValue == null) {
             return null;
         }
-        if (nextKey->equalsIgnoreCase(key)) {
+        if (nextKey->equals(key)) {
             return nextValue;
         }
     }
@@ -593,8 +605,8 @@ void Properties::get(const char* key, List* arrayValues) {
         if (nextValue == null) {
             break;
         }
-        if (nextKey->equalsIgnoreCase(key)) {
-            arrayValues->append(new String(*nextValue));
+        if (nextKey->equals(key)) {
+            arrayValues->add(new String(*nextValue));
         }
     }
 }
@@ -605,8 +617,8 @@ void Properties::put(String& key, String& value) {
         prev->empty();
         prev->append(value);
     } else {
-        append(new String(key));
-        append(new String(value));
+        add(new String(key));
+        add(new String(value));
     }
 }
 
@@ -620,8 +632,8 @@ void Properties::put(const char* key, const char* value) {
         String* v = new String();
         k->append(key);
         v->append(value);
-        append(k);
-        append(v);
+        add(k);
+        add(v);
     }
 }
 
@@ -646,7 +658,7 @@ String Properties::toString() {
 void Properties::operator=(Properties& p) {
     removeAll();
     for (int i=0; i<p.count; i++) {
-        append(p.head[i]);
+        add(p.head[i]);
     }
     p.emptyList();
 }

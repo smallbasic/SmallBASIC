@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.38 2005-04-10 23:29:53 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.39 2005-04-14 23:26:13 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -62,6 +62,11 @@ const char* toolhome = "./Bas-Home/";
 int px,py,pw,ph;
 MainWindow* wnd;
 
+// in dev_fltk.cpp
+bool cacheLink(dev_file_t* df, char* localFile);
+void updateHelp(const char* s);
+void getHomeDir(char* fileName);
+
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
@@ -75,11 +80,6 @@ const char aboutText[] =
     "the Free Software Foundation.";
 
 //--Menu callbacks--------------------------------------------------------------
-
-void getHomeDir(char* fileName) {
-    sprintf(fileName, "%s/.smallbasic/", getenv("HOME"));
-	mkdir(fileName, 0777);
-}
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
@@ -178,6 +178,17 @@ void fullscreen_cb(Widget *w, void* v) {
     } else {
         // restore geometry to the window and turn fullscreen off
         wnd->fullscreen_off(px,py,pw,ph);
+    }
+}
+
+void next_tab_cb(Widget* w, void* v) {
+    Widget* current = wnd->tabGroup->selected_child();
+    if (current == wnd->helpGroup) {
+        wnd->tabGroup->selected_child(wnd->outputGroup);
+    } else if (current == wnd->outputGroup) {
+        wnd->tabGroup->selected_child(wnd->editGroup);
+    } else {
+        wnd->tabGroup->selected_child(wnd->helpGroup);
     }
 }
 
@@ -544,8 +555,9 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/_Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
     m->add("&Edit/&Goto Line...", F4Key,    (Callback*)goto_cb);
     m->add("&Edit/Output Size...",F5Key,    (Callback*)font_size_cb);
-    m->add("&View/&Full Screen",  F6Key,    (Callback*)fullscreen_cb)->type(Item::TOGGLE);
-    m->add("&View/&Turbo",        F7Key,    (Callback*)turbo_cb)->type(Item::TOGGLE);
+    m->add("&View/Toggle/&Full Screen",0,   (Callback*)fullscreen_cb)->type(Item::TOGGLE);
+    m->add("&View/Toggle/&Turbo", F7Key,    (Callback*)turbo_cb)->type(Item::TOGGLE);
+    m->add("&View/&Next Tab",     F6Key,    (Callback*)next_tab_cb);
     scanPlugIns(m);
     m->add("&Program/&Run",       F9Key,    (Callback*)run_cb);
     m->add("&Program/&Break",     CTRL+'b', (Callback*)break_cb);
@@ -653,111 +665,19 @@ void MainWindow::execLink(const char* file) {
     // execute a link from the html window
     if (0 == strncasecmp(file, "http://", 7)) {
         char localFile[PATH_MAX];
-        char rxbuff[1024];
         dev_file_t df;
-        FILE* fp;
 
-        char* urlHome = strchr(file+7, '/');
-        char* resHome = strrchr(file+7, '/');
-
-        getHomeDir(localFile);
-        strcat(localFile, "cache/");
-
-        if (urlHome != 0 && urlHome != resHome) {
-            strncat(localFile, ++urlHome, resHome-urlHome);
-        }
-        // 1/2/3 todo:fixme
-        while () {
-            urlHome
-            mkdir(localFile, 0777);
-        }
-        if (resHome == 0 || resHome[1] == 0 || resHome[1] == '?') {
-            strcat(localFile, "index.html");
-        } else {
-            strcat(localFile, resHome+1);
-        }
-          
-        fp = fopen(localFile, "w");
-        if (fp == 0) {
-            sprintf(buff, "Failed to open cache file: %s", localFile);
-            statusMsg(buff);
-            return;
-        }
-
+        memset(&df, 0, sizeof(dev_file_t));
         strcpy(df.name, file);
         if (http_open(&df) == 0) {
-            fclose(fp);
             sprintf(buff, "Failed to open URL: %s", file);
             statusMsg(buff);
             return;
         }
-        
-        bool inHeader = true;
-        bool httpOK = false;
-        bool imageContent = false;
-        int len = strlen(localFile);
 
-        if (strcasecmp(localFile+len-4, ".gif") == 0 ||
-            strcasecmp(localFile+len-4, ".jpeg") == 0 ||
-            strcasecmp(localFile+len-4, ".jpg") == 0) {
-            imageContent = true;
-        }
-
-        // TODO: move this to a separate thread
-        while (true) {
-            int bytes = recv(df.handle, (char*)rxbuff, sizeof(rxbuff), 0);
-            if (bytes == 0) {
-                break; // no more data
-            }
-            // assumes http header < 1024 bytes
-            if (inHeader) {
-                int i = 0;
-                while (true) {
-                    int iattr = i;
-                    while (rxbuff[i] != 0 && rxbuff[i] != '\n') {
-                        i++;
-                    }
-                    if (rxbuff[i] == 0) {
-                        inHeader = false;
-                        break; // no end delimiter
-                    } 
-                    if (rxbuff[i+2] == '\n') {
-                        fwrite(rxbuff+i+3, bytes-i-3, 1, fp);
-                        inHeader = false;
-                        break; // found start of content
-                    }
-                    // null terminate attribute (in \r)
-                    rxbuff[i-1] = 0;
-                    i++;
-                    if (strstr(rxbuff+iattr, "200 OK") != 0) {
-                        httpOK = true;
-                    }
-                    if (strncmp(rxbuff+iattr, "Content-Type: image", 19) == 0) {
-                        imageContent = true;
-                    }
-                    if (strncmp(rxbuff+iattr, "Location: ", 10) == 0) {
-                        // handle redirection
-                        shutdown(df.handle, df.handle);
-                        strcpy(df.name, rxbuff+iattr+10);
-                        if (http_open(&df) == 0) {
-                            fclose(fp);
-                            sprintf(buff, "Redirection failed: %s", file);
-                            statusMsg(buff);
-                            return;
-                        }
-                        break; // scan next header
-                    }
-                }
-            } else {
-                fwrite(rxbuff, bytes, 1, fp);
-            }
-        }
-
-        // cleanup
-        shutdown(df.handle, df.handle);
-        fclose(fp);
-
+        bool httpOK = cacheLink(&df, localFile);
         char* extn = strrchr(file, '.');
+
         if (httpOK && extn && 0 == strncasecmp(extn, ".bas", 4)) {
             // run the remote program
             wnd->editWnd->loadFile(localFile, -1, false);
@@ -766,14 +686,17 @@ void MainWindow::execLink(const char* file) {
             basicMain(localFile);
         } else {
             // display as html
-            if (imageContent) {
-                sprintf(buff, "<img src=%s>", localFile);                
+            int len = strlen(localFile);
+            if (strcasecmp(localFile+len-4, ".gif") == 0 ||
+                strcasecmp(localFile+len-4, ".jpeg") == 0 ||
+                strcasecmp(localFile+len-4, ".jpg") == 0) {
+                sprintf(buff, "<img src=%s>", localFile);
             } else {
                 sprintf(buff, "file:%s", localFile);
             }
             docHost.append(df.name, df.drv_dw[1]);
             statusMsg(docHost.toString());
-            dev_html(buff, 0, 0,0,0,0);
+            updateHelp(buff);
             showOutputTab();
         }
         return;

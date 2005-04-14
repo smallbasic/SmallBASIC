@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.8 2005-04-10 23:29:53 zeeb90au Exp $
+// $Id: StringLib.h,v 1.9 2005-04-14 23:26:13 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -79,8 +79,8 @@ struct String : public Object {
     void toLowerCase();
     int toInteger() const;
     double toNumber() const;
-    bool equals(const String &s) const;
-    bool equals(const char* s) const;
+    bool equals(const String &s, bool ignoreCase=true) const;
+    bool equals(const char* s, bool ignoreCase=true) const;
     bool equalsIgnoreCase(const char* s) const;
     bool startsWith(const char* s, bool ignoreCase=true) const;
     int indexOf(const String &s, int fromIndex) const;
@@ -115,7 +115,8 @@ struct List {
     void iterateInit(int ibegin=0);
     bool hasNext() const;
     Object* next();
-    void append(Object* object);
+    void add(Object* object);
+    void addSet(String* s);
     Object** getList() {return head;}
 
     // convert the String contents into a char* array - you are

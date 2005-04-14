@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.35 2005-04-10 23:29:53 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.36 2005-04-14 23:26:13 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -19,15 +19,18 @@
 #include <fltk/SharedImage.h>
 #include <fltk/FL_VERSION.h>
 #include <fltk/Rectangle.h>
+#include <fltk/damage.h>
 
 #include "MainWindow.h"
 #include "HelpWidget.h"
 
+extern "C" {
+#include "fs_socket_client.h"
+}
+
 #ifdef WIN32
 #include <windows.h>
 #endif
-
-C_LINKAGE_BEGIN
 
 #define PEN_ON  2
 #define PEN_OFF 0
@@ -37,10 +40,213 @@ HelpWidget* helpView = 0;
 Properties env;
 String envs;
 String eventName;
-void closeHelp();
 bool activeForm = 0;
 
+//--HTML Utils------------------------------------------------------------------
+
+void getHomeDir(char* fileName) {
+    sprintf(fileName, "%s/.smallbasic/", getenv("HOME"));
+    mkdir(fileName, 0777);
+}
+
+// close the modeless help widget
+void closeHelp() {
+    if (helpView) {
+        helpView->parent()->remove(helpView);
+        helpView->parent(0);
+        helpView->getInputProperties(&env);
+        delete helpView;
+        helpView = 0;
+        wnd->out->redraw();
+    }
+}
+
+// create a full url path from the given relative path
+void createURL(const String& path, String& url) {
+    url.empty();
+    if (path[0] != '!' && 
+        path[0] != '|' &&
+        path.startsWith("http://") == false &&
+        wnd->docHost.length() > 0) {
+        int i = wnd->docHost.indexOf('/', 7); // docHost root
+        if (path[0] == '/' && i != -1) {
+            // add to absolute path from http://hostname/
+            url.append(wnd->docHost.substring(0,i));
+        } else {
+            // append path to docHost
+            url.append(wnd->docHost);
+        }
+        if (url[url.length()-1] != '/') {
+            url.append("/");
+        }
+    }
+    url.append(path[0] == '/' ? path.substring(1) : path);
+}
+
+// copy the url into the local cache
+bool cacheLink(dev_file_t* df, char* localFile) {
+    char rxbuff[1024];
+    FILE* fp;
+    const char* url = df->name;
+    const char* pathBegin = strchr(url+7, '/');
+    const char* pathEnd = strrchr(url+7, '/');
+    const char* pathNext;
+    bool inHeader = true;
+    bool httpOK = false;
+    
+    getHomeDir(localFile);
+    strcat(localFile, "cache/");
+    mkdir(localFile, 0777);
+
+    // create host name component
+    strncat(localFile, url+7, pathBegin-url-7);
+    strcat(localFile, "/");
+    int len = strlen(localFile);
+    for (int i=0; i<len; i++) {
+        if (localFile[i] == ':') {
+            localFile[i] = '_';
+        }
+    }
+    mkdir(localFile, 0777);
+    if (helpView) {
+        helpView->setSiteHome(localFile);
+    }
+    
+    if (pathBegin != 0 && pathBegin < pathEnd) {
+        // re-create the server path in cache
+        int level=0;
+        pathBegin++;
+        do {
+            pathNext = strchr(pathBegin, '/');
+            strncat(localFile, pathBegin, pathNext-pathBegin+1);
+            mkdir(localFile, 0777);
+            pathBegin = pathNext+1;
+        } while (pathBegin < pathEnd && ++level < 20);
+    }
+    if (pathEnd == 0 || pathEnd[1] == 0 || pathEnd[1] == '?') {
+        strcat(localFile, "index.html");
+    } else {
+        strcat(localFile, pathEnd+1);
+    }
+
+    fp = fopen(localFile, "w");
+    if (fp == 0) {
+        if (df->handle != -1) {
+            shutdown(df->handle, df->handle);
+        }
+        return false;
+    }
+
+    if (df->handle == -1) {
+        // pass the cache file modified time to the HTTP server
+        struct stat st;
+        if (stat(localFile, &st) == 0) {
+            df->drv_dw[2] = st.st_mtime;
+        }
+        if (http_open(df) == 0) {
+            return false;
+        }
+    }
+    
+    // TODO: move this to a separate thread
+    while (true) {
+        int bytes = recv(df->handle, (char*)rxbuff, sizeof(rxbuff), 0);
+        if (bytes == 0) {
+            break; // no more data
+        }
+        // assumes http header < 1024 bytes
+        if (inHeader) {
+            int i = 0;
+            while (true) {
+                int iattr = i;
+                while (rxbuff[i] != 0 && rxbuff[i] != '\n') {
+                    i++;
+                }
+                if (rxbuff[i] == 0) {
+                    inHeader = false;
+                    break; // no end delimiter
+                } 
+                if (rxbuff[i+2] == '\n') {
+                    fwrite(rxbuff+i+3, bytes-i-3, 1, fp);
+                    inHeader = false;
+                    break; // found start of content
+                }
+                // null terminate attribute (in \r)
+                rxbuff[i-1] = 0;
+                i++;
+                if (strstr(rxbuff+iattr, "200 OK") != 0) {
+                    httpOK = true;
+                }
+                if (strncmp(rxbuff+iattr, "Last-Modified: ", 15) == 0) {
+                    // Last-Modified: Tue, 29 Jul 2003 20:19:10 GMT 
+//                     if (access(localFile, 0) == 0) {
+//                         fclose(fp);
+//                         shutdown(df->handle, df->handle);
+//                         return false;
+//                     }
+                }
+                if (strncmp(rxbuff+iattr, "Location: ", 10) == 0) {
+                    // handle redirection
+                    shutdown(df->handle, df->handle);
+                    strcpy(df->name, rxbuff+iattr+10);
+                    if (http_open(df) == 0) {
+                        fclose(fp);
+                        return false;
+                    }
+                    break; // scan next header
+                }
+            }
+        } else {
+            fwrite(rxbuff, bytes, 1, fp);
+        }
+    }
+
+    // cleanup
+    fclose(fp);
+    shutdown(df->handle, df->handle);
+    return httpOK;
+}
+
+// redisplay the help widget and associated images
+void updateHelp(const char* s) {
+    List images;
+    char localFile[PATH_MAX];
+    dev_file_t df;
+    bool newContent = false;
+    int len;
+    Object** list;
+
+    if (helpView) {
+        helpView->loadBuffer(s);
+        helpView->show();
+        helpView->take_focus();
+    } else {
+        dev_html(s, 0, 0,0,0,0);
+    }
+//     helpView->getImageNames(&images);
+//     len = images.length();
+//     if (len == 0) {
+//         return;
+//     }
+//     memset(&df, 0, sizeof(dev_file_t));
+//     list = images.getList();
+//     for (int i=0; i<len; i++) {
+//         String* s = (String*)list[i];
+//         createURL(*s, eventName);
+//         strcpy(df.name, eventName);
+//         df.handle = -1;
+//         if (cacheLink(&df, localFile)) {
+//             newContent = true;
+//         }
+//     }
+//     if (newContent) {
+//         helpView->reloadImages();
+//     }
+}
+
 //--ANSI Output-----------------------------------------------------------------
+
+C_LINKAGE_BEGIN
 
 int osd_devinit() {
     wnd->resetPen();
@@ -91,7 +297,7 @@ int osd_events(int wait_flag) {
         // event with pen(0) or executing input statement. 
         fltk::wait();
     }
-
+    
     fltk::check();
     if (wnd->isBreakExec()) {
         closeHelp();
@@ -267,17 +473,6 @@ int dev_env_count() {
     return count;
 }
 
-void closeHelp() {
-    if (helpView) {
-        helpView->parent()->remove(helpView);
-        helpView->parent(0);
-        helpView->getInputProperties(&env);
-        delete helpView;
-        helpView = 0;
-        wnd->out->redraw();
-    }
-}
-
 void doEvent(void*) {
     fltk::remove_check(doEvent);
     if (eventName[0] == '|') {
@@ -290,24 +485,7 @@ void doEvent(void*) {
 
 void modeless_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        const String& action = helpView->getEventName();
-        eventName.empty();
-        if (action[0] != '!' && 
-            action[0] != '|' &&
-            action.startsWith("http://") == false &&
-            wnd->docHost.length() > 0) {
-            int i = wnd->docHost.indexOf('/', 7); // docHost root
-            if (action.startsWith("/") && i != -1) {
-                // add to absolute path from http://hostname/
-                eventName.append(wnd->docHost.substring(0,i));
-            } else {
-                eventName.append(wnd->docHost);
-            }
-            if (eventName[eventName.length()-1] != '/') {
-                eventName.append("/");
-            }
-        }
-        eventName.append(action);
+        createURL(helpView->getEventName(), eventName);
         fltk::add_check(doEvent); // post message
     }
 }
@@ -328,11 +506,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         Window window(x, y, w, h, t);
         window.begin();
         HelpWidget out(0, 0, w, h);
-        if (strnicmp("file:", html, 5) == 0) {
-            out.loadFile(html+5);
-        } else {
-            out.loadBuffer(html);
-        }
+        out.loadBuffer(html);
         out.callback(modal_cb);
         window.resizable(&out);
         window.end();
@@ -359,11 +533,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
         helpView = new HelpWidget(x, y, w, h);
         wnd->outputGroup->end();
         helpView->callback(modeless_cb);
-        if (strnicmp("file:", html, 5) == 0) {
-            helpView->loadFile(html+5);
-        } else {
-            helpView->loadBuffer(html);
-        }
+        helpView->loadBuffer(html);
         helpView->show();
         helpView->take_focus();
     }
@@ -383,29 +553,16 @@ Image* getImage(int handle, int index) {
         return image;
     }
 
-    uchar* buff = 0;
-    unsigned blockSize = 1024;
-    unsigned size = blockSize;
-    unsigned len = 0;
+    char localFile[PATH_MAX];
 
     // read image from web server
     switch (filep->type) {
     case ft_http_client:
         // open "http://localhost/image1.gif" as #1
-        buff = (uchar*)tmp_alloc(size);
-        while (true) {
-            unsigned bytes = recv(filep->handle, (char*)buff+len, blockSize, 0);
-            len += bytes;
-            if (bytes == 0 || bytes < blockSize) {
-                break; // no more data
-            }
-            size += blockSize;
-            buff = (uchar*)tmp_realloc(buff, size);
-        }
-        if (strstr((const char*)buff, "<title>404")) {
-            tmp_free(buff);
+        if (cacheLink(filep, localFile) == false) {
             return 0;
         }
+        strcpy(filep->name, localFile);
         break;
     case ft_stream:
         // loaded in SharedImage
@@ -414,15 +571,10 @@ Image* getImage(int handle, int index) {
         return 0;
     }
 
-    image = loadImage(filep->name, buff);
+    image = loadImage(filep->name, 0);
     if (image) {
         // force SharedImage::_draw() to call image->read()
         image->draw(fltk::Rectangle(0,0),0,0);
-    }
-
-    if (filep->type == ft_http_client) {
-        // cleanup
-        tmp_free(buff);
     }
 
     return image;
@@ -559,3 +711,4 @@ char *dev_gets(char *dest, int size) {
 
 C_LINKAGE_END
 
+//--EndOfFile-------------------------------------------------------------------
