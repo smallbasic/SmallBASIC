@@ -1796,6 +1796,8 @@ int		dev_run(const char *src, int retflg)
 	#endif
 }
 
+#if !defined(_FLTK)
+
 /*
 *	ENVIRONMENT VARIABLES
 */
@@ -1896,10 +1898,6 @@ char	*dev_getenv_n(int n)
 	#endif
 }
 
-#endif
-
-#if !defined(_FRANKLIN_EBM) && !defined(_FLTK)
-
 // empty implementations
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
 }
@@ -1916,5 +1914,6 @@ int dev_image_height(int handle, int index) {
     return -1;
 }
 
-#endif
+#endif  // _FRANKLIN_EBM
+#endif  // _FLTK
 
