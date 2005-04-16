@@ -35,7 +35,7 @@ for i=1 to 12
 	dy = tr * cos(sa)
 	x = cx+dx: y = cy-dy
 	circle x, y, w2 color 4 filled
-	circle x, y, w2 color 0
+'	circle x, y, w2 color 0
 	at x-sw/2, y-sh/2
 	print s;
 next
