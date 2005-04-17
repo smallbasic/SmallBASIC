@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.36 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.37 2005-04-17 23:43:39 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -61,28 +61,6 @@ void closeHelp() {
     }
 }
 
-// create a full url path from the given relative path
-void createURL(const String& path, String& url) {
-    url.empty();
-    if (path[0] != '!' && 
-        path[0] != '|' &&
-        path.startsWith("http://") == false &&
-        wnd->docHost.length() > 0) {
-        int i = wnd->docHost.indexOf('/', 7); // docHost root
-        if (path[0] == '/' && i != -1) {
-            // add to absolute path from http://hostname/
-            url.append(wnd->docHost.substring(0,i));
-        } else {
-            // append path to docHost
-            url.append(wnd->docHost);
-        }
-        if (url[url.length()-1] != '/') {
-            url.append("/");
-        }
-    }
-    url.append(path[0] == '/' ? path.substring(1) : path);
-}
-
 // copy the url into the local cache
 bool cacheLink(dev_file_t* df, char* localFile) {
     char rxbuff[1024];
@@ -109,7 +87,7 @@ bool cacheLink(dev_file_t* df, char* localFile) {
     }
     mkdir(localFile, 0777);
     if (helpView) {
-        helpView->setSiteHome(localFile);
+        helpView->setDocHome(localFile);
     }
     
     if (pathBegin != 0 && pathBegin < pathEnd) {
@@ -177,14 +155,14 @@ bool cacheLink(dev_file_t* df, char* localFile) {
                 if (strstr(rxbuff+iattr, "200 OK") != 0) {
                     httpOK = true;
                 }
-                if (strncmp(rxbuff+iattr, "Last-Modified: ", 15) == 0) {
-                    // Last-Modified: Tue, 29 Jul 2003 20:19:10 GMT 
+//                 if (strncmp(rxbuff+iattr, "Last-Modified: ", 15) == 0) {
+//                     // Last-Modified: Tue, 29 Jul 2003 20:19:10 GMT 
 //                     if (access(localFile, 0) == 0) {
 //                         fclose(fp);
 //                         shutdown(df->handle, df->handle);
-//                         return false;
+//                         return true;
 //                     }
-                }
+//                 }
                 if (strncmp(rxbuff+iattr, "Location: ", 10) == 0) {
                     // handle redirection
                     shutdown(df->handle, df->handle);
@@ -209,13 +187,6 @@ bool cacheLink(dev_file_t* df, char* localFile) {
 
 // redisplay the help widget and associated images
 void updateHelp(const char* s) {
-    List images;
-    char localFile[PATH_MAX];
-    dev_file_t df;
-    bool newContent = false;
-    int len;
-    Object** list;
-
     if (helpView) {
         helpView->loadBuffer(s);
         helpView->show();
@@ -223,21 +194,40 @@ void updateHelp(const char* s) {
     } else {
         dev_html(s, 0, 0,0,0,0);
     }
+
+//     List images;
+//     char localFile[PATH_MAX];
+//     dev_file_t df;
+//     bool newContent = false;
 //     helpView->getImageNames(&images);
-//     len = images.length();
+//     int len = images.length();
 //     if (len == 0) {
 //         return;
 //     }
 //     memset(&df, 0, sizeof(dev_file_t));
-//     list = images.getList();
+//     const char* host = wnd->siteHome.toString();
+//     const char* hostRoot = strchr(host+7, '/');
+//     int pathLen = hostRoot ? hostRoot-host : strlen(host);
+//     Object** list = images.getList();
+
 //     for (int i=0; i<len; i++) {
 //         String* s = (String*)list[i];
-//         createURL(*s, eventName);
+//         eventName.empty();
+//         if ((*s)[0] == '/') {
+//             // append abs image path to root of host path
+//             eventName.append(host, pathLen);
+//         } else {
+//             // append relative image path to host path
+//             eventName.append(host);
+//             eventName.append("/");
+//         }
+//         eventName.append(s);
 //         strcpy(df.name, eventName);
 //         df.handle = -1;
 //         if (cacheLink(&df, localFile)) {
 //             newContent = true;
 //         }
+//         shutdown(df.handle, df.handle);
 //     }
 //     if (newContent) {
 //         helpView->reloadImages();
@@ -476,8 +466,11 @@ int dev_env_count() {
 void doEvent(void*) {
     fltk::remove_check(doEvent);
     if (eventName[0] == '|') {
+        // user flag to indicate UI should remain
+        // for next program execution
         activeForm = true;
-    } else {
+    } else if (wnd->siteHome.length() == 0) {
+        // no currently visiting a remote site
         closeHelp();
     }
     wnd->execLink(eventName.toString());
@@ -485,7 +478,26 @@ void doEvent(void*) {
 
 void modeless_cb(Widget* w, void* v) {
     if (wnd->isEdit()) {
-        createURL(helpView->getEventName(), eventName);
+        // create a full url path from the given relative path
+        const String& path = helpView->getEventName();
+        eventName.empty();
+        if (path[0] != '!' && 
+            path[0] != '|' &&
+            path.startsWith("http://") == false &&
+            wnd->siteHome.length() > 0) {
+            int i = wnd->siteHome.indexOf('/', 7); // siteHome root
+            if (path[0] == '/' && i != -1) {
+                // add to absolute path from http://hostname/
+                eventName.append(wnd->siteHome.substring(0,i));
+            } else {
+                // append path to siteHome
+                eventName.append(wnd->siteHome);
+            }
+            if (eventName[eventName.length()-1] != '/') {
+                eventName.append("/");
+            }
+        }
+        eventName.append(path[0] == '/' ? path.substring(1) : path);
         fltk::add_check(doEvent); // post message
     }
 }

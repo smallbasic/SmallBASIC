@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.21 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.22 2005-04-17 23:43:38 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -30,6 +30,11 @@
 #include <fltk/Item.h>
 #include <fltk/Input.h>
 #include <fltk/SharedImage.h>
+#include <fltk/Dial.h>
+#include <fltk/Slider.h>
+#include <fltk/ValueSlider.h>
+#include <fltk/ValueInput.h>
+#include <fltk/ThumbWheel.h>
 
 #define FL_HELP_WIDGET_RESOURCES
 #include "HelpWidget.h"
@@ -50,6 +55,7 @@
 #define CELL_SPACING 4
 #define INPUT_SPACING 2
 #define INPUT_WIDTH 90
+#define BUTTON_WIDTH 20
 #define SCROLL_SIZE 1000
 #define HSCROLL_STEP 20
 #define ELIPSE_LEN 10
@@ -59,6 +65,7 @@ extern "C" void trace(const char *format, ...);
 Color getColor(String* s, Color def);
 void lineBreak(const char* s, int slen, int width, int& stlen, int& pxlen);
 const char* skipWhite(const char* s);
+bool unquoteTag(const char* tagBegin, const char*& tagEnd);
 Image* loadImage(const char* imgSrc);
 struct AnchorNode;
 struct InputNode;
@@ -66,6 +73,7 @@ static char truestr[] = "true";
 static char falsestr[] = "false";
 static char spacestr[] = " ";
 static char anglestr[] = "<";
+char rangeValue[20];
 
 //--Display---------------------------------------------------------------------
 
@@ -353,11 +361,9 @@ struct LiNode : public BaseNode {
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-    ImageNode(const Style* style, String* siteHome, Attributes* a) : BaseNode() {
+    ImageNode(const Style* style, String* docHome, Attributes* a) : BaseNode() {
         this->style = style;
-        path.append(siteHome);
-        path.append(a->getSrc()); // <img src=blah/images/g.gif>
-        // load image relative to the loaded files location
+        makePath(a->getSrc(), docHome);
         image = loadImage(path.toString());
         image->measure(w.value, h.value);
         w = a->getWidth(w.value);
@@ -366,17 +372,29 @@ struct ImageNode : public BaseNode {
         fixed = false;
     }
 
-    ImageNode(const Style* style, String* siteHome, String* src, bool fixed)
+    ImageNode(const Style* style, String* docHome, String* src, bool fixed)
         : BaseNode() {
         this->style = style;
         this->fixed = fixed;
-        path.append(siteHome);
-        path.append(src->toString());
+        makePath(src, docHome);
         image = loadImage(path.toString());
         image->measure(w.value, h.value);
         w.relative = 0;
         h.relative = 0;
         background = true;
+    }
+
+    void makePath(String* src, String* docHome) {
+        // <img src=blah/images/g.gif>
+        url.append(src); // html path
+        path.append(docHome); // local file system path
+        if (src) {
+            if ((*src)[0] == '/') {
+                path.append(src->substring(1));
+            } else {
+                path.append(src);
+            }
+        }
     }
 
     void reload() {
@@ -452,7 +470,7 @@ struct ImageNode : public BaseNode {
     }
     const Image* image;
     const Style* style;
-    String path;
+    String path,url;
     Value w,h;
     U8 background, fixed;
 };
@@ -923,11 +941,26 @@ InputNode::InputNode(Group* parent, Properties* env, Attributes* a) :
         }
         button->user_data((void*)ID_TEXTBOX);
     } else if (type != null && type->equals("checkbox")) {
-        button = new CheckButton(0,0,18,0);
+        button = new CheckButton(0,0,BUTTON_WIDTH,0);
         button->user_data((void*)ID_CHKBOX);
     } else if (type != null && type->equals("radio")) {
-        button = new RadioButton(0,0,18,0);
+        button = new RadioButton(0,0,BUTTON_WIDTH,0);
         button->user_data((void*)ID_RADIO);
+    } else if (type != null && type->equals("dial")) {
+        button = new Dial(0,0,BUTTON_WIDTH,0);
+        button->user_data((void*)ID_RANGEVAL);
+    } else if (type != null && type->equals("slider")) {
+        button = new Slider(0,0,BUTTON_WIDTH,0);
+        button->user_data((void*)ID_RANGEVAL);
+    } else if (type != null && type->equals("valueslider")) {
+        button = new ValueSlider(0,0,BUTTON_WIDTH,0);
+        button->user_data((void*)ID_RANGEVAL);
+    } else if (type != null && type->equals("valueinput")) {
+        button = new ValueInput(0,0,BUTTON_WIDTH,0);
+        button->user_data((void*)ID_RANGEVAL);
+    } else if (type != null && type->equals("thumbwheel")) {
+        button = new ThumbWheel(0,0,BUTTON_WIDTH,0);
+        button->user_data((void*)ID_RANGEVAL);
     } else if (type != null && type->equals("hidden")) {
         button = 0;
     } else {
@@ -1047,7 +1080,7 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     callback(anchor_callback); // default callback
     init();
     cookies = 0;
-    siteHome.empty();
+    docHome.empty();
 }
 
 HelpWidget::~HelpWidget() {
@@ -1117,6 +1150,9 @@ const char* HelpWidget::getInputValue(Widget* widget) {
     case ID_SELECT:
         widget = ((Choice*)widget)->item();
         return widget ? widget->label() : null;
+    case ID_RANGEVAL:
+        sprintf(rangeValue, "%f", ((Valuator*)widget)->value());
+        return rangeValue;
     }
     return null;
 }
@@ -1192,6 +1228,9 @@ bool HelpWidget::setInputValue(const char* assignment) {
                 if (item) {
                     choice->set_focus(item);
                 }
+                break;
+            case ID_RANGEVAL:
+                ((Valuator*)button)->value(value.toNumber());
                 break;
             }
             return true;
@@ -1487,12 +1526,12 @@ void HelpWidget::compose() {
     int textlen = 0;
     U8 newline = false;
 
-    strlib::Stack tableStack(10);
-    strlib::Stack trStack(10);
-    strlib::Stack tdStack(10);
-    strlib::Stack olStack(10);
-    strlib::List options(10);
-    Attributes p(10);
+    strlib::Stack tableStack(5);
+    strlib::Stack trStack(5);
+    strlib::Stack tdStack(5);
+    strlib::Stack olStack(5);
+    strlib::List options(5);
+    Attributes p(5);
     String* prop;
     BaseNode* node;
     InputNode* inputNode;
@@ -1749,7 +1788,7 @@ void HelpWidget::compose() {
                     nodeList.add(node);
                     prop = p.getBackground();
                     if (prop != null) {
-                        node = new ImageNode(style(), &siteHome, prop, false);
+                        node = new ImageNode(style(), &docHome, prop, false);
                         nodeList.add(node);
                         images.add(node);
                     }
@@ -1794,6 +1833,11 @@ void HelpWidget::compose() {
                     nodeList.add(node);
                     newline = true;
                 } else if (0 == strncasecmp(tag, "input ", 6)) {
+                    // check for quoted values including '>'
+                    if (unquoteTag(tagBegin+6, tagEnd)) {
+                        taglen = tagEnd - tagBegin - 1;
+                        text = *tagEnd == 0 ? 0 : tagEnd+1;
+                    }
                     p.removeAll();
                     p.load(tag+6, taglen-6);
                     inputNode = new InputNode(this, cookies, &p);
@@ -1812,7 +1856,7 @@ void HelpWidget::compose() {
                 } else if (0 == strncasecmp(tag, "img ", 4)) {
                     p.removeAll();
                     p.load(tag+4, taglen-4);
-                    node = new ImageNode(style(), &siteHome, &p);
+                    node = new ImageNode(style(), &docHome, &p);
                     nodeList.add(node);
                     images.add(node);
                 } else if (0 == strncasecmp(tag, "body ", 5)) {
@@ -1823,7 +1867,7 @@ void HelpWidget::compose() {
                     background = getColor(p.getBgColor(), background);
                     prop = p.getBackground();
                     if (prop != null) {
-                        node = new ImageNode(style(), &siteHome, prop, true);
+                        node = new ImageNode(style(), &docHome, prop, true);
                         nodeList.add(node);
                         images.add(node);
                     }
@@ -1915,7 +1959,7 @@ void HelpWidget::copyText(int begin, int end) {
 
 void HelpWidget::navigateTo(const char* s) {
     String path;
-    path.append(siteHome);
+    path.append(docHome);
     path.append(s);
     loadFile(path.toString());
 }
@@ -1953,16 +1997,16 @@ void HelpWidget::loadFile(const char *f) {
     fileName.append(f, len);
     fileName.replaceAll('\\', '/');
 
-    // update siteHome using the given file-name
-    if (siteHome.length() == 0) {
+    // update docHome using the given file-name
+    if (docHome.length() == 0) {
         int i = fileName.lastIndexOf('/', 0);
         if (i != -1) {
-            siteHome = fileName.substring(0, i+1);
+            docHome = fileName.substring(0, i+1);
         } else {
-            siteHome.append("./");
+            docHome.append("./");
         }
-        if (siteHome[siteHome.length()-1] != '/') {
-            siteHome.append("/");
+        if (docHome[docHome.length()-1] != '/') {
+            docHome.append("/");
         }
     }
     if ((fp = fopen(fileName.toString(), "rb")) != NULL) {
@@ -1990,7 +2034,7 @@ void HelpWidget::getImageNames(strlib::List* nameList) {
     int len = images.length();
     for (int i=0; i<len; i++) {
         ImageNode* imageNode = (ImageNode*)list[i];
-        nameList->addSet(&imageNode->path);
+        nameList->addSet(&imageNode->url);
     }
 }
 
@@ -2007,9 +2051,9 @@ void HelpWidget::reloadImages() {
     redraw();
 }
 
-void HelpWidget::setSiteHome(const char* s) {
-    siteHome.empty();
-    siteHome.append(s);
+void HelpWidget::setDocHome(const char* s) {
+    docHome.empty();
+    docHome.append(s);
 }
 
 //--Helper functions------------------------------------------------------------
@@ -2064,6 +2108,47 @@ void lineBreak(const char* s, int slen, int width, int& linelen, int& linepx) {
         linelen = ibreak;
         linepx = breakWidth;
     }
+}
+
+// return a new tagEnd if the current '>' is embedded in quotes
+bool unquoteTag(const char* tagBegin, const char*& tagEnd) {
+    bool quote = false;
+    int len = tagEnd-tagBegin;
+    int i = 1;
+    while (i<len) {
+        switch (tagBegin[i++]) {
+        case '\'':
+        case '\"':
+            quote = !quote;
+            break;
+        }
+    }
+    //<input type="ffff>"> - move end-tag
+    //<input type="ffff>text<next-tag> end-tag is unchanged
+    //<input value='@>>' >
+    if (quote) {
+        // found unclosed quote within tag
+        i = 1;
+        while (true) {
+            switch (tagEnd[i]) {
+            case 0:
+            case '<':
+                return false;
+            case '\'':
+            case '\"':
+                quote = !quote;
+                break;
+            case '>':
+                if (quote == false) {
+                    tagEnd += i;
+                    return true;
+                }
+                break;
+            }
+            i++;
+        }
+    }
+    return false;
 }
 
 /**

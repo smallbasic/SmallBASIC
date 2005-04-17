@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.16 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.17 2005-04-17 23:43:38 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -25,6 +25,7 @@
 #define ID_CHKBOX   3
 #define ID_RADIO    4
 #define ID_SELECT   5
+#define ID_RANGEVAL 6
 
 using namespace fltk;
 using namespace strlib;
@@ -52,7 +53,7 @@ public:
     bool setInputValue(const char* assignment);
     void copyText(int begin, int end);
     void onclick(Widget* button); // private
-    void setSiteHome(const char* home);
+    void setDocHome(const char* home);
     void getImageNames(strlib::List*);
     void reloadImages();
 
@@ -83,7 +84,7 @@ public:
     strlib::String htmlStr;
     strlib::String event;
     strlib::String fileName;
-    strlib::String siteHome;
+    strlib::String docHome;
 };
 
 #ifdef FL_HELP_WIDGET_RESOURCES

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.39 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.40 2005-04-17 23:43:38 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -655,7 +655,7 @@ void MainWindow::execLink(const char* file) {
         return;
     }
 
-    docHost.empty();
+    siteHome.empty();
     bool execFile = false;
     if (file[0] == '!' || file[0] == '|') {
         execFile = true; // exec flag passed with name
@@ -694,8 +694,8 @@ void MainWindow::execLink(const char* file) {
             } else {
                 sprintf(buff, "file:%s", localFile);
             }
-            docHost.append(df.name, df.drv_dw[1]);
-            statusMsg(docHost.toString());
+            siteHome.append(df.name, df.drv_dw[1]);
+            statusMsg(siteHome.toString());
             updateHelp(buff);
             showOutputTab();
         }
