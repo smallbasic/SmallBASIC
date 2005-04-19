@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.22 2005-04-17 23:43:38 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.23 2005-04-19 23:52:19 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -12,7 +12,7 @@
 
 #include <errno.h>
 #include <ctype.h>
-#include <io.h>
+#include <unistd.h>
 #include <stdlib.h>
 
 #include <fltk/ask.h>
@@ -30,9 +30,7 @@
 #include <fltk/Item.h>
 #include <fltk/Input.h>
 #include <fltk/SharedImage.h>
-#include <fltk/Dial.h>
 #include <fltk/Slider.h>
-#include <fltk/ValueSlider.h>
 #include <fltk/ValueInput.h>
 #include <fltk/ThumbWheel.h>
 
@@ -145,6 +143,10 @@ struct Attributes : public Properties {
     Value getHeight(int def=-1) {return getValue("height", def);}
     int getSize(int def=-1) {return getIntValue("size", def);}
     int getBorder(int def=-1) {return getIntValue("border", def);}
+    int getRows(int def=1) {return getIntValue("rows", def);}
+    int getCols(int def=20) {return getIntValue("cols", def);}
+    int getMax(int def=1) {return getIntValue("min", def);}
+    int getMin(int def=1) {return getIntValue("max", def);}
     int getIntValue(const char* attr, int def);
     Value getValue(const char* attr, int def);
 };
@@ -617,7 +619,6 @@ struct TableNode : public BaseNode {
         cols = 0;
         columns = 0;
         sizes = 0;
-        tagWidth = 0;
         border = a->getBorder();
     }
 
@@ -644,7 +645,7 @@ struct TableNode : public BaseNode {
 
         if (cols && (out->exposed || columns == 0)) {
             // prepare default column widths
-            if (out->tableLevel == 0 && tagWidth == 0) {
+            if (out->tableLevel == 0) {
                 // traverse the table structure to determine widths
                 out->measure = true;
             }
@@ -665,12 +666,17 @@ struct TableNode : public BaseNode {
     }
 
     // called from </td> to prepare for wrapping and resizing
-    void doEndTD(Display* out) {
+    void doEndTD(Display* out, Value* awidth) {
         int index = nextCol-1;
-        if (out->y > ryb) {
-            ryb = out->y; // wrapped cell
+        if (awidth->value != -1) {
+            int tdw = awidth->relative ? awidth->value*width/100 : 
+                awidth->value < width ? awidth->value : width;
+            sizes[index] = tdw; // fixed size cell width
+            ryb = out->y;
+        } else if (out->y > ryb) {
             sizes[index] = -1; // veto column changes
-        } else if (ryt == out->y &&
+            ryb = out->y; // wrapped cell
+        } else if (out->y == ryt &&
                    out->x < columns[index] &&
                    out->x > sizes[index] &&
                    sizes[index] != -1) {
@@ -695,7 +701,7 @@ struct TableNode : public BaseNode {
         out->tabH = out->y-initY;
         out->tabW = width;
 
-        if (cols && columns && out->exposed && tagWidth == 0) {
+        if (cols && columns && out->exposed) {
             // adjust columns for best fit (left align)
             int delta = 0;
             for (int i=0; i<cols-1; i++) {
@@ -731,7 +737,6 @@ struct TableNode : public BaseNode {
     U16 nextCol;
     U16 nextRow;
     U16 width;
-    U16 tagWidth; // <table width=100>
     U16 nodeId;
     U16 initX, initY; // start of table
     S16 ryt, ryb; // current row y top+bottom
@@ -807,6 +812,7 @@ struct TdNode : public BaseNode {
         }
         foreground = getColor(a->getFgColor(), 0);
         background = getColor(a->getBgColor(), 0);
+        width = a->getWidth();
     }
 
     void display(Display* out) {
@@ -837,6 +843,7 @@ struct TdNode : public BaseNode {
     }
     TrNode* tr;
     Color background, foreground;
+    Value width;
 };
 
 struct TdEndNode : public BaseNode {
@@ -845,7 +852,7 @@ struct TdEndNode : public BaseNode {
     }
     void display(Display* out) {
         if (td && td->tr && td->tr->table) {
-            td->tr->table->doEndTD(out);
+            td->tr->table->doEndTD(out, &td->width);
         }
         setcolor(out->color);
     }
@@ -872,37 +879,46 @@ static void onclick_callback(Widget* button, void *buttonId) {
 
 static void def_button_callback(Widget* button, void *buttonId) {
     // supply "onclick=fff" to make it do something useful
-    fltk::exit_modal(); 
+    // check for parent of HelpWidget
+    if (fltk::modal() == button->parent()->parent()) {
+        fltk::exit_modal(); 
+    }
 }
 
 struct InputNode : public BaseNode {
     InputNode(Group* parent);
     InputNode(Group* parent, const char* v, int len);
-    InputNode(Group* parent, Properties* env, Attributes* a);
-    void updateProperties(strlib::List* namedInputs, Attributes* a);
+    InputNode(Group* parent, Attributes* a);
+    void update(strlib::List* namedInputs, Properties* p, Attributes* a);
 
     void display(Display* out) {
         if (button == 0) {
             return;
         }
         
-        bool select = false;
+        int height = 4+(int)(getascent()+getdescent());
         switch ((int)button->user_data()) {
         case ID_SELECT:
-            select = true;
+            height += 4;
             break;
         case ID_BUTTON:
             if (button->w() == 0 && button->label()) {
                 button->w(12+(int)getwidth(button->label()));
             }
             break;
+        case ID_TEXTAREA:
+            button->w(4+((int)getwidth("W")*cols));
+            height = 4+((int)(getascent()+getdescent())*rows);
+            break;
+        default:
+            break;
         }
         if (out->x != out->indent && button->w() > out->width-out->x) {
             out->newRow();
         }
-        out->lineHeight = (select?8:4)+(int)(getascent()+getdescent());
+        out->lineHeight = height;
         button->x(out->x);
-        button->y(out->y-(int)getascent()-(select?1:0));
+        button->y(out->y-(int)getascent());
         button->h(out->lineHeight-2);
         button->textfont(out->font);
         button->textsize(out->fontSize);
@@ -920,25 +936,17 @@ struct InputNode : public BaseNode {
     }
     Widget* button;
     String onclick;
+    U16 rows,cols;
 };
 
-InputNode::InputNode(Group* parent, Properties* env, Attributes* a) : 
+InputNode::InputNode(Group* parent, Attributes* a) : 
     // creates either a text, checkbox, radio, hidden or button control
     BaseNode() {
     parent->begin();
-    String* value = a->getValue();
-    String* name = a->getName();
-    if (value == 0 && name != 0 && env) {
-        // use external attributes
-        value = env->get(name->toString());
-    }
     String* type = a->getType();
     if (type != null && type->equals("text")) {
         button = new Input(0, 0, INPUT_WIDTH, 0);
         button->box(NO_BOX);
-        if (value && value->length()) {
-            ((Input*)button)->value(value->toString());
-        }
         button->user_data((void*)ID_TEXTBOX);
     } else if (type != null && type->equals("checkbox")) {
         button = new CheckButton(0,0,BUTTON_WIDTH,0);
@@ -946,14 +954,8 @@ InputNode::InputNode(Group* parent, Properties* env, Attributes* a) :
     } else if (type != null && type->equals("radio")) {
         button = new RadioButton(0,0,BUTTON_WIDTH,0);
         button->user_data((void*)ID_RADIO);
-    } else if (type != null && type->equals("dial")) {
-        button = new Dial(0,0,BUTTON_WIDTH,0);
-        button->user_data((void*)ID_RANGEVAL);
     } else if (type != null && type->equals("slider")) {
         button = new Slider(0,0,BUTTON_WIDTH,0);
-        button->user_data((void*)ID_RANGEVAL);
-    } else if (type != null && type->equals("valueslider")) {
-        button = new ValueSlider(0,0,BUTTON_WIDTH,0);
         button->user_data((void*)ID_RANGEVAL);
     } else if (type != null && type->equals("valueinput")) {
         button = new ValueInput(0,0,BUTTON_WIDTH,0);
@@ -965,11 +967,6 @@ InputNode::InputNode(Group* parent, Properties* env, Attributes* a) :
         button = 0;
     } else {
         button = new Button(0,0,0,0);
-        if (value && value->length()) {
-            button->copy_label(value->toString());
-        } else {
-            button->copy_label(" ");
-        }
         button->user_data((void*)ID_BUTTON);
         button->labelcolor(ANCHOR_COLOR);
         button->callback(def_button_callback);
@@ -985,17 +982,13 @@ InputNode::InputNode(Group* parent, Properties* env, Attributes* a) :
     parent->end();
 }
 
-InputNode::InputNode(Group* parent, const char* v, int len) : BaseNode() {
+InputNode::InputNode(Group* parent, const char* s, int len) : BaseNode() {
     // creates a textarea control
     parent->begin();
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->box(NO_BOX);
-    if (v && len) {
-        String value;
-        value.append(v, len);
-        ((Input*)button)->value(value.toString());
-    }
-    button->user_data((void*)ID_TEXTBOX);
+    ((Input*)button)->value(s, len);
+    button->user_data((void*)ID_TEXTAREA);
     button->color(BUTTON_COLOR);
     button->textcolor(ANCHOR_COLOR);
     parent->end();
@@ -1024,14 +1017,56 @@ void createDropList(InputNode* node, strlib::List* options) {
     menu->end();
 }
 
-void InputNode::updateProperties(strlib::List* namedInputs, Attributes* a) {
+void InputNode::update(strlib::List* names, Properties* env, Attributes* a) {
+    Valuator* valuator;
+    Input* input;
     String* name = a->getName();
+    String* value = a->getValue();
+
+    if (value == 0 && name != 0 && env) {
+        // use external attributes
+        value = env->get(name->toString());
+    }
+
     if (name != null) {
-        namedInputs->add(new NamedInput(this, name));
+        names->add(new NamedInput(this, name));
     }
     onclick.append(a->getOnclick());
     if (button && onclick.length()) {
         button->callback(onclick_callback);
+    }
+
+    switch ((int)button->user_data()) {
+    case ID_TEXTAREA:
+        rows = a->getRows();
+        cols = a->getCols();
+        if (rows > 1) {
+            button->type(fltk::Input::MULTILINE);
+        }
+        break;
+    case ID_RANGEVAL:
+        valuator = (Valuator*)button;
+        valuator->minimum(a->getMin());
+        valuator->maximum(a->getMax());
+        valuator->step(1);
+        valuator->align(ALIGN_LEFT);
+        if (value && value->length()) {
+            valuator->value(value->toInteger());
+        }
+        break;
+    case INPUT_WIDTH:
+        input = (Input*)button;
+        if (value && value->length()) {
+            input->value(value->toString());
+        }
+        break;
+    case ID_BUTTON:
+        if (value && value->length()) {
+            button->copy_label(value->toString());
+        } else {
+            button->copy_label(" ");
+        }
+        break;
     }
 }
 
@@ -1143,6 +1178,7 @@ const char* HelpWidget::getInputValue(Widget* widget) {
     }
     switch ((int)widget->user_data()) {
     case ID_TEXTBOX:
+    case ID_TEXTAREA:
         return ((Input*)widget)->value();
     case ID_RADIO:
     case ID_CHKBOX:
@@ -1215,6 +1251,7 @@ bool HelpWidget::setInputValue(const char* assignment) {
 
             switch ((int)button->user_data()) {
             case ID_TEXTBOX:
+            case ID_TEXTAREA:
                 ((Input*)button)->value(value.toString());
                 break;
             case ID_RADIO:
@@ -1468,7 +1505,10 @@ int HelpWidget::handle(int event) {
                 find(fltk::input("Find:"), false);
                 return 1;
             case 'b': // break popup
-                fltk::exit_modal();
+            case 'q':
+                if (fltk::modal() == parent()) {
+                    fltk::exit_modal(); 
+                }
                 break; // handle in default
             }
         }
@@ -1720,7 +1760,7 @@ void HelpWidget::compose() {
                     inputNode = new InputNode(this, tagPair, tagBegin-tagPair);
                     nodeList.add(inputNode);
                     inputs.add(inputNode);
-                    inputNode->updateProperties(&namedInputs, &p);
+                    inputNode->update(&namedInputs, cookies, &p);
                     tagPair = 0;
                     p.removeAll();
                 } else if (0 == strncasecmp(tag, "select", 6) && tagPair) {
@@ -1728,7 +1768,7 @@ void HelpWidget::compose() {
                     createDropList(inputNode, &options);
                     nodeList.add(inputNode);
                     inputs.add(inputNode);
-                    inputNode->updateProperties(&namedInputs, &p);
+                    inputNode->update(&namedInputs, cookies, &p);
                     tagPair = 0;
                     p.removeAll();
                 } else if (0 == strncasecmp(tag, "option", 6) && tagPair) {
@@ -1840,10 +1880,10 @@ void HelpWidget::compose() {
                     }
                     p.removeAll();
                     p.load(tag+6, taglen-6);
-                    inputNode = new InputNode(this, cookies, &p);
+                    inputNode = new InputNode(this, &p);
                     nodeList.add(inputNode);
                     inputs.add(inputNode);
-                    inputNode->updateProperties(&namedInputs, &p);
+                    inputNode->update(&namedInputs, cookies, &p);
                 } else if (0 == strncasecmp(tag, "textarea", 8)) {
                     p.load(tag+8, taglen-8);
                     tagPair = text = skipWhite(tagEnd+1);
@@ -1965,7 +2005,7 @@ void HelpWidget::navigateTo(const char* s) {
 }
 
 void HelpWidget::loadBuffer(const char* str) {
-    if (strnicmp("file:", str, 5) == 0) {
+    if (strncasecmp("file:", str, 5) == 0) {
         loadFile(str+5);
     } else {
         htmlStr = str;

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.25 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.26 2005-04-19 23:52:18 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -46,6 +46,7 @@ AnsiWindow::AnsiWindow(int x, int y, int w, int h) :
     font_size = 11;
     init();
     img = 0;
+    resized = false;
 }
 
 AnsiWindow::~AnsiWindow() {
@@ -93,29 +94,11 @@ void AnsiWindow::reset() {
 }
 
 void AnsiWindow::layout() {
-    if (img && (layout_damage() & LAYOUT_WH)) { 
-        int W = img->w();
-        int H = img->h();
-        if (w() > W) {
-            W = w();
-        }
-        if (h() > H) {
-            H = h();
-        }
-
-        Image* old = img;
-        img = new Image(W, H);
-        GSave gsave;
-        img->make_current();
-        setcolor(color());
-        fillrect(Rectangle(W, H));
-        setfont(labelfont(), labelsize());
-        old->draw(Rectangle(old->w(), old->h()), 0, OUTPUT);
-        old->destroy_cache();
-        delete old;
-        redraw();
-    }
-    Widget::layout();
+     if (img && (layout_damage() & LAYOUT_WH)) { 
+         // can't use GSave here in X
+         resized = true;
+     }
+     Widget::layout();
 }
 
 void AnsiWindow::draw() {
@@ -128,6 +111,28 @@ void AnsiWindow::draw() {
         }
     }
     if (img) {
+        if (resized) {
+            int W = img->w();
+            int H = img->h();
+            if (w() > W) {
+                W = w();
+            }
+            if (h() > H) {
+                H = h();
+            }
+            Image* old = img;
+            img = new Image(W, H);
+            GSave gsave;
+            img->make_current();
+            setcolor(color());
+            fillrect(Rectangle(W, H));
+            setfont(labelfont(), labelsize());
+            old->draw(Rectangle(old->w(), old->h()), 0, OUTPUT);
+            old->destroy_cache();
+            delete old;
+            resized = false;
+        }
+
         img->draw(Rectangle(w(), h()), 0, OUTPUT);
     } else {
         setcolor(color());

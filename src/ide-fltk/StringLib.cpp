@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.10 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.11 2005-04-19 23:52:19 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -13,7 +13,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <io.h>
 
 // uncomment for unit testing and then run:
 // g++ StringLib.cpp;./a.exe
@@ -252,19 +251,20 @@ double String::toNumber() const {
 
 bool String::equals(const String &s, bool ignoreCase) const {
     return (buffer == 0 ? s.buffer == 0 : ignoreCase ? 
-            stricmp(buffer, s.buffer) == 0 : strcmp(buffer, s.buffer) == 0);
+            strcasecmp(buffer, s.buffer) == 0 : 
+            strcmp(buffer, s.buffer) == 0);
 }
 
 bool String::equals(const char* s, bool ignoreCase) const {
     return (buffer == 0 ? s == 0 : ignoreCase ? 
-            stricmp(buffer, s) == 0 : strcmp(buffer, s) == 0);
+            strcasecmp(buffer, s) == 0 : strcmp(buffer, s) == 0);
 }
 
 bool String::startsWith(const char* s, bool ignoreCase) const {
     if (s == 0 || s[0] == 0) {
         return (buffer == 0 || buffer[0] == 0);
     }
-    return (ignoreCase ? strnicmp(buffer, s, strlen(s)) == 0 :
+    return (ignoreCase ? strncasecmp(buffer, s, strlen(s)) == 0 :
             strncmp(buffer, s, strlen(s)) == 0);
 }
 

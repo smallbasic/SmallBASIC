@@ -63,14 +63,16 @@ COMMON=                                         \
     vmt.c                                       \
 
 MAKEDEPEND  = /usr/X11R6/bin/makedepend -Y
-OPTIM =  -O2 -Wall -Wunused -fno-exceptions
+OPTIM = -O3 -Os -Wall -Wunused -fno-exceptions
 DEBUG_OPTIM = -g -O0 -Wall -Wunused -fno-exceptions 
 PLATFORM=-D_UnixOS -D_FLTK
 
 ## patched fltk-config to remove -mwindows 
 ## release with -s
+# add -lpng -ljpeg if not built into FLTK
 IMAGELIBS=-lfltk_images -lpng -ljpeg
-LDLIBS = -s `fltk-config --ldflags` ${IMAGELIBS}
+LDLIBS = -s -O3 -Os `fltk-config --ldflags` ${IMAGELIBS}
+LIN_LDLIBS = -s -O3 -Os `fltk-config --ldflags` -lfltk_images
 DEBUG_LDLIBS = `fltk-config --ldflags` ${IMAGELIBS}
 RESOURCES = sbfltk.res
 
@@ -101,7 +103,7 @@ sbfltk.exe: $(OBJS) ${RESOURCES}
 	cp $@ release/
 
 sbfltk: $(OBJS)
-	gcc $(OBJS) ${LDLIBS} -o $@ 
+	gcc $(OBJS) ${LIN_LDLIBS} -o $@ 
 	cp $@ release/
 
 sbfltk.res : sbfltk.rc
@@ -121,14 +123,14 @@ ${OBJDIR}:
 	mkdir -p $@
 
 ${OBJDIR}%.o: ../%.c
-	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+	gcc ${PLATFORM} ${CXXFLAGS} -o $@ -c $<
 
 ${OBJDIR}%.o: %.cpp
-	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+	gcc ${PLATFORM} ${CXXFLAGS} -o $@ -c $<
 
 ${OBJDIR}%.o: %.cxx
-	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+	gcc ${PLATFORM} ${CXXFLAGS} -o $@ -c $<
 
 ${OBJDIR}%.o: %.c
-	gcc ${PLATFORM} ${OPTIM} ${CXXFLAGS} -o $@ -c $<
+	gcc ${PLATFORM} ${CXXFLAGS} -o $@ -c $<
 

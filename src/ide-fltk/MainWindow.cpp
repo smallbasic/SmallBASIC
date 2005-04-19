@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.40 2005-04-17 23:43:38 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.41 2005-04-19 23:52:19 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -77,7 +77,8 @@ const char aboutText[] =
     "This program is free software; you can use it "
     "redistribute it and/or modify it under the terms of the "
     "GNU General Public License version 2 as published by "
-    "the Free Software Foundation.";
+    "the Free Software Foundation.<br><br>"
+    "<i>Press F1 for help";
 
 //--Menu callbacks--------------------------------------------------------------
 
@@ -588,6 +589,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     helpGroup->hide();
     helpGroup->begin();
     helpWnd = new HelpWidget(2, 2, w-4, pageHeight-4);
+    helpWnd->loadBuffer(aboutText);
     helpGroup->resizable(helpWnd);
     helpGroup->end();
     

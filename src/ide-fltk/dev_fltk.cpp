@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.37 2005-04-17 23:43:39 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.38 2005-04-19 23:52:19 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -321,7 +321,10 @@ int osd_getpen(int code) {
         }
         if (event_state() & ANY_BUTTON) {
             get_mouse_xy();
-            return 1;
+            fltk::Rectangle* rc = wnd->out;
+            if (rc->contains(wnd->penDownX, wnd->penDownY)) {
+                return 1;
+            }
         }
         return 0;
 
@@ -553,12 +556,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
 
 //--IMAGE-----------------------------------------------------------------------
 
-Image* getImage(int handle, int index) {
-    dev_file_t* filep = dev_getfileptr(handle);
-    if (filep == 0) {
-        return 0;
-    }
-
+Image* getImage(dev_file_t* filep, int index) {
     // check for cached imaged
     SharedImage* image = loadImage(filep->name, 0);
     if (image && image->drawn()) {
@@ -596,19 +594,33 @@ void dev_image(int handle, int index, int x, int y,
                int sx, int sy, int w, int h) {
     int imgw = -1;
     int imgh = -1;
-    Image* img = getImage(handle, index);
+    dev_file_t* filep = dev_getfileptr(handle);
+    if (filep == 0) {
+        return;
+    }
+    Image* img = getImage(filep, index);
     if (img != 0) {
-        img->measure(imgw, imgh);
-        wnd->out->drawImage(img, x, y, sx, sy, 
-                            (w==0 ? imgw : w),
-                            (h==0 ? imgh : h));
+        if (filep->open_flags == DEV_FILE_INPUT) {
+            // input/read image and display
+            img->measure(imgw, imgh);
+            wnd->out->drawImage(img, x, y, sx, sy, 
+                                (w==0 ? imgw : w),
+                                (h==0 ? imgh : h));
+        } else {
+            // output screen area image to jpeg
+        }
     }
 }
 
 int dev_image_width(int handle, int index) {
     int imgw = -1;
     int imgh = -1;
-    Image* img = getImage(handle, index);
+    dev_file_t* filep = dev_getfileptr(handle);
+    if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
+        return 0;
+    }
+
+    Image* img = getImage(filep, index);
     if (img) {
         img->measure(imgw, imgh);
     }
@@ -618,7 +630,12 @@ int dev_image_width(int handle, int index) {
 int dev_image_height(int handle, int index) {
     int imgw = -1;
     int imgh = -1;
-    Image* img = getImage(handle, index);
+    dev_file_t* filep = dev_getfileptr(handle);
+    if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
+        return 0;
+    }
+    
+    Image* img = getImage(filep, index);
     if (img) {
         img->measure(imgw, imgh);
     }

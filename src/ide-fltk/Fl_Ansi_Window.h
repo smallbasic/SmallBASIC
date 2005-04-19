@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.15 2005-03-28 23:17:51 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.16 2005-04-19 23:52:18 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -65,6 +65,7 @@ class AnsiWindow : public Widget {
     bool invert;
     bool bold;
     bool italic;
+    bool resized;
     int curY;
     int curX;
     int curYSaved;

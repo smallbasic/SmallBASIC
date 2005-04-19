@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.17 2005-04-17 23:43:38 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.18 2005-04-19 23:52:19 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -22,10 +22,11 @@
 
 #define ID_BUTTON   1
 #define ID_TEXTBOX  2
-#define ID_CHKBOX   3
-#define ID_RADIO    4
-#define ID_SELECT   5
-#define ID_RANGEVAL 6
+#define ID_TEXTAREA 3
+#define ID_CHKBOX   4
+#define ID_RADIO    5
+#define ID_SELECT   6
+#define ID_RANGEVAL 7
 
 using namespace fltk;
 using namespace strlib;
