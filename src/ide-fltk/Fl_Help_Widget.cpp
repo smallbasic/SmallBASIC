@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.23 2005-04-19 23:52:19 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.24 2005-04-23 02:22:18 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -183,38 +183,43 @@ struct BaseNode : public Object {
 //--FontNode--------------------------------------------------------------------
 
 struct FontNode : public BaseNode {
-    FontNode(Font* font, int fontSize, Color color, bool bold, bool italic) {
-        this->font = font;
-        this->fontSize = fontSize;
-        this->color = color;
-        if (this->font && bold) {
-            this->font = this->font->bold();
-        }
-        if (this->font && italic) {
-            this->font = this->font->italic();
-        }
-    }
-    
-    void display(Display* out) {
-        if (font) {
-            setfont(font, fontSize);
-        }
-        if (color) {
-            setcolor(color);
-        }
-        int oldLineHeight = out->lineHeight;
-        out->lineHeight = (int)(getascent()+getdescent());
-        if (out->lineHeight > oldLineHeight) {
-            out->y += (out->lineHeight - oldLineHeight);
-        }
-        out->font = font;
-        out->fontSize = fontSize;
-    }
+    FontNode(Font* font, int fontSize, Color color, bool bold, bool italic);
+    void display(Display* out);
 
     Font* font; // includes face,bold,italic
     U16 fontSize;
     Color color;
 };
+
+FontNode::FontNode(Font* font, int fontSize, Color color, bool bold,
+                   bool italic) : BaseNode() {
+    this->font = font;
+    this->fontSize = fontSize;
+    this->color = color;
+    if (this->font && bold) {
+        this->font = this->font->bold();
+    }
+    if (this->font && italic) {
+        this->font = this->font->italic();
+    }
+}
+    
+void FontNode::display(Display* out) {
+    if (font) {
+        setfont(font, fontSize);
+    }
+    if (color) {
+        setcolor(color);
+    }
+    int oldLineHeight = out->lineHeight;
+    out->lineHeight = (int)(getascent()+getdescent());
+    if (out->lineHeight > oldLineHeight) {
+        out->y += (out->lineHeight - oldLineHeight);
+    }
+    out->font = font;
+    out->fontSize = fontSize;
+}
+
 
 //--BrNode----------------------------------------------------------------------
 
@@ -257,7 +262,7 @@ struct AnchorNode : public BaseNode {
     }
 
     bool ptInSegment(int x, int y) {
-        if (y >= y1 && y <= y2) {
+        if (y > y1 && y < y2) {
             // found row
             if ((x < x1 && y < y1+lineHeight) ||
                 (x > x2 && y > y2-lineHeight)) {
@@ -284,7 +289,7 @@ AnchorNode* pushedAnchor = 0;
 struct AnchorEndNode : public BaseNode {
     AnchorEndNode() : BaseNode() {}
     void display(Display* out) {
-        beginNode = out->anchor;
+        AnchorNode* beginNode = out->anchor;
         if (beginNode) {
             beginNode->x2 = out->x;
             beginNode->y2 = out->y;
@@ -294,7 +299,6 @@ struct AnchorEndNode : public BaseNode {
         out->anchor = 0;
         setcolor(out->color);
     }
-    AnchorNode* beginNode;
 };
 
 //--StyleNode-------------------------------------------------------------------
@@ -363,113 +367,11 @@ struct LiNode : public BaseNode {
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-    ImageNode(const Style* style, String* docHome, Attributes* a) : BaseNode() {
-        this->style = style;
-        makePath(a->getSrc(), docHome);
-        image = loadImage(path.toString());
-        image->measure(w.value, h.value);
-        w = a->getWidth(w.value);
-        h = a->getHeight(h.value);
-        background = false;
-        fixed = false;
-    }
-
-    ImageNode(const Style* style, String* docHome, String* src, bool fixed)
-        : BaseNode() {
-        this->style = style;
-        this->fixed = fixed;
-        makePath(src, docHome);
-        image = loadImage(path.toString());
-        image->measure(w.value, h.value);
-        w.relative = 0;
-        h.relative = 0;
-        background = true;
-    }
-
-    void makePath(String* src, String* docHome) {
-        // <img src=blah/images/g.gif>
-        url.append(src); // html path
-        path.append(docHome); // local file system path
-        if (src) {
-            if ((*src)[0] == '/') {
-                path.append(src->substring(1));
-            } else {
-                path.append(src);
-            }
-        }
-    }
-
-    void reload() {
-        int iw,ih;
-        image = loadImage(path.toString());
-        image->measure(iw, ih);
-        if (w.relative == 0) {
-            w.value = iw;
-        }
-        if (h.relative == 0) {
-            h.value = ih;
-        }
-    }
-
-    void display(Display* out) {
-        if (image == 0) {
-            return;
-        }
-        int iw = w.relative ? (w.value*(out->width-out->x)/100) : 
-            w.value < out->width ? w.value : out->width;
-        int ih = h.relative ? (h.value*(out->wnd->h()-out->y)/100) : h.value;
-        if (out->measure == false) {
-            if (background) {
-                // tile image inside rect x,y,tabW,tabH
-                int x = out->x-1;
-                int y = fixed ? 0 : out->y-(int)getascent();
-                int y1 = y;
-                int x1 = x;
-                int numHorz = out->tabW/w.value;
-                int numVert = out->tabH/h.value;
-                for (int iy=0; iy<=numVert; iy++) {
-                    x1 = x;
-                    for (int ix=0; ix<=numHorz; ix++) {
-                        if (x1+w.value > x+out->tabW) {
-                            iw = out->tabW-(x1-x);
-                        } else {
-                            iw = w.value;
-                        }
-                        if (y1+h.value > y+out->tabH) {
-                            ih = out->tabH-(y1-y);
-                        } else {
-                            ih = h.value;
-                        }
-                        Rectangle rc(x1, y1, iw, ih);
-                        image->draw(rc, style, OUTPUT);
-                        x1 += w.value;
-                    }
-                    y1 += h.value;
-                }
-            } else {
-                int x = out->x+DEFAULT_INDENT;
-                int y = out->y - (int)getascent();
-                if (out->anchor && out->anchor->pushed) {
-                    x += 1;
-                    y += 1;
-                }
-                image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
-            }
-        }
-        if (background == 0) {
-            out->content = true;
-            if (iw+IMG_TEXT_BORDER > out->width) {
-                out->x = out->indent;
-                out->y += ih;
-                out->imgY = -1;
-            } else {
-                out->imgY = out->y+ih;
-                out->imgIndent = out->indent;
-                out->indent = out->x;
-                out->x += iw+DEFAULT_INDENT;
-            }
-        }
-    }
+    ImageNode(const Style* style, String* docHome, Attributes* a);
+    ImageNode(const Style* style, String* docHome, String* src, bool fixed);
+    void makePath(String* src, String* docHome);
+    void reload();
+    void display(Display* out);
     const Image* image;
     const Style* style;
     String path,url;
@@ -477,116 +379,232 @@ struct ImageNode : public BaseNode {
     U8 background, fixed;
 };
 
+ImageNode::ImageNode(const Style* style, String* docHome, Attributes* a) : 
+    BaseNode() {
+    this->style = style;
+    makePath(a->getSrc(), docHome);
+    image = loadImage(path.toString());
+    image->measure(w.value, h.value);
+    w = a->getWidth(w.value);
+    h = a->getHeight(h.value);
+    background = false;
+    fixed = false;
+}
+
+ImageNode::ImageNode(const Style* style, String* docHome, String* src, bool fixed) :
+    BaseNode() {
+    this->style = style;
+    this->fixed = fixed;
+    makePath(src, docHome);
+    image = loadImage(path.toString());
+    image->measure(w.value, h.value);
+    w.relative = 0;
+    h.relative = 0;
+    background = true;
+}
+
+void ImageNode::makePath(String* src, String* docHome) {
+    // <img src=blah/images/g.gif>
+    url.append(src); // html path
+    path.append(docHome); // local file system path
+    if (src) {
+        if ((*src)[0] == '/') {
+            path.append(src->substring(1));
+        } else {
+            path.append(src);
+        }
+    }
+}
+
+void ImageNode::reload() {
+    int iw,ih;
+    image = loadImage(path.toString());
+    image->measure(iw, ih);
+    if (w.relative == 0) {
+        w.value = iw;
+    }
+    if (h.relative == 0) {
+        h.value = ih;
+    }
+}
+
+void ImageNode::display(Display* out) {
+    if (image == 0) {
+        return;
+    }
+    int iw = w.relative ? (w.value*(out->width-out->x)/100) : 
+        w.value < out->width ? w.value : out->width;
+    int ih = h.relative ? (h.value*(out->wnd->h()-out->y)/100) : h.value;
+    if (out->measure == false) {
+        if (background) {
+            // tile image inside rect x,y,tabW,tabH
+            int x = out->x-1;
+            int y = fixed ? 0 : out->y-(int)getascent();
+            int y1 = y;
+            int x1 = x;
+            int numHorz = out->tabW/w.value;
+            int numVert = out->tabH/h.value;
+            for (int iy=0; iy<=numVert; iy++) {
+                x1 = x;
+                for (int ix=0; ix<=numHorz; ix++) {
+                    if (x1+w.value > x+out->tabW) {
+                        iw = out->tabW-(x1-x);
+                    } else {
+                        iw = w.value;
+                    }
+                    if (y1+h.value > y+out->tabH) {
+                        ih = out->tabH-(y1-y);
+                    } else {
+                        ih = h.value;
+                    }
+                    Rectangle rc(x1, y1, iw, ih);
+                    image->draw(rc, style, OUTPUT);
+                    x1 += w.value;
+                }
+                y1 += h.value;
+            }
+        } else {
+            int x = out->x+DEFAULT_INDENT;
+            int y = out->y - (int)getascent();
+            if (out->anchor && out->anchor->pushed) {
+                x += 1;
+                y += 1;
+            }
+            image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
+        }
+    }
+    if (background == 0) {
+        out->content = true;
+        if (iw+IMG_TEXT_BORDER > out->width) {
+            out->x = out->indent;
+            out->y += ih;
+            out->imgY = -1;
+        } else {
+            out->imgY = out->y+ih;
+            out->imgIndent = out->indent;
+            out->indent = out->x;
+            out->x += iw+DEFAULT_INDENT;
+        }
+    }
+}
+
 //--TextNode--------------------------------------------------------------------
 
 struct TextNode : public BaseNode {
-    TextNode(const char* s, U16 textlen) {
-        this->s = s;
-        this->textlen = textlen;
-        this->width = 0;
-        this->ybegin = 0;
-    }
-
-    void display(Display* out) {
-        ybegin = out->y;
-        out->content = true;
-
-        if (width == 0) {
-            width = (int)getwidth(s, textlen);
-        }
-        if (width < out->width-out->x) {
-            // simple non-wrapping textout
-            if (out->center) {
-                int xctr = ((out->width-out->x)-width)/2;
-                if (xctr > out->x) {
-                    out->x = xctr;
-                }
-            }
-            if (out->measure == false) {
-                drawtext(s, textlen, out->x, out->y);
-                if (out->uline) {
-                    drawline(out->x, out->y+1, out->x+width, out->y+1);
-                }
-            }
-            out->x += width;
-        } else {
-            int linelen, linepx, cliplen;
-            int len = textlen;
-            const char* p = s;
-            while (len > 0) {
-                lineBreak(p, len, out->width-out->x, linelen, linepx);
-                cliplen = linelen;
-                if (linepx > out->width-out->x) {
-                    // no break point - create new line if not already on one
-                    if (out->x != out->indent) {
-                        out->newRow();
-                        // anchor now starts on a new line
-                        if (out->anchor && out->anchor->wrapxy == false) {
-                            out->anchor->x1 = out->x;
-                            out->anchor->y1 = out->y - out->lineHeight;
-                            out->anchor->wrapxy = true;
-                        }
-                    }
-
-                    // clip long text - leave room for elipses
-                    int cellW = out->width-out->indent-ELIPSE_LEN;
-                    if (linepx > cellW) {
-                        linepx = 0;
-                        cliplen = 0;
-                        do {
-                            linepx += (int)getwidth(p+cliplen, 1);
-                            cliplen++;
-                        } while (linepx < cellW);
-                    } 
-                }
-                if (out->measure == false) {
-                    drawtext(p, cliplen, out->x, out->y);
-                    if (out->uline) {
-                        drawline(out->x, out->y+1, out->x+linepx, out->y+1);
-                    }
-                    if (cliplen != linelen) {
-                        drawpoint(out->x+linepx, out->y);
-                        drawpoint(out->x+linepx+2, out->y);
-                        drawpoint(out->x+linepx+4, out->y);
-                    }
-                }
-                p += linelen;
-                len -= linelen;
-
-                if (out->anchor) {
-                    out->anchor->wrapxy = true;
-                }
-                if (out->x+linepx < out->width) {
-                    out->x += linepx;
-                } else {
-                    out->newRow();
-                }
-            }
-        }
-    }
-
-    int indexOf(const char* sFind, U8 matchCase) {
-        int numMatch = 0;
-        int findLen = strlen(sFind);
-        for (int i=0; i<textlen; i++) {
-            U8 equals = matchCase ?
-                s[i] == sFind[numMatch] :
-                toupper(s[i]) == toupper(sFind[numMatch]);
-            numMatch = (equals ? numMatch+1 : 0);
-            if (numMatch == findLen) {
-                return i+1;
-            }
-        }
-        return -1;
-    }
-
-    int getY() {return ybegin;}
+    TextNode(const char* s, U16 textlen);
+    void TextNode::display(Display* out);
+    int TextNode::indexOf(const char* sFind, U8 matchCase);
+    int TextNode::getY();
 
     const char* s; // 4
     U16 textlen;   // 4
     U16 width;     // 4
     S16 ybegin;    // 4
 };
+
+TextNode::TextNode(const char* s, U16 textlen) : BaseNode() {
+    this->s = s;
+    this->textlen = textlen;
+    this->width = 0;
+    this->ybegin = 0;
+}
+
+void TextNode::display(Display* out) {
+    ybegin = out->y;
+    out->content = true;
+    
+    if (width == 0) {
+        width = (int)getwidth(s, textlen);
+    }
+    if (width < out->width-out->x) {
+        // simple non-wrapping textout
+        if (out->center) {
+            int xctr = ((out->width-out->x)-width)/2;
+            if (xctr > out->x) {
+                out->x = xctr;
+            }
+        }
+        if (out->measure == false) {
+            drawtext(s, textlen, out->x, out->y);
+            if (out->uline) {
+                drawline(out->x, out->y+1, out->x+width, out->y+1);
+            }
+        }
+        out->x += width;
+    } else {
+        int linelen, linepx, cliplen;
+        int len = textlen;
+        const char* p = s;
+        while (len > 0) {
+            lineBreak(p, len, out->width-out->x, linelen, linepx);
+            cliplen = linelen;
+            if (linepx > out->width-out->x) {
+                // no break point - create new line if not already on one
+                if (out->x != out->indent) {
+                    out->newRow();
+                    // anchor now starts on a new line
+                    if (out->anchor && out->anchor->wrapxy == false) {
+                        out->anchor->x1 = out->x;
+                        out->anchor->y1 = out->y - out->lineHeight;
+                        out->anchor->wrapxy = true;
+                    }
+                }
+                
+                // clip long text - leave room for elipses
+                int cellW = out->width-out->indent-ELIPSE_LEN;
+                if (linepx > cellW) {
+                    linepx = 0;
+                    cliplen = 0;
+                    do {
+                        linepx += (int)getwidth(p+cliplen, 1);
+                        cliplen++;
+                    } while (linepx < cellW);
+                } 
+            }
+            if (out->measure == false) {
+                drawtext(p, cliplen, out->x, out->y);
+                if (out->uline) {
+                    drawline(out->x, out->y+1, out->x+linepx, out->y+1);
+                }
+                if (cliplen != linelen) {
+                    drawpoint(out->x+linepx, out->y);
+                    drawpoint(out->x+linepx+2, out->y);
+                    drawpoint(out->x+linepx+4, out->y);
+                }
+            }
+            p += linelen;
+            len -= linelen;
+            
+            if (out->anchor) {
+                out->anchor->wrapxy = true;
+            }
+            if (out->x+linepx < out->width) {
+                out->x += linepx;
+            } else {
+                out->newRow();
+            }
+        }
+    }
+}
+
+int TextNode::indexOf(const char* sFind, U8 matchCase) {
+    int numMatch = 0;
+    int findLen = strlen(sFind);
+    for (int i=0; i<textlen; i++) {
+        U8 equals = matchCase ?
+            s[i] == sFind[numMatch] :
+            toupper(s[i]) == toupper(sFind[numMatch]);
+        numMatch = (equals ? numMatch+1 : 0);
+        if (numMatch == findLen) {
+            return i+1;
+        }
+    }
+    return -1;
+}
+
+int TextNode::getY() {
+    return ybegin;
+}
 
 //--HrNode----------------------------------------------------------------------
 
@@ -611,126 +629,52 @@ struct HrNode : public BaseNode {
     }
 };
 
-//--TableNode-------------------------------------------------------------------
+//--Table Support---------------------------------------------------------------
+
+struct TableNode;
+
+struct TrNode : public BaseNode {
+    TrNode(TableNode* tableNode, Attributes* a);
+    void display(Display* out);
+
+    TableNode* table;
+    U16 cols;
+    S16 y1, height;
+    Color background, foreground;
+};
+
+struct TrEndNode : public BaseNode {
+    TrEndNode(TrNode* trNode);
+    void display(Display* out);
+
+    TrNode* tr;
+};
+
+struct TdNode : public BaseNode {
+    TdNode(TrNode* trNode, Attributes* a);
+    void display(Display* out);
+
+    TrNode* tr;
+    Color background, foreground;
+    Value width;
+};
+
+struct TdEndNode : public BaseNode {
+    TdEndNode(TdNode* tdNode);
+    void display(Display* out);
+
+    TdNode* td;
+};
 
 struct TableNode : public BaseNode {
-    TableNode(Attributes* a) : BaseNode() {
-        rows = 0;
-        cols = 0;
-        columns = 0;
-        sizes = 0;
-        border = a->getBorder();
-    }
+    TableNode(Attributes* a);
+    ~TableNode();
+    void display(Display* out);
+    void doEndTD(Display* out, TrNode* tr, Value* tdWidth);
+    void doEndTable(Display* out);
+    void setColWidth(Value* width);
+    void cleanup();
 
-    ~TableNode() {
-        cleanup();
-    }
-
-    void display(Display* out) {
-        nextCol = 0;
-        nextRow = 0;
-        out->endImageFlow();
-        width = out->width-out->indent;
-        initX = out->indent;
-        initY = ryt = ryb = out->y;
-        nodeId = out->nodeId;
-
-        if (out->content) {
-            // update table initial row position- we remember content
-            // state on re-visiting the table via the value of initY 
-            initY += out->lineHeight;
-            ryt = ryb = initY;
-        }
-        out->content = false;
-
-        if (cols && (out->exposed || columns == 0)) {
-            // prepare default column widths
-            if (out->tableLevel == 0) {
-                // traverse the table structure to determine widths
-                out->measure = true;
-            }
-            cleanup();
-            columns = (U16*)malloc(sizeof(U16)*cols);
-            sizes = (S16*)malloc(sizeof(S16)*cols);
-            int cellW = width/cols;
-            for (int i=0; i<cols; i++) {
-                columns[i] = cellW*(i+1);
-                sizes[i] = 0;
-            }
-        }
-        int lineHeight =  (int)(getascent()+getdescent());
-        if (lineHeight > out->lineHeight) {
-            out->lineHeight = lineHeight;
-        }
-        out->tableLevel++;
-    }
-
-    // called from </td> to prepare for wrapping and resizing
-    void doEndTD(Display* out, Value* awidth) {
-        int index = nextCol-1;
-        if (awidth->value != -1) {
-            int tdw = awidth->relative ? awidth->value*width/100 : 
-                awidth->value < width ? awidth->value : width;
-            sizes[index] = tdw; // fixed size cell width
-            ryb = out->y;
-        } else if (out->y > ryb) {
-            sizes[index] = -1; // veto column changes
-            ryb = out->y; // wrapped cell
-        } else if (out->y == ryt &&
-                   out->x < columns[index] &&
-                   out->x > sizes[index] &&
-                   sizes[index] != -1) {
-            // largest <td></td> on same line, less than the default width
-            // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
-            sizes[index] = out->x+CELL_SPACING+CELL_SPACING+2;
-        }
-        // close image flow to prevent bleeding into previous cell
-        out->imgY = -1;
-    }
-
-    void doEndTable(Display* out) {
-        out->width = width;
-        out->indent = initX;
-        out->x = initX;
-        out->y = ryb;
-        if (out->content) {
-            out->newRow();
-        }
-        out->content = false;
-        out->tableLevel--;
-        out->tabH = out->y-initY;
-        out->tabW = width;
-
-        if (cols && columns && out->exposed) {
-            // adjust columns for best fit (left align)
-            int delta = 0;
-            for (int i=0; i<cols-1; i++) {
-                if (sizes[i] > 0) {
-                    int spacing = columns[i] - sizes[i];
-                    columns[i] = sizes[i] - delta;
-                    delta += spacing;
-                } else {
-                    // apply delta only to wrapped column
-                    columns[i] -= delta;
-                }
-            }
-            // redraw outer tables
-            if (out->tableLevel == 0) {
-                out->measure = false;
-                out->nodeId = nodeId;
-            }
-        }
-    }
-
-    void cleanup() {
-        if (columns) {
-            free(columns);
-        }
-        if (sizes) {
-            free(sizes);
-        }
-    }
-    
     U16* columns;
     S16* sizes;
     U16 rows, cols;
@@ -739,125 +683,266 @@ struct TableNode : public BaseNode {
     U16 width;
     U16 nodeId;
     U16 initX, initY; // start of table
-    S16 ryt, ryb; // current row y top+bottom
+    S16 maxY; // end of table
     S16 border;
 };
 
 struct TableEndNode : public BaseNode {
-    TableEndNode(TableNode* tableNode) : BaseNode() {
-        table = tableNode;
-    }
+    TableEndNode(TableNode* tableNode);
+    void display(Display* out);
 
-    void display(Display* out) {
-        if (table) {
-            table->doEndTable(out);
-        }
-    }
     TableNode* table;    
 };
 
+//--TableNode-------------------------------------------------------------------
+
+TableNode::TableNode(Attributes* a) : BaseNode() {
+    rows = 0;
+    cols = 0;
+    columns = 0;
+    sizes = 0;
+    border = a->getBorder();
+}
+
+TableNode::~TableNode() {
+    cleanup();
+}
+
+void TableNode::display(Display* out) {
+    nextCol = 0;
+    nextRow = 0;
+    out->endImageFlow();
+    width = out->width-out->indent;
+    initX = out->indent;
+    initY = maxY = out->y;
+    nodeId = out->nodeId;
+    
+    if (out->content) {
+        // update table initial row position- we remember content
+        // state on re-visiting the table via the value of initY 
+        initY += out->lineHeight;
+        maxY = initY;
+    }
+    out->content = false;
+    
+    if (cols && (out->exposed || columns == 0)) {
+        // prepare default column widths
+        if (out->tableLevel == 0) {
+            // traverse the table structure to determine widths
+            out->measure = true;
+        }
+        cleanup();
+        columns = (U16*)malloc(sizeof(U16)*cols);
+        sizes = (S16*)malloc(sizeof(S16)*cols);
+        int cellW = width/cols;
+        for (int i=0; i<cols; i++) {
+            columns[i] = cellW*(i+1);
+            sizes[i] = 0;
+        }
+    }
+    int lineHeight =  (int)(getascent()+getdescent());
+    if (lineHeight > out->lineHeight) {
+        out->lineHeight = lineHeight;
+    }
+    out->tableLevel++;
+}
+
+// called from </td> to prepare for wrapping and resizing
+void TableNode::doEndTD(Display* out, TrNode* tr, Value* tdWidth) {
+    int index = nextCol-1;
+    if (out->y > maxY ||
+        tdWidth->value != -1) {
+        // veto column changes - wrapped or fixed-width cell
+        sizes[index] = -1; 
+    } else if (out->y == tr->y1 &&
+               out->x < columns[index] &&
+               out->x > sizes[index] &&
+               sizes[index] != -1) {
+        // largest <td></td> on same line, less than the default width
+        // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
+        sizes[index] = out->x+CELL_SPACING+CELL_SPACING+2;
+    }
+
+    if (out->y > maxY) {
+        maxY = out->y; // new max table height
+    }
+    
+    // close image flow to prevent bleeding into previous cell
+    out->imgY = -1;
+}
+
+void TableNode::doEndTable(Display* out) {
+    out->width = width;
+    out->indent = initX;
+    out->x = initX;
+    out->y = maxY;
+    if (out->content) {
+        out->newRow();
+    }
+    out->content = false;
+    out->tableLevel--;
+    out->tabH = out->y-initY;
+    out->tabW = width;
+    
+    if (cols && columns && out->exposed) {
+        // adjust columns for best fit (left align)
+        int delta = 0;
+        for (int i=0; i<cols-1; i++) {
+            if (sizes[i] > 0) {
+                int spacing = columns[i] - sizes[i];
+                columns[i] = sizes[i] - delta;
+                delta += spacing;
+            } else {
+                // apply delta only to wrapped column
+                columns[i] -= delta;
+            }
+        }
+        // redraw outer tables
+        if (out->tableLevel == 0) {
+            out->measure = false;
+            out->nodeId = nodeId;
+        }
+    }
+}
+
+void TableNode::setColWidth(Value* colw) {
+    // set user specified column width
+    int tdw = colw->relative ? colw->value*width/100 : 
+        colw->value < width ? colw->value : width;
+    int delta = columns[nextCol]-tdw;
+    columns[nextCol] = tdw;
+    for (int i=nextCol+1; i<cols-1; i++) {
+        columns[i] -= delta;
+    }
+}
+
+void TableNode::cleanup() {
+    if (columns) {
+        free(columns);
+    }
+    if (sizes) {
+        free(sizes);
+    }
+}
+
+TableEndNode::TableEndNode(TableNode* tableNode) : BaseNode() {
+    table = tableNode;
+}
+
+void TableEndNode::display(Display* out) {
+    if (table) {
+        table->doEndTable(out);
+    }
+}
+
 //--TrNode----------------------------------------------------------------------
 
-struct TrNode : public BaseNode {
-    TrNode(TableNode* tableNode) : BaseNode() {
-        table = tableNode;
-        y1=y2=cols = 0;
-        if (table) {
-            table->rows++;
-        }
+TrNode::TrNode(TableNode* tableNode, Attributes* a) : BaseNode() {
+    table = tableNode;
+    y1 = height = cols = 0;
+    if (table) {
+        table->rows++;
     }
-    void display(Display* out) {
-        if (table == 0) {
-            return;
-        }
-        if (out->content) {
-            // move bottom of <tr> to next line
-            table->ryb += out->lineHeight;
-        }
-        table->nextCol = 0;
-        table->nextRow++;
-        table->ryt = table->ryb;
-        y1 = table->ryt-(int)getascent();
-        out->content = false;
-    }
-    TableNode* table;
-    U16 cols;
-    S16 y1,y2;
-};
+    foreground = getColor(a->getFgColor(), 0);
+    background = getColor(a->getBgColor(), 0);
+}
 
-struct TrEndNode : public BaseNode {
-    TrEndNode(TrNode* trNode) : BaseNode() {
-        tr = trNode;
-        if (tr && tr->table && tr->cols > tr->table->cols) {
-            tr->table->cols = tr->cols;
-        }
+void TrNode::display(Display* out) {
+    if (table == 0) {
+        return;
     }
-    void display(Display* out) {
-        if (tr && tr->table && out->measure) {
-            // measure the row height - the table is not revisited
-            // during scrolling, so need to save height on first pass
-            tr->y2 = tr->table->ryb-tr->y1+(int)getdescent()+1;
-        }
+
+    if (out->content) {
+        // move bottom of <tr> to next line
+        table->maxY += out->lineHeight;
     }
-    TrNode* tr;
-};
+    out->content = false;
+    y1 = table->maxY;
+    table->nextCol = 0;
+    table->nextRow++;
+    
+    if (background && out->measure == false) {
+        Rectangle rc(table->initX,
+                     y1-(int)getascent(),
+                     table->width,
+                     height);
+        setcolor(background);
+        fillrect(rc);
+    }
+    setcolor(foreground ? foreground : out->color);
+}
+
+TrEndNode::TrEndNode(TrNode* trNode) : BaseNode() {
+    tr = trNode;
+    if (tr && tr->table && tr->cols > tr->table->cols) {
+        tr->table->cols = tr->cols;
+    }
+}
+
+void TrEndNode::display(Display* out) {
+    setcolor(out->color); // restore previous color
+    if (tr && tr->table) {
+        tr->height = tr->table->maxY - tr->y1 + out->lineHeight;
+    }
+}
 
 //--TdNode----------------------------------------------------------------------
 
-struct TdNode : public BaseNode {
-    TdNode(TrNode* trNode, Attributes* a) : BaseNode() {
-        tr = trNode;
-        if (tr) {
-            tr->cols++;
-        }
-        foreground = getColor(a->getFgColor(), 0);
-        background = getColor(a->getBgColor(), 0);
-        width = a->getWidth();
+TdNode::TdNode(TrNode* trNode, Attributes* a) : BaseNode() {
+    tr = trNode;
+    if (tr) {
+        tr->cols++;
+    }
+    foreground = getColor(a->getFgColor(), 0);
+    background = getColor(a->getBgColor(), 0);
+    width = a->getWidth();
+}
+
+void TdNode::display(Display* out) {
+    if (tr == 0 || tr->table == 0 || tr->table->cols == 0) {
+        return; // invalid table model
+    } 
+
+    TableNode* table = tr->table;
+    if (out->measure && table->nextRow == 1 && width.value != -1) {
+        table->setColWidth(&width);
     }
 
-    void display(Display* out) {
-        if (tr == 0 || tr->table == 0 || tr->table->cols == 0) {
-            return; // invalid table model
-        } 
-        TableNode* table = tr->table;
-        out->x = table->initX + DEFAULT_INDENT +
-            (table->nextCol == 0 ? 0 : table->columns[table->nextCol-1]);
-        out->y = table->ryt; // top+left of next cell
-        out->width = table->columns[table->nextCol]-CELL_SPACING;
-        out->indent = out->x; 
-        table->nextCol++;
-        if (out->measure == false) {
-            int x1 = out->indent-CELL_SPACING;
-            int x2 = out->width-out->indent+9;
-            Rectangle rc(x1, tr->y1, x2, tr->y2);
-            if (background) {
-                setcolor(background);
-                fillrect(rc);
-            }
-            if (table->border > 0) {
-                setcolor(BLACK);
-                strokerect(rc);
-            }
-        }
-        setcolor(foreground ? foreground : out->color);
-    }
-    TrNode* tr;
-    Color background, foreground;
-    Value width;
-};
+    out->x = table->initX + DEFAULT_INDENT +
+        (table->nextCol == 0 ? 0 : table->columns[table->nextCol-1]);
 
-struct TdEndNode : public BaseNode {
-    TdEndNode(TdNode* tdNode) : BaseNode() {
-        td = tdNode;
-    }
-    void display(Display* out) {
-        if (td && td->tr && td->tr->table) {
-            td->tr->table->doEndTD(out, &td->width);
+    out->y = tr->y1; // top+left of next cell
+    out->width = table->columns[table->nextCol]-CELL_SPACING;
+    out->indent = out->x; 
+    table->nextCol++;
+
+    if (out->measure == false) {
+        Rectangle rc(out->indent-CELL_SPACING,
+                     tr->y1 - (int)getascent(),
+                     out->width-out->indent+(CELL_SPACING*2),
+                     tr->height);
+        if (background) {
+            setcolor(background);
+            fillrect(rc);
         }
-        setcolor(out->color);
+        if (table->border > 0) {
+            setcolor(BLACK);
+            strokerect(rc);
+        }
     }
-    TdNode* td;
-};
+    setcolor(foreground ? foreground : out->color);
+}
+
+TdEndNode::TdEndNode(TdNode* tdNode) : BaseNode() {
+    td = tdNode;
+}
+
+void TdEndNode::display(Display* out) {
+    if (td && td->tr && td->tr->table) {
+        td->tr->table->doEndTD(out, td->tr, &td->width);
+    }
+    setcolor(out->color);
+}
 
 //--NamedInput------------------------------------------------------------------
 
@@ -890,50 +975,7 @@ struct InputNode : public BaseNode {
     InputNode(Group* parent, const char* v, int len);
     InputNode(Group* parent, Attributes* a);
     void update(strlib::List* namedInputs, Properties* p, Attributes* a);
-
-    void display(Display* out) {
-        if (button == 0) {
-            return;
-        }
-        
-        int height = 4+(int)(getascent()+getdescent());
-        switch ((int)button->user_data()) {
-        case ID_SELECT:
-            height += 4;
-            break;
-        case ID_BUTTON:
-            if (button->w() == 0 && button->label()) {
-                button->w(12+(int)getwidth(button->label()));
-            }
-            break;
-        case ID_TEXTAREA:
-            button->w(4+((int)getwidth("W")*cols));
-            height = 4+((int)(getascent()+getdescent())*rows);
-            break;
-        default:
-            break;
-        }
-        if (out->x != out->indent && button->w() > out->width-out->x) {
-            out->newRow();
-        }
-        out->lineHeight = height;
-        button->x(out->x);
-        button->y(out->y-(int)getascent());
-        button->h(out->lineHeight-2);
-        button->textfont(out->font);
-        button->textsize(out->fontSize);
-        button->labelsize(out->fontSize);
-        if (button->y()+button->h() < out->height && button->y() >= 0) {
-            button->show();
-        } else {
-            // draw a fake control in case partially visible
-            setcolor(button->color());
-            fillrect(*button);
-            setcolor(out->color);            
-        }
-        out->x += button->w() + INPUT_SPACING;
-        out->content = true;
-    }
+    void display(Display* out);
     Widget* button;
     String onclick;
     U16 rows,cols;
@@ -1002,6 +1044,50 @@ InputNode::InputNode(Group* parent) : BaseNode() {
     button->textcolor(ANCHOR_COLOR);
     button->user_data((void*)ID_SELECT);
     parent->end();
+}
+
+void InputNode::display(Display* out) {
+    if (button == 0) {
+        return;
+    }
+    
+    int height = 4+(int)(getascent()+getdescent());
+    switch ((int)button->user_data()) {
+    case ID_SELECT:
+        height += 4;
+        break;
+    case ID_BUTTON:
+        if (button->w() == 0 && button->label()) {
+            button->w(12+(int)getwidth(button->label()));
+        }
+        break;
+    case ID_TEXTAREA:
+        button->w(4+((int)getwidth("W")*cols));
+        height = 4+((int)(getascent()+getdescent())*rows);
+        break;
+    default:
+        break;
+    }
+    if (out->x != out->indent && button->w() > out->width-out->x) {
+        out->newRow();
+    }
+    out->lineHeight = height;
+    button->x(out->x);
+    button->y(out->y-(int)getascent());
+    button->h(out->lineHeight-2);
+    button->textfont(out->font);
+    button->textsize(out->fontSize);
+    button->labelsize(out->fontSize);
+    if (button->y()+button->h() < out->height && button->y() >= 0) {
+        button->show();
+    } else {
+        // draw a fake control in case partially visible
+        setcolor(button->color());
+        fillrect(*button);
+        setcolor(out->color);            
+    }
+    out->x += button->w() + INPUT_SPACING;
+    out->content = true;
 }
 
 void createDropList(InputNode* node, strlib::List* options) {
@@ -1582,11 +1668,11 @@ void HelpWidget::compose() {
     const char* tag;
     const char* tagPair = 0;
 
-#define ADD_PREV_SEGMENT                         \
-    prevlen = i-pindex;                          \
-    if (prevlen > 0) {                           \
-        nodeList.add(new TextNode(p, prevlen));  \
-        newline = false;                         \
+#define ADD_PREV_SEGMENT                        \
+    prevlen = i-pindex;                         \
+    if (prevlen > 0) {                          \
+        nodeList.add(new TextNode(p, prevlen)); \
+        newline = false;                        \
     }
 
     while (text && *text) {
@@ -1811,7 +1897,9 @@ void HelpWidget::compose() {
                     tdStack.push(node);
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "tr", 2)) {
-                    node = new TrNode((TableNode*)tableStack.peek());
+                    p.removeAll();
+                    p.load(tag+2, taglen-2);
+                    node = new TrNode((TableNode*)tableStack.peek(), &p);
                     nodeList.add(node);
                     trStack.push(node);
                     text = skipWhite(tagEnd+1);

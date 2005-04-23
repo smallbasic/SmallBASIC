@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.38 2005-04-19 23:52:19 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.39 2005-04-23 02:22:18 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -413,11 +413,20 @@ void osd_write(const char *s) {
 
 int dev_putenv(const char *s) {
     if (helpView && helpView->setInputValue(s)) {
-        return 1;
+        return 1; // updated form variable
     }
+
     envs.empty();
     envs.append(s);
-    env.put(envs.lvalue(), envs.rvalue());
+    String lv = envs.lvalue();
+    String rv = envs.rvalue();
+
+    if (lv.equals("APP-TITLE")) {
+        rv.append(" - SmallBASIC");
+        wnd->copy_label(rv);
+    } else {
+        env.put(lv, rv);
+    }
     return 1;
 }
 
@@ -499,8 +508,11 @@ void modeless_cb(Widget* w, void* v) {
             if (eventName[eventName.length()-1] != '/') {
                 eventName.append("/");
             }
+            eventName.append(path[0] == '/' ? path.substring(1) : path);
+        } else {
+            eventName.append(path);
         }
-        eventName.append(path[0] == '/' ? path.substring(1) : path);
+        
         fltk::add_check(doEvent); // post message
     }
 }

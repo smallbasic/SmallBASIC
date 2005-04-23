@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.41 2005-04-19 23:52:19 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.42 2005-04-23 02:22:18 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -71,7 +71,7 @@ const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
     "FLTK Version 0.9.6.1<br>"
-    "Copyright (c) 2005 Chris Warren-Smith.<br><br>"
+    "Copyright (c) 2002-2005 Chris Warren-Smith.<br><br>"
     "<u>http://smallbasic.sourceforge.net</u><br><br>"
     "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
     "This program is free software; you can use it "
@@ -100,12 +100,12 @@ void quit_cb(Widget*, void* v) {
 }
 
 void statusMsg(const char* msg) {
-    wnd->fileStatus->copy_label(msg);
+    wnd->fileStatus->copy_label(msg && msg[0] ? msg : "Ready");
     wnd->fileStatus->redraw();
 }
 
 void runMsg(const char * msg) {
-    wnd->runStatus->copy_label(msg);
+    wnd->runStatus->copy_label(msg && msg[0] ? msg : "");
     wnd->runStatus->redraw();
 }
 
@@ -146,8 +146,20 @@ void help_home_cb(Widget*, void* v) {
 }
 
 void help_contents_cb(Widget*, void* v) {
-    snprintf(buff, sizeof(buff), "file:///%s/help/0_0.html", startDir);
+    snprintf(buff, sizeof(buff), "%s/help/", startDir);
+    wnd->helpWnd->setDocHome(buff);
+    strcat(buff, "0_0.html");
     wnd->helpWnd->loadFile(buff);
+    showHelpTab();
+}
+
+void help_app_cb(Widget*, void* v) {
+    const char* helpFile = dev_getenv("APP-HELP");
+    if (helpFile) {
+        wnd->helpWnd->loadFile(helpFile);
+    } else {
+        wnd->helpWnd->loadBuffer("APP-HELP env variable not found");
+    }
     showHelpTab();
 }
 
@@ -228,6 +240,7 @@ void basicMain(const char* filename) {
 
     statusMsg("Choose Program/Break to end");
     runMsg("RUN");
+    wnd->copy_label("SmallBASIC");
 
     int success = sbasic_main(filename);
 
@@ -244,8 +257,8 @@ void basicMain(const char* filename) {
         statusMsg(gsb_last_errmsg);
         runMsg("ERR");
     } else {
-        statusMsg("Ready");
-        runMsg("");
+        statusMsg(0);
+        runMsg(0);
     }
 
     wnd->editWnd->readonly(false);
@@ -306,11 +319,11 @@ void tool_cb(Widget* w, void* v) {
     if (runMode == edit_state) {
         strcpy(opt_command, startDir);
         strcat(opt_command, toolhome+1);
-        setTitle((const char*)v);
+        statusMsg((const char*)v);
         strcpy(buff, startDir);
         strcat(buff, (const char*)v);
         basicMain(buff);
-        setTitle(wnd->editWnd->getFilename());
+        statusMsg(wnd->editWnd->getFilename());
         opt_command[0] = 0;
     } else {
         busyMessage();
@@ -318,22 +331,6 @@ void tool_cb(Widget* w, void* v) {
 }
 
 //--EditWindow functions--------------------------------------------------------
-
-void setTitle(const char* filename) {
-    if (filename && filename[0]) {
-        statusMsg(filename);
-        char* slash = strrchr(filename, '/');
-        sprintf(buff, "%s - SmallBASIC", (slash?slash+1:filename));
-        wnd->copy_label(buff);
-    } else {
-        statusMsg("Untitled");
-        wnd->label("SmallBASIC");
-    }
-
-#if defined(WIN32) 
-    ::SetFocus(xid(Window::first()));
-#endif
-}
 
 void setRowCol(int row, int col) {
     sprintf(buff, "%d", row);
@@ -484,11 +481,12 @@ int main(int argc, char **argv) {
 
 #if defined(WIN32) 
     wnd->icon((char *)LoadIcon(xdisplay, MAKEINTRESOURCE(101)));
-    GetCurrentDirectory(sizeof(buff), buff);
-#else
-    getcwd(buff, sizeof (buff));
 #endif
+
+    getcwd(buff, sizeof (buff));
     startDir = strdup(buff);
+    sprintf(buff, "BAS-HOME=%s%s",startDir, toolhome+1);
+    dev_putenv(buff);
 
     check();
     switch (runMode) {
@@ -506,7 +504,7 @@ int main(int argc, char **argv) {
             // continue editing scratch buffer
             wnd->editWnd->loadFile(buff, -1, false);
         }
-        setTitle(0);
+        statusMsg(0);
         runMode = edit_state;
     }
     run();
@@ -560,11 +558,12 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&View/Toggle/&Turbo", F7Key,    (Callback*)turbo_cb)->type(Item::TOGGLE);
     m->add("&View/&Next Tab",     F6Key,    (Callback*)next_tab_cb);
     scanPlugIns(m);
-    m->add("&Program/&Run",       F9Key,    (Callback*)run_cb);
-    m->add("&Program/&Break",     CTRL+'b', (Callback*)break_cb);
-    m->add("&Help/&Help Contents",   F1Key, (Callback*)help_contents_cb);
-    m->add("&Help/_&Release Notes",  F10Key,(Callback*)help_readme_cb);
-    m->add("&Help/_&Home Page",      F11Key,(Callback*)help_home_cb);
+    m->add("&Program/&Run",        F9Key,   (Callback*)run_cb);
+    m->add("&Program/&Break",      CTRL+'b',(Callback*)break_cb);
+    m->add("&Help/&Help Contents", F1Key,   (Callback*)help_contents_cb);
+    m->add("&Help/_&Program Help", F11Key,  (Callback*)help_app_cb);
+    m->add("&Help/&Release Notes", 0,       (Callback*)help_readme_cb);
+    m->add("&Help/_&Home Page",    0,       (Callback*)help_home_cb);
     m->add("&Help/&About SmallBASIC",F12Key,(Callback*)help_about_cb);
 
     callback(quit_cb);
@@ -683,7 +682,7 @@ void MainWindow::execLink(const char* file) {
         if (httpOK && extn && 0 == strncasecmp(extn, ".bas", 4)) {
             // run the remote program
             wnd->editWnd->loadFile(localFile, -1, false);
-            setTitle(file);
+            statusMsg(file);
             addHistory(file);
             basicMain(localFile);
         } else {
@@ -717,7 +716,7 @@ void MainWindow::execLink(const char* file) {
 
     if (access(file, 0) == 0) {
         wnd->editWnd->loadFile(file, -1, true);
-        setTitle(file);
+        statusMsg(file);
         if (execFile) {
             basicMain(file);
         } else {
