@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.26 2005-04-19 23:52:18 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.27 2005-04-28 23:25:18 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -193,20 +193,17 @@ void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy,
 void AnsiWindow::setPixel(int x, int y, int c) {
     begin_offscreen();
 #if defined(WIN32) 
-    if (c < 0) {
-        ::SetPixel(fl_bitmap_dc, x,y, -c);
-    } else {
-        Color fltkColor = ansiToFltk(c);
-        int r = (fltkColor>>24) & 0xFF;
-        int g = (fltkColor>>16) & 0xFF;
-        int b = (fltkColor>>8) & 0xFF;
-        ::SetPixel(fl_bitmap_dc, x,y, RGB(r,g,b));
-    }
+     if (c < 0) {
+         ::SetPixel(fl_bitmap_dc, x,y, -c);
+     } else {
+         setcolor(ansiToFltk(c));
+         drawpoint(x,y);
+     }
 #else
-    setcolor(ansiToFltk(c));
-    drawpoint(x,y);
+     setcolor(ansiToFltk(c));
+     drawpoint(x,y);
 #endif
-    redraw();
+     redraw();
 }
 
 int AnsiWindow::getPixel(int x, int y) {
