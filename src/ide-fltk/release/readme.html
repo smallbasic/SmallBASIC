@@ -1,39 +1,6 @@
 <html>
 <head>
 <title>SmallBASIC (FLTK/Cygwin) 0.9.6.1 - readme.html</title>
-<style type="text/css">
-BODY {
-  font-family: verdana,arial,helvetica,sans-serif;
-  font-size: 9pt;
-  background-color: #f4f4f4;
-  border: 2px solid #376EAB;
-  padding: 8px;
-  text-align: left;
-}
-
-TABLE { 
-  font-family: verdana,arial,helvetica,sans-serif;
-  font-size: 9pt;
-}
-
-A {
-  color: #294F75;
-  text-decoration: none;
-}
-
-h1 {
-  font-size: 20px;
-  color: #7A7272;
-  font-weight: normal;
-}
-
-h2 {
-  font-size: 22px;
-  color: #7A7272;
-  font-weight: bold;
-}
-
-</style>
 </head>
 <body>
 
@@ -67,17 +34,17 @@ SmallBASIC code to be used without any alterations.
 <li>Syntax high-lighting:
 <table>
 <tr>
-   <td style="color:#800000">keywords</td>
-   <td style="color:#808000">functions</td>
-   <td style="color:#008080">procedures</td>
-   <td style="color:#008000">comments</td>
+   <td fgcolor=#800000>keywords</td>
+   <td fgcolor=#808000>functions</td>
+   <td fgcolor=#008080>procedures</td>
+   <td fgcolor=#008000>comments</td>
 </tr>
 </table>
 
 <li>New/updated commands:
 <table cellspacing=3>
 <tr>
-   <td style="vertical-align:top;color:#008080">IMAGE</td>
+   <td fgcolor=#008080>IMAGE</td>
    <td>Allows you to display an .GIF image with code such as:
 <pre>open "logo.gif" as #1
 image #1, 0, 1,25
@@ -86,15 +53,15 @@ Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in t
   </td>
 </tr>
 <tr>
-   <td style="vertical-align:top;color:#808000">IMAGEW</td>
+   <td fgcolor=#808000>IMAGEW</td>
    <td>Returns the width of an image</td>
 </tr>
 <tr>
-   <td style="vertical-align:top;color:#808000">IMAGEH</td>
+   <td fgcolor=#808000>IMAGEH</td>
    <td>Returns the height of an image</td>
 </tr>
 <tr>
-   <td style="vertical-align:top;color:#008080">HTML</td>
+   <td fgcolor=#008080>HTML</td>
    <td>Displays html text in a "modeless" frame. The html command returns 
    immediately while the output remains displayed. 
    Syntax: HTML html, [title,] [x,y,w,h] &nbsp; <i>(title not used in this release).</i>
@@ -103,7 +70,7 @@ Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in t
   </td>
 </tr>
 <tr>
-   <td style="vertical-align:top;color:#008080">BUTTON</td>
+   <td fgcolor=#008080>BUTTON</td>
    <td>
    Syntax: BUTTON x, y, w, h, variable, caption [,type]<br>
 
@@ -112,13 +79,13 @@ Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in t
    will have closed the form, or if a radio or checkbox was 
    selected when the form was closed.</td>
 <tr>
-   <td style="vertical-align:top;color:#008080">TEXT</td>
+   <td fgcolor=#008080>TEXT</td>
    <td>
    Syntax: TEXT x, y, w, h, variable<br>
    When DOFORM returns the variable contains the user entered value.</td>
 </tr>
 <tr>
-   <td style="vertical-align:top;color:#008080">DOFORM</td>
+   <td fgcolor=#008080>DOFORM</td>
    <td>syntax: DOFORM [x,y,w,h]<br>
    Executes the form.</td>
 </tr>
@@ -130,7 +97,6 @@ using the -m switch.
 
 <li>Support for Plugins. Allows the editor to be extended with programs written in SmallBASIC.
 An alternative plugin home-directory may be specified on the command line using the -t switch.
-Example editor plugin: <a href=Bas-Home/indent.bas>Indent</a>.
 </ul>
 
 <hr>
