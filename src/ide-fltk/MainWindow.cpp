@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.42 2005-04-23 02:22:18 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.43 2005-04-28 23:29:52 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -35,14 +35,14 @@
 #include "HelpWidget.h"
 #include "sbapp.h"
 
-extern "C" {
-#include "fs_socket_client.h"
-}
-
 #if defined(WIN32) 
 #include <fltk/win32.h>
 #include <shellapi.h>
 #endif
+
+extern "C" {
+#include "fs_socket_client.h"
+}
 
 using namespace fltk;
 
@@ -58,15 +58,11 @@ enum ExecState {
 char buff[PATH_MAX];
 char *startDir;
 char *runfile = 0;
-const char* toolhome = "./Bas-Home/";
 int px,py,pw,ph;
 MainWindow* wnd;
 
-// in dev_fltk.cpp
-bool cacheLink(dev_file_t* df, char* localFile);
-void updateHelp(const char* s);
-void getHomeDir(char* fileName);
-
+const char* bashome = 0;
+const char untitled[] = "untitled.bas";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
@@ -79,6 +75,12 @@ const char aboutText[] =
     "GNU General Public License version 2 as published by "
     "the Free Software Foundation.<br><br>"
     "<i>Press F1 for help";
+
+// in dev_fltk.cpp
+void getHomeDir(char* fileName);
+bool cacheLink(dev_file_t* df, char* localFile);
+void updateForm(const char* s);
+void closeForm();
 
 //--Menu callbacks--------------------------------------------------------------
 
@@ -100,7 +102,9 @@ void quit_cb(Widget*, void* v) {
 }
 
 void statusMsg(const char* msg) {
-    wnd->fileStatus->copy_label(msg && msg[0] ? msg : "Ready");
+    const char* filename = wnd->editWnd->getFilename();
+    wnd->fileStatus->copy_label(msg && msg[0] ? msg : 
+                                filename && filename[0] ? filename : untitled);
     wnd->fileStatus->redraw();
 }
 
@@ -235,10 +239,8 @@ void font_size_cb(Widget* w, void* v) {
 void basicMain(const char* filename) {
     wnd->editWnd->readonly(true);
     showOutputTab();
-    wnd->out->clearScreen();
     runMode = run_state;
 
-    statusMsg("Choose Program/Break to end");
     runMsg("RUN");
     wnd->copy_label("SmallBASIC");
 
@@ -254,10 +256,11 @@ void basicMain(const char* filename) {
         if (gsb_last_errmsg[len-1] == '\n') {
             gsb_last_errmsg[len-1] = 0;
         }
+        closeForm(); // unhide the error
         statusMsg(gsb_last_errmsg);
         runMsg("ERR");
     } else {
-        statusMsg(0);
+        statusMsg(wnd->editWnd->getFilename());
         runMsg(0);
     }
 
@@ -268,13 +271,17 @@ void basicMain(const char* filename) {
 void run_cb(Widget*, void*) {
     const char* filename = wnd->editWnd->getFilename();
     if (runMode == edit_state) {
-        if (filename == 0 || filename[0] == 0) {
-            getHomeDir(buff);
-            strcat(buff, "untitled.bas");
-            filename = buff;
-            wnd->editWnd->doSaveFile(filename, false);
-        } else {
-            wnd->editWnd->doSaveFile(filename, true);
+        // inhibit autosave on run function with environment var
+        const char* noSave = dev_getenv("NO_RUN_SAVE");
+        if (noSave == 0 || noSave[0] != '1') {
+            if (filename == 0 || filename[0] == 0) {
+                getHomeDir(buff);
+                strcat(buff, untitled);
+                filename = buff;
+                wnd->editWnd->doSaveFile(filename, false);
+            } else {
+                wnd->editWnd->doSaveFile(filename, true);
+            }
         }
         basicMain(filename);
     } else {
@@ -315,13 +322,13 @@ void editor_cb(Widget* w, void* v) {
     }
 }
 
-void tool_cb(Widget* w, void* v) {
+void tool_cb(Widget* w, void* filename) {
     if (runMode == edit_state) {
         strcpy(opt_command, startDir);
-        strcat(opt_command, toolhome+1);
-        statusMsg((const char*)v);
+        strcat(opt_command, bashome+1);
+        statusMsg((const char*)filename);
         strcpy(buff, startDir);
-        strcat(buff, (const char*)v);
+        strcat(buff, (const char*)filename);
         basicMain(buff);
         statusMsg(wnd->editWnd->getFilename());
         opt_command[0] = 0;
@@ -379,13 +386,13 @@ void scanPlugIns(Menu* menu) {
     FILE* file;
     char buffer[1024];
     char label[1024];
-    int numFiles = filename_list(toolhome, &files);
+    int numFiles = filename_list(bashome, &files);
 
     for (int i=0; i<numFiles; i++) {
         const char* filename = (const char*)files[i]->d_name;
         int len = strlen(filename);
         if (strcasecmp(filename+len-4, ".bas") == 0) {
-            strcpy(buffer, toolhome);
+            strcpy(buffer, bashome);
             strcat(buffer, filename);
             file = fopen(buffer, "r");
 
@@ -415,7 +422,7 @@ void scanPlugIns(Menu* menu) {
                     offs++;
                 }
                 sprintf(label, "&Basic/%s", buffer+offs);
-                strcpy(buffer, toolhome+1); // use an absolute path
+                strcpy(buffer, bashome+1); // use an absolute path
                 strcat(buffer, filename);
                 menu->add(label, 0, (Callback*)
                           (editorTool ? editor_cb : tool_cb), 
@@ -453,8 +460,8 @@ int arg_cb(int argc, char **argv, int &i) {
         runMode = run_state;
         i+=2;
         return 1;
-    case 't':
-        toolhome = strdup(argv[i+1]);
+    case 'b':
+        bashome = strdup(argv[i+1]);
         i+=2;
         return 1;
     case 'm':
@@ -472,9 +479,23 @@ int main(int argc, char **argv) {
         fatal("Options are:\n"
               " -e[dit] file.bas\n"
               " -r[run] file.bas\n"
-              " -t[ool]-home\n"
+              " -b[asic]-home\n"
               " -m[odule]-home\n\n%s", help);
     }
+
+    if (bashome == 0) {
+        // not set with -b
+        bashome = getenv("BAS_HOME");
+        if (bashome == 0) {
+            // not set with environment
+            bashome = strdup("./Bas-Home/");
+        }
+    }
+
+    getcwd(buff, sizeof (buff));
+    startDir = strdup(buff);
+    sprintf(buff, "BAS-HOME=%s%s", startDir, bashome+1);
+    dev_putenv(buff);
 
     wnd = new MainWindow(600, 400);
     wnd->show(argc, argv);
@@ -482,11 +503,6 @@ int main(int argc, char **argv) {
 #if defined(WIN32) 
     wnd->icon((char *)LoadIcon(xdisplay, MAKEINTRESOURCE(101)));
 #endif
-
-    getcwd(buff, sizeof (buff));
-    startDir = strdup(buff);
-    sprintf(buff, "BAS-HOME=%s%s",startDir, toolhome+1);
-    dev_putenv(buff);
 
     check();
     switch (runMode) {
@@ -499,12 +515,12 @@ int main(int argc, char **argv) {
         break;
     default:
         getHomeDir(buff);
-        strcat(buff, "untitled.bas");
+        strcat(buff, untitled);
         if (access(buff, 0) == 0) {
             // continue editing scratch buffer
             wnd->editWnd->loadFile(buff, -1, false);
         }
-        statusMsg(0);
+        statusMsg(buff);
         runMode = edit_state;
     }
     run();
@@ -697,7 +713,7 @@ void MainWindow::execLink(const char* file) {
             }
             siteHome.append(df.name, df.drv_dw[1]);
             statusMsg(siteHome.toString());
-            updateHelp(buff);
+            updateForm(buff);
             showOutputTab();
         }
         return;
@@ -775,6 +791,8 @@ int MainWindow::handle(int e) {
 #if defined(WIN32)
 // see http://www.sysinternals.com/ntw2k/utilities.shtml
 // for the free DebugView program
+// an alternative debug method is to use insight.exe which
+// is included with cygwin. 
 #include <windows.h>
 extern "C" void trace(const char *format, ...) {
     char    buf[4096],*p = buf;
