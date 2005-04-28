@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.24 2005-04-23 02:22:18 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.25 2005-04-28 23:27:34 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -16,6 +16,7 @@
 #include <stdlib.h>
 
 #include <fltk/ask.h>
+#include <fltk/run.h>
 #include <fltk/draw.h>
 #include <fltk/layout.h>
 #include <fltk/Rectangle.h>
@@ -29,6 +30,7 @@
 #include <fltk/Choice.h>
 #include <fltk/Item.h>
 #include <fltk/Input.h>
+#include <fltk/Output.h>
 #include <fltk/SharedImage.h>
 #include <fltk/Slider.h>
 #include <fltk/ValueInput.h>
@@ -51,7 +53,6 @@
 #define FONT_SIZE_H1 22
 #define SCROLL_W 15
 #define CELL_SPACING 4
-#define INPUT_SPACING 2
 #define INPUT_WIDTH 90
 #define BUTTON_WIDTH 20
 #define SCROLL_SIZE 1000
@@ -135,6 +136,9 @@ struct Attributes : public Properties {
     String* getBgColor() {return get("bgcolor");}
     String* getFgColor() {return get("fgcolor");}
     String* getBackground() {return get("background");}
+    String* getAlign() {return get("align");}
+    bool isReadonly() {return get("readonly") != 0;}
+    bool isResizable() {return get("resizable") != 0;}
     void getValue(String& s) {s.append(getValue());}
     void getName(String& s) {s.append(getName());}
     void getHref(String& s) {s.append(getHref());}
@@ -147,6 +151,7 @@ struct Attributes : public Properties {
     int getCols(int def=20) {return getIntValue("cols", def);}
     int getMax(int def=1) {return getIntValue("min", def);}
     int getMin(int def=1) {return getIntValue("max", def);}
+    int getColSpan(int def=1) {return getIntValue("colspan", def);}
     int getIntValue(const char* attr, int def);
     Value getValue(const char* attr, int def);
 };
@@ -219,7 +224,6 @@ void FontNode::display(Display* out) {
     out->font = font;
     out->fontSize = fontSize;
 }
-
 
 //--BrNode----------------------------------------------------------------------
 
@@ -657,6 +661,7 @@ struct TdNode : public BaseNode {
     TrNode* tr;
     Color background, foreground;
     Value width;
+    U16 colspan;
 };
 
 struct TdEndNode : public BaseNode {
@@ -896,6 +901,7 @@ TdNode::TdNode(TrNode* trNode, Attributes* a) : BaseNode() {
     foreground = getColor(a->getFgColor(), 0);
     background = getColor(a->getBgColor(), 0);
     width = a->getWidth();
+    colspan = a->getColSpan(1)-1; // count 1 for each additional col
 }
 
 void TdNode::display(Display* out) {
@@ -912,6 +918,15 @@ void TdNode::display(Display* out) {
         (table->nextCol == 0 ? 0 : table->columns[table->nextCol-1]);
 
     out->y = tr->y1; // top+left of next cell
+
+    // adjust for colspan attribute
+    if (colspan) {
+        table->nextCol += colspan;
+    }
+    if (table->nextCol > table->cols-1) {
+        table->nextCol = table->cols-1;
+    }
+
     out->width = table->columns[table->nextCol]-CELL_SPACING;
     out->indent = out->x; 
     table->nextCol++;
@@ -972,10 +987,11 @@ static void def_button_callback(Widget* button, void *buttonId) {
 
 struct InputNode : public BaseNode {
     InputNode(Group* parent);
-    InputNode(Group* parent, const char* v, int len);
+    InputNode(Group* parent, Attributes* a, const char* v, int len);
     InputNode(Group* parent, Attributes* a);
     void update(strlib::List* namedInputs, Properties* p, Attributes* a);
     void display(Display* out);
+
     Widget* button;
     String onclick;
     U16 rows,cols;
@@ -988,8 +1004,10 @@ InputNode::InputNode(Group* parent, Attributes* a) :
     String* type = a->getType();
     if (type != null && type->equals("text")) {
         button = new Input(0, 0, INPUT_WIDTH, 0);
-        button->box(NO_BOX);
         button->user_data((void*)ID_TEXTBOX);
+    } else if (type != null && type->equals("readonly")) {
+        button = new Widget(0, 0, INPUT_WIDTH, 0);
+        button->user_data((void*)ID_READONLY);
     } else if (type != null && type->equals("checkbox")) {
         button = new CheckButton(0,0,BUTTON_WIDTH,0);
         button->user_data((void*)ID_CHKBOX);
@@ -1006,33 +1024,31 @@ InputNode::InputNode(Group* parent, Attributes* a) :
         button = new ThumbWheel(0,0,BUTTON_WIDTH,0);
         button->user_data((void*)ID_RANGEVAL);
     } else if (type != null && type->equals("hidden")) {
-        button = 0;
+        button = new Widget(0,0,0,0);
+        button->user_data((void*)ID_HIDDEN);
     } else {
         button = new Button(0,0,0,0);
         button->user_data((void*)ID_BUTTON);
-        button->labelcolor(ANCHOR_COLOR);
         button->callback(def_button_callback);
-    }
-    if (button) {
-        int size = a->getSize();
-        if (size != -1) {
-            button->w(size);
-        }
-        button->color(BUTTON_COLOR);
-        button->textcolor(ANCHOR_COLOR);
     }
     parent->end();
 }
 
-InputNode::InputNode(Group* parent, const char* s, int len) : BaseNode() {
+InputNode::InputNode(Group* parent, Attributes* a, const char* s, int len) : 
+    BaseNode() {
     // creates a textarea control
     parent->begin();
-    button = new Input(0, 0, INPUT_WIDTH, 0);
-    button->box(NO_BOX);
-    ((Input*)button)->value(s, len);
-    button->user_data((void*)ID_TEXTAREA);
-    button->color(BUTTON_COLOR);
-    button->textcolor(ANCHOR_COLOR);
+    if (a->isReadonly()) {
+        String str;
+        str.append(s, len);
+        button = new Widget(0, 0, INPUT_WIDTH, 0);
+        button->user_data((void*)ID_READONLY);
+        button->copy_label(str.toString());
+    } else {
+        button = new Input(0, 0, INPUT_WIDTH, 0);
+        button->user_data((void*)ID_TEXTAREA);
+        ((Input*)button)->value(s, len);
+    }
     parent->end();
 }
 
@@ -1040,54 +1056,8 @@ InputNode::InputNode(Group* parent) : BaseNode() {
     // creates a select control
     parent->begin();
     button = new Choice(0, 0, INPUT_WIDTH, 0);
-    button->color(BUTTON_COLOR);
-    button->textcolor(ANCHOR_COLOR);
     button->user_data((void*)ID_SELECT);
     parent->end();
-}
-
-void InputNode::display(Display* out) {
-    if (button == 0) {
-        return;
-    }
-    
-    int height = 4+(int)(getascent()+getdescent());
-    switch ((int)button->user_data()) {
-    case ID_SELECT:
-        height += 4;
-        break;
-    case ID_BUTTON:
-        if (button->w() == 0 && button->label()) {
-            button->w(12+(int)getwidth(button->label()));
-        }
-        break;
-    case ID_TEXTAREA:
-        button->w(4+((int)getwidth("W")*cols));
-        height = 4+((int)(getascent()+getdescent())*rows);
-        break;
-    default:
-        break;
-    }
-    if (out->x != out->indent && button->w() > out->width-out->x) {
-        out->newRow();
-    }
-    out->lineHeight = height;
-    button->x(out->x);
-    button->y(out->y-(int)getascent());
-    button->h(out->lineHeight-2);
-    button->textfont(out->font);
-    button->textsize(out->fontSize);
-    button->labelsize(out->fontSize);
-    if (button->y()+button->h() < out->height && button->y() >= 0) {
-        button->show();
-    } else {
-        // draw a fake control in case partially visible
-        setcolor(button->color());
-        fillrect(*button);
-        setcolor(out->color);            
-    }
-    out->x += button->w() + INPUT_SPACING;
-    out->content = true;
 }
 
 void createDropList(InputNode* node, strlib::List* options) {
@@ -1106,24 +1076,33 @@ void createDropList(InputNode* node, strlib::List* options) {
 void InputNode::update(strlib::List* names, Properties* env, Attributes* a) {
     Valuator* valuator;
     Input* input;
+    Color color;
     String* name = a->getName();
     String* value = a->getValue();
-
-    if (value == 0 && name != 0 && env) {
-        // use external attributes
-        value = env->get(name->toString());
-    }
+    String* align = a->getAlign();
 
     if (name != null) {
         names->add(new NamedInput(this, name));
     }
-    onclick.append(a->getOnclick());
-    if (button && onclick.length()) {
-        button->callback(onclick_callback);
+
+    if (button == 0) {
+        return;
+    }
+
+    // value uses environment/external attributes
+    if (value == 0 && name != 0 && env) {
+        value = env->get(name->toString());
     }
 
     switch ((int)button->user_data()) {
+    case ID_READONLY:
+        button->align(ALIGN_INSIDE_LEFT|ALIGN_CLIP);
+        if (value && value->length()) {
+            button->copy_label(value->toString());
+        }
+        // fallthru
     case ID_TEXTAREA:
+        button->box(NO_BOX);
         rows = a->getRows();
         cols = a->getCols();
         if (rows > 1) {
@@ -1140,7 +1119,8 @@ void InputNode::update(strlib::List* names, Properties* env, Attributes* a) {
             valuator->value(value->toInteger());
         }
         break;
-    case INPUT_WIDTH:
+    case ID_TEXTBOX:
+        button->box(NO_BOX);
         input = (Input*)button;
         if (value && value->length()) {
             input->value(value->toString());
@@ -1153,7 +1133,122 @@ void InputNode::update(strlib::List* names, Properties* env, Attributes* a) {
             button->copy_label(" ");
         }
         break;
+    case ID_HIDDEN:
+        if (value && value->length()) {
+            button->copy_label(value->toString());
+        }
+        break;
     }
+
+    // size
+    int size = a->getSize();
+    if (size != -1) {
+        button->w(size);
+    }
+
+    // resizable TODO-testme
+    if (a->isResizable()) {
+        button->parent()->resizable(button);
+    }
+    
+    // set callback
+    onclick.append(a->getOnclick());
+    if (onclick.length()) {
+        button->callback(onclick_callback);
+    }
+
+    // set colors
+    color = getColor(a->getBgColor(), 0);
+    if (color) {
+        button->color(color); // background
+    } else {
+        button->color(BUTTON_COLOR);        
+    }
+    color = getColor(a->getFgColor(), 0);
+    if (color) {
+        button->labelcolor(color); // foreground
+        button->textcolor(color);
+    } else {
+        button->labelcolor(ANCHOR_COLOR);
+        button->textcolor(ANCHOR_COLOR);
+    }
+
+    // set alignment
+    if (align != 0) {
+        if (align->equals("right")) {
+            button->align(ALIGN_INSIDE_RIGHT|ALIGN_CLIP);
+        } else if (align->equals("center")) {
+            button->align(ALIGN_CENTER|ALIGN_CLIP);
+        } else if (align->equals("top")) {
+            button->align(ALIGN_INSIDE_TOP|ALIGN_CLIP);
+        } else if (align->equals("bottom")) {
+            button->align(ALIGN_INSIDE_BOTTOM|ALIGN_CLIP);
+        } else {
+            button->align(ALIGN_INSIDE_LEFT|ALIGN_CLIP);
+        }
+    }
+
+    // set border
+    switch (a->getBorder(0)) {
+    case 1:
+        button->box(BORDER_BOX);
+        break;
+    case 2:
+        button->box(SHADOW_BOX);
+        break;
+    case 3:
+        button->box(ENGRAVED_BOX);
+        break;
+    case 4:
+        button->box(THIN_DOWN_BOX);
+        break;
+    }
+}
+
+void InputNode::display(Display* out) {
+    if (button == 0 || ID_HIDDEN == (int)button->user_data()) {
+        return;
+    }
+    
+    int height = 4+(int)(getascent()+getdescent());
+    switch ((int)button->user_data()) {
+    case ID_SELECT:
+        height += 4;
+        break;
+    case ID_BUTTON:
+        if (button->w() == 0 && button->label()) {
+            button->w(12+(int)getwidth(button->label()));
+        }
+        break;
+    case ID_TEXTAREA:
+    case ID_READONLY:
+        button->w(4+((int)getwidth("$")*cols));
+        height = 4+((int)(getascent()+getdescent())*rows);
+        break;
+    default:
+        break;
+    }
+    if (out->x != out->indent && button->w() > out->width-out->x) {
+        out->newRow();
+    }
+    out->lineHeight = height;
+    button->x(out->x);
+    button->y(out->y-(int)getascent());
+    button->h(out->lineHeight-2);
+    button->labelfont(out->font);
+    button->textfont(out->font);
+    button->textsize(out->fontSize);
+    button->labelsize(out->fontSize);
+    if (button->y()+button->h() < out->height && button->y() >= 0) {
+        button->show();
+    } else {
+        // draw a fake control in case partially visible
+        setcolor(button->color());
+        fillrect(*button);
+        setcolor(out->color);            
+    }
+    out->x += button->w();
+    out->content = true;
 }
 
 //--EnvNode---------------------------------------------------------------------
@@ -1239,7 +1334,7 @@ void HelpWidget::cleanup() {
 void HelpWidget::reloadPage() {
     cleanup();
     init();
-    compose();
+    compile();
     redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
     pushedAnchor = 0;
 }
@@ -1275,6 +1370,9 @@ const char* HelpWidget::getInputValue(Widget* widget) {
     case ID_RANGEVAL:
         sprintf(rangeValue, "%f", ((Valuator*)widget)->value());
         return rangeValue;
+    case ID_HIDDEN:
+    case ID_READONLY:
+        return widget->label();
     }
     return null;
 }
@@ -1303,20 +1401,24 @@ const char* HelpWidget::getInputName(Widget* button) {
     return null;
 }
 
-// return all of the forms names and values
+// return all of the forms names and values - except hidden ones
 void HelpWidget::getInputProperties(Properties* p) {
+    if (p == 0) {
+        return;
+    }
     Object** list = namedInputs.getList();
     int len = namedInputs.length();
     for (int i=0; i<len; i++) {
         NamedInput* ni = (NamedInput*)list[i];
         const char* value = getInputValue(ni->input->button);
-        if (value && p) {
+        if (value) {
             p->put(ni->name.toString(), value);
         }
     }
 }
 
-// update a widget's display value
+// update a widget's display value using the given string based 
+// assignment statement, eg val=1000
 bool HelpWidget::setInputValue(const char* assignment) {
     String s = assignment;
     String name = s.lvalue();
@@ -1355,6 +1457,9 @@ bool HelpWidget::setInputValue(const char* assignment) {
             case ID_RANGEVAL:
                 ((Valuator*)button)->value(value.toNumber());
                 break;
+            case ID_READONLY:
+                button->copy_label(value.toString()); 
+                break;
             }
             return true;
         }
@@ -1368,14 +1473,19 @@ void HelpWidget::scrollTo(const char* anchorName) {
     for (int i=0; i<len; i++) {
         AnchorNode* p = (AnchorNode*)list[i];
         if (p->name.equals(anchorName)) {
-            vscroll = -p->getY();
-            redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
+            if (p->getY() > scrollHeight) {
+                vscroll = -scrollHeight;
+            } else {
+                vscroll = -p->getY();
+            }
+            redraw(DAMAGE_ALL);
             return;
         }
     }
 }
 
 void HelpWidget::scrollTo(int scroll) {
+    // called from the scrollbar using scrollbar units
     if (vscroll != scroll) {
         vscroll = -(scroll*scrollHeight/SCROLL_SIZE);
         redraw(DAMAGE_ALL);
@@ -1430,9 +1540,6 @@ void HelpWidget::draw() {
     
     setcolor(out.background);
     fillrect(Rectangle(0, 0, w()-SCROLL_W, out.height));
-    //TODO: show selection range
-    //setcolor(color());
-    //fillrect(Rectangle(hscroll, 100+vscroll, w()-SCROLL_W, out.lineHeight));
     setcolor(out.color);
 
     // hide any inputs
@@ -1613,8 +1720,11 @@ int HelpWidget::handle(int event) {
             if (pushed) {
                 this->event.empty();
                 this->event.append(pushedAnchor->href.toString());
-                user_data((void*)this->event.toString());
-                do_callback();
+                if (this->event.length()) {
+                    // href has been set
+                    user_data((void*)this->event.toString());
+                    do_callback();
+                }
             }
             return 1;
         }
@@ -1638,7 +1748,7 @@ void HelpWidget::onclick(Widget* button) {
     }
 }
 
-void HelpWidget::compose() {
+void HelpWidget::compile() {
     U8 pre = false;
     U8 bold = false;
     U8 italic = false;
@@ -1843,7 +1953,8 @@ void HelpWidget::compose() {
                     newline = true;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "textarea", 8) && tagPair) {
-                    inputNode = new InputNode(this, tagPair, tagBegin-tagPair);
+                    inputNode = new 
+                        InputNode(this, &p, tagPair, tagBegin-tagPair);
                     nodeList.add(inputNode);
                     inputs.add(inputNode);
                     inputNode->update(&namedInputs, cookies, &p);
@@ -1860,7 +1971,11 @@ void HelpWidget::compose() {
                 } else if (0 == strncasecmp(tag, "option", 6) && tagPair) {
                     String* option = new String();
                     option->append(tagPair, tagBegin-tagPair);
-                    options.add(option);
+                    options.add(option); // continue scan for more options
+                } else if (0 == strncasecmp(tag, "title", 5) && tagPair) {
+                    title.empty();
+                    title.append(tagPair, tagBegin-tagPair);
+                    tagPair = 0;
                 }
             } else if (isalpha(tag[0]) || tag[0] == '!') {
                 // process the start of the tag
@@ -1883,8 +1998,7 @@ void HelpWidget::compose() {
                     nodeList.add(new HrNode());
                     newline = true;
                 } else if (0 == strncasecmp(tag, "title", 5)) {
-                    tagEnd = strchr(tagEnd+1, '>'); // skip past </title>
-                    text = skipWhite(tagEnd+1);
+                    tagPair = text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "pre", 3)) {
                     pre = true;
                     node = new FontNode(COURIER, fontSize, 0, bold, italic);
@@ -2152,7 +2266,8 @@ void HelpWidget::loadFile(const char *f) {
 
     reloadPage();
     if (target) {
-        scrollTo(target);
+        fltk::flush();
+        scrollTo(target+1);
     }
 }
 

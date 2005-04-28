@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.18 2005-04-19 23:52:19 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.19 2005-04-28 23:27:34 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -27,6 +27,8 @@
 #define ID_RADIO    5
 #define ID_SELECT   6
 #define ID_RANGEVAL 7
+#define ID_HIDDEN   8
+#define ID_READONLY 9
 
 using namespace fltk;
 using namespace strlib;
@@ -48,6 +50,7 @@ public:
     const char* getInputValue(Widget* button);
     const char* getInputValue(int i);
     const char* getInputName(Widget* button);
+    const char* getTitle() {return title;}
     const String getEventName() {return event;}
     void getInputProperties(Properties* p);
     void setCookies(Properties* p) {cookies=p;}
@@ -59,7 +62,7 @@ public:
     void reloadImages();
 
     protected:
-    void compose();
+    void compile();
     void reloadPage();
     void init();
     void cleanup();
@@ -86,6 +89,7 @@ public:
     strlib::String event;
     strlib::String fileName;
     strlib::String docHome;
+    strlib::String title;
 };
 
 #ifdef FL_HELP_WIDGET_RESOURCES
