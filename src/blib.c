@@ -486,11 +486,12 @@ void	cmd_print(int output)
 	*/
 	do	{
 		code = code_peek();
+        if (kw_check_evexit(code)) {
+            exitf = 1;
+            break;
+        }
+
 		switch ( code )	{
-		case	kwTYPE_LINE:
-		case	kwTYPE_EOC:
-			exitf = 1;
-			break;
 		case	kwTYPE_SEP:
 			code_skipnext();
 			last_op = code_getnext();
