@@ -1,8 +1,8 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.43 2005-04-28 23:29:52 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.44 2005-05-01 02:05:02 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <limits.h>
+#include <sys/stat.h>
 
 #include <fltk/run.h>
 #include <fltk/error.h>
@@ -106,6 +107,10 @@ void statusMsg(const char* msg) {
     wnd->fileStatus->copy_label(msg && msg[0] ? msg : 
                                 filename && filename[0] ? filename : untitled);
     wnd->fileStatus->redraw();
+
+#if defined(WIN32) 
+     ::SetFocus(xid(Window::first()));
+#endif
 }
 
 void runMsg(const char * msg) {
@@ -200,12 +205,24 @@ void fullscreen_cb(Widget *w, void* v) {
 
 void next_tab_cb(Widget* w, void* v) {
     Widget* current = wnd->tabGroup->selected_child();
-    if (current == wnd->helpGroup) {
-        wnd->tabGroup->selected_child(wnd->outputGroup);
-    } else if (current == wnd->outputGroup) {
-        wnd->tabGroup->selected_child(wnd->editGroup);
+    if (runMode == edit_state) {
+        // toggle between edit and help
+        if (current == wnd->helpGroup) {
+            wnd->tabGroup->selected_child(wnd->editGroup);
+        } else if (current == wnd->outputGroup) {
+            wnd->tabGroup->selected_child(wnd->editGroup);
+        } else {
+            wnd->tabGroup->selected_child(wnd->helpGroup);
+        }
     } else {
-        wnd->tabGroup->selected_child(wnd->helpGroup);
+        // toggle between edit and output
+        if (current == wnd->helpGroup) {
+            wnd->tabGroup->selected_child(wnd->outputGroup);
+        } else if (current == wnd->outputGroup) {
+            wnd->tabGroup->selected_child(wnd->editGroup);
+        } else {
+            wnd->tabGroup->selected_child(wnd->outputGroup);
+        }
     }
 }
 
@@ -523,7 +540,7 @@ int main(int argc, char **argv) {
         statusMsg(buff);
         runMode = edit_state;
     }
-    run();
+    return run();
 }
 
 //--MainWindow methods----------------------------------------------------------
@@ -725,17 +742,37 @@ void MainWindow::execLink(const char* file) {
     }
 
     char* extn = strrchr(file, '.');
-    if (extn && 0 == strncasecmp(extn, ".bas ", 5)) {
+    if (extn && (0 == strncasecmp(extn, ".bas ", 5) ||
+                 0 == strncasecmp(extn, ".sbx ", 5))) {
         strcpy(opt_command, extn+5);
         extn[4] = 0; // make args available to bas program
     }
 
+    // if the extension is .sbx and this does not exists or is older 
+    // than the matching .bas then rename to .bas and set opt_nosave 
+    // to false - otherwise set execFile flag to true
+    if (0 == strncasecmp(extn, ".sbx", 4)) {
+        struct stat st_sbx;
+        struct stat st_bas;
+        bool sbxExists = (stat(file, &st_sbx) == 0);
+        strcpy(extn+1, "bas"); // remains .bas unless sbx valid
+        opt_nosave = 0; // create/use sbx files
+        if (sbxExists) {
+            if (stat(file, &st_bas) == 0 &&
+                st_sbx.st_mtime > st_bas.st_mtime) {
+                strcpy(extn+1, "sbx");
+                // sbx exists and is newer than .bas 
+                execFile = true;
+            }
+        }
+    }
     if (access(file, 0) == 0) {
-        wnd->editWnd->loadFile(file, -1, true);
         statusMsg(file);
         if (execFile) {
             basicMain(file);
+            opt_nosave = 1;
         } else {
+            wnd->editWnd->loadFile(file, -1, true);
             showEditTab();
         }
     } else {
