@@ -8,6 +8,7 @@
 
 all:   sbfltk.exe
 linux: sbfltk
+debug: sbfltk.exe
 
 SOURCE =                                        \
     Fl_Ansi_Window.cpp                          \
@@ -64,17 +65,19 @@ COMMON=                                         \
 
 MAKEDEPEND  = /usr/X11R6/bin/makedepend -Y
 OPTIM = -O3 -Os -Wall -Wunused -fno-exceptions
-DEBUG_OPTIM = -g -O0 -Wall -Wunused -fno-exceptions 
 PLATFORM=-D_UnixOS -D_FLTK
 
 ## patched fltk-config to remove -mwindows 
 ## release with -s
 # add -lpng -ljpeg if not built into FLTK
 IMAGELIBS=-lfltk_images -lpng -ljpeg
+linux: IMAGELIBS=-lfltk_images
 LDLIBS = -s -O3 -Os `fltk-config --ldflags` ${IMAGELIBS}
-LIN_LDLIBS = -s -O3 -Os `fltk-config --ldflags` -lfltk_images
-DEBUG_LDLIBS = `fltk-config --ldflags` ${IMAGELIBS}
 RESOURCES = sbfltk.res
+
+#debug options
+debug: LDLIBS = -g `fltk-config --ldflags` ${IMAGELIBS}
+debug: OPTIM = -g -O0 -Wall -Wunused -fno-exceptions 
 
 CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
 OBJDIR = ./objs/
