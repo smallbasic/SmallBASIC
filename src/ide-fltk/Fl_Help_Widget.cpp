@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.25 2005-04-28 23:27:34 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.26 2005-05-01 02:03:22 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -1478,7 +1478,7 @@ void HelpWidget::scrollTo(const char* anchorName) {
             } else {
                 vscroll = -p->getY();
             }
-            redraw(DAMAGE_ALL);
+            redraw(DAMAGE_ALL | DAMAGE_SCROLL);
             return;
         }
     }
@@ -1580,8 +1580,8 @@ void HelpWidget::draw() {
         }
     }
 
-    if (out.exposed) {
-        // size has changed
+    if (out.exposed || (damage()&DAMAGE_SCROLL)) {
+        // size has changed or need to recombob scrollbar
         int pageHeight = (out.y-vscroll)+out.lineHeight;
         int height = h();
         int scrollH = pageHeight-height;
@@ -1622,9 +1622,11 @@ void HelpWidget::draw() {
 }
 
 int HelpWidget::onMove(int event) {
+    int x = fltk::event_x();
+    int y = fltk::event_y();
+
     if (pushedAnchor && event == fltk::DRAG) {
-        bool pushed = pushedAnchor->ptInSegment(fltk::event_x(), 
-                                                fltk::event_y());
+        bool pushed = pushedAnchor->ptInSegment(x, y);
         if (pushedAnchor->pushed != pushed) {
             Widget::cursor(fltk::CURSOR_HAND);
             pushedAnchor->pushed = pushed;
@@ -1636,7 +1638,7 @@ int HelpWidget::onMove(int event) {
         Object** list = anchors.getList();
         for (int i=0; i<len; i++) {
             AnchorNode* p = (AnchorNode*)list[i];
-            if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
+            if (p->ptInSegment(x, y)) {
                 Widget::cursor(fltk::CURSOR_HAND);
                 return 1;
             }
@@ -1665,7 +1667,7 @@ int HelpWidget::onPush(int event) {
 
 int HelpWidget::handle(int event) {
     int handled = Group::handle(event);
-    if (handled) {
+    if (handled && event != fltk::MOVE) {
         return handled;
     }
     switch (event) {
@@ -1976,6 +1978,9 @@ void HelpWidget::compile() {
                     title.empty();
                     title.append(tagPair, tagBegin-tagPair);
                     tagPair = 0;
+                } else if (0 == strncasecmp(tag, "script", 6) ||
+                           0 == strncasecmp(tag, "style", 5)) {
+                    tagPair = 0;
                 }
             } else if (isalpha(tag[0]) || tag[0] == '!') {
                 // process the start of the tag
@@ -2113,6 +2118,9 @@ void HelpWidget::compile() {
                         nodeList.add(node);
                         images.add(node);
                     }
+                } else if (0 == strncasecmp(tag, "script", 6) ||
+                           0 == strncasecmp(tag, "style", 5)) {
+                    tagPair = text;
                 } else {
                     // unknown tag
                     text = skipWhite(tagEnd+1);
@@ -2266,7 +2274,8 @@ void HelpWidget::loadFile(const char *f) {
 
     reloadPage();
     if (target) {
-        fltk::flush();
+        // draw to obtain dimensions
+        fltk::flush(); 
         scrollTo(target+1);
     }
 }
