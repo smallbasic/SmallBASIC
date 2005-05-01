@@ -1,12 +1,12 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.25 2005-04-23 02:22:18 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.26 2005-05-01 02:02:05 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
 // Programmer's Guide.
 // Copyright 1998-2003 by Bill Spitzak and others.
 //
-// Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -38,11 +38,9 @@
 
 using namespace fltk;
 
-//bool loading;
-
 TextDisplay::StyleTableEntry styletable[] = { // Style table
     { BLACK,            COURIER, 14 }, // A - Plain
-    { color(0,128,0),   COURIER, 14 }, // B - Ccomments
+    { color(0,128,0),   COURIER, 14 }, // B - Comments
     { color(0,0,192),   COURIER, 14 }, // C - Strings
     { color(128,0,0),   COURIER_BOLD, 14 }, // D - code_keywords
     { color(128,128,0), COURIER_BOLD, 14 }, // E - code_functions
@@ -297,88 +295,200 @@ struct CodeEditor : public TextEditor {
         undoBuff = 0;
         curBuff = 0;
     }
-    
-    int handle(int e) {
-        if (readonly && (e == KEY || e == PASTE)) {
-            return 0;
-        }
-        
-        int r = TextEditor::handle(e);
-        if (e == KEYUP || e == RELEASE) {
-            int row, col;
-            position_to_linecol(mCursorPos, &row, &col);
-            if (row < 9999 && col < 9999) {
-                setRowCol(row, col+1);
-            }
-        }
-        return r;
-    }
-    
-    void saveUndo() {
-        if (undoBuff) {
-            free(undoBuff);
-        }
-        undoBuff = curBuff;
-        curBuff = strdup(buffer()->text());
-        oldCursorPos = mCursorPos;
-    }       
-    
-    void undo() {
-        if (undoBuff) {
-            buffer()->text(undoBuff);
-            free(undoBuff);
-            undoBuff = 0;
-            mCursorPos = oldCursorPos;
-        }
-    }
-    
-    void gotoLine(int line) {
-        int numLines = buffer()->count_lines(0, buffer()->length());
-        if (line < 1) {
-            line = 1;
-        } else if (line > numLines) {
-            line = numLines;
-        }
-        
-        scroll(line-(mNVisibleLines/2), 0);
-        insert_position(buffer()->skip_lines(0, line-1));
-    }
 
     void getRowCol(int *row, int *col) {
         position_to_linecol(mCursorPos, row, col);
     }
-
-    void getSelStartRowCol(int *row, int *col) {
-        int start = buffer()->primary_selection()->start();
-        int end = buffer()->primary_selection()->end();
-        if (start == end) {
-            *row = -1;
-            *col = -1;
-        } else {
-            position_to_linecol(start, row, col);
-        }
-    }
-
-    void getSelEndRowCol(int *row, int *col) {
-        int start = buffer()->primary_selection()->start();
-        int end = buffer()->primary_selection()->end();
-        if (start == end) {
-            *row = -1;
-            *col = -1;
-        } else {
-            position_to_linecol(end, row, col);
-        }
-    }
-
     int position() {
         return mCursorPos;
     }
+
+    int handle(int e);
+    void saveUndo();
+    void undo();
+    void gotoLine(int line);
+    void getSelStartRowCol(int *row, int *col);
+    void getSelEndRowCol(int *row, int *col);
+    unsigned getIndent(char* indent, int len, int pos);
 
     int oldCursorPos;
     bool readonly;
     char* undoBuff;
     char* curBuff;
 };
+
+unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
+    // count the indent level and find the start of text
+    const char *buf = buffer()->line_text(pos);
+    int i = 0;
+    while (buf && buf[i] == ' ' && i < len) {
+        spaces[i] = buf[i];
+        i++;
+    }
+    
+    if (strncasecmp(buf+i, "while", 5) == 0 ||
+        strncasecmp(buf+i, "if", 2) == 0 ||
+        strncasecmp(buf+i, "elseif", 6) == 0 ||
+        strncasecmp(buf+i, "elif", 4) == 0 ||
+        strncasecmp(buf+i, "else", 4) == 0 ||
+        strncasecmp(buf+i, "repeat", 6) == 0 ||
+        strncasecmp(buf+i, "for", 3) == 0 ||
+        strncasecmp(buf+i, "func", 4) == 0) {
+        // indent new line
+        for (int j=0; j<4; j++, i++) {
+            spaces[i] = ' ';
+        }
+    }
+    spaces[i] = 0;
+    return i;
+}
+    
+int CodeEditor::handle(int e) {
+    int row, col;
+    int cursorPos = mCursorPos;
+    char spaces[250];
+    int indent;
+
+    if (readonly && (e == KEY || e == PASTE)) {
+        return 0;
+    }
+
+    if (e == KEY && event_key() == TabKey) {
+        if (event_key_state(LeftCtrlKey) ||
+            event_key_state(RightCtrlKey)) {
+            // pass ctrl+tab to parent
+            return 0;
+        }
+
+        // get the desired indent based on the previous line
+        int lineStart = buffer()->line_start(mCursorPos);
+        int prevLineStart = buffer()->line_start(lineStart-1);
+        indent = prevLineStart == 0 ? 0 : 
+            getIndent(spaces, sizeof(spaces), prevLineStart);
+
+        // get the current lines indent
+        const char *buf = buffer()->line_text(lineStart);
+        int curIndent = 0;
+        while (buf && buf[curIndent] == ' ') {
+            curIndent++;
+        }
+
+        // adjust indent for closure statements
+        if (strncasecmp(buf+curIndent, "wend", 4) == 0 ||
+            strncasecmp(buf+curIndent, "fi", 2) == 0 ||
+            strncasecmp(buf+curIndent, "endif", 5) == 0 ||
+            strncasecmp(buf+curIndent, "elseif", 6) == 0 ||
+            strncasecmp(buf+curIndent, "elif", 4) == 0 ||
+            strncasecmp(buf+curIndent, "else", 4) == 0 ||
+            strncasecmp(buf+curIndent, "next", 4) == 0 ||
+            strncasecmp(buf+curIndent, "end", 3) == 0  ||
+            strncasecmp(buf+curIndent, "until", 5) == 0) {
+            indent -= 4;
+        }
+        
+        if (curIndent < indent) {
+            // insert additional spaces
+            int len = min((int)sizeof(spaces)-1, indent-curIndent);
+            memset(spaces, ' ', len);
+            spaces[len] = 0;
+            buffer()->insert(lineStart, spaces);
+            if (mCursorPos-lineStart < indent) {
+                // jump cursor to start of text
+                mCursorPos = lineStart + indent;
+            } else {
+                // move cursor along with text movement, staying on same line
+                int maxpos = buffer()->line_end(lineStart);
+                if (mCursorPos + len <= maxpos) {
+                    mCursorPos += len;
+                }
+            }
+        } else if (curIndent > indent) {
+            // remove excess spaces
+            buffer()->remove(lineStart, lineStart+(curIndent-indent));
+        } else {
+            // already have ideal indent - soft-tab to indent
+            insert_position(lineStart + indent);
+        }
+
+        return 1; // end tab key processing
+    }
+
+    // call default handler then process keys
+    int rtn = TextEditor::handle(e);
+    switch (e) {
+    case KEY:
+        if (event_key() == ReturnKey) {
+            indent = getIndent(spaces, sizeof(spaces), cursorPos);
+            if (indent) {
+                buffer()->insert(mCursorPos, spaces);
+                mCursorPos += indent;
+            }
+        }
+        
+        // fallthru to show row-col
+    case RELEASE:
+        position_to_linecol(mCursorPos, &row, &col);
+        if (row < 9999 && col < 9999) {
+            setRowCol(row, col+1);
+        }
+        break;
+    }
+
+    return rtn;
+}
+
+void CodeEditor::saveUndo() {
+    if (undoBuff) {
+        free(undoBuff);
+    }
+    undoBuff = curBuff;
+    curBuff = strdup(buffer()->text());
+    oldCursorPos = mCursorPos;
+}       
+    
+void CodeEditor::undo() {
+    if (undoBuff) {
+        buffer()->text(undoBuff);
+        free(undoBuff);
+        undoBuff = 0;
+        mCursorPos = oldCursorPos;
+    }
+}
+    
+void CodeEditor::gotoLine(int line) {
+    int numLines = buffer()->count_lines(0, buffer()->length());
+    if (line < 1) {
+        line = 1;
+    } else if (line > numLines) {
+        line = numLines;
+    }
+    
+    scroll(line-(mNVisibleLines/2), 0);
+    insert_position(buffer()->skip_lines(0, line-1));
+}
+
+
+void CodeEditor::getSelStartRowCol(int *row, int *col) {
+    int start = buffer()->primary_selection()->start();
+    int end = buffer()->primary_selection()->end();
+    if (start == end) {
+        *row = -1;
+        *col = -1;
+    } else {
+        position_to_linecol(start, row, col);
+    }
+}
+
+void CodeEditor::getSelEndRowCol(int *row, int *col) {
+    int start = buffer()->primary_selection()->start();
+    int end = buffer()->primary_selection()->end();
+    if (start == end) {
+        *row = -1;
+        *col = -1;
+        } else {
+        position_to_linecol(end, row, col);
+    }
+}
 
 //--EditorWindow----------------------------------------------------------------
 
@@ -415,7 +525,6 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
                            sizeof(styletable) / sizeof(styletable[0]),
                            'A', style_unfinished_cb, 0);
     editor->textfont(COURIER);
-    editor->box(THIN_DOWN_BOX);
     editor->cursor_style(TextDisplay::BLOCK_CURSOR);
     editor->selection_color(fltk::color(192,192,192));
     end();
@@ -499,9 +608,6 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI) {
     if (updateUI) {
         statusMsg(filename);
         addHistory(filename);
-// #if defined(WIN32) 
-//     ::SetFocus(xid(Window::first()));
-// #endif
     }
 
     textbuf->call_modify_callbacks();
