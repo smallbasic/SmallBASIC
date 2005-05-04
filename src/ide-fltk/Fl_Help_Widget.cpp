@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.26 2005-05-01 02:03:22 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.27 2005-05-04 00:39:25 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -2477,8 +2477,6 @@ SharedImage* loadImage(const char* name, uchar* buff) {
         return jpegImage::get(name, buff);
     } else if (strcasecmp(name+(len-4), ".gif") == 0) {
         return gifImage::get(name, buff);
-    } else if (strcasecmp(name+(len-4), ".png") == 0) {
-        return pngImage::get(name, buff);
     } else if (strcasecmp(name+(len-4), ".xpm") == 0) {
         return xpmFileImage::get(name, buff);
     }

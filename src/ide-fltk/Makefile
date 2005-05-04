@@ -70,8 +70,9 @@ PLATFORM=-D_UnixOS -D_FLTK
 ## patched fltk-config to remove -mwindows 
 ## release with -s
 # add -lpng -ljpeg if not built into FLTK
-IMAGELIBS=-lfltk_images -lpng -ljpeg
+IMAGELIBS=-lfltk_images -lfltk_jpeg
 linux: IMAGELIBS=-lfltk_images
+debug: IMAGELIBS=-lfltk_images -ljpeg
 LDLIBS = -s -O3 -Os `fltk-config --ldflags` ${IMAGELIBS}
 RESOURCES = sbfltk.res
 
@@ -79,7 +80,7 @@ RESOURCES = sbfltk.res
 debug: LDLIBS = -g `fltk-config --ldflags` ${IMAGELIBS}
 debug: OPTIM = -g -O0 -Wall -Wunused -fno-exceptions 
 
-CXXFLAGS = ${OPTIM} -I../ -I. `fltk-config --cxxflags`
+CXXFLAGS = ${OPTIM} -I../. -I. `fltk-config --cxxflags`
 OBJDIR = ./objs/
 
 OBJS += $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(SOURCE)))) \

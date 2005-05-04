@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.40 2005-04-28 23:33:19 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.41 2005-05-04 00:39:25 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -13,7 +13,6 @@
 #include "device.h"
 #include "smbas.h"
 
-#include <sys/socket.h>
 #include <fltk/run.h>
 #include <fltk/events.h>
 #include <fltk/SharedImage.h>
@@ -29,7 +28,16 @@ extern "C" {
 }
 
 #ifdef WIN32
-#include <windows.h>
+ #include <windows.h>
+ #ifdef __MINGW32__
+  #include <winsock.h>
+ #endif
+#endif
+
+#if defined(__MINGW32__)
+ #define makedir(f) mkdir(f)
+#else
+ #define makedir(f) mkdir(f, 0700)
 #endif
 
 #define PEN_ON  2
@@ -579,7 +587,7 @@ C_LINKAGE_END
 
 void getHomeDir(char* fileName) {
     sprintf(fileName, "%s/.smallbasic/", getenv("HOME"));
-    mkdir(fileName, 0777);
+    makedir(fileName);
 }
 
 // close the modeless help widget
@@ -606,7 +614,7 @@ bool cacheLink(dev_file_t* df, char* localFile) {
     
     getHomeDir(localFile);
     strcat(localFile, "cache/");
-    mkdir(localFile, 0777);
+    makedir(localFile);
 
     // create host name component
     strncat(localFile, url+7, pathBegin-url-7);
@@ -617,7 +625,7 @@ bool cacheLink(dev_file_t* df, char* localFile) {
             localFile[i] = '_';
         }
     }
-    mkdir(localFile, 0777);
+    makedir(localFile);
     if (formView) {
         formView->setDocHome(localFile);
     }
@@ -629,7 +637,7 @@ bool cacheLink(dev_file_t* df, char* localFile) {
         do {
             pathNext = strchr(pathBegin, '/');
             strncat(localFile, pathBegin, pathNext-pathBegin+1);
-            mkdir(localFile, 0777);
+            makedir(localFile);
             pathBegin = pathNext+1;
         } while (pathBegin < pathEnd && ++level < 20);
     }

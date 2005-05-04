@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.27 2005-04-28 23:25:18 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.28 2005-05-04 00:39:25 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -127,13 +127,13 @@ void AnsiWindow::draw() {
             setcolor(color());
             fillrect(Rectangle(W, H));
             setfont(labelfont(), labelsize());
-            old->draw(Rectangle(old->w(), old->h()), 0, OUTPUT);
+            old->draw(Rectangle(old->w(), old->h()));
             old->destroy_cache();
             delete old;
             resized = false;
         }
 
-        img->draw(Rectangle(w(), h()), 0, OUTPUT);
+        img->draw(Rectangle(w(), h()));
     } else {
         setcolor(color());
         fillrect(Rectangle(w(), h()));

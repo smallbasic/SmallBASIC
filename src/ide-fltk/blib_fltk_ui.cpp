@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.8 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.9 2005-05-04 00:39:25 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -55,11 +55,11 @@ struct AnchorLink : public Button {
         int bw = w();
         int bh = h();
         Rectangle r(bx,by,bw,bh);
-        box()->inset(r, style(), 0);
+        box()->inset(r);
         draw_background();
         setcolor(labelcolor());
         draw_label(Rectangle(bx, by-2, bw, bh), 
-                   style(), ALIGN_INSIDE|ALIGN_BOTTOMLEFT);
+                   ALIGN_INSIDE|ALIGN_BOTTOMLEFT);
         drawline(2, bh-2, 2+(int)getwidth(label()), bh-2);
         focusbox()->draw(Rectangle(bx+1, by+1, bw-2, bh-2), style(), 0);
         // current_flags_highlight());

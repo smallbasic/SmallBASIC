@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.44 2005-05-01 02:05:02 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.45 2005-05-04 00:39:25 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -62,7 +62,7 @@ char *runfile = 0;
 int px,py,pw,ph;
 MainWindow* wnd;
 
-const char* bashome = 0;
+const char* bashome = "./Bas-Home/";
 const char untitled[] = "untitled.bas";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
@@ -403,8 +403,9 @@ void scanPlugIns(Menu* menu) {
     FILE* file;
     char buffer[1024];
     char label[1024];
-    int numFiles = filename_list(bashome, &files);
 
+    snprintf(buff, sizeof(buff), "%s/Bas-Home", startDir);
+    int numFiles = filename_list(buff, &files);
     for (int i=0; i<numFiles; i++) {
         const char* filename = (const char*)files[i]->d_name;
         int len = strlen(filename);
@@ -477,10 +478,6 @@ int arg_cb(int argc, char **argv, int &i) {
         runMode = run_state;
         i+=2;
         return 1;
-    case 'b':
-        bashome = strdup(argv[i+1]);
-        i+=2;
-        return 1;
     case 'm':
         opt_loadmod = 1;
         strcpy(opt_modlist, argv[i+1]);
@@ -496,17 +493,7 @@ int main(int argc, char **argv) {
         fatal("Options are:\n"
               " -e[dit] file.bas\n"
               " -r[run] file.bas\n"
-              " -b[asic]-home\n"
               " -m[odule]-home\n\n%s", help);
-    }
-
-    if (bashome == 0) {
-        // not set with -b
-        bashome = getenv("BAS_HOME");
-        if (bashome == 0) {
-            // not set with environment
-            bashome = strdup("./Bas-Home/");
-        }
     }
 
     getcwd(buff, sizeof (buff));

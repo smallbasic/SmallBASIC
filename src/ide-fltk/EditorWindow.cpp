@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.26 2005-05-01 02:02:05 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.27 2005-05-04 00:39:25 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include <fltk/ask.h>
+#include <fltk/damage.h>
 #include <fltk/events.h>
 #include <fltk/file_chooser.h>
 #include <fltk/Flags.h>
@@ -260,13 +261,7 @@ void style_update(int pos,        // I - Position of update
     style = get_style_range(start, end);
     last  = style[end - start - 1];
 
-    //  printf("start = %d, end = %d, text = \"%s\", style = \"%s\"...\n",
-    //         start, end, text, style);
-
     style_parse(text, style, end - start);
-
-    //  printf("new style = \"%s\"...\n", style);
-
     stylebuf->replace(start, end, style);
     editor->redisplay_range(start, end);
 
@@ -274,11 +269,9 @@ void style_update(int pos,        // I - Position of update
         // the last character on the line changed styles, 
         // so reparse the remainder of the buffer
         delete[] style;
-
         end   = textbuf->length();
         text  = textbuf->text_range(start, end);
         style = get_style_range(start, end);
-
         style_parse(text, style, end - start);
         stylebuf->replace(start, end, style);
         editor->redisplay_range(start, end);
@@ -310,6 +303,7 @@ struct CodeEditor : public TextEditor {
     void getSelStartRowCol(int *row, int *col);
     void getSelEndRowCol(int *row, int *col);
     unsigned getIndent(char* indent, int len, int pos);
+    void handleTab();
 
     int oldCursorPos;
     bool readonly;
@@ -326,14 +320,28 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
         i++;
     }
     
-    if (strncasecmp(buf+i, "while", 5) == 0 ||
-        strncasecmp(buf+i, "if", 2) == 0 ||
-        strncasecmp(buf+i, "elseif", 6) == 0 ||
-        strncasecmp(buf+i, "elif", 4) == 0 ||
+    if (strncasecmp(buf+i, "while ", 6) == 0 ||
+        strncasecmp(buf+i, "if ", 3) == 0 ||
+        strncasecmp(buf+i, "elseif ", 7) == 0 ||
+        strncasecmp(buf+i, "elif ", 5) == 0 ||
         strncasecmp(buf+i, "else", 4) == 0 ||
         strncasecmp(buf+i, "repeat", 6) == 0 ||
-        strncasecmp(buf+i, "for", 3) == 0 ||
-        strncasecmp(buf+i, "func", 4) == 0) {
+        strncasecmp(buf+i, "for ", 4) == 0 ||
+        strncasecmp(buf+i, "func ", 5) == 0) {
+
+        // handle if-then-blah on same line
+        if (strncasecmp(buf+i, "if ", 3) == 0) {
+            int j=i+4;
+            while (buf[j] != 0 && buf[j] != '\n') {
+                j++;
+            }
+            if (strncasecmp(buf+j-4, "then", 4) != 0) {
+                // 'then' is not final text on line
+                spaces[i] = 0;
+                return i;
+            }
+        }
+
         // indent new line
         for (int j=0; j<4; j++, i++) {
             spaces[i] = ' ';
@@ -341,6 +349,62 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
     }
     spaces[i] = 0;
     return i;
+}
+
+void CodeEditor::handleTab() {
+    char spaces[250];
+    int indent;
+
+    // get the desired indent based on the previous line
+    int lineStart = buffer()->line_start(mCursorPos);
+    int prevLineStart = buffer()->line_start(lineStart-1);
+    indent = prevLineStart == 0 ? 0 : 
+        getIndent(spaces, sizeof(spaces), prevLineStart);
+    
+    // get the current lines indent
+    const char *buf = buffer()->line_text(lineStart);
+    int curIndent = 0;
+    while (buf && buf[curIndent] == ' ') {
+        curIndent++;
+    }
+    
+    // adjust indent for closure statements
+    if (strncasecmp(buf+curIndent, "wend", 4) == 0 ||
+        strncasecmp(buf+curIndent, "fi", 2) == 0 ||
+        strncasecmp(buf+curIndent, "endif", 5) == 0 ||
+        strncasecmp(buf+curIndent, "elseif ", 7) == 0 ||
+        strncasecmp(buf+curIndent, "elif ", 5) == 0 ||
+        strncasecmp(buf+curIndent, "else", 4) == 0 ||
+        strncasecmp(buf+curIndent, "next ", 5) == 0 ||
+        strncasecmp(buf+curIndent, "end", 3) == 0  ||
+        strncasecmp(buf+curIndent, "until ", 6) == 0) {
+        if (indent >= 4) {
+            indent -= 4;
+        }
+    }
+    if (curIndent < indent) {
+        // insert additional spaces
+        int len = min((int)sizeof(spaces)-1, indent-curIndent);
+        memset(spaces, ' ', len);
+        spaces[len] = 0;
+        buffer()->insert(lineStart, spaces);
+        if (mCursorPos-lineStart < indent) {
+            // jump cursor to start of text
+            mCursorPos = lineStart + indent;
+        } else {
+            // move cursor along with text movement, staying on same line
+            int maxpos = buffer()->line_end(lineStart);
+            if (mCursorPos + len <= maxpos) {
+                mCursorPos += len;
+            }
+        }
+    } else if (curIndent > indent) {
+        // remove excess spaces
+        buffer()->remove(lineStart, lineStart+(curIndent-indent));
+    } else {
+        // already have ideal indent - soft-tab to indent
+        insert_position(lineStart + indent);
+    }
 }
     
 int CodeEditor::handle(int e) {
@@ -356,61 +420,11 @@ int CodeEditor::handle(int e) {
     if (e == KEY && event_key() == TabKey) {
         if (event_key_state(LeftCtrlKey) ||
             event_key_state(RightCtrlKey)) {
-            // pass ctrl+tab to parent
+            // pass ctrl+key to parent
             return 0;
         }
-
-        // get the desired indent based on the previous line
-        int lineStart = buffer()->line_start(mCursorPos);
-        int prevLineStart = buffer()->line_start(lineStart-1);
-        indent = prevLineStart == 0 ? 0 : 
-            getIndent(spaces, sizeof(spaces), prevLineStart);
-
-        // get the current lines indent
-        const char *buf = buffer()->line_text(lineStart);
-        int curIndent = 0;
-        while (buf && buf[curIndent] == ' ') {
-            curIndent++;
-        }
-
-        // adjust indent for closure statements
-        if (strncasecmp(buf+curIndent, "wend", 4) == 0 ||
-            strncasecmp(buf+curIndent, "fi", 2) == 0 ||
-            strncasecmp(buf+curIndent, "endif", 5) == 0 ||
-            strncasecmp(buf+curIndent, "elseif", 6) == 0 ||
-            strncasecmp(buf+curIndent, "elif", 4) == 0 ||
-            strncasecmp(buf+curIndent, "else", 4) == 0 ||
-            strncasecmp(buf+curIndent, "next", 4) == 0 ||
-            strncasecmp(buf+curIndent, "end", 3) == 0  ||
-            strncasecmp(buf+curIndent, "until", 5) == 0) {
-            indent -= 4;
-        }
-        
-        if (curIndent < indent) {
-            // insert additional spaces
-            int len = min((int)sizeof(spaces)-1, indent-curIndent);
-            memset(spaces, ' ', len);
-            spaces[len] = 0;
-            buffer()->insert(lineStart, spaces);
-            if (mCursorPos-lineStart < indent) {
-                // jump cursor to start of text
-                mCursorPos = lineStart + indent;
-            } else {
-                // move cursor along with text movement, staying on same line
-                int maxpos = buffer()->line_end(lineStart);
-                if (mCursorPos + len <= maxpos) {
-                    mCursorPos += len;
-                }
-            }
-        } else if (curIndent > indent) {
-            // remove excess spaces
-            buffer()->remove(lineStart, lineStart+(curIndent-indent));
-        } else {
-            // already have ideal indent - soft-tab to indent
-            insert_position(lineStart + indent);
-        }
-
-        return 1; // end tab key processing
+        handleTab();
+        return 1; // skip default handler
     }
 
     // call default handler then process keys
@@ -422,6 +436,7 @@ int CodeEditor::handle(int e) {
             if (indent) {
                 buffer()->insert(mCursorPos, spaces);
                 mCursorPos += indent;
+                redraw(DAMAGE_ALL);
             }
         }
         
