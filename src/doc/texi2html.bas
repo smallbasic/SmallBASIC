@@ -3,7 +3,7 @@
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 #
-# $Id: texi2html.bas,v 1.1 2004-08-07 01:10:30 zeeb90au Exp $
+# $Id: texi2html.bas,v 1.2 2005-05-04 23:38:35 zeeb90au Exp $
 # text2html.bas Copyright (c) Chris Warren-Smith July 2004 
 # Version 1.0
 #
@@ -13,6 +13,7 @@ local g_fontSize
 local g_excludeChapters
 local g_title
 local g_fileName
+local g_index
 
 map_tbl = [&
 "command", "CODE";&
@@ -205,7 +206,7 @@ end
 sub writeHeader(byref buf, byref chapters, chapterId)
     local t, nav, title, index
 
-    nav = "<font size="+g_fontSize+"><title>"+g_title+"</title>"
+    nav = "<title>"+g_title+"</title>"
     index = 0
     for chapter in chapters
         if (isExcludeChapter(chapter) = 0) then
@@ -219,6 +220,11 @@ sub writeHeader(byref buf, byref chapters, chapterId)
         fi
         index++        
     next
+    if chapterId = -1 then
+        nav += "<a href=index.html><b>Index</b></a> | "
+    else
+        nav += "<a href=index.html>Index</a> | "
+    fi
     nav += "<hr>"
     buf << nav
 end
@@ -284,8 +290,16 @@ sub readSectionTitles(byref buffer, i, byref sections)
     wend
 end
 
-func readNextSection(byref buffer, byref i, byref out, byref title)
-    local bufferLen, s, inTable, inItem, s_line
+func createIndexNodes(byref defs, byref filename)
+    local deffn
+    for deffn in defs
+        node = [deffn, filename]
+        g_index << node
+    next deffn
+end
+
+func readNextSection(byref buffer, byref i, byref out, byref title, byref filename)
+    local bufferLen, s, inTable, inItem, s_line, defs
 
     inTable = 0
     inItem = 0
@@ -298,6 +312,7 @@ func readNextSection(byref buffer, byref i, byref out, byref title)
             instr(s, "@bye") = 1) then
             readNextSection = -1
             addLineEnding out, "</p>"
+            createIndexNodes defs, filename
             exit func
         elseif (instr(s, "@section") = 1) then
             # end of this section -- another section follows
@@ -308,6 +323,7 @@ func readNextSection(byref buffer, byref i, byref out, byref title)
             #subsection or subsubsection
             title = rightof(s, " ")            
             readNextSection = i
+            createIndexNodes defs, filename
             exit func
         fi
 
@@ -354,6 +370,10 @@ func readNextSection(byref buffer, byref i, byref out, byref title)
         elseif (instr(s, "@deffn") = 1) then
             split s, " ", v() use trim(x)
             addLineEnding out, "<br>"
+            # create a link to this definition from the index
+            out << "<a name='" + lower(v(2)) + "'>"
+            defs << lower(v(2))
+            
             out << "<u>" + v(1) + "</u>:"
             out << "<b>" + v(2) + "</b>"
             out << "<i>" + toString(v, 3)+ "</i>"
@@ -379,7 +399,9 @@ func readNextSection(byref buffer, byref i, byref out, byref title)
         fi
         i++
     wend
-    out << "</p>"
+    #out << "</p>"
+
+    createIndexNodes defs, filename
     readNextSection = i
 end
 
@@ -414,7 +436,8 @@ func processChapter(byref buffer, byref i, byref chapters, byref chapterId)
     readSectionTitles buffer, i, sections
 
     # read the chapter preface
-    result = readNextSection(buffer, i, out, title)
+    fname = chapterId+".html"
+    result = readNextSection(buffer, i, out, title, fname)
     addLineEnding out, "<br>"
    
     index = 0
@@ -422,7 +445,7 @@ func processChapter(byref buffer, byref i, byref chapters, byref chapterId)
         out << "<br><a href="+chapterId+"_"+index+".html>"+section+"</a>"
         index++
     next
-    tsave chapterId+".html", out
+    tsave fname, out
 
     index = 0
     while (result != -1)
@@ -430,7 +453,8 @@ func processChapter(byref buffer, byref i, byref chapters, byref chapterId)
         writeHeader out, chapters, chapterId
         out << "<b>"+title+"</b><br><br>"
         sectionTitle = title
-        result = readNextSection(buffer, i, out, title)
+        fname = chapterId+"_"+index+".html"
+        result = readNextSection(buffer, i, out, title, fname)
 
         ssindex = 0
         while (result != -1 && instr(buffer(i), "@subs") = 1)
@@ -442,7 +466,7 @@ func processChapter(byref buffer, byref i, byref chapters, byref chapterId)
             i++
             writeHeader ssout, chapters, chapterId
             ssout << "<b>"+sectionTitle+" > "+sstitle+"</b><br><br>"
-            result = readNextSection(buffer, i, ssout, title)
+            result = readNextSection(buffer, i, ssout, title, fname)
             ssout << "<hr><a href="+chapterId+"_"+index+".html>[Up]</a>"
             tsave fname, ssout
         wend
@@ -476,11 +500,20 @@ func processChapter(byref buffer, byref i, byref chapters, byref chapterId)
     fi
 end
 
+func sortIndex(x,y)
+    if x(0) = y(0)
+        sortIndex = 0
+    elseif x(0) > y(0)
+        sortIndex = 1
+    else
+        sortIndex = -1
+    endif
+end
+
 sub execute(inputFile)
-    local i, ibegin, result, chapters, buffer, index, bufferLen
+    local i, ibegin, result, chapters, buffer, index, bufferLen, out
     
     tload inputFile, buffer
-
     bufferLen = len(buffer)-1    
     readHeader buffer, ibegin
 
@@ -503,10 +536,30 @@ sub execute(inputFile)
         fi
         index++
     wend
-   
-  # ? title
-  # ? env("SUBTITLE")
-  
+
+    # create index.html
+    writeHeader out, chapters, -1
+    sort g_index use sortIndex(x,y)
+    letter = "A"
+    out << "<table><tr><td><b>A</b></td></tr>"
+
+    for index in g_index
+        nextLetter = upper(mid(index(0), 1,1))
+        if (nextLetter != letter) then
+            out << "<tr><td><br><b>"+nextLetter+"</b></td></tr>"
+            letter = nextLetter
+        fi
+
+        out << "<tr>"
+        out << "<td><a href="+index(1)+"#"+index(0)+">"+index(0)+"</a></td>"
+        out << "</tr>"
+    next index
+    out << "</table>"
+    tsave "index.html", out
+    
+    # these are also available
+    # ? title
+    # ? env("SUBTITLE")
 end
 
 if (len(command$) = 0) then
