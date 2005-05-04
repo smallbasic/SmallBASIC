@@ -403,135 +403,137 @@ void	cmd_erase()
 //
 //	PRINT ...
 //
-void	cmd_print(int output)
+void cmd_print(int output)
 {
-	byte	code, last_op = 0;
-	byte	exitf = 0, use_format = 0;
-	var_t	var, *vuser_p;
-	int		handle = 0;
+    byte    code, last_op = 0;
+    byte    exitf = 0, use_format = 0;
+    var_t   var, *vuser_p;
+    int     handle = 0;
 
-	/*
-	*	prefix - # (file)
-	*/
-	if	( output == PV_FILE )	{
-		par_getsharp();				if	( prog_error )	return;
-		handle = par_getint();		if	( prog_error )	return;
-		if	( code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE )	{	// There are no parameters
-			if	( dev_fstatus(handle) )	
-				dev_fwrite(handle, (byte *) "\n", 1);
-			else
-				err_fopen();
-			return;
-			}
-
-		par_getsep();				if	( prog_error )	return;
-		if	( !dev_fstatus(handle) )	{
-			err_fopen();
-			return;
-			}
-		}
-
-	/*
-	*	prefix: memory variable
-	*/
-	if	( output == PV_STRING )	{
-		if	( !code_isvar() )	{
-			err_argerr();
-			return;
-			}
-
-		vuser_p = code_getvarptr();
-		par_getsemicolon();			if	( prog_error )	return;
-
-		v_free(vuser_p);
-		vuser_p->type = V_STR;
-		vuser_p->v.p.size = 256;
-		vuser_p->v.p.ptr  = tmp_alloc(vuser_p->v.p.size);
-		vuser_p->v.p.ptr[0] = '\0';
-		#if defined(_PalmOS)
-		handle = (unsigned long int) vuser_p;
-		#else
-		handle = (int) vuser_p;
-		#endif
-		}
-
-	/*
-	*	prefix - USING
-	*/
-	code = code_peek();
-	if	( code == kwUSING )	{
-		code_skipnext();
-		if	( code_peek() != kwTYPE_SEP )	{
-			eval(&var);
-			if	( prog_error )		return;
-			if	( var.type != V_STR )	{
-				rt_raise(ERR_FORMAT_INVALID_FORMAT);
-				v_free(&var);
-				return;
-				}
-			else	{
-				build_format((char *) var.v.p.ptr);
-				v_free(&var);
-				}
-			}
-		if	( code_peek() == kwTYPE_SEP )
-			par_getsemicolon();
-		last_op = ';';
-		if	( prog_error )		return;
-		use_format = 1;
-		}
-
-	/*
-	*	PRINT
-	*/
-	do	{
-		code = code_peek();
-        if (kw_check_evexit(code)) {
-            exitf = 1;
-            break;
+    /*
+    *   prefix - # (file)
+    */
+    if  ( output == PV_FILE )   {
+        par_getsharp();             if  ( prog_error )  return;
+        handle = par_getint();      if  ( prog_error )  return;
+        if  ( code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE ) {   // There are no parameters
+            if  ( dev_fstatus(handle) ) {
+                dev_fwrite(handle, (byte *) "\n", 1);
+            } else {
+                err_fopen();
+            }
+            return;
         }
 
-		switch ( code )	{
-		case	kwTYPE_SEP:
-			code_skipnext();
-			last_op = code_getnext();
-			if	( !use_format )	{
-				if	( last_op == ',' )
-					pv_write("\t", output, handle);
-				}
-			break;
-		default:
-			last_op = 0;
-			v_init(&var);
-			eval(&var);
-			if	( !prog_error )	{
-				if	( use_format )	{
-					switch ( var.type )	{
-					case	V_STR:
-						fmt_printS((char *) var.v.p.ptr, output, handle);
-						break;
-					case	V_INT:
-						fmt_printN(var.v.i, output, handle);
-						break;
-					case	V_NUM:
-						fmt_printN(var.v.n, output, handle);
-						break;
-					default:
-						err_typemismatch();
-						}
-					}
-				else
-					pv_writevar(&var, output, handle);
-				}
-			v_free(&var);
-			};
+        par_getsep();               if  ( prog_error )  return;
+        if  ( !dev_fstatus(handle) ) {
+            err_fopen();
+            return;
+        }
+    }
 
-		if	( prog_error )
-			return;
-		} while ( exitf == 0 );
+    /*
+     *   prefix: memory variable
+     */
+    if ( output == PV_STRING ) {
+        if ( !code_isvar() ) {
+            err_argerr();
+            return;
+        }
+        
+        vuser_p = code_getvarptr();
+        par_getsemicolon();         if  ( prog_error )  return;
+        
+        v_free(vuser_p);
+        vuser_p->type = V_STR;
+        vuser_p->v.p.size = 256;
+        vuser_p->v.p.ptr  = tmp_alloc(vuser_p->v.p.size);
+        vuser_p->v.p.ptr[0] = '\0';
+#if defined(_PalmOS)
+        handle = (unsigned long int) vuser_p;
+#else
+        handle = (int) vuser_p;
+#endif
+    }
 
-	if	( last_op == 0 )
-		pv_write("\n", output, handle);
+    /*
+     *   prefix - USING
+     */
+    code = code_peek();
+    if ( code == kwUSING ) {
+        code_skipnext();
+        if  ( code_peek() != kwTYPE_SEP )   {
+            eval(&var);
+            if  ( prog_error )      return;
+            if  ( var.type != V_STR )   {
+                rt_raise(ERR_FORMAT_INVALID_FORMAT);
+                v_free(&var);
+                return;
+            } else {
+                build_format((char *) var.v.p.ptr);
+                v_free(&var);
+            }
+        }
+        if ( code_peek() == kwTYPE_SEP ) {
+            par_getsemicolon();
+        }
+        last_op = ';';
+        if  ( prog_error )      return;
+        use_format = 1;
+    }
+
+    /*
+    *   PRINT
+    */
+    do {
+        code = code_peek();
+        if (code == kwTYPE_SEP) {
+            code_skipnext();
+            last_op = code_getnext();
+            if ( !use_format ) {
+                if ( last_op == ',' ) {
+                    pv_write("\t", output, handle);
+                }
+            }
+        } else {
+            if (kw_check_evexit(code)) {
+                exitf = 1;
+                break;
+            }
+            
+            last_op = 0;
+            v_init(&var);
+            eval(&var);
+            if ( !prog_error ) {
+                if ( use_format )  {
+                    switch ( var.type ) {
+                    case V_STR:
+                        fmt_printS((char *) var.v.p.ptr, output, handle);
+                        break;
+                    case V_INT:
+                        fmt_printN(var.v.i, output, handle);
+                        break;
+                    case V_NUM:
+                        fmt_printN(var.v.n, output, handle);
+                        break;
+                    default:
+                        err_typemismatch();
+                    }
+                } else {
+                    pv_writevar(&var, output, handle);
+                }
+            }
+            v_free(&var);
+        };
+
+        if ( prog_error ) {
+            return;
+        }
+    } while ( exitf == 0 );
+    
+    if ( last_op == 0 ) {
+        pv_write("\n", output, handle);
+    }
 }
 
 // print for log
