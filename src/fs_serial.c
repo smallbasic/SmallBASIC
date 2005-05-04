@@ -15,7 +15,7 @@
 #else
 	#include <errno.h>
 
-	#if defined(_UnixOS)
+	#if defined(_UnixOS) && !defined(__MINGW32__)
 	#include <sys/time.h>
 	#include <termios.h>
 	#include <unistd.h>
@@ -31,7 +31,7 @@
 #endif
 #include "fs_serial.h"
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <windows.h>
 #endif
 
@@ -49,7 +49,7 @@ int		serial_open(dev_file_t *f)
 		rt_raise("SEROPEN() ERROR %d", f->last_error);
 	return (f->last_error == 0);
 
-    #elif defined(_UnixOS) && !defined(__CYGWIN__)
+    #elif defined(_UnixOS) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 	///////////////////////////////////////////////////////////////////////////////////////////
 	//	Unix
 	sprintf(f->name, "/dev/ttyS%d", f->port);
@@ -147,7 +147,7 @@ int		serial_close(dev_file_t *f)
 		rt_raise("SERCLOSE() ERROR %d", f->last_error);
 	return (f->last_error == 0);
 
-	#elif defined(_UnixOS) && !defined(__CYGWIN__)
+	#elif defined(_UnixOS) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 	tcsetattr(f->handle, TCSANOW, &f->oldtio);
 	close(f->handle);
 	f->handle = -1;
@@ -158,7 +158,7 @@ int		serial_close(dev_file_t *f)
 	f->handle = (FileHand) -1;
 	return 1;
 
-    #elif defined(_Win32) || defined(__CYGWIN__)
+    #elif defined(_Win32) || defined(__CYGWIN__) || defined(__MINGW32__)
     CloseHandle((HANDLE) f->handle);
 	f->handle = -1;
 	return 1;

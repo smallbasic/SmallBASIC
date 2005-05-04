@@ -22,7 +22,9 @@
 	#include <sys/types.h>
 	#include <errno.h>
 
-	#if defined(_UnixOS)
+    #if defined(_Win32) || defined(__MINGW32__)
+		#include <winsock2.h>	// @#@!$@#!$ it uses 'byte'
+	#elif defined(_UnixOS)
 		#include <sys/socket.h>
 		#include <netinet/in.h>
 		#include <sys/param.h>
@@ -30,14 +32,11 @@
 		#include <arpa/inet.h>
 	#elif defined(_DOS)
 	//#define _DOSTCP_ENABLE
-
 		#if defined(_DOSTCP_ENABLE)
 		#include <netinet/in.h>
 		#include <socket.h>
 		#define INADDR_NONE    NULL
 		#endif
-	#elif defined(_Win32)
-		#include <winsock2.h>	// @#@!$@#!$ it uses 'byte'
 	#endif
 
     typedef int     socket_t;

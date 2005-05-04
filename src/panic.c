@@ -16,7 +16,7 @@
 	#include "smbas.h"
 #elif defined(_WinGUI) || defined(_Win32) 
 	#include <windows.h>
-#elif defined (_FLTK) && defined(__CYGWIN__)
+#elif defined (_FLTK)
 	#include <windows.h>
 #endif
 #if defined(_BCB_W32_IDE)
@@ -52,7 +52,7 @@ void	panic(const char *fmt, ...)
 	bcb_mgrerr("%s", preload_panic_buffer);
     #elif defined(_WinGUI) || defined(_Win32)
 	MessageBox(NULL, preload_panic_buffer, "SB Panic", MB_OK);
-    #elif defined (_FLTK) && defined(__CYGWIN__)
+    #elif defined (_FLTK)
 	MessageBox(NULL, preload_panic_buffer, "SB Panic", MB_OK);
     exit(1);
 	#elif defined(_VTOS)

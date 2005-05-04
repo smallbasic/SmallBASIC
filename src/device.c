@@ -59,6 +59,10 @@ static int	keytail;
 #include "dev_term.h"
 #endif
 
+#ifdef __MINGW32__
+#define usleep _sleep
+#endif
+
 ///////////////////////////////////////////////
 //////////////////////////////// INIT & RESTORE
 

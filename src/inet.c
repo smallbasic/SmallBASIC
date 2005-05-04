@@ -7,7 +7,7 @@
 #include "sys.h"
 #include "inet.h"
 
-#if defined(_UnixOS)
+#if defined(_UnixOS) && !defined(__MINGW32__)
 //#include <sys/poll.h>
 #include <sys/ioctl.h>
 #endif
@@ -176,8 +176,8 @@ int		net_input(socket_t s, char *buf, int size, const char *delim)
 		#else
 		bytes = recv(s, &ch, 1, 0);
 		#endif
-		if ( bytes <= 0 )            // socket error
-			return bytes;
+		if ( bytes <= 0 )
+            return count; // no more data
 		else	{
 			if	( ch == 0 )
 				return count;
@@ -227,7 +227,7 @@ int		net_peek(socket_t s)
 		#else
 		return 0;
 		#endif
-	#elif defined(_Win32)
+    #elif defined(_Win32) || defined(__MINGW32__)
 	unsigned long	bytes;
 
 	ioctlsocket(s, FIONREAD, &bytes);

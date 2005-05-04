@@ -22,6 +22,9 @@
 #include <w32api/windows.h>
 #include <sys/cygwin.h>
 #define WIN_EXTLIB
+#elif defined(__MINGW32__)
+#include <windows.h>
+#define WIN_EXTLIB
 #endif
 
 #ifdef LNX_EXTLIB
@@ -489,7 +492,7 @@ void	sblmgr_init(int mcount, const char *mlist)
 		if	( all )	{
 #if defined(LNX_EXTLIB)
        sblmgr_scanlibs("/usr/local/lib/sbasic/modules/");
-#elif defined(__CYGWIN__) 
+#elif defined(__CYGWIN__) || defined(__MINGW32__)
        // the -m argument specifies the location of all modules
        sblmgr_scanlibs(opt_modlist);
 #elif defined(WIN_EXTLIB)

@@ -1174,7 +1174,7 @@ int		intm_print_fname(const char *file)
 		sprintf(size, "%4ld Bytes", st.st_size);
 
 	// time
-	strftime(tmbuf, 63, "%a %d %b %Y", localtime(&st.st_mtime));
+	strftime(tmbuf, 63, "%a %d %b %Y", localtime((time_t*)&st.st_mtime));
 
 	// rights
 	strcpy(attr, "");

@@ -27,7 +27,7 @@
 #else
 	#include <errno.h>
 
-	#if defined(_UnixOS)
+#if defined(_UnixOS) && !defined(__MINGW32__)
 	#include <sys/time.h>
 	#include <termios.h>
 	#include <unistd.h>
@@ -141,7 +141,7 @@ int		dev_fstatus(int handle)
 	return (f->handle != -1);
 }
 
-#if defined(_UnixOS) && !defined(_Win32)
+#if defined(_UnixOS) && !defined(_Win32) && !defined(__MINGW32__)
 /*
 *	terminal speed
 *	select the correct system constant
@@ -215,7 +215,7 @@ int		dev_fopen(int sb_handle, const char *name, int flags)
 				else
 					f->devspeed = 9600;
 
-				#if defined(_UnixOS) && !defined(_Win32)
+				#if defined(_UnixOS) && !defined(_Win32) && !defined(__MINGW32__)
 				f->devspeed = select_unix_serial_speed(f->devspeed);
 				#endif
 				}
@@ -615,7 +615,7 @@ void	dev_mkdir(const char *dir)
 {
 #if defined(_PalmOS) || defined(_VTOS)
 	err_unsup();
-#elif defined(_Win32)
+#elif defined(_Win32) || defined(__MINGW32__)
 	if	( mkdir(dir) != 0 )
 		err_file(errno);
 #else
@@ -872,7 +872,7 @@ int		dev_fattr(const char *file)
 		if	( stat(file, &st) == 0 )	{
 			r |= ((S_ISREG(st.st_mode))? VFS_ATTR_FILE : 0);
 			r |= ((S_ISDIR(st.st_mode))? VFS_ATTR_DIR : 0);
-			#if defined(_UnixOS)
+            #if defined(_UnixOS) && !defined(__MINGW32__)
 			r |= ((S_ISLNK(st.st_mode))? VFS_ATTR_LINK : 0);
 			#endif
 			}

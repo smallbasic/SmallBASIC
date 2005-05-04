@@ -18,7 +18,7 @@
 #else
 	#include <errno.h>
 
-	#if defined(_UnixOS)
+	#if defined(_UnixOS) && !defined(__MINGW32__)
 	#include <sys/time.h>
 	#include <termios.h>
 	#include <unistd.h>
