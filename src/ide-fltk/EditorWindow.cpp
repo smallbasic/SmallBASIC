@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.27 2005-05-04 00:39:25 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.28 2005-05-04 23:51:03 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -287,6 +287,8 @@ struct CodeEditor : public TextEditor {
         readonly = false;
         undoBuff = 0;
         curBuff = 0;
+        const char* s = getenv("INDENT_LEVEL");
+        indentLevel = (s && s[0] ? atoi(s) : 4);
     }
 
     void getRowCol(int *row, int *col) {
@@ -309,6 +311,7 @@ struct CodeEditor : public TextEditor {
     bool readonly;
     char* undoBuff;
     char* curBuff;
+    int indentLevel;
 };
 
 unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
@@ -343,7 +346,7 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
         }
 
         // indent new line
-        for (int j=0; j<4; j++, i++) {
+        for (int j=0; j<indentLevel; j++, i++) {
             spaces[i] = ' ';
         }
     }
@@ -378,8 +381,8 @@ void CodeEditor::handleTab() {
         strncasecmp(buf+curIndent, "next ", 5) == 0 ||
         strncasecmp(buf+curIndent, "end", 3) == 0  ||
         strncasecmp(buf+curIndent, "until ", 6) == 0) {
-        if (indent >= 4) {
-            indent -= 4;
+        if (indent >= indentLevel) {
+            indent -= indentLevel;
         }
     }
     if (curIndent < indent) {
@@ -541,7 +544,7 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
                            'A', style_unfinished_cb, 0);
     editor->textfont(COURIER);
     editor->cursor_style(TextDisplay::BLOCK_CURSOR);
-    editor->selection_color(fltk::color(192,192,192));
+    editor->selection_color(fltk::color(190,189,188));
     end();
     resizable(editor);
 

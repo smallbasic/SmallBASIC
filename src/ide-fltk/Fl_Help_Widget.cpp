@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.27 2005-05-04 00:39:25 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.28 2005-05-04 23:51:03 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -43,10 +43,10 @@
 // make Fl_Ansi_Window.exe
 //#define UNIT_TEST 1
 
-#define FOREGROUND_COLOR fltk::color(32,32,32)
-#define BACKGROUND_COLOR fltk::color(230,230,230)
+#define FOREGROUND_COLOR Widget::default_style->textcolor()
+#define BACKGROUND_COLOR Widget::default_style->color()
 #define ANCHOR_COLOR fltk::color(0,0,128)
-#define BUTTON_COLOR fltk::color(220,220,220)
+#define BUTTON_COLOR Widget::default_style->buttoncolor()
 #define DEFAULT_INDENT 2
 #define LI_INDENT 18
 #define FONT_SIZE 11
@@ -262,7 +262,9 @@ struct AnchorNode : public BaseNode {
         x1 = x2 = out->x;
         y1 = y2 = out->y - out->lineHeight;
         wrapxy = 0;
-        setcolor(ANCHOR_COLOR);
+        if (href.length() >0) {
+            setcolor(ANCHOR_COLOR);
+        }
     }
 
     bool ptInSegment(int x, int y) {
@@ -1478,7 +1480,7 @@ void HelpWidget::scrollTo(const char* anchorName) {
             } else {
                 vscroll = -p->getY();
             }
-            redraw(DAMAGE_ALL | DAMAGE_SCROLL);
+            redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
             return;
         }
     }
@@ -1580,7 +1582,7 @@ void HelpWidget::draw() {
         }
     }
 
-    if (out.exposed || (damage()&DAMAGE_SCROLL)) {
+    if (out.exposed) {
         // size has changed or need to recombob scrollbar
         int pageHeight = (out.y-vscroll)+out.lineHeight;
         int height = h();

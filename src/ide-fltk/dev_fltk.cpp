@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.41 2005-05-04 00:39:25 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.42 2005-05-04 23:51:03 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -243,9 +243,11 @@ int dev_putenv(const char *s) {
     String lv = envs.lvalue();
     String rv = envs.rvalue();
 
-    if (lv.equals("APP-TITLE")) {
+    if (lv.equals("TITLE")) {
         rv.append(" - SmallBASIC");
         wnd->copy_label(rv);
+    } else if (lv.equals("TURBO")) {
+        wnd->isTurbo = rv.toInteger() == 1 ? 1: 0;
     } else {
         env.put(lv, rv);
     }

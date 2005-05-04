@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.45 2005-05-04 00:39:25 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.46 2005-05-04 23:51:03 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -538,6 +538,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabBegin = 0; // =mnuHeight for top position tabs
     int pageHeight = groupHeight-mnuHeight;
+    Color background = fltk::color(236,233,216);
+    Color tabface = fltk::color(230,230,210);
 
     isTurbo = 0;
     opt_graphics = 1;
@@ -575,7 +577,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/&Goto Line...", F4Key,    (Callback*)goto_cb);
     m->add("&Edit/Output Size...",F5Key,    (Callback*)font_size_cb);
     m->add("&View/Toggle/&Full Screen",0,   (Callback*)fullscreen_cb)->type(Item::TOGGLE);
-    m->add("&View/Toggle/&Turbo", F7Key,    (Callback*)turbo_cb)->type(Item::TOGGLE);
+    m->add("&View/Toggle/&Turbo", 0,        (Callback*)turbo_cb)->type(Item::TOGGLE);
     m->add("&View/&Next Tab",     F6Key,    (Callback*)next_tab_cb);
     scanPlugIns(m);
     m->add("&Program/&Run",        F9Key,   (Callback*)run_cb);
@@ -586,6 +588,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Help/_&Home Page",    0,       (Callback*)help_home_cb);
     m->add("&Help/&About SmallBASIC",F12Key,(Callback*)help_about_cb);
 
+    color(background);
+    m->color(background);
     callback(quit_cb);
     shortcut(0); // remove default EscapeKey shortcut
 
@@ -595,6 +599,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup = new Group(0, tabBegin, w, pageHeight, "Editor");
     editGroup->begin();
     editGroup->box(THIN_DOWN_BOX);
+    editGroup->color(tabface);
     editWnd = new EditorWindow(2, 2, w-4, pageHeight-4);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
     editWnd->box(NO_BOX);
@@ -605,6 +610,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
 
     helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
     helpGroup->box(THIN_DOWN_BOX);
+    helpGroup->color(tabface);
     helpGroup->hide();
     helpGroup->begin();
     helpWnd = new HelpWidget(2, 2, w-4, pageHeight-4);
@@ -614,6 +620,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     
     outputGroup = new Group(0, tabBegin, w, pageHeight, "Output");
     outputGroup->box(THIN_DOWN_BOX);
+    outputGroup->color(tabface);
     outputGroup->hide();
     outputGroup->begin();
     out = new AnsiWindow(2, 2, w-4, pageHeight-4);
@@ -636,7 +643,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
         Widget* w = statusBar->child(n);
         w->labelfont(HELVETICA);
         w->box(THIN_DOWN_BOX);
-        w->color(GRAY75);
+        w->color(background);
     }
 
     fileStatus->align(ALIGN_INSIDE_LEFT|ALIGN_CLIP);
