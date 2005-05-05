@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.46 2005-05-04 23:51:03 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.47 2005-05-05 23:51:23 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -106,6 +106,7 @@ void statusMsg(const char* msg) {
     const char* filename = wnd->editWnd->getFilename();
     wnd->fileStatus->copy_label(msg && msg[0] ? msg : 
                                 filename && filename[0] ? filename : untitled);
+    wnd->fileStatus->labelcolor(wnd->rowStatus->labelcolor());
     wnd->fileStatus->redraw();
 
 #if defined(WIN32) 
@@ -275,6 +276,7 @@ void basicMain(const char* filename) {
         }
         closeForm(); // unhide the error
         statusMsg(gsb_last_errmsg);
+        wnd->fileStatus->labelcolor(RED);
         runMsg("ERR");
     } else {
         statusMsg(wnd->editWnd->getFilename());
@@ -512,6 +514,7 @@ int main(int argc, char **argv) {
     switch (runMode) {
     case run_state:
         wnd->editWnd->loadFile(runfile, -1, true);
+        addHistory(runfile);
         basicMain(runfile);
         break;
     case edit_state:
@@ -538,8 +541,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabBegin = 0; // =mnuHeight for top position tabs
     int pageHeight = groupHeight-mnuHeight;
-    Color background = fltk::color(236,233,216);
-    Color tabface = fltk::color(230,230,210);
 
     isTurbo = 0;
     opt_graphics = 1;
@@ -588,8 +589,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Help/_&Home Page",    0,       (Callback*)help_home_cb);
     m->add("&Help/&About SmallBASIC",F12Key,(Callback*)help_about_cb);
 
-    color(background);
-    m->color(background);
     callback(quit_cb);
     shortcut(0); // remove default EscapeKey shortcut
 
@@ -599,7 +598,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup = new Group(0, tabBegin, w, pageHeight, "Editor");
     editGroup->begin();
     editGroup->box(THIN_DOWN_BOX);
-    editGroup->color(tabface);
     editWnd = new EditorWindow(2, 2, w-4, pageHeight-4);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
     editWnd->box(NO_BOX);
@@ -610,7 +608,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
 
     helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
     helpGroup->box(THIN_DOWN_BOX);
-    helpGroup->color(tabface);
     helpGroup->hide();
     helpGroup->begin();
     helpWnd = new HelpWidget(2, 2, w-4, pageHeight-4);
@@ -620,7 +617,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     
     outputGroup = new Group(0, tabBegin, w, pageHeight, "Output");
     outputGroup->box(THIN_DOWN_BOX);
-    outputGroup->color(tabface);
     outputGroup->hide();
     outputGroup->begin();
     out = new AnsiWindow(2, 2, w-4, pageHeight-4);
@@ -643,7 +639,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
         Widget* w = statusBar->child(n);
         w->labelfont(HELVETICA);
         w->box(THIN_DOWN_BOX);
-        w->color(background);
+        w->color(color());
     }
 
     fileStatus->align(ALIGN_INSIDE_LEFT|ALIGN_CLIP);
@@ -763,6 +759,7 @@ void MainWindow::execLink(const char* file) {
     if (access(file, 0) == 0) {
         statusMsg(file);
         if (execFile) {
+            addHistory(file);
             basicMain(file);
             opt_nosave = 1;
         } else {
