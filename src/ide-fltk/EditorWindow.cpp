@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.28 2005-05-04 23:51:03 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.29 2005-05-05 23:50:48 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -36,6 +36,13 @@
 #include "EditorWindow.h"
 #include "MainWindow.h"
 #include "kwp.cxx"
+
+#if defined(WIN32) 
+#include <fltk/win32.h>
+#define restoreFocus() ::SetFocus(xid(Window::first()))
+#else
+#define restoreFocus() take_focus()
+#endif
 
 using namespace fltk;
 
@@ -711,6 +718,7 @@ void EditorWindow::openFile() {
     if (newfile != NULL) {
         loadFile(newfile, -1, true);
     }
+    restoreFocus();
 }
 
 void EditorWindow::insertFile() {
@@ -722,6 +730,7 @@ void EditorWindow::insertFile() {
     if (newfile != NULL) {
         loadFile(newfile, editor->insert_position(), true);
     }
+    restoreFocus();
 }
 
 void EditorWindow::replaceNext() {
@@ -796,6 +805,7 @@ void EditorWindow::replaceAll() {
     } else {
         alert("No occurrences of \'%s\' found!", find);
     }
+    restoreFocus();
 }
 
 void EditorWindow::cancelReplace() {
@@ -809,6 +819,7 @@ void EditorWindow::saveFile() {
         return;
     } else {
         doSaveFile(filename, true);
+        restoreFocus();
     }
 }
 
@@ -822,6 +833,7 @@ void EditorWindow::saveFileAs() {
         }
         doSaveFile(newfile, true);
     }
+    restoreFocus();
 }
 
 void EditorWindow::doDelete() {
