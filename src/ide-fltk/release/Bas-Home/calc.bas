@@ -1,5 +1,8 @@
+'app-plug-in
+'menu Calculator
+
 ######################################################################
-# $Id: calc.bas,v 1.1 2005-04-28 23:22:37 zeeb90au Exp $
+# $Id: calc.bas,v 1.2 2005-05-05 23:52:15 zeeb90au Exp $
 # calc.bas Copyright (c) Chris Warren-Smith April 2005
 # Demonstration for html user interfaces
 #
@@ -30,10 +33,11 @@ end
 
 # evaluate the expression string
 func eval(byref expr)
-    local strl,num,result,operator,inner,endb,i,j,nbracket
+    local strl,num,pt,result,operator,inner,endb,i,j,nbracket
 
     strl = len(expr)
     num = 0
+    pt = 0
     result = 0
     operator = ""
 
@@ -45,11 +49,31 @@ func eval(byref expr)
             eval = compute(operator, result, num)
             exit func
         fi
-        if isnumber(ch) then
-            num = num*10+ch
-        else 
+        if ch = "." then
+            pt = 1
+        elseif isnumber(ch) then
+            if pt > 0 then
+                num = num + (ch/(10*pt))
+                pt++
+            else
+                num = num*10+ch                
+            fi
+        else
+            # non number
             if ch = "(" then
                 # find the matching )
+                if (len(operator) = 0) then
+                    #short form notation eg 3(1+1)
+                    operator = "*"
+                    if (result = 0) then
+                        result = num
+                    else
+                        result = compute(operator, result, num)
+                    fi
+                else
+                   # complete the previous expression
+                   result = compute(operator, result, num)
+                fi
                 nbracket = 1
                 endb = 0
                 i++
@@ -61,7 +85,7 @@ func eval(byref expr)
                         nbracket--
                         if nbracket = 0 then
                             endb = j
-                            exit for 
+                            exit for
                         fi
                     fi
                 next j
@@ -78,6 +102,13 @@ func eval(byref expr)
                     result = compute(operator, result, num)
                 fi
                 i = endb
+                if (i+1 = strl) then
+                    # nothing more to process
+                    eval = result 
+                    exit func
+                fi
+                # scan for next operator
+                operator = ""
             elseif ch = ")" then
                 eval = result 
                 exit func
@@ -92,7 +123,9 @@ func eval(byref expr)
                 endif
                 operator = ch
             fi
+            # scan for next number
             num = 0
+            pt = 0
         fi
     next i
     eval = result
@@ -108,6 +141,7 @@ sub main
     if env("form-active") != "true" then
         chdir env("BAS-HOME")
         html "file:calc.html"
+        exit sub
     fi
 
     if len(command) = 0 then
@@ -128,11 +162,11 @@ sub main
 
     out = ""
     if command = "BS" then
-       if  len(curval) > 1 then
-           out = left(curval, len(curval)-1)
-       else 
-           out = "0"
-       fi
+        if  len(curval) > 1 then
+            out = left(curval, len(curval)-1)
+        else 
+            out = "0"
+        fi
     elseif command = "mc" then
     elseif command = "mr" then
     elseif command = "ms" then
@@ -152,3 +186,4 @@ sub main
 end
 
 main
+
