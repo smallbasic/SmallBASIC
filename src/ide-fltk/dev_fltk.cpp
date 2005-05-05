@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.42 2005-05-04 23:51:03 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.43 2005-05-05 23:48:42 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -443,17 +443,19 @@ void dev_image(int handle, int index, int x, int y,
     if (filep == 0) {
         return;
     }
-    Image* img = getImage(filep, index);
-    if (img != 0) {
-        if (filep->open_flags == DEV_FILE_INPUT) {
+
+    if (filep->open_flags == DEV_FILE_INPUT) {
+        Image* img = getImage(filep, index);
+        if (img != 0) {
             // input/read image and display
             img->measure(imgw, imgh);
             wnd->out->drawImage(img, x, y, sx, sy, 
                                 (w==0 ? imgw : w),
                                 (h==0 ? imgh : h));
-        } else {
-            // output screen area image to jpeg
         }
+    } else {
+        // output screen area image to jpeg
+        wnd->out->saveImage(filep->name, x, y, sx, sy);
     }
 }
 
@@ -588,7 +590,11 @@ C_LINKAGE_END
 //--HTML Utils------------------------------------------------------------------
 
 void getHomeDir(char* fileName) {
-    sprintf(fileName, "%s/.smallbasic/", getenv("HOME"));
+    const char* home = getenv("HOME");
+    if (home == 0) home = getenv("TMP");
+    if (home == 0) home = getenv("TEMP");
+    if (home == 0) home = getenv("TMPDIR");
+    sprintf(fileName, "%s/.smallbasic/", home);
     makedir(fileName);
 }
 

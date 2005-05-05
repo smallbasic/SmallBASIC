@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.28 2005-05-04 00:39:25 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.29 2005-05-05 23:48:41 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -13,6 +13,7 @@
 
 #include <fltk/layout.h>
 #include <fltk/Image.h>
+#include <fltk/rgbImage.h>
 #include <fltk/events.h>
 #include <fltk/draw.h>
 #include <fltk/Font.h>
@@ -188,6 +189,22 @@ void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy,
     begin_offscreen();
     image->copy(Rectangle(x, y, width, height), sx, sy);
     redraw();
+}
+
+void AnsiWindow::saveImage(const char* filename, int x, int y,
+                           int width, int height) {
+    if (width == 0) {
+        width = w();
+    }
+    if (height == 0) {
+        height = h();
+    }
+    uchar* pixels = (uchar*)malloc(width*height*3);
+    begin_offscreen();
+    readimage(pixels, RGB, Rectangle(x,y,width,height));
+    fltk::rgbImage jpg(pixels, RGB, width, height);
+    jpg.write_jpeg(filename);
+    free((void*)pixels);
 }
 
 void AnsiWindow::setPixel(int x, int y, int c) {

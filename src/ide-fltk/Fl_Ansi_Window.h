@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.16 2005-04-19 23:52:18 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.17 2005-05-05 23:48:42 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -34,6 +34,7 @@ class AnsiWindow : public Widget {
     void drawRectFilled(int x1, int y1, int x2, int y2);
     void drawRect(int x1, int y1, int x2, int y2);
     void drawImage(Image* img, int x, int y, int sx, int sy, int w, int h);
+    void saveImage(const char* fn, int x, int y, int w, int h);
     void setTextColor(long fg, long bg);
     void setColor(long color);
     int getX() {return curX;}
