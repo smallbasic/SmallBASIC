@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.29 2005-05-05 23:50:48 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.30 2005-05-07 11:28:30 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -39,7 +39,7 @@
 
 #if defined(WIN32) 
 #include <fltk/win32.h>
-#define restoreFocus() ::SetFocus(xid(Window::first()))
+#define restoreFocus() ::SetFocus(xid(Window::first())); redraw()
 #else
 #define restoreFocus() take_focus()
 #endif
@@ -313,6 +313,7 @@ struct CodeEditor : public TextEditor {
     void getSelEndRowCol(int *row, int *col);
     unsigned getIndent(char* indent, int len, int pos);
     void handleTab();
+    void showRowCol();
 
     int oldCursorPos;
     bool readonly;
@@ -418,7 +419,6 @@ void CodeEditor::handleTab() {
 }
     
 int CodeEditor::handle(int e) {
-    int row, col;
     int cursorPos = mCursorPos;
     char spaces[250];
     int indent;
@@ -452,14 +452,19 @@ int CodeEditor::handle(int e) {
         
         // fallthru to show row-col
     case RELEASE:
-        position_to_linecol(mCursorPos, &row, &col);
-        if (row < 9999 && col < 9999) {
-            setRowCol(row, col+1);
-        }
+        showRowCol();
         break;
     }
 
     return rtn;
+}
+
+void CodeEditor::showRowCol() {
+    int row, col;
+    position_to_linecol(mCursorPos, &row, &col);
+    if (row < 9999 && col < 9999) {
+        setRowCol(row, col+1);
+    }
 }
 
 void CodeEditor::saveUndo() {
@@ -490,8 +495,8 @@ void CodeEditor::gotoLine(int line) {
     
     scroll(line-(mNVisibleLines/2), 0);
     insert_position(buffer()->skip_lines(0, line-1));
+    showRowCol();
 }
-
 
 void CodeEditor::getSelStartRowCol(int *row, int *col) {
     int start = buffer()->primary_selection()->start();
