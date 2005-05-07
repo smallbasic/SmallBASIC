@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.43 2005-05-05 23:48:42 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.44 2005-05-07 11:31:34 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -319,6 +319,7 @@ void modeless_cb(Widget* w, void* v) {
         eventName.empty();
         if (path[0] != '!' && 
             path[0] != '|' &&
+            path[0] != '~' &&
             path.startsWith("http://") == false &&
             wnd->siteHome.length() > 0) {
             int i = wnd->siteHome.indexOf('/', 7); // siteHome root
@@ -405,7 +406,7 @@ Image* getImage(dev_file_t* filep, int index) {
     // check for cached imaged
     SharedImage* image = loadImage(filep->name, 0);
     if (image && image->drawn()) {
-        return image;
+        return image; // already loaded+drawn
     }
 
     char localFile[PATH_MAX];
@@ -418,6 +419,7 @@ Image* getImage(dev_file_t* filep, int index) {
             return 0;
         }
         strcpy(filep->name, localFile);
+        image = loadImage(filep->name, 0);
         break;
     case ft_stream:
         // loaded in SharedImage
@@ -426,12 +428,10 @@ Image* getImage(dev_file_t* filep, int index) {
         return 0;
     }
 
-    image = loadImage(filep->name, 0);
     if (image) {
         // force SharedImage::_draw() to call image->read()
-        image->draw(fltk::Rectangle(0,0),0,0);
+        image->draw(fltk::Rectangle(0,0));
     }
-
     return image;
 }
 
