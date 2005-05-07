@@ -2,7 +2,7 @@
 'menu Calculator
 
 ######################################################################
-# $Id: calc.bas,v 1.2 2005-05-05 23:52:15 zeeb90au Exp $
+# $Id: calc.bas,v 1.3 2005-05-07 11:33:17 zeeb90au Exp $
 # calc.bas Copyright (c) Chris Warren-Smith April 2005
 # Demonstration for html user interfaces
 #
@@ -53,7 +53,7 @@ func eval(byref expr)
             pt = 1
         elseif isnumber(ch) then
             if pt > 0 then
-                num = num + (ch/(10*pt))
+                num = num + (ch/(10^pt))
                 pt++
             else
                 num = num*10+ch                
