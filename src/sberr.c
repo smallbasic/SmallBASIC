@@ -233,7 +233,7 @@ void	err_invkw(addr_t addr, byte code)
 */
 void	inf_done()
 {
-	#if defined(_UnixOS)
+	#if defined(_UnixOS) && !defined(_FLTK)
 	if ( !isatty (STDOUT_FILENO) ) 
 		fprintf(stdout, "\n* %s *\n", WORD_DONE);
 	else {
@@ -248,7 +248,7 @@ void	inf_done()
 	dev_printf("\n\033[0m\033[80m\a\033[7m * %s * \033[0m\n", WORD_DONE);
 	#endif
 
-	#if defined(_UnixOS)
+	#if defined(_UnixOS) && !defined(_FLTK)
 		}
 	#endif
 }
@@ -258,7 +258,7 @@ void	inf_done()
 */
 void	inf_break(int pline)
 {
-	#if defined(_UnixOS)
+	#if defined(_UnixOS) && !defined(_FLTK)
 	if ( !isatty (STDOUT_FILENO) ) 
 		fprintf(stdout, "\n* %s %d *\n", WORD_BREAK_AT, pline);
 	else {
@@ -273,7 +273,7 @@ void	inf_break(int pline)
 	dev_printf("\n\033[0m\033[80m\a\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT, pline);
 	#endif
 
-	#if defined(_UnixOS)
+	#if defined(_UnixOS) && !defined(_FLTK)
 		}
 	#endif
 }
