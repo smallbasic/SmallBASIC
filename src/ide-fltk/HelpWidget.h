@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.19 2005-04-28 23:27:34 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.20 2005-05-07 11:29:25 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -34,6 +34,7 @@ using namespace fltk;
 using namespace strlib;
 
 SharedImage* loadImage(const char* name, uchar* buff);
+void browseFile(const char* url);
 
 class HelpWidget : public Group {
 public:

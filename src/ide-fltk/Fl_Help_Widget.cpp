@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.28 2005-05-04 23:51:03 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.29 2005-05-07 11:29:25 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -488,8 +488,8 @@ void ImageNode::display(Display* out) {
         } else {
             out->imgY = out->y+ih;
             out->imgIndent = out->indent;
-            out->indent = out->x;
             out->x += iw+DEFAULT_INDENT;
+            out->indent = out->x;
         }
     }
 }
@@ -1840,10 +1840,17 @@ void HelpWidget::compile() {
                         nodeList.add(new BrNode(pre));
                     }
                     if (newline == false && text[i+1] != '<') {
+                        // plain text at line-end and new-line-start
                         // replace newline with single space
-                        nodeList.add(new TextNode(spacestr, 1));
-                        newline = false;
+                        if (pre == 0) {
+                            nodeList.add(new TextNode(spacestr, 1));
+                        }
                         // skip white space
+                        while (i<textlen && (isWhite(text[i+1]))) {
+                            i++; // ends on final white-char
+                        }
+                    } else if (text[i-1] == '>') {
+                        // markup at line-end - skip white space
                         while (i<textlen && (isWhite(text[i+1]))) {
                             i++; // ends on final white-char
                         }
@@ -1917,6 +1924,7 @@ void HelpWidget::compile() {
                     center = false;
                     nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "font", 4) ||
+                           0 == strncasecmp(tag, "code", 4) ||
                            0 == strncasecmp(tag, "h", 1)) { // </h1>
                     if (0 == strncasecmp(tag, "h", 1)) {
                         nodeList.add(new BrNode(pre));
@@ -1933,6 +1941,7 @@ void HelpWidget::compile() {
                     pre = false;
                     node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.add(node);
+                    nodeList.add(new BrNode(pre));
                 } else if (0 == strncasecmp(tag, "a", 1)) {
                     nodeList.add(new AnchorEndNode());
                 } else if (0 == strncasecmp(tag, "ul", 2) ||
@@ -2008,6 +2017,10 @@ void HelpWidget::compile() {
                     tagPair = text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "pre", 3)) {
                     pre = true;
+                    node = new FontNode(COURIER, fontSize, 0, bold, italic);
+                    nodeList.add(node);
+                    nodeList.add(new BrNode(pre));
+                } else if (0 == strncasecmp(tag, "code", 4)) {
                     node = new FontNode(COURIER, fontSize, 0, bold, italic);
                     nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "td", 2)) {
@@ -2210,6 +2223,12 @@ void HelpWidget::copyText(int begin, int end) {
 }
 
 void HelpWidget::navigateTo(const char* s) {
+    if (strncmp(s, "http://", 7) == 0) {
+        // launch in real browser
+        browseFile(s);
+        return;
+    }
+
     String path;
     path.append(docHome);
     path.append(s);
@@ -2231,17 +2250,10 @@ void HelpWidget::loadFile(const char *f) {
 
     fileName.empty();
     htmlStr.empty();
-
+    
     if (strncasecmp(f, "file:///", 8) == 0) {
         // only supports file protocol
         f += 8;
-    }
-    
-    if (strstr(f, "://") != 0) {
-        htmlStr.append("Invalid path syntax: ");
-        htmlStr.append(f);
-        reloadPage();
-        return;
     }
 
     const char* target = strrchr(f, '#');
