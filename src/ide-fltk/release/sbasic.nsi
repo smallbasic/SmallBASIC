@@ -43,8 +43,6 @@ Section "Start Menu Shortcut"
   CreateDirectory "$SMPROGRAMS\SmallBASIC 0.9.6.1"
   SetOutPath $INSTDIR
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\SmallBASIC.lnk" "$INSTDIR\sbfltk.exe" "-r welcome.bas"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\Readme.lnk" "$INSTDIR\readme.html" "" "$INSTDIR\sbfltk.exe" 0
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\Guide.lnk" "$INSTDIR\help\0.html" "" "$INSTDIR\sbfltk.exe" 0
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.9.6.1\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
