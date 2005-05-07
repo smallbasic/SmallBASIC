@@ -60,7 +60,8 @@ static int	keytail;
 #endif
 
 #ifdef __MINGW32__
-#define usleep _sleep
+#include <windows.h>
+#define usleep(s) Sleep((DWORD)((s+500)/1000))
 #endif
 
 ///////////////////////////////////////////////
