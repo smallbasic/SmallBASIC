@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.30 2005-05-07 11:28:30 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.31 2005-05-08 12:43:25 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -52,11 +52,13 @@ TextDisplay::StyleTableEntry styletable[] = { // Style table
     { color(0,0,192),   COURIER, 14 }, // C - Strings
     { color(128,0,0),   COURIER_BOLD, 14 }, // D - code_keywords
     { color(128,128,0), COURIER_BOLD, 14 }, // E - code_functions
-    { color(0,128,128), COURIER_BOLD, 14 }  // F - code_procedures
+    { color(0,128,128), COURIER_BOLD, 14 },  // F - code_procedures
+    { color(128,0,128), HELVETICA_BOLD, 14 }, // G - Find matches
 };
 
 TextBuffer *stylebuf = 0;
 TextBuffer *textbuf = 0;
+char search[256];
 
 // 'compare_keywords()' - Compare two keywords
 int compare_keywords(const void *a, const void *b) {
@@ -71,6 +73,7 @@ void style_parse(const char *text, char *style, int length) {
     char  buf[255];
     char *bufptr;
     const char *temp;
+    int searchLen = strlen(search);
 
     for (;length > 0; length--, text++) {
         if (current == 'B') { 
@@ -80,7 +83,7 @@ void style_parse(const char *text, char *style, int length) {
         if (current == 'A') {
             // check for directives, comments, strings, and keywords
             if ((*text == '#' && !isdigit(text[1])) || 
-                *text == '\'' || strncasecmp(text, "rem", 3) == 0) {
+                       *text == '\'' || strncasecmp(text, "rem", 3) == 0) {
                 // basic comment
                 current = 'B';
                 for (; length > 0 && *text != '\n'; length--, text ++) {
@@ -112,11 +115,23 @@ void style_parse(const char *text, char *style, int length) {
                 
                 *bufptr = '\0';
                 bufptr = buf;
-
-                if (bsearch(&bufptr, code_keywords,
-                            sizeof(code_keywords) / sizeof(code_keywords[0]),
-                            sizeof(code_keywords[0]), compare_keywords)) {
-                   
+                
+                if (searchLen > 0 &&
+                    strncasecmp(bufptr, search, searchLen) == 0) {
+                    // find text match
+                    for (int i=0; i<searchLen && text < temp; i++) {
+                        *style++ = 'G';
+                        text++;
+                        length--;
+                        col++;
+                    }
+                    text--;
+                    length++;
+                    last = 1;
+                    continue;
+                } else if (bsearch(&bufptr, code_keywords,
+                                   sizeof(code_keywords) / sizeof(code_keywords[0]),
+                                   sizeof(code_keywords[0]), compare_keywords)) {
                     while (text < temp) {
                         *style++ = 'D';
                         text++;
@@ -136,7 +151,6 @@ void style_parse(const char *text, char *style, int length) {
                         length--;
                         col++;
                     }
-
                     text--;
                     length++;
                     last = 1;
@@ -150,7 +164,6 @@ void style_parse(const char *text, char *style, int length) {
                         length--;
                         col++;
                     }
-
                     text--;
                     length++;
                     last = 1;
@@ -369,6 +382,12 @@ void CodeEditor::handleTab() {
     // get the desired indent based on the previous line
     int lineStart = buffer()->line_start(mCursorPos);
     int prevLineStart = buffer()->line_start(lineStart-1);
+
+    if (prevLineStart && prevLineStart+1 == lineStart) {
+        // skip previous blank line
+        prevLineStart = buffer()->line_start(prevLineStart-1);
+    }
+    
     indent = prevLineStart == 0 ? 0 : 
         getIndent(spaces, sizeof(spaces), prevLineStart);
     
@@ -492,10 +511,11 @@ void CodeEditor::gotoLine(int line) {
     } else if (line > numLines) {
         line = numLines;
     }
-    
-    scroll(line-(mNVisibleLines/2), 0);
-    insert_position(buffer()->skip_lines(0, line-1));
-    showRowCol();
+    scroll(line, 0);
+    int pos = buffer()->skip_lines(0, line-1);
+    insert_position(buffer()->line_start(pos));
+    show_insert_position();
+    setRowCol(line, 1);
 }
 
 void CodeEditor::getSelStartRowCol(int *row, int *col) {
@@ -568,6 +588,14 @@ EditorWindow::~EditorWindow() {
     delete replaceDlg;
     textbuf->remove_modify_callback(style_update, editor);
     textbuf->remove_modify_callback(changed_cb, this);
+}
+
+int EditorWindow::handle(int e) {
+    if (e == FOCUS) {
+        fltk::focus(editor);
+        return 1;
+    }
+    return Group::handle(e);
 }
 
 bool EditorWindow::readonly() {
@@ -665,32 +693,22 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
     }
 }
 
-void EditorWindow::find() {
-    const char *val = input("Search String:", search);
-    if (val != NULL) {
-        // user entered a string - go find it
-        strcpy(search, val);
-        findNext();
-    }
-}
-
-void EditorWindow::findNext() {
-    if (search[0] == '\0') {
-        // search string is blank; get a new one
-        find();
-        return;
+bool EditorWindow::findText(const char* find, bool forward) {
+    strcpy(search, find);
+    style_update(0, textbuf->length(), textbuf->length(), 0,0, editor);
+    if (find == 0 || find[0] == 0) {
+        return 0;
     }
 
     int pos = editor->insert_position();
-    int found = textbuf->search_forward(pos, search, &pos);
+    bool found = forward ? textbuf->search_forward(pos, search, &pos) :
+        textbuf->search_backward(pos-strlen(find), search, &pos);
     if (found) {
-        // Found a match; select and update the position
         textbuf->select(pos, pos+strlen(search));
         editor->insert_position(pos+strlen(search));
         editor->show_insert_position();
-    } else {
-        alert("No occurrences of \'%s\' found!", search);
     }
+    return found;
 }
 
 void EditorWindow::newFile() {

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.16 2005-04-23 02:22:18 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.17 2005-05-08 12:43:25 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -37,6 +37,7 @@ class EditorWindow : public Group {
     EditorWindow(int x, int y, int w, int h);
     ~EditorWindow();
 
+    int handle(int e);
     bool isDirty() { return dirty; }
     const char* getFilename() { return filename; }
     void doSaveFile(const char *newfile, bool updateUI);
@@ -50,6 +51,7 @@ class EditorWindow : public Group {
     void saveFileAs();
     void findNext();
     void find();
+    bool findText(const char* find, bool forward);
     void replaceNext();
     void replaceAll();
     void doDelete();
@@ -77,12 +79,6 @@ class EditorWindow : public Group {
     }
     static void saveas_cb(Widget*, void *v) {
         ((EditorWindow*)v)->saveFileAs();
-    }
-    static void find_cb(Widget*, void* v) {
-        ((EditorWindow*)v)->find();
-    }
-    static void find2_cb(Widget*, void* v) {
-        ((EditorWindow*)v)->findNext();
     }
     static void undo_cb(Widget*, void* v) {
         ((EditorWindow*)v)->undo();
@@ -123,7 +119,6 @@ class EditorWindow : public Group {
 
     private:
     char filename[PATH_MAX];
-    char search[256];
     bool dirty;
     bool loading;
     Window *replaceDlg;
