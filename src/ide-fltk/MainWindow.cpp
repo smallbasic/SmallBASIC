@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.47 2005-05-05 23:51:23 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.48 2005-05-08 12:43:59 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -30,6 +30,7 @@
 #include <fltk/TiledGroup.h>
 #include <fltk/MenuBar.h>
 #include <fltk/filename.h>
+#include <fltk/ValueInput.h>
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
@@ -61,6 +62,9 @@ char *startDir;
 char *runfile = 0;
 int px,py,pw,ph;
 MainWindow* wnd;
+Input* findText;
+Input* gotoLine;
+ValueInput* sizeBn;
 
 const char* bashome = "./Bas-Home/";
 const char untitled[] = "untitled.bas";
@@ -231,27 +235,21 @@ void turbo_cb(Widget* w, void* v) {
     wnd->isTurbo = w->value();
 }
 
+void find_cb(Widget* w, void* v) {
+    bool found = wnd->editWnd->findText(findText->value(), (int)v);
+    findText->textcolor(found ? BLACK : RED);
+    findText->redraw();
+}
+
 void goto_cb(Widget* w, void* v) {
-    buff[0] = 0;
-    const char *val = input("Goto Line:", buff);
-    if (val != NULL) {
-        wnd->editWnd->gotoLine(atoi(val));
-    }
+    wnd->editWnd->gotoLine(atoi(gotoLine->value()));
 }
 
 void font_size_cb(Widget* w, void* v) {
-    if (runMode == edit_state) {
-        buff[0] = 0;
-        sprintf(buff, "%d", wnd->out->fontSize());
-        const char *val = input("Output Size:", buff);
-        if (val != NULL) {
-            wnd->out->fontSize(min(30, max(1, atoi(val))));
-            sprintf(buff, "Size %d", wnd->out->fontSize());
-            statusMsg(buff);
-        }
-    } else {
-        busyMessage();
-    }
+    int value = (int)sizeBn->value();
+    value = value > 100 ? 100 : value < 1 ? 1 : value;
+    wnd->out->fontSize(value);
+    sizeBn->value(value);
 }
 
 void basicMain(const char* filename) {
@@ -504,11 +502,16 @@ int main(int argc, char **argv) {
     dev_putenv(buff);
 
     wnd = new MainWindow(600, 400);
-    wnd->show(argc, argv);
-
 #if defined(WIN32) 
-    wnd->icon((char *)LoadIcon(xdisplay, MAKEINTRESOURCE(101)));
+    HICON icon = (HICON)wnd->icon();
+    if (!icon) {
+        icon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(101),
+                                IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR|LR_SHARED);
+        if (!icon) icon = LoadIcon(NULL, IDI_APPLICATION);
+    }
+    wnd->icon((char*)icon);
 #endif
+    wnd->show(argc, argv);
 
     check();
     switch (runMode) {
@@ -537,6 +540,7 @@ int main(int argc, char **argv) {
 
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int mnuHeight = 22;
+    int tbHeight = 30;
     int statusHeight = mnuHeight;
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabBegin = 0; // =mnuHeight for top position tabs
@@ -571,12 +575,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/Cu&t",          CTRL+'x', (Callback*)EditorWindow::cut_cb);
     m->add("&Edit/&Copy",         CTRL+'c', (Callback*)EditorWindow::copy_cb);
     m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
-    m->add("&Edit/&Find...",      CTRL+'f', (Callback*)EditorWindow::find_cb);
-    m->add("&Edit/Find A&gain",   F3Key,    (Callback*)EditorWindow::find2_cb);
     m->add("&Edit/&Replace...",   F2Key,    (Callback*)EditorWindow::replace_cb);
-    m->add("&Edit/_Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
-    m->add("&Edit/&Goto Line...", F4Key,    (Callback*)goto_cb);
-    m->add("&Edit/Output Size...",F5Key,    (Callback*)font_size_cb);
+    m->add("&Edit/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
     m->add("&View/Toggle/&Full Screen",0,   (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&View/Toggle/&Turbo", 0,        (Callback*)turbo_cb)->type(Item::TOGGLE);
     m->add("&View/&Next Tab",     F6Key,    (Callback*)next_tab_cb);
@@ -598,14 +598,44 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup = new Group(0, tabBegin, w, pageHeight, "Editor");
     editGroup->begin();
     editGroup->box(THIN_DOWN_BOX);
-    editWnd = new EditorWindow(2, 2, w-4, pageHeight-4);
+
+    // create the editor edit window
+    editWnd = new EditorWindow(2, 3+tbHeight, w-4, pageHeight-4-tbHeight);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
     editWnd->box(NO_BOX);
     editWnd->editor->box(NO_BOX);
     editGroup->resizable(editWnd);
+
+    // create the editor toolbar
+    Group* toolbar = new Group(2, 2, w-4, tbHeight);
+    toolbar->begin();
+    toolbar->box(THIN_UP_BOX);
+    findText = new Input(40, 4, 150, mnuHeight, "Find:");
+    findText->align(ALIGN_LEFT|ALIGN_CLIP);
+    Button* prevBn = new Button(195,6,22,mnuHeight-4, "@<;");
+    Button* nextBn = new Button(220,6,22,mnuHeight-4, "@>;");
+    prevBn->callback(find_cb, (void*)0);
+    nextBn->callback(find_cb, (void*)1);
+
+    gotoLine = new Input(280, 4, 40, mnuHeight, "Goto:");
+    gotoLine->align(ALIGN_LEFT|ALIGN_CLIP);
+    Button* gotoBn = new Button(325,6,22,mnuHeight-4, "@>;");
+    gotoBn->callback(goto_cb);
+    sizeBn = new ValueInput(415, 4, 40, mnuHeight, "Output Size:");
+    sizeBn->minimum(1);
+    sizeBn->maximum(30);
+    sizeBn->value(11);
+    sizeBn->step(1);
+    sizeBn->callback(font_size_cb);
+
+    Group* boxEnd = new Group(500,4,0,0);
+    toolbar->resizable(boxEnd);
+    toolbar->end();
+
     editGroup->end();
     tabGroup->resizable(editGroup);
 
+    // create the help tab
     helpGroup = new Group(0, tabBegin, w, pageHeight, "Help");
     helpGroup->box(THIN_DOWN_BOX);
     helpGroup->hide();
@@ -614,7 +644,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     helpWnd->loadBuffer(aboutText);
     helpGroup->resizable(helpWnd);
     helpGroup->end();
-    
+
+    // create the output tab
     outputGroup = new Group(0, tabBegin, w, pageHeight, "Output");
     outputGroup->box(THIN_DOWN_BOX);
     outputGroup->hide();
@@ -646,6 +677,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     statusBar->resizable(fileStatus);
     statusBar->end();
     end();
+    editWnd->take_focus();
 }
 
 bool MainWindow::isBreakExec(void) {
@@ -741,7 +773,7 @@ void MainWindow::execLink(const char* file) {
     // if the extension is .sbx and this does not exists or is older 
     // than the matching .bas then rename to .bas and set opt_nosave 
     // to false - otherwise set execFile flag to true
-    if (0 == strncasecmp(extn, ".sbx", 4)) {
+    if (extn && 0 == strncasecmp(extn, ".sbx", 4)) {
         struct stat st_sbx;
         struct stat st_bas;
         bool sbxExists = (stat(file, &st_sbx) == 0);
