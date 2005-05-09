@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.48 2005-05-08 12:43:59 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.49 2005-05-09 21:17:56 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -63,8 +63,6 @@ char *runfile = 0;
 int px,py,pw,ph;
 MainWindow* wnd;
 Input* findText;
-Input* gotoLine;
-ValueInput* sizeBn;
 
 const char* bashome = "./Bas-Home/";
 const char untitled[] = "untitled.bas";
@@ -242,10 +240,13 @@ void find_cb(Widget* w, void* v) {
 }
 
 void goto_cb(Widget* w, void* v) {
+    Input* gotoLine = (Input*)v;
     wnd->editWnd->gotoLine(atoi(gotoLine->value()));
+    wnd->editWnd->take_focus();
 }
 
 void font_size_cb(Widget* w, void* v) {
+    ValueInput* sizeBn = (ValueInput*)v;
     int value = (int)sizeBn->value();
     value = value > 100 ? 100 : value < 1 ? 1 : value;
     wnd->out->fontSize(value);
@@ -600,7 +601,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup->box(THIN_DOWN_BOX);
 
     // create the editor edit window
-    editWnd = new EditorWindow(2, 3+tbHeight, w-4, pageHeight-4-tbHeight);
+    editWnd = new EditorWindow(2, 3+tbHeight, w-4, pageHeight-5-tbHeight);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
     editWnd->box(NO_BOX);
     editWnd->editor->box(NO_BOX);
@@ -617,16 +618,16 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     prevBn->callback(find_cb, (void*)0);
     nextBn->callback(find_cb, (void*)1);
 
-    gotoLine = new Input(280, 4, 40, mnuHeight, "Goto:");
+    Input* gotoLine = new Input(280, 4, 40, mnuHeight, "Goto:");
     gotoLine->align(ALIGN_LEFT|ALIGN_CLIP);
     Button* gotoBn = new Button(325,6,22,mnuHeight-4, "@>;");
-    gotoBn->callback(goto_cb);
-    sizeBn = new ValueInput(415, 4, 40, mnuHeight, "Output Size:");
+    gotoBn->callback(goto_cb, gotoLine);
+    ValueInput* sizeBn = new ValueInput(415, 4, 40, mnuHeight, "Output Size:");
     sizeBn->minimum(1);
     sizeBn->maximum(30);
     sizeBn->value(11);
     sizeBn->step(1);
-    sizeBn->callback(font_size_cb);
+    sizeBn->callback(font_size_cb, sizeBn);
 
     Group* boxEnd = new Group(500,4,0,0);
     toolbar->resizable(boxEnd);
