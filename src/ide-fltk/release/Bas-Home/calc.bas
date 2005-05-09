@@ -2,7 +2,7 @@
 'menu Calculator
 
 ######################################################################
-# $Id: calc.bas,v 1.3 2005-05-07 11:33:17 zeeb90au Exp $
+# $Id: calc.bas,v 1.4 2005-05-09 21:18:57 zeeb90au Exp $
 # calc.bas Copyright (c) Chris Warren-Smith April 2005
 # Demonstration for html user interfaces
 #
@@ -172,7 +172,9 @@ sub main
     elseif command = "ms" then
     elseif command = "m+" then
     elseif command = "dot" then
-        out = curval+"."
+        if len(curval) > 0 && right(curval,1) != "." then
+            out = curval+"."
+        fi
     elseif command = "=" then
         out = curval+command+eval(curval)
     else
