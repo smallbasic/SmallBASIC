@@ -1,5 +1,5 @@
-// -*- c-file-style: "java" -*-
-// $Id: Fl_Help_Widget.cpp,v 1.29 2005-05-07 11:29:25 zeeb90au Exp $
+// -*- c-file-style: "java" -*- $Id: Fl_Help_Widget.cpp,v 1.29
+// 2005/05/07 11:29:25 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -77,8 +77,7 @@ char rangeValue[20];
 //--Display---------------------------------------------------------------------
 
 struct Display {
-    S16 x,y;
-    U16 height,width;
+    S16 x1,x2,y1,y2;
     U16 tabW, tabH;
     U16 lineHeight;
     U16 indent;
@@ -99,20 +98,20 @@ struct Display {
     AnchorNode* anchor;
 
     void newRow(U16 nrows=1) {
-        x = indent;
-        y += nrows*lineHeight;
+        x1 = indent;
+        y1 += nrows*lineHeight;
         // flow around images
-        if (imgY != -1 && y > imgY) {
+        if (imgY != -1 && y1 > imgY) {
             imgY = -1;
-            x = indent = imgIndent;
+            x1 = indent = imgIndent;
         }
     }
     void endImageFlow() {
         // end text flow around images
         if (imgY != -1) {
             indent = imgIndent;
-            x = indent;
-            y = imgY+1;
+            x1 = indent;
+            y1 = imgY+1;
             imgY = -1;
         }
     }
@@ -219,7 +218,7 @@ void FontNode::display(Display* out) {
     int oldLineHeight = out->lineHeight;
     out->lineHeight = (int)(getascent()+getdescent());
     if (out->lineHeight > oldLineHeight) {
-        out->y += (out->lineHeight - oldLineHeight);
+        out->y1 += (out->lineHeight - oldLineHeight);
     }
     out->font = font;
     out->fontSize = fontSize;
@@ -259,8 +258,8 @@ struct AnchorNode : public BaseNode {
             out->uline = true;
         }
         out->anchor = this;
-        x1 = x2 = out->x;
-        y1 = y2 = out->y - out->lineHeight;
+        x1 = x2 = out->x1;
+        y1 = y2 = out->y1 - out->lineHeight;
         wrapxy = 0;
         if (href.length() >0) {
             setcolor(ANCHOR_COLOR);
@@ -297,8 +296,8 @@ struct AnchorEndNode : public BaseNode {
     void display(Display* out) {
         AnchorNode* beginNode = out->anchor;
         if (beginNode) {
-            beginNode->x2 = out->x;
-            beginNode->y2 = out->y;
+            beginNode->x2 = out->x1;
+            beginNode->y2 = out->y1;
             beginNode->lineHeight = out->lineHeight;
         }
         out->uline = false;
@@ -352,15 +351,15 @@ struct LiNode : public BaseNode {
     }
     void display(Display* out) {
         out->content = true;
-        out->x = out->indent;
-        out->y += out->lineHeight;
-        int x = out->x-(LI_INDENT-DEFAULT_INDENT);
-        int y = out->y-(int)(getascent()-getdescent());
+        out->x1 = out->indent;
+        out->y1 += out->lineHeight;
+        int x = out->x1-(LI_INDENT-DEFAULT_INDENT);
+        int y = out->y1-(int)(getascent()-getdescent());
         if (out->measure == false) {
             if (ulNode && ulNode->ordered) {
                 char t[10];
                 sprintf(t, "%d.", ++ulNode->nextId);
-                drawtext(t, 2, x, out->y);
+                drawtext(t, 2, x, out->y1);
             } else {
                 dotImage.draw(Rectangle(x, y, 5, 5), style, OUTPUT);
             }
@@ -438,14 +437,14 @@ void ImageNode::display(Display* out) {
     if (image == 0) {
         return;
     }
-    int iw = w.relative ? (w.value*(out->width-out->x)/100) : 
-        w.value < out->width ? w.value : out->width;
-    int ih = h.relative ? (h.value*(out->wnd->h()-out->y)/100) : h.value;
+    int iw = w.relative ? (w.value*(out->x2-out->x1)/100) : 
+        w.value < out->x2 ? w.value : out->x2;
+    int ih = h.relative ? (h.value*(out->wnd->h()-out->y1)/100) : h.value;
     if (out->measure == false) {
         if (background) {
             // tile image inside rect x,y,tabW,tabH
-            int x = out->x-1;
-            int y = fixed ? 0 : out->y-(int)getascent();
+            int x = out->x1-1;
+            int y = fixed ? 0 : out->y1-(int)getascent();
             int y1 = y;
             int x1 = x;
             int numHorz = out->tabW/w.value;
@@ -470,8 +469,8 @@ void ImageNode::display(Display* out) {
                 y1 += h.value;
             }
         } else {
-            int x = out->x+DEFAULT_INDENT;
-            int y = out->y - (int)getascent();
+            int x = out->x1+DEFAULT_INDENT;
+            int y = out->y1 - (int)getascent();
             if (out->anchor && out->anchor->pushed) {
                 x += 1;
                 y += 1;
@@ -481,15 +480,15 @@ void ImageNode::display(Display* out) {
     }
     if (background == 0) {
         out->content = true;
-        if (iw+IMG_TEXT_BORDER > out->width) {
-            out->x = out->indent;
-            out->y += ih;
+        if (iw+IMG_TEXT_BORDER > out->x2) {
+            out->x1 = out->indent;
+            out->y1 += ih;
             out->imgY = -1;
         } else {
-            out->imgY = out->y+ih;
+            out->imgY = out->y1+ih;
             out->imgIndent = out->indent;
-            out->x += iw+DEFAULT_INDENT;
-            out->indent = out->x;
+            out->x1 += iw+DEFAULT_INDENT;
+            out->indent = out->x1;
         }
     }
 }
@@ -516,48 +515,48 @@ TextNode::TextNode(const char* s, U16 textlen) : BaseNode() {
 }
 
 void TextNode::display(Display* out) {
-    ybegin = out->y;
+    ybegin = out->y1;
     out->content = true;
     
     if (width == 0) {
         width = (int)getwidth(s, textlen);
     }
-    if (width < out->width-out->x) {
+    if (width < out->x2-out->x1) {
         // simple non-wrapping textout
         if (out->center) {
-            int xctr = ((out->width-out->x)-width)/2;
-            if (xctr > out->x) {
-                out->x = xctr;
+            int xctr = ((out->x2-out->x1)-width)/2;
+            if (xctr > out->x1) {
+                out->x1 = xctr;
             }
         }
         if (out->measure == false) {
-            drawtext(s, textlen, out->x, out->y);
+            drawtext(s, textlen, out->x1, out->y1);
             if (out->uline) {
-                drawline(out->x, out->y+1, out->x+width, out->y+1);
+                drawline(out->x1, out->y1+1, out->x1+width, out->y1+1);
             }
         }
-        out->x += width;
+        out->x1 += width;
     } else {
         int linelen, linepx, cliplen;
         int len = textlen;
         const char* p = s;
         while (len > 0) {
-            lineBreak(p, len, out->width-out->x, linelen, linepx);
+            lineBreak(p, len, out->x2-out->x1, linelen, linepx);
             cliplen = linelen;
-            if (linepx > out->width-out->x) {
+            if (linepx > out->x2-out->x1) {
                 // no break point - create new line if not already on one
-                if (out->x != out->indent) {
+                if (out->x1 != out->indent) {
                     out->newRow();
                     // anchor now starts on a new line
                     if (out->anchor && out->anchor->wrapxy == false) {
-                        out->anchor->x1 = out->x;
-                        out->anchor->y1 = out->y - out->lineHeight;
+                        out->anchor->x1 = out->x1;
+                        out->anchor->y1 = out->y1 - out->lineHeight;
                         out->anchor->wrapxy = true;
                     }
                 }
                 
                 // clip long text - leave room for elipses
-                int cellW = out->width-out->indent-ELIPSE_LEN;
+                int cellW = out->x2-out->indent-ELIPSE_LEN;
                 if (linepx > cellW) {
                     linepx = 0;
                     cliplen = 0;
@@ -568,14 +567,14 @@ void TextNode::display(Display* out) {
                 } 
             }
             if (out->measure == false) {
-                drawtext(p, cliplen, out->x, out->y);
+                drawtext(p, cliplen, out->x1, out->y1);
                 if (out->uline) {
-                    drawline(out->x, out->y+1, out->x+linepx, out->y+1);
+                    drawline(out->x1, out->y1+1, out->x1+linepx, out->y1+1);
                 }
                 if (cliplen != linelen) {
-                    drawpoint(out->x+linepx, out->y);
-                    drawpoint(out->x+linepx+2, out->y);
-                    drawpoint(out->x+linepx+4, out->y);
+                    drawpoint(out->x1+linepx, out->y1);
+                    drawpoint(out->x1+linepx+2, out->y1);
+                    drawpoint(out->x1+linepx+4, out->y1);
                 }
             }
             p += linelen;
@@ -584,8 +583,8 @@ void TextNode::display(Display* out) {
             if (out->anchor) {
                 out->anchor->wrapxy = true;
             }
-            if (out->x+linepx < out->width) {
-                out->x += linepx;
+            if (out->x1+linepx < out->x2) {
+                out->x1 += linepx;
             } else {
                 out->newRow();
             }
@@ -620,18 +619,18 @@ struct HrNode : public BaseNode {
     void display(Display* out) {
         if (out->imgY != -1) {
             out->endImageFlow();
-            out->y -= out->lineHeight;
+            out->y1 -= out->lineHeight;
         }
-        out->y += 4;
-        out->x = out->indent;
+        out->y1 += 4;
+        out->x1 = out->indent;
         if (out->measure == false) {
             setcolor(GRAY45);
-            drawline(out->x, out->y+1, out->width-6, out->y+1);
+            drawline(out->x1, out->y1+1, out->x2-6, out->y1+1);
             setcolor(GRAY99);
-            drawline(out->x, out->y+2, out->width-6, out->y+2);
+            drawline(out->x1, out->y1+2, out->x2-6, out->y1+2);
             setcolor(out->color);
         }
-        out->y += out->lineHeight+2;
+        out->y1 += out->lineHeight+2;
     }
 };
 
@@ -719,9 +718,9 @@ void TableNode::display(Display* out) {
     nextCol = 0;
     nextRow = 0;
     out->endImageFlow();
-    width = out->width-out->indent;
+    width = out->x2-out->indent;
     initX = out->indent;
-    initY = maxY = out->y;
+    initY = maxY = out->y1;
     nodeId = out->nodeId;
     
     if (out->content) {
@@ -747,7 +746,7 @@ void TableNode::display(Display* out) {
             sizes[i] = 0;
         }
     }
-    int lineHeight =  (int)(getascent()+getdescent());
+    int lineHeight = (int)(getascent()+getdescent());
     if (lineHeight > out->lineHeight) {
         out->lineHeight = lineHeight;
     }
@@ -757,21 +756,21 @@ void TableNode::display(Display* out) {
 // called from </td> to prepare for wrapping and resizing
 void TableNode::doEndTD(Display* out, TrNode* tr, Value* tdWidth) {
     int index = nextCol-1;
-    if (out->y > maxY ||
+    if (out->y1 > maxY ||
         tdWidth->value != -1) {
         // veto column changes - wrapped or fixed-width cell
         sizes[index] = -1; 
-    } else if (out->y == tr->y1 &&
-               out->x < columns[index] &&
-               out->x > sizes[index] &&
+    } else if (out->y1 == tr->y1 &&
+               out->x1 < columns[index] &&
+               out->x1 > sizes[index] &&
                sizes[index] != -1) {
         // largest <td></td> on same line, less than the default width
         // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
-        sizes[index] = out->x+CELL_SPACING+CELL_SPACING+2;
+        sizes[index] = out->x1+CELL_SPACING+CELL_SPACING+2;
     }
 
-    if (out->y > maxY) {
-        maxY = out->y; // new max table height
+    if (out->y1 > maxY) {
+        maxY = out->y1; // new max table height
     }
     
     // close image flow to prevent bleeding into previous cell
@@ -779,16 +778,16 @@ void TableNode::doEndTD(Display* out, TrNode* tr, Value* tdWidth) {
 }
 
 void TableNode::doEndTable(Display* out) {
-    out->width = width;
+    out->x2 = width;
     out->indent = initX;
-    out->x = initX;
-    out->y = maxY;
+    out->x1 = initX;
+    out->y1 = maxY;
     if (out->content) {
         out->newRow();
     }
     out->content = false;
     out->tableLevel--;
-    out->tabH = out->y-initY;
+    out->tabH = out->y1-initY;
     out->tabW = width;
     
     if (cols && columns && out->exposed) {
@@ -916,10 +915,10 @@ void TdNode::display(Display* out) {
         table->setColWidth(&width);
     }
 
-    out->x = table->initX + DEFAULT_INDENT +
+    out->x1 = table->initX + DEFAULT_INDENT +
         (table->nextCol == 0 ? 0 : table->columns[table->nextCol-1]);
 
-    out->y = tr->y1; // top+left of next cell
+    out->y1 = tr->y1; // top+left of next cell
 
     // adjust for colspan attribute
     if (colspan) {
@@ -929,14 +928,17 @@ void TdNode::display(Display* out) {
         table->nextCol = table->cols-1;
     }
 
-    out->width = table->columns[table->nextCol]-CELL_SPACING;
-    out->indent = out->x; 
+    out->indent = out->x1; 
+    out->x2 = out->x1 + table->columns[table->nextCol]-CELL_SPACING;
+    if (out->x2 > out->tabW) {
+        out->x2 = out->tabW-CELL_SPACING; // stay within table bounds
+    }
     table->nextCol++;
 
     if (out->measure == false) {
         Rectangle rc(out->indent-CELL_SPACING,
                      tr->y1 - (int)getascent(),
-                     out->width-out->indent+(CELL_SPACING*2),
+                     out->x2-out->indent+(CELL_SPACING*2),
                      tr->height);
         if (background) {
             setcolor(background);
@@ -1230,18 +1232,18 @@ void InputNode::display(Display* out) {
     default:
         break;
     }
-    if (out->x != out->indent && button->w() > out->width-out->x) {
+    if (out->x1 != out->indent && button->w() > out->x2-out->x1) {
         out->newRow();
     }
     out->lineHeight = height;
-    button->x(out->x);
-    button->y(out->y-(int)getascent());
+    button->x(out->x1);
+    button->y(out->y1-(int)getascent());
     button->h(out->lineHeight-2);
     button->labelfont(out->font);
     button->textfont(out->font);
     button->textsize(out->fontSize);
     button->labelsize(out->fontSize);
-    if (button->y()+button->h() < out->height && button->y() >= 0) {
+    if (button->y()+button->h() < out->y2 && button->y() >= 0) {
         button->show();
     } else {
         // draw a fake control in case partially visible
@@ -1249,7 +1251,7 @@ void InputNode::display(Display* out) {
         fillrect(*button);
         setcolor(out->color);            
     }
-    out->x += button->w();
+    out->x1 += button->w();
     out->content = true;
 }
 
@@ -1514,34 +1516,34 @@ void HelpWidget::draw() {
     out.fontSize = FONT_SIZE;
     out.color = foreground;
     out.background = background;
-    out.height = h();
+    out.y2 = h();
     out.indent = DEFAULT_INDENT+hscroll;
-    out.x = out.indent;
-    out.width = w()-(DEFAULT_INDENT+SCROLL_W)+hscroll;
+    out.x1 = out.indent;
+    out.x2 = w()-(DEFAULT_INDENT+SCROLL_W)+hscroll;
     out.content = false;
     out.measure = false;
     out.exposed = (damage()&DAMAGE_EXPOSE) ? 1:0;
     out.tableLevel = 0;
     out.imgY = -1;
     out.imgIndent = out.indent;
-    out.tabW = out.width;
-    out.tabH = out.height;    
+    out.tabW = out.x2;
+    out.tabH = out.y2;    
 
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
-    out.y = (int)getascent();
-    out.lineHeight = out.y+(int)getdescent();
-    out.y += vscroll;
+    out.y1 = (int)getascent();
+    out.lineHeight = out.y1+(int)getdescent();
+    out.y1 += vscroll;
 
     push_clip(Rectangle(w(), h()));
     if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
         // just draw the anchor-push
         int h = (pushedAnchor->y2-pushedAnchor->y1)+pushedAnchor->lineHeight;
-        push_clip(Rectangle(0, pushedAnchor->y1, out.width, h));
+        push_clip(Rectangle(0, pushedAnchor->y1, out.x2, h));
     }
     
     setcolor(out.background);
-    fillrect(Rectangle(0, 0, w()-SCROLL_W, out.height));
+    fillrect(Rectangle(0, 0, w()-SCROLL_W, out.y2));
     setcolor(out.color);
 
     // hide any inputs
@@ -1564,8 +1566,8 @@ void HelpWidget::draw() {
         if (out.nodeId < i) {
             // perform second pass on previous outer table
             TableNode* table = (TableNode*)list[out.nodeId];
-            out.x = table->initX;
-            out.y = table->initY;
+            out.x1 = table->initX;
+            out.y1 = table->initY;
             out.exposed = false;
             for (int j=out.nodeId; j<=i; j++) {
                 p = (BaseNode*)list[j];
@@ -1576,7 +1578,7 @@ void HelpWidget::draw() {
         }
         if (out.exposed == false && 
             out.tableLevel == 0 &&
-            out.y-out.lineHeight > out.height) {
+            out.y1-out.lineHeight > out.y2) {
             // clip remaining content
             break;
         }
@@ -1584,7 +1586,7 @@ void HelpWidget::draw() {
 
     if (out.exposed) {
         // size has changed or need to recombob scrollbar
-        int pageHeight = (out.y-vscroll)+out.lineHeight;
+        int pageHeight = (out.y1-vscroll)+out.lineHeight;
         int height = h();
         int scrollH = pageHeight-height;
         if (scrollH < 1) {
