@@ -1,1 +1,2 @@
-101 ICON DISCARDABLE "../win32/icons/sb4w.ico"
+101 ICON MOVEABLE PURE LOADONCALL DISCARDABLE "../win32/icons/sb4w.ico"
+
