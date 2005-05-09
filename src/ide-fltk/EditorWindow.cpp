@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.31 2005-05-08 12:43:25 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.32 2005-05-09 21:14:59 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -60,6 +60,10 @@ TextBuffer *stylebuf = 0;
 TextBuffer *textbuf = 0;
 char search[256];
 
+const int numCodeKeywords = sizeof(code_keywords) / sizeof(code_keywords[0]);
+const int numCodeFunctions = sizeof(code_functions) / sizeof(code_functions[0]);
+const int numCodeProcedures = sizeof(code_procedures) / sizeof(code_procedures[0]);
+
 // 'compare_keywords()' - Compare two keywords
 int compare_keywords(const void *a, const void *b) {
     return (strcasecmp(*((const char **)a), *((const char **)b)));
@@ -83,7 +87,7 @@ void style_parse(const char *text, char *style, int length) {
         if (current == 'A') {
             // check for directives, comments, strings, and keywords
             if ((*text == '#' && !isdigit(text[1])) || 
-                       *text == '\'' || strncasecmp(text, "rem", 3) == 0) {
+                *text == '\'' || strncasecmp(text, "rem", 3) == 0) {
                 // basic comment
                 current = 'B';
                 for (; length > 0 && *text != '\n'; length--, text ++) {
@@ -110,28 +114,37 @@ void style_parse(const char *text, char *style, int length) {
                        *temp != '\n' && *temp != '\r' && 
                        *temp != '(' && *temp != ')' && *temp != '=' &&
                        bufptr < (buf + sizeof(buf) - 1)) {
-                    *bufptr++ = *temp++;
+                    *bufptr++ = tolower(*temp++);
                 }
                 
                 *bufptr = '\0';
                 bufptr = buf;
                 
-                if (searchLen > 0 &&
-                    strncasecmp(bufptr, search, searchLen) == 0) {
+                if (searchLen > 0) {
+                    const char* sfind = strstr(bufptr, search);
                     // find text match
-                    for (int i=0; i<searchLen && text < temp; i++) {
-                        *style++ = 'G';
-                        text++;
-                        length--;
-                        col++;
+                    if (sfind != 0) {
+                        int offset = sfind-bufptr;
+                        style += offset;
+                        text += offset;
+                        length -= offset;
+                        col += offset;
+                         //strncmp(bufptr, search, searchLen) == 0)) {
+                        for (int i=0; i<searchLen && text < temp; i++) {
+                            *style++ = 'G';
+                            text++;
+                            length--;
+                            col++;
+                        }
+                        text--;
+                        length++;
+                        last = 1;
+                        continue;
                     }
-                    text--;
-                    length++;
-                    last = 1;
-                    continue;
-                } else if (bsearch(&bufptr, code_keywords,
-                                   sizeof(code_keywords) / sizeof(code_keywords[0]),
-                                   sizeof(code_keywords[0]), compare_keywords)) {
+                } 
+                
+                if (bsearch(&bufptr, code_keywords, numCodeKeywords,
+                            sizeof(code_keywords[0]), compare_keywords)) {
                     while (text < temp) {
                         *style++ = 'D';
                         text++;
@@ -142,8 +155,7 @@ void style_parse(const char *text, char *style, int length) {
                     length++;
                     last = 1;
                     continue;
-                } else if (bsearch(&bufptr, code_functions,
-                                   sizeof(code_functions) / sizeof(code_functions[0]),
+                } else if (bsearch(&bufptr, code_functions, numCodeFunctions,
                                    sizeof(code_functions[0]), compare_keywords)) {
                     while (text < temp) {
                         *style++ = 'E';
@@ -155,8 +167,7 @@ void style_parse(const char *text, char *style, int length) {
                     length++;
                     last = 1;
                     continue;
-                } else if (bsearch(&bufptr, code_procedures,
-                                   sizeof(code_procedures) / sizeof(code_procedures[0]),
+                } else if (bsearch(&bufptr, code_procedures, numCodeProcedures,
                                    sizeof(code_procedures[0]), compare_keywords)) {
                     while (text < temp) {
                         *style++ = 'F';
@@ -351,6 +362,7 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
         strncasecmp(buf+i, "else", 4) == 0 ||
         strncasecmp(buf+i, "repeat", 6) == 0 ||
         strncasecmp(buf+i, "for ", 4) == 0 ||
+        strncasecmp(buf+i, "sub ", 4) == 0 ||
         strncasecmp(buf+i, "func ", 5) == 0) {
 
         // handle if-then-blah on same line
@@ -384,7 +396,7 @@ void CodeEditor::handleTab() {
     int prevLineStart = buffer()->line_start(lineStart-1);
 
     if (prevLineStart && prevLineStart+1 == lineStart) {
-        // skip previous blank line
+        // allows for a single blank line between statments
         prevLineStart = buffer()->line_start(prevLineStart-1);
     }
     
@@ -405,7 +417,7 @@ void CodeEditor::handleTab() {
         strncasecmp(buf+curIndent, "elseif ", 7) == 0 ||
         strncasecmp(buf+curIndent, "elif ", 5) == 0 ||
         strncasecmp(buf+curIndent, "else", 4) == 0 ||
-        strncasecmp(buf+curIndent, "next ", 5) == 0 ||
+        strncasecmp(buf+curIndent, "next", 4) == 0 ||
         strncasecmp(buf+curIndent, "end", 3) == 0  ||
         strncasecmp(buf+curIndent, "until ", 6) == 0) {
         if (indent >= indentLevel) {
@@ -693,8 +705,14 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
     }
 }
 
+void EditorWindow::showFindReplace() {
+    replaceFind->value(search);
+    replaceDlg->show();
+}
+
 bool EditorWindow::findText(const char* find, bool forward) {
     strcpy(search, find);
+    strlwr(search);
     style_update(0, textbuf->length(), textbuf->length(), 0,0, editor);
     if (find == 0 || find[0] == 0) {
         return 0;
