@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.49 2005-05-09 21:17:56 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.50 2005-05-10 08:40:58 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -166,11 +166,11 @@ void help_contents_cb(Widget*, void* v) {
 }
 
 void help_app_cb(Widget*, void* v) {
-    const char* helpFile = dev_getenv("APP-HELP");
+    const char* helpFile = dev_getenv("APP_HELP");
     if (helpFile) {
         wnd->helpWnd->loadFile(helpFile);
     } else {
-        wnd->helpWnd->loadBuffer("APP-HELP env variable not found");
+        wnd->helpWnd->loadBuffer("APP_HELP env variable not found");
     }
     showHelpTab();
 }
@@ -499,7 +499,7 @@ int main(int argc, char **argv) {
 
     getcwd(buff, sizeof (buff));
     startDir = strdup(buff);
-    sprintf(buff, "BAS-HOME=%s%s", startDir, bashome+1);
+    sprintf(buff, "BAS_HOME=%s%s", startDir, bashome+1);
     dev_putenv(buff);
 
     wnd = new MainWindow(600, 400);
