@@ -860,7 +860,7 @@ void TrNode::display(Display* out) {
 
     if (out->content) {
         // move bottom of <tr> to next line
-        table->maxY += out->lineHeight;
+        table->maxY += out->lineHeight+DEFAULT_INDENT;
     }
     out->content = false;
     y1 = table->maxY;
@@ -1592,7 +1592,7 @@ void HelpWidget::draw() {
         if (scrollH < 1) {
             // nothing to scroll
             scrollHeight = height;
-            scrollbar->deactivate();
+            scrollbar->set_flag(NOTACTIVE|INACTIVE);
             scrollbar->slider_size(10);
             scrollbar->value(0, 1, 0, SCROLL_SIZE);
             vscroll = 0;
@@ -1600,7 +1600,8 @@ void HelpWidget::draw() {
             int value = SCROLL_SIZE* -vscroll/scrollH;
             int sliderH = height* height/pageHeight;
             scrollHeight = scrollH;
-            scrollbar->activate();
+            scrollbar->clear_flag(INACTIVE); 
+            scrollbar->clear_flag(NOTACTIVE); 
             scrollbar->value(value, 1, 0, SCROLL_SIZE);
             scrollbar->pagesize(SCROLL_SIZE* height/scrollH);
             scrollbar->linesize(SCROLL_SIZE* out.lineHeight/scrollH);
