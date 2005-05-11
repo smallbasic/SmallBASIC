@@ -2,7 +2,7 @@
 'menu Calculator
 
 ######################################################################
-# $Id: calc.bas,v 1.4 2005-05-09 21:18:57 zeeb90au Exp $
+# $Id: calc.bas,v 1.5 2005-05-11 23:30:14 zeeb90au Exp $
 # calc.bas Copyright (c) Chris Warren-Smith April 2005
 # Demonstration for html user interfaces
 #
@@ -139,7 +139,7 @@ sub main
     # display the user interface if not already displayed
     # the form-active field is a hidden form variable  
     if env("form-active") != "true" then
-        chdir env("BAS-HOME")
+        chdir env("BAS_HOME")
         html "file:calc.html"
         exit sub
     fi
