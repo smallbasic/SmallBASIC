@@ -1,108 +1,269 @@
 <html>
 <head>
-<title>SmallBASIC (FLTK/MingW32) 0.9.6.1 - readme.html</title>
+<title>SmallBASIC (FLTK) 0.9.6.1 - readme.html</title>
 </head>
 <body>
-<pre><img src=Bas-Home/logo.gif><br></pre>
-
-<p>Copyright (c) 2000-2005 Nicholas Christopoulos.
-<p>FLTK/MingW32 Version 0.9.6.1
-<p>Copyright (c) 2005 Chris Warren-Smith.<br>
-<p>SmallBASIC comes with ABSOLUTELY NO WARRANTY.
+<h1>SmallBASIC</h1>
+<font size=14>
+Copyright (c) 2000-2005 Nicholas Christopoulos.
+<br>FLTK Version 0.9.6.1 Copyright (c) 2002-2005 Chris Warren-Smith.
+<br><br>SmallBASIC comes with ABSOLUTELY NO WARRANTY.
 This program is free software; you can use it
 redistribute it and/or modify it under the terms of the
 GNU General Public License version 2 as published by
-the Free Software Foundation.</p>
+the Free Software Foundation.
 
 <hr>
-<h1>Features</h1>
-
+<h7>Features</h7>
 <ul>
-<li>Based on FLTK library version 2.x. 
-
-FLTK is a collection of inter-working programs (library) written in the 
-C++ programming language. It allows a programmer to make their
-graphical user interface (GUI) programs run on various operating
-systems including Linux, Mac and Windows.
-
+<li>Based on FLTK library version 2.x. (Build 4325)
+<br>
+    The Fast Light Tool Kit ("FLTK", pronounced "fulltick") is a LGPL'd
+    C++ graphical user interface toolkit for X (UNIX(r)), OpenGL(r),
+    and Microsoft(r) Windows(r).
 <li>Reduced CPU utilisation while a program is running.
 <li>Syntax high-lighting:
 <table>
 <tr>
-   <td fgcolor=#800000>keywords</td>
-   <td fgcolor=#808000>functions</td>
-   <td fgcolor=#008080>procedures</td>
-   <td fgcolor=#008000>comments</td>
+   <td fgcolor=#800000><b>keywords</b></td>
+   <td fgcolor=#808000><b>functions</b></td>
+   <td fgcolor=#008080><b>procedures</b></td>
+   <td fgcolor=#008000><b>comments</b></td>
 </tr>
 </table>
-
-<li>New/updated commands:
-<table cellspacing=3>
+<li>New/updated commands, see below.
+<li>Support for Plug-ins. Allows the editor to be extended with programs written in SmallBASIC.
+<li>Smart line indentation.
+</ul>
+<hr>
+<h7>Commands</h7>
+<table>
 <tr>
-   <td fgcolor=#008080>IMAGE</td>
-   <td>Allows you to display an .GIF image with code such as:
-<br><pre>open "logo.gif" for input as #1
+   <td fgcolor=#008080><b>IMAGE</b></td>
+   <td>Allows you to display or save images with code such as:
+<pre>
+'open and display an image file 
+open "logo.gif" for input as #1
 image #1, 0, 1,25
-close #1</pre><br>
-Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in this release)</i>
+close #1
+
+'save the given screen region to a JPEG file
+open "snapshot.jpeg" for output as #1
+image #1, 1,1,20,20
+close #1
+
+</pre>Input Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>(index not used in 
+this release).</i><br>
+Output Syntax: IMAGE handle, index [,sx,sy,w,h]<br>
+
+Note that output format is JPEG only in this release. Input 
+formats are JPEG/GIF and XPM.<br>
   </td>
 </tr>
 <tr>
-   <td fgcolor=#808000>IMAGEW</td>
-   <td>Returns the width of an image</td>
+   <td fgcolor=#808000><b>IMAGEW</b></td>
+   <td>Returns the width of an image. Syntax: IMAGEW handle, index<br></td>
 </tr>
 <tr>
-   <td fgcolor=#808000>IMAGEH</td>
-   <td>Returns the height of an image</td>
+   <td fgcolor=#808000><b>IMAGEH</b></td>
+   <td>Returns the height of an image. Syntax: IMAGEH handle, index<br></td>
 </tr>
 <tr>
-   <td fgcolor=#008080>HTML</td>
+   <td fgcolor=#008080><b>HTML</b></td>
    <td>Displays html text in a "modeless" frame. The html command returns 
-   immediately while the output remains displayed. 
-   Syntax: HTML html, [title,] [x,y,w,h] &nbsp; <i>(title not used in this release).</i>
-   Anchor links can be used to open or edit another SmallBASIC program once the 
-   currently running program has completed.
+   immediately while the output remains displayed.<br>
+   Syntax: HTML html, [title,] [x,y,w,h] &nbsp; 
+   <ul>
+   <li>If title is specified then the
+   output appears as a modal popup window and you can then access the values of named 
+   input fields using environment variables once the popup has closed.
+   <li>html text can be prefixed with "file:" and the remainder of the string is then 
+   treated as a file name.
+   </ul>
+   Anchor links or button clicks can be used to open or edit another SmallBASIC 
+   program once the currently running program has completed.<br>
+   <br><u>Supported tags:</u>
+   <table>
+   <tr>
+     <td><b>TAG</b></td>
+     <td><b>Comments/Attributes</b></td>
+   </tr>
+   <tr>
+     <td>BR,P</td>
+     <td>Causes the text to flow onto a new line.</td>
+   </tr>
+   <tr>
+     <td>B,I,U</td>
+     <td>Specifies <B>Bold</b> <i>Italic</i> and <u>Underline</u></td>
+   </tr>
+   <tr>
+     <td>HR</td>
+     <td>Creates a horizontal rule.</td>
+   </tr>
+   <tr>
+     <td>TITLE</td>
+     <td>Updates the Application title area.</td>
+   </tr>
+   <tr>
+     <td>PRE</td>
+     <td>Display text in courier font and use CR+LF characters to flow
+     text onto a new line.</td>
+   </tr>
+   <tr>
+     <td>CODE</td>
+     <td>Display text in courier font.</td>
+   </tr>
+   <tr>
+     <td>TABLE</td>
+     <td>Creates a table. border= 1 | 0, background = image</td>
+   </tr>
+   <tr>
+     <td>TR</td>
+     <td>Creates a table-row. fgcolor, bgcolor</td>
+   </tr>
+   <tr>
+     <td>TD</td>
+     <td>Creates a table cell. fgcolor, bgcolor, width, colspan</td>
+   </tr>
+   <tr>
+     <td>UL, OL, LI</td>
+     <td>Un-ordered/Ordered lists. LI creates a List item.</td>
+   </tr>
+   <tr>
+     <td>A</td>
+     <td>Create an anchor link. name, href</td>
+   </tr>
+   <tr>
+     <td>FONT</td>
+     <td>color, face, size</td>
+   </tr>
+   <tr>
+     <td>H1,H2,H3</td>
+     <td>Create a heading.</td>
+   </tr>
+   <tr>
+     <td>INPUT</td>
+     <td>type = "text" | "readonly" | "checkbox" | <br>
+     "radio" | "slider" | "valueinput" | <br> 
+     "thumbwheel" | "hidden"<br>
+     name = "name" use ENV("name=text") to update the field or retrieve its value.<br>
+     value = "value" initial input display value.<br>
+     align = "right" | "center" | "top" | "bottom"<br>
+     border= 1 | 2 | 3 | 4 Specifies various border styles.<br>
+     fgcolor, bgcolor = colorname or #aabbcc hex spec<br>
+     onclick = <i>see below for details.</i>
+     </td>
+   </tr>
+   <tr>
+     <td>TEXTAREA</td>
+     <td>as per INPUT other than type.</td>
+   </tr>
+   <tr>
+     <td>SELECT, OPTION</td>
+     <td>as per INPUT other than type.</td>
+   </tr>
+   <tr>
+     <td>IMG</td>
+     <td>src, width, height</td>
+   </tr>
+   <tr>
+     <td>BODY</td>
+     <td>bgcolor, fgcolor, background = image</td>
+   </tr>
+   </table>
+   <br>
+    <u>More information about onclick and a-href:</u>
+    <ul>
+    <li>onclick="!program.bas" (!) execute program.bas on button click. Current HTML UI is dismissed.
+    <li>onclick="|program.bas" (|) execute program.bas on button click. Current HTML UI remains  
+     displayed and the newly executed program can access named input fields using the ENV statement.
+    <li>onclick="http://site.org/program.bas" execute program.bas from HTTP server 
+     site.org (Linux only).
+    <li>onclick="http://site.org/page.html" display contents of page.html from HTTP 
+     server site.org (Linux only).
+    </ul>
+     You can also use .SBX in lieu of the .BAS extension. This causes a .SBX byte code file
+     to be created if none exists. The byte code file is then later used in lieu of 
+     the .BAS file if it exists and is newer than the .BAS file.<br>
+   
   </td>
 </tr>
 <tr>
-   <td fgcolor=#008080>BUTTON</td>
+   <td fgcolor=#008080><b>BUTTON</b></td>
    <td>
    Syntax: BUTTON x, y, w, h, variable, caption [,type]<br>
 
    type can optionally be 'radio' | 'checkbox' | 'link' | 'label'
    variable is set to 1 if a button or link was pressed (which 
    will have closed the form, or if a radio or checkbox was 
-   selected when the form was closed.</td>
+   selected when the form was closed.<br></td>
 <tr>
-   <td fgcolor=#008080>TEXT</td>
+   <td fgcolor=#008080><b>TEXT</b></td>
    <td>
    Syntax: TEXT x, y, w, h, variable<br>
-   When DOFORM returns the variable contains the user entered value.</td>
+   When DOFORM returns the variable contains the user entered value.<br></td>
 </tr>
 <tr>
-   <td fgcolor=#008080>DOFORM</td>
+   <td fgcolor=#008080><b>DOFORM</b></td>
    <td>syntax: DOFORM [x,y,w,h]<br>
-   Executes the form.</td>
+   Executes the form.<br></td>
 </tr>
 </table>
-</li>
-
-<li>Support for modules. The module directory is specified on the command line
-using the -m switch. 
-
-<li>Support for Plugins. Allows the editor to be extended with programs written in SmallBASIC.
-An alternative plugin home-directory may be specified on the command line using the -t switch.
-</ul>
 
 <hr>
-<h1>Version History</h1>
+<h7>Environment Variables</h7>
+<table>
+<tr>
+  <td>HOME</td>
+  <td>Parent of the .smallbasic folder used to store temporary files.
+  Reverts to TMP,TEMP or TMPDIR if not found.</td>
+</tr>
+<tr>
+  <td>BAS_HOME</td>
+  <td>Available to SmallBASIC programs. Specifies the location of   
+  SmallBASIC programs displayed in the "Basic" menu item. This is 
+  taken from the "Bas-Home" subdirectory of the sbfltk executable.</td>
+</tr>
+<tr>
+  <td>INDENT_LEVEL</td>
+  <td>Specifies the number of space characters to use for automatic line indentation.</td>
+</tr>
+<tr>
+  <td>APP_HELP</td>
+  <td>Runtime setting: Setting this variable to the name of a HTML document allows the 
+   user to display help information for the running program.</td>
+</tr>
+<tr>
+  <td>NO_RUN_SAVE</td>
+  <td>When set to "1" the contents of the Edit window are not automatically saved
+  when Run is invoked.</td>
+</tr>
+<tr>
+  <td>TITLE</td>
+  <td>Runtime setting: Updates the application title.</td>
+</tr>
+<tr>
+  <td>TURBO</td>
+  <td>Runtime setting: enable/disable the Turbo menu setting. When enabled
+   some loop constructs will be slowed to conserve CPU use. </td>
+</tr>
+<tr>
+  <td>&lt;?xxx&gt;</td>
+  <td>Displays the contents of the named environment variable.
+  <br>For example: $TMP on this system is <?TMP>.
+   </td>
+</tr>
+</table>
+
+<hr>
+<h7>Version History</h7>
 <ul>
-<li>Version 0.9.6.0 - Saturday 18 Dec 2004
 <li>Version 0.9.6.1 - xxx
+<li>Version 0.9.6.0 - Saturday 18 Dec 2004
 </ul>
 
 <hr>
-<h1>Links</h1>
+<h7>Links</h7>
 <ul>
  <li><a href="http://smallbasic.sourceforge.net">SmallBASIC home</a>
  <li><a href="http://www.fltk.org/">FLTK Home</a>

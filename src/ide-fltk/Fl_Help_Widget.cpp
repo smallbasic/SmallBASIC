@@ -362,6 +362,8 @@ struct LiNode : public BaseNode {
                 drawtext(t, 2, x, out->y1);
             } else {
                 dotImage.draw(Rectangle(x, y, 5, 5), style, OUTPUT);
+                // draw messes with the current font - restore
+                setfont(out->font, out->fontSize);
             }
         }
     }
@@ -491,6 +493,7 @@ void ImageNode::display(Display* out) {
             out->indent = out->x1;
         }
     }
+    setfont(out->font, out->fontSize); // restore font
 }
 
 //--TextNode--------------------------------------------------------------------
@@ -1767,7 +1770,7 @@ void HelpWidget::compile() {
     int fontSize = FONT_SIZE;
     int taglen = 0;
     int textlen = 0;
-    U8 newline = false;
+    U8 newline = true;
 
     strlib::Stack tableStack(5);
     strlib::Stack trStack(5);
@@ -1839,24 +1842,18 @@ void HelpWidget::compile() {
                 case '\r':
                 case '\n':
                     ADD_PREV_SEGMENT;
+                    if ((prevlen && text[i-1] == ' ')) {
+                        newline = true;
+                    }
                     if (pre) {
                         nodeList.add(new BrNode(pre));
+                    } else if (newline == false) {
+                        nodeList.add(new TextNode(spacestr, 1));
+                        newline = true; // don't add consequtive spacestrs
                     }
-                    if (newline == false && text[i+1] != '<') {
-                        // plain text at line-end and new-line-start
-                        // replace newline with single space
-                        if (pre == 0) {
-                            nodeList.add(new TextNode(spacestr, 1));
-                        }
-                        // skip white space
-                        while (i<textlen && (isWhite(text[i+1]))) {
-                            i++; // ends on final white-char
-                        }
-                    } else if (text[i-1] == '>') {
-                        // markup at line-end - skip white space
-                        while (i<textlen && (isWhite(text[i+1]))) {
-                            i++; // ends on final white-char
-                        }
+                    // skip white space
+                    while (i<textlen && (isWhite(text[i+1]))) {
+                        i++; // ends on final white-char
                     }
 
                     // skip white-char character
@@ -1884,9 +1881,11 @@ void HelpWidget::compile() {
                     }
                     // skip multiple whitespaces
                     ispace = i;
-                    while (ispace<textlen && (text[ispace+1] == ' ' || 
-                                              text[ispace+1] == '\t')) {
+                    while (text[ispace+1] == ' ' || text[ispace+1] == '\t') {
                         ispace++;
+                        if (ispace == textlen) {
+                            break;
+                        }
                     }
                     if (ispace > i) {
                         ADD_PREV_SEGMENT;
@@ -1900,7 +1899,6 @@ void HelpWidget::compile() {
             int len = textlen-pindex;
             if (len) {
                 nodeList.add(new TextNode(p, len));
-                newline = false;
             }
         }
 
@@ -1908,7 +1906,6 @@ void HelpWidget::compile() {
         text = *tagEnd == 0 ? 0 : tagEnd+1;
 
         // process the tag
-        newline = false;
         taglen = tagEnd - tagBegin - 1;
         if (taglen > 0) {
             tag = tagBegin+1;
@@ -1937,7 +1934,6 @@ void HelpWidget::compile() {
                         }
                     }
                     font = fltk::HELVETICA;
-                    fontSize = FONT_SIZE;
                     node = new FontNode(font, fontSize, 0, bold, italic);
                     nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "pre", 3)) {
@@ -2002,6 +1998,7 @@ void HelpWidget::compile() {
                     0 == strncasecmp(tag, "p>", 2)) {
                     nodeList.add(new BrNode(pre));
                     newline = true;
+                    text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "b>", 2)) {
                     bold = true;
                     node = new FontNode(font, fontSize, 0, bold, italic);
@@ -2092,8 +2089,8 @@ void HelpWidget::compile() {
                     node = new FontNode(font, fontSize, color, bold, italic);
                     nodeList.add(node);
                 } else if (taglen == 2 && 0 == strncasecmp(tag, "h", 1)) {
-                    fontSize = FONT_SIZE_H1-(tag[1]-'1'); // <h1> etc
-                    node = new FontNode(font, fontSize, 0, ++bold, italic);
+                    int size = FONT_SIZE_H1-(tag[1]-'1'); // <h1> etc
+                    node = new FontNode(font, size, 0, ++bold, italic);
                     nodeList.add(new BrNode(pre));
                     nodeList.add(node);
                     newline = true;
