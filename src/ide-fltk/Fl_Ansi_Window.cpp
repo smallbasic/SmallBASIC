@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.30 2005-05-09 21:15:35 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.31 2005-05-12 23:30:21 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -10,6 +10,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <fltk/layout.h>
 #include <fltk/Image.h>

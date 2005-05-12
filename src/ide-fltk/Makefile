@@ -71,7 +71,7 @@ PLATFORM=-D_UnixOS -D_FLTK
 ## release with -s
 # add -lpng -ljpeg if not built into FLTK
 IMAGELIBS=-lfltk_images -lfltk_jpeg
-linux: IMAGELIBS=-lfltk_images
+linux: IMAGELIBS=-lfltk_images -ljpeg
 debug: IMAGELIBS=-lfltk_images -ljpeg
 LDLIBS = -s -O3 -Os `fltk-config --ldflags` ${IMAGELIBS}
 RESOURCES = sbfltk.res
@@ -107,7 +107,7 @@ sbfltk.exe: $(OBJS) ${RESOURCES}
 	cp $@ release/
 
 sbfltk: $(OBJS)
-	gcc $(OBJS) ${LIN_LDLIBS} -o $@ 
+	gcc $(OBJS) ${LDLIBS} -o $@ 
 	cp $@ release/
 
 sbfltk.res : sbfltk.rc

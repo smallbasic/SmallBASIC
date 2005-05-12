@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.32 2005-05-09 21:14:59 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.33 2005-05-12 23:30:21 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -712,7 +712,10 @@ void EditorWindow::showFindReplace() {
 
 bool EditorWindow::findText(const char* find, bool forward) {
     strcpy(search, find);
-    strlwr(search);
+    int findLen = strlen(search);
+    for (int i=0; i<findLen; i++) {
+        search[i] = tolower(search[i]);
+    }
     style_update(0, textbuf->length(), textbuf->length(), 0,0, editor);
     if (find == 0 || find[0] == 0) {
         return 0;
