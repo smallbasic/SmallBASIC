@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.50 2005-05-10 08:40:58 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.51 2005-05-14 22:25:54 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -71,7 +71,8 @@ const char aboutText[] =
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
     "FLTK Version 0.9.6.1<br>"
     "Copyright (c) 2002-2005 Chris Warren-Smith.<br><br>"
-    "<u>http://smallbasic.sourceforge.net</u><br><br>"
+    "<a href=http://smallbasic.sourceforge.net>"
+    "http://smallbasic.sourceforge.net</a><br><br>"
     "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
     "This program is free software; you can use it "
     "redistribute it and/or modify it under the terms of the "
