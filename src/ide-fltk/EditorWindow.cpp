@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.33 2005-05-12 23:30:21 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.34 2005-05-14 22:23:49 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -370,6 +370,10 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
             int j=i+4;
             while (buf[j] != 0 && buf[j] != '\n') {
                 j++;
+            }
+            // check for trailing spaces
+            while (buf[j-1] == ' ' && j > i) {
+                j--;
             }
             if (strncasecmp(buf+j-4, "then", 4) != 0) {
                 // 'then' is not final text on line
