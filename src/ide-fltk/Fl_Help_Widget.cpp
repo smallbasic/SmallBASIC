@@ -138,7 +138,6 @@ struct Attributes : public Properties {
     String* getBackground() {return get("background");}
     String* getAlign() {return get("align");}
     bool isReadonly() {return get("readonly") != 0;}
-    bool isResizable() {return get("resizable") != 0;}
     void getValue(String& s) {s.append(getValue());}
     void getName(String& s) {s.append(getName());}
     void getHref(String& s) {s.append(getHref());}
@@ -1154,11 +1153,6 @@ void InputNode::update(strlib::List* names, Properties* env, Attributes* a) {
         button->w(size);
     }
 
-    // resizable TODO-testme
-    if (a->isResizable()) {
-        button->parent()->resizable(button);
-    }
-    
     // set callback
     onclick.append(a->getOnclick());
     if (onclick.length()) {
@@ -1771,7 +1765,7 @@ void HelpWidget::compile() {
     int fontSize = FONT_SIZE;
     int taglen = 0;
     int textlen = 0;
-    U8 joinlines = true; // controls spacing between lines
+    U8 padlines = false; // padding between line-breaks
 
     strlib::Stack tableStack(5);
     strlib::Stack trStack(5);
@@ -1793,7 +1787,7 @@ void HelpWidget::compile() {
     prevlen = i-pindex;                         \
     if (prevlen > 0) {                          \
         nodeList.add(new TextNode(p, prevlen)); \
-        joinlines = false;                      \
+        padlines = true;                        \
     }
 
     while (text && *text) {
@@ -1844,13 +1838,13 @@ void HelpWidget::compile() {
                 case '\n':
                     ADD_PREV_SEGMENT;
                     if ((prevlen && text[i-1] == ' ')) {
-                        joinlines = true;
+                        padlines = false;
                     }
                     if (pre) {
                         nodeList.add(new BrNode(pre));
-                    } else if (joinlines == false) {
+                    } else if (padlines == true) {
                         nodeList.add(new TextNode(spacestr, 1));
-                        joinlines = true; // don't add consequtive spacestrs
+                        padlines = false; // don't add consequtive spacestrs
                     }
                     // skip white space
                     while (i<textlen && (isWhite(text[i+1]))) {
@@ -1869,7 +1863,7 @@ void HelpWidget::compile() {
                     prevlen = i-pindex+1;
                     if (prevlen > 0) {
                         nodeList.add(new TextNode(p, prevlen));
-                        joinlines = false;
+                        padlines = true;
                     }
                     pindex = i+1;
                     p = text+pindex;
@@ -1900,6 +1894,7 @@ void HelpWidget::compile() {
             int len = textlen-pindex;
             if (len) {
                 nodeList.add(new TextNode(p, len));
+                padlines = true;
             }
         }
 
@@ -1931,8 +1926,8 @@ void HelpWidget::compile() {
                         if (bold > 0) {
                             bold--;
                         }
-                        joinlines = true;
                         nodeList.add(new BrNode(pre));
+                        padlines = false;
                     }
                     font = fltk::HELVETICA;
                     node = new FontNode(font, fontSize, 0, bold, italic);
@@ -1948,7 +1943,7 @@ void HelpWidget::compile() {
                            0 == strncasecmp(tag, "ol", 2)) {
                     nodeList.add(new UlEndNode());
                     olStack.pop();
-                    joinlines = true;
+                    padlines = false;
                 } else if (0 == strncasecmp(tag, "u", 1)) {
                     uline = false;
                     nodeList.add(new StyleNode(uline, center));
@@ -1958,12 +1953,12 @@ void HelpWidget::compile() {
                 } else if (0 == strncasecmp(tag, "tr", 2)) {
                     node = new TrEndNode((TrNode*)trStack.pop());
                     nodeList.add(node);
-                    joinlines = true;
+                    padlines = false;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "table", 5)) {
                     node = new TableEndNode((TableNode*)tableStack.pop());
                     nodeList.add(node);
-                    joinlines = true;
+                    padlines = false;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "textarea", 8) && tagPair) {
                     inputNode = new 
@@ -1998,7 +1993,7 @@ void HelpWidget::compile() {
                 if (0 == strncasecmp(tag, "br", 2) ||
                     0 == strncasecmp(tag, "p>", 2)) {
                     nodeList.add(new BrNode(pre));
-                    joinlines = true;
+                    padlines = false;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "b>", 2)) {
                     bold = true;
@@ -2013,7 +2008,7 @@ void HelpWidget::compile() {
                     nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "hr", 2)) {
                     nodeList.add(new HrNode());
-                    joinlines = true;
+                    padlines = false;
                 } else if (0 == strncasecmp(tag, "title", 5)) {
                     tagPair = text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "pre", 3)) {
@@ -2044,7 +2039,7 @@ void HelpWidget::compile() {
                     node = new TableNode(&p);
                     nodeList.add(node);
                     tableStack.push(node);
-                    joinlines = true;
+                    padlines = false;
                     text = skipWhite(tagEnd+1);
                     // continue the font in case we resize
                     node = new FontNode(font, fontSize, 0, bold, italic);
@@ -2060,14 +2055,14 @@ void HelpWidget::compile() {
                     node = new UlNode(tag[0]=='o'||tag[0]=='O');
                     olStack.push(node);
                     nodeList.add(node);
-                    joinlines = true;
+                    padlines = false;
                 } else if (0 == strncasecmp(tag, "u>", 2)) {
                     uline = true;
                     nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "li>", 3)) {
                     node = new LiNode(style(), (UlNode*)olStack.peek());
                     nodeList.add(node);
-                    joinlines = true;
+                    padlines = false;
                     text = skipWhite(tagEnd+1);
                 } else if (0 == strncasecmp(tag, "a ", 2)) {
                     p.removeAll();
@@ -2084,6 +2079,11 @@ void HelpWidget::compile() {
                         // convert from points to pixels
                         const fltk::Monitor& monitor = fltk::Monitor::all();
                         fontSize = (int)(prop->toInteger() * monitor.dpi_y() / 72.0);
+                    } else {
+                        prop = p.get("size");
+                        if (prop != null) {
+                            fontSize = 7+(prop->toInteger()*2);
+                        }
                     }
                     prop = p.get("face");
                     if (prop != null) {
@@ -2097,7 +2097,7 @@ void HelpWidget::compile() {
                     node = new FontNode(font, size, 0, ++bold, italic);
                     nodeList.add(new BrNode(pre));
                     nodeList.add(node);
-                    joinlines = true;
+                    padlines = false;
                 } else if (0 == strncasecmp(tag, "input ", 6)) {
                     // check for quoted values including '>'
                     if (unquoteTag(tagBegin+6, tagEnd)) {
