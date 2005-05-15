@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.31 2005-05-12 23:30:21 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.32 2005-05-15 23:24:49 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -21,16 +21,18 @@
 #include <fltk/Rectangle.h>
 #include <fltk/Group.h>
 
-#include "Fl_Ansi_Window.h"
-extern "C" void trace(const char *format, ...);
-
 #if defined(WIN32) 
 #include <fltk/win32.h>
 #include <wingdi.h>
 extern HDC fl_bitmap_dc;
+#else
+#include <fltk/x.h>
 #endif
 
 #define INITXY 2
+
+#include "Fl_Ansi_Window.h"
+extern "C" void trace(const char *format, ...);
 
 using namespace fltk;
 
@@ -38,9 +40,9 @@ using namespace fltk;
 // make AnsiWindow.exe
 //#define UNIT_TEST 1
 
-#define begin_offscreen()                       \
-    initImage();                                \
-    GSave gsave;                                \
+#define begin_offscreen() \
+    initImage();          \
+    GSave gsave;          \
     img->make_current();
 
 AnsiWindow::AnsiWindow(int x, int y, int w, int h) : 
@@ -210,17 +212,17 @@ void AnsiWindow::saveImage(const char* filename, int x, int y,
 void AnsiWindow::setPixel(int x, int y, int c) {
     begin_offscreen();
 #if defined(WIN32) 
-     if (c < 0) {
-         ::SetPixel(fl_bitmap_dc, x,y, -c);
-     } else {
-         setcolor(ansiToFltk(c));
-         drawpoint(x,y);
-     }
+    if (c < 0) {
+        ::SetPixel(fl_bitmap_dc, x,y, -c);
+    } else {
+        setcolor(ansiToFltk(c));
+        drawpoint(x,y);
+    }
 #else
-     setcolor(ansiToFltk(c));
-     drawpoint(x,y);
+    setcolor(ansiToFltk(c));
+    drawpoint(x,y);
 #endif
-     redraw();
+    redraw();
 }
 
 int AnsiWindow::getPixel(int x, int y) {
@@ -229,9 +231,14 @@ int AnsiWindow::getPixel(int x, int y) {
     COLORREF c = ::GetPixel(fl_bitmap_dc, x, y);
     return -c;
 #else
-    int pixel = 0;
-    readimage((uchar*)&pixel, RGB, Rectangle(x, y, 1, 1));
-    return -pixel;
+    XImage *image = 
+        XGetImage(fltk::xdisplay, xwindow, x, y, 1, 1, AllPlanes, ZPixmap);
+    if (image) {
+        int color = XGetPixel(image, 0, 0);
+        XDestroyImage(image);
+        return -color;
+    }
+    return 0;
 #endif
 }
 
@@ -442,7 +449,7 @@ bool AnsiWindow::doEscape(unsigned char* &p) {
     }
 
     if (setGraphicsRendition(*p, escValue)) {
-        Font* font = labelfont();
+        fltk::Font* font = labelfont();
         if (bold) {
             font = font->bold();
         }
