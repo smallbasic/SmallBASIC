@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.44 2005-05-07 11:31:34 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.45 2005-05-15 23:26:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -48,7 +48,7 @@ HelpWidget* formView = 0;
 Properties env;
 String envs;
 String eventName;
-bool formActive = 0;
+bool saveForm = false;
 
 void getHomeDir(char* fileName);
 bool cacheLink(dev_file_t* df, char* localFile);
@@ -71,11 +71,11 @@ int osd_devinit() {
     if (SharedImage::first_image) {
         SharedImage::first_image->clear_cache();
     }
-    if (formActive == 0) {
+    if (saveForm == false) {
         closeForm();
         wnd->out->clearScreen();
     }
-    formActive = 0;
+    saveForm = false;
     return 1;
 }
 
@@ -304,7 +304,7 @@ void doEvent(void*) {
     if (eventName[0] == '|') {
         // user flag to indicate UI should remain
         // for next program execution
-        formActive = true;
+        saveForm = true;
     } else if (wnd->siteHome.length() == 0) {
         // no currently visiting a remote site
         closeForm();
@@ -319,7 +319,6 @@ void modeless_cb(Widget* w, void* v) {
         eventName.empty();
         if (path[0] != '!' && 
             path[0] != '|' &&
-            path[0] != '~' &&
             path.startsWith("http://") == false &&
             wnd->siteHome.length() > 0) {
             int i = wnd->siteHome.indexOf('/', 7); // siteHome root
@@ -607,6 +606,10 @@ void closeForm() {
         formView = 0;
         wnd->out->redraw();
     }
+}
+
+bool isFormActive() {
+    return formView != null;
 }
 
 // copy the url into the local cache
