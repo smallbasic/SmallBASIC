@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.51 2005-05-14 22:25:54 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.52 2005-05-15 23:25:58 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -85,6 +85,7 @@ void getHomeDir(char* fileName);
 bool cacheLink(dev_file_t* df, char* localFile);
 void updateForm(const char* s);
 void closeForm();
+bool isFormActive();
 
 //--Menu callbacks--------------------------------------------------------------
 
@@ -284,6 +285,9 @@ void basicMain(const char* filename) {
     }
 
     wnd->editWnd->readonly(false);
+    if (isFormActive() == false) {
+        wnd->editWnd->take_focus();
+    }
     runMode = edit_state;
 }
 
