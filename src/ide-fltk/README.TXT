@@ -1,36 +1,124 @@
-SB-IDE using FLTK
+Copyright (c) 2002-2005 Chris Warren-Smith
 
 Commenced sometime around early Nov 2004. Mostly coded
 during my boring train ride to/from work. Initially built
 using cygwin under w2k.
 
 ===============================================================================
+Current problems 
+
+1.
+adjMatrix = [1,0,1;0,0,1;0,1,1] 
+I find that this version of SB treats the semicolon as a 
+comment separator; that is, everything after the first 
+semicolon is italicized. However, the program still seems to 
+work normally! 
+
+2. 
+Draw command.
+
+===============================================================================
 [FLTK patches - 0.9.6.1]
-compose.cxx: disabled right-ctrl from deleting the current selection
+1. compose.cxx: disabled right-ctrl from deleting the current selection
 // See if they type the compose prefix key:
 //   if (i == RightCtrlKey || i == 0xff20/* Multi-Key */) {
 //     compose_state = 1;
 //     return true;
 //   }
 
-scrollrect.cxx: 
+2. scrollrect.cxx: 
 in is_visible() - comments suggest the test should be for NOT-unicode, 
 since this would be the case with Win98:
 
   if (!has_unicode()) {
+
+3. void TextDisplay::draw(void) 
+  in the block "  // draw the non-text, non-scrollbar areas."
+  calls: fillrect(ir);
+  and comment out the tlrb margin fillrect calls
+
+4. filename.h line 52
+#elif defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
+
+5. scandir.c line 31
+# if defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
+
+6. rgbImage.cxx
+#  include "../images/libjpeg/jpeglib.h"
+uncomment write_jpeg code
+
+then in jconfig.h
+#if defined(__MINGW32__)
+typedef unsigned char boolean;
+#endif
 
 ===============================================================================
 [0.9.6.1 enhancements]
 
 1. save screen region as jpeg. save entire screen from menu command
 
-2. mode-less forms
+2. if $HOME not found use $TMP or $TEMP or $TMPDIR
 
+3. updated the HTML command as follows:
+
+   1. create new custom html widget
+
+   2. updated command behaviour
+     if co-ordinates != 0 and title passed
+         // coordinates should be relative to parent window
+         show as modal popup window
+         form variables saved into environmemt
+     else
+         if text given
+            if coordinates are zero then use full tab width/height
+            show as modeless within ansi box
+         else 
+            close any existing html box
+
+   3. when a modeless html form is active, any named form fields
+      can be accessed using environment variables; the system
+      environment is masked out in this state.
+   
+   4. html text can be prefixed with "file:" the remainder of the 
+      string is then treated as a file name. the contents of the 
+      file as passed  to the html widget. the file can contain 
+      server page style  markup using <?smallbasic-variable-name> 
+      and the page is updated by replacing the markup with the 
+      content of the named variable. 
+
+   5. the embedded html widget remains active once the running
+      program has completed; in this state a button or anchor link
+      can cause another smallbasic program to be invoked. 
+      The subsequent program can access values of the previous
+      form using environment variables.
+
+   6. an anchor link automatically closes the help-widget. a button
+      leaves the form displayed. pressing the break menu option closes 
+      the help-widget. buttons with "type=submit" cause for the form
+      to be closed
+
+=================
+Issues:
+
+1. crash with the folowing code:
+input "a=";a
+if a=1 then
+print "a=1" then
+elseif a=2
+print "a=2"
+else
+print "a=3"
+endif 
+
+2. Incorrect colors displayed:
+...when I tried it later in FLTK version, I noticed that
+ FLTK version doesn't show color 15 on black background , 
+Kepu
 ===============================================================================
 [Issues following 0.9.6.0 release]
 
 1. File with DOS newlines open with <cr> - should be pre-processed and
-   removed (perhaps FLTK enhancement)
+   removed (perhaps FLTK enhancement) - added dos2unix itility (sb program)
 
 2. Indent.bas - handle if/then on same line with chars following "then"
 
@@ -43,9 +131,10 @@ since this would be the case with Win98:
 5. Apparently runs crappy on Win98 - update the installer to only accept
    Win2K or XP (sorry folks - why don't you try fedora core or slackware)
    
-6. Current FLTK build seems to have problems (as at 12/1/2005)
+6. Current FLTK build seems to have problems (as at 12/1/2005) - subversion
+   versions are now quite stable 
 
-7. Try to use same function keys as sbpad.
+7. Try to use same function keys as sbpad- fixed
 
 8. Help menu commands to launch html help and release notes
 
@@ -56,6 +145,8 @@ since this would be the case with Win98:
 11. Remove any error in the status bar before running a program.
 
 12. Status bar text outside bounds
+
+13. Problems with DRAW command.
 
 ===============================================================================
 [Tasks for 0.9.6.0 release]
@@ -144,5 +235,5 @@ since this would be the case with Win98:
 .><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º>  .,,.·´¯`·.. ¸><((((º>¸.  
    .....,,.><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º> .·´¯`·.. ¸><((((º>¸.  
 
-$Id: README.TXT,v 1.14 2005-03-07 22:34:17 zeeb90au Exp $
+$Id: README.TXT,v 1.15 2005-05-16 23:23:36 zeeb90au Exp $
 
