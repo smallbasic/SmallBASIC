@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.45 2005-05-15 23:26:47 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.46 2005-05-18 23:37:52 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -307,6 +307,9 @@ void doEvent(void*) {
         saveForm = true;
     } else if (wnd->siteHome.length() == 0) {
         // no currently visiting a remote site
+        if (wnd->editWnd->checkSave(true) == false) {
+            return;
+        }
         closeForm();
     }
     wnd->execLink(eventName.toString());
