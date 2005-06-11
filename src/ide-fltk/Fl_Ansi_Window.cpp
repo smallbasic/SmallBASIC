@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.32 2005-05-15 23:24:49 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.33 2005-06-11 22:03:55 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -45,9 +45,9 @@ using namespace fltk;
     GSave gsave;          \
     img->make_current();
 
-AnsiWindow::AnsiWindow(int x, int y, int w, int h) : 
+AnsiWindow::AnsiWindow(int x, int y, int w, int h, int defsize) : 
     Widget(x, y, w, h, 0) {
-    labelsize(11);
+    labelsize(defsize);
     init();
     img = 0;
     resized = false;
