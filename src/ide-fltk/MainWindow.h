@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.19 2005-04-17 23:43:38 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.20 2005-06-11 22:05:17 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -61,6 +61,9 @@ struct MainWindow : public Window {
     Group* editGroup;
     Group* outputGroup;
     Group* helpGroup;
+
+    // tool-bar
+    Choice* funcList;
 
     // status bar
     Widget* fileStatus;

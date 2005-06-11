@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.34 2005-05-14 22:23:49 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.35 2005-06-11 22:05:16 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -20,18 +20,20 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include <fltk/Button.h>
+#include <fltk/Choice.h>
+#include <fltk/FileChooser.h>
+#include <fltk/Flags.h>
+#include <fltk/Input.h>
+#include <fltk/Item.h>
+#include <fltk/MenuBar.h>
+#include <fltk/ReturnButton.h>
+#include <fltk/TextBuffer.h>
+#include <fltk/TextEditor.h>
 #include <fltk/ask.h>
 #include <fltk/damage.h>
 #include <fltk/events.h>
 #include <fltk/file_chooser.h>
-#include <fltk/Flags.h>
-#include <fltk/FileChooser.h>
-#include <fltk/MenuBar.h>
-#include <fltk/Input.h>
-#include <fltk/Button.h>
-#include <fltk/ReturnButton.h>
-#include <fltk/TextBuffer.h>
-#include <fltk/TextEditor.h>
 
 #include "EditorWindow.h"
 #include "MainWindow.h"
@@ -47,13 +49,13 @@
 using namespace fltk;
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
-    { BLACK,            COURIER, 14 }, // A - Plain
-    { color(0,128,0),   COURIER, 14 }, // B - Comments
-    { color(0,0,192),   COURIER, 14 }, // C - Strings
-    { color(128,0,0),   COURIER_BOLD, 14 }, // D - code_keywords
-    { color(128,128,0), COURIER_BOLD, 14 }, // E - code_functions
-    { color(0,128,128), COURIER_BOLD, 14 },  // F - code_procedures
-    { color(128,0,128), HELVETICA_BOLD, 14 }, // G - Find matches
+    { BLACK,            COURIER, 12 }, // A - Plain
+    { color(0,128,0),   COURIER, 12 }, // B - Comments
+    { color(0,0,192),   COURIER, 12 }, // C - Strings
+    { color(128,0,0),   COURIER_BOLD, 12 }, // D - code_keywords
+    { color(128,128,0), COURIER_BOLD, 12 }, // E - code_functions
+    { color(0,128,128), COURIER_BOLD, 12 },  // F - code_procedures
+    { color(128,0,128), HELVETICA_BOLD, 12 }, // G - Find matches
 };
 
 TextBuffer *stylebuf = 0;
@@ -129,7 +131,6 @@ void style_parse(const char *text, char *style, int length) {
                         text += offset;
                         length -= offset;
                         col += offset;
-                         //strncmp(bufptr, search, searchLen) == 0)) {
                         for (int i=0; i<searchLen && text < temp; i++) {
                             *style++ = 'G';
                             text++;
@@ -322,13 +323,6 @@ struct CodeEditor : public TextEditor {
         indentLevel = (s && s[0] ? atoi(s) : 4);
     }
 
-    void getRowCol(int *row, int *col) {
-        position_to_linecol(mCursorPos, row, col);
-    }
-    int position() {
-        return mCursorPos;
-    }
-
     int handle(int e);
     void saveUndo();
     void undo();
@@ -338,6 +332,8 @@ struct CodeEditor : public TextEditor {
     unsigned getIndent(char* indent, int len, int pos);
     void handleTab();
     void showRowCol();
+    void getRowCol(int *row, int *col);
+    int position();
 
     int oldCursorPos;
     bool readonly;
@@ -528,8 +524,8 @@ void CodeEditor::gotoLine(int line) {
         line = numLines;
     }
     scroll(line, 0);
-    int pos = buffer()->skip_lines(0, line-1);
-    insert_position(buffer()->line_start(pos));
+    int pos = buffer()->skip_lines(0, line-1); // find pos at line-1
+    insert_position(buffer()->line_start(pos)); // insert at column 0
     show_insert_position();
     setRowCol(line, 1);
 }
@@ -551,9 +547,17 @@ void CodeEditor::getSelEndRowCol(int *row, int *col) {
     if (start == end) {
         *row = -1;
         *col = -1;
-        } else {
+    } else {
         position_to_linecol(end, row, col);
     }
+}
+
+void CodeEditor::getRowCol(int *row, int *col) {
+    position_to_linecol(mCursorPos, row, col);
+}
+
+int CodeEditor::position() {
+    return mCursorPos;
 }
 
 //--EditorWindow----------------------------------------------------------------
@@ -682,6 +686,7 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI) {
     if (updateUI) {
         statusMsg(filename);
         addHistory(filename);
+        fileChanged();
     }
 
     textbuf->call_modify_callbacks();
@@ -715,11 +720,13 @@ void EditorWindow::showFindReplace() {
 }
 
 bool EditorWindow::findText(const char* find, bool forward) {
+    // copy lowercase search string for high-lighting
     strcpy(search, find);
     int findLen = strlen(search);
     for (int i=0; i<findLen; i++) {
         search[i] = tolower(search[i]);
     }
+
     style_update(0, textbuf->length(), textbuf->length(), 0,0, editor);
     if (find == 0 || find[0] == 0) {
         return 0;
@@ -751,6 +758,7 @@ void EditorWindow::newFile() {
     dirty = 0;
     textbuf->call_modify_callbacks();
     statusMsg(0);
+    fileChanged();
 }
 
 void EditorWindow::openFile() {
@@ -915,6 +923,55 @@ void EditorWindow::getSelStartRowCol(int *row, int *col) {
 
 void EditorWindow::getSelEndRowCol(int *row, int *col) {
     return ((CodeEditor*)editor)->getSelEndRowCol(row, col);
+}
+
+void EditorWindow::fontSize(int size) {
+    int len = sizeof(styletable) / sizeof(styletable[0]);
+    for (int i=0; i<len; i++) {
+        styletable[i].size = size;
+    }
+    textbuf->select(0, textbuf->length());
+    textbuf->select(0, 0);
+    editor->redraw(DAMAGE_ALL);
+}
+
+void EditorWindow::createFuncList() {
+    const char *text = textbuf->text();
+    int len = textbuf->length();
+    for (int i=0; i<len; i++) {
+        // avoid seeing "gosub" etc
+        int offs = ((strncasecmp(text+i, "\nsub ", 5) == 0 ||
+                     strncasecmp(text+i, " sub ", 5) == 0) ? 4 :
+                    (strncasecmp(text+i, "\nfunc ", 6) == 0 || 
+                     strncasecmp(text+i, " func ", 6) == 0) ? 5 : 0);
+        if (offs != 0) {
+            char* c = strchr(text+i+offs, '\n');
+            if (c) {
+                if (text[i] == '\n') {
+                    i++; // skip initial newline
+                }
+                String s;
+                s.append(text+i, c-(text+i));
+                Item* item = new Item();
+                item->copy_label(s.toString());
+            }
+        }
+    }
+}
+
+void EditorWindow::findFunc(const char* find) {
+    const char *text = textbuf->text();
+    int findLen = strlen(find);
+    int len = textbuf->length();
+    int lineNo = 1;
+    for (int i=0; i<len; i++) {
+        if (strncasecmp(text+i, find, findLen) == 0) {
+            gotoLine(lineNo);
+            return;
+        } else if (text[i] == '\n') {
+            lineNo++;
+        }
+    }
 }
 
 //--EndOfFile-------------------------------------------------------------------

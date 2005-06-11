@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.52 2005-05-15 23:25:58 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.53 2005-06-11 22:05:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -19,18 +19,19 @@
 #include <limits.h>
 #include <sys/stat.h>
 
-#include <fltk/run.h>
-#include <fltk/error.h>
-#include <fltk/ask.h>
-#include <fltk/events.h>
-#include <fltk/Window.h>
-#include <fltk/Item.h>
+#include <fltk/Choice.h>
 #include <fltk/Group.h>
+#include <fltk/Item.h>
+#include <fltk/MenuBar.h>
 #include <fltk/TabGroup.h>
 #include <fltk/TiledGroup.h>
-#include <fltk/MenuBar.h>
-#include <fltk/filename.h>
 #include <fltk/ValueInput.h>
+#include <fltk/Window.h>
+#include <fltk/ask.h>
+#include <fltk/error.h>
+#include <fltk/events.h>
+#include <fltk/filename.h>
+#include <fltk/run.h>
 
 #include "MainWindow.h"
 #include "EditorWindow.h"
@@ -64,12 +65,17 @@ int px,py,pw,ph;
 MainWindow* wnd;
 Input* findText;
 
+#define MIN_FONT_SIZE 11
+#define MAX_FONT_SIZE 22
+#define DEF_FONT_SIZE 12
+#define SCAN_LABEL "-[ Update ]-"
+
 const char* bashome = "./Bas-Home/";
 const char untitled[] = "untitled.bas";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
-    "FLTK Version 0.9.6.1<br>"
+    "FLTK Version 0.9.6.2<br>"
     "Copyright (c) 2002-2005 Chris Warren-Smith.<br><br>"
     "<a href=http://smallbasic.sourceforge.net>"
     "http://smallbasic.sourceforge.net</a><br><br>"
@@ -250,9 +256,27 @@ void goto_cb(Widget* w, void* v) {
 void font_size_cb(Widget* w, void* v) {
     ValueInput* sizeBn = (ValueInput*)v;
     int value = (int)sizeBn->value();
-    value = value > 100 ? 100 : value < 1 ? 1 : value;
+    value = value > MAX_FONT_SIZE ? MAX_FONT_SIZE : 
+        value < MIN_FONT_SIZE ? MIN_FONT_SIZE : value;
     wnd->out->fontSize(value);
+    wnd->editWnd->fontSize(value);
     sizeBn->value(value);
+}
+
+void func_list_cb(Widget* w, void* v) {
+    const char* label = wnd->funcList->item()->label();
+    if (label) {
+        if (strcmp(label, SCAN_LABEL) == 0) {
+            wnd->funcList->clear();
+            wnd->funcList->begin();
+            wnd->editWnd->createFuncList();
+            new Item(SCAN_LABEL);
+            wnd->funcList->end();
+        } else {
+            wnd->editWnd->findFunc(label);
+            wnd->editWnd->take_focus();
+        }
+    }
 }
 
 void basicMain(const char* filename) {
@@ -400,6 +424,13 @@ void addHistory(const char* fileName) {
         fwrite("\n", 1, 1, fp);
         fclose(fp);
     }
+}
+
+void fileChanged() {
+    wnd->funcList->clear();
+    wnd->funcList->begin();
+    new Item(SCAN_LABEL);
+    wnd->funcList->end();
 }
 
 //--Startup functions-----------------------------------------------------------
@@ -616,25 +647,44 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     Group* toolbar = new Group(2, 2, w-4, tbHeight);
     toolbar->begin();
     toolbar->box(THIN_UP_BOX);
-    findText = new Input(40, 4, 150, mnuHeight, "Find:");
+
+    // find control
+    findText = new Input(38, 4, 150, mnuHeight, "Find:");
     findText->align(ALIGN_LEFT|ALIGN_CLIP);
-    Button* prevBn = new Button(195,6,22,mnuHeight-4, "@<;");
-    Button* nextBn = new Button(220,6,22,mnuHeight-4, "@>;");
+    Button* prevBn = new Button(190, 6, 18, mnuHeight-4, "@-98>;");
+    Button* nextBn = new Button(210, 6, 18, mnuHeight-4, "@-92>;");
     prevBn->callback(find_cb, (void*)0);
     nextBn->callback(find_cb, (void*)1);
+    findText->labelfont(HELVETICA);
 
-    Input* gotoLine = new Input(280, 4, 40, mnuHeight, "Goto:");
+    // goto-line control
+    Input* gotoLine = new Input(268, 4, 40, mnuHeight, "Goto:");
     gotoLine->align(ALIGN_LEFT|ALIGN_CLIP);
-    Button* gotoBn = new Button(325,6,22,mnuHeight-4, "@>;");
+    Button* gotoBn = new Button(310, 6, 18, mnuHeight-4, "@-92>;");
     gotoBn->callback(goto_cb, gotoLine);
-    ValueInput* sizeBn = new ValueInput(415, 4, 40, mnuHeight, "Output Size:");
-    sizeBn->minimum(1);
-    sizeBn->maximum(30);
-    sizeBn->value(11);
+    gotoLine->labelfont(HELVETICA);
+
+    // sub-func jump droplist
+    funcList = new Choice(339, 4, 138, mnuHeight);
+    funcList->callback(func_list_cb, 0);
+    funcList->labelfont(COURIER);
+    funcList->begin();
+    new Item();
+    new Item(SCAN_LABEL);
+    funcList->end();
+    toolbar->resizable(funcList);
+
+    // font-size control
+    ValueInput* sizeBn = new ValueInput(542, 4, 40, mnuHeight, "Font Size:");
+    sizeBn->minimum(MIN_FONT_SIZE);
+    sizeBn->maximum(MAX_FONT_SIZE);
+    sizeBn->value(DEF_FONT_SIZE);
     sizeBn->step(1);
     sizeBn->callback(font_size_cb, sizeBn);
-
-    Group* boxEnd = new Group(500,4,0,0);
+    sizeBn->labelfont(HELVETICA);
+    
+    // close the tool-bar with a resizeable end-box
+    Group* boxEnd = new Group(1000,4,0,0);
     toolbar->resizable(boxEnd);
     toolbar->end();
 
@@ -656,7 +706,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     outputGroup->box(THIN_DOWN_BOX);
     outputGroup->hide();
     outputGroup->begin();
-    out = new AnsiWindow(2, 2, w-4, pageHeight-4);
+    out = new AnsiWindow(2, 2, w-4, pageHeight-4, DEF_FONT_SIZE);
     outputGroup->resizable(out);
     outputGroup->end();
 
