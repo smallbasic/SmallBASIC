@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.35 2005-06-11 22:05:16 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.36 2005-06-14 23:33:58 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -231,6 +231,8 @@ void style_init(void) {
 
     style_parse(text, style, textbuf->length());
     stylebuf->text(style);
+
+    free((void*)text);
     delete[] style;
 }
 
@@ -241,6 +243,7 @@ char* get_style_range(int start, int end) {
     const char* s = stylebuf->text_range(start, end);
     char *style = new char[strlen(s) + 1];
     strcpy(style, s);
+    free((void*)s);
     return style;
 }
 
@@ -301,6 +304,8 @@ void style_update(int pos,        // I - Position of update
         // the last character on the line changed styles, 
         // so reparse the remainder of the buffer
         delete[] style;
+        free((void*)text);
+
         end   = textbuf->length();
         text  = textbuf->text_range(start, end);
         style = get_style_range(start, end);
@@ -309,6 +314,7 @@ void style_update(int pos,        // I - Position of update
         editor->redisplay_range(start, end);
     }
 
+    free((void*)text);
     delete[] style;
 }
 
@@ -957,6 +963,7 @@ void EditorWindow::createFuncList() {
             }
         }
     }
+    free((void*)text);
 }
 
 void EditorWindow::findFunc(const char* find) {
@@ -967,11 +974,12 @@ void EditorWindow::findFunc(const char* find) {
     for (int i=0; i<len; i++) {
         if (strncasecmp(text+i, find, findLen) == 0) {
             gotoLine(lineNo);
-            return;
+            break;
         } else if (text[i] == '\n') {
             lineNo++;
         }
     }
+    free((void*)text);
 }
 
 //--EndOfFile-------------------------------------------------------------------

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.53 2005-06-11 22:05:16 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.54 2005-06-14 23:33:58 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -75,7 +75,7 @@ const char untitled[] = "untitled.bas";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
-    "FLTK Version 0.9.6.2<br>"
+    "FLTK Version 0.9.6.3<br>"
     "Copyright (c) 2002-2005 Chris Warren-Smith.<br><br>"
     "<a href=http://smallbasic.sourceforge.net>"
     "http://smallbasic.sourceforge.net</a><br><br>"
@@ -154,7 +154,9 @@ void browseFile(const char* url) {
         fclose(stderr);
         fclose(stdin);
         fclose(stdout);
-        execlp("htmlview", "htmlview", url, NULL);
+        if (execlp("htmlview", "htmlview", url, NULL) == 0) {
+            execlp("mozilla", "mozilla", url, NULL);
+        }
         ::exit(0); // in case exec failed 
     }
 #endif
@@ -166,11 +168,44 @@ void help_home_cb(Widget*, void* v) {
 }
 
 void help_contents_cb(Widget*, void* v) {
+    FILE* fp;
+    char buffer[1024];
+    char helpFile[250];
+
+    TextEditor *editor = wnd->editWnd->editor;
+    TextBuffer* tb = editor->buffer();
+    int pos = editor->insert_position();
+    int start = tb->word_start(pos);
+    int end = tb->word_end(pos);
+    const char* selection = tb->text_range(start, end);
+    int lenSelection = strlen(selection);
+
+    snprintf(buff, sizeof(buff), "%s/help/help.idx", startDir);
+    fp = fopen(buff, "r");
+    strcpy(helpFile, "0_0.html"); // default to index page
+
+    // scan for help context
+    if (fp) {
+        while (feof(fp) == 0) {
+            if (fgets(buffer, sizeof(buffer), fp) &&
+                strncasecmp(selection, buffer, lenSelection) == 0 &&
+                buffer[lenSelection] == ':') {
+                strcpy(helpFile, buffer+lenSelection+1);
+                helpFile[strlen(helpFile)-1] = 0; // trim \n
+                break;
+            }
+        }
+        fclose(fp);
+    }
+
+    showHelpTab();
     snprintf(buff, sizeof(buff), "%s/help/", startDir);
     wnd->helpWnd->setDocHome(buff);
-    strcat(buff, "0_0.html");
+    strcat(buff, helpFile);
     wnd->helpWnd->loadFile(buff);
-    showHelpTab();
+
+    // cleanup
+    free((void*)selection);
 }
 
 void help_app_cb(Widget*, void* v) {
@@ -384,6 +419,31 @@ void tool_cb(Widget* w, void* filename) {
     }
 }
 
+void setSelectionCase(bool upcase) {
+    TextBuffer* tb = wnd->editWnd->editor->buffer();
+    char* selection = (char*)tb->selection_text();
+    int len = strlen(selection);
+    int start, end;
+
+    tb->selection_position(&start, &end);
+    for (int i=0; i<len; i++) {
+        selection[i] = upcase ? toupper(selection[i]) : 
+            tolower(selection[i]);
+    }
+   
+    tb->replace_selection(selection);
+    tb->select(start, end);
+    free((void*)selection);
+}
+
+void upcase_cb(Widget* w, void* v) {
+    setSelectionCase(true);
+}
+
+void downcase_cb(Widget* w, void* v) {
+    setSelectionCase(false);    
+}
+
 //--EditWindow functions--------------------------------------------------------
 
 void setRowCol(int row, int col) {
@@ -396,20 +456,20 @@ void setRowCol(int row, int col) {
 }
 
 void setModified(bool dirty) {
-    wnd->modStatus->label(dirty?"MOD":"");
+    wnd->modStatus->label(dirty ? "MOD" : "");
     wnd->modStatus->redraw();
 }
 
 void addHistory(const char* fileName) {
+    char buffer[1024];
     getHomeDir(buff);
     strcat(buff, "history.txt");
 
     FILE* fp = fopen(buff, "r");
     if (fp) {
         // don't add the item if it already exists
-        char buffer[1024];
         while (feof(fp) == 0) {
-            if (fgets(buffer, 1024, fp) &&
+            if (fgets(buffer, sizeof(buffer), fp) &&
                 strncmp(fileName, buffer, strlen(fileName)-1) == 0) {
                 fclose(fp);
                 return;
@@ -488,7 +548,9 @@ void scanPlugIns(Menu* menu) {
         //this causes a stackdump
         //free(files[i]);
     }
-    free(files);
+    if (numFiles > 0) {
+        free(files);
+    }
 }
 
 int arg_cb(int argc, char **argv, int &i) {
@@ -612,6 +674,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/Cu&t",          CTRL+'x', (Callback*)EditorWindow::cut_cb);
     m->add("&Edit/&Copy",         CTRL+'c', (Callback*)EditorWindow::copy_cb);
     m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
+    m->add("&Edit/&Upcase",       CTRL+'u', (Callback*)upcase_cb);
+    m->add("&Edit/_&Downcase",    CTRL+'d', (Callback*)downcase_cb);
     m->add("&Edit/&Replace...",   F2Key,    (Callback*)EditorWindow::replace_cb);
     m->add("&Edit/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
     m->add("&View/Toggle/&Full Screen",0,   (Callback*)fullscreen_cb)->type(Item::TOGGLE);
