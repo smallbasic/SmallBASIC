@@ -31,7 +31,7 @@ if command = "X" then
 fi
 
 htxt = "<body bgcolor=white><b><font size=3>"
-if len(command) = 0 OR command = "R" then
+if len(command) = 0 OR command = "R" OR len(command) > 1 then
     htxt += "[Recent Files]"
 else
     htxt += "<a href='!"+app+" R'>[Recent Files]</a>"
