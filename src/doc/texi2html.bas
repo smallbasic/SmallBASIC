@@ -3,7 +3,7 @@
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 #
-# $Id: texi2html.bas,v 1.2 2005-05-04 23:38:35 zeeb90au Exp $
+# $Id: texi2html.bas,v 1.3 2005-06-15 01:39:20 zeeb90au Exp $
 # text2html.bas Copyright (c) Chris Warren-Smith July 2004 
 # Version 1.0
 #
@@ -374,9 +374,9 @@ func readNextSection(byref buffer, byref i, byref out, byref title, byref filena
             out << "<a name='" + lower(v(2)) + "'>"
             defs << lower(v(2))
             
-            out << "<u>" + v(1) + "</u>:"
-            out << "<b>" + v(2) + "</b>"
-            out << "<i>" + toString(v, 3)+ "</i>"
+            out << "<u>" + v(1) + "</u>: "
+            out << "<b>" + v(2) + "</b> "
+            out << "<i>" + toString(v, 3)+ "</i> "
         elseif (instr(s, "@end deffn") = 1) then
             #####out << "<br>"
         elseif (instr(s, "@table") = 1) then
@@ -556,6 +556,13 @@ sub execute(inputFile)
     next index
     out << "</table>"
     tsave "index.html", out
+
+    # save context help lookup file
+    out = 0
+    for index in g_index
+        out << index(0)+":"+index(1)+"#"+index(0)
+    next index
+    tsave "help.idx", out
     
     # these are also available
     # ? title
