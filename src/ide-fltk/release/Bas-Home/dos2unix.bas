@@ -1,5 +1,5 @@
 'tool-plug-in
-'menu Edit/Remove <cr> line endings
+'menu Remove <cr> line endings
 
 split command, "|", args() use trim(x)
 fname = args(0)

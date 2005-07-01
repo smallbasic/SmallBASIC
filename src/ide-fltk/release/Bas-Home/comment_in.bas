@@ -1,5 +1,5 @@
 'tool-plug-in
-'menu Edit/Comment Out Region
+'menu Comment Out Region
 
 split command, "|", args() use trim(x)
 local inbuf, outbuf

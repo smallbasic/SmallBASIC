@@ -1,5 +1,5 @@
 'tool-plug-in
-'menu Edit/Uncomment Region
+'menu Uncomment Region
 
 split command, "|", args() use trim(x)
 local inbuf, outbuf
