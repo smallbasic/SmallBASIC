@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.54 2005-06-14 23:33:58 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.55 2005-07-01 00:16:50 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -37,6 +37,7 @@
 #include "EditorWindow.h"
 #include "HelpWidget.h"
 #include "sbapp.h"
+#include "StringLib.h"
 
 #if defined(WIN32) 
 #include <fltk/win32.h>
@@ -63,15 +64,16 @@ char *startDir;
 char *runfile = 0;
 int px,py,pw,ph;
 MainWindow* wnd;
-Input* findText;
 
 #define MIN_FONT_SIZE 11
 #define MAX_FONT_SIZE 22
 #define DEF_FONT_SIZE 12
-#define SCAN_LABEL "-[ Update ]-"
+#define SCAN_LABEL "-[ Refresh ]-"
 
 const char* bashome = "./Bas-Home/";
-const char untitled[] = "untitled.bas";
+const char untitledFile[] = "untitled.bas";
+const char lasteditFile[] = "lastedit.txt";
+const char historyFile[] = "history.txt";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
@@ -115,7 +117,8 @@ void quit_cb(Widget*, void* v) {
 void statusMsg(const char* msg) {
     const char* filename = wnd->editWnd->getFilename();
     wnd->fileStatus->copy_label(msg && msg[0] ? msg : 
-                                filename && filename[0] ? filename : untitled);
+                                filename && filename[0] ? filename : 
+                                untitledFile);
     wnd->fileStatus->labelcolor(wnd->rowStatus->labelcolor());
     wnd->fileStatus->redraw();
 
@@ -168,34 +171,39 @@ void help_home_cb(Widget*, void* v) {
 }
 
 void help_contents_cb(Widget*, void* v) {
-    FILE* fp;
-    char buffer[1024];
     char helpFile[250];
-
-    TextEditor *editor = wnd->editWnd->editor;
-    TextBuffer* tb = editor->buffer();
-    int pos = editor->insert_position();
-    int start = tb->word_start(pos);
-    int end = tb->word_end(pos);
-    const char* selection = tb->text_range(start, end);
-    int lenSelection = strlen(selection);
-
-    snprintf(buff, sizeof(buff), "%s/help/help.idx", startDir);
-    fp = fopen(buff, "r");
     strcpy(helpFile, "0_0.html"); // default to index page
 
-    // scan for help context
-    if (fp) {
-        while (feof(fp) == 0) {
-            if (fgets(buffer, sizeof(buffer), fp) &&
-                strncasecmp(selection, buffer, lenSelection) == 0 &&
-                buffer[lenSelection] == ':') {
-                strcpy(helpFile, buffer+lenSelection+1);
-                helpFile[strlen(helpFile)-1] = 0; // trim \n
-                break;
+    if (event_key() != 0) {
+        // scan for help context
+        FILE* fp;
+        char buffer[1024];
+
+        TextEditor *editor = wnd->editWnd->editor;
+        TextBuffer* tb = editor->buffer();
+        int pos = editor->insert_position();
+        int start = tb->word_start(pos);
+        int end = tb->word_end(pos);
+        const char* selection = tb->text_range(start, end);
+        int lenSelection = strlen(selection);
+
+        snprintf(buff, sizeof(buff), "%s/help/help.idx", startDir);
+        fp = fopen(buff, "r");
+
+        if (fp) {
+            while (feof(fp) == 0) {
+                if (fgets(buffer, sizeof(buffer), fp) &&
+                    strncasecmp(selection, buffer, lenSelection) == 0 &&
+                    buffer[lenSelection] == ':') {
+                    strcpy(helpFile, buffer+lenSelection+1);
+                    helpFile[strlen(helpFile)-1] = 0; // trim \n
+                    break;
+                }
             }
+            fclose(fp);
         }
-        fclose(fp);
+        // cleanup
+        free((void*)selection);
     }
 
     showHelpTab();
@@ -203,9 +211,6 @@ void help_contents_cb(Widget*, void* v) {
     wnd->helpWnd->setDocHome(buff);
     strcat(buff, helpFile);
     wnd->helpWnd->loadFile(buff);
-
-    // cleanup
-    free((void*)selection);
 }
 
 void help_app_cb(Widget*, void* v) {
@@ -277,9 +282,9 @@ void turbo_cb(Widget* w, void* v) {
 }
 
 void find_cb(Widget* w, void* v) {
-    bool found = wnd->editWnd->findText(findText->value(), (int)v);
-    findText->textcolor(found ? BLACK : RED);
-    findText->redraw();
+    bool found = wnd->editWnd->findText(wnd->findText->value(), (int)v);
+    wnd->findText->textcolor(found ? BLACK : RED);
+    wnd->findText->redraw();
 }
 
 void goto_cb(Widget* w, void* v) {
@@ -358,7 +363,7 @@ void run_cb(Widget*, void*) {
         if (noSave == 0 || noSave[0] != '1') {
             if (filename == 0 || filename[0] == 0) {
                 getHomeDir(buff);
-                strcat(buff, untitled);
+                strcat(buff, untitledFile);
                 filename = buff;
                 wnd->editWnd->doSaveFile(filename, false);
             } else {
@@ -375,15 +380,17 @@ void run_cb(Widget*, void*) {
 // program will be changing the contents of the editor buffer
 void editor_cb(Widget* w, void* v) {
     char filename[256];
+    EditorWindow* editWnd = wnd->editWnd;
+    TextEditor *editor = editWnd->editor;
     strcpy(filename, wnd->editWnd->getFilename());
 
     if (runMode == edit_state) {
-        if (wnd->editWnd->checkSave(false) && filename[0]) {
-            int pos = wnd->editWnd->position();
+        if (editWnd->checkSave(false) && filename[0]) {
+            int pos = editor->insert_position();
             int row,col,s1r,s1c,s2r,s2c;
-            wnd->editWnd->getRowCol(&row, &col);
-            wnd->editWnd->getSelStartRowCol(&s1r, &s1c);
-            wnd->editWnd->getSelEndRowCol(&s2r, &s2c);
+            editWnd->getRowCol(&row, &col);
+            editWnd->getSelStartRowCol(&s1r, &s1c);
+            editWnd->getSelEndRowCol(&s2r, &s2c);
             sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
                     filename, row-1, col, s1r-1, s1c, s2r-1, s2c);
             runMode = run_state;
@@ -393,9 +400,10 @@ void editor_cb(Widget* w, void* v) {
             int success = sbasic_main(buff);
             showEditTab();
             runMsg(success ? " " : "ERR");
-            wnd->editWnd->loadFile(filename, -1, true);
-            wnd->editWnd->position(pos);
-            wnd->editWnd->take_focus();
+            editWnd->loadFile(filename, -1, true);
+            editor->insert_position(pos);
+            editor->show_insert_position();
+            editWnd->take_focus();
             runMode = edit_state;
             opt_command[0] = 0;
         }
@@ -419,29 +427,170 @@ void tool_cb(Widget* w, void* filename) {
     }
 }
 
-void setSelectionCase(bool upcase) {
-    TextBuffer* tb = wnd->editWnd->editor->buffer();
-    char* selection = (char*)tb->selection_text();
-    int len = strlen(selection);
+void change_case_cb(Widget* w, void* v) {
     int start, end;
+    TextEditor* editor = wnd->editWnd->editor;
+    TextBuffer* tb = editor->buffer();
+    char* selection;
 
-    tb->selection_position(&start, &end);
-    for (int i=0; i<len; i++) {
-        selection[i] = upcase ? toupper(selection[i]) : 
-            tolower(selection[i]);
+    if (tb->selected()) {
+        selection = (char*)tb->selection_text();
+        tb->selection_position(&start, &end);
+    } else {
+        int pos = editor->insert_position();
+        start = tb->word_start(pos);
+        end = tb->word_end(pos);
+        selection = (char*)tb->text_range(start, end);
     }
-   
-    tb->replace_selection(selection);
-    tb->select(start, end);
+    int len = strlen(selection);
+    enum {up, down, mixed} curcase = isupper(selection[0]) ? up : down;
+
+    for (int i=1; i<len; i++) {
+        if (isalpha(selection[i])) {
+            bool isup = isupper(selection[i]);
+            if ((curcase == up && isup == false) ||
+                (curcase == down && isup)) {
+                curcase = mixed;
+                break;
+            }
+        }
+    }
+
+    // transform pattern: Foo -> FOO, FOO -> foo, foo -> Foo
+    for (int i=0; i<len; i++) {
+        selection[i] = curcase == mixed ? 
+            toupper(selection[i]) : tolower(selection[i]);
+    }
+    if (curcase == down) {
+        selection[0] = toupper(selection[0]);
+        // upcase chars following non-alpha chars
+        for (int i=1; i<len; i++) {
+            if (isalpha(selection[i]) == false && i+1<len) {
+                selection[++i] = toupper(selection[i]);
+            }
+        }
+    }
+    
+    if (selection[0]) {
+        tb->replace_selection(selection);
+        tb->select(start, end);
+    }
     free((void*)selection);
 }
 
-void upcase_cb(Widget* w, void* v) {
-    setSelectionCase(true);
-}
+void expand_word_cb(Widget* w, void* v) {
+    FILE* fp;
+    int start, end;
+    char buffer[1024];
+    char* fullWord = 0;
+    TextEditor* editor = wnd->editWnd->editor;
+    TextBuffer* tb = editor->buffer();
 
-void downcase_cb(Widget* w, void* v) {
-    setSelectionCase(false);    
+    if (tb->selected()) {
+        // get word before selection
+        int pos1, pos2;
+        tb->selection_position(&pos1, &pos2);
+        start = tb->word_start(pos1-1);
+        end = pos1;
+        // retrieve the word from left of the selection to end of selection
+        fullWord = (char*)tb->text_range(start, pos2);
+    } else {
+        // nothing selected - get word to left of cursor position
+        int pos = editor->insert_position();
+        end = tb->word_end(pos);
+        start = tb->word_start(end-1);
+    }
+
+    if (start >= end) {
+        return;
+    }
+
+    char* expandWord = (char*)tb->text_range(start, end);
+    unsigned lenExpandWord = strlen(expandWord);
+
+    // scan for expandWord from within the current text buffer
+    if (tb->selected() == 0) {
+        int localPos = 0;
+        if (tb->search_backward(start-2, expandWord, &localPos, 0)) {
+            char* word = (char*)tb->text_range(tb->word_start(localPos), 
+                                               tb->word_end(localPos));
+            tb->insert(end, word+lenExpandWord);
+            tb->select(end, end+strlen(word+lenExpandWord));
+            editor->insert_position(end+strlen(word+lenExpandWord));
+            free((void*)word);
+            free((void*)expandWord);
+            return;
+        }
+    }
+
+    // keywords.txt created using
+    // sbasic.exe -pkw | sort | uniq  > keywords.txt
+    strlib::List keywords;
+    snprintf(buff, sizeof(buff), "%s/help/keywords.txt", startDir);
+    fp = fopen(buff, "r");
+    if (fp == 0) {
+        return;
+    }
+    while (feof(fp) == 0) {
+        if (fgets(buffer, sizeof(buffer), fp)) {
+            int lenb = strlen(buffer)-1;
+            buffer[lenb] = 0; // trim new-line
+            String* s = new String;
+            s->append(buffer);
+            keywords.add(s);
+        }
+    }
+    fclose(fp);
+
+    // find the next replacement 
+    int firstIndex = -1;
+    int lastIndex = -1;
+    int curIndex = -1;
+    int numWords = keywords.length();
+    for (int i=0; i<numWords; i++) {
+        const char* keyword = ((String*)keywords.get(i))->toString();
+        if (strncasecmp(expandWord, keyword, lenExpandWord) == 0) {
+            if (firstIndex == -1) {
+                firstIndex = i;
+            }
+            if (fullWord == 0) {
+                if (lenExpandWord == strlen(keyword)) {
+                    // nothing selected and word to left of cursor matches
+                    curIndex = i;
+                }
+            } else if (strcasecmp(fullWord, keyword) == 0) {
+                // selection+word to left of selection matches
+                curIndex = i;
+            }
+            lastIndex = i;
+        } else if (lastIndex != -1) {
+            // moved beyond matching words
+            break;
+        }
+    }
+
+    if (lastIndex != -1) {
+        if (lastIndex == curIndex || curIndex == -1) {
+            lastIndex = firstIndex; // wrap to first in subset
+        } else {
+            lastIndex = curIndex+1;
+        }
+
+        const char* keyword = ((String*)keywords.get(lastIndex))->toString();
+        // updated the segment of the replacement text 
+        // that completes the current selection
+        if (tb->selected()) {
+            tb->replace_selection(keyword+lenExpandWord);
+        } else {
+            tb->insert(end, keyword+lenExpandWord);
+        }
+        tb->select(end, end+strlen(keyword+lenExpandWord));
+    }
+    
+    free((void*)expandWord);
+    if (fullWord != 0) {
+        free((void*)fullWord);
+    }
 }
 
 //--EditWindow functions--------------------------------------------------------
@@ -460,12 +609,52 @@ void setModified(bool dirty) {
     wnd->modStatus->redraw();
 }
 
-void addHistory(const char* fileName) {
+void restoreEdit() {
+    FILE* fp;
     char buffer[1024];
-    getHomeDir(buff);
-    strcat(buff, "history.txt");
 
-    FILE* fp = fopen(buff, "r");
+    // continue editing the previous file
+    getHomeDir(buff);
+    strcat(buff, lasteditFile);
+    fp = fopen(buff, "r");
+    if (fp) {
+        fgets(buffer, sizeof(buffer), fp);
+        fclose(fp);
+        struct stat st;
+        if (stat(buffer, &st) == 0) {
+            wnd->editWnd->loadFile(buff, -1, false);
+            statusMsg(buff);
+            return;
+        }
+    }
+
+    // continue editing scratch buffer
+    getHomeDir(buff);
+    strcat(buff, untitledFile);
+    if (access(buff, 0) == 0) {
+        wnd->editWnd->loadFile(buff, -1, false);
+    }
+    statusMsg(buff);
+}
+
+void addHistory(const char* fileName) {
+    FILE* fp;
+    char buffer[1024];
+
+    // remember the last edited file
+    getHomeDir(buff);
+    strcat(buff, lasteditFile);
+    fp = fopen(buff, "w");
+    if (fp) {
+        fwrite(fileName, strlen(fileName), 1, fp);
+        fwrite("\n", 1, 1, fp);
+        fclose(fp);
+    }
+
+    getHomeDir(buff);
+    strcat(buff, historyFile);
+
+    fp = fopen(buff, "r");
     if (fp) {
         // don't add the item if it already exists
         while (feof(fp) == 0) {
@@ -486,9 +675,12 @@ void addHistory(const char* fileName) {
     }
 }
 
-void fileChanged() {
+void fileChanged(bool loadfile) {
     wnd->funcList->clear();
     wnd->funcList->begin();
+    if (loadfile) {
+        wnd->editWnd->createFuncList();
+    }
     new Item(SCAN_LABEL);
     wnd->funcList->end();
 }
@@ -536,7 +728,8 @@ void scanPlugIns(Menu* menu) {
                                         buffer[offs] == ' ')) {
                     offs++;
                 }
-                sprintf(label, "&Basic/%s", buffer+offs);
+                sprintf(label, (editorTool? "&Edit/Basic/%s":"&Basic/%s"),
+                        buffer+offs);
                 strcpy(buffer, bashome+1); // use an absolute path
                 strcat(buffer, filename);
                 menu->add(label, 0, (Callback*)
@@ -545,10 +738,12 @@ void scanPlugIns(Menu* menu) {
             }
             fclose(file);
         }
-        //this causes a stackdump
-        //free(files[i]);
     }
+    // cleanup
     if (numFiles > 0) {
+        for (int i=0; i<numFiles; i++) {
+            free(files[i]);            
+        }
         free(files);
     }
 }
@@ -623,13 +818,7 @@ int main(int argc, char **argv) {
         wnd->editWnd->loadFile(runfile, -1, true);
         break;
     default:
-        getHomeDir(buff);
-        strcat(buff, untitled);
-        if (access(buff, 0) == 0) {
-            // continue editing scratch buffer
-            wnd->editWnd->loadFile(buff, -1, false);
-        }
-        statusMsg(buff);
+        restoreEdit();
         runMode = edit_state;
     }
     return run();
@@ -674,10 +863,10 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&Edit/Cu&t",          CTRL+'x', (Callback*)EditorWindow::cut_cb);
     m->add("&Edit/&Copy",         CTRL+'c', (Callback*)EditorWindow::copy_cb);
     m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
-    m->add("&Edit/&Upcase",       CTRL+'u', (Callback*)upcase_cb);
-    m->add("&Edit/_&Downcase",    CTRL+'d', (Callback*)downcase_cb);
+    m->add("&Edit/&Change Case",  ALT+'c',  (Callback*)change_case_cb);
+    m->add("&Edit/_&Expand Word", ALT+'/',  (Callback*)expand_word_cb);
     m->add("&Edit/&Replace...",   F2Key,    (Callback*)EditorWindow::replace_cb);
-    m->add("&Edit/Replace &Again",CTRL+'t', (Callback*)EditorWindow::replace2_cb);
+    m->add("&Edit/_Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
     m->add("&View/Toggle/&Full Screen",0,   (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&View/Toggle/&Turbo", 0,        (Callback*)turbo_cb)->type(Item::TOGGLE);
     m->add("&View/&Next Tab",     F6Key,    (Callback*)next_tab_cb);

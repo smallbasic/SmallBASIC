@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.36 2005-06-14 23:33:58 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.37 2005-07-01 00:16:50 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -339,7 +339,6 @@ struct CodeEditor : public TextEditor {
     void handleTab();
     void showRowCol();
     void getRowCol(int *row, int *col);
-    int position();
 
     int oldCursorPos;
     bool readonly;
@@ -390,6 +389,7 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
         }
     }
     spaces[i] = 0;
+    free((void*)buf);
     return i;
 }
 
@@ -453,6 +453,7 @@ void CodeEditor::handleTab() {
         // already have ideal indent - soft-tab to indent
         insert_position(lineStart + indent);
     }
+    free((void*)buf);
 }
     
 int CodeEditor::handle(int e) {
@@ -560,10 +561,6 @@ void CodeEditor::getSelEndRowCol(int *row, int *col) {
 
 void CodeEditor::getRowCol(int *row, int *col) {
     position_to_linecol(mCursorPos, row, col);
-}
-
-int CodeEditor::position() {
-    return mCursorPos;
 }
 
 //--EditorWindow----------------------------------------------------------------
@@ -692,7 +689,7 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI) {
     if (updateUI) {
         statusMsg(filename);
         addHistory(filename);
-        fileChanged();
+        fileChanged(true);
     }
 
     textbuf->call_modify_callbacks();
@@ -764,7 +761,7 @@ void EditorWindow::newFile() {
     dirty = 0;
     textbuf->call_modify_callbacks();
     statusMsg(0);
-    fileChanged();
+    fileChanged(false);
 }
 
 void EditorWindow::openFile() {
@@ -912,15 +909,6 @@ void EditorWindow::gotoLine(int line) {
 
 void EditorWindow::getRowCol(int* row, int* col) {
     return ((CodeEditor*)editor)->getRowCol(row, col);
-}
-
-int EditorWindow::position() {
-    return ((CodeEditor*)editor)->position();
-}
-
-void EditorWindow::position(int pos) {
-    editor->insert_position(pos);
-    editor->show_insert_position();
 }
 
 void EditorWindow::getSelStartRowCol(int *row, int *col) {
