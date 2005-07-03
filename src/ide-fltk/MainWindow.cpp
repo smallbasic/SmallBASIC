@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.55 2005-07-01 00:16:50 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.56 2005-07-03 03:24:30 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -59,7 +59,7 @@ enum ExecState {
     quit_state
 } runMode = init_state;
 
-char buff[PATH_MAX];
+char path[MAX_PATH];
 char *startDir;
 char *runfile = 0;
 int px,py,pw,ph;
@@ -123,7 +123,7 @@ void statusMsg(const char* msg) {
     wnd->fileStatus->redraw();
 
 #if defined(WIN32) 
-     ::SetFocus(xid(Window::first()));
+    ::SetFocus(xid(Window::first()));
 #endif
 }
 
@@ -166,8 +166,8 @@ void browseFile(const char* url) {
 }
 
 void help_home_cb(Widget*, void* v) {
-    strcpy(buff, "http://smallbasic.sf.net");
-    browseFile(buff);
+    strcpy(path, "http://smallbasic.sf.net");
+    browseFile(path);
 }
 
 void help_contents_cb(Widget*, void* v) {
@@ -177,7 +177,7 @@ void help_contents_cb(Widget*, void* v) {
     if (event_key() != 0) {
         // scan for help context
         FILE* fp;
-        char buffer[1024];
+        char buffer[MAX_PATH];
 
         TextEditor *editor = wnd->editWnd->editor;
         TextBuffer* tb = editor->buffer();
@@ -187,8 +187,8 @@ void help_contents_cb(Widget*, void* v) {
         const char* selection = tb->text_range(start, end);
         int lenSelection = strlen(selection);
 
-        snprintf(buff, sizeof(buff), "%s/help/help.idx", startDir);
-        fp = fopen(buff, "r");
+        snprintf(path, sizeof(path), "%s/help/help.idx", startDir);
+        fp = fopen(path, "r");
 
         if (fp) {
             while (feof(fp) == 0) {
@@ -207,10 +207,10 @@ void help_contents_cb(Widget*, void* v) {
     }
 
     showHelpTab();
-    snprintf(buff, sizeof(buff), "%s/help/", startDir);
-    wnd->helpWnd->setDocHome(buff);
-    strcat(buff, helpFile);
-    wnd->helpWnd->loadFile(buff);
+    snprintf(path, sizeof(path), "%s/help/", startDir);
+    wnd->helpWnd->setDocHome(path);
+    strcat(path, helpFile);
+    wnd->helpWnd->loadFile(path);
 }
 
 void help_app_cb(Widget*, void* v) {
@@ -224,8 +224,8 @@ void help_app_cb(Widget*, void* v) {
 }
 
 void help_readme_cb(Widget*, void* v) {
-    snprintf(buff, sizeof(buff), "file:///%s/readme.html", startDir);
-    wnd->helpWnd->loadFile(buff);
+    snprintf(path, sizeof(path), "file:///%s/readme.html", startDir);
+    wnd->helpWnd->loadFile(path);
     showHelpTab();
 }
 
@@ -362,9 +362,9 @@ void run_cb(Widget*, void*) {
         const char* noSave = dev_getenv("NO_RUN_SAVE");
         if (noSave == 0 || noSave[0] != '1') {
             if (filename == 0 || filename[0] == 0) {
-                getHomeDir(buff);
-                strcat(buff, untitledFile);
-                filename = buff;
+                getHomeDir(path);
+                strcat(path, untitledFile);
+                filename = path;
                 wnd->editWnd->doSaveFile(filename, false);
             } else {
                 wnd->editWnd->doSaveFile(filename, true);
@@ -395,9 +395,8 @@ void editor_cb(Widget* w, void* v) {
                     filename, row-1, col, s1r-1, s1c, s2r-1, s2c);
             runMode = run_state;
             runMsg("RUN");
-            strcpy(buff, startDir);
-            strcat(buff, (const char*)v);
-            int success = sbasic_main(buff);
+            sprintf(path, "%s%s", startDir, (const char*)v);
+            int success = sbasic_main(path);
             showEditTab();
             runMsg(success ? " " : "ERR");
             editWnd->loadFile(filename, -1, true);
@@ -417,9 +416,8 @@ void tool_cb(Widget* w, void* filename) {
         strcpy(opt_command, startDir);
         strcat(opt_command, bashome+1);
         statusMsg((const char*)filename);
-        strcpy(buff, startDir);
-        strcat(buff, (const char*)filename);
-        basicMain(buff);
+        sprintf(path, "%s%s", startDir, (const char*)filename);
+        basicMain(path);
         statusMsg(wnd->editWnd->getFilename());
         opt_command[0] = 0;
     } else {
@@ -481,7 +479,7 @@ void change_case_cb(Widget* w, void* v) {
 void expand_word_cb(Widget* w, void* v) {
     FILE* fp;
     int start, end;
-    char buffer[1024];
+    char buffer[MAX_PATH];
     char* fullWord = 0;
     TextEditor* editor = wnd->editWnd->editor;
     TextBuffer* tb = editor->buffer();
@@ -506,19 +504,42 @@ void expand_word_cb(Widget* w, void* v) {
     }
 
     char* expandWord = (char*)tb->text_range(start, end);
-    unsigned lenExpandWord = strlen(expandWord);
+    unsigned expandWordLen = strlen(expandWord);
+    int wordPos = 0;
 
     // scan for expandWord from within the current text buffer
-    if (tb->selected() == 0) {
-        int localPos = 0;
-        if (tb->search_backward(start-2, expandWord, &localPos, 0)) {
-            char* word = (char*)tb->text_range(tb->word_start(localPos), 
-                                               tb->word_end(localPos));
-            tb->insert(end, word+lenExpandWord);
-            tb->select(end, end+strlen(word+lenExpandWord));
-            editor->insert_position(end+strlen(word+lenExpandWord));
+    if (tb->search_backward(start-2, expandWord, &wordPos, 0)) {
+        int matchPos = -1;
+        if (tb->selected() == 0) {
+            matchPos = wordPos;
+        } else {
+            // find the next word prior to the currently selected word
+            if (tb->search_backward(start-2, fullWord, &wordPos, 0)) {
+                while (tb->search_backward(wordPos-1, fullWord, &wordPos, 0)) {
+                    // find the further most fullWord
+                }
+                if (tb->search_backward(wordPos-1, expandWord, &wordPos, 0)) {
+                    matchPos = wordPos;
+                }
+            } else {
+                // fullWord not found so just use the nearest word
+                matchPos = wordPos;
+            }
+        }
+        if (matchPos != -1) {
+            char* word = (char*)tb->text_range(matchPos, tb->word_end(matchPos));
+            if (tb->selected()) {
+                tb->replace_selection(word+expandWordLen);
+            } else {
+                tb->insert(end, word+expandWordLen);
+            }
+            tb->select(end, end+strlen(word+expandWordLen));
+            editor->insert_position(end+strlen(word+expandWordLen));
             free((void*)word);
             free((void*)expandWord);
+            if (fullWord != 0) {
+                free((void*)fullWord);
+            }
             return;
         }
     }
@@ -526,8 +547,8 @@ void expand_word_cb(Widget* w, void* v) {
     // keywords.txt created using
     // sbasic.exe -pkw | sort | uniq  > keywords.txt
     strlib::List keywords;
-    snprintf(buff, sizeof(buff), "%s/help/keywords.txt", startDir);
-    fp = fopen(buff, "r");
+    snprintf(path, sizeof(path), "%s/help/keywords.txt", startDir);
+    fp = fopen(path, "r");
     if (fp == 0) {
         return;
     }
@@ -549,12 +570,12 @@ void expand_word_cb(Widget* w, void* v) {
     int numWords = keywords.length();
     for (int i=0; i<numWords; i++) {
         const char* keyword = ((String*)keywords.get(i))->toString();
-        if (strncasecmp(expandWord, keyword, lenExpandWord) == 0) {
+        if (strncasecmp(expandWord, keyword, expandWordLen) == 0) {
             if (firstIndex == -1) {
                 firstIndex = i;
             }
             if (fullWord == 0) {
-                if (lenExpandWord == strlen(keyword)) {
+                if (expandWordLen == strlen(keyword)) {
                     // nothing selected and word to left of cursor matches
                     curIndex = i;
                 }
@@ -580,11 +601,11 @@ void expand_word_cb(Widget* w, void* v) {
         // updated the segment of the replacement text 
         // that completes the current selection
         if (tb->selected()) {
-            tb->replace_selection(keyword+lenExpandWord);
+            tb->replace_selection(keyword+expandWordLen);
         } else {
-            tb->insert(end, keyword+lenExpandWord);
+            tb->insert(end, keyword+expandWordLen);
         }
-        tb->select(end, end+strlen(keyword+lenExpandWord));
+        tb->select(end, end+strlen(keyword+expandWordLen));
     }
     
     free((void*)expandWord);
@@ -596,11 +617,12 @@ void expand_word_cb(Widget* w, void* v) {
 //--EditWindow functions--------------------------------------------------------
 
 void setRowCol(int row, int col) {
-    sprintf(buff, "%d", row);
-    wnd->rowStatus->copy_label(buff);
+    char rowcol[20];
+    sprintf(rowcol, "%d", row);
+    wnd->rowStatus->copy_label(rowcol);
     wnd->rowStatus->redraw();
-    sprintf(buff, "%d", col);
-    wnd->colStatus->copy_label(buff);
+    sprintf(rowcol, "%d", col);
+    wnd->colStatus->copy_label(rowcol);
     wnd->colStatus->redraw();
 }
 
@@ -611,50 +633,49 @@ void setModified(bool dirty) {
 
 void restoreEdit() {
     FILE* fp;
-    char buffer[1024];
 
     // continue editing the previous file
-    getHomeDir(buff);
-    strcat(buff, lasteditFile);
-    fp = fopen(buff, "r");
+    getHomeDir(path);
+    strcat(path, lasteditFile);
+    fp = fopen(path, "r");
     if (fp) {
-        fgets(buffer, sizeof(buffer), fp);
+        fgets(path, sizeof(path), fp);
         fclose(fp);
-        struct stat st;
-        if (stat(buffer, &st) == 0) {
-            wnd->editWnd->loadFile(buff, -1, false);
-            statusMsg(buff);
+        path[strlen(path)-1] = 0; // trim new-line
+        if (access(path, 0) == 0) {
+            wnd->editWnd->loadFile(path, -1, false);
+            statusMsg(path);
             return;
         }
     }
 
     // continue editing scratch buffer
-    getHomeDir(buff);
-    strcat(buff, untitledFile);
-    if (access(buff, 0) == 0) {
-        wnd->editWnd->loadFile(buff, -1, false);
+    getHomeDir(path);
+    strcat(path, untitledFile);
+    if (access(path, 0) == 0) {
+        wnd->editWnd->loadFile(path, -1, false);
+        statusMsg(path);
     }
-    statusMsg(buff);
 }
 
 void addHistory(const char* fileName) {
     FILE* fp;
-    char buffer[1024];
+    char buffer[MAX_PATH];
 
     // remember the last edited file
-    getHomeDir(buff);
-    strcat(buff, lasteditFile);
-    fp = fopen(buff, "w");
+    getHomeDir(path);
+    strcat(path, lasteditFile);
+    fp = fopen(path, "w");
     if (fp) {
         fwrite(fileName, strlen(fileName), 1, fp);
         fwrite("\n", 1, 1, fp);
         fclose(fp);
     }
 
-    getHomeDir(buff);
-    strcat(buff, historyFile);
+    getHomeDir(path);
+    strcat(path, historyFile);
 
-    fp = fopen(buff, "r");
+    fp = fopen(path, "r");
     if (fp) {
         // don't add the item if it already exists
         while (feof(fp) == 0) {
@@ -667,7 +688,7 @@ void addHistory(const char* fileName) {
         fclose(fp);
     }
 
-    fp = fopen(buff, "a");
+    fp = fopen(path, "a");
     if (fp) {
         fwrite(fileName, strlen(fileName), 1, fp);
         fwrite("\n", 1, 1, fp);
@@ -676,11 +697,21 @@ void addHistory(const char* fileName) {
 }
 
 void fileChanged(bool loadfile) {
+    FILE* fp;
+
     wnd->funcList->clear();
     wnd->funcList->begin();
     if (loadfile) {
         wnd->editWnd->createFuncList();
+    } else {
+        // remove the last edited file
+        getHomeDir(path);
+        strcat(path, lasteditFile);
+        fp = fopen(path, "w");
+        fwrite("\n", 1, 1, fp);
+        fclose(fp);
     }
+
     new Item(SCAN_LABEL);
     wnd->funcList->end();
 }
@@ -690,18 +721,17 @@ void fileChanged(bool loadfile) {
 void scanPlugIns(Menu* menu) {
     dirent **files;
     FILE* file;
-    char buffer[1024];
+    char buffer[MAX_PATH];
     char label[1024];
 
-    snprintf(buff, sizeof(buff), "%s/Bas-Home", startDir);
-    int numFiles = filename_list(buff, &files);
+    snprintf(path, sizeof(path), "%s/Bas-Home", startDir);
+    int numFiles = filename_list(path, &files);
     for (int i=0; i<numFiles; i++) {
         const char* filename = (const char*)files[i]->d_name;
         int len = strlen(filename);
         if (strcasecmp(filename+len-4, ".bas") == 0) {
-            strcpy(buffer, bashome);
-            strcat(buffer, filename);
-            file = fopen(buffer, "r");
+            sprintf(path, "%s%s", bashome, filename);
+            file = fopen(path, "r");
 
             if (!file) {
                 continue;
@@ -730,11 +760,11 @@ void scanPlugIns(Menu* menu) {
                 }
                 sprintf(label, (editorTool? "&Edit/Basic/%s":"&Basic/%s"),
                         buffer+offs);
-                strcpy(buffer, bashome+1); // use an absolute path
-                strcat(buffer, filename);
+                // use an absolute path
+                sprintf(path, "%s%s", bashome+1, filename);
                 menu->add(label, 0, (Callback*)
                           (editorTool ? editor_cb : tool_cb), 
-                          strdup(buffer));
+                          strdup(path));
             }
             fclose(file);
         }
@@ -790,10 +820,10 @@ int main(int argc, char **argv) {
               " -m[odule]-home\n\n%s", help);
     }
 
-    getcwd(buff, sizeof (buff));
-    startDir = strdup(buff);
-    sprintf(buff, "BAS_HOME=%s%s", startDir, bashome+1);
-    dev_putenv(buff);
+    getcwd(path, sizeof(path));
+    startDir = strdup(path);
+    sprintf(path, "BAS_HOME=%s%s", startDir, bashome+1);
+    dev_putenv(path);
 
     wnd = new MainWindow(600, 400);
 #if defined(WIN32) 
@@ -1035,8 +1065,8 @@ void MainWindow::execLink(const char* file) {
         memset(&df, 0, sizeof(dev_file_t));
         strcpy(df.name, file);
         if (http_open(&df) == 0) {
-            sprintf(buff, "Failed to open URL: %s", file);
-            statusMsg(buff);
+            sprintf(localFile, "Failed to open URL: %s", file);
+            statusMsg(localFile);
             return;
         }
 
@@ -1055,13 +1085,13 @@ void MainWindow::execLink(const char* file) {
             if (strcasecmp(localFile+len-4, ".gif") == 0 ||
                 strcasecmp(localFile+len-4, ".jpeg") == 0 ||
                 strcasecmp(localFile+len-4, ".jpg") == 0) {
-                sprintf(buff, "<img src=%s>", localFile);
+                sprintf(path, "<img src=%s>", localFile);
             } else {
-                sprintf(buff, "file:%s", localFile);
+                sprintf(path, "file:%s", localFile);
             }
             siteHome.append(df.name, df.drv_dw[1]);
             statusMsg(siteHome.toString());
-            updateForm(buff);
+            updateForm(path);
             showOutputTab();
         }
         return;
@@ -1108,8 +1138,8 @@ void MainWindow::execLink(const char* file) {
             showEditTab();
         }
     } else {
-        sprintf(buff, "Failed to open: %s", file);
-        statusMsg(buff);
+        sprintf(path, "Failed to open: %s", file);
+        statusMsg(path);
     }
 }
 
