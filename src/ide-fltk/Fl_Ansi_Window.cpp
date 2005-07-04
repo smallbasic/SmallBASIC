@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.33 2005-06-11 22:03:55 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.34 2005-07-04 23:32:48 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -59,7 +59,7 @@ AnsiWindow::~AnsiWindow() {
 
 void AnsiWindow::destroyImage() {
     if (img) {
-        img->destroy_cache();
+        img->destroy();
         delete img;
         img = 0;
     }
@@ -131,7 +131,7 @@ void AnsiWindow::draw() {
             fillrect(Rectangle(W, H));
             setfont(labelfont(), labelsize());
             old->draw(Rectangle(old->w(), old->h()));
-            old->destroy_cache();
+            old->destroy();
             delete old;
             resized = false;
         }
@@ -189,7 +189,9 @@ void AnsiWindow::drawRect(int x1, int y1, int x2, int y2) {
 void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy, 
                            int width, int height) {
     begin_offscreen();
-    image->copy(Rectangle(x, y, width, height), sx, sy);
+    // todo: find a replacement for removed copy method 
+    //image->copy(Rectangle(x, y, width, height), sx, sy);
+    image->over(x,y);
     redraw();
 }
 
