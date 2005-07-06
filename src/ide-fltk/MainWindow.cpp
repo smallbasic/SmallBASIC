@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.57 2005-07-04 23:33:38 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.58 2005-07-06 03:26:58 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -63,6 +63,7 @@ char path[MAX_PATH];
 char *startDir;
 char *runfile = 0;
 int px,py,pw,ph;
+int completionIndex = 0;
 MainWindow* wnd;
 
 #define MIN_FONT_SIZE 11
@@ -485,31 +486,18 @@ void change_case_cb(Widget* w, void* v) {
 }
 
 bool searchBackward(const char* text, int startPos,
-                    const char* find, int* foundPos) {
-    int findLen = strlen(find);
+                    const char* find, int findLen, int* foundPos) {
     int matchIndex = findLen-1;
     for (int i=startPos; i>=0; i--) {
         bool equals = toupper(text[i]) == toupper(find[matchIndex]);
+        if (equals == false && matchIndex < findLen-1) {
+            // partial match now fails - reset search at current index
+            matchIndex = findLen-1;
+            equals = toupper(text[i]) == toupper(find[matchIndex]);
+        }
         matchIndex = (equals ? matchIndex-1 : findLen-1);
         if (matchIndex == -1 && (i==0 || isalpha(text[i-1]) == 0)) {
             // char prior to word is non-alpha
-            *foundPos = i;
-            return true;
-        }
-    }
-    return false;
-}
-
-//todo: fix this
-bool searchForward(const char* text, int startPos,
-                   const char* find, int* foundPos) {
-    int textLen = strlen(text);
-    int findLen = strlen(find);
-    int numMatch = 0;
-    for (int i=startPos; i<textLen; i++) {
-        bool equals = toupper(text[i]) == toupper(find[numMatch]);
-        numMatch = (equals ? numMatch+1 : 0);
-        if (numMatch == findLen  ) {
             *foundPos = i;
             return true;
         }
@@ -521,7 +509,8 @@ void expand_word_cb(Widget* w, void* v) {
     FILE* fp;
     int start, end;
     char buffer[MAX_PATH];
-    char* fullWord = 0;
+    const char* fullWord = 0;
+    unsigned fullWordLen = 0;
     TextEditor* editor = wnd->editWnd->editor;
     TextBuffer* textbuf = editor->buffer();
     const char *text = textbuf->text();
@@ -532,47 +521,62 @@ void expand_word_cb(Widget* w, void* v) {
         textbuf->selection_position(&pos1, &pos2);
         start = textbuf->word_start(pos1-1);
         end = pos1;
-        // retrieve the word from left of the selection to end of selection
-        fullWord = (char*)textbuf->text_range(start, pos2);
+        // get word from before selection to end of selection
+        fullWord = text+start;
+        fullWordLen = pos2-start;
     } else {
         // nothing selected - get word to left of cursor position
         int pos = editor->insert_position();
         end = textbuf->word_end(pos);
         start = textbuf->word_start(end-1);
+        completionIndex = 0;
     }
 
     if (start >= end) {
         return;
     }
 
-    char* expandWord = (char*)textbuf->text_range(start, end);
-    unsigned expandWordLen = strlen(expandWord);
+    const char* expandWord = text+start;
+    unsigned expandWordLen = end-start;
     int wordPos = 0;
-    
+
     // scan for expandWord from within the current text buffer
-    if (searchBackward(text, start-2, expandWord, &wordPos)) {
+    if (completionIndex != -1 && 
+        searchBackward(text, start-1, expandWord, expandWordLen, &wordPos)) {
+
         int matchPos = -1;
         if (textbuf->selected() == 0) {
             matchPos = wordPos;
+            completionIndex = 1; // find next word on next call
         } else {
             // find the next word prior to the currently selected word
-            if (searchBackward(text, start-2, fullWord, &wordPos)) {
-                while (searchBackward(text, wordPos-1, fullWord, &wordPos)) {
-                    // find the further most fullWord
+            int index = 1;
+            while (wordPos > 0) {
+                if (strncasecmp(text+wordPos, fullWord, fullWordLen) != 0) {
+                    matchPos = wordPos;
+                    if (completionIndex == index) {
+                        completionIndex++;
+                        break;
                     }
-                if (searchBackward(text, wordPos-1, expandWord, &wordPos)) {
-                    matchPos = wordPos;
-                } else {
-                    searchForward(text, wordPos, expandWord, &wordPos);
-                    matchPos = wordPos;
+                    // don't count index for matching fullWord
+                    index++;
+                } 
+                
+                if (searchBackward(text, wordPos-1, expandWord, 
+                                   expandWordLen, &wordPos) == 0) {
+                    matchPos = -1;
+                    break; // no more partial matches
                 }
-            } else {
-                // fullWord not found so just use the nearest word
-                matchPos = wordPos;
+            }
+            if (index == completionIndex) {
+                // end of expansion sequence
+                matchPos = -1;
+                completionIndex = -1;
             }
         }
         if (matchPos != -1) {
-            char* word = (char*)textbuf->text_range(matchPos, textbuf->word_end(matchPos));
+            char* word = (char*)textbuf->text_range(matchPos,
+                                                    textbuf->word_end(matchPos));
             if (textbuf->selected()) {
                 textbuf->replace_selection(word+expandWordLen);
             } else {
@@ -581,10 +585,7 @@ void expand_word_cb(Widget* w, void* v) {
             textbuf->select(end, end+strlen(word+expandWordLen));
             editor->insert_position(end+strlen(word+expandWordLen));
             free((void*)word);
-            free((void*)expandWord);
-            if (fullWord != 0) {
-                free((void*)fullWord);
-            }
+            free((void*)text);
             return;
         }
     }
@@ -595,6 +596,7 @@ void expand_word_cb(Widget* w, void* v) {
     snprintf(path, sizeof(path), "%s/help/keywords.txt", startDir);
     fp = fopen(path, "r");
     if (fp == 0) {
+        free((void*)text);
         return;
     }
     while (feof(fp) == 0) {
@@ -619,12 +621,12 @@ void expand_word_cb(Widget* w, void* v) {
             if (firstIndex == -1) {
                 firstIndex = i;
             }
-            if (fullWord == 0) {
+            if (fullWordLen == 0) {
                 if (expandWordLen == strlen(keyword)) {
                     // nothing selected and word to left of cursor matches
                     curIndex = i;
                 }
-            } else if (strcasecmp(fullWord, keyword) == 0) {
+            } else if (strncasecmp(fullWord, keyword, fullWordLen) == 0) {
                 // selection+word to left of selection matches
                 curIndex = i;
             }
@@ -638,6 +640,7 @@ void expand_word_cb(Widget* w, void* v) {
     if (lastIndex != -1) {
         if (lastIndex == curIndex || curIndex == -1) {
             lastIndex = firstIndex; // wrap to first in subset
+            completionIndex = 0;
         } else {
             lastIndex = curIndex+1;
         }
@@ -653,11 +656,7 @@ void expand_word_cb(Widget* w, void* v) {
         textbuf->select(end, end+strlen(keyword+expandWordLen));
     }
 
-    free((void*)text);    
-    free((void*)expandWord);
-    if (fullWord != 0) {
-        free((void*)fullWord);
-    }
+    free((void*)text);
 }
 
 //--EditWindow functions--------------------------------------------------------
