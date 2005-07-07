@@ -345,8 +345,7 @@ struct UlEndNode : public BaseNode {
 };
 
 struct LiNode : public BaseNode {
-    LiNode(const Style* style, UlNode* ulNode) {
-        this->style = style;
+    LiNode(UlNode* ulNode) {
         this->ulNode = ulNode;
     }
     void display(Display* out) {
@@ -361,13 +360,12 @@ struct LiNode : public BaseNode {
                 sprintf(t, "%d.", ++ulNode->nextId);
                 drawtext(t, 2, x, out->y1);
             } else {
-                dotImage.draw(Rectangle(x, y, 5, 5), style, OUTPUT);
+                dotImage.draw(Rectangle(x, y, 5, 5));
                 // draw messes with the current font - restore
                 setfont(out->font, out->fontSize);
             }
         }
     }
-    const Style* style;
     UlNode* ulNode;
 };
 
@@ -464,8 +462,7 @@ void ImageNode::display(Display* out) {
                     } else {
                         ih = h.value;
                     }
-                    Rectangle rc(x1, y1, iw, ih);
-                    image->draw(rc, style, OUTPUT);
+                    image->draw(Rectangle(x1, y1, iw, ih));
                     x1 += w.value;
                 }
                 y1 += h.value;
@@ -477,7 +474,7 @@ void ImageNode::display(Display* out) {
                 x += 1;
                 y += 1;
             }
-            image->draw(Rectangle(x, y, iw, ih), style, OUTPUT);
+            image->draw(Rectangle(x, y, iw, ih));
         }
     }
     if (background == 0) {
@@ -2060,7 +2057,7 @@ void HelpWidget::compile() {
                     uline = true;
                     nodeList.add(new StyleNode(uline, center));
                 } else if (0 == strncasecmp(tag, "li>", 3)) {
-                    node = new LiNode(style(), (UlNode*)olStack.peek());
+                    node = new LiNode((UlNode*)olStack.peek());
                     nodeList.add(node);
                     padlines = false;
                     text = skipWhite(tagEnd+1);
@@ -2293,7 +2290,7 @@ void HelpWidget::loadFile(const char *f) {
     reloadPage();
     if (target) {
         // draw to obtain dimensions
-        fltk::flush(); 
+        fltk::flush();
         scrollTo(target+1);
     }
 }

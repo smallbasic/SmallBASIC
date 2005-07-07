@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.37 2005-07-01 00:16:50 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.38 2005-07-07 00:02:09 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -432,7 +432,10 @@ void CodeEditor::handleTab() {
     }
     if (curIndent < indent) {
         // insert additional spaces
-        int len = min((int)sizeof(spaces)-1, indent-curIndent);
+        int len = indent-curIndent;
+        if (len > (int)sizeof(spaces)-1) {
+            len = (int)sizeof(spaces)-1;
+        }
         memset(spaces, ' ', len);
         spaces[len] = 0;
         buffer()->insert(lineStart, spaces);
