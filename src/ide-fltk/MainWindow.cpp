@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.58 2005-07-06 03:26:58 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.59 2005-07-07 00:02:40 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -102,8 +102,7 @@ void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
         const char* filename = wnd->editWnd->getFilename();
         int offs = strlen(filename)-strlen(untitledFile);
-
-        if (offs > 0 && strcmp(filename+offs, untitledFile) == 0) {
+        if (offs > 0 && strcasecmp(filename+offs, untitledFile) == 0) {
             wnd->editWnd->saveFile(); // auto-save scratchpad
             exit(0);
         }
@@ -523,7 +522,7 @@ void expand_word_cb(Widget* w, void* v) {
         end = pos1;
         // get word from before selection to end of selection
         fullWord = text+start;
-        fullWordLen = pos2-start;
+        fullWordLen = pos2-start-1;
     } else {
         // nothing selected - get word to left of cursor position
         int pos = editor->insert_position();
@@ -552,7 +551,9 @@ void expand_word_cb(Widget* w, void* v) {
             // find the next word prior to the currently selected word
             int index = 1;
             while (wordPos > 0) {
-                if (strncasecmp(text+wordPos, fullWord, fullWordLen) != 0) {
+                if (strncasecmp(text+wordPos, fullWord, fullWordLen) != 0 ||
+                    isalpha(text[wordPos+fullWordLen+1])) {
+                    // isalpha - matches fullWord but word has more chars
                     matchPos = wordPos;
                     if (completionIndex == index) {
                         completionIndex++;
@@ -560,7 +561,7 @@ void expand_word_cb(Widget* w, void* v) {
                     }
                     // don't count index for matching fullWord
                     index++;
-                } 
+                }
                 
                 if (searchBackward(text, wordPos-1, expandWord, 
                                    expandWordLen, &wordPos) == 0) {
@@ -571,12 +572,11 @@ void expand_word_cb(Widget* w, void* v) {
             if (index == completionIndex) {
                 // end of expansion sequence
                 matchPos = -1;
-                completionIndex = -1;
             }
         }
         if (matchPos != -1) {
-            char* word = (char*)textbuf->text_range(matchPos,
-                                                    textbuf->word_end(matchPos));
+            char* word = (char*)
+                textbuf->text_range(matchPos, textbuf->word_end(matchPos));
             if (textbuf->selected()) {
                 textbuf->replace_selection(word+expandWordLen);
             } else {
@@ -589,6 +589,8 @@ void expand_word_cb(Widget* w, void* v) {
             return;
         }
     }
+
+    completionIndex = -1; // no more buffer expansions
 
     // keywords.txt created using
     // sbasic.exe -pkw | sort | uniq  > keywords.txt
@@ -640,7 +642,6 @@ void expand_word_cb(Widget* w, void* v) {
     if (lastIndex != -1) {
         if (lastIndex == curIndex || curIndex == -1) {
             lastIndex = firstIndex; // wrap to first in subset
-            completionIndex = 0;
         } else {
             lastIndex = curIndex+1;
         }
