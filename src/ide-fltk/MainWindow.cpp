@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.59 2005-07-07 00:02:40 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.60 2005-07-07 23:13:52 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -100,10 +100,15 @@ bool isFormActive();
 
 void quit_cb(Widget*, void* v) {
     if (runMode == edit_state || runMode == quit_state) {
+
+        // auto-save scratchpad        
         const char* filename = wnd->editWnd->getFilename();
         int offs = strlen(filename)-strlen(untitledFile);
-        if (offs > 0 && strcasecmp(filename+offs, untitledFile) == 0) {
-            wnd->editWnd->saveFile(); // auto-save scratchpad
+        if (filename[0] == 0 || 
+            (offs > 0 && strcasecmp(filename+offs, untitledFile) == 0)) {
+            getHomeDir(path);
+            strcat(path, untitledFile);
+            wnd->editWnd->doSaveFile(path, 0);
             exit(0);
         }
 
@@ -559,7 +564,7 @@ void expand_word_cb(Widget* w, void* v) {
                         completionIndex++;
                         break;
                     }
-                    // don't count index for matching fullWord
+                    // count index for non-matching fullWords only
                     index++;
                 }
                 
@@ -691,6 +696,7 @@ void restoreEdit() {
         if (access(path, 0) == 0) {
             wnd->editWnd->loadFile(path, -1, false);
             statusMsg(path);
+            fileChanged(true);
             return;
         }
     }
@@ -701,6 +707,7 @@ void restoreEdit() {
     if (access(path, 0) == 0) {
         wnd->editWnd->loadFile(path, -1, false);
         statusMsg(path);
+        fileChanged(true);
     }
 }
 
