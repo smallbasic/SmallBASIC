@@ -212,7 +212,9 @@ void FontNode::display(Display* out) {
     if (font) {
         setfont(font, fontSize);
     }
-    if (color) {
+    if (color == (Color)-1) {
+        setcolor(out->color); // </font> restores color
+    } else if (color != 0) {
         setcolor(color);
     }
     int oldLineHeight = out->lineHeight;
@@ -1926,8 +1928,9 @@ void HelpWidget::compile() {
                         nodeList.add(new BrNode(pre));
                         padlines = false;
                     }
+                    color = (0 == strncasecmp(tag, "f", 1) ? (Color)-1 : 0);
                     font = fltk::HELVETICA;
-                    node = new FontNode(font, fontSize, 0, bold, italic);
+                    node = new FontNode(font, fontSize, color, bold, italic);
                     nodeList.add(node);
                 } else if (0 == strncasecmp(tag, "pre", 3)) {
                     pre = false;
