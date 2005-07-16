@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.38 2005-07-07 00:02:09 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.39 2005-07-16 02:38:23 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -237,7 +237,7 @@ void style_init(void) {
 }
 
 // 'style_unfinished_cb()' - Update unfinished styles.
-void style_unfinished_cb() {}
+void style_unfinished_cb(int, void *) {}
 
 char* get_style_range(int start, int end) {
     const char* s = stylebuf->text_range(start, end);
@@ -323,15 +323,11 @@ void style_update(int pos,        // I - Position of update
 struct CodeEditor : public TextEditor {
     CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
         readonly = false;
-        undoBuff = 0;
-        curBuff = 0;
         const char* s = getenv("INDENT_LEVEL");
         indentLevel = (s && s[0] ? atoi(s) : 4);
     }
 
     int handle(int e);
-    void saveUndo();
-    void undo();
     void gotoLine(int line);
     void getSelStartRowCol(int *row, int *col);
     void getSelEndRowCol(int *row, int *col);
@@ -340,10 +336,7 @@ struct CodeEditor : public TextEditor {
     void showRowCol();
     void getRowCol(int *row, int *col);
 
-    int oldCursorPos;
     bool readonly;
-    char* undoBuff;
-    char* curBuff;
     int indentLevel;
 };
 
@@ -507,24 +500,6 @@ void CodeEditor::showRowCol() {
         setRowCol(row, col+1);
     }
 }
-
-void CodeEditor::saveUndo() {
-    if (undoBuff) {
-        free(undoBuff);
-    }
-    undoBuff = curBuff;
-    curBuff = strdup(buffer()->text());
-    oldCursorPos = mCursorPos;
-}       
-    
-void CodeEditor::undo() {
-    if (undoBuff) {
-        buffer()->text(undoBuff);
-        free(undoBuff);
-        undoBuff = 0;
-        mCursorPos = oldCursorPos;
-    }
-}
     
 void CodeEditor::gotoLine(int line) {
     int numLines = buffer()->count_lines(0, buffer()->length());
@@ -600,9 +575,11 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
     editor->highlight_data(stylebuf, styletable,
                            sizeof(styletable) / sizeof(styletable[0]),
                            'A', style_unfinished_cb, 0);
-    editor->textfont(COURIER);
-    editor->cursor_style(TextDisplay::BLOCK_CURSOR);
-    editor->selection_color(fltk::color(190,189,188));
+    //editor->textfont(COURIER);
+    //editor->textsize(4);//(int)Widget::default_style->labelsize());
+    //editor->wrap_mode(true, 80);
+    //editor->cursor_style(TextDisplay::NORMAL_CURSOR);
+    //editor->selection_color(fltk::color(190,189,188));
     end();
     resizable(editor);
 
@@ -630,7 +607,7 @@ bool EditorWindow::readonly() {
 
 void EditorWindow::readonly(bool is_readonly) {
     editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR : 
-                         TextDisplay::BLOCK_CURSOR);
+                         TextDisplay::NORMAL_CURSOR);
     ((CodeEditor*)editor)->readonly = is_readonly;
 }
 
@@ -641,7 +618,6 @@ void EditorWindow::doChange(int inserted, int deleted) {
 
     if (inserted || deleted) {
         dirty = 1;
-        ((CodeEditor*)editor)->saveUndo();
     }
 
     setModified(dirty);
@@ -714,6 +690,10 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
 
     if (updateUI) {
         dirty = 0;
+        if (filename[0] == 0) {
+            // naming a previously unnamed buffer
+            addHistory(basfile);
+        }
         strcpy(filename, basfile);
         textbuf->call_modify_callbacks();
         statusMsg(basfile);
@@ -900,10 +880,6 @@ void EditorWindow::saveFileAs() {
 
 void EditorWindow::doDelete() {
     textbuf->remove_selection();
-}
-
-void EditorWindow::undo() {
-    ((CodeEditor*)editor)->undo();
 }
 
 void EditorWindow::gotoLine(int line) {
