@@ -4,6 +4,7 @@
 sub listFiles(basHome, byref htxt)
     # add files from BAS_HOME
     basHomeFiles = files(basHome+"*.bas")
+    sort basHomeFiles
     for a in basHomeFiles
         i++
         if i%2 = 1 then
@@ -15,7 +16,7 @@ sub listFiles(basHome, byref htxt)
         fullpath  = basHome + a
         htxt += "<td><a href='" +fullpath+"'>[Edit]</a></td>"
         htxt += "<td><a href='!"+fullpath+"'>[Run]</a></td>"
-        htxt += "</tr>" 
+        htxt += "</tr>"
     next i
     # add final blank
     htxt += "<tr bgcolor=white><td></td></tr>"
@@ -51,10 +52,18 @@ htxt += "</b><br>"
 if len(command) = 0 OR (command != "S" and command != "H") then
     htxt += "<hr><h4>Recent Files</h4><table>"
     if (exist(historyFile)) then
+        sortedFiles = 0
         open historyFile for input as #1
-        i=1
         while not eof (1)
             lineinput #1, a
+            a = translate(a, "\", "/")
+            sortedFiles << a
+        wend
+        close #1
+
+        i=1
+        sort sortedFiles
+        for a in sortedFiles
             i++
             if i%2 = 1 then
                 htxt += "<tr bgcolor=#c1c1c1>"
@@ -65,8 +74,7 @@ if len(command) = 0 OR (command != "S" and command != "H") then
             htxt += "<td><a href='" +a+"'>[Edit]</a></td>"
             htxt += "<td><a href='!"+a+"'>[Run]</a></td>"
             htxt += "</tr>" 
-        wend
-        close #1
+        next a
     fi
 
     # add the scratch file
