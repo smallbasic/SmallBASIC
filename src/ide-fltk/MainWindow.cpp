@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.61 2005-07-25 00:07:45 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.62 2005-07-25 23:41:09 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -804,20 +804,27 @@ void fileChanged(bool loadfile) {
         wnd->funcList->redraw();
 
         // update the last used file menu
+        bool found = false;
         const char* filename = wnd->editWnd->getFilename();
         for (int i=0; i<NUM_RECENT_ITEMS; i++) {
-            Widget* menu = recentMenu[i];
             if (strcmp(filename, recentPath[i].toString()) == 0) {
+                found = true;
                 break;
             }
-            if (strcmp(menu->label(), untitledFile) == 0) {
-                char* c = strrchr(filename, '/');
-                if (c == 0) c = strrchr(filename, '\\');
+        }
+        if (found == false) {
+            // shift items downwards
+            for (int i=NUM_RECENT_ITEMS-1; i>0; i--) {
+                recentMenu[i]->copy_label(recentMenu[i-1]->label());
                 recentPath[i].empty();
-                recentPath[i].append(filename);
-                recentMenu[i]->copy_label(c?c+1:filename);
-                break;
+                recentPath[i].append(recentPath[i-1]);
             }
+            // create new item in first position
+            char* c = strrchr(filename, '/');
+            if (c == 0) c = strrchr(filename, '\\');
+            recentPath[0].empty();
+            recentPath[0].append(filename);
+            recentMenu[0]->copy_label(c?c+1:filename);
         }
     } else {
         // empty the last edited file
@@ -851,7 +858,8 @@ void scanRecentFiles(Menu* menu) {
                 if (c == 0) c = strrchr(buffer, '\\');
                 sprintf(label, "&File/Open Recent File/%s", c?c+1:buffer);
                 recentMenu[i] = menu->add(label, CTRL+'1'+i, (Callback*)
-                                          load_file_cb, (void*)(i+1));
+                                          load_file_cb, (void*)(i+1),
+                                          RAW_LABEL);
                 recentPath[i].append(buffer);
                 if (++i == NUM_RECENT_ITEMS) {
                     break;
