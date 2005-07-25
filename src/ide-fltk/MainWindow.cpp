@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.60 2005-07-07 23:13:52 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.61 2005-07-25 00:07:45 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -59,17 +59,20 @@ enum ExecState {
     quit_state
 } runMode = init_state;
 
+#define MIN_FONT_SIZE 11
+#define MAX_FONT_SIZE 22
+#define DEF_FONT_SIZE 12
+#define SCAN_LABEL "-[ Refresh ]-"
+#define NUM_RECENT_ITEMS 9
+
 char path[MAX_PATH];
 char *startDir;
 char *runfile = 0;
 int px,py,pw,ph;
 int completionIndex = 0;
 MainWindow* wnd;
-
-#define MIN_FONT_SIZE 11
-#define MAX_FONT_SIZE 22
-#define DEF_FONT_SIZE 12
-#define SCAN_LABEL "-[ Refresh ]-"
+Widget* recentMenu[NUM_RECENT_ITEMS];
+String recentPath[NUM_RECENT_ITEMS];
 
 const char* bashome = "./Bas-Home/";
 const char untitledFile[] = "untitled.bas";
@@ -78,7 +81,7 @@ const char historyFile[] = "history.txt";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
-    "FLTK Version 0.9.6.3<br>"
+    "FLTK Version 0.9.6.4<br>"
     "Copyright (c) 2002-2005 Chris Warren-Smith.<br><br>"
     "<a href=http://smallbasic.sourceforge.net>"
     "http://smallbasic.sourceforge.net</a><br><br>"
@@ -90,7 +93,7 @@ const char aboutText[] =
     "<i>Press F1 for help";
 
 // in dev_fltk.cpp
-void getHomeDir(char* fileName);
+void getHomeDir(char* filename);
 bool cacheLink(dev_file_t* df, char* localFile);
 void updateForm(const char* s);
 void closeForm();
@@ -333,10 +336,26 @@ void func_list_cb(Widget* w, void* v) {
 }
 
 void basicMain(const char* filename) {
-    wnd->editWnd->readonly(true);
     showOutputTab();
-    runMode = run_state;
 
+    int len = strlen(filename);
+    if (strcasecmp(filename+len-4, ".htm") == 0 ||
+        strcasecmp(filename+len-5, ".html") == 0) {
+        // render html edit buffer
+        sprintf(path, "file:%s", filename);
+        updateForm(path);
+        wnd->editWnd->take_focus();
+        return;
+    }
+    if (access(filename, 0) != 0) {
+        statusMsg("File not found");
+        runMode = edit_state;
+        runMsg("ERR");
+        return;
+    }
+
+    wnd->editWnd->readonly(true);
+    runMode = run_state;
     runMsg("RUN");
     wnd->copy_label("SmallBASIC");
 
@@ -665,6 +684,16 @@ void expand_word_cb(Widget* w, void* v) {
     free((void*)text);
 }
 
+void load_file_cb(Widget* w, void* index) {
+    if (wnd->editWnd->checkSave(true)) {
+        const char* path = recentPath[((int)index)-1].toString();
+        wnd->editWnd->loadFile(path, -1, false);
+        statusMsg(path);
+        fileChanged(true);
+        showEditTab();
+    }
+}
+
 //--EditWindow functions--------------------------------------------------------
 
 void setRowCol(int row, int col) {
@@ -680,6 +709,15 @@ void setRowCol(int row, int col) {
 void setModified(bool dirty) {
     wnd->modStatus->label(dirty ? "MOD" : "");
     wnd->modStatus->redraw();
+}
+
+void updatePath(char* filename) {
+    int len = filename ? strlen(filename) : 0;
+    for (int i=0; i<len; i++) {
+        if (filename[i] == '\\') {
+            filename[i] = '/';
+        }
+    }
 }
 
 void restoreEdit() {
@@ -711,16 +749,22 @@ void restoreEdit() {
     }
 }
 
-void addHistory(const char* fileName) {
+void addHistory(const char* filename) {
     FILE* fp;
     char buffer[MAX_PATH];
+
+    int len = strlen(filename);
+    if (strcasecmp(filename+len-4, ".sbx") == 0) {
+        // don't remember bas exe files
+        return;
+    }
 
     // remember the last edited file
     getHomeDir(path);
     strcat(path, lasteditFile);
     fp = fopen(path, "w");
     if (fp) {
-        fwrite(fileName, strlen(fileName), 1, fp);
+        fwrite(filename, strlen(filename), 1, fp);
         fwrite("\n", 1, 1, fp);
         fclose(fp);
     }
@@ -733,7 +777,7 @@ void addHistory(const char* fileName) {
         // don't add the item if it already exists
         while (feof(fp) == 0) {
             if (fgets(buffer, sizeof(buffer), fp) &&
-                strncmp(fileName, buffer, strlen(fileName)-1) == 0) {
+                strncmp(filename, buffer, strlen(filename)-1) == 0) {
                 fclose(fp);
                 return;
             }
@@ -743,7 +787,7 @@ void addHistory(const char* fileName) {
 
     fp = fopen(path, "a");
     if (fp) {
-        fwrite(fileName, strlen(fileName), 1, fp);
+        fwrite(filename, strlen(filename), 1, fp);
         fwrite("\n", 1, 1, fp);
         fclose(fp);
     }
@@ -755,9 +799,28 @@ void fileChanged(bool loadfile) {
     wnd->funcList->clear();
     wnd->funcList->begin();
     if (loadfile) {
+        // update the func/sub navigator
         wnd->editWnd->createFuncList();
+        wnd->funcList->redraw();
+
+        // update the last used file menu
+        const char* filename = wnd->editWnd->getFilename();
+        for (int i=0; i<NUM_RECENT_ITEMS; i++) {
+            Widget* menu = recentMenu[i];
+            if (strcmp(filename, recentPath[i].toString()) == 0) {
+                break;
+            }
+            if (strcmp(menu->label(), untitledFile) == 0) {
+                char* c = strrchr(filename, '/');
+                if (c == 0) c = strrchr(filename, '\\');
+                recentPath[i].empty();
+                recentPath[i].append(filename);
+                recentMenu[i]->copy_label(c?c+1:filename);
+                break;
+            }
+        }
     } else {
-        // remove the last edited file
+        // empty the last edited file
         getHomeDir(path);
         strcat(path, lasteditFile);
         fp = fopen(path, "w");
@@ -770,6 +833,41 @@ void fileChanged(bool loadfile) {
 }
 
 //--Startup functions-----------------------------------------------------------
+
+void scanRecentFiles(Menu* menu) {
+    FILE* fp;
+    char buffer[MAX_PATH];
+    char label[1024];
+    int i=0;
+
+    getHomeDir(path);
+    strcat(path, historyFile);
+    fp = fopen(path, "r");
+    if (fp) {
+        while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
+            buffer[strlen(buffer)-1] = 0; // trim new-line
+            if (access(buffer, 0) == 0) {
+                char* c = strrchr(buffer, '/');
+                if (c == 0) c = strrchr(buffer, '\\');
+                sprintf(label, "&File/Open Recent File/%s", c?c+1:buffer);
+                recentMenu[i] = menu->add(label, CTRL+'1'+i, (Callback*)
+                                          load_file_cb, (void*)(i+1));
+                recentPath[i].append(buffer);
+                if (++i == NUM_RECENT_ITEMS) {
+                    break;
+                }
+            }
+        }
+        fclose(fp);
+    }
+    while (i<NUM_RECENT_ITEMS) {
+        sprintf(label, "&File/Open Recent File/%s", untitledFile);
+        recentMenu[i] = menu->add(label, CTRL+'1'+i, (Callback*)
+                                  load_file_cb, (void*)(i+1));
+        recentPath[i].append(untitledFile);
+        i++;
+    }
+}
 
 void scanPlugIns(Menu* menu) {
     dirent **files;
@@ -927,17 +1025,12 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     opt_pref_height = 0;
     opt_pref_bpp = 0;
 
-    int len = runfile ? strlen(runfile) : 0;
-    for (int i=0; i<len; i++) {
-        if (runfile[i] == '\\') {
-            runfile[i] = '/';
-        }
-    }
-    
+    updatePath(runfile);
     begin();
     MenuBar* m = new MenuBar(0, 0, w, mnuHeight);
     m->add("&File/&New File",     0,        (Callback*)EditorWindow::new_cb);
     m->add("&File/&Open File...", CTRL+'o', (Callback*)EditorWindow::open_cb);
+    scanRecentFiles(m);
     m->add("&File/_&Insert File...",CTRL+'i', (Callback*)EditorWindow::insert_cb);
     m->add("&File/&Save File",    CTRL+'s', (Callback*)EditorWindow::save_cb);
     m->add("&File/_Save File &As...",CTRL+SHIFT+'S', (Callback*)EditorWindow::saveas_cb);
