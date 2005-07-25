@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.39 2005-07-16 02:38:23 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.40 2005-07-25 00:07:10 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -678,8 +678,7 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI) {
 void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
     char basfile[PATH_MAX];
     strcpy(basfile, newfile);
-    int len = strlen(basfile);
-    if (strcasecmp(basfile+len-4, ".bas") != 0) {
+    if (strchr(basfile, '.') == 0) {
         strcat(basfile, ".bas");
     }
 
