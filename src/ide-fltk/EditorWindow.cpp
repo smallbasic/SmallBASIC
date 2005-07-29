@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.41 2005-07-29 06:03:40 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.42 2005-07-29 22:55:47 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -369,10 +369,10 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
 
         // handle if-then-blah on same line
         if (strncasecmp(buf+i, "if ", 3) == 0) {
+            // find the end of line index
             int j=i+4;
             while (buf[j] != 0 && buf[j] != '\n') {
-                // line ends at start of comments
-                //TODO: testme
+                // line also 'ends' at start of comments
                 if (strncasecmp(buf+j, "rem", 3) == 0 ||
                     buf[j] == '\'') {
                     break;
@@ -413,7 +413,7 @@ void CodeEditor::handleTab() {
         prevLineStart = buffer()->line_start(prevLineStart-1);
     }
 
-    // spaces not used in this invocation
+    // note - spaces not used in this context
     indent = prevLineStart == 0 ? 0 : 
         getIndent(spaces, sizeof(spaces), prevLineStart);
     
