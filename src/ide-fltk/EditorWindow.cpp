@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.40 2005-07-25 00:07:10 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.41 2005-07-29 06:03:40 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -56,7 +56,21 @@ TextDisplay::StyleTableEntry styletable[] = { // Style table
     { color(128,128,0), COURIER_BOLD, 12 }, // E - code_functions
     { color(0,128,128), COURIER_BOLD, 12 },  // F - code_procedures
     { color(128,0,128), HELVETICA_BOLD, 12 }, // G - Find matches
+    { color(0,128,0),   COURIER_ITALIC, 12 }, // H - Italic Comments ';
+    { color(0,128,128), COURIER, 12 }, // I - Numbers
+    { color(128,128,64),COURIER, 12 }, // J - Operators
 };
+
+#define PLAIN      'A'
+#define COMMENTS   'B'
+#define STRINGS    'C'
+#define KEYWORDS   'D'
+#define FUNCTIONS  'E'
+#define PROCEDURES 'F'
+#define FINDMATCH  'G'
+#define ITCOMMENTS 'H'
+#define DIGITS     'I'
+#define OPERATORS  'J'
 
 TextBuffer *stylebuf = 0;
 TextBuffer *textbuf = 0;
@@ -73,8 +87,7 @@ int compare_keywords(const void *a, const void *b) {
 
 // 'style_parse()' - Parse text and produce style data.
 void style_parse(const char *text, char *style, int length) {
-    char current = 'A';
-    int  col = 0;
+    char current = PLAIN;
     int  last = 0;
     char  buf[255];
     char *bufptr;
@@ -82,18 +95,17 @@ void style_parse(const char *text, char *style, int length) {
     int searchLen = strlen(search);
 
     for (;length > 0; length--, text++) {
-        if (current == 'B') { 
-            current = 'A';
-        }
-        
-        if (current == 'A') {
+        if (current == PLAIN) {
             // check for directives, comments, strings, and keywords
-            if ((*text == '#' && !isdigit(text[1])) || 
+            if ((*text == '#' && (*(text-1) == 0 || *(text-1) == 10)) ||
                 *text == '\'' || strncasecmp(text, "rem", 3) == 0) {
                 // basic comment
-                current = 'B';
+                current = COMMENTS;
                 for (; length > 0 && *text != '\n'; length--, text ++) {
-                    *style++ = 'B';
+                    if (*text == ';') {
+                        current = ITCOMMENTS;
+                    }
+                    *style++ = current;
                 }
                 if (length == 0) {
                     break;
@@ -104,12 +116,21 @@ void style_parse(const char *text, char *style, int length) {
                 *style++ = current;
                 text ++;
                 length--;
-                col += 2;
                 continue;
             } else if (*text == '\"') {
-                current = 'C';
+                current = STRINGS;
             } else if (!last) {
-                // might be a keyword
+                // test for digit sequence
+                if (isdigit(*text)) {
+                    *style++ = DIGITS;
+                    while (*text && isdigit(*(text+1))) {
+                        *style++ = DIGITS;
+                        text++;
+                        length--;
+                    }
+                    continue;
+                }
+                // test for keyword
                 temp = text;
                 bufptr = buf;
                 while (*temp != 0 && *temp != ' ' && 
@@ -130,12 +151,10 @@ void style_parse(const char *text, char *style, int length) {
                         style += offset;
                         text += offset;
                         length -= offset;
-                        col += offset;
                         for (int i=0; i<searchLen && text < temp; i++) {
-                            *style++ = 'G';
+                            *style++ = FINDMATCH;
                             text++;
                             length--;
-                            col++;
                         }
                         text--;
                         length++;
@@ -147,10 +166,9 @@ void style_parse(const char *text, char *style, int length) {
                 if (bsearch(&bufptr, code_keywords, numCodeKeywords,
                             sizeof(code_keywords[0]), compare_keywords)) {
                     while (text < temp) {
-                        *style++ = 'D';
+                        *style++ = KEYWORDS;
                         text++;
                         length--;
-                        col++;
                     }
                     text--;
                     length++;
@@ -159,10 +177,9 @@ void style_parse(const char *text, char *style, int length) {
                 } else if (bsearch(&bufptr, code_functions, numCodeFunctions,
                                    sizeof(code_functions[0]), compare_keywords)) {
                     while (text < temp) {
-                        *style++ = 'E';
+                        *style++ = FUNCTIONS;
                         text++;
                         length--;
-                        col++;
                     }
                     text--;
                     length++;
@@ -171,10 +188,9 @@ void style_parse(const char *text, char *style, int length) {
                 } else if (bsearch(&bufptr, code_procedures, numCodeProcedures,
                                    sizeof(code_procedures[0]), compare_keywords)) {
                     while (text < temp) {
-                        *style++ = 'F';
+                        *style++ = PROCEDURES;
                         text++;
                         length--;
-                        col++;
                     }
                     text--;
                     length++;
@@ -182,7 +198,7 @@ void style_parse(const char *text, char *style, int length) {
                     continue;
                 }
             }
-        } else if (current == 'C') {
+        } else if (current == STRINGS) {
             // continuing in string
             if (strncmp(text, "\\\"", 2) == 0) {
                 // quoted end quote
@@ -190,29 +206,21 @@ void style_parse(const char *text, char *style, int length) {
                 *style++ = current;
                 text++;
                 length--;
-                col += 2;
                 continue;
             } else if (*text == '\"') {
                 // End quote
                 *style++ = current;
-                col++;
-                current = 'A';
+                current = PLAIN;
                 continue;
             }
         }
 
         // copy style info
-        if (current == 'A' && (*text == '{' || *text == '}')) {
-            *style++ = 'E';
-        } else {
-            *style++ = current;
-        }
-        col++;
+        *style++ = current;
         last = isalnum(*text) || *text == '.';
 
         if (*text == '\n') {
-            col = 0; // reset column 
-            current = 'A'; // basic lines do not continue
+            current = PLAIN; // basic lines do not continue
         }
     }
 }
@@ -222,7 +230,7 @@ void style_init(void) {
     char *style = new char[textbuf->length() + 1];
     const char *text = textbuf->text();
 
-    memset(style, 'A', textbuf->length());
+    memset(style, PLAIN, textbuf->length());
     style[textbuf->length()] = '\0';
 
     if (!stylebuf) {
@@ -273,7 +281,7 @@ void style_update(int pos,        // I - Position of update
     if (nInserted > 0) { 
         // insert characters into the style buffer
         char *stylex = new char[nInserted + 1];
-        memset(stylex, 'A', nInserted);
+        memset(stylex, PLAIN, nInserted);
         stylex[nInserted] = '\0';
         stylebuf->replace(pos, pos + nDeleted, stylex);
         delete[] stylex;
@@ -363,9 +371,15 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
         if (strncasecmp(buf+i, "if ", 3) == 0) {
             int j=i+4;
             while (buf[j] != 0 && buf[j] != '\n') {
+                // line ends at start of comments
+                //TODO: testme
+                if (strncasecmp(buf+j, "rem", 3) == 0 ||
+                    buf[j] == '\'') {
+                    break;
+                }
                 j++;
             }
-            // check for trailing spaces
+            // right trim trailing spaces
             while (buf[j-1] == ' ' && j > i) {
                 j--;
             }
@@ -398,7 +412,8 @@ void CodeEditor::handleTab() {
         // allows for a single blank line between statments
         prevLineStart = buffer()->line_start(prevLineStart-1);
     }
-    
+
+    // spaces not used in this invocation
     indent = prevLineStart == 0 ? 0 : 
         getIndent(spaces, sizeof(spaces), prevLineStart);
     
@@ -574,12 +589,10 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
     editor->buffer(textbuf);
     editor->highlight_data(stylebuf, styletable,
                            sizeof(styletable) / sizeof(styletable[0]),
-                           'A', style_unfinished_cb, 0);
-    //editor->textfont(COURIER);
-    //editor->textsize(4);//(int)Widget::default_style->labelsize());
+                           PLAIN, style_unfinished_cb, 0);
     //editor->wrap_mode(true, 80);
-    //editor->cursor_style(TextDisplay::NORMAL_CURSOR);
-    //editor->selection_color(fltk::color(190,189,188));
+    editor->selection_color(fltk::color(190,189,188));
+    editor->color(WHITE);
     end();
     resizable(editor);
 
