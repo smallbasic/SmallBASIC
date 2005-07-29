@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.62 2005-07-25 23:41:09 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.63 2005-07-29 06:04:44 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -71,8 +71,10 @@ char *runfile = 0;
 int px,py,pw,ph;
 int completionIndex = 0;
 MainWindow* wnd;
+int recentIndex = 0;
 Widget* recentMenu[NUM_RECENT_ITEMS];
 String recentPath[NUM_RECENT_ITEMS];
+int recentPosition[NUM_RECENT_ITEMS];
 
 const char* bashome = "./Bas-Home/";
 const char untitledFile[] = "untitled.bas";
@@ -686,8 +688,15 @@ void expand_word_cb(Widget* w, void* v) {
 
 void load_file_cb(Widget* w, void* index) {
     if (wnd->editWnd->checkSave(true)) {
-        const char* path = recentPath[((int)index)-1].toString();
+        TextEditor* editor = wnd->editWnd->editor;
+        // save current position
+        recentPosition[recentIndex] = editor->insert_position();
+        recentIndex = ((int)index)-1;
+        // load selected file
+        const char* path = recentPath[recentIndex].toString();
         wnd->editWnd->loadFile(path, -1, false);
+        // restore previous position
+        editor->insert_position(recentPosition[recentIndex]);
         statusMsg(path);
         fileChanged(true);
         showEditTab();
@@ -854,9 +863,11 @@ void scanRecentFiles(Menu* menu) {
         while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
             buffer[strlen(buffer)-1] = 0; // trim new-line
             if (access(buffer, 0) == 0) {
-                char* c = strrchr(buffer, '/');
-                if (c == 0) c = strrchr(buffer, '\\');
-                sprintf(label, "&File/Open Recent File/%s", c?c+1:buffer);
+                char* fileLabel = strrchr(buffer, '/');
+                if (fileLabel == 0) fileLabel = strrchr(buffer, '\\');
+                fileLabel = fileLabel?fileLabel+1:buffer;
+                if (fileLabel != 0 && *fileLabel == '_') fileLabel++;
+                sprintf(label, "&File/Open Recent File/%s", fileLabel);
                 recentMenu[i] = menu->add(label, CTRL+'1'+i, (Callback*)
                                           load_file_cb, (void*)(i+1),
                                           RAW_LABEL);
