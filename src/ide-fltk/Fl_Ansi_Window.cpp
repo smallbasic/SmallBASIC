@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.34 2005-07-04 23:32:48 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.35 2005-08-02 07:26:49 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -39,6 +39,27 @@ using namespace fltk;
 // uncomment for unit testing and then run:
 // make AnsiWindow.exe
 //#define UNIT_TEST 1
+
+// see: 
+// http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
+static Color colors[] = {
+    BLACK,             // 0 black
+    color(0,0,128),    // 1 blue
+    color(0,128,0),    // 2 green
+    color(0,128,128),  // 3 cyan
+    color(128,0,0),    // 4 red
+    color(128,0,128),  // 5 magenta
+    color(128,128,0),  // 6 yellow
+    color(192,192,192),// 7 white
+    color(128,128,128),// 8 gray
+    color(0,0,255),    // 9 light blue
+    color(0,255,0),    // 10 light green
+    color(0,255,255),  // 11 light cyan
+    color(255,0,0),    // 12 light red
+    color(255,0,255),  // 13 light magenta
+    color(255,255,0),  // 14 light yellow
+    WHITE              // 15 bright white
+};
 
 #define begin_offscreen() \
     initImage();          \
@@ -128,15 +149,17 @@ void AnsiWindow::draw() {
             GSave gsave;
             img->make_current();
             setcolor(color());
-            fillrect(Rectangle(W, H));
             setfont(labelfont(), labelsize());
+            fillrect(Rectangle(W, H));
             old->draw(Rectangle(old->w(), old->h()));
             old->destroy();
             delete old;
             resized = false;
         }
-
-        img->draw(Rectangle(w(), h()));
+        Rectangle r(w(), h());
+        push_clip(r);
+        img->draw(r);
+        pop_clip();
     } else {
         setcolor(color());
         fillrect(Rectangle(w(), h()));
@@ -230,8 +253,10 @@ void AnsiWindow::setPixel(int x, int y, int c) {
 int AnsiWindow::getPixel(int x, int y) {
 #if defined(WIN32) 
     begin_offscreen();
-    COLORREF c = ::GetPixel(fl_bitmap_dc, x, y);
-    return -c;
+    // needs to return a -ve number to distiguish from basic 16 color values
+    // unpacked in later calls to ansiToFltk()
+    return -::GetPixel(fl_bitmap_dc, x, y);
+
 #else
     XImage *image = 
         XGetImage(fltk::xdisplay, xwindow, x, y, 1, 1, AllPlanes, ZPixmap);
@@ -298,33 +323,16 @@ int AnsiWindow::calcTab(int x) const {
 
 Color AnsiWindow::ansiToFltk(long c) const {
     if (c < 0) {
-        // windows style RGB packing
+        // color is windows style RGB packing
+        // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
         c = -c;
-        int r = (c>>16) & 0xFF;
+        int b = (c>>16) & 0xFF;
         int g = (c>>8) & 0xFF;
-        int b = (c) & 0xFF;
+        int r = (c) & 0xFF;
         return fltk::color(r, g, b);
     }
 
-    // see: http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
-    switch (c) {
-    case 0:  return fltk::BLACK;             // 0 black
-    case 1:  return fltk::color(0,0,128);    // 1 blue
-    case 2:  return fltk::color(0,128,0);    // 2 green
-    case 3:  return fltk::color(0,128,128);  // 3 cyan
-    case 4:  return fltk::color(128,0,0);    // 4 red
-    case 5:  return fltk::color(128,0,128);  // 5 magenta
-    case 6:  return fltk::color(128,128,0);  // 6 yellow
-    case 7:  return fltk::color(192,192,192);// 7 white
-    case 8:  return fltk::color(128,128,128);// 8 gray
-    case 9:  return fltk::color(0,0,255);    // 9 light blue
-    case 10: return fltk::color(0,255,0);    // 10 light green
-    case 11: return fltk::color(0,255,255);  // 11 light cyan
-    case 12: return fltk::color(255,0,0);    // 12 light red
-    case 13: return fltk::color(255,0,255);  // 13 light magenta
-    case 14: return fltk::color(255,255,0);  // 14 light yellow
-    default: return fltk::WHITE;             // 15 bright white
-    }
+    return (c > 16) ? WHITE : colors[c];
 }
 
 bool AnsiWindow::setGraphicsRendition(char c, int escValue) {

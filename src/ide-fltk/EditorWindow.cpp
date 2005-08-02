@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.42 2005-07-29 22:55:47 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.43 2005-08-02 07:26:49 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -123,6 +123,12 @@ void style_parse(const char *text, char *style, int length) {
                 // test for digit sequence
                 if (isdigit(*text)) {
                     *style++ = DIGITS;
+                    if (*text == '0' && *(text+1) == 'x') {
+                        // hex number
+                        *style++ = DIGITS;
+                        text++;
+                        length--;
+                    }
                     while (*text && isdigit(*(text+1))) {
                         *style++ = DIGITS;
                         text++;

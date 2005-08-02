@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.63 2005-07-29 06:04:44 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.64 2005-08-02 07:26:49 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -101,35 +101,155 @@ void updateForm(const char* s);
 void closeForm();
 bool isFormActive();
 
-//--Menu callbacks--------------------------------------------------------------
+//--EditWindow functions--------------------------------------------------------
 
-void quit_cb(Widget*, void* v) {
-    if (runMode == edit_state || runMode == quit_state) {
+void setRowCol(int row, int col) {
+    char rowcol[20];
+    sprintf(rowcol, "%d", row);
+    wnd->rowStatus->copy_label(rowcol);
+    wnd->rowStatus->redraw();
+    sprintf(rowcol, "%d", col);
+    wnd->colStatus->copy_label(rowcol);
+    wnd->colStatus->redraw();
+}
 
-        // auto-save scratchpad        
-        const char* filename = wnd->editWnd->getFilename();
-        int offs = strlen(filename)-strlen(untitledFile);
-        if (filename[0] == 0 || 
-            (offs > 0 && strcasecmp(filename+offs, untitledFile) == 0)) {
-            getHomeDir(path);
-            strcat(path, untitledFile);
-            wnd->editWnd->doSaveFile(path, 0);
-            exit(0);
-        }
+void setModified(bool dirty) {
+    wnd->modStatus->label(dirty ? "MOD" : "");
+    wnd->modStatus->redraw();
+}
 
-        if (wnd->editWnd->checkSave(true)) {
-            exit(0);
-        }
-    } else {
-        switch (choice("Terminate running program?",
-                       "Exit", "Break", "Cancel")) {
-        case 0:
-            exit(0);
-        case 1:
-            dev_pushkey(SB_KEY_BREAK);
-            runMode = break_state;
+void updatePath(char* filename) {
+    int len = filename ? strlen(filename) : 0;
+    for (int i=0; i<len; i++) {
+        if (filename[i] == '\\') {
+            filename[i] = '/';
         }
     }
+}
+
+void restoreEdit() {
+    FILE* fp;
+
+    // continue editing the previous file
+    getHomeDir(path);
+    strcat(path, lasteditFile);
+    fp = fopen(path, "r");
+    if (fp) {
+        fgets(path, sizeof(path), fp);
+        fclose(fp);
+        path[strlen(path)-1] = 0; // trim new-line
+        if (access(path, 0) == 0) {
+            wnd->editWnd->loadFile(path, -1, false);
+            statusMsg(path);
+            fileChanged(true);
+            return;
+        }
+    }
+
+    // continue editing scratch buffer
+    getHomeDir(path);
+    strcat(path, untitledFile);
+    if (access(path, 0) == 0) {
+        wnd->editWnd->loadFile(path, -1, false);
+        statusMsg(path);
+        fileChanged(true);
+    }
+}
+
+void saveLastEdit(const char* filename) {
+    // remember the last edited file
+    getHomeDir(path);
+    strcat(path, lasteditFile);
+    FILE* fp = fopen(path, "w");
+    if (fp) {
+        fwrite(filename, strlen(filename), 1, fp);
+        fwrite("\n", 1, 1, fp);
+        fclose(fp);
+    }
+}
+
+void addHistory(const char* filename) {
+    FILE* fp;
+    char buffer[MAX_PATH];
+
+    int len = strlen(filename);
+    if (strcasecmp(filename+len-4, ".sbx") == 0) {
+        // don't remember bas exe files
+        return;
+    }
+
+    // remember the last edited file
+    saveLastEdit(filename);
+
+    // save into the history file
+    getHomeDir(path);
+    strcat(path, historyFile);
+
+    fp = fopen(path, "r");
+    if (fp) {
+        // don't add the item if it already exists
+        while (feof(fp) == 0) {
+            if (fgets(buffer, sizeof(buffer), fp) &&
+                strncmp(filename, buffer, strlen(filename)-1) == 0) {
+                fclose(fp);
+                return;
+            }
+        }
+        fclose(fp);
+    }
+
+    fp = fopen(path, "a");
+    if (fp) {
+        fwrite(filename, strlen(filename), 1, fp);
+        fwrite("\n", 1, 1, fp);
+        fclose(fp);
+    }
+}
+
+void fileChanged(bool loadfile) {
+    FILE* fp;
+
+    wnd->funcList->clear();
+    wnd->funcList->begin();
+    if (loadfile) {
+        // update the func/sub navigator
+        wnd->editWnd->createFuncList();
+        wnd->funcList->redraw();
+
+        // update the last used file menu
+        bool found = false;
+        const char* filename = wnd->editWnd->getFilename();
+        for (int i=0; i<NUM_RECENT_ITEMS; i++) {
+            if (strcmp(filename, recentPath[i].toString()) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (found == false) {
+            // shift items downwards
+            for (int i=NUM_RECENT_ITEMS-1; i>0; i--) {
+                recentMenu[i]->copy_label(recentMenu[i-1]->label());
+                recentPath[i].empty();
+                recentPath[i].append(recentPath[i-1]);
+            }
+            // create new item in first position
+            char* c = strrchr(filename, '/');
+            if (c == 0) c = strrchr(filename, '\\');
+            recentPath[0].empty();
+            recentPath[0].append(filename);
+            recentMenu[0]->copy_label(c?c+1:filename);
+        }
+    } else {
+        // empty the last edited file
+        getHomeDir(path);
+        strcat(path, lasteditFile);
+        fp = fopen(path, "w");
+        fwrite("\n", 1, 1, fp);
+        fclose(fp);
+    }
+
+    new Item(SCAN_LABEL);
+    wnd->funcList->end();
 }
 
 void statusMsg(const char* msg) {
@@ -152,6 +272,11 @@ void runMsg(const char * msg) {
 
 void busyMessage() {
     statusMsg("Selection unavailable while program is running.");
+}
+
+void pathMessage(const char* file) {
+    sprintf(path, "File not found: %s", file);
+    statusMsg(path);
 }
 
 void showEditTab() {
@@ -181,6 +306,108 @@ void browseFile(const char* url) {
         ::exit(0); // in case exec failed 
     }
 #endif
+}
+
+void basicMain(const char* filename) {
+    showOutputTab();
+
+    int len = strlen(filename);
+    if (strcasecmp(filename+len-4, ".htm") == 0 ||
+        strcasecmp(filename+len-5, ".html") == 0) {
+        // render html edit buffer
+        sprintf(path, "file:%s", filename);
+        updateForm(path);
+        wnd->editWnd->take_focus();
+        return;
+    }
+    if (access(filename, 0) != 0) {
+        pathMessage(filename);
+        runMode = edit_state;
+        runMsg("ERR");
+        return;
+    }
+
+    wnd->editWnd->readonly(true);
+    runMode = run_state;
+    runMsg("RUN");
+    wnd->copy_label("SmallBASIC");
+
+    int success = sbasic_main(filename);
+    if (runMode == quit_state) {
+        exit(0);
+    }
+
+    if (success == false && gsb_last_line) {
+        wnd->editWnd->gotoLine(gsb_last_line);
+        int len = strlen(gsb_last_errmsg);
+        if (gsb_last_errmsg[len-1] == '\n') {
+            gsb_last_errmsg[len-1] = 0;
+        }
+        closeForm(); // unhide the error
+        statusMsg(gsb_last_errmsg);
+        wnd->fileStatus->labelcolor(RED);
+        runMsg("ERR");
+    } else {
+        statusMsg(wnd->editWnd->getFilename());
+        runMsg(0);
+    }
+
+    wnd->editWnd->readonly(false);
+    if (isFormActive() == false) {
+        wnd->editWnd->take_focus();
+    }
+    runMode = edit_state;
+}
+
+bool searchBackward(const char* text, int startPos,
+                    const char* find, int findLen, int* foundPos) {
+    int matchIndex = findLen-1;
+    for (int i=startPos; i>=0; i--) {
+        bool equals = toupper(text[i]) == toupper(find[matchIndex]);
+        if (equals == false && matchIndex < findLen-1) {
+            // partial match now fails - reset search at current index
+            matchIndex = findLen-1;
+            equals = toupper(text[i]) == toupper(find[matchIndex]);
+        }
+        matchIndex = (equals ? matchIndex-1 : findLen-1);
+        if (matchIndex == -1 && (i==0 || isalpha(text[i-1]) == 0)) {
+            // char prior to word is non-alpha
+            *foundPos = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+//--Menu callbacks--------------------------------------------------------------
+
+void quit_cb(Widget*, void* v) {
+    if (runMode == edit_state || runMode == quit_state) {
+
+        // auto-save scratchpad        
+        const char* filename = wnd->editWnd->getFilename();
+        int offs = strlen(filename)-strlen(untitledFile);
+        if (filename[0] == 0 || 
+            (offs > 0 && strcasecmp(filename+offs, untitledFile) == 0)) {
+            getHomeDir(path);
+            strcat(path, untitledFile);
+            wnd->editWnd->doSaveFile(path, 0);
+            exit(0);
+        }
+
+        if (wnd->editWnd->checkSave(true)) {
+            exit(0);
+        }
+    } else {
+        switch (choice("Terminate running program?",
+                       "Exit", "Break", "Cancel")) {
+        case 0:
+            exit(0);
+        case 1:
+            dev_pushkey(SB_KEY_BREAK);
+            runMode = break_state;
+        }
+    }
 }
 
 void help_home_cb(Widget*, void* v) {
@@ -337,58 +564,6 @@ void func_list_cb(Widget* w, void* v) {
     }
 }
 
-void basicMain(const char* filename) {
-    showOutputTab();
-
-    int len = strlen(filename);
-    if (strcasecmp(filename+len-4, ".htm") == 0 ||
-        strcasecmp(filename+len-5, ".html") == 0) {
-        // render html edit buffer
-        sprintf(path, "file:%s", filename);
-        updateForm(path);
-        wnd->editWnd->take_focus();
-        return;
-    }
-    if (access(filename, 0) != 0) {
-        statusMsg("File not found");
-        runMode = edit_state;
-        runMsg("ERR");
-        return;
-    }
-
-    wnd->editWnd->readonly(true);
-    runMode = run_state;
-    runMsg("RUN");
-    wnd->copy_label("SmallBASIC");
-
-    int success = sbasic_main(filename);
-
-    if (runMode == quit_state) {
-        exit(0);
-    }
-
-    if (success == false && gsb_last_line) {
-        wnd->editWnd->gotoLine(gsb_last_line);
-        int len = strlen(gsb_last_errmsg);
-        if (gsb_last_errmsg[len-1] == '\n') {
-            gsb_last_errmsg[len-1] = 0;
-        }
-        closeForm(); // unhide the error
-        statusMsg(gsb_last_errmsg);
-        wnd->fileStatus->labelcolor(RED);
-        runMsg("ERR");
-    } else {
-        statusMsg(wnd->editWnd->getFilename());
-        runMsg(0);
-    }
-
-    wnd->editWnd->readonly(false);
-    if (isFormActive() == false) {
-        wnd->editWnd->take_focus();
-    }
-    runMode = edit_state;
-}
-
 void run_cb(Widget*, void*) {
     const char* filename = wnd->editWnd->getFilename();
     if (runMode == edit_state) {
@@ -508,26 +683,6 @@ void change_case_cb(Widget* w, void* v) {
         tb->select(start, end);
     }
     free((void*)selection);
-}
-
-bool searchBackward(const char* text, int startPos,
-                    const char* find, int findLen, int* foundPos) {
-    int matchIndex = findLen-1;
-    for (int i=startPos; i>=0; i--) {
-        bool equals = toupper(text[i]) == toupper(find[matchIndex]);
-        if (equals == false && matchIndex < findLen-1) {
-            // partial match now fails - reset search at current index
-            matchIndex = findLen-1;
-            equals = toupper(text[i]) == toupper(find[matchIndex]);
-        }
-        matchIndex = (equals ? matchIndex-1 : findLen-1);
-        if (matchIndex == -1 && (i==0 || isalpha(text[i-1]) == 0)) {
-            // char prior to word is non-alpha
-            *foundPos = i;
-            return true;
-        }
-    }
-    return false;
 }
 
 void expand_word_cb(Widget* w, void* v) {
@@ -694,158 +849,18 @@ void load_file_cb(Widget* w, void* index) {
         recentIndex = ((int)index)-1;
         // load selected file
         const char* path = recentPath[recentIndex].toString();
-        wnd->editWnd->loadFile(path, -1, false);
-        // restore previous position
-        editor->insert_position(recentPosition[recentIndex]);
-        statusMsg(path);
-        fileChanged(true);
-        showEditTab();
-    }
-}
-
-//--EditWindow functions--------------------------------------------------------
-
-void setRowCol(int row, int col) {
-    char rowcol[20];
-    sprintf(rowcol, "%d", row);
-    wnd->rowStatus->copy_label(rowcol);
-    wnd->rowStatus->redraw();
-    sprintf(rowcol, "%d", col);
-    wnd->colStatus->copy_label(rowcol);
-    wnd->colStatus->redraw();
-}
-
-void setModified(bool dirty) {
-    wnd->modStatus->label(dirty ? "MOD" : "");
-    wnd->modStatus->redraw();
-}
-
-void updatePath(char* filename) {
-    int len = filename ? strlen(filename) : 0;
-    for (int i=0; i<len; i++) {
-        if (filename[i] == '\\') {
-            filename[i] = '/';
-        }
-    }
-}
-
-void restoreEdit() {
-    FILE* fp;
-
-    // continue editing the previous file
-    getHomeDir(path);
-    strcat(path, lasteditFile);
-    fp = fopen(path, "r");
-    if (fp) {
-        fgets(path, sizeof(path), fp);
-        fclose(fp);
-        path[strlen(path)-1] = 0; // trim new-line
         if (access(path, 0) == 0) {
             wnd->editWnd->loadFile(path, -1, false);
+            // restore previous position
+            editor->insert_position(recentPosition[recentIndex]);
             statusMsg(path);
             fileChanged(true);
-            return;
+            saveLastEdit(path);
+            showEditTab();
+        } else {
+            pathMessage(path);
         }
     }
-
-    // continue editing scratch buffer
-    getHomeDir(path);
-    strcat(path, untitledFile);
-    if (access(path, 0) == 0) {
-        wnd->editWnd->loadFile(path, -1, false);
-        statusMsg(path);
-        fileChanged(true);
-    }
-}
-
-void addHistory(const char* filename) {
-    FILE* fp;
-    char buffer[MAX_PATH];
-
-    int len = strlen(filename);
-    if (strcasecmp(filename+len-4, ".sbx") == 0) {
-        // don't remember bas exe files
-        return;
-    }
-
-    // remember the last edited file
-    getHomeDir(path);
-    strcat(path, lasteditFile);
-    fp = fopen(path, "w");
-    if (fp) {
-        fwrite(filename, strlen(filename), 1, fp);
-        fwrite("\n", 1, 1, fp);
-        fclose(fp);
-    }
-
-    getHomeDir(path);
-    strcat(path, historyFile);
-
-    fp = fopen(path, "r");
-    if (fp) {
-        // don't add the item if it already exists
-        while (feof(fp) == 0) {
-            if (fgets(buffer, sizeof(buffer), fp) &&
-                strncmp(filename, buffer, strlen(filename)-1) == 0) {
-                fclose(fp);
-                return;
-            }
-        }
-        fclose(fp);
-    }
-
-    fp = fopen(path, "a");
-    if (fp) {
-        fwrite(filename, strlen(filename), 1, fp);
-        fwrite("\n", 1, 1, fp);
-        fclose(fp);
-    }
-}
-
-void fileChanged(bool loadfile) {
-    FILE* fp;
-
-    wnd->funcList->clear();
-    wnd->funcList->begin();
-    if (loadfile) {
-        // update the func/sub navigator
-        wnd->editWnd->createFuncList();
-        wnd->funcList->redraw();
-
-        // update the last used file menu
-        bool found = false;
-        const char* filename = wnd->editWnd->getFilename();
-        for (int i=0; i<NUM_RECENT_ITEMS; i++) {
-            if (strcmp(filename, recentPath[i].toString()) == 0) {
-                found = true;
-                break;
-            }
-        }
-        if (found == false) {
-            // shift items downwards
-            for (int i=NUM_RECENT_ITEMS-1; i>0; i--) {
-                recentMenu[i]->copy_label(recentMenu[i-1]->label());
-                recentPath[i].empty();
-                recentPath[i].append(recentPath[i-1]);
-            }
-            // create new item in first position
-            char* c = strrchr(filename, '/');
-            if (c == 0) c = strrchr(filename, '\\');
-            recentPath[0].empty();
-            recentPath[0].append(filename);
-            recentMenu[0]->copy_label(c?c+1:filename);
-        }
-    } else {
-        // empty the last edited file
-        getHomeDir(path);
-        strcat(path, lasteditFile);
-        fp = fopen(path, "w");
-        fwrite("\n", 1, 1, fp);
-        fclose(fp);
-    }
-
-    new Item(SCAN_LABEL);
-    wnd->funcList->end();
 }
 
 //--Startup functions-----------------------------------------------------------
@@ -1037,6 +1052,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     isTurbo = 0;
     opt_graphics = 1;
     opt_quite = 1;
+    opt_interactive = 0;
     opt_nosave = 1;
     opt_ide = IDE_NONE; // for sberr.c
     opt_command[0] = 0;
@@ -1303,8 +1319,7 @@ void MainWindow::execLink(const char* file) {
             showEditTab();
         }
     } else {
-        sprintf(path, "Failed to open: %s", file);
-        statusMsg(path);
+        pathMessage(file);
     }
 }
 
