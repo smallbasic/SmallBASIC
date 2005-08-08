@@ -48,8 +48,14 @@ else
     htxt += " <a href='!"+app+" H'>[Home]</a>"
 fi
 
+if command = "T" then
+    htxt += " [Temp]"
+else
+    htxt += " <a href='!"+app+" T'>[Temp]</a>"
+fi
+
 htxt += "</b><br>"
-if len(command) = 0 OR (command != "S" and command != "H") then
+if len(command) = 0 OR (command != "S" and command != "H" and command != "T") then
     htxt += "<hr><h4>Recent Files</h4><table>"
     if (exist(historyFile)) then
         sortedFiles = 0
@@ -96,7 +102,10 @@ elif command = "S" then
     listFiles ENV("BAS_HOME"), htxt
 elif command = "H" then
     htxt += "<hr><h4>Home</h4><table>"
-    listFiles ENV("HOME"), htxt
+    listFiles ENV("HOME")+"/", htxt
+elif command = "T" then
+    htxt += "<hr><h4>Temp</h4><table>"
+    listFiles ENV("TEMP")+"/", htxt
 fi
     
 html htxt, "", 2, 2, xmax+1, ymax+1
