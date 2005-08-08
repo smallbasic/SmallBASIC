@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.64 2005-08-02 07:26:49 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.65 2005-08-08 23:38:25 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -501,24 +501,14 @@ void fullscreen_cb(Widget *w, void* v) {
 
 void next_tab_cb(Widget* w, void* v) {
     Widget* current = wnd->tabGroup->selected_child();
-    if (runMode == edit_state) {
-        // toggle between edit and help
-        if (current == wnd->helpGroup) {
-            wnd->tabGroup->selected_child(wnd->editGroup);
-        } else if (current == wnd->outputGroup) {
-            wnd->tabGroup->selected_child(wnd->editGroup);
-        } else {
-            wnd->tabGroup->selected_child(wnd->helpGroup);
-        }
+    // cycle around the main tabgroups
+    if (current == wnd->helpGroup) {
+        wnd->tabGroup->selected_child(wnd->outputGroup);
+    } else if (current == wnd->outputGroup) {
+        wnd->tabGroup->selected_child(wnd->editGroup);
+        wnd->editWnd->take_focus();
     } else {
-        // toggle between edit and output
-        if (current == wnd->helpGroup) {
-            wnd->tabGroup->selected_child(wnd->outputGroup);
-        } else if (current == wnd->outputGroup) {
-            wnd->tabGroup->selected_child(wnd->editGroup);
-        } else {
-            wnd->tabGroup->selected_child(wnd->outputGroup);
-        }
+        wnd->tabGroup->selected_child(wnd->helpGroup);
     }
 }
 
@@ -530,6 +520,9 @@ void find_cb(Widget* w, void* v) {
     bool found = wnd->editWnd->findText(wnd->findText->value(), (int)v);
     wnd->findText->textcolor(found ? BLACK : RED);
     wnd->findText->redraw();
+    if (2 == (int)v) {
+        wnd->editWnd->take_focus();        
+    }
 }
 
 void goto_cb(Widget* w, void* v) {
@@ -1119,6 +1112,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     Button* nextBn = new Button(210, 6, 18, mnuHeight-4, "@-92>;");
     prevBn->callback(find_cb, (void*)0);
     nextBn->callback(find_cb, (void*)1);
+    findText->callback(find_cb, (void*)2);
+    findText->when(WHEN_ENTER_KEY_ALWAYS);
     findText->labelfont(HELVETICA);
 
     // goto-line control
@@ -1126,6 +1121,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     gotoLine->align(ALIGN_LEFT|ALIGN_CLIP);
     Button* gotoBn = new Button(310, 6, 18, mnuHeight-4, "@-92>;");
     gotoBn->callback(goto_cb, gotoLine);
+    gotoLine->callback(goto_cb, gotoLine);
+    gotoLine->when(WHEN_ENTER_KEY_ALWAYS);
     gotoLine->labelfont(HELVETICA);
 
     // sub-func jump droplist
@@ -1324,8 +1321,20 @@ void MainWindow::execLink(const char* file) {
 }
 
 int MainWindow::handle(int e) {
-    if (runMode == run_state && e == KEY && !event_key_state(RightCtrlKey)) {
-        int k;
+    if (e != KEY) {
+        return Window::handle(e);
+    }
+
+    int k;
+    switch (runMode) {
+    case edit_state:
+        if ((event_key_state(LeftCtrlKey) || 
+             event_key_state(RightCtrlKey)) && event_key() == 'f') {
+            wnd->findText->take_focus();
+            return 1;
+        }
+        break;
+    case run_state:
         k = event_key();
         switch (k) {
         case PageUpKey:
@@ -1360,7 +1369,8 @@ int MainWindow::handle(int e) {
             dev_pushkey(k);
             break;
         }
-        return 1;
+    default:
+        break;
     }
     return Window::handle(e);
 }
