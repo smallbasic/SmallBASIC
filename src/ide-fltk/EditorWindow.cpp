@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.43 2005-08-02 07:26:49 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.44 2005-08-08 23:37:34 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -129,7 +129,7 @@ void style_parse(const char *text, char *style, int length) {
                         text++;
                         length--;
                     }
-                    while (*text && isdigit(*(text+1))) {
+                    while (*text && (*(text+1)=='.' || isdigit(*(text+1)))) {
                         *style++ = DIGITS;
                         text++;
                         length--;
@@ -715,6 +715,7 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
         strcpy(filename, basfile);
         textbuf->call_modify_callbacks();
         statusMsg(basfile);
+        fileChanged(true);
     }
 }
 
