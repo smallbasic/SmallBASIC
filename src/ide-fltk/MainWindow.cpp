@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.65 2005-08-08 23:38:25 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.66 2005-08-10 23:43:21 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -171,12 +171,18 @@ void saveLastEdit(const char* filename) {
 void addHistory(const char* filename) {
     FILE* fp;
     char buffer[MAX_PATH];
+    char updatedfile[MAX_PATH];
 
     int len = strlen(filename);
     if (strcasecmp(filename+len-4, ".sbx") == 0) {
         // don't remember bas exe files
         return;
     }
+    
+    // save paths with unix path separators
+    strcpy(updatedfile, filename);
+    updatePath(updatedfile);
+    filename = updatedfile;
 
     // remember the last edited file
     saveLastEdit(filename);
@@ -1106,10 +1112,10 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     toolbar->box(THIN_UP_BOX);
 
     // find control
-    findText = new Input(38, 4, 150, mnuHeight, "Find:");
+    findText = new Input(38, 4, 120, mnuHeight, "Find:");
     findText->align(ALIGN_LEFT|ALIGN_CLIP);
-    Button* prevBn = new Button(190, 6, 18, mnuHeight-4, "@-98>;");
-    Button* nextBn = new Button(210, 6, 18, mnuHeight-4, "@-92>;");
+    Button* prevBn = new Button(160, 6, 18, mnuHeight-4, "@-98>;");
+    Button* nextBn = new Button(180, 6, 18, mnuHeight-4, "@-92>;");
     prevBn->callback(find_cb, (void*)0);
     nextBn->callback(find_cb, (void*)1);
     findText->callback(find_cb, (void*)2);
@@ -1117,16 +1123,16 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     findText->labelfont(HELVETICA);
 
     // goto-line control
-    Input* gotoLine = new Input(268, 4, 40, mnuHeight, "Goto:");
+    Input* gotoLine = new Input(238, 4, 40, mnuHeight, "Goto:");
     gotoLine->align(ALIGN_LEFT|ALIGN_CLIP);
-    Button* gotoBn = new Button(310, 6, 18, mnuHeight-4, "@-92>;");
+    Button* gotoBn = new Button(280, 6, 18, mnuHeight-4, "@-92>;");
     gotoBn->callback(goto_cb, gotoLine);
     gotoLine->callback(goto_cb, gotoLine);
     gotoLine->when(WHEN_ENTER_KEY_ALWAYS);
     gotoLine->labelfont(HELVETICA);
 
     // sub-func jump droplist
-    funcList = new Choice(339, 4, 138, mnuHeight);
+    funcList = new Choice(309, 4, 168, mnuHeight);
     funcList->callback(func_list_cb, 0);
     funcList->labelfont(COURIER);
     funcList->begin();
@@ -1136,7 +1142,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     toolbar->resizable(funcList);
 
     // font-size control
-    ValueInput* sizeBn = new ValueInput(542, 4, 40, mnuHeight, "Font Size:");
+    ValueInput* sizeBn = new ValueInput(538, 4, 40, mnuHeight, "Font Size:");
     sizeBn->minimum(MIN_FONT_SIZE);
     sizeBn->maximum(MAX_FONT_SIZE);
     sizeBn->value(DEF_FONT_SIZE);
@@ -1220,6 +1226,7 @@ bool MainWindow::isEdit() {
 void MainWindow::resetPen() {
     penDownX = 0;
     penDownY = 0;
+    penMode = 0;
     penState = 0;
 }
 
@@ -1321,7 +1328,16 @@ void MainWindow::execLink(const char* file) {
 }
 
 int MainWindow::handle(int e) {
-    if (e != KEY) {
+    switch (e) {
+    case KEY:
+        break; // process keys below
+    case PUSH:
+        penState = 1;
+        return Window::handle(e);
+    case RELEASE:
+        penState = -1;
+        return Window::handle(e);
+    default:
         return Window::handle(e);
     }
 

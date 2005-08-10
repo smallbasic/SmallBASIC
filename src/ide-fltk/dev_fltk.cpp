@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.46 2005-05-18 23:37:52 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.47 2005-08-10 23:43:12 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -76,6 +76,7 @@ int osd_devinit() {
         wnd->out->clearScreen();
     }
     saveForm = false;
+    dev_clrkb();
     return 1;
 }
 
@@ -104,9 +105,11 @@ int osd_devrestore() {
  */
 int osd_events(int wait_flag) {
     if ((wait_flag && wnd->isTurbo == false) ||
-        (wnd->penState == PEN_ON && fltk::ready() == false)) {
+        (wnd->penState == 0 &&
+         wnd->penMode == PEN_ON &&
+         fltk::ready() == false)) {
         // in a "while 1" loop checking for a pen/mouse
-        // event with pen(0) or executing input statement. 
+        // event with pen(0) or executing input statement.
         fltk::wait();
     }
     
@@ -119,7 +122,7 @@ int osd_events(int wait_flag) {
 }
 
 void osd_setpenmode(int enable) {
-    wnd->penState = (enable ? PEN_ON : PEN_OFF);
+    wnd->penMode = (enable ? PEN_ON : PEN_OFF);
 }
 
 void get_mouse_xy() {
@@ -131,16 +134,24 @@ void get_mouse_xy() {
 }
 
 int osd_getpen(int code) {
-    if (wnd->penState == PEN_OFF) {
+    if (wnd->penMode == PEN_OFF) {
         fltk::wait();
     }
 
     switch (code) {
-    case 0: // return true if there is a waiting pen event
-    case 3: // returns true if the pen is down (and save curpos)
-        if (wnd->isTurbo == false) {
-            fltk::wait();
+    case 0: // return true if there is a waiting pen event (up/down)
+        if (wnd->penState != 0) {
+            wnd->penState = 0;
+            get_mouse_xy();
+            fltk::Rectangle* rc = wnd->out;
+            if (rc->contains(wnd->penDownX, wnd->penDownY)) {
+                return 1;
+            }
         }
+        fltk::wait(); // UNTIL PEN(0)
+        // fallthru to re-test 
+
+    case 3: // returns true if the pen is down (and save curpos)
         if (event_state() & ANY_BUTTON) {
             get_mouse_xy();
             fltk::Rectangle* rc = wnd->out;
@@ -157,13 +168,23 @@ int osd_getpen(int code) {
         return wnd->penDownY;
 
     case 4:  // cur pen-down x
+    case 10:
         get_mouse_xy();
         return wnd->penDownX;
 
     case 5:  // cur pen-down y
+    case 11:
         get_mouse_xy();
         return wnd->penDownY;
 
+    case 12: // true if left button pressed
+        return (event_state() & BUTTON1);
+
+    case 13: // true if right button pressed
+        return (event_state() & BUTTON3);
+
+    case 14: // true if middle button pressed
+        return (event_state() & BUTTON2);
     }
     return 0;
 }
@@ -320,7 +341,7 @@ void modeless_cb(Widget* w, void* v) {
         // create a full url path from the given relative path
         const String& path = formView->getEventName();
         eventName.empty();
-        if (path[0] != '!' && 
+        if (path[0] != '!' &&
             path[0] != '|' &&
             path.startsWith("http://") == false &&
             wnd->siteHome.length() > 0) {
