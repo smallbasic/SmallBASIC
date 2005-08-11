@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.44 2005-08-08 23:37:34 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.45 2005-08-11 23:58:12 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -339,6 +339,7 @@ struct CodeEditor : public TextEditor {
         readonly = false;
         const char* s = getenv("INDENT_LEVEL");
         indentLevel = (s && s[0] ? atoi(s) : 4);
+        matchingBrace = -1;
     }
 
     int handle(int e);
@@ -349,10 +350,27 @@ struct CodeEditor : public TextEditor {
     void handleTab();
     void showRowCol();
     void getRowCol(int *row, int *col);
+    void showMatchingBrace();
+    void draw();
 
     bool readonly;
     int indentLevel;
+    int matchingBrace;
 };
+
+void CodeEditor::draw() {
+    TextEditor::draw();
+    if (matchingBrace != -1) {
+        // highlight the matching brace
+        int X,Y;
+        int cursor = mCursorStyle;
+        mCursorStyle = BLOCK_CURSOR;
+        if (position_to_xy(matchingBrace, &X, &Y)) {
+            draw_cursor(X, Y);
+        }
+        mCursorStyle = cursor;
+    }
+}
 
 unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
     // count the indent level and find the start of text
@@ -472,6 +490,66 @@ void CodeEditor::handleTab() {
     }
     free((void*)buf);
 }
+
+void CodeEditor::showMatchingBrace() {
+    char cursorChar = buffer()->character(mCursorPos-1);
+    char cursorMatch=0;
+    int pair = -1;
+    int iter = -1;
+    int pos = mCursorPos-2;
+
+    switch (cursorChar) {
+        case ']': 
+            cursorMatch = '['; 
+            break;
+        case ')': 
+            cursorMatch = '('; 
+            break;
+        case '(': 
+            cursorMatch = ')'; 
+            pos = mCursorPos+1;
+            iter = 1; 
+            break;
+        case '[': 
+            cursorMatch = ']'; 
+            iter = 1; 
+            pos = mCursorPos+1;
+            break;
+    }
+    if (cursorMatch != -0) {
+        // scan for matching opening on the same line
+        int level = 1;
+        int len = buffer()->length();
+        while (pos > 0 && pos < len) {
+            char nextChar = buffer()->character(pos);
+            if (nextChar == 0 || nextChar == '\n') {
+                break;
+            }
+            if (nextChar == cursorChar) {
+                level++; // nested char
+            } else if (nextChar == cursorMatch) {
+                level--;
+                if (level == 0) {
+                    // found matching char at pos
+                    pair = pos;
+                    break;
+                }
+            }
+            pos += iter;
+        }
+    }
+
+    if (matchingBrace != -1) {
+        int lineStart = buffer()->line_start(matchingBrace);
+        int lineEnd = buffer()->line_end(matchingBrace);
+        redisplay_range(lineStart, lineEnd);
+        matchingBrace = -1;
+    }
+    if (pair != -1) {
+        redisplay_range(pair, pair);
+        matchingBrace = pair;
+    }
+}
     
 int CodeEditor::handle(int e) {
     int cursorPos = mCursorPos;
@@ -507,6 +585,7 @@ int CodeEditor::handle(int e) {
         
         // fallthru to show row-col
     case RELEASE:
+        showMatchingBrace();
         showRowCol();
         break;
     }
