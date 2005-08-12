@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.45 2005-08-11 23:58:12 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.46 2005-08-12 00:04:46 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -507,19 +507,20 @@ void CodeEditor::showMatchingBrace() {
             break;
         case '(': 
             cursorMatch = ')'; 
-            pos = mCursorPos+1;
+            pos = mCursorPos;
             iter = 1; 
             break;
         case '[': 
             cursorMatch = ']'; 
             iter = 1; 
-            pos = mCursorPos+1;
+            pos = mCursorPos;
             break;
     }
     if (cursorMatch != -0) {
         // scan for matching opening on the same line
         int level = 1;
         int len = buffer()->length();
+        int gap = 0;
         while (pos > 0 && pos < len) {
             char nextChar = buffer()->character(pos);
             if (nextChar == 0 || nextChar == '\n') {
@@ -531,11 +532,14 @@ void CodeEditor::showMatchingBrace() {
                 level--;
                 if (level == 0) {
                     // found matching char at pos
-                    pair = pos;
+                    if (gap > 1) {
+                        pair = pos;
+                    }
                     break;
                 }
             }
             pos += iter;
+            gap++;
         }
     }
 
