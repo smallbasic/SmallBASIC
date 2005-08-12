@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.9 2005-05-04 00:39:25 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.10 2005-08-12 22:13:38 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -31,7 +31,29 @@ C_LINKAGE_BEGIN
 #include "blib_ui.h"
 
 extern MainWindow *wnd;
-Group* form = 0;
+
+struct FormGroup : public Group {
+    FormGroup(int x1, int x2, int y1, int y2) : Group(x1,x2,y1,y2) {}
+    void draw(); // avoid drawing over the tab-bar
+};
+
+void FormGroup::draw() {
+    draw_box();
+    int numchildren = children();
+    Rectangle r(w(), h());
+    if (box()) {
+        box()->inset(r);
+    }
+    push_clip(r);
+    for (int n = 0; n < numchildren; n++) {
+        Widget& w = *child(n);
+        draw_child(w);
+        draw_outside_label(w);
+    }
+    pop_clip();
+}
+
+FormGroup* form = 0;
 
 enum ControlType {
     ctrl_button,
@@ -75,10 +97,10 @@ void closeButton(Widget* w, void* v) {
 void createForm() {
     if (form == 0) {
         wnd->outputGroup->begin();
-        form = new Group(wnd->out->x()+1, 
-                         wnd->out->y()+1, 
-                         wnd->out->w()-2, 
-                         wnd->out->h()-2);
+        form = new FormGroup(wnd->out->x()+1, 
+                             wnd->out->y()+1, 
+                             wnd->out->w()-2, 
+                             wnd->out->h()-2);
         form->resizable(0);
         form->color(color(152,152,152));
         wnd->outputGroup->end(); 

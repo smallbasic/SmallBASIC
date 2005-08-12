@@ -1614,7 +1614,13 @@ void HelpWidget::draw() {
 
     // prevent other child controls from drawing over the scrollbar
     push_clip(Rectangle(0,0, w()-SCROLL_W, h()));
-    Group::draw();
+    int numchildren = children();
+    for (int n = 0; n < numchildren; n++) {
+        Widget& w = *child(n);
+        if (&w != scrollbar) {
+            draw_child(w);
+        }
+    }
     pop_clip();
 
     if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
