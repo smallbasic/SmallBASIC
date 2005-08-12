@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.19 2005-06-11 22:04:07 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.20 2005-08-12 06:25:52 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -16,6 +16,11 @@
 #include <fltk/Image.h>
 
 using namespace fltk;
+
+struct ScreenImage : public Image {
+    ScreenImage(int w, int h) : Image(w,h) {}
+    void update() {}
+};
 
 class AnsiWindow : public Widget {
     public:
@@ -61,7 +66,7 @@ class AnsiWindow : public Widget {
     void newLine();
     void reset();
 
-    Image* img;
+    ScreenImage* img;
     bool underline;
     bool invert;
     bool bold;

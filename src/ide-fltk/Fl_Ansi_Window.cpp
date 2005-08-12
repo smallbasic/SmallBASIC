@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.35 2005-08-02 07:26:49 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.36 2005-08-12 06:25:52 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -61,9 +61,9 @@ static Color colors[] = {
     WHITE              // 15 bright white
 };
 
-#define begin_offscreen() \
-    initImage();          \
-    GSave gsave;          \
+#define begin_offscreen()                       \
+    initImage();                                \
+    GSave gsave;                                \
     img->make_current();
 
 AnsiWindow::AnsiWindow(int x, int y, int w, int h, int defsize) : 
@@ -89,7 +89,7 @@ void AnsiWindow::destroyImage() {
 void AnsiWindow::initImage() {
     // can only be called following Fl::check() or Fl::run()
     if (img == 0) {
-        img = new Image(w(), h());
+        img = new ScreenImage(w(), h());
         GSave gsave;
         img->make_current();
         setcolor(color());
@@ -118,11 +118,11 @@ void AnsiWindow::reset() {
 }
 
 void AnsiWindow::layout() {
-     if (img && (layout_damage() & LAYOUT_WH)) { 
-         // can't use GSave here in X
-         resized = true;
-     }
-     Widget::layout();
+    if (img && (layout_damage() & LAYOUT_WH)) { 
+        // can't use GSave here in X
+        resized = true;
+    }
+    Widget::layout();
 }
 
 void AnsiWindow::draw() {
@@ -145,7 +145,7 @@ void AnsiWindow::draw() {
                 H = h();
             }
             Image* old = img;
-            img = new Image(W, H);
+            img = new ScreenImage(W, H);
             GSave gsave;
             img->make_current();
             setcolor(color());
@@ -212,9 +212,8 @@ void AnsiWindow::drawRect(int x1, int y1, int x2, int y2) {
 void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy, 
                            int width, int height) {
     begin_offscreen();
-    // todo: find a replacement for removed copy method 
-    //image->copy(Rectangle(x, y, width, height), sx, sy);
-    image->over(x,y);
+    image->over(Rectangle(x, y, width, height), 
+                Rectangle(sx, sy, width, height));
     redraw();
 }
 
@@ -323,7 +322,7 @@ int AnsiWindow::calcTab(int x) const {
 
 Color AnsiWindow::ansiToFltk(long c) const {
     if (c < 0) {
-        // color is windows style RGB packing
+        // assume color is windows style RGB packing
         // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
         c = -c;
         int b = (c>>16) & 0xFF;
