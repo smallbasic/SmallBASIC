@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.46 2005-08-12 00:04:46 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.47 2005-08-16 00:09:27 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -1049,6 +1049,10 @@ void EditorWindow::findFunc(const char* find) {
         }
     }
     free((void*)text);
+}
+
+void EditorWindow::setIndentLevel(int level) {
+    ((CodeEditor*)editor)->indentLevel = level;
 }
 
 //--EndOfFile-------------------------------------------------------------------

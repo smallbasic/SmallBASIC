@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.21 2005-07-16 02:38:23 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.22 2005-08-16 00:09:27 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -65,6 +65,7 @@ class EditorWindow : public Group {
     void fontSize(int i);
     void createFuncList();
     void findFunc(const char* find);
+    void setIndentLevel(int level);
  
     // editor callback functions
     static void new_cb(Widget*, void* v) {
