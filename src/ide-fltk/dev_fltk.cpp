@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.47 2005-08-10 23:43:12 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.48 2005-08-16 00:11:04 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -267,11 +267,12 @@ int dev_putenv(const char *s) {
     if (lv.equals("TITLE")) {
         rv.append(" - SmallBASIC");
         wnd->copy_label(rv);
+    } else if (lv.equals("INDENT_LEVEL")) {
+        wnd->editWnd->setIndentLevel(rv.toInteger());
     } else if (lv.equals("TURBO")) {
         wnd->isTurbo = rv.toInteger() == 1 ? 1: 0;
-    } else {
-        env.put(lv, rv);
     }
+    env.put(lv, rv);
     return 1;
 }
 
