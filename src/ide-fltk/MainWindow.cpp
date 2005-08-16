@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.66 2005-08-10 23:43:21 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.67 2005-08-16 00:11:36 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -118,6 +118,63 @@ void setModified(bool dirty) {
     wnd->modStatus->redraw();
 }
 
+
+void statusMsg(const char* msg) {
+    const char* filename = wnd->editWnd->getFilename();
+    wnd->fileStatus->copy_label(msg && msg[0] ? msg : 
+                                filename && filename[0] ? filename : 
+                                untitledFile);
+    wnd->fileStatus->labelcolor(wnd->rowStatus->labelcolor());
+    wnd->fileStatus->redraw();
+
+#if defined(WIN32) 
+    ::SetFocus(xid(Window::first()));
+#endif
+}
+
+void runMsg(const char * msg) {
+    wnd->runStatus->copy_label(msg && msg[0] ? msg : "");
+    wnd->runStatus->redraw();
+}
+
+void busyMessage() {
+    statusMsg("Selection unavailable while program is running.");
+}
+
+void pathMessage(const char* file) {
+    sprintf(path, "File not found: %s", file);
+    statusMsg(path);
+}
+
+void showEditTab() {
+    wnd->tabGroup->selected_child(wnd->editGroup);
+}
+
+void showHelpTab() {
+    wnd->tabGroup->selected_child(wnd->helpGroup);
+}
+
+void showOutputTab() {
+    wnd->tabGroup->selected_child(wnd->outputGroup);
+}
+
+void browseFile(const char* url) {
+#if defined(WIN32) 
+    ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
+#else 
+    statusMsg("Launching htmlview script...");
+    if (fork() == 0) {
+        fclose(stderr);
+        fclose(stdin);
+        fclose(stdout);
+        if (execlp("htmlview", "htmlview", url, NULL) == 0) {
+            execlp("mozilla", "mozilla", url, NULL);
+        }
+        ::exit(0); // in case exec failed 
+    }
+#endif
+}
+
 void updatePath(char* filename) {
     int len = filename ? strlen(filename) : 0;
     for (int i=0; i<len; i++) {
@@ -125,6 +182,17 @@ void updatePath(char* filename) {
             filename[i] = '/';
         }
     }
+}
+
+void execInit() {
+    // execute the initialisation program
+    getHomeDir(path);
+    strcat(path, "init.bas");
+    if (access(path, 0) == 0) {
+        int success = sbasic_main(path);
+        runMsg(success ? " " : "ERR");
+    }
+    wnd->editWnd->take_focus();
 }
 
 void restoreEdit() {
@@ -256,62 +324,6 @@ void fileChanged(bool loadfile) {
 
     new Item(SCAN_LABEL);
     wnd->funcList->end();
-}
-
-void statusMsg(const char* msg) {
-    const char* filename = wnd->editWnd->getFilename();
-    wnd->fileStatus->copy_label(msg && msg[0] ? msg : 
-                                filename && filename[0] ? filename : 
-                                untitledFile);
-    wnd->fileStatus->labelcolor(wnd->rowStatus->labelcolor());
-    wnd->fileStatus->redraw();
-
-#if defined(WIN32) 
-    ::SetFocus(xid(Window::first()));
-#endif
-}
-
-void runMsg(const char * msg) {
-    wnd->runStatus->copy_label(msg && msg[0] ? msg : "");
-    wnd->runStatus->redraw();
-}
-
-void busyMessage() {
-    statusMsg("Selection unavailable while program is running.");
-}
-
-void pathMessage(const char* file) {
-    sprintf(path, "File not found: %s", file);
-    statusMsg(path);
-}
-
-void showEditTab() {
-    wnd->tabGroup->selected_child(wnd->editGroup);
-}
-
-void showHelpTab() {
-    wnd->tabGroup->selected_child(wnd->helpGroup);
-}
-
-void showOutputTab() {
-    wnd->tabGroup->selected_child(wnd->outputGroup);
-}
-
-void browseFile(const char* url) {
-#if defined(WIN32) 
-    ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
-#else 
-    statusMsg("Launching htmlview script...");
-    if (fork() == 0) {
-        fclose(stderr);
-        fclose(stdin);
-        fclose(stdout);
-        if (execlp("htmlview", "htmlview", url, NULL) == 0) {
-            execlp("mozilla", "mozilla", url, NULL);
-        }
-        ::exit(0); // in case exec failed 
-    }
-#endif
 }
 
 void basicMain(const char* filename) {
@@ -916,7 +928,6 @@ void scanPlugIns(Menu* menu) {
         if (strcasecmp(filename+len-4, ".bas") == 0) {
             sprintf(path, "%s%s", bashome, filename);
             file = fopen(path, "r");
-
             if (!file) {
                 continue;
             }
@@ -925,7 +936,6 @@ void scanPlugIns(Menu* menu) {
                 fclose(file);
                 continue;
             }
-            
             bool editorTool = false;
             if (strcmp("'tool-plug-in\n", buffer) == 0) {
                 editorTool = true;
@@ -1009,6 +1019,8 @@ int main(int argc, char **argv) {
     sprintf(path, "BAS_HOME=%s%s", startDir, bashome+1);
     dev_putenv(path);
 
+    //fltk::use_system_file_chooser(true);
+
     wnd = new MainWindow(600, 400);
 #if defined(WIN32) 
     HICON icon = (HICON)wnd->icon();
@@ -1022,6 +1034,8 @@ int main(int argc, char **argv) {
     wnd->show(argc, argv);
 
     check();
+    execInit();
+
     switch (runMode) {
     case run_state:
         wnd->editWnd->loadFile(runfile, -1, true);
@@ -1337,6 +1351,13 @@ int MainWindow::handle(int e) {
     case RELEASE:
         penState = -1;
         return Window::handle(e);
+//     case DND_ENTER:
+//     case DND_DRAG:
+//     case DND_RELEASE:
+//         return 1;
+//     case PASTE:
+//         //trace("paste=%s", event_text());
+//         return 1;
     default:
         return Window::handle(e);
     }
