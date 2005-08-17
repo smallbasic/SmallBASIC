@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.67 2005-08-16 00:11:36 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.68 2005-08-17 23:23:01 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -1351,13 +1351,12 @@ int MainWindow::handle(int e) {
     case RELEASE:
         penState = -1;
         return Window::handle(e);
-//     case DND_ENTER:
-//     case DND_DRAG:
-//     case DND_RELEASE:
-//         return 1;
-//     case PASTE:
-//         //trace("paste=%s", event_text());
-//         return 1;
+    case DND_ENTER:
+    case DND_DRAG:
+    case DND_RELEASE:
+        return 0;
+    case PASTE:
+        return 1;
     default:
         return Window::handle(e);
     }
