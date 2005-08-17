@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.47 2005-08-16 00:09:27 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.48 2005-08-17 23:21:40 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -338,7 +338,7 @@ struct CodeEditor : public TextEditor {
     CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
         readonly = false;
         const char* s = getenv("INDENT_LEVEL");
-        indentLevel = (s && s[0] ? atoi(s) : 4);
+        indentLevel = (s && s[0] ? atoi(s) : 2);
         matchingBrace = -1;
     }
 
@@ -1025,10 +1025,11 @@ void EditorWindow::createFuncList() {
                 if (text[i] == '\n') {
                     i++; // skip initial newline
                 }
-                String s;
-                s.append(text+i, c-(text+i));
+                int itemLen = c-(text+i);
+                String s(text+i, itemLen);
                 Item* item = new Item();
                 item->copy_label(s.toString());
+                i += itemLen;
             }
         }
     }
