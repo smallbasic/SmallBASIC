@@ -41,6 +41,12 @@ the Free Software Foundation.<br>
 <li>CTRL+F key sequence sets focus to toolbar search. Can now
 also press ENTER from the search and goto-line boxes to return
 focus to the editor.
+<li>Executes $HOME/.smallbasic/init.bas at program startup. This
+allows you to specifiy alternative environment settings such as INDENT_LEVEL.
+Indent now defaults to 2 spaces.
+<li>Added 'choice' option to form buttons.
+<li>Added box and background color options to the FORM conrol.
+<li>Included "Memory Test" sample application.
 </ul>
 
 <br>Version 0.9.6.3 - Sunday 17 July 2005 - hbtm :) (2K/XP)
@@ -242,10 +248,13 @@ formats are JPEG/GIF and XPM.<br>
    <td>
    Syntax: BUTTON x, y, w, h, variable, caption [,type]<br>
 
-   type can optionally be 'radio' | 'checkbox' | 'link' | 'label'
+   type can optionally be 'radio' | 'checkbox' | 'link' | 'label' | 'choice'
    variable is set to 1 if a button or link was pressed (which 
    will have closed the form, or if a radio or checkbox was 
-   selected when the form was closed.<br></td>
+   selected when the form was closed.<br>
+   Caption contains the list item for the Choice control, separated 
+   with '|' characters.  variable is set to the selected text 
+   when the form is closed.<br></td>
 <tr>
    <td fgcolor=#008080><b>TEXT</b></td>
    <td>
@@ -254,7 +263,7 @@ formats are JPEG/GIF and XPM.<br>
 </tr>
 <tr>
    <td fgcolor=#008080><b>DOFORM</b></td>
-   <td>syntax: DOFORM [x,y,w,h]<br>
+   <td>syntax: DOFORM [x,y,w,h,[box-style,bg-color]]<br>
    Executes the form.<br></td>
 </tr>
 </table>
