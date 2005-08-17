@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.10 2005-08-12 22:13:38 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.11 2005-08-17 23:21:07 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -15,16 +15,18 @@
 #include "device.h"
 #include "smbas.h"
 
-#include <fltk/run.h>
-#include <fltk/Group.h>
-#include <fltk/Input.h>
 #include <fltk/Button.h>
 #include <fltk/CheckButton.h>
+#include <fltk/Group.h>
+#include <fltk/Input.h>
+#include <fltk/Item.h>
 #include <fltk/RadioButton.h>
-#include <fltk/events.h>
 #include <fltk/Rectangle.h>
+#include <fltk/events.h>
+#include <fltk/run.h>
 
 #include "MainWindow.h"
+#include "Fl_Ansi_Window.h"
 
 C_LINKAGE_BEGIN
 
@@ -38,10 +40,13 @@ struct FormGroup : public Group {
 };
 
 void FormGroup::draw() {
-    draw_box();
     int numchildren = children();
     Rectangle r(w(), h());
-    if (box()) {
+    if (box() == NO_BOX) {
+        setcolor(color());
+        fillrect(r);
+    } else {
+        draw_box();
         box()->inset(r);
     }
     push_clip(r);
@@ -61,7 +66,8 @@ enum ControlType {
     ctrl_radio,
     ctrl_check,
     ctrl_text,
-    ctrl_label
+    ctrl_label,
+    ctrl_list
 };
 
 struct WidgetInfo {
@@ -130,8 +136,8 @@ void ui_reset() {
 
 // BUTTON x, y, w, h, variable, caption [,type] 
 //
-// type can optionally be 'radio' | 'checkbox' | 'link'
-// variable is set to 1 is a button or link was pressed (which 
+// type can optionally be 'radio' | 'checkbox' | 'link' | 'choice'
+// variable is set to 1 if a button or link was pressed (which 
 // will have closed the form, or if a radio or checkbox was 
 // selected when the form was closed
 // 
@@ -164,6 +170,25 @@ void cmd_button() {
                 widget->box(NO_BOX);
                 widget->labelcolor(color(150,0,0));
                 inf->type = ctrl_link;
+            } else if (strncmp("choice", type, 6) == 0) {
+                Choice* choice = new Choice(x, y, w, h);
+                choice->begin();
+                // "Easy|Medium|Hard"
+                inf->type = ctrl_list;
+                int len = caption ? strlen(caption) : 0;
+                for (int i=0; i<len; i++) {
+                    char* c = strchr(caption+i, '|');
+                    int endIndex = c ? c-caption : len;
+                    String s(caption+i, endIndex-i);
+                    Item* item = new Item();
+                    item->copy_label(s.toString());
+                    i = endIndex;
+                }
+                choice->user_data(inf);
+                choice->end();
+                form->end();
+                pfree2(caption, type);
+                return;
             }
         }
         if (widget == 0) {
@@ -221,7 +246,7 @@ void cmd_text() {
 // Executes the form
 // 
 void cmd_doform() {
-    int x, y, w, h;
+    int x, y, w, h, box, bg;
     int numArgs;
 
     if (form == 0) {
@@ -230,17 +255,41 @@ void cmd_doform() {
         return;
     } 
 
-    x = y = w = h = 0;
-    numArgs = par_massget("iiii", &x, &y, &w, &h);
+    x = y = w = h = box = bg = 0;
+    numArgs = par_massget("iiiiii", &x, &y, &w, &h, &box, &bg);
 
-    if (numArgs != 0 && numArgs != 4) {
+    if (numArgs != 0 && (numArgs < 4 || numArgs > 6)) {
         ui_reset();
-        rt_raise("UI: INVALID FORM COORDINATES: %d", numArgs);
+        rt_raise("UI: INVALID FORM ARGUMENTS: %d", numArgs);
         return;
     }
 
     if (numArgs > 0) {
-        form->box(SHADOW_BOX);
+        switch (box) {
+        case 1:
+            form->box(BORDER_BOX);
+            break;
+        case 2:
+            form->box(SHADOW_BOX);
+            break;
+        case 3:
+            form->box(ENGRAVED_BOX);
+            break;
+        case 4:
+            form->box(THIN_DOWN_BOX);
+            break;
+        default: 
+            form->box(NO_BOX);
+        }
+        if (numArgs == 6) {
+            form->color(AnsiWindow::ansiToFltk(bg));
+        }
+        if (x < 2) {
+            x = 2;
+        }
+        if (y < 2) {
+            y = 2;
+        }
         form->x(x);
         form->y(y);
         if (x+w > form->w()) {
@@ -282,6 +331,10 @@ void cmd_doform() {
         case ctrl_text:
             // copy input data into variable
             v_setstrn(inf->var, ((Input*)w)->value(), ((Input*)w)->size());
+            break;
+        case ctrl_list:
+            // copy drop list item into variable
+            v_setstr(inf->var, ((Choice*)w)->item()->label());
             break;
         default:
             break;
