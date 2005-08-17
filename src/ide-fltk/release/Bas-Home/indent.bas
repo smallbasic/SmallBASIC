@@ -4,7 +4,11 @@
 split command, "|", args() use trim(x)
 local inbuf, outbuf
 fname = args(0)
-indSize= 4
+indSize= env("INDENT_LEVEL")
+if indSize=0 then
+  indSize=2
+fi
+
 begin_words = ["while", "if", "elseif", "elif", "else", "repeat", "for", "func", "sub"]
 end_words = ["wend", "fi", "endif", "elseif", "elif", "else", "next", "end", "until"]
 level = 0
