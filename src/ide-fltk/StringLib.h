@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.9 2005-04-14 23:26:13 zeeb90au Exp $
+// $Id: StringLib.h,v 1.10 2005-08-17 23:19:09 zeeb90au Exp $
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
@@ -53,6 +53,7 @@ struct String : public Object {
     virtual ~String();
     String();
     String(const char* s);
+    String(const char* s, int len);
     String(const String& s);
     const String& operator=(const String& s);
     const String& operator=(const char* s);

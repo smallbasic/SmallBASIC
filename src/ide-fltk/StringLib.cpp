@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.cpp,v 1.11 2005-04-19 23:52:19 zeeb90au Exp $
+// $Id: StringLib.cpp,v 1.12 2005-08-17 23:19:08 zeeb90au Exp $
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -30,6 +30,11 @@ Object::~Object() {}
 String::String(const char* s)  {
     owner=false;
     buffer=(char*)s;
+}
+
+String::String(const char* s, int len)  {
+    init();
+    append(s, len);
 }
 
 String::String(const String& s)  {
