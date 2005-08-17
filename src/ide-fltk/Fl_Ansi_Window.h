@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.20 2005-08-12 06:25:52 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.21 2005-08-17 23:20:10 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -54,13 +54,13 @@ class AnsiWindow : public Widget {
     void fontSize(int i) {labelsize(i);}
     int fontSize() {return (int)labelsize();}
     void beep() const;
+    static Color ansiToFltk(long color);
 
     private:
     void init();
     void destroyImage();
     void initImage();
     bool setGraphicsRendition(char c, int escValue);
-    Color ansiToFltk(long color) const;
     bool doEscape(unsigned char *&p);
     int calcTab(int x) const;
     void newLine();

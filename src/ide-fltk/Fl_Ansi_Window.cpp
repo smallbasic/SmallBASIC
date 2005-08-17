@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.36 2005-08-12 06:25:52 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.37 2005-08-17 23:20:10 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -156,9 +156,8 @@ void AnsiWindow::draw() {
             delete old;
             resized = false;
         }
-        Rectangle r(w(), h());
-        push_clip(r);
-        img->draw(r);
+        push_clip(Rectangle(w(), h()));
+        img->draw(Rectangle(img->w(), img->h()));
         pop_clip();
     } else {
         setcolor(color());
@@ -320,7 +319,7 @@ int AnsiWindow::calcTab(int x) const {
     return c * tabSize;
 }
 
-Color AnsiWindow::ansiToFltk(long c) const {
+/*static*/ Color AnsiWindow::ansiToFltk(long c) {
     if (c < 0) {
         // assume color is windows style RGB packing
         // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
