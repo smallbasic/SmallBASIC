@@ -1,30 +1,53 @@
-REM $Id: memoryTest.bas,v 1.1 2005-08-17 23:25:55 zeeb90au Exp $
+REM $Id: memoryTest.bas,v 1.2 2005-08-18 23:18:06 zeeb90au Exp $
 
 const rows = 5
 const cols = 5
 const gap = 3
 const size=30
+const xoffs = 0
+const yoffs = 0
 const cellSize=gap+size
-dim grid (1 to cols, 1 to rows)
+const st_init = 1
+const st_ready = 2
+const st_active = 3
+
 skillFactor = 5
+state = st_init
+bn_start = 0
+bn_generate = 0
 
-sub creategrid
+func createGrid(skillFactor)
+  local x,y
+  dim grid (1 to cols, 1 to rows)
   for y = 1 to rows
     for x = 1 to cols
-      grid(x,y) = if(rnd*10 > skillFactor, 1,0)
+      grid(x,y) = if(skillFactor=0,0, if(rnd*10 > skillFactor, 1,0))
     next y
   next x
+  creategrid=grid
 end
 
-sub emptyGrid
+func isEqual(byref g1, byref g2)
+  cls
+  html ""
+  local x,y
   for y = 1 to rows
     for x = 1 to cols
-      grid(x,y) = 0
+      if (g1(x,y) != g2(x,y)) then
+        isEqual=0
+        ? g1
+        ? g2
+        pause
+        exit func
+      fi
     next y
   next x
+  exit
+  isEqual=1
 end
 
-sub drawGrid(xoffs, yoffs, size, gap)
+sub drawGrid(byref grid)
+  local x,y,x1,y1
   y1 = yoffs
   for y = 1 to rows
     x1 = xoffs
@@ -36,8 +59,22 @@ sub drawGrid(xoffs, yoffs, size, gap)
   next x
 end
 
+func clickCell(byref grid, cell)
+  local x,y
+  clickCell = 0
+  for y = 1 to rows
+    for x = 1 to cols
+      if (x = cell(0) and y = cell(1)) then
+        'toggle the cell
+        grid(x,y) = 1 'if (grid(x,y)=1,0,1)
+        clickCell = 1
+      fi
+    next y
+  next x
+end
+
 # Convert mouse coordinates into grid coordinates
-func getCell()
+func getCell
   pen on
   repeat
   until pen(0)
@@ -46,6 +83,7 @@ func getCell()
 end
 
 sub intro
+  local s
   s= "<b>Objective</b><br>"
   s+="To view a pattern and reproduce it entirely from memory.<br>"
   s+="Instructions<br>"
@@ -55,37 +93,62 @@ sub intro
   s+="3. Click on 'Start!' to hide the generated pattern, then start<br>"
   s+="   rebuilding the pattern in the lower field by toggling on the<br>"
   s+="   blocks where you think they belong.<br>"
-  s+="4. Click on 'Check!' to find out the results, and to unhide<br>"
+  s+="4. Click outside the pattern to find out the results, and to unhide<br>"
   s+="   the original pattern so you can compare it with your guess.<br>"
   html s, "", 170,1
 end
 
 sub showForm
-  button 5,1, 70, 20, bn_opt, "Easy|Medium|Hard", "choice"
-  button 5,26, 70, 20, bn_generate, "Generate!"
-  button 5,46, 70, 20, bn_cancel, "Cancel"
+  local x,y,w,h
+  x = 5
+  y = 1
+  w = 70
+  h = 20
+  button x,y,w,h, bn_opt, "Easy|Medium|Hard", "choice"
+  button x,26, w,h, bn_generate, "Generate!"
+  if (state = st_ready) then
+    button x,48, w,h, bn_start, "Start"
+  fi
   doform 1,(cellSize*rows)+5,(cellSize*cols)+3,200,0,0
 end  
 
 sub main
+  local testgrid,guess
+  
   env("TITLE=Memory Test")
   rect 0, 0, xmax, ymax, 0 filled
   randomize timer
   intro
-  emptyGrid
-  drawGrid 0, 0, size, gap
-  # getCell
+  emptyGrid = createGrid(0)
+  drawGrid emptyGrid
 
-  showForm
-  if (bn_cancel = 1) then
-    exit
+  'get the user skillFactor  
+  repeat
+    showForm
+    skillFactor = if (bn_opt = "Easy", 9, if (bn_opt="Medium", 7, 5))
+    testgrid = createGrid(skillFactor)
+    drawGrid testgrid
+    state = st_ready
+  until bn_start = 1
+  state = st_active
+
+cls
+html ""
+
+
+  'run the memory test
+  drawGrid emptyGrid
+  guess = createGrid(0)
+  repeat
+    cellPress = clickCell(guess, getCell)
+    drawGrid guess
+  until cellPress = 0
+  if isEqual(guess,testgrid) then
+    ? "You guessed correctly"
+  else
+    ? "You chose poorly"
   fi
-  skillFactor = if (bn_opt = "Easy", 9, if (bn_opt="Medium", 7, 5))
-  createGrid
-  drawGrid 0, 0, size, gap
- 
-
+    
 end
 
 main
-
