@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.11 2005-08-17 23:21:07 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.12 2005-08-18 23:15:55 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -100,6 +100,14 @@ void closeButton(Widget* w, void* v) {
     wnd->setModal(false);
 }
 
+void closeModeless(Widget* w, void* v) {
+    WidgetInfo* inf = (WidgetInfo*)v;
+    v_setstrn(inf->var, "1", 1);
+    wnd->outputGroup->remove(w);
+    wnd->outputGroup->redraw();
+    delete w;
+}
+
 void createForm() {
     if (form == 0) {
         wnd->outputGroup->begin();
@@ -148,11 +156,23 @@ void cmd_button() {
     char* type = 0;
 
     if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
-        createForm();
         Button* widget = 0;
         WidgetInfo* inf = new WidgetInfo();
         inf->var = v;
 
+        if (type && strncmp("modeless", type, 8) == 0) {
+            wnd->outputGroup->begin();
+            widget = new Button(x, y, w, h);
+            widget->callback(closeModeless);
+            widget->copy_label(caption);
+            widget->user_data(inf);
+            wnd->outputGroup->end();
+            inf->type = ctrl_button;
+            pfree2(caption, type);
+            return;
+        }
+
+        createForm();
         if (type) {
             if (strncmp("radio", type, 5) == 0) {
                 widget = new RadioButton(x, y, w, h);
@@ -174,6 +194,7 @@ void cmd_button() {
                 Choice* choice = new Choice(x, y, w, h);
                 choice->begin();
                 // "Easy|Medium|Hard"
+                int itemIndex = 0;
                 inf->type = ctrl_list;
                 int len = caption ? strlen(caption) : 0;
                 for (int i=0; i<len; i++) {
@@ -183,6 +204,11 @@ void cmd_button() {
                     Item* item = new Item();
                     item->copy_label(s.toString());
                     i = endIndex;
+                    if (v->type == V_STR && v->v.p.ptr &&
+                        strcmp((const char*)v->v.p.ptr, s.toString()) == 0) {
+                        choice->focus_index(itemIndex);
+                    }
+                    itemIndex++;
                 }
                 choice->user_data(inf);
                 choice->end();
@@ -203,7 +229,7 @@ void cmd_button() {
             if (inf->type == ctrl_check || 
                 inf->type == ctrl_radio) {
                 widget->value(true);
-            } else {
+            } else if (inf->type != ctrl_button) {
                 widget->value((const char*)v->v.p.ptr);
             }
         }
@@ -242,9 +268,8 @@ void cmd_text() {
     }
 }
 
-// DOFORM [x,y,w,h [,border-style]]
+// DOFORM [x,y,w,h [,border-style, bg-color]]
 // Executes the form
-// 
 void cmd_doform() {
     int x, y, w, h, box, bg;
     int numArgs;
@@ -316,6 +341,7 @@ void cmd_doform() {
     if (wnd->isBreakExec()) {
         brun_break();
     }
+    wnd->resetPen();
 
     int n = form->children();
     for (int i=0; i<n; i++) {
@@ -345,3 +371,5 @@ void cmd_doform() {
 }
 
 C_LINKAGE_END
+
+// End of "$Id: blib_fltk_ui.cpp,v 1.12 2005-08-18 23:15:55 zeeb90au Exp $".
