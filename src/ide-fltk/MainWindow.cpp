@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.68 2005-08-17 23:23:01 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.69 2005-08-18 23:17:48 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -556,6 +556,7 @@ void font_size_cb(Widget* w, void* v) {
         value < MIN_FONT_SIZE ? MIN_FONT_SIZE : value;
     wnd->out->fontSize(value);
     wnd->editWnd->fontSize(value);
+    wnd->editWnd->take_focus();
     sizeBn->value(value);
 }
 
@@ -1162,6 +1163,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     sizeBn->value(DEF_FONT_SIZE);
     sizeBn->step(1);
     sizeBn->callback(font_size_cb, sizeBn);
+    sizeBn->when(WHEN_ENTER_KEY_ALWAYS);
     sizeBn->labelfont(HELVETICA);
     
     // close the tool-bar with a resizeable end-box
