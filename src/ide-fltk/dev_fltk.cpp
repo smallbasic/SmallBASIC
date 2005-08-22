@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.48 2005-08-16 00:11:04 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.49 2005-08-22 04:56:31 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -54,6 +54,8 @@ void getHomeDir(char* fileName);
 bool cacheLink(dev_file_t* df, char* localFile);
 void updateForm(const char* s);
 void closeForm();
+void closeModeless(); // in blib_fltk_ui.cpp
+void clearOutput();
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -77,6 +79,7 @@ int osd_devinit() {
     }
     saveForm = false;
     dev_clrkb();
+    closeModeless();
     return 1;
 }
 
@@ -93,6 +96,7 @@ void osd_refresh() {
 }
 
 int osd_devrestore() {
+    closeModeless();
     return 1;
 }
 
@@ -115,7 +119,7 @@ int osd_events(int wait_flag) {
     
     fltk::check();
     if (wnd->isBreakExec()) {
-        closeForm();
+        clearOutput();
         return -2;
     }
     return 0;
@@ -588,7 +592,7 @@ char *dev_gets(char *dest, int size) {
     }
 
     if (wnd->isBreakExec()) {
-        closeForm();
+        clearOutput();
         brun_break();
     }
 
@@ -622,15 +626,19 @@ void getHomeDir(char* fileName) {
     makedir(fileName);
 }
 
-// close the modeless help widget
 void closeForm() {
-    if (formView) {
+    if (formView != 0) {
         formView->parent()->remove(formView);
         formView->parent(0);
         delete formView;
         formView = 0;
-        wnd->out->redraw();
     }
+    wnd->out->redraw();
+}
+
+void clearOutput() {
+    closeForm();
+    closeModeless();
 }
 
 bool isFormActive() {
@@ -810,4 +818,4 @@ void updateForm(const char* s) {
 //     }
 }
 
-//--EndOfFile-------------------------------------------------------------------
+// End of "$Id: dev_fltk.cpp,v 1.49 2005-08-22 04:56:31 zeeb90au Exp $".
