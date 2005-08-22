@@ -43,10 +43,23 @@ also press ENTER from the search and goto-line boxes to return
 focus to the editor.
 <li>Executes $HOME/.smallbasic/init.bas at program startup. This
 allows you to specifiy alternative environment settings such as INDENT_LEVEL.
-Indent now defaults to 2 spaces.
+<li>Indent now defaults to 2 spaces.
 <li>Added 'choice' option to form buttons.
 <li>Added box and background color options to the FORM conrol.
 <li>Included "Memory Test" sample application.
+<li>FORM widgets can now be modeless. Call DOFORM with a single argument 
+prior to calling TEXT or BUTTON to enter the modeless state,
+use a PEN(0) loop to drive the internal system event handler, then
+test if a BUTTON variable equals 1 indicating a button press.<br>
+Values for the single argument are interpreted as follows: <br>
+0 - begin modeless state.<br>
+1 - copy form fields and end modeless state.<br>
+2 - transfer fields only.<br>
+3 - end modeless state only.<br> 
+Button, radio and checkbox controls automatically
+set their variables to "1" when pressed.
+Refer to the included memoryTest.bas file
+for example use. 
 </ul>
 
 <br>Version 0.9.6.3 - Sunday 17 July 2005 - hbtm :) (2K/XP)

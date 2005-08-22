@@ -15,7 +15,7 @@ button 10, 90, 150, 20, radio3, "Unbelievable", "radio"
 button 10, 120,130, 20, vlabel, "Please enter your name...", "label"
 text   10, 140, 120, 20, text1
 button 10, 170, 70, 20, okButton, "OK"
-doform 10,10,350,950
+doform 10,10,350,950,2
 
 if (radio1 = "1") then
    ? "Excellent answer "+text1
