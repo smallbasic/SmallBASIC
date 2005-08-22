@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.69 2005-08-18 23:17:48 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.70 2005-08-22 04:57:54 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -1022,7 +1022,7 @@ int main(int argc, char **argv) {
 
     //fltk::use_system_file_chooser(true);
 
-    wnd = new MainWindow(600, 400);
+    wnd = new MainWindow(600, 500);
 #if defined(WIN32) 
     HICON icon = (HICON)wnd->icon();
     if (!icon) {
@@ -1448,4 +1448,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-//--EndOfFile-------------------------------------------------------------------
+// End of "$Id: MainWindow.cpp,v 1.70 2005-08-22 04:57:54 zeeb90au Exp $".
