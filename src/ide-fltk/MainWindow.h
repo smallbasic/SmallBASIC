@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.22 2005-08-10 23:43:21 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.23 2005-08-22 04:57:21 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -46,10 +46,9 @@ struct MainWindow : public Window {
 
     int penDownX;
     int penDownY;
-    int penState;
-    int penMode;
+    int penState; // PUSH/RELEASE events
+    int penMode; // PEN ON/OFF
     bool isTurbo;
-    bool modalLoop;
     String siteHome;
 
     // main output
