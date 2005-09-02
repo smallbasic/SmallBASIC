@@ -1,9 +1,9 @@
 'app-plug-in
 'menu Memory Test
-REM $Id: memoryTest.bas,v 1.3 2005-08-22 04:54:48 zeeb90au Exp $
+REM $Id: memoryTest.bas,v 1.4 2005-09-02 06:54:52 zeeb90au Exp $
 REM Copyright (c) 2005 Chris Warren-Smith 
 REM Game idea taken from this site:
-REM todo: find iambold site
+REM http://milov.nl/iambald/20.html
 
 const rows = 5
 const cols = 5

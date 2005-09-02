@@ -72,8 +72,8 @@ PLATFORM=-D_UnixOS -D_FLTK
 # add -lpng -ljpeg if not built into FLTK
 IMAGELIBS=-lfltk_images -lfltk_jpeg
 linux: IMAGELIBS=-lfltk_images -ljpeg
-debug: IMAGELIBS=-lfltk_images -ljpeg
-LDLIBS = -s -O3 -Os `fltk-config --ldflags` ${IMAGELIBS}
+debug: IMAGELIBS=-lfltk_images -lfltk_jpeg
+LDLIBS = -s -O2 -Os `fltk-config --ldflags` ${IMAGELIBS}
 RESOURCES = sbfltk.res
 
 #debug options
@@ -102,11 +102,11 @@ EditorWindow.cpp:kwp.cxx
 kwp.cxx: build_kwpc
 	./build_kwpc
 
-sbfltk.exe: $(OBJS) ${RESOURCES}
+sbfltk.exe: ${OBJDIR} $(OBJS) ${RESOURCES}
 	gcc $(OBJS) ${LDLIBS} ${RESOURCES} -o $@ 
 	cp $@ release/
 
-sbfltk: $(OBJS)
+sbfltk: ${OBJDIR} $(OBJS)
 	gcc $(OBJS) ${LDLIBS} -o $@ 
 	cp $@ release/
 
@@ -121,7 +121,7 @@ Fl_Help_Widget.exe: Fl_Help_Widget.o
 	gcc ${DEBUG_OPTIM} $< ${DEBUG_LDLIBS} objs/StringLib.o -o $@
 
 clean:
-	-rm -f sbfltk  build_kwpc kwp.cxx kwp objs/*.o
+	-rm -f sbfltk  build_kwpc kwp objs/*.o
 
 ${OBJDIR}:
 	mkdir -p $@
