@@ -1,0 +1,51 @@
+/* automagicaly generated file */
+const char *code_keywords[] = { // List of basic level keywords
+"access", "and", "append", "append", "as", "as", "band", "bg", 
+"bg", "bor", "byref", "chain", "close", "color", "color", "const", 
+"data", "declare", "def", "def", "delete", "dim", "do", "elif", 
+"else", "elseif", "end", "endif", "eqv", "erase", "exec", "exit", 
+"export", "fi", "filled", "for", "for", "func", "func", "gosub", 
+"goto", "if", "imp", "import", "in", "input", "input", "insert", 
+"label", "let", "like", "line", "lineinput", "linput", "local", "loop", 
+"mdl", "mod", "nand", "next", "nor", "not", "off", "on", 
+"on", "open", "option", "or", "output", "print", "read", "redim", 
+"rem", "repeat", "restore", "return", "run", "seek", "shared", "sinput", 
+"sprint", "step", "step", "stop", "sub", "sub", "then", "then", 
+"to", "to", "troff", "tron", "unit", "until", "use", "use", 
+"usg", "usg", "using", "using", "wend", "while", "write", "xnor", 
+"xor"};
+
+const char *code_functions[] = { // functions
+"abs", "absmax", "absmin", "access", "acos", "acosh", "acot", "acoth", 
+"acsc", "acsch", "array", "asc", "asec", "asech", "asin", "asinh", 
+"atan", "atan2", "atanh", "atn", "balloc", "bcs", "bgetc", "bin", 
+"call", "cat", "cbs", "cdbl", "ceil", "chop", "chr", "cint", 
+"cos", "cosh", "cot", "coth", "creal", "csc", "csch", "date", 
+"datefmt", "deg", "determ", "disclose", "empty", "enclose", "env", "environ", 
+"eof", "exist", "exp", "files", "fix", "floor", "format", "frac", 
+"fre", "freefile", "hex", "if", "iff", "imageh", "imagew", "inkey", 
+"input", "instr", "int", "inverse", "isarray", "isdir", "isfile", "islink", 
+"isnumber", "isstring", "julian", "lbound", "lcase", "left", "leftof", "leftoflast", 
+"len", "lineqn", "loadlib", "lof", "log", "log10", "lower", "ltrim", 
+"malloc", "max", "mid", "min", "oct", "peek", "peek16", "peek32", 
+"pen", "point", "polyarea", "polycent", "pow", "progline", "ptdistln", "ptdistseg", 
+"ptsign", "rad", "replace", "rgb", "rgbf", "right", "rightof", "rightoflast", 
+"rinstr", "rnd", "round", "rtrim", "run", "run", "sec", "sech", 
+"seek", "segcos", "seglen", "segsin", "seq", "sgn", "sin", "sinh", 
+"space", "spc", "sqr", "squeeze", "statmean", "statmeandev", "statspreadp", "statspreads", 
+"str", "string", "sum", "sumsq", "tab", "tan", "tanh", "textheight", 
+"textwidth", "ticks", "tickspersec", "time", "timer", "translate", "trim", "txth", 
+"txtw", "ubound", "ucase", "upper", "vadr", "val", "weekday", "xpos", 
+"ypos"};
+
+const char *code_procedures[] = { // functions
+"arc", "at", "bcopy", "beep", "bload", "bputc", "bsave", "button", 
+"call", "chart", "chdir", "chmod", "circle", "cls", "copy", "datedmy", 
+"delay", "deriv", "diffeqn", "dirwalk", "doform", "draw", "drawpoly", "env", 
+"environ", "exprseq", "html", "image", "imgget", "imgput", "intersect", "join", 
+"kill", "locate", "lock", "logprint", "m3apply", "m3ident", "m3rotate", "m3scale", 
+"m3trans", "mkdir", "nosound", "paint", "pause", "pen", "play", "plot", 
+"plot2", "poke", "poke16", "poke32", "polyext", "pset", "randomize", "rect", 
+"rename", "rmdir", "root", "rte", "search", "sort", "sound", "split", 
+"stkdump", "swap", "text", "timehms", "tload", "tsave", "unloadlib", "usrcall", 
+"view", "window", "wsplit"};
