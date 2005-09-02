@@ -260,9 +260,7 @@ void	bc_add2d(bc_t *bc, byte code, double p1)
 */
 void	bc_add2s(bc_t *bc, byte code, const char *p1)
 {
-	word	l;
-
-	l = strlen(p1);
+	int l = strlen(p1);
 	if	( l > BC_MAX_STORE_SIZE )
 		sc_raise("STRING TOO BIG");
 	else	{

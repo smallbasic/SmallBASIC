@@ -124,7 +124,7 @@ int		irda_open(dev_file_t *f)
         return 0;
     	}
 
-    f->handle = hCom;
+    f->handle = (int)hCom;
 	return 1;
 	#else
 	///////////////////////////////////////////////////////////////////////////////////////////
