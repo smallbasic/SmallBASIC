@@ -2551,4 +2551,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-//--EndOfFile-------------------------------------------------------------------
+// End of "$Id: Fl_Help_Widget.cpp,v 1.38 2005-09-02 06:26:37 zeeb90au Exp $".
+

@@ -1,7 +1,7 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.13 2005-08-22 04:56:30 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.14 2005-09-02 06:26:37 zeeb90au Exp $
 //
-// Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -433,4 +433,4 @@ void cmd_doform() {
 
 C_LINKAGE_END
 
-// End of "$Id: blib_fltk_ui.cpp,v 1.13 2005-08-22 04:56:30 zeeb90au Exp $".
+// End of "$Id: blib_fltk_ui.cpp,v 1.14 2005-09-02 06:26:37 zeeb90au Exp $".

@@ -1,7 +1,7 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.37 2005-08-17 23:20:10 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.38 2005-09-02 06:26:37 zeeb90au Exp $
 //
-// Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -614,3 +614,4 @@ int main(int argc, char **argv) {
 }
 #endif
 
+// End of "$Id: Fl_Ansi_Window.cpp,v 1.38 2005-09-02 06:26:37 zeeb90au Exp $".
