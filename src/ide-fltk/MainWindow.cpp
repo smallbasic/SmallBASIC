@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.70 2005-08-22 04:57:54 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.71 2005-09-25 01:33:49 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -47,6 +47,10 @@
 extern "C" {
 #include "fs_socket_client.h"
 }
+
+#ifndef MAX_PATH
+#define MAX_PATH 256
+#endif
 
 using namespace fltk;
 
@@ -1448,4 +1452,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.70 2005-08-22 04:57:54 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.71 2005-09-25 01:33:49 zeeb90au Exp $".
