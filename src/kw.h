@@ -167,7 +167,10 @@ kwDO,
 kwOPTION,
 kwBACKG,
 kwLOGPRINT,
-
+kwSELECT,
+kwCASE,
+kwCASE_ELSE,
+kwENDSELECT,
 kwNULL
 };
 
