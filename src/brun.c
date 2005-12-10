@@ -795,16 +795,16 @@ void	bc_loop(int isf)
 			prog_ip ++;
 
 			// debug
-/*
-			printf("\t%d: %d = ", prog_ip, code);
+            /*
+            fprintf(stderr, "\t%d: %d = ", prog_ip, code);
 			for ( i = 0; keyword_table[i].name[0] != '\0'; i ++)	{
 				if ( code == keyword_table[i].code )	{
-					printf("%s ", keyword_table[i].name);
+					fprintf(stderr,"%s ", keyword_table[i].name);
 					break;
 					}
 				}
-			printf("\n");
-*/
+			fprintf(stderr,"\n");
+            */
 
 			switch ( code )	{
 			case	kwLABEL:
@@ -903,6 +903,22 @@ void	bc_loop(int isf)
 				continue;
 			case	kwUNTIL:
 				cmd_until();
+				if	( prog_error )	break;
+				continue;
+            case kwSELECT:
+                cmd_select();
+				if	( prog_error )	break;
+				continue;
+            case kwCASE:
+                cmd_case();
+				if	( prog_error )	break;
+				continue;
+            case kwCASE_ELSE:
+                cmd_case_else();
+				if	( prog_error )	break;
+				continue;
+            case kwENDSELECT:
+                cmd_end_select();
 				if	( prog_error )	break;
 				continue;
 			case 	kwDIM:
@@ -1919,7 +1935,7 @@ int		sbasic_recursive_exec(int tid)
 
 		// run
 		#if !defined(_WinBCB)
-		if	( !(opt_quite || opt_interactive) )
+		if	( !(opt_quiet || opt_interactive) )
 			dev_printf("Initializing #%d (%s) ...\n", ctask->tid, ctask->file);
 		#endif
 		success = sbasic_exec_task(ctask->tid);
@@ -2022,7 +2038,6 @@ int		sbasic_compile(const char *file)
 
 	// compile it
 	if	( comp_rq )	{
-
 	 	sys_before_comp();					// system specific preparations for compilation
 		success = comp_compile(file);
 	 	sys_after_comp();					// system specific things; after compilation
@@ -2071,7 +2086,6 @@ int		sbasic_exec(const char *file)
 	strcpy(gsb_last_file, file);
 	strcpy(gsb_last_errmsg, "No error!");
 
-
 	success = sbasic_compile(file);		// compile it (if opt_nosave, bytecode_h is a 
 										// memory handle of BC; otherwise you must run the file)
 
@@ -2108,7 +2122,7 @@ int		sbasic_exec(const char *file)
 			if	( os_graphics )	
 				dev_settextcolor(0, 15);
 
-			if	( !opt_quite )	
+			if	( !opt_quiet )	
 				inf_done();
 			}
 
