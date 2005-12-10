@@ -735,6 +735,14 @@ var_t	*code_getvarptr(void);
 */
 int		code_isvar(void);
 
+/**
+*	@ingroup exec
+*
+*	returns the node at the top of the stack. does not change the stack.
+*
+*/
+stknode_t* code_stackpeek();
+
 #define	code_peek()			prog_source[prog_ip]	/**< R(byte) <- Code[IP]			@ingroup exec */
 #define	code_getnext()		prog_source[prog_ip++]	/**< R(byte) <- Code[IP]; IP ++;	@ingroup exec */
 
