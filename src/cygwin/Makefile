@@ -8,17 +8,18 @@ DCPPFLAGS = -O2 -Os -Wall -D_UnixOS -D_CygWin -I.. -I.
 debug: DCPPFLAGS = -g -O1 -Wall -D_UnixOS -D_CygWin -I.. -I.
 DCFLAGS   = $(DCPPFLAGS)
 CLIBS = -lm -lgcc -lreadline -ltermcap  -s
+debug: CLIBS = -lm -lgcc -lreadline -ltermcap
 
 # Common sources
 sources=\
 	brun.c ceval.c eval.c str.c match.c fmt.c kw.c sberr.c \
 	mem.c panic.c blib.c bc.c file.c blib_db.c blib_math.c \
 	var.c proc.c blib_func.c blib_sound.c inet.c vmt.c \
-	blib_graph.c scan.c circle.c ffill.c pfill.c g_bmp.c \
+	blib_graph.c scan.c circle.c ffill.c pfill.c \
 	extlib.c blib_ui.c plot.c tasks.c units.c \
     fs_stream.c fs_serial.c fs_memo.c fs_pdoc.c fs_socket_client.c fs_irda.c \
 	unx_memmgr.c dev_term.c g_line.c decomp.c  \
-	geom.c
+	geom.c 
 
 #
 com_sources = $(addprefix ../, $(sources))
