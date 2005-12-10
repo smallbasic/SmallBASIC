@@ -60,6 +60,8 @@ struct keyword_s keyword_table[] = {
 { "WEND",		kwWEND	},
 { "REPEAT",		kwREPEAT	},
 { "UNTIL",		kwUNTIL	},
+{ "SELECT",     kwSELECT },
+{ "CASE",       kwCASE },
 { "GOSUB",		kwGOSUB	},
 { "RETURN",		kwRETURN	},
 { "READ",		kwREAD	},
@@ -495,10 +497,12 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_IN_WS		" IN "
 #define LCN_WEND		"WEND"
 #define LCN_IF			"IF"
+#define LCN_SELECT		"SELECT"
+#define LCN_CASE		"CASE"
 #define LCN_INPUT_WRS	"INPUT "
 #define LCN_OPTION		"OPTION"
 #define LCN_PREDEF		"PREDEF"
-#define LCN_QUITE		"QUITE"
+#define LCN_QUIET		"QUIET"
 #define LCN_GRMODE		"GRMODE"
 #define LCN_TEXTMODE	"TEXTMODE"
 #define LCN_CSTR		"CSTR"

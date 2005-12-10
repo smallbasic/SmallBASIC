@@ -107,6 +107,10 @@
 #define MSG_UNIT_NAME_DIF_THAN_SRC	"Warning: unit's file name is different than source\n"
 #define MSG_BC_FILE_CREATED		"ByteCode file '%s' created!\n"
 #define MSG_BC_FILE_ERROR		"Can't create binary file\n"
+#define MSG_CASE_CASE_ELSE      "CASE following CASE ELSE"
+#define MSG_MISSING_END_SELECT  "SELECT/CASE without 'END SELECT'"
+#define MSG_MISSING_SELECT      "END SELECT without SELECT"
+#define MSG_MISSING_CASE        "SELECT without CASE"
 
 // executor
 #define WORD_ERROR_AT			"ERROR AT"
