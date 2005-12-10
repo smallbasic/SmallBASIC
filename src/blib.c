@@ -1395,7 +1395,7 @@ void	cmd_return()
 	// get return-address and remove any other item (sub items) from stack
 	code_pop(&node);
 
-	// 'GOTO' SHIT
+	// 'GOTO'
 	while ( node.type != kwGOSUB )	{ code_pop(&node); if ( prog_error ) return; }
 
 	if ( node.type != kwGOSUB )	{
@@ -1442,7 +1442,7 @@ void	cmd_else()
 
 	code_pop(&node);
 
-	// 'GOTO' SHIT
+	// 'GOTO'
 	while ( node.type != kwIF )	{ code_pop(&node); if ( prog_error ) return; }
 
 	if	( node.type != kwIF )	{
@@ -1470,7 +1470,7 @@ void	cmd_elif()
 	// else cond
 	code_pop(&node);
 
-	// 'GOTO' SHIT
+	// 'GOTO'
 	while ( node.type != kwIF )	{ code_pop(&node); if ( prog_error ) return; }
 
 	if	( node.type != kwIF )	{
@@ -1739,7 +1739,7 @@ void	cmd_next()
 
 	code_pop(&node);
 
-	// 'GOTO' SHIT
+	// 'GOTO'
 	while ( node.type != kwFOR )	{ code_pop(&node); if ( prog_error ) return; }
 
 	if	( node.type != kwFOR )	{
@@ -2860,3 +2860,87 @@ void cmd_image() {
     }
 }
 
+//
+// evaluate the select expression and then store it on the stack
+// syntax is:
+// select expr
+// case expr
+//   stmt
+// case expr
+//   stmt
+// case else
+//   default stmt
+// end select
+//
+void cmd_select() {
+    stknode_t node;
+    var_t* expr;
+
+    expr = v_new();
+    v_init(expr);
+    eval(expr);
+
+    node.x.vfor.var_ptr = expr;
+    node.x.vfor.flags = 0;
+    node.type = kwSELECT;
+    code_push(&node);
+}
+
+//
+// compare the case expression with the saved select expression
+// if true then branch to true_ip otherwise branch to false_ip
+// which could either be another case line or "end select"
+//
+void cmd_case() {
+    stknode_t* node;
+    addr_t true_ip, false_ip;
+	var_t var_p;
+
+    true_ip  = code_getaddr(); // matching case
+    false_ip = code_getaddr(); // non-matching case
+
+	v_init(&var_p);
+	eval(&var_p);
+
+	node = code_stackpeek();
+
+    if (node->type != kwSELECT) {
+        rt_raise(ERR_SYNTAX);
+        return;
+    }
+
+    if (node->x.vfor.flags) {
+        // previous case already matches. 
+        code_jump(false_ip);
+    } else {
+        // compare select expr with case expr
+        node->x.vfor.flags = v_compare(node->x.vfor.var_ptr, &var_p) == 0 ? 1:0;
+        code_jump(node->x.vfor.flags ? true_ip : false_ip);
+    }
+
+	v_free(&var_p);
+}
+
+//
+// skip to cmd_end_select if a previous case was true
+//
+void cmd_case_else() {
+    stknode_t* node;
+    addr_t true_ip, false_ip;
+
+    true_ip  = code_getaddr(); // default block
+    false_ip = code_getaddr(); // end-select
+	node = code_stackpeek();
+    code_jump(node->x.vfor.flags ? false_ip : true_ip);
+}
+
+//
+// free the stored select expression created in cmd_select()
+//
+void cmd_end_select() {
+	stknode_t node;
+
+    code_pop(&node);
+	tmp_free(node.x.vfor.var_ptr); // v_new()
+	code_jump(code_getaddr());
+}
