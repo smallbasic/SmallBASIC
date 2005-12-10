@@ -90,7 +90,7 @@ void	dump_bytecode(FILE *output)
 			}
 		}
 	else
-		fprintf(output, "* no linked-linraries\n");
+		fprintf(output, "* no linked-libraries\n");
 
 	////////////////////
 	// print symbol-table
