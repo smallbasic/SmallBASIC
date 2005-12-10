@@ -253,6 +253,7 @@ int		net_peek(socket_t s)
 */
 socket_t  net_connect(const char *server_name, int server_port)
 {
+
 #if defined(_PalmOS)
 	socket_t			sock;
 	NetIPAddr			inaddr;
@@ -329,8 +330,9 @@ socket_t  net_connect(const char *server_name, int server_port)
 
 	if	( (inaddr = inet_addr(server_name)) == INADDR_NONE )	{
         hp = gethostbyname(server_name);
-        if ( hp == NULL )	
+        if ( hp == NULL ) {
             return -1;
+        }
         memcpy(&ad.sin_addr, hp->h_addr, hp->h_length);
 		}
 	else
@@ -341,8 +343,10 @@ socket_t  net_connect(const char *server_name, int server_port)
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if ( sock <= 0 )	return sock;
 
-    if ( connect(sock, (struct sockaddr *) &ad, sizeof(ad)) < 0 )
+    
+    if ( connect(sock, (struct sockaddr *) &ad, sizeof(ad)) < 0 ) {
         return -1;
+    }
     return sock;
 #endif
 }
