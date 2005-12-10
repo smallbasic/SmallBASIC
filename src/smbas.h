@@ -102,7 +102,7 @@ typedef struct {
 
 EXTERN byte	opt_graphics;			/**< command-line option: start in graphics mode				@ingroup sys */
 EXTERN byte opt_cstr;				/**< C-style special characters by default						@ingroup sys */
-EXTERN byte	opt_quite;				/**< command-line option: quite									@ingroup sys */
+EXTERN byte	opt_quiet;				/**< command-line option: quiet									@ingroup sys */
 EXTERN int	opt_retval;				/**< return-value (ERRORLEVEL)									@ingroup sys */
 EXTERN byte	opt_decomp;		 		/**< decompile													@ingroup sys */
 EXTERN byte	opt_syntaxcheck; 		/**< syntax check only											@ingroup sys */

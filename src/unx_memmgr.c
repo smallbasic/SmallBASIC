@@ -40,7 +40,7 @@
 	#define free qfree
 #endif
 
-extern byte	opt_quite;
+extern byte	opt_quiet;
 
 struct palm_mem_node	{
 	char	module[OS_FILENAME_SIZE+1];
@@ -146,7 +146,7 @@ void	memmgr_close()
 	int		i;
 
 #if !defined(OS_LIMITED) || defined(_Win32)
-	if	( !opt_quite )	{
+	if	( !opt_quiet )	{
 		xprintf("\n");
 		if	( cur_alloc == 0 )
 			xprintf("SB-MemMgr: Maximum use of memory: %dKB\n", (max_alloc + 512) / 1024);
@@ -156,13 +156,13 @@ void	memmgr_close()
 #endif
 	if	( cur_alloc )	{
 #if !defined(OS_LIMITED)
-		if	( !opt_abort && !opt_quite )
+		if	( !opt_abort && !opt_quiet )
 			xprintf("-------------------------------------------------------\n");
 #endif
 		for ( i = 0; i < umm_count; i ++ )	{
 			if	( memtable[i].size != 0 )	{
 #if !defined(OS_LIMITED)
-				if	( !opt_abort && !opt_quite )	{
+				if	( !opt_abort && !opt_quiet )	{
 					xprintf("%s:%d --- Handle: %d, Size: %d, LockCount: %d (SB lines COMP=%d RT=%d)\n",
 						memtable[i].module, memtable[i].line, i+1, memtable[i].size, memtable[i].lock,
 						memtable[i].sbsline, memtable[i].sbpline);

@@ -51,7 +51,7 @@ int	main(int argc, char *argv[])
   
 	strcpy(g_file, "");
 	opt_graphics = 0;
-	opt_quite = 0;
+	opt_quiet = 0;
 	opt_ide = 0;
 	opt_command[0] = '\0';
 
@@ -158,7 +158,7 @@ int	main(int argc, char *argv[])
 					break;
 				case 'q':
 					// shutup
-					opt_quite = 1;
+					opt_quiet = 1;
 					break;
 				case 'h':
 					// print command-line parameters
@@ -195,7 +195,7 @@ int	main(int argc, char *argv[])
 						printf("-g		enable graphics\n");
 						printf("-g[<width>x<height>[x<bpp>]] enable graphics & setup the graphics mode (depented on driver)\n");
 						printf("-m[mod1,mod2,...] load all or the specified modules\n");
-						printf("-q		quite\n");
+						printf("-q		quiet\n");
 						printf("-v		verbose\n");
 						printf("-pkw	prints all keywords (useful to create color-syntax macros for editors)\n");
 						// -i for ide
@@ -300,7 +300,7 @@ int	main(int argc, char *argv[])
 		/*
 		*	file
 		*/
-		if	( !opt_quite )	
+		if	( !opt_quiet )	
 			printf("SmallBASIC version %s, use -h for help\n", SB_STR_VER);
 
 		if	( g_file[0] == OS_DIRSEP )

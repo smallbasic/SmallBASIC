@@ -34,7 +34,7 @@ static	char	device[TSIZE];
 static	pthread_t	backg_tid;
 volatile int audio_lock = 0;
 
-extern unsigned char opt_quite;
+extern unsigned char opt_quiet;
 
 struct oss_qe_s	{
 	int		freq;
@@ -58,20 +58,20 @@ int		drvsound_init()
 
 	// open
 	if ( (oss_h = open(device, O_WRONLY|O_NDELAY)) < 0 ) {
-		if	( !opt_quite )
+		if	( !opt_quiet )
 	        perror("SB/OSS DRIVER");
 		return 0;
 		}
 	else	{
 		// init
 		if ( ioctl(oss_h, SNDCTL_DSP_GETFMTS, &gotmask) == -1 )		{
-			if	( !opt_quite )
+			if	( !opt_quiet )
 				perror("SB/OSS DRIVER: get dsp mask");
 			return 0;
 			}
 		
 		if ( ioctl(oss_h, SNDCTL_DSP_SPEED, &rate) == -1){
-			if	( !opt_quite )
+			if	( !opt_quiet )
 				perror("SB/OSS DRIVER: set sample rate");
 			return 0;
 			}
@@ -83,7 +83,7 @@ int		drvsound_init()
 	q_head = q_tail = 0;
 	oss_init = 1;
 	if	( pthread_create(&backg_tid, NULL, ossdsp_backg, NULL) )	{
-		if	( !opt_quite )
+		if	( !opt_quiet )
 			perror("SB/OSS DRIVER: background thread failed");
 		oss_init = 0;
 		return 0;

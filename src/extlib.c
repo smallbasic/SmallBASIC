@@ -373,7 +373,7 @@ void    slib_import(const char *name, const char *fullname)
     strncpy(lib->fullname, fullname, 1023);
     lib->id = slib_count;
 
-    if  ( !opt_quite )
+    if  ( !opt_quiet )
         printf("SB-LibMgr: importing %s", fullname);
 
     if  ( slib_llopen(lib) )    {
@@ -417,11 +417,11 @@ void    slib_import(const char *name, const char *fullname)
 
     if  ( mok ) {
         slib_count ++;
-        if  ( !opt_quite )
+        if  ( !opt_quiet )
             printf("... done\n");
     }
     else    {
-        if  ( !opt_quite )
+        if  ( !opt_quiet )
             printf("... error\n");
     }
 #endif
@@ -439,7 +439,7 @@ void    sblmgr_scanlibs(const char *path)
     char            full[1024], libname[256];
 
     if  ( (dp = opendir(path)) == NULL ) {
-        if  ( !opt_quite) {
+        if  ( !opt_quiet) {
             printf("SB-LibMgr: module path %s not found.\n", path);
         }
         return;
@@ -482,7 +482,7 @@ void    sblmgr_init(int mcount, const char *mlist)
 
     slib_count = 0;
 
-    if  ( !opt_quite && mcount )
+    if  ( !opt_quiet && mcount )
         printf("SB-LibMgr: scanning for modules...\n");
     if  ( mcount )  {
         if  ( mlist )   {
@@ -507,7 +507,7 @@ void    sblmgr_init(int mcount, const char *mlist)
 #endif
         }
     }
-    if  ( !opt_quite )
+    if  ( !opt_quiet )
         printf("\n");
 #endif
 }

@@ -5,7 +5,7 @@
 
 int		scan_line;
 int		prog_line;
-int		opt_quite;
+int		opt_quiet;
 int		opt_usevmt;
 
 extern void hex_dump(const unsigned char *block, int size);

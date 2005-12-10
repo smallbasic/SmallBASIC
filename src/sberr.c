@@ -283,7 +283,7 @@ void	inf_break(int pline)
 */
 void	inf_comprq_dv()
 {
-	if	( !opt_quite )
+	if	( !opt_quiet )
 		dev_print("Recompile: different version\n");
 	else
 		dev_print("(ver)\n");
@@ -291,7 +291,7 @@ void	inf_comprq_dv()
 
 void	inf_comprq_dt()
 {
-	if	( !opt_quite )
+	if	( !opt_quiet )
 		dev_print("Recompile: source is newer\n");
 	else
 		dev_print("(mod)\n");
@@ -299,7 +299,7 @@ void	inf_comprq_dt()
 
 void	inf_comprq_prq()
 {
-	if	( !opt_quite )
+	if	( !opt_quiet )
 		dev_print("Recompile: no binary file\n");
 	else
 		dev_print("(bin)\n");

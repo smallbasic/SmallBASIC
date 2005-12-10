@@ -1563,7 +1563,7 @@ int		interactive_mode(const char *fname)
 
 	intm_init();
 
-	if	( !opt_quite )	{
+	if	( !opt_quiet )	{
 		printf("SmallBASIC VERSION %s\n\tCopyright (c) 2000-2003 %s\n\n", SB_STR_VER, SB_STR_CPR);
 		printf("Type 'HELP' for help; type 'BYE' or press Ctrl+C for exit.\n\n");
 		}
