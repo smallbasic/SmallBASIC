@@ -1,49 +1,77 @@
-# CYGWIN
+# SmallBASIC for Cygwin
+#
+#
+#
+# This program is distributed under the terms of the GPL v2.0 or later
+# Download the GNU Public License (GPL) from www.gnu.org
+# 
 
-all: sbnull.exe
-debug:sbnull.exe
+all: sbasic.exe
+debug:sbasic.exe
 
-DCC = gcc
-DCPPFLAGS = -O2 -Os -Wall -D_UnixOS -D_CygWin -I.. -I.
-debug: DCPPFLAGS = -g -O1 -Wall -D_UnixOS -D_CygWin -I.. -I.
-DCFLAGS   = $(DCPPFLAGS)
+debug: DCFLAGS = -g -O1 -Wall -D_UnixOS -D_CygWin -I..
+DCFLAGS   = -O2 -Os -Wall -D_UnixOS -D_CygWin -I..
 CLIBS = -lm -lgcc -lreadline -ltermcap  -s
 debug: CLIBS = -lm -lgcc -lreadline -ltermcap
 
-# Common sources
-sources=\
-	brun.c ceval.c eval.c str.c match.c fmt.c kw.c sberr.c \
-	mem.c panic.c blib.c bc.c file.c blib_db.c blib_math.c \
-	var.c proc.c blib_func.c blib_sound.c inet.c vmt.c \
-	blib_graph.c scan.c circle.c ffill.c pfill.c \
-	extlib.c blib_ui.c plot.c tasks.c units.c \
-    fs_stream.c fs_serial.c fs_memo.c fs_pdoc.c fs_socket_client.c fs_irda.c \
-	unx_memmgr.c dev_term.c g_line.c decomp.c  \
-	geom.c 
+OBJDIR = ./objs/
 
-#
-com_sources = $(addprefix ../, $(sources))
-com_objects = $(addsuffix .o,  $(basename $(sources)))
+SOURCE=									        \
+    bc.c										\
+    blib.c										\
+    blib_db.c									\
+    blib_func.c									\
+    blib_graph.c								\
+    blib_math.c 								\
+    blib_sound.c								\
+    blib_ui.c									\
+    brun.c										\
+    ceval.c										\
+    console_main.c                              \
+    decomp.c  								    \
+    dev_null.c									\
+    dev_term.c									\
+    device.c									\
+    eval.c										\
+    extlib.c									\
+    ffill.c										\
+    file.c										\
+    fmt.c										\
+    fs_irda.c 									\
+    fs_memo.c									\
+    fs_pdoc.c									\
+    fs_serial.c									\
+    fs_socket_client.c							\
+    fs_stream.c									\
+    g_line.c									\
+    geom.c										\
+    inet.c										\
+    kw.c										\
+    match.c										\
+    mem.c										\
+    panic.c										\
+    pfill.c 									\
+    plot.c										\
+    proc.c										\
+    sberr.c 									\
+    scan.c 								        \
+    circle.c								    \
+    str.c										\
+    tasks.c										\
+    units.c 									\
+    unx_memmgr.c								\
+    var.c										\
+    vmt.c 										\
 
+OBJS += $(addprefix ${OBJDIR}, $(addsuffix .o, $(basename $(SOURCE))))
 
-# Platform specific sources
-dos_obj += $(com_objects)
-
-%.o: ../%.c
-	$(DCC) $(DCFLAGS) -c $<
-
-%.o: %.c
-	$(DCC) $(DCFLAGS) -c $<
-
-# win32/cygwin without graphics & sound
-sbnull.exe: $(dos_obj) ../dev_null.c ../device.c ../console_main.c $(help_files)
-	$(DCC) $(DCFLAGS) $(dos_obj) ../dev_null.c ../device.c ../console_main.c -o sbnull.exe $(CLIBS)
-	-mv sbnull.exe sbasic.exe
-	-cp sbasic.exe bin
+sbasic.exe: ${OBJDIR} $(OBJS)
+	gcc $(DCFLAGS) $(OBJS) -o sbasic.exe $(CLIBS)
+	-cp $@ bin
 
 bas2pdb.exe: ../bas2pdb.cc
-	$(DCC) $(DCFLAGS) -D_BAS2PDB ../bas2pdb.cc -o bas2pdb.exe -lgcc -lstdc++
-	$(DCC) $(DCFLAGS) -D_PDB2BAS ../bas2pdb.cc -o pdb2bas.exe -lgcc -lstdc++
+	gcc $(DCFLAGS) -D_BAS2PDB ../bas2pdb.cc -o bas2pdb.exe -lgcc -lstdc++
+	gcc $(DCFLAGS) -D_PDB2BAS ../bas2pdb.cc -o pdb2bas.exe -lgcc -lstdc++
 	-cp bas2pdb.exe bin
 	-cp pdb2bas.exe bin
 
@@ -53,6 +81,12 @@ mkpdb.exe: ../mkpdb.c
 
 clean:
 	-rm -f *.o *.exe
+
+${OBJDIR}:
+	mkdir -p $@
+
+${OBJDIR}%.o: ../%.c
+	gcc $(DCFLAGS) -o $@ -c $<
 
 # DO NOT DELETE
 
