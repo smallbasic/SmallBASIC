@@ -353,8 +353,8 @@ typedef unsigned int	addr_t;
 *	SB's constants
 */
 
-#define	SB_STR_VER		"0.9.5"
-#define	SB_DWORD_VER	0x905	// 00 (major) 08 (minor) 03 (patch) 
+#define	SB_STR_VER		"0.9.7"
+#define	SB_DWORD_VER	0x907	// 00 (major) 08 (minor) 03 (patch) 
 
 #if defined(OS_LIMITED)
 	#define	SB_PANICMSG_SIZE	255		
