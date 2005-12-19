@@ -43,7 +43,6 @@ COMMON=                                         \
     fs_serial.c                                 \
     fs_socket_client.c                          \
     fs_stream.c                                 \
-    g_bmp.c                                     \
     g_line.c                                    \
     geom.c                                      \
     inet.c                                      \
@@ -95,12 +94,11 @@ include makedepend
 
 build_kwpc: build_kwpc.c
 	g++ build_kwpc.c -o build_kwpc
-	-rm -f kwp
-
-EditorWindow.cpp:kwp.cxx
 
 kwp.cxx: build_kwpc
 	./build_kwpc
+
+EditorWindow.cpp:kwp.cxx
 
 sbfltk.exe: ${OBJDIR} $(OBJS) ${RESOURCES}
 	gcc $(OBJS) ${LDLIBS} ${RESOURCES} -o $@ 
@@ -121,7 +119,7 @@ Fl_Help_Widget.exe: Fl_Help_Widget.o
 	gcc ${DEBUG_OPTIM} $< ${DEBUG_LDLIBS} objs/StringLib.o -o $@
 
 clean:
-	-rm -f sbfltk  build_kwpc kwp objs/*.o
+	-rm -f sbfltk  build_kwpc objs/*.o
 
 ${OBJDIR}:
 	mkdir -p $@
