@@ -2634,13 +2634,13 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 	int		csum[256];
 	int		cs_count;
 	code_t	start_code[] =
-        { kwWHILE, kwREPEAT, kwIF,    kwFOR,  kwFUNC, kwSELECT, kwCASE, kwCASE_ELSE, 0 };
+        { kwWHILE, kwREPEAT, kwIF,    kwFOR,  kwFUNC, 0 };
 	code_t	end_code[] =
         { kwWEND,  kwUNTIL,  kwENDIF, kwNEXT, kwTYPE_RET, 0 };
 #if !defined(OS_LIMITED)
 	int		details = 1;
 #endif
-
+    char buff[256];
 	code = lcode;
 
 	kw_getcmdname(code, cmd);
@@ -2649,32 +2649,34 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 	*	search for closest keyword (forward)
 	*/	
 #if !defined(OS_LIMITED)
-	fprintf(stderr, MSG_DETAILED_REPORT_Q);
-	details = (fgetc(stdin) == LOWER_CHAR_FOR_YES);
-	if	( details )	{
+    buff[0] = 0;
+	dev_printf(MSG_DETAILED_REPORT_Q);
+    dev_gets(buff, sizeof(buff));
+    details = (buff[0] == 'y' || buff[0] == 'Y');
+    
+	if (details) {
 		ip = comp_search_bc_stack(pos+1, code, level - 1);
-		if	( ip == INVALID_ADDR )	{
+		if (ip == INVALID_ADDR) {
 			ip = comp_search_bc_stack(pos+1, code, level + 1);
-			if	( ip == INVALID_ADDR )	{
+			if (ip == INVALID_ADDR) {
 				int		cnt = 0;
-
 				for ( i = pos+1; i < comp_sp; i ++ )	{
 					dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-
-					if	( comp_prog.ptr[node.pos] == code )	{
-						fprintf(stderr, "\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, node.level, node.pos, level, pos);
+					if (comp_prog.ptr[node.pos] == code) {
+						dev_printf( "\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, node.level, node.pos, level, pos);
 						cnt ++;
-						if	( cnt > 3 )
+						if	( cnt > 3 ) {
 							break;
-						}
-					}
-				}
-			else
-				fprintf(stderr, "\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, level+1, node.pos, level, pos);
-			}
-		else
-			fprintf(stderr, "\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, level-1, node.pos, level, pos);
-		}
+                        }
+                    }
+                }
+            } else {
+				dev_printf( "\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, level+1, node.pos, level, pos);
+            }
+        } else {
+			dev_printf( "\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, level-1, node.pos, level, pos);
+        }
+    }
 #endif
 
 	/*
@@ -2683,10 +2685,10 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 	cs_count = 0;
 #if !defined(OS_LIMITED)
 	if	( details )	{
-		fprintf(stderr, "\n");
-		fprintf(stderr, "--- Pass 2 - stack ------------------------------------------------------\n");
-		fprintf(stderr, "%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i", "Command", "Section", "Addr", "Line", "Level", "BlkID", "Count");
-		fprintf(stderr, "-------------------------------------------------------------------------\n");
+		dev_printf( "\n");
+		dev_printf( "--- Pass 2 - stack ------------------------------------------------------\n");
+		dev_printf( "%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i", "Command", "Section", "Addr", "Line", "Level", "BlkID", "Count");
+		dev_printf( "-------------------------------------------------------------------------\n");
 		}
 #endif
 	for ( i = 0; i < comp_sp; i ++ )	{
@@ -2717,7 +2719,7 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 #if !defined(OS_LIMITED)
 		if	( details )	{
 			// info
-			fprintf(stderr, "%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
+			dev_printf( "%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
 				((i==pos)?">>":"  "), i, cmd, node.sec, node.pos, node.line, node.level, node.block_id, csum[cs_idx]);
 			}
 #endif
@@ -2728,12 +2730,12 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 	*/
 #if !defined(OS_LIMITED)
 	if	( details )	{
-		fprintf(stderr, "\n");
-		fprintf(stderr, "--- Sum -----------------------------------------------------------------\n");
+		dev_printf( "\n");
+		dev_printf( "--- Sum -----------------------------------------------------------------\n");
 		for ( i = 0; i < cs_count; i ++ )	{
 			code = ccode[i];
 			if	( !kw_getcmdname(code, cmd) )	sprintf(cmd, "(%d)", code);
-			fprintf(stderr, "%16s - %5d\n", cmd, csum[i]);
+			dev_printf( "%16s - %5d\n", cmd, csum[i]);
 			}
 		}
 #endif
@@ -2741,11 +2743,7 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 	/*
 	*	decide
 	*/
-#if !defined(OS_LIMITED)
-	fprintf(stderr, "\n");
-#else
 	dev_printf("\n");
-#endif
 	for ( i = 0; start_code[i] != 0; i ++ )	{
 		int		sa, sb;
 		code_t	ca, cb;
@@ -2771,29 +2769,18 @@ void	print_pass2_stack(addr_t pos, code_t lcode, int level)
 				}
 			}
 
-		if	( sa - sb != 0 )	{
+		if	( sa - sb != 0 ) {
 			kw_getcmdname(ca, cmd);
 			kw_getcmdname(cb, cmd2);
-			if	( sa > sb )	
-#if !defined(OS_LIMITED)
-				fprintf(stderr, "Hint: Missing %d %s or there is/are %d more %s\n", sa - sb, cmd2, sa - sb, cmd);
-#else
+			if	( sa > sb ) {
 				dev_printf("Hint: Missing %d %s or there is/are %d more %s\n", sa - sb, cmd2, sa - sb, cmd);
-#endif
-			else	
-#if !defined(OS_LIMITED)
-				fprintf(stderr, "Hint: There is/are %d more %s or missing %d %s\n", sb - sa, cmd2, sb-sa, cmd);
-#else
+            } else {
 				dev_printf("Hint: There is/are %d more %s or missing %d %s\n", sb - sa, cmd2, sb-sa, cmd);
-#endif
-			}
-		}
+            }
+        }
+    }
 	
-#if !defined(OS_LIMITED)
-	fprintf(stderr, "\n");
-#else
 	dev_printf("\n\n");
-#endif
 }
 
 /*
