@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.71 2005-09-25 01:33:49 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.72 2005-12-19 11:10:54 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -87,7 +87,7 @@ const char historyFile[] = "history.txt";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
     "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
-    "FLTK Version 0.9.6.4<br>"
+    "FLTK Version "SB_STR_VER"<br>"
     "Copyright (c) 2002-2005 Chris Warren-Smith.<br><br>"
     "<a href=http://smallbasic.sourceforge.net>"
     "http://smallbasic.sourceforge.net</a><br><br>"
@@ -121,7 +121,6 @@ void setModified(bool dirty) {
     wnd->modStatus->label(dirty ? "MOD" : "");
     wnd->modStatus->redraw();
 }
-
 
 void statusMsg(const char* msg) {
     const char* filename = wnd->editWnd->getFilename();
@@ -1069,7 +1068,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
 
     isTurbo = 0;
     opt_graphics = 1;
-    opt_quite = 1;
+    opt_quiet = 1;
     opt_interactive = 0;
     opt_nosave = 1;
     opt_ide = IDE_NONE; // for sberr.c
@@ -1452,4 +1451,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.71 2005-09-25 01:33:49 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.72 2005-12-19 11:10:54 zeeb90au Exp $".
