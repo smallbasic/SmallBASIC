@@ -1,116 +1,12 @@
 Copyright (c) 2002-2005 Chris Warren-Smith
 
-Current release: SB_FLTK_0_9_6_1 (16 May 2005)
+Release tags
+SB_FLTK_0_9_6_1 (16 May 2005)
+SB_FLTK_0_9_6_4 (2 Sept 2005)
 
 Commenced sometime around early Nov 2004. Mostly coded
 during my boring train ride to/from work. Initially built
-using cygwin under w2k.
-
-===============================================================================
-[7/10/2005] message response from FLTK newsgroups (general)
-
-chris warren-smith wrote:
-> Also, feel free to poke around at my FLTK code here:
-> http://cvs.sourceforge.net/viewcvs.py/smallbasic/sbrs3/sync/ide-fltk/
-> Any helpfull feedback is appreciated.
-
-        Excerpt from:
-        http://cvs.sourceforge.net/viewcvs.py/smallbasic/SmallBASIC/UnixIDE/sbide.cc?rev=1.2&view=auto
-
----- snip
-/**
-*   execute a command and return its output.
-* on error returns NULL; otherwise the output as a newly created (by malloc()) string
-*
-* On DOS we cannot use fork()... I am looking for a compatible way
-*/
-char *ide_exec(const char *cmd)
-{
-     [..]
----- snip
-
-
-        Easiest thing is to use popen().
-        The following code should work on unix and windows equally:
-
-
-//
-// Demonstrate popen() on windows + unix
-//    1.00 erco 06/05/2005
-//
-// Compile: mswin: cl /TP foo.c /DMICROSOFT=1
-//          linux: gcc foo.c -o foo
-//
-
-#include <stdio.h>      // popen
-#include <string.h>     // memcpy
-#include <stdlib.h>     // malloc/free
-
-#ifdef MICROSOFT
-#define popen _popen
-#define pclose _pclose
-#endif
-
-const char *ide_exec(const char *cmd) {
-     char buf[1024], *retbuf = 0;
-     int retsize = 0, count = 0;
-     FILE *fp = popen(cmd, "r");
-     while ( ( count = fread(buf, 1, sizeof(buf), fp) ) > 0 ) {
-         retbuf = (char*)realloc((void*)retbuf, retsize + count);
-         memcpy(retbuf+retsize, buf, count);
-         retsize += count;
-     }
-     pclose(fp);
-     retbuf = (char*)realloc((void*)retbuf, retsize+1);
-     retbuf[retsize] = '\0';
-     return(retbuf);
-}
-
-int main() {
-     const char *out = ide_exec("netstat -n");   // a cmd that works on unix+win
-     printf("Result:\n%s\n", out);
-     free((void*)out);
-     return(0);
-}
-
-===============================================================================
-Current problems 
-
-1.
-adjMatrix = [1,0,1;0,0,1;0,1,1] 
-I find that this version of SB treats the semicolon as a 
-comment separator; that is, everything after the first 
-semicolon is italicized. However, the program still seems to 
-work normally! 
-
-2. 
-Draw command.
-
-' Name.bas
-' 25/09/2004
-COLOR 9:PSET 80,80
-DRAW "R50D50L25U25L15D25NR15"
-DRAW "L10U50E25F25"
-PSET 118,105
-DRAW "R8U16L16D16R8U10NR8U6"
-COLOR 12:PSET 100,117
-INPUT "Who are you"; A$
-? "Hello, ";A$;"!"
-
-
-Broken example:
-Code:
-
-' Name.bas
-' 25/09/2004
-COLOR 9:PSET 80,80
-DRAW "R50D50L25U25L15D25NR15L10U50E25F25"
-PSET 118,105
-DRAW "R8U16L16D16R8U10NR8U6"
-COLOR 12:PSET 100,117
-INPUT "Who are you"; A$
-? "Hello, ";A$;"!"
-
+using cygwin under w2k. The windows build now uses mingw/msys.
 
 ===============================================================================
 [FLTK patches - 0.9.6.1]
@@ -127,10 +23,6 @@ since this would be the case with Win98:
 
   if (!has_unicode()) {
 
-3. void TextDisplay::draw(void) 
-  in the block "  // draw the non-text, non-scrollbar areas."
-  calls: fillrect(ir);
-  and comment out the tlrb margin fillrect calls
 
 4. filename.h line 52
 #elif defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
@@ -325,10 +217,44 @@ Kepu
 
 10. Linux build
 
-===============================================================================
-  .,,.·´¯`·.. ¸><((((º>¸.  .·´¯`·.. ¸><((((º>¸.  .·´¯`·.. ¸><((((º>¸.  
-.><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º>  .,,.·´¯`·.. ¸><((((º>¸.  
-   .....,,.><((((º>`·.¸¸.·´¯`·.¸.·´¯`·...¸><((((º> .·´¯`·.. ¸><((((º>¸.  
+//
+// Demonstrate popen() on windows + unix
+//    1.00 erco 06/05/2005
+//
+// Compile: mswin: cl /TP foo.c /DMICROSOFT=1
+//          linux: gcc foo.c -o foo
+//
 
-$Id: README.TXT,v 1.16 2005-08-12 22:20:46 zeeb90au Exp $
+#include <stdio.h>      // popen
+#include <string.h>     // memcpy
+#include <stdlib.h>     // malloc/free
+
+#ifdef MICROSOFT
+#define popen _popen
+#define pclose _pclose
+#endif
+
+const char *ide_exec(const char *cmd) {
+     char buf[1024], *retbuf = 0;
+     int retsize = 0, count = 0;
+     FILE *fp = popen(cmd, "r");
+     while ( ( count = fread(buf, 1, sizeof(buf), fp) ) > 0 ) {
+         retbuf = (char*)realloc((void*)retbuf, retsize + count);
+         memcpy(retbuf+retsize, buf, count);
+         retsize += count;
+     }
+     pclose(fp);
+     retbuf = (char*)realloc((void*)retbuf, retsize+1);
+     retbuf[retsize] = '\0';
+     return(retbuf);
+}
+
+int main() {
+     const char *out = ide_exec("netstat -n");   // a cmd that works on unix+win
+     printf("Result:\n%s\n", out);
+     free((void*)out);
+     return(0);
+}
+
+$Id: README.TXT,v 1.17 2005-12-21 05:19:53 zeeb90au Exp $
 
