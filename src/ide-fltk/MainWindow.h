@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.23 2005-08-22 04:57:21 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.24 2005-12-21 05:19:34 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -14,6 +14,7 @@
 
 #include <fltk/Window.h>
 #include <fltk/TabGroup.h>
+#include <fltk/ValueInput.h>
 
 #include "Fl_Ansi_Window.h"
 #include "EditorWindow.h"
@@ -64,7 +65,9 @@ struct MainWindow : public Window {
 
     // tool-bar
     Input* findText;
+    Input* gotoLine;
     Choice* funcList;
+    ValueInput* sizeBn;
 
     // status bar
     Widget* fileStatus;

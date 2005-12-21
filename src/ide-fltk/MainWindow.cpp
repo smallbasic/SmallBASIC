@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.72 2005-12-19 11:10:54 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.73 2005-12-21 05:19:34 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -1141,7 +1141,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     findText->labelfont(HELVETICA);
 
     // goto-line control
-    Input* gotoLine = new Input(238, 4, 40, mnuHeight, "Goto:");
+    gotoLine = new Input(238, 4, 40, mnuHeight, "Goto:");
     gotoLine->align(ALIGN_LEFT|ALIGN_CLIP);
     Button* gotoBn = new Button(280, 6, 18, mnuHeight-4, "@-92>;");
     gotoBn->callback(goto_cb, gotoLine);
@@ -1160,7 +1160,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     toolbar->resizable(funcList);
 
     // font-size control
-    ValueInput* sizeBn = new ValueInput(538, 4, 40, mnuHeight, "Font Size:");
+    sizeBn = new ValueInput(538, 4, 40, mnuHeight, "Font Size:");
     sizeBn->minimum(MIN_FONT_SIZE);
     sizeBn->maximum(MAX_FONT_SIZE);
     sizeBn->value(DEF_FONT_SIZE);
@@ -1369,10 +1369,22 @@ int MainWindow::handle(int e) {
     int k;
     switch (runMode) {
     case edit_state:
-        if ((event_key_state(LeftCtrlKey) || 
-             event_key_state(RightCtrlKey)) && event_key() == 'f') {
-            wnd->findText->take_focus();
-            return 1;
+        if (event_key_state(LeftCtrlKey) || 
+            event_key_state(RightCtrlKey)) {
+            switch (event_key()) {
+            case 'f':
+                wnd->findText->take_focus();
+                return 1;
+            case 'g':
+                wnd->gotoLine->take_focus();
+                return 1;
+            case 'h':
+                wnd->funcList->take_focus();
+                return 1;
+            case 'j':
+                wnd->sizeBn->take_focus();
+                return 1;
+            }
         }
         break;
     case run_state:
@@ -1451,4 +1463,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.72 2005-12-19 11:10:54 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.73 2005-12-21 05:19:34 zeeb90au Exp $".
