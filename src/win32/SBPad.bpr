@@ -124,7 +124,7 @@ AutoIncBuild=1
 MajorVer=0
 MinorVer=9
 Release=5
-Build=1
+Build=2
 Debug=1
 PreRelease=1
 Special=0
@@ -136,7 +136,7 @@ CodePage=1253
 [Version Info Keys]
 CompanyName=Nicholas Christopoulos
 FileDescription=SmallBASIC Pad for Win32
-FileVersion=0.9.5.1
+FileVersion=0.9.5.2
 InternalName=
 LegalCopyright=GNU GPL 2
 LegalTrademarks=GNU

@@ -328,7 +328,9 @@ int console_main(int argc, char *argv[])
             } else {
 #endif
                 final_dir = cwd;
+#if defined(_CygWin)
             }
+#endif
             if (chdir(final_dir) != 0) {
                 printf("Can't change directory to '%s'! (cygwin?)\n", final_dir);
                 exit(1);
