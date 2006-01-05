@@ -40,10 +40,6 @@
 #define FL_HELP_WIDGET_RESOURCES
 #include "HelpWidget.h"
 
-// uncomment for unit testing and then run:
-// make Fl_Ansi_Window.exe
-//#define UNIT_TEST 1
-
 #define FOREGROUND_COLOR Widget::default_style->textcolor()
 #define BACKGROUND_COLOR Widget::default_style->color()
 #define ANCHOR_COLOR fltk::color(0,0,128)
@@ -1549,7 +1545,7 @@ void HelpWidget::draw() {
     for (int i=0; i<len; i++) {
         InputNode* p = (InputNode*)list[i];
         if (p->button) {
-            p->button->hide();
+            p->button->set_flag(INVISIBLE);
         }
     }
 
@@ -1674,7 +1670,7 @@ int HelpWidget::onPush(int event) {
 }
 
 int HelpWidget::handle(int event) {
-    int handled = Group::handle(event);
+    int handled = Group::handle(event); 
     if (handled && event != fltk::MOVE) {
         return handled;
     }
@@ -2551,5 +2547,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.38 2005-09-02 06:26:37 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.39 2006-01-05 00:03:56 zeeb90au Exp $".
 
