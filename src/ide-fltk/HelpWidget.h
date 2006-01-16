@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.20 2005-05-07 11:29:25 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.21 2006-01-16 05:39:55 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -80,6 +80,8 @@ public:
     Scrollbar* scrollbar;
     S16 vscroll,hscroll;
     U16 scrollHeight;
+    S16 markX,markY,pointX,pointY,old_pointX,old_pointY;
+
     strlib::List nodeList;
     strlib::List namedInputs;
     strlib::List inputs;

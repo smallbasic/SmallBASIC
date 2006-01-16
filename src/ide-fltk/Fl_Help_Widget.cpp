@@ -88,6 +88,8 @@ struct Display {
     U8 content;
     U8 exposed;
     U8 measure;
+    U8 selected;
+    S16 markX,markY,pointX,pointY;
     Font* font;
     Color color;
     Color background;
@@ -495,9 +497,10 @@ void ImageNode::display(Display* out) {
 
 struct TextNode : public BaseNode {
     TextNode(const char* s, U16 textlen);
-    void TextNode::display(Display* out);
-    int TextNode::indexOf(const char* sFind, U8 matchCase);
-    int TextNode::getY();
+    void display(Display* out);
+    void drawSelection(const char* s, U16 len, U16 width, Display* out);
+    int indexOf(const char* sFind, U8 matchCase);
+    int getY();
 
     const char* s; // 4
     U16 textlen;   // 4
@@ -510,6 +513,81 @@ TextNode::TextNode(const char* s, U16 textlen) : BaseNode() {
     this->textlen = textlen;
     this->width = 0;
     this->ybegin = 0;
+}
+
+void TextNode::drawSelection(const char* s, U16 len, U16 width, Display* out) {
+    int out_y = out->y1-(int)getascent();
+    if (out->pointY < out_y) {
+        return; // selection above text
+    }
+    if (out->markY > out_y+out->lineHeight) {
+        return; // selection below text
+    }
+
+    Rectangle rc(out->x1, out_y, width, out->lineHeight);
+
+    if (out->markY > out_y) {
+        if (out->pointY < out_y+out->lineHeight) {
+            // single row
+            if (out->pointX < out->x1 || 
+                out->markX > out->x1+width) {
+                return; // selection left or right of text
+            }
+
+            // find the left+right margins
+            bool left = true;
+            int x = out->x1;
+            for (int i=0; i<len; i++) {
+                x += (int)getwidth(s+i, 1);
+                if (left) {
+                    if (x < out->markX) {
+                        rc.set_x(x);
+                    } else {
+                        left = false;
+                    }
+                } else if (x > out->pointX) {
+                    rc.w(x-rc.x());
+                    break;
+                }
+            }
+        } else {
+            // top row multiline - find the left margin
+            int x = out->x1;
+            for (int i=0; i<len; i++) {
+                x += (int)getwidth(s+i, 1);
+                if (x < out->markX) {
+                    rc.set_x(x);
+                } else {
+                    break;
+                }
+            }
+            if (out->pointX > out->x1+width) {
+                rc.w(width); // fill previous segment
+            }
+        }
+    } else {
+        if (out->pointY < out_y+out->lineHeight) {
+            // bottom row multiline
+            if (out->pointX < out->x1) {
+                return;
+            }
+        
+            // find the right margin
+            int x = 0;
+            for (int i=0; i<len; i++) {
+                x += (int)getwidth(s+i, 1);
+                if (out->x1+x > out->pointX) {
+                    rc.w(x);
+                    break;
+                }
+            }
+        }
+        // else middle row multiline - fill left+right
+    }
+
+    setcolor(GRAY80);
+    fillrect(rc);
+    setcolor(out->color);
 }
 
 void TextNode::display(Display* out) {
@@ -528,6 +606,9 @@ void TextNode::display(Display* out) {
             }
         }
         if (out->measure == false) {
+            if (out->selected) {
+                drawSelection(s, textlen, width, out);
+            }
             drawtext(s, textlen, out->x1, out->y1);
             if (out->uline) {
                 drawline(out->x1, out->y1+1, out->x1+width, out->y1+1);
@@ -565,6 +646,9 @@ void TextNode::display(Display* out) {
                 } 
             }
             if (out->measure == false) {
+                if (out->selected) {
+                    drawSelection(s, textlen, linepx, out);
+                }
                 drawtext(p, cliplen, out->x1, out->y1);
                 if (out->uline) {
                     drawline(out->x1, out->y1+1, out->x1+linepx, out->y1+1);
@@ -1306,6 +1390,9 @@ void HelpWidget::init() {
     scrollHeight = h();
     background = BACKGROUND_COLOR;
     foreground = FOREGROUND_COLOR;
+    markX = markY = -1;
+    pointX = pointY = -1;
+    old_pointX = old_pointY = -1;
 }
 
 void HelpWidget::cleanup() {
@@ -1521,6 +1608,27 @@ void HelpWidget::draw() {
     out.imgIndent = out.indent;
     out.tabW = out.x2;
     out.tabH = out.y2;    
+    out.selected = (markX != pointX && markY != pointY);
+
+    if (markX < pointX) {
+        out.markX = markX;
+        out.pointX = pointX;
+    } else {
+        out.markX = pointX;
+        out.pointX = markX;
+    }
+    if (markY < pointY) {
+        out.markY = markY;
+        out.pointY = pointY;
+    } else {
+        out.markY = pointY;
+        out.pointY = markY;
+    }
+
+    out.markX += hscroll;
+    out.markY += vscroll;
+    out.pointX += hscroll;
+    out.pointY += vscroll;
 
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
@@ -1534,10 +1642,17 @@ void HelpWidget::draw() {
         int h = (pushedAnchor->y2-pushedAnchor->y1)+pushedAnchor->lineHeight;
         push_clip(Rectangle(0, pushedAnchor->y1, out.x2, h));
     }
-    
+
+    // draw the background
     setcolor(out.background);
     fillrect(Rectangle(0, 0, w()-SCROLL_W, out.y2));
     setcolor(out.color);
+
+//     if (damage() == DAMAGE_HIGHLIGHT) {
+//         // only redraw the selection rectangle while dragging
+//         int h = (max(old_pointY, pointY) - markY)+out.lineHeight;
+//         push_clip(Rectangle(0, markY-out.lineHeight, out.x2, h));
+//     }
 
     // hide any inputs
     int len = inputs.length();
@@ -1604,7 +1719,7 @@ void HelpWidget::draw() {
             }
         }
     }
-    
+
     // draw child controls
     draw_child(*scrollbar);
 
@@ -1618,6 +1733,10 @@ void HelpWidget::draw() {
         }
     }
     pop_clip();
+
+//     if (damage() == DAMAGE_HIGHLIGHT) {
+//         pop_clip();
+//     }
 
     if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
         pop_clip();
@@ -1649,6 +1768,17 @@ int HelpWidget::onMove(int event) {
         }
         Widget::cursor(fltk::CURSOR_DEFAULT);
     }
+
+    if (event == fltk::DRAG) {
+        // dragged the selection
+        old_pointX = pointX;
+        old_pointY = pointY;
+        pointX = x - hscroll;
+        pointY = y - vscroll;
+        redraw(DAMAGE_HIGHLIGHT);
+        return 1;
+    }
+
     return 0;
 }
 
@@ -1656,9 +1786,12 @@ int HelpWidget::onPush(int event) {
     Object** list = anchors.getList();
     int len = anchors.length();
     pushedAnchor = 0;
+    int x = fltk::event_x();
+    int y = fltk::event_y();
+
     for (int i=0; i<len; i++) {
         AnchorNode* p = (AnchorNode*)list[i];
-        if (p->ptInSegment(fltk::event_x(), fltk::event_y())) {
+        if (p->ptInSegment(x, y)) {
             pushedAnchor = p;
             pushedAnchor->pushed = true;
             Widget::cursor(fltk::CURSOR_HAND);
@@ -1666,11 +1799,15 @@ int HelpWidget::onPush(int event) {
             return 1;
         }
     }
-    return 0;
+    
+    markX = pointX = (x - hscroll);
+    markY = pointY = (y - vscroll);
+    redraw(DAMAGE_HIGHLIGHT);
+    return 1; // return 1 to become the belowmouse
 }
 
 int HelpWidget::handle(int event) {
-    int handled = Group::handle(event); 
+    int handled = Group::handle(event);
     if (handled && event != fltk::MOVE) {
         return handled;
     }
@@ -1712,12 +1849,15 @@ int HelpWidget::handle(int event) {
             }
         }
         break;
-        
-    case fltk::MOVE:
+
     case fltk::DRAG:
+    case fltk::MOVE:
         return onMove(event);
 
     case fltk::RELEASE:
+        if (markX != pointX || markY != pointY) {
+            redraw(DAMAGE_HIGHLIGHT);            
+        }
         if (pushedAnchor) {
             Widget::cursor(fltk::CURSOR_DEFAULT);
             bool pushed = pushedAnchor->pushed;
@@ -2511,6 +2651,7 @@ Image* loadImage(const char* imgSrc) {
     return image != 0 ? image : &brokenImage;
 }
 
+#define UNIT_TEST
 #ifdef UNIT_TEST
 #include <fltk/Window.h>
 #include <fltk/run.h>
@@ -2529,7 +2670,7 @@ int main(int argc, char **argv) {
     window.show(argc,argv);
     return run();
 }
-
+void browseFile(const char* s) {}
 extern "C" void trace(const char *format, ...) {
     char    buf[4096],*p = buf;
     va_list args;
@@ -2547,5 +2688,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.39 2006-01-05 00:03:56 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.40 2006-01-16 05:39:54 zeeb90au Exp $".
 
