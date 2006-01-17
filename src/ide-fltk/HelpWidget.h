@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.21 2006-01-16 05:39:55 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.22 2006-01-17 05:56:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -56,7 +56,7 @@ public:
     void getInputProperties(Properties* p);
     void setCookies(Properties* p) {cookies=p;}
     bool setInputValue(const char* assignment);
-    void copyText(int begin, int end);
+    void copySelection();
     void onclick(Widget* button); // private
     void setDocHome(const char* home);
     void getImageNames(strlib::List*);
@@ -80,8 +80,9 @@ public:
     Scrollbar* scrollbar;
     S16 vscroll,hscroll;
     U16 scrollHeight;
-    S16 markX,markY,pointX,pointY,old_pointX,old_pointY;
-
+    S16 markX,markY,pointX,pointY;
+    const char* selBegin;
+    const char* selEnd;
     strlib::List nodeList;
     strlib::List namedInputs;
     strlib::List inputs;

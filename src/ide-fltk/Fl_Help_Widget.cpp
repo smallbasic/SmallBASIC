@@ -1,5 +1,5 @@
-// -*- c-file-style: "java" -*- $Id: Fl_Help_Widget.cpp,v 1.29
-// 2005/05/07 11:29:25 zeeb90au Exp $
+// -*- c-file-style: "java" -*- 
+// $Id: Fl_Help_Widget.cpp,v 1.41 2006-01-17 05:56:23 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -89,7 +89,10 @@ struct Display {
     U8 exposed;
     U8 measure;
     U8 selected;
+    U8 invertedSel;
     S16 markX,markY,pointX,pointY;
+    const char* selBegin;
+    const char* selEnd;
     Font* font;
     Color color;
     Color background;
@@ -525,66 +528,109 @@ void TextNode::drawSelection(const char* s, U16 len, U16 width, Display* out) {
     }
 
     Rectangle rc(out->x1, out_y, width, out->lineHeight);
+    const char* selBegin = s;
+    const char* selEnd = s+len;
 
     if (out->markY > out_y) {
         if (out->pointY < out_y+out->lineHeight) {
-            // single row
-            if (out->pointX < out->x1 || 
-                out->markX > out->x1+width) {
+            // paint single row selection
+            S16 markX, pointX;
+            if (out->markX < out->pointX) {
+                markX = out->markX;
+                pointX = out->pointX;
+            } else { // invert selection
+                markX = out->pointX;
+                pointX = out->markX;
+            }
+
+            if (pointX < out->x1 || markX > out->x1+width) {
                 return; // selection left or right of text
             }
 
-            // find the left+right margins
             bool left = true;
             int x = out->x1;
-            for (int i=0; i<len; i++) {
-                x += (int)getwidth(s+i, 1);
-                if (left) {
-                    if (x < out->markX) {
-                        rc.set_x(x);
-                    } else {
-                        left = false;
+            // find the left+right margins
+            if (markX == pointX) {
+                // double click - select word
+                for (int i=0; i<len; i++) {
+                    int width = (int)getwidth(s+i, 1);
+                    x += width;
+                    if (left) {
+                        if (s[i] == ' ') {
+                            rc.set_x(x);
+                            selBegin = &s[i];
+                        }
+                        if (x > markX) {
+                            left = false;
+                        }
+                    } else if (s[i] == ' ' && x > pointX) {
+                        rc.w(x-rc.x()-width);
+                        selEnd = &s[i];
+                        break;
                     }
-                } else if (x > out->pointX) {
-                    rc.w(x-rc.x());
-                    break;
+                }
+            } else {
+                // drag row - draw around character boundary
+                for (int i=0; i<len; i++) {
+                    x += (int)getwidth(s+i, 1);
+                    if (left) {
+                        if (x < markX) {
+                            rc.set_x(x);
+                            selBegin = &s[i];
+                        } else {
+                            left = false;
+                        }
+                    } else if (x > pointX) {
+                        rc.w(x-rc.x());
+                        selEnd = &s[i];
+                        break;
+                    }
                 }
             }
         } else {
             // top row multiline - find the left margin
+            S16 markX = out->invertedSel ? 
+                min(out->pointX, out->markX) : out->markX;
             int x = out->x1;
             for (int i=0; i<len; i++) {
                 x += (int)getwidth(s+i, 1);
-                if (x < out->markX) {
+                if (x < markX) {
                     rc.set_x(x);
+                    selBegin = &s[i];
                 } else {
                     break;
                 }
             }
-            if (out->pointX > out->x1+width) {
-                rc.w(width); // fill previous segment
-            }
         }
     } else {
         if (out->pointY < out_y+out->lineHeight) {
+            S16 pointX = out->invertedSel ? 
+                max(out->pointX, out->markX) : out->pointX;
             // bottom row multiline
-            if (out->pointX < out->x1) {
+            if (pointX < out->x1) {
                 return;
             }
         
             // find the right margin
-            int x = 0;
+            int x = out->x1;
             for (int i=0; i<len; i++) {
                 x += (int)getwidth(s+i, 1);
-                if (out->x1+x > out->pointX) {
-                    rc.w(x);
+                if (x > pointX) {
+                    rc.w(x-rc.x());
+                    selEnd = &s[i];
                     break;
                 }
             }
         }
         // else middle row multiline - fill left+right
     }
-
+    if (selBegin < out->selBegin) {
+        out->selBegin = selBegin;
+    }
+    if (selEnd > out->selEnd) {
+        out->selEnd = selEnd;
+    }
+   
     setcolor(GRAY80);
     fillrect(rc);
     setcolor(out->color);
@@ -1392,7 +1438,7 @@ void HelpWidget::init() {
     foreground = FOREGROUND_COLOR;
     markX = markY = -1;
     pointX = pointY = -1;
-    old_pointX = old_pointY = -1;
+    selBegin = selEnd = 0;
 }
 
 void HelpWidget::cleanup() {
@@ -1609,26 +1655,28 @@ void HelpWidget::draw() {
     out.tabW = out.x2;
     out.tabH = out.y2;    
     out.selected = (markX != pointX && markY != pointY);
-
-    if (markX < pointX) {
-        out.markX = markX;
-        out.pointX = pointX;
-    } else {
-        out.markX = pointX;
-        out.pointX = markX;
-    }
+    out.markX = markX;
+    out.pointX = pointX;
     if (markY < pointY) {
         out.markY = markY;
         out.pointY = pointY;
+        out.invertedSel = false;
     } else {
         out.markY = pointY;
         out.pointY = markY;
+        out.invertedSel = true;
+    }
+    if (event_clicks() == 1 && damage() == DAMAGE_HIGHLIGHT) {
+        // double click
+        out.selected = true;
     }
 
     out.markX += hscroll;
     out.markY += vscroll;
     out.pointX += hscroll;
     out.pointY += vscroll;
+    out.selBegin = 0;
+    out.selEnd = 0;
 
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
@@ -1692,6 +1740,9 @@ void HelpWidget::draw() {
         }
     }
 
+    selBegin = out.selBegin;
+    selEnd = out.selEnd;
+
     if (out.exposed) {
         // size has changed or need to recombob scrollbar
         int pageHeight = (out.y1-vscroll)+out.lineHeight;
@@ -1742,140 +1793,6 @@ void HelpWidget::draw() {
         pop_clip();
     }
     pop_clip();
-}
-
-int HelpWidget::onMove(int event) {
-    int x = fltk::event_x();
-    int y = fltk::event_y();
-
-    if (pushedAnchor && event == fltk::DRAG) {
-        bool pushed = pushedAnchor->ptInSegment(x, y);
-        if (pushedAnchor->pushed != pushed) {
-            Widget::cursor(fltk::CURSOR_HAND);
-            pushedAnchor->pushed = pushed;
-            redraw(DAMAGE_PUSHED);
-            return 1;
-        }
-    } else {
-        int len = anchors.length();
-        Object** list = anchors.getList();
-        for (int i=0; i<len; i++) {
-            AnchorNode* p = (AnchorNode*)list[i];
-            if (p->ptInSegment(x, y)) {
-                Widget::cursor(fltk::CURSOR_HAND);
-                return 1;
-            }
-        }
-        Widget::cursor(fltk::CURSOR_DEFAULT);
-    }
-
-    if (event == fltk::DRAG) {
-        // dragged the selection
-        old_pointX = pointX;
-        old_pointY = pointY;
-        pointX = x - hscroll;
-        pointY = y - vscroll;
-        redraw(DAMAGE_HIGHLIGHT);
-        return 1;
-    }
-
-    return 0;
-}
-
-int HelpWidget::onPush(int event) {
-    Object** list = anchors.getList();
-    int len = anchors.length();
-    pushedAnchor = 0;
-    int x = fltk::event_x();
-    int y = fltk::event_y();
-
-    for (int i=0; i<len; i++) {
-        AnchorNode* p = (AnchorNode*)list[i];
-        if (p->ptInSegment(x, y)) {
-            pushedAnchor = p;
-            pushedAnchor->pushed = true;
-            Widget::cursor(fltk::CURSOR_HAND);
-            redraw(DAMAGE_PUSHED);
-            return 1;
-        }
-    }
-    
-    markX = pointX = (x - hscroll);
-    markY = pointY = (y - vscroll);
-    redraw(DAMAGE_HIGHLIGHT);
-    return 1; // return 1 to become the belowmouse
-}
-
-int HelpWidget::handle(int event) {
-    int handled = Group::handle(event);
-    if (handled && event != fltk::MOVE) {
-        return handled;
-    }
-    switch (event) {
-    case fltk::FOCUS:
-        return 2; // aquire focus
-        
-    case fltk::PUSH:
-        return onPush(event);
-
-    case fltk::ENTER:
-        return 1;
-
-    case fltk::KEY:
-        if (event_key_state(RightKey) && -hscroll < w()/2) {
-            hscroll -= HSCROLL_STEP;
-            redraw();
-            return 1;
-        }
-        if (event_key_state(LeftKey) && hscroll < 0) {
-            hscroll += HSCROLL_STEP;
-            redraw();
-            return 1;
-        }
-        if (event_key_state(RightCtrlKey) || event_key_state(LeftCtrlKey)) {
-            switch (event_key()) {
-            case 'r': // reload
-                reloadPage();
-                return 1;
-            case 'f': // find
-                find(fltk::input("Find:"), false);
-                return 1;
-            case 'b': // break popup
-            case 'q':
-                if (fltk::modal() == parent()) {
-                    fltk::exit_modal(); 
-                }
-                break; // handle in default
-            }
-        }
-        break;
-
-    case fltk::DRAG:
-    case fltk::MOVE:
-        return onMove(event);
-
-    case fltk::RELEASE:
-        if (markX != pointX || markY != pointY) {
-            redraw(DAMAGE_HIGHLIGHT);            
-        }
-        if (pushedAnchor) {
-            Widget::cursor(fltk::CURSOR_DEFAULT);
-            bool pushed = pushedAnchor->pushed;
-            pushedAnchor->pushed = false;
-            redraw(DAMAGE_PUSHED);
-            if (pushed) {
-                this->event.empty();
-                this->event.append(pushedAnchor->href.toString());
-                if (this->event.length()) {
-                    // href has been set
-                    user_data((void*)this->event.toString());
-                    do_callback();
-                }
-            }
-            return 1;
-        }
-    }
-    return scrollbar->active() ? scrollbar->handle(event) : 0;
 }
 
 // handle click from form button
@@ -2308,6 +2225,141 @@ void HelpWidget::compile() {
     }
 }
 
+int HelpWidget::onMove(int event) {
+    int x = fltk::event_x();
+    int y = fltk::event_y();
+
+    if (pushedAnchor && event == fltk::DRAG) {
+        bool pushed = pushedAnchor->ptInSegment(x, y);
+        if (pushedAnchor->pushed != pushed) {
+            Widget::cursor(fltk::CURSOR_HAND);
+            pushedAnchor->pushed = pushed;
+            redraw(DAMAGE_PUSHED);
+            return 1;
+        }
+    } else {
+        int len = anchors.length();
+        Object** list = anchors.getList();
+        for (int i=0; i<len; i++) {
+            AnchorNode* p = (AnchorNode*)list[i];
+            if (p->ptInSegment(x, y)) {
+                Widget::cursor(fltk::CURSOR_HAND);
+                return 1;
+            }
+        }
+        Widget::cursor(fltk::CURSOR_DEFAULT);
+    }
+
+    if (event == fltk::DRAG) {
+        // dragged the selection
+        pointX = x - hscroll;
+        pointY = y - vscroll;
+        redraw(DAMAGE_HIGHLIGHT);
+        return 1;
+    }
+
+    return 0;
+}
+
+int HelpWidget::onPush(int event) {
+    Object** list = anchors.getList();
+    int len = anchors.length();
+    pushedAnchor = 0;
+    int x = fltk::event_x();
+    int y = fltk::event_y();
+
+    for (int i=0; i<len; i++) {
+        AnchorNode* p = (AnchorNode*)list[i];
+        if (p->ptInSegment(x, y)) {
+            pushedAnchor = p;
+            pushedAnchor->pushed = true;
+            Widget::cursor(fltk::CURSOR_HAND);
+            redraw(DAMAGE_PUSHED);
+            return 1;
+        }
+    }
+    
+    markX = pointX = (x - hscroll);
+    markY = pointY = (y - vscroll);
+    redraw(DAMAGE_HIGHLIGHT);
+    return 1; // return 1 to become the belowmouse
+}
+
+int HelpWidget::handle(int event) {
+    int handled = Group::handle(event);
+    if (handled && event != fltk::MOVE) {
+        return handled;
+    }
+    switch (event) {
+    case fltk::FOCUS:
+        return 2; // aquire focus
+        
+    case fltk::PUSH:
+        return onPush(event);
+
+    case fltk::ENTER:
+        return 1;
+
+    case fltk::KEY:
+        if (event_key_state(RightKey) && -hscroll < w()/2) {
+            hscroll -= HSCROLL_STEP;
+            redraw();
+            return 1;
+        }
+        if (event_key_state(LeftKey) && hscroll < 0) {
+            hscroll += HSCROLL_STEP;
+            redraw();
+            return 1;
+        }
+        if (event_key_state(RightCtrlKey) || event_key_state(LeftCtrlKey)) {
+            switch (event_key()) {
+            case 'r': // reload
+                reloadPage();
+                return 1;
+            case 'f': // find
+                find(fltk::input("Find:"), false);
+                return 1;
+            case 'c': // copy
+                copySelection();
+                return 1;
+            case 'b': // break popup
+            case 'q':
+                if (fltk::modal() == parent()) {
+                    fltk::exit_modal(); 
+                }
+                break; // handle in default
+            }
+        }
+        break;
+
+    case fltk::DRAG:
+    case fltk::MOVE:
+        return onMove(event);
+
+    case fltk::RELEASE:
+        if (markX != pointX || markY != pointY) {
+            redraw(DAMAGE_HIGHLIGHT);            
+        }
+        if (pushedAnchor) {
+            Widget::cursor(fltk::CURSOR_DEFAULT);
+            bool pushed = pushedAnchor->pushed;
+            pushedAnchor->pushed = false;
+            redraw(DAMAGE_PUSHED);
+            if (pushed) {
+                this->event.empty();
+                this->event.append(pushedAnchor->href.toString());
+                if (this->event.length()) {
+                    // href has been set
+                    user_data((void*)this->event.toString());
+                    do_callback();
+                }
+            }
+            return 1;
+        }
+    }
+    return scrollbar->active() ? scrollbar->handle(event) : 0;
+}
+
 bool HelpWidget::find(const char* s, bool matchCase) {
     if (s == 0 || s[0] == 0) {
         return false;
@@ -2343,28 +2395,10 @@ bool HelpWidget::find(const char* s, bool matchCase) {
     return true;
 }
 
-void HelpWidget::copyText(int begin, int end) {
-    String out;
-    TextNode* p = 0;
-    if (begin > end) {
-        int i = end;
-        end = begin;
-        begin = i;
-    }
-    Object** list = nodeList.getList();
-    int len = nodeList.length();
-    for (int i=0; i<len; i++) {
-        p = (TextNode*)list[i];
-        if (p->getY() > end) {
-            break;
-        } else if (p->getY() >= begin) {
-            out.append(p->s, p->textlen);
-            out.append(" ", 1);
-        }
-    }
-
-    if (out.length() > 0) {
-        fltk::copy(out.toString(), out.length(), true);
+void HelpWidget::copySelection() {
+    const char* s = htmlStr.toString();
+    if (selBegin != selEnd && selBegin >= s) {
+        fltk::copy(selBegin, selEnd-selBegin, true);
     }
 }
 
@@ -2664,7 +2698,6 @@ int main(int argc, char **argv) {
     window.begin();
     HelpWidget out(0, 0, w, h);
     out.loadFile("t.html#there");
-    //out.loadFile("help/8_5.html");
     window.resizable(&out);
     window.end();
     window.show(argc,argv);
@@ -2688,5 +2721,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.40 2006-01-16 05:39:54 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.41 2006-01-17 05:56:23 zeeb90au Exp $".
 
