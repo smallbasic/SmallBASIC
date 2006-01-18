@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.73 2005-12-21 05:19:34 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.74 2006-01-18 04:15:18 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -103,6 +103,7 @@ void getHomeDir(char* filename);
 bool cacheLink(dev_file_t* df, char* localFile);
 void updateForm(const char* s);
 void closeForm();
+void copyFormText();
 bool isFormActive();
 
 //--EditWindow functions--------------------------------------------------------
@@ -530,6 +531,18 @@ void next_tab_cb(Widget* w, void* v) {
         wnd->editWnd->take_focus();
     } else {
         wnd->tabGroup->selected_child(wnd->helpGroup);
+    }
+}
+
+void copy_text_cb(Widget* w, void* v) {
+    Widget* current = wnd->tabGroup->selected_child();
+    // copy from the active tab
+    if (current == wnd->helpGroup) {
+        wnd->helpWnd->copySelection();
+    } else if (current == wnd->outputGroup) {
+        copyFormText();
+    } else {
+        EditorWindow::copy_cb(w, v);
     }
 }
 
@@ -1089,7 +1102,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&File/E&xit",         CTRL+'q', (Callback*)quit_cb);
     m->add("&Edit/_&Undo",        CTRL+'z', (Callback*)EditorWindow::undo_cb);
     m->add("&Edit/Cu&t",          CTRL+'x', (Callback*)EditorWindow::cut_cb);
-    m->add("&Edit/&Copy",         CTRL+'c', (Callback*)EditorWindow::copy_cb);
+    m->add("&Edit/&Copy",         CTRL+'c', (Callback*)copy_text_cb);
     m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
     m->add("&Edit/&Change Case",  ALT+'c',  (Callback*)change_case_cb);
     m->add("&Edit/_&Expand Word", ALT+'/',  (Callback*)expand_word_cb);
@@ -1463,4 +1476,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.73 2005-12-21 05:19:34 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.74 2006-01-18 04:15:18 zeeb90au Exp $".

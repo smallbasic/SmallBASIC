@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.h,v 1.22 2005-08-16 00:09:27 zeeb90au Exp $
+// $Id: EditorWindow.h,v 1.23 2006-01-18 04:15:18 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -93,7 +93,7 @@ class EditorWindow : public Group {
         TextEditor::kf_paste(0, ((EditorWindow*)v)->editor);
     }
     static void copy_cb(Widget*, void* v) {
-        TextEditor::kf_copy(00, ((EditorWindow*)v)->editor);
+        TextEditor::kf_copy(0, ((EditorWindow*)v)->editor);
     }
     static void delete_cb(Widget*, void* v) {
         ((EditorWindow*)v)->doDelete();
