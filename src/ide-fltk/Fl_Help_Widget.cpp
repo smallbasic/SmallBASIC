@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.41 2006-01-17 05:56:23 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.42 2006-01-18 03:44:51 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -91,8 +91,7 @@ struct Display {
     U8 selected;
     U8 invertedSel;
     S16 markX,markY,pointX,pointY;
-    const char* selBegin;
-    const char* selEnd;
+    String* selection;
     Font* font;
     Color color;
     Color background;
@@ -528,29 +527,29 @@ void TextNode::drawSelection(const char* s, U16 len, U16 width, Display* out) {
     }
 
     Rectangle rc(out->x1, out_y, width, out->lineHeight);
-    const char* selBegin = s;
-    const char* selEnd = s+len;
+    int selBegin = 0; // selection index into the draw string
+    int selEnd = len;
 
     if (out->markY > out_y) {
         if (out->pointY < out_y+out->lineHeight) {
             // paint single row selection
-            S16 markX, pointX;
+            S16 leftX, rightX;
             if (out->markX < out->pointX) {
-                markX = out->markX;
-                pointX = out->pointX;
+                leftX = out->markX;
+                rightX = out->pointX;
             } else { // invert selection
-                markX = out->pointX;
-                pointX = out->markX;
+                leftX = out->pointX;
+                rightX = out->markX;
             }
 
-            if (pointX < out->x1 || markX > out->x1+width) {
+            if (leftX > out->x1+width || rightX < out->x1) {
                 return; // selection left or right of text
             }
 
             bool left = true;
             int x = out->x1;
             // find the left+right margins
-            if (markX == pointX) {
+            if (leftX == rightX) {
                 // double click - select word
                 for (int i=0; i<len; i++) {
                     int width = (int)getwidth(s+i, 1);
@@ -558,14 +557,14 @@ void TextNode::drawSelection(const char* s, U16 len, U16 width, Display* out) {
                     if (left) {
                         if (s[i] == ' ') {
                             rc.set_x(x);
-                            selBegin = &s[i];
+                            selBegin = i+1;
                         }
-                        if (x > markX) {
+                        if (x > leftX) {
                             left = false;
                         }
-                    } else if (s[i] == ' ' && x > pointX) {
+                    } else if (s[i] == ' ' && x > rightX) {
                         rc.w(x-rc.x()-width);
-                        selEnd = &s[i];
+                        selEnd = i;
                         break;
                     }
                 }
@@ -574,29 +573,31 @@ void TextNode::drawSelection(const char* s, U16 len, U16 width, Display* out) {
                 for (int i=0; i<len; i++) {
                     x += (int)getwidth(s+i, 1);
                     if (left) {
-                        if (x < markX) {
+                        if (x < leftX) {
                             rc.set_x(x);
-                            selBegin = &s[i];
+                            selBegin = i+1;
                         } else {
                             left = false;
                         }
-                    } else if (x > pointX) {
+                    } else if (x > rightX) {
                         rc.w(x-rc.x());
-                        selEnd = &s[i];
+                        selEnd = i+1;
                         break;
                     }
                 }
             }
         } else {
             // top row multiline - find the left margin
-            S16 markX = out->invertedSel ? 
-                min(out->pointX, out->markX) : out->markX;
+            S16 leftX = out->invertedSel ? out->pointX : out->markX;
+            if (leftX > out->x1+width) {
+                return; // selection left of text
+            }
             int x = out->x1;
             for (int i=0; i<len; i++) {
                 x += (int)getwidth(s+i, 1);
-                if (x < markX) {
+                if (x < leftX) {
                     rc.set_x(x);
-                    selBegin = &s[i];
+                    selBegin = i;
                 } else {
                     break;
                 }
@@ -604,33 +605,28 @@ void TextNode::drawSelection(const char* s, U16 len, U16 width, Display* out) {
         }
     } else {
         if (out->pointY < out_y+out->lineHeight) {
-            S16 pointX = out->invertedSel ? 
-                max(out->pointX, out->markX) : out->pointX;
-            // bottom row multiline
-            if (pointX < out->x1) {
+            // bottom row multiline - find the right margin
+            S16 rightX = out->invertedSel ? out->markX : out->pointX;
+            if (rightX < out->x1) {
                 return;
             }
-        
-            // find the right margin
             int x = out->x1;
             for (int i=0; i<len; i++) {
                 x += (int)getwidth(s+i, 1);
-                if (x > pointX) {
+                if (x > rightX) {
                     rc.w(x-rc.x());
-                    selEnd = &s[i];
+                    selEnd = i+1;
                     break;
                 }
             }
         }
         // else middle row multiline - fill left+right
     }
-    if (selBegin < out->selBegin) {
-        out->selBegin = selBegin;
+    
+    if (selEnd > selBegin) {
+        // capture the selected text
+        out->selection->append(s+selBegin, selEnd-selBegin);
     }
-    if (selEnd > out->selEnd) {
-        out->selEnd = selEnd;
-    }
-   
     setcolor(GRAY80);
     fillrect(rc);
     setcolor(out->color);
@@ -693,7 +689,7 @@ void TextNode::display(Display* out) {
             }
             if (out->measure == false) {
                 if (out->selected) {
-                    drawSelection(s, textlen, linepx, out);
+                    drawSelection(p, cliplen, linepx, out);
                 }
                 drawtext(p, cliplen, out->x1, out->y1);
                 if (out->uline) {
@@ -1438,7 +1434,6 @@ void HelpWidget::init() {
     foreground = FOREGROUND_COLOR;
     markX = markY = -1;
     pointX = pointY = -1;
-    selBegin = selEnd = 0;
 }
 
 void HelpWidget::cleanup() {
@@ -1675,8 +1670,8 @@ void HelpWidget::draw() {
     out.markY += vscroll;
     out.pointX += hscroll;
     out.pointY += vscroll;
-    out.selBegin = 0;
-    out.selEnd = 0;
+    out.selection = &selection;
+    out.selection->empty();
 
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
@@ -1695,12 +1690,6 @@ void HelpWidget::draw() {
     setcolor(out.background);
     fillrect(Rectangle(0, 0, w()-SCROLL_W, out.y2));
     setcolor(out.color);
-
-//     if (damage() == DAMAGE_HIGHLIGHT) {
-//         // only redraw the selection rectangle while dragging
-//         int h = (max(old_pointY, pointY) - markY)+out.lineHeight;
-//         push_clip(Rectangle(0, markY-out.lineHeight, out.x2, h));
-//     }
 
     // hide any inputs
     int len = inputs.length();
@@ -1739,9 +1728,6 @@ void HelpWidget::draw() {
             break;
         }
     }
-
-    selBegin = out.selBegin;
-    selEnd = out.selEnd;
 
     if (out.exposed) {
         // size has changed or need to recombob scrollbar
@@ -1784,10 +1770,6 @@ void HelpWidget::draw() {
         }
     }
     pop_clip();
-
-//     if (damage() == DAMAGE_HIGHLIGHT) {
-//         pop_clip();
-//     }
 
     if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
         pop_clip();
@@ -2319,6 +2301,7 @@ int HelpWidget::handle(int event) {
             case 'f': // find
                 find(fltk::input("Find:"), false);
                 return 1;
+            case InsertKey:
             case 'c': // copy
                 copySelection();
                 return 1;
@@ -2396,10 +2379,7 @@ bool HelpWidget::find(const char* s, bool matchCase) {
 }
 
 void HelpWidget::copySelection() {
-    const char* s = htmlStr.toString();
-    if (selBegin != selEnd && selBegin >= s) {
-        fltk::copy(selBegin, selEnd-selBegin, true);
-    }
+    fltk::copy(selection.toString(), selection.length(), true);
 }
 
 void HelpWidget::navigateTo(const char* s) {
@@ -2685,7 +2665,7 @@ Image* loadImage(const char* imgSrc) {
     return image != 0 ? image : &brokenImage;
 }
 
-#define UNIT_TEST
+//#define UNIT_TEST
 #ifdef UNIT_TEST
 #include <fltk/Window.h>
 #include <fltk/run.h>
@@ -2721,5 +2701,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.41 2006-01-17 05:56:23 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.42 2006-01-18 03:44:51 zeeb90au Exp $".
 

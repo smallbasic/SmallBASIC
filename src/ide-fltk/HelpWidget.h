@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.22 2006-01-17 05:56:23 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.23 2006-01-18 03:44:51 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -81,8 +81,6 @@ public:
     S16 vscroll,hscroll;
     U16 scrollHeight;
     S16 markX,markY,pointX,pointY;
-    const char* selBegin;
-    const char* selEnd;
     strlib::List nodeList;
     strlib::List namedInputs;
     strlib::List inputs;
@@ -94,6 +92,7 @@ public:
     strlib::String fileName;
     strlib::String docHome;
     strlib::String title;
+    strlib::String selection;
 };
 
 #ifdef FL_HELP_WIDGET_RESOURCES
