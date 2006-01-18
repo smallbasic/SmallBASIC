@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.42 2006-01-18 03:44:51 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.43 2006-01-18 04:40:45 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -1777,22 +1777,6 @@ void HelpWidget::draw() {
     pop_clip();
 }
 
-// handle click from form button
-void HelpWidget::onclick(Widget* button) {
-    int len = inputs.length();
-    Object** list = inputs.getList();
-    for (int i=0; i<len; i++) {
-        InputNode* p = (InputNode*)list[i];
-        if (p->button == button) {
-            this->event.empty();
-            this->event.append(p->onclick.toString());
-            user_data((void*)this->event.toString());
-            do_callback();
-            return;
-        }
-    }
-}
-
 void HelpWidget::compile() {
     U8 pre = false;
     U8 bold = false;
@@ -2207,6 +2191,22 @@ void HelpWidget::compile() {
     }
 }
 
+// handle click from form button
+void HelpWidget::onclick(Widget* button) {
+    int len = inputs.length();
+    Object** list = inputs.getList();
+    for (int i=0; i<len; i++) {
+        InputNode* p = (InputNode*)list[i];
+        if (p->button == button) {
+            this->event.empty();
+            this->event.append(p->onclick.toString());
+            user_data((void*)this->event.toString());
+            do_callback();
+            return;
+        }
+    }
+}
+
 int HelpWidget::onMove(int event) {
     int x = fltk::event_x();
     int y = fltk::event_y();
@@ -2320,9 +2320,6 @@ int HelpWidget::handle(int event) {
         return onMove(event);
 
     case fltk::RELEASE:
-        if (markX != pointX || markY != pointY) {
-            redraw(DAMAGE_HIGHLIGHT);            
-        }
         if (pushedAnchor) {
             Widget::cursor(fltk::CURSOR_DEFAULT);
             bool pushed = pushedAnchor->pushed;
@@ -2701,5 +2698,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.42 2006-01-18 03:44:51 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.43 2006-01-18 04:40:45 zeeb90au Exp $".
 
