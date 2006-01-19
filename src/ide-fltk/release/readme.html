@@ -1,12 +1,12 @@
 <html>
 <head>
-<title>SmallBASIC (FLTK) 0.9.6.4 - readme.html</title>
+<title>SmallBASIC (FLTK) 0.9.7 - readme.html</title>
 </head>
 <body>
 <h2>SmallBASIC</h2>
 <font font-size=12 color=green>
 Copyright (c) 2000-2005 Nicholas Christopoulos.
-<br>FLTK Version 0.9.6.4 Copyright (c) 2002-2005 Chris Warren-Smith.
+<br>FLTK Version 0.9.7 Copyright (c) 2002-2005 Chris Warren-Smith.
 <font font-size=10 color=black><br>
 
 <br>Refer to source code in the Bas-Home subdirectory
@@ -27,7 +27,35 @@ the Free Software Foundation.<br>
 <hr>
 <h4>History</h4>
 
-<br>Version 0.9.6.4 - Sunday 4 September 2005 (2K/XP)
+<br>Version 0.9.7 - Sunday xx January 2006 (2K/XP)
+<ul>
+<li>Updated with latest FLTK changes.
+<li>Added SELECT/CASE syntax. Here's a trivial example:
+<pre>input k
+select case k
+case "a"
+  ? "you entered a"
+case "b"
+  ?  "you entered b"
+case "c"
+   ? "entering nested select"
+   input k
+   select k
+   case "x"
+       ? "you entered x"
+   case "y"
+       ? "you entered y"
+   end select
+   ? "after the nested select"
+case else
+  ? "you entered something other than a or b"
+end select</pre>
+<li>Toolbar hotkeys: CTRL+f=find, CTRL+g=goto, CTRL+h=funclist, CTRL+j=size.
+<li>Fixed socket functionality for XP build.
+<li>HTML Widget now supports text selection.
+</ul>
+
+Version 0.9.6.4 - Sunday 4 September 2005 (2K/XP)
 <ul>
 <li>Added Open Recent File menu option.
 <li>Fixed problem with output tab resizing (FLTK v2 co-evolution).
