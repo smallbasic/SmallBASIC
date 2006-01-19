@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.43 2006-01-18 04:40:45 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.44 2006-01-19 00:22:44 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -1432,8 +1432,12 @@ void HelpWidget::init() {
     scrollHeight = h();
     background = BACKGROUND_COLOR;
     foreground = FOREGROUND_COLOR;
-    markX = markY = -1;
-    pointX = pointY = -1;
+    endSelection();
+}
+
+void HelpWidget::endSelection() {
+    markX = pointX = -1;
+    markY = pointY = -1;
 }
 
 void HelpWidget::cleanup() {
@@ -1619,6 +1623,7 @@ void HelpWidget::scrollTo(int scroll) {
 
 void HelpWidget::layout() {
     scrollbar->resize(w()-SCROLL_W, 0, SCROLL_W, h());
+    endSelection();
 }
 
 void HelpWidget::draw() {
@@ -2208,23 +2213,23 @@ void HelpWidget::onclick(Widget* button) {
 }
 
 int HelpWidget::onMove(int event) {
-    int x = fltk::event_x();
-    int y = fltk::event_y();
+    int ex = fltk::event_x();
+    int ey = fltk::event_y();
 
     if (pushedAnchor && event == fltk::DRAG) {
-        bool pushed = pushedAnchor->ptInSegment(x, y);
+        bool pushed = pushedAnchor->ptInSegment(ex, ey);
         if (pushedAnchor->pushed != pushed) {
             Widget::cursor(fltk::CURSOR_HAND);
             pushedAnchor->pushed = pushed;
             redraw(DAMAGE_PUSHED);
-            return 1;
         }
+        return 1;
     } else {
         int len = anchors.length();
         Object** list = anchors.getList();
         for (int i=0; i<len; i++) {
             AnchorNode* p = (AnchorNode*)list[i];
-            if (p->ptInSegment(x, y)) {
+            if (p->ptInSegment(ex, ey)) {
                 Widget::cursor(fltk::CURSOR_HAND);
                 return 1;
             }
@@ -2234,8 +2239,8 @@ int HelpWidget::onMove(int event) {
 
     if (event == fltk::DRAG) {
         // dragged the selection
-        pointX = x - hscroll;
-        pointY = y - vscroll;
+        pointX = ex - hscroll;
+        pointY = ey - vscroll;
         redraw(DAMAGE_HIGHLIGHT);
         return 1;
     }
@@ -2260,9 +2265,14 @@ int HelpWidget::onPush(int event) {
             return 1;
         }
     }
-    
-    markX = pointX = (x - hscroll);
-    markY = pointY = (y - vscroll);
+
+    if (event_state(SHIFT)) {
+        pointX = (x - hscroll);
+        pointY = (y - vscroll);
+    } else {
+        markX = pointX = (x - hscroll);
+        markY = pointY = (y - vscroll);
+    }
     redraw(DAMAGE_HIGHLIGHT);
     return 1; // return 1 to become the belowmouse
 }
@@ -2698,5 +2708,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.43 2006-01-18 04:40:45 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.44 2006-01-19 00:22:44 zeeb90au Exp $".
 

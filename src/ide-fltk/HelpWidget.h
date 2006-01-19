@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.23 2006-01-18 03:44:51 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.24 2006-01-19 00:22:44 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -67,6 +67,7 @@ public:
     void reloadPage();
     void init();
     void cleanup();
+    void endSelection();
 
     // fltk methods
     void draw();
