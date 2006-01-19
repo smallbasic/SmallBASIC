@@ -1,11 +1,12 @@
 /*
-*	SmallBASIC RTL - FILESYSTEM, FILE and DEVICE I/O
-*
-*	2000-05-27, Nicholas Christopoulos
-*
-*	This program is distributed under the terms of the GPL v2.0 or later
-*	Download the GNU Public License (GPL) from www.gnu.org
-*/
+ * $Id: blib_db.c,v 1.2 2006-01-19 05:37:11 zeeb90au Exp $
+ * SmallBASIC RTL - FILESYSTEM, FILE and DEVICE I/O
+ *
+ * 2000-05-27, Nicholas Christopoulos
+ *
+ * This program is distributed under the terms of the GPL v2.0 or later
+ * Download the GNU Public License (GPL) from www.gnu.org
+ */
 
 #include "sys.h"
 #include "kw.h"
@@ -13,6 +14,7 @@
 #include "pproc.h"
 #include "device.h"
 #include "blib.h"
+#include "messages.h"
 
 #if defined(__BORLANDC__)
 #define	F_OK	0
@@ -557,42 +559,58 @@ void	cmd_mkdir()
 #define BUFMAX       256
 #endif
 
+#define CHK_ERR_CLEANUP(s)                      \
+if (prog_error) {                               \
+    v_free(&file_name);                         \
+    rt_raise(s);                                \
+    return;                                     \
+}
+#define CHK_ERR(s)                              \
+if (prog_error) {                               \
+    rt_raise(s);                                \
+    return;                                     \
+}
+
 void	cmd_floadln()
 {
     var_t   file_name, *array_p = NULL, *var_p = NULL;
     int     flags = DEV_FILE_INPUT;
     int     handle, index, bcount, size, array_size;
     byte    ch, type = 0;
-
     char    buf[BUFMAX];
     int     eof, eol, bufLen, bufIndex;
     dword   unreadBytes;
 
-    // filename
-    par_getstr(&file_name);     if (prog_error)   return;
-    par_getcomma();             if (prog_error)   return;
-    array_p = var_p = code_getvarptr(); if (prog_error)   return;
-    if (code_peek() == kwTYPE_SEP) {
-        par_getcomma();         if (prog_error)   return;
-        type = par_getint();
-    }
+ 	if (code_peek() == kwTYPE_SEP) {
+        // "filename" is an already open file number
+        flags = 0;
+		par_getsharp();                     CHK_ERR(FSERR_INVALID_PARAMETER);
+        handle = par_getint();              CHK_ERR(FSERR_INVALID_PARAMETER);
+        par_getcomma();                     CHK_ERR(FSERR_INVALID_PARAMETER);
+        array_p = var_p = code_getvarptr(); CHK_ERR(FSERR_INVALID_PARAMETER);
+        if (code_peek() == kwTYPE_SEP) {
+            par_getcomma();                 CHK_ERR(FSERR_INVALID_PARAMETER);
+            type = par_getint();
+        }
+    } else {
+        // filename
+        par_getstr(&file_name);             CHK_ERR(FSERR_INVALID_PARAMETER);
+        par_getcomma();                     CHK_ERR_CLEANUP(FSERR_INVALID_PARAMETER);
+        array_p = var_p = code_getvarptr(); CHK_ERR_CLEANUP(FSERR_INVALID_PARAMETER);
+        if (code_peek() == kwTYPE_SEP) {
+            par_getcomma();                 CHK_ERR_CLEANUP(FSERR_INVALID_PARAMETER);
+            type = par_getint();
+        }
+    
+        handle = dev_freefilehandle();      CHK_ERR_CLEANUP(FSERR_GENERIC);
+        if (dev_fstatus(handle)) {
+            v_free(&file_name);
+            rt_raise(FSERR_GENERIC);
+            return;
+        }
 
-    handle = dev_freefilehandle();
-    if (prog_error) {
-        v_free(&file_name);
-        return;
-    }
-
-    if (dev_fstatus(handle)) {
-        v_free(&file_name);
-        rt_raise("LOADLN: I/O ERROR");
-        return;
-    }
-
-    dev_fopen(handle, (char *) file_name.v.p.ptr, flags);
-    v_free(&file_name);
-    if (prog_error) {
-        return;
+        dev_fopen(handle, (char *) file_name.v.p.ptr, flags);
+        v_free(&file_name);                 CHK_ERR(FSERR_GENERIC);
     }
 
     if (type == 0) {
@@ -682,7 +700,9 @@ void	cmd_floadln()
         }
         var_p->v.p.ptr[var_p->v.p.size-1] = '\0';
     }
-    dev_fclose(handle);
+    if (flags == DEV_FILE_INPUT) {
+        dev_fclose(handle);
+    }
 }
 
 /*
@@ -969,3 +989,5 @@ void	cmd_bsave()
 
 	pfree(fname);
 }
+
+/* End of "$Id: blib_db.c,v 1.2 2006-01-19 05:37:11 zeeb90au Exp $". */
