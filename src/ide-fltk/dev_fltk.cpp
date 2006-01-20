@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.51 2006-01-18 04:15:18 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.52 2006-01-20 05:20:25 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -669,12 +669,6 @@ bool cacheLink(dev_file_t* df, char* localFile) {
     // create host name component
     strncat(localFile, url+7, pathBegin-url-7);
     strcat(localFile, "/");
-    int len = strlen(localFile);
-    for (int i=0; i<len; i++) {
-        if (localFile[i] == ':') {
-            localFile[i] = '_';
-        }
-    }
     makedir(localFile);
     if (formView) {
         formView->setDocHome(localFile);
@@ -824,4 +818,4 @@ void updateForm(const char* s) {
 //     }
 }
 
-// End of "$Id: dev_fltk.cpp,v 1.51 2006-01-18 04:15:18 zeeb90au Exp $".
+// End of "$Id: dev_fltk.cpp,v 1.52 2006-01-20 05:20:25 zeeb90au Exp $".
