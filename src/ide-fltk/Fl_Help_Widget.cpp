@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.45 2006-01-20 03:24:27 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.46 2006-01-20 05:19:41 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -1656,7 +1656,7 @@ void HelpWidget::draw() {
     out.tabW = out.x2;
     out.tabH = out.y2;
     out.selection = 0;
-    out.selected = (markX != pointX && markY != pointY);
+    out.selected = (markX != pointX || markY != pointY);
     if (event_clicks() == 1 && damage() == DAMAGE_HIGHLIGHT) {
         // double click
         out.selected = true;
@@ -1795,8 +1795,8 @@ void HelpWidget::compile() {
     U8 center = false;
     U8 uline = false;
 
-    Font *font = fltk::HELVETICA;
     Color color = 0;
+    Font *font = fltk::HELVETICA;
     int fontSize = FONT_SIZE;
     int taglen = 0;
     int textlen = 0;
@@ -2774,5 +2774,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.45 2006-01-20 03:24:27 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.46 2006-01-20 05:19:41 zeeb90au Exp $".
 
