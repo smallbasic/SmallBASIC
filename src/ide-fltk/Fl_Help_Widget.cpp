@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.44 2006-01-19 00:22:44 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.45 2006-01-20 03:24:27 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -623,7 +623,7 @@ void TextNode::drawSelection(const char* s, U16 len, U16 width, Display* out) {
         // else middle row multiline - fill left+right
     }
     
-    if (selEnd > selBegin) {
+    if (selEnd > selBegin && out->selection != 0) {
         // capture the selected text
         out->selection->append(s+selBegin, selEnd-selBegin);
     }
@@ -1433,6 +1433,7 @@ void HelpWidget::init() {
     background = BACKGROUND_COLOR;
     foreground = FOREGROUND_COLOR;
     endSelection();
+    mouseMode = mm_select;
 }
 
 void HelpWidget::endSelection() {
@@ -1653,30 +1654,35 @@ void HelpWidget::draw() {
     out.imgY = -1;
     out.imgIndent = out.indent;
     out.tabW = out.x2;
-    out.tabH = out.y2;    
+    out.tabH = out.y2;
+    out.selection = 0;
     out.selected = (markX != pointX && markY != pointY);
-    out.markX = markX;
-    out.pointX = pointX;
-    if (markY < pointY) {
-        out.markY = markY;
-        out.pointY = pointY;
-        out.invertedSel = false;
-    } else {
-        out.markY = pointY;
-        out.pointY = markY;
-        out.invertedSel = true;
-    }
     if (event_clicks() == 1 && damage() == DAMAGE_HIGHLIGHT) {
         // double click
         out.selected = true;
     }
+    if (out.selected) {
+        out.markX = markX;
+        out.pointX = pointX;
+        if (markY < pointY) {
+            out.markY = markY;
+            out.pointY = pointY;
+            out.invertedSel = false;
+        } else {
+            out.markY = pointY;
+            out.pointY = markY;
+            out.invertedSel = true;
+        }
+        out.markX += hscroll;
+        out.markY += vscroll;
+        out.pointX += hscroll;
+        out.pointY += vscroll;
 
-    out.markX += hscroll;
-    out.markY += vscroll;
-    out.pointX += hscroll;
-    out.pointY += vscroll;
-    out.selection = &selection;
-    out.selection->empty();
+        if (damage() == DAMAGE_HIGHLIGHT) {
+            out.selection = &selection;
+            out.selection->empty();
+        }
+    }
 
     // must call setfont() before getascent() etc
     setfont(out.font, out.fontSize);
@@ -2238,10 +2244,33 @@ int HelpWidget::onMove(int event) {
     }
 
     if (event == fltk::DRAG) {
-        // dragged the selection
-        pointX = ex - hscroll;
-        pointY = ey - vscroll;
-        redraw(DAMAGE_HIGHLIGHT);
+        switch (mouseMode) {
+        case mm_select:
+            // drag text selection
+            pointX = ex - hscroll;
+            pointY = ey - vscroll;
+            redraw(DAMAGE_HIGHLIGHT);
+            break;
+        case mm_scroll:
+            // follow the mouse navigation
+            if (scrollY != ey) {
+                // scroll down (more -ve) when draged down
+                S16 scroll = vscroll - (ey-scrollY);
+                scrollY = ey;
+                if (scroll > 0) {
+                    scroll = 0; // too far up
+                } else if (-scroll > scrollHeight) {
+                    scroll = -scrollHeight; // too far down
+                }
+                if (scrollHeight > h() && scroll != vscroll) {
+                    vscroll = scroll;
+                    redraw(DAMAGE_EXPOSE);
+                }
+            }
+            break;
+        case mm_page:
+            break;
+        }
         return 1;
     }
 
@@ -2252,12 +2281,13 @@ int HelpWidget::onPush(int event) {
     Object** list = anchors.getList();
     int len = anchors.length();
     pushedAnchor = 0;
-    int x = fltk::event_x();
-    int y = fltk::event_y();
+    int ex = fltk::event_x();
+    int ey = fltk::event_y();
+    S16 scroll = vscroll;
 
     for (int i=0; i<len; i++) {
         AnchorNode* p = (AnchorNode*)list[i];
-        if (p->ptInSegment(x, y)) {
+        if (p->ptInSegment(ex, ey)) {
             pushedAnchor = p;
             pushedAnchor->pushed = true;
             Widget::cursor(fltk::CURSOR_HAND);
@@ -2265,15 +2295,43 @@ int HelpWidget::onPush(int event) {
             return 1;
         }
     }
+    
+    switch (mouseMode) {
+    case mm_select:
+        // begin/continue text selection
+        if (event_state(SHIFT)) {
+            pointX = (ex - hscroll);
+            pointY = (ey - vscroll);
+        } else {
+            markX = pointX = (ex - hscroll);
+            markY = pointY = (ey - vscroll);
+        }
+        redraw(DAMAGE_HIGHLIGHT);
+        break;
 
-    if (event_state(SHIFT)) {
-        pointX = (x - hscroll);
-        pointY = (y - vscroll);
-    } else {
-        markX = pointX = (x - hscroll);
-        markY = pointY = (y - vscroll);
+    case mm_scroll:
+        scrollY = ey;
+        break;
+
+    case mm_page:
+        if (ey > h()/2) {
+            // page down/up
+            scroll += ex > w()/2 ? -h() : h();
+        } else {
+            // home/end
+            scroll = ex > w()/2 ? -scrollHeight : 0;
+        }
+        if (scroll > 0) {
+            scroll = 0; // too far up
+        } else if (-scroll > scrollHeight) {
+            scroll = -scrollHeight; // too far down
+        }
+        if (scrollHeight > h() && scroll != vscroll) {
+            vscroll = scroll;
+            redraw(DAMAGE_EXPOSE);
+        }
+        break;
     }
-    redraw(DAMAGE_HIGHLIGHT);
     return 1; // return 1 to become the belowmouse
 }
 
@@ -2310,6 +2368,14 @@ int HelpWidget::handle(int event) {
                 return 1;
             case 'f': // find
                 find(fltk::input("Find:"), false);
+                return 1;
+            case 'a': // select-all
+                markX = markY = 0;
+                pointX = w();
+                pointY = scrollHeight+h();
+                selection.empty();
+                selection.append(htmlStr);
+                redraw();
                 return 1;
             case InsertKey:
             case 'c': // copy
@@ -2708,5 +2774,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.44 2006-01-19 00:22:44 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.45 2006-01-20 03:24:27 zeeb90au Exp $".
 

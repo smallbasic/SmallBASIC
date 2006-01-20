@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.24 2006-01-19 00:22:44 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.25 2006-01-20 03:24:27 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -82,6 +82,8 @@ public:
     S16 vscroll,hscroll;
     U16 scrollHeight;
     S16 markX,markY,pointX,pointY;
+    S16 scrollY; // nm_scroll
+    enum {mm_select, mm_page, mm_scroll} mouseMode;
     strlib::List nodeList;
     strlib::List namedInputs;
     strlib::List inputs;
