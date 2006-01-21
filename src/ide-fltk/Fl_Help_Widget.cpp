@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.46 2006-01-20 05:19:41 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.47 2006-01-21 23:52:03 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -1439,6 +1439,7 @@ void HelpWidget::init() {
 void HelpWidget::endSelection() {
     markX = pointX = -1;
     markY = pointY = -1;
+    selection.empty();
 }
 
 void HelpWidget::cleanup() {
@@ -1679,6 +1680,7 @@ void HelpWidget::draw() {
         out.pointY += vscroll;
 
         if (damage() == DAMAGE_HIGHLIGHT) {
+            // capture new selection text
             out.selection = &selection;
             out.selection->empty();
         }
@@ -2774,5 +2776,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.46 2006-01-20 05:19:41 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.47 2006-01-21 23:52:03 zeeb90au Exp $".
 
