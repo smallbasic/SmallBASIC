@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.74 2006-01-18 04:15:18 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.75 2006-01-21 21:22:40 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -166,14 +166,17 @@ void browseFile(const char* url) {
 #if defined(WIN32) 
     ShellExecute(xid(Window::first()), "open", url, 0,0, SW_SHOWNORMAL);
 #else 
-    statusMsg("Launching htmlview script...");
     if (fork() == 0) {
         fclose(stderr);
         fclose(stdin);
         fclose(stdout);
-        if (execlp("htmlview", "htmlview", url, NULL) == 0) {
-            execlp("mozilla", "mozilla", url, NULL);
-        }
+        execlp("htmlview", "htmlview", url, NULL);
+        execlp("firefox", "firefox", url, NULL);
+        execlp("mozilla", "mozilla", url, NULL);
+        //        if (
+        //            execlp("mozilla", "mozilla", url, NULL);
+        //        }
+        statusMsg("Failed");
         ::exit(0); // in case exec failed 
     }
 #endif
@@ -1476,4 +1479,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.74 2006-01-18 04:15:18 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.75 2006-01-21 21:22:40 zeeb90au Exp $".
