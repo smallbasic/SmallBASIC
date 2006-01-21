@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.75 2006-01-21 21:22:40 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.76 2006-01-21 21:23:30 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -173,10 +173,6 @@ void browseFile(const char* url) {
         execlp("htmlview", "htmlview", url, NULL);
         execlp("firefox", "firefox", url, NULL);
         execlp("mozilla", "mozilla", url, NULL);
-        //        if (
-        //            execlp("mozilla", "mozilla", url, NULL);
-        //        }
-        statusMsg("Failed");
         ::exit(0); // in case exec failed 
     }
 #endif
@@ -1479,4 +1475,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.75 2006-01-21 21:22:40 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.76 2006-01-21 21:23:30 zeeb90au Exp $".
