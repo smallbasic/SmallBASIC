@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.4 2006-01-19 03:15:59 zeeb90au Exp $
+ * $Id: inet.c,v 1.5 2006-01-23 04:45:50 zeeb90au Exp $
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -144,6 +144,32 @@ void net_printf(socket_t s, const char *fmt, ...) {
     va_end(argp);
     //  strcat(buff, "\r\n"); 
     net_print(s, buf);
+}
+
+/*
+ *  read the specified number of bytes from the socket
+ */
+int net_read(socket_t s, char *buf, int size) {
+#if defined(_VTOS)
+    buf[0] = '\0';
+    return 0;
+#elif defined(_PalmOS)
+    Err     err;
+    int bytes = NetLibReceive(netlib, 
+                              s, (UInt8 *)buf, size,
+                              0, 0, 0, 5*SysTicksPerSecond(), &err);
+    if (err) {
+        return 0;
+    }
+#elif defined(_DOS)
+ #if defined(_DOSTCP_ENABLE)
+    return read_s(s, buf, size);
+ #else
+    return = -1;
+ #endif
+#else
+    return recv(s, buf, size, 0);
+#endif
 }
  
 /*
@@ -377,5 +403,5 @@ void net_disconnect(socket_t s) {
     net_close();
 }
 
-/* End of "$Id: inet.c,v 1.4 2006-01-19 03:15:59 zeeb90au Exp $". */
+/* End of "$Id: inet.c,v 1.5 2006-01-23 04:45:50 zeeb90au Exp $". */
 

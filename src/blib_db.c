@@ -1,5 +1,5 @@
 /*
- * $Id: blib_db.c,v 1.2 2006-01-19 05:37:11 zeeb90au Exp $
+ * $Id: blib_db.c,v 1.3 2006-01-23 04:44:58 zeeb90au Exp $
  * SmallBASIC RTL - FILESYSTEM, FILE and DEVICE I/O
  *
  * 2000-05-27, Nicholas Christopoulos
@@ -15,6 +15,7 @@
 #include "device.h"
 #include "blib.h"
 #include "messages.h"
+#include "fs_socket_client.h"
 
 #if defined(__BORLANDC__)
 #define	F_OK	0
@@ -592,6 +593,12 @@ void	cmd_floadln()
             par_getcomma();                 CHK_ERR(FSERR_INVALID_PARAMETER);
             type = par_getint();
         }
+
+        dev_file_t*	f = dev_getfileptr(handle);
+        if (f->type == ft_http_client) {
+            http_read(f, var_p, type); // TLOAD #1, html_str
+            return;
+        }
     } else {
         // filename
         par_getstr(&file_name);             CHK_ERR(FSERR_INVALID_PARAMETER);
@@ -990,4 +997,4 @@ void	cmd_bsave()
 	pfree(fname);
 }
 
-/* End of "$Id: blib_db.c,v 1.2 2006-01-19 05:37:11 zeeb90au Exp $". */
+/* End of "$Id: blib_db.c,v 1.3 2006-01-23 04:44:58 zeeb90au Exp $". */

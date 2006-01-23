@@ -1,32 +1,32 @@
 /*
-*   BSD sockets driver (byte-stream client)
-*
-*   Nicholas Christopoulos
-*/
+ *   BSD sockets driver (byte-stream client)
+ *
+ *   Nicholas Christopoulos
+ */
 
 /*
-*   PALMOS: Avoid to initialize netlib at startup because it uses a lot of memory
-*/
+ *   PALMOS: Avoid to initialize netlib at startup because it uses a lot of memory
+ */
 
 #include "inet.h"
+#include "device.h"
 #include "fs_socket_client.h"
 #include "sberr.h"
 #include <time.h>
 
-void trace(const char *format, ...);
 #if !defined(_PalmOS)
-    #if defined(_VTOS)
-    typedef FILE *  FileHand;
-    #else
-    typedef long    FileHand;
-    #endif
+#if defined(_VTOS)
+typedef FILE *  FileHand;
+#else
+typedef long    FileHand;
+#endif
 #endif
 
 int sockcl_open(dev_file_t *f) {
-    #if defined(_VTOS)
+#if defined(_VTOS)
     err_unsup();
     return 0;
-    #else
+#else
     char    *p;
     int     port;
     char    server[129];
@@ -35,7 +35,7 @@ int sockcl_open(dev_file_t *f) {
     if  ( !p )  {
         rt_raise("SOCL: NO PORT IS SPECIFIED");
         return 0;
-        }
+    }
     *p = '\0';
     strcpy(server, f->name+5);
     *p = ':';
@@ -51,14 +51,15 @@ int sockcl_open(dev_file_t *f) {
     }
 
     return 1;
-    #endif
+#endif
 }
 
+// open a web server connection
 int http_open(dev_file_t *f) {
-    #if defined(_VTOS)
+#if defined(_VTOS)
     err_unsup();
     return 0;
-    #else
+#else
 
     char host[250];
     char txbuf[1024];
@@ -135,7 +136,70 @@ int http_open(dev_file_t *f) {
     strcat(txbuf, "\r\n");
     net_print(s, txbuf);
     return 1;
-    #endif
+#endif
+}
+
+// read from a web server connection
+int http_read(dev_file_t* f, var_t* var_p, int type) {
+    char rxbuff[1024];
+    int inHeader = 1;
+    int httpOK = 0;
+
+    v_free(var_p);
+    var_p->type = V_STR;
+    var_p->v.p.ptr  = 0;
+    var_p->v.p.size = 0;
+
+    while (1) {
+        int bytes = net_read(f->handle, (char*)rxbuff, sizeof(rxbuff));
+        if (bytes == 0) {
+            break; // no more data
+        }
+        // assumes http header < 1024 bytes
+        if (inHeader) {
+            int i = 0;
+            while (1) {
+                int iattr = i;
+                while (rxbuff[i] != 0 && rxbuff[i] != '\n') {
+                    i++;
+                }
+                if (rxbuff[i] == 0) {
+                    inHeader = 0;
+                    break; // no end delimiter
+                } 
+                if (rxbuff[i+2] == '\n') {
+                    var_p->v.p.size = bytes-i-3;
+                    var_p->v.p.ptr = tmp_alloc(var_p->v.p.size+1);
+                    memcpy(var_p->v.p.ptr, rxbuff+i+3, var_p->v.p.size);
+                    var_p->v.p.ptr[var_p->v.p.size] = 0;
+                    inHeader = 0;
+                    break; // found start of content
+                }
+                // null terminate attribute (in \r)
+                rxbuff[i-1] = 0;
+                i++;
+                if (strstr(rxbuff+iattr, "200 OK") != 0) {
+                    httpOK = 1;
+                }
+                if (strncmp(rxbuff+iattr, "Location: ", 10) == 0) {
+                    // handle redirection
+                    sockcl_close(f);
+                    strcpy(f->name, rxbuff+iattr+10);
+                    if (http_open(f) == 0) {
+                        return 0;
+                    }
+                    break; // scan next header
+                }
+            }
+        } else {
+            var_p->v.p.ptr = tmp_realloc(var_p->v.p.ptr, var_p->v.p.size+bytes+1);
+            memcpy(var_p->v.p.ptr+var_p->v.p.size, rxbuff, bytes);
+            var_p->v.p.size += bytes;
+            var_p->v.p.ptr[var_p->v.p.size] = 0;
+        }
+    }
+
+    return httpOK;
 }
 
 int sockcl_close(dev_file_t *f) {
@@ -146,31 +210,31 @@ int sockcl_close(dev_file_t *f) {
 }
 
 /*
-*   write to a socket
-*/
+ *   write to a socket
+ */
 int sockcl_write(dev_file_t *f, byte *data, dword size) {
     net_print((socket_t) (long) f->handle, data);
     return size;
 }
 
 /*
-*   read from a socket
-*/
+ *   read from a socket
+ */
 int sockcl_read(dev_file_t *f, byte *data, dword size) {
     f->drv_dw[0] = (dword) net_input((socket_t) (long) f->handle, data, size, NULL);
     return (((long) f->drv_dw[0]) <= 0) ? 0 : (long) f->drv_dw[0];
 }
 
 /*
-*   Returns true (EOF) if the connection is broken
-*/
+ *   Returns true (EOF) if the connection is broken
+ */
 int sockcl_eof(dev_file_t *f) {
-  return (((long) f->drv_dw[0]) <= 0) ? 1 : 0;
+    return (((long) f->drv_dw[0]) <= 0) ? 1 : 0;
 }
 
 /*
-*   returns the size of the data which are waiting in stream's queue
-*/
+ *   returns the size of the data which are waiting in stream's queue
+ */
 int sockcl_length(dev_file_t *f) {
     return net_peek((socket_t) (long) f->handle);
 }

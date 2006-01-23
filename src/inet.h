@@ -24,6 +24,7 @@
 
     #if defined(_Win32) || defined(__MINGW32__)
 		#include <winsock2.h>	// @#@!$@#!$ it uses 'byte'
+        #undef V_ARRAY /* defined in oleauto.h in mingw build */
 	#elif defined(_UnixOS)
 		#include <sys/socket.h>
 		#include <netinet/in.h>
@@ -84,7 +85,7 @@ void    net_printf(socket_t s, const char *fmt, ...)                SEC(BIO);
 /**
 *	@ingroup net
 *
-*	reads a string form a socket until the size > from the size of the buffer
+*	reads a string from a socket until the size > from the size of the buffer
 *	or until one characters of 'delim' string found
 *
 *	@note character \r will ignored
@@ -96,6 +97,18 @@ void    net_printf(socket_t s, const char *fmt, ...)                SEC(BIO);
 *	@return the number of the bytes that read
 */
 int		net_input(socket_t s, char *buf, int size, const char *delim)   SEC(BIO);
+
+/**
+*	@ingroup net
+*
+*	read the specified number of bytes from the socket
+*
+*	@param s the socket
+*	@param buf a buffer to store the string
+*	@param size the size of the buffer
+*	@return the number of the bytes that read
+*/
+int		net_read(socket_t s, char *buf, int size)   SEC(BIO);
 
 /**
 *	@ingroup net
