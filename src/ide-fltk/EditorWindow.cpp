@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.48 2005-08-17 23:21:40 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.49 2006-01-23 05:42:52 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -98,7 +98,8 @@ void style_parse(const char *text, char *style, int length) {
         if (current == PLAIN) {
             // check for directives, comments, strings, and keywords
             if ((*text == '#' && (*(text-1) == 0 || *(text-1) == 10)) ||
-                *text == '\'' || strncasecmp(text, "rem", 3) == 0) {
+                (strncasecmp(text, "rem", 3) == 0 && text[3] == ' ') ||
+                *text == '\'') {
                 // basic comment
                 current = COMMENTS;
                 for (; length > 0 && *text != '\n'; length--, text ++) {
@@ -202,6 +203,13 @@ void style_parse(const char *text, char *style, int length) {
                     length++;
                     last = 1;
                     continue;
+                }
+                // word didn't match
+                int len = strlen(bufptr)-1;
+                for (int i=0; i<len; i++) {
+                    *style++ = PLAIN;
+                    text++;
+                    length--;
                 }
             }
         } else if (current == STRINGS) {
