@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.49 2006-01-23 05:42:52 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.50 2006-01-24 04:59:36 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -49,16 +49,16 @@
 using namespace fltk;
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
-    { BLACK,            COURIER, 12 }, // A - Plain
-    { color(0,128,0),   COURIER, 12 }, // B - Comments
-    { color(0,0,192),   COURIER, 12 }, // C - Strings
+    { BLACK,            COURIER_BOLD, 12 }, // A - Plain
+    { color(0,128,0),   COURIER_BOLD, 12 }, // B - Comments
+    { color(0,0,192),   COURIER_BOLD, 12 }, // C - Strings
     { color(128,0,0),   COURIER_BOLD, 12 }, // D - code_keywords
     { color(128,128,0), COURIER_BOLD, 12 }, // E - code_functions
     { color(0,128,128), COURIER_BOLD, 12 },  // F - code_procedures
     { color(128,0,128), HELVETICA_BOLD, 12 }, // G - Find matches
     { color(0,128,0),   COURIER_ITALIC, 12 }, // H - Italic Comments ';
-    { color(0,128,128), COURIER, 12 }, // I - Numbers
-    { color(128,128,64),COURIER, 12 }, // J - Operators
+    { color(0,128,128), COURIER_BOLD, 12 }, // I - Numbers
+    { color(128,128,64),COURIER_BOLD, 12 }, // J - Operators
 };
 
 #define PLAIN      'A'
@@ -620,7 +620,6 @@ void CodeEditor::gotoLine(int line) {
     } else if (line > numLines) {
         line = numLines;
     }
-    scroll(line, 0);
     int pos = buffer()->skip_lines(0, line-1); // find pos at line-1
     insert_position(buffer()->line_start(pos)); // insert at column 0
     show_insert_position();
