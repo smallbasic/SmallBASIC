@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.50 2006-01-24 04:59:36 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.51 2006-01-24 05:52:44 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -102,7 +102,7 @@ void style_parse(const char *text, char *style, int length) {
                 *text == '\'') {
                 // basic comment
                 current = COMMENTS;
-                for (; length > 0 && *text != '\n'; length--, text ++) {
+                for (; length > 0 && *text != '\n'; length--, text++) {
                     if (*text == ';') {
                         current = ITCOMMENTS;
                     }
@@ -115,7 +115,7 @@ void style_parse(const char *text, char *style, int length) {
                 // quoted quote
                 *style++ = current;
                 *style++ = current;
-                text ++;
+                text++;
                 length--;
                 continue;
             } else if (*text == '\"') {
@@ -137,11 +137,12 @@ void style_parse(const char *text, char *style, int length) {
                     }
                     continue;
                 }
-                // test for keyword
+
+                // test for keyword boundary
                 temp = text;
                 bufptr = buf;
                 while (*temp != 0 && *temp != ' ' && 
-                       *temp != '\n' && *temp != '\r' && 
+                       *temp != '\n' && *temp != '\r' && *temp != '"' &&
                        *temp != '(' && *temp != ')' && *temp != '=' &&
                        bufptr < (buf + sizeof(buf) - 1)) {
                     *bufptr++ = tolower(*temp++);
