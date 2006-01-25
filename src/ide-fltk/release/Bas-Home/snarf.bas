@@ -1,6 +1,6 @@
 
 #######################################################################
-# $Id: snarf.bas,v 1.2 2006-01-25 03:19:22 zeeb90au Exp $
+# $Id: snarf.bas,v 1.3 2006-01-25 04:15:43 zeeb90au Exp $
 # fetch web pages for off-line reading
 #######################################################################
 
@@ -114,6 +114,7 @@ sub fetch
   open indexPage for output as #1
   s = snarf(indexURL)
   links = getLinks(s)
+  s = translate(s, "/handheld", "|")  
   print #1, s
   close #1
   
@@ -122,7 +123,9 @@ sub fetch
     path = cacheHome+href 
     mkpath path
     open path for output as #1
-    print #1, snarf(homeURL+href)
+    s = snarf(homeURL+href)
+    s = translate(s, "/handheld", "|")
+    print #1, s
     close #1
   next
   
