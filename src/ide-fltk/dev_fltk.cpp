@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.53 2006-01-25 04:18:06 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.54 2006-01-25 20:19:51 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -32,6 +32,8 @@ extern "C" {
  #ifdef __MINGW32__
   #include <winsock.h>
  #endif
+#else
+ #include <sys/socket.h>
 #endif
 
 #if defined(__MINGW32__)
@@ -826,4 +828,4 @@ void updateForm(const char* s) {
 //     }
 }
 
-// End of "$Id: dev_fltk.cpp,v 1.53 2006-01-25 04:18:06 zeeb90au Exp $".
+// End of "$Id: dev_fltk.cpp,v 1.54 2006-01-25 20:19:51 zeeb90au Exp $".
