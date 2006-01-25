@@ -1,10 +1,10 @@
-######################################################################
-# $Id: snarf.bas,v 1.1 2006-01-24 05:50:50 zeeb90au Exp $
-# fetch web pages for off-line reading
-#
-######################################################################
 
-'strip the given tag from the html text
+#######################################################################
+# $Id: snarf.bas,v 1.2 2006-01-25 03:19:22 zeeb90au Exp $
+# fetch web pages for off-line reading
+#######################################################################
+
+# strip the given tag from the html text
 sub removeTag(byref s, tag) 
   local i, i_end, s_len, end_tag
   
@@ -26,10 +26,9 @@ sub removeTag(byref s, tag)
     s = left(s, i-1) + s_end
     s_len -= (i_end-i)
   next i
-  'removeTag=s
 end  
 
-'return an array of anchor links from the html text
+# return an array of anchor links from the html text
 func getLinks(byref s)
   local i, iend, s_len, links, end_ch, ahref
   
@@ -64,7 +63,7 @@ func getLinks(byref s)
   getLinks=links
 end func
 
-' connect to the given url and retrive the page text
+# connect to the given url and retrive the page text
 func snarf(url)
   local s
 
@@ -83,6 +82,7 @@ func snarf(url)
   snarf = s
 end
 
+# create the local file system path
 sub mkpath(s)
   local s_len, i, path
 
@@ -101,8 +101,9 @@ sub mkpath(s)
   wend
 end
 
-sub main
-  cacheHome = "snarfs/smh"
+# fetch pages from the given site
+sub fetch
+  cacheHome = ENV("HOME")+"/.smallbasic/cache/smh"
   homeURL = "http://www.smh.com.au"
   indexURL = homeURL+"/handheld/index.html"
   indexPage = cacheHome+"/handheld/index.html"
@@ -128,5 +129,32 @@ sub main
   ? "Done"
 end
 
+# process button clicks - command =value of onclick argument
+sub main
+  select case command
+  case "f_smh"
+    fetch
+  case "f_age"
+  case "r_smh"
+    s = "file:"+ENV("HOME")+"/.smallbasic/cache/smh/handheld/index.html"
+    html s
+    exit sub
+  case "r_age"
+  end select
+  
+  'display the menu
+  bn="<td><input type=button onclick='!"+env("BAS_HOME")+"snarf.sbx"
+  s = "<br><table><tr>"
+  s +="<td>Sydney Morning Herald</td>"
+  s +=bn+" r_smh' value=Read></td>"
+  s +=bn+" f_smh' value=Fetch></td>"
+  s +="</tr><tr><td>AGE</td>"
+  s +=bn+" r_age' value=Read></td>"
+  s +=bn+" f_age' value=Fetch></td>"
+  s +="</tr></table>"
+  html s
+end
+
 main
+
 
