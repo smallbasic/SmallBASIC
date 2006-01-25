@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.51 2006-01-24 05:52:44 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.52 2006-01-25 03:17:21 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -49,16 +49,16 @@
 using namespace fltk;
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
-    { BLACK,            COURIER_BOLD, 12 }, // A - Plain
-    { color(0,128,0),   COURIER_BOLD, 12 }, // B - Comments
-    { color(0,0,192),   COURIER_BOLD, 12 }, // C - Strings
-    { color(128,0,0),   COURIER_BOLD, 12 }, // D - code_keywords
-    { color(128,128,0), COURIER_BOLD, 12 }, // E - code_functions
-    { color(0,128,128), COURIER_BOLD, 12 },  // F - code_procedures
-    { color(128,0,128), HELVETICA_BOLD, 12 }, // G - Find matches
+    { BLACK,            COURIER, 12 }, // A - Plain
+    { color(0,128,0),   COURIER, 12 }, // B - Comments
+    { color(0,0,192),   COURIER, 12 }, // C - Strings
+    { color(192,0,0),   COURIER, 12 }, // D - code_keywords
+    { color(128,128,0), COURIER, 12 }, // E - code_functions
+    { color(0,128,128), COURIER, 12 },  // F - code_procedures
+    { color(128,0,128), HELVETICA, 12 }, // G - Find matches
     { color(0,128,0),   COURIER_ITALIC, 12 }, // H - Italic Comments ';
-    { color(0,128,128), COURIER_BOLD, 12 }, // I - Numbers
-    { color(128,128,64),COURIER_BOLD, 12 }, // J - Operators
+    { color(0,128,128), COURIER, 12 }, // I - Numbers
+    { color(128,128,64),COURIER, 12 }, // J - Operators
 };
 
 #define PLAIN      'A'
@@ -397,6 +397,8 @@ unsigned CodeEditor::getIndent(char* spaces, int len, int pos) {
         strncasecmp(buf+i, "else", 4) == 0 ||
         strncasecmp(buf+i, "repeat", 6) == 0 ||
         strncasecmp(buf+i, "for ", 4) == 0 ||
+        strncasecmp(buf+i, "select ", 7) == 0 ||
+        strncasecmp(buf+i, "case ", 5) == 0 ||
         strncasecmp(buf+i, "sub ", 4) == 0 ||
         strncasecmp(buf+i, "func ", 5) == 0) {
 
@@ -465,6 +467,7 @@ void CodeEditor::handleTab() {
         strncasecmp(buf+curIndent, "elif ", 5) == 0 ||
         strncasecmp(buf+curIndent, "else", 4) == 0 ||
         strncasecmp(buf+curIndent, "next", 4) == 0 ||
+        strncasecmp(buf+curIndent, "case", 4) == 0 ||
         strncasecmp(buf+curIndent, "end", 3) == 0  ||
         strncasecmp(buf+curIndent, "until ", 6) == 0) {
         if (indent >= indentLevel) {
