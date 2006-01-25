@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.25 2006-01-20 03:24:27 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.26 2006-01-25 04:15:14 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -42,7 +42,7 @@ public:
     virtual ~HelpWidget();
 
     void loadBuffer(const char* buffer);
-    void loadFile(const char* fileName);
+    void loadFile(const char* fileName, bool useDocHome=false);
     void navigateTo(const char* fileName);
     void scrollTo(const char* anchorName);
     void scrollTo(int vscroll);

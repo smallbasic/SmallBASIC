@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.47 2006-01-21 23:52:03 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.48 2006-01-25 04:15:14 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -2479,12 +2479,16 @@ void HelpWidget::loadBuffer(const char* str) {
     }
 }
 
-void HelpWidget::loadFile(const char *f) {
+void HelpWidget::loadFile(const char *f, bool useDocHome) {
     FILE *fp;
     long len;
 
     fileName.empty();
     htmlStr.empty();
+
+    if (docHome.length() != 0 && useDocHome) {
+        fileName.append(docHome);
+    }
     
     if (strncasecmp(f, "file:///", 8) == 0) {
         // only supports file protocol
@@ -2776,5 +2780,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.47 2006-01-21 23:52:03 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.48 2006-01-25 04:15:14 zeeb90au Exp $".
 
