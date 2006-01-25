@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.52 2006-01-20 05:20:25 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.53 2006-01-25 04:18:06 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -330,9 +330,17 @@ void doEvent(void*) {
     if (eventName[0] == '|') {
         // user flag to indicate UI should remain
         // for next program execution
+        const char* filename = eventName.toString();
+        int len = strlen(filename);
+        if (strcasecmp(filename+len-4, ".htm") == 0 ||
+            strcasecmp(filename+len-5, ".html") == 0) {
+            // "execute" a html file
+            formView->loadFile(filename+1, true);
+            return;
+        }
         saveForm = true;
     } else if (wnd->siteHome.length() == 0) {
-        // no currently visiting a remote site
+        // not currently visiting a remote site
         if (wnd->editWnd->checkSave(true) == false) {
             return;
         }
@@ -818,4 +826,4 @@ void updateForm(const char* s) {
 //     }
 }
 
-// End of "$Id: dev_fltk.cpp,v 1.52 2006-01-20 05:20:25 zeeb90au Exp $".
+// End of "$Id: dev_fltk.cpp,v 1.53 2006-01-25 04:18:06 zeeb90au Exp $".
