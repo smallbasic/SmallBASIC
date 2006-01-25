@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.76 2006-01-21 21:23:30 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.77 2006-01-25 03:18:32 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -378,6 +378,7 @@ void basicMain(const char* filename) {
         wnd->editWnd->take_focus();
     }
     runMode = edit_state;
+    opt_command[0] = 0;
 }
 
 bool searchBackward(const char* text, int startPos,
@@ -655,7 +656,6 @@ void tool_cb(Widget* w, void* filename) {
         sprintf(path, "%s%s", startDir, (const char*)filename);
         basicMain(path);
         statusMsg(wnd->editWnd->getFilename());
-        opt_command[0] = 0;
     } else {
         busyMessage();
     }
@@ -1475,4 +1475,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.76 2006-01-21 21:23:30 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.77 2006-01-25 03:18:32 zeeb90au Exp $".
