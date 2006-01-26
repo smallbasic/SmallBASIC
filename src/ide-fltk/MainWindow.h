@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.24 2005-12-21 05:19:34 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.25 2006-01-26 03:58:00 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -67,7 +67,6 @@ struct MainWindow : public Window {
     Input* findText;
     Input* gotoLine;
     Choice* funcList;
-    ValueInput* sizeBn;
 
     // status bar
     Widget* fileStatus;

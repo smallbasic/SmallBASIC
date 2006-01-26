@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.48 2006-01-25 04:15:14 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.49 2006-01-26 03:58:00 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -46,7 +46,6 @@
 #define BUTTON_COLOR Widget::default_style->buttoncolor()
 #define DEFAULT_INDENT 2
 #define LI_INDENT 18
-#define FONT_SIZE 11
 #define FONT_SIZE_H1 23
 #define SCROLL_W 15
 #define CELL_SPACING 4
@@ -1405,7 +1404,7 @@ static void anchor_callback(Widget* helpWidget, void *target) {
     ((HelpWidget*)helpWidget)->navigateTo((const char*)target);
 }
 
-HelpWidget::HelpWidget(int x, int y, int width, int height) :
+HelpWidget::HelpWidget(int x, int y, int width, int height, int defsize) :
     Group(x, y, width, height), 
     nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5) {
     begin();
@@ -1420,6 +1419,7 @@ HelpWidget::HelpWidget(int x, int y, int width, int height) :
     init();
     cookies = 0;
     docHome.empty();
+    labelsize(defsize);
 }
 
 HelpWidget::~HelpWidget() {
@@ -1440,6 +1440,11 @@ void HelpWidget::endSelection() {
     markX = pointX = -1;
     markY = pointY = -1;
     selection.empty();
+}
+
+void HelpWidget::setFontSize(int i) {
+    labelsize(i);
+    reloadPage();
 }
 
 void HelpWidget::cleanup() {
@@ -1641,7 +1646,7 @@ void HelpWidget::draw() {
     out.wnd = this;
     out.anchor = 0;
     out.font = HELVETICA;
-    out.fontSize = FONT_SIZE;
+    out.fontSize = (int)labelsize();
     out.color = foreground;
     out.background = background;
     out.y2 = h();
@@ -1692,7 +1697,8 @@ void HelpWidget::draw() {
     out.lineHeight = out.y1+(int)getdescent();
     out.y1 += vscroll;
 
-    push_clip(Rectangle(w(), h()));
+    //push_clip(Rectangle(x(), y(), w(), h()));
+    push_clip(*this);
     if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
         // just draw the anchor-push
         int h = (pushedAnchor->y2-pushedAnchor->y1)+pushedAnchor->lineHeight;
@@ -1799,7 +1805,7 @@ void HelpWidget::compile() {
 
     Color color = 0;
     Font *font = fltk::HELVETICA;
-    int fontSize = FONT_SIZE;
+    int fontSize = (int)labelsize();
     int taglen = 0;
     int textlen = 0;
     U8 padlines = false; // padding between line-breaks
@@ -2343,6 +2349,22 @@ int HelpWidget::handle(int event) {
         return handled;
     }
     switch (event) {
+    case EVENT_INCREASE_FONT:
+        if (getFontSize() < MAX_FONT_SIZE) {
+            setFontSize(getFontSize()+1);
+        }
+        return 1;
+
+    case EVENT_DECREASE_FONT:
+        if (getFontSize() > MIN_FONT_SIZE) {
+            setFontSize(getFontSize()-1);
+        }
+        return 1;
+
+    case EVENT_COPY_TEXT:
+        copySelection();
+        return 1;
+
     case fltk::FOCUS:
         return 2; // aquire focus
         
@@ -2755,7 +2777,7 @@ int main(int argc, char **argv) {
     int h = 400;
     Window window(w, h, "Browse");
     window.begin();
-    HelpWidget out(0, 0, w, h);
+    HelpWidget out(0, 0, w, h, 12);
     out.loadFile("t.html#there");
     window.resizable(&out);
     window.end();
@@ -2780,5 +2802,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.48 2006-01-25 04:15:14 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.49 2006-01-26 03:58:00 zeeb90au Exp $".
 

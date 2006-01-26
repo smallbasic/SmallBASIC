@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.52 2006-01-25 03:17:21 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.53 2006-01-26 03:58:00 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -1011,7 +1011,7 @@ void EditorWindow::getSelEndRowCol(int *row, int *col) {
     return ((CodeEditor*)editor)->getSelEndRowCol(row, col);
 }
 
-void EditorWindow::fontSize(int size) {
+void EditorWindow::setFontSize(int size) {
     int len = sizeof(styletable) / sizeof(styletable[0]);
     for (int i=0; i<len; i++) {
         styletable[i].size = size;
@@ -1019,6 +1019,10 @@ void EditorWindow::fontSize(int size) {
     textbuf->select(0, textbuf->length());
     textbuf->select(0, 0);
     editor->redraw(DAMAGE_ALL);
+}
+
+int EditorWindow::getFontSize() {
+    return styletable[0].size;
 }
 
 void EditorWindow::createFuncList() {

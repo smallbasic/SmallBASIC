@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.77 2006-01-25 03:18:32 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.78 2006-01-26 03:58:00 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -63,8 +63,6 @@ enum ExecState {
     quit_state
 } runMode = init_state;
 
-#define MIN_FONT_SIZE 11
-#define MAX_FONT_SIZE 22
 #define DEF_FONT_SIZE 12
 #define SCAN_LABEL "-[ Refresh ]-"
 #define NUM_RECENT_ITEMS 9
@@ -103,7 +101,6 @@ void getHomeDir(char* filename);
 bool cacheLink(dev_file_t* df, char* localFile);
 void updateForm(const char* s);
 void closeForm();
-void copyFormText();
 bool isFormActive();
 
 //--EditWindow functions--------------------------------------------------------
@@ -535,14 +532,23 @@ void next_tab_cb(Widget* w, void* v) {
 }
 
 void copy_text_cb(Widget* w, void* v) {
-    Widget* current = wnd->tabGroup->selected_child();
     // copy from the active tab
-    if (current == wnd->helpGroup) {
-        wnd->helpWnd->copySelection();
-    } else if (current == wnd->outputGroup) {
-        copyFormText();
-    } else {
+    if (wnd->editGroup == wnd->tabGroup->selected_child()) {
         EditorWindow::copy_cb(w, v);
+    } else {
+        wnd->handle(EVENT_COPY_TEXT);
+    }
+}
+
+void cut_text_cb(Widget* w, void* v) {
+    if (wnd->editGroup == wnd->tabGroup->selected_child()) {
+        EditorWindow::cut_cb(w, v);
+    }
+}
+
+void paste_text_cb(Widget* w, void* v) {
+    if (wnd->editGroup == wnd->tabGroup->selected_child()) {
+        EditorWindow::paste_cb(w, v);
     }
 }
 
@@ -565,15 +571,30 @@ void goto_cb(Widget* w, void* v) {
     wnd->editWnd->take_focus();
 }
 
-void font_size_cb(Widget* w, void* v) {
-    ValueInput* sizeBn = (ValueInput*)v;
-    int value = (int)sizeBn->value();
-    value = value > MAX_FONT_SIZE ? MAX_FONT_SIZE : 
-        value < MIN_FONT_SIZE ? MIN_FONT_SIZE : value;
-    wnd->out->fontSize(value);
-    wnd->editWnd->fontSize(value);
-    wnd->editWnd->take_focus();
-    sizeBn->value(value);
+void font_size_incr_cb(Widget* w, void* v) {
+    Widget* current = wnd->tabGroup->selected_child();
+    if (current == wnd->editGroup) {
+        int size = wnd->editWnd->getFontSize();
+        if (size < MAX_FONT_SIZE) {
+            wnd->editWnd->setFontSize(size+1);
+            wnd->out->setFontSize(size+1);
+        }
+    } else {
+        wnd->handle(EVENT_INCREASE_FONT);
+    }
+}
+
+void font_size_decr_cb(Widget* w, void* v) {
+    Widget* current = wnd->tabGroup->selected_child();
+    if (current == wnd->editGroup) {
+        int size = wnd->editWnd->getFontSize();
+        if (size > MIN_FONT_SIZE) {
+            wnd->editWnd->setFontSize(size-1);
+            wnd->out->setFontSize(size-1);
+        }
+    } else {
+        wnd->handle(EVENT_DECREASE_FONT);
+    }
 }
 
 void func_list_cb(Widget* w, void* v) {
@@ -1100,16 +1121,18 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&File/_Save File &As...",CTRL+SHIFT+'S', (Callback*)EditorWindow::saveas_cb);
     m->add("&File/E&xit",         CTRL+'q', (Callback*)quit_cb);
     m->add("&Edit/_&Undo",        CTRL+'z', (Callback*)EditorWindow::undo_cb);
-    m->add("&Edit/Cu&t",          CTRL+'x', (Callback*)EditorWindow::cut_cb);
+    m->add("&Edit/Cu&t",          CTRL+'x', (Callback*)cut_text_cb);
     m->add("&Edit/&Copy",         CTRL+'c', (Callback*)copy_text_cb);
-    m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)EditorWindow::paste_cb);
+    m->add("&Edit/_&Paste",       CTRL+'v', (Callback*)paste_text_cb);
     m->add("&Edit/&Change Case",  ALT+'c',  (Callback*)change_case_cb);
     m->add("&Edit/_&Expand Word", ALT+'/',  (Callback*)expand_word_cb);
     m->add("&Edit/&Replace...",   F2Key,    (Callback*)EditorWindow::replace_cb);
     m->add("&Edit/_Replace &Again",CTRL+'t',(Callback*)EditorWindow::replace2_cb);
     m->add("&View/Toggle/&Full Screen",0,   (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&View/Toggle/&Turbo", 0,        (Callback*)turbo_cb)->type(Item::TOGGLE);
-    m->add("&View/&Next Tab",     F6Key,    (Callback*)next_tab_cb);
+    m->add("&View/_&Next Tab",     F6Key,   (Callback*)next_tab_cb);
+    m->add("&View/Text Size/&Increase",CTRL+'[', (Callback*)font_size_incr_cb);
+    m->add("&View/Text Size/&Decrease",CTRL+']', (Callback*)font_size_decr_cb);
     scanPlugIns(m);
     m->add("&Program/&Run",        F9Key,   (Callback*)run_cb);
     m->add("&Program/&Break",      CTRL+'b',(Callback*)break_cb);
@@ -1171,16 +1194,6 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     funcList->end();
     toolbar->resizable(funcList);
 
-    // font-size control
-    sizeBn = new ValueInput(538, 4, 40, mnuHeight, "Font Size:");
-    sizeBn->minimum(MIN_FONT_SIZE);
-    sizeBn->maximum(MAX_FONT_SIZE);
-    sizeBn->value(DEF_FONT_SIZE);
-    sizeBn->step(1);
-    sizeBn->callback(font_size_cb, sizeBn);
-    sizeBn->when(WHEN_ENTER_KEY_ALWAYS);
-    sizeBn->labelfont(HELVETICA);
-    
     // close the tool-bar with a resizeable end-box
     Group* boxEnd = new Group(1000,4,0,0);
     toolbar->resizable(boxEnd);
@@ -1393,9 +1406,6 @@ int MainWindow::handle(int e) {
             case 'h':
                 wnd->funcList->take_focus();
                 return 1;
-            case 'j':
-                wnd->sizeBn->take_focus();
-                return 1;
             }
         }
         break;
@@ -1475,4 +1485,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.77 2006-01-25 03:18:32 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.78 2006-01-26 03:58:00 zeeb90au Exp $".

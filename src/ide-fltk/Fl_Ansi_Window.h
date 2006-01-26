@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.21 2005-08-17 23:20:10 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.22 2006-01-26 03:58:00 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -51,8 +51,8 @@ class AnsiWindow : public Widget {
     int textHeight(void);
     int getWidth()  {return w();}
     int getHeight() {return h();}
-    void fontSize(int i) {labelsize(i);}
-    int fontSize() {return (int)labelsize();}
+    void setFontSize(int i) {labelsize(i);}
+    int getFontSize() {return (int)labelsize();}
     void beep() const;
     static Color ansiToFltk(long color);
 

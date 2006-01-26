@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: HelpWidget.h,v 1.26 2006-01-25 04:15:14 zeeb90au Exp $
+// $Id: HelpWidget.h,v 1.27 2006-01-26 03:58:00 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -30,6 +30,12 @@
 #define ID_HIDDEN   8
 #define ID_READONLY 9
 
+#define MIN_FONT_SIZE 11
+#define MAX_FONT_SIZE 22
+#define EVENT_INCREASE_FONT 100
+#define EVENT_DECREASE_FONT 101
+#define EVENT_COPY_TEXT     102
+
 using namespace fltk;
 using namespace strlib;
 
@@ -38,7 +44,7 @@ void browseFile(const char* url);
 
 class HelpWidget : public Group {
 public:
-    HelpWidget(int x, int y, int width, int height);
+    HelpWidget(int x, int y, int width, int height, int defsize=MIN_FONT_SIZE);
     virtual ~HelpWidget();
 
     void loadBuffer(const char* buffer);
@@ -61,6 +67,8 @@ public:
     void setDocHome(const char* home);
     void getImageNames(strlib::List*);
     void reloadImages();
+    void setFontSize(int i);
+    int getFontSize() {return (int)labelsize();}
 
     protected:
     void compile();

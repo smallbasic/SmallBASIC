@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.54 2006-01-25 20:19:51 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.55 2006-01-26 03:58:00 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -655,12 +655,6 @@ bool isFormActive() {
     return formView != null;
 }
 
-void copyFormText() {
-    if (formView != null) {
-        formView->copySelection();
-    }
-}
-
 // copy the url into the local cache
 bool cacheLink(dev_file_t* df, char* localFile) {
     char rxbuff[1024];
@@ -828,4 +822,4 @@ void updateForm(const char* s) {
 //     }
 }
 
-// End of "$Id: dev_fltk.cpp,v 1.54 2006-01-25 20:19:51 zeeb90au Exp $".
+// End of "$Id: dev_fltk.cpp,v 1.55 2006-01-26 03:58:00 zeeb90au Exp $".
