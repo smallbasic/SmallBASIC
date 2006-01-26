@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.78 2006-01-26 03:58:00 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.79 2006-01-26 10:38:29 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -1131,8 +1131,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     m->add("&View/Toggle/&Full Screen",0,   (Callback*)fullscreen_cb)->type(Item::TOGGLE);
     m->add("&View/Toggle/&Turbo", 0,        (Callback*)turbo_cb)->type(Item::TOGGLE);
     m->add("&View/_&Next Tab",     F6Key,   (Callback*)next_tab_cb);
-    m->add("&View/Text Size/&Increase",CTRL+'[', (Callback*)font_size_incr_cb);
-    m->add("&View/Text Size/&Decrease",CTRL+']', (Callback*)font_size_decr_cb);
+    m->add("&View/Text Size/&Increase",CTRL+']', (Callback*)font_size_incr_cb);
+    m->add("&View/Text Size/&Decrease",CTRL+'[', (Callback*)font_size_decr_cb);
     scanPlugIns(m);
     m->add("&Program/&Run",        F9Key,   (Callback*)run_cb);
     m->add("&Program/&Break",      CTRL+'b',(Callback*)break_cb);
@@ -1485,4 +1485,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.78 2006-01-26 03:58:00 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.79 2006-01-26 10:38:29 zeeb90au Exp $".
