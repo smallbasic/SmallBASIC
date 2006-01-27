@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.53 2006-01-26 03:58:00 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.54 2006-01-27 05:03:21 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -54,8 +54,8 @@ TextDisplay::StyleTableEntry styletable[] = { // Style table
     { color(0,0,192),   COURIER, 12 }, // C - Strings
     { color(192,0,0),   COURIER, 12 }, // D - code_keywords
     { color(128,128,0), COURIER, 12 }, // E - code_functions
-    { color(0,128,128), COURIER, 12 },  // F - code_procedures
-    { color(128,0,128), HELVETICA, 12 }, // G - Find matches
+    { color(0,128,128), COURIER, 12 }, // F - code_procedures
+    { color(128,0,128), COURIER, 12 }, // G - Find matches
     { color(0,128,0),   COURIER_ITALIC, 12 }, // H - Italic Comments ';
     { color(0,128,128), COURIER, 12 }, // I - Numbers
     { color(128,128,64),COURIER, 12 }, // J - Operators
