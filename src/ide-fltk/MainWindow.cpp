@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.79 2006-01-26 10:38:29 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.80 2006-01-27 05:03:10 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -1153,14 +1153,14 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup->box(THIN_DOWN_BOX);
 
     // create the editor edit window
-    editWnd = new EditorWindow(2, 3+tbHeight, w-4, pageHeight-5-tbHeight);
+    editWnd = new EditorWindow(2, 2, w-4, pageHeight-tbHeight-6);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
     editWnd->box(NO_BOX);
     editWnd->editor->box(NO_BOX);
     editGroup->resizable(editWnd);
 
     // create the editor toolbar
-    Group* toolbar = new Group(2, 2, w-4, tbHeight);
+    Group* toolbar = new Group(2, pageHeight-tbHeight-2, w-4, tbHeight);
     toolbar->begin();
     toolbar->box(THIN_UP_BOX);
 
@@ -1485,4 +1485,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.79 2006-01-26 10:38:29 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.80 2006-01-27 05:03:10 zeeb90au Exp $".
