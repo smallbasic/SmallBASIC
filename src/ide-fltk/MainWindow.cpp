@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.80 2006-01-27 05:03:10 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.81 2006-01-27 20:55:19 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -1093,7 +1093,7 @@ int main(int argc, char **argv) {
 
 MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     int mnuHeight = 22;
-    int tbHeight = 30;
+    int tbHeight = 26;
     int statusHeight = mnuHeight;
     int groupHeight = h-mnuHeight-statusHeight-3;
     int tabBegin = 0; // =mnuHeight for top position tabs
@@ -1165,10 +1165,10 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     toolbar->box(THIN_UP_BOX);
 
     // find control
-    findText = new Input(38, 4, 120, mnuHeight, "Find:");
+    findText = new Input(38, 2, 120, mnuHeight, "Find:");
     findText->align(ALIGN_LEFT|ALIGN_CLIP);
-    Button* prevBn = new Button(160, 6, 18, mnuHeight-4, "@-98>;");
-    Button* nextBn = new Button(180, 6, 18, mnuHeight-4, "@-92>;");
+    Button* prevBn = new Button(160, 4, 18, mnuHeight-4, "@-98>;");
+    Button* nextBn = new Button(180, 4, 18, mnuHeight-4, "@-92>;");
     prevBn->callback(find_cb, (void*)0);
     nextBn->callback(find_cb, (void*)1);
     findText->callback(find_cb, (void*)2);
@@ -1176,16 +1176,16 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     findText->labelfont(HELVETICA);
 
     // goto-line control
-    gotoLine = new Input(238, 4, 40, mnuHeight, "Goto:");
+    gotoLine = new Input(238, 2, 40, mnuHeight, "Goto:");
     gotoLine->align(ALIGN_LEFT|ALIGN_CLIP);
-    Button* gotoBn = new Button(280, 6, 18, mnuHeight-4, "@-92>;");
+    Button* gotoBn = new Button(280, 4, 18, mnuHeight-4, "@-92>;");
     gotoBn->callback(goto_cb, gotoLine);
     gotoLine->callback(goto_cb, gotoLine);
     gotoLine->when(WHEN_ENTER_KEY_ALWAYS);
     gotoLine->labelfont(HELVETICA);
 
     // sub-func jump droplist
-    funcList = new Choice(309, 4, 168, mnuHeight);
+    funcList = new Choice(309, 2, 168, mnuHeight);
     funcList->callback(func_list_cb, 0);
     funcList->labelfont(COURIER);
     funcList->begin();
@@ -1485,4 +1485,4 @@ void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: MainWindow.cpp,v 1.80 2006-01-27 05:03:10 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.81 2006-01-27 20:55:19 zeeb90au Exp $".
