@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.49 2006-01-26 03:58:00 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.50 2006-01-27 03:10:43 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -1697,8 +1697,7 @@ void HelpWidget::draw() {
     out.lineHeight = out.y1+(int)getdescent();
     out.y1 += vscroll;
 
-    //push_clip(Rectangle(x(), y(), w(), h()));
-    push_clip(*this);
+    push_clip(Rectangle(w(), h()));
     if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
         // just draw the anchor-push
         int h = (pushedAnchor->y2-pushedAnchor->y1)+pushedAnchor->lineHeight;
@@ -2802,5 +2801,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.49 2006-01-26 03:58:00 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.50 2006-01-27 03:10:43 zeeb90au Exp $".
 
