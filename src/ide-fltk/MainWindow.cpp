@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.81 2006-01-27 20:55:19 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.82 2006-01-28 00:18:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -1453,11 +1453,13 @@ int MainWindow::handle(int e) {
 //--Debug support---------------------------------------------------------------
 
 #if defined(WIN32)
+#include <windows.h>
+#endif
 // see http://www.sysinternals.com/ntw2k/utilities.shtml
 // for the free DebugView program
 // an alternative debug method is to use insight.exe which
 // is included with cygwin. 
-#include <windows.h>
+
 extern "C" void trace(const char *format, ...) {
     char    buf[4096],*p = buf;
     va_list args;
@@ -1473,16 +1475,11 @@ extern "C" void trace(const char *format, ...) {
     *p++ = '\r';
     *p++ = '\n';
     *p   = '\0';
+#if defined(WIN32)
     OutputDebugString(buf);
-}
 #else
-void trace(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    fprintf(stderr, format, args);
-    fprintf(stderr, "\n");
-    va_end(args);
-}
+    fprintf(stderr, buf);
 #endif
+}
 
-// End of "$Id: MainWindow.cpp,v 1.81 2006-01-27 20:55:19 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.82 2006-01-28 00:18:16 zeeb90au Exp $".
