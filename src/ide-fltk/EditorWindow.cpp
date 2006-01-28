@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.54 2006-01-27 05:03:21 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.55 2006-01-28 00:19:00 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -611,10 +611,13 @@ int CodeEditor::handle(int e) {
 
 void CodeEditor::showRowCol() {
     int row, col;
-    position_to_linecol(mCursorPos, &row, &col);
-    if (row < 9999 && col < 9999) {
-        setRowCol(row, col+1);
+
+    if (!position_to_linecol(mCursorPos, &row, &col)) {
+        // pageup/pagedown
+        layout();
+        position_to_linecol(mCursorPos, &row, &col);
     }
+    setRowCol(row, col+1);
 }
     
 void CodeEditor::gotoLine(int line) {
@@ -786,6 +789,7 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI) {
 
     textbuf->call_modify_callbacks();
     editor->show_insert_position();
+    setRowCol(1, 1);
 }
 
 void EditorWindow::doSaveFile(const char *newfile, bool updateUI) {
