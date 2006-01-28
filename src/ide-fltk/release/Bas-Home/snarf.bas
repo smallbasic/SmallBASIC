@@ -1,6 +1,8 @@
+'app-plug-in
+'menu News Reader
 
 #######################################################################
-# $Id: snarf.bas,v 1.3 2006-01-25 04:15:43 zeeb90au Exp $
+# $Id: snarf.bas,v 1.4 2006-01-28 07:24:56 zeeb90au Exp $
 # fetch web pages for off-line reading
 #######################################################################
 
@@ -87,12 +89,13 @@ sub mkpath(s)
   local s_len, i, path
 
   s_len = len(s)
-  i = 1
+  i = 2 'skip initial /
   while (i < s_len)
     i = instr(i, s, "/")
     if (i = 0) then
       exit sub
     fi
+
     path = left(s, i-1)
     if exist(path) = 0 then
       mkdir path
@@ -103,10 +106,6 @@ end
 
 # fetch pages from the given site
 sub fetch
-  cacheHome = ENV("HOME")+"/.smallbasic/cache/smh"
-  homeURL = "http://www.smh.com.au"
-  indexURL = homeURL+"/handheld/index.html"
-  indexPage = cacheHome+"/handheld/index.html"
   
   mkpath indexPage
 
@@ -136,26 +135,36 @@ end
 sub main
   select case command
   case "f_smh"
+    cacheHome = ENV("HOME")+"/.smallbasic/cache/smh"
+    homeURL = "http://www.smh.com.au"
+    indexURL = homeURL+"/handheld/index.html"
+    indexPage = cacheHome+"/handheld/index.html"
     fetch
   case "f_age"
+    cacheHome = ENV("HOME")+"/.smallbasic/cache/age"
+    homeURL = "http://www.theage.com.au"
+    indexURL = homeURL+"/handheld/index.html"
+    indexPage = cacheHome+"/handheld/index.html"
+    fetch
   case "r_smh"
     s = "file:"+ENV("HOME")+"/.smallbasic/cache/smh/handheld/index.html"
     html s
-    exit sub
   case "r_age"
+    s = "file:"+ENV("HOME")+"/.smallbasic/cache/age/handheld/index.html"
+    html s
+  case else
+    'display the menu
+    bn="<td><input type=button onclick='!"+env("BAS_HOME")+"snarf.bas"
+    s = "<br><table><tr>"
+    s +="<td>Sydney Morning Herald</td>"
+    s +=bn+" r_smh' value=Read></td>"
+    s +=bn+" f_smh' value=Fetch></td>"
+    s +="</tr><tr><td>AGE</td>"
+    s +=bn+" r_age' value=Read></td>"
+    s +=bn+" f_age' value=Fetch></td>"
+    s +="</tr></table>"
+    html s
   end select
-  
-  'display the menu
-  bn="<td><input type=button onclick='!"+env("BAS_HOME")+"snarf.sbx"
-  s = "<br><table><tr>"
-  s +="<td>Sydney Morning Herald</td>"
-  s +=bn+" r_smh' value=Read></td>"
-  s +=bn+" f_smh' value=Fetch></td>"
-  s +="</tr><tr><td>AGE</td>"
-  s +=bn+" r_age' value=Read></td>"
-  s +=bn+" f_age' value=Fetch></td>"
-  s +="</tr></table>"
-  html s
 end
 
 main
