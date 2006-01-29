@@ -29,11 +29,17 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     # if defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
     
     6. rgbImage.cxx
-    #  include "../images/libjpeg/jpeglib.h"
-    uncomment write_jpeg code
-    
+    uncomment the write_jpeg code block
+    #undef INT32
+    extern "C" {
+    #include <stdio.h>
+    #include "../images/libjpeg/jpeglib.h"
+    }
+    variable data is now "pixels_"
+    comment out line begining with "if ( depth!=3 )" 
+
     then in jconfig.h
-    #if defined(__MINGW32__)
+    #if defined(WIN32) || defined(__EMX__) || defined(__MINGW32__)
     typedef unsigned char boolean;
     #endif
 
@@ -83,5 +89,5 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     SB_FLTK_0_9_6_1 (16 May 2005)
 
 
-$Id: README.TXT,v 1.18 2006-01-28 07:49:24 zeeb90au Exp $
+$Id: README.TXT,v 1.19 2006-01-29 23:27:10 zeeb90au Exp $
 
