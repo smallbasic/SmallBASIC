@@ -1,12 +1,12 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.55 2006-01-28 00:19:00 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.56 2006-01-31 00:51:15 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
 // Programmer's Guide.
 // Copyright 1998-2003 by Bill Spitzak and others.
 //
-// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -88,7 +88,7 @@ int compare_keywords(const void *a, const void *b) {
 // 'style_parse()' - Parse text and produce style data.
 void style_parse(const char *text, char *style, int length) {
     char current = PLAIN;
-    int  last = 0;
+    int  last = 0; // prev char was alpha-num
     char  buf[255];
     char *bufptr;
     const char *temp;
@@ -121,6 +121,8 @@ void style_parse(const char *text, char *style, int length) {
             } else if (*text == '\"') {
                 current = STRINGS;
             } else if (!last) {
+                // begin keyword/number search at non-alnum boundary
+
                 // test for digit sequence
                 if (isdigit(*text)) {
                     *style++ = DIGITS;
@@ -138,7 +140,7 @@ void style_parse(const char *text, char *style, int length) {
                     continue;
                 }
 
-                // test for keyword boundary
+                // test for a keyword
                 temp = text;
                 bufptr = buf;
                 while (*temp != 0 && *temp != ' ' && 
@@ -205,13 +207,6 @@ void style_parse(const char *text, char *style, int length) {
                     last = 1;
                     continue;
                 }
-                // word didn't match
-                int len = strlen(bufptr)-1;
-                for (int i=0; i<len; i++) {
-                    *style++ = PLAIN;
-                    text++;
-                    length--;
-                }
             }
         } else if (current == STRINGS) {
             // continuing in string
@@ -232,7 +227,7 @@ void style_parse(const char *text, char *style, int length) {
 
         // copy style info
         *style++ = current;
-        last = isalnum(*text) || *text == '.';
+        last = isalnum(*text) || *text == '.' || *text == '_';
 
         if (*text == '\n') {
             current = PLAIN; // basic lines do not continue
