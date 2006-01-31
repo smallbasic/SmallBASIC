@@ -1,8 +1,8 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.82 2006-01-28 00:18:16 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.83 2006-01-31 00:50:15 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -84,9 +84,9 @@ const char lasteditFile[] = "lastedit.txt";
 const char historyFile[] = "history.txt";
 const char aboutText[] =
     "<b>About SmallBASIC...</b><br><br>"
-    "Copyright (c) 2000-2005 Nicholas Christopoulos.<br><br>"
+    "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
     "FLTK Version "SB_STR_VER"<br>"
-    "Copyright (c) 2002-2005 Chris Warren-Smith.<br><br>"
+    "Copyright (c) 2002-2006 Chris Warren-Smith.<br><br>"
     "<a href=http://smallbasic.sourceforge.net>"
     "http://smallbasic.sourceforge.net</a><br><br>"
     "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
@@ -1153,7 +1153,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     editGroup->box(THIN_DOWN_BOX);
 
     // create the editor edit window
-    editWnd = new EditorWindow(2, 2, w-4, pageHeight-tbHeight-6);
+    editWnd = new EditorWindow(2, 2, w-4, pageHeight-tbHeight-5);
     m->user_data(editWnd); // the EditorWindow is callback user data (void*)
     editWnd->box(NO_BOX);
     editWnd->editor->box(NO_BOX);
@@ -1482,4 +1482,4 @@ extern "C" void trace(const char *format, ...) {
 #endif
 }
 
-// End of "$Id: MainWindow.cpp,v 1.82 2006-01-28 00:18:16 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.83 2006-01-31 00:50:15 zeeb90au Exp $".
