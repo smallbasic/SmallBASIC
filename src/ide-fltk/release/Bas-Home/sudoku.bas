@@ -1,44 +1,44 @@
 'app-plug-in
 'menu Su-doku
-'$Id: sudoku.bas,v 1.1 2006-02-01 04:29:04 zeeb90au Exp $
+'$Id: sudoku.bas,v 1.2 2006-02-01 05:41:54 zeeb90au Exp $
+
+const cell_size = textwidth("9")+20
+const x1 = 20
+const y1 = 20
+const x2 = x1+(cell_size*9)
+const y2 = y1+(cell_size*9)
 
 sub showGrid(byref grid)
-  local x,y,w,i,j,x1,x2,y1,y2
+  local x,y,i,j
   cls
-
-  w = textwidth("9")+20
-  x1 = 20
-  y1 = 20
-  x2 = x1+(w*9)
-  y2 = y1+(w*9)
 
   'draw line segments
   i = x1
   for x = 0 to 9
     line i,y1,i,y2,0
-    i += w
+    i += cell_size
   next x
   j = y1
   for y = 0 to 9
     line x1,j,x2,j,0
-    j += w
+    j += cell_size
   next y
   
   'draw heavy black borders
-  rect x1+1,y1+1,x2-1,y2-1,0
-  i = x1+(w*3)+1
+  rect x1+1,y1+1,x2+1,y2+1,0
+  i = x1+(cell_size*3)+1
   line i,y1,i,y2,0
-  i = x1+(w*6)+1
+  i = x1+(cell_size*6)+1
   line i,y1,i,y2,0
-  j = y1+(w*3)+1
+  j = y1+(cell_size*3)+1
   line x1,j,x2,j,0  
-  j = y1+(w*6)+1
+  j = y1+(cell_size*6)+1
   line x1,j,x2,j,0  
   
   for y = 0 to 8
     for x = 0 to 8
-      i = x1+(x*w)+10
-      j = y1+(y*w)+5
+      i = x1+(x*cell_size)+10
+      j = y1+(y*cell_size)+5
       at i,j
       ? grid(x,y)
     next
@@ -129,14 +129,76 @@ func makeGrid(byref grid)
   makeGrid = 1
 end
 
+func getPen
+  pen on
+  repeat
+  until pen(0)
+  getPen = [Pen(1), Pen(2)]
+  pen off
+end
+
+'return true if the x-y location is in the game grid
+func ptInGrid(p)
+  local x,y
+  x = p(0)
+  y = p(1)
+  if (x < x1) then
+    ptInGrid=0
+    exit sub
+  fi
+  if (x > x2) then
+    ptInGrid=0
+    exit sub
+  fi
+  if (y < y1) then
+    ptInGrid=0
+    exit sub
+  fi
+  if (y > y2) then
+    ptInGrid=0
+    exit sub
+  fi
+  ptInGrid=1
+end
+
+'convert the x-y location to game grid coordinates
+func ptToGrid(p)
+  ptToGrid = [int((p(0)-x1)/cell_size), int((p(1)-y1)/cell_size)]
+end
+
+sub showFocus(p, show) 
+  local x,y
+  x = x1+(p(0)*cell_size)+3
+  y = y1+(p(1)*cell_size)+3
+  rect x, y, x+cell_size-5, y+cell_size-5, if(show, 7, 15)
+end
+
 sub main
+  local focus,p
+  
+  dim focus(2)
+  dim grid(9,9)
+
   cls  
   randomize
-  dim grid(9,9)
+  focus = [0,0]
+
   repeat
     i = makeGrid(grid)
   until i
   showGrid grid
+  showFocus focus, true
+  
+  while 1
+    p = getPen
+    if ptInGrid(p) then
+      showFocus focus, false
+      focus = ptToGrid(p)
+      showFocus focus, true
+    fi
+
+  wend
+  
 end
 
 main
