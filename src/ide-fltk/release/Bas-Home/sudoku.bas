@@ -1,9 +1,9 @@
 'app-plug-in
 'menu Su-doku
-'$Id: sudoku.bas,v 1.4 2006-02-02 04:32:17 zeeb90au Exp $
+'$Id: sudoku.bas,v 1.5 2006-02-02 11:38:27 zeeb90au Exp $
 
 const text_size = textwidth("9")
-const cell_size = text_size*4
+const cell_size = text_size*5
 const x1 = 10
 const y1 = 10
 const x2 = x1+(cell_size*9)
@@ -13,7 +13,7 @@ const ky2 = ky1+cell_size
 
 'sets the text position for the given grid reference
 sub at_grid(x,y)
-  at x1+(x*cell_size)+10, y1+(y*cell_size)+5
+  at x1+(x*cell_size)+(text_size*2), y1+(y*cell_size)+text_size+4
 end
 
 ' displays the game grid
@@ -62,7 +62,7 @@ sub showKeypad
   i = x1
   for x = 0 to 8
     line i,ky1,i,ky2,0
-    at i+10,ky1+5
+    at i+(text_size*2),ky1+text_size+4
     ? x+1
     i += cell_size    
   next x
@@ -214,26 +214,40 @@ func ptToKey(p)
 end
 
 'highlight the active grid cell
-sub showFocus(p, show)
+sub showFocus(p, show, mode)
   local x,y,i,j
   i = p(0)
   j = p(1)
   if (i<9 && j<9) then
     x = x1+(i*cell_size)
     y = y1+(j*cell_size)
-    rect x, y, x+cell_size, y+cell_size, if(show, 12, 0)
+    rect x, y, x+cell_size, y+cell_size, if(show, if(mode!=0,12,14), 0)
   fi
 end
 
 'set the given cell into the given cell location
-sub setKey(grid, focus, key)
+sub setKey(grid, focus, key, mode)
   local x,y,xx,yy
 
   x = focus(0)
   y = focus(1)
-  atx = x1+(x*cell_size)+10
-  aty = y1+(y*cell_size)+5
+  atx = x1+(x*cell_size)+(text_size*2)
+  aty = y1+(y*cell_size)+text_size+5
   n = key+1
+  select mode
+  case 1
+    atx += 10
+    aty += 8
+  case 2
+    atx -= 10
+    aty += 8
+  case 3
+    atx -= 10
+    aty -= 8
+  case 4
+    atx += 10
+    aty -= 8
+  end select    
   
   'validate selection
   if n > 9 then
@@ -260,21 +274,8 @@ sub setKey(grid, focus, key)
   next
  
   grid(i,j) = -n
-  at_grid x,y
+  at atx,aty
   ? n
-end
-
-'sets the given cell to empty
-sub clickCell(byref grid, focus)
-  local x,y,px,py
-  x = focus(0)
-  y = focus(1)
-  if grid(x,y) < 1 then
-    px= x1+(x*cell_size)+18
-    py= y1+(y*cell_size)+12 
-    at px,py
-    ? -grid(x,y)
-  fi
 end
 
 'show or hide the selected keypad key
@@ -284,14 +285,14 @@ sub showClick(key, show)
     x = x1+(key*cell_size)
     y = ky1
     rect x+1, y+1, x+cell_size, y+cell_size, if(show, 12, 15) filled
-    at x+10,y+5
+    at x+(text_size*2),y+text_size+5
     ? key+1
   fi
 end
 
 'main game loop
 sub main
-  local p,focus,focus_click,key,key_click
+  local p,focus,focus_click,key,key_click,mode
   
   dim focus(2)
   dim grid(9,9)
@@ -300,13 +301,14 @@ sub main
   randomize
   focus = [0,0]
   key = 1
+  mode = 0
 
   repeat
     i = makeGrid(grid)
   until i
   hideCells grid
   showGrid grid
-  showFocus focus, true
+  showFocus focus, true, 0
   showKeypad
 
   while 1
@@ -314,11 +316,12 @@ sub main
     if ptInRect(p,x1,x2,y1,y2) then
       focus_click = ptToGrid(p)      
       if focus_click != focus then
-        showFocus focus, false
-        showFocus focus_click, true
+        showFocus focus, false, 0
+        showFocus focus_click, true, 0
         focus = focus_click
-      else
-        clickCell grid, focus
+      elif pen(12) = 0 then
+        showFocus focus_click, true, mode
+        mode = if(mode > 0, 0, 1)
       fi
     elif ptInRect(p,x1,x2,ky1,ky2) then
       key_click = ptToKey(p)
@@ -326,7 +329,13 @@ sub main
         showClick key, false
         showClick key_click, true
         key = key_click
-        setKey grid, focus, key
+        setKey grid, focus, key, mode
+        if mode != 0 then
+          mode++
+          if mode = 5 then
+            mode = 1
+          fi
+        fi
       fi
     fi
   wend
