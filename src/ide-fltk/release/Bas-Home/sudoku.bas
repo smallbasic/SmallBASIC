@@ -1,12 +1,14 @@
 'app-plug-in
 'menu Su-doku
-'$Id: sudoku.bas,v 1.2 2006-02-01 05:41:54 zeeb90au Exp $
+'$Id: sudoku.bas,v 1.3 2006-02-02 01:31:50 zeeb90au Exp $
 
 const cell_size = textwidth("9")+20
-const x1 = 20
-const y1 = 20
+const x1 = 10
+const y1 = 10
 const x2 = x1+(cell_size*9)
 const y2 = y1+(cell_size*9)
+const ky1 = y2+10
+const ky2 = ky1+cell_size
 
 sub showGrid(byref grid)
   local x,y,i,j
@@ -39,11 +41,26 @@ sub showGrid(byref grid)
     for x = 0 to 8
       i = x1+(x*cell_size)+10
       j = y1+(y*cell_size)+5
-      at i,j
-      ? grid(x,y)
+      if grid(x,y) > 0 then
+        at i,j
+        ? grid(x,y)
+      fi
     next
   next
 end  
+
+sub showKeypad
+  local i,x
+
+  i = x1
+  for x = 0 to 8
+    line i,ky1,i,ky2,0
+    at i+10,ky1+5
+    ? x+1
+    i += cell_size    
+  next x
+  rect x1,ky1,x2,ky2,0
+end
 
 func uniqueCol(byref grid, x, y, n)
   local yy
@@ -129,6 +146,18 @@ func makeGrid(byref grid)
   makeGrid = 1
 end
 
+sub hideCells(byref grid)
+  local x,y,n
+  for y = 0 to 8
+    for x = 0 to 8
+      n = int(rnd*10000)%2
+      if n = 0 then
+        grid(x,y) = -1
+      fi
+    next
+  next
+end
+
 func getPen
   pen on
   repeat
@@ -137,28 +166,29 @@ func getPen
   pen off
 end
 
-'return true if the x-y location is in the game grid
-func ptInGrid(p)
+'return true if the x-y location is in given rect
+func ptInRect(byref p, x1,x2,y1,y2)
   local x,y
   x = p(0)
   y = p(1)
+  
   if (x < x1) then
-    ptInGrid=0
+    ptInRect=0
     exit sub
   fi
   if (x > x2) then
-    ptInGrid=0
+    ptInRect=0
     exit sub
   fi
   if (y < y1) then
-    ptInGrid=0
+    ptInRect=0
     exit sub
   fi
   if (y > y2) then
-    ptInGrid=0
+    ptInRect=0
     exit sub
   fi
-  ptInGrid=1
+  ptInRect=1
 end
 
 'convert the x-y location to game grid coordinates
@@ -166,15 +196,82 @@ func ptToGrid(p)
   ptToGrid = [int((p(0)-x1)/cell_size), int((p(1)-y1)/cell_size)]
 end
 
+'convert the  x-y location to the keypad key number
+func ptToKey(p)
+  ptToKey = int((p(0)-x1)/cell_size)
+end
+
+'highlight the active grid cell
 sub showFocus(p, show) 
+  local x,y,i,j
+  i = p(0)
+  j = p(1)
+  if (i<9 && j<9) then
+    x = x1+(i*cell_size)
+    y = y1+(j*cell_size)
+    rect x, y, x+cell_size, y+cell_size, if(show, 12, 0)
+  fi
+end
+
+'set the given cell into the given cell location
+sub setKey(grid, focus, key)
+  local x,y,xx,yy
+
+  x = focus(0)
+  y = focus(1)
+  atx = x1+(x*cell_size)+10
+  aty = y1+(y*cell_size)+5
+  n = key+1
+  
+'  if n < 1 then
+'    'toggle erase state
+'    if grid(x,y) > 0 then
+'      at atx, aty
+'      ? "  "
+'      grid(x,y) = n
+'    else
+'      grid(x,y) = -n
+'      at atx, aty
+'      ? -n
+'    fi
+'  fi
+  
+  'validate selection
+  if n > 9 then
+    exit sub
+  fi
+  if uniqueCell(grid,x,y,n) = 0 then
+    exit sub
+  fi
+  for xx = 0 to 8
+    if grid(xx,y) = n then
+      exit sub
+    fi
+  next
+  for yy = 0 to 8
+    if grid(x,yy) = n then
+      exit sub
+    fi
+  next
+ 
+  grid(i,j) = n
+  at atx, aty
+  ? n
+end
+
+sub showClick(key, show)
   local x,y
-  x = x1+(p(0)*cell_size)+3
-  y = y1+(p(1)*cell_size)+3
-  rect x, y, x+cell_size-5, y+cell_size-5, if(show, 7, 15)
+  if key < 9 then
+    x = x1+(key*cell_size)
+    y = ky1
+    rect x+1, y+1, x+cell_size, y+cell_size, if(show, 12, 15) filled
+    at x+10,y+5
+    ? key+1
+  fi
 end
 
 sub main
-  local focus,p
+  local focus,p,key,key_hit
   
   dim focus(2)
   dim grid(9,9)
@@ -182,23 +279,32 @@ sub main
   cls  
   randomize
   focus = [0,0]
+  key = 1
 
   repeat
     i = makeGrid(grid)
   until i
+  hideCells grid
   showGrid grid
   showFocus focus, true
-  
+  showKeypad
+
   while 1
     p = getPen
-    if ptInGrid(p) then
+    if ptInRect(p,x1,x2,y1,y2) then
       showFocus focus, false
       focus = ptToGrid(p)
       showFocus focus, true
+    elif ptInRect(p,x1,x2,ky1,ky2) then
+      key_hit = ptToKey(p)
+      if (key_hit != key) then
+        showClick key, false
+        showClick key_hit, true
+        key = key_hit
+        setKey grid, focus, key
+      fi
     fi
-
   wend
-  
 end
 
 main
