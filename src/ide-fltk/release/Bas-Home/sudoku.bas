@@ -1,8 +1,9 @@
 'app-plug-in
 'menu Su-doku
-'$Id: sudoku.bas,v 1.3 2006-02-02 01:31:50 zeeb90au Exp $
+'$Id: sudoku.bas,v 1.4 2006-02-02 04:32:17 zeeb90au Exp $
 
-const cell_size = textwidth("9")+20
+const text_size = textwidth("9")
+const cell_size = text_size*4
 const x1 = 10
 const y1 = 10
 const x2 = x1+(cell_size*9)
@@ -10,6 +11,12 @@ const y2 = y1+(cell_size*9)
 const ky1 = y2+10
 const ky2 = ky1+cell_size
 
+'sets the text position for the given grid reference
+sub at_grid(x,y)
+  at x1+(x*cell_size)+10, y1+(y*cell_size)+5
+end
+
+' displays the game grid
 sub showGrid(byref grid)
   local x,y,i,j
   cls
@@ -36,19 +43,19 @@ sub showGrid(byref grid)
   line x1,j,x2,j,0  
   j = y1+(cell_size*6)+1
   line x1,j,x2,j,0  
-  
+
   for y = 0 to 8
     for x = 0 to 8
-      i = x1+(x*cell_size)+10
-      j = y1+(y*cell_size)+5
       if grid(x,y) > 0 then
-        at i,j
-        ? grid(x,y)
+        at_grid x,y
+        ? cat(1)+grid(x,y)
       fi
     next
   next
+  ? cat(-1)
 end  
 
+'display the game keypad
 sub showKeypad
   local i,x
 
@@ -62,6 +69,7 @@ sub showKeypad
   rect x1,ky1,x2,ky2,0
 end
 
+'returns 1 when n is unique in the given column
 func uniqueCol(byref grid, x, y, n)
   local yy
 
@@ -80,6 +88,7 @@ func uniqueCol(byref grid, x, y, n)
   uniqueCol = 1
 end
 
+'returns 1 when n is unique within its 3x3 cell
 func uniqueCell(byref grid, x, y, n)
   local x1,x2,y1,y2,xx,yy
   
@@ -113,6 +122,7 @@ func uniqueCell(byref grid, x, y, n)
   uniqueCell=1
 end
 
+'creates the game grid
 func makeGrid(byref grid)
   local x,y,i,n
   
@@ -146,6 +156,7 @@ func makeGrid(byref grid)
   makeGrid = 1
 end
 
+'randomly hide cells
 sub hideCells(byref grid)
   local x,y,n
   for y = 0 to 8
@@ -158,6 +169,7 @@ sub hideCells(byref grid)
   next
 end
 
+'returns the current mouse position
 func getPen
   pen on
   repeat
@@ -202,7 +214,7 @@ func ptToKey(p)
 end
 
 'highlight the active grid cell
-sub showFocus(p, show) 
+sub showFocus(p, show)
   local x,y,i,j
   i = p(0)
   j = p(1)
@@ -223,23 +235,16 @@ sub setKey(grid, focus, key)
   aty = y1+(y*cell_size)+5
   n = key+1
   
-'  if n < 1 then
-'    'toggle erase state
-'    if grid(x,y) > 0 then
-'      at atx, aty
-'      ? "  "
-'      grid(x,y) = n
-'    else
-'      grid(x,y) = -n
-'      at atx, aty
-'      ? -n
-'    fi
-'  fi
-  
   'validate selection
   if n > 9 then
     exit sub
   fi
+  
+  if grid(x,y) != -1 then
+    'don't change clue cell
+    exit sub
+  fi
+  
   if uniqueCell(grid,x,y,n) = 0 then
     exit sub
   fi
@@ -254,11 +259,25 @@ sub setKey(grid, focus, key)
     fi
   next
  
-  grid(i,j) = n
-  at atx, aty
+  grid(i,j) = -n
+  at_grid x,y
   ? n
 end
 
+'sets the given cell to empty
+sub clickCell(byref grid, focus)
+  local x,y,px,py
+  x = focus(0)
+  y = focus(1)
+  if grid(x,y) < 1 then
+    px= x1+(x*cell_size)+18
+    py= y1+(y*cell_size)+12 
+    at px,py
+    ? -grid(x,y)
+  fi
+end
+
+'show or hide the selected keypad key
 sub showClick(key, show)
   local x,y
   if key < 9 then
@@ -270,8 +289,9 @@ sub showClick(key, show)
   fi
 end
 
+'main game loop
 sub main
-  local focus,p,key,key_hit
+  local p,focus,focus_click,key,key_click
   
   dim focus(2)
   dim grid(9,9)
@@ -292,15 +312,20 @@ sub main
   while 1
     p = getPen
     if ptInRect(p,x1,x2,y1,y2) then
-      showFocus focus, false
-      focus = ptToGrid(p)
-      showFocus focus, true
+      focus_click = ptToGrid(p)      
+      if focus_click != focus then
+        showFocus focus, false
+        showFocus focus_click, true
+        focus = focus_click
+      else
+        clickCell grid, focus
+      fi
     elif ptInRect(p,x1,x2,ky1,ky2) then
-      key_hit = ptToKey(p)
-      if (key_hit != key) then
+      key_click = ptToKey(p)
+      if (key_click != key) then
         showClick key, false
-        showClick key_hit, true
-        key = key_hit
+        showClick key_click, true
+        key = key_click
         setKey grid, focus, key
       fi
     fi
