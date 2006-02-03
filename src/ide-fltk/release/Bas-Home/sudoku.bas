@@ -1,6 +1,6 @@
 'app-plug-in
 'menu Su-doku
-'$Id: sudoku.bas,v 1.5 2006-02-02 11:38:27 zeeb90au Exp $
+'$Id: sudoku.bas,v 1.6 2006-02-03 03:45:16 zeeb90au Exp $
 
 const text_size = textwidth("9")
 const cell_size = text_size*5
@@ -10,6 +10,7 @@ const x2 = x1+(cell_size*9)
 const y2 = y1+(cell_size*9)
 const ky1 = y2+10
 const ky2 = ky1+cell_size
+const kx2 = x2+(cell_size*2)
 
 'sets the text position for the given grid reference
 sub at_grid(x,y)
@@ -55,18 +56,29 @@ sub showGrid(byref grid)
   ? cat(-1)
 end  
 
+'show a keypad key
+sub showKey(n)
+  if (n = 9) then
+    ? "C"
+  elif (n = 10) then
+    ? "T"
+  else
+    ? n+1
+  fi
+end
+
 'display the game keypad
 sub showKeypad
   local i,x
 
   i = x1
-  for x = 0 to 8
+  for x = 0 to 10
     line i,ky1,i,ky2,0
     at i+(text_size*2),ky1+text_size+4
-    ? x+1
+    showKey x
     i += cell_size    
   next x
-  rect x1,ky1,x2,ky2,0
+  rect x1,ky1,kx2,ky2,0
 end
 
 'returns 1 when n is unique in the given column
@@ -225,6 +237,18 @@ sub showFocus(p, show, mode)
   fi
 end
 
+'erase the given cell
+sub clearCell(p)
+  local x,y,i,j
+  i = p(0)
+  j = p(1)
+  if (i<9 && j<9) then
+    x = x1+(i*cell_size)+2
+    y = y1+(j*cell_size)+2
+    rect x, y, x+cell_size-2, y+cell_size-2, 15 filled
+  fi
+end
+
 'set the given cell into the given cell location
 sub setKey(grid, focus, key, mode)
   local x,y,xx,yy
@@ -281,12 +305,12 @@ end
 'show or hide the selected keypad key
 sub showClick(key, show)
   local x,y
-  if key < 9 then
+  if key < 11 then
     x = x1+(key*cell_size)
     y = ky1
     rect x+1, y+1, x+cell_size, y+cell_size, if(show, 12, 15) filled
     at x+(text_size*2),y+text_size+5
-    ? key+1
+    showKey key
   fi
 end
 
@@ -308,24 +332,30 @@ sub main
   until i
   hideCells grid
   showGrid grid
-  showFocus focus, true, 0
+  showFocus focus, true, mode
   showKeypad
 
   while 1
     p = getPen
     if ptInRect(p,x1,x2,y1,y2) then
+      'clicked inside the game grid
       focus_click = ptToGrid(p)      
       if focus_click != focus then
         showFocus focus, false, 0
         showFocus focus_click, true, 0
         focus = focus_click
-      elif pen(12) = 0 then
-        showFocus focus_click, true, mode
-        mode = if(mode > 0, 0, 1)
       fi
-    elif ptInRect(p,x1,x2,ky1,ky2) then
+    elif ptInRect(p,x1,kx2,ky1,ky2) then
+      'clicked inside the keypad
       key_click = ptToKey(p)
-      if (key_click != key) then
+      if (key_click = 9) then
+        clearCell focus
+        showFocus focus, true, mode        
+      elif (key_click = 10) then
+        mode = if(mode > 0, 0, 1)
+        showFocus focus, true, mode
+        showClick key_click, mode
+      else
         showClick key, false
         showClick key_click, true
         key = key_click
