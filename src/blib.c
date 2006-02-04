@@ -16,11 +16,16 @@
 #include "smbas.h"
 #include "fmt.h"
 
+
+#ifndef USE_TERM_IO
 #if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
 #define USE_TERM_IO 1
+#else
+#define USE_TERM_IO 0
+#endif
 #endif
 
-#ifdef USE_TERM_IO
+#if USE_TERM_IO
 #include "dev_term.h"
 #endif
 
@@ -779,7 +784,7 @@ void	cmd_input(int input)
 
 				redo = 1;
 				tmp_free(inps);
-                #if defined(USE_TERM_IO)
+                #if USE_TERM_IO
 				/* standard input case */
 				if ( !os_graphics )	{
 					if	( term_israw() ) 
@@ -802,7 +807,7 @@ void	cmd_input(int input)
 	*/
 	if	( input == PV_CONSOLE )	{
 		if	( print_crlf && (prog_error == 0) )	{
-            #if defined(USE_TERM_IO)
+            #if USE_TERM_IO
 			/* standard input case */
 			if ( !os_graphics )	{
 				if	( !term_israw() ) 
