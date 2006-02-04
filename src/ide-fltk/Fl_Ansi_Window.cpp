@@ -1,7 +1,7 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.cpp,v 1.38 2005-09-02 06:26:37 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.cpp,v 1.39 2006-02-04 12:41:01 zeeb90au Exp $
 //
-// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
+// Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -211,8 +211,8 @@ void AnsiWindow::drawRect(int x1, int y1, int x2, int y2) {
 void AnsiWindow::drawImage(Image* image, int x, int y, int sx, int sy, 
                            int width, int height) {
     begin_offscreen();
-    image->over(Rectangle(x, y, width, height), 
-                Rectangle(sx, sy, width, height));
+    image->over(Rectangle(sx, sy, width, height), // from
+                Rectangle(x, y, width, height)); // to
     redraw();
 }
 
@@ -614,4 +614,4 @@ int main(int argc, char **argv) {
 }
 #endif
 
-// End of "$Id: Fl_Ansi_Window.cpp,v 1.38 2005-09-02 06:26:37 zeeb90au Exp $".
+// End of "$Id: Fl_Ansi_Window.cpp,v 1.39 2006-02-04 12:41:01 zeeb90au Exp $".
