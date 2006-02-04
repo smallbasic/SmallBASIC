@@ -85,9 +85,10 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 
 7.  Release tags:
 
+    SB_FLTK_0_9_7 (5 Feb 2006)
     SB_FLTK_0_9_6_4 (2 Sept 2005)
     SB_FLTK_0_9_6_1 (16 May 2005)
 
 
-$Id: README.TXT,v 1.19 2006-01-29 23:27:10 zeeb90au Exp $
+$Id: README.TXT,v 1.20 2006-02-04 20:50:24 zeeb90au Exp $
 
