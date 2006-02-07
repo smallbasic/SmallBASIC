@@ -8,8 +8,7 @@
 
 SUBDIRS = @BUILD_SUBDIRS@
 
-EXTRA_DIST = 
+EXTRA_DIST = \
 	sync/gtk/sbgtk.glade \
 	sync/gtk/sbgtk.gladep
 
-.SILENT:
