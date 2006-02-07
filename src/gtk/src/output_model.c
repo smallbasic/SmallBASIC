@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $
+ * $Id: output_model.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -13,13 +13,15 @@
 #  include <config.h>
 #endif
 
+#include <gtk/gtkpixmap.h>
 #include <device.h>
 #include "output_model.h"
 
-OutputModel output;
+struct OutputModel output;
 
-void output_model_init() {
+void output_model_init(GtkWidget *widget) {
     output.pixmap = 0;
+    output.widget = widget;
     output.underline = 0;
     output.invert = 0;
     output.bold = 0;
@@ -46,5 +48,5 @@ int osd_devinit() {
 }
 
 
-/* End of "$Id: output_model.c,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */
 

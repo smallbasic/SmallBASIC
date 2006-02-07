@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.h,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $
+ * $Id: output.h,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -12,9 +12,9 @@
 #ifndef DEV_GTK_OUTPUT_H
 #define DEV_GTK_OUTPUT_H
 
-static gboolean init_drawing_area(GtkWidget *window);
+static gboolean drawing_area_init(GtkWidget *window);
 
 #endif
 
-/* End of "$Id: output.h,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $". */
+/* End of "$Id: output.h,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */
 

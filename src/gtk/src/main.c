@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $
+ * $Id: main.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -17,7 +17,7 @@
 
 #include "interface.h"
 #include "support.h"
-#include "dev_gtk.h"
+#include "output.h"
 
 #ifdef G_OS_WIN32
 gchar *package_prefix = PACKAGE_PREFIX;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
             gtk_widget_hide(dialog);
             char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-            g_print(filename);
+            sbasic_main(filename);
             g_free(filename);
         } else {
             break;
@@ -100,4 +100,4 @@ int WINAPI WinMain(HINSTANCE hInstance,
 }
 #endif
 
-/* End of "$Id: main.c,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */

@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $
+ * $Id: output_model.h,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -13,7 +13,9 @@
 #define DEV_GTK_OUTPUT_MODEL_H
 
 typedef struct OutputModel {
-    GdkPixmap *pixmap; /* Backing pixmap for drawing area */
+    GdkPixmap* pixmap; /* Backing pixmap for drawing area */
+    GtkWidget* widget; /* the drawing_area widget */
+    GdkGC* gc;
     int underline;
     int invert;
     int bold;
@@ -27,6 +29,8 @@ typedef struct OutputModel {
     int penMode;
 } OutputModel;
 
+void output_model_init(GtkWidget *widget);
+
 #endif
 
-/* End of "$Id: output_model.h,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */

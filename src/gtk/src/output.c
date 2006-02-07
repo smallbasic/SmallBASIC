@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $
+ * $Id: output.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -53,7 +53,7 @@ static gboolean expose_event(GtkWidget      *widget,
     return FALSE;
 }
 
-static gboolean init_drawing_area(GtkWidget *window) {
+static gboolean drawing_area_init(GtkWidget *window) {
 
     GtkWidget *drawing_area = 
         g_object_get_data(G_OBJECT(window), "drawing_area");
@@ -81,7 +81,7 @@ static gboolean init_drawing_area(GtkWidget *window) {
     /* The following call enables tracking and processing of extension
        events for the drawing area */
     gtk_widget_set_extension_events(drawing_area, GDK_EXTENSION_EVENTS_CURSOR);
-    output_model_init();
+    output_model_init(drawing_area);
 }
 
 void osd_setcolor(long color) {
@@ -194,5 +194,5 @@ void drvsound_event(void) {
 }
 
 
-/* End of "$Id: output.c,v 1.1 2006-02-07 02:02:09 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */
 
