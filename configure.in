@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.1 2006-02-07 01:50:55 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.2 2006-02-07 02:21:51 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -132,11 +132,11 @@ function buildFLTK() {
 
   dnl preconfigured values for FLTK build
   AC_DEFINE(_UnixOS, 1, [GTK version build flag.])
+  AC_DEFINE(_FLTK, 1, [GTK version build flag.])
   AC_DEFINE(USE_TERM_IO, 0, [GTK version build flag.])
   AC_DEFINE(DEV_EVENTS_OSD, 1, [GTK version build flag.])
   AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [GTK version build flag.])
   AC_DEFINE(DRV_SOUND, 1, [GTK version build flag.])
-  AC_DEFINE(FLTK, 1, [GTK version build flag.])
 
   BUILD_SUBDIRS="sync sync/ide-fltk"
   AC_SUBST(BUILD_SUBDIRS)
@@ -155,4 +155,4 @@ AC_OUTPUT([
   sync/ide-fltk/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.1 2006-02-07 01:50:55 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.2 2006-02-07 02:21:51 zeeb90au Exp $".
