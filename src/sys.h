@@ -13,6 +13,10 @@
 #if !defined(_sb_sys_h)
 #define _sb_sys_h
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
