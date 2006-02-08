@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $
+ * $Id: output_model.h,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -15,11 +15,10 @@
 typedef struct OutputModel {
     GdkPixmap* pixmap; /* Backing pixmap for drawing area */
     GtkWidget* widget; /* the drawing_area widget */
-    GdkGC* gc;
+    GdkGC* gc;         /* current drawing colors */
+    PangoFontDescription* font; /* bold, italic */
     int underline;
     int invert;
-    int bold;
-    int italic;
     int resized;
     int curY;
     int curX;
@@ -32,8 +31,12 @@ typedef struct OutputModel {
     int penDownY;
 } OutputModel;
 
-void output_model_init(GtkWidget *widget);
+void om_init(GtkWidget *widget);
+void om_cleanup();
+void om_set_bg_color(int ansi_color);
+gint om_font_height();
+gint om_getascent();
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $". */

@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $
+ * $Id: output.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -25,18 +25,23 @@ extern OutputModel output;
 #define PEN_ON  2
 #define PEN_OFF 0
 
+int osd_devinit() {
+    os_graphics = 1;
+    os_graf_mx = output.widget->allocation.width;
+    os_graf_my = output.widget->allocation.height;
+    os_ver = 1;
+    os_color = 1;
+    os_color_depth = 16;
+    setsysvar_str(SYSVAR_OSNAME, "GTK");
+    dev_clrkb();
+}
+
 void osd_setcolor(long color) {
 
 }
 
 void osd_settextcolor(long fg, long bg) {
 
-}
-
-void invalidate_rect(int x, int y, int w, int h) {
-    GdkRectangle rc = {x, y, w, h};
-    // output.widget->parent->window ??
-    gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
 
 void osd_refresh() {
@@ -133,27 +138,37 @@ void osd_setxy(int x, int y) {
 }
 
 void osd_cls() {
-    gdk_draw_rectangle(output.pixmap,
-                       output.widget->style->white_gc,
-                       TRUE, 0, 0,
+    gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, 0,
                        output.widget->allocation.width,
                        output.widget->allocation.height);
     osd_refresh();
 }
 
-int osd_textwidth(const char *str) {
-
+void get_text_metrics(const char* text, int* width, int* height) {
+    PangoLayout* layout = gtk_widget_create_pango_layout(output.widget, text);
+    pango_layout_set_width(layout, -1);
+    pango_layout_set_font_description(layout, output.font);
+    pango_layout_get_pixel_size(layout, width, height);
+    g_object_unref(layout);
 }
 
-int osd_textheight(const char *str) {
+int osd_textwidth(const char *text) {
+    int width, height;
+    get_text_metrics(text, &width, &height);
+    return width;
+}
 
+int osd_textheight(const char *text) {
+    int width, height;
+    get_text_metrics(text, &width, &height);
+    return height;
 }
 
 void osd_setpixel(int x, int y) {
     GdkImage* image = gdk_drawable_get_image(output.pixmap, x, y, 1, 1);
     gdk_image_put_pixel(image, 0, 0, dev_fgcolor);
     gdk_draw_image(output.pixmap,
-                   output.widget->style->white_gc,
+                   output.gc,
                    image, 0, 0, x, y, 1, 1);
     g_object_unref(image);
     invalidate_rect(x, y, 1, 1);
@@ -167,16 +182,12 @@ long osd_getpixel(int x, int y) {
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
-    gdk_draw_line(output.pixmap,
-                  output.widget->style->white_gc,
-                  x1, y1, x2, y2);
+    gdk_draw_line(output.pixmap, output.gc, x1, y1, x2, y2);
     invalidate_rect(x1, y1, x2-x1, y2-y1);
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
-    gdk_draw_rectangle(output.pixmap,
-                       output.widget->style->white_gc,
-                       bFill, x1, y1, x2-x1, y2-y1);
+    gdk_draw_rectangle(output.pixmap, output.gc, bFill, x1, y1, x2-x1, y2-y1);
     invalidate_rect(x1, y1, x2-x1, y2-y1);
 }
 
@@ -218,6 +229,12 @@ void drvsound_clear_queue(void) {
 void drvsound_event(void) {
 }
 
+void invalidate_rect(int x, int y, int w, int h) {
+    GdkRectangle rc = {x, y, w, h};
+    // output.widget->parent->window ??
+    gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
+}
+
 /* Create a new backing pixmap of the appropriate size */
 static gboolean configure_event(GtkWidget         *widget,
                                 GdkEventConfigure *event ) {
@@ -234,8 +251,7 @@ static gboolean configure_event(GtkWidget         *widget,
 }
 
 /* Redraw the screen from the backing pixmap */
-static gboolean expose_event(GtkWidget      *widget,
-                             GdkEventExpose *event ) {
+static gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
     gdk_draw_drawable(widget->window,
                       widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
                       output.pixmap,
@@ -273,9 +289,9 @@ static gboolean drawing_area_init(GtkWidget *window) {
     /* The following call enables tracking and processing of extension
        events for the drawing area */
     gtk_widget_set_extension_events(drawing_area, GDK_EXTENSION_EVENTS_CURSOR);
-    output_model_init(drawing_area);
+    om_init(drawing_area);
 }
 
 
-/* End of "$Id: output.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $". */
 

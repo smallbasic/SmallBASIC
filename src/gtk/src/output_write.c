@@ -1,5 +1,5 @@
  /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $
+ * $Id: output_write.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -19,36 +19,36 @@
 extern OutputModel output;
 #define INITXY 2
 
-// callback for fl_scroll
-//void erase_bottom_line(void* data, const fltk::Rectangle& r) {
-//    setcolor(out->color());
-//    fillrect(r);
-//}
-
-static gint getascent() {
-    return gtk_style_get_font(output.widget->style)->ascent;
-}
-
-static gint getdescent() {
-    return gtk_style_get_font(output.widget->style)->descent;
-}
-
-static gint h() {
-    return output.widget->allocation.height;
-}
-
-static gint w() {
-    return output.widget->allocation.width;
+void drawtext() {
+    //    layout = gtk_widget_create_pango_layout (widget, text);
+    //    fontdesc = pango_font_description_from_string ("Luxi Mono 12");
+    //    pango_layout_set_font_description (layout, fontdesc); 
+    //    gdk_draw_layout (..., layout);
+    //    pango_font_description_free (fontdesc);
+    //    g_object_unref (layout);
 }
 
 void new_line() {
-    gint height = h();
-    gint fontHeight = (getascent()+getdescent());
+    gint height = output.widget->allocation.height;
+    gint fontHeight = om_font_height();
 
     output.curX = INITXY;
     if (output.curY+(fontHeight*2) >= height) {
-        //scrollrect(Rectangle(w(), height), 0, -fontHeight, erase_bottom_line, this);
-
+        /* shift image up fontHeight pixels */
+        gdk_draw_drawable(output.pixmap,
+                          output.gc,
+                          output.pixmap,
+                          0, fontHeight, /* src x,y */
+                          0, 0,          /* dest x,y */
+                          output.widget->allocation.width,
+                          output.widget->allocation.width-fontHeight);
+        /* erase bottom line */
+        gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
+                           output.widget->allocation.x,
+                           output.widget->allocation.y,
+                           output.widget->allocation.width,
+                           output.widget->allocation.height);
+        osd_refresh();
     } else {
         output.curY += fontHeight;
     }
@@ -81,14 +81,14 @@ long ansi_to_gtk(long c) {
 int set_graphics_rendition(char c, int escValue) {
     switch (c) {
     case 'K': // \e[K - clear to eol
-        //setcolor(color());
-        //fillrect(Rectangle(curX, curY, w()-curX, (int)(getascent()+getdescent())));
+        gdk_draw_rectangle(output.pixmap, output.gc, TRUE, output.curX, output.curY,
+                           output.widget->allocation.width-output.curX, om_font_height());
         break;
     case 'G': // move to column
         output.curX = escValue;
         break;
     case 'T': // non-standard: move to n/80th of screen width
-        //output.curX = escValue*w()/80;
+        output.curX = escValue*output.widget->allocation.width/80;
         break;
     case 's': // save cursor position
         output.curYSaved = output.curX;
@@ -105,12 +105,13 @@ int set_graphics_rendition(char c, int escValue) {
             //reset();
             break;
         case 1: // set bold on
-            output.bold = 1;
+            pango_font_description_set_weight(output.font, PANGO_WEIGHT_BOLD);
             return 1;
         case 2: // set faint on
+            pango_font_description_set_weight(output.font, PANGO_WEIGHT_ULTRALIGHT);
             break;
         case 3: // set italic on
-            output.italic = 1;
+            pango_font_description_set_style(output.font, PANGO_STYLE_ITALIC);
             return 1;
         case 4: // set underline on
             output.underline = 1;
@@ -125,10 +126,10 @@ int set_graphics_rendition(char c, int escValue) {
         case 8: // conceal on
             break;
         case 21: // set bold off
-            output.bold = 0;
+            pango_font_description_set_weight(output.font, PANGO_WEIGHT_NORMAL);
             return 1;
-        case 23:
-            output.italic = 0;
+        case 23: // italic off
+            pango_font_description_set_style(output.font, PANGO_STYLE_NORMAL);
             return 1;
         case 24: // set underline off
             output.underline = 0;
@@ -241,9 +242,8 @@ void osd_write(const char *str) {
         return;
     }
 
-    //setfont(labelfont(), labelsize());
-    int ascent = 0; //(int)getascent();
-    int fontHeight = 0; //(int)(ascent+getdescent());
+    int ascent = om_getascent();
+    int fontHeight = om_font_height();
     unsigned char *p = (unsigned char*)str;
     int numChars, cx, width;
 
@@ -258,7 +258,7 @@ void osd_write(const char *str) {
         case '\xC':
             //init();
             //setcolor(color());
-            //fillrect(Rectangle(w(), h()));
+            //fillrect(Rectangle(output.widget->allocation.width, output.widget->allocation.height));
             break;
         case '\033':  // ESC ctrl chars
             if (*(p+1) == '[' ) {
@@ -276,12 +276,12 @@ void osd_write(const char *str) {
         case '\r': // return
             output.curX = INITXY;
             //setcolor(color());
-            //fillrect(Rectangle(0, curY, w(), fontHeight));
+            //fillrect(Rectangle(0, curY, output.widget->allocation.width, fontHeight));
             break;
         default:
             numChars = 1; // print minimum of one character
             cx = 0; //(int)getwidth((const char*)p, 1);
-            //width = w()-1;
+            width = output.widget->allocation.width-1;
 
             if (output.curX + cx >= width) {
                 new_line();
@@ -328,5 +328,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $". */
 
