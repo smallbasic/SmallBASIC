@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
+ * $Id: output_model.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -13,8 +13,8 @@
 #  include <config.h>
 #endif
 
-#include <gtk/gtkpixmap.h>
 #include <device.h>
+#include <gtk/gtkpixmap.h>
 #include "output_model.h"
 
 struct OutputModel output;
@@ -33,14 +33,16 @@ void output_model_init(GtkWidget *widget) {
     output.curXSaved = 0;
     output.tabSize = 0;
     output.penMode = 0;
-
+    output.penState = 0;
+    output.penDownX = 0;
+    output.penDownY = 0;
 }
 
 int osd_devinit() {
     os_graphics = 1;
-    //    os_graf_mx = wnd->out->w();
-    //    os_graf_my = wnd->out->h();
-    //    os_ver = FL_MAJOR_VERSION+FL_MINOR_VERSION+FL_PATCH_VERSION;
+    os_graf_mx = output.widget->allocation.width;
+    os_graf_my = output.widget->allocation.height;
+    os_ver = 1;
     os_color = 1;
     os_color_depth = 16;
     setsysvar_str(SYSVAR_OSNAME, "GTK");
@@ -48,5 +50,5 @@ int osd_devinit() {
 }
 
 
-/* End of "$Id: output_model.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $". */
 

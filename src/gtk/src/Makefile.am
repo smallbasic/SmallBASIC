@@ -13,8 +13,6 @@ INCLUDES = \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
 	@PACKAGE_CFLAGS@
 
-AM_LDFLAGS = -L$(top_srcdir)/sync -lcommon
-
 bin_PROGRAMS = sbgtk
 
 sbgtk_SOURCES =									\
@@ -26,7 +24,7 @@ sbgtk_SOURCES =									\
     output_model.c output_model.h               \
     output_write.c
 
-sbgtk_LDADD = @PACKAGE_LIBS@ $(INTLLIBS)
+sbgtk_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
 
 
 

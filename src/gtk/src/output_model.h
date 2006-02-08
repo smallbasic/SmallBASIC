@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
+ * $Id: output_model.h,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -27,10 +27,13 @@ typedef struct OutputModel {
     int curXSaved;
     int tabSize;
     int penMode;
+    int penState;
+    int penDownX;
+    int penDownY;
 } OutputModel;
 
 void output_model_init(GtkWidget *widget);
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $". */

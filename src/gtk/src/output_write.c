@@ -1,5 +1,5 @@
  /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
+ * $Id: output_write.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -25,9 +25,25 @@ extern OutputModel output;
 //    fillrect(r);
 //}
 
+static gint getascent() {
+    return gtk_style_get_font(output.widget->style)->ascent;
+}
+
+static gint getdescent() {
+    return gtk_style_get_font(output.widget->style)->descent;
+}
+
+static gint h() {
+    return output.widget->allocation.height;
+}
+
+static gint w() {
+    return output.widget->allocation.width;
+}
+
 void new_line() {
-    int height = output.widget->allocation.height;
-    int fontHeight = (int)(getascent()+getdescent());
+    gint height = h();
+    gint fontHeight = (getascent()+getdescent());
 
     output.curX = INITXY;
     if (output.curY+(fontHeight*2) >= height) {
@@ -234,7 +250,7 @@ void osd_write(const char *str) {
     while (*p) {
         switch (*p) {
         case '\a':   // beep
-            osd_beep();
+            drvsound_beep();
             break;
         case '\t':
             output.curX = calc_tab(output.curX+1);
@@ -309,8 +325,8 @@ void osd_write(const char *str) {
         p++;
     }
 
-    //redraw();
+    osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.3 2006-02-08 03:29:50 zeeb90au Exp $". */
 
