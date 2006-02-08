@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $
+ * $Id: output.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -235,6 +235,21 @@ void invalidate_rect(int x, int y, int w, int h) {
     gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
 
+GdkColor get_sb_color(long c) {
+    if (c < 0) {
+        // assume color is windows style RGB packing
+        // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
+        c = -c;
+        int b = (c>>16) & 0xFF;
+        int g = (c>>8) & 0xFF;
+        int r = (c) & 0xFF;
+        //return fltk::color(r, g, b);
+    }
+
+    //return (c > 16) ? WHITE : colors[c];
+    return 0;
+}
+
 /* Create a new backing pixmap of the appropriate size */
 static gboolean configure_event(GtkWidget         *widget,
                                 GdkEventConfigure *event ) {
@@ -293,5 +308,5 @@ static gboolean drawing_area_init(GtkWidget *window) {
 }
 
 
-/* End of "$Id: output.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $". */
 

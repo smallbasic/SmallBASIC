@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $
+ * $Id: output_model.h,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -31,12 +31,12 @@ typedef struct OutputModel {
     int penDownY;
 } OutputModel;
 
+void om_reset(int reset_cursor);
 void om_init(GtkWidget *widget);
 void om_cleanup();
-void om_set_bg_color(int ansi_color);
-gint om_font_height();
-gint om_getascent();
+
+#define INITXY 2
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $". */

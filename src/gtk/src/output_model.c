@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $
+ * $Id: output_model.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -18,11 +18,12 @@
 
 struct OutputModel output;
 
-void om_init(GtkWidget *widget) {
-    output.pixmap = 0;
-    output.widget = widget;
-    output.font = pango_font_description_new();
-    output.gc = gdk_gc_new(widget->window);
+void om_reset(int reset_cursor) {
+    if (reset_cursor) {
+        curY = INITXY;
+        curX = INITXY;
+    }
+
     output.underline = 0;
     output.invert = 0;
     output.resized = 0;
@@ -30,11 +31,26 @@ void om_init(GtkWidget *widget) {
     output.curX = 0;
     output.curYSaved = 0;
     output.curXSaved = 0;
-    output.tabSize = 0;
+    output.tabSize = 40; /* tab size in pixels (160/32 = 5) */
     output.penMode = 0;
     output.penState = 0;
     output.penDownX = 0;
     output.penDownY = 0;
+
+    gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(15)); /* white background */
+    gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(0)); /* black foreground */
+    pango_font_description_set_weight(output.font, PANGO_WEIGHT_NORMAL);
+    pango_font_description_set_style(output.font, PANGO_STYLE_NORMAL);
+}
+
+void om_init(GtkWidget *widget) {
+    output.pixmap = 0;
+    output.widget = widget;
+    output.gc = gdk_gc_new(widget->window);
+    output.font = pango_font_description_new(); /* pango_font_description_from_string*/
+    pango_font_description_set_size(output.font, 10);
+    pango_font_description_set_family(output.font, "monospace");
+    om_reset(TRUE);
 }
 
 void om_cleanup() {
@@ -43,24 +59,6 @@ void om_cleanup() {
     g_object_unref(output.pixmap);
 }
 
-void om_set_bg_color(int ansi_color) {
 
-}
-
-gint om_font_height() {
-    // TODO : use PangoFontDescription
-    return 10;
-}
-
-gint om_getascent() {
-    // TODO : use PangoFontDescription
-    return gtk_style_get_font(output.widget->style)->ascent;
-}
-
-gint om_getdescent() {
-    return gtk_style_get_font(output.widget->style)->descent;
-}
-
-
-/* End of "$Id: output_model.c,v 1.4 2006-02-08 05:56:04 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $". */
 
