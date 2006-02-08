@@ -6,9 +6,9 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-lib_LIBRARIES = libcommon.a
+lib_LIBRARIES = libsb_common.a
 
-libcommon_a_SOURCES =                     \
+libsb_common_a_SOURCES =                  \
     bc.c bc.h                             \
     blib.c blib.h                         \
     blib_db.c                             \
