@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.4 2006-02-09 01:29:13 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.5 2006-02-09 10:04:52 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -77,18 +77,18 @@ function buildGTK() {
   fi
 
   dnl preconfigured values for GTK build
-  AC_DEFINE(_UnixOS, 1, [GTK version build flag.])
-  AC_DEFINE(USE_TERM_IO, 0, [GTK version build flag.])
-  AC_DEFINE(DEV_EVENTS_OSD, 1, [GTK version build flag.])
-  AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [GTK version build flag.])
-  AC_DEFINE(DRV_SOUND, 1, [GTK version build flag.])
+  AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+  AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
+  AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
+  AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
+  AC_DEFINE(DRV_SOUND, 1, [Implements functions in drvsound.h])
 
   BUILD_SUBDIRS="sync sync/gtk/src"
   AC_SUBST(BUILD_SUBDIRS)
 }
 
 function buildFLTK() {
-  echo "Building FLTK version... (TODO:fixme)"
+  echo "Building FLTK version..."
 
   checkForWindows
 
@@ -115,18 +115,10 @@ function buildFLTK() {
   ])
   fi
 
-  #FLTK_CXXFLAGS="`fltk-config --cxxflags`"
-  #FLTK_LDFLAGS="`fltk-config --ldflags`"
-  CXXFLAGS="$CXXFLAGS `fltk-config --cxxflags` -Wall -Wunused -fno-exceptions"
-  LDFLAGS="$LDFLAGS `fltk-config --ldflags --use-images`"
-
-  dnl put FLTK_* in Makefiles
-  #AC_SUBST(FLTK_CXXFLAGS)
-  #AC_SUBST(FLTK_LDFLAGS)
+  PACKAGE_CFLAGS="`fltk-config --cxxflags` -Wall -Wunused -fno-exceptions"
+  PACKAGE_LIBS="`fltk-config --ldflags --use-images`"
 
   dnl check for --enable-debug
-  #OPTIM="-O"
-  #AC_SUBST(OPTIM)
   AC_ARG_ENABLE(debug, [  --enable-debug          turn on debugging [default=no]],
   if test "x$enable_debug" = "xyes"; then
     LDFLAGS="-g -O0 $LDFLAGS"
@@ -135,12 +127,11 @@ function buildFLTK() {
   fi)
 
   dnl preconfigured values for FLTK build
-  AC_DEFINE(_UnixOS, 1, [GTK version build flag.])
-  AC_DEFINE(_FLTK, 1, [GTK version build flag.])
-  AC_DEFINE(USE_TERM_IO, 0, [GTK version build flag.])
-  AC_DEFINE(DEV_EVENTS_OSD, 1, [GTK version build flag.])
-  AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [GTK version build flag.])
-  AC_DEFINE(DRV_SOUND, 1, [GTK version build flag.])
+  AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+  AC_DEFINE(_FLTK, 0, [Defined for FLTK build.])
+  AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
+  AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
+  AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
 
   BUILD_SUBDIRS="sync sync/ide-fltk"
   AC_SUBST(BUILD_SUBDIRS)
@@ -159,4 +150,4 @@ sync/gtk/src/Makefile
 sync/ide-fltk/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.4 2006-02-09 01:29:13 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.5 2006-02-09 10:04:52 zeeb90au Exp $".
