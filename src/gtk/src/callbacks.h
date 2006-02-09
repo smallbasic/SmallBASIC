@@ -43,3 +43,15 @@ gboolean
  on_drawingarea1_configure_event(GtkWidget * widget,
 				 GdkEventConfigure * event,
 				 gpointer user_data);
+
+void
+                on_stop_activate(GtkMenuItem * menuitem,
+				 gpointer user_data);
+
+void
+                on_help1_activate(GtkMenuItem * menuitem,
+				  gpointer user_data);
+
+void
+                on_about_activate(GtkMenuItem * menuitem,
+				  gpointer user_data);

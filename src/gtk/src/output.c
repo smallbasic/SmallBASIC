@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $
+ * $Id: output.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -37,11 +37,12 @@ int osd_devinit() {
 }
 
 void osd_setcolor(long color) {
-
+    om_set_fg_color(color);
 }
 
 void osd_settextcolor(long fg, long bg) {
-
+    om_set_fg_color(fg);
+    om_set_bg_color(bg);
 }
 
 void osd_refresh() {
@@ -63,7 +64,24 @@ int osd_devrestore() {
  *    -2 stop running basic application
  */
 int osd_events(int wait_flag) {
-    return 1;
+    if (wait_flag ||
+        (output.penState == 0 &&
+         output.penMode == PEN_ON &&
+         gtk_events_pending() == FALSE)) {
+        // in a "while 1" loop checking for a pen/mouse
+        // event with pen(0) or executing input statement.
+        gtk_main_iteration_do(TRUE);
+    }
+
+    if (gtk_events_pending()) {
+        gtk_main_iteration_do(FALSE);
+    }
+
+    if (output.breakExec = 1) {
+        output.breakExec = 0;
+        return -2;
+    }
+    return 0;
 }
 
 void osd_setpenmode(int enable) {
@@ -75,7 +93,7 @@ void get_mouse_xy() {
 
 int osd_getpen(int code) {
     if (output.penMode == PEN_OFF) {
-        //fltk::wait();
+        gtk_main_iteration_do(TRUE);
     }
 
     switch (code) {
@@ -88,7 +106,7 @@ int osd_getpen(int code) {
             //return 1;
             //}
         }
-        //fltk::wait(); // UNTIL PEN(0)
+        gtk_main_iteration_do(TRUE); // UNTIL PEN(0)
         // fallthru to re-test 
 
     case 3: // returns true if the pen is down (and save curpos)
@@ -144,23 +162,15 @@ void osd_cls() {
     osd_refresh();
 }
 
-void get_text_metrics(const char* text, int* width, int* height) {
-    PangoLayout* layout = gtk_widget_create_pango_layout(output.widget, text);
-    pango_layout_set_width(layout, -1);
-    pango_layout_set_font_description(layout, output.font);
-    pango_layout_get_pixel_size(layout, width, height);
-    g_object_unref(layout);
-}
-
 int osd_textwidth(const char *text) {
     int width, height;
-    get_text_metrics(text, &width, &height);
+    pango_layout_get_pixel_size(output.layout, &width, &height);
     return width;
 }
 
 int osd_textheight(const char *text) {
     int width, height;
-    get_text_metrics(text, &width, &height);
+    pango_layout_get_pixel_size(output.layout, &width, &height);
     return height;
 }
 
@@ -235,24 +245,8 @@ void invalidate_rect(int x, int y, int w, int h) {
     gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
 
-GdkColor get_sb_color(long c) {
-    if (c < 0) {
-        // assume color is windows style RGB packing
-        // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
-        c = -c;
-        int b = (c>>16) & 0xFF;
-        int g = (c>>8) & 0xFF;
-        int r = (c) & 0xFF;
-        //return fltk::color(r, g, b);
-    }
-
-    //return (c > 16) ? WHITE : colors[c];
-    return 0;
-}
-
 /* Create a new backing pixmap of the appropriate size */
-static gboolean configure_event(GtkWidget         *widget,
-                                GdkEventConfigure *event ) {
+gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event ) {
     if (output.pixmap) {
         g_object_unref(output.pixmap);
     }
@@ -266,7 +260,7 @@ static gboolean configure_event(GtkWidget         *widget,
 }
 
 /* Redraw the screen from the backing pixmap */
-static gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
+gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
     gdk_draw_drawable(widget->window,
                       widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
                       output.pixmap,
@@ -276,8 +270,40 @@ static gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
     return FALSE;
 }
 
-static gboolean drawing_area_init(GtkWidget *window) {
+gboolean button_press_event(GtkWidget *widget, GdkEventButton *event) {
+    if (event->button == 1) {
+        gdouble pressure;
+        gdk_event_get_axis ((GdkEvent *)event, GDK_AXIS_PRESSURE, &pressure);
+        //draw_brush (widget, event->device->source, event->x, event->y, pressure);
+    }
+    return TRUE;
+}
 
+gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
+    gdouble x, y;
+    gdouble pressure;
+    GdkModifierType state;
+    
+    if (event->is_hint) {
+        gdk_device_get_state (event->device, event->window, NULL, &state);
+        gdk_event_get_axis((GdkEvent *)event, GDK_AXIS_X, &x);
+        gdk_event_get_axis((GdkEvent *)event, GDK_AXIS_Y, &y);
+        gdk_event_get_axis((GdkEvent *)event, GDK_AXIS_PRESSURE, &pressure);
+    } else {
+        x = event->x;
+        y = event->y;
+        gdk_event_get_axis ((GdkEvent *)event, GDK_AXIS_PRESSURE, &pressure);
+        state = event->state;
+    }
+    
+    if (state & GDK_BUTTON1_MASK && output.pixmap != NULL) {
+        //draw_brush (widget, event->device->source, x, y, pressure);
+    }
+ 
+    return TRUE;
+}
+
+gboolean drawing_area_init(GtkWidget *window) {
     GtkWidget *drawing_area = 
         g_object_get_data(G_OBJECT(window), "drawing_area");
 
@@ -288,12 +314,10 @@ static gboolean drawing_area_init(GtkWidget *window) {
                       G_CALLBACK (configure_event), NULL);
     
     /* Event signals */
-#if 0
     g_signal_connect(G_OBJECT (drawing_area), "motion_notify_event",
                      G_CALLBACK (motion_notify_event), NULL);
     g_signal_connect(G_OBJECT (drawing_area), "button_press_event",
                      G_CALLBACK (button_press_event), NULL);
-#endif
 
     gtk_widget_set_events(drawing_area, GDK_EXPOSURE_MASK |
                           GDK_LEAVE_NOTIFY_MASK  |
@@ -308,5 +332,5 @@ static gboolean drawing_area_init(GtkWidget *window) {
 }
 
 
-/* End of "$Id: output.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $". */
 

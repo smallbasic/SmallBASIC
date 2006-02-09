@@ -1,5 +1,5 @@
  /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $
+ * $Id: output_write.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -19,10 +19,8 @@
 
 extern OutputModel output;
 
-void drawtext() {
-}
-
-void new_line(gint font_height) {
+void new_line() {
+    gint font_height = output.ascent+output.descent;
     gint height = output.widget->allocation.height;
     output.curX = INITXY;
 
@@ -56,7 +54,8 @@ int calc_tab(int x) {
     return c * output.tabSize;
 }
 
-int set_graphics_rendition(char c, int escValue, gint font_height) {
+int set_graphics_rendition(char c, int escValue) {
+    gint font_height = output.ascent+output.descent;
     switch (c) {
     case 'K': // \e[K - clear to eol
         gdk_draw_rectangle(output.pixmap, output.gc, TRUE, output.curX, output.curY,
@@ -83,13 +82,13 @@ int set_graphics_rendition(char c, int escValue, gint font_height) {
             om_reset(FALSE);
             break;
         case 1: // set bold on
-            pango_font_description_set_weight(output.font, PANGO_WEIGHT_BOLD);
+            pango_font_description_set_weight(output.font_desc, PANGO_WEIGHT_BOLD);
             return 1;
         case 2: // set faint on
-            pango_font_description_set_weight(output.font, PANGO_WEIGHT_ULTRALIGHT);
+            pango_font_description_set_weight(output.font_desc, PANGO_WEIGHT_ULTRALIGHT);
             break;
         case 3: // set italic on
-            pango_font_description_set_style(output.font, PANGO_STYLE_ITALIC);
+            pango_font_description_set_style(output.font_desc, PANGO_STYLE_ITALIC);
             return 1;
         case 4: // set underline on
             output.underline = 1;
@@ -104,10 +103,10 @@ int set_graphics_rendition(char c, int escValue, gint font_height) {
         case 8: // conceal on
             break;
         case 21: // set bold off
-            pango_font_description_set_weight(output.font, PANGO_WEIGHT_NORMAL);
+            pango_font_description_set_weight(output.font_desc, PANGO_WEIGHT_NORMAL);
             return 1;
         case 23: // italic off
-            pango_font_description_set_style(output.font, PANGO_STYLE_NORMAL);
+            pango_font_description_set_style(output.font_desc, PANGO_STYLE_NORMAL);
             return 1;
         case 24: // set underline off
             output.underline = 0;
@@ -117,54 +116,53 @@ int set_graphics_rendition(char c, int escValue, gint font_height) {
             break;
             // colors - 30..37 foreground, 40..47 background
         case 30: // set black fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(0));
-            return 1;
+            om_set_fg_color(C_BLACK);
+            break;
         case 31: // set red fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(4));
-            return 1;
+            om_set_fg_color(C_RED);
+            break;
         case 32: // set green fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(2));
-            return 1;
+            om_set_fg_color(C_GREEN);
+            break;
         case 33: // set yellow fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(6));
-            return 1;
+            om_set_fg_color(C_YELLOW);
+            break;
         case 34: // set blue fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(1));
-            return 1;
+            om_set_fg_color(C_BLUE);
+            break;
         case 35: // set magenta fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(5));
-            return 1;
+            om_set_fg_color(C_MAGENTA);
+            break;
         case 36: // set cyan fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(3));
-            return 1;
+            om_set_fg_color(C_CYAN);
+            break;
         case 37: // set white fg
-            gdk_gc_set_rgb_fg_color(output.gc, get_sb_color(7));
-            return 1;
+            om_set_fg_color(C_WHITE);
+            break;
         case 40: // set black bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(0));
-            return 1;
+            om_set_bg_color(C_BLACK);
+            break;
         case 41: // set red bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(4));
-            return 1;
+            om_set_bg_color(C_RED);
+            break;
         case 42: // set green bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(2));
-            return 1;
+            om_set_bg_color(C_GREEN);
+            break;
         case 43: // set yellow bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(6));
-            om_set_bg_color(get_sb_color(6));
-            return 1;
+            om_set_bg_color(C_YELLOW);
+            break;
         case 44: // set blue bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(1));
-            return 1;
+            om_set_bg_color(C_BLUE);
+            break;
         case 45: // set magenta bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(5));
-            return 1;
+            om_set_bg_color(C_MAGENTA);
+            break;
         case 46: // set cyan bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(3));
-            return 1;
+            om_set_bg_color(C_CYAN);
+            break;
         case 47: // set white bg
-            gdk_gc_set_rgb_bg_color(output.gc, get_sb_color(15));
-            return 1;
+            om_set_bg_color(C_WHITE);
+            break;
         case 48: // subscript on
             break;
         case 49: // superscript
@@ -174,14 +172,16 @@ int set_graphics_rendition(char c, int escValue, gint font_height) {
     return 0;
 }
 
-int do_escape(unsigned char** p, gint font_height) {
+int do_escape(unsigned char** p) {
     int escValue = 0;
     while (isdigit(**p)) {
         escValue = (escValue * 10) + (**p - '0');
         *p++;
     }
 
-    set_graphics_rendition(**p, escValue, font_height);
+    if (set_graphics_rendition(**p, escValue)) {
+        om_font_init();
+    }
     if (**p == ';') {
         *p++; // next rendition
         return 1;
@@ -211,17 +211,6 @@ void osd_write(const char *str) {
         return;
     }
 
-    PangoContext* context = gtk_widget_get_pango_context(output.widget);
-    PangoFontMetrics* metrics = 
-        pango_context_get_metrics(context, output.font
-                                  pango_context_get_language(context));
-    gint ascent = PANGO_PIXELS(pango_font_metrics_get_ascent(metrics));
-    gint descent = PANGO_PIXELS(pango_font_metrics_get_descent(metrics));
-    gint font_width = 
-        PANGO_PIXELS(pango_font_metrics_get_approximate_digit_width(metrics));
-    gint font_height = ascent+descent;
-    pango_font_metrics_unref(metrics);
-
     unsigned char *p = (unsigned char*)str;
     int numChars, cx, width;
 
@@ -248,26 +237,27 @@ void osd_write(const char *str) {
             }
             break;
         case '\n': // new line
-            new_line(font_height);
+            new_line();
             break;
         case '\r': // return
             output.curX = INITXY;
             gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, output.curY,
-                               output.widget->allocation.width, font_height);
+                               output.widget->allocation.width, 
+                               output.ascent+output.descent);
             break;
         default:
             numChars = 1; // print minimum of one character
-            cx = font_width;
+            cx = output.font_width;
             width = output.widget->allocation.width-1;
 
             if (output.curX + cx >= width) {
-                new_line(font_height);
+                new_line();
             }
 
             // print further non-control, non-null characters 
             // up to the width of the line
             while (p[numChars] > 31) {
-                cx += font_width;
+                cx += output.font_width;
                 if (output.curX + cx < width) {
                     numChars++;
                 } else {
@@ -276,24 +266,29 @@ void osd_write(const char *str) {
             }
             
             if (output.invert) {
-                
-                gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0,
-                                   output.curX, output.curY, cx, font_height);
+                gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
+                gdk_gc_set_rgb_bg_color(output.gc, &output.fg);
+                gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
+                                   output.curX, output.curY, cx, 
+                                   output.ascent+output.descent);
+                gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
+                gdk_gc_set_rgb_bg_color(output.gc, &output.bg);
             } else {
-                gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0,
-                                   output.curX, output.curY, cx, font_height);
+                gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
+                                   output.curX, output.curY, cx,
+                                   output.ascent+output.descent);
             }
 
-                //    layout = gtk_widget_create_pango_layout (widget, text);
-                //    pango_layout_set_font_description(layout, fontdesc); 
-                //    gdk_draw_layout (..., layout);
-                //drawtext((const char*)p, numChars, curX, curY+ascent);
-                //    g_object_unref (layout);
-
+            pango_layout_set_text(output.layout, (const char*)p, numChars);
+            gdk_draw_layout(output.pixmap, output.gc,
+                            output.curX, output.curY+output.ascent, output.layout);
 
             if (output.underline) {
-                gdk_draw_line(output.pixmap, output.gc, output.curX, output.curY+ascent+1,
-                              output.curX+cx, output.curY+ascent+1);
+                gdk_draw_line(output.pixmap, output.gc,
+                              output.curX, 
+                              output.curY+output.ascent+1,
+                              output.curX+cx, 
+                              output.curY+output.ascent+1);
             }
             
             // advance
@@ -310,5 +305,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.5 2006-02-08 12:01:13 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $". */
 

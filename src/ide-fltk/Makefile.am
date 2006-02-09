@@ -7,7 +7,7 @@
 # 
 
 INCLUDES = \
-     -I../../ -I. \
+     -I../ -I. \
 	-DPACKAGE_PREFIX=\""$(prefix)"\" \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \

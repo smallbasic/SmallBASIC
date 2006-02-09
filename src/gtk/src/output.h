@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.h,v 1.4 2006-02-08 12:01:13 zeeb90au Exp $
+ * $Id: output.h,v 1.5 2006-02-09 01:24:46 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -12,11 +12,10 @@
 #ifndef DEV_GTK_OUTPUT_H
 #define DEV_GTK_OUTPUT_H
 
-static gboolean drawing_area_init(GtkWidget *window);
+gboolean drawing_area_init(GtkWidget *window);
 void invalidate_rect(int x, int y, int w, int h);
-GdkColor get_sb_color(long c);
 
 #endif
 
-/* End of "$Id: output.h,v 1.4 2006-02-08 12:01:13 zeeb90au Exp $". */
+/* End of "$Id: output.h,v 1.5 2006-02-09 01:24:46 zeeb90au Exp $". */
 

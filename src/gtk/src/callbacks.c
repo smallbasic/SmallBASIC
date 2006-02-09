@@ -12,18 +12,42 @@
 void
 on_open1_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
-/*     GtkWidget      *file_chooser = create_filechooserdialog(); */
-/*     // gtk_widget_show(file_chooser); */
-/*     // gtk_grab_add(file_chooser); */
-/*     // gtk_window_set_modal */
-/*     // k_window_set_transient_for (GTK_WINDOW(chooser), */
-/*     // GTK_WINDOW(window)); */
-/*     gint            response = gtk_dialog_run(GTK_DIALOG(file_chooser)); */
-/*     g_print("response = %d\n", response); */
-/*     if (response == GTK_RESPONSE_OK) { */
-/* 	g_print("selected file = ?"); */
-/*     } */
-/*     gtk_widget_destroy(file_chooser); */
+    /*
+     * GtkWidget *file_chooser = create_filechooserdialog(); 
+     */
+    /*
+     * // gtk_widget_show(file_chooser); 
+     */
+    /*
+     * // gtk_grab_add(file_chooser); 
+     */
+    /*
+     * // gtk_window_set_modal 
+     */
+    /*
+     * // k_window_set_transient_for (GTK_WINDOW(chooser), 
+     */
+    /*
+     * // GTK_WINDOW(window)); 
+     */
+    /*
+     * gint response = gtk_dialog_run(GTK_DIALOG(file_chooser)); 
+     */
+    /*
+     * g_print("response = %d\n", response); 
+     */
+    /*
+     * if (response == GTK_RESPONSE_OK) { 
+     */
+    /*
+     * g_print("selected file = ?"); 
+     */
+    /*
+     * } 
+     */
+    /*
+     * gtk_widget_destroy(file_chooser); 
+     */
 }
 
 
@@ -84,4 +108,24 @@ on_drawingarea1_configure_event(GtkWidget * widget,
 {
 
     return FALSE;
+}
+
+void
+on_stop_activate(GtkMenuItem * menuitem, gpointer user_data)
+{
+
+}
+
+
+void
+on_help1_activate(GtkMenuItem * menuitem, gpointer user_data)
+{
+
+}
+
+
+void
+on_about_activate(GtkMenuItem * menuitem, gpointer user_data)
+{
+
 }

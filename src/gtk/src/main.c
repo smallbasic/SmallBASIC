@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $
+ * $Id: main.c,v 1.3 2006-02-09 01:24:46 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -58,27 +58,34 @@ int main(int argc, char *argv[]) {
 #endif
 
     main_window = create_smallbasic();
+    drawing_area_init(main_window);
     gtk_widget_show(main_window);
-    g_signal_connect((gpointer) main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect((gpointer)main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-    GtkWidget* dialog =
-        gtk_file_chooser_dialog_new("Open File",
-                                    GTK_WINDOW(main_window),
-                                    GTK_FILE_CHOOSER_ACTION_OPEN,
-                                    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                    GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-                                    NULL);
-    while (1) {
-        if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-            gtk_widget_hide(dialog);
-            char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-            sbasic_main(filename);
-            g_free(filename);
-        } else {
-            break;
+    if (argc == 2) {
+        sbasic_main(argv[1]);
+    } else {
+        GtkWidget* dialog =
+            gtk_file_chooser_dialog_new("Open File",
+                                        GTK_WINDOW(main_window),
+                                        GTK_FILE_CHOOSER_ACTION_OPEN,
+                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+                                        NULL);
+        while (1) {
+            if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+                gtk_widget_hide(dialog);
+                char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+                sbasic_main(filename);
+                g_free(filename);
+            } else {
+                break;
+            }
         }
+        gtk_widget_destroy(dialog);
     }
-    gtk_widget_destroy(dialog);
+
+    om_cleanup();
 
 #ifdef G_OS_WIN32
     g_free(package_prefix);
@@ -88,16 +95,5 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-#ifdef _MSC_VER
-#include <windows.h>
 
-int WINAPI WinMain(HINSTANCE hInstance,
-                   HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine,
-                   int nCmdShow)
-{
-    return main(__argc, __argv);
-}
-#endif
-
-/* End of "$Id: main.c,v 1.2 2006-02-07 03:54:40 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.3 2006-02-09 01:24:46 zeeb90au Exp $". */

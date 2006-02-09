@@ -35,21 +35,13 @@ create_smallbasic(void)
     GtkWidget      *vbox1;
     GtkWidget      *menubar1;
     GtkWidget      *menuitem1;
-    GtkWidget      *menu1;
-    GtkWidget      *open1;
+    GtkWidget      *menuitem1_menu;
+    GtkWidget      *stop;
+    GtkWidget      *help1;
+    GtkWidget      *separator1;
+    GtkWidget      *about;
     GtkWidget      *separatormenuitem1;
     GtkWidget      *quit1;
-    GtkWidget      *menuitem2;
-    GtkWidget      *menu2;
-    GtkWidget      *cut1;
-    GtkWidget      *copy1;
-    GtkWidget      *paste1;
-    GtkWidget      *delete1;
-    GtkWidget      *menuitem3;
-    GtkWidget      *menu3;
-    GtkWidget      *menuitem4;
-    GtkWidget      *menu4;
-    GtkWidget      *about1;
     GtkWidget      *drawing_area;
     GtkWidget      *statusbar1;
     GtkAccelGroup  *accel_group;
@@ -75,78 +67,41 @@ create_smallbasic(void)
     gtk_widget_show(menuitem1);
     gtk_container_add(GTK_CONTAINER(menubar1), menuitem1);
 
-    menu1 = gtk_menu_new();
-    gtk_widget_set_name(menu1, "menu1");
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem1), menu1);
+    menuitem1_menu = gtk_menu_new();
+    gtk_widget_set_name(menuitem1_menu, "menuitem1_menu");
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem1), menuitem1_menu);
 
-    open1 = gtk_image_menu_item_new_from_stock("gtk-open", accel_group);
-    gtk_widget_set_name(open1, "open1");
-    gtk_widget_show(open1);
-    gtk_container_add(GTK_CONTAINER(menu1), open1);
+    stop = gtk_image_menu_item_new_from_stock("gtk-stop", accel_group);
+    gtk_widget_set_name(stop, "stop");
+    gtk_widget_show(stop);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), stop);
+
+    help1 = gtk_image_menu_item_new_from_stock("gtk-help", accel_group);
+    gtk_widget_set_name(help1, "help1");
+    gtk_widget_show(help1);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), help1);
+
+    separator1 = gtk_separator_menu_item_new();
+    gtk_widget_set_name(separator1, "separator1");
+    gtk_widget_show(separator1);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), separator1);
+    gtk_widget_set_sensitive(separator1, FALSE);
+
+    about = gtk_image_menu_item_new_from_stock("gtk-about", accel_group);
+    gtk_widget_set_name(about, "about");
+    gtk_widget_show(about);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), about);
 
     separatormenuitem1 = gtk_separator_menu_item_new();
     gtk_widget_set_name(separatormenuitem1, "separatormenuitem1");
     gtk_widget_show(separatormenuitem1);
-    gtk_container_add(GTK_CONTAINER(menu1), separatormenuitem1);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), separatormenuitem1);
     gtk_widget_set_sensitive(separatormenuitem1, FALSE);
 
     quit1 = gtk_image_menu_item_new_from_stock("gtk-quit", accel_group);
     gtk_widget_set_name(quit1, "quit1");
     gtk_widget_show(quit1);
-    gtk_container_add(GTK_CONTAINER(menu1), quit1);
-
-    menuitem2 = gtk_menu_item_new_with_mnemonic(_("_Edit"));
-    gtk_widget_set_name(menuitem2, "menuitem2");
-    gtk_widget_show(menuitem2);
-    gtk_container_add(GTK_CONTAINER(menubar1), menuitem2);
-
-    menu2 = gtk_menu_new();
-    gtk_widget_set_name(menu2, "menu2");
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem2), menu2);
-
-    cut1 = gtk_image_menu_item_new_from_stock("gtk-cut", accel_group);
-    gtk_widget_set_name(cut1, "cut1");
-    gtk_widget_show(cut1);
-    gtk_container_add(GTK_CONTAINER(menu2), cut1);
-
-    copy1 = gtk_image_menu_item_new_from_stock("gtk-copy", accel_group);
-    gtk_widget_set_name(copy1, "copy1");
-    gtk_widget_show(copy1);
-    gtk_container_add(GTK_CONTAINER(menu2), copy1);
-
-    paste1 = gtk_image_menu_item_new_from_stock("gtk-paste", accel_group);
-    gtk_widget_set_name(paste1, "paste1");
-    gtk_widget_show(paste1);
-    gtk_container_add(GTK_CONTAINER(menu2), paste1);
-
-    delete1 =
-	gtk_image_menu_item_new_from_stock("gtk-delete", accel_group);
-    gtk_widget_set_name(delete1, "delete1");
-    gtk_widget_show(delete1);
-    gtk_container_add(GTK_CONTAINER(menu2), delete1);
-
-    menuitem3 = gtk_menu_item_new_with_mnemonic(_("_View"));
-    gtk_widget_set_name(menuitem3, "menuitem3");
-    gtk_widget_show(menuitem3);
-    gtk_container_add(GTK_CONTAINER(menubar1), menuitem3);
-
-    menu3 = gtk_menu_new();
-    gtk_widget_set_name(menu3, "menu3");
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem3), menu3);
-
-    menuitem4 = gtk_menu_item_new_with_mnemonic(_("_Help"));
-    gtk_widget_set_name(menuitem4, "menuitem4");
-    gtk_widget_show(menuitem4);
-    gtk_container_add(GTK_CONTAINER(menubar1), menuitem4);
-
-    menu4 = gtk_menu_new();
-    gtk_widget_set_name(menu4, "menu4");
-    gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem4), menu4);
-
-    about1 = gtk_menu_item_new_with_mnemonic(_("_About"));
-    gtk_widget_set_name(about1, "about1");
-    gtk_widget_show(about1);
-    gtk_container_add(GTK_CONTAINER(menu4), about1);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), quit1);
 
     drawing_area = gtk_drawing_area_new();
     gtk_widget_set_name(drawing_area, "drawing_area");
@@ -159,20 +114,14 @@ create_smallbasic(void)
     gtk_widget_show(statusbar1);
     gtk_box_pack_start(GTK_BOX(vbox1), statusbar1, FALSE, FALSE, 0);
 
-    g_signal_connect((gpointer) open1, "activate",
-		     G_CALLBACK(on_open1_activate), NULL);
+    g_signal_connect((gpointer) stop, "activate",
+		     G_CALLBACK(on_stop_activate), NULL);
+    g_signal_connect((gpointer) help1, "activate",
+		     G_CALLBACK(on_help1_activate), NULL);
+    g_signal_connect((gpointer) about, "activate",
+		     G_CALLBACK(on_about_activate), NULL);
     g_signal_connect((gpointer) quit1, "activate",
 		     G_CALLBACK(on_quit1_activate), NULL);
-    g_signal_connect((gpointer) cut1, "activate",
-		     G_CALLBACK(on_cut1_activate), NULL);
-    g_signal_connect((gpointer) copy1, "activate",
-		     G_CALLBACK(on_copy1_activate), NULL);
-    g_signal_connect((gpointer) paste1, "activate",
-		     G_CALLBACK(on_paste1_activate), NULL);
-    g_signal_connect((gpointer) delete1, "activate",
-		     G_CALLBACK(on_delete1_activate), NULL);
-    g_signal_connect((gpointer) about1, "activate",
-		     G_CALLBACK(on_about1_activate), NULL);
     g_signal_connect((gpointer) drawing_area, "expose_event",
 		     G_CALLBACK(on_drawingarea1_expose_event), NULL);
     g_signal_connect((gpointer) drawing_area, "configure_event",
@@ -185,22 +134,14 @@ create_smallbasic(void)
     GLADE_HOOKUP_OBJECT(smallbasic, vbox1, "vbox1");
     GLADE_HOOKUP_OBJECT(smallbasic, menubar1, "menubar1");
     GLADE_HOOKUP_OBJECT(smallbasic, menuitem1, "menuitem1");
-    GLADE_HOOKUP_OBJECT(smallbasic, menu1, "menu1");
-    GLADE_HOOKUP_OBJECT(smallbasic, open1, "open1");
+    GLADE_HOOKUP_OBJECT(smallbasic, menuitem1_menu, "menuitem1_menu");
+    GLADE_HOOKUP_OBJECT(smallbasic, stop, "stop");
+    GLADE_HOOKUP_OBJECT(smallbasic, help1, "help1");
+    GLADE_HOOKUP_OBJECT(smallbasic, separator1, "separator1");
+    GLADE_HOOKUP_OBJECT(smallbasic, about, "about");
     GLADE_HOOKUP_OBJECT(smallbasic, separatormenuitem1,
 			"separatormenuitem1");
     GLADE_HOOKUP_OBJECT(smallbasic, quit1, "quit1");
-    GLADE_HOOKUP_OBJECT(smallbasic, menuitem2, "menuitem2");
-    GLADE_HOOKUP_OBJECT(smallbasic, menu2, "menu2");
-    GLADE_HOOKUP_OBJECT(smallbasic, cut1, "cut1");
-    GLADE_HOOKUP_OBJECT(smallbasic, copy1, "copy1");
-    GLADE_HOOKUP_OBJECT(smallbasic, paste1, "paste1");
-    GLADE_HOOKUP_OBJECT(smallbasic, delete1, "delete1");
-    GLADE_HOOKUP_OBJECT(smallbasic, menuitem3, "menuitem3");
-    GLADE_HOOKUP_OBJECT(smallbasic, menu3, "menu3");
-    GLADE_HOOKUP_OBJECT(smallbasic, menuitem4, "menuitem4");
-    GLADE_HOOKUP_OBJECT(smallbasic, menu4, "menu4");
-    GLADE_HOOKUP_OBJECT(smallbasic, about1, "about1");
     GLADE_HOOKUP_OBJECT(smallbasic, drawing_area, "drawing_area");
     GLADE_HOOKUP_OBJECT(smallbasic, statusbar1, "statusbar1");
 
