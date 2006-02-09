@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $
+ * $Id: output_model.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -19,11 +19,10 @@
 struct OutputModel output;
 
 #define COLOR(r,g,b) {0, (r*65535/255), (g*65535/255), (b*65535/255)}
-#define BLACK COLOR(0,0,0)
 #define WHITE COLOR(255,255,255)
 
 static GdkColor colors[] = {
-    BLACK,             // 0 black
+    COLOR(0,0,0),      // 0 black
     COLOR(0,0,128),    // 1 blue
     COLOR(0,128,0),    // 2 green
     COLOR(0,128,128),  // 3 cyan
@@ -41,7 +40,26 @@ static GdkColor colors[] = {
     WHITE              // 15 bright white
 };
 
+void om_init(GtkWidget *widget) {
+    output.widget = widget;
+    output.pixmap = 0;
+    output.layout = 0;
+    output.gc = 0; 
+    output.breakExec = 0;
+    output.font_desc = pango_font_description_new(); /* pango_font_description_from_string*/
+    pango_font_description_set_size(output.font_desc, 9);
+    pango_font_description_set_family(output.font_desc, "monospace");
+}
+
+void om_cleanup() {
+    pango_font_description_free(output.font_desc);
+    g_object_unref(output.gc);
+    g_object_unref(output.pixmap);
+    g_object_unref(output.layout);
+}
+
 void om_reset(int reset_cursor) {
+    g_print("om_reset called\n");
     if (reset_cursor) {
         output.curY = INITXY;
         output.curX = INITXY;
@@ -60,30 +78,37 @@ void om_reset(int reset_cursor) {
     output.penDownX = 0;
     output.penDownY = 0;
 
+    //om_set_bg_color(C_GREEN); /* white background */
+    // hmmm gdk_draw_rectangle uses the foreground color ...
+    om_set_fg_color(C_BRIGHT_WH);     /* black foreground */
     pango_font_description_set_weight(output.font_desc, PANGO_WEIGHT_NORMAL);
     pango_font_description_set_style(output.font_desc, PANGO_STYLE_NORMAL);
-    om_set_fg_color(C_BRIGHT_WH); /* white background */
-    om_set_fg_color(C_BLACK);     /* black foreground */
     om_font_init();
 }
 
-void om_init(GtkWidget *widget) {
-    output.pixmap = 0;
-    output.layout = 0;
-    output.breakExec = 0;
-    output.widget = widget;
-    output.gc = gdk_gc_new(widget->window);
-    output.font_desc = pango_font_description_new(); /* pango_font_description_from_string*/
-    pango_font_description_set_size(output.font_desc, 10);
-    pango_font_description_set_family(output.font_desc, "monospace");
-    om_reset(TRUE);
-}
+void om_font_init() {
+    if (output.layout) {
+        //g_object_unref(output.layout);
+    }
+    g_print("om_font_init called\n");
+    output.layout = gtk_widget_create_pango_layout(output.widget, 0);
+    pango_layout_set_width(output.layout, -1);
+    pango_layout_set_font_description(output.layout, output.font_desc); 
 
-void om_cleanup() {
-    pango_font_description_free(output.font_desc);
-    g_object_unref(output.gc);
-    g_object_unref(output.pixmap);
-    g_object_unref(output.layout);
+    gtk_widget_modify_font(output.widget, output.font_desc);
+    PangoContext* context = gtk_widget_get_pango_context(output.widget);
+    PangoFontMetrics* metrics = 
+        pango_context_get_metrics(context, output.font_desc,
+                                  pango_context_get_language(context));
+    output.ascent = PANGO_PIXELS(pango_font_metrics_get_ascent(metrics));
+    output.descent = PANGO_PIXELS(pango_font_metrics_get_descent(metrics));
+    output.font_width = 
+        PANGO_PIXELS(pango_font_metrics_get_approximate_digit_width(metrics));
+    pango_font_metrics_unref(metrics);
+    g_object_unref(context);
+
+    g_print("sizes %d %d %d\n", output.ascent, output.descent, output.font_width);
+    
 }
 
 GdkColor om_get_sb_color(long c) {
@@ -100,41 +125,22 @@ GdkColor om_get_sb_color(long c) {
     if (c > 16) {
         GdkColor color = WHITE;
         return color;
-    }        
+    }
+    g_print("set basic color %d %d %d %d\n", c, colors[c].red, colors[c].green, colors[c].blue);
     return colors[c];
 }
 
 void om_set_fg_color(int color) {
+    g_print("om_set_fg_color %d", color);
     output.fg = om_get_sb_color(color);
     gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
 }
 
 void om_set_bg_color(int color) {
+    g_print("om_set_bg_color %d", color);
     output.bg = om_get_sb_color(color);
-    gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
+    gdk_gc_set_rgb_bg_color(output.gc, &output.bg);
 }
 
-void om_font_init() {
-    gtk_widget_modify_font(output.widget, output.font_desc);
-    if (output.layout) {
-        g_object_unref(output.layout);
-    }
-    output.layout = gtk_widget_create_pango_layout(output.widget, "A-Z");
-    pango_layout_set_width(output.layout, -1);
-    pango_layout_set_font_description(output.layout, output.font_desc); 
-
-    PangoContext* context = gtk_widget_get_pango_context(output.widget);
-    PangoFontMetrics* metrics = 
-        pango_context_get_metrics(context, output.font_desc,
-                                  pango_context_get_language(context));
-    output.ascent = PANGO_PIXELS(pango_font_metrics_get_ascent(metrics));
-    output.descent = PANGO_PIXELS(pango_font_metrics_get_descent(metrics));
-    output.font_width = 
-        PANGO_PIXELS(pango_font_metrics_get_approximate_digit_width(metrics));
-    pango_font_metrics_unref(metrics);
-    g_object_unref(context);
-}
-
-
-/* End of "$Id: output_model.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $". */
 

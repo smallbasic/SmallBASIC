@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $
+ * $Id: output.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -156,6 +156,7 @@ void osd_setxy(int x, int y) {
 }
 
 void osd_cls() {
+    g_print("osd_cls entered");
     gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, 0,
                        output.widget->allocation.width,
                        output.widget->allocation.height);
@@ -241,31 +242,50 @@ void drvsound_event(void) {
 
 void invalidate_rect(int x, int y, int w, int h) {
     GdkRectangle rc = {x, y, w, h};
-    // output.widget->parent->window ??
     gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
 
 /* Create a new backing pixmap of the appropriate size */
-gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event ) {
-    if (output.pixmap) {
-        g_object_unref(output.pixmap);
+gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
+
+    if (output.gc == 0) {
+        /* deferred init to here since we don't run gtk_main() */
+        output.gc = gdk_gc_new(widget->window);
+        om_reset(TRUE); 
     }
-    
-    output.pixmap = gdk_pixmap_new(widget->window,
-                                   widget->allocation.width,
-                                   widget->allocation.height,
-                                   -1);
-    osd_cls();
+
+    if (output.pixmap) {
+        int old_w, old_h;
+        gdk_drawable_get_size(output.pixmap, &old_w, &old_h);
+        int w = MAX(widget->allocation.width, old_w);
+        int h = MAX(widget->allocation.height, old_h);
+
+        GdkPixmap* pixmap = gdk_pixmap_new(widget->window, w, h, -1);
+        gdk_draw_rectangle(pixmap, output.gc, TRUE, 0, 0, w, h);
+        gdk_draw_drawable(pixmap,       /* copy old image onto new/resized image */
+                          output.gc,
+                          output.pixmap,
+                          0,0,0,0, /* src/dest x/y */
+                          old_w, old_h);
+        g_object_unref(output.pixmap);
+        output.pixmap = pixmap;
+    } else {
+        output.pixmap = gdk_pixmap_new(widget->window,
+                                       widget->allocation.width,
+                                       widget->allocation.height, -1);
+        osd_cls();
+    }
     return TRUE;
 }
 
 /* Redraw the screen from the backing pixmap */
 gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
     gdk_draw_drawable(widget->window,
-                      widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                      //widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                      output.gc,
                       output.pixmap,
-                      event->area.x, event->area.y,
-                      event->area.x, event->area.y,
+                      event->area.x, event->area.y, /* src */
+                      event->area.x, event->area.y, /* dest */
                       event->area.width, event->area.height);
     return FALSE;
 }
@@ -303,16 +323,15 @@ gboolean motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
     return TRUE;
 }
 
-gboolean drawing_area_init(GtkWidget *window) {
+gboolean drawing_area_init(GtkWidget *main_window) {
     GtkWidget *drawing_area = 
-        g_object_get_data(G_OBJECT(window), "drawing_area");
+        g_object_get_data(G_OBJECT(main_window), "drawing_area");
 
     /* Signals used to handle backing pixmap */
     g_signal_connect (G_OBJECT (drawing_area), "expose_event",
                       G_CALLBACK (expose_event), NULL);
     g_signal_connect (G_OBJECT (drawing_area),"configure_event",
                       G_CALLBACK (configure_event), NULL);
-    
     /* Event signals */
     g_signal_connect(G_OBJECT (drawing_area), "motion_notify_event",
                      G_CALLBACK (motion_notify_event), NULL);
@@ -328,9 +347,9 @@ gboolean drawing_area_init(GtkWidget *window) {
     /* The following call enables tracking and processing of extension
        events for the drawing area */
     gtk_widget_set_extension_events(drawing_area, GDK_EXTENSION_EVENTS_CURSOR);
+
     om_init(drawing_area);
 }
 
-
-/* End of "$Id: output.c,v 1.6 2006-02-09 01:24:46 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $". */
 

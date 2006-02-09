@@ -29,11 +29,11 @@
   g_object_set_data (G_OBJECT (component), name, widget)
 
 GtkWidget      *
-create_smallbasic(void)
+create_main_window(void)
 {
-    GtkWidget      *smallbasic;
+    GtkWidget      *main_window;
     GtkWidget      *vbox1;
-    GtkWidget      *menubar1;
+    GtkWidget      *menubar;
     GtkWidget      *menuitem1;
     GtkWidget      *menuitem1_menu;
     GtkWidget      *stop;
@@ -43,29 +43,29 @@ create_smallbasic(void)
     GtkWidget      *separatormenuitem1;
     GtkWidget      *quit1;
     GtkWidget      *drawing_area;
-    GtkWidget      *statusbar1;
+    GtkWidget      *statusbar;
     GtkAccelGroup  *accel_group;
 
     accel_group = gtk_accel_group_new();
 
-    smallbasic = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_name(smallbasic, "smallbasic");
-    gtk_window_set_title(GTK_WINDOW(smallbasic), _("SmallBASIC"));
+    main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_widget_set_name(main_window, "main_window");
+    gtk_window_set_title(GTK_WINDOW(main_window), _("SmallBASIC"));
 
     vbox1 = gtk_vbox_new(FALSE, 0);
     gtk_widget_set_name(vbox1, "vbox1");
     gtk_widget_show(vbox1);
-    gtk_container_add(GTK_CONTAINER(smallbasic), vbox1);
+    gtk_container_add(GTK_CONTAINER(main_window), vbox1);
 
-    menubar1 = gtk_menu_bar_new();
-    gtk_widget_set_name(menubar1, "menubar1");
-    gtk_widget_show(menubar1);
-    gtk_box_pack_start(GTK_BOX(vbox1), menubar1, FALSE, FALSE, 0);
+    menubar = gtk_menu_bar_new();
+    gtk_widget_set_name(menubar, "menubar");
+    gtk_widget_show(menubar);
+    gtk_box_pack_start(GTK_BOX(vbox1), menubar, FALSE, FALSE, 0);
 
     menuitem1 = gtk_menu_item_new_with_mnemonic(_("_File"));
     gtk_widget_set_name(menuitem1, "menuitem1");
     gtk_widget_show(menuitem1);
-    gtk_container_add(GTK_CONTAINER(menubar1), menuitem1);
+    gtk_container_add(GTK_CONTAINER(menubar), menuitem1);
 
     menuitem1_menu = gtk_menu_new();
     gtk_widget_set_name(menuitem1_menu, "menuitem1_menu");
@@ -109,10 +109,10 @@ create_smallbasic(void)
     gtk_box_pack_start(GTK_BOX(vbox1), drawing_area, TRUE, TRUE, 0);
     gtk_widget_set_size_request(drawing_area, 200, 240);
 
-    statusbar1 = gtk_statusbar_new();
-    gtk_widget_set_name(statusbar1, "statusbar1");
-    gtk_widget_show(statusbar1);
-    gtk_box_pack_start(GTK_BOX(vbox1), statusbar1, FALSE, FALSE, 0);
+    statusbar = gtk_statusbar_new();
+    gtk_widget_set_name(statusbar, "statusbar");
+    gtk_widget_show(statusbar);
+    gtk_box_pack_start(GTK_BOX(vbox1), statusbar, FALSE, FALSE, 0);
 
     g_signal_connect((gpointer) stop, "activate",
 		     G_CALLBACK(on_stop_activate), NULL);
@@ -122,32 +122,28 @@ create_smallbasic(void)
 		     G_CALLBACK(on_about_activate), NULL);
     g_signal_connect((gpointer) quit1, "activate",
 		     G_CALLBACK(on_quit1_activate), NULL);
-    g_signal_connect((gpointer) drawing_area, "expose_event",
-		     G_CALLBACK(on_drawingarea1_expose_event), NULL);
-    g_signal_connect((gpointer) drawing_area, "configure_event",
-		     G_CALLBACK(on_drawingarea1_configure_event), NULL);
 
     /*
      * Store pointers to all widgets, for use by lookup_widget(). 
      */
-    GLADE_HOOKUP_OBJECT_NO_REF(smallbasic, smallbasic, "smallbasic");
-    GLADE_HOOKUP_OBJECT(smallbasic, vbox1, "vbox1");
-    GLADE_HOOKUP_OBJECT(smallbasic, menubar1, "menubar1");
-    GLADE_HOOKUP_OBJECT(smallbasic, menuitem1, "menuitem1");
-    GLADE_HOOKUP_OBJECT(smallbasic, menuitem1_menu, "menuitem1_menu");
-    GLADE_HOOKUP_OBJECT(smallbasic, stop, "stop");
-    GLADE_HOOKUP_OBJECT(smallbasic, help1, "help1");
-    GLADE_HOOKUP_OBJECT(smallbasic, separator1, "separator1");
-    GLADE_HOOKUP_OBJECT(smallbasic, about, "about");
-    GLADE_HOOKUP_OBJECT(smallbasic, separatormenuitem1,
+    GLADE_HOOKUP_OBJECT_NO_REF(main_window, main_window, "main_window");
+    GLADE_HOOKUP_OBJECT(main_window, vbox1, "vbox1");
+    GLADE_HOOKUP_OBJECT(main_window, menubar, "menubar");
+    GLADE_HOOKUP_OBJECT(main_window, menuitem1, "menuitem1");
+    GLADE_HOOKUP_OBJECT(main_window, menuitem1_menu, "menuitem1_menu");
+    GLADE_HOOKUP_OBJECT(main_window, stop, "stop");
+    GLADE_HOOKUP_OBJECT(main_window, help1, "help1");
+    GLADE_HOOKUP_OBJECT(main_window, separator1, "separator1");
+    GLADE_HOOKUP_OBJECT(main_window, about, "about");
+    GLADE_HOOKUP_OBJECT(main_window, separatormenuitem1,
 			"separatormenuitem1");
-    GLADE_HOOKUP_OBJECT(smallbasic, quit1, "quit1");
-    GLADE_HOOKUP_OBJECT(smallbasic, drawing_area, "drawing_area");
-    GLADE_HOOKUP_OBJECT(smallbasic, statusbar1, "statusbar1");
+    GLADE_HOOKUP_OBJECT(main_window, quit1, "quit1");
+    GLADE_HOOKUP_OBJECT(main_window, drawing_area, "drawing_area");
+    GLADE_HOOKUP_OBJECT(main_window, statusbar, "statusbar");
 
-    gtk_window_add_accel_group(GTK_WINDOW(smallbasic), accel_group);
+    gtk_window_add_accel_group(GTK_WINDOW(main_window), accel_group);
 
-    return smallbasic;
+    return main_window;
 }
 
 GtkWidget      *
@@ -159,13 +155,20 @@ create_aboutdialog(void)
      * line. 
      */
     gchar          *translators = _("translator-credits");
+    GdkPixbuf      *aboutdialog_logo_pixbuf;
 
     aboutdialog = gtk_about_dialog_new();
     gtk_widget_set_name(aboutdialog, "aboutdialog");
     gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(aboutdialog), VERSION);
-    gtk_about_dialog_set_name(GTK_ABOUT_DIALOG(aboutdialog), _("sbgtk"));
+    gtk_about_dialog_set_name(GTK_ABOUT_DIALOG(aboutdialog),
+			      _("SmallBASIC"));
+    gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutdialog),
+				 "smallbasic.sf.net");
     gtk_about_dialog_set_translator_credits(GTK_ABOUT_DIALOG(aboutdialog),
 					    translators);
+    aboutdialog_logo_pixbuf = create_pixbuf("sb32x32.png");
+    gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(aboutdialog),
+			      aboutdialog_logo_pixbuf);
 
     /*
      * Store pointers to all widgets, for use by lookup_widget(). 

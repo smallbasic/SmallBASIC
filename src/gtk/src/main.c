@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.3 2006-02-09 01:24:46 zeeb90au Exp $
+ * $Id: main.c,v 1.4 2006-02-09 05:59:34 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     add_pixmap_directory (PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
 #endif
 
-    main_window = create_smallbasic();
+    main_window = create_main_window();
     drawing_area_init(main_window);
     gtk_widget_show(main_window);
     g_signal_connect((gpointer)main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
         gtk_widget_destroy(dialog);
     }
 
+    gtk_main();
     om_cleanup();
 
 #ifdef G_OS_WIN32
@@ -96,4 +97,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.3 2006-02-09 01:24:46 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.4 2006-02-09 05:59:34 zeeb90au Exp $". */
