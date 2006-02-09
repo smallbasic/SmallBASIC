@@ -1,5 +1,5 @@
  /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $
+ * $Id: output_write.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -26,7 +26,6 @@ void new_line() {
 
     if (output.curY+(font_height*2) >= height) {
         /* shift image up font_height pixels */
-        g_print("doing new line\n");
         gdk_draw_drawable(output.pixmap,
                           output.gc,
                           output.pixmap,
@@ -35,6 +34,7 @@ void new_line() {
                           output.widget->allocation.width,
                           output.widget->allocation.width-font_height);
         /* erase bottom line */
+        gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
         gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
                            output.widget->allocation.x,
                            output.widget->allocation.y,
@@ -57,10 +57,9 @@ int calc_tab(int x) {
 
 int set_graphics_rendition(char c, int escValue) {
     gint font_height = output.ascent+output.descent;
-    g_print("set_graphics_rendition '%c'\n", c);
     switch (c) {
     case 'K': // \e[K - clear to eol
-        g_print("doing clear to eol\n");
+        gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
         gdk_draw_rectangle(output.pixmap, output.gc, TRUE, output.curX, output.curY,
                            output.widget->allocation.width-output.curX, font_height);
         break;
@@ -82,7 +81,7 @@ int set_graphics_rendition(char c, int escValue) {
     case 'm': // \e[...m  - ANSI terminal
         switch (escValue) {
         case 0:  // reset
-            //om_reset(FALSE);
+            om_reset(FALSE);
             break;
         case 1: // set bold on
             pango_font_description_set_weight(output.font_desc, PANGO_WEIGHT_BOLD);
@@ -209,7 +208,7 @@ int do_escape(unsigned char** p) {
  *   \e[27m  set reverse off
  */
 void osd_write(const char *str) {
-    int len = strlen(str); return;
+    int len = strlen(str);
     if (len <= 0) {
         return;
     }
@@ -226,7 +225,7 @@ void osd_write(const char *str) {
             output.curX = calc_tab(output.curX+1);
             break;
         case '\xC':
-            //om_reset(TRUE);
+            om_reset(TRUE);
             osd_cls();
             break;
         case '\033':  // ESC ctrl chars
@@ -243,8 +242,8 @@ void osd_write(const char *str) {
             new_line();
             break;
         case '\r': // return
-            g_print("doing return\n");
             output.curX = INITXY;
+            gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
             gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, output.curY,
                                output.widget->allocation.width, 
                                output.ascent+output.descent);
@@ -268,28 +267,27 @@ void osd_write(const char *str) {
                     break;
                 }
             }
-            
-            if (0 && output.invert) {
-                g_print("doing invert\n");
-                gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
-                gdk_gc_set_rgb_bg_color(output.gc, &output.fg);
-                gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
-                                   output.curX, output.curY, cx, 
-                                   output.ascent+output.descent);
-                gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
-                gdk_gc_set_rgb_bg_color(output.gc, &output.bg);
-            } else {
-                gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
-                                   output.curX, output.curY, cx,
-                                   output.ascent+output.descent);
-            }
 
-            g_print("drawing %d %d %d %s chars=%d\n", output.curX, output.curY,output.ascent, p, numChars);
+            if (output.invert) {
+                GdkColor c;
+                c.red =  (output.fg.red ^ 0xffff);
+                c.blue = (output.fg.blue ^ 0xffff);
+                c.green = (output.fg.green ^ 0xffff);
+                gdk_gc_set_rgb_fg_color(output.gc, &c);
+            } else {
+                gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
+            }
+            gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
+                               output.curX, output.curY, cx, 
+                               output.ascent+output.descent);
+
+            gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
             pango_layout_set_text(output.layout, (const char*)p, numChars);
-            //gdk_draw_layout(output.pixmap, output.gc,
-            //output.curX, output.curY+output.ascent, output.layout);
+            gdk_draw_layout(output.pixmap, output.gc,
+                            output.curX, output.curY, output.layout);
 
             if (output.underline) {
+                gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
                 gdk_draw_line(output.pixmap, output.gc,
                               output.curX, 
                               output.curY+output.ascent+1,
@@ -311,5 +309,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $". */
 

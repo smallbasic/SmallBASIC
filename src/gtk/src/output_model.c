@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $
+ * $Id: output_model.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -47,19 +47,18 @@ void om_init(GtkWidget *widget) {
     output.gc = 0; 
     output.breakExec = 0;
     output.font_desc = pango_font_description_new(); /* pango_font_description_from_string*/
-    pango_font_description_set_size(output.font_desc, 9);
+    pango_font_description_set_size(output.font_desc, 9*PANGO_SCALE);
     pango_font_description_set_family(output.font_desc, "monospace");
 }
 
 void om_cleanup() {
-    pango_font_description_free(output.font_desc);
+    g_object_unref(output.layout);
     g_object_unref(output.gc);
     g_object_unref(output.pixmap);
-    g_object_unref(output.layout);
+    pango_font_description_free(output.font_desc);
 }
 
 void om_reset(int reset_cursor) {
-    g_print("om_reset called\n");
     if (reset_cursor) {
         output.curY = INITXY;
         output.curX = INITXY;
@@ -68,8 +67,6 @@ void om_reset(int reset_cursor) {
     output.underline = 0;
     output.invert = 0;
     output.resized = 0;
-    output.curY = 0;
-    output.curX = 0;
     output.curYSaved = 0;
     output.curXSaved = 0;
     output.tabSize = 40; /* tab size in pixels (160/32 = 5) */
@@ -78,9 +75,9 @@ void om_reset(int reset_cursor) {
     output.penDownX = 0;
     output.penDownY = 0;
 
-    //om_set_bg_color(C_GREEN); /* white background */
-    // hmmm gdk_draw_rectangle uses the foreground color ...
-    om_set_fg_color(C_BRIGHT_WH);     /* black foreground */
+    om_set_fg_color(C_BLUE);     /* blue foreground */
+    om_set_bg_color(C_BRIGHT_WH); /* white background */
+
     pango_font_description_set_weight(output.font_desc, PANGO_WEIGHT_NORMAL);
     pango_font_description_set_style(output.font_desc, PANGO_STYLE_NORMAL);
     om_font_init();
@@ -90,8 +87,7 @@ void om_font_init() {
     if (output.layout) {
         //g_object_unref(output.layout);
     }
-    g_print("om_font_init called\n");
-    output.layout = gtk_widget_create_pango_layout(output.widget, 0);
+    output.layout = gtk_widget_create_pango_layout(output.widget, "zz");
     pango_layout_set_width(output.layout, -1);
     pango_layout_set_font_description(output.layout, output.font_desc); 
 
@@ -106,9 +102,6 @@ void om_font_init() {
         PANGO_PIXELS(pango_font_metrics_get_approximate_digit_width(metrics));
     pango_font_metrics_unref(metrics);
     g_object_unref(context);
-
-    g_print("sizes %d %d %d\n", output.ascent, output.descent, output.font_width);
-    
 }
 
 GdkColor om_get_sb_color(long c) {
@@ -126,21 +119,16 @@ GdkColor om_get_sb_color(long c) {
         GdkColor color = WHITE;
         return color;
     }
-    g_print("set basic color %d %d %d %d\n", c, colors[c].red, colors[c].green, colors[c].blue);
     return colors[c];
 }
 
 void om_set_fg_color(int color) {
-    g_print("om_set_fg_color %d", color);
     output.fg = om_get_sb_color(color);
-    gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
 }
 
 void om_set_bg_color(int color) {
-    g_print("om_set_bg_color %d", color);
     output.bg = om_get_sb_color(color);
-    gdk_gc_set_rgb_bg_color(output.gc, &output.bg);
 }
 
-/* End of "$Id: output_model.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $". */
 

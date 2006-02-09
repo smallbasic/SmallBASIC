@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $
+ * $Id: output.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -156,7 +156,7 @@ void osd_setxy(int x, int y) {
 }
 
 void osd_cls() {
-    g_print("osd_cls entered");
+    gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
     gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, 0,
                        output.widget->allocation.width,
                        output.widget->allocation.height);
@@ -193,11 +193,13 @@ long osd_getpixel(int x, int y) {
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
+    gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
     gdk_draw_line(output.pixmap, output.gc, x1, y1, x2, y2);
     invalidate_rect(x1, y1, x2-x1, y2-y1);
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
+    gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
     gdk_draw_rectangle(output.pixmap, output.gc, bFill, x1, y1, x2-x1, y2-y1);
     invalidate_rect(x1, y1, x2-x1, y2-y1);
 }
@@ -261,6 +263,7 @@ gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
         int h = MAX(widget->allocation.height, old_h);
 
         GdkPixmap* pixmap = gdk_pixmap_new(widget->window, w, h, -1);
+        gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
         gdk_draw_rectangle(pixmap, output.gc, TRUE, 0, 0, w, h);
         gdk_draw_drawable(pixmap,       /* copy old image onto new/resized image */
                           output.gc,
@@ -351,5 +354,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.7 2006-02-09 05:59:34 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $". */
 
