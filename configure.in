@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.3 2006-02-08 03:29:00 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.4 2006-02-09 01:29:13 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -118,7 +118,7 @@ function buildFLTK() {
   #FLTK_CXXFLAGS="`fltk-config --cxxflags`"
   #FLTK_LDFLAGS="`fltk-config --ldflags`"
   CXXFLAGS="$CXXFLAGS `fltk-config --cxxflags` -Wall -Wunused -fno-exceptions"
-  LDFLAGS="$LDFLAGS `fltk-config --ldflags` -lfltk_images -lfltk_jpeg"
+  LDFLAGS="$LDFLAGS `fltk-config --ldflags --use-images`"
 
   dnl put FLTK_* in Makefiles
   #AC_SUBST(FLTK_CXXFLAGS)
@@ -159,4 +159,4 @@ sync/gtk/src/Makefile
 sync/ide-fltk/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.3 2006-02-08 03:29:00 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.4 2006-02-09 01:29:13 zeeb90au Exp $".
