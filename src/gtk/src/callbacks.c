@@ -1,5 +1,5 @@
 /*
- * $Id: callbacks.c,v 1.3 2006-02-10 02:40:27 zeeb90au Exp $
+ * $Id: callbacks.c,v 1.4 2006-02-10 05:59:58 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -18,11 +18,14 @@
 #include "callbacks.h"
 #include "interface.h"
 #include "support.h"
+#include "output_model.h"
+
+extern OutputModel output;
 
 void
 on_stop_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
-
+    output.break_exec = 1;
 }
 
 void
@@ -42,9 +45,10 @@ on_help_activate(GtkMenuItem * menuitem, gpointer user_data)
 void
 on_quit_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
+    output.break_exec = 1;
     gtk_main_quit();
 }
 
 /*
- * End of "$Id: callbacks.c,v 1.3 2006-02-10 02:40:27 zeeb90au Exp $". 
+ * End of "$Id: callbacks.c,v 1.4 2006-02-10 05:59:58 zeeb90au Exp $". 
  */

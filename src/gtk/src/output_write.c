@@ -1,5 +1,5 @@
  /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $
+ * $Id: output_write.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -22,9 +22,9 @@ extern OutputModel output;
 void new_line() {
     gint font_height = output.ascent+output.descent;
     gint h = output.widget->allocation.height;
-    output.curX = INITXY;
+    output.cur_x = INITXY;
 
-    if (output.curY+(font_height*2) >= h) {
+    if (output.cur_y+font_height >= h) {
         /* shift image up font_height pixels */
         gint w = output.widget->allocation.width;
         gdk_draw_drawable(output.pixmap,
@@ -39,17 +39,17 @@ void new_line() {
                            0, h-font_height, w, font_height);
         osd_refresh();
     } else {
-        output.curY += font_height;
+        output.cur_y += font_height;
     }
 }
 
 int calc_tab(int x) {
     int c = 1;
-    while (x > output.tabSize) {
-        x -= output.tabSize;
+    while (x > output.tab_size) {
+        x -= output.tab_size;
         c++;
     }
-    return c * output.tabSize;
+    return c * output.tab_size;
 }
 
 int set_graphics_rendition(char c, int escValue) {
@@ -57,22 +57,22 @@ int set_graphics_rendition(char c, int escValue) {
     switch (c) {
     case 'K': // \e[K - clear to eol
         gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
-        gdk_draw_rectangle(output.pixmap, output.gc, TRUE, output.curX, output.curY,
-                           output.widget->allocation.width-output.curX, font_height);
+        gdk_draw_rectangle(output.pixmap, output.gc, TRUE, output.cur_x, output.cur_y,
+                           output.widget->allocation.width-output.cur_x, font_height);
         break;
     case 'G': // move to column
-        output.curX = escValue;
+        output.cur_x = escValue;
         break;
     case 'T': // non-standard: move to n/80th of screen width
-        output.curX = escValue*output.widget->allocation.width/80;
+        output.cur_x = escValue*output.widget->allocation.width/80;
         break;
     case 's': // save cursor position
-        output.curYSaved = output.curX;
-        output.curXSaved = output.curY;
+        output.cur_y_saved = output.cur_x;
+        output.cur_x_saved = output.cur_y;
         break;
     case 'u': // restore cursor position
-        output.curX = output.curYSaved;
-        output.curY = output.curXSaved;
+        output.cur_x = output.cur_y_saved;
+        output.cur_y = output.cur_x_saved;
         break;
     case ';': // fallthru
     case 'm': // \e[...m  - ANSI terminal
@@ -211,7 +211,7 @@ void osd_write(const char *str) {
     }
 
     unsigned char *p = (unsigned char*)str;
-    int numChars, cx, width;
+    int num_chars, cx, width;
 
     while (*p) {
         switch (*p) {
@@ -219,7 +219,7 @@ void osd_write(const char *str) {
             drvsound_beep();
             break;
         case '\t':
-            output.curX = calc_tab(output.curX+1);
+            output.cur_x = calc_tab(output.cur_x+1);
             break;
         case '\xC':
             om_reset(TRUE);
@@ -239,27 +239,27 @@ void osd_write(const char *str) {
             new_line();
             break;
         case '\r': // return
-            output.curX = INITXY;
+            output.cur_x = INITXY;
             gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
-            gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, output.curY,
+            gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, output.cur_y,
                                output.widget->allocation.width, 
                                output.ascent+output.descent);
             break;
         default:
-            numChars = 1; // print minimum of one character
+            num_chars = 1; // print minimum of one character
             cx = output.font_width;
             width = output.widget->allocation.width-1;
 
-            if (output.curX + cx >= width) {
+            if (output.cur_x + cx >= width) {
                 new_line();
             }
 
             // print further non-control, non-null characters 
             // up to the width of the line
-            while (p[numChars] > 31) {
+            while (p[num_chars] > 31) {
                 cx += output.font_width;
-                if (output.curX + cx < width) {
-                    numChars++;
+                if (output.cur_x + cx < width) {
+                    num_chars++;
                 } else {
                     break;
                 }
@@ -275,30 +275,25 @@ void osd_write(const char *str) {
                 gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
             }
             gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
-                               output.curX, output.curY, cx, 
+                               output.cur_x, output.cur_y, cx, 
                                output.ascent+output.descent);
 
-            PangoLayout* layout = gtk_widget_create_pango_layout(output.widget, 0);
-            pango_layout_set_width(layout, -1);
-            pango_layout_set_font_description(layout, output.font_desc); 
-            pango_layout_set_text(layout, (const char*)p, numChars);
+            pango_layout_set_text(output.layout, (const char*)p, num_chars);
             gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
             gdk_draw_layout(output.pixmap, output.gc,
-                            output.curX, output.curY, layout);
-            g_object_unref(G_OBJECT(layout));
+                            output.cur_x, output.cur_y, output.layout);
 
             if (output.underline) {
-                gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
                 gdk_draw_line(output.pixmap, output.gc,
-                              output.curX, 
-                              output.curY+output.ascent+1,
-                              output.curX+cx, 
-                              output.curY+output.ascent+1);
+                              output.cur_x, 
+                              output.cur_y+output.ascent+1,
+                              output.cur_x+cx, 
+                              output.cur_y+output.ascent+1);
             }
             
             // advance
-            p += numChars-1; // allow for p++ 
-            output.curX += cx;
+            p += num_chars-1; // allow for p++ 
+            output.cur_x += cx;
         };
         
         if (*p == '\0') {
@@ -310,5 +305,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $". */
 

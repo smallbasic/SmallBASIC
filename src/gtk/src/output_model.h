@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.7 2006-02-10 02:40:27 zeeb90au Exp $
+ * $Id: output_model.h,v 1.8 2006-02-10 05:59:58 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -35,22 +35,23 @@ typedef struct OutputModel {
     GdkGC* gc;         /* current drawing colors */
     PangoFontDescription* font_desc; /* bold, italic */
     GdkColor fg,bg;    /* couldn't find a gdk_gc_get_rgb_fg_color */
+    PangoLayout* layout;
     int ascent;
     int descent;
     int font_width;
     int underline;
     int invert;
     int resized;
-    int curY;
-    int curX;
-    int curYSaved;
-    int curXSaved;
-    int tabSize;
-    int penMode;
-    int penState;
-    int penDownX;
-    int penDownY;
-    int breakExec;
+    int cur_x;
+    int cur_y;
+    int cur_y_saved;
+    int cur_x_saved;
+    int tab_size;
+    int pen_mode;
+    int pen_down;     /* index to current mouse button */
+    int pen_down_x;
+    int pen_down_y;
+    int break_exec;
 } OutputModel;
 
 void om_reset(int reset_cursor);
@@ -65,4 +66,4 @@ void om_calc_font_metrics();
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.7 2006-02-10 02:40:27 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.8 2006-02-10 05:59:58 zeeb90au Exp $". */

@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $
+ * $Id: output_model.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -48,9 +48,9 @@ static GdkColor colors[] = {
 void om_init(GtkWidget *widget) {
     output.widget = widget;
     output.pixmap = 0;
-    //    output.layout = 0;
+    output.layout = 0;
     output.gc = 0; 
-    output.breakExec = 0;
+    output.break_exec = 0;
     /* pango_font_description_from_string*/
     output.font_desc = pango_font_description_new();
     pango_font_description_set_size(output.font_desc, FONT_SIZE*PANGO_SCALE);
@@ -59,7 +59,7 @@ void om_init(GtkWidget *widget) {
 
 /* this is called once during application shutdown */
 void om_cleanup() {
-    //g_object_unref(output.layout);
+    g_object_unref(output.layout);
     g_object_unref(output.gc);
     g_object_unref(output.pixmap);
     pango_font_description_free(output.font_desc);
@@ -68,20 +68,20 @@ void om_cleanup() {
 /* this is called during program execution */
 void om_reset(int reset_cursor) {
     if (reset_cursor) {
-        output.curY = INITXY;
-        output.curX = INITXY;
+        output.cur_x = INITXY;
+        output.cur_y = INITXY;
     }
 
     output.underline = 0;
     output.invert = 0;
     output.resized = 0;
-    output.curYSaved = 0;
-    output.curXSaved = 0;
-    output.tabSize = 40; /* tab size in pixels (160/32 = 5) */
-    output.penMode = 0;
-    output.penState = 0;
-    output.penDownX = 0;
-    output.penDownY = 0;
+    output.cur_y_saved = 0;
+    output.cur_x_saved = 0;
+    output.tab_size = 40; /* tab size in pixels (160/32 = 5) */
+    output.pen_mode = 0;
+    output.pen_down = 0;
+    output.pen_down_x = 0;
+    output.pen_down_y = 0;
 
     om_set_fg_color(C_BLUE);     /* blue foreground */
     om_set_bg_color(C_BRIGHT_WH); /* white background */
@@ -131,5 +131,5 @@ void om_set_bg_color(int color) {
     output.bg = om_get_sb_color(color);
 }
 
-/* End of "$Id: output_model.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $". */
 
