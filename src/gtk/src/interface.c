@@ -37,11 +37,11 @@ create_main_window(void)
     GtkWidget      *menuitem1;
     GtkWidget      *menuitem1_menu;
     GtkWidget      *stop;
-    GtkWidget      *help1;
+    GtkWidget      *help;
     GtkWidget      *separator1;
     GtkWidget      *about;
     GtkWidget      *separatormenuitem1;
-    GtkWidget      *quit1;
+    GtkWidget      *quit;
     GtkWidget      *drawing_area;
     GtkWidget      *statusbar;
     GtkAccelGroup  *accel_group;
@@ -76,10 +76,10 @@ create_main_window(void)
     gtk_widget_show(stop);
     gtk_container_add(GTK_CONTAINER(menuitem1_menu), stop);
 
-    help1 = gtk_image_menu_item_new_from_stock("gtk-help", accel_group);
-    gtk_widget_set_name(help1, "help1");
-    gtk_widget_show(help1);
-    gtk_container_add(GTK_CONTAINER(menuitem1_menu), help1);
+    help = gtk_image_menu_item_new_from_stock("gtk-help", accel_group);
+    gtk_widget_set_name(help, "help");
+    gtk_widget_show(help);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), help);
 
     separator1 = gtk_separator_menu_item_new();
     gtk_widget_set_name(separator1, "separator1");
@@ -98,10 +98,10 @@ create_main_window(void)
     gtk_container_add(GTK_CONTAINER(menuitem1_menu), separatormenuitem1);
     gtk_widget_set_sensitive(separatormenuitem1, FALSE);
 
-    quit1 = gtk_image_menu_item_new_from_stock("gtk-quit", accel_group);
-    gtk_widget_set_name(quit1, "quit1");
-    gtk_widget_show(quit1);
-    gtk_container_add(GTK_CONTAINER(menuitem1_menu), quit1);
+    quit = gtk_image_menu_item_new_from_stock("gtk-quit", accel_group);
+    gtk_widget_set_name(quit, "quit");
+    gtk_widget_show(quit);
+    gtk_container_add(GTK_CONTAINER(menuitem1_menu), quit);
 
     drawing_area = gtk_drawing_area_new();
     gtk_widget_set_name(drawing_area, "drawing_area");
@@ -116,12 +116,12 @@ create_main_window(void)
 
     g_signal_connect((gpointer) stop, "activate",
 		     G_CALLBACK(on_stop_activate), NULL);
-    g_signal_connect((gpointer) help1, "activate",
-		     G_CALLBACK(on_help1_activate), NULL);
+    g_signal_connect((gpointer) help, "activate",
+		     G_CALLBACK(on_help_activate), NULL);
     g_signal_connect((gpointer) about, "activate",
 		     G_CALLBACK(on_about_activate), NULL);
-    g_signal_connect((gpointer) quit1, "activate",
-		     G_CALLBACK(on_quit1_activate), NULL);
+    g_signal_connect((gpointer) quit, "activate",
+		     G_CALLBACK(on_quit_activate), NULL);
 
     /*
      * Store pointers to all widgets, for use by lookup_widget(). 
@@ -132,12 +132,12 @@ create_main_window(void)
     GLADE_HOOKUP_OBJECT(main_window, menuitem1, "menuitem1");
     GLADE_HOOKUP_OBJECT(main_window, menuitem1_menu, "menuitem1_menu");
     GLADE_HOOKUP_OBJECT(main_window, stop, "stop");
-    GLADE_HOOKUP_OBJECT(main_window, help1, "help1");
+    GLADE_HOOKUP_OBJECT(main_window, help, "help");
     GLADE_HOOKUP_OBJECT(main_window, separator1, "separator1");
     GLADE_HOOKUP_OBJECT(main_window, about, "about");
     GLADE_HOOKUP_OBJECT(main_window, separatormenuitem1,
 			"separatormenuitem1");
-    GLADE_HOOKUP_OBJECT(main_window, quit1, "quit1");
+    GLADE_HOOKUP_OBJECT(main_window, quit, "quit");
     GLADE_HOOKUP_OBJECT(main_window, drawing_area, "drawing_area");
     GLADE_HOOKUP_OBJECT(main_window, statusbar, "statusbar");
 
@@ -150,6 +150,11 @@ GtkWidget      *
 create_aboutdialog(void)
 {
     GtkWidget      *aboutdialog;
+    const gchar    *authors[] = {
+	"Nicholas Christopoulos",
+	"Chris Warren-Smith",
+	NULL
+    };
     /*
      * TRANSLATORS: Replace this string with your names, one name per
      * line. 
@@ -162,8 +167,12 @@ create_aboutdialog(void)
     gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(aboutdialog), VERSION);
     gtk_about_dialog_set_name(GTK_ABOUT_DIALOG(aboutdialog),
 			      _("SmallBASIC"));
+    gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(aboutdialog),
+				 _
+				 ("SmallBASIC comes with ABSOLUTELY NO WARRANTY.\nThis program is free software; you can use it redistribute\nit and/or modify it under the terms of the \nGNU General Public License version 2 as published by\nthe Free Software Foundation.\n"));
     gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(aboutdialog),
 				 "smallbasic.sf.net");
+    gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(aboutdialog), authors);
     gtk_about_dialog_set_translator_credits(GTK_ABOUT_DIALOG(aboutdialog),
 					    translators);
     aboutdialog_logo_pixbuf = create_pixbuf("sb32x32.png");

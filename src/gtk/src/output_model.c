@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $
+ * $Id: output_model.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -18,9 +18,13 @@
 
 struct OutputModel output;
 
+#define FONT_SIZE 8
 #define COLOR(r,g,b) {0, (r*65535/255), (g*65535/255), (b*65535/255)}
 #define WHITE COLOR(255,255,255)
 
+/* basic colors - see:
+ * http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
+ */
 static GdkColor colors[] = {
     COLOR(0,0,0),      // 0 black
     COLOR(0,0,128),    // 1 blue
@@ -40,24 +44,28 @@ static GdkColor colors[] = {
     WHITE              // 15 bright white
 };
 
+/* this is called once during application startup */
 void om_init(GtkWidget *widget) {
     output.widget = widget;
     output.pixmap = 0;
-    output.layout = 0;
+    //    output.layout = 0;
     output.gc = 0; 
     output.breakExec = 0;
-    output.font_desc = pango_font_description_new(); /* pango_font_description_from_string*/
-    pango_font_description_set_size(output.font_desc, 9*PANGO_SCALE);
+    /* pango_font_description_from_string*/
+    output.font_desc = pango_font_description_new();
+    pango_font_description_set_size(output.font_desc, FONT_SIZE*PANGO_SCALE);
     pango_font_description_set_family(output.font_desc, "monospace");
 }
 
+/* this is called once during application shutdown */
 void om_cleanup() {
-    g_object_unref(output.layout);
+    //g_object_unref(output.layout);
     g_object_unref(output.gc);
     g_object_unref(output.pixmap);
     pango_font_description_free(output.font_desc);
 }
 
+/* this is called during program execution */
 void om_reset(int reset_cursor) {
     if (reset_cursor) {
         output.curY = INITXY;
@@ -80,19 +88,12 @@ void om_reset(int reset_cursor) {
 
     pango_font_description_set_weight(output.font_desc, PANGO_WEIGHT_NORMAL);
     pango_font_description_set_style(output.font_desc, PANGO_STYLE_NORMAL);
-    om_font_init();
+    om_calc_font_metrics();
 }
 
-void om_font_init() {
-    if (output.layout) {
-        //g_object_unref(output.layout);
-    }
-    output.layout = gtk_widget_create_pango_layout(output.widget, "zz");
-    pango_layout_set_width(output.layout, -1);
-    pango_layout_set_font_description(output.layout, output.font_desc); 
-
-    gtk_widget_modify_font(output.widget, output.font_desc);
-    PangoContext* context = gtk_widget_get_pango_context(output.widget);
+void om_calc_font_metrics() {
+    /* gtk exceptions using gtk_widget_get_pango_context */
+    PangoContext* context = gdk_pango_context_get();
     PangoFontMetrics* metrics = 
         pango_context_get_metrics(context, output.font_desc,
                                   pango_context_get_language(context));
@@ -130,5 +131,5 @@ void om_set_bg_color(int color) {
     output.bg = om_get_sb_color(color);
 }
 
-/* End of "$Id: output_model.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $". */
 

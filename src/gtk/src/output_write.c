@@ -1,5 +1,5 @@
  /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $
+ * $Id: output_write.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -21,25 +21,22 @@ extern OutputModel output;
 
 void new_line() {
     gint font_height = output.ascent+output.descent;
-    gint height = output.widget->allocation.height;
+    gint h = output.widget->allocation.height;
     output.curX = INITXY;
 
-    if (output.curY+(font_height*2) >= height) {
+    if (output.curY+(font_height*2) >= h) {
         /* shift image up font_height pixels */
+        gint w = output.widget->allocation.width;
         gdk_draw_drawable(output.pixmap,
                           output.gc,
                           output.pixmap,
                           0, font_height, /* src x,y */
-                          0, 0,          /* dest x,y */
-                          output.widget->allocation.width,
-                          output.widget->allocation.width-font_height);
+                          0, 0, /* dest x,y */ 
+                          w, h-font_height);
         /* erase bottom line */
         gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
         gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
-                           output.widget->allocation.x,
-                           output.widget->allocation.y,
-                           output.widget->allocation.width,
-                           output.widget->allocation.height);
+                           0, h-font_height, w, font_height);
         osd_refresh();
     } else {
         output.curY += font_height;
@@ -182,7 +179,7 @@ int do_escape(unsigned char** p) {
     }
     
     if (set_graphics_rendition(**p, escValue)) {
-        //om_font_init();
+        om_calc_font_metrics();
     }
     if (**p == ';') {
         (*p)++; // next rendition
@@ -281,10 +278,14 @@ void osd_write(const char *str) {
                                output.curX, output.curY, cx, 
                                output.ascent+output.descent);
 
+            PangoLayout* layout = gtk_widget_create_pango_layout(output.widget, 0);
+            pango_layout_set_width(layout, -1);
+            pango_layout_set_font_description(layout, output.font_desc); 
+            pango_layout_set_text(layout, (const char*)p, numChars);
             gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
-            pango_layout_set_text(output.layout, (const char*)p, numChars);
             gdk_draw_layout(output.pixmap, output.gc,
-                            output.curX, output.curY, output.layout);
+                            output.curX, output.curY, layout);
+            g_object_unref(G_OBJECT(layout));
 
             if (output.underline) {
                 gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
@@ -309,5 +310,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $". */
 

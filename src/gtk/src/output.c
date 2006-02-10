@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $
+ * $Id: output.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -77,7 +77,7 @@ int osd_events(int wait_flag) {
         gtk_main_iteration_do(FALSE);
     }
 
-    if (output.breakExec = 1) {
+    if (output.breakExec == 1) {
         output.breakExec = 0;
         return -2;
     }
@@ -164,15 +164,11 @@ void osd_cls() {
 }
 
 int osd_textwidth(const char *text) {
-    int width, height;
-    pango_layout_get_pixel_size(output.layout, &width, &height);
-    return width;
+    return (text && text[0] ? strlen(text)*output.font_width : 0);
 }
 
 int osd_textheight(const char *text) {
-    int width, height;
-    pango_layout_get_pixel_size(output.layout, &width, &height);
-    return height;
+    return output.ascent+output.descent;
 }
 
 void osd_setpixel(int x, int y) {
@@ -249,7 +245,6 @@ void invalidate_rect(int x, int y, int w, int h) {
 
 /* Create a new backing pixmap of the appropriate size */
 gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
-
     if (output.gc == 0) {
         /* deferred init to here since we don't run gtk_main() */
         output.gc = gdk_gc_new(widget->window);
@@ -257,6 +252,7 @@ gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
     }
 
     if (output.pixmap) {
+        /* copy old image onto new/resized image */
         int old_w, old_h;
         gdk_drawable_get_size(output.pixmap, &old_w, &old_h);
         int w = MAX(widget->allocation.width, old_w);
@@ -265,7 +261,7 @@ gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
         GdkPixmap* pixmap = gdk_pixmap_new(widget->window, w, h, -1);
         gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
         gdk_draw_rectangle(pixmap, output.gc, TRUE, 0, 0, w, h);
-        gdk_draw_drawable(pixmap,       /* copy old image onto new/resized image */
+        gdk_draw_drawable(pixmap,
                           output.gc,
                           output.pixmap,
                           0,0,0,0, /* src/dest x/y */
@@ -273,6 +269,7 @@ gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
         g_object_unref(output.pixmap);
         output.pixmap = pixmap;
     } else {
+        /* create a new pixmap */
         output.pixmap = gdk_pixmap_new(widget->window,
                                        widget->allocation.width,
                                        widget->allocation.height, -1);
@@ -283,10 +280,7 @@ gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
 
 /* Redraw the screen from the backing pixmap */
 gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
-    gdk_draw_drawable(widget->window,
-                      //widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-                      output.gc,
-                      output.pixmap,
+    gdk_draw_drawable(widget->window, output.gc, output.pixmap,
                       event->area.x, event->area.y, /* src */
                       event->area.x, event->area.y, /* dest */
                       event->area.width, event->area.height);
@@ -354,5 +348,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.8 2006-02-09 12:29:47 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.9 2006-02-10 02:40:27 zeeb90au Exp $". */
 

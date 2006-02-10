@@ -50,11 +50,11 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="help1">
+		    <widget class="GtkImageMenuItem" id="help">
 		      <property name="visible">True</property>
 		      <property name="label">gtk-help</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_help1_activate" last_modification_time="Thu, 09 Feb 2006 00:16:21 GMT"/>
+		      <signal name="activate" handler="on_help_activate" last_modification_time="Thu, 09 Feb 2006 23:55:19 GMT"/>
 		    </widget>
 		  </child>
 
@@ -80,11 +80,11 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="quit1">
+		    <widget class="GtkImageMenuItem" id="quit">
 		      <property name="visible">True</property>
 		      <property name="label">gtk-quit</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_quit1_activate" last_modification_time="Thu, 02 Feb 2006 02:41:21 GMT"/>
+		      <signal name="activate" handler="on_quit_activate" last_modification_time="Thu, 09 Feb 2006 23:55:19 GMT"/>
 		    </widget>
 		  </child>
 		</widget>
@@ -132,8 +132,17 @@
   <property name="destroy_with_parent">False</property>
   <property name="name" translatable="yes">SmallBASIC</property>
   <property name="comments" translatable="yes"></property>
+  <property name="license" translatable="yes">SmallBASIC comes with ABSOLUTELY NO WARRANTY.
+This program is free software; you can use it redistribute
+it and/or modify it under the terms of the 
+GNU General Public License version 2 as published by
+the Free Software Foundation.
+</property>
   <property name="wrap_license">False</property>
   <property name="website">smallbasic.sf.net</property>
+  <property name="authors">Nicholas Christopoulos
+Chris Warren-Smith
+</property>
   <property name="translator_credits" translatable="yes" comments="TRANSLATORS: Replace this string with your names, one name per line.">translator-credits</property>
   <property name="logo">sb32x32.png</property>
 </widget>

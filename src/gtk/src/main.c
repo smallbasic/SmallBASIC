@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.4 2006-02-09 05:59:34 zeeb90au Exp $
+ * $Id: main.c,v 1.5 2006-02-10 02:40:27 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -13,8 +13,8 @@
 #  include <config.h>
 #endif
 
+#include <sbapp.h>
 #include <gtk/gtk.h>
-
 #include "interface.h"
 #include "support.h"
 #include "output.h"
@@ -62,7 +62,24 @@ int main(int argc, char *argv[]) {
     gtk_widget_show(main_window);
     g_signal_connect((gpointer)main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+    /* prepare runtime flags */
+    opt_graphics = 1;
+    opt_quiet = 1;
+    opt_interactive = 0;
+    opt_nosave = 1;
+    opt_ide = IDE_NONE; // for sberr.c
+    opt_command[0] = 0;
+    opt_pref_width = 0;
+    opt_pref_height = 0;
+    opt_pref_bpp = 0;
+
     if (argc == 2) {
+        /* program command line args */
+        int i;
+        for (i=3; i<argc; i++) {
+            strcat(opt_command, argv[i]);
+            strcat(opt_command, " ");
+        }
         sbasic_main(argv[1]);
     } else {
         GtkWidget* dialog =
@@ -97,4 +114,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.4 2006-02-09 05:59:34 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.5 2006-02-10 02:40:27 zeeb90au Exp $". */
