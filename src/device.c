@@ -85,6 +85,24 @@ static int	keytail;
 #endif
 #endif
 
+#ifndef IMPL_IMAGE
+#if defined(_FRANKLIN_EBM) || defined(_FLTK)
+#define IMPL_IMAGE
+#endif
+#endif
+
+#ifndef IMPL_HTML
+#if defined(_FRANKLIN_EBM) || defined(_FLTK)
+#define IMPL_HTML
+#endif
+#endif
+
+#ifndef IMPL_DEV_GETS
+#if defined(_FLTK)
+#define IMPL_DEV_GETS
+#endif
+#endif
+
 
 ///////////////////////////////////////////////
 //////////////////////////////// INIT & RESTORE
@@ -747,11 +765,10 @@ void	dev_input_clreol(int cx, int cy)
 		}
 }
 
-#if !defined(_FLTK)
-
 /*
 *	gets a string (INPUT)
 */
+#ifndef IMPL_DEV_GETS
 char	*dev_gets(char *dest, int size)
 {
 	long int	ch = 0;
@@ -949,8 +966,7 @@ char	*dev_gets(char *dest, int size)
 	#endif
 	return dest;	 
 }
-
-#endif // _FRANKLIN_EBM
+#endif // #ifndef IMPL_DEV_GETS
 
 /*
 *	enable/disable default pointing device (pen or mouse)
@@ -1925,22 +1941,24 @@ char	*dev_getenv_n(int n)
 	#endif
 }
 
-// empty implementations
+#endif  // _FRANKLIN_EBM
+#endif  // _FLTK
+
+#ifndef IMPL_HTML
 void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
 }
+#endif
 
+#ifndef IMPL_IMAGE
 void dev_image(int handle, int index, int x, int y, 
                int sx, int sy, int w, int h) {
 }
-
 int dev_image_width(int handle, int index) {
     return -1;
 }
-
 int dev_image_height(int handle, int index) {
     return -1;
 }
+#endif
 
-#endif  // _FRANKLIN_EBM
-#endif  // _FLTK
 
