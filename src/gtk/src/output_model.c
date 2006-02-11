@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $
+ * $Id: output_model.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -92,8 +92,7 @@ void om_reset(int reset_cursor) {
 }
 
 void om_calc_font_metrics() {
-    /* gtk exceptions using gtk_widget_get_pango_context */
-    PangoContext* context = gdk_pango_context_get();
+    PangoContext* context = gtk_widget_create_pango_context(output.widget);
     PangoFontMetrics* metrics = 
         pango_context_get_metrics(context, output.font_desc,
                                   pango_context_get_language(context));
@@ -131,5 +130,5 @@ void om_set_bg_color(int color) {
     output.bg = om_get_sb_color(color);
 }
 
-/* End of "$Id: output_model.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $". */
 

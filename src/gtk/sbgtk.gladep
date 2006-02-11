@@ -4,9 +4,6 @@
 <glade-project>
   <name>sbgtk</name>
   <program_name>sbgtk</program_name>
-  <msvc_directory>ide</msvc_directory>
-  <devcpp_directory>ide</devcpp_directory>
-  <style>Berkeley</style>
   <gnome_support>FALSE</gnome_support>
   <use_widget_names>TRUE</use_widget_names>
 </glade-project>

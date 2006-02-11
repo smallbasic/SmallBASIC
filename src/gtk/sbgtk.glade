@@ -20,7 +20,7 @@
   <property name="urgency_hint">False</property>
 
   <child>
-    <widget class="GtkVBox" id="vbox1">
+    <widget class="GtkVBox" id="main_container">
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
       <property name="spacing">0</property>
@@ -100,10 +100,20 @@
       </child>
 
       <child>
-	<widget class="GtkDrawingArea" id="drawing_area">
-	  <property name="width_request">200</property>
-	  <property name="height_request">240</property>
+	<widget class="GtkFixed" id="fixed">
 	  <property name="visible">True</property>
+
+	  <child>
+	    <widget class="GtkDrawingArea" id="drawing_area">
+	      <property name="width_request">672</property>
+	      <property name="height_request">396</property>
+	      <property name="visible">True</property>
+	    </widget>
+	    <packing>
+	      <property name="x">0</property>
+	      <property name="y">0</property>
+	    </packing>
+	  </child>
 	</widget>
 	<packing>
 	  <property name="padding">0</property>
@@ -131,20 +141,21 @@
   <property name="visible">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="name" translatable="yes">SmallBASIC</property>
+  <property name="copyright" translatable="yes">Copyright (c) 2006 Chris Warren-Smith</property>
   <property name="comments" translatable="yes"></property>
-  <property name="license" translatable="yes">SmallBASIC comes with ABSOLUTELY NO WARRANTY.
+  <property name="license">SmallBASIC comes with ABSOLUTELY NO WARRANTY.
 This program is free software; you can use it redistribute
 it and/or modify it under the terms of the 
 GNU General Public License version 2 as published by
 the Free Software Foundation.
 </property>
-  <property name="wrap_license">False</property>
+  <property name="wrap_license">True</property>
   <property name="website">smallbasic.sf.net</property>
+  <property name="website_label" translatable="yes">SmallBASIC</property>
   <property name="authors">Nicholas Christopoulos
 Chris Warren-Smith
 </property>
   <property name="translator_credits" translatable="yes" comments="TRANSLATORS: Replace this string with your names, one name per line.">translator-credits</property>
-  <property name="logo">sb32x32.png</property>
 </widget>
 
 </glade-interface>

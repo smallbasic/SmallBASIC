@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.8 2006-02-10 05:59:58 zeeb90au Exp $
+ * $Id: output_model.h,v 1.9 2006-02-11 22:37:37 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -52,6 +52,7 @@ typedef struct OutputModel {
     int pen_down_x;
     int pen_down_y;
     int break_exec;
+    int modal_flag;
 } OutputModel;
 
 void om_reset(int reset_cursor);
@@ -62,8 +63,8 @@ void om_set_fg_color(int color);
 void om_set_bg_color(int color);
 void om_calc_font_metrics();
 
-#define INITXY 2
+#define INITXY 4
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.8 2006-02-10 05:59:58 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.9 2006-02-11 22:37:37 zeeb90au Exp $". */

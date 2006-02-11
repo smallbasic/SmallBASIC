@@ -1,12 +1,12 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $
+ * $Id: output.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
  * cwarrens@twpo.com.au
  *
  * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
+ * Download the GNU Public License(GPL) from www.gnu.org
  */ 
 
 #ifdef HAVE_CONFIG_H
@@ -47,8 +47,7 @@ void osd_settextcolor(long fg, long bg) {
 
 void osd_refresh() {
     GdkRectangle rc = {
-        output.widget->allocation.x,
-        output.widget->allocation.y,
+        0, 0,
         output.widget->allocation.width,
         output.widget->allocation.height
     };
@@ -68,7 +67,7 @@ int osd_devrestore() {
  */
 int osd_events(int wait_flag) {
     if (wait_flag ||
-        (output.pen_down == 0 &&
+       (output.pen_down == 0 &&
          output.pen_mode == PEN_ON &&
          gtk_events_pending() == FALSE)) {
         // in a "while 1" loop checking for a pen/mouse
@@ -97,14 +96,15 @@ int osd_getpen(int code) {
     }
 
     if (output.break_exec == 1) {
+        brun_break();
         return 1; // break from WHILE PEN(0)=0
     }
 
     GdkModifierType mask;
     int x,y;
 
-    switch (code) {
-    case 0: // return true if there is a waiting pen event (up/down)
+    switch(code) {
+    case 0: // return true if there is a waiting pen event(up/down)
         if (output.pen_down != 0) {
             output.pen_down = 0;
             gdk_window_get_pointer(output.widget->window,
@@ -116,11 +116,11 @@ int osd_getpen(int code) {
         gtk_main_iteration_do(TRUE); // UNTIL PEN(0)
         // fallthru to re-test 
 
-    case 3: // returns true if the pen is down (and save curpos)
+    case 3: // returns true if the pen is down(and save curpos)
         if (output.widget->window == 
             gdk_window_get_pointer(output.widget->window, &x, &y, &mask)) {
             if (mask &
-                (GDK_BUTTON1_MASK |
+               (GDK_BUTTON1_MASK |
                  GDK_BUTTON2_MASK |
                  GDK_BUTTON3_MASK)) {
                 output.pen_down_x = x;
@@ -147,13 +147,13 @@ int osd_getpen(int code) {
         return y;
 
     case 12: // true if left button pressed
-        return (output.pen_down==1);
+        return(output.pen_down==1);
 
     case 13: // true if right button pressed
-        return (output.pen_down==3);
+        return(output.pen_down==3);
 
     case 14: // true if middle button pressed
-        return (output.pen_down==2);
+        return(output.pen_down==2);
         break;
     }
     return 0;
@@ -178,11 +178,12 @@ void osd_cls() {
     gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, 0,
                        output.widget->allocation.width,
                        output.widget->allocation.height);
+    om_reset(TRUE);
     osd_refresh();
 }
 
 int osd_textwidth(const char *text) {
-    return (text && text[0] ? strlen(text)*output.font_width : 0);
+    return(text && text[0] ? strlen(text)*output.font_width : 0);
 }
 
 int osd_textheight(const char *text) {
@@ -209,13 +210,13 @@ long osd_getpixel(int x, int y) {
 void osd_line(int x1, int y1, int x2, int y2) {
     gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
     gdk_draw_line(output.pixmap, output.gc, x1, y1, x2, y2);
-    osd_refresh();
+    invalidate_rect(x1, y1, x2, y2);
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
     gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
     gdk_draw_rectangle(output.pixmap, output.gc, bFill, x1, y1, x2-x1, y2-y1);
-    osd_refresh();
+    invalidate_rect(x1, y1, x2, y2);
 }
 
 int drvsound_init(void) {
@@ -231,7 +232,7 @@ void drvsound_close(void) {
  *   plays a tone 
  *       frq = frequency
  *       ms  = duration in milliseconds
- *       vol = volume (0..100)
+ *       vol = volume(0..100)
  *       bgplay = true for play in background
  */
 void drvsound_sound(int frq, int ms, int vol, int bgplay) {
@@ -251,9 +252,58 @@ void drvsound_clear_queue(void) {
 
 /*
  *   For OSes that does not supports threads, this enables background plays
- *   (Its called every ~50ms)
+ *  (Its called every ~50ms)
  */
 void drvsound_event(void) {
+}
+
+/*
+ * Image commmands ...
+ */
+void dev_image(int handle, int index, int x, int y, 
+               int sx, int sy, int w, int h) {
+}
+
+int dev_image_width(int handle, int index) {
+    return -1;
+}
+
+int dev_image_height(int handle, int index) {
+    return -1;
+}
+
+/*
+ * Keyboard input command
+ */
+char* dev_gets(char *dest, int size) {
+    GtkWidget* entry = gtk_entry_new();
+
+    gtk_fixed_put(GTK_FIXED(output.widget->parent), entry, 
+                  output.cur_x,
+                  output.cur_y-4);
+    gtk_entry_set_has_frame(GTK_ENTRY(entry), FALSE);
+    gtk_entry_set_max_length(GTK_ENTRY(entry), size);
+    gtk_entry_set_width_chars(GTK_ENTRY(entry), 4);
+    gtk_widget_grab_focus(entry);
+    gtk_widget_show(entry);
+
+    output.modal_flag = TRUE;
+    while (output.modal_flag && output.break_exec == 0) {
+        gtk_main_iteration_do(TRUE);
+    }
+
+    const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));
+    strcpy(dest, value);
+    osd_write(dest);
+
+    /* remove and destroy the entry widget */
+    gtk_container_remove(GTK_CONTAINER(output.widget->parent), entry);
+
+    if (output.break_exec == 1) {
+        brun_break();
+    }
+
+    return dest;
 }
 
 void invalidate_rect(int x1, int y1, int x2, int y2) {
@@ -266,7 +316,7 @@ void invalidate_rect(int x1, int y1, int x2, int y2) {
         w = x1-x2;
     } else {
         x = x1;
-        w = 2;
+        w = 1;
     }
     if (y1<y2) {
         y = y1;
@@ -276,11 +326,47 @@ void invalidate_rect(int x1, int y1, int x2, int y2) {
         h = y1-y2;
     } else {
         y = y1;
-        h = 2;
+        h = 1;
     }
-    GdkRectangle rc = {x, y, w, h};
+    GdkRectangle rc = {x-1, y-1, w+2, h+2};
     gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
+
+#ifdef USE_HILDON
+/* Callback for maemo hardware keys */
+gboolean key_press_cb(GtkWidget* widget, GdkEventKey* event, HildonApp *app) {
+    switch(event->keyval) {
+    case GDK_Up: // Navigation Key Up
+        return TRUE;
+        
+    case GDK_Down: // Navigation Key Down
+        return TRUE;
+        
+    case GDK_Left: // Navigation Key Left
+        return TRUE;
+        
+    case GDK_Right: // Navigation Key Right
+        return TRUE;
+        
+    case GDK_Return: // Navigation Key select
+        return TRUE;
+        
+    case GDK_F6: // Full screen
+        return TRUE;
+        
+    case GDK_F7: // Increase(zoom in)
+        return TRUE;
+        
+    case GDK_F8: // Decrease(zoom out)
+        return TRUE;
+        
+    case GDK_Escape: // Cancel/Close
+        gtk_infoprint(GTK_WINDOW(app), "");
+        return TRUE;        
+    }
+    return FALSE;
+}
+#endif
 
 /* Create a new backing pixmap of the appropriate size */
 gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
@@ -346,15 +432,20 @@ gboolean drawing_area_init(GtkWidget *main_window) {
         g_object_get_data(G_OBJECT(main_window), "drawing_area");
 
     /* Signals used to handle backing pixmap */
-    g_signal_connect (G_OBJECT (drawing_area), "expose_event",
-                      G_CALLBACK (expose_event), NULL);
-    g_signal_connect (G_OBJECT (drawing_area),"configure_event",
-                      G_CALLBACK (configure_event), NULL);
+    g_signal_connect(G_OBJECT(drawing_area), "expose_event",
+                      G_CALLBACK(expose_event), NULL);
+    g_signal_connect(G_OBJECT(drawing_area),"configure_event",
+                      G_CALLBACK(configure_event), NULL);
     /* Event signals */
-    g_signal_connect(G_OBJECT (drawing_area), "button_press_event",
-                     G_CALLBACK (button_press_event), NULL);
-    g_signal_connect(G_OBJECT (drawing_area), "button_release_event",
-                     G_CALLBACK (button_release_event), NULL);
+    g_signal_connect(G_OBJECT(drawing_area), "button_press_event",
+                     G_CALLBACK(button_press_event), NULL);
+    g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
+                     G_CALLBACK(button_release_event), NULL);
+
+#ifdef USE_HILDON
+    g_signal_connect(G_OBJECT(drawing_area), "key_press_event", 
+                     G_CALLBACK(key_press_cb), NULL);
+#endif
 
     gtk_widget_set_events(drawing_area, 
                           GDK_POINTER_MOTION_HINT_MASK |
@@ -365,5 +456,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $". */
 
