@@ -1,5 +1,5 @@
 /*
- * $Id: callbacks.c,v 1.5 2006-02-11 22:37:37 zeeb90au Exp $
+ * $Id: callbacks.c,v 1.6 2006-02-12 00:39:15 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -46,11 +46,10 @@ on_help_activate(GtkMenuItem * menuitem, gpointer user_data)
 void
 on_quit_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
-    brun_break();
     output.break_exec = 1;
     gtk_main_quit();
 }
 
 /*
- * End of "$Id: callbacks.c,v 1.5 2006-02-11 22:37:37 zeeb90au Exp $". 
+ * End of "$Id: callbacks.c,v 1.6 2006-02-12 00:39:15 zeeb90au Exp $". 
  */

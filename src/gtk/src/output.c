@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $
+ * $Id: output.c,v 1.12 2006-02-12 00:39:15 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -15,6 +15,7 @@
 
 #include <device.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 #include "interface.h"
 #include "support.h"
 #include "output.h"
@@ -81,6 +82,7 @@ int osd_events(int wait_flag) {
 
     if (output.break_exec == 1) {
         output.break_exec = 0;
+        brun_break();
         return -2;
     }
     return 0;
@@ -272,6 +274,29 @@ int dev_image_height(int handle, int index) {
     return -1;
 }
 
+gboolean key_press(GtkWidget* entry, GdkEventKey* event, gpointer data) {
+    switch (event->keyval) {
+    case GDK_Return:
+        output.modal_flag = FALSE;
+        return TRUE;
+    case GDK_C:
+    case GDK_c:
+        if (event->state & GDK_CONTROL_MASK) {
+            output.break_exec = TRUE;
+            return TRUE;
+        }
+    default:
+        break;
+    }
+    return FALSE;
+}
+
+gboolean key_release(GtkWidget* entry, GdkEventKey* event, gpointer data) {
+    const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));    
+    gtk_entry_set_width_chars(GTK_ENTRY(entry), 1+strlen(value));
+    return FALSE;
+}
+
 /*
  * Keyboard input command
  */
@@ -283,9 +308,18 @@ char* dev_gets(char *dest, int size) {
                   output.cur_y-4);
     gtk_entry_set_has_frame(GTK_ENTRY(entry), FALSE);
     gtk_entry_set_max_length(GTK_ENTRY(entry), size);
-    gtk_entry_set_width_chars(GTK_ENTRY(entry), 4);
+    gtk_entry_set_width_chars(GTK_ENTRY(entry), 1);
     gtk_widget_grab_focus(entry);
     gtk_widget_show(entry);
+
+    g_signal_connect(G_OBJECT(entry), "key_press_event", 
+                     G_CALLBACK(key_press), NULL);
+    g_signal_connect(G_OBJECT(entry), "key_release_event", 
+                     G_CALLBACK(key_release), NULL);
+
+    // TODO: set entry to fixed font
+    //PangoLayout* layout = gtk_entry_get_layout(GTK_ENTRY(entry));
+    //pango_layout_set_font_description(layout, output.font_desc);
 
     output.modal_flag = TRUE;
     while (output.modal_flag && output.break_exec == 0) {
@@ -361,7 +395,6 @@ gboolean key_press_cb(GtkWidget* widget, GdkEventKey* event, HildonApp *app) {
         return TRUE;
         
     case GDK_Escape: // Cancel/Close
-        gtk_infoprint(GTK_WINDOW(app), "");
         return TRUE;        
     }
     return FALSE;
@@ -441,6 +474,9 @@ gboolean drawing_area_init(GtkWidget *main_window) {
                      G_CALLBACK(button_press_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
                      G_CALLBACK(button_release_event), NULL);
+    //g_signal_connect(G_OBJECT(drawing_area), "key_press_event", 
+    //                     G_CALLBACK(key_press_ev), NULL);
+
 
 #ifdef USE_HILDON
     g_signal_connect(G_OBJECT(drawing_area), "key_press_event", 
@@ -456,5 +492,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.12 2006-02-12 00:39:15 zeeb90au Exp $". */
 
