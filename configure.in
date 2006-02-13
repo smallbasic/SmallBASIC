@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.8 2006-02-13 05:00:07 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.9 2006-02-13 05:32:49 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -86,9 +86,10 @@ function buildGTK() {
    AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
-   AC_DEFINE(DRV_SOUND, 1, [Implements functions in drvsound.h])
-   AC_DEFINE(IMPL_IMAGE, 1, [Implements image commands])
-   AC_DEFINE(IMPL_DEV_GETS, 1, [Implements dev_gets()])
+   AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
+   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
  
    BUILD_SUBDIRS="sync sync/gtk/src"
    AC_SUBST(BUILD_SUBDIRS)
@@ -132,9 +133,9 @@ function buildFLTK() {
    AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
-   AC_DEFINE(IMPL_IMAGE, 1, [Implements image commands])
-   AC_DEFINE(IMPL_HTML, 1, [Implements the html command])
-   AC_DEFINE(IMPL_DEV_GETS, 1, [Implements dev_gets()])
+   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
  
    BUILD_SUBDIRS="sync sync/ide-fltk"
    AC_SUBST(BUILD_SUBDIRS)
@@ -175,4 +176,4 @@ sync/ide-fltk/Makefile
 sync/cygwin/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.8 2006-02-13 05:00:07 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.9 2006-02-13 05:32:49 zeeb90au Exp $".

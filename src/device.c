@@ -490,6 +490,7 @@ int		dev_events(int waitf)
 /*
 *	delay for a specified amount of milliseconds
 */
+#ifndef IMPL_DEV_DELAY
 void	dev_delay(dword ms)
 {
 	#if defined(_PalmOS)
@@ -523,6 +524,7 @@ void	dev_delay(dword ms)
 	usleep(ms * 1000);
 	#endif
 }
+#endif
 
 ///////////////////////////////////////////////
 ////////////////////////////////////// KEYBOARD
