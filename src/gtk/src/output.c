@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.12 2006-02-12 00:39:15 zeeb90au Exp $
+ * $Id: output.c,v 1.13 2006-02-13 05:02:19 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -262,16 +262,60 @@ void drvsound_event(void) {
 /*
  * Image commmands ...
  */
+
+GdkPixbuf* get_image(dev_file_t* filep, int index) {
+    GtkWidget* image = gtk_image_new_from_file(filep->name);
+    if (gtk_image_get_storage_type(GTK_IMAGE(image)) != GTK_IMAGE_PIXBUF) {
+        return 0;
+    }
+    GdkPixbuf* pixbuf = gtk_image_get_pixbuf(GTK_IMAGE(image));
+    return pixbuf;
+}
+
 void dev_image(int handle, int index, int x, int y, 
                int sx, int sy, int w, int h) {
+    int imgw = -1;
+    int imgh = -1;
+    dev_file_t* filep = dev_getfileptr(handle);
+    if (filep == 0) {
+        return;
+    }
+
+    if (filep->open_flags == DEV_FILE_INPUT) {
+        GdkPixbuf* pixbuf = get_image(filep, index);
+        if (pixbuf) {
+            gdk_draw_pixbuf(output.pixmap, 
+                            output.gc,
+                            pixbuf,
+                            sx,sy,x,y,w,h,
+                            GDK_RGB_DITHER_NORMAL, 0,0);
+            GdkRectangle rc = {x-1, y-1, w+2, h+2};
+            gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
+            gtk_main_iteration_do(FALSE);
+        }
+    } else {
+        /* output screen area image to jpeg */
+    }
 }
 
 int dev_image_width(int handle, int index) {
-    return -1;
+    dev_file_t* filep = dev_getfileptr(handle);
+    if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
+        return 0;
+    }
+    GdkPixbuf* pixbuf = get_image(filep, index);
+    return pixbuf != 0 ? gdk_pixbuf_get_width(pixbuf) : -1;
 }
 
 int dev_image_height(int handle, int index) {
-    return -1;
+    int imgw = -1;
+    int imgh = -1;
+    dev_file_t* filep = dev_getfileptr(handle);
+    if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
+        return 0;
+    }
+    GdkPixbuf* pixbuf = get_image(filep, index);
+    return pixbuf != 0 ? gdk_pixbuf_get_height(pixbuf) : -1;
 }
 
 gboolean key_press(GtkWidget* entry, GdkEventKey* event, gpointer data) {
@@ -304,11 +348,11 @@ char* dev_gets(char *dest, int size) {
     GtkWidget* entry = gtk_entry_new();
 
     gtk_fixed_put(GTK_FIXED(output.widget->parent), entry, 
-                  output.cur_x,
-                  output.cur_y-4);
+                  output.cur_x, output.cur_y-2);
     gtk_entry_set_has_frame(GTK_ENTRY(entry), FALSE);
     gtk_entry_set_max_length(GTK_ENTRY(entry), size);
     gtk_entry_set_width_chars(GTK_ENTRY(entry), 1);
+    gtk_widget_modify_font(entry, output.font_desc);
     gtk_widget_grab_focus(entry);
     gtk_widget_show(entry);
 
@@ -316,10 +360,6 @@ char* dev_gets(char *dest, int size) {
                      G_CALLBACK(key_press), NULL);
     g_signal_connect(G_OBJECT(entry), "key_release_event", 
                      G_CALLBACK(key_release), NULL);
-
-    // TODO: set entry to fixed font
-    //PangoLayout* layout = gtk_entry_get_layout(GTK_ENTRY(entry));
-    //pango_layout_set_font_description(layout, output.font_desc);
 
     output.modal_flag = TRUE;
     while (output.modal_flag && output.break_exec == 0) {
@@ -402,7 +442,9 @@ gboolean key_press_cb(GtkWidget* widget, GdkEventKey* event, HildonApp *app) {
 #endif
 
 /* Create a new backing pixmap of the appropriate size */
-gboolean configure_event(GtkWidget* widget, GdkEventConfigure *event) {
+gboolean configure_event(GtkWidget* widget, 
+                         GdkEventConfigure *event,
+                         gpointer user_data) {
     if (output.gc == 0) {
         /* deferred init to here since we don't run gtk_main() */
         output.gc = gdk_gc_new(widget->window);
@@ -464,19 +506,15 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     GtkWidget *drawing_area = 
         g_object_get_data(G_OBJECT(main_window), "drawing_area");
 
-    /* Signals used to handle backing pixmap */
+    /* connect signals */
     g_signal_connect(G_OBJECT(drawing_area), "expose_event",
                       G_CALLBACK(expose_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area),"configure_event",
                       G_CALLBACK(configure_event), NULL);
-    /* Event signals */
     g_signal_connect(G_OBJECT(drawing_area), "button_press_event",
                      G_CALLBACK(button_press_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
                      G_CALLBACK(button_release_event), NULL);
-    //g_signal_connect(G_OBJECT(drawing_area), "key_press_event", 
-    //                     G_CALLBACK(key_press_ev), NULL);
-
 
 #ifdef USE_HILDON
     g_signal_connect(G_OBJECT(drawing_area), "key_press_event", 
@@ -492,5 +530,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.12 2006-02-12 00:39:15 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.13 2006-02-13 05:02:19 zeeb90au Exp $". */
 
