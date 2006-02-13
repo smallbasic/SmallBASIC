@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.13 2006-02-13 05:02:19 zeeb90au Exp $
+ * $Id: output.c,v 1.14 2006-02-13 05:33:46 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -259,10 +259,22 @@ void drvsound_clear_queue(void) {
 void drvsound_event(void) {
 }
 
+gint timeout_callback(gpointer data) {
+    output.modal_flag = FALSE;
+}
+
+void dev_delay(dword ms) {
+    gint timer_id = g_timeout_add(ms, timeout_callback, 0);
+    output.modal_flag = TRUE;
+    while (output.modal_flag && output.break_exec == 0) {
+        gtk_main_iteration_do(TRUE);
+    }
+    g_source_remove(timer_id);
+}
+
 /*
  * Image commmands ...
  */
-
 GdkPixbuf* get_image(dev_file_t* filep, int index) {
     GtkWidget* image = gtk_image_new_from_file(filep->name);
     if (gtk_image_get_storage_type(GTK_IMAGE(image)) != GTK_IMAGE_PIXBUF) {
@@ -291,7 +303,6 @@ void dev_image(int handle, int index, int x, int y,
                             GDK_RGB_DITHER_NORMAL, 0,0);
             GdkRectangle rc = {x-1, y-1, w+2, h+2};
             gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
-            gtk_main_iteration_do(FALSE);
         }
     } else {
         /* output screen area image to jpeg */
@@ -530,5 +541,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.13 2006-02-13 05:02:19 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.14 2006-02-13 05:33:46 zeeb90au Exp $". */
 
