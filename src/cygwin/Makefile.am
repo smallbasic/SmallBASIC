@@ -18,10 +18,7 @@ bin_PROGRAMS = sbasic
 sbasic_SOURCES =								\
   ../console_main.c								\
   ../dev_null.c									\
-  ../clibmgr.c									\
-  ../dev_term.c ../dev_term.h					\
-  ../help_subsys.c ../help_subsys.h				\
-  ../interactive_mode.c interactive_mode.h
+  ../dev_term.c ../dev_term.h
 
 sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
 
