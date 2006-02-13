@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.9 2006-02-13 05:32:49 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.10 2006-02-13 12:25:58 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -61,16 +61,42 @@ function checkForDEBUG() {
    fi)
 }
 
+function checkHILDON() {
+   PKG_CHECK_MODULES(HILDON, hildon-libs >= 0.8.4)
+   AC_SUBST(HILDON_LIBS)
+   AC_SUBST(HILDON_CFLAGS)
+
+   PKG_CHECK_MODULES(OSSO,libosso >= 0.8.4 gnome-vfs-2.0 >= 2.2 gnome-vfs-module-2.0 >= 2.2)
+   AC_SUBST(OSSO_LIBS)
+   AC_SUBST(OSSO_CFLAGS)
+
+   PKG_CHECK_MODULES(OSSOSETTINGS, osso-af-settings >= 0.8.4)
+
+   localedir=`$PKG_CONFIG osso-af-settings --variable=localedir`
+   hildondesktopentrydir=`$PKG_CONFIG osso-af-settings --variable=desktopentrydir`
+   hildoncpdesktopentrydir=`$PKG_CONFIG hildon-control-panel --variable plugindesktopentrydir`
+   hildonstatusbarplugindir=`$PKG_CONFIG hildon-status-bar-lib --variable=pluginlibdir`
+   hildoncplibdir=`$PKG_CONFIG hildon-control-panel --variable=pluginlibdir`
+   hildoniconthemedir=$HOME/.icons/hicolor
+
+   AC_SUBST(localedir)
+   AC_SUBST(desktopentrydir)
+   AC_SUBST(hildondesktopentrydir)
+   AC_SUBST(hildoncpdesktopentrydir)
+   AC_SUBST(hildonstatusbarplugindir)
+   AC_SUBST(hildoncplibdir)
+   AC_SUBST(hildoniconthemedir)
+
+   PACKAGE_CFLAGS="${HILDON_CFLAGS} ${OSSO_CFLAGS}"
+   PACKAGE_LIBS="${HILDON_LIBS} ${OSSO_LIBS}"
+}
+
 function buildGTK() {
    echo "Building GTK version..."
  
    checkForWindows
    checkForDEBUG 
 
-   dnl check for gtk libraries
-   pkg_modules="gtk+-2.0 >= 2.0.0"
-   PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
- 
    dnl disable build for hildon
    AC_ARG_ENABLE(hildon,
      AC_HELP_STRING([--disable-hildon], [disable hildon build (default=no)]),
@@ -79,6 +105,11 @@ function buildGTK() {
  
    if test "x$ac_hildon_build" = "xyes"; then
       AC_DEFINE(USE_HILDON, 1, [Define if building for hildon/maemo/n770.])
+      checkHILDON
+   else
+      dnl check for gtk libraries
+      pkg_modules="gtk+-2.0 >= 2.0.0"
+      PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
    fi
  
    dnl preconfigured values for GTK build
@@ -172,8 +203,10 @@ AC_OUTPUT([
 Makefile
 sync/Makefile
 sync/gtk/src/Makefile
+sync/gtk/data/sbgtk.desktop
+sync/gtk/data/com.nokia.sbgtk.service
 sync/ide-fltk/Makefile
 sync/cygwin/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.9 2006-02-13 05:32:49 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.10 2006-02-13 12:25:58 zeeb90au Exp $".
