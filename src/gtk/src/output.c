@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.15 2006-02-13 11:33:55 zeeb90au Exp $
+ * $Id: output.c,v 1.16 2006-02-13 12:25:25 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -20,6 +20,10 @@
 #include "support.h"
 #include "output.h"
 #include "output_model.h"
+
+#ifdef USE_HILDON
+#include "hildon-lgpl/hildon-widgets/hildon-app.h"
+#endif
 
 extern OutputModel output;
 
@@ -551,5 +555,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.15 2006-02-13 11:33:55 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.16 2006-02-13 12:25:25 zeeb90au Exp $". */
 

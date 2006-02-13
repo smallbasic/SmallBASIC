@@ -10,7 +10,7 @@ INCLUDES = \
      -I../../ -I. \
 	-DPACKAGE_PREFIX=\""$(prefix)"\" \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
-	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
+	-DPACKAGE_LOCALE_DIR=\"$(localedir)\" \
 	@PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbgtk
@@ -26,6 +26,7 @@ sbgtk_SOURCES =									\
 
 sbgtk_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
 
+servicefiledir=`$(PKG_CONFIG) --variable=libdir dbus-glib-1`/dbus-1.0/services
 
 
 

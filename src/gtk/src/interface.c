@@ -170,7 +170,7 @@ create_aboutdialog (void)
   gtk_about_dialog_set_name (GTK_ABOUT_DIALOG (aboutdialog), _("SmallBASIC"));
   gtk_about_dialog_set_copyright (GTK_ABOUT_DIALOG (aboutdialog), _("Copyright (c) 2006 Chris Warren-Smith"));
   gtk_about_dialog_set_license (GTK_ABOUT_DIALOG (aboutdialog), "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\nThis program is free software; you can use it redistribute\nit and/or modify it under the terms of the \nGNU General Public License version 2 as published by\nthe Free Software Foundation.\n");
-  gtk_about_dialog_set_wrap_license (GTK_ABOUT_DIALOG (aboutdialog), TRUE);
+  //gtk_about_dialog_set_wrap_license (GTK_ABOUT_DIALOG (aboutdialog), TRUE);
   gtk_about_dialog_set_website (GTK_ABOUT_DIALOG (aboutdialog), "smallbasic.sf.net");
   gtk_about_dialog_set_website_label (GTK_ABOUT_DIALOG (aboutdialog), _("SmallBASIC"));
   gtk_about_dialog_set_authors (GTK_ABOUT_DIALOG (aboutdialog), authors);

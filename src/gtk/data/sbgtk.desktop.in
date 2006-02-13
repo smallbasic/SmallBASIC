@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+_Name=SmallBASIC
+Exec=/usr/bin/sbgtk
+Icon=qgn_list_documents
+X-Window-Icon=sbgtk-window
+X-Window-Icon-Dimmed=sbgtk-window-dimmed
+X-Osso-Service=sbgtk
+X-Osso-Type=application/x-executable
