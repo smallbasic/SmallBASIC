@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.14 2006-02-13 05:33:46 zeeb90au Exp $
+ * $Id: output.c,v 1.15 2006-02-13 11:33:55 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -108,7 +108,7 @@ int osd_getpen(int code) {
     switch(code) {
     case 0: // return true if there is a waiting pen event(up/down)
         if (output.pen_down != 0) {
-            output.pen_down = 0;
+            gtk_main_iteration_do(FALSE);
             gdk_window_get_pointer(output.widget->window,
                                    &output.pen_down_x,
                                    &output.pen_down_y,
@@ -329,7 +329,7 @@ int dev_image_height(int handle, int index) {
     return pixbuf != 0 ? gdk_pixbuf_get_height(pixbuf) : -1;
 }
 
-gboolean key_press(GtkWidget* entry, GdkEventKey* event, gpointer data) {
+gboolean in_key_press(GtkWidget* entry, GdkEventKey* event, gpointer data) {
     switch (event->keyval) {
     case GDK_Return:
         output.modal_flag = FALSE;
@@ -346,7 +346,7 @@ gboolean key_press(GtkWidget* entry, GdkEventKey* event, gpointer data) {
     return FALSE;
 }
 
-gboolean key_release(GtkWidget* entry, GdkEventKey* event, gpointer data) {
+gboolean in_key_release(GtkWidget* entry, GdkEventKey* event, gpointer data) {
     const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));    
     gtk_entry_set_width_chars(GTK_ENTRY(entry), 1+strlen(value));
     return FALSE;
@@ -368,9 +368,9 @@ char* dev_gets(char *dest, int size) {
     gtk_widget_show(entry);
 
     g_signal_connect(G_OBJECT(entry), "key_press_event", 
-                     G_CALLBACK(key_press), NULL);
+                     G_CALLBACK(in_key_press), NULL);
     g_signal_connect(G_OBJECT(entry), "key_release_event", 
-                     G_CALLBACK(key_release), NULL);
+                     G_CALLBACK(in_key_release), NULL);
 
     output.modal_flag = TRUE;
     while (output.modal_flag && output.break_exec == 0) {
@@ -417,40 +417,53 @@ void invalidate_rect(int x1, int y1, int x2, int y2) {
     gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
 
-#ifdef USE_HILDON
 /* Callback for maemo hardware keys */
-gboolean key_press_cb(GtkWidget* widget, GdkEventKey* event, HildonApp *app) {
+#ifdef USE_HILDON
+gboolean key_press_event(GtkWidget* widget, GdkEventKey* event, HildonApp *app)
+#else
+gboolean key_press_event(GtkWidget* widget, GdkEventKey* event, gpointer user_data)
+#endif
+{    
     switch(event->keyval) {
     case GDK_Up: // Navigation Key Up
+        dev_pushkey(SB_KEY_UP);
         return TRUE;
         
     case GDK_Down: // Navigation Key Down
+        dev_pushkey(SB_KEY_DN);
         return TRUE;
         
     case GDK_Left: // Navigation Key Left
+        dev_pushkey(SB_KEY_LEFT);
         return TRUE;
         
     case GDK_Right: // Navigation Key Right
+        dev_pushkey(SB_KEY_RIGHT);
         return TRUE;
         
     case GDK_Return: // Navigation Key select
-        return TRUE;
+        return FALSE;
         
     case GDK_F6: // Full screen
         return TRUE;
         
     case GDK_F7: // Increase(zoom in)
+        dev_pushkey(SB_KEY_PGUP);
         return TRUE;
         
     case GDK_F8: // Decrease(zoom out)
+        dev_pushkey(SB_KEY_PGDN);
         return TRUE;
         
     case GDK_Escape: // Cancel/Close
-        return TRUE;        
+        output.break_exec = 1;
+        return TRUE;
+    default:
+        dev_pushkey(event->keyval);
+        return TRUE;
     }
     return FALSE;
 }
-#endif
 
 /* Create a new backing pixmap of the appropriate size */
 gboolean configure_event(GtkWidget* widget, 
@@ -526,14 +539,11 @@ gboolean drawing_area_init(GtkWidget *main_window) {
                      G_CALLBACK(button_press_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
                      G_CALLBACK(button_release_event), NULL);
-
-#ifdef USE_HILDON
     g_signal_connect(G_OBJECT(drawing_area), "key_press_event", 
-                     G_CALLBACK(key_press_cb), NULL);
-#endif
+                     G_CALLBACK(key_press_event), NULL);
 
     gtk_widget_set_events(drawing_area, 
-                          GDK_POINTER_MOTION_HINT_MASK |
+                          GDK_KEY_PRESS_MASK |
                           GDK_EXPOSURE_MASK |
                           GDK_BUTTON_PRESS_MASK   |
                           GDK_BUTTON_RELEASE_MASK);
@@ -541,5 +551,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.14 2006-02-13 05:33:46 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.15 2006-02-13 11:33:55 zeeb90au Exp $". */
 
