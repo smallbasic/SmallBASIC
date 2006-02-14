@@ -24,5 +24,10 @@ sbfltk_SOURCES =								\
     StringLib.cpp                               \
     blib_fltk_ui.cpp
 
-sbfltk_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
+sbfltk_LDADD = -L$(top_srcdir)/sync -lsb_common @PACKAGE_LIBS@
 
+if WITH_WIN32
+sbfltk_LDADD += sbfltk.res
+sbfltk.res : sbfltk.rc
+	$(WINDRES) $< -O coff -o $@
+endif
