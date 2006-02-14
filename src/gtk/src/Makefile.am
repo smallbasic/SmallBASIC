@@ -17,12 +17,16 @@ bin_PROGRAMS = sbgtk
 
 sbgtk_SOURCES =									\
 	main.c										\
-	support.c support.h							\
-	interface.c interface.h						\
-	callbacks.c callbacks.h						\
     output.c output.h      						\
     output_model.c output_model.h               \
-    output_write.c
+    output_write.c                              \
+	callbacks.c callbacks.h
+
+if WITH_HILDON
+sbgtk_SOURCES += hildon_ui.c hildon_ui.h
+else
+sbgtk_SOURCES += support.c support.h interface.c interface.h	
+endif
 
 sbgtk_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
 
