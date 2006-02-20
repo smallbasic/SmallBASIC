@@ -3073,19 +3073,30 @@ void	comp_pass2_scan()
             break;
 
         case kwCASE_ELSE:
-            // should not be any following CASE expr statements
-			false_ip = comp_search_bc_stack(i+1, kwCASE, node.level);
-            if (false_ip != INVALID_ADDR) {
-				sc_raise(MSG_CASE_CASE_ELSE);
-				print_pass2_stack(i, kwENDSELECT, node.level);
-				return;
-            }
+            // check for END SELECT statement
             false_ip = comp_search_bc_stack(i+1, kwENDSELECT, node.level);
             if (false_ip == INVALID_ADDR) {
                 sc_raise(MSG_MISSING_END_SELECT);
                 print_pass2_stack(i, kwCASE, node.level);
                 return;
             }
+
+            // validate no futher CASE expr statements
+			j = comp_search_bc_stack(i+1, kwCASE, node.level);
+            if (j != INVALID_ADDR && j < false_ip) {
+				sc_raise(MSG_CASE_CASE_ELSE);
+				print_pass2_stack(i, kwCASE, node.level);
+				return;
+            }
+
+            // validate no futher CASE ELSE expr statements
+			j = comp_search_bc_stack(i+1, kwCASE_ELSE, node.level);
+            if (j != INVALID_ADDR && j < false_ip) {
+				sc_raise(MSG_CASE_CASE_ELSE);
+				print_pass2_stack(i, kwCASE_ELSE, node.level);
+				return;
+            }
+
             // if the expression is false jump to the end-select
             memcpy(comp_prog.ptr+node.pos+(ADDRSZ+1), &false_ip, ADDRSZ);
             break;
