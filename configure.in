@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.12 2006-02-14 12:54:45 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.13 2006-02-20 00:29:36 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -46,19 +46,25 @@ function checkForWindows() {
      *mingw* | pw32* | cygwin*)
     	win32="yes"
      AC_CHECK_TOOL(WINDRES, windres, :)
-     PACKAGE_CFLAGS="$PACKAGE_CFLAGS -mms-bitfields -mno-cygwin"
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
    esac
    AM_CONDITIONAL(WITH_WIN32, test x"$win32" = "xyes")
 }
 
-function checkForDEBUG() {
-   dnl check for --enable-debug
-   AC_ARG_ENABLE(debug, [  --enable-debug          turn on debugging [default=no]],
-   if test "x$enable_debug" = "xyes"; then
-     LDFLAGS="-g -O0 $LDFLAGS"
+function checkDebugMode() {
+   AC_MSG_CHECKING([if debug mode is enabled])
+   AC_ARG_WITH(debug,
+   [  --with-debug            Build the debug version default=no],
+       [with_debug=$withval],
+       [with_debug=no])
+   AC_MSG_RESULT([$with_debug])
+   if test "$with_debug" = "yes" || test "$with_debug" = "full"
+   then
+     CFLAGS="-g -O0"
    else
-     LDFLAGS="-s -O2 -Os $LDFLAGS"
-   fi)
+     CFLAGS="-O3 -Os"
+   fi
+   AC_SUBST(CFLAGS)
 }
 
 function checkHILDON() {
@@ -87,16 +93,13 @@ function checkHILDON() {
    AC_SUBST(hildoncplibdir)
    AC_SUBST(hildoniconthemedir)
 
-   PACKAGE_CFLAGS="${HILDON_CFLAGS} ${OSSO_CFLAGS}"
-   PACKAGE_LIBS="${HILDON_LIBS} ${OSSO_LIBS}"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${HILDON_CFLAGS} ${OSSO_CFLAGS}"
+   PACKAGE_LIBS="${PACKAGE_LIBS} ${HILDON_LIBS} ${OSSO_LIBS}"
 }
 
 function buildGTK() {
    echo "Building GTK version..."
  
-   checkForWindows
-   checkForDEBUG 
-
    dnl disable build for hildon
    AC_ARG_ENABLE(hildon,
      AC_HELP_STRING([--disable-hildon], [disable hildon build (default=no)]),
@@ -131,9 +134,6 @@ function buildGTK() {
 function buildFLTK() {
    echo "Building FLTK version..."
  
-   checkForWindows
-   checkForDEBUG
- 
    dnl Checks for FLTK 2.x
    AC_CHECK_PROG(have_fltk, fltk-config, [yes], [no])
  
@@ -157,8 +157,8 @@ function buildFLTK() {
    ])
    fi
  
-   PACKAGE_CFLAGS="`fltk-config --cxxflags` -Wall -Wunused -fno-exceptions"
-   PACKAGE_LIBS="`fltk-config --ldstaticflags --use-images`"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `fltk-config --cxxflags` -Wall -Wunused -fno-exceptions"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk-config --ldstaticflags --use-images`"
    AM_CONDITIONAL(WITH_HILDON, false)
  
    dnl preconfigured values for FLTK build
@@ -178,11 +178,7 @@ function buildFLTK() {
 function buildConsole {
    echo "Building Console version..."
 
-   checkForWindows
-   checkForDEBUG
-
-   PACKAGE_CFLAGS="-O2 -Os -Wall"
-   PACKAGE_LIBS="-lm -lgcc -lreadline -ltermcap -s"
+   PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lreadline -ltermcap -s"
    AM_CONDITIONAL(WITH_HILDON, false)
 
    dnl preconfigured values for FLTK build
@@ -194,6 +190,9 @@ function buildConsole {
    BUILD_SUBDIRS="sync sync/cygwin"
    AC_SUBST(BUILD_SUBDIRS)
 }
+
+checkDebugMode
+checkForWindows
 
 if test x$ac_build_gtk = xyes; then
    buildGTK
@@ -213,4 +212,4 @@ sync/ide-fltk/Makefile
 sync/cygwin/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.12 2006-02-14 12:54:45 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.13 2006-02-20 00:29:36 zeeb90au Exp $".
