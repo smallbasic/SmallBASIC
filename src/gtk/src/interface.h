@@ -4,3 +4,4 @@
 
 GtkWidget* create_main_window (void);
 GtkWidget* create_aboutdialog (void);
+GtkWidget* create_opendialog (void);

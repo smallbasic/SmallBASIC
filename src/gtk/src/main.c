@@ -1,13 +1,13 @@
-/*
- * $Id: main.c,v 1.5 2006-02-10 02:40:27 zeeb90au Exp $
- * This file is part of SmallBASIC
- *
- * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
- * cwarrens@twpo.com.au
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- */ 
+//
+// $Id: main.c,v 1.6 2006-03-01 05:22:16 zeeb90au Exp $
+// This file is part of SmallBASIC
+//
+// Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
+// cwarrens@twpo.com.au
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+// 
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -19,50 +19,52 @@
 #include "support.h"
 #include "output.h"
 
-#ifdef G_OS_WIN32
-gchar *package_prefix = PACKAGE_PREFIX;
-gchar *package_data_dir = PACKAGE_DATA_DIR;
-gchar *package_locale_dir = PACKAGE_LOCALE_DIR;
+#ifdef USE_HILDON
+#include <libosso.h>
+#include "hildon-lgpl/hildon-widgets/hildon-app.h"
+#include "hildon-lgpl/hildon-widgets/hildon-input-mode-hint.h"
+HildonApp* app;
+#else
+#define app
 #endif
+
+void destroy_event(GtkObject *object, gpointer user_data) {
+    exit(1);
+}
 
 int main(int argc, char *argv[]) {
     GtkWidget *main_window;
-    gchar *pixmap_dir;
 
-#ifdef G_OS_WIN32
-    package_prefix = g_win32_get_package_installation_directory(NULL, NULL);
-    package_data_dir = g_build_filename(package_prefix, "share", NULL);
-    package_locale_dir = g_build_filename(package_prefix, "share", "locale", NULL);
-#ifdef ENABLE_NLS
-    bindtextdomain(GETTEXT_PACKAGE, package_locale_dir);
-    bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
-    textdomain(GETTEXT_PACKAGE);
-#endif
-#else
 #ifdef ENABLE_NLS
     bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
     bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
     textdomain (GETTEXT_PACKAGE);
 #endif
-#endif
 
     gtk_set_locale();
     gtk_init(&argc, &argv);
 
-#ifdef G_OS_WIN32
-    pixmap_dir = g_build_filename(package_data_dir, PACKAGE, "pixmaps", NULL);
-    add_pixmap_directory(pixmap_dir);
-    g_free(pixmap_dir);
+#ifdef USE_HILDON
+    app = HILDON_APP(hildon_app_new());
+    hildon_app_set_title(app, "SmallBASIC");
+    osso_context_t* osso = osso_initialize(PACKAGE, VERSION, TRUE, NULL);
+    main_window = create_main_window();
+    hildon_app_set_appview(app, HILDON_APPVIEW(main_window));
 #else
-    add_pixmap_directory (PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
+    main_window = create_main_window();
 #endif
 
-    main_window = create_main_window();
     drawing_area_init(main_window);
-    gtk_widget_show(main_window);
-    g_signal_connect((gpointer)main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(G_OBJECT(main_window), "destroy", 
+                     G_CALLBACK(destroy_event), NULL);
 
-    /* prepare runtime flags */
+#ifdef USE_HILDON
+    gtk_widget_show_all(GTK_WIDGET(app));
+#else
+    gtk_widget_show(main_window);
+#endif
+
+    // prepare runtime flags
     opt_graphics = 1;
     opt_quiet = 1;
     opt_interactive = 0;
@@ -73,45 +75,20 @@ int main(int argc, char *argv[]) {
     opt_pref_height = 0;
     opt_pref_bpp = 0;
 
-    if (argc == 2) {
-        /* program command line args */
-        int i;
-        for (i=3; i<argc; i++) {
-            strcat(opt_command, argv[i]);
-            strcat(opt_command, " ");
+    while (1) {
+        GtkWidget* dialog = create_opendialog(app);
+        if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
+            char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+            gtk_widget_destroy(dialog);
+            sbasic_main(filename);
+            g_free(filename);
+        } else {
+            gtk_widget_destroy(dialog);
+            break;
         }
-        sbasic_main(argv[1]);
-    } else {
-        GtkWidget* dialog =
-            gtk_file_chooser_dialog_new("Open File",
-                                        GTK_WINDOW(main_window),
-                                        GTK_FILE_CHOOSER_ACTION_OPEN,
-                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-                                        NULL);
-        while (1) {
-            if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-                gtk_widget_hide(dialog);
-                char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-                sbasic_main(filename);
-                g_free(filename);
-            } else {
-                break;
-            }
-        }
-        gtk_widget_destroy(dialog);
     }
-
-    gtk_main();
     om_cleanup();
-
-#ifdef G_OS_WIN32
-    g_free(package_prefix);
-    g_free(package_data_dir);
-    g_free(package_locale_dir);
-#endif
-
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.5 2006-02-10 02:40:27 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.6 2006-03-01 05:22:16 zeeb90au Exp $". */

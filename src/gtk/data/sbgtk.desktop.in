@@ -1,11 +1,11 @@
 [Desktop Entry]
 Encoding=UTF-8
-Version=1.0
+Version=0.1
+Name=SmallBASIC
 Type=Application
-_Name=SmallBASIC
-Exec=/usr/bin/sbgtk
+Exec=/var/lib/install/usr/bin/sbgtk
 Icon=qgn_list_documents
-X-Window-Icon=sbgtk-window
-X-Window-Icon-Dimmed=sbgtk-window-dimmed
+X-HildonDesk-ShowInToolbar=true
 X-Osso-Service=sbgtk
 X-Osso-Type=application/x-executable
+StartupWMClass=sbgtk

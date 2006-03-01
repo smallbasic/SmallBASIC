@@ -1,5 +1,5 @@
 /*
- * $Id: callbacks.c,v 1.6 2006-02-12 00:39:15 zeeb90au Exp $
+ * $Id: callbacks.c,v 1.7 2006-03-01 05:22:16 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -32,7 +32,7 @@ on_stop_activate(GtkMenuItem * menuitem, gpointer user_data)
 void
 on_about_activate(GtkMenuItem * menuitem, gpointer user_data)
 {
-    GtkWidget      *about = create_aboutdialog();
+    GtkWidget *about = create_aboutdialog();
     gtk_dialog_run(GTK_DIALOG(about));
     gtk_widget_destroy(about);
 }
@@ -51,5 +51,5 @@ on_quit_activate(GtkMenuItem * menuitem, gpointer user_data)
 }
 
 /*
- * End of "$Id: callbacks.c,v 1.6 2006-02-12 00:39:15 zeeb90au Exp $". 
+ * End of "$Id: callbacks.c,v 1.7 2006-03-01 05:22:16 zeeb90au Exp $". 
  */

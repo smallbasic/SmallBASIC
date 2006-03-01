@@ -67,3 +67,8 @@ void        glade_set_atk_action_description (AtkAction       *action,
                                               const gchar     *action_name,
                                               const gchar     *description);
 
+/* These variables define various paths detected at runtime. */
+extern gchar *package_prefix;
+extern gchar *package_data_dir;
+extern gchar *package_locale_dir;
+

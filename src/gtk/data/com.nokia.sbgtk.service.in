@@ -1,3 +1,4 @@
 [D-BUS Service]
 Name=com.nokia.sbgtk
-Exec=@prefix@/bin/sbgtk
+Exec=/var/lib/install/usr/bin/sbgtk
+
