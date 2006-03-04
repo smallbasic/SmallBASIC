@@ -6,7 +6,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-lib_LIBRARIES = libsb_common.a
+noinst_LIBRARIES = libsb_common.a
 
 libsb_common_a_SOURCES =                  \
     bc.c bc.h                             \
