@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.13 2006-02-20 00:29:36 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.14 2006-03-04 09:28:14 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.9.7)
+AM_INIT_AUTOMAKE(smallbasic, 0.9.7.1)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -194,6 +194,15 @@ function buildConsole {
 checkDebugMode
 checkForWindows
 
+dnl if the CPU is ARM then always assume invoked
+dnl from the command "fakeroot dpkg-buildpackage"
+dnl to build a DEB module for the Nokia 770
+if test x${host_cpu} = xarm; then
+  ac_build_gtk="yes"
+  ac_hildon_build="yes"
+  ln -s sync/gtk/debian
+fi
+
 if test x$ac_build_gtk = xyes; then
    buildGTK
 elif test x$ac_build_fltk = xyes; then
@@ -212,4 +221,4 @@ sync/ide-fltk/Makefile
 sync/cygwin/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.13 2006-02-20 00:29:36 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.14 2006-03-04 09:28:14 zeeb90au Exp $".
