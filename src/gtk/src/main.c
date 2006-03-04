@@ -1,5 +1,5 @@
 //
-// $Id: main.c,v 1.6 2006-03-01 05:22:16 zeeb90au Exp $
+// $Id: main.c,v 1.7 2006-03-04 00:11:07 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -16,7 +16,6 @@
 #include <sbapp.h>
 #include <gtk/gtk.h>
 #include "interface.h"
-#include "support.h"
 #include "output.h"
 
 #ifdef USE_HILDON
@@ -34,6 +33,7 @@ void destroy_event(GtkObject *object, gpointer user_data) {
 
 int main(int argc, char *argv[]) {
     GtkWidget *main_window;
+    char buf[1];
 
 #ifdef ENABLE_NLS
     bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 #ifdef USE_HILDON
     gtk_widget_show_all(GTK_WIDGET(app));
 #else
-    gtk_widget_show(main_window);
+    gtk_widget_show_all(main_window);
 #endif
 
     // prepare runtime flags
@@ -77,11 +77,23 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         GtkWidget* dialog = create_opendialog(app);
+        gtk_window_set_title(GTK_WINDOW(dialog), "Open BAS File");
         if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
             char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
             gtk_widget_destroy(dialog);
-            sbasic_main(filename);
+
+            while (1) {
+                osd_cls();
+                sbasic_main(filename);
+                osd_setxy(1,1);
+                osd_write("\nRestart Y/N?");
+                dev_gets(buf, 1);
+                if (buf[0] != 'Y' && buf[0] != 'y') {
+                    break;
+                }
+            }
             g_free(filename);
+
         } else {
             gtk_widget_destroy(dialog);
             break;
@@ -91,4 +103,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.6 2006-03-01 05:22:16 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.7 2006-03-04 00:11:07 zeeb90au Exp $". */

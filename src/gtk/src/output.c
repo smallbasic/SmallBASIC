@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.17 2006-03-01 05:22:16 zeeb90au Exp $
+ * $Id: output.c,v 1.18 2006-03-04 00:11:07 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -17,7 +17,6 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include "interface.h"
-#include "support.h"
 #include "output.h"
 #include "output_model.h"
 
@@ -32,8 +31,6 @@ extern OutputModel output;
 
 int osd_devinit() {
     os_graphics = 1;
-    os_graf_mx = output.widget->allocation.width;
-    os_graf_my = output.widget->allocation.height;
     os_ver = 1;
     os_color = 1;
     os_color_depth = 16;
@@ -51,11 +48,7 @@ void osd_settextcolor(long fg, long bg) {
 }
 
 void osd_refresh() {
-    GdkRectangle rc = {
-        0, 0,
-        output.widget->allocation.width,
-        output.widget->allocation.height
-    };
+    GdkRectangle rc = {0, 0, os_graf_mx, os_graf_my};
     gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
 
@@ -220,7 +213,7 @@ void osd_line(int x1, int y1, int x2, int y2) {
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
-    gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
+    gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
     gdk_draw_rectangle(output.pixmap, output.gc, bFill, x1, y1, x2-x1, y2-y1);
     invalidate_rect(x1, y1, x2, y2);
 }
@@ -337,7 +330,6 @@ int dev_image_height(int handle, int index) {
 gboolean key_press_event(GtkWidget* widget, 
                          GdkEventKey* event, 
                          gpointer user_data) {
-
     switch(event->keyval) {
     case GDK_Up: // Navigation Key Up
         dev_pushkey(SB_KEY_UP);
@@ -356,7 +348,9 @@ gboolean key_press_event(GtkWidget* widget,
         return TRUE;
         
     case GDK_Return: // Navigation Key select
-        return FALSE;
+    case GDK_KP_Enter:
+        output.modal_flag = FALSE;
+        return TRUE;
         
     case GDK_F6: // Full screen
         return TRUE;
@@ -373,6 +367,13 @@ gboolean key_press_event(GtkWidget* widget,
         output.break_exec = 1;
         return TRUE;
 
+    case GDK_C:
+    case GDK_c:
+        if (event->state & GDK_CONTROL_MASK) {
+            output.break_exec = TRUE;
+            return TRUE;
+        }
+
     default:
         dev_pushkey(event->keyval);
         return TRUE;
@@ -380,34 +381,10 @@ gboolean key_press_event(GtkWidget* widget,
     return FALSE;
 }
 
-gboolean in_key_press(GtkWidget* entry, GdkEventKey* event, gpointer data) {
-    switch (event->keyval) {
-    case GDK_Return:
-        output.modal_flag = FALSE;
-        return TRUE;
-    case GDK_C:
-    case GDK_c:
-        if (event->state & GDK_CONTROL_MASK) {
-            output.break_exec = TRUE;
-            return TRUE;
-        }
-    default:
-        break;
-    }
-    return key_press_event(entry, event, data);
-}
-
-gboolean in_key_release(GtkWidget* entry, GdkEventKey* event, gpointer data) {
-    const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));    
-    gtk_entry_set_width_chars(GTK_ENTRY(entry), 1+strlen(value));
-    return FALSE;
-}
-
 void input_changed(GtkEditable* editable, GtkWidget* entry) {
+    // adjust the size of the input to fix the text
     const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));
-    //TODO fixme - in scratchbox
-    //gtk_entry_set_width_chars(GTK_ENTRY(entry), 1+strlen(value));
-    //dev_pushkey(event->keyval);
+    gtk_entry_set_width_chars(GTK_ENTRY(entry), 1+strlen(value));
 }
 
 /*
@@ -417,33 +394,39 @@ char* dev_gets(char *dest, int size) {
     GtkWidget* entry = gtk_entry_new();
 
     g_object_set(G_OBJECT(entry), "autocap", FALSE, NULL);
-    gtk_layout_put(GTK_LAYOUT(output.widget->parent), 
-                   entry, output.cur_x, output.cur_y-2);
+    gtk_layout_put(GTK_LAYOUT(output.widget), entry, 
+                   output.cur_x-1, output.cur_y-1);
     gtk_entry_set_has_frame(GTK_ENTRY(entry), FALSE);
     gtk_entry_set_max_length(GTK_ENTRY(entry), size);
     gtk_entry_set_width_chars(GTK_ENTRY(entry), 1);
+    gtk_entry_set_alignment(GTK_ENTRY(entry), 0);
     gtk_widget_modify_font(entry, output.font_desc);
-    gtk_widget_grab_focus(entry);
-    gtk_widget_show(entry);
-
     g_signal_connect(G_OBJECT(entry), "key_press_event", 
-                     G_CALLBACK(in_key_press), entry);
-    g_signal_connect(G_OBJECT(entry), "key_release_event", 
-                     G_CALLBACK(in_key_release), entry);
+                     G_CALLBACK(key_press_event), entry);
     g_signal_connect(G_OBJECT(entry), "changed",
                      G_CALLBACK(input_changed), entry);
+    gtk_widget_show(entry);
+
+    GtkIMContext *imctx = gtk_im_multicontext_new();
+    gtk_im_context_set_client_window(imctx, output.widget->window);
+    gtk_im_context_focus_in(imctx);
+    gtk_im_context_show(imctx);
+    gtk_widget_grab_focus(entry);
 
     output.modal_flag = TRUE;
     while (output.modal_flag && output.break_exec == 0) {
         gtk_main_iteration_do(TRUE);
     }
 
+    gtk_im_context_focus_out(imctx);
+    g_object_unref(G_OBJECT(imctx));
+
     const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));
     strcpy(dest, value);
     osd_write(dest);
 
     /* remove and destroy the entry widget */
-    gtk_container_remove(GTK_CONTAINER(output.widget->parent), entry);
+    gtk_container_remove(GTK_CONTAINER(output.widget), entry);
 
     if (output.break_exec == 1) {
         brun_break();
@@ -486,6 +469,9 @@ gboolean configure_event(GtkWidget* widget,
         /* deferred init to here since we don't run gtk_main() */
         output.gc = gdk_gc_new(widget->window);
         om_reset(TRUE); 
+        /* set mx/my here while no keypad is displayed */
+        os_graf_mx = output.widget->allocation.width-1;
+        os_graf_my = output.widget->allocation.height-1;
     }
     if (output.layout == 0) {
         output.layout = gtk_widget_create_pango_layout(widget, 0);
@@ -545,9 +531,17 @@ gboolean button_release_event(GtkWidget* w, GdkEventButton *e, gpointer data) {
 gboolean drawing_area_init(GtkWidget *main_window) {
     GtkWidget *drawing_area = 
         g_object_get_data(G_OBJECT(main_window), "drawing_area");
+    GtkWidget *top_window;
+
+#ifdef USE_HILDON
+    // HildonApp lives above the toplevel display window
+    top_window = main_window->parent;
+#else
+    top_window = main_window;
+#endif
 
     /* connect signals */
-    g_signal_connect(G_OBJECT(main_window),"configure_event",
+    g_signal_connect(G_OBJECT(top_window),"configure_event",
                       G_CALLBACK(configure_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "expose_event",
                       G_CALLBACK(expose_event), NULL);
@@ -567,5 +561,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.17 2006-03-01 05:22:16 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.18 2006-03-04 00:11:07 zeeb90au Exp $". */
 

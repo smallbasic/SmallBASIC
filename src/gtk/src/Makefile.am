@@ -15,22 +15,20 @@ INCLUDES = \
 
 bin_PROGRAMS = sbgtk
 
+bin_PROGRAMS : ../../libsb_common.a
+
 sbgtk_SOURCES =									\
 	main.c										\
     output.c output.h      						\
     output_model.c output_model.h               \
     output_write.c                              \
-	callbacks.c callbacks.h
-
-if WITH_HILDON
-sbgtk_SOURCES += hildon_ui.c hildon_ui.h
-else
-sbgtk_SOURCES += support.c support.h interface.c interface.h	
-endif
+	callbacks.c callbacks.h                     \
+    interface.c interface.h	
 
 sbgtk_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
 
-servicefiledir=`$(PKG_CONFIG) --variable=libdir dbus-glib-1`/dbus-1.0/services
+#
+#servicefiledir=`$(PKG_CONFIG) --variable=libdir dbus-glib-1`/dbus-1.0/services
 
 
 

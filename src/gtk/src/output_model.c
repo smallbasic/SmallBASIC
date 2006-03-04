@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $
+ * $Id: output_model.c,v 1.12 2006-03-04 00:11:07 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -18,7 +18,7 @@
 
 struct OutputModel output;
 
-#define FONT_SIZE 8
+#define FONT_SIZE 10
 #define COLOR(r,g,b) {0, (r*65535/255), (g*65535/255), (b*65535/255)}
 #define WHITE COLOR(255,255,255)
 
@@ -44,6 +44,26 @@ static GdkColor colors[] = {
     WHITE              // 15 bright white
 };
 
+int get_font_size() {
+    int size = FONT_SIZE*PANGO_SCALE;
+    GError* error = 0;
+    GKeyFile* key_file = g_key_file_new();
+    const gchar* home = g_get_home_dir();
+    const gchar* filename = g_build_filename(home, "text.ini", NULL);
+
+    g_key_file_load_from_file(key_file, filename, G_KEY_FILE_NONE, &error);
+    if (error == NULL) {
+        int n = g_key_file_get_integer(key_file, 
+                                       g_key_file_get_start_group(key_file),
+                                       "size", &error);
+        if (error == NULL) {
+            size = n*PANGO_SCALE;
+        }
+    }
+    g_key_file_free(key_file);
+    return size;
+}
+
 /* this is called once during application startup */
 void om_init(GtkWidget *widget) {
     output.widget = widget;
@@ -53,15 +73,21 @@ void om_init(GtkWidget *widget) {
     output.break_exec = 0;
     /* pango_font_description_from_string*/
     output.font_desc = pango_font_description_new();
-    pango_font_description_set_size(output.font_desc, FONT_SIZE*PANGO_SCALE);
+    pango_font_description_set_size(output.font_desc, get_font_size());
     pango_font_description_set_family(output.font_desc, "monospace");
 }
 
 /* this is called once during application shutdown */
 void om_cleanup() {
-    g_object_unref(output.layout);
-    g_object_unref(output.gc);
-    g_object_unref(output.pixmap);
+    if (output.layout) {
+        g_object_unref(output.layout);
+    }
+    if (output.gc) {
+        g_object_unref(output.gc);
+    }
+    if (output.pixmap) {
+        g_object_unref(output.pixmap);
+    }
     pango_font_description_free(output.font_desc);
 }
 
@@ -130,5 +156,5 @@ void om_set_bg_color(int color) {
     output.bg = om_get_sb_color(color);
 }
 
-/* End of "$Id: output_model.c,v 1.11 2006-02-11 22:37:37 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.12 2006-03-04 00:11:07 zeeb90au Exp $". */
 
