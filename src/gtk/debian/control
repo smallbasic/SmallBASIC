@@ -1,0 +1,14 @@
+Source: sbasic
+Section: unknown
+Priority: optional
+Maintainer: Chris Warren-Smith <cwarrensmith@gmail.com>
+Build-Depends: debhelper (>= 4.0.0)
+Standards-Version: 3.6.0
+
+Package: sbasic
+Architecture: any
+Depends: maemo
+Description: One more BASIC ...
+
+
+
