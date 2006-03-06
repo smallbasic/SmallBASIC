@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.14 2006-03-04 09:28:14 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.15 2006-03-06 11:44:54 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -127,7 +127,7 @@ function buildGTK() {
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
  
-   BUILD_SUBDIRS="sync sync/gtk/src"
+   BUILD_SUBDIRS="sync sync/gtk/src sync/gtk/data sync/gtk/icons"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -215,10 +215,11 @@ AC_OUTPUT([
 Makefile
 sync/Makefile
 sync/gtk/src/Makefile
-sync/gtk/data/sbgtk.desktop
-sync/gtk/data/com.nokia.sbgtk.service
+sync/gtk/data/sbasic.desktop
+sync/gtk/data/Makefile
+sync/gtk/icons/Makefile
 sync/ide-fltk/Makefile
 sync/cygwin/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.14 2006-03-04 09:28:14 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.15 2006-03-06 11:44:54 zeeb90au Exp $".
