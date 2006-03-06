@@ -1,5 +1,5 @@
- /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $
+/* -*- c-file-style: "java" -*-
+ * $Id: output_write.c,v 1.11 2006-03-06 11:45:29 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -21,19 +21,19 @@ extern OutputModel output;
 
 void new_line() {
     gint font_height = output.ascent+output.descent;
-    gint h = output.widget->allocation.height;
+    gint h = output.height;
     output.cur_x = INITXY;
 
-    if (output.cur_y+font_height >= h) {
-        /* shift image up font_height pixels */
-        gint w = output.widget->allocation.width;
+    if (output.cur_y+(font_height*2) >= h) {
+        // shift image up font_height pixels
+        gint w = output.width;
         gdk_draw_drawable(output.pixmap,
                           output.gc,
                           output.pixmap,
-                          0, font_height, /* src x,y */
-                          0, 0, /* dest x,y */ 
+                          0, font_height, // src x,y
+                          0, 0, // dest x,y
                           w, h-font_height);
-        /* erase bottom line */
+        // erase bottom line
         gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
         gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
                            0, h-font_height, w, font_height);
@@ -58,13 +58,13 @@ int set_graphics_rendition(char c, int escValue) {
     case 'K': // \e[K - clear to eol
         gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
         gdk_draw_rectangle(output.pixmap, output.gc, TRUE, output.cur_x, output.cur_y,
-                           output.widget->allocation.width-output.cur_x, font_height);
+                           output.width-output.cur_x, font_height);
         break;
     case 'G': // move to column
         output.cur_x = escValue;
         break;
     case 'T': // non-standard: move to n/80th of screen width
-        output.cur_x = escValue*output.widget->allocation.width/80;
+        output.cur_x = escValue*output.width/80;
         break;
     case 's': // save cursor position
         output.cur_y_saved = output.cur_x;
@@ -242,13 +242,12 @@ void osd_write(const char *str) {
             output.cur_x = INITXY;
             gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
             gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, output.cur_y,
-                               output.widget->allocation.width, 
-                               output.ascent+output.descent);
+                               output.width, output.ascent+output.descent);
             break;
         default:
             num_chars = 1; // print minimum of one character
             cx = output.font_width;
-            width = output.widget->allocation.width-1;
+            width = output.width-1;
 
             if (output.cur_x + cx >= width) {
                 new_line();
@@ -305,5 +304,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.10 2006-02-10 05:59:58 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.11 2006-03-06 11:45:29 zeeb90au Exp $". */
 

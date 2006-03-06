@@ -3,10 +3,10 @@
 #
 
 dbusdir=$(prefix)/lib/dbus-1.0/services
-dbus_DATA=com.nokia.sbgtk.service
+dbus_DATA=com.nokia.sbasic.service
 
 desktopdir=$(datadir)/applications/hildon
-desktop_DATA = sbgtk.desktop
+desktop_DATA = sbasic.desktop
 
 EXTRA_DIST = $(dbus_DATA) $(desktop_DATA)
 

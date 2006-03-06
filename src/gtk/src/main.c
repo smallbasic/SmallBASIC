@@ -1,5 +1,5 @@
 //
-// $Id: main.c,v 1.7 2006-03-04 00:11:07 zeeb90au Exp $
+// $Id: main.c,v 1.8 2006-03-06 11:45:29 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
     osso_context_t* osso = osso_initialize(PACKAGE, VERSION, TRUE, NULL);
     main_window = create_main_window();
     hildon_app_set_appview(app, HILDON_APPVIEW(main_window));
+    hildon_app_set_two_part_title(app, TRUE);
 #else
     main_window = create_main_window();
 #endif
@@ -81,19 +82,12 @@ int main(int argc, char *argv[]) {
         if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
             char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
             gtk_widget_destroy(dialog);
-
-            while (1) {
-                osd_cls();
-                sbasic_main(filename);
-                osd_setxy(1,1);
-                osd_write("\nRestart Y/N?");
-                dev_gets(buf, 1);
-                if (buf[0] != 'Y' && buf[0] != 'y') {
-                    break;
-                }
-            }
+#ifdef USE_HILDON
+            const char* p = strrchr(filename, '/');
+            hildon_appview_set_title(HILDON_APPVIEW(main_window), p?p+1:filename);
+#endif
+            sbasic_main(filename);
             g_free(filename);
-
         } else {
             gtk_widget_destroy(dialog);
             break;
@@ -103,4 +97,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.7 2006-03-04 00:11:07 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.8 2006-03-06 11:45:29 zeeb90au Exp $". */

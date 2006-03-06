@@ -13,11 +13,11 @@ INCLUDES = \
 	-DPACKAGE_LOCALE_DIR=\"$(localedir)\" \
 	@PACKAGE_CFLAGS@
 
-bin_PROGRAMS = sbgtk
+bin_PROGRAMS = sbasic
 
 bin_PROGRAMS : ../../libsb_common.a
 
-sbgtk_SOURCES =									\
+sbasic_SOURCES =								\
 	main.c										\
     output.c output.h      						\
     output_model.c output_model.h               \
@@ -25,7 +25,7 @@ sbgtk_SOURCES =									\
 	callbacks.c callbacks.h                     \
     interface.c interface.h	
 
-sbgtk_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
+sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
 
 #
 #servicefiledir=`$(PKG_CONFIG) --variable=libdir dbus-glib-1`/dbus-1.0/services

@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.18 2006-03-04 00:11:07 zeeb90au Exp $
+ * $Id: output.c,v 1.19 2006-03-06 11:45:29 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -14,6 +14,7 @@
 #endif
 
 #include <device.h>
+#include <osd.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include "interface.h"
@@ -34,8 +35,12 @@ int osd_devinit() {
     os_ver = 1;
     os_color = 1;
     os_color_depth = 16;
+    os_graf_mx = output.width;
+    os_graf_my = output.height;
     setsysvar_str(SYSVAR_OSNAME, "GTK");
     dev_clrkb();
+    osd_cls();
+    output.break_exec = 0;
 }
 
 void osd_setcolor(long color) {
@@ -78,7 +83,6 @@ int osd_events(int wait_flag) {
     }
 
     if (output.break_exec == 1) {
-        output.break_exec = 0;
         brun_break();
         return -2;
     }
@@ -353,6 +357,9 @@ gboolean key_press_event(GtkWidget* widget,
         return TRUE;
         
     case GDK_F6: // Full screen
+        output.full_screen = !output.full_screen;
+        hildon_appview_set_fullscreen(HILDON_APPVIEW(output.main_view),
+                                      output.full_screen);
         return TRUE;
         
     case GDK_F7: // Increase(zoom in)
@@ -428,10 +435,6 @@ char* dev_gets(char *dest, int size) {
     /* remove and destroy the entry widget */
     gtk_container_remove(GTK_CONTAINER(output.widget), entry);
 
-    if (output.break_exec == 1) {
-        brun_break();
-    }
-
     return dest;
 }
 
@@ -470,8 +473,8 @@ gboolean configure_event(GtkWidget* widget,
         output.gc = gdk_gc_new(widget->window);
         om_reset(TRUE); 
         /* set mx/my here while no keypad is displayed */
-        os_graf_mx = output.widget->allocation.width-1;
-        os_graf_my = output.widget->allocation.height-1;
+        output.width = event->width;
+        output.height = event->height;
     }
     if (output.layout == 0) {
         output.layout = gtk_widget_create_pango_layout(widget, 0);
@@ -540,6 +543,8 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     top_window = main_window;
 #endif
 
+    output.main_view = main_window;
+
     /* connect signals */
     g_signal_connect(G_OBJECT(top_window),"configure_event",
                       G_CALLBACK(configure_event), NULL);
@@ -549,7 +554,7 @@ gboolean drawing_area_init(GtkWidget *main_window) {
                      G_CALLBACK(button_press_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
                      G_CALLBACK(button_release_event), NULL);
-    g_signal_connect(G_OBJECT(drawing_area), "key_press_event", 
+    g_signal_connect(G_OBJECT(top_window), "key_press_event", 
                      G_CALLBACK(key_press_event), NULL);
 
     gtk_widget_set_events(drawing_area, 
@@ -561,5 +566,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.18 2006-03-04 00:11:07 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.19 2006-03-06 11:45:29 zeeb90au Exp $". */
 
