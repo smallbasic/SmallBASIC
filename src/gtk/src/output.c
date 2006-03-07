@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.19 2006-03-06 11:45:29 zeeb90au Exp $
+ * $Id: output.c,v 1.20 2006-03-07 23:33:31 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -468,13 +468,14 @@ void invalidate_rect(int x1, int y1, int x2, int y2) {
 gboolean configure_event(GtkWidget* widget, 
                          GdkEventConfigure *event,
                          gpointer user_data) {
+
     if (output.gc == 0) {
         /* deferred init to here since we don't run gtk_main() */
         output.gc = gdk_gc_new(widget->window);
         om_reset(TRUE); 
         /* set mx/my here while no keypad is displayed */
-        output.width = event->width;
-        output.height = event->height;
+        output.width = widget->allocation.width-4;
+        output.height = widget->allocation.height-4;
     }
     if (output.layout == 0) {
         output.layout = gtk_widget_create_pango_layout(widget, 0);
@@ -486,8 +487,8 @@ gboolean configure_event(GtkWidget* widget,
         /* copy old image onto new/resized image */
         int old_w, old_h;
         gdk_drawable_get_size(output.pixmap, &old_w, &old_h);
-        int w = MAX(event->width, old_w);
-        int h = MAX(event->height, old_h);
+        int w = MAX(output.width, old_w);
+        int h = MAX(output.height, old_h);
 
         GdkPixmap* pixmap = gdk_pixmap_new(widget->window, w, h, -1);
         gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
@@ -502,7 +503,7 @@ gboolean configure_event(GtkWidget* widget,
     } else {
         /* create a new pixmap */
         output.pixmap = 
-            gdk_pixmap_new(widget->window, event->width, event->height, -1);
+            gdk_pixmap_new(widget->window, output.width, output.height, -1);
         osd_cls();
     }
     return FALSE; /* continue sizing other widgets */
@@ -566,5 +567,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.19 2006-03-06 11:45:29 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.20 2006-03-07 23:33:31 zeeb90au Exp $". */
 

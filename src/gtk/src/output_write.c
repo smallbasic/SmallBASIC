@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.11 2006-03-06 11:45:29 zeeb90au Exp $
+ * $Id: output_write.c,v 1.12 2006-03-07 23:33:31 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -24,7 +24,7 @@ void new_line() {
     gint h = output.height;
     output.cur_x = INITXY;
 
-    if (output.cur_y+(font_height*2) >= h) {
+    if (output.cur_y+font_height >= h) {
         // shift image up font_height pixels
         gint w = output.width;
         gdk_draw_drawable(output.pixmap,
@@ -304,5 +304,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.11 2006-03-06 11:45:29 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.12 2006-03-07 23:33:31 zeeb90au Exp $". */
 
