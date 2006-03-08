@@ -1,5 +1,5 @@
 //
-// $Id: main.c,v 1.8 2006-03-06 11:45:29 zeeb90au Exp $
+// $Id: main.c,v 1.9 2006-03-08 07:19:46 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -76,12 +76,13 @@ int main(int argc, char *argv[]) {
     opt_pref_height = 0;
     opt_pref_bpp = 0;
 
+    GtkWidget* dialog = create_opendialog(app);
     while (1) {
-        GtkWidget* dialog = create_opendialog(app);
+        gtk_widget_show(dialog);
         gtk_window_set_title(GTK_WINDOW(dialog), "Open BAS File");
         if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
             char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-            gtk_widget_destroy(dialog);
+            gtk_widget_hide(dialog);
 #ifdef USE_HILDON
             const char* p = strrchr(filename, '/');
             hildon_appview_set_title(HILDON_APPVIEW(main_window), p?p+1:filename);
@@ -89,12 +90,12 @@ int main(int argc, char *argv[]) {
             sbasic_main(filename);
             g_free(filename);
         } else {
-            gtk_widget_destroy(dialog);
             break;
         }
     }
+    gtk_widget_destroy(dialog);
     om_cleanup();
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.8 2006-03-06 11:45:29 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.9 2006-03-08 07:19:46 zeeb90au Exp $". */

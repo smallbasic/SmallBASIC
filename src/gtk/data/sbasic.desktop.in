@@ -5,7 +5,6 @@ Type=Application
 Name=SmallBASIC
 Exec=/var/lib/install/usr/bin/sbasic
 Icon=sbasic_32
-X-Icon-path=/var/lib/install/usr/share/crazyparking/pixmaps
 X-Window-Icon=sbasic_32
 X-Window-Icon-Dimmed=sbasic_32
 X-HildonDesk-ShowInToolbar=true
