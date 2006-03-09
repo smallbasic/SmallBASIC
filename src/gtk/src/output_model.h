@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.10 2006-03-06 11:45:29 zeeb90au Exp $
+ * $Id: output_model.h,v 1.11 2006-03-09 12:07:19 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -69,6 +69,20 @@ void om_calc_font_metrics();
 
 #define INITXY 4
 
+// mapping for hardware keys
+#define KEYMAP_UP     0
+#define KEYMAP_DOWN   1
+#define KEYMAP_LEFT   2
+#define KEYMAP_RIGHT  3
+#define KEYMAP_F7     4
+#define KEYMAP_F8     5
+#define KEYMAP_F6     6
+#define KEYMAP_ENTER  7
+
+typedef struct Keymap {
+    int c;
+} Keymap;
+
 #endif
 
-/* End of "$Id: output_model.h,v 1.10 2006-03-06 11:45:29 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.11 2006-03-09 12:07:19 zeeb90au Exp $". */

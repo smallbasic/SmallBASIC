@@ -38,29 +38,23 @@
 	      <property name="use_underline">True</property>
 
 	      <child>
-		<widget class="GtkMenu" id="menuitem1_menu">
+		<widget class="GtkMenu" id="menuitem_menu">
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="stop">
+		    <widget class="GtkMenuItem" id="break_bn">
 		      <property name="visible">True</property>
-		      <property name="label">gtk-stop</property>
-		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_stop_activate" last_modification_time="Thu, 09 Feb 2006 00:16:21 GMT"/>
+		      <property name="label" translatable="yes">_Break</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_break" last_modification_time="Thu, 09 Mar 2006 04:25:33 GMT"/>
 		    </widget>
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="help">
+		    <widget class="GtkMenuItem" id="map_key">
 		      <property name="visible">True</property>
-		      <property name="label">gtk-help</property>
-		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_help_activate" last_modification_time="Thu, 09 Feb 2006 23:55:19 GMT"/>
-		    </widget>
-		  </child>
-
-		  <child>
-		    <widget class="GtkSeparatorMenuItem" id="separator1">
-		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Map Key</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_map_key" last_modification_time="Thu, 09 Mar 2006 04:25:33 GMT"/>
 		    </widget>
 		  </child>
 

@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.20 2006-03-07 23:33:31 zeeb90au Exp $
+ * $Id: output.c,v 1.21 2006-03-09 12:07:19 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -29,6 +29,17 @@ extern OutputModel output;
 
 #define PEN_ON  2
 #define PEN_OFF 0
+
+Keymap keymap[] = {
+    SB_KEY_UP,
+    SB_KEY_DN,
+    SB_KEY_LEFT,
+    SB_KEY_RIGHT,
+    SB_KEY_PGUP,
+    SB_KEY_PGDN,
+    0,
+    0
+};
 
 int osd_devinit() {
     os_graphics = 1;
@@ -336,38 +347,45 @@ gboolean key_press_event(GtkWidget* widget,
                          gpointer user_data) {
     switch(event->keyval) {
     case GDK_Up: // Navigation Key Up
-        dev_pushkey(SB_KEY_UP);
+        dev_pushkey(keymap[KEYMAP_UP].c);
         return TRUE;
         
     case GDK_Down: // Navigation Key Down
-        dev_pushkey(SB_KEY_DN);
+        dev_pushkey(keymap[KEYMAP_DOWN].c);
         return TRUE;
         
     case GDK_Left: // Navigation Key Left
-        dev_pushkey(SB_KEY_LEFT);
+        dev_pushkey(keymap[KEYMAP_LEFT].c);
         return TRUE;
         
     case GDK_Right: // Navigation Key Right
-        dev_pushkey(SB_KEY_RIGHT);
+        dev_pushkey(keymap[KEYMAP_RIGHT].c);
+        return TRUE;
+
+    case GDK_F7: // Increase(zoom in)
+        dev_pushkey(keymap[KEYMAP_F7].c);
+        return TRUE;
+        
+    case GDK_F8: // Decrease(zoom out)
+        dev_pushkey(keymap[KEYMAP_F8].c);
         return TRUE;
         
     case GDK_Return: // Navigation Key select
     case GDK_KP_Enter:
         output.modal_flag = FALSE;
+        dev_pushkey(keymap[KEYMAP_ENTER].c);        
         return TRUE;
         
     case GDK_F6: // Full screen
-        output.full_screen = !output.full_screen;
-        hildon_appview_set_fullscreen(HILDON_APPVIEW(output.main_view),
-                                      output.full_screen);
-        return TRUE;
-        
-    case GDK_F7: // Increase(zoom in)
-        dev_pushkey(SB_KEY_PGUP);
-        return TRUE;
-        
-    case GDK_F8: // Decrease(zoom out)
-        dev_pushkey(SB_KEY_PGDN);
+        if (keymap[KEYMAP_F7].c) {
+            dev_pushkey(keymap[KEYMAP_F7].c);
+        } else {
+            output.full_screen = !output.full_screen;
+#ifdef USE_HILDON        
+            hildon_appview_set_fullscreen(HILDON_APPVIEW(output.main_view),
+                                          output.full_screen);
+#endif
+        }
         return TRUE;
         
     case GDK_Escape: // Cancel/Close
@@ -567,5 +585,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.20 2006-03-07 23:33:31 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.21 2006-03-09 12:07:19 zeeb90au Exp $". */
 
