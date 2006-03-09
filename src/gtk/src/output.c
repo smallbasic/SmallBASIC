@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.21 2006-03-09 12:07:19 zeeb90au Exp $
+ * $Id: output.c,v 1.22 2006-03-09 20:28:25 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -30,16 +30,16 @@ extern OutputModel output;
 #define PEN_ON  2
 #define PEN_OFF 0
 
-Keymap keymap[] = {
-    SB_KEY_UP,
-    SB_KEY_DN,
-    SB_KEY_LEFT,
-    SB_KEY_RIGHT,
-    SB_KEY_PGUP,
-    SB_KEY_PGDN,
-    0,
-    0
-};
+int keymap[KEYMAP_LAST+1];
+gboolean key_press_event(GtkWidget* widget, 
+                         GdkEventKey* event, 
+                         gpointer user_data);
+typedef struct {
+    GtkWidget* dialog;
+    GtkWidget* label;
+    GtkIMContext* imctx;
+    int index;
+} keymap_dialog_data;
 
 int osd_devinit() {
     os_graphics = 1;
@@ -341,51 +341,122 @@ int dev_image_height(int handle, int index) {
     return pixbuf != 0 ? gdk_pixbuf_get_height(pixbuf) : -1;
 }
 
+gboolean dialog_focus(GtkWidget *dialog,
+                      GdkEventFocus *event,
+                      GtkIMContext *imctx) {
+    if (event->in) {
+        gtk_im_context_focus_in(imctx);
+        gtk_im_context_show(imctx);
+    } else {
+        gtk_im_context_focus_out(imctx);
+    }
+    return FALSE;
+}
+
+gboolean im_context_commit(GtkIMContext *ctx,
+                           const gchar *str,
+                           keymap_dialog_data* data) {
+    if (str && str[0]) {
+        keymap[data->index] = str[0];
+        gtk_dialog_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_ACCEPT);
+    }
+    return TRUE;
+}
+
+void handle_key(int index, int def_key, int keyval, 
+                keymap_dialog_data* data) {
+    if (keymap[index]) {
+        // press the key
+        dev_pushkey(keymap[index]);
+    } else if (data) {
+        // assign default 
+        keymap[index] = def_key;
+        dev_pushkey(keymap[index]);
+        gtk_dialog_response(GTK_DIALOG(data->dialog), GTK_RESPONSE_ACCEPT);
+    } else {
+        // ask for key assignment
+        keymap_dialog_data* data = g_new0(keymap_dialog_data, 1);
+        data->index = index;
+        data->dialog = 
+            gtk_dialog_new_with_buttons("Map Key",
+                                        GTK_WINDOW(output.main_view->parent),
+                                        GTK_DIALOG_MODAL |
+                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        GTK_STOCK_CANCEL, 
+                                        GTK_RESPONSE_CANCEL,
+                                        NULL);
+        data->label = gtk_label_new("Press a key (or cancel)");
+        gtk_box_pack_start_defaults(GTK_BOX(GTK_DIALOG(data->dialog)->vbox), 
+                                    data->label);
+        g_signal_connect(G_OBJECT(data->dialog), "key_press_event",
+                         G_CALLBACK(key_press_event), data);
+      
+        gtk_widget_show_all(data->dialog);
+
+        data->imctx = gtk_im_multicontext_new();
+        g_signal_connect(G_OBJECT(data->imctx), "commit",
+                         G_CALLBACK(im_context_commit), data);
+        gtk_im_context_set_client_window(data->imctx, GTK_WIDGET(data->dialog)->window);
+        g_signal_connect(G_OBJECT(data->dialog), "focus-in-event",
+                         G_CALLBACK(dialog_focus), data->imctx);
+        g_signal_connect(G_OBJECT(data->dialog), "focus-out-event",
+                         G_CALLBACK(dialog_focus), data->imctx);
+
+        gtk_dialog_run(GTK_DIALOG(data->dialog));
+
+        // cleanup
+        gtk_widget_hide(data->dialog);
+        gtk_widget_destroy(data->dialog);
+        gtk_im_context_focus_out(data->imctx);
+        g_object_unref(G_OBJECT(data->imctx));
+        g_free(data);    
+    }
+}
+
 /* handler for maemo hardware keys */
 gboolean key_press_event(GtkWidget* widget, 
                          GdkEventKey* event, 
                          gpointer user_data) {
+
     switch(event->keyval) {
     case GDK_Up: // Navigation Key Up
-        dev_pushkey(keymap[KEYMAP_UP].c);
+        handle_key(KEYMAP_UP, SB_KEY_UP, GDK_Up, user_data);
         return TRUE;
         
     case GDK_Down: // Navigation Key Down
-        dev_pushkey(keymap[KEYMAP_DOWN].c);
+        handle_key(KEYMAP_DOWN, SB_KEY_DN, GDK_Down, user_data);
         return TRUE;
         
     case GDK_Left: // Navigation Key Left
-        dev_pushkey(keymap[KEYMAP_LEFT].c);
+        handle_key(KEYMAP_LEFT, SB_KEY_LEFT, GDK_Left, user_data);
         return TRUE;
         
     case GDK_Right: // Navigation Key Right
-        dev_pushkey(keymap[KEYMAP_RIGHT].c);
+        handle_key(KEYMAP_RIGHT, SB_KEY_RIGHT, GDK_Right, user_data);
         return TRUE;
 
     case GDK_F7: // Increase(zoom in)
-        dev_pushkey(keymap[KEYMAP_F7].c);
+        handle_key(KEYMAP_F7, SB_KEY_PGUP, GDK_F7, user_data);
         return TRUE;
         
     case GDK_F8: // Decrease(zoom out)
-        dev_pushkey(keymap[KEYMAP_F8].c);
+        handle_key(KEYMAP_F8, SB_KEY_PGDN, GDK_F8, user_data);
         return TRUE;
         
     case GDK_Return: // Navigation Key select
+        handle_key(KEYMAP_ENTER, '\n', GDK_Return, user_data);
+        return TRUE;
+
     case GDK_KP_Enter:
         output.modal_flag = FALSE;
-        dev_pushkey(keymap[KEYMAP_ENTER].c);        
         return TRUE;
         
     case GDK_F6: // Full screen
-        if (keymap[KEYMAP_F7].c) {
-            dev_pushkey(keymap[KEYMAP_F7].c);
-        } else {
-            output.full_screen = !output.full_screen;
+        output.full_screen = !output.full_screen;
 #ifdef USE_HILDON        
-            hildon_appview_set_fullscreen(HILDON_APPVIEW(output.main_view),
-                                          output.full_screen);
+        hildon_appview_set_fullscreen(HILDON_APPVIEW(output.main_view),
+                                      output.full_screen);
 #endif
-        }
         return TRUE;
         
     case GDK_Escape: // Cancel/Close
@@ -427,7 +498,7 @@ char* dev_gets(char *dest, int size) {
     gtk_entry_set_alignment(GTK_ENTRY(entry), 0);
     gtk_widget_modify_font(entry, output.font_desc);
     g_signal_connect(G_OBJECT(entry), "key_press_event", 
-                     G_CALLBACK(key_press_event), entry);
+                     G_CALLBACK(key_press_event), NULL);
     g_signal_connect(G_OBJECT(entry), "changed",
                      G_CALLBACK(input_changed), entry);
     gtk_widget_show(entry);
@@ -585,5 +656,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.21 2006-03-09 12:07:19 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.22 2006-03-09 20:28:25 zeeb90au Exp $". */
 
