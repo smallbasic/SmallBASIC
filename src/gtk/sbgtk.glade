@@ -50,11 +50,17 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkMenuItem" id="map_key">
+		    <widget class="GtkMenuItem" id="reset_keys">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">_Map Key</property>
+		      <property name="label" translatable="yes">_Reset keys</property>
 		      <property name="use_underline">True</property>
-		      <signal name="activate" handler="on_map_key" last_modification_time="Thu, 09 Mar 2006 04:25:33 GMT"/>
+		      <signal name="activate" handler="on_reset_keys" last_modification_time="Thu, 09 Mar 2006 20:34:27 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separator1">
+		      <property name="visible">True</property>
 		    </widget>
 		  </child>
 

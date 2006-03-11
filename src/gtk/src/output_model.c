@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.13 2006-03-06 11:45:29 zeeb90au Exp $
+ * $Id: output_model.c,v 1.14 2006-03-11 05:10:37 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -71,7 +71,6 @@ void om_init(GtkWidget *widget) {
     output.layout = 0;
     output.gc = 0; 
     output.break_exec = 0;
-    output.full_screen = 0;
     /* pango_font_description_from_string*/
     output.font_desc = pango_font_description_new();
     pango_font_description_set_size(output.font_desc, get_font_size());
@@ -157,5 +156,5 @@ void om_set_bg_color(int color) {
     output.bg = om_get_sb_color(color);
 }
 
-/* End of "$Id: output_model.c,v 1.13 2006-03-06 11:45:29 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.14 2006-03-11 05:10:37 zeeb90au Exp $". */
 

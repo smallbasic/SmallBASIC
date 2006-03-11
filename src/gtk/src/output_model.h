@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.12 2006-03-09 20:28:25 zeeb90au Exp $
+ * $Id: output_model.h,v 1.13 2006-03-11 05:10:37 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -54,7 +54,6 @@ typedef struct OutputModel {
     int pen_down_y;
     int break_exec;
     int modal_flag;
-    int full_screen;
     int width;
     int height;
 } OutputModel;
@@ -83,4 +82,4 @@ void om_calc_font_metrics();
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.12 2006-03-09 20:28:25 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.13 2006-03-11 05:10:37 zeeb90au Exp $". */
