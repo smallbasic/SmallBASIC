@@ -8,7 +8,10 @@ Standards-Version: 3.6.0
 Package: sbasic
 Architecture: any
 Depends: maemo
-Description: One more BASIC ...
+Description: SmallBASIC is designed to be a simple, lightweight programming environment for experimentation, featuring strong mathematical and high level graphics commands.
+
+
+
 
 
 

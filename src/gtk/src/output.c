@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.23 2006-03-11 05:10:37 zeeb90au Exp $
+ * $Id: output.c,v 1.24 2006-03-11 06:59:43 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -255,12 +255,6 @@ void drvsound_sound(int frq, int ms, int vol, int bgplay) {
 }
 
 /*
- *   beep!
- */
-void drvsound_beep(void) {
-}
-
-/*
  *	clear background queue
  */
 void drvsound_clear_queue(void) {
@@ -271,6 +265,13 @@ void drvsound_clear_queue(void) {
  *  (Its called every ~50ms)
  */
 void drvsound_event(void) {
+}
+
+/*
+ *   beep!
+ */
+void drvsound_beep(void) {
+    gdk_beep();
 }
 
 gint timeout_callback(gpointer data) {
@@ -664,5 +665,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.23 2006-03-11 05:10:37 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.24 2006-03-11 06:59:43 zeeb90au Exp $". */
 
