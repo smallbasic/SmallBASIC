@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.5 2006-01-23 04:45:50 zeeb90au Exp $
+ * $Id: inet.c,v 1.6 2006-04-11 12:38:06 zeeb90au Exp $
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -9,7 +9,6 @@
 #include "inet.h"
 
 #if defined(_UnixOS) && !defined(__MINGW32__)
-//#include <sys/poll.h>
 #include <sys/ioctl.h>
 #endif
 
@@ -162,11 +161,11 @@ int net_read(socket_t s, char *buf, int size) {
         return 0;
     }
 #elif defined(_DOS)
- #if defined(_DOSTCP_ENABLE)
+#if defined(_DOSTCP_ENABLE)
     return read_s(s, buf, size);
- #else
+#else
     return = -1;
- #endif
+#endif
 #else
     return recv(s, buf, size, 0);
 #endif
@@ -305,7 +304,8 @@ socket_t net_connect(const char *server_name, int server_port) {
     }
     memcpy(&addr.addr, &inaddr, sizeof(inaddr));
     addr.port = server_port;
-    sock = NetLibSocketOpen(netlib, netSocketAddrINET, netSocketTypeStream, 0, 5 * SysTicksPerSecond(), &err);
+    sock = NetLibSocketOpen(netlib, netSocketAddrINET, 
+                            netSocketTypeStream, 0, 5 * SysTicksPerSecond(), &err);
 
     if (sock <= 0) {
         return sock;
@@ -384,6 +384,34 @@ socket_t net_connect(const char *server_name, int server_port) {
 }
 
 /*
+ * listen for an incoming connection on the given port and 
+ * returns the socket once a connection has been established
+ */
+socket_t net_listen(int server_port) {
+    int sock;
+    struct sockaddr_in addr, remoteaddr;
+    socklen_t remoteaddr_len;
+
+    // more info about listen sockets:
+    // http://beej.us/guide/bgnet/output/htmlsingle/bgnet.html#acceptman
+    net_init();
+    
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(server_port); // clients connect to this port
+    addr.sin_addr.s_addr = INADDR_ANY; // autoselect IP address
+    
+    sock = socket(PF_INET, SOCK_STREAM, 0);
+    if (sock <= 0) {
+        return sock;
+    }
+
+    bind(sock, (struct sockaddr*)&addr, sizeof(addr));
+    listen(sock, 1); // set s up to be a server (listening) socket
+    
+    return accept(sock, (struct sockaddr*)&remoteaddr, &remoteaddr_len);
+}
+
+/*
  */
 void net_disconnect(socket_t s) {
 #if defined(_PalmOS)
@@ -403,5 +431,5 @@ void net_disconnect(socket_t s) {
     net_close();
 }
 
-/* End of "$Id: inet.c,v 1.5 2006-01-23 04:45:50 zeeb90au Exp $". */
+/* End of "$Id: inet.c,v 1.6 2006-04-11 12:38:06 zeeb90au Exp $". */
 

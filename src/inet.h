@@ -124,6 +124,16 @@ socket_t  net_connect(const char *server_name, int server_port)     SEC(BIO);
 /**
 *	@ingroup net
 *
+*	listen on a port number like a server
+*
+*	@param server_port the port to listen
+*	@return on success the socket; otherwise -1
+*/
+socket_t net_listen(int server_port)     SEC(BIO);
+
+/**
+*	@ingroup net
+*
 *	disconnect
 *
 *	@param s the socket

@@ -27,26 +27,28 @@ int sockcl_open(dev_file_t *f) {
     err_unsup();
     return 0;
 #else
-    char    *p;
-    int     port;
-    char    server[129];
+    char *p;
+    int   port;
+    char  server[129];
 
-    p = strchr(f->name+5, ':');
-    if  ( !p )  {
-        rt_raise("SOCL: NO PORT IS SPECIFIED");
-        return 0;
-    }
-    *p = '\0';
-    strcpy(server, f->name+5);
-    *p = ':';
-    port = xstrtol(p+1);
+    // open "SOCL:smallbasic.sf.net:80" as #1 
+    // open "SOCL:80" as #2
     f->drv_dw[0] = 1;
-    
-    f->handle = (int)net_connect(server, port);
-    if  (f->handle <= 0 )   {
+    p = strchr(f->name+5, ':');
+    if (!p) {
+        port = xstrtol(f->name+6);
+        f->handle = (int)net_listen(port);
+    } else {
+        *p = '\0';
+        strcpy(server, f->name+5);
+        *p = ':';
+        port = xstrtol(p+1);
+        f->handle = (int)net_connect(server, port);
+    }        
+
+    if (f->handle <= 0) {
         f->handle = -1;
         f->drv_dw[0] = 0;
-        //rt_raise("SOCL: CONNECTION ERROR");
         return 0;
     }
 
