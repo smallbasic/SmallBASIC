@@ -28,7 +28,7 @@ int sockcl_open(dev_file_t *f) {
     return 0;
 #else
     char *p;
-    int   port;
+    int port;
     char  server[129];
 
     // open "SOCL:smallbasic.sf.net:80" as #1 
@@ -36,7 +36,7 @@ int sockcl_open(dev_file_t *f) {
     f->drv_dw[0] = 1;
     p = strchr(f->name+5, ':');
     if (!p) {
-        port = xstrtol(f->name+6);
+        port = xstrtol(f->name+5);
         f->handle = (int)net_listen(port);
     } else {
         *p = '\0';

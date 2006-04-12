@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.6 2006-04-11 12:38:06 zeeb90au Exp $
+ * $Id: inet.c,v 1.7 2006-04-12 12:53:13 zeeb90au Exp $
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -391,24 +391,26 @@ socket_t net_listen(int server_port) {
     int sock;
     struct sockaddr_in addr, remoteaddr;
     socklen_t remoteaddr_len;
+    socket_t s;
 
     // more info about listen sockets:
     // http://beej.us/guide/bgnet/output/htmlsingle/bgnet.html#acceptman
     net_init();
-    
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(server_port); // clients connect to this port
-    addr.sin_addr.s_addr = INADDR_ANY; // autoselect IP address
-    
     sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock <= 0) {
         return sock;
     }
 
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(server_port); // clients connect to this port
+    addr.sin_addr.s_addr = INADDR_ANY; // autoselect IP address
+
     bind(sock, (struct sockaddr*)&addr, sizeof(addr));
     listen(sock, 1); // set s up to be a server (listening) socket
     
-    return accept(sock, (struct sockaddr*)&remoteaddr, &remoteaddr_len);
+    s = accept(sock, (struct sockaddr*)&remoteaddr, &remoteaddr_len);
+    close(sock);
+    return s;
 }
 
 /*
@@ -431,5 +433,5 @@ void net_disconnect(socket_t s) {
     net_close();
 }
 
-/* End of "$Id: inet.c,v 1.6 2006-04-11 12:38:06 zeeb90au Exp $". */
+/* End of "$Id: inet.c,v 1.7 2006-04-12 12:53:13 zeeb90au Exp $". */
 
