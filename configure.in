@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.16 2006-03-11 05:09:44 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.17 2006-04-14 23:39:08 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -134,10 +134,10 @@ function buildFLTK() {
    HAVE_API_VERSION=no
  
    if test "${have_fltk}" = "yes" ; then
-     FLTK_API_VERSION="`fltk-config --api-version`"
-     if test "${FLTK_API_VERSION}" = "2.0" ; then
-       HAVE_API_VERSION=yes
-     fi
+      FLTK_API_VERSION="`fltk-config --api-version`"
+      if test "${FLTK_API_VERSION}" = "2.0" ; then
+         HAVE_API_VERSION=yes
+      fi
    fi
  
    if test "${HAVE_API_VERSION}" = "no" ; then
@@ -169,18 +169,34 @@ function buildFLTK() {
 }
 
 function buildConsole {
-   echo "Building Console version..."
-
-   PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lreadline -ltermcap -s"
    AM_CONDITIONAL(WITH_HILDON, false)
 
-   dnl preconfigured values for FLTK build
+   win32=no
+   case "${host_os}" in
+     *mingw* | pw32* | cygwin*)
+    	win32="yes"
+   esac
+
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
    AC_DEFINE(USE_TERM_IO, 1, [Uses terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
 
-   BUILD_SUBDIRS="sync sync/cygwin"
+   if test $win32 = yes; then
+      dnl preconfigured values for cygwin console build
+      echo "Building Cygwin console version..."
+      AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lreadline -ltermcap"
+      BUILD_SUBDIRS="sync sync/cygwin"
+   else 
+      dnl preconfigured values for unix console build
+      echo "Building Unix console version..."
+      AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
+      AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
+      AC_DEFINE(USE_PCRE, 1, [Perl compatible regular expressions])
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline -lpcre"
+      BUILD_SUBDIRS="sync sync/unix"
+   fi
+
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -204,6 +220,7 @@ sync/gtk/data/Makefile
 sync/gtk/icons/Makefile
 sync/ide-fltk/Makefile
 sync/cygwin/Makefile
+sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.16 2006-03-11 05:09:44 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.17 2006-04-14 23:39:08 zeeb90au Exp $".
