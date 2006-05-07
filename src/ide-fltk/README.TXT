@@ -51,8 +51,13 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     
     Install FLTK - www.fltk.org.
     Update the FLTK sources as per step 2.
-    cd sbrs3/sync/ide-fltk
-    make linux -s
+    cd to sb root directory
+ 
+    ./configure --enable-fltk
+    make -s
+
+    if the configure program is not present then execute this command to build it:
+    sh autogen.sh
 
 
 4.  How to build under Windows (W2K/XP)
@@ -90,5 +95,5 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     SB_FLTK_0_9_6_1 (16 May 2005)
 
 
-$Id: README.TXT,v 1.20 2006-02-04 20:50:24 zeeb90au Exp $
+$Id: README.TXT,v 1.21 2006-05-07 05:18:50 zeeb90au Exp $
 
