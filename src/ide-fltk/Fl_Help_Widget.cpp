@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: Fl_Help_Widget.cpp,v 1.50 2006-01-27 03:10:43 zeeb90au Exp $
+// $Id: Fl_Help_Widget.cpp,v 1.51 2006-05-07 05:21:17 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -1755,7 +1755,7 @@ void HelpWidget::draw() {
         if (scrollH < 1) {
             // nothing to scroll
             scrollHeight = height;
-            scrollbar->set_flag(NOTACTIVE|INACTIVE);
+            scrollbar->set_flag(INACTIVE);
             scrollbar->slider_size(10);
             scrollbar->value(0, 1, 0, SCROLL_SIZE);
             vscroll = 0;
@@ -1764,7 +1764,6 @@ void HelpWidget::draw() {
             int sliderH = height* height/pageHeight;
             scrollHeight = scrollH;
             scrollbar->clear_flag(INACTIVE); 
-            scrollbar->clear_flag(NOTACTIVE); 
             scrollbar->value(value, 1, 0, SCROLL_SIZE);
             scrollbar->pagesize(SCROLL_SIZE* height/scrollH);
             scrollbar->linesize(SCROLL_SIZE* out.lineHeight/scrollH);
@@ -2801,5 +2800,5 @@ extern "C" void trace(const char *format, ...) {
 }
 #endif
 
-// End of "$Id: Fl_Help_Widget.cpp,v 1.50 2006-01-27 03:10:43 zeeb90au Exp $".
+// End of "$Id: Fl_Help_Widget.cpp,v 1.51 2006-05-07 05:21:17 zeeb90au Exp $".
 
