@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.17 2006-04-14 23:39:08 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.18 2006-05-07 05:01:36 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -128,13 +128,13 @@ function buildFLTK() {
    echo "Building FLTK version..."
  
    dnl Checks for FLTK 2.x
-   AC_CHECK_PROG(have_fltk, fltk-config, [yes], [no])
+   AC_CHECK_PROG(have_fltk, fltk2-config, [yes], [no])
  
    dnl do we HAVE the needed FLTK API VERSION ?
    HAVE_API_VERSION=no
  
    if test "${have_fltk}" = "yes" ; then
-      FLTK_API_VERSION="`fltk-config --api-version`"
+      FLTK_API_VERSION="`fltk2-config --api-version`"
       if test "${FLTK_API_VERSION}" = "2.0" ; then
          HAVE_API_VERSION=yes
       fi
@@ -143,15 +143,15 @@ function buildFLTK() {
    if test "${HAVE_API_VERSION}" = "no" ; then
        AC_MSG_ERROR([
      You need FLTK version 2.* installed with
-     the program fltk-config in your PATH in order to build sbfltk
+     the program fltk2-config in your PATH in order to build sbfltk
      See the FLTK homepage at http://www.fltk.org/. 
    
    configure failed.
    ])
    fi
  
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `fltk-config --cxxflags` -Wall -Wunused -fno-exceptions"
-   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk-config --ldstaticflags --use-images`"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -Wall -Wunused -fno-exceptions"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldstaticflags --use-images`"
    AM_CONDITIONAL(WITH_HILDON, false)
  
    dnl preconfigured values for FLTK build
@@ -223,4 +223,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.17 2006-04-14 23:39:08 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.18 2006-05-07 05:01:36 zeeb90au Exp $".
