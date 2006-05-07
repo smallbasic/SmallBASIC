@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.56 2006-01-31 00:51:15 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.57 2006-05-07 05:18:28 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -367,12 +367,12 @@ void CodeEditor::draw() {
     if (matchingBrace != -1) {
         // highlight the matching brace
         int X,Y;
-        int cursor = mCursorStyle;
-        mCursorStyle = BLOCK_CURSOR;
+        int cursor = cursor_style_;
+        cursor_style_ = BLOCK_CURSOR;
         if (position_to_xy(matchingBrace, &X, &Y)) {
             draw_cursor(X, Y);
         }
-        mCursorStyle = cursor;
+        cursor_style_ = cursor;
     }
 }
 
@@ -435,7 +435,7 @@ void CodeEditor::handleTab() {
     int indent;
 
     // get the desired indent based on the previous line
-    int lineStart = buffer()->line_start(mCursorPos);
+    int lineStart = buffer()->line_start(cursor_pos_);
     int prevLineStart = buffer()->line_start(lineStart-1);
 
     if (prevLineStart && prevLineStart+1 == lineStart) {
@@ -478,14 +478,14 @@ void CodeEditor::handleTab() {
         memset(spaces, ' ', len);
         spaces[len] = 0;
         buffer()->insert(lineStart, spaces);
-        if (mCursorPos-lineStart < indent) {
+        if (cursor_pos_-lineStart < indent) {
             // jump cursor to start of text
-            mCursorPos = lineStart + indent;
+            cursor_pos_ = lineStart + indent;
         } else {
             // move cursor along with text movement, staying on same line
             int maxpos = buffer()->line_end(lineStart);
-            if (mCursorPos + len <= maxpos) {
-                mCursorPos += len;
+            if (cursor_pos_ + len <= maxpos) {
+                cursor_pos_ += len;
             }
         }
     } else if (curIndent > indent) {
@@ -499,11 +499,11 @@ void CodeEditor::handleTab() {
 }
 
 void CodeEditor::showMatchingBrace() {
-    char cursorChar = buffer()->character(mCursorPos-1);
+    char cursorChar = buffer()->character(cursor_pos_-1);
     char cursorMatch=0;
     int pair = -1;
     int iter = -1;
-    int pos = mCursorPos-2;
+    int pos = cursor_pos_-2;
 
     switch (cursorChar) {
         case ']': 
@@ -514,13 +514,13 @@ void CodeEditor::showMatchingBrace() {
             break;
         case '(': 
             cursorMatch = ')'; 
-            pos = mCursorPos;
+            pos = cursor_pos_;
             iter = 1; 
             break;
         case '[': 
             cursorMatch = ']'; 
             iter = 1; 
-            pos = mCursorPos;
+            pos = cursor_pos_;
             break;
     }
     if (cursorMatch != -0) {
@@ -563,7 +563,7 @@ void CodeEditor::showMatchingBrace() {
 }
     
 int CodeEditor::handle(int e) {
-    int cursorPos = mCursorPos;
+    int cursorPos = cursor_pos_;
     char spaces[250];
     int indent;
 
@@ -588,8 +588,8 @@ int CodeEditor::handle(int e) {
         if (event_key() == ReturnKey) {
             indent = getIndent(spaces, sizeof(spaces), cursorPos);
             if (indent) {
-                buffer()->insert(mCursorPos, spaces);
-                mCursorPos += indent;
+                buffer()->insert(cursor_pos_, spaces);
+                cursor_pos_ += indent;
                 redraw(DAMAGE_ALL);
             }
         }
@@ -607,10 +607,10 @@ int CodeEditor::handle(int e) {
 void CodeEditor::showRowCol() {
     int row, col;
 
-    if (!position_to_linecol(mCursorPos, &row, &col)) {
+    if (!position_to_linecol(cursor_pos_, &row, &col)) {
         // pageup/pagedown
         layout();
-        position_to_linecol(mCursorPos, &row, &col);
+        position_to_linecol(cursor_pos_, &row, &col);
     }
     setRowCol(row, col+1);
 }
@@ -651,7 +651,7 @@ void CodeEditor::getSelEndRowCol(int *row, int *col) {
 }
 
 void CodeEditor::getRowCol(int *row, int *col) {
-    position_to_linecol(mCursorPos, row, col);
+    position_to_linecol(cursor_pos_, row, col);
 }
 
 //--EditorWindow----------------------------------------------------------------
@@ -868,7 +868,7 @@ void EditorWindow::openFile() {
         return;
     }
 
-    char *newfile = file_chooser("Open File", "*.bas", filename);
+    const char *newfile = file_chooser("Open File", "*.bas", filename);
     if (newfile != NULL) {
         loadFile(newfile, -1, true);
     }
@@ -880,7 +880,7 @@ void EditorWindow::insertFile() {
         return;
     }
 
-    char *newfile = file_chooser("Insert File?", "*.bas", filename);
+    const char *newfile = file_chooser("Insert File?", "*.bas", filename);
     if (newfile != NULL) {
         loadFile(newfile, editor->insert_position(), true);
     }
@@ -980,7 +980,7 @@ void EditorWindow::saveFile() {
 void EditorWindow::saveFileAs() {
     const char* msg = 
         "%s\n\nFile already exists.\nDo you want to replace it?";
-    char* newfile = file_chooser("Save File As?", "*.bas", filename);
+    const char* newfile = file_chooser("Save File As?", "*.bas", filename);
     if (newfile != NULL) {
         if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
             return;
@@ -1021,7 +1021,7 @@ void EditorWindow::setFontSize(int size) {
 }
 
 int EditorWindow::getFontSize() {
-    return styletable[0].size;
+    return (int)styletable[0].size;
 }
 
 void EditorWindow::createFuncList() {
