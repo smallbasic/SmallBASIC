@@ -480,64 +480,70 @@ char	*get_param_sect(char *text, const char *delim, char *dest)
 {
 	char	*p = (char *) text;
 	char	*d = dest;
-	int		quotes = 0, level = 0, skip_ch = 0;
+	int quotes = 0, level = 0, skip_ch = 0;
 
 	if	( p == NULL )	{
-		*dest = '\0';
-		return 0;
-		}
+      *dest = '\0';
+      return 0;
+    }
 
-	while ( is_space(*p) )	p ++;
+	while (is_space(*p)) {
+      p ++;
+    }
 
-	while ( *p )	{
-		if	( quotes )	{
-			if	( *p == '\"' )
-				quotes = 0;
-			}
-		else	{
-			switch ( *p )	{
-			case	'\"':
-				quotes = 1;
-				break;
-			case	'(':
-				level ++;
-				break;
-			case	')':
-				level --;
-				break;
-			case	'\n':
-			case	'\r':
-				skip_ch = 1;
-				break;
-				};
-			}
+	while (*p)	{
+      if (quotes) {
+        if (*p == '\\' && *(p+1) == '\"') {
+          // add the escaped quote and continue
+          *d++ = *p++;
+        } else if ( *p == '\"' ) {
+          quotes = 0;
+        }
+      } else {
+        switch ( *p )	{
+        case '\"':
+          quotes = 1;
+          break;
+        case '(':
+          level ++;
+          break;
+        case ')':
+          level --;
+          break;
+        case '\n':
+        case '\r':
+          skip_ch = 1;
+          break;
+        };
+      }
 
-		// delim check
-		if	( delim != NULL && level <= 0 && quotes == 0 )	{
-			if	( strchr(delim, *p) != NULL )	
-				break;
-			}
+      // delim check
+      if (delim != NULL && level <= 0 && quotes == 0) {
+        if (strchr(delim, *p) != NULL) {
+          break;
+        }
+      }
 
-		// copy
-		if	( !skip_ch )	{
-			*d = *p;
-			d ++;
-			}
-		else
-			skip_ch = 0;
-
-		p ++;
-		}
+      // copy
+      if (!skip_ch)	{
+        *d = *p;
+        d ++;
+      } else {
+        skip_ch = 0;
+      }
+      p ++;
+    }
 
 	*d = '\0';
-	
-	if	( quotes )
-		err_comp_missing_q();
-	if	( level > 0 )
-		err_comp_missing_rp();
-	if	( level < 0 )
-		err_comp_missing_lp();
-
+	if (quotes) {
+      err_comp_missing_q();
+    }
+	if (level > 0) {
+      err_comp_missing_rp();
+    }
+	if (level < 0) {
+      err_comp_missing_lp();
+    }
 	str_alltrim(dest);
 	return p;
 }
@@ -3537,12 +3543,16 @@ char	*comp_format_text(const char *source)
 					}
 				}
 			}
-		else	{	// in quotes
-			if	( *p == '\"' )	
-				quotes = !quotes;
-			*ps ++ = *p ++;
-			}
-		}
+		else {	// in quotes
+          if (*p == '\\' && *(p+1) == '\"') {
+            // add the escaped quote and continue
+            *ps++ = *p++;
+          } else if (*p == '\"') {
+            quotes = !quotes;
+          }
+          *ps ++ = *p ++;
+        }
+    }
 
 	// close
 	*ps ++ = '\n';

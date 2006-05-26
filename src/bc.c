@@ -283,40 +283,47 @@ void	bc_add2s(bc_t *bc, byte code, const char *p1)
 *	adds a string.
 *	returns a pointer of src to the next "element"
 */
-char*	bc_store_string(bc_t *bc, char *src)
-{
-	char	*p = src, *np;
-	int		l;
+char*	bc_store_string(bc_t *bc, char *src) {
+    char* p = src;
+    char* np = 0;
+    char* base = src+1;
+    int  l = 0; // total length
+    int seglen = 0; // length of segment between escapes
 
-	p ++;	// == '\"'
-	while ( *p )	{
-		if	( *p == '\"' )	{
-			l = p - src;
-			np = tmp_alloc(l+1);
-			strncpy(np, src+1, l);
-			np[l-1] = '\0';
-
-			if ( opt_cstr )	{
-				// c-style special char syntax
-				char *cstr;
-				cstr = cstrdup(np);
-				tmp_free(np);
-				bc_add2s(bc, kwTYPE_STR, cstr);
-				tmp_free(cstr);
-				}
-			else	{
-				// normal
-				bc_add2s(bc, kwTYPE_STR, np);
-				tmp_free(np);
-				}
-
-			p ++;
-			return p;
-			}
-		p ++;
-		}
-
-	return p;
+    p++;   // == '\"'
+    while (*p) {
+        if (*p == '\\' && *(p+1) == '\"') {
+            // escaped quote "
+            seglen = p-base;
+            np = np ? tmp_realloc(np, l+seglen+1) : tmp_alloc(seglen+1);
+            strncpy(np+l, base, seglen);
+            l += seglen; // add next segment
+            np[l] = 0; 
+            base = ++p; // include " in next segment
+        } else if (*p == '\"') {
+            // end of string detected
+            seglen = p-base;
+            np = np ? tmp_realloc(np, l+seglen+1) : tmp_alloc(seglen+1);
+            strncpy(np+l, base, seglen);
+            np[l+seglen] = 0;
+            if (opt_cstr) {
+                // c-style special char syntax
+                char *cstr;
+                cstr = cstrdup(np);
+                tmp_free(np);
+                bc_add2s(bc, kwTYPE_STR, cstr);
+                tmp_free(cstr);
+            } else {
+                // normal
+                bc_add2s(bc, kwTYPE_STR, np);
+                tmp_free(np);
+            }
+            p++;
+            return p;
+        }
+        p++;
+    }
+    return p;
 }
 
 /*
