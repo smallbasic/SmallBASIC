@@ -1,0 +1,10 @@
+
+2006-05-27	<cwarrensmith@gmail.com>
+	* update bc_store_string() to handle escaped double quotes
+
+2006-04-12	<cwarrensmith@gmail.com>
+	* updated sockcl_open() to handle server listen sockets
+
+
+
+refer to http://smallbasic.sourceforge.net/ for more history	
