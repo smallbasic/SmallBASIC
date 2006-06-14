@@ -1,5 +1,5 @@
 //
-// $Id: main.c,v 1.9 2006-03-08 07:19:46 zeeb90au Exp $
+// $Id: main.c,v 1.10 2006-06-14 10:35:41 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -17,6 +17,7 @@
 #include <gtk/gtk.h>
 #include "interface.h"
 #include "output.h"
+#include "output_model.h"
 
 #ifdef USE_HILDON
 #include <libosso.h>
@@ -26,6 +27,8 @@ HildonApp* app;
 #else
 #define app
 #endif
+
+extern OutputModel output;
 
 void destroy_event(GtkObject *object, gpointer user_data) {
     exit(1);
@@ -47,7 +50,7 @@ int main(int argc, char *argv[]) {
 #ifdef USE_HILDON
     app = HILDON_APP(hildon_app_new());
     hildon_app_set_title(app, "SmallBASIC");
-    osso_context_t* osso = osso_initialize(PACKAGE, VERSION, TRUE, NULL);
+    output.osso = osso_initialize(PACKAGE, VERSION, TRUE, NULL);
     main_window = create_main_window();
     hildon_app_set_appview(app, HILDON_APPVIEW(main_window));
     hildon_app_set_two_part_title(app, TRUE);
@@ -98,4 +101,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.9 2006-03-08 07:19:46 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.10 2006-06-14 10:35:41 zeeb90au Exp $". */

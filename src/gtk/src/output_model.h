@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.13 2006-03-11 05:10:37 zeeb90au Exp $
+ * $Id: output_model.h,v 1.14 2006-06-14 10:35:41 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -37,6 +37,9 @@ typedef struct OutputModel {
     PangoFontDescription* font_desc; /* bold, italic */
     GdkColor fg,bg;    /* couldn't find a gdk_gc_get_rgb_fg_color */
     PangoLayout* layout;
+#ifdef USE_HILDON
+    osso_context_t* osso;
+#endif
     int ascent;
     int descent;
     int font_width;
@@ -56,6 +59,7 @@ typedef struct OutputModel {
     int modal_flag;
     int width;
     int height;
+    int flite_out;
 } OutputModel;
 
 void om_reset(int reset_cursor);
@@ -82,4 +86,4 @@ void om_calc_font_metrics();
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.13 2006-03-11 05:10:37 zeeb90au Exp $". */
+/* End of "$Id: output_model.h,v 1.14 2006-06-14 10:35:41 zeeb90au Exp $". */

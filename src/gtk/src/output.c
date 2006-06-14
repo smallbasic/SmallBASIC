@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.24 2006-03-11 06:59:43 zeeb90au Exp $
+ * $Id: output.c,v 1.25 2006-06-14 10:35:41 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -13,8 +13,9 @@
 #  include <config.h>
 #endif
 
-#include <device.h>
-#include <osd.h>
+#include "device.h"
+#include "osd.h"
+
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include "interface.h"
@@ -23,6 +24,8 @@
 
 #ifdef USE_HILDON
 #include "hildon-lgpl/hildon-widgets/hildon-app.h"
+#else
+#define gtk_im_context_show(imctx)
 #endif
 
 extern OutputModel output;
@@ -646,9 +649,9 @@ gboolean drawing_area_init(GtkWidget *main_window) {
 
     /* connect signals */
     g_signal_connect(G_OBJECT(top_window),"configure_event",
-                      G_CALLBACK(configure_event), NULL);
+                     G_CALLBACK(configure_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "expose_event",
-                      G_CALLBACK(expose_event), NULL);
+                     G_CALLBACK(expose_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_press_event",
                      G_CALLBACK(button_press_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
@@ -665,5 +668,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.24 2006-03-11 06:59:43 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.25 2006-06-14 10:35:41 zeeb90au Exp $". */
 

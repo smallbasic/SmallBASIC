@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.14 2006-03-09 12:07:19 zeeb90au Exp $
+ * $Id: output_write.c,v 1.15 2006-06-14 10:35:41 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -18,6 +18,33 @@
 #include "output_model.h"
 
 extern OutputModel output;
+
+void speak_string(const char* s, int len) {
+#ifdef USE_HILDON
+    int retval;
+    int speed = 2;
+    int pitch = 4;
+    osso_rpc_run(output.osso, 
+                 "com.nokia.flite",
+                 "/com/nokia/flite",
+                 "com.nokia.flite",
+                 "flite_tts",
+                 &retval,
+                 DBUS_TYPE_UINT32, // id for the order
+                 getpid(),
+                 DBUS_TYPE_STRING, // string to be read
+                 "Say something",
+                 DBUS_TYPE_UINT32, // priority. From 0 to 20.
+                 20,
+                 DBUS_TYPE_DOUBLE, // speed of speeching. From 0.1 to 3
+                 speed,
+                 DBUS_TYPE_DOUBLE, // adjust pitch of voice. From -2 to 8
+                 pitch,
+                 DBUS_TYPE_STRING, // name of the voice (not implemented)
+                 "cmu_us_kal",
+                 DBUS_TYPE_INVALID);
+#endif
+}
 
 void new_line() {
     gint font_height = output.ascent+output.descent;
@@ -166,6 +193,12 @@ int set_graphics_rendition(char c, int escValue) {
             break;
         case 49: // superscript
             break;
+        case 100:
+            output.flite_out = 1;
+            break;
+        case 101:
+            output.flite_out = 0;
+            break;
         };                        
     }
     return 0;
@@ -263,6 +296,10 @@ void osd_write(const char *str) {
                     break;
                 }
             }
+            
+            if (output.flite_out) {
+                speak_string((const char*)p, num_chars);
+            }
 
             if (output.invert) {
                 GdkColor c;
@@ -304,5 +341,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.14 2006-03-09 12:07:19 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.15 2006-06-14 10:35:41 zeeb90au Exp $". */
 
