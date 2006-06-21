@@ -7,7 +7,7 @@
 # 
 
 INCLUDES = \
-     -I../../ -I. \
+	-I../../ -I. \
 	-DPACKAGE_PREFIX=\""$(prefix)"\" \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_LOCALE_DIR=\"$(localedir)\" \
@@ -17,13 +17,14 @@ bin_PROGRAMS = sbasic
 
 bin_PROGRAMS : ../../libsb_common.a
 
-sbasic_SOURCES =								\
-	main.c										\
-    output.c output.h      						\
-    output_model.c output_model.h               \
-    output_write.c                              \
-	callbacks.c callbacks.h                     \
-    interface.c interface.h	
+sbasic_SOURCES =									\
+	main.c											\
+	output.c output.h      						\
+	output_model.c output_model.h          	\
+	output_write.c								\
+	form_ui.c										\
+	callbacks.c callbacks.h						\
+	interface.c interface.h	
 
 sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
 
