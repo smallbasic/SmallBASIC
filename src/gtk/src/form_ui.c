@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.2 2006-06-21 23:11:28 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.3 2006-06-22 12:10:57 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -62,7 +62,7 @@ void radio_cb(GtkWidget* widget, void* v) {
 }
 
 // transfer widget data in variables
-void updateVars(GtkWidget* widget) {
+void update_vars(GtkWidget* widget) {
     WidgetInfo* inf = get_widget_info(widget);
     switch (inf->type) {
     case ctrl_check:
@@ -73,7 +73,10 @@ void updateVars(GtkWidget* widget) {
         break;
     case ctrl_text:
         // copy input data into variable
-        //v_setstrn(inf->var, ((Input*)w)->value(), ((Input*)w)->size());
+        gchar* p = gtk_entry_get_text(GTK_ENTRY(widget));
+        if (p && p[0]) {
+            v_setstrn(inf->var, p, strlen(p));
+        }
         break;
     case ctrl_list:
         // copy drop list item into variable
@@ -84,11 +87,11 @@ void updateVars(GtkWidget* widget) {
     }
 }
 
-void form_begin() {
+void ui_begin() {
     if (form == 0) {
         form = gtk_layout_new(NULL, NULL);
-        gtk_layout_put(GTK_LAYOUT(output.widget), form, 0, 0);
-        printf("new form\n");
+        gtk_container_add(GTK_CONTAINER(output.widget), form);
+        gtk_widget_show(form);
     }
 }
 
@@ -106,7 +109,6 @@ void ui_reset() {
         gtk_container_remove(GTK_CONTAINER(output.widget), form);
         g_list_free(list);
         form = 0;
-        printf("reset form\n");
     }
 }
 
@@ -128,7 +130,7 @@ void cmd_button() {
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
         inf->var = v;
 
-        form_begin();
+        ui_begin();
         if (type) {
             if (strncmp("radio", type, 5) == 0) {
                 //widget = new RadioButton(x, y, w, h);
@@ -207,7 +209,7 @@ void cmd_text() {
     var_t* v = 0;
 
     if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {
-        form_begin();
+        ui_begin();
         GtkWidget* entry = gtk_entry_new();
 
         // prime field from var_t
@@ -215,27 +217,23 @@ void cmd_text() {
             gtk_entry_set_text(GTK_ENTRY(entry), (const char*)v->v.p.ptr);
         }
     
-        //g_object_set(G_OBJECT(entry), "autocap", FALSE, NULL);
-        gtk_layout_put(GTK_LAYOUT(output.widget), entry,
-                       //        gtk_layout_put(GTK_LAYOUT(form), entry,
-                       output.cur_x-1, output.cur_y-1);
+        gtk_layout_put(GTK_LAYOUT(form), entry, x, y);
         gtk_entry_set_has_frame(GTK_ENTRY(entry), TRUE);
         gtk_entry_set_max_length(GTK_ENTRY(entry), 100);
-        gtk_entry_set_width_chars(GTK_ENTRY(entry), 10);
+        gtk_widget_set_size_request(entry, w, h);
         gtk_widget_modify_font(entry, output.font_desc);
-        //g_signal_connect(G_OBJECT(entry), "key_press_event",
-        //G_CALLBACK(key_press_event), NULL);
-        //g_signal_connect(G_OBJECT(entry), "changed",
-        //G_CALLBACK(input_changed), entry);
-        //gtk_widget_show(entry);
-        //printf("show widget\n");
+        gtk_widget_show(entry);
         
-        //GtkIMContext* imctx = gtk_im_multicontext_new();
-        //gtk_im_context_set_client_window(imctx, output.widget->window);
-        //gtk_im_context_focus_in(imctx);
-        //gtk_im_context_show(imctx);
+        GtkIMContext* imctx = gtk_im_multicontext_new();
+        gtk_im_context_set_client_window(imctx, output.widget->window);
+        gtk_im_context_focus_in(imctx);
         gtk_widget_grab_focus(entry);
-   
+
+#ifdef USE_HILDON
+        g_object_set(G_OBJECT(entry), "autocap", FALSE, NULL);
+        gtk_im_context_show(imctx);
+#endif
+
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
         inf->var = v;
         inf->type = ctrl_text;
@@ -276,9 +274,9 @@ void cmd_doform() {
         h = output.height-y;
     }
 
-    printf("form at %d %d %d %d\n", x,y,w,h);
     gtk_layout_move(GTK_LAYOUT(output.widget), form, x, y);
     gtk_layout_set_size(GTK_LAYOUT(form), w, h);
+    gtk_widget_set_size_request(GTK_WIDGET(form), w, h);
     gtk_widget_grab_focus(form);
     gtk_widget_show(form);
 
@@ -291,11 +289,11 @@ void cmd_doform() {
     int n = g_list_length(list);
     int i;
     for (i=0; i<n; i++) {
-        updateVars((GtkWidget*)g_list_nth_data(list, i));
+        update_vars((GtkWidget*)g_list_nth_data(list, i));
     }
     g_list_free(list);
 
     ui_reset();
 }
 
-/* End of "$Id: form_ui.c,v 1.2 2006-06-21 23:11:28 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.3 2006-06-22 12:10:57 zeeb90au Exp $". */
