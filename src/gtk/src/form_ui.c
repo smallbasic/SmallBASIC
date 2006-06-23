@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.3 2006-06-22 12:10:57 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.4 2006-06-23 22:37:43 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -25,6 +25,7 @@
 #include "output_model.h"
 
 GtkWidget* form = 0; /* modal form */
+int modeless = FALSE;
 extern OutputModel output;
 
 typedef enum ControlType {
@@ -49,21 +50,24 @@ void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
     g_object_set_data(G_OBJECT(w), "widget_info", inf);
 }
 
-gboolean button_cb(GtkWidget *widget, GdkEventButton *event) {
+gboolean button_pressed(GtkWidget* widget, 
+                        GdkEventButton* event, 
+                        gpointer user_data) {
     WidgetInfo* inf = get_widget_info(widget);
     v_setstrn(inf->var, "1", 1);
-    //wnd->setModal(false);
-    //wnd->penState = 2;
+    if (user_data) {
+        // close the form
+        output.modal_flag = FALSE;        
+    }
+    return FALSE; // TRUE == stop other handlers from being invoked
 }
 
-void radio_cb(GtkWidget* widget, void* v) {
-    WidgetInfo* inf = get_widget_info(widget);
-    v_setstrn(inf->var, "1", 1);
-}
 
 // transfer widget data in variables
 void update_vars(GtkWidget* widget) {
     WidgetInfo* inf = get_widget_info(widget);
+    const gchar* text;
+
     switch (inf->type) {
     case ctrl_check:
     case ctrl_radio:
@@ -73,9 +77,9 @@ void update_vars(GtkWidget* widget) {
         break;
     case ctrl_text:
         // copy input data into variable
-        gchar* p = gtk_entry_get_text(GTK_ENTRY(widget));
-        if (p && p[0]) {
-            v_setstrn(inf->var, p, strlen(p));
+        text = gtk_entry_get_text(GTK_ENTRY(widget));
+        if (text && text[0]) {
+            v_setstrn(inf->var, text, strlen(text));
         }
         break;
     case ctrl_list:
@@ -133,56 +137,62 @@ void cmd_button() {
         ui_begin();
         if (type) {
             if (strncmp("radio", type, 5) == 0) {
-                //widget = new RadioButton(x, y, w, h);
-                //widget->callback(radio_cb);
                 inf->type = ctrl_radio;
+                widget = gtk_radio_button_new_with_mnemonic(NULL, caption);
+                g_signal_connect((gpointer)widget, "button-press-event", 
+                                 G_CALLBACK(button_pressed), NULL);
             } else if (strncmp("checkbox", type, 8) == 0) {
-                //widget = new CheckButton(x, y, w, h);
-                //widget->callback(radio_cb);
                 inf->type = ctrl_check;
+                widget = gtk_check_button_new_with_mnemonic(caption);
+                g_signal_connect((gpointer)widget, "button-press-event", 
+                                 G_CALLBACK(button_pressed), NULL);
             } else if (strncmp("button", type, 6) == 0) {
-                //widget = new Button(x, y, w, h);
-                //widget->callback(radio_cb);
                 inf->type = ctrl_button;
-            } else if (strncmp("label", type, 8) == 0) {
-                //widget = (Button*)new GtkWidget(x, y, w, h);
+                widget = gtk_button_new_with_mnemonic(caption);
+                g_signal_connect((gpointer)widget, "button-press-event", 
+                                 G_CALLBACK(button_pressed), NULL);
+            } else if (strncmp("label", type, 5) == 0) {
                 inf->type = ctrl_label;
+                widget = gtk_label_new(caption);
             } else if (strncmp("choice", type, 6) == 0) {
-#if 0
-                Choice* choice = new Choice(x, y, w, h);
-                choice->begin();
+                inf->type = ctrl_list;
+                widget = gtk_combo_box_new_text();
                 // "Easy|Medium|Hard"
                 int itemIndex = 0;
-                inf->type = ctrl_list;
                 int len = caption ? strlen(caption) : 0;
-                for (int i=0; i<len; i++) {
-                    char* c = strchr(caption+i, '|');
+                int i;
+                for (i=0; i<len; i++) {
+                    const char* c = strchr(caption+i, '|');
                     int endIndex = c ? c-caption : len;
-                    String s(caption+i, endIndex-i);
-                    Item* item = new Item();
-                    item->copy_label(s.toString());
+                    GString* s = g_string_new_len(caption+i, endIndex-i);
+                    gtk_combo_box_append_text(GTK_COMBO_BOX(widget), s->str);
+                    g_string_free(s, TRUE);
                     i = endIndex;
                     if (v->type == V_STR && v->v.p.ptr &&
-                        strcmp((const char*)v->v.p.ptr, s.toString()) == 0) {
-                        choice->focus_index(itemIndex);
+                        strcmp((const char*)v->v.p.ptr, s->str) == 0) {
+                        //choice->focus_index(itemIndex);
                     }
                     itemIndex++;
                 }
-                choice->user_data(inf);
-                choice->end();
                 pfree2(caption, type);
-#endif
                 return;
             } else {
                 ui_reset();
                 rt_raise("UI: UNKNOWN TYPE: %s", type);
             }
         }
+
         if (widget == 0) {
-            //widget = new Button(x, y, w, h);
-            //widget->callback(button_cb);
-            //inf->type = ctrl_button;
+            // button will close the form
+            inf->type = ctrl_button;
+            widget = gtk_button_new_with_mnemonic(caption);
+            g_signal_connect((gpointer)widget, "button-press-event",
+                             G_CALLBACK(button_pressed), (gpointer)TRUE);
         }
+
+        set_widget_info(widget, inf);
+        gtk_layout_put(GTK_LAYOUT(form), widget, x, y);
+        gtk_widget_set_size_request(widget, w, h);
 
         // prime input field from variable
         if (v->type == V_STR && v->v.p.ptr &&
@@ -194,9 +204,6 @@ void cmd_button() {
                 //widget->value((const char*)v->v.p.ptr);
             }
         }
-
-        //widget->copy_label(caption);
-        //widget->user_data(inf);
     }
     pfree2(caption, type);
 }
@@ -248,7 +255,7 @@ void cmd_doform() {
     int num_args;
 
     if (form == 0) {
-        rt_raise("UI: DOFORM called before TEXT or BUTTON.");
+        modeless = TRUE;
         return;
     }
 
@@ -296,4 +303,4 @@ void cmd_doform() {
     ui_reset();
 }
 
-/* End of "$Id: form_ui.c,v 1.3 2006-06-22 12:10:57 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.4 2006-06-23 22:37:43 zeeb90au Exp $". */

@@ -1,5 +1,5 @@
-//
-// $Id: main.c,v 1.10 2006-06-14 10:35:41 zeeb90au Exp $
+// $Id: main.c,v 1.11 2006-06-23 22:37:43 zeeb90au Exp $
+// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -101,4 +101,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.10 2006-06-14 10:35:41 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.11 2006-06-23 22:37:43 zeeb90au Exp $". */
