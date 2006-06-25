@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.20 2006-06-21 23:08:37 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.21 2006-06-25 11:31:30 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -119,6 +119,7 @@ function buildGTK() {
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [avoid building obsolete code)])
  
    BUILD_SUBDIRS="sync sync/gtk/src sync/gtk/data sync/gtk/icons"
    AC_SUBST(BUILD_SUBDIRS)
@@ -224,4 +225,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.20 2006-06-21 23:08:37 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.21 2006-06-25 11:31:30 zeeb90au Exp $".
