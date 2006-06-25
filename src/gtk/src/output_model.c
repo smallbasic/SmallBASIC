@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.15 2006-06-14 10:35:41 zeeb90au Exp $
+ * $Id: output_model.c,v 1.16 2006-06-25 11:33:36 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -13,7 +13,7 @@
 #  include <config.h>
 #endif
 
-#include <gtk/gtkpixmap.h>
+#include <gtk/gtk.h>
 #include "output_model.h"
 
 struct OutputModel output;
@@ -158,5 +158,5 @@ void om_set_bg_color(int color) {
     output.bg = om_get_sb_color(color);
 }
 
-/* End of "$Id: output_model.c,v 1.15 2006-06-14 10:35:41 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.16 2006-06-25 11:33:36 zeeb90au Exp $". */
 
