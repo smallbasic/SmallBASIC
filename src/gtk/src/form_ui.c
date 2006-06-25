@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.4 2006-06-23 22:37:43 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.5 2006-06-25 11:32:04 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -34,7 +34,10 @@ typedef enum ControlType {
     ctrl_check,
     ctrl_text,
     ctrl_label,
-    ctrl_list
+    ctrl_list,
+    ctrl_calendar,
+    ctrl_file_chooser,
+    ctrl_color_selection
 } ControlType;
 
 typedef struct WidgetInfo {
@@ -50,23 +53,22 @@ void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
     g_object_set_data(G_OBJECT(w), "widget_info", inf);
 }
 
-gboolean button_pressed(GtkWidget* widget, 
-                        GdkEventButton* event, 
-                        gpointer user_data) {
-    WidgetInfo* inf = get_widget_info(widget);
+void button_clicked(GtkWidget *button, gpointer user_data) {
+    WidgetInfo* inf = get_widget_info(button);
     v_setstrn(inf->var, "1", 1);
     if (user_data) {
         // close the form
         output.modal_flag = FALSE;        
     }
-    return FALSE; // TRUE == stop other handlers from being invoked
 }
-
 
 // transfer widget data in variables
 void update_vars(GtkWidget* widget) {
     WidgetInfo* inf = get_widget_info(widget);
-    const gchar* text;
+    gchar* text = 0;
+    guint year, month, day;
+    char cal[11]; // DD/MM/YYYY
+    GdkColor color;
 
     switch (inf->type) {
     case ctrl_check:
@@ -76,15 +78,31 @@ void update_vars(GtkWidget* widget) {
         }
         break;
     case ctrl_text:
-        // copy input data into variable
-        text = gtk_entry_get_text(GTK_ENTRY(widget));
+        text = (gchar*)gtk_entry_get_text(GTK_ENTRY(widget));
         if (text && text[0]) {
             v_setstrn(inf->var, text, strlen(text));
+            // text is internal entry buffer so doesn't get freed
         }
         break;
     case ctrl_list:
-        // copy drop list item into variable
-        //v_setstr(inf->var, ((Choice*)w)->item()->label());
+        text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(widget));
+        v_setstr(inf->var, text);
+        g_free(text);
+        break;
+    case ctrl_calendar: 
+        gtk_calendar_get_date(GTK_CALENDAR(widget), &year, &month, &day);
+        sprintf(cal, "%d/%d/%d", day, month, year);
+        v_setstr(inf->var, cal);
+        break;
+    case ctrl_file_chooser:
+        text = (gchar*)gtk_file_chooser_button_get_title(GTK_FILE_CHOOSER_BUTTON(widget));
+        v_setstr(inf->var, text);
+        break;
+    case ctrl_color_selection:
+        gtk_color_selection_get_current_color(GTK_COLOR_SELECTION(widget), &color);
+        text = gtk_color_selection_palette_to_string(&color, 3);
+        v_setstr(inf->var, text);
+        g_free(text);
         break;
     default:
         break;
@@ -139,21 +157,34 @@ void cmd_button() {
             if (strncmp("radio", type, 5) == 0) {
                 inf->type = ctrl_radio;
                 widget = gtk_radio_button_new_with_mnemonic(NULL, caption);
-                g_signal_connect((gpointer)widget, "button-press-event", 
-                                 G_CALLBACK(button_pressed), NULL);
+                g_signal_connect((gpointer)widget, "clicked", 
+                                 G_CALLBACK(button_clicked), NULL);
             } else if (strncmp("checkbox", type, 8) == 0) {
                 inf->type = ctrl_check;
                 widget = gtk_check_button_new_with_mnemonic(caption);
-                g_signal_connect((gpointer)widget, "button-press-event", 
-                                 G_CALLBACK(button_pressed), NULL);
+                g_signal_connect((gpointer)widget, "clicked", 
+                                 G_CALLBACK(button_clicked), NULL);
             } else if (strncmp("button", type, 6) == 0) {
                 inf->type = ctrl_button;
                 widget = gtk_button_new_with_mnemonic(caption);
-                g_signal_connect((gpointer)widget, "button-press-event", 
-                                 G_CALLBACK(button_pressed), NULL);
+                g_signal_connect((gpointer)widget, "clicked", 
+                                 G_CALLBACK(button_clicked), NULL);
             } else if (strncmp("label", type, 5) == 0) {
                 inf->type = ctrl_label;
                 widget = gtk_label_new(caption);
+            } else if (strncmp("calendar", type, 8) == 0) {
+                inf->type = ctrl_calendar;
+                widget = gtk_calendar_new();
+                gtk_calendar_display_options(GTK_CALENDAR(widget),
+                                             GTK_CALENDAR_SHOW_HEADING |
+                                             GTK_CALENDAR_SHOW_DAY_NAMES);
+            } else if (strncmp("file_chooser", type, 12) == 0) {
+                inf->type = ctrl_file_chooser;
+                widget = gtk_file_chooser_button_new(caption, GTK_FILE_CHOOSER_ACTION_OPEN);
+            } else if (strncmp("color_selection", type, 15) == 0) {
+                inf->type = ctrl_color_selection;
+                widget = gtk_color_selection_new();
+                gtk_color_selection_set_has_opacity_control(GTK_COLOR_SELECTION(widget), TRUE);
             } else if (strncmp("choice", type, 6) == 0) {
                 inf->type = ctrl_list;
                 widget = gtk_combo_box_new_text();
@@ -170,7 +201,8 @@ void cmd_button() {
                     i = endIndex;
                     if (v->type == V_STR && v->v.p.ptr &&
                         strcmp((const char*)v->v.p.ptr, s->str) == 0) {
-                        //choice->focus_index(itemIndex);
+                        // item text same as variable - set selected
+                        gtk_combo_box_set_active(GTK_COMBO_BOX(widget), itemIndex);
                     }
                     itemIndex++;
                 }
@@ -186,22 +218,21 @@ void cmd_button() {
             // button will close the form
             inf->type = ctrl_button;
             widget = gtk_button_new_with_mnemonic(caption);
-            g_signal_connect((gpointer)widget, "button-press-event",
-                             G_CALLBACK(button_pressed), (gpointer)TRUE);
+            g_signal_connect((gpointer)widget, "clicked",
+                             G_CALLBACK(button_clicked), (gpointer)TRUE);
         }
 
         set_widget_info(widget, inf);
         gtk_layout_put(GTK_LAYOUT(form), widget, x, y);
         gtk_widget_set_size_request(widget, w, h);
+        gtk_widget_modify_font(widget, output.font_desc);
 
         // prime input field from variable
         if (v->type == V_STR && v->v.p.ptr &&
             strcmp((const char*)v->v.p.ptr, "1") == 0) {
             if (inf->type == ctrl_check || 
                 inf->type == ctrl_radio) {
-                //widget->value(true);
-            } else if (inf->type != ctrl_button) {
-                //widget->value((const char*)v->v.p.ptr);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE);
             }
         }
     }
@@ -229,7 +260,6 @@ void cmd_text() {
         gtk_entry_set_max_length(GTK_ENTRY(entry), 100);
         gtk_widget_set_size_request(entry, w, h);
         gtk_widget_modify_font(entry, output.font_desc);
-        gtk_widget_show(entry);
         
         GtkIMContext* imctx = gtk_im_multicontext_new();
         gtk_im_context_set_client_window(imctx, output.widget->window);
@@ -285,7 +315,7 @@ void cmd_doform() {
     gtk_layout_set_size(GTK_LAYOUT(form), w, h);
     gtk_widget_set_size_request(GTK_WIDGET(form), w, h);
     gtk_widget_grab_focus(form);
-    gtk_widget_show(form);
+    gtk_widget_show_all(form);
 
     output.modal_flag = TRUE;
     while (output.modal_flag && output.break_exec == 0) {
@@ -303,4 +333,4 @@ void cmd_doform() {
     ui_reset();
 }
 
-/* End of "$Id: form_ui.c,v 1.4 2006-06-23 22:37:43 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.5 2006-06-25 11:32:04 zeeb90au Exp $". */
