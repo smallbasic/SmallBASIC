@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.5 2006-06-25 11:32:04 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.6 2006-06-26 00:07:49 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -36,8 +36,7 @@ typedef enum ControlType {
     ctrl_label,
     ctrl_list,
     ctrl_calendar,
-    ctrl_file_chooser,
-    ctrl_color_selection
+    ctrl_file_chooser
 } ControlType;
 
 typedef struct WidgetInfo {
@@ -53,16 +52,34 @@ void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
     g_object_set_data(G_OBJECT(w), "widget_info", inf);
 }
 
-void button_clicked(GtkWidget *button, gpointer user_data) {
-    WidgetInfo* inf = get_widget_info(button);
-    v_setstrn(inf->var, "1", 1);
-    if (user_data) {
-        // close the form
-        output.modal_flag = FALSE;        
+// create the form
+void ui_begin() {
+    if (form == 0) {
+        form = gtk_layout_new(NULL, NULL);
+        gtk_container_add(GTK_CONTAINER(output.widget), form);
+        gtk_widget_show(form);
     }
 }
 
-// transfer widget data in variables
+// destroy the form
+void ui_reset() {
+    if (form != 0) {
+        GList* list = gtk_container_get_children(GTK_CONTAINER(form));
+        int n = g_list_length(list);
+        int i;
+        for (i=0; i<n; i++) {
+            GtkWidget* w = (GtkWidget*)g_list_nth_data(list, i);
+            WidgetInfo* inf = get_widget_info(w);
+            g_free(inf);
+            gtk_container_remove(GTK_CONTAINER(form), w);
+        }
+        gtk_container_remove(GTK_CONTAINER(output.widget), form);
+        g_list_free(list);
+        form = 0;
+    }
+}
+
+// copy widget data into its matching basic variable
 void update_vars(GtkWidget* widget) {
     WidgetInfo* inf = get_widget_info(widget);
     gchar* text = 0;
@@ -91,16 +108,11 @@ void update_vars(GtkWidget* widget) {
         break;
     case ctrl_calendar: 
         gtk_calendar_get_date(GTK_CALENDAR(widget), &year, &month, &day);
-        sprintf(cal, "%d/%d/%d", day, month, year);
+        sprintf(cal, "%02d/%02d/%d", day, month+1, year);
         v_setstr(inf->var, cal);
         break;
     case ctrl_file_chooser:
-        text = (gchar*)gtk_file_chooser_button_get_title(GTK_FILE_CHOOSER_BUTTON(widget));
-        v_setstr(inf->var, text);
-        break;
-    case ctrl_color_selection:
-        gtk_color_selection_get_current_color(GTK_COLOR_SELECTION(widget), &color);
-        text = gtk_color_selection_palette_to_string(&color, 3);
+        text = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget));
         v_setstr(inf->var, text);
         g_free(text);
         break;
@@ -109,28 +121,29 @@ void update_vars(GtkWidget* widget) {
     }
 }
 
-void ui_begin() {
-    if (form == 0) {
-        form = gtk_layout_new(NULL, NULL);
-        gtk_container_add(GTK_CONTAINER(output.widget), form);
-        gtk_widget_show(form);
-    }
-}
-
-void ui_reset() {
-    if (form != 0) {
+// copy form data into basic variables
+void ui_transfer_data() {
+    if (form) {
         GList* list = gtk_container_get_children(GTK_CONTAINER(form));
         int n = g_list_length(list);
         int i;
         for (i=0; i<n; i++) {
-            GtkWidget* w = (GtkWidget*)g_list_nth_data(list, i);
-            WidgetInfo* inf = get_widget_info(w);
-            g_free(inf);
-            gtk_container_remove(GTK_CONTAINER(form), w);
+            update_vars((GtkWidget*)g_list_nth_data(list, i));
         }
-        gtk_container_remove(GTK_CONTAINER(output.widget), form);
         g_list_free(list);
-        form = 0;
+    }
+}
+
+// button callback
+void button_clicked(GtkWidget *button, gpointer user_data) {
+    WidgetInfo* inf = get_widget_info(button);
+    v_setstrn(inf->var, "1", 1);
+    if (user_data) {
+        // close the form
+        output.modal_flag = FALSE;
+        if (modeless) {
+            ui_transfer_data();
+        }
     }
 }
 
@@ -140,7 +153,10 @@ void ui_reset() {
 // variable is set to 1 if a button or link was pressed (which 
 // will have closed the form, or if a radio or checkbox was 
 // selected when the form was closed
-// 
+//
+// TODO: try adding hildon widgets:
+//  http://www.maemo.org/platform/docs/api/hildon-docs/html/ch02.html
+//
 void cmd_button() {
     int x, y, w, h;
     var_t* v = 0;
@@ -181,10 +197,6 @@ void cmd_button() {
             } else if (strncmp("file_chooser", type, 12) == 0) {
                 inf->type = ctrl_file_chooser;
                 widget = gtk_file_chooser_button_new(caption, GTK_FILE_CHOOSER_ACTION_OPEN);
-            } else if (strncmp("color_selection", type, 15) == 0) {
-                inf->type = ctrl_color_selection;
-                widget = gtk_color_selection_new();
-                gtk_color_selection_set_has_opacity_control(GTK_COLOR_SELECTION(widget), TRUE);
             } else if (strncmp("choice", type, 6) == 0) {
                 inf->type = ctrl_list;
                 widget = gtk_combo_box_new_text();
@@ -197,7 +209,6 @@ void cmd_button() {
                     int endIndex = c ? c-caption : len;
                     GString* s = g_string_new_len(caption+i, endIndex-i);
                     gtk_combo_box_append_text(GTK_COMBO_BOX(widget), s->str);
-                    g_string_free(s, TRUE);
                     i = endIndex;
                     if (v->type == V_STR && v->v.p.ptr &&
                         strcmp((const char*)v->v.p.ptr, s->str) == 0) {
@@ -205,12 +216,13 @@ void cmd_button() {
                         gtk_combo_box_set_active(GTK_COMBO_BOX(widget), itemIndex);
                     }
                     itemIndex++;
+                    g_string_free(s, TRUE);
                 }
-                pfree2(caption, type);
-                return;
             } else {
                 ui_reset();
                 rt_raise("UI: UNKNOWN TYPE: %s", type);
+                pfree2(caption, type);
+                return;
             }
         }
 
@@ -278,14 +290,32 @@ void cmd_text() {
     }
 }
 
-// DOFORM [x,y,w,h [,border-style, bg-color]]
-// Executes the form
+// DOFORM [x,y,w,h]
+//
+// Modal syntax:
+//   BUTTON ...
+//   DOFORM ...
+//
+// Modeless syntax:
+//   DOFORM 'begin modeless form
+//   BUTTON ....
+//   DOFORM x,y,w,h
+//   ...
+//   DOFORM 'end modeless form
+//
 void cmd_doform() {
     int x, y, w, h;
     int num_args;
 
     if (form == 0) {
-        modeless = TRUE;
+        if (modeless) {
+            // end modeless form
+            ui_transfer_data();
+            ui_reset();
+        } else {
+            // begin modeless form
+            modeless = TRUE;
+        }
         return;
     }
 
@@ -317,20 +347,15 @@ void cmd_doform() {
     gtk_widget_grab_focus(form);
     gtk_widget_show_all(form);
 
-    output.modal_flag = TRUE;
-    while (output.modal_flag && output.break_exec == 0) {
-        gtk_main_iteration_do(TRUE);
+    if (modeless == FALSE) {
+        output.modal_flag = TRUE;
+        while (output.modal_flag && output.break_exec == 0) {
+            gtk_main_iteration_do(TRUE);
+        }
+        
+        ui_transfer_data();
+        ui_reset();
     }
-
-    GList* list = gtk_container_get_children(GTK_CONTAINER(form));
-    int n = g_list_length(list);
-    int i;
-    for (i=0; i<n; i++) {
-        update_vars((GtkWidget*)g_list_nth_data(list, i));
-    }
-    g_list_free(list);
-
-    ui_reset();
 }
 
-/* End of "$Id: form_ui.c,v 1.5 2006-06-25 11:32:04 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.6 2006-06-26 00:07:49 zeeb90au Exp $". */
