@@ -1,10 +1,23 @@
 
 2006-05-27	<cwarrensmith@gmail.com>
-	* update bc_store_string() to handle escaped double quotes
+	* added form support to GTK build
+	
+2006-05-27	<cwarrensmith@gmail.com>
+	* bc_store_string() now handles escaped double quotes
 
 2006-04-12	<cwarrensmith@gmail.com>
 	* updated sockcl_open() to handle server listen sockets
 
+================================================================================
 
-
-refer to http://smallbasic.sourceforge.net/ for more history	
+Future ideas:
+- MediaWiki link to help and error codes	
+- Fix error message with unterminated strings in a sub or func. complains
+  about missing END instead of the missing " char
+- Add support for detecting another program has changed
+  the edited file in fltk version
+- Add command argument GUI for fltk to allow run time args to be set
+  usefull when creating command line based applications
+	
+Refer to sync/Changes for more history
+This log has been created for autotools support	
