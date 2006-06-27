@@ -1,4 +1,4 @@
 [D-BUS Service]
 Name=com.nokia.sbasic
-Exec=/var/lib/install/usr/bin/sbasic
+Exec=/usr/bin/sbasic
 

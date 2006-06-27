@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.15 2006-06-14 10:35:41 zeeb90au Exp $
+ * $Id: output_write.c,v 1.16 2006-06-27 12:27:49 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -14,6 +14,11 @@
 #endif
 
 #include <gtk/gtk.h>
+
+#ifdef USE_HILDON
+#include <libosso.h>
+#endif
+
 #include "output.h"
 #include "output_model.h"
 
@@ -341,5 +346,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.15 2006-06-14 10:35:41 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.16 2006-06-27 12:27:49 zeeb90au Exp $". */
 

@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.21 2006-06-25 11:31:30 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.22 2006-06-27 12:27:00 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -60,34 +60,62 @@ function checkDebugMode() {
 }
 
 function checkHILDON() {
-   PKG_CHECK_MODULES(HILDON, hildon-libs >= 0.8.4)
+   PKG_CHECK_MODULES(HILDON, hildon-libs >= 0.9.50 hildon-fm libossohelp)
    AC_SUBST(HILDON_LIBS)
    AC_SUBST(HILDON_CFLAGS)
 
-   PKG_CHECK_MODULES(OSSO,libosso >= 0.8.4 gnome-vfs-2.0 >= 2.2 gnome-vfs-module-2.0 >= 2.2)
+   PKG_CHECK_MODULES(OSSO, osso-af-settings >= 0.8.5 libosso >= 0.9.17 
+                     gnome-vfs-2.0 >= 2.8.4.11 gnome-vfs-module-2.0 >= 2.8.4.11)
    AC_SUBST(OSSO_LIBS)
    AC_SUBST(OSSO_CFLAGS)
 
-   PKG_CHECK_MODULES(OSSOSETTINGS, osso-af-settings >= 0.8.4)
+   # To make application visible in maemo Task Navigator it needs a Desktop
+   # file for the application.
+   # D-BUS service file is needed to be able to launch the maemo application
+   # and connect it to D-BUS services.
+   # The following line defines install directories for these files.
+   desktopentrydir=`$PKG_CONFIG osso-af-settings --variable=desktopentrydir`
+   serviceentrydir=`$PKG_CONFIG osso-af-settings --variable=dbusservicedir`
 
+   # Application locale install directory
    localedir=`$PKG_CONFIG osso-af-settings --variable=localedir`
-   hildondesktopentrydir=`$PKG_CONFIG osso-af-settings --variable=desktopentrydir`
-   hildoncpdesktopentrydir=`$PKG_CONFIG hildon-control-panel --variable plugindesktopentrydir`
-   hildonstatusbarplugindir=`$PKG_CONFIG hildon-status-bar-lib --variable=pluginlibdir`
-   hildoncplibdir=`$PKG_CONFIG hildon-control-panel --variable=pluginlibdir`
-   hildoniconthemedir=$HOME/.icons/hicolor
 
-   AC_SUBST(localedir)
+   # Application pixmaps install directory
+   pixmapdir=`$PKG_CONFIG osso-af-settings --variable=hildonpixmapdir`
+
+   # Application icon install directories
+   icon_26x26dir=$datadir/icons/hicolor/26x26/hildon
+   icon_34x34dir=$datadir/icons/hicolor/34x34/hildon
+   icon_40x40dir=$datadir/icons/hicolor/40x40/hildon
+   icon_50x50dir=$datadir/icons/hicolor/50x50/hildon
+   icon_scalabledir=$datadir/icons/hicolor/scalable/hildon
+
+   # Help file install directory
+   helpfile_engbdir=$datadir/osso-help/en_GB
+
+   # Hildon control panel plugin install directories
+   pluginlibdir=`$PKG_CONFIG hildon-control-panel --variable=plugindir`
+   plugindesktopentrydir=`$PKG_CONFIG hildon-control-panel --variable=plugindesktopentrydir`
+
+   # Define as variables in Makefiles
    AC_SUBST(desktopentrydir)
-   AC_SUBST(hildondesktopentrydir)
-   AC_SUBST(hildoncpdesktopentrydir)
-   AC_SUBST(hildonstatusbarplugindir)
-   AC_SUBST(hildoncplibdir)
-   AC_SUBST(hildoniconthemedir)
+   AC_SUBST(serviceentrydir)
+   AC_SUBST(localedir)
+   AC_SUBST(pixmapdir)
+   AC_SUBST(icon_26x26dir)
+   AC_SUBST(icon_34x34dir)
+   AC_SUBST(icon_40x40dir)
+   AC_SUBST(icon_50x50dir)
+   AC_SUBST(icon_scalabledir)
+   AC_SUBST(pluginlibdir)
+   AC_SUBST(plugindesktopentrydir)
+   AC_SUBST(helpfile_engbdir)
+
+   AC_DEFINE_UNQUOTED([LOCALEDIR], "${localedir}", [Runtime locale catalog files path])
+   AC_DEFINE_UNQUOTED([PIXMAPDIR], "${pixmapdir}", [Runtime pixmap files path])
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${HILDON_CFLAGS} ${OSSO_CFLAGS}"
    PACKAGE_LIBS="${PACKAGE_LIBS} ${HILDON_LIBS} ${OSSO_LIBS}"
-   ln -s sync/gtk/debian
 }
 
 function buildGTK() {
@@ -218,6 +246,7 @@ Makefile
 sync/Makefile
 sync/gtk/src/Makefile
 sync/gtk/data/sbasic.desktop
+sync/gtk/data/com.nokia.sbasic.service
 sync/gtk/data/Makefile
 sync/gtk/icons/Makefile
 sync/ide-fltk/Makefile
@@ -225,4 +254,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.21 2006-06-25 11:31:30 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.22 2006-06-27 12:27:00 zeeb90au Exp $".

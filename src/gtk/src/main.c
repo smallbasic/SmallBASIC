@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.12 2006-06-27 09:47:59 zeeb90au Exp $
+// $Id: main.c,v 1.13 2006-06-27 12:27:49 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -15,13 +15,17 @@
 
 #include <sbapp.h>
 #include <gtk/gtk.h>
+
+#ifdef USE_HILDON
+#include <libosso.h>
+#include <hildon-widgets/hildon-program.h>
+#endif
+
 #include "interface.h"
 #include "output.h"
 #include "output_model.h"
 
 #ifdef USE_HILDON
-#include <libosso.h>
-#include <hildon-widgets/hildon-program.h>
 HildonProgram* app;
 #else
 #define app
@@ -99,4 +103,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.12 2006-06-27 09:47:59 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.13 2006-06-27 12:27:49 zeeb90au Exp $". */

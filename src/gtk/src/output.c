@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.26 2006-06-27 09:47:59 zeeb90au Exp $
+ * $Id: output.c,v 1.27 2006-06-27 12:27:49 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -18,13 +18,17 @@
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+
+#ifdef USE_HILDON
+#include <libosso.h>
+#include <hildon-widgets/hildon-program.h>
+#endif
+
 #include "interface.h"
 #include "output.h"
 #include "output_model.h"
 
-#ifdef USE_HILDON
-#include <hildon-widgets/hildon-program.h>
-#else
+#ifndef USE_HILDON
 #define gtk_im_context_show(imctx)
 #endif
 
@@ -505,7 +509,6 @@ char* dev_gets(char *dest, int size) {
 #ifdef USE_HILDON
     g_object_set(entry, "hildon-input-mode", 
                  HILDON_GTK_INPUT_MODE_AUTOCAP, NULL); 
-    gtk_im_context_show(imctx);
 #endif
 
     gtk_layout_put(GTK_LAYOUT(output.widget), entry, 
@@ -674,5 +677,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.26 2006-06-27 09:47:59 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.27 2006-06-27 12:27:49 zeeb90au Exp $". */
 

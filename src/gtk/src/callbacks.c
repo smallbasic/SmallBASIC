@@ -1,49 +1,28 @@
-/*
- * $Id: callbacks.c,v 1.11 2006-03-09 20:28:25 zeeb90au Exp $
- * This file is part of SmallBASIC
- *
- * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
- * cwarrens@twpo.com.au
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- */
+/* $Id: callbacks.c,v 1.12 2006-06-27 12:27:49 zeeb90au Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
 #include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
-
 #include "callbacks.h"
 #include "interface.h"
-#include "output_model.h"
 
-extern OutputModel output;
-extern int keymap[];
+void on_break(GtkMenuItem* menuitem, gpointer user_data) {
 
-void on_break(GtkMenuItem * menuitem, gpointer user_data) {
-    output.break_exec = 1;
-}
-
-void on_about_activate(GtkMenuItem * menuitem, gpointer user_data) {
-    GtkWidget *about = create_aboutdialog();
-    gtk_dialog_run(GTK_DIALOG(about));
-    gtk_widget_destroy(about);
 }
 
 void on_reset_keys(GtkMenuItem* menuitem, gpointer user_data) {
-    int i;
-    for (i=KEYMAP_FIRST; i<=KEYMAP_LAST; i++) {
-        keymap[i]=0;
-    }
+
 }
 
-void on_quit_activate(GtkMenuItem * menuitem, gpointer user_data) {
-    exit(1);
+void on_about_activate(GtkMenuItem* menuitem, gpointer user_data) {
+
 }
 
-/*
- * End of "$Id: callbacks.c,v 1.11 2006-03-09 20:28:25 zeeb90au Exp $". 
- */
+void on_quit_activate(GtkMenuItem* menuitem, gpointer user_data) {
+
+}
+
+
+/* End of $Id: callbacks.c,v 1.12 2006-06-27 12:27:49 zeeb90au Exp $ */

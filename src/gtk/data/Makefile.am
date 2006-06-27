@@ -2,13 +2,10 @@
 # This file is part of SmallBASIC
 #
 
-dbusdir=$(prefix)/lib/dbus-1.0/services
-dbus_DATA=com.nokia.sbasic.service
+serviceentry_DATA = com.nokia.sbasic.service
+desktopentry_DATA = sbasic.desktop
 
-desktopdir=$(datadir)/applications/hildon
-desktop_DATA = sbasic.desktop
-
-EXTRA_DIST = $(dbus_DATA) $(desktop_DATA)
+EXTRA_DIST = $(serviceentry_DATA) $(desktopentry_DATA) 
 
 ###
 

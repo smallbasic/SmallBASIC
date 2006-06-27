@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.7 2006-06-27 09:47:59 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.8 2006-06-27 12:27:49 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -22,6 +22,11 @@
 #include "blib_ui.h"
 
 #include <gtk/gtk.h>
+
+#ifdef USE_HILDON
+#include <libosso.h>
+#endif
+
 #include "output_model.h"
 
 GtkWidget* form = 0; /* modal form */
@@ -387,4 +392,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.7 2006-06-27 09:47:59 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.8 2006-06-27 12:27:49 zeeb90au Exp $". */
