@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.11 2006-06-23 22:37:43 zeeb90au Exp $
+// $Id: main.c,v 1.12 2006-06-27 09:47:59 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -21,9 +21,8 @@
 
 #ifdef USE_HILDON
 #include <libosso.h>
-#include "hildon-lgpl/hildon-widgets/hildon-app.h"
-#include "hildon-lgpl/hildon-widgets/hildon-input-mode-hint.h"
-HildonApp* app;
+#include <hildon-widgets/hildon-program.h>
+HildonProgram* app;
 #else
 #define app
 #endif
@@ -39,8 +38,8 @@ int main(int argc, char *argv[]) {
     char buf[1];
 
 #ifdef ENABLE_NLS
-    bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
-    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+    bindtextdomain(GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
+    bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
     textdomain (GETTEXT_PACKAGE);
 #endif
 
@@ -48,12 +47,11 @@ int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
 #ifdef USE_HILDON
-    app = HILDON_APP(hildon_app_new());
-    hildon_app_set_title(app, "SmallBASIC");
+    app = HILDON_PROGRAM(hildon_program_get_instance());
+    g_set_application_name("SmallBASIC");
     output.osso = osso_initialize(PACKAGE, VERSION, TRUE, NULL);
     main_window = create_main_window();
-    hildon_app_set_appview(app, HILDON_APPVIEW(main_window));
-    hildon_app_set_two_part_title(app, TRUE);
+    hildon_program_add_window(app, main_window);
 #else
     main_window = create_main_window();
 #endif
@@ -101,4 +99,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.11 2006-06-23 22:37:43 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.12 2006-06-27 09:47:59 zeeb90au Exp $". */

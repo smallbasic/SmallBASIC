@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.25 2006-06-14 10:35:41 zeeb90au Exp $
+ * $Id: output.c,v 1.26 2006-06-27 09:47:59 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -23,7 +23,7 @@
 #include "output_model.h"
 
 #ifdef USE_HILDON
-#include "hildon-lgpl/hildon-widgets/hildon-app.h"
+#include <hildon-widgets/hildon-program.h>
 #else
 #define gtk_im_context_show(imctx)
 #endif
@@ -74,6 +74,7 @@ void osd_refresh() {
 }
 
 int osd_devrestore() {
+    ui_reset();
     return 1;
 }
 
@@ -166,13 +167,13 @@ int osd_getpen(int code) {
         return y;
 
     case 12: // true if left button pressed
-        return(output.pen_down==1);
+        return (output.pen_down==1);
 
     case 13: // true if right button pressed
-        return(output.pen_down==3);
+        return (output.pen_down==3);
 
     case 14: // true if middle button pressed
-        return(output.pen_down==2);
+        return (output.pen_down==2);
         break;
     }
     return 0;
@@ -323,7 +324,7 @@ void dev_image(int handle, int index, int x, int y,
             gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
         }
     } else {
-        /* output screen area image to jpeg */
+        // output screen area image to jpeg
     }
 }
 
@@ -500,8 +501,13 @@ void input_changed(GtkEditable* editable, GtkWidget* entry) {
  */
 char* dev_gets(char *dest, int size) {
     entry = gtk_entry_new();
-    
-    g_object_set(G_OBJECT(entry), "autocap", FALSE, NULL);
+
+#ifdef USE_HILDON
+    g_object_set(entry, "hildon-input-mode", 
+                 HILDON_GTK_INPUT_MODE_AUTOCAP, NULL); 
+    gtk_im_context_show(imctx);
+#endif
+
     gtk_layout_put(GTK_LAYOUT(output.widget), entry, 
                    output.cur_x-1, output.cur_y-1);
     gtk_entry_set_has_frame(GTK_ENTRY(entry), FALSE);
@@ -533,7 +539,7 @@ char* dev_gets(char *dest, int size) {
     strcpy(dest, value);
     osd_write(dest);
 
-    /* remove and destroy the entry widget */
+    // remove and destroy the entry widget
     gtk_container_remove(GTK_CONTAINER(output.widget), entry);
     entry = 0;
     return dest;
@@ -571,10 +577,10 @@ gboolean configure_event(GtkWidget* widget,
                          gpointer user_data) {
 
     if (output.gc == 0) {
-        /* deferred init to here since we don't run gtk_main() */
+        // deferred init to here since we don't run gtk_main()
         output.gc = gdk_gc_new(widget->window);
         om_reset(TRUE); 
-        /* set mx/my here while no keypad is displayed */
+        // set mx/my here while no keypad is displayed
         output.width = widget->allocation.width-4;
         output.height = widget->allocation.height-4;
     }
@@ -585,7 +591,7 @@ gboolean configure_event(GtkWidget* widget,
     }
 
     if (output.pixmap) {
-        /* copy old image onto new/resized image */
+        // copy old image onto new/resized image
         int old_w, old_h;
         gdk_drawable_get_size(output.pixmap, &old_w, &old_h);
         int w = MAX(output.width, old_w);
@@ -597,17 +603,17 @@ gboolean configure_event(GtkWidget* widget,
         gdk_draw_drawable(pixmap,
                           output.gc,
                           output.pixmap,
-                          0,0,0,0, /* src/dest x/y */
+                          0,0,0,0, // src/dest x/y
                           old_w, old_h);
         g_object_unref(output.pixmap);
         output.pixmap = pixmap;
     } else {
-        /* create a new pixmap */
+        // create a new pixmap
         output.pixmap = 
             gdk_pixmap_new(widget->window, output.width, output.height, -1);
         osd_cls();
     }
-    return FALSE; /* continue sizing other widgets */
+    return FALSE; // continue sizing other widgets
 }
 
 /* Redraw the screen from the backing pixmap */
@@ -616,8 +622,8 @@ gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
         gdk_draw_drawable(GTK_LAYOUT(widget)->bin_window,
                           output.gc, 
                           output.pixmap,
-                          event->area.x, event->area.y, /* src */
-                          event->area.x, event->area.y, /* dest */
+                          event->area.x, event->area.y, // src 
+                          event->area.x, event->area.y, // dest
                           event->area.width, event->area.height);
     }
     return FALSE;
@@ -639,7 +645,7 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     GtkWidget *top_window;
 
 #ifdef USE_HILDON
-    // HildonApp lives above the toplevel display window
+    // HildonProgram lives above the toplevel display window
     top_window = main_window->parent;
 #else
     top_window = main_window;
@@ -647,7 +653,7 @@ gboolean drawing_area_init(GtkWidget *main_window) {
 
     output.main_view = main_window;
 
-    /* connect signals */
+    // connect signals 
     g_signal_connect(G_OBJECT(top_window),"configure_event",
                      G_CALLBACK(configure_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "expose_event",
@@ -668,5 +674,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.25 2006-06-14 10:35:41 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.26 2006-06-27 09:47:59 zeeb90au Exp $". */
 

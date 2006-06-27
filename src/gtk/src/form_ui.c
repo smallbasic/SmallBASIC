@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.6 2006-06-26 00:07:49 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.7 2006-06-27 09:47:59 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -36,7 +36,9 @@ typedef enum ControlType {
     ctrl_label,
     ctrl_list,
     ctrl_calendar,
-    ctrl_file_chooser
+    ctrl_file_button,
+    ctrl_font_button,
+    ctrl_color_button
 } ControlType;
 
 typedef struct WidgetInfo {
@@ -84,7 +86,7 @@ void update_vars(GtkWidget* widget) {
     WidgetInfo* inf = get_widget_info(widget);
     gchar* text = 0;
     guint year, month, day;
-    char cal[11]; // DD/MM/YYYY
+    char buf[11]; // DD/MM/YYYY
     GdkColor color;
 
     switch (inf->type) {
@@ -97,23 +99,41 @@ void update_vars(GtkWidget* widget) {
     case ctrl_text:
         text = (gchar*)gtk_entry_get_text(GTK_ENTRY(widget));
         if (text && text[0]) {
-            v_setstrn(inf->var, text, strlen(text));
-            // text is internal entry buffer so doesn't get freed
+            v_setstr(inf->var, text);
         }
+        // internal text not freed
         break;
     case ctrl_list:
         text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(widget));
-        v_setstr(inf->var, text);
+        if (text && text[0]) {
+            v_setstr(inf->var, text);
+        }
         g_free(text);
         break;
     case ctrl_calendar: 
         gtk_calendar_get_date(GTK_CALENDAR(widget), &year, &month, &day);
-        sprintf(cal, "%02d/%02d/%d", day, month+1, year);
-        v_setstr(inf->var, cal);
+        sprintf(buf, "%02d/%02d/%d", day, month+1, year);
+        v_setstr(inf->var, buf);
         break;
-    case ctrl_file_chooser:
+    case ctrl_file_button:
         text = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget));
-        v_setstr(inf->var, text);
+        if (text && text[0]) {
+            v_setstr(inf->var, text);
+        }
+        g_free(text);
+        break;
+    case ctrl_font_button:
+        text = (char*)gtk_font_button_get_font_name(GTK_FONT_BUTTON(widget));
+        if (text && text[0]) {
+            v_setstr(inf->var, text);
+        }
+        break;
+    case ctrl_color_button:
+        gtk_color_button_get_color(GTK_COLOR_BUTTON(widget), &color);
+        text = gtk_color_selection_palette_to_string(&color, 1);
+        if (text && text[0]) {
+            v_setstr(inf->var, text);
+        }
         g_free(text);
         break;
     default:
@@ -143,6 +163,7 @@ void button_clicked(GtkWidget *button, gpointer user_data) {
         output.modal_flag = FALSE;
         if (modeless) {
             ui_transfer_data();
+            ui_reset();
         }
     }
 }
@@ -194,9 +215,15 @@ void cmd_button() {
                 gtk_calendar_display_options(GTK_CALENDAR(widget),
                                              GTK_CALENDAR_SHOW_HEADING |
                                              GTK_CALENDAR_SHOW_DAY_NAMES);
-            } else if (strncmp("file_chooser", type, 12) == 0) {
-                inf->type = ctrl_file_chooser;
+            } else if (strncmp("file_button", type, 11) == 0) {
+                inf->type = ctrl_file_button;
                 widget = gtk_file_chooser_button_new(caption, GTK_FILE_CHOOSER_ACTION_OPEN);
+            } else if (strncmp("font_button", type, 11) == 0) {
+                inf->type = ctrl_font_button;
+                widget = gtk_font_button_new();
+            } else if (strncmp("color_button", type, 12) == 0) {
+                inf->type = ctrl_color_button;
+                widget= gtk_color_button_new();
             } else if (strncmp("choice", type, 6) == 0) {
                 inf->type = ctrl_list;
                 widget = gtk_combo_box_new_text();
@@ -279,10 +306,10 @@ void cmd_text() {
         gtk_widget_grab_focus(entry);
 
 #ifdef USE_HILDON
-        g_object_set(G_OBJECT(entry), "autocap", FALSE, NULL);
+        g_object_set(entry, "hildon-input-mode", 
+                     HILDON_GTK_INPUT_MODE_AUTOCAP, NULL); 
         gtk_im_context_show(imctx);
 #endif
-
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
         inf->var = v;
         inf->type = ctrl_text;
@@ -300,27 +327,29 @@ void cmd_text() {
 //   DOFORM 'begin modeless form
 //   BUTTON ....
 //   DOFORM x,y,w,h
-//   ...
-//   DOFORM 'end modeless form
+//   DOFORM 'end modeless form - can also be closed with default button
 //
 void cmd_doform() {
     int x, y, w, h;
     int num_args;
 
-    if (form == 0) {
-        if (modeless) {
-            // end modeless form
-            ui_transfer_data();
-            ui_reset();
-        } else {
-            // begin modeless form
-            modeless = TRUE;
-        }
-        return;
-    }
-
     x = y = w = h = 0;
     num_args = par_massget("iiii", &x, &y, &w, &h);
+
+    if (num_args == 0) {
+        // begin or end modeless form state
+        if (modeless && form) {
+            modeless = FALSE;
+            ui_transfer_data();
+            ui_reset();
+            return;
+        }
+
+        if (form == 0) {
+            modeless = TRUE;
+            return;
+        }
+    }
 
     if (num_args != 4) {
         ui_reset();
@@ -358,4 +387,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.6 2006-06-26 00:07:49 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.7 2006-06-27 09:47:59 zeeb90au Exp $". */
