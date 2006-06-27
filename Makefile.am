@@ -12,3 +12,5 @@ EXTRA_DIST = \
 	sync/gtk/sbgtk.glade \
 	sync/gtk/sbgtk.gladep
 
+deb:
+	fakeroot dpkg-buildpackage

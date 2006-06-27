@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.22 2006-06-27 12:27:00 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.23 2006-06-27 12:32:29 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -116,6 +116,7 @@ function checkHILDON() {
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${HILDON_CFLAGS} ${OSSO_CFLAGS}"
    PACKAGE_LIBS="${PACKAGE_LIBS} ${HILDON_LIBS} ${OSSO_LIBS}"
+   ln -s sync/gtk/debian
 }
 
 function buildGTK() {
@@ -254,4 +255,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.22 2006-06-27 12:27:00 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.23 2006-06-27 12:32:29 zeeb90au Exp $".
