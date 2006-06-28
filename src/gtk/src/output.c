@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.28 2006-06-28 13:06:46 zeeb90au Exp $
+ * $Id: output.c,v 1.29 2006-06-28 22:29:38 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -443,6 +443,7 @@ void handle_key(int index, int def_key, int keyval, keymap_data* data) {
 gboolean key_press_event(GtkWidget* widget, 
                          GdkEventKey* event, 
                          keymap_data* data) {
+
     switch(event->keyval) {
     case GDK_Up: // Navigation Key Up
         handle_key(KEYMAP_UP, SB_KEY_UP, GDK_Up, data);
@@ -506,11 +507,6 @@ void input_changed(GtkEditable* editable, GtkWidget* entry) {
 char* dev_gets(char *dest, int size) {
     entry = gtk_entry_new();
 
-#ifdef USE_HILDON
-    g_object_set(entry, "hildon-input-mode", 
-                 HILDON_GTK_INPUT_MODE_AUTOCAP, NULL); 
-#endif
-
     gtk_layout_put(GTK_LAYOUT(output.widget), entry, 
                    output.cur_x-1, output.cur_y-1);
     gtk_entry_set_has_frame(GTK_ENTRY(entry), FALSE);
@@ -536,7 +532,6 @@ char* dev_gets(char *dest, int size) {
     }
 
     gtk_im_context_focus_out(imctx);
-    g_object_unref(G_OBJECT(imctx));
 
     const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));
     strcpy(dest, value);
@@ -669,5 +664,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.28 2006-06-28 13:06:46 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.29 2006-06-28 22:29:38 zeeb90au Exp $". */
 
