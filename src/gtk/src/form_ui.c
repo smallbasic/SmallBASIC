@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.8 2006-06-27 12:27:49 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.9 2006-06-28 10:33:43 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -59,6 +59,16 @@ void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
     g_object_set_data(G_OBJECT(w), "widget_info", inf);
 }
 
+// make width and height fit within the output box
+void update_dimensions(int x, int y, int* w, int* h) {
+    if (*w < 1 || x+*w > output.width) {
+        *w = output.width-x;
+    }
+    if (*h < 1 || y+*h > output.height) {
+        *h = output.height-y;
+    }
+}
+
 // create the form
 void ui_begin() {
     if (form == 0) {
@@ -98,7 +108,7 @@ void update_vars(GtkWidget* widget) {
     case ctrl_check:
     case ctrl_radio:
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget))) {
-            v_setstrn(inf->var, "1", 1);
+            v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(widget)));
         }
         break;
     case ctrl_text:
@@ -162,7 +172,7 @@ void ui_transfer_data() {
 // button callback
 void button_clicked(GtkWidget *button, gpointer user_data) {
     WidgetInfo* inf = get_widget_info(button);
-    v_setstrn(inf->var, "1", 1);
+    v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
     if (user_data) {
         // close the form
         output.modal_flag = FALSE;
@@ -171,6 +181,30 @@ void button_clicked(GtkWidget *button, gpointer user_data) {
             ui_reset();
         }
     }
+}
+
+// set the radio into a group that shares a common basic variable
+void set_radio_group(var_t* v, GtkWidget* radio_widget) {
+    GSList *radio_group = NULL;
+    if (v == 0 || v->type != V_STR) {
+        return;
+    }
+
+    GList* list = gtk_container_get_children(GTK_CONTAINER(form));
+    int n = g_list_length(list);
+    int i;
+    for (i=0; i<n; i++) {
+        GtkWidget* widget = (GtkWidget*)g_list_nth_data(list, i);
+        WidgetInfo* inf = get_widget_info(widget);
+        if (inf->type == ctrl_radio &&
+            inf->var->type == V_STR && 
+            (inf->var == v || inf->var->v.p.ptr == v->v.p.ptr)) {
+            radio_group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(widget));
+            gtk_radio_button_set_group(GTK_RADIO_BUTTON(radio_widget), radio_group);
+            break;
+        }
+    }
+    g_list_free(list);
 }
 
 // BUTTON x, y, w, h, variable, caption [,type] 
@@ -198,12 +232,15 @@ void cmd_button() {
         if (type) {
             if (strncmp("radio", type, 5) == 0) {
                 inf->type = ctrl_radio;
-                widget = gtk_radio_button_new_with_mnemonic(NULL, caption);
-                g_signal_connect((gpointer)widget, "clicked", 
-                                 G_CALLBACK(button_clicked), NULL);
+                widget = gtk_radio_button_new_with_label(NULL, caption);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
+                set_radio_group(v, widget);
+                g_signal_connect((gpointer)widget, "clicked",
+                                 G_CALLBACK(button_clicked),NULL);
             } else if (strncmp("checkbox", type, 8) == 0) {
                 inf->type = ctrl_check;
-                widget = gtk_check_button_new_with_mnemonic(caption);
+                widget = gtk_check_button_new_with_label(caption);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
                 g_signal_connect((gpointer)widget, "clicked", 
                                  G_CALLBACK(button_clicked), NULL);
             } else if (strncmp("button", type, 6) == 0) {
@@ -214,6 +251,7 @@ void cmd_button() {
             } else if (strncmp("label", type, 5) == 0) {
                 inf->type = ctrl_label;
                 widget = gtk_label_new(caption);
+                gtk_label_set_justify(GTK_LABEL(widget), GTK_JUSTIFY_LEFT);
             } else if (strncmp("calendar", type, 8) == 0) {
                 inf->type = ctrl_calendar;
                 widget = gtk_calendar_new();
@@ -273,7 +311,7 @@ void cmd_button() {
 
         // prime input field from variable
         if (v->type == V_STR && v->v.p.ptr &&
-            strcmp((const char*)v->v.p.ptr, "1") == 0) {
+            strcmp((const char*)v->v.p.ptr, caption) == 0) {
             if (inf->type == ctrl_check || 
                 inf->type == ctrl_radio) {
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE);
@@ -298,7 +336,7 @@ void cmd_text() {
         if (v->type == V_STR && v->v.p.ptr) {
             gtk_entry_set_text(GTK_ENTRY(entry), (const char*)v->v.p.ptr);
         }
-    
+
         gtk_layout_put(GTK_LAYOUT(form), entry, x, y);
         gtk_entry_set_has_frame(GTK_ENTRY(entry), TRUE);
         gtk_entry_set_max_length(GTK_ENTRY(entry), 100);
@@ -335,11 +373,11 @@ void cmd_text() {
 //   DOFORM 'end modeless form - can also be closed with default button
 //
 void cmd_doform() {
-    int x, y, w, h;
+    int x, y, w, h, box, bg;
     int num_args;
 
-    x = y = w = h = 0;
-    num_args = par_massget("iiii", &x, &y, &w, &h);
+    x = y = w = h = box = bg = 0;
+    num_args = par_massget("iiii", &x, &y, &w, &h, &box, &bg);
 
     if (num_args == 0) {
         // begin or end modeless form state
@@ -356,22 +394,17 @@ void cmd_doform() {
         }
     }
 
-    if (num_args != 4) {
+    if (num_args < 4 || num_args > 6) {
+        // box and bg are for compatibility with fltk version
         ui_reset();
         rt_raise("UI: INVALID FORM ARGUMENTS: %d", num_args);
         return;
     }
-    
-    if (x < 2) {
-        x = 2;
-    }
-    if (y < 2) {
-        y = 2;
-    }
-    if (x+w > output.width) {
+
+    if (w < 1 || x+w > output.width) {
         w = output.width-x;
     }
-    if (y+h > output.height) {
+    if (h < 1 || y+h > output.height) {
         h = output.height-y;
     }
 
@@ -392,4 +425,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.8 2006-06-27 12:27:49 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.9 2006-06-28 10:33:43 zeeb90au Exp $". */
