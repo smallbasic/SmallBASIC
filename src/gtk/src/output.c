@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.27 2006-06-27 12:27:49 zeeb90au Exp $
+ * $Id: output.c,v 1.28 2006-06-28 13:06:46 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -645,19 +645,11 @@ gboolean button_release_event(GtkWidget* w, GdkEventButton *e, gpointer data) {
 gboolean drawing_area_init(GtkWidget *main_window) {
     GtkWidget *drawing_area = 
         g_object_get_data(G_OBJECT(main_window), "drawing_area");
-    GtkWidget *top_window;
-
-#ifdef USE_HILDON
-    // HildonProgram lives above the toplevel display window
-    top_window = main_window->parent;
-#else
-    top_window = main_window;
-#endif
 
     output.main_view = main_window;
 
     // connect signals 
-    g_signal_connect(G_OBJECT(top_window),"configure_event",
+    g_signal_connect(G_OBJECT(main_window),"configure_event",
                      G_CALLBACK(configure_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "expose_event",
                      G_CALLBACK(expose_event), NULL);
@@ -665,7 +657,7 @@ gboolean drawing_area_init(GtkWidget *main_window) {
                      G_CALLBACK(button_press_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
                      G_CALLBACK(button_release_event), NULL);
-    g_signal_connect(G_OBJECT(top_window), "key_press_event", 
+    g_signal_connect(G_OBJECT(main_window), "key_press_event", 
                      G_CALLBACK(key_press_event), NULL);
 
     gtk_widget_set_events(drawing_area, 
@@ -677,5 +669,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.27 2006-06-27 12:27:49 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.28 2006-06-28 13:06:46 zeeb90au Exp $". */
 

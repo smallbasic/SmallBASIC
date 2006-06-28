@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.16 2006-06-27 12:27:49 zeeb90au Exp $
+ * $Id: output_write.c,v 1.17 2006-06-28 13:06:46 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -26,7 +26,7 @@ extern OutputModel output;
 
 void speak_string(const char* s, int len) {
 #ifdef USE_HILDON
-    int retval;
+    osso_rpc_t retval;
     int speed = 2;
     int pitch = 4;
     osso_rpc_run(output.osso, 
@@ -346,5 +346,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.16 2006-06-27 12:27:49 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.17 2006-06-28 13:06:46 zeeb90au Exp $". */
 
