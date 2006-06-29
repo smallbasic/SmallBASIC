@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.9 2006-06-28 10:33:43 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.10 2006-06-29 03:54:06 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -57,16 +57,6 @@ WidgetInfo* get_widget_info(GtkWidget* w) {
 
 void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
     g_object_set_data(G_OBJECT(w), "widget_info", inf);
-}
-
-// make width and height fit within the output box
-void update_dimensions(int x, int y, int* w, int* h) {
-    if (*w < 1 || x+*w > output.width) {
-        *w = output.width-x;
-    }
-    if (*h < 1 || y+*h > output.height) {
-        *h = output.height-y;
-    }
 }
 
 // create the form
@@ -307,7 +297,6 @@ void cmd_button() {
         set_widget_info(widget, inf);
         gtk_layout_put(GTK_LAYOUT(form), widget, x, y);
         gtk_widget_set_size_request(widget, w, h);
-        gtk_widget_modify_font(widget, output.font_desc);
 
         // prime input field from variable
         if (v->type == V_STR && v->v.p.ptr &&
@@ -341,7 +330,6 @@ void cmd_text() {
         gtk_entry_set_has_frame(GTK_ENTRY(entry), TRUE);
         gtk_entry_set_max_length(GTK_ENTRY(entry), 100);
         gtk_widget_set_size_request(entry, w, h);
-        gtk_widget_modify_font(entry, output.font_desc);
         
         GtkIMContext* imctx = gtk_im_multicontext_new();
         gtk_im_context_set_client_window(imctx, output.widget->window);
@@ -425,4 +413,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.9 2006-06-28 10:33:43 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.10 2006-06-29 03:54:06 zeeb90au Exp $". */
