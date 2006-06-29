@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.14 2005-09-02 06:26:37 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.15 2006-06-29 03:53:38 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -244,7 +244,7 @@ void cmd_button() {
                 widget = new Button(x, y, w, h);
                 widget->callback(radio_cb);
                 inf->type = ctrl_button;
-            } else if (strncmp("label", type, 8) == 0) {
+            } else if (strncmp("label", type, 5) == 0) {
                 widget = (Button*)new Widget(x, y, w, h);
                 widget->box(NO_BOX);
                 inf->type = ctrl_label;
@@ -282,6 +282,8 @@ void cmd_button() {
             } else {
                 ui_reset();
                 rt_raise("UI: UNKNOWN TYPE: %s", type);
+                pfree2(caption, type);
+                return;
             }
         }
         if (widget == 0) {
@@ -433,4 +435,4 @@ void cmd_doform() {
 
 C_LINKAGE_END
 
-// End of "$Id: blib_fltk_ui.cpp,v 1.14 2005-09-02 06:26:37 zeeb90au Exp $".
+// End of "$Id: blib_fltk_ui.cpp,v 1.15 2006-06-29 03:53:38 zeeb90au Exp $".
