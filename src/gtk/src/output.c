@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.29 2006-06-28 22:29:38 zeeb90au Exp $
+ * $Id: output.c,v 1.30 2006-06-30 00:26:16 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -37,7 +37,8 @@ extern OutputModel output;
 #define PEN_ON  2
 #define PEN_OFF 0
 
-GtkWidget* entry;
+GtkWidget* entry = 0;
+GtkWidget* label = 0;
 int keymap[KEYMAP_LAST+1];
 typedef struct {
     GtkWidget* dialog;
@@ -77,8 +78,16 @@ void osd_refresh() {
     gdk_window_invalidate_rect(output.widget->window, &rc, TRUE);
 }
 
+void close_html() {
+    if (label) {
+        gtk_container_remove(GTK_CONTAINER(output.widget), label);
+        label = 0;
+    }
+}
+
 int osd_devrestore() {
     ui_reset();
+    close_html();
     return 1;
 }
 
@@ -293,6 +302,32 @@ void dev_delay(dword ms) {
         gtk_main_iteration_do(TRUE);
     }
     g_source_remove(timer_id);
+}
+
+
+void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
+    if (html == 0 || html[0] == 0) {
+        close_html();
+        return;
+    }
+    // fit within the output box
+    if (w < 1 || x+w > output.width) {
+        w = output.width-x;
+    }
+    if (h < 1 || y+h > output.height) {
+        h = output.height-y;
+    }
+    if (label) {
+        gtk_label_set_text(GTK_LABEL(label), html);
+        gtk_layout_move(GTK_LAYOUT(output.widget), label, x, y);
+    } else {
+        label = gtk_label_new(html);
+        gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
+        gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
+        gtk_layout_put(GTK_LAYOUT(output.widget), label, x, y);
+    }
+    gtk_widget_set_size_request(label, w, h);
+    gtk_widget_show(label);    
 }
 
 /*
@@ -664,5 +699,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.29 2006-06-28 22:29:38 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.30 2006-06-30 00:26:16 zeeb90au Exp $". */
 
