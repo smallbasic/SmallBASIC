@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.30 2006-06-30 00:26:16 zeeb90au Exp $
+ * $Id: output.c,v 1.31 2006-06-30 10:23:04 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -38,7 +38,7 @@ extern OutputModel output;
 #define PEN_OFF 0
 
 GtkWidget* entry = 0;
-GtkWidget* label = 0;
+GtkWidget* html_widget = 0;
 int keymap[KEYMAP_LAST+1];
 typedef struct {
     GtkWidget* dialog;
@@ -79,9 +79,9 @@ void osd_refresh() {
 }
 
 void close_html() {
-    if (label) {
-        gtk_container_remove(GTK_CONTAINER(output.widget), label);
-        label = 0;
+    if (html_widget) {
+        gtk_container_remove(GTK_CONTAINER(output.widget), html_widget);
+        html_widget = 0;
     }
 }
 
@@ -306,8 +306,8 @@ void dev_delay(dword ms) {
 
 
 void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
+    close_html();
     if (html == 0 || html[0] == 0) {
-        close_html();
         return;
     }
     // fit within the output box
@@ -317,17 +317,24 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
     if (h < 1 || y+h > output.height) {
         h = output.height-y;
     }
-    if (label) {
-        gtk_label_set_text(GTK_LABEL(label), html);
-        gtk_layout_move(GTK_LAYOUT(output.widget), label, x, y);
-    } else {
-        label = gtk_label_new(html);
-        gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
-        gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
-        gtk_layout_put(GTK_LAYOUT(output.widget), label, x, y);
-    }
-    gtk_widget_set_size_request(label, w, h);
-    gtk_widget_show(label);    
+
+    html_widget = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_show(html_widget);
+    gtk_layout_put(GTK_LAYOUT(output.widget), html_widget, x, y);
+    gtk_widget_set_size_request(html_widget, w, h);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(html_widget), 
+                                   GTK_POLICY_AUTOMATIC,
+                                   GTK_POLICY_AUTOMATIC);
+
+    GtkWidget* viewport = gtk_viewport_new(NULL, NULL);
+    gtk_widget_show(viewport);
+    gtk_container_add(GTK_CONTAINER(html_widget), viewport);
+        
+    GtkWidget* label = gtk_label_new(html);
+    gtk_widget_show(label);
+    gtk_container_add(GTK_CONTAINER(viewport), label);
+    gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
 }
 
 /*
@@ -699,5 +706,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.30 2006-06-30 00:26:16 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.31 2006-06-30 10:23:04 zeeb90au Exp $". */
 
