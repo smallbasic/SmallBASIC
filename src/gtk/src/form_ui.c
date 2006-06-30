@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.11 2006-06-30 00:25:52 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.12 2006-06-30 10:22:03 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -346,27 +346,27 @@ void cmd_text() {
 
     if (-1 != par_massget("IIIIP", &x1, &x2, &y1, &y2, &v)) {
         ui_begin();
-        GtkWidget* entry = gtk_entry_new();
+        GtkWidget* widget = gtk_entry_new();
 
         // prime field from var_t
         if (v->type == V_STR && v->v.p.ptr) {
-            gtk_entry_set_text(GTK_ENTRY(entry), (const char*)v->v.p.ptr);
+            gtk_entry_set_text(GTK_ENTRY(widget), (const char*)v->v.p.ptr);
         }
 
-        add_form_child(entry, x1, x2, y1, y2);
-        gtk_entry_set_has_frame(GTK_ENTRY(entry), TRUE);
-        gtk_entry_set_max_length(GTK_ENTRY(entry), 100);
+        add_form_child(widget, x1, x2, y1, y2);
+        gtk_entry_set_has_frame(GTK_ENTRY(widget), TRUE);
+        gtk_entry_set_max_length(GTK_ENTRY(widget), 100);
         
         GtkIMContext* imctx = gtk_im_multicontext_new();
         gtk_im_context_set_client_window(imctx, output.widget->window);
         gtk_im_context_focus_in(imctx);
         gtk_im_context_show(imctx);
-        gtk_widget_grab_focus(entry);
+        gtk_widget_grab_focus(widget);
 
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
         inf->var = v;
         inf->type = ctrl_text;
-        set_widget_info(entry, inf);
+        set_widget_info(widget, inf);
     }
 }
 
@@ -433,4 +433,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.11 2006-06-30 00:25:52 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.12 2006-06-30 10:22:03 zeeb90au Exp $". */
