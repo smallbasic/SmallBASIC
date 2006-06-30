@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.10 2006-06-29 03:54:06 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.11 2006-06-30 00:25:52 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -29,9 +29,15 @@
 
 #include "output_model.h"
 
-GtkWidget* form = 0; /* modal form */
+GtkWidget* form = 0;
 int modeless = FALSE;
+int rows = 1;
+int cols = 1;
 extern OutputModel output;
+
+#ifndef USE_HILDON
+#define gtk_im_context_show(imctx)
+#endif
 
 typedef enum ControlType {
     ctrl_button,
@@ -62,7 +68,7 @@ void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
 // create the form
 void ui_begin() {
     if (form == 0) {
-        form = gtk_layout_new(NULL, NULL);
+        form = gtk_table_new(rows, cols, FALSE);
         gtk_container_add(GTK_CONTAINER(output.widget), form);
         gtk_widget_show(form);
     }
@@ -83,6 +89,8 @@ void ui_reset() {
         gtk_container_remove(GTK_CONTAINER(output.widget), form);
         g_list_free(list);
         form = 0;
+        rows = 1;
+        cols = 1;
     }
 }
 
@@ -160,7 +168,7 @@ void ui_transfer_data() {
 }
 
 // button callback
-void button_clicked(GtkWidget *button, gpointer user_data) {
+void button_clicked(GtkWidget* button, gpointer user_data) {
     WidgetInfo* inf = get_widget_info(button);
     v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
     if (user_data) {
@@ -197,7 +205,27 @@ void set_radio_group(var_t* v, GtkWidget* radio_widget) {
     g_list_free(list);
 }
 
-// BUTTON x, y, w, h, variable, caption [,type] 
+// refer to rev 1.10 or less for the obsolete layout version
+void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
+    int resized = FALSE;
+    if (x2 > cols) {
+        cols = x2;
+        resized = TRUE;
+    }
+    if (y2 > rows) {
+        rows = y2;
+        resized = TRUE;
+    }
+    if (resized) {
+        gtk_table_resize(GTK_TABLE(form), rows, cols);
+    }
+    gtk_table_attach(GTK_TABLE(form), widget, x1, x2, y1, y2,
+                     (GtkAttachOptions)(GTK_FILL),
+                     (GtkAttachOptions)(0), 0, 0);
+}
+
+
+// BUTTON x1, x2, y1, y2, variable, caption [,type] 
 //
 // type can optionally be 'radio' | 'checkbox' | 'link' | 'choice'
 // variable is set to 1 if a button or link was pressed (which 
@@ -208,12 +236,12 @@ void set_radio_group(var_t* v, GtkWidget* radio_widget) {
 //  http://www.maemo.org/platform/docs/api/hildon-docs/html/ch02.html
 //
 void cmd_button() {
-    int x, y, w, h;
+    int x1, x2, y1, y2;
     var_t* v = 0;
     char* caption = 0;
     char* type = 0;
 
-    if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
+    if (-1 != par_massget("IIIIPSs", &x1, &x2, &y1, &y2, &v, &caption, &type)) {
         GtkWidget* widget = 0;
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
         inf->var = v;
@@ -231,12 +259,12 @@ void cmd_button() {
                 inf->type = ctrl_check;
                 widget = gtk_check_button_new_with_label(caption);
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
-                g_signal_connect((gpointer)widget, "clicked", 
+                g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked), NULL);
             } else if (strncmp("button", type, 6) == 0) {
                 inf->type = ctrl_button;
                 widget = gtk_button_new_with_mnemonic(caption);
-                g_signal_connect((gpointer)widget, "clicked", 
+                g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked), NULL);
             } else if (strncmp("label", type, 5) == 0) {
                 inf->type = ctrl_label;
@@ -295,8 +323,7 @@ void cmd_button() {
         }
 
         set_widget_info(widget, inf);
-        gtk_layout_put(GTK_LAYOUT(form), widget, x, y);
-        gtk_widget_set_size_request(widget, w, h);
+        add_form_child(widget, x1, x2, y1, y2);
 
         // prime input field from variable
         if (v->type == V_STR && v->v.p.ptr &&
@@ -310,14 +337,14 @@ void cmd_button() {
     pfree2(caption, type);
 }
 
-// TEXT x, y, w, h, variable
+// TEXT x1, x2, y1, y2, variable
 // When DOFORM returns the variable contains the user entered value
 //
 void cmd_text() {
-    int x, y, w, h;
+    int x1, x2, y1, y2;
     var_t* v = 0;
 
-    if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {
+    if (-1 != par_massget("IIIIP", &x1, &x2, &y1, &y2, &v)) {
         ui_begin();
         GtkWidget* entry = gtk_entry_new();
 
@@ -326,21 +353,16 @@ void cmd_text() {
             gtk_entry_set_text(GTK_ENTRY(entry), (const char*)v->v.p.ptr);
         }
 
-        gtk_layout_put(GTK_LAYOUT(form), entry, x, y);
+        add_form_child(entry, x1, x2, y1, y2);
         gtk_entry_set_has_frame(GTK_ENTRY(entry), TRUE);
         gtk_entry_set_max_length(GTK_ENTRY(entry), 100);
-        gtk_widget_set_size_request(entry, w, h);
         
         GtkIMContext* imctx = gtk_im_multicontext_new();
         gtk_im_context_set_client_window(imctx, output.widget->window);
         gtk_im_context_focus_in(imctx);
+        gtk_im_context_show(imctx);
         gtk_widget_grab_focus(entry);
 
-#ifdef USE_HILDON
-        g_object_set(entry, "hildon-input-mode", 
-                     HILDON_GTK_INPUT_MODE_AUTOCAP, NULL); 
-        gtk_im_context_show(imctx);
-#endif
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
         inf->var = v;
         inf->type = ctrl_text;
@@ -361,11 +383,11 @@ void cmd_text() {
 //   DOFORM 'end modeless form - can also be closed with default button
 //
 void cmd_doform() {
-    int x, y, w, h, box, bg;
+    int x, y, w, h;
     int num_args;
 
-    x = y = w = h = box = bg = 0;
-    num_args = par_massget("iiii", &x, &y, &w, &h, &box, &bg);
+    x = y = w = h = 0;
+    num_args = par_massget("iiii", &x, &y, &w, &h);
 
     if (num_args == 0) {
         // begin or end modeless form state
@@ -382,8 +404,7 @@ void cmd_doform() {
         }
     }
 
-    if (num_args < 4 || num_args > 6) {
-        // box and bg are for compatibility with fltk version
+    if (num_args != 4) {
         ui_reset();
         rt_raise("UI: INVALID FORM ARGUMENTS: %d", num_args);
         return;
@@ -397,7 +418,6 @@ void cmd_doform() {
     }
 
     gtk_layout_move(GTK_LAYOUT(output.widget), form, x, y);
-    gtk_layout_set_size(GTK_LAYOUT(form), w, h);
     gtk_widget_set_size_request(GTK_WIDGET(form), w, h);
     gtk_widget_grab_focus(form);
     gtk_widget_show_all(form);
@@ -413,4 +433,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.10 2006-06-29 03:54:06 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.11 2006-06-30 00:25:52 zeeb90au Exp $". */
