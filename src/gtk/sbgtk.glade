@@ -126,10 +126,10 @@
 	      <property name="width_request">400</property>
 	      <property name="height_request">280</property>
 	      <property name="visible">True</property>
-	      <property name="width">400</property>
-	      <property name="height">280</property>
-	      <property name="hadjustment">0 0 480 10 432 480</property>
-	      <property name="vadjustment">0 0 300 10 270 300</property>
+	      <property name="width">668</property>
+	      <property name="height">392</property>
+	      <property name="hadjustment">0 0 668 10 360 400</property>
+	      <property name="vadjustment">0 0 392 10 252 280</property>
 	    </widget>
 	  </child>
 	</widget>

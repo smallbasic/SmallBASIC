@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.31 2006-06-30 10:23:04 zeeb90au Exp $
+ * $Id: output.c,v 1.32 2006-07-02 12:47:05 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -147,19 +147,15 @@ int osd_getpen(int code) {
             return 1;
         }
         gtk_main_iteration_do(TRUE); // UNTIL PEN(0)
-        // fallthru to re-test 
+        return 0;
 
     case 3: // returns true if the pen is down(and save curpos)
-        if (output.widget->window == 
-            gdk_window_get_pointer(output.widget->window, &x, &y, &mask)) {
-            if (mask &
-               (GDK_BUTTON1_MASK |
-                 GDK_BUTTON2_MASK |
-                 GDK_BUTTON3_MASK)) {
-                output.pen_down_x = x;
-                output.pen_down_y = y;
-                return 1;
-            }
+        if (output.pen_down != 0) {
+            gdk_window_get_pointer(output.widget->window,
+                                   &output.pen_down_x,
+                                   &output.pen_down_y,
+                                   &mask);
+            return 1;
         }
         return 0;
 
@@ -621,8 +617,8 @@ gboolean configure_event(GtkWidget* widget,
         output.gc = gdk_gc_new(widget->window);
         om_reset(TRUE); 
         // set mx/my here while no keypad is displayed
-        output.width = widget->allocation.width-4;
-        output.height = widget->allocation.height-4;
+        output.width = widget->allocation.width;
+        output.height = widget->allocation.height;
     }
     if (output.layout == 0) {
         output.layout = gtk_widget_create_pango_layout(widget, 0);
@@ -706,5 +702,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.31 2006-06-30 10:23:04 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.32 2006-07-02 12:47:05 zeeb90au Exp $". */
 
