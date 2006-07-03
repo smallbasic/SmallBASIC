@@ -123,13 +123,12 @@
 
 	  <child>
 	    <widget class="GtkLayout" id="drawing_area">
-	      <property name="width_request">400</property>
-	      <property name="height_request">280</property>
-	      <property name="visible">True</property>
-	      <property name="width">668</property>
-	      <property name="height">392</property>
-	      <property name="hadjustment">0 0 668 10 360 400</property>
-	      <property name="vadjustment">0 0 392 10 252 280</property>
+	      <property name="width_request">668</property>
+	      <property name="height_request">392</property>
+	      <property name="width">1</property>
+	      <property name="height">1</property>
+	      <property name="hadjustment">0 0 668 10 601.2 668</property>
+	      <property name="vadjustment">0 0 392 10 352.8 392</property>
 	    </widget>
 	  </child>
 	</widget>

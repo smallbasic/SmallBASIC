@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.32 2006-07-02 12:47:05 zeeb90au Exp $
+ * $Id: output.c,v 1.33 2006-07-03 00:36:19 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -481,7 +481,6 @@ void handle_key(int index, int def_key, int keyval, keymap_data* data) {
 gboolean key_press_event(GtkWidget* widget, 
                          GdkEventKey* event, 
                          keymap_data* data) {
-
     switch(event->keyval) {
     case GDK_Up: // Navigation Key Up
         handle_key(KEYMAP_UP, SB_KEY_UP, GDK_Up, data);
@@ -608,20 +607,15 @@ void invalidate_rect(int x1, int y1, int x2, int y2) {
 }
 
 /* Create a new backing pixmap of the appropriate size */
-gboolean configure_event(GtkWidget* widget, 
-                         GdkEventConfigure *event,
-                         gpointer user_data) {
-
+void on_realize(GtkWidget* widget, gpointer user_data) {
     if (output.gc == 0) {
         // deferred init to here since we don't run gtk_main()
         output.gc = gdk_gc_new(widget->window);
         om_reset(TRUE); 
-        // set mx/my here while no keypad is displayed
-        output.width = widget->allocation.width;
-        output.height = widget->allocation.height;
     }
+
     if (output.layout == 0) {
-        output.layout = gtk_widget_create_pango_layout(widget, 0);
+        output.layout = gtk_widget_create_pango_layout(output.widget, 0);
         pango_layout_set_width(output.layout, -1);
         pango_layout_set_font_description(output.layout, output.font_desc);
     }
@@ -645,11 +639,25 @@ gboolean configure_event(GtkWidget* widget,
         output.pixmap = pixmap;
     } else {
         // create a new pixmap
-        output.pixmap = 
+        output.pixmap =
             gdk_pixmap_new(widget->window, output.width, output.height, -1);
         osd_cls();
     }
-    return FALSE; // continue sizing other widgets
+}
+
+/* called when ever the client area size changes */
+void on_size_allocate(GtkWidget* widget,
+                      GdkRectangle* allocation, 
+                      gpointer user_data) {
+    if (output.width != allocation->width ||
+        output.width != allocation->width) {
+        output.width = allocation->width;
+        output.height = allocation->height;
+        if (widget->window) {
+            on_realize(widget, user_data);
+        }
+    }
+    return;
 }
 
 /* Redraw the screen from the backing pixmap */
@@ -681,16 +689,18 @@ gboolean drawing_area_init(GtkWidget *main_window) {
 
     output.main_view = main_window;
 
-    // connect signals 
-    g_signal_connect(G_OBJECT(main_window),"configure_event",
-                     G_CALLBACK(configure_event), NULL);
+    // connect signals
+    g_signal_connect(G_OBJECT(drawing_area), "size_allocate",
+                     G_CALLBACK(on_size_allocate), NULL);
+    g_signal_connect(G_OBJECT(drawing_area), "realize",
+                      G_CALLBACK(on_realize), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "expose_event",
                      G_CALLBACK(expose_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_press_event",
                      G_CALLBACK(button_press_event), NULL);
     g_signal_connect(G_OBJECT(drawing_area), "button_release_event",
                      G_CALLBACK(button_release_event), NULL);
-    g_signal_connect(G_OBJECT(main_window), "key_press_event", 
+    g_signal_connect(G_OBJECT(main_window), "key_press_event",
                      G_CALLBACK(key_press_event), NULL);
 
     gtk_widget_set_events(drawing_area, 
@@ -702,5 +712,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.32 2006-07-02 12:47:05 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.33 2006-07-03 00:36:19 zeeb90au Exp $". */
 
