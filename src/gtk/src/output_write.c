@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.17 2006-06-28 13:06:46 zeeb90au Exp $
+ * $Id: output_write.c,v 1.18 2006-07-03 11:49:21 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -29,6 +29,7 @@ void speak_string(const char* s, int len) {
     osso_rpc_t retval;
     int speed = 2;
     int pitch = 4;
+    GString* text = g_string_new_len(s, len);
     osso_rpc_run(output.osso, 
                  "com.nokia.flite",
                  "/com/nokia/flite",
@@ -38,7 +39,7 @@ void speak_string(const char* s, int len) {
                  DBUS_TYPE_UINT32, // id for the order
                  getpid(),
                  DBUS_TYPE_STRING, // string to be read
-                 "Say something",
+                 text->str,
                  DBUS_TYPE_UINT32, // priority. From 0 to 20.
                  20,
                  DBUS_TYPE_DOUBLE, // speed of speeching. From 0.1 to 3
@@ -48,6 +49,7 @@ void speak_string(const char* s, int len) {
                  DBUS_TYPE_STRING, // name of the voice (not implemented)
                  "cmu_us_kal",
                  DBUS_TYPE_INVALID);
+    g_string_free(text, TRUE);
 #endif
 }
 
@@ -198,12 +200,6 @@ int set_graphics_rendition(char c, int escValue) {
             break;
         case 49: // superscript
             break;
-        case 100:
-            output.flite_out = 1;
-            break;
-        case 101:
-            output.flite_out = 0;
-            break;
         };                        
     }
     return 0;
@@ -282,6 +278,18 @@ void osd_write(const char *str) {
             gdk_draw_rectangle(output.pixmap, output.gc, TRUE, 0, output.cur_y,
                                output.width, output.ascent+output.descent);
             break;
+        case 2: // STX: start of flite text
+            num_chars = 0;
+            p++;
+            while (p[num_chars] > 31) {
+                num_chars++;
+            }
+            if (num_chars) {
+                speak_string((const char*)p, num_chars);
+                p += num_chars;
+            }
+            break;
+
         default:
             num_chars = 1; // print minimum of one character
             cx = output.font_width;
@@ -302,10 +310,6 @@ void osd_write(const char *str) {
                 }
             }
             
-            if (output.flite_out) {
-                speak_string((const char*)p, num_chars);
-            }
-
             if (output.invert) {
                 GdkColor c;
                 c.red =  (output.fg.red ^ 0xffff);
@@ -318,12 +322,12 @@ void osd_write(const char *str) {
             gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
                                output.cur_x, output.cur_y, cx, 
                                output.ascent+output.descent);
-
+            
             pango_layout_set_text(output.layout, (const char*)p, num_chars);
             gdk_gc_set_rgb_fg_color(output.gc, &output.fg);
             gdk_draw_layout(output.pixmap, output.gc,
                             output.cur_x, output.cur_y, output.layout);
-
+            
             if (output.underline) {
                 gdk_draw_line(output.pixmap, output.gc,
                               output.cur_x, 
@@ -331,10 +335,10 @@ void osd_write(const char *str) {
                               output.cur_x+cx, 
                               output.cur_y+output.ascent+1);
             }
-            
-            // advance
-            p += num_chars-1; // allow for p++ 
             output.cur_x += cx;
+            
+            // advance text pointer
+            p += num_chars-1; // allow for p++ 
         };
         
         if (*p == '\0') {
@@ -346,5 +350,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.17 2006-06-28 13:06:46 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.18 2006-07-03 11:49:21 zeeb90au Exp $". */
 
