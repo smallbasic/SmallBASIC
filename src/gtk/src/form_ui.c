@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.13 2006-07-07 22:21:33 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.14 2006-07-07 22:48:39 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -39,6 +39,8 @@ extern OutputModel output;
 #define gtk_im_context_show(imctx)
 #endif
 
+#define TABLE_GAP 2
+
 typedef enum ControlType {
     ctrl_button,
     ctrl_radio,
@@ -69,6 +71,8 @@ void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
 void ui_begin() {
     if (form == 0) {
         form = gtk_table_new(rows, cols, FALSE);
+        gtk_table_set_col_spacings(GTK_TABLE(form), TABLE_GAP);
+        gtk_table_set_row_spacings(GTK_TABLE(form), TABLE_GAP);
         gtk_container_add(GTK_CONTAINER(output.widget), form);
         gtk_widget_show(form);
     }
@@ -434,4 +438,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.13 2006-07-07 22:21:33 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.14 2006-07-07 22:48:39 zeeb90au Exp $". */
