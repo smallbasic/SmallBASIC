@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.12 2006-06-30 10:22:03 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.13 2006-07-07 22:21:33 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -89,9 +89,10 @@ void ui_reset() {
         gtk_container_remove(GTK_CONTAINER(output.widget), form);
         g_list_free(list);
         form = 0;
-        rows = 1;
-        cols = 1;
     }
+    rows = 1;
+    cols = 1;
+    modeless = FALSE;    
 }
 
 // copy widget data into its matching basic variable
@@ -276,13 +277,13 @@ void cmd_button() {
                 gtk_calendar_display_options(GTK_CALENDAR(widget),
                                              GTK_CALENDAR_SHOW_HEADING |
                                              GTK_CALENDAR_SHOW_DAY_NAMES);
-            } else if (strncmp("file_button", type, 11) == 0) {
+            } else if (strncmp("file", type, 4) == 0) {
                 inf->type = ctrl_file_button;
                 widget = gtk_file_chooser_button_new(caption, GTK_FILE_CHOOSER_ACTION_OPEN);
-            } else if (strncmp("font_button", type, 11) == 0) {
+            } else if (strncmp("font", type, 4) == 0) {
                 inf->type = ctrl_font_button;
                 widget = gtk_font_button_new();
-            } else if (strncmp("color_button", type, 12) == 0) {
+            } else if (strncmp("color", type, 5) == 0) {
                 inf->type = ctrl_color_button;
                 widget= gtk_color_button_new();
             } else if (strncmp("choice", type, 6) == 0) {
@@ -433,4 +434,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.12 2006-06-30 10:22:03 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.13 2006-07-07 22:21:33 zeeb90au Exp $". */
