@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.14 2006-07-07 22:48:39 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -394,22 +394,29 @@ void cmd_doform() {
     x = y = w = h = 0;
     num_args = par_massget("iiii", &x, &y, &w, &h);
 
-    if (num_args == 0) {
-        // begin or end modeless form state
-        if (modeless && form) {
-            modeless = FALSE;
-            ui_transfer_data();
-            ui_reset();
-            return;
-        }
-
-        if (form == 0) {
-            modeless = TRUE;
-            return;
-        }
+    // begin or end modeless form state
+    if (modeless && form) {
+        modeless = FALSE;
+        ui_transfer_data();
+        ui_reset();
+        return;
+    }
+    
+    if (form == 0) {
+        modeless = TRUE;
+        return;
     }
 
-    if (num_args != 4) {
+    switch (num_args) {
+    case 0:
+        x = y = w = h = 0;
+        break;
+    case 2:
+        w = h = 0; // updated below
+        break;
+    case 4:
+        break;
+    default:
         ui_reset();
         rt_raise("UI: INVALID FORM ARGUMENTS: %d", num_args);
         return;
@@ -438,4 +445,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.14 2006-07-07 22:48:39 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $". */

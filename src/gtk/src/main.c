@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.14 2006-06-28 13:06:46 zeeb90au Exp $
+// $Id: main.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -81,12 +81,9 @@ int main(int argc, char *argv[]) {
         gtk_window_set_title(GTK_WINDOW(dialog), "Open BAS File");
         if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
             char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-            gtk_widget_hide(dialog);
-#ifdef USE_HILDON
             const char* p = strrchr(filename, '/');
-            //hildon_appview_set_title(HILDON_APPVIEW(main_window), p?p+1:filename);
-            //g_set_application_name(p?p+1:filename);
-#endif
+            gtk_window_set_title(GTK_WINDOW(main_window), p?p+1:filename);
+            gtk_widget_hide(dialog);
             sbasic_main(filename);
             g_free(filename);
         } else {
@@ -98,4 +95,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.14 2006-06-28 13:06:46 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $". */

@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.c,v 1.18 2006-07-03 11:49:21 zeeb90au Exp $
+ * $Id: output_model.c,v 1.19 2006-07-11 12:40:53 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -54,7 +54,7 @@ int get_font_size() {
     GError* error = 0;
     GKeyFile* key_file = g_key_file_new();
     const gchar* home = g_get_home_dir();
-    const gchar* filename = g_build_filename(home, "text.ini", NULL);
+    gchar* filename = g_build_filename(home, "text.ini", NULL);
 
     g_key_file_load_from_file(key_file, filename, G_KEY_FILE_NONE, &error);
     if (error == NULL) {
@@ -65,7 +65,10 @@ int get_font_size() {
             size = n*PANGO_SCALE;
         }
     }
+
+    g_clear_error(&error);
     g_key_file_free(key_file);
+    g_free(filename);
     return size;
 }
 
@@ -162,5 +165,5 @@ void om_set_bg_color(int color) {
     output.bg = om_get_sb_color(color);
 }
 
-/* End of "$Id: output_model.c,v 1.18 2006-07-03 11:49:21 zeeb90au Exp $". */
+/* End of "$Id: output_model.c,v 1.19 2006-07-11 12:40:53 zeeb90au Exp $". */
 
