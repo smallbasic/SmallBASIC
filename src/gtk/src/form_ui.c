@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.16 2006-07-17 07:57:03 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -229,7 +229,6 @@ void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
                      (GtkAttachOptions)(0), 0, 0);
 }
 
-
 // BUTTON x1, x2, y1, y2, variable, caption [,type] 
 //
 // type can optionally be 'radio' | 'checkbox' | 'link' | 'choice'
@@ -237,8 +236,7 @@ void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
 // will have closed the form, or if a radio or checkbox was 
 // selected when the form was closed
 //
-// TODO: try adding hildon widgets:
-//  http://www.maemo.org/platform/docs/api/hildon-docs/html/ch02.html
+// TODO: add "GRID" contol type
 //
 void cmd_button() {
     int x1, x2, y1, y2;
@@ -253,44 +251,61 @@ void cmd_button() {
 
         ui_begin();
         if (type) {
-            if (strncmp("radio", type, 5) == 0) {
+            if (g_ascii_strncasecmp("radio", type, 5) == 0) {
                 inf->type = ctrl_radio;
                 widget = gtk_radio_button_new_with_label(NULL, caption);
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
                 set_radio_group(v, widget);
                 g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked),NULL);
-            } else if (strncmp("checkbox", type, 8) == 0) {
+            } else if (g_ascii_strncasecmp("checkbox", type, 8) == 0) {
                 inf->type = ctrl_check;
                 widget = gtk_check_button_new_with_label(caption);
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
                 g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked), NULL);
-            } else if (strncmp("button", type, 6) == 0) {
+            } else if (g_ascii_strncasecmp("button", type, 6) == 0) {
                 inf->type = ctrl_button;
                 widget = gtk_button_new_with_mnemonic(caption);
                 g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked), NULL);
-            } else if (strncmp("label", type, 5) == 0) {
+            } else if (g_ascii_strncasecmp("label", type, 5) == 0) {
                 inf->type = ctrl_label;
                 widget = gtk_label_new(caption);
                 gtk_label_set_justify(GTK_LABEL(widget), GTK_JUSTIFY_LEFT);
-            } else if (strncmp("calendar", type, 8) == 0) {
+            } else if (g_ascii_strncasecmp("calendar", type, 8) == 0) {
                 inf->type = ctrl_calendar;
                 widget = gtk_calendar_new();
                 gtk_calendar_display_options(GTK_CALENDAR(widget),
                                              GTK_CALENDAR_SHOW_HEADING |
                                              GTK_CALENDAR_SHOW_DAY_NAMES);
-            } else if (strncmp("file", type, 4) == 0) {
+            } else if (g_ascii_strncasecmp("file", type, 4) == 0) {
                 inf->type = ctrl_file_button;
                 widget = gtk_file_chooser_button_new(caption, GTK_FILE_CHOOSER_ACTION_OPEN);
-            } else if (strncmp("font", type, 4) == 0) {
+                if (v->type == V_STR && v->v.p.ptr) {
+                    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(widget), v->v.p.ptr);
+                }
+            } else if (g_ascii_strncasecmp("font", type, 4) == 0) {
                 inf->type = ctrl_font_button;
                 widget = gtk_font_button_new();
-            } else if (strncmp("color", type, 5) == 0) {
+                gtk_font_button_set_font_name(GTK_FONT_BUTTON(widget), caption);
+                if (v->type == V_STR && v->v.p.ptr) {
+                    gtk_font_button_set_font_name(GTK_FONT_BUTTON(widget), v->v.p.ptr);
+                }
+            } else if (g_ascii_strncasecmp("color", type, 5) == 0) {
                 inf->type = ctrl_color_button;
                 widget= gtk_color_button_new();
-            } else if (strncmp("choice", type, 6) == 0) {
+                if (v->type == V_STR && v->v.p.ptr) {
+                    gint n_colors = 1;
+                    GdkColor* colors = 0;
+                    gtk_color_selection_palette_from_string(v->v.p.ptr, &colors, &n_colors);
+                    if (n_colors) {
+                        gtk_color_button_set_color(GTK_COLOR_BUTTON(widget), colors);
+                        
+                    }
+                    g_free(colors);
+                }
+            } else if (g_ascii_strncasecmp("choice", type, 6) == 0) {
                 inf->type = ctrl_list;
                 widget = gtk_combo_box_new_text();
                 // "Easy|Medium|Hard"
@@ -445,4 +460,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.16 2006-07-17 07:57:03 zeeb90au Exp $". */
