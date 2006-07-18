@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.18 2006-07-18 22:11:53 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.19 2006-07-18 22:23:10 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -346,10 +346,12 @@ void cmd_button() {
         }
 
         if (widget == 0) {
+            // becomes a submit button when not modeless
             inf->type = ctrl_button;
             widget = gtk_button_new_with_mnemonic(caption);
             g_signal_connect((gpointer)widget, "clicked",
-                             G_CALLBACK(button_clicked), NULL);
+                             G_CALLBACK(button_clicked), 
+                             (gpointer)modeless?FALSE:TRUE);
         }
 
         set_widget_info(widget, inf);
@@ -478,4 +480,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.18 2006-07-18 22:11:53 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.19 2006-07-18 22:23:10 zeeb90au Exp $". */
