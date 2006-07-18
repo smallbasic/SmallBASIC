@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.7 2006-04-12 12:53:13 zeeb90au Exp $
+ * $Id: inet.c,v 1.8 2006-07-18 06:42:25 zeeb90au Exp $
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -7,6 +7,7 @@
 
 #include "sys.h"
 #include "inet.h"
+#include "device.h"
 
 #if defined(_UnixOS) && !defined(__MINGW32__)
 #include <sys/ioctl.h>
@@ -392,6 +393,9 @@ socket_t net_listen(int server_port) {
     struct sockaddr_in addr, remoteaddr;
     socklen_t remoteaddr_len;
     socket_t s;
+    fd_set readfds;
+    struct timeval tv;
+    int rv;
 
     // more info about listen sockets:
     // http://beej.us/guide/bgnet/output/htmlsingle/bgnet.html#acceptman
@@ -407,8 +411,28 @@ socket_t net_listen(int server_port) {
 
     bind(sock, (struct sockaddr*)&addr, sizeof(addr));
     listen(sock, 1); // set s up to be a server (listening) socket
-    
-    s = accept(sock, (struct sockaddr*)&remoteaddr, &remoteaddr_len);
+
+    // clear the set
+    FD_ZERO(&readfds);
+
+    tv.tv_sec = 1; // block at 1 second intervals
+    tv.tv_usec = 0;
+    while (1) {
+        FD_SET(sock, &readfds);
+        rv = select(sock+1, &readfds, NULL, NULL, &tv);
+        if (rv == -1) {
+            s = 0;
+            break; // an error occured
+        } else if (rv == 0) {
+            // timeout occured
+            dev_events(0);
+        } else {
+            // connection is ready
+            s = accept(sock, (struct sockaddr*)&remoteaddr, &remoteaddr_len);
+            break;
+        }
+    }
+
     close(sock);
     return s;
 }
@@ -433,5 +457,5 @@ void net_disconnect(socket_t s) {
     net_close();
 }
 
-/* End of "$Id: inet.c,v 1.7 2006-04-12 12:53:13 zeeb90au Exp $". */
+/* End of "$Id: inet.c,v 1.8 2006-07-18 06:42:25 zeeb90au Exp $". */
 
