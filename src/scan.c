@@ -3457,7 +3457,7 @@ char	*comp_format_text(const char *source)
 	
 	sl = strlen(source);
 	new_text = tmp_alloc(sl+2);
-//	memset(new_text, 0, sl+2);
+	memset(new_text, 0, sl+2);
 
 	comp_line = 0;
 	p = source;
