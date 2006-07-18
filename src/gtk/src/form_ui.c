@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.20 2006-07-18 23:34:41 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.21 2006-07-18 23:53:09 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -374,27 +374,29 @@ void cmd_button() {
 //
 void cmd_text() {
     int x1, x2, y1, y2;
+    var_t arg;
     var_t* v = 0;
 
-    if (code_peek() == kwTYPE_STR) {
-        var_t	str;
-        par_getstr(&str);
-        if (prog_error) {
-            return;
-        }
-        GtkWidget* dialog = 
+    v_init(&arg);
+    eval(&arg);
+
+    if (arg.type == V_STR) {
+        GtkWidget* dialog =
             gtk_message_dialog_new(GTK_WINDOW(output.main_view->parent),
                                    GTK_DIALOG_DESTROY_WITH_PARENT,
                                    GTK_MESSAGE_INFO,
                                    GTK_BUTTONS_OK,
-                                   "%s", str.v.p.ptr);
+                                   "%s", arg.v.p.ptr);
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
-        v_free(&str);
+        v_free(&arg);
         return;
+    } else {
+        x1 = v_igetval(&arg);
+        v_free(&arg);
     }
 
-    if (-1 != par_massget("IIIIP", &x1, &x2, &y1, &y2, &v)) {
+    if (-1 != par_massget("IIIP", &x2, &y1, &y2, &v)) {
         ui_begin();
         GtkWidget* widget = gtk_entry_new();
 
@@ -498,4 +500,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.20 2006-07-18 23:34:41 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.21 2006-07-18 23:53:09 zeeb90au Exp $". */
