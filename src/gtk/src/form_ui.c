@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.17 2006-07-18 13:34:04 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.18 2006-07-18 22:11:53 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -183,7 +183,6 @@ void ui_transfer_data() {
 void button_clicked(GtkWidget* button, gpointer user_data) {
     WidgetInfo* inf = get_widget_info(button);
     v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
-    ui_transfer_data();
     
     if (user_data) {
         // close the form
@@ -275,11 +274,11 @@ void cmd_button() {
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
                 g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked), NULL);
-            } else if (g_ascii_strncasecmp("button", type, 6) == 0) {
+            } else if (g_ascii_strncasecmp("submit", type, 6) == 0) {
                 inf->type = ctrl_button;
                 widget = gtk_button_new_with_mnemonic(caption);
                 g_signal_connect((gpointer)widget, "clicked",
-                                 G_CALLBACK(button_clicked), NULL);
+                                 G_CALLBACK(button_clicked), (gpointer)TRUE);
             } else if (g_ascii_strncasecmp("label", type, 5) == 0) {
                 inf->type = ctrl_label;
                 widget = gtk_label_new(caption);
@@ -292,7 +291,8 @@ void cmd_button() {
                                              GTK_CALENDAR_SHOW_DAY_NAMES);
             } else if (g_ascii_strncasecmp("file", type, 4) == 0) {
                 inf->type = ctrl_file_button;
-                widget = gtk_file_chooser_button_new(caption, GTK_FILE_CHOOSER_ACTION_OPEN);
+                widget = gtk_file_chooser_button_new(caption, 
+                                                     GTK_FILE_CHOOSER_ACTION_OPEN);
                 if (v->type == V_STR && v->v.p.ptr) {
                     gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(widget), v->v.p.ptr);
                 }
@@ -346,11 +346,10 @@ void cmd_button() {
         }
 
         if (widget == 0) {
-            // button will close the form
             inf->type = ctrl_button;
             widget = gtk_button_new_with_mnemonic(caption);
             g_signal_connect((gpointer)widget, "clicked",
-                             G_CALLBACK(button_clicked), (gpointer)TRUE);
+                             G_CALLBACK(button_clicked), NULL);
         }
 
         set_widget_info(widget, inf);
@@ -427,9 +426,14 @@ void cmd_doform() {
     } 
 
     if (modeless) {
+        if (form == 0) {
+            rt_raise("UI: FORM HAS CLOSED");
+            return;
+        }
+
         // continue modeless state
-        ui_transfer_data();
         gtk_main_iteration_do(TRUE);
+        ui_transfer_data();
         if (form == 0 || num_args == 0) {
             // default button click or no dimension args
             return;
@@ -474,4 +478,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.17 2006-07-18 13:34:04 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.18 2006-07-18 22:11:53 zeeb90au Exp $". */
