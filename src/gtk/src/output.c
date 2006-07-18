@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.33 2006-07-03 00:36:19 zeeb90au Exp $
+ * $Id: output.c,v 1.34 2006-07-18 13:34:04 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -326,11 +326,12 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
     gtk_widget_show(viewport);
     gtk_container_add(GTK_CONTAINER(html_widget), viewport);
         
-    GtkWidget* label = gtk_label_new(html);
-    gtk_widget_show(label);
+    GtkWidget* label = gtk_label_new(NULL);
     gtk_container_add(GTK_CONTAINER(viewport), label);
     gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
     gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
+    gtk_label_set_text(GTK_LABEL(label), html);
+    gtk_widget_show(label);
 }
 
 /*
@@ -472,7 +473,6 @@ void handle_key(int index, int def_key, int keyval, keymap_data* data) {
         gtk_widget_hide(data->dialog);
         gtk_widget_destroy(data->dialog);
         gtk_im_context_focus_out(data->imctx);
-        g_object_unref(G_OBJECT(data->imctx));
         g_free(data);
     }
 }
@@ -674,7 +674,15 @@ gboolean expose_event(GtkWidget* widget, GdkEventExpose* event) {
 }
 
 gboolean button_press_event(GtkWidget *widget, GdkEventButton *event) {
+    GdkModifierType mask;
+
     output.pen_down = event->button;
+    if (output.pen_down) {
+        gdk_window_get_pointer(output.widget->window,
+                               &output.pen_down_x,
+                               &output.pen_down_y,
+                               &mask);
+    }
     return TRUE;
 }
 
@@ -712,5 +720,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.33 2006-07-03 00:36:19 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.34 2006-07-18 13:34:04 zeeb90au Exp $". */
 

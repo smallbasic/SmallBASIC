@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.16 2006-07-17 07:57:03 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.17 2006-07-18 13:34:04 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -108,6 +108,13 @@ void update_vars(GtkWidget* widget) {
     GdkColor color;
 
     switch (inf->type) {
+    case ctrl_label:
+        if (inf->var->type == V_STR && inf->var->v.p.ptr &&
+            g_ascii_strcasecmp(inf->var->v.p.ptr, 
+                               gtk_label_get_text(GTK_LABEL(widget))) != 0) {
+            gtk_label_set_text(GTK_LABEL(widget), inf->var->v.p.ptr);
+        }
+        break;
     case ctrl_check:
     case ctrl_radio:
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget))) {
@@ -176,11 +183,12 @@ void ui_transfer_data() {
 void button_clicked(GtkWidget* button, gpointer user_data) {
     WidgetInfo* inf = get_widget_info(button);
     v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
+    ui_transfer_data();
+    
     if (user_data) {
         // close the form
         output.modal_flag = FALSE;
         if (modeless) {
-            ui_transfer_data();
             ui_reset();
         }
     }
@@ -227,6 +235,9 @@ void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
     gtk_table_attach(GTK_TABLE(form), widget, x1, x2, y1, y2,
                      (GtkAttachOptions)(GTK_FILL),
                      (GtkAttachOptions)(0), 0, 0);
+    if (modeless) {
+        gtk_widget_show(widget);
+    }
 }
 
 // BUTTON x1, x2, y1, y2, variable, caption [,type] 
@@ -272,7 +283,7 @@ void cmd_button() {
             } else if (g_ascii_strncasecmp("label", type, 5) == 0) {
                 inf->type = ctrl_label;
                 widget = gtk_label_new(caption);
-                gtk_label_set_justify(GTK_LABEL(widget), GTK_JUSTIFY_LEFT);
+                gtk_misc_set_alignment(GTK_MISC(widget), 0,0);
             } else if (g_ascii_strncasecmp("calendar", type, 8) == 0) {
                 inf->type = ctrl_calendar;
                 widget = gtk_calendar_new();
@@ -400,7 +411,7 @@ void cmd_text() {
 //   DOFORM 'begin modeless form
 //   BUTTON ....
 //   DOFORM x,y,w,h
-//   DOFORM 'end modeless form - can also be closed with default button
+//   DOFORM 'continue modeless form
 //
 void cmd_doform() {
     int x, y, w, h;
@@ -409,17 +420,20 @@ void cmd_doform() {
     x = y = w = h = 0;
     num_args = par_massget("iiii", &x, &y, &w, &h);
 
-    // begin or end modeless form state
-    if (modeless && form) {
-        modeless = FALSE;
-        ui_transfer_data();
-        ui_reset();
-        return;
-    }
-    
     if (form == 0) {
+        // begin modeless state
         modeless = TRUE;
         return;
+    } 
+
+    if (modeless) {
+        // continue modeless state
+        ui_transfer_data();
+        gtk_main_iteration_do(TRUE);
+        if (form == 0 || num_args == 0) {
+            // default button click or no dimension args
+            return;
+        }
     }
 
     switch (num_args) {
@@ -460,4 +474,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.16 2006-07-17 07:57:03 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.17 2006-07-18 13:34:04 zeeb90au Exp $". */
