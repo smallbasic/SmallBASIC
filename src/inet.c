@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.8 2006-07-18 06:42:25 zeeb90au Exp $
+ * $Id: inet.c,v 1.9 2006-07-19 01:21:55 zeeb90au Exp $
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -425,7 +425,10 @@ socket_t net_listen(int server_port) {
             break; // an error occured
         } else if (rv == 0) {
             // timeout occured
-            dev_events(0);
+            if (0 != dev_events(0)) {
+                s = 0;
+                break;
+            }
         } else {
             // connection is ready
             s = accept(sock, (struct sockaddr*)&remoteaddr, &remoteaddr_len);
@@ -457,5 +460,5 @@ void net_disconnect(socket_t s) {
     net_close();
 }
 
-/* End of "$Id: inet.c,v 1.8 2006-07-18 06:42:25 zeeb90au Exp $". */
+/* End of "$Id: inet.c,v 1.9 2006-07-19 01:21:55 zeeb90au Exp $". */
 
