@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.35 2006-07-18 22:11:53 zeeb90au Exp $
+ * $Id: output.c,v 1.36 2006-07-22 13:16:08 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -345,7 +345,7 @@ GdkPixbuf* get_image(dev_file_t* filep, int index) {
     }
     GdkPixbuf* pixbuf = gtk_image_get_pixbuf(GTK_IMAGE(image));
     return pixbuf;
-}
+} 
 
 void dev_image(int handle, int index, int x, int y, 
                int sx, int sy, int w, int h) {
@@ -369,6 +369,16 @@ void dev_image(int handle, int index, int x, int y,
         }
     } else {
         // output screen area image to jpeg
+        GdkPixbuf*  pixbuf = 
+            gdk_pixbuf_get_from_drawable(NULL, output.pixmap, NULL,
+                                         x, y, 0, 0, sx, sy);
+        if (pixbuf) {
+            GError *error = 0;
+            gdk_pixbuf_save(pixbuf, filep->name, "jpeg", &error, 
+                            "quality", "100", NULL);
+            g_object_unref(pixbuf);
+            g_clear_error(&error);
+        }
     }
 }
 
@@ -721,5 +731,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.35 2006-07-18 22:11:53 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.36 2006-07-22 13:16:08 zeeb90au Exp $". */
 
