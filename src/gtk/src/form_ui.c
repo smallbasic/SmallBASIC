@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.21 2006-07-18 23:53:09 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.22 2006-07-24 11:35:06 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -48,6 +48,7 @@ typedef enum ControlType {
     ctrl_text,
     ctrl_label,
     ctrl_list,
+    ctrl_grid,
     ctrl_calendar,
     ctrl_file_button,
     ctrl_font_button,
@@ -239,14 +240,78 @@ void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
     }
 }
 
+// create a grid control type
+GtkWidget* create_grid(const char* caption, var_t* v) {
+    GtkWidget* view = gtk_tree_view_new();
+    GtkCellRenderer* renderer = 0;
+    
+    int len = caption ? strlen(caption) : 0;
+    int i;
+    int n_columns = 0;
+    for (i=0; i<len; i++) {
+        const char* c = strchr(caption+i, '|');
+        int end_index = c ? c-caption : len;
+        GString* s = g_string_new_len(caption+i, end_index-i);
+        
+        GtkTreeViewColumn* col = gtk_tree_view_column_new();
+        gtk_tree_view_column_set_title(col, s->str);
+        
+        // pack tree view column into tree view
+        gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
+        
+        // pack cell renderer into tree view column
+        if (renderer == 0) {
+            renderer = gtk_cell_renderer_text_new();
+        }
+        gtk_tree_view_column_pack_start(col, renderer, TRUE);
+        
+        // the 'text' property of the cell renderer is to be populated 
+        // from the nth column of the tree-view-column
+        gtk_tree_view_column_add_attribute(col, renderer, "text", n_columns++);
+
+        i = end_index;
+        g_string_free(s, TRUE);
+    }
+
+    GType* types = (GType*)g_malloc(sizeof(GType)*n_columns);
+    for (i=0; i<n_columns; i++) {
+        types[i] = G_TYPE_STRING;
+    }
+
+    GtkTreeStore* model = gtk_tree_store_newv(n_columns, types);
+    g_free(types);
+    gtk_tree_view_set_model(GTK_TREE_VIEW(view), GTK_TREE_MODEL(model));
+    g_object_unref(model); // destroy model automatically with view
+    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(view)),
+                                GTK_SELECTION_MULTIPLE);
+
+    // populate the grid
+    for (i = 0; i < v->v.a.size; i ++ ) {
+        var_t* row_p = (var_t*)(v->v.a.ptr + sizeof(var_t)*i);
+        if (row_p->type == V_ARRAY) {
+            // create the row
+            GtkTreeIter row_iter;
+            gtk_tree_store_append(model, &row_iter, NULL);
+
+            // expects a 2D array of strings
+            int col = 0;
+            for (col=0; col<row_p->v.a.size; col++) {
+                var_t* col_p = (var_t*)(row_p->v.a.ptr + sizeof(var_t)*col);
+                if (col_p->type == V_STR) {
+                    gtk_tree_store_set(model, &row_iter, col, col_p->v.p.ptr, -1);
+                }
+            }
+        }
+    }
+    return view;
+}
+
 // BUTTON x1, x2, y1, y2, variable, caption [,type] 
 //
 // type can optionally be 'radio' | 'checkbox' | 'link' | 'choice'
 // variable is set to 1 if a button or link was pressed (which 
 // will have closed the form, or if a radio or checkbox was 
 // selected when the form was closed
-//
-// TODO: add "GRID" contol type
 //
 void cmd_button() {
     int x1, x2, y1, y2;
@@ -320,27 +385,36 @@ void cmd_button() {
                 inf->type = ctrl_list;
                 widget = gtk_combo_box_new_text();
                 // "Easy|Medium|Hard"
-                int itemIndex = 0;
+                int item_index = 0;
                 int len = caption ? strlen(caption) : 0;
                 int i;
                 for (i=0; i<len; i++) {
                     const char* c = strchr(caption+i, '|');
-                    int endIndex = c ? c-caption : len;
-                    GString* s = g_string_new_len(caption+i, endIndex-i);
+                    int end_index = c ? c-caption : len;
+                    GString* s = g_string_new_len(caption+i, end_index-i);
                     gtk_combo_box_append_text(GTK_COMBO_BOX(widget), s->str);
-                    i = endIndex;
+                    i = end_index;
                     if (v->type == V_STR && v->v.p.ptr &&
                         strcmp((const char*)v->v.p.ptr, s->str) == 0) {
                         // item text same as variable - set selected
-                        gtk_combo_box_set_active(GTK_COMBO_BOX(widget), itemIndex);
+                        gtk_combo_box_set_active(GTK_COMBO_BOX(widget), item_index);
                     }
-                    itemIndex++;
+                    item_index++;
                     g_string_free(s, TRUE);
+                }
+            } else if (g_ascii_strncasecmp("grid", type, 4) == 0) {
+                if (v->type != V_ARRAY || caption == 0 || caption[0] == 0) {
+                    inf->type = ctrl_label;
+                    widget = gtk_label_new("!ERR");
+                } else {
+                    inf->type = ctrl_grid;
+                    widget = create_grid(caption, v);
                 }
             } else {
                 ui_reset();
                 rt_raise("UI: UNKNOWN TYPE: %s", type);
                 pfree2(caption, type);
+                g_free(inf);
                 return;
             }
         }
@@ -500,4 +574,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.21 2006-07-18 23:53:09 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.22 2006-07-24 11:35:06 zeeb90au Exp $". */
