@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.23 2006-07-25 00:26:33 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.24 2006-07-25 11:23:27 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -244,16 +244,17 @@ void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
 void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row) {
     GtkTreeIter row_iter;
     int col = 0;
+    int i;
 
     if (row_p->type != V_ARRAY) {
         return;
     }
 
     gtk_tree_store_append(model, &row_iter, parent_row);
-    for (col=0; col<row_p->v.a.size; col++) {
+    for (col=0, i=0; i<row_p->v.a.size; i++) {
         var_t* col_p = (var_t*)(row_p->v.a.ptr + sizeof(var_t)*col);
         if (col_p->type == V_STR) {
-            gtk_tree_store_set(model, &row_iter, col, col_p->v.p.ptr, -1);
+            gtk_tree_store_set(model, &row_iter, col++, col_p->v.p.ptr, -1);
         } else if (col_p->type == V_ARRAY) {
             create_grid_row(col_p, model, &row_iter);
         }
@@ -261,17 +262,26 @@ void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row)
 }
 
 // called when a row is selected
-void on_grid_selection(GtkTreeSelection *treeselection, gpointer user_data) {
+void on_grid_selection(GtkTreeSelection* selection, var_t* v) {
+    GtkTreeModel* model;
+    GtkTreeIter iter;
+    if (gtk_tree_selection_get_selected(selection, &model, &iter)) {
+        GValue value = {0};
+        gtk_tree_model_get_value(model, &iter, 0, &value);
+        v_setstr(v, g_value_get_string(&value));
+        g_value_unset(&value);
+    }
 }
 
 // create a grid control type
 GtkWidget* create_grid(const char* caption, var_t* v) {
     GtkWidget* view = gtk_tree_view_new();
     GtkCellRenderer* renderer = 0;
-
-    int len = caption ? strlen(caption) : 0;
     int i;
+    int len = caption ? strlen(caption) : 0;
     int n_columns = 0;
+
+    // create the title area from the caption
     for (i=0; i<len; i++) {
         const char* c = strchr(caption+i, '|');
         int end_index = c ? c-caption : len;
@@ -279,6 +289,8 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
 
         GtkTreeViewColumn* col = gtk_tree_view_column_new();
         gtk_tree_view_column_set_title(col, s->str);
+        gtk_tree_view_column_set_sort_column_id(col, n_columns);
+        gtk_tree_view_column_set_sort_indicator(col, TRUE);
 
         // pack tree view column into tree view
         gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
@@ -289,13 +301,16 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
         }
         gtk_tree_view_column_pack_start(col, renderer, TRUE);
 
-        // the 'text' property of the cell renderer is to be populated
-        // from the nth column of the tree-view-column
+        // set the 'text' property of the cell renderer to be 
+        // populated from the nth column of the tree-view-column
         gtk_tree_view_column_add_attribute(col, renderer, "text", n_columns++);
 
         i = end_index;
         g_string_free(s, TRUE);
     }
+
+    gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(view), TRUE);
+    gtk_tree_view_set_enable_search(GTK_TREE_VIEW(view), TRUE);
 
     GType* types = (GType*)g_malloc(sizeof(GType)*n_columns);
     for (i=0; i<n_columns; i++) {
@@ -304,19 +319,28 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
 
     GtkTreeStore* model = gtk_tree_store_newv(n_columns, types);
     g_free(types);
-    gtk_tree_view_set_model(GTK_TREE_VIEW(view), GTK_TREE_MODEL(model));
+    gtk_tree_view_set_model(GTK_TREE_VIEW(view), 
+                            gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(model)));
     g_object_unref(model); // destroy model automatically with view
 
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
-    gtk_tree_selection_set_mode(selection, GTK_SELECTION_MULTIPLE);
-    g_signal_connect(G_OBJECT(selection), "changed",
-                     G_CALLBACK(on_grid_selection), v);
+    gtk_tree_selection_set_mode(selection, GTK_SELECTION_BROWSE);
+
+    // if the first row contains a string or int then 
+    // use it as the row selection container
+    var_t* sel_row = (var_t*)v->v.a.ptr;
+    if (sel_row->type == V_STR ||
+        sel_row->type == V_INT) {
+        g_signal_connect(G_OBJECT(selection), "changed",
+                         G_CALLBACK(on_grid_selection), sel_row);
+    }
 
     // populate the grid
     for (i = 0; i < v->v.a.size; i ++ ) {
         var_t* row_p = (var_t*)(v->v.a.ptr + sizeof(var_t)*i);
         create_grid_row(row_p, model, NULL);
     }
+
     return view;
 }
 
@@ -588,4 +612,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.23 2006-07-25 00:26:33 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.24 2006-07-25 11:23:27 zeeb90au Exp $". */

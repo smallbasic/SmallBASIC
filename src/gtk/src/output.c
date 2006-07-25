@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.37 2006-07-25 00:26:33 zeeb90au Exp $
+ * $Id: output.c,v 1.38 2006-07-25 11:23:27 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -331,7 +331,7 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
     gtk_misc_set_alignment(GTK_MISC(label), 0,0);
     gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
     gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
-    gtk_label_set_text(GTK_LABEL(label), html);
+    gtk_label_set_markup(GTK_LABEL(label), html);
     gtk_widget_show(label);
 }
 
@@ -737,5 +737,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.37 2006-07-25 00:26:33 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.38 2006-07-25 11:23:27 zeeb90au Exp $". */
 
