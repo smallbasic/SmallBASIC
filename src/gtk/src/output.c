@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.36 2006-07-22 13:16:08 zeeb90au Exp $
+ * $Id: output.c,v 1.37 2006-07-25 00:26:33 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -438,6 +438,7 @@ gboolean im_context_commit(GtkIMContext *ctx,
     return TRUE;
 }
 
+#ifdef USE_HILDON
 void handle_key(int index, int def_key, int keyval, keymap_data* data) {
     if (keymap[index]) {
         // press the key
@@ -487,6 +488,11 @@ void handle_key(int index, int def_key, int keyval, keymap_data* data) {
         g_free(data);
     }
 }
+#else 
+void handle_key(int index, int def_key, int keyval, keymap_data* data) {
+    press_key(def_key);
+}
+#endif
 
 /* handler for maemo hardware keys */
 gboolean key_press_event(GtkWidget* widget, 
@@ -731,5 +737,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.36 2006-07-22 13:16:08 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.37 2006-07-25 00:26:33 zeeb90au Exp $". */
 

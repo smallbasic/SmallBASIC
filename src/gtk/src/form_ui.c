@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.22 2006-07-24 11:35:06 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.23 2006-07-25 00:26:33 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -7,7 +7,7 @@
  *
  * This program is distributed under the terms of the GPL v2.0 or later
  * Download the GNU Public License(GPL) from www.gnu.org
- */ 
+ */
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -97,7 +97,7 @@ void ui_reset() {
     }
     rows = 1;
     cols = 1;
-    modeless = FALSE;    
+    modeless = FALSE;
 }
 
 // copy widget data into its matching basic variable
@@ -111,7 +111,7 @@ void update_vars(GtkWidget* widget) {
     switch (inf->type) {
     case ctrl_label:
         if (inf->var->type == V_STR && inf->var->v.p.ptr &&
-            g_ascii_strcasecmp(inf->var->v.p.ptr, 
+            g_ascii_strcasecmp(inf->var->v.p.ptr,
                                gtk_label_get_text(GTK_LABEL(widget))) != 0) {
             gtk_label_set_text(GTK_LABEL(widget), inf->var->v.p.ptr);
         }
@@ -136,7 +136,7 @@ void update_vars(GtkWidget* widget) {
         }
         g_free(text);
         break;
-    case ctrl_calendar: 
+    case ctrl_calendar:
         gtk_calendar_get_date(GTK_CALENDAR(widget), &year, &month, &day);
         sprintf(buf, "%02d/%02d/%d", day, month+1, year);
         v_setstr(inf->var, buf);
@@ -184,7 +184,7 @@ void ui_transfer_data() {
 void button_clicked(GtkWidget* button, gpointer user_data) {
     WidgetInfo* inf = get_widget_info(button);
     v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
-    
+
     if (user_data) {
         // close the form
         output.modal_flag = FALSE;
@@ -208,7 +208,7 @@ void set_radio_group(var_t* v, GtkWidget* radio_widget) {
         GtkWidget* widget = (GtkWidget*)g_list_nth_data(list, i);
         WidgetInfo* inf = get_widget_info(widget);
         if (inf->type == ctrl_radio &&
-            inf->var->type == V_STR && 
+            inf->var->type == V_STR &&
             (inf->var == v || inf->var->v.p.ptr == v->v.p.ptr)) {
             radio_group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(widget));
             gtk_radio_button_set_group(GTK_RADIO_BUTTON(radio_widget), radio_group);
@@ -240,11 +240,35 @@ void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
     }
 }
 
+// create a row in the grid from the given basic variable
+void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row) {
+    GtkTreeIter row_iter;
+    int col = 0;
+
+    if (row_p->type != V_ARRAY) {
+        return;
+    }
+
+    gtk_tree_store_append(model, &row_iter, parent_row);
+    for (col=0; col<row_p->v.a.size; col++) {
+        var_t* col_p = (var_t*)(row_p->v.a.ptr + sizeof(var_t)*col);
+        if (col_p->type == V_STR) {
+            gtk_tree_store_set(model, &row_iter, col, col_p->v.p.ptr, -1);
+        } else if (col_p->type == V_ARRAY) {
+            create_grid_row(col_p, model, &row_iter);
+        }
+    }
+}
+
+// called when a row is selected
+void on_grid_selection(GtkTreeSelection *treeselection, gpointer user_data) {
+}
+
 // create a grid control type
 GtkWidget* create_grid(const char* caption, var_t* v) {
     GtkWidget* view = gtk_tree_view_new();
     GtkCellRenderer* renderer = 0;
-    
+
     int len = caption ? strlen(caption) : 0;
     int i;
     int n_columns = 0;
@@ -252,20 +276,20 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
         const char* c = strchr(caption+i, '|');
         int end_index = c ? c-caption : len;
         GString* s = g_string_new_len(caption+i, end_index-i);
-        
+
         GtkTreeViewColumn* col = gtk_tree_view_column_new();
         gtk_tree_view_column_set_title(col, s->str);
-        
+
         // pack tree view column into tree view
         gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
-        
+
         // pack cell renderer into tree view column
         if (renderer == 0) {
             renderer = gtk_cell_renderer_text_new();
         }
         gtk_tree_view_column_pack_start(col, renderer, TRUE);
-        
-        // the 'text' property of the cell renderer is to be populated 
+
+        // the 'text' property of the cell renderer is to be populated
         // from the nth column of the tree-view-column
         gtk_tree_view_column_add_attribute(col, renderer, "text", n_columns++);
 
@@ -282,35 +306,25 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
     g_free(types);
     gtk_tree_view_set_model(GTK_TREE_VIEW(view), GTK_TREE_MODEL(model));
     g_object_unref(model); // destroy model automatically with view
-    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(view)),
-                                GTK_SELECTION_MULTIPLE);
+
+    GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
+    gtk_tree_selection_set_mode(selection, GTK_SELECTION_MULTIPLE);
+    g_signal_connect(G_OBJECT(selection), "changed",
+                     G_CALLBACK(on_grid_selection), v);
 
     // populate the grid
     for (i = 0; i < v->v.a.size; i ++ ) {
         var_t* row_p = (var_t*)(v->v.a.ptr + sizeof(var_t)*i);
-        if (row_p->type == V_ARRAY) {
-            // create the row
-            GtkTreeIter row_iter;
-            gtk_tree_store_append(model, &row_iter, NULL);
-
-            // expects a 2D array of strings
-            int col = 0;
-            for (col=0; col<row_p->v.a.size; col++) {
-                var_t* col_p = (var_t*)(row_p->v.a.ptr + sizeof(var_t)*col);
-                if (col_p->type == V_STR) {
-                    gtk_tree_store_set(model, &row_iter, col, col_p->v.p.ptr, -1);
-                }
-            }
-        }
+        create_grid_row(row_p, model, NULL);
     }
     return view;
 }
 
-// BUTTON x1, x2, y1, y2, variable, caption [,type] 
+// BUTTON x1, x2, y1, y2, variable, caption [,type]
 //
 // type can optionally be 'radio' | 'checkbox' | 'link' | 'choice'
-// variable is set to 1 if a button or link was pressed (which 
-// will have closed the form, or if a radio or checkbox was 
+// variable is set to 1 if a button or link was pressed (which
+// will have closed the form, or if a radio or checkbox was
 // selected when the form was closed
 //
 void cmd_button() {
@@ -356,7 +370,7 @@ void cmd_button() {
                                              GTK_CALENDAR_SHOW_DAY_NAMES);
             } else if (g_ascii_strncasecmp("file", type, 4) == 0) {
                 inf->type = ctrl_file_button;
-                widget = gtk_file_chooser_button_new(caption, 
+                widget = gtk_file_chooser_button_new(caption,
                                                      GTK_FILE_CHOOSER_ACTION_OPEN);
                 if (v->type == V_STR && v->v.p.ptr) {
                     gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(widget), v->v.p.ptr);
@@ -377,7 +391,7 @@ void cmd_button() {
                     gtk_color_selection_palette_from_string(v->v.p.ptr, &colors, &n_colors);
                     if (n_colors) {
                         gtk_color_button_set_color(GTK_COLOR_BUTTON(widget), colors);
-                        
+
                     }
                     g_free(colors);
                 }
@@ -424,7 +438,7 @@ void cmd_button() {
             inf->type = ctrl_button;
             widget = gtk_button_new_with_mnemonic(caption);
             g_signal_connect((gpointer)widget, "clicked",
-                             G_CALLBACK(button_clicked), 
+                             G_CALLBACK(button_clicked),
                              (gpointer)(modeless ? FALSE : TRUE));
         }
 
@@ -434,7 +448,7 @@ void cmd_button() {
         // prime input field from variable
         if (v->type == V_STR && v->v.p.ptr &&
             strcmp((const char*)v->v.p.ptr, caption) == 0) {
-            if (inf->type == ctrl_check || 
+            if (inf->type == ctrl_check ||
                 inf->type == ctrl_radio) {
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE);
             }
@@ -482,7 +496,7 @@ void cmd_text() {
         add_form_child(widget, x1, x2, y1, y2);
         gtk_entry_set_has_frame(GTK_ENTRY(widget), TRUE);
         gtk_entry_set_max_length(GTK_ENTRY(widget), 100);
-        
+
         GtkIMContext* imctx = gtk_im_multicontext_new();
         gtk_im_context_set_client_window(imctx, output.widget->window);
         gtk_im_context_focus_in(imctx);
@@ -519,7 +533,7 @@ void cmd_doform() {
         // begin modeless state
         modeless = TRUE;
         return;
-    } 
+    }
 
     if (modeless) {
         if (form == 0) {
@@ -568,10 +582,10 @@ void cmd_doform() {
         while (output.modal_flag && output.break_exec == 0) {
             gtk_main_iteration_do(TRUE);
         }
-        
+
         ui_transfer_data();
         ui_reset();
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.22 2006-07-24 11:35:06 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.23 2006-07-25 00:26:33 zeeb90au Exp $". */
