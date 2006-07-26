@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.28 2006-07-26 12:22:21 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.29 2006-07-26 12:30:37 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -249,7 +249,8 @@ void add_form_child(GtkWidget* widget, int expand, int x1, int x2, int y1, int y
 }
 
 // create a row in the grid from the given basic variable
-void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row) {
+void create_grid_row(var_t* row_p, GtkTreeStore* model, 
+                     GtkTreeIter* parent_row, int n_columns) {
     GtkTreeIter row_iter;
     int col = 0;
     int i;
@@ -280,7 +281,10 @@ void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row)
             sprintf(buff, "%d", row_p->v.i);
             gtk_tree_store_set(model, &row_iter, col++, buff, -1);
         } else if (col_p->type == V_ARRAY) {
-            create_grid_row(col_p, model, &row_iter);
+            create_grid_row(col_p, model, &row_iter, n_columns);
+        }
+        if (col >= n_columns) {
+            break;
         }
     }
 }
@@ -335,6 +339,7 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
 
     gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(view), TRUE);
     gtk_tree_view_set_enable_search(GTK_TREE_VIEW(view), TRUE);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(view), TRUE);
 
     GType* types = (GType*)g_malloc(sizeof(GType)*n_columns);
     for (i=0; i<n_columns; i++) {
@@ -364,7 +369,7 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
     // populate the grid
     for (; i<v->v.a.size; i++) {
         var_t* row_p = (var_t*)(v->v.a.ptr + sizeof(var_t)*i);
-        create_grid_row(row_p, model, NULL);
+        create_grid_row(row_p, model, NULL, n_columns);
     }
 
     GtkWidget* scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
@@ -638,4 +643,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.28 2006-07-26 12:22:21 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.29 2006-07-26 12:30:37 zeeb90au Exp $". */
