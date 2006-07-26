@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.24 2006-07-25 11:23:27 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.25 2006-07-26 03:53:33 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -33,6 +33,7 @@ GtkWidget* form = 0;
 int modeless = FALSE;
 int rows = 1;
 int cols = 1;
+char buff[40];
 extern OutputModel output;
 
 #ifndef USE_HILDON
@@ -219,7 +220,7 @@ void set_radio_group(var_t* v, GtkWidget* radio_widget) {
 }
 
 // refer to rev 1.10 or less for the obsolete layout version
-void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
+void add_form_child(GtkWidget* widget, int expand, int x1, int x2, int y1, int y2) {
     int resized = FALSE;
     if (x2 > cols) {
         cols = x2;
@@ -232,9 +233,16 @@ void add_form_child(GtkWidget* widget, int x1, int x2, int y1, int y2) {
     if (resized) {
         gtk_table_resize(GTK_TABLE(form), rows, cols);
     }
-    gtk_table_attach(GTK_TABLE(form), widget, x1, x2, y1, y2,
-                     (GtkAttachOptions)(GTK_FILL),
-                     (GtkAttachOptions)(0), 0, 0);
+
+    if (expand) {
+        gtk_table_attach(GTK_TABLE(form), widget, x1, x2, y1, y2,
+                         (GtkAttachOptions)(GTK_EXPAND | GTK_FILL),
+                         (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 0, 0);
+    } else {
+        gtk_table_attach(GTK_TABLE(form), widget, x1, x2, y1, y2,
+                         (GtkAttachOptions)(GTK_FILL),
+                         (GtkAttachOptions)(0), 0, 0);
+    }
     if (modeless) {
         gtk_widget_show(widget);
     }
@@ -246,17 +254,28 @@ void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row)
     int col = 0;
     int i;
 
+    gtk_tree_store_append(model, &row_iter, parent_row);
+
     if (row_p->type != V_ARRAY) {
+        if (row_p->type == V_STR) {
+            // basic variable is a 1D array, eg: f = files("*.bas")
+            gtk_tree_store_set(model, &row_iter, 0, row_p->v.p.ptr, -1);
+        } else if (row_p->type == V_INT) {
+            sprintf(buff, "%d", row_p->v.i);
+            gtk_tree_store_set(model, &row_iter, 0, buff, -1);
+        }
         return;
     }
 
-    gtk_tree_store_append(model, &row_iter, parent_row);
     for (col=0, i=0; i<row_p->v.a.size; i++) {
         var_t* col_p = (var_t*)(row_p->v.a.ptr + sizeof(var_t)*col);
         if (col_p->type == V_STR) {
             gtk_tree_store_set(model, &row_iter, col++, col_p->v.p.ptr, -1);
         } else if (col_p->type == V_ARRAY) {
             create_grid_row(col_p, model, &row_iter);
+        } else if (row_p->type == V_INT) {
+            sprintf(buff, "%d", row_p->v.i);
+            gtk_tree_store_set(model, &row_iter, 0, buff, -1);
         }
     }
 }
@@ -329,19 +348,25 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
     // if the first row contains a string or int then 
     // use it as the row selection container
     var_t* sel_row = (var_t*)v->v.a.ptr;
-    if (sel_row->type == V_STR ||
-        sel_row->type == V_INT) {
+    if (sel_row->type == V_STR) {
         g_signal_connect(G_OBJECT(selection), "changed",
                          G_CALLBACK(on_grid_selection), sel_row);
+        i = 1; // populate from second element onwards
+    } else {
+        i = 0;
     }
 
     // populate the grid
-    for (i = 0; i < v->v.a.size; i ++ ) {
+    for (; i<v->v.a.size; i++) {
         var_t* row_p = (var_t*)(v->v.a.ptr + sizeof(var_t)*i);
         create_grid_row(row_p, model, NULL);
     }
 
-    return view;
+    GtkWidget* scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolledwindow), GTK_SHADOW_IN);
+    gtk_container_add (GTK_CONTAINER(scrolledwindow), view);
+
+    return scrolledwindow;
 }
 
 // BUTTON x1, x2, y1, y2, variable, caption [,type]
@@ -364,49 +389,49 @@ void cmd_button() {
 
         ui_begin();
         if (type) {
-            if (g_ascii_strncasecmp("radio", type, 5) == 0) {
+            if (g_ascii_strcasecmp("radio", type) == 0) {
                 inf->type = ctrl_radio;
                 widget = gtk_radio_button_new_with_label(NULL, caption);
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
                 set_radio_group(v, widget);
                 g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked),NULL);
-            } else if (g_ascii_strncasecmp("checkbox", type, 8) == 0) {
+            } else if (g_ascii_strcasecmp("checkbox", type) == 0) {
                 inf->type = ctrl_check;
                 widget = gtk_check_button_new_with_label(caption);
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
                 g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked), NULL);
-            } else if (g_ascii_strncasecmp("submit", type, 6) == 0) {
+            } else if (g_ascii_strcasecmp("submit", type) == 0) {
                 inf->type = ctrl_button;
                 widget = gtk_button_new_with_mnemonic(caption);
                 g_signal_connect((gpointer)widget, "clicked",
                                  G_CALLBACK(button_clicked), (gpointer)TRUE);
-            } else if (g_ascii_strncasecmp("label", type, 5) == 0) {
+            } else if (g_ascii_strcasecmp("label", type) == 0) {
                 inf->type = ctrl_label;
                 widget = gtk_label_new(caption);
                 gtk_misc_set_alignment(GTK_MISC(widget), 0,0);
-            } else if (g_ascii_strncasecmp("calendar", type, 8) == 0) {
+            } else if (g_ascii_strcasecmp("calendar", type) == 0) {
                 inf->type = ctrl_calendar;
                 widget = gtk_calendar_new();
                 gtk_calendar_display_options(GTK_CALENDAR(widget),
                                              GTK_CALENDAR_SHOW_HEADING |
                                              GTK_CALENDAR_SHOW_DAY_NAMES);
-            } else if (g_ascii_strncasecmp("file", type, 4) == 0) {
+            } else if (g_ascii_strcasecmp("file", type) == 0) {
                 inf->type = ctrl_file_button;
                 widget = gtk_file_chooser_button_new(caption,
                                                      GTK_FILE_CHOOSER_ACTION_OPEN);
                 if (v->type == V_STR && v->v.p.ptr) {
                     gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(widget), v->v.p.ptr);
                 }
-            } else if (g_ascii_strncasecmp("font", type, 4) == 0) {
+            } else if (g_ascii_strcasecmp("font", type) == 0) {
                 inf->type = ctrl_font_button;
                 widget = gtk_font_button_new();
                 gtk_font_button_set_font_name(GTK_FONT_BUTTON(widget), caption);
                 if (v->type == V_STR && v->v.p.ptr) {
                     gtk_font_button_set_font_name(GTK_FONT_BUTTON(widget), v->v.p.ptr);
                 }
-            } else if (g_ascii_strncasecmp("color", type, 5) == 0) {
+            } else if (g_ascii_strcasecmp("color", type) == 0) {
                 inf->type = ctrl_color_button;
                 widget= gtk_color_button_new();
                 if (v->type == V_STR && v->v.p.ptr) {
@@ -419,7 +444,7 @@ void cmd_button() {
                     }
                     g_free(colors);
                 }
-            } else if (g_ascii_strncasecmp("choice", type, 6) == 0) {
+            } else if (g_ascii_strcasecmp("choice", type) == 0) {
                 inf->type = ctrl_list;
                 widget = gtk_combo_box_new_text();
                 // "Easy|Medium|Hard"
@@ -440,17 +465,19 @@ void cmd_button() {
                     item_index++;
                     g_string_free(s, TRUE);
                 }
-            } else if (g_ascii_strncasecmp("grid", type, 4) == 0) {
+            } else if (g_ascii_strcasecmp("grid", type) == 0) {
                 if (v->type != V_ARRAY || caption == 0 || caption[0] == 0) {
-                    inf->type = ctrl_label;
-                    widget = gtk_label_new("!ERR");
+                    rt_raise("INVALID GRID BUTTON ARRAY");
                 } else {
                     inf->type = ctrl_grid;
                     widget = create_grid(caption, v);
                 }
             } else {
+                rt_raise("UNKNOWN BUTTON TYPE: %s", type);
+            }
+            
+            if (prog_error) {
                 ui_reset();
-                rt_raise("UI: UNKNOWN TYPE: %s", type);
                 pfree2(caption, type);
                 g_free(inf);
                 return;
@@ -467,7 +494,7 @@ void cmd_button() {
         }
 
         set_widget_info(widget, inf);
-        add_form_child(widget, x1, x2, y1, y2);
+        add_form_child(widget, (inf->type == ctrl_grid), x1, x2, y1, y2);
 
         // prime input field from variable
         if (v->type == V_STR && v->v.p.ptr &&
@@ -517,7 +544,7 @@ void cmd_text() {
             gtk_entry_set_text(GTK_ENTRY(widget), (const char*)v->v.p.ptr);
         }
 
-        add_form_child(widget, x1, x2, y1, y2);
+        add_form_child(widget, FALSE, x1, x2, y1, y2);
         gtk_entry_set_has_frame(GTK_ENTRY(widget), TRUE);
         gtk_entry_set_max_length(GTK_ENTRY(widget), 100);
 
@@ -612,4 +639,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.24 2006-07-25 11:23:27 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.25 2006-07-26 03:53:33 zeeb90au Exp $". */
