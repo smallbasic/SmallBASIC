@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.27 2006-07-26 11:29:48 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.28 2006-07-26 12:22:21 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -276,11 +276,11 @@ void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row)
         var_t* col_p = (var_t*)(row_p->v.a.ptr + sizeof(var_t)*col);
         if (col_p->type == V_STR) {
             gtk_tree_store_set(model, &row_iter, col++, col_p->v.p.ptr, -1);
-        } else if (col_p->type == V_ARRAY) {
-            create_grid_row(col_p, model, &row_iter);
         } else if (row_p->type == V_INT) {
             sprintf(buff, "%d", row_p->v.i);
-            gtk_tree_store_set(model, &row_iter, 0, buff, -1);
+            gtk_tree_store_set(model, &row_iter, col++, buff, -1);
+        } else if (col_p->type == V_ARRAY) {
+            create_grid_row(col_p, model, &row_iter);
         }
     }
 }
@@ -638,4 +638,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.27 2006-07-26 11:29:48 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.28 2006-07-26 12:22:21 zeeb90au Exp $". */
