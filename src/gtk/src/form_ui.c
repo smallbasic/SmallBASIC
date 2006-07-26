@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.25 2006-07-26 03:53:33 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.26 2006-07-26 03:55:58 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -345,7 +345,7 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_BROWSE);
 
-    // if the first row contains a string or int then 
+    // if the first row contains a string then 
     // use it as the row selection container
     var_t* sel_row = (var_t*)v->v.a.ptr;
     if (sel_row->type == V_STR) {
@@ -370,11 +370,6 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
 }
 
 // BUTTON x1, x2, y1, y2, variable, caption [,type]
-//
-// type can optionally be 'radio' | 'checkbox' | 'link' | 'choice'
-// variable is set to 1 if a button or link was pressed (which
-// will have closed the form, or if a radio or checkbox was
-// selected when the form was closed
 //
 void cmd_button() {
     int x1, x2, y1, y2;
@@ -440,7 +435,6 @@ void cmd_button() {
                     gtk_color_selection_palette_from_string(v->v.p.ptr, &colors, &n_colors);
                     if (n_colors) {
                         gtk_color_button_set_color(GTK_COLOR_BUTTON(widget), colors);
-
                     }
                     g_free(colors);
                 }
@@ -639,4 +633,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.25 2006-07-26 03:53:33 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.26 2006-07-26 03:55:58 zeeb90au Exp $". */
