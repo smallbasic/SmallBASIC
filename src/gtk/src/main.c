@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $
+// $Id: main.c,v 1.16 2006-07-26 11:29:48 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -59,11 +59,11 @@ int main(int argc, char *argv[]) {
 
 #ifdef USE_HILDON
     gtk_widget_show_all(GTK_WIDGET(main_window));
-    GtkWidget* dialog = create_opendialog(GTK_WINDOW(main_window));
 #else
     gtk_widget_show_all(main_window);
-    GtkWidget* dialog = create_opendialog();
 #endif
+
+    GtkWidget* dialog = create_opendialog();
 
     // prepare runtime flags
     opt_graphics = 1;
@@ -95,4 +95,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.15 2006-07-11 12:40:53 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.16 2006-07-26 11:29:48 zeeb90au Exp $". */

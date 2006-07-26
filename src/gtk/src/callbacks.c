@@ -1,5 +1,5 @@
 /*
- * $Id: callbacks.c,v 1.14 2006-07-22 13:16:08 zeeb90au Exp $
+ * $Id: callbacks.c,v 1.15 2006-07-26 11:29:48 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -49,7 +49,8 @@ void on_quit_activate(GtkMenuItem * menuitem, gpointer user_data) {
 }
 
 void on_save_screen(GtkMenuItem* menuitem, gpointer user_data) {
-    GtkWidget* dialog = create_savedialog(GTK_WINDOW(output.main_view));
+    GtkWidget* dialog = create_savedialog();
+
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
         char* chooser_name = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
         char* filename = chooser_name;
@@ -83,5 +84,5 @@ void on_save_screen(GtkMenuItem* menuitem, gpointer user_data) {
 }
 
 /*
- * End of "$Id: callbacks.c,v 1.14 2006-07-22 13:16:08 zeeb90au Exp $". 
+ * End of "$Id: callbacks.c,v 1.15 2006-07-26 11:29:48 zeeb90au Exp $". 
  */

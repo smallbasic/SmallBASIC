@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.26 2006-07-26 03:55:58 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.27 2006-07-26 11:29:48 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -254,16 +254,21 @@ void create_grid_row(var_t* row_p, GtkTreeStore* model, GtkTreeIter* parent_row)
     int col = 0;
     int i;
 
-    gtk_tree_store_append(model, &row_iter, parent_row);
+    if (row_p->type != V_ARRAY &&
+        row_p->type != V_STR &&
+        row_p->type != V_INT) {
+        return;
+    }
 
-    if (row_p->type != V_ARRAY) {
-        if (row_p->type == V_STR) {
-            // basic variable is a 1D array, eg: f = files("*.bas")
-            gtk_tree_store_set(model, &row_iter, 0, row_p->v.p.ptr, -1);
-        } else if (row_p->type == V_INT) {
-            sprintf(buff, "%d", row_p->v.i);
-            gtk_tree_store_set(model, &row_iter, 0, buff, -1);
-        }
+    gtk_tree_store_append(model, &row_iter, parent_row);
+    if (row_p->type == V_STR) {
+        // basic variable is a 1D array, eg: f = files("*.bas")
+        gtk_tree_store_set(model, &row_iter, 0, row_p->v.p.ptr, -1);
+        return;
+    }
+    if (row_p->type == V_INT) {
+        sprintf(buff, "%d", row_p->v.i);
+        gtk_tree_store_set(model, &row_iter, 0, buff, -1);
         return;
     }
 
@@ -633,4 +638,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.26 2006-07-26 03:55:58 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.27 2006-07-26 11:29:48 zeeb90au Exp $". */
