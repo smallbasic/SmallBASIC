@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.16 2006-07-26 11:29:48 zeeb90au Exp $
+// $Id: main.c,v 1.17 2006-07-26 11:59:18 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -34,34 +34,22 @@ void destroy_event(GtkObject *object, gpointer user_data) {
 int main(int argc, char *argv[]) {
     GtkWidget *main_window;
 
-#ifdef ENABLE_NLS
-    bindtextdomain(GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
-    bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
-    textdomain (GETTEXT_PACKAGE);
-#endif
-
     gtk_set_locale();
     gtk_init(&argc, &argv);
+
+    main_window = create_main_window();
 
 #ifdef USE_HILDON
     HildonProgram* app = HILDON_PROGRAM(hildon_program_get_instance());
     g_set_application_name("SmallBASIC");
     output.osso = osso_initialize(PACKAGE, VERSION, TRUE, NULL);
-    main_window = create_main_window();
     hildon_program_add_window(app, HILDON_WINDOW(main_window));
-#else
-    main_window = create_main_window();
 #endif
 
     drawing_area_init(main_window);
-    g_signal_connect(G_OBJECT(main_window), "destroy", 
-                     G_CALLBACK(destroy_event), NULL);
-
-#ifdef USE_HILDON
     gtk_widget_show_all(GTK_WIDGET(main_window));
-#else
-    gtk_widget_show_all(main_window);
-#endif
+    g_signal_connect(G_OBJECT(main_window), "destroy",
+                     G_CALLBACK(destroy_event), NULL);
 
     GtkWidget* dialog = create_opendialog();
 
@@ -95,4 +83,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.16 2006-07-26 11:29:48 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.17 2006-07-26 11:59:18 zeeb90au Exp $". */
