@@ -299,6 +299,14 @@ long	comp_is_operator(const char *name) 				SEC(BCSC2);
 int		comp_compile(const char *sb_file_name) SEC(BCSC2);
 
 /**
+ * compiler - main
+ *
+ * @param source buffer
+ * @return non-zero on success
+ */
+int comp_compile_buffer(const char *source) SEC(BCSC2);
+
+/**
 *	@ingroup scan
 *
 *	loads a file for compile

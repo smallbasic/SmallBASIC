@@ -4521,3 +4521,20 @@ int		comp_compile(const char *sb_file_name)
 	
 	return success;
 }
+
+/**
+ * compiler - main.
+ *
+ * @param source buffer
+ * @return non-zero on success
+ */
+int comp_compile_buffer(const char* source) {
+    comp_init();  // initialize compiler
+    int success = comp_pass1(NULL, source);      // PASS1
+    if (success) success = comp_pass2();         // PASS2
+    if (success) success = comp_check_labels();
+    if (success) bytecode_h = comp_create_bin(); // update task's bytecode
+    comp_close();
+    return (success && bytecode_h);
+}
+
