@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.27 2006-07-26 11:27:26 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.28 2006-07-28 02:25:10 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -233,6 +233,8 @@ function buildConsole() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+AC_DEFINE(HAVE_C_MALLOC, 1, [allocate memory with regular malloc calls])
+
 if test x$ac_build_gtk = xyes; then
    buildGTK
 elif test x$ac_build_fltk = xyes; then
@@ -257,4 +259,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.27 2006-07-26 11:27:26 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.28 2006-07-28 02:25:10 zeeb90au Exp $".

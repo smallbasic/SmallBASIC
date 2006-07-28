@@ -204,7 +204,8 @@ typedef unsigned int	addr_t;
 
 #elif defined(_FRANKLIN_EBM)
 
-	#include "ebm.h"
+   #include "ebm.h"
+   #define HAVE_C_MALLOC
 
 #elif defined(_DOS) 
 /* ------------------------------------------------------------------------------------ */
@@ -281,9 +282,22 @@ typedef unsigned int	addr_t;
 	// TODO: check other CPU's
 	#define	CPU_BIGENDIAN
 
-	#if !defined(UNIX_MEMMGR)
-	#define MALLOC_LIMITED
-	#endif
+    #ifdef HAVE_C_MALLOC
+
+    #define tmp_alloc(s) malloc(s)
+    #define tmp_realloc(ptr, size) realloc(ptr, size)
+    #define tmp_free(p)  free(p)
+    #define mem_alloc(p) (mem_t)malloc(p)
+    #define mem_realloc(ptr, size) (mem_t)realloc((void*)ptr, size)
+    #define mem_free(h)  free((void*)h)
+    #define tmp_strdup(str) strdup(str)
+    #define mem_lock(h) (void*)(h)
+    #define mem_unlock(h)
+    #define mem_handle_size(p) malloc_usable_size(p)
+
+    #elif !defined(UNIX_MEMMGR)
+    #define MALLOC_LIMITED
+    #endif
 
 	#define	OS_PATHNAME_SIZE	1024
 	#define	OS_FILENAME_SIZE	256

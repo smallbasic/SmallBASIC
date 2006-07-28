@@ -125,7 +125,7 @@ void    err_tlistadd(void)                  {   panic("tmplist_add: OUT OF MEMOR
 /*
  *   Allocate local memory
  */
-#if !defined(_FRANKLIN_EBM)
+#if !defined(HAVE_C_MALLOC)
 
 #if defined(_PalmOS)
 void    *tmp_alloc(dword size)
@@ -466,7 +466,7 @@ mem_t   mem_new_text(const char *text)
     mem_unlock(h);
     return h;
 }
-#endif // _FRANKLIN_EBM
+#endif // HAVE_C_MALLOC
 
 #if defined(ENABLE_MEMLIST)
 

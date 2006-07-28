@@ -134,7 +134,7 @@ typedef dword	        addr_t;
 #endif
 
 // ---------------------------------------------
-#if !defined(_FRANKLIN_EBM)
+#if !defined(HAVE_C_MALLOC)
 
 // Dynamic RAM
 #if defined(_PalmOS) || defined(MALLOC_LIMITED)
@@ -291,7 +291,7 @@ mem_t	mem_new_text(const char *text);
 */
 dword	mem_handle_size(mem_t h);
 
-#endif // _FRANKLIN_EBM
+#endif // HAVE_C_MALLOC
 
 #if defined(MALLOC_LIMITED)
 dword	MemPtrSize(void *ptr);

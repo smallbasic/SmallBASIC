@@ -48,7 +48,6 @@ libsb_common_a_SOURCES =                  \
     str.c str.h                           \
     tasks.c tasks.h                       \
     units.c units.h                       \
-    unx_memmgr.c unx_memmgr.h             \
     var.c var.h                           \
     vmt.c vmt.h
 
