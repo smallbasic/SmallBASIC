@@ -283,7 +283,6 @@ typedef unsigned int	addr_t;
 	#define	CPU_BIGENDIAN
 
     #ifdef HAVE_C_MALLOC
-
     #define tmp_alloc(s) malloc(s)
     #define tmp_realloc(ptr, size) realloc(ptr, size)
     #define tmp_free(p)  free(p)
@@ -293,7 +292,14 @@ typedef unsigned int	addr_t;
     #define tmp_strdup(str) strdup(str)
     #define mem_lock(h) (void*)(h)
     #define mem_unlock(h)
-    #define mem_handle_size(p) malloc_usable_size(p)
+    #define mem_handle_size(p) malloc_usable_size((void*)p)
+    #define MemHandleSize(p) malloc_usable_size((void*)p)
+    #define MemPtrSize(p) malloc_usable_size(p)
+    #define MemHandleSizeX(p,f,l) malloc_usable_size(p)
+    #define memmgr_setabort(v) (v)
+    #define memmgr_getmaxalloc(v) (0)
+    #define MemPtrNew(x) malloc(x)
+    #define MemPtrFree(x) free(x)
 
     #elif !defined(UNIX_MEMMGR)
     #define MALLOC_LIMITED
@@ -419,7 +425,7 @@ typedef unsigned int	addr_t;
 #define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v)							/**< range check				@ingroup sys */
 
 //#define ENABLE_VMM
-#if !defined(_PalmOS) && !defined(_FRANKLIN_EBM)
+#if !defined(_PalmOS) && !defined(HAVE_C_MALLOC)
 	#include "unx_memmgr.h"	// on MALLOC_LIMITED it is has empty routines
 #endif
 #include "pmem.h"

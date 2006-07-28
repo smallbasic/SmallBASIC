@@ -46,6 +46,11 @@ typedef	unsigned long	MemHandle;
 #define	MemPtrNew(x)	malloc(x)
 #define	MemPtrFree(x)	free(x)
 #endif
+
+#ifdef HAVE_C_MALLOC
+typedef int MemHandle;
+#endif
+
 typedef	MemHandle		mem_t;
 
 //#if !defined(_Win32)	// ???
