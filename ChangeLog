@@ -1,4 +1,13 @@
 
+2006-07-28	<cwarrensmith@gmail.com>
+	* updated chain command to take string or array
+	of string arguments in liue of a file name. After
+	calling this command, the calling program now 
+	successfully resumes.
+	* added HAVE_C_MALLOC to replace complicated
+	memory routines with simple malloc/free calls
+	* added GRID button support
+
 2006-05-27	<cwarrensmith@gmail.com>
 	* added form support to GTK build
 	
