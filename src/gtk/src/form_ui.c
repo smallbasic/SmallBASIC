@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.29 2006-07-26 12:30:37 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.30 2006-07-28 09:21:35 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -301,6 +301,17 @@ void on_grid_selection(GtkTreeSelection* selection, var_t* v) {
     }
 }
 
+// called when a row is double clicked
+void on_treeview_row_activated(GtkTreeView* treeview,
+                               GtkTreePath* path,
+                               GtkTreeViewColumn* column,
+                               gpointer user_data) {
+    output.modal_flag = FALSE;
+    if (modeless) {
+        ui_reset();
+    }
+}
+
 // create a grid control type
 GtkWidget* create_grid(const char* caption, var_t* v) {
     GtkWidget* view = gtk_tree_view_new();
@@ -354,6 +365,9 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
 
     GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_BROWSE);
+
+    g_signal_connect((gpointer)view, "row_activated",
+                     G_CALLBACK (on_treeview_row_activated), NULL);
 
     // if the first row contains a string then 
     // use it as the row selection container
@@ -643,4 +657,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.29 2006-07-26 12:30:37 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.30 2006-07-28 09:21:35 zeeb90au Exp $". */
