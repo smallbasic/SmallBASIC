@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.17 2006-07-26 11:59:18 zeeb90au Exp $
+// $Id: main.c,v 1.18 2006-07-31 12:16:35 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -51,8 +51,6 @@ int main(int argc, char *argv[]) {
     g_signal_connect(G_OBJECT(main_window), "destroy",
                      G_CALLBACK(destroy_event), NULL);
 
-    GtkWidget* dialog = create_opendialog();
-
     // prepare runtime flags
     opt_graphics = 1;
     opt_quiet = 1;
@@ -64,6 +62,11 @@ int main(int argc, char *argv[]) {
     opt_pref_height = 0;
     opt_pref_bpp = 0;
 
+    if (argc == 2) {
+        sbasic_main(argv[1]);
+    }
+
+    GtkWidget* dialog = create_opendialog();
     while (1) {
         gtk_widget_show(dialog);
         gtk_window_set_title(GTK_WINDOW(dialog), "Open BAS File");
@@ -83,4 +86,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.17 2006-07-26 11:59:18 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.18 2006-07-31 12:16:35 zeeb90au Exp $". */
