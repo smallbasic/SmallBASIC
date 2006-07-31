@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.30 2006-07-28 09:21:35 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.31 2006-07-31 12:16:02 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -30,11 +30,12 @@
 #include "output_model.h"
 
 GtkWidget* form = 0;
+GtkWidget* notebook = 0;
 int modeless = FALSE;
-int rows = 1;
-int cols = 1;
 char buff[40];
 extern OutputModel output;
+
+void ui_transfer_data(GtkWidget* container);
 
 #ifndef USE_HILDON
 #define gtk_im_context_show(imctx)
@@ -50,6 +51,7 @@ typedef enum ControlType {
     ctrl_label,
     ctrl_list,
     ctrl_grid,
+    ctrl_tab,
     ctrl_calendar,
     ctrl_file_button,
     ctrl_font_button,
@@ -72,7 +74,7 @@ void set_widget_info(GtkWidget* w, WidgetInfo* inf) {
 // create the form
 void ui_begin() {
     if (form == 0) {
-        form = gtk_table_new(rows, cols, FALSE);
+        form = gtk_table_new(1, 1, FALSE);
         gtk_table_set_col_spacings(GTK_TABLE(form), TABLE_GAP);
         gtk_table_set_row_spacings(GTK_TABLE(form), TABLE_GAP);
         gtk_container_add(GTK_CONTAINER(output.widget), form);
@@ -80,25 +82,36 @@ void ui_begin() {
     }
 }
 
+// clean up child widgets of the given container
+void remove_children(GtkWidget* container) {
+    GList* list = gtk_container_get_children(GTK_CONTAINER(container));
+    int n = g_list_length(list);
+    int i;
+    for (i=0; i<n; i++) {
+        GtkWidget* w = (GtkWidget*)g_list_nth_data(list, i);
+        WidgetInfo* inf = get_widget_info(w);
+        if (inf->type == ctrl_tab) {
+            int n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(w));
+            int j;
+            for (j=0; j<n_pages; j++) {
+                remove_children(gtk_notebook_get_nth_page(GTK_NOTEBOOK(w), j));
+            }
+        }
+        g_free(inf);
+        gtk_container_remove(GTK_CONTAINER(container), w);
+    }
+    g_list_free(list);
+}
+
 // destroy the form
 void ui_reset() {
     if (form != 0) {
-        GList* list = gtk_container_get_children(GTK_CONTAINER(form));
-        int n = g_list_length(list);
-        int i;
-        for (i=0; i<n; i++) {
-            GtkWidget* w = (GtkWidget*)g_list_nth_data(list, i);
-            WidgetInfo* inf = get_widget_info(w);
-            g_free(inf);
-            gtk_container_remove(GTK_CONTAINER(form), w);
-        }
+        remove_children(form);
         gtk_container_remove(GTK_CONTAINER(output.widget), form);
-        g_list_free(list);
         form = 0;
     }
-    rows = 1;
-    cols = 1;
     modeless = FALSE;
+    notebook = 0;
 }
 
 // copy widget data into its matching basic variable
@@ -108,6 +121,7 @@ void update_vars(GtkWidget* widget) {
     guint year, month, day;
     char buf[11]; // DD/MM/YYYY
     GdkColor color;
+    int n_pages, j;
 
     switch (inf->type) {
     case ctrl_label:
@@ -163,15 +177,22 @@ void update_vars(GtkWidget* widget) {
         }
         g_free(text);
         break;
+    case ctrl_tab:
+        n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(widget));
+        for (j=0; j<n_pages; j++) {
+            GtkWidget* p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(widget), j);
+            ui_transfer_data(p);
+        }
+        break;
     default:
         break;
     }
 }
 
 // copy form data into basic variables
-void ui_transfer_data() {
-    if (form) {
-        GList* list = gtk_container_get_children(GTK_CONTAINER(form));
+void ui_transfer_data(GtkWidget* container) {
+    if (container) {
+        GList* list = gtk_container_get_children(GTK_CONTAINER(container));
         int n = g_list_length(list);
         int i;
         for (i=0; i<n; i++) {
@@ -222,6 +243,18 @@ void set_radio_group(var_t* v, GtkWidget* radio_widget) {
 // refer to rev 1.10 or less for the obsolete layout version
 void add_form_child(GtkWidget* widget, int expand, int x1, int x2, int y1, int y2) {
     int resized = FALSE;
+    int rows, cols;
+    GtkWidget* table;
+
+    if (notebook != 0) {
+        int last_index = gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook))-1;
+        table = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook), last_index);
+    } else {
+        table = form;
+    }
+    
+    g_object_get(G_OBJECT(table), "n-rows", &rows, "n-columns", &cols, 0);
+
     if (x2 > cols) {
         cols = x2;
         resized = TRUE;
@@ -231,15 +264,15 @@ void add_form_child(GtkWidget* widget, int expand, int x1, int x2, int y1, int y
         resized = TRUE;
     }
     if (resized) {
-        gtk_table_resize(GTK_TABLE(form), rows, cols);
+        gtk_table_resize(GTK_TABLE(table), rows, cols);
     }
 
     if (expand) {
-        gtk_table_attach(GTK_TABLE(form), widget, x1, x2, y1, y2,
+        gtk_table_attach(GTK_TABLE(table), widget, x1, x2, y1, y2,
                          (GtkAttachOptions)(GTK_EXPAND | GTK_FILL),
                          (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 0, 0);
     } else {
-        gtk_table_attach(GTK_TABLE(form), widget, x1, x2, y1, y2,
+        gtk_table_attach(GTK_TABLE(table), widget, x1, x2, y1, y2,
                          (GtkAttachOptions)(GTK_FILL),
                          (GtkAttachOptions)(0), 0, 0);
     }
@@ -249,7 +282,7 @@ void add_form_child(GtkWidget* widget, int expand, int x1, int x2, int y1, int y
 }
 
 // create a row in the grid from the given basic variable
-void create_grid_row(var_t* row_p, GtkTreeStore* model, 
+void create_grid_row(var_t* row_p, GtkTreeStore* model,
                      GtkTreeIter* parent_row, int n_columns) {
     GtkTreeIter row_iter;
     int col = 0;
@@ -490,6 +523,20 @@ void cmd_button() {
                     inf->type = ctrl_grid;
                     widget = create_grid(caption, v);
                 }
+            } else if (g_ascii_strcasecmp("tab", type) == 0) {
+                if (notebook == 0) {
+                    notebook = gtk_notebook_new();
+                    inf->type = ctrl_tab;
+                    gtk_container_add(GTK_CONTAINER(form), notebook);
+                    set_widget_info(notebook, inf);
+                }
+                GtkWidget* label = gtk_label_new(caption);
+                GtkWidget* table = gtk_table_new(1, 1, FALSE);
+                gtk_table_set_col_spacings(GTK_TABLE(table), TABLE_GAP);
+                gtk_table_set_row_spacings(GTK_TABLE(table), TABLE_GAP);
+                gtk_notebook_append_page(GTK_NOTEBOOK(notebook), table, label);
+                pfree2(caption, type);
+                return;
             } else {
                 rt_raise("UNKNOWN BUTTON TYPE: %s", type);
             }
@@ -612,7 +659,7 @@ void cmd_doform() {
 
         // continue modeless state
         gtk_main_iteration_do(TRUE);
-        ui_transfer_data();
+        ui_transfer_data(form);
         if (form == 0 || num_args == 0) {
             // default button click or no dimension args
             return;
@@ -652,9 +699,9 @@ void cmd_doform() {
             gtk_main_iteration_do(TRUE);
         }
 
-        ui_transfer_data();
+        ui_transfer_data(form);
         ui_reset();
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.30 2006-07-28 09:21:35 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.31 2006-07-31 12:16:02 zeeb90au Exp $". */
