@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.9 2006-07-19 01:21:55 zeeb90au Exp $
+ * $Id: inet.c,v 1.10 2006-08-02 10:39:59 zeeb90au Exp $
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -168,7 +168,33 @@ int net_read(socket_t s, char *buf, int size) {
     return = -1;
 #endif
 #else
-    return recv(s, buf, size, 0);
+    fd_set readfds;
+    struct timeval tv;
+    int rv;
+
+    // clear the set
+    FD_ZERO(&readfds);
+
+    tv.tv_sec = 0; // block at 1 second intervals
+    tv.tv_usec = 250000;
+    while (1) {
+        FD_SET(s, &readfds);
+        rv = select(s+1, &readfds, NULL, NULL, &tv);
+        if (rv == -1) {
+            // an error occured
+            return 0;
+        } else if (rv == 0) {
+            // timeout occured
+            if (0 != dev_events(0)) {
+                s = 0;
+                break;
+            }
+        } else {
+            // ready to read
+            return recv(s, buf, size, 0);
+        }
+    }
+    return 0;
 #endif
 }
  
@@ -203,7 +229,7 @@ int net_input(socket_t s, char *buf, int size, const char *delim) {
         bytes = -1;
 #endif
 #else
-        bytes = recv(s, &ch, 1, 0);
+        bytes = net_read(s, &ch, 1);
 #endif
         if (bytes <= 0) {
             return count; // no more data
@@ -460,5 +486,5 @@ void net_disconnect(socket_t s) {
     net_close();
 }
 
-/* End of "$Id: inet.c,v 1.9 2006-07-19 01:21:55 zeeb90au Exp $". */
+/* End of "$Id: inet.c,v 1.10 2006-08-02 10:39:59 zeeb90au Exp $". */
 
