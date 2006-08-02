@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.18 2006-07-31 12:16:35 zeeb90au Exp $
+// $Id: main.c,v 1.19 2006-08-02 10:41:09 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     opt_pref_height = 0;
     opt_pref_bpp = 0;
 
-    if (argc == 2) {
+    if (argc == 2 && access(argv[1], R_OK) == 0) {
         sbasic_main(argv[1]);
     }
 
@@ -86,4 +86,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.18 2006-07-31 12:16:35 zeeb90au Exp $". */
+/* End of "$Id: main.c,v 1.19 2006-08-02 10:41:09 zeeb90au Exp $". */
