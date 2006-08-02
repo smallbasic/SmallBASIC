@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.31 2006-07-31 12:16:02 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.32 2006-08-02 10:42:40 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -94,11 +94,13 @@ void remove_children(GtkWidget* container) {
             int n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(w));
             int j;
             for (j=0; j<n_pages; j++) {
-                remove_children(gtk_notebook_get_nth_page(GTK_NOTEBOOK(w), j));
+                GtkWidget* table = gtk_notebook_get_nth_page(GTK_NOTEBOOK(w), j);
+                remove_children(table);
+                //gtk_widget_destroy(table);
             }
         }
         g_free(inf);
-        gtk_container_remove(GTK_CONTAINER(container), w);
+        //gtk_widget_destroy(w);
     }
     g_list_free(list);
 }
@@ -107,7 +109,7 @@ void remove_children(GtkWidget* container) {
 void ui_reset() {
     if (form != 0) {
         remove_children(form);
-        gtk_container_remove(GTK_CONTAINER(output.widget), form);
+        gtk_widget_destroy(form);
         form = 0;
     }
     modeless = FALSE;
@@ -119,7 +121,6 @@ void update_vars(GtkWidget* widget) {
     WidgetInfo* inf = get_widget_info(widget);
     gchar* text = 0;
     guint year, month, day;
-    char buf[11]; // DD/MM/YYYY
     GdkColor color;
     int n_pages, j;
 
@@ -153,8 +154,8 @@ void update_vars(GtkWidget* widget) {
         break;
     case ctrl_calendar:
         gtk_calendar_get_date(GTK_CALENDAR(widget), &year, &month, &day);
-        sprintf(buf, "%02d/%02d/%d", day, month+1, year);
-        v_setstr(inf->var, buf);
+        sprintf(buff, "%02d/%02d/%d", day, month+1, year);
+        v_setstr(inf->var, buff);
         break;
     case ctrl_file_button:
         text = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget));
@@ -180,8 +181,8 @@ void update_vars(GtkWidget* widget) {
     case ctrl_tab:
         n_pages = gtk_notebook_get_n_pages(GTK_NOTEBOOK(widget));
         for (j=0; j<n_pages; j++) {
-            GtkWidget* p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(widget), j);
-            ui_transfer_data(p);
+            GtkWidget* table = gtk_notebook_get_nth_page(GTK_NOTEBOOK(widget), j);
+            ui_transfer_data(table);
         }
         break;
     default:
@@ -310,8 +311,8 @@ void create_grid_row(var_t* row_p, GtkTreeStore* model,
         var_t* col_p = (var_t*)(row_p->v.a.ptr + sizeof(var_t)*col);
         if (col_p->type == V_STR) {
             gtk_tree_store_set(model, &row_iter, col++, col_p->v.p.ptr, -1);
-        } else if (row_p->type == V_INT) {
-            sprintf(buff, "%d", row_p->v.i);
+        } else if (col_p->type == V_INT) {
+            sprintf(buff, "%d", col_p->v.i);
             gtk_tree_store_set(model, &row_iter, col++, buff, -1);
         } else if (col_p->type == V_ARRAY) {
             create_grid_row(col_p, model, &row_iter, n_columns);
@@ -329,7 +330,10 @@ void on_grid_selection(GtkTreeSelection* selection, var_t* v) {
     if (gtk_tree_selection_get_selected(selection, &model, &iter)) {
         GValue value = {0};
         gtk_tree_model_get_value(model, &iter, 0, &value);
-        v_setstr(v, g_value_get_string(&value));
+        const char* val = g_value_get_string(&value);
+        if (val) {
+            v_setstr(v, val);
+        }
         g_value_unset(&value);
     }
 }
@@ -419,9 +423,9 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
         create_grid_row(row_p, model, NULL, n_columns);
     }
 
-    GtkWidget* scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
+    GtkWidget* scrolledwindow = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolledwindow), GTK_SHADOW_IN);
-    gtk_container_add (GTK_CONTAINER(scrolledwindow), view);
+    gtk_container_add(GTK_CONTAINER(scrolledwindow), view);
 
     return scrolledwindow;
 }
@@ -704,4 +708,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.31 2006-07-31 12:16:02 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.32 2006-08-02 10:42:40 zeeb90au Exp $". */
