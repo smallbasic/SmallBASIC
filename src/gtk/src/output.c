@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.38 2006-07-25 11:23:27 zeeb90au Exp $
+ * $Id: output.c,v 1.39 2006-08-02 10:41:59 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -265,6 +265,15 @@ void drvsound_close(void) {
  *       bgplay = true for play in background
  */
 void drvsound_sound(int frq, int ms, int vol, int bgplay) {
+
+    //If you want nonblocking audio that's not a system sound, combination of:
+
+    //int esd = esd_open_sound(NULL);
+    //int sample = esd_file_cache(esd, "myprogname", "soundfile.wav");
+    //esd_sample_play(esd, sample);
+    //esd_sample_free(esd, sample);
+    //esd_close(esd);
+
 }
 
 /*
@@ -737,5 +746,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.38 2006-07-25 11:23:27 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.39 2006-08-02 10:41:59 zeeb90au Exp $". */
 
