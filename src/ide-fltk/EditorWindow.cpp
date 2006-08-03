@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: EditorWindow.cpp,v 1.57 2006-05-07 05:18:28 zeeb90au Exp $
+// $Id: EditorWindow.cpp,v 1.58 2006-08-03 10:28:12 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
@@ -688,7 +688,8 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) :
     editor->highlight_data(stylebuf, styletable,
                            sizeof(styletable) / sizeof(styletable[0]),
                            PLAIN, style_unfinished_cb, 0);
-    //editor->wrap_mode(true, 80);
+    editor->linenumber_width(40);
+    editor->wrap_mode(true, 0);
     editor->selection_color(fltk::color(190,189,188));
     editor->color(WHITE);
     end();

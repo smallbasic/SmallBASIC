@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: Fl_Ansi_Window.h,v 1.22 2006-01-26 03:58:00 zeeb90au Exp $
+// $Id: Fl_Ansi_Window.h,v 1.23 2006-08-03 10:28:12 zeeb90au Exp $
 //
 // Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -19,6 +19,7 @@ using namespace fltk;
 
 struct ScreenImage : public Image {
     ScreenImage(int w, int h) : Image(w,h) {}
+    virtual ~ScreenImage() {}
     void update() {}
 };
 

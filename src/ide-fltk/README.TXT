@@ -94,6 +94,30 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     SB_FLTK_0_9_6_4 (2 Sept 2005)
     SB_FLTK_0_9_6_1 (16 May 2005)
 
+8. Indent settings:
 
-$Id: README.TXT,v 1.21 2006-05-07 05:18:50 zeeb90au Exp $
+-bap 
+-br 
+-brs
+-cdb
+-cdw 
+-ce 
+-cli0
+-fca
+-i4
+-l80
+-lc75
+-lp
+-nbbo
+-nbc 
+-ncs 
+-nip 
+-npcs 
+-npsl 
+-nut
+-ppi0
+-sc 
+
+
+$Id: README.TXT,v 1.22 2006-08-03 10:28:12 zeeb90au Exp $
 
