@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.10 2006-08-02 10:39:59 zeeb90au Exp $
+ * $Id: inet.c,v 1.11 2006-08-03 10:30:53 zeeb90au Exp $
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -18,6 +18,10 @@ static word netlib;
 #endif
 #if defined(_Win32) || defined(_PalmOS) || defined(__MINGW32__)
 static int  inetlib_init =0;
+#endif
+
+#ifndef socklen_t
+#define socklen_t int
 #endif
 
 /*
@@ -486,5 +490,5 @@ void net_disconnect(socket_t s) {
     net_close();
 }
 
-/* End of "$Id: inet.c,v 1.10 2006-08-02 10:39:59 zeeb90au Exp $". */
+/* End of "$Id: inet.c,v 1.11 2006-08-03 10:30:53 zeeb90au Exp $". */
 
