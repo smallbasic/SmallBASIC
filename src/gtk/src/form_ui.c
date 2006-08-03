@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.32 2006-08-02 10:42:40 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.33 2006-08-03 00:28:18 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -32,6 +32,7 @@
 GtkWidget* form = 0;
 GtkWidget* notebook = 0;
 int modeless = FALSE;
+int modeless_clicked = FALSE;
 char buff[40];
 extern OutputModel output;
 
@@ -207,6 +208,7 @@ void ui_transfer_data(GtkWidget* container) {
 void button_clicked(GtkWidget* button, gpointer user_data) {
     WidgetInfo* inf = get_widget_info(button);
     v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
+    modeless_clicked = TRUE;
 
     if (user_data) {
         // close the form
@@ -344,6 +346,7 @@ void on_treeview_row_activated(GtkTreeView* treeview,
                                GtkTreeViewColumn* column,
                                gpointer user_data) {
     output.modal_flag = FALSE;
+    modeless_clicked = TRUE;
     if (modeless) {
         ui_reset();
     }
@@ -404,7 +407,7 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
     gtk_tree_selection_set_mode(selection, GTK_SELECTION_BROWSE);
 
     g_signal_connect((gpointer)view, "row_activated",
-                     G_CALLBACK (on_treeview_row_activated), NULL);
+                     G_CALLBACK(on_treeview_row_activated), NULL);
 
     // if the first row contains a string then 
     // use it as the row selection container
@@ -662,7 +665,11 @@ void cmd_doform() {
         }
 
         // continue modeless state
-        gtk_main_iteration_do(TRUE);
+        modeless_clicked = num_args; // fall thru if num_args > 0
+        while (modeless_clicked == FALSE && output.break_exec == 0) {
+            gtk_main_iteration_do(TRUE);
+        }
+
         ui_transfer_data(form);
         if (form == 0 || num_args == 0) {
             // default button click or no dimension args
@@ -708,4 +715,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.32 2006-08-02 10:42:40 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.33 2006-08-03 00:28:18 zeeb90au Exp $". */
