@@ -279,6 +279,10 @@ typedef unsigned int	addr_t;
 *   Linux/Win32
 */
 
+#if defined(__MINGW32__)
+#define malloc_usable_size _msize
+#endif
+
 	// TODO: check other CPU's
 	#define	CPU_BIGENDIAN
 
