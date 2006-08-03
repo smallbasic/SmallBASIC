@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.33 2006-08-03 00:28:18 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.34 2006-08-03 10:25:38 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -31,8 +31,11 @@
 
 GtkWidget* form = 0;
 GtkWidget* notebook = 0;
-int modeless = FALSE;
-int modeless_clicked = FALSE;
+enum {m_unset, m_init, m_active, m_clicked} modeless = m_unset;
+int modeless_x;
+int modeless_y;
+int modeless_w;
+int modeless_h;
 char buff[40];
 extern OutputModel output;
 
@@ -113,7 +116,7 @@ void ui_reset() {
         gtk_widget_destroy(form);
         form = 0;
     }
-    modeless = FALSE;
+    modeless = m_unset;
     notebook = 0;
 }
 
@@ -208,15 +211,15 @@ void ui_transfer_data(GtkWidget* container) {
 void button_clicked(GtkWidget* button, gpointer user_data) {
     WidgetInfo* inf = get_widget_info(button);
     v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
-    modeless_clicked = TRUE;
 
     if (user_data) {
-        // close the form
+        // submit button - close the form
         output.modal_flag = FALSE;
-        if (modeless) {
+        if (modeless != m_unset) {
             ui_reset();
         }
     }
+    modeless = m_clicked;
 }
 
 // set the radio into a group that shares a common basic variable
@@ -279,7 +282,7 @@ void add_form_child(GtkWidget* widget, int expand, int x1, int x2, int y1, int y
                          (GtkAttachOptions)(GTK_FILL),
                          (GtkAttachOptions)(0), 0, 0);
     }
-    if (modeless) {
+    if (modeless != m_unset) {
         gtk_widget_show(widget);
     }
 }
@@ -346,10 +349,10 @@ void on_treeview_row_activated(GtkTreeView* treeview,
                                GtkTreeViewColumn* column,
                                gpointer user_data) {
     output.modal_flag = FALSE;
-    modeless_clicked = TRUE;
-    if (modeless) {
+    if (modeless != m_unset) {
         ui_reset();
     }
+    modeless = m_clicked;
 }
 
 // create a grid control type
@@ -562,7 +565,7 @@ void cmd_button() {
             widget = gtk_button_new_with_mnemonic(caption);
             g_signal_connect((gpointer)widget, "clicked",
                              G_CALLBACK(button_clicked),
-                             (gpointer)(modeless ? FALSE : TRUE));
+                             (gpointer)(modeless == m_unset ? TRUE : FALSE));
         }
 
         set_widget_info(widget, inf);
@@ -642,7 +645,6 @@ void cmd_text() {
 // Modeless syntax:
 //   DOFORM 'begin modeless form
 //   BUTTON ....
-//   DOFORM x,y,w,h
 //   DOFORM 'continue modeless form
 //
 void cmd_doform() {
@@ -653,37 +655,46 @@ void cmd_doform() {
     num_args = par_massget("iiii", &x, &y, &w, &h);
 
     if (form == 0) {
-        // begin modeless state
-        modeless = TRUE;
+        // begin modeless state - m_unset, m_init, m_active
+        modeless = m_init;
+        modeless_x = x;
+        modeless_y = y;
+        modeless_w = w;
+        modeless_h = h;
         return;
     }
 
-    if (modeless) {
+    if (modeless != m_unset) {
+        // continue modeless state
         if (form == 0) {
             rt_raise("UI: FORM HAS CLOSED");
             return;
         }
 
-        // continue modeless state
-        modeless_clicked = num_args; // fall thru if num_args > 0
-        while (modeless_clicked == FALSE && output.break_exec == 0) {
-            gtk_main_iteration_do(TRUE);
-        }
-
-        ui_transfer_data(form);
-        if (form == 0 || num_args == 0) {
-            // default button click or no dimension args
+        // set form position in initial iteration
+        if (modeless == m_init) {
+            modeless = m_active;
+            if (num_args == 0) {
+                // apply coordinates from inital doform call
+                x = modeless_x;
+                y = modeless_y;
+                w = modeless_w;
+                h = modeless_h;
+            }
+        } else {
+            // pump system messages until button is clicked
+            while (modeless == m_active && output.break_exec == 0) {
+                gtk_main_iteration_do(TRUE);
+            }
+            modeless = m_active;
+            ui_transfer_data(form);
             return;
         }
     }
 
     switch (num_args) {
     case 0:
-        x = y = w = h = 0;
-        break;
     case 2:
-        w = h = 0; // updated below
-        break;
     case 4:
         break;
     default:
@@ -704,7 +715,7 @@ void cmd_doform() {
     gtk_widget_grab_focus(form);
     gtk_widget_show_all(form);
 
-    if (modeless == FALSE) {
+    if (modeless == m_unset) {
         output.modal_flag = TRUE;
         while (output.modal_flag && output.break_exec == 0) {
             gtk_main_iteration_do(TRUE);
@@ -715,4 +726,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.33 2006-08-03 00:28:18 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.34 2006-08-03 10:25:38 zeeb90au Exp $". */
