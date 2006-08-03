@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.34 2006-08-03 10:25:38 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.35 2006-08-03 21:29:26 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -219,7 +219,9 @@ void button_clicked(GtkWidget* button, gpointer user_data) {
             ui_reset();
         }
     }
-    modeless = m_clicked;
+    if (modeless != m_unset) {
+        modeless = m_clicked;
+    }
 }
 
 // set the radio into a group that shares a common basic variable
@@ -350,9 +352,9 @@ void on_treeview_row_activated(GtkTreeView* treeview,
                                gpointer user_data) {
     output.modal_flag = FALSE;
     if (modeless != m_unset) {
+        modeless = m_clicked;
         ui_reset();
     }
-    modeless = m_clicked;
 }
 
 // create a grid control type
@@ -726,4 +728,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.34 2006-08-03 10:25:38 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.35 2006-08-03 21:29:26 zeeb90au Exp $". */
