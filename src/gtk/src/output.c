@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.39 2006-08-02 10:41:59 zeeb90au Exp $
+ * $Id: output.c,v 1.40 2006-08-04 11:07:30 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -676,14 +676,13 @@ void on_size_allocate(GtkWidget* widget,
                       GdkRectangle* allocation, 
                       gpointer user_data) {
     if (output.width != allocation->width ||
-        output.width != allocation->width) {
+        output.height != allocation->height) {
         output.width = allocation->width;
         output.height = allocation->height;
         if (widget->window) {
             on_realize(widget, user_data);
         }
     }
-    return;
 }
 
 /* Redraw the screen from the backing pixmap */
@@ -746,5 +745,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.39 2006-08-02 10:41:59 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.40 2006-08-04 11:07:30 zeeb90au Exp $". */
 
