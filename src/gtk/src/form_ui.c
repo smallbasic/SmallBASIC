@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.35 2006-08-03 21:29:26 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.36 2006-08-08 12:09:35 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -40,10 +40,6 @@ char buff[40];
 extern OutputModel output;
 
 void ui_transfer_data(GtkWidget* container);
-
-#ifndef USE_HILDON
-#define gtk_im_context_show(imctx)
-#endif
 
 #define TABLE_GAP 2
 
@@ -624,11 +620,6 @@ void cmd_text() {
         add_form_child(widget, FALSE, x1, x2, y1, y2);
         gtk_entry_set_has_frame(GTK_ENTRY(widget), TRUE);
         gtk_entry_set_max_length(GTK_ENTRY(widget), 100);
-
-        GtkIMContext* imctx = gtk_im_multicontext_new();
-        gtk_im_context_set_client_window(imctx, output.widget->window);
-        gtk_im_context_focus_in(imctx);
-        gtk_im_context_show(imctx);
         gtk_widget_grab_focus(widget);
 
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
@@ -728,4 +719,4 @@ void cmd_doform() {
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.35 2006-08-03 21:29:26 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.36 2006-08-08 12:09:35 zeeb90au Exp $". */

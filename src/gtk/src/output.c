@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.40 2006-08-04 11:07:30 zeeb90au Exp $
+ * $Id: output.c,v 1.41 2006-08-08 12:09:35 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -27,10 +27,6 @@
 #include "interface.h"
 #include "output.h"
 #include "output_model.h"
-
-#ifndef USE_HILDON
-#define gtk_im_context_show(imctx)
-#endif
 
 extern OutputModel output;
 
@@ -411,15 +407,17 @@ int dev_image_height(int handle, int index) {
     return pixbuf != 0 ? gdk_pixbuf_get_height(pixbuf) : -1;
 }
 
-gboolean dialog_focus(GtkWidget *dialog,
-                      GdkEventFocus *event,
-                      GtkIMContext *imctx) {
+gboolean focus_event(GtkWidget *widget,
+                     GdkEventFocus *event,
+                     GtkIMContext *imctx) {
+#ifdef USE_HILDON
     if (event->in) {
         gtk_im_context_focus_in(imctx);
         gtk_im_context_show(imctx);
     } else {
         gtk_im_context_focus_out(imctx);
     }
+#endif
     return FALSE;
 }
 
@@ -483,10 +481,10 @@ void handle_key(int index, int def_key, int keyval, keymap_data* data) {
         g_signal_connect(G_OBJECT(data->imctx), "commit",
                          G_CALLBACK(im_context_commit), data);
         gtk_im_context_set_client_window(data->imctx, GTK_WIDGET(data->dialog)->window);
-        g_signal_connect(G_OBJECT(data->dialog), "focus-in-event",
-                         G_CALLBACK(dialog_focus), data->imctx);
-        g_signal_connect(G_OBJECT(data->dialog), "focus-out-event",
-                         G_CALLBACK(dialog_focus), data->imctx);
+        g_signal_connect(G_OBJECT(data->dialog), "focus_in_event",
+                         G_CALLBACK(focus_event), data->imctx);
+        g_signal_connect(G_OBJECT(data->dialog), "focus_out_event",
+                         G_CALLBACK(focus_event), data->imctx);
 
         gtk_dialog_run(GTK_DIALOG(data->dialog));
 
@@ -494,6 +492,7 @@ void handle_key(int index, int def_key, int keyval, keymap_data* data) {
         gtk_widget_hide(data->dialog);
         gtk_widget_destroy(data->dialog);
         gtk_im_context_focus_out(data->imctx);
+        g_object_unref(G_OBJECT(data->imctx));
         g_free(data);
     }
 }
@@ -532,14 +531,11 @@ gboolean key_press_event(GtkWidget* widget,
         handle_key(KEYMAP_F8, SB_KEY_PGDN, GDK_F8, data);
         return TRUE;
         
-    case GDK_Return: // Navigation Key select
-        handle_key(KEYMAP_ENTER, '\n', GDK_Return, data);
-        return TRUE;
-
     case GDK_F6: // Full screen
         handle_key(KEYMAP_F6, SB_KEY_HOME, GDK_F6, data);
         return TRUE;
 
+    case GDK_Return: // Navigation Key select
     case GDK_KP_Enter:
         output.modal_flag = FALSE;
         return TRUE;
@@ -581,20 +577,15 @@ char* dev_gets(char *dest, int size) {
                      G_CALLBACK(key_press_event), NULL);
     g_signal_connect(G_OBJECT(entry), "changed",
                      G_CALLBACK(input_changed), entry);
+    
     gtk_widget_show(entry);
-
-    GtkIMContext* imctx = gtk_im_multicontext_new();
-    gtk_im_context_set_client_window(imctx, output.widget->window);
-    gtk_im_context_focus_in(imctx);
-    gtk_im_context_show(imctx);
     gtk_widget_grab_focus(entry);
+    gtk_im_context_show(GTK_ENTRY(entry)->im_context);
 
     output.modal_flag = TRUE;
     while (output.modal_flag && output.break_exec == 0) {
         gtk_main_iteration_do(TRUE);
     }
-
-    gtk_im_context_focus_out(imctx);
 
     const gchar* value = gtk_entry_get_text(GTK_ENTRY(entry));
     strcpy(dest, value);
@@ -745,5 +736,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.40 2006-08-04 11:07:30 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.41 2006-08-08 12:09:35 zeeb90au Exp $". */
 
