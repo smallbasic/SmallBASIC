@@ -1,11 +1,13 @@
-/**
- *   SmallBASIC, main() console versions
- *
- *   This program is distributed under the terms of the GPL v2.0 or later
- *   Download the GNU Public License (GPL) from www.gnu.org
- *
- *   Nicholas Christopoulos
- */
+// $Id: console_main.c,v 1.7 2006-08-10 07:47:18 zeeb90au Exp $
+// -*- c-file-style: "java" -*-
+// This file is part of SmallBASIC
+//
+// SmallBASIC, main() console versions
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sbapp.h"
 
@@ -16,11 +18,11 @@
 
 #if defined(_UnixOS) || defined(_DOS)
 // global the filename (its needed for CTRL+C signal - delete temporary)
-char    g_file[1025];
+char g_file[1025];
 
 // global command-line args
-char    **g_argv;
-int     g_argc;
+char **g_argv;
+int g_argc;
 
 /*
  *   remove temporary files
@@ -28,7 +30,8 @@ int     g_argc;
  *   its called by atexit() only if the
  *   source file it had been created in /tmp
  */
-void sbunx_remove_temp(void) {
+void sbunx_remove_temp(void)
+{
     unlink(g_file);
 }
 #endif
@@ -39,59 +42,62 @@ void sbunx_remove_temp(void) {
 #if defined(_Win32)
 int console_main(int argc, char *argv[])
 #else
-    int main(int argc, char *argv[])
+int main(int argc, char *argv[])
 #endif
 {
-    char    prev_cwd[1025];
-    char    cwd[1025], *slash;
-    int     i, j, use_stdin = 0, c;
-    int     opt_ihavename = 0, opt_nomore = 0;
-    FILE    *fp;
+    char prev_cwd[1025];
+    char cwd[1025], *slash;
+    int i, j, use_stdin = 0, c;
+    int opt_ihavename = 0, opt_nomore = 0;
+    FILE *fp;
 
     strcpy(g_file, "");
     opt_graphics = 0;
     opt_quiet = 0;
     opt_ide = 0;
     opt_command[0] = '\0';
-
+    opt_nosave = 1;
     opt_pref_width = opt_pref_height = opt_pref_bpp = 0;
 
     /*
      *   command-line parameters
      */
-    for (i = 1; i < argc; i ++) {
+    for (i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
-            if (opt_nomore){
+            if (opt_nomore) {
                 if (strlen(opt_command)) {
                     strcat(opt_command, " ");
                 }
                 strcat(opt_command, argv[i]);
-            }
-            else  {
+            } else {
                 switch (argv[i][1]) {
                 case '-':
-                    // the following parameters are going to script (COMMAND$)
+                    // the following parameters are going to script
+                    // (COMMAND$)
                     opt_nomore = 1;
                     break;
                 case 's':
                     // decompile
-                    opt_decomp ++;
+                    opt_decomp++;
                     break;
                 case 'c':
                     // syntax check
-                    opt_syntaxcheck ++;
+                    opt_syntaxcheck++;
                     break;
                 case 'v':
                     // verbose check
-                    opt_verbose ++;
+                    opt_verbose++;
                     break;
                 case 'i':
                     opt_ide = IDE_EXTERNAL;
                     break;
+                case 'x':
+                    opt_nosave = 0;
+                    break;
                 case 'g':
                     // run in graphics mode
                     opt_graphics = 2;
-                    if ((argv[i][2] >= '1') && (argv[i][2] <= '9')){
+                    if ((argv[i][2] >= '1') && (argv[i][2] <= '9')) {
                         // setup graphics mode
                         slash = &argv[i][2];
                         sprintf(cwd, "SBGRAF=%s", slash);
@@ -101,9 +107,9 @@ int console_main(int argc, char *argv[])
                     }
                     break;
                 case 'p':
-                    if (strcmp(argv[i]+1, "pkw") == 0) {
+                    if (strcmp(argv[i] + 1, "pkw") == 0) {
                         printf("SmallBASIC keywords table\n");
-                        printf("::':#:rem:\"\n");   // ted's format
+                        printf("::':#:rem:\"\n");       // ted's format
                         printf("$$$-remarks\n");
                         printf("'\n");
                         printf("REM\n");
@@ -113,28 +119,28 @@ int console_main(int argc, char *argv[])
                         printf("%s\n", "+ - * / \\ % ^");
                         printf("%s\n", "= <= =< >= => <> != !");
                         printf("%s\n", "&& & || | ~");
-                        for (j = 0; opr_table[j].name[0] != '\0'; j ++) {
+                        for (j = 0; opr_table[j].name[0] != '\0'; j++) {
                             printf("%s\n", opr_table[j].name);
                         }
                         // print keywords
                         printf("$$$-keywords\n");
-                        for (j = 0; keyword_table[j].name[0] != '\0'; j ++) {
+                        for (j = 0; keyword_table[j].name[0] != '\0'; j++) {
                             if (keyword_table[j].name[0] != '$')
                                 printf("%s\n", keyword_table[j].name);
                         }
 
                         // special separators
-                        for (j = 0; spopr_table[j].name[0] != '\0'; j ++) {
+                        for (j = 0; spopr_table[j].name[0] != '\0'; j++) {
                             printf("%s\n", spopr_table[j].name);
                         }
                         // functions
                         printf("$$$-functions\n");
-                        for (j = 0; func_table[j].name[0] != '\0'; j ++) {
+                        for (j = 0; func_table[j].name[0] != '\0'; j++) {
                             printf("%s\n", func_table[j].name);
                         }
                         // procedures
                         printf("$$$-procedures\n");
-                        for (j = 0; proc_table[j].name[0] != '\0'; j ++) {
+                        for (j = 0; proc_table[j].name[0] != '\0'; j++) {
                             printf("%s\n", proc_table[j].name);
                         }
                         // external procedures
@@ -143,17 +149,19 @@ int console_main(int argc, char *argv[])
                     }
                     break;
                 case 'm':
-                    // load run-time modules (linux only, shared libraries)
+                    // load run-time modules (linux only, shared
+                    // libraries)
 #if defined(__linux__)
                     opt_loadmod = 1;
-                    strcpy(opt_modlist, argv[i]+2);
+                    strcpy(opt_modlist, argv[i] + 2);
 #elif defined(_CygWin)
                     opt_loadmod = 1;
-                    if (i+1<argc) {
+                    if (i + 1 < argc) {
                         strcpy(opt_modlist, argv[++i]);
                     }
 #else
-                    printf("\n\a* Modules are supported only on Linux platform\n\n");
+                    printf
+                        ("\n\a* Modules are supported only on Linux platform\n\n");
 #endif
                     break;
                 case 'q':
@@ -162,7 +170,11 @@ int console_main(int argc, char *argv[])
                     break;
                 case 'h':
                     // print command-line parameters
-                    fprintf(stderr, "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n", SB_STR_VER, kwNULL, (kwNULLPROC-kwCLS)+1, (kwNULLFUNC-kwASC)+1, (int) (65536 / sizeof(var_t)));
+                    fprintf(stderr,
+                            "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n",
+                            SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
+                            (kwNULLFUNC - kwASC) + 1,
+                            (int)(65536 / sizeof(var_t)));
                     fprintf(stderr, "http://smallbasic.sourceforge.net\n\n");
 
                     if (argv[i][2] == '-' || argv[i][2] == 'x') {
@@ -171,40 +183,47 @@ int console_main(int argc, char *argv[])
                          */
                         if (argv[i][2] == '-') {
 #ifdef _CygWin
-                            fprintf(stderr, "Please refer to the online help in the GUI application");
+                            fprintf(stderr,
+                                    "Please refer to the online help in the GUI application");
 #else
-                            char    *command = argv[i]+3;
+                            char *command = argv[i] + 3;
                             help_printinfo(command);
 #endif
                         } else if (argv[i][2] == 'x') {
                             // print all
-                            //printf("%s\n", help_text);
+                            // printf("%s\n", help_text);
                             ;
                         }
                     } else {
                         /*
                          *   Generic help-page
                          */
-                        //                      printf("%s\n", about_text);
-                        printf("usage: sbasic [options] source [--] [program parameters]\n");
+                        printf
+                            ("usage: sbasic [options] source [--] [program parameters]\n");
                         printf("-c      syntax check (compile only)\n");
                         printf("-s      decompiler\n");
                         printf("-g      enable graphics\n");
-                        printf("-g[<width>x<height>[x<bpp>]] enable graphics & setup the graphics mode (depented on driver)\n");
-                        printf("-m[mod1,mod2,...] load all or the specified modules\n");
+                        printf
+                            ("-g[<width>x<height>[x<bpp>]] enable graphics & setup the graphics mode (depented on driver)\n");
+                        printf
+                            ("-m[mod1,mod2,...] load all or the specified modules\n");
                         printf("-q      quiet\n");
                         printf("-v      verbose\n");
-                        printf("-pkw    prints all keywords (useful to create color-syntax macros for editors)\n");
+                        printf("-x      output compiled SBX file\n");
+                        printf
+                            ("-pkw    prints all keywords (useful to create color-syntax macros for editors)\n");
                         // -i for ide
                         /*
-                          fprintf(stderr, "\ncharset (default: utf8)\n");
-                          fprintf(stderr, "-j     enable sjis\n");
-                          fprintf(stderr, "-b     enable big5\n");
-                          fprintf(stderr, "-m     enable generic multibyte\n");
-                          fprintf(stderr, "-u     enable unicode!\n");
-                        */
+                         * fprintf(stderr, "\ncharset (default: utf8)\n");
+                         * fprintf(stderr, "-j enable sjis\n");
+                         * fprintf(stderr, "-b enable big5\n");
+                         * fprintf(stderr, "-m enable generic
+                         * multibyte\n"); fprintf(stderr, "-u enable
+                         * unicode!\n"); 
+                         */
                         printf("-h[-command] help pages\n");
-                        printf("\nExamples:\n\tsbasic -h | less\n\tsbasic -h-input\n");
+                        printf
+                            ("\nExamples:\n\tsbasic -h | less\n\tsbasic -h-input\n");
                     }
                     return 255;
                 default:
@@ -215,16 +234,16 @@ int console_main(int argc, char *argv[])
         } else {
             // no - switch
             // this is the filename or script-parameters
-            if (opt_ihavename == 0){
+            if (opt_ihavename == 0) {
                 strcpy(g_file, argv[i]);
-                if (access(g_file, F_OK))  {
+                if (access(g_file, F_OK)) {
                     strcat(g_file, ".bas");
-                    if (access(g_file, F_OK))      {
+                    if (access(g_file, F_OK)) {
                         perror("sbasic");
                         return 255;
                     }
                 }
-                if (access(g_file, R_OK))  {
+                if (access(g_file, R_OK)) {
                     perror("sbasic");
                     return 255;
                 }
@@ -248,19 +267,18 @@ int console_main(int argc, char *argv[])
         /*
          *   stdin
          */
-        use_stdin ++;
-        if (isatty (STDIN_FILENO)) {   /*  check if it is a terminal. */
-            use_stdin ++;
+        use_stdin++;
+        if (isatty(STDIN_FILENO)) {     /* check if it is a terminal. */
+            use_stdin++;
             opt_interactive = 1;
         }
-
 #if defined(_Win32) || defined(_DOS)
         slash = strchr(argv[0], OS_DIRSEP);
         if (slash) {
             strcpy(g_file, argv[0]);
             slash = strrchr(g_file, OS_DIRSEP);
             *slash = OS_DIRSEP;
-            *(slash+1) = '\0';
+            *(slash + 1) = '\0';
             strcat(g_file, "sbasic.tmp");
         } else {
             sprintf(g_file, "sbasic.tmp");
@@ -275,7 +293,9 @@ int console_main(int argc, char *argv[])
         if (opt_interactive) {
             // get it from console
 #ifndef _CygWin
+#ifndef HAVE_C_MALLOC
             memmgr_init();
+#endif
             interactive_mode(g_file);
 #endif
         } else {
@@ -301,27 +321,27 @@ int console_main(int argc, char *argv[])
             cwd[0] = '\0';
         }
 #if defined(_Win32) || defined(_DOS)
-        if (strlen(g_file) > 2){
+        if (strlen(g_file) > 2) {
             if (g_file[1] == ':')
                 cwd[0] = '\0';
         }
 #endif
         slash = strrchr(g_file, OS_DIRSEP);
         if (slash) {
-            char    tmp[1024];
-            char    sep[2];
-            char    *final_dir;
+            char tmp[1024];
+            char sep[2];
+            char *final_dir;
 
             *slash = '\0';
             sep[0] = OS_DIRSEP;
             sep[1] = '\0';
             strcat(cwd, sep);
             strcat(cwd, g_file);
-            strcpy(tmp, slash+1);
+            strcpy(tmp, slash + 1);
             strcpy(g_file, tmp);
 
-            //          printf("Current directory changed to [%s]\n", cwd);
-            //          printf("Source file changed to: [%s]\n", g_file);
+            // printf("Current directory changed to [%s]\n", cwd);
+            // printf("Source file changed to: [%s]\n", g_file);
 #if defined(_CygWin)
             if (strncmp(cwd, "//", 2) == 0) {
                 final_dir = cwd + 1;
@@ -332,7 +352,8 @@ int console_main(int argc, char *argv[])
             }
 #endif
             if (chdir(final_dir) != 0) {
-                printf("Can't change directory to '%s'! (cygwin?)\n", final_dir);
+                printf("Can't change directory to '%s'! (cygwin?)\n",
+                       final_dir);
                 exit(1);
             }
         }
@@ -342,7 +363,9 @@ int console_main(int argc, char *argv[])
      *   run it
      */
     if (!opt_interactive) {
+#ifndef HAVE_C_MALLOC
         memmgr_init();
+#endif
         sbasic_main(g_file);
     }
 
@@ -359,6 +382,3 @@ int console_main(int argc, char *argv[])
     }
     return opt_retval;
 }
-
-
-

@@ -84,6 +84,7 @@ kwTYPE_CALLEXTP,		/* Call an external procedure */
 kwTYPE_CRVAR,			/* Create dynamic variable (PARAMETERS OR LOCALS) */
 kwTYPE_RET,				/* Return from UDF|UDP */
 kwTYPE_PARAM,			/* Parameters */
+kwTYPE_PTR,          /* Address pointer, eg f=@foo */
 kwLOCAL,				/* Create local variables */
 kwFUNC,					/* USER DEFINED FUNCTION */
 kwPROC,					/* USER DEFINED PROCEDURE */

@@ -36,7 +36,7 @@
 #define	V_NUM		2	/**< variable type, 64bit float (same as V_NUM)				@ingroup var */
 #define	V_STR		3	/**< variable type, string									@ingroup var */
 #define	V_ARRAY		4	/**< variable type, array of variables						@ingroup var */
-#define	V_PTR		5	/**< variable type, binary - N/A							@ingroup var */
+#define	V_PTR		5	/**< variable type, pointer to UDF or label						@ingroup var */
 #define	V_LIST		6	/**< variable type, dynamic list - N/A						@ingroup var */
 
 /*
@@ -100,6 +100,7 @@ struct var_s	{
 		double		n;					/**< numeric value */
 		long		i;					/**< integer value */
 		#endif
+        addr_t     ap;              /** address pointer */
 
 		// generic ptr (string)
 		struct {
