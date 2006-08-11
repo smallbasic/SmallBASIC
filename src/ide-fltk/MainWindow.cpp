@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.84 2006-08-03 10:28:12 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.85 2006-08-11 23:01:47 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -504,8 +504,8 @@ void break_cb(Widget*, void* v) {
     }
 }
 
-void fullscreen_cb(Menu* w, void* v) {
-    if (w->value()) {
+void fullscreen_cb(Widget* w, void* v) {
+    if (w->flags() & VALUE) {
         // store current geometry of the window
         px = wnd->x(); 
         py = wnd->y();
@@ -552,8 +552,8 @@ void paste_text_cb(Widget* w, void* v) {
     }
 }
 
-void turbo_cb(Menu* w, void* v) {
-    wnd->isTurbo = w->value();
+void turbo_cb(Widget* w, void* v) {
+    wnd->isTurbo = (w->flags() & VALUE);
 }
 
 void find_cb(Widget* w, void* v) {
@@ -1482,4 +1482,4 @@ extern "C" void trace(const char *format, ...) {
 #endif
 }
 
-// End of "$Id: MainWindow.cpp,v 1.84 2006-08-03 10:28:12 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.85 2006-08-11 23:01:47 zeeb90au Exp $".
