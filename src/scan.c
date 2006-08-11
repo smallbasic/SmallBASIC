@@ -1,4 +1,4 @@
-// $Id: scan.c,v 1.16 2006-08-10 07:47:18 zeeb90au Exp $
+// $Id: scan.c,v 1.17 2006-08-11 22:53:21 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -1077,10 +1077,8 @@ void comp_expression(char *expr, byte no_parser)
                         bc_add_code(&bc, idx);
                         bc_add_addr(&bc, 0);
                         bc_add_addr(&bc, 0);
-                        comp_use_global_vartable = 1;   // all the next
-                        // variables are
-                        // global (needed
-                        // for X)
+                        comp_use_global_vartable = 1;   
+                        // all the next variables are global (needed for X)
                         check_udf++;
                     } else if (idx == kwDO) {
                         while (*ptr == ' ') {

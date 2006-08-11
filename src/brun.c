@@ -828,9 +828,9 @@ void bc_loop(int isf)
 
     //      printf("task #%d; bc_loop(%d)\n", ctask->tid, isf);
 
-    if (isf == 2)
+    if (isf == 2) {
         proc_level++;
-
+    }
     while (prog_ip < prog_length) {
 
 #if defined(_PalmOS)
@@ -1255,9 +1255,6 @@ void bc_loop(int isf)
                     break;
                 case kwBLOAD:
                     cmd_bload();
-                    break;
-                case kwCALLADR:
-                    cmd_calladr();
                     break;
                 case kwEXPRSEQ:
                     cmd_exprseq();

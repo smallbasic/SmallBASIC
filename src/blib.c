@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.12 2006-08-10 07:47:17 zeeb90au Exp $
+// $Id: blib.c,v 1.13 2006-08-11 22:53:20 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -2895,22 +2895,6 @@ void cmd_bcopy(void)
         return;
 
     memcpy(bdst, bsrc, size);
-}
-
-/*
-*   USRCALL addr
-*/
-void cmd_calladr(void)
-{
-    int32 addr;
-    void (*f) (void);
-
-    addr = par_getint();
-    if (prog_error)
-        return;
-
-    f = (void (*)(void))addr;
-    f();
 }
 
 /*

@@ -1,4 +1,4 @@
-// $Id: var.c,v 1.4 2006-08-10 07:47:18 zeeb90au Exp $
+// $Id: var.c,v 1.5 2006-08-11 22:53:21 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -599,6 +599,7 @@ void v_set(var_t * dest, const var_t * src)
         }
     } else if (src->type == V_PTR) {
         dest->v.ap = src->v.ap;
+        dest->type = V_PTR;
     }
 }
 

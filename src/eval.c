@@ -1,4 +1,4 @@
-// $Id: eval.c,v 1.4 2006-08-10 07:47:18 zeeb90au Exp $
+// $Id: eval.c,v 1.5 2006-08-11 22:53:20 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -20,13 +20,8 @@
 
 #define IP           prog_ip
 #define CODE(x)      prog_source[(x)]
-
 #define CODE_PEEK()  CODE(IP)
-
-#define CHECKOP1(s)   if (CODE(IP) == kwTYPE_OPR && CODE(IP+1) == (s)) { IP += 2; return (s); }
-#define CHECKOP2(s,o) if (CODE(IP) == kwTYPE_OPR && CODE(IP+1) == (s)[0] && CODE(IP+2) == kwTYPE_OPR && CODE(IP+3) == (s)[1]) { IP += 4; return (o); }
-#define CHECKOP3(s,o) if ( code_checkop_s((s)) ) { IP += 6; return (o); }
-#define V_FREE(v)     if ( (v) ) { if ( (v)->type == V_STR || (v)->type == V_ARRAY ) v_free((v)); }
+#define V_FREE(v)    if ( (v) ) { if ( (v)->type == V_STR || (v)->type == V_ARRAY ) v_free((v)); }
 
 void eval(var_t * result);
 void mat_op1(var_t * l, int op, double n) SEC(BMATH);
@@ -166,15 +161,13 @@ void mat_op2(var_t * l, var_t * r, int op)
                 for (i = 0; i < lr; i++) {
                     for (j = 0; j < lc; j++) {
                         pos = i * lc + j;
-                        if (op == '+')
+                        if (op == '+') {
                             m[pos] = m1[pos] + m2[pos];
-                        else
-//                                                      m[pos] = m1[pos] - m2[pos];
-                            m[pos] = m2[pos] - m1[pos]; // array is
-                                                        // comming
-                                                        // reversed
-                                                        // because of
-                                                        // where to store
+                        } else {
+                            m[pos] = m2[pos] - m1[pos]; 
+                        }
+                        // array is comming reversed because of
+                        // where to store
                     }
                 }
             }
@@ -365,6 +358,10 @@ void eval(var_t * r)
                 return;
 
             switch (var_p->type) {
+            case V_PTR:
+                r->type = V_PTR;
+                r->v.ap = var_p->v.ap;
+                break;
             case V_INT:
                 r->type = V_INT;
                 r->v.i = var_p->v.i;

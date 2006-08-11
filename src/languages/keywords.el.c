@@ -448,7 +448,6 @@ struct proc_keyword_s proc_table[] = {
 { "BCOPY",		kwBCOPY },
 { "BLOAD",		kwBLOAD },
 { "BSAVE",		kwBSAVE },
-{ "USRCALL",	kwCALLADR },
 { "IMGGET",		kwIMGGET },
 { "IMGPUT",		kwIMGPUT },
 { "TIMEHMS",	kwTIMEHMS },
