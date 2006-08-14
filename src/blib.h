@@ -26,7 +26,7 @@ extern "C" {
 void	dump_stack(void) SEC(TRASH);
 
 // first class
-void	cmd_udp(int)		SEC(BLIB);
+void	cmd_udp(addr_t goto_addr, int)		SEC(BLIB);
 void	cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid);
 void	cmd_udpret(void)	SEC(BLIB);
 void	cmd_crvar(void)		SEC(BLIB);
@@ -166,8 +166,8 @@ void	cmd_bputc(void)					SEC(BIO2);
 void	cmd_bload(void)					SEC(BIO2);
 void	cmd_bsave(void)					SEC(BIO2);
 
-void    cmd_html(void)                  SEC(BMATH);
-void    cmd_image(void)                 SEC(BMATH);
+void cmd_html(void)                  SEC(BMATH);
+void cmd_image(void)                 SEC(BMATH);
 
 // blib_func
 

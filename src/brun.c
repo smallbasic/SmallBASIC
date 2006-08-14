@@ -1279,6 +1279,9 @@ void bc_loop(int isf)
                     // giving a duplicate case label error
                     cmd_print(PV_LOG);
                     break;
+                case kwCALLCP:
+                    cmd_udp(0, kwPROC);
+                    continue;;
                 default:
                     err_pcode_err(pcode);
                 }
@@ -1289,7 +1292,7 @@ void bc_loop(int isf)
                  * ----------------------------------------- */
 
             case kwTYPE_CALL_UDP:      // user defined procedure
-                cmd_udp(kwPROC);
+                cmd_udp(code_getaddr(), kwPROC);
                 if (isf)
                     proc_level++;
                 if (prog_error)
@@ -1297,7 +1300,7 @@ void bc_loop(int isf)
                 continue;
             case kwTYPE_CALL_UDF:      // user defined function
                 if (isf) {
-                    cmd_udp(kwFUNC);
+                    cmd_udp(code_getaddr(), kwFUNC);
                     proc_level++;
                 } else
                     err_syntax();
@@ -1400,7 +1403,6 @@ void bc_loop(int isf)
             case kwCHAIN:
                 cmd_chain();
                 break;
-
             case kwRUN:
                 cmd_run(1);
                 break;
@@ -1434,8 +1436,8 @@ void bc_loop(int isf)
                 rt_raise("COMMAND SEPARATOR '%c' FOUND!",
                          prog_source[prog_ip + 1]);
             else
-                rt_raise("PARAM COUNT ERROR @%d=%X", prog_ip,
-                         prog_source[prog_ip]);
+                rt_raise("PARAM COUNT ERROR @%d=%X %d", prog_ip,
+                         prog_source[prog_ip], code);
 #else
             err_invkw(prog_ip, code);
 #endif
@@ -1475,10 +1477,8 @@ void dump_stack()
                         dev_printf(" RIP: %d", node.x.vgosub.ret_ip);
                         if (prog_source[node.x.vgosub.ret_ip] == kwTYPE_LINE) {
                             dev_printf(" = LI %d",
-                                       (*
-                                        ((word *) (prog_source +
-                                                   node.x.vgosub.ret_ip + 1))) -
-                                       1);
+                                       (*((word *)(prog_source + 
+                                                   node.x.vgosub.ret_ip + 1))) - 1);
                         }
                         break;
                     }

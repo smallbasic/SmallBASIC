@@ -1,4 +1,4 @@
-// $Id: scan.c,v 1.17 2006-08-11 22:53:21 zeeb90au Exp $
+// $Id: scan.c,v 1.18 2006-08-14 13:39:05 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -475,8 +475,7 @@ bid_t comp_add_udp(const char *proc_name)
     if (idx == -1) {
         if (comp_udpcount >= comp_udpsize) {
             comp_udpsize += GROWSIZE;
-            comp_udptable =
-                tmp_realloc(comp_udptable, comp_udpsize * sizeof(comp_udp_t));
+            comp_udptable = tmp_realloc(comp_udptable, comp_udpsize * sizeof(comp_udp_t));
         }
 
         if (!(is_alpha(name[0]) || name[0] == '_'))
@@ -1135,7 +1134,6 @@ void comp_expression(char *expr, byte no_parser)
                                         bc_add_code(&bc, kwTYPE_PTR);
                                         bc_add_addr(&bc, udf);
                                         comp_push(comp_prog.count);
-                                        addr_opr = 0;
                                     } else {
                                         bc_add_code(&bc, kwTYPE_CALL_UDF);
                                         bc_add_addr(&bc, udf);
@@ -1145,7 +1143,7 @@ void comp_expression(char *expr, byte no_parser)
                                 } else {
                                     // VARIABLE
                                     if (addr_opr != 0) {
-                                        sc_raise("PTR to non existing location");
+                                        sc_raise("PTR to invalid SUB/FUNC");
                                         break;
                                     }
                                     while (*ptr == ' ')
@@ -1165,8 +1163,9 @@ void comp_expression(char *expr, byte no_parser)
                     }           // opr
                 }               // sp. sep
             }                   // check sep
-        }                       // isalpha
-        else if (*ptr == ',' || *ptr == ';' || *ptr == '#') {
+            addr_opr = 0;
+            // end isalpha block
+        } else if (*ptr == ',' || *ptr == ';' || *ptr == '#') {
             // parameter separator
             bc_add_code(&bc, kwTYPE_SEP);
             bc_add_code(&bc, *ptr);
@@ -1815,24 +1814,34 @@ void comp_text_line(char *text)
      * what's this ? 
      */
     idx = comp_is_keyword(comp_bc_name);
-    if (idx == kwREM)
+    if (idx == kwREM) {
         return;                 // remarks... return
+    }
     if (idx == -1) {
         idx = comp_is_proc(comp_bc_name);
         if (idx != -1) {
             // simple buildin procedure
-            // 
-            // there is no need to check it more...
-            // save it and return (go to next)
             bc_add_pcode(&comp_prog, idx);
-            comp_expression(comp_bc_parm, 0);
+
+            if (idx == kwCALLCP) {
+                // extract the first argument from comp_bc_parm
+                bc_add_addr(&comp_prog, 0); // return-variable ID
+                bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
+                // allow cmd_udp to find the initial var-ptr arg
+                bc_add_code(&comp_prog, kwTYPE_PTR); 
+                comp_expression(comp_bc_parm, 0);
+                bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+            } else {
+                // there is no need to check it more...
+                // save it and return (go to next)
+                comp_expression(comp_bc_parm, 0);
+            }
 
             if (*p == ':') {    // command separator
                 bc_eoc(&comp_prog);
                 p++;
                 comp_text_line(p);
             }
-
             return;
         }
     }
@@ -2015,8 +2024,7 @@ void comp_text_line(char *text)
                     else {
 
                         // setup routine's address (and get an id)
-                        if ((pidx =
-                             comp_udp_setip(pname, comp_prog.count)) == -1) {
+                        if ((pidx = comp_udp_setip(pname, comp_prog.count)) == -1) {
                             pidx = comp_add_udp(pname);
                             comp_udp_setip(pname, comp_prog.count);
                         }
@@ -2029,12 +2037,10 @@ void comp_text_line(char *text)
 
                         comp_block_level++;
                         comp_block_id++;
-                        comp_push(comp_prog.count);     // keep it in
-                        // stack for
-                        // 'pass2'
-                        bc_add_code(&comp_prog, idx);   // store
-                        // (FUNC/PROC)
-                        // code
+                        // keep it in stack for 'pass2'
+                        comp_push(comp_prog.count);     
+                        // store (FUNC/PROC) code
+                        bc_add_code(&comp_prog, idx);
 
                         // func/proc name (also, update comp_bc_proc)
                         if (comp_proc_level) {

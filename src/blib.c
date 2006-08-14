@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.13 2006-08-11 22:53:20 zeeb90au Exp $
+// $Id: blib.c,v 1.14 2006-08-14 13:39:05 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -988,16 +988,15 @@ void cmd_gosub()
 *
 *   @param cmd is the type of the udp (function or procedure)
 */
-void cmd_udp(int cmd)
+void cmd_udp(addr_t goto_addr, int cmd)
 {
     stknode_t param;
-    addr_t goto_addr;
     addr_t pcount = 0, rvid;
     var_t *arg = NULL;
     byte ready, code;
     addr_t ofs;
+    var_t var_ptr;
 
-    goto_addr = code_getaddr(); // UDP's real code address
     rvid = code_getaddr();      // return-variable ID
 
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -1007,6 +1006,16 @@ void cmd_udp(int cmd)
         do {
             code = code_peek(); // get next BC
             switch (code) {
+            case kwTYPE_PTR:
+                code_skipnext();
+                v_init(&var_ptr);
+                eval(&var_ptr);
+                if (var_ptr.type != V_PTR) {
+                    rt_raise("Invalid SUB/FUNC pointer variable");
+                    return;
+                }
+                goto_addr = var_ptr.v.ap;
+                break;
             case kwTYPE_EOC:   // end of an expression (parameter)
                 code_skipnext();        // ignore it
                 break;
