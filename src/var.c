@@ -1,4 +1,4 @@
-// $Id: var.c,v 1.5 2006-08-11 22:53:21 zeeb90au Exp $
+// $Id: var.c,v 1.6 2006-08-15 13:15:38 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -83,7 +83,7 @@ int v_isempty(var_t * var)
     case V_INT:
         return (var->v.i == 0);
     case V_PTR:
-        return (var->v.ap == 0);
+        return (var->v.ap.p == 0);
     case V_NUM:
         return (var->v.n == 0.0);
     case V_ARRAY:
@@ -104,7 +104,7 @@ int v_length(var_t * var)
     case V_STR:
         return strlen((char *)var->v.p.ptr);
     case V_PTR:
-        ltostr(var->v.ap, tmpsb);
+        ltostr(var->v.ap.p, tmpsb);
         return strlen(tmpsb);
     case V_INT:
         ltostr(var->v.i, tmpsb);
@@ -129,7 +129,7 @@ double v_getval(var_t * v)
     else {
         switch (v->type) {
         case V_PTR:
-            return v->v.ap;
+            return v->v.ap.p;
         case V_INT:
             return v->v.i;
         case V_NUM:
@@ -153,7 +153,7 @@ long v_igetval(var_t * v)
     } else {
         switch (v->type) {
         case V_PTR:
-            return v->v.ap;
+            return v->v.ap.p;
         case V_INT:
             return v->v.i;
         case V_NUM:
@@ -387,7 +387,7 @@ int v_is_nonzero(var_t * v)
     case V_STR:
         return (v->v.p.size != 0);
     case V_PTR:
-        return (v->v.ap != 0);
+        return (v->v.ap.p != 0);
     case V_ARRAY:
         return (v->v.a.size != 0);
     };
@@ -674,7 +674,7 @@ void v_tostr(var_t * arg)
 
         switch (arg->type) {
         case V_PTR:
-            ltostr(arg->v.ap, tmp);
+            ltostr(arg->v.ap.p, tmp);
             break;
         case V_INT:
             ltostr(arg->v.i, tmp);

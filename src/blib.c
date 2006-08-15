@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.14 2006-08-14 13:39:05 zeeb90au Exp $
+// $Id: blib.c,v 1.15 2006-08-15 13:15:37 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -17,7 +17,6 @@
 #include "pproc.h"
 #include "smbas.h"
 #include "fmt.h"
-
 
 #ifndef USE_TERM_IO
 #if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
@@ -988,7 +987,7 @@ void cmd_gosub()
 *
 *   @param cmd is the type of the udp (function or procedure)
 */
-void cmd_udp(addr_t goto_addr, int cmd)
+void cmd_udp(int cmd)
 {
     stknode_t param;
     addr_t pcount = 0, rvid;
@@ -996,26 +995,32 @@ void cmd_udp(addr_t goto_addr, int cmd)
     byte ready, code;
     addr_t ofs;
     var_t var_ptr;
+    addr_t goto_addr;
 
+    goto_addr = code_getaddr(); // target sub/func
     rvid = code_getaddr();      // return-variable ID
 
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
         code_skipnext();        // kwTYPE_LEVEL_BEGIN (which means left-parenthesis)
 
+        if (code_peek() == kwTYPE_CALL_PTR) {
+            // replace call address with address in first arg
+            code_skipnext();
+            v_init(&var_ptr);
+            eval(&var_ptr);
+            if (var_ptr.type != V_PTR || var_ptr.v.ap.p == 0) {
+                rt_raise("Invalid %s pointer variable", 
+                         cmd==kwPROC ? "SUB" : "FUNC");
+                return;
+            }
+            goto_addr = var_ptr.v.ap.p;
+            rvid = var_ptr.v.ap.v;
+        }
+
         ready = 0;
         do {
             code = code_peek(); // get next BC
             switch (code) {
-            case kwTYPE_PTR:
-                code_skipnext();
-                v_init(&var_ptr);
-                eval(&var_ptr);
-                if (var_ptr.type != V_PTR) {
-                    rt_raise("Invalid SUB/FUNC pointer variable");
-                    return;
-                }
-                goto_addr = var_ptr.v.ap;
-                break;
             case kwTYPE_EOC:   // end of an expression (parameter)
                 code_skipnext();        // ignore it
                 break;

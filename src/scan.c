@@ -1,4 +1,4 @@
-// $Id: scan.c,v 1.18 2006-08-14 13:39:05 zeeb90au Exp $
+// $Id: scan.c,v 1.19 2006-08-15 13:15:38 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -852,8 +852,9 @@ fcode_t comp_is_func(const char *name)
     }
 
     for (i = 0; func_table[i].name[0] != '\0'; i++) {
-        if (strcmp(func_table[i].name, name) == 0)
+        if (strcmp(func_table[i].name, name) == 0) {
             return func_table[i].fcode;
+        }
     }
 
     if (dolar_sup) {
@@ -1064,7 +1065,22 @@ void comp_expression(char *expr, byte no_parser)
                         sc_raise(MSG_BF_ARGERR, comp_bc_name);
                     }
                 }
-                bc_add_fcode(&bc, idx);
+                if (idx == kwCALLCF) {
+                    bc_add_code(&bc, kwTYPE_CALL_UDF);
+                    bc_add_addr(&bc, idx); // place holder
+                    bc_add_addr(&bc, 0); // return-variable ID
+                    bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
+                    bc_add_code(&bc, kwTYPE_CALL_PTR); // next is address
+                    // skip next ( since we already added kwTYPE_LEVEL_BEGIN
+                    // to allow kwTYPE_CALL_PTR to be the next code
+                    char* par = comp_next_char(ptr);
+                    if (*par == '(') {
+                        ptr = par+1;
+                        level++;
+                    }
+                } else {
+                    bc_add_fcode(&bc, idx);
+                }
                 check_udf++;
             } else {
                 /*
@@ -1131,19 +1147,18 @@ void comp_expression(char *expr, byte no_parser)
                                     // UDF
                                     if (addr_opr != 0) {
                                         // pointer to UDF
-                                        bc_add_code(&bc, kwTYPE_PTR);
-                                        bc_add_addr(&bc, udf);
-                                        comp_push(comp_prog.count);
+                                        bc_add_code(&bc, kwTYPE_PTR); 
                                     } else {
                                         bc_add_code(&bc, kwTYPE_CALL_UDF);
-                                        bc_add_addr(&bc, udf);
-                                        bc_add_addr(&bc, 0);
-                                        check_udf++;
                                     }
+                                    check_udf++;
+                                    bc_add_addr(&bc, udf);
+                                    bc_add_addr(&bc, 0);  // var place holder
                                 } else {
                                     // VARIABLE
                                     if (addr_opr != 0) {
                                         sc_raise("PTR to invalid SUB/FUNC");
+                                        kw_exec_more = level = 0;
                                         break;
                                     }
                                     while (*ptr == ' ')
@@ -1286,6 +1301,13 @@ void comp_expression(char *expr, byte no_parser)
                     comp_push(cip);
                     cip += (1 + ADDRSZ + ADDRSZ);
                 }
+
+                cip = stip;
+                while ((cip = comp_search_bc(cip, kwTYPE_PTR)) != INVALID_ADDR) {
+                    comp_push(cip);
+                    cip += (1 + ADDRSZ + ADDRSZ);
+                }
+
             }
         }
 
@@ -1820,20 +1842,20 @@ void comp_text_line(char *text)
     if (idx == -1) {
         idx = comp_is_proc(comp_bc_name);
         if (idx != -1) {
-            // simple buildin procedure
-            bc_add_pcode(&comp_prog, idx);
-
             if (idx == kwCALLCP) {
-                // extract the first argument from comp_bc_parm
+                bc_add_code(&comp_prog, kwTYPE_CALL_UDP);
+                bc_add_addr(&comp_prog, idx); // place holder
                 bc_add_addr(&comp_prog, 0); // return-variable ID
                 bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
                 // allow cmd_udp to find the initial var-ptr arg
-                bc_add_code(&comp_prog, kwTYPE_PTR); 
+                bc_add_code(&comp_prog, kwTYPE_CALL_PTR); 
                 comp_expression(comp_bc_parm, 0);
                 bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
             } else {
+                // simple buildin procedure
                 // there is no need to check it more...
                 // save it and return (go to next)
+                bc_add_pcode(&comp_prog, idx);
                 comp_expression(comp_bc_parm, 0);
             }
 
@@ -2533,7 +2555,6 @@ addr_t comp_next_bc_cmd(addr_t ip)
         ip++;
         break;
 
-    case kwTYPE_PTR:
     case kwRESTORE:
     case kwGOSUB:
     case kwTYPE_LINE:
@@ -2541,6 +2562,7 @@ addr_t comp_next_bc_cmd(addr_t ip)
     case kwSELECT:
         ip += ADDRSZ;
         break;
+    case kwTYPE_PTR:
     case kwTYPE_CALL_UDP:
     case kwTYPE_CALL_UDF:      // [true-ip][false-ip]
         ip += BC_CTRLSZ;
@@ -2926,20 +2948,11 @@ void comp_pass2_scan()
             memcpy(&label_id, comp_prog.ptr + node.pos + 1, ADDRSZ);
             dbt_read(comp_labtable, label_id, &label, sizeof(comp_label_t));
             count = comp_first_data_ip + label.dp;
-            memcpy(comp_prog.ptr + node.pos + 1, &count, ADDRSZ);       // change 
-                                                                        // 
-            // LABEL-ID 
-            // with 
-            // DataPointer
+            memcpy(comp_prog.ptr + node.pos + 1, &count, ADDRSZ);       
+            // change LABEL-ID with DataPointer
             break;
 
         case kwTYPE_PTR:
-            // convert udf-id to IP
-            memcpy(&label_id, comp_prog.ptr + node.pos + 1, ADDRSZ);
-            true_ip = comp_udptable[label_id].ip + (ADDRSZ + 3);
-            memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
-            break;
-
         case kwTYPE_CALL_UDP:
         case kwTYPE_CALL_UDF:
             // update real IP

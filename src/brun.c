@@ -1279,9 +1279,6 @@ void bc_loop(int isf)
                     // giving a duplicate case label error
                     cmd_print(PV_LOG);
                     break;
-                case kwCALLCP:
-                    cmd_udp(0, kwPROC);
-                    continue;;
                 default:
                     err_pcode_err(pcode);
                 }
@@ -1292,7 +1289,7 @@ void bc_loop(int isf)
                  * ----------------------------------------- */
 
             case kwTYPE_CALL_UDP:      // user defined procedure
-                cmd_udp(code_getaddr(), kwPROC);
+                cmd_udp(kwPROC);
                 if (isf)
                     proc_level++;
                 if (prog_error)
@@ -1300,7 +1297,7 @@ void bc_loop(int isf)
                 continue;
             case kwTYPE_CALL_UDF:      // user defined function
                 if (isf) {
-                    cmd_udp(code_getaddr(), kwFUNC);
+                    cmd_udp(kwFUNC);
                     proc_level++;
                 } else
                     err_syntax();

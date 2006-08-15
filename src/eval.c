@@ -1,4 +1,4 @@
-// $Id: eval.c,v 1.5 2006-08-11 22:53:20 zeeb90au Exp $
+// $Id: eval.c,v 1.6 2006-08-15 13:15:38 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -345,7 +345,8 @@ void eval(var_t * r)
             V_FREE(r);
             r->type = V_PTR;
             r->const_flag = 1;
-            r->v.ap = code_getaddr();
+            r->v.ap.p = code_getaddr();
+            r->v.ap.v = code_getaddr();
             break;
             
             // ////////////// variable ///////////////////
@@ -360,7 +361,8 @@ void eval(var_t * r)
             switch (var_p->type) {
             case V_PTR:
                 r->type = V_PTR;
-                r->v.ap = var_p->v.ap;
+                r->v.ap.p = var_p->v.ap.p;
+                r->v.ap.v = var_p->v.ap.v;
                 break;
             case V_INT:
                 r->type = V_INT;
@@ -1183,7 +1185,6 @@ void eval(var_t * r)
             break;
 
         case kwTYPE_CALL_UDF:
-
             prog_ip--;
             bc_loop(1);
 
