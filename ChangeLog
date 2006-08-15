@@ -1,9 +1,21 @@
 
 2006-08-12	<cwarrensmith@gmail.com>
-       * add support for func/sub pointer variables:
-	sub foo
-	end
-	fp = @foo
+       * added support for func/sub pointer variables used with the call statement:
+	func foo(s)
+         foo="foo!"+s
+       end
+       sub bar
+         ? "in bar"
+       end
+       p = @foo
+       ? call(@foo, "#")
+       ? call(p, "%")
+       pb = @bar
+       call pb
+       call @bar
+ 
+       * USRCALL has been removed since it never worked and the above
+ 	is a better replacement (IMHO)
 	
 2006-07-28	<cwarrensmith@gmail.com>
 	* updated chain command to take string or array	of string arguments in 
