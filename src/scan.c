@@ -1,4 +1,4 @@
-// $Id: scan.c,v 1.19 2006-08-15 13:15:38 zeeb90au Exp $
+// $Id: scan.c,v 1.20 2006-08-16 06:57:08 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -75,7 +75,6 @@ void err_comp_unknown_unit(const char *name) SEC(BCSC2);
 void err_comp_label_not_def(const char *name) SEC(BCSC2);
 void err_comp_missing_lp() SEC(BCSC2);
 void err_comp_missing_rp() SEC(BCSC2);
-void err_comp_missing_q() SEC(BCSC2);
 void err_wrongproc(const char *name) SEC(BCSC2);
 
 #if defined(_WinBCB)
@@ -86,11 +85,6 @@ extern void bcb_comp(int pass, int pmin, int pmax);     // Win32GUI
 void err_wrongproc(const char *name)
 {
     sc_raise(MSG_WRONG_PROCNAME, name);
-}
-
-void err_comp_missing_q()
-{
-    sc_raise(MSG_EXP_MIS_DQ);
 }
 
 void err_comp_missing_rp()
@@ -595,10 +589,12 @@ char *get_param_sect(char *text, const char *delim, char *dest)
         p++;
     }
 
-    *d = '\0';
     if (quotes) {
-        err_comp_missing_q();
+        *d++ = '\"';
     }
+
+    *d = '\0';
+
     if (level > 0) {
         err_comp_missing_rp();
     }
@@ -3635,7 +3631,8 @@ char *comp_format_text(const char *source)
             if (*p == '\\' && *(p + 1) == '\"') {
                 // add the escaped quote and continue
                 *ps++ = *p++;
-            } else if (*p == '\"') {
+            } else if (*p == '\"' || *p == '\n') {
+                // new line auto-ends the quoted string
                 quotes = !quotes;
             }
             *ps++ = *p++;
@@ -3936,9 +3933,9 @@ int comp_pass1(const char *section, const char *text)
          */
         if (strncmp(LCN_OPTION, p, len_option) == 0) {
             p += len_option;
-            while (*p == ' ')
+            while (*p == ' ') {
                 p++;
-
+            }
             if (strncmp(LCN_PREDEF, p, strlen(LCN_PREDEF)) == 0) {
                 p += strlen(LCN_PREDEF);
                 while (*p == ' ')
@@ -3957,18 +3954,18 @@ int comp_pass1(const char *section, const char *text)
                     char *pe;
 
                     p += strlen(LCN_COMMAND);
-                    while (*p == ' ')
+                    while (*p == ' ') {
                         p++;
-
+                    }
                     pe = p;
-                    while (*pe != '\0' && *pe != '\n')
+                    while (*pe != '\0' && *pe != '\n') {
                         pe++;
-
+                    }
                     lc = *pe;
                     *pe = '\0';
-                    if (strlen(p) < OPT_CMD_SZ)
+                    if (strlen(p) < OPT_CMD_SZ) {
                         strcpy(opt_command, p);
-                    else {
+                    } else {
                         memcpy(opt_command, p, OPT_CMD_SZ - 1);
                         opt_command[OPT_CMD_SZ - 1] = '\0';
                     }
@@ -3990,10 +3987,11 @@ int comp_pass1(const char *section, const char *text)
          *      UNIT name
          */
         else if (strncmp(LCN_UNIT_WRS, p, len_unit) == 0) {
-            if (comp_unit_flag)
+            if (comp_unit_flag) {
                 sc_raise(MSG_MANY_UNIT_DECL);
-            else
+            } else {
                 comp_preproc_unit(p + len_unit);
+            }
             comp_preproc_remove_line(p, 1);
         }
         /*
@@ -4006,15 +4004,16 @@ int comp_pass1(const char *section, const char *text)
 
             ps = p;
             p += len_unit_path;
-            while (*p == ' ')
+            while (*p == ' ') {
                 p++;
-
-            if (*p == '\"')
+            }
+            if (*p == '\"') {
                 p++;
-
+            }
             up = upath;
-            while (*p != '\n' && *p != '\"')
+            while (*p != '\n' && *p != '\"') {
                 *up++ = *p++;
+            }
             *up = '\0';
 
             sprintf(comp_bc_temp, "SB_UNIT_PATH=%s", upath);
@@ -4090,37 +4089,40 @@ int comp_pass1(const char *section, const char *text)
                 char *dp;
                 int single_line_f = 0;
 
-                if (strncmp(LCN_SUB_WRS, p, len_sub) == 0)
+                if (strncmp(LCN_SUB_WRS, p, len_sub) == 0) {
                     p += len_sub;
-                else if (strncmp(LCN_FUNC_WRS, p, len_func) == 0)
+                } else if (strncmp(LCN_FUNC_WRS, p, len_func) == 0) {
                     p += len_func;
-                else
+                } else {
                     p += len_def;
-
+                }
                 // skip spaces
-                while (*p == ' ')
+                while (*p == ' ') {
                     p++;
-
+                }
                 // copy proc/func name
                 dp = pname;
-                while (is_alnum(*p) || *p == '_')
+                while (is_alnum(*p) || *p == '_') {
                     *dp++ = *p++;
+                }
                 *dp = '\0';
 
                 // search for '='
-                while (*p != '\n' && *p != '=')
+                while (*p != '\n' && *p != '=') {
                     p++;
+                }
                 if (*p == '=') {
                     single_line_f = 1;
-                    while (*p != '\n')
+                    while (*p != '\n') {
                         p++;
+                    }
                 }
                 // add declaration
-                if (comp_udp_getip(pname) == INVALID_ADDR)
+                if (comp_udp_getip(pname) == INVALID_ADDR) {
                     comp_add_udp(pname);
-                else
+                } else {
                     sc_raise(MSG_UDP_ALREADY_DECL, pname);
-
+                }
                 // func/proc name (also, update comp_bc_proc)
                 if (comp_proc_level) {
                     strcat(comp_bc_proc, "/");
@@ -4130,17 +4132,18 @@ int comp_pass1(const char *section, const char *text)
                 }
 
                 // 
-                if (!single_line_f)
+                if (!single_line_f) {
                     comp_proc_level++;
-                else {
+                } else {
                     // inline (DEF FN)
                     char *dol;
 
                     dol = strrchr(comp_bc_proc, '/');
-                    if (dol)
+                    if (dol) {
                         *dol = '\0';
-                    else
+                    } else {
                         *comp_bc_proc = '\0';
+                    }
                 }
             }
 
@@ -4153,29 +4156,31 @@ int comp_pass1(const char *section, const char *text)
                     char *dol;
 
                     dol = strrchr(comp_bc_proc, '/');
-                    if (dol)
+                    if (dol) {
                         *dol = '\0';
-                    else
+                    } else {
                         *comp_bc_proc = '\0';
-
+                    }
                     comp_proc_level--;
                 }
             }
-        }                       /* OPTION */
+        } /* OPTION */
 
         /*
          *      skip text line
          */
-        while (*p != '\0' && *p != '\n')
+        while (*p != '\0' && *p != '\n') {
             p++;
+        }
 
-        if (*p)
+        if (*p) {
             p++;
+        }
     }
 
-    if (comp_proc_level)
+    if (comp_proc_level) {
         sc_raise(MSG_UDP_MIS_END_2, comp_file_name, comp_bc_proc);
-
+    }
     comp_proc_level = 0;
     *comp_bc_proc = '\0';
 
@@ -4201,9 +4206,9 @@ int comp_pass1(const char *section, const char *text)
         comp_line = 0;
         if (!opt_quiet && !opt_interactive) {
 #if defined(_UnixOS)
-            if (!isatty(STDOUT_FILENO))
+            if (!isatty(STDOUT_FILENO)) {
                 fprintf(stdout, MSG_PASS1);
-            else {
+            } else {
 #endif
 
                 dev_printf(MSG_PASS1_COUNT, comp_line + 1);
@@ -4248,8 +4253,9 @@ int comp_pass1(const char *section, const char *text)
 #endif
                 }
 #if defined(_WinBCB)
-                if ((comp_line % 256) == 0)
+                if ((comp_line % 256) == 0) {
                     bcb_comp(1, comp_line + 1, 0);
+                }
 #endif
 
                 // add debug info: line-number

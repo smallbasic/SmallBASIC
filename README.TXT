@@ -1,5 +1,28 @@
-Installation from source step-by-step
--------------------------------------
+
+===============================================================================
+Installation from source for FLTK, N770(GTK) or command line versions
+
+> sh autogen.sh
+
+For FLTK version (see sync/ide-fltk/README.TXT for further details)
+> ./configure --enable-fltk
+> make -s
+
+For GTK version
+> ./configure --enable-gtk --disable-hildon
+> make -s
+
+For N770 version
+> ./configure --enable-gtk
+> make deb -s
+
+For non-graphical console version (cygwin or linux)
+> ./configure
+> make
+
+===============================================================================
+
+Installation from source step-by-step for other versions:
 
 1. Unpack files to a directory
 
@@ -42,8 +65,8 @@ Installation from source step-by-step
 		# man sbasic
 
 
+===============================================================================
 Directories
------------
 
 sync/
 The source code directory tree
