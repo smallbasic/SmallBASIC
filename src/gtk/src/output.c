@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.41 2006-08-08 12:09:35 zeeb90au Exp $
+ * $Id: output.c,v 1.42 2006-08-17 11:57:34 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -580,7 +580,9 @@ char* dev_gets(char *dest, int size) {
     
     gtk_widget_show(entry);
     gtk_widget_grab_focus(entry);
+#ifdef USE_HILDON
     gtk_im_context_show(GTK_ENTRY(entry)->im_context);
+#endif
 
     output.modal_flag = TRUE;
     while (output.modal_flag && output.break_exec == 0) {
@@ -736,5 +738,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.41 2006-08-08 12:09:35 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.42 2006-08-17 11:57:34 zeeb90au Exp $". */
 
