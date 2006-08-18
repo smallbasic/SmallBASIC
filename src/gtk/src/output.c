@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.42 2006-08-17 11:57:34 zeeb90au Exp $
+ * $Id: output.c,v 1.43 2006-08-18 21:51:29 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -509,36 +509,36 @@ gboolean key_press_event(GtkWidget* widget,
     switch(event->keyval) {
     case GDK_Up: // Navigation Key Up
         handle_key(KEYMAP_UP, SB_KEY_UP, GDK_Up, data);
-        return TRUE;
+        break;
         
     case GDK_Down: // Navigation Key Down
         handle_key(KEYMAP_DOWN, SB_KEY_DN, GDK_Down, data);
-        return TRUE;
+        break;
         
     case GDK_Left: // Navigation Key Left
         handle_key(KEYMAP_LEFT, SB_KEY_LEFT, GDK_Left, data);
-        return TRUE;
+        break;
         
     case GDK_Right: // Navigation Key Right
         handle_key(KEYMAP_RIGHT, SB_KEY_RIGHT, GDK_Right, data);
-        return TRUE;
+        break;
 
     case GDK_F7: // Increase(zoom in)
         handle_key(KEYMAP_F7, SB_KEY_PGUP, GDK_F7, data);
-        return TRUE;
+        break;
         
     case GDK_F8: // Decrease(zoom out)
         handle_key(KEYMAP_F8, SB_KEY_PGDN, GDK_F8, data);
-        return TRUE;
+        break;
         
     case GDK_F6: // Full screen
         handle_key(KEYMAP_F6, SB_KEY_HOME, GDK_F6, data);
-        return TRUE;
+        break;
 
     case GDK_Return: // Navigation Key select
     case GDK_KP_Enter:
         output.modal_flag = FALSE;
-        return TRUE;
+        break; 
     
     case GDK_Escape: // Cancel/Close
         output.break_exec = 1;
@@ -551,7 +551,7 @@ gboolean key_press_event(GtkWidget* widget,
             return TRUE;
         }
     }
-    return FALSE;
+    return FALSE; // continue event processing
 }
 
 void input_changed(GtkEditable* editable, GtkWidget* entry) {
@@ -738,5 +738,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.42 2006-08-17 11:57:34 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.43 2006-08-18 21:51:29 zeeb90au Exp $". */
 

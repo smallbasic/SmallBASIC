@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.36 2006-08-08 12:09:35 zeeb90au Exp $
+ * $Id: form_ui.c,v 1.37 2006-08-18 21:51:29 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -31,7 +31,7 @@
 
 GtkWidget* form = 0;
 GtkWidget* notebook = 0;
-enum {m_unset, m_init, m_active, m_clicked} modeless = m_unset;
+enum {m_unset, m_init, m_modeless, m_modal, m_clicked} mode = m_unset;
 int modeless_x;
 int modeless_y;
 int modeless_w;
@@ -48,6 +48,7 @@ typedef enum ControlType {
     ctrl_radio,
     ctrl_check,
     ctrl_text,
+    ctrl_text_multi,
     ctrl_label,
     ctrl_list,
     ctrl_grid,
@@ -96,11 +97,9 @@ void remove_children(GtkWidget* container) {
             for (j=0; j<n_pages; j++) {
                 GtkWidget* table = gtk_notebook_get_nth_page(GTK_NOTEBOOK(w), j);
                 remove_children(table);
-                //gtk_widget_destroy(table);
             }
         }
         g_free(inf);
-        //gtk_widget_destroy(w);
     }
     g_list_free(list);
 }
@@ -112,8 +111,21 @@ void ui_reset() {
         gtk_widget_destroy(form);
         form = 0;
     }
-    modeless = m_unset;
+    mode = m_unset;
     notebook = 0;
+}
+
+gchar* get_multi_edit_text(GtkWidget* scolled_window) {
+    GtkTextIter start, end;
+    GtkTextBuffer *buffer;
+
+    GtkWidget* widget = gtk_bin_get_child(GTK_BIN(scolled_window));
+    buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+
+    gtk_text_buffer_get_start_iter(buffer, &start);
+    gtk_text_buffer_get_end_iter(buffer, &end);
+
+    return gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
 }
 
 // copy widget data into its matching basic variable
@@ -144,6 +156,13 @@ void update_vars(GtkWidget* widget) {
             v_setstr(inf->var, text);
         }
         // internal text not freed
+        break;
+    case ctrl_text_multi:
+        text = get_multi_edit_text(widget);
+        if (text && text[0]) {
+            v_setstr(inf->var, text);
+        }
+        g_free(text);
         break;
     case ctrl_list:
         text = gtk_combo_box_get_active_text(GTK_COMBO_BOX(widget));
@@ -209,14 +228,13 @@ void button_clicked(GtkWidget* button, gpointer user_data) {
     v_setstr(inf->var, gtk_button_get_label(GTK_BUTTON(button)));
 
     if (user_data) {
-        // submit button - close the form
-        output.modal_flag = FALSE;
-        if (modeless != m_unset) {
+        // submit button - close modeless form
+        if (mode == m_modeless) {
             ui_reset();
         }
     }
-    if (modeless != m_unset) {
-        modeless = m_clicked;
+    if (mode != m_unset) {
+        mode = m_clicked;
     }
 }
 
@@ -280,7 +298,7 @@ void add_form_child(GtkWidget* widget, int expand, int x1, int x2, int y1, int y
                          (GtkAttachOptions)(GTK_FILL),
                          (GtkAttachOptions)(0), 0, 0);
     }
-    if (modeless != m_unset) {
+    if (mode != m_unset) {
         gtk_widget_show(widget);
     }
 }
@@ -346,9 +364,8 @@ void on_treeview_row_activated(GtkTreeView* treeview,
                                GtkTreePath* path,
                                GtkTreeViewColumn* column,
                                gpointer user_data) {
-    output.modal_flag = FALSE;
-    if (modeless != m_unset) {
-        modeless = m_clicked;
+    if (mode != m_unset) {
+        mode = m_clicked;
         ui_reset();
     }
 }
@@ -428,7 +445,8 @@ GtkWidget* create_grid(const char* caption, var_t* v) {
     }
 
     GtkWidget* scrolledwindow = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolledwindow), GTK_SHADOW_IN);
+    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolledwindow), 
+                                        GTK_SHADOW_IN);
     gtk_container_add(GTK_CONTAINER(scrolledwindow), view);
 
     return scrolledwindow;
@@ -563,7 +581,7 @@ void cmd_button() {
             widget = gtk_button_new_with_mnemonic(caption);
             g_signal_connect((gpointer)widget, "clicked",
                              G_CALLBACK(button_clicked),
-                             (gpointer)(modeless == m_unset ? TRUE : FALSE));
+                             (gpointer)(mode == m_unset ? TRUE : FALSE));
         }
 
         set_widget_info(widget, inf);
@@ -581,13 +599,14 @@ void cmd_button() {
     pfree2(caption, type);
 }
 
-// TEXT x1, x2, y1, y2, variable
+// TEXT x1, x2, y1, y2, variable  [|"multiline"]
 // When DOFORM returns the variable contains the user entered value
 //
 void cmd_text() {
     int x1, x2, y1, y2;
     var_t arg;
     var_t* v = 0;
+    char* type = 0;
 
     v_init(&arg);
     eval(&arg);
@@ -608,24 +627,49 @@ void cmd_text() {
         v_free(&arg);
     }
 
-    if (-1 != par_massget("IIIP", &x2, &y1, &y2, &v)) {
+    if (-1 != par_massget("IIIPs", &x2, &y1, &y2, &v, &type)) {
         ui_begin();
-        GtkWidget* widget = gtk_entry_new();
-
-        // prime field from var_t
-        if (v->type == V_STR && v->v.p.ptr) {
-            gtk_entry_set_text(GTK_ENTRY(widget), (const char*)v->v.p.ptr);
-        }
-
-        add_form_child(widget, FALSE, x1, x2, y1, y2);
-        gtk_entry_set_has_frame(GTK_ENTRY(widget), TRUE);
-        gtk_entry_set_max_length(GTK_ENTRY(widget), 100);
-        gtk_widget_grab_focus(widget);
 
         WidgetInfo* inf = (WidgetInfo*)g_malloc(sizeof(WidgetInfo));
         inf->var = v;
-        inf->type = ctrl_text;
-        set_widget_info(widget, inf);
+
+        if (type && g_ascii_strcasecmp("multiline", type) == 0) {
+            GtkWidget* widget = gtk_text_view_new();
+            inf->type = ctrl_text_multi;
+
+            // prime field from var_t
+            if (v->type == V_STR && v->v.p.ptr) {
+                GtkTextBuffer *buffer = 
+                    gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+                gtk_text_buffer_set_text(buffer, (const char*)v->v.p.ptr, -1);
+            }
+            
+            GtkWidget* scrolledwindow = gtk_scrolled_window_new(NULL, NULL);
+            gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolledwindow), 
+                                                GTK_SHADOW_ETCHED_IN);
+            gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwindow),
+                                           GTK_POLICY_AUTOMATIC,
+                                           GTK_POLICY_AUTOMATIC);
+            gtk_container_add(GTK_CONTAINER(scrolledwindow), widget);
+
+            set_widget_info(scrolledwindow, inf);            
+            add_form_child(scrolledwindow, TRUE, x1, x2, y1, y2);
+        } else {
+            GtkWidget* widget = gtk_entry_new();
+            inf->type = ctrl_text;
+            
+            // prime field from var_t
+            if (v->type == V_STR && v->v.p.ptr) {
+                gtk_entry_set_text(GTK_ENTRY(widget), (const char*)v->v.p.ptr);
+            }
+            
+            gtk_entry_set_has_frame(GTK_ENTRY(widget), TRUE);
+            gtk_entry_set_max_length(GTK_ENTRY(widget), 100);
+            
+            set_widget_info(widget, inf);
+            add_form_child(widget, FALSE, x1, x2, y1, y2);
+        }
+        pfree(type);
     }
 }
 
@@ -648,8 +692,8 @@ void cmd_doform() {
     num_args = par_massget("iiii", &x, &y, &w, &h);
 
     if (form == 0) {
-        // begin modeless state - m_unset, m_init, m_active
-        modeless = m_init;
+        // begin modeless state - m_unset, m_init, m_modeless
+        mode = m_init;
         modeless_x = x;
         modeless_y = y;
         modeless_w = w;
@@ -657,7 +701,7 @@ void cmd_doform() {
         return;
     }
 
-    if (modeless != m_unset) {
+    if (mode != m_unset) {
         // continue modeless state
         if (form == 0) {
             rt_raise("UI: FORM HAS CLOSED");
@@ -665,8 +709,8 @@ void cmd_doform() {
         }
 
         // set form position in initial iteration
-        if (modeless == m_init) {
-            modeless = m_active;
+        if (mode == m_init) {
+            mode = m_modeless;
             if (num_args == 0) {
                 // apply coordinates from inital doform call
                 x = modeless_x;
@@ -676,10 +720,10 @@ void cmd_doform() {
             }
         } else {
             // pump system messages until button is clicked
-            while (modeless == m_active && output.break_exec == 0) {
+            while (mode == m_modeless && output.break_exec == 0) {
                 gtk_main_iteration_do(TRUE);
             }
-            modeless = m_active;
+            mode = m_modeless;
             ui_transfer_data(form);
             return;
         }
@@ -708,15 +752,14 @@ void cmd_doform() {
     gtk_widget_grab_focus(form);
     gtk_widget_show_all(form);
 
-    if (modeless == m_unset) {
-        output.modal_flag = TRUE;
-        while (output.modal_flag && output.break_exec == 0) {
+    if (mode == m_unset) {
+        mode = m_modal;
+        while (mode == m_modal && output.break_exec == 0) {
             gtk_main_iteration_do(TRUE);
         }
-
         ui_transfer_data(form);
         ui_reset();
     }
 }
 
-/* End of "$Id: form_ui.c,v 1.36 2006-08-08 12:09:35 zeeb90au Exp $". */
+/* End of "$Id: form_ui.c,v 1.37 2006-08-18 21:51:29 zeeb90au Exp $". */
