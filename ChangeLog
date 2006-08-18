@@ -1,13 +1,16 @@
 
+2006-08-19	<cwarrensmith@gmail.com>
+	* added "multiline" option to the TEXT command to support
+	the multiline edit control (GTK)
+	
 2006-08-16	<cwarrensmith@gmail.com>
-       * Fixed error message with unterminated strings in a sub or func. 
-	  complained about missing END instead of the missing " char
+	* Fixed error message with unterminated strings in a sub or func. 
+	complained about missing END instead of the missing " char
 	* Quoted strings no longer required the end quote char. A new line is 
-	 taken as the end of string.
-
+	taken as the end of string.
 	
 2006-08-12	<cwarrensmith@gmail.com>
-       * added support for func/sub pointer variables used with the call statement:
+	* added support for func/sub pointer variables used with the call statement:
 	func foo(s)
          foo="foo!"+s
        end
@@ -21,7 +24,7 @@
        call pb
        call @bar
  
-       * USRCALL has been removed since it never worked and the above
+	* USRCALL has been removed since it never worked and the above
  	is a better replacement (IMHO)
 	
 2006-07-28	<cwarrensmith@gmail.com>
@@ -44,15 +47,13 @@
 ================================================================================
 
 Future ideas:
-- MediaWiki link to help and error codes	
 - Add support for detecting another program has changed
   the edited file in fltk version
 - Add command argument GUI for fltk to allow run time args to be set.
   usefull when creating command line based applications.
 - Add option to FLTK version to support run once and then terminate
-- replace keywords.txt with internal buffer	
-- Add break point, variable inspection, step/resume options. line
-  number byte-code generation to depend on user option (FLTK)
+- replace keywords.txt with internal buffer (FLTK)
+- Add break point, variable inspection, step/resume options.
 	
 Refer to sync/Changes for more history
 This log has been created for autotools support	
