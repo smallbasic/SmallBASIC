@@ -45,7 +45,6 @@ libsb_common_a_SOURCES =                  \
     proc.c                                \
     sberr.c sberr.h                       \
     scan.c scan.h                         \
-    str.c str.h                           \
     tasks.c tasks.h                       \
     units.c units.h                       \
     var.c var.h                           \
