@@ -2,6 +2,8 @@
 2006-08-19	<cwarrensmith@gmail.com>
 	* added "multiline" option to the TEXT command to support
 	the multiline edit control (GTK)
+	* fixed RINSTR command to work as advertised.
+	* TSAVE can now take a file number arg like TLOAD
 	
 2006-08-16	<cwarrensmith@gmail.com>
 	* Fixed error message with unterminated strings in a sub or func. 
