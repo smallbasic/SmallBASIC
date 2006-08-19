@@ -15,7 +15,6 @@ sbasic_SOURCES = 								\
   ../dev_genfb.c 								\
   ../device.c 									\
   ../dev_oss.c									\
-  ../unx_memmgr.c 								\
   ../dev_term.c 								\
   ../g_line.c 									\
   ../decomp.c 									\
