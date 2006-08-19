@@ -237,7 +237,7 @@ struct func_keyword_s func_table[] = {
 { "TIME",			kwTIME },
 { "DATE",			kwDATE },
 { "INSTR",			kwINSTR },
-{ "RINSTR",			kwINSTR },
+{ "RINSTR",			kwRINSTR },
 { "LBOUND",			kwLBOUND },
 { "UBOUND",			kwUBOUND },
 { "LEN",			kwLEN },

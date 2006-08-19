@@ -1,4 +1,4 @@
-// $Id: blib_func.c,v 1.8 2006-08-11 22:53:20 zeeb90au Exp $
+// $Id: blib_func.c,v 1.9 2006-08-19 11:22:47 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -2059,39 +2059,15 @@ void cmd_intN(long funcCode, var_t * r)
     r->type = V_INT;
     v_init(&arg1);
 
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
+
     switch (funcCode) {
     case kwINSTR:
-        // 
-        // int <- INSTR ( [start,] str1, str2 )
-        // 
-        r->v.i = 0;
-        start = 1;
-        pc = par_massget("iSS", &start, &s1, &s2);
-        if (!prog_error) {
-            l = strlen(s1);
-            if (l) {
-                start--;
-                if (start >= l || start < 0)
-                    err_stridx();
-                else {
-                    p = s1 + start;
-                    l = strlen(s2);
-
-                    while (*p) {
-                        if (strncmp(p, s2, l) == 0) {
-                            r->v.i = (p - (char *)s1) + 1;
-                            break;
-                        }
-                        p++;
-                    }
-                }               // start
-            }                   // l
-        }                       // error
-        break;
     case kwRINSTR:
         // 
+        // int <- INSTR ( [start,] str1, str2 )
         // int <- RINSTR ( [start,] str1, str2 )
         // 
         r->v.i = 0;
@@ -2101,15 +2077,19 @@ void cmd_intN(long funcCode, var_t * r)
             l = strlen(s1);
             if (l) {
                 start--;
-                if (start >= l || start < 0)
+                if (start >= l || start < 0) {
                     err_stridx();
-                else {
+                } else {
                     p = s1 + start;
                     l = strlen(s2);
 
                     while (*p) {
-                        if (strncmp(p, s2, l) == 0)
+                        if (strncmp(p, s2, l) == 0) {
                             r->v.i = (p - (char *)s1) + 1;
+                            if (funcCode ==  kwINSTR) {
+                                break;
+                            }
+                        }
                         p++;
                     }
                 }               // start
