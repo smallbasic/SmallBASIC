@@ -49,24 +49,33 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 
 3.  How to build under Linux
     
-    Install FLTK - www.fltk.org.
+    Install FLTK, see www.fltk.org.
     Update the FLTK sources as per step 2.
+
+    Build FLTK libraries:
+    ./configure --enable-png=local --enable-jpeg=local --enable-zlib=local
+    make
+    make install
+    
     cd to sb root directory
+    if the configure program is not present then execute this command to build it:
+    sh autogen.sh
  
     ./configure --enable-fltk
     make -s
 
-    if the configure program is not present then execute this command to build it:
-    sh autogen.sh
-
 
 4.  How to build under Windows (W2K/XP)
    
-    Install mingw/msys tools
-    Install FLTK 
-    Update the FLTK sources as per step 2.
-    cd sbrs3/sync/ide-fltk
-    make -s
+    Install mingw+msys tools (www.mingw.org)
+     - use the perl from cygwin by creating the file
+       c:\MinGW\msys\1.0\bin\perl
+       with this line:
+       /c/cygwin/bin/perl.exe $*
+       The cygwin perl knows about unix syle paths whereas
+       the ActiveState perl uses drive lettered paths
+
+    refer to "How to build under Linux"
 
 
 5.  Generate the help files
@@ -94,6 +103,7 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     SB_FLTK_0_9_6_4 (2 Sept 2005)
     SB_FLTK_0_9_6_1 (16 May 2005)
 
+
 8. Indent settings:
 
 -bap 
@@ -119,5 +129,5 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 -sc 
 
 
-$Id: README.TXT,v 1.22 2006-08-03 10:28:12 zeeb90au Exp $
+$Id: README.TXT,v 1.23 2006-10-24 21:07:56 zeeb90au Exp $
 
