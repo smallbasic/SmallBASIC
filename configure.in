@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.28 2006-07-28 02:25:10 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.29 2006-10-24 21:00:16 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -218,7 +218,7 @@ function buildConsole() {
       echo "Building Cygwin console version..."
       AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
       AC_DEFINE(__CYGWIN__, 1, [as above])
-      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lreadline -ltermcap"
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
       BUILD_SUBDIRS="sync sync/cygwin"
    else 
       dnl preconfigured values for unix console build
@@ -259,4 +259,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.28 2006-07-28 02:25:10 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.29 2006-10-24 21:00:16 zeeb90au Exp $".

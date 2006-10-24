@@ -1,4 +1,8 @@
 
+2006-10-23	<cwarrensmith@gmail.com>
+	* Added more info the index out of range runtime error message
+	* Fixed configure.in for cygwin build
+	
 2006-08-19	<cwarrensmith@gmail.com>
 	* added "multiline" option to the TEXT command to support
 	the multiline edit control (GTK)
@@ -15,16 +19,16 @@
 	* added support for func/sub pointer variables used with the call statement:
 	func foo(s)
          foo="foo!"+s
-       end
-       sub bar
-         ? "in bar"
-       end
-       p = @foo
-       ? call(@foo, "#")
-       ? call(p, "%")
-       pb = @bar
-       call pb
-       call @bar
+        end
+        sub bar
+          ? "in bar"
+        end
+        p = @foo
+        ? call(@foo, "#")
+        ? call(p, "%")
+        pb = @bar
+        call pb
+        call @bar
  
 	* USRCALL has been removed since it never worked and the above
  	is a better replacement (IMHO)
