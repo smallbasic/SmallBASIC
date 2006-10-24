@@ -1,4 +1,4 @@
-// $Id: var.c,v 1.6 2006-08-15 13:15:38 zeeb90au Exp $
+// $Id: var.c,v 1.7 2006-10-24 21:05:47 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -180,7 +180,7 @@ var_t *v_getelemptr(var_t * v, dword index)
         if (index < v->v.a.size)
             return (var_t *) (v->v.a.ptr + (index * sizeof(var_t)));
         else {
-            err_vararridx();
+            err_vararridx(index, v->v.a.size);
             return NULL;
         }
     }

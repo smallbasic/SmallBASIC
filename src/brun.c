@@ -358,8 +358,9 @@ var_t * code_getvarptr_arridx(var_t * basevar_p)
                 } else
                     err_arrmis_rp();
 
-            } else
-                err_arridx();
+            } else {
+                err_arridx(array_index, basevar_p->v.a.size);
+            }
         }
     }
 

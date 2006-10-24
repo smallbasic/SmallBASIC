@@ -155,7 +155,7 @@
 #define ERR_STACK				"Stack mess!"
 #define ERR_ARRAY_MISSING_LP	"Array: Missing '('"
 #define ERR_ARRAY_MISSING_RP	"Array: Missing ')'"
-#define ERR_ARRAY_RANGE			"Array: Index out of range"
+#define ERR_ARRAY_RANGE			"Array: Index '%d' out of range. (Max = %d)"
 #define ERR_TYPE				"Type mismatch"
 #define ERR_PARAM				"Invalid parameter"
 
