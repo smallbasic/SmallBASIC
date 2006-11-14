@@ -1,4 +1,7 @@
 
+2006-11-14	<cwarrensmith@gmail.com>
+	* Updated DATE and TIME error messages to provide extra information
+	
 2006-10-23	<cwarrensmith@gmail.com>
 	* Added more info the index out of range runtime error message
 	* Fixed configure.in for cygwin build

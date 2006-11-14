@@ -1,4 +1,4 @@
-// $Id: blib_func.c,v 1.9 2006-08-19 11:22:47 zeeb90au Exp $
+// $Id: blib_func.c,v 1.10 2006-11-14 02:54:32 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -198,19 +198,19 @@ void date_str2dmy(char *str, long *d, long *m, long *y)
             case 0:            // day
                 *d = xstrtol(tmp);
                 if (*d < 1 || *d > 31) {
-                    rt_raise(ERR_DATE);
+                    rt_raise(ERR_DATE, str);
                     return;
                 }
                 break;
             case 1:            // month
                 *m = xstrtol(tmp);
                 if (*m < 1 || *m > 12) {
-                    rt_raise(ERR_DATE);
+                    rt_raise(ERR_DATE, str);
                     return;
                 }
                 break;
             default:
-                rt_raise(ERR_DATE);
+                rt_raise(ERR_DATE, str);
                 return;
             };
             mode++;
@@ -223,14 +223,15 @@ void date_str2dmy(char *str, long *d, long *m, long *y)
     }
 
     if (mode != 2) {
-        rt_raise(ERR_DATE);
+        rt_raise(ERR_DATE, str);
         return;
     }
 
     tmp[count] = '\0';
     *y = xstrtol(tmp);
-    if (*y < 100)
+    if (*y < 100) {
         *y += 2000;
+    }
 }
 
 /*
@@ -250,19 +251,19 @@ void date_str2hms(char *str, long *h, long *m, long *s)
             case 0:            // hour
                 *h = xstrtol(tmp);
                 if (*h < 0 || *h > 23) {
-                    rt_raise(ERR_TIME);
+                    rt_raise(ERR_TIME, str);
                     return;
                 }
                 break;
             case 1:            // min
                 *m = xstrtol(tmp);
                 if (*m < 0 || *m > 59) {
-                    rt_raise(ERR_TIME);
+                    rt_raise(ERR_TIME, str);
                     return;
                 }
                 break;
             default:
-                rt_raise(ERR_TIME);
+                rt_raise(ERR_TIME, str);
                 return;
             };
             mode++;
@@ -275,14 +276,15 @@ void date_str2hms(char *str, long *h, long *m, long *s)
     }
 
     if (mode != 2) {
-        rt_raise(ERR_TIME);
+        rt_raise(ERR_TIME, str);
         return;
     }
 
     tmp[count] = '\0';
     *s = xstrtol(tmp);
-    if (*s < 0 || *s > 59)
-        rt_raise(ERR_TIME);
+    if (*s < 0 || *s > 59) {
+        rt_raise(ERR_TIME, str);
+    }
 }
 
 /*
@@ -2326,6 +2328,7 @@ void cmd_intN(long funcCode, var_t * r)
             r->v.i = dev_image_height(h, i);
         }
         break;
+
     default:
         rt_raise("Unsupported built-in function call %ld, please report this bug (9)",
                  funcCode);
