@@ -56,6 +56,11 @@
 ================================================================================
 
 Future ideas:
+- user defined structures 
+- if test short circuit evaluation. 
+- add syntax support for '=='
+
+- Add drag-drop file support to open a bas file
 - Add support for detecting another program has changed
   the edited file in fltk version
 - Add command argument GUI for fltk to allow run time args to be set.
