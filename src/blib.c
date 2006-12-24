@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.15 2006-08-15 13:15:37 zeeb90au Exp $
+// $Id: blib.c,v 1.16 2006-12-24 03:39:50 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -31,6 +31,9 @@
 #endif
 
 #include "messages.h"
+
+int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) SEC(BLIB);
+void sb_bubble(var_t * var_p, addr_t use_ip, int n) SEC(BLIB);
 
 //
 //      LET v[(x)] = any
@@ -2562,63 +2565,43 @@ void cmd_timehms()
 //
 //      SORT array [USE ...]
 //
-int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) SEC(BLIB);
 int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
 {
     if (use_ip == INVALID_ADDR) {
-/*      if  ( strcmp(a->v.p.ptr, "in") == 0 || strcmp(b->v.p.ptr, "in") == 0 )
-            printf("v=[%s],[%s] = %d = %d = %d = %d\n", a->v.p.ptr, b->v.p.ptr, v_compare(a,b), strcmp(a->v.p.ptr, b->v.p.ptr), strncmp(a->v.p.ptr, b->v.p.ptr, 2), a->v.p.ptr[0] - b->v.p.ptr[0] );
-*/
         return v_compare(a, b);
     } else {
-        var_t v1, v2;
-        int r;
+/*         int r; */
+/*         var_t result; */
 
-        v_init(&v1);
-        v_init(&v2);
+/*         v_set(tvar[SYSVAR_X], a); */
+/*         v_set(tvar[SYSVAR_Y], b); */
+/*         code_jump(use_ip); */
+        
+/*         // evaluate the function result left on the stack */
+/*         v_init(&result); */
+/*         eval(&result); */
+/*         r = v_igetval(&result); */
+/*         v_free(&result); */
+/*         return r; */
 
-        v_set(&v1, a);
-        v_set(&v2, b);
-        exec_usefunc2(&v1, &v2, use_ip);
-        r = v_igetval(&v1);
-        v_free(&v1);
-        return r;
+		var_t	v1, v2;
+		int		r;
+		
+		v_init(&v1);
+		v_init(&v2);
+
+		v_set(&v1, a);
+		v_set(&v2, b);
+		exec_usefunc2(&v1, &v2, use_ip);
+		r = v_igetval(&v1);
+		v_free(&v1);
+		return r;
+
+
     }
 }
 
-/*
-void    sb_qsort(var_t *p, addr_t use_ip, int lo, int hi) SEC(BLIB);
-void    sb_qsort(var_t *p, addr_t use_ip, int lo, int hi)
-{
-    int     i, j;
-    var_t   *mid, tmp;
-
-    i = lo; j = hi;
-    mid = &p[(lo+hi)/2];
-
-    do  {
-        while ( sb_qcmp(&p[i], mid, use_ip) < 0 )       i ++;
-        while ( sb_qcmp(&p[j], mid, use_ip) > 0 )       j --;
-
-        if  ( i <= j )  {
-            // swap
-            tmp  = p[i];
-            p[i] = p[j];
-            p[j] = tmp;
-
-            // next
-            i ++; j --;
-            }
-
-        } while ( i <= j );
-
-    if ( lo < j )   sb_qsort(p, use_ip, lo, j);
-    if ( i < hi )   sb_qsort(p, use_ip, i, hi);
-}
-*/
-
 // bubble sort
-void sb_bubble(var_t * var_p, addr_t use_ip, int n) SEC(BLIB);
 void sb_bubble(var_t * var_p, addr_t use_ip, int n)
 {
     int i, j;
