@@ -1,4 +1,4 @@
-// $Id: fs_stream.c,v 1.3 2006-12-24 03:40:30 zeeb90au Exp $
+// $Id: fs_stream.c,v 1.4 2006-12-27 01:10:55 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -50,15 +50,13 @@ void bcb_remove_readonly(const char *name);
 */
 int stream_open(dev_file_t *f)
 {
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    //  C
-    int osflags, osshare, flags = f->open_flags;
+    int osflags, osshare;
 
-    if (flags == DEV_FILE_OUTPUT) {
+    if (f->open_flags == DEV_FILE_OUTPUT) {
         remove(f->name);
     }
 
-    if (flags & DEV_FILE_EXCL) {
+    if (f->open_flags & DEV_FILE_EXCL) {
         osshare = 0;
     } else {
         osshare = S_IREAD;
@@ -67,14 +65,14 @@ int stream_open(dev_file_t *f)
     // take care not to set any write flags when simply reading a file.
     // the file may be open in another program (such as excel) which has
     // a write lock on the file causing the bas program to needlessly fail.
-    osflags = (O_RDONLY & O_BINARY);
+    osflags = (O_RDONLY | O_BINARY);
 
-    if (flags & DEV_FILE_OUTPUT) {
-        osflags |= (O_CREAT & O_WRONLY);
+    if (f->open_flags & DEV_FILE_OUTPUT) {
+        osflags |= (O_CREAT | O_WRONLY);
         osshare |= S_IWRITE;
     }
-    if (flags & DEV_FILE_APPEND) {
-        osflags |= (O_CREAT & O_APPEND);
+    if (f->open_flags & DEV_FILE_APPEND) {
+        osflags |= (O_CREAT | O_APPEND);
         osshare |= S_IWRITE;
     }
 
