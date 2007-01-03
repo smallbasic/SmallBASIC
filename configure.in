@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.30 2006-12-24 03:38:14 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.31 2007-01-03 03:50:25 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -137,6 +137,7 @@ function buildGTK() {
       dnl check for gtk libraries
       pkg_modules="gtk+-2.0 >= 2.0.0"
       PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
+      glade-2 -w sync/gtk/sbgtk.glade
    fi
  
    dnl preconfigured values for GTK build
@@ -226,7 +227,7 @@ function buildConsole() {
       AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
       AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
       AC_DEFINE(USE_PCRE, 1, [Perl compatible regular expressions])
-      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lpcre"
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline -lpcre"
       BUILD_SUBDIRS="sync sync/unix"
    fi
 
@@ -259,4 +260,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.30 2006-12-24 03:38:14 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.31 2007-01-03 03:50:25 zeeb90au Exp $".
