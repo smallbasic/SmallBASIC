@@ -1,5 +1,5 @@
-// $Id: scan.c,v 1.20 2006-08-16 06:57:08 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
+// $Id: scan.c,v 1.21 2007-01-03 03:55:23 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -1240,6 +1240,13 @@ void comp_expression(char *expr, byte no_parser)
                     sc_raise(MSG_OPR_APPEND_ERR);
                 }
                 break;
+	    } else if (strncmp(ptr, "==", 2) == 0) {
+		// support == syntax to prevent java or c programmers
+		// getting used to single = thus causing embarrasing 
+		// coding errors in their normal work :)
+		bc_add_code(&bc, kwTYPE_CMPOPR);
+		bc_add_code(&bc, *ptr);
+		ptr++;
             } else if (*ptr == '=' || *ptr == '>' || *ptr == '<') {
                 bc_add_code(&bc, kwTYPE_CMPOPR);
                 bc_add_code(&bc, *ptr);
