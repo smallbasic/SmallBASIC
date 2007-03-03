@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.31 2007-01-03 03:50:25 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.32 2007-03-03 02:43:24 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -57,6 +57,15 @@ function checkDebugMode() {
      CFLAGS="-O3 -Os"
    fi
    AC_SUBST(CFLAGS)
+}
+
+function checkPCRE() {
+   AC_CHECK_PROG(have_pcre, pcre-config, [yes], [no])
+ 
+   if test "${have_pcre}" = "yes" ; then
+      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])
+      PACKAGE_LIBS="${PACKAGE_LIBS} `pcre-config --libs`"
+   fi
 }
 
 function checkHILDON() {
@@ -226,8 +235,8 @@ function buildConsole() {
       echo "Building Unix console version..."
       AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
       AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
-      AC_DEFINE(USE_PCRE, 1, [Perl compatible regular expressions])
-      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline -lpcre"
+      AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline"
       BUILD_SUBDIRS="sync sync/unix"
    fi
 
@@ -235,6 +244,8 @@ function buildConsole() {
 }
 
 AC_DEFINE(HAVE_C_MALLOC, 1, [allocate memory with regular malloc calls])
+
+checkPCRE
 
 if test x$ac_build_gtk = xyes; then
    buildGTK
@@ -260,4 +271,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.31 2007-01-03 03:50:25 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.32 2007-03-03 02:43:24 zeeb90au Exp $".
