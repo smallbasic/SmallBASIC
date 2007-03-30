@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.16 2006-12-24 03:39:50 zeeb90au Exp $
+// $Id: blib.c,v 1.17 2007-03-30 20:33:02 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -52,8 +52,9 @@ void cmd_let(int allowConst)
             return;
         }
 
-        if (prog_source[prog_ip] == kwTYPE_CMPOPR && prog_source[prog_ip + 1] == '=')
+        if (prog_source[prog_ip] == kwTYPE_CMPOPR && prog_source[prog_ip + 1] == '=') {
             code_skipopr();
+        }
 
         v_init(&arg);
         eval(&arg);
@@ -80,21 +81,22 @@ void cmd_dim(int preserve)
         byte code, zaf = 0;
 
         code = code_peek();
-        if (code == kwTYPE_LINE || code == kwTYPE_EOC)
+        if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
             exitf = 1;
-        else {
+        } else {
             array.v.a.maxdim = 0;
             if (code_peek() == kwTYPE_SEP) {
                 code_skipnext();
-                if (code_getnext() != ',')
+                if (code_getnext() != ',') {
                     err_syntax();
+                }
             }
             if (code_peek() == kwTYPE_VAR) {
                 code_skipnext();
                 var_p = tvar[code_getaddr()];
-            } else
+            } else {
                 err_syntax();
-
+            }
 
             if (!prog_error) {
                 if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -102,16 +104,16 @@ void cmd_dim(int preserve)
                     zaf = 0;
                     do {
                         eval(&arg);
-                        if (prog_error)
+                        if (prog_error) {
                             return;
-
+                        }
                         if (code_peek() == kwTO) {
                             array.v.a.lbound[array.v.a.maxdim] = v_getint(&arg);
                             code_skipnext();
                             eval(&arg);
-                            if (prog_error)
+                            if (prog_error) {
                                 return;
-
+                            }
                             array.v.a.ubound[array.v.a.maxdim] = v_getint(&arg);
                         } else {
                             array.v.a.lbound[array.v.a.maxdim] = opt_base;
@@ -123,36 +125,40 @@ void cmd_dim(int preserve)
                         // skip separator
                         if (code_peek() == kwTYPE_SEP) {
                             code_skipnext();
-                            if (code_getnext() != ',')
+                            if (code_getnext() != ',') {
                                 err_syntax();
+                            }
                         }
 
                     } while (code_peek() != kwTYPE_LEVEL_END);
 
                     code_skipnext();    // ')', level
-                } else
+                } else {
                     zaf = 1;    // zero-length array
-            } else
+                }
+            } else {
                 err_syntax();
+            }
 
             // 
             // run...
             // 
             if (!prog_error) {
-                if (zaf)
+                if (zaf) {
                     v_toarray1(var_p, 0);
-                else {
-                    size = 1;
-                    for (i = 0; i < array.v.a.maxdim; i++)
+                } else {
+                    size = 1; 
+                    for (i = 0; i < array.v.a.maxdim; i++) {
                         size = size * (ABS(array.v.a.ubound[i] - array.v.a.lbound[i]) + 1);
-
-                    if (!preserve)
+                    }
+                    if (!preserve) {
                         v_toarray1(var_p, size);
-                    else {
-                        if (var_p->type == V_ARRAY)
+                    } else {
+                        if (var_p->type == V_ARRAY) {
                             v_resize_array(var_p, size);
-                        else
+                        } else {
                             v_toarray1(var_p, size);
+                        }
                     }
 
                     // dim
@@ -162,8 +168,9 @@ void cmd_dim(int preserve)
                         var_p->v.a.ubound[i] = array.v.a.ubound[i];
                     }
                 }
-            } else
+            } else {
                 exitf = 1;
+            }
         }
     } while (!exitf && !prog_error);
 }
@@ -186,16 +193,16 @@ void cmd_ladd()
     var_t *var_p, *elem_p, *arg_p;
 
     var_p = code_getvarptr();
-    if (prog_error)
+    if (prog_error) {
         return;
-
-    if (code_peek() == kwTYPE_CMPOPR && prog_source[prog_ip + 1] == '=')
+    }
+    if (code_peek() == kwTYPE_CMPOPR && prog_source[prog_ip + 1] == '=') {
         // compatible with LET, operator format
         code_skipopr();
-    else if (code_peek() == kwTYPE_SEP && prog_source[prog_ip + 1] == ',')
+    } else if (code_peek() == kwTYPE_SEP && prog_source[prog_ip + 1] == ',') {
         // command style
         code_skipsep();
-    else {
+    } else {
         err_syntax();
         return;
     }
@@ -206,8 +213,9 @@ void cmd_ladd()
         // get parameter on arg_p
         v_free(arg_p);
         eval(arg_p);
-        if (prog_error)
+        if (prog_error) {
             break;
+        }
 
         // append data 
         if (var_p->type != V_ARRAY) {
@@ -220,12 +228,13 @@ void cmd_ladd()
         v_set(elem_p, arg_p);
 
         // next parameter
-        if (code_peek() != kwTYPE_SEP)
+        if (code_peek() != kwTYPE_SEP) {
             break;
-        else {
+        } else {
             par_getcomma();
-            if (prog_error)
+            if (prog_error) {
                 break;
+            }
         }
 
     } while (1);
@@ -244,71 +253,74 @@ void cmd_lins()
     int idx, ladd, i;
 
     var_p = code_getvarptr();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     // convert to array
-    if (var_p->type != V_ARRAY)
+    if (var_p->type != V_ARRAY) {
         v_toarray1(var_p, 0);
-
+    }
     // get 'index'
     idx = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     idx -= var_p->v.a.lbound[0];
 
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
-//      if      ( (idx > var_p->v.a.size) || (idx < 0) )        {
-//              err_out_of_range();
-//              return;
-//              }
+    }
+    //      if      ( (idx > var_p->v.a.size) || (idx < 0) )        {
+    //              err_out_of_range();
+    //              return;
+    //              }
 
     ladd = 0;
     if (idx >= var_p->v.a.size) {
         ladd = 1;               // append
         idx = var_p->v.a.size;
-    } else if (idx <= 0)
+    } else if (idx <= 0) {
         idx = 0;                // insert at top
-
+    }
     // data
     arg_p = v_new();
     do {
         // get parameter on arg_p
         v_free(arg_p);
         eval(arg_p);
-        if (prog_error)
+        if (prog_error) {
             break;
-
+        }
         // resize +1
         v_resize_array(var_p, var_p->v.a.size + 1);
 
-        if (ladd)               // append
+        if (ladd) {              // append
             elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
-        else {
+        } else {
             // move all form idx one down
-            for (i = var_p->v.a.size - 1; i > idx; i--)
+            for (i = var_p->v.a.size - 1; i > idx; i--) {
                 // A(i) = A(i-1)
                 v_set((var_t *) (var_p->v.a.ptr + (sizeof(var_t) * i)),
                       (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (i - 1))));
-
+            }
             elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * idx));
         }
         v_set(elem_p, arg_p);
 
         // next parameter
-        if (code_peek() != kwTYPE_SEP)
+        if (code_peek() != kwTYPE_SEP) {
             break;
-        else {
+        } else {
             par_getcomma();
-            if (prog_error)
+            if (prog_error) {
                 break;
+            }
         }
-
     } while (1);
 
     // cleanup
@@ -326,12 +338,13 @@ void cmd_ldel()
     int i, j;
 
     var_p = code_getvarptr();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     // only arrays
     if (var_p->type != V_ARRAY) {
         err_argerr();
@@ -339,48 +352,51 @@ void cmd_ldel()
     }
     // get 'index'
     idx = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     idx -= var_p->v.a.lbound[0];
     if ((idx >= var_p->v.a.size) || (idx < 0)) {
         err_out_of_range();
         return;
-    } else if (idx == var_p->v.a.size - 1)
+    } else if (idx == var_p->v.a.size - 1) {
         flags = 2;              // last element
-    else if (idx == 0)
+    } else if (idx == 0) {
         flags = 1;              // first element
-    else
+    } else {
         flags = 0;              // somewhere inside
-
+    }
     // get 'count'
     if (code_peek() == kwTYPE_SEP) {
         par_getcomma();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         count = par_getint();
-        if (prog_error)
+        if (prog_error) {
             return;
-
+        }
         if (((count + idx) - 1 > var_p->v.a.size)) {
             err_out_of_range();
             return;
-        } else if (count <= 0)
+        } else if (count <= 0) {
             err_argerr();
+        }
     }
     // data
     arg_p = v_clone(var_p);
     v_resize_array(var_p, var_p->v.a.size - count);
 
     // first part
-    for (i = 0; i < idx; i++)
+    for (i = 0; i < idx; i++) {
         // A(i) = OLD(i)
         v_set(v_elem(var_p, i), v_elem(arg_p, i));
-
+    }
     // second part
-    for (i = idx + count, j = idx; i < arg_p->v.a.size; i++, j++)
+    for (i = idx + count, j = idx; i < arg_p->v.a.size; i++, j++) {
         // A(j) = OLD(i)
         v_set(v_elem(var_p, j), v_elem(arg_p, i));
-
+    }
     // cleanup
     v_free(arg_p);
     tmp_free(arg_p);
@@ -395,31 +411,32 @@ void cmd_erase()
     var_t *var_p;
 
     do {
-        if (prog_error)
+        if (prog_error) {
             break;
-
+        }
         code = code_peek();
 
-        if (code_isvar())
+        if (code_isvar()) {
             var_p = code_getvarptr();
-        else {
+        } else {
             err_typemismatch();
             break;
         }
 
-        if (var_p->type == V_ARRAY)
+        if (var_p->type == V_ARRAY) {
             v_toarray1(var_p, 0);
-        else {
+        } else {
             v_free(var_p);
             v_init(var_p);
         }
 
         // next
         code = code_peek();
-        if (code == kwTYPE_SEP)
+        if (code == kwTYPE_SEP) {
             par_getcomma();
-        else
+        } else {
             break;
+        }
 
     } while (1);
 }
@@ -439,8 +456,9 @@ void cmd_print(int output)
      */
     if (output == PV_FILE) {
         par_getsharp();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         handle = par_getint();
         if (prog_error)
             return;
@@ -455,8 +473,9 @@ void cmd_print(int output)
         }
 
         par_getsep();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         if (!dev_fstatus(handle)) {
             err_fopen();
             return;
@@ -474,9 +493,9 @@ void cmd_print(int output)
 
         vuser_p = code_getvarptr();
         par_getsemicolon();
-        if (prog_error)
+        if (prog_error) {
             return;
-
+        }
         v_free(vuser_p);
         vuser_p->type = V_STR;
         vuser_p->v.p.size = 256;
@@ -497,8 +516,9 @@ void cmd_print(int output)
         code_skipnext();
         if (code_peek() != kwTYPE_SEP) {
             eval(&var);
-            if (prog_error)
+            if (prog_error) {
                 return;
+            }
             if (var.type != V_STR) {
                 rt_raise(ERR_FORMAT_INVALID_FORMAT);
                 v_free(&var);
@@ -512,8 +532,9 @@ void cmd_print(int output)
             par_getsemicolon();
         }
         last_op = ';';
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         use_format = 1;
     }
 
@@ -600,21 +621,23 @@ void cmd_input(int input)
     par_t *par;
     char *p, lc;
 
-
     v_init(&prompt);
     /*
      *      prefix - # (file)
      */
     if (input == PV_FILE) {
         par_getsharp();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         handle = par_getint();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         par_getsep();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         if (!dev_fstatus(handle)) {
             err_fopen();
             return;
@@ -632,10 +655,12 @@ void cmd_input(int input)
 
         vuser_p = code_getvarptr();
         par_getsemicolon();
-        if (prog_error)
+        if (prog_error) {
             return;
-        if (vuser_p->type == V_INT || vuser_p->type == V_NUM)
+        }
+        if (vuser_p->type == V_INT || vuser_p->type == V_NUM) {
             v_tostr(vuser_p);
+        }
         if (vuser_p->type != V_STR) {
             err_argerr();
             return;
@@ -656,38 +681,41 @@ void cmd_input(int input)
         v_setstr(&prompt, "");
 
         print_crlf = (code_peeksep() != ';');
-        if (!print_crlf)
+        if (!print_crlf) {
             code_skipsep();
-
+        }
         if (!code_isvar()) {
             v_free(&prompt);
             eval(&prompt);
 
             code = code_getsep();
             if (!prog_error) {
-                if (code == ';')
+                if (code == ';') {
                     v_strcat(&prompt, "? ");
+                }
             }
-        } else                  /* no prompt */
+        } else {                 /* no prompt */
             v_setstr(&prompt, "? ");
-    } else
+        }
+    } else {
         print_crlf = 0;
-
+    }
     /*
      *      get list of parameters
      */
     pcount = par_getpartable(&ptable, ",;");
-    if (pcount == 0)
+    if (pcount == 0) {
         rt_raise(ERR_INPUT_NO_VARS);
-
+    }
     /*
      *      the INPUT itself
      */
     if (!prog_error) {
         do {                    // "redo from start"
             if (input == PV_CONSOLE) {  // prompt
-                if (prompt.v.p.ptr)
+                if (prompt.v.p.ptr) {
                     pv_write((char *)prompt.v.p.ptr, input, handle);
+                }
             }
 
             /*
@@ -716,11 +744,11 @@ void cmd_input(int input)
 
                     while (!dev_feof(handle)) {
                         dev_fread(handle, &ch, 1);
-                        if (prog_error)
+                        if (prog_error) {
                             break;
-                        else if (ch == '\n' && !quotes)
+                        } else if (ch == '\n' && !quotes) {
                             break;
-                        else if (ch != '\r') {
+                        } else if (ch != '\r') {
                             // store char
                             if (index == (size - 2)) {
                                 size += 256;
@@ -729,8 +757,9 @@ void cmd_input(int input)
 
                             inps[index] = ch;
                             index++;
-                            if (ch == '\"')
+                            if (ch == '\"') {
                                 quotes = !quotes;
+                            }
                         }
                     }
 
@@ -757,7 +786,6 @@ void cmd_input(int input)
                         unused_vars++;
                     }
                 } else {        // we are continue to read
-
                     if (par->flags & PAR_BYVAL) {
                         // no constants are allowed
                         err_typemismatch();
@@ -780,13 +808,13 @@ void cmd_input(int input)
                         // next_is_const = get the left string of the specified word
                         // NOT next_is_const = get the left string of the specified character
                         // (,)
-                        if (pcount == 1)
+                        if (pcount == 1) {
                             p = (inp_p + strlen(inp_p));
-                        else
+                        } else {
                             p = q_strstr(inp_p,
                                          ((next_is_const) ? v_getstr(ptable[cur_par_idx].var) :
                                           ","), "\"\"");
-
+                        }
                         if (p) {
                             lc = *p;
                             *p = '\0';
@@ -798,8 +826,9 @@ void cmd_input(int input)
                                 p +
                                 ((next_is_const) ?
                                  strlen((char *)ptable[cur_par_idx].var->v.p.ptr) : 1);
-                            if (*p == '\0')
+                            if (*p == '\0') {
                                 input_is_finished = 1;
+                            }
                         } else {
                             v_input2var(inp_p, par->var);
                             inp_p = (inp_p + strlen(inp_p));    // go to '\0'
@@ -813,14 +842,12 @@ void cmd_input(int input)
             }
 
             // REDO FROM START
-            if (cur_par_idx == pcount)
+            if (cur_par_idx == pcount) {
                 input_is_finished = 1;
+            }
 
             if (input_is_finished && (input == PV_CONSOLE) && (!prog_error) &&
-                (((pcount > 1) && (*inp_p || unused_vars))
-                )
-                ) {
-
+                (((pcount > 1) && (*inp_p || unused_vars)))) {
                 redo = 1;
                 tmp_free(inps);
 #if USE_TERM_IO
@@ -828,15 +855,18 @@ void cmd_input(int input)
                  * standard input case 
                  */
                 if (!os_graphics) {
-                    if (term_israw())
+                    if (term_israw()) {
                         fprintf(stdout, "\n\a* %s *\n", WORD_INPUT_REDO);
-                    else
+                    } else {
                         dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
-                } else
+                    }
+                } else {
 #endif
                     dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
-            } else
+                }
+            } else {
                 redo = 0;
+            }
 
         } while (redo && !prog_error);
     }
@@ -859,8 +889,9 @@ void cmd_input(int input)
         }
     }
 
-    if (inps)
+    if (inps) {
         tmp_free(inps);
+    }
     par_freepartable(&ptable, pcount);
     v_free(&prompt);
 }
@@ -885,25 +916,28 @@ void cmd_RTE()
         case kwTYPE_SEP:
             code_skipnext();
             last_op = code_getnext();
-            if (last_op == ',')
+            if (last_op == ',') {
                 dev_print("\t");
+            }
             break;
         default:
             last_op = 0;
             v_init(&var);
             eval(&var);
-            if (!prog_error)
+            if (!prog_error) {
                 print_var(&var);
+            }
             v_free(&var);
         };
 
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     } while (exitf == 0);
 
-    if (last_op == 0)
+    if (last_op == 0) {
         dev_print("\n");
-
+    }
     prog_error = 0x1000;
 }
 
@@ -977,19 +1011,19 @@ void cmd_gosub()
 }
 
 /**
-*   Call a user-defined procedure or function
-*
-*   What will happend to the stack
-*       [param 1]
-*       ...
-*       [param N]
-*       [udp-call node]
-*
-*   p1...pN nodes will be removed by cmd_param()
-*   cmd_param is the first UDP/F's command
-*
-*   @param cmd is the type of the udp (function or procedure)
-*/
+ *   Call a user-defined procedure or function
+ *
+ *   What will happend to the stack
+ *       [param 1]
+ *       ...
+ *       [param N]
+ *       [udp-call node]
+ *
+ *   p1...pN nodes will be removed by cmd_param()
+ *   cmd_param is the first UDP/F's command
+ *
+ *   @param cmd is the type of the udp (function or procedure)
+ */
 void cmd_udp(int cmd)
 {
     stknode_t param;
@@ -1033,6 +1067,8 @@ void cmd_udp(int cmd)
             case kwTYPE_LEVEL_END:     // (right-parenthesis) which means: end of parameters
                 ready = 1;      // finish flag
                 break;
+                
+            case kwTYPE_UDS:
             case kwTYPE_VAR:   // the parameter is a variable
                 ofs = prog_ip;  // keep expression's IP
 
@@ -1100,13 +1136,13 @@ void cmd_udp(int cmd)
 }
 
 /**
-*   Call a user-defined procedure or function OF ANOTHER UNIT
-*
-*   @param cmd is the type of the udp (function or procedure)
-*   @param udp_tid is the UDP's task-id
-*   @param goto_addr address of UDP
-*   @param rvid return-var-id on callers task (this task)
-*/
+ *   Call a user-defined procedure or function OF ANOTHER UNIT
+ *
+ *   @param cmd is the type of the udp (function or procedure)
+ *   @param udp_tid is the UDP's task-id
+ *   @param goto_addr address of UDP
+ *   @param rvid return-var-id on callers task (this task)
+ */
 void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid)
 {
     stknode_t param;
@@ -1134,6 +1170,7 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid)
             case kwTYPE_LEVEL_END:     // (right-parenthesis) which means: end of parameters
                 ready = 1;      // finish flag
                 break;
+            case kwTYPE_UDS:
             case kwTYPE_VAR:   // the parameter is a variable
                 ofs = prog_ip;  // keep expression's IP
 
@@ -1191,16 +1228,16 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid)
         code_skipnext();        // right-parenthesis; kwTYPE_LEVEL_END
     }
     // 
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     // store call-info
 
     activate_task(udp_tid);
     // 
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     param.type = cmd;           // type of call (procedure or function)
     param.x.vcall.pcount = pcount;      // number of parameters which passed on (the number of 
                                         // parameter-nodes in the stack)
@@ -1220,11 +1257,11 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid)
 }
 
 /**
-*   Create dynamic-variables (actually local-variables)
-*
-*   In older versions ( <= 5.8?) there was only one variable-table... 
-*   The global's one.
-*/
+ *   Create dynamic-variables (actually local-variables)
+ *
+ *   In older versions ( <= 5.8?) there was only one variable-table... 
+ *   The global's one.
+ */
 void cmd_crvar()
 {
     int i, count;
@@ -1250,14 +1287,14 @@ void cmd_crvar()
 }
 
 /**
-*   user defined procedure or function - parse parameters code
-*
-*   this code will be called by udp/f to pop parameter node
-*   which was stored in stack by the cmd_udp (call to udp/f)
-*
-*   'by value' parameters are stored as local variables in the stack (kwTYPE_CRVAR)
-*   'by reference' parameters are stored as local variables in the stack (kwTYPE_BYREF)
-*/
+ *   user defined procedure or function - parse parameters code
+ *
+ *   this code will be called by udp/f to pop parameter node
+ *   which was stored in stack by the cmd_udp (call to udp/f)
+ *
+ *   'by value' parameters are stored as local variables in the stack (kwTYPE_CRVAR)
+ *   'by reference' parameters are stored as local variables in the stack (kwTYPE_BYREF)
+ */
 void cmd_param()
 {
     int i, pcount;
@@ -1282,9 +1319,9 @@ void cmd_param()
 
     if (pcount) {               // get parameters
         param = (stknode_t *) tmp_alloc(sizeof(stknode_t) * pcount);
-        for (i = pcount - 1; i > -1; i--)
+        for (i = pcount - 1; i > -1; i--) {
             code_pop(&param[i]);
-
+        }
         code_push(&ncall);      // push call's pars (again); we will needed at 'return'
 
         for (i = 0; i < pcount; i++) {  // check parameters one-by-one
@@ -1299,14 +1336,12 @@ void cmd_param()
                 code_push(&node);       // store previous variable (with the same ID) to stack
 
                 // assign
-                if (param[i].x.param.vcheck == 1)
-                    tvar[vid] = param[i].x.param.res;   // its already cloned by the CALL
-                                                        // (expr)
-                else
+                if (param[i].x.param.vcheck == 1) {
+                    tvar[vid] = param[i].x.param.res;   // its already cloned by the CALL (expr)
+                } else {
                     tvar[vid] = v_clone(param[i].x.param.res);
-            }
-
-            else {              // UDP requires b 'by reference' parameter
+                }
+            } else {              // UDP requires 'by reference' parameter
                 if (param[i].x.param.vcheck == 1) {
                     err_parm_byref(i);  // error; the parameter can be used only 'by value'
                     break;
@@ -1315,20 +1350,29 @@ void cmd_param()
                     node.x.vdvar.vid = vid;
                     node.x.vdvar.vptr = tvar[vid];
                     code_push(&node);   // store previous variable to stack (with the same ID)
-
                     tvar[vid] = param[i].x.param.res;   // use the 'var_t'
+                }
+            }
+
+            if (tvar[vid]->type == V_UDS) {
+                // use vid as a uds group_id, then search the struct-table
+                // to find the start of its structure elements
+                addr_t struct_ip = v_get_uds_ip(vid);
+                if (struct_ip != -1) {
+                    v_set_uds(struct_ip, tvar[vid]->v.uds_p);
                 }
             }
         }
 
         tmp_free(param);
-    } else
+    } else {
         code_push(&ncall);      // push caller's info node
+    }
 }
 
 /**
-*   return from user-defined procedure or function
-*/
+ *   return from user-defined procedure or function
+ */
 void cmd_udpret()
 {
     stknode_t node, rval;
@@ -1336,21 +1380,30 @@ void cmd_udpret()
     code_pop(&node);
     while ((node.type != kwPROC) && (node.type != kwFUNC)) {    // pop from stack until
                                                                 // caller's node found
-
         if (node.type == kwTYPE_CRVAR) {        // local variable - cleanup
             v_free(tvar[node.x.vdvar.vid]);     // free local variable data
             tmp_free(tvar[node.x.vdvar.vid]);
             tvar[node.x.vdvar.vid] = node.x.vdvar.vptr; // restore ptr (replace to pre-call
                                                         // variable)
-        }
+        } else if (node.type == kwBYREF) { // variable 'by reference'
+            if (tvar[node.x.vdvar.vid]->type == V_UDS) {
+                // simulate pass by reference of structure variables by 
+                // copying uds fields. 
+                // tvar[node.x.vdvar.vid] is the variable passed to the udf
+                // node.x.vdvar.vid is the var_id of the formal udf argument
+                addr_t struct_ip = v_get_uds_ip(node.x.vdvar.vid);
+                if (struct_ip != -1) {
+                    v_set_uds(tvar[node.x.vdvar.vid]->v.uds_p, struct_ip);
+                }
+            }
 
-        else if (node.type == kwBYREF)  // variable 'by reference'
             tvar[node.x.vdvar.vid] = node.x.vdvar.vptr; // restore ptr
-
+        }
         // pop next node
         code_pop(&node);
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     }
 
     if ((node.type != kwPROC) && (node.type != kwFUNC)) {
@@ -1359,7 +1412,6 @@ void cmd_udpret()
     } else {
         // restore return value
         if (node.x.vcall.rvid != (bid_t) INVALID_ADDR) {        // it is a function
-
             // store value to stack
             rval.type = kwTYPE_RET;
             rval.x.vdvar.vptr = tvar[node.x.vcall.rvid];
@@ -1385,9 +1437,9 @@ int cmd_exit()
     code = code_getnext();
     do {
         code_pop(&node);
-        if (prog_error)
+        if (prog_error) {
             return 0;
-
+        }
         switch (node.type) {
         case kwIF:
             break;
@@ -1433,18 +1485,19 @@ int cmd_exit()
                 addr = INVALID_ADDR;
                 ready = 1;
             } else {
-                if (code == kwFORSEP)
+                if (code == kwFORSEP) {
                     rt_raise(ERR_EXITFOR);
-                else
+                } else {
                     rt_raise(ERR_EXITLOOP);
+                }
             }
             break;
         };
     } while (ready == 0);
 
-    if (addr != INVALID_ADDR)
+    if (addr != INVALID_ADDR) {
         code_jump(addr);
-
+    }
     return exit_from_udp;
 }
 
@@ -1461,8 +1514,9 @@ void cmd_return()
     // 'GOTO'
     while (node.type != kwGOSUB) {
         code_pop(&node);
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     }
 
     if (node.type != kwGOSUB) {
@@ -1512,8 +1566,9 @@ void cmd_else()
     // 'GOTO'
     while (node.type != kwIF) {
         code_pop(&node);
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     }
 
     if (node.type != kwIF) {
@@ -1544,8 +1599,9 @@ void cmd_elif()
     // 'GOTO'
     while (node.type != kwIF) {
         code_pop(&node);
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     }
 
     if (node.type != kwIF) {
@@ -1587,12 +1643,12 @@ void cmd_for()
 
     code = code_peek();
 
-//  its checked by compiler
-//
-//      if      ( code != kwTYPE_VAR )  {
-//              err_syntax();
-//              return;
-//              }
+    //  its checked by compiler
+    //
+    //      if      ( code != kwTYPE_VAR )  {
+    //              err_syntax();
+    //              return;
+    //              }
 
     node.type = kwFOR;
     node.x.vfor.subtype = kwTO;
@@ -1603,8 +1659,9 @@ void cmd_for()
     // get FOR-variable
     // 
     var_p = code_getvarptr();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     node.x.vfor.var_ptr = var_p;
     v_free(var_p);
 
@@ -1643,8 +1700,9 @@ void cmd_for()
                         node.x.vfor.step_expr_ip = prog_ip;
                         eval(&varstep);
                         if (!(varstep.type == V_NUM || varstep.type == V_INT)) {
-                            if (!prog_error)
+                            if (!prog_error) {
                                 err_syntax();
+                            }
                         }
                     } else {
                         node.x.vfor.step_expr_ip = INVALID_ADDR;
@@ -1652,11 +1710,13 @@ void cmd_for()
                         varstep.v.i = 1;
                     }           // STEP kw
                 } else {        // str for TO
-                    if (!prog_error)
+                    if (!prog_error) {
                         err_syntax();
+                    }
                 }
-            } else              // TO keyword
+            } else {             // TO keyword
                 err_syntax();
+            }
         }
         // 
         // run
@@ -1665,10 +1725,11 @@ void cmd_for()
             if (v_sign(&varstep) < 0) {
                 code_jump((v_compare(var_p, &var) >= 0) ? true_ip : false_ip);
             } else {
-                if (v_compare(var_p, &var) <= 0)
+                if (v_compare(var_p, &var) <= 0) {
                     code_jump(true_ip);
-                else
+                } else {
                     code_jump(false_ip);
+                }
             }
 
             code_push(&node);
@@ -1810,8 +1871,9 @@ void cmd_next()
     // 'GOTO'
     while (node.type != kwFOR) {
         code_pop(&node);
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     }
 
     if (node.type != kwFOR) {
@@ -1823,7 +1885,7 @@ void cmd_next()
 
     // 
     var_p = node.x.vfor.var_ptr;
-//      v_init(&var_to);
+    //      v_init(&var_to);
     var_step.const_flag = 0;
     var_step.type = V_INT;
     var_step.v.i = 1;
@@ -1845,18 +1907,21 @@ void cmd_next()
 
             if (!prog_error && (var_step.type == V_INT || var_step.type == V_NUM)) {
                 v_inc(var_p, &var_step);
-                if (v_sign(&var_step) < 0)
+                if (v_sign(&var_step) < 0) {
                     check = (v_compare(var_p, &var_to) >= 0);
-                else
+                } else {
                     check = (v_compare(var_p, &var_to) <= 0);
+                }
             }                   // 
             else {
-                if (!prog_error)
+                if (!prog_error) {
                     err_typemismatch();
+                }
             }
         } else {
-            if (!prog_error)
+            if (!prog_error) {
                 rt_raise("FOR-TO: TO v IS NOT A NUMBER");
+            }
         }
 
         // 
@@ -1894,7 +1959,7 @@ void cmd_next()
                 code_jump(next_ip);
             }
         } else {
-//                      if      ( !prog_error ) rt_raise("FOR-IN: IN var IS NOT ARRAY");
+            //                      if      ( !prog_error ) rt_raise("FOR-IN: IN var IS NOT ARRAY");
             if (node.x.vfor.flags & 1) {        // allocated in for
                 v_free(node.x.vfor.arr_ptr);
                 tmp_free(node.x.vfor.arr_ptr);
@@ -1932,9 +1997,9 @@ void cmd_read()
             break;
         default:
             vp = code_getvarptr();
-            if (prog_error)
+            if (prog_error) {
                 return;
-
+            }
             // ////
             if (!prog_error) {
                 v_free(vp);
@@ -2055,8 +2120,9 @@ void cmd_delay()
     dword ms;
 
     ms = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     dev_delay(ms);
 }
 
@@ -2068,8 +2134,9 @@ void cmd_at()
     int x, y;
 
     par_massget("II", &x, &y);
-    if (!prog_error)
+    if (!prog_error) {
         dev_setxy(x, y);
+    }
 }
 
 //
@@ -2086,15 +2153,17 @@ void cmd_locate()
     if (prog_error)
         return;
     x = par_getint() - 1;
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
 #if defined(_PalmOS)
     dev_setxy(x * dev_textwidth("0"), y * dev_textheight("0"));
 #else
-    if (os_graphics)
+    if (os_graphics) {
         dev_setxy(x * dev_textwidth("0"), y * dev_textheight("0"));
-    else
+    } else {
         dev_setxy(x, y);
+    }
 #endif
 }
 
@@ -2105,13 +2174,14 @@ void cmd_pause()
 {
     int x = 0, evc;
     byte code;
-    long start, now, tps;
+    long start, now;
 
     code = code_peek();
     if (code == kwTYPE_VAR) {
         x = par_getint();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     } else if (code == kwTYPE_INT) {
         code_skipnext();
         x = code_getint();
@@ -2130,6 +2200,7 @@ void cmd_pause()
             case -1:           // break
                 return;
             }
+            dev_delay(50);
         }
 
         dev_getch();
@@ -2137,9 +2208,18 @@ void cmd_pause()
 #if defined(_PalmOS)
         start = TimGetTicks();
         tps = SysTicksPerSecond();
+#elif defined(_VTOS)
+        RTM timenow;
+
+        RtcGetTime(&timenow);
+        start = timenow.hour * 3600L + timenow.min * 60L + timenow.sec;
 #else
-        start = clock();
-        tps = CLOCKS_PER_SEC;
+        struct tm tms;
+        time_t timenow;
+
+        time(&timenow);
+        tms = *localtime(&timenow);
+        start = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
 #endif
         while (!dev_kbhit()) {
             switch ((evc = dev_events(0))) {
@@ -2158,12 +2238,18 @@ void cmd_pause()
             }
 #if defined(_PalmOS)
             now = TimGetTicks();
+#elif defined(_VTOS)
+            RtcGetTime(&timenow);
+            now = timenow.hour * 3600L + timenow.min * 60L + timenow.sec;
 #else
-            now = clock();
+            time(&timenow);
+            tms = *localtime(&timenow);
+            now = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
 #endif
 
-            if (now > start + tps * x)
+            if (now > start + x)
                 break;
+            dev_delay(50);
         }
 
         if (dev_kbhit())
@@ -2179,96 +2265,99 @@ void cmd_color()
     int fg, bg = -1;
 
     fg = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     if (code_peek() == kwTYPE_SEP) {
         par_getcomma();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
         bg = par_getint();
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     }
 
     dev_settextcolor(fg, bg);
 }
 
 /*
-*   SPLIT string, delimiters, array()
-void    cmd_split()
-{
-    int     count, i;
-    char    *p, *ps, *new_text;
-    var_t   *var_p, *elem_p;
-    addr_t  use_ip, exit_ip = INVALID_ADDR;
-    char    *str = NULL, *del = NULL;
+ *   SPLIT string, delimiters, array()
+ void    cmd_split()
+ {
+ int     count, i;
+ char    *p, *ps, *new_text;
+ var_t   *var_p, *elem_p;
+ addr_t  use_ip, exit_ip = INVALID_ADDR;
+ char    *str = NULL, *del = NULL;
 
-    par_massget("SSP", &str, &del, &var_p);
+ par_massget("SSP", &str, &del, &var_p);
 
-    if  ( !prog_error ) {
-        // is there a use keyword ?
-        if  ( code_peek() == kwUSE )    {
-            code_skipnext();
-            use_ip  = code_getaddr();
-            exit_ip = code_getaddr();
-            }
-        else
-            use_ip = INVALID_ADDR;
+ if  ( !prog_error ) {
+ // is there a use keyword ?
+ if  ( code_peek() == kwUSE )    {
+ code_skipnext();
+ use_ip  = code_getaddr();
+ exit_ip = code_getaddr();
+ }
+ else
+ use_ip = INVALID_ADDR;
 
-        //
-        v_toarray1(var_p, 1);
+ //
+ v_toarray1(var_p, 1);
     
-        // reformat
-        new_text = tmp_strdup(str);
-        count = 0;
-        ps = p = new_text;
-        while ( *p )    {
-            if  ( strchr(del, *p) ) {
-                *p = '\0';
+ // reformat
+ new_text = tmp_strdup(str);
+ count = 0;
+ ps = p = new_text;
+ while ( *p )    {
+ if  ( strchr(del, *p) ) {
+ *p = '\0';
 
-                // add element (ps)
-                if  ( var_p->v.a.size <= count )        // resize array
-                    v_resize_array(var_p, count+16);
+ // add element (ps)
+ if  ( var_p->v.a.size <= count )        // resize array
+ v_resize_array(var_p, count+16);
 
-                // store string
-                elem_p = v_elem(var_p, count);
-                v_setstr(elem_p, ps);
-                count ++;
+ // store string
+ elem_p = v_elem(var_p, count);
+ v_setstr(elem_p, ps);
+ count ++;
 
-                // next word
-                ps = p+1;
-                }
+ // next word
+ ps = p+1;
+ }
 
-            p ++;
-            }
+ p ++;
+ }
 
-        if  ( *ps ) {
-            // add the last element (ps)
-            if  ( v_asize(var_p) <= count )     // resize array
-                v_resize_array(var_p, count+1);
+ if  ( *ps ) {
+ // add the last element (ps)
+ if  ( v_asize(var_p) <= count )     // resize array
+ v_resize_array(var_p, count+1);
 
-            elem_p = v_elem(var_p, count);
-            v_setstr(elem_p, ps);
+ elem_p = v_elem(var_p, count);
+ v_setstr(elem_p, ps);
 
-            count ++;
-            }
-        v_resize_array(var_p, count);   // final resize
+ count ++;
+ }
+ v_resize_array(var_p, count);   // final resize
 
-        //  execute user's expression for each element
-        if  ( use_ip != INVALID_ADDR )  {
-            for ( i = 0; i < v_asize(var_p) && !prog_error; i ++ )  {
-                elem_p = v_elem(var_p, i);
-                exec_usefunc(elem_p, use_ip);
-                }
-            // jmp to correct location
-            code_jump(exit_ip);
-            }
+ //  execute user's expression for each element
+ if  ( use_ip != INVALID_ADDR )  {
+ for ( i = 0; i < v_asize(var_p) && !prog_error; i ++ )  {
+ elem_p = v_elem(var_p, i);
+ exec_usefunc(elem_p, use_ip);
+ }
+ // jmp to correct location
+ code_jump(exit_ip);
+ }
 
-        // cleanup
-        pfree2(str, del);
-        tmp_free(new_text);
-        }
-}
+ // cleanup
+ pfree2(str, del);
+ tmp_free(new_text);
+ }
+ }
 */
 
 void cmd_split()
@@ -2277,8 +2366,8 @@ void cmd_split()
 }
 
 /*
-*   SPLIT string, delimiters, array() [, pairs] [USE ...]
-*/
+ *   SPLIT string, delimiters, array() [, pairs] [USE ...]
+ */
 void cmd_wsplit()
 {
     int count, i, wait_q;
@@ -2295,13 +2384,13 @@ void cmd_wsplit()
             code_skipnext();
             use_ip = code_getaddr();
             exit_ip = code_getaddr();
-        } else
+        } else {
             use_ip = INVALID_ADDR;
-
+        }
         // 
-        if (!pairs)
+        if (!pairs) {
             pairs = tmp_strdup("");
-
+        }
         v_toarray1(var_p, 1);
 
         /*
@@ -2319,19 +2408,19 @@ void cmd_wsplit()
                 int open_q;
 
                 open_q = ((z - pairs) + 1) % 2;
-                if (open_q)
+                if (open_q) {
                     wait_q = *(z + 1);
-                else
+                } else {
                     wait_q = 0;
-
+                }
                 p++;
             } else if (wait_q == 0 && strchr(del, *p)) {
                 *p = '\0';
 
                 // add element (ps)
-                if (var_p->v.a.size <= count)   // resize array
+                if (var_p->v.a.size <= count) {  // resize array
                     v_resize_array(var_p, count + 16);
-
+                }
                 // store string
                 elem_p = v_elem(var_p, count);
                 buf = tmp_strdup(ps);   // trimdup
@@ -2348,9 +2437,9 @@ void cmd_wsplit()
 
         if (*ps) {
             // add the last element (ps)
-            if (v_asize(var_p) <= count)        // resize array
+            if (v_asize(var_p) <= count) {       // resize array
                 v_resize_array(var_p, count + 1);
-
+            }
             elem_p = v_elem(var_p, count);
             buf = tmp_strdup(ps);       // trimdup
             v_setstr(elem_p, buf);
@@ -2386,14 +2475,17 @@ void cmd_wjoin()
 
     v_init(&del);
     var_p = par_getvarray();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getstr(&del);
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
     if (prog_error) {
         v_free(&del);
@@ -2418,9 +2510,9 @@ void cmd_wjoin()
 
         v_init(&e_str);
         v_set(&e_str, elem_p);
-        if (e_str.type != V_STR)
+        if (e_str.type != V_STR) {
             v_tostr(&e_str);
-
+        }
         while ((e_str.v.p.size + del.v.p.size + 1) >= str->v.p.size) {
             str->v.p.ptr = tmp_realloc(str->v.p.ptr, str->v.p.size + 256);
             str->v.p.size += 256;
@@ -2448,10 +2540,12 @@ void cmd_environ()
     var_t str;
 
     par_getstr(&str);
-    if (prog_error)
+    if (prog_error) {
         return;
-    if (dev_putenv((char *)str.v.p.ptr) == -1)
+    }
+    if (dev_putenv((char *)str.v.p.ptr) == -1) {
         rt_raise(ERR_PUTENV);
+    }
     v_free(&str);
 }
 
@@ -2478,24 +2572,29 @@ void cmd_datedmy()
 
     // byref pars
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     vd = par_getvar_ptr();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     vm = par_getvar_ptr();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     vy = par_getvar_ptr();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     v_free(vd);
     v_free(vm);
     v_free(vy);
@@ -2532,24 +2631,29 @@ void cmd_timehms()
 
     // byref pars
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     vh = par_getvar_ptr();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     vm = par_getvar_ptr();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     vs = par_getvar_ptr();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     v_free(vh);
     v_free(vm);
     v_free(vs);
@@ -2570,32 +2674,32 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
     if (use_ip == INVALID_ADDR) {
         return v_compare(a, b);
     } else {
-/*         int r; */
-/*         var_t result; */
+        /*         int r; */
+        /*         var_t result; */
 
-/*         v_set(tvar[SYSVAR_X], a); */
-/*         v_set(tvar[SYSVAR_Y], b); */
-/*         code_jump(use_ip); */
+        /*         v_set(tvar[SYSVAR_X], a); */
+        /*         v_set(tvar[SYSVAR_Y], b); */
+        /*         code_jump(use_ip); */
         
-/*         // evaluate the function result left on the stack */
-/*         v_init(&result); */
-/*         eval(&result); */
-/*         r = v_igetval(&result); */
-/*         v_free(&result); */
-/*         return r; */
+        /*         // evaluate the function result left on the stack */
+        /*         v_init(&result); */
+        /*         eval(&result); */
+        /*         r = v_igetval(&result); */
+        /*         v_free(&result); */
+        /*         return r; */
 
-		var_t	v1, v2;
-		int		r;
-		
-		v_init(&v1);
-		v_init(&v2);
+        var_t   v1, v2;
+        int     r;
+        
+        v_init(&v1);
+        v_init(&v2);
 
-		v_set(&v1, a);
-		v_set(&v2, b);
-		exec_usefunc2(&v1, &v2, use_ip);
-		r = v_igetval(&v1);
-		v_free(&v1);
-		return r;
+        v_set(&v1, a);
+        v_set(&v2, b);
+        exec_usefunc2(&v1, &v2, use_ip);
+        r = v_igetval(&v1);
+        v_free(&v1);
+        return r;
 
 
     }
@@ -2613,12 +2717,12 @@ void sb_bubble(var_t * var_p, addr_t use_ip, int n)
         for (j = 1; j < i; ++j) {
             if (sb_qcmp(&p[j], &p[j + 1], use_ip) > 0) {
                 // swap - with copy
-//                              var_t   tmp;
-//                              v_init(&tmp);
-//                              v_set(&tmp, &p[j]);
-//                              v_set(&p[j], &p[j+1]);
-//                              v_set(&p[j+1], &tmp);
-//                              v_free(&tmp);
+                //                              var_t   tmp;
+                //                              v_init(&tmp);
+                //                              v_set(&tmp, &p[j]);
+                //                              v_set(&p[j], &p[j+1]);
+                //                              v_set(&p[j+1], &tmp);
+                //                              v_free(&tmp);
 
                 // fast swap 
                 // (contents of ptrs does not need to be copied)
@@ -2626,7 +2730,6 @@ void sb_bubble(var_t * var_p, addr_t use_ip, int n)
                 tmp = p[j];
                 p[j] = p[j + 1];
                 p[j + 1] = tmp;
-
             }
         }                       // j
     }                           // i
@@ -2653,8 +2756,9 @@ void cmd_sort()
 
     if (code_isvar()) {
         var_p = code_getvarptr();
-        if (var_p->type != V_ARRAY)
+        if (var_p->type != V_ARRAY) {
             errf = 1;
+        }
     } else {
         err_typemismatch();
         return;
@@ -2665,9 +2769,9 @@ void cmd_sort()
         code_skipnext();
         use_ip = code_getaddr();
         exit_ip = code_getaddr();
-    } else
+    } else {
         use_ip = exit_ip = INVALID_ADDR;
-
+    }
     // sort
     if (!errf) {
         if (var_p->v.a.size > 1) {
@@ -2679,13 +2783,14 @@ void cmd_sort()
 #endif
         }
     }
-//      NO RTE anymore... there is no meaning on this because of empty arrays/variables (example: TLOAD "data", V:SORT V)
-//      else
-//              rt_raise("SORT: Not an array"); 
+    //      NO RTE anymore... there is no meaning on this because of empty arrays/variables (example: TLOAD "data", V:SORT V)
+    //      else
+    //              rt_raise("SORT: Not an array"); 
 
     // return
-    if (exit_ip != INVALID_ADDR)
+    if (exit_ip != INVALID_ADDR) {
         code_jump(exit_ip);
+    }
 }
 
 //
@@ -2702,8 +2807,9 @@ void cmd_search()
     // parameters 1: the array
     if (code_isvar()) {
         var_p = code_getvarptr();
-        if (var_p->type != V_ARRAY)
+        if (var_p->type != V_ARRAY) {
             errf = 1;
+        }
     } else {
         err_typemismatch();
         return;
@@ -2711,13 +2817,14 @@ void cmd_search()
 
     // parameters 2: the key
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     v_init(&vkey);
     eval(&vkey);
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     // parameters 3: the return-variable
     par_getcomma();
     if (prog_error) {
@@ -2738,9 +2845,9 @@ void cmd_search()
         code_skipnext();
         use_ip = code_getaddr();
         exit_ip = code_getaddr();
-    } else
+    } else {
         use_ip = exit_ip = INVALID_ADDR;
-
+    }
     // search
     if (!errf) {
         rv_p->v.i = var_p->v.a.lbound[0] - 1;
@@ -2753,21 +2860,22 @@ void cmd_search()
             }
         }
     }
-//      NO RTE anymore... there is no meaning on this because of empty arrays/variables (example: TLOAD "data", V:SEARCH V...)
-//      else
-//              rt_raise("SEARCH: Not an array");
-    else
+    //      NO RTE anymore... there is no meaning on this because of empty arrays/variables (example: TLOAD "data", V:SEARCH V...)
+    //      else
+    //              rt_raise("SEARCH: Not an array");
+    else {
         rv_p->v.i = -1;
-
+    }
     // return
-    if (exit_ip != INVALID_ADDR)
+    if (exit_ip != INVALID_ADDR) {
         code_jump(exit_ip);
+    }
     v_free(&vkey);
 }
 
 /*
-*   SWAP a, b
-*/
+ *   SWAP a, b
+ */
 void cmd_swap(void)
 {
     var_t *va, *vb, *vc;
@@ -2779,12 +2887,13 @@ void cmd_swap(void)
         return;
     }
     par_getcomma(); {
-        if (prog_error)
+        if (prog_error) {
             return;
+        }
     }
-    if (code_isvar())
+    if (code_isvar()) {
         vb = code_getvarptr();
-    else {
+    } else {
         err_typemismatch();
         return;
     }
@@ -2798,105 +2907,115 @@ void cmd_swap(void)
 }
 
 /*
-*   POKE addr, byte
-*/
+ *   POKE addr, byte
+ */
 void cmd_poke(void)
 {
     int32 addr, val;
     byte *baddr;
 
     addr = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     val = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     baddr = (byte *) addr;
     *baddr = (byte) val;
 }
 
 /*
-*   POKE16 addr, word
-*/
+ *   POKE16 addr, word
+ */
 void cmd_poke16(void)
 {
     int32 addr, val;
     word *baddr;
 
     addr = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     val = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     baddr = (word *) addr;
     *baddr = (word) val;
 }
 
 /*
-*   POKE32 addr, dword
-*/
+ *   POKE32 addr, dword
+ */
 void cmd_poke32(void)
 {
     int32 addr, val;
     dword *baddr;
 
     addr = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     val = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     baddr = (dword *) addr;
     *baddr = (dword) val;
 }
 
 /*
-*   BCOPY srcadr, dstadr, size
-*/
+ *   BCOPY srcadr, dstadr, size
+ */
 void cmd_bcopy(void)
 {
     int32 addr, size;
     byte *bsrc, *bdst;
 
     addr = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     bsrc = (byte *) addr;
 
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     addr = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     bdst = (byte *) addr;
 
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
         return;
+    }
     size = par_getint();
-    if (prog_error)
+    if (prog_error) {
         return;
-
+    }
     memcpy(bdst, bsrc, size);
 }
 
 /*
-*   EXPRSEQ @array, xmin, xmax, count USE f(x)
-*/
+ *   EXPRSEQ @array, xmin, xmax, count USE f(x)
+ */
 void cmd_exprseq(void)
 {
     int count, i;
@@ -2930,12 +3049,13 @@ void cmd_exprseq(void)
                 v_setreal(elem_p, x);
                 exec_usefunc(elem_p, use_ip);
 
-                if (prog_error)
+                if (prog_error) {
                     break;
+                }
             }
-        } else
+        } else {
             v_toarray1(var_p, 0);
-
+        }
 
         // 
         code_jump(exit_ip);

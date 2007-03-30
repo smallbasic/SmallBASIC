@@ -62,6 +62,10 @@ static char fileName[OS_FILENAME_SIZE + 1];
 static int main_tid;
 static int exec_tid;
 
+#define IF_ERR_BREAK if (prog_error) {break;}
+#define IF_ERR_RETURN if (prog_error) {return;}
+#define IF_ERR_RETURN_0 if (prog_error) {return 0;}
+
 /*
  *   returns the next 32bit and moves the instruction pointer to the next instruction
  */
@@ -264,8 +268,7 @@ void code_pop_until(int type)
     code_pop(&node);
     while (node.type != type) {
         code_pop(&node);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
     }
 }
 
@@ -274,9 +277,9 @@ void code_pop_until(int type)
  */
 stknode_t * code_stackpeek()
 {
-    if (prog_stack_count)
+    if (prog_stack_count) {
         return &prog_stack[prog_stack_count - 1];
-
+    }
     return NULL;
 }
 
@@ -293,35 +296,36 @@ addr_t getarrayidx(var_t * array)
     do {
         v_init(&var);
         eval(&var);
-        if (prog_error)
-            return 0;
+        IF_ERR_RETURN_0;
+
         idim = v_getint(&var);
         v_free(&var);
-
-        if (prog_error)
-            return 0;
+        IF_ERR_RETURN_0;
 
         idim = idim - array->v.a.lbound[lev];
 
         m = idim;
-        for (i = lev + 1; i < array->v.a.maxdim; i++)
+        for (i = lev + 1; i < array->v.a.maxdim; i++) {
             m = m * (ABS(array->v.a.ubound[i] - array->v.a.lbound[i]) + 1);
+        }
         idx += m;
 
         // skip separator
         code = code_peek();
         if (code == kwTYPE_SEP) {
             code_skipnext();
-            if (code_getnext() != ',')
+            if (code_getnext() != ',') {
                 err_syntax_error();
+            }
         }
         // next
         lev++;
     } while (code_peek() != kwTYPE_LEVEL_END);
 
     if (!prog_error) {
-        if ((int) array->v.a.maxdim != lev)
+        if ((int) array->v.a.maxdim != lev) {
             err_missing_sep();
+        }
     }
     return idx;
 }
@@ -334,9 +338,9 @@ var_t * code_getvarptr_arridx(var_t * basevar_p)
     addr_t array_index;
     var_t *var_p = NULL;
 
-    if (code_peek() != kwTYPE_LEVEL_BEGIN)
+    if (code_peek() != kwTYPE_LEVEL_BEGIN) {
         err_arrmis_lp();
-    else {
+    } else {
         code_skipnext();        // '('
         array_index = getarrayidx(basevar_p);
         if (!prog_error) {
@@ -355,9 +359,9 @@ var_t * code_getvarptr_arridx(var_t * basevar_p)
                         else
                             return code_getvarptr_arridx(var_p);
                     }
-                } else
+                } else {
                     err_arrmis_rp();
-
+                }
             } else {
                 err_arridx(array_index, basevar_p->v.a.size);
             }
@@ -375,25 +379,32 @@ var_t * code_getvarptr()
 {
     var_t *basevar_p, *var_p = NULL;
 
-    if (code_peek() == kwTYPE_VAR) {
+    switch (code_peek()) {
+    case kwTYPE_VAR:
         code_skipnext();
         var_p = basevar_p = tvar[code_getaddr()];
         if (basevar_p->type == V_ARRAY) {       /* variable is an array */
-            if (code_peek() == kwTYPE_LEVEL_BEGIN)
+            if (code_peek() == kwTYPE_LEVEL_BEGIN) {
                 var_p = code_getvarptr_arridx(basevar_p);
+            }
         } else {
-            if (code_peek() == kwTYPE_LEVEL_BEGIN)
+            if (code_peek() == kwTYPE_LEVEL_BEGIN) {
                 err_varisnotarray();
+            }
         }
+        break;
+
+    case kwTYPE_UDS:
+        code_skipnext();
+        var_p = tvar[code_getaddr()];
+        var_p->type = V_UDS;
+        var_p->v.uds_p = code_getaddr(); // pointer to structure
+        break;
     }
 
     if (var_p == NULL && !prog_error) {
         err_notavar();
-#if defined(_UnixOS)
-        //              memcpy(NULL, var_p, 1024);      // crash
-#else
         return tvar[0];
-#endif
     }
 
     return var_p;
@@ -407,9 +418,9 @@ var_t * code_isvar_arridx(var_t * basevar_p)
     addr_t array_index;
     var_t *var_p = NULL;
 
-    if (code_peek() != kwTYPE_LEVEL_BEGIN)
+    if (code_peek() != kwTYPE_LEVEL_BEGIN) {
         return NULL;
-    else {
+    } else {
         code_skipnext();        // '('
         array_index = getarrayidx(basevar_p);
         if (!prog_error) {
@@ -422,16 +433,18 @@ var_t * code_isvar_arridx(var_t * basevar_p)
                     code_skipnext();    // ')', ')' level
                     if (code_peek() == kwTYPE_LEVEL_BEGIN) {    
                         // there is a second array inside
-                        if (var_p->type != V_ARRAY)
+                        if (var_p->type != V_ARRAY) {
                             return NULL;
-                        else
+                        } else {
                             return code_isvar_arridx(var_p);
+                        }
                     }
-                } else
+                } else {
                     return NULL;
-
-            } else
+                }
+            } else {
                 return NULL;
+            }
         }
     }
 
@@ -449,19 +462,28 @@ int code_isvar()
     addr_t cur_ip;
 
     cur_ip = prog_ip;           // store IP
-
-    if (code_peek() == kwTYPE_VAR) {
+    
+    switch (code_peek()) {
+    case kwTYPE_VAR:
         code_skipnext();
         var_p = basevar_p = tvar[code_getaddr()];
         if (basevar_p->type == V_ARRAY) {       /* variable is an array */
-            if (code_peek() == kwTYPE_LEVEL_BEGIN)
+            if (code_peek() == kwTYPE_LEVEL_BEGIN) {
                 var_p = code_isvar_arridx(basevar_p);
+            }
         } else {
-            if (code_peek() == kwTYPE_LEVEL_BEGIN)
+            if (code_peek() == kwTYPE_LEVEL_BEGIN) {
                 var_p = NULL;
+            }
         }
+        break;
+    
+    case kwTYPE_UDS:
+        code_skipnext();
+        var_p = tvar[code_getaddr()];
+        code_getaddr();
+        break;
     }
-
     if (var_p) {
         if (kw_check_evexit(code_peek()) || code_peek() == kwTYPE_LEVEL_END) {
             prog_ip = cur_ip;   // restore IP
@@ -532,9 +554,9 @@ void setsysvar_str(int index, const char *value)
         if (ctask->has_sysvars) {
             var_t *var_p = tvar[index];
 
-            if (var_p->type == V_STR)
+            if (var_p->type == V_STR) {
                 tmp_free(var_p->v.p.ptr);
-
+            }
             var_p->type = V_STR;
             var_p->const_flag = 1;
             var_p->v.p.ptr = tmp_alloc(l);
@@ -562,9 +584,20 @@ void exec_setup_predefined_variables()
     setsysvar_str(SYSVAR_OSNAME, OS_NAME);
     setsysvar_int(SYSVAR_SBVER, SB_DWORD_VER);
     setsysvar_num(SYSVAR_PI, 3.14159265358979323846);
-    setsysvar_int(SYSVAR_XMAX, 159);
-    setsysvar_int(SYSVAR_YMAX, 159);
-    setsysvar_int(SYSVAR_BPP, 1);
+
+    // Change from Haraszti - 30/3/2007 Thanks Atilla :)
+    //    setsysvar_int(SYSVAR_XMAX, 159);
+    //    setsysvar_int(SYSVAR_YMAX, 159);
+    //    setsysvar_int(SYSVAR_BPP, 1);
+    setsysvar_int(SYSVAR_XMAX, os_graf_mx-1);
+    setsysvar_int(SYSVAR_YMAX, os_graf_my-1);
+    if (os_graphics) {
+        setsysvar_int(SYSVAR_BPP, os_color_depth);
+    } else {
+        setsysvar_int(SYSVAR_BPP, 4);
+    }
+    // end of change
+
     setsysvar_int(SYSVAR_TRUE, -1);
     setsysvar_int(SYSVAR_FALSE, 0);
     setsysvar_int(SYSVAR_LINECHART, 1);
@@ -573,11 +606,11 @@ void exec_setup_predefined_variables()
     setsysvar_str(SYSVAR_COMMAND, opt_command);
 
 #if defined(_UnixOS)
-    if (dev_getenv("HOME"))
+    if (dev_getenv("HOME")) {
         strcpy(homedir, dev_getenv("HOME"));
-    else
+    } else {
         strcpy(homedir, "/tmp/");
-
+    }
     l = strlen(homedir);
     if (homedir[l - 1] != OS_DIRSEP) {
         homedir[l] = OS_DIRSEP;
@@ -585,19 +618,21 @@ void exec_setup_predefined_variables()
     }
     setsysvar_str(SYSVAR_HOME, homedir);
 #elif defined(_PalmOS)
-    if (dev_getenv("HOME"))
+    if (dev_getenv("HOME")) {
         strcpy(homedir, dev_getenv("HOME"));
-    else
+    } else {
         strcpy(homedir, "");
+    }
 #elif defined(_DOS)
-    if (dev_getenv("HOME"))
+    if (dev_getenv("HOME")) {
         strcpy(homedir, dev_getenv("HOME"));
-    else
+    } else {
         setsysvar_str(SYSVAR_HOME, "c:/");      // djgpp uses /
+    }
 #elif defined(_Win32)
-    if (dev_getenv("HOME"))     // this works on cygwin
+    if (dev_getenv("HOME")) {    // this works on cygwin
         strcpy(homedir, dev_getenv("HOME"));
-    else {
+    } else {
         char *p;
 
         GetModuleFileName(NULL, homedir, 1024);
@@ -641,8 +676,9 @@ void brun_stop()
  */
 int brun_status()
 {
-    if (prog_error)
+    if (prog_error) {
         return BRUN_STOPPED;
+    }
     return BRUN_RUNNING;
 }
 
@@ -651,8 +687,9 @@ int brun_status()
  */
 void brun_break()
 {
-    if (brun_status() == BRUN_RUNNING)
+    if (brun_status() == BRUN_RUNNING) {
         inf_break(prog_line);
+    }
     brun_stop();
 }
 
@@ -755,20 +792,19 @@ void cmd_run(int retf)
 
     v_init(&var);
     eval(&var);
-    if (prog_error)
+    IF_ERR_RETURN;
+
+    if (var.type != V_STR) {
+        err_typemismatch();
         return;
-    else {
-        if (var.type != V_STR) {
-            err_typemismatch();
-            return;
-        } else {
-            strcpy(fileName, var.v.p.ptr);
-            v_free(&var);
-        }
+    } else {
+        strcpy(fileName, var.v.p.ptr);
+        v_free(&var);
     }
 
-    if (!dev_run(fileName, retf))
+    if (!dev_run(fileName, retf)) {
         err_run_err(fileName);
+    }
 }
 
 /*
@@ -880,8 +916,9 @@ void bc_loop(int isf)
                 continue;
             case kwTYPE_LINE:
                 prog_line = code_getaddr();
-                if (trace_flag)
+                if (trace_flag) {
                     dev_printf("<%d>", prog_line);
+                }
                 continue;
             case kwLET:
                 cmd_let(0);
@@ -903,19 +940,16 @@ void bc_loop(int isf)
                 prog_ip = next_ip;
                 continue;
             case kwGOSUB:
-                cmd_gosub();
-                if (prog_error)
-                    break;
+                cmd_gosub(); 
+                IF_ERR_BREAK;
                 continue;
             case kwRETURN:
                 cmd_return();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwONJMP:
                 cmd_on_go();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwPRINT:
                 cmd_print(PV_CONSOLE);
@@ -925,25 +959,21 @@ void bc_loop(int isf)
                 break;
             case kwIF:
                 cmd_if();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwELIF:
                 cmd_elif();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwELSE:
                 cmd_else();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwENDIF:
                 code_pop(&node);
                 while (node.type != kwIF) {
                     code_pop(&node);
-                    if (prog_error)
-                        break;
+                    IF_ERR_BREAK;
                 }
 
                 if (!prog_error) {
@@ -953,23 +983,19 @@ void bc_loop(int isf)
                 break;
             case kwFOR:
                 cmd_for();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwNEXT:
                 cmd_next();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwWHILE:
                 cmd_while();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwWEND:
                 cmd_wend();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwREPEAT:
                 node.type = kwREPEAT;
@@ -980,28 +1006,23 @@ void bc_loop(int isf)
                 continue;
             case kwUNTIL:
                 cmd_until();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwSELECT:
                 cmd_select();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwCASE:
                 cmd_case();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwCASE_ELSE:
                 cmd_case_else();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwENDSELECT:
                 cmd_end_select();
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwDIM:
                 cmd_dim(0);
@@ -1046,12 +1067,13 @@ void bc_loop(int isf)
                     idx = code_getaddr();
                     if (lib & UID_UNIT_BIT) {
                         unit_exec(lib & (~UID_UNIT_BIT), idx, NULL);
-                        if (gsb_last_error)
+                        if (gsb_last_error) {
                             prog_error = gsb_last_error;
-                        if (prog_error)
-                            break;
-                    } else
+                        }
+                        IF_ERR_BREAK;
+                    } else {
                         sblmgr_procexec(lib, prog_symtable[idx].exp_idx);
+                    }
                 }
                 break;
                 /*
@@ -1291,19 +1313,19 @@ void bc_loop(int isf)
 
             case kwTYPE_CALL_UDP:      // user defined procedure
                 cmd_udp(kwPROC);
-                if (isf)
+                if (isf) {
                     proc_level++;
-                if (prog_error)
-                    break;
+                }
+                IF_ERR_BREAK;
                 continue;
             case kwTYPE_CALL_UDF:      // user defined function
                 if (isf) {
                     cmd_udp(kwFUNC);
                     proc_level++;
-                } else
+                } else {
                     err_syntax();
-                if (prog_error)
-                    break;
+                }
+                IF_ERR_BREAK;
                 continue;
             case kwTYPE_RET:
                 cmd_udpret();
@@ -1312,8 +1334,7 @@ void bc_loop(int isf)
                     if (proc_level == 0)
                         return;
                 }
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
             case kwTYPE_CRVAR:
                 cmd_crvar();
@@ -1328,8 +1349,7 @@ void bc_loop(int isf)
                     if (proc_level == 0)
                         return;
                 }
-                if (prog_error)
-                    break;
+                IF_ERR_BREAK;
                 continue;
 
                 // //////////////
@@ -1430,12 +1450,13 @@ void bc_loop(int isf)
         code = prog_source[prog_ip];
         if (code != kwTYPE_EOC && code != kwTYPE_LINE && !prog_error) {
 #if !defined(OS_LIMITED)
-            if (code == kwTYPE_SEP)
+            if (code == kwTYPE_SEP) {
                 rt_raise("COMMAND SEPARATOR '%c' FOUND!",
                          prog_source[prog_ip + 1]);
-            else
+            } else {
                 rt_raise("PARAM COUNT ERROR @%d=%X %d", prog_ip,
                          prog_source[prog_ip], code);
+            }
 #else
             err_invkw(prog_ip, code);
 #endif
@@ -1443,14 +1464,14 @@ void bc_loop(int isf)
             prog_ip++;
             if (code == kwTYPE_LINE) {
                 prog_line = code_getaddr();
-                if (trace_flag)
+                if (trace_flag) {
                     dev_printf("<%d>", prog_line);
+                }
             }
         }
 
         // quit on error
-        if (prog_error)
-            break;
+        IF_ERR_BREAK;
     }
 }
 
@@ -1531,24 +1552,25 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
             char *p;
             strcpy(fname, filename);
             p = strrchr(fname, '.');
-            if (p)
+            if (p) {
                 *p = '\0';
+            }
             strcat(fname, ".sbx");
-        } else
+        } else {
             find_unit(filename, fname);
-
-        if (access(fname, R_OK))
+        }
+        if (access(fname, R_OK)) {
             panic("File '%s' not found", filename);
-
+        }
         // look if it is already loaded
-        if (search_task(fname) != -1)
+        if (search_task(fname) != -1) {
             return search_task(fname);
-
+        }
         // open & load
         h = open(fname, O_RDWR | O_BINARY, 0660);
-        if (h == -1)
+        if (h == -1) {
             panic("File '%s' not found", fname);
-
+        }
         // load it
         if (libf) {
             read(h, &uft, sizeof(unit_file_t));
@@ -1588,10 +1610,11 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
                 cp += sizeof(unit_sym_t);
             }
         }
-    } else if (memcmp(source, "SBEx", 4) == 0)  // load an executable
+    } else if (memcmp(source, "SBEx", 4) == 0) { // load an executable
         ;
-    else                        // signature error
+    } else {                       // signature error
         panic("Wrong bytecode signature");
+    }
 
     /*
      *      ---------------------
@@ -1606,14 +1629,16 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
     prog_labcount = hdr.lab_count;
     prog_libcount = hdr.lib_count;
     prog_symcount = hdr.sym_count;
+    prog_uds_tab_ip = hdr.uds_tab_ip;
 
     // create variable-table
-    if (prog_varcount == 0)
+    if (prog_varcount == 0) {
         prog_varcount++;
+    }
     tvar = tmp_alloc(sizeof(var_t *) * prog_varcount);
-    for (i = 0; i < prog_varcount; i++)
+    for (i = 0; i < prog_varcount; i++) {
         tvar[i] = v_new();
-
+    }
     // create label-table
     if (prog_labcount) {
         tlab = tmp_alloc(sizeof(lab_t) * prog_labcount);
@@ -1675,12 +1700,11 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
         int lib_tid, j, k;
 
         // reset symbol mapping
-        for (i = 0; i < prog_symcount; i++)
+        for (i = 0; i < prog_symcount; i++) {
             prog_symtable[i].task_id = prog_symtable[i].exp_idx = -1;
-
+        }
         // for each library
         for (i = 0; i < prog_libcount; i++) {
-
             if (prog_libtable[i].type == 1) {
                 // === SB Unit ===
 
@@ -1803,23 +1827,27 @@ int exec_close_task()
         ctask->has_sysvars = 0;
 
         // clean up - rest tables
-        if (prog_expcount)
+        if (prog_expcount) {
             tmp_free(prog_exptable);
-        if (prog_libcount)
+        }
+        if (prog_libcount) {
             tmp_free(prog_libtable);
-        if (prog_symcount)
+        }
+        if (prog_symcount) {
             tmp_free(prog_symtable);
-        if (prog_labcount)
+        }
+        if (prog_labcount) {
             tmp_free(tlab);
-
+        }
         // clean up - the rest
         mem_unlock(bytecode_h);
         mem_free(bytecode_h);
         bytecode_h = 0;
     }
 
-    if (prog_error != -1 && prog_error != 0)
+    if (prog_error != -1 && prog_error != 0) {
         return 1;
+    }
     return 0;
 }
 
@@ -1988,9 +2016,9 @@ int sbasic_exec_task(int tid)
 
     bc_loop(0);                 // natural the value -1 is end of program
     success = (prog_error == 0 || prog_error == -1);
-    if (success)
+    if (success) {
         prog_error = 0;
-
+    }
     activate_task(prev_tid);
     return success;
 }
@@ -2010,8 +2038,9 @@ int sbasic_recursive_exec(int tid)
             // do the same for the childs
             activate_task(i);
             success = sbasic_recursive_exec(i);
-            if (!success)
+            if (!success) {
                 break;
+            }
         }
     }
 
@@ -2087,35 +2116,38 @@ int sbasic_compile(const char *file)
         return success;         // file is an executable
     }
 
-    if (opt_nosave)
+    if (opt_nosave) {
         comp_rq = 1;
-    else {
+    } else {
         char exename[OS_PATHNAME_SIZE + 1];
         char *p;
 
         // executable name
         strcpy(exename, file);
         p = strrchr(exename, '.');
-        if (p)
+        if (p) {
             *p = '\0';
+        }
         strcat(exename, ".sbx");
 
         if ((access(exename, R_OK) == 0)) {
             time_t bin_date = 0, src_date = 0;
 
             // compare dates
-            if ((bin_date = sys_filetime(exename)) == 0L)
+            if ((bin_date = sys_filetime(exename)) == 0L) {
                 comp_rq = 1;
-            else if ((src_date = sys_filetime(file)) == 0L)
+            } else if ((src_date = sys_filetime(file)) == 0L) {
                 comp_rq = 1;
-
+            }
             if (bin_date >= src_date) {
                 // TODO: check binary version
                 ;
-            } else
+            } else {
                 comp_rq = 1;
-        } else
+            }
+        } else {
             comp_rq = 1;
+        }
     }
 
     // compile it
@@ -2125,7 +2157,6 @@ int sbasic_compile(const char *file)
         success = comp_compile(file);
         sys_after_comp();       // system specific things; after
         // compilation
-
     }
     return success;
 }
@@ -2160,9 +2191,9 @@ int sbasic_exec(const char *file)
 
     // setup some default options
     opt_pref_width = opt_pref_height = opt_pref_bpp = 0;
-    if (opt_decomp)
+    if (opt_decomp) {
         opt_nosave = 1;
-
+    }
     // setup global values
     gsb_last_line = gsb_last_error = 0;
     strcpy(gsb_last_file, file);
@@ -2260,12 +2291,12 @@ int sbasic_main(const char *file)
     unit_mgr_init();
 
     // modules load
-    if (opt_loadmod)
+    if (opt_loadmod) {
         sblmgr_init(1, opt_modlist);    // initialize (load) Linux's C
-    // units
-    else
+        // units
+    } else {
         sblmgr_init(0, NULL);
-
+    }
     // go...
     success = sbasic_exec(file);
 

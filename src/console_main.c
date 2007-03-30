@@ -1,4 +1,4 @@
-// $Id: console_main.c,v 1.7 2006-08-10 07:47:18 zeeb90au Exp $
+// $Id: console_main.c,v 1.8 2007-03-30 20:33:03 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -65,10 +65,12 @@ int main(int argc, char *argv[])
     for (i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             if (opt_nomore) {
-                if (strlen(opt_command)) {
+                if (strlen(opt_command)+strlen(argv[i])+2 < OPT_CMD_SZ) { // +1 for space +1 for the trailing zero
                     strcat(opt_command, " ");
+					strcat(opt_command, argv[i]);
                 }
-                strcat(opt_command, argv[i]);
+				else
+					fprintf(stderr,"Too long command line! (%s)\n",argv[i]);
             } else {
                 switch (argv[i][1]) {
                 case '-':
@@ -249,10 +251,12 @@ int main(int argc, char *argv[])
                 }
                 opt_ihavename = 1;
             } else {
-                if (strlen(opt_command)) {
+                if (strlen(opt_command)+strlen(argv[i])+2 < OPT_CMD_SZ) { // +1 for space +1 for the trailing zero
                     strcat(opt_command, " ");
+					strcat(opt_command, argv[i]);
                 }
-                strcat(opt_command, argv[i]);
+				else
+					fprintf(stderr,"Too long command line! (%s)\n",argv[i]);
             }
         }
     }

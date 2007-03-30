@@ -1,5 +1,5 @@
-// $Id: var.c,v 1.7 2006-10-24 21:05:47 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
+// $Id: var.c,v 1.8 2007-03-30 20:33:04 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBasic Variable Manager.
@@ -18,8 +18,8 @@
 #define ARR_ALLOC       256
 
 /*
-*   initialize a variable
-*/
+ * initialize a variable
+ */
 void v_init(var_t * v)
 {
     v->type = V_INT;
@@ -28,8 +28,8 @@ void v_init(var_t * v)
 }
 
 /*
-*   creates and returns a new variable
-*/
+ * creates and returns a new variable
+ */
 var_t *v_new()
 {
     var_t *ptr;
@@ -40,8 +40,8 @@ var_t *v_new()
 }
 
 /*
-*   release variable
-*/
+ * release variable
+ */
 void v_free(var_t * v)
 {
     int i;
@@ -72,9 +72,9 @@ void v_free(var_t * v)
 }
 
 /*
-*   returns true if the user's program must use this var as an empty var
-*   this is usefull for arrays
-*/
+ * returns true if the user's program must use this var as an empty var
+ * this is usefull for arrays
+ */
 int v_isempty(var_t * var)
 {
     switch (var->type) {
@@ -82,6 +82,8 @@ int v_isempty(var_t * var)
         return (strlen((char *)var->v.p.ptr) == 0);
     case V_INT:
         return (var->v.i == 0);
+    case V_UDS:
+        return (var->v.uds_p == 0);
     case V_PTR:
         return (var->v.ap.p == 0);
     case V_NUM:
@@ -94,8 +96,8 @@ int v_isempty(var_t * var)
 }
 
 /*
-*   returns the length of the variable
-*/
+ * returns the length of the variable
+ */
 int v_length(var_t * var)
 {
     char tmpsb[64];
@@ -103,6 +105,9 @@ int v_length(var_t * var)
     switch (var->type) {
     case V_STR:
         return strlen((char *)var->v.p.ptr);
+    case V_UDS:
+        ltostr(var->v.uds_p, tmpsb);
+        return strlen(tmpsb);
     case V_PTR:
         ltostr(var->v.ap.p, tmpsb);
         return strlen(tmpsb);
@@ -120,14 +125,16 @@ int v_length(var_t * var)
 }
 
 /*
-*   returns the floating-point value of the variable v
-*/
+ * returns the floating-point value of the variable v
+ */
 double v_getval(var_t * v)
 {
-    if (v == NULL)
+    if (v == NULL) {
         err_evsyntax();
-    else {
+    } else {
         switch (v->type) {
+        case V_UDS:
+            return v->v.uds_p;
         case V_PTR:
             return v->v.ap.p;
         case V_INT:
@@ -144,14 +151,16 @@ double v_getval(var_t * v)
 }
 
 /*
-*   returns the integer value of the variable v
-*/
+ * returns the integer value of the variable v
+ */
 long v_igetval(var_t * v)
 {
     if (v == 0) {
         err_evsyntax();
     } else {
         switch (v->type) {
+        case V_UDS:
+            return v->v.uds_p;
         case V_PTR:
             return v->v.ap.p;
         case V_INT:
@@ -168,12 +177,12 @@ long v_igetval(var_t * v)
 }
 
 /*
-*   return array element pointer
-*/
+ * return array element pointer
+ */
 #if defined(OS_ADDR16)
 var_t *v_getelemptr(var_t * v, word index)
 #else
-var_t *v_getelemptr(var_t * v, dword index)
+    var_t *v_getelemptr(var_t * v, dword index)
 #endif
 {
     if (v->type == V_ARRAY) {
@@ -190,12 +199,12 @@ var_t *v_getelemptr(var_t * v, dword index)
 }
 
 /*
-*   resize an existing array
-*/
+ * resize an existing array
+ */
 #if defined(OS_ADDR16)
 void v_resize_array(var_t * v, word size)
 #else
-void v_resize_array(var_t * v, dword size)
+    void v_resize_array(var_t * v, dword size)
 #endif
 {
     byte *prev;
@@ -243,8 +252,9 @@ void v_resize_array(var_t * v, dword size)
             v->v.a.maxdim = 1;
 
             // 
-            if (prev)
+            if (prev) {
                 tmp_free(prev);
+            }
         } else if (v->v.a.size < size) {
             // resize up
 
@@ -267,8 +277,9 @@ void v_resize_array(var_t * v, dword size)
             // resize & copy
             prev = v->v.a.ptr;
             v->v.a.ptr = tmp_alloc(size * sizeof(var_t));
-            if (v->v.a.size > 0)
+            if (v->v.a.size > 0) {
                 memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
+            }
 #endif
 
             // init vars
@@ -283,16 +294,18 @@ void v_resize_array(var_t * v, dword size)
             v->v.a.maxdim = 1;
 
             // 
-            if (prev)
+            if (prev) {
                 tmp_free(prev);
+            }
         }
-    } else
+    } else {
         err_varisnotarray();
+    }
 }
 
 /*
-*   create RxC array
-*/
+ * create RxC array
+ */
 void v_tomatrix(var_t * v, int r, int c)
 {
     var_t *e;
@@ -317,8 +330,8 @@ void v_tomatrix(var_t * v, int r, int c)
 }
 
 /*
-*   create RxC array
-*/
+ * create RxC array
+ */
 var_t *v_new_matrix(int r, int c)
 {
     var_t *v;
@@ -330,12 +343,12 @@ var_t *v_new_matrix(int r, int c)
 }
 
 /*
-*   create array
-*/
+ * create array
+ */
 #if defined(OS_ADDR16)
 void v_toarray1(var_t * v, word r)
 #else
-void v_toarray1(var_t * v, dword r)
+    void v_toarray1(var_t * v, dword r)
 #endif
 {
     var_t *e;
@@ -374,18 +387,20 @@ void v_toarray1(var_t * v, dword r)
 }
 
 /*
-*   returns true if the variable v is not empty (0 for nums)
-*/
+ * returns true if the variable v is not empty (0 for nums)
+ */
 int v_is_nonzero(var_t * v)
 {
     switch (v->type) {
     case V_INT:
         return (v->v.i != 0);
     case V_NUM:
-//              return (v->v.n != 0.0 && v->v.n != -0.0);
+        //              return (v->v.n != 0.0 && v->v.n != -0.0);
         return (ABS(v->v.n) > 1E-308);
     case V_STR:
         return (v->v.p.size != 0);
+    case V_UDS:
+        return (v->v.uds_p != 0);
     case V_PTR:
         return (v->v.ap.p != 0);
     case V_ARRAY:
@@ -395,12 +410,12 @@ int v_is_nonzero(var_t * v)
 }
 
 /*
-*   compare the variable a with the variable b
-*   returns
-*   -1      a < b
-*   +1      a > b
-*   0       a = b
-*/
+ * compare the variable a with the variable b
+ * returns
+ *   -1      a < b
+ *   +1      a > b
+ *   0       a = b
+ */
 int v_compare(var_t * a, var_t * b)
 {
     double dt;
@@ -415,15 +430,17 @@ int v_compare(var_t * a, var_t * b)
 
     if (a->type == V_INT && b->type == V_INT) {
         di = (a->v.i - b->v.i);
-        if (di < 0)             // ndc: 18/03/2001
+        if (di < 0) {           // ndc: 18/03/2001
             return -1;
-        if (di > 0)
+        }
+        if (di > 0) {
             return 1;
+        }
         return 0;
     } else if ((a->type == V_INT || a->type == V_NUM) &&
                (b->type == V_INT || b->type == V_NUM)) {
         dt = (((a->type == V_INT) ? a->v.i : a->v.n) - ((b->type == V_INT) ? b->v.i : b->v.n));
-//              printf("== %g - %g = %g ==", a->v.n, b->v.n, dt);
+        //              printf("== %g - %g = %g ==", a->v.n, b->v.n, dt);
         return ZSGN(dt);
     }
     if ((a->type == V_STR) && (b->type == V_STR))
@@ -459,16 +476,18 @@ int v_compare(var_t * a, var_t * b)
     if ((a->type == V_ARRAY) && (b->type == V_ARRAY)) {
         // check size
         if (a->v.a.size != b->v.a.size) {
-            if (a->v.a.size < b->v.a.size)
+            if (a->v.a.size < b->v.a.size) {
                 return -1;
+            }
             return 1;
         }
         // check every element
         for (i = 0; i < a->v.a.size; i++) {
             ea = (var_t *) (a->v.a.ptr + sizeof(var_t) * i);
             eb = (var_t *) (b->v.a.ptr + sizeof(var_t) * i);
-            if ((ci = v_compare(ea, eb)) != 0)
+            if ((ci = v_compare(ea, eb)) != 0) {
                 return ci;
+            }
         }
 
         return 0;               // equal
@@ -479,25 +498,25 @@ int v_compare(var_t * a, var_t * b)
 }
 
 /*
-*/
+ */
 int v_addtype(var_t * a, var_t * b)
 {
-    if (a->type == V_STR)
+    if (a->type == V_STR) {
         return V_STR;
-
-    if (a->type == V_NUM || b->type == V_NUM)
+    }
+    if (a->type == V_NUM || b->type == V_NUM) {
         return V_NUM;
-
-    if (a->type == V_INT || b->type == V_STR)
+    }
+    if (a->type == V_INT || b->type == V_STR) {
         return V_NUM;
-
+    }
     return V_INT;
 }
 
 /*
-*   add two variables
-*   result = a + b
-*/
+ * add two variables
+ * result = a + b
+ */
 void v_add(var_t * result, var_t * a, var_t * b)
 {
     char tmpsb[64];
@@ -529,18 +548,20 @@ void v_add(var_t * result, var_t * a, var_t * b)
     } else if (a->type == V_STR && (b->type == V_INT || b->type == V_NUM)) {
         if (is_number((char *)a->v.p.ptr)) {
             result->type = V_NUM;
-            if (b->type == V_INT)
+            if (b->type == V_INT) {
                 result->v.n = b->v.i + v_getval(a);
-            else
+            } else {
                 result->v.n = b->v.n + v_getval(a);
+            }
         } else {
             result->type = V_STR;
             result->v.p.ptr = (byte *) tmp_alloc(strlen((char *)a->v.p.ptr) + 64);
             strcpy((char *)result->v.p.ptr, (char *)a->v.p.ptr);
-            if (b->type == V_INT)
+            if (b->type == V_INT) {
                 ltostr(b->v.i, tmpsb);
-            else
+            } else {
                 ftostr(b->v.n, tmpsb);
+            }
             strcat((char *)result->v.p.ptr, tmpsb);
             result->v.p.size = strlen((char *)result->v.p.ptr) + 1;
         }
@@ -554,10 +575,11 @@ void v_add(var_t * result, var_t * a, var_t * b)
         } else {
             result->type = V_STR;
             result->v.p.ptr = (byte *) tmp_alloc(strlen((char *)b->v.p.ptr) + 64);
-            if (a->type == V_INT)
+            if (a->type == V_INT) {
                 ltostr(a->v.i, tmpsb);
-            else
+            } else {
                 ftostr(a->v.n, tmpsb);
+            }
             strcpy((char *)result->v.p.ptr, tmpsb);
             strcat((char *)result->v.p.ptr, (char *)b->v.p.ptr);
             result->v.p.size = strlen((char *)result->v.p.ptr) + 1;
@@ -566,21 +588,117 @@ void v_add(var_t * result, var_t * a, var_t * b)
 }
 
 /*
-*   assign (dest = src)
-*/
-void v_set(var_t * dest, const var_t * src)
+ * returns the starting address for the uds of the given id
+ * see comp_pass2_uds() in scan.c
+ */
+addr_t v_get_uds_ip(addr_t var_id) {
+    addr_t uds_tab_ip = prog_uds_tab_ip;
+    while (uds_tab_ip < prog_length) {
+        addr_t struct_id = (addr_t)code_peekaddr(uds_tab_ip);
+        addr_t struct_ip = (addr_t)code_peekaddr(uds_tab_ip+ADDRSZ);
+        uds_tab_ip += ADDRSZ+ADDRSZ;
+        if (struct_id == var_id) {
+            return struct_ip;
+        }
+    }
+    return -1;
+}
+
+/*
+ * copy values from one structure to another
+ */
+void v_set_uds(addr_t dst_ip, addr_t src_ip) {
+    if (!src_ip || !dst_ip) {
+        return;
+    }
+    
+    while (code_peekaddr(src_ip) != -1) {
+        bid_t src_field_id = (bid_t)code_peekaddr(src_ip);
+        var_t* src_field = tvar[code_peekaddr(src_ip+ADDRSZ)];
+        src_ip += (ADDRSZ+ADDRSZ);
+
+        // find the matching field_id
+        while (code_peekaddr(dst_ip) != -1) {
+            bid_t dst_field_id = (bid_t)code_peekaddr(dst_ip);
+            var_t* dst_field = tvar[code_peekaddr(dst_ip+ADDRSZ)];
+            dst_ip += (ADDRSZ+ADDRSZ);
+            if (src_field_id == dst_field_id) {
+                v_set(dst_field, src_field);
+                break;
+            }
+        }
+    }
+}
+
+/*
+ * empty struct values 
+ */
+void v_clear_uds(const var_t* var) {
+    addr_t ip = var->v.uds_p; // location of src's structure
+    while (ip && code_peekaddr(ip) != -1) {
+        bid_t field_id = (bid_t)code_peekaddr(ip);
+        var_t* field = tvar[code_peekaddr(ip+ADDRSZ)];
+        ip += (ADDRSZ+ADDRSZ);
+        v_free(field);
+    }
+}
+
+/*
+ * assign (dest = src)
+ */
+void v_set(var_t* dest, const var_t* src)
 {
     int i;
     var_t *dest_vp, *src_vp;
 
-    v_free(dest);
+    if (src->type == V_UDS) {
+        if (dest->type != V_UDS) {
+            v_free(dest);
 
+            // default is copy by reference
+            dest->type = V_UDS;
+            dest->v.uds_p = src->v.uds_p;
+
+            int var_id = -1;
+            int i;
+
+            // find the var_id by scanning the entire var_table
+            for (i = 0; i < prog_varcount; i++) {
+                if (dest == tvar[i]) {
+                    var_id = i;
+                    break;
+                }
+            }
+            if (var_id == -1) {
+                return;
+            }
+
+            // read the lookup table to find the target uds address
+            addr_t struct_ip = v_get_uds_ip(var_id);
+            if (struct_ip == -1) {
+                return;
+            }
+            dest->v.uds_p = struct_ip;
+        }
+
+        v_set_uds(dest->v.uds_p, src->v.uds_p);
+        return;
+    } else if (dest->type == V_UDS) {
+        // lvalue struct assigned to non-struct rvalue
+        v_clear_uds(dest);
+        return;
+    }
+
+    v_free(dest);
     *dest = *src;
     dest->const_flag = 0;
-    if (src->type == V_STR) {
+    switch (src->type) {
+    case V_STR:
         dest->v.p.ptr = (byte *) tmp_alloc(strlen((char *)src->v.p.ptr) + 1);
         strcpy((char *)dest->v.p.ptr, (char *)src->v.p.ptr);
-    } else if (src->type == V_ARRAY) {
+        break;
+
+    case V_ARRAY:
         if (src->v.a.size) {
             dest->v.a.ptr = tmp_alloc(src->v.a.size * sizeof(var_t));
 
@@ -597,15 +715,18 @@ void v_set(var_t * dest, const var_t * src)
             dest->v.a.ubound[0] = dest->v.a.lbound[0] = opt_base;
             dest->v.a.maxdim = 1;
         }
-    } else if (src->type == V_PTR) {
+        break;
+
+    case V_PTR:
         dest->v.ap = src->v.ap;
-        dest->type = V_PTR;
+        dest->type = src->type;
+        break;
     }
 }
 
 /*
-*   return a full copy of the 'source'
-*/
+ * return a full copy of the 'source'
+ */
 var_t *v_clone(const var_t * source)
 {
     var_t *vnew;
@@ -617,39 +738,40 @@ var_t *v_clone(const var_t * source)
 }
 
 /*
-*   add b to a
-*/
+ * add b to a
+ */
 void v_inc(var_t * a, var_t * b)
 {
-    if (a->type == V_INT && b->type == V_INT)
+    if (a->type == V_INT && b->type == V_INT) {
         a->v.i += b->v.i;
-    else if (a->type == V_NUM && b->type == V_NUM)
+    } else if (a->type == V_NUM && b->type == V_NUM) {
         a->v.n += b->v.n;
-    else if (a->type == V_NUM && b->type == V_INT)
+    } else if (a->type == V_NUM && b->type == V_INT) {
         a->v.n += b->v.i;
-    else if (a->type == V_INT && b->type == V_NUM) {
+    } else if (a->type == V_INT && b->type == V_NUM) {
         a->type = V_NUM;
         a->v.n = a->v.i + b->v.n;
-    } else
+    } else {
         err_varnotnum();
+    }
 }
 
 /*
-*/
+ */
 int v_sign(var_t * x)
 {
-    if (x->type == V_INT)
+    if (x->type == V_INT) {
         return (x->v.i < 0) ? -1 : ((x->v.i == 0) ? 0 : 1);
-    else if (x->type == V_NUM)
+    } else if (x->type == V_NUM) {
         return (x->v.n < 0) ? -1 : ((x->v.n == 0) ? 0 : 1);
-
+    }
     err_varnotnum();
     return 0;
 }
 
 /*
-*   setup a string variable
-*/
+ * setup a string variable
+ */
 void v_createstr(var_t * v, const char *src)
 {
     int l;
@@ -662,8 +784,8 @@ void v_createstr(var_t * v, const char *src)
 }
 
 /*
-*   converts the variable to string-variable
-*/
+ * converts the variable to string-variable
+ */
 void v_tostr(var_t * arg)
 {
     if (arg->type != V_STR) {
@@ -673,6 +795,9 @@ void v_tostr(var_t * arg)
         tmp = tmp_alloc(64);
 
         switch (arg->type) {
+        case V_UDS:
+            ltostr(arg->v.uds_p, tmp);
+            break;
         case V_PTR:
             ltostr(arg->v.ap.p, tmp);
             break;
@@ -698,8 +823,8 @@ void v_tostr(var_t * arg)
 }
 
 /*
-*   set the value of 'var' to string
-*/
+ * set the value of 'var' to string
+ */
 void v_setstr(var_t * var, const char *string)
 {
     v_free(var);
@@ -720,8 +845,8 @@ void v_setstrn(var_t * var, const char *string, int len)
 }
 
 /*
-*   set the value of 'var' to string
-*/
+ * set the value of 'var' to string
+ */
 void v_setstrf(var_t * var, const char *fmt, ...)
 {
     char *buf;
@@ -746,8 +871,8 @@ void v_setstrf(var_t * var, const char *fmt, ...)
 }
 
 /*
-*   adds a string to current string value
-*/
+ * adds a string to current string value
+ */
 void v_strcat(var_t * var, const char *string)
 {
     if (var->type == V_INT || var->type == V_NUM) {
@@ -763,8 +888,8 @@ void v_strcat(var_t * var, const char *string)
 }
 
 /*
-*   set the value of 'var' to n
-*/
+ * set the value of 'var' to n
+ */
 void v_setreal(var_t * var, double n)
 {
     v_free(var);
@@ -773,8 +898,8 @@ void v_setreal(var_t * var, double n)
 }
 
 /*
-*   set the value of 'var' to i
-*/
+ * set the value of 'var' to i
+ */
 void v_setint(var_t * var, int32 i)
 {
     v_free(var);
@@ -783,8 +908,8 @@ void v_setint(var_t * var, int32 i)
 }
 
 /*
-*   return the string value of 'var'
-*/
+ * return the string value of 'var'
+ */
 char *v_getstr(var_t * var)
 {
     if (var->type != V_STR) {
@@ -794,8 +919,8 @@ char *v_getstr(var_t * var)
 }
 
 /*
-*   set the value of 'var' to 'itable' integer array
-*/
+ * set the value of 'var' to 'itable' integer array
+ */
 void v_setintarray(var_t * var, int32 * itable, int count)
 {
     int i;
@@ -809,8 +934,8 @@ void v_setintarray(var_t * var, int32 * itable, int count)
 }
 
 /*
-*   set the value of 'var' to 'itable' real's array
-*/
+ * set the value of 'var' to 'itable' real's array
+ */
 void v_setrealarray(var_t * var, double *ntable, int count)
 {
     int i;
@@ -824,8 +949,8 @@ void v_setrealarray(var_t * var, double *ntable, int count)
 }
 
 /*
-*   set the value of 'var' to 'itable' string array
-*/
+ * set the value of 'var' to 'itable' string array
+ */
 void v_setstrarray(var_t * var, char **ctable, int count)
 {
     int i;
@@ -839,8 +964,8 @@ void v_setstrarray(var_t * var, char **ctable, int count)
 }
 
 /*
-*   set an empty string
-*/
+ * set an empty string
+ */
 void v_zerostr(var_t * r)
 {
     v_free(r);
@@ -851,18 +976,18 @@ void v_zerostr(var_t * r)
 }
 
 /*
-*   convert's a user's string to variable
-*
-*   its decides in what format to store the value
-*   its used mostly by 'input' functions
-*/
+ * convert's a user's string to variable
+ *
+ * its decides in what format to store the value
+ * its used mostly by 'input' functions
+ */
 void v_input2var(const char *str, var_t * var)
 {
     v_free(var);
 
-    if (strlen(str) == 0)       // no data
+    if (strlen(str) == 0) {      // no data
         v_setstr(var, str);
-    else {
+    } else {
         char *np, *sb;
         char buf[64];
         int type;
@@ -872,13 +997,13 @@ void v_input2var(const char *str, var_t * var)
         sb = tmp_strdup(str);
         np = get_numexpr(sb, buf, &type, &lv, &dv);
 
-        if (type == 1 && *np == '\0')
+        if (type == 1 && *np == '\0') {
             v_setint(var, lv);
-        else if (type == 2 && *np == '\0')
+        } else if (type == 2 && *np == '\0') {
             v_setreal(var, dv);
-        else
+        } else {
             v_setstr(var, str);
-
+        }
         tmp_free(sb);
     }
 }

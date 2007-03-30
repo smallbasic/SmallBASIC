@@ -1,4 +1,4 @@
-// $Id: proc.c,v 1.6 2006-08-15 13:15:38 zeeb90au Exp $
+// $Id: proc.c,v 1.7 2007-03-30 20:33:03 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -255,6 +255,10 @@ void pv_writevar(var_t * var, int method, int handle)
     switch (var->type) {
     case V_STR:
         pv_write((char *)var->v.p.ptr, method, handle);
+        break;
+    case V_UDS:
+        ltostr(var->v.uds_p, tmpsb);
+        pv_write(tmpsb, method, handle);
         break;
     case V_PTR:
         ltostr(var->v.ap.p, tmpsb);

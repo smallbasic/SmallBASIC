@@ -1,4 +1,4 @@
-// $Id: var.h,v 1.5 2006-08-15 13:15:38 zeeb90au Exp $
+// $Id: var.h,v 1.6 2007-03-30 20:33:04 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -36,6 +36,7 @@
 #define V_ARRAY     4 /**< variable type, array of variables           @ingroup var */
 #define V_PTR       5 /**< variable type, pointer to UDF or label      @ingroup var */
 #define V_LIST      6 /**< variable type, dynamic list - N/A           @ingroup var */
+#define V_UDS       7 /**< variable type, user defined structure       @ingroup var */
 
 /*
  *   predefined system variables - index
@@ -98,12 +99,14 @@ struct var_s {
         double n;              /**< numeric value */
         long i;                /**< integer value */
 #endif
-        
         // pointer to sub/func variable 
         struct {
             addr_t p;          /** address pointer */
             addr_t v;          /** return-var ID */
         } ap;
+
+        // user defined structure
+        addr_t uds_p;          /** pointer to the "structure" */
         
         // generic ptr (string)
         struct {
@@ -129,7 +132,6 @@ struct var_s {
             int32 lbound[MAXDIM];  /**< lower bound */
             int32 ubound[MAXDIM];  /**< upper bound */
 #endif
-            
             byte maxdim;       /**< number of dimensions */
         } a;
     } v;
@@ -380,6 +382,19 @@ void v_createstr(var_t * v, const char *src);
  *   @param arg is the variable
  */
 void v_tostr(var_t * arg);
+
+/**
+ *   @ingroup var
+ *
+ *   copies data from one user defined structure to another
+ *
+ */
+void v_set_uds(addr_t dst_ip, addr_t src_ip);
+
+/*
+ * returns the starting address for the uds of the given id
+ */
+addr_t v_get_uds_ip(addr_t var_id);
 
 /**
  *   @ingroup var

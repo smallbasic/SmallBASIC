@@ -1,5 +1,5 @@
-// $Id: eval.c,v 1.7 2006-08-19 11:22:47 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
+// $Id: eval.c,v 1.8 2007-03-30 20:33:03 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBASIC-executor: expressions
@@ -34,8 +34,8 @@ void mat_mul(var_t * l, var_t * r) SEC(BMATH);
 int v_wc_match(var_t * vwc, var_t * v) SEC(BMATH);
 
 /*
-*   matrix: convert var_t to double[r][c]
-*/
+ *   matrix: convert var_t to double[r][c]
+ */
 double *mat_toc(var_t * v, int *rows, int *cols)
 {
     int i, j, pos;
@@ -70,8 +70,8 @@ double *mat_toc(var_t * v, int *rows, int *cols)
 }
 
 /*
-*   matrix: conv. double[nr][nc] to var_t
-*/
+ *   matrix: conv. double[nr][nc] to var_t
+ */
 void mat_tov(var_t * v, double *m, int rows, int cols, int protect_col1)
 {
     var_t *e;
@@ -93,8 +93,8 @@ void mat_tov(var_t * v, double *m, int rows, int cols, int protect_col1)
 }
 
 /*
-*   matrix: 1op
-*/
+ *   matrix: 1op
+ */
 void mat_op1(var_t * l, int op, double n)
 {
     double *m1, *m;
@@ -126,24 +126,24 @@ void mat_op1(var_t * l, int op, double n)
 }
 
 /*
-*   M = -A
-*/
+ *   M = -A
+ */
 void mat_antithetos(var_t * v)
 {
     mat_op1(v, 'A', 0);
 }
 
 /*
-*   M = ëA
-*/
+ *   M = ëA
+ */
 void mat_mulN(var_t * v, double N)
 {
     mat_op1(v, '*', N);
 }
 
 /*
-*   matrix - add/sub
-*/
+ *   matrix - add/sub
+ */
 void mat_op2(var_t * l, var_t * r, int op)
 {
     double *m1, *m2, *m = NULL;
@@ -199,8 +199,8 @@ void mat_sub(var_t * l, var_t * r)
 }
 
 /*
-*   matrix: multiply
-*/
+ *   matrix: multiply
+ */
 void mat_mul(var_t * l, var_t * r)
 {
     double *m1, *m2, *m = NULL;
@@ -243,8 +243,8 @@ void mat_mul(var_t * l, var_t * r)
 }
 
 /*
-*   The LIKE operator
-*/
+ *   The LIKE operator
+ */
 int v_wc_match(var_t * vwc, var_t * v)
 {
     int ri;
@@ -285,8 +285,8 @@ int v_wc_match(var_t * vwc, var_t * v)
 }
 
 /*
-*   executes the expression (Code[IP]) and returns the result (r)
-*/
+ *   executes the expression (Code[IP]) and returns the result (r)
+ */
 void eval(var_t * r)
 {
     code_t code;
@@ -311,7 +311,6 @@ void eval(var_t * r)
     do {
         code = CODE(IP);
         IP++;
-
         switch (code) {
         case kwTYPE_INT:
             // //////////// integer - constant //////////////
@@ -348,21 +347,27 @@ void eval(var_t * r)
             r->v.ap.p = code_getaddr();
             r->v.ap.v = code_getaddr();
             break;
-            
+
             // ////////////// variable ///////////////////
+        case kwTYPE_UDS:
         case kwTYPE_VAR:
             V_FREE(r);
 
             IP--;
             var_p = code_getvarptr();
-            if (prog_error)
-                return;
 
+            if (prog_error) {
+                return;
+            }
             switch (var_p->type) {
             case V_PTR:
-                r->type = V_PTR;
+                r->type = var_p->type;
                 r->v.ap.p = var_p->v.ap.p;
                 r->v.ap.v = var_p->v.ap.v;
+                break;
+            case V_UDS:
+                r->type = var_p->type;
+                r->v.uds_p = var_p->v.uds_p;
                 break;
             case V_INT:
                 r->type = V_INT;
@@ -409,7 +414,7 @@ void eval(var_t * r)
             if (eval_sp == eval_size) {
                 eval_size += 64;
                 eval_stk = tmp_realloc(eval_stk, sizeof(var_t) * eval_size);
-//                              rt_raise("EVAL: STACK OVERFLOW");
+                //                              rt_raise("EVAL: STACK OVERFLOW");
             }
             break;
 
@@ -476,7 +481,6 @@ void eval(var_t * r)
                         }
                         break;
                     }
-
                     v_set(r, &vtmp);
                     V_FREE(&vtmp);
                 }
@@ -552,7 +556,7 @@ void eval(var_t * r)
                     if ((int32) rf == 0)
                         err_division_by_zero();
                     else {
-//                                              r->v.n = fmod(lf, rf);
+                        //                                              r->v.n = fmod(lf, rf);
                         ri = rf;
                         li = (lf < 0.0) ? -floor(-lf) : floor(lf);
                         r->v.i = li - ri * (li / ri);
@@ -788,8 +792,8 @@ void eval(var_t * r)
                 V_FREE(r);
                 if (lib & UID_UNIT_BIT) {
                     unit_exec(lib & (~UID_UNIT_BIT), idx, r);
-//                                      if      ( prog_error )
-//                                              return;
+                    //                                      if      ( prog_error )
+                    //                                              return;
                 } else
                     sblmgr_funcexec(lib, prog_symtable[idx].exp_idx, r);
             }
@@ -1212,7 +1216,7 @@ void eval(var_t * r)
                 return;         // warning: normal exit
             }
 
-            rt_raise("UNKNOWN FUNC=%d", prog_line, code);
+            rt_raise("UNKNOWN FUNC=%d", code);
         };
 
         // run-time error check

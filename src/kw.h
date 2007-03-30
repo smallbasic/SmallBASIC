@@ -68,6 +68,7 @@ kwTYPE_MULOPR,			/* MUL/DIV/IDIV operator */
 kwTYPE_POWOPR,			/* POW(x,y) operator */
 kwTYPE_UNROPR,			/* Unary operator */
 kwTYPE_VAR,				/* Variable */
+kwTYPE_UDS,  			/* Structure */
 kwTYPE_SEP,				/* Separator */
 kwTYPE_LINE,			/* Debug info: SOURCE LINE */
 kwTYPE_LEVEL_BEGIN,		/* Parenthesis ( */
