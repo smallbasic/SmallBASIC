@@ -17,6 +17,11 @@
 	#include <conio.h>
 #elif defined(_UnixOS)
 	#include <sys/ioctl.h>
+	#ifndef TIOCGWINSZ
+	// in Cygwin TIOCGWINSZ defined in termios.h! 
+	#include <termios.h>
+	#endif
+	#include <sys/select.h>
 #endif
 #include "help_subsys.h"
 
@@ -260,7 +265,7 @@ char	*intm_tab2spc(char *src)
 
 /*
 */
-char	*strndup(const char *src, int size)
+char	*sb_strndup(const char *src, int size)
 {
 	char	*p;
 	
@@ -1165,13 +1170,13 @@ int		intm_print_fname(const char *file)
 
 	// size
 	if	( st.st_size > (1024 * 1024 * 1024) )	
-		sprintf(size, "%4ld GB   ", (st.st_size + (1024*1024*512)) / (1024 * 1024 * 1024) );
+		sprintf(size, "%4ld GB   ", (long)(st.st_size + (1024*1024*512)) / (1024 * 1024 * 1024) );
 	else if	( st.st_size > (1024 * 1024) )	
-		sprintf(size, "%4ld MB   ", (st.st_size + (1024*512)) / (1024 * 1024) );
+		sprintf(size, "%4ld MB   ", (long)(st.st_size + (1024*512)) / (1024 * 1024) );
 	if	( st.st_size > 1024 )	
-		sprintf(size, "%4ld kB   ", (st.st_size + 512) / 1024 );
+		sprintf(size, "%4ld kB   ", (long)(st.st_size + 512) / 1024 );
 	else	
-		sprintf(size, "%4ld Bytes", st.st_size);
+		sprintf(size, "%4ld Bytes", (long)st.st_size);
 
 	// time
 	strftime(tmbuf, 63, "%a %d %b %Y", localtime((time_t*)&st.st_mtime));
@@ -1485,7 +1490,7 @@ void	intm_set_hist(const char *src)
 	p = (char *) src;
 	while ( (e = strchr(p, '\n')) )	{
 		size = e - p;
-		np = strndup(p, size);
+		np = sb_strndup(p, size);
 		add_history(np);
 		free(np);
 
@@ -1730,6 +1735,7 @@ int		interactive_mode(const char *fname)
 						// save
 						if	( !errf )	{
 							fp = fopen(fname, "wb");
+							  if (intm_head) {
 							np = intm_head;
 							while ( np )	{
 								fprintf(fp, "%s\n", np->buf);
@@ -1743,6 +1749,9 @@ int		interactive_mode(const char *fname)
 							clreol();
 							cprintf("\n");
 							#endif
+							  } else {
+								printf("No any line of code to run!\n");
+							  }
 							}
 						}
 					else if	( strcmp(intm_argv[0], "NEW") == 0 )	{

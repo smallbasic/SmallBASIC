@@ -10,7 +10,7 @@
 #if !defined(_sb_interactive_mode)
 #define _sb_interactive_mode
 
-int		intractive_mode(const char *fname);
+int      interactive_mode(const char *fname);
 
 #endif
 
