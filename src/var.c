@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: var.c,v 1.8 2007-03-30 20:33:04 zeeb90au Exp $
+// $Id: var.c,v 1.9 2007-04-02 03:38:40 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBasic Variable Manager.
@@ -608,7 +608,7 @@ addr_t v_get_uds_ip(addr_t var_id) {
  * copy values from one structure to another
  */
 void v_set_uds(addr_t dst_ip, addr_t src_ip) {
-    if (!src_ip || !dst_ip) {
+    if ((!src_ip || !dst_ip) || src_ip == dst_ip) {
         return;
     }
     
