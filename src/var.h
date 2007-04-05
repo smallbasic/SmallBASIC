@@ -1,4 +1,4 @@
-// $Id: var.h,v 1.6 2007-03-30 20:33:04 zeeb90au Exp $
+// $Id: var.h,v 1.7 2007-04-05 20:56:44 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -390,6 +390,15 @@ void v_tostr(var_t * arg);
  *
  */
 void v_set_uds(addr_t dst_ip, addr_t src_ip);
+
+/**
+ * @ingroup var
+ *
+ * clones data from one user defined structure to another. pushes
+ * replaced variables onto the stack for later clean 
+ *
+ *
+void v_clone_uds(addr_t dst_ip, addr_t src_ip);
 
 /*
  * returns the starting address for the uds of the given id

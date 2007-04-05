@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.17 2007-03-30 20:33:02 zeeb90au Exp $
+// $Id: blib.c,v 1.18 2007-04-05 20:56:44 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -1301,6 +1301,7 @@ void cmd_param()
     bid_t vid;
     byte vattr;
     stknode_t ncall, *param, node;
+    var_t* param_var;
 
     code_pop(&ncall);           // get caller's info-node
 
@@ -1327,6 +1328,19 @@ void cmd_param()
         for (i = 0; i < pcount; i++) {  // check parameters one-by-one
             vattr = code_getnext();
             vid = code_getaddr();
+            param_var = param[i].x.param.res;
+
+            if (param_var->type == V_UDS) {
+                // vid is the uds group_id. search the uds-table
+                // to find the start of the containers elements
+                addr_t struct_ip = v_get_uds_ip(vid);
+                if (struct_ip != -1 &&
+                    (struct_ip != param_var->v.uds_p || !vattr)) {
+                    // don't clone fields if formal and actual args have the
+                    // same name and the BYREF modifier has been specified
+                    v_clone_uds(struct_ip, param_var->v.uds_p);
+                }
+            }
 
             if ((vattr & 0x80) == 0) {  // UDP requires a 'by value' parameter; any value is
                                         // good
@@ -1337,9 +1351,9 @@ void cmd_param()
 
                 // assign
                 if (param[i].x.param.vcheck == 1) {
-                    tvar[vid] = param[i].x.param.res;   // its already cloned by the CALL (expr)
+                    tvar[vid] = param_var;   // its already cloned by the CALL (expr)
                 } else {
-                    tvar[vid] = v_clone(param[i].x.param.res);
+                    tvar[vid] = v_clone(param_var);
                 }
             } else {              // UDP requires 'by reference' parameter
                 if (param[i].x.param.vcheck == 1) {
@@ -1350,16 +1364,7 @@ void cmd_param()
                     node.x.vdvar.vid = vid;
                     node.x.vdvar.vptr = tvar[vid];
                     code_push(&node);   // store previous variable to stack (with the same ID)
-                    tvar[vid] = param[i].x.param.res;   // use the 'var_t'
-                }
-            }
-
-            if (tvar[vid]->type == V_UDS) {
-                // use vid as a uds group_id, then search the struct-table
-                // to find the start of its structure elements
-                addr_t struct_ip = v_get_uds_ip(vid);
-                if (struct_ip != -1) {
-                    v_set_uds(struct_ip, tvar[vid]->v.uds_p);
+                    tvar[vid] = param_var;   // use the 'var_t'
                 }
             }
         }
@@ -1387,8 +1392,8 @@ void cmd_udpret()
                                                         // variable)
         } else if (node.type == kwBYREF) { // variable 'by reference'
             if (tvar[node.x.vdvar.vid]->type == V_UDS) {
-                // simulate pass by reference of structure variables by 
-                // copying uds fields. 
+                // simulate pass by reference of UDS variables by copying field
+                // data back to the fields referenced by the formal variable/container
                 // tvar[node.x.vdvar.vid] is the variable passed to the udf
                 // node.x.vdvar.vid is the var_id of the formal udf argument
                 addr_t struct_ip = v_get_uds_ip(node.x.vdvar.vid);

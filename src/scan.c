@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.22 2007-03-30 20:33:03 zeeb90au Exp $
+// $Id: scan.c,v 1.23 2007-04-05 20:56:44 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -861,7 +861,7 @@ void comp_add_variable(bc_t* bc, const char *var_name) {
         if (!comp_check_uds(var_name, name_len, &usd_old, 0)) {
             // base_id is copied from the found child element
             uds.var_id = var_id;
-            uds.ip = 1;
+            uds.is_container = 1;
             uds.name_len = name_len;
             strcpy(uds.name, var_name);
             dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
@@ -897,7 +897,7 @@ void comp_add_variable(bc_t* bc, const char *var_name) {
 
             uds.name_len = name_len;
             uds.var_id = var_id;
-            uds.ip = 0;
+            uds.is_container = 0;
             uds.base_id = base_id;
             uds.field_id = comp_get_uds_field_id(dot+1);
             strcpy(uds.name, var_name);
@@ -4419,13 +4419,12 @@ int comp_pass2_uds()
     while (n_visited < comp_udscount) {
         if (!visited[i]) {
             dbt_read(comp_udstable, i, &uds, sizeof(comp_struct_t));
-            
             if (curr_struct_id == -1 || curr_struct_id == uds.base_id) {
                 curr_struct_id = uds.base_id;
                 next_struct_id = -1; // find next non-matching baseid
                 visited[i] = 1;
                 n_visited++;
-                if (uds.ip) {
+                if (uds.is_container) {
                     // update all uds variables (foo) of the same id
                     // allowing the kwTYPE_UDS to find its fields
                     addr_t var_id, addr;

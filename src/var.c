@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: var.c,v 1.9 2007-04-02 03:38:40 zeeb90au Exp $
+// $Id: var.c,v 1.10 2007-04-05 20:56:44 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBasic Variable Manager.
@@ -607,24 +607,82 @@ addr_t v_get_uds_ip(addr_t var_id) {
 /*
  * copy values from one structure to another
  */
-void v_set_uds(addr_t dst_ip, addr_t src_ip) {
-    if ((!src_ip || !dst_ip) || src_ip == dst_ip) {
+void v_set_uds(addr_t dst_ip_in, addr_t src_ip) {
+    if ((!src_ip || !dst_ip_in) || src_ip == dst_ip_in) {
         return;
     }
-    
+
     while (code_peekaddr(src_ip) != -1) {
         bid_t src_field_id = (bid_t)code_peekaddr(src_ip);
         var_t* src_field = tvar[code_peekaddr(src_ip+ADDRSZ)];
+        // notes: if the fields where packed in sorted order
+        // at compile time then dst_ip would not need to be
+        // reset at each iteration of src_ip
+        addr_t dst_ip = dst_ip_in;
         src_ip += (ADDRSZ+ADDRSZ);
 
         // find the matching field_id
         while (code_peekaddr(dst_ip) != -1) {
+            // see comp_pass2_uds() in scan.c for bc layout
             bid_t dst_field_id = (bid_t)code_peekaddr(dst_ip);
             var_t* dst_field = tvar[code_peekaddr(dst_ip+ADDRSZ)];
             dst_ip += (ADDRSZ+ADDRSZ);
             if (src_field_id == dst_field_id) {
                 v_set(dst_field, src_field);
-                break;
+                break; // scan next src_field
+            }
+        }
+    }
+}
+
+/*
+ * performs the same operation as v_set_uds only the member variables
+ * are localised by being pushed onto the stack. this allows sub/func's
+ * to share formal UDS variable names with global names and have the 
+ * member values contained to local scope.
+ */
+void v_clone_uds(addr_t dst_ip_in, addr_t src_ip) {
+    if (!src_ip || !dst_ip_in) {
+        return; // invalid address
+    }
+
+    if (src_ip == dst_ip_in) {
+        // formal and actual args are the same
+        while (code_peekaddr(src_ip) != -1) {
+            bid_t src_field_id = (bid_t)code_peekaddr(src_ip);
+            bid_t src_var_id = (bid_t)code_peekaddr(src_ip+ADDRSZ);
+            src_ip += (ADDRSZ+ADDRSZ);
+
+            stknode_t node;
+            node.type = kwTYPE_CRVAR;
+            node.x.vdvar.vid = src_var_id;
+            node.x.vdvar.vptr = tvar[src_var_id];
+            code_push(&node); 
+            tvar[src_var_id] = v_clone(node.x.vdvar.vptr);
+        }
+        return;
+    }    
+    
+    while (code_peekaddr(src_ip) != -1) {
+        bid_t src_field_id = (bid_t)code_peekaddr(src_ip);
+        var_t* src_field = tvar[code_peekaddr(src_ip+ADDRSZ)];
+        addr_t dst_ip = dst_ip_in;
+        src_ip += (ADDRSZ+ADDRSZ);
+
+        // find the matching field_id
+        while (code_peekaddr(dst_ip) != -1) {
+            bid_t dst_field_id = (bid_t)code_peekaddr(dst_ip);
+            bid_t dst_var_id = (bid_t)code_peekaddr(dst_ip+ADDRSZ);
+            dst_ip += (ADDRSZ+ADDRSZ);
+            if (src_field_id == dst_field_id) {
+                // store previous variable (with the same ID) to stack
+                stknode_t node;
+                node.type = kwTYPE_CRVAR;
+                node.x.vdvar.vid = dst_var_id;
+                node.x.vdvar.vptr = tvar[dst_var_id];
+                code_push(&node); 
+                tvar[dst_var_id] = v_clone(src_field);
+                break; // scan next src_field
             }
         }
     }

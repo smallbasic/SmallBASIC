@@ -172,11 +172,10 @@ typedef struct comp_pass_node_s comp_pass_node_t;
  */
 struct comp_struct_s    {
     char name[SB_KEYWORD_SIZE+1];
-    int name_len;
+    int name_len, is_container;
     addr_t base_id;
     addr_t field_id;
     addr_t var_id;
-    addr_t ip;
 };
 typedef struct comp_struct_s comp_struct_t;
 
