@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.18 2007-04-05 20:56:44 zeeb90au Exp $
+// $Id: blib.c,v 1.19 2007-04-16 10:46:55 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -863,7 +863,9 @@ void cmd_input(int input)
                 } else {
 #endif
                     dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
+#if USE_TERM_IO
                 }
+#endif
             } else {
                 redo = 0;
             }
