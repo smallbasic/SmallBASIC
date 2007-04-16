@@ -1,4 +1,4 @@
-// $Id: var.h,v 1.7 2007-04-05 20:56:44 zeeb90au Exp $
+// $Id: var.h,v 1.8 2007-04-16 11:03:38 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -398,6 +398,7 @@ void v_set_uds(addr_t dst_ip, addr_t src_ip);
  * replaced variables onto the stack for later clean 
  *
  *
+ */
 void v_clone_uds(addr_t dst_ip, addr_t src_ip);
 
 /*
