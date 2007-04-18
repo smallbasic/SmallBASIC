@@ -1,10 +1,12 @@
-# SmallBASIC for GTK
-# Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
-# cwarrens@twpo.com.au
+# SmallBASIC
+# Copyright(C) 2001-2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
+
+# see: http://www.cygwin.com/ml/cygwin/2004-03/msg00289.html
+AM_CFLAGS = @PACKAGE_CFLAGS@
 
 noinst_LIBRARIES = libsb_common.a
 

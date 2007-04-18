@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.32 2007-03-03 02:43:24 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.33 2007-04-18 10:23:44 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -22,6 +22,7 @@ AM_PROG_CC_STDC
 AC_HEADER_STDC
 AC_PROG_RANLIB
 
+dnl define build arguments
 AC_ARG_ENABLE(gtk,
   AC_HELP_STRING([--enable-gtk], [build gtk version(default=no)]),
   [ac_build_gtk="yes"],
@@ -32,13 +33,19 @@ AC_ARG_ENABLE(fltk,
   [ac_build_fltk="yes"],
   [ac_build_fltk="no"])
 
+AC_ARG_ENABLE(sdl,
+  AC_HELP_STRING([--enable-sdl], [build SDL version(default=no)]),
+  [ac_build_sdl="yes"],
+  [ac_build_sdl="no"])
+
 function checkForWindows() {
    win32=no
    case "${host_os}" in
      *mingw* | pw32* | cygwin*)
-    	win32="yes"
+     win32="yes"
      AC_CHECK_TOOL(WINDRES, windres, :)
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
+     PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32"
    esac
    AM_CONDITIONAL(WITH_WIN32, test x"$win32" = "xyes")
 }
@@ -151,7 +158,7 @@ function buildGTK() {
  
    dnl preconfigured values for GTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
    AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
@@ -199,7 +206,7 @@ function buildFLTK() {
    dnl preconfigured values for FLTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_FLTK, 0, [Defined for FLTK build.])
-   AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
@@ -210,13 +217,104 @@ function buildFLTK() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildSDL() {
+   echo "Building SDL version..."
+   AM_CONDITIONAL(WITH_HILDON, false)
+
+   dnl The following code was taken from the SDL test/configure.in
+   dnl Figure out which math library to use
+   MATHLIB=""
+   SYS_GL_LIBS=""
+
+   case "$host" in
+    *-*-cygwin* | *-*-mingw32*)
+        SYS_GL_LIBS="-lopengl32"
+        ;;
+    *-*-beos*)
+        SYS_GL_LIBS="-lGL"
+        ;;
+    *-*-darwin* )
+        SYS_GL_LIBS="-Wl,-framework,OpenGL"
+        ;;
+    *-*-aix*)
+        if test x$ac_cv_prog_gcc = xyes; then
+            CFLAGS="-mthreads"
+        fi
+        ;;
+    *-*-mint*)
+        AC_PATH_PROG(OSMESA_CONFIG, osmesa-config, no)
+        if test "x$OSMESA_CONFIG" = "xyes"; then
+            OSMESA_CFLAGS=`$OSMESA_CONFIG --cflags`
+            OSMESA_LIBS=`$OSMESA_CONFIG --libs`
+            CFLAGS="$CFLAGS $OSMESA_CFLAGS"
+            SYS_GL_LIBS="$OSMESA_LIBS"
+        else
+            SYS_GL_LIBS="-lOSMesa"
+        fi
+        ;;
+    *)
+        MATHLIB="-lm"
+        SYS_GL_LIBS="-lGL"
+        ;;
+   esac
+
+   dnl Check for SDL
+   SDL_VERSION=1.2.10
+   AM_PATH_SDL($SDL_VERSION,
+            :,
+        AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
+   )
+
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${SDL_CFLAGS}"
+   PACKAGE_LIBS="${PACKAGE_LIBS} ${SDL_LIBS} ${MATHLIB}"
+
+   dnl Check for OpenGL
+   AC_MSG_CHECKING(for OpenGL support)
+   have_opengl=no
+   AC_TRY_COMPILE([
+    #include "SDL_opengl.h"
+   ],[
+   ],[
+   have_opengl=yes
+   ])
+   AC_MSG_RESULT($have_opengl)
+   if test x$have_opengl = xyes; then
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -DHAVE_OPENGL "
+     PACKAGE_LIBS="${PACKAGE_LIBS} ${SYS_GL_LIBS}"
+   fi
+
+   dnl Check for SDL_Image
+   AC_MSG_CHECKING(for SDL_Image support)
+   have_sdl_image=no
+   AC_TRY_COMPILE([
+    #include "SDL_image.h"
+   ],[
+   ],[
+   have_sdl_image=yes
+   ])
+   AC_MSG_RESULT($have_sdl_image)
+   if test x$have_sdl_image = xyes; then
+      AC_DEFINE(HAVE_SDL_IMAGE, 1, [SDL Image header is present.])
+      AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   fi
+
+   dnl preconfigured values for SDL build
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
+   AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
+
+   BUILD_SUBDIRS="sync sync/sdl"
+   AC_SUBST(BUILD_SUBDIRS)
+}
+
 function buildConsole() {
    AM_CONDITIONAL(WITH_HILDON, false)
 
    win32=no
    case "${host_os}" in
      *mingw* | pw32* | cygwin*)
-    	win32="yes"
+        win32="yes"
    esac
 
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -251,6 +349,8 @@ if test x$ac_build_gtk = xyes; then
    buildGTK
 elif test x$ac_build_fltk = xyes; then
    buildFLTK
+elif test x$ac_build_sdl = xyes; then
+   buildSDL
 else
    buildConsole
 fi  
@@ -267,8 +367,9 @@ sync/gtk/data/com.nokia.sbasic.service
 sync/gtk/data/Makefile
 sync/gtk/icons/Makefile
 sync/ide-fltk/Makefile
+sync/sdl/Makefile
 sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.32 2007-03-03 02:43:24 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.33 2007-04-18 10:23:44 zeeb90au Exp $".

@@ -1,4 +1,4 @@
-// $Id: console_main.c,v 1.8 2007-03-30 20:33:03 zeeb90au Exp $
+// $Id: console_main.c,v 1.9 2007-04-18 10:24:12 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -11,7 +11,7 @@
 
 #include "sbapp.h"
 
-#ifndef _CygWin
+#ifdef INTERACTIVE_CONSOLE
 #include "interactive_mode.h"
 #include "help_subsys.h"
 #endif
@@ -184,12 +184,12 @@ int main(int argc, char *argv[])
                          *   search for command, or print all doc
                          */
                         if (argv[i][2] == '-') {
-#ifdef _CygWin
-                            fprintf(stderr,
-                                    "Please refer to the online help in the GUI application");
-#else
+#ifdef INTERACTIVE_CONSOLE
                             char *command = argv[i] + 3;
                             help_printinfo(command);
+#else
+                            fprintf(stderr,
+                                    "Please refer to the online help in the GUI application");
 #endif
                         } else if (argv[i][2] == 'x') {
                             // print all
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 
         if (opt_interactive) {
             // get it from console
-#ifndef _CygWin
+#ifdef INTERACTIVE_CONSOLE
 #ifndef HAVE_C_MALLOC
             memmgr_init();
 #endif

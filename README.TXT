@@ -1,6 +1,6 @@
 
 ===============================================================================
-Installation from source for FLTK, N770(GTK) or command line versions
+Installation from source for FLTK, SDL, N770(GTK) or command line versions
 
 > sh autogen.sh
 
@@ -15,6 +15,10 @@ For GTK version
 For N770 version
 > ./configure --enable-gtk
 > make deb -s
+
+For SDL version
+> ./configure --enable-sdl
+> make
 
 For non-graphical console version (cygwin or linux)
 > ./configure
