@@ -1,4 +1,4 @@
-// $Id: console_main.c,v 1.9 2007-04-18 10:24:12 zeeb90au Exp $
+// $Id: console_main.c,v 1.10 2007-04-19 20:24:35 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -41,6 +41,9 @@ void sbunx_remove_temp(void)
  */
 #if defined(_Win32)
 int console_main(int argc, char *argv[])
+#elif defined(_SDL)
+// sb prefix used to avoid name conflict with SDL
+int sb_console_main(int argc, char *argv[])
 #else
 int main(int argc, char *argv[])
 #endif

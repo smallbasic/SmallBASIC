@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.23 2007-04-05 20:56:44 zeeb90au Exp $
+// $Id: scan.c,v 1.24 2007-04-19 20:24:35 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -818,7 +818,7 @@ int comp_check_uds(const char *name, int name_len, comp_struct_t* uds, int ignor
  */
 int comp_get_uds_field_id(const char* field_name)
 {
-    int i, cmp_len;
+    int i;
     comp_struct_t uds;
     for (i = 0; i < comp_udscount; i++) {
         dbt_read(comp_udstable, i, &uds, sizeof(comp_struct_t));
@@ -1134,7 +1134,7 @@ void comp_expression(char *expr, byte no_parser)
     int level = 0, check_udf = 0;
     int kw_exec_more = 0;
     int tp;
-    addr_t w, stip, cip;
+    addr_t stip, cip;
     long lv = 0;
     double dv = 0;
     bc_t bc;
@@ -2099,7 +2099,7 @@ void comp_text_line(char *text)
 #else
         char_p_t pars[256];
 #endif
-        char *lpar_ptr, *eq_ptr, *p, *p_do, *n;
+        char *lpar_ptr, *eq_ptr, *p, *p_do;
         int  keep_ip, udp, count, i;
 
         switch (idx) {
@@ -3747,14 +3747,15 @@ void comp_preproc_grmode(const char *source)
 {
     char *p, *v;
     int x, y, b;
+    char buffer[32];
 
-    // prepare the string (copy it to comp_bc_tmp2)
+    // prepare the string (copy it to buffer)
     // we use second buffer because we want to place some '\0' characters
     // into the buffer
     // in a non-SB code, there must be a dynamic allocation
-    strncpy(comp_bc_tmp2, source, 32);
-    comp_bc_tmp2[31] = '\0';    // safe paranoia
-    p = comp_bc_tmp2;
+    strncpy(buffer, source, 32);
+    buffer[31] = '\0';
+    p = buffer;
 
     // searching the end of the string
     while (*p) {                // while *p is not '\0'
@@ -3769,7 +3770,7 @@ void comp_preproc_grmode(const char *source)
     }
 
     // get parameters
-    p = comp_bc_tmp2;
+    p = buffer;
     SKIP_SPACES(p);
 
     // the width

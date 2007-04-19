@@ -1,4 +1,9 @@
 
+2007-04-19 	<cwarrensmith@gmail.com>
+	* Implemented user defined structures
+	* Commited Attila Haraszti's SDL code and changes for configure.in
+	* Added syntax support for '=='
+	
 2006-11-14	<cwarrensmith@gmail.com>
 	* Updated DATE and TIME error messages to provide extra information
 	
@@ -56,10 +61,7 @@
 ================================================================================
 
 Future ideas:
-- user defined structures 
 - if test short circuit evaluation. 
-- add syntax support for '=='
-
 - Add drag-drop file support to open a bas file
 - Add support for detecting another program has changed
   the edited file in fltk version
