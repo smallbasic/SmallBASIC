@@ -100,7 +100,7 @@ static int con_use_ul = 0;
 static int con_use_reverse = 0;
 static long fg_screen_color;
 static long fg_screen_color, bg_screen_color;
-static int fast_quick = 0;
+static int fast_exit = 0;
 
 int w = 640, h = 480, d = 16;
 int sb_console_main(int argc, char *argv[]);
@@ -518,6 +518,7 @@ int main(int argc, char *argv[])
                                                                                
     // Enable Unicode translation 
     SDL_EnableUNICODE(1);
+    SDL_WM_SetCaption("SmallBASIC", NULL);
 
     sb_console_main(argc, argv);
 }
@@ -531,6 +532,7 @@ int osd_devinit()
     int i;
     char cbuf[256];
 
+    os_graphics = 1;
     snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", w, h, d, g_file);
     SDL_WM_SetCaption(cbuf, NULL);
 
@@ -550,7 +552,7 @@ int osd_devinit()
                                 // INT((font_w+7)/8)
     mouse_hot_x = -16;
     mouse_hot_y = -16;
-    fast_quick = 0;
+    fast_exit = 0;
 
     os_graf_mx = screen->w;
     os_graf_my = screen->h;
@@ -620,10 +622,11 @@ int osd_devrestore()
     cur_x = 0;
     cur_y = os_graf_my - font_h;
     SDL_PauseAudio(1);
-    if (!fast_quick) {          // if the user would like to see anything wait
-        osd_write("SDL: Press any key to exit...");
-        while (!dev_kbhit())
+    if (!fast_exit) {          // if the user would like to see anything wait
+        osd_write("Press any key to exit...");
+        while (!dev_kbhit()) {
             SDL_Delay(50);      // wait for key hit but not eat the cpu!
+        }
     }
     // if the user would like to quit w/o wait just set the same zero for fg and bg like COLOR 
     // 0,0
@@ -1492,8 +1495,9 @@ void osd_write(const char *str)
             case '\n':         // new line
                 // UNLOCK();
                 osd_nextln();
-                if ((dev_fgcolor == dev_bgcolor) && (dev_fgcolor == 0))
-                    fast_quick = 1;     // the user don't want to see anything at the end
+                if ((dev_fgcolor == dev_bgcolor) && (dev_fgcolor == 0)) {
+                    fast_exit = 1;     // the user don't want to see anything at the end
+                }
                 // LOCK();
                 break;
             case '\r':         // return
@@ -1854,7 +1858,7 @@ int osd_textwidth(const char *str)
     int l = strlen(str);
 
     // SJIS ???
-    return l * font_w;
+    return 1+(l * font_w);
 }
 
 int osd_textheight(const char *str)
