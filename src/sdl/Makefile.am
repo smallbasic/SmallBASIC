@@ -8,6 +8,9 @@ INCLUDES = -I../ -I. @PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 
-sbasic_SOURCES = ../console_main.c dev_sdl.c
+sbasic_SOURCES =    \
+  ../console_main.c \
+  dev_sdl.c         \
+  blib_sdl_ui.cpp
 
 sbasic_LDADD = -L$(top_srcdir)/sync -lsb_common @PACKAGE_LIBS@

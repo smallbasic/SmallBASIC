@@ -102,7 +102,7 @@ static long fg_screen_color;
 static long fg_screen_color, bg_screen_color;
 static int fast_exit = 0;
 
-int w = 640, h = 480, d = 16;
+int dev_w = 640, dev_h = 480, dev_d = 16;
 int sb_console_main(int argc, char *argv[]);
 
 // VGA16 colors in RGB
@@ -144,7 +144,7 @@ static int font_h = 16;
 static int font_l = 1;          // this is the length of a row in bytes equal INT((font_w + 7) 
                                 // / 8)
 
-static SDL_Surface *screen = NULL;
+/*static*/ SDL_Surface* screen = NULL; // extern in blib_sdl_ui.cpp
 static int has_audio = 0;
 static int mouse_hot_x = -16, mouse_hot_y = -16;
 static SDL_AudioSpec audiospec;
@@ -409,18 +409,18 @@ int main(int argc, char *argv[])
         p = strchr(buf, 'x');
         if (p) {
             *p = '\0';
-            w = atoi(ps);
+            dev_w = atoi(ps);
             ps = ++p;
             p = strchr(ps, 'x');
             if (p) {
                 *p = '\0';
-                h = atoi(ps);
+                dev_h = atoi(ps);
                 ps = ++p;
                 if (*p) {
-                    d = atoi(ps);
+                    dev_d = atoi(ps);
                 }
             } else if (*ps) {
-                h = atoi(ps);
+                dev_h = atoi(ps);
             }
         }
         free(buf);
@@ -461,12 +461,12 @@ int main(int argc, char *argv[])
     /*
      * setup video mode 
      */
-    screen = SDL_SetVideoMode(w, h, d, 0);
+    screen = SDL_SetVideoMode(dev_w, dev_h, dev_d, 0);
     if (screen == NULL) {
         fprintf(stderr,
                 "SDL: Couldn't set %dx%dx%d video mode: %s\n"
                 "Use SB_SDLMODE environment variable (set SB_SDLMODE=800x600x16)\n",
-                w, h, d, SDL_GetError());
+                dev_w, dev_h, dev_d, SDL_GetError());
         return 0;
     }
 
@@ -533,7 +533,7 @@ int osd_devinit()
     char cbuf[256];
 
     os_graphics = 1;
-    snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", w, h, d, g_file);
+    snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", dev_w, dev_h, dev_d, g_file);
     SDL_WM_SetCaption(cbuf, NULL);
 
     cur_x = cur_y = 0;

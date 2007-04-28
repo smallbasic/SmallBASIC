@@ -1,4 +1,7 @@
 
+2007-04-27 	<cwarrensmith@gmail.com>
+	* Added GUI support to SDL version using guichan
+	
 2007-04-19 	<cwarrensmith@gmail.com>
 	* Implemented user defined structures
 	* Commited Attila Haraszti's SDL code and changes for configure.in

@@ -1,6 +1,13 @@
-/*
-*	User Interface Lib
-*/
+// -*- c-file-style: "java" -*-
+// $Id: blib_ui.c,v 1.2 2007-04-28 05:28:04 zeeb90au Exp $
+// This file is part of SmallBASIC
+//
+// User Interface Lib
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "var.h"
@@ -9,6 +16,9 @@
 #include "blib_ui.h"
 #include "device.h"
 #include "smbas.h"
+
+// check if driver implements the UI api
+#ifndef IMPL_UI
 
 #define	UI_TITLE		1
 #define	UI_FRAME		2
@@ -341,3 +351,4 @@ void	cmd_doform()
 	ui_reset();
 }
 
+#endif

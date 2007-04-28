@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.34 2007-04-19 20:24:11 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.35 2007-04-28 05:27:53 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.9.7.3)
+AM_INIT_AUTOMAKE(smallbasic, 0.9.8)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -307,6 +307,20 @@ function buildSDL() {
       PACKAGE_LIBS="${PACKAGE_LIBS} -lSDL_image"
    fi
 
+   dnl Check for guichan.hpp
+   dnl see http://guichan.sourceforge.net/wiki/index.php"
+   AC_MSG_CHECKING(for guichan forms support)
+   have_guichan="maybe"
+   AC_LANG_PUSH(C++)
+   AC_CHECK_HEADER(guichan.hpp, [have_guichan="yes"], [have_guichan="no"])
+   AC_LANG_POP(C++)
+   AC_MSG_RESULT($have_guichan)
+   if test x$have_guichan = xyes; then
+      AC_DEFINE(IMPL_UI, 1, [Guichan forms support found])
+      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -DGUICHAN_BUILD -I/usr/local/include"
+      PACKAGE_LIBS="-lguichan_sdl -lguichan ${PACKAGE_LIBS}"
+   fi
+
    dnl preconfigured values for SDL build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
@@ -382,4 +396,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.34 2007-04-19 20:24:11 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.35 2007-04-28 05:27:53 zeeb90au Exp $".
