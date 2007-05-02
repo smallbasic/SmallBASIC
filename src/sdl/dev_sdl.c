@@ -1144,8 +1144,7 @@ int osd_getpen(int code)
  */
 void osd_cls()
 {
-    cur_x = 0;
-    cur_y = font_h;
+    cur_x = cur_y = 0;
 
     LOCK();
     direct_fillrect(0, 0, os_graf_mx - 1, os_graf_my - 1, get_screen_color(GET_BG_COLOR));
