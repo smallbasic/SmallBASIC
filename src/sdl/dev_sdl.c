@@ -384,10 +384,24 @@ unsigned char *zstr(char *a, char *b)
     return (unsigned char *)strstr((char *)a, (char *)b);
 }
 
+
 /**
  * Application entry point - prepare SDL surfaces before passing to 
  * smallbasic common code to ensure any load time messages are displayable
  */
+ /*
+  * Next ifdef main - undef main is a hack to go around a tricky SDL "feature"
+  *   If in a file where #include "SDL.h" was somewhere and has main() function
+  *   at least on windows systems the main will translate to winmain which means
+  *   might be a problem compiling under MINGW (you need -lmingw32 -lSDLmain in that order)
+  *   and we loose the stdout/stderr functionality because this will redirect to 
+  *   a file called stdout/stderr.txt in the current directory.
+  *   Means an SDL program will be a windows application instead of a console application!
+  *   (SDL.h defining a macro called main :)
+ */
+#ifdef main
+#undef main
+#endif
 int main(int argc, char *argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -521,6 +535,11 @@ int main(int argc, char *argv[])
     SDL_WM_SetCaption("SmallBASIC", NULL);
 
     sb_console_main(argc, argv);
+
+	if (SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {		// if syntax error happened no osd_devrestore was performed
+	    osd_devrestore();
+	    }
+    return 0;
 }
 
 /*
@@ -1858,7 +1877,7 @@ int osd_textwidth(const char *str)
     int l = strlen(str);
 
     // SJIS ???
-    return 1+(l * font_w);
+    return (l * font_w);
 }
 
 int osd_textheight(const char *str)
@@ -1933,6 +1952,9 @@ static void Add_to_cache(SDL_Surface * image, char *filename)
     int i, save;
     long usage;
 
+    if (image->w*image->h > MAX_IMAGE_PIXEL_COUNT) {
+        return;      // if the image alone larger than the cache size just return.
+        }
     for (i = 0; i < MAX_IMAGE_IN_CACHE; ++i) {
         if (i_cache[i].file_name)
             if (0 == strcmp(filename, i_cache[i].file_name))
