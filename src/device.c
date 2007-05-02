@@ -231,11 +231,11 @@ int		dev_init(int mode, int flags)
 		drvmouse_ok = drvmouse_init();
 #endif
 	dev_initfs();
-	dev_fgcolor = 0;
+    dev_fgcolor = 0;
 	#if defined(_PalmOS)
 	dev_bgcolor = 15;
 	#else
-	dev_bgcolor = (os_graphics) ? 15 : 0;
+    dev_bgcolor = (os_graphics) ? 15 : 0;
 	#endif
 
     #if USE_TERM_IO
@@ -272,20 +272,18 @@ int		dev_init(int mode, int flags)
 	dev_viewport(0,0,0,0);
 	dev_window(0,0,0,0);
 
-	///////
-	if	( os_graphics )	{
-		dev_fgcolor = 0;
-		dev_bgcolor = 15;
+	if (os_graphics) {
+        // dev_fgcolor + dev_bgcolor can be overridden in osd_devinit()
+        // otherwise left as default black text on white background
 		osd_settextcolor(dev_fgcolor, dev_bgcolor);
 		osd_setcolor(dev_fgcolor);
-		}
-	else	{
+    } else {
 		dev_fgcolor = 7;
 		dev_bgcolor = 0;
         #if USE_TERM_IO
 //		term_settextcolor(dev_fgcolor, dev_bgcolor);
-		#endif
-		}
+#endif
+    }
 
 #if defined(_UnixOS)
 /*
