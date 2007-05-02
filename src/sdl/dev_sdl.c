@@ -47,6 +47,7 @@
 
 #include "device.h"
 #include "osd.h"
+#include "smbas.h"
 #include "str.h"
 #include <stdio.h>
 #include <sys/types.h>
@@ -84,9 +85,6 @@ static void osd_setbgcolor(long color);
 static long get_screen_color(int fgbg);
 
 extern char g_file[];
-extern int opt_quiet;
-extern int opt_interactive;
-
 static int cur_x = 0;
 static int cur_y = 0;
 static int bytespp = 1;
@@ -224,7 +222,6 @@ static int keymap[] = {
 
 #define   LOCK()      SDL_LockSurface(screen)
 #define   UNLOCK()    SDL_UnlockSurface(screen)
-
 
 /*
  *   I know nothing about sound.
@@ -551,11 +548,15 @@ int osd_devinit()
     int i;
     char cbuf[256];
 
+    // define application default colours
     os_graphics = 1;
+    dev_fgcolor = 14;
+	dev_bgcolor = 0;
+    osd_settextcolor(dev_fgcolor, dev_bgcolor);
+
     snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", dev_w, dev_h, dev_d, g_file);
     SDL_WM_SetCaption(cbuf, NULL);
 
-    cur_x = cur_y = 0;
     bytespp = 1;
     mouse_mode = mouse_x = mouse_y = mouse_b = 
         mouse_upd = mouse_down_x = mouse_down_y =
@@ -621,7 +622,6 @@ int osd_devinit()
 #endif
     setsysvar_int(SYSVAR_VIDADR, (int32) screen->pixels);
     SDL_ShowCursor(SDL_DISABLE); // use PEN command to display cursor
-    osd_settextcolor(0, 15);
 
     // these modes don't seem right in this client
     opt_quiet = 1;
@@ -655,9 +655,9 @@ int osd_devrestore()
     Clear_cache();
 #endif
     SDL_Quit();
-    if (mixbuf)
+    if (mixbuf) {
         free(mixbuf);
-
+    }
     return 1;
 }
 static long get_screen_color(int fgbg)
@@ -878,7 +878,7 @@ void direct_fillrect(int x1, int y1, int x2, int y2, long c)
 }
 
 void osd_settextcolor(long fg, long bg)
-{
+{ 
     osd_setcolor(fg);
     if (bg != -1)
         osd_setbgcolor(bg);
@@ -1100,7 +1100,7 @@ int osd_getpen(int code)
 {
     int r = 0;
 
-    osd_events();
+    osd_events(0);
     if (mouse_mode) {
         switch (code) {
         case 0:                // bool: status changed
@@ -1144,7 +1144,8 @@ int osd_getpen(int code)
  */
 void osd_cls()
 {
-    cur_x = cur_y = 0;
+    cur_x = 0;
+    cur_y = font_h;
 
     LOCK();
     direct_fillrect(0, 0, os_graf_mx - 1, os_graf_my - 1, get_screen_color(GET_BG_COLOR));
@@ -1577,7 +1578,7 @@ void osd_write(const char *str)
 /*
  *   check SDL's events
  */
-int osd_events()
+int osd_events(int wait_flag)
 {
     int ch, button, i;
     int evc = 0;
@@ -1594,90 +1595,76 @@ int osd_events()
         Update_rect.h = 0;
     }
 
-    while (SDL_PollEvent(&ev)) {
+    if (wait_flag) {
+        SDL_WaitEvent(NULL);
+    }
+
+    if (SDL_PollEvent(&ev)) {
         switch (ev.type) {
         case SDL_KEYDOWN:
             ch = ev.key.keysym.sym;
-            if ((ch == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) || ch == SDLK_BREAK) {        // break
+            if ((ch == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) || ch == SDLK_BREAK) {        
+                // break
                 return -2;
             } else {
                 // dev_printf("--- K=0x%X ---", ch);
                 // scan keymap
                 for (i = 0; keymap[i] != 0; i += 2) {
                     if (keymap[i] == ch) {      // !!!!!!!!!!!!!!!
-                        if (keymap[i + 1] != -1)
+                        if (keymap[i + 1] != -1) {
                             dev_pushkey(keymap[i + 1]);
+                        }
                         ch = -1;
                         break;
                     }
                 }
 
                 // not found
-#if 0
-                if (ch > 0 && ch < 255) {
-                    int upr;
-                    int shift;
-                    char *p;
-                    char *us_codes = "`1234567890-=[]\\;,./'";
-                    char *sf_codes = "~!@#$%^&*()_+{}|:<>?\"";
-
-                    shift = (ev.key.keysym.mod & (KMOD_SHIFT));
-
-                    upr = (((ev.key.keysym.mod & (KMOD_CAPS))) &&
-                           ((ev.key.keysym.mod & (KMOD_SHIFT)) == 0))
-                        || (((ev.key.keysym.mod & (KMOD_CAPS)) == 0) &&
-                            ((ev.key.keysym.mod & KMOD_SHIFT)));
-
-                    if (((p = strchr(us_codes, ch)) != NULL) && shift)
-                        dev_pushkey(*(sf_codes + (p - us_codes)));
-                    else if (upr)
-                        dev_pushkey(toupper(ch));
-                    else
-                        dev_pushkey(ch);
+                if (ch > 0 && ev.key.keysym.unicode) {
+                    // using kernel keyboard mapping
+                    dev_pushkey(ev.key.keysym.unicode & 0xFF);  
                 }
-#else
-                if (ch > 0 && ev.key.keysym.unicode)
-                    dev_pushkey(ev.key.keysym.unicode & 0xFF);  // using kernel keyboard
-                                                                // mapping
                 // CTRL, ALT(group), SHIFT already interpreted
-#endif
             }
 
             evc++;
             break;
+
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
         case SDL_MOUSEMOTION:
             if (mouse_mode) {
                 button = SDL_GetMouseState(&mouse_x, &mouse_y);
 
-                if (mouse_x < mouse_hot_x)
+                if (mouse_x < mouse_hot_x) {
                     mouse_x = mouse_hot_x;
-                if (mouse_y < mouse_hot_y)
+                }
+                if (mouse_y < mouse_hot_y) {
                     mouse_y = mouse_hot_y;
-                if (mouse_x >= os_graf_mx - 1)
+                }
+                if (mouse_x >= os_graf_mx - 1) {
                     mouse_x = os_graf_mx - 1;
-                if (mouse_y >= os_graf_my - 1)
+                }
+                if (mouse_y >= os_graf_my - 1) {
                     mouse_y = os_graf_my - 1;
+                }
                 mouse_b = 0;    // / bug
                 if (button & SDL_BUTTON(1)) {
                     if ((mouse_b & SDL_BUTTON(1)) == 0) {       // new press
                         mouse_down_x = mouse_x;
                         mouse_down_y = mouse_y;
                     }
-
                     mouse_upd = 1;
-
                     mouse_pc_x = mouse_x;
                     mouse_pc_y = mouse_y;
-
                     mouse_b |= 1;
                 }
-                if (button & SDL_BUTTON(2))
+                if (button & SDL_BUTTON(2)) {
                     mouse_b |= 2;
-                if (button & SDL_BUTTON(3))
+                }
+                if (button & SDL_BUTTON(3)) {
                     mouse_b |= 4;
-
+                }
                 evc++;
             }
         }
