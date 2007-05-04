@@ -99,6 +99,7 @@ static int con_use_reverse = 0;
 static long fg_screen_color;
 static long fg_screen_color, bg_screen_color;
 static int fast_exit = 0;
+static int exit_app = 0; // allow CTRL+C or ALT+F4 while displaying exit message
 
 int dev_w = 640, dev_h = 480, dev_d = 16;
 int sb_console_main(int argc, char *argv[]);
@@ -550,7 +551,7 @@ int osd_devinit()
 
     // define application default colours
     os_graphics = 1;
-    dev_fgcolor = 14;
+    dev_fgcolor = 15;
 	dev_bgcolor = 0;
     osd_settextcolor(dev_fgcolor, dev_bgcolor);
 
@@ -643,7 +644,8 @@ int osd_devrestore()
     SDL_PauseAudio(1);
     if (!fast_exit) {          // if the user would like to see anything wait
         osd_write("Press any key to exit...");
-        while (!dev_kbhit()) {
+        exit_app = 0;
+        while (!exit_app && !dev_kbhit()) {
             SDL_Delay(50);      // wait for key hit but not eat the cpu!
         }
     }
@@ -1105,6 +1107,15 @@ int osd_getpen(int code)
         switch (code) {
         case 0:                // bool: status changed
             r = mouse_upd;
+
+            // wait for an event to prevent code like below
+            // from eating 100% of the cpu:
+            // while 1
+            //   if pen(0)
+            //     line pen(4),pen(5)
+            //   fi
+            // wend
+            SDL_WaitEvent(NULL);
             break;
         case 1:                // last pen-down x
             r = mouse_down_x;
@@ -1582,7 +1593,7 @@ int osd_events(int wait_flag)
     int ch, button, i;
     int evc = 0;
     SDL_Event ev;
-
+    
     if (scr_update) {
         // refresh
         SDL_UpdateRect(screen, Update_rect.x, Update_rect.y, Update_rect.w + 1,
@@ -1600,9 +1611,14 @@ int osd_events(int wait_flag)
 
     if (SDL_PollEvent(&ev)) {
         switch (ev.type) {
+        case SDL_QUIT:
+            exit_app = 1;
+            return -2;
+
         case SDL_KEYDOWN:
             ch = ev.key.keysym.sym;
-            if ((ch == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) || ch == SDLK_BREAK) {        
+            if ((ch == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) || ch == SDLK_BREAK) {
+                exit_app = 1;                
                 // break
                 return -2;
             } else {
