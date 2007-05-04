@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_sdl_ui.cpp,v 1.2 2007-05-02 20:34:28 zeeb90au Exp $
+// $Id: blib_sdl_ui.cpp,v 1.3 2007-05-04 23:35:30 zeeb90au Exp $
 //
 // Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
@@ -26,6 +26,12 @@
 #include <guichan.hpp>
 #include <guichan/sdl.hpp>
 #include "SDL.h"
+#include "SDL_Image.h"
+
+#include "fixedfont.xpm"
+const char* font_chars =
+    " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    ".,!?-+/():;%&`'*#=[]\""; 
 
 // SDL surface in dev_sdl.c
 extern SDL_Surface* screen;
@@ -45,7 +51,6 @@ gcn::SDLInput* input;             // Input driver
 gcn::SDLGraphics* graphics;       // Graphics driver
 gcn::Gui* gui;                    // A Gui object - binds it all together
 gcn::ImageFont* font;             // A font
-gcn::SDLImageLoader* imageLoader; // For loading images
 
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W  16
@@ -68,7 +73,29 @@ struct WidgetInfo {
     ControlType type;
     var_t* var;
     bool is_group_radio;
-    unsigned char* text;
+
+    // startup value used to check if
+    // exec has altered a bound variable
+    union {
+        long i;
+        byte* ptr;
+    } orig;
+
+    void update_var_flag() {
+        switch (var->type) {
+        case V_STR:
+            orig.ptr = var->v.p.ptr;
+            break;
+        case V_ARRAY:
+            orig.ptr = var->v.a.ptr;
+            break;
+        case V_INT:
+            orig.i = var->v.i;
+            break;
+        default:
+            orig.i = 0;
+        }
+    }
 };
 
 // a ScrollArea with content cleanup
@@ -88,7 +115,13 @@ struct DropListModel : gcn::ListModel {
 
     DropListModel(const char* items, var_t* v) {
         focus_index = -1;
-        // parse a string like "Easy|Medium|Hard"
+
+        if (v && v->type == V_ARRAY) {
+            fromArray(items, v);
+            return;
+        }
+
+        // construct from a string like "Easy|Medium|Hard"
         int item_index = 0;
         int len = items ? strlen(items) : 0;
         for (int i=0; i<len; i++) {
@@ -102,6 +135,25 @@ struct DropListModel : gcn::ListModel {
                 focus_index = item_index;
             }
             item_index++;
+        }
+    }
+
+    // construct from an array of values
+    void fromArray(const char* caption, var_t* v) {
+        for (int i=0; i<v->v.a.size; i++) {
+            var_t* el_p = (var_t*)(v->v.a.ptr + sizeof(var_t)*i);
+            if (el_p->type == V_STR) {
+                list.push_back((const char*)el_p->v.p.ptr);
+                if (strcasecmp((const char*)el_p->v.p.ptr, caption) == 0) {
+                    focus_index = i;
+                }
+            } else if (el_p->type == V_INT) {
+                char buff[40];
+                sprintf(buff, "%d", el_p->v.i);
+                list.push_back(buff);
+            } else if (el_p->type == V_ARRAY) {
+                fromArray(caption, el_p);
+            }
         }
     }
 
@@ -126,6 +178,31 @@ struct DropListModel : gcn::ListModel {
 
 };
 
+// load the font image from a static xpixmap structure
+struct FontImageLoader : gcn::SDLImageLoader {
+    Image* load(const std::string& filename,
+                bool convertToDisplayFormat = true) {
+        SDL_Surface* loadedSurface = NULL;
+        if (filename == "fixed_font.xpm") {
+            loadedSurface = IMG_ReadXPMFromArray((char**)fixedfont_xpm);
+        } // else test and load other embedded fonts
+
+        if (loadedSurface == NULL) {
+            throw std::string("Unable to load font data");
+        }
+
+        SDL_Surface *surface = convertToStandardFormat(loadedSurface);
+        SDL_FreeSurface(loadedSurface);
+
+        if (surface == NULL) {
+            throw std::string("Not enough memory to load font");
+        }
+        return new SDLImage(surface, true);
+    }
+};
+
+FontImageLoader* imageLoader = 0;
+
 // map iterator
 typedef std::map<gcn::Widget*, WidgetInfo*>::iterator WI;
 
@@ -135,7 +212,7 @@ struct Form : gcn::Container, gcn::ActionListener {
     void add_button(gcn::Widget* widget, WidgetInfo* inf,
                     const char* caption, Rectangle& rect, int def_w, int def_h);
     void add_widget(gcn::Widget* widget, WidgetInfo* inf, Rectangle& rect);
-    void update_gui(gcn::Widget* w, WidgetInfo* inf);
+    bool update_gui(gcn::Widget* w, WidgetInfo* inf);
     void transfer_data(gcn::Widget* w, WidgetInfo* inf);
     bool set_radio_group(var_t* v, RadioButton* radio);
     std::map<gcn::Widget*, WidgetInfo*> widget_map;
@@ -188,11 +265,13 @@ void Form::add_widget(gcn::Widget* widget, WidgetInfo* inf, Rectangle& rect) {
     prev_x = rect.x + rect.width;
     prev_y = rect.y + rect.height;
 
-    widget->addActionListener(form);
     widget_map.insert(std::make_pair(widget, inf));
     add(widget, rect.x, rect.y);
+    inf->update_var_flag();
 
-    inf->text = inf->var->type == V_STR ? inf->var->v.p.ptr : 0;
+    widget->addActionListener(form);
+    widget->setFocusable(true);
+    widget->requestFocus();
 }
 
 void Form::action(const gcn::ActionEvent& actionEvent) {
@@ -222,66 +301,101 @@ void Form::update() {
     }
 }
 
-// set basic variable to widget state
-void Form::update_gui(gcn::Widget* w, WidgetInfo* inf) {
+// set basic string variable to widget state
+bool Form::update_gui(gcn::Widget* w, WidgetInfo* inf) {
     DropDown* dropdown;
     ListBox* listbox;
     DropListModel* model;
 
-    switch (inf->type) {
-    case ctrl_button:
-        ((Button*)w)->setCaption((const char*)inf->var->v.p.ptr);
-        break;
+    if (inf->var->type == V_INT &&
+        inf->var->v.i != inf->orig.i) {
+        // update list control with new int variable
+        switch (inf->type) {
+        case ctrl_dropdown:
+            ((DropDown*)w)->setSelected(inf->var->v.i);
+            return true;
 
-    case ctrl_check:
-        ((CheckBox*)w)->setMarked(!strcasecmp((const char*)inf->var->v.p.ptr,
-                                              ((CheckBox*)w)->getCaption().c_str()));
-        break;
+        case ctrl_listbox:
+            ((ListBox*)w)->setSelected(inf->var->v.i);
+            return true;
 
-    case ctrl_label:
-        ((Label*)w)->setCaption((const char*)inf->var->v.p.ptr);
-        break;
-
-    case ctrl_text:
-        ((TextBox*)((ScrollBox*)w)->getContent())->setText((const char*)inf->var->v.p.ptr);
-        break;
-
-    case ctrl_dropdown:
-        dropdown = (DropDown*)w;
-        model = (DropListModel*)dropdown->getListModel();
-        if (strchr((const char*)inf->var->v.p.ptr, '|')) {
-            // create a new list of items
-            delete model;
-            model = new DropListModel((const char*)inf->var->v.p.ptr, 0);
-            dropdown->setListModel(model);
-        } else {
-            // select one of the existing list items
-            int selection = model->getPosition((const char*)inf->var->v.p.ptr);
-            if (selection != -1) {
-                dropdown->setSelected(selection);
-            }
+        default:
+            return false;
         }
-        break;
-
-    case ctrl_listbox:
-        listbox = (ListBox*)w;
-        model = (DropListModel*)listbox->getListModel();
-        if (strchr((const char*)inf->var->v.p.ptr, '|')) {
-            // create a new list of items
-            delete model;
-            model = new DropListModel((const char*)inf->var->v.p.ptr, 0);
-            listbox->setListModel(model);
-        } else {
-            int selection = model->getPosition((const char*)inf->var->v.p.ptr);
-            if (selection != -1) {
-                listbox->setSelected(selection);
-            }
-        }
-        break;
-
-    default:
-        break;
     }
+
+    if (inf->var->type == V_ARRAY &&
+        inf->var->v.p.ptr != inf->orig.ptr) {
+        // update list control with new array variable
+        switch (inf->type) {
+        case ctrl_dropdown:
+            delete ((DropDown*)w)->getListModel();
+            ((DropDown*)w)->setListModel(new DropListModel(0, inf->var));
+            return true;
+
+        case ctrl_listbox:
+            delete ((ListBox*)w)->getListModel();
+            ((ListBox*)w)->setListModel(new DropListModel(0, inf->var));
+            return true;
+
+        default:
+            return false;
+        }
+    }
+
+    if (inf->var->type == V_STR &&
+        inf->orig.ptr != inf->var->v.p.ptr) {
+        // update list control with new string variable
+        switch (inf->type) {
+        case ctrl_dropdown:
+            dropdown = (DropDown*)w;
+            model = (DropListModel*)dropdown->getListModel();
+            if (strchr((const char*)inf->var->v.p.ptr, '|')) {
+                // create a new list of items
+                delete model;
+                model = new DropListModel((const char*)inf->var->v.p.ptr, 0);
+                dropdown->setListModel(model);
+            } else {
+                // select one of the existing list items
+                int selection = model->getPosition((const char*)inf->var->v.p.ptr);
+                if (selection != -1) {
+                    dropdown->setSelected(selection);
+                }
+            }
+            break;
+
+        case ctrl_listbox:
+            listbox = (ListBox*)w;
+            model = (DropListModel*)listbox->getListModel();
+            if (strchr((const char*)inf->var->v.p.ptr, '|')) {
+                // create a new list of items
+                delete model;
+                model = new DropListModel((const char*)inf->var->v.p.ptr, 0);
+                listbox->setListModel(model);
+            } else {
+                int selection = model->getPosition((const char*)inf->var->v.p.ptr);
+                if (selection != -1) {
+                    listbox->setSelected(selection);
+                }
+            }
+            break;
+
+        case ctrl_check:
+            ((CheckBox*)w)->setMarked(!strcasecmp((const char*)inf->var->v.p.ptr,
+                                                  ((CheckBox*)w)->getCaption().c_str()));
+            break;
+
+        case ctrl_label:
+            ((Label*)w)->setCaption((const char*)inf->var->v.p.ptr);
+            break;
+
+        case ctrl_text:
+            ((TextBox*)((ScrollBox*)w)->getContent())->setText((const char*)inf->var->v.p.ptr);
+            break;
+        }
+        return true;
+    }
+    return false;
 }
 
 // synchronise basic variable and widget state
@@ -290,11 +404,8 @@ void Form::transfer_data(gcn::Widget* w, WidgetInfo* inf) {
     ListBox* listbox;
     DropListModel* model;
 
-    if (inf->text != inf->var->v.p.ptr) {
-        if (inf->var->type == V_STR && inf->var->v.p.ptr) {
-            update_gui(w, inf);
-        }
-        inf->text = inf->var->v.p.ptr;
+    if (update_gui(w, inf)) {
+        inf->update_var_flag();
         return;
     }
 
@@ -344,7 +455,7 @@ void Form::transfer_data(gcn::Widget* w, WidgetInfo* inf) {
     }
 
     // only update the gui when the variable is changed in basic code
-    inf->text = inf->var->v.p.ptr;
+    inf->update_var_flag();
 }
 
 // radio control's belong to the same group when they share
@@ -393,21 +504,21 @@ void form_begin() {
         // Set the top container
         gui->setTop(form);
 
-        imageLoader = new gcn::SDLImageLoader();
+        imageLoader = new FontImageLoader();
+
         // The ImageLoader in use is static and must be set to be
         // able to load images
         gcn::Image::setImageLoader(imageLoader);
 
-        // Load the image font.
-        const char* c =
-            " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         try {
-            font = new gcn::ImageFont("fixedfont.bmp", c);
+            font = new gcn::ImageFont("fixed_font.xpm", font_chars);
             // The global font is static and must be set.
             gcn::Widget::setGlobalFont(font);
         } catch (gcn::Exception e) {
             rt_raise("UI: Failed to load font file: %s",
                      e.getMessage().c_str());
+        } catch (std::string s) {
+            rt_raise("UI: Failed to load font file: %s", s.c_str());
         }
         cursor = SDL_ShowCursor(SDL_ENABLE);
     }
@@ -418,7 +529,8 @@ void form_iteration() {
     try {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_KEYDOWN) {
+            switch (event.type) {
+            case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_c) {
                     if (event.key.keysym.mod & KMOD_CTRL) {
                         mode = m_closed;
@@ -426,6 +538,11 @@ void form_iteration() {
                         return;
                     }
                 }
+                break;
+            case SDL_QUIT:
+                mode = m_closed;
+                brun_break();
+                return;
             }
             input->pushInput(event); // handle the event in guichan
         }
@@ -471,6 +588,9 @@ extern "C" void cmd_button() {
         Rectangle rect(x, y, w, h);
 
         form_begin();
+        if (prog_error) {
+            return;
+        }
         if (type) {
             if (strcasecmp("radio", type) == 0) {
                 inf->type = ctrl_radio;
@@ -513,7 +633,8 @@ extern "C" void cmd_button() {
                     widget->setSelected(model->focus_index);
                 }
                 form->add_widget(widget, inf, rect);
-            } else if (strcasecmp("dropdown", type) == 0) {
+            } else if (strcasecmp("dropdown", type) == 0 ||
+                       strcasecmp("choice", type) == 0) {
                 inf->type = ctrl_dropdown;
                 DropDown* widget = new DropDown();
                 DropListModel* model = new DropListModel(caption, v);
@@ -648,4 +769,4 @@ extern "C" void cmd_doform() {
 
 #endif
 
-// End of "$Id: blib_sdl_ui.cpp,v 1.2 2007-05-02 20:34:28 zeeb90au Exp $".
+// End of "$Id: blib_sdl_ui.cpp,v 1.3 2007-05-04 23:35:30 zeeb90au Exp $".
