@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.35 2007-04-28 05:27:53 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.36 2007-05-04 23:34:22 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -315,7 +315,8 @@ function buildSDL() {
    AC_CHECK_HEADER(guichan.hpp, [have_guichan="yes"], [have_guichan="no"])
    AC_LANG_POP(C++)
    AC_MSG_RESULT($have_guichan)
-   if test x$have_guichan = xyes; then
+   if test x$have_guichan = xyes && test x$have_sdl_image = xyes; then
+      dnl need SDL_Image as well
       AC_DEFINE(IMPL_UI, 1, [Guichan forms support found])
       PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -DGUICHAN_BUILD -I/usr/local/include"
       PACKAGE_LIBS="-lguichan_sdl -lguichan ${PACKAGE_LIBS}"
@@ -325,7 +326,6 @@ function buildSDL() {
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
 
    BUILD_SUBDIRS="sync sync/sdl"
@@ -396,4 +396,4 @@ sync/cygwin/Makefile
 sync/unix/Makefile
 ])
 
-dnl End of "$Id: configure.in,v 1.35 2007-04-28 05:27:53 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.36 2007-05-04 23:34:22 zeeb90au Exp $".
