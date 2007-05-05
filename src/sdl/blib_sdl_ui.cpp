@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_sdl_ui.cpp,v 1.3 2007-05-04 23:35:30 zeeb90au Exp $
+// $Id: blib_sdl_ui.cpp,v 1.4 2007-05-05 05:30:29 zeeb90au Exp $
 //
 // Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
@@ -60,7 +60,6 @@ gcn::ImageFont* font;             // A font
 
 enum ControlType {
     ctrl_button,
-    ctrl_link,
     ctrl_radio,
     ctrl_check,
     ctrl_text,
@@ -203,6 +202,23 @@ struct FontImageLoader : gcn::SDLImageLoader {
 
 FontImageLoader* imageLoader = 0;
 
+// convert a basic array into a std::string
+void array_to_string(std::string &s, var_t* v) {
+    for (int i=0; i<v->v.a.size; i++) {
+        var_t* el_p = (var_t*)(v->v.a.ptr + sizeof(var_t)*i);
+        if (el_p->type == V_STR) {
+            s.append((const char*)el_p->v.p.ptr);
+            s.append("\n");
+        } else if (el_p->type == V_INT) {
+            char buff[40];
+            sprintf(buff, "%d\n", el_p->v.i);
+            s.append(buff);
+        } else if (el_p->type == V_ARRAY) {
+            array_to_string(s, el_p);
+        }
+    }
+}
+
 // map iterator
 typedef std::map<gcn::Widget*, WidgetInfo*>::iterator WI;
 
@@ -327,6 +343,8 @@ bool Form::update_gui(gcn::Widget* w, WidgetInfo* inf) {
     if (inf->var->type == V_ARRAY &&
         inf->var->v.p.ptr != inf->orig.ptr) {
         // update list control with new array variable
+        std::string s;
+
         switch (inf->type) {
         case ctrl_dropdown:
             delete ((DropDown*)w)->getListModel();
@@ -337,6 +355,16 @@ bool Form::update_gui(gcn::Widget* w, WidgetInfo* inf) {
             delete ((ListBox*)w)->getListModel();
             ((ListBox*)w)->setListModel(new DropListModel(0, inf->var));
             return true;
+
+        case ctrl_label:
+            array_to_string(s, inf->var);
+            ((Label*)w)->setCaption(s.c_str());
+            break;
+
+        case ctrl_text:
+            array_to_string(s, inf->var);
+            ((TextBox*)((ScrollBox*)w)->getContent())->setText(s.c_str());
+            break;
 
         default:
             return false;
@@ -599,20 +627,14 @@ extern "C" void cmd_button() {
                 widget->setCaption(caption);
                 widget->setGroup(caption);
                 inf->is_group_radio = form->set_radio_group(v, widget);
-                if (v->type == V_STR && v->v.p.ptr &&
-                    strcasecmp((const char*)v->v.p.ptr, caption) == 0) {
-                    widget->setMarked(true);
-                }
                 form->add_button(widget, inf, caption, rect, RAD_W, RAD_H);
+                form->update_gui(widget, inf);
             } else if (strcasecmp("checkbox", type) == 0) {
                 inf->type = ctrl_check;
                 CheckBox* widget = new CheckBox();
                 widget->setCaption(caption);
-                if (v->type == V_STR && v->v.p.ptr &&
-                    strcasecmp((const char*)v->v.p.ptr, caption) == 0) {
-                    widget->setMarked(true);
-                }
                 form->add_button(widget, inf, caption, rect, RAD_W, RAD_H);
+                form->update_gui(widget, inf);
             } else if (strcasecmp("button", type) == 0) {
                 inf->type = ctrl_button;
                 Button* widget = new Button();
@@ -668,16 +690,11 @@ extern "C" void cmd_text() {
         TextBox* widget = new TextBox();
         ScrollBox* scrollBox = new ScrollBox(widget);
         Rectangle rect(x, y, w, h);
-
-        // prime field from var_t
-        if (v->type == V_STR && v->v.p.ptr) {
-            widget->setText((const char*)v->v.p.ptr);
-        }
-
         WidgetInfo* inf = new WidgetInfo();
         inf->var = v;
         inf->type = ctrl_text;
         form->add_widget(scrollBox, inf, rect);
+        form->update_gui(widget, inf);
     }
 }
 
@@ -769,4 +786,4 @@ extern "C" void cmd_doform() {
 
 #endif
 
-// End of "$Id: blib_sdl_ui.cpp,v 1.3 2007-05-04 23:35:30 zeeb90au Exp $".
+// End of "$Id: blib_sdl_ui.cpp,v 1.4 2007-05-05 05:30:29 zeeb90au Exp $".
