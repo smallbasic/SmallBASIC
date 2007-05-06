@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.19 2007-04-16 10:46:55 zeeb90au Exp $
+// $Id: blib.c,v 1.20 2007-05-06 08:13:02 haraszti Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -2153,13 +2153,7 @@ void cmd_locate()
 {
     int x, y;
 
-    y = par_getint() - 1;
-    if (prog_error)
-        return;
-    par_getcomma();
-    if (prog_error)
-        return;
-    x = par_getint() - 1;
+    par_massget("II", &y, &x);
     if (prog_error) {
         return;
     }
@@ -2683,11 +2677,9 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
     } else {
         /*         int r; */
         /*         var_t result; */
-
         /*         v_set(tvar[SYSVAR_X], a); */
         /*         v_set(tvar[SYSVAR_Y], b); */
         /*         code_jump(use_ip); */
-        
         /*         // evaluate the function result left on the stack */
         /*         v_init(&result); */
         /*         eval(&result); */
@@ -2707,8 +2699,6 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
         r = v_igetval(&v1);
         v_free(&v1);
         return r;
-
-
     }
 }
 
@@ -3193,6 +3183,7 @@ void cmd_end_select()
     stknode_t node;
 
     code_pop(&node);
+    v_free(node.x.vfor.var_ptr);      // if V_new() was string or array release the allocated memory
     tmp_free(node.x.vfor.var_ptr);      // v_new()
     code_jump(code_getaddr());
 }
