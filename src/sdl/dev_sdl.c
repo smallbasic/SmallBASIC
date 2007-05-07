@@ -382,6 +382,75 @@ unsigned char *zstr(char *a, char *b)
     return (unsigned char *)strstr((char *)a, (char *)b);
 }
 
+/*
+ * initialise system fonts and colors
+ */
+int init_fonts() 
+{
+    SDL_Color colors[256];
+    int i;
+
+    // define application default colours
+    dev_fgcolor = 15;
+	dev_bgcolor = 0;
+    osd_settextcolor(dev_fgcolor, dev_bgcolor);
+
+    mouse_mode = mouse_x = mouse_y = mouse_b = 
+        mouse_upd = mouse_down_x = mouse_down_y =
+        mouse_pc_x = mouse_pc_y = 0;
+    tabsize = 32;               // from dev_palm
+
+    con_use_bold = con_use_ul = con_use_reverse = 0;
+    currentsystemfont = savedsystemfont = 1;
+    currentfont = (unsigned char *)font8x16i2;
+    font_w = 8;
+    font_h = 16;
+    font_l = 1;                 // this is the length of a row in bytes equal
+                                // INT((font_w+7)/8)
+    mouse_hot_x = -16;
+    mouse_hot_y = -16;
+
+    os_graf_mx = screen->w;
+    os_graf_my = screen->h;
+    maxline = os_graf_my / font_h;
+    os_color_depth = screen->format->BitsPerPixel;
+    os_color = 1;
+    bytespp = screen->format->BytesPerPixel;
+
+    if (os_color_depth == 8) {
+        for (i = 0; i < 256; i++) {
+            colors[i].r = i;
+            colors[i].g = i;
+            colors[i].b = i;
+        }
+        for (i = 0; i < 16; i++) {
+#if defined(CPU_BIGENDIAN)
+            colors[i].r = (vga16[i] & 0xFF0000) >> 16;
+            colors[i].g = (vga16[i] & 0xFF00) >> 8;
+            colors[i].b = (vga16[i] & 0xFF);
+            cmap[i] = i;
+#else
+            colors[i].b = (vga16[i] & 0xFF0000) >> 16;
+            colors[i].g = (vga16[i] & 0xFF00) >> 8;
+            colors[i].r = (vga16[i] & 0xFF);
+            cmap[i] = i;
+#endif
+        }
+        SDL_SetColors(screen, colors, 0, 256);
+    } else {
+        for (i = 0; i < 16; i++) {
+#if defined(CPU_BIGENDIAN)
+            cmap[i] = SDL_MapRGB(screen->format,
+                                 (vga16[i] & 0xFF0000) >> 16,
+                                 (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF));
+#else
+            cmap[i] = SDL_MapRGB(screen->format,
+                                 (vga16[i] & 0xFF),
+                                 (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF0000) >> 16);
+#endif
+        }
+    }
+}
 
 /**
  * Application entry point - prepare SDL surfaces before passing to 
@@ -530,91 +599,28 @@ int main(int argc, char *argv[])
                                                                                
     // Enable Unicode translation 
     SDL_EnableUNICODE(1);
+    SDL_ShowCursor(SDL_DISABLE); // use PEN command to display cursor
     SDL_WM_SetCaption("SmallBASIC", NULL);
+
+    // init runtime flags
+    os_graphics = 1;
+    fast_exit = 0;
+
+    init_fonts();
 
     sb_console_main(argc, argv);
 
 	if (SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {		// if syntax error happened no osd_devrestore was performed
-	    osd_devrestore();
-	    }
+        osd_devrestore();
+    }
     return 0;
 }
 
 /*
- * SDL: Program runtime initialization
+ * initialise the system prior to the next program execution
  */
-int osd_devinit()
-{
-    SDL_Color colors[256];
-    int i;
+int osd_devinit() {
     char cbuf[256];
-
-    // define application default colours
-    os_graphics = 1;
-    dev_fgcolor = 15;
-	dev_bgcolor = 0;
-    osd_settextcolor(dev_fgcolor, dev_bgcolor);
-
-    snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", dev_w, dev_h, dev_d, g_file);
-    SDL_WM_SetCaption(cbuf, NULL);
-
-    bytespp = 1;
-    mouse_mode = mouse_x = mouse_y = mouse_b = 
-        mouse_upd = mouse_down_x = mouse_down_y =
-        mouse_pc_x = mouse_pc_y = 0;
-    tabsize = 32;               // from dev_palm
-
-    con_use_bold = con_use_ul = con_use_reverse = 0;
-    currentsystemfont = savedsystemfont = 1;
-    currentfont = (unsigned char *)font8x16i2;
-    font_w = 8;
-    font_h = 16;
-    font_l = 1;                 // this is the length of a row in bytes equal
-                                // INT((font_w+7)/8)
-    mouse_hot_x = -16;
-    mouse_hot_y = -16;
-    fast_exit = 0;
-
-    os_graf_mx = screen->w;
-    os_graf_my = screen->h;
-    maxline = os_graf_my / font_h;
-    os_color_depth = screen->format->BitsPerPixel;
-    os_color = 1;
-    bytespp = screen->format->BytesPerPixel;
-
-    if (os_color_depth == 8) {
-        for (i = 0; i < 256; i++) {
-            colors[i].r = i;
-            colors[i].g = i;
-            colors[i].b = i;
-        }
-        for (i = 0; i < 16; i++) {
-#if defined(CPU_BIGENDIAN)
-            colors[i].r = (vga16[i] & 0xFF0000) >> 16;
-            colors[i].g = (vga16[i] & 0xFF00) >> 8;
-            colors[i].b = (vga16[i] & 0xFF);
-            cmap[i] = i;
-#else
-            colors[i].b = (vga16[i] & 0xFF0000) >> 16;
-            colors[i].g = (vga16[i] & 0xFF00) >> 8;
-            colors[i].r = (vga16[i] & 0xFF);
-            cmap[i] = i;
-#endif
-        }
-        SDL_SetColors(screen, colors, 0, 256);
-    } else {
-        for (i = 0; i < 16; i++) {
-#if defined(CPU_BIGENDIAN)
-            cmap[i] = SDL_MapRGB(screen->format,
-                                 (vga16[i] & 0xFF0000) >> 16,
-                                 (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF));
-#else
-            cmap[i] = SDL_MapRGB(screen->format,
-                                 (vga16[i] & 0xFF),
-                                 (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF0000) >> 16);
-#endif
-        }
-    }
 
 #if defined(_UnixOS)
     setsysvar_str(SYSVAR_OSNAME, "Unix/SDL");
@@ -622,16 +628,15 @@ int osd_devinit()
     setsysvar_str(SYSVAR_OSNAME, "Win32/SDL");
 #endif
     setsysvar_int(SYSVAR_VIDADR, (int32) screen->pixels);
-    SDL_ShowCursor(SDL_DISABLE); // use PEN command to display cursor
 
-    // these modes don't seem right in this client
+    snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", dev_w, dev_h, dev_d, g_file);
+    SDL_WM_SetCaption(cbuf, NULL);
+
     opt_quiet = 1;
     opt_interactive = 0;
 
     // clear the keyboard queue
     dev_clrkb();
-
-    return 1;
 }
 
 /*
