@@ -1,4 +1,4 @@
-// $Id: console_main.c,v 1.10 2007-04-19 20:24:35 zeeb90au Exp $
+// $Id: console_main.c,v 1.11 2007-05-08 06:40:39 haraszti Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -13,10 +13,16 @@
 
 #ifdef INTERACTIVE_CONSOLE
 #include "interactive_mode.h"
+#ifndef HELP_SUBSYS
+#define HELP_SUBSYS
+#endif
+#endif
+
+#ifdef HELP_SUBSYS
 #include "help_subsys.h"
 #endif
 
-#if defined(_UnixOS) || defined(_DOS)
+#if defined(_UnixOS) || defined(_DOS) || defined(_SDL)
 // global the filename (its needed for CTRL+C signal - delete temporary)
 char g_file[1025];
 
@@ -55,8 +61,13 @@ int main(int argc, char *argv[])
     FILE *fp;
 
     strcpy(g_file, "");
+#ifdef _SDL
+    opt_graphics = 2;	// we need to set default options here for SDL
+    opt_quiet = 1;
+#else
     opt_graphics = 0;
     opt_quiet = 0;
+#endif
     opt_ide = 0;
     opt_command[0] = '\0';
     opt_nosave = 1;
@@ -70,10 +81,10 @@ int main(int argc, char *argv[])
             if (opt_nomore) {
                 if (strlen(opt_command)+strlen(argv[i])+2 < OPT_CMD_SZ) { // +1 for space +1 for the trailing zero
                     strcat(opt_command, " ");
-					strcat(opt_command, argv[i]);
+               strcat(opt_command, argv[i]);
                 }
-				else
-					fprintf(stderr,"Too long command line! (%s)\n",argv[i]);
+            else
+               fprintf(stderr,"Too long command line! (%s)\n",argv[i]);
             } else {
                 switch (argv[i][1]) {
                 case '-':
@@ -175,23 +186,23 @@ int main(int argc, char *argv[])
                     break;
                 case 'h':
                     // print command-line parameters
-                    fprintf(stderr,
+                    fprintf(stdout,
                             "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n",
                             SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
                             (kwNULLFUNC - kwASC) + 1,
                             (int)(65536 / sizeof(var_t)));
-                    fprintf(stderr, "http://smallbasic.sourceforge.net\n\n");
+                    fprintf(stdout, "http://smallbasic.sourceforge.net\n\n");
 
                     if (argv[i][2] == '-' || argv[i][2] == 'x') {
                         /*
                          *   search for command, or print all doc
                          */
                         if (argv[i][2] == '-') {
-#ifdef INTERACTIVE_CONSOLE
+#ifdef HELP_SUBSYS
                             char *command = argv[i] + 3;
                             help_printinfo(command);
 #else
-                            fprintf(stderr,
+                            fprintf(stdout,
                                     "Please refer to the online help in the GUI application");
 #endif
                         } else if (argv[i][2] == 'x') {
@@ -232,7 +243,7 @@ int main(int argc, char *argv[])
                     }
                     return 255;
                 default:
-                    fprintf(stderr, "unknown option: %s\n", argv[i]);
+                    printf("unknown option: %s\n", argv[i]);
                     return 255;
                 };
             }
@@ -244,22 +255,22 @@ int main(int argc, char *argv[])
                 if (access(g_file, F_OK)) {
                     strcat(g_file, ".bas");
                     if (access(g_file, F_OK)) {
-                        perror("sbasic");
+                        printf("SmallBasic file not accessible - %s\n",g_file);
                         return 255;
                     }
                 }
                 if (access(g_file, R_OK)) {
-                    perror("sbasic");
+                    printf("SmallBasic file not readable - %s\n",g_file);
                     return 255;
                 }
                 opt_ihavename = 1;
             } else {
                 if (strlen(opt_command)+strlen(argv[i])+2 < OPT_CMD_SZ) { // +1 for space +1 for the trailing zero
                     strcat(opt_command, " ");
-					strcat(opt_command, argv[i]);
+                    strcat(opt_command, argv[i]);
                 }
-				else
-					fprintf(stderr,"Too long command line! (%s)\n",argv[i]);
+            else
+               printf("Too long command line! (%s)\n",argv[i]);
             }
         }
     }
@@ -290,8 +301,10 @@ int main(int argc, char *argv[])
         } else {
             sprintf(g_file, "sbasic.tmp");
         }
-#else
+#elif defined(_UnixOS)
         sprintf(g_file, "%ctmp%csb%d.bas", OS_DIRSEP, OS_DIRSEP, getpid());
+#else
+        sprintf(g_file, "sb%d.bas", getpid());	// for minimal GNU systems like MINGW
 #endif
 
         // its a temporary and it must be deleted
@@ -309,12 +322,12 @@ int main(int argc, char *argv[])
             // get it from stdin
             fp = fopen(g_file, "wb");
             if (fp) {
-                while ((c = fgetc(stdin)) != -1) {
+                while ((c = fgetc(stdin)) != EOF) {
                     fputc(c, fp);
                 }
                 fclose(fp);
             } else {
-                perror("sbasic");
+                printf("Smallbasic file not writeable - %s\n",g_file);
             }
         }
     } else {
