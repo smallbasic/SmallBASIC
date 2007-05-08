@@ -875,7 +875,7 @@ int		term_getx()
 		term_cmd(tc_cpr_rq);
 		fflush(stdout);
 		while ( (term_events() == 0) && count )	{
-			usleep(1000);	// 1 ms
+			dev_delay(1);	// 1 ms
 			count --;
 			}
 		}
@@ -899,7 +899,7 @@ int		term_gety()
 		term_cmd(tc_cpr_rq);
 		fflush(stdout);
 		while ( (term_events() == 0) && count )	{
-			usleep(1000);	// 1ms
+			dev_delay(1);	// 1ms
 			count --;
 			}
 		}
@@ -1160,6 +1160,7 @@ void	term_setcursor(int style)
 		#elif defined(_DOS)
 		_setcursortype(_SOLIDCURSOR);	// ???
 		#endif
+		break;
 		}
 }
 
