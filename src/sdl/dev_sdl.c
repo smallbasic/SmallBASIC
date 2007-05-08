@@ -385,7 +385,7 @@ unsigned char *zstr(char *a, char *b)
 /*
  * initialise system fonts and colors
  */
-int init_fonts() 
+void init_fonts() 
 {
     SDL_Color colors[256];
     int i;
@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
     /*
      * setup video mode 
      */
-    screen = SDL_SetVideoMode(dev_w, dev_h, dev_d, 0);
+    screen = SDL_SetVideoMode(dev_w, dev_h, dev_d, SDL_ANYFORMAT | SDL_HWACCEL);
     if (screen == NULL) {
         fprintf(stderr,
                 "SDL: Couldn't set %dx%dx%d video mode: %s\n"
@@ -607,10 +607,13 @@ int main(int argc, char *argv[])
     fast_exit = 0;
 
     init_fonts();
+    osd_settextcolor(0,15);	// clear the screen with the new foreground, background colors (the SDL default is white on black
+    osd_cls();				// and Smallbasic default is black on white!)
 
     sb_console_main(argc, argv);
 
 	if (SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {		// if syntax error happened no osd_devrestore was performed
+        fast_exit = 1;
         osd_devrestore();
     }
     return 0;
@@ -631,12 +634,15 @@ int osd_devinit() {
 
     snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", dev_w, dev_h, dev_d, g_file);
     SDL_WM_SetCaption(cbuf, NULL);
+    os_graf_mx = screen->w;			// need to reinitialize again because in brun.c sbasic_exec calling dev_init which calling term_init 
+    os_graf_my = screen->h;			// which overwrite our original value of screen->w, screen->h
 
-    opt_quiet = 1;
+//    opt_quiet = 1;	// we set this default in console_main.c
     opt_interactive = 0;
 
     // clear the keyboard queue
     dev_clrkb();
+	return 1;
 }
 
 /*
