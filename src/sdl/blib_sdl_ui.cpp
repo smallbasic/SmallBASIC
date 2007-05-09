@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_sdl_ui.cpp,v 1.4 2007-05-05 05:30:29 zeeb90au Exp $
+// $Id: blib_sdl_ui.cpp,v 1.5 2007-05-09 11:15:06 zeeb90au Exp $
 //
 // Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
@@ -30,8 +30,9 @@
 
 #include "fixedfont.xpm"
 const char* font_chars =
-    " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    ".,!?-+/():;%&`'*#=[]\""; 
+    " abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789.,!?-+/():;%&`'*#=[]\"\'";
 
 // SDL surface in dev_sdl.c
 extern SDL_Surface* screen;
@@ -596,10 +597,10 @@ extern "C" void ui_reset() {
         delete graphics;
         delete imageLoader;
         form = 0;
+        osd_cls();
+        SDL_ShowCursor(cursor);
+        SDL_Flip(screen);
     }
-    osd_cls();
-    SDL_ShowCursor(cursor);
-    SDL_Flip(screen);
     mode = m_unset;
 }
 
@@ -750,6 +751,7 @@ extern "C" void cmd_doform() {
                 form_iteration();
             }
             mode = m_modeless;
+            form->update();
             return;
         }
     }
@@ -786,4 +788,4 @@ extern "C" void cmd_doform() {
 
 #endif
 
-// End of "$Id: blib_sdl_ui.cpp,v 1.4 2007-05-05 05:30:29 zeeb90au Exp $".
+// End of "$Id: blib_sdl_ui.cpp,v 1.5 2007-05-09 11:15:06 zeeb90au Exp $".
