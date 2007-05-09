@@ -712,7 +712,23 @@ void cmd_chain(void)
     }
 
     if (var.type == V_STR) {
-        code = var.v.p.ptr;
+        if (access(var.v.p.ptr, R_OK) == 0) {
+            // argument is a file name
+            FILE* f = fopen(var.v.p.ptr, "r");
+            if (!fseek (f, 0, SEEK_END)) {
+                int len = ftell(f);
+                fseek(f, 0, SEEK_SET);
+                if (len) {
+                    code_alloc = tmp_alloc(len+1);
+                    fgets(code_alloc, len, f);
+                    code = code_alloc;
+                }
+            }
+            fclose(f);
+        }
+        if (!code) {
+            code = var.v.p.ptr;
+        }
     } else if (var.type == V_ARRAY) {
         int el;
         int len = 0;
@@ -764,6 +780,7 @@ void cmd_chain(void)
     tid_main = brun_create_task("CH_MAIN", bytecode_h, 0);
     sys_before_run();
 
+    dev_init(opt_graphics, 0);
     exec_sync_variables(0);
 
     bc_loop(0);
