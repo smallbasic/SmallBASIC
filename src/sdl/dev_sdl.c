@@ -81,6 +81,8 @@ static long maxpixelcount;
 
 #define GET_FG_COLOR 1
 #define GET_BG_COLOR 2
+#define DEF_FG_COLOR 15
+#define DEF_BG_COLOR 0
 static void osd_setbgcolor(long color);
 static long get_screen_color(int fgbg);
 
@@ -385,34 +387,22 @@ unsigned char *zstr(char *a, char *b)
 /*
  * initialise system fonts and colors
  */
-void init_fonts() 
+int init_font() 
 {
     SDL_Color colors[256];
     int i;
-
-    // define application default colours
-    dev_fgcolor = 15;
-	dev_bgcolor = 0;
-    osd_settextcolor(dev_fgcolor, dev_bgcolor);
 
     mouse_mode = mouse_x = mouse_y = mouse_b = 
         mouse_upd = mouse_down_x = mouse_down_y =
         mouse_pc_x = mouse_pc_y = 0;
     tabsize = 32;               // from dev_palm
 
-    con_use_bold = con_use_ul = con_use_reverse = 0;
-    currentsystemfont = savedsystemfont = 1;
-    currentfont = (unsigned char *)font8x16i2;
-    font_w = 8;
-    font_h = 16;
-    font_l = 1;                 // this is the length of a row in bytes equal
-                                // INT((font_w+7)/8)
     mouse_hot_x = -16;
     mouse_hot_y = -16;
 
+    os_graphics = 1;
     os_graf_mx = screen->w;
     os_graf_my = screen->h;
-    maxline = os_graf_my / font_h;
     os_color_depth = screen->format->BitsPerPixel;
     os_color = 1;
     bytespp = screen->format->BytesPerPixel;
@@ -450,6 +440,24 @@ void init_fonts()
 #endif
         }
     }
+}
+
+/**
+ * set the font to initial startup values
+ */
+void reset_font() {
+    con_use_bold = 0;
+    con_use_ul = 0;
+    con_use_reverse = 0;
+    osd_setcolor(DEF_FG_COLOR);
+    osd_setbgcolor(DEF_BG_COLOR);
+    currentsystemfont = savedsystemfont;
+    currentfont = fonttable[currentsystemfont][1];
+    font_w = 8;
+    font_h = 16;
+    font_l = 1;  // this is the length of a row in bytes equal
+                 // INT((font_w+7)/8)
+    maxline = os_graf_my / font_h;
 }
 
 /**
@@ -602,11 +610,9 @@ int main(int argc, char *argv[])
     SDL_ShowCursor(SDL_DISABLE); // use PEN command to display cursor
     SDL_WM_SetCaption("SmallBASIC", NULL);
 
-    // init runtime flags
-    os_graphics = 1;
-    fast_exit = 0;
+    init_font();
+    reset_font();
 
-    init_fonts();
     osd_settextcolor(0,15);	// clear the screen with the new foreground, background colors (the SDL default is white on black
     osd_cls();				// and Smallbasic default is black on white!)
 
@@ -634,11 +640,11 @@ int osd_devinit() {
 
     snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", dev_w, dev_h, dev_d, g_file);
     SDL_WM_SetCaption(cbuf, NULL);
+
     os_graf_mx = screen->w;			// need to reinitialize again because in brun.c sbasic_exec calling dev_init which calling term_init 
     os_graf_my = screen->h;			// which overwrite our original value of screen->w, screen->h
 
-//    opt_quiet = 1;	// we set this default in console_main.c
-    opt_interactive = 0;
+    reset_font();
 
     // clear the keyboard queue
     dev_clrkb();
@@ -1358,17 +1364,8 @@ void osd_write(const char *str)
                     case 'm':  // \e[...m - ANSI terminal
                         switch (esc_val) {
                         case 0:        // reset
-                            con_use_bold = 0;
-                            con_use_ul = 0;
-                            con_use_reverse = 0;
-                            osd_setcolor(0);
-                            osd_settextcolor(0, 15);
-                            currentsystemfont = savedsystemfont;
-                            currentfont = fonttable[currentsystemfont][1];
-                            font_h = 16;
-                            maxline = os_graf_my / font_h;
-                            cx = font_w = 8;
-                            font_l = 1;
+                            reset_font();
+                            cx = font_w;
                             break;
                         case 1:        // set bold on
                             con_use_bold = 1;
