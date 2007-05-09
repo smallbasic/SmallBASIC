@@ -69,8 +69,6 @@ Section "SmallBASIC (SDL)" SecMain
   File SDL.dll
   File SDL_image.dll
 
-  File "..\basic-sources\distro-examples\apps\Calendar.bas"
-  File "..\basic-sources\distro-examples\apps\Charmap.bas"
   File "..\basic-sources\distro-examples\apps\Easter_Butcher.bas"
   File "..\basic-sources\distro-examples\apps\Easter_Carter.bas"
   File "..\basic-sources\distro-examples\apps\Eliza.bas"
@@ -81,7 +79,6 @@ Section "SmallBASIC (SDL)" SecMain
   File "..\basic-sources\distro-examples\apps\Weekday.bas"
   File "..\basic-sources\distro-examples\apps\palm_cli.bas"
   File "..\basic-sources\distro-examples\graphics\Chaos_1xt.bas"
-  File "..\basic-sources\distro-examples\graphics\Chaos_NPhase.bas"
   File "..\basic-sources\distro-examples\graphics\Charts.bas"
   File "..\basic-sources\distro-examples\graphics\Colors.bas"
   File "..\basic-sources\distro-examples\graphics\Fractal_Cloud.bas"

@@ -1,4 +1,4 @@
-REM $Id: welcome.bas,v 1.1 2007-05-07 01:23:18 zeeb90au Exp $
+REM $Id: welcome.bas,v 1.2 2007-05-09 11:13:54 zeeb90au Exp $
 
 sub slow_print(s)
    local ch, len_s
@@ -27,6 +27,7 @@ delay 1500
 open_bn = ""
 load_bn = ""
 quit_bn = ""
+save_bn = ""
 edit_lb = "? 'Hello World'"
 
 margin = xmax/3
@@ -36,6 +37,7 @@ list = files("*.bas")
 button  5, 5, margin, -1, list, "", "listbox"
 button -5, 5, -1, -1, open_bn, "Run"
 button -5, 5, -1, -1, load_bn, "Load"
+button -5, 5, -1, -1, save_bn, "Save"
 button -5, 5, -1, -1, quit_bn, "Quit"
 text margin+10, -4, xmax-(margin+14), ymax-28, edit_lb
 list = 0
@@ -48,6 +50,7 @@ while 1
       if exist(list)
         tload list, code
         chain code
+        pause
       fi
    elif (load_bn = "Load") then
        load_bn = ""
@@ -57,6 +60,8 @@ while 1
        fi
    elif (quit_bn = "Quit") then
       exit loop
+   elif (save_bn = "Save") then
+      tsave list, edit_lb
    fi
 wend
 
