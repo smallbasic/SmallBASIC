@@ -25,7 +25,7 @@
 		#include <unistd.h>
 		#include <conio.h>
 		extern char **environ;
-	#elif defined(_Win32)
+	#elif defined(_Win32) || defined(__MINGW32__)
 		#include <windows.h>
 		#include <process.h>
 		#include <dir.h>
@@ -51,7 +51,7 @@ static int	keyhead;
 static int	keytail;
 
 #ifndef USE_TERM_IO
-#if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
+#if (defined(_UnixOS) || defined(__MINGW32__) || defined(_DOS)) && !defined(_FLTK)
 #define USE_TERM_IO 1
 #else
 #define USE_TERM_IO 0
@@ -68,7 +68,7 @@ static int	keytail;
 #endif
 
 #ifndef DEV_EVENTS_OSD
-#if	defined(_FRANKLIN_EBM) || defined(_FLTK)
+#if	defined(_FRANKLIN_EBM) || defined(_FLTK) || defined(_SDL)
 #define DEV_EVENTS_OSD 1
 #endif
 #endif
@@ -86,7 +86,7 @@ static int	keytail;
 #endif
 
 #ifndef IMPL_IMAGE
-#if defined(_FRANKLIN_EBM) || defined(_FLTK)
+#if defined(_FRANKLIN_EBM) || defined(_FLTK) || defined(_SDL)
 #define IMPL_IMAGE
 #endif
 #endif
@@ -378,7 +378,7 @@ int		dev_init(int mode, int flags)
     }
     #endif
 
-#if USE_TERM_IO
+#if USE_TERM_IO && !defined(__MINGW32__)
 	signal(SIGINT, termination_handler);
 	signal(SIGQUIT, termination_handler);
 #endif
@@ -410,7 +410,7 @@ int		dev_restore()
 	term_restore();	// by default
 	#endif
 
-#if USE_TERM_IO
+#if USE_TERM_IO && !defined(__MINGW32__)
    	signal(SIGINT, SIG_DFL);
    	signal(SIGQUIT, SIG_DFL);
 #endif
@@ -1832,10 +1832,42 @@ int		dev_run(const char *src, int retflg)
 	#else
 	if	( retflg )
 		return (system(src) != -1);
-	else	{
-		execl(src, src, NULL);
-		return 0;
-		}
+	else {
+//		execl(src, src, NULL);
+// call the shell if we want to behave same like system() function
+//  -c means the next argument is the command string to execute
+// this allow us to execute shell script too!
+    char *src1;
+    #if defined(__CYGWIN__) || defined(__MINGW32__)
+    char *cmdspec;
+    #endif
+    
+    src1=malloc(strlen(src)+3);
+    if (src1 == NULL)
+        exit(-1);	// ok, what to do now ?
+    memset(src1,'\0',strlen(src)+3);
+    *src1 = '"';
+    strcat(src1,src);
+    *(src1+strlen(src)+1)='"';	// we need a doublequote around the command
+    #if defined(_SDL)
+	if (os_graphics) {
+		dev_settextcolor(0,0);
+		dev_printf("\n");	// in SDL version a new line with black on black color means no wait on quit
+		osd_devrestore();	// we have to close the graphical screen before call the program
+	}
+    #endif
+	execlp("sh", "sh", "-c", src1, NULL);
+	#if defined(__CYGWIN__) || defined(__MINGW32__)
+	cmdspec = getenv("COMSPEC");
+	if (cmdspec == NULL) {
+	    cmdspec = strdup("cmd");
+	    }
+	execlp(cmdspec,cmdspec, "/c", src1, NULL); // might be we were cross compiled under CYGWIN or MINGW but running
+                                               // in native windows environment which means no shell (sh) available
+                                               // try to use the standard windows command interpreter
+	#endif
+	exit(-1);	// o.k. some error happens - what to do??? we already closed the screen!!
+	}
 	#endif
 }
 
@@ -1953,6 +1985,7 @@ void dev_html(const char* html, const char* title, int x, int y, int w, int h) {
 void dev_image(int handle, int index, int x, int y, 
                int sx, int sy, int w, int h) {
 }
+
 int dev_image_width(int handle, int index) {
     return -1;
 }
