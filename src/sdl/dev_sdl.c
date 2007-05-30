@@ -2216,4 +2216,21 @@ int dev_image_height(int handle, int index)
     }
     return i;
 }
+
+#else 
+
+// HAVE_SDL_IMAGE not defined
+int dev_image_width(int handle, int index)
+{
+  return -1;
+}
+
+int dev_image_height(int handle, int index) {
+  return -1;
+}
+
+void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h)
+{
+}
+
 #endif
