@@ -7,15 +7,15 @@
 
 SUBDIRS = @BUILD_SUBDIRS@
 
-EXTRA_DIST =                 \
-    README.TXT               \
-	sync/gtk/sbgtk.glade     \
-	sync/gtk/sbgtk.gladep    \
-	sync/sdl/fonts/BI1.c     \
-	sync/sdl/fonts/BI2.c     \
-	sync/sdl/fonts/BI5.c     \
-	sync/sdl/fonts/BI7.c     \
-	sync/sdl/fonts/psf2c.c
+EXTRA_DIST =					\
+    README.TXT					\
+    sync/gtk/sbgtk.glade			\
+    sync/gtk/sbgtk.gladep			\
+    sync/sdl/fonts/BI1.c			\
+    sync/sdl/fonts/BI2.c			\
+    sync/sdl/fonts/BI5.c			\
+    sync/sdl/fonts/BI7.c			\
+    sync/sdl/fonts/psf2c.c
 
 
 deb:

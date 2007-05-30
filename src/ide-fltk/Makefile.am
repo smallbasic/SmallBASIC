@@ -13,15 +13,18 @@ INCLUDES = \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
 	@PACKAGE_CFLAGS@
 
+EXTRA_DIST =					\
+    README.TXT					\
+    sbfltk.rc  
+
 bin_PROGRAMS = sbfltk
 
-sbfltk_SOURCES =								\
-    Fl_Ansi_Window.cpp                          \
-    Fl_Help_Widget.cpp                          \
-    MainWindow.cpp                              \
-    EditorWindow.cpp                            \
+sbfltk_SOURCES =				\
+    Fl_Help_Widget.cpp HelpWidget.h             \
+    MainWindow.cpp MainWindow.h                 \
+    EditorWindow.cpp EditorWindow.h             \
     dev_fltk.cpp                                \
-    StringLib.cpp                               \
+    StringLib.cpp StringLib.h                   \
     blib_fltk_ui.cpp
 
 sbfltk_LDADD = -L$(top_srcdir)/sync -lsb_common @PACKAGE_LIBS@
