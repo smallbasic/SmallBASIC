@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.cpp,v 1.85 2006-08-11 23:01:47 zeeb90au Exp $
+// $Id: MainWindow.cpp,v 1.86 2007-05-31 11:03:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -505,7 +505,7 @@ void break_cb(Widget*, void* v) {
 }
 
 void fullscreen_cb(Widget* w, void* v) {
-    if (w->flags() & VALUE) {
+    if (w->flags() & STATE) {
         // store current geometry of the window
         px = wnd->x(); 
         py = wnd->y();
@@ -553,7 +553,7 @@ void paste_text_cb(Widget* w, void* v) {
 }
 
 void turbo_cb(Widget* w, void* v) {
-    wnd->isTurbo = (w->flags() & VALUE);
+    wnd->isTurbo = (w->flags() & STATE);
 }
 
 void find_cb(Widget* w, void* v) {
@@ -1217,7 +1217,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC") {
     outputGroup->box(THIN_DOWN_BOX);
     outputGroup->hide();
     outputGroup->begin();
-    out = new AnsiWindow(2, 2, w-4, pageHeight-4, DEF_FONT_SIZE);
+    out = new AnsiWidget(2, 2, w-4, pageHeight-4, DEF_FONT_SIZE);
     outputGroup->resizable(out);
     outputGroup->end();
 
@@ -1482,4 +1482,4 @@ extern "C" void trace(const char *format, ...) {
 #endif
 }
 
-// End of "$Id: MainWindow.cpp,v 1.85 2006-08-11 23:01:47 zeeb90au Exp $".
+// End of "$Id: MainWindow.cpp,v 1.86 2007-05-31 11:03:16 zeeb90au Exp $".

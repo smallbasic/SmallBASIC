@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: MainWindow.h,v 1.25 2006-01-26 03:58:00 zeeb90au Exp $
+// $Id: MainWindow.h,v 1.26 2007-05-31 11:03:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2003 Chris Warren-Smith. Gawler, South Australia
@@ -15,8 +15,8 @@
 #include <fltk/Window.h>
 #include <fltk/TabGroup.h>
 #include <fltk/ValueInput.h>
+#include <fltk/AnsiWidget.h>
 
-#include "Fl_Ansi_Window.h"
 #include "EditorWindow.h"
 #include "HelpWidget.h"
 
@@ -53,7 +53,7 @@ struct MainWindow : public Window {
     String siteHome;
 
     // main output
-    AnsiWindow *out;
+    AnsiWidget *out;
     EditorWindow* editWnd;
     HelpWidget* helpWnd;
 

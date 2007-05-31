@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: dev_fltk.cpp,v 1.55 2006-01-26 03:58:00 zeeb90au Exp $
+// $Id: dev_fltk.cpp,v 1.56 2007-05-31 11:03:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -443,9 +443,9 @@ void dev_html(const char* html, const char* t, int x, int y, int w, int h) {
 Image* getImage(dev_file_t* filep, int index) {
     // check for cached imaged
     SharedImage* image = loadImage(filep->name, 0);
-    if (image && image->drawn()) {
-        return image; // already loaded+drawn
-    }
+    //if (image && image->drawn()) {
+    //    return image; // already loaded+drawn
+    //}
 
     char localFile[PATH_MAX];
 
@@ -822,4 +822,4 @@ void updateForm(const char* s) {
 //     }
 }
 
-// End of "$Id: dev_fltk.cpp,v 1.55 2006-01-26 03:58:00 zeeb90au Exp $".
+// End of "$Id: dev_fltk.cpp,v 1.56 2007-05-31 11:03:16 zeeb90au Exp $".

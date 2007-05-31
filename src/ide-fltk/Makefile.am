@@ -8,14 +8,31 @@
 
 INCLUDES = \
      -I../ -I. \
-	-DPACKAGE_PREFIX=\""$(prefix)"\" \
-	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
-	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
-	@PACKAGE_CFLAGS@
+     -DPACKAGE_PREFIX=\""$(prefix)"\" \
+     -DPACKAGE_DATA_DIR=\""$(datadir)"\" \
+     -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
+     @PACKAGE_CFLAGS@
 
 EXTRA_DIST =					\
     README.TXT					\
-    sbfltk.rc  
+    sbfltk.rc  					\
+    release/readme.html				\
+    release/sbasic.nsi				\
+    release/welcome.bas				\
+    release/Bas-Home/calc.bas			\
+    release/Bas-Home/calc.html			\
+    release/Bas-Home/comment_in.bas		\
+    release/Bas-Home/comment_out.bas		\
+    release/Bas-Home/CVS			\
+    release/Bas-Home/dos2unix.bas		\
+    release/Bas-Home/image_demo.bas		\
+    release/Bas-Home/indent.bas			\
+    release/Bas-Home/logo.gif			\
+    release/Bas-Home/memoryTest.bas		\
+    release/Bas-Home/recent_files.bas		\
+    release/Bas-Home/snarf.bas			\
+    release/Bas-Home/sudoku.bas			\
+    release/Bas-Home/_survey.bas
 
 bin_PROGRAMS = sbfltk
 

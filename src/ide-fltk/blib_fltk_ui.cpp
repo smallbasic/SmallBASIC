@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_fltk_ui.cpp,v 1.15 2006-06-29 03:53:38 zeeb90au Exp $
+// $Id: blib_fltk_ui.cpp,v 1.16 2007-05-31 11:03:16 zeeb90au Exp $
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
 // cwarrens@twpo.com.au
@@ -24,9 +24,9 @@
 #include <fltk/Rectangle.h>
 #include <fltk/events.h>
 #include <fltk/run.h>
+#include <fltk/AnsiWidget.h>
 
 #include "MainWindow.h"
-#include "Fl_Ansi_Window.h"
 #include "StringLib.h"
 
 extern "C" { 
@@ -91,7 +91,7 @@ struct AnchorLink : public Button {
         draw_label(Rectangle(bx, by-2, bw, bh), 
                    ALIGN_INSIDE|ALIGN_BOTTOMLEFT);
         drawline(2, bh-2, 2+(int)getwidth(label()), bh-2);
-        focusbox()->draw(Rectangle(bx+1, by+1, bw-2, bh-2), style(), 0);
+        //focusbox()->draw(Rectangle(bx+1, by+1, bw-2, bh-2), style(), 0);
         // current_flags_highlight());
     }
 };
@@ -389,7 +389,7 @@ void cmd_doform() {
             form->box(NO_BOX);
         }
         if (numArgs == 6) {
-            form->color(AnsiWindow::ansiToFltk(bg));
+            form->color(AnsiWidget::ansiToFltk(bg));
         }
         if (x < 2) {
             x = 2;
@@ -435,4 +435,4 @@ void cmd_doform() {
 
 C_LINKAGE_END
 
-// End of "$Id: blib_fltk_ui.cpp,v 1.15 2006-06-29 03:53:38 zeeb90au Exp $".
+// End of "$Id: blib_fltk_ui.cpp,v 1.16 2007-05-31 11:03:16 zeeb90au Exp $".
