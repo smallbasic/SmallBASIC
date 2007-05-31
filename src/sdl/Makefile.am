@@ -6,11 +6,16 @@
 
 INCLUDES = -I../ -I. @PACKAGE_CFLAGS@
 
+EXTRA_DIST =					\
+    fixedfont.xpm				\
+    sbasic.nsi					\
+    welcome.bas
+
 bin_PROGRAMS = sbasic
 
 sbasic_SOURCES =    \
-  ../console_main.c \
-  dev_sdl.c         \
-  blib_sdl_ui.cpp
+    ../console_main.c \
+    dev_sdl.c         \
+    blib_sdl_ui.cpp
 
 sbasic_LDADD = -L$(top_srcdir)/sync -lsb_common @PACKAGE_LIBS@
