@@ -1,4 +1,4 @@
-// $Id: blib_db.c,v 1.4 2006-08-19 11:50:15 zeeb90au Exp $
+// $Id: blib_db.c,v 1.5 2007-06-23 22:39:20 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -759,7 +759,7 @@ void cmd_fsaveln()
         fprint_var(handle, var_p);
     }
 
-    if (flags == DEV_FILE_INPUT) {
+    if (flags == DEV_FILE_OUTPUT) {
         dev_fclose(handle);
     }
 }
@@ -1000,4 +1000,4 @@ void cmd_bsave()
     pfree(fname);
 }
 
-/* End of "$Id: blib_db.c,v 1.4 2006-08-19 11:50:15 zeeb90au Exp $". */
+/* End of "$Id: blib_db.c,v 1.5 2007-06-23 22:39:20 zeeb90au Exp $". */
