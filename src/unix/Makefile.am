@@ -9,6 +9,7 @@
 INCLUDES = -I../ -I. @PACKAGE_CFLAGS@
 
 EXTRA_DIST =					\
+    small-basic-mode.el				\
     chr2c.c					\
     el-928.c					\
     lnx928.fnt					\

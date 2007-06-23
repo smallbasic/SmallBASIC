@@ -9,6 +9,7 @@ SUBDIRS = @BUILD_SUBDIRS@
 
 EXTRA_DIST =					\
     README.TXT					\
+    autogen.sh					\
     sync/gtk/sbgtk.glade			\
     sync/gtk/sbgtk.gladep			\
     sync/sdl/fonts/BI1.c			\
