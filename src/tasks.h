@@ -1,13 +1,13 @@
-/**
- *   @file tasks.h
- *   SmallBASIC SB-Task manager
- *
- *   @author Nicholas Christopoulos
- *   @date 2002/07/10
- *
- *   This program is distributed under the terms of the GPL v2.0 or later
- *   Download the GNU Public License (GPL) from www.gnu.org
- */
+// -*- c-file-style: "java" -*-
+// $Id: tasks.h,v 1.3 2007-07-13 23:06:43 zeeb90au Exp $
+// This file is part of SmallBASIC
+//
+// SmallBASIC SB-Task manager
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #if !defined(__sb_tasks_h)
 #define __sb_tasks_h
@@ -41,8 +41,8 @@ typedef struct {
     /* --- common --- */
     int                 line;           /**< The current source code line               */
     int                 error;          /**< The last RTL error code (its work as flag) */
-    char                errmsg[SB_ERRMSG_SIZE+1];                                                       
-    char                file[OS_PATHNAME_SIZE+1];                                                       
+    char                errmsg[SB_ERRMSG_SIZE+1];
+    char                file[OS_PATHNAME_SIZE+1];
     /**< The program file name (task name)                           */
     mem_t               bytecode_h;     /**< BC's memory handle                         */
     int                 bc_type;        /**< BC type (1=executable, 2=unit)             */
@@ -85,7 +85,8 @@ typedef struct {
             char*               bc_sec; // used by sberr.c
 
             int                 proc_level;
-            byte                use_global_vartable;        // flag - uses global variable-table for the next commands
+            // flag - uses global variable-table for the next commands
+            byte                use_global_vartable;        
 
             bc_t                bc_prog;
             bc_t                bc_data;
@@ -110,7 +111,6 @@ typedef struct {
             dbt_t               udstable;
             bid_t               udscount;
             int                 next_field_id; 
-            addr_t              uds_tab_ip;
 
             // pass2 stack
             dbt_t               stack;
@@ -120,36 +120,35 @@ typedef struct {
 
         /* --- executor --- */
         struct {
-            addr_t              length;         /**< The byte-code length (program length in bytes) */
-            addr_t              ip;             /**< Register IP; the instruction pointer           */
-            byte*               bytecode;       /**< The byte-code itself                           */
+            addr_t   length;         /**< The byte-code length (program length in bytes) */
+            addr_t   ip;             /**< Register IP; the instruction pointer           */
+            byte*    bytecode;       /**< The byte-code itself                           */
 
-            addr_t              dp;             /**< Register DP; READ/DATA current position        */
-            addr_t              org;            /**< READ/DATA beginning position                   */
-            addr_t              uds_tab_ip;     /**< structure var_id/begin-pos lookup table        */
+            addr_t   dp;             /**< Register DP; READ/DATA current position        */
+            addr_t   org;            /**< READ/DATA beginning position                   */
 
-            stknode_t*          stack;          /**< The program stack                              */
-            dword               stack_alloc;    /**< The stack size                                 */
-            dword               sp;             /**< Register SP; The stack pointer                 */
+            stknode_t* stack;          /**< The program stack                            */
+            dword      stack_alloc;    /**< The stack size                               */
+            dword      sp;             /**< Register SP; The stack pointer               */
 
-            var_t*              eval_stk;       /**< eval's stack                                   */
-            word                eval_stk_size;  /**< eval's stack size                              */
-            word                eval_sp;        /**< Register ESP; eval's stack pointer             */
+            var_t*     eval_stk;       /**< eval's stack                                 */
+            word       eval_stk_size;  /**< eval's stack size                            */
+            word       eval_sp;        /**< Register ESP; eval's stack pointer           */
 
-            /* Register R; no need */                                                                           
-            /* Register L; no need */                                                                           
+            /* Register R; no need */
+            /* Register L; no need */
 
-            dword               varcount;       /**< number of global-variables                     */
-            dword               labcount;       /**< number of labels                               */
-            dword               libcount;       /**< number of linked libraries                     */
-            dword               symcount;       /**< number of linked symbols                       */
-            dword               expcount;       /**< number of exported symbols                     */
+            dword    varcount;       /**< number of global-variables                     */
+            dword    labcount;       /**< number of labels                               */
+            dword    libcount;       /**< number of linked libraries                     */
+            dword    symcount;       /**< number of linked symbols                       */
+            dword    expcount;       /**< number of exported symbols                     */
 
-            var_t**             vartable;       /**< The table of variables                         */
-            lab_t*              labtable;       /**< The table of labels                            */
-            bc_lib_rec_t*       libtable;       /**< import-libraries table                         */
-            bc_symbol_rec_t*    symtable;       /**< import-symbols table                           */
-            unit_sym_t*         exptable;       /**< export-symbols table                           */
+            var_t**  vartable;       /**< The table of variables                         */
+            lab_t*   labtable;       /**< The table of labels                            */
+            bc_lib_rec_t* libtable;  /**< import-libraries table                         */
+            bc_symbol_rec_t* symtable;  /**< import-symbols table                        */
+            unit_sym_t*         exptable; /**< export-symbols table                      */
 
 #if defined(_PalmOS)
             DmOpenRef   bytecode_fp;

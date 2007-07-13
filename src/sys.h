@@ -1,4 +1,4 @@
-// $Id: sys.h,v 1.12 2007-04-28 05:28:04 zeeb90au Exp $
+// $Id: sys.h,v 1.13 2007-07-13 23:06:43 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -386,8 +386,13 @@ typedef unsigned int    addr_t;
 *   SB's constants
 */
 
-#define SB_STR_VER      "0.9.8"
 #define SB_DWORD_VER    0x908   // 00 (major) 08 (minor) 03 (patch) 
+
+#if defined(VERSION)
+#define SB_STR_VER VERSION
+#else
+#define SB_STR_VER      "0.9.8"
+#endif
 
 #if defined(OS_LIMITED)
     #define SB_PANICMSG_SIZE    255     

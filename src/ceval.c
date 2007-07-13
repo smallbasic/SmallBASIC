@@ -1,4 +1,4 @@
-// $Id: ceval.c,v 1.4 2007-03-30 20:33:03 zeeb90au Exp $
+// $Id: ceval.c,v 1.5 2007-07-13 23:06:43 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -102,13 +102,15 @@ void cev_prim()
         cev_udp();
         break;
 
-    case kwTYPE_UDS: // two addresses as per kwTYPE_PTR
     case kwTYPE_PTR:
         bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // addr
         IP += ADDRSZ;
         bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // return var
         IP += ADDRSZ;
         break;
+
+    case kwTYPE_UDS:
+    case kwTYPE_UDS_EL:
     case kwTYPE_VAR:
         bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // 1 addr
         IP += ADDRSZ;

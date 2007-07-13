@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: eval.c,v 1.8 2007-03-30 20:33:03 zeeb90au Exp $
+// $Id: eval.c,v 1.9 2007-07-13 23:06:43 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBASIC-executor: expressions
@@ -366,8 +366,7 @@ void eval(var_t * r)
                 r->v.ap.v = var_p->v.ap.v;
                 break;
             case V_UDS:
-                r->type = var_p->type;
-                r->v.uds_p = var_p->v.uds_p;
+                v_set(r, var_p);
                 break;
             case V_INT:
                 r->type = V_INT;

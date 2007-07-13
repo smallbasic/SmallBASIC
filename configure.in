@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.37 2007-05-30 11:05:43 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.38 2007-07-13 23:06:43 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.9.8)
+AM_INIT_AUTOMAKE(smallbasic, 0.9.8.1)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -417,4 +417,4 @@ if test x$ac_build_dist = xyes; then
    make dist
 fi
 
-dnl End of "$Id: configure.in,v 1.37 2007-05-30 11:05:43 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.38 2007-07-13 23:06:43 zeeb90au Exp $".

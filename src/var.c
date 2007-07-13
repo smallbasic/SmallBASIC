@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: var.c,v 1.10 2007-04-05 20:56:44 zeeb90au Exp $
+// $Id: var.c,v 1.11 2007-07-13 23:06:43 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBasic Variable Manager.
@@ -47,13 +47,15 @@ void v_free(var_t * v)
     int i;
     var_t *elem;
 
-    if (v->type == V_STR) {
+    switch (v->type) {
+    case V_STR:
         if (v->v.p.ptr) {
             tmp_free(v->v.p.ptr);
         }
         v->v.p.ptr = NULL;
         v->v.p.size = 0;
-    } else if (v->type == V_ARRAY) {
+        break;
+    case V_ARRAY:
         if (v->v.a.size) {
             if (v->v.a.ptr) {
                 for (i = 0; i < v->v.a.size; i++) {
@@ -66,6 +68,10 @@ void v_free(var_t * v)
                 v->v.a.size = 0;
             }
         }
+        break;
+    case V_UDS:
+        uds_free(v);
+        break;
     }
 
     v_init(v);
@@ -83,7 +89,7 @@ int v_isempty(var_t * var)
     case V_INT:
         return (var->v.i == 0);
     case V_UDS:
-        return (var->v.uds_p == 0);
+        return uds_is_empty(var);
     case V_PTR:
         return (var->v.ap.p == 0);
     case V_NUM:
@@ -106,7 +112,7 @@ int v_length(var_t * var)
     case V_STR:
         return strlen((char *)var->v.p.ptr);
     case V_UDS:
-        ltostr(var->v.uds_p, tmpsb);
+        uds_to_str(var->v.uds, tmpsb, 64);
         return strlen(tmpsb);
     case V_PTR:
         ltostr(var->v.ap.p, tmpsb);
@@ -134,7 +140,7 @@ double v_getval(var_t * v)
     } else {
         switch (v->type) {
         case V_UDS:
-            return v->v.uds_p;
+            return uds_to_int(v);
         case V_PTR:
             return v->v.ap.p;
         case V_INT:
@@ -160,7 +166,7 @@ long v_igetval(var_t * v)
     } else {
         switch (v->type) {
         case V_UDS:
-            return v->v.uds_p;
+            return uds_to_int(v);
         case V_PTR:
             return v->v.ap.p;
         case V_INT:
@@ -400,7 +406,7 @@ int v_is_nonzero(var_t * v)
     case V_STR:
         return (v->v.p.size != 0);
     case V_UDS:
-        return (v->v.uds_p != 0);
+        return !uds_is_empty(v);
     case V_PTR:
         return (v->v.ap.p != 0);
     case V_ARRAY:
@@ -588,120 +594,6 @@ void v_add(var_t * result, var_t * a, var_t * b)
 }
 
 /*
- * returns the starting address for the uds of the given id
- * see comp_pass2_uds() in scan.c
- */
-addr_t v_get_uds_ip(addr_t var_id) {
-    addr_t uds_tab_ip = prog_uds_tab_ip;
-    while (uds_tab_ip < prog_length) {
-        addr_t struct_id = (addr_t)code_peekaddr(uds_tab_ip);
-        addr_t struct_ip = (addr_t)code_peekaddr(uds_tab_ip+ADDRSZ);
-        uds_tab_ip += ADDRSZ+ADDRSZ;
-        if (struct_id == var_id) {
-            return struct_ip;
-        }
-    }
-    return -1;
-}
-
-/*
- * copy values from one structure to another
- */
-void v_set_uds(addr_t dst_ip_in, addr_t src_ip) {
-    if ((!src_ip || !dst_ip_in) || src_ip == dst_ip_in) {
-        return;
-    }
-
-    while (code_peekaddr(src_ip) != -1) {
-        bid_t src_field_id = (bid_t)code_peekaddr(src_ip);
-        var_t* src_field = tvar[code_peekaddr(src_ip+ADDRSZ)];
-        // notes: if the fields where packed in sorted order
-        // at compile time then dst_ip would not need to be
-        // reset at each iteration of src_ip
-        addr_t dst_ip = dst_ip_in;
-        src_ip += (ADDRSZ+ADDRSZ);
-
-        // find the matching field_id
-        while (code_peekaddr(dst_ip) != -1) {
-            // see comp_pass2_uds() in scan.c for bc layout
-            bid_t dst_field_id = (bid_t)code_peekaddr(dst_ip);
-            var_t* dst_field = tvar[code_peekaddr(dst_ip+ADDRSZ)];
-            dst_ip += (ADDRSZ+ADDRSZ);
-            if (src_field_id == dst_field_id) {
-                v_set(dst_field, src_field);
-                break; // scan next src_field
-            }
-        }
-    }
-}
-
-/*
- * performs the same operation as v_set_uds only the member variables
- * are localised by being pushed onto the stack. this allows sub/func's
- * to share formal UDS variable names with global names and have the 
- * member values contained to local scope.
- */
-void v_clone_uds(addr_t dst_ip_in, addr_t src_ip) {
-    if (!src_ip || !dst_ip_in) {
-        return; // invalid address
-    }
-
-    if (src_ip == dst_ip_in) {
-        // formal and actual args are the same
-        while (code_peekaddr(src_ip) != -1) {
-            bid_t src_field_id = (bid_t)code_peekaddr(src_ip);
-            bid_t src_var_id = (bid_t)code_peekaddr(src_ip+ADDRSZ);
-            src_ip += (ADDRSZ+ADDRSZ);
-
-            stknode_t node;
-            node.type = kwTYPE_CRVAR;
-            node.x.vdvar.vid = src_var_id;
-            node.x.vdvar.vptr = tvar[src_var_id];
-            code_push(&node); 
-            tvar[src_var_id] = v_clone(node.x.vdvar.vptr);
-        }
-        return;
-    }    
-    
-    while (code_peekaddr(src_ip) != -1) {
-        bid_t src_field_id = (bid_t)code_peekaddr(src_ip);
-        var_t* src_field = tvar[code_peekaddr(src_ip+ADDRSZ)];
-        addr_t dst_ip = dst_ip_in;
-        src_ip += (ADDRSZ+ADDRSZ);
-
-        // find the matching field_id
-        while (code_peekaddr(dst_ip) != -1) {
-            bid_t dst_field_id = (bid_t)code_peekaddr(dst_ip);
-            bid_t dst_var_id = (bid_t)code_peekaddr(dst_ip+ADDRSZ);
-            dst_ip += (ADDRSZ+ADDRSZ);
-            if (src_field_id == dst_field_id) {
-                // store previous variable (with the same ID) to stack
-                stknode_t node;
-                node.type = kwTYPE_CRVAR;
-                node.x.vdvar.vid = dst_var_id;
-                node.x.vdvar.vptr = tvar[dst_var_id];
-                code_push(&node); 
-                tvar[dst_var_id] = v_clone(src_field);
-                break; // scan next src_field
-            }
-        }
-    }
-}
-
-/*
- * empty struct values 
- */
-void v_clear_uds(const var_t* var) {
-    addr_t ip = var->v.uds_p; // location of src's structure
-    while (ip && code_peekaddr(ip) != -1) {
-        bid_t field_id = (bid_t)code_peekaddr(ip);
-        var_t* field = tvar[code_peekaddr(ip+ADDRSZ)];
-        ip += (ADDRSZ+ADDRSZ);
-        v_free(field);
-    }
-}
-
-/*
  * assign (dest = src)
  */
 void v_set(var_t* dest, const var_t* src)
@@ -710,40 +602,11 @@ void v_set(var_t* dest, const var_t* src)
     var_t *dest_vp, *src_vp;
 
     if (src->type == V_UDS) {
-        if (dest->type != V_UDS) {
-            v_free(dest);
-
-            // default is copy by reference
-            dest->type = V_UDS;
-            dest->v.uds_p = src->v.uds_p;
-
-            int var_id = -1;
-            int i;
-
-            // find the var_id by scanning the entire var_table
-            for (i = 0; i < prog_varcount; i++) {
-                if (dest == tvar[i]) {
-                    var_id = i;
-                    break;
-                }
-            }
-            if (var_id == -1) {
-                return;
-            }
-
-            // read the lookup table to find the target uds address
-            addr_t struct_ip = v_get_uds_ip(var_id);
-            if (struct_ip == -1) {
-                return;
-            }
-            dest->v.uds_p = struct_ip;
-        }
-
-        v_set_uds(dest->v.uds_p, src->v.uds_p);
+        uds_set(dest, src);
         return;
     } else if (dest->type == V_UDS) {
         // lvalue struct assigned to non-struct rvalue
-        v_clear_uds(dest);
+        uds_clear(dest);
         return;
     }
 
@@ -854,7 +717,8 @@ void v_tostr(var_t * arg)
 
         switch (arg->type) {
         case V_UDS:
-            ltostr(arg->v.uds_p, tmp);
+            uds_to_str(arg, tmp, 64);
+            uds_free(arg);
             break;
         case V_PTR:
             ltostr(arg->v.ap.p, tmp);

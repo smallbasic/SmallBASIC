@@ -9,6 +9,7 @@
 AM_CFLAGS = @PACKAGE_CFLAGS@
 
 EXTRA_DIST =					\
+    Changes					\
     keywords.c					\
     languages/chars.el.h			\
     languages/chars.en.h			\
@@ -83,6 +84,7 @@ libsb_common_a_SOURCES =			\
     scan.c scan.h				\
     str.c str.h					\
     tasks.c tasks.h				\
+    uds.c uds.h                                 \
     units.c units.h				\
     var.c var.h					\
     vmt.c vmt.h					\

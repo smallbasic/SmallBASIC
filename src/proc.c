@@ -1,4 +1,4 @@
-// $Id: proc.c,v 1.7 2007-03-30 20:33:03 zeeb90au Exp $
+// $Id: proc.c,v 1.8 2007-07-13 23:06:43 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -12,6 +12,7 @@
 #include "sys.h"
 #include "pproc.h"
 #include "messages.h"
+#include "uds.h"
 #include <limits.h>
 
 int par_massget_type_check(char fmt, par_t * par) SEC(BLIB);
@@ -257,8 +258,7 @@ void pv_writevar(var_t * var, int method, int handle)
         pv_write((char *)var->v.p.ptr, method, handle);
         break;
     case V_UDS:
-        ltostr(var->v.uds_p, tmpsb);
-        pv_write(tmpsb, method, handle);
+        uds_write(var, method, handle);
         break;
     case V_PTR:
         ltostr(var->v.ap.p, tmpsb);

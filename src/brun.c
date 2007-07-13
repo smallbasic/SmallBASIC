@@ -1,11 +1,13 @@
-/**
- *   SmallBasic byte-code executor
- *
- *   Nicholas Christopoulos
- *
- *   This program is distributed under the terms of the GPL v2.0 or later
- *   Download the GNU Public License (GPL) from www.gnu.org
- */
+// -*- c-file-style: "java" -*-
+// $Id: brun.c,v 1.20 2007-07-13 23:06:43 zeeb90au Exp $
+// This file is part of SmallBASIC
+//
+// byte-code executor
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #define BRUN_MODULE
 
@@ -22,9 +24,9 @@
 #include "scan.h"
 #include "smbas.h"
 #include "messages.h"
-
 #include "device.h"
 #include "pproc.h"
+#include "uds.h"
 
 int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) SEC(BEXEC);
 int exec_close_task() SEC(BEXEC);
@@ -386,6 +388,10 @@ var_t * code_getvarptr()
         if (basevar_p->type == V_ARRAY) {       /* variable is an array */
             if (code_peek() == kwTYPE_LEVEL_BEGIN) {
                 var_p = code_getvarptr_arridx(basevar_p);
+                if (var_p && code_peek() == kwTYPE_UDS_EL) {
+                    // found uds field eg foo(n).x
+                    var_p = uds_resolve_fields(var_p);
+                }
             }
         } else {
             if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -398,7 +404,7 @@ var_t * code_getvarptr()
         code_skipnext();
         var_p = tvar[code_getaddr()];
         var_p->type = V_UDS;
-        var_p->v.uds_p = code_getaddr(); // pointer to structure
+        var_p = uds_resolve_fields(var_p);
         break;
     }
 
@@ -470,6 +476,9 @@ int code_isvar()
         if (basevar_p->type == V_ARRAY) {       /* variable is an array */
             if (code_peek() == kwTYPE_LEVEL_BEGIN) {
                 var_p = code_isvar_arridx(basevar_p);
+                if (code_peek() == kwTYPE_UDS_EL) {
+                    var_p = uds_resolve_fields(var_p);
+                }
             }
         } else {
             if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -477,11 +486,12 @@ int code_isvar()
             }
         }
         break;
-    
+
     case kwTYPE_UDS:
         code_skipnext();
         var_p = tvar[code_getaddr()];
-        code_getaddr();
+        var_p->type = V_UDS;
+        var_p = uds_resolve_fields(var_p);
         break;
     }
     if (var_p) {
@@ -582,7 +592,7 @@ void exec_setup_predefined_variables()
 
     setsysvar_int(SYSVAR_OSVER, os_ver);
     setsysvar_str(SYSVAR_OSNAME, OS_NAME);
-    setsysvar_int(SYSVAR_SBVER, SB_DWORD_VER);
+    setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
     setsysvar_num(SYSVAR_PI, 3.14159265358979323846);
 
     // Change from Haraszti - 30/3/2007 Thanks Atilla :)
@@ -1447,12 +1457,12 @@ void bc_loop(int isf)
 
             default:
 #if !defined(OS_LIMITED)
-                rt_raise("SEG:CODE[%d]=%02X", prog_ip, prog_source[prog_ip]);
+                rt_raise("SEG:CODE[%d]=%02x", prog_ip, prog_source[prog_ip]);
                 // ////////
                 dev_printf("OUT OF ADDRESS SPACE\n");
                 for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
                     if (prog_source[prog_ip] == keyword_table[i].code) {
-                        dev_printf("OR ILLEGAL CALL TO '%s'",
+                        dev_printf("OR ILLEGAL CALL TO '%s'\n",
                                    keyword_table[i].name);
                         break;
                     }
@@ -1646,7 +1656,6 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
     prog_labcount = hdr.lab_count;
     prog_libcount = hdr.lib_count;
     prog_symcount = hdr.sym_count;
-    prog_uds_tab_ip = hdr.uds_tab_ip;
 
     // create variable-table
     if (prog_varcount == 0) {

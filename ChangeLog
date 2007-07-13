@@ -1,4 +1,8 @@
 
+2007-07-12 	<cwarrensmith@gmail.com>
+	* (re) Implemented user defined structures
+	* AnsiWidget added to FLTK core package
+	
 2007-06-23 	<cwarrensmith@gmail.com>
 	* TSAVE now correctly closes the opened file
 	

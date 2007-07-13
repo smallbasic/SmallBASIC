@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.24 2007-04-19 20:24:35 zeeb90au Exp $
+// $Id: scan.c,v 1.25 2007-07-13 23:06:43 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -51,6 +51,9 @@ int comp_getlist(char *source, char_p_t * args, char *delims,
 char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims,
                          int maxarg, int *count) SEC(BCSC2);
 void comp_array_params(char *src) SEC(BCSC2);
+char* comp_array_uds_field(char* p, bc_t* bc) SEC(BCSC2);
+int comp_check_uds(const char *name);
+int comp_get_uds_field_id(const char* field_name, int len);
 void comp_cmd_option(char *src) SEC(BCSC2);
 int comp_error_if_keyword(const char *name) SEC(BCSC3);
 void bc_store_exports(const char *slist) SEC(BCSC2);
@@ -793,20 +796,15 @@ bid_t comp_var_getID(const char *var_name)
 /*
  * returns true if 'name' is a user defined structure
  */
-int comp_check_uds(const char *name, int name_len, comp_struct_t* uds, int ignore_dot)
+int comp_check_uds(const char *name)
 {
-    int i, cmp_len;
-    for (i = 0; i < comp_udscount; i++) {
-        dbt_read(comp_udstable, i, uds, sizeof(comp_struct_t));
-        if (ignore_dot) {
-            // compare up to but not including any final dot chars
-            char* dot = strrchr(uds->name, '.');
-            cmp_len = dot ? dot-uds->name : uds->name_len;
-        } else {
-            cmp_len = uds->name_len;
-        }
+    int i;
+    comp_struct_t uds;
 
-        if (cmp_len == name_len && strncasecmp(uds->name, name, cmp_len) == 0) {
+    for (i = 0; i < comp_udscount; i++) {
+        dbt_read(comp_udstable, i, &uds, sizeof(comp_struct_t));
+        if (uds.field_id == -1 &&
+            strcasecmp(uds.name, name) == 0) {
             return 1;
         }
     }
@@ -816,94 +814,82 @@ int comp_check_uds(const char *name, int name_len, comp_struct_t* uds, int ignor
 /*
  * returns the shared field_id for the given field name
  */
-int comp_get_uds_field_id(const char* field_name)
+int comp_get_uds_field_id(const char* field_name, int len)
 {
     int i;
     comp_struct_t uds;
+
     for (i = 0; i < comp_udscount; i++) {
         dbt_read(comp_udstable, i, &uds, sizeof(comp_struct_t));
-        char* dot = strrchr(uds.name, '.');
-        if (dot && *(dot+1) && strcasecmp(dot+1, field_name) == 0) {
+        if (uds.field_id != -1 &&
+            strlen(uds.name) == len &&
+            strncasecmp(uds.name, field_name, len) == 0) {
             return uds.field_id;
         }
     }
-    return ++comp_next_field_id;
+
+    strncpy(uds.name, field_name, len);
+    uds.name[len] = 0;
+    uds.field_id = ++comp_next_field_id;
+    dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
+    comp_udscount++;
+
+    return uds.field_id;
 }
 
 /*
  * add the named variable to the current position in the byte code stream
  * 
  * if the name 'foo' has already been used in a struct context, eg 'foo.x'
- * then the foo variable is added as kwTYPE_UDS. the actual structure is
- * appended to the byte code as a series of variable addresses. the byte 
- * following the kwTYPE_UDS var_id and the value of the struct variable
- * contain the struct starting address.
+ * then the foo variable is added as kwTYPE_UDS.
  * 
  */
 void comp_add_variable(bc_t* bc, const char *var_name) {
-    bid_t var_id = comp_var_getID(var_name);
-    comp_struct_t uds, usd_old;
-    
-    if (comp_error) {
-        return;
-    }
-
-    int name_len = strlen(var_name);
-    char* dot = strrchr(var_name, '.');
-
-    // compare all of var_name to the dot-less portion of existing variables
-    if (comp_check_uds(var_name, name_len, &uds, 1)) {
-        // bare name previously used in struct context
-        bc_add_code(bc, kwTYPE_UDS);
-        bc_add_addr(bc, var_id);
-        bc_add_addr(bc, 0); // IP to struct block placeholder
-
-        if (!comp_check_uds(var_name, name_len, &usd_old, 0)) {
-            // base_id is copied from the found child element
-            uds.var_id = var_id;
-            uds.is_container = 1;
-            uds.name_len = name_len;
-            strcpy(uds.name, var_name);
-            dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
-            comp_udscount++;
-        }
-        return;
-    }
-
-    bc_add_code(bc, kwTYPE_VAR);
-    bc_add_addr(bc, var_id);
+    char* dot = strchr(var_name, '.');
 
     if (dot != 0 && !comp_check_lib(var_name)) { 
-        // not a module or unit
-        // compare all of var_name to existing fields
-        if (!comp_check_uds(var_name, name_len, &uds, 0)) {
-            // unseen full-name in struct context, eg foo.x
-            int base_id = var_id;
+        // uds-element (or sub-element eg foo.x.y.z) 
+        // record the uds-parent
+        int len = dot-var_name;
+        comp_struct_t uds;
+        strncpy(uds.name, var_name, len);
+        uds.name[len] = 0;
+        uds.field_id = -1;
+        dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
+        comp_udscount++;
 
-            // find any root sibling and use its base_id, eg foo.y
-            if (comp_check_uds(var_name, dot-var_name, &uds, 1)) {
-                base_id = uds.base_id;
+        bid_t var_id = comp_var_getID(uds.name);
+        bc_add_code(bc, kwTYPE_UDS);
+        bc_add_addr(bc, var_id);
+
+        while (dot && dot[0]) {
+            char* dot_end = strchr(dot+1, '.');
+            if (dot_end) {
+                // next sub-element
+                len = (dot_end-dot)-1;
+                var_id = comp_get_uds_field_id(dot+1, len);
+                dot = dot_end;
             } else {
-                // take any bare variable as the base_id
-                int i;
-                for (i = 0; i < comp_varcount; i++) {
-                    if (dot-var_name == strlen(comp_vartable[i].name) &&
-                        strncmp(comp_vartable[i].name, var_name, dot-var_name) == 0) {
-                        base_id = i;
-                        break;
-                    }
-                }
-            }
+                // final element
+                len = strlen(dot+1);
+                var_id = comp_get_uds_field_id(dot+1, len);
 
-            uds.name_len = name_len;
-            uds.var_id = var_id;
-            uds.is_container = 0;
-            uds.base_id = base_id;
-            uds.field_id = comp_get_uds_field_id(dot+1);
-            strcpy(uds.name, var_name);
-            dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
-            comp_udscount++;
+                dot = 0;
+            }
+            bc_add_code(bc, kwTYPE_UDS_EL);
+            bc_add_addr(bc, var_id);
         }
+
+    } else if (comp_check_uds(var_name)) {
+        // uds-container
+        // all of var_name same as dot-less portion of existing variable
+        bid_t var_id = comp_var_getID(var_name);
+        bc_add_code(bc, kwTYPE_UDS);
+        bc_add_addr(bc, var_id);
+    } else {
+        // regular variable
+        bc_add_code(bc, kwTYPE_VAR);
+        bc_add_addr(bc, comp_var_getID(var_name));
     }
 }
 
@@ -1308,6 +1294,9 @@ void comp_expression(char *expr, byte no_parser)
             bc_add_code(&bc, kwTYPE_LEVEL_END);
             level--;
             ptr++;
+            if (*ptr == '.') {
+                ptr = comp_array_uds_field(ptr+1, &bc);
+            }
         } else if (is_space(*ptr)) {
             // null characters
             ptr++;
@@ -1733,6 +1722,31 @@ int comp_single_line_if(char *text)
     return 0;                   // false
 }
 
+/**
+ * Referencing a UDS field via array, eg foo(10).x
+ */
+char* comp_array_uds_field(char* p, bc_t* bc) {
+    char* p_begin = p;
+
+    while (1) {
+        if (*p == 0 || *p == ' ' || *p == '.') {
+            int len = (p - p_begin);
+            if (len) {
+                bc_add_code(bc, kwTYPE_UDS_EL);
+                bc_add_addr(bc, comp_get_uds_field_id(p_begin, len));
+            }
+            if (*p == '.') {
+                p_begin = p+1;
+            } else {
+                return p;
+            }
+        }
+        p++;
+    }
+
+    return p;
+}
+
 /*
  * array's args 
  */
@@ -1752,7 +1766,6 @@ void comp_array_params(char *src)
             break;
         case ')':
             level--;
-
             if (level == 0) {
                 se = p;
                 // store this index
@@ -1771,7 +1784,10 @@ void comp_array_params(char *src)
                     *se = ')';
                     ss = se = NULL;
                 }
-            }                   // lev = 0
+                if (*(p+1) == '.') {
+                    comp_array_uds_field(p+2, &comp_prog);
+                }
+            }   // lev = 0
             break;
         };
 
@@ -2669,7 +2685,6 @@ addr_t comp_next_bc_cmd(addr_t ip)
         ip += CODESZ;
         break;
 
-    case kwTYPE_UDS:
     case kwTYPE_CALLEXTF:
     case kwTYPE_CALLEXTP:      // [lib][index]
         ip += (ADDRSZ * 2);
@@ -2689,6 +2704,8 @@ addr_t comp_next_bc_cmd(addr_t ip)
     case kwGOSUB:
     case kwTYPE_LINE:
     case kwTYPE_VAR:           // [addr|id]
+    case kwTYPE_UDS:
+    case kwTYPE_UDS_EL:
     case kwSELECT:
         ip += ADDRSZ;
         break;
@@ -4391,85 +4408,6 @@ int comp_pass2_exports()
     return (comp_error == 0);
 }
 
-/**
- * setup user defined structures
- */
-int comp_pass2_uds()
-{
-    comp_struct_t uds;
-
-    // remember which comp_struct_t's have already been processed
-    int* visited = tmp_alloc(sizeof(int)*comp_udscount);
-    memset(visited, 0, sizeof(int)*comp_udscount);
-
-    // hide the structure details from the executor
-    bc_add_addr(&comp_prog, kwTYPE_EOC);
-    addr_t struct_ip = comp_prog.count;
-    bid_t curr_struct_id = -1;
-    bid_t next_struct_id = -1;
-    int n_visited = 0;
-    int i = 0;
-    int n_fields = 0;
-    
-    // create the structure lookup table. this can be used to find 
-    // structure fields when only the var_id of a structure is known.
-    // the lookup contains repeating elements of struct_id+struct_ptr
-    bc_t bc_uds_tab;
-    bc_create(&bc_uds_tab);
-
-    while (n_visited < comp_udscount) {
-        if (!visited[i]) {
-            dbt_read(comp_udstable, i, &uds, sizeof(comp_struct_t));
-            if (curr_struct_id == -1 || curr_struct_id == uds.base_id) {
-                curr_struct_id = uds.base_id;
-                next_struct_id = -1; // find next non-matching baseid
-                visited[i] = 1;
-                n_visited++;
-                if (uds.is_container) {
-                    // update all uds variables (foo) of the same id
-                    // allowing the kwTYPE_UDS to find its fields
-                    addr_t var_id, addr;
-                    for (addr = comp_search_bc(0, kwTYPE_UDS);
-                         addr != INVALID_ADDR;
-                         addr = comp_search_bc(addr+1+ADDRSZ+ADDRSZ, kwTYPE_UDS)) {
-                        memcpy(&var_id, comp_prog.ptr+addr+1, ADDRSZ);
-                        if (var_id == uds.var_id) {
-                            memcpy(comp_prog.ptr+addr+1+ADDRSZ, &struct_ip, ADDRSZ);                        
-                        }
-                    }
-                } else {
-                    // object member reference (foo.x)
-                    if (n_fields == 0) {
-                        bc_add_addr(&bc_uds_tab, curr_struct_id);
-                        bc_add_addr(&bc_uds_tab, struct_ip);
-                    }
-                    bc_add_addr(&comp_prog, uds.field_id);
-                    bc_add_addr(&comp_prog, uds.var_id);
-                    n_fields++;
-                }
-            } else if (next_struct_id == -1) {
-                next_struct_id = uds.base_id;
-            }
-        }
-
-        if (++i == comp_udscount) {
-            // no more structure fields
-            bc_add_addr(&comp_prog, -1);
-
-            // visit next structure
-            struct_ip = comp_prog.count;
-            curr_struct_id = next_struct_id;
-            i = 0;
-            n_fields = 0;
-        }
-    }
-    bc_add_addr(&comp_prog, -1);
-    comp_uds_tab_ip = comp_prog.count;
-    bc_append(&comp_prog, &bc_uds_tab);
-    bc_destroy(&bc_uds_tab);
-    tmp_free(visited);
-}
-
 /*
  * PASS 2
  */
@@ -4503,9 +4441,6 @@ int comp_pass2()
     }
     if (comp_expcount) {
         comp_pass2_exports();
-    }
-    if (comp_udscount > 0) {
-        comp_pass2_uds();
     }
     return (comp_error == 0);
 }
@@ -4551,8 +4486,6 @@ mem_t comp_create_bin()
     hdr.var_count = comp_varcount;
     hdr.lab_count = comp_labcount;
     hdr.data_ip = comp_first_data_ip;
-    hdr.uds_tab_ip = comp_uds_tab_ip;
-
     hdr.size = sizeof(bc_head_t)
         + comp_prog.count + (comp_labcount * ADDRSZ)
         + sizeof(unit_sym_t) * comp_expcount

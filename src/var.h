@@ -1,4 +1,4 @@
-// $Id: var.h,v 1.8 2007-04-16 11:03:38 zeeb90au Exp $
+// $Id: var.h,v 1.9 2007-07-13 23:06:43 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -80,6 +80,8 @@
 extern "C" {
 #endif
 
+typedef struct uds_field_s uds_field_s; // declared below
+
 /**
  *   @ingroup var
  *   @typedef var_s
@@ -106,7 +108,7 @@ struct var_s {
         } ap;
 
         // user defined structure
-        addr_t uds_p;          /** pointer to the "structure" */
+        uds_field_s* uds;      /** pointer to the "structure" */
         
         // generic ptr (string)
         struct {
@@ -139,6 +141,15 @@ struct var_s {
 
 typedef struct var_s var_t;
 typedef var_t *var_p_t;
+
+/*
+ * user defined structures
+ */
+struct uds_field_s {
+    uds_field_s* next; // next structure element 
+    addr_t field_id;   // the element id
+    var_p_t var;       // the variable
+};
 
 /*
  *   label
