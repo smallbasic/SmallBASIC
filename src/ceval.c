@@ -1,4 +1,4 @@
-// $Id: ceval.c,v 1.5 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: ceval.c,v 1.6 2007-07-20 22:43:54 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -46,9 +46,12 @@ void cev_opr_err(void)
     sc_raise("(EXPR): SYNTAX ERROR (1st OP)");
 }
 #else
-
-#define cev_missing_rp()        printf("C %s:%d, BAS: %d, EXPR: MISSING ')' (CS:IP=%d)\n", __FILE__, __LINE__, comp_line, CODE_PEEK() | comp_error++)
-#define cev_opr_err()           printf("C %s:%d, BAS: %d, EXPR: SYNTAX ERROR (1st OP) (CS:IP=%d)\n", __FILE__, __LINE__, comp_line, CODE_PEEK() | comp_error++)
+#define cev_missing_rp()                                                \
+    printf("C %s:%d, BAS: %d, EXPR: MISSING ')' (CS:IP=%d)\n",          \
+           __FILE__, __LINE__, comp_line, CODE_PEEK() | comp_error++)
+#define cev_opr_err()                                                   \
+    printf("C %s:%d, BAS: %d, EXPR: SYNTAX ERROR (1st OP) (CS:IP=%d)\n", \
+           __FILE__, __LINE__, comp_line, CODE_PEEK() | comp_error++)
 #endif
 
 static bc_t *bc_in;
@@ -59,8 +62,8 @@ static bc_t *bc_out;
 #define cev_add_addr(x) bc_add_addr(bc_out, (x))
 
 /*
-*   prim
-*/
+ *   prim
+ */
 void cev_prim()
 {
     byte code;
@@ -109,11 +112,17 @@ void cev_prim()
         IP += ADDRSZ;
         break;
 
-    case kwTYPE_UDS:
-    case kwTYPE_UDS_EL:
     case kwTYPE_VAR:
+    case kwTYPE_UDS:
         bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // 1 addr
         IP += ADDRSZ;
+
+        while (CODE_PEEK() == kwTYPE_UDS_EL) {
+            cev_add1(kwTYPE_UDS_EL);
+            IP++; // re-add the byte-code
+            bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);   // 1 addr
+            IP += ADDRSZ; // re-add the element index
+        }
 
         // support multiple ()
         while (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
@@ -192,8 +201,8 @@ void cev_prim()
 }
 
 /*
-*   parenthesis
-*/
+ *   parenthesis
+ */
 void cev_parenth()
 {
     if (comp_error) {
@@ -225,8 +234,8 @@ void cev_parenth()
 }
 
 /*
-*   unary
-*/
+ *   unary
+ */
 void cev_unary()
 {
     char op;
@@ -248,8 +257,8 @@ void cev_unary()
 }
 
 /*
-*   pow
-*/
+ *   pow
+ */
 void cev_pow()
 {
     cev_unary();                // R = cev_unary
@@ -272,8 +281,8 @@ void cev_pow()
 }
 
 /*
-*   mul | div | mod
-*/
+ *   mul | div | mod
+ */
 void cev_mul()
 {
     cev_pow();                  // R = cev_pow()
@@ -298,8 +307,8 @@ void cev_mul()
 }
 
 /*
-*   add | sub
-*/
+ *   add | sub
+ */
 void cev_add()
 {
     cev_mul();                  // R = cev_mul()
@@ -325,8 +334,8 @@ void cev_add()
 }
 
 /*
-*   compare
-*/
+ *   compare
+ */
 void cev_cmp()
 {
     cev_add();                  // R = cev_add()
@@ -352,8 +361,8 @@ void cev_cmp()
 }
 
 /*
-*   logical
-*/
+ *   logical
+ */
 void cev_log(void)
 {
     cev_cmp();                  // R = cev_cmp()
@@ -378,8 +387,8 @@ void cev_log(void)
 }
 
 /*
-*   main
-*/
+ *   main
+ */
 void expr_parser(bc_t * bc_src)
 {
     byte code;
@@ -391,17 +400,17 @@ void expr_parser(bc_t * bc_src)
 
     code = CODE_PEEK();
 
-    // 
+    //
     // empty!
-    // 
+    //
     if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
         bc_destroy(bc_out);
         tmp_free(bc_out);
         return;
     }
-    // 
+    //
     // LET|CONST special code
-    // 
+    //
     if (code == kwTYPE_CMPOPR) {
         IP++;
         if (CODE(IP) != '=') {

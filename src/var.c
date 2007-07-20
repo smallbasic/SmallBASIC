@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: var.c,v 1.11 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: var.c,v 1.12 2007-07-20 22:43:54 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBasic Variable Manager.
@@ -497,6 +497,10 @@ int v_compare(var_t * a, var_t * b)
         }
 
         return 0;               // equal
+    }
+
+    if (a->type == V_UDS && b->type == V_UDS) {
+        return uds_compare(a, b);
     }
 
     err_evtype();               // ndc 01/08/2001

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: kw.h,v 1.9 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: kw.h,v 1.10 2007-07-20 22:43:54 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 //  Generic keywords  : BC size = 1 byte = 255-2 names 
@@ -55,40 +55,40 @@ extern "C" {
  *       special seperators too like INPUT, APPEND, FORSEP
  *       and, of course, root commands like REPEAT-UNTIL, IF, etc
  */
-enum keyword    {               // line 50
-    kwTYPE_INT = 0x1,               /* 32b Integer */
-    kwTYPE_NUM,                     /* 64b Real */
-    kwTYPE_STR,                     /* String */
-    kwTYPE_LOGOPR,                  /* Logical operator */
-    kwTYPE_CMPOPR,                  /* Comparation operator */
-    kwTYPE_ADDOPR,                  /* ADD/SUB operator */
-    kwTYPE_MULOPR,                  /* MUL/DIV/IDIV operator */
-    kwTYPE_POWOPR,                  /* POW(x,y) operator */
-    kwTYPE_UNROPR,                  /* Unary operator */
-    kwTYPE_VAR,                     /* Variable */
-    kwTYPE_UDS,                     /* Structure */
-    kwTYPE_UDS_EL,                  /* Structure element */
-    kwTYPE_SEP,                     /* Separator */
-    kwTYPE_LINE,                    /* Debug info: SOURCE LINE */
-    kwTYPE_LEVEL_BEGIN,             /* Parenthesis ( */
-    kwTYPE_LEVEL_END,               /* Parenthesis ) */
-    kwTYPE_EOC,                     /* End-Of-Command mark */
-    kwTYPE_EVPUSH,                  /* PUSH R */
-    kwTYPE_EVPOP,                   /* POP  L */
-    kwTYPE_CALLF,                   /* Call a build-in function */
-    kwTYPE_CALLP,                   /* Call a build-in procedure */
-    kwTYPE_CALL_UDF,                /* Call user defined function */                
-    kwTYPE_CALL_UDP,                /* Call user defined procedure */
-    kwTYPE_CALL_PTR,                /* Call user defined procedure or function from address pointer */
-    kwTYPE_CALLEXTF,                /* Call an external function */
-    kwTYPE_CALLEXTP,                /* Call an external procedure */
-    kwTYPE_CRVAR,                   /* Create dynamic variable (PARAMETERS OR LOCALS) */
-    kwTYPE_RET,                     /* Return from UDF|UDP */
-    kwTYPE_PARAM,                   /* Parameters */
-    kwTYPE_PTR,                     /* Address pointer, eg f=@foo */
-    kwLOCAL,                        /* Create local variables */
-    kwFUNC,                         /* USER DEFINED FUNCTION */
-    kwPROC,                         /* USER DEFINED PROCEDURE */
+enum keyword    {         // line 50
+    kwTYPE_INT = 0x1,     /* 32b Integer */
+    kwTYPE_NUM,           /* 64b Real */
+    kwTYPE_STR,           /* String */
+    kwTYPE_LOGOPR,        /* Logical operator */
+    kwTYPE_CMPOPR,        /* Comparation operator */
+    kwTYPE_ADDOPR,        /* ADD/SUB operator */
+    kwTYPE_MULOPR,        /* MUL/DIV/IDIV operator */
+    kwTYPE_POWOPR,        /* POW(x,y) operator */
+    kwTYPE_UNROPR,        /* Unary operator */
+    kwTYPE_VAR,           /* Variable */
+    kwTYPE_UDS,           /* Structure */
+    kwTYPE_UDS_EL,        /* Structure element */
+    kwTYPE_SEP,           /* Separator */
+    kwTYPE_LINE,          /* Debug info: SOURCE LINE */
+    kwTYPE_LEVEL_BEGIN,   /* Parenthesis ( */
+    kwTYPE_LEVEL_END,     /* Parenthesis ) */
+    kwTYPE_EOC,           /* End-Of-Command mark */
+    kwTYPE_EVPUSH,        /* PUSH R */
+    kwTYPE_EVPOP,         /* POP  L */
+    kwTYPE_CALLF,         /* Call a build-in function */
+    kwTYPE_CALLP,         /* Call a build-in procedure */
+    kwTYPE_CALL_UDF,      /* Call user defined function */                
+    kwTYPE_CALL_UDP,      /* Call user defined procedure */
+    kwTYPE_CALL_PTR,      /* Call user defined procedure or function from address pointer */
+    kwTYPE_CALLEXTF,      /* Call an external function */
+    kwTYPE_CALLEXTP,      /* Call an external procedure */
+    kwTYPE_CRVAR,         /* Create dynamic variable (PARAMETERS OR LOCALS) */
+    kwTYPE_RET,           /* Return from UDF|UDP */
+    kwTYPE_PARAM,         /* Parameters */
+    kwTYPE_PTR,           /* Address pointer, eg f=@foo */
+    kwLOCAL,              /* Create local variables */
+    kwFUNC,               /* USER DEFINED FUNCTION */
+    kwPROC,               /* USER DEFINED PROCEDURE */
     kwBYREF,
     kwDECLARE,
     kwIMPORT,

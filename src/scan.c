@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.25 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: scan.c,v 1.26 2007-07-20 22:43:54 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -873,7 +873,6 @@ void comp_add_variable(bc_t* bc, const char *var_name) {
                 // final element
                 len = strlen(dot+1);
                 var_id = comp_get_uds_field_id(dot+1, len);
-
                 dot = 0;
             }
             bc_add_code(bc, kwTYPE_UDS_EL);
@@ -883,9 +882,8 @@ void comp_add_variable(bc_t* bc, const char *var_name) {
     } else if (comp_check_uds(var_name)) {
         // uds-container
         // all of var_name same as dot-less portion of existing variable
-        bid_t var_id = comp_var_getID(var_name);
         bc_add_code(bc, kwTYPE_UDS);
-        bc_add_addr(bc, var_id);
+        bc_add_addr(bc, comp_var_getID(var_name));
     } else {
         // regular variable
         bc_add_code(bc, kwTYPE_VAR);
