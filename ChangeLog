@@ -1,4 +1,7 @@
 
+2007-07-21	<cwarrensmith@gmail.com>
+	* Implemented experimental logical expression short-circuit evaluation
+	
 2007-07-12 	<cwarrensmith@gmail.com>
 	* (re) Implemented user defined structures
 	* AnsiWidget added to FLTK core package
@@ -71,7 +74,6 @@
 ================================================================================
 
 Future ideas:
-- if test short circuit evaluation. 
 - Add drag-drop file support to open a bas file
 - Add support for detecting another program has changed
   the edited file in fltk version

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: kw.h,v 1.10 2007-07-20 22:43:54 zeeb90au Exp $
+// $Id: kw.h,v 1.11 2007-07-21 11:02:39 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 //  Generic keywords  : BC size = 1 byte = 255-2 names 
@@ -75,6 +75,7 @@ enum keyword    {         // line 50
     kwTYPE_EOC,           /* End-Of-Command mark */
     kwTYPE_EVPUSH,        /* PUSH R */
     kwTYPE_EVPOP,         /* POP  L */
+    kwTYPE_EVAL_SC,       /* Evalulation short-circuit begin */
     kwTYPE_CALLF,         /* Call a build-in function */
     kwTYPE_CALLP,         /* Call a build-in procedure */
     kwTYPE_CALL_UDF,      /* Call user defined function */                

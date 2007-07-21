@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: eval.c,v 1.9 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: eval.c,v 1.10 2007-07-21 11:02:39 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBASIC-executor: expressions
@@ -299,6 +299,7 @@ void eval(var_t * r)
     int i;
     long li = 0, ri = 0, fcode;
     double lf, rf;
+    addr_t addr;
 
     // / bit ops
     int32 a, b;
@@ -612,6 +613,34 @@ void eval(var_t * r)
             }
 
             // cleanup
+            break;
+
+        case kwTYPE_EVAL_SC:
+            // short-circuit evaluation
+            // see cev_log() in ceval.c for layout detail
+            IP++;  // skip code kwTYPE_LOGOPR
+            op = CODE(IP); // read operator
+            IP++;
+            li = v_igetval(&eval_stk[eval_sp-1]); // read left side result
+            ri = -1;
+            
+            addr = code_getaddr(); // read shortcut jump offset
+
+            switch (op) {
+            case OPLOG_AND:
+                if (!li) ri = 0; // False AND blah => result is false
+                break;
+            case OPLOG_OR:
+                if (li) ri = 1;   // True OR blah => result is true
+                break;
+            }
+            if (ri != -1) {
+                IP + addr; // jump to the shortcut offset
+                V_FREE(r);
+                r->type = V_INT;
+                r->v.i = ri;
+                return;
+            }
             break;
 
             // ////////////// LOGICAL/BIT ///////////////////
