@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: eval.c,v 1.10 2007-07-21 11:02:39 zeeb90au Exp $
+// $Id: eval.c,v 1.11 2007-07-22 04:24:05 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBASIC-executor: expressions
@@ -634,12 +634,16 @@ void eval(var_t * r)
                 if (li) ri = 1;   // True OR blah => result is true
                 break;
             }
+
             if (ri != -1) {
-                IP + addr; // jump to the shortcut offset
-                V_FREE(r);
+                // set the result into v - if there are more expressions
+                // this will be kwTYPE_EVPUSH'd onto the stack 
+                // and kwTYPE_EVAL_SC will be called again to test the 
+                // subsequent boolean operator
+                V_FREE(r); 
                 r->type = V_INT;
                 r->v.i = ri;
-                return;
+                IP += (addr-ADDRSZ); // jump to the shortcut offset
             }
             break;
 
