@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.26 2007-07-20 22:43:54 zeeb90au Exp $
+// $Id: scan.c,v 1.27 2007-08-18 13:30:43 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -2746,6 +2746,11 @@ addr_t comp_next_bc_cmd(addr_t ip)
     case kwCASE_ELSE:
     case kwENDSELECT:
         ip += BC_CTRLSZ;
+        break;
+
+    case kwTYPE_EVAL_SC:
+        ip += 2;      // kwTYPE_LOGOPR+op
+        ip += ADDRSZ; // the shortcut address
         break;
     };
     return ip;

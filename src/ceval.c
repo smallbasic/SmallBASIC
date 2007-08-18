@@ -1,4 +1,4 @@
-// $Id: ceval.c,v 1.7 2007-07-21 11:02:38 zeeb90au Exp $
+// $Id: ceval.c,v 1.8 2007-08-18 13:30:43 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -378,10 +378,10 @@ void cev_log(void)
         op = CODE(IP);
         IP++;
         cev_add1(kwTYPE_EVPUSH); // PUSH R (push the left side result
-        cev_add1(kwTYPE_EVAL_SC);
-        cev_add2(kwTYPE_LOGOPR, op);    // R = LEFT op R
 
-        shortcut = bc_out->count; // shortcut jump target 
+        cev_add1(kwTYPE_EVAL_SC);
+        cev_add2(kwTYPE_LOGOPR, op);
+        shortcut = bc_out->count; // shortcut jump target (calculated below)
         cev_add_addr(0);
 
         cev_cmp();              // right seg // R = cev_cmp()

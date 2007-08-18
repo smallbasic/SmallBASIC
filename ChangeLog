@@ -1,4 +1,15 @@
 
+2007-08-18	<cwarrensmith@gmail.com>
+	* Fixed a problem with the short-circuit eval code causing 
+	incorrect true/false return IP's being calculated
+	
+2007-08-02	<cwarrensmith@gmail.com>
+	* The IN operator when applied to arrays now returns
+	  the 1 based index position, eg:
+	a << "cat"
+        a << "dog"
+        ? "dog" in a 'prints 2
+	
 2007-07-21	<cwarrensmith@gmail.com>
 	* Implemented experimental logical expression short-circuit evaluation
 	
@@ -37,7 +48,9 @@
 	taken as the end of string.
 	
 2006-08-12	<cwarrensmith@gmail.com>
-	* added support for func/sub pointer variables used with the call statement:
+	* added support for func/sub pointer variables used with the 
+	  call statement:
+
 	func foo(s)
          foo="foo!"+s
         end

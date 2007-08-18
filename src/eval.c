@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: eval.c,v 1.11 2007-07-22 04:24:05 zeeb90au Exp $
+// $Id: eval.c,v 1.12 2007-08-18 13:30:43 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // SmallBASIC-executor: expressions
@@ -617,7 +617,7 @@ void eval(var_t * r)
 
         case kwTYPE_EVAL_SC:
             // short-circuit evaluation
-            // see cev_log() in ceval.c for layout detail
+            // see cev_log() in ceval.c for layout details
             IP++;  // skip code kwTYPE_LOGOPR
             op = CODE(IP); // read operator
             IP++;
@@ -713,6 +713,7 @@ void eval(var_t * r)
             // 
             r->type = V_INT;
             r->v.i = ri;
+
             break;
 
             // ////////////// COMPARE ///////////////////
@@ -748,7 +749,7 @@ void eval(var_t * r)
                     for (i = 0; i < r->v.a.size; i++) {
                         elem_p = v_elem(r, i);
                         if (v_compare(left, elem_p) == 0) {
-                            ri = 1;
+                            ri = i+1;
                             break;
                         }
                     }
@@ -961,12 +962,13 @@ void eval(var_t * r)
                     IP++;       // '('
                     cmd_strN(fcode, r);
                     if (!prog_error) {
-                        if (CODE_PEEK() == kwTYPE_SEP)
+                        if (CODE_PEEK() == kwTYPE_SEP) {
                             IP++;       // ','
-                        else if (CODE_PEEK() == kwTYPE_LEVEL_END)
+                        } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
                             IP++;       // ')'
-                        else
+                        } else {
                             err_missing_rp();
+                        }
                     }
                 }
                 break;
@@ -1004,12 +1006,13 @@ void eval(var_t * r)
                     IP++;       // '('
                     cmd_intN(fcode, r);
                     if (!prog_error) {
-                        if (CODE_PEEK() == kwTYPE_SEP)
+                        if (CODE_PEEK() == kwTYPE_SEP) {
                             IP++;       // ','
-                        else if (CODE_PEEK() == kwTYPE_LEVEL_END)
+                        } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
                             IP++;       // ')'
-                        else
+                        } else {
                             err_missing_sep();
+                        }
                     }
                 }
                 break;
@@ -1028,12 +1031,13 @@ void eval(var_t * r)
                     IP++;       // '('
                     cmd_numN(fcode, r);
                     if (!prog_error) {
-                        if (CODE_PEEK() == kwTYPE_SEP)
+                        if (CODE_PEEK() == kwTYPE_SEP) {
                             IP++;       // ','
-                        else if (CODE_PEEK() == kwTYPE_LEVEL_END)
+                        } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
                             IP++;       // ')' level
-                        else
+                        } else {
                             err_missing_sep();
+                        }
                     }
                 }
                 break;
@@ -1188,8 +1192,9 @@ void eval(var_t * r)
 
                     cmd_genfunc(fcode, r);
                     if (!prog_error) {
-                        if (CODE_PEEK() == kwTYPE_LEVEL_END)
+                        if (CODE_PEEK() == kwTYPE_LEVEL_END) {
                             IP++;
+                        }
                     }
                 }
                 break;
