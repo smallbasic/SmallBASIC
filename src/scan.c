@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.27 2007-08-18 13:30:43 zeeb90au Exp $
+// $Id: scan.c,v 1.28 2007-08-31 21:09:51 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -1783,7 +1783,7 @@ void comp_array_params(char *src)
                     ss = se = NULL;
                 }
                 if (*(p+1) == '.') {
-                    comp_array_uds_field(p+2, &comp_prog);
+                    p = comp_array_uds_field(p+2, &comp_prog);
                 }
             }   // lev = 0
             break;

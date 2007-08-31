@@ -1,4 +1,4 @@
-// $Id: ceval.c,v 1.8 2007-08-18 13:30:43 zeeb90au Exp $
+// $Id: ceval.c,v 1.9 2007-08-31 21:09:51 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -112,17 +112,11 @@ void cev_prim()
         IP += ADDRSZ;
         break;
 
-    case kwTYPE_VAR:
+    case kwTYPE_UDS_EL:
     case kwTYPE_UDS:
+    case kwTYPE_VAR:
         bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // 1 addr
         IP += ADDRSZ;
-
-        while (CODE_PEEK() == kwTYPE_UDS_EL) {
-            cev_add1(kwTYPE_UDS_EL);
-            IP++; // re-add the byte-code
-            bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);   // 1 addr
-            IP += ADDRSZ; // re-add the element index
-        }
 
         // support multiple ()
         while (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
