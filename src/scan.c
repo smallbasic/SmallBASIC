@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.28 2007-08-31 21:09:51 zeeb90au Exp $
+// $Id: scan.c,v 1.29 2007-08-31 21:44:33 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -1727,7 +1727,7 @@ char* comp_array_uds_field(char* p, bc_t* bc) {
     char* p_begin = p;
 
     while (1) {
-        if (*p == 0 || *p == ' ' || *p == '.') {
+        if (*p == 0 || !isalnum(*p)) {
             int len = (p - p_begin);
             if (len) {
                 bc_add_code(bc, kwTYPE_UDS_EL);
