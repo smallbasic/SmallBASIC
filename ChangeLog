@@ -1,3 +1,9 @@
+2007-10-10	<cwarrensmith@gmail.com>
+	* A runtime error is now created in lieu of crashing when you 
+	pass a value less than 0 to the LEFT and RIGHT string commands. 
+	* The runtime error for LEFT,RIGHT,REPLACE,MID,INSTR,RINSTR now
+	includes the invalid index in the message
+
 2007-08-31	<cwarrensmith@gmail.com>
 	* Fixed a problem referring to UDS fields from an array
 	eg x = foo(0).x
