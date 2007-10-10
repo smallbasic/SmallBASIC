@@ -1,4 +1,4 @@
-// $Id: sberr.c,v 1.7 2006-10-24 21:05:47 zeeb90au Exp $
+// $Id: sberr.c,v 1.8 2007-10-10 11:50:19 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -24,9 +24,8 @@ extern void bcb_comp(int pass, int pmin, int pmax); // Win32GUI progress
 void err_common_msg(const char *seg, const char *file, int line, const char *descr) SEC(TRASH);
 
 /*
-*/
-void    err_common_msg(const char *seg, const char *file, int line, const char *descr)
-{
+ */
+void err_common_msg(const char *seg, const char *file, int line, const char *descr) {
     gsb_last_line = line;
     gsb_last_error = prog_error;
     strcpy(gsb_last_file, file);
@@ -34,13 +33,12 @@ void    err_common_msg(const char *seg, const char *file, int line, const char *
     prog_errmsg[SB_ERRMSG_SIZE] = '\0';
     strcpy(gsb_last_errmsg, prog_errmsg);
 
-    if  ( opt_ide == IDE_NONE ) {
+    if (opt_ide == IDE_NONE) {
         #if defined(_UnixOS) && !defined(_FLTK)
         if ( !isatty (STDOUT_FILENO) ) {
             // hm... out or err ?
             fprintf(stdout, "\n* %s-%s %s:%d # %s\n", seg, WORD_ERROR_AT, file, line, descr);
-            }
-        else    {
+        } else {
         #endif
 
         dev_printf("\n\033[0m\033[80m\n");
@@ -52,7 +50,7 @@ void    err_common_msg(const char *seg, const char *file, int line, const char *
         dev_printf("\033[80m\033[0m");
 
         #if defined(_UnixOS) && !defined(_FLTK)
-            }
+        }
         #endif
     }
 
@@ -62,19 +60,17 @@ void    err_common_msg(const char *seg, const char *file, int line, const char *
 }
 
 /*
-*   raise a compiler error
-*/
-void    sc_raise2(const char *sec, int scline, const char *buff)
-{
+ *   raise a compiler error
+ */
+void sc_raise2(const char *sec, int scline, const char *buff) {
     prog_error = 0x40;
     err_common_msg(WORD_COMP, sec, scline, buff);
 }
 
 /*
-*   run-time error
-*/
-void    rt_raise(const char *fmt, ...)
-{
+ *   run-time error
+ */
+void rt_raise(const char *fmt, ...) {
     char    *buff;
     va_list ap;
 
@@ -95,8 +91,7 @@ void    rt_raise(const char *fmt, ...)
 }
 
 /* ERROR MESSAGES */
-void    err_file(dword code)
-{
+void err_file(dword code) {
     #if defined(_PalmOS)
     switch ( code ) {
     case    fileErrMemError:
@@ -155,91 +150,84 @@ void    err_file(dword code)
 
     strcpy(buf, strerror(code));
     p = buf;
-    while ( *p )    {
+    while ( *p ) {
         *p = to_upper(*p);
         p ++;
-        }
+    }
     rt_raise(FSERR_FMT, code, buf);
     #endif
 }
 
 
 #if defined(OS_LIMITED)
-void    err_missing_rp(void)        {   rt_raise(ERR_MISSING_RP); }
-void    err_matdim(void)            {   rt_raise(ERR_MATRIX_DIM);                   }
-void    err_syntax(void)            {   rt_raise(ERR_SYNTAX);                       }
-void    err_syntaxsep(int c)        {   rt_raise(ERR_MISSING_SEP, c);       }
-void    err_parm_num(void)          {   rt_raise(ERR_PARCOUNT);         }
+void err_missing_rp(void)        { rt_raise(ERR_MISSING_RP);       }
+void err_matdim(void)            { rt_raise(ERR_MATRIX_DIM);       }
+void err_syntax(void)            { rt_raise(ERR_SYNTAX);           }
+void err_syntaxsep(int c)        { rt_raise(ERR_MISSING_SEP, c);   }
+void err_parm_num(void)          { rt_raise(ERR_PARCOUNT);         }
 #endif
+void err_stackoverflow(void)     { rt_raise(ERR_STACK_OVERFLOW);   }
+void err_stackunderflow(void)    { rt_raise(ERR_STACK_UNDERFLOW);  }
+void err_stackmess()             { rt_raise(ERR_STACK);            }
+void err_arrmis_lp(void)         { rt_raise(ERR_ARRAY_MISSING_LP); }
+void err_arrmis_rp(void)         { rt_raise(ERR_ARRAY_MISSING_RP); }
+void err_arridx(int i, int m)    { rt_raise(ERR_ARRAY_RANGE, i,m); }
+void err_typemismatch(void)      { rt_raise(ERR_TYPE);             }
+void err_argerr(void)            { rt_raise(ERR_PARAM);            }
+void err_varisarray(void)        { rt_raise(EVAL_VAR_IS_ARRAY);    }
+void err_varisnotarray(void)     { rt_raise(EVAL_VAR_IS_NOT_ARRAY);}
+void err_vararridx(int i, int m) { rt_raise(ERR_ARRAY_RANGE, i,m); }
+void err_varnotnum(void)         { rt_raise(EVAL_NOT_A_NUM);       }
+void err_evsyntax(void)          { rt_raise(EVAL_SYNTAX);          }
+void err_evtype(void)            { rt_raise(EVAL_TYPE);            }
+void err_evargerr(void)          { rt_raise(EVAL_PARAM);           }
+void err_unsup(void)             { rt_raise(ERR_UNSUPPORTED);      }
+void err_const(void)             { rt_raise(ERR_CONST);            }
+void err_notavar(void)           { rt_raise(ERR_NOT_A_VAR);        }
+void err_notarray(void)          { rt_raise(ERR_NOT_ARR_OR_FUNC);  }
+void err_out_of_range(void)      { rt_raise(ERR_RANGE);            }
+void err_missing_sep(void)       { rt_raise(ERR_MISSING_SEP_OR_PAR); }
+void err_division_by_zero(void)  { rt_raise(ERR_DIVZERO);          }
+void err_matop(void)             { rt_raise(ERR_OPERATOR);         }
+void err_matsig(void)            { rt_raise(ERR_MATSIG);           }
+void err_missing_lp(void)        { rt_raise(ERR_MISSING_LP);       }
+void err_parfmt(const char *fmt) { rt_raise(ERR_PARFMT, fmt);      }
+void err_parm_byref(int n)       { rt_raise(ERR_BYREF, n);         }
+void err_stridx(int n)           { rt_raise(ERR_STR_RANGE, n);     }
+void err_fopen(void)             { rt_raise(ERR_BAD_FILE_HANDLE);  }
+void err_syntaxanysep(const char *seps) { rt_raise(ERR_SEP_FMT, seps);  }
+void err_parsepoly(int idx, int mark) {   rt_raise(ERR_POLY, idx, mark);}
+void err_bfn_err(long code)      { rt_raise(ERR_CRITICAL_MISSING_FUNC, code); }
 
-void    err_stackoverflow(void)     {   rt_raise(ERR_STACK_OVERFLOW);                       }
-void    err_stackunderflow(void)    {   rt_raise(ERR_STACK_UNDERFLOW);                  }
-void    err_stackmess()             {   rt_raise(ERR_STACK);                        }
-
-void    err_arrmis_lp(void)         {   rt_raise(ERR_ARRAY_MISSING_LP);                 }
-void    err_arrmis_rp(void)         {   rt_raise(ERR_ARRAY_MISSING_RP);                 }
-void    err_arridx(int i, int m)    {   rt_raise(ERR_ARRAY_RANGE, i,m);         }
-void    err_typemismatch(void)      {   rt_raise(ERR_TYPE);                     }
-void    err_argerr(void)            {   rt_raise(ERR_PARAM);                    }
-
-void    err_varisarray(void)        {   rt_raise(EVAL_VAR_IS_ARRAY);        }
-void    err_varisnotarray(void)     {   rt_raise(EVAL_VAR_IS_NOT_ARRAY); }
-void    err_vararridx(int i, int m) {   rt_raise(ERR_ARRAY_RANGE, i,m);     }
-void    err_varnotnum(void)         {   rt_raise(EVAL_NOT_A_NUM);               }
-void    err_evsyntax(void)          {   rt_raise(EVAL_SYNTAX);              }
-void    err_evtype(void)            {   rt_raise(EVAL_TYPE);                }
-void    err_evargerr(void)          {   rt_raise(EVAL_PARAM);           }
-void    err_unsup(void)             {   rt_raise(ERR_UNSUPPORTED);                      }
-void    err_const(void)             {   rt_raise(ERR_CONST);        }
-void    err_notavar(void)           {   rt_raise(ERR_NOT_A_VAR);                        }
-
-void    err_notarray(void)          {   rt_raise(ERR_NOT_ARR_OR_FUNC);          }
-void    err_out_of_range(void)      {   rt_raise(ERR_RANGE);                        }
-void    err_missing_sep(void)       {   rt_raise(ERR_MISSING_SEP_OR_PAR);   }
-void    err_division_by_zero(void)  {   rt_raise(ERR_DIVZERO);                  }
-void    err_matop(void)             {   rt_raise(ERR_OPERATOR);                 }
-void    err_matsig(void)            {   rt_raise(ERR_MATSIG);                   }
-void    err_missing_lp(void)        {   rt_raise(ERR_MISSING_LP);                       }
-
-void    err_parfmt(const char *fmt) {   rt_raise(ERR_PARFMT, fmt); }
-void    err_parm_byref(int n)       {   rt_raise(ERR_BYREF, n);         }
-
-void    err_stridx(void)            {   rt_raise(ERR_STR_RANGE);        }
-void    err_fopen(void)             {   rt_raise(ERR_BAD_FILE_HANDLE);  }
-void    err_syntaxanysep(const char *seps)
-                                    {   rt_raise(ERR_SEP_FMT, seps); }
-void    err_parsepoly(int idx, int mark)        {   rt_raise(ERR_POLY, idx, mark); }
-
-void    err_bfn_err(long code)
-        {   rt_raise(ERR_CRITICAL_MISSING_FUNC, code); }
-
-void    err_gpf(addr_t addr, int bc)
-{
+void err_gpf(addr_t addr, int bc) {
     dev_printf(ERR_GPF);
     rt_raise("SEG:CODE[%d]=%02X", addr, bc);
 }
 
-void    err_pcode_err(long pcode)
-{   rt_raise(ERR_CRITICAL_MISSING_PROC, pcode); }
+void err_pcode_err(long pcode) {   
+    rt_raise(ERR_CRITICAL_MISSING_PROC, pcode); 
+}
 
-void    err_chain_err(const char *file)
-                                    {   rt_raise(ERR_CHAIN_FILE, file); }
+void err_chain_err(const char *file) {
+    rt_raise(ERR_CHAIN_FILE, file); 
+}
 
-void    err_run_err(const char *file)
-                                    {   rt_raise(ERR_RUN_FILE, file);   }
+void err_run_err(const char *file) {
+    rt_raise(ERR_RUN_FILE, file);
+}
 
-void    err_invkw(addr_t addr, byte code)
-                                    {       rt_raise(ERR_PARCOUNT_SP, addr, (int) code);    }
+void err_invkw(addr_t addr, byte code) {
+    rt_raise(ERR_PARCOUNT_SP, addr, (int) code);   
+}
 
 /*
-*   the DONE message
-*/
-void    inf_done()
-{
-    #if defined(_UnixOS) && !defined(_FLTK)
-    if ( !isatty (STDOUT_FILENO) ) 
+ *   the DONE message
+ */
+void inf_done() {
+  #if defined(_UnixOS) && !defined(_FLTK)
+    if ( !isatty (STDOUT_FILENO) ) {
         fprintf(stdout, "\n* %s *\n", WORD_DONE);
-    else {
+    } else {
     #endif
 
     #if defined(_PalmOS)
@@ -252,19 +240,18 @@ void    inf_done()
     #endif
 
     #if defined(_UnixOS) && !defined(_FLTK)
-        }
+    }
     #endif
 }
 
 /*
 *   the BREAK message
 */
-void    inf_break(int pline)
-{
+void inf_break(int pline) {
     #if defined(_UnixOS) && !defined(_FLTK)
-    if ( !isatty (STDOUT_FILENO) ) 
+    if ( !isatty (STDOUT_FILENO) ) {
         fprintf(stdout, "\n* %s %d *\n", WORD_BREAK_AT, pline);
-    else {
+    } else {
     #endif
 
     dev_settextcolor(15, 0);
@@ -277,42 +264,41 @@ void    inf_break(int pline)
     #endif
 
     #if defined(_UnixOS) && !defined(_FLTK)
-        }
+    }
     #endif
 }
 
 /*
 *   if bytecode files are keeped; messages of the compiler why recompile is needed
 */
-void    inf_comprq_dv()
-{
-    if  ( !opt_quiet )
+void inf_comprq_dv() {
+    if ( !opt_quiet ) {
         dev_print("Recompile: different version\n");
-    else
+    } else {
         dev_print("(ver)\n");
+    }
 }
 
-void    inf_comprq_dt()
-{
-    if  ( !opt_quiet )
+void inf_comprq_dt() {
+    if ( !opt_quiet ) {
         dev_print("Recompile: source is newer\n");
-    else
+    } else {
         dev_print("(mod)\n");
+    }
 }
 
-void    inf_comprq_prq()
-{
-    if  ( !opt_quiet )
+void inf_comprq_prq() {
+    if (!opt_quiet ) {
         dev_print("Recompile: no binary file\n");
-    else
+    } else {
         dev_print("(bin)\n");
+    }
 }
 
 /*
-*   Low-battery event/signal
-*/
-void    inf_low_battery()
-{
+ *   Low-battery event/signal
+ */
+void inf_low_battery() {
     dev_print("\n\n\a* ALARM: LOW BATTERY *\a\n\n");
 }
 

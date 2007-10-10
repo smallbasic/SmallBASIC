@@ -1,4 +1,4 @@
-// $Id: blib_func.c,v 1.10 2006-11-14 02:54:32 zeeb90au Exp $
+// $Id: blib_func.c,v 1.11 2007-10-10 11:53:59 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -78,19 +78,18 @@ int32 r2int(double x, int32 l, int32 h)
 void cmd_pen()
 {
     byte code;
-
-    if (prog_error)
-        return;
+    IF_ERR_RETURN;
 
     code = code_getnext();
-    if (prog_error)
-        return;
-    if (code == kwOFF)
+    IF_ERR_RETURN;
+
+    if (code == kwOFF) {
         dev_setpenmode(0);
-    else if (code == kwON)
+    } else if (code == kwON) {
         dev_setpenmode(1);
-    else
+    } else {
         err_syntax();
+    }
 }
 
 /*
@@ -464,8 +463,7 @@ double cmd_math1(long funcCode, var_t * arg)
 {
     double r = 0.0, x;
 
-    if (prog_error)
-        return 0;
+    IF_ERR_RETURN;
     x = v_getval(arg);
 
     switch (funcCode) {
@@ -643,8 +641,7 @@ long cmd_imath1(long funcCode, var_t * arg)
 {
     int32 r = 0, x;
 
-    if (prog_error)
-        return 0;
+    IF_ERR_RETURN;
     x = v_getint(arg);
 
     switch (funcCode) {
@@ -1027,12 +1024,10 @@ long cmd_imath1(long funcCode, var_t * arg)
 //
 void cmd_ns1(long funcCode, var_t * arg, var_t * r)
 {
-    if (prog_error)
-        return;
+    IF_ERR_RETURN;
     if (arg->type != V_STR) {
         v_tostr(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
     }
 
     switch (funcCode) {
@@ -1157,9 +1152,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // convert C-Style string to BASIC-style string
         // 
         v_tostr(arg);
-        if (prog_error)
-            return;
-
+        IF_ERR_RETURN;
         r->v.p.ptr = (byte *) cstrdup((char *)arg->v.p.ptr);
         r->v.p.size = strlen((char *)r->v.p.ptr) + 1;
         break;
@@ -1170,8 +1163,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // convert BASIC-Style string to C-style string
         // 
         v_tostr(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
 
         r->v.p.ptr = (byte *) bstrdup((char *)arg->v.p.ptr);
         r->v.p.size = strlen((char *)r->v.p.ptr) + 1;
@@ -1215,8 +1207,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // 
     case kwBIN:
         l = v_getint(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
         tb = tmp_alloc(33);
         memset(tb, 0, 33);
         for (i = 0; i < 32; i++) {
@@ -1261,8 +1252,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // str <- LCASE$(s)
         // 
         v_tostr(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
         r->v.p.ptr = (byte *) tmp_alloc(strlen((char *)arg->v.p.ptr) + 1);
         strcpy((char *)r->v.p.ptr, (char *)arg->v.p.ptr);
         p = r->v.p.ptr;
@@ -1277,8 +1267,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // str <- UCASE$(s)
         // 
         v_tostr(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
         r->v.p.ptr = (byte *) tmp_alloc(strlen((char *)arg->v.p.ptr) + 1);
         strcpy((char *)r->v.p.ptr, (char *)arg->v.p.ptr);
         p = r->v.p.ptr;
@@ -1293,8 +1282,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // str <- LTRIM$(s)
         // 
         v_tostr(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
         p = arg->v.p.ptr;
         while (is_wspace(*p))
             p++;
@@ -1311,8 +1299,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // str <- RTRIM$(s)
         // 
         v_tostr(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
         p = arg->v.p.ptr;
         if (*p != '\0') {       // ndc: 20/2/2001
             while (*p)
@@ -1427,8 +1414,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
         // str <- ENVIRON$(str)
         // 
         v_tostr(arg);
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
         if (*arg->v.p.ptr != '\0') {
             // return the variable
             char *v;
@@ -1488,8 +1474,7 @@ void cmd_str0(long funcCode, var_t * r)
     time_t now;
 #endif
 
-    if (prog_error)
-        return;
+    IF_ERR_RETURN;
     switch (funcCode) {
     case kwINKEY:
         // 
@@ -1632,8 +1617,7 @@ void cmd_strN(long funcCode, var_t * r)
     v_init(&arg1);
 //      r->type = V_STR;
 
-    if (prog_error)
-        return;
+    IF_ERR_RETURN;
     switch (funcCode) {
     case kwTRANSLATEF:
         // 
@@ -1840,13 +1824,19 @@ void cmd_strN(long funcCode, var_t * r)
         par_massget("Si", &s1, &count);
         if (!prog_error) {
             len = strlen(s1);
-            if (count > len)
+            if (count > len) {
                 count = len;
-            r->v.p.ptr = tmp_alloc(count + 1);
-            if (count)
-                memcpy(r->v.p.ptr, s1, count);
-            r->v.p.ptr[count] = '\0';
-            r->v.p.size = count + 1;
+            }
+            if (count < 0) {
+                err_stridx(count);
+            } else {
+                r->v.p.ptr = tmp_alloc(count + 1);
+                if (count) {
+                    memcpy(r->v.p.ptr, s1, count);
+                }
+                r->v.p.ptr[count] = '\0';
+                r->v.p.size = count + 1;
+            }
         }
         break;
 
@@ -1880,12 +1870,19 @@ void cmd_strN(long funcCode, var_t * r)
         par_massget("Si", &s1, &count);
         if (!prog_error) {
             len = strlen(s1);
-            if (count > len)
+            if (count > len) {
                 count = len;
-            r->v.p.ptr = tmp_alloc(count + 1);
-            if (count)
-                memcpy(r->v.p.ptr, s1 + (len - count), count + 1);
-            r->v.p.size = count + 1;
+            } 
+            if (count < 0) {
+                err_stridx(count);
+            } else {
+                r->v.p.ptr = tmp_alloc(count + 1);
+                if (count) {
+                    memcpy(r->v.p.ptr, s1 + (len - count), count + 1);
+                }
+                r->v.p.ptr[count] = '\0';
+                r->v.p.size = count + 1;
+            }
         }
         break;
 
@@ -1904,8 +1901,9 @@ void cmd_strN(long funcCode, var_t * r)
                 r->v.p.ptr = tmp_alloc(l);
                 memcpy(r->v.p.ptr, p, l);
                 r->v.p.size = l;
-            } else
+            } else {
                 v_zerostr(r);
+            }
         }
         break;
 
@@ -1935,8 +1933,9 @@ void cmd_strN(long funcCode, var_t * r)
                 memcpy(r->v.p.ptr, s1, l);
                 r->v.p.size = l;
                 *p = lc;
-            } else
+            } else {
                 v_zerostr(r);
+            }
         }
         break;
 
@@ -1963,8 +1962,9 @@ void cmd_strN(long funcCode, var_t * r)
                 r->v.p.ptr = tmp_alloc(l);
                 memcpy(r->v.p.ptr, p, l);
                 r->v.p.size = l;
-            } else
+            } else {
                 v_zerostr(r);
+            }
         }
         break;
 
@@ -1982,7 +1982,7 @@ void cmd_strN(long funcCode, var_t * r)
 
             start--;
             if (start < 0 || start > ls1) {
-                err_stridx();
+                err_stridx(start);
                 break;
             }
 
@@ -1999,12 +1999,12 @@ void cmd_strN(long funcCode, var_t * r)
             strcat((char *)r->v.p.ptr, s2);
 
             // add the right-part
-            if (count == -1)
+            if (count == -1) {
                 count = ls2;
-
-            if (start + count < ls1)
+            }
+            if (start + count < ls1) {
                 strcat((char *)r->v.p.ptr, (char *)(s1 + start + count));
-
+            }
             r->v.p.ptr[ls1 + ls2] = '\0';
             r->v.p.size = ls1 + ls2 + 1;
         }
@@ -2019,14 +2019,14 @@ void cmd_strN(long funcCode, var_t * r)
         par_massget("SIi", &s1, &start, &len);
         if (!prog_error) {
             lsrc = strlen(s1);
-            if (start <= 0 || start > (int)strlen(s1))
-                err_stridx();
-            else {
+            if (start <= 0 || start > (int)strlen(s1)) {
+                err_stridx(start);
+            } else {
                 start--;
 
-                if (len == -1 || len + start >= lsrc)
+                if (len == -1 || len + start >= lsrc) {
                     len = lsrc - start;
-
+                }
                 r->v.p.ptr = tmp_alloc(len + 1);
                 memcpy(r->v.p.ptr, s1 + start, len);
                 r->v.p.ptr[len] = '\0';
@@ -2060,10 +2060,7 @@ void cmd_intN(long funcCode, var_t * r)
 
     r->type = V_INT;
     v_init(&arg1);
-
-    if (prog_error) {
-        return;
-    }
+    IF_ERR_RETURN;
 
     switch (funcCode) {
     case kwINSTR:
@@ -2080,7 +2077,7 @@ void cmd_intN(long funcCode, var_t * r)
             if (l) {
                 start--;
                 if (start >= l || start < 0) {
-                    err_stridx();
+                    err_stridx(start);
                 } else {
                     p = s1 + start;
                     l = strlen(s2);
@@ -2088,7 +2085,7 @@ void cmd_intN(long funcCode, var_t * r)
                     while (*p) {
                         if (strncmp(p, s2, l) == 0) {
                             r->v.i = (p - (char *)s1) + 1;
-                            if (funcCode ==  kwINSTR) {
+                            if (funcCode == kwINSTR) {
                                 break;
                             }
                         }
@@ -2102,16 +2099,16 @@ void cmd_intN(long funcCode, var_t * r)
         // 
         // bool <- ISARRAY(v)
         // 
-        if (code_isvar())
+        if (code_isvar()) {
             var_p = code_getvarptr();
-        else {
+        } else {
             eval(&arg1);
             var_p = &arg1;
         }
 
-        if (!prog_error)
+        if (!prog_error) {
             r->v.i = (var_p->type == V_ARRAY);
-
+        }
         break;
     case kwISSTRING:
         // 
@@ -2121,9 +2118,9 @@ void cmd_intN(long funcCode, var_t * r)
         // 
         // bool <- ISNUMBER(v)
         // 
-        if (code_isvar())
+        if (code_isvar()) {
             var_p = code_getvarptr();
-        else {
+        } else {
             eval(&arg1);
             var_p = &arg1;
         }
@@ -2139,15 +2136,17 @@ void cmd_intN(long funcCode, var_t * r)
 
                 np = get_numexpr((char *)var_p->v.p.ptr, buf, &type, &lv, &dv);
 
-                if (type == 1 && *np == '\0')
+                if (type == 1 && *np == '\0') {
                     r->v.i = (funcCode == kwISSTRING) ? 0 : 1;
-                else if (type == 2 && *np == '\0')
+                } else if (type == 2 && *np == '\0') {
                     r->v.i = (funcCode == kwISSTRING) ? 0 : 1;
-                else
+                } else {
                     r->v.i = (funcCode == kwISSTRING) ? 1 : 0;
+                }
             } else {
-                if (var_p->type == V_NUM || var_p->type == V_INT)
+                if (var_p->type == V_NUM || var_p->type == V_INT) {
                     r->v.i = (funcCode == kwISSTRING) ? 0 : 1;
+                }
             }
         }
 
@@ -2156,34 +2155,36 @@ void cmd_intN(long funcCode, var_t * r)
         // 
         // int <- LEN(v)
         // 
-        if (code_isvar())
+        if (code_isvar()) {
             var_p = code_getvarptr();
-        else {
+        } else {
             eval(&arg1);
             var_p = &arg1;
         }
 
-        if (!prog_error)
+        if (!prog_error) {
             r->v.i = v_length(var_p);
-        else
+        } else {
             r->v.i = 1;
+        }
         break;
 
     case kwEMPTY:
         // 
         // bool <- EMPTY(x)
         // 
-        if (code_isvar())
+        if (code_isvar()) {
             var_p = code_getvarptr();
-        else {
+        } else {
             eval(&arg1);
             var_p = &arg1;
         }
 
-        if (!prog_error)
+        if (!prog_error) {
             r->v.i = v_isempty(var_p);
-        else
+        } else {
             r->v.i = 1;
+        }
         break;
     case kwLBOUND:
         // 
@@ -2198,23 +2199,27 @@ void cmd_intN(long funcCode, var_t * r)
                     par_getcomma();
                     if (!prog_error) {
                         eval(&arg1);
-                        if (!prog_error)
+                        if (!prog_error) {
                             l = v_getint(&arg1);
+                        }
                         v_free(&arg1);
                     }
                 }
 
                 if (!prog_error) {
                     l--;
-                    if (l >= 0 && l < var_p->v.a.maxdim)
+                    if (l >= 0 && l < var_p->v.a.maxdim) {
                         r->v.i = var_p->v.a.lbound[l];
-                    else
+                    } else {
                         rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim, l);
+                    }
                 }
-            } else
+            } else {
                 rt_raise(ERR_BOUND_VAR);
-        } else
+            }
+        } else {
             err_typemismatch();
+        }
         break;
 
     case kwUBOUND:
@@ -2231,23 +2236,27 @@ void cmd_intN(long funcCode, var_t * r)
                     par_getcomma();
                     if (!prog_error) {
                         eval(&arg1);
-                        if (!prog_error)
+                        if (!prog_error) {
                             l = v_getint(&arg1);
+                        }
                         v_free(&arg1);
                     }
                 }
 
                 if (!prog_error) {
                     l--;
-                    if (l >= 0 && l < var_p->v.a.maxdim)
+                    if (l >= 0 && l < var_p->v.a.maxdim) {
                         r->v.i = var_p->v.a.ubound[l];
-                    else
+                    } else {
                         rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim);
+                    }
                 }
-            } else
+            } else {
                 rt_raise(ERR_BOUND_VAR);
-        } else
+            }
+        } else {
             err_typemismatch();
+        }
         break;
 
         // i <- RGB(r,g,b)
@@ -2259,24 +2268,28 @@ void cmd_intN(long funcCode, var_t * r)
             int code;
 
             pc = par_massget("FFF", &rc, &gc, &bc);
-            if (prog_error)
-                break;
-
+            IF_ERR_RETURN;
             code = 0;
             if (funcCode == kwRGBF) {
-                if ((rc >= 0 && rc <= 1) && (gc >= 0 && gc <= 1) && (bc >= 0 && bc <= 1))
+                if ((rc >= 0 && rc <= 1) && 
+                    (gc >= 0 && gc <= 1) && 
+                    (bc >= 0 && bc <= 1)) {
                     code = 1;
+                }
             } else {
-                if ((rc >= 0 && rc <= 255) && (gc >= 0 && gc <= 255) && (bc >= 0 && bc <= 255))
+                if ((rc >= 0 && rc <= 255) && 
+                    (gc >= 0 && gc <= 255) && 
+                    (bc >= 0 && bc <= 255)) {
                     code = 2;
+                }
             }
 
             // ////
             switch (code) {
             case 1:
-                r->v.i =
-                    (r2int(rc * 255.0, 0, 255) << 16) | (r2int(gc * 255.0, 0, 255) << 8) |
-                    r2int(bc * 255.0, 0, 255);
+                r->v.i = (r2int(rc * 255.0, 0, 255) << 16) | 
+                         (r2int(gc * 255.0, 0, 255) << 8) |
+                         r2int(bc * 255.0, 0, 255);
                 break;
             case 2:
                 r->v.i = ((dword) rc << 16) | ((dword) gc << 8) | (dword) bc;
@@ -2294,17 +2307,16 @@ void cmd_intN(long funcCode, var_t * r)
             // image width 
             int h, i;
             par_getsharp();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
+
             h = par_getint();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
+
             i = par_getint();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
             r->v.i = dev_image_width(h, i);
         }
         break;
@@ -2314,17 +2326,17 @@ void cmd_intN(long funcCode, var_t * r)
             // image height
             int h, i;
             par_getsharp();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
+
             h = par_getint();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
+
             i = par_getint();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
+
             r->v.i = dev_image_height(h, i);
         }
         break;
@@ -2348,8 +2360,7 @@ void cmd_numN(long funcCode, var_t * r)
 
     r->type = V_NUM;
 
-    if (prog_error)
-        return;
+    IF_ERR_RETURN;
     switch (funcCode) {
     case kwATAN2:
         // fp <- ATAN2(x,y)
@@ -2415,8 +2426,7 @@ void cmd_genfunc(long funcCode, var_t * r)
     char tmp[3];
     double *dar;
 
-    if (prog_error)
-        return;
+    IF_ERR_RETURN;
     v_init(r);
 
     switch (funcCode) {
@@ -2429,8 +2439,7 @@ void cmd_genfunc(long funcCode, var_t * r)
         if (!prog_error) {
 
             par_getcomma();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
             ch = v_is_nonzero(&arg);
             v_free(&arg);
 
@@ -2440,14 +2449,12 @@ void cmd_genfunc(long funcCode, var_t * r)
                     v_set(r, &arg);     // set the true value
                     v_free(&arg);
                 }
-            } else
+            } else {
                 par_skip();
-
-            if (prog_error)
-                break;
+            }
+            IF_ERR_RETURN;
             par_getcomma();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
             if (!ch) {
                 eval(&arg);     // false-value (there is no jump-optimization, so we must
                                 // execute that)
@@ -2467,8 +2474,7 @@ void cmd_genfunc(long funcCode, var_t * r)
         eval(&arg);             // condition
         if (!prog_error) {
             par_getcomma();
-            if (prog_error)
-                break;
+            IF_ERR_RETURN;
             if (arg.type != V_STR) {
                 rt_raise(ERR_FORMAT_INVALID_FORMAT);
                 v_free(&arg);
@@ -2516,8 +2522,8 @@ void cmd_genfunc(long funcCode, var_t * r)
 
             v_init(&arg);
             eval(&arg);
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             if (arg.type == V_STR) {
                 date_str2dmy((char *)arg.v.p.ptr, &d, &m, &y);
                 v_free(&arg);
@@ -2525,17 +2531,16 @@ void cmd_genfunc(long funcCode, var_t * r)
                 d = v_igetval(&arg);
                 v_free(&arg);
                 par_getcomma();
-                if (prog_error)
-                    return;
+                IF_ERR_RETURN;
+
                 m = par_getint();
-                if (prog_error)
-                    return;
+                IF_ERR_RETURN;
+
                 par_getcomma();
-                if (prog_error)
-                    return;
+                IF_ERR_RETURN;
+
                 y = par_getint();
-                if (prog_error)
-                    return;
+                IF_ERR_RETURN;
             }
 
             r->v.i = date_julian(d, m, y);
@@ -2560,11 +2565,10 @@ void cmd_genfunc(long funcCode, var_t * r)
             if (funcCode == kwDATEFMT) {        // format
                 v_init(&arg);
                 eval(&arg);
-                if (prog_error)
-                    return;
+                IF_ERR_RETURN;
+
                 par_getcomma();
-                if (prog_error)
-                    return;
+                IF_ERR_RETURN;
             }
 
             v_init(&arg2);
@@ -2620,20 +2624,17 @@ void cmd_genfunc(long funcCode, var_t * r)
         // 
     case kwINPUTF:
         count = par_getint();
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
 
         if (code_peek() == kwTYPE_SEP) {
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             handle = par_getint();
-            if (prog_error)
-                return;
-        } else
+            IF_ERR_RETURN;
+        } else {
             handle = -1;
-
+        }
         if (handle == -1) {
             // keyboard
             r->type = V_STR;
@@ -2681,8 +2682,8 @@ void cmd_genfunc(long funcCode, var_t * r)
         // 
     case kwBGETC:
         handle = par_getint();
-        if (prog_error)
-            return;
+        IF_ERR_RETURN;
+
         // file
         dev_fread(handle, &code, 1);
         r->type = V_INT;
@@ -2699,12 +2700,12 @@ void cmd_genfunc(long funcCode, var_t * r)
             r->type = V_NUM;
 
             count = par_getpoly(&poly);
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             r->v.n = 0.0;
-            for (i = 0; i < count - 1; i++)
+            for (i = 0; i < count - 1; i++) {
                 r->v.n = r->v.n + (poly[i].x - poly[i + 1].x) * (poly[i].y + poly[i + 1].y);
+            }
 
             // hmm.... closed ?
             tmp_free(poly);
@@ -2723,8 +2724,7 @@ void cmd_genfunc(long funcCode, var_t * r)
             r->type = V_NUM;
 
             count = par_getpoly(&poly);
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             err = geo_polycentroid(poly, count, &x, &y, &area);
             v_toarray1(r, 2);
@@ -2763,32 +2763,27 @@ void cmd_genfunc(long funcCode, var_t * r)
                     x = v_getint(v);
                     if (code_peek() == kwTYPE_SEP) {
                         par_getcomma();
-                        if (prog_error)
-                            return;
+                        IF_ERR_RETURN;
                         y = par_getint();
-                        if (prog_error)
-                            return;
+                        IF_ERR_RETURN;
                     }
                 }
             } else {
                 x = par_getint();
-                if (prog_error)
-                    return;
+                IF_ERR_RETURN;
                 if (code_peek() == kwTYPE_SEP) {
                     par_getcomma();
-                    if (prog_error)
-                        return;
+                    IF_ERR_RETURN;
+
                     y = par_getint();
-                    if (prog_error)
-                        return;
+                    IF_ERR_RETURN;
                 }
             }
 
             // 
             r->type = V_INT;
             r->v.i = 0;
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             if (y == -1) {
                 switch (x) {
@@ -2815,14 +2810,13 @@ void cmd_genfunc(long funcCode, var_t * r)
             double dx, dy;
 
             A = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             B = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             dx = B.x - A.x;
             dy = B.y - A.y;
@@ -2839,20 +2833,19 @@ void cmd_genfunc(long funcCode, var_t * r)
             pt_t A, B, Q;
 
             A = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             B = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             Q = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             r->type = V_INT;
             r->v.i = PTSIGN(A.x, A.y, B.x, B.y, Q.x, Q.y);
@@ -2868,20 +2861,19 @@ void cmd_genfunc(long funcCode, var_t * r)
             pt_t A, B, C;
 
             B = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             C = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             A = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             r->type = V_NUM;
 
@@ -2902,31 +2894,29 @@ void cmd_genfunc(long funcCode, var_t * r)
             pt_t A, B;
 
             A = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             B = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             par_getcomma();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
             Adx = B.x - A.x;
             Ady = B.y - A.y;
 
             A = par_getpt();
-            if (prog_error)
-                return;
-            par_getcomma();
-            if (prog_error)
-                return;
-            B = par_getpt();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
 
+            par_getcomma();
+            IF_ERR_RETURN;
+
+            B = par_getpt();
+            IF_ERR_RETURN;
+    
             Bdx = B.x - A.x;
             Bdy = B.y - A.y;
 
@@ -3108,35 +3098,39 @@ void cmd_genfunc(long funcCode, var_t * r)
 
             v_init(r);
             a = par_getvarray();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
             m1 = mat_toc(a, &rows, &cols);
             if (rows != cols || cols < 2) {
-                if (m1)
+                if (m1) {
                     tmp_free(m1);
+                }
                 rt_raise(ERR_LINEEQN_ADIM, rows, cols);
             } else {
                 n = rows;
                 par_getcomma();
                 if (prog_error) {
-                    if (m1)
+                    if (m1) {
                         tmp_free(m1);
+                    }
                     return;
                 }
 
                 b = par_getvarray();
                 if (prog_error) {
-                    if (m1)
+                    if (m1) {
                         tmp_free(m1);
+                    }
                     return;
                 }
                 m2 = mat_toc(b, &rows, &cols);
 
                 if (rows != n || cols != 1) {
-                    if (m1)
+                    if (m1) {
                         tmp_free(m1);
-                    if (m2)
+                    }
+                    if (m2) {
                         tmp_free(m2);
+                    }
                     rt_raise(ERR_LINEEQN_BDIM, rows, cols);
                     return;
                 }
@@ -3169,8 +3163,8 @@ void cmd_genfunc(long funcCode, var_t * r)
 
             v_init(r);
             a = par_getvarray();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             m1 = mat_toc(a, &rows, &cols);
             if (rows != cols || cols < 2) {
                 if (m1)
@@ -3195,8 +3189,8 @@ void cmd_genfunc(long funcCode, var_t * r)
 
             v_init(r);
             a = par_getvarray();
-            if (prog_error)
-                return;
+            IF_ERR_RETURN;
+
             if (code_peek() == kwTYPE_SEP) {
                 code_skipsep();
                 toler = par_getnum();
@@ -3204,8 +3198,9 @@ void cmd_genfunc(long funcCode, var_t * r)
 
             m1 = mat_toc(a, &rows, &cols);
             if (rows != cols || cols < 2) {
-                if (m1)
+                if (m1) {
                     tmp_free(m1);
+                }
                 rt_raise(ERR_WRONG_MAT, rows, cols);
             } else {
                 n = rows;
@@ -3245,8 +3240,9 @@ void cmd_genfunc(long funcCode, var_t * r)
                         curcol = 0;
                     } else {    // next col
                         curcol++;
-                        if (curcol > cols)
+                        if (curcol > cols) {
                             cols = curcol;
+                        }
                     }
                     code_skipnext();
                     break;
@@ -3272,11 +3268,11 @@ void cmd_genfunc(long funcCode, var_t * r)
             // 
             rows++;
             cols++;
-            if (rows > 1)
+            if (rows > 1) {
                 v_tomatrix(r, rows, cols);
-            else
+            } else {
                 v_toarray1(r, cols);
-
+            }
             cur = lst.head;
             while (cur) {
                 tp = (canode_t *) cur->data;
@@ -3325,12 +3321,13 @@ void cmd_genfunc(long funcCode, var_t * r)
                         elem_p->v.p.ptr = tmp_alloc(elem_p->v.p.size);
                         strcpy(elem_p->v.p.ptr, list[i]);
                     }
-                } else
+                } else {
                     v_toarray1(r, 0);
-
+                }
                 // cleanup
-                if (list)
+                if (list) {
                     dev_destroy_file_list(list, count);
+                }
                 v_free(&arg);
             }
         }
@@ -3360,10 +3357,12 @@ void cmd_genfunc(long funcCode, var_t * r)
                         elem_p->type = V_NUM;
                         elem_p->v.n = x;
                     }
-                } else
+                } else {
                     v_toarray1(r, 0);
-            } else
+                }
+            } else {
                 v_toarray1(r, 0);
+            }
         }
 
         break;

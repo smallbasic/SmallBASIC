@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: brun.c,v 1.20 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: brun.c,v 1.21 2007-10-10 11:56:07 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // byte-code executor
@@ -63,10 +63,6 @@ static dword evt_check_every;
 static char fileName[OS_FILENAME_SIZE + 1];
 static int main_tid;
 static int exec_tid;
-
-#define IF_ERR_BREAK if (prog_error) {break;}
-#define IF_ERR_RETURN if (prog_error) {return;}
-#define IF_ERR_RETURN_0 if (prog_error) {return 0;}
 
 /*
  *   returns the next 32bit and moves the instruction pointer to the next instruction
