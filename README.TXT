@@ -9,11 +9,11 @@ For FLTK version (see sync/ide-fltk/README.TXT for further details)
 > make -s
 
 For GTK version
-> ./configure --enable-gtk --disable-hildon
+> ./configure --enable-gtk
 > make -s
 
 For N770 version
-> ./configure --enable-gtk
+> ./configure --enable-gtk --enable-hildon
 > make deb -s
 
 For SDL version
