@@ -1,4 +1,4 @@
-// $Id: console_main.c,v 1.11 2007-05-08 06:40:39 haraszti Exp $
+// $Id: console_main.c,v 1.12 2007-10-27 03:20:59 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -63,11 +63,10 @@ int main(int argc, char *argv[])
     strcpy(g_file, "");
 #ifdef _SDL
     opt_graphics = 2;	// we need to set default options here for SDL
-    opt_quiet = 1;
 #else
     opt_graphics = 0;
-    opt_quiet = 0;
 #endif
+    opt_quiet = 1;
     opt_ide = 0;
     opt_command[0] = '\0';
     opt_nosave = 1;
@@ -103,6 +102,7 @@ int main(int argc, char *argv[])
                 case 'v':
                     // verbose check
                     opt_verbose++;
+                    opt_quiet = 0;
                     break;
                 case 'i':
                     opt_ide = IDE_EXTERNAL;
@@ -342,10 +342,13 @@ int main(int argc, char *argv[])
         }
 #if defined(_Win32) || defined(_DOS)
         if (strlen(g_file) > 2) {
-            if (g_file[1] == ':')
+            if (g_file[1] == ':') {
                 cwd[0] = '\0';
+            }
         }
 #endif
+
+#if INTERACTIVE_CONSOLE
         slash = strrchr(g_file, OS_DIRSEP);
         if (slash) {
             char tmp[1024];
@@ -377,6 +380,7 @@ int main(int argc, char *argv[])
                 exit(1);
             }
         }
+#endif
     }
 
     /*
