@@ -177,7 +177,7 @@
 #define ERR_MISSING_LP			"Missing '('"
 #define ERR_PARFMT				"Parameters count/format error (%s)"
 #define ERR_BYREF				"Parameter %d cannot BYREF"
-#define ERR_STR_RANGE			"String: Index out of range"
+#define ERR_STR_RANGE			"String: Index out of range (%d)"
 #define ERR_BAD_FILE_HANDLE		"VFS: Bad file number (Use OPEN)"
 #define ERR_SEP_FMT				"No separator found (missing %s)"
 #define ERR_POLY				"Parsing polyline: type mismatch! (element: %d, info: %d)"
