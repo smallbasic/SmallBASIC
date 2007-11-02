@@ -11,11 +11,11 @@ EXTRA_DIST =					\
     sbasic.nsi					\
     welcome.bas
 
-bin_PROGRAMS = sbasic
+bin_PROGRAMS = sbasicg
 
-sbasic_SOURCES =    \
-    ../console_main.c \
-    dev_sdl.c         \
+sbasicg_SOURCES =      \
+    ../console_main.c  \
+    dev_sdl.c          \
     blib_sdl_ui.cpp
 
-sbasic_LDADD = -L$(top_srcdir)/sync -lsb_common @PACKAGE_LIBS@
+sbasicg_LDADD = -L$(top_srcdir)/sync -lsb_common @PACKAGE_LIBS@
