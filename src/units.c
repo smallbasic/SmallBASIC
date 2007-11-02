@@ -86,13 +86,21 @@ int		find_unit_source(const char *name, char *file)
 	sprintf(file, "%s.bas", lname);
 	
 	#if defined(_UnixOS) || defined(_DOS) || defined(_Win32)
-	if	( getenv("SB_UNIT_PATH") )	{
-		if	( sys_search_path(getenv("SB_UNIT_PATH"), file, file) )
+	if	( getenv("BASDIR") )	{
+		if	( sys_search_path(getenv("BASDIR"), file, file) ) {
 			return 1;
 		}
+    }
 
-	if	( sys_search_path(def_path, file, file) )
+	if	( getenv("SB_UNIT_PATH") )	{
+		if	( sys_search_path(getenv("SB_UNIT_PATH"), file, file) ) {
+			return 1;
+		}
+    }
+
+	if	( sys_search_path(def_path, file, file) ) {
 		return 1;
+    }
 
 	#else
 	if	( access(file, R_OK) == 0 )	

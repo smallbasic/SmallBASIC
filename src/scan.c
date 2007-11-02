@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.29 2007-08-31 21:44:33 zeeb90au Exp $
+// $Id: scan.c,v 1.30 2007-11-02 20:24:56 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -482,8 +482,9 @@ bid_t comp_add_udp(const char *proc_name)
             err_wrongproc(name);
         } else {
 #if !defined(OS_LIMITED)
-            if (opt_verbose)
+            if (opt_verbose) {
                 dev_printf(MSG_NEW_UDP, comp_line, name, comp_udpcount);
+            }
 #endif
             comp_udptable[comp_udpcount].name = tmp_alloc(strlen(name) + 1);
             comp_udptable[comp_udpcount].ip = INVALID_ADDR;     // bc_prog.count;

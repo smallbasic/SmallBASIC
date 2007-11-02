@@ -1,3 +1,6 @@
+2007-11-03	<cwarrensmith@gmail.com>
+	* refactored console_main 
+
 2007-10-10	<cwarrensmith@gmail.com>
 	* A runtime error is now created in lieu of crashing when you 
 	pass a value less than 0 to the LEFT and RIGHT string commands. 
@@ -7,7 +10,6 @@
 2007-08-31	<cwarrensmith@gmail.com>
 	* Fixed a problem referring to UDS fields from an array
 	eg x = foo(0).x
-	
 	
 2007-08-18	<cwarrensmith@gmail.com>
 	* Fixed a problem with the short-circuit eval code causing 

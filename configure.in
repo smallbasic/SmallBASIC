@@ -1,9 +1,9 @@
 dnl 
-dnl "$Id: configure.in,v 1.40 2007-10-27 03:15:46 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.41 2007-11-02 20:24:56 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
+dnl Copyright(C) 2001-2007 Chris Warren-Smith. Gawler, South Australia
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.9.8.2)
+AM_INIT_AUTOMAKE(smallbasic, 0.9.8.3)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -170,6 +170,13 @@ function buildGTK() {
            glade-2 not found: configure failed.
          ])
       fi
+
+      dnl check for dbus
+      PKG_CHECK_MODULES(DBUS, [dbus-1 >= 0.35 dbus-glib-1 >= 0.35], [
+        PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${DBUS_CFLAGS}"
+        PACKAGE_LIBS="${PACKAGE_LIBS} ${DBUS_LIBS}"
+        AC_DEFINE(USE_DBUS, 1, [use dbus-glib])
+      ])
    fi
  
    dnl preconfigured values for GTK build
@@ -298,10 +305,10 @@ function buildSDL() {
    AC_MSG_CHECKING(for OpenGL support)
    have_opengl=no
    AC_TRY_COMPILE([
-    #include "SDL/SDL_opengl.h"
-   ],[
-   ],[
-   have_opengl=yes
+     #include "SDL/SDL_opengl.h"
+     ],[
+     ],[
+     have_opengl=yes
    ])
    AC_MSG_RESULT($have_opengl)
    if test x$have_opengl = xyes; then
@@ -313,10 +320,10 @@ function buildSDL() {
    AC_MSG_CHECKING(for SDL_Image support)
    have_sdl_image=no
    AC_TRY_COMPILE([
-    #include "SDL/SDL_image.h"
-   ],[
-   ],[
-   have_sdl_image=yes
+     #include "SDL/SDL_image.h"
+     ],[
+     ],[
+     have_sdl_image=yes
    ])
    AC_MSG_RESULT($have_sdl_image)
    if test x$have_sdl_image = xyes; then
@@ -429,4 +436,4 @@ if test x$ac_build_dist = xyes; then
    make dist
 fi
 
-dnl End of "$Id: configure.in,v 1.40 2007-10-27 03:15:46 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.41 2007-11-02 20:24:56 zeeb90au Exp $".

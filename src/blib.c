@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.21 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: blib.c,v 1.22 2007-11-02 20:24:56 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -1526,6 +1526,7 @@ void cmd_if()
     // expression
     v_init(&var);
     eval(&var);
+
     node.type = kwIF;
     node.x.vif.lcond = v_is_nonzero(&var);
     code_jump((node.x.vif.lcond) ? true_ip : false_ip);
@@ -1722,7 +1723,6 @@ void cmd_for()
         // 
         // FOR [EACH] v1 IN v2
         // 
-
         code = code_getnext();  // kwIN
         node.x.vfor.subtype = kwIN;
         node.x.vfor.to_expr_ip = prog_ip;
