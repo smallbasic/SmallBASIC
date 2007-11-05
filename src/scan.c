@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.30 2007-11-02 20:24:56 zeeb90au Exp $
+// $Id: scan.c,v 1.31 2007-11-05 11:45:07 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.
@@ -654,7 +654,12 @@ int comp_check_lib(const char *name)
         for (i = 0; i < comp_libcount; i++) {
             bc_lib_rec_t lib;
             dbt_read(comp_libtable, i, &lib, sizeof(bc_lib_rec_t));
-            if (strcasecmp(lib.lib, tmp) == 0) {
+
+            // remove any file path component from the name
+            char* dir_sep = strrchr(lib.lib, OS_DIRSEP);
+            char* lib_name = dir_sep ? dir_sep + 1 : lib.lib;
+         
+            if (strcasecmp(lib_name, tmp) == 0) {
                 return 1;
             }
         }
@@ -3869,12 +3874,28 @@ void comp_preproc_grmode(const char *source)
 }
 
 /**
+ * copy the unit name from the source string to the given buffer
+ */
+const char* get_unit_name(const char* p, char* buf_p) {
+    while (is_alnum(*p) || *p == '_' || *p == '.') {
+        if (*p == '.') {
+            *buf_p++ = OS_DIRSEP;
+            p++;
+        } else {
+            *buf_p++ = *p++;
+        }
+    }
+    
+    *buf_p = '\0';
+    return p;
+}
+
+/**
  * imports units
  */
 void comp_preproc_import(const char *slist)
 {
     const char *p;
-    char *d;
     char buf[OS_PATHNAME_SIZE + 1];
     int uid;
     bc_lib_rec_t imlib;
@@ -3884,12 +3905,8 @@ void comp_preproc_import(const char *slist)
     SKIP_SPACES(p);
 
     while (is_alpha(*p)) {
-        // get name
-        d = buf;
-        while (is_alnum(*p) || *p == '_') {
-            *d++ = *p++;
-        }
-        *d = '\0';
+        // get name - "Import other.Foo => "other/Foo"
+        p = get_unit_name(p, buf);
 
         // import name
         strlower(buf);
@@ -3914,8 +3931,10 @@ void comp_preproc_import(const char *slist)
                 close_unit(uid);
                 return;
             }
+
             // store lib-record
             strcpy(imlib.lib, buf);
+
             imlib.id = uid;
             imlib.type = 1;     // unit
 
@@ -3958,19 +3977,17 @@ void comp_preproc_remove_line(char *s, int cmd_sep_allowed)
  */
 void comp_preproc_unit(char *name)
 {
-    char *p = name;
-    char *d;
+    const char *p = name;
 
-    d = comp_unit_name;
     SKIP_SPACES(p);
+
     if (!is_alpha(*p)) {
         sc_raise(MSG_INVALID_UNIT_NAME);
     }
-    while (is_alpha(*p) || *p == '_') {
-        *d++ = *p++;
-    }
-    *d = '\0';
+    
+    p = get_unit_name(p, comp_unit_name);
     comp_unit_flag = 1;
+
     SKIP_SPACES(p);
 
     if (*p != '\n' && *p != ':') {
@@ -4462,7 +4479,6 @@ mem_t comp_create_bin()
     unit_file_t uft;
     unit_sym_t sym;
 
-
     if (!opt_quiet && !opt_interactive) {
         if (comp_unit_flag) {
             dev_printf(MSG_CREATING_UNIT, comp_unit_name);
@@ -4496,8 +4512,9 @@ mem_t comp_create_bin()
         + sizeof(bc_lib_rec_t) * comp_libcount
         + sizeof(bc_symbol_rec_t) * comp_impcount;
 
-    if (comp_unit_flag)
+    if (comp_unit_flag) {
         hdr.size += sizeof(unit_file_t);
+    }
 
     hdr.lib_count = comp_libcount;
     hdr.sym_count = comp_impcount;
@@ -4603,34 +4620,18 @@ int comp_save_bin(mem_t h_bc)
     int h;
     char fname[OS_FILENAME_SIZE + 1];
     char *buf;
+    char *p;
 
     if ((opt_nosave && !comp_unit_flag) || opt_syntaxcheck) {
         return 1;
     }
-    if (comp_unit_flag) {
-        strcpy(fname, comp_unit_name);
-        strlower(fname);
 
-        if (!opt_quiet && !opt_interactive) {
-#if defined(_Win32) || defined(_DOS)
-            if (strncasecmp(fname, comp_file_name, strlen(fname)) != 0)
-#else
-            if (strncmp(fname, comp_file_name, strlen(fname)) != 0)
-#endif
-                dev_printf(MSG_UNIT_NAME_DIF_THAN_SRC);
-        }
-
-        strcat(fname, ".sbu");  // add ext
-    } else {
-        char *p;
-
-        strcpy(fname, comp_file_name);
-        p = strrchr(fname, '.');
-        if (p) {
-            *p = '\0';
-        }
-        strcat(fname, ".sbx");
+    strcpy(fname, comp_file_name);
+    p = strrchr(fname, '.');
+    if (p) {
+        *p = '\0';
     }
+    strcat(fname, comp_unit_flag ? ".sbu" : ".sbx");
 
     h = open(fname, O_BINARY | O_RDWR | O_TRUNC | O_CREAT, 0660);
     if (h != -1) {
@@ -4642,6 +4643,7 @@ int comp_save_bin(mem_t h_bc)
             dev_printf(MSG_BC_FILE_CREATED, fname);
         }
     } else {
+        fprintf(stderr, "error =%s\n", fname);
         panic(MSG_BC_FILE_ERROR);
     }
 

@@ -2,10 +2,15 @@
 
 SUBDIRS = src
 
-EXTRA_DIST = \
-	autogen.sh \
-	sbgtk.glade \
-	sbgtk.gladep
+EXTRA_DIST =									\
+	autogen.sh									\
+	sbgtk.glade									\
+	sbgtk.gladep								\
+    debian/changelog							\
+    debian/control								\
+    debian/copyright							\
+    debian/rules								\
+    debian/sbasic.links
 
 install-data-local:
 	@$(NORMAL_INSTALL)

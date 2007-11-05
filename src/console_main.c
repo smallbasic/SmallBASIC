@@ -1,4 +1,4 @@
-// $Id: console_main.c,v 1.13 2007-11-02 20:24:56 zeeb90au Exp $
+// $Id: console_main.c,v 1.14 2007-11-05 11:45:07 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -12,14 +12,14 @@
 
 #include "sbapp.h"
 
-#if defined(INTERACTIVE_CONSOLE)
+#ifdef INTERACTIVE_CONSOLE
 #include "interactive_mode.h"
-#if !defined(HELP_SUBSYS)
+#ifndef HELP_SUBSYS
 #define HELP_SUBSYS
 #endif
 #endif
 
-#if defined(HELP_SUBSYS)
+#ifdef HELP_SUBSYS
 #include "help_subsys.h"
 #endif
 
@@ -31,7 +31,7 @@
 #endif
 
 // global filename (its needed for CTRL+C signal - delete temporary)
-char g_file[1025];
+char g_file[OS_PATHNAME_SIZE + 1];
 
 /*
  * remove temporary files
@@ -48,9 +48,10 @@ void remove_temp_file(void) {
  * current working directory
  */
 void set_bas_dir(const char* cwd, const char* bas_file) {
-    char bas_dir[1025];
+    char bas_dir[OS_PATHNAME_SIZE + 10];
     int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
 
+    bas_dir[0] = 0;
     strcat(bas_dir, "BASDIR=");
 
     if (bas_file[0] == OS_DIRSEP) {
@@ -148,6 +149,7 @@ void print_keywords() {
 
     // external procedures
     // ....
+    exit(1);
 }
 
 /*
@@ -219,26 +221,16 @@ int process_options(int argc, char *argv[], const char* cwd) {
                 case 'p':
                     if (strcmp(argv[i] + 1, "pkw") == 0) {
                         print_keywords();
-                        return 1;
                     }
                     break;
 
                 case 'm':
-                    // load run-time modules (linux only, shared
-                    // libraries)
-#if defined(__linux__)
-                    opt_loadmod = 1;
-                    strcpy(opt_modlist, argv[i] + 2);
-#elif defined(_CygWin)
+                    // load run-time modules 
                     opt_loadmod = 1;
                     if (i + 1 < argc) {
                         strcpy(opt_modlist, argv[++i]);
                     }
-#else
-                    printf("\n\a* Modules are supported only on Linux platform\n\n");
                     return 1;
-#endif
-                    break;
 
                 case 'q':
                     // shutup
@@ -259,7 +251,7 @@ int process_options(int argc, char *argv[], const char* cwd) {
                          *   search for command, or print all doc
                          */
                         if (argv[i][2] == '-') {
-#if defined(HELP_SUBSYS)
+#ifdef HELP_SUBSYS
                             char *command = argv[i] + 3;
                             help_printinfo(command);
 #endif
@@ -339,8 +331,8 @@ int process_options(int argc, char *argv[], const char* cwd) {
 
         if (opt_interactive) {
             // get it from console
-#if defined (INTERACTIVE_CONSOLE)
-#if !defined(HAVE_C_MALLOC)
+#ifdef INTERACTIVE_CONSOLE
+#ifndef HAVE_C_MALLOC
             memmgr_init();
 #endif
             interactive_mode(g_file);
@@ -367,19 +359,23 @@ int process_options(int argc, char *argv[], const char* cwd) {
  * program entry point
  */
 int MAIN_FUNC(int argc, char *argv[]) {
-    char prev_cwd[1025];
+    char prev_cwd[OS_PATHNAME_SIZE + 1];
 
-    strcpy(g_file, "");
-#if defined(_SDL)
+#ifdef _SDL
     opt_graphics = 2;   // we need to set default options here for SDL
 #else
     opt_graphics = 0;
 #endif
     opt_quiet = 1;
     opt_ide = 0;
-    opt_command[0] = '\0';
     opt_nosave = 1;
     opt_pref_width = opt_pref_height = opt_pref_bpp = 0;
+
+    // init strings
+    opt_command[0] = 0;
+    opt_modlist[0] = 0;
+    prev_cwd[0] = 0;
+    g_file[0] = 0;
 
     getcwd(prev_cwd, sizeof(prev_cwd) - 1);
 
@@ -394,7 +390,7 @@ int MAIN_FUNC(int argc, char *argv[]) {
 
         // run it
         if (!opt_interactive) {
-#if !defined(HAVE_C_MALLOC)
+#ifndef HAVE_C_MALLOC
             memmgr_init();
 #endif
             sbasic_main(g_file);
@@ -403,5 +399,5 @@ int MAIN_FUNC(int argc, char *argv[]) {
         chdir(prev_cwd);
     }
 
-    return gsb_last_error ? 1 : opt_retval;
+    return gsb_last_error ? gsb_last_error : opt_retval;
 }

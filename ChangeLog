@@ -1,65 +1,77 @@
-2007-11-03	<cwarrensmith@gmail.com>
+2007-11-03	version 0.9.8.3
 	* refactored console_main 
+	* added the ability to include a path component in a unit name, eg:
+	import other.something.foo
+	? foo.my_var
 
-2007-10-10	<cwarrensmith@gmail.com>
+	Then in the foo.bas file:
+
+	Unit other.something.Foo
+	export my_var
+
+	The unit file should be saved in $UNITPATH/other/something.
+	If not defined, $UNITPATH is inferred as the host program 
+	file directory.
+
+2007-10-10	
 	* A runtime error is now created in lieu of crashing when you 
 	pass a value less than 0 to the LEFT and RIGHT string commands. 
 	* The runtime error for LEFT,RIGHT,REPLACE,MID,INSTR,RINSTR now
 	includes the invalid index in the message
 
-2007-08-31	<cwarrensmith@gmail.com>
+2007-08-31	
 	* Fixed a problem referring to UDS fields from an array
 	eg x = foo(0).x
 	
-2007-08-18	<cwarrensmith@gmail.com>
+2007-08-18	
 	* Fixed a problem with the short-circuit eval code causing 
 	incorrect true/false return IP's being calculated
 	
-2007-08-02	<cwarrensmith@gmail.com>
+2007-08-02	
 	* The IN operator when applied to arrays now returns
 	  the 1 based index position, eg:
 	a << "cat"
         a << "dog"
         ? "dog" in a 'prints 2
 	
-2007-07-21	<cwarrensmith@gmail.com>
+2007-07-21	
 	* Implemented experimental logical expression short-circuit evaluation
 	
-2007-07-12 	<cwarrensmith@gmail.com>
+2007-07-12 	
 	* (re) Implemented user defined structures
 	* AnsiWidget added to FLTK core package
 	
-2007-06-23 	<cwarrensmith@gmail.com>
+2007-06-23 	
 	* TSAVE now correctly closes the opened file
 	
-2007-04-27 	<cwarrensmith@gmail.com>
+2007-04-27 	
 	* Added GUI support to SDL version using guichan
 	
-2007-04-19 	<cwarrensmith@gmail.com>
+2007-04-19 	
 	* Implemented user defined structures
 	* Commited Attila Haraszti's SDL code and changes for configure.in
 	* Added syntax support for '=='
 	
-2006-11-14	<cwarrensmith@gmail.com>
+2006-11-14	
 	* Updated DATE and TIME error messages to provide extra information
 	
-2006-10-23	<cwarrensmith@gmail.com>
+2006-10-23	
 	* Added more info the index out of range runtime error message
 	* Fixed configure.in for cygwin build
 	
-2006-08-19	<cwarrensmith@gmail.com>
+2006-08-19	
 	* added "multiline" option to the TEXT command to support
 	the multiline edit control (GTK)
 	* fixed RINSTR command to work as advertised.
 	* TSAVE can now take a file number arg like TLOAD
 	
-2006-08-16	<cwarrensmith@gmail.com>
+2006-08-16	
 	* Fixed error message with unterminated strings in a sub or func. 
 	complained about missing END instead of the missing " char
 	* Quoted strings no longer required the end quote char. A new line is 
 	taken as the end of string.
 	
-2006-08-12	<cwarrensmith@gmail.com>
+2006-08-12	
 	* added support for func/sub pointer variables used with the 
 	  call statement:
 
@@ -79,7 +91,7 @@
 	* USRCALL has been removed since it never worked and the above
  	is a better replacement (IMHO)
 	
-2006-07-28	<cwarrensmith@gmail.com>
+2006-07-28	
 	* updated chain command to take string or array	of string arguments in 
 	lieu of a file name. After calling this command, the calling program now 
 	successfully resumes.
@@ -87,13 +99,13 @@
 	memory routines with simple malloc/free calls
 	* added GRID+TAB button support to GTK build
 
-2006-05-27	<cwarrensmith@gmail.com>
+2006-05-27	
 	* added form support to GTK build
 	
-2006-05-27	<cwarrensmith@gmail.com>
+2006-05-27	
 	* bc_store_string() now handles escaped double quotes
 
-2006-04-12	<cwarrensmith@gmail.com>
+2006-04-12	
 	* updated sockcl_open() to handle server listen sockets
 
 ================================================================================
