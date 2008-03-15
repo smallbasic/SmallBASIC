@@ -114,9 +114,9 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 -ce 
 -cli0
 -fca
--i4
--l80
--lc75
+-i2
+-l95
+-lc95
 -lp
 -nbbo
 -nbc 
@@ -129,5 +129,18 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 -sc 
 
 
-$Id: README.TXT,v 1.23 2006-10-24 21:07:56 zeeb90au Exp $
+=======
+
+Future ideas:
+- Add drag-drop file support to open a bas file
+- Add support for detecting another program has changed
+  the edited file in fltk version
+- Add command argument GUI for fltk to allow run time args to be set.
+  usefull when creating command line based applications.
+- Add option to FLTK version to support run once and then terminate
+- replace keywords.txt with internal buffer (FLTK)
+- Add break point, variable inspection, step/resume options.
+
+
+$Id: README.TXT,v 1.23 2006/10/24 21:07:56 zeeb90au Exp $
 
