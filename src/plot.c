@@ -10,99 +10,103 @@
 /*
 *	returns the min & max value of the array
 */
-void	plot_array_exr(var_t *var_p, double *xmin, double *xmax)	SEC(BIO2);
-void	plot_array_exr(var_t *var_p, double *xmin, double *xmax)
+void plot_array_exr(var_t * var_p, double *xmin, double *xmax) SEC(BIO2);
+void plot_array_exr(var_t * var_p, double *xmin, double *xmax)
 {
-	int		count, i;
-	var_t	*elem_p;
-	double	x;
+  int count, i;
+  var_t *elem_p;
+  double x;
 
-	count = v_asize(var_p);
+  count = v_asize(var_p);
 
-	if	( count <= 0 )
-		*xmin = *xmax = 0.0;
-	else	{
-		// starting value
-		elem_p = v_elem(var_p, 0);
-		*xmin = *xmax = v_getreal(elem_p);
+  if (count <= 0)
+    *xmin = *xmax = 0.0;
+  else {
+    // starting value
+    elem_p = v_elem(var_p, 0);
+    *xmin = *xmax = v_getreal(elem_p);
 
-		// scan
-		for ( i = 0; i < count; i ++ )	{
-			elem_p = v_elem(var_p, i);
-			x = v_getreal(elem_p);
+    // scan
+    for (i = 0; i < count; i++) {
+      elem_p = v_elem(var_p, i);
+      x = v_getreal(elem_p);
 
-			if	( *xmin > x )	*xmin = x;
-			if	( *xmax < x )	*xmax = x;
-			}
-		}
+      if (*xmin > x)
+        *xmin = x;
+      if (*xmax < x)
+        *xmax = x;
+    }
+  }
 }
 
 /*
 *	draw X axis
 */
-void	plot_draw_x_axis(double xmin, double xmax, int left, int right, int y)	SEC(BIO2);
-void	plot_draw_x_axis(double xmin, double xmax, int left, int right, int y)
+void plot_draw_x_axis(double xmin, double xmax, int left, int right,
+                      int y) SEC(BIO2);
+void plot_draw_x_axis(double xmin, double xmax, int left, int right, int y)
 {
-	double	xrange, dx, x;
-	int		count, sxrange, smin_dx, smin_dy;
-	int		i, sx, fw;
-	char	buf[64];
+  double xrange, dx, x;
+  int count, sxrange, smin_dx, smin_dy;
+  int i, sx, fw;
+  char buf[64];
 
-	xrange   = xmax-xmin;
-	sxrange  = right-left;
+  xrange = xmax - xmin;
+  sxrange = right - left;
 
-	smin_dx  = dev_textwidth("000");				// minimum screen-dx
-	smin_dy  = dev_textheight("0") / 2;			// minimum screen-dy
-	count    = sxrange / smin_dx;					// values to draw
-	dx       = xrange / (double) count;			// dx for values
+  smin_dx = dev_textwidth("000"); // minimum screen-dx
+  smin_dy = dev_textheight("0") / 2;  // minimum screen-dy
+  count = sxrange / smin_dx;    // values to draw
+  dx = xrange / (double)count;  // dx for values
 
-	// draw
-	dev_line(left, y, right, y);
-	for ( i = 0, sx = left, x = xmin; i < count; i ++, sx += smin_dx, x += dx )	{
-		// draw text
-		ftostr(x, buf);
-		buf[3] = '\0';
-		fw = dev_textwidth(buf);
-		dev_setxy(sx-fw, y+1);
-		dev_print(buf);
+  // draw
+  dev_line(left, y, right, y);
+  for (i = 0, sx = left, x = xmin; i < count; i++, sx += smin_dx, x += dx) {
+    // draw text
+    ftostr(x, buf);
+    buf[3] = '\0';
+    fw = dev_textwidth(buf);
+    dev_setxy(sx - fw, y + 1);
+    dev_print(buf);
 
-		//
-		dev_line(sx, y, sx, y+smin_dy);
-		}
+    // 
+    dev_line(sx, y, sx, y + smin_dy);
+  }
 }
 
 /*
 *	draw Y axis
 */
-void	plot_draw_y_axis(double ymin, double ymax, int top, int bottom, int x)	SEC(BIO2);
-void	plot_draw_y_axis(double ymin, double ymax, int top, int bottom, int x)
+void plot_draw_y_axis(double ymin, double ymax, int top, int bottom,
+                      int x) SEC(BIO2);
+void plot_draw_y_axis(double ymin, double ymax, int top, int bottom, int x)
 {
-	double	yrange, dy, y;
-	int		count, syrange, smin_dy, smin_dx;
-	int		i, sy, fh;
-	char	buf[64];
+  double yrange, dy, y;
+  int count, syrange, smin_dy, smin_dx;
+  int i, sy, fh;
+  char buf[64];
 
-	yrange   = ymax-ymin;
-	syrange  = bottom-top;
+  yrange = ymax - ymin;
+  syrange = bottom - top;
 
-	smin_dx  = dev_textwidth("0");				// minimum screen-dx
-	smin_dy  = dev_textheight("0") * 1.5;		// minimum screen-dy
-	count    = syrange / smin_dy;				// values to draw
-	dy       = yrange / (double) count;			// dx for values
+  smin_dx = dev_textwidth("0"); // minimum screen-dx
+  smin_dy = dev_textheight("0") * 1.5;  // minimum screen-dy
+  count = syrange / smin_dy;    // values to draw
+  dy = yrange / (double)count;  // dx for values
 
-	// draw
-	dev_line(x, top, x, bottom);
-	for ( i = 0, sy = top, y = ymax; i < count; i ++, sy += smin_dy, y -= dy )	{
-		// draw text
-		ftostr(y, buf);
-		buf[3] = '\0';
-		fh = dev_textheight(buf);
-		dev_setxy(x-dev_textwidth(buf), sy-fh);
-		dev_print(buf);
+  // draw
+  dev_line(x, top, x, bottom);
+  for (i = 0, sy = top, y = ymax; i < count; i++, sy += smin_dy, y -= dy) {
+    // draw text
+    ftostr(y, buf);
+    buf[3] = '\0';
+    fh = dev_textheight(buf);
+    dev_setxy(x - dev_textwidth(buf), sy - fh);
+    dev_print(buf);
 
-		//
-		dev_line(x, sy, x-smin_dx, sy);
-		}
+    // 
+    dev_line(x, sy, x - smin_dx, sy);
+  }
 }
 
 /*
@@ -112,26 +116,26 @@ void	plot_draw_y_axis(double ymin, double ymax, int top, int bottom, int x)
 *
 *	Optional: ISO[TROPIC]
 */
-void	cmd_plot2(void)
+void cmd_plot2(void)
 {
-	var_t	*vx = NULL, *vy = NULL;
-	addr_t	use_ip, exit_ip;
+  var_t *vx = NULL, *vy = NULL;
+  addr_t use_ip, exit_ip;
 
-	par_massget("pp", &vx, &vy);
-	if	( !prog_error )	{
-		// is there a use keyword ?
-		if	( code_peek() == kwUSE )	{
-			code_skipnext();
-			use_ip  = code_getaddr();
-			exit_ip = code_getaddr();
-			}
-		else	{
-			rt_raise("PLOT: Missing USE keyword");
-			return;
-			}
-		
-		///////
-		}
+  par_massget("pp", &vx, &vy);
+  if (!prog_error) {
+    // is there a use keyword ?
+    if (code_peek() == kwUSE) {
+      code_skipnext();
+      use_ip = code_getaddr();
+      exit_ip = code_getaddr();
+    }
+    else {
+      rt_raise("PLOT: Missing USE keyword");
+      return;
+    }
+
+    // /////
+  }
 }
 
 /*
@@ -146,70 +150,70 @@ void	cmd_plot2(void)
 */
 
 //
-//	PLOT xmin, xmax [, count] USE ...
+//      PLOT xmin, xmax [, count] USE ...
 //
-void	cmd_plot()
+void cmd_plot()
 {
-	double	x, xmin = 0, xmax = 0, dx, xstep;
-	double	*yt, *xt;
-	int		count = 0, i, border;
-	addr_t	use_ip, exit_ip;
-	int		prev_fgcolor = dev_fgcolor;
-	int		prev_bgcolor = dev_bgcolor;
+  double x, xmin = 0, xmax = 0, dx, xstep;
+  double *yt, *xt;
+  int count = 0, i, border;
+  addr_t use_ip, exit_ip;
+  int prev_fgcolor = dev_fgcolor;
+  int prev_bgcolor = dev_bgcolor;
 
-	par_massget("FFi", &xmin, &xmax, &count);
-	if	( prog_error )	return;
+  par_massget("FFi", &xmin, &xmax, &count);
+  if (prog_error)
+    return;
 
-	// is there a use keyword ?
-	if	( code_peek() == kwUSE )	{
-		code_skipnext();
-		use_ip  = code_getaddr();
-		exit_ip = code_getaddr();
-		}
-	else	{
-		rt_raise("PLOT: Missing USE keyword");
-		return;
-		}
+  // is there a use keyword ?
+  if (code_peek() == kwUSE) {
+    code_skipnext();
+    use_ip = code_getaddr();
+    exit_ip = code_getaddr();
+  }
+  else {
+    rt_raise("PLOT: Missing USE keyword");
+    return;
+  }
 
-	// .................
-	border = dev_textwidth("00000");
-	dx = ABS(xmax-xmin);
-	if	( count <= 0 )
-		count = os_graf_mx - border;
-	xstep = dx / (double) count;
+  // .................
+  border = dev_textwidth("00000");
+  dx = ABS(xmax - xmin);
+  if (count <= 0)
+    count = os_graf_mx - border;
+  xstep = dx / (double)count;
 
-	yt = (double *) tmp_alloc(sizeof(double) * count);
-	xt = (double *) tmp_alloc(sizeof(double) * count);
+  yt = (double *)tmp_alloc(sizeof(double) * count);
+  xt = (double *)tmp_alloc(sizeof(double) * count);
 
-	//	execute user's expression for each element
-	//  get y values
-	if	( use_ip != INVALID_ADDR )	{
-		var_t	v;
-		
-		for ( i = 0, x = xmin; i < count && !prog_error; i ++, x += xstep )	{
-			v_init(&v);
-			v_setreal(&v, x);
-			exec_usefunc(&v, use_ip);
-			xt[i] = x;
-			yt[i] = v_getreal(&v);
-			v_free(&v);
-			}
+  // execute user's expression for each element
+  // get y values
+  if (use_ip != INVALID_ADDR) {
+    var_t v;
 
-		// jmp to correct location
-		code_jump(exit_ip);
-		}
+    for (i = 0, x = xmin; i < count && !prog_error; i++, x += xstep) {
+      v_init(&v);
+      v_setreal(&v, x);
+      exec_usefunc(&v, use_ip);
+      xt[i] = x;
+      yt[i] = v_getreal(&v);
+      v_free(&v);
+    }
 
-	if	( !prog_error )	{
-		// draw
-		chart_draw(0, 0, os_graf_mx, os_graf_my, yt, count, xt, count, 5 /* points */, 2 /* ruler */);
-//	for ( i = 0; i < count; i ++ )	
-//		dev_setpixel(i, (yt[i] - ymin) * ystep);
-		}
+    // jmp to correct location
+    code_jump(exit_ip);
+  }
 
-	//
-	tmp_free(xt);
-	tmp_free(yt);
-	dev_settextcolor(prev_fgcolor, prev_bgcolor);
+  if (!prog_error) {
+    // draw
+    chart_draw(0, 0, os_graf_mx, os_graf_my, yt, count, xt, count, 5  /* points 
+                */ , 2 /* ruler */ );
+//      for ( i = 0; i < count; i ++ )  
+//              dev_setpixel(i, (yt[i] - ymin) * ystep);
+  }
+
+  // 
+  tmp_free(xt);
+  tmp_free(yt);
+  dev_settextcolor(prev_fgcolor, prev_bgcolor);
 }
-
-

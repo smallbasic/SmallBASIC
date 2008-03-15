@@ -1,7 +1,7 @@
 /*
-*	Add-on SB sound driver header
-*	Nicholas Christopoulos
-*/
+ * Add-on SB sound driver header
+ * Nicholas Christopoulos
+ */
 
 #if !defined(_DRV_SOUND_H)
 #define _DRV_SOUND_H
@@ -11,44 +11,42 @@ extern "C" {
 #endif
 
 /*
-*   driver initialization
-*   returns false on error
-*/
-int		drvsound_init(void);
+ *   driver initialization
+ *   returns false on error
+ */
+int drvsound_init(void);
 
 /*
-*   restores device state
-*/
-void	drvsound_close(void);
+ *   restores device state
+ */
+void drvsound_close(void);
 
 /*
-*   plays a tone 
-*       frq = frequency
-*       ms  = duration in milliseconds
-*       vol = volume (0..100)
-*       bgplay = true for play in background
-*/
-void	drvsound_sound(int frq, int ms, int vol, int bgplay);
+ *   plays a tone
+ *       frq = frequency
+ *       ms  = duration in milliseconds
+ *       vol = volume (0..100)
+ *       bgplay = true for play in background
+ */
+void drvsound_sound(int frq, int ms, int vol, int bgplay);
 
 /*
-*   beep!
-*/
-void	drvsound_beep(void);
+ *   beep!
+ */
+void drvsound_beep(void);
 
 /*
-*	clear background queue
-*/
-void	drvsound_clear_queue(void);
+ * clear background queue
+ */
+void drvsound_clear_queue(void);
 
 /*
-*   For OSes that does not supports threads, this enables background plays
-*   (Its called every ~50ms)
-*/
-void    drvsound_event(void);
+ *   For OSes that does not supports threads, this enables background plays
+ *   (Its called every ~50ms)
+ */
+void drvsound_event(void);
 
 #if defined(__cplusplus)
 }
 #endif
-
 #endif
-

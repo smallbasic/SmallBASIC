@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Author: Chris Warren-Smith <cwarrensmith@gmail.com>
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the
+    Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+    Boston, MA 02111-1307, USA.
+
+  -->
+<language id="sb" _name="Smallbasic" version="2.0" _section="Scripts">
+  <metadata>
+    <property name="mimetypes">application/x-javascript;text/x-javascript;text/javascript;text/x-js</property>
+    <property name="globs">*.js</property>
+    <property name="line-comment-start">//</property>
+    <property name="block-comment-start">/*</property>
+    <property name="block-comment-end">*/</property>
+  </metadata>
+
+  <styles>
+    <style id="comment" _name="Comment" map-to="def:comment"/>
+    <style id="error" _name="Error" map-to="def:error"/>
+    <style id="string" _name="String" map-to="def:string"/>
+    <style id="null-value" _name="Null Value" map-to="def:special-constant"/>
+    <style id="keyword" _name="Keyword" map-to="def:keyword"/>
+    <style id="function" _name="Function" map-to="def:function"/>
+    <style id="procedure" _name="Procedure" map-to="def:type"/>
+  </styles>
+
+  <default-regex-options case-sensitive="false"/>
+
+  <definitions>
+    <context id="sb">
+      <include>
+
+        <!-- Comments -->
+        <context id="line-comment" style-ref="comment">
+          <start>rem|#|'</start>
+          <end>$</end>
+          <include>
+            <context ref="def:line-continue"/>
+            <context ref="def:in-comment"/>
+          </include>
+        </context>
+
+        <!-- Strings -->
+        <context id="string-double" end-at-line-end="true" style-ref="string">
+          <start>"</start>
+          <end>"</end>
+          <include>
+            <context ref="def:line-continue"/>
+            <context ref="def:escape"/>
+          </include>
+        </context>
+
+        <context id="string-single" end-at-line-end="true" style-ref="string">
+          <start>'</start>
+          <end>'</end>
+          <include>
+            <context ref="def:line-continue"/>
+            <context ref="def:escape"/>
+          </include>
+        </context>
+
+        <!-- Keywords -->
+        <context id="keywords" style-ref="keyword" >
+	  <prefix>(?i)</prefix> <!-- case insensitive -->
+	  <keyword>LOCAL</keyword>
+	  <keyword>SUB</keyword>
+	  <keyword>FUNC</keyword>
+	  <keyword>DEF</keyword>
+	  <keyword>BYREF</keyword>
+	  <keyword>DECLARE</keyword>
+	  <keyword>IMPORT</keyword>
+	  <keyword>EXPORT</keyword>
+	  <keyword>UNIT</keyword>
+	  <keyword>LET</keyword>
+	  <keyword>CONST</keyword>
+	  <keyword>DIM</keyword>
+	  <keyword>REDIM</keyword>
+	  <keyword>STOP</keyword>
+	  <keyword>END</keyword>
+	  <keyword>PRINT</keyword>
+	  <keyword>SPRINT</keyword>
+	  <keyword>INPUT</keyword>
+	  <keyword>SINPUT</keyword>
+	  <keyword>REM</keyword>
+	  <keyword>CHAIN</keyword>
+	  <keyword>ON</keyword>
+	  <keyword>LABEL</keyword>
+	  <keyword>GOTO</keyword>
+	  <keyword>IF</keyword>
+	  <keyword>THEN</keyword>
+	  <keyword>ELSE</keyword>
+	  <keyword>ELIF</keyword>
+	  <keyword>ELSEIF</keyword>
+	  <keyword>ENDIF</keyword>
+	  <keyword>FI</keyword>
+	  <keyword>FOR</keyword>
+	  <keyword>TO</keyword>
+	  <keyword>STEP</keyword>
+	  <keyword>NEXT</keyword>
+	  <keyword>WHILE</keyword>
+	  <keyword>WEND</keyword>
+	  <keyword>REPEAT</keyword>
+	  <keyword>UNTIL</keyword>
+	  <keyword>SELECT</keyword>
+	  <keyword>CASE</keyword>
+	  <keyword>GOSUB</keyword>
+	  <keyword>RETURN</keyword>
+	  <keyword>READ</keyword>
+	  <keyword>DATA</keyword>
+	  <keyword>RESTORE</keyword>
+	  <keyword>EXIT</keyword>
+	  <keyword>ERASE</keyword>
+	  <keyword>USE</keyword>
+	  <keyword>USING</keyword>
+	  <keyword>USG</keyword>
+	  <keyword>LINE</keyword>
+	  <keyword>COLOR</keyword>
+	  <keyword>RUN</keyword>
+	  <keyword>EXEC</keyword>
+	  <keyword>OPEN</keyword>
+	  <keyword>APPEND</keyword>
+	  <keyword>AS</keyword>
+	  <keyword>CLOSE</keyword>
+	  <keyword>LINEINPUT</keyword>
+	  <keyword>LINPUT</keyword>
+	  <keyword>SEEK</keyword>
+	  <keyword>WRITE</keyword>
+	  <keyword>INSERT</keyword>
+	  <keyword>DELETE</keyword>
+	  <keyword>TRON</keyword>
+	  <keyword>TROFF</keyword>
+	  <keyword>OPTION</keyword>
+	  <keyword>BG</keyword>
+	  <keyword>LOGPRINT</keyword>
+	  <keyword>COLOR</keyword>
+	  <keyword>FILLED</keyword>
+	  <keyword>FOR</keyword>
+	  <keyword>INPUT</keyword>
+	  <keyword>OUTPUT</keyword>
+	  <keyword>APPEND</keyword>
+	  <keyword>ACCESS</keyword>
+	  <keyword>USING</keyword>
+	  <keyword>USG</keyword>
+	  <keyword>SHARED</keyword>
+	  <keyword>AS</keyword>
+	  <keyword>TO</keyword>
+	  <keyword>DO</keyword>
+	  <keyword>STEP</keyword>
+	  <keyword>THEN</keyword>
+	  <keyword>SUB</keyword>
+	  <keyword>FUNC</keyword>
+	  <keyword>DEF</keyword>
+	  <keyword>LOOP</keyword>
+	  <keyword>ON</keyword>
+	  <keyword>OFF</keyword>
+	  <keyword>USE</keyword>
+	  <keyword>BG</keyword>
+	</context>
+
+        <context id="functions" style-ref="function">
+	  <keyword>ASC</keyword>
+	  <keyword>VAL</keyword>
+	  <keyword>CHR</keyword>
+	  <keyword>STR</keyword>
+	  <keyword>OCT</keyword>
+	  <keyword>HEX</keyword>
+	  <keyword>LCASE</keyword>
+	  <keyword>LOWER</keyword>
+	  <keyword>UCASE</keyword>
+	  <keyword>UPPER</keyword>
+	  <keyword>LTRIM</keyword>
+	  <keyword>RTRIM</keyword>
+	  <keyword>SPACE</keyword>
+	  <keyword>SPC</keyword>
+	  <keyword>TAB</keyword>
+	  <keyword>CAT</keyword>
+	  <keyword>ENVIRON</keyword>
+	  <keyword>ENV</keyword>
+	  <keyword>TRIM</keyword>
+	  <keyword>STRING</keyword>
+	  <keyword>SQUEEZE</keyword>
+	  <keyword>LEFT</keyword>
+	  <keyword>RIGHT</keyword>
+	  <keyword>LEFTOF</keyword>
+	  <keyword>RIGHTOF</keyword>
+	  <keyword>LEFTOFLAST</keyword>
+	  <keyword>RIGHTOFLAST</keyword>
+	  <keyword>MID</keyword>
+	  <keyword>REPLACE</keyword>
+	  <keyword>RUN</keyword>
+	  <keyword>INKEY</keyword>
+	  <keyword>TIME</keyword>
+	  <keyword>DATE</keyword>
+	  <keyword>INSTR</keyword>
+	  <keyword>RINSTR</keyword>
+	  <keyword>LBOUND</keyword>
+	  <keyword>UBOUND</keyword>
+	  <keyword>LEN</keyword>
+	  <keyword>EMPTY</keyword>
+	  <keyword>ISARRAY</keyword>
+	  <keyword>ISNUMBER</keyword>
+	  <keyword>ISSTRING</keyword>
+	  <keyword>ATAN2</keyword>
+	  <keyword>POW</keyword>
+	  <keyword>ROUND</keyword>
+	  <keyword>COS</keyword>
+	  <keyword>SIN</keyword>
+	  <keyword>TAN</keyword>
+	  <keyword>COSH</keyword>
+	  <keyword>SINH</keyword>
+	  <keyword>TANH</keyword>
+	  <keyword>ACOS</keyword>
+	  <keyword>ASIN</keyword>
+	  <keyword>ATAN</keyword>
+	  <keyword>ATN</keyword>
+	  <keyword>ACOSH</keyword>
+	  <keyword>ASINH</keyword>
+	  <keyword>ATANH</keyword>
+	  <keyword>SEC</keyword>
+	  <keyword>ASEC</keyword>
+	  <keyword>SECH</keyword>
+	  <keyword>ASECH</keyword>
+	  <keyword>CSC</keyword>
+	  <keyword>ACSC</keyword>
+	  <keyword>CSCH</keyword>
+	  <keyword>ACSCH</keyword>
+	  <keyword>COT</keyword>
+	  <keyword>ACOT</keyword>
+	  <keyword>COTH</keyword>
+	  <keyword>ACOTH</keyword>
+	  <keyword>SQR</keyword>
+	  <keyword>ABS</keyword>
+	  <keyword>EXP</keyword>
+	  <keyword>LOG</keyword>
+	  <keyword>LOG10</keyword>
+	  <keyword>FIX</keyword>
+	  <keyword>INT</keyword>
+	  <keyword>CDBL</keyword>
+	  <keyword>CREAL</keyword>
+	  <keyword>DEG</keyword>
+	  <keyword>RAD</keyword>
+	  <keyword>PEN</keyword>
+	  <keyword>FLOOR</keyword>
+	  <keyword>CEIL</keyword>
+	  <keyword>FRAC</keyword>
+	  <keyword>FRE</keyword>
+	  <keyword>SGN</keyword>
+	  <keyword>CINT</keyword>
+	  <keyword>EOF</keyword>
+	  <keyword>SEEK</keyword>
+	  <keyword>LOF</keyword>
+	  <keyword>RND</keyword>
+	  <keyword>MAX</keyword>
+	  <keyword>MIN</keyword>
+	  <keyword>ABSMAX</keyword>
+	  <keyword>ABSMIN</keyword>
+	  <keyword>SUM</keyword>
+	  <keyword>SUMSQ</keyword>
+	  <keyword>STATMEAN</keyword>
+	  <keyword>STATMEANDEV</keyword>
+	  <keyword>STATSPREADS</keyword>
+	  <keyword>STATSPREADP</keyword>
+	  <keyword>SEGCOS</keyword>
+	  <keyword>SEGSIN</keyword>
+	  <keyword>SEGLEN</keyword>
+	  <keyword>POLYAREA</keyword>
+	  <keyword>POLYCENT</keyword>
+	  <keyword>PTDISTSEG</keyword>
+	  <keyword>PTSIGN</keyword>
+	  <keyword>PTDISTLN</keyword>
+	  <keyword>POINT</keyword>
+	  <keyword>XPOS</keyword>
+	  <keyword>YPOS</keyword>
+	  <keyword>INPUT</keyword>
+	  <keyword>ARRAY</keyword>
+	  <keyword>LINEQN</keyword>
+	  <keyword>FILES</keyword>
+	  <keyword>INVERSE</keyword>
+	  <keyword>DETERM</keyword>
+	  <keyword>JULIAN</keyword>
+	  <keyword>DATEFMT</keyword>
+	  <keyword>WEEKDAY</keyword>
+	  <keyword>IF</keyword>
+	  <keyword>IFF</keyword>
+	  <keyword>FORMAT</keyword>
+	  <keyword>FREEFILE</keyword>
+	  <keyword>TICKS</keyword>
+	  <keyword>TICKSPERSEC</keyword>
+	  <keyword>TIMER</keyword>
+	  <keyword>PROGLINE</keyword>
+	  <keyword>RUN</keyword>
+	  <keyword>TXTW</keyword>
+	  <keyword>TXTH</keyword>
+	  <keyword>TEXTWIDTH</keyword>
+	  <keyword>TEXTHEIGHT</keyword>
+	  <keyword>EXIST</keyword>
+	  <keyword>ISFILE</keyword>
+	  <keyword>ISDIR</keyword>
+	  <keyword>ISLINK</keyword>
+	  <keyword>ACCESS</keyword>
+	  <keyword>RGB</keyword>
+	  <keyword>RGBF</keyword>
+	  <keyword>BIN</keyword>
+	  <keyword>ENCLOSE</keyword>
+	  <keyword>DISCLOSE</keyword>
+	  <keyword>TRANSLATE</keyword>
+	  <keyword>CHOP</keyword>
+	  <keyword>BGETC</keyword>
+	  <keyword>BALLOC</keyword>
+	  <keyword>MALLOC</keyword>
+	  <keyword>PEEK32</keyword>
+	  <keyword>PEEK16</keyword>
+	  <keyword>PEEK</keyword>
+	  <keyword>VADR</keyword>
+	  <keyword>SEQ</keyword>
+	  <keyword>CBS</keyword>
+	  <keyword>BCS</keyword>
+	  <keyword>LOADLIB</keyword>
+	  <keyword>CALL</keyword>
+	  <keyword>IMAGEW</keyword>
+	  <keyword>IMAGEH</keyword>
+        </context>
+
+        <context id="procedures" style-ref="procedure">
+	  <keyword>CLS</keyword>
+	  <keyword>RTE</keyword>
+	  <keyword>ENVIRON</keyword>
+	  <keyword>ENV</keyword>
+	  <keyword>LOCATE</keyword>
+	  <keyword>AT</keyword>
+	  <keyword>PEN</keyword>
+	  <keyword>DATEDMY</keyword>
+	  <keyword>BEEP</keyword>
+	  <keyword>SOUND</keyword>
+	  <keyword>NOSOUND</keyword>
+	  <keyword>PSET</keyword>
+	  <keyword>RECT</keyword>
+	  <keyword>CIRCLE</keyword>
+	  <keyword>RANDOMIZE</keyword>
+	  <keyword>SPLIT</keyword>
+	  <keyword>WSPLIT</keyword>
+	  <keyword>JOIN</keyword>
+	  <keyword>PAUSE</keyword>
+	  <keyword>DELAY</keyword>
+	  <keyword>ARC</keyword>
+	  <keyword>DRAW</keyword>
+	  <keyword>PAINT</keyword>
+	  <keyword>PLAY</keyword>
+	  <keyword>SORT</keyword>
+	  <keyword>SEARCH</keyword>
+	  <keyword>ROOT</keyword>
+	  <keyword>DIFFEQN</keyword>
+	  <keyword>CHART</keyword>
+	  <keyword>WINDOW</keyword>
+	  <keyword>VIEW</keyword>
+	  <keyword>DRAWPOLY</keyword>
+	  <keyword>M3IDENT</keyword>
+	  <keyword>M3ROTATE</keyword>
+	  <keyword>M3SCALE</keyword>
+	  <keyword>M3TRANS</keyword>
+	  <keyword>M3APPLY</keyword>
+	  <keyword>INTERSECT</keyword>
+	  <keyword>POLYEXT</keyword>
+	  <keyword>DERIV</keyword>
+	  <keyword>KILL</keyword>
+	  <keyword>RENAME</keyword>
+	  <keyword>COPY</keyword>
+	  <keyword>CHDIR</keyword>
+	  <keyword>MKDIR</keyword>
+	  <keyword>RMDIR</keyword>
+	  <keyword>TLOAD</keyword>
+	  <keyword>TSAVE</keyword>
+	  <keyword>LOCK</keyword>
+	  <keyword>CHMOD</keyword>
+	  <keyword>PLOT2</keyword>
+	  <keyword>PLOT</keyword>
+	  <keyword>SWAP</keyword>
+	  <keyword>BUTTON</keyword>
+	  <keyword>TEXT</keyword>
+	  <keyword>DOFORM</keyword>
+	  <keyword>DIRWALK</keyword>
+	  <keyword>BPUTC</keyword>
+	  <keyword>POKE32</keyword>
+	  <keyword>POKE16</keyword>
+	  <keyword>POKE</keyword>
+	  <keyword>BCOPY</keyword>
+	  <keyword>BLOAD</keyword>
+	  <keyword>BSAVE</keyword>
+	  <keyword>IMGGET</keyword>
+	  <keyword>IMGPUT</keyword>
+	  <keyword>TIMEHMS</keyword>
+	  <keyword>EXPRSEQ</keyword>
+	  <keyword>UNLOADLIB</keyword>
+	  <keyword>CALL</keyword>
+	  <keyword>HTML</keyword>
+	  <keyword>IMAGE</keyword>
+	  <keyword>STKDUMP</keyword>
+        </context>
+
+      </include>
+    </context>
+  </definitions>
+</language>

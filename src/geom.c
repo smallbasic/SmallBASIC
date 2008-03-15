@@ -18,87 +18,89 @@
 */
 double geo_seglen(double Ax, double Ay, double Bx, double By)
 {
-	double	dx = Bx-Ax;
-	double	dy = By-Ay;
+  double dx = Bx - Ax;
+  double dy = By - Ay;
 
-	return sqrt(dx*dx + dy*dy);
+  return sqrt(dx * dx + dy * dy);
 }
 
 /**
 *	distance of point C from line (A,B)
 */
-double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx, double Cy)
+double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx,
+                        double Cy)
 {
-	double	L, s;
-//	double	r;
-//	double	Px, Py;	// projection of C on AB
+  double L, s;
+//      double  r;
+//      double  Px, Py; // projection of C on AB
 
-	L = geo_seglen(Ax, Ay, Bx, By);
+  L = geo_seglen(Ax, Ay, Bx, By);
 
-	if	( L == 0.0 )	// A,B are the same point, TODO: tolerance
-		return geo_seglen(Ax, Ay, Cx, Cy);
+  if (L == 0.0)                 // A,B are the same point, TODO: tolerance
+    return geo_seglen(Ax, Ay, Cx, Cy);
 
-//	r = ((Ay-Cy) * (Ay-By) - (Ax-Cx) * (Bx-Ax)) / (L * L);
-//	Px = Ax + r * (Bx - Ax);
-//	Py = Ay + r * (By - Ay);
+//      r = ((Ay-Cy) * (Ay-By) - (Ax-Cx) * (Bx-Ax)) / (L * L);
+//      Px = Ax + r * (Bx - Ax);
+//      Py = Ay + r * (By - Ay);
 
-	s = ((Ay-Cy) * (Bx-Ax) - (Ax-Cx) * (By-Ay)) / (L * L);
-	return s * L;
+  s = ((Ay - Cy) * (Bx - Ax) - (Ax - Cx) * (By - Ay)) / (L * L);
+  return s * L;
 }
 
 /**
 *	distance of point C from line segment (A->B)
 */
-double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx, double Cy)
+double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx,
+                       double Cy)
 {
-//	double	Px, Py;	// projection of C on AB
-	double	L, r, s;
-	double	ca, cb;
+//      double  Px, Py; // projection of C on AB
+  double L, r, s;
+  double ca, cb;
 
-	L = geo_seglen(Ax, Ay, Bx, By);
+  L = geo_seglen(Ax, Ay, Bx, By);
 
-	if	( L == 0.0 )	// A,B are the same point, TODO: tolerance
-		return geo_seglen(Ax, Ay, Cx, Cy);
+  if (L == 0.0)                 // A,B are the same point, TODO: tolerance
+    return geo_seglen(Ax, Ay, Cx, Cy);
 
-	r = ((Ay-Cy) * (Ay-By) - (Ax-Cx) * (Bx-Ax)) / (L * L);
+  r = ((Ay - Cy) * (Ay - By) - (Ax - Cx) * (Bx - Ax)) / (L * L);
 
-	if	( r >= 0.0 && r <= 1.0 )	{	// TODO: tolerance
-//		Px = Ax + r * (Bx - Ax);
-//		Py = Ay + r * (By - Ay);
+  if (r >= 0.0 && r <= 1.0) {   // TODO: tolerance
+//              Px = Ax + r * (Bx - Ax);
+//              Py = Ay + r * (By - Ay);
 
-		s = ((Ay-Cy) * (Bx-Ax) - (Ax-Cx) * (By-Ay)) / (L * L);
-		return s * L;
-		}
+    s = ((Ay - Cy) * (Bx - Ax) - (Ax - Cx) * (By - Ay)) / (L * L);
+    return s * L;
+  }
 
-	// else the P is out of A-B
-	ca = geo_seglen(Ax, Ay, Cx, Cy);
-	cb = geo_seglen(Bx, By, Cx, Cy);
-	return (ca < cb) ? ca : cb;
+  // else the P is out of A-B
+  ca = geo_seglen(Ax, Ay, Cx, Cy);
+  cb = geo_seglen(Bx, By, Cx, Cy);
+  return (ca < cb) ? ca : cb;
 }
 
 /*
 *	COS/SIN of two line segments
 */
-double	geo_segangle(int type, double Adx, double Ady, double Bdx, double Bdy)
+double geo_segangle(int type, double Adx, double Ady, double Bdx, double Bdy)
 {
-	double	la, lb;
-	double	UAdx, UAdy, UBdx, UBdy;
+  double la, lb;
+  double UAdx, UAdy, UBdx, UBdy;
 
-	la = sqrt(Adx * Adx + Ady * Ady);
-	lb = sqrt(Bdx * Bdx + Bdy * Bdy);
+  la = sqrt(Adx * Adx + Ady * Ady);
+  lb = sqrt(Bdx * Bdx + Bdy * Bdy);
 
-	if (la != 0 && lb != 0)	{
-		UAdx = Adx / la;
-		UAdy = Ady / la;
-		UBdx = Bdx / lb;
-		UBdy = Bdy / lb;
-		if	( type == kwSEGCOS )
-			return UAdx * UBdx + UAdy * UBdy;
-		else
-			return UAdy * UBdx + UAdx * UBdy;
-		}
+  if (la != 0 && lb != 0) {
+    UAdx = Adx / la;
+    UAdy = Ady / la;
+    UBdx = Bdx / lb;
+    UBdy = Bdy / lb;
+    if (type == kwSEGCOS)
+      return UAdx * UBdx + UAdy * UBdy;
+    else
+      return UAdy * UBdx + UAdx * UBdy;
+  }
 
-	return 0;	// Ενα από τα διανύσματα έχει μήκος 0.
+  return 0;                     // Ενα από τα διανύσματα έχει μήκος 0.
 }
 
 /*********************************************************************
@@ -116,28 +118,28 @@ Returned values:  0 for normal execution;  1 if the polygon is
 degenerate (number of vertices < 3);  and 2 if area = 0 (and the
 centroid is undefined).
 **********************************************************************/
-int		geo_polycentroid(pt_t *poly, int n, double *xCentroid, double *yCentroid, double *area)
+int geo_polycentroid(pt_t * poly, int n, double *xCentroid, double *yCentroid,
+                     double *area)
 {
-	int		i, j;
-	double	ai, atmp = 0, xtmp = 0, ytmp = 0;
-     
-	if ( n < 3 )
-		return 1;
+  int i, j;
+  double ai, atmp = 0, xtmp = 0, ytmp = 0;
 
-	for ( i = n-1, j = 0; j < n; i = j, j ++ )	{
-		ai = poly[i].x * poly[j].y - poly[j].x * poly[i].y;
-		atmp += ai;
-		xtmp += (poly[j].x + poly[i].x) * ai;
-		ytmp += (poly[j].y + poly[i].y) * ai;
-		}
+  if (n < 3)
+    return 1;
 
-	*area = atmp / 2;
-	if ( atmp != 0 )	{
-		*xCentroid =	xtmp / (3 * atmp);
-		*yCentroid =	ytmp / (3 * atmp);
-		return 0;
-		}
+  for (i = n - 1, j = 0; j < n; i = j, j++) {
+    ai = poly[i].x * poly[j].y - poly[j].x * poly[i].y;
+    atmp += ai;
+    xtmp += (poly[j].x + poly[i].x) * ai;
+    ytmp += (poly[j].y + poly[i].y) * ai;
+  }
 
-     return 2;
- }
+  *area = atmp / 2;
+  if (atmp != 0) {
+    *xCentroid = xtmp / (3 * atmp);
+    *yCentroid = ytmp / (3 * atmp);
+    return 0;
+  }
 
+  return 2;
+}

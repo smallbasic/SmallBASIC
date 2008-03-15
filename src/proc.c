@@ -1,4 +1,4 @@
-// $Id: proc.c,v 1.8 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: proc.c,v 1.8 2007/07/13 23:06:43 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -24,11 +24,11 @@ int par_massget_type_check(char fmt, par_t * par) SEC(BLIB);
 */
 time_t sys_filetime(const char *file)
 {
-    struct stat st;
+  struct stat st;
 
-    if (stat(file, &st) == 0)
-        return st.st_mtime;
-    return 0L;
+  if (stat(file, &st) == 0)
+    return st.st_mtime;
+  return 0L;
 }
 
 /*
@@ -42,67 +42,68 @@ time_t sys_filetime(const char *file)
 */
 int sys_search_path(const char *path, const char *file, char *retbuf)
 {
-    const char *ps, *p;
-    char cur_path[OS_PATHNAME_SIZE + 1];
+  const char *ps, *p;
+  char cur_path[OS_PATHNAME_SIZE + 1];
 
-    if (path == NULL)
-        return 0;
-    if (strlen(path) == 0)
-        return 0;
-
-    ps = path;
-    do {
-        // next element, build cur_path
-#if defined(_UnixOS)
-        p = strchr(ps, ':');
-#else
-        p = strchr(ps, ';');
-#endif
-        if (!p)
-            strcpy(cur_path, ps);
-        else {
-            strncpy(cur_path, ps, p - ps);
-            cur_path[p - ps] = '\0';
-            ps = p + 1;
-        }
-
-        // fix home directory
-        if (cur_path[0] == '~') {
-            char *old_path;
-
-            old_path = tmp_alloc(strlen(cur_path));
-            strcpy(old_path, cur_path + 1);
-#if defined(_UnixOS)
-            sprintf(cur_path, "%s/%s", getenv("HOME"), old_path);
-#else
-            if (getenv("HOME"))
-                sprintf(cur_path, "%s\\%s", getenv("HOME"), old_path);
-            else
-                sprintf(cur_path, "%s\\%s", getenv("HOMEPATH"), old_path);
-#endif
-            tmp_free(old_path);
-        }
-        // build the final file-name
-#if defined(_UnixOS)
-        strcat(cur_path, "/");
-#else
-        strcat(cur_path, "\\");
-#endif
-        strcat(cur_path, file);
-
-        // TODO: probably in DOS/Win we must remove double dir-seps (c:\\home\\\\user)
-
-        // check it
-//              printf("sp:[%s]\n", cur_path);
-        if (access(cur_path, R_OK) == 0) {
-            if (retbuf)
-                strcpy(retbuf, cur_path);
-            return 1;
-        }
-
-    } while (p);
-
+  if (path == NULL)
     return 0;
+  if (strlen(path) == 0)
+    return 0;
+
+  ps = path;
+  do {
+    // next element, build cur_path
+#if defined(_UnixOS)
+    p = strchr(ps, ':');
+#else
+    p = strchr(ps, ';');
+#endif
+    if (!p)
+      strcpy(cur_path, ps);
+    else {
+      strncpy(cur_path, ps, p - ps);
+      cur_path[p - ps] = '\0';
+      ps = p + 1;
+    }
+
+    // fix home directory
+    if (cur_path[0] == '~') {
+      char *old_path;
+
+      old_path = tmp_alloc(strlen(cur_path));
+      strcpy(old_path, cur_path + 1);
+#if defined(_UnixOS)
+      sprintf(cur_path, "%s/%s", getenv("HOME"), old_path);
+#else
+      if (getenv("HOME"))
+        sprintf(cur_path, "%s\\%s", getenv("HOME"), old_path);
+      else
+        sprintf(cur_path, "%s\\%s", getenv("HOMEPATH"), old_path);
+#endif
+      tmp_free(old_path);
+    }
+    // build the final file-name
+#if defined(_UnixOS)
+    strcat(cur_path, "/");
+#else
+    strcat(cur_path, "\\");
+#endif
+    strcat(cur_path, file);
+
+    // TODO: probably in DOS/Win we must remove double dir-seps
+    // (c:\\home\\\\user)
+
+    // check it
+//              printf("sp:[%s]\n", cur_path);
+    if (access(cur_path, R_OK) == 0) {
+      if (retbuf)
+        strcpy(retbuf, cur_path);
+      return 1;
+    }
+
+  } while (p);
+
+  return 0;
 }
 
 /*
@@ -114,21 +115,21 @@ int sys_search_path(const char *path, const char *file, char *retbuf)
 */
 void exec_usefunc(var_t * var, addr_t ip)
 {
-    var_t *old_x;
+  var_t *old_x;
 
-    // save X
-    old_x = v_clone(tvar[SYSVAR_X]);
+  // save X
+  old_x = v_clone(tvar[SYSVAR_X]);
 
-    // run
-    v_set(tvar[SYSVAR_X], var);
-    v_free(var);
-    code_jump(ip);
-    eval(var);
+  // run
+  v_set(tvar[SYSVAR_X], var);
+  v_free(var);
+  code_jump(ip);
+  eval(var);
 
-    // restore X
-    v_set(tvar[SYSVAR_X], old_x);
-    v_free(old_x);
-    tmp_free(old_x);
+  // restore X
+  v_set(tvar[SYSVAR_X], old_x);
+  v_free(old_x);
+  tmp_free(old_x);
 }
 
 /*
@@ -140,27 +141,27 @@ void exec_usefunc(var_t * var, addr_t ip)
 */
 void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip)
 {
-    var_t *old_x, *old_y;
+  var_t *old_x, *old_y;
 
-    // save X
-    old_x = v_clone(tvar[SYSVAR_X]);
-    old_y = v_clone(tvar[SYSVAR_Y]);
+  // save X
+  old_x = v_clone(tvar[SYSVAR_X]);
+  old_y = v_clone(tvar[SYSVAR_Y]);
 
-    // run
-    v_set(tvar[SYSVAR_X], var1);
-    v_free(var1);
-    v_set(tvar[SYSVAR_Y], var2);
-    v_free(var2);
-    code_jump(ip);
-    eval(var1);
+  // run
+  v_set(tvar[SYSVAR_X], var1);
+  v_free(var1);
+  v_set(tvar[SYSVAR_Y], var2);
+  v_free(var2);
+  code_jump(ip);
+  eval(var1);
 
-    // restore X,Y
-    v_set(tvar[SYSVAR_X], old_x);
-    v_free(old_x);
-    tmp_free(old_x);
-    v_set(tvar[SYSVAR_Y], old_y);
-    v_free(old_y);
-    tmp_free(old_y);
+  // restore X,Y
+  v_set(tvar[SYSVAR_X], old_x);
+  v_free(old_x);
+  tmp_free(old_x);
+  v_set(tvar[SYSVAR_Y], old_y);
+  v_free(old_y);
+  tmp_free(old_y);
 }
 
 /*
@@ -173,33 +174,33 @@ void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip)
 */
 void exec_usefunc3(var_t * var1, var_t * var2, var_t * var3, addr_t ip)
 {
-    var_t *old_x, *old_y, *old_z;
+  var_t *old_x, *old_y, *old_z;
 
-    // save X
-    old_x = v_clone(tvar[SYSVAR_X]);
-    old_y = v_clone(tvar[SYSVAR_Y]);
-    old_z = v_clone(tvar[SYSVAR_Z]);
+  // save X
+  old_x = v_clone(tvar[SYSVAR_X]);
+  old_y = v_clone(tvar[SYSVAR_Y]);
+  old_z = v_clone(tvar[SYSVAR_Z]);
 
-    // run
-    v_set(tvar[SYSVAR_X], var1);
-    v_free(var1);
-    v_set(tvar[SYSVAR_Y], var2);
-    v_free(var2);
-    v_set(tvar[SYSVAR_Z], var3);
-    v_free(var3);
-    code_jump(ip);
-    eval(var1);
+  // run
+  v_set(tvar[SYSVAR_X], var1);
+  v_free(var1);
+  v_set(tvar[SYSVAR_Y], var2);
+  v_free(var2);
+  v_set(tvar[SYSVAR_Z], var3);
+  v_free(var3);
+  code_jump(ip);
+  eval(var1);
 
-    // restore X,Y
-    v_set(tvar[SYSVAR_X], old_x);
-    v_free(old_x);
-    tmp_free(old_x);
-    v_set(tvar[SYSVAR_Y], old_y);
-    v_free(old_y);
-    tmp_free(old_y);
-    v_set(tvar[SYSVAR_Z], old_z);
-    v_free(old_z);
-    tmp_free(old_z);
+  // restore X,Y
+  v_set(tvar[SYSVAR_X], old_x);
+  v_free(old_x);
+  tmp_free(old_x);
+  v_set(tvar[SYSVAR_Y], old_y);
+  v_free(old_y);
+  tmp_free(old_y);
+  v_set(tvar[SYSVAR_Z], old_z);
+  v_free(old_z);
+  tmp_free(old_z);
 }
 
 /*
@@ -215,31 +216,31 @@ void pv_write(char *str, int method, unsigned long int handle)
 void pv_write(char *str, int method, int handle)
 #endif
 {
-    var_t *vp;
-    int l;
+  var_t *vp;
+  int l;
 
-    switch (method) {
-    case PV_FILE:
-        dev_fwrite(handle, (byte *) str, strlen(str));
-        break;
-    case PV_LOG:
-        lwrite(str);
-        break;
-    case PV_STRING:
-        vp = (var_t *) handle;
-        l = strlen(str) + strlen(str) + 1;
-        if (vp->v.p.size <= l) {
-            vp->v.p.size = l + 128;
-            vp->v.p.ptr = tmp_realloc(vp->v.p.ptr, vp->v.p.size);
-        }
-        strcat((char *)vp->v.p.ptr, str);
-        break;
-    default:
-        dev_print(str);
-#if defined(_WinBCB)
-        bcb_lwrite(str);
-#endif
+  switch (method) {
+  case PV_FILE:
+    dev_fwrite(handle, (byte *) str, strlen(str));
+    break;
+  case PV_LOG:
+    lwrite(str);
+    break;
+  case PV_STRING:
+    vp = (var_t *) handle;
+    l = strlen(str) + strlen(str) + 1;
+    if (vp->v.p.size <= l) {
+      vp->v.p.size = l + 128;
+      vp->v.p.ptr = tmp_realloc(vp->v.p.ptr, vp->v.p.size);
     }
+    strcat((char *)vp->v.p.ptr, str);
+    break;
+  default:
+    dev_print(str);
+#if defined(_WinBCB)
+    bcb_lwrite(str);
+#endif
+  }
 }
 
 /*
@@ -251,69 +252,70 @@ void pv_writevar(var_t * var, int method, unsigned long int handle)
 void pv_writevar(var_t * var, int method, int handle)
 #endif
 {
-    char tmpsb[64];
+  char tmpsb[64];
 
-    switch (var->type) {
-    case V_STR:
-        pv_write((char *)var->v.p.ptr, method, handle);
-        break;
-    case V_UDS:
-        uds_write(var, method, handle);
-        break;
-    case V_PTR:
-        ltostr(var->v.ap.p, tmpsb);
-        pv_write(tmpsb, method, handle);
-        break;
-    case V_INT:
-        ltostr(var->v.i, tmpsb);
-        pv_write(tmpsb, method, handle);
-        break;
-    case V_NUM:
-        ftostr(var->v.n, tmpsb);
-        pv_write(tmpsb, method, handle);
-        break;
-    case V_ARRAY:
-        // open array
-        pv_write("[", method, handle);
+  switch (var->type) {
+  case V_STR:
+    pv_write((char *)var->v.p.ptr, method, handle);
+    break;
+  case V_UDS:
+    uds_write(var, method, handle);
+    break;
+  case V_PTR:
+    ltostr(var->v.ap.p, tmpsb);
+    pv_write(tmpsb, method, handle);
+    break;
+  case V_INT:
+    ltostr(var->v.i, tmpsb);
+    pv_write(tmpsb, method, handle);
+    break;
+  case V_NUM:
+    ftostr(var->v.n, tmpsb);
+    pv_write(tmpsb, method, handle);
+    break;
+  case V_ARRAY:
+    // open array
+    pv_write("[", method, handle);
 
-        // 
-        if (var->v.a.maxdim == 2) {
-            int rows, cols;
-            var_t *e;
-            int i, j, pos;
+    // 
+    if (var->v.a.maxdim == 2) {
+      int rows, cols;
+      var_t *e;
+      int i, j, pos;
 
-            // NxN
-            rows = ABS(var->v.a.ubound[0] - var->v.a.lbound[0]) + 1;
-            cols = ABS(var->v.a.ubound[1] - var->v.a.lbound[1]) + 1;
+      // NxN
+      rows = ABS(var->v.a.ubound[0] - var->v.a.lbound[0]) + 1;
+      cols = ABS(var->v.a.ubound[1] - var->v.a.lbound[1]) + 1;
 
-            for (i = 0; i < rows; i++) {
-                for (j = 0; j < cols; j++) {
-                    pos = i * cols + j;
-                    e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
-                    pv_writevar(e, method, handle);
-                    if (j != cols - 1)
-                        pv_write(",", method, handle);  // add space?
-                }
-                if (i != rows - 1)
-                    pv_write(";", method, handle);      // add space?
-            }
-
-        } else {
-            var_t *e;
-            int i;
-
-            for (i = 0; i < var->v.a.size; i++) {
-                e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * i));
-                pv_writevar(e, method, handle);
-                if (i != var->v.a.size - 1)
-                    pv_write(",", method, handle);      // add space?
-            }
+      for (i = 0; i < rows; i++) {
+        for (j = 0; j < cols; j++) {
+          pos = i * cols + j;
+          e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
+          pv_writevar(e, method, handle);
+          if (j != cols - 1)
+            pv_write(",", method, handle);  // add space?
         }
+        if (i != rows - 1)
+          pv_write(";", method, handle);  // add space?
+      }
 
-        // close array
-        pv_write("]", method, handle);
-        break;
     }
+    else {
+      var_t *e;
+      int i;
+
+      for (i = 0; i < var->v.a.size; i++) {
+        e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * i));
+        pv_writevar(e, method, handle);
+        if (i != var->v.a.size - 1)
+          pv_write(",", method, handle);  // add space?
+      }
+    }
+
+    // close array
+    pv_write("]", method, handle);
+    break;
+  }
 }
 
 /*
@@ -321,7 +323,7 @@ void pv_writevar(var_t * var, int method, int handle)
 */
 void print_var(var_t * v)
 {
-    pv_writevar(v, PV_CONSOLE, 0);
+  pv_writevar(v, PV_CONSOLE, 0);
 }
 
 /*
@@ -329,7 +331,7 @@ void print_var(var_t * v)
 */
 void fprint_var(int handle, var_t * v)
 {
-    pv_writevar(v, PV_FILE, handle);
+  pv_writevar(v, PV_FILE, handle);
 }
 
 /*
@@ -337,7 +339,7 @@ void fprint_var(int handle, var_t * v)
 */
 void logprint_var(var_t * v)
 {
-    pv_writevar(v, PV_LOG, 0);
+  pv_writevar(v, PV_LOG, 0);
 }
 
 /*
@@ -345,76 +347,76 @@ void logprint_var(var_t * v)
 */
 void par_skip()
 {
-    byte exitf = 0, code;
+  byte exitf = 0, code;
 #if defined(ADDR16)
-    word len;
+  word len;
 #else
-    dword len;
+  dword len;
 #endif
-    int level = 0;
+  int level = 0;
 
-    do {
-        code = code_peek();
-        switch (code) {
-        case kwTYPE_INT:       // integer
-            prog_ip += OS_INTSZ + 1;
-            break;
-        case kwTYPE_NUM:       // number
-            prog_ip += OS_REALSZ + 1;
-            break;
-        case kwTYPE_STR:       // string: [2/4B-len][data]
-            prog_ip++;
-            memcpy(&len, prog_source + prog_ip, OS_STRLEN);
-            len += OS_STRLEN;
-            prog_ip += len;
-            break;
-        case kwTYPE_VAR:       // [addr|id]
-            prog_ip += ADDRSZ + 1;
-            break;
-        case kwTYPE_CALLF:
-            prog_ip += CODESZ + 1;
-            break;
-        case kwTYPE_CALLEXTF:
-            prog_ip += (ADDRSZ * 2) + 1;
-            break;
-        case kwTYPE_LEVEL_BEGIN:       // left parenthesis
-            level++;
-            prog_ip++;
-            break;
-        case kwTYPE_LEVEL_END: // right parenthesis
-            prog_ip++;
-            level--;
-            if (level <= 0)
-                exitf = 1;
-            break;
-        case kwTYPE_LOGOPR:
-        case kwTYPE_CMPOPR:
-        case kwTYPE_ADDOPR:
-        case kwTYPE_MULOPR:
-        case kwTYPE_POWOPR:
-        case kwTYPE_UNROPR:    // [1B data]
-            prog_ip += 2;
-            break;
-        case kwTYPE_CALL_UDF:  // [true-ip][false-ip]
-            prog_ip += BC_CTRLSZ + 1;
-            break;
-        case kwTYPE_LINE:
-        case kwTYPE_EOC:
-        case kwUSE:
-            if (level != 0)
-                rt_raise("Block error!");
-            exitf = 1;
-            break;
-        case kwTYPE_SEP:
-            if (level <= 0)
-                exitf = 1;
-            else
-                prog_ip += 2;
-            break;
-        default:
-            prog_ip++;
-        }
-    } while (!exitf);
+  do {
+    code = code_peek();
+    switch (code) {
+    case kwTYPE_INT:           // integer
+      prog_ip += OS_INTSZ + 1;
+      break;
+    case kwTYPE_NUM:           // number
+      prog_ip += OS_REALSZ + 1;
+      break;
+    case kwTYPE_STR:           // string: [2/4B-len][data]
+      prog_ip++;
+      memcpy(&len, prog_source + prog_ip, OS_STRLEN);
+      len += OS_STRLEN;
+      prog_ip += len;
+      break;
+    case kwTYPE_VAR:           // [addr|id]
+      prog_ip += ADDRSZ + 1;
+      break;
+    case kwTYPE_CALLF:
+      prog_ip += CODESZ + 1;
+      break;
+    case kwTYPE_CALLEXTF:
+      prog_ip += (ADDRSZ * 2) + 1;
+      break;
+    case kwTYPE_LEVEL_BEGIN:   // left parenthesis
+      level++;
+      prog_ip++;
+      break;
+    case kwTYPE_LEVEL_END:     // right parenthesis
+      prog_ip++;
+      level--;
+      if (level <= 0)
+        exitf = 1;
+      break;
+    case kwTYPE_LOGOPR:
+    case kwTYPE_CMPOPR:
+    case kwTYPE_ADDOPR:
+    case kwTYPE_MULOPR:
+    case kwTYPE_POWOPR:
+    case kwTYPE_UNROPR:        // [1B data]
+      prog_ip += 2;
+      break;
+    case kwTYPE_CALL_UDF:      // [true-ip][false-ip]
+      prog_ip += BC_CTRLSZ + 1;
+      break;
+    case kwTYPE_LINE:
+    case kwTYPE_EOC:
+    case kwUSE:
+      if (level != 0)
+        rt_raise("Block error!");
+      exitf = 1;
+      break;
+    case kwTYPE_SEP:
+      if (level <= 0)
+        exitf = 1;
+      else
+        prog_ip += 2;
+      break;
+    default:
+      prog_ip++;
+    }
+  } while (!exitf);
 
 //      printf("exit at %d\n", prog_ip);
 }
@@ -424,19 +426,19 @@ void par_skip()
 */
 void par_getvar(var_t * var)
 {
-    byte code;
+  byte code;
 
-    code = code_peek();
-    switch (code) {
-    case kwTYPE_LINE:
-    case kwTYPE_EOC:
-    case kwTYPE_SEP:
-        err_syntax();
-        return;
-    default:
-        eval(var);
-        break;
-    };
+  code = code_peek();
+  switch (code) {
+  case kwTYPE_LINE:
+  case kwTYPE_EOC:
+  case kwTYPE_SEP:
+    err_syntax();
+    return;
+  default:
+    eval(var);
+    break;
+  };
 }
 
 /*
@@ -444,28 +446,28 @@ void par_getvar(var_t * var)
 */
 var_t *par_getvarray()
 {
-    byte code;
-    var_t *var;
+  byte code;
+  var_t *var;
 
-    code = code_peek();
-    switch (code) {
-    case kwTYPE_LINE:
-    case kwTYPE_EOC:
-    case kwTYPE_SEP:
-        err_syntax();
-        return NULL;
-    case kwTYPE_VAR:
-        var = code_getvarptr();
-        if (!prog_error) {
-            if (var->type != V_ARRAY)
-                return NULL;
-        }
-        return var;
-    default:
-        err_typemismatch();
-        break;
-    };
+  code = code_peek();
+  switch (code) {
+  case kwTYPE_LINE:
+  case kwTYPE_EOC:
+  case kwTYPE_SEP:
+    err_syntax();
     return NULL;
+  case kwTYPE_VAR:
+    var = code_getvarptr();
+    if (!prog_error) {
+      if (var->type != V_ARRAY)
+        return NULL;
+    }
+    return var;
+  default:
+    err_typemismatch();
+    break;
+  };
+  return NULL;
 }
 
 /*
@@ -473,11 +475,11 @@ var_t *par_getvarray()
 */
 var_t *par_getvar_ptr()
 {
-    if (code_peek() != kwTYPE_VAR) {
-        err_syntax();
-        return NULL;
-    }
-    return code_getvarptr();
+  if (code_peek() != kwTYPE_VAR) {
+    err_syntax();
+    return NULL;
+  }
+  return code_getvarptr();
 }
 
 /*
@@ -485,22 +487,22 @@ var_t *par_getvar_ptr()
 */
 void par_getstr(var_t * var)
 {
-    byte code;
+  byte code;
 
-    code = code_peek();
-    switch (code) {
-    case kwTYPE_LINE:
-    case kwTYPE_EOC:
-    case kwTYPE_SEP:
-        err_syntax();
-        return;
-    default:
-        eval(var);
-        break;
-    };
+  code = code_peek();
+  switch (code) {
+  case kwTYPE_LINE:
+  case kwTYPE_EOC:
+  case kwTYPE_SEP:
+    err_syntax();
+    return;
+  default:
+    eval(var);
+    break;
+  };
 
-    if (var->type != V_STR)
-        v_tostr(var);
+  if (var->type != V_STR)
+    v_tostr(var);
 }
 
 /*
@@ -508,15 +510,15 @@ void par_getstr(var_t * var)
 */
 long par_getint()
 {
-    var_t var;
-    long i;
+  var_t var;
+  long i;
 
-    v_init(&var);
-    par_getvar(&var);
-    i = v_getint(&var);
-    v_free(&var);
+  v_init(&var);
+  par_getvar(&var);
+  i = v_getint(&var);
+  v_free(&var);
 
-    return i;
+  return i;
 }
 
 /*
@@ -524,15 +526,15 @@ long par_getint()
 */
 double par_getnum()
 {
-    var_t var;
-    double f;
+  var_t var;
+  double f;
 
-    v_init(&var);
-    par_getvar(&var);
-    f = v_getval(&var);
-    v_free(&var);
+  v_init(&var);
+  par_getvar(&var);
+  f = v_getval(&var);
+  v_free(&var);
 
-    return f;
+  return f;
 }
 
 /*
@@ -541,20 +543,20 @@ double par_getnum()
 */
 int par_getsep()
 {
-    int last_op;
-    byte code;
+  int last_op;
+  byte code;
 
-    code = code_peek();
-    switch (code) {
-    case kwTYPE_SEP:
-        code_skipnext();
-        last_op = code_getnext();
-        return last_op;
-    default:
-        err_syntax();
-    };
+  code = code_peek();
+  switch (code) {
+  case kwTYPE_SEP:
+    code_skipnext();
+    last_op = code_getnext();
+    return last_op;
+  default:
+    err_syntax();
+  };
 
-    return 0;
+  return 0;
 }
 
 /*
@@ -562,10 +564,10 @@ int par_getsep()
 */
 void par_getcomma()
 {
-    if (par_getsep() != ',') {
-        if (!prog_error)
-            err_syntaxsep(',');
-    }
+  if (par_getsep() != ',') {
+    if (!prog_error)
+      err_syntaxsep(',');
+  }
 }
 
 /*
@@ -573,10 +575,10 @@ void par_getcomma()
 */
 void par_getsemicolon()
 {
-    if (par_getsep() != ';') {
-        if (!prog_error)
-            err_syntaxsep(';');
-    }
+  if (par_getsep() != ';') {
+    if (!prog_error)
+      err_syntaxsep(';');
+  }
 }
 
 /*
@@ -584,10 +586,10 @@ void par_getsemicolon()
 */
 void par_getsharp()
 {
-    if (par_getsep() != '#') {
-        if (!prog_error)
-            err_syntaxsep('#');
-    }
+  if (par_getsep() != '#') {
+    if (!prog_error)
+      err_syntaxsep('#');
+  }
 }
 
 /*
@@ -595,51 +597,52 @@ void par_getsharp()
 */
 pt_t par_getpt()
 {
-    pt_t pt;
-    var_t *var;
-    byte alloc = 0;
+  pt_t pt;
+  var_t *var;
+  byte alloc = 0;
 
-    pt.x = pt.y = 0;
+  pt.x = pt.y = 0;
 
-    // first parameter
-    if (code_isvar())
-        var = code_getvarptr();
+  // first parameter
+  if (code_isvar())
+    var = code_getvarptr();
+  else {
+    alloc = 1;
+    var = v_new();
+    eval(var);
+  }
+
+  if (!prog_error) {
+    if (var->type == V_ARRAY) {
+      // array
+      if (var->v.a.size != 2)
+        rt_raise(ERR_POLY_POINT);
+      else {
+        pt.x = v_getreal(v_elem(var, 0));
+        pt.y = v_getreal(v_elem(var, 1));
+      }
+    }
     else {
-        alloc = 1;
-        var = v_new();
-        eval(var);
-    }
+      // non-arrays
+      pt.x = v_getreal(var);
+      par_getcomma();
+      if (!prog_error) {
+        var_t v2;
 
-    if (!prog_error) {
-        if (var->type == V_ARRAY) {
-            // array
-            if (var->v.a.size != 2)
-                rt_raise(ERR_POLY_POINT);
-            else {
-                pt.x = v_getreal(v_elem(var, 0));
-                pt.y = v_getreal(v_elem(var, 1));
-            }
-        } else {
-            // non-arrays
-            pt.x = v_getreal(var);
-            par_getcomma();
-            if (!prog_error) {
-                var_t v2;
-
-                eval(&v2);
-                if (!prog_error)
-                    pt.y = v_getreal(&v2);
-                v_free(&v2);
-            }
-        }
+        eval(&v2);
+        if (!prog_error)
+          pt.y = v_getreal(&v2);
+        v_free(&v2);
+      }
     }
-    // clean-up
-    if (alloc) {
-        v_free(var);
-        tmp_free(var);
-    }
+  }
+  // clean-up
+  if (alloc) {
+    v_free(var);
+    tmp_free(var);
+  }
 
-    return pt;
+  return pt;
 }
 
 /*
@@ -647,51 +650,52 @@ pt_t par_getpt()
 */
 ipt_t par_getipt()
 {
-    ipt_t pt;
-    var_t *var;
-    byte alloc = 0;
+  ipt_t pt;
+  var_t *var;
+  byte alloc = 0;
 
-    pt.x = pt.y = 0;
+  pt.x = pt.y = 0;
 
-    // first parameter
-    if (code_isvar())
-        var = code_getvarptr();
+  // first parameter
+  if (code_isvar())
+    var = code_getvarptr();
+  else {
+    alloc = 1;
+    var = v_new();
+    eval(var);
+  }
+
+  if (!prog_error) {
+    if (var->type == V_ARRAY) {
+      // array
+      if (var->v.a.size != 2)
+        rt_raise(ERR_POLY_POINT);
+      else {
+        pt.x = v_getint(v_elem(var, 0));
+        pt.y = v_getint(v_elem(var, 1));
+      }
+    }
     else {
-        alloc = 1;
-        var = v_new();
-        eval(var);
-    }
+      // non-arrays
+      pt.x = v_getint(var);
+      par_getcomma();
+      if (!prog_error) {
+        var_t v2;
 
-    if (!prog_error) {
-        if (var->type == V_ARRAY) {
-            // array
-            if (var->v.a.size != 2)
-                rt_raise(ERR_POLY_POINT);
-            else {
-                pt.x = v_getint(v_elem(var, 0));
-                pt.y = v_getint(v_elem(var, 1));
-            }
-        } else {
-            // non-arrays
-            pt.x = v_getint(var);
-            par_getcomma();
-            if (!prog_error) {
-                var_t v2;
-
-                eval(&v2);
-                if (!prog_error)
-                    pt.y = v_getint(&v2);
-                v_free(&v2);
-            }
-        }
+        eval(&v2);
+        if (!prog_error)
+          pt.y = v_getint(&v2);
+        v_free(&v2);
+      }
     }
-    // clean-up
-    if (alloc) {
-        v_free(var);
-        tmp_free(var);
-    }
+  }
+  // clean-up
+  if (alloc) {
+    v_free(var);
+    tmp_free(var);
+  }
 
-    return pt;
+  return pt;
 }
 
 /*
@@ -699,108 +703,111 @@ ipt_t par_getipt()
 */
 int par_getpoly(pt_t ** poly_pp)
 {
-    pt_t *poly = NULL;
-    var_t *var, *el;
-    int count = 0;
-    byte style = 0, alloc = 0;
+  pt_t *poly = NULL;
+  var_t *var, *el;
+  int count = 0;
+  byte style = 0, alloc = 0;
 
-    // get array
-    if (code_isvar()) {
-        var = par_getvarray();
-        if (prog_error)
-            return 0;
-    } else {
-        var = v_new();
-        eval(var);
-        alloc = 1;
-    }
+  // get array
+  if (code_isvar()) {
+    var = par_getvarray();
+    if (prog_error)
+      return 0;
+  }
+  else {
+    var = v_new();
+    eval(var);
+    alloc = 1;
+  }
 
-    // zero-length array
-    if (var->v.a.size == 0) {
-        if (alloc) {
-            v_free(var);
-            tmp_free(var);
-        }
-        return 0;
-    }
-    // 
-    el = v_elem(var, 0);
-    if (el->type == V_ARRAY)
-        style = 1;              // nested --- [ [x1,y1], [x2,y2], ... ]
-    // else
-    // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
-
-    // error check
-    if (style == 1) {
-        if (el->v.a.size != 2) {
-            err_parsepoly(-1, 1);
-            if (alloc) {
-                v_free(var);
-                tmp_free(var);
-            }
-            return 0;
-        }
-
-        count = var->v.a.size;
-    } else if (style == 0) {
-        if ((var->v.a.size % 2) != 0) {
-            err_parsepoly(-1, 2);
-            if (alloc) {
-                v_free(var);
-                tmp_free(var);
-            }
-            return 0;
-        }
-
-        count = var->v.a.size >> 1;
-    }
-    // build array
-    *poly_pp = poly = tmp_alloc(sizeof(pt_t) * count);
-
-    if (style == 1) {
-        int i;
-
-        for (i = 0; i < count; i++) {
-            // get point
-            el = v_elem(var, i);
-
-            // error check
-            if (el->type != V_ARRAY)
-                err_parsepoly(i, 3);
-            else if (el->v.a.size != 2)
-                err_parsepoly(i, 4);
-            if (prog_error)
-                break;
-
-            // store point
-            poly[i].x = v_getreal(v_elem(el, 0));
-            poly[i].y = v_getreal(v_elem(el, 1));
-        }
-    } else if (style == 0) {
-        int i, j;
-
-        for (i = j = 0; i < count; i++, j += 2) {
-            // error check
-            if (prog_error)
-                break;
-
-            // store point
-            poly[i].x = v_getreal(v_elem(var, j));
-            poly[i].y = v_getreal(v_elem(var, j + 1));
-        }
-    }
-    // clean-up
-    if (prog_error) {
-        tmp_free(poly);
-        *poly_pp = NULL;
-        count = 0;
-    }
+  // zero-length array
+  if (var->v.a.size == 0) {
     if (alloc) {
+      v_free(var);
+      tmp_free(var);
+    }
+    return 0;
+  }
+  // 
+  el = v_elem(var, 0);
+  if (el->type == V_ARRAY)
+    style = 1;                  // nested --- [ [x1,y1], [x2,y2], ... ]
+  // else
+  // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
+
+  // error check
+  if (style == 1) {
+    if (el->v.a.size != 2) {
+      err_parsepoly(-1, 1);
+      if (alloc) {
         v_free(var);
         tmp_free(var);
+      }
+      return 0;
     }
 
-    return count;
+    count = var->v.a.size;
+  }
+  else if (style == 0) {
+    if ((var->v.a.size % 2) != 0) {
+      err_parsepoly(-1, 2);
+      if (alloc) {
+        v_free(var);
+        tmp_free(var);
+      }
+      return 0;
+    }
+
+    count = var->v.a.size >> 1;
+  }
+  // build array
+  *poly_pp = poly = tmp_alloc(sizeof(pt_t) * count);
+
+  if (style == 1) {
+    int i;
+
+    for (i = 0; i < count; i++) {
+      // get point
+      el = v_elem(var, i);
+
+      // error check
+      if (el->type != V_ARRAY)
+        err_parsepoly(i, 3);
+      else if (el->v.a.size != 2)
+        err_parsepoly(i, 4);
+      if (prog_error)
+        break;
+
+      // store point
+      poly[i].x = v_getreal(v_elem(el, 0));
+      poly[i].y = v_getreal(v_elem(el, 1));
+    }
+  }
+  else if (style == 0) {
+    int i, j;
+
+    for (i = j = 0; i < count; i++, j += 2) {
+      // error check
+      if (prog_error)
+        break;
+
+      // store point
+      poly[i].x = v_getreal(v_elem(var, j));
+      poly[i].y = v_getreal(v_elem(var, j + 1));
+    }
+  }
+  // clean-up
+  if (prog_error) {
+    tmp_free(poly);
+    *poly_pp = NULL;
+    count = 0;
+  }
+  if (alloc) {
+    v_free(var);
+    tmp_free(var);
+  }
+
+  return count;
 }
 
 /*
@@ -808,108 +815,111 @@ int par_getpoly(pt_t ** poly_pp)
 */
 int par_getipoly(ipt_t ** poly_pp)
 {
-    ipt_t *poly = NULL;
-    var_t *var, *el;
-    int count = 0;
-    byte style = 0, alloc = 0;
+  ipt_t *poly = NULL;
+  var_t *var, *el;
+  int count = 0;
+  byte style = 0, alloc = 0;
 
-    // get array
-    if (code_isvar()) {
-        var = par_getvarray();
-        if (prog_error)
-            return 0;
-    } else {
-        var = v_new();
-        eval(var);
-        alloc = 1;
-    }
+  // get array
+  if (code_isvar()) {
+    var = par_getvarray();
+    if (prog_error)
+      return 0;
+  }
+  else {
+    var = v_new();
+    eval(var);
+    alloc = 1;
+  }
 
-    // zero-length array
-    if (var->v.a.size == 0) {
-        if (alloc) {
-            v_free(var);
-            tmp_free(var);
-        }
-        return 0;
-    }
-    // 
-    el = v_elem(var, 0);
-    if (el->type == V_ARRAY)
-        style = 1;              // nested --- [ [x1,y1], [x2,y2], ... ]
-    // else
-    // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
-
-    // error check
-    if (style == 1) {
-        if (el->v.a.size != 2) {
-            err_parsepoly(-1, 1);
-            if (alloc) {
-                v_free(var);
-                tmp_free(var);
-            }
-            return 0;
-        }
-
-        count = var->v.a.size;
-    } else if (style == 0) {
-        if ((var->v.a.size % 2) != 0) {
-            err_parsepoly(-1, 2);
-            if (alloc) {
-                v_free(var);
-                tmp_free(var);
-            }
-            return 0;
-        }
-
-        count = var->v.a.size >> 1;
-    }
-    // build array
-    *poly_pp = poly = tmp_alloc(sizeof(ipt_t) * count);
-
-    if (style == 1) {
-        int i;
-
-        for (i = 0; i < count; i++) {
-            // get point
-            el = v_elem(var, i);
-
-            // error check
-            if (el->type != V_ARRAY)
-                err_parsepoly(i, 3);
-            else if (el->v.a.size != 2)
-                err_parsepoly(i, 4);
-            if (prog_error)
-                break;
-
-            // store point
-            poly[i].x = v_getint(v_elem(el, 0));
-            poly[i].y = v_getint(v_elem(el, 1));
-        }
-    } else if (style == 0) {
-        int i, j;
-
-        for (i = j = 0; i < count; i++, j += 2) {
-            // error check
-            if (prog_error)
-                break;
-
-            // store point
-            poly[i].x = v_getint(v_elem(var, j));
-            poly[i].y = v_getint(v_elem(var, j + 1));
-        }
-    }
-    // clean-up
-    if (prog_error) {
-        tmp_free(poly);
-        *poly_pp = NULL;
-        count = 0;
-    }
+  // zero-length array
+  if (var->v.a.size == 0) {
     if (alloc) {
+      v_free(var);
+      tmp_free(var);
+    }
+    return 0;
+  }
+  // 
+  el = v_elem(var, 0);
+  if (el->type == V_ARRAY)
+    style = 1;                  // nested --- [ [x1,y1], [x2,y2], ... ]
+  // else
+  // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
+
+  // error check
+  if (style == 1) {
+    if (el->v.a.size != 2) {
+      err_parsepoly(-1, 1);
+      if (alloc) {
         v_free(var);
         tmp_free(var);
+      }
+      return 0;
     }
 
-    return count;
+    count = var->v.a.size;
+  }
+  else if (style == 0) {
+    if ((var->v.a.size % 2) != 0) {
+      err_parsepoly(-1, 2);
+      if (alloc) {
+        v_free(var);
+        tmp_free(var);
+      }
+      return 0;
+    }
+
+    count = var->v.a.size >> 1;
+  }
+  // build array
+  *poly_pp = poly = tmp_alloc(sizeof(ipt_t) * count);
+
+  if (style == 1) {
+    int i;
+
+    for (i = 0; i < count; i++) {
+      // get point
+      el = v_elem(var, i);
+
+      // error check
+      if (el->type != V_ARRAY)
+        err_parsepoly(i, 3);
+      else if (el->v.a.size != 2)
+        err_parsepoly(i, 4);
+      if (prog_error)
+        break;
+
+      // store point
+      poly[i].x = v_getint(v_elem(el, 0));
+      poly[i].y = v_getint(v_elem(el, 1));
+    }
+  }
+  else if (style == 0) {
+    int i, j;
+
+    for (i = j = 0; i < count; i++, j += 2) {
+      // error check
+      if (prog_error)
+        break;
+
+      // store point
+      poly[i].x = v_getint(v_elem(var, j));
+      poly[i].y = v_getint(v_elem(var, j + 1));
+    }
+  }
+  // clean-up
+  if (prog_error) {
+    tmp_free(poly);
+    *poly_pp = NULL;
+    count = 0;
+  }
+  if (alloc) {
+    v_free(var);
+    tmp_free(var);
+  }
+
+  return count;
 }
 
 /*
@@ -919,7 +929,7 @@ int par_getipoly(ipt_t ** poly_pp)
 */
 int par_isonevar()
 {
-    return code_isvar();
+  return code_isvar();
 }
 
 /*
@@ -927,21 +937,21 @@ int par_isonevar()
 */
 void par_freepartable(par_t ** ptable_pp, int pcount)
 {
-    int i;
-    par_t *ptable;
+  int i;
+  par_t *ptable;
 
-    ptable = *ptable_pp;
-    if (ptable) {
-        for (i = 0; i < pcount; i++) {
-            if (ptable[i].flags & PAR_BYVAL) {
-                v_free(ptable[i].var);
-                tmp_free(ptable[i].var);
-            }
-        }
-
-        tmp_free(ptable);
+  ptable = *ptable_pp;
+  if (ptable) {
+    for (i = 0; i < pcount; i++) {
+      if (ptable[i].flags & PAR_BYVAL) {
+        v_free(ptable[i].var);
+        tmp_free(ptable[i].var);
+      }
     }
-    *ptable_pp = NULL;
+
+    tmp_free(ptable);
+  }
+  *ptable_pp = NULL;
 }
 
 /*
@@ -957,112 +967,113 @@ void par_freepartable(par_t ** ptable_pp, int pcount)
 */
 int par_getpartable(par_t ** ptable_pp, const char *valid_sep)
 {
-    byte ready, last_sep = 0;
-    par_t *ptable;
-    addr_t ofs;
-    char vsep[8];
-    var_t *par = NULL;
-    int pcount = 0;
+  byte ready, last_sep = 0;
+  par_t *ptable;
+  addr_t ofs;
+  char vsep[8];
+  var_t *par = NULL;
+  int pcount = 0;
 
-    /*
-     *      initialize
-     */
+  /*
+   *      initialize
+   */
 #if defined(OS_LIMITED)
-    ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 32);
+  ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 32);
 #else
-    ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 256);
+  ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 256);
 #endif
 
-    if (valid_sep)
-        strcpy(vsep, valid_sep);
-    else
-        strcpy(vsep, ",");
+  if (valid_sep)
+    strcpy(vsep, valid_sep);
+  else
+    strcpy(vsep, ",");
 
-    /*
-     *      start
-     */
-    ready = 0;
-    do {
-        switch (code_peek()) {
-        case kwTYPE_EOC:
-        case kwTYPE_LINE:
-        case kwUSE:
-        case kwTYPE_LEVEL_END: // end of parameters
-            ready = 1;
-            break;
-        case kwTYPE_SEP:       // separator 
-            code_skipnext();
+  /*
+   *      start
+   */
+  ready = 0;
+  do {
+    switch (code_peek()) {
+    case kwTYPE_EOC:
+    case kwTYPE_LINE:
+    case kwUSE:
+    case kwTYPE_LEVEL_END:     // end of parameters
+      ready = 1;
+      break;
+    case kwTYPE_SEP:           // separator 
+      code_skipnext();
 
-            // check parameters separator
-            if (strchr(vsep, (last_sep = code_getnext())) == NULL) {
-                if (strlen(vsep) <= 1)
-                    err_syntaxsep(',');
-                else
-                    err_syntaxanysep(vsep);
+      // check parameters separator
+      if (strchr(vsep, (last_sep = code_getnext())) == NULL) {
+        if (strlen(vsep) <= 1)
+          err_syntaxsep(',');
+        else
+          err_syntaxanysep(vsep);
 
-                par_freepartable(ptable_pp, pcount);
-                return -1;
-            }
-            // update par.next_sep
-            if (pcount)
-                ptable[pcount - 1].next_sep = last_sep;
+        par_freepartable(ptable_pp, pcount);
+        return -1;
+      }
+      // update par.next_sep
+      if (pcount)
+        ptable[pcount - 1].next_sep = last_sep;
 
-            break;
-        case kwTYPE_VAR:       // variable
-            ofs = prog_ip;      // store IP
+      break;
+    case kwTYPE_VAR:           // variable
+      ofs = prog_ip;            // store IP
 
-            ptable[pcount].flags = 0;
-            ptable[pcount].prev_sep = last_sep;
-            ptable[pcount].next_sep = 0;
+      ptable[pcount].flags = 0;
+      ptable[pcount].prev_sep = last_sep;
+      ptable[pcount].next_sep = 0;
 
-            if (code_isvar()) {
-                // push parameter
-                ptable[pcount].var = code_getvarptr();
-                pcount++;
-                break;
-            }
-            // Its no a single variable, its an expression
-            // restore IP
-            prog_ip = ofs;
+      if (code_isvar()) {
+        // push parameter
+        ptable[pcount].var = code_getvarptr();
+        pcount++;
+        break;
+      }
+      // Its no a single variable, its an expression
+      // restore IP
+      prog_ip = ofs;
 
-            // no 'break' here
-        default:
-            // default --- expression (BYVAL ONLY)
-            par = v_new();
-            eval(par);
-            if (!prog_error) {
-                // push parameter
-                ptable[pcount].var = par;
-                ptable[pcount].flags |= PAR_BYVAL;
-                pcount++;
-            } else {
-                v_free(par);
-                tmp_free(par);
-                par_freepartable(ptable_pp, pcount);
-                return -1;
-            }
-        }
+      // no 'break' here
+    default:
+      // default --- expression (BYVAL ONLY)
+      par = v_new();
+      eval(par);
+      if (!prog_error) {
+        // push parameter
+        ptable[pcount].var = par;
+        ptable[pcount].flags |= PAR_BYVAL;
+        pcount++;
+      }
+      else {
+        v_free(par);
+        tmp_free(par);
+        par_freepartable(ptable_pp, pcount);
+        return -1;
+      }
+    }
 
-    } while (!ready);
+  } while (!ready);
 
-    return pcount;
+  return pcount;
 }
 
 /*
 */
 int par_massget_type_check(char fmt, par_t * par)
 {
-    switch (fmt) {
-    case 'S':
-    case 's':
-        return (par->var->type == V_STR);
-    case 'I':
-    case 'i':
-    case 'F':
-    case 'f':
-        return (par->var->type == V_NUM || par->var->type == V_INT);
-    }
-    return 0;
+  switch (fmt) {
+  case 'S':
+  case 's':
+    return (par->var->type == V_STR);
+  case 'I':
+  case 'i':
+  case 'F':
+  case 'f':
+    return (par->var->type == V_NUM || par->var->type == V_INT);
+  }
+  return 0;
 }
 
 /*
@@ -1102,128 +1113,128 @@ int par_massget_type_check(char fmt, par_t * par)
 */
 int par_massget(const char *fmt, ...)
 {
-    char *fmt_p = NULL;
-    int pcount = 0, rqcount, optcount, curpar;
-    int opt = 0, ignore = 0;
-    va_list ap;
-    par_t *ptable;
+  char *fmt_p = NULL;
+  int pcount = 0, rqcount, optcount, curpar;
+  int opt = 0, ignore = 0;
+  va_list ap;
+  par_t *ptable;
 
-    char **s;
-    int32 *i;
-    double *f;
-    var_t **vt;
+  char **s;
+  int32 *i;
+  double *f;
+  var_t **vt;
 
-    // get ptable
-    pcount = par_getpartable(&ptable, NULL);
-    if (pcount == -1)
-        return -1;
+  // get ptable
+  pcount = par_getpartable(&ptable, NULL);
+  if (pcount == -1)
+    return -1;
 
+  /*
+   *      count pars
+   */
+  fmt_p = (char *)fmt;
+  rqcount = optcount = 0;
+  while (*fmt_p) {
+    if (*fmt_p >= 'a')
+      optcount++;
+    else
+      rqcount++;
+    fmt_p++;
+  }
+
+  if (rqcount > pcount)
+    err_parfmt(fmt);
+  else {
     /*
-     *      count pars
+     *      parse
      */
+    va_start(ap, fmt);
+    curpar = 0;
     fmt_p = (char *)fmt;
-    rqcount = optcount = 0;
     while (*fmt_p) {
-        if (*fmt_p >= 'a')
-            optcount++;
-        else
-            rqcount++;
-        fmt_p++;
-    }
 
-    if (rqcount > pcount)
+      if (*fmt_p >= 'a' && optcount &&
+          ((curpar < pcount) ? par_massget_type_check(*fmt_p, &ptable[curpar]) : 0))
+        (optcount--, opt = 1, ignore = 0);
+      else if (*fmt_p >= 'a' && optcount)
+        (optcount--, opt = 0, ignore = 1);
+      else if (*fmt_p < 'a' && rqcount)
+        (rqcount--, opt = 0, ignore = 0);
+      else {
         err_parfmt(fmt);
-    else {
-        /*
-         *      parse
-         */
-        va_start(ap, fmt);
-        curpar = 0;
-        fmt_p = (char *)fmt;
-        while (*fmt_p) {
+        break;
+      }
 
-            if (*fmt_p >= 'a' && optcount &&
-                ((curpar < pcount) ? par_massget_type_check(*fmt_p, &ptable[curpar]) : 0))
-                (optcount--, opt = 1, ignore = 0);
-            else if (*fmt_p >= 'a' && optcount)
-                (optcount--, opt = 0, ignore = 1);
-            else if (*fmt_p < 'a' && rqcount)
-                (rqcount--, opt = 0, ignore = 0);
-            else {
-                err_parfmt(fmt);
-                break;
-            }
-
-            if (pcount <= curpar && ignore == 0) {
-                err_parfmt(fmt);
+      if (pcount <= curpar && ignore == 0) {
+        err_parfmt(fmt);
 //                              rt_raise("%s\nb: pc=%d, oc=%d, rc=%d", fmt, pcount, optcount, rqcount);
-                break;
-            }
+        break;
+      }
 
-            switch (*fmt_p) {
-            case 's':
-                // optional string
-                if (!opt) {
-                    s = va_arg(ap, char **);
-                    break;
-                }
-            case 'S':
-                // string
-                s = va_arg(ap, char **);
-                *s = tmp_strdup(v_getstr(ptable[curpar].var));
-                curpar++;
-                break;
-            case 'i':
-                // optional integer
-                if (!opt) {
-                    i = va_arg(ap, int32 *);
-                    break;
-                }
-            case 'I':
-                // integer
-                i = va_arg(ap, int32 *);
-                *i = v_getint(ptable[curpar].var);
-                curpar++;
-                break;
-            case 'f':
-                // optional real (double)
-                if (!opt) {
-                    f = va_arg(ap, double *);
-                    break;
-                }
-            case 'F':
-                // real (double)
-                f = va_arg(ap, double *);
-                *f = v_getnum(ptable[curpar].var);
-                curpar++;
-                break;
-            case 'p':
-                // optional variable
-                if (!opt) {
-                    vt = va_arg(ap, var_t **);
-                    break;
-                }
-            case 'P':
-                // variable
-                vt = va_arg(ap, var_t **);
-                if (ptable[curpar].flags == 0)  // byref 
-                    *vt = ptable[curpar].var;
-                else {
-                    err_syntax();
-                    break;
-                }
-                curpar++;
-                break;
-            }
-
-            fmt_p++;
+      switch (*fmt_p) {
+      case 's':
+        // optional string
+        if (!opt) {
+          s = va_arg(ap, char **);
+          break;
         }
-        va_end(ap);
-    }
+      case 'S':
+        // string
+        s = va_arg(ap, char **);
+        *s = tmp_strdup(v_getstr(ptable[curpar].var));
+        curpar++;
+        break;
+      case 'i':
+        // optional integer
+        if (!opt) {
+          i = va_arg(ap, int32 *);
+          break;
+        }
+      case 'I':
+        // integer
+        i = va_arg(ap, int32 *);
+        *i = v_getint(ptable[curpar].var);
+        curpar++;
+        break;
+      case 'f':
+        // optional real (double)
+        if (!opt) {
+          f = va_arg(ap, double *);
+          break;
+        }
+      case 'F':
+        // real (double)
+        f = va_arg(ap, double *);
+        *f = v_getnum(ptable[curpar].var);
+        curpar++;
+        break;
+      case 'p':
+        // optional variable
+        if (!opt) {
+          vt = va_arg(ap, var_t **);
+          break;
+        }
+      case 'P':
+        // variable
+        vt = va_arg(ap, var_t **);
+        if (ptable[curpar].flags == 0)  // byref 
+          *vt = ptable[curpar].var;
+        else {
+          err_syntax();
+          break;
+        }
+        curpar++;
+        break;
+      }
 
-    // 
-    par_freepartable(&ptable, pcount);
-    if (prog_error)
-        return -1;
-    return pcount;
+      fmt_p++;
+    }
+    va_end(ap);
+  }
+
+  // 
+  par_freepartable(&ptable, pcount);
+  if (prog_error)
+    return -1;
+  return pcount;
 }

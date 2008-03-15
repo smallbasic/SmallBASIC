@@ -1,0 +1,11 @@
+; $Id: export_dxml.info,v 1.1.2.1 2007/09/04 00:33:20 puregin Exp $
+name = Export Code
+dependencies = book
+description = "Allows authorized users to export book page text within <code> tags as a file."
+
+
+; Information added by drupal.org packaging script on 2007-09-10
+version = "5.x-1.x-dev"
+project = "export_file"
+datestamp = "1189425811"
+

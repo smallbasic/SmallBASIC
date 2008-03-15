@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+ * Download content from book page text within &lt;code&gt; tags
+ */
+
+/**
+ * Implementation of hook_perm().
+ */
+function export_code_perm() {
+  return array('Download code from a book page');
+}
+
+/**
+ * Implementation of hook_link().
+ */
+function export_code_link($type, $node = 0, $teaser = FALSE) {
+  $links = array();
+  if (!$teaser && 
+      $type == 'node' && 
+      isset($node->parent) && 
+      strpos($node->title, ".") !== false &&
+      strpos($node->body, "<code") !== false &&
+      strpos($node->body, "</code>") !== false) {
+   $links['book_export_code'] = 
+          array('title' => t('Download'), 
+                'href' => 'book/export/code/'. $node->nid, 
+                'attributes' => array('title' => t('Download ' . $node->title)),
+                'html' => FALSE);
+  }
+    
+  return $links;
+}
+
+/**
+ * menu handler
+ *
+ */
+function book_export_code($nid, $depth) {
+  return export_book_page($nid);
+}
+
+/**
+ * main program entry
+ *
+ */
+function export_book_page($nid) {
+  $node = node_load($nid);
+  $result = false;
+  if ($node->body) {
+   $content = $node->body;
+   // find text within code markup
+   $code = strpos($content, "<code");
+   if ($code !== false) {
+    $code_begin = strpos($content, ">", $code);
+    $code_end = strpos($content, "</code>", $code);
+    if ($code_begin !== false && $code_end !== false) {
+     $extn = strrpos($node->title, ".");
+     drupal_set_header('Content-Type: text/' . 
+                       strtolower(substr($node->title, $extn + 1)) . 
+                       '; charset=utf-8');
+     drupal_set_header('Content-Disposition: attachment; filename="' . 
+                       $node->title . '"');
+     $result = substr($content, $code_begin + 1, $code_end - $code_begin -1);
+     $result = strip_tags($result);
+    }
+   }
+  }
+
+  if ($result === false) {
+   drupal_set_message(t('No &lt;code&gt; found on this page.'));
+   drupal_not_found();
+  }
+
+  return $result;
+}
+

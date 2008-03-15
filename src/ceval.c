@@ -1,4 +1,4 @@
-// $Id: ceval.c,v 1.9 2007-08-31 21:09:51 zeeb90au Exp $
+// $Id: ceval.c,v 1.9 2007/08/31 21:09:51 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -32,18 +32,18 @@ void expr_parser(bc_t * bc_src) SEC(BCSCAN);
 
 void cev_udp(void)
 {
-    sc_raise("(EXPR): UDP INSIDE EXPR");
+  sc_raise("(EXPR): UDP INSIDE EXPR");
 }
 
 #if defined(_PalmOS)
 void cev_missing_rp(void)
 {
-    sc_raise("(EXPR): MISSING ')'");
+  sc_raise("(EXPR): MISSING ')'");
 }
 
 void cev_opr_err(void)
 {
-    sc_raise("(EXPR): SYNTAX ERROR (1st OP)");
+  sc_raise("(EXPR): SYNTAX ERROR (1st OP)");
 }
 #else
 #define cev_missing_rp()                                                \
@@ -66,132 +66,135 @@ static bc_t *bc_out;
  */
 void cev_prim()
 {
-    byte code;
+  byte code;
 #if defined(OS_ADDR16)
-    word len;
+  word len;
 #else
-    dword len;
+  dword len;
 #endif
 
-    if (comp_error) {
-        return;
+  if (comp_error) {
+    return;
+  }
+  code = CODE(IP);
+  IP++;
+  cev_add1(code);
+
+  switch (code) {
+  case kwTYPE_INT:
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, OS_INTSZ);
+    IP += OS_INTSZ;
+    break;
+  case kwTYPE_NUM:
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, OS_REALSZ);
+    IP += OS_REALSZ;
+    break;
+  case kwTYPE_STR:
+    memcpy(&len, bc_in->ptr + bc_in->cp, OS_STRLEN);
+    IP += OS_STRLEN;
+#if defined(OS_ADDR16)
+    bc_add_word(bc_out, len);
+#else
+    bc_add_dword(bc_out, len);
+#endif
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, len);
+
+    IP += len;
+    break;
+  case kwTYPE_CALL_UDP:
+    cev_udp();
+    break;
+
+  case kwTYPE_PTR:
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // addr
+    IP += ADDRSZ;
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // return var
+    IP += ADDRSZ;
+    break;
+
+  case kwTYPE_UDS_EL:
+  case kwTYPE_UDS:
+  case kwTYPE_VAR:
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // 1 addr
+    IP += ADDRSZ;
+
+    // support multiple ()
+    while (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
+      cev_add1(kwTYPE_LEVEL_BEGIN);
+      IP++;
+      if (CODE_PEEK() == kwTYPE_LEVEL_END) {  // NULL ARRAYS
+        cev_add1(kwTYPE_LEVEL_END);
+        IP++;
+      }
+      else {
+        cev_log();
+
+        while (CODE_PEEK() == kwTYPE_SEP || CODE_PEEK() == kwTO) {  // DIM
+          // X(A
+          // TO
+          // B)
+          if (CODE_PEEK() == kwTYPE_SEP) {
+            cev_add1(CODE(IP));
+            IP++;
+          }
+          cev_add1(CODE(IP));
+          IP++;
+
+          cev_log();
+        }
+
+        if (CODE_PEEK() != kwTYPE_LEVEL_END)
+          cev_missing_rp();
+        else {
+          cev_add1(kwTYPE_LEVEL_END);
+          IP++;
+        }
+      }
     }
-    code = CODE(IP);
-    IP++;
-    cev_add1(code);
+    break;
+  case kwTYPE_CALL_UDF:        // [udf1][addr2]
+  case kwTYPE_CALLEXTF:        // [lib][index]
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
+    IP += ADDRSZ;
+    // no break here
+  case kwTYPE_CALLF:           // [code]
+    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
+    IP += ADDRSZ;
+    // no break here
+  default:
+    // function [(...)]
+    if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
+      cev_add1(kwTYPE_LEVEL_BEGIN);
+      IP++;
 
-    switch (code) {
-    case kwTYPE_INT:
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, OS_INTSZ);
-        IP += OS_INTSZ;
-        break;
-    case kwTYPE_NUM:
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, OS_REALSZ);
-        IP += OS_REALSZ;
-        break;
-    case kwTYPE_STR:
-        memcpy(&len, bc_in->ptr + bc_in->cp, OS_STRLEN);
-        IP += OS_STRLEN;
-#if defined(OS_ADDR16)
-        bc_add_word(bc_out, len);
-#else
-        bc_add_dword(bc_out, len);
-#endif
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, len);
+      if (CODE_PEEK() == kwTYPE_CALL_PTR) {
+        cev_add1(CODE(IP));
+        IP++;
+      }
 
-        IP += len;
-        break;
-    case kwTYPE_CALL_UDP:
-        cev_udp();
-        break;
+      if (CODE_PEEK() != kwTYPE_SEP)  // empty parameter
+        cev_log();
 
-    case kwTYPE_PTR:
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // addr
-        IP += ADDRSZ;
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // return var
-        IP += ADDRSZ;
-        break;
+      while (CODE_PEEK() == kwTYPE_SEP) { // while parameters
+        cev_add1(CODE(IP));
+        IP++;
+        cev_add1(CODE(IP));
+        IP++;
 
-    case kwTYPE_UDS_EL:
-    case kwTYPE_UDS:
-    case kwTYPE_VAR:
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);       // 1 addr
-        IP += ADDRSZ;
-
-        // support multiple ()
-        while (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-            cev_add1(kwTYPE_LEVEL_BEGIN);
-            IP++;
-            if (CODE_PEEK() == kwTYPE_LEVEL_END) {      // NULL ARRAYS
-                cev_add1(kwTYPE_LEVEL_END);
-                IP++;
-            } else {
-                cev_log();
-
-                while (CODE_PEEK() == kwTYPE_SEP || CODE_PEEK() == kwTO) {      // DIM X(A TO
-                                                                                // B)
-                    if (CODE_PEEK() == kwTYPE_SEP) {
-                        cev_add1(CODE(IP));
-                        IP++;
-                    }
-                    cev_add1(CODE(IP));
-                    IP++;
-
-                    cev_log();
-                }
-
-                if (CODE_PEEK() != kwTYPE_LEVEL_END)
-                    cev_missing_rp();
-                else {
-                    cev_add1(kwTYPE_LEVEL_END);
-                    IP++;
-                }
-            }
+        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+          if (CODE_PEEK() != kwTYPE_SEP)
+            cev_log();
         }
-        break;
-    case kwTYPE_CALL_UDF:      // [udf1][addr2]
-    case kwTYPE_CALLEXTF:      // [lib][index]
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
-        IP += ADDRSZ;
-        // no break here
-    case kwTYPE_CALLF:         // [code]
-        bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
-        IP += ADDRSZ;
-        // no break here
-    default:
-        // function [(...)]
-        if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-            cev_add1(kwTYPE_LEVEL_BEGIN);
-            IP++;
+      }
 
-            if (CODE_PEEK() == kwTYPE_CALL_PTR) {
-                cev_add1(CODE(IP));
-                IP++;
-            }
-
-            if (CODE_PEEK() != kwTYPE_SEP)      // empty parameter
-                cev_log();
-
-            while (CODE_PEEK() == kwTYPE_SEP) { // while parameters
-                cev_add1(CODE(IP));
-                IP++;
-                cev_add1(CODE(IP));
-                IP++;
-
-                if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-                    if (CODE_PEEK() != kwTYPE_SEP)
-                        cev_log();
-                }
-            }
-
-            if (CODE_PEEK() != kwTYPE_LEVEL_END)
-                cev_missing_rp();
-            else {
-                cev_add1(kwTYPE_LEVEL_END);
-                IP++;
-            }
-        }
-    };
+      if (CODE_PEEK() != kwTYPE_LEVEL_END)
+        cev_missing_rp();
+      else {
+        cev_add1(kwTYPE_LEVEL_END);
+        IP++;
+      }
+    }
+  };
 }
 
 /*
@@ -199,32 +202,35 @@ void cev_prim()
  */
 void cev_parenth()
 {
-    if (comp_error) {
-        return;
+  if (comp_error) {
+    return;
+  }
+  if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
+    cev_add1(kwTYPE_LEVEL_BEGIN);
+    IP++;
+
+    cev_log();                  // R = cev_log
+
+    if (comp_error)
+      return;
+
+    if (CODE_PEEK() == kwTYPE_SEP) {
+      cev_add1(kwTYPE_SEP);
+      IP++;
+      cev_add1(CODE(IP));
+      IP++;
     }
-    if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-        cev_add1(kwTYPE_LEVEL_BEGIN);
-        IP++;
-
-        cev_log();              // R = cev_log
-
-        if (comp_error)
-            return;
-
-        if (CODE_PEEK() == kwTYPE_SEP) {
-            cev_add1(kwTYPE_SEP);
-            IP++;
-            cev_add1(CODE(IP));
-            IP++;
-        } else if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-            cev_missing_rp();
-            return;
-        } else {
-            cev_add1(kwTYPE_LEVEL_END);
-            IP++;
-        }
-    } else
-        cev_prim();
+    else if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+      cev_missing_rp();
+      return;
+    }
+    else {
+      cev_add1(kwTYPE_LEVEL_END);
+      IP++;
+    }
+  }
+  else
+    cev_prim();
 }
 
 /*
@@ -232,22 +238,23 @@ void cev_parenth()
  */
 void cev_unary()
 {
-    char op;
+  char op;
 
-    if (comp_error) {
-        return;
-    }
-    if (CODE(IP) == kwTYPE_UNROPR || CODE(IP) == kwTYPE_ADDOPR) {
-        op = CODE(IP + 1);
-        IP += 2;
-    } else {
-        op = 0;
-    }
-    cev_parenth();              // R = cev_parenth
-    if (op) {
-        cev_add1(kwTYPE_UNROPR);
-        cev_add1(op);           // R = op R
-    }
+  if (comp_error) {
+    return;
+  }
+  if (CODE(IP) == kwTYPE_UNROPR || CODE(IP) == kwTYPE_ADDOPR) {
+    op = CODE(IP + 1);
+    IP += 2;
+  }
+  else {
+    op = 0;
+  }
+  cev_parenth();                // R = cev_parenth
+  if (op) {
+    cev_add1(kwTYPE_UNROPR);
+    cev_add1(op);               // R = op R
+  }
 }
 
 /*
@@ -255,23 +262,23 @@ void cev_unary()
  */
 void cev_pow()
 {
+  cev_unary();                  // R = cev_unary
+
+  if (comp_error) {
+    return;
+  }
+  while (CODE(IP) == kwTYPE_POWOPR) {
+    IP += 2;
+
+    cev_add1(kwTYPE_EVPUSH);    // PUSH R
+
     cev_unary();                // R = cev_unary
+    if (comp_error)
+      return;
 
-    if (comp_error) {
-        return;
-    }
-    while (CODE(IP) == kwTYPE_POWOPR) {
-        IP += 2;
-
-        cev_add1(kwTYPE_EVPUSH);        // PUSH R
-
-        cev_unary();            // R = cev_unary
-        if (comp_error)
-            return;
-
-        cev_add1(kwTYPE_EVPOP); // POP LEFT
-        cev_add2(kwTYPE_POWOPR, '^');   // R = LEFT op R
-    }
+    cev_add1(kwTYPE_EVPOP);     // POP LEFT
+    cev_add2(kwTYPE_POWOPR, '^'); // R = LEFT op R
+  }
 }
 
 /*
@@ -279,25 +286,25 @@ void cev_pow()
  */
 void cev_mul()
 {
-    cev_pow();                  // R = cev_pow()
+  cev_pow();                    // R = cev_pow()
 
-    if (comp_error) {
-        return;
-    }
-    while (CODE(IP) == kwTYPE_MULOPR) {
-        char op;
+  if (comp_error) {
+    return;
+  }
+  while (CODE(IP) == kwTYPE_MULOPR) {
+    char op;
 
-        op = CODE(++IP);
-        IP++;
-        cev_add1(kwTYPE_EVPUSH);        // PUSH R
+    op = CODE(++IP);
+    IP++;
+    cev_add1(kwTYPE_EVPUSH);    // PUSH R
 
-        cev_pow();
-        if (comp_error)
-            return;
+    cev_pow();
+    if (comp_error)
+      return;
 
-        cev_add1(kwTYPE_EVPOP); // POP LEFT
-        cev_add2(kwTYPE_MULOPR, op);    // R = LEFT op R
-    }
+    cev_add1(kwTYPE_EVPOP);     // POP LEFT
+    cev_add2(kwTYPE_MULOPR, op);  // R = LEFT op R
+  }
 }
 
 /*
@@ -305,26 +312,26 @@ void cev_mul()
  */
 void cev_add()
 {
-    cev_mul();                  // R = cev_mul()
+  cev_mul();                    // R = cev_mul()
 
-    if (comp_error) {
-        return;
-    }
-    while (CODE(IP) == kwTYPE_ADDOPR) {
-        char op;
+  if (comp_error) {
+    return;
+  }
+  while (CODE(IP) == kwTYPE_ADDOPR) {
+    char op;
 
-        IP++;
-        op = CODE(IP);
-        IP++;
-        cev_add1(kwTYPE_EVPUSH);        // PUSH R
+    IP++;
+    op = CODE(IP);
+    IP++;
+    cev_add1(kwTYPE_EVPUSH);    // PUSH R
 
-        cev_mul();              // R = cev_mul
-        if (comp_error)
-            return;
+    cev_mul();                  // R = cev_mul
+    if (comp_error)
+      return;
 
-        cev_add1(kwTYPE_EVPOP); // POP LEFT
-        cev_add2(kwTYPE_ADDOPR, op);    // R = LEFT op R
-    }
+    cev_add1(kwTYPE_EVPOP);     // POP LEFT
+    cev_add2(kwTYPE_ADDOPR, op);  // R = LEFT op R
+  }
 }
 
 /*
@@ -332,26 +339,26 @@ void cev_add()
  */
 void cev_cmp()
 {
+  cev_add();                    // R = cev_add()
+
+  if (comp_error) {
+    return;
+  }
+  while (CODE(IP) == kwTYPE_CMPOPR) {
+    char op;
+
+    IP++;
+    op = CODE(IP);
+    IP++;
+    cev_add1(kwTYPE_EVPUSH);    // PUSH R
+
     cev_add();                  // R = cev_add()
+    if (comp_error)
+      return;
 
-    if (comp_error) {
-        return;
-    }
-    while (CODE(IP) == kwTYPE_CMPOPR) {
-        char op;
-
-        IP++;
-        op = CODE(IP);
-        IP++;
-        cev_add1(kwTYPE_EVPUSH);        // PUSH R
-
-        cev_add();              // R = cev_add()
-        if (comp_error)
-            return;
-
-        cev_add1(kwTYPE_EVPOP); // POP LEFT
-        cev_add2(kwTYPE_CMPOPR, op);    // R = LEFT op R
-    }
+    cev_add1(kwTYPE_EVPOP);     // POP LEFT
+    cev_add2(kwTYPE_CMPOPR, op);  // R = LEFT op R
+  }
 }
 
 /*
@@ -359,35 +366,35 @@ void cev_cmp()
  */
 void cev_log(void)
 {
-    cev_cmp();                  // R = cev_cmp()
+  cev_cmp();                    // R = cev_cmp()
+  if (comp_error) {
+    return;
+  }
+  while (CODE(IP) == kwTYPE_LOGOPR) {
+    char op;
+    addr_t shortcut;
+    addr_t shortcut_offs;
+
+    IP++;
+    op = CODE(IP);
+    IP++;
+    cev_add1(kwTYPE_EVPUSH);    // PUSH R (push the left side result
+
+    cev_add1(kwTYPE_EVAL_SC);
+    cev_add2(kwTYPE_LOGOPR, op);
+    shortcut = bc_out->count;   // shortcut jump target (calculated below)
+    cev_add_addr(0);
+
+    cev_cmp();                  // right seg // R = cev_cmp()
     if (comp_error) {
-        return;
+      return;
     }
-    while (CODE(IP) == kwTYPE_LOGOPR) {
-        char op;
-        addr_t shortcut;
-        addr_t shortcut_offs;
+    cev_add1(kwTYPE_EVPOP);     // POP LEFT
+    cev_add2(kwTYPE_LOGOPR, op);  // R = LEFT op R
 
-        IP++;
-        op = CODE(IP);
-        IP++;
-        cev_add1(kwTYPE_EVPUSH); // PUSH R (push the left side result
-
-        cev_add1(kwTYPE_EVAL_SC);
-        cev_add2(kwTYPE_LOGOPR, op);
-        shortcut = bc_out->count; // shortcut jump target (calculated below)
-        cev_add_addr(0);
-
-        cev_cmp();              // right seg // R = cev_cmp()
-        if (comp_error) {
-            return;
-        }
-        cev_add1(kwTYPE_EVPOP); // POP LEFT
-        cev_add2(kwTYPE_LOGOPR, op);    // R = LEFT op R
-
-        shortcut_offs = bc_out->count - shortcut;
-        memcpy(bc_out->ptr + shortcut, &shortcut_offs, ADDRSZ);
-    }
+    shortcut_offs = bc_out->count - shortcut;
+    memcpy(bc_out->ptr + shortcut, &shortcut_offs, ADDRSZ);
+  }
 }
 
 /*
@@ -395,77 +402,80 @@ void cev_log(void)
  */
 void expr_parser(bc_t * bc_src)
 {
-    byte code;
+  byte code;
 
-    // init
-    bc_in = bc_src;
-    bc_out = tmp_alloc(sizeof(bc_t));
-    bc_create(bc_out);
+  // init
+  bc_in = bc_src;
+  bc_out = tmp_alloc(sizeof(bc_t));
+  bc_create(bc_out);
 
-    code = CODE_PEEK();
+  code = CODE_PEEK();
 
-    //
-    // empty!
-    //
-    if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
-        bc_destroy(bc_out);
-        tmp_free(bc_out);
-        return;
-    }
-    //
-    // LET|CONST special code
-    //
-    if (code == kwTYPE_CMPOPR) {
-        IP++;
-        if (CODE(IP) != '=') {
-            cev_opr_err();
-            bc_destroy(bc_out);
-            tmp_free(bc_out);
-            return;
-        } else {
-            IP++;
-            cev_add2(kwTYPE_CMPOPR, '=');
-        }
-    }
-    // start
-    code = CODE_PEEK();
-    while (code != kwTYPE_EOC && code != kwTYPE_LINE && !comp_error) {
-        if (kw_check_evexit(code)) {    // separator
-            cev_add1(code);
-            IP++;               // add sep.
-
-            if (code == kwUSE) {
-                cev_add_addr(0);        // USE needs 2 ips
-                cev_add_addr(0);
-                IP += (ADDRSZ + ADDRSZ);
-            } else if (code == kwAS) {
-                if (CODE_PEEK() == kwTYPE_SEP) {        // OPEN ... AS #1
-                    cev_add1(kwTYPE_SEP);
-                    IP++;
-                    cev_add1(CODE(IP));
-                    IP++;
-                }
-            } else {
-                if (code == kwTYPE_SEP) {       // Normal separator (,;)
-                    cev_add1(CODE(IP));
-                    IP++;
-                }
-            }
-
-            code = CODE_PEEK(); // next
-            continue;
-        }
-
-        cev_log();              // do it
-        code = CODE_PEEK();     // next
-    }
-
-    // finish
-    if (bc_out->count) {
-        bc_in->count = 0;
-        bc_append(bc_in, bc_out);
-    }
-
+  // 
+  // empty!
+  // 
+  if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
     bc_destroy(bc_out);
     tmp_free(bc_out);
+    return;
+  }
+  // 
+  // LET|CONST special code
+  // 
+  if (code == kwTYPE_CMPOPR) {
+    IP++;
+    if (CODE(IP) != '=') {
+      cev_opr_err();
+      bc_destroy(bc_out);
+      tmp_free(bc_out);
+      return;
+    }
+    else {
+      IP++;
+      cev_add2(kwTYPE_CMPOPR, '=');
+    }
+  }
+  // start
+  code = CODE_PEEK();
+  while (code != kwTYPE_EOC && code != kwTYPE_LINE && !comp_error) {
+    if (kw_check_evexit(code)) {  // separator
+      cev_add1(code);
+      IP++;                     // add sep.
+
+      if (code == kwUSE) {
+        cev_add_addr(0);        // USE needs 2 ips
+        cev_add_addr(0);
+        IP += (ADDRSZ + ADDRSZ);
+      }
+      else if (code == kwAS) {
+        if (CODE_PEEK() == kwTYPE_SEP) {  // OPEN ... AS #1
+          cev_add1(kwTYPE_SEP);
+          IP++;
+          cev_add1(CODE(IP));
+          IP++;
+        }
+      }
+      else {
+        if (code == kwTYPE_SEP) { // Normal separator (,;)
+          cev_add1(CODE(IP));
+          IP++;
+        }
+      }
+
+      code = CODE_PEEK();       // next
+      continue;
+    }
+
+    cev_log();                  // do it
+    code = CODE_PEEK();         // next
+  }
+
+  // finish
+  if (bc_out->count) {
+    bc_in->count = 0;
+    bc_append(bc_in, bc_out);
+  }
+
+  bc_destroy(bc_out);
+  tmp_free(bc_out);
 }

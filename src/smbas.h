@@ -1,10 +1,10 @@
 /**
-*   @file smbas.h
-*
-*   SmallBASIC - COMPILER/EXECUTOR/IDE COMMON DEFS
-* 
-*   Nicholas Christopoulos
-*/
+ *   @file smbas.h
+ *
+ *   SmallBASIC - COMPILER/EXECUTOR/IDE COMMON DEFS
+ *
+ *   Nicholas Christopoulos
+ */
 
 #if !defined(_smbas_h)
 #define _smbas_h
@@ -20,73 +20,73 @@ extern "C" {
 #endif
 
 /**
-*   @ingroup exec
-*
-*   @typedef bc_head_t
-*   byte-code header
-*/
+ *   @ingroup exec
+ *
+ *   @typedef bc_head_t
+ *   byte-code header
+ */
 typedef struct {
-    char    sign[4];            /**< always "SBEx" */
-    byte    unused;
-    word    ver;                /**< version of this structure */
-    dword   sbver;              /**< version of SB */
-    dword   flags;              /**< flags 
-                                b0 = Big-endian CPU
-                                b1 = BC 16bit
-                                b2 = BC 32bit */
+  char sign[4];               /**< always "SBEx" */
+  byte unused;
+  word ver;                   /**< version of this structure */
+  dword sbver;                /**< version of SB */
+  dword flags;                /**< flags
+                                 b0 = Big-endian CPU
+                                 b1 = BC 16bit
+                                 b2 = BC 32bit */
 
-    dword   size;               /**< total size (include label-table and bc) */
-    dword   bc_count;           /**< BC length */
-    dword   var_count;          /**< number of variables */
-    dword   lab_count;          /**< number of labels */
-    dword   data_ip;            /**< default DATA position */
-    dword   uds_tab_ip;         /**< location of struct mapping table */
+  dword size;                 /**< total size (include label-table and bc) */
+  dword bc_count;             /**< BC length */
+  dword var_count;            /**< number of variables */
+  dword lab_count;            /**< number of labels */
+  dword data_ip;              /**< default DATA position */
+  dword uds_tab_ip;           /**< location of struct mapping table */
 
-    // ver 2
-    word    lib_count;          /**< libraries count (needed units) */
-    dword   sym_count;          /**< symbol count (linked-symbols) */
+  // ver 2
+  word lib_count;             /**< libraries count (needed units) */
+  dword sym_count;            /**< symbol count (linked-symbols) */
 
-    //
-    char    reserved[26];
-    } bc_head_t;
+  //
+  char reserved[26];
+} bc_head_t;
 
 /**
-*   @ingroup exec
-*
-*   @typedef bc_unit_rec_t
-*   byte-code linked-unit record 
-*/
+ *   @ingroup exec
+ *
+ *   @typedef bc_unit_rec_t
+ *   byte-code linked-unit record
+ */
 typedef struct {
-    char    lib[OS_FILENAME_SIZE+1];    /**< library name */
-    int     type;                       /**< library type (unit, c-module) */
-    int     id;                         /**< lib-id in this byte-code */
-    int     tid;                        /**< task id (updated on loading) */
-    } bc_lib_rec_t;
+  char lib[OS_FILENAME_SIZE + 1];     /**< library name */
+  int type;                           /**< library type (unit, c-module) */
+  int id;                             /**< lib-id in this byte-code */
+  int tid;                            /**< task id (updated on loading) */
+} bc_lib_rec_t;
 
 /**
-*   @ingroup exec
-*
-*   @typedef bc_symbol_rec_t
-*   byte-code linked-symbol record 
-*/
+ *   @ingroup exec
+ *
+ *   @typedef bc_symbol_rec_t
+ *   byte-code linked-symbol record
+ */
 typedef struct {
-    char    symbol[SB_KEYWORD_SIZE+1];  /**< symbol name */
-    int     type;                       /**< symbol type */
-    int     lib_id;                     /**< lib-id in this byte-code */
-    int     sym_id;                     /**< symbol-id in this byte-code */
-    int     var_id;                     /**< related variable-id in this byte-code */
+  char symbol[SB_KEYWORD_SIZE + 1];   /**< symbol name */
+  int type;                           /**< symbol type */
+  int lib_id;                         /**< lib-id in this byte-code */
+  int sym_id;                         /**< symbol-id in this byte-code */
+  int var_id;                         /**< related variable-id in this byte-code */
 
-    int     task_id;                    /**< task id which library is loaded (updated on loading) */
-    int     exp_idx;                    /**< export symbol-index in librarys space (updated on loading) */
+  int task_id;                        /**< task id which library is loaded (updated on loading) */
+  int exp_idx;                        /**< export symbol-index in librarys space (updated on loading) */
 
-    } bc_symbol_rec_t;
+} bc_symbol_rec_t;
 
 #define BRUN_RUNNING    0       /**< brun_status(), the program is still running  @ingroup exec */
 #define BRUN_STOPPED    1       /**< brun_status(), an error or 'break' has already stoped the program @ingroup exec */
 
 /*
-*   compiler options
-*/
+ *   compiler options
+ */
 #if defined(BRUN_MODULE)
 #define EXTERN
 #else
@@ -101,28 +101,30 @@ typedef struct {
 #define OPT_MOD_SZ  1024
 #endif
 
-EXTERN byte opt_graphics;           /**< command-line option: start in graphics mode                @ingroup sys */
-EXTERN byte opt_cstr;               /**< C-style special characters by default                      @ingroup sys */
-EXTERN byte opt_quiet;              /**< command-line option: quiet                                 @ingroup sys */
-EXTERN int  opt_retval;             /**< return-value (ERRORLEVEL)                                  @ingroup sys */
-EXTERN byte opt_decomp;             /**< decompile                                                  @ingroup sys */
-EXTERN byte opt_syntaxcheck;        /**< syntax check only                                          @ingroup sys */
-EXTERN char opt_command[OPT_CMD_SZ];/**< command-line parameters (COMMAND$)                         @ingroup sys */
-EXTERN byte opt_safedraw;           /**< using safest drawing routines (PalmOS: Use API for draw)   @ingroup sys */
-EXTERN byte opt_usevmt;             /**< using VMT on compilation by default                        @ingroup sys */
-EXTERN int  opt_base;               /**< OPTION BASE x                                              @ingroup sys */
-EXTERN byte opt_uipos;              /**< OPTION UICS {CHARS|PIXELS}                                 @ingroup sys */
-EXTERN byte opt_loadmod;            /**< load all modules                                           @ingroup sys */
-EXTERN char opt_modlist[OPT_MOD_SZ];/**< Modules list                                               @ingroup sys */
-EXTERN int  opt_verbose;            /**< print some additional infos                                @ingroup sys */
-EXTERN int  opt_ide;                /**< SB runs through an IDE, store somewhere the last-error (0=no IDE, 1=IDE is linked, 2=IDE is external executable)   @ingroup sys */
-EXTERN byte os_charset;             /**< use charset encoding                                       @ingroup sys */
-EXTERN int  opt_pref_width;         /**< prefered graphics mode width (0 = undefined)               @ingroup sys */
-EXTERN int  opt_pref_height;        /**< prefered graphics mode height (0 = undefined)              @ingroup sys */
-EXTERN byte opt_pref_bpp;           /**< prefered graphics mode bits-per-pixel (0 = undefined)      @ingroup sys */
-EXTERN byte opt_nosave;             /**< do not create .sbx files                                   @ingroup sys */
-EXTERN byte opt_interactive;        /**< interactive mode                                           @ingroup sys */
-EXTERN byte opt_usepcre;            /**< OPTION PREDEF PCRE                                         @ingroup sys */
+EXTERN byte opt_graphics;         /**< command-line option: start in graphics mode                @ingroup sys */
+EXTERN byte opt_cstr;             /**< C-style special characters by default                      @ingroup sys */
+EXTERN byte opt_quiet;            /**< command-line option: quiet                                 @ingroup sys */
+EXTERN int opt_retval;            /**< return-value (ERRORLEVEL)                                  @ingroup sys */
+EXTERN byte opt_decomp;           /**< decompile                                                  @ingroup sys */
+EXTERN byte opt_syntaxcheck;      /**< syntax check only                                          @ingroup sys */
+EXTERN char opt_command[OPT_CMD_SZ];
+/**< command-line parameters (COMMAND$)                         @ingroup sys */
+EXTERN byte opt_safedraw;         /**< using safest drawing routines (PalmOS: Use API for draw)   @ingroup sys */
+EXTERN byte opt_usevmt;           /**< using VMT on compilation by default                        @ingroup sys */
+EXTERN int opt_base;              /**< OPTION BASE x                                              @ingroup sys */
+EXTERN byte opt_uipos;            /**< OPTION UICS {CHARS|PIXELS}                                 @ingroup sys */
+EXTERN byte opt_loadmod;          /**< load all modules                                           @ingroup sys */
+EXTERN char opt_modlist[OPT_MOD_SZ];
+/**< Modules list                                               @ingroup sys */
+EXTERN int opt_verbose;           /**< print some additional infos                                @ingroup sys */
+EXTERN int opt_ide;               /**< SB runs through an IDE, store somewhere the last-error (0=no IDE, 1=IDE is linked, 2=IDE is external executable)   @ingroup sys */
+EXTERN byte os_charset;           /**< use charset encoding                                       @ingroup sys */
+EXTERN int opt_pref_width;        /**< prefered graphics mode width (0 = undefined)               @ingroup sys */
+EXTERN int opt_pref_height;       /**< prefered graphics mode height (0 = undefined)              @ingroup sys */
+EXTERN byte opt_pref_bpp;         /**< prefered graphics mode bits-per-pixel (0 = undefined)      @ingroup sys */
+EXTERN byte opt_nosave;           /**< do not create .sbx files                                   @ingroup sys */
+EXTERN byte opt_interactive;      /**< interactive mode                                           @ingroup sys */
+EXTERN byte opt_usepcre;          /**< OPTION PREDEF PCRE                                         @ingroup sys */
 
 
 #define IDE_NONE        0
@@ -130,17 +132,17 @@ EXTERN byte opt_usepcre;            /**< OPTION PREDEF PCRE                     
 #define IDE_EXTERNAL    2
 
 // globals
-EXTERN int      gsb_last_line;                      /**< source code line of the last error         @ingroup sys */
-EXTERN int      gsb_last_error;                     /**< error code, 0 = no error,  < 0 = local messages (i.e. break), > 0 = error      @ingroup sys */
-EXTERN char     gsb_last_file[OS_PATHNAME_SIZE+1];  /**< source code file-name of the last error    @ingroup sys */
-EXTERN char     gsb_last_errmsg[SB_ERRMSG_SIZE+1];  /**< last error message                         @ingroup sys */
+EXTERN int gsb_last_line;                         /**< source code line of the last error         @ingroup sys */
+EXTERN int gsb_last_error;                        /**< error code, 0 = no error,  < 0 = local messages (i.e. break), > 0 = error      @ingroup sys */
+EXTERN char gsb_last_file[OS_PATHNAME_SIZE + 1];  /**< source code file-name of the last error    @ingroup sys */
+EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1];  /**< last error message                         @ingroup sys */
 
 #include "units.h"
 #include "tasks.h"
 
 // emulation
-#define prog_line           ctask->line 
-#define comp_line           ctask->line 
+#define prog_line           ctask->line
+#define comp_line           ctask->line
 #define prog_error          ctask->error
 #define comp_error          ctask->error
 #define prog_file           ctask->file
@@ -234,81 +236,80 @@ EXTERN char     gsb_last_errmsg[SB_ERRMSG_SIZE+1];  /**< last error message     
 #define prog_stack_count    prog_stack_sp
 
 #if defined(_PalmOS)
-    #define bytecode_fp         ctask->bytecode_fp
-    #define bytecode_recidx     ctask->bytecode_recidx
+#define bytecode_fp         ctask->bytecode_fp
+#define bytecode_recidx     ctask->bytecode_recidx
 #elif defined (_FRANKLIN_EBM)
-    #define bytecode_fp         ctask->bytecode_fp
+#define bytecode_fp         ctask->bytecode_fp
 #endif
 
 #if defined(_PalmOS)
 // environment emulation
-EXTERN dbt_t    env_table;
+EXTERN dbt_t env_table;
 #endif
 
 #undef EXTERN
 
 /**
-*   @ingroup exec
-*
-*   create a 'break' - display message, too
-*
-*   the 'break' will stops the program's execution
-*/
-void    brun_break(void)            SEC(BLIB);
+ *   @ingroup exec
+ *
+ *   create a 'break' - display message, too
+ *
+ *   the 'break' will stops the program's execution
+ */
+void brun_break(void) SEC(BLIB);
 
 /**
-*   @ingroup exec
-*
-*   stops the program's execution
-*/
-void    brun_stop(void)             SEC(BLIB);
+ *   @ingroup exec
+ *
+ *   stops the program's execution
+ */
+void brun_stop(void) SEC(BLIB);
 
 /**
-*   @ingroup exec
-*
-*   returns the execution status (runing or stopped)
-*
-*   @return BRUN_STOPPED or BRUN_RUNNING
-*/
-int     brun_status(void)           SEC(BLIB);
+ *   @ingroup exec
+ *
+ *   returns the execution status (runing or stopped)
+ *
+ *   @return BRUN_STOPPED or BRUN_RUNNING
+ */
+int brun_status(void) SEC(BLIB);
 
 #if !defined(OS_LIMITED)
 /**
-*   decompiler,
-*   dumps the code in the current task
-*
-*   @param output the output stream (FILE*)
-*/
-void    dump_bytecode(FILE *output);
+ *   decompiler,
+ *   dumps the code in the current task
+ *
+ *   @param output the output stream (FILE*)
+ */
+void dump_bytecode(FILE * output);
 #endif
 
 /**
-*   returns the last-modified time of the file
-*
-*   @param file the filename
-*   @return the last-modified time of the file; on error returns 0L
-*/
-time_t  sys_filetime(const char *file)  SEC(PALMFS);
+ *   returns the last-modified time of the file
+ *
+ *   @param file the filename
+ *   @return the last-modified time of the file; on error returns 0L
+ */
+time_t sys_filetime(const char *file) SEC(PALMFS);
 
 /*
-*   search a set of directories for the given file
-*   directories on path must be separated with symbol ':'
-*
-*   @param path the path
-*   @param file the file
-*   @param retbuf a buffer to store the full-path-name file (can be NULL)
-*   @return non-zero if found
-*/
+ *   search a set of directories for the given file
+ *   directories on path must be separated with symbol ':'
+ *
+ *   @param path the path
+ *   @param file the file
+ *   @param retbuf a buffer to store the full-path-name file (can be NULL)
+ *   @return non-zero if found
+ */
 
-int     sys_search_path(const char *path, const char *file, char *retbuf)   SEC(PALMFS);
+int sys_search_path(const char *path, const char *file, char *retbuf) SEC(PALMFS);
 
 /**
-*   synchronize exported variables
-*/
-void    exec_sync_variables(int dir)        SEC(TRASH);
+ *   synchronize exported variables
+ */
+void exec_sync_variables(int dir) SEC(TRASH);
 
 #if defined(__cplusplus)
 }
 #endif
-
 #endif

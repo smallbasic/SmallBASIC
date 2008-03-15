@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: uds.h,v 1.2 2007-07-20 22:43:54 zeeb90au Exp $
+// $Id: uds.h,v 1.2 2007/07/20 22:43:54 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
 // user-defined structures
@@ -22,10 +22,9 @@ var_p_t uds_resolve_fields(const var_p_t var_p);
 void uds_clear(const var_p_t var);
 void uds_free(var_p_t var_p);
 void uds_set(var_p_t dest, const var_p_t src);
-void uds_to_str(const var_p_t var_p, char* out, int max_len);
+void uds_to_str(const var_p_t var_p, char *out, int max_len);
 void uds_write(const var_p_t var_p, int method, int handle);
 
 #endif
 
-// End of $Id: uds.h,v 1.2 2007-07-20 22:43:54 zeeb90au Exp $
-
+// End of $Id: uds.h,v 1.2 2007/07/20 22:43:54 zeeb90au Exp $

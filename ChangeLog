@@ -1,38 +1,46 @@
+2007-12-31
+	* Fixed a problem in the SDL version with pressing ctrl+c 
+	  while the "press any key to close" message was being displayed
+	
+2007-12-02      version 0.9.9.0
+	* moved code to subversion
+	* see src/fltk/README.TXT for updated project indent settings
+
 2007-11-03	version 0.9.8.3
 	* refactored console_main 
 	* added the ability to include a path component in a unit name, eg:
-	import other.something.foo
-	? foo.my_var
+	  import other.something.foo
+	  ? foo.my_var
 
-	Then in the foo.bas file:
+	  Then in the foo.bas file:
 
-	Unit other.something.Foo
-	export my_var
+	  Unit other.something.Foo
+	  export my_var
 
-	The unit file should be saved in $UNITPATH/other/something.
-	If not defined, $UNITPATH is inferred as the host program 
-	file directory.
+	  The unit file should be saved in $UNITPATH/other/something.
+	  If not defined, $UNITPATH is inferred as the host program 
+	  file directory.
 
 2007-10-10	
 	* A runtime error is now created in lieu of crashing when you 
-	pass a value less than 0 to the LEFT and RIGHT string commands. 
+	  pass a value less than 0 to the LEFT and RIGHT string commands. 
 	* The runtime error for LEFT,RIGHT,REPLACE,MID,INSTR,RINSTR now
-	includes the invalid index in the message
+	  includes the invalid index in the message
 
 2007-08-31	
 	* Fixed a problem referring to UDS fields from an array
-	eg x = foo(0).x
+	  eg x = foo(0).x
 	
 2007-08-18	
 	* Fixed a problem with the short-circuit eval code causing 
-	incorrect true/false return IP's being calculated
+	  incorrect true/false return IP's being calculated
 	
 2007-08-02	
 	* The IN operator when applied to arrays now returns
 	  the 1 based index position, eg:
-	a << "cat"
-        a << "dog"
-        ? "dog" in a 'prints 2
+           a << "cat"
+           a << "dog"
+           ? "dog" in a 'prints 2
 	
 2007-07-21	
 	* Implemented experimental logical expression short-circuit evaluation
@@ -61,42 +69,42 @@
 	
 2006-08-19	
 	* added "multiline" option to the TEXT command to support
-	the multiline edit control (GTK)
+          the multiline edit control (GTK)
 	* fixed RINSTR command to work as advertised.
 	* TSAVE can now take a file number arg like TLOAD
 	
 2006-08-16	
 	* Fixed error message with unterminated strings in a sub or func. 
-	complained about missing END instead of the missing " char
+          complained about missing END instead of the missing " char
 	* Quoted strings no longer required the end quote char. A new line is 
-	taken as the end of string.
+          taken as the end of string.
 	
 2006-08-12	
 	* added support for func/sub pointer variables used with the 
 	  call statement:
 
-	func foo(s)
-         foo="foo!"+s
-        end
-        sub bar
-          ? "in bar"
-        end
-        p = @foo
-        ? call(@foo, "#")
-        ? call(p, "%")
-        pb = @bar
-        call pb
-        call @bar
+          func foo(s)
+           foo="foo!"+s
+          end
+          sub bar
+            ? "in bar"
+          end
+          p = @foo
+          ? call(@foo, "#")
+          ? call(p, "%")
+          pb = @bar
+          call pb
+          call @bar
  
-	* USRCALL has been removed since it never worked and the above
- 	is a better replacement (IMHO)
+ 	* USRCALL has been removed since it never worked and the above
+          is a better replacement (IMHO)
 	
 2006-07-28	
 	* updated chain command to take string or array	of string arguments in 
-	lieu of a file name. After calling this command, the calling program now 
-	successfully resumes.
+          lieu of a file name. After calling this command, the calling program 
+	  now successfully resumes.
 	* added HAVE_C_MALLOC to replace complicated
-	memory routines with simple malloc/free calls
+          memory routines with simple malloc/free calls
 	* added GRID+TAB button support to GTK build
 
 2006-05-27	
@@ -109,16 +117,6 @@
 	* updated sockcl_open() to handle server listen sockets
 
 ================================================================================
-
-Future ideas:
-- Add drag-drop file support to open a bas file
-- Add support for detecting another program has changed
-  the edited file in fltk version
-- Add command argument GUI for fltk to allow run time args to be set.
-  usefull when creating command line based applications.
-- Add option to FLTK version to support run once and then terminate
-- replace keywords.txt with internal buffer (FLTK)
-- Add break point, variable inspection, step/resume options.
 	
 Refer to sync/Changes for more history
 This log has been created for autotools support	

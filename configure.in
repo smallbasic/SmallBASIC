@@ -1,9 +1,9 @@
 dnl 
-dnl "$Id: configure.in,v 1.41 2007-11-02 20:24:56 zeeb90au Exp $"
+dnl "$Id: configure.in,v 1.41 2007/11/02 20:24:56 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2007 Chris Warren-Smith. Gawler, South Australia
+dnl Copyright(C) 2001-2008 Chris Warren-Smith. Gawler, South Australia
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.9.8.3)
+AM_INIT_AUTOMAKE(smallbasic, 0.10.0)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -136,7 +136,7 @@ function checkHILDON() {
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${HILDON_CFLAGS} ${OSSO_CFLAGS}"
    PACKAGE_LIBS="${PACKAGE_LIBS} ${HILDON_LIBS} ${OSSO_LIBS}"
-   ln -s sync/gtk/debian
+   ln -s src/gtk/debian
 }
 
 function buildGTK() {
@@ -163,7 +163,7 @@ function buildGTK() {
 
       if test "${have_glade}" = "yes" ; then
          dnl build the user interface 
-         glade-2 -w sync/gtk/sbgtk.glade
+         glade-2 -w src/gtk/sbgtk.glade
          AC_DEFINE(gtk_widget_unref, g_object_unref, [hack for glade-2.])
       else
          AC_MSG_ERROR([
@@ -192,7 +192,7 @@ function buildGTK() {
    AC_DEFINE(HILDON_DISABLE_DEPRECATED, 1, [avoid building obsolete code)])
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
  
-   BUILD_SUBDIRS="sync sync/gtk/src sync/gtk/data sync/gtk/icons"
+   BUILD_SUBDIRS="src src/gtk/src src/gtk/data src/gtk/icons"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -244,7 +244,7 @@ function buildFLTK() {
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
  
-   BUILD_SUBDIRS="sync sync/ide-fltk"
+   BUILD_SUBDIRS="src src/fltk"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -348,12 +348,13 @@ function buildSDL() {
    fi
 
    dnl preconfigured values for SDL build
+   AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
 
-   BUILD_SUBDIRS="sync sync/sdl"
+   BUILD_SUBDIRS="src src/sdl"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -376,7 +377,7 @@ function buildConsole() {
       AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
       AC_DEFINE(__CYGWIN__, 1, [as above])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
-      BUILD_SUBDIRS="sync sync/cygwin"
+      BUILD_SUBDIRS="src src/cygwin"
    else 
       dnl preconfigured values for unix console build
       echo "Building Unix console version..."
@@ -384,18 +385,18 @@ function buildConsole() {
       AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
       AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline"
-      BUILD_SUBDIRS="sync sync/unix"
+      BUILD_SUBDIRS="src src/unix"
    fi
 
    AC_SUBST(BUILD_SUBDIRS)
 }
 
 function buildDist() {
-   BUILD_SUBDIRS="sync sync/gtk/src sync/gtk/data sync/gtk/icons"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} sync/ide-fltk"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} sync/sdl"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} sync/cygwin"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} sync/unix"
+   BUILD_SUBDIRS="src src/gtk/src src/gtk/data src/gtk/icons"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/fltk"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/sdl"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/cygwin"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/unix"
    AC_SUBST(BUILD_SUBDIRS)
    AM_CONDITIONAL(WITH_HILDON, false)
 }
@@ -420,20 +421,20 @@ checkForWindows
 
 AC_OUTPUT([
 Makefile
-sync/Makefile
-sync/gtk/src/Makefile
-sync/gtk/data/sbasic.desktop
-sync/gtk/data/com.nokia.sbasic.service
-sync/gtk/data/Makefile
-sync/gtk/icons/Makefile
-sync/ide-fltk/Makefile
-sync/sdl/Makefile
-sync/cygwin/Makefile
-sync/unix/Makefile
+src/Makefile
+src/gtk/src/Makefile
+src/gtk/data/sbasic.desktop
+src/gtk/data/com.nokia.sbasic.service
+src/gtk/data/Makefile
+src/gtk/icons/Makefile
+src/fltk/Makefile
+src/sdl/Makefile
+src/cygwin/Makefile
+src/unix/Makefile
 ])
 
 if test x$ac_build_dist = xyes; then
    make dist
 fi
 
-dnl End of "$Id: configure.in,v 1.41 2007-11-02 20:24:56 zeeb90au Exp $".
+dnl End of "$Id: configure.in,v 1.41 2007/11/02 20:24:56 zeeb90au Exp $".

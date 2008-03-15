@@ -1,4 +1,4 @@
-// $Id: var.h,v 1.9 2007-07-13 23:06:43 zeeb90au Exp $
+// $Id: var.h,v 1.9 2007/07/13 23:06:43 zeeb90au Exp $
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -65,12 +65,14 @@
  *   @def MAXDIM Maxium number of array-dimensions
  */
 #if defined(OS_LIMITED)
-#define MAXDIM      3       // think before increase this, (possible stack overflow)
+#define MAXDIM      3           // think before increase this, (possible stack
+                                // overflow)
 #else
 #if defined(OS_ADDR16)
-#define MAXDIM      3       // think before increase this, (possible stack overflow)
+#define MAXDIM      3           // think before increase this, (possible stack
+                                // overflow)
 #else
-#define MAXDIM      6       // that's large enough
+#define MAXDIM      6           // that's large enough
 #endif
 #endif
 
@@ -89,54 +91,54 @@ typedef struct uds_field_s uds_field_s; // declared below
  *   VARIANT DATA TYPE
  */
 struct var_s {
-    byte type;                 /**< variable's type */
-    byte const_flag;           /**< non-zero if constants */
-    
-    // value 
-    union {
-#if defined(OS_PREC64)
-        long double n;         /**< numeric value */
-        long long i;           /**< integer value */
-#else
-        double n;              /**< numeric value */
-        long i;                /**< integer value */
-#endif
-        // pointer to sub/func variable 
-        struct {
-            addr_t p;          /** address pointer */
-            addr_t v;          /** return-var ID */
-        } ap;
+  byte type;                 /**< variable's type */
+  byte const_flag;           /**< non-zero if constants */
 
-        // user defined structure
-        uds_field_s* uds;      /** pointer to the "structure" */
-        
-        // generic ptr (string)
-        struct {
-            byte *ptr;         /**< data ptr (possibly, string pointer) */
-#if defined(OS_ADDR16)
-            int16 size;        /**< the size of the string */
-            int16 pos;         /**< position in string (used by pv_* functions) */
+  // value
+  union {
+#if defined(OS_PREC64)
+    long double n;           /**< numeric value */
+    long long i;             /**< integer value */
 #else
-            int32 size;        /**< the size of string */
-            int32 pos;         /**< position in string (used by pv_* functions) */
+    double n;                /**< numeric value */
+    long i;                  /**< integer value */
 #endif
-        } p;
-        
-        // array
-        struct {
-            byte *ptr;         /**< array data ptr (sizeof(var_t) * size) */
+    // pointer to sub/func variable
+    struct {
+      addr_t p;              /** address pointer */
+      addr_t v;              /** return-var ID */
+    } ap;
+
+    // user defined structure
+    uds_field_s *uds;        /** pointer to the "structure" */
+
+    // generic ptr (string)
+    struct {
+      byte *ptr;             /**< data ptr (possibly, string pointer) */
 #if defined(OS_ADDR16)
-            int16 size;        /**< the number of elements */
-            int16 lbound[MAXDIM];  /**< lower bound */
-            int16 ubound[MAXDIM];  /**< upper bound */
+      int16 size;            /**< the size of the string */
+      int16 pos;             /**< position in string (used by pv_* functions) */
 #else
-            int32 size;            /**< the number of elements */
-            int32 lbound[MAXDIM];  /**< lower bound */
-            int32 ubound[MAXDIM];  /**< upper bound */
+      int32 size;            /**< the size of string */
+      int32 pos;             /**< position in string (used by pv_* functions) */
 #endif
-            byte maxdim;       /**< number of dimensions */
-        } a;
-    } v;
+    } p;
+
+    // array
+    struct {
+      byte *ptr;             /**< array data ptr (sizeof(var_t) * size) */
+#if defined(OS_ADDR16)
+      int16 size;            /**< the number of elements */
+      int16 lbound[MAXDIM];      /**< lower bound */
+      int16 ubound[MAXDIM];      /**< upper bound */
+#else
+      int32 size;                /**< the number of elements */
+      int32 lbound[MAXDIM];      /**< lower bound */
+      int32 ubound[MAXDIM];      /**< upper bound */
+#endif
+      byte maxdim;           /**< number of dimensions */
+    } a;
+  } v;
 };
 
 typedef struct var_s var_t;
@@ -146,16 +148,16 @@ typedef var_t *var_p_t;
  * user defined structures
  */
 struct uds_field_s {
-    uds_field_s* next; // next structure element 
-    addr_t field_id;   // the element id
-    var_p_t var;       // the variable
+  uds_field_s *next;          // next structure element
+  addr_t field_id;            // the element id
+  var_p_t var;                // the variable
 };
 
 /*
  *   label
  */
 struct lab_s {
-    addr_t ip;
+  addr_t ip;
 };
 typedef struct lab_s lab_t;
 
@@ -166,67 +168,67 @@ typedef struct lab_s lab_t;
  *   EXECUTOR's STACK NODE
  */
 struct stknode_s {
-    code_t type;              /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
-    addr_t exit_ip;           /**< EXIT command IP to go */
-    
-    union {
-        /**
-         *  FOR-TO-NEXT
-         */
-        struct {
-            code_t subtype;      /**< kwTO | kwIN */
-            var_t *var_ptr;      /**< 'FOR' variable */
-            var_t *arr_ptr;      /**< FOR-IN array-variable */
-            addr_t to_expr_ip;   /**< IP of 'TO' expression */
-            addr_t step_expr_ip; /**< IP of 'STEP' expression (FOR-IN = current element) */
-            addr_t jump_ip;      /**< code block IP */
-            byte flags;          /**< ... */
-        } vfor;
+  code_t type;              /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
+  addr_t exit_ip;           /**< EXIT command IP to go */
 
-        /**
-         *  IF/ELIF
-         */
-        struct {
-            addr_t lcond;        /**< result of the last condition */
-        } vif;
+  union {
+    /**
+     *  FOR-TO-NEXT
+     */
+    struct {
+      code_t subtype;          /**< kwTO | kwIN */
+      var_t *var_ptr;          /**< 'FOR' variable */
+      var_t *arr_ptr;          /**< FOR-IN array-variable */
+      addr_t to_expr_ip;       /**< IP of 'TO' expression */
+      addr_t step_expr_ip;     /**< IP of 'STEP' expression (FOR-IN = current element) */
+      addr_t jump_ip;          /**< code block IP */
+      byte flags;              /**< ... */
+    } vfor;
 
-        /**
-         *  GOSUB
-         */
-        struct {
-            addr_t ret_ip;       /**< return ip */
-        } vgosub;
+    /**
+     *  IF/ELIF
+     */
+    struct {
+      addr_t lcond;            /**< result of the last condition */
+    } vif;
 
-        /**
-         *  CALL UDP/F
-         */
-        struct {
-            addr_t ret_ip;       /**< return ip */
-            word pcount;         /**< number of parameters */
-            bid_t rvid;          /**< return-variable ID */
-            var_t *retvar;       /**< return-variable data */
+    /**
+     *  GOSUB
+     */
+    struct {
+      addr_t ret_ip;           /**< return ip */
+    } vgosub;
 
-            // unit - version
-            int task_id;         /**< task_id or -1 (this task) */
-        } vcall;
+    /**
+     *  CALL UDP/F
+     */
+    struct {
+      addr_t ret_ip;           /**< return ip */
+      word pcount;             /**< number of parameters */
+      bid_t rvid;              /**< return-variable ID */
+      var_t *retvar;           /**< return-variable data */
 
-        /**
-         *  Create dynamic variable (LOCAL or PARAMETER)
-         */
-        struct {
-            bid_t vid;           /**< variable index in tvar */
-            var_t *vptr;         /**< previous variable */
-        } vdvar;
+      // unit - version
+      int task_id;             /**< task_id or -1 (this task) */
+    } vcall;
 
-        /**
-         *  parameter (CALL UDP/F)
-         */
-        struct {
-            word vcheck;         /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
-            var_t *res;          /**< variable pointer (for BYVAL this is a clone) */
-        } param;
+    /**
+     *  Create dynamic variable (LOCAL or PARAMETER)
+     */
+    struct {
+      bid_t vid;               /**< variable index in tvar */
+      var_t *vptr;             /**< previous variable */
+    } vdvar;
 
-    } x;
+    /**
+     *  parameter (CALL UDP/F)
+     */
+    struct {
+      word vcheck;             /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
+      var_t *res;              /**< variable pointer (for BYVAL this is a clone) */
+    } param;
+
+  } x;
 };
 typedef struct stknode_s stknode_t;
 
@@ -263,7 +265,7 @@ int v_is_nonzero(var_t * v);
  *   @return the numeric value of a variable
  */
 double v_getval(var_t * v);
-#define v_getnum(a) v_getval((a))   /* @ingroup var */
+#define v_getnum(a) v_getval((a)) /* @ingroup var */
 
 /**
  *   @ingroup var
@@ -406,7 +408,7 @@ void v_set_uds(addr_t dst_ip, addr_t src_ip);
  * @ingroup var
  *
  * clones data from one user defined structure to another. pushes
- * replaced variables onto the stack for later clean 
+ * replaced variables onto the stack for later clean
  *
  *
  */
@@ -455,7 +457,7 @@ void v_tomatrix(var_t * v, int r, int c) SEC(BLIB);
 /**
  *   @ingroup var
  *
- *   creates and returns a new matrix (array RxC) variable 
+ *   creates and returns a new matrix (array RxC) variable
  *
  *   @param r the number of the rows
  *   @param c the number of the columns
@@ -660,7 +662,7 @@ void v_zerostr(var_t * var) SEC(BLIB);
 /**< makes 'var' an empry integer variable
    @ingroup var
 */
-#define v_zeroint(r) v_init((r)) 
+#define v_zeroint(r) v_init((r))
 
 /**
  *   @ingroup var
@@ -676,8 +678,8 @@ void v_zerostr(var_t * var) SEC(BLIB);
 void v_input2var(const char *str, var_t * var) SEC(BLIB);
 
 /**< returns the var_t pointer of the element i
-     on the array x. i is a zero-based, one dim, index.
-     @ingroup var */
+   on the array x. i is a zero-based, one dim, index.
+   @ingroup var */
 #define v_elem(x,i)     (var_t *) ( (x)->v.a.ptr + (sizeof(var_t) * (i)))
 
 /**< the number of the elements of the array (x)
@@ -707,7 +709,7 @@ void v_input2var(const char *str, var_t * var) SEC(BLIB);
 char *v_getstr(var_t * v);
 
 /*
- *   low-level byte-code parsing 
+ *   low-level byte-code parsing
  *
  *   Usually you must not use these functions (except the rt_raise)
  *   try the parameters API.
@@ -736,13 +738,13 @@ dword code_getnext32(void);
 double code_getnext64f(void);
 
 #if defined(OS_PREC64)
-long long code_getnext64i(void);    // R(long long) <- Code[IP]; IP+=8
+long long code_getnext64i(void);  // R(long long) <- Code[IP]; IP+=8
 long double code_getnext128f(void); // R(long double) <- Code[IP]; IP+=16
 #endif
 
 int code_checkop(byte op);
 int code_checkop_s(byte * str);
-void code_jump_label(word label_id);        // IP <- LABEL_IP_TABLE[label_id]
+void code_jump_label(word label_id);  // IP <- LABEL_IP_TABLE[label_id]
 #define code_jump(newip) prog_ip=(newip) /**< IP <- NewIP @ingroup exec */
 
 /**
@@ -813,22 +815,22 @@ stknode_t *code_stackpeek();
 #define code_peek32(o)          (*((dword *) (prog_source+(o))))
 #else                           // !!!
 #if defined(CPU_BIGENDIAN)
-#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-1]<<8)|prog_source[prog_ip-2]) // R(2-byte-word+
+#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-1]<<8)|prog_source[prog_ip-2])  // R(2-byte-word+
 #define code_peeknext16()   ((prog_source[prog_ip+1]<<8)|prog_source[prog_ip])
-#define code_peek16(o)      ((prog_source[(o)+1]<<8)|prog_source[(o)])      // R(2-byte-word) 
+#define code_peek16(o)      ((prog_source[(o)+1]<<8)|prog_source[(o)])  // R(2-byte-word)
 // <- Cod+
 #define code_peek32(o)      (((addr_t) code_peek16((o)+2) << 16) + (addr_t) code_peek16((o)))
 #else
-#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1]) // R(2-byte-word) 
-// <- 
-// Code[IP]; 
-// IP 
-// += 
-// 2;
-#define code_peeknext16()   ((prog_source[prog_ip]<<8)|prog_source[prog_ip+1]) // R(2-byte-word) 
+#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1])  // R(2-byte-word)
 // <-
 // Code[IP];
-#define code_peek16(o)      ((prog_source[(o)]<<8)|prog_source[(o)+1])      // R(2-byte-word) 
+// IP
+// +=
+// 2;
+#define code_peeknext16()   ((prog_source[prog_ip]<<8)|prog_source[prog_ip+1])  // R(2-byte-word)
+// <-
+// Code[IP];
+#define code_peek16(o)      ((prog_source[(o)]<<8)|prog_source[(o)+1])  // R(2-byte-word)
 // <-
 // Code[IP+o];
 #define code_peek32(o)      ( ((addr_t) code_peek16((o)) << 16) + (addr_t) code_peek16((o)+2) )
@@ -842,8 +844,8 @@ stknode_t *code_stackpeek();
  */
 #define code_skipopr()      code_skipnext16()    /**< skip operator  @ingroup exec */
 #define code_skipsep()      code_skipnext16()    /**< skip separator @ingroup exec */
- /**< returns the separator and advance (IP) to next command @ingroup exec */
-#define code_getsep()       (prog_ip ++, prog_source[prog_ip++])   
+/**< returns the separator and advance (IP) to next command @ingroup exec */
+#define code_getsep()       (prog_ip ++, prog_source[prog_ip++])
 #define code_peeksep()      (prog_source[prog_ip+1])
 
 #if defined(OS_ADDR16)
@@ -915,7 +917,8 @@ void setsysvar_str(int index, const char *value) SEC(BLIB);
  *   Rest...
  */
 double *mat_toc(var_t * v, int *rows, int *cols) SEC(BMATH);
-void mat_tov(var_t * v, double *m, int rows, int cols, int protect_col1) SEC(BMATH);
+void mat_tov(var_t * v, double *m, int rows, int cols,
+             int protect_col1) SEC(BMATH);
 
 #if defined(__cplusplus)
 }
