@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.c,v 1.43 2006-08-18 21:51:29 zeeb90au Exp $
+ * $Id: output.c,v 1.43 2006/08/18 21:51:29 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -48,6 +48,8 @@ gboolean key_press_event(GtkWidget* widget,
                          keymap_data* data);
 
 int osd_devinit() {
+    dev_fgcolor = 0;
+    dev_bgcolor = 15;
     os_graphics = 1;
     os_ver = 1;
     os_color = 1;
@@ -738,5 +740,5 @@ gboolean drawing_area_init(GtkWidget *main_window) {
     om_init(drawing_area);
 }
 
-/* End of "$Id: output.c,v 1.43 2006-08-18 21:51:29 zeeb90au Exp $". */
+/* End of "$Id: output.c,v 1.43 2006/08/18 21:51:29 zeeb90au Exp $". */
 

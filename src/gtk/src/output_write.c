@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.19 2006-07-17 07:57:03 zeeb90au Exp $
+ * $Id: output_write.c,v 1.19 2006/07/17 07:57:03 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -13,6 +13,7 @@
 #  include <config.h>
 #endif
 
+#include <string.h>
 #include <gtk/gtk.h>
 
 #ifdef USE_HILDON
@@ -320,6 +321,7 @@ void osd_write(const char *str) {
             } else {
                 gdk_gc_set_rgb_fg_color(output.gc, &output.bg);
             }
+
             gdk_draw_rectangle(output.pixmap, output.gc, TRUE,
                                output.cur_x, output.cur_y, cx, 
                                output.ascent+output.descent);
@@ -351,5 +353,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.19 2006-07-17 07:57:03 zeeb90au Exp $". */
+/* End of "$Id: output_write.c,v 1.19 2006/07/17 07:57:03 zeeb90au Exp $". */
 

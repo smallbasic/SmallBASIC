@@ -1,5 +1,5 @@
 /*
- * $Id: callbacks.c,v 1.15 2006-07-26 11:29:48 zeeb90au Exp $
+ * $Id: callbacks.c,v 1.15 2006/07/26 11:29:48 zeeb90au Exp $
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -84,5 +84,5 @@ void on_save_screen(GtkMenuItem* menuitem, gpointer user_data) {
 }
 
 /*
- * End of "$Id: callbacks.c,v 1.15 2006-07-26 11:29:48 zeeb90au Exp $". 
+ * End of "$Id: callbacks.c,v 1.15 2006/07/26 11:29:48 zeeb90au Exp $". 
  */
