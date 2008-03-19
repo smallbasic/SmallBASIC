@@ -1,0 +1,374 @@
+<html>
+<head>
+<title>SmallBASIC (FLTK) 0.9.7 - readme.html</title>
+</head>
+<body>
+<h2>SmallBASIC</h2>
+<font font-size=12 color=green>
+Copyright (c) 2000-2006 Nicholas Christopoulos.
+<br>FLTK Version 0.9.7 Copyright (c) 2002-2006 Chris Warren-Smith.
+<font font-size=10 color=black><br>
+
+<br>Refer to source code in the Bas-Home subdirectory
+for sample program author details.<br>
+
+<br>
+This version of SmallBASIC is based on FLTK library version 2.x.
+The Fast Light Tool Kit ("FLTK", pronounced "fulltick") is a LGPL'd
+C++ graphical user interface toolkit for X (UNIX(r)), OpenGL(r),
+and Microsoft(r) Windows(r).<br>
+
+<br>SmallBASIC comes with ABSOLUTELY NO WARRANTY.
+This program is free software; you can use it
+redistribute it and/or modify it under the terms of the
+GNU General Public License version 2 as published by
+the Free Software Foundation.<br>
+
+<hr>
+<h4>History</h4>
+
+<br>Version 0.9.7 - Sunday 5 February 2006 (2K/XP)
+<ul>
+<li>Updated with latest FLTK changes.
+<li>Added SELECT/CASE syntax. Here's a trivial example:
+<pre>input k
+select case k
+case "a"
+  ? "you entered a"
+case "b"
+  ?  "you entered b"
+case "c"
+   ? "entering nested select"
+   input k
+   select k
+   case "x"
+       ? "you entered x"
+   case "y"
+       ? "you entered y"
+   end select
+   ? "after the nested select"
+case else
+  ? "you entered something other than a or b"
+end select</pre>
+<li>Toolbar hotkeys: CTRL+f=find, CTRL+g=goto, CTRL+h=funclist.
+<li>Fixed socket functionality for XP build.
+<li>HTML Widget now supports text selection/clipboard copy.
+<li>TLOAD command supports file number or a filename. It can also now
+be used to read an entire web page. Refer to the snarf.bas sample file.
+<li>Variables that end with a keyword name (eg str_len) are no longer
+color-ised with the keyword color.
+<li>The toolbar now lives at the bottom of the editor window.
+<li>Font size (increase/decrease) is now a menu option and
+also operates on HTML output windows.
+</ul>
+
+Version 0.9.6.4 - Sunday 4 September 2005 (2K/XP)
+<ul>
+<li>Added Open Recent File menu option.
+<li>Fixed problem with output tab resizing (FLTK v2 co-evolution).
+<li>Fixed problem with RGB color display.
+<li>Updated editor color handling.
+<li>Reworked PEN(0) and PEN(3) handling. No longer tied to Turbo option.
+<li>Keyboard handler now correctly initialised at program start.
+<li>Implemented visual bracket matching indicator.
+<li>Updated for FLTK API changes.
+<li>FORM buttons no longer display outside the FORM bounds.
+<li>CTRL+F key sequence sets focus to toolbar search. Can now
+also press ENTER from the search and goto-line boxes to return
+focus to the editor.
+<li>Executes $HOME/.smallbasic/init.bas at program startup. This
+allows you to specifiy alternative environment settings such as INDENT_LEVEL.
+<li>Indent now defaults to 2 spaces.
+<li>Added 'choice' option to form buttons.
+<li>Added box and background color options to the FORM conrol.
+<li>Included "Memory Test" sample application.
+<li>FORM widgets can now be modeless. Call DOFORM with a single argument 
+prior to calling TEXT or BUTTON to enter the modeless state,
+use a PEN(0) loop to drive the internal system event handler, then
+test if a BUTTON variable equals 1 indicating a button press.<br>
+Values for the single argument are interpreted as follows: <br>
+0 - begin modeless state.<br>
+1 - copy form fields and end modeless state.<br>
+2 - transfer fields only.<br>
+3 - end modeless state only.<br> 
+Button, radio and checkbox controls automatically
+set their variables to "1" when pressed.
+Refer to the included memoryTest.bas file
+for example use. 
+</ul>
+
+<br>Version 0.9.6.3 - Sunday 17 July 2005 - hbtm :) (2K/XP)
+<ul>
+<li>Keyword completion. Position the cursor at the end of a partially
+entered keyword then press ALT+'/" until the desired keyword appears.
+<li>Change cASE command - cycles between 'CASE', 'case' and 'Case'
+styles. Position the cursor on a keyword then press ALT+'c'
+until the desired Case style appears. 
+<li>Context help. Position the cursor on a keyword then press F1.
+<li>Sub-Func toolbar search tool. Click the "Update" item to scan 
+for Sub/Funcs. The list is then populated with
+search items allowing you to quickly navigate around the current file.
+<li>Adjustable editor font size.
+</ul>
+
+Version 0.9.6.2 - Sunday 12 June 2005 (Linux)
+<ul>
+<li>Updated toolbar.
+</ul>
+
+Version 0.9.6.1 - Monday 16 May 2005 (2K/XP)
+<ul>
+<li>New improved HTML widget including GUI support. Allows for separation of 
+UI and program logic. Included Calculator example.
+<li>Integrated indexed help text. 
+<li>Smart line indentation.
+</ul>
+
+Version 0.9.6.0 - Saturday 18 Dec 2004 (2K/XP)
+<ul>
+<li>Syntax high-lighting: 
+ <font color=#800000><b>keywords</b> </font>
+ <font color=#808000><b>functions</b> </font>
+ <font color=#008080><b>procedures</b> </font>
+ <font color=#008000><b>comments.</b> </font>
+<li>New/updated commands, see below.
+<li>Support for Plug-ins. Allows the editor to be extended with programs written in SmallBASIC.
+</ul>
+<hr>
+
+<h4>Commands</h4>
+<table>
+<tr>
+   <td fgcolor=#008080><b>IMAGE</b></td>
+   <td>Allows you to display or save images with code such as:
+<pre>
+'open and display an image file 
+open "logo.gif" for input as #1
+image #1, 0, 1,25
+close #1
+
+'save the given screen region to a JPEG file
+open "snapshot.jpeg" for output as #1
+image #1, 0, 1,1,20,20
+close #1
+
+</pre>Input Syntax: IMAGE handle, index, x, y [,sx,sy [,w,h]] &nbsp; <i>
+(index not used in this release).</i><br>
+Output Syntax: IMAGE handle, index [,sx,sy,w,h]<br>
+
+Note that output format is JPEG only in this release. Input
+formats are JPEG/GIF and XPM.<br>
+  </td>
+</tr>
+<tr>
+   <td fgcolor=#808000><b>IMAGEW</b></td>
+   <td>Returns the width of an image. Syntax: IMAGEW handle, index<br></td>
+</tr>
+<tr>
+   <td fgcolor=#808000><b>IMAGEH</b></td>
+   <td>Returns the height of an image. Syntax: IMAGEH handle, index<br></td>
+</tr>
+<tr>
+   <td fgcolor=#008080><b>HTML</b></td>
+   <td>Displays html text in a "modeless" frame. The html command returns
+   immediately while the output remains displayed.<br>
+   Syntax: HTML html, [title,] [x,y,w,h] &nbsp;
+   <ul>
+   <li>If title is specified then the
+   output appears as a modal popup window and you can then access the values of named 
+   input fields using environment variables once the popup has closed.
+   <li>html text can be prefixed with "file:" and the remainder of the string is then 
+   treated as a file name.
+   </ul>
+   Anchor links or button clicks can be used to open or edit another SmallBASIC 
+   program once the currently running program has completed.<br>
+   <br><u>Supported tags:</u>
+   <table>
+   <tr>
+     <td><b>TAG</b></td>
+     <td><b>Comments/Attributes</b></td>
+   </tr>
+   <tr>
+     <td>BR,P</td>
+     <td>Causes the text to flow onto a new line.</td>
+   </tr>
+   <tr>
+     <td>B,I,U</td>
+     <td>Specifies <B>Bold</b> <i>Italic</i> and <u>Underline.</u></td>
+   </tr>
+   <tr>
+     <td>HR</td>
+     <td>Creates a horizontal rule.</td>
+   </tr>
+   <tr>
+     <td>TITLE</td>
+     <td>Updates the Application title area.</td>
+   </tr>
+   <tr>
+     <td>PRE</td>
+     <td>Display text in courier font and use CR+LF characters to flow
+     text onto a new line.</td>
+   </tr>
+   <tr>
+     <td>CODE</td>
+     <td>Display text in courier font.</td>
+   </tr>
+   <tr>
+     <td>TABLE</td>
+     <td>Creates a table. border= 1 | 0, background = image</td>
+   </tr>
+   <tr>
+     <td>TR</td>
+     <td>Creates a table-row. fgcolor, bgcolor</td>
+   </tr>
+   <tr>
+     <td>TD</td>
+     <td>Creates a table cell. fgcolor, bgcolor, width, colspan</td>
+   </tr>
+   <tr>
+     <td>UL, OL, LI</td>
+     <td>Un-ordered/Ordered lists. LI creates a List item.</td>
+   </tr>
+   <tr>
+     <td>A</td>
+     <td>Create an anchor link. name, href</td>
+   </tr>
+   <tr>
+     <td>FONT</td>
+     <td>color, face, size, font-size (in points)</td>
+   </tr>
+   <tr>
+     <td>H1,H2,H3</td>
+     <td>Create a heading.</td>
+   </tr>
+   <tr>
+     <td>INPUT</td>
+     <td>type = "text" | "readonly" | "checkbox" | <br>
+     "radio" | "slider" | "valueinput" | <br> 
+     "thumbwheel" | "hidden"<br>
+     name = "name" use ENV("name=text") to update the field or retrieve its value.<br>
+     value = "value" initial input display value. Value can also be a FLTK 
+     markup-symbol such as: <code> '@<;', '@>|', '@<<', '@[]'</code> 
+     The markup is replaced with a matching glyph, see FLTK documentation for more details.
+     <br>
+     align = "right" | "center" | "top" | "bottom"<br>
+     border= 1 | 2 | 3 | 4 Specifies various border styles.<br>
+     fgcolor, bgcolor = colorname or #aabbcc hex spec<br>
+     onclick = <i>see below for details.</i>
+     </td>
+   </tr>
+   <tr>
+     <td>TEXTAREA</td>
+     <td>as per INPUT other than type.</td>
+   </tr>
+   <tr>
+     <td>SELECT, OPTION</td>
+     <td>as per INPUT other than type.</td>
+   </tr>
+   <tr>
+     <td>IMG</td>
+     <td>src, width, height</td>
+   </tr>
+   <tr>
+     <td>BODY</td>
+     <td>bgcolor, fgcolor, background = image</td>
+   </tr>
+   </table>
+   <br>
+    <u>More information about onclick and a-href:</u>
+    <ul>
+    <li>onclick="!program.bas" (!) execute program.bas on button click. Current HTML UI is dismissed.
+    <li>onclick="|program.bas" (|) execute program.bas on button click. Current HTML UI remains  
+     displayed and the newly executed program can access named input fields using the ENV statement.
+    <li>onclick="http://site.org/program.bas" execute program.bas from HTTP server 
+     site.org.
+    <li>onclick="http://site.org/page.html" display contents of page.html from HTTP 
+     server site.org.
+    </ul>
+     You can also use .SBX in lieu of the .BAS extension. This causes a .SBX byte code file
+     to be created if none exists. The byte code file is then later used in lieu of 
+     the .BAS file if it exists and is newer than the .BAS file.<br>
+   
+  </td>
+</tr>
+<tr>
+   <td fgcolor=#008080><b>BUTTON</b></td>
+   <td>
+   Syntax: BUTTON x, y, w, h, variable, caption [,type]<br>
+
+   type can optionally be 'radio' | 'checkbox' | 'link' | 'label' | 'choice'
+   variable is set to 1 if a button or link was pressed (which 
+   will have closed the form, or if a radio or checkbox was 
+   selected when the form was closed.<br>
+   Caption contains the list item for the Choice control, separated 
+   with '|' characters.  variable is set to the selected text 
+   when the form is closed.<br></td>
+<tr>
+   <td fgcolor=#008080><b>TEXT</b></td>
+   <td>
+   Syntax: TEXT x, y, w, h, variable<br>
+   When DOFORM returns the variable contains the user entered value.<br></td>
+</tr>
+<tr>
+   <td fgcolor=#008080><b>DOFORM</b></td>
+   <td>syntax: DOFORM [x,y,w,h,[box-style,bg-color]]<br>
+   Executes the form.<br></td>
+</tr>
+</table>
+
+<hr>
+<h4>Environment Variables</h4>
+<table>
+<tr>
+  <td>HOME</td>
+  <td>Parent of the .smallbasic folder used to store temporary files.
+  Reverts to TMP,TEMP or TMPDIR if not found.</td>
+</tr>
+<tr>
+  <td>BAS_HOME</td>
+  <td>Available to SmallBASIC programs. Specifies the location of   
+  SmallBASIC programs displayed in the "Basic" menu item. This is 
+  taken from the "Bas-Home" subdirectory of the sbfltk executable.</td>
+</tr>
+<tr>
+  <td>INDENT_LEVEL</td>
+  <td>Specifies the number of space characters to use for automatic line indentation.</td>
+</tr>
+<tr>
+  <td>APP_HELP</td>
+  <td>Runtime setting: Setting this variable to the name of a HTML document allows the 
+   user to display help information for the running program.</td>
+</tr>
+<tr>
+  <td>NO_RUN_SAVE</td>
+  <td>When set to "1" the contents of the Edit window are not automatically saved
+  when Run is invoked.</td>
+</tr>
+<tr>
+  <td>TITLE</td>
+  <td>Runtime setting: Updates the application title.</td>
+</tr>
+<tr>
+  <td>TURBO</td>
+  <td>Runtime setting: enable/disable the Turbo menu setting. When enabled
+   some loop constructs will be slowed to conserve CPU use. </td>
+</tr>
+<tr>
+  <td>&lt;?xxx&gt;</td>
+  <td>HTML markup. Displays the contents of the named environment variable.
+  <br>For example: $TMP on this system is <?TMP>.
+   </td>
+</tr>
+</table>
+
+<hr>
+<h4>Links</h4>
+<ul>
+ <li><a href="http://smallbasic.sourceforge.net">SmallBASIC home</a>
+ <li><a href="http://www.fltk.org/">FLTK Home</a>
+ <li><a href="http://www.mingw.org/">MingW Home</a>
+ <li><a href="http://www.twpo.com.au/cwarrens/ebm">eBookMan tools</a>
+</ul>
+
+</body>
+</html>
