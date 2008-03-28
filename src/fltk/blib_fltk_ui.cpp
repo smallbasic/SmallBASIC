@@ -1,8 +1,7 @@
 // -*- c-file-style: "java" -*-
 // $Id: blib_fltk_ui.cpp,v 1.16 2007-05-31 11:03:16 zeeb90au Exp $
 //
-// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
-// cwarrens@twpo.com.au
+// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -29,19 +28,17 @@
 #include "MainWindow.h"
 #include "StringLib.h"
 
-extern "C" { 
+extern "C" {
 #include "blib_ui.h"
-}
+} extern MainWindow *wnd;
 
-extern MainWindow *wnd;
-
-struct FormGroup : public Group {
-  FormGroup(int x1, int x2, int y1, int y2) : Group(x1,x2,y1,y2) {}
-  void draw(); // avoid drawing over the tab-bar
+struct FormGroup:public Group {
+  FormGroup(int x1, int x2, int y1, int y2):Group(x1, x2, y1, y2) {
+  } void draw();                // avoid drawing over the tab-bar
 };
 
-FormGroup* form = 0; // modal form
-strlib::List* widgets = 0; // modeless form widgets
+FormGroup *form = 0;            // modal form
+strlib::List * widgets = 0;     // modeless form widgets
 
 enum ControlType {
   ctrl_button,
@@ -55,76 +52,80 @@ enum ControlType {
 
 struct WidgetInfo {
   ControlType type;
-  var_t* var;
+  var_t *var;
 };
 
-void FormGroup::draw() {
+void FormGroup::draw()
+{
   int numchildren = children();
   Rectangle r(w(), h());
   if (box() == NO_BOX) {
     setcolor(color());
     fillrect(r);
-  } else {
+  }
+  else {
     draw_box();
     box()->inset(r);
   }
   push_clip(r);
   for (int n = 0; n < numchildren; n++) {
-    Widget& w = *child(n);
+    Widget & w = *child(n);
     draw_child(w);
     draw_outside_label(w);
   }
   pop_clip();
 }
 
-struct AnchorLink : public Button {
-  AnchorLink(int x, int y, int w, int h) : Button(x, y, w, h) {}
-  void draw() {
+struct AnchorLink:public Button {
+  AnchorLink(int x, int y, int w, int h):Button(x, y, w, h) {
+  } void draw() {
     int bx = 0;
     int by = 0;
     int bw = w();
     int bh = h();
-    Rectangle r(bx,by,bw,bh);
+    Rectangle r(bx, by, bw, bh);
     box()->inset(r);
     draw_background();
     setcolor(labelcolor());
-    draw_label(Rectangle(bx, by-2, bw, bh), 
-               ALIGN_INSIDE|ALIGN_BOTTOMLEFT);
-    drawline(2, bh-2, 2+(int)getwidth(label()), bh-2);
-    //focusbox()->draw(Rectangle(bx+1, by+1, bw-2, bh-2), style(), 0);
+    draw_label(Rectangle(bx, by - 2, bw, bh), ALIGN_INSIDE | ALIGN_BOTTOMLEFT);
+    drawline(2, bh - 2, 2 + (int)getwidth(label()), bh - 2);
+    // focusbox()->draw(Rectangle(bx+1, by+1, bw-2, bh-2), style(), 0);
     // current_flags_highlight());
   }
 };
 
-void button_cb(Widget* w, void* v) {
-  WidgetInfo* inf = (WidgetInfo*)v;
+void button_cb(Widget * w, void *v)
+{
+  WidgetInfo *inf = (WidgetInfo *) v;
   v_setstrn(inf->var, "1", 1);
   wnd->setModal(false);
   wnd->penState = 2;
 }
 
-void radio_cb(Widget* w, void* v) {
-  WidgetInfo* inf = (WidgetInfo*)v;
+void radio_cb(Widget * w, void *v)
+{
+  WidgetInfo *inf = (WidgetInfo *) v;
   v_setstrn(inf->var, "1", 1);
 }
 
 // transfer widget data in variables
-void updateVars(Widget* w) {
-  WidgetInfo* inf = (WidgetInfo*)w->user_data();
+void updateVars(Widget * w)
+{
+  WidgetInfo *inf = (WidgetInfo *) w->user_data();
   switch (inf->type) {
   case ctrl_check:
   case ctrl_radio:
-    if (((Button*)w)->value()) {
+    if (((Button *) w)->value()) {
       v_setstrn(inf->var, "1", 1);
     }
     break;
   case ctrl_text:
     // copy input data into variable
-    v_setstrn(inf->var, ((Input*)w)->value(), ((Input*)w)->size());
+    v_setstrn(inf->var, ((Input *) w)->value(), ((Input *) w)->size());
     break;
   case ctrl_list:
     // copy drop list item into variable
-    v_setstr(inf->var, ((Choice*)w)->item()->label());
+    v_setstr(inf->var, ((Choice *) w)->item()->label());
     break;
   default:
     break;
@@ -132,24 +133,26 @@ void updateVars(Widget* w) {
 }
 
 // copy all modeless widget fields into variables
-void updateForm() {
+void updateForm()
+{
   if (widgets) {
-    Object** list = widgets->getList();
+    Object **list = widgets->getList();
     int len = widgets->length();
-    for (int i=0; i<len; i++) {
-      updateVars((Widget*)list[i]);
+    for (int i = 0; i < len; i++) {
+      updateVars((Widget *) list[i]);
     }
   }
 }
 
 // close the modeless widgets
-void closeModeless() {
+void closeModeless()
+{
   if (widgets) {
-    Object** list = widgets->getList();
+    Object **list = widgets->getList();
     int len = widgets->length();
-    for (int i=0; i<len; i++) {
-      Widget* w = (Widget*)list[i];
-      WidgetInfo* inf = (WidgetInfo*)w->user_data();
+    for (int i = 0; i < len; i++) {
+      Widget *w = (Widget *) list[i];
+      WidgetInfo *inf = (WidgetInfo *) w->user_data();
       w->parent()->remove(w);
       w->parent(0);
       delete inf;
@@ -162,7 +165,8 @@ void closeModeless() {
   wnd->out->redraw();
 }
 
-void formBegin() {
+void formBegin()
+{
   if (widgets) {
     ui_reset();
     wnd->outputGroup->begin();
@@ -170,34 +174,35 @@ void formBegin() {
   }
   if (form == 0) {
     wnd->outputGroup->begin();
-    form = new FormGroup(wnd->out->x()+1, 
-                         wnd->out->y()+1, 
-                         wnd->out->w()-2, 
-                         wnd->out->h()-2);
+    form = new FormGroup(wnd->out->x() + 1,
+                         wnd->out->y() + 1, 
+                         wnd->out->w() - 2, 
+                         wnd->out->h() - 2);
     form->resizable(0);
-    form->color(color(152,152,152));
-    wnd->outputGroup->end(); 
+    form->color(color(152, 152, 152));
+    wnd->outputGroup->end();
   }
   form->begin();
 }
 
-void formEnd(Widget* w) {
+void formEnd(Widget * w)
+{
   if (widgets) {
     wnd->outputGroup->end();
-    widgets->add((Object*)w);
-  } else {
+    widgets->add((Object *) w);
+  }
+  else {
     form->end();
   }
 }
 
-C_LINKAGE_BEGIN
-
-void ui_reset() {
+C_LINKAGE_BEGIN void ui_reset()
+{
   if (form != 0) {
     form->hide();
     int n = form->children();
-    for (int i=0; i<n; i++) {
-      WidgetInfo* inf = (WidgetInfo*)form->child(i)->user_data();
+    for (int i = 0; i < n; i++) {
+      WidgetInfo *inf = (WidgetInfo *) form->child(i)->user_data();
       delete inf;
     }
     form->clear();
@@ -219,15 +224,16 @@ void ui_reset() {
 // will have closed the form, or if a radio or checkbox was 
 // selected when the form was closed
 // 
-void cmd_button() {
+void cmd_button()
+{
   int x, y, w, h;
-  var_t* v = 0;
-  char* caption = 0;
-  char* type = 0;
+  var_t *v = 0;
+  char *caption = 0;
+  char *type = 0;
 
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
-    Button* widget = 0;
-    WidgetInfo* inf = new WidgetInfo();
+    Button *widget = 0;
+    WidgetInfo *inf = new WidgetInfo();
     inf->var = v;
 
     formBegin();
@@ -236,40 +242,45 @@ void cmd_button() {
         widget = new RadioButton(x, y, w, h);
         widget->callback(radio_cb);
         inf->type = ctrl_radio;
-      } else if (strncmp("checkbox", type, 8) == 0) {
+      }
+      else if (strncmp("checkbox", type, 8) == 0) {
         widget = new CheckButton(x, y, w, h);
         widget->callback(radio_cb);
         inf->type = ctrl_check;
-      } else if (strncmp("button", type, 6) == 0) {
+      }
+      else if (strncmp("button", type, 6) == 0) {
         widget = new Button(x, y, w, h);
         widget->callback(radio_cb);
         inf->type = ctrl_button;
-      } else if (strncmp("label", type, 5) == 0) {
-        widget = (Button*)new Widget(x, y, w, h);
+      }
+      else if (strncmp("label", type, 5) == 0) {
+        widget = (Button *) new Widget(x, y, w, h);
         widget->box(NO_BOX);
         inf->type = ctrl_label;
-      } else if (strncmp("link", type, 4) == 0) {
-        widget = (Button*)new AnchorLink(x, y, w, h);
+      }
+      else if (strncmp("link", type, 4) == 0) {
+        widget = (Button *) new AnchorLink(x, y, w, h);
         widget->callback(button_cb);
         widget->box(NO_BOX);
-        widget->labelcolor(color(150,0,0));
+        widget->labelcolor(color(150, 0, 0));
         inf->type = ctrl_link;
-      } else if (strncmp("choice", type, 6) == 0) {
-        Choice* choice = new Choice(x, y, w, h);
+      }
+      else if (strncmp("choice", type, 6) == 0) {
+        Choice *choice = new Choice(x, y, w, h);
         choice->begin();
         // "Easy|Medium|Hard"
         int itemIndex = 0;
         inf->type = ctrl_list;
         int len = caption ? strlen(caption) : 0;
-        for (int i=0; i<len; i++) {
-          char* c = strchr(caption+i, '|');
-          int endIndex = c ? c-caption : len;
-          String s(caption+i, endIndex-i);
-          Item* item = new Item();
+        for (int i = 0; i < len; i++) {
+          char *c = strchr(caption + i, '|');
+          int endIndex = c ? c - caption : len;
+          String s(caption + i, endIndex - i);
+          Item *item = new Item();
           item->copy_label(s.toString());
           i = endIndex;
           if (v->type == V_STR && v->v.p.ptr &&
-              strcmp((const char*)v->v.p.ptr, s.toString()) == 0) {
+              strcmp((const char *)v->v.p.ptr, s.toString()) == 0) {
             choice->focus_index(itemIndex);
           }
           itemIndex++;
@@ -279,7 +290,8 @@ void cmd_button() {
         formEnd(choice);
         pfree2(caption, type);
         return;
-      } else {
+      }
+      else {
         ui_reset();
         rt_raise("UI: UNKNOWN TYPE: %s", type);
         pfree2(caption, type);
@@ -293,13 +305,12 @@ void cmd_button() {
     }
 
     // prime input field from variable
-    if (v->type == V_STR && v->v.p.ptr &&
-        strcmp((const char*)v->v.p.ptr, "1") == 0) {
-      if (inf->type == ctrl_check || 
-          inf->type == ctrl_radio) {
+    if (v->type == V_STR && v->v.p.ptr && strcmp((const char *)v->v.p.ptr, "1") == 0) {
+      if (inf->type == ctrl_check || inf->type == ctrl_radio) {
         widget->value(true);
-      } else if (inf->type != ctrl_button) {
-        widget->value((const char*)v->v.p.ptr);
+      }
+      else if (inf->type != ctrl_button) {
+        widget->value((const char *)v->v.p.ptr);
       }
     }
 
@@ -313,22 +324,23 @@ void cmd_button() {
 // TEXT x, y, w, h, variable
 // When DOFORM returns the variable contains the user entered value
 //
-void cmd_text() {
+void cmd_text()
+{
   int x, y, w, h;
-  var_t* v = 0;
+  var_t *v = 0;
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {
     formBegin();
-    Input* widget = new Input(x, y, w, h);
+    Input *widget = new Input(x, y, w, h);
     widget->box(BORDER_BOX);
-    widget->color(color(220,220,220));
+    widget->color(color(220, 220, 220));
 
     // prime field from var_t
     if (v->type == V_STR && v->v.p.ptr) {
-      widget->value((const char*)v->v.p.ptr);
+      widget->value((const char *)v->v.p.ptr);
     }
 
-    WidgetInfo* inf = new WidgetInfo();
+    WidgetInfo *inf = new WidgetInfo();
     inf->var = v;
     inf->type = ctrl_text;
     widget->user_data(inf);
@@ -339,7 +351,8 @@ void cmd_text() {
 
 // DOFORM [x,y,w,h [,border-style, bg-color]]
 // Executes the form
-void cmd_doform() {
+void cmd_doform()
+{
   int x, y, w, h, box, bg;
   int numArgs;
 
@@ -356,22 +369,23 @@ void cmd_doform() {
     // modeless operations
     ui_reset();
     switch (x) {
-    case 0: // begin modeless state
+    case 0:                    // begin modeless state
       widgets = new strlib::List(10);
       break;
-    case 1: // end modeless state
+    case 1:                    // end modeless state
       updateForm();
       closeModeless();
       break;
-    case 2: // transfer form variables
+    case 2:                    // transfer form variables
       updateForm();
       break;
-    case 3: // close only
+    case 3:                    // close only
       closeModeless();
       break;
     }
     return;
-  } else if (numArgs > 0) {
+  }
+  else if (numArgs > 0) {
     switch (box) {
     case 1:
       form->box(BORDER_BOX);
@@ -385,7 +399,7 @@ void cmd_doform() {
     case 4:
       form->box(THIN_DOWN_BOX);
       break;
-    default: 
+    default:
       form->box(NO_BOX);
     }
     if (numArgs == 6) {
@@ -399,15 +413,16 @@ void cmd_doform() {
     }
     form->x(x);
     form->y(y);
-    if (x+w > form->w()) {
-      w = form->w()-x;
+    if (x + w > form->w()) {
+      w = form->w() - x;
     }
     form->w(w);
-    if (y+h > form->h()) {
-      h = form->h()-y;
+    if (y + h > form->h()) {
+      h = form->h() - y;
     }
     form->h(h);
-  } else {
+  }
+  else {
     form->box(ENGRAVED_BOX);
   }
 
@@ -426,7 +441,7 @@ void cmd_doform() {
   wnd->resetPen();
 
   int n = form->children();
-  for (int i=0; i<n; i++) {
+  for (int i = 0; i < n; i++) {
     updateVars(form->child(i));
   }
 
@@ -434,5 +449,4 @@ void cmd_doform() {
 }
 
 C_LINKAGE_END
-
 // End of "$Id: blib_fltk_ui.cpp,v 1.16 2007-05-31 11:03:16 zeeb90au Exp $".

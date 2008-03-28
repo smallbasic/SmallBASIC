@@ -34,7 +34,23 @@ EXTRA_DIST =																		\
     documentation/README.DOS										\
     documentation/README.HELIO									\
     documentation/README.PALM										\
-    documentation/README.UNIX
+    documentation/README.UNIX										\
+    package/readme.html													\
+    package/sbasic.nsi													\
+    package/welcome.bas													\
+    package/Bas-Home/calc.bas										\
+    package/Bas-Home/calc.html									\
+    package/Bas-Home/comment_in.bas							\
+    package/Bas-Home/comment_out.bas						\
+    package/Bas-Home/dos2unix.bas								\
+    package/Bas-Home/image_demo.bas							\
+    package/Bas-Home/indent.bas									\
+    package/Bas-Home/logo.gif										\
+    package/Bas-Home/memoryTest.bas							\
+    package/Bas-Home/recent_files.bas						\
+    package/Bas-Home/snarf.bas									\
+    package/Bas-Home/sudoku.bas									\
+    package/Bas-Home/_survey.bas
 
 
 deb:

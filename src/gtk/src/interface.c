@@ -186,13 +186,12 @@ create_aboutdialog (void)
   };
   /* TRANSLATORS: Replace this string with your names, one name per line. */
   gchar *translators = _("translator-credits");
-  GtkWidget *dialog_vbox1;
 
   aboutdialog = gtk_about_dialog_new ();
   gtk_widget_set_name (aboutdialog, "aboutdialog");
   gtk_container_set_border_width (GTK_CONTAINER (aboutdialog), 5);
   gtk_about_dialog_set_version (GTK_ABOUT_DIALOG (aboutdialog), VERSION);
-  gtk_about_dialog_set_name (GTK_ABOUT_DIALOG (aboutdialog), _("sbgtk"));
+  gtk_about_dialog_set_name (GTK_ABOUT_DIALOG (aboutdialog), _("SmallBASIC"));
   gtk_about_dialog_set_copyright (GTK_ABOUT_DIALOG (aboutdialog), _("Copyright (c) 2006 Chris Warren-Smith"));
   gtk_about_dialog_set_license (GTK_ABOUT_DIALOG (aboutdialog), "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\nThis program is free software; you can use it redistribute\nit and/or modify it under the terms of the \nGNU General Public License version 2 as published by\nthe Free Software Foundation.\n");
   gtk_about_dialog_set_wrap_license (GTK_ABOUT_DIALOG (aboutdialog), TRUE);
@@ -201,13 +200,8 @@ create_aboutdialog (void)
   gtk_about_dialog_set_authors (GTK_ABOUT_DIALOG (aboutdialog), authors);
   gtk_about_dialog_set_translator_credits (GTK_ABOUT_DIALOG (aboutdialog), translators);
 
-  dialog_vbox1 = gtk_vbox_new (FALSE, 0);
-  gtk_widget_set_name (dialog_vbox1, "dialog_vbox1");
-  gtk_container_add (GTK_CONTAINER (aboutdialog), dialog_vbox1);
-
   /* Store pointers to all widgets, for use by lookup_widget(). */
   GLADE_HOOKUP_OBJECT_NO_REF (aboutdialog, aboutdialog, "aboutdialog");
-  GLADE_HOOKUP_OBJECT (aboutdialog, dialog_vbox1, "dialog_vbox1");
 
   return aboutdialog;
 }

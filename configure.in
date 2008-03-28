@@ -3,7 +3,7 @@ dnl "$Id: configure.in,v 1.41 2007/11/02 20:24:56 zeeb90au Exp $"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2008 Chris Warren-Smith. Gawler, South Australia
+dnl Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
@@ -22,6 +22,8 @@ AM_PROG_CC_STDC
 AC_HEADER_STDC
 AC_PROG_RANLIB
 PKG_PROG_PKG_CONFIG
+
+TARGET=""
 
 dnl define build arguments
 AC_ARG_ENABLE(gtk,
@@ -144,7 +146,7 @@ function checkHILDON() {
 }
 
 function buildGTK() {
-   echo "Building GTK version..."
+   TARGET="Building GTK version."
  
    dnl disable build for hildon
    AC_ARG_ENABLE(hildon,
@@ -201,7 +203,7 @@ function buildGTK() {
 }
 
 function buildFLTK() {
-   echo "Building FLTK version..."
+   TARGET="Building FLTK version."
  
    dnl Checks for FLTK 2.x
    AC_CHECK_PROG(have_fltk, fltk2-config, [yes], [no])
@@ -222,7 +224,7 @@ function buildFLTK() {
      the program fltk2-config in your PATH in order to build sbfltk
      See the FLTK homepage at http://www.fltk.org/. 
    
-   configure failed.
+     configure failed.
    ])
    fi
  
@@ -253,7 +255,7 @@ function buildFLTK() {
 }
 
 function buildSDL() {
-   echo "Building SDL version..."
+   TARGET="Building SDL version."
    AM_CONDITIONAL(WITH_HILDON, false)
 
    dnl The following code was taken from the SDL test/configure.in
@@ -377,14 +379,14 @@ function buildConsole() {
 
    if test $win32 = yes; then
       dnl preconfigured values for cygwin console build (depends on cygwin.dll)
-      echo "Building Cygwin console version..."
+      TARGET="Building Cygwin console version."
       AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
       AC_DEFINE(__CYGWIN__, 1, [as above])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
       BUILD_SUBDIRS="src src/cygwin"
    else 
       dnl preconfigured values for unix console build
-      echo "Building Unix console version..."
+      TARGET="Building Unix console version."
       AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
       AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
       AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
@@ -396,6 +398,7 @@ function buildConsole() {
 }
 
 function buildDist() {
+   TARGET="Building source code release."
    BUILD_SUBDIRS="src src/gtk/src src/gtk/data src/gtk/icons"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/fltk"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/sdl"
@@ -436,6 +439,10 @@ src/sdl/Makefile
 src/cygwin/Makefile
 src/unix/Makefile
 ])
+
+echo
+echo ${TARGET}
+echo
 
 if test x$ac_build_dist = xyes; then
    make dist

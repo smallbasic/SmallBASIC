@@ -1,6 +1,5 @@
 # SmallBASIC for FLTK
-# Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
-# cwarrens@twpo.com.au
+# Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
@@ -16,26 +15,10 @@ INCLUDES =																											\
 EXTRA_DIST =																		\
     README.TXT																	\
     sbfltk.rc																		\
-    release/readme.html													\
-    release/sbasic.nsi													\
-    release/welcome.bas													\
-    release/Bas-Home/calc.bas										\
-    release/Bas-Home/calc.html									\
-    release/Bas-Home/comment_in.bas							\
-    release/Bas-Home/comment_out.bas						\
-    release/Bas-Home/dos2unix.bas								\
-    release/Bas-Home/image_demo.bas							\
-    release/Bas-Home/indent.bas									\
-    release/Bas-Home/logo.gif										\
-    release/Bas-Home/memoryTest.bas							\
-    release/Bas-Home/recent_files.bas						\
-    release/Bas-Home/snarf.bas									\
-    release/Bas-Home/sudoku.bas									\
-    release/Bas-Home/_survey.bas
 
-bin_PROGRAMS = sbfltk
+bin_PROGRAMS = sbasici
 
-sbfltk_SOURCES =																\
+sbasici_SOURCES =																\
     Fl_Help_Widget.cpp HelpWidget.h							\
     MainWindow.cpp MainWindow.h									\
     EditorWindow.cpp EditorWindow.h							\
@@ -43,10 +26,10 @@ sbfltk_SOURCES =																\
     StringLib.cpp StringLib.h										\
     blib_fltk_ui.cpp
 
-sbfltk_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
+sbasici_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
 
 if WITH_WIN32
-sbfltk_LDADD += sbfltk.res
+sbasici_LDADD += sbfltk.res
 sbfltk.res : sbfltk.rc
 	$(WINDRES) $< -O coff -o $@
 endif

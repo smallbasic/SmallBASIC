@@ -6,27 +6,27 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = \
-	-I../../ -I. \
-	-DPACKAGE_PREFIX=\""$(prefix)"\" \
-	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
-	-DPACKAGE_LOCALE_DIR=\"$(localedir)\" \
+INCLUDES =																			\
+	-I../../ -I.																	\
+	-DPACKAGE_PREFIX=\""$(prefix)"\"							\
+	-DPACKAGE_DATA_DIR=\""$(datadir)"\"						\
+	-DPACKAGE_LOCALE_DIR=\"$(localedir)\"					\
 	@PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 
 bin_PROGRAMS : ../../libsb_common.a
 
-sbasic_SOURCES =									\
-	main.c											\
-	output.c output.h      						\
-	output_model.c output_model.h          	\
-	output_write.c								\
-	form_ui.c										\
-	callbacks.c callbacks.h						\
+sbasic_SOURCES =																\
+	main.c																				\
+	output.c output.h															\
+	output_model.c output_model.h									\
+	output_write.c																\
+	form_ui.c																			\
+	callbacks.c callbacks.h												\
 	interface.c interface.h	
 
-sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/sync -lsb_common
+sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src -lsb_common
 
 #
 #servicefiledir=`$(PKG_CONFIG) --variable=libdir dbus-glib-1`/dbus-1.0/services
