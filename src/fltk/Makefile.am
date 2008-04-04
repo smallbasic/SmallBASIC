@@ -14,17 +14,17 @@ INCLUDES =							\
 
 EXTRA_DIST =					\
     README.TXT					\
-    sbfltk.rc		\
+    sbfltk.rc
 
 bin_PROGRAMS = sbasici
 
 sbasici_SOURCES =				\
-    Fl_Help_Widget.cpp HelpWidget.h		\
-    MainWindow.cpp MainWindow.h			\
-    EditorWindow.cpp EditorWindow.h		\
-    dev_fltk.cpp				\
-    StringLib.cpp StringLib.h			\
-    blib_fltk_ui.cpp
+    HelpWidget.cxx HelpWidget.h			\
+    MainWindow.cxx MainWindow.h			\
+    EditorWindow.cxx EditorWindow.h		\
+    dev_fltk.cxx				\
+    StringLib.cxx StringLib.h			\
+    blib_fltk_ui.cxx
 
 sbasici_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
 
