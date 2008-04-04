@@ -18,6 +18,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include <fltk/Button.h>
 #include <fltk/Choice.h>
@@ -342,22 +343,24 @@ void style_update(int pos,      // I - Position of update
 
 //--CodeEditor------------------------------------------------------------------
 
-struct CodeEditor:public TextEditor {
-  CodeEditor(int x, int y, int w, int h):TextEditor(x, y, w, h) {
+struct CodeEditor : public TextEditor {
+  CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
     readonly = false;
     const char *s = getenv("INDENT_LEVEL");
-      indentLevel = (s && s[0] ? atoi(s) : 2);
-      matchingBrace = -1;
-  } int handle(int e);
-  void gotoLine(int line);
-  void getSelStartRowCol(int *row, int *col);
-  void getSelEndRowCol(int *row, int *col);
+    indentLevel = (s && s[0] ? atoi(s) : 2);
+    matchingBrace = -1;
+  } 
+
+  int handle(int e);
   unsigned getIndent(char *indent, int len, int pos);
-  void handleTab();
-  void showRowCol();
-  void getRowCol(int *row, int *col);
-  void showMatchingBrace();
   void draw();
+  void getRowCol(int *row, int *col);
+  void getSelEndRowCol(int *row, int *col);
+  void getSelStartRowCol(int *row, int *col);
+  void gotoLine(int line);
+  void handleTab();
+  void showMatchingBrace();
+  void showRowCol();
 
   bool readonly;
   int indentLevel;
@@ -672,9 +675,8 @@ void CodeEditor::getRowCol(int *row, int *col)
 
 //--EditorWindow----------------------------------------------------------------
 
-EditorWindow::EditorWindow(int x, int y, int w, int h):Group(x, y, w, h)
+EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
 {
-
   replaceDlg = new Window(300, 105, "Replace");
   replaceDlg->begin();
   replaceFind = new Input(80, 10, 210, 25, "Find:");
@@ -712,6 +714,7 @@ EditorWindow::EditorWindow(int x, int y, int w, int h):Group(x, y, w, h)
 
   textbuf->add_modify_callback(style_update, editor);
   textbuf->add_modify_callback(changed_cb, this);
+  modifiedTime = 0;
 }
 
 EditorWindow::~EditorWindow()
@@ -723,10 +726,25 @@ EditorWindow::~EditorWindow()
 
 int EditorWindow::handle(int e)
 {
-  if (e == FOCUS) {
+  char buffer[PATH_MAX];
+
+  switch (e) {
+  case FOCUS:
     fltk::focus(editor);
+    handleFileChange();
+    return 1;
+  case DND_ENTER:
+  case DND_DRAG:
+  case DND_RELEASE:
+  case DND_LEAVE:
+    return 1;
+  case PASTE:
+    strncpy(buffer, fltk::event_text(), fltk::event_length());
+    buffer[fltk::event_length()] = 0;
+    loadFile(buffer, -1, true);
     return 1;
   }
+
   return Group::handle(e);
 }
 
@@ -778,13 +796,17 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI)
   loading = true;
   int insert = (ipos != -1);
   dirty = insert;
-  if (!insert) {
-    strcpy(filename, "");
-  }
-
   int r;
+
   if (!insert) {
     r = textbuf->loadfile(newfile);
+    if (r) {
+      // restore previous
+      textbuf->loadfile(filename);
+    }
+    else {
+      filename[0] = 0;
+    }
   }
   else {
     r = textbuf->insertfile(newfile, ipos);
@@ -793,10 +815,8 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI)
   if (r) {
     alert("Error reading from file \'%s\':\n%s.", newfile, strerror(errno));
   }
-  else {
-    if (!insert) {
-      strcpy(filename, newfile);
-    }
+  else if (!insert) {
+    strcpy(filename, newfile);
   }
 
   loading = false;
@@ -809,6 +829,13 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI)
   textbuf->call_modify_callbacks();
   editor->show_insert_position();
   setRowCol(1, 1);
+  modifiedTime = getModifiedTime();
+}
+
+void EditorWindow::reloadFile() {
+  char buffer[PATH_MAX];
+  strcpy(buffer, filename);
+  loadFile(buffer, -1, true);
 }
 
 void EditorWindow::doSaveFile(const char *newfile, bool updateUI)
@@ -835,6 +862,7 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI)
     statusMsg(basfile);
     fileChanged(true);
   }
+  modifiedTime = getModifiedTime();
 }
 
 void EditorWindow::showFindReplace()
@@ -885,6 +913,7 @@ void EditorWindow::newFile()
   textbuf->call_modify_callbacks();
   statusMsg(0);
   fileChanged(false);
+  modifiedTime = 0;
 }
 
 void EditorWindow::openFile()
@@ -1115,5 +1144,30 @@ void EditorWindow::setIndentLevel(int level)
 {
   ((CodeEditor *) editor)->indentLevel = level;
 }
+
+ulong EditorWindow::getModifiedTime() {
+  struct stat st_file;
+  ulong modified = 0;
+  if (filename[0] && !stat(filename, &st_file)) {
+    modified = st_file.st_mtime;
+  }
+  return modified;
+}
+
+void EditorWindow::handleFileChange() {
+  // handle outside changes to the file
+  if (filename[0] && modifiedTime != 0 && 
+      modifiedTime != getModifiedTime()) {
+    const char *msg = "File %s\nhas changed on disk.\n\n"
+      "Do you want to reload the file?";
+    if (ask(msg, filename)) {
+      reloadFile();
+    }
+    else {
+      modifiedTime = 0;
+    }
+  }
+}
+
 
 //--EndOfFile-------------------------------------------------------------------

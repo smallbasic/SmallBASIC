@@ -33,7 +33,7 @@ void setModified(bool dirty);
 void addHistory(const char *fileName);
 void fileChanged(bool loadfile);
 
-class EditorWindow:public Group {
+class EditorWindow : public Group {
 public:
   EditorWindow(int x, int y, int w, int h);
    ~EditorWindow();
@@ -45,31 +45,32 @@ public:
   const char *getFilename() {
     return filename;
   }
-  void doSaveFile(const char *newfile, bool updateUI);
-  void doChange(int inserted, int deleted);
+
   bool checkSave(bool discard);
+  bool findText(const char *find, bool forward);
+  int getFontSize();
+  void cancelReplace();
+  void createFuncList();
+  void doChange(int inserted, int deleted);
+  void doDelete();
+  void doSaveFile(const char *newfile, bool updateUI);
+  void findFunc(const char *find);
+  void getRowCol(int *row, int *col);
+  void getSelEndRowCol(int *row, int *col);
+  void getSelStartRowCol(int *row, int *col);
+  void gotoLine(int line);
+  void insertFile();
   void loadFile(const char *newfile, int ipos, bool updateUI);
   void newFile();
   void openFile();
-  void insertFile();
+  void replaceAll();
+  void replaceNext();
   void saveFile();
   void saveFileAs();
-  void showFindReplace();
-  bool findText(const char *find, bool forward);
-  void replaceNext();
-  void replaceAll();
-  void doDelete();
-  void cancelReplace();
-  void undo();
-  void gotoLine(int line);
-  void getRowCol(int *row, int *col);
-  void getSelStartRowCol(int *row, int *col);
-  void getSelEndRowCol(int *row, int *col);
   void setFontSize(int i);
-  int getFontSize();
-  void createFuncList();
-  void findFunc(const char *find);
   void setIndentLevel(int level);
+  void showFindReplace();
+  void undo();
 
   // editor callback functions
   static void new_cb(Widget *, void *v) {
@@ -125,6 +126,11 @@ public:
     return loading;
   }
 
+protected:
+  void handleFileChange();
+  ulong getModifiedTime();
+  void reloadFile();
+
 private:
   char filename[PATH_MAX];
   bool dirty;
@@ -132,6 +138,7 @@ private:
   Window *replaceDlg;
   Input *replaceFind;
   Input *replaceWith;
+  ulong modifiedTime;
 };
 
 #endif

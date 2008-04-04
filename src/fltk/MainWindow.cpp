@@ -175,7 +175,7 @@ void browseFile(const char *url)
     execlp("htmlview", "htmlview", url, NULL);
     execlp("firefox", "firefox", url, NULL);
     execlp("mozilla", "mozilla", url, NULL);
-    ::exit(0);                  // in case exec failed 
+    ::exit(0);    // in case exec failed 
   }
 #endif
 }
@@ -301,29 +301,33 @@ void fileChanged(bool loadfile)
     wnd->editWnd->createFuncList();
     wnd->funcList->redraw();
     
-    // update the last used file menu
-    bool found = false;
     const char *filename = wnd->editWnd->getFilename();
-    for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-      if (strcmp(filename, recentPath[i].toString()) == 0) {
-        found = true;
-        break;
+    if (filename && filename[0]) {
+      // update the last used file menu
+      bool found = false;
+      
+      for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+        if (strcmp(filename, recentPath[i].toString()) == 0) {
+          found = true;
+          break;
+        }
       }
-    }
-    if (found == false) {
-      // shift items downwards
-      for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
-        recentMenu[i]->copy_label(recentMenu[i - 1]->label());
-        recentPath[i].empty();
-        recentPath[i].append(recentPath[i - 1]);
+
+      if (found == false) {
+        // shift items downwards
+        for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
+          recentMenu[i]->copy_label(recentMenu[i - 1]->label());
+          recentPath[i].empty();
+          recentPath[i].append(recentPath[i - 1]);
+        }
+        // create new item in first position
+        char *c = strrchr(filename, '/');
+        if (c == 0)
+          c = strrchr(filename, '\\');
+        recentPath[0].empty();
+        recentPath[0].append(filename);
+        recentMenu[0]->copy_label(c ? c + 1 : filename);
       }
-       // create new item in first position
-      char *c = strrchr(filename, '/');
-      if (c == 0)
-        c = strrchr(filename, '\\');
-      recentPath[0].empty();
-      recentPath[0].append(filename);
-      recentMenu[0]->copy_label(c ? c + 1 : filename);
     }
   }
   else {
@@ -467,7 +471,7 @@ void help_contents_cb(Widget *, void *v)
     int pos = editor->insert_position();
     int start = tb->word_start(pos);
     int end = tb->word_end(pos);
-    const char *selection = tb->text_range(start, end);
+    char *selection = tb->text_range(start, end);
     int lenSelection = strlen(selection);
 
     snprintf(path, sizeof(path), "%s/help/help.idx", startDir);
@@ -505,13 +509,6 @@ void help_app_cb(Widget *, void *v)
   else {
     wnd->helpWnd->loadBuffer("APP_HELP env variable not found");
   }
-  showHelpTab();
-}
-
-void help_readme_cb(Widget *, void *v)
-{
-  snprintf(path, sizeof(path), "file:///%s/readme.html", startDir);
-  wnd->helpWnd->loadFile(path);
   showHelpTab();
 }
 
@@ -856,8 +853,7 @@ void expand_word_cb(Widget * w, void *v)
       }
     }
     if (matchPos != -1) {
-      char *word = (char *)
-        textbuf->text_range(matchPos, textbuf->word_end(matchPos));
+      char *word = textbuf->text_range(matchPos, textbuf->word_end(matchPos));
       if (textbuf->selected()) {
         textbuf->replace_selection(word + expandWordLen);
       }
@@ -1113,9 +1109,15 @@ int main(int argc, char **argv)
 
   wnd = new MainWindow(600, 500);
 
-  Button::default_style->box_ = fltk::PLASTIC_UP_BOX;
-  Button::default_style->color_ = 220;
+  // setup styles
   Widget::default_style->highlight_color(3);
+  Font* defaultFont = font("arial");
+  if (defaultFont) {
+    Widget::default_style->labelfont(defaultFont);
+    Button::default_style->labelfont(defaultFont);
+    Widget::default_style->textfont(defaultFont);
+    Button::default_style->textfont(defaultFont);
+  }
 
 #if defined(WIN32)
   HICON icon = (HICON) wnd->icon();
@@ -1142,7 +1144,7 @@ int main(int argc, char **argv)
     wnd->editWnd->loadFile(runfile, -1, true);
     break;
   default:
-    //    restoreEdit();
+    restoreEdit();
     runMode = edit_state;
   }
   return run();
@@ -1169,6 +1171,7 @@ MainWindow::MainWindow(int w, int h):Window(w, h, "SmallBASIC")
   opt_pref_width = 0;
   opt_pref_height = 0;
   opt_pref_bpp = 0;
+  os_graphics = 1;
 
   updatePath(runfile);
   begin();
@@ -1201,7 +1204,6 @@ MainWindow::MainWindow(int w, int h):Window(w, h, "SmallBASIC")
   m->add("&Program/&Break", CTRL + 'b', (Callback *) break_cb);
   m->add("&Help/&Help Contents", F1Key, (Callback *) help_contents_cb);
   m->add("&Help/_&Program Help", F11Key, (Callback *) help_app_cb);
-  m->add("&Help/&Release Notes", 0, (Callback *) help_readme_cb);
   m->add("&Help/_&Home Page", 0, (Callback *) help_home_cb);
   m->add("&Help/&About SmallBASIC", F12Key, (Callback *) help_about_cb);
 
@@ -1456,12 +1458,6 @@ int MainWindow::handle(int e)
   case RELEASE:
     penState = -1;
     return Window::handle(e);
-  case DND_ENTER:
-  case DND_DRAG:
-  case DND_RELEASE:
-    return 0;
-  case PASTE:
-    return 1;
   default:
     return Window::handle(e);
   }

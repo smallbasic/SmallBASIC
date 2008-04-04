@@ -1,4 +1,9 @@
-2008-08-15
+2008-03-31
+	* Various fixes for FLTK build
+	* Implemented outside file change check in FLTK build
+	* Implemented file drop support in FLTK build
+	
+2008-03-15
 	* re-migrated code from cvs - this time with full history
 	
 2007-12-31

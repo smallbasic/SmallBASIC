@@ -132,13 +132,12 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 =======
 
 Future ideas:
-- Add drag-drop file support to open a bas file
-- Add support for detecting another program has changed
-  the edited file in fltk version
+- Internal "fullscreen" mode that hides editor etc. This will make the 
+  running program look more or less like a standalone app.
+- Integrate online help with web site help info
 - Add command argument GUI for fltk to allow run time args to be set.
   usefull when creating command line based applications.
-- Add option to FLTK version to support run once and then terminate
-- replace keywords.txt with internal buffer (FLTK)
+- Add option to support run once and then terminate
 - Add break point, variable inspection, step/resume options.
 
 
