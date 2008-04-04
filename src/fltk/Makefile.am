@@ -5,25 +5,25 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES =																											\
-     -I../ -I.																									\
-     -DPACKAGE_PREFIX=\""$(prefix)"\"														\
-     -DPACKAGE_DATA_DIR=\""$(datadir)"\"												\
+INCLUDES =							\
+     -I../ -I.							\
+     -DPACKAGE_PREFIX=\""$(prefix)"\"				\
+     -DPACKAGE_DATA_DIR=\""$(datadir)"\"			\
      -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
      @PACKAGE_CFLAGS@
 
-EXTRA_DIST =																		\
-    README.TXT																	\
-    sbfltk.rc																		\
+EXTRA_DIST =					\
+    README.TXT					\
+    sbfltk.rc		\
 
 bin_PROGRAMS = sbasici
 
-sbasici_SOURCES =																\
-    Fl_Help_Widget.cpp HelpWidget.h							\
-    MainWindow.cpp MainWindow.h									\
-    EditorWindow.cpp EditorWindow.h							\
-    dev_fltk.cpp																\
-    StringLib.cpp StringLib.h										\
+sbasici_SOURCES =				\
+    Fl_Help_Widget.cpp HelpWidget.h		\
+    MainWindow.cpp MainWindow.h			\
+    EditorWindow.cpp EditorWindow.h		\
+    dev_fltk.cpp				\
+    StringLib.cpp StringLib.h			\
     blib_fltk_ui.cpp
 
 sbasici_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@

@@ -163,23 +163,6 @@ void showOutputTab()
   wnd->tabGroup->selected_child(wnd->outputGroup);
 }
 
-void browseFile(const char *url)
-{
-#if defined(WIN32)
-  ShellExecute(xid(Window::first()), "open", url, 0, 0, SW_SHOWNORMAL);
-#else
-  if (fork() == 0) {
-    fclose(stderr);
-    fclose(stdin);
-    fclose(stdout);
-    execlp("htmlview", "htmlview", url, NULL);
-    execlp("firefox", "firefox", url, NULL);
-    execlp("mozilla", "mozilla", url, NULL);
-    ::exit(0);    // in case exec failed 
-  }
-#endif
-}
-
 void updatePath(char *filename)
 {
   int len = filename ? strlen(filename) : 0;

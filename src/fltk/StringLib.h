@@ -1,9 +1,8 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.10 2005-08-17 23:19:09 zeeb90au Exp $
+// $Id: StringLib.h,v 1.1 2006/06/14 23:37:06 zeeb90au Exp $
 // This file is part of EBjLib
 //
-// Copyright(C) 2001-2004 Chris Warren-Smith. Gawler, South Australia
-// cwarrens@twpo.com.au
+// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -42,49 +41,52 @@ namespace strlib {
 
 //--Object----------------------------------------------------------------------
 
-struct Object {
+  struct Object {
     Object();
-    virtual ~Object();
-};
+    virtual ~ Object();
+  };
 
 //--String----------------------------------------------------------------------
 
-struct String : public Object {
-    virtual ~String();
+  struct String : public Object {
+    virtual ~ String();
     String();
-    String(const char* s);
-    String(const char* s, int len);
-    String(const String& s);
-    const String& operator=(const String& s);
-    const String& operator=(const char* s);
-    const String& operator=(const char c);
-    const void operator+=(const String& s);
-    const void operator+=(const char* s);
-    const char operator[](int index);
-    const String operator+(const String& s);
+    String(const char *s);
+    String(const char *s, int len);
+    String(const String & s);
+    const String & operator=(const String & s);
+    const String & operator=(const char *s);
+    const String & operator=(const char c);
+    const void operator+=(const String & s);
+    const void operator+=(const char *s);
+    const void operator+=(int i);
+    const char operator[] (int index);
+    const String operator+(const String & s);
     const String operator+(int i);
-    const String& operator=(int i);
-    void append(const String& s);
-    void append(const String* s);
+    const String & operator=(int i);
+    void append(const String & s);
+    void append(const String * s);
     void append(int i);
     void append(double d);
     void append(int i, int padding);
     void append(const char *s);
     void append(const char *s, int numCopy);
-    void append(FILE *fp, long len);
-    operator const char* () const {return buffer;}
-    const char* toString() const;
+    void append(FILE * fp, long len);
+    operator const char *() const {
+      return buffer;
+    }
+    const char *toString() const;
     int length() const;
     void replaceAll(char a, char b);
     void toUpperCase();
     void toLowerCase();
     int toInteger() const;
     double toNumber() const;
-    bool equals(const String &s, bool ignoreCase=true) const;
-    bool equals(const char* s, bool ignoreCase=true) const;
-    bool equalsIgnoreCase(const char* s) const;
-    bool startsWith(const char* s, bool ignoreCase=true) const;
-    int indexOf(const String &s, int fromIndex) const;
+    bool equals(const String & s, bool ignoreCase = true) const;
+    bool equals(const char *s, bool ignoreCase = true) const;
+    bool equalsIgnoreCase(const char *s) const;
+    bool startsWith(const char *s, bool ignoreCase = true) const;
+    int indexOf(const String & s, int fromIndex) const;
     int lastIndexOf(char chr, int untilIndex) const;
     void empty();
     void trim();
@@ -94,74 +96,84 @@ struct String : public Object {
     String rvalue();
     String substring(int beginIndex) const;
     String substring(int beginIndex, int endIndex) const;
-    String replaceAll(const char* srch, const char* repl);
-    String getPath(const char* fileName);
-    
-    protected:
-    void init() {buffer=0;owner=true;}
-    char* buffer;
+    String replaceAll(const char *srch, const char *repl);
+    String getPath(const char *fileName);
+
+  protected:
+    void init() {
+      buffer = 0;
+      owner = true;
+    }
+    char *buffer;
     bool owner;
-};
+  };
 
 //--List------------------------------------------------------------------------
 
-struct List {
-    List(int growSize=20);
-    virtual ~List();
-    void removeAll(); // Removes the list and the list contents
-    void emptyList(); // Empties the list without deleteing the list objects
-    int length() const {return count;}
-    Object* operator[](const int index) const;
-    Object* get(const int index) const;
-    void iterateInit(int ibegin=0);
+  struct List {
+    List(int growSize = 20);
+      virtual ~ List();
+    void removeAll();           // Removes the list and the list contents
+    void emptyList();           // Empties the list without deleteing the list
+    // objects
+    int length() const {
+      return count;
+    }
+    Object *operator[] (const int index)const;
+    Object *get(const int index) const;
+    void iterateInit(int ibegin = 0);
     bool hasNext() const;
-    Object* next();
-    void add(Object* object);
-    void addSet(String* s);
-    Object** getList() {return head;}
+    Object *next();
+    void add(Object * object);
+    void addSet(String * s);
+    Object **getList() {
+      return head;
+    }
 
-    // convert the String contents into a char* array - you are
-    // responsible for ensuring the array is deleted
-    const char** toArray();
-    
-    protected:
+    // convert the String contents into a char* array - you are// responsible
+    // for ensuring the array is deleted 
+    const char **toArray();
+
+  protected:
     void init();
-    Object** head;
+    Object **head;
     int growSize;
     int count;
     int size;
     int iterator;
-};
+  };
 
 //--Stack-----------------------------------------------------------------------
 
-struct Stack : public List{
+  struct Stack : public List {
     Stack();
     Stack(int growSize);
-    Object* peek();
-    Object* pop();
-    void push(Object* o);
-};
+    Object *peek();
+    Object *pop();
+    void push(Object * o);
+  };
 
 //--Properties------------------------------------------------------------------
 
-struct Properties : public List {
+  struct Properties : public List {
     Properties();
     Properties(int growSize);
-    virtual ~Properties();
+      virtual ~ Properties();
 
-    void load(const char* s);
-    void load(const char* s, int len);
-    String* get(const char* key);
-    String* get(int i) const;
-    String* getKey(int i) const;
-    int length() const {return count/2;}
-    void get(const char* key, List* arrayValues);
-    void operator=(Properties& p);
-    void put(String& key, String& value);
-    void put(const char* key, const char* value);
+    void load(const char *s);
+    void load(const char *s, int len);
+    String *get(const char *key);
+    String *get(int i) const;
+    String *getKey(int i) const;
+    int length() const {
+      return count / 2;
+    }
+    void get(const char *key, List * arrayValues);
+    void operator=(Properties & p);
+    void put(String & key, String & value);
+    void put(const char *key, const char *value);
     String toString();
-};
+  };
 
 }
 
