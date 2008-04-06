@@ -7,59 +7,59 @@
 
 SUBDIRS = @BUILD_SUBDIRS@
 
-EXTRA_DIST =																		\
-    README.TXT																	\
-    autogen.sh																	\
-    src/gtk/sbgtk.glade													\
-    src/gtk/sbgtk.gladep												\
-    src/gtk/debian/changelog										\
-    src/gtk/debian/control											\
-    src/gtk/debian/copyright										\
-    src/gtk/debian/rules												\
-    src/gtk/debian/sbasic.links									\
-    src/sdl/fonts/BI1.c													\
-    src/sdl/fonts/BI2.c													\
-    src/sdl/fonts/BI5.c													\
-    src/sdl/fonts/BI7.c													\
-    src/sdl/fonts/psf2c.c												\
-    documentation/export_cvs.bas								\
-    documentation/sbasic_ref.csv								\
-    documentation/HOWTO/HOWTO-DOCUMENT.TXT			\
-    documentation/HOWTO/HOWTO-PORT.TXT					\
-    documentation/HOWTO/DEVELOP.TXT							\
-    documentation/LICENSE												\
-    documentation/README												\
-    documentation/README.BCC										\
-    documentation/README.DEV										\
-    documentation/README.DOS										\
-    documentation/README.HELIO									\
-    documentation/README.PALM										\
-    documentation/README.UNIX										\
-    package/readme.html													\
-    package/sbasic.nsi													\
-    package/welcome.bas													\
-    package/Bas-Home/calc.bas										\
-    package/Bas-Home/calc.html									\
-    package/Bas-Home/comment_in.bas							\
-    package/Bas-Home/comment_out.bas						\
-    package/Bas-Home/dos2unix.bas								\
-    package/Bas-Home/image_demo.bas							\
-    package/Bas-Home/indent.bas									\
-    package/Bas-Home/logo.gif										\
-    package/Bas-Home/memoryTest.bas							\
-    package/Bas-Home/recent_files.bas						\
-    package/Bas-Home/snarf.bas									\
-    package/Bas-Home/sudoku.bas									\
-    package/Bas-Home/_survey.bas
+EXTRA_DIST =					\
+    README.TXT					\
+    autogen.sh					\
+    src/gtk/sbgtk.glade				\
+    src/gtk/sbgtk.gladep			\
+    src/gtk/debian/changelog			\
+    src/gtk/debian/control			\
+    src/gtk/debian/copyright			\
+    src/gtk/debian/rules			\
+    src/gtk/debian/sbasic.links			\
+    src/sdl/fonts/BI1.c				\
+    src/sdl/fonts/BI2.c				\
+    src/sdl/fonts/BI5.c				\
+    src/sdl/fonts/BI7.c				\
+    src/sdl/fonts/psf2c.c			\
+    documentation/export_cvs.bas		\
+    documentation/sbasic_ref.csv		\
+    documentation/HOWTO/HOWTO-DOCUMENT.TXT	\
+    documentation/HOWTO/HOWTO-PORT.TXT		\
+    documentation/HOWTO/DEVELOP.TXT		\
+    documentation/LICENSE			\
+    documentation/README			\
+    documentation/README.BCC			\
+    documentation/README.DEV			\
+    documentation/README.DOS			\
+    documentation/README.HELIO			\
+    documentation/README.PALM			\
+    documentation/README.UNIX			\
+    plugin/welcome.bas				\
+    plugin/calc.bas				\
+    plugin/calc.html				\
+    plugin/comment_in.bas			\
+    plugin/comment_out.bas			\
+    plugin/dos2unix.bas				\
+    plugin/image_demo.bas			\
+    plugin/indent.bas				\
+    plugin/logo.gif				\
+    plugin/memoryTest.bas			\
+    plugin/recent_files.bas			\
+    plugin/snarf.bas				\
+    plugin/sudoku.bas				\
+    plugin/_survey.bas
 
 
 deb:
 	fakeroot dpkg-buildpackage
 
-install-exec-hook:																	\
-	test -x ${bindir}/sbasic &&												\
-	mkdir -p $(DESTDIR)$(htmldir) &&									\
-	cp src/doc/guide_2.texi $(DESTDIR)$(htmldir) &&		\
-	cp src/doc/texi2html.bas $(DESTDIR)$(htmldir) &&	\
-	cd $(DESTDIR)$(htmldir) &&												\
-	sbasic texi2html.bas guide_2.texi
+install-exec-hook:
+	mkdir -p $(pkgdatadir) &&				\
+	mkdir -p $(pkgdatadir)/plugin &&			\
+	mkdir -p $(pkgdatadir)/ide &&				\
+	mkdir -p $(pkgdatadir)/samples &&			\
+	cp documentation/sbasic_ref.csv $(pkgdatadir) &&	\
+	cp plugin/*.* $(pkgdatadir)/plugin &&			\
+	cp ide/*.* $(pkgdatadir)/ide &&				\
+	cp -R samples/distro-examples/* $(pkgdatadir)/samples

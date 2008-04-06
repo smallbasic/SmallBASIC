@@ -750,7 +750,7 @@ void change_case_cb(Widget * w, void *v)
     // upcase chars following non-alpha chars
     for (int i = 1; i < len; i++) {
       if (isalpha(selection[i]) == false && i + 1 < len) {
-        selection[++i] = toupper(selection[i]);
+        selection[i+1] = toupper(selection[i+1]);
       }
     }
   }
@@ -1135,7 +1135,7 @@ int main(int argc, char **argv)
 
 //--MainWindow methods----------------------------------------------------------
 
-MainWindow::MainWindow(int w, int h):Window(w, h, "SmallBASIC")
+MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC")
 {
   int mnuHeight = 22;
   int tbHeight = 26;
