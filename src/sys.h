@@ -349,7 +349,9 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
-
+#include <ctype.h>
+#include <assert.h>
+#include <malloc.h>
 
 #if defined(__BORLANDC__)
 #include <dir.h>
