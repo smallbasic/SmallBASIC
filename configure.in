@@ -228,13 +228,13 @@ function buildFLTK() {
    ])
    fi
  
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -Wall -Wunused -fno-exceptions"
+   FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -Wall -Wunused -fno-exceptions"
    PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldstaticflags --use-images`"
 
    dnl do not depend on cygwin.dll under cygwin build
    case "${host_os}" in
      cygwin*)
-     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
+     FLTK_CXXFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32"
    esac
 
@@ -242,7 +242,7 @@ function buildFLTK() {
  
    dnl preconfigured values for FLTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(_FLTK, 0, [Defined for FLTK build.])
+   AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
@@ -252,6 +252,7 @@ function buildFLTK() {
  
    BUILD_SUBDIRS="src src/fltk"
    AC_SUBST(BUILD_SUBDIRS)
+   AC_SUBST(FLTK_CXXFLAGS)
 }
 
 function buildSDL() {

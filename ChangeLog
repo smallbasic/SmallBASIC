@@ -2,6 +2,8 @@
 	* Various fixes for FLTK build
 	* Implemented outside file change check in FLTK build
 	* Implemented file drop support in FLTK build
+	* Not being able to save an sbx file is no longer a fatal error
+	* runtime .bas files can now be read-only files.
 	
 2008-03-15
 	* re-migrated code from cvs - this time with full history

@@ -35,20 +35,20 @@ EXTRA_DIST =					\
     documentation/README.HELIO			\
     documentation/README.PALM			\
     documentation/README.UNIX			\
-    plugin/welcome.bas				\
-    plugin/calc.bas				\
-    plugin/calc.html				\
-    plugin/comment_in.bas			\
-    plugin/comment_out.bas			\
-    plugin/dos2unix.bas				\
-    plugin/image_demo.bas			\
-    plugin/indent.bas				\
-    plugin/logo.gif				\
-    plugin/memoryTest.bas			\
-    plugin/recent_files.bas			\
-    plugin/snarf.bas				\
-    plugin/sudoku.bas				\
-    plugin/_survey.bas
+    plugins/welcome.bas				\
+    plugins/calc.bas				\
+    plugins/calc.html				\
+    plugins/comment_in.bas			\
+    plugins/comment_out.bas			\
+    plugins/dos2unix.bas			\
+    plugins/image_demo.bas			\
+    plugins/indent.bas				\
+    plugins/logo.gif				\
+    plugins/memoryTest.bas			\
+    plugins/recent_files.bas			\
+    plugins/snarf.bas				\
+    plugins/sudoku.bas				\
+    plugins/_survey.bas
 
 
 deb:
@@ -56,10 +56,10 @@ deb:
 
 install-exec-hook:
 	mkdir -p $(pkgdatadir) &&				\
-	mkdir -p $(pkgdatadir)/plugin &&			\
+	mkdir -p $(pkgdatadir)/plugins &&			\
 	mkdir -p $(pkgdatadir)/ide &&				\
 	mkdir -p $(pkgdatadir)/samples &&			\
 	cp documentation/sbasic_ref.csv $(pkgdatadir) &&	\
-	cp plugin/*.* $(pkgdatadir)/plugin &&			\
+	cp plugins/*.* $(pkgdatadir)/plugins &&			\
 	cp ide/*.* $(pkgdatadir)/ide &&				\
 	cp -R samples/distro-examples/* $(pkgdatadir)/samples
