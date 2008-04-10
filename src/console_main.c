@@ -46,16 +46,17 @@ void remove_temp_file(void)
 
 /*
  * sets the BASDIR environment variable from the input file and
- * current working directory
+ * current working directory. BASDIR indicates the directory
+ * location of the running program
  */
 void set_bas_dir(const char *cwd, const char *bas_file)
 {
   char bas_dir[OS_PATHNAME_SIZE + 10];
   int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
-
+  
   bas_dir[0] = 0;
   strcat(bas_dir, "BASDIR=");
-
+  
   if (bas_file[0] == OS_DIRSEP) {
     // full path
     strncat(bas_dir, bas_file, path_len + 1);
@@ -82,16 +83,18 @@ void show_help()
 {
   printf("usage: sbasic [options] source [--] [program parameters]\n");
   printf("-c      syntax check (compile only)\n");
-  printf("-s      decompiler\n");
   printf("-g      enable graphics\n");
   printf("-g[<width>x<height>[x<bpp>]]\n");
   printf("        enable graphics & setup the graphics mode (depends on driver)\n");
+  printf("-h[-command] help pages\n");
   printf("-m[mod1,mod2,...]\n");
   printf("        load all or the specified modules\n");
-  printf("-v      verbose\n");
-  printf("-x      output compiled SBX file\n");
   printf("-pkw    print all keywords \n");
   printf("        (for creating editor color-syntax macros)\n");
+  printf("-s      decompiler\n");
+  printf("-u      set unit path\n");
+  printf("-v      verbose\n");
+  printf("-x      output compiled SBX file\n");
   // -i for ide
   /*
    * fprintf(stderr, "\ncharset (default: utf8)\n");
@@ -101,7 +104,6 @@ void show_help()
    * multibyte\n"); fprintf(stderr, "-u enable
    * unicode!\n");
    */
-  printf("-h[-command] help pages\n");
   printf("\nExamples:\n\tsbasic -h | less\n\tsbasic -h-input\n");
 }
 
@@ -161,11 +163,12 @@ void print_keywords()
 /*
  * process command-line parameters
  */
-int process_options(int argc, char *argv[], const char *cwd)
+int process_options(int argc, char *argv[])
 {
   int i;
   int opt_ihavename = 0;
   int opt_nomore = 0;
+  char buff[128];
 
   for (i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -198,6 +201,11 @@ int process_options(int argc, char *argv[], const char *cwd)
           opt_syntaxcheck++;
           break;
 
+        case 'u':
+          sprintf(buff, "UNITPATH=%s", &argv[i][2]);
+          dev_putenv(buff);
+          break;
+
         case 'v':
           // verbose check
           if (!opt_quiet) {
@@ -220,7 +228,6 @@ int process_options(int argc, char *argv[], const char *cwd)
           opt_graphics = 2;
           if ((argv[i][2] >= '1') && (argv[i][2] <= '9')) {
             // setup graphics mode
-            char buff[128];
             char *mode = &argv[i][2];
             sprintf(buff, "SBGRAF=%s", mode);
             dev_putenv(buff);
@@ -399,7 +406,7 @@ int MAIN_FUNC(int argc, char *argv[])
 
   getcwd(prev_cwd, sizeof(prev_cwd) - 1);
 
-  opt_retval = process_options(argc, argv, prev_cwd);
+  opt_retval = process_options(argc, argv);
 
   if (!opt_retval) {
     set_bas_dir(prev_cwd, g_file);
