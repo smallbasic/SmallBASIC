@@ -172,7 +172,7 @@
 #define ERR_RANGE				"Out of range"
 #define ERR_MISSING_SEP_OR_PAR	"Missing separator OR parenthesis"
 #define ERR_DIVZERO				"Division by zero"
-#define ERR_OPERATOR			"Operator NOT allowed"
+#define ERR_OPERATOR			"Operator cannot be used with an array"
 #define ERR_MATSIG				"Matrix singular"
 #define ERR_MISSING_LP			"Missing '('"
 #define ERR_PARFMT				"Parameters count/format error (%s)"
