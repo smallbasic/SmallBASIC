@@ -6,11 +6,11 @@
 # 
 
 INCLUDES =							\
-     -I../ -I.							\
-     -DPACKAGE_PREFIX=\""$(prefix)"\"				\
-     -DPACKAGE_DATA_DIR=\""$(datadir)"\"			\
-     -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
-     @PACKAGE_CFLAGS@
+  -I../ -I.							\
+  -DPACKAGE_PREFIX=\""$(prefix)"\"				\
+  -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"			\
+  -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
+  @FLTK_CXXFLAGS@
 
 EXTRA_DIST =					\
     README.TXT					\

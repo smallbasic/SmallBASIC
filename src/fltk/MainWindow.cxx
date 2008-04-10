@@ -65,7 +65,7 @@ enum ExecState {
 #define NUM_RECENT_ITEMS 9
 
 char path[MAX_PATH];
-char *startDir;
+char *packageHome;
 char *runfile = 0;
 int px, py, pw, ph;
 int completionIndex = 0;
@@ -75,7 +75,8 @@ Widget *recentMenu[NUM_RECENT_ITEMS];
 String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 
-const char *bashome = "./Bas-Home/";
+const char *basHome = "BAS_HOME=";
+const char *pluginHome = "./plugins/";
 const char untitledFile[] = "untitled.bas";
 const char lasteditFile[] = "lastedit.txt";
 const char historyFile[] = "history.txt";
@@ -441,45 +442,30 @@ void help_home_cb(Widget *, void *v)
 
 void help_contents_cb(Widget *, void *v)
 {
-  char helpFile[250];
-  strcpy(helpFile, "0_0.html"); // default to index page
+  if (runMode == edit_state) {
+    if (event_key() != 0) {
+      // scan for help context
+      TextEditor *editor = wnd->editWnd->editor;
+      TextBuffer *tb = editor->buffer();
+      int pos = editor->insert_position();
+      int start = tb->word_start(pos);
+      int end = tb->word_end(pos);
+      char *selection = tb->text_range(start, end);
 
-  if (event_key() != 0) {
-    // scan for help context
-    FILE *fp;
-    char buffer[MAX_PATH];
-
-    TextEditor *editor = wnd->editWnd->editor;
-    TextBuffer *tb = editor->buffer();
-    int pos = editor->insert_position();
-    int start = tb->word_start(pos);
-    int end = tb->word_end(pos);
-    char *selection = tb->text_range(start, end);
-    int lenSelection = strlen(selection);
-
-    snprintf(path, sizeof(path), "%s/help/help.idx", startDir);
-    fp = fopen(path, "r");
-
-    if (fp) {
-      while (feof(fp) == 0) {
-        if (fgets(buffer, sizeof(buffer), fp) &&
-            strncasecmp(selection, buffer, lenSelection) == 0 &&
-            buffer[lenSelection] == ':') {
-          strcpy(helpFile, buffer + lenSelection + 1);
-          helpFile[strlen(helpFile) - 1] = 0; // trim \n
-          break;
-        }
-      }
-      fclose(fp);
+      strcpy(opt_command, selection);
+      free((void *)selection);
     }
-    // cleanup
-    free((void *)selection);
+
+    sprintf(path, "%s/plugins/help.bas", packageHome);
+    basicMain(path);
+    statusMsg(wnd->editWnd->getFilename());
   }
 
+  // display the results of help.bas 
   showHelpTab();
-  snprintf(path, sizeof(path), "%s/help/", startDir);
+  getHomeDir(path);
   wnd->helpWnd->setDocHome(path);
-  strcat(path, helpFile);
+  strcat(path, "help.html");
   wnd->helpWnd->loadFile(path);
 }
 
@@ -679,7 +665,7 @@ void editor_cb(Widget * w, void *v)
               filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
       runMode = run_state;
       runMsg("RUN");
-      sprintf(path, "%s%s", startDir, (const char *)v);
+      sprintf(path, "%s%s", packageHome, (const char *)v);
       int success = sbasic_main(path);
       showEditTab();
       runMsg(success ? " " : "ERR");
@@ -699,10 +685,10 @@ void editor_cb(Widget * w, void *v)
 void tool_cb(Widget * w, void *filename)
 {
   if (runMode == edit_state) {
-    strcpy(opt_command, startDir);
-    strcat(opt_command, bashome + 1);
+    strcpy(opt_command, packageHome);
+    strcat(opt_command, pluginHome + 1);
     statusMsg((const char *)filename);
-    sprintf(path, "%s%s", startDir, (const char *)filename);
+    sprintf(path, "%s%s", packageHome, (const char *)filename);
     basicMain(path);
     statusMsg(wnd->editWnd->getFilename());
   }
@@ -855,7 +841,7 @@ void expand_word_cb(Widget * w, void *v)
   // keywords.txt created using
   // sbasic.exe -pkw | sort | uniq > keywords.txt
   strlib::List keywords;
-  snprintf(path, sizeof(path), "%s/help/keywords.txt", startDir);
+  snprintf(path, sizeof(path), "%s/help/keywords.txt", packageHome);
   fp = fopen(path, "r");
   if (fp == 0) {
     return;
@@ -994,13 +980,13 @@ void scanPlugIns(Menu * menu)
   char buffer[MAX_PATH];
   char label[1024];
 
-  snprintf(path, sizeof(path), "%s/Bas-Home", startDir);
+  snprintf(path, sizeof(path), "%s/plugins", packageHome);
   int numFiles = filename_list(path, &files);
   for (int i = 0; i < numFiles; i++) {
     const char *filename = (const char *)files[i]->d_name;
     int len = strlen(filename);
     if (strcasecmp(filename + len - 4, ".bas") == 0) {
-      sprintf(path, "%s%s", bashome, filename);
+      sprintf(path, "%s%s", pluginHome, filename);
       file = fopen(path, "r");
       if (!file) {
         continue;
@@ -1027,7 +1013,7 @@ void scanPlugIns(Menu * menu)
         }
         sprintf(label, (editorTool ? "&Edit/Basic/%s" : "&Basic/%s"), buffer + offs);
         // use an absolute path
-        sprintf(path, "%s%s", bashome + 1, filename);
+        sprintf(path, "%s%s", pluginHome + 1, filename);
         menu->add(label, 0, (Callback *)
                   (editorTool ? editor_cb : tool_cb), strdup(path));
       }
@@ -1085,15 +1071,24 @@ int main(int argc, char **argv)
           " -e[dit] file.bas\n" " -r[run] file.bas\n" " -m[odule]-home\n\n%s", help);
   }
 
+  // package home contains installed components
+#if defined(WIN32)
   getcwd(path, sizeof(path));
-  startDir = strdup(path);
-  sprintf(path, "BAS_HOME=%s%s", startDir, bashome + 1);
+  packageHome = strdup(path);
+#else
+  packageHome = PACKAGE_DATA_DIR;
+#endif
+  sprintf(path, "PKG_HOME=%s", packageHome);
+  dev_putenv(path);
+
+  // bas_home contains user editable files along with generated help
+  strcpy(path, basHome);
+  getHomeDir(path + strlen(basHome));
   dev_putenv(path);
 
   wnd = new MainWindow(600, 500);
 
   // setup styles
-  Widget::default_style->highlight_color(3);
   Font* defaultFont = font("arial");
   if (defaultFont) {
     Widget::default_style->labelfont(defaultFont);
@@ -1111,6 +1106,15 @@ int main(int argc, char **argv)
       icon = LoadIcon(NULL, IDI_APPLICATION);
   }
   wnd->icon((char *)icon);
+#else
+//   uchar* data = builddata(4, (uchar*)argbpixels);
+//   const unsigned width = 16*SCALE;
+//   const unsigned height = 16*SCALE;
+//   unsigned* icon = new unsigned[width*height+2];
+//   icon[0] = width;
+//   icon[1] = height;
+//   memcpy(icon+2, data, width*height*4);
+//   wnd->icon(icon);
 #endif
   wnd->show(argc, argv);
 

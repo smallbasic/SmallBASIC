@@ -662,12 +662,15 @@ C_LINKAGE_END
 void getHomeDir(char *fileName)
 {
   const char *home = getenv("HOME");
-  if (home == 0)
+  if (home == 0) {
     home = getenv("TMP");
-  if (home == 0)
+  }
+  if (home == 0) {
     home = getenv("TEMP");
-  if (home == 0)
+  }
+  if (home == 0) {
     home = getenv("TMPDIR");
+  }
   sprintf(fileName, "%s/.smallbasic/", home);
   makedir(fileName);
 }
