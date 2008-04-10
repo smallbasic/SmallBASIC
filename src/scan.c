@@ -20,10 +20,6 @@
 #include "extlib.h"
 #include "messages.h"
 
-#if defined(_UnixOS)
-#include <assert.h>
-#endif
-
 void comp_text_line(char *text) SEC(BCSC3);
 int comp_single_line_if(char *text) SEC(BCSC3);
 addr_t comp_search_bc(addr_t ip, code_t code) SEC(BCSC3);
@@ -3709,7 +3705,7 @@ char *comp_load(const char *file_name)
   int h;
 
   strcpy(comp_file_name, file_name);
-  h = open(comp_file_name, O_BINARY | O_RDWR, 0660);
+  h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
   if (h == -1) {
 #if defined(__CYGWIN__)
     char temp[1024];
@@ -4770,6 +4766,7 @@ int comp_save_bin(mem_t h_bc)
   char fname[OS_FILENAME_SIZE + 1];
   char *buf;
   char *p;
+  int result = 1;
 
   if ((opt_nosave && !comp_unit_flag) || opt_syntaxcheck) {
     return 1;
@@ -4793,11 +4790,11 @@ int comp_save_bin(mem_t h_bc)
     }
   }
   else {
-    fprintf(stderr, "error =%s\n", fname);
-    panic(MSG_BC_FILE_ERROR);
+    // non-fatal error
+    result = 0;
   }
 
-  return 1;
+  return result;
 }
 
 /**
