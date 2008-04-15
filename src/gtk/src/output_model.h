@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_model.h,v 1.15 2006-07-03 11:49:21 zeeb90au Exp $
+ * $Id$
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -85,4 +85,4 @@ void om_calc_font_metrics();
 
 #endif
 
-/* End of "$Id: output_model.h,v 1.15 2006-07-03 11:49:21 zeeb90au Exp $". */
+/* End of "$Id$". */

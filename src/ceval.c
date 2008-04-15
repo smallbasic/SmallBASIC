@@ -1,4 +1,4 @@
-// $Id: ceval.c,v 1.9 2007/08/31 21:09:51 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: expressions (warning: the input is byte-code segment)

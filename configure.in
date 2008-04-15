@@ -1,5 +1,5 @@
 dnl 
-dnl "$Id: configure.in,v 1.41 2007/11/02 20:24:56 zeeb90au Exp $"
+dnl "$Id$"
 dnl 
 dnl Configure script for SmallBASIC
 dnl
@@ -452,4 +452,4 @@ if test x$ac_build_dist = xyes; then
    make dist
 fi
 
-dnl End of "$Id: configure.in,v 1.41 2007/11/02 20:24:56 zeeb90au Exp $".
+dnl End of "$Id$".

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: eval.c,v 1.12 2007/08/18 13:30:43 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // SmallBASIC-executor: expressions

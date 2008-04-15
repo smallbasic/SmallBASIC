@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output.h,v 1.6 2006-02-10 05:59:58 zeeb90au Exp $
+ * $Id$
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -17,5 +17,5 @@ void invalidate_rect(int x1, int y1, int x2, int y2);
 
 #endif
 
-/* End of "$Id: output.h,v 1.6 2006-02-10 05:59:58 zeeb90au Exp $". */
+/* End of "$Id$". */
 

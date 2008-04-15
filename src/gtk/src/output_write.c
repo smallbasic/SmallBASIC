@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: output_write.c,v 1.19 2006/07/17 07:57:03 zeeb90au Exp $
+ * $Id$
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -353,5 +353,5 @@ void osd_write(const char *str) {
     osd_refresh();
 }
 
-/* End of "$Id: output_write.c,v 1.19 2006/07/17 07:57:03 zeeb90au Exp $". */
+/* End of "$Id$". */
 

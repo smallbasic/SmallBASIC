@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: scan.c,v 1.31 2007/11/05 11:45:07 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: Converts the source to byte-code.

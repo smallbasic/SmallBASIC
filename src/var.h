@@ -1,4 +1,4 @@
-// $Id: var.h,v 1.9 2007/07/13 23:06:43 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //

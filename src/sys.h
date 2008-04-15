@@ -1,4 +1,4 @@
-// $Id: sys.h,v 1.13 2007/07/13 23:06:43 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //

@@ -1,4 +1,4 @@
-// $Id: sberr.h,v 1.4 2007/10/10 11:50:19 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //

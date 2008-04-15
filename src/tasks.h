@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: tasks.h,v 1.3 2007/07/13 23:06:43 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // SmallBASIC SB-Task manager

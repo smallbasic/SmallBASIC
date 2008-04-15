@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: var.c,v 1.12 2007/07/20 22:43:54 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // SmallBasic Variable Manager.

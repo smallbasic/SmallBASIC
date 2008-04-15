@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: units.c,v 1.6 2007/11/05 11:45:07 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // SmallBASIC Unit (SB units) manager

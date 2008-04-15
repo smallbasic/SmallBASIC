@@ -1,4 +1,4 @@
-// $Id: console_main.c,v 1.14 2007/11/05 11:45:07 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //

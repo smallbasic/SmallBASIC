@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: kw.h,v 1.11 2007/07/21 11:02:39 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 //  Generic keywords  : BC size = 1 byte = 255-2 names

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_ui.c,v 1.2 2007/04/28 05:28:04 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // User Interface Lib

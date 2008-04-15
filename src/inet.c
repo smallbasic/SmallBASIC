@@ -1,5 +1,5 @@
 /*
- * $Id: inet.c,v 1.11 2006/08/03 10:30:53 zeeb90au Exp $
+ * $Id$
  *   Network library (byte-stream sockets)
  *
  *   Nicholas Christopoulos
@@ -507,4 +507,4 @@ void net_disconnect(socket_t s)
   net_close();
 }
 
-/* End of "$Id: inet.c,v 1.11 2006/08/03 10:30:53 zeeb90au Exp $". */
+/* End of "$Id$". */

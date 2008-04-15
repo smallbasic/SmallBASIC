@@ -1,4 +1,4 @@
-// $Id: blib.c,v 1.22 2007/11/02 20:24:56 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //

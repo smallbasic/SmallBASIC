@@ -1,5 +1,5 @@
 /* -*- c-file-style: "java" -*-
- * $Id: form_ui.c,v 1.37 2006/08/18 21:51:29 zeeb90au Exp $
+ * $Id$
  * This file is part of SmallBASIC
  *
  * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
@@ -762,4 +762,4 @@ void cmd_doform() {
   }
 }
 
-/* End of "$Id: form_ui.c,v 1.37 2006/08/18 21:51:29 zeeb90au Exp $". */
+/* End of "$Id$". */

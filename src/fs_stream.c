@@ -1,4 +1,4 @@
-// $Id: fs_stream.c,v 1.4 2006/12/27 01:10:55 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: file.c,v 1.7 2007/01/07 03:05:50 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // SmallBASIC - file.c - Low-level file system support

@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: blib_sdl_ui.cpp,v 1.5 2007/05/09 11:15:06 zeeb90au Exp $
+// $Id$
 //
 // Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
@@ -808,4 +808,4 @@ extern "C" void cmd_doform()
 
 #endif
 
-// End of "$Id: blib_sdl_ui.cpp,v 1.5 2007/05/09 11:15:06 zeeb90au Exp $".
+// End of "$Id$".

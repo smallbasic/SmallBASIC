@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: uds.c,v 1.2 2007/07/20 22:43:54 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // user-defined structures
@@ -213,4 +213,4 @@ void uds_write(const var_p_t var_p, int method, int handle)
   pv_write(")", method, handle);
 }
 
-// End of $Id: uds.c,v 1.2 2007/07/20 22:43:54 zeeb90au Exp $
+// End of $Id$

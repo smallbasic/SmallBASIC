@@ -1,4 +1,4 @@
-// $Id: blib_db.c,v 1.5 2007/06/23 22:39:20 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -1070,4 +1070,4 @@ void cmd_bsave()
   pfree(fname);
 }
 
-/* End of "$Id: blib_db.c,v 1.5 2007/06/23 22:39:20 zeeb90au Exp $". */
+/* End of "$Id$". */

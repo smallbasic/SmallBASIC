@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: brun.c,v 1.21 2007/10/10 11:56:07 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // byte-code executor

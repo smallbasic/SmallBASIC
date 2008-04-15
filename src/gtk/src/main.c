@@ -1,4 +1,4 @@
-// $Id: main.c,v 1.19 2006/08/02 10:41:09 zeeb90au Exp $
+// $Id$
 // -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
@@ -86,4 +86,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/* End of "$Id: main.c,v 1.19 2006/08/02 10:41:09 zeeb90au Exp $". */
+/* End of "$Id$". */
