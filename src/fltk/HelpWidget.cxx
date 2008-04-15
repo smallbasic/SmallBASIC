@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*- 
-// $Id: HelpWidget.cxx,v 1.8 2006/07/17 10:33:47 zeeb90au Exp $
+// $Id$
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
@@ -3144,4 +3144,4 @@ void browseFile(const char *url)
 #endif
 }
 
-// End of "$Id: HelpWidget.cxx,v 1.8 2006/07/17 10:33:47 zeeb90au Exp $".
+// End of "$Id$".

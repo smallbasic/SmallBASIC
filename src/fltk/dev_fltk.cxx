@@ -1,4 +1,4 @@
-// $Id: dev_fltk.cpp,v 1.56 2007-05-31 11:03:16 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
@@ -868,4 +868,4 @@ void updateForm(const char *s)
 //     }
 }
 
-// End of "$Id: dev_fltk.cpp,v 1.56 2007-05-31 11:03:16 zeeb90au Exp $".
+// End of "$Id$".

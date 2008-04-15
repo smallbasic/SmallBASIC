@@ -1,4 +1,4 @@
-// $Id: StringLib.cxx,v 1.2 2006/06/24 23:37:13 zeeb90au Exp $
+// $Id$
 // This file was part of EBjLib
 //
 // Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia

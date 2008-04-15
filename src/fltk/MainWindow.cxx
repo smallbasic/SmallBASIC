@@ -1,4 +1,4 @@
-// $Id: MainWindow.cpp,v 1.86 2007-05-31 11:03:16 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -1551,4 +1551,4 @@ extern "C" void trace(const char *format, ...)
 #endif
 }
 
-// End of "$Id: MainWindow.cpp,v 1.86 2007-05-31 11:03:16 zeeb90au Exp $".
+// End of "$Id$".
