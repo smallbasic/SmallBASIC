@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id: EditorWindow.cpp,v 1.59 2007-05-31 11:03:16 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
@@ -1166,6 +1165,20 @@ void EditorWindow::handleFileChange() {
     else {
       modifiedTime = 0;
     }
+  }
+}
+
+void EditorWindow::getKeywords(strlib::List& keywords) {
+  for (int i = 0; i < numCodeKeywords; i++) {
+    keywords.add(new String(code_keywords[i]));
+  }
+
+  for (int i = 0; i < numCodeFunctions; i++) {
+    keywords.add(new String(code_functions[i]));
+  }
+
+  for (int i = 0; i < numCodeProcedures; i++) {
+    keywords.add(new String(code_procedures[i]));
   }
 }
 

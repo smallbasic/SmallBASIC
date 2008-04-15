@@ -117,8 +117,8 @@ public:
   }
 
 protected:
-  void compile();
   void reloadPage();
+  void compile();
   void init();
   void cleanup();
   void endSelection();

@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id: StringLib.cxx,v 1.2 2006/06/24 23:37:13 zeeb90au Exp $
 // This file was part of EBjLib
 //
@@ -455,10 +454,11 @@ void List::emptyList()
   init();
 }
 
-Object *List::operator[] (const int index)
-const {
+Object *List::operator[] (const int index) const 
+{
   return index < count ? head[index] : 0;
 }
+
 Object *List::get(const int index) const
 {
   return index < count ? head[index] : 0;

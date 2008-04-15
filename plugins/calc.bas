@@ -139,9 +139,9 @@ sub main
     # display the user interface if not already displayed
     # the form-active field is a hidden form variable  
     if env("form-active") != "true" then
-        chdir env("BAS_HOME")
-        html "file:calc.html"
-        exit sub
+      chdir env("PKG_HOME") + "/plugins/"
+      html "file:calc.html"
+      exit sub
     fi
 
     if len(command) = 0 then

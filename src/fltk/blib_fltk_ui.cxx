@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id: blib_fltk_ui.cpp,v 1.16 2007-05-31 11:03:16 zeeb90au Exp $
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -449,4 +448,5 @@ void cmd_doform()
 }
 
 C_LINKAGE_END
+
 // End of "$Id: blib_fltk_ui.cpp,v 1.16 2007-05-31 11:03:16 zeeb90au Exp $".

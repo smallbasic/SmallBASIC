@@ -48,8 +48,11 @@ EXTRA_DIST =					\
     plugins/recent_files.bas			\
     plugins/snarf.bas				\
     plugins/sudoku.bas				\
-    plugins/_survey.bas
-
+    plugins/_survey.bas				\
+    images/sb16x16.png				\
+    images/sb32x32.png				\
+    images/sb-desktop-16x16.png			\
+    images/sb-desktop-32x32.png
 
 deb:
 	fakeroot dpkg-buildpackage

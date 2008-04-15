@@ -15,6 +15,17 @@ func getHelpOutputFilename
 end
 
 #
+# remove any surrounding quotes from the given string
+#
+func unquote(s)
+  if (left(s, 1) == "\"") then
+    unquote = mid(s, 2, len(s)-2)
+  else
+    unquote = s
+  fi
+end
+
+#
 # show the available chapter names
 #
 sub showChapters
@@ -44,9 +55,9 @@ sub showChapter(chapter)
   for row in contents
     split row, ",", cols
     if len(cols) > 0 then
-      nextChapter = disclose(cols(0), "\"\"")
+      nextChapter = unquote(cols(0))
       if (nextChapter == chapter) then
-        keyword = disclose(cols(2), "\"\"")
+        keyword = unquote(cols(2))
         out << "<a href=" + keyword + ">" + keyword + "</a><br>"
       fi
     fi
@@ -64,17 +75,18 @@ sub showContext(keyword)
 
   tload getHelpInputFilename, contents
   max_contents = len(contents) - 1
-
+  out = 0
+  
   for i = 0 to max_contents
     split contents(i), ",", cols, "\"\""
     if len(cols) > 0 then
-      kw = disclose(cols(2), "\"\"")
+      kw = unquote(cols(2))
       if (kw == keyword) then
-        chapter = disclose(cols(0), "\"\"")
+        chapter = unquote(cols(0))
         out << "<h1>" + chapter + " - " + keyword + "</h1>"
-        out << disclose(cols(3), "\"\"") 'synopsis
+        out << unquote(cols(3)) 'synopsis
         out << "<br><br>"
-        out << disclose(cols(4), "\"\"") 'help information
+        out << unquote(cols(4)) 'help information
         out << "<hr>"
 
         rem draw next and previous links
@@ -82,12 +94,12 @@ sub showContext(keyword)
         out << "<a href=!" + chapter + ">[Up]</a>"
         if (i > 0) then
           split contents(i - 1), ",", cols
-          kw = disclose(cols(2), "\"\"")
+          kw = unquote(cols(2))
           out << "<a href=" + kw + ">[" + kw + "]</a>"
         fi
-        if (i < max_contents) then
+        if (i < max_contents - 1) then
           split contents(i + 1), ",", cols
-          kw = disclose(cols(2), "\"\"")
+          kw = unquote(cols(2))
           out << "<a href=" + kw + ">[" + kw + "]</a>"
         fi
         exit for
@@ -95,6 +107,11 @@ sub showContext(keyword)
     fi
   next i
 
+  if (isarray(out) == 0) then
+    out << "Keyword not found: " + keyword
+    out << "<hr><a href=^>[Index]</a>"
+  fi
+    
   tsave getHelpOutputFilename, out
 end
 
@@ -110,5 +127,6 @@ sub main
     showContext upper(command)
   fi
 end
-  
+
 main
+

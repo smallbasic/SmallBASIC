@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id: dev_fltk.cpp,v 1.56 2007-05-31 11:03:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //

@@ -14,7 +14,8 @@ INCLUDES =							\
 
 EXTRA_DIST =					\
     README.TXT					\
-    sbfltk.rc
+    sbfltk.rc					\
+    $(desktopentry_DATA)
 
 bin_PROGRAMS = sbasici
 
@@ -27,6 +28,12 @@ sbasici_SOURCES =				\
     blib_fltk_ui.cxx
 
 sbasici_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
+
+sbasici_DEPENDENCIES = ../libsb_common.a
+
+iconsdir = $(datadir)/icons/hicolor/32x32/apps
+icons_DATA = ../../images/sb-desktop-32x32.png
+desktopentry_DATA = smallbasic.desktop
 
 if WITH_WIN32
 sbasici_LDADD += sbfltk.res

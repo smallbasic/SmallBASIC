@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id: EditorWindow.h,v 1.24 2006-01-26 03:58:00 zeeb90au Exp $
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
@@ -23,6 +22,8 @@
 #include <fltk/TextEditor.h>
 #include <fltk/Choice.h>
 #include <limits.h>
+
+#include "StringLib.h"
 
 using namespace fltk;
 
@@ -71,6 +72,7 @@ public:
   void setIndentLevel(int level);
   void showFindReplace();
   void undo();
+  void getKeywords(strlib::List& keywords);
 
   // editor callback functions
   static void new_cb(Widget *, void *v) {

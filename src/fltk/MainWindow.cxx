@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id: MainWindow.cpp,v 1.86 2007-05-31 11:03:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
@@ -76,10 +75,11 @@ String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 
 const char *basHome = "BAS_HOME=";
-const char *pluginHome = "./plugins/";
+const char *pluginHome = "plugins";
 const char untitledFile[] = "untitled.bas";
 const char lasteditFile[] = "lastedit.txt";
 const char historyFile[] = "history.txt";
+const char keywordsFile[] = "keywords.txt";
 const char aboutText[] =
   "<b>About SmallBASIC...</b><br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
@@ -329,8 +329,6 @@ void fileChanged(bool loadfile)
 
 void basicMain(const char *filename)
 {
-  showOutputTab();
-
   int len = strlen(filename);
   if (strcasecmp(filename + len - 4, ".htm") == 0 ||
       strcasecmp(filename + len - 5, ".html") == 0) {
@@ -363,7 +361,8 @@ void basicMain(const char *filename)
     if (gsb_last_errmsg[len - 1] == '\n') {
       gsb_last_errmsg[len - 1] = 0;
     }
-    closeForm();                // unhide the error
+    closeForm();  // unhide the error
+    showEditTab();
     statusMsg(gsb_last_errmsg);
     wnd->fileStatus->labelcolor(RED);
     runMsg("ERR");
@@ -378,7 +377,6 @@ void basicMain(const char *filename)
     wnd->editWnd->take_focus();
   }
   runMode = edit_state;
-  opt_command[0] = 0;
 }
 
 bool searchBackward(const char *text, int startPos,
@@ -440,6 +438,37 @@ void help_home_cb(Widget *, void *v)
   browseFile(path);
 }
 
+// display the results of help.bas 
+void showHelpPage() {
+  showHelpTab();
+  getHomeDir(path);
+  wnd->helpWnd->setDocHome(path);
+  strcat(path, "help.html");
+  wnd->helpWnd->loadFile(path);
+}
+
+void execHelp() {
+  sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
+  basicMain(path);
+  statusMsg(wnd->editWnd->getFilename());
+}
+
+// handle click from within help window
+void do_help_contents_anchor(void *)
+{
+  fltk::remove_check(do_help_contents_anchor);
+  strcpy(opt_command, wnd->helpWnd->getEventName());
+  execHelp();
+  showHelpPage();
+}
+
+void help_contents_anchor_cb(Widget * w, void *v) {
+  if (runMode == edit_state) {
+    fltk::add_check(do_help_contents_anchor);
+  }
+}
+
+// handle f1 context help
 void help_contents_cb(Widget *, void *v)
 {
   if (runMode == edit_state) {
@@ -456,17 +485,10 @@ void help_contents_cb(Widget *, void *v)
       free((void *)selection);
     }
 
-    sprintf(path, "%s/plugins/help.bas", packageHome);
-    basicMain(path);
-    statusMsg(wnd->editWnd->getFilename());
+    execHelp();
   }
 
-  // display the results of help.bas 
-  showHelpTab();
-  getHomeDir(path);
-  wnd->helpWnd->setDocHome(path);
-  strcat(path, "help.html");
-  wnd->helpWnd->loadFile(path);
+  showHelpPage();
 }
 
 void help_app_cb(Widget *, void *v)
@@ -491,6 +513,14 @@ void break_cb(Widget *, void *v)
 {
   if (runMode == run_state || runMode == modal_state) {
     runMode = break_state;
+  }
+}
+
+void set_options_cb(Widget *, void *v)
+{
+  const char* args = fltk::input("Enter program arguments", opt_command);
+  if (args) {
+    strcpy(opt_command, args);
   }
 }
 
@@ -638,6 +668,7 @@ void run_cb(Widget *, void *)
         wnd->editWnd->doSaveFile(filename, true);
       }
     }
+    showOutputTab();
     basicMain(filename);
   }
   else {
@@ -665,7 +696,7 @@ void editor_cb(Widget * w, void *v)
               filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
       runMode = run_state;
       runMsg("RUN");
-      sprintf(path, "%s%s", packageHome, (const char *)v);
+      sprintf(path, "%s/%s", packageHome, (const char *)v);
       int success = sbasic_main(path);
       showEditTab();
       runMsg(success ? " " : "ERR");
@@ -685,12 +716,13 @@ void editor_cb(Widget * w, void *v)
 void tool_cb(Widget * w, void *filename)
 {
   if (runMode == edit_state) {
-    strcpy(opt_command, packageHome);
-    strcat(opt_command, pluginHome + 1);
+    sprintf(opt_command, "%s/%s", packageHome, pluginHome);
     statusMsg((const char *)filename);
-    sprintf(path, "%s%s", packageHome, (const char *)filename);
+    sprintf(path, "%s/%s", packageHome, (const char *)filename);
+    showOutputTab();
     basicMain(path);
     statusMsg(wnd->editWnd->getFilename());
+    opt_command[0] = 0;
   }
   else {
     busyMessage();
@@ -750,9 +782,7 @@ void change_case_cb(Widget * w, void *v)
 
 void expand_word_cb(Widget * w, void *v)
 {
-  FILE *fp;
   int start, end;
-  char buffer[MAX_PATH];
   const char *fullWord = 0;
   unsigned fullWordLen = 0;
   TextEditor *editor = wnd->editWnd->editor;
@@ -838,24 +868,8 @@ void expand_word_cb(Widget * w, void *v)
 
   completionIndex = -1;         // no more buffer expansions
 
-  // keywords.txt created using
-  // sbasic.exe -pkw | sort | uniq > keywords.txt
   strlib::List keywords;
-  snprintf(path, sizeof(path), "%s/help/keywords.txt", packageHome);
-  fp = fopen(path, "r");
-  if (fp == 0) {
-    return;
-  }
-  while (feof(fp) == 0) {
-    if (fgets(buffer, sizeof(buffer), fp)) {
-      int lenb = strlen(buffer) - 1;
-      buffer[lenb] = 0;         // trim new-line
-      String *s = new String;
-      s->append(buffer);
-      keywords.add(s);
-    }
-  }
-  fclose(fp);
+  wnd->editWnd->getKeywords(keywords);
 
   // find the next replacement 
   int firstIndex = -1;
@@ -980,13 +994,13 @@ void scanPlugIns(Menu * menu)
   char buffer[MAX_PATH];
   char label[1024];
 
-  snprintf(path, sizeof(path), "%s/plugins", packageHome);
+  snprintf(path, sizeof(path), "%s/%s", packageHome, pluginHome);
   int numFiles = filename_list(path, &files);
   for (int i = 0; i < numFiles; i++) {
     const char *filename = (const char *)files[i]->d_name;
     int len = strlen(filename);
     if (strcasecmp(filename + len - 4, ".bas") == 0) {
-      sprintf(path, "%s%s", pluginHome, filename);
+      sprintf(path, "%s/%s", pluginHome, filename);
       file = fopen(path, "r");
       if (!file) {
         continue;
@@ -1013,7 +1027,7 @@ void scanPlugIns(Menu * menu)
         }
         sprintf(label, (editorTool ? "&Edit/Basic/%s" : "&Basic/%s"), buffer + offs);
         // use an absolute path
-        sprintf(path, "%s%s", pluginHome + 1, filename);
+        sprintf(path, "%s/%s", pluginHome, filename);
         menu->add(label, 0, (Callback *)
                   (editorTool ? editor_cb : tool_cb), strdup(path));
       }
@@ -1102,19 +1116,11 @@ int main(int argc, char **argv)
   if (!icon) {
     icon = (HICON) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(101),
                              IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR | LR_SHARED);
-    if (!icon)
+    if (!icon) {
       icon = LoadIcon(NULL, IDI_APPLICATION);
+    }
   }
   wnd->icon((char *)icon);
-#else
-//   uchar* data = builddata(4, (uchar*)argbpixels);
-//   const unsigned width = 16*SCALE;
-//   const unsigned height = 16*SCALE;
-//   unsigned* icon = new unsigned[width*height+2];
-//   icon[0] = width;
-//   icon[1] = height;
-//   memcpy(icon+2, data, width*height*4);
-//   wnd->icon(icon);
 #endif
   wnd->show(argc, argv);
 
@@ -1125,8 +1131,9 @@ int main(int argc, char **argv)
   case run_state:
     wnd->editWnd->loadFile(runfile, -1, true);
     addHistory(runfile);
+    showOutputTab();
     basicMain(runfile);
-    break;
+    return 0;
   case edit_state:
     wnd->editWnd->loadFile(runfile, -1, true);
     break;
@@ -1188,7 +1195,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC")
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) font_size_decr_cb);
   scanPlugIns(m);
   m->add("&Program/&Run", F9Key, (Callback *) run_cb);
-  m->add("&Program/&Break", CTRL + 'b', (Callback *) break_cb);
+  m->add("&Program/_&Break", CTRL + 'b', (Callback *) break_cb);
+  m->add("&Program/&Options", F10Key, (Callback *) set_options_cb);
   m->add("&Help/&Help Contents", F1Key, (Callback *) help_contents_cb);
   m->add("&Help/_&Program Help", F11Key, (Callback *) help_app_cb);
   m->add("&Help/_&Home Page", 0, (Callback *) help_home_cb);
@@ -1261,6 +1269,7 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC")
   helpGroup->hide();
   helpGroup->begin();
   helpWnd = new HelpWidget(2, 2, w - 4, pageHeight - 4);
+  helpWnd->callback(help_contents_anchor_cb);
   helpWnd->loadBuffer(aboutText);
   helpGroup->resizable(helpWnd);
   helpGroup->end();
@@ -1367,6 +1376,7 @@ void MainWindow::execLink(const char *file)
       wnd->editWnd->loadFile(localFile, -1, false);
       statusMsg(file);
       addHistory(file);
+      showOutputTab();
       basicMain(localFile);
     }
     else {
@@ -1421,6 +1431,7 @@ void MainWindow::execLink(const char *file)
     statusMsg(file);
     if (execFile) {
       addHistory(file);
+      showOutputTab();
       basicMain(file);
       opt_nosave = 1;
     }

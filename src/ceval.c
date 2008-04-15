@@ -1,5 +1,4 @@
 // $Id: ceval.c,v 1.9 2007/08/31 21:09:51 zeeb90au Exp $
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // pseudo-compiler: expressions (warning: the input is byte-code segment)
@@ -35,7 +34,6 @@ void cev_udp(void)
   sc_raise("(EXPR): UDP INSIDE EXPR");
 }
 
-#if defined(_PalmOS)
 void cev_missing_rp(void)
 {
   sc_raise("(EXPR): MISSING ')'");
@@ -45,14 +43,6 @@ void cev_opr_err(void)
 {
   sc_raise("(EXPR): SYNTAX ERROR (1st OP)");
 }
-#else
-#define cev_missing_rp()                                                \
-    printf("C %s:%d, BAS: %d, EXPR: MISSING ')' (CS:IP=%d)\n",          \
-           __FILE__, __LINE__, comp_line, CODE_PEEK() | comp_error++)
-#define cev_opr_err()                                                   \
-    printf("C %s:%d, BAS: %d, EXPR: SYNTAX ERROR (1st OP) (CS:IP=%d)\n", \
-           __FILE__, __LINE__, comp_line, CODE_PEEK() | comp_error++)
-#endif
 
 static bc_t *bc_in;
 static bc_t *bc_out;
