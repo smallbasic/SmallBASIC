@@ -31,8 +31,8 @@ sbasici_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
 
 sbasici_DEPENDENCIES = ../libsb_common.a
 
-iconsdir = $(datadir)/icons/hicolor/32x32/apps
-icons_DATA = ../../images/sb-desktop-32x32.png
+iconsdir = $(datadir)/icons/hicolor/48x48/apps
+icons_DATA = ../../images/smallbasic.png
 desktopentry_DATA = smallbasic.desktop
 
 if WITH_WIN32

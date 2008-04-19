@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=SmallBASIC IDE 
+Comment=SmallBASIC
+Exec=sbasici
+Icon=smallbasic.png
+Terminal=false
+Type=Application
+Categories=Application;Development;
+
