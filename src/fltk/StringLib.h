@@ -1,5 +1,5 @@
 // -*- c-file-style: "java" -*-
-// $Id: StringLib.h,v 1.1 2006/06/14 23:37:06 zeeb90au Exp $
+// $Id$
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]

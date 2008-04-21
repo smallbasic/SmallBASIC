@@ -1,4 +1,4 @@
-// $Id: MainWindow.h,v 1.26 2007-05-31 11:03:16 zeeb90au Exp $
+// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]

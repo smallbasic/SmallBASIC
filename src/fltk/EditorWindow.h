@@ -1,4 +1,4 @@
-// $Id: EditorWindow.h,v 1.24 2006-01-26 03:58:00 zeeb90au Exp $
+// $Id$
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast 
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
