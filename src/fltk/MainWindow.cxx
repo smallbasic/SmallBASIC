@@ -5,7 +5,7 @@
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-// 
+//
 
 #include "sys.h"
 
@@ -66,7 +66,6 @@ enum ExecState {
 char path[MAX_PATH];
 char *packageHome;
 char *runfile = 0;
-int px, py, pw, ph;
 int completionIndex = 0;
 MainWindow *wnd;
 int recentIndex = 0;
@@ -81,17 +80,17 @@ const char lasteditFile[] = "lastedit.txt";
 const char historyFile[] = "history.txt";
 const char keywordsFile[] = "keywords.txt";
 const char aboutText[] =
-  "<b>About SmallBASIC...</b><br><br>"
-  "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
-  "FLTK Version " SB_STR_VER "<br>"
-  "Copyright (c) 2002-2008 Chris Warren-Smith.<br><br>"
-  "<a href=http://smallbasic.sourceforge.net>"
-  "http://smallbasic.sourceforge.net</a><br><br>"
-  "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
-  "This program is free software; you can use it "
-  "redistribute it and/or modify it under the terms of the "
-  "GNU General Public License version 2 as published by "
-  "the Free Software Foundation.<br><br>" "<i>Press F1 for help";
+"<b>About SmallBASIC...</b><br><br>"
+"Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
+"FLTK Version " SB_STR_VER "<br>"
+"Copyright (c) 2002-2008 Chris Warren-Smith.<br><br>"
+"<a href=http://smallbasic.sourceforge.net>"
+"http://smallbasic.sourceforge.net</a><br><br>"
+"SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
+"This program is free software; you can use it "
+"redistribute it and/or modify it under the terms of the "
+"GNU General Public License version 2 as published by "
+"the Free Software Foundation.<br><br>" "<i>Press F1 for help";
 
 // in dev_fltk.cpp
 void getHomeDir(char *filename);
@@ -99,6 +98,8 @@ bool cacheLink(dev_file_t * df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
 bool isFormActive();
+
+void quit_cb(Widget *, void *v);
 
 //--EditWindow functions--------------------------------------------------------
 
@@ -284,12 +285,12 @@ void fileChanged(bool loadfile)
     // update the func/sub navigator
     wnd->editWnd->createFuncList();
     wnd->funcList->redraw();
-    
+
     const char *filename = wnd->editWnd->getFilename();
     if (filename && filename[0]) {
       // update the last used file menu
       bool found = false;
-      
+
       for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
         if (strcmp(filename, recentPath[i].toString()) == 0) {
           found = true;
@@ -306,8 +307,9 @@ void fileChanged(bool loadfile)
         }
         // create new item in first position
         char *c = strrchr(filename, '/');
-        if (c == 0)
+        if (c == 0) {
           c = strrchr(filename, '\\');
+        }
         recentPath[0].empty();
         recentPath[0].append(filename);
         recentMenu[0]->copy_label(c ? c + 1 : filename);
@@ -322,7 +324,7 @@ void fileChanged(bool loadfile)
     fwrite("\n", 1, 1, fp);
     fclose(fp);
   }
-  
+
   new Item(SCAN_LABEL);
   wnd->funcList->end();
 }
@@ -350,7 +352,33 @@ void basicMain(const char *filename)
   runMsg("RUN");
   wnd->copy_label("SmallBASIC");
 
+  Window* fullScreen = NULL;
+  Group* oldOutputGroup = wnd->outputGroup;
+  int old_w = wnd->out->w();
+  int old_h = wnd->out->h();
+  if (wnd->isFullScreen) {
+    fullScreen = new BaseWindow(wnd->w(), wnd->h());
+    fullScreen->callback(quit_cb);
+    fullScreen->shortcut(0);
+    fullScreen->add(wnd->out);
+    fullScreen->show();
+    wnd->outputGroup = fullScreen;
+    wnd->out->resize(wnd->w(), wnd->h());
+    wnd->hide();
+  }
+
   int success = sbasic_main(filename);
+
+  if (fullScreen != NULL) {
+    fullScreen->remove(wnd->out);
+    delete fullScreen;
+
+    wnd->outputGroup = oldOutputGroup;
+    wnd->outputGroup->add(wnd->out);
+    wnd->out->resize(old_w, old_h);
+    wnd->show();
+  }
+
   if (runMode == quit_state) {
     exit(0);
   }
@@ -406,7 +434,7 @@ void quit_cb(Widget *, void *v)
 {
   if (runMode == edit_state || runMode == quit_state) {
 
-    // auto-save scratchpad 
+    // auto-save scratchpad
     const char *filename = wnd->editWnd->getFilename();
     int offs = strlen(filename) - strlen(untitledFile);
     if (filename[0] == 0 ||
@@ -426,7 +454,7 @@ void quit_cb(Widget *, void *v)
     case 0:
       exit(0);
     case 1:
-      dev_pushkey(SB_KEY_BREAK);
+      brun_break();
       runMode = break_state;
     }
   }
@@ -438,7 +466,7 @@ void help_home_cb(Widget *, void *v)
   browseFile(path);
 }
 
-// display the results of help.bas 
+// display the results of help.bas
 void showHelpPage() {
   showHelpTab();
   getHomeDir(path);
@@ -462,7 +490,7 @@ void do_help_contents_anchor(void *)
   showHelpPage();
 }
 
-void help_contents_anchor_cb(Widget * w, void *v) {
+void help_contents_anchor_cb(Widget* w, void *v) {
   if (runMode == edit_state) {
     fltk::add_check(do_help_contents_anchor);
   }
@@ -518,29 +546,18 @@ void break_cb(Widget *, void *v)
 
 void set_options_cb(Widget *, void *v)
 {
-  const char* args = fltk::input("Enter program arguments", opt_command);
+  const char* args = fltk::input("Enter program command line", opt_command);
   if (args) {
     strcpy(opt_command, args);
   }
 }
 
-void fullscreen_cb(Widget * w, void *v)
+void fullscreen_cb(Widget* w, void *v)
 {
-  if (w->flags() & STATE) {
-    // store current geometry of the window
-    px = wnd->x();
-    py = wnd->y();
-    pw = wnd->w();
-    ph = wnd->h();
-    wnd->fullscreen();
-  }
-  else {
-    // restore geometry to the window and turn fullscreen off
-    wnd->fullscreen_off(px, py, pw, ph);
-  }
+  wnd->isFullScreen = (w->flags() & STATE);
 }
 
-void next_tab_cb(Widget * w, void *v)
+void next_tab_cb(Widget* w, void *v)
 {
   Widget *current = wnd->tabGroup->selected_child();
   // cycle around the main tabgroups
@@ -556,7 +573,7 @@ void next_tab_cb(Widget * w, void *v)
   }
 }
 
-void copy_text_cb(Widget * w, void *v)
+void copy_text_cb(Widget* w, void *v)
 {
   // copy from the active tab
   if (wnd->editGroup == wnd->tabGroup->selected_child()) {
@@ -567,26 +584,26 @@ void copy_text_cb(Widget * w, void *v)
   }
 }
 
-void cut_text_cb(Widget * w, void *v)
+void cut_text_cb(Widget* w, void *v)
 {
   if (wnd->editGroup == wnd->tabGroup->selected_child()) {
     EditorWindow::cut_cb(w, v);
   }
 }
 
-void paste_text_cb(Widget * w, void *v)
+void paste_text_cb(Widget* w, void *v)
 {
   if (wnd->editGroup == wnd->tabGroup->selected_child()) {
     EditorWindow::paste_cb(w, v);
   }
 }
 
-void turbo_cb(Widget * w, void *v)
+void turbo_cb(Widget* w, void *v)
 {
   wnd->isTurbo = (w->flags() & STATE);
 }
 
-void find_cb(Widget * w, void *v)
+void find_cb(Widget* w, void *v)
 {
   bool found = wnd->editWnd->findText(wnd->findText->value(), (int)v);
   wnd->findText->textcolor(found ? BLACK : RED);
@@ -596,14 +613,14 @@ void find_cb(Widget * w, void *v)
   }
 }
 
-void goto_cb(Widget * w, void *v)
+void goto_cb(Widget* w, void *v)
 {
   Input *gotoLine = (Input *) v;
   wnd->editWnd->gotoLine(atoi(gotoLine->value()));
   wnd->editWnd->take_focus();
 }
 
-void font_size_incr_cb(Widget * w, void *v)
+void font_size_incr_cb(Widget* w, void *v)
 {
   Widget *current = wnd->tabGroup->selected_child();
   if (current == wnd->editGroup) {
@@ -618,7 +635,7 @@ void font_size_incr_cb(Widget * w, void *v)
   }
 }
 
-void font_size_decr_cb(Widget * w, void *v)
+void font_size_decr_cb(Widget* w, void *v)
 {
   Widget *current = wnd->tabGroup->selected_child();
   if (current == wnd->editGroup) {
@@ -633,7 +650,7 @@ void font_size_decr_cb(Widget * w, void *v)
   }
 }
 
-void func_list_cb(Widget * w, void *v)
+void func_list_cb(Widget* w, void *v)
 {
   const char *label = wnd->funcList->item()->label();
   if (label) {
@@ -678,7 +695,7 @@ void run_cb(Widget *, void *)
 
 // callback for editor-plug-in plug-ins. we assume the target
 // program will be changing the contents of the editor buffer
-void editor_cb(Widget * w, void *v)
+void editor_cb(Widget* w, void *v)
 {
   char filename[256];
   EditorWindow *editWnd = wnd->editWnd;
@@ -713,7 +730,7 @@ void editor_cb(Widget * w, void *v)
   }
 }
 
-void tool_cb(Widget * w, void *filename)
+void tool_cb(Widget* w, void *filename)
 {
   if (runMode == edit_state) {
     sprintf(opt_command, "%s/%s", packageHome, pluginHome);
@@ -729,7 +746,7 @@ void tool_cb(Widget * w, void *filename)
   }
 }
 
-void change_case_cb(Widget * w, void *v)
+void change_case_cb(Widget* w, void *v)
 {
   int start, end;
   TextEditor *editor = wnd->editWnd->editor;
@@ -780,7 +797,7 @@ void change_case_cb(Widget * w, void *v)
   free((void *)selection);
 }
 
-void expand_word_cb(Widget * w, void *v)
+void expand_word_cb(Widget* w, void *v)
 {
   int start, end;
   const char *fullWord = 0;
@@ -871,7 +888,7 @@ void expand_word_cb(Widget * w, void *v)
   strlib::List keywords;
   wnd->editWnd->getKeywords(keywords);
 
-  // find the next replacement 
+  // find the next replacement
   int firstIndex = -1;
   int lastIndex = -1;
   int curIndex = -1;
@@ -909,7 +926,7 @@ void expand_word_cb(Widget * w, void *v)
     }
 
     const char *keyword = ((String *) keywords.get(lastIndex))->toString();
-    // updated the segment of the replacement text 
+    // updated the segment of the replacement text
     // that completes the current selection
     if (textbuf->selected()) {
       textbuf->replace_selection(keyword + expandWordLen);
@@ -921,7 +938,7 @@ void expand_word_cb(Widget * w, void *v)
   }
 }
 
-void load_file_cb(Widget * w, void *index)
+void load_file_cb(Widget* w, void *index)
 {
   if (wnd->editWnd->checkSave(true)) {
     TextEditor *editor = wnd->editWnd->editor;
@@ -1129,6 +1146,7 @@ int main(int argc, char **argv)
 
   switch (runMode) {
   case run_state:
+    wnd->isFullScreen = true;
     wnd->editWnd->loadFile(runfile, -1, true);
     addHistory(runfile);
     showOutputTab();
@@ -1146,7 +1164,7 @@ int main(int argc, char **argv)
 
 //--MainWindow methods----------------------------------------------------------
 
-MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC")
+MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
   int mnuHeight = 22;
   int tbHeight = 26;
@@ -1155,7 +1173,8 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC")
   int tabBegin = 0;             // =mnuHeight for top position tabs
   int pageHeight = groupHeight - mnuHeight;
 
-  isTurbo = 0;
+  isTurbo = false;
+  isFullScreen = false;
   opt_graphics = 1;
   opt_quiet = 1;
   opt_interactive = 0;
@@ -1187,16 +1206,16 @@ MainWindow::MainWindow(int w, int h) : Window(w, h, "SmallBASIC")
   m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWindow::replace_cb);
   m->add("&Edit/_Replace &Again", CTRL + 't',
          (Callback *) EditorWindow::replace2_cb);
+  m->add("&View/Toggle/&Turbo", 0, (Callback *) turbo_cb)->type(Item::TOGGLE);
   m->add("&View/Toggle/&Full Screen", 0,
          (Callback *) fullscreen_cb)->type(Item::TOGGLE);
-  m->add("&View/Toggle/&Turbo", 0, (Callback *) turbo_cb)->type(Item::TOGGLE);
   m->add("&View/_&Next Tab", F6Key, (Callback *) next_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) font_size_decr_cb);
   scanPlugIns(m);
   m->add("&Program/&Run", F9Key, (Callback *) run_cb);
   m->add("&Program/_&Break", CTRL + 'b', (Callback *) break_cb);
-  m->add("&Program/&Options", F10Key, (Callback *) set_options_cb);
+  m->add("&Program/&Command", F10Key, (Callback *) set_options_cb);
   m->add("&Help/&Help Contents", F1Key, (Callback *) help_contents_cb);
   m->add("&Help/_&Program Help", F11Key, (Callback *) help_app_cb);
   m->add("&Help/_&Home Page", 0, (Callback *) help_home_cb);
@@ -1410,8 +1429,8 @@ void MainWindow::execLink(const char *file)
     extn[4] = 0;                // make args available to bas program
   }
 
-  // if the extension is .sbx and this does not exists or is older 
-  // than the matching .bas then rename to .bas and set opt_nosave 
+  // if the extension is .sbx and this does not exists or is older
+  // than the matching .bas then rename to .bas and set opt_nosave
   // to false - otherwise set execFile flag to true
   if (extn && 0 == strncasecmp(extn, ".sbx", 4)) {
     struct stat st_sbx;
@@ -1422,7 +1441,7 @@ void MainWindow::execLink(const char *file)
     if (sbxExists) {
       if (stat(file, &st_bas) == 0 && st_sbx.st_mtime > st_bas.st_mtime) {
         strcpy(extn + 1, "sbx");
-        // sbx exists and is newer than .bas 
+        // sbx exists and is newer than .bas
         execFile = true;
       }
     }
@@ -1445,7 +1464,7 @@ void MainWindow::execLink(const char *file)
   }
 }
 
-int MainWindow::handle(int e)
+int BaseWindow::handle(int e)
 {
   switch (e) {
   case KEY:
@@ -1523,10 +1542,10 @@ int MainWindow::handle(int e)
 #if defined(WIN32)
 #include <windows.h>
 #endif
-           // see http://www.sysinternals.com/ntw2k/utilities.shtml
-           // for the free DebugView program
-           // an alternative debug method is to use insight.exe which
-           // is included with cygwin. 
+// see http://www.sysinternals.com/ntw2k/utilities.shtml
+// for the free DebugView program
+// an alternative debug method is to use insight.exe which
+// is included with cygwin.
 
 extern "C" void trace(const char *format, ...)
 {

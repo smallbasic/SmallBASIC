@@ -135,18 +135,25 @@ void get_mouse_xy()
   // convert mouse screen rect to out-client rect
   wnd->penDownX -= wnd->x() + wnd->out->x();
   wnd->penDownY -= wnd->y() + wnd->out->y();
-  wnd->penDownY -= wnd->tabGroup->y() + wnd->outputGroup->y();
+  if (!wnd->isFullScreen) {
+    wnd->penDownY -= wnd->tabGroup->y() + wnd->outputGroup->y();
+  }
 }
 
 int osd_getpen(int code)
 {
+  if (wnd->isBreakExec()) {
+    clearOutput();
+    brun_break();
+    return 0;
+  }
+
   if (wnd->penMode == PEN_OFF) {
     fltk::wait();
   }
 
   switch (code) {
-  case 0:                      // return true if there is a waiting pen event
-                                // (up/down)
+  case 0:     // return true if there is a waiting pen event (up/down)
     if (wnd->penState != 0) {
       wnd->penState = 0;
       get_mouse_xy();
@@ -156,10 +163,9 @@ int osd_getpen(int code)
       }
     }
     fltk::wait();               // UNTIL PEN(0)
-    // fallthru to re-test 
+                                // fallthru to re-test 
 
-  case 3:                      // returns true if the pen is down (and save
-                                // curpos)
+  case 3:    // returns true if the pen is down (and save curpos)
     if (event_state() & ANY_BUTTON) {
       get_mouse_xy();
       fltk::Rectangle * rc = wnd->out;
@@ -569,7 +575,7 @@ void enter_cb(Widget *, void *v)
   wnd->setModal(false);
 }
 
-struct LineInput:public fltk::Input {
+struct LineInput: public fltk::Input {
   LineInput(int def_w):fltk::Input(wnd->out->getX() + 2,
                                    wnd->out->getY() + 1,
                                    def_w, wnd->out->textHeight() + 4) {
@@ -578,7 +584,8 @@ struct LineInput:public fltk::Input {
     this->orig_y = y();
     this->orig_w = w();
     this->orig_h = h();
-  } bool replace(int b, int e, const char *text, int ilen) {
+  } 
+  bool replace(int b, int e, const char *text, int ilen) {
     // grow the input box width
     if (ilen) {
       int strw = (int)getwidth(value()) + def_w;

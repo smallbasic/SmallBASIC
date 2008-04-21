@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id: MainWindow.h,v 1.26 2007-05-31 11:03:16 zeeb90au Exp $
 // This file is part of SmallBASIC
 //
@@ -29,51 +28,57 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
-extern "C" void trace(const char *format, ...);
+extern "C" void trace(const char* format, ...);
 
-struct MainWindow:public Window {
-  MainWindow(int w, int h);
-   ~MainWindow() {
-  };
-
+struct BaseWindow : public Window {
+  BaseWindow(int w, int h) : Window(w, h, "SmallBASIC") {}
+  virtual ~BaseWindow() {};
   int handle(int e);
+
+  int penDownX;
+  int penDownY;
+  int penState;                 // PUSH/RELEASE events
+  int penMode;                  // PEN ON/OFF
+};
+
+struct MainWindow : public BaseWindow {
+  MainWindow(int w, int h);
+  virtual ~MainWindow() {};
+
   bool isBreakExec(void);
   bool isModal();
   bool isEdit();
   void setModal(bool modal);
   void setBreak();
   void resetPen();
-  void execLink(const char *file);
+  void execLink(const char* file);
 
-  int penDownX;
-  int penDownY;
-  int penState;                 // PUSH/RELEASE events
-  int penMode;                  // PEN ON/OFF
   bool isTurbo;
+  bool isFullScreen;
   String siteHome;
 
   // main output
-  AnsiWidget *out;
-  EditorWindow *editWnd;
-  HelpWidget *helpWnd;
+  AnsiWidget* out;
+  EditorWindow* editWnd;
+  HelpWidget* helpWnd;
 
   // tabs
-  TabGroup *tabGroup;
-  Group *editGroup;
-  Group *outputGroup;
-  Group *helpGroup;
+  TabGroup* tabGroup;
+  Group* editGroup;
+  Group* outputGroup;
+  Group* helpGroup;
 
   // tool-bar
-  Input *findText;
-  Input *gotoLine;
-  Choice *funcList;
+  Input* findText;
+  Input* gotoLine;
+  Choice* funcList;
 
   // status bar
-  Widget *fileStatus;
-  Widget *rowStatus;
-  Widget *colStatus;
-  Widget *runStatus;
-  Widget *modStatus;
+  Widget* fileStatus;
+  Widget* rowStatus;
+  Widget* colStatus;
+  Widget* runStatus;
+  Widget* modStatus;
 };
 
 #endif

@@ -8,13 +8,6 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 
 2.  FLTK patches
 
-    1. compose.cxx: disabled right-ctrl from deleting the current selection
-    by commenting the following lines
-    // See if they type the compose prefix key:
-    //   if (i == RightCtrlKey || i == 0xff20/* Multi-Key */) {
-    //     compose_state = 1;
-    //     return true;
-    //   }
    
     2. scrollrect.cxx: 
     in is_visible() - comments suggest the test should be for NOT-unicode, 
@@ -43,9 +36,6 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     typedef unsigned char boolean;
     #endif
 
-    7. for linux build, update clip.cxx
-    add if (xftc) before call to XftDrawSetClip(xftc, r);
-
 
 3.  How to build under Linux
     
@@ -58,8 +48,6 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     make install
     
     cd to sb root directory
-    if the configure program is not present then execute this command to build it:
-    sh autogen.sh
  
     ./configure --enable-fltk
     make -s
@@ -77,24 +65,6 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 
     refer to "How to build under Linux"
 
-
-5.  Generate the help files
-
-    Build the command line version of SmallBASIC:
-    make fb;make install
-    Run the following command from within the directory containing
-    the sbfltk executable.
-    mkdir help
-    cd help
-    cp ../../doc/guide.texi .
-    cp ../../doc/texi2html.bas .
-    ./texi2html guide.texi
-
-
-6.  Generate the keyword expansion file
-
-    Run the following command from within the above 'help' directory:
-    sbasic.exe -pkw | sort | uniq  > keywords.txt
 
 
 7.  Release tags:
@@ -132,12 +102,9 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 =======
 
 Future ideas:
-- Internal "fullscreen" mode that hides editor etc. This will make the 
-  running program look more or less like a standalone app.
 - Integrate online help with web site help info
-- Add command argument GUI for fltk to allow run time args to be set.
-  usefull when creating command line based applications.
-- Add option to support run once and then terminate
+- Fix -u option
+- Add/fix ability for applications to set the window dimensions
 - Add break point, variable inspection, step/resume options.
 
 
