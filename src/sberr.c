@@ -377,6 +377,11 @@ void inf_done()
 */
 void inf_break(int pline)
 {
+  gsb_last_line = pline;
+  gsb_last_error = prog_error;
+  strcpy(gsb_last_file, prog_file);
+  sprintf(gsb_last_errmsg, "%s %d", WORD_BREAK_AT, pline);
+
 #if defined(_UnixOS) && !defined(_FLTK)
   if (!isatty(STDOUT_FILENO)) {
     fprintf(stdout, "\n* %s %d *\n", WORD_BREAK_AT, pline);
