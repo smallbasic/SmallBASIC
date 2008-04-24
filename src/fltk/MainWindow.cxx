@@ -59,6 +59,12 @@ enum ExecState {
   quit_state
 } runMode = init_state;
 
+enum RunMessage {
+  msg_err,
+  msg_run,
+  msg_none
+};
+
 #define DEF_FONT_SIZE 12
 #define SCAN_LABEL "-[ Refresh ]-"
 #define NUM_RECENT_ITEMS 9
@@ -80,17 +86,17 @@ const char lasteditFile[] = "lastedit.txt";
 const char historyFile[] = "history.txt";
 const char keywordsFile[] = "keywords.txt";
 const char aboutText[] =
-"<b>About SmallBASIC...</b><br><br>"
-"Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
-"FLTK Version " SB_STR_VER "<br>"
-"Copyright (c) 2002-2008 Chris Warren-Smith.<br><br>"
-"<a href=http://smallbasic.sourceforge.net>"
-"http://smallbasic.sourceforge.net</a><br><br>"
-"SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
-"This program is free software; you can use it "
-"redistribute it and/or modify it under the terms of the "
-"GNU General Public License version 2 as published by "
-"the Free Software Foundation.<br><br>" "<i>Press F1 for help";
+  "<b>About SmallBASIC...</b><br><br>"
+  "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
+  "FLTK Version " SB_STR_VER "<br>"
+  "Copyright (c) 2002-2008 Chris Warren-Smith.<br><br>"
+  "<a href=http://smallbasic.sourceforge.net>"
+  "http://smallbasic.sourceforge.net</a><br><br>"
+  "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
+  "This program is free software; you can use it "
+  "redistribute it and/or modify it under the terms of the "
+  "GNU General Public License version 2 as published by "
+  "the Free Software Foundation.<br><br>" "<i>Press F1 for help";
 
 // in dev_fltk.cpp
 void getHomeDir(char *filename);
@@ -133,9 +139,20 @@ void statusMsg(const char *msg)
 #endif
 }
 
-void runMsg(const char *msg)
+void runMsg(RunMessage runMessage)
 {
-  wnd->runStatus->copy_label(msg && msg[0] ? msg : "");
+  const char* msg = 0;
+  switch (runMessage) {
+  case msg_err:
+    msg = "ERR";
+    break;
+  case msg_run:
+    msg = "RUN";
+    break;
+  default:
+    msg = "";
+  }
+  wnd->runStatus->copy_label(msg);
   wnd->runStatus->redraw();
 }
 
@@ -182,7 +199,7 @@ void execInit()
   strcat(path, "init.bas");
   if (access(path, 0) == 0) {
     int success = sbasic_main(path);
-    runMsg(success ? " " : "ERR");
+    runMsg(success ? msg_none : msg_err);
   }
   wnd->editWnd->take_focus();
 }
@@ -329,7 +346,8 @@ void fileChanged(bool loadfile)
   wnd->funcList->end();
 }
 
-void basicMain(const char *filename)
+// run the give file. returns whether break was hit
+bool basicMain(const char *filename, bool toolExec)
 {
   int len = strlen(filename);
   if (strcasecmp(filename + len - 4, ".htm") == 0 ||
@@ -338,36 +356,40 @@ void basicMain(const char *filename)
     sprintf(path, "file:%s", filename);
     updateForm(path);
     wnd->editWnd->take_focus();
-    return;
+    return false;
   }
   if (access(filename, 0) != 0) {
     pathMessage(filename);
     runMode = edit_state;
-    runMsg("ERR");
-    return;
+    runMsg(msg_err);
+    return false;
   }
 
   wnd->editWnd->readonly(true);
   runMode = run_state;
-  runMsg("RUN");
-  wnd->copy_label("SmallBASIC");
+  runMsg(msg_run);
 
   Window* fullScreen = NULL;
   Group* oldOutputGroup = wnd->outputGroup;
   int old_w = wnd->out->w();
   int old_h = wnd->out->h();
-  if (wnd->isFullScreen) {
+  if (!toolExec && wnd->isFullScreen) {
     fullScreen = new BaseWindow(wnd->w(), wnd->h());
+    fullScreen->copy_label(filename);
     fullScreen->callback(quit_cb);
     fullScreen->shortcut(0);
     fullScreen->add(wnd->out);
     fullScreen->show();
     wnd->outputGroup = fullScreen;
-    wnd->out->resize(wnd->w(), wnd->h());
+    wnd->out->resize(fullScreen->w(), fullScreen->h());
     wnd->hide();
+  }
+  else {
+    wnd->copy_label("SmallBASIC");
   }
 
   int success = sbasic_main(filename);
+  bool was_break = (runMode == break_state);
 
   if (fullScreen != NULL) {
     fullScreen->remove(wnd->out);
@@ -383,8 +405,10 @@ void basicMain(const char *filename)
     exit(0);
   }
 
-  if (success == false && gsb_last_line) {
-    wnd->editWnd->gotoLine(gsb_last_line);
+  if (!success || was_break) {
+    if (!toolExec) {
+      wnd->editWnd->gotoLine(gsb_last_line);
+    }
     int len = strlen(gsb_last_errmsg);
     if (gsb_last_errmsg[len - 1] == '\n') {
       gsb_last_errmsg[len - 1] = 0;
@@ -393,18 +417,20 @@ void basicMain(const char *filename)
     showEditTab();
     statusMsg(gsb_last_errmsg);
     wnd->fileStatus->labelcolor(RED);
-    runMsg("ERR");
+    runMsg(was_break ? msg_none : msg_err); 
   }
   else {
     statusMsg(wnd->editWnd->getFilename());
-    runMsg(0);
+    runMsg(msg_none);
   }
 
   wnd->editWnd->readonly(false);
   if (isFormActive() == false) {
     wnd->editWnd->take_focus();
   }
+
   runMode = edit_state;
+  return was_break;
 }
 
 bool searchBackward(const char *text, int startPos,
@@ -477,7 +503,7 @@ void showHelpPage() {
 
 void execHelp() {
   sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
-  basicMain(path);
+  basicMain(path, true);
   statusMsg(wnd->editWnd->getFilename());
 }
 
@@ -686,7 +712,7 @@ void run_cb(Widget *, void *)
       }
     }
     showOutputTab();
-    basicMain(filename);
+    basicMain(filename, false);
   }
   else {
     busyMessage();
@@ -712,11 +738,11 @@ void editor_cb(Widget* w, void *v)
       sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
               filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
       runMode = run_state;
-      runMsg("RUN");
+      runMsg(msg_run);
       sprintf(path, "%s/%s", packageHome, (const char *)v);
       int success = sbasic_main(path);
       showEditTab();
-      runMsg(success ? " " : "ERR");
+      runMsg(success ? msg_none : msg_err);
       editWnd->loadFile(filename, -1, true);
       editor->insert_position(pos);
       editor->show_insert_position();
@@ -737,7 +763,7 @@ void tool_cb(Widget* w, void *filename)
     statusMsg((const char *)filename);
     sprintf(path, "%s/%s", packageHome, (const char *)filename);
     showOutputTab();
-    basicMain(path);
+    basicMain(path, true);
     statusMsg(wnd->editWnd->getFilename());
     opt_command[0] = 0;
   }
@@ -1004,7 +1030,7 @@ void scanRecentFiles(Menu * menu)
   }
 }
 
-void scanPlugIns(Menu * menu)
+void scanPlugIns(Menu* menu)
 {
   dirent **files;
   FILE *file;
@@ -1017,7 +1043,7 @@ void scanPlugIns(Menu * menu)
     const char *filename = (const char *)files[i]->d_name;
     int len = strlen(filename);
     if (strcasecmp(filename + len - 4, ".bas") == 0) {
-      sprintf(path, "%s/%s", pluginHome, filename);
+      sprintf(path, "%s/%s/%s", packageHome, pluginHome, filename);
       file = fopen(path, "r");
       if (!file) {
         continue;
@@ -1150,8 +1176,9 @@ int main(int argc, char **argv)
     wnd->editWnd->loadFile(runfile, -1, true);
     addHistory(runfile);
     showOutputTab();
-    basicMain(runfile);
-    return 0;
+    if (!basicMain(runfile, false)) {
+      return 0; // continue if break hit
+    }
   case edit_state:
     wnd->editWnd->loadFile(runfile, -1, true);
     break;
@@ -1396,7 +1423,7 @@ void MainWindow::execLink(const char *file)
       statusMsg(file);
       addHistory(file);
       showOutputTab();
-      basicMain(localFile);
+      basicMain(localFile, false);
     }
     else {
       // display as html
@@ -1451,7 +1478,7 @@ void MainWindow::execLink(const char *file)
     if (execFile) {
       addHistory(file);
       showOutputTab();
-      basicMain(file);
+      basicMain(file, false);
       opt_nosave = 1;
     }
     else {
@@ -1524,6 +1551,23 @@ int BaseWindow::handle(int e)
     case ReturnKey:
       dev_pushkey(13);
       break;
+    case 'b':
+      if (event_key_state(LeftCtrlKey) || 
+          event_key_state(RightCtrlKey)) {
+        break_cb(0,0);
+        break;
+      }
+      dev_pushkey(k);
+      break;
+    case 'q':
+      if (event_key_state(LeftCtrlKey) || 
+          event_key_state(RightCtrlKey)) {
+        quit_cb(0,0);
+        break;
+      }
+      dev_pushkey(k);
+      break;
+
     default:
       if (k >= LeftShiftKey && k <= RightAltKey) {
         break;                  // ignore caps+shift+ctrl+alt

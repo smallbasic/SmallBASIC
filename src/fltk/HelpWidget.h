@@ -208,7 +208,7 @@ static const char *broken_xpm[] = {
 
 static xpmImage brokenImage(broken_xpm);
 
-struct {
+struct ENTITY_MAP {
   const char *ent;
   int elen;
   char xlat;

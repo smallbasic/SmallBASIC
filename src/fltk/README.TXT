@@ -1,4 +1,4 @@
-Copyright (c) 2002-2006 Chris Warren-Smith
+Copyright (c) 2002-2008 Chris Warren-Smith
 
 1.  About 
 
@@ -8,16 +8,6 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 
 2.  FLTK patches
 
-   
-    2. scrollrect.cxx: 
-    in is_visible() - comments suggest the test should be for NOT-unicode, 
-    since this would be the case with Win98:
-    
-    if (!has_unicode()) {
-    
-    4. filename.h line 52
-    #elif defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
-    
     5. scandir.c line 31
     # if defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
     
@@ -43,14 +33,14 @@ Copyright (c) 2002-2006 Chris Warren-Smith
     Update the FLTK sources as per step 2.
 
     Build FLTK libraries:
-    ./configure --enable-png=local --enable-jpeg=local --enable-zlib=local
+    ./configure
     make
-    make install
+    sudo make install
     
     cd to sb root directory
  
     ./configure --enable-fltk
-    make -s
+    sudo make install
 
 
 4.  How to build under Windows (W2K/XP)
@@ -64,8 +54,6 @@ Copyright (c) 2002-2006 Chris Warren-Smith
        the ActiveState perl uses drive lettered paths
 
     refer to "How to build under Linux"
-
-
 
 7.  Release tags:
 
@@ -102,11 +90,15 @@ Copyright (c) 2002-2006 Chris Warren-Smith
 =======
 
 Future ideas:
-- Integrate online help with web site help info
-- Fix -u option
-- Add/fix ability for applications to set the window dimensions
-- Add break point, variable inspection, step/resume options.
 
+- Add/fix ability for applications to set the window dimensions
+- Add button color support
+- Update form handling to be like SDL implementation
+- Fix up fltk AnsiWidget.saveImage()
+
+- Integrate online help with web site help info
+- Add break point, variable inspection, step/resume options.
+ 
 
 $Id: README.TXT,v 1.23 2006/10/24 21:07:56 zeeb90au Exp $
 

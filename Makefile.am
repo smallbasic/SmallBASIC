@@ -8,7 +8,11 @@
 SUBDIRS = @BUILD_SUBDIRS@
 
 EXTRA_DIST =					\
-    README.TXT					\
+    AUTHORS					\
+    ChangeLog					\
+    configure.in				\
+    NEWS					\
+    README					\
     autogen.sh					\
     src/gtk/sbgtk.glade				\
     src/gtk/sbgtk.gladep			\
@@ -52,7 +56,11 @@ EXTRA_DIST =					\
     images/sb16x16.png				\
     images/sb32x32.png				\
     images/sb-desktop-16x16.png			\
-    images/sb-desktop-32x32.png
+    images/sb-desktop-32x32.png			\
+    images/smallbasic.png			\
+    ide/smallbasic.lang				\
+    ide/small-basic-mode.el			\
+    ide/smallbasic.syn
 
 deb:
 	fakeroot dpkg-buildpackage

@@ -2,7 +2,7 @@
 Name=SmallBASIC IDE 
 Comment=SmallBASIC
 Exec=sbasici
-Icon=smallbasic.png
+Icon=sb-desktop-32x32.png
 Terminal=false
 Type=Application
 Categories=Application;Development;

@@ -77,7 +77,8 @@ void FormGroup::draw()
 
 struct AnchorLink:public Button {
   AnchorLink(int x, int y, int w, int h):Button(x, y, w, h) {
-  } void draw() {
+  } 
+  void draw() {
     int bx = 0;
     int by = 0;
     int bw = w();
