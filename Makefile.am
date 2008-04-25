@@ -26,7 +26,7 @@ EXTRA_DIST =					\
     src/sdl/fonts/BI5.c				\
     src/sdl/fonts/BI7.c				\
     src/sdl/fonts/psf2c.c			\
-    documentation/export_cvs.bas		\
+    documentation/export_csv.bas		\
     documentation/sbasic_ref.csv		\
     documentation/HOWTO/HOWTO-DOCUMENT.TXT	\
     documentation/HOWTO/HOWTO-PORT.TXT		\
@@ -57,7 +57,6 @@ EXTRA_DIST =					\
     images/sb32x32.png				\
     images/sb-desktop-16x16.png			\
     images/sb-desktop-32x32.png			\
-    images/smallbasic.png			\
     ide/smallbasic.lang				\
     ide/small-basic-mode.el			\
     ide/smallbasic.syn
