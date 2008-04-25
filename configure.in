@@ -256,6 +256,9 @@ function buildFLTK() {
 
    desktopentrydir='$(datarootdir)'/applications
    AC_SUBST(desktopentrydir)
+
+   dnl generate kwp.h
+   (cd src/fltk && g++ -o build_kwp build_kwp.cxx && build_kwp)
 }
 
 function buildSDL() {

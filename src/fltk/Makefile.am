@@ -15,6 +15,7 @@ INCLUDES =							\
 EXTRA_DIST =					\
     README.TXT					\
     sbfltk.rc					\
+    build_kwp.cxx				\
     $(desktopentry_DATA)
 
 bin_PROGRAMS = sbasici

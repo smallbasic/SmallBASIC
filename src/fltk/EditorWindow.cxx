@@ -36,7 +36,7 @@
 
 #include "EditorWindow.h"
 #include "MainWindow.h"
-#include "kwp.cxx"
+#include "kwp.h"
 
 #if defined(WIN32)
 #include <fltk/win32.h>
