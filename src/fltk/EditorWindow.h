@@ -27,12 +27,15 @@
 
 using namespace fltk;
 
-// implemented in MainWindow
-void statusMsg(const char *filename);
-void setRowCol(int row, int col);
-void setModified(bool dirty);
-void addHistory(const char *fileName);
-void fileChanged(bool loadfile);
+#ifdef CALLBACK_METHOD
+#undef CALLBACK_METHOD
+#endif
+
+#define CALLBACK_METHOD(FN)                     \
+  void FN();                                    \
+  static void FN ## _cb(Widget *, void *v) {    \
+    ((EditorWindow *) v)->FN();                 \
+  }
 
 class EditorWindow : public Group {
 public:
@@ -47,79 +50,53 @@ public:
     return filename;
   }
 
+  int getFontSize();
   bool checkSave(bool discard);
   bool findText(const char *find, bool forward);
-  int getFontSize();
-  void cancelReplace();
   void createFuncList();
   void doChange(int inserted, int deleted);
-  void doDelete();
   void doSaveFile(const char *newfile, bool updateUI);
   void findFunc(const char *find);
+  void getKeywords(strlib::List& keywords);
   void getRowCol(int *row, int *col);
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
   void gotoLine(int line);
-  void insertFile();
   void loadFile(const char *newfile, int ipos, bool updateUI);
-  void newFile();
-  void openFile();
-  void replaceAll();
-  void replaceNext();
-  void saveFile();
-  void saveFileAs();
   void setFontSize(int i);
   void setIndentLevel(int level);
-  void showFindReplace();
   void undo();
-  void getKeywords(strlib::List& keywords);
 
-  // editor callback functions
-  static void new_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->newFile();
-  }
-  static void open_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->openFile();
-  }
-  static void insert_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->insertFile();
-  }
-  static void save_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->saveFile();
-  }
-  static void saveas_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->saveFileAs();
-  }
   static void undo_cb(Widget *, void *v) {
     TextEditor::kf_undo(0, ((EditorWindow *) v)->editor);
   }
+
   static void cut_cb(Widget *, void *v) {
     TextEditor::kf_cut(0, ((EditorWindow *) v)->editor);
   }
+
   static void paste_cb(Widget *, void *v) {
     TextEditor::kf_paste(0, ((EditorWindow *) v)->editor);
   }
+
   static void copy_cb(Widget *, void *v) {
     TextEditor::kf_copy(0, ((EditorWindow *) v)->editor);
   }
-  static void delete_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->doDelete();
-  }
-  static void replace_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->showFindReplace();
-  }
-  static void replace2_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->replaceNext();
-  }
-  static void replall_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->replaceAll();
-  }
-  static void replcan_cb(Widget *, void *v) {
-    ((EditorWindow *) v)->cancelReplace();
-  }
+
   static void changed_cb(int, int inserted, int deleted, int, const char *, void *v) {
     ((EditorWindow *) v)->doChange(inserted, deleted);
   }
+
+  CALLBACK_METHOD(cancelReplace);
+  CALLBACK_METHOD(doDelete);
+  CALLBACK_METHOD(insertFile);
+  CALLBACK_METHOD(newFile);
+  CALLBACK_METHOD(openFile);
+  CALLBACK_METHOD(replaceAll);
+  CALLBACK_METHOD(replaceNext);
+  CALLBACK_METHOD(saveFile);
+  CALLBACK_METHOD(saveFileAs);
+  CALLBACK_METHOD(showFindReplace);
 
   TextEditor *editor;
   bool readonly();

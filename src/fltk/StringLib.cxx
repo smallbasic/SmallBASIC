@@ -1,8 +1,7 @@
 // $Id$
 // This file was part of EBjLib
 //
-// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
-// cwarrens@twpo.com.au
+// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org

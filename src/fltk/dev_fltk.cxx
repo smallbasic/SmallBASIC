@@ -40,7 +40,7 @@ extern "C" {
 #endif
 #define PEN_ON  2
 #define PEN_OFF 0
-extern MainWindow *wnd;
+
 HelpWidget *formView = 0;
 Properties env;
 String envs;

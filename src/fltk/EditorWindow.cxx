@@ -34,8 +34,8 @@
 #include <fltk/events.h>
 #include <fltk/file_chooser.h>
 
-#include "EditorWindow.h"
 #include "MainWindow.h"
+#include "EditorWindow.h"
 #include "kwp.h"
 
 #if defined(WIN32)
@@ -623,7 +623,7 @@ void CodeEditor::showRowCol()
     layout();
     position_to_linecol(cursor_pos_, &row, &col);
   }
-  setRowCol(row, col + 1);
+  wnd->setRowCol(row, col + 1);
 }
 
 void CodeEditor::gotoLine(int line)
@@ -638,7 +638,7 @@ void CodeEditor::gotoLine(int line)
   int pos = buffer()->skip_lines(0, line - 1);  // find pos at line-1
   insert_position(buffer()->line_start(pos)); // insert at column 0
   show_insert_position();
-  setRowCol(line, 1);
+  wnd->setRowCol(line, 1);
 }
 
 void CodeEditor::getSelStartRowCol(int *row, int *col)
@@ -683,11 +683,11 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   replaceWith = new Input(80, 40, 210, 25, "Replace:");
   replaceWith->align(ALIGN_LEFT);
   Button *replaceAll = new Button(10, 70, 90, 25, "Replace All");
-  replaceAll->callback((Callback *) replall_cb, this);
+  replaceAll->callback((Callback *) replaceAll_cb, this);
   ReturnButton *replaceNext = new ReturnButton(105, 70, 120, 25, "Replace Next");
-  replaceNext->callback((Callback *) replace2_cb, this);
+  replaceNext->callback((Callback *) replaceNext_cb, this);
   Button *replaceCancel = new Button(230, 70, 60, 25, "Cancel");
-  replaceCancel->callback((Callback *) replcan_cb, this);
+  replaceCancel->callback((Callback *) cancelReplace_cb, this);
   replaceDlg->end();
   replaceDlg->set_non_modal();
 
@@ -769,7 +769,7 @@ void EditorWindow::doChange(int inserted, int deleted)
     dirty = 1;
   }
 
-  setModified(dirty);
+  wnd->setModified(dirty);
 }
 
 bool EditorWindow::checkSave(bool discard)
@@ -820,14 +820,14 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI)
 
   loading = false;
   if (updateUI) {
-    statusMsg(filename);
-    addHistory(filename);
-    fileChanged(true);
+    wnd->statusMsg(filename);
+    wnd->addHistory(filename);
+    wnd->fileChanged(true);
   }
 
   textbuf->call_modify_callbacks();
   editor->show_insert_position();
-  setRowCol(1, 1);
+  wnd->setRowCol(1, 1);
   modifiedTime = getModifiedTime();
 }
 
@@ -854,12 +854,12 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI)
     dirty = 0;
     if (filename[0] == 0) {
       // naming a previously unnamed buffer
-      addHistory(basfile);
+      wnd->addHistory(basfile);
     }
     strcpy(filename, basfile);
     textbuf->call_modify_callbacks();
-    statusMsg(basfile);
-    fileChanged(true);
+    wnd->statusMsg(basfile);
+    wnd->fileChanged(true);
   }
   modifiedTime = getModifiedTime();
 }
@@ -910,8 +910,8 @@ void EditorWindow::newFile()
   textbuf->remove_selection();
   dirty = 0;
   textbuf->call_modify_callbacks();
-  statusMsg(0);
-  fileChanged(false);
+  wnd->statusMsg(0);
+  wnd->fileChanged(false);
   modifiedTime = 0;
 }
 

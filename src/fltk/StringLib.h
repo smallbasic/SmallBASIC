@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of EBjLib
 //

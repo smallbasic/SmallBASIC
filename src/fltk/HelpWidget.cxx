@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*- 
 // $Id$
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
