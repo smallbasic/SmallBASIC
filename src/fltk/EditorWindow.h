@@ -33,7 +33,7 @@ using namespace fltk;
 
 #define CALLBACK_METHOD(FN)                     \
   void FN();                                    \
-  static void FN ## _cb(Widget *, void *v) {    \
+  static void FN ## _cb(Widget* w, void *v) {   \
     ((EditorWindow *) v)->FN();                 \
   }
 

@@ -1,12 +1,16 @@
 $Id$
 
-Installation from source for FLTK, SDL, N770(GTK) or command line versions
+== Installation from source for FLTK, SDL, N770(GTK) or command line versions ==
 
 > sh autogen.sh
 
-For FLTK version (see src/fltk/README.TXT for further details)
+For FLTK version
+
+Download, build and install FLTK, see www.fltk.org.
+
 > ./configure --enable-fltk
 > make
+> sudo make install
 
 For GTK version
 > ./configure --enable-gtk
@@ -17,6 +21,9 @@ For N770 version
 > make deb
 
 For SDL version
+
+Optionally install guichan - see http://guichan.sourceforge.net/wiki/index.php
+
 > ./configure --enable-sdl
 > make
 
@@ -24,3 +31,26 @@ For non-graphical console version (cygwin or linux)
 > ./configure
 > make
 
+== Indent settings ==
+
+-bap 
+-br 
+-brs
+-cdb
+-cdw 
+-ce 
+-cli0
+-fca
+-i2
+-l95
+-lc95
+-lp
+-nbbo
+-nbc 
+-ncs 
+-nip 
+-npcs 
+-npsl 
+-nut
+-ppi0
+-sc 

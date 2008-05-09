@@ -11,6 +11,7 @@
 #include "sys.h"
 #include "device.h"
 #include "smbas.h"
+#include "osd.h"
 
 #include <fltk/run.h>
 #include <fltk/events.h>
@@ -60,8 +61,21 @@ C_LINKAGE_BEGIN int osd_devinit()
 {
   wnd->resetPen();
   os_graphics = 1;
+
+  // allow the application to set the preferred width and height
+  if ((opt_pref_width || opt_pref_height) && wnd->isEditHidden()) {
+    int delta_x = wnd->w() - wnd->out->w();
+    int delta_y = wnd->h() - wnd->out->h();
+    wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
+  } 
+
+  // show the output-group in case it's the full-screen container. a possible
+  // bug with fltk on x11 prevents resize after the window has been shown
+  wnd->outputGroup->show();
+
   os_graf_mx = wnd->out->w();
   os_graf_my = wnd->out->h();
+
   os_ver = FL_MAJOR_VERSION + FL_MINOR_VERSION + FL_PATCH_VERSION;
   os_color = 1;
   os_color_depth = 16;
@@ -71,7 +85,7 @@ C_LINKAGE_BEGIN int osd_devinit()
   }
   if (saveForm == false) {
     closeForm();
-    wnd->out->clearScreen();
+    osd_cls();
   }
   saveForm = false;
   dev_clrkb();
@@ -135,7 +149,7 @@ void get_mouse_xy()
   // convert mouse screen rect to out-client rect
   wnd->penDownX -= wnd->x() + wnd->out->x();
   wnd->penDownY -= wnd->y() + wnd->out->y();
-  if (!wnd->isFullScreen) {
+  if (!wnd->isEditHidden()) {
     wnd->penDownY -= wnd->tabGroup->y() + wnd->outputGroup->y();
   }
 }

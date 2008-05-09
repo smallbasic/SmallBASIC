@@ -55,7 +55,7 @@ int osd_devrestore(void) SEC(BIO);
  *   -1 that means BREAK (brun_break() it was called).
  *   -2 that means BREAK (executor displays "BREAK" message).
  */
-int osd_events();
+int osd_events(int wait_flag);
 
 /**
  * @ingroup lgraf

@@ -571,23 +571,51 @@ int main(int argc, char *argv[])
     }
   }
 
+  sb_console_main(argc, argv);
+
+  if (SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) { // if syntax error
+                                                      // happened no
+                                                      // osd_devrestore was
+                                                      // performed
+    fast_exit = 1;
+    osd_devrestore();
+  }
+  return 0;
+}
+
+/*
+ * initialise the system prior to the next program execution
+ */
+int osd_devinit()
+{
+  char cbuf[256];
+
   /*
    * setup video mode 
    */
+  if (opt_pref_width || opt_pref_height) {
+    dev_w = opt_pref_width;
+    dev_h = opt_pref_height;
+  }
+
+  if (opt_pref_bpp) {
+    dev_d = opt_pref_bpp;
+  }
+
   screen = SDL_SetVideoMode(dev_w, dev_h, dev_d, SDL_ANYFORMAT | SDL_HWACCEL);
   if (screen == NULL) {
     fprintf(stderr,
             "SDL: Couldn't set %dx%dx%d video mode: %s\n"
             "Use SB_SDLMODE environment variable (set SB_SDLMODE=800x600x16)\n",
             dev_w, dev_h, dev_d, SDL_GetError());
-    return 0;
+    exit(1);
   }
 
   if (screen->format->BitsPerPixel != 8 &&
       screen->format->BitsPerPixel != 16 &&
       screen->format->BitsPerPixel != 24 && screen->format->BitsPerPixel != 32) {
     fprintf(stderr, "SDL: Couldn't set video mode\n");
-    return 0;
+    exit(1);
   }
 
   has_audio = (SDL_InitSubSystem(SDL_INIT_AUDIO) >= 0);
@@ -632,34 +660,9 @@ int main(int argc, char *argv[])
 
   // Enable Unicode translation 
   SDL_EnableUNICODE(1);
-  SDL_ShowCursor(SDL_DISABLE);  // use PEN command to display cursor
-  SDL_WM_SetCaption("SmallBASIC", NULL);
-
+  
   init_font();
   reset_font();
-
-  // osd_settextcolor(0,15); // clear the screen with the new foreground,
-  // background colors (the SDL default is white on black
-  // osd_cls(); // and Smallbasic default is black on white!)
-
-  sb_console_main(argc, argv);
-
-  if (SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) { // if syntax error
-                                                      // happened no
-                                                      // osd_devrestore was
-                                                      // performed
-    fast_exit = 1;
-    osd_devrestore();
-  }
-  return 0;
-}
-
-/*
- * initialise the system prior to the next program execution
- */
-int osd_devinit()
-{
-  char cbuf[256];
 
 #if defined(_UnixOS)
   setsysvar_str(SYSVAR_OSNAME, "Unix/SDL");
@@ -668,7 +671,7 @@ int osd_devinit()
 #endif
   setsysvar_int(SYSVAR_VIDADR, (int32) screen->pixels);
 
-  snprintf(cbuf, 256, "SmallBASIC %dx%dx%d - %s", dev_w, dev_h, dev_d, g_file);
+  snprintf(cbuf, 256, "SmallBASIC - %s", g_file);
   SDL_WM_SetCaption(cbuf, NULL);
 
   os_graf_mx = screen->w;       // need to reinitialize again because in brun.c 
@@ -676,8 +679,6 @@ int osd_devinit()
                                 // term_init 
   os_graf_my = screen->h;       // which overwrite our original value of
                                 // screen->w, screen->h
-
-  reset_font();
 
   // clear the keyboard queue
   dev_clrkb();
@@ -716,6 +717,7 @@ int osd_devrestore()
   }
   return 1;
 }
+
 static long get_screen_color(int fgbg)
 {
   long color = 0;
@@ -1239,12 +1241,6 @@ void osd_drawchar(int x, int y, byte ch, int overwrite, long fg_rgb, long bg_rgb
 void osd_setpenmode(int enable)
 {
   mouse_mode = enable;
-  if (enable) {
-    SDL_ShowCursor(SDL_ENABLE);
-  }
-  else {
-    SDL_ShowCursor(SDL_DISABLE);
-  }
 }
 
 /*
@@ -1406,6 +1402,11 @@ void osd_write(const char *str)
   static int next_is_graphic = 0;
 
   len = strlen(str);
+
+  if (!screen) {
+    fprintf(stderr, "%s", str);
+    return;
+  }
 
   if (len <= 0) {
     return;

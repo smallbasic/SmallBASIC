@@ -28,16 +28,6 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
-#ifdef CALLBACK_METHOD
-#undef CALLBACK_METHOD
-#endif
-
-#define CALLBACK_METHOD(FN)                     \
-  void FN(void* v);                             \
-  static void FN ## _cb(Widget *, void *v) {    \
-    ((MainWindow *) v)->FN(v);                  \
-  }
-
 extern "C" void trace(const char* format, ...);
 
 enum ExecState {
@@ -54,6 +44,20 @@ enum RunMessage {
   msg_run,
   msg_none
 };
+
+struct MainWindow;
+extern MainWindow *wnd;
+extern ExecState runMode;
+
+#ifdef CALLBACK_METHOD
+#undef CALLBACK_METHOD
+#endif
+
+#define CALLBACK_METHOD(FN)                     \
+  void FN(Widget* w=0, void* v=0);              \
+  static void FN ## _cb(Widget* w, void *v) {   \
+    wnd->FN(w, v);                              \
+  }
 
 struct BaseWindow : public Window {
   BaseWindow(int w, int h) : Window(w, h, "SmallBASIC") {}
@@ -73,6 +77,7 @@ struct MainWindow : public BaseWindow {
   bool isBreakExec(void);
   bool isModal();
   bool isEdit();
+  bool isEditHidden() {return isHideEditor;}
   void setModal(bool modal);
   void setBreak();
   void resetPen();
@@ -84,33 +89,6 @@ struct MainWindow : public BaseWindow {
   void addHistory(const char *fileName);
   void fileChanged(bool loadfile);
 
-  bool isTurbo;
-  bool isFullScreen;
-  String siteHome;
-
-  // main output
-  AnsiWidget* out;
-  EditorWindow* editWnd;
-  HelpWidget* helpWnd;
-
-  // tabs
-  TabGroup* tabGroup;
-  Group* editGroup;
-  Group* outputGroup;
-  Group* helpGroup;
-
-  // tool-bar
-  Input* findText;
-  Input* gotoLine;
-  Choice* funcList;
-
-  // status bar
-  Widget* fileStatus;
-  Widget* rowStatus;
-  Widget* colStatus;
-  Widget* runStatus;
-  Widget* modStatus;
-
   CALLBACK_METHOD(change_case);
   CALLBACK_METHOD(copy_text);
   CALLBACK_METHOD(cut_text);
@@ -119,7 +97,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(find);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
-  CALLBACK_METHOD(fullscreen);
+  CALLBACK_METHOD(hide_editor);
   CALLBACK_METHOD(func_list);
   CALLBACK_METHOD(goto_line);
   CALLBACK_METHOD(help_about);
@@ -141,9 +119,11 @@ struct MainWindow : public BaseWindow {
   void busyMessage();
   void execHelp();
   void execInit();
+  void focusWidget();
   void pathMessage(const char *file);
   void restoreEdit();
   void runMsg(RunMessage runMessage);
+  void setHideEditor();
   void saveLastEdit(const char *filename);
   void scanPlugIns(Menu* menu);
   void scanRecentFiles(Menu * menu);
@@ -152,10 +132,35 @@ struct MainWindow : public BaseWindow {
   void showHelpTab();
   void showOutputTab();
   void updatePath(char *filename);
-  void focusWidget();
-};
 
-extern MainWindow *wnd;
-extern ExecState runMode;
+  bool isTurbo;
+  bool isHideEditor;
+  String siteHome;
+
+  // main output
+  AnsiWidget* out;
+  EditorWindow* editWnd;
+  HelpWidget* helpWnd;
+
+  // tabs
+  TabGroup* tabGroup;
+  Group* editGroup;
+  Group* outputGroup;
+  Group* helpGroup;
+
+  private:
+
+  // tool-bar
+  Input* findText;
+  Input* gotoLine;
+  Choice* funcList;
+
+  // status bar
+  Widget* fileStatus;
+  Widget* rowStatus;
+  Widget* colStatus;
+  Widget* runStatus;
+  Widget* modStatus;
+};
 
 #endif
