@@ -67,6 +67,8 @@ int prev_y;
 #define RAD_W 22
 #define RAD_H  0
 
+Color formColor = color(172, 172, 172);
+
 void closeModeless() {
   mode = m_closed;
   ui_reset();
@@ -89,11 +91,14 @@ struct WidgetInfo {
     case V_STR:
       orig.ptr = var->v.p.ptr;
       break;
-    case V_ARRAY:orig.ptr = var->v.a.ptr;
+    case V_ARRAY:
+      orig.ptr = var->v.a.ptr;
       break;
-    case V_INT:orig.i = var->v.i;
+    case V_INT:
+      orig.i = var->v.i;
       break;
-    default:orig.i = 0;
+    default:
+      orig.i = 0;
     }
   }
 };
@@ -261,7 +266,7 @@ bool update_gui(Widget* w, WidgetInfo* inf)
 
     case ctrl_text:
       array_to_string(s, inf->var);
-      ((Input*) w)->label(s.c_str());
+      ((Input*) w)->copy_label(s.c_str());
       break;
 
     default:
@@ -308,16 +313,17 @@ bool update_gui(Widget* w, WidgetInfo* inf)
       break;
 
     case ctrl_check:
+    case ctrl_radio:
       ((CheckButton*) w)->
         value(!strcasecmp((const char*)inf->var->v.p.ptr, w->label()));
       break;
 
     case ctrl_label:
-      w->label((const char*)inf->var->v.p.ptr);
+      w->copy_label((const char*)inf->var->v.p.ptr);
       break;
 
     case ctrl_text:
-      w->label((const char*)inf->var->v.p.ptr);
+      ((Input*)w)->text((const char*)inf->var->v.p.ptr);
       break;
 
     default:
@@ -362,8 +368,11 @@ void transfer_data(Widget* w, WidgetInfo* inf)
     break;
 
   case ctrl_text:
-    if (w->label()) {
-      v_setstr(inf->var, w->label());
+    if (((Input*)w)->text()) {
+      v_setstr(inf->var, ((Input*)w)->text());
+    }
+    else {
+      v_zerostr(inf->var);
     }
     break;
 
@@ -393,29 +402,50 @@ void transfer_data(Widget* w, WidgetInfo* inf)
   inf->update_var_flag();
 }
 
-// radio control's belong to the same group when they share
-// a common basic variable
-bool set_radio_group(var_t* v, RadioButton* radio)
-{
-  if (v == 0 || v->type != V_STR) {
-    return false;
-  }
-
-  int n = form->children();
-  for (int i = 0; i < n; i++) {
-    Widget* w = form->child(i);
-    WidgetInfo* inf = (WidgetInfo*) w->user_data();
-    if (inf && inf->type == ctrl_radio &&
-        inf->var->type == V_STR &&
-        (inf->var == v || inf->var->v.p.ptr == v->v.p.ptr)) {
-      // another ctrl_radio is linked to the same variable
-      // radio->setGroup(((RadioButton*) widget)->getGroup());
-      // TODO: make part of group
-      inf->is_group_radio = true;
-      return true;
+// find the radio group of the given variable from within the parent
+Group* findRadioGroup(Group* parent, var_t* v) {
+  Group* radioGroup = 0;
+  int n = parent->children();
+  for (int i = 0; i < n && !radioGroup; i++) {
+    Widget* w = parent->child(i);
+    if (!w->user_data()) {
+      radioGroup = findRadioGroup((Group*) w, v);
+    }
+    else {
+      WidgetInfo* inf = (WidgetInfo*) w->user_data();
+      if (inf->type == ctrl_radio &&
+          inf->var->type == V_STR &&
+          (inf->var == v || inf->var->v.p.ptr == v->v.p.ptr)) {
+        // another ctrl_radio is linked to the same variable
+        inf->is_group_radio = true;
+        radioGroup = parent;
+      }
     }
   }
-  return false;
+  return radioGroup;
+}
+
+// radio control's belong to the same group when they share
+// a common basic variable
+void update_radio_group(WidgetInfo* radioInf, RadioButton* radio)
+{
+  var_t* v = radioInf->var;
+
+  if (v == 0 || v->type != V_STR) {
+    return;
+  }
+
+  Group* radioGroup = findRadioGroup(form, v);
+
+  if (!radioGroup) {
+    radioGroup = new Group(0, 0, form->w(), form->h());
+    form->add(radioGroup);
+  }
+  else {
+    radioInf->is_group_radio = true;
+  }
+
+  radioGroup->add(radio);
 }
 
 void widget_cb(Widget* w, void* v)
@@ -461,7 +491,10 @@ void update_widget(Widget* widget, WidgetInfo* inf, Rectangle& rect)
   widget->y(rect.y());
   widget->callback(widget_cb);
   widget->user_data(inf);
-  inf->update_var_flag();
+
+  // allow form init to update widget from basic variable
+  inf->orig.ptr = 0;
+  inf->orig.i = 0;
 }
 
 void update_button(Widget* widget, WidgetInfo* inf,
@@ -480,13 +513,18 @@ void update_button(Widget* widget, WidgetInfo* inf,
 }
 
 // copy all widget fields into variables
-void update_form()
+void update_form(Group* group)
 {
-  if (form) {
-    int n = form->children();
+  if (group) {
+    int n = group->children();
     for (int i = 0; i < n; i++) {
-      Widget* w = form->child(i);
-      transfer_data(w, (WidgetInfo*) w->user_data());
+      Widget* w = group->child(i);
+      if (!w->user_data()) {
+        update_form((Group*) w);
+      }
+      else {
+        transfer_data(w, (WidgetInfo*) w->user_data());
+      }
     }
   }
 }
@@ -495,11 +533,13 @@ void form_begin()
 {
   if (form == 0) {
     wnd->outputGroup->begin();
-    form = new Form(wnd->out->x() + 1,
-                    wnd->out->y() + 1, wnd->out->w() - 2, wnd->out->h() - 2);
+    form = new Form(wnd->out->x() + 2,
+                    wnd->out->y() + 2, 
+                    wnd->out->w() - 2, 
+                    wnd->out->h() - 2);
     form->resizable(0);
-    form->color(color(152, 152, 152));
-    form->box(SHADOW_BOX);
+    form->color(formColor);
+    form->box(BORDER_BOX);
     wnd->outputGroup->end();
   }
   form->begin();
@@ -534,7 +574,7 @@ C_LINKAGE_BEGIN void ui_reset()
 // will have closed the form, or if a radio or checkbox was
 // selected when the form was closed
 //
-extern "C" void cmd_button()
+void cmd_button()
 {
   int x, y, w, h;
   var_t* v = 0;
@@ -554,17 +594,15 @@ extern "C" void cmd_button()
       if (strcasecmp("radio", type) == 0) {
         inf->type = ctrl_radio;
         inf->is_group_radio = false;
+        form->end(); // add widget to RadioGroup
         RadioButton* widget = new RadioButton(x, y, w, h);
-        //widget->setGroup(caption);
-        inf->is_group_radio = set_radio_group(v, widget);
+        update_radio_group(inf, widget);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
-        update_gui(widget, inf);
       }
       else if (strcasecmp("checkbox", type) == 0) {
         inf->type = ctrl_check;
         CheckButton* widget = new CheckButton(x, y, w, h);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
-        update_gui(widget, inf);
       }
       else if (strcasecmp("button", type) == 0) {
         inf->type = ctrl_button;
@@ -575,6 +613,8 @@ extern "C" void cmd_button()
         inf->type = ctrl_label;
         Widget* widget = new Widget(x, y, w, h);
         widget->box(FLAT_BOX);
+        widget->color(formColor);
+        widget->align(ALIGN_LEFT | ALIGN_INSIDE);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
       }
       else if (strcasecmp("listbox", type) == 0) {
@@ -615,7 +655,7 @@ extern "C" void cmd_button()
 
 // TEXT x, y, w, h, variable
 // When DOFORM returns the variable contains the user entered value
-extern "C" void cmd_text()
+void cmd_text()
 {
   int x, y, w, h;
   var_t* v = 0;
@@ -674,18 +714,19 @@ void cmd_doform()
     }
     else {
       // pump system messages until button is clicked
-      update_form();
+      update_form(form);
       while (mode == m_modeless) {
         fltk::wait();
       }
       mode = m_modeless;
-      update_form();
+      update_form(form);
       return;
     }
   }
 
   switch (num_args) {
   case 0:
+    x = y = 2;
   case 2:
   case 4:
     break;
@@ -696,10 +737,10 @@ void cmd_doform()
   }
 
   if (w < 1 || x + w > form->w()) {
-    w = form->w() - x;
+    w = form->w() + 3;
   }
   if (h < 1 || y + h > form->h()) {
-    h = form->h() - y;
+    h = form->h() + 3;
   }
 
   wnd->tabGroup->selected_child(wnd->outputGroup);
@@ -710,10 +751,11 @@ void cmd_doform()
   if (mode == m_unset) {
     mode = m_modal;
     wnd->setModal(true);
+    update_form(form);
     while (mode == m_modal && wnd->isModal()) {
       fltk::wait();
     }
-    update_form();
+    update_form(form);
     ui_reset();
   }
 }
