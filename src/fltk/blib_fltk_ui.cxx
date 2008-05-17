@@ -32,11 +32,11 @@
 
 extern "C" {
 #include "blib_ui.h"
-} 
+}
 extern MainWindow* wnd;
 
 struct Form : public Group {
-  Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {} 
+  Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {}
   void draw(); // avoid drawing over the tab-bar
 };
 
@@ -66,8 +66,6 @@ int prev_y;
 #define BN_H   2
 #define RAD_W 22
 #define RAD_H  0
-
-Color formColor = color(172, 172, 172);
 
 void closeModeless() {
   mode = m_closed;
@@ -110,13 +108,13 @@ struct DropListModel : StringList {
 
   DropListModel(const char* items, var_t* v) : StringList() {
     focus_index = -1;
-    
+
     if (v && v->type == V_ARRAY) {
       fromArray(items, v);
       return;
     }
 
-    // construct from a string like "Easy|Medium|Hard" 
+    // construct from a string like "Easy|Medium|Hard"
     int item_index = 0;
     int len = items ? strlen(items) : 0;
     for (int i = 0; i < len; i++) {
@@ -132,14 +130,18 @@ struct DropListModel : StringList {
       item_index++;
     }
   }
-  
+
+  virtual ~DropListModel() {
+    list.removeAll();
+  }
+
   // construct from an array of values
   void fromArray(const char* caption, var_t* v) {
     for (int i = 0; i < v->v.a.size; i++) {
       var_t* el_p = (var_t*) (v->v.a.ptr + sizeof(var_t)* i);
       if (el_p->type == V_STR) {
-        list.add(new String((const char*)el_p->v.p.ptr));
-        if (strcasecmp((const char*)el_p->v.p.ptr, caption) == 0) {
+        list.add((const char*)el_p->v.p.ptr);
+        if (caption && strcasecmp((const char*)el_p->v.p.ptr, caption) == 0) {
           focus_index = i;
         }
       }
@@ -158,12 +160,12 @@ struct DropListModel : StringList {
   int children(const Menu*) {
     return list.length();
   }
-  
+
   // return the label at the given index
   const char* label(const Menu*, int index) {
     return getElementAt(index)->c_str();
   }
-  
+
   String* getElementAt(int index) {
     return (String*) list.get(index);
   }
@@ -495,6 +497,11 @@ void update_widget(Widget* widget, WidgetInfo* inf, Rectangle& rect)
   // allow form init to update widget from basic variable
   inf->orig.ptr = 0;
   inf->orig.i = 0;
+
+  // copy output widget colors
+  widget->color(wnd->out->color());
+  widget->labelcolor(wnd->out->labelcolor());
+  widget->textcolor(wnd->out->labelcolor());
 }
 
 void update_button(Widget* widget, WidgetInfo* inf,
@@ -534,12 +541,12 @@ void form_begin()
   if (form == 0) {
     wnd->outputGroup->begin();
     form = new Form(wnd->out->x() + 2,
-                    wnd->out->y() + 2, 
-                    wnd->out->w() - 2, 
+                    wnd->out->y() + 2,
+                    wnd->out->w() - 2,
                     wnd->out->h() - 2);
     form->resizable(0);
-    form->color(formColor);
     form->box(BORDER_BOX);
+    form->color(wnd->out->color());
     wnd->outputGroup->end();
   }
   form->begin();
@@ -569,11 +576,6 @@ C_LINKAGE_BEGIN void ui_reset()
 
 // BUTTON x, y, w, h, variable, caption [,type]
 //
-// type can optionally be 'radio' | 'checkbox' | 'link' | 'choice'
-// variable is set to 1 if a button or link was pressed (which
-// will have closed the form, or if a radio or checkbox was
-// selected when the form was closed
-//
 void cmd_button()
 {
   int x, y, w, h;
@@ -599,7 +601,7 @@ void cmd_button()
         update_radio_group(inf, widget);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
       }
-      else if (strcasecmp("checkbox", type) == 0) {
+      else if (strcasecmp("checkbox", type) == 0 || strcasecmp("check", type) == 0) {
         inf->type = ctrl_check;
         CheckButton* widget = new CheckButton(x, y, w, h);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
@@ -613,11 +615,10 @@ void cmd_button()
         inf->type = ctrl_label;
         Widget* widget = new Widget(x, y, w, h);
         widget->box(FLAT_BOX);
-        widget->color(formColor);
         widget->align(ALIGN_LEFT | ALIGN_INSIDE);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
       }
-      else if (strcasecmp("listbox", type) == 0) {
+      else if (strcasecmp("listbox", type) == 0 || strcasecmp("list", type) == 0) {
         inf->type = ctrl_listbox;
         Browser* widget = new Browser(x, y, w, h);
         DropListModel* model = new DropListModel(caption, v);
@@ -626,6 +627,7 @@ void cmd_button()
           widget->value(model->focus_index);
         }
         update_widget(widget, inf, rect);
+        form->resizable(widget);
       }
       else if (strcasecmp("dropdown", type) == 0 || strcasecmp("choice", type) == 0) {
         inf->type = ctrl_dropdown;
@@ -639,7 +641,7 @@ void cmd_button()
       }
       else {
         ui_reset();
-        rt_raise("UI: UNKNOWN TYPE: %s", type);
+        rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);
       }
     }
     else {
@@ -649,7 +651,9 @@ void cmd_button()
     }
   }
 
-  form->end();
+  if (form) {
+    form->end();
+  }
   pfree2(caption, type);
 }
 
@@ -664,7 +668,6 @@ void cmd_text()
     form_begin();
     Input* widget = new Input(x, y, w, h);
     widget->box(BORDER_BOX);
-    widget->color(color(220, 220, 220));
     Rectangle rect(x, y, w, h);
     WidgetInfo* inf = new WidgetInfo();
     inf->var = v;

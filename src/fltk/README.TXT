@@ -3,7 +3,6 @@ Copyright (c) 2002-2008 Chris Warren-Smith
 0. TODO:
 
 - Add button color support
-- Update form handling to be like SDL implementation
 - Fix up fltk AnsiWidget.saveImage()
 - Update imagedraw handling to be like SDL implementation
 - Integrate online help with web site help info + add keyword index page

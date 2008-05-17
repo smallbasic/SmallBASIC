@@ -122,7 +122,7 @@ struct List {
   bool hasNext() const;
   Object *next();
   void add(Object* object);
-  void add(const char* s) {add(new String(s));}
+  void add(const char* s) {add(new String(s, strlen(s)));}
   void addSet(String* s);
   Object **getList() {return head;}
   

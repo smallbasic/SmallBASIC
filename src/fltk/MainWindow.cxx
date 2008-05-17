@@ -153,6 +153,7 @@ void MainWindow::pathMessage(const char *file)
 void MainWindow::showEditTab()
 {
   tabGroup->selected_child(editGroup);
+  editWnd->take_focus();
 }
 
 void MainWindow::showHelpTab()
@@ -419,10 +420,6 @@ bool MainWindow::basicMain(const char *filename, bool toolExec)
   }
 
   editWnd->readonly(false);
-  if (isFormActive() == false) {
-    editWnd->take_focus();
-  }
-
   runMode = edit_state;
   return was_break;
 }
