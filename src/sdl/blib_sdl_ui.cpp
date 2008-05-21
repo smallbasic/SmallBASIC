@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 //
 // Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -47,10 +46,10 @@ int cursor;
 using namespace gcn;
 
 // Guichan SDL components
-gcn::SDLInput * input;          // Input driver
-gcn::SDLGraphics * graphics;    // Graphics driver
-gcn::Gui * gui;                 // A Gui object - binds it all together
-gcn::ImageFont * font;          // A font
+gcn::SDLInput *input;          // Input driver
+gcn::SDLGraphics *graphics;    // Graphics driver
+gcn::Gui *gui;                 // A Gui object - binds it all together
+gcn::ImageFont *font;          // A font
 
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W  16
@@ -85,24 +84,30 @@ struct WidgetInfo {
     case V_STR:
       orig.ptr = var->v.p.ptr;
       break;
-      case V_ARRAY:orig.ptr = var->v.a.ptr;
+    case V_ARRAY:
+      orig.ptr = var->v.a.ptr;
       break;
-      case V_INT:orig.i = var->v.i;
+    case V_INT:
+      orig.i = var->v.i;
       break;
-      default:orig.i = 0;
-}}};
+    default:
+      orig.i = 0;
+    }
+  }
+};
 
 // a ScrollArea with content cleanup
-struct ScrollBox:gcn::ScrollArea {
-  ScrollBox(gcn::Widget * w):ScrollArea(w) {
+struct ScrollBox : gcn::ScrollArea {
+  ScrollBox(gcn::Widget * w) : ScrollArea(w) {
     setBorderSize(1);
-  } ~ScrollBox() {
+  } 
+  ~ScrollBox() {
     delete getContent();
   }
 };
 
 // implements abstract gcn::ListModel as a list of strings
-struct DropListModel:gcn::ListModel {
+struct DropListModel : gcn::ListModel {
   std::vector < std::string > list;
   int focus_index;
 
@@ -118,14 +123,16 @@ struct DropListModel:gcn::ListModel {
     for (int i = 0; i < len; i++) {
       char *c = strchr(items + i, '|');
       int end_index = c ? c - items : len;
-      std::string s(items + i, end_index - i);
-      list.push_back(s);
-      i = end_index;
-      if (v != 0 && v->type == V_STR && v->v.p.ptr &&
-          strcasecmp((const char *)v->v.p.ptr, s.c_str()) == 0) {
-        focus_index = item_index;
+      if (end_index > 0) {
+        std::string s(items + i, end_index - i);
+        list.push_back(s);
+        i = end_index;
+        if (v != 0 && v->type == V_STR && v->v.p.ptr &&
+            strcasecmp((const char *)v->v.p.ptr, s.c_str()) == 0) {
+          focus_index = item_index;
+        }
+        item_index++;
       }
-      item_index++;
     }
   }
 
@@ -227,8 +234,9 @@ struct Form:gcn::Container, gcn::ActionListener {
   bool set_radio_group(var_t * v, RadioButton * radio);
   std::map < gcn::Widget *, WidgetInfo * >widget_map;
   ~Form();
-  Form():prev_x(0), prev_y(0) {
-  } int prev_x, prev_y;
+  Form() : prev_x(0), prev_y(0) {
+  } 
+  int prev_x, prev_y;
 };
 
 Form *form = 0;

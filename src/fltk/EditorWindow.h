@@ -114,9 +114,9 @@ private:
   char filename[PATH_MAX];
   bool dirty;
   bool loading;
-  Window *replaceDlg;
-  Input *replaceFind;
-  Input *replaceWith;
+  Window* replaceDlg;
+  Input* replaceFind;
+  Input* replaceWith;
   ulong modifiedTime;
 };
 

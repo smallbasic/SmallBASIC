@@ -120,14 +120,16 @@ struct DropListModel : StringList {
     for (int i = 0; i < len; i++) {
       char* c = strchr(items + i, '|');
       int end_index = c ? c - items : len;
-      String* s = new String(items + i, end_index - i);
-      list.add(s);
-      i = end_index;
-      if (v != 0 && v->type == V_STR && v->v.p.ptr &&
-          strcasecmp((const char*)v->v.p.ptr, s->toString()) == 0) {
-        focus_index = item_index;
+      if (end_index > 0) {
+        String* s = new String(items + i, end_index - i);
+        list.add(s);
+        i = end_index;
+        if (v != 0 && v->type == V_STR && v->v.p.ptr &&
+            strcasecmp((const char*)v->v.p.ptr, s->toString()) == 0) {
+          focus_index = item_index;
+        }
+        item_index++;
       }
-      item_index++;
     }
   }
 
@@ -268,7 +270,7 @@ bool update_gui(Widget* w, WidgetInfo* inf)
 
     case ctrl_text:
       array_to_string(s, inf->var);
-      ((Input*) w)->copy_label(s.c_str());
+      ((Input*) w)->text(s.c_str());
       break;
 
     default:
@@ -552,6 +554,12 @@ void form_begin()
   form->begin();
 }
 
+void form_end() {
+  if (form != 0) {
+    form->end();
+  }
+}
+
 C_LINKAGE_BEGIN void ui_reset()
 {
   if (form != 0) {
@@ -596,7 +604,7 @@ void cmd_button()
       if (strcasecmp("radio", type) == 0) {
         inf->type = ctrl_radio;
         inf->is_group_radio = false;
-        form->end(); // add widget to RadioGroup
+        form_end(); // add widget to RadioGroup
         RadioButton* widget = new RadioButton(x, y, w, h);
         update_radio_group(inf, widget);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
@@ -623,6 +631,7 @@ void cmd_button()
         Browser* widget = new Browser(x, y, w, h);
         DropListModel* model = new DropListModel(caption, v);
         widget->list(model);
+        widget->box(BORDER_BOX);
         if (model->focus_index != -1) {
           widget->value(model->focus_index);
         }
@@ -634,6 +643,7 @@ void cmd_button()
         Choice* widget = new Choice(x, y, w, h);
         DropListModel* model = new DropListModel(caption, v);
         widget->list(model);
+        widget->box(BORDER_BOX);
         if (model->focus_index != -1) {
           widget->value(model->focus_index);
         }
@@ -651,9 +661,7 @@ void cmd_button()
     }
   }
 
-  if (form) {
-    form->end();
-  }
+  form_end();
   pfree2(caption, type);
 }
 
@@ -673,11 +681,14 @@ void cmd_text()
     inf->var = v;
     inf->type = ctrl_text;
     update_widget(widget, inf, rect);
+    if (rect.h() > (getascent() + getdescent() + BN_H)) {
+      widget->type(Input::MULTILINE | Input::WORDWRAP);
+    }
     form->end();
   }
 }
 
-// DOFORM [x, y, w, h [,border-style, bg-color]]
+// DOFORM [x, y, w, h]
 // Executes the form
 void cmd_doform()
 {

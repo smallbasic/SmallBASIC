@@ -1,3 +1,8 @@
+2008-05-15
+	* Update FLTK forms implementation to be like the SDL implementation
+	* FLTK now correctly implements DELAY
+	* Updated help.bas help plugin to include an index
+
 2008-05-07
 	* FLTK: allow applications to set the window geometry using:
 	option predef grmode WxH

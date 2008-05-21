@@ -886,7 +886,7 @@ bool EditorWindow::findText(const char *find, bool forward)
 
   int pos = editor->insert_position();
   bool found = forward ? textbuf->search_forward(pos, search, &pos) :
-    textbuf->search_backward(pos - strlen(find), search, &pos);
+               textbuf->search_backward(pos - strlen(find), search, &pos);
   if (found) {
     textbuf->select(pos, pos + strlen(search));
     editor->insert_position(pos + strlen(search));
@@ -1181,6 +1181,5 @@ void EditorWindow::getKeywords(strlib::List& keywords) {
     keywords.add(new String(code_procedures[i]));
   }
 }
-
 
 //--EndOfFile-------------------------------------------------------------------

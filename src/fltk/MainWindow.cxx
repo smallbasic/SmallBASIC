@@ -731,12 +731,11 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
       runMsg(msg_run);
       sprintf(path, "%s/%s", packageHome, (const char *)eventData);
       int success = sbasic_main(path);
-      showEditTab();
       runMsg(success ? msg_none : msg_err);
       editWnd->loadFile(filename, -1, true);
       editor->insert_position(pos);
       editor->show_insert_position();
-      editWnd->take_focus();
+      showEditTab();
       runMode = edit_state;
       opt_command[0] = 0;
     }

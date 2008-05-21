@@ -249,6 +249,7 @@ function buildFLTK() {
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
  
    BUILD_SUBDIRS="src src/fltk"
    AC_SUBST(BUILD_SUBDIRS)

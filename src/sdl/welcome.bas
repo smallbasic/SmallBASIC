@@ -32,9 +32,10 @@ edit_lb = "? 'Hello World'"
 
 margin = xmax/3
 
+color 0,7
 doform 0, 0, xmax, ymax
 list = files("*.bas")
-button  5, 5, margin, -1, list, "", "listbox"
+button  5, 5, margin, ymax-12, list, "", "listbox"
 button -5, 5, -1, -1, open_bn, "Run"
 button -5, 5, -1, -1, load_bn, "Load"
 button -5, 5, -1, -1, save_bn, "Save"

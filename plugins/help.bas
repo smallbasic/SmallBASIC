@@ -30,7 +30,7 @@ end
 #
 sub showChapters
   local out
-  out << "<h1>Help Index</h1>"
+  out << "<h1>Help Topics</h1>"
   out << "<a href=!Console>Console</a><br>"
   out << "<a href=!Data>Data</a><br>"
   out << "<a href=!Date>Date</a><br>"
@@ -40,6 +40,56 @@ sub showChapters
   out << "<a href=!Math>Math</a><br>"
   out << "<a href=!String>String</a><br>"
   out << "<a href=!System>System</a><br>"
+  
+  'show additional index information
+  out << "<hr>"
+  out << "<a href=~>[Index]</a><br>"  
+  
+  tsave getHelpOutputFilename, out
+end
+
+#
+# sort by keyword
+#
+func sortKeywords(x, y)
+  local result, cols_a, cols_b, kw_a, kw_b
+
+  result = 0
+  split x, ",", cols_a
+  split y, ",", cols_b  
+  if len(cols_a) > 0 and len(cols_b) > 0 then
+    kw_a = unquote(cols_a(2))
+    kw_b = unquote(cols_b(2))
+    result = IFF(kw_a == kw_b, 0, IFF(kw_a > kw_b, 1, -1))
+  fi
+  sortKeywords = result
+end
+
+#
+# show alphabetical groups
+#
+sub showIndex()
+  local contents, keyword, row, nextKw, kw
+
+  tload getHelpInputFilename, contents
+  sort contents use sortKeywords(x,y)
+
+  nextKw = ""
+
+  for row in contents
+    split row, ",", cols
+    if len(cols) > 0 then
+      keyword = unquote(cols(2))
+      kw = mid(keyword, 1,1)      
+      if (nextKw != kw) then
+        out << "<hr><b>" + kw + "</b><br>"
+        nextKw = kw
+      fi
+      out << "<a href=" + keyword + ">" + keyword + "</a><br>"
+    fi
+  next
+
+  out << "<hr><a href=^>[Top]</a>"
   tsave getHelpOutputFilename, out
 end
 
@@ -47,7 +97,7 @@ end
 # show the contents of the given chapter
 #
 sub showChapter(chapter)
-  local row, contents, nextChapter, out, keyword
+  local row, contents, nextChapter, out, keyword, chapterKeywords
 
   tload getHelpInputFilename, contents
   out << "<h1>" + chapter + "</h1>"
@@ -57,13 +107,17 @@ sub showChapter(chapter)
     if len(cols) > 0 then
       nextChapter = unquote(cols(0))
       if (nextChapter == chapter) then
-        keyword = unquote(cols(2))
-        out << "<a href=" + keyword + ">" + keyword + "</a><br>"
+        chapterKeywords << unquote(cols(2))
       fi
     fi
   next row
 
-  out << "<hr><a href=^>[Index]</a>"
+  sort chapterKeywords
+  for keyword in chapterKeywords
+    out << "<a href=" + keyword + ">" + keyword + "</a><br>"
+  next keyword
+
+  out << "<hr><a href=~>[Index]</a> | <a href=^>[Top]</a>"
   tsave getHelpOutputFilename, out
 end
 
@@ -90,8 +144,8 @@ sub showContext(keyword)
         out << "<hr>"
 
         rem draw next and previous links
-        out << "<a href=^>[Index]</a>"
-        out << "<a href=!" + chapter + ">[Up]</a>"
+        out << "<a href=~>[Index]</a> | <a href=^>[Top]</a>"
+        out << "<a href=!" + chapter + ">[Group]</a>"
         if (i > 0) then
           split contents(i - 1), ",", cols
           kw = unquote(cols(2))
@@ -109,7 +163,7 @@ sub showContext(keyword)
 
   if (isarray(out) == 0) then
     out << "Keyword not found: " + keyword
-    out << "<hr><a href=^>[Index]</a>"
+    out << "<hr><a href=~>[Index]</a> | <a href=^>[Top]</a>"
   fi
     
   tsave getHelpOutputFilename, out
@@ -121,6 +175,8 @@ end
 sub main
   if len(command) = 0 or left(command, 1) = "^" then
     showChapters
+  elif left(command, 1) = "~" then
+    showIndex
   elif left(command, 1) = "!" then
     showChapter right(command, len(command)-1)
   else

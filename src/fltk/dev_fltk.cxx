@@ -295,7 +295,7 @@ void osd_write(const char *s)
   wnd->out->print(s);
 }
 
-//--HTML------------------------------------------------------------------------
+//--ENV-------------------------------------------------------------------------
 
 int dev_putenv(const char *s)
 {
@@ -366,10 +366,13 @@ int dev_env_count()
     return p.length();
   }
   int count = env.length();
-  while (environ[count])
+  while (environ[count]) {
     count++;
+  }
   return count;
 }
+
+//--HTML------------------------------------------------------------------------
 
 void doEvent(void *)
 {
@@ -582,6 +585,25 @@ int dev_image_height(int handle, int index)
   return imgh;
 }
 
+//--DELAY-----------------------------------------------------------------------
+
+void timeout_callback(void* data) {
+  if (wnd->isModal()) {
+    wnd->setModal(false);
+  }
+}
+
+void dev_delay(dword ms) {
+  if (!wnd->isBreakExec()) {
+    add_timeout(((float)ms)/1000, timeout_callback, 0);
+    wnd->setModal(true);
+    while (wnd->isModal()) {
+      fltk::wait(0.1);
+    }
+    fltk::remove_check(timeout_callback);
+  }
+}
+
 //--INPUT-----------------------------------------------------------------------
 
 void enter_cb(Widget *, void *v)
@@ -678,7 +700,9 @@ char *dev_gets(char *dest, int size)
 }
 
 C_LINKAGE_END
+
 //--HTML Utils------------------------------------------------------------------
+
 void getHomeDir(char *fileName)
 {
   const char *home = getenv("HOME");
