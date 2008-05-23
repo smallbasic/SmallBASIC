@@ -54,7 +54,7 @@
 #define CELL_SPACING 4
 #define INPUT_WIDTH 90
 #define BUTTON_WIDTH 20
-#define SCROLL_SIZE 640000
+#define SCROLL_SIZE 10000
 #define HSCROLL_STEP 20
 #define ELIPSE_LEN 10
 #define IMG_TEXT_BORDER 25
@@ -127,7 +127,7 @@ struct Value {
   int value;
 };
 
-struct Attributes:public Properties {
+struct Attributes : public Properties {
   Attributes(int growSize):Properties(growSize) {
   } 
   String *getValue() {
@@ -232,7 +232,7 @@ Value Attributes::getValue(const char *attr, int def)
 
 //--BaseNode--------------------------------------------------------------------
 
-struct BaseNode:public Object {
+struct BaseNode : public Object {
   virtual void display(Display * out) {
   }
   virtual int indexOf(const char *sFind, U8 matchCase) {
@@ -247,7 +247,7 @@ struct BaseNode:public Object {
 
 //--FontNode--------------------------------------------------------------------
 
-struct FontNode:public BaseNode {
+struct FontNode : public BaseNode {
   FontNode(Font * font, int fontSize, Color color, bool bold, bool italic);
   void display(Display * out);
 
@@ -292,7 +292,7 @@ void FontNode::display(Display * out)
 
 //--BrNode----------------------------------------------------------------------
 
-struct BrNode:public BaseNode {
+struct BrNode : public BaseNode {
   BrNode(U8 premode) {
     this->premode = premode;
   }
@@ -311,7 +311,7 @@ struct BrNode:public BaseNode {
 
 //--AnchorNode------------------------------------------------------------------
 
-struct AnchorNode:public BaseNode {
+struct AnchorNode : public BaseNode {
   AnchorNode(Attributes & p):BaseNode() {
     p.getName(name);
     p.getHref(href);
@@ -357,7 +357,7 @@ struct AnchorNode:public BaseNode {
 
 AnchorNode *pushedAnchor = 0;
 
-struct AnchorEndNode:public BaseNode {
+struct AnchorEndNode : public BaseNode {
   AnchorEndNode():BaseNode() {
   }
   void display(Display * out) {
@@ -375,7 +375,7 @@ struct AnchorEndNode:public BaseNode {
 
 //--StyleNode-------------------------------------------------------------------
 
-struct StyleNode:public BaseNode {
+struct StyleNode : public BaseNode {
   StyleNode(U8 uline, U8 center) {
     this->uline = uline;
     this->center = center;
@@ -390,7 +390,7 @@ struct StyleNode:public BaseNode {
 
 //--LiNode----------------------------------------------------------------------
 
-struct UlNode:public BaseNode {
+struct UlNode : public BaseNode {
   UlNode(bool ordered) {
     this->ordered = ordered;
   }
@@ -403,7 +403,7 @@ struct UlNode:public BaseNode {
   int nextId;
 };
 
-struct UlEndNode:public BaseNode {
+struct UlEndNode : public BaseNode {
   UlEndNode() {
   }
   void display(Display * out) {
@@ -412,7 +412,7 @@ struct UlEndNode:public BaseNode {
   }
 };
 
-struct LiNode:public BaseNode {
+struct LiNode : public BaseNode {
   LiNode(UlNode * ulNode) {
     this->ulNode = ulNode;
   }
@@ -440,7 +440,7 @@ struct LiNode:public BaseNode {
 
 //--ImageNode-------------------------------------------------------------------
 
-struct ImageNode:public BaseNode {
+struct ImageNode : public BaseNode {
   ImageNode(const Style * style, String * docHome, Attributes * a);
   ImageNode(const Style * style, String * docHome, String * src, bool fixed);
   ImageNode(const Style * style, const Image * image);
@@ -599,7 +599,7 @@ void ImageNode::display(Display * out)
 
 //--TextNode--------------------------------------------------------------------
 
-struct TextNode:public BaseNode {
+struct TextNode : public BaseNode {
   TextNode(const char *s, U16 textlen);
   void display(Display * out);
   void drawSelection(const char *s, U16 len, U16 width, Display * out);
@@ -861,7 +861,7 @@ int TextNode::getY()
 
 //--HrNode----------------------------------------------------------------------
 
-struct HrNode:public BaseNode {
+struct HrNode : public BaseNode {
   HrNode():BaseNode() {
   }
   void display(Display * out) {
@@ -886,7 +886,7 @@ struct HrNode:public BaseNode {
 
 struct TableNode;
 
-struct TrNode:public BaseNode {
+struct TrNode : public BaseNode {
   TrNode(TableNode * tableNode, Attributes * a);
   void display(Display * out);
 
@@ -896,14 +896,14 @@ struct TrNode:public BaseNode {
   Color background, foreground;
 };
 
-struct TrEndNode:public BaseNode {
+struct TrEndNode : public BaseNode {
   TrEndNode(TrNode * trNode);
   void display(Display * out);
 
   TrNode *tr;
 };
 
-struct TdNode:public BaseNode {
+struct TdNode : public BaseNode {
   TdNode(TrNode * trNode, Attributes * a);
   void display(Display * out);
 
@@ -913,14 +913,14 @@ struct TdNode:public BaseNode {
   U16 colspan;
 };
 
-struct TdEndNode:public BaseNode {
+struct TdEndNode : public BaseNode {
   TdEndNode(TdNode * tdNode);
   void display(Display * out);
 
   TdNode *td;
 };
 
-struct TableNode:public BaseNode {
+struct TableNode : public BaseNode {
   TableNode(Attributes * a);
   ~TableNode();
   void display(Display * out);
@@ -941,7 +941,7 @@ struct TableNode:public BaseNode {
   S16 border;
 };
 
-struct TableEndNode:public BaseNode {
+struct TableEndNode : public BaseNode {
   TableEndNode(TableNode * tableNode);
   void display(Display * out);
 
@@ -1226,7 +1226,7 @@ void TdEndNode::display(Display * out)
 
 //--NamedInput------------------------------------------------------------------
 
-struct NamedInput:public Object {
+struct NamedInput : public Object {
   NamedInput(InputNode * node, String * name) {
     this->input = node;
     this->name.append(name->toString());
@@ -1253,7 +1253,7 @@ static void def_button_callback(Widget * button, void *buttonId)
   }
 }
 
-struct InputNode:public BaseNode {
+struct InputNode : public BaseNode {
   InputNode(Group * parent);
   InputNode(Group * parent, Attributes * a, const char *v, int len);
   InputNode(Group * parent, Attributes * a);
@@ -1265,9 +1265,8 @@ struct InputNode:public BaseNode {
   U16 rows, cols;
 };
 
-InputNode::InputNode(Group * parent, Attributes * a):
-    // creates either a text, checkbox, radio, hidden or button control
-BaseNode()
+// creates either a text, checkbox, radio, hidden or button control
+InputNode::InputNode(Group * parent, Attributes * a) : BaseNode()
 {
   parent->begin();
   String *type = a->getType();
@@ -1539,7 +1538,7 @@ void InputNode::display(Display * out)
 
 //--EnvNode---------------------------------------------------------------------
 
-struct EnvNode:public TextNode {
+struct EnvNode : public TextNode {
   EnvNode(Properties * p, const char *s, U16 textlen):TextNode(0, 0) {
     String var;
     var.append(s, textlen);
@@ -1570,10 +1569,9 @@ static void anchor_callback(Widget * helpWidget, void *target)
   ((HelpWidget *) helpWidget)->navigateTo((const char *)target);
 }
 
-HelpWidget::HelpWidget(int x, int y, int width, int height, int defsize):Group(x, y,
-                                                                               width,
-                                                                               height),
-nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5)
+HelpWidget::HelpWidget(int x, int y, int width, int height, int defsize) : 
+  Group(x, y, width, height), 
+  nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5)
 {
   begin();
   scrollbar = new Scrollbar(width - SCROLL_W, 0, SCROLL_W, height);
@@ -2173,7 +2171,9 @@ void HelpWidget::compile()
           center = false;
           nodeList.add(new StyleNode(uline, center));
         }
-        else if (0 == strncasecmp(tag, "font", 4) || 0 == strncasecmp(tag, "code", 4) || 0 == strncasecmp(tag, "h", 1)) { // </h1>
+        else if (0 == strncasecmp(tag, "font", 4) || 
+                 0 == strncasecmp(tag, "code", 4) || 
+                 0 == strncasecmp(tag, "h", 1)) { // </h1>
           if (0 == strncasecmp(tag, "h", 1)) {
             if (bold > 0) {
               bold--;

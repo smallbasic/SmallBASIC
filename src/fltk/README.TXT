@@ -2,7 +2,6 @@ Copyright (c) 2002-2008 Chris Warren-Smith
 
 0. TODO:
 
-- Add button color support
 - Fix up fltk AnsiWidget.saveImage()
 - Update imagedraw handling to be like SDL implementation
 - Integrate online help with web site help info + add keyword index page
@@ -12,7 +11,6 @@ Copyright (c) 2002-2008 Chris Warren-Smith
 
     Commenced sometime around early Nov 2004. Gave me something
     to do during my boring train ride to/from work.
-
 
 2.  FLTK patches
 

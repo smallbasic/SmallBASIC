@@ -529,6 +529,9 @@ void MainWindow::help_contents(Widget* w, void* eventData)
       strcpy(opt_command, selection);
       free((void *)selection);
     }
+    else {
+      opt_command[0] = 0;
+    }
 
     execHelp();
   }

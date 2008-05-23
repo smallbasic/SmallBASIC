@@ -69,7 +69,7 @@ end
 # show alphabetical groups
 #
 sub showIndex()
-  local contents, keyword, row, nextKw, kw
+  local contents, keyword, row, nextKw, kw, nextChapter
 
   tload getHelpInputFilename, contents
   sort contents use sortKeywords(x,y)
@@ -85,11 +85,13 @@ sub showIndex()
         out << "<hr><b>" + kw + "</b><br>"
         nextKw = kw
       fi
-      out << "<a href=" + keyword + ">" + keyword + "</a><br>"
+      nextChapter = unquote(cols(0)) 
+      out << "<a href=" + keyword + ">" + keyword + &
+             "</a> - " + nextChapter +"<br>"
     fi
   next
 
-  out << "<hr><a href=^>[Top]</a>"
+  out << "<hr><a href=^>[Topics]</a>"
   tsave getHelpOutputFilename, out
 end
 
@@ -117,7 +119,7 @@ sub showChapter(chapter)
     out << "<a href=" + keyword + ">" + keyword + "</a><br>"
   next keyword
 
-  out << "<hr><a href=~>[Index]</a> | <a href=^>[Top]</a>"
+  out << "<hr><a href=~>[Index]</a> | <a href=^>[Topics]</a>"
   tsave getHelpOutputFilename, out
 end
 
@@ -144,7 +146,7 @@ sub showContext(keyword)
         out << "<hr>"
 
         rem draw next and previous links
-        out << "<a href=~>[Index]</a> | <a href=^>[Top]</a>"
+        out << "<a href=~>[Index]</a> | <a href=^>[Topics]</a>"
         out << "<a href=!" + chapter + ">[Group]</a>"
         if (i > 0) then
           split contents(i - 1), ",", cols
@@ -163,7 +165,7 @@ sub showContext(keyword)
 
   if (isarray(out) == 0) then
     out << "Keyword not found: " + keyword
-    out << "<hr><a href=~>[Index]</a> | <a href=^>[Top]</a>"
+    out << "<hr><a href=~>[Index]</a> | <a href=^>[Topics]</a>"
   fi
     
   tsave getHelpOutputFilename, out
@@ -185,4 +187,3 @@ sub main
 end
 
 main
-

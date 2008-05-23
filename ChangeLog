@@ -1,3 +1,9 @@
+$Id: $
+
+2008-05-24
+	* Updated SDL forms to work with guichan 0.8.1
+	* Fixed problem with FLTK HelpWidget displaying large pages
+
 2008-05-15
 	* Update FLTK forms implementation to be like the SDL implementation
 	* FLTK now correctly implements DELAY
@@ -143,3 +149,5 @@
 
 Refer to sync/Changes for more history
 This log has been created for autotools support
+
+$Id: $

@@ -24,8 +24,8 @@
 #include <utility>
 #include <guichan.hpp>
 #include <guichan/sdl.hpp>
-#include "SDL.h"
-#include "SDL_Image.h"
+#include <SDL.h>
+#include <SDL_image.h>
 
 #include "fixedfont.xpm"
 const char *font_chars =
@@ -36,7 +36,7 @@ const char *font_chars =
 extern SDL_Surface *screen;
 extern "C" void ui_reset();
 
-enum { m_unset, m_init, m_modeless, m_modal, m_closed } mode = m_unset;
+enum Mode { m_unset, m_init, m_modeless, m_modal, m_closed } mode = m_unset;
 int modeless_x;
 int modeless_y;
 int modeless_w;
@@ -98,9 +98,7 @@ struct WidgetInfo {
 
 // a ScrollArea with content cleanup
 struct ScrollBox : gcn::ScrollArea {
-  ScrollBox(gcn::Widget * w) : ScrollArea(w) {
-    setBorderSize(1);
-  } 
+  ScrollBox(gcn::Widget * w) : ScrollArea(w) {} 
   ~ScrollBox() {
     delete getContent();
   }
@@ -118,7 +116,8 @@ struct DropListModel : gcn::ListModel {
       fromArray(items, v);
       return;
     }
-    // construct from a string like "Easy|Medium|Hard" int item_index = 0;
+    // construct from a string like "Easy|Medium|Hard" 
+    int item_index = 0;
     int len = items ? strlen(items) : 0;
     for (int i = 0; i < len; i++) {
       char *c = strchr(items + i, '|');
@@ -181,14 +180,16 @@ struct DropListModel : gcn::ListModel {
 // load the font image from a static xpixmap structure
 struct FontImageLoader:gcn::SDLImageLoader {
   Image *load(const std::string & filename, bool convertToDisplayFormat = true) {
-    SDL_Surface *loadedSurface = NULL;
+    SDL_Surface* loadedSurface = NULL;
     if (filename == "fixed_font.xpm") {
       loadedSurface = IMG_ReadXPMFromArray((char **)fixedfont_xpm);
-    } // else test and load other embedded fonts if (loadedSurface == NULL) {
+    } 
+    // else test and load other embedded fonts 
+    if (loadedSurface == NULL) {
       throw std::string("Unable to load font data");
     }
 
-    SDL_Surface *surface = convertToStandardFormat(loadedSurface);
+    SDL_Surface* surface = convertToStandardFormat(loadedSurface);
     SDL_FreeSurface(loadedSurface);
 
     if (surface == NULL) {
@@ -415,9 +416,9 @@ bool Form::update_gui(gcn::Widget * w, WidgetInfo * inf)
       break;
 
     case ctrl_check:
-      ((CheckBox *) w)->setMarked(!strcasecmp((const char *)inf->var->v.p.ptr,
-                                              ((CheckBox *) w)->getCaption().
-                                              c_str()));
+      ((CheckBox *) w)->setSelected(!strcasecmp((const char *)inf->var->v.p.ptr,
+                                                ((CheckBox *) w)->getCaption().
+                                                c_str()));
       break;
 
     case ctrl_label:
@@ -449,7 +450,7 @@ void Form::transfer_data(gcn::Widget * w, WidgetInfo * inf)
   // set widget state to basic variable
   switch (inf->type) {
   case ctrl_check:
-    if (((CheckBox *) w)->isMarked()) {
+    if (((CheckBox *) w)->isSelected()) {
       v_setstr(inf->var, ((CheckBox *) w)->getCaption().c_str());
     }
     else {
@@ -458,7 +459,7 @@ void Form::transfer_data(gcn::Widget * w, WidgetInfo * inf)
     break;
 
   case ctrl_radio:
-    if (((RadioButton *) w)->isMarked()) {
+    if (((RadioButton *) w)->isSelected()) {
       v_setstr(inf->var, ((RadioButton *) w)->getCaption().c_str());
     }
     else if (!inf->is_group_radio) {
@@ -650,7 +651,7 @@ extern "C" void cmd_button()
         form->add_button(widget, inf, caption, rect, RAD_W, RAD_H);
         form->update_gui(widget, inf);
       }
-      else if (strcasecmp("checkbox", type) == 0) {
+      else if (strcasecmp("checkbox", type) == 0 || strcasecmp("check", type) == 0) {
         inf->type = ctrl_check;
         CheckBox *widget = new CheckBox();
         widget->setCaption(caption);
@@ -669,12 +670,11 @@ extern "C" void cmd_button()
         widget->setCaption(caption);
         form->add_button(widget, inf, caption, rect, BN_W, BN_H);
       }
-      else if (strcasecmp("listbox", type) == 0) {
+      else if (strcasecmp("listbox", type) == 0 || strcasecmp("list", type) == 0) {
         inf->type = ctrl_listbox;
         ListBox *widget = new ListBox();
         DropListModel *model = new DropListModel(caption, v);
         widget->setListModel(model);
-        widget->setBorderSize(1);
         if (model->focus_index != -1) {
           widget->setSelected(model->focus_index);
         }
@@ -692,7 +692,7 @@ extern "C" void cmd_button()
       }
       else {
         ui_reset();
-        rt_raise("UI: UNKNOWN TYPE: %s", type);
+        rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);
       }
     }
     else {
