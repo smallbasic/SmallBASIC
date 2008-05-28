@@ -7,6 +7,7 @@ $Id: $
 	* UDS copy operations now always as by reference
 	* Can now refer to UDS field within parenthesis
 	* Updated FLTK online help
+	* Fix support for composite expressions such as "ar.ch(0).foo"
 
 2008-05-24
 	* Updated SDL forms to work with guichan 0.8.1

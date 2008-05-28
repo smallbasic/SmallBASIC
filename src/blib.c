@@ -94,15 +94,6 @@ void cmd_dim(int preserve)
 
       var_p = code_getvarptr();
 
-      // TODO: deleteme
-      /* if (code_peek() == kwTYPE_VAR) { */
-      /*   code_skipnext(); */
-      /*   var_p = tvar[code_getaddr()]; */
-      /* } */
-      /* else { */
-      /*   err_syntax(); */
-      /* } */
-
       if (!prog_error) {
         if (code_peek() == kwTYPE_LEVEL_BEGIN) {
           code_skipnext();

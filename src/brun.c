@@ -48,6 +48,7 @@ int exec_close(int tid) SEC(BEXEC);
 int sbasic_exec(const char *file) SEC(BEXEC);
 void cmd_options(void) SEC(BLIB);
 void cmd_options(void) SEC(BLIB);
+var_t* resolve_composite_var(var_t* var_p);
 
 #if defined(_WinBCB)
 extern void bcb_comp(int pass, int pmin, int pmax); // Win32GUI progress
@@ -63,9 +64,9 @@ static char fileName[OS_FILENAME_SIZE + 1];
 static int main_tid;
 static int exec_tid;
 
-/*
- *   returns the next 32bit and moves the instruction pointer to the next instruction
- */
+//
+// returns the next 32bit and moves the instruction pointer to the next instruction
+//
 dword code_getnext32()
 {
   dword v;
@@ -76,9 +77,10 @@ dword code_getnext32()
 }
 
 #if defined(OS_PREC64)
-/*
- *   returns the next 64bit and moves the instruction pointer to the next instruction
- */
+
+//
+// returns the next 64bit and moves the instruction pointer to the next instruction
+//
 long long code_getnext64i()
 {
   long long v;
@@ -89,9 +91,9 @@ long long code_getnext64i()
 }
 #endif
 
-/*
- *   returns the next 64bit and moves the instruction pointer to the next instruction
- */
+//
+// returns the next 64bit and moves the instruction pointer to the next instruction
+//
 double code_getnext64f()
 {
   double v;
@@ -102,9 +104,10 @@ double code_getnext64f()
 }
 
 #if defined(OS_PREC64)
-/*
- *   returns the next 128bit and moves the instruction pointer to the next instruction
- */
+
+//
+// returns the next 128bit and moves the instruction pointer to the next instruction
+//
 long double code_getnext128f()
 {
   long double v;
@@ -115,17 +118,17 @@ long double code_getnext128f()
 }
 #endif
 
-/*
- *   jump to label
- */
+//
+// jump to label
+//
 void code_jump_label(word label_id)
 {
   prog_ip = tlab[label_id].ip;
 }
 
-/*
- *   Put the node 'node' in stack (PUSH)
- */
+//
+// Put the node 'node' in stack (PUSH)
+//
 void code_push(stknode_t * node)
 {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
@@ -149,9 +152,9 @@ void code_push(stknode_t * node)
   prog_stack_count++;
 }
 
-/*
- *   Returns and deletes the topmost node from stack (POP)
- */
+//
+// Returns and deletes the topmost node from stack (POP)
+//
 void code_pop(stknode_t * node)
 {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
@@ -179,9 +182,9 @@ void code_pop(stknode_t * node)
   }
 }
 
-/*
- *   Returns and deletes the topmost node from stack (POP)
- */
+//
+// Returns and deletes the topmost node from stack (POP)
+//
 void code_pop_and_free(stknode_t * node)
 {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
@@ -253,9 +256,9 @@ void code_pop_and_free(stknode_t * node)
   }
 }
 
-/*
- *   removes nodes from stack until 'type' node found
- */
+//
+// removes nodes from stack until 'type' node found
+//
 void code_pop_until(int type)
 {
   stknode_t node;
@@ -267,9 +270,9 @@ void code_pop_until(int type)
   }
 }
 
-/*
- *   Peek the topmost node of stack
- */
+//
+// Peek the topmost node of stack
+//
 stknode_t *code_stackpeek()
 {
   if (prog_stack_count) {
@@ -278,9 +281,9 @@ stknode_t *code_stackpeek()
   return NULL;
 }
 
-/*
- *   Convertion multi-dim index to one-dim index
- */
+//
+// Convertion multi-dim index to one-dim index
+//
 addr_t getarrayidx(var_t * array)
 {
   byte code;
@@ -325,9 +328,9 @@ addr_t getarrayidx(var_t * array)
   return idx;
 }
 
-/*
- *   Used by code_getvarptr() to retrieve an element ptr of an array
- */
+//
+// Used by code_getvarptr() to retrieve an element ptr of an array
+//
 var_t *code_getvarptr_arridx(var_t * basevar_p)
 {
   addr_t array_index;
@@ -347,10 +350,12 @@ var_t *code_getvarptr_arridx(var_t * basevar_p)
           code_skipnext();      // ')', ')' level
           if (code_peek() == kwTYPE_LEVEL_BEGIN) {
             // there is a second array inside
-            if (var_p->type != V_ARRAY)
+            if (var_p->type != V_ARRAY) {
               err_varisnotarray();
-            else
+            } 
+            else {
               return code_getvarptr_arridx(var_p);
+            }
           }
         }
         else {
@@ -366,26 +371,38 @@ var_t *code_getvarptr_arridx(var_t * basevar_p)
   return var_p;
 }
 
-/*
- *   Returns the varptr of the next variable
- *   if the variable is an array returns the element ptr
- */
+//
+// resolve a composite variable reference, eg: ar.ch(0).foo
+//
+var_t* resolve_composite_var(var_t* var_p) {
+  if (var_p) {
+    switch (code_peek()) {
+    case kwTYPE_LEVEL_BEGIN:
+      var_p = resolve_composite_var(code_getvarptr_arridx(var_p));
+      break;
+    case kwTYPE_UDS_EL:
+      var_p = resolve_composite_var(uds_resolve_fields(var_p));
+      break;
+    }
+  }
+  return var_p;
+}
+
+//
+// Returns the varptr of the next variable
+// if the variable is an array returns the element ptr
+//
 var_t *code_getvarptr()
 {
-  var_t *basevar_p, *var_p = NULL;
+  var_t *var_p = NULL;
 
   switch (code_peek()) {
   case kwTYPE_VAR:
     code_skipnext();
-    var_p = basevar_p = tvar[code_getaddr()];
-    if (basevar_p->type == V_ARRAY) { /* variable is an array */
-      if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-        var_p = code_getvarptr_arridx(basevar_p);
-        if (var_p && code_peek() == kwTYPE_UDS_EL) {
-          // found uds field eg foo(n).x
-          var_p = uds_resolve_fields(var_p);
-        }
-      }
+    var_p = tvar[code_getaddr()];
+    if (var_p->type == V_ARRAY) { 
+      // variable is an array
+      var_p = resolve_composite_var(var_p);
     }
     else {
       if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -398,7 +415,7 @@ var_t *code_getvarptr()
     code_skipnext();
     var_p = tvar[code_getaddr()];
     var_p->type = V_UDS;
-    var_p = uds_resolve_fields(var_p);
+    var_p = resolve_composite_var(uds_resolve_fields(var_p));
     break;
   }
 
@@ -410,9 +427,9 @@ var_t *code_getvarptr()
   return var_p;
 }
 
-/*
- *   Used by code_isvar() to retrieve an element ptr of an array
- */
+//
+// Used by code_isvar() to retrieve an element ptr of an array
+//
 var_t *code_isvar_arridx(var_t * basevar_p)
 {
   addr_t array_index;
@@ -453,11 +470,11 @@ var_t *code_isvar_arridx(var_t * basevar_p)
   return var_p;
 }
 
-/*
- *   returns true if the next code is a variable.
- *   if the following code is an expression (no matter if the first item is a variable),
- *   returns false
- */
+//
+// returns true if the next code is a variable.
+// if the following code is an expression (no matter if the first item is a variable),
+// returns false
+//
 int code_isvar()
 {
   var_t *basevar_p, *var_p = NULL;
@@ -469,13 +486,9 @@ int code_isvar()
   case kwTYPE_VAR:
     code_skipnext();
     var_p = basevar_p = tvar[code_getaddr()];
-    if (basevar_p->type == V_ARRAY) { /* variable is an array */
-      if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-        var_p = code_isvar_arridx(basevar_p);
-        if (code_peek() == kwTYPE_UDS_EL) {
-          var_p = uds_resolve_fields(var_p);
-        }
-      }
+    if (basevar_p->type == V_ARRAY) { 
+      // variable is an array 
+      var_p = resolve_composite_var(var_p);
     }
     else {
       if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -488,9 +501,10 @@ int code_isvar()
     code_skipnext();
     var_p = tvar[code_getaddr()];
     var_p->type = V_UDS;
-    var_p = uds_resolve_fields(var_p);
+    var_p = resolve_composite_var(uds_resolve_fields(var_p));
     break;
   }
+
   if (var_p) {
     if (kw_check_evexit(code_peek()) || code_peek() == kwTYPE_LEVEL_END) {
       prog_ip = cur_ip;         // restore IP
@@ -502,9 +516,9 @@ int code_isvar()
   return 0;
 }
 
-/*
- *   sets the value of an integer system-variable
- */
+//
+// sets the value of an integer system-variable
+//
 void setsysvar_int(int index, long value)
 {
   int tid;
@@ -524,9 +538,9 @@ void setsysvar_int(int index, long value)
   activate_task(tid);
 }
 
-/*
- *   sets the value of a real system-variable
- */
+//
+// sets the value of a real system-variable
+//
 void setsysvar_num(int index, double value)
 {
   int tid;
@@ -546,9 +560,9 @@ void setsysvar_num(int index, double value)
   activate_task(tid);
 }
 
-/*
- *   sets the value of an string system-variable
- */
+//
+// sets the value of an string system-variable
+//
 void setsysvar_str(int index, const char *value)
 {
   int tid;
@@ -574,9 +588,9 @@ void setsysvar_str(int index, const char *value)
   activate_task(tid);
 }
 
-/**
- *   create predefined system variables for this task
- */
+//
+// create predefined system variables for this task
+//
 void exec_setup_predefined_variables()
 {
   char homedir[OS_PATHNAME_SIZE + 1];
@@ -675,17 +689,17 @@ void exec_setup_predefined_variables()
 #endif
 }
 
-/*
- *   BREAK
- */
+//
+// BREAK
+//
 void brun_stop()
 {
   prog_error = -3;
 }
 
-/*
- *   returns the status of executor (runing or stopped)
- */
+//
+// returns the status of executor (runing or stopped)
+//
 int brun_status()
 {
   if (prog_error) {
@@ -694,9 +708,9 @@ int brun_status()
   return BRUN_RUNNING;
 }
 
-/*
- *   BREAK - display message, too
- */
+//
+// BREAK - display message, too
+//
 void brun_break()
 {
   if (brun_status() == BRUN_RUNNING) {
@@ -705,9 +719,9 @@ void brun_break()
   brun_stop();
 }
 
-/*
- *   CHAIN sb-source
- */
+//
+// CHAIN sb-source
+//
 void cmd_chain(void)
 {
   var_t var;
@@ -812,11 +826,11 @@ void cmd_chain(void)
   }
 }
 
-/*
- *   RUN "program"
- *
- *   For PalmOS use RUN CreatorID (i.e. run "calc")
- */
+//
+// RUN "program"
+//
+//  For PalmOS use RUN CreatorID (i.e. run "calc")
+//
 void cmd_run(int retf)
 {
   var_t var;
@@ -839,9 +853,9 @@ void cmd_run(int retf)
   }
 }
 
-/*
- *   OPTION (run-time part) keyword
- */
+//
+// OPTION (run-time part) keyword
+//
 void cmd_options(void)
 {
   byte c;
@@ -862,13 +876,13 @@ void cmd_options(void)
   };
 }
 
-/**
- *   execute commands (loop)
- *
- *   @param isf if 1, the program must return if found return (by level <= 0);
- *               otherwise an RTE will generated
- *               if 2; like 1, but increase the proc_level because UDF call it was executed internaly
- */
+//
+// execute commands (loop)
+//
+// @param isf if 1, the program must return if found return (by level <= 0);
+// otherwise an RTE will generated
+// if 2; like 1, but increase the proc_level because UDF call it was executed internaly
+//
 void bc_loop(int isf)
 {
   register dword now;
@@ -1509,10 +1523,10 @@ void bc_loop(int isf)
   }
 }
 
-/*
- *   debug info
- *   stack dump
- */
+//
+// debug info
+// stack dump
+//
 #if !defined(OS_LIMITED)        // save some bytes
 void dump_stack()
 {
@@ -1809,9 +1823,9 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
   return tid;
 }
 
-/**
- *   clean up the current task's (executor's) data
- */
+//
+// clean up the current task's (executor's) data
+//
 int exec_close_task()
 {
   word i;
@@ -1880,9 +1894,9 @@ int exec_close_task()
   return 0;
 }
 
-/**
- *   close the executor
- */
+//
+// close the executor
+//
 int exec_close(int tid)
 {
   int prev_tid, i;
@@ -2091,9 +2105,10 @@ int sbasic_recursive_exec(int tid)
 }
 
 #if !defined(OS_LIMITED)
-/**
- *   dump-taskinfo
- */
+
+//
+// dump-taskinfo
+//
 void sbasic_dump_taskinfo(FILE * output)
 {
   int i;
@@ -2108,9 +2123,9 @@ void sbasic_dump_taskinfo(FILE * output)
   activate_task(prev_tid);
 }
 
-/**
- *   dump-bytecode
- */
+//
+// dump-bytecode
+//
 void sbasic_dump_bytecode(int tid, FILE * output)
 {
   int i;
@@ -2134,8 +2149,9 @@ void sbasic_dump_bytecode(int tid, FILE * output)
 }
 #endif
 
-/**
- */
+//
+//
+//
 int sbasic_compile(const char *file)
 {
   int comp_rq = 0;              // compilation required = 0
@@ -2194,9 +2210,9 @@ int sbasic_compile(const char *file)
   return success;
 }
 
-/**
- *   initialize executor and run a binary
- */
+//
+// initialize executor and run a binary
+//
 void sbasic_exec_prepare(const char *filename)
 {
   // load source
