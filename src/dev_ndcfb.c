@@ -296,7 +296,7 @@ int osd_getpen(int code)
 {
   int r = 0;
 
-  osd_events();
+  osd_events(0);
   if (mouse_mode) {
     switch (code) {
     case 0:                    // bool: status changed
@@ -338,7 +338,7 @@ int osd_getpen(int code)
 /*
  * check events
  */
-int osd_events()
+int osd_events(int wait_flag)
 {
   int r;
 #if defined(DRV_MOUSE)

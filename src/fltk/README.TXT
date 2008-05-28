@@ -5,6 +5,7 @@ Copyright (c) 2002-2008 Chris Warren-Smith
 - Fix up fltk AnsiWidget.saveImage()
 - Update imagedraw handling to be like SDL implementation
 - Integrate online help with web site help info + add keyword index page
+- Add support for hashmap types perhaps using gnu clib search.h
 - Add break point, variable inspection, step/resume options.
 
 1.  About 

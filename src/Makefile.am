@@ -8,6 +8,8 @@
 # see: http://www.cygwin.com/ml/cygwin/2004-03/msg00289.html
 AM_CFLAGS = @PACKAGE_CFLAGS@
 
+INCLUDES = -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
+
 EXTRA_DIST =					\
     Changes					\
     keywords.c					\
@@ -17,6 +19,11 @@ EXTRA_DIST =					\
     languages/keywords.en.c			\
     languages/messages.el.h			\
     languages/messages.en.h			\
+    modules/configure.in			\
+    modules/example1.c				\
+    modules/Makefile.am				\
+    modules/mod_utils.c				\
+    modules/mod_utils.h				\
     modules/example1.c				\
     modules/flite/flite.c			\
     modules/flite/Makefile			\
@@ -24,7 +31,7 @@ EXTRA_DIST =					\
     modules/flite/test.bas			\
     modules/gdbm/gdbm.c				\
     modules/gdbm/Makefile			\
-    modules/mysql/Makefile			\
+    modules/mysql/Makefile.am			\
     modules/mysql/mysql.c
 
 noinst_LIBRARIES = libsb_common.a

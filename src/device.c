@@ -427,7 +427,7 @@ int dev_restore()
  *
  * returns 0 for no events in queue
  */
-int dev_events(int waitf)
+int dev_events(int wait_flag)
 {
 #if !defined(_PalmOS) && !defined(DEV_EVENTS_OSD)
   if (os_graphics)
@@ -445,10 +445,10 @@ int dev_events(int waitf)
 #endif
 
 #if DEV_EVENTS_OSD
-  return osd_events(waitf);
+  return osd_events(wait_flag);
 #else
 
-  if (waitf) {
+  if (wait_flag) {
     int evc;
 
 #if defined(_VTOS)
@@ -476,10 +476,10 @@ int dev_events(int waitf)
 #endif
 
 #if defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS)
-    return osd_events();
+    return osd_events(0);
 #else
     if (os_graphics)
-      return osd_events();
+      return osd_events(0);
     return term_events();
 #endif
   }

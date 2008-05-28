@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of SmallBASIC
 //
@@ -8,7 +7,6 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 // Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
-
 
 #include "sys.h"
 #include "var.h"
@@ -66,13 +64,14 @@ int uds_to_int(const var_p_t var_p)
 /**
  * helper for uds_resolve_fields
  */
-uds_field_s *uds_new_field(addr_t field_id)
+uds_field_s *uds_new_field(addr_t field_id, byte owner_flag)
 {
   uds_field_s *field;
   field = tmp_alloc(sizeof(uds_field_s));
   field->next = 0;
   field->field_id = field_id;
-  field->var = v_new();
+  field->var = owner_flag ? v_new() : 0;
+  field->var_owner_flag = owner_flag;
   return field;
 }
 
@@ -109,12 +108,12 @@ var_p_t uds_resolve_fields(const var_p_t var_p)
       // append field to list
       if (last != 0) {
         // append to existing list of elements
-        last->next = uds_new_field(field_id);
+        last->next = uds_new_field(field_id, 1);
         field = last->next->var;
       }
       else {
         // create first node on var_p->v.uds
-        var_p->v.uds = uds_new_field(field_id);
+        var_p->v.uds = uds_new_field(field_id, 1);
         field = var_p->v.uds->var;
       }
     }
@@ -128,13 +127,22 @@ var_p_t uds_resolve_fields(const var_p_t var_p)
 }
 
 /**
+ * free any owned variable in element
+ */
+void var_free(uds_field_s* element) {
+  if (element->var_owner_flag) {
+    v_free(element->var);
+  }
+}
+
+/**
  * empty struct values
  */
 void uds_clear(const var_p_t var)
 {
   uds_field_s *next = var->v.uds;
   while (next) {
-    v_free(next->var);
+    var_free(next);
     next = next->next;
   }
 }
@@ -142,11 +150,11 @@ void uds_clear(const var_p_t var)
 /**
  * Helper for uds_free
  */
-void uds_free_element(uds_field_s * element)
+void uds_free_element(uds_field_s* element)
 {
   if (element) {
     uds_free_element(element->next);
-    v_free(element->var);
+    var_free(element);
     tmp_free(element);
   }
 }
@@ -161,7 +169,7 @@ void uds_free(var_p_t var_p)
 }
 
 /**
- * copy values from one structure to another
+ * reference values from one structure to another
  */
 void uds_set(var_p_t dest, const var_p_t src)
 {
@@ -174,14 +182,14 @@ void uds_set(var_p_t dest, const var_p_t src)
   while (src_node) {
     if (dest->v.uds == 0) {
       // head of the list
-      dest->v.uds = uds_new_field(src_node->field_id);
-      v_set(dest->v.uds->var, src_node->var);
+      dest->v.uds = uds_new_field(src_node->field_id, 0);
+      dest->v.uds->var = src_node->var;
       dest_node = dest->v.uds;
     }
     else {
       // subsequent list item
-      dest_node->next = uds_new_field(src_node->field_id);
-      v_set(dest_node->next->var, src_node->var);
+      dest_node->next = uds_new_field(src_node->field_id, 0);
+      dest_node->next->var = src_node->var;
       dest_node = dest_node->next;
     }
     src_node = src_node->next;

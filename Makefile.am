@@ -71,5 +71,5 @@ install-exec-hook:
 	mkdir -p $(pkgdatadir)/samples &&			\
 	cp documentation/sbasic_ref.csv $(pkgdatadir) &&	\
 	cp plugins/*.* $(pkgdatadir)/plugins &&			\
-	cp ide/*.* $(pkgdatadir)/ide &&				\
-	cp -R samples/distro-examples/* $(pkgdatadir)/samples
+	cp ide/*.* $(pkgdatadir)/ide
+

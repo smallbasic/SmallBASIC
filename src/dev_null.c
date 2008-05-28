@@ -99,7 +99,7 @@ void osd_write(const char *str)
 }
 
 //      events loop (called from main, every 50ms)
-int osd_events()
+int osd_events(int wait_flag)
 {
   int evc = 0;
 

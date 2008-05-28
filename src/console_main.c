@@ -86,8 +86,7 @@ void show_help()
   printf("-g      enable graphics\n");
   printf("-g[<width>x<height>[x<bpp>]]\n");
   printf("        enable graphics & setup the graphics mode (depends on driver)\n");
-  printf("-h[-command] help pages\n");
-  printf("-m[mod1,mod2,...]\n");
+  printf("-m [mod1,mod2,...]\n");
   printf("        load all or the specified modules\n");
   printf("-pkw    print all keywords \n");
   printf("        (for creating editor color-syntax macros)\n");
@@ -248,7 +247,7 @@ int process_options(int argc, char *argv[])
           if (i + 1 < argc) {
             strcpy(opt_modlist, argv[++i]);
           }
-          return 1;
+          break;
 
         case 'q':
           // shutup

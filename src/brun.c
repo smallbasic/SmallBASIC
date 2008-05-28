@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of SmallBASIC
 //
@@ -2231,7 +2230,7 @@ int sbasic_exec(const char *file)
   // setup global values
   gsb_last_line = gsb_last_error = 0;
   strcpy(gsb_last_file, file);
-  strcpy(gsb_last_errmsg, "No error!");
+  strcpy(gsb_last_errmsg, "");
 
   success = sbasic_compile(file); // compile it (if opt_nosave,
   // bytecode_h is a 

@@ -442,21 +442,6 @@ int sblib_vfs_exec(int index, int param_count,  // executes the 'index'
                    // function
                    slib_par_t * params, slib_par_t * retval);
 
-/* ------- Extra Module Support Routines  */
-
-#if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
-
-typedef char *mod_keyword_t;
-
-int mod_parint(int n, slib_par_t * params, int param_count, int *val);
-int mod_opt_parint(int n, slib_par_t * params, int param_count, int *val,
-                   int def_val);
-int mod_parstr_ptr(int n, slib_par_t * params, int param_count, char **ptr);
-int mod_opt_parstr_ptr(int n, slib_par_t * params, int param_count, char **ptr,
-                       const char *def_val);
-
-#endif
-
 #if defined(__cplusplus)
 }
 #endif

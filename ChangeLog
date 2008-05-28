@@ -1,5 +1,13 @@
 $Id: $
 
+2008-05-26
+	* Updated module building to use autotools
+	* Fix regression with console build
+	* Fix for expression if (foo.x)
+	* UDS copy operations now always as by reference
+	* Can now refer to UDS field within parenthesis
+	* Updated FLTK online help
+
 2008-05-24
 	* Updated SDL forms to work with guichan 0.8.1
 	* Fixed problem with FLTK HelpWidget displaying large pages

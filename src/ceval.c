@@ -52,7 +52,7 @@ static bc_t *bc_out;
 #define cev_add_addr(x) bc_add_addr(bc_out, (x))
 
 /*
- *   prim
+ * prim
  */
 void cev_prim()
 {
@@ -119,10 +119,8 @@ void cev_prim()
       else {
         cev_log();
 
-        while (CODE_PEEK() == kwTYPE_SEP || CODE_PEEK() == kwTO) {  // DIM
-          // X(A
-          // TO
-          // B)
+        while (CODE_PEEK() == kwTYPE_SEP || CODE_PEEK() == kwTO) {  
+          // DIM X(A TO B)
           if (CODE_PEEK() == kwTYPE_SEP) {
             cev_add1(CODE(IP));
             IP++;
@@ -133,8 +131,9 @@ void cev_prim()
           cev_log();
         }
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_END)
+        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
           cev_missing_rp();
+        } 
         else {
           cev_add1(kwTYPE_LEVEL_END);
           IP++;
@@ -162,9 +161,9 @@ void cev_prim()
         IP++;
       }
 
-      if (CODE_PEEK() != kwTYPE_SEP)  // empty parameter
+      if (CODE_PEEK() != kwTYPE_SEP) { // empty parameter
         cev_log();
-
+      }
       while (CODE_PEEK() == kwTYPE_SEP) { // while parameters
         cev_add1(CODE(IP));
         IP++;
@@ -172,13 +171,18 @@ void cev_prim()
         IP++;
 
         if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          if (CODE_PEEK() != kwTYPE_SEP)
+          if (CODE_PEEK() != kwTYPE_SEP) {
             cev_log();
+          }
         }
       }
 
-      if (CODE_PEEK() != kwTYPE_LEVEL_END)
+      if (CODE_PEEK() == kwTYPE_UDS_EL) {
+        cev_prim();
+      }
+      else if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         cev_missing_rp();
+      } 
       else {
         cev_add1(kwTYPE_LEVEL_END);
         IP++;
@@ -188,7 +192,7 @@ void cev_prim()
 }
 
 /*
- *   parenthesis
+ * parenthesis
  */
 void cev_parenth()
 {
@@ -201,14 +205,18 @@ void cev_parenth()
 
     cev_log();                  // R = cev_log
 
-    if (comp_error)
+    if (comp_error) {
       return;
+    }
 
     if (CODE_PEEK() == kwTYPE_SEP) {
       cev_add1(kwTYPE_SEP);
       IP++;
       cev_add1(CODE(IP));
       IP++;
+    }
+    else if (CODE_PEEK() == kwTYPE_UDS_EL) {
+      cev_prim();
     }
     else if (CODE_PEEK() != kwTYPE_LEVEL_END) {
       cev_missing_rp();
@@ -219,12 +227,13 @@ void cev_parenth()
       IP++;
     }
   }
-  else
+  else {
     cev_prim();
+  }
 }
 
 /*
- *   unary
+ * unary
  */
 void cev_unary()
 {
@@ -248,7 +257,7 @@ void cev_unary()
 }
 
 /*
- *   pow
+ * pow
  */
 void cev_pow()
 {
@@ -263,16 +272,16 @@ void cev_pow()
     cev_add1(kwTYPE_EVPUSH);    // PUSH R
 
     cev_unary();                // R = cev_unary
-    if (comp_error)
+    if (comp_error) {
       return;
-
+    }
     cev_add1(kwTYPE_EVPOP);     // POP LEFT
     cev_add2(kwTYPE_POWOPR, '^'); // R = LEFT op R
   }
 }
 
 /*
- *   mul | div | mod
+ * mul | div | mod
  */
 void cev_mul()
 {
@@ -289,16 +298,16 @@ void cev_mul()
     cev_add1(kwTYPE_EVPUSH);    // PUSH R
 
     cev_pow();
-    if (comp_error)
+    if (comp_error) {
       return;
-
+    }
     cev_add1(kwTYPE_EVPOP);     // POP LEFT
     cev_add2(kwTYPE_MULOPR, op);  // R = LEFT op R
   }
 }
 
 /*
- *   add | sub
+ * add | sub
  */
 void cev_add()
 {
@@ -325,7 +334,7 @@ void cev_add()
 }
 
 /*
- *   compare
+ * compare
  */
 void cev_cmp()
 {
@@ -352,7 +361,7 @@ void cev_cmp()
 }
 
 /*
- *   logical
+ * logical
  */
 void cev_log(void)
 {
@@ -388,7 +397,7 @@ void cev_log(void)
 }
 
 /*
- *   main
+ * main
  */
 void expr_parser(bc_t * bc_src)
 {

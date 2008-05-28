@@ -35,7 +35,7 @@ sub showChapters
   out << "<a href=!Data>Data</a><br>"
   out << "<a href=!Date>Date</a><br>"
   out << "<a href=!File>File</a><br>"
-  out << "<a href=!Graphic>Graphics</a><br>"
+  out << "<a href=!Graphics>Graphics</a><br>"
   out << "<a href=!Language>Language</a><br>"
   out << "<a href=!Math>Math</a><br>"
   out << "<a href=!String>String</a><br>"
@@ -140,10 +140,11 @@ sub showContext(keyword)
       if (kw == keyword) then
         chapter = unquote(cols(0))
         out << "<h1>" + chapter + " - " + keyword + "</h1>"
-        out << unquote(cols(3)) 'synopsis
+        out << unquote(cols(4)) 'synopsis
         out << "<br><br>"
-        out << unquote(cols(4)) 'help information
-        out << "<hr>"
+        out << unquote(cols(5)) 'help information
+        out << "<br><br><i><a href=http://smallbasic.sf.net/?q=node/" + cols(3) + ">"
+        out << cols(2) + " home page on smallbasic.sf.net</a></i><hr>"
 
         rem draw next and previous links
         out << "<a href=~>[Index]</a> | <a href=^>[Topics]</a>"

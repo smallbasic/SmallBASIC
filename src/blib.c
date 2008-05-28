@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // SmallBASIC RTL - STANDARD COMMANDS
@@ -36,8 +35,8 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) SEC(BLIB);
 void sb_bubble(var_t * var_p, addr_t use_ip, int n) SEC(BLIB);
 
 //
-//      LET v[(x)] = any
-//      CONST v[(x)] = any
+// LET v[(x)] = any
+// CONST v[(x)] = any
 //
 void cmd_let(int allowConst)
 {
@@ -68,7 +67,7 @@ void cmd_let(int allowConst)
 }
 
 //
-//      DIM     var([lower TO] uppper [, ...])
+//  DIM var([lower TO] uppper [, ...])
 //
 void cmd_dim(int preserve)
 {
@@ -92,13 +91,17 @@ void cmd_dim(int preserve)
           err_syntax();
         }
       }
-      if (code_peek() == kwTYPE_VAR) {
-        code_skipnext();
-        var_p = tvar[code_getaddr()];
-      }
-      else {
-        err_syntax();
-      }
+
+      var_p = code_getvarptr();
+
+      // TODO: deleteme
+      /* if (code_peek() == kwTYPE_VAR) { */
+      /*   code_skipnext(); */
+      /*   var_p = tvar[code_getaddr()]; */
+      /* } */
+      /* else { */
+      /*   err_syntax(); */
+      /* } */
 
       if (!prog_error) {
         if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -185,7 +188,7 @@ void cmd_dim(int preserve)
 }
 
 //
-//      REDIM x
+// REDIM x
 //
 void cmd_redim()
 {
@@ -193,9 +196,9 @@ void cmd_redim()
 }
 
 //
-//      APPEND A, x1 [, x2, ...]
-//      or
-//      A << x1 [, x2, ...]
+// APPEND A, x1 [, x2, ...]
+// or
+// A << x1 [, x2, ...]
 //
 void cmd_ladd()
 {
@@ -258,7 +261,7 @@ void cmd_ladd()
 }
 
 //
-//      INSERT A, index, v1 [, vN]
+// INSERT A, index, v1 [, vN]
 //
 void cmd_lins()
 {
@@ -345,7 +348,7 @@ void cmd_lins()
 }
 
 //
-//      DELETE A, index[, count]
+// DELETE A, index[, count]
 //
 void cmd_ldel()
 {
@@ -423,7 +426,7 @@ void cmd_ldel()
 }
 
 //
-//      ERASE var1 [, var2[, ...]]
+// ERASE var1 [, var2[, ...]]
 //
 void cmd_erase()
 {
@@ -465,7 +468,7 @@ void cmd_erase()
 }
 
 //
-//      PRINT ...
+// PRINT ...
 //
 void cmd_print(int output)
 {
@@ -628,7 +631,7 @@ void cmd_logprint()
 }
 
 //
-//      INPUT ...
+// INPUT ...
 //
 void cmd_input(int input)
 {
@@ -941,7 +944,7 @@ void cmd_input(int input)
 }
 
 //
-//      RTE ...
+// RTE ...
 //
 void cmd_RTE()
 {
@@ -986,7 +989,7 @@ void cmd_RTE()
 }
 
 //
-//      ON x GOTO|GOSUB ...
+// ON x GOTO|GOSUB ...
 //
 void cmd_on_go()
 {
@@ -1042,7 +1045,7 @@ void cmd_on_go()
 }
 
 //
-//      GOSUB label
+// GOSUB label
 //
 void cmd_gosub()
 {
@@ -1441,9 +1444,9 @@ void cmd_param()
   }
 }
 
-/**
- *   return from user-defined procedure or function
- */
+//
+// Return from user-defined procedure or function
+//
 void cmd_udpret()
 {
   stknode_t node, rval;
@@ -1489,7 +1492,7 @@ void cmd_udpret()
 }
 
 //
-//      EXIT [FOR|LOOP|FUNC|PROC]
+// EXIT [FOR|LOOP|FUNC|PROC]
 //
 int cmd_exit()
 {
@@ -1568,7 +1571,7 @@ int cmd_exit()
 }
 
 //
-//      RETURN
+// RETURN
 //
 void cmd_return()
 {
@@ -1594,7 +1597,7 @@ void cmd_return()
 }
 
 //
-//      IF expr [THEN]
+// IF expr [THEN]
 //
 void cmd_if()
 {
@@ -1618,7 +1621,7 @@ void cmd_if()
 }
 
 //
-//      ELSE
+// ELSE
 //
 void cmd_else()
 {
@@ -1649,7 +1652,7 @@ void cmd_else()
 }
 
 //
-//      ELIF
+// ELIF
 //
 void cmd_elif()
 {
@@ -1697,7 +1700,7 @@ void cmd_elif()
 }
 
 //
-//      FOR var = expr TO expr [STEP expr]
+// FOR var = expr TO expr [STEP expr]
 //
 void cmd_for()
 {
@@ -1866,7 +1869,7 @@ void cmd_for()
 }
 
 //
-//      WHILE expr
+// WHILE expr
 //
 void cmd_while()
 {
@@ -1894,7 +1897,7 @@ void cmd_while()
 }
 
 //
-//      WEND
+// WEND
 //
 void cmd_wend()
 {
@@ -1908,7 +1911,7 @@ void cmd_wend()
 }
 
 //
-//      UNTIL expr
+// UNTIL expr
 //
 void cmd_until()
 {
@@ -1930,7 +1933,7 @@ void cmd_until()
 }
 
 //
-//      NEXT
+// NEXT
 //
 void cmd_next()
 {
@@ -2056,7 +2059,7 @@ void cmd_next()
 }
 
 //
-//      READ var [, var [, ...]]
+// READ var [, var [, ...]]
 //
 void cmd_read()
 {
@@ -2146,7 +2149,7 @@ void cmd_read()
 }
 
 //
-//      DATA ...
+// DATA ...
 //
 void cmd_data()
 {
@@ -2155,19 +2158,15 @@ void cmd_data()
 }
 
 //
-//      RESTORE label
+// RESTORE label
 //
 void cmd_restore()
 {
   prog_dp = code_getaddr();
 }
 
-/////////////////////////////////////////////////////////////////
-///////////////////     SYSTEM
-////////////
-
 //
-//      RANDOMIZE [num]
+// RANDOMIZE [num]
 //
 void cmd_randomize()
 {
@@ -2197,7 +2196,7 @@ void cmd_randomize()
 }
 
 //
-//      DELAY
+// DELAY
 //
 void cmd_delay()
 {
@@ -2211,7 +2210,7 @@ void cmd_delay()
 }
 
 //
-//      AT x,y
+// AT x,y
 //
 void cmd_at()
 {
@@ -2224,7 +2223,7 @@ void cmd_at()
 }
 
 //
-//      LOCATE y,x
+// LOCATE y,x
 //
 void cmd_locate()
 {
@@ -2247,7 +2246,7 @@ void cmd_locate()
 }
 
 //
-//      PAUSE [secs]
+// PAUSE [secs]
 //
 void cmd_pause()
 {
@@ -2256,7 +2255,7 @@ void cmd_pause()
   long start, now;
 
   code = code_peek();
-  if (code == kwTYPE_VAR) {
+  if (code == kwTYPE_VAR || code == kwTYPE_UDS) {
     x = par_getint();
     if (prog_error) {
       return;
@@ -2329,18 +2328,20 @@ void cmd_pause()
       now = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
 #endif
 
-      if (now > start + x)
+      if (now > start + x) {
         break;
+      }
       dev_delay(50);
     }
 
-    if (dev_kbhit())
+    if (dev_kbhit()) {
       dev_getch();
+    }
   }
 }
 
 //
-//      COLOR fg[,text_bg]
+// COLOR fg[,text_bg]
 //
 void cmd_color()
 {
@@ -2447,9 +2448,9 @@ void cmd_split()
   cmd_wsplit();
 }
 
-/*
- *   SPLIT string, delimiters, array() [, pairs] [USE ...]
- */
+//
+// SPLIT string, delimiters, array() [, pairs] [USE ...]
+//
 void cmd_wsplit()
 {
   int count, i, wait_q;
@@ -2553,7 +2554,7 @@ void cmd_wsplit()
 }
 
 //
-//      JOIN array(), delimiter, dest-var
+// JOIN array(), delimiter, dest-var
 //
 void cmd_wjoin()
 {
@@ -2620,7 +2621,7 @@ void cmd_wjoin()
 }
 
 //
-//      ENVIRON string
+// ENVIRON string
 //
 void cmd_environ()
 {
@@ -2637,7 +2638,7 @@ void cmd_environ()
 }
 
 //
-//      DATEDMY string|julian, m, d, y
+// DATEDMY string|julian, m, d, y
 //
 void cmd_datedmy()
 {
@@ -2696,7 +2697,7 @@ void cmd_datedmy()
 }
 
 //
-//      TIMEHMS string|timer, h, m, s
+// TIMEHMS string|timer, h, m, s
 //
 void cmd_timehms()
 {
@@ -2756,7 +2757,7 @@ void cmd_timehms()
 }
 
 //
-//      SORT array [USE ...]
+// SORT array [USE ...]
 //
 int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
 {
@@ -2813,7 +2814,9 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
   }
 }
 
+//
 // bubble sort
+//
 void sb_bubble(var_t * var_p, addr_t use_ip, int n)
 {
   int i, j;
@@ -2905,7 +2908,7 @@ void cmd_sort()
 }
 
 //
-//      SEARCH A(), key, BYREF ridx [USE ...]
+// SEARCH A(), key, BYREF ridx [USE ...]
 //
 void cmd_search()
 {
@@ -2988,9 +2991,9 @@ void cmd_search()
   v_free(&vkey);
 }
 
-/*
- *   SWAP a, b
- */
+//
+// SWAP a, b
+//
 void cmd_swap(void)
 {
   var_t *va, *vb, *vc;
@@ -3022,9 +3025,9 @@ void cmd_swap(void)
   tmp_free(vc);
 }
 
-/*
- *   POKE addr, byte
- */
+//
+// POKE addr, byte
+//
 void cmd_poke(void)
 {
   int32 addr, val;
@@ -3046,9 +3049,9 @@ void cmd_poke(void)
   *baddr = (byte) val;
 }
 
-/*
- *   POKE16 addr, word
- */
+//
+// POKE16 addr, word
+//
 void cmd_poke16(void)
 {
   int32 addr, val;
@@ -3070,9 +3073,9 @@ void cmd_poke16(void)
   *baddr = (word) val;
 }
 
-/*
- *   POKE32 addr, dword
- */
+//
+// POKE32 addr, dword
+//
 void cmd_poke32(void)
 {
   int32 addr, val;
@@ -3094,9 +3097,9 @@ void cmd_poke32(void)
   *baddr = (dword) val;
 }
 
-/*
- *   BCOPY srcadr, dstadr, size
- */
+//
+// BCOPY srcadr, dstadr, size
+//
 void cmd_bcopy(void)
 {
   int32 addr, size;
@@ -3129,9 +3132,9 @@ void cmd_bcopy(void)
   memcpy(bdst, bsrc, size);
 }
 
-/*
- *   EXPRSEQ @array, xmin, xmax, count USE f(x)
- */
+//
+// EXPRSEQ @array, xmin, xmax, count USE f(x)
+//
 void cmd_exprseq(void)
 {
   int count, i;

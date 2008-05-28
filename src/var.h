@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // SmallBasic Code & Variable Manager.
@@ -151,6 +150,7 @@ struct uds_field_s {
   uds_field_s *next;          // next structure element
   addr_t field_id;            // the element id
   var_p_t var;                // the variable
+  byte var_owner_flag;        // whether var is owned by this node
 };
 
 /*

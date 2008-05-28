@@ -1,15 +1,12 @@
-/*
- *   SmallBASIC module manager
- *
- *   2001/12/07, Nicholas Christopoulos
- *
- *   This program is distributed under the terms of the GPL v2.0 or later
- *   Download the GNU Public License (GPL) from www.gnu.org
- *
- *   WARNING: extlib is out for now (it will replaces by units/generic-lib-code)
- *   some methods commented with #if 0 since they appear not to be used (chris 2/9/05)
- *
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// SmallBASIC - External library support (modules)
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2001 Nicholas Christopoulos
 
 #include "smbas.h"
 #include "extlib.h"
@@ -59,28 +56,28 @@ static ext_func_node_t *extfunctable;       /**< external function table        
 static int extfuncsize;                     /**< ext-func table allocated size  */
 static int extfunccount;                    /**< ext-func table count           */
 
-#if 0
 /*
- *   reset the external proc/func lists
+ * reset the external proc/func lists
  */
 static void slib_reset_externals(void)
 {
   // reset functions
-  if (extfunctable)
+  if (extfunctable) {
     tmp_free(extfunctable);
+  }
   extfunctable = NULL;
   extfunccount = extfuncsize = 0;
 
   // reset procedures
-  if (extproctable)
+  if (extproctable) {
     tmp_free(extproctable);
+  }
   extproctable = NULL;
   extproccount = extprocsize = 0;
 }
-#endif
 
 /*
- *   add an external procedure to the list
+ * add an external procedure to the list
  */
 static int slib_add_external_proc(const char *proc_name, int lib_id)
 {
@@ -116,7 +113,7 @@ static int slib_add_external_proc(const char *proc_name, int lib_id)
 }
 
 /*
- *   Add an external function to the list
+ * Add an external function to the list
  */
 static int slib_add_external_func(const char *func_name, int lib_id)
 {
@@ -152,9 +149,8 @@ static int slib_add_external_func(const char *func_name, int lib_id)
 }
 
 /*
- *   returns the external procedure id
+ * returns the external procedure id
  */
-#if 0
 static int slib_is_external_proc(const char *name)
 {
   int i;
@@ -167,7 +163,7 @@ static int slib_is_external_proc(const char *name)
 }
 
 /*
- *   returns the external function id
+ * returns the external function id
  */
 static int slib_is_external_func(const char *name)
 {
@@ -179,12 +175,11 @@ static int slib_is_external_func(const char *name)
   }
   return -1;
 }
-#endif
 
 #endif
 
 /**
- *   returns the ID of the keyword
+ * returns the ID of the keyword
  */
 int slib_get_kid(const char *name)
 {
@@ -204,7 +199,7 @@ int slib_get_kid(const char *name)
 }
 
 /**
- *   returns the library-id (index of library of the current process)
+ * returns the library-id (index of library of the current process)
  */
 int slib_get_module_id(const char *name)
 {
@@ -226,7 +221,7 @@ int slib_get_module_id(const char *name)
 }
 
 /**
- *   updates compiler with the module's keywords
+ * updates compiler with the module's keywords
  */
 void slib_setup_comp(int mid)
 {
@@ -247,7 +242,7 @@ void slib_setup_comp(int mid)
 /* --- System Load/Execute ----------------------------------------------------------------------------------------------- */
 
 /*
- *   retrieve the function pointer
+ * retrieve the function pointer
  */
 void *slib_getoptptr(slib_t * lib, const char *name)
 {
@@ -261,7 +256,7 @@ void *slib_getoptptr(slib_t * lib, const char *name)
 }
 
 /*
- *   retrieve the function pointer; error if its not exists
+ * retrieve the function pointer; error if its not exists
  */
 void *slib_getptr(slib_t * lib, const char *name)
 {
@@ -278,7 +273,7 @@ void *slib_getptr(slib_t * lib, const char *name)
 }
 
 /*
- *   open library (basic open)
+ * open library (basic open)
  */
 int slib_llopen(slib_t * lib)
 {
@@ -305,7 +300,7 @@ int slib_llopen(slib_t * lib)
 }
 
 /*
- *   close library (basic close)
+ * close library (basic close)
  */
 int slib_llclose(slib_t * lib)
 {
@@ -364,7 +359,7 @@ void slib_import_routines(slib_t * lib)
 }
 
 /*
- *   load a lib
+ * load a lib
  */
 void slib_import(const char *name, const char *fullname)
 {
@@ -374,10 +369,16 @@ void slib_import(const char *name, const char *fullname)
   int (*mtype) (void);
   void (*mdrvname) (char *);
   int mok = 0;
+  int name_index = 0;
+
+  if (strncmp(name, "lib", 3) == 0) {
+    // libmysql -> store mysql
+    name_index = 3;
+  }
 
   lib = &slib_table[slib_count];
   memset(lib, 0, sizeof(slib_t));
-  strncpy(lib->name, name, 255);
+  strncpy(lib->name, name + name_index, 255);
   strncpy(lib->fullname, fullname, 1023);
   lib->id = slib_count;
 
@@ -398,11 +399,11 @@ void slib_import(const char *name, const char *fullname)
 
     // get type
     mtype = (int (*)(void))slib_getoptptr(lib, "sblib_type");
-    if (mtype)
+    if (mtype) {
       lib->type = mtype();
-    else
+    } else {
       lib->type = lib_lang_ext; // default type
-
+    }
     // get info
     switch (lib->type) {
     case lib_lang_ext:
@@ -420,23 +421,25 @@ void slib_import(const char *name, const char *fullname)
       mok = 0;
     };
   }
-  else
+  else {
     printf("SB-LibMgr: can't open %s", fullname);
-
+  }
   if (mok) {
     slib_count++;
-    if (!opt_quiet)
+    if (!opt_quiet) {
       printf("... done\n");
+    }
   }
   else {
-    if (!opt_quiet)
+    if (!opt_quiet) {
       printf("... error\n");
+    }
   }
 #endif
 }
 
 /*
- *   scan libraries
+ * scan libraries
  */
 void sblmgr_scanlibs(const char *path)
 {
@@ -455,8 +458,9 @@ void sblmgr_scanlibs(const char *path)
 
   while ((e = readdir(dp)) != NULL) {
     name = e->d_name;
-    if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0))
+    if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
       continue;
+    }
     if ((p = strstr(name, LIB_EXT)) != NULL) {
       if (strcmp(p, LIB_EXT) == 0) {
         // store it
@@ -481,7 +485,7 @@ void sblmgr_scanlibs(const char *path)
 }
 
 /*
- *   slib-manager: initialize manager
+ * slib-manager: initialize manager
  */
 void sblmgr_init(int mcount, const char *mlist)
 {
@@ -490,24 +494,26 @@ void sblmgr_init(int mcount, const char *mlist)
 
   slib_count = 0;
 
-  if (!opt_quiet && mcount)
+  if (!opt_quiet && mcount) {
     printf("SB-LibMgr: scanning for modules...\n");
+  }
   if (mcount) {
     if (mlist) {
-      if (strlen(mlist) == 0)
+      if (strlen(mlist) == 0) {
         all = 1;
-      else
+      } else {
         all = 1;
+      }
       // TODO: else load the specified modules
     }
-    else
+    else {
       all = 1;
-
+    }
     if (all) {
-#if defined(LNX_EXTLIB)
-      sblmgr_scanlibs("/usr/local/lib/sbasic/modules/");
-#elif defined(__CYGWIN__) || defined(__MINGW32__)
       // the -m argument specifies the location of all modules
+#if defined(LNX_EXTLIB)
+      sblmgr_scanlibs(opt_modlist[0] ? opt_modlist : PACKAGE_LIB_DIR);
+#elif defined(__CYGWIN__) || defined(__MINGW32__)
       sblmgr_scanlibs(opt_modlist);
 #elif defined(WIN_EXTLIB)
       sblmgr_scanlibs("c:\\sbasic\\modules");
@@ -515,13 +521,14 @@ void sblmgr_init(int mcount, const char *mlist)
 #endif
     }
   }
-  if (!opt_quiet)
+  if (!opt_quiet) {
     printf("\n");
+  }
 #endif
 }
 
 /*
- *   slib-manager: close everything
+ * slib-manager: close everything
  */
 void sblmgr_close()
 {
@@ -568,7 +575,7 @@ int sblmgr_getvfs(const char *name)
 }
 
 /*
- *   returns the 'index' function-name of the 'lib'
+ * returns the 'index' function-name of the 'lib'
  */
 int sblmgr_getfuncname(int lib_id, int index, char *buf)
 {
@@ -592,7 +599,7 @@ int sblmgr_getfuncname(int lib_id, int index, char *buf)
 }
 
 /*
- *   returns the 'index' procedure-name of the 'lib'
+ * returns the 'index' procedure-name of the 'lib'
  */
 int sblmgr_getprocname(int lib_id, int index, char *buf)
 {
@@ -616,7 +623,7 @@ int sblmgr_getprocname(int lib_id, int index, char *buf)
 }
 
 /*
- *   build parameter table
+ * build parameter table
  */
 int slib_build_ptable(slib_par_t * ptable)
 {
@@ -685,7 +692,7 @@ int slib_build_ptable(slib_par_t * ptable)
 }
 
 /*
- *   free parameter table
+ * free parameter table
  */
 void slib_free_ptable(slib_par_t * ptable, int pcount)
 {
@@ -702,7 +709,7 @@ void slib_free_ptable(slib_par_t * ptable, int pcount)
 }
 
 /*
- *   execute a procedure
+ *  execute a procedure
  */
 int sblmgr_procexec(int lib_id, int index)
 {
@@ -764,7 +771,7 @@ int sblmgr_procexec(int lib_id, int index)
 }
 
 /*
- *   execute a function
+ * execute a function
  */
 int sblmgr_funcexec(int lib_id, int index, var_t * ret)
 {
@@ -995,91 +1002,3 @@ long sblmgr_vfsdirexec(enum slib_vfs_idx_t func, int ilib, ...)
   return retval;
 }
 
-/* ------------------------------------------------ Extra Module Support Routines ----------------------------------------- */
-
-#if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
-
-int mod_parint(int n, slib_par_t * params, int param_count, int *val)
-{
-  var_t *param;
-
-  if (prog_error)
-    return 0;
-  if (n < 0 || n >= param_count) {
-    prog_error = 1;
-    return 0;
-  }
-  param = params[n].var_p;
-  *val = v_igetval(param);
-
-  return 1;
-}
-
-int mod_opt_parint(int n, slib_par_t * params, int param_count, int *val,
-                   int def_val)
-{
-  var_t *param;
-
-  if (prog_error)
-    return 0;
-  if (n < 0) {
-    prog_error = 1;
-    return 0;
-  }
-  if (n < param_count) {
-    param = params[n].var_p;
-    *val = v_igetval(param);
-  }
-  else
-    *val = def_val;
-
-  return 1;
-}
-
-int mod_parstr_ptr(int n, slib_par_t * params, int param_count, char **ptr)
-{
-  var_t *param;
-
-  if (prog_error)
-    return 0;
-  if (n < 0 || n >= param_count) {
-    prog_error = 1;
-    return 0;
-  }
-  param = params[n].var_p;
-
-  if (param->type != V_STR)
-    v_tostr(param);
-  *ptr = param->v.p.ptr;
-
-  return 1;
-}
-
-#if 0
-int mod_opt_parstr_ptr(int n, slib_par_t * params, int param_count, char **ptr,
-                       const char *def_val)
-{
-  var_t *param;
-
-  if (prog_error)
-    return 0;
-  if (n < 0) {
-    prog_error = 1;
-    return 0;
-  }
-
-  if (n < param_count) {
-    param = params[n].var_p;
-
-    if (param->type != V_STR)
-      v_tostr(param);
-    *ptr = param->v.p.ptr;
-  }
-  else
-    *ptr = def_val;
-
-  return 1;
-}
-#endif
-
-#endif

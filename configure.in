@@ -54,6 +54,11 @@ function checkForWindows() {
      AC_CHECK_TOOL(WINDRES, windres, :)
    esac
    AM_CONDITIONAL(WITH_WIN32, test x"$win32" = "xyes")
+
+   dnl backlinking support for modules
+   if test $win32 = no; then
+     LDFLAGS="${LDFLAGS} -export-dynamic"
+   fi
 }
 
 function checkDebugMode() {

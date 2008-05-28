@@ -493,9 +493,15 @@ void MainWindow::showHelpPage() {
 }
 
 void MainWindow::execHelp() {
-  sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
-  basicMain(path, true);
-  statusMsg(editWnd->getFilename());
+  if (strncmp(opt_command, "http://", 7) == 0) {
+    // launch in real browser
+    browseFile(opt_command);
+  }
+  else {
+    sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
+    basicMain(path, true);
+    statusMsg(editWnd->getFilename());
+  }
 }
 
 // handle click from within help window
