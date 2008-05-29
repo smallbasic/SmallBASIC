@@ -774,7 +774,18 @@ void code_pop(stknode_t * node);
  *
  *   @return the var_t*
  */
-var_t *code_getvarptr(void);
+var_t *code_getvarptr();
+
+/**
+ *   @ingroup exec
+ *
+ *   variant of code_getvarptr() derefence until left parenthesis found
+ *
+ *   R(var_t*) <- Code[IP]; IP += 2;
+ *
+ *   @return the var_t*
+ */
+var_t* code_getvarptr_parens(int until_parens);
 
 /**
  *   @ingroup exec

@@ -48,7 +48,7 @@ int exec_close(int tid) SEC(BEXEC);
 int sbasic_exec(const char *file) SEC(BEXEC);
 void cmd_options(void) SEC(BLIB);
 void cmd_options(void) SEC(BLIB);
-var_t* resolve_composite_var(var_t* var_p);
+var_t* code_resolve_varptr(var_t* var_p, int until_parens);
 
 #if defined(_WinBCB)
 extern void bcb_comp(int pass, int pmin, int pmax); // Win32GUI progress
@@ -374,14 +374,16 @@ var_t *code_getvarptr_arridx(var_t * basevar_p)
 //
 // resolve a composite variable reference, eg: ar.ch(0).foo
 //
-var_t* resolve_composite_var(var_t* var_p) {
+var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
   if (var_p) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
-      var_p = resolve_composite_var(code_getvarptr_arridx(var_p));
+      if (!until_parens) {
+        var_p = code_resolve_varptr(code_getvarptr_arridx(var_p), until_parens);
+      }
       break;
     case kwTYPE_UDS_EL:
-      var_p = resolve_composite_var(uds_resolve_fields(var_p));
+      var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
       break;
     }
   }
@@ -389,10 +391,18 @@ var_t* resolve_composite_var(var_t* var_p) {
 }
 
 //
-// Returns the varptr of the next variable
-// if the variable is an array returns the element ptr
+// returns the varptr of the next variable. if the variable is an array 
+// returns the element ptr
 //
-var_t *code_getvarptr()
+var_t *code_getvarptr() 
+{
+  return code_getvarptr_parens(0);
+}
+
+//
+// helper for code_getvarptr
+//
+var_t* code_getvarptr_parens(int until_parens)
 {
   var_t *var_p = NULL;
 
@@ -402,12 +412,10 @@ var_t *code_getvarptr()
     var_p = tvar[code_getaddr()];
     if (var_p->type == V_ARRAY) { 
       // variable is an array
-      var_p = resolve_composite_var(var_p);
+      var_p = code_resolve_varptr(var_p, until_parens);
     }
-    else {
-      if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-        err_varisnotarray();
-      }
+    else if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
+      err_varisnotarray();
     }
     break;
 
@@ -415,7 +423,7 @@ var_t *code_getvarptr()
     code_skipnext();
     var_p = tvar[code_getaddr()];
     var_p->type = V_UDS;
-    var_p = resolve_composite_var(uds_resolve_fields(var_p));
+    var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
     break;
   }
 
@@ -488,7 +496,7 @@ int code_isvar()
     var_p = basevar_p = tvar[code_getaddr()];
     if (basevar_p->type == V_ARRAY) { 
       // variable is an array 
-      var_p = resolve_composite_var(var_p);
+      var_p = code_resolve_varptr(var_p, 0);
     }
     else {
       if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -501,7 +509,7 @@ int code_isvar()
     code_skipnext();
     var_p = tvar[code_getaddr()];
     var_p->type = V_UDS;
-    var_p = resolve_composite_var(uds_resolve_fields(var_p));
+    var_p = code_resolve_varptr(uds_resolve_fields(var_p), 0);
     break;
   }
 

@@ -92,7 +92,7 @@ void cmd_dim(int preserve)
         }
       }
 
-      var_p = code_getvarptr();
+      var_p = code_getvarptr_parens(1);
 
       if (!prog_error) {
         if (code_peek() == kwTYPE_LEVEL_BEGIN) {
