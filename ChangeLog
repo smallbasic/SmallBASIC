@@ -1,5 +1,8 @@
 $Id: $
 
+2008-06-01
+	* Add support for hash arrays (rainy day)
+
 2008-05-26
 	* Updated module building to use autotools
 	* Fix regression with console build

@@ -13,7 +13,7 @@
 #include "smbas.h"
 
 /**
- * Compare on UDS to another. see v_compare comments for return spec.
+ * Compare one UDS to another. see v_compare comments for return spec.
  */
 int uds_compare(const var_p_t var_a, const var_p_t var_b)
 {

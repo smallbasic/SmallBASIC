@@ -87,11 +87,6 @@ void eval_alloc_stack(void);
  */
 void eval_free_stack(void);
 
-/*
- * old-one, forget it
- */
-addr_t getarrayidx(var_t * array);
-
 /**
  * @ingroup exec
  *

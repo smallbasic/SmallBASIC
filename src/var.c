@@ -13,6 +13,8 @@
 #include "var.h"
 #include "smbas.h"
 #include "sberr.h"
+#include "var_uds.h"
+#include "var_hash.h"
 
 #define ARR_ALLOC       256
 
@@ -71,6 +73,8 @@ void v_free(var_t * v)
   case V_UDS:
     uds_free(v);
     break;
+  case V_HASH:
+    hash_free(v);
   }
 
   v_init(v);
@@ -89,6 +93,8 @@ int v_isempty(var_t * var)
     return (var->v.i == 0);
   case V_UDS:
     return uds_is_empty(var);
+  case V_HASH:
+    return hash_is_empty(var);
   case V_PTR:
     return (var->v.ap.p == 0);
   case V_NUM:
@@ -111,7 +117,10 @@ int v_length(var_t * var)
   case V_STR:
     return strlen((char *)var->v.p.ptr);
   case V_UDS:
-    uds_to_str(var->v.uds, tmpsb, 64);
+    uds_to_str((const var_p_t)var->v.uds, tmpsb, 64);
+    return strlen(tmpsb);
+  case V_HASH:
+    hash_to_str((const var_p_t)var->v.uds, tmpsb, 64);
     return strlen(tmpsb);
   case V_PTR:
     ltostr(var->v.ap.p, tmpsb);
@@ -141,6 +150,8 @@ double v_getval(var_t * v)
     switch (v->type) {
     case V_UDS:
       return uds_to_int(v);
+    case V_HASH:
+      return hash_to_int(v);
     case V_PTR:
       return v->v.ap.p;
     case V_INT:
@@ -168,6 +179,8 @@ long v_igetval(var_t * v)
     switch (v->type) {
     case V_UDS:
       return uds_to_int(v);
+    case V_HASH:
+      return hash_to_int(v);
     case V_PTR:
       return v->v.ap.p;
     case V_INT:
@@ -414,6 +427,8 @@ int v_is_nonzero(var_t * v)
     return (v->v.p.size != 0);
   case V_UDS:
     return !uds_is_empty(v);
+  case V_HASH:
+    return !hash_is_empty(v);
   case V_PTR:
     return (v->v.ap.p != 0);
   case V_ARRAY:
@@ -515,6 +530,10 @@ int v_compare(var_t * a, var_t * b)
 
   if (a->type == V_UDS && b->type == V_UDS) {
     return uds_compare(a, b);
+  }
+
+  if (a->type == V_HASH && b->type == V_HASH) {
+    return hash_compare(a, b);
   }
 
   err_evtype();                 // ndc 01/08/2001
@@ -626,18 +645,27 @@ void v_add(var_t * result, var_t * a, var_t * b)
 /*
  * assign (dest = src)
  */
-void v_set(var_t * dest, const var_t * src)
+void v_set(var_t *dest, const var_t *src)
 {
   int i;
   var_t *dest_vp, *src_vp;
 
   if (src->type == V_UDS) {
-    uds_set(dest, src);
+    uds_set(dest, (const var_p_t)src);
     return;
   }
   else if (dest->type == V_UDS) {
     // lvalue struct assigned to non-struct rvalue
     uds_clear(dest);
+    return;
+  }
+  else if (src->type == V_HASH) {
+    hash_set(dest, (const var_p_t)src);
+    return;
+  }
+  else if (dest->type == V_HASH) {
+    // lvalue struct assigned to non-struct rvalue
+    hash_clear(dest);
     return;
   }
 
@@ -756,6 +784,10 @@ void v_tostr(var_t * arg)
     case V_UDS:
       uds_to_str(arg, tmp, 64);
       uds_free(arg);
+      break;
+    case V_HASH:
+      hash_to_str(arg, tmp, 64);
+      hash_free(arg);
       break;
     case V_PTR:
       ltostr(arg->v.ap.p, tmp);

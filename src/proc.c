@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // SmallBASIC, library API
@@ -12,44 +11,47 @@
 #include "sys.h"
 #include "pproc.h"
 #include "messages.h"
-#include "uds.h"
+#include "var_uds.h"
+#include "var_hash.h"
 #include <limits.h>
 
 int par_massget_type_check(char fmt, par_t * par) SEC(BLIB);
 
 /*
-*   returns the last-modified time of the file
-*
-*   on error returns 0L
-*/
+ * returns the last-modified time of the file
+ *
+ * on error returns 0L
+ */
 time_t sys_filetime(const char *file)
 {
   struct stat st;
 
-  if (stat(file, &st) == 0)
+  if (stat(file, &st) == 0) {
     return st.st_mtime;
+  }
   return 0L;
 }
 
 /*
-*   search a set of directories for the given file
-*   directories on path must be separated with symbol ':' (unix) or ';' (dos/win)
-*
-*   @param path the path
-*   @param file the file
-*   @param retbuf a buffer to store the full-path-name file (can be NULL)
-*   @return non-zero if found
-*/
+ * search a set of directories for the given file
+ * directories on path must be separated with symbol ':' (unix) or ';' (dos/win)
+ *
+ * @param path the path
+ * @param file the file
+ * @param retbuf a buffer to store the full-path-name file (can be NULL)
+ * @return non-zero if found
+ */
 int sys_search_path(const char *path, const char *file, char *retbuf)
 {
   const char *ps, *p;
   char cur_path[OS_PATHNAME_SIZE + 1];
 
-  if (path == NULL)
+  if (path == NULL) {
     return 0;
-  if (strlen(path) == 0)
+  }
+  if (strlen(path) == 0) {
     return 0;
-
+  }
   ps = path;
   do {
     // next element, build cur_path
@@ -96,8 +98,9 @@ int sys_search_path(const char *path, const char *file, char *retbuf)
     // check it
 //              printf("sp:[%s]\n", cur_path);
     if (access(cur_path, R_OK) == 0) {
-      if (retbuf)
+      if (retbuf) {
         strcpy(retbuf, cur_path);
+      }
       return 1;
     }
 
@@ -107,12 +110,12 @@ int sys_search_path(const char *path, const char *file, char *retbuf)
 }
 
 /*
-*   execute a user's expression (using one variable)
-*   (note: keyword USE)
-*
-*   var - the variable (the X)
-*   ip  - expression's address 
-*/
+ * execute a user's expression (using one variable)
+ * (note: keyword USE)
+ *
+ * var - the variable (the X)
+ * ip  - expression's address 
+ */
 void exec_usefunc(var_t * var, addr_t ip)
 {
   var_t *old_x;
@@ -133,12 +136,12 @@ void exec_usefunc(var_t * var, addr_t ip)
 }
 
 /*
-*   execute a user's expression (using two variable)
-*
-*   var1 - the first variable (the X)
-*   var2 - the second variable (the Y)
-*   ip   - expression's address 
-*/
+ * execute a user's expression (using two variable)
+ *
+ * var1 - the first variable (the X)
+ * var2 - the second variable (the Y)
+ * ip   - expression's address 
+ */
 void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip)
 {
   var_t *old_x, *old_y;
@@ -165,13 +168,13 @@ void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip)
 }
 
 /*
-*   execute a user's expression (using three variable)
-*
-*   var1 - the first variable (the X)
-*   var2 - the second variable (the Y)
-*   var3 - the thrid variable (the Z)
-*   ip   - expression's address 
-*/
+ * execute a user's expression (using three variable)
+ *
+ * var1 - the first variable (the X)
+ * var2 - the second variable (the Y)
+ * var3 - the thrid variable (the Z)
+ * ip   - expression's address 
+ */
 void exec_usefunc3(var_t * var1, var_t * var2, var_t * var3, addr_t ip)
 {
   var_t *old_x, *old_y, *old_z;
@@ -204,8 +207,8 @@ void exec_usefunc3(var_t * var1, var_t * var2, var_t * var3, addr_t ip)
 }
 
 /*
-*   Write string to output device
-*/
+ * Write string to output device
+ */
 #if defined(_WinBCB)
 extern void bcb_lwrite(char *s);
 #endif
@@ -244,8 +247,8 @@ void pv_write(char *str, int method, int handle)
 }
 
 /*
-*   just prints the value of variable 'var'
-*/
+ * just prints the value of variable 'var'
+ */
 #if defined(_PalmOS)
 void pv_writevar(var_t * var, int method, unsigned long int handle)
 #else
@@ -260,6 +263,9 @@ void pv_writevar(var_t * var, int method, int handle)
     break;
   case V_UDS:
     uds_write(var, method, handle);
+    break;
+  case V_HASH:
+    hash_write(var, method, handle);
     break;
   case V_PTR:
     ltostr(var->v.ap.p, tmpsb);
@@ -319,32 +325,32 @@ void pv_writevar(var_t * var, int method, int handle)
 }
 
 /*
-*   write a variable to console
-*/
+ * write a variable to console
+ */
 void print_var(var_t * v)
 {
   pv_writevar(v, PV_CONSOLE, 0);
 }
 
 /*
-*   write a variable to a file
-*/
+ * write a variable to a file
+ */
 void fprint_var(int handle, var_t * v)
 {
   pv_writevar(v, PV_FILE, handle);
 }
 
 /*
-*   write a variable to log-file
-*/
+ * write a variable to log-file
+ */
 void logprint_var(var_t * v)
 {
   pv_writevar(v, PV_LOG, 0);
 }
 
 /*
-*   skip parameter
-*/
+ * skip parameter
+ */
 void par_skip()
 {
   byte exitf = 0, code;
@@ -422,8 +428,8 @@ void par_skip()
 }
 
 /*
-*   get next parameter as var_t
-*/
+ * get next parameter as var_t
+ */
 void par_getvar(var_t * var)
 {
   byte code;
@@ -442,8 +448,8 @@ void par_getvar(var_t * var)
 }
 
 /*
-*   get next parameter as var_t/array
-*/
+ * get next parameter as var_t/array
+ */
 var_t *par_getvarray()
 {
   byte code;
@@ -459,8 +465,9 @@ var_t *par_getvarray()
   case kwTYPE_VAR:
     var = code_getvarptr();
     if (!prog_error) {
-      if (var->type != V_ARRAY)
+      if (var->type != V_ARRAY) {
         return NULL;
+      }
     }
     return var;
   default:
@@ -471,8 +478,8 @@ var_t *par_getvarray()
 }
 
 /*
-*   get next parameter as var_t
-*/
+ * get next parameter as var_t
+ */
 var_t *par_getvar_ptr()
 {
   if (code_peek() != kwTYPE_VAR) {
@@ -483,8 +490,8 @@ var_t *par_getvar_ptr()
 }
 
 /*
-*   get next parameter as var_t
-*/
+ * get next parameter as var_t
+ */
 void par_getstr(var_t * var)
 {
   byte code;
@@ -501,13 +508,14 @@ void par_getstr(var_t * var)
     break;
   };
 
-  if (var->type != V_STR)
+  if (var->type != V_STR) {
     v_tostr(var);
+  }
 }
 
 /*
-*   get next parameter as long
-*/
+ * get next parameter as long
+ */
 long par_getint()
 {
   var_t var;
@@ -522,8 +530,8 @@ long par_getint()
 }
 
 /*
-*   get next parameter as double
-*/
+ * get next parameter as double
+ */
 double par_getnum()
 {
   var_t var;
@@ -538,9 +546,9 @@ double par_getnum()
 }
 
 /*
-*   no-error if the next byte is separator
-*   returns the separator
-*/
+ * no-error if the next byte is separator
+ * returns the separator
+ */
 int par_getsep()
 {
   int last_op;
@@ -560,41 +568,44 @@ int par_getsep()
 }
 
 /*
-*   no-error if the next byte is the separator ','
-*/
+ * no-error if the next byte is the separator ','
+ */
 void par_getcomma()
 {
   if (par_getsep() != ',') {
-    if (!prog_error)
+    if (!prog_error) {
       err_syntaxsep(',');
+    }
   }
 }
 
 /*
-*   no-error if the next byte is the separator ';'
-*/
+ * no-error if the next byte is the separator ';'
+ */
 void par_getsemicolon()
 {
   if (par_getsep() != ';') {
-    if (!prog_error)
+    if (!prog_error) {
       err_syntaxsep(';');
+    }
   }
 }
 
 /*
-*   no-error if the next byte is the separator '#'
-*/
+ * no-error if the next byte is the separator '#'
+ */
 void par_getsharp()
 {
   if (par_getsep() != '#') {
-    if (!prog_error)
+    if (!prog_error) {
       err_syntaxsep('#');
+    }
   }
 }
 
 /*
-*   retrieve a 2D point (double)
-*/
+ * retrieve a 2D point (double)
+ */
 pt_t par_getpt()
 {
   pt_t pt;
@@ -604,9 +615,9 @@ pt_t par_getpt()
   pt.x = pt.y = 0;
 
   // first parameter
-  if (code_isvar())
+  if (code_isvar()) {
     var = code_getvarptr();
-  else {
+  } else {
     alloc = 1;
     var = v_new();
     eval(var);
@@ -615,9 +626,9 @@ pt_t par_getpt()
   if (!prog_error) {
     if (var->type == V_ARRAY) {
       // array
-      if (var->v.a.size != 2)
+      if (var->v.a.size != 2) {
         rt_raise(ERR_POLY_POINT);
-      else {
+      } else {
         pt.x = v_getreal(v_elem(var, 0));
         pt.y = v_getreal(v_elem(var, 1));
       }
@@ -630,8 +641,9 @@ pt_t par_getpt()
         var_t v2;
 
         eval(&v2);
-        if (!prog_error)
+        if (!prog_error) {
           pt.y = v_getreal(&v2);
+        }
         v_free(&v2);
       }
     }
@@ -646,8 +658,8 @@ pt_t par_getpt()
 }
 
 /*
-*   retrieve a 2D point (integer)
-*/
+ * retrieve a 2D point (integer)
+ */
 ipt_t par_getipt()
 {
   ipt_t pt;
@@ -657,8 +669,9 @@ ipt_t par_getipt()
   pt.x = pt.y = 0;
 
   // first parameter
-  if (code_isvar())
+  if (code_isvar()) {
     var = code_getvarptr();
+  } 
   else {
     alloc = 1;
     var = v_new();
@@ -668,8 +681,9 @@ ipt_t par_getipt()
   if (!prog_error) {
     if (var->type == V_ARRAY) {
       // array
-      if (var->v.a.size != 2)
+      if (var->v.a.size != 2) {
         rt_raise(ERR_POLY_POINT);
+      }
       else {
         pt.x = v_getint(v_elem(var, 0));
         pt.y = v_getint(v_elem(var, 1));
@@ -699,8 +713,8 @@ ipt_t par_getipt()
 }
 
 /*
-*   retrieve a 2D polyline
-*/
+ * retrieve a 2D polyline
+ */
 int par_getpoly(pt_t ** poly_pp)
 {
   pt_t *poly = NULL;
@@ -711,8 +725,9 @@ int par_getpoly(pt_t ** poly_pp)
   // get array
   if (code_isvar()) {
     var = par_getvarray();
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
   }
   else {
     var = v_new();
@@ -730,8 +745,9 @@ int par_getpoly(pt_t ** poly_pp)
   }
   // 
   el = v_elem(var, 0);
-  if (el->type == V_ARRAY)
+  if (el->type == V_ARRAY) {
     style = 1;                  // nested --- [ [x1,y1], [x2,y2], ... ]
+  }
   // else
   // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
 
@@ -811,8 +827,8 @@ int par_getpoly(pt_t ** poly_pp)
 }
 
 /*
-*   retrieve a 2D polyline (integers)
-*/
+ * retrieve a 2D polyline (integers)
+ */
 int par_getipoly(ipt_t ** poly_pp)
 {
   ipt_t *poly = NULL;
@@ -823,8 +839,9 @@ int par_getipoly(ipt_t ** poly_pp)
   // get array
   if (code_isvar()) {
     var = par_getvarray();
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
   }
   else {
     var = v_new();
@@ -923,18 +940,18 @@ int par_getipoly(ipt_t ** poly_pp)
 }
 
 /*
-*   returns true if the following code is descibing one var code
-*   usefull for optimization 
-*   (one var can be used by the pointer; more than one it must be evaluated)
-*/
+ * returns true if the following code is descibing one var code
+ * usefull for optimization 
+ * (one var can be used by the pointer; more than one it must be evaluated)
+ */
 int par_isonevar()
 {
   return code_isvar();
 }
 
 /*
-*   destroy a parameter-table which was created by par_getparlist
-*/
+ * destroy a parameter-table which was created by par_getparlist
+ */
 void par_freepartable(par_t ** ptable_pp, int pcount)
 {
   int i;
@@ -955,16 +972,16 @@ void par_freepartable(par_t ** ptable_pp, int pcount)
 }
 
 /*
-*   builds a parameter table
-*
-*   ptable_pp = pointer to an ptable
-*   valid_sep = valid separators (';)
-*
-*   returns the number of the parameters, OR, -1 on error
-*
-*   YOU MUST FREE THAT TABLE BY USING par_freepartable()
-*   IF THERE IS NO ERROR, CALL TO par_freepartable IS NOT NEEDED
-*/
+ * builds a parameter table
+ *
+ * ptable_pp = pointer to an ptable
+ * valid_sep = valid separators (';)
+ *
+ * returns the number of the parameters, OR, -1 on error
+ *
+ * YOU MUST FREE THAT TABLE BY USING par_freepartable()
+ * IF THERE IS NO ERROR, CALL TO par_freepartable IS NOT NEEDED
+ */
 int par_getpartable(par_t ** ptable_pp, const char *valid_sep)
 {
   byte ready, last_sep = 0;
@@ -1060,7 +1077,7 @@ int par_getpartable(par_t ** ptable_pp, const char *valid_sep)
 }
 
 /*
-*/
+ */
 int par_massget_type_check(char fmt, par_t * par)
 {
   switch (fmt) {
@@ -1077,40 +1094,40 @@ int par_massget_type_check(char fmt, par_t * par)
 }
 
 /*
-*   Parsing parameters with scanf-style
-*   returns the parameter-count or -1 (error)
-*
-*   Format:
-*   --------
-*   capital character = the parameter is required
-*   small character   = optional parameter
-*
-*   I = integer         (int32  )
-*   F = double          (double*)
-*   S = string          (char*  )
-*   P = variable's ptr  (var_t* )
-*
-*   Example:
-*   --------
-*   int32   i1, i2 = -1;    // -1 is the default value for i2
-*   char    *s1 = NULL;     // NULL is the default value for s1
-*   var_t   *v  = NULL;     // NULL is the default value for v
-*
-*   // the first integer is required, the second is optional
-*   // the string is optional too
-*   pc = par_massget("Iis", &i1, &i2, &s1, &v);
-*
-*   if ( pc != -1 ) {   // no error; also, you can use prog_error because par_massget() will call rt_raise() on error
-*       printf("required integer = %d\n", i1);
-*
-*       // if there is no optional parameters, the default value will be returned
-*       if  ( i2 != -1 )    printf("optional integer found = %d\n", i2);
-*       if  ( s1 )          printf("optional string found = %s\n", s1);
-*       if  ( v )       {   printf("optional variable's ptr found");    v_free(v);  }
-*       }
-*
-*   pfree2(s1, v);
-*/
+ *   Parsing parameters with scanf-style
+ *   returns the parameter-count or -1 (error)
+ *
+ *   Format:
+ *   --------
+ *   capital character = the parameter is required
+ *   small character   = optional parameter
+ *
+ *   I = integer         (int32  )
+ *   F = double          (double*)
+ *   S = string          (char*  )
+ *   P = variable's ptr  (var_t* )
+ *
+ *   Example:
+ *   --------
+ *   int32   i1, i2 = -1;    // -1 is the default value for i2
+ *   char    *s1 = NULL;     // NULL is the default value for s1
+ *   var_t   *v  = NULL;     // NULL is the default value for v
+ *
+ *   // the first integer is required, the second is optional
+ *   // the string is optional too
+ *   pc = par_massget("Iis", &i1, &i2, &s1, &v);
+ *
+ *   if ( pc != -1 ) {   // no error; also, you can use prog_error because par_massget() will call rt_raise() on error
+ *       printf("required integer = %d\n", i1);
+ *
+ *       // if there is no optional parameters, the default value will be returned
+ *       if  ( i2 != -1 )    printf("optional integer found = %d\n", i2);
+ *       if  ( s1 )          printf("optional string found = %s\n", s1);
+ *       if  ( v )       {   printf("optional variable's ptr found");    v_free(v);  }
+ *       }
+ *
+ *   pfree2(s1, v);
+ */
 int par_massget(const char *fmt, ...)
 {
   char *fmt_p = NULL;

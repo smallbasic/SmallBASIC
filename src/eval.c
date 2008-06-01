@@ -369,9 +369,6 @@ void eval(var_t * r)
         r->v.ap.p = var_p->v.ap.p;
         r->v.ap.v = var_p->v.ap.v;
         break;
-      case V_UDS:
-        v_set(r, var_p);
-        break;
       case V_INT:
         r->type = V_INT;
         r->v.i = var_p->v.i;
@@ -384,6 +381,8 @@ void eval(var_t * r)
         v_set(r, var_p);
         break;
       case V_ARRAY:
+      case V_UDS:
+      case V_HASH:
         v_set(r, var_p);
         break;
       };                        // switch(type)

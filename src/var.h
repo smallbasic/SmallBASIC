@@ -36,6 +36,7 @@
 #define V_PTR       5 /**< variable type, pointer to UDF or label      @ingroup var */
 #define V_LIST      6 /**< variable type, dynamic list - N/A           @ingroup var */
 #define V_UDS       7 /**< variable type, user defined structure       @ingroup var */
+#define V_HASH      8 /**< variable type, hash                         @ingroup var */
 
 /*
  *   predefined system variables - index
@@ -81,7 +82,8 @@
 extern "C" {
 #endif
 
-typedef struct uds_field_s uds_field_s; // declared below
+// the following prototype is declared later below
+typedef struct uds_field_s uds_field_s; 
 
 /**
  *   @ingroup var
@@ -110,6 +112,9 @@ struct var_s {
 
     // user defined structure
     uds_field_s *uds;        /** pointer to the "structure" */
+
+    // hash map
+    void* hash;              /** pointer the hash structure */
 
     // generic ptr (string)
     struct {

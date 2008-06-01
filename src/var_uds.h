@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of SmallBASIC
 //
@@ -9,11 +8,10 @@
 //
 // Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
-
 #include "var.h"
 
-#ifndef UDS_H
-#define UDS_H
+#ifndef VAR_UDS_H
+#define VAR_UDS_H
 
 int uds_compare(const var_p_t var_a, const var_p_t var_b);
 int uds_is_empty(const var_p_t var_p);

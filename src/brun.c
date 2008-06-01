@@ -25,13 +25,12 @@
 #include "messages.h"
 #include "device.h"
 #include "pproc.h"
-#include "uds.h"
+#include "var_uds.h"
 
 int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) SEC(BEXEC);
 int exec_close_task() SEC(BEXEC);
 void exec_setup_predefined_variables() SEC(BEXEC);
 var_t *code_isvar_arridx(var_t * basevar_p) SEC(BEXEC);
-var_t *code_getvarptr_arridx(var_t * basevar_p) SEC(BEXEC);
 void code_pop_until(int type) SEC(BEXEC);
 void code_pop_and_free(stknode_t * node) SEC(BEXEC);
 stknode_t *code_stackpeek() SEC(BEXEC);
@@ -46,7 +45,6 @@ int sbasic_exec(const char *file) SEC(BEXEC);
 int sbasic_main(const char *file) SEC(BEXEC);
 int exec_close(int tid) SEC(BEXEC);
 int sbasic_exec(const char *file) SEC(BEXEC);
-void cmd_options(void) SEC(BLIB);
 void cmd_options(void) SEC(BLIB);
 var_t* code_resolve_varptr(var_t* var_p, int until_parens);
 
@@ -284,7 +282,7 @@ stknode_t *code_stackpeek()
 //
 // Convertion multi-dim index to one-dim index
 //
-addr_t getarrayidx(var_t * array)
+addr_t getarrayidx(var_t* array, var_t** var_hash_val)
 {
   byte code;
   var_t var;
@@ -296,29 +294,45 @@ addr_t getarrayidx(var_t * array)
     eval(&var);
     IF_ERR_RETURN_0;
 
-    idim = v_getint(&var);
-    v_free(&var);
-    IF_ERR_RETURN_0;
-
-    idim = idim - array->v.a.lbound[lev];
-
-    m = idim;
-    for (i = lev + 1; i < array->v.a.maxdim; i++) {
-      m = m * (ABS(array->v.a.ubound[i] - array->v.a.lbound[i]) + 1);
-    }
-    idx += m;
-
-    // skip separator
-    code = code_peek();
-    if (code == kwTYPE_SEP) {
-      code_skipnext();
-      if (code_getnext() != ',') {
-        err_syntax_error();
+    if (var.type == V_STR) {
+      // array elemement is a string - convert array to hash
+      hash_get_value(array, &var, var_hash_val);
+      
+      if (code_peek() == kwTYPE_LEVEL_END) {
+        code_skipnext();
       }
+      else {
+        err_missing_sep();
+      }
+      v_free(&var);
+      return 0;
     }
-    // next
-    lev++;
-  } while (code_peek() != kwTYPE_LEVEL_END);
+    else {
+      idim = v_getint(&var);
+      v_free(&var);
+      IF_ERR_RETURN_0;
+
+      idim = idim - array->v.a.lbound[lev];
+      
+      m = idim;
+      for (i = lev + 1; i < array->v.a.maxdim; i++) {
+        m = m * (ABS(array->v.a.ubound[i] - array->v.a.lbound[i]) + 1);
+      }
+      idx += m;
+      
+      // skip separator
+      code = code_peek();
+      if (code == kwTYPE_SEP) {
+        code_skipnext();
+        if (code_getnext() != ',') {
+          err_syntax_error();
+        }
+      }
+      // next
+      lev++;
+    }
+  } 
+  while (code_peek() != kwTYPE_LEVEL_END);
 
   if (!prog_error) {
     if ((int)array->v.a.maxdim != lev) {
@@ -331,7 +345,7 @@ addr_t getarrayidx(var_t * array)
 //
 // Used by code_getvarptr() to retrieve an element ptr of an array
 //
-var_t *code_getvarptr_arridx(var_t * basevar_p)
+var_t *code_getvarptr_arridx(var_t* basevar_p)
 {
   addr_t array_index;
   var_t *var_p = NULL;
@@ -341,7 +355,13 @@ var_t *code_getvarptr_arridx(var_t * basevar_p)
   }
   else {
     code_skipnext();            // '('
-    array_index = getarrayidx(basevar_p);
+    array_index = getarrayidx(basevar_p, &var_p);
+
+    if (var_p != NULL) {
+      // hash map value
+      return var_p;
+    }
+
     if (!prog_error) {
       if ((int)array_index < basevar_p->v.a.size && (int)array_index >= 0) {
         var_p = (var_t *) (basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
@@ -410,12 +430,15 @@ var_t* code_getvarptr_parens(int until_parens)
   case kwTYPE_VAR:
     code_skipnext();
     var_p = tvar[code_getaddr()];
-    if (var_p->type == V_ARRAY) { 
-      // variable is an array
+    switch (var_p->type) {
+    case V_HASH:
+    case V_ARRAY:
       var_p = code_resolve_varptr(var_p, until_parens);
-    }
-    else if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
-      err_varisnotarray();
+      break;
+    default:
+      if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
+        err_varisnotarray();
+      }
     }
     break;
 
@@ -448,7 +471,13 @@ var_t *code_isvar_arridx(var_t * basevar_p)
   }
   else {
     code_skipnext();            // '('
-    array_index = getarrayidx(basevar_p);
+    array_index = getarrayidx(basevar_p, &var_p);
+
+    if (var_p != NULL) {
+      // hash map value
+      return var_p;
+    }
+
     if (!prog_error) {
       if ((int)array_index < basevar_p->v.a.size) {
         var_p = (var_t *) (basevar_p->v.a.ptr + (array_index * sizeof(var_t)));

@@ -78,7 +78,8 @@ libsb_common_a_SOURCES =			\
     scan.c scan.h				\
     str.c str.h					\
     tasks.c tasks.h				\
-    uds.c uds.h					\
+    var_uds.c var_uds.h				\
+    var_hash.c var_hash.h		        \
     units.c units.h				\
     var.c var.h					\
     vmt.c vmt.h					\
