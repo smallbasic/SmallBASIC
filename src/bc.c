@@ -1,11 +1,12 @@
-/*
- * bc module. Bytecode manipulation routines (bytecode segments API)
- *
- * 2001/02/23, Nicholas Christopoulos
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// bc module. Bytecode manipulation routines (bytecode segments API)
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2001 Nicholas Christopoulos
 
 #include "bc.h"
 #include "smbas.h"
@@ -61,9 +62,9 @@ void bc_resize(bc_t * bc, dword new_size)
  */
 void bc_add1(bc_t * bc, byte code)
 {
-  if (bc->count >= (bc->size - 2))
+  if (bc->count >= (bc->size - 2)) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
   bc->ptr[bc->count] = code;
   bc->count++;
 }
@@ -81,9 +82,9 @@ void bc_store1(bc_t * bc, addr_t offset, byte code)
  */
 void bc_add2c(bc_t * bc, byte code, byte v)
 {
-  if (bc->count >= bc->size - 3)
+  if (bc->count >= bc->size - 3) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
   bc->ptr[bc->count] = code;
   bc->count++;
   bc->ptr[bc->count] = v;
@@ -95,9 +96,9 @@ void bc_add2c(bc_t * bc, byte code, byte v)
  */
 void bc_add_word(bc_t * bc, word p1)
 {
-  if (bc->count >= bc->size - 4)
+  if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
   memcpy(bc->ptr + bc->count, &p1, 2);
   bc->count += 2;
 }
@@ -107,9 +108,9 @@ void bc_add_word(bc_t * bc, word p1)
  */
 void bc_add_dword(bc_t * bc, dword p1)
 {
-  if (bc->count >= bc->size - 4)
+  if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
   memcpy(bc->ptr + bc->count, &p1, 4);
   bc->count += 4;
 }
@@ -119,9 +120,9 @@ void bc_add_dword(bc_t * bc, dword p1)
  */
 void bc_add2i(bc_t * bc, byte code, word p1)
 {
-  if (bc->count >= bc->size - 4)
+  if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
   bc->ptr[bc->count] = code;
   bc->count++;
   memcpy(bc->ptr + bc->count, &p1, 2);
@@ -133,9 +134,9 @@ void bc_add2i(bc_t * bc, byte code, word p1)
  */
 void bc_add2l(bc_t * bc, byte code, long p1)
 {
-  if (bc->count >= bc->size - 8)
+  if (bc->count >= bc->size - 8) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
   bc->ptr[bc->count] = code;
   bc->count++;
   memcpy(bc->ptr + bc->count, &p1, 4);
@@ -201,9 +202,9 @@ void bc_add_extpcode(bc_t * bc, int lib, long idx)
  */
 void bc_add_addr(bc_t * bc, addr_t idx)
 {
-  if (bc->count >= bc->size - 4)
+  if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
 #if defined(OS_ADDR16)
   memcpy(bc->ptr + bc->count, &idx, 2);
   bc->count += 2;
@@ -246,9 +247,9 @@ void bc_add_creal(bc_t * bc, double v)
  */
 void bc_add2d(bc_t * bc, byte code, double p1)
 {
-  if (bc->count >= bc->size - 16)
+  if (bc->count >= bc->size - 16) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+  }
   bc->ptr[bc->count] = code;
   bc->count++;
   memcpy(bc->ptr + bc->count, &p1, 8);
@@ -261,8 +262,9 @@ void bc_add2d(bc_t * bc, byte code, double p1)
 void bc_add2s(bc_t * bc, byte code, const char *p1)
 {
   int l = strlen(p1);
-  if (l > BC_MAX_STORE_SIZE)
+  if (l > BC_MAX_STORE_SIZE) {
     sc_raise("STRING TOO BIG");
+  } 
   else {
     bc_add_code(bc, code);
 #if defined(OS_ADDR16)
@@ -293,14 +295,14 @@ char *bc_store_string(bc_t * bc, char *src)
 
   p++;                          // == '\"'
   while (*p) {
-    if (*p == '\\' && *(p + 1) == '\"') {
-      // escaped quote "
+    if (*p == '\\' && ((*(p + 1) == '\"') || *(p + 1) == '\\')) {
+      // escaped quote " or escaped escape
       seglen = p - base;
       np = np ? tmp_realloc(np, l + seglen + 1) : tmp_alloc(seglen + 1);
       strncpy(np + l, base, seglen);
       l += seglen;              // add next segment
       np[l] = 0;
-      base = ++p;               // include " in next segment
+      base = ++p;               // include " (or \ ) in next segment
     }
     else if (*p == '\"') {
       // end of string detected
@@ -383,8 +385,9 @@ void bc_append(bc_t * dst, bc_t * src)
  */
 void bc_add_n(bc_t * dst, byte * src, dword n)
 {
-  if (dst->count >= dst->size - n)
+  if (dst->count >= dst->size - n) {
     bc_resize(dst, dst->size + n);
+  }
   memcpy(dst->ptr + dst->count, src, n);
   dst->count += n;
 }

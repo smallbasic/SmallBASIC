@@ -1,4 +1,5 @@
-$Id: $
+2008-06-04
+	* Fixed problem with trailing backslash in strings
 
 2008-06-01
 	* Add support for hash arrays (rainy day)
@@ -161,5 +162,3 @@ $Id: $
 
 Refer to sync/Changes for more history
 This log has been created for autotools support
-
-$Id: $

@@ -82,8 +82,14 @@ int hash_is_empty(const var_p_t var_p)
   return (var_p->v.hash == 0);
 }
 
-void hash_to_int_cb(const void *nodep, VISIT value, int level) {
-  cb.count++;
+/**
+ * Helper for hash_to_int
+ */
+void hash_to_int_cb(const void *nodep, VISIT value, int level) 
+{
+  if (value == leaf || value == endorder) {
+    cb.count++;
+  }
 }
 
 /**
