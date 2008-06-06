@@ -2069,8 +2069,9 @@ void comp_text_line(char *text)
     decl = 1;
     p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
     idx = comp_is_keyword(comp_bc_name);
-    if (idx == -1)
+    if (idx == -1) {
       idx = comp_is_proc(comp_bc_name);
+    }
     strcpy(comp_bc_parm, p);
     if (idx != kwPROC && idx != kwFUNC) {
       sc_raise(MSG_USE_DECL);
@@ -2157,9 +2158,9 @@ void comp_text_line(char *text)
     if (!comp_error) {
       if (parms[0] == '(') {
         char *p = strchr(parms, '=');
-        if (!p)
+        if (!p) {
           sc_raise(MSG_LET_MISSING_EQ);
-        else {
+        } else {
           if (*comp_next_char(parms + 1) == ')') {
             // its the variable's name only
             comp_expression(p, 0);
@@ -2374,6 +2375,17 @@ void comp_text_line(char *text)
         comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
         bc_add_addr(&comp_prog, comp_var_getID(vname));
       }
+      // handle same line variable assignment, eg local blah = foo
+      for (i = 0; i < count; i++) {
+        comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+        if (strlen(vname) != strlen(pars[i])) {
+          // kwTYPE_LINE is required for executor
+          bc_add_code(&comp_prog, kwTYPE_LINE);
+          bc_add_addr(&comp_prog, comp_line);
+          comp_text_line(pars[i]);
+        }
+      }
+
       break;
 
     case kwREM:

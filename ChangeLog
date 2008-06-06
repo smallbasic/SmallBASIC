@@ -1,3 +1,7 @@
+2008-06-06
+	* Implemented the ability to declare a local variable and assign a
+	  value to it on the same line, eg local foo = "foo"
+
 2008-06-04
 	* Fixed problem with trailing backslash in strings
 

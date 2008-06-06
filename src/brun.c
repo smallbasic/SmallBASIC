@@ -62,9 +62,9 @@ static char fileName[OS_FILENAME_SIZE + 1];
 static int main_tid;
 static int exec_tid;
 
-//
-// returns the next 32bit and moves the instruction pointer to the next instruction
-//
+/**
+ * returns the next 32bit and moves the instruction pointer to the next instruction
+ */
 dword code_getnext32()
 {
   dword v;
@@ -76,9 +76,9 @@ dword code_getnext32()
 
 #if defined(OS_PREC64)
 
-//
-// returns the next 64bit and moves the instruction pointer to the next instruction
-//
+/**
+ * returns the next 64bit and moves the instruction pointer to the next instruction
+ */
 long long code_getnext64i()
 {
   long long v;
@@ -89,9 +89,9 @@ long long code_getnext64i()
 }
 #endif
 
-//
-// returns the next 64bit and moves the instruction pointer to the next instruction
-//
+/**
+ * returns the next 64bit and moves the instruction pointer to the next instruction
+ */
 double code_getnext64f()
 {
   double v;
@@ -103,9 +103,9 @@ double code_getnext64f()
 
 #if defined(OS_PREC64)
 
-//
-// returns the next 128bit and moves the instruction pointer to the next instruction
-//
+/**
+ * returns the next 128bit and moves the instruction pointer to the next instruction
+ */
 long double code_getnext128f()
 {
   long double v;
@@ -116,17 +116,17 @@ long double code_getnext128f()
 }
 #endif
 
-//
-// jump to label
-//
+/**
+ * jump to label
+ */
 void code_jump_label(word label_id)
 {
   prog_ip = tlab[label_id].ip;
 }
 
-//
-// Put the node 'node' in stack (PUSH)
-//
+/**
+ * Put the node 'node' in stack (PUSH)
+ */
 void code_push(stknode_t * node)
 {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
@@ -150,9 +150,9 @@ void code_push(stknode_t * node)
   prog_stack_count++;
 }
 
-//
-// Returns and deletes the topmost node from stack (POP)
-//
+/**
+ * Returns and deletes the topmost node from stack (POP)
+ */
 void code_pop(stknode_t * node)
 {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
@@ -180,9 +180,9 @@ void code_pop(stknode_t * node)
   }
 }
 
-//
-// Returns and deletes the topmost node from stack (POP)
-//
+/**
+ * Returns and deletes the topmost node from stack (POP)
+ */
 void code_pop_and_free(stknode_t * node)
 {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
@@ -254,9 +254,9 @@ void code_pop_and_free(stknode_t * node)
   }
 }
 
-//
-// removes nodes from stack until 'type' node found
-//
+/**
+ * removes nodes from stack until 'type' node found
+ */
 void code_pop_until(int type)
 {
   stknode_t node;
@@ -268,9 +268,9 @@ void code_pop_until(int type)
   }
 }
 
-//
-// Peek the topmost node of stack
-//
+/**
+ * Peek the topmost node of stack
+ */
 stknode_t *code_stackpeek()
 {
   if (prog_stack_count) {
@@ -279,9 +279,9 @@ stknode_t *code_stackpeek()
   return NULL;
 }
 
-//
-// Convertion multi-dim index to one-dim index
-//
+/**
+ * Convertion multi-dim index to one-dim index
+ */
 addr_t getarrayidx(var_t* array, var_t** var_hash_val)
 {
   byte code;
@@ -342,9 +342,9 @@ addr_t getarrayidx(var_t* array, var_t** var_hash_val)
   return idx;
 }
 
-//
-// Used by code_getvarptr() to retrieve an element ptr of an array
-//
+/**
+ * Used by code_getvarptr() to retrieve an element ptr of an array
+ */
 var_t *code_getvarptr_arridx(var_t* basevar_p)
 {
   addr_t array_index;
@@ -391,9 +391,9 @@ var_t *code_getvarptr_arridx(var_t* basevar_p)
   return var_p;
 }
 
-//
-// resolve a composite variable reference, eg: ar.ch(0).foo
-//
+/**
+ * resolve a composite variable reference, eg: ar.ch(0).foo
+ */
 var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
   if (var_p) {
     switch (code_peek()) {
@@ -410,18 +410,18 @@ var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
   return var_p;
 }
 
-//
-// returns the varptr of the next variable. if the variable is an array 
-// returns the element ptr
-//
+/**
+ * returns the varptr of the next variable. if the variable is an array 
+ * returns the element ptr
+ */
 var_t *code_getvarptr() 
 {
   return code_getvarptr_parens(0);
 }
 
-//
-// helper for code_getvarptr
-//
+/**
+ * helper for code_getvarptr
+ */
 var_t* code_getvarptr_parens(int until_parens)
 {
   var_t *var_p = NULL;
@@ -458,9 +458,9 @@ var_t* code_getvarptr_parens(int until_parens)
   return var_p;
 }
 
-//
-// Used by code_isvar() to retrieve an element ptr of an array
-//
+/**
+ * Used by code_isvar() to retrieve an element ptr of an array
+ */
 var_t *code_isvar_arridx(var_t * basevar_p)
 {
   addr_t array_index;
@@ -507,11 +507,11 @@ var_t *code_isvar_arridx(var_t * basevar_p)
   return var_p;
 }
 
-//
-// returns true if the next code is a variable.
-// if the following code is an expression (no matter if the first item is a variable),
-// returns false
-//
+/**
+ * returns true if the next code is a variable.
+ * if the following code is an expression (no matter if the first item is a variable),
+ * returns false
+ */
 int code_isvar()
 {
   var_t *basevar_p, *var_p = NULL;
@@ -553,9 +553,9 @@ int code_isvar()
   return 0;
 }
 
-//
-// sets the value of an integer system-variable
-//
+/**
+ * sets the value of an integer system-variable
+ */
 void setsysvar_int(int index, long value)
 {
   int tid;
@@ -575,9 +575,9 @@ void setsysvar_int(int index, long value)
   activate_task(tid);
 }
 
-//
-// sets the value of a real system-variable
-//
+/**
+ * sets the value of a real system-variable
+ */
 void setsysvar_num(int index, double value)
 {
   int tid;
@@ -597,9 +597,9 @@ void setsysvar_num(int index, double value)
   activate_task(tid);
 }
 
-//
-// sets the value of an string system-variable
-//
+/**
+ * sets the value of an string system-variable
+ */
 void setsysvar_str(int index, const char *value)
 {
   int tid;
@@ -625,9 +625,9 @@ void setsysvar_str(int index, const char *value)
   activate_task(tid);
 }
 
-//
-// create predefined system variables for this task
-//
+/**
+ * create predefined system variables for this task
+ */
 void exec_setup_predefined_variables()
 {
   char homedir[OS_PATHNAME_SIZE + 1];
@@ -726,17 +726,17 @@ void exec_setup_predefined_variables()
 #endif
 }
 
-//
-// BREAK
-//
+/**
+ * BREAK
+ */
 void brun_stop()
 {
   prog_error = -3;
 }
 
-//
-// returns the status of executor (runing or stopped)
-//
+/**
+ * returns the status of executor (runing or stopped)
+ */
 int brun_status()
 {
   if (prog_error) {
@@ -745,9 +745,9 @@ int brun_status()
   return BRUN_RUNNING;
 }
 
-//
-// BREAK - display message, too
-//
+/**
+ * BREAK - display message, too
+ */
 void brun_break()
 {
   if (brun_status() == BRUN_RUNNING) {
@@ -756,9 +756,9 @@ void brun_break()
   brun_stop();
 }
 
-//
-// CHAIN sb-source
-//
+/**
+ * CHAIN sb-source
+ */
 void cmd_chain(void)
 {
   var_t var;
@@ -863,11 +863,11 @@ void cmd_chain(void)
   }
 }
 
-//
-// RUN "program"
-//
-//  For PalmOS use RUN CreatorID (i.e. run "calc")
-//
+/**
+ * RUN "program"
+ *
+ * For PalmOS use RUN CreatorID (i.e. run "calc")
+ */
 void cmd_run(int retf)
 {
   var_t var;
@@ -890,9 +890,9 @@ void cmd_run(int retf)
   }
 }
 
-//
-// OPTION (run-time part) keyword
-//
+/**
+ * OPTION (run-time part) keyword
+ */
 void cmd_options(void)
 {
   byte c;
@@ -913,13 +913,13 @@ void cmd_options(void)
   };
 }
 
-//
-// execute commands (loop)
-//
-// @param isf if 1, the program must return if found return (by level <= 0);
-// otherwise an RTE will generated
-// if 2; like 1, but increase the proc_level because UDF call it was executed internaly
-//
+/**
+ * execute commands (loop)
+ *
+ * @param isf if 1, the program must return if found return (by level <= 0);
+ * otherwise an RTE will generated
+ * if 2; like 1, but increase the proc_level because UDF call it was executed internaly
+ */
 void bc_loop(int isf)
 {
   register dword now;
@@ -1560,10 +1560,10 @@ void bc_loop(int isf)
   }
 }
 
-//
-// debug info
-// stack dump
-//
+/**
+ * debug info
+ * stack dump
+ */
 #if !defined(OS_LIMITED)        // save some bytes
 void dump_stack()
 {
@@ -1596,26 +1596,24 @@ void dump_stack()
 }
 #endif
 
-//////////////////////////////////////////////////////////////////////////////////
-
 /*
- *   RUN byte-code
- *   
- *   ByteCode Structure (executables, not units):
+ * RUN byte-code
+ * 
+ * ByteCode Structure (executables, not units):
  *
- *       [header (bc_head_t)]
- *       [label-table (ADDRSZ) * label_count]
- *       [import-lib-table (bc_lib_rec_t) * lib_count]
- *       [import-symbol-table (bc_symbol_rec_t) * symbol_count]
- *       [the bytecode itself]
+ * [header (bc_head_t)]
+ * [label-table (ADDRSZ) * label_count]
+ * [import-lib-table (bc_lib_rec_t) * lib_count]
+ * [import-symbol-table (bc_symbol_rec_t) * symbol_count]
+ * [the bytecode itself]
  *
- *   brun_init(source)
- *   ...brun_create_task(source)
+ * brun_init(source)
+ * ...brun_create_task(source)
  *
- *   brun()
+ * brun()
  *
- *   exec_close()
- *   ...exec_close_task()
+ * exec_close()
+ * ...exec_close_task()
  */
 int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
 {
@@ -1860,9 +1858,9 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
   return tid;
 }
 
-//
-// clean up the current task's (executor's) data
-//
+/**
+ * clean up the current task's (executor's) data
+ */
 int exec_close_task()
 {
   word i;
@@ -1931,9 +1929,9 @@ int exec_close_task()
   return 0;
 }
 
-//
-// close the executor
-//
+/**
+ * close the executor
+ */
 int exec_close(int tid)
 {
   int prev_tid, i;
@@ -1956,11 +1954,11 @@ int exec_close(int tid)
 }
 
 /**
- *   update common variables
+ * update common variables
  *
- *   if dir = 0, source is the unit, dir = 1 source is this program
+ * if dir = 0, source is the unit, dir = 1 source is this program
  *
- *   actually dir has no meaning, but it is more logical (dir=0 always is also correct)
+ * actually dir has no meaning, but it is more logical (dir=0 always is also correct)
  */
 void exec_sync_variables(int dir)
 {
@@ -1998,7 +1996,7 @@ void exec_sync_variables(int dir)
 }
 
 /**
- *   system specific things - before compilation
+ * system specific things - before compilation
  */
 void sys_before_comp()
 {
@@ -2044,7 +2042,7 @@ void sys_before_comp()
 }
 
 /**
- *   system specific things - after compilation
+ * system specific things - after compilation
  */
 void sys_after_comp()
 {
@@ -2060,7 +2058,7 @@ void sys_after_comp()
 }
 
 /**
- *   system specific things - before execution
+ * system specific things - before execution
  */
 void sys_before_run()
 {
@@ -2074,7 +2072,7 @@ void sys_before_run()
 }
 
 /**
- *   system specific things - after execution
+ * system specific things - after execution
  */
 void sys_after_run()
 {
@@ -2087,7 +2085,7 @@ void sys_after_run()
 }
 
 /**
- *   execute the code on this task
+ * execute the code on this task
  */
 int sbasic_exec_task(int tid)
 {
@@ -2105,7 +2103,7 @@ int sbasic_exec_task(int tid)
 }
 
 /**
- *   run libraries and main-code
+ * run libraries and main-code
  */
 int sbasic_recursive_exec(int tid)
 {
@@ -2143,9 +2141,9 @@ int sbasic_recursive_exec(int tid)
 
 #if !defined(OS_LIMITED)
 
-//
-// dump-taskinfo
-//
+/**
+ * dump-taskinfo
+ */
 void sbasic_dump_taskinfo(FILE * output)
 {
   int i;
@@ -2160,9 +2158,9 @@ void sbasic_dump_taskinfo(FILE * output)
   activate_task(prev_tid);
 }
 
-//
-// dump-bytecode
-//
+/**
+ * dump-bytecode
+ */
 void sbasic_dump_bytecode(int tid, FILE * output)
 {
   int i;
@@ -2186,9 +2184,9 @@ void sbasic_dump_bytecode(int tid, FILE * output)
 }
 #endif
 
-//
-//
-//
+/**
+ * TODO add comment
+ */
 int sbasic_compile(const char *file)
 {
   int comp_rq = 0;              // compilation required = 0
@@ -2247,9 +2245,9 @@ int sbasic_compile(const char *file)
   return success;
 }
 
-//
-// initialize executor and run a binary
-//
+/**
+ * initialize executor and run a binary
+ */
 void sbasic_exec_prepare(const char *filename)
 {
   // load source
@@ -2264,11 +2262,11 @@ void sbasic_exec_prepare(const char *filename)
 }
 
 /**
- *   this is the main 'execute' routine; its work depended on opt_xxx flags
- *   use it instead of sbasic_main if managers are already initialized
+ * this is the main 'execute' routine; its work depended on opt_xxx flags
+ * use it instead of sbasic_main if managers are already initialized
  *
- *   @param file the source file
- *   @return true on success
+ * @param file the source file
+ * @return true on success
  */
 int sbasic_exec(const char *file)
 {
@@ -2360,10 +2358,10 @@ int sbasic_exec(const char *file)
 }
 
 /**
- *   this is the main routine; its work depended on opt_xxx flags
+ * this is the main routine; its work depended on opt_xxx flags
  *
- *   @param file the source file
- *   @return true on success
+ * @param file the source file
+ * @return true on success
  */
 int sbasic_main(const char *file)
 {
@@ -2402,3 +2400,4 @@ int sbasic_main(const char *file)
 
   return success;
 }
+
