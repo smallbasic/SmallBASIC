@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of SmallBASIC
 //
@@ -237,10 +236,10 @@ int close_unit(int uid)
 }
 
 /**
- *   imports unit's names
+ * imports unit's names
  *
- *   @param uid unit's handle
- *   @return 0 on success
+ * @param uid unit's handle
+ * @return 0 on success
  */
 int import_unit(int uid)
 {
@@ -285,7 +284,7 @@ int import_unit(int uid)
 }
 
 /**
- *   execute a call to a unit
+ * execute a call to a unit
  */
 int unit_exec(int lib_id, int index, var_t * ret)
 {

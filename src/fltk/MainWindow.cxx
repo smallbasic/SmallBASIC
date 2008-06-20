@@ -1089,33 +1089,58 @@ int arg_cb(int argc, char **argv, int &i)
 {
   const char *s = argv[i];
   int len = strlen(s);
+
   if (strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0) {
     runfile = strdup(s);
     runMode = run_state;
     i += 1;
     return 1;
   }
-  else if (i + 1 >= argc) {
-    return 0;
+
+  if (argv[i][0] == '-'  && !argv[i][2] && argv[i + 1]) {
+    switch (argv[i][1]) {
+    case 'e':
+      runfile = strdup(argv[i + 1]);
+      runMode = edit_state;
+      i += 2;
+      return 1;
+
+    case 'r':
+      runfile = strdup(argv[i + 1]);
+      runMode = run_state;
+      i += 2;
+      return 1;
+
+    case 'm':
+      opt_loadmod = 1;
+      strcpy(opt_modlist, argv[i + 1]);
+      i += 2;
+      return 1;
+    }
   }
 
-  switch (argv[i][1]) {
-  case 'e':
-    runfile = strdup(argv[i + 1]);
-    runMode = edit_state;
-    i += 2;
-    return 1;
-  case 'r':
-    runfile = strdup(argv[i + 1]);
-    runMode = run_state;
-    i += 2;
-    return 1;
-  case 'm':
-    opt_loadmod = 1;
-    strcpy(opt_modlist, argv[i + 1]);
-    i += 2;
+
+  if (argv[i][0] == '-' && argv[i][1] == '-') {
+    // echo foo | sbasic foo.bas --
+    int c;
+    while ((c = fgetc(stdin)) != EOF) {
+      int len = strlen(opt_command);
+      opt_command[len] = c;
+      opt_command[len + 1] = 0;
+    }
+    i++;
     return 1;
   }
+
+  if (runMode == run_state) {
+    if (opt_command[0]) {
+      strcat(opt_command, " ");
+    }
+    strcat(opt_command, s);
+    i++;
+    return 1;
+  }
+
   return 0;
 }
 
@@ -1124,8 +1149,8 @@ int main(int argc, char **argv)
   int i = 0;
   if (args(argc, argv, i, arg_cb) < argc) {
     fatal("Options are:\n"
-          " -e[dit] file.bas\n" 
-          " -r[run] file.bas\n" 
+          " -e[dit] file.bas\n"
+          " -r[run] file.bas\n"
           " -m[odule]-home\n\n%s", help);
   }
 
@@ -1209,7 +1234,6 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   opt_interactive = 0;
   opt_nosave = 1;
   opt_ide = IDE_NONE;           // for sberr.c
-  opt_command[0] = 0;
   opt_pref_bpp = 0;
   os_graphics = 1;
 
