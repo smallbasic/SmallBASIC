@@ -394,20 +394,40 @@ function buildConsole() {
         win32="yes"
    esac
 
-   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(USE_TERM_IO, 1, [Uses terminal-io functions.])
-   AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
-
    if test $win32 = yes; then
-      dnl preconfigured values for cygwin console build (depends on cygwin.dll)
-      TARGET="Building Cygwin console version."
-      AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
-      AC_DEFINE(__CYGWIN__, 1, [as above])
-      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
-      BUILD_SUBDIRS="src src/cygwin"
+      dnl test whether to build using mingw
+      AC_MSG_CHECKING(for standard cygwin gcc PATH)
+      have_cygwin=no
+      AC_TRY_COMPILE([
+        #include "sys/cygwin.h"
+        ],[
+        ],[
+        have_cygwin=yes
+      ])
+      AC_MSG_RESULT($have_cygwin)
+      if test x$have_cygwin = xyes; then
+         dnl preconfigured values for cygwin console build (depends on cygwin.dll)
+         TARGET="Building Cygwin console version."
+         AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+         AC_DEFINE(USE_TERM_IO, 1, [Uses terminal-io functions.])
+         AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
+         AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
+         AC_DEFINE(__CYGWIN__, 1, [as above])
+         PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
+         BUILD_SUBDIRS="src src/cygwin"
+      else
+         dnl preconfigured values for cygwin mingw console build
+         TARGET="Building Cygwin MinGW console version."
+         AC_DEFINE(__MINGW32__, 1, [as above])
+         PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole"
+         BUILD_SUBDIRS="src src/mingw"
+      fi
    else 
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."
+      AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+      AC_DEFINE(USE_TERM_IO, 1, [Uses terminal-io functions.])
+      AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
       AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
       AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
       AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
@@ -459,6 +479,7 @@ src/gtk/icons/Makefile
 src/fltk/Makefile
 src/sdl/Makefile
 src/cygwin/Makefile
+src/mingw/Makefile
 src/unix/Makefile
 ])
 

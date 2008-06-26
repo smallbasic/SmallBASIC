@@ -128,7 +128,9 @@ void hash_free_cb(void *nodep) {
 void hash_free(var_p_t var_p)
 {
   if (var_p->type == V_HASH) {
+#if defined(tdestroy)
     tdestroy(var_p->v.hash, hash_free_cb);
+#endif
   }
 }
 

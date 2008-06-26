@@ -1,6 +1,12 @@
-/*
- * lowlevel device (OS) I/O
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// lowlevel device (OS) I/O
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "str.h"
@@ -51,7 +57,7 @@ static int keyhead;
 static int keytail;
 
 #ifndef USE_TERM_IO
-#if (defined(_UnixOS) || defined(__MINGW32__) || defined(_DOS)) && !defined(_FLTK)
+#if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
 #define USE_TERM_IO 1
 #else
 #define USE_TERM_IO 0
@@ -418,6 +424,10 @@ int dev_restore()
 #endif
   return 1;
 }
+
+#if defined(__MINGW32__) && !defined(_FLTK)
+int term_events() {return 0;}
+#endif
 
 /*
  * CHECK FOR EVENTS
