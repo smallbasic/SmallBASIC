@@ -1144,9 +1144,9 @@ void EditorWindow::setIndentLevel(int level)
   ((CodeEditor *) editor)->indentLevel = level;
 }
 
-ulong EditorWindow::getModifiedTime() {
+U32 EditorWindow::getModifiedTime() {
   struct stat st_file;
-  ulong modified = 0;
+  U32 modified = 0;
   if (filename[0] && !stat(filename, &st_file)) {
     modified = st_file.st_mtime;
   }

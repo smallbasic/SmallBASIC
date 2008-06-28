@@ -71,8 +71,10 @@ function checkDebugMode() {
    if test "$with_debug" = "yes" || test "$with_debug" = "full"
    then
      CFLAGS="-g -O0"
+     CXXFLAGS="-g -O0"
    else
      CFLAGS="-O3 -Os"
+     CXXFLAGS="-O3 -Os"
    fi
    AC_SUBST(CFLAGS)
 }
@@ -242,13 +244,13 @@ function buildFLTK() {
    fi
  
    FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -Wall -Wunused -fno-exceptions"
-   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldstaticflags --use-images`"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldflags --use-images`"
 
    dnl do not depend on cygwin.dll under cygwin build
    case "${host_os}" in
      cygwin*)
-     FLTK_CXXFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
-     PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32"
+     FLTK_CXXFLAGS="-I`cygpath -m /usr/local/include` ${FLTK_CXXFLAGS} -mms-bitfields"
+     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32"
    esac
 
    AM_CONDITIONAL(WITH_HILDON, false)
@@ -272,7 +274,7 @@ function buildFLTK() {
    AC_SUBST(desktopentrydir)
 
    dnl generate kwp.h
-   (cd src/fltk && g++ -o build_kwp build_kwp.cxx && build_kwp)
+   (cd src/fltk && g++ -o build_kwp build_kwp.cxx && ./build_kwp)
 }
 
 function buildSDL() {

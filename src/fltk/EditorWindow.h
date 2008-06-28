@@ -107,7 +107,7 @@ public:
 
 protected:
   void handleFileChange();
-  ulong getModifiedTime();
+  U32 getModifiedTime();
   void reloadFile();
 
 private:
@@ -117,7 +117,7 @@ private:
   Window* replaceDlg;
   Input* replaceFind;
   Input* replaceWith;
-  ulong modifiedTime;
+  U32 modifiedTime;
 };
 
 #endif

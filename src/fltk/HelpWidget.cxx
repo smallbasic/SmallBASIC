@@ -3126,6 +3126,12 @@ Image *loadImage(const char *imgSrc)
   return image != 0 ? image : &brokenImage;
 }
 
+#if defined(WIN32)
+#include <windows.h>
+#include <fltk/window.h>
+#include <fltk/win32.h>
+#endif
+
 void browseFile(const char *url)
 {
 #if defined(WIN32)

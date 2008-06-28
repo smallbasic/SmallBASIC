@@ -1,3 +1,7 @@
+
+2008-06-28
+	* Updated to build FLTK version using MingW under Cygwin (see below).
+
 2008-06-26
 	* Added build support for MingW under Cygwin. This is simpler than installing 
 	  Msys, simply install MingW to say c:\MinwG, then change your .bash_profile with: 

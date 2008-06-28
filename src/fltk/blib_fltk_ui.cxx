@@ -510,11 +510,11 @@ void update_button(Widget* widget, WidgetInfo* inf,
                    const char* caption, Rectangle& rect, int def_w, int def_h)
 {
   if (rect.w() == -1 && caption != 0) {
-    rect.w(getwidth(caption) + def_w);
+    rect.w((int) getwidth(caption) + def_w);
   }
 
   if (rect.h() == -1) {
-    rect.h(getascent() + getdescent() + def_h);
+    rect.h((int) (getascent() + getdescent() + def_h));
   }
 
   update_widget(widget, inf, rect);

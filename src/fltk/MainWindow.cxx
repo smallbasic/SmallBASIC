@@ -116,10 +116,6 @@ void MainWindow::statusMsg(const char *msg)
                          filename && filename[0] ? filename : untitledFile);
   fileStatus->labelcolor(rowStatus->labelcolor());
   fileStatus->redraw();
-
-#if defined(WIN32)
-  ::SetFocus(xid(Window::first()));
-#endif
 }
 
 void MainWindow::runMsg(RunMessage runMessage)
@@ -1030,15 +1026,15 @@ void MainWindow::scanRecentFiles(Menu * menu)
 
 void MainWindow::scanPlugIns(Menu* menu)
 {
-  dirent **files;
   FILE *file;
   char buffer[MAX_PATH];
   char label[1024];
+  DIR *dp;
+  struct dirent *e;
 
   snprintf(path, sizeof(path), "%s/%s", packageHome, pluginHome);
-  int numFiles = filename_list(path, &files);
-  for (int i = 0; i < numFiles; i++) {
-    const char *filename = (const char *)files[i]->d_name;
+  for (dp = opendir(path); (e = readdir(dp)) != NULL;) {
+    const char* filename = e->d_name;
     int len = strlen(filename);
     if (strcasecmp(filename + len - 4, ".bas") == 0) {
       sprintf(path, "%s/%s/%s", packageHome, pluginHome, filename);
@@ -1077,12 +1073,7 @@ void MainWindow::scanPlugIns(Menu* menu)
     }
   }
   // cleanup
-  if (numFiles > 0) {
-    for (int i = 0; i < numFiles; i++) {
-      free(files[i]);
-    }
-    free(files);
-  }
+  closedir(dp);
 }
 
 int arg_cb(int argc, char **argv, int &i)
@@ -1614,7 +1605,7 @@ int BaseWindow::handle(int e)
 #if defined(WIN32)
 #include <windows.h>
 #endif
-// see http://www.sysinternals.com/ntw2k/utilities.shtml
+// see http://download.sysinternals.com/Files/DebugView.zip
 // for the free DebugView program
 // an alternative debug method is to use insight.exe which
 // is included with cygwin.
