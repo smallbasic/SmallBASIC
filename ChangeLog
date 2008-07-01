@@ -1,3 +1,5 @@
+2008-07-01
+	* Implemented program restart option in FLTK
 
 2008-06-28
 	* Updated to build FLTK version using MingW under Cygwin (see below).

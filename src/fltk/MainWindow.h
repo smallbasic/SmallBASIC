@@ -109,6 +109,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(next_tab);
   CALLBACK_METHOD(paste_text);
   CALLBACK_METHOD(quit);
+  CALLBACK_METHOD(restart_run);
   CALLBACK_METHOD(run);
   CALLBACK_METHOD(run_break);
   CALLBACK_METHOD(set_options);

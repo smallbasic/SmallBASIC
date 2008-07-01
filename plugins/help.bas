@@ -28,7 +28,7 @@ end
 #
 # show the available chapter names
 #
-sub showChapters
+sub showChapters(keywordNotFound)
   local out
   out << "<h1>Help Topics</h1>"
   out << "<a href=!Console>Console</a><br>"
@@ -40,7 +40,12 @@ sub showChapters
   out << "<a href=!Math>Math</a><br>"
   out << "<a href=!String>String</a><br>"
   out << "<a href=!System>System</a><br>"
-  
+ 
+  'show not found error
+  if (keywordNotFound != 0) then
+    out << "<hr><b>Keyword not found: \"" + keywordNotFound + "\"</b>"
+  fi
+ 
   'show additional index information
   out << "<hr>"
   out << "<a href=~>[Index]</a><br>"  
@@ -165,11 +170,10 @@ sub showContext(keyword)
   next i
 
   if (isarray(out) == 0) then
-    out << "Keyword not found: " + keyword
-    out << "<hr><a href=~>[Index]</a> | <a href=^>[Topics]</a>"
-  fi
-    
-  tsave getHelpOutputFilename, out
+    showChapters keyword
+  else    
+    tsave getHelpOutputFilename, out
+  endif
 end
 
 #
@@ -177,7 +181,7 @@ end
 #
 sub main
   if len(command) = 0 or left(command, 1) = "^" then
-    showChapters
+    showChapters 0
   elif left(command, 1) = "~" then
     showIndex
   elif left(command, 1) = "!" then

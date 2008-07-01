@@ -59,6 +59,7 @@ char* packageHome;
 char* runfile = 0;
 int completionIndex = 0;
 int recentIndex = 0;
+int restart = 0;
 Widget* recentMenu[NUM_RECENT_ITEMS];
 String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
@@ -353,7 +354,6 @@ bool MainWindow::basicMain(const char *filename, bool toolExec)
   }
 
   editWnd->readonly(true);
-  runMode = run_state;
   runMsg(msg_run);
 
   opt_pref_width = 0;
@@ -379,7 +379,14 @@ bool MainWindow::basicMain(const char *filename, bool toolExec)
     copy_label("SmallBASIC");
   }
 
-  int success = sbasic_main(filename);
+  int success;
+  do {
+    restart = false;
+    runMode = run_state;
+    success = sbasic_main(filename);
+  }
+  while (restart);
+  
   bool was_break = (runMode == break_state);
 
   if (fullScreen != NULL) {
@@ -442,6 +449,12 @@ bool searchBackward(const char *text, int startPos,
 }
 
 //--Menu callbacks--------------------------------------------------------------
+
+void MainWindow::restart_run(Widget* w, void* eventData) {
+  brun_break();
+  restart = true;
+  runMode = break_state;
+}
 
 void MainWindow::quit(Widget* w, void* eventData)
 {
@@ -1252,8 +1265,9 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) MainWindow::font_size_decr_cb);
   scanPlugIns(m);
-  m->add("&Program/&Run", F9Key, (Callback *) run_cb);
-  m->add("&Program/_&Break", CTRL + 'b', (Callback *) MainWindow::run_break_cb);
+  m->add("&Program/_&Run", F9Key, (Callback *) run_cb);
+  m->add("&Program/&Break", CTRL + 'b', (Callback *) MainWindow::run_break_cb);
+  m->add("&Program/_&Restart", CTRL + 'r', (Callback *) MainWindow::restart_run_cb);
   m->add("&Program/&Command", F10Key, (Callback *) MainWindow::set_options_cb);
   m->add("&Program/Toggle/&Turbo", 0, (Callback *) turbo_cb)->type(Item::TOGGLE);
   m->add("&Program/Toggle/&Hide Editor", 0,

@@ -591,6 +591,20 @@ int CodeEditor::handle(int e)
     return 1;                   // skip default handler
   }
 
+#if defined(WIN32)
+  // in windows these message are sent here instead of EditorWindow
+  switch (e) {  
+  case DND_ENTER:
+  case DND_DRAG:
+  case DND_RELEASE:
+  case DND_LEAVE:
+    return 1;
+  case PASTE:
+    parent()->handle(e);
+    return 1;
+  }
+#endif
+
   // call default handler then process keys
   int rtn = TextEditor::handle(e);
   switch (e) {
