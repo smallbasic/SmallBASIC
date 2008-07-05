@@ -1,3 +1,7 @@
+2008-07-05
+	* cleanup ansi codes from output in dev_null driver. fixed logprint
+	command
+
 2008-07-01
 	* Implemented program restart option in FLTK
 
@@ -13,7 +17,7 @@
 	
 2008-06-20
 	* Can now supply program arguments on FLTK version command line:
-	  sbasici -r t5.bas foo -or- sbasici t5.bas foo -or ls | sbasic t5.bas
+	  sbasici -r t5.bas foo -or- sbasici t5.bas foo -or- ls | sbasic t5.bas
 
 2008-06-06
 	* Implemented the ability to declare a local variable and assign a

@@ -1,12 +1,12 @@
-/*
-*	SmallBASIC platform driver, NULL 
-*	Non-graphics driver, redirects everything to terminal
-*
-*	2001-02-13, Nicholas Christopoulos
-*
-*	This program is distributed under the terms of the GPL v2.0 or later
-*	Download the GNU Public License (GPL) from www.gnu.org
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// Non-graphics driver, redirects everything to terminal
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2001-02-13 Nicholas Christopoulos
 
 #include "device.h"
 #include "osd.h"
@@ -76,29 +76,34 @@ void osd_setxy(int x, int y)
 }
 
 /**
-*	Basic output
-*
-*	Supported control codes:
-*	\t		tab (20 px)
-*	\a		beep
-*	\n		next line (cr/lf)
-*	\xC		clear screen
-*	\e[K	clear to end of line
-*	\e[0m	reset all attributes to their defaults
-*	\e[1m	set bold on
-*	\e[4m	set underline on
-*	\e[7m	reverse video
-*	\e[21m	set bold off
-*	\e[24m	set underline off
-*	\e[27m	set reverse off
-*	\e[nG	move cursor to specified column
-*/
+ * Basic output - print sans control codes
+ */
 void osd_write(const char *str)
 {
-  printf("%s", str);
+  int len = strlen(str);
+  if (len) {
+    int i, index = 0, escape = 0;
+    char* buffer = (char*)malloc(len);
+    for (i = 0; i < len; i++) {
+      if (i + 1 < len && str[i] == '\033' && str[i + 1] == '[') {
+        escape = 1;
+      }
+      else if (escape && str[i] == 'm') {
+        escape = 0;
+      }
+      else if (!escape) {
+        buffer[index++] = str[i];
+      }
+    }
+    if (index) {
+      buffer[index] = 0;
+      printf("%s", buffer);
+    }
+    free(buffer);
+  }
 }
 
-//      events loop (called from main, every 50ms)
+// events loop (called from main, every 50ms)
 int osd_events(int wait_flag)
 {
   int evc = 0;

@@ -1,13 +1,12 @@
-/*
- *   mem.h
- *
- *   Simple and Virtual Memory Manager unix/palm
- *
- *   Nicholas Christopoulos
- *
- *   This program is distributed under the terms of the GPL v2.0 or later
- *   Download the GNU Public License (GPL) from www.gnu.org
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// Simple and Virtual Memory Manager unix/palm
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "pmem.h"
@@ -24,11 +23,11 @@
 #endif
 
 /*
- *   MALLOC_LIMITED - limited systems without memory-handles
- *   using memory block address as handle.
- *   each memory block has an mbi_t structure on its head, 
- *   the data pointer (which is used from the rest application)
- *   is the address real_ptr + sizeof(mbi_t)
+ * MALLOC_LIMITED - limited systems without memory-handles
+ * using memory block address as handle.
+ * each memory block has an mbi_t structure on its head, 
+ * the data pointer (which is used from the rest application)
+ * is the address real_ptr + sizeof(mbi_t)
  */
 #if defined(MALLOC_LIMITED)
 typedef struct {
@@ -59,7 +58,7 @@ static char vm_idxname[OS_PATHNAME_SIZE + 1]; /* VM index filename */
 static int vm_init_count;       /* VM initialization check */
 
 /*
- *    VMM node
+ * VMM node
  */
 struct vm_node_s {
   void *ptr;                    /* pointer to local memory (only locked chunks
@@ -169,7 +168,7 @@ void err_tlistadd(void)
 }
 
 /*
- *   Allocate local memory
+ * Allocate local memory
  */
 #if !defined(HAVE_C_MALLOC)
 
@@ -225,7 +224,7 @@ void *tmp_allocX(dword size, const char *file, int line)
 #endif
 
 /*
- *   Free local memory
+ * Free local memory
  */
 #if defined(_PalmOS)
 void tmp_free(void *ptr)
@@ -272,7 +271,7 @@ void tmp_freeX(void *ptr, const char *file, int line)
 #endif
 
 /*
- *       Reallocate the size of a memory chunk
+ * Reallocate the size of a memory chunk
  */
 #if defined(MALLOC_LIMITED)     /* limited systems without memory handles */
 void *tmp_realloc(void *p, dword size)
@@ -344,7 +343,7 @@ char *tmp_strdup(const char *source)
 
 #if defined(MALLOC_LIMITED)     /* limited systems without memory handles */
 /*
- *   returns the size of the block
+ * returns the size of the block
  */
 dword MemPtrSize(void *ptr)
 {
@@ -367,7 +366,7 @@ dword mem_handle_size(mem_t h)
 }
 
 /*
- *   Allocate a memory handle (a memory block on "storage area")
+ * Allocate a memory handle (a memory block on "storage area")
  */
 #if defined(MALLOC_LIMITED)     /* limited systems without memory handles */
 mem_t mem_alloc(dword size)
@@ -406,7 +405,7 @@ mem_t mem_alloc(dword size)
 #endif
 
 /*
- *   lock a memory handle (moves the memory block to dynamic RAM)
+ * lock a memory handle (moves the memory block to dynamic RAM)
  */
 #if defined(MALLOC_LIMITED)     /* limited systems without memory handles */
 void *mem_lock(mem_t h)
@@ -428,7 +427,7 @@ void *mem_lock(mem_t h)
 #endif
 
 /*
- *   unlock a memory handle
+ * unlock a memory handle
  */
 #if defined(MALLOC_LIMITED)     /* limited systems without memory handles */
 void mem_unlock(mem_t h)
@@ -446,7 +445,7 @@ void mem_unlock(mem_t h)
 #endif
 
 /*
- *       Reallocate the size of a memory chunk
+ * Reallocate the size of a memory chunk
  */
 #if defined(MALLOC_LIMITED)     /* limited systems without memory handles */
 mem_t mem_realloc(mem_t hdl, dword new_size)
@@ -473,7 +472,7 @@ mem_t mem_realloc(mem_t hdl, dword new_size)
 #endif
 
 /*
- *   free a memory block from storage RAM
+ * free a memory block from storage RAM
  */
 #if defined(MALLOC_LIMITED)     /* limited systems without memory handles */
 void mem_free(mem_t h)
@@ -502,7 +501,7 @@ void mem_freeX(mem_t h, const char *file, int line)
 #endif
 
 /*
- *   creates a memory block in storage RAM for string 'text'
+ * creates a memory block in storage RAM for string 'text'
  */
 mem_t mem_new_text(const char *text)
 {
@@ -522,9 +521,9 @@ mem_t mem_new_text(const char *text)
 #if defined(ENABLE_MEMLIST)
 
 /*
- *   dynamic single-linked list in storage RAM
+ * dynamic single-linked list in storage RAM
  *
- *   list initialization
+ * list initialization
  */
 void mlist_init(mlist_t * lst)
 {
@@ -573,7 +572,7 @@ mnode_t *mlist_add(mlist_t * lst, mem_t h)
 #if defined(ENABLE_TMPLIST)
 
 /*
- *   dynamic single-linked list in dynamic RAM
+ * dynamic single-linked list in dynamic RAM
  */
 
 void tmplist_init(tmplist_t * lst)
@@ -620,12 +619,10 @@ tmpnode_t *tmplist_add(tmplist_t * lst, void *data, int size)
 
 #endif // ENABLE_TMPLIST
 
-/* -----------------------------------------------------------------------------------------------------------------------
- *
- *   LOGFILE
+/*
+ * LOGFILE
  *
  */
-//
 void lwrite(const char *buf)
 {
 #if defined(_PalmOS)
@@ -646,7 +643,7 @@ void lwrite(const char *buf)
     panic("LOG: Error on creating log-file");
   fseek(log_dev, 0, SEEK_END);
 #else
-#if defined(_Win32)
+#if defined(_Win32) || defined(__MINGW32__)
   if (getenv("SBLOG"))
     strcpy(log_name, getenv("SBLOG"));
   else
@@ -759,19 +756,19 @@ void lg(const char *fmt, ...)
 
 /* -----------------------------------------------------------------------------------------------------------------------
  *
- *   VIRTUAL MEMORY
+ * VIRTUAL MEMORY
  *
- *   VMM works like DBMS
+ * VMM works like DBMS
  *
- *   Its has a table of vm_node (vm_index file) witch keeps information about each allocated handle
- *   There is loaded (into the memory) only a part of this index of 'vmm_index_page_size' nodes witch located at vm_table
- *   Each block of vmm_index_page_size nodes is called bank.
+ * Its has a table of vm_node (vm_index file) witch keeps information about each allocated handle
+ * There is loaded (into the memory) only a part of this index of 'vmm_index_page_size' nodes witch located at vm_table
+ * Each block of vmm_index_page_size nodes is called bank.
  */
 
 #if defined(ENABLE_VMM)
 
 /*
- *   initialize
+ * initialize
  */
 void vm_init()
 {
@@ -832,7 +829,7 @@ void vm_init()
 }
 
 /*
- *   Switch bank 
+ * Switch bank 
  */
 void vm_swbank(int bank)
 {
@@ -909,7 +906,7 @@ void vm_swbank(int bank)
 }
 
 /*
- *   Returns the 'idx' VM index-node
+ * Returns the 'idx' VM index-node
  */
 vm_node *vm_getnode(int idx)
 {
@@ -926,7 +923,7 @@ vm_node *vm_getnode(int idx)
 }
 
 /*
- *   Creates & returns a new VM index node
+ * Creates & returns a new VM index node
  */
 vm_node *vm_newnode()
 {
@@ -940,7 +937,7 @@ vm_node *vm_newnode()
 }
 
 /*
- *   Destroy everything
+ * Destroy everything
  */
 void vm_close()
 {
@@ -984,7 +981,7 @@ void vm_close()
 }
 
 /*
- *   Returns the VM handle of ptr
+ * Returns the VM handle of ptr
  */
 int vm_findptr(void *ptr)
 {
@@ -1001,7 +998,7 @@ int vm_findptr(void *ptr)
 }
 
 /*
- *   Allocates a new memory block and returns the handle
+ * Allocates a new memory block and returns the handle
  */
 int vm_halloc(word size)
 {
@@ -1086,7 +1083,7 @@ int vm_halloc(word size)
 }
 
 /*
- *   Release a memory block
+ * Release a memory block
  */
 void vm_hfree(int idx)
 {
@@ -1099,9 +1096,9 @@ void vm_hfree(int idx)
 }
 
 /*
- *   lock handle
+ * lock handle
  *
- *   (load data into memory)
+ * (load data into memory)
  */
 void *vm_lock(int idx)
 {
@@ -1143,9 +1140,9 @@ void *vm_lock(int idx)
 }
 
 /*
- *   unlock handle
+ * unlock handle
  *
- *   (write data to disk and free associeted memory)
+ * (write data to disk and free associeted memory)
  */
 void vm_unlock(int idx)
 {
@@ -1186,7 +1183,7 @@ void vm_unlock(int idx)
 }
 
 /*
- *   Creates a new memory block and returns its pointer
+ * Creates a new memory block and returns its pointer
  */
 void *vm_alloc(word size)
 {
@@ -1197,7 +1194,7 @@ void *vm_alloc(word size)
 }
 
 /*
- *   Release a memory block using its pointer
+ * Release a memory block using its pointer
  */
 void vm_free(void *ptr)
 {
@@ -1213,3 +1210,4 @@ void vm_free(void *ptr)
 }
 
 #endif // VMM
+
