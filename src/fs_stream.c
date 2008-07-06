@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // SmallBASIC streams (normal files), driver
@@ -48,8 +47,8 @@ void bcb_remove_readonly(const char *name);
 #include "fs_stream.h"
 
 /*
-*   open a file
-*/
+ * open a file
+ */
 int stream_open(dev_file_t * f)
 {
   int osflags, osshare;
@@ -75,7 +74,7 @@ int stream_open(dev_file_t * f)
     osshare |= S_IWRITE;
   }
   if (f->open_flags & DEV_FILE_APPEND) {
-    osflags |= (O_CREAT | O_APPEND);
+    osflags |= (O_CREAT | O_APPEND | O_WRONLY);
     osshare |= S_IWRITE;
   }
 
@@ -130,6 +129,7 @@ int stream_write(dev_file_t * f, byte * data, dword size)
 
   r = write(f->handle, data, size);
   if (r != (int)size) {
+    fprintf(stderr, "error result =%d %d\n", r, size);
     err_file((f->last_error = errno));
   }
   return (r == (int)size);
@@ -149,16 +149,16 @@ int stream_read(dev_file_t * f, byte * data, dword size)
 }
 
 /*
-*   returns the current position
-*/
+ * returns the current position
+ */
 dword stream_tell(dev_file_t * f)
 {
   return lseek(f->handle, 0, SEEK_CUR);
 }
 
 /*
-*   returns the file-length
-*/
+ * returns the file-length
+ */
 dword stream_length(dev_file_t * f)
 {
   long pos, endpos;

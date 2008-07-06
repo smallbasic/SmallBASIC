@@ -60,6 +60,7 @@ char* runfile = 0;
 int completionIndex = 0;
 int recentIndex = 0;
 int restart = 0;
+int init_show = 1;
 Widget* recentMenu[NUM_RECENT_ITEMS];
 String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
@@ -1109,6 +1110,11 @@ int arg_cb(int argc, char **argv, int &i)
       i += 2;
       return 1;
 
+    case 'n':
+      i += 1;
+      init_show = 0;
+      return 1;
+
     case 'r':
       runfile = strdup(argv[i + 1]);
       runMode = run_state;
@@ -1122,7 +1128,6 @@ int arg_cb(int argc, char **argv, int &i)
       return 1;
     }
   }
-
 
   if (argv[i][0] == '-' && argv[i][1] == '-') {
     // echo foo | sbasic foo.bas --
@@ -1155,6 +1160,7 @@ int main(int argc, char **argv)
     fatal("Options are:\n"
           " -e[dit] file.bas\n"
           " -r[run] file.bas\n"
+          " -n run non-interactive\n"
           " -m[odule]-home\n\n%s", help);
   }
 
@@ -1407,6 +1413,10 @@ bool MainWindow::isModal()
 bool MainWindow::isEdit()
 {
   return (runMode == edit_state);
+}
+
+bool MainWindow::isInitShow() {
+  return init_show;
 }
 
 void MainWindow::resetPen()

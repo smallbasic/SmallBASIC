@@ -71,7 +71,9 @@ C_LINKAGE_BEGIN int osd_devinit()
 
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
-  wnd->outputGroup->show();
+  if (wnd->isInitShow()) {
+    wnd->outputGroup->show();
+  }
 
   os_graf_mx = wnd->out->w();
   os_graf_my = wnd->out->h();

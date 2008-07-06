@@ -78,6 +78,7 @@ struct MainWindow : public BaseWindow {
   bool isModal();
   bool isEdit();
   bool isEditHidden() {return isHideEditor;}
+  bool isInitShow();
   void setModal(bool modal);
   void setBreak();
   void resetPen();

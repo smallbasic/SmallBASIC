@@ -421,6 +421,8 @@ function buildConsole() {
          dnl preconfigured values for cygwin mingw console build
          TARGET="Building Cygwin MinGW console version."
          AC_DEFINE(__MINGW32__, 1, [as above])
+         AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+         AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
          PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole"
          BUILD_SUBDIRS="src src/mingw"
       fi

@@ -1,6 +1,7 @@
 2008-07-05
-	* cleanup ansi codes from output in dev_null driver. fixed logprint
-	command
+	* cleanup ansi codes from output in dev_null driver. fixed logprint command
+	* fixed "open for append"
+	* added FLTK -n non-interactive flag (prevents the gui from being displayed)
 
 2008-07-01
 	* Implemented program restart option in FLTK
