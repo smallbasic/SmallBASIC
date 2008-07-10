@@ -451,9 +451,11 @@ bool searchBackward(const char *text, int startPos,
 //--Menu callbacks--------------------------------------------------------------
 
 void MainWindow::restart_run(Widget* w, void* eventData) {
-  brun_break();
-  restart = true;
-  runMode = break_state;
+  if (runMode == run_state) {
+    brun_break();
+    restart = true;
+    runMode = break_state;
+  }
 }
 
 void MainWindow::quit(Widget* w, void* eventData)
