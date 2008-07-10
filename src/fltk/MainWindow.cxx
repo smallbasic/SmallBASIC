@@ -60,7 +60,6 @@ char* runfile = 0;
 int completionIndex = 0;
 int recentIndex = 0;
 int restart = 0;
-int init_show = 1;
 Widget* recentMenu[NUM_RECENT_ITEMS];
 String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
@@ -1102,6 +1101,12 @@ int arg_cb(int argc, char **argv, int &i)
     return 1;
   }
 
+  if (strcmp(argv[i], "-n") == 0) {
+    i += 1;
+    opt_interactive = 0;
+    return 1;
+  }
+
   if (argv[i][0] == '-'  && !argv[i][2] && argv[i + 1]) {
     switch (argv[i][1]) {
     case 'e':
@@ -1110,9 +1115,10 @@ int arg_cb(int argc, char **argv, int &i)
       i += 2;
       return 1;
 
-    case 'n':
+    case 'v':
       i += 1;
-      init_show = 0;
+      opt_verbose = 1;
+      opt_quiet = 0;
       return 1;
 
     case 'r':
@@ -1155,12 +1161,22 @@ int arg_cb(int argc, char **argv, int &i)
 
 int main(int argc, char **argv)
 {
+  opt_graphics = 1;
+  opt_quiet = 1;
+  opt_verbose = 0;
+  opt_nosave = 1;
+  opt_ide = IDE_NONE;   // for sberr.c
+  opt_pref_bpp = 0;
+  os_graphics = 1;
+  opt_interactive = 1;
+
   int i = 0;
   if (args(argc, argv, i, arg_cb) < argc) {
     fatal("Options are:\n"
           " -e[dit] file.bas\n"
           " -r[run] file.bas\n"
-          " -n run non-interactive\n"
+          " -v verbose\n"
+          " -n non-interactive\n"
           " -m[odule]-home\n\n%s", help);
   }
 
@@ -1239,13 +1255,6 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 
   isTurbo = false;
   isHideEditor = false;
-  opt_graphics = 1;
-  opt_quiet = 1;
-  opt_interactive = 0;
-  opt_nosave = 1;
-  opt_ide = IDE_NONE;           // for sberr.c
-  opt_pref_bpp = 0;
-  os_graphics = 1;
 
   updatePath(runfile);
   begin();
@@ -1415,8 +1424,8 @@ bool MainWindow::isEdit()
   return (runMode == edit_state);
 }
 
-bool MainWindow::isInitShow() {
-  return init_show;
+bool MainWindow::isInteractive() {
+  return opt_interactive;
 }
 
 void MainWindow::resetPen()
