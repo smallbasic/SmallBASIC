@@ -1,6 +1,6 @@
-;NSIS Modern User Interface
-;Basic Example Script
-;Written by Joost Verburg
+;
+; FLTK windows NSIS installer script
+;
 
 ;--------------------------------
 ;Include Modern UI
@@ -9,8 +9,8 @@
 ;--------------------------------
 ;General
   ;Name and file
-  Name "SmallBASIC (FLTK/MingW32)"
-  OutFile "sbasic.exe"
+  Name "SmallBASIC (FLTK)"
+  OutFile "sbasic_0.10.1.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\SBW32\FLTK_0.10.1"
@@ -42,39 +42,36 @@
 Section "Start Menu Shortcut"
   CreateDirectory "$SMPROGRAMS\SmallBASIC 0.10.1"
   SetOutPath $INSTDIR
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.1\SmallBASIC.lnk" "$INSTDIR\sbfltk.exe" "-r welcome.bas"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.1\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.1\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "Quick Launch Shortcut"
   SetOutPath $INSTDIR
-  CreateShortCut "$QUICKLAUNCH\SmallBASIC.lnk" "$INSTDIR\sbfltk.exe" "" "$INSTDIR\sbfltk.exe" 0
+  CreateShortCut "$QUICKLAUNCH\SmallBASIC.lnk" "$INSTDIR\sbasici.exe" "" "$INSTDIR\sbasici.exe" 0
 SectionEnd
 
 Section "Desktop Shortcut"
   SetOutPath $INSTDIR
-  CreateShortCut "$DESKTOP\SmallBASIC.lnk" "$INSTDIR\sbfltk.exe" "" "$INSTDIR\sbfltk.exe" 0
+  CreateShortCut "$DESKTOP\SmallBASIC.lnk" "$INSTDIR\sbasici.exe" "" "$INSTDIR\sbasici.exe" 0
 SectionEnd
 
 Section "Create .BAS file association"
   WriteRegStr HKCR ".bas" "" "SmallBASIC"
   WriteRegStr HKCR "SmallBASIC" "" "SmallBASIC"
-  WriteRegStr HKCR "SmallBASIC\DefaultIcon" "" "$INSTDIR\sbfltk.exe,0"
+  WriteRegStr HKCR "SmallBASIC\DefaultIcon" "" "$INSTDIR\sbasici.exe,0"
   WriteRegStr HKCR "SmallBASIC\shell" "" "open"
-  WriteRegStr HKCR "SmallBASIC\shell\open\command" "" '"$INSTDIR\sbfltk.exe" -e "%1"'
+  WriteRegStr HKCR "SmallBASIC\shell\open\command" "" '"$INSTDIR\sbasici.exe" -e "%1"'
   WriteRegStr HKCR "SmallBASIC\shell" "" "run"
-  WriteRegStr HKCR "SmallBASIC\shell\run\command" "" '"$INSTDIR\sbfltk.exe" -r "%1"'
+  WriteRegStr HKCR "SmallBASIC\shell\run\command" "" '"$INSTDIR\sbasici.exe" -r "%1"'
 SectionEnd
 
-Section "SmallBASIC (FLTK/MingW32)" SecMain
+Section "SmallBASIC (FLTK)" SecMain
   SetOutPath "$INSTDIR"
-  File sbfltk.exe
-  File readme.html
-  File welcome.bas
-  SetOutPath $INSTDIR\Help
-  File "help\*.*"
-  SetOutPath $INSTDIR\Bas-Home
-  File "Bas-Home\*.*"
+  File sbasici.exe
+  File ..\..\documentation\sbasic_ref.csv
+  SetOutPath $INSTDIR\plugins
+  File "..\..\plugins\*.*"
 
   ;Store installation folder
   WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.10.1" "" $INSTDIR
@@ -87,7 +84,7 @@ SectionEnd
 ;--------------------------------
 ;Descriptions
   ;Language strings
-  LangString DESC_SecMain ${LANG_ENGLISH} "Program executable and required DLL file."
+  LangString DESC_SecMain ${LANG_ENGLISH} "Program executable."
 
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
@@ -102,12 +99,10 @@ Section "Uninstall"
   DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.10.1"
 
   ; Remove files and uninstaller
-  Delete $INSTDIR\sbfltk.exe
-  Delete $INSTDIR\readme.html
-  Delete $INSTDIR\welcome.bas
+  Delete $INSTDIR\sbasici.exe
   Delete $INSTDIR\Uninstall.exe
-  Delete $INSTDIR\Help\*.*
-  Delete $INSTDIR\Bas-Home\*.*
+  Delete $INSTDIR\sbasic_ref.csv
+  Delete $INSTDIR\plugins\*.*
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\SmallBASIC 0.10.1\*.*"
@@ -116,8 +111,7 @@ Section "Uninstall"
 
   ; Remove directories used
   RMDir "$SMPROGRAMS\SmallBASIC 0.10.1"
-  RMDir "$INSTDIR\Help"
-  RMDir "$INSTDIR\Bas-Home"
+  RMDir "$INSTDIR\plugins"
   RMDir "$INSTDIR"
 
 SectionEnd

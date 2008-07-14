@@ -45,14 +45,10 @@ EXTRA_DIST =					\
     plugins/comment_in.bas			\
     plugins/comment_out.bas			\
     plugins/dos2unix.bas			\
-    plugins/image_demo.bas			\
     plugins/indent.bas				\
-    plugins/logo.gif				\
-    plugins/memoryTest.bas			\
-    plugins/recent_files.bas			\
-    plugins/snarf.bas				\
-    plugins/sudoku.bas				\
-    plugins/_survey.bas				\
+    plugins/filemgr.bas				\
+    plugins/feedback.bas			\
+    images/logo.gif				\
     images/sb16x16.png				\
     images/sb32x32.png				\
     images/sb-desktop-16x16.png			\

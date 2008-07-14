@@ -31,11 +31,47 @@ using namespace fltk;
 #undef CALLBACK_METHOD
 #endif
 
+struct EditorWindow;
+EditorWindow* get_editor();
+
 #define CALLBACK_METHOD(FN)                     \
-  void FN();                                    \
+  void FN(void *v=0);                           \
   static void FN ## _cb(Widget* w, void *v) {   \
-    ((EditorWindow *) v)->FN();                 \
+    EditorWindow* e = get_editor();             \
+    if (e) e->FN(v);                            \
   }
+
+enum RunMessage {
+  msg_err,
+  msg_run,
+  msg_none
+};
+
+struct CodeEditor : public TextEditor {
+  CodeEditor(int x, int y, int w, int h);
+  ~CodeEditor();
+
+  bool findText(const char *find, bool forward);
+  int handle(int e);
+  unsigned getIndent(char *indent, int len, int pos);
+  void draw();
+  void getRowCol(int *row, int *col);
+  void getSelEndRowCol(int *row, int *col);
+  void getSelStartRowCol(int *row, int *col);
+  void gotoLine(int line);
+  void handleTab();
+  void showMatchingBrace();
+  void showRowCol();
+  void styleParse(const char *text, char *style, int length);
+  
+  bool readonly;
+  int indentLevel;
+  int matchingBrace;
+
+  TextBuffer *stylebuf;
+  TextBuffer *textbuf;
+  char search[256];
+};
 
 class EditorWindow : public Group {
 public:
@@ -50,21 +86,30 @@ public:
     return filename;
   }
 
-  int getFontSize();
+
   bool checkSave(bool discard);
-  bool findText(const char *find, bool forward);
+  int getFontSize();
+  void busyMessage();
   void createFuncList();
   void doChange(int inserted, int deleted);
   void doSaveFile(const char *newfile, bool updateUI);
+  void fileChanged(bool loadfile);
   void findFunc(const char *find);
+  void focusWidget();
   void getKeywords(strlib::List& keywords);
   void getRowCol(int *row, int *col);
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
   void gotoLine(int line);
   void loadFile(const char *newfile, int ipos, bool updateUI);
+  void pathMessage(const char *file);
+  void restoreEdit();
+  void runMsg(RunMessage runMessage);
   void setFontSize(int i);
   void setIndentLevel(int level);
+  void setModified(bool dirty);
+  void setRowCol(int row, int col);
+  void statusMsg(const char *filename);
   void undo();
 
   static void undo_cb(Widget *, void *v) {
@@ -89,6 +134,9 @@ public:
 
   CALLBACK_METHOD(cancelReplace);
   CALLBACK_METHOD(doDelete);
+  CALLBACK_METHOD(find);
+  CALLBACK_METHOD(func_list);
+  CALLBACK_METHOD(goto_line);
   CALLBACK_METHOD(insertFile);
   CALLBACK_METHOD(newFile);
   CALLBACK_METHOD(openFile);
@@ -98,7 +146,7 @@ public:
   CALLBACK_METHOD(saveFileAs);
   CALLBACK_METHOD(showFindReplace);
 
-  TextEditor *editor;
+  CodeEditor *editor;
   bool readonly();
   void readonly(bool is_readonly);
   bool isLoading() {
@@ -114,10 +162,19 @@ private:
   char filename[PATH_MAX];
   bool dirty;
   bool loading;
-  Window* replaceDlg;
-  Input* replaceFind;
-  Input* replaceWith;
   U32 modifiedTime;
+
+  // tool-bar
+  Input* findTextInput;
+  Input* gotoLineInput;
+  Choice* funcList;
+
+  // status bar
+  Widget* fileStatus;
+  Widget* rowStatus;
+  Widget* colStatus;
+  Widget* runStatus;
+  Widget* modStatus;
 };
 
 #endif

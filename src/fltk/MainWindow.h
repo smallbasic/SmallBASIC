@@ -28,6 +28,19 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
+#define MNU_HEIGHT 22
+
+#define DEF_FONT_SIZE 12
+#define SCAN_LABEL "-[ Refresh ]-"
+#define NUM_RECENT_ITEMS 9
+
+#ifndef MAX_PATH
+#define MAX_PATH 256
+#endif
+
+#define UNTITLED_FILE "untitled.bas"
+#define LASTEDIT_FILE "lastedit.txt"
+
 extern "C" void trace(const char* format, ...);
 
 enum ExecState {
@@ -37,12 +50,6 @@ enum ExecState {
   modal_state,
   break_state,
   quit_state
-};
-
-enum RunMessage {
-  msg_err,
-  msg_run,
-  msg_none
 };
 
 struct MainWindow;
@@ -74,38 +81,42 @@ struct MainWindow : public BaseWindow {
   MainWindow(int w, int h);
   virtual ~MainWindow() {};
 
+  bool basicMain(const char *filename, bool toolExec);
   bool isBreakExec(void);
-  bool isModal();
   bool isEdit();
   bool isEditHidden() {return isHideEditor;}
   bool isInteractive();
-  void setModal(bool modal);
-  void setBreak();
-  void resetPen();
-  void execLink(const char* file);
-
-  void statusMsg(const char *filename);
-  void setRowCol(int row, int col);
-  void setModified(bool dirty);
+  bool isModal();
   void addHistory(const char *fileName);
-  void fileChanged(bool loadfile);
+  void execHelp();
+  void execInit();
+  void execLink(const char* file);
+  void resetPen();
+  void saveLastEdit(const char *filename);
+  void scanPlugIns(Menu* menu);
+  void scanRecentFiles(Menu * menu);
+  void setBreak();
+  void setHideEditor();
+  void setModal(bool modal);
+  void showEditTab();
+  void showHelpPage();
+  void showHelpTab();
+  void showOutputTab();
+  void updatePath(char *filename);
 
   CALLBACK_METHOD(change_case);
   CALLBACK_METHOD(copy_text);
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);
   CALLBACK_METHOD(expand_word);
-  CALLBACK_METHOD(find);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
-  CALLBACK_METHOD(hide_editor);
-  CALLBACK_METHOD(func_list);
-  CALLBACK_METHOD(goto_line);
   CALLBACK_METHOD(help_about);
   CALLBACK_METHOD(help_app);
   CALLBACK_METHOD(help_contents);
   CALLBACK_METHOD(help_contents_anchor);
   CALLBACK_METHOD(help_home);
+  CALLBACK_METHOD(hide_editor);
   CALLBACK_METHOD(load_file);
   CALLBACK_METHOD(next_tab);
   CALLBACK_METHOD(paste_text);
@@ -116,24 +127,6 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(set_options);
   CALLBACK_METHOD(tool_plugin);
   CALLBACK_METHOD(turbo);
-
-  bool basicMain(const char *filename, bool toolExec);
-  void busyMessage();
-  void execHelp();
-  void execInit();
-  void focusWidget();
-  void pathMessage(const char *file);
-  void restoreEdit();
-  void runMsg(RunMessage runMessage);
-  void setHideEditor();
-  void saveLastEdit(const char *filename);
-  void scanPlugIns(Menu* menu);
-  void scanRecentFiles(Menu * menu);
-  void showEditTab();
-  void showHelpPage();
-  void showHelpTab();
-  void showOutputTab();
-  void updatePath(char *filename);
 
   bool isTurbo;
   bool isHideEditor;
@@ -150,19 +143,10 @@ struct MainWindow : public BaseWindow {
   Group* outputGroup;
   Group* helpGroup;
 
-  private:
-
-  // tool-bar
-  Input* findText;
-  Input* gotoLine;
-  Choice* funcList;
-
-  // status bar
-  Widget* fileStatus;
-  Widget* rowStatus;
-  Widget* colStatus;
-  Widget* runStatus;
-  Widget* modStatus;
+  // common editing widgets
+  Window* replaceDlg;
+  Input* replaceFind;
+  Input* replaceWith;
 };
 
 #endif

@@ -38,14 +38,15 @@
 #include "EditorWindow.h"
 #include "kwp.h"
 
-#if defined(WIN32)
-#include <fltk/win32.h>
-#define restoreFocus() ::SetFocus(xid(Window::first())); redraw()
-#else
-#define restoreFocus() take_focus()
-#endif
-
 using namespace fltk;
+
+// in MainWindow
+extern char path[MAX_PATH];
+extern String recentPath[];
+extern Widget* recentMenu[];
+
+// in dev_fltk.cpp
+void getHomeDir(char *filename);
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
   { BLACK, COURIER, 12},                  // A - Plain
@@ -71,13 +72,13 @@ TextDisplay::StyleTableEntry styletable[] = { // Style table
 #define DIGITS     'I'
 #define OPERATORS  'J'
 
-TextBuffer *stylebuf = 0;
-TextBuffer *textbuf = 0;
-char search[256];
-
 const int numCodeKeywords = sizeof(code_keywords) / sizeof(code_keywords[0]);
 const int numCodeFunctions = sizeof(code_functions) / sizeof(code_functions[0]);
 const int numCodeProcedures = sizeof(code_procedures) / sizeof(code_procedures[0]);
+
+EditorWindow* get_editor() {
+  return wnd->editWnd;
+}
 
 // 'compare_keywords()' - Compare two keywords
 int compare_keywords(const void *a, const void *b)
@@ -85,8 +86,110 @@ int compare_keywords(const void *a, const void *b)
   return (strcasecmp(*((const char **)a), *((const char **)b)));
 }
 
+// 'style_unfinished_cb()' - Update unfinished styles.
+void style_unfinished_cb(int, void *)
+{
+}
+
+// 'style_update()' - Update the style buffer
+void style_update_cb(int pos,      // I - Position of update
+                     int nInserted,  // I - Number of inserted chars
+                     int nDeleted, // I - Number of deleted chars
+                     int /* nRestyled */ , // I - Number of restyled chars
+                     const char * /* deletedText */ ,  // I - Text that was deleted
+                     void *cbArg)
+{                               // I - Callback data
+  int start;              // Start of text
+  int end;                // End of text
+  char last;              // Last style on line
+  char *text_range;       // Text data
+  char *style_range;      // Text data
+
+  CodeEditor *editor = (CodeEditor*) cbArg;
+  TextBuffer *stylebuf = editor->stylebuf;
+  TextBuffer *textbuf = editor->textbuf;
+
+  // if this is just a selection change, just unselect the style buffer
+  if (nInserted == 0 && nDeleted == 0) {
+    stylebuf->unselect();
+    return;
+  }
+
+  // track changes in the text buffer
+  if (nInserted > 0) {
+    // insert characters into the style buffer
+    char *stylex = new char[nInserted + 1];
+    memset(stylex, PLAIN, nInserted);
+    stylex[nInserted] = '\0';
+    stylebuf->replace(pos, pos + nDeleted, stylex);
+    delete[] stylex;
+  }
+  else {
+    // just delete characters in the style buffer
+    stylebuf->remove(pos, pos + nDeleted);
+  }
+
+  // Select the area that was just updated to avoid unnecessary callbacks
+  stylebuf->select(pos, pos + nInserted - nDeleted);
+
+  // re-parse the changed region; we do this by parsing from the
+  // beginning of the line of the changed region to the end of
+  // the line of the changed region Then we check the last
+  // style character and keep updating if we have a multi-line
+  // comment character
+  start = textbuf->line_start(pos);
+  end = textbuf->line_end(pos + nInserted);
+  text_range = textbuf->text_range(start, end);
+  style_range = stylebuf->text_range(start, end);
+  last = style_range[end - start - 1];
+
+  editor->styleParse(text_range, style_range, end - start);
+  stylebuf->replace(start, end, style_range);
+  editor->redisplay_range(start, end);
+
+  if (last != style_range[end - start - 1]) {
+    // the last character on the line changed styles, 
+    // so reparse the remainder of the buffer
+    free(text_range);
+    free(style_range);
+
+    end = textbuf->length();
+    text_range = textbuf->text_range(start, end);
+    style_range = stylebuf->text_range(start, end);
+    editor->styleParse(text_range, style_range, end - start);
+    stylebuf->replace(start, end, style_range);
+    editor->redisplay_range(start, end);
+  }
+
+  free(text_range);
+  free(style_range);
+}
+
+//--CodeEditor------------------------------------------------------------------
+
+CodeEditor::CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
+  readonly = false;
+  const char *s = getenv("INDENT_LEVEL");
+  indentLevel = (s && s[0] ? atoi(s) : 2);
+  matchingBrace = -1;
+
+  textbuf = new TextBuffer();
+  buffer(textbuf);
+  stylebuf = new TextBuffer();
+  search[0] = 0;
+  highlight_data(stylebuf, styletable,
+                 sizeof(styletable) / sizeof(styletable[0]),
+                 PLAIN, style_unfinished_cb, 0);
+}
+
+CodeEditor::~CodeEditor() {
+  // cleanup buffers
+  delete textbuf;
+  delete stylebuf;
+}
+
 // 'style_parse()' - Parse text and produce style data.
-void style_parse(const char *text, char *style, int length)
+void CodeEditor::styleParse(const char *text, char *style, int length)
 {
   char current = PLAIN;
   int last = 0;                 // prev char was alpha-num
@@ -241,130 +344,6 @@ void style_parse(const char *text, char *style, int length)
     }
   }
 }
-
-// 'style_init()' - Initialize the style buffer
-void style_init(void)
-{
-  char *style = new char[textbuf->length() + 1];
-  const char *text = textbuf->text();
-
-  memset(style, PLAIN, textbuf->length());
-  style[textbuf->length()] = '\0';
-
-  if (!stylebuf) {
-    stylebuf = new TextBuffer(textbuf->length());
-  }
-
-  style_parse(text, style, textbuf->length());
-  stylebuf->text(style);
-
-  delete[] style;
-}
-
-// 'style_unfinished_cb()' - Update unfinished styles.
-void style_unfinished_cb(int, void *)
-{
-}
-
-// 'style_update()' - Update the style buffer
-void style_update(int pos,      // I - Position of update
-                  int nInserted,  // I - Number of inserted chars
-                  int nDeleted, // I - Number of deleted chars
-                  int /* nRestyled */ , // I - Number of restyled chars
-                  const char * /* deletedText */ ,  // I - Text that was
-                                                    // deleted
-                  void *cbArg)
-{                               // I - Callback data
-
-  int start;              // Start of text
-  int end;                // End of text
-  char last;              // Last style on line
-  char *text_range;       // Text data
-  char *style_range;      // Text data
-
-  TextEditor *editor = (TextEditor *) cbArg;
-
-  // if this is just a selection change, just unselect the style buffer
-  if (nInserted == 0 && nDeleted == 0) {
-    stylebuf->unselect();
-    return;
-  }
-
-  // track changes in the text buffer
-  if (nInserted > 0) {
-    // insert characters into the style buffer
-    char *stylex = new char[nInserted + 1];
-    memset(stylex, PLAIN, nInserted);
-    stylex[nInserted] = '\0';
-    stylebuf->replace(pos, pos + nDeleted, stylex);
-    delete[] stylex;
-  }
-  else {
-    // just delete characters in the style buffer
-    stylebuf->remove(pos, pos + nDeleted);
-  }
-
-  // Select the area that was just updated to avoid unnecessary callbacks
-  stylebuf->select(pos, pos + nInserted - nDeleted);
-
-  // re-parse the changed region; we do this by parsing from the
-  // beginning of the line of the changed region to the end of
-  // the line of the changed region Then we check the last
-  // style character and keep updating if we have a multi-line
-  // comment character
-  start = textbuf->line_start(pos);
-  end = textbuf->line_end(pos + nInserted);
-  text_range = textbuf->text_range(start, end);
-  style_range = stylebuf->text_range(start, end);
-  last = style_range[end - start - 1];
-
-  style_parse(text_range, style_range, end - start);
-  stylebuf->replace(start, end, style_range);
-  editor->redisplay_range(start, end);
-
-  if (last != style_range[end - start - 1]) {
-    // the last character on the line changed styles, 
-    // so reparse the remainder of the buffer
-    free(text_range);
-    free(style_range);
-
-    end = textbuf->length();
-    text_range = textbuf->text_range(start, end);
-    style_range = stylebuf->text_range(start, end);
-    style_parse(text_range, style_range, end - start);
-    stylebuf->replace(start, end, style_range);
-    editor->redisplay_range(start, end);
-  }
-
-  free(text_range);
-  free(style_range);
-}
-
-//--CodeEditor------------------------------------------------------------------
-
-struct CodeEditor : public TextEditor {
-  CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
-    readonly = false;
-    const char *s = getenv("INDENT_LEVEL");
-    indentLevel = (s && s[0] ? atoi(s) : 2);
-    matchingBrace = -1;
-  } 
-
-  int handle(int e);
-  unsigned getIndent(char *indent, int len, int pos);
-  void draw();
-  void getRowCol(int *row, int *col);
-  void getSelEndRowCol(int *row, int *col);
-  void getSelStartRowCol(int *row, int *col);
-  void gotoLine(int line);
-  void handleTab();
-  void showMatchingBrace();
-  void showRowCol();
-
-  bool readonly;
-  int indentLevel;
-  int matchingBrace;
-};
 
 void CodeEditor::draw()
 {
@@ -637,7 +616,7 @@ void CodeEditor::showRowCol()
     layout();
     position_to_linecol(cursor_pos_, &row, &col);
   }
-  wnd->setRowCol(row, col + 1);
+  ((EditorWindow*) parent())->setRowCol(row, col + 1);
 }
 
 void CodeEditor::gotoLine(int line)
@@ -652,7 +631,7 @@ void CodeEditor::gotoLine(int line)
   int pos = buffer()->skip_lines(0, line - 1);  // find pos at line-1
   insert_position(buffer()->line_start(pos)); // insert at column 0
   show_insert_position();
-  wnd->setRowCol(line, 1);
+  ((EditorWindow*) parent())->setRowCol(line, 1);
 }
 
 void CodeEditor::getSelStartRowCol(int *row, int *col)
@@ -686,55 +665,123 @@ void CodeEditor::getRowCol(int *row, int *col)
   position_to_linecol(cursor_pos_, row, col);
 }
 
+bool CodeEditor::findText(const char *find, bool forward)
+{
+  // copy lowercase search string for high-lighting
+  strcpy(search, find);
+  int findLen = strlen(search);
+
+  for (int i = 0; i < findLen; i++) {
+    search[i] = tolower(search[i]);
+  }
+
+  style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
+  if (find == 0 || find[0] == 0) {
+    return 0;
+  }
+
+  int pos = insert_position();
+  bool found = forward ? textbuf->search_forward(pos, search, &pos) :
+               textbuf->search_backward(pos - strlen(find), search, &pos);
+  if (found) {
+    textbuf->select(pos, pos + strlen(search));
+    insert_position(pos + strlen(search));
+    show_insert_position();
+  }
+  return found;
+}
+
 //--EditorWindow----------------------------------------------------------------
 
 EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
 {
-  replaceDlg = new Window(300, 105, "Replace");
-  replaceDlg->begin();
-  replaceFind = new Input(80, 10, 210, 25, "Find:");
-  replaceFind->align(ALIGN_LEFT);
-  replaceWith = new Input(80, 40, 210, 25, "Replace:");
-  replaceWith->align(ALIGN_LEFT);
-  Button *replaceAll = new Button(10, 70, 90, 25, "Replace All");
-  replaceAll->callback((Callback *) replaceAll_cb, this);
-  ReturnButton *replaceNext = new ReturnButton(105, 70, 120, 25, "Replace Next");
-  replaceNext->callback((Callback *) replaceNext_cb, this);
-  Button *replaceCancel = new Button(230, 70, 60, 25, "Cancel");
-  replaceCancel->callback((Callback *) cancelReplace_cb, this);
-  replaceDlg->end();
-  replaceDlg->set_non_modal();
+  int tbHeight = 26; // toolbar height
+  int stHeight = MNU_HEIGHT;
 
-  search[0] = 0;
   filename[0] = 0;
   dirty = false;
   loading = false;
-  textbuf = new TextBuffer();
-  style_init();
 
   begin();
-  editor = new CodeEditor(0, 0, w, h);
-  editor->buffer(textbuf);
-  editor->highlight_data(stylebuf, styletable,
-                         sizeof(styletable) / sizeof(styletable[0]),
-                         PLAIN, style_unfinished_cb, 0);
+  editor = new CodeEditor(0, 0, w, h - (tbHeight + stHeight + 6));
   editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
-  editor->selection_color(fltk::color(190,189,188));
+  editor->selection_color(fltk::color(190, 189, 188));
   editor->color(WHITE);
   end();
   resizable(editor);
 
-  textbuf->add_modify_callback(style_update, editor);
-  textbuf->add_modify_callback(changed_cb, this);
+  editor->textbuf->add_modify_callback(style_update_cb, editor);
+  editor->textbuf->add_modify_callback(changed_cb, this);
   modifiedTime = 0;
+
+  // create the editor toolbar
+  Group *toolbar = new Group(2, editor->h() + 4, w, tbHeight);
+  toolbar->begin();
+  toolbar->box(FLAT_BOX);
+
+  // find control
+  findTextInput = new Input(38, 2, 120, MNU_HEIGHT, "Find:");
+  findTextInput->align(ALIGN_LEFT | ALIGN_CLIP);
+  Button *prevBn = new Button(160, 4, 18, MNU_HEIGHT - 4, "@-98>;");
+  Button *nextBn = new Button(180, 4, 18, MNU_HEIGHT - 4, "@-92>;");
+  prevBn->callback(EditorWindow::find_cb, (void *)0);
+  nextBn->callback(EditorWindow::find_cb, (void *)1);
+  findTextInput->callback(EditorWindow::find_cb, (void *)2);
+  findTextInput->when(WHEN_ENTER_KEY_ALWAYS);
+  findTextInput->labelfont(HELVETICA);
+
+  // goto-line control
+  gotoLineInput = new Input(238, 2, 40, MNU_HEIGHT, "Goto:");
+  gotoLineInput->align(ALIGN_LEFT | ALIGN_CLIP);
+  Button *gotoBn = new Button(280, 4, 18, MNU_HEIGHT - 4, "@-92>;");
+  gotoBn->callback(EditorWindow::goto_line_cb, gotoLineInput);
+  gotoLineInput->callback(EditorWindow::goto_line_cb, gotoLineInput);
+  gotoLineInput->when(WHEN_ENTER_KEY_ALWAYS);
+  gotoLineInput->labelfont(HELVETICA);
+
+  // sub-func jump droplist
+  funcList = new Choice(309, 2, 168, MNU_HEIGHT);
+  funcList->callback(func_list_cb, 0);
+  funcList->labelfont(COURIER);
+  funcList->begin();
+  new Item();
+  new Item(SCAN_LABEL);
+  funcList->end();
+  toolbar->resizable(funcList);
+
+  // close the tool-bar with a resizeable end-box
+  Group *boxEnd = new Group(1000, 4, 0, 0);
+  toolbar->resizable(boxEnd);
+  toolbar->end();
+
+  // editor status bar
+  Group *statusBar = new Group(2, h - MNU_HEIGHT, w, MNU_HEIGHT - 2);
+  statusBar->begin();
+  statusBar->box(NO_BOX);
+  fileStatus = new Widget(0, 0, w - 137, MNU_HEIGHT - 2);
+  modStatus = new Widget(w - 136, 0, 33, MNU_HEIGHT - 2);
+  runStatus = new Widget(w - 102, 0, 33, MNU_HEIGHT - 2);
+  rowStatus = new Widget(w - 68, 0, 33, MNU_HEIGHT - 2);
+  colStatus = new Widget(w - 34, 0, 33, MNU_HEIGHT - 2);
+
+  for (int n = 0; n < statusBar->children(); n++) {
+    Widget *w = statusBar->child(n);
+    w->labelfont(HELVETICA);
+    w->box(FLAT_BOX);
+    w->color(color());
+  }
+
+  fileStatus->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
+  statusBar->resizable(fileStatus);
+  statusBar->end();
 }
 
 EditorWindow::~EditorWindow()
 {
-  delete replaceDlg;
-  textbuf->remove_modify_callback(style_update, editor);
-  textbuf->remove_modify_callback(changed_cb, this);
+  //delete replaceDlg; TODO delete in Main
+  editor->textbuf->remove_modify_callback(style_update_cb, editor);
+  editor->textbuf->remove_modify_callback(changed_cb, this);
 }
 
 int EditorWindow::handle(int e)
@@ -783,7 +830,7 @@ void EditorWindow::doChange(int inserted, int deleted)
     dirty = 1;
   }
 
-  wnd->setModified(dirty);
+  setModified(dirty);
 }
 
 bool EditorWindow::checkSave(bool discard)
@@ -806,10 +853,12 @@ bool EditorWindow::checkSave(bool discard)
 
 void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI)
 {
-  loading = true;
   int insert = (ipos != -1);
-  dirty = insert;
   int r;
+  TextBuffer *textbuf = editor->textbuf;
+
+  loading = true;
+  dirty = insert;
 
   if (!insert) {
     r = textbuf->loadfile(newfile);
@@ -834,14 +883,14 @@ void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI)
 
   loading = false;
   if (updateUI) {
-    wnd->statusMsg(filename);
+    statusMsg(filename);
     wnd->addHistory(filename);
-    wnd->fileChanged(true);
+    fileChanged(true);
   }
 
   textbuf->call_modify_callbacks();
   editor->show_insert_position();
-  wnd->setRowCol(1, 1);
+  setRowCol(1, 1);
   modifiedTime = getModifiedTime();
 }
 
@@ -854,6 +903,8 @@ void EditorWindow::reloadFile() {
 void EditorWindow::doSaveFile(const char *newfile, bool updateUI)
 {
   char basfile[PATH_MAX];
+  TextBuffer *textbuf = editor->textbuf;
+
   strcpy(basfile, newfile);
   if (strchr(basfile, '.') == 0) {
     strcat(basfile, ".bas");
@@ -872,110 +923,36 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI)
     }
     strcpy(filename, basfile);
     textbuf->call_modify_callbacks();
-    wnd->statusMsg(basfile);
-    wnd->fileChanged(true);
+    statusMsg(basfile);
+    fileChanged(true);
   }
   modifiedTime = getModifiedTime();
 }
 
-void EditorWindow::showFindReplace()
+void EditorWindow::showFindReplace(void* eventData)
 {
-  replaceFind->value(search);
-  replaceDlg->show();
+  wnd->replaceFind->value(editor->search);
+  wnd->replaceDlg->show();
 }
 
-bool EditorWindow::findText(const char *find, bool forward)
-{
-  // copy lowercase search string for high-lighting
-  strcpy(search, find);
-  int findLen = strlen(search);
-  for (int i = 0; i < findLen; i++) {
-    search[i] = tolower(search[i]);
-  }
-
-  style_update(0, textbuf->length(), textbuf->length(), 0, 0, editor);
-  if (find == 0 || find[0] == 0) {
-    return 0;
-  }
-
-  int pos = editor->insert_position();
-  bool found = forward ? textbuf->search_forward(pos, search, &pos) :
-               textbuf->search_backward(pos - strlen(find), search, &pos);
-  if (found) {
-    textbuf->select(pos, pos + strlen(search));
-    editor->insert_position(pos + strlen(search));
-    editor->show_insert_position();
-  }
-  return found;
-}
-
-void EditorWindow::newFile()
+void EditorWindow::replaceNext(void* eventData)
 {
   if (readonly()) {
     return;
   }
 
-  if (!checkSave(true)) {
-    return;
-  }
-
-  filename[0] = '\0';
-  textbuf->select(0, textbuf->length());
-  textbuf->remove_selection();
-  dirty = 0;
-  textbuf->call_modify_callbacks();
-  wnd->statusMsg(0);
-  wnd->fileChanged(false);
-  modifiedTime = 0;
-}
-
-void EditorWindow::openFile()
-{
-  if (readonly()) {
-    return;
-  }
-
-  if (!checkSave(true)) {
-    return;
-  }
-
-  const char *newfile = file_chooser("Open File", "*.bas", filename);
-  if (newfile != NULL) {
-    loadFile(newfile, -1, true);
-  }
-  restoreFocus();
-}
-
-void EditorWindow::insertFile()
-{
-  if (readonly()) {
-    return;
-  }
-
-  const char *newfile = file_chooser("Insert File?", "*.bas", filename);
-  if (newfile != NULL) {
-    loadFile(newfile, editor->insert_position(), true);
-  }
-  restoreFocus();
-}
-
-void EditorWindow::replaceNext()
-{
-  if (readonly()) {
-    return;
-  }
-
-  const char *find = replaceFind->value();
-  const char *replace = replaceWith->value();
+  const char *find = wnd->replaceFind->value();
+  const char *replace = wnd->replaceWith->value();
 
   if (find[0] == '\0') {
     // search string is blank; get a new one
-    replaceDlg->show();
+    wnd->replaceDlg->show();
     return;
   }
 
-  replaceDlg->hide();
+  wnd->replaceDlg->hide();
 
+  TextBuffer *textbuf = editor->textbuf;
   int pos = editor->insert_position();
   int found = textbuf->search_forward(pos, find, &pos);
 
@@ -993,29 +970,125 @@ void EditorWindow::replaceNext()
   }
 }
 
-void EditorWindow::replaceAll()
+void EditorWindow::cancelReplace(void* eventData)
+{
+  wnd->replaceDlg->hide();
+}
+
+void EditorWindow::doDelete(void* eventData)
+{
+  editor->textbuf->remove_selection();
+}
+
+void EditorWindow::find(void* eventData)
+{
+  bool found = editor->findText(findTextInput->value(), (int)eventData);
+  findTextInput->textcolor(found ? BLACK : RED);
+  findTextInput->redraw();
+  if (2 == (int)eventData) {
+    take_focus();
+  }
+}
+
+void EditorWindow::func_list(void* eventData)
+{
+  const char *label = funcList->item()->label();
+  if (label) {
+    if (strcmp(label, SCAN_LABEL) == 0) {
+      funcList->clear();
+      funcList->begin();
+      createFuncList();
+      new Item(SCAN_LABEL);
+      funcList->end();
+    }
+    else {
+      findFunc(label);
+      take_focus();
+    }
+  }
+}
+
+void EditorWindow::goto_line(void* eventData)
+{
+  gotoLine(atoi(gotoLineInput->value()));
+  take_focus();
+}
+
+void EditorWindow::insertFile(void* eventData)
 {
   if (readonly()) {
     return;
   }
 
-  const char *find = replaceFind->value();
-  const char *replace = replaceWith->value();
+  const char *newfile = file_chooser("Insert File?", "*.bas", filename);
+  if (newfile != NULL) {
+    loadFile(newfile, editor->insert_position(), true);
+  }
+}
 
-  find = replaceFind->value();
-  if (find[0] == '\0') {
-    // search string is blank; get a new one
-    replaceDlg->show();
+void EditorWindow::newFile(void* eventData)
+{
+  if (readonly()) {
     return;
   }
 
-  replaceDlg->hide();
+  if (!checkSave(true)) {
+    return;
+  }
+
+  TextBuffer *textbuf = editor->textbuf;
+
+  filename[0] = '\0';
+  textbuf->select(0, textbuf->length());
+  textbuf->remove_selection();
+  dirty = 0;
+  textbuf->call_modify_callbacks();
+  statusMsg(0);
+  fileChanged(false);
+  modifiedTime = 0;
+}
+
+void EditorWindow::openFile(void* eventData)
+{
+  if (readonly()) {
+    return;
+  }
+
+  if (!checkSave(true)) {
+    return;
+  }
+
+  const char *newfile = file_chooser("Open File", "*.bas", filename);
+  if (newfile != NULL) {
+    loadFile(newfile, -1, true);
+  }
+}
+
+void EditorWindow::replaceAll(void* eventData)
+{
+  if (readonly()) {
+    return;
+  }
+
+  const char *find = wnd->replaceFind->value();
+  const char *replace = wnd->replaceWith->value();
+
+  find = wnd->replaceFind->value();
+  if (find[0] == '\0') {
+    // search string is blank; get a new one
+    wnd->replaceDlg->show();
+    return;
+  }
+
+  wnd->replaceDlg->hide();
   editor->insert_position(0);
   int times = 0;
 
   // loop through the whole string
   for (int found = 1; found;) {
     int pos = editor->insert_position();
+    TextBuffer *textbuf = editor->textbuf;
+
     found = textbuf->search_forward(pos, find, &pos);
 
     if (found) {
@@ -1035,15 +1108,9 @@ void EditorWindow::replaceAll()
   else {
     alert("No occurrences of \'%s\' found!", find);
   }
-  restoreFocus();
 }
 
-void EditorWindow::cancelReplace()
-{
-  replaceDlg->hide();
-}
-
-void EditorWindow::saveFile()
+void EditorWindow::saveFile(void* eventData)
 {
   if (filename[0] == '\0') {
     // no filename - get one!
@@ -1052,11 +1119,10 @@ void EditorWindow::saveFile()
   }
   else {
     doSaveFile(filename, true);
-    restoreFocus();
   }
 }
 
-void EditorWindow::saveFileAs()
+void EditorWindow::saveFileAs(void* eventData)
 {
   const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
   const char *newfile = file_chooser("Save File As?", "*.bas", filename);
@@ -1066,12 +1132,6 @@ void EditorWindow::saveFileAs()
     }
     doSaveFile(newfile, true);
   }
-  restoreFocus();
-}
-
-void EditorWindow::doDelete()
-{
-  textbuf->remove_selection();
 }
 
 void EditorWindow::gotoLine(int line)
@@ -1097,6 +1157,8 @@ void EditorWindow::getSelEndRowCol(int *row, int *col)
 void EditorWindow::setFontSize(int size)
 {
   int len = sizeof(styletable) / sizeof(styletable[0]);
+  TextBuffer *textbuf = editor->textbuf;
+
   for (int i = 0; i < len; i++) {
     styletable[i].size = size;
   }
@@ -1112,8 +1174,10 @@ int EditorWindow::getFontSize()
 
 void EditorWindow::createFuncList()
 {
+  TextBuffer *textbuf = editor->textbuf;
   const char *text = textbuf->text();
   int len = textbuf->length();
+
   for (int i = 0; i < len; i++) {
     // avoid seeing "gosub" etc
     int offs = ((strncasecmp(text + i, "\nsub ", 5) == 0 ||
@@ -1138,9 +1202,9 @@ void EditorWindow::createFuncList()
 
 void EditorWindow::findFunc(const char *find)
 {
-  const char *text = textbuf->text();
+  const char *text = editor->textbuf->text();
   int findLen = strlen(find);
-  int len = textbuf->length();
+  int len = editor->textbuf->length();
   int lineNo = 1;
   for (int i = 0; i < len; i++) {
     if (strncasecmp(text + i, find, findLen) == 0) {
@@ -1193,6 +1257,160 @@ void EditorWindow::getKeywords(strlib::List& keywords) {
 
   for (int i = 0; i < numCodeProcedures; i++) {
     keywords.add(new String(code_procedures[i]));
+  }
+}
+
+void EditorWindow::focusWidget() {
+  switch (event_key()) {
+  case 'f':
+    findTextInput->take_focus();
+    break;
+  case 'g':
+    gotoLineInput->take_focus();
+    break;
+  case 'h':
+    funcList->take_focus();
+    break;
+  }
+}
+
+void EditorWindow::setModified(bool dirty)
+{
+  modStatus->label(dirty ? "MOD" : "");
+  modStatus->redraw();
+}
+
+void EditorWindow::statusMsg(const char *msg)
+{
+  const char *filename = getFilename();
+  fileStatus->copy_label(msg && msg[0] ? msg :
+                         filename && filename[0] ? filename : UNTITLED_FILE);
+  fileStatus->labelcolor(rowStatus->labelcolor());
+  fileStatus->redraw();
+}
+
+void EditorWindow::setRowCol(int row, int col)
+{
+  char rowcol[20];
+  sprintf(rowcol, "%d", row);
+  rowStatus->copy_label(rowcol);
+  rowStatus->redraw();
+  sprintf(rowcol, "%d", col);
+  colStatus->copy_label(rowcol);
+  colStatus->redraw();
+}
+
+void EditorWindow::runMsg(RunMessage runMessage)
+{
+  const char* msg = 0;
+  switch (runMessage) {
+  case msg_err:
+    fileStatus->labelcolor(RED);
+    msg = "ERR";
+    break;
+  case msg_run:
+    fileStatus->labelcolor(BLACK);
+    msg = "RUN";
+    break;
+  default:
+    msg = "";
+  }
+  runStatus->copy_label(msg);
+  runStatus->redraw();
+}
+
+void EditorWindow::busyMessage()
+{
+  statusMsg("Selection unavailable while program is running.");
+}
+
+void EditorWindow::pathMessage(const char *file)
+{
+  sprintf(path, "File not found: %s", file);
+  statusMsg(path);
+}
+
+void EditorWindow::fileChanged(bool loadfile)
+{
+  FILE *fp;
+
+  funcList->clear();
+  funcList->begin();
+  if (loadfile) {
+    // update the func/sub navigator
+    createFuncList();
+    funcList->redraw();
+
+    const char *filename = getFilename();
+    if (filename && filename[0]) {
+      // update the last used file menu
+      bool found = false;
+
+      for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+        if (strcmp(filename, recentPath[i].toString()) == 0) {
+          found = true;
+          break;
+        }
+      }
+
+      if (found == false) {
+        // shift items downwards
+        for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
+          recentMenu[i]->copy_label(recentMenu[i - 1]->label());
+          recentPath[i].empty();
+          recentPath[i].append(recentPath[i - 1]);
+        }
+        // create new item in first position
+        char *c = strrchr(filename, '/');
+        if (c == 0) {
+          c = strrchr(filename, '\\');
+        }
+        recentPath[0].empty();
+        recentPath[0].append(filename);
+        recentMenu[0]->copy_label(c ? c + 1 : filename);
+      }
+    }
+  }
+  else {
+    // empty the last edited file
+    getHomeDir(path);
+    strcat(path, LASTEDIT_FILE);
+    fp = fopen(path, "w");
+    fwrite("\n", 1, 1, fp);
+    fclose(fp);
+  }
+
+  new Item(SCAN_LABEL);
+  funcList->end();
+}
+
+void EditorWindow::restoreEdit()
+{
+  FILE *fp;
+
+  // continue editing the previous file
+  getHomeDir(path);
+  strcat(path, LASTEDIT_FILE);
+  fp = fopen(path, "r");
+  if (fp) {
+    fgets(path, sizeof(path), fp);
+    fclose(fp);
+    path[strlen(path) - 1] = 0; // trim new-line
+    if (access(path, 0) == 0) {
+      loadFile(path, -1, false);
+      statusMsg(path);
+      fileChanged(true);
+      return;
+    }
+  }
+
+  // continue editing scratch buffer
+  getHomeDir(path);
+  strcat(path, UNTITLED_FILE);
+  if (access(path, 0) == 0) {
+    loadFile(path, -1, false);
+    statusMsg(path);
+    fileChanged(true);
   }
 }
 
