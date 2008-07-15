@@ -29,9 +29,8 @@
 #endif
 
 #define MNU_HEIGHT 22
-
 #define DEF_FONT_SIZE 12
-#define SCAN_LABEL "-[ Refresh ]-"
+#define SCAN_LABEL "(Refresh)"
 #define NUM_RECENT_ITEMS 9
 
 #ifndef MAX_PATH
@@ -127,6 +126,8 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(set_options);
   CALLBACK_METHOD(tool_plugin);
   CALLBACK_METHOD(turbo);
+
+  EditorWindow* getEditor();
 
   bool isTurbo;
   bool isHideEditor;

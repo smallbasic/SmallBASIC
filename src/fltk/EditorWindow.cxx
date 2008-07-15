@@ -701,22 +701,20 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   filename[0] = 0;
   dirty = false;
   loading = false;
+  modifiedTime = 0;
 
   begin();
-  editor = new CodeEditor(0, 0, w, h - (tbHeight + stHeight + 6));
+  editor = new CodeEditor(0, 0, w, h - (tbHeight + stHeight + 8));
   editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
   editor->selection_color(fltk::color(190, 189, 188));
   editor->color(WHITE);
-  end();
-  resizable(editor);
-
   editor->textbuf->add_modify_callback(style_update_cb, editor);
   editor->textbuf->add_modify_callback(changed_cb, this);
-  modifiedTime = 0;
 
   // create the editor toolbar
-  Group *toolbar = new Group(2, editor->h() + 4, w, tbHeight);
+  w -= 4;
+  Group *toolbar = new Group(2, editor->b() + 2, w, tbHeight);
   toolbar->begin();
   toolbar->box(FLAT_BOX);
 
@@ -748,7 +746,6 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   new Item();
   new Item(SCAN_LABEL);
   funcList->end();
-  toolbar->resizable(funcList);
 
   // close the tool-bar with a resizeable end-box
   Group *boxEnd = new Group(1000, 4, 0, 0);
@@ -756,7 +753,7 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   toolbar->end();
 
   // editor status bar
-  Group *statusBar = new Group(2, h - MNU_HEIGHT, w, MNU_HEIGHT - 2);
+  Group *statusBar = new Group(2, toolbar->b() + 2, w, MNU_HEIGHT);
   statusBar->begin();
   statusBar->box(NO_BOX);
   fileStatus = new Widget(0, 0, w - 137, MNU_HEIGHT - 2);
@@ -768,18 +765,20 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   for (int n = 0; n < statusBar->children(); n++) {
     Widget *w = statusBar->child(n);
     w->labelfont(HELVETICA);
-    w->box(FLAT_BOX);
+    w->box(BORDER_BOX);
     w->color(color());
   }
 
   fileStatus->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
   statusBar->resizable(fileStatus);
   statusBar->end();
+
+  resizable(editor);
+  end();
 }
 
 EditorWindow::~EditorWindow()
 {
-  //delete replaceDlg; TODO delete in Main
   editor->textbuf->remove_modify_callback(style_update_cb, editor);
   editor->textbuf->remove_modify_callback(changed_cb, this);
 }

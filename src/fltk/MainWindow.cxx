@@ -1130,9 +1130,9 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->user_data(editWnd);        // the EditorWindow is callback user data
   editWnd->box(NO_BOX);
   editWnd->editor->box(NO_BOX);
-  editGroup->end();
+  editWnd->editor->take_focus();
   editGroup->resizable(editWnd);
-  tabGroup->resizable(editGroup);
+  editGroup->end();
 
   // create the help tab
   helpGroup = new Group(0, MNU_HEIGHT, w, h, "Help");
@@ -1155,11 +1155,12 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   outputGroup->end();
 
   tabGroup->end();
-  resizable(tabGroup);
-  outer->resizable(tabGroup);
   outer->end();
   end();
-  editWnd->take_focus();
+
+  tabGroup->resizable(editGroup);
+  outer->resizable(tabGroup);
+  resizable(outer);
 
   replaceDlg = new Window(300, 105, "Replace");
   replaceDlg->begin();
