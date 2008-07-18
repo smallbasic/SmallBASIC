@@ -868,6 +868,8 @@ void MainWindow::load_file(Widget* w, void* eventData)
         editWidget->statusMsg(path);
         editWidget->fileChanged(true);
         saveLastEdit(path);
+        const char* slash = strrchr(path, '/');
+        editWidget->parent()->copy_label(slash ? slash + 1 : path);
         showEditTab();
       }
       else {
@@ -894,11 +896,13 @@ void MainWindow::scanRecentFiles(Menu * menu)
       buffer[strlen(buffer) - 1] = 0; // trim new-line
       if (access(buffer, 0) == 0) {
         char *fileLabel = strrchr(buffer, '/');
-        if (fileLabel == 0)
+        if (fileLabel == 0) {
           fileLabel = strrchr(buffer, '\\');
+        }
         fileLabel = fileLabel ? fileLabel + 1 : buffer;
-        if (fileLabel != 0 && *fileLabel == '_')
+        if (fileLabel != 0 && *fileLabel == '_') {
           fileLabel++;
+        }
         sprintf(label, "&File/Open Recent File/%s", fileLabel);
         recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
                                   load_file_cb, (void *)(i + 1), RAW_LABEL);
@@ -1220,6 +1224,28 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   replaceDlg->set_non_modal();
 }
 
+/**
+ * create a new help widget and add it to the tab group
+ */
+Group* MainWindow::createEditor(const char* title) {
+  int w = tabGroup->w();
+  int h = tabGroup->h() - 8;
+
+  Group* editGroup = new Group(0, MNU_HEIGHT, w, h);
+  const char* slash = strrchr(title, '/');
+  editGroup->copy_label(slash ? slash + 1 : title);
+  editGroup->begin();
+  editGroup->box(THIN_DOWN_BOX);
+  editGroup->resizable(new EditorWidget(2, 2, w - 4, h));
+  editGroup->user_data((void*) gw_editor);
+  editGroup->end();
+
+  tabGroup->add(editGroup);
+  tabGroup->redraw();
+  tabGroup->selected_child(editGroup);
+  return editGroup;
+}
+
 void MainWindow::openFile(Widget* w, void* eventData) {
   Group* openFileGroup = findTab(gw_file);
   if (!openFileGroup ) {
@@ -1232,6 +1258,7 @@ void MainWindow::openFile(Widget* w, void* eventData) {
     openFileGroup->user_data((void*) gw_file);
     openFileGroup->resizable(new FileWidget(2, 2, w - 4, h));
     openFileGroup->end();
+    tabGroup->redraw();
     tabGroup->end();
   }
 
@@ -1254,6 +1281,7 @@ HelpWidget* MainWindow::getHelp()
     help = new HelpWidget(2, 2, w - 4, h - 4);
     help->callback(help_contents_anchor_cb);
     helpGroup->resizable(help);
+    tabGroup->redraw();
     tabGroup->end();
   }
   else {
@@ -1293,16 +1321,11 @@ EditorWidget* MainWindow::getEditor(const char* fullPath) {
   return NULL;
 }
 
-void MainWindow::editFile(const char* filePath, const char* fileName) {
-  String fullPath;
-  fullPath.append(filePath);
-  fullPath.append("/");
-  fullPath.append(fileName);
-
-  if (!getEditor(fullPath)) {
-    EditorWidget* editWidget = getEditor(createEditor(fileName));
-    editWidget->loadFile(fullPath);
-    addHistory(fullPath);
+void MainWindow::editFile(const char* filePath) {
+  if (!getEditor(filePath)) {
+    EditorWidget* editWidget = getEditor(createEditor(filePath));
+    editWidget->loadFile(filePath);
+    addHistory(filePath);
   }
 }
 
@@ -1344,26 +1367,6 @@ Group* MainWindow::selectTab(const char* label) {
     tabGroup->selected_child(tab);
   }
   return tab;
-}
-
-/**
- * create a new help widget and add it to the tab group
- */
-Group* MainWindow::createEditor(const char* title) {
-  int w = tabGroup->w();
-  int h = tabGroup->h() - 8;
-
-  Group* editGroup = new Group(0, MNU_HEIGHT, w, h);
-  editGroup->copy_label(title);
-  editGroup->begin();
-  editGroup->box(THIN_DOWN_BOX);
-  editGroup->resizable(new EditorWidget(2, 2, w - 4, h));
-  editGroup->user_data((void*) gw_editor);
-  editGroup->end();
-
-  tabGroup->add(editGroup);
-  tabGroup->selected_child(editGroup);
-  return editGroup;
 }
 
 /**

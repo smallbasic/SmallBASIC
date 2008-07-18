@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 
 #include <fltk/Window.h>
+#include <fltk/run.h>
 
 #include "MainWindow.h"
 #include "StringLib.h"
@@ -25,6 +26,20 @@
 #include "FileWidget.h"
 
 FileWidget* fileWidget;
+String click;
+
+static void anchorClick_event(void *) {
+  fltk::remove_check(anchorClick_event);
+  fileWidget->anchorClick();
+}
+
+static void anchorClick_cb(Widget* w, void *v) {
+  if (fileWidget) {
+    click.empty();
+    click.append((char*) v);
+    fltk::add_check(anchorClick_event); // post message
+  }
+}
 
 FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h) {
   callback(anchorClick_cb);
@@ -43,6 +58,7 @@ FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h) {
 }
 
 FileWidget::~FileWidget() {
+  fileWidget = 0;
 }
 
 void FileWidget::displayPath() {
@@ -101,8 +117,8 @@ void FileWidget::displayPath() {
 }
 
 // anchor link clicked
-void FileWidget::anchorClick(void *eventData) {
-  const char* target = (const char*)eventData;
+void FileWidget::anchorClick() {
+  const char* target = click.toString();
 
   if (target[0] == '!') {
     // file browser window
@@ -152,7 +168,11 @@ void FileWidget::anchorClick(void *eventData) {
   }
 
   setDocHome(docHome);
-  wnd->editFile(docHome.toString(), target[0] == '/' ? target+1 : target);
+  String fullPath;
+  fullPath.append(docHome.toString());
+  fullPath.append("/");
+  fullPath.append(target[0] == '/' ? target+1 : target);
+  wnd->editFile(fullPath.toString());
 }
 
 // --- End of file -------------------------------------------------------------

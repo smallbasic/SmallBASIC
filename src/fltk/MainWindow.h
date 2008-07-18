@@ -114,7 +114,7 @@ struct MainWindow : public BaseWindow {
   EditorWidget* getEditor(Group* group);
   EditorWidget* getEditor(const char* fullPath);
   EditorWidget* getEditor();
-  void editFile(const char* filePath, const char* fileName);
+  void editFile(const char* filePath);
   Group* getSelectedTab();
   Group* getNextTab(Group* current);
   Group* getPrevTab(Group* current);

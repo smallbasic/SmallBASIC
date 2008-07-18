@@ -14,25 +14,12 @@
 #include "HelpWidget.h"
 #include <limits.h>
 
-struct FileWidget;
-extern FileWidget* fileWidget;
-
-#ifdef CALLBACK_METHOD
-#undef CALLBACK_METHOD
-#endif
-
-#define CALLBACK_METHOD(FN)                     \
-  void FN(void *v=0);                           \
-  static void FN ## _cb(Widget* w, void *v) {   \
-    fileWidget->FN(v);                          \
-  }
-
 struct FileWidget : public HelpWidget {
   FileWidget(int x, int y, int w, int h);
   ~FileWidget();
 
   void displayPath();
-  CALLBACK_METHOD(anchorClick);
+  void anchorClick();
 
   private:
   char path[PATH_MAX+1];
