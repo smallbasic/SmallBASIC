@@ -21,7 +21,6 @@
 
 #include <fltk/Button.h>
 #include <fltk/Choice.h>
-#include <fltk/FileChooser.h>
 #include <fltk/Flags.h>
 #include <fltk/Input.h>
 #include <fltk/Item.h>
@@ -32,10 +31,9 @@
 #include <fltk/ask.h>
 #include <fltk/damage.h>
 #include <fltk/events.h>
-#include <fltk/file_chooser.h>
 
 #include "MainWindow.h"
-#include "EditorWindow.h"
+#include "EditorWidget.h"
 #include "kwp.h"
 
 using namespace fltk;
@@ -76,8 +74,8 @@ const int numCodeKeywords = sizeof(code_keywords) / sizeof(code_keywords[0]);
 const int numCodeFunctions = sizeof(code_functions) / sizeof(code_functions[0]);
 const int numCodeProcedures = sizeof(code_procedures) / sizeof(code_procedures[0]);
 
-EditorWindow* get_editor() {
-  return wnd->editWnd;
+EditorWidget* get_editor() {
+  return wnd->getEditor();
 }
 
 // 'compare_keywords()' - Compare two keywords
@@ -571,7 +569,7 @@ int CodeEditor::handle(int e)
   }
 
 #if defined(WIN32)
-  // in windows these message are sent here instead of EditorWindow
+  // in windows these message are sent here instead of EditorWidget
   switch (e) {  
   case DND_ENTER:
   case DND_DRAG:
@@ -616,7 +614,7 @@ void CodeEditor::showRowCol()
     layout();
     position_to_linecol(cursor_pos_, &row, &col);
   }
-  ((EditorWindow*) parent())->setRowCol(row, col + 1);
+  ((EditorWidget*) parent())->setRowCol(row, col + 1);
 }
 
 void CodeEditor::gotoLine(int line)
@@ -631,7 +629,7 @@ void CodeEditor::gotoLine(int line)
   int pos = buffer()->skip_lines(0, line - 1);  // find pos at line-1
   insert_position(buffer()->line_start(pos)); // insert at column 0
   show_insert_position();
-  ((EditorWindow*) parent())->setRowCol(line, 1);
+  ((EditorWidget*) parent())->setRowCol(line, 1);
 }
 
 void CodeEditor::getSelStartRowCol(int *row, int *col)
@@ -691,9 +689,9 @@ bool CodeEditor::findText(const char *find, bool forward)
   return found;
 }
 
-//--EditorWindow----------------------------------------------------------------
+//--EditorWidget----------------------------------------------------------------
 
-EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
+EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 {
   int tbHeight = 26; // toolbar height
   int stHeight = MNU_HEIGHT;
@@ -702,6 +700,7 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   dirty = false;
   loading = false;
   modifiedTime = 0;
+  box(NO_BOX);
 
   begin();
   editor = new CodeEditor(0, 0, w, h - (tbHeight + stHeight + 8));
@@ -711,6 +710,8 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   editor->color(WHITE);
   editor->textbuf->add_modify_callback(style_update_cb, editor);
   editor->textbuf->add_modify_callback(changed_cb, this);
+  editor->box(NO_BOX);
+  editor->take_focus();
 
   // create the editor toolbar
   w -= 4;
@@ -723,9 +724,9 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   findTextInput->align(ALIGN_LEFT | ALIGN_CLIP);
   Button *prevBn = new Button(160, 4, 18, MNU_HEIGHT - 4, "@-98>;");
   Button *nextBn = new Button(180, 4, 18, MNU_HEIGHT - 4, "@-92>;");
-  prevBn->callback(EditorWindow::find_cb, (void *)0);
-  nextBn->callback(EditorWindow::find_cb, (void *)1);
-  findTextInput->callback(EditorWindow::find_cb, (void *)2);
+  prevBn->callback(EditorWidget::find_cb, (void *)0);
+  nextBn->callback(EditorWidget::find_cb, (void *)1);
+  findTextInput->callback(EditorWidget::find_cb, (void *)2);
   findTextInput->when(WHEN_ENTER_KEY_ALWAYS);
   findTextInput->labelfont(HELVETICA);
 
@@ -733,8 +734,8 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   gotoLineInput = new Input(238, 2, 40, MNU_HEIGHT, "Goto:");
   gotoLineInput->align(ALIGN_LEFT | ALIGN_CLIP);
   Button *gotoBn = new Button(280, 4, 18, MNU_HEIGHT - 4, "@-92>;");
-  gotoBn->callback(EditorWindow::goto_line_cb, gotoLineInput);
-  gotoLineInput->callback(EditorWindow::goto_line_cb, gotoLineInput);
+  gotoBn->callback(EditorWidget::goto_line_cb, gotoLineInput);
+  gotoLineInput->callback(EditorWidget::goto_line_cb, gotoLineInput);
   gotoLineInput->when(WHEN_ENTER_KEY_ALWAYS);
   gotoLineInput->labelfont(HELVETICA);
 
@@ -777,13 +778,13 @@ EditorWindow::EditorWindow(int x, int y, int w, int h) : Group(x, y, w, h)
   end();
 }
 
-EditorWindow::~EditorWindow()
+EditorWidget::~EditorWidget()
 {
   editor->textbuf->remove_modify_callback(style_update_cb, editor);
   editor->textbuf->remove_modify_callback(changed_cb, this);
 }
 
-int EditorWindow::handle(int e)
+int EditorWidget::handle(int e)
 {
   char buffer[PATH_MAX];
 
@@ -800,26 +801,26 @@ int EditorWindow::handle(int e)
   case PASTE:
     strncpy(buffer, fltk::event_text(), fltk::event_length());
     buffer[fltk::event_length()] = 0;
-    loadFile(buffer, -1, true);
+    loadFile(buffer);
     return 1;
   }
 
   return Group::handle(e);
 }
 
-bool EditorWindow::readonly()
+bool EditorWidget::readonly()
 {
   return ((CodeEditor *) editor)->readonly;
 }
 
-void EditorWindow::readonly(bool is_readonly)
+void EditorWidget::readonly(bool is_readonly)
 {
   editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR :
                        TextDisplay::NORMAL_CURSOR);
   ((CodeEditor *) editor)->readonly = is_readonly;
 }
 
-void EditorWindow::doChange(int inserted, int deleted)
+void EditorWidget::doChange(int inserted, int deleted)
 {
   if (loading) {
     return;                     // do nothing while file load in progress
@@ -832,17 +833,16 @@ void EditorWindow::doChange(int inserted, int deleted)
   setModified(dirty);
 }
 
-bool EditorWindow::checkSave(bool discard)
+bool EditorWidget::checkSave(bool discard)
 {
   if (!dirty) {
     return true;                // continue next operation
   }
 
   const char *msg = "The current file has not been saved.\n"
-    "Would you like to save it now?";
-  int r = discard ?
-    choice(msg, "Save", "Discard", "Cancel") : choice(msg, "Save", "Cancel", 0);
-
+                    "Would you like to save it now?";
+  int r = discard ? choice(msg, "Save", "Discard", "Cancel") : 
+          choice(msg, "Save", "Cancel", 0);
   if (r == 0) {
     saveFile();                 // Save the file
     return !dirty;
@@ -850,56 +850,37 @@ bool EditorWindow::checkSave(bool discard)
   return (discard && r == 1);
 }
 
-void EditorWindow::loadFile(const char *newfile, int ipos, bool updateUI)
+void EditorWidget::loadFile(const char *newfile)
 {
-  int insert = (ipos != -1);
-  int r;
   TextBuffer *textbuf = editor->textbuf;
-
   loading = true;
-  dirty = insert;
-
-  if (!insert) {
-    r = textbuf->loadfile(newfile);
-    if (r) {
-      // restore previous
-      textbuf->loadfile(filename);
-    }
-    else {
-      filename[0] = 0;
-    }
-  }
-  else {
-    r = textbuf->insertfile(newfile, ipos);
-  }
-
+  int r = textbuf->loadfile(newfile);
   if (r) {
+    // restore previous
+    textbuf->loadfile(filename);
     alert("Error reading from file \'%s\':\n%s.", newfile, strerror(errno));
   }
-  else if (!insert) {
+  else {
+    dirty = false;
     strcpy(filename, newfile);
   }
 
   loading = false;
-  if (updateUI) {
-    statusMsg(filename);
-    wnd->addHistory(filename);
-    fileChanged(true);
-  }
-
+  statusMsg(filename);
+  fileChanged(true);
   textbuf->call_modify_callbacks();
   editor->show_insert_position();
   setRowCol(1, 1);
   modifiedTime = getModifiedTime();
 }
 
-void EditorWindow::reloadFile() {
+void EditorWidget::reloadFile() {
   char buffer[PATH_MAX];
   strcpy(buffer, filename);
-  loadFile(buffer, -1, true);
+  loadFile(buffer);
 }
 
-void EditorWindow::doSaveFile(const char *newfile, bool updateUI)
+void EditorWidget::doSaveFile(const char *newfile, bool updateUI)
 {
   char basfile[PATH_MAX];
   TextBuffer *textbuf = editor->textbuf;
@@ -928,13 +909,13 @@ void EditorWindow::doSaveFile(const char *newfile, bool updateUI)
   modifiedTime = getModifiedTime();
 }
 
-void EditorWindow::showFindReplace(void* eventData)
+void EditorWidget::showFindReplace(void* eventData)
 {
   wnd->replaceFind->value(editor->search);
   wnd->replaceDlg->show();
 }
 
-void EditorWindow::replaceNext(void* eventData)
+void EditorWidget::replaceNext(void* eventData)
 {
   if (readonly()) {
     return;
@@ -969,17 +950,17 @@ void EditorWindow::replaceNext(void* eventData)
   }
 }
 
-void EditorWindow::cancelReplace(void* eventData)
+void EditorWidget::cancelReplace(void* eventData)
 {
   wnd->replaceDlg->hide();
 }
 
-void EditorWindow::doDelete(void* eventData)
+void EditorWidget::doDelete(void* eventData)
 {
   editor->textbuf->remove_selection();
 }
 
-void EditorWindow::find(void* eventData)
+void EditorWidget::find(void* eventData)
 {
   bool found = editor->findText(findTextInput->value(), (int)eventData);
   findTextInput->textcolor(found ? BLACK : RED);
@@ -989,7 +970,7 @@ void EditorWindow::find(void* eventData)
   }
 }
 
-void EditorWindow::func_list(void* eventData)
+void EditorWidget::func_list(void* eventData)
 {
   const char *label = funcList->item()->label();
   if (label) {
@@ -1007,25 +988,13 @@ void EditorWindow::func_list(void* eventData)
   }
 }
 
-void EditorWindow::goto_line(void* eventData)
+void EditorWidget::goto_line(void* eventData)
 {
   gotoLine(atoi(gotoLineInput->value()));
   take_focus();
 }
 
-void EditorWindow::insertFile(void* eventData)
-{
-  if (readonly()) {
-    return;
-  }
-
-  const char *newfile = file_chooser("Insert File?", "*.bas", filename);
-  if (newfile != NULL) {
-    loadFile(newfile, editor->insert_position(), true);
-  }
-}
-
-void EditorWindow::newFile(void* eventData)
+void EditorWidget::newFile(void* eventData)
 {
   if (readonly()) {
     return;
@@ -1047,23 +1016,23 @@ void EditorWindow::newFile(void* eventData)
   modifiedTime = 0;
 }
 
-void EditorWindow::openFile(void* eventData)
+void EditorWidget::openFile(void* eventData)
 {
-  if (readonly()) {
-    return;
-  }
+//   if (readonly()) {
+//     return;
+//   }
 
-  if (!checkSave(true)) {
-    return;
-  }
+//   if (!checkSave(true)) {
+//     return;
+//   }
 
-  const char *newfile = file_chooser("Open File", "*.bas", filename);
-  if (newfile != NULL) {
-    loadFile(newfile, -1, true);
-  }
+//   const char *newfile = file_chooser("Open File", "*.bas", filename);
+//   if (newfile != NULL) {
+//     loadFile(newfile, -1, true);
+//   }
 }
 
-void EditorWindow::replaceAll(void* eventData)
+void EditorWidget::replaceAll(void* eventData)
 {
   if (readonly()) {
     return;
@@ -1109,7 +1078,7 @@ void EditorWindow::replaceAll(void* eventData)
   }
 }
 
-void EditorWindow::saveFile(void* eventData)
+void EditorWidget::saveFile(void* eventData)
 {
   if (filename[0] == '\0') {
     // no filename - get one!
@@ -1121,39 +1090,39 @@ void EditorWindow::saveFile(void* eventData)
   }
 }
 
-void EditorWindow::saveFileAs(void* eventData)
+void EditorWidget::saveFileAs(void* eventData)
 {
-  const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
-  const char *newfile = file_chooser("Save File As?", "*.bas", filename);
-  if (newfile != NULL) {
-    if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
-      return;
-    }
-    doSaveFile(newfile, true);
-  }
+//   const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
+//   const char *newfile = file_chooser("Save File As?", "*.bas", filename);
+//   if (newfile != NULL) {
+//     if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
+//       return;
+//     }
+//     doSaveFile(newfile, true);
+//   }
 }
 
-void EditorWindow::gotoLine(int line)
+void EditorWidget::gotoLine(int line)
 {
   ((CodeEditor *) editor)->gotoLine(line);
 }
 
-void EditorWindow::getRowCol(int *row, int *col)
+void EditorWidget::getRowCol(int *row, int *col)
 {
   return ((CodeEditor *) editor)->getRowCol(row, col);
 }
 
-void EditorWindow::getSelStartRowCol(int *row, int *col)
+void EditorWidget::getSelStartRowCol(int *row, int *col)
 {
   return ((CodeEditor *) editor)->getSelStartRowCol(row, col);
 }
 
-void EditorWindow::getSelEndRowCol(int *row, int *col)
+void EditorWidget::getSelEndRowCol(int *row, int *col)
 {
   return ((CodeEditor *) editor)->getSelEndRowCol(row, col);
 }
 
-void EditorWindow::setFontSize(int size)
+void EditorWidget::setFontSize(int size)
 {
   int len = sizeof(styletable) / sizeof(styletable[0]);
   TextBuffer *textbuf = editor->textbuf;
@@ -1166,12 +1135,12 @@ void EditorWindow::setFontSize(int size)
   editor->redraw(DAMAGE_ALL);
 }
 
-int EditorWindow::getFontSize()
+int EditorWidget::getFontSize()
 {
   return (int)styletable[0].size;
 }
 
-void EditorWindow::createFuncList()
+void EditorWidget::createFuncList()
 {
   TextBuffer *textbuf = editor->textbuf;
   const char *text = textbuf->text();
@@ -1199,7 +1168,7 @@ void EditorWindow::createFuncList()
   }
 }
 
-void EditorWindow::findFunc(const char *find)
+void EditorWidget::findFunc(const char *find)
 {
   const char *text = editor->textbuf->text();
   int findLen = strlen(find);
@@ -1216,12 +1185,12 @@ void EditorWindow::findFunc(const char *find)
   }
 }
 
-void EditorWindow::setIndentLevel(int level)
+void EditorWidget::setIndentLevel(int level)
 {
   ((CodeEditor *) editor)->indentLevel = level;
 }
 
-U32 EditorWindow::getModifiedTime() {
+U32 EditorWidget::getModifiedTime() {
   struct stat st_file;
   U32 modified = 0;
   if (filename[0] && !stat(filename, &st_file)) {
@@ -1230,7 +1199,7 @@ U32 EditorWindow::getModifiedTime() {
   return modified;
 }
 
-void EditorWindow::handleFileChange() {
+void EditorWidget::handleFileChange() {
   // handle outside changes to the file
   if (filename[0] && modifiedTime != 0 && 
       modifiedTime != getModifiedTime()) {
@@ -1245,7 +1214,7 @@ void EditorWindow::handleFileChange() {
   }
 }
 
-void EditorWindow::getKeywords(strlib::List& keywords) {
+void EditorWidget::getKeywords(strlib::List& keywords) {
   for (int i = 0; i < numCodeKeywords; i++) {
     keywords.add(new String(code_keywords[i]));
   }
@@ -1259,7 +1228,7 @@ void EditorWindow::getKeywords(strlib::List& keywords) {
   }
 }
 
-void EditorWindow::focusWidget() {
+void EditorWidget::focusWidget() {
   switch (event_key()) {
   case 'f':
     findTextInput->take_focus();
@@ -1273,13 +1242,13 @@ void EditorWindow::focusWidget() {
   }
 }
 
-void EditorWindow::setModified(bool dirty)
+void EditorWidget::setModified(bool dirty)
 {
   modStatus->label(dirty ? "MOD" : "");
   modStatus->redraw();
 }
 
-void EditorWindow::statusMsg(const char *msg)
+void EditorWidget::statusMsg(const char *msg)
 {
   const char *filename = getFilename();
   fileStatus->copy_label(msg && msg[0] ? msg :
@@ -1288,7 +1257,7 @@ void EditorWindow::statusMsg(const char *msg)
   fileStatus->redraw();
 }
 
-void EditorWindow::setRowCol(int row, int col)
+void EditorWidget::setRowCol(int row, int col)
 {
   char rowcol[20];
   sprintf(rowcol, "%d", row);
@@ -1299,7 +1268,7 @@ void EditorWindow::setRowCol(int row, int col)
   colStatus->redraw();
 }
 
-void EditorWindow::runMsg(RunMessage runMessage)
+void EditorWidget::runMsg(RunMessage runMessage)
 {
   const char* msg = 0;
   switch (runMessage) {
@@ -1318,18 +1287,18 @@ void EditorWindow::runMsg(RunMessage runMessage)
   runStatus->redraw();
 }
 
-void EditorWindow::busyMessage()
+void EditorWidget::busyMessage()
 {
   statusMsg("Selection unavailable while program is running.");
 }
 
-void EditorWindow::pathMessage(const char *file)
+void EditorWidget::pathMessage(const char *file)
 {
   sprintf(path, "File not found: %s", file);
   statusMsg(path);
 }
 
-void EditorWindow::fileChanged(bool loadfile)
+void EditorWidget::fileChanged(bool loadfile)
 {
   FILE *fp;
 
@@ -1383,7 +1352,7 @@ void EditorWindow::fileChanged(bool loadfile)
   funcList->end();
 }
 
-void EditorWindow::restoreEdit()
+void EditorWidget::restoreEdit()
 {
   FILE *fp;
 
@@ -1396,9 +1365,7 @@ void EditorWindow::restoreEdit()
     fclose(fp);
     path[strlen(path) - 1] = 0; // trim new-line
     if (access(path, 0) == 0) {
-      loadFile(path, -1, false);
-      statusMsg(path);
-      fileChanged(true);
+      loadFile(path);
       return;
     }
   }
@@ -1407,9 +1374,7 @@ void EditorWindow::restoreEdit()
   getHomeDir(path);
   strcat(path, UNTITLED_FILE);
   if (access(path, 0) == 0) {
-    loadFile(path, -1, false);
-    statusMsg(path);
-    fileChanged(true);
+    loadFile(path);
   }
 }
 

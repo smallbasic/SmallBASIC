@@ -15,7 +15,7 @@
 #include <fltk/ValueInput.h>
 #include <fltk/AnsiWidget.h>
 
-#include "EditorWindow.h"
+#include "EditorWidget.h"
 #include "HelpWidget.h"
 
 #define C_LINKAGE_BEGIN extern "C" {
@@ -51,6 +51,13 @@ enum ExecState {
   quit_state
 };
 
+enum GroupWidget {
+  gw_editor,
+  gw_output,
+  gw_help,
+  gw_file
+};
+
 struct MainWindow;
 extern MainWindow *wnd;
 extern ExecState runMode;
@@ -80,7 +87,7 @@ struct MainWindow : public BaseWindow {
   MainWindow(int w, int h);
   virtual ~MainWindow() {};
 
-  bool basicMain(const char *filename, bool toolExec);
+  bool basicMain(EditorWidget* editWidget, const char *filename, bool toolExec);
   bool isBreakExec(void);
   bool isEdit();
   bool isEditHidden() {return isHideEditor;}
@@ -99,11 +106,24 @@ struct MainWindow : public BaseWindow {
   void setModal(bool modal);
   void showEditTab();
   void showHelpPage();
-  void showHelpTab();
   void showOutputTab();
   void updatePath(char *filename);
+  void updateEditTabNames();
+
+  Group* createEditor(const char* title);
+  EditorWidget* getEditor(Group* group);
+  EditorWidget* getEditor(const char* fullPath);
+  EditorWidget* getEditor();
+  void editFile(const char* filePath, const char* fileName);
+  Group* getSelectedTab();
+  Group* getNextTab(Group* current);
+  Group* getPrevTab(Group* current);
+  Group* selectTab(const char* label);
+  Group* findTab(const char* label);
+  Group* findTab(GroupWidget groupWidget);
 
   CALLBACK_METHOD(change_case);
+  CALLBACK_METHOD(close_tab);
   CALLBACK_METHOD(copy_text);
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);
@@ -118,7 +138,9 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(hide_editor);
   CALLBACK_METHOD(load_file);
   CALLBACK_METHOD(next_tab);
+  CALLBACK_METHOD(openFile);
   CALLBACK_METHOD(paste_text);
+  CALLBACK_METHOD(prev_tab);
   CALLBACK_METHOD(quit);
   CALLBACK_METHOD(restart_run);
   CALLBACK_METHOD(run);
@@ -127,7 +149,12 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(tool_plugin);
   CALLBACK_METHOD(turbo);
 
-  EditorWindow* getEditor();
+  HelpWidget* getHelp();
+
+  // common editing widgets
+  Window* replaceDlg;
+  Input* replaceFind;
+  Input* replaceWith;
 
   bool isTurbo;
   bool isHideEditor;
@@ -135,19 +162,10 @@ struct MainWindow : public BaseWindow {
 
   // main output
   AnsiWidget* out;
-  EditorWindow* editWnd;
-  HelpWidget* helpWnd;
-
-  // tabs
-  TabGroup* tabGroup;
-  Group* editGroup;
   Group* outputGroup;
-  Group* helpGroup;
 
-  // common editing widgets
-  Window* replaceDlg;
-  Input* replaceFind;
-  Input* replaceWith;
+  // tab parent
+  TabGroup* tabGroup;
 };
 
 #endif

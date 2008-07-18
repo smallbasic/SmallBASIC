@@ -24,9 +24,10 @@ bin_PROGRAMS = sbasici
 sbasici_SOURCES =				\
     HelpWidget.cxx HelpWidget.h			\
     MainWindow.cxx MainWindow.h			\
-    EditorWindow.cxx EditorWindow.h		\
-    dev_fltk.cxx				\
+    EditorWidget.cxx EditorWidget.h		\
+    FileWidget.cxx FileWidget.h			\
     StringLib.cxx StringLib.h			\
+    dev_fltk.cxx				\
     blib_fltk_ui.cxx
 
 sbasici_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@

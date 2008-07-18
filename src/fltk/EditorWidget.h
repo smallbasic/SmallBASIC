@@ -11,8 +11,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef EDITOR_WINDOW_H
-#define EDITOR_WINDOW_H
+#ifndef EDITOR_WIDGET_H
+#define EDITOR_WIDGET_H
 
 #include <fltk/Window.h>
 #include <fltk/Widget.h>
@@ -31,13 +31,13 @@ using namespace fltk;
 #undef CALLBACK_METHOD
 #endif
 
-struct EditorWindow;
-EditorWindow* get_editor();
+struct EditorWidget;
+EditorWidget* get_editor();
 
 #define CALLBACK_METHOD(FN)                     \
   void FN(void *v=0);                           \
   static void FN ## _cb(Widget* w, void *v) {   \
-    EditorWindow* e = get_editor();             \
+    EditorWidget* e = get_editor();             \
     if (e) e->FN(v);                            \
   }
 
@@ -73,10 +73,10 @@ struct CodeEditor : public TextEditor {
   char search[256];
 };
 
-class EditorWindow : public Group {
+class EditorWidget : public Group {
 public:
-  EditorWindow(int x, int y, int w, int h);
-   ~EditorWindow();
+  EditorWidget(int x, int y, int w, int h);
+   ~EditorWidget();
 
   int handle(int e);
   bool isDirty() {
@@ -85,7 +85,6 @@ public:
   const char *getFilename() {
     return filename;
   }
-
 
   bool checkSave(bool discard);
   int getFontSize();
@@ -101,7 +100,7 @@ public:
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
   void gotoLine(int line);
-  void loadFile(const char *newfile, int ipos, bool updateUI);
+  void loadFile(const char *newfile);
   void pathMessage(const char *file);
   void restoreEdit();
   void runMsg(RunMessage runMessage);
@@ -113,23 +112,23 @@ public:
   void undo();
 
   static void undo_cb(Widget *, void *v) {
-    TextEditor::kf_undo(0, ((EditorWindow *) v)->editor);
+    TextEditor::kf_undo(0, ((EditorWidget *) v)->editor);
   }
 
   static void cut_cb(Widget *, void *v) {
-    TextEditor::kf_cut(0, ((EditorWindow *) v)->editor);
+    TextEditor::kf_cut(0, ((EditorWidget *) v)->editor);
   }
 
   static void paste_cb(Widget *, void *v) {
-    TextEditor::kf_paste(0, ((EditorWindow *) v)->editor);
+    TextEditor::kf_paste(0, ((EditorWidget *) v)->editor);
   }
 
   static void copy_cb(Widget *, void *v) {
-    TextEditor::kf_copy(0, ((EditorWindow *) v)->editor);
+    TextEditor::kf_copy(0, ((EditorWidget *) v)->editor);
   }
 
   static void changed_cb(int, int inserted, int deleted, int, const char *, void *v) {
-    ((EditorWindow *) v)->doChange(inserted, deleted);
+    ((EditorWidget *) v)->doChange(inserted, deleted);
   }
 
   CALLBACK_METHOD(cancelReplace);
@@ -137,7 +136,6 @@ public:
   CALLBACK_METHOD(find);
   CALLBACK_METHOD(func_list);
   CALLBACK_METHOD(goto_line);
-  CALLBACK_METHOD(insertFile);
   CALLBACK_METHOD(newFile);
   CALLBACK_METHOD(openFile);
   CALLBACK_METHOD(replaceAll);

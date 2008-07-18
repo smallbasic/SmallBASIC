@@ -72,7 +72,8 @@ C_LINKAGE_BEGIN int osd_devinit()
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
   if (wnd->isInteractive()) {
-    wnd->outputGroup->show();
+    // TODO: fixme
+    //    wnd->outputGroup->show();
   }
 
   os_graf_mx = wnd->out->w();
@@ -315,7 +316,7 @@ int dev_putenv(const char *s)
     wnd->copy_label(rv);
   }
   else if (lv.equals("INDENT_LEVEL")) {
-    wnd->editWnd->setIndentLevel(rv.toInteger());
+    wnd->getEditor()->setIndentLevel(rv.toInteger());
   }
   else if (lv.equals("TURBO")) {
     wnd->isTurbo = rv.toInteger() == 1 ? 1 : 0;
@@ -394,7 +395,7 @@ void doEvent(void *)
   }
   else if (wnd->siteHome.length() == 0) {
     // not currently visiting a remote site
-    if (wnd->editWnd->checkSave(true) == false) {
+    if (wnd->getEditor()->checkSave(true) == false) {
       return;
     }
     closeForm();

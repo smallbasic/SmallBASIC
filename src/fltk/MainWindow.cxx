@@ -32,8 +32,9 @@
 #include <fltk/run.h>
 
 #include "MainWindow.h"
-#include "EditorWindow.h"
+#include "EditorWidget.h"
 #include "HelpWidget.h"
+#include "FileWidget.h"
 #include "sbapp.h"
 #include "StringLib.h"
 
@@ -59,6 +60,8 @@ int recentPosition[NUM_RECENT_ITEMS];
 MainWindow* wnd;
 ExecState runMode = init_state;
 
+const char* fileTabName = "File";
+const char* helpTabName = "Help";
 const char* basHome = "BAS_HOME=";
 const char* pluginHome = "plugins";
 const char historyFile[] = "history.txt";
@@ -87,13 +90,11 @@ bool isFormActive();
 
 void MainWindow::showEditTab()
 {
-  tabGroup->selected_child(editGroup);
-  editWnd->take_focus();
-}
-
-void MainWindow::showHelpTab()
-{
-  tabGroup->selected_child(helpGroup);
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    tabGroup->selected_child(editWidget->parent());
+    editWidget->take_focus();
+  }
 }
 
 void MainWindow::showOutputTab()
@@ -118,9 +119,9 @@ void MainWindow::execInit()
   strcat(path, "init.bas");
   if (access(path, 0) == 0) {
     int success = sbasic_main(path);
-    editWnd->runMsg(success ? msg_none : msg_err);
+    getEditor()->runMsg(success ? msg_none : msg_err);
   }
-  editWnd->take_focus();
+  getEditor()->take_focus();
 }
 
 void MainWindow::saveLastEdit(const char *filename)
@@ -189,7 +190,7 @@ void MainWindow::addHistory(const char *filename)
 }
 
 // run the give file. returns whether break was hit
-bool MainWindow::basicMain(const char *filename, bool toolExec)
+bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool toolExec)
 {
   int len = strlen(filename);
   if (strcasecmp(filename + len - 4, ".htm") == 0 ||
@@ -197,18 +198,24 @@ bool MainWindow::basicMain(const char *filename, bool toolExec)
     // render html edit buffer
     sprintf(path, "file:%s", filename);
     updateForm(path);
-    editWnd->take_focus();
+    if (editWidget) {
+      editWidget->take_focus();
+    }
     return false;
   }
   if (access(filename, 0) != 0) {
-    editWnd->pathMessage(filename);
+    if (editWidget) {
+      editWidget->pathMessage(filename);
+      editWidget->runMsg(msg_err);
+    }
     runMode = edit_state;
-    editWnd->runMsg(msg_err);
     return false;
   }
 
-  editWnd->readonly(true);
-  editWnd->runMsg(msg_run);
+  if (editWidget) {
+    editWidget->readonly(true);
+    editWidget->runMsg(msg_run);
+  }
 
   opt_pref_width = 0;
   opt_pref_height = 0;
@@ -258,8 +265,8 @@ bool MainWindow::basicMain(const char *filename, bool toolExec)
   }
 
   if (!success || was_break) {
-    if (!toolExec) {
-      editWnd->gotoLine(gsb_last_line);
+    if (!toolExec && editWidget) {
+      editWidget->gotoLine(gsb_last_line);
     }
     int len = strlen(gsb_last_errmsg);
     if (gsb_last_errmsg[len - 1] == '\n') {
@@ -267,15 +274,19 @@ bool MainWindow::basicMain(const char *filename, bool toolExec)
     }
     closeForm();  // unhide the error
     showEditTab();
-    editWnd->statusMsg(gsb_last_errmsg);
-    editWnd->runMsg(was_break ? msg_none : msg_err);
+    if (editWidget) {
+      editWidget->statusMsg(gsb_last_errmsg);
+      editWidget->runMsg(was_break ? msg_none : msg_err);
+    }
   }
-  else {
-    editWnd->statusMsg(editWnd->getFilename());
-    editWnd->runMsg(msg_none);
+  else if (editWidget) {
+    editWidget->statusMsg(editWidget->getFilename());
+    editWidget->runMsg(msg_none);
   }
 
-  editWnd->readonly(false);
+  if (editWidget) {
+    editWidget->readonly(false);
+  }
   runMode = edit_state;
   return was_break;
 }
@@ -303,6 +314,21 @@ bool searchBackward(const char *text, int startPos,
 
 //--Menu callbacks--------------------------------------------------------------
 
+void MainWindow::close_tab(Widget* w, void* eventData) {
+  if (tabGroup->children() > 1) {
+    Group* group = getSelectedTab();
+    if (group && group != outputGroup) {
+      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+        EditorWidget* editWidget = (EditorWidget*)group->child(0);
+        if (!editWidget->checkSave(true)) {
+          return;
+        }
+      }
+      tabGroup->remove(group);
+    }
+  }
+}
+
 void MainWindow::restart_run(Widget* w, void* eventData) {
   if (runMode == run_state) {
     brun_break();
@@ -314,21 +340,26 @@ void MainWindow::restart_run(Widget* w, void* eventData) {
 void MainWindow::quit(Widget* w, void* eventData)
 {
   if (runMode == edit_state || runMode == quit_state) {
-
     // auto-save scratchpad
-    const char *filename = editWnd->getFilename();
-    int offs = strlen(filename) - strlen(UNTITLED_FILE);
-    if (filename[0] == 0 ||
-        (offs > 0 && strcasecmp(filename + offs, UNTITLED_FILE) == 0)) {
-      getHomeDir(path);
-      strcat(path, UNTITLED_FILE);
-      editWnd->doSaveFile(path, 0);
-      exit(0);
+    int n = tabGroup->children();
+    for (int c = 0; c<n; c++) {
+      Group* group = (Group*)tabGroup->child(c);
+      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+        EditorWidget* editWidget = (EditorWidget*)group->child(0);
+        const char *filename = editWidget->getFilename();
+        int offs = strlen(filename) - strlen(UNTITLED_FILE);
+        if (filename[0] == 0 ||
+            (offs > 0 && strcasecmp(filename + offs, UNTITLED_FILE) == 0)) {
+          getHomeDir(path);
+          strcat(path, UNTITLED_FILE);
+          editWidget->doSaveFile(path, 0);
+        }
+        else if (!editWidget->checkSave(true)) {
+          return;
+        }
+      }
     }
-
-    if (editWnd->checkSave(true)) {
-      exit(0);
-    }
+    exit(0);
   }
   else {
     switch (choice("Terminate running program?", "Exit", "Break", "Cancel")) {
@@ -349,11 +380,11 @@ void MainWindow::help_home(Widget* w, void* eventData)
 
 // display the results of help.bas
 void MainWindow::showHelpPage() {
-  showHelpTab();
+  HelpWidget* help = getHelp();
   getHomeDir(path);
-  helpWnd->setDocHome(path);
+  help->setDocHome(path);
   strcat(path, "help.html");
-  helpWnd->loadFile(path);
+  help->loadFile(path);
 }
 
 void MainWindow::execHelp() {
@@ -363,8 +394,11 @@ void MainWindow::execHelp() {
   }
   else {
     sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
-    basicMain(path, true);
-    editWnd->statusMsg(editWnd->getFilename());
+    EditorWidget* editWidget = getEditor();
+    basicMain(editWidget, path, true);
+    if (editWidget) {
+      editWidget->statusMsg(editWidget->getFilename());
+    }
   }
 }
 
@@ -372,7 +406,7 @@ void MainWindow::execHelp() {
 void do_help_contents_anchor(void *)
 {
   fltk::remove_check(do_help_contents_anchor);
-  strcpy(opt_command, wnd->helpWnd->getEventName());
+  strcpy(opt_command, wnd->getHelp()->getEventName());
   wnd->execHelp();
   wnd->showHelpPage();
 }
@@ -389,7 +423,7 @@ void MainWindow::help_contents(Widget* w, void* eventData)
   if (runMode == edit_state) {
     if (event_key() != 0) {
       // scan for help context
-      TextEditor *editor = editWnd->editor;
+      TextEditor *editor = getEditor()->editor;
       TextBuffer *tb = editor->buffer();
       int pos = editor->insert_position();
       int start = tb->word_start(pos);
@@ -413,18 +447,16 @@ void MainWindow::help_app(Widget* w, void* eventData)
 {
   const char *helpFile = dev_getenv("APP_HELP");
   if (helpFile) {
-    helpWnd->loadFile(helpFile);
+    getHelp()->loadFile(helpFile);
   }
   else {
-    helpWnd->loadBuffer("APP_HELP env variable not found");
+    getHelp()->loadBuffer("APP_HELP env variable not found");
   }
-  showHelpTab();
 }
 
 void MainWindow::help_about(Widget* w, void* eventData)
 {
-  helpWnd->loadBuffer(aboutText);
-  showHelpTab();
+  getHelp()->loadBuffer(aboutText);
 }
 
 void MainWindow::run_break(Widget* w, void* eventData)
@@ -449,25 +481,29 @@ void MainWindow::hide_editor(Widget* w, void* eventData)
 
 void MainWindow::next_tab(Widget* w, void* eventData)
 {
-  Widget *current = tabGroup->selected_child();
-  // cycle around the main tabgroups
-  if (current == helpGroup) {
-    tabGroup->selected_child(outputGroup);
+  Group* group = getNextTab(getSelectedTab());
+  tabGroup->selected_child(group);
+  EditorWidget* editWidget = getEditor(group);
+  if (editWidget) {
+    editWidget->take_focus();
   }
-  else if (current == outputGroup) {
-    tabGroup->selected_child(editGroup);
-    editWnd->take_focus();
-  }
-  else {
-    tabGroup->selected_child(helpGroup);
+}
+
+void MainWindow::prev_tab(Widget* w, void* eventData)
+{
+  Group* group = getPrevTab(getSelectedTab());
+  tabGroup->selected_child(group);
+  EditorWidget* editWidget = getEditor(group);
+  if (editWidget) {
+    editWidget->take_focus();
   }
 }
 
 void MainWindow::copy_text(Widget* w, void* eventData)
 {
-  // copy from the active tab
-  if (editGroup == tabGroup->selected_child()) {
-    EditorWindow::copy_cb(0, eventData);
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    EditorWidget::copy_cb(0, editWidget);
   }
   else {
     handle(EVENT_COPY_TEXT);
@@ -476,15 +512,17 @@ void MainWindow::copy_text(Widget* w, void* eventData)
 
 void MainWindow::cut_text(Widget* w, void* eventData)
 {
-  if (editGroup == tabGroup->selected_child()) {
-    EditorWindow::cut_cb(0, eventData);
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    EditorWidget::cut_cb(0, editWidget);
   }
 }
 
 void MainWindow::paste_text(Widget* w, void* eventData)
 {
-  if (editGroup == tabGroup->selected_child()) {
-    EditorWindow::paste_cb(0, eventData);
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    EditorWidget::paste_cb(0, editWidget);
   }
 }
 
@@ -495,11 +533,11 @@ void MainWindow::turbo(Widget* w, void* eventData)
 
 void MainWindow::font_size_incr(Widget* w, void* eventData)
 {
-  Widget *current = tabGroup->selected_child();
-  if (current == editGroup) {
-    int size = editWnd->getFontSize();
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    int size = editWidget->getFontSize();
     if (size < MAX_FONT_SIZE) {
-      editWnd->setFontSize(size + 1);
+      editWidget->setFontSize(size + 1);
       out->setFontSize(size + 1);
     }
   }
@@ -510,11 +548,11 @@ void MainWindow::font_size_incr(Widget* w, void* eventData)
 
 void MainWindow::font_size_decr(Widget* w, void* eventData)
 {
-  Widget *current = tabGroup->selected_child();
-  if (current == editGroup) {
-    int size = editWnd->getFontSize();
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    int size = editWidget->getFontSize();
     if (size > MIN_FONT_SIZE) {
-      editWnd->setFontSize(size - 1);
+      editWidget->setFontSize(size - 1);
       out->setFontSize(size - 1);
     }
   }
@@ -525,26 +563,29 @@ void MainWindow::font_size_decr(Widget* w, void* eventData)
 
 void MainWindow::run(Widget* w, void* eventData)
 {
-  const char *filename = editWnd->getFilename();
-  if (runMode == edit_state) {
-    // inhibit autosave on run function with environment var
-    const char *noSave = dev_getenv("NO_RUN_SAVE");
-    if (noSave == 0 || noSave[0] != '1') {
-      if (filename == 0 || filename[0] == 0) {
-        getHomeDir(path);
-        strcat(path, UNTITLED_FILE);
-        filename = path;
-        editWnd->doSaveFile(filename, false);
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    const char *filename = editWidget->getFilename();
+    if (runMode == edit_state) {
+      // inhibit autosave on run function with environment var
+      const char *noSave = dev_getenv("NO_RUN_SAVE");
+      if (noSave == 0 || noSave[0] != '1') {
+        if (filename == 0 || filename[0] == 0) {
+          getHomeDir(path);
+          strcat(path, UNTITLED_FILE);
+          filename = path;
+          editWidget->doSaveFile(filename, false);
+        }
+        else {
+          editWidget->doSaveFile(filename, true);
+        }
       }
-      else {
-        editWnd->doSaveFile(filename, true);
-      }
+      showOutputTab();
+      basicMain(editWidget, filename, false);
     }
-    showOutputTab();
-    basicMain(filename, false);
-  }
-  else {
-    editWnd->busyMessage();
+    else {
+      editWidget->busyMessage();
+    }
   }
 }
 
@@ -552,57 +593,69 @@ void MainWindow::run(Widget* w, void* eventData)
 // program will be changing the contents of the editor buffer
 void MainWindow::editor_plugin(Widget* w, void* eventData)
 {
-  char filename[256];
-  TextEditor *editor = editWnd->editor;
-  strcpy(filename, editWnd->getFilename());
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    TextEditor *editor = editWidget->editor;
+    char filename[256];
+    strcpy(filename, editWidget->getFilename());
 
-  if (runMode == edit_state) {
-    if (editWnd->checkSave(false) && filename[0]) {
-      int pos = editor->insert_position();
-      int row, col, s1r, s1c, s2r, s2c;
-      editWnd->getRowCol(&row, &col);
-      editWnd->getSelStartRowCol(&s1r, &s1c);
-      editWnd->getSelEndRowCol(&s2r, &s2c);
-      sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
-              filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
-      runMode = run_state;
-      editWnd->runMsg(msg_run);
-      sprintf(path, "%s/%s", packageHome, (const char *)eventData);
-      int success = sbasic_main(path);
-      editWnd->runMsg(success ? msg_none : msg_err);
-      editWnd->loadFile(filename, -1, true);
-      editor->insert_position(pos);
-      editor->show_insert_position();
-      showEditTab();
-      runMode = edit_state;
-      opt_command[0] = 0;
+    if (runMode == edit_state) {
+      if (editWidget->checkSave(false) && filename[0]) {
+        int pos = editor->insert_position();
+        int row, col, s1r, s1c, s2r, s2c;
+        editWidget->getRowCol(&row, &col);
+        editWidget->getSelStartRowCol(&s1r, &s1c);
+        editWidget->getSelEndRowCol(&s2r, &s2c);
+        sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
+                filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
+        runMode = run_state;
+        editWidget->runMsg(msg_run);
+        sprintf(path, "%s/%s", packageHome, (const char *)eventData);
+        int success = sbasic_main(path);
+        editWidget->runMsg(success ? msg_none : msg_err);
+        editWidget->loadFile(filename);
+        editor->insert_position(pos);
+        editor->show_insert_position();
+        showEditTab();
+        runMode = edit_state;
+        opt_command[0] = 0;
+      }
     }
-  }
-  else {
-    editWnd->busyMessage();
+    else {
+      editWidget->busyMessage();
+    }
   }
 }
 
 void MainWindow::tool_plugin(Widget* w, void* eventData)
 {
-  if (runMode == edit_state) {
-    sprintf(opt_command, "%s/%s", packageHome, pluginHome);
-    editWnd->statusMsg((const char *)eventData);
-    sprintf(path, "%s/%s", packageHome, (const char *)eventData);
-    showOutputTab();
-    basicMain(path, true);
-    editWnd->statusMsg(editWnd->getFilename());
-    opt_command[0] = 0;
-  }
-  else {
-    editWnd->busyMessage();
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    if (runMode == edit_state) {
+      sprintf(opt_command, "%s/%s", packageHome, pluginHome);
+      editWidget->statusMsg((const char *)eventData);
+      sprintf(path, "%s/%s", packageHome, (const char *)eventData);
+      showOutputTab();
+      basicMain(editWidget, path, true);
+      editWidget->statusMsg(editWidget->getFilename());
+      opt_command[0] = 0;
+    }
+    else {
+      editWidget->busyMessage();
+    }
   }
 }
 
 void MainWindow::change_case(Widget* w, void* eventData)
 {
   int start, end;
-  TextEditor *editor = editWnd->editor;
+
+  EditorWidget* editWidget = getEditor();
+  if (!editWidget) {
+    return;
+  }
+
+  TextEditor *editor = editWidget->editor;
   TextBuffer *tb = editor->buffer();
   char *selection;
 
@@ -655,7 +708,13 @@ void MainWindow::expand_word(Widget* w, void* eventData)
   int start, end;
   const char *fullWord = 0;
   unsigned fullWordLen = 0;
-  TextEditor *editor = editWnd->editor;
+
+  EditorWidget* editWidget = getEditor();
+  if (!editWidget) {
+    return;
+  }
+
+  TextEditor *editor = editWidget->editor;
   TextBuffer *textbuf = editor->buffer();
   const char *text = textbuf->text();
 
@@ -739,7 +798,7 @@ void MainWindow::expand_word(Widget* w, void* eventData)
   completionIndex = -1;         // no more buffer expansions
 
   strlib::List keywords;
-  editWnd->getKeywords(keywords);
+  editWidget->getKeywords(keywords);
 
   // find the next replacement
   int firstIndex = -1;
@@ -793,24 +852,27 @@ void MainWindow::expand_word(Widget* w, void* eventData)
 
 void MainWindow::load_file(Widget* w, void* eventData)
 {
-  if (editWnd->checkSave(true)) {
-    TextEditor *editor = editWnd->editor;
-    // save current position
-    recentPosition[recentIndex] = editor->insert_position();
-    recentIndex = ((int)eventData) - 1;
-    // load selected file
-    const char *path = recentPath[recentIndex].toString();
-    if (access(path, 0) == 0) {
-      editWnd->loadFile(path, -1, false);
-      // restore previous position
-      editor->insert_position(recentPosition[recentIndex]);
-      editWnd->statusMsg(path);
-      editWnd->fileChanged(true);
-      saveLastEdit(path);
-      showEditTab();
-    }
-    else {
-      editWnd->pathMessage(path);
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    if (editWidget->checkSave(true)) {
+      TextEditor *editor = editWidget->editor;
+      // save current position
+      recentPosition[recentIndex] = editor->insert_position();
+      recentIndex = ((int)eventData) - 1;
+      // load selected file
+      const char *path = recentPath[recentIndex].toString();
+      if (access(path, 0) == 0) {
+        editWidget->loadFile(path);
+        // restore previous position
+        editor->insert_position(recentPosition[recentIndex]);
+        editWidget->statusMsg(path);
+        editWidget->fileChanged(true);
+        saveLastEdit(path);
+        showEditTab();
+      }
+      else {
+        editWidget->pathMessage(path);
+      }
     }
   }
 }
@@ -1044,20 +1106,21 @@ int main(int argc, char **argv)
   switch (runMode) {
   case run_state:
     wnd->setHideEditor();
-    wnd->editWnd->loadFile(runfile, -1, true);
+    wnd->getEditor()->loadFile(runfile);
     wnd->addHistory(runfile);
     wnd->showOutputTab();
-    if (!wnd->basicMain(runfile, false)) {
+    if (!wnd->basicMain(0, runfile, false)) {
       return 0; // continue if break hit
     }
   case edit_state:
-    wnd->editWnd->loadFile(runfile, -1, true);
+    wnd->getEditor()->loadFile(runfile);
     break;
   default:
-    wnd->editWnd->restoreEdit();
+    wnd->getEditor()->restoreEdit();
     runMode = edit_state;
   }
 
+  wnd->updateEditTabNames();
   wnd->show(argc, argv);
   return run();
 }
@@ -1072,24 +1135,25 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   updatePath(runfile);
   begin();
   MenuBar *m = new MenuBar(0, 0, w, MNU_HEIGHT);
-  m->add("&File/&New File", 0, (Callback *) EditorWindow::newFile_cb);
-  m->add("&File/&Open File...", CTRL + 'o', (Callback *) EditorWindow::openFile_cb);
+  m->add("&File/&New File", 0, (Callback *) EditorWidget::newFile_cb);
+  m->add("&File/&Open File...", CTRL + 'o', (Callback *) MainWindow::openFile_cb);
   scanRecentFiles(m);
-  m->add("&File/_&Insert File...", CTRL + 'i', (Callback *) EditorWindow::insertFile_cb);
-  m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWindow::saveFile_cb);
+  m->add("&File/_&Close", CTRL + F4Key, (Callback *) MainWindow::close_tab_cb);
+  m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWidget::saveFile_cb);
   m->add("&File/_Save File &As...", CTRL + SHIFT + 'S',
-         (Callback *) EditorWindow::saveFileAs_cb);
+         (Callback *) EditorWidget::saveFileAs_cb);
   m->add("&File/E&xit", CTRL + 'q', (Callback *) MainWindow::quit_cb);
-  m->add("&Edit/_&Undo", CTRL + 'z', (Callback *) EditorWindow::undo_cb);
+  m->add("&Edit/_&Undo", CTRL + 'z', (Callback *) EditorWidget::undo_cb);
   m->add("&Edit/Cu&t", CTRL + 'x', (Callback *) MainWindow::cut_text_cb);
   m->add("&Edit/&Copy", CTRL + 'c', (Callback *) MainWindow::copy_text_cb);
   m->add("&Edit/_&Paste", CTRL + 'v', (Callback *) MainWindow::paste_text_cb);
   m->add("&Edit/&Change Case", ALT + 'c', (Callback *) MainWindow::change_case_cb);
   m->add("&Edit/_&Expand Word", ALT + '/', (Callback *) MainWindow::expand_word_cb);
-  m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWindow::replaceAll_cb);
+  m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWidget::replaceAll_cb);
   m->add("&Edit/_Replace &Again", CTRL + 't',
-         (Callback *) EditorWindow::replaceNext_cb);
+         (Callback *) EditorWidget::replaceNext_cb);
   m->add("&View/_&Next Tab", F6Key, (Callback *) MainWindow::next_tab_cb);
+  m->add("&View/_&Prev Tab", CTRL + F6Key, (Callback *) MainWindow::prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) MainWindow::font_size_decr_cb);
   scanPlugIns(m);
@@ -1116,49 +1180,27 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 
   // group for all tabs
   w -= 8;
-  h -= MNU_HEIGHT; // tab-height
+  h -= MNU_HEIGHT;
   tabGroup = new TabGroup(4, 4, w, h);
-  tabGroup->begin();
 
   h -= 8; // TabGroup border
-  editGroup = new Group(0, MNU_HEIGHT, w, h, "Editor");
-  editGroup->begin();
-  editGroup->box(THIN_DOWN_BOX);
-
-  // create the editor edit window
-  editWnd = new EditorWindow(2, 2, w - 4, h);
-  m->user_data(editWnd);        // the EditorWindow is callback user data
-  editWnd->box(NO_BOX);
-  editWnd->editor->box(NO_BOX);
-  editWnd->editor->take_focus();
-  editGroup->resizable(editWnd);
-  editGroup->end();
-
-  // create the help tab
-  helpGroup = new Group(0, MNU_HEIGHT, w, h, "Help");
-  helpGroup->box(THIN_DOWN_BOX);
-  helpGroup->hide();
-  helpGroup->begin();
-  helpWnd = new HelpWidget(2, 2, w - 4, h - 4);
-  helpWnd->callback(help_contents_anchor_cb);
-  helpWnd->loadBuffer(aboutText);
-  helpGroup->resizable(helpWnd);
-  helpGroup->end();
+  tabGroup->begin();
 
   // create the output tab
   outputGroup = new Group(0, MNU_HEIGHT, w, h, "Output");
   outputGroup->box(THIN_DOWN_BOX);
   outputGroup->hide();
+  outputGroup->user_data((void*) gw_output);
   outputGroup->begin();
   out = new AnsiWidget(2, 2, w - 4, h - 4, DEF_FONT_SIZE);
   outputGroup->resizable(out);
   outputGroup->end();
 
+  tabGroup->resizable(createEditor(UNTITLED_FILE));
   tabGroup->end();
   outer->end();
   end();
 
-  tabGroup->resizable(editGroup);
   outer->resizable(tabGroup);
   resizable(outer);
 
@@ -1169,13 +1211,203 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   replaceWith = new Input(80, 40, 210, 25, "Replace:");
   replaceWith->align(ALIGN_LEFT);
   Button *replaceAll = new Button(10, 70, 90, 25, "Replace All");
-  replaceAll->callback((Callback *) EditorWindow::replaceAll_cb, this);
+  replaceAll->callback((Callback *) EditorWidget::replaceAll_cb, this);
   ReturnButton *replaceNext = new ReturnButton(105, 70, 120, 25, "Replace Next");
-  replaceNext->callback((Callback *) EditorWindow::replaceNext_cb, this);
+  replaceNext->callback((Callback *) EditorWidget::replaceNext_cb, this);
   Button *replaceCancel = new Button(230, 70, 60, 25, "Cancel");
-  replaceCancel->callback((Callback *) EditorWindow::cancelReplace_cb, this);
+  replaceCancel->callback((Callback *) EditorWidget::cancelReplace_cb, this);
   replaceDlg->end();
   replaceDlg->set_non_modal();
+}
+
+void MainWindow::openFile(Widget* w, void* eventData) {
+  Group* openFileGroup = findTab(gw_file);
+  if (!openFileGroup ) {
+    int w = tabGroup->w();
+    int h = tabGroup->h() - 8;
+    tabGroup->begin();
+    openFileGroup = new Group(0, MNU_HEIGHT, w, h, fileTabName);
+    openFileGroup->begin();
+    openFileGroup->box(THIN_DOWN_BOX);
+    openFileGroup->user_data((void*) gw_file);
+    openFileGroup->resizable(new FileWidget(2, 2, w - 4, h));
+    openFileGroup->end();
+    tabGroup->end();
+  }
+
+  tabGroup->selected_child(openFileGroup);
+}
+
+HelpWidget* MainWindow::getHelp()
+{
+  HelpWidget* help = 0;
+  Group* helpGroup = findTab(gw_help);
+  if (!helpGroup) {
+    int w = tabGroup->w();
+    int h = tabGroup->h() - 8;
+    tabGroup->begin();
+    helpGroup = new Group(0, MNU_HEIGHT, w, h, helpTabName);
+    helpGroup->box(THIN_DOWN_BOX);
+    helpGroup->hide();
+    helpGroup->user_data((void*) gw_help);
+    helpGroup->begin();
+    help = new HelpWidget(2, 2, w - 4, h - 4);
+    help->callback(help_contents_anchor_cb);
+    helpGroup->resizable(help);
+    tabGroup->end();
+  }
+  else {
+    help = (HelpWidget*) helpGroup->resizable();
+  }
+  tabGroup->selected_child(helpGroup);
+  return help;
+}
+
+EditorWidget* MainWindow::getEditor() {
+  return getEditor(getSelectedTab());
+}
+
+EditorWidget* MainWindow::getEditor(Group* group) {
+  EditorWidget* editWidget = 0;
+  if (group != 0 && gw_editor == ((GroupWidget) (int)group->user_data())) {
+    editWidget = (EditorWidget*)group->resizable();
+  }
+  return editWidget;
+}
+
+EditorWidget* MainWindow::getEditor(const char* fullPath) {
+  if (fullPath != 0 && fullPath[0] != 0) {
+    int n = tabGroup->children();
+    for (int c = 0; c<n; c++) {
+      Group* group = (Group*)tabGroup->child(c);
+      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+        EditorWidget* editWidget = (EditorWidget*)group->child(0);
+        const char* fileName = editWidget->getFilename();
+        if (fileName && strcmp(fullPath, fileName) == 0) {
+          tabGroup->selected_child(group);
+          return editWidget;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+void MainWindow::editFile(const char* filePath, const char* fileName) {
+  String fullPath;
+  fullPath.append(filePath);
+  fullPath.append("/");
+  fullPath.append(fileName);
+
+  if (!getEditor(fullPath)) {
+    EditorWidget* editWidget = getEditor(createEditor(fileName));
+    editWidget->loadFile(fullPath);
+    addHistory(fullPath);
+  }
+}
+
+Group* MainWindow::getSelectedTab() {
+  return (Group*)tabGroup->selected_child();
+}
+
+/**
+ * returns the tab with the given name
+ */
+Group* MainWindow::findTab(const char* label) {
+  int n = tabGroup->children();
+  for (int c = 0; c<n; c++) {
+    Group* child = (Group*)tabGroup->child(c);
+    if (strcmp(child->label(), label) == 0) {
+      return child;
+    }
+  }
+  return 0;
+}
+
+Group* MainWindow::findTab(GroupWidget groupWidget) {
+  int n = tabGroup->children();
+  for (int c = 0; c<n; c++) {
+    Group* child = (Group*)tabGroup->child(c);
+    if (groupWidget == ((GroupWidget) (int) child->user_data())) {
+      return child;
+    }
+  }
+  return 0;
+}
+
+/**
+ * find and select the tab with the given tab label
+ */
+Group* MainWindow::selectTab(const char* label) {
+  Group* tab = findTab(label);
+  if (tab) {
+    tabGroup->selected_child(tab);
+  }
+  return tab;
+}
+
+/**
+ * create a new help widget and add it to the tab group
+ */
+Group* MainWindow::createEditor(const char* title) {
+  int w = tabGroup->w();
+  int h = tabGroup->h() - 8;
+
+  Group* editGroup = new Group(0, MNU_HEIGHT, w, h);
+  editGroup->copy_label(title);
+  editGroup->begin();
+  editGroup->box(THIN_DOWN_BOX);
+  editGroup->resizable(new EditorWidget(2, 2, w - 4, h));
+  editGroup->user_data((void*) gw_editor);
+  editGroup->end();
+
+  tabGroup->add(editGroup);
+  tabGroup->selected_child(editGroup);
+  return editGroup;
+}
+
+/**
+ * updates the names of the editor tabs based on the enclosed editing file
+ */
+void MainWindow::updateEditTabNames() {
+  int n = tabGroup->children();
+  for (int c = 0; c < n; c++) {
+    Group* group = (Group*)tabGroup->child(c);
+    if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+      EditorWidget* editWidget = (EditorWidget*)group->child(0);
+      const char* editFileName = editWidget->getFilename();
+      const char* slash = strrchr(editFileName, '/');
+      group->copy_label(slash ? slash + 1 : editFileName);
+    }      
+  }
+}
+
+/**
+ * returns the tab following the given tab
+ */
+Group* MainWindow::getNextTab(Group* current) {
+  int n = tabGroup->children();
+  for (int c = 0; c < n - 1; c++) {
+    Group* child = (Group*) tabGroup->child(c);
+    if (child == current) {
+      return (Group*) tabGroup->child(c+1);
+    }
+  }
+  return (Group*) tabGroup->child(0);
+}
+
+/**
+ * returns the tab prior the given tab or null if not found
+ */
+Group* MainWindow::getPrevTab(Group* current) {
+  int n = tabGroup->children();
+  for (int c = n; c > 0; c--) {
+    Group* child = (Group*)tabGroup->child(c);
+    if (child == current) {
+      return (Group*) tabGroup->child(c - 1);
+    }
+  }
+  return (Group*) tabGroup->child(n - 1);
 }
 
 bool MainWindow::isBreakExec(void)
@@ -1217,10 +1449,11 @@ void MainWindow::resetPen()
 
 void MainWindow::execLink(const char *file)
 {
-  if (file == 0 || file[0] == 0) {
+  if (!file || !file[0]) {
     return;
   }
 
+  EditorWidget* editWidget = getEditor();
   siteHome.empty();
   bool execFile = false;
   if (file[0] == '!' || file[0] == '|') {
@@ -1237,7 +1470,7 @@ void MainWindow::execLink(const char *file)
     strcpy(df.name, file);
     if (http_open(&df) == 0) {
       sprintf(localFile, "Failed to open URL: %s", file);
-      editWnd->statusMsg(localFile);
+      editWidget->statusMsg(localFile);
       return;
     }
 
@@ -1246,11 +1479,10 @@ void MainWindow::execLink(const char *file)
 
     if (httpOK && extn && 0 == strncasecmp(extn, ".bas", 4)) {
       // run the remote program
-      editWnd->loadFile(localFile, -1, false);
-      editWnd->statusMsg(file);
+      editWidget->loadFile(localFile);
       addHistory(file);
       showOutputTab();
-      basicMain(localFile, false);
+      basicMain(editWidget, localFile, false);
     }
     else {
       // display as html
@@ -1264,7 +1496,7 @@ void MainWindow::execLink(const char *file)
         sprintf(path, "file:%s", localFile);
       }
       siteHome.append(df.name, df.drv_dw[1]);
-      editWnd->statusMsg(siteHome.toString());
+      editWidget->statusMsg(siteHome.toString());
       updateForm(path);
       showOutputTab();
     }
@@ -1301,20 +1533,20 @@ void MainWindow::execLink(const char *file)
     }
   }
   if (access(file, 0) == 0) {
-    editWnd->statusMsg(file);
+    editWidget->statusMsg(file);
     if (execFile) {
       addHistory(file);
       showOutputTab();
-      basicMain(file, false);
+      basicMain(editWidget, file, false);
       opt_nosave = 1;
     }
     else {
-      editWnd->loadFile(file, -1, true);
+      editWidget->loadFile(file);
       showEditTab();
     }
   }
   else {
-    editWnd->pathMessage(file);
+    editWidget->pathMessage(file);
   }
 }
 
@@ -1337,7 +1569,7 @@ int BaseWindow::handle(int e)
   switch (runMode) {
   case edit_state:
     if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
-      wnd->editWnd->focusWidget();
+      wnd->getEditor()->focusWidget();
     }
     break;
   case run_state:
