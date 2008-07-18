@@ -1241,7 +1241,6 @@ Group* MainWindow::createEditor(const char* title) {
   editGroup->end();
 
   tabGroup->add(editGroup);
-  tabGroup->redraw();
   tabGroup->selected_child(editGroup);
   return editGroup;
 }
@@ -1256,9 +1255,8 @@ void MainWindow::openFile(Widget* w, void* eventData) {
     openFileGroup->begin();
     openFileGroup->box(THIN_DOWN_BOX);
     openFileGroup->user_data((void*) gw_file);
-    openFileGroup->resizable(new FileWidget(2, 2, w - 4, h));
+    openFileGroup->resizable(new FileWidget(2, 2, w - 4, h - 4));
     openFileGroup->end();
-    tabGroup->redraw();
     tabGroup->end();
   }
 
@@ -1281,7 +1279,6 @@ HelpWidget* MainWindow::getHelp()
     help = new HelpWidget(2, 2, w - 4, h - 4);
     help->callback(help_contents_anchor_cb);
     helpGroup->resizable(help);
-    tabGroup->redraw();
     tabGroup->end();
   }
   else {
