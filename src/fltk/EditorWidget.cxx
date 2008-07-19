@@ -1016,22 +1016,6 @@ void EditorWidget::newFile(void* eventData)
   modifiedTime = 0;
 }
 
-void EditorWidget::openFile(void* eventData)
-{
-//   if (readonly()) {
-//     return;
-//   }
-
-//   if (!checkSave(true)) {
-//     return;
-//   }
-
-//   const char *newfile = file_chooser("Open File", "*.bas", filename);
-//   if (newfile != NULL) {
-//     loadFile(newfile, -1, true);
-//   }
-}
-
 void EditorWidget::replaceAll(void* eventData)
 {
   if (readonly()) {
@@ -1285,17 +1269,6 @@ void EditorWidget::runMsg(RunMessage runMessage)
   }
   runStatus->copy_label(msg);
   runStatus->redraw();
-}
-
-void EditorWidget::busyMessage()
-{
-  statusMsg("Selection unavailable while program is running.");
-}
-
-void EditorWidget::pathMessage(const char *file)
-{
-  sprintf(path, "File not found: %s", file);
-  statusMsg(path);
 }
 
 void EditorWidget::fileChanged(bool loadfile)

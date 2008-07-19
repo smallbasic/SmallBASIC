@@ -88,9 +88,30 @@ bool isFormActive();
 
 //--EditWindow functions--------------------------------------------------------
 
-void MainWindow::showEditTab()
+void MainWindow::statusMsg(RunMessage runMessage, const char *statusMessage) {
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    editWidget->statusMsg(statusMessage ? statusMessage : editWidget->getFilename());
+    editWidget->runMsg(runMessage);
+  }
+}
+
+void MainWindow::busyMessage()
 {
   EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    editWidget->statusMsg("Selection unavailable while program is running.");
+  }
+}
+
+void MainWindow::pathMessage(const char *file)
+{
+  sprintf(path, "File not found: %s", file);
+  statusMsg(msg_err, path);
+}
+
+void MainWindow::showEditTab(EditorWidget* editWidget)
+{
   if (editWidget) {
     tabGroup->selected_child(editWidget->parent());
     editWidget->take_focus();
@@ -137,11 +158,11 @@ void MainWindow::saveLastEdit(const char *filename)
   }
 }
 
-void MainWindow::setHideEditor() {
-  isHideEditor = true;
+void MainWindow::setHideIde() {
+  opt_ide = IDE_NONE;
 
   // update the menu
-  ((Menu*) ((Menu*) child(0))->find("Program/Toggle/Hide Editor"))->set();
+  ((Menu*) ((Menu*) child(0))->find("Program/Toggle/Hide IDE"))->set();
 }
 
 void MainWindow::addHistory(const char *filename)
@@ -204,10 +225,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     return false;
   }
   if (access(filename, 0) != 0) {
-    if (editWidget) {
-      editWidget->pathMessage(filename);
-      editWidget->runMsg(msg_err);
-    }
+    pathMessage(filename);
     runMode = edit_state;
     return false;
   }
@@ -225,7 +243,8 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   int old_w = out->w();
   int old_h = out->h();
 
-  if (!toolExec && isHideEditor) {
+  if (!toolExec && opt_ide == IDE_NONE) {
+    // run in a separate window with the ide hidden
     fullScreen = new BaseWindow(w(), h());
     fullScreen->copy_label(filename);
     fullScreen->callback(quit_cb);
@@ -238,6 +257,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   }
   else {
     copy_label("SmallBASIC");
+    outputGroup->label("(Output)");
   }
 
   int success;
@@ -249,6 +269,10 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   while (restart);
   
   bool was_break = (runMode == break_state);
+  if (editWidget) {
+    // may have closed during run
+    editWidget = getEditor(filename);
+  }
 
   if (fullScreen != NULL) {
     fullScreen->remove(out);
@@ -258,6 +282,9 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     outputGroup->add(out);
     out->resize(old_w, old_h);
     show();
+  }
+  else {
+    outputGroup->label("Output");
   }
 
   if (runMode == quit_state) {
@@ -273,14 +300,13 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
       gsb_last_errmsg[len - 1] = 0;
     }
     closeForm();  // unhide the error
-    showEditTab();
-    if (editWidget) {
-      editWidget->statusMsg(gsb_last_errmsg);
+    if (editWidget) { trace("here !");
+      showEditTab(editWidget);
       editWidget->runMsg(was_break ? msg_none : msg_err);
+      editWidget->statusMsg(gsb_last_errmsg);
     }
   }
   else if (editWidget) {
-    editWidget->statusMsg(editWidget->getFilename());
     editWidget->runMsg(msg_none);
   }
 
@@ -394,11 +420,8 @@ void MainWindow::execHelp() {
   }
   else {
     sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
-    EditorWidget* editWidget = getEditor();
-    basicMain(editWidget, path, true);
-    if (editWidget) {
-      editWidget->statusMsg(editWidget->getFilename());
-    }
+    basicMain(0, path, true);
+    statusMsg(msg_none, 0);
   }
 }
 
@@ -421,9 +444,10 @@ void MainWindow::help_contents_anchor(Widget* w, void* eventData) {
 void MainWindow::help_contents(Widget* w, void* eventData)
 {
   if (runMode == edit_state) {
-    if (event_key() != 0) {
+    EditorWidget* editWidget = getEditor();
+    if (editWidget && event_key() != 0) {
       // scan for help context
-      TextEditor *editor = getEditor()->editor;
+      TextEditor *editor = editWidget->editor;
       TextBuffer *tb = editor->buffer();
       int pos = editor->insert_position();
       int start = tb->word_start(pos);
@@ -474,9 +498,9 @@ void MainWindow::set_options(Widget* w, void* eventData)
   }
 }
 
-void MainWindow::hide_editor(Widget* w, void* eventData)
+void MainWindow::hide_ide(Widget* w, void* eventData)
 {
-  isHideEditor = (w->flags() & STATE);
+  opt_ide = (w->flags() & STATE) ? IDE_NONE : IDE_LINKED;
 }
 
 void MainWindow::next_tab(Widget* w, void* eventData)
@@ -584,7 +608,7 @@ void MainWindow::run(Widget* w, void* eventData)
       basicMain(editWidget, filename, false);
     }
     else {
-      editWidget->busyMessage();
+      busyMessage();
     }
   }
 }
@@ -616,33 +640,30 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
         editWidget->loadFile(filename);
         editor->insert_position(pos);
         editor->show_insert_position();
-        showEditTab();
+        showEditTab(editWidget);
         runMode = edit_state;
         opt_command[0] = 0;
       }
     }
     else {
-      editWidget->busyMessage();
+      busyMessage();
     }
   }
 }
 
 void MainWindow::tool_plugin(Widget* w, void* eventData)
 {
-  EditorWidget* editWidget = getEditor();
-  if (editWidget) {
-    if (runMode == edit_state) {
-      sprintf(opt_command, "%s/%s", packageHome, pluginHome);
-      editWidget->statusMsg((const char *)eventData);
-      sprintf(path, "%s/%s", packageHome, (const char *)eventData);
-      showOutputTab();
-      basicMain(editWidget, path, true);
-      editWidget->statusMsg(editWidget->getFilename());
-      opt_command[0] = 0;
-    }
-    else {
-      editWidget->busyMessage();
-    }
+  if (runMode == edit_state) {
+    sprintf(opt_command, "%s/%s", packageHome, pluginHome);
+    statusMsg(msg_none, (const char *)eventData);
+    sprintf(path, "%s/%s", packageHome, (const char *)eventData);
+    showOutputTab();
+    basicMain(0, path, true);
+    statusMsg(msg_none, 0);
+    opt_command[0] = 0;
+  }
+  else {
+    busyMessage();
   }
 }
 
@@ -870,10 +891,10 @@ void MainWindow::load_file(Widget* w, void* eventData)
         saveLastEdit(path);
         const char* slash = strrchr(path, '/');
         editWidget->parent()->copy_label(slash ? slash + 1 : path);
-        showEditTab();
+        showEditTab(editWidget);
       }
       else {
-        editWidget->pathMessage(path);
+        pathMessage(path);
       }
     }
   }
@@ -1051,7 +1072,7 @@ int main(int argc, char **argv)
   opt_quiet = 1;
   opt_verbose = 0;
   opt_nosave = 1;
-  opt_ide = IDE_NONE;   // for sberr.c
+  opt_ide = IDE_LINKED;
   opt_pref_bpp = 0;
   os_graphics = 1;
   opt_interactive = 1;
@@ -1109,7 +1130,7 @@ int main(int argc, char **argv)
 
   switch (runMode) {
   case run_state:
-    wnd->setHideEditor();
+    wnd->setHideIde();
     wnd->getEditor()->loadFile(runfile);
     wnd->addHistory(runfile);
     wnd->showOutputTab();
@@ -1134,7 +1155,6 @@ int main(int argc, char **argv)
 MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
   isTurbo = false;
-  isHideEditor = false;
 
   updatePath(runfile);
   begin();
@@ -1166,8 +1186,8 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Program/_&Restart", CTRL + 'r', (Callback *) MainWindow::restart_run_cb);
   m->add("&Program/&Command", F10Key, (Callback *) MainWindow::set_options_cb);
   m->add("&Program/Toggle/&Turbo", 0, (Callback *) turbo_cb)->type(Item::TOGGLE);
-  m->add("&Program/Toggle/&Hide Editor", 0,
-         (Callback *) hide_editor_cb)->type(Item::TOGGLE);
+  m->add("&Program/Toggle/&Hide IDE", 0,
+         (Callback *) hide_ide_cb)->type(Item::TOGGLE);
   m->add("&Help/&Help Contents", F1Key, (Callback *) MainWindow::help_contents_cb);
   m->add("&Help/_&Program Help", F11Key, (Callback *) MainWindow::help_app_cb);
   m->add("&Help/_&Home Page", 0, (Callback *) MainWindow::help_home_cb);
@@ -1309,7 +1329,6 @@ EditorWidget* MainWindow::getEditor(const char* fullPath) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         const char* fileName = editWidget->getFilename();
         if (fileName && strcmp(fullPath, fileName) == 0) {
-          tabGroup->selected_child(group);
           return editWidget;
         }
       }
@@ -1319,11 +1338,13 @@ EditorWidget* MainWindow::getEditor(const char* fullPath) {
 }
 
 void MainWindow::editFile(const char* filePath) {
-  if (!getEditor(filePath)) {
-    EditorWidget* editWidget = getEditor(createEditor(filePath));
+  EditorWidget* editWidget = getEditor(filePath);
+  if (!editWidget) {
+    editWidget = getEditor(createEditor(filePath));
     editWidget->loadFile(filePath);
     addHistory(filePath);
   }
+  showEditTab(editWidget);
 }
 
 Group* MainWindow::getSelectedTab() {
@@ -1439,6 +1460,10 @@ bool MainWindow::isInteractive() {
   return opt_interactive;
 }
 
+bool MainWindow::isIdeHidden() {
+  return (opt_ide == IDE_NONE);
+}
+
 void MainWindow::resetPen()
 {
   penDownX = 0;
@@ -1454,6 +1479,7 @@ void MainWindow::execLink(const char *file)
   }
 
   EditorWidget* editWidget = getEditor();
+
   siteHome.empty();
   bool execFile = false;
   if (file[0] == '!' || file[0] == '|') {
@@ -1470,12 +1496,15 @@ void MainWindow::execLink(const char *file)
     strcpy(df.name, file);
     if (http_open(&df) == 0) {
       sprintf(localFile, "Failed to open URL: %s", file);
-      editWidget->statusMsg(localFile);
+      statusMsg(msg_none, localFile);
       return;
     }
 
     bool httpOK = cacheLink(&df, localFile);
     char *extn = strrchr(file, '.');
+    if (!editWidget) {
+      editWidget = getEditor(createEditor(file));
+    }
 
     if (httpOK && extn && 0 == strncasecmp(extn, ".bas", 4)) {
       // run the remote program
@@ -1496,7 +1525,7 @@ void MainWindow::execLink(const char *file)
         sprintf(path, "file:%s", localFile);
       }
       siteHome.append(df.name, df.drv_dw[1]);
-      editWidget->statusMsg(siteHome.toString());
+      statusMsg(msg_none, siteHome.toString());
       updateForm(path);
       showOutputTab();
     }
@@ -1533,20 +1562,23 @@ void MainWindow::execLink(const char *file)
     }
   }
   if (access(file, 0) == 0) {
-    editWidget->statusMsg(file);
+    statusMsg(msg_none, file);
     if (execFile) {
       addHistory(file);
       showOutputTab();
-      basicMain(editWidget, file, false);
+      basicMain(0, file, false);
       opt_nosave = 1;
     }
     else {
+      if (!editWidget) {
+        editWidget = getEditor(createEditor(file));
+      }
       editWidget->loadFile(file);
-      showEditTab();
+      showEditTab(editWidget);
     }
   }
   else {
-    editWidget->pathMessage(file);
+    pathMessage(file);
   }
 }
 

@@ -88,7 +88,6 @@ public:
 
   bool checkSave(bool discard);
   int getFontSize();
-  void busyMessage();
   void createFuncList();
   void doChange(int inserted, int deleted);
   void doSaveFile(const char *newfile, bool updateUI);
@@ -101,7 +100,6 @@ public:
   void getSelStartRowCol(int *row, int *col);
   void gotoLine(int line);
   void loadFile(const char *newfile);
-  void pathMessage(const char *file);
   void restoreEdit();
   void runMsg(RunMessage runMessage);
   void setFontSize(int i);
@@ -137,7 +135,6 @@ public:
   CALLBACK_METHOD(func_list);
   CALLBACK_METHOD(goto_line);
   CALLBACK_METHOD(newFile);
-  CALLBACK_METHOD(openFile);
   CALLBACK_METHOD(replaceAll);
   CALLBACK_METHOD(replaceNext);
   CALLBACK_METHOD(saveFile);

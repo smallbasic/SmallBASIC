@@ -42,7 +42,7 @@ sub showChapters(keywordNotFound)
   out << "<a href=!System>System</a><br>"
  
   'show not found error
-  if (keywordNotFound != 0) then
+  if (keywordNotFound != 0 && keywordNotFound != "") then
     out << "<hr><b>Keyword not found: \"" + keywordNotFound + "\"</b>"
   fi
  

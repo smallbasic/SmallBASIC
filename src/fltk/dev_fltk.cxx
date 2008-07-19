@@ -63,7 +63,7 @@ C_LINKAGE_BEGIN int osd_devinit()
   os_graphics = 1;
 
   // allow the application to set the preferred width and height
-  if ((opt_pref_width || opt_pref_height) && wnd->isEditHidden()) {
+  if ((opt_pref_width || opt_pref_height) && wnd->isIdeHidden()) {
     int delta_x = wnd->w() - wnd->out->w();
     int delta_y = wnd->h() - wnd->out->h();
     wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
@@ -72,8 +72,7 @@ C_LINKAGE_BEGIN int osd_devinit()
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
   if (wnd->isInteractive()) {
-    // TODO: fixme
-    //    wnd->outputGroup->show();
+    wnd->outputGroup->show();
   }
 
   os_graf_mx = wnd->out->w();
@@ -152,7 +151,7 @@ void get_mouse_xy()
   // convert mouse screen rect to out-client rect
   wnd->penDownX -= wnd->x() + wnd->out->x();
   wnd->penDownY -= wnd->y() + wnd->out->y();
-  if (!wnd->isEditHidden()) {
+  if (!wnd->isIdeHidden()) {
     wnd->penDownY -= wnd->tabGroup->y() + wnd->outputGroup->y();
   }
 }
@@ -315,7 +314,7 @@ int dev_putenv(const char *s)
     rv.append(" - SmallBASIC");
     wnd->copy_label(rv);
   }
-  else if (lv.equals("INDENT_LEVEL")) {
+  else if (lv.equals("INDENT_LEVEL") && wnd->getEditor()) {
     wnd->getEditor()->setIndentLevel(rv.toInteger());
   }
   else if (lv.equals("TURBO")) {
@@ -395,10 +394,10 @@ void doEvent(void *)
   }
   else if (wnd->siteHome.length() == 0) {
     // not currently visiting a remote site
-    if (wnd->getEditor()->checkSave(true) == false) {
+    if (wnd->getEditor() && 
+        wnd->getEditor()->checkSave(true) == false) {
       return;
     }
-    closeForm();
   }
   wnd->execLink(eventName.toString());
 }

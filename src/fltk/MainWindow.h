@@ -90,7 +90,7 @@ struct MainWindow : public BaseWindow {
   bool basicMain(EditorWidget* editWidget, const char *filename, bool toolExec);
   bool isBreakExec(void);
   bool isEdit();
-  bool isEditHidden() {return isHideEditor;}
+  bool isIdeHidden();
   bool isInteractive();
   bool isModal();
   void addHistory(const char *fileName);
@@ -102,13 +102,16 @@ struct MainWindow : public BaseWindow {
   void scanPlugIns(Menu* menu);
   void scanRecentFiles(Menu * menu);
   void setBreak();
-  void setHideEditor();
+  void setHideIde();
   void setModal(bool modal);
-  void showEditTab();
+  void showEditTab(EditorWidget* editWidget);
   void showHelpPage();
   void showOutputTab();
   void updatePath(char *filename);
   void updateEditTabNames();
+  void busyMessage();
+  void statusMsg(RunMessage runMessage, const char *filename);
+  void pathMessage(const char *file);
 
   Group* createEditor(const char* title);
   EditorWidget* getEditor(Group* group);
@@ -135,7 +138,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(help_contents);
   CALLBACK_METHOD(help_contents_anchor);
   CALLBACK_METHOD(help_home);
-  CALLBACK_METHOD(hide_editor);
+  CALLBACK_METHOD(hide_ide);
   CALLBACK_METHOD(load_file);
   CALLBACK_METHOD(next_tab);
   CALLBACK_METHOD(openFile);
@@ -157,7 +160,6 @@ struct MainWindow : public BaseWindow {
   Input* replaceWith;
 
   bool isTurbo;
-  bool isHideEditor;
   String siteHome;
 
   // main output
