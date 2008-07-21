@@ -210,7 +210,9 @@ void MainWindow::addHistory(const char *filename)
   }
 }
 
-// run the give file. returns whether break was hit
+/**
+ * run the give file. returns whether break was hit
+ */
 bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool toolExec)
 {
   int len = strlen(filename);
@@ -242,22 +244,27 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   Group* oldOutputGroup = outputGroup;
   int old_w = out->w();
   int old_h = out->h();
+  int interactive = opt_interactive;
 
-  if (!toolExec && opt_ide == IDE_NONE) {
-    // run in a separate window with the ide hidden
-    fullScreen = new BaseWindow(w(), h());
-    fullScreen->copy_label(filename);
-    fullScreen->callback(quit_cb);
-    fullScreen->shortcut(0);
-    fullScreen->add(out);
-    fullScreen->resizable(fullScreen);
-    outputGroup = fullScreen;
-    out->resize(w(), h());
-    hide();
+  if (!toolExec) {
+    if (opt_ide == IDE_NONE) {
+      // run in a separate window with the ide hidden
+      fullScreen = new BaseWindow(w(), h());
+      fullScreen->copy_label(filename);
+      fullScreen->callback(quit_cb);
+      fullScreen->shortcut(0);
+      fullScreen->add(out);
+      fullScreen->resizable(fullScreen);
+      outputGroup = fullScreen;
+      out->resize(w(), h());
+      hide();
+    }
+    else {
+      copy_label("SmallBASIC +");
+    }
   }
   else {
-    copy_label("SmallBASIC");
-    outputGroup->label("(Output)");
+    opt_interactive = false;
   }
 
   int success;
@@ -267,7 +274,8 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     success = sbasic_main(filename);
   }
   while (restart);
-  
+
+  opt_interactive = interactive;
   bool was_break = (runMode == break_state);
   if (editWidget) {
     // may have closed during run
@@ -284,7 +292,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     show();
   }
   else {
-    outputGroup->label("Output");
+    copy_label("SmallBASIC");
   }
 
   if (runMode == quit_state) {
@@ -404,7 +412,9 @@ void MainWindow::help_home(Widget* w, void* eventData)
   browseFile(path);
 }
 
-// display the results of help.bas
+/**
+ * display the results of help.bas
+ */
 void MainWindow::showHelpPage() {
   HelpWidget* help = getHelp();
   getHomeDir(path);
@@ -421,11 +431,12 @@ void MainWindow::execHelp() {
   else {
     sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
     basicMain(0, path, true);
-    statusMsg(msg_none, 0);
   }
 }
 
-// handle click from within help window
+/**
+ * handle click from within help window
+ */
 void do_help_contents_anchor(void *)
 {
   fltk::remove_check(do_help_contents_anchor);
@@ -440,7 +451,9 @@ void MainWindow::help_contents_anchor(Widget* w, void* eventData) {
   }
 }
 
-// handle f1 context help
+/**
+ * handle f1 context help
+ */
 void MainWindow::help_contents(Widget* w, void* eventData)
 {
   if (runMode == edit_state) {
@@ -613,8 +626,10 @@ void MainWindow::run(Widget* w, void* eventData)
   }
 }
 
-// callback for editor-plug-in plug-ins. we assume the target
-// program will be changing the contents of the editor buffer
+/**
+ * callback for editor-plug-in plug-ins. we assume the target
+ * program will be changing the contents of the editor buffer
+ */
 void MainWindow::editor_plugin(Widget* w, void* eventData)
 {
   EditorWidget* editWidget = getEditor();
@@ -873,29 +888,32 @@ void MainWindow::expand_word(Widget* w, void* eventData)
 
 void MainWindow::load_file(Widget* w, void* eventData)
 {
-  EditorWidget* editWidget = getEditor();
-  if (editWidget) {
-    if (editWidget->checkSave(true)) {
-      TextEditor *editor = editWidget->editor;
-      // save current position
-      recentPosition[recentIndex] = editor->insert_position();
-      recentIndex = ((int)eventData) - 1;
-      // load selected file
-      const char *path = recentPath[recentIndex].toString();
-      if (access(path, 0) == 0) {
-        editWidget->loadFile(path);
-        // restore previous position
-        editor->insert_position(recentPosition[recentIndex]);
-        editWidget->statusMsg(path);
-        editWidget->fileChanged(true);
-        saveLastEdit(path);
-        const char* slash = strrchr(path, '/');
-        editWidget->parent()->copy_label(slash ? slash + 1 : path);
-        showEditTab(editWidget);
-      }
-      else {
-        pathMessage(path);
-      }
+  int pathIndex = ((int)eventData) - 1;
+  const char *path = recentPath[pathIndex].toString();
+  EditorWidget* editWidget = getEditor(path);
+  if (!editWidget) {
+    editWidget = getEditor(createEditor(path));
+  }
+
+  if (editWidget->checkSave(true)) {
+    TextEditor *editor = editWidget->editor;
+    // save current position
+    recentPosition[recentIndex] = editor->insert_position();
+    recentIndex = pathIndex;
+    // load selected file
+    if (access(path, 0) == 0) {
+      editWidget->loadFile(path);
+      // restore previous position
+      editor->insert_position(recentPosition[recentIndex]);
+      editWidget->statusMsg(path);
+      editWidget->fileChanged(true);
+      saveLastEdit(path);
+      const char* slash = strrchr(path, '/');
+      editWidget->parent()->copy_label(slash ? slash + 1 : path);
+      showEditTab(editWidget);
+    }
+    else {
+      pathMessage(path);
     }
   }
 }
