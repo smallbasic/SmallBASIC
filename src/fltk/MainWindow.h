@@ -108,7 +108,7 @@ struct MainWindow : public BaseWindow {
   void showHelpPage();
   void showOutputTab();
   void updatePath(char *filename);
-  void updateEditTabNames();
+  void updateEditTabName(EditorWidget* editWidget);
   void busyMessage();
   void statusMsg(RunMessage runMessage, const char *filename);
   void pathMessage(const char *file);

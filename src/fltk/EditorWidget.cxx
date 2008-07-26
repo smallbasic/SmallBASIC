@@ -31,6 +31,7 @@
 #include <fltk/ask.h>
 #include <fltk/damage.h>
 #include <fltk/events.h>
+#include <fltk/file_chooser.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
@@ -880,7 +881,7 @@ void EditorWidget::reloadFile() {
   loadFile(buffer);
 }
 
-void EditorWidget::doSaveFile(const char *newfile, bool updateUI)
+void EditorWidget::doSaveFile(const char *newfile)
 {
   char basfile[PATH_MAX];
   TextBuffer *textbuf = editor->textbuf;
@@ -895,18 +896,21 @@ void EditorWidget::doSaveFile(const char *newfile, bool updateUI)
     return;
   }
 
-  if (updateUI) {
-    dirty = 0;
-    if (filename[0] == 0) {
-      // naming a previously unnamed buffer
-      wnd->addHistory(basfile);
-    }
-    strcpy(filename, basfile);
-    textbuf->call_modify_callbacks();
-    statusMsg(basfile);
-    fileChanged(true);
-  }
+  dirty = 0;
+  strcpy(filename, basfile);
   modifiedTime = getModifiedTime();
+  
+  if (filename[0] == 0) {
+    // naming a previously unnamed buffer
+    wnd->addHistory(basfile);
+  }
+  wnd->updateEditTabName(this);
+  wnd->showEditTab(this);
+
+  textbuf->call_modify_callbacks();
+  statusMsg(filename);
+  fileChanged(true);
+  editor->take_focus();
 }
 
 void EditorWidget::showFindReplace(void* eventData)
@@ -1070,20 +1074,20 @@ void EditorWidget::saveFile(void* eventData)
     return;
   }
   else {
-    doSaveFile(filename, true);
+    doSaveFile(filename);
   }
 }
 
 void EditorWidget::saveFileAs(void* eventData)
 {
-//   const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
-//   const char *newfile = file_chooser("Save File As?", "*.bas", filename);
-//   if (newfile != NULL) {
-//     if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
-//       return;
-//     }
-//     doSaveFile(newfile, true);
-//   }
+  const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
+  const char *newfile = file_chooser("Save File As?", "*.bas", filename);
+  if (newfile != NULL) {
+    if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
+      return;
+    }
+    doSaveFile(newfile);
+  }
 }
 
 void EditorWidget::gotoLine(int line)

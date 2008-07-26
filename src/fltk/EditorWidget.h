@@ -90,7 +90,7 @@ public:
   int getFontSize();
   void createFuncList();
   void doChange(int inserted, int deleted);
-  void doSaveFile(const char *newfile, bool updateUI);
+  void doSaveFile(const char *newfile);
   void fileChanged(bool loadfile);
   void findFunc(const char *find);
   void focusWidget();

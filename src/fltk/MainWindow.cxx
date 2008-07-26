@@ -386,7 +386,7 @@ void MainWindow::quit(Widget* w, void* eventData)
             (offs > 0 && strcasecmp(filename + offs, UNTITLED_FILE) == 0)) {
           getHomeDir(path);
           strcat(path, UNTITLED_FILE);
-          editWidget->doSaveFile(path, 0);
+          editWidget->doSaveFile(path);
         }
         else if (!editWidget->checkSave(true)) {
           return;
@@ -611,10 +611,10 @@ void MainWindow::run(Widget* w, void* eventData)
           getHomeDir(path);
           strcat(path, UNTITLED_FILE);
           filename = path;
-          editWidget->doSaveFile(filename, false);
+          editWidget->doSaveFile(filename);
         }
         else {
-          editWidget->doSaveFile(filename, true);
+          editWidget->doSaveFile(filename);
         }
       }
       showOutputTab();
@@ -1163,7 +1163,7 @@ int main(int argc, char **argv)
     runMode = edit_state;
   }
 
-  wnd->updateEditTabNames();
+  wnd->updateEditTabName(wnd->getEditor());
   wnd->show(argc, argv);
   return run();
 }
@@ -1194,7 +1194,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWidget::replaceAll_cb);
   m->add("&Edit/_Replace &Again", CTRL + 't',
          (Callback *) EditorWidget::replaceNext_cb);
-  m->add("&View/_&Next Tab", F6Key, (Callback *) MainWindow::next_tab_cb);
+  m->add("&View/&Next Tab", F6Key, (Callback *) MainWindow::next_tab_cb);
   m->add("&View/_&Prev Tab", CTRL + F6Key, (Callback *) MainWindow::prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) MainWindow::font_size_decr_cb);
@@ -1408,12 +1408,12 @@ Group* MainWindow::selectTab(const char* label) {
 /**
  * updates the names of the editor tabs based on the enclosed editing file
  */
-void MainWindow::updateEditTabNames() {
+void MainWindow::updateEditTabName(EditorWidget* editWidget) {
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group* group = (Group*)tabGroup->child(c);
-    if (gw_editor == ((GroupWidget) (int)group->user_data())) {
-      EditorWidget* editWidget = (EditorWidget*)group->child(0);
+    if (gw_editor == ((GroupWidget) (int)group->user_data()) &&
+        editWidget == (EditorWidget*)group->child(0)) {
       const char* editFileName = editWidget->getFilename();
       const char* slash = strrchr(editFileName, '/');
       group->copy_label(slash ? slash + 1 : editFileName);
