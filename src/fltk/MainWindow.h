@@ -95,7 +95,6 @@ struct MainWindow : public BaseWindow {
   bool isModal();
   void addHistory(const char *fileName);
   void execHelp();
-  void execInit();
   void execLink(const char* file);
   void resetPen();
   void saveLastEdit(const char *filename);
@@ -116,7 +115,7 @@ struct MainWindow : public BaseWindow {
   Group* createEditor(const char* title);
   EditorWidget* getEditor(Group* group);
   EditorWidget* getEditor(const char* fullPath);
-  EditorWidget* getEditor();
+  EditorWidget* getEditor(bool select= false);
   void editFile(const char* filePath);
   Group* getSelectedTab();
   Group* getNextTab(Group* current);

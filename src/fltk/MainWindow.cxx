@@ -133,18 +133,6 @@ void MainWindow::updatePath(char *filename)
   }
 }
 
-void MainWindow::execInit()
-{
-  // execute the initialisation program
-  getHomeDir(path);
-  strcat(path, "init.bas");
-  if (access(path, 0) == 0) {
-    int success = sbasic_main(path);
-    getEditor()->runMsg(success ? msg_none : msg_err);
-  }
-  getEditor()->take_focus();
-}
-
 void MainWindow::saveLastEdit(const char *filename)
 {
   // remember the last edited file
@@ -308,7 +296,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
       gsb_last_errmsg[len - 1] = 0;
     }
     closeForm();  // unhide the error
-    if (editWidget) { trace("here !");
+    if (editWidget) {
       showEditTab(editWidget);
       editWidget->runMsg(was_break ? msg_none : msg_err);
       editWidget->statusMsg(gsb_last_errmsg);
@@ -1144,22 +1132,21 @@ int main(int argc, char **argv)
 #endif
 
   check();
-  wnd->execInit();
 
   switch (runMode) {
   case run_state:
     wnd->setHideIde();
-    wnd->getEditor()->loadFile(runfile);
+    wnd->getEditor(true)->loadFile(runfile);
     wnd->addHistory(runfile);
     wnd->showOutputTab();
     if (!wnd->basicMain(0, runfile, false)) {
       return 0; // continue if break hit
     }
   case edit_state:
-    wnd->getEditor()->loadFile(runfile);
+    wnd->getEditor(true)->loadFile(runfile);
     break;
   default:
-    wnd->getEditor()->restoreEdit();
+    wnd->getEditor(true)->restoreEdit();
     runMode = edit_state;
   }
 
@@ -1326,8 +1313,22 @@ HelpWidget* MainWindow::getHelp()
   return help;
 }
 
-EditorWidget* MainWindow::getEditor() {
-  return getEditor(getSelectedTab());
+EditorWidget* MainWindow::getEditor(bool select) {
+  EditorWidget* result=0;
+  if (select) {
+    int n = tabGroup->children();
+    for (int c = 0; c<n; c++) {
+      Group* group = (Group*)tabGroup->child(c);
+      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+        result = (EditorWidget*)group->child(0);
+        tabGroup->selected_child(group);
+      }
+    }
+  }
+  else {
+    result = getEditor(getSelectedTab());
+  }
+  return result;
 }
 
 EditorWidget* MainWindow::getEditor(Group* group) {
@@ -1415,8 +1416,10 @@ void MainWindow::updateEditTabName(EditorWidget* editWidget) {
     if (gw_editor == ((GroupWidget) (int)group->user_data()) &&
         editWidget == (EditorWidget*)group->child(0)) {
       const char* editFileName = editWidget->getFilename();
-      const char* slash = strrchr(editFileName, '/');
-      group->copy_label(slash ? slash + 1 : editFileName);
+      if (editFileName && editFileName[0]) {
+        const char* slash = strrchr(editFileName, '/');
+        group->copy_label(slash ? slash + 1 : editFileName);
+      }
     }      
   }
 }
@@ -1496,8 +1499,7 @@ void MainWindow::execLink(const char *file)
     return;
   }
 
-  EditorWidget* editWidget = getEditor();
-
+  EditorWidget* editWidget = getEditor(true);
   siteHome.empty();
   bool execFile = false;
   if (file[0] == '!' || file[0] == '|') {
@@ -1619,7 +1621,10 @@ int BaseWindow::handle(int e)
   switch (runMode) {
   case edit_state:
     if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
-      wnd->getEditor()->focusWidget();
+      EditorWidget* editWidget = wnd->getEditor();
+      if (editWidget) {
+        editWidget->focusWidget();
+      }
     }
     break;
   case run_state:

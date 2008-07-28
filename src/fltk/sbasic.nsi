@@ -9,7 +9,7 @@
 ;--------------------------------
 ;General
   ;Name and file
-  Name "SmallBASIC (FLTK)"
+  Name "SmallBASIC"
   OutFile "sbasic_0.10.1.exe"
 
   ;Default installation folder
@@ -66,7 +66,7 @@ Section "Create .BAS file association"
   WriteRegStr HKCR "SmallBASIC\shell\run\command" "" '"$INSTDIR\sbasici.exe" -r "%1"'
 SectionEnd
 
-Section "SmallBASIC (FLTK)" SecMain
+Section "SmallBASIC" SecMain
   SetOutPath "$INSTDIR"
   File sbasici.exe
   File ..\..\documentation\sbasic_ref.csv
