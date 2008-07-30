@@ -139,8 +139,9 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(help_home);
   CALLBACK_METHOD(hide_ide);
   CALLBACK_METHOD(load_file);
+  CALLBACK_METHOD(new_file);
   CALLBACK_METHOD(next_tab);
-  CALLBACK_METHOD(openFile);
+  CALLBACK_METHOD(open_file);
   CALLBACK_METHOD(paste_text);
   CALLBACK_METHOD(prev_tab);
   CALLBACK_METHOD(quit);

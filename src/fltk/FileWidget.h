@@ -20,9 +20,12 @@ struct FileWidget : public HelpWidget {
 
   void displayPath();
   void anchorClick();
+  void fileOpen();
+  void fileSaveAs(const char* filename);
 
   private:
   char path[PATH_MAX+1];
+  char saveAsPath[PATH_MAX+1];
 };
 
 #endif

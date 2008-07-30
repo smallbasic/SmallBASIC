@@ -53,24 +53,24 @@ struct String : public Object {
   String(const char *s);
   String(const char *s, int len);
   String(const String & s);
-  const String & operator=(const String & s);
-  const String & operator=(const char *s);
-  const String & operator=(const char c);
+  const String& operator=(const String & s);
+  const String& operator=(const char *s);
+  const String& operator=(const char c);
   const void operator+=(const String & s);
   const void operator+=(const char *s);
   const void operator+=(int i);
   const char operator[] (int index);
   const String operator+(const String & s);
   const String operator+(int i);
-  const String & operator=(int i);
-  void append(const String & s);
-  void append(const String * s);
-  void append(int i);
-  void append(double d);
-  void append(int i, int padding);
-  void append(const char *s);
-  void append(const char *s, int numCopy);
-  void append(FILE * fp, long len);
+  const String& operator=(int i);
+  String& append(const String & s);
+  String& append(const String * s);
+  String& append(int i);
+  String& append(double d);
+  String& append(int i, int padding);
+  String& append(const char *s);
+  String& append(const char *s, int numCopy);
+  String& append(FILE * fp, long len);
   operator const char *() const {
     return buffer;
   }

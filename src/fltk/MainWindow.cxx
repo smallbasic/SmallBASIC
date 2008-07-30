@@ -9,26 +9,12 @@
 
 #include "sys.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <limits.h>
-#include <sys/stat.h>
-
-#include <fltk/Choice.h>
-#include <fltk/Group.h>
 #include <fltk/Item.h>
 #include <fltk/MenuBar.h>
 #include <fltk/TabGroup.h>
-#include <fltk/TiledGroup.h>
-#include <fltk/ValueInput.h>
-#include <fltk/Window.h>
 #include <fltk/ask.h>
 #include <fltk/error.h>
 #include <fltk/events.h>
-#include <fltk/filename.h>
 #include <fltk/run.h>
 
 #include "MainWindow.h"
@@ -40,7 +26,6 @@
 
 #if defined(WIN32)
 #include <fltk/win32.h>
-#include <shellapi.h>
 #endif
 
 extern "C" {
@@ -1164,8 +1149,8 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   updatePath(runfile);
   begin();
   MenuBar *m = new MenuBar(0, 0, w, MNU_HEIGHT);
-  m->add("&File/&New File", 0, (Callback *) EditorWidget::newFile_cb);
-  m->add("&File/&Open File...", CTRL + 'o', (Callback *) MainWindow::openFile_cb);
+  m->add("&File/&New File", CTRL + 'n', (Callback *) MainWindow::new_file_cb);
+  m->add("&File/&Open File", CTRL + 'o', (Callback *) MainWindow::open_file_cb);
   scanRecentFiles(m);
   m->add("&File/_&Close", CTRL + F4Key, (Callback *) MainWindow::close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWidget::saveFile_cb);
@@ -1270,7 +1255,31 @@ Group* MainWindow::createEditor(const char* title) {
   return editGroup;
 }
 
-void MainWindow::openFile(Widget* w, void* eventData) {
+void MainWindow::new_file(Widget* w, void* eventData) 
+{
+  EditorWidget* editWidget = 0;
+  Group* untitledEditor = findTab(UNTITLED_FILE);
+  if (untitledEditor) {
+    tabGroup->selected_child(untitledEditor);
+    editWidget = getEditor(untitledEditor);
+  }
+  if (!editWidget) {
+    editWidget = getEditor(createEditor(UNTITLED_FILE));
+
+    // preserve the contents of any existing untitled.bas
+    getHomeDir(path);
+    strcat(path, UNTITLED_FILE);
+    if (access(path, 0) == 0) {
+      editWidget->loadFile(path);
+    }
+  }
+
+  TextBuffer *textbuf = editWidget->editor->buffer();
+  textbuf->select(0, textbuf->length());
+}
+
+void MainWindow::open_file(Widget* w, void* eventData) 
+{
   Group* openFileGroup = findTab(gw_file);
   if (!openFileGroup ) {
     int w = tabGroup->w();
@@ -1313,7 +1322,8 @@ HelpWidget* MainWindow::getHelp()
   return help;
 }
 
-EditorWidget* MainWindow::getEditor(bool select) {
+EditorWidget* MainWindow::getEditor(bool select) 
+{
   EditorWidget* result=0;
   if (select) {
     int n = tabGroup->children();
@@ -1331,7 +1341,8 @@ EditorWidget* MainWindow::getEditor(bool select) {
   return result;
 }
 
-EditorWidget* MainWindow::getEditor(Group* group) {
+EditorWidget* MainWindow::getEditor(Group* group) 
+{
   EditorWidget* editWidget = 0;
   if (group != 0 && gw_editor == ((GroupWidget) (int)group->user_data())) {
     editWidget = (EditorWidget*)group->resizable();
@@ -1339,7 +1350,8 @@ EditorWidget* MainWindow::getEditor(Group* group) {
   return editWidget;
 }
 
-EditorWidget* MainWindow::getEditor(const char* fullPath) {
+EditorWidget* MainWindow::getEditor(const char* fullPath) 
+{
   if (fullPath != 0 && fullPath[0] != 0) {
     int n = tabGroup->children();
     for (int c = 0; c<n; c++) {
@@ -1356,7 +1368,11 @@ EditorWidget* MainWindow::getEditor(const char* fullPath) {
   return NULL;
 }
 
-void MainWindow::editFile(const char* filePath) {
+/**
+ * called by FileWidget to open the selected file
+ */
+void MainWindow::editFile(const char* filePath) 
+{
   EditorWidget* editWidget = getEditor(filePath);
   if (!editWidget) {
     editWidget = getEditor(createEditor(filePath));
@@ -1366,14 +1382,16 @@ void MainWindow::editFile(const char* filePath) {
   showEditTab(editWidget);
 }
 
-Group* MainWindow::getSelectedTab() {
+Group* MainWindow::getSelectedTab() 
+{
   return (Group*)tabGroup->selected_child();
 }
 
 /**
  * returns the tab with the given name
  */
-Group* MainWindow::findTab(const char* label) {
+Group* MainWindow::findTab(const char* label) 
+{
   int n = tabGroup->children();
   for (int c = 0; c<n; c++) {
     Group* child = (Group*)tabGroup->child(c);
@@ -1384,7 +1402,8 @@ Group* MainWindow::findTab(const char* label) {
   return 0;
 }
 
-Group* MainWindow::findTab(GroupWidget groupWidget) {
+Group* MainWindow::findTab(GroupWidget groupWidget) 
+{
   int n = tabGroup->children();
   for (int c = 0; c<n; c++) {
     Group* child = (Group*)tabGroup->child(c);
@@ -1398,7 +1417,8 @@ Group* MainWindow::findTab(GroupWidget groupWidget) {
 /**
  * find and select the tab with the given tab label
  */
-Group* MainWindow::selectTab(const char* label) {
+Group* MainWindow::selectTab(const char* label) 
+{
   Group* tab = findTab(label);
   if (tab) {
     tabGroup->selected_child(tab);
@@ -1409,7 +1429,8 @@ Group* MainWindow::selectTab(const char* label) {
 /**
  * updates the names of the editor tabs based on the enclosed editing file
  */
-void MainWindow::updateEditTabName(EditorWidget* editWidget) {
+void MainWindow::updateEditTabName(EditorWidget* editWidget) 
+{
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group* group = (Group*)tabGroup->child(c);
@@ -1427,7 +1448,8 @@ void MainWindow::updateEditTabName(EditorWidget* editWidget) {
 /**
  * returns the tab following the given tab
  */
-Group* MainWindow::getNextTab(Group* current) {
+Group* MainWindow::getNextTab(Group* current) 
+{
   int n = tabGroup->children();
   for (int c = 0; c < n - 1; c++) {
     Group* child = (Group*) tabGroup->child(c);
@@ -1441,7 +1463,8 @@ Group* MainWindow::getNextTab(Group* current) {
 /**
  * returns the tab prior the given tab or null if not found
  */
-Group* MainWindow::getPrevTab(Group* current) {
+Group* MainWindow::getPrevTab(Group* current) 
+{
   int n = tabGroup->children();
   for (int c = n; c > 0; c--) {
     Group* child = (Group*)tabGroup->child(c);

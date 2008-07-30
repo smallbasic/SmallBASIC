@@ -125,33 +125,37 @@ const String & String::operator=(int i)
   return *this;
 }
 
-void String::append(const String & s)
+String& String::append(const String & s)
 {
   append(s.buffer);
+  return *this;
 }
 
-void String::append(const String * s)
+String& String::append(const String * s)
 {
   if (s && s->length()) {
     append(s->buffer);
   }
+  return *this;
 }
 
-void String::append(int i)
+String& String::append(int i)
 {
   char t[20];
   sprintf(t, "%i", i);
   append(t);
+  return *this;
 }
 
-void String::append(double d)
+String& String::append(double d)
 {
   char t[20];
   sprintf(t, "%g", d);
   append(t);
+  return *this;
 }
 
-void String::append(int i, int padding)
+String& String::append(int i, int padding)
 {
   char buf[20];
   char fmt[20];
@@ -161,21 +165,23 @@ void String::append(int i, int padding)
   sprintf(fmt + 2, "%dd", padding);
   sprintf(buf, fmt, i);
   append(buf);
+  return *this;
 }
 
-void String::append(const char *s)
+String& String::append(const char *s)
 {
   if (s != null && s[0] && owner) {
     int len = length();
     buffer = (char *)realloc(buffer, len + strlen(s) + 1);
     strcpy(buffer + len, s);
   }
+  return *this;
 }
 
-void String::append(const char *s, int numCopy)
+String& String::append(const char *s, int numCopy)
 {
   if (!owner || s == null || numCopy < 1) {
-    return;
+    return *this;
   }
   int len = strlen(s);
   if (numCopy > len) {
@@ -186,14 +192,16 @@ void String::append(const char *s, int numCopy)
   buffer = (char *)realloc(buffer, len + numCopy + 1);
   strncpy(buffer + len, s, numCopy);
   buffer[len + numCopy] = '\0';
+  return *this;
 }
 
-void String::append(FILE * fp, long filelen)
+String& String::append(FILE * fp, long filelen)
 {
   int len = length();
   buffer = (char *)realloc(buffer, len + filelen + 1);
   fread((void *)(len + buffer), 1, filelen, fp);
   buffer[len + filelen] = 0;
+  return *this;
 }
 
 const char *String::toString() const {

@@ -11,27 +11,13 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include <fltk/Button.h>
-#include <fltk/Choice.h>
-#include <fltk/Flags.h>
-#include <fltk/Input.h>
 #include <fltk/Item.h>
-#include <fltk/MenuBar.h>
-#include <fltk/ReturnButton.h>
-#include <fltk/TextBuffer.h>
-#include <fltk/TextEditor.h>
 #include <fltk/ask.h>
 #include <fltk/damage.h>
 #include <fltk/events.h>
-#include <fltk/file_chooser.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
@@ -578,8 +564,9 @@ int CodeEditor::handle(int e)
   case DND_LEAVE:
     return 1;
   case PASTE:
-    parent()->handle(e);
-    return 1;
+    if (parent()->handle(e)) {
+      return 1;
+    }
   }
 #endif
 
@@ -788,22 +775,28 @@ EditorWidget::~EditorWidget()
 int EditorWidget::handle(int e)
 {
   char buffer[PATH_MAX];
-
+  static int dnd_release = 0;
+  
   switch (e) {
   case FOCUS:
     fltk::focus(editor);
     handleFileChange();
     return 1;
-  case DND_ENTER:
   case DND_DRAG:
   case DND_RELEASE:
+  case DND_ENTER:
   case DND_LEAVE:
+    dnd_release = 1;
     return 1;
   case PASTE:
-    strncpy(buffer, fltk::event_text(), fltk::event_length());
-    buffer[fltk::event_length()] = 0;
-    loadFile(buffer);
-    return 1;
+    if (dnd_release) {
+      dnd_release = 0;
+      strncpy(buffer, fltk::event_text(), fltk::event_length());
+      buffer[fltk::event_length()] = 0;
+      wnd->editFile(buffer);
+      return 1;
+    }
+    return 0;
   }
 
   return Group::handle(e);
@@ -824,7 +817,7 @@ void EditorWidget::readonly(bool is_readonly)
 void EditorWidget::doChange(int inserted, int deleted)
 {
   if (loading) {
-    return;                     // do nothing while file load in progress
+    return;  // do nothing while file load in progress
   }
 
   if (inserted || deleted) {
@@ -837,7 +830,7 @@ void EditorWidget::doChange(int inserted, int deleted)
 bool EditorWidget::checkSave(bool discard)
 {
   if (!dirty) {
-    return true;                // continue next operation
+    return true;  // continue next operation
   }
 
   const char *msg = "The current file has not been saved.\n"
@@ -867,12 +860,38 @@ void EditorWidget::loadFile(const char *newfile)
   }
 
   loading = false;
-  statusMsg(filename);
-  fileChanged(true);
   textbuf->call_modify_callbacks();
   editor->show_insert_position();
-  setRowCol(1, 1);
   modifiedTime = getModifiedTime();
+
+  wnd->updatePath(filename);
+  wnd->updateEditTabName(this);
+  wnd->showEditTab(this);
+
+  statusMsg(filename);
+  fileChanged(true);
+  setRowCol(1, 1);
+}
+
+void EditorWidget::newFile()
+{
+  if (readonly()) {
+    return;
+  }
+
+  if (!checkSave(true)) {
+    return;
+  }
+
+  TextBuffer *textbuf = editor->textbuf;
+  filename[0] = '\0';
+  textbuf->select(0, textbuf->length());
+  textbuf->remove_selection();
+  dirty = 0;
+  textbuf->call_modify_callbacks();
+  statusMsg(0);
+  fileChanged(false);
+  modifiedTime = 0;
 }
 
 void EditorWidget::reloadFile() {
@@ -998,28 +1017,6 @@ void EditorWidget::goto_line(void* eventData)
   take_focus();
 }
 
-void EditorWidget::newFile(void* eventData)
-{
-  if (readonly()) {
-    return;
-  }
-
-  if (!checkSave(true)) {
-    return;
-  }
-
-  TextBuffer *textbuf = editor->textbuf;
-
-  filename[0] = '\0';
-  textbuf->select(0, textbuf->length());
-  textbuf->remove_selection();
-  dirty = 0;
-  textbuf->call_modify_callbacks();
-  statusMsg(0);
-  fileChanged(false);
-  modifiedTime = 0;
-}
-
 void EditorWidget::replaceAll(void* eventData)
 {
   if (readonly()) {
@@ -1080,8 +1077,9 @@ void EditorWidget::saveFile(void* eventData)
 
 void EditorWidget::saveFileAs(void* eventData)
 {
-  const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
-  const char *newfile = file_chooser("Save File As?", "*.bas", filename);
+  const char* msg = "%s\n\nFile already exists.\nDo you want to replace it?";
+  const char* newfile = fltk::input("Save File As?", filename);
+  //  const char *newfile = file_chooser("Save File As?", "*.bas", filename);
   if (newfile != NULL) {
     if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
       return;
@@ -1232,6 +1230,7 @@ void EditorWidget::focusWidget() {
 
 void EditorWidget::setModified(bool dirty)
 {
+  this->dirty = dirty;
   modStatus->label(dirty ? "MOD" : "");
   modStatus->redraw();
 }

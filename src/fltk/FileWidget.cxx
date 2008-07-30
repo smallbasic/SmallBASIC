@@ -12,12 +12,8 @@
 #  include <config.h>
 #endif
 
-#include <unistd.h>
-#include <limits.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
-#include <fltk/Window.h>
 #include <fltk/run.h>
 
 #include "MainWindow.h"
@@ -28,12 +24,14 @@
 FileWidget* fileWidget;
 String click;
 
-static void anchorClick_event(void *) {
+static void anchorClick_event(void *) 
+{
   fltk::remove_check(anchorClick_event);
   fileWidget->anchorClick();
 }
 
-static void anchorClick_cb(Widget* w, void *v) {
+static void anchorClick_cb(Widget* w, void *v) 
+{
   if (fileWidget) {
     click.empty();
     click.append((char*) v);
@@ -41,10 +39,11 @@ static void anchorClick_cb(Widget* w, void *v) {
   }
 }
 
-FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h) {
+FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h) 
+{
   callback(anchorClick_cb);
   fileWidget = this;
-  setScrollMode();
+  setSelectMode();
 
   getcwd(path, sizeof(path));
   int len = path ? strlen(path) : 0;
@@ -57,11 +56,27 @@ FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h) {
   displayPath();
 }
 
-FileWidget::~FileWidget() {
+FileWidget::~FileWidget() 
+{
   fileWidget = 0;
 }
 
-void FileWidget::displayPath() {
+void FileWidget::fileOpen() 
+{
+  if (saveAsPath[0]) {
+    saveAsPath[0] = 0;
+    displayPath();
+  }
+}
+
+void FileWidget::fileSaveAs(const char* filename) 
+{
+  strcpy(saveAsPath, filename);
+  displayPath();
+}
+
+void FileWidget::displayPath() 
+{
   chdir(path);
   DIR* dp = opendir(path);
   if (dp == 0) {
@@ -72,9 +87,13 @@ void FileWidget::displayPath() {
   dirent* entry;
   struct stat stbuf;
 
-  html.append("<b>Index of: ");
-  html.append(path);
-  html.append("</b><br>");
+  if (saveAsPath[0]) {
+    html.append("<p><b>Save ").append(saveAsPath).append(" as:<br>");
+    html.append("<input size=120 type=text value='").append(saveAsPath).append("' name=saveas>");
+    html.append("&nbsp;<input type=button onclick='~' value='Save As'><br>");
+  }
+
+  html.append("<br><b>Files in: ").append(path).append("</b><br>");
 
   while ((entry = readdir(dp)) != 0) {
     char* name = entry->d_name;
@@ -88,7 +107,7 @@ void FileWidget::displayPath() {
 
     if (stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
       if (!strcmp(name, "..")) {
-        html.append("<p><input type=button onclick='!..' value='@<-;'>");
+        html.append("<input type=button onclick='!..' value='@<-;'>");
       }
       else {
          html.append("<p><a href=!");
@@ -117,9 +136,9 @@ void FileWidget::displayPath() {
 }
 
 // anchor link clicked
-void FileWidget::anchorClick() {
+void FileWidget::anchorClick() 
+{
   const char* target = click.toString();
-
   if (target[0] == '!') {
     // file browser window
     if (strcmp(target+1, "..") == 0) {
@@ -141,7 +160,12 @@ void FileWidget::anchorClick() {
     }
     displayPath();
     return;
-  } 
+  }
+  else if (target[0] == '~') {
+    // TODO call wnd to rename file, then redisplay as normal file mode
+    //ask(getInputValue(getInput("saveas")));
+    return;
+  }
 
   String docHome;
   if (target[0] == '/') {
