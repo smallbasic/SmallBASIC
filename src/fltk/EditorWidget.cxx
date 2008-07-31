@@ -21,6 +21,7 @@
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
+#include "FileWidget.h"
 #include "kwp.h"
 
 using namespace fltk;
@@ -864,7 +865,7 @@ void EditorWidget::loadFile(const char *newfile)
   editor->show_insert_position();
   modifiedTime = getModifiedTime();
 
-  wnd->updatePath(filename);
+  FileWidget::forwardSlash(filename);
   wnd->updateEditTabName(this);
   wnd->showEditTab(this);
 

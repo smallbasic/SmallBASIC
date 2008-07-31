@@ -108,16 +108,6 @@ void MainWindow::showOutputTab()
   tabGroup->selected_child(outputGroup);
 }
 
-void MainWindow::updatePath(char *filename)
-{
-  int len = filename ? strlen(filename) : 0;
-  for (int i = 0; i < len; i++) {
-    if (filename[i] == '\\') {
-      filename[i] = '/';
-    }
-  }
-}
-
 void MainWindow::saveLastEdit(const char *filename)
 {
   // remember the last edited file
@@ -152,7 +142,7 @@ void MainWindow::addHistory(const char *filename)
 
   // save paths with unix path separators
   strcpy(updatedfile, filename);
-  updatePath(updatedfile);
+  FileWidget::forwardSlash(updatedfile);
   filename = updatedfile;
 
   // remember the last edited file
@@ -320,6 +310,11 @@ bool searchBackward(const char *text, int startPos,
 }
 
 //--Menu callbacks--------------------------------------------------------------
+
+void MainWindow::tab_change(Widget* w, void* eventData)
+{
+
+}
 
 void MainWindow::close_tab(Widget* w, void* eventData) {
   if (tabGroup->children() > 1) {
@@ -1146,7 +1141,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
   isTurbo = false;
 
-  updatePath(runfile);
+  FileWidget::forwardSlash(runfile);
   begin();
   MenuBar *m = new MenuBar(0, 0, w, MNU_HEIGHT);
   m->add("&File/&New File", CTRL + 'n', (Callback *) MainWindow::new_file_cb);
@@ -1154,8 +1149,8 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   scanRecentFiles(m);
   m->add("&File/_&Close", CTRL + F4Key, (Callback *) MainWindow::close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWidget::saveFile_cb);
-  m->add("&File/_Save File &As...", CTRL + SHIFT + 'S',
-         (Callback *) EditorWidget::saveFileAs_cb);
+  m->add("&File/_Save File &As", CTRL + SHIFT + 'S', 
+         (Callback *) MainWindow::save_file_as_cb);
   m->add("&File/E&xit", CTRL + 'q', (Callback *) MainWindow::quit_cb);
   m->add("&Edit/_&Undo", CTRL + 'z', (Callback *) EditorWidget::undo_cb);
   m->add("&Edit/Cu&t", CTRL + 'x', (Callback *) MainWindow::cut_text_cb);
@@ -1196,6 +1191,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   w -= 8;
   h -= MNU_HEIGHT;
   tabGroup = new TabGroup(4, 4, w, h);
+  tabGroup->callback(tab_change_cb);
 
   h -= 8; // TabGroup border
   tabGroup->begin();
@@ -1297,6 +1293,16 @@ void MainWindow::open_file(Widget* w, void* eventData)
   tabGroup->selected_child(openFileGroup);
 }
 
+void MainWindow::save_file_as(Widget* w, void* eventData) 
+{
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    open_file(w, eventData);
+    FileWidget* fileWidget = (FileWidget*) getSelectedTab()->resizable();
+    fileWidget->fileOpen(editWidget);
+  }
+}
+
 HelpWidget* MainWindow::getHelp()
 {
   HelpWidget* help = 0;
@@ -1382,7 +1388,7 @@ void MainWindow::editFile(const char* filePath)
   showEditTab(editWidget);
 }
 
-Group* MainWindow::getSelectedTab() 
+Group* MainWindow::getSelectedTab()
 {
   return (Group*)tabGroup->selected_child();
 }

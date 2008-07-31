@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <fltk/run.h>
+#include <fltk/events.h>
 
 #include "MainWindow.h"
 #include "StringLib.h"
@@ -43,16 +44,11 @@ FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h)
 {
   callback(anchorClick_cb);
   fileWidget = this;
+  saveEditorAs = 0;
   setSelectMode();
 
   getcwd(path, sizeof(path));
-  int len = path ? strlen(path) : 0;
-  for (int i=0; i<len; i++) {
-    if (path[i] == '\\') {
-      path[i] = '/';
-    }
-  }
-
+  forwardSlash(path);
   displayPath();
 }
 
@@ -61,17 +57,30 @@ FileWidget::~FileWidget()
   fileWidget = 0;
 }
 
-void FileWidget::fileOpen() 
-{
-  if (saveAsPath[0]) {
-    saveAsPath[0] = 0;
+int FileWidget::handle(int e) {
+  if (e == SHOW && saveEditorAs) {
+    saveEditorAs = 0;
     displayPath();
   }
+  return HelpWidget::handle(e);
 }
 
-void FileWidget::fileSaveAs(const char* filename) 
+char* FileWidget::forwardSlash(char *filename)
 {
-  strcpy(saveAsPath, filename);
+  char* result = 0;
+  int len = filename ? strlen(filename) : 0;
+  for (int i = 0; i < len; i++) {
+    if (filename[i] == '\\') {
+      filename[i] = '/';
+      result = &filename[i];
+    }
+  }
+  return result;
+}
+
+void FileWidget::fileOpen(EditorWidget* saveEditorAs)
+{
+  this->saveEditorAs = saveEditorAs;
   displayPath();
 }
 
@@ -87,10 +96,12 @@ void FileWidget::displayPath()
   dirent* entry;
   struct stat stbuf;
 
-  if (saveAsPath[0]) {
-    html.append("<p><b>Save ").append(saveAsPath).append(" as:<br>");
-    html.append("<input size=120 type=text value='").append(saveAsPath).append("' name=saveas>");
-    html.append("&nbsp;<input type=button onclick='~' value='Save As'><br>");
+  if (saveEditorAs) {
+    const char* path = saveEditorAs->getFilename();
+    char* slash = strrchr(path, '/');
+    html.append("<p><b>Save file as:<br>");
+    html.append("<input size=120 type=text value='").append(slash ? slash + 1 : path);
+    html.append("' name=saveas>&nbsp;<input type=button onclick='~' value='Save As'><br>");
   }
 
   html.append("<br><b>Files in: ").append(path).append("</b><br>");
@@ -121,11 +132,10 @@ void FileWidget::displayPath()
              strncasecmp(name+len-5, ".html", 5) == 0||
              strncasecmp(name+len-4, ".bas", 4) == 0 ||
              strncasecmp(name+len-4, ".txt", 4) == 0) {
-      html.append("<p><a href=");
-      html.append(name);
-      html.append(">");
-      html.append(name);
-      html.append("</a>");
+      if (!saveEditorAs) {
+        html.append("<p><a href=").append(name).append(">");
+        html.append(name).append("</a>");
+      }
     }
   }
   closedir(dp);
@@ -162,8 +172,13 @@ void FileWidget::anchorClick()
     return;
   }
   else if (target[0] == '~') {
-    // TODO call wnd to rename file, then redisplay as normal file mode
-    //ask(getInputValue(getInput("saveas")));
+    if (saveEditorAs) {
+      char savepath[PATH_MAX+1];
+      strcpy(savepath, path);
+      strcat(savepath, "/");
+      strcat(savepath, getInputValue(getInput("saveas")));
+      saveEditorAs->doSaveFile(savepath);
+    }
     return;
   }
 

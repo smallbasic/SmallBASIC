@@ -106,7 +106,6 @@ struct MainWindow : public BaseWindow {
   void showEditTab(EditorWidget* editWidget);
   void showHelpPage();
   void showOutputTab();
-  void updatePath(char *filename);
   void updateEditTabName(EditorWidget* editWidget);
   void busyMessage();
   void statusMsg(RunMessage runMessage, const char *filename);
@@ -148,7 +147,9 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(restart_run);
   CALLBACK_METHOD(run);
   CALLBACK_METHOD(run_break);
+  CALLBACK_METHOD(save_file_as);
   CALLBACK_METHOD(set_options);
+  CALLBACK_METHOD(tab_change);
   CALLBACK_METHOD(tool_plugin);
   CALLBACK_METHOD(turbo);
 

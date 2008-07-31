@@ -12,20 +12,23 @@
 #define FILE_WIDGET_H
 
 #include "HelpWidget.h"
+#include "EditorWidget.h"
 #include <limits.h>
 
 struct FileWidget : public HelpWidget {
   FileWidget(int x, int y, int w, int h);
   ~FileWidget();
 
-  void displayPath();
+  // returns the final slash char
+  static char* forwardSlash(char *filename);
+  void fileOpen(EditorWidget* saveEditorAs);
   void anchorClick();
-  void fileOpen();
-  void fileSaveAs(const char* filename);
+  int handle(int e);
 
   private:
+  void displayPath();
   char path[PATH_MAX+1];
-  char saveAsPath[PATH_MAX+1];
+  EditorWidget* saveEditorAs;
 };
 
 #endif
