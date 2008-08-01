@@ -2056,8 +2056,7 @@ void cmd_strN(long funcCode, var_t * r)
       }
       else {
         start--;
-
-        if (len == -1 || len + start >= lsrc) {
+        if (len < 0 || len + start >= lsrc) {
           len = lsrc - start;
         }
         r->v.p.ptr = tmp_alloc(len + 1);
