@@ -311,11 +311,6 @@ bool searchBackward(const char *text, int startPos,
 
 //--Menu callbacks--------------------------------------------------------------
 
-void MainWindow::tab_change(Widget* w, void* eventData)
-{
-
-}
-
 void MainWindow::close_tab(Widget* w, void* eventData) {
   if (tabGroup->children() > 1) {
     Group* group = getSelectedTab();
@@ -327,6 +322,7 @@ void MainWindow::close_tab(Widget* w, void* eventData) {
         }
       }
       tabGroup->remove(group);
+      delete group;
     }
   }
 }
@@ -1191,7 +1187,6 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   w -= 8;
   h -= MNU_HEIGHT;
   tabGroup = new TabGroup(4, 4, w, h);
-  tabGroup->callback(tab_change_cb);
 
   h -= 8; // TabGroup border
   tabGroup->begin();
@@ -1360,7 +1355,7 @@ EditorWidget* MainWindow::getEditor(const char* fullPath)
 {
   if (fullPath != 0 && fullPath[0] != 0) {
     int n = tabGroup->children();
-    for (int c = 0; c<n; c++) {
+    for (int c = 0; c < n; c++) {
       Group* group = (Group*)tabGroup->child(c);
       if (gw_editor == ((GroupWidget) (int)group->user_data())) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
@@ -1472,7 +1467,7 @@ Group* MainWindow::getNextTab(Group* current)
 Group* MainWindow::getPrevTab(Group* current) 
 {
   int n = tabGroup->children();
-  for (int c = n; c > 0; c--) {
+  for (int c = n - 1; c > 0; c--) {
     Group* child = (Group*)tabGroup->child(c);
     if (child == current) {
       return (Group*) tabGroup->child(c - 1);

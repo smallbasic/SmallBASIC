@@ -138,7 +138,6 @@ public:
   CALLBACK_METHOD(replaceAll);
   CALLBACK_METHOD(replaceNext);
   CALLBACK_METHOD(saveFile);
-  CALLBACK_METHOD(saveFileAs);
   CALLBACK_METHOD(showFindReplace);
 
   CodeEditor *editor;

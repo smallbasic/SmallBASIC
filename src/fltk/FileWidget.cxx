@@ -14,8 +14,9 @@
 
 #include <dirent.h>
 #include <sys/stat.h>
-#include <fltk/run.h>
+#include <fltk/ask.h>
 #include <fltk/events.h>
+#include <fltk/run.h>
 
 #include "MainWindow.h"
 #include "StringLib.h"
@@ -45,7 +46,7 @@ FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h)
   callback(anchorClick_cb);
   fileWidget = this;
   saveEditorAs = 0;
-  setSelectMode();
+  setPageMode();
 
   getcwd(path, sizeof(path));
   forwardSlash(path);
@@ -58,10 +59,42 @@ FileWidget::~FileWidget()
 }
 
 int FileWidget::handle(int e) {
-  if (e == SHOW && saveEditorAs) {
-    saveEditorAs = 0;
-    displayPath();
+  char buffer[PATH_MAX];
+  static int dnd_active = 0;
+
+  switch (e) {
+  case SHOW:
+    if (saveEditorAs) {
+      saveEditorAs = 0;
+      displayPath();
+    }
+    break;
+
+  case DND_LEAVE:
+    dnd_active = 0;
+    return 1;
+
+  case DND_DRAG:
+  case DND_RELEASE:
+  case DND_ENTER:
+    dnd_active = 1;
+    return 1;
+
+  case MOVE:
+    if (dnd_active) {
+      return 1;
+    }
+    break;
+
+  case PASTE:
+    strncpy(buffer, fltk::event_text(), fltk::event_length());
+    buffer[fltk::event_length()] = 0;
+    forwardSlash(buffer);
+    wnd->editFile(buffer);
+    dnd_active = 0;
+    return 1;
   }
+
   return HelpWidget::handle(e);
 }
 
@@ -100,7 +133,7 @@ void FileWidget::displayPath()
     const char* path = saveEditorAs->getFilename();
     char* slash = strrchr(path, '/');
     html.append("<p><b>Save file as:<br>");
-    html.append("<input size=120 type=text value='").append(slash ? slash + 1 : path);
+    html.append("<input size=220 type=text value='").append(slash ? slash + 1 : path);
     html.append("' name=saveas>&nbsp;<input type=button onclick='~' value='Save As'><br>");
   }
 
@@ -135,6 +168,9 @@ void FileWidget::displayPath()
       if (!saveEditorAs) {
         html.append("<p><a href=").append(name).append(">");
         html.append(name).append("</a>");
+      }
+      else {
+        html.append("<p>").append(name);
       }
     }
   }
@@ -177,7 +213,10 @@ void FileWidget::anchorClick()
       strcpy(savepath, path);
       strcat(savepath, "/");
       strcat(savepath, getInputValue(getInput("saveas")));
-      saveEditorAs->doSaveFile(savepath);
+      const char* msg = "%s\n\nFile already exists.\nDo you want to replace it?";
+      if (access(savepath, 0) != 0 || ask(msg, savepath)) {
+        saveEditorAs->doSaveFile(savepath);
+      }
     }
     return;
   }

@@ -153,14 +153,14 @@ void style_update_cb(int pos,      // I - Position of update
 
 //--CodeEditor------------------------------------------------------------------
 
-CodeEditor::CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
+CodeEditor::CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) 
+{
   readonly = false;
   const char *s = getenv("INDENT_LEVEL");
   indentLevel = (s && s[0] ? atoi(s) : 2);
   matchingBrace = -1;
 
-  textbuf = new TextBuffer();
-  buffer(textbuf);
+  textbuf = buffer(); // reference only
   stylebuf = new TextBuffer();
   search[0] = 0;
   highlight_data(stylebuf, styletable,
@@ -168,9 +168,9 @@ CodeEditor::CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) {
                  PLAIN, style_unfinished_cb, 0);
 }
 
-CodeEditor::~CodeEditor() {
-  // cleanup buffers
-  delete textbuf;
+CodeEditor::~CodeEditor() 
+{
+  // cleanup
   delete stylebuf;
 }
 
@@ -556,21 +556,6 @@ int CodeEditor::handle(int e)
     return 1;                   // skip default handler
   }
 
-#if defined(WIN32)
-  // in windows these message are sent here instead of EditorWidget
-  switch (e) {  
-  case DND_ENTER:
-  case DND_DRAG:
-  case DND_RELEASE:
-  case DND_LEAVE:
-    return 1;
-  case PASTE:
-    if (parent()->handle(e)) {
-      return 1;
-    }
-  }
-#endif
-
   // call default handler then process keys
   int rtn = TextEditor::handle(e);
   switch (e) {
@@ -769,35 +754,16 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 
 EditorWidget::~EditorWidget()
 {
-  editor->textbuf->remove_modify_callback(style_update_cb, editor);
-  editor->textbuf->remove_modify_callback(changed_cb, this);
+  delete editor;
 }
 
 int EditorWidget::handle(int e)
 {
-  char buffer[PATH_MAX];
-  static int dnd_release = 0;
-  
   switch (e) {
   case FOCUS:
     fltk::focus(editor);
     handleFileChange();
     return 1;
-  case DND_DRAG:
-  case DND_RELEASE:
-  case DND_ENTER:
-  case DND_LEAVE:
-    dnd_release = 1;
-    return 1;
-  case PASTE:
-    if (dnd_release) {
-      dnd_release = 0;
-      strncpy(buffer, fltk::event_text(), fltk::event_length());
-      buffer[fltk::event_length()] = 0;
-      wnd->editFile(buffer);
-      return 1;
-    }
-    return 0;
   }
 
   return Group::handle(e);
@@ -1068,24 +1034,11 @@ void EditorWidget::saveFile(void* eventData)
 {
   if (filename[0] == '\0') {
     // no filename - get one!
-    saveFileAs();
+    wnd->save_file_as();
     return;
   }
   else {
     doSaveFile(filename);
-  }
-}
-
-void EditorWidget::saveFileAs(void* eventData)
-{
-  const char* msg = "%s\n\nFile already exists.\nDo you want to replace it?";
-  const char* newfile = fltk::input("Save File As?", filename);
-  //  const char *newfile = file_chooser("Save File As?", "*.bas", filename);
-  if (newfile != NULL) {
-    if (access(newfile, 0) == 0 && ask(msg, newfile) == 0) {
-      return;
-    }
-    doSaveFile(newfile);
   }
 }
 
