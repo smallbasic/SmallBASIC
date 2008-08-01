@@ -1,3 +1,6 @@
+2008-08-01
+	* passing length < 0 to MID no longer causes stackdump
+	
 2008-07-17
 	* refactor FLTK to allow opening of multiple editors 
 	
