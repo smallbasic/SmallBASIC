@@ -12,6 +12,7 @@
 //
 
 #include <unistd.h>
+#include <errno.h>
 #include <sys/stat.h>
 
 #include <fltk/Item.h>

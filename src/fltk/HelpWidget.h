@@ -154,7 +154,7 @@ private:
 #ifdef FL_HELP_WIDGET_RESOURCES
 // somewhere to keep this clutter
 
-static char *dot_xpm[] = {
+static const char *dot_xpm[] = {
   "5 5 3 1",
   "   c None",
   ".  c #F4F4F4",
@@ -168,7 +168,7 @@ static char *dot_xpm[] = {
 
 static xpmImage dotImage(dot_xpm);
 
-static char *ellipse_xpm[] = {
+static const char *ellipse_xpm[] = {
   "6 1 2 1",
   " 	c #000000",
   ".	c #FFFFFF",
