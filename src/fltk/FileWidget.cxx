@@ -133,7 +133,7 @@ void FileWidget::displayPath()
   if (saveEditorAs) {
     const char* path = saveEditorAs->getFilename();
     char* slash = strrchr(path, '/');
-    html.append("<p><b>Save file as:<br>");
+    html.append("<p><b>Save ").append(slash ? slash + 1 : path).append(" as:<br>");
     html.append("<input size=220 type=text value='").append(slash ? slash + 1 : path);
     html.append("' name=saveas>&nbsp;<input type=button onclick='~' value='Save As'><br>");
   }
@@ -166,13 +166,8 @@ void FileWidget::displayPath()
              strncasecmp(name+len-5, ".html", 5) == 0||
              strncasecmp(name+len-4, ".bas", 4) == 0 ||
              strncasecmp(name+len-4, ".txt", 4) == 0) {
-      if (!saveEditorAs) {
-        html.append("<p><a href=").append(name).append(">");
-        html.append(name).append("</a>");
-      }
-      else {
-        html.append("<p>").append(name);
-      }
+      html.append("<p><a href=").append(name).append(">");
+      html.append(name).append("</a>");
     }
   }
   closedir(dp);
@@ -246,12 +241,18 @@ void FileWidget::anchorClick()
     docHome.append(path);
   }
 
-  setDocHome(docHome);
-  String fullPath;
-  fullPath.append(docHome.toString());
-  fullPath.append("/");
-  fullPath.append(target[0] == '/' ? target+1 : target);
-  wnd->editFile(fullPath.toString());
+  if (saveEditorAs) {
+    Input* input = (Input*) getInput("saveas");
+    input->value(target);
+  } 
+  else {
+    setDocHome(docHome);
+    String fullPath;
+    fullPath.append(docHome.toString());
+    fullPath.append("/");
+    fullPath.append(target[0] == '/' ? target+1 : target);
+    wnd->editFile(fullPath.toString());
+  }
 }
 
 // --- End of file -------------------------------------------------------------
