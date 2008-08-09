@@ -128,7 +128,7 @@ struct Value {
 };
 
 struct Attributes : public Properties {
-  Attributes(int growSize):Properties(growSize) {
+  Attributes(int growSize) : Properties(growSize) {
   } 
   String *getValue() {
     return get("value");
@@ -257,7 +257,7 @@ struct FontNode : public BaseNode {
 };
 
 FontNode::FontNode(Font * font, int fontSize, Color color, bool bold,
-                   bool italic):BaseNode()
+                   bool italic) : BaseNode()
 {
   this->font = font;
   this->fontSize = fontSize;
@@ -358,7 +358,7 @@ struct AnchorNode : public BaseNode {
 AnchorNode *pushedAnchor = 0;
 
 struct AnchorEndNode : public BaseNode {
-  AnchorEndNode():BaseNode() {
+  AnchorEndNode() : BaseNode() {
   }
   void display(Display * out) {
     AnchorNode *beginNode = out->anchor;
@@ -456,7 +456,7 @@ struct ImageNode : public BaseNode {
 };
 
 ImageNode::ImageNode(const Style * style, String * docHome,
-                     Attributes * a):BaseNode()
+                     Attributes * a) : BaseNode()
 {
   this->style = style;
   makePath(a->getSrc(), docHome);
@@ -470,7 +470,7 @@ ImageNode::ImageNode(const Style * style, String * docHome,
 }
 
 ImageNode::ImageNode(const Style * style, String * docHome, String * src,
-                     bool fixed):BaseNode()
+                     bool fixed) : BaseNode()
 {
   this->style = style;
   this->fixed = fixed;
@@ -483,7 +483,7 @@ ImageNode::ImageNode(const Style * style, String * docHome, String * src,
   valign = 0;
 }
 
-ImageNode::ImageNode(const Style * style, const Image * image):BaseNode()
+ImageNode::ImageNode(const Style * style, const Image * image) : BaseNode()
 {
   this->style = style;
   this->image = image;
@@ -614,7 +614,7 @@ struct TextNode : public BaseNode {
   S16 ybegin;                   // 4
 };
 
-TextNode::TextNode(const char *s, U16 textlen):BaseNode()
+TextNode::TextNode(const char *s, U16 textlen) : BaseNode()
 {
   this->s = s;
   this->textlen = textlen;
@@ -862,7 +862,7 @@ int TextNode::getY()
 //--HrNode----------------------------------------------------------------------
 
 struct HrNode : public BaseNode {
-  HrNode():BaseNode() {
+  HrNode() : BaseNode() {
   }
   void display(Display * out) {
     if (out->imgY != -1) {
@@ -950,7 +950,7 @@ struct TableEndNode : public BaseNode {
 
 //--TableNode-------------------------------------------------------------------
 
-TableNode::TableNode(Attributes * a):BaseNode()
+TableNode::TableNode(Attributes * a) : BaseNode()
 {
   rows = 0;
   cols = 0;
@@ -1086,7 +1086,7 @@ void TableNode::cleanup()
   }
 }
 
-TableEndNode::TableEndNode(TableNode * tableNode):BaseNode()
+TableEndNode::TableEndNode(TableNode * tableNode) : BaseNode()
 {
   table = tableNode;
 }
@@ -1100,7 +1100,7 @@ void TableEndNode::display(Display * out)
 
 //--TrNode----------------------------------------------------------------------
 
-TrNode::TrNode(TableNode * tableNode, Attributes * a):BaseNode()
+TrNode::TrNode(TableNode * tableNode, Attributes * a) : BaseNode()
 {
   table = tableNode;
   y1 = height = cols = 0;
@@ -1134,7 +1134,7 @@ void TrNode::display(Display * out)
   setcolor(foreground ? foreground : out->color);
 }
 
-TrEndNode::TrEndNode(TrNode * trNode):BaseNode()
+TrEndNode::TrEndNode(TrNode * trNode) : BaseNode()
 {
   tr = trNode;
   if (tr && tr->table && tr->cols > tr->table->cols) {
@@ -1152,7 +1152,7 @@ void TrEndNode::display(Display * out)
 
 //--TdNode----------------------------------------------------------------------
 
-TdNode::TdNode(TrNode * trNode, Attributes * a):BaseNode()
+TdNode::TdNode(TrNode * trNode, Attributes * a) : BaseNode()
 {
   tr = trNode;
   if (tr) {
@@ -1211,7 +1211,7 @@ void TdNode::display(Display * out)
   setcolor(foreground ? foreground : out->color);
 }
 
-TdEndNode::TdEndNode(TdNode * tdNode):BaseNode()
+TdEndNode::TdEndNode(TdNode * tdNode) : BaseNode()
 {
   td = tdNode;
 }
@@ -1311,7 +1311,7 @@ InputNode::InputNode(Group * parent, Attributes * a) : BaseNode()
 }
 
 InputNode::InputNode(Group * parent, Attributes * a, const char *s,
-                     int len):BaseNode()
+                     int len) : BaseNode()
 {
   // creates a textarea control
   parent->begin();
@@ -1330,7 +1330,7 @@ InputNode::InputNode(Group * parent, Attributes * a, const char *s,
   parent->end();
 }
 
-InputNode::InputNode(Group * parent):BaseNode()
+InputNode::InputNode(Group * parent) : BaseNode()
 {
   // creates a select control
   parent->begin();
@@ -1882,10 +1882,12 @@ void HelpWidget::draw()
   out.y1 += vscroll;
 
   push_clip(Rectangle(w(), h()));
+  bool havePushedAnchor = false;
   if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
     // just draw the anchor-push
     int h = (pushedAnchor->y2 - pushedAnchor->y1) + pushedAnchor->lineHeight;
     push_clip(Rectangle(0, pushedAnchor->y1, out.x2, h));
+    havePushedAnchor = true;
   }
 
   // draw the background
@@ -1972,7 +1974,7 @@ void HelpWidget::draw()
   }
   pop_clip();
 
-  if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
+  if (havePushedAnchor) {
     pop_clip();
   }
   pop_clip();

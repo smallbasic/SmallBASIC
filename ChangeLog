@@ -1,9 +1,9 @@
 2008-08-01
 	* passing length < 0 to MID no longer causes stackdump
-	
+
 2008-07-17
-	* refactor FLTK to allow opening of multiple editors 
-	
+	* refactor FLTK to allow opening of multiple editors
+
 2008-07-05
 	* cleanup ansi codes from output in dev_null driver. fixed logprint command
 	* fixed "open for append"
@@ -16,15 +16,16 @@
 	* Updated to build FLTK version using MingW under Cygwin (see below).
 
 2008-06-26
-	* Added build support for MingW under Cygwin. This is simpler than installing 
-	  Msys, simply install MingW to say c:\MinwG, then change your .bash_profile with: 
+	* Added build support for MingW under Cygwin. This is simpler than installing
+	  Msys, simply install MingW to say c:\MinwG, then change your .bash_profile with:
 	  export PATH=/c/MinGW/bin:$PATH
-	  Then re-run configure (under cygwin bash) and a non-cygwin console version will 
+	  Then re-run configure (under cygwin bash) and a non-cygwin console version will
 	  be produced which can run under cmd.exe, explorer.exe etc.
-	
+
 2008-06-20
 	* Can now supply program arguments on FLTK version command line:
-	  sbasici -r t5.bas foo -or- sbasici t5.bas foo -or- ls | sbasic t5.bas --
+        sbasici -r t5.bas foo -or- sbasici t5.bas foo -or- ls | sbasic t5.bas --
+	also: echo foo | sbasic foo.bas --
 
 2008-06-06
 	* Implemented the ability to declare a local variable and assign a

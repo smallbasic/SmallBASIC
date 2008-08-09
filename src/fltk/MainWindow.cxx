@@ -1201,7 +1201,8 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   outputGroup->resizable(out);
   outputGroup->end();
 
-  tabGroup->resizable(createEditor(UNTITLED_FILE));
+  createEditor(UNTITLED_FILE);
+  tabGroup->resizable(outputGroup);
   tabGroup->end();
   outer->end();
   end();

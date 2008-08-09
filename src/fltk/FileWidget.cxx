@@ -60,7 +60,7 @@ FileWidget::~FileWidget()
 }
 
 int FileWidget::handle(int e) {
-  char buffer[PATH_MAX];
+  static char buffer[PATH_MAX];
   static int dnd_active = 0;
 
   switch (e) {
@@ -119,17 +119,17 @@ void FileWidget::fileOpen(EditorWidget* saveEditorAs)
 }
 
 void FileWidget::displayPath() 
-{
+{ 
   chdir(path);
   DIR* dp = opendir(path);
   if (dp == 0) {
     return;
   }
 
-  String html;
   dirent* entry;
   struct stat stbuf;
-
+  String html;
+  
   if (saveEditorAs) {
     const char* path = saveEditorAs->getFilename();
     char* slash = strrchr(path, '/');
@@ -171,9 +171,6 @@ void FileWidget::displayPath()
     }
   }
   closedir(dp);
-
-  // open into an exiting file open tab if one exists
-  html.append("<br>");
   loadBuffer(html);
 }
 
