@@ -26,6 +26,15 @@ func unquote(s)
 end
 
 #
+# create a html button
+#
+func navButton(caption, event)
+  local s = "<input type='button' value='" + caption + &
+            "' onclick='" + event + "'>&nbsp;"
+  navButton = s
+end
+
+#
 # show the available chapter names
 #
 sub showChapters(keywordNotFound)
@@ -42,14 +51,12 @@ sub showChapters(keywordNotFound)
   out << "<a href=!System>System</a><br>"
  
   'show not found error
-  if (keywordNotFound != 0 && keywordNotFound != "") then
+  if (keywordNotFound != 0 && trim(keywordNotFound) != "") then
     out << "<hr><b>Keyword not found: \"" + keywordNotFound + "\"</b>"
   fi
  
   'show additional index information
-  out << "<hr>"
-  out << "<a href=~>[Index]</a><br>"  
-  
+  out << "<hr> " + navButton("Index", "~") + "<br>"  
   tsave getHelpOutputFilename, out
 end
 
@@ -96,7 +103,7 @@ sub showIndex()
     fi
   next
 
-  out << "<hr><a href=^>[Topics]</a>"
+  out << "<hr>" + navButton("Topics", "^")
   tsave getHelpOutputFilename, out
 end
 
@@ -124,7 +131,7 @@ sub showChapter(chapter)
     out << "<a href=" + keyword + ">" + keyword + "</a><br>"
   next keyword
 
-  out << "<hr><a href=~>[Index]</a> | <a href=^>[Topics]</a>"
+  out << "<hr>" + navButton("Index", "~") + navButton("Topics", "^")
   tsave getHelpOutputFilename, out
 end
 
@@ -148,21 +155,22 @@ sub showContext(keyword)
         out << unquote(cols(4)) 'synopsis
         out << "<br><br>"
         out << unquote(cols(5)) 'help information
-        out << "<br><br><i><a href=http://smallbasic.sf.net/?q=node/" + cols(3) + ">"
+        out << "<br><br><i>See also: <a href=http://smallbasic.sf.net/?q=node/" + cols(3) + ">"
         out << cols(2) + " home page on smallbasic.sf.net</a></i><hr>"
 
         rem draw next and previous links
-        out << "<a href=~>[Index]</a> | <a href=^>[Topics]</a>"
-        out << "<a href=!" + chapter + ">[Group]</a>"
+        out << navButton("Index", "~")  
+        out << navButton("Topics", "^")
+        out << navButton(chapter, "!" + chapter) 
         if (i > 0) then
           split contents(i - 1), ",", cols
           kw = unquote(cols(2))
-          out << "<a href=" + kw + ">[" + kw + "]</a>"
+          out << navButton(kw, kw)
         fi
         if (i < max_contents - 1) then
           split contents(i + 1), ",", cols
           kw = unquote(cols(2))
-          out << "<a href=" + kw + ">[" + kw + "]</a>"
+          out << navButton(kw, kw)          
         fi
         exit for
       fi

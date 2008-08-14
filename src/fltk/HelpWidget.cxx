@@ -1524,7 +1524,7 @@ void InputNode::display(Display * out)
   button->textsize(out->fontSize);
   button->labelsize(out->fontSize);
   if (button->y() + button->h() < out->y2 && button->y() >= 0) {
-    button->show();
+    button->clear_flag(INVISIBLE);
   }
   else {
     // draw a fake control in case partially visible

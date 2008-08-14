@@ -47,7 +47,6 @@ FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h)
   callback(anchorClick_cb);
   fileWidget = this;
   saveEditorAs = 0;
-  setPageMode();
 
   getcwd(path, sizeof(path));
   forwardSlash(path);
@@ -83,7 +82,7 @@ int FileWidget::handle(int e) {
 
   case MOVE:
     if (dnd_active) {
-      return 1;
+      return 1; // return 1 to become drop-target
     }
     break;
 
