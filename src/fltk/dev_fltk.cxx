@@ -613,56 +613,14 @@ void enter_cb(Widget *, void *v)
   wnd->setModal(false);
 }
 
-struct LineInput: public fltk::Input {
-  LineInput(int def_w):fltk::Input(wnd->out->getX() + 2,
-                                   wnd->out->getY() + 1,
-                                   def_w, wnd->out->textHeight() + 4) {
-    this->def_w = def_w;
-    this->orig_x = x();
-    this->orig_y = y();
-    this->orig_w = w();
-    this->orig_h = h();
-  } 
-  bool replace(int b, int e, const char *text, int ilen) {
-    // grow the input box width
-    if (ilen) {
-      int strw = (int)getwidth(value()) + def_w;
-      if (strw > w()) {
-        w(strw);
-        orig_w = strw;
-        redraw();
-      }
-    }
-    return Input::replace(b, e, text, ilen);
-  }
-  void layout() {
-    fltk::Input::layout();
-    // veto the layout changes
-    x(orig_x);
-    y(orig_y);
-    w(orig_w);
-    h(orig_h);
-  }
-
-  int handle(int event) {
-    if (event == fltk::KEY &&
-        (event_key_state(LeftCtrlKey) ||
-         event_key_state(RightCtrlKey)) && event_key() == 'b') {
-      wnd->setBreak();
-    }
-    return fltk::Input::handle(event);
-  }
-
-  int orig_x, orig_y;
-  int orig_w, orig_h;
-  int def_w;
-};
-
 char *dev_gets(char *dest, int size)
 {
   wnd->tabGroup->selected_child(wnd->outputGroup);
   wnd->outputGroup->begin();
-  LineInput *in = new LineInput(20);
+
+  LineInput *in = new LineInput(wnd->out->getX() + 2,
+                                wnd->out->getY() + 1,
+                                20, wnd->out->textHeight() + 4);
   wnd->outputGroup->end();
   in->callback(enter_cb);
   in->when(WHEN_ENTER_KEY_ALWAYS);

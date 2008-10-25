@@ -1,7 +1,7 @@
 // $Id$
 //
-// Based on test/editor.cxx - A simple text editor program for the Fast 
-// Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
+// Based on test/editor.cxx - A simple text editor program for the Fast
+// Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK
 // Programmer's Guide.
 // Copyright 1998-2003 by Bill Spitzak and others.
 //
@@ -62,6 +62,13 @@ TextDisplay::StyleTableEntry styletable[] = { // Style table
 const int numCodeKeywords = sizeof(code_keywords) / sizeof(code_keywords[0]);
 const int numCodeFunctions = sizeof(code_functions) / sizeof(code_functions[0]);
 const int numCodeProcedures = sizeof(code_procedures) / sizeof(code_procedures[0]);
+
+/**
+ * return whether the character is a valid variable symbol
+ */
+bool isvar(int c) {
+  return (isalnum(c) || c == '_');
+}
 
 EditorWidget* get_editor() {
   return wnd->getEditor();
@@ -135,7 +142,7 @@ void style_update_cb(int pos,      // I - Position of update
   editor->redisplay_range(start, end);
 
   if (last != style_range[end - start - 1]) {
-    // the last character on the line changed styles, 
+    // the last character on the line changed styles,
     // so reparse the remainder of the buffer
     free(text_range);
     free(style_range);
@@ -154,7 +161,7 @@ void style_update_cb(int pos,      // I - Position of update
 
 //--CodeEditor------------------------------------------------------------------
 
-CodeEditor::CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h) 
+CodeEditor::CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h)
 {
   readonly = false;
   const char *s = getenv("INDENT_LEVEL");
@@ -169,7 +176,7 @@ CodeEditor::CodeEditor(int x, int y, int w, int h) : TextEditor(x, y, w, h)
                  PLAIN, style_unfinished_cb, 0);
 }
 
-CodeEditor::~CodeEditor() 
+CodeEditor::~CodeEditor()
 {
   // cleanup
   delete stylebuf;
@@ -324,7 +331,7 @@ void CodeEditor::styleParse(const char *text, char *style, int length)
 
     // copy style info
     *style++ = current;
-    last = isalnum(*text) || *text == '.' || *text == '_';
+    last = isvar(*text) || *text == '.';
 
     if (*text == '\n') {
       current = PLAIN;          // basic lines do not continue
@@ -633,6 +640,27 @@ void CodeEditor::getSelEndRowCol(int *row, int *col)
   }
 }
 
+/**
+ * return the selected text and its coordinate rectangle
+ */
+char* CodeEditor::getSelection(Rectangle* rc) {
+  char* result = 0;
+  if (!readonly && textbuf->selected()) {
+    int x1, y1, x2, y2, start, end;
+
+    textbuf->selection_position(&start, &end);
+    position_to_xy(start, &x1, &y1);
+    position_to_xy(end, &x2, &y2);
+
+    rc->x(x1);
+    rc->y(y1);
+    rc->w(x2 - x1);
+    rc->h(maxsize_);
+    result = textbuf->text_range(start, end);
+  }
+  return result;
+}
+
 void CodeEditor::getRowCol(int *row, int *col)
 {
   position_to_linecol(cursor_pos_, row, col);
@@ -803,7 +831,7 @@ bool EditorWidget::checkSave(bool discard)
 
   const char *msg = "The current file has not been saved.\n"
                     "Would you like to save it now?";
-  int r = discard ? choice(msg, "Save", "Discard", "Cancel") : 
+  int r = discard ? choice(msg, "Save", "Discard", "Cancel") :
           choice(msg, "Save", "Cancel", 0);
   if (r == 0) {
     saveFile();                 // Save the file
@@ -886,7 +914,7 @@ void EditorWidget::doSaveFile(const char *newfile)
   dirty = 0;
   strcpy(filename, basfile);
   modifiedTime = getModifiedTime();
-  
+
   if (filename[0] == 0) {
     // naming a previously unnamed buffer
     wnd->addHistory(basfile);
@@ -902,8 +930,67 @@ void EditorWidget::doSaveFile(const char *newfile)
 
 void EditorWidget::showFindReplace(void* eventData)
 {
-  wnd->replaceFind->value(editor->search);
+  const char* prime = editor->search;
+  if (!prime || !prime[0]) {
+    // use selected text when search not available
+    prime = editor->textbuf->selection_text();
+  }
+  wnd->replaceFind->value(prime);
   wnd->replaceDlg->show();
+}
+
+int EditorWidget::replaceAll(const char* find, const char* replace, 
+                             bool restorePos, bool matchWord)
+{
+  int times = 0;
+
+  if (strcmp(find, replace) != 0) {
+    TextBuffer *textbuf = editor->textbuf;
+    int prevPos = editor->insert_position();
+    
+    // loop through the whole string
+    int pos = 0;
+    editor->insert_position(pos);
+    
+    while (textbuf->search_forward(pos, find, &pos)) {
+      // found a match; update the position and replace text
+      if (!matchWord ||
+          ((pos == 0 || !isvar(textbuf->character(pos - 1))) &&
+            !isvar(textbuf->character(pos + strlen(find))))) {
+        textbuf->select(pos, pos + strlen(find));
+        textbuf->remove_selection();
+        textbuf->insert(pos, replace);
+      }
+
+      // advance beyond replace string
+      pos += strlen(replace);
+      editor->insert_position(pos);
+      times++;
+    }
+    
+    if (restorePos) {
+      editor->insert_position(prevPos);
+    }
+    editor->show_insert_position();
+  }
+
+  return times;
+}
+
+void EditorWidget::replaceAll(void* eventData)
+{
+  if (!readonly()) {
+    const char *find = wnd->replaceFind->value();
+    const char *replace = wnd->replaceWith->value();
+
+    int times = replaceAll(find, replace, false, false);
+    if (times) {
+      message("Replaced %d occurrences.", times);
+    }
+    else {
+      alert("No occurrences of \'%s\' found!", find);
+    }
+  }
 }
 
 void EditorWidget::replaceNext(void* eventData)
@@ -914,14 +1001,6 @@ void EditorWidget::replaceNext(void* eventData)
 
   const char *find = wnd->replaceFind->value();
   const char *replace = wnd->replaceWith->value();
-
-  if (find[0] == '\0') {
-    // search string is blank; get a new one
-    wnd->replaceDlg->show();
-    return;
-  }
-
-  wnd->replaceDlg->hide();
 
   TextBuffer *textbuf = editor->textbuf;
   int pos = editor->insert_position();
@@ -985,52 +1064,6 @@ void EditorWidget::goto_line(void* eventData)
   take_focus();
 }
 
-void EditorWidget::replaceAll(void* eventData)
-{
-  if (readonly()) {
-    return;
-  }
-
-  const char *find = wnd->replaceFind->value();
-  const char *replace = wnd->replaceWith->value();
-
-  find = wnd->replaceFind->value();
-  if (find[0] == '\0') {
-    // search string is blank; get a new one
-    wnd->replaceDlg->show();
-    return;
-  }
-
-  wnd->replaceDlg->hide();
-  editor->insert_position(0);
-  int times = 0;
-
-  // loop through the whole string
-  for (int found = 1; found;) {
-    int pos = editor->insert_position();
-    TextBuffer *textbuf = editor->textbuf;
-
-    found = textbuf->search_forward(pos, find, &pos);
-
-    if (found) {
-      // found a match; update the position and replace text
-      textbuf->select(pos, pos + strlen(find));
-      textbuf->remove_selection();
-      textbuf->insert(pos, replace);
-      editor->insert_position(pos + strlen(replace));
-      editor->show_insert_position();
-      times++;
-    }
-  }
-
-  if (times) {
-    message("Replaced %d occurrences.", times);
-  }
-  else {
-    alert("No occurrences of \'%s\' found!", find);
-  }
-}
-
 void EditorWidget::saveFile(void* eventData)
 {
   if (filename[0] == '\0') {
@@ -1061,6 +1094,11 @@ void EditorWidget::getSelStartRowCol(int *row, int *col)
 void EditorWidget::getSelEndRowCol(int *row, int *col)
 {
   return ((CodeEditor *) editor)->getSelEndRowCol(row, col);
+}
+
+char* EditorWidget::getSelection(Rectangle* rc)
+{
+  return ((CodeEditor *) editor)->getSelection(rc);
 }
 
 void EditorWidget::setFontSize(int size)
@@ -1142,7 +1180,7 @@ U32 EditorWidget::getModifiedTime() {
 
 void EditorWidget::handleFileChange() {
   // handle outside changes to the file
-  if (filename[0] && modifiedTime != 0 && 
+  if (filename[0] && modifiedTime != 0 &&
       modifiedTime != getModifiedTime()) {
     const char *msg = "File %s\nhas changed on disk.\n\n"
       "Do you want to reload the file?";

@@ -58,6 +58,16 @@ enum GroupWidget {
   gw_file
 };
 
+struct LineInput : public fltk::Input {
+  LineInput(int x, int y, int w, int h);
+  bool replace(int b, int e, const char *text, int ilen);
+  void layout();
+  int handle(int event);
+
+  private:
+  int orig_x, orig_y, orig_w, orig_h;
+};
+
 struct MainWindow;
 extern MainWindow *wnd;
 extern ExecState runMode;
@@ -144,6 +154,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(paste_text);
   CALLBACK_METHOD(prev_tab);
   CALLBACK_METHOD(quit);
+  CALLBACK_METHOD(rename_word);
   CALLBACK_METHOD(restart_run);
   CALLBACK_METHOD(run);
   CALLBACK_METHOD(run_break);

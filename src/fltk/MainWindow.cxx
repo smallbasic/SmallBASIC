@@ -327,6 +327,46 @@ void MainWindow::close_tab(Widget* w, void* eventData) {
   }
 }
 
+/**
+ * rename the currently selected variable
+ */
+void MainWindow::rename_word(Widget* w, void* eventData) {
+  EditorWidget* editWidget = getEditor();
+  static bool rename_active = false;
+
+  if (rename_active) {
+    rename_active = false;
+  }
+  else if (editWidget) {
+    Rectangle rc;
+    char* selection = editWidget->getSelection(&rc);
+    if (selection) {
+      editWidget->begin();
+      LineInput *in = new LineInput(rc.x(), rc.y(), rc.w() + 10, rc.h());
+      editWidget->end();
+      in->text(selection);
+      in->callback(rename_word_cb);
+      in->when(WHEN_ENTER_KEY_ALWAYS);
+      in->box(BORDER_BOX);
+      in->color(fltk::color(220, 220, 220));
+      in->take_focus();
+      in->textfont(COURIER);
+      in->textsize(editWidget->getFontSize());
+
+      rename_active = true;
+      while (rename_active) {
+        fltk::wait();
+      }
+
+      editWidget->replaceAll(selection, in->value(), true, true);
+      editWidget->remove(in);
+      editWidget->take_focus();
+      delete in;
+      free((void *)selection);
+    }
+  }  
+}
+
 void MainWindow::restart_run(Widget* w, void* eventData) {
   if (runMode == run_state) {
     brun_break();
@@ -1145,7 +1185,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   scanRecentFiles(m);
   m->add("&File/_&Close", CTRL + F4Key, (Callback *) MainWindow::close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWidget::saveFile_cb);
-  m->add("&File/_Save File &As", CTRL + SHIFT + 'S', 
+  m->add("&File/_Save File &As", CTRL + SHIFT + 'S',
          (Callback *) MainWindow::save_file_as_cb);
   m->add("&File/E&xit", CTRL + 'q', (Callback *) MainWindow::quit_cb);
   m->add("&Edit/_&Undo", CTRL + 'z', (Callback *) EditorWidget::undo_cb);
@@ -1153,8 +1193,9 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Edit/&Copy", CTRL + 'c', (Callback *) MainWindow::copy_text_cb);
   m->add("&Edit/_&Paste", CTRL + 'v', (Callback *) MainWindow::paste_text_cb);
   m->add("&Edit/&Change Case", ALT + 'c', (Callback *) MainWindow::change_case_cb);
-  m->add("&Edit/_&Expand Word", ALT + '/', (Callback *) MainWindow::expand_word_cb);
-  m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWidget::replaceAll_cb);
+  m->add("&Edit/&Expand Word", ALT + '/', (Callback *) MainWindow::expand_word_cb);
+  m->add("&Edit/_&Rename Word", CTRL + SHIFT + 'r', (Callback *) MainWindow::rename_word_cb);
+  m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWidget::showFindReplace_cb);
   m->add("&Edit/_Replace &Again", CTRL + 't',
          (Callback *) EditorWidget::replaceNext_cb);
   m->add("&View/&Next Tab", F6Key, (Callback *) MainWindow::next_tab_cb);
@@ -1708,6 +1749,54 @@ int BaseWindow::handle(int e)
     break;
   }
   return Window::handle(e);
+}
+
+LineInput::LineInput(int x, int y, int w, int h) : fltk::Input(x, y, w, h) {
+  this->orig_x = x;
+  this->orig_y = y;
+  this->orig_w = w;
+  this->orig_h = h;
+} 
+
+/**
+ * grow the input box width as text is entered
+ */
+bool LineInput::replace(int b, int e, const char *text, int ilen) {
+  if (ilen) {
+    int strw = (int)getwidth(value()) + 20;
+    if (strw > w()) {
+      w(strw);
+      orig_w = strw;
+      redraw();
+    }
+  }
+  return Input::replace(b, e, text, ilen);
+}
+
+/**
+ * veto the layout changes
+ */ 
+void LineInput::layout() {
+  fltk::Input::layout();
+  x(orig_x);
+  y(orig_y);
+  w(orig_w);
+  h(orig_h);
+}
+
+int LineInput::handle(int event) {
+  if (event == fltk::KEY) {
+    if (event_key_state(LeftCtrlKey) ||
+        event_key_state(RightCtrlKey) && event_key() == 'b') {
+      if (!wnd->isEdit()) {
+        wnd->setBreak();
+      }
+    }
+    if (event_key_state(EscapeKey)) {
+      do_callback();
+    }
+  }
+  return fltk::Input::handle(event);
 }
 
 //--Debug support---------------------------------------------------------------

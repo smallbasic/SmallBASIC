@@ -1,3 +1,9 @@
+2008-10-26
+	FLTK: Fixed a few problems with find and replace. Implemented Rename Word command.
+
+2008-08-16
+	* released windows version 0.10.1
+
 2008-08-01
 	* passing length < 0 to MID no longer causes stackdump
 

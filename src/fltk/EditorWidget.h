@@ -58,6 +58,7 @@ struct CodeEditor : public TextEditor {
   void getRowCol(int *row, int *col);
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
+  char* getSelection(Rectangle* rc);
   void gotoLine(int line);
   void handleTab();
   void showMatchingBrace();
@@ -98,9 +99,12 @@ public:
   void getRowCol(int *row, int *col);
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
+  char* getSelection(Rectangle* rc);
   void gotoLine(int line);
   void loadFile(const char *newfile);
   void newFile();
+  int  replaceAll(const char* find, const char* replace, 
+                  bool restorePos, bool matchWord);
   void restoreEdit();
   void runMsg(RunMessage runMessage);
   void setFontSize(int i);
