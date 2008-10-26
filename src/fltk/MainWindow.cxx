@@ -346,10 +346,6 @@ void MainWindow::rename_word(Widget* w, void* eventData) {
       editWidget->end();
       in->text(selection);
       in->callback(rename_word_cb);
-      in->when(WHEN_ENTER_KEY_ALWAYS);
-      in->box(BORDER_BOX);
-      in->color(fltk::color(220, 220, 220));
-      in->take_focus();
       in->textfont(COURIER);
       in->textsize(editWidget->getFontSize());
 
@@ -1671,6 +1667,7 @@ void MainWindow::execLink(const char *file)
 int BaseWindow::handle(int e)
 {
   switch (e) {
+  case SHORTCUT:
   case KEY:
     break;                      // process keys below
   case PUSH:
@@ -1694,6 +1691,7 @@ int BaseWindow::handle(int e)
     }
     break;
   case run_state:
+  case modal_state:
     k = event_key();
     switch (k) {
     case PageUpKey:
@@ -1756,21 +1754,26 @@ LineInput::LineInput(int x, int y, int w, int h) : fltk::Input(x, y, w, h) {
   this->orig_y = y;
   this->orig_w = w;
   this->orig_h = h;
+  when(WHEN_ENTER_KEY_ALWAYS);
+  box(BORDER_BOX);
+  color(fltk::color(220, 220, 220));
+  take_focus();
 } 
 
 /**
  * grow the input box width as text is entered
  */
 bool LineInput::replace(int b, int e, const char *text, int ilen) {
+  bool result = Input::replace(b, e, text, ilen);
   if (ilen) {
-    int strw = (int)getwidth(value()) + 20;
+    int strw = (int) (getwidth(text) + getwidth(value())) + 4;
     if (strw > w()) {
       w(strw);
       orig_w = strw;
       redraw();
     }
   }
-  return Input::replace(b, e, text, ilen);
+  return result;
 }
 
 /**

@@ -24,6 +24,7 @@ repeat
 	ox=x:oy=y
 	x=x+dx
 	y=y+dy
+  delay 10
 until (inkey$ <> "")
 end
 

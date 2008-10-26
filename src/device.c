@@ -86,8 +86,10 @@ static int keytail;
 #endif
 
 #ifndef KBHIT_PWR_CONSERVE
-#if defined(_FRANKLIN_EBM) || defined(_FLTK)
-#define KBHIT_PWR_CONSERVE
+#if defined(_FRANKLIN_EBM)
+#define KBHIT_PWR_CONSERVE 1
+#else
+#define KBHIT_PWR_CONSERVE 0
 #endif
 #endif
 
@@ -573,7 +575,7 @@ int dev_kbhit()
   if (keytail != keyhead)
     return 1;
 
-#if defined(KBHIT_PWR_CONSERVE)
+#if KBHIT_PWR_CONSERVE
   // conserve battery power
   code = dev_events(1);
 #else

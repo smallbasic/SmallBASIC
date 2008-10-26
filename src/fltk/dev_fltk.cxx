@@ -623,10 +623,6 @@ char *dev_gets(char *dest, int size)
                                 20, wnd->out->textHeight() + 4);
   wnd->outputGroup->end();
   in->callback(enter_cb);
-  in->when(WHEN_ENTER_KEY_ALWAYS);
-  in->box(BORDER_BOX);
-  in->color(color(220, 220, 220));
-  in->take_focus();
   in->reserve(size);
   in->textfont(wnd->out->labelfont());
   in->textsize(wnd->out->labelsize());
