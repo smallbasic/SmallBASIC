@@ -645,18 +645,33 @@ void CodeEditor::getSelEndRowCol(int *row, int *col)
  */
 char* CodeEditor::getSelection(Rectangle* rc) {
   char* result = 0;
-  if (!readonly && textbuf->selected()) {
+  if (!readonly) {
     int x1, y1, x2, y2, start, end;
 
-    textbuf->selection_position(&start, &end);
-    position_to_xy(start, &x1, &y1);
-    position_to_xy(end, &x2, &y2);
+    if (textbuf->selected()) {
+      textbuf->selection_position(&start, &end);
+    }
+    else {
+      int pos = insert_position();
+      if (isvar(textbuf->character(pos))) {
+        start = textbuf->word_start(pos);
+        end = textbuf->word_end(pos);
+      }
+      else {
+        start = end = 0;
+      }
+    }
 
-    rc->x(x1);
-    rc->y(y1);
-    rc->w(x2 - x1);
-    rc->h(maxsize_);
-    result = textbuf->text_range(start, end);
+    if (start != end) {
+      position_to_xy(start, &x1, &y1);
+      position_to_xy(end, &x2, &y2);
+    
+      rc->x(x1);
+      rc->y(y1);
+      rc->w(x2 - x1);
+      rc->h(maxsize_);
+      result = textbuf->text_range(start, end);
+    }
   }
   return result;
 }
