@@ -42,7 +42,7 @@ AC_ARG_ENABLE(sdl,
   [ac_build_sdl="no"])
 
 AC_ARG_ENABLE(dist,
-  AC_HELP_STRING([--enable-dist], [prepare for make dist(default=no)]),
+  AC_HELP_STRING([--enable-dist], [prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
   [ac_build_dist="no"])
 
@@ -449,6 +449,7 @@ function buildDist() {
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/sdl"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/cygwin"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/unix"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/mingw"
    AC_SUBST(BUILD_SUBDIRS)
    AM_CONDITIONAL(WITH_HILDON, false)
 }

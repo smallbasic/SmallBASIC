@@ -1694,6 +1694,72 @@ int BaseWindow::handle(int e)
   case modal_state:
     k = event_key();
     switch (k) {
+    case TabKey:
+      dev_pushkey(SB_KEY_TAB);
+      break;
+    case HomeKey:
+      dev_pushkey(SB_KEY_KP_HOME);
+      break;
+    case EndKey:
+      dev_pushkey(SB_KEY_END);
+      break;
+    case InsertKey:
+      dev_pushkey(SB_KEY_INSERT);
+      break;
+    case MenuKey:
+      dev_pushkey(SB_KEY_MENU);
+      break;
+    case MultiplyKey:
+      dev_pushkey(SB_KEY_KP_MUL);
+      break;
+    case AddKey:
+      dev_pushkey(SB_KEY_KP_PLUS);
+      break;
+    case SubtractKey:
+      dev_pushkey(SB_KEY_KP_MINUS);
+      break;
+    case DivideKey:
+      dev_pushkey(SB_KEY_KP_DIV);
+      break;
+    case F0Key:
+      dev_pushkey(SB_KEY_F(0));
+      break;
+    case F1Key:       
+      dev_pushkey(SB_KEY_F(1));
+      break;
+    case F2Key:
+      dev_pushkey(SB_KEY_F(2));
+      break;
+    case F3Key:
+      dev_pushkey(SB_KEY_F(3));
+      break;
+    case F4Key:
+      dev_pushkey(SB_KEY_F(4));
+      break;
+    case F5Key:
+      dev_pushkey(SB_KEY_F(5));
+      break;
+    case F6Key:
+      dev_pushkey(SB_KEY_F(6));
+      break;
+    case F7Key:
+      dev_pushkey(SB_KEY_F(7));
+      break;
+    case F8Key:
+      dev_pushkey(SB_KEY_F(8));
+      break;
+    case F9Key:
+      dev_pushkey(SB_KEY_F(9));
+      break;
+    case F10Key:
+      dev_pushkey(SB_KEY_F(10));
+      break;
+    case F11Key:
+      dev_pushkey(SB_KEY_F(11));
+      break;
+    case F12Key:
+      dev_pushkey(SB_KEY_F(12));
+      break;
     case PageUpKey:
       dev_pushkey(SB_KEY_PGUP);
       break;

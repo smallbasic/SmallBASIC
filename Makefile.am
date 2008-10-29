@@ -39,7 +39,6 @@ EXTRA_DIST =					\
     documentation/README.HELIO			\
     documentation/README.PALM			\
     documentation/README.UNIX			\
-    plugins/welcome.bas				\
     plugins/calc.bas				\
     plugins/calc.html				\
     plugins/comment_in.bas			\
