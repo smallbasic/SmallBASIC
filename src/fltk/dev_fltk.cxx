@@ -1,8 +1,7 @@
 // $Id$
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2005 Chris Warren-Smith. Gawler, South Australia
-// cwarrens@twpo.com.au
+// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -145,15 +144,22 @@ void osd_setpenmode(int enable)
   wnd->penMode = (enable ? PEN_ON : PEN_OFF);
 }
 
-void get_mouse_xy()
+/**
+ * sets the current mouse position and returns whether the mouse is within the output window
+ */
+bool get_mouse_xy()
 {
-  fltk::get_mouse(wnd->penDownX, wnd->penDownY);
+  Rectangle rc;
+  int x,y;
+
+  fltk::get_mouse(x, y);
+  wnd->out->get_absolute_rect(&rc);
+
   // convert mouse screen rect to out-client rect
-  wnd->penDownX -= wnd->x() + wnd->out->x();
-  wnd->penDownY -= wnd->y() + wnd->out->y();
-  if (!wnd->isIdeHidden()) {
-    wnd->penDownY -= wnd->tabGroup->y() + wnd->outputGroup->y();
-  }
+  wnd->penDownX = x - rc.x();
+  wnd->penDownY = y - rc.y();
+  
+  return rc.contains(x,y);
 }
 
 int osd_getpen(int code)
@@ -172,9 +178,7 @@ int osd_getpen(int code)
   case 0:     // return true if there is a waiting pen event (up/down)
     if (wnd->penState != 0) {
       wnd->penState = 0;
-      get_mouse_xy();
-      fltk::Rectangle * rc = wnd->out;
-      if (rc->contains(wnd->penDownX, wnd->penDownY)) {
+      if (get_mouse_xy()) {
         return 1;
       }
     }
@@ -183,9 +187,7 @@ int osd_getpen(int code)
 
   case 3:    // returns true if the pen is down (and save curpos)
     if (event_state() & ANY_BUTTON) {
-      get_mouse_xy();
-      fltk::Rectangle * rc = wnd->out;
-      if (rc->contains(wnd->penDownX, wnd->penDownY)) {
+      if (get_mouse_xy()) {
         return 1;
       }
     }

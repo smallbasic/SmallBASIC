@@ -1,3 +1,6 @@
+2008-11-16
+	FLTK: Fix for invalid values returned by PEN command.
+
 2008-10-26
 	FLTK: Fixed a few problems with find and replace. Implemented Rename Word command.
 
