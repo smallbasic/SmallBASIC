@@ -149,7 +149,7 @@ void osd_setpenmode(int enable)
  */
 bool get_mouse_xy()
 {
-  Rectangle rc;
+  fltk::Rectangle rc;
   int x,y;
 
   fltk::get_mouse(x, y);
