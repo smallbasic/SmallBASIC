@@ -479,6 +479,19 @@ void CodeEditor::handleTab()
   free((void *)buf);
 }
 
+void CodeEditor::showFindText(const char *find)
+{
+  // copy lowercase search string for high-lighting
+  strcpy(search, find);
+  int findLen = strlen(search);
+
+  for (int i = 0; i < findLen; i++) {
+    search[i] = tolower(search[i]);
+  }
+
+  style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
+}
+
 void CodeEditor::showMatchingBrace()
 {
   char cursorChar = buffer()->character(cursor_pos_ - 1);
@@ -683,26 +696,18 @@ void CodeEditor::getRowCol(int *row, int *col)
 
 bool CodeEditor::findText(const char *find, bool forward)
 {
-  // copy lowercase search string for high-lighting
-  strcpy(search, find);
-  int findLen = strlen(search);
+  showFindText(find);
 
-  for (int i = 0; i < findLen; i++) {
-    search[i] = tolower(search[i]);
-  }
-
-  style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
-  if (find == 0 || find[0] == 0) {
-    return 0;
-  }
-
-  int pos = insert_position();
-  bool found = forward ? textbuf->search_forward(pos, search, &pos) :
-               textbuf->search_backward(pos - strlen(find), search, &pos);
-  if (found) {
-    textbuf->select(pos, pos + strlen(search));
-    insert_position(pos + strlen(search));
-    show_insert_position();
+  bool found = false;
+  if (find != 0 && find[0] != 0) {
+    int pos = insert_position();
+    found = forward ? textbuf->search_forward(pos, search, &pos) :
+            textbuf->search_backward(pos - strlen(find), search, &pos);
+    if (found) {
+      textbuf->select(pos, pos + strlen(search));
+      insert_position(pos + strlen(search));
+      show_insert_position();
+    }
   }
   return found;
 }
@@ -808,6 +813,11 @@ int EditorWidget::handle(int e)
     fltk::focus(editor);
     handleFileChange();
     return 1;
+  case ENTER:
+    if (children()) {
+      // prevent drawing over child controls
+      return 0;
+    }
   }
 
   return Group::handle(e);
@@ -1261,6 +1271,10 @@ void EditorWidget::setRowCol(int row, int col)
   sprintf(rowcol, "%d", col);
   colStatus->copy_label(rowcol);
   colStatus->redraw();
+}
+
+void EditorWidget::showFindText(const char *text) {
+  editor->showFindText(text);
 }
 
 void EditorWidget::runMsg(RunMessage runMessage)

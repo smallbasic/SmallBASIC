@@ -61,6 +61,7 @@ struct CodeEditor : public TextEditor {
   char* getSelection(Rectangle* rc);
   void gotoLine(int line);
   void handleTab();
+  void showFindText(const char *text);
   void showMatchingBrace();
   void showRowCol();
   void styleParse(const char *text, char *style, int length);
@@ -111,6 +112,7 @@ public:
   void setIndentLevel(int level);
   void setModified(bool dirty);
   void setRowCol(int row, int col);
+  void showFindText(const char *text);
   void statusMsg(const char *filename);
   void undo();
 

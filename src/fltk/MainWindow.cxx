@@ -341,6 +341,7 @@ void MainWindow::rename_word(Widget* w, void* eventData) {
     Rectangle rc;
     char* selection = editWidget->getSelection(&rc);
     if (selection) {
+      editWidget->showFindText(selection);
       editWidget->begin();
       LineInput *in = new LineInput(rc.x(), rc.y(), rc.w() + 10, rc.h());
       editWidget->end();
@@ -350,10 +351,11 @@ void MainWindow::rename_word(Widget* w, void* eventData) {
       in->textsize(editWidget->getFontSize());
 
       rename_active = true;
-      while (rename_active) {
+      while (rename_active && in->focused()) {
         fltk::wait();
       }
 
+      editWidget->showFindText("");
       editWidget->replaceAll(selection, in->value(), true, true);
       editWidget->remove(in);
       editWidget->take_focus();
