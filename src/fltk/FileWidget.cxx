@@ -151,14 +151,14 @@ void FileWidget::displayPath()
 
     if (stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
       if (!strcmp(name, "..")) {
-        html.append("<input type=button onclick='!..' value='@<-;'>");
+        html.append("<input type=button onclick='!..' value='@<;'>");
       }
       else {
-         html.append("<p><a href=!");
-         html.append(name);
-         html.append(">[");
-         html.append(name);
-         html.append("]</a>");
+        html.append("<p><a href='!");
+        html.append(name);
+        html.append("'>[");
+        html.append(name);
+        html.append("]</a>");
       }
     } 
     else if (strncasecmp(name+len-4, ".htm", 4) == 0 ||

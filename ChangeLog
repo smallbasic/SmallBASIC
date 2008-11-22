@@ -1,3 +1,7 @@
+2008-11-23
+	FLTK: Fix for possible crash with html command used in plain window mode. Fix for
+	file widget for directory names with space characters.
+	      
 2008-11-16
 	FLTK: Fix for invalid values returned by PEN command.
 

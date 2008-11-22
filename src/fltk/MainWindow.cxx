@@ -246,6 +246,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   }
 
   if (fullScreen != NULL) {
+    closeForm(); // cleanup any global formView
     fullScreen->remove(out);
     delete fullScreen;
 
