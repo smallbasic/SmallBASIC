@@ -10,13 +10,13 @@
 ;General
   ;Name and file
   Name "SmallBASIC"
-  OutFile "sbasic_0.10.1.exe"
+  OutFile "sbasic_0.10.2.exe"
 
   ;Default installation folder
-  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.10.1"
+  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.10.2"
   
   ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.10.1" ""
+  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.10.2" ""
 
 ;--------------------------------
 ;Interface Settings
@@ -40,10 +40,10 @@
 
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcut"
-  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.10.1"
+  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.10.2"
   SetOutPath $INSTDIR
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.1\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.1\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.2\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.2\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "Quick Launch Shortcut"
@@ -74,7 +74,7 @@ Section "SmallBASIC" SecMain
   File "..\..\plugins\*.*"
 
   ;Store installation folder
-  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.10.1" "" $INSTDIR
+  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.10.2" "" $INSTDIR
   
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -96,7 +96,7 @@ SectionEnd
 
 Section "Uninstall"
   ; Remove registry keys
-  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.10.1"
+  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.10.2"
 
   ; Remove files and uninstaller
   Delete $INSTDIR\sbasici.exe
@@ -105,12 +105,12 @@ Section "Uninstall"
   Delete $INSTDIR\plugins\*.*
 
   ; Remove shortcuts, if any
-  Delete "$SMPROGRAMS\SmallBASIC 0.10.1\*.*"
+  Delete "$SMPROGRAMS\SmallBASIC 0.10.2\*.*"
   Delete "$QUICKLAUNCH\SmallBASIC.lnk"
   Delete "$DESKTOP\SmallBASIC.lnk"
 
   ; Remove directories used
-  RMDir "$SMPROGRAMS\SmallBASIC 0.10.1"
+  RMDir "$SMPROGRAMS\SmallBASIC 0.10.2"
   RMDir "$INSTDIR\plugins"
   RMDir "$INSTDIR"
 
