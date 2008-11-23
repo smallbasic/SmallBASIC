@@ -188,6 +188,7 @@ end
 # program entry
 #
 sub main
+  option base 0
   if len(command) = 0 or left(command, 1) = "^" then
     showChapters 0
   elif left(command, 1) = "~" then

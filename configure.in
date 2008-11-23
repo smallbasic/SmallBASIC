@@ -260,7 +260,7 @@ function buildFLTK() {
    AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(KBHIT_PWR_CONSERVE, 0, [Conserve power in dev_kbhit()])
+   AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])

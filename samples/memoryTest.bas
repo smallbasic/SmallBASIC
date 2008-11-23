@@ -138,7 +138,7 @@ sub showForm
   else
     button x,26, w,h, bn_generate, "Generate @->"    
   fi
-  doform 1,(cellSize*rows)+5,(cellSize*cols)+3,200,0,0
+  doform 1,(cellSize*rows)+5,(cellSize*cols)+3,200
 end  
 
 sub init
@@ -175,7 +175,7 @@ sub main
   bn_check = 0
   bn_reset = 0
   
-  doform 0 'enter modeless state
+  doform 'enter modeless state
   button 5,(cellSize*cols)+3,70,20, bn_check, "Check @->"
   button 5,(cellSize*cols)+26,70,20, bn_reset, "Clear"
   repeat
@@ -186,7 +186,7 @@ sub main
     fi
     drawGrid guess
   until bn_check = 1
-  doform 3 'end modeless state
+  doform 'end modeless state
 
   if isEqual(guess,test) then
     display, "<br><font color=green>Correct!</font>"
