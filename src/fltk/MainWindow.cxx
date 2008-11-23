@@ -33,7 +33,6 @@ extern "C" {
 }
 using namespace fltk;
 
-char path[MAX_PATH];
 char* packageHome;
 char* runfile = 0;
 int completionIndex = 0;
@@ -91,8 +90,9 @@ void MainWindow::busyMessage()
 
 void MainWindow::pathMessage(const char *file)
 {
-  sprintf(path, "File not found: %s", file);
-  statusMsg(msg_err, path);
+  char message[MAX_PATH];
+  sprintf(message, "File not found: %s", file);
+  statusMsg(msg_err, message);
 }
 
 void MainWindow::showEditTab(EditorWidget* editWidget)
@@ -111,6 +111,7 @@ void MainWindow::showOutputTab()
 void MainWindow::saveLastEdit(const char *filename)
 {
   // remember the last edited file
+  char path[MAX_PATH];
   getHomeDir(path);
   strcat(path, LASTEDIT_FILE);
   FILE *fp = fopen(path, "w");
@@ -133,6 +134,7 @@ void MainWindow::addHistory(const char *filename)
   FILE *fp;
   char buffer[MAX_PATH];
   char updatedfile[MAX_PATH];
+  char path[MAX_PATH];
 
   int len = strlen(filename);
   if (strcasecmp(filename + len - 4, ".sbx") == 0) {
@@ -179,6 +181,7 @@ void MainWindow::addHistory(const char *filename)
 bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool toolExec)
 {
   int len = strlen(filename);
+  char path[MAX_PATH];
   if (strcasecmp(filename + len - 4, ".htm") == 0 ||
       strcasecmp(filename + len - 5, ".html") == 0) {
     // render html edit buffer
@@ -381,6 +384,7 @@ void MainWindow::quit(Widget* w, void* eventData)
     int n = tabGroup->children();
     for (int c = 0; c<n; c++) {
       Group* group = (Group*)tabGroup->child(c);
+      char path[MAX_PATH];
       if (gw_editor == ((GroupWidget) (int)group->user_data())) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         const char *filename = editWidget->getFilename();
@@ -411,6 +415,7 @@ void MainWindow::quit(Widget* w, void* eventData)
 
 void MainWindow::help_home(Widget* w, void* eventData)
 {
+  char path[MAX_PATH];
   strcpy(path, "http://smallbasic.sf.net");
   browseFile(path);
 }
@@ -420,6 +425,7 @@ void MainWindow::help_home(Widget* w, void* eventData)
  */
 void MainWindow::showHelpPage() {
   HelpWidget* help = getHelp();
+  char path[MAX_PATH];
   getHomeDir(path);
   help->setDocHome(path);
   strcat(path, "help.html");
@@ -427,6 +433,7 @@ void MainWindow::showHelpPage() {
 }
 
 void MainWindow::execHelp() {
+  char path[MAX_PATH];
   if (strncmp(opt_command, "http://", 7) == 0) {
     // launch in real browser
     browseFile(opt_command);
@@ -609,6 +616,7 @@ void MainWindow::run(Widget* w, void* eventData)
     if (runMode == edit_state) {
       // inhibit autosave on run function with environment var
       const char *noSave = dev_getenv("NO_RUN_SAVE");
+      char path[MAX_PATH];
       if (noSave == 0 || noSave[0] != '1') {
         if (filename == 0 || filename[0] == 0) {
           getHomeDir(path);
@@ -638,7 +646,8 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
   EditorWidget* editWidget = getEditor();
   if (editWidget) {
     TextEditor *editor = editWidget->editor;
-    char filename[256];
+    char filename[MAX_PATH];
+    char path[MAX_PATH];
     strcpy(filename, editWidget->getFilename());
 
     if (runMode == edit_state) {
@@ -672,6 +681,7 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
 void MainWindow::tool_plugin(Widget* w, void* eventData)
 {
   if (runMode == edit_state) {
+    char path[MAX_PATH];
     sprintf(opt_command, "%s/%s", packageHome, pluginHome);
     statusMsg(msg_none, (const char *)eventData);
     sprintf(path, "%s/%s", packageHome, (const char *)eventData);
@@ -927,6 +937,7 @@ void MainWindow::scanRecentFiles(Menu * menu)
 {
   FILE *fp;
   char buffer[MAX_PATH];
+  char path[MAX_PATH];
   char label[1024];
   int i = 0;
 
@@ -969,6 +980,7 @@ void MainWindow::scanPlugIns(Menu* menu)
 {
   FILE *file;
   char buffer[MAX_PATH];
+  char path[MAX_PATH];
   char label[1024];
   DIR *dp;
   struct dirent *e;
@@ -1087,7 +1099,7 @@ int arg_cb(int argc, char **argv, int &i)
   return 0;
 }
 
-int main(int argc, char **argv)
+bool initialise(int argc, char **argv)
 {
   opt_graphics = 1;
   opt_quiet = 1;
@@ -1110,11 +1122,16 @@ int main(int argc, char **argv)
 
   // package home contains installed components
 #if defined(WIN32)
-  getcwd(path, sizeof(path));
-  packageHome = strdup(path);
+  packageHome = strdup(argv[0]);
+  char* slash = FileWidget::forwardSlash(packageHome);
+  if (slash) {
+    *slash = 0;
+  }
 #else
   packageHome = (char*)PACKAGE_DATA_DIR;
 #endif
+
+  char path[MAX_PATH];
   sprintf(path, "PKG_HOME=%s", packageHome);
   dev_putenv(path);
 
@@ -1155,7 +1172,7 @@ int main(int argc, char **argv)
     wnd->addHistory(runfile);
     wnd->showOutputTab();
     if (!wnd->basicMain(0, runfile, false)) {
-      return 0; // continue if break hit
+      return false; // continue if break hit
     }
   case edit_state:
     wnd->getEditor(true)->loadFile(runfile);
@@ -1167,7 +1184,15 @@ int main(int argc, char **argv)
 
   wnd->updateEditTabName(wnd->getEditor());
   wnd->show(argc, argv);
-  return run();
+  return true;
+}
+
+int main(int argc, char **argv)
+{
+  if (initialise(argc, argv)) {
+    run();
+  }
+  return 0;
 }
 
 //--MainWindow methods----------------------------------------------------------
@@ -1291,6 +1316,8 @@ void MainWindow::new_file(Widget* w, void* eventData)
 {
   EditorWidget* editWidget = 0;
   Group* untitledEditor = findTab(UNTITLED_FILE);
+  char path[MAX_PATH];
+
   if (untitledEditor) {
     tabGroup->selected_child(untitledEditor);
     editWidget = getEditor(untitledEditor);
@@ -1575,6 +1602,7 @@ void MainWindow::execLink(const char *file)
   // execute a link from the html window
   if (0 == strncasecmp(file, "http://", 7)) {
     char localFile[PATH_MAX];
+    char path[MAX_PATH];
     dev_file_t df;
 
     memset(&df, 0, sizeof(dev_file_t));

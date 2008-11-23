@@ -28,7 +28,6 @@
 using namespace fltk;
 
 // in MainWindow
-extern char path[MAX_PATH];
 extern String recentPath[];
 extern Widget* recentMenu[];
 
@@ -1058,6 +1057,7 @@ void EditorWidget::doDelete(void* eventData)
 void EditorWidget::find(void* eventData)
 {
   bool found = editor->findText(findTextInput->value(), (int)eventData);
+  trace("find=%d %s\n", found, findTextInput->value());
   findTextInput->textcolor(found ? BLACK : RED);
   findTextInput->redraw();
   if (2 == (int)eventData) {
@@ -1235,7 +1235,15 @@ void EditorWidget::getKeywords(strlib::List& keywords) {
 void EditorWidget::focusWidget() {
   switch (event_key()) {
   case 'f':
-    findTextInput->take_focus();
+    if (findTextInput->focused()) {
+      // continue search - shift -> backward else forward
+      find((void*)((event_key_state(LeftShiftKey) ||
+                    event_key_state(RightShiftKey)) ? 0 : 1));
+    }
+    else {
+      // commence search
+      findTextInput->take_focus();
+    }
     break;
   case 'g':
     gotoLineInput->take_focus();
@@ -1339,6 +1347,7 @@ void EditorWidget::fileChanged(bool loadfile)
   }
   else {
     // empty the last edited file
+    char path[MAX_PATH];
     getHomeDir(path);
     strcat(path, LASTEDIT_FILE);
     fp = fopen(path, "w");
@@ -1353,6 +1362,7 @@ void EditorWidget::fileChanged(bool loadfile)
 void EditorWidget::restoreEdit()
 {
   FILE *fp;
+  char path[MAX_PATH];
 
   // continue editing the previous file
   getHomeDir(path);
