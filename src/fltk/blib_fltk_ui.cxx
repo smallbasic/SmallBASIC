@@ -63,14 +63,9 @@ int prev_y;
 
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W  16
-#define BN_H   2
+#define BN_H   8
 #define RAD_W 22
 #define RAD_H  0
-
-void closeModeless() {
-  mode = m_closed;
-  ui_reset();
-}
 
 struct WidgetInfo {
   ControlType type;
@@ -468,6 +463,10 @@ void widget_cb(Widget* w, void* v)
     // update the basic variable with the button pressed
     v_setstr(inf->var, w->label());
   }
+
+  // set the pen-state for integration with osd_events
+  // this callback is included as a waiting pen event
+  wnd->penState = -1;
 }
 
 void update_widget(Widget* widget, WidgetInfo* inf, Rectangle& rect)
@@ -509,36 +508,20 @@ void update_widget(Widget* widget, WidgetInfo* inf, Rectangle& rect)
 void update_button(Widget* widget, WidgetInfo* inf,
                    const char* caption, Rectangle& rect, int def_w, int def_h)
 {
-  if (rect.w() == -1 && caption != 0) {
-    rect.w((int) getwidth(caption) + def_w);
+  if (rect.w() < 0 && caption != 0) {
+    rect.w((int) getwidth(caption) + def_w + (-rect.w() - 1));
   }
 
-  if (rect.h() == -1) {
-    rect.h((int) (getascent() + getdescent() + def_h));
+  if (rect.h() < 0) {
+    rect.h((int) (getascent() + getdescent() + def_h + (-rect.h() - 1)));
   }
 
   update_widget(widget, inf, rect);
   widget->copy_label(caption);
 }
 
-// copy all widget fields into variables
-void update_form(Group* group)
-{
-  if (group) {
-    int n = group->children();
-    for (int i = 0; i < n; i++) {
-      Widget* w = group->child(i);
-      if (!w->user_data()) {
-        update_form((Group*) w);
-      }
-      else {
-        transfer_data(w, (WidgetInfo*) w->user_data());
-      }
-    }
-  }
-}
-
-void form_begin()
+// create a new form
+void form_create()
 {
   if (form == 0) {
     wnd->outputGroup->begin();
@@ -554,12 +537,61 @@ void form_begin()
   form->begin();
 }
 
+// prepare the form for display
+void form_init(int x, int y, int w, int h) {
+  if (form) {
+    if (w < 1 || x + w > form->w()) {
+      w = form->w() + 3;
+    }
+    if (h < 1 || y + h > form->h()) {
+      h = form->h() + 3;
+    }
+    form->resize(x, y, w, h);
+    form->take_focus();
+    form->show();
+  }
+}
+
+// copy all widget fields into variables
+void form_update(Group* group)
+{
+  if (group) {
+    int n = group->children();
+    for (int i = 0; i < n; i++) {
+      Widget* w = group->child(i);
+      if (!w->user_data()) {
+        form_update((Group*) w);
+      }
+      else {
+        transfer_data(w, (WidgetInfo*) w->user_data());
+      }
+    }
+  }
+}
+
+// init or update the modeless form
+void updateModeless(bool init) {
+  if (init) {
+    if (mode == m_init) {
+      mode = m_modeless;
+      form_init(modeless_x, modeless_y, modeless_w, modeless_h);
+    }
+  }
+  else {
+    form_update(form);
+    mode = m_closed;
+    ui_reset();
+  }
+}
+
+// close the form
 void form_end() {
   if (form != 0) {
     form->end();
   }
 }
 
+// destroy the form
 C_LINKAGE_BEGIN void ui_reset()
 {
   if (form != 0) {
@@ -591,7 +623,7 @@ void cmd_button()
   char* caption = 0;
   char* type = 0;
 
-  form_begin();
+  form_create();
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
     WidgetInfo* inf = new WidgetInfo();
     inf->var = v;
@@ -673,7 +705,7 @@ void cmd_text()
   var_t* v = 0;
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {
-    form_begin();
+    form_create();
     Input* widget = new Input(x, y, w, h);
     widget->box(BORDER_BOX);
     Rectangle rect(x, y, w, h);
@@ -694,6 +726,10 @@ void cmd_doform()
 {
   int x, y, w, h;
   int num_args;
+
+  if (wnd->isBreakExec()) {
+    return;
+  }
 
   x = y = w = h = 0;
   num_args = par_massget("iiii", &x, &y, &w, &h);
@@ -728,12 +764,12 @@ void cmd_doform()
     }
     else {
       // pump system messages until button is clicked
-      update_form(form);
-      while (mode == m_modeless) {
+      form_update(form);
+      while (mode == m_modeless && !(event_state() & ANY_BUTTON)) {
         fltk::wait();
       }
       mode = m_modeless;
-      update_form(form);
+      form_update(form);
       return;
     }
   }
@@ -750,26 +786,16 @@ void cmd_doform()
     return;
   }
 
-  if (w < 1 || x + w > form->w()) {
-    w = form->w() + 3;
-  }
-  if (h < 1 || y + h > form->h()) {
-    h = form->h() + 3;
-  }
-
-  wnd->tabGroup->selected_child(wnd->outputGroup);
-  form->resize(x, y, w, h);
-  form->take_focus();
-  form->show();
+  form_init(x, y, w, h);
 
   if (mode == m_unset) {
     mode = m_modal;
     wnd->setModal(true);
-    update_form(form);
+    form_update(form);
     while (mode == m_modal && wnd->isModal()) {
       fltk::wait();
     }
-    update_form(form);
+    form_update(form);
     ui_reset();
   }
 }

@@ -4,7 +4,7 @@
 
 ;--------------------------------
 ;Include Modern UI
-!include "MUI.nsh"
+!include "MUI2.nsh"
 
 ;--------------------------------
 ;General
@@ -70,6 +70,8 @@ Section "SmallBASIC" SecMain
   SetOutPath "$INSTDIR"
   File sbasici.exe
   File ..\..\documentation\sbasic_ref.csv
+  File /r ..\..\samples\distro-examples\*.bas
+
   SetOutPath $INSTDIR\plugins
   File "..\..\plugins\*.*"
 
@@ -98,12 +100,6 @@ Section "Uninstall"
   ; Remove registry keys
   DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.10.2"
 
-  ; Remove files and uninstaller
-  Delete $INSTDIR\sbasici.exe
-  Delete $INSTDIR\Uninstall.exe
-  Delete $INSTDIR\sbasic_ref.csv
-  Delete $INSTDIR\plugins\*.*
-
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\SmallBASIC 0.10.2\*.*"
   Delete "$QUICKLAUNCH\SmallBASIC.lnk"
@@ -111,8 +107,7 @@ Section "Uninstall"
 
   ; Remove directories used
   RMDir "$SMPROGRAMS\SmallBASIC 0.10.2"
-  RMDir "$INSTDIR\plugins"
-  RMDir "$INSTDIR"
+  RMDir /r "$INSTDIR"
 
 SectionEnd
 
