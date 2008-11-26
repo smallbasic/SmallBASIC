@@ -1,6 +1,6 @@
 'app-plug-in
 'menu Memory Test
-REM $Id: memoryTest.bas,v 1.4 2005-09-02 06:54:52 zeeb90au Exp $
+REM $Id: memoryTest.bas,v 1.4 2005/09/02 06:54:52 zeeb90au Exp $
 REM Copyright (c) 2005 Chris Warren-Smith 
 REM Game idea taken from this site:
 REM http://milov.nl/iambald/20.html
@@ -105,11 +105,9 @@ end
 
 # Convert mouse coordinates into grid coordinates
 func getCell
-  pen on
   repeat
   until pen(0)
   getCell = [1+Int(Pen(1)/cellSize), 1+Int(Pen(2)/cellSize)]
-  pen off
 end
 
 sub intro
@@ -128,22 +126,28 @@ sub intro
   display s
 end
 
+sub do_form
+  doform 1, (cellSize*rows)+5, (cellSize*cols)+3, 100
+end
+
 sub showForm
   local x,y,w,h
-  x = 5: y = 1: w = 70: h = 20
-  button x,y,w,h, bn_opt, "Easy|Medium|Hard", "choice"
+  x = 5: y = 1: w = 10: h = -1
+  color 11,0
+  button x, y, 80, 20, bn_opt, "Easy|Medium|Hard", "choice"
   if (state = st_ready) then
-    button x,26, w,h, bn_generate, "Generate"
-    button x,48, w,h, bn_start, "Start @->"
+    button x, 26, -1, -5, bn_generate, "Generate"
+    button x, -1, -1, -5, bn_start, "Start @->"
   else
-    button x,26, w,h, bn_generate, "Generate @->"    
+    button x, 26, -1, -5, bn_generate, "Generate @->"    
   fi
-  doform 1,(cellSize*rows)+5,(cellSize*cols)+3,200
+  bn_generate = ""
+  bn_start = ""
+  do_form
 end  
 
 sub init
   local emptyGrid
-  env("TITLE=Memory Test")
   rect 0, 0, xmax, ymax, 0 filled
   randomize timer
   intro
@@ -156,11 +160,10 @@ sub main
 
   'get the user skillFactor  
   state = st_init
-  bn_start = 0
   emptyGrid = createGrid(0)
 
   showForm
-  while bn_start != 1
+  while len(bn_start) = 0
     state = st_ready
     skillFactor = if (bn_opt = "Easy", 9, if (bn_opt="Medium", 7, 5))
     test = createGrid(skillFactor)
@@ -168,27 +171,37 @@ sub main
     showForm
   wend
   state = st_active
-  
+ 
   'run the memory test
   drawGrid emptyGrid
   guess = createGrid(0)
-  bn_check = 0
-  bn_reset = 0
-  
-  doform 'enter modeless state
-  button 5,(cellSize*cols)+3,70,20, bn_check, "Check @->"
-  button 5,(cellSize*cols)+26,70,20, bn_reset, "Clear"
+  bn_check = ""
+  bn_reset = ""
+  color 8,0
+
+  ' by calling doform before any button we enter
+  ' into a 'modeless' state - ie the form is active
+  ' outside of the doform call
+  do_form
+  button 10, 3, -1, -5, bn_check, "Check @->"
+  button 10, -1, -1, -5, bn_reset, "Clear"
+
+  pen on
   repeat
     clickCell guess, getCell
-    if (bn_reset = 1) then
+    if (bn_check != "") then
+      exit loop
+    fi
+    if (bn_reset != "") then
       guess = createGrid(0)
-      bn_reset = 0
+      bn_reset = ""
     fi
     drawGrid guess
-  until bn_check = 1
-  doform 'end modeless state
+  until bn_check != ""
+  pen off
 
-  if isEqual(guess,test) then
+  'test completed
+  if isEqual(guess, test) then
     display, "<br><font color=green>Correct!</font>"
   else
     matches = numMatches(guess,test)
