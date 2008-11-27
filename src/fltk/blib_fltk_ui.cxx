@@ -183,14 +183,6 @@ void Form::draw()
 {
   int numchildren = children();
   Rectangle r(w(), h());
-  if (box() == NO_BOX) {
-    setcolor(color());
-    fillrect(r);
-  }
-  else {
-    draw_box();
-    box()->inset(r);
-  }
   push_clip(r);
   for (int n = 0; n < numchildren; n++) {
     Widget & w = *child(n);
@@ -530,8 +522,6 @@ void form_create()
                     wnd->out->w() - 2,
                     wnd->out->h() - 2);
     form->resizable(0);
-    form->box(BORDER_BOX);
-    form->color(wnd->out->color());
     wnd->outputGroup->end();
   }
   form->begin();
