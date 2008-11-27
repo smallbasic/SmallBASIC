@@ -1,3 +1,6 @@
+2008-11-26
+	FLTK 0.10.2 was released
+	
 2008-11-23
 	FLTK: Fix for possible crash with html command used in plain window mode. Fix for
 	file widget for directory names with space characters.
