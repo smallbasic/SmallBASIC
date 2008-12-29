@@ -1,0 +1,15 @@
+Source: smallbasic
+Section: unknown
+Priority: extra
+Maintainer: Chris Warren-Smith <cwarrensmith@gmail.com>
+Build-Depends: debhelper (>= 7), autotools-dev
+Standards-Version: 3.7.3
+Homepage: smallbasic.sourceforge.net
+
+Package: smallbasic
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: One more basic
+ The SmallBASIC project aims to provide a full featured and 
+ easy to use scripting language suitable for non serious 
+ programming on any computing platform

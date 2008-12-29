@@ -1,9 +1,11 @@
 [Desktop Entry]
-Name=SmallBASIC IDE 
+Name=SmallBASIC
 Comment=SmallBASIC
 Exec=sbasici
-Icon=sb-desktop-32x32.png
+Icon=/usr/share/icons/hicolor/32x32/apps/sb-desktop-32x32.png
 Terminal=false
 Type=Application
 Categories=Application;Development;
+MimeType=application/bas
+
 

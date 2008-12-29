@@ -986,7 +986,12 @@ void MainWindow::scanPlugIns(Menu* menu)
   struct dirent *e;
 
   snprintf(path, sizeof(path), "%s/%s", packageHome, pluginHome);
-  for (dp = opendir(path); (e = readdir(dp)) != NULL;) {
+  dp = opendir(path);
+  while (dp != NULL) {
+    e = readdir(dp);
+    if (e == NULL) {
+      break;
+    }
     const char* filename = e->d_name;
     int len = strlen(filename);
     if (strcasecmp(filename + len - 4, ".bas") == 0) {
@@ -995,7 +1000,7 @@ void MainWindow::scanPlugIns(Menu* menu)
       if (!file) {
         continue;
       }
-
+      
       if (!fgets(buffer, 1024, file)) {
         fclose(file);
         continue;
@@ -1008,7 +1013,7 @@ void MainWindow::scanPlugIns(Menu* menu)
         fclose(file);
         continue;
       }
-
+      
       if (fgets(buffer, 1024, file) && strncmp("'menu", buffer, 5) == 0) {
         int offs = 6;
         buffer[strlen(buffer) - 1] = 0; // trim new-line
@@ -1114,9 +1119,9 @@ bool initialise(int argc, char **argv)
   if (args(argc, argv, i, arg_cb) < argc) {
     fatal("Options are:\n"
           " -e[dit] file.bas\n"
-          " -r[run] file.bas\n"
-          " -v verbose\n"
-          " -n non-interactive\n"
+          " -r[un] file.bas\n"
+          " -v[erbose]\n"
+          " -n[on]-interactive\n"
           " -m[odule]-home\n\n%s", help);
   }
 

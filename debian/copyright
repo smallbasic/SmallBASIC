@@ -1,0 +1,38 @@
+This package was debianized by chris warren-smith <cwarrensmith@gmail.com> on
+Tue, 30 Dec 2008 09:45:25 +1000.
+
+It was downloaded from https://smallbasic.svn.sourceforge.net/svnroot/smallbasic
+
+Upstream Author(s):
+
+    Copyright (C) 2008 Chris Warren-Smith cwarrensmith@gmail.com
+
+Copyright:
+
+    Copyright (C) 2008 Chris Warren-Smith
+
+License:
+
+    This package is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This package is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this package; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+
+On Debian systems, the complete text of the GNU General
+Public License can be found in `/usr/share/common-licenses/GPL'.
+
+The Debian packaging is (C) 2008, chris warren-smith <cwarrensmith@gmail.com> and
+is licensed under the GPL, see above.
+
+
+# Please also look if there are files or directories which have a
+# different copyright/license attached and list them here.
