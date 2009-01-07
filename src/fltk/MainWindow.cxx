@@ -116,8 +116,9 @@ void MainWindow::saveLastEdit(const char *filename)
   strcat(path, LASTEDIT_FILE);
   FILE *fp = fopen(path, "w");
   if (fp) {
-    fwrite(filename, strlen(filename), 1, fp);
-    fwrite("\n", 1, 1, fp);
+    int err;
+    err = fwrite(filename, strlen(filename), 1, fp);
+    err = fwrite("\n", 1, 1, fp);
     fclose(fp);
   }
 }
@@ -169,8 +170,9 @@ void MainWindow::addHistory(const char *filename)
 
   fp = fopen(path, "a");
   if (fp) {
-    fwrite(filename, strlen(filename), 1, fp);
-    fwrite("\n", 1, 1, fp);
+    int err;
+    err = fwrite(filename, strlen(filename), 1, fp);
+    err = fwrite("\n", 1, 1, fp);
     fclose(fp);
   }
 }
@@ -624,7 +626,7 @@ void MainWindow::run(Widget* w, void* eventData)
           filename = path;
           editWidget->doSaveFile(filename);
         }
-        else {
+        else if (access(filename, W_OK) == 0) {
           editWidget->doSaveFile(filename);
         }
       }
@@ -1001,7 +1003,7 @@ void MainWindow::scanPlugIns(Menu* menu)
         continue;
       }
       
-      if (!fgets(buffer, 1024, file)) {
+      if (!fgets(buffer, MAX_PATH, file)) {
         fclose(file);
         continue;
       }
@@ -1014,7 +1016,7 @@ void MainWindow::scanPlugIns(Menu* menu)
         continue;
       }
       
-      if (fgets(buffer, 1024, file) && strncmp("'menu", buffer, 5) == 0) {
+      if (fgets(buffer, MAX_PATH, file) && strncmp("'menu", buffer, 5) == 0) {
         int offs = 6;
         buffer[strlen(buffer) - 1] = 0; // trim new-line
         while (buffer[offs] && (buffer[offs] == '\t' || buffer[offs] == ' ')) {
@@ -1891,8 +1893,8 @@ void LineInput::layout() {
 
 int LineInput::handle(int event) {
   if (event == fltk::KEY) {
-    if (event_key_state(LeftCtrlKey) ||
-        event_key_state(RightCtrlKey) && event_key() == 'b') {
+    if ((event_key_state(LeftCtrlKey) ||
+         event_key_state(RightCtrlKey)) && event_key() == 'b') {
       if (!wnd->isEdit()) {
         wnd->setBreak();
       }
@@ -1933,7 +1935,7 @@ extern "C" void trace(const char *format, ...)
 #if defined(WIN32)
   OutputDebugString(buf);
 #else
-  fprintf(stderr, buf);
+  //fprintf(stderr, buf);
 #endif
 }
 

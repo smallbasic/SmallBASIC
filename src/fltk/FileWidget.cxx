@@ -23,6 +23,7 @@
 #include "StringLib.h"
 #include "HelpWidget.h"
 #include "FileWidget.h"
+#include "device.h"
 
 FileWidget* fileWidget;
 String click;
@@ -48,9 +49,10 @@ FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h)
   fileWidget = this;
   saveEditorAs = 0;
 
-  getcwd(path, sizeof(path));
-  forwardSlash(path);
-  displayPath();
+  if (getcwd(path, sizeof(path))) {
+    forwardSlash(path);
+    displayPath();
+  }
 }
 
 FileWidget::~FileWidget() 
@@ -119,7 +121,9 @@ void FileWidget::fileOpen(EditorWidget* saveEditorAs)
 
 void FileWidget::displayPath() 
 { 
-  chdir(path);
+  if (chdir(path) != 0) {
+    return;
+  }
   DIR* dp = opendir(path);
   if (dp == 0) {
     return;
@@ -201,13 +205,34 @@ void FileWidget::anchorClick()
   }
   else if (target[0] == '~') {
     if (saveEditorAs) {
-      char savepath[PATH_MAX+1];
-      strcpy(savepath, path);
-      strcat(savepath, "/");
-      strcat(savepath, getInputValue(getInput("saveas")));
-      const char* msg = "%s\n\nFile already exists.\nDo you want to replace it?";
-      if (access(savepath, 0) != 0 || ask(msg, savepath)) {
-        saveEditorAs->doSaveFile(savepath);
+      const char* enteredPath = getInputValue(getInput("saveas"));
+      if (enteredPath && enteredPath[0]) {
+        // a path has been entered
+        char savepath[PATH_MAX+1];
+        if (enteredPath[0] == '~') {
+          // substitute ~ for $HOME contents
+          const char *home = dev_getenv("HOME");
+          if (home) {
+            strcpy(savepath, home);
+          }
+          else {
+            savepath[0] = 0;
+          }
+          strcat(savepath, enteredPath + 1);
+        }
+        else if (enteredPath[0] == '/' || enteredPath[1] == ':') {
+          // absolute path given
+          strcpy(savepath, enteredPath);
+        }
+        else {
+          strcpy(savepath, path);
+          strcat(savepath, "/");
+          strcat(savepath, enteredPath);
+        }
+        const char* msg = "%s\n\nFile already exists.\nDo you want to replace it?";
+        if (access(savepath, 0) != 0 || ask(msg, savepath)) {
+          saveEditorAs->doSaveFile(savepath);
+        }
       }
     }
     return;

@@ -829,6 +829,12 @@ bool EditorWidget::readonly()
 
 void EditorWidget::readonly(bool is_readonly)
 {
+  if (!is_readonly && access(filename, W_OK) != 0) {
+    // cannot set writable since file is readonly
+    is_readonly = true;
+  }
+  modStatus->label(is_readonly ? "RO" : "");
+  modStatus->redraw();
   editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR :
                        TextDisplay::NORMAL_CURSOR);
   ((CodeEditor *) editor)->readonly = is_readonly;
@@ -883,6 +889,7 @@ void EditorWidget::loadFile(const char *newfile)
   textbuf->call_modify_callbacks();
   editor->show_insert_position();
   modifiedTime = getModifiedTime();
+  readonly(false);
 
   FileWidget::forwardSlash(filename);
   wnd->updateEditTabName(this);
@@ -1351,7 +1358,9 @@ void EditorWidget::fileChanged(bool loadfile)
     getHomeDir(path);
     strcat(path, LASTEDIT_FILE);
     fp = fopen(path, "w");
-    fwrite("\n", 1, 1, fp);
+    if (!fwrite("\n", 1, 1, fp)) {
+      // write error
+    }
     fclose(fp);
   }
 
@@ -1369,9 +1378,10 @@ void EditorWidget::restoreEdit()
   strcat(path, LASTEDIT_FILE);
   fp = fopen(path, "r");
   if (fp) {
-    fgets(path, sizeof(path), fp);
+    if (fgets(path, sizeof(path), fp)) {
+      path[strlen(path) - 1] = 0; // trim new-line
+    }
     fclose(fp);
-    path[strlen(path) - 1] = 0; // trim new-line
     if (access(path, 0) == 0) {
       loadFile(path);
       return;
