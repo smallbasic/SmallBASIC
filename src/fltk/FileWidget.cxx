@@ -141,7 +141,7 @@ void FileWidget::displayPath()
     html.append("' name=saveas>&nbsp;<input type=button onclick='~' value='Save As'><br>");
   }
 
-  html.append("<br><b>Files in: ").append(path).append("</b><br>");
+  html.append("<br><b>Files in: <a href=@>").append(path).append("</a></b><br>");
 
   while ((entry = readdir(dp)) != 0) {
     char* name = entry->d_name;
@@ -233,6 +233,19 @@ void FileWidget::anchorClick()
         if (access(savepath, 0) != 0 || ask(msg, savepath)) {
           saveEditorAs->doSaveFile(savepath);
         }
+      }
+    }
+    return;
+  }
+  else if (target[0] == '@') {
+    const char* newPath = fltk::input("Enter path:", path);
+    if (newPath != 0) {
+      if (chdir(newPath) == 0) {
+        strcpy(path, newPath);
+        displayPath();
+      }
+      else {
+        message("Invalid path");
       }
     }
     return;

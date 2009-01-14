@@ -1,3 +1,7 @@
+2009-01-14
+	in osd_getpixel() for X11, offset x/y as getPixel is relative to the outer window
+	FileWidget allow input of a custom path
+
 2009-01-07
 	Updated FileWidget to allow relative paths for saveas. Updated to handle
 	readonly edit buffers. Fixed a few compiler warnings

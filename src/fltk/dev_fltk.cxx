@@ -259,7 +259,21 @@ void osd_setpixel(int x, int y)
 
 long osd_getpixel(int x, int y)
 {
-  return wnd->out->getPixel(x, y);
+  int xoffs = 0;
+  int yoffs = 0;
+
+#if !defined(WIN32)
+  // offset x/y as getPixel is relative to the outer window
+  fltk::Rectangle rc;
+  wnd->out->get_absolute_rect(&rc);
+  xoffs = rc.x();
+  yoffs = rc.y();
+
+  wnd->get_absolute_rect(&rc);
+  xoffs -= rc.x();
+  yoffs -= rc.y();
+#endif
+  return wnd->out->getPixel(x + xoffs, y + yoffs);
 }
 
 void osd_line(int x1, int y1, int x2, int y2)
@@ -504,10 +518,6 @@ Image *getImage(dev_file_t * filep, int index)
 {
   // check for cached imaged
   SharedImage *image = loadImage(filep->name, 0);
-  // if (image && image->drawn()) {
-  // return image; // already loaded+drawn
-  // }
-
   char localFile[PATH_MAX];
 
   // read image from web server
@@ -733,7 +743,8 @@ bool cacheLink(dev_file_t * df, char *localFile)
       strncat(localFile, pathBegin, pathNext - pathBegin + 1);
       makedir(localFile);
       pathBegin = pathNext + 1;
-    } while (pathBegin < pathEnd && ++level < 20);
+    } 
+    while (pathBegin < pathEnd && ++level < 20);
   }
   if (pathEnd == 0 || pathEnd[1] == 0 || pathEnd[1] == '?') {
     strcat(localFile, "index.html");
@@ -780,7 +791,9 @@ bool cacheLink(dev_file_t * df, char *localFile)
           break;                // no end delimiter
         }
         if (rxbuff[i + 2] == '\n') {
-          fwrite(rxbuff + i + 3, bytes - i - 3, 1, fp);
+          if (!fwrite(rxbuff + i + 3, bytes - i - 3, 1, fp)) {
+            break;
+          }
           inHeader = false;
           break;                // found start of content
         }
@@ -811,7 +824,9 @@ bool cacheLink(dev_file_t * df, char *localFile)
       }
     }
     else {
-      fwrite(rxbuff, bytes, 1, fp);
+      if (!fwrite(rxbuff, bytes, 1, fp)) {
+        break;
+      }
     }
   }
 
