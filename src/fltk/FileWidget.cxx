@@ -1,4 +1,4 @@
-// $Id: EditorWidget.cxx 623 2008-07-15 12:53:20Z zeeb90au $
+// $Id$
 //
 // FileWidget
 //
