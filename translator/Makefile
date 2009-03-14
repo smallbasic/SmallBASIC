@@ -1,4 +1,4 @@
-CLASSPATH:="/home/chris/antlr/antlr-3.1.1.jar:."
+CLASSPATH:="/home/chris/antlr/antlr-3.1.2/lib/antlr-3.1.2.jar:."
 
 all: Translator.class
 

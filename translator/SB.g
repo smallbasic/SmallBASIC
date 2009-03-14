@@ -34,17 +34,19 @@ declaration :
   | arrayObject
   | clockObject
   | fileObject
-  | graphicsObject
+  | graphicsWindowObject
   | mathObject
   | mouseObject
   | networkObject
   | programObject
+  | soundObject
   | stackObject
   | textObject
   | textWindowObject
   | endKeywords
   | functionCall
-  | ID | NUM | OPR | PUNC | STRING | EQEQ | EQ
+  | ifTest
+  | anyThingElse
   ;
 
 argumentObject
@@ -125,15 +127,15 @@ fileObjectMethods
   | m='WriteLine' '(' v1=expr CO v2=expr CO v3=expr e=')'
   ;
 
-graphicsObject
-  : graphicsObjectRef graphicsObjectMethods
+graphicsWindowObject
+  : graphicsWindowObjectRef graphicsWindowObjectMethods
   ;
 
-graphicsObjectRef
+graphicsWindowObjectRef
   : m='GraphicsWindow.' { tokens.replace($m, ""); }
   ;
 
-graphicsObjectMethods
+graphicsWindowObjectMethods
   : m='AddRectangle' '(' v1=expr CO v2=expr e=')'
   | m='Clear'
     { tokens.replace($m, "cls"); }
@@ -142,11 +144,13 @@ graphicsObjectMethods
   | b = 'BackgroundColor' // (e='=' v=variable)?
 //    { tokens.replace($b, $e, "color "); }
   | m='Title' '=' e=STRING 
-    { tokens.replace($m, $e, "setTitle(" + $e.text + ")"); }
+    { tokens.replace($m, $e, "env('TITLE=" + $e.text + "')"); }
   | m='Height'
   | m='Width'
   | m='LastKey' '=' variable
   | m='ShowMessage' '(' v1=expr CO v2=expr e=')'
+    { tokens.replace($m, $e, "html '" + $v1.text + 
+        "<br><br><input type=button value=OK>', 'Title', 20,20,260,80"); }
   | m='GetLeftOfShape' '(' v1=expr e=')'
   | m='GetTopOfShape' '(' v1=expr e=')'
   | m='Get'
@@ -180,6 +184,7 @@ graphicsObjectMethods
   | m='GetRandomColor'
   | m='RemoveShape' '(' v1=expr e=')'
   | m='SetPixel' '(' v1=expr CO v2=expr CO v3=expr e=')'
+    { tokens.replace($m, $e, "PSet " + $v1.text + "," + $v2.text + "," + $v3.text ); }
   | m='Left'
   | m='MouseX'
   | m='MouseY'
@@ -206,7 +211,7 @@ mathObjectMethods
   | m='GetRadians' '(' v1=expr e=')'
   | m='GetRandomVariable' '(' v1=expr e=')'
   | m='GetRandomNumber' '(' v1=expr e=')' 
-    { tokens.replace($m, $e, "RND("+$v1.text+")"); }
+    { tokens.replace($m, $e, "1 + ((Rnd*1000) \% " + $v1.text + ")"); }
   | m='Log' '(' v1=expr e=')'
   | m='Max' '(' v1=expr CO v2=expr e=')'
   | m='Min' '(' v1=expr CO v2=expr e=')'
@@ -261,6 +266,18 @@ programObjectMethods
   : m='Directory'
   | m='Delay' '(' v1=expr e=')'
   | m='End'
+  ;
+
+soundObject
+  : soundObjectRef soundObjectMethods
+  ;
+
+soundObjectRef
+  : m='Sound.' { tokens.replace($m, ""); }
+  ;
+
+soundObjectMethods
+  : m='PlayBellRingAndWait' '(' e=')' { tokens.replace($m, $e, "Beep"); }
   ;
 
 stackObject
@@ -319,12 +336,29 @@ textWindowObjectMethods
   | m='PauseWithoutMessage'
   | m='Read'
   | m='ReadNumber'
-  | m='Write' '(' v1=expr e=')'
+  | m='Write' '(' v1=expr e=')' { tokens.replace($m, $e, "print " + $v1.text + ";"); }
   | m='BackgroundColor'
   | m='Title'
   | m='Clear' { tokens.replace($m, "cls"); }
   | m='Show'
-  | m='WriteLine' '(' v1=expr e=')'
+  | m='WriteLine' '(' v1=expr e=')' { tokens.replace($m, $e, "print " + $v1.text); }
+  ;
+
+ifTest
+  : ('If' | 'While') ifExpr
+  ;
+
+ifExpr 
+  : '(' expr ('=' expr)? ')'
+  | variable
+  ;
+
+functionCall
+  : m='(' v1=expr e=')' { 
+      if ($v1.text.length() == 0) {
+        tokens.replace($m, $e, "");
+      }
+    }
   ;
 
 expr
@@ -340,8 +374,9 @@ variable
   | arrayObject
   | clockObject
   | fileObject
-  | graphicsObject
+  | graphicsWindowObject
   | mathObject
+  | mouseObject
   | stackObject
   | textObject
   | ID
@@ -354,14 +389,11 @@ endKeywords
   | m='EndIf'  { tokens.replace($m, "EndIf"); }
   | m='ElseIf' { tokens.replace($m, "ElseIf"); }
   | m='EndSub' { tokens.replace($m, "End Sub"); }
+  | m='EndFor' { tokens.replace($m, "Next"); }
   ;
 
-functionCall
-  : m='(' v1=expr e=')' { 
-      if ($v1.text.length() == 0) {
-        tokens.replace($m, $e, "");
-      }
-    }
+anyThingElse
+  : ID | NUM | OPR | PUNC | STRING | EQEQ | EQ
   ;
 
 CO
@@ -373,7 +405,7 @@ STRING
   ;
 
 fragment EscapeSequence
-  :   '\\' ('b' | 't' | 'n' | 'f' | 'r' | '\"' | '\'' | '\\')
+  : '\\' ('b' | 't' | 'n' | 'f' | 'r' | '\"' | '\'' | '\\')
   ;
 
 ID
@@ -393,7 +425,7 @@ PUNC
   ;
 
 OPR
-  : ('+' | '-' | '/' | '*' ) 
+  : ('+' | '-' | '/' | '*') 
   ;
 
 EQ

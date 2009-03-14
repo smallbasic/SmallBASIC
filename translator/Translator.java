@@ -15,8 +15,19 @@ public class Translator {
     CharStream input = new ANTLRFileStream(args[0]);
     SBLexer lex = new SBLexer(input);
     TokenStream tokens = new TokenRewriteStream(lex);
-    SBParser parser = new SBParser(tokens);
+    RecognizerSharedState parseState = new RecognizerSharedState();
+    SBParser parser = new SBParser(tokens, parseState);
     parser.program();
-    System.out.println(tokens);
+    if (tokens.index() != tokens.size()) {
+      String line = tokens.toString(tokens.index(), tokens.index()+40);
+      int index = line.indexOf("\n");
+      if (index != -1) {
+        line = line.substring(0, index-1);
+      }
+      System.out.println("Unrecognised input: " + line + "...");
+    }
+    else if (parseState.syntaxErrors == 0) {
+      System.out.println(tokens);
+    }
   }
 }
