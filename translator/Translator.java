@@ -18,16 +18,16 @@ public class Translator {
     RecognizerSharedState parseState = new RecognizerSharedState();
     SBParser parser = new SBParser(tokens, parseState);
     parser.program();
-    if (tokens.index() != tokens.size()) {
-      String line = tokens.toString(tokens.index(), tokens.index()+40);
-      int index = line.indexOf("\n");
-      if (index != -1) {
-        line = line.substring(0, index-1);
+    if (parseState.syntaxErrors == 0) {
+      if (tokens.index() != tokens.size()) {
+        Token current = tokens.LT(1);
+        System.out.println("line " + current.getLine() + ":" + 
+                           current.getCharPositionInLine() + " end of recognition: '" +
+                           current.getText() + "'");
       }
-      System.out.println("Unrecognised input: " + line + "...");
-    }
-    else if (parseState.syntaxErrors == 0) {
-      System.out.println(tokens);
+      else {
+        System.out.println(tokens);
+      }
     }
   }
 }

@@ -9,6 +9,10 @@
  */
 grammar SB;
 
+options {
+  backtrack=true;
+}
+
 @header {
 import java.util.LinkedList;
 import java.util.Queue;
@@ -39,14 +43,16 @@ declaration :
   | mouseObject
   | networkObject
   | programObject
+  | shapesObject
   | soundObject
   | stackObject
   | textObject
   | textWindowObject
+  | turtleObject
   | endKeywords
   | functionCall
   | ifTest
-  | anyThingElse
+  | plainText
   ;
 
 argumentObject
@@ -268,6 +274,22 @@ programObjectMethods
   | m='End'
   ;
 
+shapesObject
+  : shapesObjectRef shapesObjectMethods
+  ;
+
+shapesObjectRef
+  : m='Shapes.' { tokens.replace($m, ""); }
+  ;
+
+shapesObjectMethods
+  : m='AddRectangle' '(' v1=expr CO v2=expr e=')' 
+  | m='AddEllipse' '(' v1=expr CO v2=expr e=')'
+  | m='Animate' '(' v1=expr CO v2=expr CO v3=expr CO v4=expr e=')' 
+  | m='GetLeft' '(' v1=expr e=')'
+  | m='Move' '(' v1=expr CO v2=expr CO v3=expr e=')'
+  ;
+
 soundObject
   : soundObjectRef soundObjectMethods
   ;
@@ -278,6 +300,7 @@ soundObjectRef
 
 soundObjectMethods
   : m='PlayBellRingAndWait' '(' e=')' { tokens.replace($m, $e, "Beep"); }
+  | m='PlayClick' '(' ')'
   ;
 
 stackObject
@@ -344,13 +367,31 @@ textWindowObjectMethods
   | m='WriteLine' '(' v1=expr e=')' { tokens.replace($m, $e, "print " + $v1.text); }
   ;
 
+turtleObject
+  : turtleObjectRef turtleObjectMethods
+  ;
+
+turtleObjectRef
+  : m='Turtle.' { tokens.replace($m, ""); }
+  ;
+
+turtleObjectMethods 
+  : m='Speed' '=' a1=plainText
+  | m='Move' '(' v1=expr ')'
+  | m='Turn' '(' v1=expr ')'
+  ;
+
 ifTest
-  : ('If' | 'While') ifExpr
+  : ifStatement '(' ifExpr ')' ifExpr?
+  | ifStatement ifExpr
+  ;
+
+ifStatement
+  : ('If' | 'While')
   ;
 
 ifExpr 
-  : '(' expr ('=' expr)? ')'
-  | variable
+  : expr (logicalOperator expr)*
   ;
 
 functionCall
@@ -378,6 +419,7 @@ variable
   | mathObject
   | mouseObject
   | stackObject
+  | shapesObject
   | textObject
   | ID
   | NUM
@@ -392,8 +434,12 @@ endKeywords
   | m='EndFor' { tokens.replace($m, "Next"); }
   ;
 
-anyThingElse
+plainText
   : ID | NUM | OPR | PUNC | STRING | EQEQ | EQ
+  ;
+
+logicalOperator
+  : ('='|'>'|'<'|'<='|'>='|'Or'|'And'|'&'|'|')
   ;
 
 CO
