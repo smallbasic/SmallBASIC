@@ -51,8 +51,8 @@ void getHomeDir(char *fileName);
 bool cacheLink(dev_file_t * df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
-void updateModeless(bool init);           // in blib_fltk_ui.cpp
 void clearOutput();
+void ui_close(); // in blib_fltk_ui.cpp
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -90,7 +90,7 @@ C_LINKAGE_BEGIN int osd_devinit()
   }
   saveForm = false;
   dev_clrkb();
-  updateModeless(false);
+  ui_close();
   return 1;
 }
 
@@ -111,7 +111,7 @@ void osd_refresh()
 
 int osd_devrestore()
 {
-  updateModeless(false);
+  ui_close();
   return 1;
 }
 
@@ -142,7 +142,6 @@ int osd_events(int wait_flag)
 void osd_setpenmode(int enable)
 {
   wnd->penMode = (enable ? PEN_ON : PEN_OFF);
-  updateModeless(enable);
 }
 
 /**
@@ -702,7 +701,7 @@ void closeForm()
 void clearOutput()
 {
   closeForm();
-  updateModeless(false);
+  ui_close();
 }
 
 bool isFormActive()

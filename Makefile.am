@@ -47,6 +47,9 @@ EXTRA_DIST =					\
     plugins/indent.bas				\
     plugins/filemgr.bas				\
     plugins/feedback.bas			\
+    translator/SB.g                             \
+    translator/Makefile                         \
+    translator/Translator.java                  \
     images/logo.gif				\
     images/sb16x16.png				\
     images/sb32x32.png				\

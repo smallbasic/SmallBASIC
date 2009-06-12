@@ -1,3 +1,9 @@
+2009-06-13
+	updated form API in fltk version
+
+2009-04-13
+	incorporate agg into fltk version (reverted for now)
+
 2009-01-14
 	in osd_getpixel() for X11, offset x/y as getPixel is relative to the outer window
 	FileWidget allow input of a custom path
@@ -219,3 +225,5 @@
 
 Refer to sync/Changes for more history
 This log has been created for autotools support
+
+$Id: $

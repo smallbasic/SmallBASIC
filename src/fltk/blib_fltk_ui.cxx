@@ -38,6 +38,8 @@ extern MainWindow* wnd;
 struct Form : public Group {
   Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {}
   void draw(); // avoid drawing over the tab-bar
+  var_t* var; // form variable contains the value of the event widget
+  int cmd; // doform argument by value
 };
 
 Form* form = 0;
@@ -52,11 +54,7 @@ enum ControlType {
   ctrl_dropdown
 };
 
-enum Mode { m_unset, m_init, m_modeless, m_modal, m_closed } mode = m_unset;
-int modeless_x;
-int modeless_y;
-int modeless_w;
-int modeless_h;
+enum Mode { m_reset, m_init, m_active, m_selected } mode = m_reset;
 
 int prev_x;
 int prev_y;
@@ -444,16 +442,15 @@ void widget_cb(Widget* w, void* v)
   WidgetInfo* inf = (WidgetInfo*) v;
   transfer_data(w, (WidgetInfo*) v);
 
-  if (inf->type == ctrl_button || mode == m_modeless) {
-    // any button type = end modal loop -or- exit modeless
-    // loop in cmd_doform() and continue basic statements
-    // cmd_doform() can later be re-entered to continue form
-    mode = m_closed;
-  }
+  mode = m_selected;
 
   if (inf->type == ctrl_button) {
     // update the basic variable with the button pressed
     v_setstr(inf->var, w->label());
+  }
+
+  if (form->var) {
+    v_set(form->var, inf->var);
   }
 
   // set the pen-state for integration with osd_events
@@ -525,18 +522,13 @@ void form_create()
     wnd->outputGroup->end();
   }
   form->begin();
+  mode = m_init;
 }
 
 // prepare the form for display
-void form_init(int x, int y, int w, int h) {
+void form_init() {
   if (form) {
-    if (w < 1 || x + w > form->w()) {
-      w = form->w() + 3;
-    }
-    if (h < 1 || y + h > form->h()) {
-      h = form->h() + 3;
-    }
-    form->resize(x, y, w, h);
+    form->resize(2, 2, form->w() + 4, form->h() + 4);
     form->take_focus();
     form->show();
   }
@@ -559,26 +551,17 @@ void form_update(Group* group)
   }
 }
 
-// init or update the modeless form
-void updateModeless(bool init) {
-  if (init) {
-    if (mode == m_init) {
-      mode = m_modeless;
-      form_init(modeless_x, modeless_y, modeless_w, modeless_h);
-    }
-  }
-  else {
-    form_update(form);
-    mode = m_closed;
-    ui_reset();
-  }
-}
-
 // close the form
 void form_end() {
   if (form != 0) {
     form->end();
   }
+}
+
+// init or update the modeless form
+void ui_close() {
+  form_update(form);
+  ui_reset();
 }
 
 // destroy the form
@@ -601,7 +584,7 @@ C_LINKAGE_BEGIN void ui_reset()
     wnd->out->take_focus();
     wnd->out->redraw();
   }
-  mode = m_unset;
+  mode = m_reset;
 }
 
 // BUTTON x, y, w, h, variable, caption [,type]
@@ -710,83 +693,56 @@ void cmd_text()
   }
 }
 
-// DOFORM [x, y, w, h]
+// DOFORM [FLAG|VAR]
 // Executes the form
 void cmd_doform()
 {
-  int x, y, w, h;
-  int num_args;
-
-  if (wnd->isBreakExec()) {
-    return;
-  }
-
-  x = y = w = h = 0;
-  num_args = par_massget("iiii", &x, &y, &w, &h);
-
   if (form == 0) {
-    // begin modeless state - m_unset, m_init, m_modeless
-    mode = m_init;
-    modeless_x = x;
-    modeless_y = y;
-    modeless_w = w;
-    modeless_h = h;
+    rt_raise("UI: FORM NOT READY");
     return;
   }
-
-  if (mode != m_unset) {
-    // continue modeless state
-    if (form == 0) {
-      rt_raise("UI: FORM HAS CLOSED");
-      return;
-    }
-
-    // set form position in initial iteration
-    if (mode == m_init) {
-      mode = m_modeless;
-      if (num_args == 0) {
-        // apply coordinates from inital doform call
-        x = modeless_x;
-        y = modeless_y;
-        w = modeless_w;
-        h = modeless_h;
-      }
-    }
-    else {
-      // pump system messages until button is clicked
-      form_update(form);
-      while (mode == m_modeless && !(event_state() & ANY_BUTTON)) {
-        fltk::wait();
-      }
-      mode = m_modeless;
-      form_update(form);
-      return;
-    }
+  else if (mode == m_init) {
+    form_init();
   }
 
-  switch (num_args) {
-  case 0:
-    x = y = 2;
-  case 2:
-  case 4:
+  switch (code_peek()) {
+  case kwTYPE_LINE:
+  case kwTYPE_EOC:
+  case kwTYPE_SEP:
+    form->cmd = -1;
+    form->var = 0;
     break;
   default:
-    ui_reset();
-    rt_raise("UI: INVALID FORM ARGUMENTS: %d", num_args);
-    return;
+    if (code_isvar()) {
+      form->var = code_getvarptr();
+      form->cmd = -1;
+    }
+    else {
+      var_t var;
+      v_init(&var);
+      eval(&var);
+      form->cmd = v_getint(&var);
+      form->var = 0;
+      v_free(&var);
+    }
+    break;
+  };
+
+  form_update(form);
+
+  if (!form->cmd) {
+    ui_close();
   }
-
-  form_init(x, y, w, h);
-
-  if (mode == m_unset) {
-    mode = m_modal;
-    wnd->setModal(true);
-    form_update(form);
-    while (mode == m_modal && wnd->isModal()) {
+  else if (wnd->penMode) {
+    fltk::wait();
+  }
+  else {
+    // pump system messages until there is a widget callback
+    mode = m_active;
+    while (!wnd->isBreakExec() && mode == m_active) {
       fltk::wait();
     }
     form_update(form);
-    ui_reset();
   }
 }
 

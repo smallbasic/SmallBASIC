@@ -1935,7 +1935,7 @@ extern "C" void trace(const char *format, ...)
 #if defined(WIN32)
   OutputDebugString(buf);
 #else
-  //fprintf(stderr, buf);
+  fprintf(stderr, buf, 0);
 #endif
 }
 
