@@ -1,9 +1,12 @@
-/**
- * @file blib_math.h
- * SmallBASIC - Math RTL
- *
- * Nicholas Christopoulos
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// Math RTL
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 /**
  * @defgroup math Mathematics
@@ -15,7 +18,8 @@
 #include "sys.h"
 
 #define SEGLEN(Ax,Ay,Bx,By)     line_length(Ax,Ay,Bx,By)
-#define PTSIGN(Ax,Ay,Bx,By,Qx,Qy) (ZSGN((Qx) * ((Ay) - (By)) + (Qy) * ((Bx) - (Ax)) + (Ax) * (By) - (Ay) * (Bx))) /**< sign of a point(Q) from a line-segment(A->B) @ingroup math */
+#define PTSIGN(Ax,Ay,Bx,By,Qx,Qy) (ZSGN((Qx) * ((Ay) - (By)) + (Qy) * ((Bx) - (Ax)) + (Ax) * (By) - (Ay) * (Bx))) 
+  /**< sign of a point(Q) from a line-segment(A->B) @ingroup math */
 
 /**
  * @ingroup math
@@ -29,7 +33,7 @@
  * @param n is the number of the rows
  * @param toler is the smallest acceptable number
  */
-void mat_gauss_jordan(double *a, double *b, int n, double toler) SEC(BMATH2);
+void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) SEC(BMATH2);
 
 /**
  * @ingroup math
@@ -39,10 +43,10 @@ void mat_gauss_jordan(double *a, double *b, int n, double toler) SEC(BMATH2);
  * @param a is the matrix
  * @param n is the number of rows/cols
  */
-void mat_inverse(double *a, int n) SEC(BMATH2);
+void mat_inverse(var_num_t *a, int n) SEC(BMATH2);
 
-void mat_det2(double t, int m, int k, double *a, int *done, double *v, int n,
-              double toler) SEC(BMATH2);
+void mat_det2(var_num_t t, int m, int k, var_num_t *a, int *done, 
+              var_num_t *v, int n, double toler) SEC(BMATH2);
 
 /**
  * @ingroup math
@@ -54,24 +58,24 @@ void mat_det2(double t, int m, int k, double *a, int *done, double *v, int n,
  * @param toler is the smallest acceptable number
  * @return the determinant of A
  */
-double mat_determ(double *a, int n, double toler) SEC(BMATH2);
+var_num_t mat_determ(var_num_t *a, int n, double toler) SEC(BMATH2);
 
 /**
  * @ingroup math
  * todo: statmeandev
  */
-double statmeandev(double *e, int count) SEC(BMATH2);
+var_num_t statmeandev(var_num_t *e, int count) SEC(BMATH2);
 
 /**
  * @ingroup math
  * todo: statspreads
  */
-double statspreads(double *e, int count) SEC(BMATH2);
+var_num_t statspreads(var_num_t *e, int count) SEC(BMATH2);
 
 /**
  * @ingroup math
  * todo: statspreadp
  */
-double statspreadp(double *e, int count) SEC(BMATH2);
+var_num_t statspreadp(var_num_t *e, int count) SEC(BMATH2);
 
 #endif

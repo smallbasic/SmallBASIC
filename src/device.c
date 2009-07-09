@@ -210,8 +210,9 @@ void termination_handler(int signum)
 
   prog_error = -2;
   ctrlc_count++;
-  if (ctrlc_count == 1)
+  if (ctrlc_count == 1) {
     dev_printf("\n\n\033[0m\033[7m\a * %s %d * \033[0m\n", WORD_BREAK_AT, prog_line);
+  }
   else if (ctrlc_count == 3) {
     dev_restore();
     memmgr_setabort(1);
@@ -318,8 +319,9 @@ int dev_init(int mode, int flags)
     bytes = read(verfd, verstr, 255);
     verstr[(bytes < 256) ? bytes : 255] = '\0';
     p = strchr(verstr, '\n');
-    if (p)
+    if (p) {
       *p = '\0';
+    }
     close(verfd);
 
     // store name to system constant
@@ -333,9 +335,9 @@ int dev_init(int mode, int flags)
       int dg = 0;
 
       p += 6;
-      while (*p == ' ' || *p == '\t')
+      while (*p == ' ' || *p == '\t') {
         p++;
-
+      }
       while (*p) {
         if (is_digit(*p)) {
           vi = (vi << 4) + (*p - '0');
@@ -353,8 +355,9 @@ int dev_init(int mode, int flags)
 
           dg = 0;
         }
-        else
+        else {
           break;
+        }
 
         p++;
       }                         // while (*p)
@@ -369,8 +372,9 @@ int dev_init(int mode, int flags)
   os_ver = ((_osmajor << 16) | (_osminor)) << 8;
   setsysvar_int(SYSVAR_OSVER, os_ver);
 #elif defined(_WinBCB)
-  if (flags == 0)
+  if (flags == 0) {
     setsysvar_int(SYSVAR_OSVER, os_ver);
+  }
 #else
   setsysvar_int(SYSVAR_OSVER, os_ver);
 #endif
@@ -380,10 +384,12 @@ int dev_init(int mode, int flags)
 #endif
     setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
     setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
-    if (os_graphics)
+    if (os_graphics) {
       setsysvar_int(SYSVAR_BPP, os_color_depth);
-    else
+    }
+    else {
       setsysvar_int(SYSVAR_BPP, 4);
+    }
 #if defined(_WinBCB)
   }
 #endif
@@ -400,22 +406,26 @@ int dev_init(int mode, int flags)
  */
 int dev_restore()
 {
-  if (os_graphics)
+  if (os_graphics) {
     osd_refresh();
+  }
 
 #if defined(DRV_SOUND)
-  if (drvsound_ok)
+  if (drvsound_ok) {
     drvsound_close();
+  }
 #endif
 #if defined(DRV_MOUSE)
   if (os_graphics) {
-    if (drvmouse_ok)
+    if (drvmouse_ok) {
       drvmouse_close();
+    }
   }
 #endif
   dev_closefs();
-  if (os_graphics)
+  if (os_graphics) {
     osd_devrestore();
+  }
 #if USE_TERM_IO
   term_restore();               // by default
 #endif
@@ -442,8 +452,9 @@ int term_events() {return 0;}
 int dev_events(int wait_flag)
 {
 #if !defined(_PalmOS) && !defined(DEV_EVENTS_OSD)
-  if (os_graphics)
+  if (os_graphics) {
     osd_refresh();
+  }
 #endif
 
 #if USE_TERM_IO
@@ -451,8 +462,9 @@ int dev_events(int wait_flag)
   // standard input case
   //
   if (!os_graphics) {
-    if (term_israw())
+    if (term_israw()) {
       return !feof(stdin);
+    }
   }
 #endif
 
@@ -490,8 +502,9 @@ int dev_events(int wait_flag)
 #if defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS)
     return osd_events(0);
 #else
-    if (os_graphics)
+    if (os_graphics) {
       return osd_events(0);
+    }
     return term_events();
 #endif
   }
@@ -556,8 +569,9 @@ void dev_pushkey(word key)
 {
   keybuff[keytail] = key;
   keytail++;
-  if (keytail >= PCKBSIZE)
+  if (keytail >= PCKBSIZE) {
     keytail = 0;
+  }
 }
 
 /*
@@ -568,22 +582,23 @@ int dev_kbhit()
   int code;
 
 #if USE_TERM_IO
-  if (!os_graphics && term_israw())
+  if (!os_graphics && term_israw()) {
     return !feof(stdin);
+  }
 #endif
 
-  if (keytail != keyhead)
+  if (keytail != keyhead) {
     return 1;
-
+  }
 #if KBHIT_PWR_CONSERVE
   // conserve battery power
   code = dev_events(1);
 #else
   code = dev_events(0);
 #endif
-  if (code < 0)
+  if (code < 0) {
     brun_break();
-
+  }
   return (keytail != keyhead);
 }
 
@@ -595,23 +610,25 @@ long int dev_getch()
   word ch = 0;
 
 #if USE_TERM_IO
-  if (!os_graphics && term_israw())
+  if (!os_graphics && term_israw()) {
     return fgetc(stdin);
+  }
 #endif
 
   while ((dev_kbhit() == 0) && (prog_error == 0)) {
     int evc;
 
     evc = dev_events(1);
-    if (evc < 0 || prog_error)
+    if (evc < 0 || prog_error) {
       return 0xFFFF;
+    }
   }
 
   ch = keybuff[keyhead];
   keyhead++;
-  if (keyhead >= PCKBSIZE)
+  if (keyhead >= PCKBSIZE) {
     keyhead = 0;
-
+  }
   return ch;
 }
 
@@ -638,19 +655,22 @@ int dev_input_char2str(int ch, byte * cstr)
 
   switch (os_charset) {
   case enc_sjis:               // Japan
-    if (IsJISFont(ch))
+    if (IsJISFont(ch)) {
       cstr[0] = ch >> 8;
+    }
     cstr[1] = ch & 0xFF;
     break;
   case enc_big5:               // China/Taiwan (there is another charset for
     // China but I don't know the difference)
-    if (IsBig5Font(ch))
+    if (IsBig5Font(ch)) {
       cstr[0] = ch >> 8;
+    }
     cstr[1] = ch & 0xFF;
     break;
   case enc_gmb:                // Generic multibyte
-    if (IsGMBFont(ch))
+    if (IsGMBFont(ch)) {
       cstr[0] = ch >> 8;
+    }
     cstr[1] = ch & 0xFF;
     break;
   case enc_unicode:            // Unicode
@@ -678,8 +698,9 @@ int dev_input_count_char(byte * buf, int pos)
     ch = ch + buf[1];
     count = dev_input_char2str(ch, cstr);
   }
-  else
+  else {
     count = 1;
+  }
   return count;
 }
 
@@ -704,13 +725,15 @@ int dev_input_insert_char(int ch, byte * dest, int pos, int replace_mode)
     memcpy(dest + pos, cstr, count);
     dest[pos + count] = '\0';
 
-    if (os_charset != enc_utf8)
+    if (os_charset != enc_utf8) {
       count = dev_input_char2str(((buf[0] << 8) | buf[1]), cstr);
-    else
+    }
+    else {
       count = 1;
-
-    if (buf[0])                 // not a '\0'
+    }
+    if (buf[0]) {                // not a '\0'
       strcat((char *)dest, (char *)(buf + count));
+    }
     tmp_free(buf);
   }
   else {
@@ -738,11 +761,12 @@ int dev_input_remove_char(byte * dest, int pos)
   byte *buf;
 
   if (dest[pos]) {
-    if (os_charset != enc_utf8)
+    if (os_charset != enc_utf8) {
       count = dev_input_char2str(((dest[pos] << 8) | dest[pos + 1]), cstr);
-    else
+    }
+    else {
       count = 1;
-
+    }
     remain = strlen((char *)(dest + pos + 1));
     buf = tmp_alloc(remain + 1);
     strcpy(buf, dest + pos + count);
@@ -766,8 +790,9 @@ void dev_input_clreol(int cx, int cy)
 
   x = dev_getx();
   y = dev_gety();
-  if (x + cx + 1 >= os_graf_mx)
+  if (x + cx + 1 >= os_graf_mx) {
     dev_clreol();
+  }
   else {
     if (os_graphics) {
       osd_setcolor(dev_bgcolor);
@@ -809,13 +834,15 @@ char *dev_gets(char *dest, int size)
 
       p = dest;
       while ((c = fgetc(stdin)) != -1) {
-        if (c == '\r')
+        if (c == '\r') {
           continue;             // ignore
-        if (c == '\n')
+        }
+        if (c == '\n') {
           break;
-        if (size <= ((int)(p - dest)) + 1)
+        }
+        if (size <= ((int)(p - dest)) + 1) {
           break;
-
+        }
         *p++ = c;
       }
 
@@ -845,18 +872,19 @@ char *dev_gets(char *dest, int size)
   pos = 0;
 
 #if USE_TERM_IO
-  if (!os_graphics)
+  if (!os_graphics) {
     term_getsdraw(dest, 0, 0);
+  }
 #endif
 
   do {
-
     len = strlen(dest);
 
     // draw
 #if USE_TERM_IO
-    if (!os_graphics)
+    if (!os_graphics) {
       term_getsdraw(dest, pos, 1);
+    }
     else {
 #endif
       dev_setxy(prev_x, prev_y);
@@ -867,8 +895,9 @@ char *dev_gets(char *dest, int size)
       tmp_lines = (prev_x + dev_textwidth(dest)) / os_graf_mx;
       if (tmp_lines > lines) {
         lines = tmp_lines;
-        while ((lines * cy) + prev_y >= (lpp * cy))
+        while ((lines * cy) + prev_y >= (lpp * cy)) {
           prev_y -= cy;
+        }
       }
 
       //
@@ -953,27 +982,33 @@ char *dev_gets(char *dest, int size)
         replace_mode = !replace_mode;
         break;
       case SB_KEY_LEFT:
-        if (pos > 0)
+        if (pos > 0) {
           pos -= dev_input_count_char((byte *) dest, pos);
-        else
+        }
+        else {
           dev_beep();
+        }
         break;
       case SB_KEY_RIGHT:
-        if (pos < len)
+        if (pos < len) {
           pos += dev_input_count_char((byte *) dest, pos);
-        else
+        }
+        else {
           dev_beep();
+        }
         break;
       default:
-        if ((ch & 0xFF00) != 0xFF00)  // Not an hardware key
+        if ((ch & 0xFF00) != 0xFF00) { // Not an hardware key
           pos += dev_input_insert_char(ch, (byte *) dest, pos, replace_mode);
-        else
+        }
+        else {
           ch = 0;
-
+        }
         // check the size
         len = strlen(dest);
-        if (len >= (size - 2))
+        if (len >= (size - 2)) {
           break;
+        }
       }
     }                           // dev_kbhit() loop
 
@@ -981,8 +1016,9 @@ char *dev_gets(char *dest, int size)
   dest[len] = '\0';
 
 #if USE_TERM_IO
-  if (!os_graphics)
+  if (!os_graphics) {
     term_getsdraw(dest, strlen(dest), 2);
+  }
   else {
 #endif
     dev_setxy(prev_x, prev_y);
@@ -1000,8 +1036,9 @@ char *dev_gets(char *dest, int size)
  */
 void dev_setpenmode(int enable)
 {
-  if (os_graphics)
+  if (os_graphics) {
     osd_setpenmode(enable);
+  }
 }
 
 /*
@@ -1010,8 +1047,9 @@ void dev_setpenmode(int enable)
  */
 int dev_getpen(int code)
 {
-  if (os_graphics)
+  if (os_graphics) {
     return osd_getpen(code);
+  }
   return 0;
 }
 
@@ -1032,8 +1070,9 @@ void dev_clreol()
 int dev_getx()
 {
 #if USE_TERM_IO
-  if (os_graphics)
+  if (os_graphics) {
     return osd_getx();
+  }
   return term_getx();
 #else
   return osd_getx();
@@ -1046,8 +1085,9 @@ int dev_getx()
 int dev_gety()
 {
 #if USE_TERM_IO
-  if (os_graphics)
+  if (os_graphics) {
     return osd_gety();
+  }
   return term_gety();
 #else
   return osd_gety();
@@ -1060,16 +1100,19 @@ int dev_gety()
  */
 void dev_setxy(int x, int y)
 {
-  if (x < 0 || x > os_graf_mx)
+  if (x < 0 || x > os_graf_mx) {
     return;
-  if (y < 0 || y > os_graf_my)
+  }
+  if (y < 0 || y > os_graf_my) {
     return;
-
+  }
 #if USE_TERM_IO
-  if (os_graphics)
+  if (os_graphics) {
     osd_setxy(x, y);
-  else
+  }
+  else {
     term_setxy(x, y);
+  }
 #else
   osd_setxy(x, y);
 #endif
@@ -1084,21 +1127,25 @@ void dev_settextcolor(long fg, long bg)
 #if USE_TERM_IO
   if (os_graphics) {
 #endif
-    if (bg == -1)
+    if (bg == -1) {
       bg = dev_bgcolor;
+    }
 
     if ((fg <= 15) && (bg <= 15) && (fg >= 0) && (bg >= 0)) { // VGA
-      if (bg != -1)
+      if (bg != -1) {
         dev_bgcolor = bg;
+      }
       osd_settextcolor(dev_fgcolor = fg, dev_bgcolor);
     }
-    else
+    else {
       osd_settextcolor((dev_fgcolor = fg), (dev_bgcolor = bg));
+    }
 
 #if USE_TERM_IO
   }
-  else
+  else {
     term_settextcolor(fg, bg);
+  }
 #endif
 }
 
@@ -1107,10 +1154,12 @@ void dev_settextcolor(long fg, long bg)
 void dev_print(const char *str)
 {
 #if USE_TERM_IO
-  if (os_graphics)
+  if (os_graphics) {
     osd_write(str);
-  else
+  }
+  else {
     term_print(str);
+  }
 #else
   osd_write(str);
 #endif
@@ -1155,10 +1204,12 @@ void dev_printf(const char *fmt, ...)
 void dev_cls()
 {
 #if USE_TERM_IO
-  if (os_graphics)
+  if (os_graphics) {
     osd_cls();
-  else
+  }
+  else {
     term_cls();
+  }
 #else
   osd_cls();
 #endif
@@ -1177,8 +1228,9 @@ void dev_cls()
  */
 int dev_textwidth(const char *str)
 {
-  if (os_graphics)
+  if (os_graphics) {
     return osd_textwidth(str);
+  }
   return strlen(str);           // console
 }
 
@@ -1187,8 +1239,9 @@ int dev_textwidth(const char *str)
  */
 int dev_textheight(const char *str)
 {
-  if (os_graphics)
+  if (os_graphics) {
     return osd_textheight(str);
+  }
   return 1;                     // console
 }
 
@@ -1200,15 +1253,18 @@ void dev_setcolor(long color)
 #if USE_TERM_IO
   if (os_graphics) {
 #endif
-    if (color <= 15 && color >= 0)
+    if (color <= 15 && color >= 0) {
       osd_setcolor(dev_fgcolor = color);
-    else if (color < 0)
+    }
+    else if (color < 0) {
       osd_setcolor((dev_fgcolor = color));
+    }
 #if USE_TERM_IO
   }
   else {
-    if (color <= 15 && color >= 0)
+    if (color <= 15 && color >= 0) {
       term_settextcolor(color, -1);
+    }
   }
 #endif
 }
@@ -1223,10 +1279,12 @@ void dev_setpixel(int x, int y)
   if (x >= dev_Vx1 && x <= dev_Vx2) {
     if (y >= dev_Vy1 && y <= dev_Vy2) {
 #if USE_TERM_IO
-      if (os_graphics)
+      if (os_graphics) {
         osd_setpixel(x, y);
-      else
+      }
+      else {
         term_drawpoint(x, y);
+      }
 #else
       osd_setpixel(x, y);
 #endif
@@ -1244,10 +1302,12 @@ long dev_getpixel(int x, int y)
   if (x >= dev_Vx1 && x <= dev_Vx2) {
     if (y >= dev_Vy1 && y <= dev_Vy2) {
 #if USE_TERM_IO
-      if (os_graphics)
+      if (os_graphics) {
         return osd_getpixel(x, y);
-      else
+      }
+      else {
         return term_getpoint(x, y);
+      }
 #else
       return osd_getpixel(x, y);
 #endif
@@ -1273,11 +1333,12 @@ void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible)
     CLIPENCODE(*x2, *y2, c2);
     in1 = CLIPIN(c1);
     in2 = CLIPIN(c2);
-    if (in1 && in2)
+    if (in1 && in2) {
       *visible = done = 1;
-    else if ((c1 & c2 & 0x1) || (c1 & c2 & 0x2) || (c1 & c2 & 0x4) || (c1 & c2 & 0x8)
-             )
+    }
+    else if ((c1 & c2 & 0x1) || (c1 & c2 & 0x2) || (c1 & c2 & 0x4) || (c1 & c2 & 0x8)) {
       done = 1;                 // visible = false
+    }
     else {
       // at least one point is outside
       if (in1) {
@@ -1294,10 +1355,12 @@ void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible)
       }
 
       if (*x1 == *x2) {
-        if (c1 & 0x2)
+        if (c1 & 0x2) {
           *y1 = dev_Vy1;
-        else
+        }
+        else {
           *y1 = dev_Vy2;
+        }
       }
       else {
         if (c1 & 0x1) {
@@ -1334,10 +1397,12 @@ void dev_line(int x1, int y1, int x2, int y2)
   dev_clipline(&x1, &y1, &x2, &y2, &visible);
   if (visible) {
 #if USE_TERM_IO
-    if (os_graphics)
+    if (os_graphics) {
       osd_line(x1, y1, x2, y2);
-    else
+    }
+    else {
       term_drawline(x1, y1, x2, y2);
+    }
 #else
     osd_line(x1, y1, x2, y2);
 #endif
@@ -1381,10 +1446,12 @@ void dev_rect(int x1, int y1, int x2, int y2, int fill)
      */
 
 #if USE_TERM_IO
-    if (os_graphics)
+    if (os_graphics) {
       osd_rect(x1, y1, x2, y2, fill);
-    else
+    }
+    else {
       term_drawrect(x1, y1, x2, y2, fill);
+    }
 #else
     osd_rect(x1, y1, x2, y2, fill);
 #endif
@@ -1397,8 +1464,9 @@ void dev_rect(int x1, int y1, int x2, int y2, int fill)
     int y;
 
     if (fill) {
-      for (y = py1; y <= py2; y++)
+      for (y = py1; y <= py2; y++) {
         dev_line(px1, y, px2, y);
+      }
     }
     else {
       dev_line(px1, py1, px1, py2);
@@ -1428,9 +1496,7 @@ void dev_viewport(int x1, int y1, int x2, int y2)
     if ((x1 < 0) || (x2 < 0) ||
         (y1 < 0) || (y2 < 0) ||
         (x1 >= os_graf_mx) || (x2 >= os_graf_mx) ||
-        (y1 >= os_graf_my) || (y2 >= os_graf_my)
-        ) {
-
+        (y1 >= os_graf_my) || (y2 >= os_graf_my)) {
       rt_raise(ERR_VP_POS);
     }
 
@@ -1442,8 +1508,9 @@ void dev_viewport(int x1, int y1, int x2, int y2)
     dev_Vdx = ABS(x2 - x1);
     dev_Vdy = ABS(y2 - y1);
 
-    if (dev_Vdx == 0 || dev_Vdy == 0)
+    if (dev_Vdx == 0 || dev_Vdy == 0) {
       rt_raise(ERR_VP_ZERO);
+    }
   }
 
   // reset window
@@ -1480,8 +1547,9 @@ void dev_window(int x1, int y1, int x2, int y2)
     dev_Wdx = x2 - x1;
     dev_Wdy = y2 - y1;
 
-    if (dev_Wdx == 0 || dev_Wdy == 0)
+    if (dev_Wdx == 0 || dev_Wdy == 0) {
       rt_raise(ERR_WIN_ZERO);
+    }
   }
 }
 
@@ -1493,8 +1561,9 @@ void dev_window(int x1, int y1, int x2, int y2)
  */
 void dev_beep()
 {
-  if (os_graphics)
+  if (os_graphics) {
     osd_refresh();
+  }
 
 #if defined(DRV_BEEP)
   osd_beep();
@@ -1502,10 +1571,12 @@ void dev_beep()
 #if defined(DRV_SOUND)
   drvsound_beep();
 #else
-  if (os_graphics)
+  if (os_graphics) {
     osd_beep();
-  else
+  }
+  else {
     printf("\a");
+  }
 #endif
 #endif
 }
@@ -1522,10 +1593,11 @@ void dev_sound(int frq, int ms, int vol, int bgplay)
 #if defined(DRV_SOUND)
   drvsound_sound(frq, ms, vol, bgplay);
 #else
-  if (os_graphics)
+  if (os_graphics) {
     osd_sound(frq, ms, vol, bgplay);
-  // Linux only ???
+  }
   else {
+    // Linux only ???
 #if defined(USE_LINCONCODES)
     /*
      *      Linux console codes - PC Speaker
@@ -1540,8 +1612,9 @@ void dev_sound(int frq, int ms, int vol, int bgplay)
     printf("\033[11;%d]", 250);
     fflush(stdout);
 #else
-    if (!bgplay)
+    if (!bgplay) {
       dev_delay(ms);
+    }
 #endif
   }
 #endif
@@ -1557,8 +1630,9 @@ void dev_clear_sound_queue()
 #if defined(DRV_SOUND)
   drvsound_clear_queue();
 #else
-  if (os_graphics)
+  if (os_graphics) {
     osd_clear_sound_queue();
+  }
 #endif
 }
 
@@ -1869,15 +1943,18 @@ int dev_run(const char *src, int retflg)
   char *out;
 
   r = ((out = pw_shell(src)) != NULL);
-  if (r)
+  if (r) {
     tmp_free(out);
+  }
 
-  if (r && !retflg)
+  if (r && !retflg) {
     exit(1);                    // ok, what to do now ?
+  }
   return r;
 #else
-  if (retflg)
+  if (retflg) {
     return (system(src) != -1);
+  }
   else {
     //              execl(src, src, NULL);
     // call the shell if we want to behave same like system() function
@@ -1988,8 +2065,9 @@ int dev_env_count()
 #else
   int count = 0;
 
-  while (environ[count])
+  while (environ[count]) {
     count++;
+  }
   return count;
 #endif
 }
@@ -2019,8 +2097,9 @@ char *dev_getenv_n(int n)
   int count = 0;
 
   while (environ[count]) {
-    if (n == count)
+    if (n == count) {
       return environ[count];
+    }
     count++;
   }
   return NULL;

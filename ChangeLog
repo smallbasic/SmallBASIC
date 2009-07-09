@@ -1,3 +1,7 @@
+2009-06-29
+	update variables to use 64 bits
+	fix for matrix inverse bug
+
 2009-06-13
 	updated form API in fltk version
 

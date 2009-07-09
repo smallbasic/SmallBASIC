@@ -1120,8 +1120,8 @@ void comp_expression(char *expr, byte no_parser)
   int kw_exec_more = 0;
   int tp;
   addr_t stip, cip;
-  long lv = 0;
-  double dv = 0;
+  var_int_t lv = 0;
+  var_num_t dv = 0;
   bc_t bc;
   int addr_opr = 0;
 
@@ -1464,8 +1464,9 @@ void comp_data_seg(char *source)
 {
   char *ptr = source;
   char *commap;
-  long lv = 0;
-  double dv = 0, sign = 1;
+  var_int_t lv = 0;
+  var_num_t dv = 0;
+  double sign = 1;
   char *tmp = comp_bc_temp;
   int quotes;
   int tp;

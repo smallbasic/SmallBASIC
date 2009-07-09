@@ -142,7 +142,7 @@ struct DropListModel : StringList {
       }
       else if (el_p->type == V_INT) {
         char buff[40];
-        sprintf(buff, "%ld", el_p->v.i);
+        sprintf(buff, VAR_INT_FMT, el_p->v.i);
         list.add(buff);
       }
       else if (el_p->type == V_ARRAY) {
@@ -201,7 +201,7 @@ void array_to_string(String& s, var_t* v)
     }
     else if (el_p->type == V_INT) {
       char buff[40];
-      sprintf(buff, "%ld\n", el_p->v.i);
+      sprintf(buff, VAR_INT_FMT "\n", el_p->v.i);
       s.append(buff);
     }
     else if (el_p->type == V_ARRAY) {
@@ -591,7 +591,7 @@ C_LINKAGE_BEGIN void ui_reset()
 //
 void cmd_button()
 {
-  int x, y, w, h;
+  var_int_t x, y, w, h;
   var_t* v = 0;
   char* caption = 0;
   char* type = 0;

@@ -79,12 +79,12 @@ dword code_getnext32()
 /**
  * returns the next 64bit and moves the instruction pointer to the next instruction
  */
-long long code_getnext64i()
+var_int_t code_getnext64i()
 {
-  long long v;
+  var_int_t v;
 
-  memcpy(&v, prog_source + prog_ip, 8);
-  prog_ip += 8;
+  memcpy(&v, prog_source + prog_ip, sizeof(var_int_t));
+  prog_ip += sizeof(var_int_t);
   return v;
 }
 #endif
@@ -96,8 +96,8 @@ double code_getnext64f()
 {
   double v;
 
-  memcpy(&v, prog_source + prog_ip, 8);
-  prog_ip += 8;
+  memcpy(&v, prog_source + prog_ip, sizeof(double));
+  prog_ip += sizeof(double);
   return v;
 }
 
@@ -106,12 +106,12 @@ double code_getnext64f()
 /**
  * returns the next 128bit and moves the instruction pointer to the next instruction
  */
-long double code_getnext128f()
+var_num_t code_getnext128f()
 {
-  long double v;
+  var_num_t v;
 
-  memcpy(&v, prog_source + prog_ip, 16);
-  prog_ip += 16;
+  memcpy(&v, prog_source + prog_ip, sizeof(var_num_t));
+  prog_ip += sizeof(var_num_t);
   return v;
 }
 #endif
@@ -556,7 +556,7 @@ int code_isvar()
 /**
  * sets the value of an integer system-variable
  */
-void setsysvar_int(int index, long value)
+void setsysvar_int(int index, var_int_t value)
 {
   int tid;
   int i;
@@ -578,7 +578,7 @@ void setsysvar_int(int index, long value)
 /**
  * sets the value of a real system-variable
  */
-void setsysvar_num(int index, double value)
+void setsysvar_num(int index, var_num_t value)
 {
   int tid;
   int i;

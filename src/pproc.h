@@ -41,10 +41,14 @@
 extern "C" {
 #endif
 
-#define pfree(a)    { if ((a))    tmp_free((a));    }       /**< simple macro for free() @ingroup par */
-#define pfree2(a,b)   { pfree((a)); pfree((b));       }       /**< simple macro for free() 2 ptrs @ingroup par */
-#define pfree3(a,b,c) { pfree2((a),(b)); pfree((c));    }       /**< simple macro for free() 3 ptrs @ingroup par */
-#define pfree4(a,b,c,d) { pfree3((a),(b),(c)); pfree((d));  }       /**< simple macro for free() 4 ptrs @ingroup par */
+#define pfree(a)    { if ((a))    tmp_free((a)); }
+  /**< simple macro for free() @ingroup par */
+#define pfree2(a,b)   { pfree((a)); pfree((b));  }
+  /**< simple macro for free() 2 ptrs @ingroup par */
+#define pfree3(a,b,c) { pfree2((a),(b)); pfree((c));  }
+  /**< simple macro for free() 3 ptrs @ingroup par */
+#define pfree4(a,b,c,d) { pfree3((a),(b),(c)); pfree((d)); }
+  /**< simple macro for free() 4 ptrs @ingroup par */
 
 /*
  * low-level
@@ -67,7 +71,7 @@ void bc_loop(int isf);
  *
  * @param result the variable to store the result.
  */
-void eval(var_t * result);
+void eval(var_t *result);
 
 /**
  * @ingroup exec
@@ -97,7 +101,7 @@ void set_dataip(word label_id) SEC(BLIB);
 
 #if defined(_PalmOS)
 void pv_write(char *str, int method, unsigned long int handle) SEC(BIO2);
-void pv_writevar(var_t * var, int method, unsigned long int handle) SEC(BIO2);
+void pv_writevar(var_t *var, int method, unsigned long int handle) SEC(BIO2);
 #else
 
 /**
@@ -116,7 +120,7 @@ void pv_write(char *str, int method, int handle) SEC(BIO2);
  *
  * @note avoid to use it
  */
-void pv_writevar(var_t * var, int method, int handle) SEC(BIO2);
+void pv_writevar(var_t *var, int method, int handle) SEC(BIO2);
 #endif
 
 /**
@@ -126,7 +130,7 @@ void pv_writevar(var_t * var, int method, int handle) SEC(BIO2);
  *
  * @param var is the variable
  */
-void print_var(var_t * var) SEC(BIO2);
+void print_var(var_t *var) SEC(BIO2);
 
 /**
  * @ingroup exec
@@ -136,7 +140,7 @@ void print_var(var_t * var) SEC(BIO2);
  * @param var is the variable
  * @param handle is the file-handle
  */
-void fprint_var(int handle, var_t * var) SEC(BIO2);
+void fprint_var(int handle, var_t *var) SEC(BIO2);
 
 /**
  * @ingroup exec
@@ -145,7 +149,7 @@ void fprint_var(int handle, var_t * var) SEC(BIO2);
  *
  * @param var is the variable
  */
-void logprint_var(var_t * var) SEC(BIO2);
+void logprint_var(var_t *var) SEC(BIO2);
 
 /*
  * Parameter's API
@@ -159,16 +163,18 @@ void logprint_var(var_t * var) SEC(BIO2);
  * Parameter structure, used in 'partables'
  */
 typedef struct {
-  var_t *var;                 /**< a var_t pointer; the data */
+  var_t *var;        /**< a var_t pointer; the data */
 
-  byte prev_sep;              /**< previous separator (default '\0') */
-  byte next_sep;              /**< next separator (default '\0') */
+  byte prev_sep;     /**< previous separator (default '\0') */
+  byte next_sep;     /**< next separator (default '\0') */
 
-  byte flags;                 /**< 0x1 = its a 'byval' and the 'var' must be released */
+  byte flags;        /**< 0x1 = its a 'byval' and the 'var' must be released */
 } par_t;
 
 /* par_t flags */
-#define PAR_BYVAL 1       /**< pat_t::flags,  parameter was an expression (var = the temporary copy of the result) @ingroup par */
+#define PAR_BYVAL 1 
+/**< pat_t::flags,  parameter was an expression 
+   (var = the temporary copy of the result) @ingroup par */
 
 /*
  * low-level parameters parser
@@ -182,7 +188,7 @@ typedef struct {
  *
  * @param var the variable to copy the data
  */
-void par_getvar(var_t * var) SEC(BLIB);
+void par_getvar(var_t *var) SEC(BLIB);
 
 /**
  * @ingroup par
@@ -202,7 +208,7 @@ var_t *par_getvar_ptr(void) SEC(BLIB);
  *
  * @param var the variable to copy the data
  */
-void par_getstr(var_t * var) SEC(BLIB);
+void par_getstr(var_t *var) SEC(BLIB);
 
 /**
  * @ingroup par
@@ -212,7 +218,7 @@ void par_getstr(var_t * var) SEC(BLIB);
  *
  * @return the integer
  */
-long par_getint(void) SEC(BLIB);
+var_int_t par_getint(void) SEC(BLIB);
 
 /**
  * @ingroup par
@@ -222,7 +228,7 @@ long par_getint(void) SEC(BLIB);
  *
  * @return the number
  */
-double par_getnum(void) SEC(BLIB);
+var_num_t par_getnum(void) SEC(BLIB);
 #define par_getreal()   par_getnum()
 
 /**
@@ -387,7 +393,7 @@ int par_massget(const char *fmt, ...) SEC(BLIB);
  * @param var the variable (the X)
  * @param ip the expression's address
  */
-void exec_usefunc(var_t * var, addr_t ip) SEC(BLIB);  // one parameter (x)
+void exec_usefunc(var_t *var, addr_t ip) SEC(BLIB);  // one parameter (x)
 
 /**
  * @ingroup par
@@ -401,7 +407,7 @@ void exec_usefunc(var_t * var, addr_t ip) SEC(BLIB);  // one parameter (x)
  * @param var2 the variable (the Y)
  * @param ip the expression's address
  */
-void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip) SEC(BLIB);  // two
+void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip) SEC(BLIB);  // two
 // parameters
 // (x,y)
 
@@ -418,7 +424,7 @@ void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip) SEC(BLIB);  // two
  * @param var3 the variable (the Z)
  * @param ip the expression's address
  */
-void exec_usefunc3(var_t * var1, var_t * var2, var_t * var3, addr_t ip) SEC(BLIB);  // three
+void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip) SEC(BLIB);  // three
 //
 // parameters
 // (x,y,z)

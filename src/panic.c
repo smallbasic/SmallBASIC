@@ -1,17 +1,16 @@
-/*
-*	System error manager
-*
-*	Nicolas Christopoulos
-*
-*	This program is distributed under the terms of the GPL v2.0 or later
-*	Download the GNU Public License (GPL) from www.gnu.org
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// System error manager
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 
 #if defined(_PalmOS)
-//      #define ERROR_CHECK_LEVEL 2
-//      defined by PalmOpt...h
 #include "sbpad.h"
 #include "smbas.h"
 #elif defined(_WinGUI) || defined(_Win32) || defined(__MINGW32__)
@@ -32,7 +31,8 @@
 static char preload_panic_buffer[SB_PANICMSG_SIZE + 1];
 
 /**
-*/
+ *
+ */
 void panic(const char *fmt, ...)
 {
   va_list ap;
@@ -70,7 +70,8 @@ void panic(const char *fmt, ...)
 }
 
 /**
-*/
+ *
+ */
 void warning(const char *fmt, ...)
 {
   va_list ap;
@@ -92,12 +93,13 @@ void warning(const char *fmt, ...)
 #elif defined(_FRANKLIN_EBM)
   GUI_Alert(ALERT_ERROR, preload_panic_buffer);
 #else // defined(_UnixOS)
-  fprintf(stderr, preload_panic_buffer);
+  fprintf(stderr, preload_panic_buffer, 0);
 #endif
 }
 
 /**
-*/
+ *
+ */
 void debug(const char *fmt, ...)
 {
   va_list ap;
@@ -119,13 +121,13 @@ void debug(const char *fmt, ...)
 #elif defined(_FRANKLIN_EBM)
   GUI_Alert(ALERT_ERROR, preload_panic_buffer);
 #else // defined(_UnixOS)
-  fprintf(stderr, preload_panic_buffer);
+  fprintf(stderr, preload_panic_buffer, 0);
 #endif
 }
 
-/*
-*	memory dump
-*/
+/**
+ * memory dump
+ */
 void hex_dump(const unsigned char *block, int size)
 {
 #if defined(_UnixOS) || defined(_DOS)

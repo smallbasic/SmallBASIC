@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.10.3)
+AM_INIT_AUTOMAKE(smallbasic, 0.10.4)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -212,6 +212,7 @@ function buildGTK() {
    AC_DEFINE(GTK_DISABLE_DEPRECATED, 1, [avoid building obsolete code)])
    AC_DEFINE(HILDON_DISABLE_DEPRECATED, 1, [avoid building obsolete code)])
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
+   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
  
    BUILD_SUBDIRS="src src/gtk/src src/gtk/data src/gtk/icons"
    AC_SUBST(BUILD_SUBDIRS)
@@ -265,6 +266,7 @@ function buildFLTK() {
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
  
    BUILD_SUBDIRS="src src/fltk"
    AC_SUBST(BUILD_SUBDIRS)

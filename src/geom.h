@@ -1,14 +1,12 @@
-/**
- * @file geom.h
- *
- * SmallBASIC, extra geometry algorithms
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- *
- * History:
- * ndc - 09/03/2003 - created
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// SmallBASIC LIBRARY - extra geometry algorithms
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 /**
  * @defgroup math Mathematics
@@ -78,7 +76,7 @@ double geo_segangle(int type, double Adx, double Ady, double Bdx,
  * degenerate (number of vertices < 3);  and 2 if area = 0 (and the
  * centroid is undefined).
  */
-int geo_polycentroid(pt_t * poly, int n, double *xCentroid, double *yCentroid,
-                     double *area) SEC(BMATH2);
+int geo_polycentroid(pt_t * poly, int n, var_num_t *xCentroid, var_num_t *yCentroid,
+                     var_num_t *area) SEC(BMATH2);
 
 #endif

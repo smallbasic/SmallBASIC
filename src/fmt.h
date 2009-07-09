@@ -1,12 +1,12 @@
-/**
- * @file fmt.h
- * formating numbers and strings
- *
- * Copyright(c) Nicholas Christopoulos, Nov 2001
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// formating numbers and strings
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #if !defined(_sb_fmt_h)
 #define _sb_fmt_h
@@ -26,7 +26,7 @@ extern "C" {
  * @param x is the number
  * @param dest is the string buffer
  */
-void fptoa(double x, char *dest) SEC(BLIB);
+void fptoa(var_num_t x, char *dest) SEC(BLIB);
 
 /**
  * @ingroup str
@@ -36,7 +36,7 @@ void fptoa(double x, char *dest) SEC(BLIB);
  * @param x is the number
  * @param dest is the string buffer
  */
-void bestfta(double x, char *dest) SEC(BLIB);
+void bestfta(var_num_t x, char *dest) SEC(BLIB);
 
 /**
  * @ingroup str
@@ -46,7 +46,7 @@ void bestfta(double x, char *dest) SEC(BLIB);
  * @param x is the number
  * @param dest is the string buffer
  */
-void expfta(double x, char *dest) SEC(BLIB);
+void expfta(var_num_t x, char *dest) SEC(BLIB);
 
 /**
  * @ingroup str
@@ -68,7 +68,7 @@ void expfta(double x, char *dest) SEC(BLIB);
  * @param fmt_cnst is the format string
  * @param x is the number
  */
-void format_num(char *dest, const char *fmt_cnst, double x) SEC(BLIB);
+void format_num(char *dest, const char *fmt_cnst, var_num_t x) SEC(BLIB);
 
 /**
  * @ingroup str
@@ -119,7 +119,7 @@ void free_format(void) SEC(BLIB);
  * @param output is the output-set-of-routines code (see PV_xxx macros)
  * @param handle is the output handle (depented on output-code)
  */
-void fmt_printN(double x, int output, int handle) SEC(BLIB);
+void fmt_printN(var_num_t x, int output, int handle) SEC(BLIB);
 
 /**
  * @ingroup str

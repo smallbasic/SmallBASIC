@@ -155,7 +155,7 @@ void FileWidget::displayPath()
 
     if (stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
       if (!strcmp(name, "..")) {
-        html.append("<input type=button onclick='!..' value='@<;'>");
+        html.append("<p><input type=button onclick='!..' value='@<;'>");
       }
       else {
         html.append("<p><a href='!");

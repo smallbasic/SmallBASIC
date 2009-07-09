@@ -1,10 +1,12 @@
-/**
- * @file str.h
- * Strings
- *
- * @author Nicholas Christopoulos
- * @date 5/5/2000
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// strings!
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 /**
  * @defgroup str Strings
@@ -21,20 +23,29 @@ extern "C" {
 
 // SJIS
 //Begin: Modified by Araiguma
-#define IsJIS1Font(x)           (((x) >= 0x81 && (x) <= 0x9f) || ((x) >= 0xe0 && (x) <= 0xef))          /**< SJIS charset, true if the first character is belongs to sjis encode @ingroup str */
-#define IsJIS2Font(x)           ((x) >= 0x40 && (x) <= 0xfc)                                                                            /**< SJIS charset, true if the second character is belongs to sjis encode @ingroup str */
-#define IsJISFont(x)            (IsJIS1Font((x >> 8) & 0xff) && IsJIS2Font(x & 0xff))                           /**< SJIS charset, true if the character is belongs to sjis encode @ingroup str */
+#define IsJIS1Font(x)  (((x) >= 0x81 && (x) <= 0x9f) || ((x) >= 0xe0 && (x) <= 0xef))
+ /**< SJIS charset, true if the first character is belongs to sjis encode @ingroup str */
+#define IsJIS2Font(x)  ((x) >= 0x40 && (x) <= 0xfc)
+ /**< SJIS charset, true if the second character is belongs to sjis encode @ingroup str */
+#define IsJISFont(x)   (IsJIS1Font((x >> 8) & 0xff) && IsJIS2Font(x & 0xff))
+ /**< SJIS charset, true if the character is belongs to sjis encode @ingroup str */
 // End :  Modified by Araiguma
 
 // Big5
-#define IsBig51Font(x)           ((x) >= 0x81 && (x) <= 0xfe)                                                                           /**< BIG5 charset, true if the first character is belongs to big5 encode @ingroup str */
-#define IsBig52Font(x)           (((x) >= 0x40 && (x) <= 0x7e) || ((x) >= 0xa1 && (x) <= 0xfe))         /**< BIG5 charset, true if the second character is belongs to big5 encode @ingroup str */
-#define IsBig5Font(x)            (IsBig51Font((x >> 8) & 0xff) && IsBig52Font(x & 0xff))                        /**< BIG5 charset, true if the character is belongs to big5 encode @ingroup str */
+#define IsBig51Font(x) ((x) >= 0x81 && (x) <= 0xfe)
+ /**< BIG5 charset, true if the first character is belongs to big5 encode @ingroup str */
+#define IsBig52Font(x) (((x) >= 0x40 && (x) <= 0x7e) || ((x) >= 0xa1 && (x) <= 0xfe))
+ /**< BIG5 charset, true if the second character is belongs to big5 encode @ingroup str */
+#define IsBig5Font(x)  (IsBig51Font((x >> 8) & 0xff) && IsBig52Font(x & 0xff))
+ /**< BIG5 charset, true if the character is belongs to big5 encode @ingroup str */
 
 // generic multibyte
-#define IsGMB1Font(x)           ((x) >= 0x81 && (x) <= 0xfe)                                                                            /**< generic-multibyte charset, true if the character is belongs to gmb encode @ingroup str */
-#define IsGMB2Font(x)           ((x) >= 0x21 && (x) <= 0xff)                                                                            /**< generic-multibyte charset, true if the second character is belongs to gmb encode @ingroup str */
-#define IsGMBFont(x)            (IsGMB1Font((x >> 8) & 0xff) && IsGMB2Font(x & 0xff))                           /**< generic-multibyte charset, true if the character is belongs to gmb encode @ingroup str */
+#define IsGMB1Font(x) ((x) >= 0x81 && (x) <= 0xfe)
+ /**< generic-multibyte charset, true if the character is belongs to gmb encode @ingroup str */
+#define IsGMB2Font(x) ((x) >= 0x21 && (x) <= 0xff)
+ /**< generic-multibyte charset, true if the second character is belongs to gmb encode @ingroup str */
+#define IsGMBFont(x)  (IsGMB1Font((x >> 8) & 0xff) && IsGMB2Font(x & 0xff))
+ /**< generic-multibyte charset, true if the character is belongs to gmb encode @ingroup str */
 
 #include "languages/chars.en.h"
 
@@ -157,8 +168,8 @@ char *get_keyword(char *text, char *dest) SEC(BCSCAN);
  * @param dv the real value
  * @return a pointer in 'text' that points to the next position
  */
-char *get_numexpr(char *text, char *dest, int *type, long *lv,
-                  double *dv) SEC(BCSCAN);
+char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv,
+                  var_num_t *dv) SEC(BCSCAN);
 
 /**
  * @ingroup str
@@ -234,7 +245,7 @@ long xstrtol(const char *str) SEC(BIO3);
  * @param dest is the buffer to store the string
  * @return a pointer to dest
  */
-char *ftostr(double num, char *dest) SEC(BIO3);
+char *ftostr(var_num_t num, char *dest) SEC(BIO3);
 
 /**
  * @ingroup str
@@ -245,7 +256,7 @@ char *ftostr(double num, char *dest) SEC(BIO3);
  * @param dest is the buffer to store the string
  * @return a pointer to dest
  */
-char *ltostr(long num, char *dest) SEC(BIO3);
+char *ltostr(var_int_t num, char *dest) SEC(BIO3);
 
 int strcaseless(const char *s1, const char *s2) SEC(BIO3);
 int strcaselessn(const char *s1, const char *s2, int len) SEC(BIO3);
@@ -306,7 +317,7 @@ char *strrchr(const char *source, int ch) SEC(BIO3);
  * @param source is the text
  * @returns the real-number
  */
-double numexpr_sb_strtof(char *source) SEC(BIO3);
+var_num_t numexpr_sb_strtof(char *source) SEC(BIO3);
 
 /**
  * @ingroup str
@@ -316,7 +327,7 @@ double numexpr_sb_strtof(char *source) SEC(BIO3);
  * @param source is the text
  * @returns the real-number
  */
-long numexpr_strtol(char *source) SEC(BIO3);
+var_int_t numexpr_strtol(char *source) SEC(BIO3);
 
 /**
  * @ingroup str

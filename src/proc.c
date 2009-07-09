@@ -516,10 +516,10 @@ void par_getstr(var_t * var)
 /*
  * get next parameter as long
  */
-long par_getint()
+var_int_t par_getint()
 {
   var_t var;
-  long i;
+  var_int_t i;
 
   v_init(&var);
   par_getvar(&var);
@@ -532,10 +532,10 @@ long par_getint()
 /*
  * get next parameter as double
  */
-double par_getnum()
+var_num_t par_getnum()
 {
   var_t var;
-  double f;
+  var_num_t f;
 
   v_init(&var);
   par_getvar(&var);
@@ -1094,39 +1094,40 @@ int par_massget_type_check(char fmt, par_t * par)
 }
 
 /*
- *   Parsing parameters with scanf-style
- *   returns the parameter-count or -1 (error)
+ * Parsing parameters with scanf-style
+ * returns the parameter-count or -1 (error)
  *
- *   Format:
- *   --------
- *   capital character = the parameter is required
- *   small character   = optional parameter
+ * Format:
+ * --------
+ * capital character = the parameter is required
+ * small character   = optional parameter
  *
- *   I = integer         (int32  )
- *   F = double          (double*)
- *   S = string          (char*  )
- *   P = variable's ptr  (var_t* )
+ * I = var_int_t       (var_int_t*)
+ * F = var_num_t       (var_num_t*)
+ * S = string          (char*)
+ * P = variable's ptr  (var_t*)
  *
- *   Example:
- *   --------
- *   int32   i1, i2 = -1;    // -1 is the default value for i2
- *   char    *s1 = NULL;     // NULL is the default value for s1
- *   var_t   *v  = NULL;     // NULL is the default value for v
+ * Example:
+ * --------
+ * var_int_t i1, i2 = -1;    // -1 is the default value for i2
+ * char      *s1 = NULL;     // NULL is the default value for s1
+ * var_t     *v  = NULL;     // NULL is the default value for v
  *
- *   // the first integer is required, the second is optional
- *   // the string is optional too
- *   pc = par_massget("Iis", &i1, &i2, &s1, &v);
+ * // the first integer is required, the second is optional
+ * // the string is optional too
+ * pc = par_massget("Iis", &i1, &i2, &s1, &v);
  *
- *   if ( pc != -1 ) {   // no error; also, you can use prog_error because par_massget() will call rt_raise() on error
- *       printf("required integer = %d\n", i1);
+ * if ( pc != -1 ) {  
+ *   // no error; also, you can use prog_error because par_massget() will call rt_raise() on error
+ *   printf("required integer = %d\n", i1);
  *
- *       // if there is no optional parameters, the default value will be returned
- *       if  ( i2 != -1 )    printf("optional integer found = %d\n", i2);
- *       if  ( s1 )          printf("optional string found = %s\n", s1);
- *       if  ( v )       {   printf("optional variable's ptr found");    v_free(v);  }
- *       }
+ *   // if there is no optional parameters, the default value will be returned
+ *   if  ( i2 != -1 )    printf("optional integer found = %d\n", i2);
+ *   if  ( s1 )          printf("optional string found = %s\n", s1);
+ *   if  ( v )       {   printf("optional variable's ptr found");    v_free(v);  }
+ *   }
  *
- *   pfree2(s1, v);
+ * pfree2(s1, v);
  */
 int par_massget(const char *fmt, ...)
 {
@@ -1137,8 +1138,8 @@ int par_massget(const char *fmt, ...)
   par_t *ptable;
 
   char **s;
-  int32 *i;
-  double *f;
+  var_int_t *i;
+  var_num_t *f;
   var_t **vt;
 
   // get ptable
@@ -1159,8 +1160,9 @@ int par_massget(const char *fmt, ...)
     fmt_p++;
   }
 
-  if (rqcount > pcount)
+  if (rqcount > pcount) {
     err_parfmt(fmt);
+  }
   else {
     /*
      *      parse
@@ -1169,14 +1171,16 @@ int par_massget(const char *fmt, ...)
     curpar = 0;
     fmt_p = (char *)fmt;
     while (*fmt_p) {
-
       if (*fmt_p >= 'a' && optcount &&
-          ((curpar < pcount) ? par_massget_type_check(*fmt_p, &ptable[curpar]) : 0))
+          ((curpar < pcount) ? par_massget_type_check(*fmt_p, &ptable[curpar]) : 0)) {
         (optcount--, opt = 1, ignore = 0);
-      else if (*fmt_p >= 'a' && optcount)
+      } 
+      else if (*fmt_p >= 'a' && optcount) {
         (optcount--, opt = 0, ignore = 1);
-      else if (*fmt_p < 'a' && rqcount)
+      } 
+      else if (*fmt_p < 'a' && rqcount) {
         (rqcount--, opt = 0, ignore = 0);
+      }
       else {
         err_parfmt(fmt);
         break;
@@ -1184,7 +1188,7 @@ int par_massget(const char *fmt, ...)
 
       if (pcount <= curpar && ignore == 0) {
         err_parfmt(fmt);
-//                              rt_raise("%s\nb: pc=%d, oc=%d, rc=%d", fmt, pcount, optcount, rqcount);
+        // rt_raise("%s\nb: pc=%d, oc=%d, rc=%d", fmt, pcount, optcount, rqcount);
         break;
       }
 
@@ -1192,48 +1196,48 @@ int par_massget(const char *fmt, ...)
       case 's':
         // optional string
         if (!opt) {
-          s = va_arg(ap, char **);
+          s = va_arg(ap, char**);
           break;
         }
       case 'S':
         // string
-        s = va_arg(ap, char **);
+        s = va_arg(ap, char**);
         *s = tmp_strdup(v_getstr(ptable[curpar].var));
         curpar++;
         break;
       case 'i':
         // optional integer
         if (!opt) {
-          i = va_arg(ap, int32 *);
+          i = va_arg(ap, var_int_t*);
           break;
         }
       case 'I':
         // integer
-        i = va_arg(ap, int32 *);
+        i = va_arg(ap, var_int_t*);
         *i = v_getint(ptable[curpar].var);
         curpar++;
         break;
       case 'f':
-        // optional real (double)
+        // optional real (var_num_t)
         if (!opt) {
-          f = va_arg(ap, double *);
+          f = va_arg(ap, var_num_t*);
           break;
         }
       case 'F':
-        // real (double)
-        f = va_arg(ap, double *);
+        // real (var_num_t)
+        f = va_arg(ap, var_num_t*);
         *f = v_getnum(ptable[curpar].var);
         curpar++;
         break;
       case 'p':
         // optional variable
         if (!opt) {
-          vt = va_arg(ap, var_t **);
+          vt = va_arg(ap, var_t**);
           break;
         }
       case 'P':
         // variable
-        vt = va_arg(ap, var_t **);
+        vt = va_arg(ap, var_t**);
         if (ptable[curpar].flags == 0)  // byref 
           *vt = ptable[curpar].var;
         else {
@@ -1251,7 +1255,8 @@ int par_massget(const char *fmt, ...)
 
   // 
   par_freepartable(&ptable, pcount);
-  if (prog_error)
+  if (prog_error) {
     return -1;
+  }
   return pcount;
 }

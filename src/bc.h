@@ -1,13 +1,12 @@
-/**
- * @file bc.h
- *
- * bc module. Bytecode manipulation routines (bytecode segments API)
- *
- * 2001/02/23, Nicholas Christopoulos
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// bc module. Bytecode manipulation routines (bytecode segments API)
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #if !defined(_bc_h)
 #define _bc_h
@@ -246,11 +245,7 @@ void bc_add_ctrl(bc_t * bc, code_t code, addr_t true_ip,
  * @param bc the bc segment
  * @param v the number
  */
-#if defined(OS_PREC64)
-void bc_add_creal(bc_t * bc, long double v) SEC(BCSCAN);
-#else
-void bc_add_creal(bc_t * bc, double v) SEC(BCSCAN);
-#endif
+void bc_add_creal(bc_t * bc, var_num_t v) SEC(BCSCAN);
 
 /**
  * @ingroup scan
@@ -260,10 +255,6 @@ void bc_add_creal(bc_t * bc, double v) SEC(BCSCAN);
  * @param bc the bc segment
  * @param v the number
  */
-#if defined(OS_PREC64)
-void bc_add_cint(bc_t * bc, long long v) SEC(BCSCAN);
-#else
-void bc_add_cint(bc_t * bc, long v) SEC(BCSCAN);
-#endif
+void bc_add_cint(bc_t * bc, var_int_t v) SEC(BCSCAN);
 
 #endif

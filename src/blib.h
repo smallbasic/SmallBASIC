@@ -75,11 +75,11 @@ void cmd_poke32(void) SEC(BLIB);
 void cmd_bcopy(void) SEC(BLIB);
 void cmd_calladr(void) SEC(BLIB);
 
-double cmd_math1(long funcCode, var_t * arg) SEC(BMATH);
-long cmd_imath1(long funcCode, var_t * arg) SEC(BMATH);
-void cmd_str1(long funcCode, var_t * arg, var_t * r) SEC(BMATH);
-void cmd_ns1(long funcCode, var_t * arg, var_t * r) SEC(BMATH);
-void cmd_str0(long funcCode, var_t * r) SEC(BMATH);
+var_num_t cmd_math1(long funcCode, var_t *arg) SEC(BMATH);
+var_int_t cmd_imath1(long funcCode, var_t *arg) SEC(BMATH);
+void cmd_str1(long funcCode, var_t *arg, var_t *r) SEC(BMATH);
+void cmd_ns1(long funcCode, var_t *arg, var_t *r) SEC(BMATH);
+void cmd_str0(long funcCode, var_t *r) SEC(BMATH);
 void cmd_split(void) SEC(BLIB);
 void cmd_wsplit(void) SEC(BLIB);
 void cmd_wjoin(void) SEC(BLIB);
@@ -127,7 +127,7 @@ void cmd_strN(long, var_t *) SEC(BMATH);  // its ok, i want all functions
 void cmd_intN(long, var_t *) SEC(BMATH);
 void cmd_numN(long, var_t *) SEC(BMATH);
 void cmd_genfunc(long, var_t *) SEC(BMATH);
-double line_length(double Ax, double Ay, double Bx, double By) SEC(BMATH);
+var_num_t line_length(var_num_t Ax, var_num_t Ay, var_num_t Bx, var_num_t By) SEC(BMATH);
 double line_segangle(int type, double Adx, double Ady, double Bdx,
                      double Bdy) SEC(BMATH);
 void cmd_integral(void) SEC(BMATH);

@@ -14,17 +14,15 @@
 #include <assert.h>
 #endif
 
-void bc_add2c(bc_t * bc, byte code, byte v) SEC(BCSCAN);
-#define bc_add2(a,b,c)  bc_add2c((a),(b),(c))
-void bc_add2i(bc_t * bc, byte code, word p1) SEC(BCSCAN);
-void bc_add2l(bc_t * bc, byte code, long p1) SEC(BCSCAN);
-void bc_add2d(bc_t * bc, byte code, double p1) SEC(BCSCAN);
-void bc_add2s(bc_t * bc, byte code, const char *p1) SEC(BCSCAN);
+void bc_add2c(bc_t *bc, byte code, byte v) SEC(BCSCAN);
+void bc_add2i(bc_t *bc, byte code, word p1) SEC(BCSCAN);
+void bc_add2l(bc_t *bc, byte code, long p1) SEC(BCSCAN);
+void bc_add2s(bc_t *bc, byte code, const char *p1) SEC(BCSCAN);
 
 /*
  * Create a bytecode segment
  */
-void bc_create(bc_t * bc)
+void bc_create(bc_t *bc)
 {
   bc->mem_h = mem_alloc(BC_ALLOC_INCR);
   bc->ptr = mem_lock(bc->mem_h);
@@ -36,7 +34,7 @@ void bc_create(bc_t * bc)
 /*
  * Destroy a bytecode segment
  */
-void bc_destroy(bc_t * bc)
+void bc_destroy(bc_t *bc)
 {
   mem_unlock(bc->mem_h);
   mem_free(bc->mem_h);
@@ -49,7 +47,7 @@ void bc_destroy(bc_t * bc)
 /*
  * Resize a bytecode segment
  */
-void bc_resize(bc_t * bc, dword new_size)
+void bc_resize(bc_t *bc, dword new_size)
 {
   mem_unlock(bc->mem_h);
   bc->mem_h = mem_realloc(bc->mem_h, new_size);
@@ -60,7 +58,7 @@ void bc_resize(bc_t * bc, dword new_size)
 /*
  * add one command
  */
-void bc_add1(bc_t * bc, byte code)
+void bc_add1(bc_t *bc, byte code)
 {
   if (bc->count >= (bc->size - 2)) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
@@ -72,7 +70,7 @@ void bc_add1(bc_t * bc, byte code)
 /*
  * change one command
  */
-void bc_store1(bc_t * bc, addr_t offset, byte code)
+void bc_store1(bc_t *bc, addr_t offset, byte code)
 {
   bc->ptr[offset] = code;
 }
@@ -80,7 +78,7 @@ void bc_store1(bc_t * bc, addr_t offset, byte code)
 /*
  * add one command & one byte
  */
-void bc_add2c(bc_t * bc, byte code, byte v)
+void bc_add2c(bc_t *bc, byte code, byte v)
 {
   if (bc->count >= bc->size - 3) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
@@ -94,7 +92,7 @@ void bc_add2c(bc_t * bc, byte code, byte v)
 /*
  * add one word
  */
-void bc_add_word(bc_t * bc, word p1)
+void bc_add_word(bc_t *bc, word p1)
 {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
@@ -106,7 +104,7 @@ void bc_add_word(bc_t * bc, word p1)
 /*
  * add one dword
  */
-void bc_add_dword(bc_t * bc, dword p1)
+void bc_add_dword(bc_t *bc, dword p1)
 {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
@@ -118,7 +116,7 @@ void bc_add_dword(bc_t * bc, dword p1)
 /*
  * add one command and one word
  */
-void bc_add2i(bc_t * bc, byte code, word p1)
+void bc_add2i(bc_t *bc, byte code, word p1)
 {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
@@ -130,7 +128,7 @@ void bc_add2i(bc_t * bc, byte code, word p1)
 }
 
 /*
- * add one command and one long int
+ * add one command and one long int (32 bits)
  */
 void bc_add2l(bc_t * bc, byte code, long p1)
 {
@@ -143,10 +141,11 @@ void bc_add2l(bc_t * bc, byte code, long p1)
   bc->count += 4;
 }
 
+
 /*
  * add buildin function call
  */
-void bc_add_fcode(bc_t * bc, long idx)
+void bc_add_fcode(bc_t *bc, long idx)
 {
 #if defined(OS_ADDR16)
   bc_add2i(bc, kwTYPE_CALLF, idx);
@@ -158,7 +157,7 @@ void bc_add_fcode(bc_t * bc, long idx)
 /*
  * add buildin procedure call
  */
-void bc_add_pcode(bc_t * bc, long idx)
+void bc_add_pcode(bc_t *bc, long idx)
 {
 #if defined(OS_ADDR16)
   bc_add2i(bc, kwTYPE_CALLP, idx);
@@ -170,7 +169,7 @@ void bc_add_pcode(bc_t * bc, long idx)
 /*
  * add an external function-call
  */
-void bc_add_extfcode(bc_t * bc, int lib, long idx)
+void bc_add_extfcode(bc_t *bc, int lib, long idx)
 {
   bc_add_code(bc, kwTYPE_CALLEXTF);
 #if defined(OS_ADDR16)
@@ -185,7 +184,7 @@ void bc_add_extfcode(bc_t * bc, int lib, long idx)
 /*
  * add an external procedure-call
  */
-void bc_add_extpcode(bc_t * bc, int lib, long idx)
+void bc_add_extpcode(bc_t *bc, int lib, long idx)
 {
   bc_add_code(bc, kwTYPE_CALLEXTP);
 #if defined(OS_ADDR16)
@@ -200,7 +199,7 @@ void bc_add_extpcode(bc_t * bc, int lib, long idx)
 /*
  * add an address
  */
-void bc_add_addr(bc_t * bc, addr_t idx)
+void bc_add_addr(bc_t *bc, addr_t idx)
 {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
@@ -219,7 +218,7 @@ void bc_add_addr(bc_t * bc, addr_t idx)
  *
  * Control codes are followed by 2 addr_t elements (jump on true, jump on false)
  */
-void bc_add_ctrl(bc_t * bc, code_t code, addr_t true_ip, addr_t false_ip)
+void bc_add_ctrl(bc_t *bc, code_t code, addr_t true_ip, addr_t false_ip)
 {
   bc_add1(bc, code);
   bc_add_addr(bc, true_ip);
@@ -229,37 +228,35 @@ void bc_add_ctrl(bc_t * bc, code_t code, addr_t true_ip, addr_t false_ip)
 /*
  * add an integer
  */
-void bc_add_cint(bc_t * bc, long v)
+void bc_add_cint(bc_t *bc, var_int_t v)
 {
-  bc_add2l(bc, kwTYPE_INT, v);
+  if (bc->count >= bc->size - 8) {
+    bc_resize(bc, bc->size + BC_ALLOC_INCR);
+  }
+  bc->ptr[bc->count] = kwTYPE_INT;
+  bc->count++;
+  memcpy(bc->ptr + bc->count, &v, sizeof(var_int_t));
+  bc->count += sizeof(var_int_t);
 }
 
 /*
  * add an real
  */
-void bc_add_creal(bc_t * bc, double v)
-{
-  bc_add2d(bc, kwTYPE_NUM, v);
-}
-
-/*
- * add one command and one double
- */
-void bc_add2d(bc_t * bc, byte code, double p1)
+void bc_add_creal(bc_t *bc, var_num_t v)
 {
   if (bc->count >= bc->size - 16) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
-  bc->ptr[bc->count] = code;
+  bc->ptr[bc->count] = kwTYPE_NUM;
   bc->count++;
-  memcpy(bc->ptr + bc->count, &p1, 8);
-  bc->count += 8;
+  memcpy(bc->ptr + bc->count, &v, sizeof(var_num_t));
+  bc->count += sizeof(var_num_t);
 }
 
 /*
  * add one command and one string (see: bc_store_string)
  */
-void bc_add2s(bc_t * bc, byte code, const char *p1)
+void bc_add2s(bc_t *bc, byte code, const char *p1)
 {
   int l = strlen(p1);
   if (l > BC_MAX_STORE_SIZE) {
@@ -285,7 +282,7 @@ void bc_add2s(bc_t * bc, byte code, const char *p1)
  * adds a string.
  * returns a pointer of src to the next "element"
  */
-char *bc_store_string(bc_t * bc, char *src)
+char *bc_store_string(bc_t *bc, char *src)
 {
   char *p = src;
   char *np = 0;
@@ -335,7 +332,7 @@ char *bc_store_string(bc_t * bc, char *src)
  * adds a string.
  * returns a pointer of src to the next "element"
  */
-char *bc_store_macro(bc_t * bc, char *src)
+char *bc_store_macro(bc_t *bc, char *src)
 {
   char *p = src, *np;
   int l;
@@ -362,7 +359,7 @@ char *bc_store_macro(bc_t * bc, char *src)
 /*
  * adds an EOC mark at the current position
  */
-void bc_eoc(bc_t * bc)
+void bc_eoc(bc_t *bc)
 {
   //      if      ( bc->count )   {
   //              if      ( bc->ptr[bc->count-1] != kwTYPE_EOC )
@@ -373,7 +370,7 @@ void bc_eoc(bc_t * bc)
 /*
  * appends the src to dst
  */
-void bc_append(bc_t * dst, bc_t * src)
+void bc_append(bc_t *dst, bc_t *src)
 {
   bc_resize(dst, dst->count + src->count + 4);
   memcpy(dst->ptr + dst->count, src->ptr, src->count);
@@ -383,7 +380,7 @@ void bc_append(bc_t * dst, bc_t * src)
 /*
  * appends n bytes from src to dst
  */
-void bc_add_n(bc_t * dst, byte * src, dword n)
+void bc_add_n(bc_t *dst, byte *src, dword n)
 {
   if (dst->count >= dst->size - n) {
     bc_resize(dst, dst->size + n);

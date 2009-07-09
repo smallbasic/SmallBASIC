@@ -1,31 +1,35 @@
-/**
-* SmallBASIC, decompiler
-*
-* This program is distributed under the terms of the GPL v2.0 or later
-* Download the GNU Public License (GPL) from www.gnu.org
-*
-* Nicholas Christopoulos
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// decompiler
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sbapp.h"
 
-/*
-*/
+/**
+ *
+ */
 void prcmd(code_t code)
 {
   char cmd[16];
 
-  if (kw_getcmdname(code, cmd))
+  if (kw_getcmdname(code, cmd)) {
     fprintf(stderr, "{%s}", cmd);
-  else
+  }
+  else {
     fprintf(stderr, "{N/A:%d}", code);
+  }
 }
 
-/* ---------------------------------------------------
-*
-* decompiler
-*
-*/
+/**
+ *
+ * decompiler
+ *
+ */
 void dump_bytecode(FILE * output)
 {
   int i, c, b, d, h, l, j;
@@ -70,11 +74,13 @@ void dump_bytecode(FILE * output)
   // print label-table
   if (prog_labcount) {
     fprintf(output, "* label-table:\n");
-    for (i = 0; i < prog_labcount; i++)
+    for (i = 0; i < prog_labcount; i++) {
       fprintf(output, "  %d = 0x%X (%d)\n", i, (int)tlab[i].ip, (int)tlab[i].ip);
+    }
   }
-  else
+  else {
     fprintf(output, "* no label-table\n");
+  }
 
   // //////////////////
   // print libs
@@ -90,8 +96,9 @@ void dump_bytecode(FILE * output)
         );
     }
   }
-  else
+  else {
     fprintf(output, "* no linked-libraries\n");
+  }
 
   // //////////////////
   // print symbol-table
@@ -109,8 +116,9 @@ void dump_bytecode(FILE * output)
               prog_symtable[i].task_id, prog_symtable[i].exp_idx);
     }
   }
-  else
+  else {
     fprintf(output, "* no import-symbol-table\n");
+  }
 
   // //////////////////
   // print export symbol-table
@@ -127,8 +135,9 @@ void dump_bytecode(FILE * output)
               prog_exptable[i].vid);
     }
   }
-  else
+  else {
     fprintf(output, "* no export-symbol-table\n");
+  }
 
   // //////////////////
   // print code
@@ -149,8 +158,9 @@ void dump_bytecode(FILE * output)
         fprintf(output, "line: %d\n%d: ", c, c);
         fprintf(output, "%s", source[c - 1]);
       }
-      else
+      else {
         fprintf(output, "line: %d", c);
+      }
       break;
     case kwTYPE_EVPUSH:
       fprintf(output, "push (r)esult");
@@ -179,8 +189,9 @@ void dump_bytecode(FILE * output)
       c = code_getaddr();
       d = code_getaddr();
       if (b == kwTYPE_CALLEXTF) {
-        if (c & UID_UNIT_BIT)
+        if (c & UID_UNIT_BIT) {
           fprintf(output, "call external (unit) function; lid 0x%X, sid %d", c, d);
+        } 
         else {
           sblmgr_getfuncname(c, prog_symtable[d].exp_idx, cmd);
           fprintf(output, "call external (c-lib) function; lid 0x%X, sid %d (%s)", c,
@@ -188,8 +199,9 @@ void dump_bytecode(FILE * output)
         }
       }
       else {
-        if (c & UID_UNIT_BIT)
+        if (c & UID_UNIT_BIT) {
           fprintf(output, "call external (unit) procedure; lid 0x%X, sid %d", c, d);
+        } 
         else {
           sblmgr_getprocname(c, prog_symtable[d].exp_idx, cmd);
           fprintf(output, "call external (c-lib) procedure; lid 0x%X, sid %d (%s)",
@@ -230,17 +242,20 @@ void dump_bytecode(FILE * output)
     case kwTYPE_PARAM:
     case kwTYPE_CRVAR:
       c = code_getnext();
-      if (b == kwTYPE_PARAM)
+      if (b == kwTYPE_PARAM) {
         fprintf(output, "parameter %d: ", c);
-      else
+      }
+      else {
         fprintf(output, "local variable %d: ", c);
+      }
 
       d = 0;
       for (j = 0; j < c; j++) {
         if (b == kwTYPE_PARAM) {
           d = code_getnext();
-          if (d & 0x80)
+          if (d & 0x80) {
             fprintf(output, "&");
+          }
         }
         fprintf(output, "%d ", code_getaddr());
       }
@@ -319,8 +334,9 @@ void dump_bytecode(FILE * output)
         c = code_getnext();
         fprintf(output, "on %s count %d\n", ((b == kwGOTO) ? "goto" : "gosub"), c);
         fprintf(output, "      next address %d\n", new_ip);
-        for (j = 0; j < c; j++)
+        for (j = 0; j < c; j++) {
           fprintf(output, "       jump to %d\n", code_getaddr());
+        }
         fprintf(output, "on %s expression:", ((b == kwGOTO) ? "goto" : "gosub"));
         break;
       case kwGOTO:
@@ -353,13 +369,14 @@ void dump_bytecode(FILE * output)
         fprintf(output, "value (int) %d (0x%X) ", (int)lng, (int)lng);
         break;
       case kwTYPE_NUM:
-        fprintf(output, "value (real) %f ", code_getreal());
+        fprintf(output, "value (real) " VAR_NUM_FMT " ", code_getreal());
         break;
       case kwTYPE_STR:
         len = code_getstrlen();
         fprintf(output, "\"");
-        for (j = 0; j < len; j++)
+        for (j = 0; j < len; j++) {
           fprintf(output, "%c", prog_source[prog_ip + j]);
+        }
         fprintf(output, "\"");
         prog_ip += len;
         break;
@@ -380,13 +397,15 @@ void dump_bytecode(FILE * output)
     }
 
     fprintf(output, "\n");
-  } while (prog_ip < prog_length);
+  } 
+  while (prog_ip < prog_length);
 
   // ///////////////
   // delete source
   if (source) {
-    for (i = 0; i < lcount; i++)
+    for (i = 0; i < lcount; i++) {
       tmp_free(source[i]);
+    }
     tmp_free(source);
   }
 }

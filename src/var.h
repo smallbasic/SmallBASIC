@@ -21,7 +21,7 @@
 #include "pmem.h"
 
 /*
- *   Variable - types
+ * Variable - types
  */
 #if defined(_WinBCB)
 #undef V_INT
@@ -61,8 +61,8 @@
 #define SYSVAR_VIDADR       17 /**< system variable, VIDADR    @ingroup var */
 
 /**
- *   @ingroup var
- *   @def MAXDIM Maxium number of array-dimensions
+ * @ingroup var
+ * @def MAXDIM Maxium number of array-dimensions
  */
 #if defined(OS_LIMITED)
 #define MAXDIM      3           // think before increase this, (possible stack
@@ -86,10 +86,10 @@ extern "C" {
 typedef struct uds_field_s uds_field_s; 
 
 /**
- *   @ingroup var
- *   @typedef var_s
+ * @ingroup var
+ * @typedef var_s
  *
- *   VARIANT DATA TYPE
+ * VARIANT DATA TYPE
  */
 struct var_s {
   byte type;                 /**< variable's type */
@@ -97,13 +97,9 @@ struct var_s {
 
   // value
   union {
-#if defined(OS_PREC64)
-    long double n;           /**< numeric value */
-    long long i;             /**< integer value */
-#else
-    double n;                /**< numeric value */
-    long i;                  /**< integer value */
-#endif
+    var_num_t n;             /**< numeric value */
+    var_int_t i;             /**< integer value */
+
     // pointer to sub/func variable
     struct {
       addr_t p;              /** address pointer */
@@ -159,7 +155,7 @@ struct uds_field_s {
 };
 
 /*
- *   label
+ * label
  */
 struct lab_s {
   addr_t ip;
@@ -167,10 +163,10 @@ struct lab_s {
 typedef struct lab_s lab_t;
 
 /**
- *   @ingroup exec
- *   @struct stknode_s
+ * @ingroup exec
+ * @struct stknode_s
  *
- *   EXECUTOR's STACK NODE
+ * EXECUTOR's STACK NODE
  */
 struct stknode_s {
   code_t type;              /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
@@ -238,143 +234,143 @@ struct stknode_s {
 typedef struct stknode_s stknode_t;
 
 /*
- *   Basic variable's API
+ * Basic variable's API
  */
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   creates a new variable
+ * creates a new variable
  *
- *   @return a newly created var_t object
+ * @return a newly created var_t object
  */
 var_t *v_new(void);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns true if the value is not 0/NULL
+ * returns true if the value is not 0/NULL
  *
- *   @param v the variable
- *   @return true if the value is not 0/NULL
+ * @param v the variable
+ * @return true if the value is not 0/NULL
  */
 int v_is_nonzero(var_t * v);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns the floating-point value of a var.
- *   if v is string it will converted to double.
+ * returns the floating-point value of a var.
+ * if v is string it will converted to double.
  *
- *   @param v the variable
- *   @return the numeric value of a variable
+ * @param v the variable
+ * @return the numeric value of a variable
  */
-double v_getval(var_t * v);
+var_num_t v_getval(var_t * v);
 #define v_getnum(a) v_getval((a)) /* @ingroup var */
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns the integer value of a var.
- *   if v is string it will converted to integer.
+ * returns the integer value of a var.
+ * if v is string it will converted to integer.
  *
- *   @param v the variable
- *   @return the integer value of a variable
+ * @param v the variable
+ * @return the integer value of a variable
  */
-long v_igetval(var_t * v);
+var_int_t v_igetval(var_t * v);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   compares two variables
+ * compares two variables
  *
- *   @param a the left-side variable
- *   @param b the right-side variable
- *   @return 0 if a = b, <0 if a < b, >0 if a > b
+ * @param a the left-side variable
+ * @param b the right-side variable
+ * @return 0 if a = b, <0 if a < b, >0 if a > b
  */
 int v_compare(var_t * a, var_t * b);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   calculates the result type of the addition of two variables
+ * calculates the result type of the addition of two variables
  *
- *   @param a the left-side variable
- *   @param b the right-side variable
- *   @return the type of the new variable
+ * @param a the left-side variable
+ * @param b the right-side variable
+ * @return the type of the new variable
  */
 int v_addtype(var_t * a, var_t * b);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   adds two variables
+ * adds two variables
  *
- *   @param result the result
- *   @param a the left-side variable
- *   @param b the right-side variable
+ * @param result the result
+ * @param a the left-side variable
+ * @param b the right-side variable
  */
 void v_add(var_t * result, var_t * a, var_t * b);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   initialize a variable
+ * initialize a variable
  *
- *   @param v the variable
+ * @param v the variable
  */
 void v_init(var_t * v);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   free variable's data.
+ * free variable's data.
  *
- *   @warning it frees only the data, not the variable
+ * @warning it frees only the data, not the variable
  *
- *   @param v the variable
+ * @param v the variable
  */
 void v_free(var_t * v);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   assing: dest = src
+ * assing: dest = src
  *
- *   @param dest the destination-var
- *   @param src the source-var
+ * @param dest the destination-var
+ * @param src the source-var
  */
 void v_set(var_t * dest, const var_t * src);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   increase the value of variable a by b
- *   (similar to v_add())
+ * increase the value of variable a by b
+ * (similar to v_add())
  *
- *   @param a is the variable
- *   @param b is the increment
+ * @param a is the variable
+ * @param b is the increment
  */
 void v_inc(var_t * a, var_t * b);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns the sign of a variable
+ * returns the sign of a variable
  *
- *   @param x the variable
- *   @return the sign
+ * @param x the variable
+ * @return the sign
  */
 int v_sign(var_t * x);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns the var_t pointer of an array element
+ * returns the var_t pointer of an array element
  *
- *   @param v is the array-variable
- *   @param index is the element's index number
- *   @return the var_t pointer of an array element
+ * @param v is the array-variable
+ * @param index is the element's index number
+ * @return the var_t pointer of an array element
  */
 #if defined(OS_ADDR16)
 var_t *v_getelemptr(var_t * v, word index);
@@ -383,29 +379,28 @@ var_t *v_getelemptr(var_t * v, dword index);
 #endif
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   create a string variable (with value str)
+ * create a string variable (with value str)
  *
- *   @param v is the variable
- *   @param src is the string
+ * @param v is the variable
+ * @param src is the string
  */
 void v_createstr(var_t * v, const char *src);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   convert variable to string
+ * convert variable to string
  *
- *   @param arg is the variable
+ * @param arg is the variable
  */
 void v_tostr(var_t * arg);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   copies data from one user defined structure to another
- *
+ * copies data from one user defined structure to another
  */
 void v_set_uds(addr_t dst_ip, addr_t src_ip);
 
@@ -414,7 +409,6 @@ void v_set_uds(addr_t dst_ip, addr_t src_ip);
  *
  * clones data from one user defined structure to another. pushes
  * replaced variables onto the stack for later clean
- *
  *
  */
 void v_clone_uds(addr_t dst_ip, addr_t src_ip);
@@ -425,22 +419,22 @@ void v_clone_uds(addr_t dst_ip, addr_t src_ip);
 addr_t v_get_uds_ip(addr_t var_id);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   creates a new variable which is a clone of 'source'.
+ * creates a new variable which is a clone of 'source'.
  *
- *   @param source is the source
- *   @return a newly created var_t object, clone of 'source'
+ * @param source is the source
+ * @return a newly created var_t object, clone of 'source'
  */
 var_t *v_clone(const var_t * source);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   resizes an array-variable to 1-dimension array of 'size' elements
+ * resizes an array-variable to 1-dimension array of 'size' elements
  *
- *   @param v the variable
- *   @param size the number of the elements
+ * @param v the variable
+ * @param size the number of the elements
  */
 #if defined(OS_ADDR16)
 void v_resize_array(var_t * v, word size);
@@ -449,35 +443,35 @@ void v_resize_array(var_t * v, dword size);
 #endif
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   convert variable v to a RxC matrix
+ * convert variable v to a RxC matrix
  *
- *   @param v the variable
- *   @param r the number of the rows
- *   @param c the number of the columns
+ * @param v the variable
+ * @param r the number of the rows
+ * @param c the number of the columns
  */
 void v_tomatrix(var_t * v, int r, int c) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   creates and returns a new matrix (array RxC) variable
+ * creates and returns a new matrix (array RxC) variable
  *
- *   @param r the number of the rows
- *   @param c the number of the columns
- *   @return a newly created variable
+ * @param r the number of the rows
+ * @param c the number of the columns
+ * @return a newly created variable
  */
 var_t *v_new_matrix(int r, int c) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   converts the variable v to an array of R elements.
- *   R can be zero for zero-length arrays
+ * converts the variable v to an array of R elements.
+ * R can be zero for zero-length arrays
  *
- *   @param v the variable
- *   @param r the number of the elements
+ * @param v the variable
+ * @param r the number of the elements
  */
 #if defined(OS_ADDR16)
 void v_toarray1(var_t * v, word r) SEC(BLIB);
@@ -486,28 +480,28 @@ void v_toarray1(var_t * v, dword r) SEC(BLIB);
 #endif
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns true if the 'v' is empty (see EMPTY())
+ * returns true if the 'v' is empty (see EMPTY())
  *
- *   @param v the variable
- *   @return non-zero if v is not 'empty'
+ * @param v the variable
+ * @return non-zero if v is not 'empty'
  */
 int v_isempty(var_t * v);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns the length of the variable (see LEN())
+ * returns the length of the variable (see LEN())
  *
- *   @param v the variable
- *   @return the length of the variable
+ * @param v the variable
+ * @return the length of the variable
  */
 int v_length(var_t * v);
 
 /**
- *   @ingroup var
- *   @page var_12_2001 Var API (Dec 2001)
+ * @ingroup var
+ * @page var_12_2001 Var API (Dec 2001)
  *
  @code
  Use these routines
@@ -561,106 +555,106 @@ int v_length(var_t * v);
 */
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   sets a string value to variable 'var'
+ * sets a string value to variable 'var'
  *
- *   @param var is the variable
- *   @param string is the string
+ * @param var is the variable
+ * @param string is the string
  */
 void v_setstr(var_t * var, const char *string) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   sets a string value to variable 'var' to the given length
+ * sets a string value to variable 'var' to the given length
  *
- *   @param var is the variable
- *   @param string is the string
+ * @param var is the variable
+ * @param string is the string
  */
 void v_setstrn(var_t * var, const char *string, int len) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   Sets a string value to variable 'var'.
- *   printf() style. Avoid to use on low-memory systems (like PalmOS 3.3).
- *   The buffer size is limited to 1KB for OS_LIMITED, otherwise 64KB.
+ * Sets a string value to variable 'var'.
+ * printf() style. Avoid to use on low-memory systems (like PalmOS 3.3).
+ * The buffer size is limited to 1KB for OS_LIMITED, otherwise 64KB.
  *
- *   @param var is the variable
- *   @param fmt is the the format
+ * @param var is the variable
+ * @param fmt is the the format
  */
 void v_setstrf(var_t * var, const char *fmt, ...) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   concate string to variable 'var'
+ * concate string to variable 'var'
  *
- *   @param var is the variable
- *   @param string is the string
+ * @param var is the variable
+ * @param string is the string
  */
 void v_strcat(var_t * var, const char *string) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   sets a real-number value to variable 'var'
+ * sets a real-number value to variable 'var'
  *
- *   @param var is the variable
- *   @param number is the number
+ * @param var is the variable
+ * @param number is the number
  */
-void v_setreal(var_t * var, double number) SEC(BLIB);
+void v_setreal(var_t * var, var_num_t number) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   sets an integer value to variable 'var'
+ * sets an integer value to variable 'var'
  *
- *   @param var is the variable
- *   @param integer is the integer
+ * @param var is the variable
+ * @param integer is the integer
  */
 void v_setint(var_t * var, int32 integer) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   makes 'var' an array of integers and copies the itable elements to it
+ * makes 'var' an array of integers and copies the itable elements to it
  *
- *   @param var is the variable
- *   @param itable is the table of integers
- *   @param count the number of the elements
+ * @param var is the variable
+ * @param itable is the table of integers
+ * @param count the number of the elements
  */
 void v_setintarray(var_t * var, int32 * itable, int count) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   makes 'var' an array of reals and copies the ntable elements to it
+ * makes 'var' an array of reals and copies the ntable elements to it
  *
- *   @param var is the variable
- *   @param ntable is the table of doubles
- *   @param count the number of the elements
+ * @param var is the variable
+ * @param ntable is the table of doubles
+ * @param count the number of the elements
  */
-void v_setrealarray(var_t * var, double *ntable, int count) SEC(BLIB);
+void v_setrealarray(var_t * var, var_num_t *ntable, int count) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   makes 'var' an array of strings and copies the ctable elements to it
+ * makes 'var' an array of strings and copies the ctable elements to it
  *
- *   @param var is the variable
- *   @param ctable is the table of strings
- *   @param count the number of the elements
+ * @param var is the variable
+ * @param ctable is the table of strings
+ * @param count the number of the elements
  */
 void v_setstrarray(var_t * var, char **ctable, int count) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   makes 'var' an empty string variable
+ * makes 'var' an empty string variable
  *
- *   @param var is the variable
+ * @param var is the variable
  */
 void v_zerostr(var_t * var) SEC(BLIB);
 
@@ -670,15 +664,15 @@ void v_zerostr(var_t * var) SEC(BLIB);
 #define v_zeroint(r) v_init((r))
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   assign value 'str' to var. the final type of the var will be decided
- *   on that function (numeric if the str is a numeric-constant string or string)
+ * assign value 'str' to var. the final type of the var will be decided
+ * on that function (numeric if the str is a numeric-constant string or string)
  *
- *   @note used by INPUT to convert the variables
+ * @note used by INPUT to convert the variables
  *
- *   @param str is the string
- *   @param var is the variable
+ * @param str is the string
+ * @param var is the variable
  */
 void v_input2var(const char *str, var_t * var) SEC(BLIB);
 
@@ -693,7 +687,7 @@ void v_input2var(const char *str, var_t * var) SEC(BLIB);
 #define v_asize(x)      ((x)->v.a.size)
 
 /*
- *   new api (dec 2001) - get value
+ * new api (dec 2001) - get value
  */
 /**< returns the integer value of variable v
    @ingroup var */
@@ -704,47 +698,47 @@ void v_input2var(const char *str, var_t * var) SEC(BLIB);
 #define v_getreal(v)    v_getval((v))
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   returns the string-pointer of variable v
+ * returns the string-pointer of variable v
  *
- *   @param v is the variable
- *   @return the pointer of the string
+ * @param v is the variable
+ * @return the pointer of the string
  */
 char *v_getstr(var_t * v);
 
 /*
- *   low-level byte-code parsing
+ * low-level byte-code parsing
  *
- *   Usually you must not use these functions (except the rt_raise)
- *   try the parameters API.
+ * Usually you must not use these functions (except the rt_raise)
+ * try the parameters API.
  */
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   returns the next integer and moves the IP 4 bytes forward.
+ * returns the next integer and moves the IP 4 bytes forward.
  *
- *   R(long int) <- Code[IP]; IP+=4
+ * R(long int) <- Code[IP]; IP+=4
  *
- *   @return the integer
+ * @return the integer
  */
 dword code_getnext32(void);
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   returns the next double and moves the IP 8 bytes forward.
+ * returns the next double and moves the IP 8 bytes forward.
  *
- *   R(double)   <- Code[IP]; IP+=8
+ * R(double)   <- Code[IP]; IP+=8
  *
- *   @return the double-number
+ * @return the double-number
  */
 double code_getnext64f(void);
 
 #if defined(OS_PREC64)
-long long code_getnext64i(void);  // R(long long) <- Code[IP]; IP+=8
-long double code_getnext128f(void); // R(long double) <- Code[IP]; IP+=16
+var_int_t code_getnext64i(void);  // R(long long) <- Code[IP]; IP+=8
+var_num_t code_getnext128f(void); // R(long double) <- Code[IP]; IP+=16
 #endif
 
 int code_checkop(byte op);
@@ -753,64 +747,64 @@ void code_jump_label(word label_id);  // IP <- LABEL_IP_TABLE[label_id]
 #define code_jump(newip) prog_ip=(newip) /**< IP <- NewIP @ingroup exec */
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   stores a node to stack
+ * stores a node to stack
  *
- *   @param node the stack node
+ * @param node the stack node
  */
 void code_push(stknode_t * node);
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   restores the topmost node from stack
+ * restores the topmost node from stack
  *
- *   @param node the stack node
+ * @param node the stack node
  */
 void code_pop(stknode_t * node);
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   returns the next var_t* and moves the IP 2 bytes forward.
+ * returns the next var_t* and moves the IP 2 bytes forward.
  *
- *   R(var_t*) <- Code[IP]; IP += 2;
+ * R(var_t*) <- Code[IP]; IP += 2;
  *
- *   @return the var_t*
+ * @return the var_t*
  */
 var_t *code_getvarptr();
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   variant of code_getvarptr() derefence until left parenthesis found
+ * variant of code_getvarptr() derefence until left parenthesis found
  *
- *   R(var_t*) <- Code[IP]; IP += 2;
+ * R(var_t*) <- Code[IP]; IP += 2;
  *
- *   @return the var_t*
+ * @return the var_t*
  */
 var_t* code_getvarptr_parens(int until_parens);
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   returns true if the next code is a single variable
+ * returns true if the next code is a single variable
  *
- *   @return non-zero if the following code is a variable
+ * @return non-zero if the following code is a variable
  */
 int code_isvar(void);
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   returns the node at the top of the stack. does not change the stack.
+ * returns the node at the top of the stack. does not change the stack.
  *
  */
 stknode_t *code_stackpeek();
 
-#define code_peek()         prog_source[prog_ip]    /**< R(byte) <- Code[IP]            @ingroup exec */
-#define code_getnext()      prog_source[prog_ip++]  /**< R(byte) <- Code[IP]; IP ++;    @ingroup exec */
+#define code_peek()         prog_source[prog_ip]    /**< R(byte) <- Code[IP]          @ingroup exec */
+#define code_getnext()      prog_source[prog_ip++]  /**< R(byte) <- Code[IP]; IP ++;  @ingroup exec */
 
 #define code_skipnext()     prog_ip++   /**< IP ++;   @ingroup exec */
 #define code_skipnext16()   prog_ip+=2  /**< IP += 2; @ingroup exec */
@@ -831,13 +825,15 @@ stknode_t *code_stackpeek();
 #define code_peek32(o)          (*((dword *) (prog_source+(o))))
 #else                           // !!!
 #if defined(CPU_BIGENDIAN)
-#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-1]<<8)|prog_source[prog_ip-2])  // R(2-byte-word+
+#define code_getnext16()  (prog_ip+=2, (prog_source[prog_ip-1]<<8)|prog_source[prog_ip-2])  
+  // R(2-byte-word+
 #define code_peeknext16()   ((prog_source[prog_ip+1]<<8)|prog_source[prog_ip])
 #define code_peek16(o)      ((prog_source[(o)+1]<<8)|prog_source[(o)])  // R(2-byte-word)
-// <- Cod+
+  // <- Cod+
 #define code_peek32(o)      (((addr_t) code_peek16((o)+2) << 16) + (addr_t) code_peek16((o)))
 #else
-#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1])  // R(2-byte-word)
+#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1]) 
+  // R(2-byte-word)
 // <-
 // Code[IP];
 // IP
@@ -854,86 +850,86 @@ stknode_t *code_stackpeek();
 #endif
 
 /*
- *   New API (Dec 2001, 16 & 32 bit support)
+ * New API (Dec 2001, 16 & 32 bit support)
  *
- *   Use these code_x instead of old ones
+ * Use these code_x instead of old ones
  */
-#define code_skipopr()      code_skipnext16()    /**< skip operator  @ingroup exec */
-#define code_skipsep()      code_skipnext16()    /**< skip separator @ingroup exec */
+#define code_skipopr()   code_skipnext16()    /**< skip operator  @ingroup exec */
+#define code_skipsep()   code_skipnext16()    /**< skip separator @ingroup exec */
 /**< returns the separator and advance (IP) to next command @ingroup exec */
-#define code_getsep()       (prog_ip ++, prog_source[prog_ip++])
-#define code_peeksep()      (prog_source[prog_ip+1])
+#define code_getsep()    (prog_ip ++, prog_source[prog_ip++])
+#define code_peeksep()   (prog_source[prog_ip+1])
 
 #if defined(OS_ADDR16)
-#define code_getaddr()      code_getnext16()
-#define code_skipaddr()     code_skipnext16()
-#define code_getstrlen()    code_getnext16()
-#define code_peekaddr(i)    code_peek16((i))
+#define code_getaddr()   code_getnext16()
+#define code_skipaddr()  code_skipnext16()
+#define code_getstrlen() code_getnext16()
+#define code_peekaddr(i) code_peek16((i))
 #else
-#define code_getaddr()      code_getnext32()  /**< get address value and advance          @ingroup exec */
-#define code_skipaddr()     code_skipnext32() /**< skip address field                     @ingroup exec */
-#define code_getstrlen()    code_getnext32()  /**< get strlen (kwTYPE_STR) and advance    @ingroup exec */
-#define code_peekaddr(i)    code_peek32((i))  /**< peek address field at offset i         @ingroup exec */
+#define code_getaddr()   code_getnext32()  /**< get address value and advance        @ingroup exec */
+#define code_skipaddr()  code_skipnext32() /**< skip address field                   @ingroup exec */
+#define code_getstrlen() code_getnext32()  /**< get strlen (kwTYPE_STR) and advance  @ingroup exec */
+#define code_peekaddr(i) code_peek32((i))  /**< peek address field at offset i       @ingroup exec */
 #endif
 
 #if defined(OS_PREC64)
-#define code_getint()       code_getnext64i()
-#define code_getreal()      code_getnext128f()
+#define code_getint()   code_getnext64i()
+#define code_getreal()  code_getnext128f()
 #else
-#define code_getint()       code_getnext32()  /**< get integer    (kwTYPE_INT)            @ingroup exec */
-#define code_getreal()      code_getnext64f() /**< get real       (kwTYPE_NUM)            @ingroup exec */
+#define code_getint()   code_getnext32()  /**< get integer    (kwTYPE_INT)   @ingroup exec */
+#define code_getreal()  code_getnext64f() /**< get real       (kwTYPE_NUM)   @ingroup exec */
 #endif
 
 /**
- *   @ingroup var
- *   @page sysvar System variables
- @code
- System variables (osname, osver, bpp, xmax, etc)
-
- The variables must be defined
- a) here (see in first lines) - (variable's index)
- b) in scan.c (variable's name)
- c) in brun.c or device.c (variable's value)
-
- DO NOT LOSE THE ORDER
- @endcode
-*/
-
-/**
- *   @ingroup var
+ * @ingroup var
+ * @page sysvar System variables
+ * @code
+ * System variables (osname, osver, bpp, xmax, etc)
  *
- *   sets an integer value to a system variable (constant)
- *
- *   @param index is the system variable's index
- *   @param val the value
+ * The variables must be defined
+ * a) here (see in first lines) - (variable's index)
+ * b) in scan.c (variable's name)
+ * c) in brun.c or device.c (variable's value)
+ * 
+ * DO NOT LOSE THE ORDER
+ * @endcode
  */
-void setsysvar_int(int index, long val) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   sets a double value to a system variable (constant)
+ * sets an integer value to a system variable (constant)
  *
- *   @param index is the system variable's index
- *   @param val the value
+ * @param index is the system variable's index
+ * @param val the value
  */
-void setsysvar_num(int index, double val) SEC(BLIB);
+void setsysvar_int(int index, var_int_t val) SEC(BLIB);
 
 /**
- *   @ingroup var
+ * @ingroup var
  *
- *   sets a string value to a system variable (constant)
+ * sets a double value to a system variable (constant)
  *
- *   @param index is the system variable's index
- *   @param val the value
+ * @param index is the system variable's index
+ * @param val the value
+ */
+void setsysvar_num(int index, var_num_t val) SEC(BLIB);
+
+/**
+ * @ingroup var
+ *
+ * sets a string value to a system variable (constant)
+ *
+ * @param index is the system variable's index
+ * @param val the value
  */
 void setsysvar_str(int index, const char *value) SEC(BLIB);
 
 /*
- *   Rest...
+ * in eval.c
  */
-double *mat_toc(var_t * v, int *rows, int *cols) SEC(BMATH);
-void mat_tov(var_t * v, double *m, int rows, int cols,
+var_num_t *mat_toc(var_t * v, int32 *rows, int32 *cols) SEC(BMATH);
+void mat_tov(var_t * v, var_num_t *m, int32 rows, int32 cols,
              int protect_col1) SEC(BMATH);
 
 #if defined(__cplusplus)

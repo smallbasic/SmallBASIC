@@ -1,13 +1,12 @@
-/**
- * @file mem.h
- *
- * Memory manager unix/palm
- *
- * @author Nicholas Christopoulos
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// Memory manager unix/palm
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 /**
  * @defgroup mem memory manager
@@ -25,7 +24,8 @@ extern "C" {
 #endif
 
 #if defined(_PalmOS)
-#define memset(a,b,c) MemSet((a),(c),(b))                             /**< standard memset()      @ingroup mem */
+#define memset(a,b,c) MemSet((a),(c),(b)) 
+  /**< standard memset()      @ingroup mem */
 #endif
 
 #if !defined(NULL)
@@ -35,8 +35,7 @@ extern "C" {
 #define ENABLE_TMPLIST
 
 #if defined(_Win32)
-#include <winsock2.h>           // there are conflicts for data types: byte,
-// int32
+#include <winsock2.h>    // there are conflicts for data types: byte, int32
 #endif
 
 /*
@@ -121,11 +120,9 @@ typedef dword addr_t;
 
 #endif
 #define INVALID_ADDR    0xFFFFFFFF
-#define OS_ADDRSZ   4           // size of address pointer (always 4
-// for 32b addresses)
-#define OS_CODESZ   4           // size of buildin func/proc ptrs
-// (always 4 for 32b mode)
-#define OS_STRLEN   4           // size of strings
+#define OS_ADDRSZ   4   // size of address pointer (always 4 for 32b addresses)
+#define OS_CODESZ   4   // size of buildin func/proc ptrs (always 4 for 32b mode)
+#define OS_STRLEN   4   // size of strings
 
 #endif
 
@@ -134,14 +131,6 @@ typedef dword addr_t;
 #define ADDRSZ      OS_ADDRSZ
 #define CODESZ      OS_CODESZ
 #define BC_CTRLSZ   (ADDRSZ+ADDRSZ)
-
-#if defined(OS_PREC64)
-#define OS_INTSZ    8           // size of integer
-#define OS_REALSZ   16          // size of real
-#else
-#define OS_INTSZ    4           // size of integer
-#define OS_REALSZ   8           // size of real
-#endif
 
 // ---------------------------------------------
 #if !defined(HAVE_C_MALLOC)
@@ -322,7 +311,7 @@ dword MemHandleSize(mem_t h);
  * all-purpose list using memory-handles. node structure
  */
 struct mem_list_node_s {
-  mem_t data;                                         /**< handle to memory block */
+  mem_t data;                         /**< handle to memory block */
   struct mem_list_node_s *next;       /**< pointer to next node */
 };
 typedef struct mem_list_node_s mnode_t;
@@ -335,8 +324,8 @@ typedef struct mem_list_node_s mnode_t;
  * all-purpose list using memory-handles.
  */
 struct mem_list_s {
-  mnode_t *head, *tail;                       /**< head and tail pointers */
-  int count;                                                  /**< the number of the elements */
+  mnode_t *head, *tail;     /**< head and tail pointers */
+  int count;                /**< the number of the elements */
 };
 typedef struct mem_list_s mlist_t;
 
@@ -371,7 +360,6 @@ void mlist_clear(mlist_t * lst) SEC(TRASH);
  */
 mnode_t *mlist_add(mlist_t * lst, mem_t h) SEC(TRASH);
 #endif
-
 
 /*
  * temporary list --- dynamic single-linked list, stored in DYNAMIC RAM

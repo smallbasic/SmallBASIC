@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of SmallBASIC
 //
@@ -14,8 +13,8 @@
 #include "panic.h"
 #include "fmt.h"
 
-/*
- *  removes spaces and returns a new string
+/**
+ * removes spaces and returns a new string
  */
 char *trimdup(const char *str)
 {
@@ -50,8 +49,8 @@ char *trimdup(const char *str)
   return buf;
 }
 
-/*
- *  removes spaces
+/**
+ * removes spaces
  */
 void str_alltrim(char *str)
 {
@@ -62,8 +61,8 @@ void str_alltrim(char *str)
   tmp_free(buf);
 }
 
-/*
- *  caseless string compare
+/**
+ * caseless string compare
  */
 int strcaseless(const char *s1, const char *s2)
 {
@@ -92,8 +91,8 @@ int strcaseless(const char *s1, const char *s2)
   return 0;
 }
 
-/*
- *  caseless string compare
+/**
+ * caseless string compare
  */
 int strcaselessn(const char *s1, const char *s2, int len)
 {
@@ -127,8 +126,8 @@ int strcaselessn(const char *s1, const char *s2, int len)
   return 0;
 }
 
-/*
- *  strstr with ignore case
+/**
+ * strstr with ignore case
  */
 char *stristr(const char *s1, const char *s2)
 {
@@ -145,7 +144,8 @@ char *stristr(const char *s1, const char *s2)
   return NULL;
 }
 
-/*
+/**
+ *
  */
 char *transdup(const char *src, const char *what, const char *with)
 {
@@ -244,7 +244,8 @@ char *q_strstr(const char *s1, const char *s2, const char *pairs)
   return NULL;
 }
 
-/*
+/**
+ *
  */
 int is_alpha(int ch)
 {
@@ -258,8 +259,8 @@ int is_alpha(int ch)
   return (ch & 0x80);           // +foreign
 }
 
-/*
- *  returns true if the ch is alphanumeric
+/**
+ * returns true if the ch is alphanumeric
  */
 int is_alnum(int ch)
 {
@@ -269,8 +270,8 @@ int is_alnum(int ch)
   return (is_alpha(ch) || is_digit(ch));
 }
 
-/*
- *   returns true if the ch is an 'empty' character
+/**
+ * returns true if the ch is an 'empty' character
  */
 int is_space(int ch)
 {
@@ -278,8 +279,8 @@ int is_space(int ch)
           ch == '\v') ? -1 : 0;
 }
 
-/*
- *   returns true if 'text' contains digits only
+/**
+ * returns true if 'text' contains digits only
  */
 int is_all_digits(const char *text)
 {
@@ -300,8 +301,8 @@ int is_all_digits(const char *text)
   return 1;
 }
 
-/*
- *   returns true if the text is keyword
+/**
+ * returns true if the text is keyword
  */
 int is_keyword(const char *name)
 {
@@ -319,8 +320,8 @@ int is_keyword(const char *name)
   return 0;
 }
 
-/*
- *   converts the 'str' string to uppercase
+/**
+ * converts the 'str' string to uppercase
  */
 char *strupper(char *str)
 {
@@ -336,8 +337,8 @@ char *strupper(char *str)
   return str;
 }
 
-/*
- *   converts the 'str' string to lowercase
+/**
+ * converts the 'str' string to lowercase
  */
 char *strlower(char *str)
 {
@@ -353,7 +354,8 @@ char *strlower(char *str)
   return str;
 }
 
-/*
+/**
+ *
  */
 char *get_keyword(char *text, char *dest)
 {
@@ -395,16 +397,16 @@ char *get_keyword(char *text, char *dest)
   return p;
 }
 
-/*
- *   Returns the number of a string (constant numeric expression)
+/**
+ * Returns the number of a string (constant numeric expression)
  *
- *   type  <=0 = error
- *           1 = int32
- *           2 = double
+ * type  <=0 = error
+ *         1 = int32
+ *         2 = double
  *
- *   Warning: octals are different from C (QB compatibility: 009 = 9)
+ * Warning: octals are different from C (QB compatibility: 009 = 9)
  */
-char *get_numexpr(char *text, char *dest, int *type, long *lv, double *dv)
+char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *dv)
 {
   char *p = (char *)text;
   char *d = dest;
@@ -640,19 +642,20 @@ char *get_numexpr(char *text, char *dest, int *type, long *lv, double *dv)
   return p;
 }
 
-/*
+/**
+ *
  */
-double numexpr_sb_strtof(char *source)
+var_num_t numexpr_sb_strtof(char *source)
 {
   char buf[256], *np;
   int type;
-  long lv;
-  double dv;
+  var_int_t lv;
+  var_num_t dv;
 
   np = get_numexpr(source, buf, &type, &lv, &dv);
 
   if (type == 1 && *np == '\0') {
-    return (double)lv;
+    return (var_num_t)lv;
   }
   else if (type == 2 && *np == '\0') {
     return dv;
@@ -660,14 +663,15 @@ double numexpr_sb_strtof(char *source)
   return 0.0;
 }
 
-/*
+/**
+ *
  */
-long numexpr_strtol(char *source)
+var_int_t numexpr_strtol(char *source)
 {
   char buf[256], *np;
   int type;
-  long lv;
-  double dv;
+  var_int_t lv;
+  var_num_t dv;
 
   np = get_numexpr(source, buf, &type, &lv, &dv);
 
@@ -675,13 +679,13 @@ long numexpr_strtol(char *source)
     return lv;
   }
   else if (type == 2 && *np == '\0') {
-    return (long)dv;
+    return (var_int_t)dv;
   }
   return 0;
 }
 
-/*
- *   convertion: binary to decimal
+/**
+ * convertion: binary to decimal
  */
 long bintol(const char *str)
 {
@@ -699,8 +703,8 @@ long bintol(const char *str)
   return r;
 }
 
-/*
- *   convertion: octal to decimal
+/**
+ * convertion: octal to decimal
  */
 long octtol(const char *str)
 {
@@ -718,8 +722,8 @@ long octtol(const char *str)
   return r;
 }
 
-/*
- *   convertion: hexadecimal to decimal
+/**
+ * convertion: hexadecimal to decimal
  */
 long hextol(const char *str)
 {
@@ -741,8 +745,8 @@ long hextol(const char *str)
   return r;
 }
 
-/*
- *   string to double
+/**
+ * string to double
  */
 double sb_strtof(const char *str)
 {
@@ -785,7 +789,8 @@ double sb_strtof(const char *str)
   return r * ((double)sign);
 }
 
-/*
+/**
+ *
  */
 long xstrtol(const char *str)
 {
@@ -799,7 +804,8 @@ long xstrtol(const char *str)
 #endif
 }
 
-/*
+/**
+ *
  */
 int is_number(const char *str)
 {
@@ -830,18 +836,19 @@ int is_number(const char *str)
   return 0;
 }
 
-/*
- *   double to string
+/**
+ * double to string
  */
-char *ftostr(double num, char *dest)
+char *ftostr(var_num_t num, char *dest)
 {
   bestfta(num, dest);
   return dest;
 }
 
-/*
+/**
+ *
  */
-char *ltostr(long num, char *dest)
+char *ltostr(var_int_t num, char *dest)
 {
   if (dest == NULL) {
     panic("l2s(..,null)");
@@ -849,7 +856,7 @@ char *ltostr(long num, char *dest)
 #if defined(_PalmOS)
   StrIToA(dest, num);
 #else
-  sprintf(dest, "%ld", num);
+  sprintf(dest, VAR_INT_FMT, num);
 #endif
   return dest;
 }
@@ -870,9 +877,9 @@ char *strrchr(const char *source, int ch)
 }
 #endif
 
-/*
- *   newdir must ends with dirsep
- *   new_ext must starts with .
+/**
+ * newdir must ends with dirsep
+ * new_ext must starts with .
  */
 char *chgfilename(char *dest, char *source, char *newdir, char *prefix,
                   char *new_ext, char *suffix)
@@ -911,7 +918,8 @@ char *chgfilename(char *dest, char *source, char *newdir, char *prefix,
   return dest;
 }
 
-/*
+/**
+ *
  */
 char *xbasename(char *dest, const char *source)
 {
@@ -927,16 +935,16 @@ char *xbasename(char *dest, const char *source)
   return dest;
 }
 
-/*
+/**
+ *
  */
 int is_wspace(int c)
 {
   return (c != 0 && strchr(" \t\n\r\v\f", c));
 }
 
-
-/*
- *   squeeze (& strdup)
+/**
+ * squeeze (& strdup)
  */
 char *sqzdup(const char *source)
 {
@@ -984,8 +992,8 @@ char *sqzdup(const char *source)
   return rp;
 }
 
-/*
- *   enclose, returns a newly created string
+/**
+ * enclose, returns a newly created string
  */
 char *encldup(const char *source, const char *pairs)
 {
@@ -1005,8 +1013,8 @@ char *encldup(const char *source, const char *pairs)
   return rp;
 }
 
-/*
- *   disclose, returns a newly created string
+/**
+ * disclose, returns a newly created string
  */
 char *discldup(const char *source, const char *pairs, const char *ignpairs)
 {
@@ -1088,8 +1096,8 @@ char *discldup(const char *source, const char *pairs, const char *ignpairs)
   return np;
 }
 
-/*
- *   C-Style control codes
+/**
+ * C-Style control codes
  */
 char *cstrdup(const char *source)
 {
@@ -1192,8 +1200,8 @@ char *cstrdup(const char *source)
   return buf;
 }
 
-/*
- *   basic-string to c-string convertion
+/**
+ * basic-string to c-string convertion
  */
 char *bstrdup(const char *source)
 {
@@ -1266,7 +1274,8 @@ char *bstrdup(const char *source)
   return buf;
 }
 
-/*
+/**
+ *
  */
 const char *baseof(const char *source, int delim)
 {
@@ -1279,7 +1288,8 @@ const char *baseof(const char *source, int delim)
   return source;
 }
 
-/*
+/**
+ *
  */
 char char_table_replace(const char *what_table, int ch, const char *replace_table)
 {

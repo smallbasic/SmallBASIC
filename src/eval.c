@@ -22,24 +22,24 @@
 #define CODE_PEEK()  CODE(IP)
 #define V_FREE(v)    if ( (v) ) { if ( (v)->type == V_STR || (v)->type == V_ARRAY ) v_free((v)); }
 
-void eval(var_t * result);
-void mat_op1(var_t * l, int op, double n) SEC(BMATH);
-void mat_antithetos(var_t * v) SEC(BMATH);
-void mat_mulN(var_t * v, double N) SEC(BMATH);
-void mat_op2(var_t * l, var_t * r, int op) SEC(BMATH);
-void mat_add(var_t * l, var_t * r) SEC(BMATH);
-void mat_sub(var_t * l, var_t * r) SEC(BMATH);
-void mat_mul(var_t * l, var_t * r) SEC(BMATH);
-int v_wc_match(var_t * vwc, var_t * v) SEC(BMATH);
+void eval(var_t *result);
+void mat_op1(var_t *l, int op, var_num_t n) SEC(BMATH);
+void mat_antithetos(var_t *v) SEC(BMATH);
+void mat_mulN(var_t *v, var_num_t N) SEC(BMATH);
+void mat_op2(var_t *l, var_t *r, int op) SEC(BMATH);
+void mat_add(var_t *l, var_t *r) SEC(BMATH);
+void mat_sub(var_t *l, var_t *r) SEC(BMATH);
+void mat_mul(var_t *l, var_t *r) SEC(BMATH);
+int v_wc_match(var_t* vwc, var_t *v) SEC(BMATH);
 
-/*
- *   matrix: convert var_t to double[r][c]
+/**
+ * matrix: convert var_t to double[r][c]
  */
-double *mat_toc(var_t * v, int *rows, int *cols)
+var_num_t* mat_toc(var_t *v, int32 *rows, int32 *cols)
 {
   int i, j, pos;
   var_t *e;
-  double *m;
+  var_num_t *m;
 
   m = NULL;
 
@@ -49,14 +49,15 @@ double *mat_toc(var_t * v, int *rows, int *cols)
   }
   *rows = ABS(v->v.a.lbound[0] - v->v.a.ubound[0]) + 1;
 
-  if (v->v.a.maxdim == 2)
+  if (v->v.a.maxdim == 2) {
     *cols = ABS(v->v.a.lbound[1] - v->v.a.ubound[1]) + 1;
+  }
   else {
     *cols = *rows;
     *rows = 1;
   }
 
-  m = (double *)tmp_alloc(((*rows) * (*cols)) * sizeof(double));
+  m = (var_num_t*) tmp_alloc(((*rows) * (*cols)) * sizeof(var_num_t));
   for (i = 0; i < *rows; i++) {
     for (j = 0; j < *cols; j++) {
       pos = i * (*cols) + j;
@@ -68,18 +69,20 @@ double *mat_toc(var_t * v, int *rows, int *cols)
   return m;
 }
 
-/*
- *   matrix: conv. double[nr][nc] to var_t
+/**
+ * matrix: conv. double[nr][nc] to var_t
  */
-void mat_tov(var_t * v, double *m, int rows, int cols, int protect_col1)
+void mat_tov(var_t * v, var_num_t *m, int rows, int cols, int protect_col1)
 {
   var_t *e;
   int i, j, pos;
 
-  if (cols > 1 || protect_col1)
+  if (cols > 1 || protect_col1) {
     v_tomatrix(v, rows, cols);
-  else
+  }
+  else {
     v_toarray1(v, rows);
+  }
 
   for (i = 0; i < rows; i++) {
     for (j = 0; j < cols; j++) {
@@ -91,18 +94,18 @@ void mat_tov(var_t * v, double *m, int rows, int cols, int protect_col1)
   }
 }
 
-/*
- *   matrix: 1op
+/**
+ * matrix: 1op
  */
-void mat_op1(var_t * l, int op, double n)
+void mat_op1(var_t *l, int op, var_num_t n)
 {
-  double *m1, *m;
+  var_num_t *m1, *m;
   int lr, lc, pos;
   int i, j;
 
   m1 = mat_toc(l, &lr, &lc);
   if (m1) {
-    m = (double *)tmp_alloc(sizeof(double) * lr * lc);
+    m = (var_num_t*) tmp_alloc(sizeof(var_num_t) * lr * lc);
     for (i = 0; i < lr; i++) {
       for (j = 0; j < lc; j++) {
         pos = i * lc + j;
@@ -124,28 +127,28 @@ void mat_op1(var_t * l, int op, double n)
   }
 }
 
-/*
- *   M = -A
+/**
+ * M = -A
  */
-void mat_antithetos(var_t * v)
+void mat_antithetos(var_t *v)
 {
   mat_op1(v, 'A', 0);
 }
 
-/*
- *   M = ëA
+/**
+ * M = ëA
  */
-void mat_mulN(var_t * v, double N)
+void mat_mulN(var_t *v, var_num_t N)
 {
   mat_op1(v, '*', N);
 }
 
-/*
- *   matrix - add/sub
+/**
+ * matrix - add/sub
  */
-void mat_op2(var_t * l, var_t * r, int op)
+void mat_op2(var_t *l, var_t *r, int op)
 {
-  double *m1, *m2, *m = NULL;
+  var_num_t *m1, *m2, *m = NULL;
   int lr, lc, rr, rc, pos;
   int i, j;
 
@@ -153,10 +156,11 @@ void mat_op2(var_t * l, var_t * r, int op)
   if (m1) {
     m2 = mat_toc(r, &rr, &rc);
     if (m2) {
-      if (rc != lc || lr != rr)
+      if (rc != lc || lr != rr) {
         err_matdim();
+      }
       else {
-        m = (double *)tmp_alloc(sizeof(double) * lr * lc);
+        m = (var_num_t*) tmp_alloc(sizeof(var_num_t) * lr * lc);
         for (i = 0; i < lr; i++) {
           for (j = 0; j < lc; j++) {
             pos = i * lc + j;
@@ -189,22 +193,22 @@ void mat_op2(var_t * l, var_t * r, int op)
   }
 }
 
-void mat_add(var_t * l, var_t * r)
+void mat_add(var_t *l, var_t *r)
 {
   mat_op2(l, r, '+');
 }
 
-void mat_sub(var_t * l, var_t * r)
+void mat_sub(var_t *l, var_t *r)
 {
   mat_op2(l, r, '-');
 }
 
-/*
- *   matrix: multiply
+/**
+ * matrix: multiply
  */
-void mat_mul(var_t * l, var_t * r)
+void mat_mul(var_t *l, var_t *r)
 {
-  double *m1, *m2, *m = NULL;
+  var_num_t *m1, *m2, *m = NULL;
   int lr, lc, rr, rc, pos;
   int mr = 0, mc = 0;
   int i, j, k;
@@ -218,7 +222,7 @@ void mat_mul(var_t * l, var_t * r)
       else {
         mr = lr;
         mc = rc;
-        m = (double *)tmp_alloc(sizeof(double) * mr * mc);
+        m = (var_num_t*) tmp_alloc(sizeof(var_num_t) * mr * mc);
 
         for (i = 0; i < mr; i++) {
           for (j = 0; j < mc; j++) {
@@ -244,15 +248,16 @@ void mat_mul(var_t * l, var_t * r)
   }
 }
 
-/*
- *   The LIKE operator
+/**
+ * The LIKE operator
  */
-int v_wc_match(var_t * vwc, var_t * v)
+int v_wc_match(var_t *vwc, var_t *v)
 {
   int ri;
 
-  if (prog_error)
+  if (prog_error) {
     return 0;
+  }
   if (vwc->type != V_STR) {
     err_typemismatch();
     return 0;
@@ -272,25 +277,27 @@ int v_wc_match(var_t * vwc, var_t * v)
       }
     }
   }
-  else if (v->type == V_STR)
+  else if (v->type == V_STR) {
     ri = wc_match((char *)vwc->v.p.ptr, (char *)v->v.p.ptr);
+  }
   else if (v->type == V_NUM || v->type == V_INT) {
     var_t *vt;
 
     vt = v_clone(v);
     v_tostr(vt);
-    if (!prog_error)
+    if (!prog_error) {
       ri = wc_match((char *)vwc->v.p.ptr, (char *)vt->v.p.ptr);
+    }
     v_free(vt);
     tmp_free(vt);
   }
   return ri;
 }
 
-/*
- *   executes the expression (Code[IP]) and returns the result (r)
+/**
+ * executes the expression (Code[IP]) and returns the result (r)
  */
-void eval(var_t * r)
+void eval(var_t *r)
 {
   code_t code;
   byte op;
@@ -300,13 +307,14 @@ void eval(var_t * r)
   var_t *left = NULL, vtmp;
   addr_t eval_pos = eval_sp;
   int i;
-  long li = 0, ri = 0, fcode;
-  double lf, rf;
+  long fcode;
+  var_int_t li = 0, ri = 0;
+  var_num_t lf, rf;
   addr_t addr;
 
   // / bit ops
-  int32 a, b;
-  int ba, bb;
+  var_int_t a, b;
+  var_int_t ba, bb;
 
   r->const_flag = 0;
   r->type = V_INT;
@@ -431,30 +439,38 @@ void eval(var_t * r)
       IP++;
 
       if (r->type == V_INT && left->type == V_INT) {
-        if (op == '+')
+        if (op == '+') {
           r->v.i += left->v.i;
-        else
+        }
+        else {
           r->v.i = left->v.i - r->v.i;
+        }
       }
       else if (r->type == V_NUM && left->type == V_NUM) {
         r->type = V_NUM;
-        if (op == '+')
+        if (op == '+') {
           r->v.n += left->v.n;
-        else
+        }
+        else {
           r->v.n = left->v.n - r->v.n;
+        }
       }
       else if (r->type == V_INT && left->type == V_NUM) {
         r->type = V_NUM;
-        if (op == '+')
+        if (op == '+') {
           r->v.n = r->v.i + left->v.n;
-        else
+        }
+        else {
           r->v.n = left->v.n - r->v.i;
+        }
       }
       else if (r->type == V_NUM && left->type == V_INT) {
-        if (op == '+')
+        if (op == '+') {
           r->v.n += left->v.i;
-        else
+        }
+        else {
           r->v.n = left->v.i - r->v.n;
+        }
       }
       else {
         if (r->type == V_ARRAY || left->type == V_ARRAY) {
@@ -462,13 +478,16 @@ void eval(var_t * r)
           // ARRAYS
           // 
           if (r->type == V_ARRAY && left->type == V_ARRAY) {
-            if (op == '+')
+            if (op == '+') {
               mat_add(r, left);
-            else
+            }
+            else {
               mat_sub(r, left);
+            }
           }
-          else
+          else {
             err_matop();
+          }
         }
         else {
           // 
@@ -509,25 +528,31 @@ void eval(var_t * r)
         // ARRAYS
         // 
         if (r->type == V_ARRAY && left->type == V_ARRAY) {
-          if (op == '*')
+          if (op == '*') {
             mat_mul(left, r);
-          else
+          }
+          else {
             err_matop();
+          }
         }
         else {
           if (r->type == V_ARRAY) {
-            if (op == '*')
+            if (op == '*') {
               mat_mulN(r, v_getval(left));
-            else
+            }
+            else {
               err_matop();
+            }
           }
           else {
             rf = v_getval(r);
             v_set(r, left);
-            if (op == '*')
+            if (op == '*') {
               mat_mulN(r, rf);
-            else
+            }
+            else {
               err_matop();
+            }
           }
         }
 
@@ -548,25 +573,29 @@ void eval(var_t * r)
           r->v.n = lf * rf;
           break;
         case '/':
-          if (ABS(rf) == 0)
+          if (ABS(rf) == 0) {
             err_division_by_zero();
-          else
+          }
+          else {
             r->v.n = lf / rf;
+          }
           break;
         case '\\':
           li = lf;
           ri = rf;
-          if (ri == 0)
+          if (ri == 0) {
             err_division_by_zero();
-          else
+          }
+          else {
             r->v.i = li / ri;
-
+          }
           r->type = V_INT;
           break;
         case '%':
         case OPLOG_MOD:
-          if ((int32) rf == 0)
+          if ((var_int_t) rf == 0) {
             err_division_by_zero();
+          }
           else {
             // r->v.n = fmod(lf, rf);
             ri = rf;
@@ -576,8 +605,9 @@ void eval(var_t * r)
           }
           break;
         case OPLOG_MDL:
-          if (rf == 0)
+          if (rf == 0) {
             err_division_by_zero();
+          }
           else {
             r->v.n = fmod(lf, rf) + rf * (SGN(lf) != SGN(rf));
             r->type = V_NUM;
@@ -595,12 +625,15 @@ void eval(var_t * r)
 
       switch (op) {
       case '-':
-        if (r->type == V_INT)
+        if (r->type == V_INT) {
           r->v.i = -r->v.i;
-        else if (r->type == V_NUM)
+        }
+        else if (r->type == V_NUM) {
           r->v.n = -r->v.n;
-        else if (r->type == V_ARRAY)
+        }
+        else if (r->type == V_ARRAY) {
           mat_antithetos(r);
+        }
         else {
           rf = v_getval(r);
           V_FREE(r);
@@ -640,12 +673,14 @@ void eval(var_t * r)
 
       switch (op) {
       case OPLOG_AND:
-        if (!li)
+        if (!li) {
           ri = 0;               // False AND blah => result is false
+        }
         break;
       case OPLOG_OR:
-        if (li)
+        if (li) {
           ri = 1;               // True OR blah => result is true
+        }
         break;
       }
 
@@ -685,8 +720,9 @@ void eval(var_t * r)
         for (i = 0; i < 32; i++) {
           ba = a & (1 << i);
           bb = b & (1 << i);
-          if ((ba && bb) || (!ba && !bb))
+          if ((ba && bb) || (!ba && !bb)) {
             ri |= (1 << i);
+          }
         }
         break;
       case OPLOG_IMP:
@@ -696,8 +732,9 @@ void eval(var_t * r)
         for (i = 0; i < 32; i++) {
           ba = a & (1 << i);
           bb = b & (1 << i);
-          if (!(ba && !bb))
+          if (!(ba && !bb)) {
             ri |= (1 << i);
+          }
         }
         break;
       case OPLOG_NAND:
@@ -770,10 +807,12 @@ void eval(var_t * r)
         }
         else if (r->type == V_STR) {
           if (left->type == V_STR) {
-            if (left->v.p.ptr[0] != '\0')
+            if (left->v.p.ptr[0] != '\0') {
               ri = (strstr(r->v.p.ptr, left->v.p.ptr) != NULL);
-            else
+            }
+            else {
               ri = 0;
+            }
           }
           else if (left->type == V_NUM || left->type == V_INT) {
             var_t *v;
@@ -785,8 +824,9 @@ void eval(var_t * r)
             tmp_free(v);
           }
         }
-        else if (r->type == V_NUM || r->type == V_INT)
+        else if (r->type == V_NUM || r->type == V_INT) {
           ri = (v_compare(left, r) == 0);
+        }
         break;
       case OPLOG_LIKE:
         ri = v_wc_match(r, left);
@@ -845,8 +885,9 @@ void eval(var_t * r)
           // if ( prog_error )
           // return;
         }
-        else
+        else {
           sblmgr_funcexec(lib, prog_symtable[idx].exp_idx, r);
+        }
       }
       break;
       // ///////////////////////////////////////////////////////////////////////////////
@@ -860,8 +901,9 @@ void eval(var_t * r)
         // Variable's address
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           var_t *vp;
 
@@ -872,10 +914,12 @@ void eval(var_t * r)
             r->v.i = (dword) vp->v.p.ptr;
           }
 
-          if (CODE_PEEK() != kwTYPE_LEVEL_END)
+          if (CODE_PEEK() != kwTYPE_LEVEL_END) {
             err_missing_rp();
-          else
+          }
+          else {
             IP++;
+          }
         }
 
         break;
@@ -892,8 +936,9 @@ void eval(var_t * r)
       case kwACCESSF:
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           IP++;
 
@@ -903,10 +948,12 @@ void eval(var_t * r)
             cmd_ns1(fcode, &vtmp, r);
             V_FREE(&vtmp);
 
-            if (CODE_PEEK() != kwTYPE_LEVEL_END)
+            if (CODE_PEEK() != kwTYPE_LEVEL_END) {
               err_missing_rp();
-            else
+            }
+            else {
               IP++;
+            }
           }
         }
         break;
@@ -932,8 +979,9 @@ void eval(var_t * r)
 
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           IP++;
 
@@ -945,10 +993,12 @@ void eval(var_t * r)
             cmd_str1(fcode, &vtmp, r);
             V_FREE(&vtmp);
 
-            if (CODE_PEEK() != kwTYPE_LEVEL_END)
+            if (CODE_PEEK() != kwTYPE_LEVEL_END) {
               err_missing_rp();
-            else
+            }
+            else {
               IP++;
+            }
           }
         }
         break;
@@ -971,8 +1021,9 @@ void eval(var_t * r)
       case kwDISCLOSE:
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           r->type = V_STR;
           r->v.p.ptr = NULL;
@@ -1018,8 +1069,9 @@ void eval(var_t * r)
       case kwIMGH:
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           r->type = V_INT;
 
@@ -1045,8 +1097,9 @@ void eval(var_t * r)
       case kwROUND:
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           r->type = V_NUM;
 
@@ -1109,8 +1162,9 @@ void eval(var_t * r)
       case kwFRAC:
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           IP++;
 
@@ -1121,10 +1175,12 @@ void eval(var_t * r)
             r->v.n = cmd_math1(fcode, &vtmp);
             V_FREE(&vtmp);
             if (!prog_error) {
-              if (CODE_PEEK() != kwTYPE_LEVEL_END)
+              if (CODE_PEEK() != kwTYPE_LEVEL_END) {
                 err_missing_rp();
-              else
+              } 
+              else {
                 IP++;
+              }
             }
           }
         }
@@ -1143,8 +1199,9 @@ void eval(var_t * r)
 
         V_FREE(r);
 
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           IP++;
 
@@ -1154,10 +1211,12 @@ void eval(var_t * r)
             r->type = V_INT;
             r->v.i = cmd_imath1(fcode, &vtmp);
 
-            if (CODE_PEEK() != kwTYPE_LEVEL_END)
+            if (CODE_PEEK() != kwTYPE_LEVEL_END) {
               err_missing_rp();
-            else
+            }
+            else {
               IP++;
+            }
           }
         }
         break;
@@ -1209,8 +1268,9 @@ void eval(var_t * r)
       case kwSEQ:
 
         V_FREE(r);
-        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN)
+        if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
           err_missing_lp();
+        }
         else {
           IP++;
 
@@ -1281,8 +1341,9 @@ void eval(var_t * r)
     };
 
     // run-time error check
-    if (prog_error)
+    if (prog_error) {
       break;
+    }
 
   } while (1);
 

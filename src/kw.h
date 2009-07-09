@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of SmallBASIC
 //
@@ -46,14 +45,14 @@ extern "C" {
 #define OPLOG_LIKE      'W'     // LIKE wc
 
 /**
- *       @ingroup sys
- *       @enum keyword
+ * @ingroup sys
+ * @enum keyword
  *
- *       Generic keyword codes
+ * Generic keyword codes
  *
- *       special commands like PRINT, INPUT, LINE (ex: LINE INPUT)
- *       special seperators too like INPUT, APPEND, FORSEP
- *       and, of course, root commands like REPEAT-UNTIL, IF, etc
+ * special commands like PRINT, INPUT, LINE (ex: LINE INPUT)
+ * special seperators too like INPUT, APPEND, FORSEP
+ * and, of course, root commands like REPEAT-UNTIL, IF, etc
  */
 enum keyword {                // line 50
     kwTYPE_INT = 0x1,           /* 32b Integer */
@@ -180,10 +179,10 @@ enum keyword {                // line 50
 };
 
 /**
- *       @ingroup sys
- *       @enum proc_keywords
+ * @ingroup sys
+ * @enum proc_keywords
  *
- *       buildin procedures - keyword codes
+ * buildin procedures - keyword codes
  */
 enum proc_keywords {
     kwCLS = 0x100,              // 256 (generic keywords)
@@ -263,10 +262,10 @@ enum proc_keywords {
 };
 
 /**
- *       @ingroup sys
- *       @enum func_keywords
+ * @ingroup sys
+ * @enum func_keywords
  *
- *       buildin functions - keyword codes
+ * buildin functions - keyword codes
  */
 enum func_keywords {
     kwASC = 0x200,
@@ -424,65 +423,65 @@ enum func_keywords {
 };
 
 /**
- *       @ingroup sys
+ * @ingroup sys
  *
- *       checks if the 'code' belongs to the codes that contained in table
+ * checks if the 'code' belongs to the codes that contained in table
  *
- *       @param code the code to search for
- *       @param table the table of codes to scan
- *       @return non-zero on success
+ * @param code the code to search for
+ * @param table the table of codes to scan
+ * @return non-zero on success
  */
 int kw_check(code_t * table, code_t code);
 
 /**
- *       @ingroup sys
+ * @ingroup sys
  *
- *       returns true if the 'code' is valid code for end-of-expression
+ * returns true if the 'code' is valid code for end-of-expression
  *
  *       @return non-zero if the 'code' is valid code for end-of-expression
  */
 int kw_check_evexit(code_t code);
 
 /**
- *       @ingroup sys
+ * @ingroup sys
  *
- *       returns the name which is assigned to code
+ * returns the name which is assigned to code
  *
- *       @param code is the code
- *       @param dest is the buffer to store the keyword
- *       @return non-zero on success
+ * @param code is the code
+ * @param dest is the buffer to store the keyword
+ * @return non-zero on success
  */
 int kw_getcmdname(code_t code, char *dest) SEC(TRASH);
 
 /**
- *       @ingroup sys
+ * @ingroup sys
  *
- *       returns the name which is assigned to build-in function code
+ * returns the name which is assigned to build-in function code
  *
- *       @param code is the code
- *       @param dest is the buffer to store the keyword
- *       @return non-zero on success
+ * @param code is the code
+ * @param dest is the buffer to store the keyword
+ * @return non-zero on success
  */
 int kw_getfuncname(fcode_t code, char *dest) SEC(TRASH);
 
 /**
- *       @ingroup sys
+ * @ingroup sys
  *
- *       returns the name which is assigned to build-in procedure code
+ * returns the name which is assigned to build-in procedure code
  *
- *       @param code is the code
- *       @param dest is the buffer to store the keyword
- *       @return non-zero on success
+ * @param code is the code
+ * @param dest is the buffer to store the keyword
+ * @return non-zero on success
  */
 int kw_getprocname(pcode_t code, char *dest) SEC(TRASH);
 
 /**
- *       @ingroup sys
+ * @ingroup sys
  *
- *       returns true if the code is a function without parameters
+ * returns true if the code is a function without parameters
  *
- *       @param code is the code
- *       @return non-zero if 'code' is a function that does not requires parameters
+ * @param code is the code
+ * @return non-zero if 'code' is a function that does not requires parameters
  */
 int kw_noarg_func(fcode_t code);
 

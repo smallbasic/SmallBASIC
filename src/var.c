@@ -21,7 +21,7 @@
 /*
  * initialize a variable
  */
-void v_init(var_t * v)
+void v_init(var_t *v)
 {
   v->type = V_INT;
   v->const_flag = 0;
@@ -43,7 +43,7 @@ var_t *v_new()
 /*
  * release variable
  */
-void v_free(var_t * v)
+void v_free(var_t *v)
 {
   int i;
   var_t *elem;
@@ -84,7 +84,7 @@ void v_free(var_t * v)
  * returns true if the user's program must use this var as an empty var
  * this is usefull for arrays
  */
-int v_isempty(var_t * var)
+int v_isempty(var_t *var)
 {
   switch (var->type) {
   case V_STR:
@@ -109,7 +109,7 @@ int v_isempty(var_t * var)
 /*
  * returns the length of the variable
  */
-int v_length(var_t * var)
+int v_length(var_t *var)
 {
   char tmpsb[64];
 
@@ -141,7 +141,7 @@ int v_length(var_t * var)
 /*
  * returns the floating-point value of the variable v
  */
-double v_getval(var_t * v)
+var_num_t v_getval(var_t *v)
 {
   if (v == NULL) {
     err_evsyntax();
@@ -170,7 +170,7 @@ double v_getval(var_t * v)
 /*
  * returns the integer value of the variable v
  */
-long v_igetval(var_t * v)
+var_int_t v_igetval(var_t *v)
 {
   if (v == 0) {
     err_evsyntax();
@@ -200,9 +200,9 @@ long v_igetval(var_t * v)
  * return array element pointer
  */
 #if defined(OS_ADDR16)
-var_t *v_getelemptr(var_t * v, word index)
+var_t *v_getelemptr(var_t *v, word index)
 #else
-var_t *v_getelemptr(var_t * v, dword index)
+var_t *v_getelemptr(var_t *v, dword index)
 #endif
 {
   if (v->type == V_ARRAY) {
@@ -222,9 +222,9 @@ var_t *v_getelemptr(var_t * v, dword index)
  * resize an existing array
  */
 #if defined(OS_ADDR16)
-void v_resize_array(var_t * v, word size)
+void v_resize_array(var_t *v, word size)
 #else
-void v_resize_array(var_t * v, dword size)
+void v_resize_array(var_t *v, dword size)
 #endif
 {
   byte *prev;
@@ -331,7 +331,7 @@ void v_resize_array(var_t * v, dword size)
 /*
  * create RxC array
  */
-void v_tomatrix(var_t * v, int r, int c)
+void v_tomatrix(var_t *v, int r, int c)
 {
   var_t *e;
   int i;
@@ -371,9 +371,9 @@ var_t *v_new_matrix(int r, int c)
  * create array
  */
 #if defined(OS_ADDR16)
-void v_toarray1(var_t * v, word r)
+void v_toarray1(var_t *v, word r)
 #else
-void v_toarray1(var_t * v, dword r)
+void v_toarray1(var_t *v, dword r)
 #endif
 {
   var_t *e;
@@ -415,7 +415,7 @@ void v_toarray1(var_t * v, dword r)
 /*
  * returns true if the variable v is not empty (0 for nums)
  */
-int v_is_nonzero(var_t * v)
+int v_is_nonzero(var_t *v)
 {
   switch (v->type) {
   case V_INT:
@@ -444,10 +444,10 @@ int v_is_nonzero(var_t * v)
  *   +1      a > b
  *   0       a = b
  */
-int v_compare(var_t * a, var_t * b)
+int v_compare(var_t *a, var_t *b)
 {
-  double dt;
-  long di;
+  var_num_t dt;
+  var_int_t di;
   int i, ci;
   var_t *ea, *eb;
 
@@ -468,14 +468,13 @@ int v_compare(var_t * a, var_t * b)
   }
   else if ((a->type == V_INT || a->type == V_NUM) &&
            (b->type == V_INT || b->type == V_NUM)) {
-    dt =
-      (((a->type == V_INT) ? a->v.i : a->v.n) - ((b->type ==
-                                                  V_INT) ? b->v.i : b->v.n));
-    // printf("== %g - %g = %g ==", a->v.n, b->v.n, dt);
-    return ZSGN(dt);
+    var_num_t left = (a->type == V_NUM) ? a->v.n : a->v.i;
+    var_num_t right = (b->type == V_NUM) ? b->v.n : b->v.i;
+    return ZSGN((right + left) - (right + left)); // avoid 1-1.000=-0
   }
-  if ((a->type == V_STR) && (b->type == V_STR))
+  if ((a->type == V_STR) && (b->type == V_STR)) {
     return strcmp(a->v.p.ptr, b->v.p.ptr);
+  }
   if ((a->type == V_STR) && (b->type == V_NUM)) {
     if (a->v.p.ptr[0] == '\0' || is_number((char *)a->v.p.ptr)) { // compare 
       // nums
@@ -542,7 +541,7 @@ int v_compare(var_t * a, var_t * b)
 
 /*
  */
-int v_addtype(var_t * a, var_t * b)
+int v_addtype(var_t *a, var_t *b)
 {
   if (a->type == V_STR) {
     return V_STR;
@@ -560,7 +559,7 @@ int v_addtype(var_t * a, var_t * b)
  * add two variables
  * result = a + b
  */
-void v_add(var_t * result, var_t * a, var_t * b)
+void v_add(var_t *result, var_t *a, var_t *b)
 {
   char tmpsb[64];
 
@@ -708,7 +707,7 @@ void v_set(var_t *dest, const var_t *src)
 /*
  * return a full copy of the 'source'
  */
-var_t *v_clone(const var_t * source)
+var_t *v_clone(const var_t *source)
 {
   var_t *vnew;
 
@@ -721,7 +720,7 @@ var_t *v_clone(const var_t * source)
 /*
  * add b to a
  */
-void v_inc(var_t * a, var_t * b)
+void v_inc(var_t *a, var_t *b)
 {
   if (a->type == V_INT && b->type == V_INT) {
     a->v.i += b->v.i;
@@ -743,7 +742,7 @@ void v_inc(var_t * a, var_t * b)
 
 /*
  */
-int v_sign(var_t * x)
+int v_sign(var_t *x)
 {
   if (x->type == V_INT) {
     return (x->v.i < 0) ? -1 : ((x->v.i == 0) ? 0 : 1);
@@ -758,7 +757,7 @@ int v_sign(var_t * x)
 /*
  * setup a string variable
  */
-void v_createstr(var_t * v, const char *src)
+void v_createstr(var_t *v, const char *src)
 {
   int l;
 
@@ -772,7 +771,7 @@ void v_createstr(var_t * v, const char *src)
 /*
  * converts the variable to string-variable
  */
-void v_tostr(var_t * arg)
+void v_tostr(var_t *arg)
 {
   if (arg->type != V_STR) {
     char *tmp;
@@ -816,7 +815,7 @@ void v_tostr(var_t * arg)
 /*
  * set the value of 'var' to string
  */
-void v_setstr(var_t * var, const char *string)
+void v_setstr(var_t *var, const char *string)
 {
   v_free(var);
   var->type = V_STR;
@@ -825,7 +824,7 @@ void v_setstr(var_t * var, const char *string)
   strcpy(var->v.p.ptr, string);
 }
 
-void v_setstrn(var_t * var, const char *string, int len)
+void v_setstrn(var_t *var, const char *string, int len)
 {
   v_free(var);
   var->type = V_STR;
@@ -838,7 +837,7 @@ void v_setstrn(var_t * var, const char *string, int len)
 /*
  * set the value of 'var' to string
  */
-void v_setstrf(var_t * var, const char *fmt, ...)
+void v_setstrf(var_t *var, const char *fmt, ...)
 {
   char *buf;
   va_list ap;
@@ -864,7 +863,7 @@ void v_setstrf(var_t * var, const char *fmt, ...)
 /*
  * adds a string to current string value
  */
-void v_strcat(var_t * var, const char *string)
+void v_strcat(var_t *var, const char *string)
 {
   if (var->type == V_INT || var->type == V_NUM) {
     v_tostr(var);
@@ -882,7 +881,7 @@ void v_strcat(var_t * var, const char *string)
 /*
  * set the value of 'var' to n
  */
-void v_setreal(var_t * var, double n)
+void v_setreal(var_t *var, var_num_t n)
 {
   v_free(var);
   var->type = V_NUM;
@@ -892,7 +891,7 @@ void v_setreal(var_t * var, double n)
 /*
  * set the value of 'var' to i
  */
-void v_setint(var_t * var, int32 i)
+void v_setint(var_t *var, int32 i)
 {
   v_free(var);
   var->type = V_INT;
@@ -902,7 +901,7 @@ void v_setint(var_t * var, int32 i)
 /*
  * return the string value of 'var'
  */
-char *v_getstr(var_t * var)
+char *v_getstr(var_t *var)
 {
   if (var->type != V_STR) {
     v_tostr(var);
@@ -913,7 +912,7 @@ char *v_getstr(var_t * var)
 /*
  * set the value of 'var' to 'itable' integer array
  */
-void v_setintarray(var_t * var, int32 * itable, int count)
+void v_setintarray(var_t *var, int32 *itable, int count)
 {
   int i;
   var_t *elem_p;
@@ -928,7 +927,7 @@ void v_setintarray(var_t * var, int32 * itable, int count)
 /*
  * set the value of 'var' to 'itable' real's array
  */
-void v_setrealarray(var_t * var, double *ntable, int count)
+void v_setrealarray(var_t *var, var_num_t *ntable, int count)
 {
   int i;
   var_t *elem_p;
@@ -943,7 +942,7 @@ void v_setrealarray(var_t * var, double *ntable, int count)
 /*
  * set the value of 'var' to 'itable' string array
  */
-void v_setstrarray(var_t * var, char **ctable, int count)
+void v_setstrarray(var_t *var, char **ctable, int count)
 {
   int i;
   var_t *elem_p;
@@ -958,7 +957,7 @@ void v_setstrarray(var_t * var, char **ctable, int count)
 /*
  * set an empty string
  */
-void v_zerostr(var_t * r)
+void v_zerostr(var_t *r)
 {
   v_free(r);
   r->type = V_STR;
@@ -973,7 +972,7 @@ void v_zerostr(var_t * r)
  * its decides in what format to store the value
  * its used mostly by 'input' functions
  */
-void v_input2var(const char *str, var_t * var)
+void v_input2var(const char *str, var_t *var)
 {
   v_free(var);
 
@@ -984,8 +983,8 @@ void v_input2var(const char *str, var_t * var)
     char *np, *sb;
     char buf[64];
     int type;
-    long lv;
-    double dv;
+    var_int_t lv;
+    var_num_t dv;
 
     sb = tmp_strdup(str);
     np = get_numexpr(sb, buf, &type, &lv, &dv);

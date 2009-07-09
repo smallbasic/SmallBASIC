@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // SmallBASIC LIBRARY - STANDARD FUNCTIONS
@@ -28,16 +27,16 @@
 #include <dpmi.h>
 #endif
 
-int32 r2int(double x, int32 l, int32 h) SEC(BMATH);
-void dar_first(long funcCode, var_t * r, var_t * elem_p) SEC(BMATH);
-void dar_next(long funcCode, var_t * r, var_t * elem_p) SEC(BMATH);
-void dar_final(long funcCode, var_t * r, int count) SEC(BMATH);
+var_int_t r2int(var_num_t x, var_int_t l, var_int_t h) SEC(BMATH);
+void dar_first(long funcCode, var_t *r, var_t *elem_p) SEC(BMATH);
+void dar_next(long funcCode, var_t *r, var_t *elem_p) SEC(BMATH);
+void dar_final(long funcCode, var_t *r, int count) SEC(BMATH);
 int date_weekday(long d, long m, long y) SEC(BMATH);
 
 struct code_array_node_s {
   var_t *v;
-  int col;
-  int row;
+  var_int_t col;
+  var_int_t row;
 };
 typedef struct code_array_node_s canode_t;
 
@@ -47,33 +46,34 @@ extern int gra_y;
 
 // date
 static char *date_wd3_table[] = TABLE_WEEKDAYS_3C;
-
 static char *date_wdN_table[] = TABLE_WEEKDAYS_FULL;
-
 static char *date_m3_table[] = TABLE_MONTH_3C;
-
 static char *date_mN_table[] = TABLE_MONTH_FULL;
 
 /*
  */
-int32 r2int(double x, int32 l, int32 h)
+var_int_t r2int(var_num_t x, var_int_t l, var_int_t h)
 {
-  int32 nx;
+  var_int_t nx;
 
-  if (x < 0.0)
-    nx = (int32) - floor(-x + .5);
-  else
-    nx = (int32) floor(x + .5);
+  if (x < 0.0) {
+    nx = (var_int_t) - floor(-x + .5);
+  }
+  else {
+    nx = (var_int_t) floor(x + .5);
+  }
 
-  if (nx < l)
+  if (nx < l) {
     nx = l;
-  else if (nx > h)
+  }
+  else if (nx > h) {
     nx = h;
+  }
   return nx;
 }
 
 /*
- *   PEN function
+ * PEN function
  */
 void cmd_pen()
 {
@@ -95,12 +95,13 @@ void cmd_pen()
 }
 
 /*
- *   ARRAY ROUTINES - First element
- *   funcCode is the function code, r is the return value of the function, elem_p is the element
+ * ARRAY ROUTINES - First element
+ * funcCode is the function code, r is the return value of the 
+ * function, elem_p is the element
  */
-void dar_first(long funcCode, var_t * r, var_t * elem_p)
+void dar_first(long funcCode, var_t *r, var_t *elem_p)
 {
-  double n;
+  var_num_t n;
 
   switch (funcCode) {
   case kwMAX:
@@ -127,21 +128,24 @@ void dar_first(long funcCode, var_t * r, var_t * elem_p)
 }
 
 /*
- *   ARRAY ROUTINES - Next (each) element
- *   funcCode is the function code, r is the return value of the function, elem_p is the current element
+ * ARRAY ROUTINES - Next (each) element
+ * funcCode is the function code, r is the return value of 
+ * the function, elem_p is the current element
  */
-void dar_next(long funcCode, var_t * r, var_t * elem_p)
+void dar_next(long funcCode, var_t *r, var_t *elem_p)
 {
-  double n;
+  var_num_t n;
 
   switch (funcCode) {
   case kwMAX:
-    if (v_compare(r, elem_p) < 0)
+    if (v_compare(r, elem_p) < 0) {
       v_set(r, elem_p);
+    }
     break;
   case kwMIN:
-    if (v_compare(r, elem_p) > 0)
+    if (v_compare(r, elem_p) > 0) {
       v_set(r, elem_p);
+    }
     break;
   default:                     // numeric
     n = v_getval(elem_p);
@@ -149,13 +153,15 @@ void dar_next(long funcCode, var_t * r, var_t * elem_p)
     switch (funcCode) {
     case kwABSMIN:
       n = fabs(n);
-      if (r->v.n < n)
+      if (r->v.n < n) {
         r->v.n = n;
+      }
       break;
     case kwABSMAX:
       n = fabs(n);
-      if (r->v.n > n)
+      if (r->v.n > n) {
         r->v.n = n;
+      }
       break;
     case kwSUM:
     case kwSTATMEAN:
@@ -164,26 +170,28 @@ void dar_next(long funcCode, var_t * r, var_t * elem_p)
     case kwSUMSV:
       r->v.n += (n * n);
       break;
-    }                           // sw2
-  }                             // sw1
+    }                         // sw2
+  }                           // sw1
 }
 
 /*
- *   ARRAY ROUTINES - Last element
- *   funcCode is the function code, r is the return value of the function, elem_p is the element
+ * ARRAY ROUTINES - Last element
+ * funcCode is the function code, r is the return value of 
+ * the function, elem_p is the element
  */
-void dar_final(long funcCode, var_t * r, int count)
+void dar_final(long funcCode, var_t *r, int count)
 {
   switch (funcCode) {
   case kwSTATMEAN:
-    if (count)
+    if (count) {
       r->v.n = r->v.n / count;
+    }
     break;
   };
 }
 
 /*
- *   DATE mm/dd/yy string to ints
+ * DATE mm/dd/yy string to ints
  */
 void date_str2dmy(char *str, long *d, long *m, long *y)
 {
@@ -297,12 +305,15 @@ long date_julian(long d, long m, long y)
 {
   long j = -1L, t, jp;
 
-  if (y < 0)
+  if (y < 0) {
     return j;
-  if (m < 1 || m > 12)
+  }
+  if (m < 1 || m > 12) {
     return j;
-  if (d < 1 || d > 31)
+  }
+  if (d < 1 || d > 31) {
     return j;
+  }
   t = (m - 14L) / 12L;
   jp = d - 32075L + (1461L * (y + 4800L + t) / 4L);
   jp = jp + (367L * (m - 2L - t * 12L) / 12L);
@@ -311,47 +322,53 @@ long date_julian(long d, long m, long y)
 }
 
 /*
- *   date: weekday (0=sun)
+ * date: weekday (0=sun)
  */
 int date_weekday(long d, long m, long y)
 {
-  if (y < 0)
+  if (y < 0) {
     return -1;
-  if (m < 1 || m > 12)
+  }
+  if (m < 1 || m > 12) {
     return -1;
-  if (d < 1 || d > 31)
+  }
+  if (d < 1 || d > 31) {
     return -1;
-  if (y < 100)
+  }
+  if (y < 100) {
     y += 2000;
-
+  }
   return ((1461 * (y + 4800 + (m - 14) / 12) / 4 +
            367 * (m - 2 - 12 * ((m - 14) / 12)) / 12 -
            3 * ((y + 4900 + (m - 14) / 12) / 100) / 4 + d) % 7);
 }
 
 /*
- *   format date
+ * format date
  */
 void date_fmt(char *fmt, char *buf, long d, long m, long y)
 {
   int dc, mc, yc, wd, l, i;
   char *p, tmp[32];
 
-
   buf[0] = '\0';
   dc = 0;
   mc = 0;
   yc = 0;
   p = fmt;
-  if (!(*p))
+  if (!(*p)) {
     return;
+  }
   while (1) {
-    if (*p == DATEFMT_DAY_U || *p == DATEFMT_DAY_L)
+    if (*p == DATEFMT_DAY_U || *p == DATEFMT_DAY_L) {
       dc++;
-    else if (*p == DATEFMT_MONTH_U || *p == DATEFMT_MONTH_L)
+    }
+    else if (*p == DATEFMT_MONTH_U || *p == DATEFMT_MONTH_L) {
       mc++;
-    else if (*p == DATEFMT_YEAR_U || *p == DATEFMT_YEAR_L)
+    }
+    else if (*p == DATEFMT_YEAR_U || *p == DATEFMT_YEAR_L) {
       yc++;
+    }
     else {
       //
       // Separator
@@ -364,20 +381,26 @@ void date_fmt(char *fmt, char *buf, long d, long m, long y)
           break;
         case 2:
           ltostr(d, tmp);
-          if (d < 10)
+          if (d < 10) {
             strcat(buf, "0");
+          }
           strcat(buf, tmp);
           break;
         default:               // weekday
           wd = date_weekday(d, m, y);
           if (wd >= 0 && wd <= 6) {
-            if (dc == 3)        // 3 letters
+            if (dc == 3) {
+              // 3 letters
               strcat(buf, date_wd3_table[wd]);
-            else                // full name
+            }
+            else {
+              // full name
               strcat(buf, date_wdN_table[wd]);
+            }
           }
-          else
+          else {
             strcat(buf, "***");
+          }
         }
 
         dc = 0;
@@ -390,16 +413,21 @@ void date_fmt(char *fmt, char *buf, long d, long m, long y)
           break;
         case 2:
           ltostr(m, tmp);
-          if (m < 10)
+          if (m < 10) {
             strcat(buf, "0");
+          }
           strcat(buf, tmp);
           break;
         default:               // month
           if (m >= 1 && m <= 12) {
-            if (mc == 3)        // 3 letters
+            if (mc == 3) {
+              // 3 letters
               strcat(buf, date_m3_table[m - 1]);
-            else                // full name
+            }
+            else {
+              // full name
               strcat(buf, date_mN_table[m - 1]);
+            }
           }
           else
             strcat(buf, "***");
@@ -411,12 +439,13 @@ void date_fmt(char *fmt, char *buf, long d, long m, long y)
         ltostr(y, tmp);
         l = strlen(tmp);
         if (l < yc) {
-          for (i = l; i < yc; i++)
+          for (i = l; i < yc; i++) {
             strcat(buf, "0");
+          }
         }
-        else
+        else {
           strcat(buf, tmp + (l - yc));
-
+        }
         yc = 0;
       }                         // year
 
@@ -426,14 +455,15 @@ void date_fmt(char *fmt, char *buf, long d, long m, long y)
       strcat(buf, tmp);
     }
 
-    if (*p == '\0')
+    if (*p == '\0') {
       return;
+    }
     p++;                        // next
   }
 }
 
 /*
- *   date julian->d/m/y
+ * date julian->d/m/y
  */
 void date_jul2dmy(long j, long *d, long *m, long *y)
 {
@@ -454,7 +484,7 @@ void date_jul2dmy(long j, long *d, long *m, long *y)
 }
 
 /*
- *   timer->hms
+ * timer->hms
  */
 void date_tim2hms(long t, long *h, long *m, long *s)
 {
@@ -463,12 +493,12 @@ void date_tim2hms(long t, long *h, long *m, long *s)
   *s = t - (*h * 3600L + *m * 60L);
 }
 
-//
-//      f <- FUNC (f|i)
-//
-double cmd_math1(long funcCode, var_t * arg)
+/*
+ * f <- FUNC (f|i)
+ */
+var_num_t cmd_math1(long funcCode, var_t *arg)
 {
-  double r = 0.0, x;
+  var_num_t r = 0.0, x;
 
   IF_ERR_RETURN;
   x = v_getval(arg);
@@ -628,9 +658,9 @@ double cmd_math1(long funcCode, var_t * arg)
     break;
   case kwRND:
 #if defined(_PalmOS)
-    r = ((double)SysRandom(0)) / ((double)sysRandomMax + 1.0);
+    r = ((var_num_t)SysRandom(0)) / ((var_num_t)sysRandomMax + 1.0);
 #else
-    r = ((double)rand()) / (RAND_MAX + 1.0);
+    r = ((var_num_t)rand()) / (RAND_MAX + 1.0);
 #endif
     break;
   default:
@@ -641,12 +671,12 @@ double cmd_math1(long funcCode, var_t * arg)
   return r;
 }
 
-//
-//      i <- FUNC (f|i)
-//
-long cmd_imath1(long funcCode, var_t * arg)
+/*
+ * i <- FUNC (f|i)
+ */
+var_int_t cmd_imath1(long funcCode, var_t *arg)
 {
-  int32 r = 0, x;
+  var_int_t r = 0, x;
 
   IF_ERR_RETURN;
   x = v_getint(arg);
@@ -656,34 +686,19 @@ long cmd_imath1(long funcCode, var_t * arg)
     //
     // byte <- PEEK(addr)
     //
-    {
-      byte *ptr;
-
-      ptr = (byte *) x;
-      r = (byte) * ptr;
-    }
+    r = (var_int_t) (int) ((byte*) &x);
     break;
   case kwPEEK16:
     //
     // word <- PEEK16(addr)
     //
-    {
-      word *ptr;
-
-      ptr = (word *) x;
-      r = (word) * ptr;
-    }
+    r = (var_int_t) (int) ((word*) &x);
     break;
   case kwPEEK32:
     //
     // dword <- PEEK32(addr)
     //
-    {
-      dword *ptr;
-
-      ptr = (dword *) x;
-      r = (dword) * ptr;
-    }
+    r = (var_int_t) (int) ((dword*) &x);
     break;
   case kwTIMER:
     //
@@ -1108,13 +1123,13 @@ void cmd_ns1(long funcCode, var_t * arg, var_t * r)
 }
 
 //
-//      str <- FUNC (any)
+// str <- FUNC (any)
 //
 void cmd_str1(long funcCode, var_t * arg, var_t * r)
 {
   byte *p, *wp;
   byte *tb;
-  int32 l, i;
+  var_int_t l, i;
 
   switch (funcCode) {
   case kwBALLOC:
@@ -1127,8 +1142,9 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
       memset(r->v.p.ptr, 0, l);
       r->v.p.size = l;
     }
-    else
+    else {
       rt_raise("BALLOC size %d <= 0", l);
+    }
     break;
   case kwCHR:
     //
@@ -1144,10 +1160,12 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r)
     // str <- STR$(n)
     //
     r->v.p.ptr = tmp_alloc(64);
-    if (arg->type == V_INT)
+    if (arg->type == V_INT) {
       ltostr(arg->v.i, (char *)r->v.p.ptr);
-    else if (arg->type == V_REAL)
+    }
+    else if (arg->type == V_REAL) {
       ftostr(arg->v.n, (char *)r->v.p.ptr);
+    }
     else if (arg->type == V_STR) {
       tmp_free(r->v.p.ptr);
       r->v.p.ptr = (byte *) tmp_strdup((char *)arg->v.p.ptr);
@@ -1626,12 +1644,12 @@ void cmd_str0(long funcCode, var_t * r)
 }
 
 //
-//      str <- FUNC (...)
+// str <- FUNC (...)
 //
 void cmd_strN(long funcCode, var_t * r)
 {
   var_t arg1;
-  int32 i, count, lsrc, len, start, pc;
+  var_int_t i, count, lsrc, len, start, pc;
   char tmp[2], *tmp_p;
   char *s1 = NULL, *s2 = NULL, *s3 = NULL;
 
@@ -2077,13 +2095,13 @@ void cmd_strN(long funcCode, var_t * r)
 }
 
 //
-//      int <- FUNC (...)
+// int <- FUNC (...)
 //
 void cmd_intN(long funcCode, var_t * r)
 {
   int pc;
   char *s1 = NULL, *s2 = NULL, *s3 = NULL;
-  int32 start;
+  var_int_t start;
 
   var_t arg1;
   int l;
@@ -2166,8 +2184,8 @@ void cmd_intN(long funcCode, var_t * r)
       if (var_p->type == V_STR) {
         char buf[64], *np;
         int type;
-        long lv;
-        double dv;
+        var_int_t lv = 0;
+        var_num_t dv = 0;
 
         np = get_numexpr((char *)var_p->v.p.ptr, buf, &type, &lv, &dv);
 
@@ -2312,7 +2330,7 @@ void cmd_intN(long funcCode, var_t * r)
   case kwRGB:
   case kwRGBF:
     {
-      double rc, gc, bc;
+      var_num_t rc, gc, bc;
       int code;
 
       pc = par_massget("FFF", &rc, &gc, &bc);
@@ -2395,12 +2413,12 @@ void cmd_intN(long funcCode, var_t * r)
   pfree3(s1, s2, s3);
 }
 
-//
-//      fp <- FUNC (...)
-//
-void cmd_numN(long funcCode, var_t * r)
+/*
+ * fp <- FUNC (...)
+ */
+void cmd_numN(long funcCode, var_t *r)
 {
-  double x, y, m;
+  var_num_t x, y, m;
   int pw = 0;
 
   r->type = V_NUM;
@@ -2459,9 +2477,9 @@ void cmd_numN(long funcCode, var_t * r)
   }
 }
 
-//
-//      any <- FUNC (...)
-//
+/*
+ * any <- FUNC (...)
+ */
 void cmd_genfunc(long funcCode, var_t * r)
 {
   byte code, ready, first;
@@ -2470,7 +2488,7 @@ void cmd_genfunc(long funcCode, var_t * r)
   var_t *basevar_p, *elem_p;
   var_t arg, arg2;
   char tmp[3];
-  double *dar;
+  var_num_t *dar;
 
   IF_ERR_RETURN;
   v_init(r);
@@ -2776,9 +2794,9 @@ void cmd_genfunc(long funcCode, var_t * r)
     //
   case kwPOLYCENT:
     {
-      int err, count;
       pt_t *poly = NULL;
-      double x, y, area;
+      int err, count;
+      var_num_t x, y, area;
 
       r->type = V_NUM;
 
@@ -2789,10 +2807,12 @@ void cmd_genfunc(long funcCode, var_t * r)
       v_toarray1(r, 2);
       v_setreal(v_getelemptr(r, 0), x);
       v_setreal(v_getelemptr(r, 1), y);
-      if (err == 2 && area == 0)
+      if (err == 2 && area == 0) {
         rt_raise(ERR_CENTROID);
-      else
+      }
+      else {
         rt_raise(ERR_WRONG_POLY);
+      }
 
       // hmm.... closed ?
       tmp_free(poly);
@@ -2869,7 +2889,7 @@ void cmd_genfunc(long funcCode, var_t * r)
   case kwSEGLEN:
     {
       pt_t A, B;
-      double dx, dy;
+      var_num_t dx, dy;
 
       A = par_getpt();
       IF_ERR_RETURN;
@@ -2952,7 +2972,7 @@ void cmd_genfunc(long funcCode, var_t * r)
   case kwSEGCOS:
   case kwSEGSIN:
     {
-      double Adx, Ady, Bdx, Bdy;
+      var_num_t Adx, Ady, Bdx, Bdy;
       pt_t A, B;
 
       A = par_getpt();
@@ -3073,7 +3093,7 @@ void cmd_genfunc(long funcCode, var_t * r)
     ready = 0;
     tcount = 0;
     len = 64;
-    dar = (double *)tmp_alloc(sizeof(double) * len);
+    dar = (var_num_t*)tmp_alloc(sizeof(var_num_t) * len);
 
     do {
       code = code_peek();
@@ -3095,7 +3115,7 @@ void cmd_genfunc(long funcCode, var_t * r)
               if (!prog_error) {
                 if (tcount >= len) {
                   len += 64;
-                  dar = (double *)tmp_realloc(dar, sizeof(double) * len);
+                  dar = (var_num_t*)tmp_realloc(dar, sizeof(var_num_t) * len);
                 }
 
                 dar[tcount] = v_getval(elem_p);
@@ -3118,7 +3138,7 @@ void cmd_genfunc(long funcCode, var_t * r)
         if (!prog_error) {
           if (tcount >= len) {
             len += 64;
-            dar = (double *)tmp_realloc(dar, sizeof(double) * len);
+            dar = (var_num_t*)tmp_realloc(dar, sizeof(var_num_t) * len);
           }
 
           dar[tcount] = v_getval(&arg);
@@ -3159,9 +3179,9 @@ void cmd_genfunc(long funcCode, var_t * r)
     //
   case kwGAUSSJORDAN:
     {
-      double toler = 0.0;
-      double *m1 = NULL, *m2 = NULL;
-      int n, rows, cols;
+      var_num_t toler = 0.0;
+      var_num_t *m1 = NULL, *m2 = NULL;
+      int32 n, rows, cols;
       var_t *a, *b;
 
       v_init(r);
@@ -3226,8 +3246,8 @@ void cmd_genfunc(long funcCode, var_t * r)
     //
   case kwINVERSE:
     {
-      double *m1 = NULL;
-      int n, rows, cols;
+      var_num_t *m1 = NULL;
+      int32 n, rows, cols;
       var_t *a;
 
       v_init(r);
@@ -3236,8 +3256,9 @@ void cmd_genfunc(long funcCode, var_t * r)
 
       m1 = mat_toc(a, &rows, &cols);
       if (rows != cols || cols < 2) {
-        if (m1)
+        if (m1) {
           tmp_free(m1);
+        }
         rt_raise(ERR_WRONG_MAT, rows, cols);
       }
       else {
@@ -3253,8 +3274,8 @@ void cmd_genfunc(long funcCode, var_t * r)
     //
   case kwDETERM:
     {
-      double *m1 = NULL, toler = 0;
-      int n, rows, cols;
+      var_num_t *m1 = NULL, toler = 0;
+      int32 n, rows, cols;
       var_t *a;
 
       v_init(r);
@@ -3288,8 +3309,9 @@ void cmd_genfunc(long funcCode, var_t * r)
     //
   case kwCODEARRAY:
     {
-      int rows, cols, curcol, ready, count, pos;
+      var_int_t curcol, ready, count, pos;
       var_t *e;
+      int32 rows, cols;
       tmplist_t lst;
       canode_t tnode, *tp;
       tmpnode_t *cur;
@@ -3412,9 +3434,9 @@ void cmd_genfunc(long funcCode, var_t * r)
     //
   case kwSEQ:
     {
-      int count;
       var_t *elem_p;
-      double xmin, xmax, x, dx;
+      var_int_t count;
+      var_num_t xmin, xmax, x, dx;
 
       par_massget("FFI", &xmin, &xmax, &count);
 

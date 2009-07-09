@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // SmallBASIC RTL - FILESYSTEM, FILE and DEVICE I/O
@@ -35,7 +34,7 @@ struct file_encoded_var {
 };
 
 /*
- *   OPEN "file" [FOR {INPUT|OUTPUT|APPEND}] AS #fileN
+ * OPEN "file" [FOR {INPUT|OUTPUT|APPEND}] AS #fileN
  */
 void cmd_fopen()
 {
@@ -95,7 +94,7 @@ void cmd_fopen()
 }
 
 /*
- *   CLOSE #fileN
+ * CLOSE #fileN
  */
 void cmd_fclose()
 {
@@ -106,16 +105,18 @@ void cmd_fclose()
   if (!prog_error) {
     handle = par_getint();
     if (!prog_error) {
-      if (dev_fstatus(handle))
+      if (dev_fstatus(handle)) {
         dev_fclose(handle);
-      else
+      }
+      else {
         rt_raise("CLOSE: FILE IS NOT OPENED");
+      }
     }
   }
 }
 
 /*
- *   SEEK #fileN, pos
+ * SEEK #fileN, pos
  */
 void cmd_fseek()
 {
@@ -136,14 +137,15 @@ void cmd_fseek()
           }
         }
       }
-      else
+      else {
         rt_raise("SEEK: FILE IS NOT OPENED");
+      }
     }
   }
 }
 
 /*
- *   PRINT #fileN; var1 [, varN]
+ * PRINT #fileN; var1 [, varN]
  */
 void cmd_fprint()
 {
@@ -151,7 +153,7 @@ void cmd_fprint()
 }
 
 /*
- *   store a variable in binary form
+ * store a variable in binary form
  */
 void write_encoded_var(int handle, var_t * var)
 {
@@ -199,7 +201,7 @@ void write_encoded_var(int handle, var_t * var)
 }
 
 /*
- *   read a variable from a binary form
+ * read a variable from a binary form
  */
 int read_encoded_var(int handle, var_t * var)
 {
@@ -256,7 +258,7 @@ int read_encoded_var(int handle, var_t * var)
 }
 
 /*
- *   WRITE #fileN; var1 [, varN]
+ * WRITE #fileN; var1 [, varN]
  */
 void cmd_fwrite()
 {
@@ -272,11 +274,13 @@ void cmd_fwrite()
         // are
         // no
         // parameters
-        if (!dev_fstatus(handle))
+        if (!dev_fstatus(handle)) {
           // dev_fwrite(handle, "\n", 1);
           ;
-        else
+        } 
+        else {
           rt_raise("FIO: FILE IS NOT OPENED");
+        }
         return;
       }
 
@@ -308,19 +312,21 @@ void cmd_fwrite()
               rt_raise("WRITE: ONLY VARIABLES ARE ALLOWED");
             };
 
-            if (prog_error)
+            if (prog_error) {
               return;
+            }
           } while (!exitf);
         }
-        else
+        else {
           rt_raise("FIO: FILE IS NOT OPENED");
+        }
       }
     }
   }
 }
 
 /*
- *   READ #fileN; var1 [, var2 [, ...]]
+ * READ #fileN; var1 [, var2 [, ...]]
  */
 void cmd_fread()
 {
@@ -369,7 +375,7 @@ void cmd_fread()
 }
 
 /*
- *   LINE INPUT [#fileN;] var$
+ * LINE INPUT [#fileN;] var$
  */
 void cmd_flineinput()
 {
@@ -461,7 +467,7 @@ void cmd_flineinput()
 }
 
 /*
- *   INPUT #fileN; var$ [, var2 [, ...]]
+ * INPUT #fileN; var$ [, var2 [, ...]]
  */
 void cmd_finput()
 {
@@ -469,7 +475,7 @@ void cmd_finput()
 }
 
 /*
- *   KILL filename
+ * KILL filename
  */
 void cmd_fkill()
 {
@@ -488,7 +494,7 @@ void cmd_fkill()
 }
 
 /*
- *   COPY/RENAME filem newfile
+ * COPY/RENAME filem newfile
  */
 void cmd_filecp(int mv)
 {
@@ -527,7 +533,7 @@ void cmd_filecp(int mv)
 }
 
 /*
- *   change the current directory
+ * change the current directory
  */
 void cmd_chdir()
 {
@@ -543,7 +549,7 @@ void cmd_chdir()
 }
 
 /*
- *   remove directory
+ * remove directory
  */
 void cmd_rmdir()
 {
@@ -559,7 +565,7 @@ void cmd_rmdir()
 }
 
 /*
- *   create directory
+ * create directory
  */
 void cmd_mkdir()
 {
@@ -757,9 +763,9 @@ void cmd_floadln()
 }
 
 /*
- *   save text file
+ * save text file
  *
- *   TSAVE filename, array/string
+ * TSAVE filename, array/string
  */
 void cmd_fsaveln()
 {
@@ -819,9 +825,9 @@ void cmd_fsaveln()
 }
 
 /*
- *   TODO: lock a record or an area
+ * TODO: lock a record or an area
  *
- *   LOCK #1, [record]|[start TO end]
+ * LOCK #1, [record]|[start TO end]
  */
 void cmd_flock()
 {
@@ -834,7 +840,7 @@ void cmd_flock()
 }
 
 /*
- *   CHMOD file, mode
+ * CHMOD file, mode
  */
 void cmd_chmod()
 {
@@ -862,7 +868,7 @@ void cmd_chmod()
 }
 
 /*
- *   walk on dirs
+ * walk on dirs
  */
 #if defined(_UnixOS) || defined(_DOS) || defined(_Win32)
 void dirwalk(char *dir, char *wc, addr_t use_ip)
@@ -926,9 +932,9 @@ void dirwalk(char *dir, char *wc, addr_t use_ip)
 #endif
 
 /*
- *   walking on directories
+ * walking on directories
  *
- *   DIRWALK "/home" [, "*"] USE MYPRN(x)
+ * DIRWALK "/home" [, "*"] USE MYPRN(x)
  */
 void cmd_dirwalk()
 {
@@ -962,9 +968,9 @@ void cmd_dirwalk()
 }
 
 /*
- *   write a byte to a stream
+ * write a byte to a stream
  *
- *   BPUTC #file, byte
+ * BPUTC #file, byte
  */
 void cmd_bputc()
 {
@@ -998,34 +1004,34 @@ void cmd_bputc()
 }
 
 /*
- *   load from file to a memory address
+ * load from file to a memory address
  *
- *   BLOAD file[, offset]
+ * BLOAD file[, offset]
  */
 void cmd_bload()
 {
-  int32 ofs = -1, idata;
+  var_int_t ofs = -1, idata;
   char *fname = NULL;
 
   par_massget("Si", &fname, &ofs);
   if (!prog_error) {
-    int handle;
     int flags = DEV_FILE_INPUT;
-    int32 len;
+    int handle = dev_freefilehandle();
+    var_int_t len;
 
-    handle = dev_freefilehandle();
     if (!prog_error) {
       if (dev_fstatus(handle) == 0) {
         dev_fopen(handle, fname, flags);
         if (!prog_error) {
-          byte *data;
+          var_int_t *data;
 
-          dev_fread(handle, (byte *) & idata, sizeof(idata));
-          if (ofs == -1)
+          dev_fread(handle, (byte*) &idata, sizeof(idata));
+          if (ofs == -1) {
             ofs = idata;
-          dev_fread(handle, (byte *) & len, sizeof(len));
-          data = (byte *) ofs;
-          dev_fread(handle, data, len);
+          }
+          dev_fread(handle, (byte*) &len, sizeof(len));
+          data = &ofs;
+          dev_fread(handle, (byte*) data, len);
           dev_fclose(handle);
         }
       }
@@ -1036,31 +1042,29 @@ void cmd_bload()
 }
 
 /*
- *   save memory contents to a file
+ * save memory contents to a file
  *
- *   BSAVE file, offset, length
+ * BSAVE file, offset, length
  */
 void cmd_bsave()
 {
-  int32 ofs = 0, len = 0;
+  var_int_t ofs = 0, len = 0;
   char *fname = NULL;
 
   par_massget("SII", &fname, &ofs, &len);
   if (!prog_error) {
-    int handle;
     int flags = DEV_FILE_OUTPUT;
-
-    handle = dev_freefilehandle();
+    int handle = dev_freefilehandle();
     if (!prog_error) {
       if (dev_fstatus(handle) == 0) {
         dev_fopen(handle, fname, flags);
         if (!prog_error) {
-          byte *data;
+          var_int_t *data;
 
-          dev_fwrite(handle, (byte *) & ofs, sizeof(ofs));
-          dev_fwrite(handle, (byte *) & len, sizeof(len));
-          data = (byte *) ofs;
-          dev_fwrite(handle, data, len);
+          dev_fwrite(handle, (byte*) &ofs, sizeof(ofs));
+          dev_fwrite(handle, (byte*) &len, sizeof(len));
+          data = &ofs;
+          dev_fwrite(handle, (byte*) data, len);
           dev_fclose(handle);
         }
       }

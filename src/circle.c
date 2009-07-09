@@ -1,5 +1,10 @@
-/* 
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "device.h"
 #include "osd.h"
@@ -30,7 +35,7 @@ void set_4line(int x, int y, int xc, int yc)
 }
 
 /*
-*/
+ */
 void simple_ellipse(int xc, int yc, int rx, int ry, int fill)
 {
   int x = 0;
@@ -52,11 +57,12 @@ void simple_ellipse(int xc, int yc, int rx, int ry, int fill)
   dy = TwoAsquared * b;
 
   while (dx < dy) {
-    if (fill)
+    if (fill) {
       set_4line(x, y, xc, yc);
-    else
+    }
+    else {
       set_4pixel(x, y, xc, yc);
-
+    }
 
     if (d > 0L) {
       --y;
@@ -72,12 +78,12 @@ void simple_ellipse(int xc, int yc, int rx, int ry, int fill)
   d += (3L * (Asquared - Bsquared) / 2L - (dx + dy)) / 2L;
 
   while (y >= 0) {
-
-    if (fill)
+    if (fill) {
       set_4line(x, y, xc, yc);
-    else
+    }
+    else {
       set_4pixel(x, y, xc, yc);
-
+    }
     if (d < 0L) {
       ++x;
       dx += TwoBsquared;
@@ -91,24 +97,25 @@ void simple_ellipse(int xc, int yc, int rx, int ry, int fill)
 }
 
 /*
-*/
+ */
 void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill)
 {
   simple_ellipse(xc, yc, xr, yr * aspect, fill);
 }
 
 /*
-*/
+ */
 void dev_arc(int xc, int yc, double r, double start, double end, double aspect)
 {
   double th, ph, xs, ys, xe, ye, x, y;
   int i;
 
-  if (r < 1)
+  if (r < 1) {
     r = 1;
-
-  while (end < start)
+  }
+  while (end < start) {
     end += M_PI * 2.0;
+  }
   th = (end - start) / r;
   xs = xc + r * cos(start);
   ys = yc + r * aspect * sin(start);

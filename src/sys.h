@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // System information
@@ -10,7 +9,7 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 /**
- *   @defgroup sys System/CPU
+ * @defgroup sys System/CPU
  */
 
 #if !defined(_sb_sys_h)
@@ -31,111 +30,109 @@ extern "C" {
 #if defined(__CYGWIN__)
 #define __addr_t_defined
 typedef unsigned int addr_t;
-
-// there is conflict on cygwin's headers sys/types.h
-// they reserve the 'addr_t' (sys/types.h:typedef char * addr_t)
-// I did a grep -r -w at /usr/include to find if it is used somewhere else
-// and it didn't.
-//
-// So, comment out that line in /usr/include/sys/types.h, at least for now...
-//
-// Another conflict is for V_ARRAY which is used on windows OLE subsystem
-
-//#include <w32api/windows.h>
-//#undef V_ARRAY
 #endif
 
+#if defined OS_PREC64
+  typedef long double   var_num_t;
+  typedef long long int var_int_t;
+  #define VAR_INT_FMT   "%lld"
+  #define VAR_NUM_FMT   "%Lg"
+#else
+  #define OS_PREC32
+  typedef double        var_num_t;
+  typedef long int      var_int_t;
+  #define VAR_INT_FMT   "%ld"
+  #define VAR_NUM_FMT   "%g"
+#endif
+
+#define OS_INTSZ  sizeof(var_int_t)  // size of integer
+#define OS_REALSZ sizeof(var_num_t)  // size of real
+
 /**
- *   @ingroup sys
- *   @page sbsys System macros (SB/OS/CPU) and Memory manager
+ * @ingroup sys
+ * @page sbsys System macros (SB/OS/CPU) and Memory manager
  *
- *  <b>CPU's FLAGS</b>
+ * <b>CPU's FLAGS</b>
  *
- *   CPU_BIGENDIAN       The words are stored reversed; first the low-byte followed by high-byte (Intel x86)
+ * CPU_BIGENDIAN       The words are stored reversed; first the low-byte followed by high-byte (Intel x86)
  *
- *   CPU_LITTLEENDIAN    The words are stored normal; first the high-byte followed by low-byte (Motorola 68K)
+ * CPU_LITTLEENDIAN    The words are stored normal; first the high-byte followed by low-byte (Motorola 68K)
  *
- *   CPU_CODESEG64K      64KB code size limit
+ * CPU_CODESEG64K      64KB code size limit
  *
- *   CPU_REG16           16bit registers (64KB code|data segments)
+ * CPU_REG16           16bit registers (64KB code|data segments)
  *
- *   <b>OS FLAGS</b>
+ * <b>OS FLAGS</b>
  *
- *   OS_PATHNAME_SIZE    Maximum full-path name size (DOS=64,Unix/Win32=1024)
+ * OS_PATHNAME_SIZE    Maximum full-path name size (DOS=64,Unix/Win32=1024)
  *
- *   OS_FILENAME_SIZE    Maximum filename size (DOS=12,Unix/Win32=256)
+ * OS_FILENAME_SIZE    Maximum filename size (DOS=12,Unix/Win32=256)
  *
- *   OS_NAME             OS name!
+ * OS_NAME             OS name!
  *
- *   OS_DIRSEP           OS directory separator (unix=/, win=\\)
+ * OS_DIRSEP           OS directory separator (unix=/, win=\\)
  *
- *   OS_LIMITED          Use few resources.
- *                       SB runs on handhelds but also runs on linux.
- *                       On linux to create a static array of 256 elements (like the one for the file-handles) is a joke,
- *                       but on handhelds that is a real pain.
- *                       Also, there are speed optimized code that uses a lot of memory for favour of speed.
- *                       Use this macro for handhelds to reduce the use of memory.
+ * OS_LIMITED          Use few resources.
+ *                     SB runs on handhelds but also runs on linux.
+ *                     On linux to create a static array of 256 elements
+ *                      (like the one for the file-handles) is a joke,
+ *                     but on handhelds that is a real pain.
+ *                     Also, there are speed optimized code that uses a lot of memory for favour of speed.
+ *                     Use this macro for handhelds to reduce the use of memory.
  *
- *   OS_FILEHANDLES      Number of file handles to use.
- *                       Because there is a static array with information about each handle,
- *                       use small numbers on limited systems (a value of 16 is good enough).
+ * OS_FILEHANDLES      Number of file handles to use.
+ *                     Because there is a static array with information about each handle,
+ *                     use small numbers on limited systems (a value of 16 is good enough).
  *
- *   OS_ADDR32           Use 32bit code, in anycase
+ * OS_ADDR32           Use 32bit code, in anycase
  *
- *   OS_ADDR16           Use 16bit code, in anycase
+ * OS_ADDR16           Use 16bit code, in anycase
  *
- *   <b>Special flags</b>
+ * <b>Special flags</b>
  *
- *   MALLOC_LIMITED      Use special SB's memory manager for limited systems without memory handles.
- *                       This driver must be used on final releases for desktops because it is speeds up
- *                       the SB about 4-8 times, but does not protect the system from memory-leaks or
- *                       other memory-related problems.
+ * MALLOC_LIMITED      Use special SB's memory manager for limited systems without memory handles.
+ *                     This driver must be used on final releases for desktops because it is speeds up
+ *                     the SB about 4-8 times, but does not protect the system from memory-leaks or
+ *                     other memory-related problems.
  *
- *   <b>Memory managers</b>
+ * <b>Memory managers</b>
  *
- *   At this time, there are three memory manager on SB.
+ * At this time, there are three memory manager on SB.
  *
- *   a) Standard C (mem.c, unx_memmgr.c)
+ * a) Standard C (mem.c, unx_memmgr.c)
  *
- *   This is the default memory manager.
- *   This manager can protect the system from memory problems
- *   and can display a lot of debug information.
- *   Especially, if the CHECK_PTRS_LEV2 macro is defined,
- *   it can checks almost all the pointers in almost all memory/string related routines.
+ * This is the default memory manager.
+ * This manager can protect the system from memory problems
+ * and can display a lot of debug information.
+ * Especially, if the CHECK_PTRS_LEV2 macro is defined,
+ * it can checks almost all the pointers in almost all memory/string related routines.
  *
- *   This manager do a real good work but it is slow.
- *   Especially, if the CHECK_PTRS_LEV2 macro is defined, it is *extremly* slow.
+ * This manager do a real good work but it is slow.
+ * Especially, if the CHECK_PTRS_LEV2 macro is defined, it is *extremly* slow.
  *
- *   b) Standard C limited (mem.c/MALLOC_LIMITED)
+ * b) Standard C limited (mem.c/MALLOC_LIMITED)
  *
- *   This manager is *extremly* fast. Also, it uses an fast emulation of memory handles.
- *   It puts all required information on the start of the memory block.
+ * This manager is *extremly* fast. Also, it uses an fast emulation of memory handles.
+ * It puts all required information on the start of the memory block.
  *
- *   This manager it does not protect you from memory-leaks or pointer overuns.
+ * This manager it does not protect you from memory-leaks or pointer overuns.
  *
- *   c) PalmOS (mem.c)
+ * c) PalmOS (mem.c)
  *
- *   The typical PalmOS memory manager. It is slow enough but it is not needs much memory.
- *   Do not use its string-related routines, are slow too (use glib's). Also, it has a
- *   small protection mechanism.
+ * The typical PalmOS memory manager. It is slow enough but it is not needs much memory.
+ * Do not use its string-related routines, are slow too (use glib's). Also, it has a
+ * small protection mechanism.
  *
  */
-
-#define OS_PREC32
-//#define OS_PREC64
 
 // default
 #define OS_ADDR32
 
-//#define MALLOC_LIMITED
-
 #if defined(_PalmOS) || defined(_ArmPalmOS)
-/* ------------------------------------------------------------------------------------ */
 
-/*
- *   PalmOS
- */
-
+//
+//--PalmOS----------------------------------------------------------------------
+//
 #define CPU_LITTLEENDIAN
 
 #define OS_PATHNAME_SIZE    64
@@ -154,7 +151,6 @@ typedef unsigned int addr_t;
 #define OS_ADDR16
 #define OS_NAME     "PalmOS/68k"
 #define CPU_CODESEG64K
-//      #define SMART_LINKER    // multilink
 #endif
 
 // Creator ID
@@ -175,14 +171,12 @@ typedef unsigned int addr_t;
 #include "syslib.h"
 
 #elif defined(_VTOS)
-/* ------------------------------------------------------------------------------------ */
 
-/*
- *   Helio: Cygnus-based GCC and MY_STDLIB interface libraries required
- */
+//
+//--Helio: Cygnus-based GCC and MY_STDLIB interface libraries required----------
+//
 
 #define CPU_BIGENDIAN
-//  #define CPU_CODESEG64K
 
 #undef  OS_ADDR32
 #define OS_ADDR16
@@ -194,8 +188,6 @@ typedef unsigned int addr_t;
 #define OS_NAME     "VTOS"
 #define OS_VER          0x010300
 #define OS_DIRSEP   '/'
-
-//  #define OS_LIMITED
 
 #include <system.h>
 #include <stdio.h>
@@ -211,11 +203,11 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #define HAVE_C_MALLOC
 
 #elif defined(_DOS)
-/* ------------------------------------------------------------------------------------ */
 
-/*
- *   DOS/DJGPP
- */
+//
+//--DOS/DJGPP-------------------------------------------------------------------
+//
+
 #define CPU_BIGENDIAN
 
 // use long-filenames for DOS (its works on DJGPP; but only under windows)
@@ -233,7 +225,6 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #endif
 
 #define OS_NAME     "DOS32/DJGPP"
-//  #define OS_DIRSEP   '\\'
 #define OS_DIRSEP   '/'         // djgpp uses /
 
 #include <stdio.h>
@@ -249,11 +240,11 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #include <dos.h>
 #include <dirent.h>
 #elif defined(_AMIDOS)
-/* ------------------------------------------------------------------------------------ */
 
-/*
- *   AMIGA
- */
+//
+//--AMIGA-----------------------------------------------------------------------
+//
+
 #define CPU_LITTLEENDIAN
 #define MALLOC_LIMITED
 
@@ -276,11 +267,10 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #include <fcntl.h>
 #include <dirent.h>
 #else
-/* ------------------------------------------------------------------------------------ */
 
-/*
- *   Linux/Win32
- */
+//
+//--Linux/WIN32-----------------------------------------------------------------
+//
 
 #if defined(__MINGW32__)
 #define malloc_usable_size _msize
@@ -288,7 +278,6 @@ extern void MessageBox(char *title, char *msg, int fatal);
 
 #include <string.h>
 
-// TODO: check other CPU's
 #define CPU_BIGENDIAN
 
 #ifdef HAVE_C_MALLOC
@@ -323,7 +312,6 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #define OS_DIRSEP   '/'
 #elif defined(_Win32)
 #define OS_NAME     "Win32"
-//      #define OS_DIRSEP   '\\'
 #if defined(_WinBCB)
 #define OS_DIRSEP   '\\'
 #else
@@ -366,10 +354,6 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #include "win32/bcb.h"
 #endif
 
-//#if defined(CPU_REG16) && !defined(CPU_CODESEG64K)
-//  #define CPU_CODESEG64K
-//#endif
-
 #if defined(CPU_CODESEG64K) && !defined(SMART_LINKER)
 #define SEC(x)  __attribute__((section(#x)))
 #else
@@ -378,7 +362,8 @@ extern void MessageBox(char *title, char *msg, int fatal);
 
 #if defined(CPU_BIGENDIAN)      // __i386__
 #define BS16(x) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
-#define BS32(x) ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+#define BS32(x) ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
+                 (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
 #else
 #define BS16(x) (x)
 #define BS32(x) (x)
@@ -427,18 +412,29 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #define SB_PI   3.14159265358979323846
 
 // STD MACROS
-#define ABS(x)          ( ((x) < 0) ? -(x) : (x) )                                      /**< absolute value             @ingroup sys */
-#define SGN(a)          ( ((a)<0)? -1 : 1 )                                             /**< sign                       @ingroup sys */
-#define ZSGN(a)         ( ((a)<0)? -1 : (((a)>0)? 1 : 0)  )                             /**< sign which returns 0 for 0 @ingroup sys */
-#define SWAP(a,b,c)     ( (c) = (a), (a) = (b), (b) = (c) )                             /**< swap values                @ingroup sys */
-#define FLOOR(a)        ((a)>0 ? (int)(a) : -(int)(-a))                                 /**< floor                      @ingroup sys */
-#define CEILING(a)      ((a)==(int)(a) ? (a) : (a)>0 ? 1+(int)(a) : -(1+(int)(-a)))     /**< ceil                       @ingroup sys */
-#define ROUND(a)        ((a)>0 ? (int)(a+0.5) : -(int)(0.5-a))                          /**< round                      @ingroup sys */
-#define ISWAP(a,b)      ( a^=b, b^=a, a^=b )                                            /**< integer swap               @ingroup sys */
-#define I2MIN(a,b)      ( ((a) < (b)) ? (a) : (b) )                                     /**< min                        @ingroup sys */
-#define I2MAX(a,b)      ( ((a) > (b)) ? (a) : (b) )                                     /**< max                        @ingroup sys */
-/* clamp the input to the specified range */
-#define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v)                           /**< range check                @ingroup sys */
+#define ABS(x)    ( ((x) < 0) ? -(x) : (x) )
+  /**< absolute value            @ingroup sys */
+#define SGN(a)    ( ((a)<0)? -1 : 1 )
+ /**< sign                       @ingroup sys */
+#define ZSGN(a)   ( ((a)<0)? -1 : (((a)>0)? 1 : 0)  )
+ /**< sign which returns 0 for 0 @ingroup sys */
+#define SWAP(a,b,c) ( (c) = (a), (a) = (b), (b) = (c) )
+ /**< swap values                @ingroup sys */
+#define FLOOR(a)    ((a)>0 ? (int)(a) : -(int)(-a))
+ /**< floor                      @ingroup sys */
+#define CEILING(a)  ((a)==(int)(a) ? (a) : (a)>0 ? 1+(int)(a) : -(1+(int)(-a)))
+ /**< ceil                       @ingroup sys */
+#define ROUND(a)    ((a)>0 ? (int)(a+0.5) : -(int)(0.5-a))
+ /**< round                      @ingroup sys */
+#define ISWAP(a,b)  ( a^=b, b^=a, a^=b )
+ /**< integer swap               @ingroup sys */
+#define I2MIN(a,b)      ( ((a) < (b)) ? (a) : (b) )
+ /**< min                        @ingroup sys */
+#define I2MAX(a,b)      ( ((a) > (b)) ? (a) : (b) )
+ /**< max                        @ingroup sys */
+ /* clamp the input to the specified range */
+#define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v)
+ /**< range check                @ingroup sys */
 
 //#define ENABLE_VMM
 #if !defined(_PalmOS) && !defined(HAVE_C_MALLOC)
@@ -450,8 +446,8 @@ extern void MessageBox(char *title, char *msg, int fatal);
 
 #if !defined(_PalmOS)
 // global command-line args
-extern char **g_argv;                                                                 /**< global pointer to **argv   @ingroup sys */
-extern int g_argc;                                                                    /**< global to argc             @ingroup sys */
+extern char **g_argv;  /**< global pointer to **argv   @ingroup sys */
+extern int g_argc;     /**< global to argc             @ingroup sys */
 #endif
 
 // fix-up open/close/read/write command set

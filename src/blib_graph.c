@@ -1,11 +1,12 @@
-/*
- *   SmallBASIC, RTL - GRAPHICS
- *
- *   2000-05-27, Nicholas Christopoulos
- *
- *   This program is distributed under the terms of the GPL v2.0 or later
- *   Download the GNU Public License (GPL) from www.gnu.org
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// SmallBASIC RTL - GRAPHICS
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "str.h"

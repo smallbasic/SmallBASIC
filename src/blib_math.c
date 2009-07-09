@@ -1,8 +1,12 @@
-/*
- * SmallBASIC - Math RTL
- *
- * Nicholas Christopoulos
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// Math RTL
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "blib_math.h"
@@ -13,12 +17,15 @@
 #include "pproc.h"
 #include "smbas.h"
 
+void root_iterate(var_num_t xl, var_num_t xh, var_num_t fl, var_num_t fh, var_t * res_vp,
+                  var_num_t maxerr, var_t *err_vp, addr_t use_ip) SEC(BMATH2);
+
 /*
  * length of line
  */
-double line_length(double Ax, double Ay, double Bx, double By)
+var_num_t line_length(var_num_t Ax, var_num_t Ay, var_num_t Bx, var_num_t By)
 {
-  double dx, dy;
+  var_num_t dx, dy;
 
   dx = Bx - Ax;
   dy = By - Ay;
@@ -28,9 +35,9 @@ double line_length(double Ax, double Ay, double Bx, double By)
 /*
  * Gauss-Jordan method
  */
-void mat_gauss_jordan(double *a, double *b, int n, double toler)
+void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler)
 {
-  double big, dum, pivinv, swp;
+  var_num_t big, dum, pivinv, swp;
   int i, j, k, l, ll;
   int icol, irow;
   int *indxc, *indxr, *ipiv;
@@ -71,8 +78,9 @@ void mat_gauss_jordan(double *a, double *b, int n, double toler)
 
     ipiv[icol] = ipiv[icol] + 1;
     if (irow != icol) {
-      for (l = 0; l < n; l++)
+      for (l = 0; l < n; l++) {
         SWAP(a[irow * n + l], a[icol * n + l], swp);
+      }
 
       SWAP(b[irow], b[icol], swp);
     }
@@ -122,53 +130,70 @@ void mat_gauss_jordan(double *a, double *b, int n, double toler)
 /*
  * Inverse matrix
  */
-void mat_inverse(double *a, int n)
+void mat_inverse(var_num_t *a, int n)
 {
   int i, j, r, t, s, m, l;
-  double *b, *x, p;
+  var_num_t *b, *x, p, div;
 
-  b = tmp_alloc(n * n * sizeof(double));
-  x = tmp_alloc(n * n * sizeof(double));
+  b = tmp_alloc(n * n * sizeof(var_num_t));
+  x = tmp_alloc(n * n * sizeof(var_num_t));
   for (i = 0; i < n; i++) {
-    for (j = 0; j < n; j++)
+    for (j = 0; j < n; j++) {
       b[i * n + j] = (i == j);
+    }
   }
 
   for (r = 0; r < n - 1; r++) {
     for (i = r; i < n - 1; i++) {
-      p = a[(i + 1) * n + r] / a[r * n + r];
-      for (j = r + 1; j < n; j++)
+      div = a[r * n + r];
+      if (div != 0) {
+        p = a[(i + 1) * n + r] / div;
+      }
+      else {
+        p = a[(i + 1) * n + r];
+      }
+      for (j = r + 1; j < n; j++) {
         a[(i + 1) * n + j] = a[(i + 1) * n + j] - p * a[r * n + j];
-      for (t = 0; t < n; t++)
+      }
+      for (t = 0; t < n; t++) {
         b[(i + 1) * n + t] = b[(i + 1) * n + t] - p * b[r * n + t];
+      }
     }
   }
 
   for (s = 0; s < n; s++) {
     for (m = n - 1; m >= 0; m--) {
       if (m != n - 1) {
-        for (l = n - 1; l >= m + 1; l--)
+        for (l = n - 1; l >= m + 1; l--) {
           b[m * n + s] = b[m * n + s] - a[m * n + l] * x[l * n + s];
+        }
       }
-      x[m * n + s] = b[m * n + s] / a[m * n + m];
+      div = a[m * n + m];
+      if (div != 0) {
+        x[m * n + s] = b[m * n + s] / div;
+      }
+      else {
+        x[m * n + s] = b[m * n + s];
+      }
     }
   }
 
   tmp_free(b);
-  memcpy(a, x, sizeof(double) * n * n);
+  memcpy(a, x, sizeof(var_num_t) * n * n);
   tmp_free(x);
 }
 
 /*
  */
-void mat_det2(double t, int m, int k, double *a, int *done, double *v, int n,
-              double toler)
+void mat_det2(var_num_t t, int m, int k, var_num_t *a, int *done, 
+              var_num_t *v, int n, double toler)
 {
   if (k >= n) {
     int s = -1;
 
-    if ((m % 2) == 0)
+    if ((m % 2) == 0) {
       s = 1;
+    }
     *v += s * t;
   }
   else {
@@ -176,8 +201,9 @@ void mat_det2(double t, int m, int k, double *a, int *done, double *v, int n,
       int n2 = 0, j;
 
       for (j = n - 1; j >= 0; j--) {
-        if (done[j])
+        if (done[j]) {
           n2++;
+        }
         else {
           done[j] = 1;
           mat_det2(t * a[k * n + j], m + n2, k + 1, a, done, v, n, toler);
@@ -191,11 +217,11 @@ void mat_det2(double t, int m, int k, double *a, int *done, double *v, int n,
 /*
  * Determinant of A
  */
-double mat_determ(double *a, int n, double toler)
+var_num_t mat_determ(var_num_t *a, int n, double toler)
 {
   int *done;
   int i;
-  double v;
+  var_num_t v;
 
   done = tmp_alloc(n * sizeof(int));
   for (i = 0; i < n; i++)
@@ -210,35 +236,39 @@ double mat_determ(double *a, int n, double toler)
 
 /*
  */
-double statmeandev(double *e, int count)
+var_num_t statmeandev(var_num_t *e, int count)
 {
-  double sum = 0.0;
-  double mean;
+  var_num_t sum = 0.0;
+  var_num_t mean;
   int i;
 
-  if (count == 0)
+  if (count == 0) {
     return 0;
+  }
 
-  for (i = 0; i < count; i++)
+  for (i = 0; i < count; i++) {
     sum += e[i];
+  }
   mean = sum / count;
 
   sum = 0.0;
-  for (i = 0; i < count; i++)
+  for (i = 0; i < count; i++) {
     sum += fabs(e[i] - mean);
+  }
 
   return sum / count;
 }
 
 /*
  */
-double statspreads(double *e, int count)
+var_num_t statspreads(var_num_t *e, int count)
 {
-  double sumsq = 0.0, sum = 0.0;
+  var_num_t sumsq = 0.0, sum = 0.0;
   int i;
 
-  if (count <= 1)
+  if (count <= 1) {
     return 0;
+  }
 
   for (i = 0; i < count; i++) {
     sum += e[i];
@@ -250,13 +280,14 @@ double statspreads(double *e, int count)
 
 /*
  */
-double statspreadp(double *e, int count)
+var_num_t statspreadp(var_num_t *e, int count)
 {
-  double sumsq = 0.0, sum = 0.0;
+  var_num_t sumsq = 0.0, sum = 0.0;
   int i;
 
-  if (count <= 0)
+  if (count <= 0) {
     return 0;
+  }
 
   for (i = 0; i < count; i++) {
     sum += e[i];
@@ -379,14 +410,12 @@ double statspreadp(double *e, int count)
 */
 
 //
-//      ROOT low, high, maxseg, maxerr, BYREF result, BYREF errcode USE ...
+// ROOT low, high, maxseg, maxerr, BYREF result, BYREF errcode USE ...
 //
-void root_iterate(double xl, double xh, double fl, double fh, var_t * res_vp,
-                  double maxerr, var_t * err_vp, addr_t use_ip) SEC(BMATH2);
-void root_iterate(double xl, double xh, double fl, double fh, var_t * res_vp,
-                  double maxerr, var_t * err_vp, addr_t use_ip)
+void root_iterate(var_num_t xl, var_num_t xh, var_num_t fl, var_num_t fh, var_t *res_vp,
+                  var_num_t maxerr, var_t *err_vp, addr_t use_ip)
 {
-  double t, x;
+  var_num_t t, x;
   var_t var;
 
   v_init(&var);
@@ -396,8 +425,9 @@ void root_iterate(double xl, double xh, double fl, double fh, var_t * res_vp,
     var.type = V_NUM;
     var.v.n = x;
     exec_usefunc(&var, use_ip);
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
     t = v_getval(&var);
     v_free(&var);
 
@@ -407,10 +437,12 @@ void root_iterate(double xl, double xh, double fl, double fh, var_t * res_vp,
       return;
     }
     else {
-      if (t * fl > 0.0)
+      if (t * fl > 0.0) {
         (xl = x, fl = t);
-      else
+      }
+      else {
         (xh = x, fh = t);
+      }
     }
   } while (err_vp->v.i);
 }
@@ -418,13 +450,13 @@ void root_iterate(double xl, double xh, double fl, double fh, var_t * res_vp,
 void cmd_root()
 {
   var_t *res_vp, *err_vp;
-  double low, high, maxerr;
+  var_num_t low, high, maxerr;
   int maxseg, nseg;
   addr_t use_ip, exit_ip = INVALID_ADDR;
   var_t var;
 
   int j;
-  double xl, xh, fl, fh, x, width;
+  var_num_t xl, xh, fl, fh, x, width;
 
   v_init(&var);
   low = par_getnum();
@@ -546,7 +578,7 @@ void cmd_root()
 }
 
 //
-//      DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE ...
+// DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE ...
 //
 void cmd_deriv()
 {
@@ -657,7 +689,7 @@ void cmd_deriv()
 }
 
 //
-//      DIFFEQ x0, y0, x, maxseg, maxerr, BYREF y, BYREF errcode USE ...
+// DIFFEQ x0, y0, x, maxseg, maxerr, BYREF y, BYREF errcode USE ...
 //
 void cmd_diffeq()
 {

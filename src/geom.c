@@ -1,14 +1,12 @@
-/**
-*	@file geom.h
-*
-*	SmallBASIC, extra algebra/geometry algorithms
-*
-*	This program is distributed under the terms of the GPL v2.0 or later
-*	Download the GNU Public License (GPL) from www.gnu.org
-*
-*	History:
-*	ndc - 09/03/2003 - created
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// SmallBASIC LIBRARY - extra geometry algorithms
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "geom.h"
 #include "kw.h"
@@ -118,11 +116,11 @@ Returned values:  0 for normal execution;  1 if the polygon is
 degenerate (number of vertices < 3);  and 2 if area = 0 (and the
 centroid is undefined).
 **********************************************************************/
-int geo_polycentroid(pt_t * poly, int n, double *xCentroid, double *yCentroid,
-                     double *area)
+int geo_polycentroid(pt_t * poly, int n, var_num_t *xCentroid, var_num_t *yCentroid,
+                     var_num_t *area)
 {
   int i, j;
-  double ai, atmp = 0, xtmp = 0, ytmp = 0;
+  var_num_t ai, atmp = 0, xtmp = 0, ytmp = 0;
 
   if (n < 3)
     return 1;

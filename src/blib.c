@@ -2205,7 +2205,7 @@ void cmd_delay()
 //
 void cmd_at()
 {
-  int x, y;
+  var_int_t x, y;
 
   par_massget("II", &x, &y);
   if (!prog_error) {
@@ -2218,7 +2218,7 @@ void cmd_at()
 //
 void cmd_locate()
 {
-  int x, y;
+  var_int_t x, y;
 
   par_massget("II", &y, &x);
   if (prog_error) {
@@ -3128,10 +3128,10 @@ void cmd_bcopy(void)
 //
 void cmd_exprseq(void)
 {
-  int count, i;
   var_t *var_p, *elem_p;
   addr_t use_ip, exit_ip = INVALID_ADDR;
-  double xmin, xmax, dx, x;
+  var_num_t xmin, xmax, dx, x;
+  var_int_t count, i;
 
   par_massget("PFFI", &var_p, &xmin, &xmax, &count);
 
@@ -3181,7 +3181,7 @@ void cmd_html()
 {
   char *html = 0;
   char *title = 0;
-  int x, y, w, h;
+  var_int_t x, y, w, h;
 
   x = y = w = h = 0;
   par_massget("Ssiiii", &html, &title, &x, &y, &w, &h);
@@ -3197,8 +3197,8 @@ void cmd_html()
 //
 void cmd_image()
 {
-  int h, i, x, y;
-  int sx, sy, iw, ih;
+  var_int_t h, i, x, y;
+  var_int_t sx, sy, iw, ih;
   sx = sy = iw = ih = 0;
 
   par_getsharp();

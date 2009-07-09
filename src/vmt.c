@@ -1,144 +1,151 @@
-/* -----------------------------------------------------------------------------------------------------------------------
-*
-*	Tables
-*
-*	VMTs are an easy solution for PalmOS limited memory.
-*	It is a system to support dynamic arrays on "disk".
-*
-*	+ Each VMT is a dynamic table of variable-length records
-*	+ Every VMT can be stored on "disk" or on memory
-*	+ If the a record does not exists then a new one will be created
-*
-*	Details:
-*
-*	There are two files for each table, the .dbt which holds the data and the .dbi which holds database info
-*
-*	.dbi file structure
-*	[vmt_t // vmt data structure] 
-*	[vmt_rec_t 0 // vmt record structure]
-*	...
-*	[vmt_rec_t N // vmt record structure]
-*
-*	Note: multiuser not supported yet, but it is easy to be added (lock/unlock the header record)
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// Tables
+//
+// VMTs are an easy solution for PalmOS limited memory.
+// It is a system to support dynamic arrays on "disk".
+//
+// + Each VMT is a dynamic table of variable-length records
+// + Every VMT can be stored on "disk" or on memory
+// + If the a record does not exists then a new one will be created
+//
+// Details:
+//
+// There are two files for each table, the .dbt which holds the data and the .dbi which holds database info
+//
+// .dbi file structure
+//  [vmt_t // vmt data structure] 
+//  [vmt_rec_t 0 // vmt record structure]
+//  ...
+//  [vmt_rec_t N // vmt record structure]
+//
+// Note: multiuser not supported yet, but it is easy to be added (lock/unlock the header record)
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "vmt.h"
 #include "smbas.h"
 
 #if defined(OS_LIMITED)
-#define			MAX_VMT_FILES	16
+#define  MAX_VMT_FILES 16
 #else
-#define			MAX_VMT_FILES	256
+#define  MAX_VMT_FILES 256
 #endif
 
 static vmt_t vmt[MAX_VMT_FILES];  // table of VMTs
 
-#define	MEM_VMT_GROWSIZE	128
-#define	FILE_VMT_GROWSIZE	64
-#define	VMT_DEFRAG_SIZE		32768
+#define MEM_VMT_GROWSIZE     128
+#define FILE_VMT_GROWSIZE    64
+#define VMT_DEFRAG_SIZE      32768
 
 /**
-*	update dbt header 
-*/
+ * update dbt header 
+ */
 void dbt_file_write_header(dbt_t t) SEC(PALMFS);
 void dbt_file_write_header(dbt_t t)
 {
   lseek(vmt[t].i_handle, 0, SEEK_SET);
-  write(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
+  int n = write(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
 }
 
 /**
-*	read dbt header 
-*/
+ * read dbt header 
+ */
 void dbt_file_read_header(dbt_t t) SEC(PALMFS);
 void dbt_file_read_header(dbt_t t)
 {
   lseek(vmt[t].i_handle, 0, SEEK_SET);
-  read(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
+  int n = read(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
 }
 
 /**
-*	read index-record
-*/
+ * read index-record
+ */
 void dbt_file_read_rec_t(dbt_t t, int index, vmt_rec_t * rec) SEC(PALMFS);
 void dbt_file_read_rec_t(dbt_t t, int index, vmt_rec_t * rec)
 {
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  read(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
+  int n = read(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
 }
 
 /**
-*	write index-record
-*/
+ * write index-record
+ */
 void dbt_file_write_rec_t(dbt_t t, int index, vmt_rec_t * rec) SEC(PALMFS);
 void dbt_file_write_rec_t(dbt_t t, int index, vmt_rec_t * rec)
 {
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  write(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
+  int n = write(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
 }
 
 /**
-*	read record data
-*/
+ * read record data
+ */
 void dbt_file_read_data(dbt_t t, int index, char *data, int size) SEC(PALMFS);
 void dbt_file_read_data(dbt_t t, int index, char *data, int size)
 {
   vmt_rec_t rec;
 
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+  int n= read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
   lseek(vmt[t].f_handle, rec.offset, SEEK_SET);
-  read(vmt[t].f_handle, data, size);
+  n = read(vmt[t].f_handle, data, size);
 
 //      printf("\nvmt %d read: %d, %d\n", t, index, size);
 //      hex_dump(data, size);
 }
 
 /**
-*	write record data
-*/
+ * write record data
+ */
 void dbt_file_write_data(dbt_t t, int index, char *data, int size) SEC(PALMFS);
 void dbt_file_write_data(dbt_t t, int index, char *data, int size)
 {
   vmt_rec_t rec;
+  int n;
 
 //      printf("\nvmt %d write: %d, %d\n", t, index, size);
 //      hex_dump(data, size);
 
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+  n = read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
 
   if (rec.size >= size) {
     // it is fits on that space
     rec.size = size;
-    write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+    n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
 
     lseek(vmt[t].f_handle, rec.offset, SEEK_SET);
 //              printf("\noffset=%d\n", rec.offset);
-    write(vmt[t].f_handle, data, size);
+    n = write(vmt[t].f_handle, data, size);
   }
   else {
     // new allocation required
     rec.offset = lseek(vmt[t].f_handle, 0, SEEK_END);
     rec.size = size;
-    write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+    n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
 //              printf("\noffset(new)=%d\n", rec.offset);
 
 //              lseek(vmt[t].f_handle, rec.offset, SEEK_SET);   // not needed
-    write(vmt[t].f_handle, data, size);
+    n = write(vmt[t].f_handle, data, size);
   }
 }
 
 /**
-*	allocates additional space on database for 'recs' records of 'recsize' size
-*/
+ * allocates additional space on database for 'recs' records of 'recsize' size
+ */
 int dbt_file_append(dbt_t t, int recs, int recsize) SEC(PALMFS);
 int dbt_file_append(dbt_t t, int recs, int recsize)
 {
   vmt_rec_t rec;
   int i;
+  int n;
 
   rec.ver = 1;
   rec.size = recsize;
@@ -155,8 +162,8 @@ int dbt_file_append(dbt_t t, int recs, int recsize)
     for (i = vmt[t].size; i < newsize; i++) {
       lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * i + sizeof(vmt_t), SEEK_SET);
       rec.offset = lseek(vmt[t].f_handle, 0, SEEK_END);
-      write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
-      write(vmt[t].f_handle, data, recsize);
+      n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+      n = write(vmt[t].f_handle, data, recsize);
     }
 
     tmp_free(data);
@@ -171,13 +178,13 @@ int dbt_file_append(dbt_t t, int recs, int recsize)
 }
 
 /**
-*	removes deleted chuncks (defrag)
-*/
+ * removes deleted chuncks (defrag)
+ */
 void dbt_file_pack(dbt_t t) SEC(PALMFS);
 void dbt_file_pack(dbt_t t)
 {
   vmt_rec_t rec;
-  int i, idx_offset, new_h, new_offset;
+  int i, idx_offset, new_h, new_offset, n;
   char *data;
   char old_db_name[OS_PATHNAME_SIZE];
   char new_db_name[OS_PATHNAME_SIZE];
@@ -193,16 +200,16 @@ void dbt_file_pack(dbt_t t)
     // read data
     data = tmp_alloc(rec.size);
     lseek(vmt[t].f_handle, rec.offset, rec.size);
-    read(vmt[t].f_handle, data, rec.size);
+    n = read(vmt[t].f_handle, data, rec.size);
 
     // copy record
     new_offset = lseek(new_h, 0, SEEK_END);
     rec.offset = new_offset;
-    write(new_h, data, rec.size);
+    n = write(new_h, data, rec.size);
     tmp_free(data);
 
     // update index
-    write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+    n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
   }
 
   // swap databases and reopen
@@ -213,12 +220,12 @@ void dbt_file_pack(dbt_t t)
   vmt[t].f_handle = open(old_db_name, O_BINARY | O_RDWR);
 }
 
-/*
-*	create/open a table
-*
-*	b0	= ON for non-memory file (file is created by the user, so, it must exists in disk)
-*	b1	= ON for create always (truncate if it is exists); FALSE for open if exists or create if it does not exists
-*/
+/**
+ * create/open a table
+ *
+ * b0 = ON for non-memory file (file is created by the user, so, it must exists in disk)
+ * b1 = ON for create always (truncate if it is exists); FALSE for open if exists or create if it does not exists
+ */
 dbt_t dbt_create(const char *fileName, int flags)
 {
   int i, t = -1;
@@ -315,9 +322,9 @@ dbt_t dbt_create(const char *fileName, int flags)
   return t;                     // return vmt-handle
 }
 
-/*
-*	Close table (warning: file does not deleted)
-*/
+/**
+ * Close table (warning: file does not deleted)
+ */
 void dbt_close(dbt_t t)
 {
   // close the file (if exists)
@@ -350,9 +357,9 @@ void dbt_close(dbt_t t)
   }
 }
 
-/*
-*	Allocate a standard size (use it at startup; good speed optimization)
-*/
+/**
+ * Allocate a standard size (use it at startup; good speed optimization)
+ */
 void dbt_prealloc(dbt_t t, int num, int recsize)
 {
   if (vmt[t].flags & 1) {
@@ -379,9 +386,9 @@ void dbt_prealloc(dbt_t t, int num, int recsize)
   }
 }
 
-/*
-*	Store an element
-*/
+/**
+ * Store an element
+ */
 void dbt_write(dbt_t t, int index, void *ptr, int size)
 {
   if (vmt[t].flags & 1) {
@@ -430,9 +437,9 @@ void dbt_write(dbt_t t, int index, void *ptr, int size)
   }
 }
 
-/*
-*	Load an element
-*/
+/**
+ * Load an element
+ */
 void dbt_read(dbt_t t, int index, void *ptr, int size)
 {
   if (vmt[t].flags & 1) {
@@ -472,29 +479,29 @@ void dbt_read(dbt_t t, int index, void *ptr, int size)
   }
 }
 
-/*
-*	return the number of records in VMT
-*/
+/**
+ * return the number of records in VMT
+ */
 int dbt_count(dbt_t t)
 {
   return vmt[t].count;
 }
 
-/*
-*	remove a record
-*/
+/**
+ * remove a record
+ */
 void dbt_remove(dbt_t t, int index)
 {
   // ignore it for now
 }
 
-/*
-*	Using VMT's with keys (like environment-variables)
-*
-*	sets a variable
-*
-*	if varvalue == NULL, the variable will be deleted
-*/
+/**
+ * Using VMT's with keys (like environment-variables)
+ *
+ * sets a variable
+ *
+ * if varvalue == NULL, the variable will be deleted
+ */
 int dbt_setvar(dbt_t fh, const char *varname, const char *varvalue)
 {
   char *buf, *newrec = NULL;
@@ -551,12 +558,12 @@ int dbt_setvar(dbt_t fh, const char *varname, const char *varvalue)
   return 0;
 }
 
-/*
-*	Using VMT's with keys (like environment-variables)
-*
-*	gets a variable's value
-*	if variable not found, returns NULL otherwise returns a newly created string with the value
-*/
+/**
+ * Using VMT's with keys (like environment-variables)
+ *
+ * gets a variable's value
+ * if variable not found, returns NULL otherwise returns a newly created string with the value
+ */
 char *dbt_getvar(dbt_t fh, const char *varname)
 {
   char *buf, *retval = NULL;
@@ -590,7 +597,7 @@ char *dbt_getvar(dbt_t fh, const char *varname)
 }
 
 /**
-*	return the size of the record
+*       return the size of the record
 */
 int dbt_recsize(dbt_t t, int index)
 {

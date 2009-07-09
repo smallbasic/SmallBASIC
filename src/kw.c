@@ -1,13 +1,18 @@
-/*
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "kw.h"
 #include "var.h"
 
 /*
-*	valid exit codes from eval
-*/
+ * valid exit codes from eval
+ */
 code_t kw_eval_validexit[] = {
   kwTYPE_EOC, kwTYPE_LINE,
   kwTYPE_SEP, kwFILLED,
@@ -23,8 +28,8 @@ code_t kw_eval_validexit[] = {
 };
 
 /*
-*	functions without parameters
-*/
+ * functions without parameters
+ */
 fcode_t kw_noarg_func_table[] = {
   kwINKEY,
   kwTIME,
@@ -60,7 +65,7 @@ int kw_check_evexit(code_t code)
 }
 
 /*
-*/
+ */
 int kw_getcmdname(code_t code, char *dest)
 {
   int i;
@@ -87,7 +92,7 @@ int kw_getcmdname(code_t code, char *dest)
 }
 
 /*
-*/
+ */
 int kw_getfuncname(fcode_t code, char *dest)
 {
   int i;
@@ -147,34 +152,37 @@ int kw_noarg_func(fcode_t code)
   int i;
 
   for (i = 0; kw_noarg_func_table[i] != 0; i++) {
-    if (kw_noarg_func_table[i] == code)
+    if (kw_noarg_func_table[i] == code) {
       return 1;
+    }
   }
   return 0;
 }
 
 /*
-*/
+ */
 int kw_iscommand(const char *name)
 {
   int i;
 
   for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
-    if (strcasecmp(name, keyword_table[i].name) == 0)
+    if (strcasecmp(name, keyword_table[i].name) == 0) {
       return -1;
+    }
   }
   return 0;
 }
 
 /*
-*/
+ */
 int kw_isproc(const char *name)
 {
   int i;
 
   for (i = 0; proc_table[i].name[0] != '\0'; i++) {
-    if (strcasecmp(name, proc_table[i].name) == 0)
+    if (strcasecmp(name, proc_table[i].name) == 0) {
       return -1;
+    }
   }
   return 0;
 }
