@@ -125,6 +125,7 @@ struct List {
   void add(const char* s) {add(new String(s, strlen(s)));}
   void addSet(String* s);
   Object **getList() {return head;}
+  void sort(bool desc=true);
   
   // convert the String contents into a char* array - you are// responsible
   // for ensuring the array is deleted 
@@ -132,6 +133,7 @@ struct List {
   
   protected:
   void init();
+  static int compare(const void *a, const void *b);
   Object **head;
   int growSize;
   int count;

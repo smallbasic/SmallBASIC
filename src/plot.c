@@ -1,5 +1,12 @@
-/*
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// plot routines
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "var.h"
@@ -7,20 +14,24 @@
 #include "device.h"
 #include "blib.h"
 
+void plot_array_exr(var_t *var_p, var_num_t *xmin, var_num_t *xmax) SEC(BIO2);
+void plot_draw_x_axis(var_num_t xmin, var_num_t xmax, int left, int right, int y) SEC(BIO2);
+void plot_draw_y_axis(var_num_t ymin, var_num_t ymax, int top, int bottom, int x) SEC(BIO2);
+
 /*
-*	returns the min & max value of the array
-*/
-void plot_array_exr(var_t * var_p, double *xmin, double *xmax) SEC(BIO2);
-void plot_array_exr(var_t * var_p, double *xmin, double *xmax)
+ * returns the min & max value of the array
+ */
+void plot_array_exr(var_t* var_p, var_num_t *xmin, var_num_t *xmax)
 {
-  int count, i;
+  var_int_t count, i;
   var_t *elem_p;
-  double x;
+  var_num_t x;
 
   count = v_asize(var_p);
 
-  if (count <= 0)
+  if (count <= 0) {
     *xmin = *xmax = 0.0;
+  }
   else {
     // starting value
     elem_p = v_elem(var_p, 0);
@@ -31,24 +42,24 @@ void plot_array_exr(var_t * var_p, double *xmin, double *xmax)
       elem_p = v_elem(var_p, i);
       x = v_getreal(elem_p);
 
-      if (*xmin > x)
+      if (*xmin > x) {
         *xmin = x;
-      if (*xmax < x)
+      }
+      if (*xmax < x) {
         *xmax = x;
+      }
     }
   }
 }
 
 /*
-*	draw X axis
-*/
-void plot_draw_x_axis(double xmin, double xmax, int left, int right,
-                      int y) SEC(BIO2);
-void plot_draw_x_axis(double xmin, double xmax, int left, int right, int y)
+ * draw X axis
+ */
+void plot_draw_x_axis(var_num_t xmin, var_num_t xmax, int left, int right, int y)
 {
-  double xrange, dx, x;
-  int count, sxrange, smin_dx, smin_dy;
-  int i, sx, fw;
+  var_num_t xrange, dx, x;
+  var_int_t count, sxrange, smin_dx, smin_dy;
+  var_int_t i, sx, fw;
   char buf[64];
 
   xrange = xmax - xmin;
@@ -57,7 +68,7 @@ void plot_draw_x_axis(double xmin, double xmax, int left, int right, int y)
   smin_dx = dev_textwidth("000"); // minimum screen-dx
   smin_dy = dev_textheight("0") / 2;  // minimum screen-dy
   count = sxrange / smin_dx;    // values to draw
-  dx = xrange / (double)count;  // dx for values
+  dx = xrange / (var_num_t)count;  // dx for values
 
   // draw
   dev_line(left, y, right, y);
@@ -68,22 +79,18 @@ void plot_draw_x_axis(double xmin, double xmax, int left, int right, int y)
     fw = dev_textwidth(buf);
     dev_setxy(sx - fw, y + 1);
     dev_print(buf);
-
-    // 
     dev_line(sx, y, sx, y + smin_dy);
   }
 }
 
 /*
-*	draw Y axis
-*/
-void plot_draw_y_axis(double ymin, double ymax, int top, int bottom,
-                      int x) SEC(BIO2);
-void plot_draw_y_axis(double ymin, double ymax, int top, int bottom, int x)
+ * draw Y axis
+ */
+void plot_draw_y_axis(var_num_t ymin, var_num_t ymax, int top, int bottom, int x)
 {
-  double yrange, dy, y;
-  int count, syrange, smin_dy, smin_dx;
-  int i, sy, fh;
+  var_num_t yrange, dy, y;
+  var_int_t count, syrange, smin_dy, smin_dx;
+  var_int_t i, sy, fh;
   char buf[64];
 
   yrange = ymax - ymin;
@@ -92,7 +99,7 @@ void plot_draw_y_axis(double ymin, double ymax, int top, int bottom, int x)
   smin_dx = dev_textwidth("0"); // minimum screen-dx
   smin_dy = dev_textheight("0") * 1.5;  // minimum screen-dy
   count = syrange / smin_dy;    // values to draw
-  dy = yrange / (double)count;  // dx for values
+  dy = yrange / (var_num_t)count;  // dx for values
 
   // draw
   dev_line(x, top, x, bottom);
@@ -103,19 +110,17 @@ void plot_draw_y_axis(double ymin, double ymax, int top, int bottom, int x)
     fh = dev_textheight(buf);
     dev_setxy(x - dev_textwidth(buf), sy - fh);
     dev_print(buf);
-
-    // 
     dev_line(x, sy, x - smin_dx, sy);
   }
 }
 
 /*
-*	PLOT xset, yset
-*	PLOT xset USE y_expr
-*	PLOT USE xy_expr
-*
-*	Optional: ISO[TROPIC]
-*/
+ * PLOT xset, yset
+ * PLOT xset USE y_expr
+ * PLOT USE xy_expr
+ *
+ * Optional: ISO[TROPIC]
+ */
 void cmd_plot2(void)
 {
   var_t *vx = NULL, *vy = NULL;
@@ -133,37 +138,36 @@ void cmd_plot2(void)
       rt_raise("PLOT: Missing USE keyword");
       return;
     }
-
-    // /////
   }
 }
 
 /*
-*	PLOT3D xset, yset, zset
-*	PLOT3D xset, yset USE z_expr
-*	PLOT3D xset USE zy_expr
-*	PLOT3D USE xzy_expr
-*/
+ * PLOT3D xset, yset, zset
+ * PLOT3D xset, yset USE z_expr
+ * PLOT3D xset USE zy_expr
+ * PLOT3D USE xzy_expr
+ */
 
 /*
-*	PLOT4D [xset], [yset], [zset], [tset]
-*/
+ * PLOT4D [xset], [yset], [zset], [tset]
+ */
 
 //
-//      PLOT xmin, xmax [, count] USE ...
+// PLOT xmin, xmax [, count] USE ...
 //
 void cmd_plot()
 {
-  double x, xmin = 0, xmax = 0, dx, xstep;
-  double *yt, *xt;
-  int count = 0, i, border;
+  var_num_t x, xmin = 0, xmax = 0, dx, xstep;
+  var_num_t *yt, *xt;
+  var_int_t count = 0, i, border;
   addr_t use_ip, exit_ip;
   int prev_fgcolor = dev_fgcolor;
   int prev_bgcolor = dev_bgcolor;
 
   par_massget("FFi", &xmin, &xmax, &count);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
 
   // is there a use keyword ?
   if (code_peek() == kwUSE) {
@@ -179,12 +183,13 @@ void cmd_plot()
   // .................
   border = dev_textwidth("00000");
   dx = ABS(xmax - xmin);
-  if (count <= 0)
+  if (count <= 0) {
     count = os_graf_mx - border;
-  xstep = dx / (double)count;
+  }
+  xstep = dx / (var_num_t)count;
 
-  yt = (double *)tmp_alloc(sizeof(double) * count);
-  xt = (double *)tmp_alloc(sizeof(double) * count);
+  yt = (var_num_t*) tmp_alloc(sizeof(var_num_t) * count);
+  xt = (var_num_t*) tmp_alloc(sizeof(var_num_t) * count);
 
   // execute user's expression for each element
   // get y values
@@ -206,13 +211,12 @@ void cmd_plot()
 
   if (!prog_error) {
     // draw
-    chart_draw(0, 0, os_graf_mx, os_graf_my, yt, count, xt, count, 5  /* points 
-                */ , 2 /* ruler */ );
+    chart_draw(0, 0, os_graf_mx, os_graf_my, yt, count, xt, count, 5  
+               /* points */ , 2 /* ruler */ );
 //      for ( i = 0; i < count; i ++ )  
 //              dev_setpixel(i, (yt[i] - ymin) * ystep);
   }
 
-  // 
   tmp_free(xt);
   tmp_free(yt);
   dev_settextcolor(prev_fgcolor, prev_bgcolor);

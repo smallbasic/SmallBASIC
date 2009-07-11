@@ -102,14 +102,14 @@ void cmd_paint(void) SEC(BIO2);
 void cmd_pen(void) SEC(BIO2);
 void cmd_view(void) SEC(BIO2);
 void cmd_window(void) SEC(BIO2);
-void chart_draw(int x1, int y1, int x2, int y2, double *vals, int count,
-                double *xvals, int xcount, int chart, int marks) SEC(BIO2);
-void cmd_chart_fstr(double v, char *buf) SEC(BIO2);
+void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
+                var_num_t *xvals, int xcount, int chart, int marks) SEC(BIO2);
+void cmd_chart_fstr(var_num_t v, char *buf) SEC(BIO2);
 void cmd_chart(void) SEC(BIO2);
 void cmd_drawpoly(void) SEC(BIO2);
 var_t *par_getm3(void) SEC(BIO2);
-void m3ident(double[3][3]) SEC(BIO2);
-void m3combine(var_t *, double[3][3]) SEC(BIO2);
+void m3ident(var_num_t[3][3]) SEC(BIO2);
+void m3combine(var_t *, var_num_t[3][3]) SEC(BIO2);
 void cmd_m3ident(void) SEC(BIO2);
 void cmd_m3rotate(void) SEC(BIO2);
 void cmd_m3scale(void) SEC(BIO2);
@@ -122,14 +122,14 @@ void cmd_plot(void) SEC(BIO2);
 void cmd_plot2(void) SEC(BIO2);
 
 // third class
-void cmd_strN(long, var_t *) SEC(BMATH);  // its ok, i want all functions
+void cmd_strN(long, var_t*) SEC(BMATH);  // its ok, i want all functions
 // to BMATH
-void cmd_intN(long, var_t *) SEC(BMATH);
-void cmd_numN(long, var_t *) SEC(BMATH);
-void cmd_genfunc(long, var_t *) SEC(BMATH);
+void cmd_intN(long, var_t*) SEC(BMATH);
+void cmd_numN(long, var_t*) SEC(BMATH);
+void cmd_genfunc(long, var_t*) SEC(BMATH);
 var_num_t line_length(var_num_t Ax, var_num_t Ay, var_num_t Bx, var_num_t By) SEC(BMATH);
-double line_segangle(int type, double Adx, double Ady, double Bdx,
-                     double Bdy) SEC(BMATH);
+var_num_t line_segangle(int type, var_num_t Adx, var_num_t Ady, var_num_t Bdx,
+                        var_num_t Bdy) SEC(BMATH);
 void cmd_integral(void) SEC(BMATH);
 void cmd_root() SEC(BMATH);
 

@@ -12,8 +12,8 @@
 #include "kw.h"
 
 /**
-*	length of line segment A-B
-*/
+ * length of line segment A-B
+ */
 double geo_seglen(double Ax, double Ay, double Bx, double By)
 {
   double dx = Bx - Ax;
@@ -23,8 +23,8 @@ double geo_seglen(double Ax, double Ay, double Bx, double By)
 }
 
 /**
-*	distance of point C from line (A,B)
-*/
+ * distance of point C from line (A,B)
+ */
 double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx,
                         double Cy)
 {
@@ -46,8 +46,8 @@ double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx,
 }
 
 /**
-*	distance of point C from line segment (A->B)
-*/
+ * distance of point C from line segment (A->B)
+ */
 double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx,
                        double Cy)
 {
@@ -77,8 +77,8 @@ double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx,
 }
 
 /*
-*	COS/SIN of two line segments
-*/
+ * COS/SIN of two line segments
+ */
 double geo_segangle(int type, double Adx, double Ady, double Bdx, double Bdy)
 {
   double la, lb;
@@ -122,8 +122,9 @@ int geo_polycentroid(pt_t * poly, int n, var_num_t *xCentroid, var_num_t *yCentr
   int i, j;
   var_num_t ai, atmp = 0, xtmp = 0, ytmp = 0;
 
-  if (n < 3)
+  if (n < 3) {
     return 1;
+  }
 
   for (i = n - 1, j = 0; j < n; i = j, j++) {
     ai = poly[i].x * poly[j].y - poly[j].x * poly[i].y;

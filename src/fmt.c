@@ -102,7 +102,7 @@ void fmt_addfmt(const char *fmt, int type) SEC(BLIB);
 void fmt_printL(int output, int handle) SEC(BLIB);
 
 /*
- * INT(x)
+ * INT(x) round downwards to the nearest integer
  */
 var_num_t fint(var_num_t x)
 {

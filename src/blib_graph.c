@@ -322,11 +322,11 @@ void cmd_rect()
 void cmd_drawpoly()
 {
   int i, count;
-  double xorg = 0, yorg = 0;
+  var_num_t xorg = 0, yorg = 0;
   int32 prev_color = dev_fgcolor;
   int32 color = dev_fgcolor;
   byte filled = 0, scalef = 0;
-  double scale = 1.0;
+  var_num_t scale = 1.0;
   ipt_t *poly;
 
   // array
@@ -434,7 +434,7 @@ void cmd_circle()
   byte fill = 0, step = 0;
   ipt_t pt;
   int r;
-  double aspect = 1.0;
+  var_num_t aspect = 1.0;
   byte code;
 
   /*
@@ -512,7 +512,7 @@ void cmd_arc()
   int32 color = dev_fgcolor;
   byte step = 0;
   int r;
-  double as, ae, aspect = 1.0;
+  var_num_t as, ae, aspect = 1.0;
   byte code;
   ipt_t pt;
 
@@ -863,7 +863,7 @@ void cmd_draw()
 //      1 = labels
 //      2 = ruler
 //
-void cmd_chart_fstr(double v, char *buf)
+void cmd_chart_fstr(var_num_t v, char *buf)
 {
   if (fabs(v) >= 10E+9) {
     ftostr(v / 1E+9, buf);
@@ -905,12 +905,12 @@ void cmd_chart_fstr(double v, char *buf)
  *   chart = chart type (1=line chart, 0=bar chart, 5=points)
  *   marks = marks type (2 & ruler, 1 & marks)
  */
-void chart_draw(int x1, int y1, int x2, int y2, double *vals, int count,
-                double *xvals, int xcount, int chart, int marks)
+void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
+                var_num_t *xvals, int xcount, int chart, int marks)
 {
   int *pts;
   int rx1, dx, dy, i;
-  double vmin, vmax, lx, ly;
+  var_num_t vmin, vmax, lx, ly;
   char buf[32];
   int32 color = 0;
 
@@ -947,11 +947,11 @@ void chart_draw(int x1, int y1, int x2, int y2, double *vals, int count,
   }
 
   if (chart == 1)               // line-chart
-    lx = ((double)dx) / (double)(count - 1);
+    lx = ((var_num_t)dx) / (var_num_t)(count - 1);
   else
-    lx = ((double)dx) / (double)count;
+    lx = ((var_num_t)dx) / (var_num_t)count;
 
-  ly = ((double)dy) / (vmax - vmin);
+  ly = ((var_num_t)dy) / (vmax - vmin);
 
   // calc points
   for (i = 0; i < count; i++) {
@@ -962,7 +962,7 @@ void chart_draw(int x1, int y1, int x2, int y2, double *vals, int count,
   // draw ruler
   if (marks & 0x2) {
     int fh, fw, n, y, x;
-    double v;
+    var_num_t v;
 
     // vertical
     fh = dev_textheight("0");
@@ -975,7 +975,7 @@ void chart_draw(int x1, int y1, int x2, int y2, double *vals, int count,
         else if (i == n)
           v = vmax;
         else
-          v = vmin + (((double)i + 1) * ((vmax - vmin) / (double)(n + 1)));
+          v = vmin + (((var_num_t)i + 1) * ((vmax - vmin) / (var_num_t)(n + 1)));
 
         cmd_chart_fstr(v, buf);
 
@@ -1008,13 +1008,13 @@ void chart_draw(int x1, int y1, int x2, int y2, double *vals, int count,
         if (i == 0)
           v = 0;
         else
-          v = i * ((double)count / (double)n);
+          v = i * ((var_num_t)count / (var_num_t)n);
 
 
         if (xvals) {
           // I have xvals
-          double x, dx;
-          double xmin, xmax;
+          var_num_t x, dx;
+          var_num_t xmin, xmax;
 
           xmin = xvals[0];
           xmax = xvals[xcount - 1];
@@ -1178,7 +1178,7 @@ void cmd_chart()
 {
   var_t *var_p, *elem_p;
   int i, count;
-  double *vals;
+  var_num_t *vals;
   int32 prev_fgcolor = dev_fgcolor;
   int32 prev_bgcolor = dev_bgcolor;
 
@@ -1240,7 +1240,7 @@ void cmd_chart()
   }
 
   // get array's values
-  vals = (double *)tmp_alloc(sizeof(double) * count);
+  vals = (var_num_t *)tmp_alloc(sizeof(var_num_t) * count);
   for (i = 0; i < count; i++) {
     elem_p = v_getelemptr(var_p, i);
     if (prog_error) {
@@ -1290,9 +1290,9 @@ var_t *par_getm3()
 }
 
 ///
-void m3combine(var_t * m, double nm[3][3])
+void m3combine(var_t * m, var_num_t nm[3][3])
 {
-  double om[3][3];
+  var_num_t om[3][3];
   int i, j;
   var_t *e;
 
@@ -1323,7 +1323,7 @@ void m3combine(var_t * m, double nm[3][3])
 }
 
 //
-void m3ident(double m[3][3])
+void m3ident(var_num_t m[3][3])
 {
   int i, j;
 
@@ -1361,8 +1361,8 @@ void cmd_m3ident()
 void cmd_m3rotate()
 {
   var_t *m;
-  double angle, x = 0, y = 0, c, s;
-  double matrix[3][3];
+  var_num_t angle, x = 0, y = 0, c, s;
+  var_num_t matrix[3][3];
 
   m = par_getm3();
   if (prog_error)
@@ -1407,8 +1407,8 @@ void cmd_m3rotate()
 void cmd_m3scale()
 {
   var_t *m;
-  double x, y, fx, fy;
-  double matrix[3][3];
+  var_num_t x, y, fx, fy;
+  var_num_t matrix[3][3];
 
   m = par_getm3();
   if (prog_error)
@@ -1452,8 +1452,8 @@ void cmd_m3scale()
 void cmd_m3translate()
 {
   var_t *m;
-  double x, y;
-  double matrix[3][3];
+  var_num_t x, y;
+  var_num_t matrix[3][3];
 
   m = par_getm3();
   if (prog_error)
@@ -1483,7 +1483,7 @@ void cmd_m3translate()
 void cmd_m3apply()
 {
   var_t *m, *p, *e;
-  double om[3][3], x, y;
+  var_num_t om[3][3], x, y;
   int i, j, count;
 
   m = par_getm3();
@@ -1556,7 +1556,7 @@ void cmd_m3apply()
 //
 void cmd_intersect()
 {
-  double a, b, c, s;
+  var_num_t a, b, c, s;
   pt_t A, B, C, D, R;
   var_t *type, *vrx, *vry = NULL;
   byte style = 0;

@@ -471,7 +471,7 @@ Object *List::get(const int index) const
   return index < count ? head[index] : 0;
 }
 
-void List::add(Object * object)
+void List::add(Object* object)
 {
   if (++count > size) {
     size += growSize;
@@ -521,6 +521,18 @@ const char **List::toArray()
     return array;
   }
   return 0;
+}
+
+int List::compare(const void *a, const void *b) {
+  String* s1 = ((String**) a)[0];
+  String* s2 = ((String**) b)[0];
+  return strcasecmp(s1->toString(), s2->toString());
+}
+
+void List::sort(bool desc) {
+  if (count > 0) {
+    qsort(head, count, sizeof(Object), compare);
+  }
 }
 
 //--Stack-----------------------------------------------------------------------

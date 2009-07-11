@@ -717,7 +717,7 @@ void eval(var_t *r)
         a = li;
         b = ri;
         ri = 0;
-        for (i = 0; i < 32; i++) {
+        for (i = 0; i < sizeof(var_int_t); i++) {
           ba = a & (1 << i);
           bb = b & (1 << i);
           if ((ba && bb) || (!ba && !bb)) {
@@ -729,7 +729,7 @@ void eval(var_t *r)
         a = li;
         b = ri;
         ri = 0;
-        for (i = 0; i < 32; i++) {
+        for (i = 0; i < sizeof(var_int_t); i++) {
           ba = a & (1 << i);
           bb = b & (1 << i);
           if (!(ba && !bb)) {

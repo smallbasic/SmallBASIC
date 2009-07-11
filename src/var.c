@@ -458,19 +458,16 @@ int v_compare(var_t *a, var_t *b)
 
   if (a->type == V_INT && b->type == V_INT) {
     di = (a->v.i - b->v.i);
-    if (di < 0) {               // ndc: 18/03/2001
-      return -1;
-    }
-    if (di > 0) {
-      return 1;
-    }
-    return 0;
+    i = di < 0 ? -1 : di > 0 ? 1 : 0;
+    return i;
   }
   else if ((a->type == V_INT || a->type == V_NUM) &&
            (b->type == V_INT || b->type == V_NUM)) {
     var_num_t left = (a->type == V_NUM) ? a->v.n : a->v.i;
     var_num_t right = (b->type == V_NUM) ? b->v.n : b->v.i;
-    return ZSGN((right + left) - (right + left)); // avoid 1-1.000=-0
+    dt = (left - right);
+    i = dt < 0.0 ? -1 : dt > 0.0 ? 1 : 0;
+    return i;
   }
   if ((a->type == V_STR) && (b->type == V_STR)) {
     return strcmp(a->v.p.ptr, b->v.p.ptr);

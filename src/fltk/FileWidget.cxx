@@ -124,6 +124,7 @@ void FileWidget::displayPath()
   if (chdir(path) != 0) {
     return;
   }
+
   DIR* dp = opendir(path);
   if (dp == 0) {
     return;
@@ -131,8 +132,29 @@ void FileWidget::displayPath()
 
   dirent* entry;
   struct stat stbuf;
+  strlib::List dirs;
+  strlib::List files;
+
+  while ((entry = readdir(dp)) != 0) {
+    char* name = entry->d_name;
+    int len = strlen(name);
+    if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+      continue;
+    } 
+
+    if (stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
+      dirs.add(new String(name));
+    } 
+    else if (strncasecmp(name+len-4, ".htm", 4) == 0 ||
+             strncasecmp(name+len-5, ".html", 5) == 0||
+             strncasecmp(name+len-4, ".bas", 4) == 0 ||
+             strncasecmp(name+len-4, ".txt", 4) == 0) {
+      files.add(new String(name));
+    }
+  }
+
   String html;
-  
+
   if (saveEditorAs) {
     const char* path = saveEditorAs->getFilename();
     char* slash = strrchr(path, '/');
@@ -143,36 +165,28 @@ void FileWidget::displayPath()
 
   html.append("<br><b>Files in: <a href=@>").append(path).append("</a></b><br>");
 
-  while ((entry = readdir(dp)) != 0) {
-    char* name = entry->d_name;
-    int len = strlen(name);
-    if (strcmp(name, ".") == 0) {
-      continue;
-    } 
-    else if (strcmp(name, "..") == 0 && path[0] == '/' && path[1] == 0) {
-      continue;
-    }
-
-    if (stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
-      if (!strcmp(name, "..")) {
-        html.append("<p><input type=button onclick='!..' value='@<;'>");
-      }
-      else {
-        html.append("<p><a href='!");
-        html.append(name);
-        html.append("'>[");
-        html.append(name);
-        html.append("]</a>");
-      }
-    } 
-    else if (strncasecmp(name+len-4, ".htm", 4) == 0 ||
-             strncasecmp(name+len-5, ".html", 5) == 0||
-             strncasecmp(name+len-4, ".bas", 4) == 0 ||
-             strncasecmp(name+len-4, ".txt", 4) == 0) {
-      html.append("<p><a href=").append(name).append(">");
-      html.append(name).append("</a>");
-    }
+  if (strcmp(path, "/") != 0 && strcmp(path + 1, ":/") != 0) {
+    // not "/" or "C:/"
+    html.append("<p><input type=button onclick='!..' value='@<;'>");
   }
+
+  dirs.sort();
+  files.sort();
+
+  int len = dirs.length();
+  for (int i = 0; i < len; i++) {
+    String* name = (String*) dirs.get(i);
+    html.append("<p><a href='!").append(name)
+        .append("'>[").append(name).append("]</a>");
+  }
+
+  len = files.length();
+  for (int i = 0; i < len; i++) {
+    String* name = (String*) files.get(i);
+    html.append("<p><a href=").append(name)
+        .append(">").append(name).append("</a>");
+  }
+
   closedir(dp);
   loadBuffer(html);
 }
