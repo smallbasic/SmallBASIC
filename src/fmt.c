@@ -8,22 +8,6 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#if defined(_TEST_)
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <stdlib.h>
-#define panic(a)      { printf("%s\n", (a)); abort(); }
-#define rt_raise(a)     panic(a)
-#define tmp_alloc(x)    malloc(x)
-#define tmp_free(x)     free(x)
-#define dev_print(a)    printf("%s", a)
-#define SEC(x)
-
-// select alogrithm
-#define FMT_USE_i32
-#else // SB
-
 #include "sys.h"
 #include "str.h"
 #include "panic.h"
@@ -31,11 +15,9 @@
 #include "device.h"
 #include "pproc.h"
 #include "messages.h"
+#include "blib_math.h"
 
 #define FMT_USE_i32
-#endif
-
-//
 #if defined(FMT_USE_i32)
 // limits for use with 32bit integer algorithm
 #define FMT_xMIN        1e-8          // lowest limit to use the exp. format
@@ -45,11 +27,11 @@
 #define FMT_xRND2       1e+8          // 1 * 10 ^ (FMT_RND-1)
 #else
 // limits for use with 64bit integer or 64bit fp algorithm
+#define FMT_xMIN        1e-8
+#define FMT_xMAX        1e+14
 #define FMT_RND         14
 #define FMT_xRND        1e+14
 #define FMT_xRND2       1e+13
-#define FMT_xMAX        1e+14
-#define FMT_xMIN        1e-8
 #endif
 
 // PRINT USING; format-list
@@ -58,6 +40,16 @@
 #else
 #define MAX_FMT_N       128
 #endif
+
+void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) SEC(BLIB);
+void fmt_nmap(int dir, char *dest, char *fmt, char *src) SEC(BLIB);
+void fmt_omap(char *dest, const char *fmt) SEC(BLIB);
+int fmt_cdig(char *fmt) SEC(BLIB);
+char *fmt_getnumfmt(char *dest, char *source) SEC(BLIB);
+char *fmt_getstrfmt(char *dest, char *source) SEC(BLIB);
+void fmt_addfmt(const char *fmt, int type) SEC(BLIB);
+void fmt_printL(int output, int handle) SEC(BLIB);
+
 typedef struct {
   char *fmt;                    // the format or a string
   int type;                     // 0 = string, 1 = numeric format, 2 = string
@@ -86,66 +78,6 @@ static double nfta_eminus[] = {
   1e-200, 1e-208, 1e-216, 1e-224, 1e-232, 1e-240, 1e-248, 1e-256, // 32
   1e-264, 1e-272, 1e-280, 1e-288, 1e-296, 1e-304  // 38
 };
-
-var_num_t fint(var_num_t x) SEC(BMATH);
-var_num_t frac(var_num_t x) SEC(BMATH);
-int sgn(var_num_t x)  SEC(BMATH);
-int zsgn(var_num_t x) SEC(BMATH);
-var_num_t fround(var_num_t x, int dig) SEC(BMATH);
-void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) SEC(BLIB);
-void fmt_nmap(int dir, char *dest, char *fmt, char *src) SEC(BLIB);
-void fmt_omap(char *dest, const char *fmt) SEC(BLIB);
-int fmt_cdig(char *fmt) SEC(BLIB);
-char *fmt_getnumfmt(char *dest, char *source) SEC(BLIB);
-char *fmt_getstrfmt(char *dest, char *source) SEC(BLIB);
-void fmt_addfmt(const char *fmt, int type) SEC(BLIB);
-void fmt_printL(int output, int handle) SEC(BLIB);
-
-/*
- * INT(x) round downwards to the nearest integer
- */
-var_num_t fint(var_num_t x)
-{
-  return (x < 0.0) ? -floor(-x) : floor(x);
-}
-
-/*
- * FRAC(x)
- */
-var_num_t frac(var_num_t x)
-{
-  return fabs(fabs(x) - fint(fabs(x)));
-}
-
-/*
- * SGN(x)
- */
-int sgn(var_num_t x)
-{
-  return (x < 0.0) ? -1 : 1;
-}
-
-/*
- * ZSGN(x)
- */
-int zsgn(var_num_t x)
-{
-  return (x < 0.0) ? -1 : ((x > 0.0) ? 1 : 0);
-}
-
-/*
- * ROUND(x, digits)
- */
-var_num_t fround(var_num_t x, int dig)
-{
-  var_num_t m;
-
-  m = floor(pow(10.0, dig));
-  if (x < 0.0) {
-    return -floor((-x * m) + .5) / m;
-  }
-  return floor((x * m) + .5) / m;
-}
 
 /*
  * Part of floating point to string (by using integers) algorithm

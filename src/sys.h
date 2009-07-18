@@ -9,46 +9,6 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 /**
- * @defgroup sys System/CPU
- */
-
-#if !defined(_sb_sys_h)
-#define _sb_sys_h
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-#if defined(__BORLANDC__)
-#pragma warn -8012              // comparing signed & unsinged
-#endif
-
-#if defined(__CYGWIN__)
-#define __addr_t_defined
-typedef unsigned int addr_t;
-#endif
-
-#if defined OS_PREC64
-  typedef long double   var_num_t;
-  typedef long long int var_int_t;
-  #define VAR_INT_FMT   "%lld"
-  #define VAR_NUM_FMT   "%Lg"
-#else
-  #define OS_PREC32
-  typedef double        var_num_t;
-  typedef long int      var_int_t;
-  #define VAR_INT_FMT   "%ld"
-  #define VAR_NUM_FMT   "%g"
-#endif
-
-#define OS_INTSZ  sizeof(var_int_t)  // size of integer
-#define OS_REALSZ sizeof(var_num_t)  // size of real
-
-/**
  * @ingroup sys
  * @page sbsys System macros (SB/OS/CPU) and Memory manager
  *
@@ -124,6 +84,46 @@ typedef unsigned int addr_t;
  * small protection mechanism.
  *
  */
+
+/**
+ * @defgroup sys System/CPU
+ */
+
+#if !defined(_sb_sys_h)
+#define _sb_sys_h
+
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+#if defined(__BORLANDC__)
+#pragma warn -8012              // comparing signed & unsinged
+#endif
+
+#if defined(__CYGWIN__)
+#define __addr_t_defined
+typedef unsigned int addr_t;
+#endif
+
+#if defined OS_PREC64
+  typedef long double   var_num_t;
+  typedef long long int var_int_t;
+  #define VAR_INT_FMT   "%lld"
+  #define VAR_NUM_FMT   "%Lg"
+#else
+  #define OS_PREC32
+  typedef double        var_num_t;
+  typedef long int      var_int_t;
+  #define VAR_INT_FMT   "%ld"
+  #define VAR_NUM_FMT   "%g"
+#endif
+
+#define OS_INTSZ  sizeof(var_int_t)  // size of integer
+#define OS_REALSZ sizeof(var_num_t)  // size of real
 
 // default
 #define OS_ADDR32

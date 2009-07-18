@@ -2455,19 +2455,22 @@ void cmd_numN(long funcCode, var_t *r)
     if (!prog_error) {
       if (code_peek() == kwTYPE_SEP) {
         par_getcomma();
-        if (!prog_error)
+        if (!prog_error) {
           pw = par_getint();
+        }
       }
-      else
+      else {
         pw = 0;
-
+      }
       if (!prog_error) {
         // round
         m = floor(pow(10.0, pw));
-        if (SGN(x) < 0.0)
+        if (SGN(x) < 0.0) {
           r->v.n = -floor((-x * m) + .5) / m;
-        else
+        }
+        else {
           r->v.n = floor((x * m) + .5) / m;
+        }
       }
     }
     break;

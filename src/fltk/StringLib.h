@@ -66,6 +66,7 @@ struct String : public Object {
   String& append(const String & s);
   String& append(const String * s);
   String& append(int i);
+  String& append(char c);
   String& append(double d);
   String& append(int i, int padding);
   String& append(const char *s);

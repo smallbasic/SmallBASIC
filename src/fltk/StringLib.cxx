@@ -147,6 +147,13 @@ String& String::append(int i)
   return *this;
 }
 
+String& String::append(char c)
+{
+  char t[2] = {c, 0};
+  append(t);
+  return *this;
+}
+
 String& String::append(double d)
 {
   char t[20];

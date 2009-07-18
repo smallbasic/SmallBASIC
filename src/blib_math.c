@@ -17,6 +17,66 @@
 #include "pproc.h"
 #include "smbas.h"
 
+/*
+ * INT(x) round downwards to the nearest integer
+ */
+var_num_t fint(var_num_t x)
+{
+  return (x < 0.0) ? -floor(-x) : floor(x);
+}
+
+/*
+ * FRAC(x)
+ */
+var_num_t frac(var_num_t x)
+{
+  return fabs(fabs(x) - fint(fabs(x)));
+}
+
+/*
+ * SGN(x)
+ */
+int sgn(var_num_t x)
+{
+  return (x < 0.0) ? -1 : 1;
+}
+
+/*
+ * ZSGN(x)
+ */
+int zsgn(var_num_t x)
+{
+  return (x < 0.0) ? -1 : ((x > 0.0) ? 1 : 0);
+}
+
+/*
+ * ROUND(x, digits)
+ */
+var_num_t fround(var_num_t x, int dig)
+{
+  var_num_t result = 0.0;
+  var_num_t m = floor(pow(10.0, dig));
+
+  if (x < 0.0) {
+    result = -floor((-x * m) + .5) / m;
+  }
+  else {
+    result = floor((x * m) + .5) / m;
+  }
+  return result;
+}
+
+/*
+ * divide n by d with limited precision
+ */
+var_num_t m_div(var_num_t n, var_num_t d) {
+  var_num_t result = n;
+  if (d != 0.0) {
+    result = n / d;
+  }
+  return result;
+}
+
 void root_iterate(var_num_t xl, var_num_t xh, var_num_t fl, var_num_t fh, var_t * res_vp,
                   var_num_t maxerr, var_t *err_vp, addr_t use_ip) SEC(BMATH2);
 
@@ -50,9 +110,9 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler)
   //
   irow = 0;
   icol = 0;
-  for (j = 0; j < n; j++)
+  for (j = 0; j < n; j++) {
     ipiv[j] = 0;
-
+  }
   for (i = 0; i < n; i++) {
     big = 0.0;
     for (j = 0; j < n; j++) {
@@ -98,17 +158,18 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler)
 
     pivinv = 1.0 / a[icol * n + icol];
     a[icol * n + icol] = 1.0;
-    for (l = 0; l < n; l++)
+    for (l = 0; l < n; l++) {
       a[icol * n + l] = a[icol * n + l] * pivinv;
+    }
 
     b[icol] = b[icol] * pivinv;
     for (ll = 0; ll < n; ll++) {
       if (ll != icol) {
         dum = a[ll * n + icol];
         a[ll * n + icol] = 0.0;
-        for (l = 0; l < n; l++)
+        for (l = 0; l < n; l++) {
           a[ll * n + l] = a[ll * n + l] - a[icol * n + l] * dum;
-
+        }
         b[ll] = b[ll] - b[icol] * dum;
       }
     }
@@ -116,8 +177,9 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler)
 
   for (l = n - 1; l >= 0; l--) {
     if (indxr[l] != indxc[l]) {
-      for (k = 0; k < n; k++)
+      for (k = 0; k < n; k++) {
         SWAP(a[k * n + indxr[l]], a[k * n + indxc[l]], swp);
+      }
     }
   }
 
@@ -133,7 +195,7 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler)
 void mat_inverse(var_num_t *a, int n)
 {
   int i, j, r, t, s, m, l;
-  var_num_t *b, *x, p, div;
+  var_num_t *b, *x, p;
 
   b = tmp_alloc(n * n * sizeof(var_num_t));
   x = tmp_alloc(n * n * sizeof(var_num_t));
@@ -145,13 +207,7 @@ void mat_inverse(var_num_t *a, int n)
 
   for (r = 0; r < n - 1; r++) {
     for (i = r; i < n - 1; i++) {
-      div = a[r * n + r];
-      if (div != 0) {
-        p = a[(i + 1) * n + r] / div;
-      }
-      else {
-        p = a[(i + 1) * n + r];
-      }
+      p = m_div(a[(i + 1) * n + r], a[r * n + r]);
       for (j = r + 1; j < n; j++) {
         a[(i + 1) * n + j] = a[(i + 1) * n + j] - p * a[r * n + j];
       }
@@ -168,13 +224,7 @@ void mat_inverse(var_num_t *a, int n)
           b[m * n + s] = b[m * n + s] - a[m * n + l] * x[l * n + s];
         }
       }
-      div = a[m * n + m];
-      if (div != 0) {
-        x[m * n + s] = b[m * n + s] / div;
-      }
-      else {
-        x[m * n + s] = b[m * n + s];
-      }
+      x[m * n + s] = m_div(b[m * n + s], a[m * n + m]);
     }
   }
 

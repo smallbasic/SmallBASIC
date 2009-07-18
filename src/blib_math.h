@@ -17,8 +17,15 @@
 
 #include "sys.h"
 
+var_num_t fint(var_num_t x) SEC(BMATH);
+var_num_t frac(var_num_t x) SEC(BMATH);
+int sgn(var_num_t x)  SEC(BMATH);
+int zsgn(var_num_t x) SEC(BMATH);
+var_num_t fround(var_num_t x, int dig) SEC(BMATH);
+
 #define SEGLEN(Ax,Ay,Bx,By)     line_length(Ax,Ay,Bx,By)
-#define PTSIGN(Ax,Ay,Bx,By,Qx,Qy) (ZSGN((Qx) * ((Ay) - (By)) + (Qy) * ((Bx) - (Ax)) + (Ax) * (By) - (Ay) * (Bx))) 
+#define PTSIGN(Ax,Ay,Bx,By,Qx,Qy) (ZSGN((Qx) * ((Ay) - (By)) + (Qy) * \
+     ((Bx) - (Ax)) + (Ax) * (By) - (Ay) * (Bx))) 
   /**< sign of a point(Q) from a line-segment(A->B) @ingroup math */
 
 /**

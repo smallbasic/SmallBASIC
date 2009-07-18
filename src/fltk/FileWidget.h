@@ -21,12 +21,16 @@ struct FileWidget : public HelpWidget {
 
   // returns the final slash char
   static char* forwardSlash(char *filename);
-  void fileOpen(EditorWidget* saveEditorAs);
   void anchorClick();
+  void fileOpen(EditorWidget* saveEditorAs);
   int handle(int e);
 
   private:
+  void changeDir(const char* target);
   void displayPath();
+  void enterPath();
+  void saveAs();
+
   char path[PATH_MAX+1];
   EditorWidget* saveEditorAs;
 };
