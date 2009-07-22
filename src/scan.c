@@ -2627,9 +2627,22 @@ void comp_text_line(char *text)
 
     case kwELSE:
     case kwELIF:
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-      comp_expression(comp_bc_parm, 0);
+      {
+        int index = 0;
+        // handle "ELSE IF"
+        if (idx == kwELSE && strncasecmp(LCN_IF, comp_bc_parm, 2) == 0) {
+          idx = kwELIF;
+          index = 2;
+        }
+        // handle error for ELSE xxxx
+        if (idx == kwELSE && comp_bc_parm[0]) {
+          sc_raise(ERR_SYNTAX);
+          break;
+        }        
+        comp_push(comp_prog.count);
+        bc_add_ctrl(&comp_prog, idx, 0, 0);
+        comp_expression(comp_bc_parm + index, 0);
+      }
       break;
 
     case kwENDIF:
