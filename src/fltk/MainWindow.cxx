@@ -50,6 +50,8 @@ const char* basHome = "BAS_HOME=";
 const char* pluginHome = "plugins";
 const char historyFile[] = "history.txt";
 const char keywordsFile[] = "keywords.txt";
+const char fontFile[] = "fonts.txt";
+const char fontFileFormat[] = "name=%s\nsize=%d\n";
 const char aboutText[] =
   "<b>About SmallBASIC...</b><br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
@@ -111,14 +113,22 @@ void MainWindow::showOutputTab()
 void MainWindow::saveLastEdit(const char *filename)
 {
   // remember the last edited file
-  char path[MAX_PATH];
-  getHomeDir(path);
-  strcat(path, LASTEDIT_FILE);
-  FILE *fp = fopen(path, "w");
+  FILE *fp = openConfig(LASTEDIT_FILE);
   if (fp) {
     int err;
     err = fwrite(filename, strlen(filename), 1, fp);
     err = fwrite("\n", 1, 1, fp);
+    fclose(fp);
+  }
+}
+
+void MainWindow::saveFontSpec(const char* fontName, int size) {
+  FILE *fp = openConfig(fontFile);
+  if (fp) {
+    char buffer[MAX_PATH];
+    int err;
+    sprintf(buffer, fontFileFormat, fontName, size);
+    err = fwrite(buffer, strlen(buffer), 1, fp);
     fclose(fp);
   }
 }
@@ -588,6 +598,7 @@ void MainWindow::font_size_incr(Widget* w, void* eventData)
     if (size < MAX_FONT_SIZE) {
       editWidget->setFontSize(size + 1);
       out->setFontSize(size + 1);
+      saveFontSpec(editWidget->getFontName(), editWidget->getFontSize());
     }
   }
   else {
@@ -603,10 +614,20 @@ void MainWindow::font_size_decr(Widget* w, void* eventData)
     if (size > MIN_FONT_SIZE) {
       editWidget->setFontSize(size - 1);
       out->setFontSize(size - 1);
+      saveFontSpec(editWidget->getFontName(), editWidget->getFontSize());
     }
   }
   else {
     handle(EVENT_DECREASE_FONT);
+  }
+}
+
+void MainWindow::font_name(Widget* w, void* eventData)
+{
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    editWidget->setFont(fltk::font(w->label(), 0));
+    saveFontSpec(w->label(), editWidget->getFontSize());
   }
 }
 
@@ -978,6 +999,22 @@ void MainWindow::scanRecentFiles(Menu * menu)
   }
 }
 
+void MainWindow::scanFonts(Menu* menu)
+{
+  char label[1024];
+  Font** fonts;
+
+  int numfonts = fltk::list_fonts(fonts);
+  for (int i = 0; i < numfonts; i++) {
+    sprintf(label, "&View/Font/%s", fonts[i]->name());
+    
+    setfont(font(fonts[i]->name()), 12);
+    if (getwidth("QW") == getwidth("il")) {
+      menu->add(label, 0, (Callback *)MainWindow::font_name_cb, label);
+    }
+  }
+}
+
 void MainWindow::scanPlugIns(Menu* menu)
 {
   FILE *file;
@@ -1233,6 +1270,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&View/_&Prev Tab", CTRL + F6Key, (Callback *) MainWindow::prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) MainWindow::font_size_decr_cb);
+  scanFonts(m);
   scanPlugIns(m);
   m->add("&Program/_&Run", F9Key, (Callback *) run_cb);
   m->add("&Program/&Break", CTRL + 'b', (Callback *) MainWindow::run_break_cb);
@@ -1282,6 +1320,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   outer->resizable(tabGroup);
   resizable(outer);
 
+  // setup the find and replace dialog
   replaceDlg = new Window(300, 105, "Replace");
   replaceDlg->begin();
   replaceFind = new Input(80, 10, 210, 25, "Find:");
@@ -1309,8 +1348,20 @@ Group* MainWindow::createEditor(const char* title) {
   const char* slash = strrchr(title, '/');
   editGroup->copy_label(slash ? slash + 1 : title);
   editGroup->begin();
+  EditorWidget* editor = new EditorWidget(2, 2, w - 4, h);
+  FILE *fp = openConfig(fontFile, "r");
+  if (fp) {
+    char fontName[MAX_PATH];
+    int size = 0;
+    if (fscanf(fp, fontFileFormat, fontName, &size) == 2) {
+      editor->setFont(font(fontName));
+      editor->setFontSize(size);
+    }
+    fclose(fp);
+  }
+
   editGroup->box(THIN_DOWN_BOX);
-  editGroup->resizable(new EditorWidget(2, 2, w - 4, h));
+  editGroup->resizable(editor);
   editGroup->user_data((void*) gw_editor);
   editGroup->end();
 
@@ -1549,6 +1600,16 @@ Group* MainWindow::getPrevTab(Group* current)
     }
   }
   return (Group*) tabGroup->child(n - 1);
+}
+
+/**
+ * Opens the config file ready for writing
+ */
+FILE* MainWindow::openConfig(const char* fileName, const char* flags) {
+  char path[MAX_PATH];
+  getHomeDir(path);
+  strcat(path, fileName);
+  return fopen(path, flags);
 }
 
 bool MainWindow::isBreakExec(void)

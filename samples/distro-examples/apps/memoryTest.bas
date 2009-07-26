@@ -18,7 +18,6 @@ const st_active = 3
 const st_done = 4
 
 skillFactor = 5
-state = st_init
 bn_start = 0
 bn_generate = 0
 txt = ""
@@ -126,24 +125,38 @@ sub intro
   display s
 end
 
-sub do_form
-  doform 1, (cellSize*rows)+5, (cellSize*cols)+3, 100
-end
-
-sub showForm
-  local x,y,w,h
-  x = 5: y = 1: w = 10: h = -1
+sub getOptions
+  local x = 5
+  local w = 10
+  local h = -1
+  local y = (cellSize*rows)+3
+  
   color 11,0
   button x, y, 80, 20, bn_opt, "Easy|Medium|Hard", "choice"
-  if (state = st_ready) then
-    button x, 26, -1, -5, bn_generate, "Generate"
-    button x, -1, -1, -5, bn_start, "Start @->"
-  else
-    button x, 26, -1, -5, bn_generate, "Generate @->"    
-  fi
-  bn_generate = ""
-  bn_start = ""
-  do_form
+  button x, -3, -1, -5, bn_generate, "Generate @->"    
+
+  local start_ready = false
+
+  ' display the form until either generate or start has been clicked
+  repeat
+    bn_generate = 0
+    bn_start = 0
+    
+    doform form_var
+
+    if (form_var == bn_generate) then
+      skillFactor = if (bn_opt = "Easy", 9, if (bn_opt="Medium", 7, 5))
+      test = createGrid(skillFactor)
+      drawGrid test
+      if (start_ready == false)
+        button x, -3, -1, -5, bn_start, "Start @->"
+        start_ready = true
+      fi
+    fi
+  until form_var = bn_start
+ 
+  ' close the form
+  doform 0
 end  
 
 sub init
@@ -159,46 +172,47 @@ sub main
   local test,guess,emptyGrid
 
   'get the user skillFactor  
-  state = st_init
   emptyGrid = createGrid(0)
 
-  showForm
-  while len(bn_start) = 0
-    state = st_ready
-    skillFactor = if (bn_opt = "Easy", 9, if (bn_opt="Medium", 7, 5))
-    test = createGrid(skillFactor)
-    drawGrid test
-    showForm
-  wend
-  state = st_active
+  getOptions
  
   'run the memory test
   drawGrid emptyGrid
   guess = createGrid(0)
-  bn_check = ""
-  bn_reset = ""
+  drawGrid guess
+  
   color 8,0
+  local y = (cellSize*rows)+3
 
-  ' by calling doform before any button we enter
-  ' into a 'modeless' state - ie the form is active
-  ' outside of the doform call
-  do_form
-  button 10, 3, -1, -5, bn_check, "Check @->"
-  button 10, -1, -1, -5, bn_reset, "Clear"
+  ' this shows how to create a combine pen/form loop
+  bn_check = 0
+  bn_reset = 0
+  
+  button 10, y, -1, -5, bn_check, "Check @->"
+  button 10, -3, -1, -5, bn_reset, "Clear"
 
   pen on
   repeat
+    ' handle mouse actions
     clickCell guess, getCell
-    if (bn_check != "") then
-      exit loop
-    fi
-    if (bn_reset != "") then
-      guess = createGrid(0)
-      bn_reset = ""
-    fi
     drawGrid guess
+   
+   ' handle form actions
+   doform form_var
+    select case form_var
+    case bn_check
+      exit loop
+    case bn_reset
+      guess = createGrid(0)
+      drawGrid guess
+      bn_reset = 0
+    end select
+
   until bn_check != ""
   pen off
+
+  ' close the form
+  doform 0
 
   'test completed
   if isEqual(guess, test) then
@@ -208,7 +222,7 @@ sub main
     cells = numCells(test)
     display "<br>You guessed "+matches+" of the "+cells+" cells."
   fi
-  state = st_done
+
   drawGrid test
 end
 
@@ -216,3 +230,4 @@ init
 while 1
   main
 wend
+

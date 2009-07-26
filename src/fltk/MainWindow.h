@@ -108,6 +108,8 @@ struct MainWindow : public BaseWindow {
   void execLink(const char* file);
   void resetPen();
   void saveLastEdit(const char *filename);
+  void saveFontSpec(const char* fontName, int size);
+  void scanFonts(Menu* menu);
   void scanPlugIns(Menu* menu);
   void scanRecentFiles(Menu * menu);
   void setBreak();
@@ -132,6 +134,7 @@ struct MainWindow : public BaseWindow {
   Group* selectTab(const char* label);
   Group* findTab(const char* label);
   Group* findTab(GroupWidget groupWidget);
+  FILE* openConfig(const char* fileName, const char* flags="w");
 
   CALLBACK_METHOD(change_case);
   CALLBACK_METHOD(close_tab);
@@ -139,6 +142,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);
   CALLBACK_METHOD(expand_word);
+  CALLBACK_METHOD(font_name);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
   CALLBACK_METHOD(help_about);

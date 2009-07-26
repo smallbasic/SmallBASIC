@@ -338,6 +338,12 @@ void CodeEditor::styleParse(const char *text, char *style, int length)
   }
 }
 
+void CodeEditor::styleChanged() {
+  textbuf->select(0, textbuf->length());
+  textbuf->select(0, 0);
+  redraw(DAMAGE_ALL);
+}
+
 void CodeEditor::draw()
 {
   TextEditor::draw();
@@ -1064,7 +1070,6 @@ void EditorWidget::doDelete(void* eventData)
 void EditorWidget::find(void* eventData)
 {
   bool found = editor->findText(findTextInput->value(), (int)eventData);
-  trace("find=%d %s\n", found, findTextInput->value());
   findTextInput->textcolor(found ? BLACK : RED);
   findTextInput->redraw();
   if (2 == (int)eventData) {
@@ -1133,17 +1138,27 @@ char* EditorWidget::getSelection(Rectangle* rc)
   return ((CodeEditor *) editor)->getSelection(rc);
 }
 
+void EditorWidget::setFont(Font* font)
+{
+  int len = sizeof(styletable) / sizeof(styletable[0]);
+  for (int i = 0; i < len; i++) {
+    styletable[i].font = font;
+  }
+  editor->styleChanged();
+}
+
 void EditorWidget::setFontSize(int size)
 {
   int len = sizeof(styletable) / sizeof(styletable[0]);
-  TextBuffer *textbuf = editor->textbuf;
-
   for (int i = 0; i < len; i++) {
     styletable[i].size = size;
   }
-  textbuf->select(0, textbuf->length());
-  textbuf->select(0, 0);
-  editor->redraw(DAMAGE_ALL);
+  editor->styleChanged();
+}
+
+const char* EditorWidget::getFontName()
+{
+  return styletable[0].font->name();
 }
 
 int EditorWidget::getFontSize()

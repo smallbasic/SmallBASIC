@@ -64,6 +64,7 @@ struct CodeEditor : public TextEditor {
   void showFindText(const char *text);
   void showMatchingBrace();
   void showRowCol();
+  void styleChanged();
   void styleParse(const char *text, char *style, int length);
   
   bool readonly;
@@ -89,6 +90,7 @@ public:
   }
 
   bool checkSave(bool discard);
+  const char* getFontName();
   int getFontSize();
   void createFuncList();
   void doChange(int inserted, int deleted);
@@ -108,6 +110,7 @@ public:
                   bool restorePos, bool matchWord);
   void restoreEdit();
   void runMsg(RunMessage runMessage);
+  void setFont(Font* font);
   void setFontSize(int i);
   void setIndentLevel(int level);
   void setModified(bool dirty);
