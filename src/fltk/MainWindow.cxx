@@ -50,8 +50,6 @@ const char* basHome = "BAS_HOME=";
 const char* pluginHome = "plugins";
 const char historyFile[] = "history.txt";
 const char keywordsFile[] = "keywords.txt";
-const char fontFile[] = "fonts.txt";
-const char fontFileFormat[] = "name=%s\nsize=%d\n";
 const char aboutText[] =
   "<b>About SmallBASIC...</b><br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
@@ -118,17 +116,6 @@ void MainWindow::saveLastEdit(const char *filename)
     int err;
     err = fwrite(filename, strlen(filename), 1, fp);
     err = fwrite("\n", 1, 1, fp);
-    fclose(fp);
-  }
-}
-
-void MainWindow::saveFontSpec(const char* fontName, int size) {
-  FILE *fp = openConfig(fontFile);
-  if (fp) {
-    char buffer[MAX_PATH];
-    int err;
-    sprintf(buffer, fontFileFormat, fontName, size);
-    err = fwrite(buffer, strlen(buffer), 1, fp);
     fclose(fp);
   }
 }
@@ -597,8 +584,8 @@ void MainWindow::font_size_incr(Widget* w, void* eventData)
     int size = editWidget->getFontSize();
     if (size < MAX_FONT_SIZE) {
       editWidget->setFontSize(size + 1);
+      updateConfig(editWidget);
       out->setFontSize(size + 1);
-      saveFontSpec(editWidget->getFontName(), editWidget->getFontSize());
     }
   }
   else {
@@ -613,21 +600,12 @@ void MainWindow::font_size_decr(Widget* w, void* eventData)
     int size = editWidget->getFontSize();
     if (size > MIN_FONT_SIZE) {
       editWidget->setFontSize(size - 1);
+      updateConfig(editWidget);
       out->setFontSize(size - 1);
-      saveFontSpec(editWidget->getFontName(), editWidget->getFontSize());
     }
   }
   else {
     handle(EVENT_DECREASE_FONT);
-  }
-}
-
-void MainWindow::font_name(Widget* w, void* eventData)
-{
-  EditorWidget* editWidget = getEditor();
-  if (editWidget) {
-    editWidget->setFont(fltk::font(w->label(), 0));
-    saveFontSpec(w->label(), editWidget->getFontSize());
   }
 }
 
@@ -1010,7 +988,7 @@ void MainWindow::scanFonts(Menu* menu)
     
     setfont(font(fonts[i]->name()), 12);
     if (getwidth("QW") == getwidth("il")) {
-      menu->add(label, 0, (Callback *)MainWindow::font_name_cb, label);
+      menu->add(label, 0, (Callback *)EditorWidget::font_name_cb, label);
     }
   }
 }
@@ -1270,6 +1248,15 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&View/_&Prev Tab", CTRL + F6Key, (Callback *) MainWindow::prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) MainWindow::font_size_decr_cb);
+  m->add("&View/Text Color/Text", 0, (Callback *) EditorWidget::text_color_text_cb);
+  m->add("&View/Text Color/Comments", 0, (Callback *) EditorWidget::text_color_comments_cb);
+  m->add("&View/Text Color/Strings", 0, (Callback *) EditorWidget::text_color_strings_cb);
+  m->add("&View/Text Color/Keywords", 0, (Callback *) EditorWidget::text_color_keywords_cb);
+  m->add("&View/Text Color/Funcs", 0, (Callback *) EditorWidget::text_color_funcs_cb);
+  m->add("&View/Text Color/Subs", 0, (Callback *) EditorWidget::text_color_subs_cb);
+  m->add("&View/Text Color/Find Matches", 0, (Callback *) EditorWidget::text_color_find_cb);
+  m->add("&View/Text Color/Numbers", 0, (Callback *) EditorWidget::text_color_numbers_cb);
+  m->add("&View/Text Color/Operators", 0, (Callback *) EditorWidget::text_color_operators_cb);
   scanFonts(m);
   scanPlugIns(m);
   m->add("&Program/_&Run", F9Key, (Callback *) run_cb);
@@ -1348,20 +1335,8 @@ Group* MainWindow::createEditor(const char* title) {
   const char* slash = strrchr(title, '/');
   editGroup->copy_label(slash ? slash + 1 : title);
   editGroup->begin();
-  EditorWidget* editor = new EditorWidget(2, 2, w - 4, h);
-  FILE *fp = openConfig(fontFile, "r");
-  if (fp) {
-    char fontName[MAX_PATH];
-    int size = 0;
-    if (fscanf(fp, fontFileFormat, fontName, &size) == 2) {
-      editor->setFont(font(fontName));
-      editor->setFontSize(size);
-    }
-    fclose(fp);
-  }
-
   editGroup->box(THIN_DOWN_BOX);
-  editGroup->resizable(editor);
+  editGroup->resizable(new EditorWidget(2, 2, w - 4, h));
   editGroup->user_data((void*) gw_editor);
   editGroup->end();
 
@@ -1551,6 +1526,24 @@ Group* MainWindow::selectTab(const char* label)
     tabGroup->selected_child(tab);
   }
   return tab;
+}
+
+/**
+ * copies the configuration from the current editor to any remaining editors
+ */
+void MainWindow::updateConfig(EditorWidget* current) 
+{
+  current->saveConfig();
+  int n = tabGroup->children();
+  for (int c = 0; c < n; c++) {
+    Group* group = (Group*)tabGroup->child(c);
+    if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+      EditorWidget* editWidget = (EditorWidget*)group->child(0);
+      if (editWidget != current) {
+        editWidget->updateConfig(current);
+      }
+    }
+  }
 }
 
 /**

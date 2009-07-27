@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#include <fltk/ColorChooser.h>
 #include <fltk/Item.h>
 #include <fltk/ask.h>
 #include <fltk/damage.h>
@@ -61,6 +62,10 @@ TextDisplay::StyleTableEntry styletable[] = { // Style table
 const int numCodeKeywords = sizeof(code_keywords) / sizeof(code_keywords[0]);
 const int numCodeFunctions = sizeof(code_functions) / sizeof(code_functions[0]);
 const int numCodeProcedures = sizeof(code_procedures) / sizeof(code_procedures[0]);
+
+const char configFile[] = "config.txt";
+const char configFileFormatRead[] = "name=%[^;];size=%d";
+const char configFileFormatSave[] = "name=%s;size=%d";
 
 /**
  * return whether the character is a valid variable symbol
@@ -804,6 +809,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 
   resizable(editor);
   end();
+
+  loadConfig();
 }
 
 EditorWidget::~EditorWidget()
@@ -874,6 +881,22 @@ bool EditorWidget::checkSave(bool discard)
     return !dirty;
   }
   return (discard && r == 1);
+}
+
+/**
+ * load any stored settings
+ */
+void EditorWidget::loadConfig() {
+  FILE *fp = wnd->openConfig(configFile, "r");
+  if (fp) {
+    char fontName[MAX_PATH];
+    int size = 0;
+    if (fscanf(fp, configFileFormatRead, fontName, &size) == 2) {
+      setFont(font(fontName));
+      setFontSize(size);
+    }
+    fclose(fp);
+  }
 }
 
 void EditorWidget::loadFile(const char *newfile)
@@ -965,7 +988,7 @@ void EditorWidget::doSaveFile(const char *newfile)
   editor->take_focus();
 }
 
-void EditorWidget::showFindReplace(void* eventData)
+void EditorWidget::showFindReplace(Widget* w, void* eventData)
 {
   const char* prime = editor->search;
   if (!prime || !prime[0]) {
@@ -974,6 +997,51 @@ void EditorWidget::showFindReplace(void* eventData)
   }
   wnd->replaceFind->value(prime);
   wnd->replaceDlg->show();
+}
+
+void EditorWidget::text_color_text(Widget* w, void* eventData)
+{
+  setColor("Text", text);
+}
+
+void EditorWidget::text_color_comments(Widget* w, void* eventData)
+{
+  setColor("Comments", comments);
+}
+
+void EditorWidget::text_color_strings(Widget* w, void* eventData)
+{
+  setColor("Strings", strings);
+}
+
+void EditorWidget::text_color_keywords(Widget* w, void* eventData)
+{
+  setColor("Keywords", keywords);
+}
+
+void EditorWidget::text_color_funcs(Widget* w, void* eventData)
+{
+  setColor("Funcs", funcs);
+}
+
+void EditorWidget::text_color_subs(Widget* w, void* eventData)
+{
+  setColor("Subs", subs);
+}
+
+void EditorWidget::text_color_find(Widget* w, void* eventData)
+{
+  setColor("Find Text", findMatches);
+}
+
+void EditorWidget::text_color_numbers(Widget* w, void* eventData)
+{
+  setColor("Numbers", numbers);
+}
+
+void EditorWidget::text_color_operators(Widget* w, void* eventData)
+{
+  setColor("Operators", operators);
 }
 
 int EditorWidget::replaceAll(const char* find, const char* replace, 
@@ -1014,7 +1082,7 @@ int EditorWidget::replaceAll(const char* find, const char* replace,
   return times;
 }
 
-void EditorWidget::replaceAll(void* eventData)
+void EditorWidget::replaceAll(Widget* w, void* eventData)
 {
   if (!readonly()) {
     const char *find = wnd->replaceFind->value();
@@ -1030,7 +1098,7 @@ void EditorWidget::replaceAll(void* eventData)
   }
 }
 
-void EditorWidget::replaceNext(void* eventData)
+void EditorWidget::replaceNext(Widget* w, void* eventData)
 {
   if (readonly()) {
     return;
@@ -1057,17 +1125,17 @@ void EditorWidget::replaceNext(void* eventData)
   }
 }
 
-void EditorWidget::cancelReplace(void* eventData)
+void EditorWidget::cancelReplace(Widget* w, void* eventData)
 {
   wnd->replaceDlg->hide();
 }
 
-void EditorWidget::doDelete(void* eventData)
+void EditorWidget::doDelete(Widget* w, void* eventData)
 {
   editor->textbuf->remove_selection();
 }
 
-void EditorWidget::find(void* eventData)
+void EditorWidget::find(Widget* w, void* eventData)
 {
   bool found = editor->findText(findTextInput->value(), (int)eventData);
   findTextInput->textcolor(found ? BLACK : RED);
@@ -1077,7 +1145,13 @@ void EditorWidget::find(void* eventData)
   }
 }
 
-void EditorWidget::func_list(void* eventData)
+void EditorWidget::font_name(Widget* w, void* eventData)
+{
+  setFont(fltk::font(w->label(), 0));
+  wnd->updateConfig(this);
+}
+
+void EditorWidget::func_list(Widget* w, void* eventData)
 {
   const char *label = funcList->item()->label();
   if (label) {
@@ -1095,13 +1169,13 @@ void EditorWidget::func_list(void* eventData)
   }
 }
 
-void EditorWidget::goto_line(void* eventData)
+void EditorWidget::goto_line(Widget* w, void* eventData)
 {
   gotoLine(atoi(gotoLineInput->value()));
   take_focus();
 }
 
-void EditorWidget::saveFile(void* eventData)
+void EditorWidget::saveFile(Widget* w, void* eventData)
 {
   if (filename[0] == '\0') {
     // no filename - get one!
@@ -1138,13 +1212,36 @@ char* EditorWidget::getSelection(Rectangle* rc)
   return ((CodeEditor *) editor)->getSelection(rc);
 }
 
+void EditorWidget::saveConfig() {
+  FILE *fp = wnd->openConfig(configFile);
+  if (fp) {
+    char buffer[MAX_PATH];
+    int err;
+    sprintf(buffer, configFileFormatSave, getFontName(), getFontSize());
+    err = fwrite(buffer, strlen(buffer), 1, fp);
+    fclose(fp);
+  }
+}
+
+void EditorWidget::setColor(const char* label, StyleField field) {
+  uchar r,g,b;
+  split_color(styletable[field].color,r,g,b);
+  if (color_chooser(label, r,g,b)) {
+    set_color_index(fltk::FREE_COLOR, fltk::color(r,g,b));
+    styletable[field].color = fltk::color(r,g,b);
+    editor->styleChanged();
+  }
+} 
+
 void EditorWidget::setFont(Font* font)
 {
-  int len = sizeof(styletable) / sizeof(styletable[0]);
-  for (int i = 0; i < len; i++) {
-    styletable[i].font = font;
+  if (font) {
+    int len = sizeof(styletable) / sizeof(styletable[0]);
+    for (int i = 0; i < len; i++) {
+      styletable[i].font = font;
+    }
+    editor->styleChanged();
   }
-  editor->styleChanged();
 }
 
 void EditorWidget::setFontSize(int size)
@@ -1259,8 +1356,8 @@ void EditorWidget::focusWidget() {
   case 'f':
     if (findTextInput->focused()) {
       // continue search - shift -> backward else forward
-      find((void*)((event_key_state(LeftShiftKey) ||
-                    event_key_state(RightShiftKey)) ? 0 : 1));
+      find(0, (void*)((event_key_state(LeftShiftKey) ||
+                       event_key_state(RightShiftKey)) ? 0 : 1));
     }
     else {
       // commence search
@@ -1290,6 +1387,11 @@ void EditorWidget::statusMsg(const char *msg)
                          filename && filename[0] ? filename : UNTITLED_FILE);
   fileStatus->labelcolor(rowStatus->labelcolor());
   fileStatus->redraw();
+}
+
+void EditorWidget::updateConfig(EditorWidget* current) {
+  setFont(font(current->getFontName()));
+  setFontSize(current->getFontSize());
 }
 
 void EditorWidget::setRowCol(int row, int col)

@@ -104,11 +104,13 @@ struct MainWindow : public BaseWindow {
   bool isInteractive();
   bool isModal();
   void addHistory(const char *fileName);
+  void busyMessage();
   void execHelp();
   void execLink(const char* file);
+  void pathMessage(const char *file);
   void resetPen();
+  void saveEditConfig(EditorWidget* editWidget);
   void saveLastEdit(const char *filename);
-  void saveFontSpec(const char* fontName, int size);
   void scanFonts(Menu* menu);
   void scanPlugIns(Menu* menu);
   void scanRecentFiles(Menu * menu);
@@ -118,10 +120,9 @@ struct MainWindow : public BaseWindow {
   void showEditTab(EditorWidget* editWidget);
   void showHelpPage();
   void showOutputTab();
-  void updateEditTabName(EditorWidget* editWidget);
-  void busyMessage();
   void statusMsg(RunMessage runMessage, const char *filename);
-  void pathMessage(const char *file);
+  void updateConfig(EditorWidget* current);
+  void updateEditTabName(EditorWidget* editWidget);
 
   Group* createEditor(const char* title);
   EditorWidget* getEditor(Group* group);
@@ -142,7 +143,6 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);
   CALLBACK_METHOD(expand_word);
-  CALLBACK_METHOD(font_name);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
   CALLBACK_METHOD(help_about);

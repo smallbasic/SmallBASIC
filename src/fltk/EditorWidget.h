@@ -35,16 +35,28 @@ struct EditorWidget;
 EditorWidget* get_editor();
 
 #define CALLBACK_METHOD(FN)                     \
-  void FN(void *v=0);                           \
+  void FN(Widget* w=0, void *v=0);              \
   static void FN ## _cb(Widget* w, void *v) {   \
     EditorWidget* e = get_editor();             \
-    if (e) e->FN(v);                            \
+    if (e) e->FN(w, v);                         \
   }
 
 enum RunMessage {
   msg_err,
   msg_run,
   msg_none
+};
+
+enum StyleField {
+  text=0,
+  comments,
+  strings,
+  keywords,
+  funcs,
+  subs,
+  findMatches,
+  numbers=8,
+  operators=9
 };
 
 struct CodeEditor : public TextEditor {
@@ -90,8 +102,6 @@ public:
   }
 
   bool checkSave(bool discard);
-  const char* getFontName();
-  int getFontSize();
   void createFuncList();
   void doChange(int inserted, int deleted);
   void doSaveFile(const char *newfile);
@@ -99,17 +109,21 @@ public:
   void findFunc(const char *find);
   void focusWidget();
   void getKeywords(strlib::List& keywords);
+  const char* getFontName();
+  int getFontSize();
   void getRowCol(int *row, int *col);
+  char* getSelection(Rectangle* rc);
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
-  char* getSelection(Rectangle* rc);
   void gotoLine(int line);
+  void loadConfig();
   void loadFile(const char *newfile);
   void newFile();
-  int  replaceAll(const char* find, const char* replace, 
-                  bool restorePos, bool matchWord);
+  int  replaceAll(const char* find, const char* replace, bool restorePos, bool matchWord);
   void restoreEdit();
   void runMsg(RunMessage runMessage);
+  void saveConfig();
+  void setColor(const char* label, StyleField field);
   void setFont(Font* font);
   void setFontSize(int i);
   void setIndentLevel(int level);
@@ -117,7 +131,7 @@ public:
   void setRowCol(int row, int col);
   void showFindText(const char *text);
   void statusMsg(const char *filename);
-  void undo();
+  void updateConfig(EditorWidget* current);
 
   static void undo_cb(Widget *, void *v) {
     TextEditor::kf_undo(0, ((EditorWidget *) v)->editor);
@@ -142,12 +156,22 @@ public:
   CALLBACK_METHOD(cancelReplace);
   CALLBACK_METHOD(doDelete);
   CALLBACK_METHOD(find);
+  CALLBACK_METHOD(font_name);
   CALLBACK_METHOD(func_list);
   CALLBACK_METHOD(goto_line);
   CALLBACK_METHOD(replaceAll);
   CALLBACK_METHOD(replaceNext);
   CALLBACK_METHOD(saveFile);
   CALLBACK_METHOD(showFindReplace);
+  CALLBACK_METHOD(text_color_comments);
+  CALLBACK_METHOD(text_color_find);
+  CALLBACK_METHOD(text_color_funcs);
+  CALLBACK_METHOD(text_color_keywords);
+  CALLBACK_METHOD(text_color_numbers);
+  CALLBACK_METHOD(text_color_operators);
+  CALLBACK_METHOD(text_color_text);
+  CALLBACK_METHOD(text_color_strings);
+  CALLBACK_METHOD(text_color_subs);
 
   CodeEditor *editor;
   bool readonly();
