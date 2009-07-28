@@ -64,8 +64,8 @@ const int numCodeFunctions = sizeof(code_functions) / sizeof(code_functions[0]);
 const int numCodeProcedures = sizeof(code_procedures) / sizeof(code_procedures[0]);
 
 const char configFile[] = "config.txt";
-const char configFileFormatRead[] = "name=%[^;];size=%d";
-const char configFileFormatSave[] = "name=%s;size=%d";
+const char fontConfigRead[] = "name=%[^;];size=%d\n";
+const char fontConfigSave[] = "name=%s;size=%d\n";
 
 /**
  * return whether the character is a valid variable symbol
@@ -884,17 +884,35 @@ bool EditorWidget::checkSave(bool discard)
 }
 
 /**
- * load any stored settings
+ * load any stored font or color settings
  */
 void EditorWidget::loadConfig() {
   FILE *fp = wnd->openConfig(configFile, "r");
   if (fp) {
-    char fontName[MAX_PATH];
+    char buffer[MAX_PATH];
     int size = 0;
-    if (fscanf(fp, configFileFormatRead, fontName, &size) == 2) {
-      setFont(font(fontName));
+    int i = 0;
+
+    if (fscanf(fp, fontConfigRead, buffer, &size) == 2) {
+      setFont(font(buffer));
       setFontSize(size);
     }
+
+    while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
+      buffer[strlen(buffer) - 1] = 0; // trim new-line
+      Color c = fltk::color(buffer + 3); // skip nn=#xxxxxx
+      if (c != NO_COLOR) {
+        if (i == st_background) {
+          editor->color(c);
+          break;
+        }
+        else {
+          styletable[i].color = c;
+        }
+      }
+      i++;
+    }
+
     fclose(fp);
   }
 }
@@ -999,49 +1017,23 @@ void EditorWidget::showFindReplace(Widget* w, void* eventData)
   wnd->replaceDlg->show();
 }
 
-void EditorWidget::text_color_text(Widget* w, void* eventData)
+void EditorWidget::set_color(Widget* w, void* eventData)
 {
-  setColor("Text", text);
-}
-
-void EditorWidget::text_color_comments(Widget* w, void* eventData)
-{
-  setColor("Comments", comments);
-}
-
-void EditorWidget::text_color_strings(Widget* w, void* eventData)
-{
-  setColor("Strings", strings);
-}
-
-void EditorWidget::text_color_keywords(Widget* w, void* eventData)
-{
-  setColor("Keywords", keywords);
-}
-
-void EditorWidget::text_color_funcs(Widget* w, void* eventData)
-{
-  setColor("Funcs", funcs);
-}
-
-void EditorWidget::text_color_subs(Widget* w, void* eventData)
-{
-  setColor("Subs", subs);
-}
-
-void EditorWidget::text_color_find(Widget* w, void* eventData)
-{
-  setColor("Find Text", findMatches);
-}
-
-void EditorWidget::text_color_numbers(Widget* w, void* eventData)
-{
-  setColor("Numbers", numbers);
-}
-
-void EditorWidget::text_color_operators(Widget* w, void* eventData)
-{
-  setColor("Operators", operators);
+  StyleField styleField = (StyleField) (int) eventData;
+  if (styleField == st_background) {
+    uchar r,g,b;
+    split_color(editor->color(),r,g,b);
+    if (color_chooser(w->label(), r,g,b)) {
+      Color c = fltk::color(r,g,b);
+      set_color_index(fltk::FREE_COLOR + styleField, c);
+      editor->color(c);
+      editor->styleChanged();
+    }
+  }
+  else {
+    setColor(w->label(), styleField);
+  }
+  wnd->updateConfig(this);
 }
 
 int EditorWidget::replaceAll(const char* find, const char* replace, 
@@ -1217,8 +1209,17 @@ void EditorWidget::saveConfig() {
   if (fp) {
     char buffer[MAX_PATH];
     int err;
-    sprintf(buffer, configFileFormatSave, getFontName(), getFontSize());
+    uchar r,g,b;
+
+    sprintf(buffer, fontConfigSave, getFontName(), getFontSize());
     err = fwrite(buffer, strlen(buffer), 1, fp);
+
+    for (int i = 0; i <= st_background; i++) {
+      split_color(i == st_background ? editor->color() : styletable[i].color, r,g,b);
+      sprintf(buffer, "%02d=#%02x%02x%02x\n", i, r,g,b);
+      err = fwrite(buffer, strlen(buffer), 1, fp);
+    }
+    
     fclose(fp);
   }
 }
@@ -1227,8 +1228,9 @@ void EditorWidget::setColor(const char* label, StyleField field) {
   uchar r,g,b;
   split_color(styletable[field].color,r,g,b);
   if (color_chooser(label, r,g,b)) {
-    set_color_index(fltk::FREE_COLOR, fltk::color(r,g,b));
-    styletable[field].color = fltk::color(r,g,b);
+    Color c = fltk::color(r,g,b);
+    set_color_index(fltk::FREE_COLOR + field, c);
+    styletable[field].color = c;
     editor->styleChanged();
   }
 } 
@@ -1392,6 +1394,7 @@ void EditorWidget::statusMsg(const char *msg)
 void EditorWidget::updateConfig(EditorWidget* current) {
   setFont(font(current->getFontName()));
   setFontSize(current->getFontSize());
+  editor->color(current->editor->color());
 }
 
 void EditorWidget::setRowCol(int row, int col)

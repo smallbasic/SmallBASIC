@@ -48,15 +48,17 @@ enum RunMessage {
 };
 
 enum StyleField {
-  text=0,
-  comments,
-  strings,
-  keywords,
-  funcs,
-  subs,
-  findMatches,
-  numbers=8,
-  operators=9
+  st_text=0,
+  st_comments,
+  st_strings,
+  st_keywords,
+  st_funcs,
+  st_subs,
+  st_findMatches,
+  st_icomments,
+  st_numbers,
+  st_operators,
+  st_background
 };
 
 struct CodeEditor : public TextEditor {
@@ -163,15 +165,7 @@ public:
   CALLBACK_METHOD(replaceNext);
   CALLBACK_METHOD(saveFile);
   CALLBACK_METHOD(showFindReplace);
-  CALLBACK_METHOD(text_color_comments);
-  CALLBACK_METHOD(text_color_find);
-  CALLBACK_METHOD(text_color_funcs);
-  CALLBACK_METHOD(text_color_keywords);
-  CALLBACK_METHOD(text_color_numbers);
-  CALLBACK_METHOD(text_color_operators);
-  CALLBACK_METHOD(text_color_text);
-  CALLBACK_METHOD(text_color_strings);
-  CALLBACK_METHOD(text_color_subs);
+  CALLBACK_METHOD(set_color);
 
   CodeEditor *editor;
   bool readonly();

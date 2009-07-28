@@ -988,7 +988,7 @@ void MainWindow::scanFonts(Menu* menu)
     
     setfont(font(fonts[i]->name()), 12);
     if (getwidth("QW") == getwidth("il")) {
-      menu->add(label, 0, (Callback *)EditorWidget::font_name_cb, label);
+      menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
     }
   }
 }
@@ -1248,15 +1248,16 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&View/_&Prev Tab", CTRL + F6Key, (Callback *) MainWindow::prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) MainWindow::font_size_decr_cb);
-  m->add("&View/Text Color/Text", 0, (Callback *) EditorWidget::text_color_text_cb);
-  m->add("&View/Text Color/Comments", 0, (Callback *) EditorWidget::text_color_comments_cb);
-  m->add("&View/Text Color/Strings", 0, (Callback *) EditorWidget::text_color_strings_cb);
-  m->add("&View/Text Color/Keywords", 0, (Callback *) EditorWidget::text_color_keywords_cb);
-  m->add("&View/Text Color/Funcs", 0, (Callback *) EditorWidget::text_color_funcs_cb);
-  m->add("&View/Text Color/Subs", 0, (Callback *) EditorWidget::text_color_subs_cb);
-  m->add("&View/Text Color/Find Matches", 0, (Callback *) EditorWidget::text_color_find_cb);
-  m->add("&View/Text Color/Numbers", 0, (Callback *) EditorWidget::text_color_numbers_cb);
-  m->add("&View/Text Color/Operators", 0, (Callback *) EditorWidget::text_color_operators_cb);
+  m->add("&View/Text Color/Background", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_background);
+  m->add("&View/Text Color/Text", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_text);
+  m->add("&View/Text Color/Comments", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_comments);
+  m->add("&View/Text Color/Strings", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_strings);
+  m->add("&View/Text Color/Keywords", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_keywords);
+  m->add("&View/Text Color/Funcs", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_funcs);
+  m->add("&View/Text Color/Subs", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_subs);
+  m->add("&View/Text Color/Find Matches", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_findMatches);
+  m->add("&View/Text Color/Numbers", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_numbers);
+  m->add("&View/Text Color/Operators", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_operators);
   scanFonts(m);
   scanPlugIns(m);
   m->add("&Program/_&Run", F9Key, (Callback *) run_cb);

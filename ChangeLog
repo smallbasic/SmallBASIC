@@ -1,3 +1,6 @@
+2009-07-28
+	Implemented editor colour selection in FLTK build.
+	
 2009-07-26
 	Implemented editor font selection in FLTK build. Fixed memoryTest.bas sample
 	
