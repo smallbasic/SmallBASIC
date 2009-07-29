@@ -1,3 +1,19 @@
+smallbasic (0.10.4) unstable; urgency=low
+
+  * Implemented editor colour selection.
+	
+  * Implemented editor font selection in FLTK build
+
+  * Implemented "ELSE IF" syntax
+
+  * file widget displays sorted items
+
+  * update variables to use 64 bits, fix for matrix inverse bug
+
+  * updated form API
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Tue, 30 Dec 2008 09:45:25 +1000
+
 smallbasic (0.10.3) unstable; urgency=low
 
   * Initial Release.

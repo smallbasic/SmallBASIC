@@ -111,7 +111,6 @@ struct MainWindow : public BaseWindow {
   void resetPen();
   void saveEditConfig(EditorWidget* editWidget);
   void saveLastEdit(const char *filename);
-  void scanFonts(Menu* menu);
   void scanPlugIns(Menu* menu);
   void scanRecentFiles(Menu * menu);
   void setBreak();

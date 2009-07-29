@@ -70,6 +70,36 @@ void updateForm(const char *s);
 void closeForm();
 bool isFormActive();
 
+// scan for fixed pitch fonts in the background
+struct ScanFont {
+  ScanFont(Menu* argMenu) : menu(argMenu), index(0) {
+    numfonts = fltk::list_fonts(fonts);
+    fltk::add_idle(ScanFont::scan_font_cb, this);
+  }
+  static void scan_font_cb(void* eventData) {
+    ((ScanFont*) eventData)->scanNext();
+  }
+  void scanNext() {
+    if (index < numfonts) {
+      char label[256];
+      sprintf(label, "&View/Font/%s", fonts[index]->system_name());
+      setfont(font(fonts[index]->name()), 12);
+      if (getwidth("QW#@") == getwidth("il:(")) {
+        menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
+      }
+      index++;
+    }
+    else {
+      fltk::remove_idle(scan_font_cb, this);
+      delete this;
+    }
+  }
+  Menu* menu;
+  Font** fonts;
+  int numfonts;
+  int index;
+};
+
 //--EditWindow functions--------------------------------------------------------
 
 void MainWindow::statusMsg(RunMessage runMessage, const char *statusMessage) {
@@ -977,22 +1007,6 @@ void MainWindow::scanRecentFiles(Menu * menu)
   }
 }
 
-void MainWindow::scanFonts(Menu* menu)
-{
-  char label[1024];
-  Font** fonts;
-
-  int numfonts = fltk::list_fonts(fonts);
-  for (int i = 0; i < numfonts; i++) {
-    sprintf(label, "&View/Font/%s", fonts[i]->name());
-    
-    setfont(font(fonts[i]->name()), 12);
-    if (getwidth("QW") == getwidth("il")) {
-      menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
-    }
-  }
-}
-
 void MainWindow::scanPlugIns(Menu* menu)
 {
   FILE *file;
@@ -1030,7 +1044,7 @@ void MainWindow::scanPlugIns(Menu* menu)
         fclose(file);
         continue;
       }
-      
+
       if (fgets(buffer, MAX_PATH, file) && strncmp("'menu", buffer, 5) == 0) {
         int offs = 6;
         buffer[strlen(buffer) - 1] = 0; // trim new-line
@@ -1258,8 +1272,10 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&View/Text Color/Find Matches", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_findMatches);
   m->add("&View/Text Color/Numbers", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_numbers);
   m->add("&View/Text Color/Operators", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_operators);
-  scanFonts(m);
+
+  new ScanFont(m);
   scanPlugIns(m);
+
   m->add("&Program/_&Run", F9Key, (Callback *) run_cb);
   m->add("&Program/&Break", CTRL + 'b', (Callback *) MainWindow::run_break_cb);
   m->add("&Program/_&Restart", CTRL + 'r', (Callback *) MainWindow::restart_run_cb);
