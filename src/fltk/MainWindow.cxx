@@ -1176,7 +1176,7 @@ bool initialise(int argc, char **argv)
   getHomeDir(path + strlen(basHome));
   dev_putenv(path);
 
-  wnd = new MainWindow(600, 500);
+  wnd = new MainWindow(800, 650);
 
   // setup styles
   Font* defaultFont = font("arial");

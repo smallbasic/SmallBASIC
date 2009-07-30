@@ -752,11 +752,21 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   toolbar->begin();
   toolbar->box(FLAT_BOX);
 
+  // widths become relative when the outer window is resized
+  int prev_bn_w = 18;
+  int next_bn_w = 18;
+  int goto_in_w = 40;
+  int goto_bn_w = 18;
+  int func_bn_w = 190;
+  int spacing = 100;
+  int find_bn_w = w - (prev_bn_w + next_bn_w + goto_in_w + goto_bn_w + func_bn_w) - spacing;
+
   // find control
-  findTextInput = new Input(38, 2, 120, MNU_HEIGHT, "Find:");
+  findTextInput = new Input(38, 2, find_bn_w, MNU_HEIGHT, "Find:");
   findTextInput->align(ALIGN_LEFT | ALIGN_CLIP);
-  Button *prevBn = new Button(160, 4, 18, MNU_HEIGHT - 4, "@-98>;");
-  Button *nextBn = new Button(180, 4, 18, MNU_HEIGHT - 4, "@-92>;");
+
+  Button *prevBn = new Button(findTextInput->r() + 4, 4, prev_bn_w, MNU_HEIGHT - 4, "@-98>;");
+  Button *nextBn = new Button(prevBn->r() + 4, 4, next_bn_w, MNU_HEIGHT - 4, "@-92>;");
   prevBn->callback(EditorWidget::find_cb, (void *)0);
   nextBn->callback(EditorWidget::find_cb, (void *)1);
   findTextInput->callback(EditorWidget::find_cb, (void *)2);
@@ -764,16 +774,16 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   findTextInput->labelfont(HELVETICA);
 
   // goto-line control
-  gotoLineInput = new Input(238, 2, 40, MNU_HEIGHT, "Goto:");
+  gotoLineInput = new Input(nextBn->r() + 40, 2, goto_in_w, MNU_HEIGHT, "Goto:");
   gotoLineInput->align(ALIGN_LEFT | ALIGN_CLIP);
-  Button *gotoBn = new Button(280, 4, 18, MNU_HEIGHT - 4, "@-92>;");
+  Button *gotoBn = new Button(gotoLineInput->r() + 4, 4, goto_bn_w, MNU_HEIGHT - 4, "@-92>;");
   gotoBn->callback(EditorWidget::goto_line_cb, gotoLineInput);
   gotoLineInput->callback(EditorWidget::goto_line_cb, gotoLineInput);
   gotoLineInput->when(WHEN_ENTER_KEY_ALWAYS);
   gotoLineInput->labelfont(HELVETICA);
 
   // sub-func jump droplist
-  funcList = new Choice(309, 2, 168, MNU_HEIGHT);
+  funcList = new Choice(gotoBn->r() + 4, 2, func_bn_w, MNU_HEIGHT);
   funcList->callback(func_list_cb, 0);
   funcList->labelfont(COURIER);
   funcList->begin();
@@ -782,8 +792,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   funcList->end();
 
   // close the tool-bar with a resizeable end-box
-  Group *boxEnd = new Group(1000, 4, 0, 0);
-  toolbar->resizable(boxEnd);
+  toolbar->resizable(findTextInput);
   toolbar->end();
 
   // editor status bar
