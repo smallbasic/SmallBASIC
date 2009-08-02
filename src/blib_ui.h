@@ -9,10 +9,18 @@
 
 #include "sys.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 void ui_reset(void) SEC(BLIB);
 
 void cmd_button(void) SEC(BLIB);
 void cmd_text(void) SEC(BLIB);
 void cmd_doform(void) SEC(BLIB);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

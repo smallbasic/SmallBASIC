@@ -146,42 +146,42 @@ func createForm
   local ocb = 5
 
   local fcf = 1
-  local ncf = 6
+  local ncf = 15
   local ocf = 7
 
   out_x = x
   out_y = y - h
- 
-  color fcf, fcb: button  x, y, w, h, b_mc,  "MC"
-  color ncf, ncb: button -1, y, w, h, b_7,   "7"
-  color ncf, ncb: button -1, y, w, h, b_8,   "8"
-  color ncf, ncb: button -1, y, w, h, b_9,   "9"
-  color ocf, ocb: button -1, y, w, h, b_add, "+"
-  color ocf, ocb: button -1, y, w, h, b_sub, "-"
+  
+  color fcf, fcb: button  x, y, w, h, b_mc,   "MC"
+  color ncf, ncb: button -1, y, w, h, b_7,    "7"
+  color ncf, ncb: button -1, y, w, h, b_8,    "8"
+  color ncf, ncb: button -1, y, w, h, b_9,    "9"
+  color ocf, ocb: button -1, y, w, h, b_add,  "+"
+  color ocf, ocb: button -1, y, w, h, b_sub,  "-"
 
   y += h
-  color fcf, fcb: button  x, y, w, h, b_mr,  "MR"
-  color ncf, ncb: button -1, y, w, h, b_4,   "4"
-  color ncf, ncb: button -1, y, w, h, b_5,   "5"
-  color ncf, ncb: button -1, y, w, h, b_6,   "6"
-  color ocf, ocb: button -1, y, w, h, b_mul, "*"
-  color ocf, ocb: button -1, y, w, h, b_div, "/"
+  color fcf, fcb: button  x, y, w, h, b_mr,   "MR"
+  color ncf, ncb: button -1, y, w, h, b_4,    "4"
+  color ncf, ncb: button -1, y, w, h, b_5,    "5"
+  color ncf, ncb: button -1, y, w, h, b_6,    "6"
+  color ocf, ocb: button -1, y, w, h, b_mul,  "*"
+  color ocf, ocb: button -1, y, w, h, b_div,  "/"
 
   y += h
-  color fcf, fcb: button  x, y, w, h, b_ms,  "MS"
-  color ncf, ncb: button -1, y, w, h, b_1,   "1"
-  color ncf, ncb: button -1, y, w, h, b_2,   "2"
-  color ncf, ncb: button -1, y, w, h, b_3,   "3"
-  color ocf, ocb: button -1, y, w, h, b_ob, "("
-  color ocf, ocb: button -1, y, w, h, b_cb, ")"
+  color fcf, fcb: button  x, y, w, h, b_ms,   "MS"
+  color ncf, ncb: button -1, y, w, h, b_1,    "1"
+  color ncf, ncb: button -1, y, w, h, b_2,    "2"
+  color ncf, ncb: button -1, y, w, h, b_3,    "3"
+  color ocf, ocb: button -1, y, w, h, b_ob,   "("
+  color ocf, ocb: button -1, y, w, h, b_cb,   ")"
 
   y += h
-  color fcf, fcb: button  x, y, w, h, b_mp,  "M+"
-  color ncf, ncb: button -1, y, w, h, b_0,   "0"
-  color ncf, ncb: button -1, y, w, h, b_dot, "."
-  color fcf, fcb: button -1, y, w, h, b_bs,  "BS
-  color fcf, fcb: button -1, y, w, h, b_ce,  "CE"
-  color ocf, ocb: button -1, y, w, h, b_eq,  "="
+  color fcf, fcb: button  x, y, w, h, b_ex,   "EXIT"
+  color ncf, ncb: button -1, y, w, h, b_0,    "0"
+  color ncf, ncb: button -1, y, w, h, b_dot,  "."
+  color fcf, fcb: button -1, y, w, h, b_bs,   "BS
+  color fcf, fcb: button -1, y, w, h, b_ce,   "CE"
+  color ocf, ocb: button -1, y, w, h, b_eq,   "="
 end
 
 func showResult(result)
@@ -219,14 +219,16 @@ sub main
       fi
     case b_ms
       mem = result
-    case b_mp
-      rem not implemented
+    case b_ex
+      exit loop
     case b_dot
       if len(result) > 0 && right(result, 1) != "." then
         result += "."
       fi
     case b_eq
-      result = result + form_var + eval(result)
+      if (instr(result, "=") == 0) then
+        result = result + form_var + eval(result)
+      fi
     case else
       ' expression input
       if (result = "0") then 

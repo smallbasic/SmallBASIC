@@ -11,6 +11,7 @@
 #include "device.h"
 #include "smbas.h"
 #include "osd.h"
+#include "blib_ui.h"
 
 #include <fltk/run.h>
 #include <fltk/events.h>
@@ -52,7 +53,6 @@ bool cacheLink(dev_file_t * df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
 void clearOutput();
-void ui_close(); // in blib_fltk_ui.cpp
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -90,7 +90,7 @@ C_LINKAGE_BEGIN int osd_devinit()
   }
   saveForm = false;
   dev_clrkb();
-  ui_close();
+  ui_reset();
   return 1;
 }
 
@@ -111,7 +111,7 @@ void osd_refresh()
 
 int osd_devrestore()
 {
-  ui_close();
+  ui_reset();
   return 1;
 }
 
@@ -701,7 +701,7 @@ void closeForm()
 void clearOutput()
 {
   closeForm();
-  ui_close();
+  ui_reset();
 }
 
 bool isFormActive()

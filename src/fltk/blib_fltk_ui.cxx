@@ -37,6 +37,7 @@ extern MainWindow* wnd;
 
 struct Form : public Group {
   Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {}
+  ~Form() {}
   void draw(); // avoid drawing over the tab-bar
   var_t* var; // form variable contains the value of the event widget
   int cmd; // doform argument by value
@@ -315,6 +316,10 @@ bool update_gui(Widget* w, WidgetInfo* inf)
       ((Input*)w)->text((const char*)inf->var->v.p.ptr);
       break;
 
+    case ctrl_button:
+      w->copy_label((const char*)inf->var->v.p.ptr);
+      break;
+
     default:
       break;
     }
@@ -383,6 +388,11 @@ void transfer_data(Widget* w, WidgetInfo* inf)
     }
     break;
 
+  case ctrl_button:
+    // update the basic variable with the button label
+    v_setstrn(inf->var, w->label(), strlen(w->label()));
+    break;
+
   default:
     break;
   }
@@ -439,23 +449,20 @@ void update_radio_group(WidgetInfo* radioInf, RadioButton* radio)
 
 void widget_cb(Widget* w, void* v)
 {
-  WidgetInfo* inf = (WidgetInfo*) v;
-  transfer_data(w, (WidgetInfo*) v);
+  if (wnd->isRunning()) {
+    WidgetInfo* inf = (WidgetInfo*) v;
+    transfer_data(w, (WidgetInfo*) v);
 
-  mode = m_selected;
-
-  if (inf->type == ctrl_button) {
-    // update the basic variable with the button pressed
-    v_setstr(inf->var, w->label());
+    mode = m_selected;
+    
+    if (form->var) {
+      v_set(form->var, inf->var);
+    }
+    
+    // set the pen-state for integration with osd_events
+    // this callback is included as a waiting pen event
+    wnd->penState = -1;
   }
-
-  if (form->var) {
-    v_set(form->var, inf->var);
-  }
-
-  // set the pen-state for integration with osd_events
-  // this callback is included as a waiting pen event
-  wnd->penState = -1;
 }
 
 void update_widget(Widget* widget, WidgetInfo* inf, Rectangle& rect)
@@ -537,7 +544,7 @@ void form_init() {
 // copy all widget fields into variables
 void form_update(Group* group)
 {
-  if (group) {
+  if (group && wnd->isRunning()) {
     int n = group->children();
     for (int i = 0; i < n; i++) {
       Widget* w = group->child(i);
@@ -556,12 +563,6 @@ void form_end() {
   if (form != 0) {
     form->end();
   }
-}
-
-// init or update the modeless form
-void ui_close() {
-  form_update(form);
-  ui_reset();
 }
 
 // destroy the form
@@ -731,7 +732,7 @@ void cmd_doform()
   form_update(form);
 
   if (!form->cmd) {
-    ui_close();
+    ui_reset();
   }
   else if (wnd->penMode) {
     fltk::wait();
@@ -739,7 +740,7 @@ void cmd_doform()
   else {
     // pump system messages until there is a widget callback
     mode = m_active;
-    while (!wnd->isBreakExec() && mode == m_active) {
+    while (wnd->isRunning() && mode == m_active) {
       fltk::wait();
     }
     form_update(form);

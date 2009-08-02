@@ -296,12 +296,18 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   }
 
   if (!success || was_break) {
-    if (!toolExec && editWidget) {
+    if (!toolExec && editWidget && (!was_break || breakToLine)) {
       editWidget->gotoLine(gsb_last_line);
     }
-    int len = strlen(gsb_last_errmsg);
-    if (gsb_last_errmsg[len - 1] == '\n') {
-      gsb_last_errmsg[len - 1] = 0;
+    if (was_break) {
+      // override any possible stack error
+      sprintf(gsb_last_errmsg, "BREAK AT LINE %d", gsb_last_line);
+    }
+    else {
+      int len = strlen(gsb_last_errmsg);
+      if (gsb_last_errmsg[len - 1] == '\n') {
+        gsb_last_errmsg[len - 1] = 0;
+      }
     }
     closeForm();  // unhide the error
     if (editWidget) {
@@ -542,6 +548,12 @@ void MainWindow::run_break(Widget* w, void* eventData)
   }
 }
 
+void MainWindow::set_flag(Widget* w, void* eventData)
+{
+  bool* flag = (bool*) eventData;
+  *flag = (w->flags() & STATE);
+}
+
 void MainWindow::set_options(Widget* w, void* eventData)
 {
   const char* args = fltk::input("Enter program command line", opt_command);
@@ -600,11 +612,6 @@ void MainWindow::paste_text(Widget* w, void* eventData)
   if (editWidget) {
     EditorWidget::paste_cb(0, editWidget);
   }
-}
-
-void MainWindow::turbo(Widget* w, void* eventData)
-{
-  isTurbo = (w->flags() & STATE);
 }
 
 void MainWindow::font_size_incr(Widget* w, void* eventData)
@@ -1236,6 +1243,7 @@ int main(int argc, char **argv)
 MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
   isTurbo = false;
+  breakToLine = false;
 
   FileWidget::forwardSlash(runfile);
   begin();
@@ -1245,8 +1253,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   scanRecentFiles(m);
   m->add("&File/_&Close", CTRL + F4Key, (Callback *) MainWindow::close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWidget::saveFile_cb);
-  m->add("&File/_Save File &As", CTRL + SHIFT + 'S',
-         (Callback *) MainWindow::save_file_as_cb);
+  m->add("&File/_Save File &As", CTRL + SHIFT + 'S', (Callback *) MainWindow::save_file_as_cb);
   m->add("&File/E&xit", CTRL + 'q', (Callback *) MainWindow::quit_cb);
   m->add("&Edit/_&Undo", CTRL + 'z', (Callback *) EditorWidget::undo_cb);
   m->add("&Edit/Cu&t", CTRL + 'x', (Callback *) MainWindow::cut_text_cb);
@@ -1256,8 +1263,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Edit/&Expand Word", ALT + '/', (Callback *) MainWindow::expand_word_cb);
   m->add("&Edit/_&Rename Word", CTRL + SHIFT + 'r', (Callback *) MainWindow::rename_word_cb);
   m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWidget::showFindReplace_cb);
-  m->add("&Edit/_Replace &Again", CTRL + 't',
-         (Callback *) EditorWidget::replaceNext_cb);
+  m->add("&Edit/_Replace &Again", CTRL + 't', (Callback *) EditorWidget::replaceNext_cb);
   m->add("&View/&Next Tab", F6Key, (Callback *) MainWindow::next_tab_cb);
   m->add("&View/_&Prev Tab", CTRL + F6Key, (Callback *) MainWindow::prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
@@ -1280,9 +1286,9 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Program/&Break", CTRL + 'b', (Callback *) MainWindow::run_break_cb);
   m->add("&Program/_&Restart", CTRL + 'r', (Callback *) MainWindow::restart_run_cb);
   m->add("&Program/&Command", F10Key, (Callback *) MainWindow::set_options_cb);
-  m->add("&Program/Toggle/&Turbo", 0, (Callback *) turbo_cb)->type(Item::TOGGLE);
-  m->add("&Program/Toggle/&Hide IDE", 0,
-         (Callback *) hide_ide_cb)->type(Item::TOGGLE);
+  m->add("&Program/Toggle/&Hide IDE", 0, (Callback *) hide_ide_cb)->type(Item::TOGGLE);
+  m->add("&Program/Toggle/&Break To Line", 0, (Callback *) set_flag_cb, &breakToLine)->type(Item::TOGGLE);
+  m->add("&Program/Toggle/&Turbo", 0, (Callback *) set_flag_cb, &isTurbo)->type(Item::TOGGLE);
   m->add("&Help/&Help Contents", F1Key, (Callback *) MainWindow::help_contents_cb);
   m->add("&Help/_&Program Help", F11Key, (Callback *) MainWindow::help_app_cb);
   m->add("&Help/_&Home Page", 0, (Callback *) MainWindow::help_home_cb);
@@ -1625,6 +1631,11 @@ FILE* MainWindow::openConfig(const char* fileName, const char* flags) {
 bool MainWindow::isBreakExec(void)
 {
   return (runMode == break_state || runMode == quit_state);
+}
+
+bool MainWindow::isRunning(void)
+{
+  return (runMode == run_state || runMode == modal_state);
 }
 
 void MainWindow::setModal(bool modal)

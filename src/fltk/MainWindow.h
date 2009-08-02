@@ -99,6 +99,7 @@ struct MainWindow : public BaseWindow {
 
   bool basicMain(EditorWidget* editWidget, const char *filename, bool toolExec);
   bool isBreakExec(void);
+  bool isRunning(void);
   bool isEdit();
   bool isIdeHidden();
   bool isInteractive();
@@ -162,9 +163,9 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(run);
   CALLBACK_METHOD(run_break);
   CALLBACK_METHOD(save_file_as);
+  CALLBACK_METHOD(set_flag);
   CALLBACK_METHOD(set_options);
   CALLBACK_METHOD(tool_plugin);
-  CALLBACK_METHOD(turbo);
 
   HelpWidget* getHelp();
 
@@ -174,6 +175,7 @@ struct MainWindow : public BaseWindow {
   Input* replaceWith;
 
   bool isTurbo;
+  bool breakToLine;
   String siteHome;
 
   // main output

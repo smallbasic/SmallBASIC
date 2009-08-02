@@ -985,14 +985,19 @@ void EditorWidget::reloadFile() {
 
 void EditorWidget::doSaveFile(const char *newfile)
 {
+  if (!dirty) {
+    // nothing has changed
+    return;
+  }
+
   char basfile[PATH_MAX];
   TextBuffer *textbuf = editor->textbuf;
-
+  
   strcpy(basfile, newfile);
   if (strchr(basfile, '.') == 0) {
     strcat(basfile, ".bas");
   }
-
+  
   if (textbuf->savefile(basfile)) {
     alert("Error writing to file \'%s\':\n%s.", basfile, strerror(errno));
     return;
