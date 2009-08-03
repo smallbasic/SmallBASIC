@@ -529,7 +529,12 @@ void MainWindow::help_app(Widget* w, void* eventData)
 {
   const char *helpFile = dev_getenv("APP_HELP");
   if (helpFile) {
-    getHelp()->loadFile(helpFile);
+    if (access(helpFile, R_OK) == 0) {
+      getHelp()->loadFile(helpFile);
+    }
+    else {
+      getHelp()->loadBuffer(helpFile);
+    }
   }
   else {
     getHelp()->loadBuffer("APP_HELP env variable not found");
@@ -1269,13 +1274,13 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', (Callback *) MainWindow::font_size_decr_cb);
   m->add("&View/Text Color/Background", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_background);
-  m->add("&View/Text Color/Text", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_text);
+  m->add("&View/Text Color/_Text", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_text);
   m->add("&View/Text Color/Comments", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_comments);
-  m->add("&View/Text Color/Strings", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_strings);
+  m->add("&View/Text Color/_Strings", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_strings);
   m->add("&View/Text Color/Keywords", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_keywords);
   m->add("&View/Text Color/Funcs", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_funcs);
-  m->add("&View/Text Color/Subs", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_subs);
-  m->add("&View/Text Color/Find Matches", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_findMatches);
+  m->add("&View/Text Color/_Subs", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_subs);
+  m->add("&View/Text Color/_Find Matches", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_findMatches);
   m->add("&View/Text Color/Numbers", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_numbers);
   m->add("&View/Text Color/Operators", 0, (Callback *) EditorWidget::set_color_cb, (void*) st_operators);
 

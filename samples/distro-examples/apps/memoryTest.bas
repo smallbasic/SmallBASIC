@@ -139,9 +139,6 @@ sub getOptions
 
   ' display the form until either generate or start has been clicked
   repeat
-    bn_generate = 0
-    bn_start = 0
-    
     doform form_var
 
     if (form_var == bn_generate) then
@@ -185,30 +182,32 @@ sub main
   local y = (cellSize*rows)+3
 
   ' this shows how to create a combine pen/form loop
-  bn_check = 0
-  bn_reset = 0
+  bn_check = "Check @->"
+  bn_reset = "Clear"
+  form_var = 0
   
-  button 10, y, -1, -5, bn_check, "Check @->"
-  button 10, -3, -1, -5, bn_reset, "Clear"
+  button 10, y, -1, -5, bn_check, bn_check
+  button 10, -3, -1, -5, bn_reset, bn_reset
 
   pen on
-  repeat
+  while 1
     ' handle mouse actions
     clickCell guess, getCell
     drawGrid guess
    
-   ' handle form actions
-   doform form_var
-    select case form_var
-    case bn_check
-      exit loop
-    case bn_reset
-      guess = createGrid(0)
-      drawGrid guess
-      bn_reset = 0
-    end select
-
-  until bn_check != ""
+    ' handle form actions
+    doform form_var
+    if (form_var != 0) then
+      select case form_var
+      case bn_check
+        exit loop
+      case bn_reset
+        guess = createGrid(0)
+        drawGrid guess
+      end select
+      form_var = 0
+    fi
+  wend
   pen off
 
   ' close the form

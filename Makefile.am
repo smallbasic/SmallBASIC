@@ -40,7 +40,6 @@ EXTRA_DIST =					\
     documentation/README.PALM			\
     documentation/README.UNIX			\
     plugins/calc.bas				\
-    plugins/calc.html				\
     plugins/comment_in.bas			\
     plugins/comment_out.bas			\
     plugins/dos2unix.bas			\

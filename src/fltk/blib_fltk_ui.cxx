@@ -211,7 +211,7 @@ void array_to_string(String& s, var_t* v)
   }
 }
 
-// set basic string variable to widget state
+// set basic string variable to widget state when the variable has changed
 bool update_gui(Widget* w, WidgetInfo* inf)
 {
   Choice* dropdown;
@@ -390,7 +390,7 @@ void transfer_data(Widget* w, WidgetInfo* inf)
 
   case ctrl_button:
     // update the basic variable with the button label
-    v_setstrn(inf->var, w->label(), strlen(w->label()));
+    v_setstr(inf->var, w->label());
     break;
 
   default:

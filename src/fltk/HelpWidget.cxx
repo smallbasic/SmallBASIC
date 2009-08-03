@@ -2642,8 +2642,12 @@ int HelpWidget::handle(int event)
     }
     return 1;
 
+  case fltk::SHOW:
+    focus(this);
+    break;
+
   case fltk::FOCUS:
-    return 2;                   // aquire focus
+    return 1;                   // aquire focus
 
   case fltk::PUSH:
     return onPush(event);
@@ -2713,7 +2717,7 @@ int HelpWidget::handle(int event)
       return 1;
     }
   }
-  return scrollbar->active()? scrollbar->handle(event) : 0;
+  return scrollbar->active() ? scrollbar->handle(event) : 0;
 }
 
 bool HelpWidget::find(const char *s, bool matchCase)

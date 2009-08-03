@@ -814,21 +814,25 @@ void v_tostr(var_t *arg)
  */
 void v_setstr(var_t *var, const char *string)
 {
-  v_free(var);
-  var->type = V_STR;
-  var->v.p.size = strlen(string) + 1;
-  var->v.p.ptr = tmp_alloc(var->v.p.size);
-  strcpy(var->v.p.ptr, string);
+  if (var->type != V_STR || strcmp(string, var->v.p.ptr) != 0) {
+    v_free(var);
+    var->type = V_STR;
+    var->v.p.size = strlen(string) + 1;
+    var->v.p.ptr = tmp_alloc(var->v.p.size);
+    strcpy(var->v.p.ptr, string);
+  }
 }
 
 void v_setstrn(var_t *var, const char *string, int len)
 {
-  v_free(var);
-  var->type = V_STR;
-  var->v.p.size = len + 1;
-  var->v.p.ptr = tmp_alloc(var->v.p.size);
-  strncpy(var->v.p.ptr, string, len);
-  var->v.p.ptr[len] = 0;
+  if (var->type != V_STR || strncmp(string, var->v.p.ptr, len) != 0) {
+    v_free(var);
+    var->type = V_STR;
+    var->v.p.size = len + 1;
+    var->v.p.ptr = tmp_alloc(var->v.p.size);
+    strncpy(var->v.p.ptr, string, len);
+    var->v.p.ptr[len] = 0;
+  }
 }
 
 /*
