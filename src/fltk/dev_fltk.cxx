@@ -86,8 +86,8 @@ C_LINKAGE_BEGIN int osd_devinit()
   }
   if (saveForm == false) {
     closeForm();
-    osd_cls();
   }
+  osd_cls();
   saveForm = false;
   dev_clrkb();
   ui_reset();

@@ -20,6 +20,7 @@
 #include <fltk/ask.h>
 #include <fltk/damage.h>
 #include <fltk/events.h>
+#include <fltk/run.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
@@ -34,6 +35,8 @@ extern Widget* recentMenu[];
 
 // in dev_fltk.cpp
 void getHomeDir(char *filename);
+
+int completionIndex = 0;
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
   { BLACK, COURIER, 12},                  // A - Plain
@@ -75,7 +78,7 @@ bool isvar(int c) {
 }
 
 EditorWidget* get_editor() {
-  return wnd->getEditor();
+  return wnd->getEditor(true);
 }
 
 // 'compare_keywords()' - Compare two keywords
@@ -489,19 +492,6 @@ void CodeEditor::handleTab()
   free((void *)buf);
 }
 
-void CodeEditor::showFindText(const char *find)
-{
-  // copy lowercase search string for high-lighting
-  strcpy(search, find);
-  int findLen = strlen(search);
-
-  for (int i = 0; i < findLen; i++) {
-    search[i] = tolower(search[i]);
-  }
-
-  style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
-}
-
 void CodeEditor::showMatchingBrace()
 {
   char cursorChar = buffer()->character(cursor_pos_ - 1);
@@ -753,37 +743,31 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   toolbar->box(FLAT_BOX);
 
   // widths become relative when the outer window is resized
-  int prev_bn_w = 18;
-  int next_bn_w = 18;
-  int goto_in_w = 40;
-  int goto_bn_w = 18;
-  int func_bn_w = 190;
-  int spacing = 100;
-  int find_bn_w = w - (prev_bn_w + next_bn_w + goto_in_w + goto_bn_w + func_bn_w) - spacing;
+  int cmd_bn_w = 80;
+  int func_bn_w = w / 3;
+  int spacing = 8;
+  int find_bn_w = w - (cmd_bn_w + func_bn_w + spacing);
 
-  // find control
-  findTextInput = new Input(38, 2, find_bn_w, MNU_HEIGHT, "Find:");
-  findTextInput->align(ALIGN_LEFT | ALIGN_CLIP);
+  // command selection
+  commandOpt = cmd_find;
+  commandChoice = new Choice(2, 2, cmd_bn_w, MNU_HEIGHT);
+  commandChoice->labelfont(COURIER);
+  commandChoice->begin();
+  new Item("Find:", 0, command_opt_cb, (void*) cmd_find);
+  new Item("Replace:" ,0, command_opt_cb, (void*) cmd_replace);
+  new Item("With:" ,0, command_opt_cb, (void*) cmd_replace_with);
+  new Item("Goto:", 0, command_opt_cb, (void*) cmd_goto);
+  commandChoice->end();
 
-  Button *prevBn = new Button(findTextInput->r() + 4, 4, prev_bn_w, MNU_HEIGHT - 4, "@-98>;");
-  Button *nextBn = new Button(prevBn->r() + 4, 4, next_bn_w, MNU_HEIGHT - 4, "@-92>;");
-  prevBn->callback(EditorWidget::find_cb, (void *)0);
-  nextBn->callback(EditorWidget::find_cb, (void *)1);
-  findTextInput->callback(EditorWidget::find_cb, (void *)2);
-  findTextInput->when(WHEN_ENTER_KEY_ALWAYS);
-  findTextInput->labelfont(HELVETICA);
-
-  // goto-line control
-  gotoLineInput = new Input(nextBn->r() + 40, 2, goto_in_w, MNU_HEIGHT, "Goto:");
-  gotoLineInput->align(ALIGN_LEFT | ALIGN_CLIP);
-  Button *gotoBn = new Button(gotoLineInput->r() + 4, 4, goto_bn_w, MNU_HEIGHT - 4, "@-92>;");
-  gotoBn->callback(EditorWidget::goto_line_cb, gotoLineInput);
-  gotoLineInput->callback(EditorWidget::goto_line_cb, gotoLineInput);
-  gotoLineInput->when(WHEN_ENTER_KEY_ALWAYS);
-  gotoLineInput->labelfont(HELVETICA);
+  // command control
+  commandText = new Input(commandChoice->r() + 2, 2, find_bn_w, MNU_HEIGHT);
+  commandText->align(ALIGN_LEFT | ALIGN_CLIP);
+  commandText->callback(EditorWidget::command_cb, (void*) 2);
+  commandText->when(WHEN_ENTER_KEY_ALWAYS);
+  commandText->labelfont(HELVETICA);
 
   // sub-func jump droplist
-  funcList = new Choice(gotoBn->r() + 4, 2, func_bn_w, MNU_HEIGHT);
+  funcList = new Choice(commandText->r() + 4, 2, func_bn_w, MNU_HEIGHT);
   funcList->callback(func_list_cb, 0);
   funcList->labelfont(COURIER);
   funcList->begin();
@@ -792,18 +776,18 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   funcList->end();
 
   // close the tool-bar with a resizeable end-box
-  toolbar->resizable(findTextInput);
+  toolbar->resizable(commandText);
   toolbar->end();
 
   // editor status bar
   Group *statusBar = new Group(2, toolbar->b() + 2, w, MNU_HEIGHT);
   statusBar->begin();
   statusBar->box(NO_BOX);
-  fileStatus = new Widget(0, 0, w - 137, MNU_HEIGHT - 2);
-  modStatus = new Widget(w - 136, 0, 33, MNU_HEIGHT - 2);
-  runStatus = new Widget(w - 102, 0, 33, MNU_HEIGHT - 2);
-  rowStatus = new Widget(w - 68, 0, 33, MNU_HEIGHT - 2);
-  colStatus = new Widget(w - 34, 0, 33, MNU_HEIGHT - 2);
+  fileStatus = new Widget(0, 0, w - 140, MNU_HEIGHT - 2);
+  modStatus = new Widget(fileStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
+  runStatus = new Widget(modStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
+  rowStatus = new Widget(runStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
+  colStatus = new Widget(rowStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
 
   for (int n = 0; n < statusBar->children(); n++) {
     Widget *w = statusBar->child(n);
@@ -826,6 +810,405 @@ EditorWidget::~EditorWidget()
 {
   delete editor;
 }
+
+//--Event handler methods-------------------------------------------------------
+
+void EditorWidget::change_case(Widget* w, void* eventData)
+{
+  int start, end;
+  TextBuffer *tb = editor->buffer();
+  char *selection;
+
+  if (tb->selected()) {
+    selection = (char *)tb->selection_text();
+    tb->selection_position(&start, &end);
+  }
+  else {
+    int pos = editor->insert_position();
+    start = tb->word_start(pos);
+    end = tb->word_end(pos);
+    selection = (char *)tb->text_range(start, end);
+  }
+  int len = strlen(selection);
+  enum { up, down, mixed } curcase = isupper(selection[0]) ? up : down;
+
+  for (int i = 1; i < len; i++) {
+    if (isalpha(selection[i])) {
+      bool isup = isupper(selection[i]);
+      if ((curcase == up && isup == false) || (curcase == down && isup)) {
+        curcase = mixed;
+        break;
+      }
+    }
+  }
+
+  // transform pattern: Foo -> FOO, FOO -> foo, foo -> Foo
+  for (int i = 0; i < len; i++) {
+    selection[i] = curcase == mixed ? toupper(selection[i]) : tolower(selection[i]);
+  }
+  if (curcase == down) {
+    selection[0] = toupper(selection[0]);
+    // upcase chars following non-alpha chars
+    for (int i = 1; i < len; i++) {
+      if (isalpha(selection[i]) == false && i + 1 < len) {
+        selection[i+1] = toupper(selection[i+1]);
+      }
+    }
+  }
+
+  if (selection[0]) {
+    tb->replace_selection(selection);
+    tb->select(start, end);
+  }
+  free((void *)selection);
+}
+
+void EditorWidget::command_opt(Widget* w, void* eventData)
+{
+  commandOpt = (CommandOpt) (int) eventData;
+  commandText->textcolor(BLACK);
+}
+
+void EditorWidget::cut_text(Widget* w, void* eventData)
+{
+  TextEditor::kf_cut(0, editor);
+}
+
+void EditorWidget::do_delete(Widget* w, void* eventData)
+{
+  editor->textbuf->remove_selection();
+}
+
+void EditorWidget::expand_word(Widget* w, void* eventData)
+{
+  int start, end;
+  const char *fullWord = 0;
+  unsigned fullWordLen = 0;
+
+  TextBuffer *textbuf = editor->buffer();
+  const char *text = textbuf->text();
+
+  if (textbuf->selected()) {
+    // get word before selection
+    int pos1, pos2;
+    textbuf->selection_position(&pos1, &pos2);
+    start = textbuf->word_start(pos1 - 1);
+    end = pos1;
+    // get word from before selection to end of selection
+    fullWord = text + start;
+    fullWordLen = pos2 - start - 1;
+  }
+  else {
+    // nothing selected - get word to left of cursor position
+    int pos = editor->insert_position();
+    end = textbuf->word_end(pos);
+    start = textbuf->word_start(end - 1);
+    completionIndex = 0;
+  }
+
+  if (start >= end) {
+    return;
+  }
+
+  const char *expandWord = text + start;
+  unsigned expandWordLen = end - start;
+  int wordPos = 0;
+
+  // scan for expandWord from within the current text buffer
+  if (completionIndex != -1 &&
+      searchBackward(text, start - 1, expandWord, expandWordLen, &wordPos)) {
+
+    int matchPos = -1;
+    if (textbuf->selected() == 0) {
+      matchPos = wordPos;
+      completionIndex = 1;      // find next word on next call
+    }
+    else {
+      // find the next word prior to the currently selected word
+      int index = 1;
+      while (wordPos > 0) {
+        if (strncasecmp(text + wordPos, fullWord, fullWordLen) != 0 ||
+            isalpha(text[wordPos + fullWordLen + 1])) {
+          // isalpha - matches fullWord but word has more chars
+          matchPos = wordPos;
+          if (completionIndex == index) {
+            completionIndex++;
+            break;
+          }
+          // count index for non-matching fullWords only
+          index++;
+        }
+
+        if (searchBackward(text, wordPos - 1, expandWord,
+                           expandWordLen, &wordPos) == 0) {
+          matchPos = -1;
+          break;                // no more partial matches
+        }
+      }
+      if (index == completionIndex) {
+        // end of expansion sequence
+        matchPos = -1;
+      }
+    }
+    if (matchPos != -1) {
+      char *word = textbuf->text_range(matchPos, textbuf->word_end(matchPos));
+      if (textbuf->selected()) {
+        textbuf->replace_selection(word + expandWordLen);
+      }
+      else {
+        textbuf->insert(end, word + expandWordLen);
+      }
+      textbuf->select(end, end + strlen(word + expandWordLen));
+      editor->insert_position(end + strlen(word + expandWordLen));
+      free((void *)word);
+      return;
+    }
+  }
+
+  completionIndex = -1;         // no more buffer expansions
+
+  strlib::List keywords;
+  getKeywords(keywords);
+
+  // find the next replacement
+  int firstIndex = -1;
+  int lastIndex = -1;
+  int curIndex = -1;
+  int numWords = keywords.length();
+  for (int i = 0; i < numWords; i++) {
+    const char *keyword = ((String *) keywords.get(i))->toString();
+    if (strncasecmp(expandWord, keyword, expandWordLen) == 0) {
+      if (firstIndex == -1) {
+        firstIndex = i;
+      }
+      if (fullWordLen == 0) {
+        if (expandWordLen == strlen(keyword)) {
+          // nothing selected and word to left of cursor matches
+          curIndex = i;
+        }
+      }
+      else if (strncasecmp(fullWord, keyword, fullWordLen) == 0) {
+        // selection+word to left of selection matches
+        curIndex = i;
+      }
+      lastIndex = i;
+    }
+    else if (lastIndex != -1) {
+      // moved beyond matching words
+      break;
+    }
+  }
+
+  if (lastIndex != -1) {
+    if (lastIndex == curIndex || curIndex == -1) {
+      lastIndex = firstIndex;   // wrap to first in subset
+    }
+    else {
+      lastIndex = curIndex + 1;
+    }
+
+    const char *keyword = ((String *) keywords.get(lastIndex))->toString();
+    // updated the segment of the replacement text
+    // that completes the current selection
+    if (textbuf->selected()) {
+      textbuf->replace_selection(keyword + expandWordLen);
+    }
+    else {
+      textbuf->insert(end, keyword + expandWordLen);
+    }
+    textbuf->select(end, end + strlen(keyword + expandWordLen));
+  }
+}
+
+void EditorWidget::find(Widget* w, void* eventData)
+{
+  setCommand(cmd_find);
+}
+
+void EditorWidget::command(Widget* w, void* eventData)
+{
+  if (!readonly()) {
+    bool found = false;
+    switch (commandOpt) {
+    case cmd_find:
+      found = editor->findText(commandText->value(), (int)eventData);
+      commandText->textcolor(found ? BLACK : RED);
+      commandText->redraw();
+      break;
+
+    case cmd_replace:
+      commandBuffer.empty();
+      commandBuffer.append(commandText->value());
+      setCommand(cmd_replace_with);
+      break;
+
+    case cmd_replace_with:
+      replace_next();
+      commandBuffer.empty();
+      break;
+
+    case cmd_goto:
+      gotoLine(atoi(commandText->value()));
+      take_focus();
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  if (commandOpt == cmd_find) {
+    take_focus();
+  }
+}
+
+void EditorWidget::font_name(Widget* w, void* eventData)
+{
+  setFont(fltk::font(w->label(), 0));
+  wnd->updateConfig(this);
+}
+
+void EditorWidget::func_list(Widget* w, void* eventData)
+{
+  const char *label = funcList->item()->label();
+  if (label) {
+    if (strcmp(label, SCAN_LABEL) == 0) {
+      funcList->clear();
+      funcList->begin();
+      createFuncList();
+      new Item(SCAN_LABEL);
+      funcList->end();
+    }
+    else {
+      findFunc(label);
+      take_focus();
+    }
+  }
+}
+
+void EditorWidget::goto_line(Widget* w, void* eventData)
+{
+  setCommand(cmd_goto);  
+}
+
+void EditorWidget::paste_text(Widget* w, void* eventData)
+{
+  TextEditor::kf_paste(0, editor);
+}
+
+/**
+ * rename the currently selected variable
+ */
+void EditorWidget::rename_word(Widget* w, void* eventData) {
+
+  static bool rename_active = false;
+
+  if (rename_active) {
+    rename_active = false;
+  }
+  else {
+    Rectangle rc;
+    char* selection = getSelection(&rc);
+    if (selection) {
+      showFindText(selection);
+      begin();
+      LineInput *in = new LineInput(rc.x(), rc.y(), rc.w() + 10, rc.h());
+      end();
+      in->text(selection);
+      in->callback(rename_word_cb);
+      in->textfont(COURIER);
+      in->textsize(getFontSize());
+
+      rename_active = true;
+      while (rename_active && in->focused()) {
+        fltk::wait();
+      }
+
+      showFindText("");
+      replaceAll(selection, in->value(), true, true);
+      remove(in);
+      take_focus();
+      delete in;
+      free((void *)selection);
+    }
+  }  
+}
+
+void EditorWidget::replace_next(Widget* w, void* eventData)
+{
+  if (readonly()) {
+    return;
+  }
+
+  const char *find = commandBuffer;
+  const char *replace = commandText->value();
+
+  TextBuffer *textbuf = editor->textbuf;
+  int pos = editor->insert_position();
+  int found = textbuf->search_forward(pos, find, &pos);
+
+  if (found) {
+    // found a match; update the position and replace text
+    textbuf->select(pos, pos + strlen(find));
+    textbuf->remove_selection();
+    textbuf->insert(pos, replace);
+    textbuf->select(pos, pos + strlen(replace));
+    editor->insert_position(pos + strlen(replace));
+    editor->show_insert_position();
+  }
+  else {
+    setCommand(cmd_replace);
+  }
+}
+
+void EditorWidget::save_file(Widget* w, void* eventData)
+{
+  if (filename[0] == '\0') {
+    // no filename - get one!
+    wnd->save_file_as();
+    return;
+  }
+  else {
+    doSaveFile(filename);
+  }
+}
+
+void EditorWidget::set_color(Widget* w, void* eventData)
+{
+  StyleField styleField = (StyleField) (int) eventData;
+  if (styleField == st_background) {
+    uchar r,g,b;
+    split_color(editor->color(),r,g,b);
+    if (color_chooser(w->label(), r,g,b)) {
+      Color c = fltk::color(r,g,b);
+      set_color_index(fltk::FREE_COLOR + styleField, c);
+      editor->color(c);
+      editor->styleChanged();
+    }
+  }
+  else {
+    setColor(w->label(), styleField);
+  }
+  wnd->updateConfig(this);
+}
+
+void EditorWidget::show_replace(Widget* w, void* eventData)
+{
+  const char* prime = editor->search;
+  if (!prime || !prime[0]) {
+    // use selected text when search not available
+    prime = editor->textbuf->selection_text();
+  }
+  commandText->value(prime);
+  setCommand(cmd_replace);
+}
+
+void EditorWidget::undo(Widget* w, void* eventData)
+{
+  TextEditor::kf_undo(0, editor);
+}
+
+//--Public methods--------------------------------------------------------------
 
 int EditorWidget::handle(int e)
 {
@@ -862,19 +1245,6 @@ void EditorWidget::readonly(bool is_readonly)
   ((CodeEditor *) editor)->readonly = is_readonly;
 }
 
-void EditorWidget::doChange(int inserted, int deleted)
-{
-  if (loading) {
-    return;  // do nothing while file load in progress
-  }
-
-  if (inserted || deleted) {
-    dirty = 1;
-  }
-
-  setModified(dirty);
-}
-
 bool EditorWidget::checkSave(bool discard)
 {
   if (!dirty) {
@@ -886,44 +1256,10 @@ bool EditorWidget::checkSave(bool discard)
   int r = discard ? choice(msg, "Save", "Discard", "Cancel") :
           choice(msg, "Save", "Cancel", 0);
   if (r == 0) {
-    saveFile();                 // Save the file
+    save_file();     // Save the file
     return !dirty;
   }
   return (discard && r == 1);
-}
-
-/**
- * load any stored font or color settings
- */
-void EditorWidget::loadConfig() {
-  FILE *fp = wnd->openConfig(configFile, "r");
-  if (fp) {
-    char buffer[MAX_PATH];
-    int size = 0;
-    int i = 0;
-
-    if (fscanf(fp, fontConfigRead, buffer, &size) == 2) {
-      setFont(font(buffer));
-      setFontSize(size);
-    }
-
-    while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
-      buffer[strlen(buffer) - 1] = 0; // trim new-line
-      Color c = fltk::color(buffer + 3); // skip nn=#xxxxxx
-      if (c != NO_COLOR) {
-        if (i == st_background) {
-          editor->color(c);
-          break;
-        }
-        else {
-          styletable[i].color = c;
-        }
-      }
-      i++;
-    }
-
-    fclose(fp);
-  }
 }
 
 void EditorWidget::loadFile(const char *newfile)
@@ -954,33 +1290,6 @@ void EditorWidget::loadFile(const char *newfile)
   statusMsg(filename);
   fileChanged(true);
   setRowCol(1, 1);
-}
-
-void EditorWidget::newFile()
-{
-  if (readonly()) {
-    return;
-  }
-
-  if (!checkSave(true)) {
-    return;
-  }
-
-  TextBuffer *textbuf = editor->textbuf;
-  filename[0] = '\0';
-  textbuf->select(0, textbuf->length());
-  textbuf->remove_selection();
-  dirty = 0;
-  textbuf->call_modify_callbacks();
-  statusMsg(0);
-  fileChanged(false);
-  modifiedTime = 0;
-}
-
-void EditorWidget::reloadFile() {
-  char buffer[PATH_MAX];
-  strcpy(buffer, filename);
-  loadFile(buffer);
 }
 
 void EditorWidget::doSaveFile(const char *newfile)
@@ -1020,179 +1329,6 @@ void EditorWidget::doSaveFile(const char *newfile)
   editor->take_focus();
 }
 
-void EditorWidget::showFindReplace(Widget* w, void* eventData)
-{
-  const char* prime = editor->search;
-  if (!prime || !prime[0]) {
-    // use selected text when search not available
-    prime = editor->textbuf->selection_text();
-  }
-  wnd->replaceFind->value(prime);
-  wnd->replaceDlg->show();
-}
-
-void EditorWidget::set_color(Widget* w, void* eventData)
-{
-  StyleField styleField = (StyleField) (int) eventData;
-  if (styleField == st_background) {
-    uchar r,g,b;
-    split_color(editor->color(),r,g,b);
-    if (color_chooser(w->label(), r,g,b)) {
-      Color c = fltk::color(r,g,b);
-      set_color_index(fltk::FREE_COLOR + styleField, c);
-      editor->color(c);
-      editor->styleChanged();
-    }
-  }
-  else {
-    setColor(w->label(), styleField);
-  }
-  wnd->updateConfig(this);
-}
-
-int EditorWidget::replaceAll(const char* find, const char* replace, 
-                             bool restorePos, bool matchWord)
-{
-  int times = 0;
-
-  if (strcmp(find, replace) != 0) {
-    TextBuffer *textbuf = editor->textbuf;
-    int prevPos = editor->insert_position();
-    
-    // loop through the whole string
-    int pos = 0;
-    editor->insert_position(pos);
-    
-    while (textbuf->search_forward(pos, find, &pos)) {
-      // found a match; update the position and replace text
-      if (!matchWord ||
-          ((pos == 0 || !isvar(textbuf->character(pos - 1))) &&
-            !isvar(textbuf->character(pos + strlen(find))))) {
-        textbuf->select(pos, pos + strlen(find));
-        textbuf->remove_selection();
-        textbuf->insert(pos, replace);
-      }
-
-      // advance beyond replace string
-      pos += strlen(replace);
-      editor->insert_position(pos);
-      times++;
-    }
-    
-    if (restorePos) {
-      editor->insert_position(prevPos);
-    }
-    editor->show_insert_position();
-  }
-
-  return times;
-}
-
-void EditorWidget::replaceAll(Widget* w, void* eventData)
-{
-  if (!readonly()) {
-    const char *find = wnd->replaceFind->value();
-    const char *replace = wnd->replaceWith->value();
-
-    int times = replaceAll(find, replace, false, false);
-    if (times) {
-      message("Replaced %d occurrences.", times);
-    }
-    else {
-      alert("No occurrences of \'%s\' found!", find);
-    }
-  }
-}
-
-void EditorWidget::replaceNext(Widget* w, void* eventData)
-{
-  if (readonly()) {
-    return;
-  }
-
-  const char *find = wnd->replaceFind->value();
-  const char *replace = wnd->replaceWith->value();
-
-  TextBuffer *textbuf = editor->textbuf;
-  int pos = editor->insert_position();
-  int found = textbuf->search_forward(pos, find, &pos);
-
-  if (found) {
-    // found a match; update the position and replace text
-    textbuf->select(pos, pos + strlen(find));
-    textbuf->remove_selection();
-    textbuf->insert(pos, replace);
-    textbuf->select(pos, pos + strlen(replace));
-    editor->insert_position(pos + strlen(replace));
-    editor->show_insert_position();
-  }
-  else {
-    alert("No occurrences of \'%s\' found!", find);
-  }
-}
-
-void EditorWidget::cancelReplace(Widget* w, void* eventData)
-{
-  wnd->replaceDlg->hide();
-}
-
-void EditorWidget::doDelete(Widget* w, void* eventData)
-{
-  editor->textbuf->remove_selection();
-}
-
-void EditorWidget::find(Widget* w, void* eventData)
-{
-  bool found = editor->findText(findTextInput->value(), (int)eventData);
-  findTextInput->textcolor(found ? BLACK : RED);
-  findTextInput->redraw();
-  if (2 == (int)eventData) {
-    take_focus();
-  }
-}
-
-void EditorWidget::font_name(Widget* w, void* eventData)
-{
-  setFont(fltk::font(w->label(), 0));
-  wnd->updateConfig(this);
-}
-
-void EditorWidget::func_list(Widget* w, void* eventData)
-{
-  const char *label = funcList->item()->label();
-  if (label) {
-    if (strcmp(label, SCAN_LABEL) == 0) {
-      funcList->clear();
-      funcList->begin();
-      createFuncList();
-      new Item(SCAN_LABEL);
-      funcList->end();
-    }
-    else {
-      findFunc(label);
-      take_focus();
-    }
-  }
-}
-
-void EditorWidget::goto_line(Widget* w, void* eventData)
-{
-  gotoLine(atoi(gotoLineInput->value()));
-  take_focus();
-}
-
-void EditorWidget::saveFile(Widget* w, void* eventData)
-{
-  if (filename[0] == '\0') {
-    // no filename - get one!
-    wnd->save_file_as();
-    return;
-  }
-  else {
-    doSaveFile(filename);
-  }
-}
-
 void EditorWidget::gotoLine(int line)
 {
   ((CodeEditor *) editor)->gotoLine(line);
@@ -1211,11 +1347,6 @@ void EditorWidget::getSelStartRowCol(int *row, int *col)
 void EditorWidget::getSelEndRowCol(int *row, int *col)
 {
   return ((CodeEditor *) editor)->getSelEndRowCol(row, col);
-}
-
-char* EditorWidget::getSelection(Rectangle* rc)
-{
-  return ((CodeEditor *) editor)->getSelection(rc);
 }
 
 void EditorWidget::saveConfig() {
@@ -1238,28 +1369,6 @@ void EditorWidget::saveConfig() {
   }
 }
 
-void EditorWidget::setColor(const char* label, StyleField field) {
-  uchar r,g,b;
-  split_color(styletable[field].color,r,g,b);
-  if (color_chooser(label, r,g,b)) {
-    Color c = fltk::color(r,g,b);
-    set_color_index(fltk::FREE_COLOR + field, c);
-    styletable[field].color = c;
-    editor->styleChanged();
-  }
-} 
-
-void EditorWidget::setFont(Font* font)
-{
-  if (font) {
-    int len = sizeof(styletable) / sizeof(styletable[0]);
-    for (int i = 0; i < len; i++) {
-      styletable[i].font = font;
-    }
-    editor->styleChanged();
-  }
-}
-
 void EditorWidget::setFontSize(int size)
 {
   int len = sizeof(styletable) / sizeof(styletable[0]);
@@ -1269,59 +1378,9 @@ void EditorWidget::setFontSize(int size)
   editor->styleChanged();
 }
 
-const char* EditorWidget::getFontName()
-{
-  return styletable[0].font->name();
-}
-
 int EditorWidget::getFontSize()
 {
   return (int)styletable[0].size;
-}
-
-void EditorWidget::createFuncList()
-{
-  TextBuffer *textbuf = editor->textbuf;
-  const char *text = textbuf->text();
-  int len = textbuf->length();
-
-  for (int i = 0; i < len; i++) {
-    // avoid seeing "gosub" etc
-    int offs = ((strncasecmp(text + i, "\nsub ", 5) == 0 ||
-                 strncasecmp(text + i, " sub ", 5) == 0) ? 4 :
-                (strncasecmp(text + i, "\nfunc ", 6) == 0 ||
-                 strncasecmp(text + i, " func ", 6) == 0) ? 5 : 0);
-    if (offs != 0) {
-      char *c = strchr(text + i + offs, '\n');
-      if (c) {
-        if (text[i] == '\n') {
-          i++;                  // skip initial newline
-        }
-        int itemLen = c - (text + i);
-        String s(text + i, itemLen);
-        Item *item = new Item();
-        item->copy_label(s.toString());
-        i += itemLen;
-      }
-    }
-  }
-}
-
-void EditorWidget::findFunc(const char *find)
-{
-  const char *text = editor->textbuf->text();
-  int findLen = strlen(find);
-  int len = editor->textbuf->length();
-  int lineNo = 1;
-  for (int i = 0; i < len; i++) {
-    if (strncasecmp(text + i, find, findLen) == 0) {
-      gotoLine(lineNo);
-      break;
-    }
-    else if (text[i] == '\n') {
-      lineNo++;
-    }
-  }
 }
 
 void EditorWidget::setIndentLevel(int level)
@@ -1329,71 +1388,17 @@ void EditorWidget::setIndentLevel(int level)
   ((CodeEditor *) editor)->indentLevel = level;
 }
 
-U32 EditorWidget::getModifiedTime() {
-  struct stat st_file;
-  U32 modified = 0;
-  if (filename[0] && !stat(filename, &st_file)) {
-    modified = st_file.st_mtime;
-  }
-  return modified;
-}
-
-void EditorWidget::handleFileChange() {
-  // handle outside changes to the file
-  if (filename[0] && modifiedTime != 0 &&
-      modifiedTime != getModifiedTime()) {
-    const char *msg = "File %s\nhas changed on disk.\n\n"
-      "Do you want to reload the file?";
-    if (ask(msg, filename)) {
-      reloadFile();
-    }
-    else {
-      modifiedTime = 0;
-    }
-  }
-}
-
-void EditorWidget::getKeywords(strlib::List& keywords) {
-  for (int i = 0; i < numCodeKeywords; i++) {
-    keywords.add(new String(code_keywords[i]));
-  }
-
-  for (int i = 0; i < numCodeFunctions; i++) {
-    keywords.add(new String(code_functions[i]));
-  }
-
-  for (int i = 0; i < numCodeProcedures; i++) {
-    keywords.add(new String(code_procedures[i]));
-  }
-}
-
 void EditorWidget::focusWidget() {
   switch (event_key()) {
   case 'f':
-    if (findTextInput->focused()) {
+    if (strlen(commandText->value()) > 0 && commandOpt == cmd_find) {
       // continue search - shift -> backward else forward
-      find(0, (void*)((event_key_state(LeftShiftKey) ||
-                       event_key_state(RightShiftKey)) ? 0 : 1));
+      command(0, (void*)((event_key_state(LeftShiftKey) ||
+                          event_key_state(RightShiftKey)) ? 0 : 1));
     }
-    else {
-      // commence search
-      findTextInput->take_focus();
-    }
-    break;
-  case 'g':
-    gotoLineInput->take_focus();
-    break;
-  case 'h':
-    funcList->take_focus();
+    setCommand(cmd_find);
     break;
   }
-}
-
-void EditorWidget::setModified(bool dirty)
-{
-  this->dirty = dirty;
-  modStatus->label(dirty ? "MOD" : "");
-  modStatus->redraw();
 }
 
 void EditorWidget::statusMsg(const char *msg)
@@ -1528,6 +1533,282 @@ void EditorWidget::restoreEdit()
   if (access(path, 0) == 0) {
     loadFile(path);
   }
+}
+
+//--Protected methods-----------------------------------------------------------
+
+void EditorWidget::createFuncList()
+{
+  TextBuffer *textbuf = editor->textbuf;
+  const char *text = textbuf->text();
+  int len = textbuf->length();
+
+  for (int i = 0; i < len; i++) {
+    // avoid seeing "gosub" etc
+    int offs = ((strncasecmp(text + i, "\nsub ", 5) == 0 ||
+                 strncasecmp(text + i, " sub ", 5) == 0) ? 4 :
+                (strncasecmp(text + i, "\nfunc ", 6) == 0 ||
+                 strncasecmp(text + i, " func ", 6) == 0) ? 5 : 0);
+    if (offs != 0) {
+      char *c = strchr(text + i + offs, '\n');
+      if (c) {
+        if (text[i] == '\n') {
+          i++;                  // skip initial newline
+        }
+        int itemLen = c - (text + i);
+        String s(text + i, itemLen);
+        Item *item = new Item();
+        item->copy_label(s.toString());
+        i += itemLen;
+      }
+    }
+  }
+}
+
+void EditorWidget::doChange(int inserted, int deleted)
+{
+  if (loading) {
+    return;  // do nothing while file load in progress
+  }
+
+  if (inserted || deleted) {
+    dirty = 1;
+  }
+
+  setModified(dirty);
+}
+
+void EditorWidget::findFunc(const char *find)
+{
+  const char *text = editor->textbuf->text();
+  int findLen = strlen(find);
+  int len = editor->textbuf->length();
+  int lineNo = 1;
+  for (int i = 0; i < len; i++) {
+    if (strncasecmp(text + i, find, findLen) == 0) {
+      gotoLine(lineNo);
+      break;
+    }
+    else if (text[i] == '\n') {
+      lineNo++;
+    }
+  }
+}
+
+char* EditorWidget::getSelection(Rectangle* rc)
+{
+  return ((CodeEditor *) editor)->getSelection(rc);
+}
+
+const char* EditorWidget::getFontName()
+{
+  return styletable[0].font->name();
+}
+
+void EditorWidget::getKeywords(strlib::List& keywords) {
+  for (int i = 0; i < numCodeKeywords; i++) {
+    keywords.add(new String(code_keywords[i]));
+  }
+
+  for (int i = 0; i < numCodeFunctions; i++) {
+    keywords.add(new String(code_functions[i]));
+  }
+
+  for (int i = 0; i < numCodeProcedures; i++) {
+    keywords.add(new String(code_procedures[i]));
+  }
+}
+
+U32 EditorWidget::getModifiedTime() {
+  struct stat st_file;
+  U32 modified = 0;
+  if (filename[0] && !stat(filename, &st_file)) {
+    modified = st_file.st_mtime;
+  }
+  return modified;
+}
+
+void EditorWidget::handleFileChange() {
+  // handle outside changes to the file
+  if (filename[0] && modifiedTime != 0 &&
+      modifiedTime != getModifiedTime()) {
+    const char *msg = "File %s\nhas changed on disk.\n\n"
+      "Do you want to reload the file?";
+    if (ask(msg, filename)) {
+      reloadFile();
+    }
+    else {
+      modifiedTime = 0;
+    }
+  }
+}
+
+/**
+ * load any stored font or color settings
+ */
+void EditorWidget::loadConfig() {
+  FILE *fp = wnd->openConfig(configFile, "r");
+  if (fp) {
+    char buffer[MAX_PATH];
+    int size = 0;
+    int i = 0;
+
+    if (fscanf(fp, fontConfigRead, buffer, &size) == 2) {
+      setFont(font(buffer));
+      setFontSize(size);
+    }
+
+    while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
+      buffer[strlen(buffer) - 1] = 0; // trim new-line
+      Color c = fltk::color(buffer + 3); // skip nn=#xxxxxx
+      if (c != NO_COLOR) {
+        if (i == st_background) {
+          editor->color(c);
+          break;
+        }
+        else {
+          styletable[i].color = c;
+        }
+      }
+      i++;
+    }
+
+    fclose(fp);
+  }
+}
+
+void EditorWidget::newFile()
+{
+  if (readonly()) {
+    return;
+  }
+
+  if (!checkSave(true)) {
+    return;
+  }
+
+  TextBuffer *textbuf = editor->textbuf;
+  filename[0] = '\0';
+  textbuf->select(0, textbuf->length());
+  textbuf->remove_selection();
+  dirty = 0;
+  textbuf->call_modify_callbacks();
+  statusMsg(0);
+  fileChanged(false);
+  modifiedTime = 0;
+}
+
+void EditorWidget::reloadFile() {
+  char buffer[PATH_MAX];
+  strcpy(buffer, filename);
+  loadFile(buffer);
+}
+
+int EditorWidget::replaceAll(const char* find, const char* replace, 
+                             bool restorePos, bool matchWord)
+{
+  int times = 0;
+
+  if (strcmp(find, replace) != 0) {
+    TextBuffer *textbuf = editor->textbuf;
+    int prevPos = editor->insert_position();
+    
+    // loop through the whole string
+    int pos = 0;
+    editor->insert_position(pos);
+    
+    while (textbuf->search_forward(pos, find, &pos)) {
+      // found a match; update the position and replace text
+      if (!matchWord ||
+          ((pos == 0 || !isvar(textbuf->character(pos - 1))) &&
+            !isvar(textbuf->character(pos + strlen(find))))) {
+        textbuf->select(pos, pos + strlen(find));
+        textbuf->remove_selection();
+        textbuf->insert(pos, replace);
+      }
+
+      // advance beyond replace string
+      pos += strlen(replace);
+      editor->insert_position(pos);
+      times++;
+    }
+    
+    if (restorePos) {
+      editor->insert_position(prevPos);
+    }
+    editor->show_insert_position();
+  }
+
+  return times;
+}
+
+bool EditorWidget::searchBackward(const char *text, int startPos,
+                                  const char *find, int findLen, int *foundPos)
+{
+  int matchIndex = findLen - 1;
+  for (int i = startPos; i >= 0; i--) {
+    bool equals = toupper(text[i]) == toupper(find[matchIndex]);
+    if (equals == false && matchIndex < findLen - 1) {
+      // partial match now fails - reset search at current index
+      matchIndex = findLen - 1;
+      equals = toupper(text[i]) == toupper(find[matchIndex]);
+    }
+    matchIndex = (equals ? matchIndex - 1 : findLen - 1);
+    if (matchIndex == -1 && (i == 0 || isalpha(text[i - 1]) == 0)) {
+      // char prior to word is non-alpha
+      *foundPos = i;
+      return true;
+    }
+  }
+  return false;
+}
+
+void EditorWidget::setColor(const char* label, StyleField field) {
+  uchar r,g,b;
+  split_color(styletable[field].color,r,g,b);
+  if (color_chooser(label, r,g,b)) {
+    Color c = fltk::color(r,g,b);
+    set_color_index(fltk::FREE_COLOR + field, c);
+    styletable[field].color = c;
+    editor->styleChanged();
+  }
+} 
+
+void EditorWidget::setCommand(CommandOpt command) {
+  commandChoice->value(command);
+  commandOpt = command;
+  commandText->take_focus();
+}
+
+void EditorWidget::setFont(Font* font)
+{
+  if (font) {
+    int len = sizeof(styletable) / sizeof(styletable[0]);
+    for (int i = 0; i < len; i++) {
+      styletable[i].font = font;
+    }
+    editor->styleChanged();
+  }
+}
+
+void EditorWidget::setModified(bool dirty)
+{
+  this->dirty = dirty;
+  modStatus->label(dirty ? "MOD" : "");
+  modStatus->redraw();
+}
+
+void CodeEditor::showFindText(const char *find)
+{
+  // copy lowercase search string for high-lighting
+  strcpy(search, find);
+  int findLen = strlen(search);
+
+  for (int i = 0; i < findLen; i++) {
+    search[i] = tolower(search[i]);
+  }
+
+  style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
 }
 
 //--EndOfFile-------------------------------------------------------------------

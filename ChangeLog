@@ -1,3 +1,7 @@
+2009-08-08
+	Reworked editor toobar so there is now a command selection and only one text 
+	input field.
+	
 2009-08-02
 	Updated calc.bas to work with the new DOFORM api
 	Fixes for the FLTK DOFORM API to allow the updated calc.bas to work reliably

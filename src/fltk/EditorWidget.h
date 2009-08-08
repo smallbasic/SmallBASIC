@@ -61,6 +61,14 @@ enum StyleField {
   st_background
 };
 
+// same order as display items
+enum CommandOpt {
+  cmd_find=0,
+  cmd_replace,
+  cmd_replace_with,
+  cmd_goto,
+};
+
 struct CodeEditor : public TextEditor {
   CodeEditor(int x, int y, int w, int h);
   ~CodeEditor();
@@ -95,57 +103,23 @@ public:
   EditorWidget(int x, int y, int w, int h);
    ~EditorWidget();
 
-  int handle(int e);
-  bool isDirty() {
-    return dirty;
-  }
-  const char *getFilename() {
-    return filename;
-  }
-
-  bool checkSave(bool discard);
-  void createFuncList();
-  void doChange(int inserted, int deleted);
-  void doSaveFile(const char *newfile);
-  void fileChanged(bool loadfile);
-  void findFunc(const char *find);
-  void focusWidget();
-  void getKeywords(strlib::List& keywords);
-  const char* getFontName();
-  int getFontSize();
-  void getRowCol(int *row, int *col);
-  char* getSelection(Rectangle* rc);
-  void getSelEndRowCol(int *row, int *col);
-  void getSelStartRowCol(int *row, int *col);
-  void gotoLine(int line);
-  void loadConfig();
-  void loadFile(const char *newfile);
-  void newFile();
-  int  replaceAll(const char* find, const char* replace, bool restorePos, bool matchWord);
-  void restoreEdit();
-  void runMsg(RunMessage runMessage);
-  void saveConfig();
-  void setColor(const char* label, StyleField field);
-  void setFont(Font* font);
-  void setFontSize(int i);
-  void setIndentLevel(int level);
-  void setModified(bool dirty);
-  void setRowCol(int row, int col);
-  void showFindText(const char *text);
-  void statusMsg(const char *filename);
-  void updateConfig(EditorWidget* current);
-
-  static void undo_cb(Widget *, void *v) {
-    TextEditor::kf_undo(0, ((EditorWidget *) v)->editor);
-  }
-
-  static void cut_cb(Widget *, void *v) {
-    TextEditor::kf_cut(0, ((EditorWidget *) v)->editor);
-  }
-
-  static void paste_cb(Widget *, void *v) {
-    TextEditor::kf_paste(0, ((EditorWidget *) v)->editor);
-  }
+  CALLBACK_METHOD(change_case);
+  CALLBACK_METHOD(command);
+  CALLBACK_METHOD(command_opt);
+  CALLBACK_METHOD(cut_text);
+  CALLBACK_METHOD(do_delete);
+  CALLBACK_METHOD(expand_word);
+  CALLBACK_METHOD(find);
+  CALLBACK_METHOD(font_name);
+  CALLBACK_METHOD(func_list);
+  CALLBACK_METHOD(goto_line);
+  CALLBACK_METHOD(paste_text);
+  CALLBACK_METHOD(rename_word);
+  CALLBACK_METHOD(replace_next);
+  CALLBACK_METHOD(save_file);
+  CALLBACK_METHOD(set_color);
+  CALLBACK_METHOD(show_replace);
+  CALLBACK_METHOD(undo);
 
   static void copy_cb(Widget *, void *v) {
     TextEditor::kf_copy(0, ((EditorWidget *) v)->editor);
@@ -155,29 +129,53 @@ public:
     ((EditorWidget *) v)->doChange(inserted, deleted);
   }
 
-  CALLBACK_METHOD(cancelReplace);
-  CALLBACK_METHOD(doDelete);
-  CALLBACK_METHOD(find);
-  CALLBACK_METHOD(font_name);
-  CALLBACK_METHOD(func_list);
-  CALLBACK_METHOD(goto_line);
-  CALLBACK_METHOD(replaceAll);
-  CALLBACK_METHOD(replaceNext);
-  CALLBACK_METHOD(saveFile);
-  CALLBACK_METHOD(showFindReplace);
-  CALLBACK_METHOD(set_color);
+  int handle(int e);
+  bool isDirty() { return dirty; }
+  const char *getFilename() { return filename; }
+  bool checkSave(bool discard);
+  void doSaveFile(const char *newfile);
+  void fileChanged(bool loadfile);
+  void focusWidget();
+  int getFontSize();
+  void getRowCol(int *row, int *col);
+  void getSelEndRowCol(int *row, int *col);
+  void getSelStartRowCol(int *row, int *col);
+  void gotoLine(int line);
+  void loadFile(const char *newfile);
+  void restoreEdit();
+  void runMsg(RunMessage runMessage);
+  void saveConfig();
+  void setFontSize(int i);
+  void setIndentLevel(int level);
+  void setRowCol(int row, int col);
+  void statusMsg(const char *filename);
+  void updateConfig(EditorWidget* current);
 
   CodeEditor *editor;
   bool readonly();
   void readonly(bool is_readonly);
-  bool isLoading() {
-    return loading;
-  }
+  bool isLoading() { return loading; }
 
 protected:
-  void handleFileChange();
+  void createFuncList();
+  void doChange(int inserted, int deleted);
+  void findFunc(const char *find);
+  char* getSelection(Rectangle* rc);
+  const char* getFontName();
+  void getKeywords(strlib::List& keywords);
   U32 getModifiedTime();
+  void handleFileChange();
+  void loadConfig();
+  void newFile();
   void reloadFile();
+  int  replaceAll(const char* find, const char* replace, bool restorePos, bool matchWord);
+  bool searchBackward(const char *text, int startPos,
+                      const char *find, int findLen, int *foundPos);
+  void setColor(const char* label, StyleField field);
+  void setCommand(CommandOpt command);
+  void setFont(Font* font);
+  void setModified(bool dirty);
+  void showFindText(const char *text);
 
 private:
   char filename[PATH_MAX];
@@ -186,9 +184,14 @@ private:
   U32 modifiedTime;
 
   // tool-bar
-  Input* findTextInput;
-  Input* gotoLineInput;
+  Input* commandText;
+  Choice* commandChoice;
   Choice* funcList;
+
+  // same order as display items
+  CommandOpt commandOpt;
+
+  strlib::String commandBuffer;
 
   // status bar
   Widget* fileStatus;

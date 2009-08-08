@@ -45,7 +45,6 @@ EXTRA_DIST =					\
     plugins/dos2unix.bas			\
     plugins/indent.bas				\
     plugins/filemgr.bas				\
-    plugins/feedback.bas			\
     translator/SB.g                             \
     translator/Makefile                         \
     translator/Translator.java                  \

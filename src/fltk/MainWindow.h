@@ -137,12 +137,10 @@ struct MainWindow : public BaseWindow {
   Group* findTab(GroupWidget groupWidget);
   FILE* openConfig(const char* fileName, const char* flags="w");
 
-  CALLBACK_METHOD(change_case);
   CALLBACK_METHOD(close_tab);
   CALLBACK_METHOD(copy_text);
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);
-  CALLBACK_METHOD(expand_word);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
   CALLBACK_METHOD(help_about);
@@ -158,7 +156,6 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(paste_text);
   CALLBACK_METHOD(prev_tab);
   CALLBACK_METHOD(quit);
-  CALLBACK_METHOD(rename_word);
   CALLBACK_METHOD(restart_run);
   CALLBACK_METHOD(run);
   CALLBACK_METHOD(run_break);
@@ -168,11 +165,6 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(tool_plugin);
 
   HelpWidget* getHelp();
-
-  // common editing widgets
-  Window* replaceDlg;
-  Input* replaceFind;
-  Input* replaceWith;
 
   bool isTurbo;
   bool breakToLine;

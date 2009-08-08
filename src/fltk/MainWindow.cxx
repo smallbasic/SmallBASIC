@@ -35,7 +35,6 @@ using namespace fltk;
 
 char* packageHome;
 char* runfile = 0;
-int completionIndex = 0;
 int recentIndex = 0;
 int restart = 0;
 Widget* recentMenu[NUM_RECENT_ITEMS];
@@ -327,27 +326,6 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   return was_break;
 }
 
-bool searchBackward(const char *text, int startPos,
-                    const char *find, int findLen, int *foundPos)
-{
-  int matchIndex = findLen - 1;
-  for (int i = startPos; i >= 0; i--) {
-    bool equals = toupper(text[i]) == toupper(find[matchIndex]);
-    if (equals == false && matchIndex < findLen - 1) {
-      // partial match now fails - reset search at current index
-      matchIndex = findLen - 1;
-      equals = toupper(text[i]) == toupper(find[matchIndex]);
-    }
-    matchIndex = (equals ? matchIndex - 1 : findLen - 1);
-    if (matchIndex == -1 && (i == 0 || isalpha(text[i - 1]) == 0)) {
-      // char prior to word is non-alpha
-      *foundPos = i;
-      return true;
-    }
-  }
-  return false;
-}
-
 //--Menu callbacks--------------------------------------------------------------
 
 void MainWindow::close_tab(Widget* w, void* eventData) {
@@ -364,44 +342,6 @@ void MainWindow::close_tab(Widget* w, void* eventData) {
       delete group;
     }
   }
-}
-
-/**
- * rename the currently selected variable
- */
-void MainWindow::rename_word(Widget* w, void* eventData) {
-  EditorWidget* editWidget = getEditor();
-  static bool rename_active = false;
-
-  if (rename_active) {
-    rename_active = false;
-  }
-  else if (editWidget) {
-    Rectangle rc;
-    char* selection = editWidget->getSelection(&rc);
-    if (selection) {
-      editWidget->showFindText(selection);
-      editWidget->begin();
-      LineInput *in = new LineInput(rc.x(), rc.y(), rc.w() + 10, rc.h());
-      editWidget->end();
-      in->text(selection);
-      in->callback(rename_word_cb);
-      in->textfont(COURIER);
-      in->textsize(editWidget->getFontSize());
-
-      rename_active = true;
-      while (rename_active && in->focused()) {
-        fltk::wait();
-      }
-
-      editWidget->showFindText("");
-      editWidget->replaceAll(selection, in->value(), true, true);
-      editWidget->remove(in);
-      editWidget->take_focus();
-      delete in;
-      free((void *)selection);
-    }
-  }  
 }
 
 void MainWindow::restart_run(Widget* w, void* eventData) {
@@ -603,22 +543,6 @@ void MainWindow::copy_text(Widget* w, void* eventData)
   }
 }
 
-void MainWindow::cut_text(Widget* w, void* eventData)
-{
-  EditorWidget* editWidget = getEditor();
-  if (editWidget) {
-    EditorWidget::cut_cb(0, editWidget);
-  }
-}
-
-void MainWindow::paste_text(Widget* w, void* eventData)
-{
-  EditorWidget* editWidget = getEditor();
-  if (editWidget) {
-    EditorWidget::paste_cb(0, editWidget);
-  }
-}
-
 void MainWindow::font_size_incr(Widget* w, void* eventData)
 {
   EditorWidget* editWidget = getEditor();
@@ -735,210 +659,6 @@ void MainWindow::tool_plugin(Widget* w, void* eventData)
   }
   else {
     busyMessage();
-  }
-}
-
-void MainWindow::change_case(Widget* w, void* eventData)
-{
-  int start, end;
-
-  EditorWidget* editWidget = getEditor();
-  if (!editWidget) {
-    return;
-  }
-
-  TextEditor *editor = editWidget->editor;
-  TextBuffer *tb = editor->buffer();
-  char *selection;
-
-  if (tb->selected()) {
-    selection = (char *)tb->selection_text();
-    tb->selection_position(&start, &end);
-  }
-  else {
-    int pos = editor->insert_position();
-    start = tb->word_start(pos);
-    end = tb->word_end(pos);
-    selection = (char *)tb->text_range(start, end);
-  }
-  int len = strlen(selection);
-  enum { up, down, mixed } curcase = isupper(selection[0]) ? up : down;
-
-  for (int i = 1; i < len; i++) {
-    if (isalpha(selection[i])) {
-      bool isup = isupper(selection[i]);
-      if ((curcase == up && isup == false) || (curcase == down && isup)) {
-        curcase = mixed;
-        break;
-      }
-    }
-  }
-
-  // transform pattern: Foo -> FOO, FOO -> foo, foo -> Foo
-  for (int i = 0; i < len; i++) {
-    selection[i] = curcase == mixed ? toupper(selection[i]) : tolower(selection[i]);
-  }
-  if (curcase == down) {
-    selection[0] = toupper(selection[0]);
-    // upcase chars following non-alpha chars
-    for (int i = 1; i < len; i++) {
-      if (isalpha(selection[i]) == false && i + 1 < len) {
-        selection[i+1] = toupper(selection[i+1]);
-      }
-    }
-  }
-
-  if (selection[0]) {
-    tb->replace_selection(selection);
-    tb->select(start, end);
-  }
-  free((void *)selection);
-}
-
-void MainWindow::expand_word(Widget* w, void* eventData)
-{
-  int start, end;
-  const char *fullWord = 0;
-  unsigned fullWordLen = 0;
-
-  EditorWidget* editWidget = getEditor();
-  if (!editWidget) {
-    return;
-  }
-
-  TextEditor *editor = editWidget->editor;
-  TextBuffer *textbuf = editor->buffer();
-  const char *text = textbuf->text();
-
-  if (textbuf->selected()) {
-    // get word before selection
-    int pos1, pos2;
-    textbuf->selection_position(&pos1, &pos2);
-    start = textbuf->word_start(pos1 - 1);
-    end = pos1;
-    // get word from before selection to end of selection
-    fullWord = text + start;
-    fullWordLen = pos2 - start - 1;
-  }
-  else {
-    // nothing selected - get word to left of cursor position
-    int pos = editor->insert_position();
-    end = textbuf->word_end(pos);
-    start = textbuf->word_start(end - 1);
-    completionIndex = 0;
-  }
-
-  if (start >= end) {
-    return;
-  }
-
-  const char *expandWord = text + start;
-  unsigned expandWordLen = end - start;
-  int wordPos = 0;
-
-  // scan for expandWord from within the current text buffer
-  if (completionIndex != -1 &&
-      searchBackward(text, start - 1, expandWord, expandWordLen, &wordPos)) {
-
-    int matchPos = -1;
-    if (textbuf->selected() == 0) {
-      matchPos = wordPos;
-      completionIndex = 1;      // find next word on next call
-    }
-    else {
-      // find the next word prior to the currently selected word
-      int index = 1;
-      while (wordPos > 0) {
-        if (strncasecmp(text + wordPos, fullWord, fullWordLen) != 0 ||
-            isalpha(text[wordPos + fullWordLen + 1])) {
-          // isalpha - matches fullWord but word has more chars
-          matchPos = wordPos;
-          if (completionIndex == index) {
-            completionIndex++;
-            break;
-          }
-          // count index for non-matching fullWords only
-          index++;
-        }
-
-        if (searchBackward(text, wordPos - 1, expandWord,
-                           expandWordLen, &wordPos) == 0) {
-          matchPos = -1;
-          break;                // no more partial matches
-        }
-      }
-      if (index == completionIndex) {
-        // end of expansion sequence
-        matchPos = -1;
-      }
-    }
-    if (matchPos != -1) {
-      char *word = textbuf->text_range(matchPos, textbuf->word_end(matchPos));
-      if (textbuf->selected()) {
-        textbuf->replace_selection(word + expandWordLen);
-      }
-      else {
-        textbuf->insert(end, word + expandWordLen);
-      }
-      textbuf->select(end, end + strlen(word + expandWordLen));
-      editor->insert_position(end + strlen(word + expandWordLen));
-      free((void *)word);
-      return;
-    }
-  }
-
-  completionIndex = -1;         // no more buffer expansions
-
-  strlib::List keywords;
-  editWidget->getKeywords(keywords);
-
-  // find the next replacement
-  int firstIndex = -1;
-  int lastIndex = -1;
-  int curIndex = -1;
-  int numWords = keywords.length();
-  for (int i = 0; i < numWords; i++) {
-    const char *keyword = ((String *) keywords.get(i))->toString();
-    if (strncasecmp(expandWord, keyword, expandWordLen) == 0) {
-      if (firstIndex == -1) {
-        firstIndex = i;
-      }
-      if (fullWordLen == 0) {
-        if (expandWordLen == strlen(keyword)) {
-          // nothing selected and word to left of cursor matches
-          curIndex = i;
-        }
-      }
-      else if (strncasecmp(fullWord, keyword, fullWordLen) == 0) {
-        // selection+word to left of selection matches
-        curIndex = i;
-      }
-      lastIndex = i;
-    }
-    else if (lastIndex != -1) {
-      // moved beyond matching words
-      break;
-    }
-  }
-
-  if (lastIndex != -1) {
-    if (lastIndex == curIndex || curIndex == -1) {
-      lastIndex = firstIndex;   // wrap to first in subset
-    }
-    else {
-      lastIndex = curIndex + 1;
-    }
-
-    const char *keyword = ((String *) keywords.get(lastIndex))->toString();
-    // updated the segment of the replacement text
-    // that completes the current selection
-    if (textbuf->selected()) {
-      textbuf->replace_selection(keyword + expandWordLen);
-    }
-    else {
-      textbuf->insert(end, keyword + expandWordLen);
-    }
-    textbuf->select(end, end + strlen(keyword + expandWordLen));
   }
 }
 
@@ -1257,18 +977,19 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&File/&Open File", CTRL + 'o', (Callback *) MainWindow::open_file_cb);
   scanRecentFiles(m);
   m->add("&File/_&Close", CTRL + F4Key, (Callback *) MainWindow::close_tab_cb);
-  m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWidget::saveFile_cb);
+  m->add("&File/&Save File", CTRL + 's', (Callback *) EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", CTRL + SHIFT + 'S', (Callback *) MainWindow::save_file_as_cb);
   m->add("&File/E&xit", CTRL + 'q', (Callback *) MainWindow::quit_cb);
   m->add("&Edit/_&Undo", CTRL + 'z', (Callback *) EditorWidget::undo_cb);
-  m->add("&Edit/Cu&t", CTRL + 'x', (Callback *) MainWindow::cut_text_cb);
+  m->add("&Edit/Cu&t", CTRL + 'x', (Callback *) EditorWidget::cut_text_cb);
   m->add("&Edit/&Copy", CTRL + 'c', (Callback *) MainWindow::copy_text_cb);
-  m->add("&Edit/_&Paste", CTRL + 'v', (Callback *) MainWindow::paste_text_cb);
-  m->add("&Edit/&Change Case", ALT + 'c', (Callback *) MainWindow::change_case_cb);
-  m->add("&Edit/&Expand Word", ALT + '/', (Callback *) MainWindow::expand_word_cb);
-  m->add("&Edit/_&Rename Word", CTRL + SHIFT + 'r', (Callback *) MainWindow::rename_word_cb);
-  m->add("&Edit/&Replace...", F2Key, (Callback *) EditorWidget::showFindReplace_cb);
-  m->add("&Edit/_Replace &Again", CTRL + 't', (Callback *) EditorWidget::replaceNext_cb);
+  m->add("&Edit/_&Paste", CTRL + 'v', (Callback *) EditorWidget::paste_text_cb);
+  m->add("&Edit/&Change Case", ALT + 'c', (Callback *) EditorWidget::change_case_cb);
+  m->add("&Edit/&Expand Word", ALT + '/', (Callback *) EditorWidget::expand_word_cb);
+  m->add("&Edit/_&Rename Word", CTRL + SHIFT + 'r', (Callback *) EditorWidget::rename_word_cb);
+  m->add("&Edit/&Find", CTRL + 'f', (Callback *) EditorWidget::find_cb);
+  m->add("&Edit/&Replace", CTRL + 'r', (Callback *) EditorWidget::show_replace_cb);
+  m->add("&Edit/_&Goto Line", CTRL + 'g', (Callback *) EditorWidget::goto_line_cb);
   m->add("&View/&Next Tab", F6Key, (Callback *) MainWindow::next_tab_cb);
   m->add("&View/_&Prev Tab", CTRL + F6Key, (Callback *) MainWindow::prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', (Callback *) MainWindow::font_size_incr_cb);
@@ -1287,7 +1008,8 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   new ScanFont(m);
   scanPlugIns(m);
 
-  m->add("&Program/_&Run", F9Key, (Callback *) run_cb);
+  m->add("&Program/&Run", F9Key, (Callback *) run_cb);
+  m->add("&Program/_&Run Selection", F8Key, (Callback *) run_cb);
   m->add("&Program/&Break", CTRL + 'b', (Callback *) MainWindow::run_break_cb);
   m->add("&Program/_&Restart", CTRL + 'r', (Callback *) MainWindow::restart_run_cb);
   m->add("&Program/&Command", F10Key, (Callback *) MainWindow::set_options_cb);
@@ -1334,22 +1056,6 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 
   outer->resizable(tabGroup);
   resizable(outer);
-
-  // setup the find and replace dialog
-  replaceDlg = new Window(300, 105, "Replace");
-  replaceDlg->begin();
-  replaceFind = new Input(80, 10, 210, 25, "Find:");
-  replaceFind->align(ALIGN_LEFT);
-  replaceWith = new Input(80, 40, 210, 25, "Replace:");
-  replaceWith->align(ALIGN_LEFT);
-  Button *replaceAll = new Button(10, 70, 90, 25, "Replace All");
-  replaceAll->callback((Callback *) EditorWidget::replaceAll_cb, this);
-  ReturnButton *replaceNext = new ReturnButton(105, 70, 120, 25, "Replace Next");
-  replaceNext->callback((Callback *) EditorWidget::replaceNext_cb, this);
-  Button *replaceCancel = new Button(230, 70, 60, 25, "Cancel");
-  replaceCancel->callback((Callback *) EditorWidget::cancelReplace_cb, this);
-  replaceDlg->end();
-  replaceDlg->set_non_modal();
 }
 
 /**
@@ -1462,6 +1168,7 @@ EditorWidget* MainWindow::getEditor(bool select)
       if (gw_editor == ((GroupWidget) (int)group->user_data())) {
         result = (EditorWidget*)group->child(0);
         tabGroup->selected_child(group);
+        break;
       }
     }
   }
