@@ -1044,7 +1044,6 @@ void EditorWidget::command(Widget* w, void* eventData)
 
     case cmd_replace_with:
       replace_next();
-      commandBuffer.empty();
       break;
 
     case cmd_goto:
@@ -1157,7 +1156,8 @@ void EditorWidget::replace_next(Widget* w, void* eventData)
     editor->show_insert_position();
   }
   else {
-    setCommand(cmd_replace);
+    setCommand(cmd_find);
+    editor->take_focus();
   }
 }
 
@@ -1294,8 +1294,8 @@ void EditorWidget::loadFile(const char *newfile)
 
 void EditorWidget::doSaveFile(const char *newfile)
 {
-  if (!dirty) {
-    // nothing has changed
+  if (!dirty && strcmp(newfile, filename) == 0) {
+    // neither buffer or filename have changed
     return;
   }
 
@@ -1365,6 +1365,27 @@ void EditorWidget::saveConfig() {
       err = fwrite(buffer, strlen(buffer), 1, fp);
     }
     
+    fclose(fp);
+  }
+}
+
+/**
+ * Saves the selected text to the given file path
+ */
+void EditorWidget::saveSelection(const char* path) {
+  int err;
+  FILE *fp = fopen(path, "w");
+  if (fp) {
+    Rectangle rc;
+    char* selection = getSelection(&rc);
+    if (selection) {
+      err = fwrite(selection, strlen(selection), 1, fp);
+      free((void *)selection);
+    }
+    else {
+      // save as an empty file
+      fputc(0, fp);
+    }
     fclose(fp);
   }
 }
@@ -1775,8 +1796,10 @@ void EditorWidget::setColor(const char* label, StyleField field) {
 } 
 
 void EditorWidget::setCommand(CommandOpt command) {
-  commandChoice->value(command);
   commandOpt = command;
+  commandChoice->value(command);
+  commandText->textcolor(BLACK);
+  commandText->redraw();
   commandText->take_focus();
 }
 

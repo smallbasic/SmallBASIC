@@ -145,6 +145,7 @@ public:
   void restoreEdit();
   void runMsg(RunMessage runMessage);
   void saveConfig();
+  void saveSelection(const char* path);
   void setFontSize(int i);
   void setIndentLevel(int level);
   void setRowCol(int row, int col);

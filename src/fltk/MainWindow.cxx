@@ -486,13 +486,6 @@ void MainWindow::help_about(Widget* w, void* eventData)
   getHelp()->loadBuffer(aboutText);
 }
 
-void MainWindow::run_break(Widget* w, void* eventData)
-{
-  if (runMode == run_state || runMode == modal_state) {
-    runMode = break_state;
-  }
-}
-
 void MainWindow::set_flag(Widget* w, void* eventData)
 {
   bool* flag = (bool*) eventData;
@@ -601,6 +594,28 @@ void MainWindow::run(Widget* w, void* eventData)
     else {
       busyMessage();
     }
+  }
+}
+
+void MainWindow::run_break(Widget* w, void* eventData)
+{
+  if (runMode == run_state || runMode == modal_state) {
+    runMode = break_state;
+  }
+}
+
+/**
+ * run the selected text as the main program
+ */
+void MainWindow::run_selection(Widget* w, void* eventData)
+{
+  EditorWidget* editWidget = getEditor();
+  if (editWidget) {
+    char path[MAX_PATH];
+    getHomeDir(path);
+    strcat(path, "selection.bas");
+    editWidget->saveSelection(path);
+    basicMain(0, path, false);
   }
 }
 
@@ -1009,7 +1024,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   scanPlugIns(m);
 
   m->add("&Program/&Run", F9Key, (Callback *) run_cb);
-  m->add("&Program/_&Run Selection", F8Key, (Callback *) run_cb);
+  m->add("&Program/_&Run Selection", F8Key, (Callback *) run_selection_cb);
   m->add("&Program/&Break", CTRL + 'b', (Callback *) MainWindow::run_break_cb);
   m->add("&Program/_&Restart", CTRL + 'r', (Callback *) MainWindow::restart_run_cb);
   m->add("&Program/&Command", F10Key, (Callback *) MainWindow::set_options_cb);
