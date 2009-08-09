@@ -70,6 +70,8 @@ const char configFile[] = "config.txt";
 const char fontConfigRead[] = "name=%[^;];size=%d\n";
 const char fontConfigSave[] = "name=%s;size=%d\n";
 
+#define TOOLBAR_HEIGHT 26 // height of toolbar widget
+
 /**
  * return whether the character is a valid variable symbol
  */
@@ -78,7 +80,11 @@ bool isvar(int c) {
 }
 
 EditorWidget* get_editor() {
-  return wnd->getEditor(true);
+  EditorWidget* result = wnd->getEditor();
+  if (!result) {
+    result = wnd->getEditor(true);
+  }
+  return result;
 }
 
 // 'compare_keywords()' - Compare two keywords
@@ -558,6 +564,19 @@ void CodeEditor::showMatchingBrace()
   }
 }
 
+void CodeEditor::showFindText(const char *find)
+{
+  // copy lowercase search string for high-lighting
+  strcpy(search, find);
+  int findLen = strlen(search);
+
+  for (int i = 0; i < findLen; i++) {
+    search[i] = tolower(search[i]);
+  }
+
+  style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
+}
+
 int CodeEditor::handle(int e)
 {
   int cursorPos = cursor_pos_;
@@ -694,7 +713,7 @@ void CodeEditor::getRowCol(int *row, int *col)
   position_to_linecol(cursor_pos_, row, col);
 }
 
-bool CodeEditor::findText(const char *find, bool forward)
+bool CodeEditor::findText(const char *find, bool forward, bool updatePos)
 {
   showFindText(find);
 
@@ -703,7 +722,7 @@ bool CodeEditor::findText(const char *find, bool forward)
     int pos = insert_position();
     found = forward ? textbuf->search_forward(pos, search, &pos) :
             textbuf->search_backward(pos - strlen(find), search, &pos);
-    if (found) {
+    if (found && updatePos) {
       textbuf->select(pos, pos + strlen(search));
       insert_position(pos + strlen(search));
       show_insert_position();
@@ -716,7 +735,7 @@ bool CodeEditor::findText(const char *find, bool forward)
 
 EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 {
-  int tbHeight = 26; // toolbar height
+  int tbHeight = TOOLBAR_HEIGHT;
   int stHeight = MNU_HEIGHT;
 
   filename[0] = 0;
@@ -754,6 +773,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   commandChoice->labelfont(COURIER);
   commandChoice->begin();
   new Item("Find:", 0, command_opt_cb, (void*) cmd_find);
+  new Item("Inc Find:", 0, command_opt_cb, (void*) cmd_find_inc);
   new Item("Replace:" ,0, command_opt_cb, (void*) cmd_replace);
   new Item("With:" ,0, command_opt_cb, (void*) cmd_replace_with);
   new Item("Goto:", 0, command_opt_cb, (void*) cmd_goto);
@@ -762,7 +782,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // command control
   commandText = new Input(commandChoice->r() + 2, 2, find_bn_w, MNU_HEIGHT);
   commandText->align(ALIGN_LEFT | ALIGN_CLIP);
-  commandText->callback(EditorWidget::command_cb, (void*) 2);
+  commandText->callback(EditorWidget::command_cb, (void*) 1);
   commandText->when(WHEN_ENTER_KEY_ALWAYS);
   commandText->labelfont(HELVETICA);
 
@@ -865,8 +885,7 @@ void EditorWidget::change_case(Widget* w, void* eventData)
 
 void EditorWidget::command_opt(Widget* w, void* eventData)
 {
-  commandOpt = (CommandOpt) (int) eventData;
-  commandText->textcolor(BLACK);
+  setCommand((CommandOpt) (int) eventData);
 }
 
 void EditorWidget::cut_text(Widget* w, void* eventData)
@@ -1029,9 +1048,13 @@ void EditorWidget::command(Widget* w, void* eventData)
 {
   if (!readonly()) {
     bool found = false;
+    bool forward = (int) eventData;
+    bool updatePos = (commandOpt != cmd_find_inc);
+
     switch (commandOpt) {
+    case cmd_find_inc:
     case cmd_find:
-      found = editor->findText(commandText->value(), (int)eventData);
+      found = editor->findText(commandText->value(), forward, updatePos);
       commandText->textcolor(found ? BLACK : RED);
       commandText->redraw();
       break;
@@ -1050,14 +1073,7 @@ void EditorWidget::command(Widget* w, void* eventData)
       gotoLine(atoi(commandText->value()));
       take_focus();
       break;
-
-    default:
-      break;
     }
-  }
-
-  if (commandOpt == cmd_find) {
-    take_focus();
   }
 }
 
@@ -1069,18 +1085,20 @@ void EditorWidget::font_name(Widget* w, void* eventData)
 
 void EditorWidget::func_list(Widget* w, void* eventData)
 {
-  const char *label = funcList->item()->label();
-  if (label) {
-    if (strcmp(label, SCAN_LABEL) == 0) {
-      funcList->clear();
-      funcList->begin();
-      createFuncList();
-      new Item(SCAN_LABEL);
-      funcList->end();
-    }
-    else {
-      findFunc(label);
-      take_focus();
+  if (funcList && funcList->item()) {
+    const char *label = funcList->item()->label();
+    if (label) {
+      if (strcmp(label, SCAN_LABEL) == 0) {
+        funcList->clear();
+        funcList->begin();
+        createFuncList();
+        new Item(SCAN_LABEL);
+        funcList->end();
+      }
+      else {
+        findFunc(label);
+        take_focus();
+      }
     }
   }
 }
@@ -1448,10 +1466,6 @@ void EditorWidget::setRowCol(int row, int col)
   colStatus->redraw();
 }
 
-void EditorWidget::showFindText(const char *text) {
-  editor->showFindText(text);
-}
-
 void EditorWidget::runMsg(RunMessage runMessage)
 {
   const char* msg = 0;
@@ -1801,6 +1815,8 @@ void EditorWidget::setCommand(CommandOpt command) {
   commandText->textcolor(BLACK);
   commandText->redraw();
   commandText->take_focus();
+  commandText->when(commandOpt == cmd_find_inc ? 
+                    WHEN_CHANGED : WHEN_ENTER_KEY_ALWAYS);
 }
 
 void EditorWidget::setFont(Font* font)
@@ -1821,17 +1837,8 @@ void EditorWidget::setModified(bool dirty)
   modStatus->redraw();
 }
 
-void CodeEditor::showFindText(const char *find)
-{
-  // copy lowercase search string for high-lighting
-  strcpy(search, find);
-  int findLen = strlen(search);
-
-  for (int i = 0; i < findLen; i++) {
-    search[i] = tolower(search[i]);
-  }
-
-  style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
+void EditorWidget::showFindText(const char *text) {
+  editor->showFindText(text);
 }
 
 //--EndOfFile-------------------------------------------------------------------

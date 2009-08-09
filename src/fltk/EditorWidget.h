@@ -64,6 +64,7 @@ enum StyleField {
 // same order as display items
 enum CommandOpt {
   cmd_find=0,
+  cmd_find_inc,
   cmd_replace,
   cmd_replace_with,
   cmd_goto,
@@ -73,7 +74,7 @@ struct CodeEditor : public TextEditor {
   CodeEditor(int x, int y, int w, int h);
   ~CodeEditor();
 
-  bool findText(const char *find, bool forward);
+  bool findText(const char *find, bool forward, bool updatePos);
   int handle(int e);
   unsigned getIndent(char *indent, int len, int pos);
   void draw();
