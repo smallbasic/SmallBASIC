@@ -193,10 +193,9 @@ sub main
   local mem = ""
     
   createForm
-  showResult result
 
-  color 1,8
-  cls
+  color 1,8: cls
+  showResult result  
 
   while 1
     doform form_var

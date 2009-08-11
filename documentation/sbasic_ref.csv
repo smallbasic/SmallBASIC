@@ -1,3 +1,4 @@
+Math,command,RANDOMIZE,810,"RANDOMIZE [int]","Seeds the random number generator."
 Math,function,FIX,731,"FIX (x)","Rounds x upwards to the nearest integer."
 Math,function,EXP,730,"EXP (x)","Returns the value of e raised to the power of x."
 Math,function,FLOOR,732,"FLOOR (x)","Largest integer value not greater than x."
@@ -287,7 +288,6 @@ System,command,DELAY,806,"DELAY ms","Delay for a specified amount of millisecond
 System,command,ENV,807,"ENV expr","See ENVIRON."
 System,command,ENVIRON,808,"ENVIRON expr","Adds a variable to or deletes a variable from the current environment variable-table."
 System,command,PAUSE,809,"PAUSE [secs]","Pauses the execution for a specified length of time, or until user hit the keyboard."
-System,command,RANDOMIZE,810,"RANDOMIZE [int]","Seeds the random number generator."
 System,command,RTE,811,"RTE [info [, ...]]","Creates a Run-Time-Error. The parameters will be displayed on error-line."
 System,command,STKDUMP,812,"STKDUMP","Display internal execution stack."
 System,command,TROFF,813,"TROFF","See TRON."

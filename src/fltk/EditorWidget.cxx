@@ -756,6 +756,9 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   editor->take_focus();
 
   // create the editor toolbar
+  Color toolColor = fltk::color(155, 195, 155);
+  Color statusColor = fltk::color(155, 155, 195);
+  
   w -= 4;
   Group *toolbar = new Group(2, editor->b() + 2, w, tbHeight);
   toolbar->begin();
@@ -770,7 +773,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // command selection
   commandOpt = cmd_find;
   commandChoice = new Choice(2, 2, cmd_bn_w, MNU_HEIGHT);
-  commandChoice->labelfont(COURIER);
+  commandChoice->color(toolColor);
+  commandChoice->labelfont(HELVETICA);
   commandChoice->begin();
   new Item("Find:", 0, command_opt_cb, (void*) cmd_find);
   new Item("Inc Find:", 0, command_opt_cb, (void*) cmd_find_inc);
@@ -784,12 +788,14 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   commandText->align(ALIGN_LEFT | ALIGN_CLIP);
   commandText->callback(EditorWidget::command_cb, (void*) 1);
   commandText->when(WHEN_ENTER_KEY_ALWAYS);
+  commandText->color(toolColor);
   commandText->labelfont(HELVETICA);
 
   // sub-func jump droplist
   funcList = new Choice(commandText->r() + 4, 2, func_bn_w, MNU_HEIGHT);
   funcList->callback(func_list_cb, 0);
-  funcList->labelfont(COURIER);
+  funcList->color(toolColor);
+  funcList->labelfont(HELVETICA);
   funcList->begin();
   new Item();
   new Item(SCAN_LABEL);
@@ -813,7 +819,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
     Widget *w = statusBar->child(n);
     w->labelfont(HELVETICA);
     w->box(BORDER_BOX);
-    w->color(color());
+    w->color(statusColor);
   }
 
   fileStatus->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
@@ -1429,6 +1435,10 @@ void EditorWidget::setIndentLevel(int level)
 
 void EditorWidget::focusWidget() {
   switch (event_key()) {
+  case 'i':
+    setCommand(cmd_find_inc);
+    break;
+
   case 'f':
     if (strlen(commandText->value()) > 0 && commandOpt == cmd_find) {
       // continue search - shift -> backward else forward
