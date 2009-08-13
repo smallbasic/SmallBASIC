@@ -1102,7 +1102,7 @@ void EditorWidget::func_list(Widget* w, void* eventData)
         funcList->end();
       }
       else {
-        findFunc(label);
+        gotoLine((int) funcList->item()->user_data());
         take_focus();
       }
     }
@@ -1587,8 +1587,22 @@ void EditorWidget::createFuncList()
   TextBuffer *textbuf = editor->textbuf;
   const char *text = textbuf->text();
   int len = textbuf->length();
+  int curLine = 0;
 
   for (int i = 0; i < len; i++) {
+    if (text[i] == '\n' || i == 0) {
+      curLine++;
+    }
+
+    // skip ahead to the next line when comments found
+    if (text[i] == '#' || text[i] == '\'' || 
+        strncasecmp(text + i, "rem", 3) == 0) {
+      while (i < len && text[i] != '\n') {
+        i++;
+      }
+      curLine++;
+    }
+
     // avoid seeing "gosub" etc
     int offs = ((strncasecmp(text + i, "\nsub ", 5) == 0 ||
                  strncasecmp(text + i, " sub ", 5) == 0) ? 4 :
@@ -1598,13 +1612,15 @@ void EditorWidget::createFuncList()
       char *c = strchr(text + i + offs, '\n');
       if (c) {
         if (text[i] == '\n') {
-          i++;                  // skip initial newline
+          i++;    // skip initial newline
         }
         int itemLen = c - (text + i);
         String s(text + i, itemLen);
         Item *item = new Item();
         item->copy_label(s.toString());
+        item->user_data((void*) curLine);
         i += itemLen;
+        curLine++;
       }
     }
   }

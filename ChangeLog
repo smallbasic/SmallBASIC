@@ -1,3 +1,7 @@
+2009-08-14
+	Fix for sub/func navigation tool to internally use line numbers in lieu of 
+	label searching.
+	
 2009-08-08
 	Reworked editor toobar so there is now a command selection and only one text 
 	input field.

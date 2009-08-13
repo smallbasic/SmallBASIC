@@ -926,7 +926,7 @@ bool initialise(int argc, char **argv)
   wnd = new MainWindow(800, 650);
 
   // setup styles
-  Font* defaultFont = font("arial");
+  Font* defaultFont = HELVETICA;
   if (defaultFont) {
     Widget::default_style->labelfont(defaultFont);
     Button::default_style->labelfont(defaultFont);
