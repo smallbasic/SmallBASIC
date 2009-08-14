@@ -1,9 +1,12 @@
-/*
- * $Id$
- *   Network library (byte-stream sockets)
- *
- *   Nicholas Christopoulos
- */
+// $Id$
+// This file is part of SmallBASIC
+//
+// Network library (byte-stream sockets)
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include "sys.h"
 #include "inet.h"
@@ -111,8 +114,8 @@ int net_close()
 #endif
 }
 
-/*
- *   sends a string to socket
+/**
+ * sends a string to socket
  */
 void net_print(socket_t s, const char *str)
 {
@@ -133,8 +136,8 @@ void net_print(socket_t s, const char *str)
 #endif
 }
 
-/*
- *   sends a string to socket
+/**
+ * sends a string to socket
  */
 void net_printf(socket_t s, const char *fmt, ...)
 {
@@ -154,8 +157,8 @@ void net_printf(socket_t s, const char *fmt, ...)
   net_print(s, buf);
 }
 
-/*
- *  read the specified number of bytes from the socket
+/**
+ * read the specified number of bytes from the socket
  */
 int net_read(socket_t s, char *buf, int size)
 {
@@ -209,11 +212,43 @@ int net_read(socket_t s, char *buf, int size)
 #endif
 }
 
-/*
- *   read a string from a socket until a char from delim str found.
+/**
+ * read a string from a socket until a char from delim str found.
  */
-int net_input(socket_t s, char *buf, int size, const char *delim)
+int net_input(socket_t s, char* buf, int size, const char* delim)
 {
+#if defined(_UnixOS)
+  // wait for remote input without eating cpu
+  fd_set readfds;
+  struct timeval tv;
+
+  // clear the set
+  FD_ZERO(&readfds);
+
+  while (1) {
+    tv.tv_sec = 1;  // block at 1 second intervals
+    tv.tv_usec = 0; // time is reset in select() call in linux
+    FD_SET(s, &readfds);
+
+    int rv = select(s + 1, &readfds, NULL, NULL, &tv);
+    if (rv == -1) {
+      return 0;  // an error occured
+    }
+    else if (rv == 0) {
+      // timeout occured - check for program break
+      if (0 != dev_events(0)) {
+        return 0;
+      }
+    }
+    else if (FD_ISSET(s, &readfds)) {
+      // ready for reading
+      break;
+    }
+  }
+
+  FD_ZERO(&readfds);
+#endif
+
 #if defined(_VTOS)
   buf[0] = '\0';
   return 0;
@@ -266,8 +301,8 @@ int net_input(socket_t s, char *buf, int size, const char *delim)
 #endif
 }
 
-/*
- *   return true if there something waitting
+/**
+ * return true if there something waiting
  */
 int net_peek(socket_t s)
 {
@@ -317,8 +352,8 @@ int net_peek(socket_t s)
 #endif
 }
 
-/*
- *   connect to server and returns the socket
+/**
+ * connect to server and returns the socket
  */
 socket_t net_connect(const char *server_name, int server_port)
 {
@@ -433,56 +468,71 @@ socket_t net_connect(const char *server_name, int server_port)
  */
 socket_t net_listen(int server_port)
 {
-  int sock;
+  int listener;
   struct sockaddr_in addr, remoteaddr;
-  socklen_t remoteaddr_len;
   socket_t s;
   fd_set readfds;
   struct timeval tv;
   int rv;
+  int yes = 1;
 
   // more info about listen sockets:
   // http://beej.us/guide/bgnet/output/htmlsingle/bgnet.html#acceptman
   net_init();
-  sock = socket(PF_INET, SOCK_STREAM, 0);
-  if (sock <= 0) {
-    return sock;
+  listener = socket(PF_INET, SOCK_STREAM, 0);
+  if (listener <= 0) {
+    return listener;
   }
 
   addr.sin_family = AF_INET;
   addr.sin_port = htons(server_port); // clients connect to this port
   addr.sin_addr.s_addr = INADDR_ANY;  // autoselect IP address
 
-  bind(sock, (struct sockaddr *)&addr, sizeof(addr));
-  listen(sock, 1);              // set s up to be a server (listening) socket
+  // prevent address already in use bind errors
+  if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+    return -1;
+  } 
+
+  // set s up to be a server (listening) socket
+  if (bind(listener, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+    return -1;
+  }
+
+  if (listen(listener, 1) == -1) {
+    return -1;
+  }
 
   // clear the set
   FD_ZERO(&readfds);
 
-  tv.tv_sec = 1;                // block at 1 second intervals
-  tv.tv_usec = 0;
   while (1) {
-    FD_SET(sock, &readfds);
-    rv = select(sock + 1, &readfds, NULL, NULL, &tv);
+    tv.tv_sec = 1;  // block at 1 second intervals
+    tv.tv_usec = 0; // time is reset in select() call in linux
+    FD_SET(listener, &readfds);
+
+    rv = select(listener + 1, &readfds, NULL, NULL, &tv);
     if (rv == -1) {
       s = 0;
-      break;                    // an error occured
+      break;  // an error occured
     }
     else if (rv == 0) {
-      // timeout occured
+      // timeout occured - check for program break
       if (0 != dev_events(0)) {
         s = 0;
         break;
       }
     }
-    else {
+    else if (FD_ISSET(listener, &readfds)) {
       // connection is ready
-      s = accept(sock, (struct sockaddr *)&remoteaddr, &remoteaddr_len);
+      socklen_t remoteaddr_len = sizeof(remoteaddr);
+      s = accept(listener, (struct sockaddr *)&remoteaddr, &remoteaddr_len);
       break;
     }
   }
 
-  close(sock);
+  FD_ZERO(&readfds);
+  close(listener);
+
   return s;
 }
 
