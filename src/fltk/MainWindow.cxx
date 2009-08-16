@@ -601,6 +601,7 @@ void MainWindow::run_break(Widget* w, void* eventData)
 {
   if (runMode == run_state || runMode == modal_state) {
     runMode = break_state;
+    brun_break();
   }
 }
 
