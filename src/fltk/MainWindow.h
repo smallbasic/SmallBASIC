@@ -108,6 +108,7 @@ struct MainWindow : public BaseWindow {
   void busyMessage();
   void execHelp();
   void execLink(const char* file);
+  void loadIcon(const char* prefix, int resourceId);
   void pathMessage(const char *file);
   void resetPen();
   void saveEditConfig(EditorWidget* editWidget);

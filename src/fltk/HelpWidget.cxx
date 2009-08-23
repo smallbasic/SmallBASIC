@@ -3110,17 +3110,25 @@ Color getColor(String * s, Color def)
 SharedImage *loadImage(const char *name, uchar * buff)
 {
   int len = strlen(name);
+  SharedImage* result = 0;
   if (strcasecmp(name + (len - 4), ".jpg") == 0 ||
       strcasecmp(name + (len - 5), ".jpeg") == 0) {
-    return jpegImage::get(name, buff);
+    result = jpegImage::get(name, buff);
   }
   else if (strcasecmp(name + (len - 4), ".gif") == 0) {
-    return gifImage::get(name, buff);
+    result = gifImage::get(name, buff);
+  }
+  else if (strcasecmp(name + (len - 4), ".png") == 0) {
+    result = pngImage::get(name, buff);
   }
   else if (strcasecmp(name + (len - 4), ".xpm") == 0) {
-    return xpmFileImage::get(name, buff);
+    result = xpmFileImage::get(name, buff);
   }
-  return 0;
+  if (result) {
+    // load the image
+    ((Image* )result)->fetch();
+  }
+  return result;
 }
 
 Image *loadImage(const char *imgSrc)

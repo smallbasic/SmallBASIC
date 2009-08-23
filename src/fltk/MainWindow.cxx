@@ -935,18 +935,9 @@ bool initialise(int argc, char **argv)
     Button::default_style->textfont(defaultFont);
   }
 
-#if defined(WIN32)
-  HICON icon = (HICON) wnd->icon();
-  if (!icon) {
-    icon = (HICON) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(101),
-                             IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR | LR_SHARED);
-    if (!icon) {
-      icon = LoadIcon(NULL, IDI_APPLICATION);
-    }
-  }
-  wnd->icon((char *)icon);
-#endif
+  Window::xclass("smallbasic");
 
+  wnd->loadIcon(PACKAGE_PREFIX, 101);
   check();
 
   switch (runMode) {
@@ -1509,6 +1500,58 @@ void MainWindow::execLink(const char *file)
   }
   else {
     pathMessage(file);
+  }
+}
+
+/**
+ * loads the desktop icon
+ */
+void MainWindow::loadIcon(const char* prefix, int resourceId) {
+  if (!icon()) {
+#if defined(WIN32)
+    HICON ico = (HICON) wnd->icon();
+    if (!ico) {
+      ico = (HICON) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(resourceId),
+                              IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR | LR_SHARED);
+      if (!ico) {
+        ico = LoadIcon(NULL, IDI_APPLICATION);
+      }
+    }
+    wnd->icon((char *)ico);
+#else
+    char buffer[MAX_PATH];
+    char path[MAX_PATH];
+    const char* key = "Icon=";
+    
+    // read the application desktop file, then scan for the Icon file
+    sprintf(path, "%s/share/applications/%s.desktop", prefix, Window::xclass());
+    FILE* fp = fopen(path, "r");
+    if (fp) {
+      while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
+        buffer[strlen(buffer) - 1] = 0; // trim new-line
+        if (strncasecmp(buffer, key, strlen(key)) == 0) {
+          // found icon spec
+          const char* filename = buffer + strlen(key);
+          Image* ico = loadImage(filename, 0); // in HelpWidget.cxx
+          if (ico) {
+            if (sizeof(unsigned) == ico->buffer_depth()) {
+              // prefix the buffer with unsigned width and height values
+              unsigned size = ico->buffer_width() * ico->buffer_height() * 
+                              ico->buffer_depth();
+              unsigned* image = (unsigned*) malloc(size + sizeof(unsigned) * 2);
+              image[0] = ico->buffer_width();
+              image[1] = ico->buffer_height();
+              memcpy(image+2, ico->buffer(), size);
+              icon(image);
+            }
+            SharedImage::remove(filename);
+          }
+          break;
+        }
+      }
+      fclose (fp);
+    }
+#endif
   }
 }
 

@@ -1,3 +1,6 @@
+2009-08-23
+	Fix for desktop icon display (ALT+Tab) under X11 (ubuntu)
+	
 2009-08-14
 	Fix for sub/func navigation tool to internally use line numbers in lieu of 
 	label searching.
