@@ -749,16 +749,12 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
   editor->selection_color(fltk::color(190, 189, 188));
-  editor->color(WHITE);
   editor->textbuf->add_modify_callback(style_update_cb, editor);
   editor->textbuf->add_modify_callback(changed_cb, this);
   editor->box(NO_BOX);
   editor->take_focus();
 
   // create the editor toolbar
-  Color toolColor = fltk::color(155, 195, 155);
-  Color statusColor = fltk::color(155, 155, 195);
-  
   w -= 4;
   Group *toolbar = new Group(2, editor->b() + 2, w, tbHeight);
   toolbar->begin();
@@ -773,7 +769,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // command selection
   commandOpt = cmd_find;
   commandChoice = new Choice(2, 2, cmd_bn_w, MNU_HEIGHT);
-  commandChoice->color(toolColor);
   commandChoice->labelfont(HELVETICA);
   commandChoice->begin();
   new Item("Find:", 0, command_opt_cb, (void*) cmd_find);
@@ -788,13 +783,11 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   commandText->align(ALIGN_LEFT | ALIGN_CLIP);
   commandText->callback(EditorWidget::command_cb, (void*) 1);
   commandText->when(WHEN_ENTER_KEY_ALWAYS);
-  commandText->color(toolColor);
   commandText->labelfont(HELVETICA);
 
   // sub-func jump droplist
   funcList = new Choice(commandText->r() + 4, 2, func_bn_w, MNU_HEIGHT);
   funcList->callback(func_list_cb, 0);
-  funcList->color(toolColor);
   funcList->labelfont(HELVETICA);
   funcList->begin();
   new Item();
@@ -819,7 +812,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
     Widget *w = statusBar->child(n);
     w->labelfont(HELVETICA);
     w->box(BORDER_BOX);
-    w->color(statusColor);
   }
 
   fileStatus->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
@@ -829,6 +821,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   resizable(editor);
   end();
 
+  setEditorColor(WHITE);
   loadConfig();
 }
 
@@ -1061,7 +1054,7 @@ void EditorWidget::command(Widget* w, void* eventData)
     case cmd_find_inc:
     case cmd_find:
       found = editor->findText(commandText->value(), forward, updatePos);
-      commandText->textcolor(found ? BLACK : RED);
+      commandText->textcolor(found ? commandChoice->textcolor() : RED);
       commandText->redraw();
       break;
 
@@ -1206,7 +1199,7 @@ void EditorWidget::set_color(Widget* w, void* eventData)
     if (color_chooser(w->label(), r,g,b)) {
       Color c = fltk::color(r,g,b);
       set_color_index(fltk::FREE_COLOR + styleField, c);
-      editor->color(c);
+      setEditorColor(c);
       editor->styleChanged();
     }
   }
@@ -1462,7 +1455,7 @@ void EditorWidget::statusMsg(const char *msg)
 void EditorWidget::updateConfig(EditorWidget* current) {
   setFont(font(current->getFontName()));
   setFontSize(current->getFontSize());
-  editor->color(current->editor->color());
+  setEditorColor(current->editor->color());
 }
 
 void EditorWidget::setRowCol(int row, int col)
@@ -1485,7 +1478,7 @@ void EditorWidget::runMsg(RunMessage runMessage)
     msg = "ERR";
     break;
   case msg_run:
-    fileStatus->labelcolor(BLACK);
+    fileStatus->labelcolor(rowStatus->labelcolor());
     msg = "RUN";
     break;
   default:
@@ -1724,8 +1717,8 @@ void EditorWidget::loadConfig() {
       Color c = fltk::color(buffer + 3); // skip nn=#xxxxxx
       if (c != NO_COLOR) {
         if (i == st_background) {
-          editor->color(c);
-          break;
+          setEditorColor(c);
+          break; // found final StyleField element
         }
         else {
           styletable[i].color = c;
@@ -1838,11 +1831,36 @@ void EditorWidget::setColor(const char* label, StyleField field) {
 void EditorWidget::setCommand(CommandOpt command) {
   commandOpt = command;
   commandChoice->value(command);
-  commandText->textcolor(BLACK);
+  commandText->textcolor(commandChoice->textcolor());
   commandText->redraw();
   commandText->take_focus();
   commandText->when(commandOpt == cmd_find_inc ? 
                     WHEN_CHANGED : WHEN_ENTER_KEY_ALWAYS);
+}
+
+/**
+ * Sets the editor and editor toolbar color
+ */
+void EditorWidget::setEditorColor(Color c) {
+  editor->color(c);
+
+  Color bg = lerp(c, BLACK, .1f); // same offset as editor line numbers
+  Color fg = contrast(c, bg);
+  int i;
+  Widget* child;
+
+  for (i = commandText->parent()->children(); i > 0; i--) {
+    child = commandText->parent()->child(i - 1);
+    child->color(bg);
+    child->textcolor(fg);
+    child->redraw();
+  }
+  for (i = fileStatus->parent()->children(); i > 0; i--) {
+    Widget* child = fileStatus->parent()->child(i - 1);
+    child->color(bg);
+    child->labelcolor(fg);
+    child->redraw();
+  }
 }
 
 void EditorWidget::setFont(Font* font)

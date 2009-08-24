@@ -175,6 +175,7 @@ protected:
                       const char *find, int findLen, int *foundPos);
   void setColor(const char* label, StyleField field);
   void setCommand(CommandOpt command);
+  void setEditorColor(Color c);
   void setFont(Font* font);
   void setModified(bool dirty);
   void showFindText(const char *text);
