@@ -58,7 +58,8 @@ enum StyleField {
   st_icomments,
   st_numbers,
   st_operators,
-  st_background
+  st_background,
+  st_background_def
 };
 
 // same order as display items
@@ -175,7 +176,7 @@ protected:
                       const char *find, int findLen, int *foundPos);
   void setColor(const char* label, StyleField field);
   void setCommand(CommandOpt command);
-  void setEditorColor(Color c);
+  void setEditorColor(Color c, bool defColor);
   void setFont(Font* font);
   void setModified(bool dirty);
   void showFindText(const char *text);

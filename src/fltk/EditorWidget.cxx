@@ -38,17 +38,30 @@ void getHomeDir(char *filename);
 
 int completionIndex = 0;
 
+Color defaultColor[] = {
+  BLACK,                 // A - Plain
+  color(0, 128, 0),      // B - Comments
+  color(0, 0, 192),      // C - Strings
+  color(192, 0, 0),      // D - code_keywords
+  color(128, 128, 0),    // E - code_functions
+  color(0, 128, 128),    // F - code_procedures
+  color(128, 0, 128),    // G - Find matches
+  color(0, 128, 0),      // H - Italic Comments ';
+  color(0, 128, 128),    // I - Numbers
+  color(128, 128, 64),   // J - Operators
+};
+
 TextDisplay::StyleTableEntry styletable[] = { // Style table
-  { BLACK, COURIER, 12},                  // A - Plain
-  { color(0, 128, 0), COURIER, 12},       // B - Comments
-  { color(0, 0, 192), COURIER, 12},       // C - Strings
-  { color(192, 0, 0), COURIER, 12},       // D - code_keywords
-  { color(128, 128, 0), COURIER, 12},     // E - code_functions
-  { color(0, 128, 128), COURIER, 12},     // F - code_procedures
-  { color(128, 0, 128), COURIER, 12},     // G - Find matches
-  { color(0, 128, 0), COURIER_ITALIC, 12},// H - Italic Comments ';
-  { color(0, 128, 128), COURIER, 12},     // I - Numbers
-  { color(128, 128, 64), COURIER, 12},    // J - Operators
+  { defaultColor[0], COURIER, 12},     // A - Plain
+  { defaultColor[1], COURIER, 12},     // B - Comments
+  { defaultColor[2], COURIER, 12},     // C - Strings
+  { defaultColor[3], COURIER, 12},     // D - code_keywords
+  { defaultColor[4], COURIER, 12},     // E - code_functions
+  { defaultColor[5], COURIER, 12},     // F - code_procedures
+  { defaultColor[6], COURIER, 12},     // G - Find matches
+  { defaultColor[7], COURIER_ITALIC, 12},// H - Italic Comments ';
+  { defaultColor[8], COURIER, 12},     // I - Numbers
+  { defaultColor[9], COURIER, 12},     // J - Operators
 };
 
 #define PLAIN      'A'
@@ -821,7 +834,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   resizable(editor);
   end();
 
-  setEditorColor(WHITE);
+  setEditorColor(WHITE, true);
   loadConfig();
 }
 
@@ -1193,13 +1206,13 @@ void EditorWidget::save_file(Widget* w, void* eventData)
 void EditorWidget::set_color(Widget* w, void* eventData)
 {
   StyleField styleField = (StyleField) (int) eventData;
-  if (styleField == st_background) {
+  if (styleField == st_background || styleField == st_background_def) {
     uchar r,g,b;
     split_color(editor->color(),r,g,b);
     if (color_chooser(w->label(), r,g,b)) {
       Color c = fltk::color(r,g,b);
       set_color_index(fltk::FREE_COLOR + styleField, c);
-      setEditorColor(c);
+      setEditorColor(c, styleField == st_background_def);
       editor->styleChanged();
     }
   }
@@ -1455,7 +1468,7 @@ void EditorWidget::statusMsg(const char *msg)
 void EditorWidget::updateConfig(EditorWidget* current) {
   setFont(font(current->getFontName()));
   setFontSize(current->getFontSize());
-  setEditorColor(current->editor->color());
+  setEditorColor(current->editor->color(), false);
 }
 
 void EditorWidget::setRowCol(int row, int col)
@@ -1717,7 +1730,7 @@ void EditorWidget::loadConfig() {
       Color c = fltk::color(buffer + 3); // skip nn=#xxxxxx
       if (c != NO_COLOR) {
         if (i == st_background) {
-          setEditorColor(c);
+          setEditorColor(c, false);
           break; // found final StyleField element
         }
         else {
@@ -1841,7 +1854,7 @@ void EditorWidget::setCommand(CommandOpt command) {
 /**
  * Sets the editor and editor toolbar color
  */
-void EditorWidget::setEditorColor(Color c) {
+void EditorWidget::setEditorColor(Color c, bool defColor) {
   editor->color(c);
 
   Color bg = lerp(c, BLACK, .1f); // same offset as editor line numbers
@@ -1860,6 +1873,13 @@ void EditorWidget::setEditorColor(Color c) {
     child->color(bg);
     child->labelcolor(fg);
     child->redraw();
+  }
+
+  if (defColor) {
+    // contrast the default colours against the background
+    for (i = 0; i < st_background; i++) {
+      styletable[i].color = contrast(defaultColor[i], bg);
+    }
   }
 }
 
