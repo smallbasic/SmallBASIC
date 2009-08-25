@@ -1878,7 +1878,7 @@ void EditorWidget::setEditorColor(Color c, bool defColor) {
   if (defColor) {
     // contrast the default colours against the background
     for (i = 0; i < st_background; i++) {
-      styletable[i].color = contrast(defaultColor[i], bg);
+      styletable[i].color = contrast(defaultColor[i], c);
     }
   }
 }
