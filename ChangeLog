@@ -1,30 +1,33 @@
+2009-09-04
+	0.10.5 for windows released
+
 2009-08-23
 	Fix for desktop icon display (ALT+Tab) under X11 (ubuntu)
-	
+
 2009-08-14
-	Fix for sub/func navigation tool to internally use line numbers in lieu of 
+	Fix for sub/func navigation tool to internally use line numbers in lieu of
 	label searching.
-	
+
 2009-08-08
-	Reworked editor toobar so there is now a command selection and only one text 
+	Reworked editor toobar so there is now a command selection and only one text
 	input field.
-	
+
 2009-08-02
 	Updated calc.bas to work with the new DOFORM api
 	Fixes for the FLTK DOFORM API to allow the updated calc.bas to work reliably
-	
+
 2009-07-28
 	Implemented editor colour selection in FLTK build.
-	
+
 2009-07-26
 	Implemented editor font selection in FLTK build. Fixed memoryTest.bas sample
-	
+
 2009-07-22
 	Implemented "ELSE IF" syntax
-	
+
 2009-07-11
 	fltk - file widget displays sorted items
-	
+
 2009-06-29
 	update variables to use 64 bits
 	fix for matrix inverse bug

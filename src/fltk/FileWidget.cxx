@@ -42,7 +42,8 @@ struct FileNode : public Object {
   bool isdir;
 };
 
-int fileNodeCompare(const void *a, const void *b) {
+int fileNodeCompare(const void *a, const void *b) 
+{
   FileNode* n1 = ((FileNode**) a)[0];
   FileNode* n2 = ((FileNode**) b)[0];
   int result = 0;
@@ -71,7 +72,8 @@ int fileNodeCompare(const void *a, const void *b) {
   return result;
 }
 
-void updateSortBy(SORT_BY newSort) {
+void updateSortBy(SORT_BY newSort) 
+{
   if (sortBy == newSort) {
     sortDesc = !sortDesc;
   }
@@ -213,7 +215,8 @@ void FileWidget::fileOpen(EditorWidget* saveEditorAs)
   displayPath();
 }
 
-int FileWidget::handle(int e) {
+int FileWidget::handle(int e) 
+{
   static char buffer[PATH_MAX];
   static int dnd_active = 0;
 
@@ -253,7 +256,8 @@ int FileWidget::handle(int e) {
   return HelpWidget::handle(e);
 }
 
-void FileWidget::changeDir(const char* target) {
+void FileWidget::changeDir(const char* target) 
+{
   char newPath[PATH_MAX+1];
 
   strcpy(newPath, path);
@@ -354,11 +358,11 @@ void FileWidget::displayPath()
   len = files.length();
   for (int i = 0; i < len; i++) {
     FileNode* fileNode = (FileNode*) files.get(i);
-    html.append("<tr bgcolor=#f1f1f1>").append("<td><a href=");
+    html.append("<tr bgcolor=#f1f1f1>").append("<td><a href='");
     if (fileNode->isdir) {
       html.append(CMD_CHG_DIR);
     }
-    html.append(fileNode->name).append(">");
+    html.append(fileNode->name).append("'>");
     if (fileNode->isdir) {
       html.append("[");
     }
@@ -378,7 +382,8 @@ void FileWidget::displayPath()
   take_focus();
 }
 
-void FileWidget::enterPath() {
+void FileWidget::enterPath() 
+{
   const char* newPath = fltk::input("Enter path:", path);
   if (newPath != 0) {
     if (chdir(newPath) == 0) {
@@ -391,7 +396,8 @@ void FileWidget::enterPath() {
   }
 }
 
-void FileWidget::saveAs() {
+void FileWidget::saveAs() 
+{
   if (saveEditorAs) {
     const char* enteredPath = getInputValue(getInput("saveas"));
     if (enteredPath && enteredPath[0]) {

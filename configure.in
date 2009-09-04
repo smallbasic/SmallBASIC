@@ -81,10 +81,10 @@ function checkDebugMode() {
 
 function checkPCRE() {
    AC_CHECK_PROG(have_pcre, pcre-config, [yes], [no])
- 
+
    if test "${have_pcre}" = "yes" ; then
-      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])
-      PACKAGE_LIBS="${PACKAGE_LIBS} `pcre-config --libs`"
+     AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])
+     PACKAGE_LIBS="${PACKAGE_LIBS} `pcre-config --libs`"
    fi
 }
 
@@ -244,6 +244,12 @@ function buildFLTK() {
    ])
    fi
  
+   dnl avoid using MSCRT versions of printf for long double
+   case "${host_os}" in
+     cygwin*)
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
+   esac
+
    FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -Wall -Wunused -fno-exceptions"
    PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldflags --use-images`"
 
