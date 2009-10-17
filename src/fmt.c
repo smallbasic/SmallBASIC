@@ -85,34 +85,11 @@ static double nfta_eminus[] = {
  */
 void fptoa(var_num_t x, char *dest)
 {
-#if defined(FMT_USE_i32)        // 32bit integers
-  var_num_t l;
-
-  *dest = '\0';
-  l = (var_num_t)x;
+  dest[0] = '\0';
 #if defined(_PalmOS)
-  StrIToA(dest, l);
+  StrIToA(dest, x);
 #else
-  sprintf(dest, VAR_NUM_FMT, l);      // or l=atol(dest)
-#endif
-#endif
-
-#if defined(FMT_USE_i64)        // 64bit integers
-  long long l;
-
-  *dest = '\0';
-  l = (long long)x;
-  sprintf(dest, "%lld", l);     // or l=atoll(dest)
-#endif
-
-#if defined(FMT_USE_f64)        // 64bit real
-  char *p;
-
-  sprintf(dest, "%*lf", FMT_RND, x);
-  p = strchr(dest, '.');
-  if (p) {
-    *p = '\0';
-  }
+  sprintf(dest, VAR_INT_NUM_FMT, x);
 #endif
 }
 

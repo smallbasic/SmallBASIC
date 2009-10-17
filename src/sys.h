@@ -110,16 +110,18 @@ typedef unsigned int addr_t;
 #endif
 
 #if defined OS_PREC64
-  typedef long double   var_num_t;
-  typedef long long int var_int_t;
-  #define VAR_INT_FMT   "%lld"
-  #define VAR_NUM_FMT   "%Lg"
+  typedef long double     var_num_t;
+  typedef long long int   var_int_t;
+  #define VAR_INT_FMT     "%lld"
+  #define VAR_NUM_FMT     "%Lf"
+  #define VAR_INT_NUM_FMT "%.0Lf" // convert float to int
 #else
   #define OS_PREC32
-  typedef double        var_num_t;
-  typedef long int      var_int_t;
-  #define VAR_INT_FMT   "%ld"
-  #define VAR_NUM_FMT   "%g"
+  typedef double          var_num_t;
+  typedef long int        var_int_t;
+  #define VAR_INT_FMT     "%ld"
+  #define VAR_NUM_FMT     "%f"
+  #define VAR_INT_NUM_FMT "%.0f"
 #endif
 
 #define OS_INTSZ  sizeof(var_int_t)  // size of integer

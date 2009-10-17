@@ -257,6 +257,9 @@ void pv_writevar(var_t * var, int method, int handle)
 {
   char tmpsb[64];
 
+  // start with a clean buffer
+  memset(tmpsb, 0, sizeof(tmpsb));
+
   switch (var->type) {
   case V_STR:
     pv_write((char *)var->v.p.ptr, method, handle);
