@@ -189,48 +189,122 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler)
   tmp_free(ipiv);
 }
 
-/*
- * Inverse matrix
- */
-void mat_inverse(var_num_t *a, int n)
-{
-  int i, j, r, t, s, m, l;
-  var_num_t *b, *x, p;
-
-  b = tmp_alloc(n * n * sizeof(var_num_t));
-  x = tmp_alloc(n * n * sizeof(var_num_t));
-  for (i = 0; i < n; i++) {
-    for (j = 0; j < n; j++) {
-      b[i * n + j] = (i == j);
-    }
+var_num_t** mat_create(int order) {
+  var_num_t** m = (var_num_t**) tmp_alloc(sizeof(float*) * order);
+  int i;
+  for (i = 0; i < order; i++) {
+    m[i] = (var_num_t*) tmp_alloc(sizeof(var_num_t) * order);
   }
 
-  for (r = 0; r < n - 1; r++) {
-    for (i = r; i < n - 1; i++) {
-      p = m_div(a[(i + 1) * n + r], a[r * n + r]);
-      for (j = r + 1; j < n; j++) {
-        a[(i + 1) * n + j] = a[(i + 1) * n + j] - p * a[r * n + j];
-      }
-      for (t = 0; t < n; t++) {
-        b[(i + 1) * n + t] = b[(i + 1) * n + t] - p * b[r * n + t];
-      }
-    }
-  }
+  return m;
+}
 
-  for (s = 0; s < n; s++) {
-    for (m = n - 1; m >= 0; m--) {
-      if (m != n - 1) {
-        for (l = n - 1; l >= m + 1; l--) {
-          b[m * n + s] = b[m * n + s] - a[m * n + l] * x[l * n + s];
+void mat_free(var_num_t** m, int order) {
+  int i;
+  for (i = 0; i < order; i++) {
+    tmp_free(m[i]);
+  }
+  tmp_free(m);
+}
+
+// calculate the cofactor of element (row,col)
+int getMinor(var_num_t** src, var_num_t** dest, int row, int col, int order) {
+  // indicate which col and row is being copied to dest
+  int colCount=0, rowCount=0;
+ 
+  int i, j;
+
+  for (i = 0; i < order; i++) {
+    if (i != row) {
+      colCount = 0;
+      for (j = 0; j < order; j++) {
+        // when j is not the element
+        if (j != col) {
+          dest[rowCount][colCount] = src[i][j];
+          colCount++;
         }
       }
-      x[m * n + s] = m_div(b[m * n + s], a[m * n + m]);
+      rowCount++;
+    }
+  }
+  return 1;
+}
+
+// Calculate the determinant recursively.
+var_num_t calcDeterminant(var_num_t** mat, int order)
+{
+  int i;
+  
+  // order must be >= 0
+  // stop the recursion when matrix is a single element
+  if (order == 1) {
+    return mat[0][0];
+  }
+ 
+  // the determinant value
+  var_num_t det = 0;
+  
+  // allocate the cofactor matrix
+  var_num_t** minor = mat_create(order);
+ 
+  for (i = 0; i < order; i++) {
+    // get minor of element (0,i)
+    getMinor(mat, minor, 0, i, order);
+
+    // the recusion is here!
+    det += pow(-1.0, i) * mat[0][i] * calcDeterminant(minor, order-1);
+  }
+ 
+  // release memory
+  mat_free(minor, order);
+ 
+  return det;
+}
+
+/*
+ * Inverse matrix
+ * from: http://chi3x10.wordpress.com/2008/05/28/calculate-matrix-inversion-in-c/
+ */
+void mat_inverse(var_num_t* m, const int order) {
+  int i, j;
+
+  // memory allocation
+  var_num_t** Y = mat_create(order);
+  var_num_t** A = mat_create(order);
+  var_num_t** minor = mat_create(order);
+
+  // convert x/y location of incoming matrix
+  for (i=0; i < order; i++) {
+    for (j=0; j < order; j++) {
+      A[i][j] = m[i * order + j];
     }
   }
 
-  tmp_free(b);
-  memcpy(a, x, sizeof(var_num_t) * n * n);
-  tmp_free(x);
+  // get the determinant of a
+  var_num_t det = 1.0 / calcDeterminant(A, order);
+
+  for (j=0; j < order; j++) {
+    for (i=0; i < order; i++) {
+      // get the co-factor (matrix) of A(j,i)
+      getMinor(A, minor, j, i, order);
+      Y[i][j] = det * calcDeterminant(minor, order-1);
+      if ((i+j) % 2 == 1) {
+        Y[i][j] = -Y[i][j];
+      }
+    }
+  }
+
+  // assign the result
+  for (i=0; i < order; i++) {
+    for (j=0; j < order; j++) {
+      m[i * order + j] = Y[i][j];
+    }
+  }
+
+  // release memory
+  mat_free(minor, order);
+  mat_free(A, order);
+  mat_free(Y, order);
 }
 
 /*
@@ -274,9 +348,9 @@ var_num_t mat_determ(var_num_t *a, int n, double toler)
   var_num_t v;
 
   done = tmp_alloc(n * sizeof(int));
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     done[i] = 0;
-
+  }
   v = 0;
   mat_det2(1, 0, 0, a, done, &v, n, toler);
 
