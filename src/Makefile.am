@@ -42,7 +42,7 @@ libsb_common_a_SOURCES =			\
     blib_db.c					\
     blib_func.c					\
     blib_graph.c				\
-    blib_math.c					\
+    blib_math.c	matrix.c			\
     blib_ui.c blib_ui.h				\
     blib_math.h blib_ui.h			\
     blib_sound.c				\
