@@ -23,6 +23,7 @@ bin_PROGRAMS = sbasici
 
 sbasici_SOURCES =				\
     HelpWidget.cxx HelpWidget.h			\
+    TtyWidget.cxx TtyWidget.h			\
     MainWindow.cxx MainWindow.h			\
     EditorWidget.cxx EditorWidget.h		\
     FileWidget.cxx FileWidget.h			\

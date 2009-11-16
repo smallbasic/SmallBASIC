@@ -24,6 +24,7 @@
 #include <limits.h>
 
 #include "StringLib.h"
+#include "TtyWidget.h"
 
 using namespace fltk;
 
@@ -155,6 +156,7 @@ public:
   void updateConfig(EditorWidget* current);
 
   CodeEditor *editor;
+  TtyWidget* tty;
   bool readonly();
   void readonly(bool is_readonly);
   bool isLoading() { return loading; }

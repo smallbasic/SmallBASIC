@@ -21,6 +21,7 @@
 #include <fltk/damage.h>
 #include <fltk/events.h>
 #include <fltk/run.h>
+#include <fltk/TiledGroup.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
@@ -37,6 +38,8 @@ extern Widget* recentMenu[];
 void getHomeDir(char *filename);
 
 int completionIndex = 0;
+
+static bool rename_active = false;
 
 Color defaultColor[] = {
   BLACK,                 // A - Plain
@@ -641,7 +644,7 @@ void CodeEditor::showRowCol()
     layout();
     position_to_linecol(cursor_pos_, &row, &col);
   }
-  ((EditorWidget*) parent())->setRowCol(row, col + 1);
+  get_editor()->setRowCol(row, col + 1);
 }
 
 void CodeEditor::gotoLine(int line)
@@ -656,7 +659,7 @@ void CodeEditor::gotoLine(int line)
   int pos = buffer()->skip_lines(0, line - 1);  // find pos at line-1
   insert_position(buffer()->line_start(pos)); // insert at column 0
   show_insert_position();
-  ((EditorWidget*) parent())->setRowCol(line, 1);
+  get_editor()->setRowCol(line, 1);
 }
 
 void CodeEditor::getSelStartRowCol(int *row, int *col)
@@ -758,7 +761,15 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   box(NO_BOX);
 
   begin();
-  editor = new CodeEditor(0, 0, w, h - (tbHeight + stHeight + 8));
+
+  int tileHeight = h - (tbHeight + stHeight + 8);
+  int ttyHeight = h / 8;
+  int editHeight = tileHeight - ttyHeight;
+
+  TiledGroup* tile = new TiledGroup(0, 0, w, tileHeight);
+  tile->begin();
+
+  editor = new CodeEditor(0, 0, w, editHeight);
   editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
   editor->selection_color(fltk::color(190, 189, 188));
@@ -767,9 +778,14 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   editor->box(NO_BOX);
   editor->take_focus();
 
+  tty = new TtyWidget(0, editHeight, w, ttyHeight, 1000);
+  tty->color(WHITE); // bg
+  tty->labelcolor(BLACK); // fg
+  tile->end();
+
   // create the editor toolbar
   w -= 4;
-  Group *toolbar = new Group(2, editor->b() + 2, w, tbHeight);
+  Group *toolbar = new Group(2, tty->b() + 2, w, tbHeight);
   toolbar->begin();
   toolbar->box(FLAT_BOX);
 
@@ -1129,9 +1145,6 @@ void EditorWidget::paste_text(Widget* w, void* eventData)
  * rename the currently selected variable
  */
 void EditorWidget::rename_word(Widget* w, void* eventData) {
-
-  static bool rename_active = false;
-
   if (rename_active) {
     rename_active = false;
   }
@@ -1248,8 +1261,8 @@ int EditorWidget::handle(int e)
     handleFileChange();
     return 1;
   case ENTER:
-    if (children()) {
-      // prevent drawing over child controls
+    if (rename_active) {
+      // prevent drawing over the inplace editor child control
       return 0;
     }
   }
@@ -1862,19 +1875,20 @@ void EditorWidget::setEditorColor(Color c, bool defColor) {
   int i;
   Widget* child;
 
+  // set the colours on the command text bar
   for (i = commandText->parent()->children(); i > 0; i--) {
     child = commandText->parent()->child(i - 1);
     child->color(bg);
     child->textcolor(fg);
     child->redraw();
   }
+  // set the colours on the status bar
   for (i = fileStatus->parent()->children(); i > 0; i--) {
-    Widget* child = fileStatus->parent()->child(i - 1);
+    child = fileStatus->parent()->child(i - 1);
     child->color(bg);
     child->labelcolor(fg);
     child->redraw();
   }
-
   if (defColor) {
     // contrast the default colours against the background
     for (i = 0; i < st_background; i++) {
