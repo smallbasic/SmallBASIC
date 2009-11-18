@@ -17,6 +17,8 @@
 #include <fltk/Group.h>
 #include <fltk/Scrollbar.h>
 
+#include "StringLib.h"
+
 #define SCROLL_W 15
 #define SCROLL_H 15
 #define HSCROLL_W 80
@@ -24,6 +26,7 @@
 extern "C" void trace(const char* format, ...);
 
 using namespace fltk;
+using namespace strlib;
 
 struct Point {
   int x;
@@ -35,7 +38,7 @@ struct TextSeg {
     BOLD = 0x00000001,
     ITALIC = 0x00000002,
     UNDERLINE = 0x00000004,
-    INVERSE = 0x00000008,
+    INVERT = 0x00000008,
   };
 
   // create a new segment
@@ -81,9 +84,8 @@ struct TextSeg {
     return !str ? 0 : strlen(str);
   }
 
-  // draw the segment
-  int draw(int x, int y, bool* bold, bool* italic, 
-           bool* underline, bool* inverse);
+  // update font and state variables when set in this segment
+  void setfont(bool* bold, bool* italic, bool* underline, bool* invert);
 
   char* str;
   int flags;
@@ -163,12 +165,12 @@ struct TtyWidget : public Group {
   void layout();
 
   // public api
-  void copySelection();
+  bool copySelection();
   void clearScreen();
   void print(const char *str);
 
 private:
-  void drawSelection(TextSeg* seg, int row, int x, int y);
+  void drawSelection(TextSeg* seg, String* s, int row, int x, int y);
   Row* getLine(int ndx);
   int processLine(Row* line, const char* linePtr);
   void setGraphicsRendition(TextSeg* segment, int c);

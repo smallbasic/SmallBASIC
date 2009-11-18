@@ -529,7 +529,7 @@ void MainWindow::copy_text(Widget* w, void* eventData)
 {
   EditorWidget* editWidget = getEditor();
   if (editWidget) {
-    EditorWidget::copy_cb(0, editWidget);
+    editWidget->copyText();
   }
   else {
     handle(EVENT_COPY_TEXT);

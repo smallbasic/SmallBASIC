@@ -1288,6 +1288,15 @@ void EditorWidget::readonly(bool is_readonly)
   ((CodeEditor *) editor)->readonly = is_readonly;
 }
 
+/**
+ * copy selection text to the clipboard
+ */
+void EditorWidget::copyText() {
+  if (!tty->copySelection()) {
+    TextEditor::kf_copy(0, editor);
+  }
+}
+
 bool EditorWidget::checkSave(bool discard)
 {
   if (!dirty) {

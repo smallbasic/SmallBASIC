@@ -124,10 +124,6 @@ public:
   CALLBACK_METHOD(show_replace);
   CALLBACK_METHOD(undo);
 
-  static void copy_cb(Widget *, void *v) {
-    TextEditor::kf_copy(0, ((EditorWidget *) v)->editor);
-  }
-
   static void changed_cb(int, int inserted, int deleted, int, const char *, void *v) {
     ((EditorWidget *) v)->doChange(inserted, deleted);
   }
@@ -136,6 +132,7 @@ public:
   bool isDirty() { return dirty; }
   const char *getFilename() { return filename; }
   bool checkSave(bool discard);
+  void copyText();
   void doSaveFile(const char *newfile);
   void fileChanged(bool loadfile);
   void focusWidget();
