@@ -163,10 +163,12 @@ struct TtyWidget : public Group {
   void layout();
 
   // public api
+  void copySelection();
   void clearScreen();
   void print(const char *str);
 
 private:
+  void drawSelection(TextSeg* seg, int row, int x, int y);
   Row* getLine(int ndx);
   int processLine(Row* line, const char* linePtr);
   void setGraphicsRendition(TextSeg* segment, int c);
@@ -196,9 +198,7 @@ private:
   int lineHeight;
 
   // clipboard handling
-  int origLeft;
-  int origRight;
-  Rectangle copyRect;
+  int markX, markY, pointX, pointY;
 };
 
 #endif

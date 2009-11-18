@@ -42,7 +42,7 @@ int TextSeg::draw(int x, int y, bool* bold, bool* italic,
     if (*italic) {
       font = font->italic();
     }
-    fltk::setfont(font, BASE_FONT_SIZE);
+    setfont(font, BASE_FONT_SIZE);
 
     drawtext(str, x, y);
     next_x += width();
@@ -69,21 +69,22 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   // initialize the buffer
   buffer = new Row[numRows];
   rows = numRows;
-  cols = 0;
-  width = 0;
-  head = 0;
-  tail = 0;
+  cols = width = 0;
+  head = tail = 0;
   cursor = 0;
+  markX = markY = pointX = pointY = 0;
 
-  fltk::setfont(BASE_FONT, BASE_FONT_SIZE);
+  setfont(BASE_FONT, BASE_FONT_SIZE);
   lineHeight = (int) (getascent() + getdescent());
 
   begin();
+  // vertical scrollbar scrolls in row units
   vscrollbar = new Scrollbar(w - SCROLL_W, 1, SCROLL_W, h);
   vscrollbar->set_vertical();
   vscrollbar->user_data(this);
   vscrollbar->callback(scrollbar_callback);
 
+  // horizontal scrollbar scrolls in pixel units
   hscrollbar = new Scrollbar(w - HSCROLL_W - SCROLL_W, 1, HSCROLL_W, SCROLL_H);
   vscrollbar->user_data(this);
   vscrollbar->callback(scrollbar_callback);
@@ -120,6 +121,7 @@ void TtyWidget::draw() {
   int firstRow = tail + vscroll;
 
   // setup the background colour
+  setfont(BASE_FONT, BASE_FONT_SIZE);
   setcolor(color());
   fillrect(rc);
   push_clip(rc);
@@ -134,8 +136,8 @@ void TtyWidget::draw() {
     TextSeg* seg = line->head;
     int x = (rc.x() + 2) - hscroll;
     while (seg != NULL) {
-      x += seg->draw(x, y, &bold, &italic, &underline, &inverse);
-      x += hscroll;
+      drawSelection(seg, row, x, y);
+      x = seg->draw(x, y, &bold, &italic, &underline, &inverse);
       seg = seg->next;
     }
     int rowWidth = line->width();
@@ -153,19 +155,98 @@ void TtyWidget::draw() {
 }
 
 //
+// draw the background for selected text
+//
+void TtyWidget::drawSelection(TextSeg* seg, int row, int x, int y) {
+  if (markX != pointX || markY != pointY) {
+    Rectangle rc(0, y - getascent(), 0, lineHeight);
+    int r1 = markY;
+    int r2 = pointY;
+    int x1 = markX; 
+    int x2 = pointX; 
+
+    if (r1 > r2) {
+      r1 = pointY;
+      r2 = markY;
+      x1 = pointX;
+      x2 = markX;
+    }
+    if (r1 == r2 && x1 > x2) {
+      x1 = pointX;
+      x2 = markX;
+    }
+
+    if (row > r1 && row < r2) {
+      // entire row
+      rc.x(x);
+      rc.w(seg->width());
+    }
+    else if (row == r1 && (r2 > r1 || x < x2)) {
+      // top selection row
+      int i = 0;
+      int len = seg->numChars();
+
+      while (x < x1 && i < len) {
+        x += getwidth(seg->str + i, 1);
+        i++;
+      }
+      rc.x(x);
+
+      // select rest of line when r2>r1
+      while ((r2 > r1 || x < x2) && i < len) {
+        x += getwidth(seg->str + i, 1);
+        i++;
+      }
+      rc.set_r(x);
+    }
+    else if (row == r2) {
+      // bottom selection row
+      rc.x(x);
+
+      // select rest of line when r2>r1
+      int i = 0;
+      int len = seg->numChars();
+      while (x < x2 && i < len) {
+        x += getwidth(seg->str + (i++), 1);
+      }
+      rc.set_r(x);
+    }
+
+    if (!rc.empty()) {
+      setcolor(YELLOW);
+      fillrect(rc);
+      setcolor(labelcolor());
+    }
+  }
+}
+
+//
 // process messages for the I/O window.
 //
 int TtyWidget::handle(int e) {
   switch (e) {
   case PUSH:
+    if (get_key_state(LeftButton) && 
+        (!vscrollbar->visible() || !event_inside(*vscrollbar))) {
+      markX = pointX = event_x();
+      markY = pointY = (event_y() / lineHeight) + vscrollbar->value();
+      redraw(DAMAGE_HIGHLIGHT);
+    }
     break;
 
   case MOVE:
-    break;
+    if (get_key_state(LeftButton)) {
+      pointX = event_x();
+      pointY = (event_y() / lineHeight) + vscrollbar->value();
+      redraw(DAMAGE_HIGHLIGHT);
+    }
+    return 1;
 
   case RELEASE:
     break;
   }
+
+  vscrollbar->handle(e);
   return Group::handle(e);
 }
 
@@ -197,8 +278,19 @@ void TtyWidget::layout() {
   }
   else {
     hscrollbar->clear_visible();
+    hscrollbar->value(0);
   }
+}
 
+//
+// copy selected text to the clipboard
+//
+void TtyWidget::copySelection() {
+  strlib::String selection;
+  const char *copy = selection.toString();
+  if (*copy) {
+    fltk::copy(copy, strlen(copy), 0);
+  }
 }
 
 //
