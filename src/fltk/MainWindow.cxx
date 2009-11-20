@@ -1040,13 +1040,13 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 
   // group for all tabs
   w -= 8;
-  h -= MNU_HEIGHT;
-  tabGroup = new TabGroup(4, 4, w, h);
 
-  h -= 8; // TabGroup border
-  tabGroup->begin();
+  tabGroup = new TabGroup(4, 4, w, h-6);
+  tabGroup->box(NO_BOX);
 
   // create the output tab
+  h -= (MNU_HEIGHT + 8);
+  tabGroup->begin();
   outputGroup = new Group(0, MNU_HEIGHT, w, h, "Output");
   outputGroup->box(THIN_DOWN_BOX);
   outputGroup->hide();
@@ -1071,19 +1071,22 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
  */
 Group* MainWindow::createEditor(const char* title) {
   int w = tabGroup->w();
-  int h = tabGroup->h() - 8;
+  int h = tabGroup->h() - MNU_HEIGHT;
 
-  Group* editGroup = new Group(0, MNU_HEIGHT, w, h);
+  tabGroup->begin();
+  Group* editGroup = new Group(0, MNU_HEIGHT, w, h-2);
   const char* slash = strrchr(title, '/');
   editGroup->copy_label(slash ? slash + 1 : title);
   editGroup->begin();
   editGroup->box(THIN_DOWN_BOX);
-  editGroup->resizable(new EditorWidget(2, 2, w - 4, h));
+  editGroup->resizable(new EditorWidget(2, 2, w-4, h-2));
+
   editGroup->user_data((void*) gw_editor);
   editGroup->end();
 
   tabGroup->add(editGroup);
   tabGroup->selected_child(editGroup);
+  tabGroup->end();
   return editGroup;
 }
 

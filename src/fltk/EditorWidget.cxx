@@ -17,11 +17,11 @@
 
 #include <fltk/ColorChooser.h>
 #include <fltk/Item.h>
+#include <fltk/TiledGroup.h>
 #include <fltk/ask.h>
 #include <fltk/damage.h>
 #include <fltk/events.h>
 #include <fltk/run.h>
-#include <fltk/TiledGroup.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
@@ -751,9 +751,6 @@ bool CodeEditor::findText(const char *find, bool forward, bool updatePos)
 
 EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 {
-  int tbHeight = TOOLBAR_HEIGHT;
-  int stHeight = MNU_HEIGHT;
-
   filename[0] = 0;
   dirty = false;
   loading = false;
@@ -762,7 +759,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 
   begin();
 
-  int tileHeight = h - (tbHeight + stHeight + 8);
+  int tileHeight = h - (MNU_HEIGHT + 8);
   int ttyHeight = h / 8;
   int editHeight = tileHeight - ttyHeight;
 
@@ -785,37 +782,32 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 
   // create the editor toolbar
   w -= 4;
-  Group *toolbar = new Group(2, tty->b() + 2, w, tbHeight);
-  toolbar->begin();
-  toolbar->box(FLAT_BOX);
-
-  // widths become relative when the outer window is resized
-  int cmd_bn_w = 80;
-  int func_bn_w = w / 3;
-  int spacing = 8;
-  int find_bn_w = w - (cmd_bn_w + func_bn_w + spacing);
 
   // command selection
   commandOpt = cmd_find;
-  commandChoice = new Choice(2, 2, cmd_bn_w, MNU_HEIGHT);
-  commandChoice->labelfont(HELVETICA);
-  commandChoice->begin();
-  new Item("Find:", 0, command_opt_cb, (void*) cmd_find);
-  new Item("Inc Find:", 0, command_opt_cb, (void*) cmd_find_inc);
-  new Item("Replace:" ,0, command_opt_cb, (void*) cmd_replace);
-  new Item("With:" ,0, command_opt_cb, (void*) cmd_replace_with);
-  new Item("Goto:", 0, command_opt_cb, (void*) cmd_goto);
-  commandChoice->end();
 
-  // command control
-  commandText = new Input(commandChoice->r() + 2, 2, find_bn_w, MNU_HEIGHT);
-  commandText->align(ALIGN_LEFT | ALIGN_CLIP);
-  commandText->callback(EditorWidget::command_cb, (void*) 1);
-  commandText->when(WHEN_ENTER_KEY_ALWAYS);
-  commandText->labelfont(HELVETICA);
+  // editor status bar
+  Group *statusBar = new Group(2, tty->b() + 2, w, MNU_HEIGHT);
+  statusBar->box(NO_BOX);
+  statusBar->begin();
+
+  // widths become relative when the outer window is resized
+  int func_bn_w = 140;
+  int st_w = 40;
+  int bn_w = 16;
+  int st_h = statusBar->h() - 2;
+
+  printButton = new ToggleButton(w - (bn_w + 2), 2, bn_w, st_h, "@||;");
+  lockButton = new ToggleButton(printButton->x() - (bn_w + 2), 2,
+                                bn_w, st_h, "@>[];");
+  hideIdeButton = new ToggleButton(lockButton->x() - (bn_w + 2), 2,
+                                   bn_w, st_h, "@circle;");
+  lineBreakButton = new ToggleButton(hideIdeButton->x() - (bn_w + 2), 2,
+                                     bn_w, st_h, "@->;");
 
   // sub-func jump droplist
-  funcList = new Choice(commandText->r() + 4, 2, func_bn_w, MNU_HEIGHT);
+  funcList = new Choice(lineBreakButton->x() - (func_bn_w + 2), 2,
+                        func_bn_w, st_h);
   funcList->callback(func_list_cb, 0);
   funcList->labelfont(HELVETICA);
   funcList->begin();
@@ -823,19 +815,18 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   new Item(SCAN_LABEL);
   funcList->end();
 
-  // close the tool-bar with a resizeable end-box
-  toolbar->resizable(commandText);
-  toolbar->end();
+  colStatus = new Widget(funcList->x() - (st_w + 2), 2, st_w, st_h);
+  rowStatus = new Widget(colStatus->x() - (st_w + 2), 2, st_w, st_h);
+  runStatus = new Widget(rowStatus->x() - (st_w + 2), 2, st_w, st_h);
+  modStatus = new Widget(runStatus->x() - (st_w + 2), 2, st_w, st_h);
 
-  // editor status bar
-  Group *statusBar = new Group(2, toolbar->b() + 2, w, MNU_HEIGHT);
-  statusBar->begin();
-  statusBar->box(NO_BOX);
-  fileStatus = new Widget(0, 0, w - 140, MNU_HEIGHT - 2);
-  modStatus = new Widget(fileStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
-  runStatus = new Widget(modStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
-  rowStatus = new Widget(runStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
-  colStatus = new Widget(rowStatus->r() + 2, 0, 33, MNU_HEIGHT - 2);
+  commandChoice = new Widget(0, 2, 80, st_h, "Find:");
+  commandText = new Input(commandChoice->r() + 2, 2,
+                          modStatus->x() - commandChoice->r() - 4, st_h);
+  commandText->align(ALIGN_LEFT | ALIGN_CLIP);
+  commandText->callback(EditorWidget::command_cb, (void*) 1);
+  commandText->when(WHEN_ENTER_KEY_ALWAYS);
+  commandText->labelfont(HELVETICA);
 
   for (int n = 0; n < statusBar->children(); n++) {
     Widget *w = statusBar->child(n);
@@ -843,8 +834,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
     w->box(BORDER_BOX);
   }
 
-  fileStatus->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
-  statusBar->resizable(fileStatus);
+  statusBar->resizable(commandText);
   statusBar->end();
 
   resizable(editor);
@@ -1481,10 +1471,11 @@ void EditorWidget::focusWidget() {
 void EditorWidget::statusMsg(const char *msg)
 {
   const char *filename = getFilename();
-  fileStatus->copy_label(msg && msg[0] ? msg :
-                         filename && filename[0] ? filename : UNTITLED_FILE);
-  fileStatus->labelcolor(rowStatus->labelcolor());
-  fileStatus->redraw();
+  //todo
+  //  fileStatus->copy_label(msg && msg[0] ? msg :
+  //                         filename && filename[0] ? filename : UNTITLED_FILE);
+  //  fileStatus->labelcolor(rowStatus->labelcolor());
+  //  fileStatus->redraw();
 }
 
 void EditorWidget::updateConfig(EditorWidget* current) {
@@ -1509,11 +1500,13 @@ void EditorWidget::runMsg(RunMessage runMessage)
   const char* msg = 0;
   switch (runMessage) {
   case msg_err:
-    fileStatus->labelcolor(RED);
+    //todo
+    //    fileStatus->labelcolor(RED);
     msg = "ERR";
     break;
   case msg_run:
-    fileStatus->labelcolor(rowStatus->labelcolor());
+    // todo
+    //    fileStatus->labelcolor(rowStatus->labelcolor());
     msg = "RUN";
     break;
   default:
@@ -1865,7 +1858,24 @@ void EditorWidget::setColor(const char* label, StyleField field) {
 
 void EditorWidget::setCommand(CommandOpt command) {
   commandOpt = command;
-  commandChoice->value(command);
+  switch (command) {
+  case cmd_find:
+    commandChoice->label("Find:");
+    break;
+  case cmd_find_inc:
+    commandChoice->label("Inc Find:");
+    break;
+  case cmd_replace:
+    commandChoice->label("Replace:");
+    break;
+  case cmd_replace_with:
+    commandChoice->label("With:");
+    break;
+  case cmd_goto:
+    commandChoice->label("Goto:");
+    break;
+  }
+  commandChoice->redraw();
   commandText->textcolor(commandChoice->textcolor());
   commandText->redraw();
   commandText->take_focus();
@@ -1892,8 +1902,8 @@ void EditorWidget::setEditorColor(Color c, bool defColor) {
     child->redraw();
   }
   // set the colours on the status bar
-  for (i = fileStatus->parent()->children(); i > 0; i--) {
-    child = fileStatus->parent()->child(i - 1);
+  for (i = rowStatus->parent()->children(); i > 0; i--) {
+    child = rowStatus->parent()->child(i - 1);
     child->color(bg);
     child->labelcolor(fg);
     child->redraw();

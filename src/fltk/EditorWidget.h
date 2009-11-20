@@ -17,7 +17,7 @@
 #include <fltk/Window.h>
 #include <fltk/Widget.h>
 #include <fltk/Input.h>
-#include <fltk/ReturnButton.h>
+#include <fltk/ToggleButton.h>
 #include <fltk/Button.h>
 #include <fltk/TextEditor.h>
 #include <fltk/Choice.h>
@@ -188,20 +188,22 @@ private:
 
   // tool-bar
   Input* commandText;
-  Choice* commandChoice;
-  Choice* funcList;
-
-  // same order as display items
-  CommandOpt commandOpt;
-
-  strlib::String commandBuffer;
-
-  // status bar
-  Widget* fileStatus;
   Widget* rowStatus;
   Widget* colStatus;
   Widget* runStatus;
   Widget* modStatus;
+  Choice* funcList;
+
+  ToggleButton* printButton;
+  ToggleButton* lockButton;
+  ToggleButton* hideIdeButton;
+  ToggleButton* lineBreakButton;
+
+  // same order as display items
+  CommandOpt commandOpt;
+  Widget* commandChoice;
+
+  strlib::String commandBuffer;
 };
 
 #endif
