@@ -22,6 +22,7 @@
 
 #include "MainWindow.h"
 #include "HelpWidget.h"
+#include "TtyWidget.h"
 
 extern "C" {
 #include "fs_socket_client.h"
@@ -70,7 +71,7 @@ C_LINKAGE_BEGIN int osd_devinit()
 
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
-  if (wnd->isInteractive()) {
+  if (wnd->isInteractive() && !wnd->logPrint) {
     wnd->outputGroup->show();
   }
 
@@ -311,6 +312,9 @@ void osd_clear_sound_queue()
 
 void osd_write(const char *s)
 {
+  if (wnd->logPrint) {
+    wnd->tty->print(s);
+  }
   wnd->out->print(s);
 }
 

@@ -104,7 +104,7 @@ struct ScanFont {
 void MainWindow::statusMsg(RunMessage runMessage, const char *statusMessage) {
   EditorWidget* editWidget = getEditor();
   if (editWidget) {
-    editWidget->statusMsg(statusMessage ? statusMessage : editWidget->getFilename());
+    editWidget->statusMsg(statusMessage);
     editWidget->runMsg(runMessage);
   }
 }
@@ -132,11 +132,6 @@ void MainWindow::showEditTab(EditorWidget* editWidget)
   }
 }
 
-void MainWindow::showOutputTab()
-{
-  tabGroup->selected_child(outputGroup);
-}
-
 void MainWindow::saveLastEdit(const char *filename)
 {
   // remember the last edited file
@@ -147,13 +142,6 @@ void MainWindow::saveLastEdit(const char *filename)
     err = fwrite("\n", 1, 1, fp);
     fclose(fp);
   }
-}
-
-void MainWindow::setHideIde() {
-  opt_ide = IDE_NONE;
-
-  // update the menu
-  ((Menu*) ((Menu*) child(0))->find("Program/Toggle/Hide IDE"))->set();
 }
 
 void MainWindow::addHistory(const char *filename)
@@ -229,6 +217,10 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   if (editWidget) {
     editWidget->readonly(true);
     editWidget->runMsg(msg_run);
+    tty = editWidget->tty;
+  }
+  else {
+    tty = 0;
   }
 
   opt_pref_width = 0;
@@ -322,6 +314,9 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   if (editWidget) {
     editWidget->readonly(false);
   }
+
+  breakToLine = false;
+  logPrint = false;
   runMode = edit_state;
   return was_break;
 }
@@ -500,11 +495,6 @@ void MainWindow::set_options(Widget* w, void* eventData)
   }
 }
 
-void MainWindow::hide_ide(Widget* w, void* eventData)
-{
-  opt_ide = (w->flags() & STATE) ? IDE_NONE : IDE_LINKED;
-}
-
 void MainWindow::next_tab(Widget* w, void* eventData)
 {
   Group* group = getNextTab(getSelectedTab());
@@ -588,7 +578,8 @@ void MainWindow::run(Widget* w, void* eventData)
           editWidget->doSaveFile(filename);
         }
       }
-      showOutputTab();
+      breakToLine = editWidget->isBreakToLine();
+      logPrint = editWidget->isLogPrint();
       basicMain(editWidget, filename, false);
     }
     else {
@@ -668,7 +659,6 @@ void MainWindow::tool_plugin(Widget* w, void* eventData)
     sprintf(opt_command, "%s/%s", packageHome, pluginHome);
     statusMsg(msg_none, (const char *)eventData);
     sprintf(path, "%s/%s", packageHome, (const char *)eventData);
-    showOutputTab();
     basicMain(0, path, true);
     statusMsg(msg_none, 0);
     opt_command[0] = 0;
@@ -697,7 +687,6 @@ void MainWindow::load_file(Widget* w, void* eventData)
       editWidget->loadFile(path);
       // restore previous position
       editor->insert_position(recentPosition[recentIndex]);
-      editWidget->statusMsg(path);
       editWidget->fileChanged(true);
       saveLastEdit(path);
       const char* slash = strrchr(path, '/');
@@ -942,10 +931,9 @@ bool initialise(int argc, char **argv)
 
   switch (runMode) {
   case run_state:
-    wnd->setHideIde();
+    wnd->getEditor(true)->setHideIde();
     wnd->getEditor(true)->loadFile(runfile);
     wnd->addHistory(runfile);
-    wnd->showOutputTab();
     if (!wnd->basicMain(0, runfile, false)) {
       return false; // continue if break hit
     }
@@ -976,20 +964,22 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
   isTurbo = false;
   breakToLine = false;
+  logPrint = false;
+  tty = 0;
 
   FileWidget::forwardSlash(runfile);
   begin();
   MenuBar *m = new MenuBar(0, 0, w, MNU_HEIGHT);
-  m->add("&File/&New File", CTRL + 'n', MainWindow::new_file_cb);
-  m->add("&File/&Open File", CTRL + 'o', MainWindow::open_file_cb);
+  m->add("&File/&New File", CTRL + 'n', new_file_cb);
+  m->add("&File/&Open File", CTRL + 'o', open_file_cb);
   scanRecentFiles(m);
-  m->add("&File/_&Close", CTRL + F4Key, MainWindow::close_tab_cb);
+  m->add("&File/_&Close", CTRL + F4Key, close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', EditorWidget::save_file_cb);
-  m->add("&File/_Save File &As", CTRL + SHIFT + 'S', MainWindow::save_file_as_cb);
-  m->add("&File/E&xit", CTRL + 'q', MainWindow::quit_cb);
+  m->add("&File/_Save File &As", CTRL + SHIFT + 'S', save_file_as_cb);
+  m->add("&File/E&xit", CTRL + 'q', quit_cb);
   m->add("&Edit/_&Undo", CTRL + 'z', EditorWidget::undo_cb);
   m->add("&Edit/Cu&t", CTRL + 'x', EditorWidget::cut_text_cb);
-  m->add("&Edit/&Copy", CTRL + 'c', MainWindow::copy_text_cb);
+  m->add("&Edit/&Copy", CTRL + 'c', copy_text_cb);
   m->add("&Edit/_&Paste", CTRL + 'v', EditorWidget::paste_text_cb);
   m->add("&Edit/&Change Case", ALT + 'c', EditorWidget::change_case_cb);
   m->add("&Edit/&Expand Word", ALT + '/', EditorWidget::expand_word_cb);
@@ -997,10 +987,10 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Edit/&Find", CTRL + 'f', EditorWidget::find_cb);
   m->add("&Edit/&Replace", CTRL + 'r', EditorWidget::show_replace_cb);
   m->add("&Edit/_&Goto Line", CTRL + 'g', EditorWidget::goto_line_cb);
-  m->add("&View/&Next Tab", F6Key, MainWindow::next_tab_cb);
-  m->add("&View/_&Prev Tab", CTRL + F6Key, MainWindow::prev_tab_cb);
-  m->add("&View/Text Size/&Increase", CTRL + ']', MainWindow::font_size_incr_cb);
-  m->add("&View/Text Size/&Decrease", CTRL + '[', MainWindow::font_size_decr_cb);
+  m->add("&View/&Next Tab", F6Key, next_tab_cb);
+  m->add("&View/_&Prev Tab", CTRL + F6Key, prev_tab_cb);
+  m->add("&View/Text Size/&Increase", CTRL + ']', font_size_incr_cb);
+  m->add("&View/Text Size/&Decrease", CTRL + '[', font_size_decr_cb);
   m->add("&View/Text Color/Background Def", 0, EditorWidget::set_color_cb, (void*)st_background_def);
   m->add("&View/Text Color/_Background", 0, EditorWidget::set_color_cb, (void*)st_background);
   m->add("&View/Text Color/Text", 0, EditorWidget::set_color_cb, (void*) st_text);
@@ -1018,16 +1008,13 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 
   m->add("&Program/&Run", F9Key, run_cb);
   m->add("&Program/_&Run Selection", F8Key, run_selection_cb);
-  m->add("&Program/&Break", CTRL + 'b', MainWindow::run_break_cb);
-  m->add("&Program/_&Restart", CTRL + 'r', MainWindow::restart_run_cb);
-  m->add("&Program/&Command", F10Key, MainWindow::set_options_cb);
-  m->add("&Program/Toggle/&Hide IDE", 0, hide_ide_cb)->type(Item::TOGGLE);
-  m->add("&Program/Toggle/&Break To Line", 0, set_flag_cb, &breakToLine)->type(Item::TOGGLE);
-  m->add("&Program/Toggle/&Turbo", 0, set_flag_cb, &isTurbo)->type(Item::TOGGLE);
-  m->add("&Help/&Help Contents", F1Key, MainWindow::help_contents_cb);
-  m->add("&Help/_&Program Help", F11Key, MainWindow::help_app_cb);
-  m->add("&Help/_&Home Page", 0, MainWindow::help_home_cb);
-  m->add("&Help/&About SmallBASIC", F12Key, MainWindow::help_about_cb);
+  m->add("&Program/&Break", CTRL + 'b', run_break_cb);
+  m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
+  m->add("&Program/&Command", F10Key, set_options_cb);
+  m->add("&Help/&Help Contents", F1Key, help_contents_cb);
+  m->add("&Help/_&Program Help", F11Key, help_app_cb);
+  m->add("&Help/_&Home Page", 0, help_home_cb);
+  m->add("&Help/&About SmallBASIC", F12Key, help_about_cb);
 
   callback(quit_cb);
   shortcut(0);                  // remove default EscapeKey shortcut
@@ -1120,7 +1107,7 @@ void MainWindow::open_file(Widget* w, void* eventData)
   Group* openFileGroup = findTab(gw_file);
   if (!openFileGroup ) {
     int w = tabGroup->w();
-    int h = tabGroup->h() - 8;
+    int h = tabGroup->h() - MNU_HEIGHT;
     tabGroup->begin();
     openFileGroup = new Group(0, MNU_HEIGHT, w, h, fileTabName);
     openFileGroup->begin();
@@ -1150,7 +1137,7 @@ HelpWidget* MainWindow::getHelp()
   Group* helpGroup = findTab(gw_help);
   if (!helpGroup) {
     int w = tabGroup->w();
-    int h = tabGroup->h() - 8;
+    int h = tabGroup->h() - MNU_HEIGHT;
     tabGroup->begin();
     helpGroup = new Group(0, MNU_HEIGHT, w, h, helpTabName);
     helpGroup->box(THIN_DOWN_BOX);
@@ -1435,7 +1422,6 @@ void MainWindow::execLink(const char *file)
       // run the remote program
       editWidget->loadFile(localFile);
       addHistory(file);
-      showOutputTab();
       basicMain(editWidget, localFile, false);
     }
     else {
@@ -1452,7 +1438,6 @@ void MainWindow::execLink(const char *file)
       siteHome.append(df.name, df.drv_dw[1]);
       statusMsg(msg_none, siteHome.toString());
       updateForm(path);
-      showOutputTab();
     }
     return;
   }
@@ -1490,7 +1475,6 @@ void MainWindow::execLink(const char *file)
     statusMsg(msg_none, file);
     if (execFile) {
       addHistory(file);
-      showOutputTab();
       basicMain(0, file, false);
       opt_nosave = 1;
     }

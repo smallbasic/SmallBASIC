@@ -63,7 +63,6 @@ enum StyleField {
   st_background_def
 };
 
-// same order as display items
 enum CommandOpt {
   cmd_find=0,
   cmd_find_inc,
@@ -116,10 +115,12 @@ public:
   CALLBACK_METHOD(font_name);
   CALLBACK_METHOD(func_list);
   CALLBACK_METHOD(goto_line);
+  CALLBACK_METHOD(hide_ide);
   CALLBACK_METHOD(paste_text);
   CALLBACK_METHOD(rename_word);
   CALLBACK_METHOD(replace_next);
   CALLBACK_METHOD(save_file);
+  CALLBACK_METHOD(scroll_lock);
   CALLBACK_METHOD(set_color);
   CALLBACK_METHOD(show_replace);
   CALLBACK_METHOD(undo);
@@ -146,17 +147,21 @@ public:
   void runMsg(RunMessage runMessage);
   void saveConfig();
   void saveSelection(const char* path);
+  void setHideIde();
   void setFontSize(int i);
   void setIndentLevel(int level);
   void setRowCol(int row, int col);
-  void statusMsg(const char *filename);
+  void showPath();
+  void statusMsg(const char *msg);
   void updateConfig(EditorWidget* current);
 
   CodeEditor *editor;
   TtyWidget* tty;
   bool readonly();
   void readonly(bool is_readonly);
+  bool isBreakToLine() { return breakLineBn->value(); }
   bool isLoading() { return loading; }
+  bool isLogPrint() { return logPrintBn->value(); }
 
 protected:
   void createFuncList();
@@ -194,10 +199,10 @@ private:
   Widget* modStatus;
   Choice* funcList;
 
-  ToggleButton* printButton;
-  ToggleButton* lockButton;
-  ToggleButton* hideIdeButton;
-  ToggleButton* lineBreakButton;
+  ToggleButton* logPrintBn;
+  ToggleButton* lockBn;
+  ToggleButton* hideIdeBn;
+  ToggleButton* breakLineBn;
 
   // same order as display items
   CommandOpt commandOpt;

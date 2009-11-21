@@ -98,12 +98,12 @@ struct MainWindow : public BaseWindow {
   virtual ~MainWindow() {};
 
   bool basicMain(EditorWidget* editWidget, const char *filename, bool toolExec);
-  bool isBreakExec(void);
-  bool isRunning(void);
-  bool isEdit();
-  bool isIdeHidden();
-  bool isInteractive();
-  bool isModal();
+  bool isBreakExec(void); // whether BREAK mode has been entered
+  bool isRunning(void); // whether a program is running
+  bool isEdit(); // whether a program is currently being edited 
+  bool isIdeHidden(); // whether to run without the IDE displayed
+  bool isInteractive(); // whether to run without an interface
+  bool isModal(); // whether a modal gui loop is active
   void addHistory(const char *fileName);
   void busyMessage();
   void execHelp();
@@ -116,11 +116,9 @@ struct MainWindow : public BaseWindow {
   void scanPlugIns(Menu* menu);
   void scanRecentFiles(Menu * menu);
   void setBreak();
-  void setHideIde();
   void setModal(bool modal);
   void showEditTab(EditorWidget* editWidget);
   void showHelpPage();
-  void showOutputTab();
   void statusMsg(RunMessage runMessage, const char *filename);
   void updateConfig(EditorWidget* current);
   void updateEditTabName(EditorWidget* editWidget);
@@ -168,12 +166,14 @@ struct MainWindow : public BaseWindow {
 
   HelpWidget* getHelp();
 
-  bool isTurbo;
-  bool breakToLine;
+  bool isTurbo; // whether to limit CPU usage
+  bool breakToLine; // whether to restore the editor cursor 
+  bool logPrint; // whether program output is being tee'd to tty
   String siteHome;
 
   // main output
   AnsiWidget* out;
+  TtyWidget* tty;
   Group* outputGroup;
 
   // tab parent

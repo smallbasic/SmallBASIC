@@ -27,6 +27,7 @@
 #include "EditorWidget.h"
 #include "FileWidget.h"
 #include "kwp.h"
+#include "smbas.h"
 
 using namespace fltk;
 
@@ -794,19 +795,16 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // widths become relative when the outer window is resized
   int func_bn_w = 140;
   int st_w = 40;
-  int bn_w = 16;
+  int bn_w = 18;
   int st_h = statusBar->h() - 2;
 
-  printButton = new ToggleButton(w - (bn_w + 2), 2, bn_w, st_h, "@||;");
-  lockButton = new ToggleButton(printButton->x() - (bn_w + 2), 2,
-                                bn_w, st_h, "@>[];");
-  hideIdeButton = new ToggleButton(lockButton->x() - (bn_w + 2), 2,
-                                   bn_w, st_h, "@circle;");
-  lineBreakButton = new ToggleButton(hideIdeButton->x() - (bn_w + 2), 2,
-                                     bn_w, st_h, "@->;");
+  logPrintBn = new ToggleButton(w - (bn_w + 2), 2, bn_w, st_h);
+  lockBn = new ToggleButton(logPrintBn->x() - (bn_w + 2), 2, bn_w, st_h);
+  hideIdeBn = new ToggleButton(lockBn->x() - (bn_w + 2), 2, bn_w, st_h);
+  breakLineBn = new ToggleButton(hideIdeBn->x() - (bn_w + 2), 2, bn_w, st_h);
 
   // sub-func jump droplist
-  funcList = new Choice(lineBreakButton->x() - (func_bn_w + 2), 2,
+  funcList = new Choice(breakLineBn->x() - (func_bn_w + 2), 2,
                         func_bn_w, st_h);
   funcList->callback(func_list_cb, 0);
   funcList->labelfont(HELVETICA);
@@ -820,11 +818,11 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   runStatus = new Widget(rowStatus->x() - (st_w + 2), 2, st_w, st_h);
   modStatus = new Widget(runStatus->x() - (st_w + 2), 2, st_w, st_h);
 
-  commandChoice = new Widget(0, 2, 80, st_h, "Find:");
+  commandChoice = new Widget(0, 2, 80, st_h);
   commandText = new Input(commandChoice->r() + 2, 2,
                           modStatus->x() - commandChoice->r() - 4, st_h);
   commandText->align(ALIGN_LEFT | ALIGN_CLIP);
-  commandText->callback(EditorWidget::command_cb, (void*) 1);
+  commandText->callback(command_cb, (void*) 1);
   commandText->when(WHEN_ENTER_KEY_ALWAYS);
   commandText->labelfont(HELVETICA);
 
@@ -842,6 +840,29 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 
   setEditorColor(WHITE, true);
   loadConfig();
+  setCommand(cmd_find);
+
+  // set button callbacks
+  lockBn->callback(scroll_lock_cb);
+  hideIdeBn->callback(hide_ide_cb);
+
+  // setup icons
+  logPrintBn->label("@circle;");
+  lockBn->label("@||;");
+  hideIdeBn->label("@plus;");
+  breakLineBn->label("@->;");
+
+  // setup tooltips
+  commandText->tooltip("Press Ctrl+f or Ctrl+Shift+f to find again");
+  rowStatus->tooltip("Row");
+  colStatus->tooltip("Column");
+  runStatus->tooltip("Run status");
+  modStatus->tooltip("Modified status");
+  funcList->tooltip("Position the cursor to a FUNC/SUB");
+  logPrintBn->tooltip("Display PRINT statements in the log window");
+  lockBn->tooltip("Prevent log window auto-scrolling");
+  hideIdeBn->tooltip("Hide the editor while program is running");
+  breakLineBn->tooltip("Position to the last program line after BREAK");
 }
 
 EditorWidget::~EditorWidget()
@@ -1062,6 +1083,11 @@ void EditorWidget::find(Widget* w, void* eventData)
   setCommand(cmd_find);
 }
 
+void EditorWidget::hide_ide(Widget* w, void* eventData)
+{
+  opt_ide = (w->flags() & STATE) ? IDE_NONE : IDE_LINKED;
+}
+
 void EditorWidget::command(Widget* w, void* eventData)
 {
   if (!readonly()) {
@@ -1206,6 +1232,11 @@ void EditorWidget::save_file(Widget* w, void* eventData)
   }
 }
 
+void EditorWidget::scroll_lock(Widget* w, void* eventData)
+{
+  // todo
+}
+
 void EditorWidget::set_color(Widget* w, void* eventData)
 {
   StyleField styleField = (StyleField) (int) eventData;
@@ -1329,7 +1360,7 @@ void EditorWidget::loadFile(const char *newfile)
   wnd->updateEditTabName(this);
   wnd->showEditTab(this);
 
-  statusMsg(filename);
+  showPath();
   fileChanged(true);
   setRowCol(1, 1);
 }
@@ -1366,7 +1397,7 @@ void EditorWidget::doSaveFile(const char *newfile)
   wnd->showEditTab(this);
 
   textbuf->call_modify_callbacks();
-  statusMsg(filename);
+  showPath();
   fileChanged(true);
   editor->take_focus();
 }
@@ -1432,6 +1463,11 @@ void EditorWidget::saveSelection(const char* path) {
   }
 }
 
+void EditorWidget::setHideIde() {
+  opt_ide = IDE_NONE;
+  hideIdeBn->value(true);
+}
+
 void EditorWidget::setFontSize(int size)
 {
   int len = sizeof(styletable) / sizeof(styletable[0]);
@@ -1468,14 +1504,18 @@ void EditorWidget::focusWidget() {
   }
 }
 
+// display the full pathname
+void EditorWidget::showPath()
+{
+  commandChoice->tooltip(filename);
+}
+
 void EditorWidget::statusMsg(const char *msg)
 {
-  const char *filename = getFilename();
-  //todo
-  //  fileStatus->copy_label(msg && msg[0] ? msg :
-  //                         filename && filename[0] ? filename : UNTITLED_FILE);
-  //  fileStatus->labelcolor(rowStatus->labelcolor());
-  //  fileStatus->redraw();
+  if (msg) {
+    tty->print(msg);
+    tty->print("\n");
+  }
 }
 
 void EditorWidget::updateConfig(EditorWidget* current) {
@@ -1775,7 +1815,6 @@ void EditorWidget::newFile()
   textbuf->remove_selection();
   dirty = 0;
   textbuf->call_modify_callbacks();
-  statusMsg(0);
   fileChanged(false);
   modifiedTime = 0;
 }
