@@ -65,6 +65,11 @@ struct TextSeg {
     flags |= (f << 16);
   }
 
+  // return whether the flag was set (to true or false)
+  bool set(int f) {
+    return (flags & (f << 16));
+  }
+
   // return the flag value if set, otherwise return value
   bool get(int f, bool* value) {
     bool result = *value;
@@ -85,7 +90,18 @@ struct TextSeg {
   }
 
   // update font and state variables when set in this segment
-  void setfont(bool* bold, bool* italic, bool* underline, bool* invert);
+  bool escape(bool* bold, bool* italic, bool* underline, bool* invert) {
+    *bold = get(BOLD, bold);
+    *italic = get(ITALIC, italic);
+    *underline = get(UNDERLINE, underline);
+    *invert = get(INVERT, invert);
+
+    if (this->color != NO_COLOR) {
+      fltk::setcolor(this->color);
+    }
+
+    return set(BOLD) || set(ITALIC);
+  }
 
   char* str;
   int flags;
@@ -114,6 +130,7 @@ struct Row {
   // clear the contents of this row
   void clear() {
     remove(head);
+    head = 0;
   }
 
   // number of characters in this row
@@ -165,14 +182,19 @@ struct TtyWidget : public Group {
   void layout();
 
   // public api
-  bool copySelection();
   void clearScreen();
+  bool copySelection();
   void print(const char *str);
+  void setFont(Font* font) {setfont(font, 0); redraw();};
+  void setFontSize(int size) {setfont(0, size); redraw();};
+  void setScrollLock(bool b) { scrollLock = b; };
 
 private:
   void drawSelection(TextSeg* seg, String* s, int row, int x, int y);
   Row* getLine(int ndx);
   int processLine(Row* line, const char* linePtr);
+  void setfont(bool bold, bool italic);
+  void setfont(Font* font, int size);
   void setGraphicsRendition(TextSeg* segment, int c);
 
   // returns the number of display text rows held in the buffer
@@ -198,6 +220,7 @@ private:
   Scrollbar *vscrollbar;
   Scrollbar *hscrollbar;
   int lineHeight;
+  bool scrollLock;
 
   // clipboard handling
   int markX, markY, pointX, pointY;

@@ -843,13 +843,13 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   setCommand(cmd_find);
 
   // set button callbacks
+  logPrintBn->callback(log_print_cb);
   lockBn->callback(scroll_lock_cb);
-  hideIdeBn->callback(hide_ide_cb);
 
   // setup icons
-  logPrintBn->label("@circle;");
+  logPrintBn->label("@i;@b;T");
   lockBn->label("@||;");
-  hideIdeBn->label("@plus;");
+  hideIdeBn->label("@circle;");
   breakLineBn->label("@->;");
 
   // setup tooltips
@@ -1083,9 +1083,9 @@ void EditorWidget::find(Widget* w, void* eventData)
   setCommand(cmd_find);
 }
 
-void EditorWidget::hide_ide(Widget* w, void* eventData)
+void EditorWidget::log_print(Widget* w, void* eventData)
 {
-  opt_ide = (w->flags() & STATE) ? IDE_NONE : IDE_LINKED;
+  tty->clearScreen();
 }
 
 void EditorWidget::command(Widget* w, void* eventData)
@@ -1234,7 +1234,7 @@ void EditorWidget::save_file(Widget* w, void* eventData)
 
 void EditorWidget::scroll_lock(Widget* w, void* eventData)
 {
-  // todo
+  tty->setScrollLock(w->flags() & STATE);
 }
 
 void EditorWidget::set_color(Widget* w, void* eventData)
@@ -1464,7 +1464,6 @@ void EditorWidget::saveSelection(const char* path) {
 }
 
 void EditorWidget::setHideIde() {
-  opt_ide = IDE_NONE;
   hideIdeBn->value(true);
 }
 
@@ -1475,6 +1474,7 @@ void EditorWidget::setFontSize(int size)
     styletable[i].size = size;
   }
   editor->styleChanged();
+  tty->setFontSize(size);
 }
 
 int EditorWidget::getFontSize()
@@ -1540,13 +1540,9 @@ void EditorWidget::runMsg(RunMessage runMessage)
   const char* msg = 0;
   switch (runMessage) {
   case msg_err:
-    //todo
-    //    fileStatus->labelcolor(RED);
     msg = "ERR";
     break;
   case msg_run:
-    // todo
-    //    fileStatus->labelcolor(rowStatus->labelcolor());
     msg = "RUN";
     break;
   default:
@@ -1963,6 +1959,7 @@ void EditorWidget::setFont(Font* font)
       styletable[i].font = font;
     }
     editor->styleChanged();
+    tty->setFont(font);
   }
 }
 

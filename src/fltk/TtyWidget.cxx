@@ -9,42 +9,25 @@
 
 #include <fltk/damage.h>
 #include <fltk/events.h>
+#include <fltk/run.h>
 #include <fltk/CheckButton.h>
 
 #include "TtyWidget.h"
-
-#define BASE_FONT_SIZE 12
-#define BASE_FONT COURIER
-
-//
-// TextSeg - a segment of text between escape chars
-//
-void TextSeg::setfont(bool* bold, bool* italic, bool* underline, bool* invert) {
-  // update state variables when explicitely set in this segment
-  *bold = get(BOLD, bold);
-  *italic = get(ITALIC, italic);
-  *underline = get(UNDERLINE, underline);
-  *invert = get(INVERT, invert);
-
-  Font* font = BASE_FONT;
-  if (*bold) {
-    font = font->bold();
-  }
-  if (*italic) {
-    font = font->italic();
-  }
-  fltk::setfont(font, BASE_FONT_SIZE);
-
-  if (this->color != NO_COLOR) {
-    fltk::setcolor(this->color);
-  }
-}
 
 //
 // scrollbar callback to redraw upon scroll changes
 //
 void scrollbar_callback(Widget* scrollBar, void* ttyWidget) {
-  ((TtyWidget *) ttyWidget)->redraw(DAMAGE_ALL);
+  ((TtyWidget*) ttyWidget)->redraw(DAMAGE_ALL);
+}
+
+//
+// print check handler
+//
+void print_callback(void* data) {
+  TtyWidget* ttyWidget = (TtyWidget*) data;
+  ttyWidget->relayout();
+  ttyWidget->redraw();
 }
 
 //
@@ -61,8 +44,8 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   cursor = 0;
   markX = markY = pointX = pointY = 0;
 
-  setfont(BASE_FONT, BASE_FONT_SIZE);
-  lineHeight = (int) (getascent() + getdescent());
+  setfont(COURIER, 12);
+  scrollLock = false;
 
   begin();
   // vertical scrollbar scrolls in row units
@@ -114,6 +97,7 @@ void TtyWidget::draw() {
   setcolor(BLACK);
   drawline(0, 0, w(), 0);
   setcolor(labelcolor());
+  setfont(labelfont(), labelsize());
 
   int pageWidth = 0;
   for (int row = firstRow, rows = 0, y = rc.y() + lineHeight;
@@ -122,7 +106,9 @@ void TtyWidget::draw() {
     TextSeg* seg = line->head;
     int x = 2 - hscroll;
     while (seg != NULL) {
-      seg->setfont(&bold, &italic, &underline, &invert);
+      if (seg->escape(&bold, &italic, &underline, &invert)) {
+        setfont(bold, italic);
+      }
       drawSelection(seg, null, row, x, y);
       int width = seg->width();
       if (seg->str) {
@@ -312,7 +298,9 @@ bool TtyWidget::copySelection() {
     int x = 2 - hscroll;
     String rowText;
     while (seg != NULL) {
-      seg->setfont(&bold, &italic, &underline, &invert);
+      if (seg->escape(&bold, &italic, &underline, &invert)) {
+        setfont(bold, italic);
+      }
       drawSelection(seg, &rowText, row, x, 0);
       x += seg->width();
       seg = seg->next;
@@ -335,7 +323,15 @@ bool TtyWidget::copySelection() {
 // clear the screen
 //
 void TtyWidget::clearScreen() {
-
+  head = tail = 0;
+  cols = width = cursor = 0;
+  markX = markY = pointX = pointY = 0;
+  getLine(0)->clear();
+  vscrollbar->value(0);
+  vscrollbar->hide();
+  hscrollbar->value(0);
+  hscrollbar->hide();
+  redraw();
 }
 
 //
@@ -346,7 +342,7 @@ void TtyWidget::print(const char *str) {
   Row* line = getLine(head); // pointer to current line
 
   // need the current font set to calculate text widths
-  fltk::setfont(BASE_FONT, BASE_FONT_SIZE);
+  fltk::setfont(labelfont(), labelsize());
 
   // scan the text, handle any special characters, and display the rest.
   for (int i = 0; i < strLength; i++) {
@@ -376,7 +372,7 @@ void TtyWidget::print(const char *str) {
     case '\b': // backspace
       // move back one space
       if (cursor > 0) {
-        redraw(DAMAGE_ALL);
+        
       }
       break;
 
@@ -389,7 +385,12 @@ void TtyWidget::print(const char *str) {
     } // end case
   }
 
-  vscrollbar->value(getTextRows() - getPageRows());
+  if (!scrollLock) {
+    vscrollbar->value(getTextRows() - getPageRows());
+  }
+
+  // schedule a layout and redraw
+  fltk::add_check(print_callback, this);
 }
 
 //
@@ -552,6 +553,34 @@ void TtyWidget::setGraphicsRendition(TextSeg* segment, int c) {
     segment->color = WHITE;
     break;
   }
+}
+
+//
+// update the current drawing font
+//
+void TtyWidget::setfont(bool bold, bool italic) {
+  Font* font = labelfont();
+  if (bold) {
+    font = font->bold();
+  }
+  if (italic) {
+    font = font->italic();
+  }
+  fltk::setfont(font, labelsize());
+}
+
+//
+// update the current drawing font and remember the face/size
+//
+void TtyWidget::setfont(Font* font, int size) {
+  if (font) {
+    labelfont(font);
+  }
+  if (size) {
+    labelsize(size);
+  }
+  fltk::setfont(labelfont(), labelsize());
+  lineHeight = (int) (getascent() + getdescent());
 }
 
 // End of "$Id$".

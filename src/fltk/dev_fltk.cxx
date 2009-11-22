@@ -310,12 +310,18 @@ void osd_clear_sound_queue()
 {
 }
 
-void osd_write(const char *s)
+void osd_write(const char* s)
 {
-  if (wnd->logPrint) {
+  if (wnd->logPrint && wnd->tty) {
     wnd->tty->print(s);
   }
   wnd->out->print(s);
+}
+
+void lwrite(const char* s) {
+  if (wnd->tty) {
+    wnd->tty->print(s);
+  }
 }
 
 //--ENV-------------------------------------------------------------------------
@@ -619,7 +625,6 @@ void dev_delay(dword ms) {
     while (wnd->isModal()) {
       fltk::wait(0.1);
     }
-    fltk::remove_check(timeout_callback);
   }
 }
 

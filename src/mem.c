@@ -619,6 +619,8 @@ tmpnode_t *tmplist_add(tmplist_t * lst, void *data, int size)
 
 #endif // ENABLE_TMPLIST
 
+#if !defined(_FLTK)
+
 /*
  * LOGFILE
  *
@@ -685,6 +687,7 @@ void lwrite(const char *buf)
   close(log_dev);
 #endif
 }
+#endif // NOT FLTK
 
 //
 void lprintf(const char *fmt, ...)

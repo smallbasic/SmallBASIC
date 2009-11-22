@@ -167,7 +167,6 @@ struct MainWindow : public BaseWindow {
   HelpWidget* getHelp();
 
   bool isTurbo; // whether to limit CPU usage
-  bool breakToLine; // whether to restore the editor cursor 
   bool logPrint; // whether program output is being tee'd to tty
   String siteHome;
 

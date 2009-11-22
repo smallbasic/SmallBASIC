@@ -198,6 +198,8 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
 {
   int len = strlen(filename);
   char path[MAX_PATH];
+  bool breakToLine = false; // whether to restore the editor cursor 
+
   if (strcasecmp(filename + len - 4, ".htm") == 0 ||
       strcasecmp(filename + len - 5, ".html") == 0) {
     // render html edit buffer
@@ -218,6 +220,9 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     editWidget->readonly(true);
     editWidget->runMsg(msg_run);
     tty = editWidget->tty;
+    breakToLine = editWidget->isBreakToLine();
+    logPrint = editWidget->isLogPrint();
+    opt_ide = editWidget->isHideIDE() ? IDE_NONE : IDE_LINKED;
   }
   else {
     tty = 0;
@@ -315,7 +320,6 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     editWidget->readonly(false);
   }
 
-  breakToLine = false;
   logPrint = false;
   runMode = edit_state;
   return was_break;
@@ -578,8 +582,6 @@ void MainWindow::run(Widget* w, void* eventData)
           editWidget->doSaveFile(filename);
         }
       }
-      breakToLine = editWidget->isBreakToLine();
-      logPrint = editWidget->isLogPrint();
       basicMain(editWidget, filename, false);
     }
     else {
@@ -963,7 +965,6 @@ int main(int argc, char **argv)
 MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
   isTurbo = false;
-  breakToLine = false;
   logPrint = false;
   tty = 0;
 
