@@ -42,8 +42,8 @@ struct TextSeg {
   };
 
   // create a new segment
-  TextSeg(const char* str, int n) {
-    this->str = (!str || !n) ? 0 : strndup(str, n);
+  TextSeg() {
+    this->str = 0;
     this->flags = 0;
     this->color = NO_COLOR;
   }
@@ -52,6 +52,18 @@ struct TextSeg {
     if (str) {
       free(str);
     }
+  }
+
+  // reset all flags
+  void reset() {
+    set(BOLD, false);
+    set(ITALIC, false);
+    set(UNDERLINE, false);
+    set(INVERT, false);
+  }
+
+  void setText(const char* str, int n) {
+    this->str = (!str || !n) ? 0 : strndup(str, n);
   }
 
   // set the flag value

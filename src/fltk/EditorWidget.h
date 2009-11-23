@@ -87,7 +87,6 @@ public:
   CALLBACK_METHOD(font_name);
   CALLBACK_METHOD(func_list);
   CALLBACK_METHOD(goto_line);
-  CALLBACK_METHOD(log_print);
   CALLBACK_METHOD(paste_text);
   CALLBACK_METHOD(rename_word);
   CALLBACK_METHOD(replace_next);

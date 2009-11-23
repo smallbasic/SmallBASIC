@@ -22,15 +22,6 @@ void scrollbar_callback(Widget* scrollBar, void* ttyWidget) {
 }
 
 //
-// print check handler
-//
-void print_callback(void* data) {
-  TtyWidget* ttyWidget = (TtyWidget*) data;
-  ttyWidget->relayout();
-  ttyWidget->redraw();
-}
-
-//
 // TtyWidget constructor
 //
 TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
@@ -114,14 +105,17 @@ void TtyWidget::draw() {
       if (seg->str) {
         if (invert) {
           setcolor(labelcolor());
-          fillrect(x, y, width, lineHeight);
+          fillrect(x, (y-lineHeight) + getdescent(), width, lineHeight);
           setcolor(color());
+          drawtext(seg->str, x, y);
+          setcolor(labelcolor());
         }
-        drawtext(seg->str, x, y);
+        else {
+          drawtext(seg->str, x, y);
+        }
       }
       if (underline) {
-        int ascent = (int)getascent();
-        drawline(x, y+ascent+1, x+width, y+ascent+1);
+        drawline(x, y+1, x+width, y+1);
       }
       x += width;
       seg = seg->next;
@@ -148,8 +142,8 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
     Rectangle rc(0, y - getascent(), 0, lineHeight);
     int r1 = markY;
     int r2 = pointY;
-    int x1 = markX; 
-    int x2 = pointX; 
+    int x1 = markX;
+    int x2 = pointX;
 
     if (r1 > r2) {
       r1 = pointY;
@@ -220,7 +214,7 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
 int TtyWidget::handle(int e) {
   switch (e) {
   case PUSH:
-    if (get_key_state(LeftButton) && 
+    if (get_key_state(LeftButton) &&
         (!vscrollbar->visible() || !event_inside(*vscrollbar))) {
       markX = pointX = event_x();
       markY = pointY = (event_y() / lineHeight) + vscrollbar->value();
@@ -372,12 +366,15 @@ void TtyWidget::print(const char *str) {
     case '\b': // backspace
       // move back one space
       if (cursor > 0) {
-        
       }
       break;
 
     case '\t':
       cursor += 8;
+      break;
+
+    case '\xC':
+      clearScreen();
       break;
 
     default:
@@ -390,7 +387,8 @@ void TtyWidget::print(const char *str) {
   }
 
   // schedule a layout and redraw
-  fltk::add_check(print_callback, this);
+  relayout();
+  redraw();
 }
 
 //
@@ -411,6 +409,50 @@ Row* TtyWidget::getLine(int pos) {
 // interpret ANSI escape codes in linePtr and return number of chars consumed
 //
 int TtyWidget::processLine(Row* line, const char* linePtr) {
+  TextSeg* segment = new TextSeg();
+  line->append(segment);
+
+  const char* linePtrStart = linePtr;
+
+  // Determine if we are at an end-of-line or an escape
+  bool escaped = false;
+  if (*linePtr == '\033') {
+    linePtr++;
+
+    if (*linePtr == '[') {
+      escaped = true;
+      linePtr++;
+    }
+
+    if (escaped) {
+      int param = 0;
+      while (*linePtr != '\0' && escaped) {
+        // Walk the escape sequence
+        switch (*linePtr) {
+        case 'm':
+          escaped = false;  // fall through
+          
+        case ';':  // Parameter seperator
+          setGraphicsRendition(segment, param);
+          param = 0;
+          break;
+          
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+          // Numeric OK; continue till delimeter or illegal char
+          param = (param * 10) + (*linePtr - '0');
+          break;
+          
+        default: // Illegal character - reset
+          segment->flags = 0;
+          escaped = false;
+          break;
+        }
+        linePtr += 1;
+      } // while escaped and not null
+    }
+  }
+
   const char* linePtrNext = linePtr;
 
   // Walk the line of text until an escape char or end-of-line
@@ -420,9 +462,8 @@ int TtyWidget::processLine(Row* line, const char* linePtr) {
   }
 
   // Print the next (possible) line of text
-  if (*linePtrNext != '\0') {
-    TextSeg* segment = new TextSeg(linePtrNext, (linePtr - linePtrNext));
-    line->append(segment);
+  if (*linePtrNext != '\0' && linePtrNext != linePtr) {
+    segment->setText(linePtrNext, (linePtr - linePtrNext));
 
     // save max rows encountered
     int lineWidth = line->width();
@@ -434,50 +475,10 @@ int TtyWidget::processLine(Row* line, const char* linePtr) {
     if (lineChars > cols) {
       cols = lineChars;
     }
-
-    // Determine if we are at an end-of-line or an escape
-    bool escaped = false;
-    if (*linePtr == '\033') {
-      linePtr++;
-
-      if (*linePtr == '[') {
-        escaped = true;
-        linePtr++;
-      }
-
-      if (escaped) {
-        int param = 0;
-        while (*linePtr != '\0' && escaped) {
-          // Walk the escape sequence
-          switch (*linePtr) {
-          case 'm':
-            escaped = false;  // fall through
-
-          case ';':  // Parameter seperator
-            setGraphicsRendition(segment, param);
-            param = 0;
-            break;
-
-          case '0': case '1': case '2': case '3': case '4':
-          case '5': case '6': case '7': case '8': case '9':
-            // Numeric OK; continue till delimeter or illegal char
-            param = (param * 10) + (*linePtr - '0');
-            break;
-
-          default: // Illegal character - reset
-            segment->flags = 0;
-            escaped = false;
-          }
-          linePtr += 1;
-        } // while escaped and not null
-      }
-    }
-    else {
-      // next special char was not escape
-      linePtr--;
-    }
   }
-  return (linePtr - linePtrNext);
+
+  // return the number of eaten chars (less 1)
+  return linePtr == linePtrStart ? 0 : (linePtr - linePtrStart) - 1;
 }
 
 //
@@ -485,6 +486,10 @@ int TtyWidget::processLine(Row* line, const char* linePtr) {
 //
 void TtyWidget::setGraphicsRendition(TextSeg* segment, int c) {
   switch (c) {
+  case 0:
+    segment->reset();
+    break;
+
   case 1:  // Bold on
     segment->set(TextSeg::BOLD, true);
     break;

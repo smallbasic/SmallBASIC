@@ -150,7 +150,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   setCommand(cmd_find);
 
   // set button callbacks
-  logPrintBn->callback(log_print_cb);
   lockBn->callback(scroll_lock_cb);
 
   // setup icons
@@ -388,11 +387,6 @@ void EditorWidget::expand_word(Widget* w, void* eventData)
 void EditorWidget::find(Widget* w, void* eventData)
 {
   setCommand(cmd_find);
-}
-
-void EditorWidget::log_print(Widget* w, void* eventData)
-{
-  tty->clearScreen();
 }
 
 void EditorWidget::command(Widget* w, void* eventData)
@@ -816,7 +810,8 @@ void EditorWidget::showPath()
 
 void EditorWidget::statusMsg(const char *msg)
 {
-  if (msg) {
+  // message will already be present when logPrint is true
+  if (msg && !isLogPrint()) {
     tty->print(msg);
     tty->print("\n");
   }
