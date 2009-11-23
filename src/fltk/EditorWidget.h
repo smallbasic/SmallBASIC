@@ -25,6 +25,7 @@
 
 #include "StringLib.h"
 #include "TtyWidget.h"
+#include "BasicEditor.h"
 
 using namespace fltk;
 
@@ -71,36 +72,7 @@ enum CommandOpt {
   cmd_goto,
 };
 
-struct CodeEditor : public TextEditor {
-  CodeEditor(int x, int y, int w, int h);
-  ~CodeEditor();
-
-  bool findText(const char *find, bool forward, bool updatePos);
-  int handle(int e);
-  unsigned getIndent(char *indent, int len, int pos);
-  void draw();
-  void getRowCol(int *row, int *col);
-  void getSelEndRowCol(int *row, int *col);
-  void getSelStartRowCol(int *row, int *col);
-  char* getSelection(Rectangle* rc);
-  void gotoLine(int line);
-  void handleTab();
-  void showFindText(const char *text);
-  void showMatchingBrace();
-  void showRowCol();
-  void styleChanged();
-  void styleParse(const char *text, char *style, int length);
-  
-  bool readonly;
-  int indentLevel;
-  int matchingBrace;
-
-  TextBuffer *stylebuf;
-  TextBuffer *textbuf;
-  char search[256];
-};
-
-class EditorWidget : public Group {
+class EditorWidget : public Group, StatusBar {
 public:
   EditorWidget(int x, int y, int w, int h);
    ~EditorWidget();
@@ -155,7 +127,7 @@ public:
   void statusMsg(const char *msg);
   void updateConfig(EditorWidget* current);
 
-  CodeEditor *editor;
+  BasicEditor *editor;
   TtyWidget* tty;
   bool readonly();
   void readonly(bool is_readonly);

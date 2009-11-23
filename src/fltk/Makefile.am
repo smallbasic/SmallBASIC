@@ -25,6 +25,7 @@ sbasici_SOURCES =				\
     HelpWidget.cxx HelpWidget.h			\
     TtyWidget.cxx TtyWidget.h			\
     MainWindow.cxx MainWindow.h			\
+    BasicEditor.cxx BasicEditor.h		\
     EditorWidget.cxx EditorWidget.h		\
     FileWidget.cxx FileWidget.h			\
     StringLib.cxx StringLib.h			\
