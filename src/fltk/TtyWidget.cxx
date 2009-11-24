@@ -353,11 +353,11 @@ void TtyWidget::print(const char *str) {
 
     case '\n': // new line
       // scroll by moving logical last line
-      head = (head + 1 >= rows) ? 0 : head + 1;
-      if (head == tail) {
-        tail++;
+      if (getTextRows() == rows) {
+        tail = (tail + 1 >= rows) ? 0 : tail + 1;
       }
-
+      head = (head + 1 >= rows) ? 0 : head + 1;
+      
       // clear the new line
       line = getLine(head);
       line->clear();
@@ -366,6 +366,7 @@ void TtyWidget::print(const char *str) {
     case '\b': // backspace
       // move back one space
       if (cursor > 0) {
+        cursor--;
       }
       break;
 

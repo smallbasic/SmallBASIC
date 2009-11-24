@@ -178,7 +178,9 @@ BasicEditor::~BasicEditor()
   delete stylebuf;
 }
 
-// 'style_parse()' - Parse text and produce style data.
+/**
+ * Parse text and produce style data.
+ */
 void BasicEditor::styleParse(const char *text, char *style, int length)
 {
   char current = PLAIN;
@@ -335,12 +337,18 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
   }
 }
 
+/**
+ * handler for the style change event
+ */
 void BasicEditor::styleChanged() {
   textbuf->select(0, textbuf->length());
   textbuf->select(0, 0);
   redraw(DAMAGE_ALL);
 }
 
+/**
+ * display the editor buffer
+ */
 void BasicEditor::draw()
 {
   TextEditor::draw();
@@ -356,6 +364,9 @@ void BasicEditor::draw()
   }
 }
 
+/**
+ * returns the indent position level
+ */
 unsigned BasicEditor::getIndent(char *spaces, int len, int pos)
 {
   // count the indent level and find the start of text
@@ -410,6 +421,9 @@ unsigned BasicEditor::getIndent(char *spaces, int len, int pos)
   return i;
 }
 
+/**
+ * handler for the TAB character
+ */
 void BasicEditor::handleTab()
 {
   char spaces[250];
@@ -481,6 +495,9 @@ void BasicEditor::handleTab()
   free((void *)buf);
 }
 
+/**
+ * sets the current display font
+ */
 void BasicEditor::setFont(Font* font)
 {
   if (font) {
@@ -492,6 +509,9 @@ void BasicEditor::setFont(Font* font)
   }
 }
 
+/**
+ * sets the current font size
+ */
 void BasicEditor::setFontSize(int size)
 {
   int len = sizeof(styletable) / sizeof(styletable[0]);
@@ -501,6 +521,9 @@ void BasicEditor::setFontSize(int size)
   styleChanged();
 }
 
+/**
+ * display the matching brace
+ */
 void BasicEditor::showMatchingBrace()
 {
   char cursorChar = buffer()->character(cursor_pos_ - 1);
@@ -567,6 +590,9 @@ void BasicEditor::showMatchingBrace()
   }
 }
 
+/**
+ * highlight the given search text
+ */
 void BasicEditor::showFindText(const char *find)
 {
   // copy lowercase search string for high-lighting
@@ -580,6 +606,9 @@ void BasicEditor::showFindText(const char *find)
   style_update_cb(0, textbuf->length(), textbuf->length(), 0, 0, this);
 }
 
+/**
+ * FLTK event handler
+ */
 int BasicEditor::handle(int e)
 {
   int cursorPos = cursor_pos_;
@@ -622,6 +651,9 @@ int BasicEditor::handle(int e)
   return rtn;
 }
 
+/**
+ * displays the current row and col position
+ */
 void BasicEditor::showRowCol()
 {
   int row, col;
@@ -634,6 +666,9 @@ void BasicEditor::showRowCol()
   status->setRowCol(row, col + 1);
 }
 
+/**
+ * sets the cursor to the given line number
+ */
 void BasicEditor::gotoLine(int line)
 {
   int numLines = buffer()->count_lines(0, buffer()->length());
@@ -649,6 +684,9 @@ void BasicEditor::gotoLine(int line)
   status->setRowCol(line, 1);
 }
 
+/**
+ * returns where text selection starts
+ */
 void BasicEditor::getSelStartRowCol(int *row, int *col)
 {
   int start = buffer()->primary_selection()->start();
@@ -662,6 +700,9 @@ void BasicEditor::getSelStartRowCol(int *row, int *col)
   }
 }
 
+/**
+ * returns where text selection ends
+ */
 void BasicEditor::getSelEndRowCol(int *row, int *col)
 {
   int start = buffer()->primary_selection()->start();
@@ -711,16 +752,25 @@ char* BasicEditor::getSelection(Rectangle* rc) {
   return result;
 }
 
+/**
+ * returns the current font size
+ */
 int BasicEditor::getFontSize()
 {
   return (int)styletable[0].size;
 }
 
+/**
+ * returns the current font face name
+ */
 const char* BasicEditor::getFontName()
 {
   return styletable[0].font->name();
 }
 
+/**
+ * returns the BASIC keyword list
+ */
 void BasicEditor::getKeywords(strlib::List& keywords) {
   for (int i = 0; i < numCodeKeywords; i++) {
     keywords.add(new String(code_keywords[i]));
@@ -735,11 +785,17 @@ void BasicEditor::getKeywords(strlib::List& keywords) {
   }
 }
 
+/**
+ * returns the row and col position for the current cursor position
+ */
 void BasicEditor::getRowCol(int *row, int *col)
 {
   position_to_linecol(cursor_pos_, row, col);
 }
 
+/**
+ * find text within the editor buffer
+ */
 bool BasicEditor::findText(const char *find, bool forward, bool updatePos)
 {
   showFindText(find);

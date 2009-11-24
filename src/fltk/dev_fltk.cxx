@@ -696,7 +696,7 @@ void getHomeDir(char *fileName)
   if (home == 0) {
     home = getenv("TMPDIR");
   }
-  sprintf(fileName, "%s/.smallbasic/", home);
+  sprintf(fileName, "%s/.config/smallbasic/", home);
   makedir(fileName);
 }
 

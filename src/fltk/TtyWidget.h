@@ -46,6 +46,7 @@ struct TextSeg {
     this->str = 0;
     this->flags = 0;
     this->color = NO_COLOR;
+    this->next = 0;
   }
 
   ~TextSeg() {
