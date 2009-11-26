@@ -79,7 +79,7 @@ void TtyWidget::draw() {
   int vscroll = vscrollbar->value();
   int hscroll = hscrollbar->value();
   int numRows = textRows < pageRows ? textRows : pageRows;
-  int firstRow = tail + vscroll;
+  int firstRow = tail + vscroll; // from start plus scroll offset
 
   // setup the background colour
   setcolor(color());
@@ -155,7 +155,6 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
       x1 = pointX;
       x2 = markX;
     }
-
     if (row > r1 && row < r2) {
       // entire row
       rc.x(x);
@@ -216,22 +215,31 @@ int TtyWidget::handle(int e) {
   case PUSH:
     if (get_key_state(LeftButton) &&
         (!vscrollbar->visible() || !event_inside(*vscrollbar))) {
+      bool selected = (markX != pointX || markY != pointY);
       markX = pointX = event_x();
-      markY = pointY = (event_y() / lineHeight) + vscrollbar->value();
-      redraw(DAMAGE_HIGHLIGHT);
+      markY = pointY = rowEvent();
+      if (selected) {
+        // end selection
+        redraw(DAMAGE_HIGHLIGHT);
+      }
     }
     break;
 
   case MOVE:
     if (get_key_state(LeftButton)) {
       pointX = event_x();
-      pointY = (event_y() / lineHeight) + vscrollbar->value();
+      pointY = rowEvent();
       redraw(DAMAGE_HIGHLIGHT);
     }
     return 1;
+
+  case MOUSEWHEEL:
+    if (vscrollbar->visible()) {
+      return vscrollbar->handle(e);
+    }
+    break;
   }
 
-  vscrollbar->handle(e);
   return Group::handle(e);
 }
 
@@ -246,8 +254,13 @@ void TtyWidget::layout() {
 
   if (textRows > pageRows && h() > SCROLL_W) {
     vscrollbar->set_visible();
-    vscrollbar->value(vscrollbar->value(), pageRows, 0, textRows);
+    int value = vscrollbar->value();
+    if (value + pageRows > textRows) {
+      // prevent value from extending beyond the buffer range
+      value = textRows - pageRows;
+    }
     vscrollbar->resize(w() - SCROLL_W, 1, SCROLL_W, h());
+    vscrollbar->value(value, pageRows, 0, textRows);
     hscrollX -= SCROLL_W;
     hscrollW -= SCROLL_W;
   }
@@ -258,8 +271,8 @@ void TtyWidget::layout() {
 
   if (width > hscrollW) {
     hscrollbar->set_visible();
-    hscrollbar->value(hscrollbar->value(), hscrollW, 0, width);
     hscrollbar->resize(hscrollX, 1, HSCROLL_W, SCROLL_H);
+    hscrollbar->value(hscrollbar->value(), hscrollW, 0, width);
   }
   else {
     hscrollbar->clear_visible();

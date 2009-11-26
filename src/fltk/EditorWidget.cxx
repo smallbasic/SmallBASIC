@@ -30,6 +30,7 @@
 
 using namespace fltk;
 
+// TODO: replace with settings manager setting
 #define TTY_ROWS 1000
 
 // in MainWindow.cxx
@@ -181,7 +182,7 @@ EditorWidget::~EditorWidget()
 //--Event handler methods-------------------------------------------------------
 
 /**
- *
+ * change the selected text to upper/lower/camel case
  */
 void EditorWidget::change_case(Widget* w, void* eventData)
 {
@@ -234,7 +235,7 @@ void EditorWidget::change_case(Widget* w, void* eventData)
 }
 
 /**
- *
+ * command handler
  */
 void EditorWidget::command_opt(Widget* w, void* eventData)
 {
@@ -242,7 +243,7 @@ void EditorWidget::command_opt(Widget* w, void* eventData)
 }
 
 /**
- *
+ * cut selected text to the clipboard
  */
 void EditorWidget::cut_text(Widget* w, void* eventData)
 {
@@ -250,7 +251,7 @@ void EditorWidget::cut_text(Widget* w, void* eventData)
 }
 
 /**
- *
+ * delete selected text
  */
 void EditorWidget::do_delete(Widget* w, void* eventData)
 {
@@ -258,7 +259,7 @@ void EditorWidget::do_delete(Widget* w, void* eventData)
 }
 
 /**
- *
+ * perform keyword completion
  */
 void EditorWidget::expand_word(Widget* w, void* eventData)
 {
@@ -402,7 +403,7 @@ void EditorWidget::expand_word(Widget* w, void* eventData)
 }
 
 /**
- *
+ * handler for find text command
  */
 void EditorWidget::find(Widget* w, void* eventData)
 {
@@ -410,7 +411,7 @@ void EditorWidget::find(Widget* w, void* eventData)
 }
 
 /**
- *
+ * performs the current command
  */
 void EditorWidget::command(Widget* w, void* eventData)
 {
@@ -446,7 +447,7 @@ void EditorWidget::command(Widget* w, void* eventData)
 }
 
 /**
- *
+ * font menu selection handler
  */
 void EditorWidget::font_name(Widget* w, void* eventData)
 {
@@ -455,7 +456,7 @@ void EditorWidget::font_name(Widget* w, void* eventData)
 }
 
 /**
- *
+ * sub/func selection list handler
  */
 void EditorWidget::func_list(Widget* w, void* eventData)
 {
@@ -478,7 +479,7 @@ void EditorWidget::func_list(Widget* w, void* eventData)
 }
 
 /**
- *
+ * goto-line command handler
  */
 void EditorWidget::goto_line(Widget* w, void* eventData)
 {
@@ -486,7 +487,7 @@ void EditorWidget::goto_line(Widget* w, void* eventData)
 }
 
 /**
- *
+ * paste clipboard text onto the buffer
  */
 void EditorWidget::paste_text(Widget* w, void* eventData)
 {
@@ -529,7 +530,7 @@ void EditorWidget::rename_word(Widget* w, void* eventData) {
 }
 
 /**
- *
+ * replace the next find occurance
  */
 void EditorWidget::replace_next(Widget* w, void* eventData)
 {
@@ -560,7 +561,7 @@ void EditorWidget::replace_next(Widget* w, void* eventData)
 }
 
 /**
- *
+ * save file menu command handler
  */
 void EditorWidget::save_file(Widget* w, void* eventData)
 {
@@ -575,7 +576,7 @@ void EditorWidget::save_file(Widget* w, void* eventData)
 }
 
 /**
- *
+ * prevent the tty window from scrolling with new data
  */
 void EditorWidget::scroll_lock(Widget* w, void* eventData)
 {
@@ -583,7 +584,7 @@ void EditorWidget::scroll_lock(Widget* w, void* eventData)
 }
 
 /**
- *
+ * set colour menu command handler
  */
 void EditorWidget::set_color(Widget* w, void* eventData)
 {
@@ -605,7 +606,7 @@ void EditorWidget::set_color(Widget* w, void* eventData)
 }
 
 /**
- *
+ * replace text menu command handler
  */
 void EditorWidget::show_replace(Widget* w, void* eventData)
 {

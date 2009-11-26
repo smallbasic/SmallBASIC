@@ -220,6 +220,11 @@ private:
     return (h() - 1) / lineHeight;
   }
 
+  // returns the selected row within the circular buffer
+  int rowEvent() {
+    return (event_y() / lineHeight) + tail + vscrollbar->value();
+  }
+
   // buffer management
   Row* buffer;
   int head; // current head of buffer

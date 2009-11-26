@@ -68,18 +68,24 @@ bool isvar(int c) {
   return (isalnum(c) || c == '_');
 }
 
-// 'compare_keywords()' - Compare two keywords
+/**
+ * Compare two keywords
+ */
 int compare_keywords(const void *a, const void *b)
 {
   return (strcasecmp(*((const char **)a), *((const char **)b)));
 }
 
-// 'style_unfinished_cb()' - Update unfinished styles.
+/**
+ * Update unfinished styles.
+ */
 void style_unfinished_cb(int, void *)
 {
 }
 
-// 'style_update()' - Update the style buffer
+/**
+ * Update the style buffer
+ */
 void style_update_cb(int pos,      // I - Position of update
                      int nInserted,  // I - Number of inserted chars
                      int nDeleted, // I - Number of deleted chars
