@@ -15,13 +15,6 @@
 #include "TtyWidget.h"
 
 //
-// scrollbar callback to redraw upon scroll changes
-//
-void scrollbar_callback(Widget* scrollBar, void* ttyWidget) {
-  ((TtyWidget*) ttyWidget)->redraw(DAMAGE_ALL);
-}
-
-//
 // TtyWidget constructor
 //
 TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
@@ -43,12 +36,10 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   vscrollbar = new Scrollbar(w - SCROLL_W, 1, SCROLL_W, h);
   vscrollbar->set_vertical();
   vscrollbar->user_data(this);
-  vscrollbar->callback(scrollbar_callback);
 
   // horizontal scrollbar scrolls in pixel units
   hscrollbar = new Scrollbar(w - HSCROLL_W - SCROLL_W, 1, HSCROLL_W, SCROLL_H);
   vscrollbar->user_data(this);
-  vscrollbar->callback(scrollbar_callback);
 
   end();
 }

@@ -105,7 +105,7 @@ void MainWindow::statusMsg(RunMessage runMessage, const char *statusMessage) {
   EditorWidget* editWidget = getEditor();
   if (editWidget) {
     editWidget->statusMsg(statusMessage);
-    editWidget->runMsg(runMessage);
+    editWidget->runState(runMessage);
   }
 }
 
@@ -121,7 +121,7 @@ void MainWindow::pathMessage(const char *file)
 {
   char message[MAX_PATH];
   sprintf(message, "File not found: %s", file);
-  statusMsg(msg_err, message);
+  statusMsg(rs_err, message);
 }
 
 void MainWindow::showEditTab(EditorWidget* editWidget)
@@ -218,7 +218,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
 
   if (editWidget) {
     editWidget->readonly(true);
-    editWidget->runMsg(msg_run);
+    editWidget->runState(rs_run);
     tty = editWidget->tty;
     breakToLine = editWidget->isBreakToLine();
     logPrint = editWidget->isLogPrint();
@@ -308,12 +308,12 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     closeForm();  // unhide the error
     if (editWidget) {
       showEditTab(editWidget);
-      editWidget->runMsg(was_break ? msg_none : msg_err);
+      editWidget->runState(was_break ? rs_ready : rs_err);
       editWidget->statusMsg(gsb_last_errmsg);
     }
   }
   else if (editWidget) {
-    editWidget->runMsg(msg_none);
+    editWidget->runState(rs_ready);
   }
 
   if (editWidget) {
@@ -636,10 +636,10 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
         sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
                 filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
         runMode = run_state;
-        editWidget->runMsg(msg_run);
+        editWidget->runState(rs_run);
         sprintf(path, "%s/%s", packageHome, (const char *)eventData);
         int success = sbasic_main(path);
-        editWidget->runMsg(success ? msg_none : msg_err);
+        editWidget->runState(success ? rs_ready : rs_err);
         editWidget->loadFile(filename);
         editor->insert_position(pos);
         editor->show_insert_position();
@@ -659,10 +659,10 @@ void MainWindow::tool_plugin(Widget* w, void* eventData)
   if (runMode == edit_state) {
     char path[MAX_PATH];
     sprintf(opt_command, "%s/%s", packageHome, pluginHome);
-    statusMsg(msg_none, (const char *)eventData);
+    statusMsg(rs_ready, (const char *)eventData);
     sprintf(path, "%s/%s", packageHome, (const char *)eventData);
     basicMain(0, path, true);
-    statusMsg(msg_none, 0);
+    statusMsg(rs_ready, 0);
     opt_command[0] = 0;
   }
   else {
@@ -1409,7 +1409,7 @@ void MainWindow::execLink(const char *file)
     strcpy(df.name, file);
     if (http_open(&df) == 0) {
       sprintf(localFile, "Failed to open URL: %s", file);
-      statusMsg(msg_none, localFile);
+      statusMsg(rs_ready, localFile);
       return;
     }
 
@@ -1437,7 +1437,7 @@ void MainWindow::execLink(const char *file)
         sprintf(path, "file:%s", localFile);
       }
       siteHome.append(df.name, df.drv_dw[1]);
-      statusMsg(msg_none, siteHome.toString());
+      statusMsg(rs_ready, siteHome.toString());
       updateForm(path);
     }
     return;
@@ -1473,7 +1473,7 @@ void MainWindow::execLink(const char *file)
     }
   }
   if (access(file, 0) == 0) {
-    statusMsg(msg_none, file);
+    statusMsg(rs_ready, file);
     if (execFile) {
       addHistory(file);
       basicMain(0, file, false);

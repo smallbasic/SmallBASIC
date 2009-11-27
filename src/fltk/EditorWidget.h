@@ -44,9 +44,9 @@ EditorWidget* get_editor();
   }
 
 enum RunMessage {
-  msg_err,
-  msg_run,
-  msg_none
+  rs_err,
+  rs_run,
+  rs_ready
 };
 
 enum StyleField {
@@ -115,7 +115,7 @@ public:
   void gotoLine(int line);
   void loadFile(const char *newfile);
   void restoreEdit();
-  void runMsg(RunMessage runMessage);
+  void runState(RunMessage runMessage);
   void saveConfig();
   void saveSelection(const char* path);
   void setHideIde();
@@ -167,8 +167,8 @@ private:
   Input* commandText;
   Widget* rowStatus;
   Widget* colStatus;
-  Widget* runStatus;
-  Widget* modStatus;
+  Button* runStatus;
+  Button* modStatus;
   Choice* funcList;
 
   ToggleButton* logPrintBn;
@@ -178,7 +178,7 @@ private:
 
   // same order as display items
   CommandOpt commandOpt;
-  Widget* commandChoice;
+  Button* commandChoice;
 
   strlib::String commandBuffer;
 };

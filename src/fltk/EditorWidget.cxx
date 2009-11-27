@@ -94,9 +94,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // create the editor toolbar
   w -= 4;
 
-  // command selection
-  commandOpt = cmd_find;
-
   // editor status bar
   Group *statusBar = new Group(2, tty->b() + 2, w, MNU_HEIGHT);
   statusBar->box(NO_BOX);
@@ -116,7 +113,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // sub-func jump droplist
   funcList = new Choice(breakLineBn->x() - (func_bn_w + 2), 2,
                         func_bn_w, st_h);
-  funcList->callback(func_list_cb, 0);
   funcList->labelfont(HELVETICA);
   funcList->begin();
   new Item();
@@ -125,14 +121,13 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 
   colStatus = new Widget(funcList->x() - (st_w + 2), 2, st_w, st_h);
   rowStatus = new Widget(colStatus->x() - (st_w + 2), 2, st_w, st_h);
-  runStatus = new Widget(rowStatus->x() - (st_w + 2), 2, st_w, st_h);
-  modStatus = new Widget(runStatus->x() - (st_w + 2), 2, st_w, st_h);
+  runStatus = new Button(rowStatus->x() - (st_w + 2), 2, st_w, st_h);
+  modStatus = new Button(runStatus->x() - (st_w + 2), 2, st_w, st_h);
 
-  commandChoice = new Widget(0, 2, 80, st_h);
+  commandChoice = new Button(0, 2, 80, st_h);
   commandText = new Input(commandChoice->r() + 2, 2,
                           modStatus->x() - commandChoice->r() - 4, st_h);
   commandText->align(ALIGN_LEFT | ALIGN_CLIP);
-  commandText->callback(command_cb, (void*) 1);
   commandText->when(WHEN_ENTER_KEY_ALWAYS);
   commandText->labelfont(HELVETICA);
 
@@ -150,10 +145,18 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
 
   setEditorColor(WHITE, true);
   loadConfig();
-  setCommand(cmd_find);
 
-  // set button callbacks
+  // command selection
+  setCommand(cmd_find);
+  runState(rs_ready);
+
+  // button callbacks
   lockBn->callback(scroll_lock_cb);
+  modStatus->callback(save_file_cb);
+  runStatus->callback(MainWindow::run_cb);
+  commandChoice->callback(command_cb, (void*) 1);
+  commandText->callback(command_cb, (void*) 1);
+  funcList->callback(func_list_cb, 0);
 
   // setup icons
   logPrintBn->label("@i;@b;T"); // italic bold T
@@ -165,8 +168,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   commandText->tooltip("Press Ctrl+f or Ctrl+Shift+f to find again");
   rowStatus->tooltip("Row");
   colStatus->tooltip("Column");
-  runStatus->tooltip("Run status");
-  modStatus->tooltip("Modified status");
+  runStatus->tooltip("Run or BREAK");
+  modStatus->tooltip("Save modified");
   funcList->tooltip("Position the cursor to a FUNC/SUB");
   logPrintBn->tooltip("Display PRINT statements in the log window");
   lockBn->tooltip("Prevent log window auto-scrolling");
@@ -950,18 +953,20 @@ void EditorWidget::setRowCol(int row, int col)
 /**
  * displays the current run-mode flag
  */
-void EditorWidget::runMsg(RunMessage runMessage)
+void EditorWidget::runState(RunMessage runMessage)
 {
+  runStatus->callback(MainWindow::run_cb);
   const char* msg = 0;
   switch (runMessage) {
-  case msg_err:
+  case rs_err:
     msg = "ERR";
     break;
-  case msg_run:
-    msg = "RUN";
+  case rs_run:
+    msg = "BRK";
+    runStatus->callback(MainWindow::run_break_cb);
     break;
   default:
-    msg = "";
+    msg = "RUN";
   }
   runStatus->copy_label(msg);
   runStatus->redraw();
@@ -1333,7 +1338,7 @@ void EditorWidget::setCommand(CommandOpt command) {
   commandOpt = command;
   switch (command) {
   case cmd_find:
-    commandChoice->label("Find:");
+    commandChoice->label("@search; Find:");
     break;
   case cmd_find_inc:
     commandChoice->label("Inc Find:");
@@ -1406,6 +1411,7 @@ void EditorWidget::setFont(Font* font)
 void EditorWidget::setModified(bool dirty)
 {
   this->dirty = dirty;
+  modStatus->when(dirty ? WHEN_CHANGED : WHEN_NEVER);
   modStatus->label(dirty ? "MOD" : "");
   modStatus->redraw();
 }
