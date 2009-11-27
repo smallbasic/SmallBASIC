@@ -43,7 +43,8 @@ var_num_t* mat_toc(var_t *v, int32 *rows, int32 *cols)
 
   m = NULL;
 
-  if (v->v.a.maxdim > 2) {
+  if (!v || v->v.a.maxdim > 2) {
+    *rows = *cols = 0;
     err_matdim();
     return NULL;
   }
