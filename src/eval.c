@@ -42,9 +42,15 @@ var_num_t* mat_toc(var_t *v, int32 *rows, int32 *cols)
   var_num_t *m;
 
   m = NULL;
+  *rows = *cols = 0;
 
-  if (!v || v->v.a.maxdim > 2) {
-    *rows = *cols = 0;
+  if (!v) {
+    // uninitialised variable
+    return NULL;
+  }
+
+  if (v->v.a.maxdim > 2) {
+    // too many dimensions
     err_matdim();
     return NULL;
   }

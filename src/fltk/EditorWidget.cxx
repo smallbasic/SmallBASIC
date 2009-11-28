@@ -149,6 +149,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // command selection
   setCommand(cmd_find);
   runState(rs_ready);
+  setModified(false);
 
   // button callbacks
   lockBn->callback(scroll_lock_cb);
@@ -669,7 +670,7 @@ void EditorWidget::readonly(bool is_readonly)
     // cannot set writable since file is readonly
     is_readonly = true;
   }
-  modStatus->label(is_readonly ? "RO" : "");
+  modStatus->label(is_readonly ? "RO" : "@line");
   modStatus->redraw();
   editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR :
                        TextDisplay::NORMAL_CURSOR);
@@ -1412,7 +1413,7 @@ void EditorWidget::setModified(bool dirty)
 {
   this->dirty = dirty;
   modStatus->when(dirty ? WHEN_CHANGED : WHEN_NEVER);
-  modStatus->label(dirty ? "MOD" : "");
+  modStatus->label(dirty ? "MOD" : "@line");
   modStatus->redraw();
 }
 
