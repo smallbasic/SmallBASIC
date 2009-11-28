@@ -424,6 +424,10 @@ void EditorWidget::command(Widget* w, void* eventData)
     bool forward = (int) eventData;
     bool updatePos = (commandOpt != cmd_find_inc);
 
+    if (event_button() == 3) {
+      forward = 0;
+    }
+
     switch (commandOpt) {
     case cmd_find_inc:
     case cmd_find:
