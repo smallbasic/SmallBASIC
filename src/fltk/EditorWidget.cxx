@@ -108,10 +108,15 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   logPrintBn = new ToggleButton(w - (bn_w + 2), 2, bn_w, st_h);
   lockBn = new ToggleButton(logPrintBn->x() - (bn_w + 2), 2, bn_w, st_h);
   hideIdeBn = new ToggleButton(lockBn->x() - (bn_w + 2), 2, bn_w, st_h);
-  breakLineBn = new ToggleButton(hideIdeBn->x() - (bn_w + 2), 2, bn_w, st_h);
+  gotoLineBn = new ToggleButton(hideIdeBn->x() - (bn_w + 2), 2, bn_w, st_h);
+
+  logPrintBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
+  lockBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
+  hideIdeBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
+  gotoLineBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
 
   // sub-func jump droplist
-  funcList = new Choice(breakLineBn->x() - (func_bn_w + 2), 2,
+  funcList = new Choice(gotoLineBn->x() - (func_bn_w + 2), 2,
                         func_bn_w, st_h);
   funcList->labelfont(HELVETICA);
   funcList->begin();
@@ -158,12 +163,14 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   commandChoice->callback(command_cb, (void*) 1);
   commandText->callback(command_cb, (void*) 1);
   funcList->callback(func_list_cb, 0);
+  logPrintBn->callback(un_select_cb, (void*) hideIdeBn);
+  hideIdeBn->callback(un_select_cb, (void*) logPrintBn);
 
   // setup icons
   logPrintBn->label("@i;@b;T"); // italic bold T
   lockBn->label("@||;"); // vertical bars
   hideIdeBn->label("@circle;"); // large dot
-  breakLineBn->label("@->;"); // right arrow
+  gotoLineBn->label("@>;"); // right arrow (goto)
 
   // setup tooltips
   commandText->tooltip("Press Ctrl+f or Ctrl+Shift+f to find again");
@@ -175,7 +182,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   logPrintBn->tooltip("Display PRINT statements in the log window");
   lockBn->tooltip("Prevent log window auto-scrolling");
   hideIdeBn->tooltip("Hide the editor while program is running");
-  breakLineBn->tooltip("Position to the last program line after BREAK");
+  gotoLineBn->tooltip("Position the cursor to the last program line after BREAK");
 }
 
 EditorWidget::~EditorWidget()
@@ -425,6 +432,7 @@ void EditorWidget::command(Widget* w, void* eventData)
     bool updatePos = (commandOpt != cmd_find_inc);
 
     if (event_button() == 3) {
+      // right click
       forward = 0;
     }
 
@@ -633,6 +641,14 @@ void EditorWidget::show_replace(Widget* w, void* eventData)
 void EditorWidget::undo(Widget* w, void* eventData)
 {
   TextEditor::kf_undo(0, editor);
+}
+
+/**
+ * de-select the button specified in the eventData
+ */
+void EditorWidget::un_select(Widget* w, void* eventData)
+{
+  ((Button*) eventData)->value(false);
 }
 
 //--Public methods--------------------------------------------------------------
@@ -1355,7 +1371,7 @@ void EditorWidget::setCommand(CommandOpt command) {
     commandChoice->label("With:");
     break;
   case cmd_goto:
-    commandChoice->label("Goto:");
+    commandChoice->label("@>; Goto:");
     break;
   }
   commandChoice->redraw();

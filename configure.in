@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.10.5)
+AM_INIT_AUTOMAKE(smallbasic, 0.10.6)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -81,6 +81,12 @@ function checkDebugMode() {
 
 function checkPCRE() {
    AC_CHECK_PROG(have_pcre, pcre-config, [yes], [no])
+
+   dnl supported under linux only for now
+   case "${host_os}" in
+     *mingw* | pw32* | cygwin*)
+     have_pcre="no"
+   esac
 
    if test "${have_pcre}" = "yes" ; then
      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])

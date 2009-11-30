@@ -10,13 +10,13 @@
 ;General
   ;Name and file
   Name "SmallBASIC"
-  OutFile "sbasic_0.10.2.exe"
+  OutFile "sbasic_0.10.6.exe"
 
   ;Default installation folder
-  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.10.2"
+  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.10.6"
   
   ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.10.2" ""
+  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.10.6" ""
 
 ;--------------------------------
 ;Interface Settings
@@ -40,10 +40,10 @@
 
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcut"
-  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.10.2"
+  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.10.6"
   SetOutPath $INSTDIR
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.2\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.2\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.6\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.6\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "Quick Launch Shortcut"
@@ -76,7 +76,7 @@ Section "SmallBASIC" SecMain
   File "..\..\plugins\*.*"
 
   ;Store installation folder
-  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.10.2" "" $INSTDIR
+  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.10.6" "" $INSTDIR
   
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -98,15 +98,15 @@ SectionEnd
 
 Section "Uninstall"
   ; Remove registry keys
-  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.10.2"
+  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.10.6"
 
   ; Remove shortcuts, if any
-  Delete "$SMPROGRAMS\SmallBASIC 0.10.2\*.*"
+  Delete "$SMPROGRAMS\SmallBASIC 0.10.6\*.*"
   Delete "$QUICKLAUNCH\SmallBASIC.lnk"
   Delete "$DESKTOP\SmallBASIC.lnk"
 
   ; Remove directories used
-  RMDir "$SMPROGRAMS\SmallBASIC 0.10.2"
+  RMDir "$SMPROGRAMS\SmallBASIC 0.10.6"
   RMDir /r "$INSTDIR"
 
 SectionEnd

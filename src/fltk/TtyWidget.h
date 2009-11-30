@@ -51,7 +51,7 @@ struct TextSeg {
 
   ~TextSeg() {
     if (str) {
-      free(str);
+      delete[] str;
     }
   }
 
@@ -64,7 +64,14 @@ struct TextSeg {
   }
 
   void setText(const char* str, int n) {
-    this->str = (!str || !n) ? 0 : strndup(str, n);
+    if ((!str || !n)) {
+      this->str = 0;
+    }
+    else {
+      this->str = new char[n + 1];
+      strncpy(this->str, str, n);
+      this->str[n] = 0;
+    }
   }
 
   // set the flag value

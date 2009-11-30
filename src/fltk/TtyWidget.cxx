@@ -79,7 +79,7 @@ void TtyWidget::draw() {
   setcolor(BLACK);
   drawline(0, 0, w(), 0);
   setcolor(labelcolor());
-  setfont(labelfont(), labelsize());
+  setfont(labelfont(), (int) labelsize());
 
   int pageWidth = 0;
   for (int row = firstRow, rows = 0, y = rc.y() + lineHeight;
@@ -96,7 +96,7 @@ void TtyWidget::draw() {
       if (seg->str) {
         if (invert) {
           setcolor(labelcolor());
-          fillrect(x, (y-lineHeight) + getdescent(), width, lineHeight);
+          fillrect(x, (y-lineHeight) + (int) getdescent(), width, lineHeight);
           setcolor(color());
           drawtext(seg->str, x, y);
           setcolor(labelcolor());
@@ -130,7 +130,7 @@ void TtyWidget::draw() {
 //
 void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
   if (markX != pointX || markY != pointY) {
-    Rectangle rc(0, y - getascent(), 0, lineHeight);
+    Rectangle rc(0, y - (int) getascent(), 0, lineHeight);
     int r1 = markY;
     int r2 = pointY;
     int x1 = markX;
@@ -161,7 +161,7 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
 
       // find start of selection
       while (x < x1 && i < len) {
-        x += getwidth(seg->str + (i++), 1);
+        x += (int) getwidth(seg->str + (i++), 1);
       }
       rc.x(x);
 
@@ -170,7 +170,7 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
         if (s) {
           s->append(seg->str[i]);
         }
-        x += getwidth(seg->str + (i++), 1);
+        x += (int) getwidth(seg->str + (i++), 1);
       }
       rc.set_r(x);
     }
@@ -185,7 +185,7 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
         if (s) {
           s->append(seg->str[i]);
         }
-        x += getwidth(seg->str + (i++), 1);
+        x += (int) getwidth(seg->str + (i++), 1);
       }
       rc.set_r(x);
     }
@@ -202,28 +202,36 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
 // process mouse messages
 //
 int TtyWidget::handle(int e) {
+  static bool leftButtonDown = false;
   switch (e) {
   case PUSH:
-    if (get_key_state(LeftButton) &&
+    if (event_button() == 1 &&
         (!vscrollbar->visible() || !event_inside(*vscrollbar))) {
       bool selected = (markX != pointX || markY != pointY);
       markX = pointX = event_x();
       markY = pointY = rowEvent();
       if (selected) {
-        // end selection
+        // draw end selection
         redraw(DAMAGE_HIGHLIGHT);
       }
+      leftButtonDown = true;
+      return 1; // become belowmouse to receive RELEASE event
     }
     break;
 
+  case DRAG:
   case MOVE:
-    if (get_key_state(LeftButton)) {
+    if (leftButtonDown) {
       pointX = event_x();
       pointY = rowEvent();
       redraw(DAMAGE_HIGHLIGHT);
     }
     return 1;
 
+  case RELEASE:
+    leftButtonDown = false;
+    return 1;
+    
   case MOUSEWHEEL:
     if (vscrollbar->visible()) {
       return vscrollbar->handle(e);
@@ -305,14 +313,14 @@ bool TtyWidget::copySelection() {
     }
     if (rowText.length()) {
       selection.append(rowText);
-      selection.append("\n");
+      selection.append("\r\n");
     }
   }
 
   bool result = selection.length() > 0;
   if (result) {
     const char *copy = selection.toString();
-    fltk::copy(copy, strlen(copy), 0);
+    fltk::copy(copy, strlen(copy), true);
   }
   return result;
 }

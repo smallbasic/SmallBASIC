@@ -1,9 +1,19 @@
+smallbasic (0.10.6) unstable; urgency=low
+
+  * Implemented TtyWidget
+
+  * Fixes for display of 64 bit float variables
+
+  * Fixes for matrix inverse function
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Wed, 19 Aug 2009 09:45:25 +1000
+
 smallbasic (0.10.5) unstable; urgency=low
 
   * Refer to source ChangeLog file
 
  -- Chris Warren-Smith <cwarrensmith@gmail.com>  Wed, 19 Aug 2009 09:45:25 +1000
-  
+
 smallbasic (0.10.4) unstable; urgency=low
 
   * Implemented editor colour selection.

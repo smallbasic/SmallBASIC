@@ -95,6 +95,7 @@ public:
   CALLBACK_METHOD(set_color);
   CALLBACK_METHOD(show_replace);
   CALLBACK_METHOD(undo);
+  CALLBACK_METHOD(un_select);
 
   static void changed_cb(int, int inserted, int deleted, int, const char *, void *v) {
     ((EditorWidget *) v)->doChange(inserted, deleted);
@@ -130,7 +131,7 @@ public:
   TtyWidget* tty;
   bool readonly();
   void readonly(bool is_readonly);
-  bool isBreakToLine() { return breakLineBn->value(); }
+  bool isBreakToLine() { return gotoLineBn->value(); }
   bool isHideIDE() { return hideIdeBn->value(); }
   bool isLoading() { return loading; }
   bool isLogPrint() { return logPrintBn->value(); }
@@ -174,7 +175,7 @@ private:
   ToggleButton* logPrintBn;
   ToggleButton* lockBn;
   ToggleButton* hideIdeBn;
-  ToggleButton* breakLineBn;
+  ToggleButton* gotoLineBn;
 
   // same order as display items
   CommandOpt commandOpt;

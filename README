@@ -12,6 +12,21 @@ Download, build and install FLTK, see www.fltk.org.
 > make
 > sudo make install
 
+Setup instructions for building FLTK version under cygwin
+
+Download and install cygwin
+--> http://www.cygwin.com/
+
+Download and install MingW
+--> http://sourceforge.net/projects/mingw/
+
+Setup $HOME/.bash_profile:
+
+--cut-here--
+ export PATH="/cygdrive/c/MinGW/bin:/usr/local/bin:/bin:"
+ alias make=mingw32-make
+--cut-here--
+
 For GTK version
 > ./configure --enable-gtk
 > make
