@@ -110,10 +110,13 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   hideIdeBn = new ToggleButton(lockBn->x() - (bn_w + 2), 2, bn_w, st_h);
   gotoLineBn = new ToggleButton(hideIdeBn->x() - (bn_w + 2), 2, bn_w, st_h);
 
+#ifdef __MINGW32__
+  // fixup alignment under windows
   logPrintBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
   lockBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
   hideIdeBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
   gotoLineBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
+#endif
 
   // sub-func jump droplist
   funcList = new Choice(gotoLineBn->x() - (func_bn_w + 2), 2,
