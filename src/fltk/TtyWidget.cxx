@@ -225,6 +225,17 @@ int TtyWidget::handle(int e) {
       pointX = event_x();
       pointY = rowEvent();
       redraw(DAMAGE_HIGHLIGHT);
+      if (vscrollbar->visible()) {
+        // drag to scroll up or down
+        int value = vscrollbar->value();
+        if (event_y() < 0 && value > 0) {
+          vscrollbar->value(value - 1);
+        }
+        else if ((event_y() > h()) &&
+                 (value + getPageRows() < getTextRows())) {
+          vscrollbar->value(value + 1);
+        }
+      }
     }
     return 1;
 
