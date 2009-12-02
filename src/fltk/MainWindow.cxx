@@ -999,8 +999,8 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Program/&Break", CTRL + 'b', run_break_cb);
   m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
   m->add("&Program/&Command", F10Key, set_options_cb);
-  m->add("&Help/&Help Contents", F1Key, help_contents_cb);
-  m->add("&Help/_&Program Help", F11Key, help_app_cb);
+  m->add("&Help/_&Help Contents", F1Key, help_contents_cb);
+  m->add("&Help/&Program Help", F11Key, help_app_cb);
   m->add("&Help/_&Home Page", 0, help_home_cb);
   m->add("&Help/&About SmallBASIC", F12Key, help_about_cb);
 
