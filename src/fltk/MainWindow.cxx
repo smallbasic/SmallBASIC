@@ -389,9 +389,7 @@ void MainWindow::quit(Widget* w, void* eventData)
 
 void MainWindow::help_home(Widget* w, void* eventData)
 {
-  char path[MAX_PATH];
-  strcpy(path, "http://smallbasic.sf.net");
-  browseFile(path);
+  browseFile("http://smallbasic.sf.net");
 }
 
 /**
@@ -466,18 +464,7 @@ void MainWindow::help_contents(Widget* w, void* eventData)
 
 void MainWindow::help_app(Widget* w, void* eventData)
 {
-  const char *helpFile = dev_getenv("APP_HELP");
-  if (helpFile) {
-    if (access(helpFile, R_OK) == 0) {
-      getHelp()->loadFile(helpFile);
-    }
-    else {
-      getHelp()->loadBuffer(helpFile);
-    }
-  }
-  else {
-    getHelp()->loadBuffer("APP_HELP env variable not found");
-  }
+  browseFile("http://smallbasic.sourceforge.net/?q=node/955");
 }
 
 void MainWindow::help_about(Widget* w, void* eventData)
