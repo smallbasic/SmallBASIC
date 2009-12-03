@@ -205,9 +205,12 @@ int TtyWidget::handle(int e) {
   static bool leftButtonDown = false;
   switch (e) {
   case PUSH:
-    if (event_button() == 1 &&
-        (!vscrollbar->visible() || !event_inside(*vscrollbar))) {
+    if (!vscrollbar->visible() || !event_inside(*vscrollbar)) {
       bool selected = (markX != pointX || markY != pointY);
+      if (selected && event_button() == 3) {
+        // right click to copy selection
+        copySelection();
+      }
       markX = pointX = event_x();
       markY = pointY = rowEvent();
       if (selected) {
