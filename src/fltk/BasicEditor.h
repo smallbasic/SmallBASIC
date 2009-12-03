@@ -19,6 +19,8 @@
 
 using namespace fltk;
 
+extern "C" void trace(const char* format, ...);
+
 bool isvar(int c);
 
 struct StatusBar {

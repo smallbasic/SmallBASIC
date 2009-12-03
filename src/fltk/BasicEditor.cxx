@@ -662,13 +662,20 @@ int BasicEditor::handle(int e)
  */
 void BasicEditor::showRowCol()
 {
-  int row, col;
+  int row = -1;
+  int col = 0;
 
   if (!position_to_linecol(cursor_pos_, &row, &col)) {
-    // pageup/pagedown
-    layout();
+    // This is a workaround for a bug in the FLTK TextDisplay widget
+    // where linewrapping causes a mis-calculation of line offsets which
+    // sometimes prevents the display of the last few lines of text.
+    insert_position(0);
+    scroll(0, 0);
+    insert_position(buffer()->length());
+    scroll(count_lines(0, buffer()->length(), 1), 0);
     position_to_linecol(cursor_pos_, &row, &col);
   }
+
   status->setRowCol(row, col + 1);
 }
 
