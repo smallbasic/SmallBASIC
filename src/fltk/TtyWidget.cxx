@@ -207,7 +207,7 @@ int TtyWidget::handle(int e) {
   case PUSH:
     if (!vscrollbar->visible() || !event_inside(*vscrollbar)) {
       bool selected = (markX != pointX || markY != pointY);
-      if (selected && event_button() == 3) {
+      if (selected && event_button() == RightButton) {
         // right click to copy selection
         copySelection();
       }
