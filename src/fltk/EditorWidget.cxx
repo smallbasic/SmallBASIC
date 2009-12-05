@@ -434,7 +434,7 @@ void EditorWidget::command(Widget* w, void* eventData)
     bool forward = (int) eventData;
     bool updatePos = (commandOpt != cmd_find_inc);
 
-    if (event_button() == 3) {
+    if (event_button() == RightButton) {
       // right click
       forward = 0;
     }
@@ -1141,15 +1141,16 @@ void EditorWidget::createFuncList()
  */
 void EditorWidget::doChange(int inserted, int deleted)
 {
-  if (loading) {
-    return;  // do nothing while file load in progress
-  }
+  if (!loading) {
+    // do nothing while file load in progress
+    if (inserted || deleted) {
+      dirty = 1;
+    }
 
-  if (inserted || deleted) {
-    dirty = 1;
+    if (!readonly()) {
+      setModified(dirty);
+    }
   }
-
-  setModified(dirty);
 }
 
 /**
