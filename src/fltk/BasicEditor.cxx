@@ -620,8 +620,22 @@ int BasicEditor::handle(int e)
   int cursorPos = cursor_pos_;
   char spaces[250];
   int indent;
+  bool navigateKey = false;
 
-  if (readonly && (e == KEY || e == PASTE)) {
+  switch (event_key()) {
+  case HomeKey:
+  case LeftKey:
+  case UpKey:
+  case RightKey:
+  case DownKey:
+  case PageUpKey:
+  case PageDownKey:
+  case EndKey:
+    navigateKey = true;
+  }
+
+  if (readonly && ((e == KEY && !navigateKey) || e == PASTE)) {
+    // prevent buffer modification when in readonly state
     return 0;
   }
 
