@@ -442,13 +442,8 @@ void MainWindow::help_contents(Widget* w, void* eventData)
     EditorWidget* editWidget = getEditor();
     if (editWidget && event_key() != 0) {
       // scan for help context
-      TextEditor *editor = editWidget->editor;
-      TextBuffer *tb = editor->buffer();
-      int pos = editor->insert_position();
-      int start = tb->word_start(pos);
-      int end = tb->word_end(pos);
-      char *selection = tb->text_range(start, end);
-
+      int start, end;      
+      char *selection = editWidget->getSelection(&start, &end);
       strcpy(opt_command, selection);
       free((void *)selection);
     }

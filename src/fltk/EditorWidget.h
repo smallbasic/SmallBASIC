@@ -103,18 +103,19 @@ public:
 
   int handle(int e);
   bool isDirty() { return dirty; }
-  const char *getFilename() { return filename; }
+  const char* getFilename() { return filename; }
   bool checkSave(bool discard);
   void copyText();
   void doSaveFile(const char *newfile);
   void fileChanged(bool loadfile);
   void focusWidget();
   int getFontSize();
-  void getRowCol(int *row, int *col);
-  void getSelEndRowCol(int *row, int *col);
-  void getSelStartRowCol(int *row, int *col);
+  void getRowCol(int* row, int* col);
+  char* getSelection(int* start, int* end);
+  void getSelEndRowCol(int* row, int* col);
+  void getSelStartRowCol(int* row, int* col);
   void gotoLine(int line);
-  void loadFile(const char *newfile);
+  void loadFile(const char* newfile);
   void restoreEdit();
   void runState(RunMessage runMessage);
   void saveConfig();
@@ -124,7 +125,7 @@ public:
   void setIndentLevel(int level);
   void setRowCol(int row, int col);
   void showPath();
-  void statusMsg(const char *msg);
+  void statusMsg(const char* msg);
   void updateConfig(EditorWidget* current);
 
   BasicEditor *editor;

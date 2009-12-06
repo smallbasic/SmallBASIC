@@ -200,20 +200,9 @@ EditorWidget::~EditorWidget()
  */
 void EditorWidget::change_case(Widget* w, void* eventData)
 {
-  int start, end;
   TextBuffer *tb = editor->buffer();
-  char *selection;
-
-  if (tb->selected()) {
-    selection = (char *)tb->selection_text();
-    tb->selection_position(&start, &end);
-  }
-  else {
-    int pos = editor->insert_position();
-    start = tb->word_start(pos);
-    end = tb->word_end(pos);
-    selection = (char *)tb->text_range(start, end);
-  }
+  int start, end;
+  char *selection = getSelection(&start, &end);
   int len = strlen(selection);
   enum { up, down, mixed } curcase = isupper(selection[0]) ? up : down;
 
@@ -813,9 +802,31 @@ void EditorWidget::gotoLine(int line)
 /**
  * returns the row and col position for the current cursor position
  */
-void EditorWidget::getRowCol(int *row, int *col)
+void EditorWidget::getRowCol(int* row, int* col)
 {
   return ((BasicEditor *) editor)->getRowCol(row, col);
+}
+
+/**
+ * returns the selected text or the word around the cursor if there
+ * is no current selection. caller must free the returned value
+ */
+char* EditorWidget::getSelection(int* start, int* end) {
+  char *result = 0;
+ 
+  TextBuffer *tb = editor->buffer();
+  if (tb->selected()) {
+    result = tb->selection_text();
+    tb->selection_position(start, end);
+  }
+  else {
+    int pos = editor->insert_position();
+    *start = tb->word_start(pos);
+    *end = tb->word_end(pos);
+    result = tb->text_range(*start, *end);
+  }
+
+  return result;
 }
 
 /**
