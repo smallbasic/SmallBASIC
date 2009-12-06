@@ -205,7 +205,8 @@ int TtyWidget::handle(int e) {
   static bool leftButtonDown = false;
   switch (e) {
   case PUSH:
-    if (!vscrollbar->visible() || !event_inside(*vscrollbar)) {
+    if ((!vscrollbar->visible() || !event_inside(*vscrollbar)) &&
+        (!hscrollbar->visible() || !event_inside(*hscrollbar))) {
       bool selected = (markX != pointX || markY != pointY);
       if (selected && event_button() == RightButton) {
         // right click to copy selection
@@ -327,7 +328,11 @@ bool TtyWidget::copySelection() {
     }
     if (rowText.length()) {
       selection.append(rowText);
+#ifdef __MINGW32__
       selection.append("\r\n");
+#else
+      selection.append("\n");
+#endif
     }
   }
 
