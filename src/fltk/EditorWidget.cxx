@@ -955,8 +955,7 @@ void EditorWidget::showPath()
  */
 void EditorWidget::statusMsg(const char *msg)
 {
-  // message will already be present when logPrint is true
-  if (msg && !isLogPrint()) {
+  if (msg) {
     tty->print(msg);
     tty->print("\n");
   }

@@ -309,7 +309,10 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     if (editWidget) {
       showEditTab(editWidget);
       editWidget->runState(was_break ? rs_ready : rs_err);
-      editWidget->statusMsg(gsb_last_errmsg);
+      if (!was_break || !editWidget->isLogPrint()) {
+        // avoid showing repeated break message in logprint window
+        editWidget->statusMsg(gsb_last_errmsg);
+      }
     }
   }
   else if (editWidget) {
