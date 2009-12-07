@@ -25,7 +25,6 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   rows = numRows;
   cols = width = 0;
   head = tail = 0;
-  cursor = 0;
   markX = markY = pointX = pointY = 0;
 
   setfont(COURIER, 12);
@@ -349,7 +348,7 @@ bool TtyWidget::copySelection() {
 //
 void TtyWidget::clearScreen() {
   head = tail = 0;
-  cols = width = cursor = 0;
+  cols = width = 0;
   markX = markY = pointX = pointY = 0;
   getLine(0)->clear();
   vscrollbar->value(0);
@@ -375,7 +374,6 @@ void TtyWidget::print(const char *str) {
     switch (str[i]) {
     case '\r': // return
       // move to the start of the line
-      cursor = 0;
       break;
 
     case '\a':
@@ -395,14 +393,10 @@ void TtyWidget::print(const char *str) {
       break;
 
     case '\b': // backspace
-      // move back one space
-      if (cursor > 0) {
-        cursor--;
-      }
       break;
 
     case '\t':
-      cursor += 8;
+      line->tab();
       break;
 
     case '\xC':

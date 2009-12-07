@@ -74,6 +74,13 @@ struct TextSeg {
     }
   }
 
+  // create a string of n spaces
+  void tab(int n) {
+    this->str = new char[n + 1];
+    memset(this->str, ' ', n);
+    this->str[n] = 0;
+  }
+
   // set the flag value
   void set(int f, bool value) {
     if (value) {
@@ -172,6 +179,18 @@ struct Row {
       delete next;
     }
   }
+  
+  // move to the tab position
+  void tab() {
+    int tabSize = 6;
+    int num = numChars(this->head);
+    int pos = tabSize - (num % tabSize);
+    if (pos) {
+      TextSeg* next = new TextSeg();
+      next->tab(pos);
+      append(next);
+    }
+  }
 
   TextSeg* tail(TextSeg* next) {
     return !next->next ? next : tail(next->next);
@@ -236,7 +255,6 @@ private:
   Row* buffer;
   int head; // current head of buffer
   int tail; // buffer last line
-  int cursor; // current x position at head
   int rows; // total number of rows - size of buffer
   int cols; // maximum number of characters in a row
   int width; // the maximum width of the buffer text in pixels
