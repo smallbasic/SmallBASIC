@@ -189,6 +189,7 @@ int osd_getpen(int code)
   case 3:    // returns true if the pen is down (and save curpos)
     if (event_state() & ANY_BUTTON) {
       if (get_mouse_xy()) {
+        wnd->penState = 0;
         return 1;
       }
     }
