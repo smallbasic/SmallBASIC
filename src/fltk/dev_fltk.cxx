@@ -126,7 +126,7 @@ int osd_devrestore()
 int osd_events(int wait_flag)
 {
   if ((wait_flag && wnd->isTurbo == false) ||
-      (wnd->penState == 0 && wnd->penMode == PEN_ON && fltk::ready() == false)) {
+      (wnd->penMode == PEN_ON && fltk::ready() == false)) {
     // in a "while 1" loop checking for a pen/mouse
     // event with pen(0) or executing input statement.
     fltk::wait();
@@ -176,20 +176,12 @@ int osd_getpen(int code)
   }
 
   switch (code) {
-  case 0:     // return true if there is a waiting pen event (up/down)
-    if (wnd->penState != 0) {
-      wnd->penState = 0;
-      if (get_mouse_xy()) {
-        return 1;
-      }
-    }
-    fltk::wait();               // UNTIL PEN(0)
-                                // fallthru to re-test 
+  case 0:
+    fltk::wait();  // UNTIL PEN(0) - fallthru to re-test 
 
   case 3:    // returns true if the pen is down (and save curpos)
     if (event_state() & ANY_BUTTON) {
       if (get_mouse_xy()) {
-        wnd->penState = 0;
         return 1;
       }
     }

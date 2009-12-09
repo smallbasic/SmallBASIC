@@ -458,10 +458,6 @@ void widget_cb(Widget* w, void* v)
     if (form->var) {
       v_set(form->var, inf->var);
     }
-    
-    // set the pen-state for integration with osd_events
-    // this callback is included as a waiting pen event
-    wnd->penState = -1;
   }
 }
 

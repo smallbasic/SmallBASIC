@@ -1367,7 +1367,6 @@ void MainWindow::resetPen()
   penDownX = 0;
   penDownY = 0;
   penMode = 0;
-  penState = 0;
 }
 
 void MainWindow::execLink(const char *file)
@@ -1534,13 +1533,7 @@ int BaseWindow::handle(int e)
   switch (e) {
   case SHORTCUT:
   case KEY:
-    break;                      // process keys below
-  case PUSH:
-    penState = 1;
-    return Window::handle(e);
-  case RELEASE:
-    penState = -1;
-    return Window::handle(e);
+    break; // process keys below
   default:
     return Window::handle(e);
   }

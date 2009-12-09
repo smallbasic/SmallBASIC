@@ -89,8 +89,7 @@ struct BaseWindow : public Window {
 
   int penDownX;
   int penDownY;
-  int penState;                 // PUSH/RELEASE events
-  int penMode;                  // PEN ON/OFF
+  int penMode; // PEN ON/OFF
 };
 
 struct MainWindow : public BaseWindow {
