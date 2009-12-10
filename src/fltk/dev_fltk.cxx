@@ -125,10 +125,7 @@ int osd_devrestore()
  */
 int osd_events(int wait_flag)
 {
-  if ((wait_flag && wnd->isTurbo == false) ||
-      (wnd->penMode == PEN_ON && fltk::ready() == false)) {
-    // in a "while 1" loop checking for a pen/mouse
-    // event with pen(0) or executing input statement.
+  if (wait_flag) {
     fltk::wait();
   }
 
@@ -177,7 +174,8 @@ int osd_getpen(int code)
 
   switch (code) {
   case 0:
-    fltk::wait();  // UNTIL PEN(0) - fallthru to re-test 
+    // UNTIL PEN(0) - wait until move click or move
+    fltk::wait(); // fallthru to re-test 
 
   case 3:    // returns true if the pen is down (and save curpos)
     if (event_state() & ANY_BUTTON) {
@@ -339,9 +337,6 @@ int dev_putenv(const char *s)
   }
   else if (lv.equals("INDENT_LEVEL") && wnd->getEditor()) {
     wnd->getEditor()->setIndentLevel(rv.toInteger());
-  }
-  else if (lv.equals("TURBO")) {
-    wnd->isTurbo = rv.toInteger() == 1 ? 1 : 0;
   }
   env.put(lv, rv);
   return 1;

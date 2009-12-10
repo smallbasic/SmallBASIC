@@ -949,7 +949,6 @@ int main(int argc, char **argv)
 
 MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
-  isTurbo = false;
   logPrint = false;
   tty = 0;
 

@@ -14,6 +14,11 @@ Download, build and install FLTK, see www.fltk.org.
 
 Setup instructions for building FLTK version under cygwin
 
+Update the fltk makeinclude file:
+STRIP		= /cygdrive/c/cygwin/bin/strip
+LIBCOMMAND	= /cygdrive/c/cygwin/bin/ar cr
+RANLIB		= /cygdrive/c/cygwin/bin/ranlib
+
 Download and install cygwin
 --> http://www.cygwin.com/
 
