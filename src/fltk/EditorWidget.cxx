@@ -172,15 +172,15 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   // setup icons
   logPrintBn->label("@i;@b;T"); // italic bold T
   lockBn->label("@||;"); // vertical bars
-  hideIdeBn->label("@circle;"); // large dot
+  hideIdeBn->label("@border_frame;"); // large dot
   gotoLineBn->label("@>;"); // right arrow (goto)
 
   // setup tooltips
   commandText->tooltip("Press Ctrl+f or Ctrl+Shift+f to find again");
-  rowStatus->tooltip("Row");
-  colStatus->tooltip("Column");
+  rowStatus->tooltip("Cursor row position");
+  colStatus->tooltip("Cursor column position");
   runStatus->tooltip("Run or BREAK");
-  modStatus->tooltip("Save modified");
+  modStatus->tooltip("Save file");
   funcList->tooltip("Position the cursor to a FUNC/SUB");
   logPrintBn->tooltip("Display PRINT statements in the log window");
   lockBn->tooltip("Prevent log window auto-scrolling");
