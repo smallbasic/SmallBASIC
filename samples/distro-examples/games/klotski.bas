@@ -69,7 +69,7 @@ J=INT(CX/40):I=INT(CY/40)
 p=a(I,J):if p=15 then 15
 
 'while pen(0) =0:wend
-while pen(3)
+while pen(0)
 CX=PEN(4):CY=PEN(5)
 wend
 DX=ABS(CX-TX):DY=ABS(CY-TY)
