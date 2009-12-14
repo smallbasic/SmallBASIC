@@ -19,7 +19,8 @@ EXTRA_DIST =					\
     ndc928.c					\
     ndc928.fnt					\
     rlgr928.fnt					\
-    rom16.c
+    rom16.c                                     \
+    inet.c
 
 bin_PROGRAMS = sbasic
 
