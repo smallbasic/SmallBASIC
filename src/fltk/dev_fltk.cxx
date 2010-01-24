@@ -48,6 +48,11 @@ Properties env;
 String envs;
 String eventName;
 bool saveForm = false;
+dword lastEventTime;
+dword eventsPerTick;
+
+#define MAX_EVENT_PER_TICK 50
+#define EVENT_PAUSE_TIME 0.05
 
 void getHomeDir(char *fileName);
 bool cacheLink(dev_file_t * df, char *localFile);
@@ -117,19 +122,34 @@ int osd_devrestore()
 }
 
 /**
- *   system event-loop
- *   return value:
- *     0 continue 
- *    -1 close sbpad application
- *    -2 stop running basic application
+ * system event-loop
+ * return value:
+ *   0 continue 
+ *  -1 close sbpad application
+ *  -2 stop running basic application
  */
 int osd_events(int wait_flag)
 {
-  if (wait_flag) {
+  if (!wait_flag) {
+    // pause when we have been called too frequently
+    dword now = clock();
+    eventsPerTick = (now == lastEventTime) ? eventsPerTick + 1 : 0;
+    lastEventTime = now;
+    
+    if (eventsPerTick > MAX_EVENT_PER_TICK) {
+      // pause
+      fltk::wait(EVENT_PAUSE_TIME);
+    }
+    else {
+      // pump messages without pausing
+      fltk::check();      
+    }
+  }
+  else {
+    // wait for an event
     fltk::wait();
   }
 
-  fltk::check();
   if (wnd->isBreakExec()) {
     clearOutput();
     return -2;
