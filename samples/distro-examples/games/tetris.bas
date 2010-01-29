@@ -129,6 +129,7 @@ func next_block
   result.col = i + 2
   result.x = b_w / 2
   result.y = 0
+  show_block result  
   next_block = result
 end
 
@@ -182,59 +183,63 @@ func is_bottom(block)
 end
 
 '
-' handle user input while block is dropping
+' update the block position by the given offsets
 '
-sub handle_input(block)
-  local k = inkey
-  if len(k) == 2 then
-    k = asc(right(k,1))
-    select case k
-    case "4" 'left
-      if (block.x > 0) then
-        block.x--
-      fi
-    case "5" 'right
-      if ((block.x + right_edge(block)) < b_w) then
-        block.x++
-      fi
-    case "10" 'down arrow
-      
-    case "9" 'up arrow
-      block.r = iff(block.r == 3, 0, block.r+1)
-    end select
+sub moveBlock(x, y)
+  hide_block block
+  block.x += x
+  block.y += y
+  show_block block
+end
+
+'
+' move the block left
+'
+sub moveLeft
+   if (block.x > 0) then
+     moveBlock -1, 0
+   fi
+end
+
+'
+' move the block right
+'
+sub moveRight
+  if ((block.x + right_edge(block)) < b_w) then
+    moveBlock 1, 0
   fi
+end
+
+sub moveRotate
+  hide_block block
+  block.r = iff(block.r == 3, 0, block.r+1)    
+  show_block block
 end
 
 '
 ' main game loop
 '
 sub play_game
-  local block = next_block
-  show_block block
+  block = next_block
 
   while game_over = false
     delay drop_speed
-        
-    ' erase the current block before showing updated position
-    hide_block block
 
-    ' drop the block down
-    block.y++
-
+    ' drop the block down one position
+    moveBlock 0, 1
+      
     ' check for collision
     if is_bottom(block) then
       show_block block 'show final position
       erase block
       block = next_block
     fi
-
-    ' handle user keyboard input
-    handle_input block
-
-    ' redisplay new position
-    show_block block
   wend
 end
+
+defineKey 0xFF04, moveLeft
+defineKey 0xFF05, moveRight
+defineKey 0xFF09, moveRotate
 
 init_game
 play_game
