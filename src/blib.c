@@ -3318,10 +3318,15 @@ void cmd_definekey(void) {
   if (!prog_error) {
     par_getcomma();
 
-    keymap_add(key, prog_ip);
-
-    // record the handler location then skip ahead to avoid immediate call
-    prog_ip += BC_CTRLSZ + 1;
+    if (code_peek() != kwTYPE_CALL_UDF) {
+      rt_raise(ERR_SYNTAX);
+    }
+    else {
+      keymap_add(key, prog_ip);
+      
+      // skip ahead to avoid immediate call
+      prog_ip += BC_CTRLSZ + 1;
+    }
   }
   v_free(&var);
 }
