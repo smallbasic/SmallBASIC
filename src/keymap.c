@@ -80,6 +80,25 @@ void keymap_add(int key, addr_t ip) {
 }
 
 /**
+ * invokes the handler for the given key
+ */
+int keymap_invoke(word key) {
+  int result = 0;
+  key_map_s* head = keymap;
+  while (head) {
+    if (head->key == key) {
+      addr_t ip = prog_ip; // store current ip
+      prog_ip = head->ip;  // jump to keymap ip
+      bc_loop(1);          // invoke the keymap code
+      prog_ip = ip;        // restore the current ip
+      result = 1;          // key was consumed
+    }
+    head = head->next;
+  }
+  return result;
+}
+
+/**
  * clear keyboard buffer
  */
 void dev_clrkb() {
@@ -98,16 +117,7 @@ void dev_pushkey(word key) {
     }
   }
 
-  key_map_s* head = keymap;
-  while (head) {
-    if (head->key == key) {
-      addr_t ip = prog_ip; // store current ip
-      prog_ip = head->ip;  // jump to keymap ip
-      bc_loop(1);          // invoke the keymap code
-      prog_ip = ip;        // restore the current ip
-    }
-    head = head->next;
-  }
+  keymap_invoke(key);
 }
 
 /**

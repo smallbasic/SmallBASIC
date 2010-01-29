@@ -1534,23 +1534,34 @@ int BaseWindow::handle(int e)
   case modal_state:
     switch (e) {
     case PUSH:
-      dev_pushkey(SB_KEY_MK_PUSH);
-      return 1;
+      if (keymap_invoke(SB_KEY_MK_PUSH)) {
+        return 1;
+      }
+      break;
     case DRAG:
-      dev_pushkey(SB_KEY_MK_DRAG);
-      return 1;
+      if (keymap_invoke(SB_KEY_MK_DRAG)) {
+        return 1;
+      }
+      break;
     case MOVE:
-      dev_pushkey(SB_KEY_MK_MOVE);
-      return 1;
+      if (keymap_invoke(SB_KEY_MK_MOVE)) {
+        return 1;
+      }
+      break;
     case RELEASE:
-      dev_pushkey(SB_KEY_MK_RELEASE);
-      return 1;
+      if (keymap_invoke(SB_KEY_MK_RELEASE)) {
+        return 1;
+      }
+      break;
     case MOUSEWHEEL:
-      dev_pushkey(SB_KEY_MK_WHEEL);
-      return 1;
+      if (keymap_invoke(SB_KEY_MK_WHEEL)) {
+        return 1;
+      }
+      break;
     case SHORTCUT:
     case KEY:
       handleKeyEvent();
+      break;
     }
     break;
 

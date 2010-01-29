@@ -99,6 +99,7 @@
 void keymap_init();
 void keymap_free();
 void keymap_add(int key, addr_t ip);
+int keymap_invoke(word key);
 
 #endif
 
