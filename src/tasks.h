@@ -14,6 +14,7 @@
 
 #include "smbas.h"
 #include "bc.h"
+#include "keymap.h"
 
 #if defined(__cplusplus)
 extern "C" {

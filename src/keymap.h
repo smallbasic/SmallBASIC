@@ -1,16 +1,21 @@
-
-/*
- * Keyboard codes
- */
-
-#if !defined(_sb_keycodes_h)
-#define _sb_keycodes_h
-
-#if defined(_PalmOS)
+// $Id$
+// This file is part of SmallBASIC
 //
-//      PalmOS
+// keyboard map
 //
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
+#include "var.h"
+
+#ifndef KEYMAP_H
+#define KEYMAP_H
+
+#define PCKBSIZE 256
+
+// Keyboard codes
 // PalmOS - SB H/W KEYS
 #define SB_KEY_PALM_PGUP  0xFF01
 #define SB_KEY_PALM_PGDN  0xFF02
@@ -20,16 +25,9 @@
 #define SB_KEY_PALM_BTN4  0xFF06
 #define SB_KEY_PALM_FIND  0xFF07
 #define SB_KEY_PALM_CALC  0xFF08
-#endif
 
-// COMMON
-#if defined(_UnixOS)
-#define SB_KEY_BACKSPACE  127   // Linux has problem with ^H
-#define SB_KEY_DELETE   8       // ??????????
-#else
-#define SB_KEY_BACKSPACE  8
-#define SB_KEY_DELETE   127
-#endif
+#define SB_KEY_BACKSPACE  127
+#define SB_KEY_DELETE     8 
 
 #if defined(_PalmOS)
 #define SB_KEY_BREAK    SB_KEY_PALM_BTN4  // MemoPad
@@ -47,8 +45,8 @@
 #define SB_KEY_NEXT     SB_KEY_PGDN
 #define SB_KEY_LEFT     0xFF04
 #define SB_KEY_RIGHT    0xFF05
-#define SB_KEY_UP     0xFF09
-#define SB_KEY_DN     0xFF0A
+#define SB_KEY_UP       0xFF09
+#define SB_KEY_DN       0xFF0A
 #define SB_KEY_DOWN     SB_KEY_DN
 
 // second 16 - common on PCs
@@ -65,28 +63,43 @@
 
 // Control & Alt keys (parameter = capital character)
 #define SB_KEY_CTRL(x)    ((x)-'@')
-#define SB_KEY_ALT(x)   (0xFF20+(((x)>='a') ? (x)-57 : (x)-31))
+#define SB_KEY_ALT(x)     (0xFF20+(((x)>='a') ? (x)-57 : (x)-31))
 
 // keypad
-#define SB_KEY_KP_DIV   0xFFDA
-#define SB_KEY_KP_MUL   0xFFDB
+#define SB_KEY_KP_DIV     0xFFDA
+#define SB_KEY_KP_MUL     0xFFDB
 #define SB_KEY_KP_MINUS   0xFFDC
 #define SB_KEY_KP_PLUS    0xFFDD
 #define SB_KEY_KP_ENTER   0xFFDE
 
 #define SB_KEY_KP_HOME    0xFFD7
-#define SB_KEY_KP_UP    0xFFD8
+#define SB_KEY_KP_UP      0xFFD8
 #define SB_KEY_KP_PGUP    0xFFD9
 
 #define SB_KEY_KP_LEFT    0xFFD4
 #define SB_KEY_KP_CENTER  0xFFD5
 #define SB_KEY_KP_RIGHT   0xFFD6
 
-#define SB_KEY_KP_END   0xFFD1
+#define SB_KEY_KP_END     0xFFD1
 #define SB_KEY_KP_DOWN    0xFFD2
 #define SB_KEY_KP_PGDN    0xFFD3
 
-#define SB_KEY_KP_INS   0xFFD0
-#define SB_KEY_KP_DEL   0xFFDF
+#define SB_KEY_KP_INS     0xFFD0
+#define SB_KEY_KP_DEL     0xFFDF
+
+#define SB_KEY_MK_PUSH    0xFFC0
+#define SB_KEY_MK_DRAG    0xFFC1
+#define SB_KEY_MK_MOVE    0xFFC2
+#define SB_KEY_MK_RELEASE 0xFFC3
+#define SB_KEY_MK_WHEEL   0xFFC4
+
+#define SB_KEY_MK_FIRST   SB_KEY_MK_PUSH
+#define SB_KEY_MK_LAST    SB_KEY_MK_WHEEL
+
+void keymap_init();
+void keymap_free();
+void keymap_add(int key, addr_t ip);
 
 #endif
+
+// End of $Id$

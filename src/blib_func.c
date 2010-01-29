@@ -1511,9 +1511,9 @@ void cmd_str0(long funcCode, var_t * r)
     //
     // str <- INKEY$
     //
-    if (!dev_kbhit())
-      dev_events(0);
-
+    if (!dev_kbhit()) {
+      dev_events(2);
+    }
     if (dev_kbhit()) {
       ch = dev_getch();         // MultiByte - dev_getchr() must return the
       // extended code (2

@@ -2263,7 +2263,7 @@ void cmd_pause()
 
   if (x == 0) {
     while (dev_kbhit() == 0) {
-      switch (dev_events(0)) {
+      switch (dev_events(2)) {
       case 0:                  // no event
         break;
       case -2:                 // break
@@ -3302,4 +3302,26 @@ void cmd_end_select()
   // allocated memory
   tmp_free(node.x.vfor.var_ptr);  // v_new()
   code_jump(code_getaddr());
+}
+
+//
+// define keyboard event handling
+//
+void cmd_definekey(void) {
+  var_t var;
+
+  v_init(&var);
+  eval(&var);
+
+  int key = v_igetval(&var);
+
+  if (!prog_error) {
+    par_getcomma();
+
+    keymap_add(key, prog_ip);
+
+    // record the handler location then skip ahead to avoid immediate call
+    prog_ip += BC_CTRLSZ + 1;
+  }
+  v_free(&var);
 }

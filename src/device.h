@@ -26,7 +26,6 @@
 #define _device_h
 
 #include "sys.h"
-#include "keys.h"               // Keyboard codes
 #if !defined(SCAN_MODULE)
 #include "var.h"
 #endif

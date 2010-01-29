@@ -171,6 +171,7 @@ void cmd_bsave(void) SEC(BIO2);
 
 void cmd_html(void) SEC(BMATH);
 void cmd_image(void) SEC(BMATH);
+void cmd_definekey(void) SEC(BMATH);
 
 // blib_func
 

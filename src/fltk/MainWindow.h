@@ -86,6 +86,7 @@ struct BaseWindow : public Window {
   BaseWindow(int w, int h) : Window(w, h, "SmallBASIC") {}
   virtual ~BaseWindow() {};
   int handle(int e);
+  void handleKeyEvent();
 
   int penDownX;
   int penDownY;

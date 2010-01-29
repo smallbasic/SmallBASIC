@@ -430,6 +430,7 @@ struct proc_keyword_s proc_table[] = {
 { "CALL",               kwCALLCP },
 { "HTML",               kwHTML },
 { "IMAGE",              kwIMAGE },
+{ "DEFINEKEY",          kwDEFINEKEY },
 
 #if !defined(OS_LIMITED)
 { "STKDUMP",    kwSTKDUMP },

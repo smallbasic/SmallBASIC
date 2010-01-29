@@ -1529,147 +1529,169 @@ void MainWindow::loadIcon(const char* prefix, int resourceId) {
 
 int BaseWindow::handle(int e)
 {
-  switch (e) {
-  case SHORTCUT:
-  case KEY:
-    break; // process keys below
-  default:
-    return Window::handle(e);
-  }
-
-  int k;
   switch (runMode) {
-  case edit_state:
-    if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
-      EditorWidget* editWidget = wnd->getEditor();
-      if (editWidget) {
-        editWidget->focusWidget();
-      }
-    }
-    break;
   case run_state:
   case modal_state:
-    k = event_key();
-    switch (k) {
-    case TabKey:
-      dev_pushkey(SB_KEY_TAB);
-      break;
-    case HomeKey:
-      dev_pushkey(SB_KEY_KP_HOME);
-      break;
-    case EndKey:
-      dev_pushkey(SB_KEY_END);
-      break;
-    case InsertKey:
-      dev_pushkey(SB_KEY_INSERT);
-      break;
-    case MenuKey:
-      dev_pushkey(SB_KEY_MENU);
-      break;
-    case MultiplyKey:
-      dev_pushkey(SB_KEY_KP_MUL);
-      break;
-    case AddKey:
-      dev_pushkey(SB_KEY_KP_PLUS);
-      break;
-    case SubtractKey:
-      dev_pushkey(SB_KEY_KP_MINUS);
-      break;
-    case DivideKey:
-      dev_pushkey(SB_KEY_KP_DIV);
-      break;
-    case F0Key:
-      dev_pushkey(SB_KEY_F(0));
-      break;
-    case F1Key:       
-      dev_pushkey(SB_KEY_F(1));
-      break;
-    case F2Key:
-      dev_pushkey(SB_KEY_F(2));
-      break;
-    case F3Key:
-      dev_pushkey(SB_KEY_F(3));
-      break;
-    case F4Key:
-      dev_pushkey(SB_KEY_F(4));
-      break;
-    case F5Key:
-      dev_pushkey(SB_KEY_F(5));
-      break;
-    case F6Key:
-      dev_pushkey(SB_KEY_F(6));
-      break;
-    case F7Key:
-      dev_pushkey(SB_KEY_F(7));
-      break;
-    case F8Key:
-      dev_pushkey(SB_KEY_F(8));
-      break;
-    case F9Key:
-      dev_pushkey(SB_KEY_F(9));
-      break;
-    case F10Key:
-      dev_pushkey(SB_KEY_F(10));
-      break;
-    case F11Key:
-      dev_pushkey(SB_KEY_F(11));
-      break;
-    case F12Key:
-      dev_pushkey(SB_KEY_F(12));
-      break;
-    case PageUpKey:
-      dev_pushkey(SB_KEY_PGUP);
-      break;
-    case PageDownKey:
-      dev_pushkey(SB_KEY_PGDN);
-      break;
-    case UpKey:
-      dev_pushkey(SB_KEY_UP);
-      break;
-    case DownKey:
-      dev_pushkey(SB_KEY_DN);
-      break;
-    case LeftKey:
-      dev_pushkey(SB_KEY_LEFT);
-      break;
-    case RightKey:
-      dev_pushkey(SB_KEY_RIGHT);
-      break;
-    case BackSpaceKey:
-    case DeleteKey:
-      dev_pushkey(SB_KEY_BACKSPACE);
-      break;
-    case ReturnKey:
-      dev_pushkey(13);
-      break;
-    case 'b':
-      if (event_key_state(LeftCtrlKey) ||
-          event_key_state(RightCtrlKey)) {
-        wnd->run_break();
-        break;
-      }
-      dev_pushkey(k);
-      break;
-    case 'q':
-      if (event_key_state(LeftCtrlKey) ||
-          event_key_state(RightCtrlKey)) {
-        wnd->quit();
-        break;
-      }
-      dev_pushkey(k);
-      break;
-
-    default:
-      if (k >= LeftShiftKey && k <= RightAltKey) {
-        break;                  // ignore caps+shift+ctrl+alt
-      }
-      dev_pushkey(k);
-      break;
+    switch (e) {
+    case PUSH:
+      dev_pushkey(SB_KEY_MK_PUSH);
+      return 1;
+    case DRAG:
+      dev_pushkey(SB_KEY_MK_DRAG);
+      return 1;
+    case MOVE:
+      dev_pushkey(SB_KEY_MK_MOVE);
+      return 1;
+    case RELEASE:
+      dev_pushkey(SB_KEY_MK_RELEASE);
+      return 1;
+    case MOUSEWHEEL:
+      dev_pushkey(SB_KEY_MK_WHEEL);
+      return 1;
+    case SHORTCUT:
+    case KEY:
+      handleKeyEvent();
     }
+    break;
+
+  case edit_state:
+    switch (e) {
+    case SHORTCUT:
+    case KEY:
+      if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
+        EditorWidget* editWidget = wnd->getEditor();
+        if (editWidget) {
+          editWidget->focusWidget();
+        }
+      }
+    }
+    break;
+
   default:
     break;
   }
+
   return Window::handle(e);
+}
+
+void BaseWindow::handleKeyEvent() {
+  int k = event_key();
+  switch (k) {
+  case TabKey:
+    dev_pushkey(SB_KEY_TAB);
+    break;
+  case HomeKey:
+    dev_pushkey(SB_KEY_KP_HOME);
+    break;
+  case EndKey:
+    dev_pushkey(SB_KEY_END);
+    break;
+  case InsertKey:
+    dev_pushkey(SB_KEY_INSERT);
+    break;
+  case MenuKey:
+    dev_pushkey(SB_KEY_MENU);
+    break;
+  case MultiplyKey:
+    dev_pushkey(SB_KEY_KP_MUL);
+    break;
+  case AddKey:
+    dev_pushkey(SB_KEY_KP_PLUS);
+    break;
+  case SubtractKey:
+    dev_pushkey(SB_KEY_KP_MINUS);
+    break;
+  case DivideKey:
+    dev_pushkey(SB_KEY_KP_DIV);
+    break;
+  case F0Key:
+    dev_pushkey(SB_KEY_F(0));
+    break;
+  case F1Key:       
+    dev_pushkey(SB_KEY_F(1));
+    break;
+  case F2Key:
+    dev_pushkey(SB_KEY_F(2));
+    break;
+  case F3Key:
+    dev_pushkey(SB_KEY_F(3));
+    break;
+  case F4Key:
+    dev_pushkey(SB_KEY_F(4));
+    break;
+  case F5Key:
+    dev_pushkey(SB_KEY_F(5));
+    break;
+  case F6Key:
+    dev_pushkey(SB_KEY_F(6));
+    break;
+  case F7Key:
+    dev_pushkey(SB_KEY_F(7));
+    break;
+  case F8Key:
+    dev_pushkey(SB_KEY_F(8));
+    break;
+  case F9Key:
+    dev_pushkey(SB_KEY_F(9));
+    break;
+  case F10Key:
+    dev_pushkey(SB_KEY_F(10));
+    break;
+  case F11Key:
+    dev_pushkey(SB_KEY_F(11));
+    break;
+  case F12Key:
+    dev_pushkey(SB_KEY_F(12));
+    break;
+  case PageUpKey:
+    dev_pushkey(SB_KEY_PGUP);
+    break;
+  case PageDownKey:
+    dev_pushkey(SB_KEY_PGDN);
+    break;
+  case UpKey:
+    dev_pushkey(SB_KEY_UP);
+    break;
+  case DownKey:
+    dev_pushkey(SB_KEY_DN);
+    break;
+  case LeftKey:
+    dev_pushkey(SB_KEY_LEFT);
+    break;
+  case RightKey:
+    dev_pushkey(SB_KEY_RIGHT);
+    break;
+  case BackSpaceKey:
+  case DeleteKey:
+    dev_pushkey(SB_KEY_BACKSPACE);
+    break;
+  case ReturnKey:
+    dev_pushkey(13);
+    break;
+  case 'b':
+    if (event_key_state(LeftCtrlKey) ||
+        event_key_state(RightCtrlKey)) {
+      wnd->run_break();
+      break;
+    }
+    dev_pushkey(k);
+    break;
+  case 'q':
+    if (event_key_state(LeftCtrlKey) ||
+        event_key_state(RightCtrlKey)) {
+      wnd->quit();
+      break;
+    }
+    dev_pushkey(k);
+    break;
+    
+  default:
+    if (k >= LeftShiftKey && k <= RightAltKey) {
+      break;                  // ignore caps+shift+ctrl+alt
+    }
+    dev_pushkey(k);
+    break;
+  }
 }
 
 LineInput::LineInput(int x, int y, int w, int h) : fltk::Input(x, y, w, h) {

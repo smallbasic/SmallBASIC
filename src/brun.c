@@ -922,7 +922,7 @@ void cmd_options(void)
  */
 void bc_loop(int isf)
 {
-  register dword now;
+  dword now;
   static dword next_check;
   stknode_t node;
   byte code, pops;
@@ -1379,6 +1379,9 @@ void bc_loop(int isf)
         case kwIMAGE:
           cmd_image();
           break;
+        case kwDEFINEKEY:
+          cmd_definekey();
+          break;
         default:
           err_pcode_err(pcode);
         }
@@ -1768,6 +1771,9 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf)
   // 
   exec_setup_predefined_variables();
 
+  // init the keyboard map
+  keymap_init();
+
   /*
    *      --------------
    *      load libraries
@@ -1917,6 +1923,9 @@ int exec_close_task()
     mem_unlock(bytecode_h);
     mem_free(bytecode_h);
     bytecode_h = 0;
+
+    // cleanup the keyboard map
+    keymap_free();
   }
 
   if (prog_error != -1 && prog_error != 0) {

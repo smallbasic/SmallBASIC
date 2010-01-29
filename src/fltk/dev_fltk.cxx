@@ -48,11 +48,12 @@ Properties env;
 String envs;
 String eventName;
 bool saveForm = false;
-dword lastEventTime;
+clock_t lastEventTime;
 dword eventsPerTick;
 
-#define MAX_EVENT_PER_TICK 50
-#define EVENT_PAUSE_TIME 0.05
+#define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
+#define EVT_PAUSE_TIME 0.005
+#define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
 void getHomeDir(char *fileName);
 bool cacheLink(dev_file_t * df, char *localFile);
@@ -132,22 +133,29 @@ int osd_events(int wait_flag)
 {
   if (!wait_flag) {
     // pause when we have been called too frequently
-    dword now = clock();
-    eventsPerTick = (now == lastEventTime) ? eventsPerTick + 1 : 0;
+    clock_t now = clock();
+    if (now - lastEventTime <= EVT_CHECK_EVERY) {
+      eventsPerTick += (now - lastEventTime);
+      if (eventsPerTick >= EVT_MAX_BURN_TIME) {
+        eventsPerTick = 0;
+        wait_flag = 2;
+      }
+    }
     lastEventTime = now;
-    
-    if (eventsPerTick > MAX_EVENT_PER_TICK) {
-      // pause
-      fltk::wait(EVENT_PAUSE_TIME);
-    }
-    else {
-      // pump messages without pausing
-      fltk::check();      
-    }
   }
-  else {
+
+  switch (wait_flag) {
+  case 1:
     // wait for an event
     fltk::wait();
+    break;
+  case 2:
+    // pause
+    fltk::wait(EVT_PAUSE_TIME);
+    break;
+  default:
+    // pump messages without pausing
+    fltk::check();
   }
 
   if (wnd->isBreakExec()) {

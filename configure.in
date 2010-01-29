@@ -12,7 +12,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.10.6)
+AM_INIT_AUTOMAKE(smallbasic, 0.10.7)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 

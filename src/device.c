@@ -50,12 +50,6 @@ static int drvsound_ok;
 static int drvmouse_ok;
 #endif
 
-//      Keyboard buffer
-#define PCKBSIZE  256
-static word keybuff[PCKBSIZE];
-static int keyhead;
-static int keytail;
-
 #ifndef USE_TERM_IO
 #if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
 #define USE_TERM_IO 1
@@ -110,6 +104,13 @@ static int keytail;
 #define IMPL_DEV_GETS
 #endif
 #endif
+
+void dev_drawcursor(int x, int y) SEC(BIO);
+int dev_input_char2str(int ch, byte * cstr) SEC(BIO);
+int dev_input_count_char(byte * buf, int pos) SEC(BIO);
+int dev_input_insert_char(int ch, byte * dest, int pos, int replace_mode) SEC(BIO);
+int dev_input_remove_char(byte * dest, int pos) SEC(BIO);
+void dev_input_clreol(int cx, int cy) SEC(BIO);
 
 ///////////////////////////////////////////////
 //////////////////////////////// INIT & RESTORE
@@ -365,7 +366,6 @@ int dev_init(int mode, int flags)
       os_ver = vi;
     }                           // if ver
   }                             // verfd
-  //              }
 
   setsysvar_int(SYSVAR_OSVER, os_ver);
 #elif defined(_DOS)
@@ -551,91 +551,9 @@ void dev_delay(dword ms)
 }
 #endif
 
-///////////////////////////////////////////////
-////////////////////////////////////// KEYBOARD
-
-/*
- * clear keyboard buffer
- */
-void dev_clrkb()
-{
-  keyhead = keytail = 0;
-}
-
-/*
- * stores a key in keyboard buffer
- */
-void dev_pushkey(word key)
-{
-  keybuff[keytail] = key;
-  keytail++;
-  if (keytail >= PCKBSIZE) {
-    keytail = 0;
-  }
-}
-
-/*
- * returns true if there is an key in keyboard buffer
- */
-int dev_kbhit()
-{
-  int code;
-
-#if USE_TERM_IO
-  if (!os_graphics && term_israw()) {
-    return !feof(stdin);
-  }
-#endif
-
-  if (keytail != keyhead) {
-    return 1;
-  }
-#if KBHIT_PWR_CONSERVE
-  // conserve battery power
-  code = dev_events(1);
-#else
-  code = dev_events(0);
-#endif
-  if (code < 0) {
-    brun_break();
-  }
-  return (keytail != keyhead);
-}
-
-/*
- * returns the next key in keyboard buffer (and removes it)
- */
-long int dev_getch()
-{
-  word ch = 0;
-
-#if USE_TERM_IO
-  if (!os_graphics && term_israw()) {
-    return fgetc(stdin);
-  }
-#endif
-
-  while ((dev_kbhit() == 0) && (prog_error == 0)) {
-    int evc;
-
-    evc = dev_events(1);
-    if (evc < 0 || prog_error) {
-      return 0xFFFF;
-    }
-  }
-
-  ch = keybuff[keyhead];
-  keyhead++;
-  if (keyhead >= PCKBSIZE) {
-    keyhead = 0;
-  }
-  return ch;
-}
-
 /*
  * draw the cursor
  */
-void dev_drawcursor(int x, int y) SEC(BIO);
 void dev_drawcursor(int x, int y)
 {
   if (os_graphics) {
@@ -648,7 +566,6 @@ void dev_drawcursor(int x, int y)
 /*
  * return the character (multibyte charsets support)
  */
-int dev_input_char2str(int ch, byte * cstr) SEC(BIO);
 int dev_input_char2str(int ch, byte * cstr)
 {
   memset(cstr, 0, 3);
@@ -686,7 +603,6 @@ int dev_input_char2str(int ch, byte * cstr)
 /*
  * return the character size at pos! (multibyte charsets support)
  */
-int dev_input_count_char(byte * buf, int pos) SEC(BIO);
 int dev_input_count_char(byte * buf, int pos)
 {
   int count, ch;
@@ -707,7 +623,6 @@ int dev_input_count_char(byte * buf, int pos)
 /*
  * stores a character at 'pos' position
  */
-int dev_input_insert_char(int ch, byte * dest, int pos, int replace_mode) SEC(BIO);
 int dev_input_insert_char(int ch, byte * dest, int pos, int replace_mode)
 {
   byte cstr[3];
@@ -753,7 +668,6 @@ int dev_input_insert_char(int ch, byte * dest, int pos, int replace_mode)
 /*
  * removes the character at 'pos' position
  */
-int dev_input_remove_char(byte * dest, int pos) SEC(BIO);
 int dev_input_remove_char(byte * dest, int pos)
 {
   byte cstr[3];
@@ -782,7 +696,6 @@ int dev_input_remove_char(byte * dest, int pos)
 /*
  * clears right of the cursor
  */
-void dev_input_clreol(int cx, int cy) SEC(BIO);
 void dev_input_clreol(int cx, int cy)
 {
   int x, y;

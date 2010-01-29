@@ -80,11 +80,11 @@ libsb_common_a_SOURCES =			\
     tasks.c tasks.h				\
     var_uds.c var_uds.h				\
     var_hash.c var_hash.h		        \
+    keymap.c keymap.h		        	\
     units.c units.h				\
     var.c var.h					\
     vmt.c vmt.h					\
     interactive_mode.h				\
-    keys.h					\
     lopen_bridge.h				\
     messages.h					\
     osd.h					\
