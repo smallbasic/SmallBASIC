@@ -38,6 +38,7 @@ Console,command,TEXT,537,"TEXT x, y, w, h, variable","Create an input text widge
 Console,function,CAT,538,"CAT (x)","Returns a console code. 0 = reset, 1 = bold, -1 bold-off, 2 = underline, -2 = underline-off, 3 = reverse, -3 = reverse-off."
 Console,function,INKEY,539,"INKEY","Returns the last key-code in keyboard buffer, or an empty string if there are no keys. Special key-codes like the function-keys (PC) or the hardware-buttons (PalmOS) are returned as 2-byte string."
 Console,function,TAB,540,"TAB (n)","Moves cursor position to the nth column."
+Console,function,DEFINEKEY,1015,"DEFINEKEY k,sub","Binds a keystoke to a user defined function"
 Data,command,BCOPY,541,"BCOPY src_addr, dst_addr, length","Copies a memory block from 'src_addr' to 'dst_addr'."
 Data,command,DELETE,542,"DELETE a, idx [, count]","Deletes 'count' elements at position 'idx' of array 'a'."
 Data,command,EMPTY,543,"EMPTY (x)","Returns true if x is: a zero length array, an empty string, an integer or real with the value 0."
