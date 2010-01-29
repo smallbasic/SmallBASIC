@@ -54,6 +54,7 @@ void keymap_delete(key_map_s* km) {
  */
 void keymap_free() {
   keymap_delete(keymap);
+  keymap = 0;
 }
 
 /**
