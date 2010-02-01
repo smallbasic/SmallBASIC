@@ -5,16 +5,16 @@
 '
 
 ' cell size in pixels
-const c_w = 8
-const c_h = 8
+const c_w = 10
+const c_h = 10
 
 ' board position
 const b_x = 40
 const b_y = 10
 
 ' board size
-const b_w = 20
-const b_h = 20
+const b_w = 12
+const b_h = 28
 
 ' board color
 const b_col = rgb(111,199,222)
@@ -29,10 +29,16 @@ dim blocks(0 to num_blocks - 1)
 dim board(0 to b_w - 1, 0 to b_h - 1)
 
 ' event loop delay factor
-drop_speed = 100
+drop_speed = 300
 
 ' whether the game is over
 game_over = false
+
+' number of played shapes
+num_shapes = 0
+
+' number of completed rows
+num_rows = 0
 
 '
 ' block, rotation, x+y coordinates on the game board
@@ -112,10 +118,22 @@ end
 '
 ' draw the board outline
 '
-sub draw_board
+sub draw_board(x1, y1)
   local w = b_w * c_w
   local h = b_h * c_h
-  rect b_x, b_y, step w, h, b_col filled
+  rect x1, y1, step w, h, b_col filled
+
+  local x, y, px, py
+  
+  for y = b_h -1 to 0 step -1
+    for x = 0 to b_w -1
+      if (board(x, y) != 0) then
+        px = x1 + (x * c_w)
+        py = y1 + (y * c_h)
+        rect px, py, step c_w, c_h, board(x, y) filled
+      fi
+    next x
+  next y
 end
 
 '
@@ -123,13 +141,13 @@ end
 '
 func next_block
   local i = int(rnd * num_blocks)
-  result.id = rnd
   result.b = blocks(i)
   result.r = int(rnd * 4)
   result.col = i + 2
   result.x = b_w / 2
   result.y = 0
-  show_block result  
+  show_block result
+  num_shapes++
   next_block = result
 end
 
@@ -151,8 +169,43 @@ sub init_game
     next y
   next x
   
-  draw_board
+  draw_board b_x, b_y
   randomize timer 
+end
+
+'
+' handle row completion
+'
+func row_completed
+  local x, y, n, x2, y2
+
+  row_completed = 0
+  
+  for y = b_h -1 to 0 step -1
+    n = 0
+    for x = 0 to b_w -1
+      if (board(x, y) != 0) then
+        n++
+      fi
+    next x
+
+    if (n == b_w) then
+      ' erase the completed row
+      for y2 = y to 1 step -1
+        for x2 = 0 to b_w - 1
+          board(x2, y2) = board(x2, y2 - 1)
+        next x2
+      next y2
+
+      ' clear the top row
+      for x2 = 0 to b_w - 1
+        board(x2, 0) = 0
+      next x2
+    
+      y += 1 'next row now in y
+      row_completed = 1      
+    fi
+  next y
 end
 
 '
@@ -167,17 +220,35 @@ func is_bottom(block)
 
   for y = 3 to 0 step -1  
     for x = 0 to 3
-      if block.b(br)(x, y) = 1 && &
-       (touch || by + y + 1 == b_h || board(bx + x, by + y + 1) != 0) then
+      if (block.b(br)(x, y) = 1 && &
+          (by + y + 1 == b_h || board(bx + x, by + y + 1) != 0)) then
        touch = true
-       board(bx + x, by + y) = block.col
-       if (by == 1) then
-         game_over = true
-         exit func
-       fi
       fi
     next x
   next y
+
+  if (touch) then
+    ' check for end of game
+    for y = 3 to 0 step -1  
+      for x = 0 to 3
+        if (block.b(br)(x, y) = 1) then
+          if (by == 0 || (by < 4 && board(bx + x, by + y) != 0)) then
+            game_over = true
+            exit func
+          fi
+        fi
+      next x
+    next y
+
+    ' record the resting position on the board    
+    for y = 3 to 0 step -1  
+      for x = 0 to 3
+        if (block.b(br)(x, y) = 1) then
+          board(bx + x, by + y) = block.col          
+        fi
+      next x
+    next y
+  fi
 
   is_bottom = touch
 end
@@ -210,10 +281,37 @@ sub moveRight
   fi
 end
 
+'
+' rotate the block
+'
 sub moveRotate
   hide_block block
-  block.r = iff(block.r == 3, 0, block.r+1)    
+  block.r = iff(block.r == 3, 0, block.r+1)
+
+  ' ensure rotation doesn't extend beyond board
+  while ((block.x + right_edge(block)) > b_w)
+    block.x --
+  wend
+  
   show_block block
+end
+
+'
+' drop the block
+'
+sub dropBlock
+  while !is_bottom(block)
+    moveBlock 0, 1
+  wend
+end
+
+'
+' show game statistics
+'
+sub show_stats
+  at b_x + (b_w * c_w) + 10, b_y: ? "Shapes:"; num_shapes
+  at b_x + (b_w * c_w) + 10, b_y+20: ? "Rows:"; num_rows
+  at b_x + (b_w * c_w) + 10, b_y+40: ? "Speed:"; drop_speed
 end
 
 '
@@ -221,18 +319,25 @@ end
 '
 sub play_game
   block = next_block
+  show_stats
 
   while game_over = false
     delay drop_speed
 
-    ' drop the block down one position
-    moveBlock 0, 1
-      
     ' check for collision
     if is_bottom(block) then
       show_block block 'show final position
       erase block
+      if row_completed then
+        num_rows++
+        draw_board b_x, b_y
+        drop_speed -= 20
+      fi
       block = next_block
+      show_stats
+    else
+      ' drop the block down one position
+      moveBlock 0, 1
     fi
   wend
 end
@@ -240,6 +345,7 @@ end
 defineKey 0xFF04, moveLeft
 defineKey 0xFF05, moveRight
 defineKey 0xFF09, moveRotate
+defineKey asc(" "), dropBlock
 
 init_game
 play_game
