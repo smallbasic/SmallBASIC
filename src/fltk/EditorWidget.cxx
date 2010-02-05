@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#include <fltk/Browser.h>
 #include <fltk/ColorChooser.h>
 #include <fltk/Item.h>
 #include <fltk/TiledGroup.h>
@@ -74,17 +75,24 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   int tileHeight = h - (MNU_HEIGHT + 8);
   int ttyHeight = h / 8;
   int editHeight = tileHeight - ttyHeight;
+  int browserWidth = w / 8;
 
   TiledGroup* tile = new TiledGroup(0, 0, w, tileHeight);
   tile->begin();
 
-  editor = new BasicEditor(0, 0, w, editHeight, this);
+  editor = new BasicEditor(0, 0, w - browserWidth, editHeight, this);
   editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
   editor->selection_color(fltk::color(190, 189, 188));
   editor->textbuf->add_modify_callback(changed_cb, this);
   editor->box(NO_BOX);
   editor->take_focus();
+
+  // sub-func jump droplist
+  funcList = new Browser(editor->w(), 0, browserWidth, editHeight);
+  funcList->labelfont(HELVETICA);
+  funcList->indented(1);
+  funcList->add(SCAN_LABEL);
 
   tty = new TtyWidget(0, editHeight, w, ttyHeight, TTY_ROWS);
   tty->color(WHITE); // bg
@@ -100,7 +108,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   statusBar->begin();
 
   // widths become relative when the outer window is resized
-  int func_bn_w = 140;
   int st_w = 40;
   int bn_w = 18;
   int st_h = statusBar->h() - 2;
@@ -118,16 +125,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   gotoLineBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
 #endif
 
-  // sub-func jump droplist
-  funcList = new Choice(gotoLineBn->x() - (func_bn_w + 2), 2,
-                        func_bn_w, st_h);
-  funcList->labelfont(HELVETICA);
-  funcList->begin();
-  new Item();
-  new Item(SCAN_LABEL);
-  funcList->end();
-
-  colStatus = new Widget(funcList->x() - (st_w + 2), 2, st_w, st_h);
+  colStatus = new Widget(gotoLineBn->x() - (st_w + 2), 2, st_w, st_h);
   rowStatus = new Widget(colStatus->x() - (st_w + 2), 2, st_w, st_h);
   runStatus = new Button(rowStatus->x() - (st_w + 2), 2, st_w, st_h);
   modStatus = new Button(runStatus->x() - (st_w + 2), 2, st_w, st_h);
@@ -181,7 +179,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   colStatus->tooltip("Cursor column position");
   runStatus->tooltip("Run or BREAK");
   modStatus->tooltip("Save file");
-  funcList->tooltip("Position the cursor to a FUNC/SUB");
   logPrintBn->tooltip("Display PRINT statements in the log window");
   lockBn->tooltip("Prevent log window auto-scrolling");
   hideIdeBn->tooltip("Hide the editor while program is running");
@@ -473,10 +470,8 @@ void EditorWidget::func_list(Widget* w, void* eventData)
     if (label) {
       if (strcmp(label, SCAN_LABEL) == 0) {
         funcList->clear();
-        funcList->begin();
         createFuncList();
-        new Item(SCAN_LABEL);
-        funcList->end();
+        funcList->add(SCAN_LABEL);
       }
       else {
         gotoLine((int) funcList->item()->user_data());
@@ -1014,7 +1009,6 @@ void EditorWidget::fileChanged(bool loadfile)
   FILE *fp;
 
   funcList->clear();
-  funcList->begin();
   if (loadfile) {
     // update the func/sub navigator
     createFuncList();
@@ -1062,8 +1056,7 @@ void EditorWidget::fileChanged(bool loadfile)
     fclose(fp);
   }
 
-  new Item(SCAN_LABEL);
-  funcList->end();
+  funcList->add(SCAN_LABEL);
 }
 
 /**
@@ -1107,41 +1100,56 @@ void EditorWidget::createFuncList()
   TextBuffer *textbuf = editor->textbuf;
   const char *text = textbuf->text();
   int len = textbuf->length();
-  int curLine = 0;
+  int curLine = 1;
+  const char* keywords[] = {
+    "sub ", "func ", "const ", "local ", "dim "
+  };
+  int keywords_length = sizeof(keywords) / sizeof(keywords[0]);
+  Group* menuGroup = 0;
 
   for (int i = 0; i < len; i++) {
-    if (text[i] == '\n' || i == 0) {
-      curLine++;
+    // skip to the newline start
+    while (i < len && i != 0 && text[i] != '\n') {
+      i++;
     }
 
-    // skip ahead to the next line when comments found
-    if (text[i] == '#' || text[i] == '\'' || 
-        strncasecmp(text + i, "rem", 3) == 0) {
-      while (i < len && text[i] != '\n') {
-        i++;
-      }
+    // skip any successive newlines
+    while (i < len && text[i] == '\n') {
       curLine++;
+      i++;
     }
 
-    // avoid seeing "gosub" etc
-    int offs = ((strncasecmp(text + i, "\nsub ", 5) == 0 ||
-                 strncasecmp(text + i, " sub ", 5) == 0) ? 4 :
-                (strncasecmp(text + i, "\nfunc ", 6) == 0 ||
-                 strncasecmp(text + i, " func ", 6) == 0) ? 5 : 0);
-    if (offs != 0) {
-      char *c = strchr(text + i + offs, '\n');
-      if (c) {
-        if (text[i] == '\n') {
-          i++;    // skip initial newline
+    // skip any leading whitespace
+    while (i < len && (text[i] == ' ' || text[i] == '\t')) {
+      i++;
+    }
+
+    for (int j = 0; j < keywords_length; j++) {
+      int keyword_len = strlen(keywords[j]);
+      if (!strncasecmp(text + i, keywords[j], keyword_len)) {
+        i += keyword_len;
+        int i_begin = i;
+        while (i < len && text[i] != '=' && 
+               text[i] != '\r' && text[i] != '\n') {
+          i++;
         }
-        int itemLen = c - (text + i);
-        String s(text + i, itemLen);
-        Item *item = new Item();
-        item->copy_label(s.toString());
-        item->user_data((void*) curLine);
-        i += itemLen;
-        curLine++;
+        if (i > i_begin) {
+          String s(text + i_begin, i - i_begin);
+          if (j <2) {
+            menuGroup = funcList->add_group(s.toString(), 0, (void*) curLine);
+          }
+          else {
+            funcList->add_leaf(s.toString(), menuGroup, (void*) curLine);
+          }
+          //Item *item = new Item();
+          //item->copy_label(s.toString());
+          //          item->user_data((void*) curLine);
+        }
+        break;
       }
+    }
+    if (text[i] == '\n') {
+      i--; // avoid eating the entire next line
     }
   }
 }

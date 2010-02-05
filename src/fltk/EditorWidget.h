@@ -14,6 +14,7 @@
 #ifndef EDITOR_WIDGET_H
 #define EDITOR_WIDGET_H
 
+#include <fltk/Browser.h>
 #include <fltk/Window.h>
 #include <fltk/Widget.h>
 #include <fltk/Input.h>
@@ -171,7 +172,7 @@ private:
   Widget* colStatus;
   Button* runStatus;
   Button* modStatus;
-  Choice* funcList;
+  Browser* funcList;
 
   ToggleButton* logPrintBn;
   ToggleButton* lockBn;

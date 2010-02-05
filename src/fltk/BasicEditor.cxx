@@ -709,6 +709,7 @@ void BasicEditor::gotoLine(int line)
   insert_position(buffer()->line_start(pos)); // insert at column 0
   show_insert_position();
   status->setRowCol(line, 1);
+  scroll(line, hor_offset());
 }
 
 /**
