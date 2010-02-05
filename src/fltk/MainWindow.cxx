@@ -53,7 +53,7 @@ const char aboutText[] =
   "<b>About SmallBASIC...</b><br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
   "FLTK Version " SB_STR_VER "<br>"
-  "Copyright (c) 2002-2009 Chris Warren-Smith.<br><br>"
+  "Copyright (c) 2002-2010 Chris Warren-Smith.<br><br>"
   "<a href=http://smallbasic.sourceforge.net>"
   "http://smallbasic.sourceforge.net</a><br><br>"
   "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "

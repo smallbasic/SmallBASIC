@@ -1105,6 +1105,10 @@ void EditorWidget::createFuncList()
     "sub ", "func ", "const ", "local ", "dim "
   };
   int keywords_length = sizeof(keywords) / sizeof(keywords[0]);
+  int keywords_len[keywords_length];
+  for (int j = 0; j < keywords_length; j++) {
+    keywords_len[j] = strlen(keywords[j]);
+  }
   Group* menuGroup = 0;
 
   for (int i = 0; i < len; i++) {
@@ -1125,9 +1129,8 @@ void EditorWidget::createFuncList()
     }
 
     for (int j = 0; j < keywords_length; j++) {
-      int keyword_len = strlen(keywords[j]);
-      if (!strncasecmp(text + i, keywords[j], keyword_len)) {
-        i += keyword_len;
+      if (!strncasecmp(text + i, keywords[j], keywords_len[j])) {
+        i += keywords_len[j];
         int i_begin = i;
         while (i < len && text[i] != '=' && 
                text[i] != '\r' && text[i] != '\n') {
@@ -1141,9 +1144,6 @@ void EditorWidget::createFuncList()
           else {
             funcList->add_leaf(s.toString(), menuGroup, (void*) curLine);
           }
-          //Item *item = new Item();
-          //item->copy_label(s.toString());
-          //          item->user_data((void*) curLine);
         }
         break;
       }
