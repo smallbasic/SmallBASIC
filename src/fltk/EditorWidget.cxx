@@ -1102,7 +1102,7 @@ void EditorWidget::createFuncList()
   int len = textbuf->length();
   int curLine = 1;
   const char* keywords[] = {
-    "sub ", "func ", "label ", "const ", "local ", "dim "
+    "sub ", "func ", "def ", "label ", "const ", "local ", "dim "
   };
   int keywords_length = sizeof(keywords) / sizeof(keywords[0]);
   int keywords_len[keywords_length];
