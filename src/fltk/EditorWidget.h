@@ -158,6 +158,7 @@ protected:
   void setEditorColor(Color c, bool defColor);
   void setFont(Font* font);
   void setModified(bool dirty);
+  void setWidgetColor(Widget* w, Color bg, Color fg);
   void showFindText(const char *text);
 
 private:

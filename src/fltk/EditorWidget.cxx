@@ -1413,22 +1413,16 @@ void EditorWidget::setEditorColor(Color c, bool defColor) {
   Color bg = lerp(c, BLACK, .1f); // same offset as editor line numbers
   Color fg = contrast(c, bg);
   int i;
-  Widget* child;
 
   // set the colours on the command text bar
   for (i = commandText->parent()->children(); i > 0; i--) {
-    child = commandText->parent()->child(i - 1);
-    child->color(bg);
-    child->textcolor(fg);
-    child->redraw();
+    Widget* child = commandText->parent()->child(i - 1);
+    setWidgetColor(child, bg, fg);
   }
-  // set the colours on the status bar
-  for (i = rowStatus->parent()->children(); i > 0; i--) {
-    child = rowStatus->parent()->child(i - 1);
-    child->color(bg);
-    child->labelcolor(fg);
-    child->redraw();
-  }
+
+  // set the colours on the function list
+  setWidgetColor(funcList, bg, fg);
+
   if (defColor) {
     // contrast the default colours against the background
     for (i = 0; i < st_background; i++) {
@@ -1457,6 +1451,16 @@ void EditorWidget::setModified(bool dirty)
   modStatus->when(dirty ? WHEN_CHANGED : WHEN_NEVER);
   modStatus->label(dirty ? "MOD" : "@line");
   modStatus->redraw();
+}
+
+/**
+ * sets the foreground and background colors on the given widget
+ */
+void EditorWidget::setWidgetColor(Widget* w, Color bg, Color fg)
+{
+  w->color(bg);
+  w->textcolor(fg);
+  w->redraw();
 }
 
 /**
