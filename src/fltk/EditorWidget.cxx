@@ -51,6 +51,7 @@ static bool rename_active = false;
 const char configFile[] = "config.txt";
 const char fontConfigRead[] = "name=%[^;];size=%d\n";
 const char fontConfigSave[] = "name=%s;size=%d\n";
+const char scanLabel[] = "(Refresh)";
 
 EditorWidget* get_editor() {
   EditorWidget* result = wnd->getEditor();
@@ -92,7 +93,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   funcList = new Browser(editor->w(), 0, browserWidth, editHeight);
   funcList->labelfont(HELVETICA);
   funcList->indented(1);
-  funcList->add(SCAN_LABEL);
+  funcList->add(scanLabel);
 
   tty = new TtyWidget(0, editHeight, w, ttyHeight, TTY_ROWS);
   tty->color(WHITE); // bg
@@ -468,10 +469,10 @@ void EditorWidget::func_list(Widget* w, void* eventData)
   if (funcList && funcList->item()) {
     const char *label = funcList->item()->label();
     if (label) {
-      if (strcmp(label, SCAN_LABEL) == 0) {
+      if (strcmp(label, scanLabel) == 0) {
         funcList->clear();
         createFuncList();
-        funcList->add(SCAN_LABEL);
+        funcList->add(scanLabel);
       }
       else {
         gotoLine((int) funcList->item()->user_data());
@@ -1006,8 +1007,6 @@ void EditorWidget::runState(RunMessage runMessage)
  */
 void EditorWidget::fileChanged(bool loadfile)
 {
-  FILE *fp;
-
   funcList->clear();
   if (loadfile) {
     // update the func/sub navigator
@@ -1044,50 +1043,8 @@ void EditorWidget::fileChanged(bool loadfile)
       }
     }
   }
-  else {
-    // empty the last edited file
-    char path[MAX_PATH];
-    getHomeDir(path);
-    strcat(path, LASTEDIT_FILE);
-    fp = fopen(path, "w");
-    if (!fwrite("\n", 1, 1, fp)) {
-      // write error
-    }
-    fclose(fp);
-  }
 
-  funcList->add(SCAN_LABEL);
-}
-
-/**
- * restores the previous editor buffer
- */
-void EditorWidget::restoreEdit()
-{
-  FILE *fp;
-  char path[MAX_PATH];
-
-  // continue editing the previous file
-  getHomeDir(path);
-  strcat(path, LASTEDIT_FILE);
-  fp = fopen(path, "r");
-  if (fp) {
-    if (fgets(path, sizeof(path), fp)) {
-      path[strlen(path) - 1] = 0; // trim new-line
-    }
-    fclose(fp);
-    if (access(path, 0) == 0) {
-      loadFile(path);
-      return;
-    }
-  }
-
-  // continue editing scratch buffer
-  getHomeDir(path);
-  strcat(path, UNTITLED_FILE);
-  if (access(path, 0) == 0) {
-    loadFile(path);
-  }
+  funcList->add(scanLabel);
 }
 
 //--Protected methods-----------------------------------------------------------

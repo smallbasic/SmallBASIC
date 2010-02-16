@@ -17,6 +17,7 @@
 
 #include "EditorWidget.h"
 #include "HelpWidget.h"
+#include "Profile.h"
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
@@ -30,15 +31,11 @@
 
 #define MNU_HEIGHT 22
 #define DEF_FONT_SIZE 12
-#define SCAN_LABEL "(Refresh)"
 #define NUM_RECENT_ITEMS 9
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
 #endif
-
-#define UNTITLED_FILE "untitled.bas"
-#define LASTEDIT_FILE "lastedit.txt"
 
 extern "C" void trace(const char* format, ...);
 
@@ -112,7 +109,6 @@ struct MainWindow : public BaseWindow {
   void pathMessage(const char *file);
   void resetPen();
   void saveEditConfig(EditorWidget* editWidget);
-  void saveLastEdit(const char *filename);
   void scanPlugIns(Menu* menu);
   void scanRecentFiles(Menu * menu);
   void setBreak();
@@ -176,6 +172,9 @@ struct MainWindow : public BaseWindow {
 
   // tab parent
   TabGroup* tabGroup;
+
+  // configuration
+  Profile* profile;
 };
 
 #endif

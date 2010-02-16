@@ -28,6 +28,7 @@ sbasici_SOURCES =				\
     BasicEditor.cxx BasicEditor.h		\
     EditorWidget.cxx EditorWidget.h		\
     FileWidget.cxx FileWidget.h			\
+    Profile.cxx Profile.h			\
     StringLib.cxx StringLib.h			\
     dev_fltk.cxx				\
     blib_fltk_ui.cxx

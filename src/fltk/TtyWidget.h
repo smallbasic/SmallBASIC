@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <fltk/events.h>
 #include <fltk/Font.h>
 #include <fltk/draw.h>
 #include <fltk/Group.h>

@@ -43,6 +43,7 @@ int recentPosition[NUM_RECENT_ITEMS];
 MainWindow* wnd;
 ExecState runMode = init_state;
 
+const char* untitledFile = "untitled.bas";
 const char* fileTabName = "File";
 const char* helpTabName = "Help";
 const char* basHome = "BAS_HOME=";
@@ -132,18 +133,6 @@ void MainWindow::showEditTab(EditorWidget* editWidget)
   }
 }
 
-void MainWindow::saveLastEdit(const char *filename)
-{
-  // remember the last edited file
-  FILE *fp = openConfig(LASTEDIT_FILE);
-  if (fp) {
-    int err;
-    err = fwrite(filename, strlen(filename), 1, fp);
-    err = fwrite("\n", 1, 1, fp);
-    fclose(fp);
-  }
-}
-
 void MainWindow::addHistory(const char *filename)
 {
   FILE *fp;
@@ -161,9 +150,6 @@ void MainWindow::addHistory(const char *filename)
   strcpy(updatedfile, filename);
   FileWidget::forwardSlash(updatedfile);
   filename = updatedfile;
-
-  // remember the last edited file
-  saveLastEdit(filename);
 
   // save into the history file
   getHomeDir(path);
@@ -365,11 +351,11 @@ void MainWindow::quit(Widget* w, void* eventData)
       if (gw_editor == ((GroupWidget) (int)group->user_data())) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         const char *filename = editWidget->getFilename();
-        int offs = strlen(filename) - strlen(UNTITLED_FILE);
+        int offs = strlen(filename) - strlen(untitledFile);
         if (filename[0] == 0 ||
-            (offs > 0 && strcasecmp(filename + offs, UNTITLED_FILE) == 0)) {
+            (offs > 0 && strcasecmp(filename + offs, untitledFile) == 0)) {
           getHomeDir(path);
-          strcat(path, UNTITLED_FILE);
+          strcat(path, untitledFile);
           editWidget->doSaveFile(path);
         }
         else if (!editWidget->checkSave(true)) {
@@ -559,7 +545,7 @@ void MainWindow::run(Widget* w, void* eventData)
       if (noSave == 0 || noSave[0] != '1') {
         if (filename == 0 || filename[0] == 0) {
           getHomeDir(path);
-          strcat(path, UNTITLED_FILE);
+          strcat(path, untitledFile);
           filename = path;
           editWidget->doSaveFile(filename);
         }
@@ -675,7 +661,6 @@ void MainWindow::load_file(Widget* w, void* eventData)
       // restore previous position
       editor->insert_position(recentPosition[recentIndex]);
       editWidget->fileChanged(true);
-      saveLastEdit(path);
       const char* slash = strrchr(path, '/');
       editWidget->parent()->copy_label(slash ? slash + 1 : path);
       showEditTab(editWidget);
@@ -723,10 +708,10 @@ void MainWindow::scanRecentFiles(Menu * menu)
     fclose(fp);
   }
   while (i < NUM_RECENT_ITEMS) {
-    sprintf(label, "&File/Open Recent File/%s", UNTITLED_FILE);
+    sprintf(label, "&File/Open Recent File/%s", untitledFile);
     recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
                               load_file_cb, (void *)(i + 1));
-    recentPath[i].append(UNTITLED_FILE);
+    recentPath[i].append(untitledFile);
     i++;
   }
 }
@@ -928,8 +913,8 @@ bool initialise(int argc, char **argv)
     wnd->getEditor(true)->loadFile(runfile);
     break;
   default:
-    wnd->getEditor(true)->restoreEdit();
     runMode = edit_state;
+    wnd->profile->restore(wnd);
   }
 
   wnd->updateEditTabName(wnd->getEditor());
@@ -937,9 +922,15 @@ bool initialise(int argc, char **argv)
   return true;
 }
 
+void save_profile(void)
+{
+  wnd->profile->save(wnd);
+}
+
 int main(int argc, char **argv)
 {
   if (initialise(argc, argv)) {
+    atexit(save_profile);
     run();
   }
   return 0;
@@ -951,6 +942,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
   logPrint = false;
   tty = 0;
+  profile = new Profile();
 
   FileWidget::forwardSlash(runfile);
   begin();
@@ -1028,7 +1020,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   outputGroup->resizable(out);
   outputGroup->end();
 
-  createEditor(UNTITLED_FILE);
+  createEditor(untitledFile);
   tabGroup->resizable(outputGroup);
   tabGroup->end();
   outer->end();
@@ -1065,7 +1057,7 @@ Group* MainWindow::createEditor(const char* title) {
 void MainWindow::new_file(Widget* w, void* eventData) 
 {
   EditorWidget* editWidget = 0;
-  Group* untitledEditor = findTab(UNTITLED_FILE);
+  Group* untitledEditor = findTab(untitledFile);
   char path[MAX_PATH];
 
   if (untitledEditor) {
@@ -1073,11 +1065,11 @@ void MainWindow::new_file(Widget* w, void* eventData)
     editWidget = getEditor(untitledEditor);
   }
   if (!editWidget) {
-    editWidget = getEditor(createEditor(UNTITLED_FILE));
+    editWidget = getEditor(createEditor(untitledFile));
 
     // preserve the contents of any existing untitled.bas
     getHomeDir(path);
-    strcat(path, UNTITLED_FILE);
+    strcat(path, untitledFile);
     if (access(path, 0) == 0) {
       editWidget->loadFile(path);
     }

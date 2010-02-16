@@ -117,7 +117,6 @@ public:
   void getSelStartRowCol(int* row, int* col);
   void gotoLine(int line);
   void loadFile(const char* newfile);
-  void restoreEdit();
   void runState(RunMessage runMessage);
   void saveConfig();
   void saveSelection(const char* path);
