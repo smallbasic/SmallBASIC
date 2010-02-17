@@ -12,14 +12,18 @@
 #include "Profile.h"
 #include "MainWindow.h"
 
-const char* configFile = "profile.txt";
+const char* configFile = "config.txt";
 const char* pathKey = "path";
 const char* indentLevelKey = "indentLevel";
-const char* ttyRowsKey = "ttyRows";
 const char* logPrintKey = "logPrint";
 const char* scrollLockKey = "scrollLock";
 const char* hideIdeKey = "hideIde";
 const char* gotoLineKey = "gotoLine";
+const char* fontNameKey = "fontName";
+const char* fontSizeKey = "fontSize";
+
+// in BasicEditor.cxx
+extern TextDisplay::StyleTableEntry styletable[];
 
 //
 // Profile constructor
@@ -27,11 +31,30 @@ const char* gotoLineKey = "gotoLine";
 Profile::Profile() {
   // defaults
   indentLevel = 2;
-  ttyRows = 1000;
-  logPrint = false;
-  scrollLock = false;
-  hideIde = false;
-  gotoLine = false;
+  logPrint = 0;
+  scrollLock = 0;
+  hideIde = 0;
+  gotoLine = 0;
+  font = COURIER;
+  fontSize = 12;
+  color = NO_COLOR;
+}
+
+//
+// setup the editor defaults
+//
+void Profile::loadConfig(EditorWidget* editor) {
+  editor->setIndentLevel(indentLevel);
+  editor->setFont(font);
+  editor->setFontSize(fontSize);
+  editor->setHideIde(hideIde);
+  editor->setLogPrint(logPrint);
+  editor->setScrollLock(scrollLock);
+  editor->setBreakToLine(gotoLine);
+  
+  if (color != NO_COLOR) {
+    editor->setEditorColor(color, false);
+  }
 }
 
 //
@@ -40,49 +63,78 @@ Profile::Profile() {
 void Profile::restore(MainWindow* wnd) {
   strlib::String buffer;
   strlib::Properties profile;
-  strlib::List paths;
   long len;
 
   FILE *fp = wnd->openConfig(configFile, "r");
   if (fp) {
-    // load the entire file
     fseek(fp, 0, SEEK_END);
     len = ftell(fp);
     rewind(fp);
     buffer.append(fp, len);
     fclose(fp);
-
     profile.load(buffer.toString(), buffer.length());
-    profile.get(pathKey, &paths);
 
-    restoreTabs(wnd, &paths);
     restoreValue(&profile, indentLevelKey, &indentLevel);
-    restoreValue(&profile, ttyRowsKey, &ttyRows);
     restoreValue(&profile, logPrintKey, &logPrint);
     restoreValue(&profile, scrollLockKey, &scrollLock);
     restoreValue(&profile, hideIdeKey, &hideIde);
     restoreValue(&profile, gotoLineKey, &gotoLine);
+    restoreStyles(&profile);
+    restoreTabs(wnd, &profile);
+  }
+}
+
+//
+// load any stored font or color settings
+//
+void Profile::restoreStyles(strlib::Properties* profile) {
+  // restore size and face
+  restoreValue(profile, fontSizeKey, &fontSize);
+  String* fontName = profile->get(fontNameKey);
+  if (fontName) {
+    font = fltk::font(fontName->toString());
+  }
+
+  for (int i = 0; i <= st_background; i++) {
+    char buffer[4];
+    sprintf(buffer, "%02d", i);
+    String* color = profile->get(buffer);
+    if (color) {
+      Color c = fltk::color(color->toString());
+      if (c != NO_COLOR) {
+        if (i == st_background) {
+          this->color = c;
+        }
+        else {
+          styletable[i].color = c;
+        }
+      }
+    }
   }
 }
 
 //
 // restore the editor tabs
 //
-void Profile::restoreTabs(MainWindow* wnd, strlib::List* paths) {
+void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
   bool usedEditor = false;
+  strlib::List paths;
+  profile->get(pathKey, &paths);
+  Object** list = paths.getList();
+  int len = paths.length();
 
-  Object** list = paths->getList();
-  int len = paths->length();
   for (int i = 0; i < len; i++) {
     const char* path = ((String *) list[i])->toString();
     EditorWidget* editor = 0;
     if (usedEditor) {
+      // constructor will call loadConfig
       Group* group = wnd->createEditor(path);
       editor = wnd->getEditor(group);
     }
     else {
       // load into the initial buffer
       editor = wnd->getEditor(true);
+      loadConfig(editor);
       usedEditor = true;
     }
     editor->loadFile(path);
@@ -93,7 +145,7 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::List* paths) {
 // restore the int value
 //
 void Profile::restoreValue(strlib::Properties* p, const char* key, int* value) {
-  String* s = p->get(indentLevelKey);
+  String* s = p->get(key);
   if (s) {
     *value = s->toInteger();
   }
@@ -106,16 +158,33 @@ void Profile::save(MainWindow* wnd) {
   // remember the last edited file
   FILE *fp = wnd->openConfig(configFile);
   if (fp) {
-    saveTabs(wnd, fp);
-
     saveValue(fp, indentLevelKey, indentLevel);
-    saveValue(fp, ttyRowsKey, ttyRows);
     saveValue(fp, logPrintKey, logPrint);
     saveValue(fp, scrollLockKey, scrollLock);
     saveValue(fp, hideIdeKey, hideIde);
     saveValue(fp, gotoLineKey, gotoLine);
+    saveStyles(fp);
+    saveTabs(wnd, fp);
 
     fclose(fp);
+  }
+}
+
+//
+// saves the current font size, face and colour configuration
+//
+void Profile::saveStyles(FILE *fp) {
+  char buffer[MAX_PATH];
+  int err;
+  uchar r,g,b;
+
+  saveValue(fp, fontSizeKey, (int) styletable[0].size);
+  saveValue(fp, fontNameKey, styletable[0].font->name());
+  
+  for (int i = 0; i <= st_background; i++) {
+    split_color(i == st_background ? color : styletable[i].color, r,g,b);
+    sprintf(buffer, "%02d=#%02x%02x%02x\n", i, r,g,b);
+    err = fwrite(buffer, strlen(buffer), 1, fp);
   }
 }
 
@@ -152,7 +221,7 @@ void Profile::saveValue(FILE* fp, const char* key, int value) {
   String s;
   int err;
   s.append(key).append("=").append(value).append("\n");
-  err = fwrite(s, s.length(), 1, fp);
+  err = fwrite(s.toString(), s.length(), 1, fp);
 }
 
 // End of "$Id$".

@@ -48,9 +48,9 @@ const char* fileTabName = "File";
 const char* helpTabName = "Help";
 const char* basHome = "BAS_HOME=";
 const char* pluginHome = "plugins";
-const char historyFile[] = "history.txt";
-const char keywordsFile[] = "keywords.txt";
-const char aboutText[] =
+const char* historyFile = "history.txt";
+const char* keywordsFile = "keywords.txt";
+const char* aboutText =
   "<b>About SmallBASIC...</b><br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
   "FLTK Version " SB_STR_VER "<br>"
@@ -903,7 +903,7 @@ bool initialise(int argc, char **argv)
 
   switch (runMode) {
   case run_state:
-    wnd->getEditor(true)->setHideIde();
+    wnd->getEditor(true)->setHideIde(true);
     wnd->getEditor(true)->loadFile(runfile);
     wnd->addHistory(runfile);
     if (!wnd->basicMain(0, runfile, false)) {
@@ -1243,7 +1243,6 @@ Group* MainWindow::selectTab(const char* label)
  */
 void MainWindow::updateConfig(EditorWidget* current) 
 {
-  current->saveConfig();
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group* group = (Group*)tabGroup->child(c);

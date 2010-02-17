@@ -118,12 +118,16 @@ public:
   void gotoLine(int line);
   void loadFile(const char* newfile);
   void runState(RunMessage runMessage);
-  void saveConfig();
   void saveSelection(const char* path);
-  void setHideIde();
+  void setBreakToLine(bool b) { gotoLineBn->value(b); }
+  void setEditorColor(Color c, bool defColor);
+  void setFont(Font* font);
   void setFontSize(int i);
+  void setHideIde(bool b) { hideIdeBn->value(b); }
   void setIndentLevel(int level);
+  void setLogPrint(bool b) { logPrintBn->value(b); }
   void setRowCol(int row, int col);
+  void setScrollLock(bool b) { lockBn->value(b); }
   void showPath();
   void statusMsg(const char* msg);
   void updateConfig(EditorWidget* current);
@@ -142,11 +146,9 @@ protected:
   void doChange(int inserted, int deleted);
   void findFunc(const char *find);
   char* getSelection(Rectangle* rc);
-  const char* getFontName();
   void getKeywords(strlib::List& keywords);
   U32 getModifiedTime();
   void handleFileChange();
-  void loadConfig();
   void newFile();
   void reloadFile();
   int  replaceAll(const char* find, const char* replace, bool restorePos, bool matchWord);
@@ -154,8 +156,6 @@ protected:
                       const char *find, int findLen, int *foundPos);
   void setColor(const char* label, StyleField field);
   void setCommand(CommandOpt command);
-  void setEditorColor(Color c, bool defColor);
-  void setFont(Font* font);
   void setModified(bool dirty);
   void setWidgetColor(Widget* w, Color bg, Color fg);
   void showFindText(const char *text);

@@ -31,7 +31,6 @@
 
 using namespace fltk;
 
-// TODO: replace with settings manager setting
 #define TTY_ROWS 1000
 
 // in MainWindow.cxx
@@ -48,9 +47,6 @@ extern Color defaultColor[];
 int completionIndex = 0;
 
 static bool rename_active = false;
-const char configFile[] = "config.txt";
-const char fontConfigRead[] = "name=%[^;];size=%d\n";
-const char fontConfigSave[] = "name=%s;size=%d\n";
 const char scanLabel[] = "(Refresh)";
 
 EditorWidget* get_editor() {
@@ -150,9 +146,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   resizable(editor);
   end();
 
-  setEditorColor(WHITE, true);
-  loadConfig();
-
   // command selection
   setCommand(cmd_find);
   runState(rs_ready);
@@ -184,6 +177,14 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   lockBn->tooltip("Prevent log window auto-scrolling");
   hideIdeBn->tooltip("Hide the editor while program is running");
   gotoLineBn->tooltip("Position the cursor to the last program line after BREAK");
+
+  // setup defaults or restore settings
+  if (wnd && wnd->profile) {
+    wnd->profile->loadConfig(this);
+  }
+  else {
+    setEditorColor(WHITE, true);
+  }
 }
 
 EditorWidget::~EditorWidget()
@@ -842,30 +843,6 @@ void EditorWidget::getSelEndRowCol(int *row, int *col)
 }
 
 /**
- * saves the current font size, face and colour configuration
- */
-void EditorWidget::saveConfig() {
-  FILE *fp = wnd->openConfig(configFile);
-  if (fp) {
-    char buffer[MAX_PATH];
-    int err;
-    uchar r,g,b;
-
-    sprintf(buffer, fontConfigSave, 
-            editor->getFontName(), editor->getFontSize());
-    err = fwrite(buffer, strlen(buffer), 1, fp);
-
-    for (int i = 0; i <= st_background; i++) {
-      split_color(i == st_background ? editor->color() : styletable[i].color, r,g,b);
-      sprintf(buffer, "%02d=#%02x%02x%02x\n", i, r,g,b);
-      err = fwrite(buffer, strlen(buffer), 1, fp);
-    }
-    
-    fclose(fp);
-  }
-}
-
-/**
  * Saves the selected text to the given file path
  */
 void EditorWidget::saveSelection(const char* path) {
@@ -887,10 +864,45 @@ void EditorWidget::saveSelection(const char* path) {
 }
 
 /**
- * sets the hide IDE state to true
+ * Sets the editor and editor toolbar color
  */
-void EditorWidget::setHideIde() {
-  hideIdeBn->value(true);
+void EditorWidget::setEditorColor(Color c, bool defColor) {
+  if (wnd && wnd->profile) {
+    wnd->profile->color = c;
+  }
+  editor->color(c);
+
+  Color bg = lerp(c, BLACK, .1f); // same offset as editor line numbers
+  Color fg = contrast(c, bg);
+  int i;
+
+  // set the colours on the command text bar
+  for (i = commandText->parent()->children(); i > 0; i--) {
+    Widget* child = commandText->parent()->child(i - 1);
+    setWidgetColor(child, bg, fg);
+  }
+
+  // set the colours on the function list
+  setWidgetColor(funcList, bg, fg);
+
+  if (defColor) {
+    // contrast the default colours against the background
+    for (i = 0; i < st_background; i++) {
+      styletable[i].color = contrast(defaultColor[i], c);
+    }
+  }
+}
+
+/**
+ * sets the current display font
+ */
+void EditorWidget::setFont(Font* font)
+{
+  if (font) {
+    editor->setFont(font);
+    tty->setFont(font);
+    wnd->profile->font = font;
+  }
 }
 
 /**
@@ -900,6 +912,7 @@ void EditorWidget::setFontSize(int size)
 {
   editor->setFontSize(size);
   tty->setFontSize(size);
+  wnd->profile->fontSize = size;
 }
 
 /**
@@ -1187,40 +1200,6 @@ void EditorWidget::handleFileChange() {
 }
 
 /**
- * load any stored font or color settings
- */
-void EditorWidget::loadConfig() {
-  FILE *fp = wnd->openConfig(configFile, "r");
-  if (fp) {
-    char buffer[MAX_PATH];
-    int size = 0;
-    int i = 0;
-
-    if (fscanf(fp, fontConfigRead, buffer, &size) == 2) {
-      setFont(font(buffer));
-      setFontSize(size);
-    }
-
-    while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
-      buffer[strlen(buffer) - 1] = 0; // trim new-line
-      Color c = fltk::color(buffer + 3); // skip nn=#xxxxxx
-      if (c != NO_COLOR) {
-        if (i == st_background) {
-          setEditorColor(c, false);
-          break; // found final StyleField element
-        }
-        else {
-          styletable[i].color = c;
-        }
-      }
-      i++;
-    }
-
-    fclose(fp);
-  }
-}
-
-/**
  * create a new editor buffer
  */
 void EditorWidget::newFile()
@@ -1359,44 +1338,6 @@ void EditorWidget::setCommand(CommandOpt command) {
   commandText->take_focus();
   commandText->when(commandOpt == cmd_find_inc ? 
                     WHEN_CHANGED : WHEN_ENTER_KEY_ALWAYS);
-}
-
-/**
- * Sets the editor and editor toolbar color
- */
-void EditorWidget::setEditorColor(Color c, bool defColor) {
-  editor->color(c);
-
-  Color bg = lerp(c, BLACK, .1f); // same offset as editor line numbers
-  Color fg = contrast(c, bg);
-  int i;
-
-  // set the colours on the command text bar
-  for (i = commandText->parent()->children(); i > 0; i--) {
-    Widget* child = commandText->parent()->child(i - 1);
-    setWidgetColor(child, bg, fg);
-  }
-
-  // set the colours on the function list
-  setWidgetColor(funcList, bg, fg);
-
-  if (defColor) {
-    // contrast the default colours against the background
-    for (i = 0; i < st_background; i++) {
-      styletable[i].color = contrast(defaultColor[i], c);
-    }
-  }
-}
-
-/**
- * sets the current display font
- */
-void EditorWidget::setFont(Font* font)
-{
-  if (font) {
-    editor->setFont(font);
-    tty->setFont(font);
-  }
 }
 
 /**
