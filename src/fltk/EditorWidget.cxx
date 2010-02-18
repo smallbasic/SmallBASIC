@@ -94,6 +94,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   tty = new TtyWidget(0, editHeight, w, ttyHeight, TTY_ROWS);
   tty->color(WHITE); // bg
   tty->labelcolor(BLACK); // fg
+
   tile->end();
 
   // create the editor toolbar
@@ -143,7 +144,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   statusBar->resizable(commandText);
   statusBar->end();
 
-  resizable(editor);
+  resizable(tile);
   end();
 
   // command selection
@@ -1197,6 +1198,16 @@ void EditorWidget::handleFileChange() {
       modifiedTime = 0;
     }
   }
+}
+
+/**
+ * prevent the tty and browser from growing when the outer window is resized
+ */
+void EditorWidget::layout() {
+  Group* tile = editor->parent();
+  tile->resizable(editor);
+  Group::layout();
+  tile->resizable(null);
 }
 
 /**

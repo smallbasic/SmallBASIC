@@ -150,6 +150,7 @@ protected:
   void getKeywords(strlib::List& keywords);
   U32 getModifiedTime();
   void handleFileChange();
+  void layout();
   void newFile();
   void reloadFile();
   int  replaceAll(const char* find, const char* replace, bool restorePos, bool matchWord);

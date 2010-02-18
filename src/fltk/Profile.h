@@ -32,7 +32,7 @@ struct Profile {
 
   private:
   bool loaded;
-  int nextInteger(const char* s, int* index);
+  int nextInteger(const char* s, int len, int& index);
   void restoreStyles(strlib::Properties* profile);
   void restoreTabs(MainWindow* wnd, strlib::Properties* profile);
   void restoreValue(strlib::Properties* profile, const char* key, int* value);

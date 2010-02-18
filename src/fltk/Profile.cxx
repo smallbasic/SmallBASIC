@@ -9,6 +9,7 @@
 
 #include <unistd.h>
 #include <ctype.h>
+#include <fltk/Monitor.h>
 
 #include "Profile.h"
 #include "MainWindow.h"
@@ -77,6 +78,7 @@ void Profile::restore(MainWindow* wnd) {
 //
 void Profile::save(MainWindow* wnd) {
   if (loaded) {
+    // prevent overwriting config when not initially used
     FILE *fp = wnd->openConfig(configFile);
     if (fp) {
       saveValue(fp, indentLevelKey, indentLevel);
@@ -91,14 +93,14 @@ void Profile::save(MainWindow* wnd) {
 //
 // returns the next integer from the given string
 //
-int Profile::nextInteger(const char* s, int* index) {
+int Profile::nextInteger(const char* s, int len, int& index) {
   int result = 0;
-  while (isdigit(s[*index])) {
-    result = (result * 10) + (s[*index] - '0');
-    (*index)++;
+  while (isdigit(s[index]) && index < len) {
+    result = (result * 10) + (s[index] - '0');
+    index++;
   }
-  if (s[*index] == ';') {
-    (*index)++;
+  if (s[index] == ';') {
+    index++;
   }
   return result;
 }
@@ -145,11 +147,12 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
   for (int i = 0; i < len; i++) {
     const char* buffer = ((String *) list[i])->toString();
     int index = 0;
-    int logPrint = nextInteger(buffer, &index);
-    int scrollLock = nextInteger(buffer, &index);
-    int hideIde = nextInteger(buffer, &index);
-    int gotoLine = nextInteger(buffer, &index);
-    int insertPos = nextInteger(buffer, &index);
+    int len = strlen(buffer);
+    int logPrint = nextInteger(buffer, len, index);
+    int scrollLock = nextInteger(buffer, len, index);
+    int hideIde = nextInteger(buffer, len, index);
+    int gotoLine = nextInteger(buffer, len, index);
+    int insertPos = nextInteger(buffer, len, index);
 
     const char* path = buffer + index;
 
@@ -199,8 +202,11 @@ void Profile::restoreWindowPos(MainWindow* wnd, strlib::Properties* profile) {
   restoreValue(profile, "w", &w);
   restoreValue(profile, "h", &h);
 
-  if (x > 1 && y > 1 && w > 100 && h > 100) {
-    wnd->resize(x, y, w, h);
+  if (x > 0 && y > 0 && w > 100 && h > 100) {
+    const Monitor& monitor = Monitor::all();
+    if (x < monitor.w() && y < monitor.h()) {
+      wnd->resize(x, y, w, h);
+    }
   }
 }
 
