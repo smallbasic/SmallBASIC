@@ -140,6 +140,7 @@ public:
   bool isHideIDE() { return hideIdeBn->value(); }
   bool isLoading() { return loading; }
   bool isLogPrint() { return logPrintBn->value(); }
+  bool isScrollLock() { return lockBn->value(); }
 
 protected:
   void createFuncList();

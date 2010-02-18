@@ -21,27 +21,27 @@ struct EditorWidget;
 struct Profile {
   Profile();
 
+  void loadConfig(EditorWidget* editor);
   void restore(MainWindow* wnd);
   void save(MainWindow* wnd);
-  void loadConfig(EditorWidget* editor);
 
   fltk::Color color;
   fltk::Font* font;
   int fontSize;
   int indentLevel;
-  int logPrint;
-  int scrollLock;
-  int hideIde;
-  int gotoLine;
 
   private:
+  bool loaded;
+  int nextInteger(const char* s, int* index);
   void restoreStyles(strlib::Properties* profile);
   void restoreTabs(MainWindow* wnd, strlib::Properties* profile);
   void restoreValue(strlib::Properties* profile, const char* key, int* value);
+  void restoreWindowPos(MainWindow* wnd, strlib::Properties* profile);
   void saveStyles(FILE *fp);
-  void saveTabs(MainWindow* wnd, FILE* fp);
+  void saveTabs(FILE* fp, MainWindow* wnd);
   void saveValue(FILE* fp, const char* key, const char* value);
   void saveValue(FILE* fp, const char* key, int value);
+  void saveWindowPos(FILE* fp, MainWindow* wnd);
 };
 
 #endif

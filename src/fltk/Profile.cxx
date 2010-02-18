@@ -8,6 +8,7 @@
 //
 
 #include <unistd.h>
+#include <ctype.h>
 
 #include "Profile.h"
 #include "MainWindow.h"
@@ -15,10 +16,6 @@
 const char* configFile = "config.txt";
 const char* pathKey = "path";
 const char* indentLevelKey = "indentLevel";
-const char* logPrintKey = "logPrint";
-const char* scrollLockKey = "scrollLock";
-const char* hideIdeKey = "hideIde";
-const char* gotoLineKey = "gotoLine";
 const char* fontNameKey = "fontName";
 const char* fontSizeKey = "fontSize";
 
@@ -31,13 +28,10 @@ extern TextDisplay::StyleTableEntry styletable[];
 Profile::Profile() {
   // defaults
   indentLevel = 2;
-  logPrint = 0;
-  scrollLock = 0;
-  hideIde = 0;
-  gotoLine = 0;
   font = COURIER;
   fontSize = 12;
   color = NO_COLOR;
+  loaded = false;
 }
 
 //
@@ -47,10 +41,6 @@ void Profile::loadConfig(EditorWidget* editor) {
   editor->setIndentLevel(indentLevel);
   editor->setFont(font);
   editor->setFontSize(fontSize);
-  editor->setHideIde(hideIde);
-  editor->setLogPrint(logPrint);
-  editor->setScrollLock(scrollLock);
-  editor->setBreakToLine(gotoLine);
   
   if (color != NO_COLOR) {
     editor->setEditorColor(color, false);
@@ -75,13 +65,42 @@ void Profile::restore(MainWindow* wnd) {
     profile.load(buffer.toString(), buffer.length());
 
     restoreValue(&profile, indentLevelKey, &indentLevel);
-    restoreValue(&profile, logPrintKey, &logPrint);
-    restoreValue(&profile, scrollLockKey, &scrollLock);
-    restoreValue(&profile, hideIdeKey, &hideIde);
-    restoreValue(&profile, gotoLineKey, &gotoLine);
     restoreStyles(&profile);
+    restoreWindowPos(wnd, &profile);
     restoreTabs(wnd, &profile);
   }
+  loaded = true;
+}
+
+//
+// persist profile values
+//
+void Profile::save(MainWindow* wnd) {
+  if (loaded) {
+    FILE *fp = wnd->openConfig(configFile);
+    if (fp) {
+      saveValue(fp, indentLevelKey, indentLevel);
+      saveStyles(fp);
+      saveTabs(fp, wnd);
+      saveWindowPos(fp, wnd);
+      fclose(fp);
+    }
+  }
+}
+
+//
+// returns the next integer from the given string
+//
+int Profile::nextInteger(const char* s, int* index) {
+  int result = 0;
+  while (isdigit(s[*index])) {
+    result = (result * 10) + (s[*index] - '0');
+    (*index)++;
+  }
+  if (s[*index] == ';') {
+    (*index)++;
+  }
+  return result;
 }
 
 //
@@ -124,7 +143,16 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
   int len = paths.length();
 
   for (int i = 0; i < len; i++) {
-    const char* path = ((String *) list[i])->toString();
+    const char* buffer = ((String *) list[i])->toString();
+    int index = 0;
+    int logPrint = nextInteger(buffer, &index);
+    int scrollLock = nextInteger(buffer, &index);
+    int hideIde = nextInteger(buffer, &index);
+    int gotoLine = nextInteger(buffer, &index);
+    int insertPos = nextInteger(buffer, &index);
+
+    const char* path = buffer + index;
+
     EditorWidget* editor = 0;
     if (usedEditor) {
       // constructor will call loadConfig
@@ -137,7 +165,14 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
       loadConfig(editor);
       usedEditor = true;
     }
+
     editor->loadFile(path);
+    editor->setHideIde(hideIde);
+    editor->setLogPrint(logPrint);
+    editor->setScrollLock(scrollLock);
+    editor->setBreakToLine(gotoLine);
+    editor->editor->insert_position(insertPos);
+    editor->editor->show_insert_position();
   }
 }
 
@@ -152,21 +187,20 @@ void Profile::restoreValue(strlib::Properties* p, const char* key, int* value) {
 }
 
 //
-// persist profile values
+// restore the main window position
 //
-void Profile::save(MainWindow* wnd) {
-  // remember the last edited file
-  FILE *fp = wnd->openConfig(configFile);
-  if (fp) {
-    saveValue(fp, indentLevelKey, indentLevel);
-    saveValue(fp, logPrintKey, logPrint);
-    saveValue(fp, scrollLockKey, scrollLock);
-    saveValue(fp, hideIdeKey, hideIde);
-    saveValue(fp, gotoLineKey, gotoLine);
-    saveStyles(fp);
-    saveTabs(wnd, fp);
+void Profile::restoreWindowPos(MainWindow* wnd, strlib::Properties* profile) {
+  int x,y,w,h;
 
-    fclose(fp);
+  x = y = w = h = -1;
+
+  restoreValue(profile, "x", &x);
+  restoreValue(profile, "y", &y);
+  restoreValue(profile, "w", &w);
+  restoreValue(profile, "h", &h);
+
+  if (x > 1 && y > 1 && w > 100 && h > 100) {
+    wnd->resize(x, y, w, h);
   }
 }
 
@@ -191,14 +225,27 @@ void Profile::saveStyles(FILE *fp) {
 //
 // persist the editor tabs
 //
-void Profile::saveTabs(MainWindow* wnd, FILE* fp) {
-  // write tabs
+void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
   int n = wnd->tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group* group = (Group*) wnd->tabGroup->child(c);
     if (gw_editor == ((GroupWidget) (int)group->user_data())) {
-      EditorWidget* editWidget = (EditorWidget*) group->child(0);
-      saveValue(fp, pathKey, editWidget->getFilename());
+      EditorWidget* editor = (EditorWidget*) group->child(0);
+
+      bool logPrint = editor->isLogPrint();
+      bool scrollLock = editor->isScrollLock();
+      bool hideIde =  editor->isHideIDE();
+      bool gotoLine = editor->isBreakToLine();
+      int insertPos = editor->editor->insert_position();
+      
+      String s;
+      s.append(logPrint).append(";")
+      .append(scrollLock).append(";")
+      .append(hideIde).append(";")
+      .append(gotoLine).append(";")
+      .append(insertPos).append(";")
+      .append(editor->getFilename());
+      saveValue(fp, pathKey, s.toString());
     }
   }
 }
@@ -209,9 +256,9 @@ void Profile::saveTabs(MainWindow* wnd, FILE* fp) {
 void Profile::saveValue(FILE* fp, const char* key, const char* value) {
   int err;
   err = fwrite(key, strlen(key), 1, fp);
-  err = fwrite("=", 1, 1, fp);
+  err = fwrite("='", 2, 1, fp);
   err = fwrite(value, strlen(value), 1, fp);
-  err = fwrite("\n", 1, 1, fp);
+  err = fwrite("'\n", 2, 1, fp);
 }
 
 //
@@ -222,6 +269,16 @@ void Profile::saveValue(FILE* fp, const char* key, int value) {
   int err;
   s.append(key).append("=").append(value).append("\n");
   err = fwrite(s.toString(), s.length(), 1, fp);
+}
+
+//
+// save the main window position
+//
+void Profile::saveWindowPos(FILE* fp, MainWindow* wnd) {
+  saveValue(fp, "x", wnd->x());
+  saveValue(fp, "y", wnd->y());
+  saveValue(fp, "w", wnd->w());
+  saveValue(fp, "h", wnd->h());
 }
 
 // End of "$Id$".
