@@ -154,6 +154,7 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
     int hideIde = nextInteger(buffer, len, index);
     int gotoLine = nextInteger(buffer, len, index);
     int insertPos = nextInteger(buffer, len, index);
+    int topLineNo = nextInteger(buffer, len, index);
 
     const char* path = buffer + index;
 
@@ -177,6 +178,7 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
     editor->setBreakToLine(gotoLine);
     editor->editor->insert_position(insertPos);
     editor->editor->show_insert_position();
+    editor->editor->scroll(topLineNo, 0);
   }
 }
 
@@ -244,9 +246,10 @@ void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
       bool hideIde =  editor->isHideIDE();
       bool gotoLine = editor->isBreakToLine();
       int insertPos = editor->editor->insert_position();
-      
-      fprintf(fp, "%s='%d;%d;%d;%d;%d;%s'\n", pathKey, 
-              logPrint, scrollLock, hideIde, gotoLine, insertPos,
+      int topLineNo = editor->editor->top_line();
+
+      fprintf(fp, "%s='%d;%d;%d;%d;%d;%d;%s'\n", pathKey, 
+              logPrint, scrollLock, hideIde, gotoLine, insertPos, topLineNo,
               editor->getFilename());
     }
   }
