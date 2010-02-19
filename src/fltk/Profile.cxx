@@ -19,6 +19,7 @@ const char* pathKey = "path";
 const char* indentLevelKey = "indentLevel";
 const char* fontNameKey = "fontName";
 const char* fontSizeKey = "fontSize";
+const char* windowPosKey = "windowPos";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -193,19 +194,22 @@ void Profile::restoreValue(strlib::Properties* p, const char* key, int* value) {
 // restore the main window position
 //
 void Profile::restoreWindowPos(MainWindow* wnd, strlib::Properties* profile) {
-  int x,y,w,h;
+  String* windowPos = profile->get(windowPosKey);
+  if (windowPos != null) {
+    const char* buffer = windowPos->toString();
+    int index = 0;
+    int len = strlen(buffer);
 
-  x = y = w = h = -1;
+    int x = nextInteger(buffer, len, index);
+    int y = nextInteger(buffer, len, index);
+    int w = nextInteger(buffer, len, index);
+    int h = nextInteger(buffer, len, index);
 
-  restoreValue(profile, "x", &x);
-  restoreValue(profile, "y", &y);
-  restoreValue(profile, "w", &w);
-  restoreValue(profile, "h", &h);
-
-  if (x > 0 && y > 0 && w > 100 && h > 100) {
-    const Monitor& monitor = Monitor::all();
-    if (x < monitor.w() && y < monitor.h()) {
-      wnd->resize(x, y, w, h);
+    if (x > 0 && y > 0 && w > 100 && h > 100) {
+      const Monitor& monitor = Monitor::all();
+      if (x < monitor.w() && y < monitor.h()) {
+        wnd->resize(x, y, w, h);
+      }
     }
   }
 }
@@ -214,8 +218,6 @@ void Profile::restoreWindowPos(MainWindow* wnd, strlib::Properties* profile) {
 // saves the current font size, face and colour configuration
 //
 void Profile::saveStyles(FILE *fp) {
-  char buffer[MAX_PATH];
-  int err;
   uchar r,g,b;
 
   saveValue(fp, fontSizeKey, (int) styletable[0].size);
@@ -223,8 +225,7 @@ void Profile::saveStyles(FILE *fp) {
   
   for (int i = 0; i <= st_background; i++) {
     split_color(i == st_background ? color : styletable[i].color, r,g,b);
-    sprintf(buffer, "%02d=#%02x%02x%02x\n", i, r,g,b);
-    err = fwrite(buffer, strlen(buffer), 1, fp);
+    fprintf(fp, "%02d=#%02x%02x%02x\n", i, r,g,b);
   }
 }
 
@@ -244,14 +245,9 @@ void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
       bool gotoLine = editor->isBreakToLine();
       int insertPos = editor->editor->insert_position();
       
-      String s;
-      s.append(logPrint).append(";")
-      .append(scrollLock).append(";")
-      .append(hideIde).append(";")
-      .append(gotoLine).append(";")
-      .append(insertPos).append(";")
-      .append(editor->getFilename());
-      saveValue(fp, pathKey, s.toString());
+      fprintf(fp, "%s='%d;%d;%d;%d;%d;%s'\n", pathKey, 
+              logPrint, scrollLock, hideIde, gotoLine, insertPos,
+              editor->getFilename());
     }
   }
 }
@@ -260,31 +256,22 @@ void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
 // persist a single value
 //
 void Profile::saveValue(FILE* fp, const char* key, const char* value) {
-  int err;
-  err = fwrite(key, strlen(key), 1, fp);
-  err = fwrite("='", 2, 1, fp);
-  err = fwrite(value, strlen(value), 1, fp);
-  err = fwrite("'\n", 2, 1, fp);
+  fprintf(fp, "%s='%s'\n", key, value);
 }
 
 //
 // persist a single value
 //
 void Profile::saveValue(FILE* fp, const char* key, int value) {
-  String s;
-  int err;
-  s.append(key).append("=").append(value).append("\n");
-  err = fwrite(s.toString(), s.length(), 1, fp);
+  fprintf(fp, "%s=%d\n", key, value);
 }
 
 //
 // save the main window position
 //
 void Profile::saveWindowPos(FILE* fp, MainWindow* wnd) {
-  saveValue(fp, "x", wnd->x());
-  saveValue(fp, "y", wnd->y());
-  saveValue(fp, "w", wnd->w());
-  saveValue(fp, "h", wnd->h());
+  fprintf(fp, "%s=%d;%d;%d;%d\n", windowPosKey, 
+          wnd->x(), wnd->y(), wnd->w(), wnd->h());
 }
 
 // End of "$Id$".
