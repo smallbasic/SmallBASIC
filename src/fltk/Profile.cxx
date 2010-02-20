@@ -20,6 +20,7 @@ const char* indentLevelKey = "indentLevel";
 const char* fontNameKey = "fontName";
 const char* fontSizeKey = "fontSize";
 const char* windowPosKey = "windowPos";
+const char* activeTabKey = "activeTab";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -39,13 +40,13 @@ Profile::Profile() {
 //
 // setup the editor defaults
 //
-void Profile::loadConfig(EditorWidget* editor) {
-  editor->setIndentLevel(indentLevel);
-  editor->setFont(font);
-  editor->setFontSize(fontSize);
+void Profile::loadConfig(EditorWidget* editWidget) {
+  editWidget->setIndentLevel(indentLevel);
+  editWidget->setFont(font);
+  editWidget->setFontSize(fontSize);
   
   if (color != NO_COLOR) {
-    editor->setEditorColor(color, false);
+    editWidget->setEditorColor(color, false);
   }
 }
 
@@ -158,27 +159,36 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
 
     const char* path = buffer + index;
 
-    EditorWidget* editor = 0;
+    EditorWidget* editWidget = 0;
     if (usedEditor) {
       // constructor will call loadConfig
       Group* group = wnd->createEditor(path);
-      editor = wnd->getEditor(group);
+      editWidget = wnd->getEditor(group);
     }
     else {
       // load into the initial buffer
-      editor = wnd->getEditor(true);
-      loadConfig(editor);
+      editWidget = wnd->getEditor(true);
+      loadConfig(editWidget);
       usedEditor = true;
     }
 
-    editor->loadFile(path);
-    editor->setHideIde(hideIde);
-    editor->setLogPrint(logPrint);
-    editor->setScrollLock(scrollLock);
-    editor->setBreakToLine(gotoLine);
-    editor->editor->insert_position(insertPos);
-    editor->editor->show_insert_position();
-    editor->editor->scroll(topLineNo, 0);
+    editWidget->loadFile(path);
+    editWidget->setHideIde(hideIde);
+    editWidget->setLogPrint(logPrint);
+    editWidget->setScrollLock(scrollLock);
+    editWidget->setBreakToLine(gotoLine);
+    editWidget->editor->insert_position(insertPos);
+    editWidget->editor->show_insert_position();
+    editWidget->editor->scroll(topLineNo, 0);
+  }
+
+  // restore the active tab
+  String* activeTab = profile->get(activeTabKey);
+  if (activeTab != null) {
+    EditorWidget* editWidget = wnd->getEditor(activeTab->toString());
+    if (editWidget) {
+      wnd->showEditTab(editWidget);
+    }
   }
 }
 
@@ -239,19 +249,25 @@ void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
   for (int c = 0; c < n; c++) {
     Group* group = (Group*) wnd->tabGroup->child(c);
     if (gw_editor == ((GroupWidget) (int)group->user_data())) {
-      EditorWidget* editor = (EditorWidget*) group->child(0);
+      EditorWidget* editWidget = (EditorWidget*) group->child(0);
 
-      bool logPrint = editor->isLogPrint();
-      bool scrollLock = editor->isScrollLock();
-      bool hideIde =  editor->isHideIDE();
-      bool gotoLine = editor->isBreakToLine();
-      int insertPos = editor->editor->insert_position();
-      int topLineNo = editor->editor->top_line();
+      bool logPrint = editWidget->isLogPrint();
+      bool scrollLock = editWidget->isScrollLock();
+      bool hideIde =  editWidget->isHideIDE();
+      bool gotoLine = editWidget->isBreakToLine();
+      int insertPos = editWidget->editor->insert_position();
+      int topLineNo = editWidget->editor->top_line();
 
       fprintf(fp, "%s='%d;%d;%d;%d;%d;%d;%s'\n", pathKey, 
               logPrint, scrollLock, hideIde, gotoLine, insertPos, topLineNo,
-              editor->getFilename());
+              editWidget->getFilename());
     }
+  }
+
+  // save the active tab
+  EditorWidget* editWidget = wnd->getEditor(false);
+  if (editWidget) {
+    saveValue(fp, activeTabKey, editWidget->getFilename());
   }
 }
 
