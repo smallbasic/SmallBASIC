@@ -1081,6 +1081,7 @@ void MainWindow::new_file(Widget* w, void* eventData)
 
 void MainWindow::open_file(Widget* w, void* eventData) 
 {
+  FileWidget* fileWidget = null;
   Group* openFileGroup = findTab(gw_file);
   if (!openFileGroup ) {
     int w = tabGroup->w();
@@ -1088,12 +1089,24 @@ void MainWindow::open_file(Widget* w, void* eventData)
     tabGroup->begin();
     openFileGroup = new Group(0, MNU_HEIGHT, w, h, fileTabName);
     openFileGroup->begin();
+    fileWidget = new FileWidget(2, 2, w - 4, h - 4);
     openFileGroup->box(THIN_DOWN_BOX);
     openFileGroup->user_data((void*) gw_file);
-    openFileGroup->resizable(new FileWidget(2, 2, w - 4, h - 4));
+    openFileGroup->resizable(fileWidget);
     openFileGroup->end();
     tabGroup->end();
   }
+  else {
+    fileWidget = (FileWidget*) openFileGroup->resizable();
+  }
+
+  // change to the directory of the current editor widget
+  EditorWidget* editWidget = getEditor(false);
+  String path;
+  if (editWidget) {
+    editWidget->splitPath(editWidget->getFilename(), &path);
+  }
+  fileWidget->openPath(path);
 
   tabGroup->selected_child(openFileGroup);
 }

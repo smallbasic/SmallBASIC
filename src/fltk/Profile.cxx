@@ -21,6 +21,7 @@ const char* fontNameKey = "fontName";
 const char* fontSizeKey = "fontSize";
 const char* windowPosKey = "windowPos";
 const char* activeTabKey = "activeTab";
+const char* createBackupsKey = "createBackups";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -35,6 +36,7 @@ Profile::Profile() {
   fontSize = 12;
   color = NO_COLOR;
   loaded = false;
+  createBackups = true;
 }
 
 //
@@ -68,6 +70,7 @@ void Profile::restore(MainWindow* wnd) {
     profile.load(buffer.toString(), buffer.length());
 
     restoreValue(&profile, indentLevelKey, &indentLevel);
+    restoreValue(&profile, createBackupsKey, &createBackups);
     restoreStyles(&profile);
     restoreWindowPos(wnd, &profile);
     restoreTabs(wnd, &profile);
@@ -84,6 +87,7 @@ void Profile::save(MainWindow* wnd) {
     FILE *fp = wnd->openConfig(configFile);
     if (fp) {
       saveValue(fp, indentLevelKey, indentLevel);
+      saveValue(fp, createBackupsKey, createBackups);
       saveStyles(fp);
       saveTabs(fp, wnd);
       saveWindowPos(fp, wnd);

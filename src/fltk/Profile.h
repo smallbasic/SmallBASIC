@@ -29,6 +29,7 @@ struct Profile {
   fltk::Font* font;
   int fontSize;
   int indentLevel;
+  int createBackups;
 
   private:
   bool loaded;

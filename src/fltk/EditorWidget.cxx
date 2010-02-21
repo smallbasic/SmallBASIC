@@ -1,10 +1,5 @@
 // $Id$
 //
-// Based on test/editor.cxx - A simple text editor program for the Fast
-// Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK
-// Programmer's Guide.
-// Copyright 1998-2003 by Bill Spitzak and others.
-//
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
@@ -762,6 +757,13 @@ void EditorWidget::doSaveFile(const char *newfile)
   char basfile[PATH_MAX];
   TextBuffer *textbuf = editor->textbuf;
   
+  if (wnd->profile->createBackups && access(newfile, 0) == 0) {
+    // rename any existing file as a backup
+    strcpy(basfile, newfile);
+    strcat(basfile, "~");
+    rename(newfile, basfile);
+  }
+
   strcpy(basfile, newfile);
   if (strchr(basfile, '.') == 0) {
     strcat(basfile, ".bas");
@@ -782,6 +784,13 @@ void EditorWidget::doSaveFile(const char *newfile)
   }
   wnd->updateEditTabName(this);
   wnd->showEditTab(this);
+
+  // store a copy in the developer 
+  if (wnd->profile->createBackups) {
+    getHomeDir(basfile);
+    strcat(basfile, "lastedit.bas");
+    textbuf->savefile(basfile);
+  }
 
   textbuf->call_modify_callbacks();
   showPath();
@@ -961,6 +970,30 @@ void EditorWidget::showPath()
 }
 
 /**
+ * return the name component of the full file path
+ */
+const char* EditorWidget::splitPath(const char* filename, String* path) {
+  const char *result = strrchr(filename, '/');
+  if (!result) {
+    result = strrchr(filename, '\\');
+  }
+
+  if (!result) {
+    result = filename;
+  }
+  else {
+    result++; // skip slash
+  }
+
+  if (path) {
+    // return the path component
+    path->append(filename, result - filename - 1);
+  }
+
+  return result;
+}
+
+/**
  * prints a status message on the tty-widget
  */
 void EditorWidget::statusMsg(const char *msg)
@@ -1047,13 +1080,10 @@ void EditorWidget::fileChanged(bool loadfile)
           recentPath[i].append(recentPath[i - 1]);
         }
         // create new item in first position
-        char *c = strrchr(filename, '/');
-        if (c == 0) {
-          c = strrchr(filename, '\\');
-        }
+        const char *label = splitPath(filename, null);
         recentPath[0].empty();
         recentPath[0].append(filename);
-        recentMenu[0]->copy_label(c ? c + 1 : filename);
+        recentMenu[0]->copy_label(label);
       }
     }
   }

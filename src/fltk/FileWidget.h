@@ -23,12 +23,13 @@ struct FileWidget : public HelpWidget {
   static char* forwardSlash(char *filename);
   void anchorClick();
   void fileOpen(EditorWidget* saveEditorAs);
-  int handle(int e);
+  void openPath(const char* newPath);
 
   private:
   void changeDir(const char* target);
   void displayPath();
   void enterPath();
+  int handle(int e);
   void saveAs();
 
   char path[PATH_MAX+1];

@@ -112,11 +112,6 @@ FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h)
   saveEditorAs = 0;
   sortDesc = false;
   sortBy = e_name;
-
-  if (getcwd(path, sizeof(path))) {
-    forwardSlash(path);
-    displayPath();
-  }
 }
 
 FileWidget::~FileWidget()
@@ -124,6 +119,9 @@ FileWidget::~FileWidget()
   fileWidget = 0;
 }
 
+//
+// convert slash chars in filename to forward slashes
+//
 char* FileWidget::forwardSlash(char *filename)
 {
   char* result = 0;
@@ -137,7 +135,9 @@ char* FileWidget::forwardSlash(char *filename)
   return result;
 }
 
+//
 // anchor link clicked
+//
 void FileWidget::anchorClick()
 {
   const char* target = click.toString();
@@ -209,53 +209,34 @@ void FileWidget::anchorClick()
   }
 }
 
+//
+// open file
+//
 void FileWidget::fileOpen(EditorWidget* saveEditorAs)
 {
   this->saveEditorAs = saveEditorAs;
   displayPath();
 }
 
-int FileWidget::handle(int e) 
-{
-  static char buffer[PATH_MAX];
-  static int dnd_active = 0;
-
-  switch (e) {
-  case SHOW:
-    if (saveEditorAs) {
-      saveEditorAs = 0;
-      displayPath();
-    }
-    break;
-
-  case DND_LEAVE:
-    dnd_active = 0;
-    return 1;
-
-  case DND_DRAG:
-  case DND_RELEASE:
-  case DND_ENTER:
-    dnd_active = 1;
-    return 1;
-
-  case MOVE:
-    if (dnd_active) {
-      return 1; // return 1 to become drop-target
-    }
-    break;
-
-  case PASTE:
-    strncpy(buffer, fltk::event_text(), fltk::event_length());
-    buffer[fltk::event_length()] = 0;
-    forwardSlash(buffer);
-    wnd->editFile(buffer);
-    dnd_active = 0;
-    return 1;
+//
+// display the given path
+//
+void FileWidget::openPath(const char* newPath) {
+  if (newPath) {
+    strcpy(path, newPath);
+  }
+  else {
+    getcwd(path, sizeof(path));
   }
 
-  return HelpWidget::handle(e);
+  forwardSlash(path);
+  displayPath();
+  redraw();
 }
 
+//
+// change to the given dir
+//
 void FileWidget::changeDir(const char* target) 
 {
   char newPath[PATH_MAX+1];
@@ -290,6 +271,9 @@ void FileWidget::changeDir(const char* target)
   }
 }
 
+//
+// display the path
+//
 void FileWidget::displayPath()
 {
   dirent* entry;
@@ -382,6 +366,9 @@ void FileWidget::displayPath()
   take_focus();
 }
 
+//
+// open the path
+//
 void FileWidget::enterPath() 
 {
   const char* newPath = fltk::input("Enter path:", path);
@@ -396,6 +383,53 @@ void FileWidget::enterPath()
   }
 }
 
+//
+// event handler
+//
+int FileWidget::handle(int e) 
+{
+  static char buffer[PATH_MAX];
+  static int dnd_active = 0;
+
+  switch (e) {
+  case SHOW:
+    if (saveEditorAs) {
+      saveEditorAs = 0;
+      displayPath();
+    }
+    break;
+
+  case DND_LEAVE:
+    dnd_active = 0;
+    return 1;
+
+  case DND_DRAG:
+  case DND_RELEASE:
+  case DND_ENTER:
+    dnd_active = 1;
+    return 1;
+
+  case MOVE:
+    if (dnd_active) {
+      return 1; // return 1 to become drop-target
+    }
+    break;
+
+  case PASTE:
+    strncpy(buffer, fltk::event_text(), fltk::event_length());
+    buffer[fltk::event_length()] = 0;
+    forwardSlash(buffer);
+    wnd->editFile(buffer);
+    dnd_active = 0;
+    return 1;
+  }
+
+  return HelpWidget::handle(e);
+}
+
+//
+// save the buffer with a new name
+//
 void FileWidget::saveAs() 
 {
   if (saveEditorAs) {

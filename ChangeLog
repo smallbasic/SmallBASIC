@@ -1,11 +1,14 @@
 2010-02-18
 	Updated saving and restoring from config.txt
+	File open uses current buffer file path
+	 Creates backup files
 	
 2010-02-05
 	Updated the editor code browser
 	
 2010-01-29
 	Added DEFINEKEY command
+	fixed inkey
 
 2009-11-27
 	Implemented TTY widget
