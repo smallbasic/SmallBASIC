@@ -136,6 +136,20 @@ char* FileWidget::forwardSlash(char *filename)
 }
 
 //
+// removes CRLF line endings
+//
+char* FileWidget::trimEOL(char *buffer)
+{
+  int index = strlen(buffer) - 1;
+  char* result = buffer;
+  while (index > 0 && (buffer[index] == '\r' || buffer[index] == '\n')) {
+    buffer[index] = 0;
+    index--;
+  }
+  return result;
+}
+
+//
 // anchor link clicked
 //
 void FileWidget::anchorClick()

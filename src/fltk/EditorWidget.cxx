@@ -785,7 +785,7 @@ void EditorWidget::doSaveFile(const char *newfile)
   wnd->updateEditTabName(this);
   wnd->showEditTab(this);
 
-  // store a copy in the developer 
+  // store a copy in lastedit.bas
   if (wnd->profile->createBackups) {
     getHomeDir(basfile);
     strcat(basfile, "lastedit.bas");

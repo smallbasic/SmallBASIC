@@ -632,6 +632,7 @@ void MainWindow::tool_plugin(Widget* w, void* eventData)
     sprintf(opt_command, "%s/%s", packageHome, pluginHome);
     statusMsg(rs_ready, (const char *)eventData);
     sprintf(path, "%s/%s", packageHome, (const char *)eventData);
+    tabGroup->selected_child(outputGroup);
     basicMain(0, path, true);
     statusMsg(rs_ready, 0);
     opt_command[0] = 0;
@@ -740,23 +741,24 @@ void MainWindow::scanPlugIns(Menu* menu)
       if (!file) {
         continue;
       }
-      
+
       if (!fgets(buffer, MAX_PATH, file)) {
         fclose(file);
         continue;
       }
       bool editorTool = false;
-      if (strcmp("'tool-plug-in\n", buffer) == 0) {
+      FileWidget::trimEOL(buffer);
+      if (strcmp("'tool-plug-in", buffer) == 0) {
         editorTool = true;
       }
-      else if (strcmp("'app-plug-in\n", buffer) != 0) {
+      else if (strcmp("'app-plug-in", buffer) != 0) {
         fclose(file);
         continue;
       }
 
       if (fgets(buffer, MAX_PATH, file) && strncmp("'menu", buffer, 5) == 0) {
+        FileWidget::trimEOL(buffer);
         int offs = 6;
-        buffer[strlen(buffer) - 1] = 0; // trim new-line
         while (buffer[offs] && (buffer[offs] == '\t' || buffer[offs] == ' ')) {
           offs++;
         }
@@ -943,6 +945,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   logPrint = false;
   tty = 0;
   profile = new Profile();
+  size_range(250, 250);
 
   FileWidget::forwardSlash(runfile);
   begin();
