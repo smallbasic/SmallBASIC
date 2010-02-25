@@ -30,6 +30,7 @@ struct Profile {
   int fontSize;
   int indentLevel;
   int createBackups;
+  int lineNumbers;
 
   private:
   bool loaded;

@@ -22,6 +22,7 @@ const char* fontSizeKey = "fontSize";
 const char* windowPosKey = "windowPos";
 const char* activeTabKey = "activeTab";
 const char* createBackupsKey = "createBackups";
+const char* lineNumbersKey = "lineNumbers";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -34,9 +35,10 @@ Profile::Profile() {
   indentLevel = 2;
   font = COURIER;
   fontSize = 12;
-  color = NO_COLOR;
+  color = WHITE;
   loaded = false;
   createBackups = true;
+  lineNumbers = true;
 }
 
 //
@@ -46,10 +48,8 @@ void Profile::loadConfig(EditorWidget* editWidget) {
   editWidget->setIndentLevel(indentLevel);
   editWidget->setFont(font);
   editWidget->setFontSize(fontSize);
-  
-  if (color != NO_COLOR) {
-    editWidget->setEditorColor(color, false);
-  }
+  editWidget->setEditorColor(color, false);
+  editWidget->editor->linenumber_width(lineNumbers ? 40 : 0);
 }
 
 //
@@ -71,6 +71,7 @@ void Profile::restore(MainWindow* wnd) {
 
     restoreValue(&profile, indentLevelKey, &indentLevel);
     restoreValue(&profile, createBackupsKey, &createBackups);
+    restoreValue(&profile, lineNumbersKey, &lineNumbers);
     restoreStyles(&profile);
     restoreWindowPos(wnd, &profile);
     restoreTabs(wnd, &profile);
@@ -88,6 +89,7 @@ void Profile::save(MainWindow* wnd) {
     if (fp) {
       saveValue(fp, indentLevelKey, indentLevel);
       saveValue(fp, createBackupsKey, createBackups);
+      saveValue(fp, lineNumbersKey, lineNumbers);
       saveStyles(fp);
       saveTabs(fp, wnd);
       saveWindowPos(fp, wnd);

@@ -888,6 +888,7 @@ bool initialise(int argc, char **argv)
   dev_putenv(path);
 
   wnd = new MainWindow(800, 650);
+  wnd->profile->restore(wnd);
 
   // setup styles
   Font* defaultFont = HELVETICA;
@@ -908,15 +909,20 @@ bool initialise(int argc, char **argv)
     wnd->getEditor(true)->setHideIde(true);
     wnd->getEditor(true)->loadFile(runfile);
     wnd->addHistory(runfile);
+    opt_ide = IDE_NONE;
     if (!wnd->basicMain(0, runfile, false)) {
       return false; // continue if break hit
     }
+    wnd->getEditor(true)->editor->take_focus();
+    opt_ide = IDE_LINKED;
+    break;
+
   case edit_state:
     wnd->getEditor(true)->loadFile(runfile);
     break;
+
   default:
     runMode = edit_state;
-    wnd->profile->restore(wnd);
   }
 
   wnd->updateEditTabName(wnd->getEditor());

@@ -369,7 +369,14 @@ void FileWidget::displayPath()
       html.append("]");
     }
     html.append("</a></td>");
-    html.append("<td>").append((int)fileNode->size).append("</td>");
+    html.append("<td>");
+    if (fileNode->isdir) {
+      html.append(0);
+    }
+    else {
+      html.append(fileNode->isdir ? 0 : (int)fileNode->size);
+    }
+    html.append("</td>");
     strftime(modifedTime, sizeof(modifedTime), "%a, %d %b %Y %T %Z",
              localtime(&fileNode->m_time));
     html.append("<td>").append(modifedTime).append("</td></tr>");

@@ -1,11 +1,12 @@
 2010-02-18
 	Updated saving and restoring from config.txt
 	File open uses current buffer file path
-	 Creates backup files
-	
+        Creates backup files
+	Fixed minor display issues with the File Open Widget
+
 2010-02-05
 	Updated the editor code browser
-	
+
 2010-01-29
 	Added DEFINEKEY command
 	fixed inkey

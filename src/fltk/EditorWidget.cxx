@@ -181,6 +181,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   else {
     setEditorColor(WHITE, true);
   }
+  take_focus();
 }
 
 EditorWidget::~EditorWidget()

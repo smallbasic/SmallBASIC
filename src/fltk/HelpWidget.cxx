@@ -100,15 +100,15 @@ struct Display {
   Group *wnd;
   AnchorNode *anchor;
 
-  void newRow(U16 nrows = 1) {
-    x1 = indent;
-    y1 += nrows * lineHeight;
-    // flow around images
-    if (imgY != -1 && y1 > imgY) {
-      imgY = -1;
-      x1 = indent = imgIndent;
+  void drawBackground(Rectangle& rc) {
+    if (background != NO_COLOR) {
+      Color oldColor = fltk::getcolor();
+      setcolor(background);
+      fillrect(rc);
+      setcolor(oldColor);
     }
   }
+
   void endImageFlow() {
     // end text flow around images
     if (imgY != -1) {
@@ -118,6 +118,42 @@ struct Display {
       imgY = -1;
     }
   }
+
+  void newRow(U16 nrows = 1, bool doBackground=true) {
+    int bgY = y1 + (int) getdescent();
+
+    x1 = indent;
+    y1 += nrows * lineHeight;
+    // flow around images
+    if (imgY != -1 && y1 > imgY) {
+      imgY = -1;
+      x1 = indent = imgIndent;
+    }
+
+    if (!measure && background != NO_COLOR && doBackground) {
+      Rectangle rc(x1, bgY, x2 - x1 + CELL_SPACING, lineHeight);
+      drawBackground(rc);
+    }
+  }
+
+  // restore previous colors
+  void restoreColors() {
+    setcolor(color);
+    background = oldBackground;
+  }
+
+  void setColors(Color nodeForeground, Color nodeBackground) {
+    setcolor(nodeForeground != NO_COLOR ? nodeForeground : color);
+
+    oldBackground = background;
+    if (nodeBackground != NO_COLOR) {
+      background = nodeBackground;
+    }
+  }
+
+  private:
+  Color oldBackground;
+
 };
 
 //--Attributes------------------------------------------------------------------
@@ -1017,7 +1053,7 @@ void TableNode::doEndTD(Display * out, TrNode * tr, Value * tdWidth)
            out->x1 > sizes[index] && sizes[index] != -1) {
     // largest <td></td> on same line, less than the default width
     // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
-    sizes[index] = out->x1 + CELL_SPACING + CELL_SPACING + 2;
+    sizes[index] = out->x1 + (CELL_SPACING * 3);
   }
 
   if (out->y1 > maxY) {
@@ -1035,7 +1071,7 @@ void TableNode::doEndTable(Display * out)
   out->x1 = initX;
   out->y1 = maxY;
   if (out->content) {
-    out->newRow();
+    out->newRow(1, false);
   }
   out->content = false;
   out->tableLevel--;
@@ -1086,12 +1122,12 @@ void TableNode::cleanup()
   }
 }
 
-TableEndNode::TableEndNode(TableNode * tableNode) : BaseNode()
+TableEndNode::TableEndNode(TableNode* tableNode) : BaseNode()
 {
   table = tableNode;
 }
 
-void TableEndNode::display(Display * out)
+void TableEndNode::display(Display* out)
 {
   if (table) {
     table->doEndTable(out);
@@ -1100,19 +1136,21 @@ void TableEndNode::display(Display * out)
 
 //--TrNode----------------------------------------------------------------------
 
-TrNode::TrNode(TableNode * tableNode, Attributes * a) : BaseNode()
+TrNode::TrNode(TableNode* tableNode, Attributes* a) : BaseNode()
 {
   table = tableNode;
   y1 = height = cols = 0;
   if (table) {
     table->rows++;
   }
-  foreground = getColor(a->getFgColor(), 0);
-  background = getColor(a->getBgColor(), 0);
+  foreground = getColor(a->getFgColor(), NO_COLOR);
+  background = getColor(a->getBgColor(), NO_COLOR);
 }
 
-void TrNode::display(Display * out)
+void TrNode::display(Display* out)
 {
+  out->setColors(foreground, background);
+
   if (table == 0) {
     return;
   }
@@ -1127,11 +1165,9 @@ void TrNode::display(Display * out)
   table->nextRow++;
 
   if (background && out->measure == false) {
-    Rectangle rc(table->initX, y1 - (int)getascent(), table->width, height);
-    setcolor(background);
-    fillrect(rc);
+    Rectangle rc(table->initX, y1 - (int)getascent(), table->width, out->lineHeight);
+    out->drawBackground(rc);
   }
-  setcolor(foreground ? foreground : out->color);
 }
 
 TrEndNode::TrEndNode(TrNode * trNode) : BaseNode()
@@ -1142,9 +1178,10 @@ TrEndNode::TrEndNode(TrNode * trNode) : BaseNode()
   }
 }
 
-void TrEndNode::display(Display * out)
+void TrEndNode::display(Display* out)
 {
-  setcolor(out->color);         // restore previous color
+  out->restoreColors();
+
   if (tr && tr->table) {
     tr->height = tr->table->maxY - tr->y1 + out->lineHeight;
   }
@@ -1158,14 +1195,16 @@ TdNode::TdNode(TrNode * trNode, Attributes * a) : BaseNode()
   if (tr) {
     tr->cols++;
   }
-  foreground = getColor(a->getFgColor(), 0);
-  background = getColor(a->getBgColor(), 0);
+  foreground = getColor(a->getFgColor(), NO_COLOR);
+  background = getColor(a->getBgColor(), NO_COLOR);
   width = a->getWidth();
   colspan = a->getColSpan(1) - 1; // count 1 for each additional col
 }
 
-void TdNode::display(Display * out)
+void TdNode::display(Display* out)
 {
+  out->setColors(foreground, background);
+
   if (tr == 0 || tr->table == 0 || tr->table->cols == 0) {
     return;                     // invalid table model
   }
@@ -1198,30 +1237,30 @@ void TdNode::display(Display * out)
   if (out->measure == false) {
     Rectangle rc(out->indent - CELL_SPACING,
                  tr->y1 - (int)getascent(),
-                 out->x2 - out->indent + (CELL_SPACING * 2), tr->height);
-    if (background) {
-      setcolor(background);
-      fillrect(rc);
-    }
+                 out->x2 - out->indent + (CELL_SPACING * 2), out->lineHeight);
+    out->drawBackground(rc);
     if (table->border > 0) {
+      Color oldColor = getcolor();
       setcolor(BLACK);
       strokerect(rc);
+      setcolor(oldColor);
     }
   }
-  setcolor(foreground ? foreground : out->color);
+
 }
 
-TdEndNode::TdEndNode(TdNode * tdNode) : BaseNode()
+TdEndNode::TdEndNode(TdNode* tdNode) : BaseNode()
 {
   td = tdNode;
 }
 
-void TdEndNode::display(Display * out)
+void TdEndNode::display(Display* out)
 {
+  out->restoreColors();
+
   if (td && td->tr && td->tr->table) {
     td->tr->table->doEndTD(out, td->tr, &td->width);
   }
-  setcolor(out->color);
 }
 
 //--NamedInput------------------------------------------------------------------
@@ -1895,6 +1934,8 @@ void HelpWidget::draw()
   fillrect(Rectangle(0, 0, w() - SCROLL_W, out.y2));
   setcolor(out.color);
 
+  out.background = NO_COLOR;
+  
   // hide any inputs
   int len = inputs.length();
   Object **list = inputs.getList();
