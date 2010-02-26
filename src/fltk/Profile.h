@@ -12,8 +12,12 @@
 
 #include <fltk/Color.h>
 #include <fltk/Font.h>
+#include <fltk/Rectangle.h>
 
 #include "StringLib.h"
+
+using namespace fltk;
+using namespace strlib;
 
 struct MainWindow;
 struct EditorWidget;
@@ -23,10 +27,13 @@ struct Profile {
 
   void loadConfig(EditorWidget* editor);
   void restore(MainWindow* wnd);
+  void restoreAppPosition(Rectangle* wnd);
   void save(MainWindow* wnd);
 
-  fltk::Color color;
-  fltk::Font* font;
+  Color color;
+  Font* font;
+  Rectangle appPosition;
+
   int fontSize;
   int indentLevel;
   int createBackups;
@@ -35,15 +42,16 @@ struct Profile {
   private:
   bool loaded;
   int nextInteger(const char* s, int len, int& index);
-  void restoreStyles(strlib::Properties* profile);
-  void restoreTabs(MainWindow* wnd, strlib::Properties* profile);
-  void restoreValue(strlib::Properties* profile, const char* key, int* value);
-  void restoreWindowPos(MainWindow* wnd, strlib::Properties* profile);
+  Rectangle restoreRect(Properties* profile, const char* key);
+  void restoreStyles(Properties* profile);
+  void restoreTabs(MainWindow* wnd, Properties* profile);
+  void restoreValue(Properties* profile, const char* key, int* value);
+  void restoreWindowPos(MainWindow* wnd, Rectangle& rc);
+  void saveRect(FILE* fp, const char* key, Rectangle* wnd);
   void saveStyles(FILE *fp);
   void saveTabs(FILE* fp, MainWindow* wnd);
   void saveValue(FILE* fp, const char* key, const char* value);
   void saveValue(FILE* fp, const char* key, int value);
-  void saveWindowPos(FILE* fp, MainWindow* wnd);
 };
 
 #endif

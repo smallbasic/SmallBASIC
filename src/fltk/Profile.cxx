@@ -23,6 +23,7 @@ const char* windowPosKey = "windowPos";
 const char* activeTabKey = "activeTab";
 const char* createBackupsKey = "createBackups";
 const char* lineNumbersKey = "lineNumbers";
+const char* appPositionKey = "appPosition";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -30,7 +31,7 @@ extern TextDisplay::StyleTableEntry styletable[];
 //
 // Profile constructor
 //
-Profile::Profile() {
+Profile::Profile() : appPosition(0,0,640,480) {
   // defaults
   indentLevel = 2;
   font = COURIER;
@@ -57,7 +58,7 @@ void Profile::loadConfig(EditorWidget* editWidget) {
 //
 void Profile::restore(MainWindow* wnd) {
   strlib::String buffer;
-  strlib::Properties profile;
+  Properties profile;
   long len;
 
   FILE *fp = wnd->openConfig(configFile, "r");
@@ -73,10 +74,35 @@ void Profile::restore(MainWindow* wnd) {
     restoreValue(&profile, createBackupsKey, &createBackups);
     restoreValue(&profile, lineNumbersKey, &lineNumbers);
     restoreStyles(&profile);
-    restoreWindowPos(wnd, &profile);
+
+    Rectangle rc;
+    rc = restoreRect(&profile, appPositionKey);
+    if (!rc.empty()) {
+      appPosition = rc;
+    }
+
+    rc = restoreRect(&profile, windowPosKey);
+    if (!rc.empty()) {
+      restoreWindowPos(wnd, rc);
+    }
+
     restoreTabs(wnd, &profile);
   }
   loaded = true;
+}
+
+//
+// restore the standalone window position
+//
+void Profile::restoreAppPosition(Rectangle* wnd) {
+  if (!appPosition.empty()) {
+    wnd->w(appPosition.w());
+    wnd->h(appPosition.h());
+    if (appPosition.x() != 0) {
+      wnd->x(appPosition.x());
+      wnd->y(appPosition.y());
+    }
+  }
 }
 
 //
@@ -92,7 +118,8 @@ void Profile::save(MainWindow* wnd) {
       saveValue(fp, lineNumbersKey, lineNumbers);
       saveStyles(fp);
       saveTabs(fp, wnd);
-      saveWindowPos(fp, wnd);
+      saveRect(fp, appPositionKey, &appPosition);
+      saveRect(fp, windowPosKey, wnd);
       fclose(fp);
     }
   }
@@ -114,9 +141,28 @@ int Profile::nextInteger(const char* s, int len, int& index) {
 }
 
 //
+// restore a rectangle value with the given key
+//
+Rectangle Profile::restoreRect(Properties* profile, const char* key) {
+  Rectangle result(0,0,0,0);
+  String* value = profile->get(key);
+  if (value != null) {
+    const char* buffer = value->toString();
+    int index = 0;
+    int len = strlen(buffer);
+
+    result.x(nextInteger(buffer, len, index));
+    result.y(nextInteger(buffer, len, index));
+    result.w(nextInteger(buffer, len, index));
+    result.h(nextInteger(buffer, len, index));
+  }
+  return result;
+}
+
+//
 // load any stored font or color settings
 //
-void Profile::restoreStyles(strlib::Properties* profile) {
+void Profile::restoreStyles(Properties* profile) {
   // restore size and face
   restoreValue(profile, fontSizeKey, &fontSize);
   String* fontName = profile->get(fontNameKey);
@@ -145,7 +191,7 @@ void Profile::restoreStyles(strlib::Properties* profile) {
 //
 // restore the editor tabs
 //
-void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
+void Profile::restoreTabs(MainWindow* wnd, Properties* profile) {
   bool usedEditor = false;
   strlib::List paths;
   profile->get(pathKey, &paths);
@@ -201,7 +247,7 @@ void Profile::restoreTabs(MainWindow* wnd, strlib::Properties* profile) {
 //
 // restore the int value
 //
-void Profile::restoreValue(strlib::Properties* p, const char* key, int* value) {
+void Profile::restoreValue(Properties* p, const char* key, int* value) {
   String* s = p->get(key);
   if (s) {
     *value = s->toInteger();
@@ -211,25 +257,25 @@ void Profile::restoreValue(strlib::Properties* p, const char* key, int* value) {
 //
 // restore the main window position
 //
-void Profile::restoreWindowPos(MainWindow* wnd, strlib::Properties* profile) {
-  String* windowPos = profile->get(windowPosKey);
-  if (windowPos != null) {
-    const char* buffer = windowPos->toString();
-    int index = 0;
-    int len = strlen(buffer);
+void Profile::restoreWindowPos(MainWindow* wnd, Rectangle& rc) {
+  int x = rc.x();
+  int y = rc.y();
+  int w = rc.w();
+  int h = rc.h();
 
-    int x = nextInteger(buffer, len, index);
-    int y = nextInteger(buffer, len, index);
-    int w = nextInteger(buffer, len, index);
-    int h = nextInteger(buffer, len, index);
-
-    if (x > 0 && y > 0 && w > 100 && h > 100) {
-      const Monitor& monitor = Monitor::all();
-      if (x < monitor.w() && y < monitor.h()) {
-        wnd->resize(x, y, w, h);
-      }
+  if (x > 0 && y > 0 && w > 100 && h > 100) {
+    const Monitor& monitor = Monitor::all();
+    if (x < monitor.w() && y < monitor.h()) {
+      wnd->resize(x, y, w, h);
     }
   }
+}
+
+//
+// save the window position
+//
+void Profile::saveRect(FILE* fp, const char* key, Rectangle* rc) {
+  fprintf(fp, "%s=%d;%d;%d;%d\n", key, rc->x(), rc->y(), rc->w(), rc->h());
 }
 
 //
@@ -289,14 +335,6 @@ void Profile::saveValue(FILE* fp, const char* key, const char* value) {
 //
 void Profile::saveValue(FILE* fp, const char* key, int value) {
   fprintf(fp, "%s=%d\n", key, value);
-}
-
-//
-// save the main window position
-//
-void Profile::saveWindowPos(FILE* fp, MainWindow* wnd) {
-  fprintf(fp, "%s=%d;%d;%d;%d\n", windowPosKey, 
-          wnd->x(), wnd->y(), wnd->w(), wnd->h());
 }
 
 // End of "$Id$".

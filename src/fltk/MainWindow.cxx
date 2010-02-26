@@ -227,6 +227,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     if (opt_ide == IDE_NONE) {
       // run in a separate window with the ide hidden
       fullScreen = new BaseWindow(w(), h());
+      profile->restoreAppPosition(fullScreen);
       fullScreen->copy_label(filename);
       fullScreen->callback(quit_cb);
       fullScreen->shortcut(0);
@@ -260,6 +261,8 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   }
 
   if (fullScreen != NULL) {
+    profile->appPosition = *fullScreen;
+
     closeForm(); // cleanup any global formView
     fullScreen->remove(out);
     delete fullScreen;
