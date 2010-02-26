@@ -717,26 +717,39 @@ bool EditorWidget::checkSave(bool discard)
  */
 void EditorWidget::loadFile(const char *newfile)
 {
-  TextBuffer *textbuf = editor->textbuf;
-  loading = true;
-  int r = textbuf->loadfile(newfile);
-  if (r) {
-    // restore previous
-    textbuf->loadfile(filename);
-    alert("Error reading from file \'%s\':\n%s.", newfile, strerror(errno));
-  }
-  else {
-    dirty = false;
+  // save the current filename
+  char oldpath[PATH_MAX];
+  strcpy(oldpath, filename);
+
+  // convert relative path to full path
+  getcwd(filename, sizeof(filename));
+  strcat(filename, "/");
+  strcat(filename, newfile);
+
+  if (access(filename, R_OK) != 0) {
     strcpy(filename, newfile);
   }
 
+  FileWidget::forwardSlash(filename);
+
+  loading = true;
+  if (editor->textbuf->loadfile(filename)) {
+    // read failed
+    alert("Error reading from file \'%s\':\n%s.", filename, strerror(errno));
+
+    // restore previous file
+    strcpy(filename, oldpath);
+    editor->textbuf->loadfile(filename);
+  }
+
+  dirty = false;
   loading = false;
-  textbuf->call_modify_callbacks();
+
+  editor->textbuf->call_modify_callbacks();
   editor->show_insert_position();
   modifiedTime = getModifiedTime();
   readonly(false);
 
-  FileWidget::forwardSlash(filename);
   wnd->updateEditTabName(this);
   wnd->showEditTab(this);
 

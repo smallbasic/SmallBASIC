@@ -236,7 +236,7 @@ void FileWidget::fileOpen(EditorWidget* saveEditorAs)
 // display the given path
 //
 void FileWidget::openPath(const char* newPath) {
-  if (newPath) {
+  if (newPath && access(path, R_OK) == 0) {
     strcpy(path, newPath);
   }
   else {

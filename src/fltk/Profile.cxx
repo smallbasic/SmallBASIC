@@ -49,7 +49,7 @@ void Profile::loadConfig(EditorWidget* editWidget) {
   editWidget->setFont(font);
   editWidget->setFontSize(fontSize);
   editWidget->setEditorColor(color, false);
-  editWidget->editor->linenumber_width(lineNumbers ? 40 : 0);
+  editWidget->editor->linenumber_width(lineNumbers ? 40 : 1);
 }
 
 //
