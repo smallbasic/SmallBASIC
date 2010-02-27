@@ -18,3 +18,11 @@ color 15, rgb(0, 0, 128)
 'results in white foreground on red background,
 'this should be white foreground on blue background'
 
+'
+' fix this at the same time since it will be a problem with AnsiWidget.cxx:
+'
+'I get weird results when i use the tab() function inside a print #1
+'statement. For example: print x;tab(10);y works fine, but when i do
+'this print #1; x;tab(10);y it puts escape codes inbetween x and y
+'instead of a space.
+
