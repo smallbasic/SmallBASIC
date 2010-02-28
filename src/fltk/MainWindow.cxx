@@ -203,15 +203,11 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
   }
 
   if (editWidget) {
+    runEditWidget = editWidget;
     editWidget->readonly(true);
     editWidget->runState(rs_run);
-    tty = editWidget->tty;
     breakToLine = editWidget->isBreakToLine();
-    logPrint = editWidget->isLogPrint();
     opt_ide = editWidget->isHideIDE() ? IDE_NONE : IDE_LINKED;
-  }
-  else {
-    tty = 0;
   }
 
   opt_pref_width = 0;
@@ -255,10 +251,6 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
 
   opt_interactive = interactive;
   bool was_break = (runMode == break_state);
-  if (editWidget) {
-    // may have closed during run
-    editWidget = getEditor(filename);
-  }
 
   if (fullScreen != NULL) {
     profile->appPosition = *fullScreen;
@@ -312,8 +304,8 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
     editWidget->readonly(false);
   }
 
-  logPrint = false;
   runMode = edit_state;
+  runEditWidget = 0;
   return was_break;
 }
 
@@ -326,6 +318,12 @@ void MainWindow::close_tab(Widget* w, void* eventData) {
       if (gw_editor == ((GroupWidget) (int)group->user_data())) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         if (!editWidget->checkSave(true)) {
+          return;
+        }
+        // check whether the editor is a running program
+        if (editWidget == runEditWidget) {
+          brun_break();
+          runMode = break_state;
           return;
         }
       }
@@ -583,7 +581,7 @@ void MainWindow::run_selection(Widget* w, void* eventData)
     getHomeDir(path);
     strcat(path, "selection.bas");
     editWidget->saveSelection(path);
-    basicMain(0, path, false);
+    basicMain(editWidget, path, false);
   }
 }
 
@@ -951,8 +949,7 @@ int main(int argc, char **argv)
 
 MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
 {
-  logPrint = false;
-  tty = 0;
+  runEditWidget = 0;
   profile = new Profile();
   size_range(250, 250);
 
@@ -970,6 +967,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&Edit/Cu&t", CTRL + 'x', EditorWidget::cut_text_cb);
   m->add("&Edit/&Copy", CTRL + 'c', copy_text_cb);
   m->add("&Edit/_&Paste", CTRL + 'v', EditorWidget::paste_text_cb);
+  m->add("&Edit/_&Select All", CTRL + 'a', EditorWidget::select_all_cb);
   m->add("&Edit/&Change Case", ALT + 'c', EditorWidget::change_case_cb);
   m->add("&Edit/&Expand Word", ALT + '/', EditorWidget::expand_word_cb);
   m->add("&Edit/_&Rename Word", CTRL + SHIFT + 'r', EditorWidget::rename_word_cb);
@@ -1382,6 +1380,20 @@ void MainWindow::resetPen()
   penDownX = 0;
   penDownY = 0;
   penMode = 0;
+}
+
+//
+// returns any active tty widget
+//
+TtyWidget* MainWindow::tty() {
+  return runEditWidget != 0 ? runEditWidget->tty : 0;
+}
+
+//
+// returns whether printing to the tty widget is active
+//
+bool MainWindow::logPrint() {
+  return (runEditWidget && runEditWidget->tty && runEditWidget->isLogPrint());
 }
 
 void MainWindow::execLink(const char *file)

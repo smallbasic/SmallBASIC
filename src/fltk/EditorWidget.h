@@ -93,6 +93,7 @@ public:
   CALLBACK_METHOD(replace_next);
   CALLBACK_METHOD(save_file);
   CALLBACK_METHOD(scroll_lock);
+  CALLBACK_METHOD(select_all);
   CALLBACK_METHOD(set_color);
   CALLBACK_METHOD(show_replace);
   CALLBACK_METHOD(undo);

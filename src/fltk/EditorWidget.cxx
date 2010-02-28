@@ -586,6 +586,14 @@ void EditorWidget::scroll_lock(Widget* w, void* eventData)
 }
 
 /**
+ * select all text
+ */
+void EditorWidget::select_all(Widget* w, void* eventData)
+{
+  TextEditor::kf_select_all(0, editor);
+}
+
+/**
  * set colour menu command handler
  */
 void EditorWidget::set_color(Widget* w, void* eventData)

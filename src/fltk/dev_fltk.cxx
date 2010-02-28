@@ -77,7 +77,7 @@ C_LINKAGE_BEGIN int osd_devinit()
 
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
-  if (wnd->isInteractive() && !wnd->logPrint) {
+  if (wnd->isInteractive() && !wnd->logPrint()) {
     wnd->outputGroup->show();
   }
 
@@ -260,8 +260,8 @@ void osd_cls()
 {
   // send reset and clear screen codes
   wnd->out->print("\033[0m\xC");
-  if (wnd->logPrint && wnd->tty) {
-    wnd->tty->clearScreen();
+  if (wnd->logPrint()) {
+    wnd->tty()->clearScreen();
   }
 }
 
@@ -334,15 +334,16 @@ void osd_clear_sound_queue()
 
 void osd_write(const char* s)
 {
-  if (wnd->logPrint && wnd->tty) {
-    wnd->tty->print(s);
+  if (wnd->logPrint()) {
+    wnd->tty()->print(s);
   }
   wnd->out->print(s);
 }
 
 void lwrite(const char* s) {
-  if (wnd->tty) {
-    wnd->tty->print(s);
+  TtyWidget* tty = wnd->tty();
+  if (tty) {
+    tty->print(s);
   }
 }
 

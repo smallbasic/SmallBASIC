@@ -130,7 +130,9 @@ struct MainWindow : public BaseWindow {
   Group* selectTab(const char* label);
   Group* findTab(const char* label);
   Group* findTab(GroupWidget groupWidget);
+  bool logPrint();
   FILE* openConfig(const char* fileName, const char* flags="w");
+  TtyWidget* tty();
 
   CALLBACK_METHOD(close_tab);
   CALLBACK_METHOD(copy_text);
@@ -162,13 +164,13 @@ struct MainWindow : public BaseWindow {
 
   HelpWidget* getHelp();
 
-  bool logPrint; // whether program output is being tee'd to tty
   String siteHome;
 
   // main output
   AnsiWidget* out;
-  TtyWidget* tty;
   Group* outputGroup;
+
+  EditorWidget* runEditWidget;
 
   // tab parent
   TabGroup* tabGroup;
