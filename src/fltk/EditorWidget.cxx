@@ -31,6 +31,8 @@ using namespace fltk;
 // in MainWindow.cxx
 extern String recentPath[];
 extern Widget* recentMenu[];
+extern const char* historyFile;
+extern const char* untitledFile;
 
 // in dev_fltk.cpp
 void getHomeDir(char *filename);
@@ -648,59 +650,6 @@ void EditorWidget::un_select(Widget* w, void* eventData)
 //--Public methods--------------------------------------------------------------
 
 /**
- * FLTK event handler
- */
-int EditorWidget::handle(int e)
-{
-  switch (e) {
-  case FOCUS:
-    fltk::focus(editor);
-    handleFileChange();
-    return 1;
-  case ENTER:
-    if (rename_active) {
-      // prevent drawing over the inplace editor child control
-      return 0;
-    }
-  }
-
-  return Group::handle(e);
-}
-
-/**
- * returns the buffer readonly flag
- */
-bool EditorWidget::readonly()
-{
-  return ((BasicEditor *) editor)->readonly;
-}
-
-/**
- * sets the buffer readonly flag
- */
-void EditorWidget::readonly(bool is_readonly)
-{
-  if (!is_readonly && access(filename, W_OK) != 0) {
-    // cannot set writable since file is readonly
-    is_readonly = true;
-  }
-  modStatus->label(is_readonly ? "RO" : "@line");
-  modStatus->redraw();
-  editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR :
-                       TextDisplay::NORMAL_CURSOR);
-  ((BasicEditor *) editor)->readonly = is_readonly;
-}
-
-/**
- * copy selection text to the clipboard
- */
-void EditorWidget::copyText() {
-  if (!tty->copySelection()) {
-    TextEditor::kf_copy(0, editor);
-  }
-}
-
-/**
  * handles saving the current buffer
  */
 bool EditorWidget::checkSave(bool discard)
@@ -718,6 +667,210 @@ bool EditorWidget::checkSave(bool discard)
     return !dirty;
   }
   return (discard && r == 1);
+}
+
+/**
+ * copy selection text to the clipboard
+ */
+void EditorWidget::copyText() {
+  if (!tty->copySelection()) {
+    TextEditor::kf_copy(0, editor);
+  }
+}
+
+/**
+ * saves the editor buffer to the given file name
+ */
+void EditorWidget::doSaveFile(const char *newfile)
+{
+  if (!dirty && strcmp(newfile, filename) == 0) {
+    // neither buffer or filename have changed
+    return;
+  }
+
+  char basfile[PATH_MAX];
+  TextBuffer *textbuf = editor->textbuf;
+  
+  if (wnd->profile->createBackups && access(newfile, 0) == 0) {
+    // rename any existing file as a backup
+    strcpy(basfile, newfile);
+    strcat(basfile, "~");
+    rename(newfile, basfile);
+  }
+
+  strcpy(basfile, newfile);
+  if (strchr(basfile, '.') == 0) {
+    strcat(basfile, ".bas");
+  }
+  
+  if (textbuf->savefile(basfile)) {
+    alert("Error writing to file \'%s\':\n%s.", basfile, strerror(errno));
+    return;
+  }
+
+  dirty = 0;
+  strcpy(filename, basfile);
+  modifiedTime = getModifiedTime();
+
+  wnd->updateEditTabName(this);
+  wnd->showEditTab(this);
+
+  // store a copy in lastedit.bas
+  if (wnd->profile->createBackups) {
+    getHomeDir(basfile);
+    strcat(basfile, "lastedit.bas");
+    textbuf->savefile(basfile);
+  }
+
+  textbuf->call_modify_callbacks();
+  showPath();
+  fileChanged(true);
+  addHistory(filename);
+  editor->take_focus();
+}
+
+/**
+ * called when the buffer has changed
+ */
+void EditorWidget::fileChanged(bool loadfile)
+{
+  funcList->clear();
+  if (loadfile) {
+    // update the func/sub navigator
+    createFuncList();
+    funcList->redraw();
+
+    const char *filename = getFilename();
+    if (filename && filename[0]) {
+      // update the last used file menu
+      bool found = false;
+
+      for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+        if (strcmp(filename, recentPath[i].toString()) == 0) {
+          found = true;
+          break;
+        }
+      }
+
+      if (found == false) {
+        // shift items downwards
+        for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
+          recentMenu[i]->copy_label(recentMenu[i - 1]->label());
+          recentPath[i].empty();
+          recentPath[i].append(recentPath[i - 1]);
+        }
+        // create new item in first position
+        const char *label = splitPath(filename, null);
+        recentPath[0].empty();
+        recentPath[0].append(filename);
+        recentMenu[0]->copy_label(label);
+      }
+    }
+  }
+
+  funcList->add(scanLabel);
+}
+
+/**
+ * keyboard shortcut handler
+ */
+void EditorWidget::focusWidget() {
+  switch (event_key()) {
+  case 'i':
+    setCommand(cmd_find_inc);
+    break;
+
+  case 'f':
+    if (strlen(commandText->value()) > 0 && commandOpt == cmd_find) {
+      // continue search - shift -> backward else forward
+      command(0, (void*)((event_key_state(LeftShiftKey) ||
+                          event_key_state(RightShiftKey)) ? 0 : 1));
+    }
+    setCommand(cmd_find);
+    break;
+  }
+}
+
+/**
+ * returns the current font size
+ */
+int EditorWidget::getFontSize()
+{
+  return editor->getFontSize();
+}
+
+/**
+ * returns the row and col position for the current cursor position
+ */
+void EditorWidget::getRowCol(int* row, int* col)
+{
+  return ((BasicEditor *) editor)->getRowCol(row, col);
+}
+
+/**
+ * returns the selected text or the word around the cursor if there
+ * is no current selection. caller must free the returned value
+ */
+char* EditorWidget::getSelection(int* start, int* end) {
+  char *result = 0;
+ 
+  TextBuffer *tb = editor->buffer();
+  if (tb->selected()) {
+    result = tb->selection_text();
+    tb->selection_position(start, end);
+  }
+  else {
+    int pos = editor->insert_position();
+    *start = tb->word_start(pos);
+    *end = tb->word_end(pos);
+    result = tb->text_range(*start, *end);
+  }
+
+  return result;
+}
+
+/**
+ * returns where text selection ends
+ */
+void EditorWidget::getSelEndRowCol(int *row, int *col)
+{
+  return ((BasicEditor *) editor)->getSelEndRowCol(row, col);
+}
+
+/**
+ * returns where text selection starts
+ */
+void EditorWidget::getSelStartRowCol(int *row, int *col)
+{
+  return ((BasicEditor *) editor)->getSelStartRowCol(row, col);
+}
+
+/**
+ * sets the cursor to the given line number
+ */
+void EditorWidget::gotoLine(int line)
+{
+  ((BasicEditor *) editor)->gotoLine(line);
+}
+
+/**
+ * FLTK event handler
+ */
+int EditorWidget::handle(int e)
+{
+  switch (e) {
+  case FOCUS:
+    fltk::focus(editor);
+    handleFileChange();
+    return 1;
+  case ENTER:
+    if (rename_active) {
+      // prevent drawing over the inplace editor child control
+      return 0;
+    }
+  }
+
+  return Group::handle(e);
 }
 
 /**
@@ -767,111 +920,49 @@ void EditorWidget::loadFile(const char *newfile)
 }
 
 /**
- * saves the editor buffer to the given file name
+ * returns the buffer readonly flag
  */
-void EditorWidget::doSaveFile(const char *newfile)
+bool EditorWidget::readonly()
 {
-  if (!dirty && strcmp(newfile, filename) == 0) {
-    // neither buffer or filename have changed
-    return;
-  }
-
-  char basfile[PATH_MAX];
-  TextBuffer *textbuf = editor->textbuf;
-  
-  if (wnd->profile->createBackups && access(newfile, 0) == 0) {
-    // rename any existing file as a backup
-    strcpy(basfile, newfile);
-    strcat(basfile, "~");
-    rename(newfile, basfile);
-  }
-
-  strcpy(basfile, newfile);
-  if (strchr(basfile, '.') == 0) {
-    strcat(basfile, ".bas");
-  }
-  
-  if (textbuf->savefile(basfile)) {
-    alert("Error writing to file \'%s\':\n%s.", basfile, strerror(errno));
-    return;
-  }
-
-  dirty = 0;
-  strcpy(filename, basfile);
-  modifiedTime = getModifiedTime();
-
-  if (filename[0] == 0) {
-    // naming a previously unnamed buffer
-    wnd->addHistory(basfile);
-  }
-  wnd->updateEditTabName(this);
-  wnd->showEditTab(this);
-
-  // store a copy in lastedit.bas
-  if (wnd->profile->createBackups) {
-    getHomeDir(basfile);
-    strcat(basfile, "lastedit.bas");
-    textbuf->savefile(basfile);
-  }
-
-  textbuf->call_modify_callbacks();
-  showPath();
-  fileChanged(true);
-  editor->take_focus();
+  return ((BasicEditor *) editor)->readonly;
 }
 
 /**
- * sets the cursor to the given line number
+ * sets the buffer readonly flag
  */
-void EditorWidget::gotoLine(int line)
+void EditorWidget::readonly(bool is_readonly)
 {
-  ((BasicEditor *) editor)->gotoLine(line);
-}
-
-/**
- * returns the row and col position for the current cursor position
- */
-void EditorWidget::getRowCol(int* row, int* col)
-{
-  return ((BasicEditor *) editor)->getRowCol(row, col);
-}
-
-/**
- * returns the selected text or the word around the cursor if there
- * is no current selection. caller must free the returned value
- */
-char* EditorWidget::getSelection(int* start, int* end) {
-  char *result = 0;
- 
-  TextBuffer *tb = editor->buffer();
-  if (tb->selected()) {
-    result = tb->selection_text();
-    tb->selection_position(start, end);
+  if (!is_readonly && access(filename, W_OK) != 0) {
+    // cannot set writable since file is readonly
+    is_readonly = true;
   }
-  else {
-    int pos = editor->insert_position();
-    *start = tb->word_start(pos);
-    *end = tb->word_end(pos);
-    result = tb->text_range(*start, *end);
+  modStatus->label(is_readonly ? "RO" : "@line");
+  modStatus->redraw();
+  editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR :
+                       TextDisplay::NORMAL_CURSOR);
+  ((BasicEditor *) editor)->readonly = is_readonly;
+}
+
+/**
+ * displays the current run-mode flag
+ */
+void EditorWidget::runState(RunMessage runMessage)
+{
+  runStatus->callback(MainWindow::run_cb);
+  const char* msg = 0;
+  switch (runMessage) {
+  case rs_err:
+    msg = "ERR";
+    break;
+  case rs_run:
+    msg = "BRK";
+    runStatus->callback(MainWindow::run_break_cb);
+    break;
+  default:
+    msg = "RUN";
   }
-
-  return result;
-}
-
-/**
- * returns where text selection starts
- */
-void EditorWidget::getSelStartRowCol(int *row, int *col)
-{
-  return ((BasicEditor *) editor)->getSelStartRowCol(row, col);
-}
-
-/**
- * returns where text selection ends
- */
-void EditorWidget::getSelEndRowCol(int *row, int *col)
-{
-  return ((BasicEditor *) editor)->getSelEndRowCol(row, col);
+  runStatus->copy_label(msg);
+  runStatus->redraw();
 }
 
 /**
@@ -948,14 +1039,6 @@ void EditorWidget::setFontSize(int size)
 }
 
 /**
- * returns the current font size
- */
-int EditorWidget::getFontSize()
-{
-  return editor->getFontSize();
-}
-
-/**
  * sets the indent level to the given amount
  */
 void EditorWidget::setIndentLevel(int level)
@@ -964,23 +1047,17 @@ void EditorWidget::setIndentLevel(int level)
 }
 
 /**
- * keyboard shortcut handler
+ * displays the row/col in the editor toolbar
  */
-void EditorWidget::focusWidget() {
-  switch (event_key()) {
-  case 'i':
-    setCommand(cmd_find_inc);
-    break;
-
-  case 'f':
-    if (strlen(commandText->value()) > 0 && commandOpt == cmd_find) {
-      // continue search - shift -> backward else forward
-      command(0, (void*)((event_key_state(LeftShiftKey) ||
-                          event_key_state(RightShiftKey)) ? 0 : 1));
-    }
-    setCommand(cmd_find);
-    break;
-  }
+void EditorWidget::setRowCol(int row, int col)
+{
+  char rowcol[20];
+  sprintf(rowcol, "%d", row);
+  rowStatus->copy_label(rowcol);
+  rowStatus->redraw();
+  sprintf(rowcol, "%d", col);
+  colStatus->copy_label(rowcol);
+  colStatus->redraw();
 }
 
 /**
@@ -1035,85 +1112,61 @@ void EditorWidget::updateConfig(EditorWidget* current) {
   setEditorColor(current->editor->color(), false);
 }
 
-/**
- * displays the row/col in the editor toolbar
- */
-void EditorWidget::setRowCol(int row, int col)
-{
-  char rowcol[20];
-  sprintf(rowcol, "%d", row);
-  rowStatus->copy_label(rowcol);
-  rowStatus->redraw();
-  sprintf(rowcol, "%d", col);
-  colStatus->copy_label(rowcol);
-  colStatus->redraw();
-}
+//--Protected methods-----------------------------------------------------------
 
 /**
- * displays the current run-mode flag
+ * add filename to the hiistory file
  */
-void EditorWidget::runState(RunMessage runMessage)
+void EditorWidget::addHistory(const char *filename)
 {
-  runStatus->callback(MainWindow::run_cb);
-  const char* msg = 0;
-  switch (runMessage) {
-  case rs_err:
-    msg = "ERR";
-    break;
-  case rs_run:
-    msg = "BRK";
-    runStatus->callback(MainWindow::run_break_cb);
-    break;
-  default:
-    msg = "RUN";
+  FILE *fp;
+  char buffer[MAX_PATH];
+  char updatedfile[MAX_PATH];
+  char path[MAX_PATH];
+
+  int len = strlen(filename);
+  if (strcasecmp(filename + len - 4, ".sbx") == 0 ||
+      access(filename, R_OK) != 0) {
+    // don't remember bas exe or invalid files
+    return;
   }
-  runStatus->copy_label(msg);
-  runStatus->redraw();
-}
 
-/**
- * called when the buffer has changed
- */
-void EditorWidget::fileChanged(bool loadfile)
-{
-  funcList->clear();
-  if (loadfile) {
-    // update the func/sub navigator
-    createFuncList();
-    funcList->redraw();
+  len -= strlen(untitledFile);
+  if (len > 0 && strcmp(filename + len, untitledFile) == 0) {
+    // don't remember the untitled file
+    return;
+  }
 
-    const char *filename = getFilename();
-    if (filename && filename[0]) {
-      // update the last used file menu
-      bool found = false;
+  // save paths with unix path separators
+  strcpy(updatedfile, filename);
+  FileWidget::forwardSlash(updatedfile);
+  filename = updatedfile;
 
-      for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-        if (strcmp(filename, recentPath[i].toString()) == 0) {
-          found = true;
-          break;
-        }
-      }
+  // save into the history file
+  getHomeDir(path);
+  strcat(path, historyFile);
 
-      if (found == false) {
-        // shift items downwards
-        for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
-          recentMenu[i]->copy_label(recentMenu[i - 1]->label());
-          recentPath[i].empty();
-          recentPath[i].append(recentPath[i - 1]);
-        }
-        // create new item in first position
-        const char *label = splitPath(filename, null);
-        recentPath[0].empty();
-        recentPath[0].append(filename);
-        recentMenu[0]->copy_label(label);
+  fp = fopen(path, "r");
+  if (fp) {
+    // don't add the item if it already exists
+    while (feof(fp) == 0) {
+      if (fgets(buffer, sizeof(buffer), fp) &&
+          strncmp(filename, buffer, strlen(filename) - 1) == 0) {
+        fclose(fp);
+        return;
       }
     }
+    fclose(fp);
   }
 
-  funcList->add(scanLabel);
+  fp = fopen(path, "a");
+  if (fp) {
+    int err;
+    err = fwrite(filename, strlen(filename), 1, fp);
+    err = fwrite("\n", 1, 1, fp);
+    fclose(fp);
+  }
 }
-
-//--Protected methods-----------------------------------------------------------
 
 /**
  * creates the sub/func selection list
@@ -1259,6 +1312,8 @@ void EditorWidget::layout() {
   Group* tile = editor->parent();
   tile->resizable(editor);
   Group::layout();
+
+  // when set to editor the tile is not resizable using the mouse
   tile->resizable(null);
 }
 

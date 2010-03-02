@@ -103,48 +103,49 @@ public:
     ((EditorWidget *) v)->doChange(inserted, deleted);
   }
 
-  int handle(int e);
-  bool isDirty() { return dirty; }
-  const char* getFilename() { return filename; }
   bool checkSave(bool discard);
   void copyText();
   void doSaveFile(const char *newfile);
   void fileChanged(bool loadfile);
   void focusWidget();
+  const char* getFilename() { return filename; }
   int getFontSize();
   void getRowCol(int* row, int* col);
   char* getSelection(int* start, int* end);
   void getSelEndRowCol(int* row, int* col);
   void getSelStartRowCol(int* row, int* col);
   void gotoLine(int line);
+  int handle(int e);
+  bool isDirty() { return dirty; }
   void loadFile(const char* newfile);
+  bool readonly();
+  void readonly(bool is_readonly);
   void runState(RunMessage runMessage);
   void saveSelection(const char* path);
   void setBreakToLine(bool b) { gotoLineBn->value(b); }
   void setEditorColor(Color c, bool defColor);
   void setFont(Font* font);
   void setFontSize(int i);
-  void setHideIde(bool b) { hideIdeBn->value(b); }
+  void setHideIde(bool b) { hideIdeBn->value(b); if (b) setLogPrint(!b);}
   void setIndentLevel(int level);
-  void setLogPrint(bool b) { logPrintBn->value(b); }
+  void setLogPrint(bool b) { logPrintBn->value(b); if (b) setHideIde(!b);}
   void setRowCol(int row, int col);
   void setScrollLock(bool b) { lockBn->value(b); }
   void showPath();
   const char* splitPath(const char* filename, String* path);
   void statusMsg(const char* msg);
   void updateConfig(EditorWidget* current);
-
-  BasicEditor *editor;
-  TtyWidget* tty;
-  bool readonly();
-  void readonly(bool is_readonly);
   bool isBreakToLine() { return gotoLineBn->value(); }
   bool isHideIDE() { return hideIdeBn->value(); }
   bool isLoading() { return loading; }
   bool isLogPrint() { return logPrintBn->value(); }
   bool isScrollLock() { return lockBn->value(); }
 
+  BasicEditor *editor;
+  TtyWidget* tty;
+
 protected:
+  void addHistory(const char *filename);
   void createFuncList();
   void doChange(int inserted, int deleted);
   void findFunc(const char *find);

@@ -133,50 +133,6 @@ void MainWindow::showEditTab(EditorWidget* editWidget)
   }
 }
 
-void MainWindow::addHistory(const char *filename)
-{
-  FILE *fp;
-  char buffer[MAX_PATH];
-  char updatedfile[MAX_PATH];
-  char path[MAX_PATH];
-
-  int len = strlen(filename);
-  if (strcasecmp(filename + len - 4, ".sbx") == 0) {
-    // don't remember bas exe files
-    return;
-  }
-
-  // save paths with unix path separators
-  strcpy(updatedfile, filename);
-  FileWidget::forwardSlash(updatedfile);
-  filename = updatedfile;
-
-  // save into the history file
-  getHomeDir(path);
-  strcat(path, historyFile);
-
-  fp = fopen(path, "r");
-  if (fp) {
-    // don't add the item if it already exists
-    while (feof(fp) == 0) {
-      if (fgets(buffer, sizeof(buffer), fp) &&
-          strncmp(filename, buffer, strlen(filename) - 1) == 0) {
-        fclose(fp);
-        return;
-      }
-    }
-    fclose(fp);
-  }
-
-  fp = fopen(path, "a");
-  if (fp) {
-    int err;
-    err = fwrite(filename, strlen(filename), 1, fp);
-    err = fwrite("\n", 1, 1, fp);
-    fclose(fp);
-  }
-}
-
 /**
  * run the give file. returns whether break was hit
  */
@@ -229,6 +185,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
       fullScreen->shortcut(0);
       fullScreen->add(out);
       fullScreen->resizable(fullScreen);
+
       outputGroup = fullScreen;
       out->resize(w(), h());
       hide();
@@ -675,6 +632,9 @@ void MainWindow::load_file(Widget* w, void* eventData)
 
 //--Startup functions-----------------------------------------------------------
 
+/**
+ * scan for recent files
+ */
 void MainWindow::scanRecentFiles(Menu * menu)
 {
   FILE *fp;
@@ -718,6 +678,9 @@ void MainWindow::scanRecentFiles(Menu * menu)
   }
 }
 
+/**
+ * scan for optional plugins
+ */
 void MainWindow::scanPlugIns(Menu* menu)
 {
   FILE *file;
@@ -777,6 +740,9 @@ void MainWindow::scanPlugIns(Menu* menu)
   closedir(dp);
 }
 
+/**
+ * process the program command line arguments
+ */
 int arg_cb(int argc, char **argv, int &i)
 {
   const char *s = argv[i];
@@ -847,6 +813,35 @@ int arg_cb(int argc, char **argv, int &i)
   return 0;
 }
 
+/**
+ * start the application in run mode
+ */
+void run_mode_startup(void* data) {
+  remove_check(run_mode_startup, data);
+
+  if (data) {
+    fltk::wait();
+    Window* w = (Window*) data;
+    w->destroy();
+  }
+    
+  EditorWidget* editWidget = wnd->getEditor(true);
+  if (editWidget) {
+    editWidget->setHideIde(true);
+    editWidget->loadFile(runfile);
+
+    opt_ide = IDE_NONE;
+    if (!wnd->basicMain(0, runfile, false)) {
+      exit(0);
+    }
+    editWidget->editor->take_focus();
+    opt_ide = IDE_LINKED;
+  }
+}
+
+/**
+ * prepare to start the application
+ */
 bool initialise(int argc, char **argv)
 {
   opt_graphics = 1;
@@ -889,6 +884,9 @@ bool initialise(int argc, char **argv)
   dev_putenv(path);
 
   wnd = new MainWindow(800, 650);
+
+  // load startup editors
+  wnd->new_file(0, 0);
   wnd->profile->restore(wnd);
 
   // setup styles
@@ -905,17 +903,13 @@ bool initialise(int argc, char **argv)
   wnd->loadIcon(PACKAGE_PREFIX, 101);
   check();
 
+  Window* run_wnd; // required for x11 plumbing
+
   switch (runMode) {
   case run_state:
-    wnd->getEditor(true)->setHideIde(true);
-    wnd->getEditor(true)->loadFile(runfile);
-    wnd->addHistory(runfile);
-    opt_ide = IDE_NONE;
-    if (!wnd->basicMain(0, runfile, false)) {
-      return false; // continue if break hit
-    }
-    wnd->getEditor(true)->editor->take_focus();
-    opt_ide = IDE_LINKED;
+    run_wnd = new Window(0,0);
+    run_wnd->show();
+    add_check(run_mode_startup, run_wnd);
     break;
 
   case edit_state:
@@ -926,22 +920,29 @@ bool initialise(int argc, char **argv)
     runMode = edit_state;
   }
 
-  wnd->updateEditTabName(wnd->getEditor());
-  wnd->show(argc, argv);
+  if (runMode != run_state) {
+    wnd->show(argc, argv);
+  }
+
   return true;
 }
 
+/**
+ * save application state at program exit
+ */
 void save_profile(void)
 {
   wnd->profile->save(wnd);
 }
 
+/**
+ * application entry point
+ */
 int main(int argc, char **argv)
 {
-  if (initialise(argc, argv)) {
-    atexit(save_profile);
-    run();
-  }
+  initialise(argc, argv);
+  atexit(save_profile);
+  run();
   return 0;
 }
 
@@ -1030,7 +1031,6 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   outputGroup->resizable(out);
   outputGroup->end();
 
-  createEditor(untitledFile);
   tabGroup->resizable(outputGroup);
   tabGroup->end();
   outer->end();
@@ -1212,7 +1212,6 @@ void MainWindow::editFile(const char* filePath)
   if (!editWidget) {
     editWidget = getEditor(createEditor(filePath));
     editWidget->loadFile(filePath);
-    addHistory(filePath);
   }
   showEditTab(editWidget);
 }
@@ -1382,16 +1381,16 @@ void MainWindow::resetPen()
   penMode = 0;
 }
 
-//
-// returns any active tty widget
-//
+/**
+ * returns any active tty widget
+ */
 TtyWidget* MainWindow::tty() {
   return runEditWidget != 0 ? runEditWidget->tty : 0;
 }
 
-//
-// returns whether printing to the tty widget is active
-//
+/**
+ * returns whether printing to the tty widget is active
+ */
 bool MainWindow::logPrint() {
   return (runEditWidget && runEditWidget->tty && runEditWidget->isLogPrint());
 }
@@ -1433,7 +1432,6 @@ void MainWindow::execLink(const char *file)
     if (httpOK && extn && 0 == strncasecmp(extn, ".bas", 4)) {
       // run the remote program
       editWidget->loadFile(localFile);
-      addHistory(file);
       basicMain(editWidget, localFile, false);
     }
     else {
@@ -1486,7 +1484,6 @@ void MainWindow::execLink(const char *file)
   if (access(file, 0) == 0) {
     statusMsg(rs_ready, file);
     if (execFile) {
-      addHistory(file);
       basicMain(0, file, false);
       opt_nosave = 1;
     }
