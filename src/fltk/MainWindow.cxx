@@ -180,7 +180,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
       // run in a separate window with the ide hidden
       fullScreen = new BaseWindow(w(), h());
       profile->restoreAppPosition(fullScreen);
-      fullScreen->copy_label(filename);
+      fullScreen->copy_label(FileWidget::splitPath(filename, null));
       fullScreen->callback(quit_cb);
       fullScreen->shortcut(0);
       fullScreen->add(out);
@@ -401,7 +401,9 @@ void MainWindow::help_contents(Widget* w, void* eventData)
     execHelp();
   }
 
-  showHelpPage();
+  if (!eventData) {
+    showHelpPage();
+  }
 }
 
 void MainWindow::help_app(Widget* w, void* eventData)
@@ -1114,8 +1116,9 @@ void MainWindow::open_file(Widget* w, void* eventData)
   EditorWidget* editWidget = getEditor(false);
   String path;
   if (editWidget) {
-    editWidget->splitPath(editWidget->getFilename(), &path);
+    FileWidget::splitPath(editWidget->getFilename(), &path);
   }
+
   fileWidget->openPath(path);
 
   tabGroup->selected_child(openFileGroup);
@@ -1597,6 +1600,10 @@ int BaseWindow::handle(int e)
       if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
         EditorWidget* editWidget = wnd->getEditor();
         if (editWidget) {
+          if (event_key() == F1Key) {
+            wnd->help_contents(0, (void*) true);
+            return 1;
+          }
           editWidget->focusWidget();
         }
       }

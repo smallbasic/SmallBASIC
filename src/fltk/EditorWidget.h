@@ -132,7 +132,6 @@ public:
   void setRowCol(int row, int col);
   void setScrollLock(bool b) { lockBn->value(b); }
   void showPath();
-  const char* splitPath(const char* filename, String* path);
   void statusMsg(const char* msg);
   void updateConfig(EditorWidget* current);
   bool isBreakToLine() { return gotoLineBn->value(); }

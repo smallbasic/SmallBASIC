@@ -760,7 +760,7 @@ void EditorWidget::fileChanged(bool loadfile)
           recentPath[i].append(recentPath[i - 1]);
         }
         // create new item in first position
-        const char *label = splitPath(filename, null);
+        const char *label = FileWidget::splitPath(filename, null);
         recentPath[0].empty();
         recentPath[0].append(filename);
         recentMenu[0]->copy_label(label);
@@ -859,6 +859,7 @@ void EditorWidget::gotoLine(int line)
 int EditorWidget::handle(int e)
 {
   switch (e) {
+  case SHOW:
   case FOCUS:
     fltk::focus(editor);
     handleFileChange();
@@ -888,6 +889,7 @@ void EditorWidget::loadFile(const char *newfile)
   strcat(filename, newfile);
 
   if (access(filename, R_OK) != 0) {
+    // filename unreadable, try newfile
     strcpy(filename, newfile);
   }
 
@@ -1066,30 +1068,6 @@ void EditorWidget::setRowCol(int row, int col)
 void EditorWidget::showPath()
 {
   commandChoice->tooltip(filename);
-}
-
-/**
- * return the name component of the full file path
- */
-const char* EditorWidget::splitPath(const char* filename, String* path) {
-  const char *result = strrchr(filename, '/');
-  if (!result) {
-    result = strrchr(filename, '\\');
-  }
-
-  if (!result) {
-    result = filename;
-  }
-  else {
-    result++; // skip slash
-  }
-
-  if (path) {
-    // return the path component
-    path->append(filename, result - filename - 1);
-  }
-
-  return result;
 }
 
 /**

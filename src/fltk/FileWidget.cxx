@@ -122,9 +122,9 @@ FileWidget::~FileWidget()
 //
 // convert slash chars in filename to forward slashes
 //
-char* FileWidget::forwardSlash(char *filename)
+const char* FileWidget::forwardSlash(char *filename)
 {
-  char* result = 0;
+  const char* result = 0;
   int len = filename ? strlen(filename) : 0;
   for (int i = 0; i < len; i++) {
     if (filename[i] == '\\') {
@@ -135,13 +135,37 @@ char* FileWidget::forwardSlash(char *filename)
   return result;
 }
 
+/**
+ * return the name component of the full file path
+ */
+const char* FileWidget::splitPath(const char* filename, String* path) {
+  const char *result = strrchr(filename, '/');
+  if (!result) {
+    result = strrchr(filename, '\\');
+  }
+
+  if (!result) {
+    result = filename;
+  }
+  else {
+    result++; // skip slash
+  }
+
+  if (path) {
+    // return the path component
+    path->append(filename, result - filename - 1);
+  }
+
+  return result;
+}
+
 //
 // removes CRLF line endings
 //
-char* FileWidget::trimEOL(char *buffer)
+const char* FileWidget::trimEOL(char *buffer)
 {
   int index = strlen(buffer) - 1;
-  char* result = buffer;
+  const char* result = buffer;
   while (index > 0 && (buffer[index] == '\r' || buffer[index] == '\n')) {
     buffer[index] = 0;
     index--;
@@ -236,7 +260,7 @@ void FileWidget::fileOpen(EditorWidget* saveEditorAs)
 // display the given path
 //
 void FileWidget::openPath(const char* newPath) {
-  if (newPath && access(path, R_OK) == 0) {
+  if (newPath && access(newPath, R_OK) == 0) {
     strcpy(path, newPath);
   }
   else {

@@ -19,8 +19,9 @@ struct FileWidget : public HelpWidget {
   FileWidget(int x, int y, int w, int h);
   ~FileWidget();
 
-  static char* forwardSlash(char *filename);
-  static char* trimEOL(char *buffer);
+  static const char* forwardSlash(char *filename);
+  static const char* splitPath(const char* filename, String* path);
+  static const char* trimEOL(char *buffer);
 
   void anchorClick();
   void fileOpen(EditorWidget* saveEditorAs);
