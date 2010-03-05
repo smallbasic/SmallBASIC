@@ -872,7 +872,7 @@ bool initialise(int argc, char **argv)
   // package home contains installed components
 #if defined(WIN32)
   packageHome = strdup(argv[0]);
-  char* slash = FileWidget::forwardSlash(packageHome);
+  char* slash = (char*) FileWidget::forwardSlash(packageHome);
   if (slash) {
     *slash = 0;
   }

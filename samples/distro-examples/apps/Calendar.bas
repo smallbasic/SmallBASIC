@@ -18,7 +18,7 @@ repeat
   cls
   if ln$=0 then stop
   split ln$,"/,",v
-  if len(v)>2 then
+  if len(v)=2 then
     m=val(v(0))
     y=val(v(1))
     d=(1461*(y+4800+(m-14)\12)\4+367*(m-2-12*((m-14)\12))\12-3*((y+4900+(m-14)\12)\100)\4+1)%7
