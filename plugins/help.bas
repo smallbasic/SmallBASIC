@@ -150,13 +150,19 @@ sub showContext(keyword)
     if len(cols) > 0 then
       kw = unquote(cols(2))
       if (kw == keyword) then
+        rem simple help in the log window
+        logprint cat(1) + unquote(cols(4))
+        logprint cat(0) + unquote(cols(5))
+        
         chapter = unquote(cols(0))
+        
         out << "<h1>" + chapter + " - " + keyword + "</h1>"
         out << unquote(cols(4)) 'synopsis
         out << "<br><br>"
         out << unquote(cols(5)) 'help information
         out << "<br><br><i>See also: <a href=http://smallbasic.sf.net/?q=node/" + cols(3) + ">"
-        out << cols(2) + " home page on smallbasic.sf.net</a></i><hr>"
+        out << cols(2) + " home page on smallbasic.sf.net</a>"
+         out << " - CTRL+F1 = log window help</i><hr>"
 
         rem draw next and previous links
         out << navButton("Index", "~")  

@@ -1,4 +1,5 @@
-// $Id$
+//
+// "$Id$"
 //
 // Copyright 2001-2006 by Bill Spitzak and others.
 // Original code Copyright Chris Warren-Smith.  Permission to distribute under
@@ -25,7 +26,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include <fltk/layout.h>
 #include <fltk/Image.h>
@@ -48,7 +48,6 @@ extern HDC fl_bitmap_dc;
 #define INITXY 2
 
 #include "AnsiWidget.h"
-extern "C" void trace(const char* format, ...);
 
 using namespace fltk;
 
@@ -63,6 +62,7 @@ using namespace fltk;
   For more information about ANSI code see:
   http://en.wikipedia.org/wiki/ANSI_escape_code
   http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
+  http://bjh21.me.uk/all-escapes/all-escapes.txt
 
   Supported control codes:
   \t      tab (20 px)
@@ -109,7 +109,8 @@ static Color colors[] = {
  */
 AnsiWidget::AnsiWidget(int x, int y, int w, int h, int defsize) : 
   Widget(x, y, w, h, 0) {
-  labelsize(float(defsize));
+  labelsize(float(defsize)); // default size
+  textsize(float(defsize)); // settable size
   init();
   reset();
   img = 0;
@@ -120,7 +121,6 @@ AnsiWidget::AnsiWidget(int x, int y, int w, int h, int defsize) :
  */
 AnsiWidget::~AnsiWidget() {
   destroyImage();
-  destroyAgg();
 }
 
 /*! clean up the offscreen buffer
@@ -133,43 +133,18 @@ void AnsiWidget::destroyImage() {
   }
 }
 
-/*! clean up the agg drawing
- */
-void AnsiWidget::destroyAgg() {
-  if (ren) {
-    delete ren;
-  }
-  if (rbuf) {
-    delete rbuf;
-  }
-}
-
 /*! offscreen widget initialisation
   can only be called following Fl::check() or Fl::run()
 */
 void AnsiWidget::initImage() {
   if (img == 0) {
-    img = new Image(fltk::ARGB32, w(), h());
+    img = new Image(w(), h());
     GSave gsave;
     img->make_current();
     setcolor(color());
-    //    fillrect(Rectangle(w(), h()));
-    setfont(labelfont(), labelsize());
+    fillrect(Rectangle(w(), h()));
+    setFont();
   }
-  initAgg();
-}
-
-/*! prepare to display lines and rectangles with agg.
- */
-void AnsiWidget::initAgg() {
-  destroyAgg();
-  rbuf = new agg::rendering_buffer(img->buffer(), 
-                                   img->buffer_width(), 
-                                   img->buffer_height(), 
-                                   img->buffer_linedelta());
-  ren = new agg::renderer<agg::span_argb32>(*rbuf);
-  ras.gamma(1.3);
-  ras.filling_rule(agg::fill_non_zero);
 }
 
 /*! widget initialisation
@@ -192,6 +167,8 @@ void AnsiWidget::reset() {
   color(WHITE); // bg
   labelcolor(BLACK); // fg
   labelfont(COURIER);
+  textsize(labelsize()); 
+  setFont();
 }
 
 /*! handle resize changes
@@ -208,8 +185,6 @@ void AnsiWidget::layout() {
  */
 void AnsiWidget::draw() {
   // ensure this widget has lowest z-order
-  trace("draw\n");
-
   int siblings = parent()->children();
   for (int n = 0; n < siblings; n++) {
     Widget* w = parent()->child(n);
@@ -228,23 +203,21 @@ void AnsiWidget::draw() {
         H = h();
       }
       Image* old = img;
-      img = new Image(fltk::ARGB32, W, H);
+      img = new Image(W, H);
       GSave gsave;
       img->make_current();
       setcolor(color());
-      setfont(labelfont(), labelsize());
+      setFont();
       fillrect(Rectangle(W, H));
       old->draw(Rectangle(old->w(), old->h()));
       old->destroy();
       delete old;
       resized = false;
-      initAgg();
     }
     push_clip(Rectangle(w(), h()));
     img->draw(Rectangle(img->w(), img->h()));
     pop_clip();
   } else {
-    trace("draw with no image: color=%d %d %d\n", color(),w(), h());
     setcolor(color());
     fillrect(Rectangle(w(), h()));
   }
@@ -253,16 +226,13 @@ void AnsiWidget::draw() {
 /*! clear the offscreen buffer
  */
 void AnsiWidget::clearScreen() {
-  trace("clearScreen %d\n", color() >> 8);
-  init();
   if (img != 0) {
+    init();
     begin_offscreen();
-    //    ren->clear(agg::rgba8(color() >> 8, agg::rgba8::rgb));
-    ren->clear(agg::rgba8(128,0,0));
-    ras.reset();
-    img->buffer_changed();
+    setcolor(color());
+    fillrect(Rectangle(w(), h()));
+    redraw();
   }
-  redraw();
 }
 
 /*! sets the current text drawing color
@@ -270,7 +240,6 @@ void AnsiWidget::clearScreen() {
 void AnsiWidget::setTextColor(long fg, long bg) {
   labelcolor(ansiToFltk(fg));
   color(ansiToFltk(bg));
-  trace("ansiToFltk=%d %d\n", fg, bg);
 }
 
 /*! sets the current drawing color
@@ -283,27 +252,14 @@ void AnsiWidget::setColor(long fg) {
  */
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   begin_offscreen();
-  trace("drawLine (agg)\n");
-  double width = 1.0;
-  double dx = x2 - x1;
-  double dy = y2 - y1;
-  double d = sqrt(dx*dx + dy*dy);
-    
-  dx = width * (y2 - y1) / d;
-  dy = width * (x2 - x1) / d;
-
-  ras.move_to_d(x1 - dx,  y1 + dy);
-  ras.line_to_d(x2 - dx,  y2 + dy);
-  ras.line_to_d(x2 + dx,  y2 - dy);
-  ras.line_to_d(x1 + dx,  y1 - dy);
-
-  render();
+  setcolor(labelcolor());
+  drawline(x1, y1, x2, y2);
+  redraw();
 }
 
 /*! draw a filled rectangle onto the offscreen buffer
  */
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
-  trace("drawRectFilled\n");
   begin_offscreen();
   setcolor(labelcolor());
   fillrect(Rectangle(x1, y1, x2-x1, y2-y1));
@@ -313,32 +269,13 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
 /*! draw a rectangle onto the offscreen buffer
  */
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
-  trace("drawRect (agg)\n");
   begin_offscreen();
-  //  setcolor(labelcolor());
-
-  ras.move_to_d(x1, y1);
-  ras.line_to_d(x1, y2);
-
-  ras.move_to_d(x1, y2);
-  ras.line_to_d(x2, y2);
-
-  ras.move_to_d(x2, y2);
-  ras.line_to_d(x2, y1);
-
-  ras.move_to_d(x2, y1);
-  ras.line_to_d(x1, y1);
-}
-
-void AnsiWidget::render() {
-  ras.render(*ren, agg::rgba8(labelcolor(), agg::rgba8::rgb));
-  img->buffer_changed();
+  setcolor(labelcolor());
+  drawline(x1, y1, x1, y2);
+  drawline(x1, y2, x2, y2);
+  drawline(x2, y2, x2, y1);
+  drawline(x2, y1, x1, y1);
   redraw();
-
-  // drawline(x1, y1, x1, y2);
-  // drawline(x1, y2, x2, y2);
-  // drawline(x2, y2, x2, y1);
-  // drawline(x2, y1, x1, y1);
 }
 
 /*! draws the given image onto the offscreen buffer
@@ -420,7 +357,7 @@ void AnsiWidget::beep() const {
  */
 int AnsiWidget::textWidth(const char* s) {
   begin_offscreen();
-  setfont(labelfont(), labelsize());
+  setFont();
   return (int)getwidth(s);
 }
 
@@ -428,7 +365,7 @@ int AnsiWidget::textWidth(const char* s) {
  */
 int AnsiWidget::textHeight(void) {
   begin_offscreen();
-  setfont(labelfont(), labelsize());
+  setFont();
   return (int)(getascent()+getdescent());
 }
 
@@ -472,16 +409,16 @@ Color AnsiWidget::ansiToFltk(long c) {
     // assume color is windows style RGB packing
     // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
     c = -c;
-    int b = (c>>16) & 0xFF;
+    int r = (c>>16) & 0xFF;
     int g = (c>>8) & 0xFF;
-    int r = (c) & 0xFF;
+    int b = (c) & 0xFF;
     return fltk::color(r, g, b);
   }
 
   return (c > 16) ? WHITE : colors[c];
 }
 
-/*! Handles the given escape character
+/*! Handles the given escape character. Returns whether the font has changed
  */
 bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   switch (c) {
@@ -544,52 +481,52 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
       // colors - 30..37 foreground, 40..47 background
     case 30: // set black fg
       labelcolor(ansiToFltk(0));
-      return true;
+      break;
     case 31: // set red fg
       labelcolor(ansiToFltk(4));
-      return true;
+      break;
     case 32: // set green fg
       labelcolor(ansiToFltk(2));
-      return true;
+      break;
     case 33: // set yellow fg
       labelcolor(ansiToFltk(6));
-      return true;
+      break;
     case 34: // set blue fg
       labelcolor(ansiToFltk(1));
-      return true;
+      break;
     case 35: // set magenta fg
       labelcolor(ansiToFltk(5));
-      return true;
+      break;
     case 36: // set cyan fg
       labelcolor(ansiToFltk(3));
-      return true;
+      break;
     case 37: // set white fg
       labelcolor(ansiToFltk(7));
-      return true;
+      break;
     case 40: // set black bg
       color(ansiToFltk(0));
-      return true;
+      break;
     case 41: // set red bg
       color(ansiToFltk(4));
-      return true;
+      break;
     case 42: // set green bg
       color(ansiToFltk(2));
-      return true;
+      break;
     case 43: // set yellow bg
       color(ansiToFltk(6));
-      return true;
+      break;
     case 44: // set blue bg
       color(ansiToFltk(1));
-      return true;
+      break;
     case 45: // set magenta bg
       color(ansiToFltk(5));
-      return true;
+      break;
     case 46: // set cyan bg
       color(ansiToFltk(3));
-      return true;
+      break;
     case 47: // set white bg
       color(ansiToFltk(15));
-      return true;
+      break;
     case 48: // subscript on
       break;
     case 49: // superscript
@@ -599,24 +536,28 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   return false;
 }
 
-/*! Handles the characters following the \e[ sequence
+/*! Handles the characters following the \e[ sequence. Returns whether a further call
+ * is required to complete the process.
  */
 bool AnsiWidget::doEscape(unsigned char* &p) {
   int escValue = 0;
+
   while (isdigit(*p)) {
     escValue = (escValue * 10) + (*p - '0');
     p++;
   }
 
-  if (setGraphicsRendition(*p, escValue)) {
-    fltk::Font* font = labelfont();
-    if (bold) {
-      font = font->bold();
+  if (*p == ' ') {
+    p++;
+    switch (*p) {
+    case 'C':
+      // GSS  Graphic Size Selection
+      textsize(escValue);
+      setFont();
+      break;
     }
-    if (italic) {
-      font = font->italic();
-    }
-    setfont(font, labelsize());
+  } else if (setGraphicsRendition(*p, escValue)) {
+    setFont();
   }
     
   if (*p == ';') {
@@ -626,6 +567,19 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
   return false;
 }
 
+/*! Prepares to display text according to accumulated flags
+ */
+void AnsiWidget::setFont() {
+  fltk::Font* font = labelfont();
+  if (bold) {
+    font = font->bold();
+  }
+  if (italic) {
+    font = font->italic();
+  }
+  setfont(font, textsize());
+}
+
 /*! Prints the contents of the given string onto the backbuffer
  */
 void AnsiWidget::print(const char *str) {
@@ -633,9 +587,9 @@ void AnsiWidget::print(const char *str) {
   if (len <= 0) {
     return;
   }
-  trace(str);
+
   begin_offscreen();
-  setfont(labelfont(), labelsize());
+  setFont();
   int ascent = (int)getascent();
   int fontHeight = (int)(ascent+getdescent());
   unsigned char *p = (unsigned char*)str;
@@ -656,10 +610,8 @@ void AnsiWidget::print(const char *str) {
     case '\033':  // ESC ctrl chars
       if (*(p+1) == '[' ) {
         p += 2;
-        while(true) {
-          if (!doEscape(p)) {
-            break;
-          }
+        while (doEscape(p)) {
+          // continue
         }
       }
       break;

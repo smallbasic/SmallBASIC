@@ -136,7 +136,8 @@ void MainWindow::showEditTab(EditorWidget* editWidget)
 /**
  * run the give file. returns whether break was hit
  */
-bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool toolExec)
+bool MainWindow::basicMain(EditorWidget* editWidget, 
+                           const char *filename, bool toolExec)
 {
   int len = strlen(filename);
   char path[MAX_PATH];
@@ -160,10 +161,12 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
 
   if (editWidget) {
     runEditWidget = editWidget;
-    editWidget->readonly(true);
-    editWidget->runState(rs_run);
-    breakToLine = editWidget->isBreakToLine();
-    opt_ide = editWidget->isHideIDE() ? IDE_NONE : IDE_LINKED;
+    if (!toolExec) {
+      editWidget->readonly(true);
+      editWidget->runState(rs_run);
+      breakToLine = editWidget->isBreakToLine();
+      opt_ide = editWidget->isHideIDE() ? IDE_NONE : IDE_LINKED;
+    }
   }
 
   opt_pref_width = 0;
@@ -253,11 +256,12 @@ bool MainWindow::basicMain(EditorWidget* editWidget, const char *filename, bool 
       }
     }
   }
-  else if (editWidget) {
+  else if (!toolExec && editWidget) {
+    // normal termination
     editWidget->runState(rs_ready);
   }
 
-  if (editWidget) {
+  if (!toolExec && editWidget) {
     editWidget->readonly(false);
   }
 
@@ -359,7 +363,7 @@ void MainWindow::execHelp() {
   }
   else {
     sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
-    basicMain(0, path, true);
+    basicMain(getEditor(), path, true);
   }
 }
 
@@ -1601,6 +1605,7 @@ int BaseWindow::handle(int e)
         EditorWidget* editWidget = wnd->getEditor();
         if (editWidget) {
           if (event_key() == F1Key) {
+            // CTRL + F1 key for brief log mode help
             wnd->help_contents(0, (void*) true);
             return 1;
           }
