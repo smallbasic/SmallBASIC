@@ -13,8 +13,8 @@
 #include <fltk/Window.h>
 #include <fltk/TabGroup.h>
 #include <fltk/ValueInput.h>
-#include <fltk/AnsiWidget.h>
 
+#include "AnsiWidget.h"
 #include "EditorWidget.h"
 #include "HelpWidget.h"
 #include "Profile.h"
