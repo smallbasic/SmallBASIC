@@ -610,6 +610,7 @@ void EditorWidget::set_color(Widget* w, void* eventData)
       setEditorColor(c, styleField == st_background_def);
       editor->styleChanged();
     }
+    editor->take_focus();
   }
   else {
     setColor(w->label(), styleField);

@@ -20,7 +20,7 @@ struct FileWidget : public HelpWidget {
   ~FileWidget();
 
   static const char* forwardSlash(char *filename);
-  static const char* splitPath(const char* filename, String* path);
+  static const char* splitPath(const char* filename, char* path);
   static const char* trimEOL(char *buffer);
 
   void anchorClick();

@@ -1118,9 +1118,24 @@ void MainWindow::open_file(Widget* w, void* eventData)
 
   // change to the directory of the current editor widget
   EditorWidget* editWidget = getEditor(false);
-  String path;
+  char path[MAX_PATH];
+
   if (editWidget) {
-    FileWidget::splitPath(editWidget->getFilename(), &path);
+    FileWidget::splitPath(editWidget->getFilename(), path);
+  }
+  else {
+    Group* group = (Group*) tabGroup->selected_child();
+    GroupWidget gw = (GroupWidget) (int) group->user_data();
+    switch (gw) {
+    case gw_output:
+      getHomeDir(path);
+      break;
+    case gw_help:
+      strcpy(path, packageHome);
+      break;
+    default:
+      path[0] = 0;
+    }
   }
 
   fileWidget->openPath(path);

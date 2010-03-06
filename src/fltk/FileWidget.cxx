@@ -138,7 +138,7 @@ const char* FileWidget::forwardSlash(char *filename)
 /**
  * return the name component of the full file path
  */
-const char* FileWidget::splitPath(const char* filename, String* path) {
+const char* FileWidget::splitPath(const char* filename, char* path) {
   const char *result = strrchr(filename, '/');
   if (!result) {
     result = strrchr(filename, '\\');
@@ -153,7 +153,9 @@ const char* FileWidget::splitPath(const char* filename, String* path) {
 
   if (path) {
     // return the path component
-    path->append(filename, result - filename - 1);
+    int len = result - filename - 1;
+    strncpy(path, filename, len);
+    path[len] = 0;
   }
 
   return result;
