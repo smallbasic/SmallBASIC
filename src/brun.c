@@ -206,36 +206,37 @@ void code_pop_and_free(stknode_t * node)
     }
 #endif
 
-    /*
-     *      free node's data
-     */
+    // free node's data
     cur_node = &prog_stack[prog_stack_count];
     switch (cur_node->type) {
     case kwTYPE_CRVAR:
-      v_free(tvar[cur_node->x.vdvar.vid]);  // free local
-      // variable data
+      v_free(tvar[cur_node->x.vdvar.vid]);  // free local variable data
       tmp_free(tvar[cur_node->x.vdvar.vid]);
-      tvar[cur_node->x.vdvar.vid] = cur_node->x.vdvar.vptr; // restore 
-      // 
-      // ptr
+      tvar[cur_node->x.vdvar.vid] = cur_node->x.vdvar.vptr; // restore ptr
       break;
+
     case kwBYREF:
       tvar[cur_node->x.vdvar.vid] = cur_node->x.vdvar.vptr;
       break;
+
     case kwTYPE_VAR:
       if ((cur_node->x.param.vcheck == 1) || (cur_node->x.param.vcheck == 0x81)) {
         v_free(cur_node->x.param.res);
         tmp_free(cur_node->x.param.res);
       }
       break;
+
     case kwTYPE_RET:
       v_free(cur_node->x.vdvar.vptr); // free ret-var
       tmp_free(cur_node->x.vdvar.vptr);
       break;
+
     case kwFUNC:
-      tvar[cur_node->x.vcall.rvid] = cur_node->x.vcall.retvar;  // restore 
-      // ptr
+      if (cur_node->x.vcall.rvid != INVALID_ADDR) {
+        tvar[cur_node->x.vcall.rvid] = cur_node->x.vcall.retvar;  // restore ptr
+      }
       break;
+
     case kwFOR:
       if (cur_node->x.vfor.subtype == kwIN) {
         if (cur_node->x.vfor.flags & 1) {

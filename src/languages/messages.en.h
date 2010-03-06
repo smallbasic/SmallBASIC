@@ -156,7 +156,7 @@
 #define ERR_PARCOUNT            "Error number of parameters"
 #define ERR_STACK_OVERFLOW      "Stack overflow"
 #define ERR_STACK_UNDERFLOW     "Stack underflow"
-#define ERR_STACK               "Stack mess!"
+#define ERR_STACK               "Stack mess (Cannot use call to SUB with an expression)"
 #define ERR_ARRAY_MISSING_LP    "Array: Missing '('"
 #define ERR_ARRAY_MISSING_RP    "Array: Missing ')'"
 #define ERR_ARRAY_RANGE         "Array: Index '%d' out of range. (Max = %d)"
