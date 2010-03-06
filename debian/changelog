@@ -1,3 +1,12 @@
+smallbasic (0.10.7) unstable; urgency=low
+  * Added defineKey and fixed delay problems with the inkey command
+
+  * Updated the code browser
+
+  * Implemented saving and restoring window position
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Wed, 6 Mar 2010 09:45:25 +1000
+
 smallbasic (0.10.6) unstable; urgency=low
 
   * Implemented TtyWidget
