@@ -62,6 +62,43 @@ int uds_to_int(const var_p_t var_p)
 }
 
 /**
+ * Return the number of elements
+ */
+int uds_length(const var_p_t var_p)
+{
+  int n = 0;
+  if (var_p->type == V_UDS) {
+    uds_field_s *next = var_p->v.uds;
+    while (next) {
+      n += 1;
+      next = next->next;
+    }
+  }
+  return n;
+}
+
+/**
+ * return the element at the nth position
+ */
+var_p_t uds_elem(const var_p_t var_p, int index) {
+  var_p_t result = 0;
+  if (var_p->type == V_UDS) {
+    uds_field_s *next = var_p->v.uds;
+    int count = 0;
+    while (next) {
+      if (count++ == index) {
+        result = next->var;
+        next = 0;
+      }
+      else {
+        next = next->next;
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * helper for uds_resolve_fields
  */
 uds_field_s *uds_new_field(addr_t field_id, byte owner_flag)

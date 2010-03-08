@@ -11,6 +11,8 @@
 #include "sys.h"
 #include "kw.h"
 #include "var.h"
+#include "var_hash.h"
+#include "var_uds.h"
 #include "device.h"
 #include "blib.h"
 #include "pproc.h"
@@ -1698,19 +1700,13 @@ void cmd_for()
   byte code;
   addr_t true_ip, false_ip;
   stknode_t node;
-  var_t var, varstep, *var_p, *array_p;
+  var_t var, varstep;
+  var_p_t array_p, var_p;
 
   true_ip = code_getaddr();
   false_ip = code_getaddr();
 
   code = code_peek();
-
-  // its checked by compiler
-  //
-  // if ( code != kwTYPE_VAR ) {
-  // err_syntax();
-  // return;
-  // }
 
   node.type = kwFOR;
   node.x.vfor.subtype = kwTO;
@@ -1835,20 +1831,37 @@ void cmd_for()
       node.x.vfor.arr_ptr = array_p = new_var;
     }
 
-    // ///////////
     if (!prog_error) {
       node.x.vfor.step_expr_ip = 0; // element-index
 
-      if (array_p->type == V_ARRAY) {
+      var_p_t var_elem_ptr = 0;
+
+      switch (array_p->type) {
+      case V_HASH:
+        var_elem_ptr = hash_elem(array_p, 0);
+        break;
+      
+      case V_UDS:
+        var_elem_ptr = uds_elem(array_p, 0);
+        break;
+
+      case V_ARRAY:
         if (array_p->v.a.size > 0) {
-          v_set(var_p, v_elem(array_p, 0));
-          code_jump(true_ip);
+          var_elem_ptr = v_elem(array_p, 0);
         }
-        else
-          code_jump(false_ip);
+        break;
+      
+      default:
+        break;
       }
-      else
+
+      if (var_elem_ptr) {
+        v_set(var_p, var_elem_ptr);
+        code_jump(true_ip);
+      }
+      else {
         code_jump(false_ip);
+      }
 
       code_push(&node);
     }
@@ -1954,7 +1967,6 @@ void cmd_next()
   }
   jump_ip = node.x.vfor.jump_ip;
 
-  //
   var_p = node.x.vfor.var_ptr;
   // v_init(&var_to);
   var_step.const_flag = 0;
@@ -1984,7 +1996,7 @@ void cmd_next()
         else {
           check = (v_compare(var_p, &var_to) <= 0);
         }
-      }                         //
+      }
       else {
         if (!prog_error) {
           err_typemismatch();
@@ -2017,32 +2029,51 @@ void cmd_next()
     //
 
     array_p = node.x.vfor.arr_ptr;
-    if (array_p->type == V_ARRAY) {
-      node.x.vfor.step_expr_ip++; // element-index
+    var_elem_ptr = 0;
 
+    switch (array_p->type) {
+    case V_HASH:
+      node.x.vfor.step_expr_ip++; // element-index
+      var_elem_ptr = hash_elem(array_p, node.x.vfor.step_expr_ip);
+      break;
+      
+    case V_UDS:
+      node.x.vfor.step_expr_ip++; // element-index
+      var_elem_ptr = uds_elem(array_p, node.x.vfor.step_expr_ip);
+      break;
+      
+    case V_ARRAY:
+      node.x.vfor.step_expr_ip++; // element-index
+      
       if (array_p->v.a.size > (int)node.x.vfor.step_expr_ip) {
         var_elem_ptr = v_elem(array_p, node.x.vfor.step_expr_ip);
-        v_set(var_p, var_elem_ptr);
-
-        code_push(&node);
-        code_jump(jump_ip);
       }
       else {
         if (node.x.vfor.flags & 1) {  // allocated in for
           v_free(node.x.vfor.arr_ptr);
           tmp_free(node.x.vfor.arr_ptr);
         }
-        code_jump(next_ip);
       }
-    }
-    else {
+      break;
+
+    default:
       // if ( !prog_error ) rt_raise("FOR-IN: IN var IS NOT ARRAY");
       if (node.x.vfor.flags & 1) {  // allocated in for
         v_free(node.x.vfor.arr_ptr);
         tmp_free(node.x.vfor.arr_ptr);
       }
+      break;
+    }
+
+    if (var_elem_ptr) {
+      v_set(var_p, var_elem_ptr);
+      code_push(&node);
+      code_jump(jump_ip);
+    }
+    else {
       code_jump(next_ip);
     }
+
   }
 
   // clean up

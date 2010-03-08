@@ -1,3 +1,8 @@
+2010-03-08
+	UDS and HASH types now work with FOR-IN and also return sensible
+	values when used with the LEN command. Fixed crash when converting
+	between UDS and HASH types.
+	
 2010-03-07
 	Fixed a bug where hitting break from inside a SUB that had the
 	result being assigned to another variable would cause a crash

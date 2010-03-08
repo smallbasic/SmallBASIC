@@ -446,7 +446,6 @@ var_t* code_getvarptr_parens(int until_parens)
   case kwTYPE_UDS:
     code_skipnext();
     var_p = tvar[code_getaddr()];
-    var_p->type = V_UDS;
     var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
     break;
   }
@@ -524,11 +523,14 @@ int code_isvar()
   case kwTYPE_VAR:
     code_skipnext();
     var_p = basevar_p = tvar[code_getaddr()];
-    if (basevar_p->type == V_ARRAY) { 
-      // variable is an array 
+
+    switch (basevar_p->type) {
+    case V_HASH:
+    case V_ARRAY:
+      // variable is an array or hash
       var_p = code_resolve_varptr(var_p, 0);
-    }
-    else {
+      break;
+    default:
       if (code_peek() == kwTYPE_LEVEL_BEGIN) {
         var_p = NULL;
       }
@@ -538,7 +540,6 @@ int code_isvar()
   case kwTYPE_UDS:
     code_skipnext();
     var_p = tvar[code_getaddr()];
-    var_p->type = V_UDS;
     var_p = code_resolve_varptr(uds_resolve_fields(var_p), 0);
     break;
   }

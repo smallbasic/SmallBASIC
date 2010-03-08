@@ -24,9 +24,11 @@
 typedef struct CallbackData {
   int method;
   int handle;
+  int index;
   int count;
   int firstElement;
   void* hash;
+  var_p_t var;
 } CallbackData;
 
 CallbackData cb;
@@ -83,9 +85,17 @@ int hash_is_empty(const var_p_t var_p)
 }
 
 /**
- * Helper for hash_to_int
+ * Return the contents of the structure as an integer
  */
-void hash_to_int_cb(const void *nodep, VISIT value, int level) 
+int hash_to_int(const var_p_t var_p)
+{
+  return hash_length(var_p);
+}
+
+/**
+ * Helper for hash_length
+ */
+void hash_length_cb(const void *nodep, VISIT value, int level) 
 {
   if (value == leaf || value == endorder) {
     cb.count++;
@@ -93,15 +103,41 @@ void hash_to_int_cb(const void *nodep, VISIT value, int level)
 }
 
 /**
- * Return the contents of the structure as an integer
+ * Return the number of elements
  */
-int hash_to_int(const var_p_t var_p)
+int hash_length(const var_p_t var_p)
 {
   cb.count = 0;
   if (var_p->type == V_HASH) {
-    twalk(var_p->v.hash, hash_to_int_cb);
+    twalk(var_p->v.hash, hash_length_cb);
   }
   return cb.count;
+}
+
+/**
+ * Helper for hash_length
+ */
+void hash_elem_cb(const void *nodep, VISIT value, int level) 
+{
+  if (value == leaf || value == endorder) {
+    if (cb.count++ == cb.index) {
+      Element* element = ((Node*) nodep)->element;
+      cb.var = element->value;
+    }
+  }
+}
+
+/**
+ * return the element at the nth position
+ */
+var_p_t hash_elem(const var_p_t var_p, int index) {
+  cb.count = 0;
+  cb.index = index;
+  cb.var = 0;
+  if (var_p->type == V_HASH) {
+    twalk(var_p->v.hash, hash_elem_cb);
+  }
+  return cb.var;
 }
 
 /**

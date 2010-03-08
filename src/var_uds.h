@@ -16,6 +16,8 @@
 int uds_compare(const var_p_t var_a, const var_p_t var_b);
 int uds_is_empty(const var_p_t var_p);
 int uds_to_int(const var_p_t var_p);
+int uds_length(const var_p_t var_p);
+var_p_t uds_elem(const var_p_t var, int index);
 var_p_t uds_resolve_fields(const var_p_t var_p);
 void uds_clear(const var_p_t var);
 void uds_free(var_p_t var_p);

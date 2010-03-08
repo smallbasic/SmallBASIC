@@ -117,11 +117,9 @@ int v_length(var_t *var)
   case V_STR:
     return strlen((char *)var->v.p.ptr);
   case V_UDS:
-    uds_to_str((const var_p_t)var->v.uds, tmpsb, 64);
-    return strlen(tmpsb);
+    return uds_length(var);
   case V_HASH:
-    hash_to_str((const var_p_t)var->v.uds, tmpsb, 64);
-    return strlen(tmpsb);
+    return hash_length(var);
   case V_PTR:
     ltostr(var->v.ap.p, tmpsb);
     return strlen(tmpsb);

@@ -16,7 +16,9 @@
 int hash_compare(const var_p_t var_a, const var_p_t var_b);
 int hash_is_empty(const var_p_t var_p);
 int hash_to_int(const var_p_t var_p);
-void hash_clear(const var_p_t var);
+int hash_length(const var_p_t var_p);
+var_p_t hash_elem(const var_p_t var_p, int index);
+void hash_clear(const var_p_t var_p);
 void hash_free(var_p_t var_p);
 void hash_get_value(var_p_t base, var_p_t key, var_p_t *result);
 void hash_set(var_p_t dest, const var_p_t src);
