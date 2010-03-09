@@ -37,7 +37,7 @@ CallbackData cb;
  * Our internal tree element node
  */
 typedef struct Element {
-  char* key;
+  var_p_t key;
   var_p_t value;
 } Element;
 
@@ -51,11 +51,26 @@ typedef struct Node {
 /**
  * Returns a new Element 
  */
-Element* create_element(const char* key) {
+Element* create_element(var_p_t key) {
   Element* element = (Element*) tmp_alloc(sizeof (Element));
-  element->key = strdup(key);
+  element->key = v_new();
+  v_createstr(element->key, key->v.p.ptr);
   element->value = NULL;
   return element;
+}
+
+/**
+ * cleanup the given element
+ */
+void delete_element(Element* element) {
+  v_free(element->key);
+  tmp_free(element->key); // cleanup v_new
+
+  if (element->value) {
+    v_free(element->value);
+    tmp_free(element->value); // cleanup v_new
+  }
+  tmp_free(element); // cleanup create_element() 
 }
 
 /**
@@ -63,9 +78,9 @@ Element* create_element(const char* key) {
  */
 int cmp_fn(const void *a, const void *b)
 {
-  Element* key_a = (Element*) a;
-  Element* key_b = (Element*) b;
-  return strcasecmp(key_a->key, key_b->key);
+  Element* el_a = (Element*) a;
+  Element* el_b = (Element*) b;
+  return strcasecmp(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
 }
 
 /**
@@ -122,7 +137,7 @@ void hash_elem_cb(const void *nodep, VISIT value, int level)
   if (value == leaf || value == endorder) {
     if (cb.count++ == cb.index) {
       Element* element = ((Node*) nodep)->element;
-      cb.var = element->value;
+      cb.var = element->key;
     }
   }
 }
@@ -153,9 +168,7 @@ void hash_clear(const var_p_t var)
  */
 void hash_free_cb(void *nodep) {
   Element* element = (Element*) nodep;
-  tmp_free(element->key); // cleanup strdup()
-  tmp_free(element->value); // cleanup v_new
-  tmp_free(element); // cleanup create_element() 
+  delete_element(element);
 }
 
 /**
@@ -184,11 +197,12 @@ void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result)
   }
 
   // create a key which will hold our name and value pairs
-  Element* key = create_element(var_key->v.p.ptr);
+  Element* key = create_element(var_key);
   Node* node = tfind(key, &base->v.hash, cmp_fn);
   if (node != NULL) {
+    // item already exists
     *result = node->element->value;
-    tmp_free(key);
+    delete_element(key);
   }
   else {
     // add key to the tree
@@ -219,7 +233,6 @@ void hash_set(var_p_t dest, const var_p_t src)
   v_free(dest);
   cb.hash = 0;
 
-  //  dest->v.hash = hash = 0;
   if (src->type == V_HASH) {
     twalk(src->v.hash, hash_set_cb);
   }
@@ -246,7 +259,7 @@ void hash_write_cb(const void *nodep, VISIT value, int level) {
       pv_write(",", cb.method, cb.handle);
     }
     cb.firstElement = 0;
-    pv_write(element->key, cb.method, cb.handle);
+    pv_write(element->key->v.p.ptr, cb.method, cb.handle);
     pv_write("=", cb.method, cb.handle);
     pv_writevar(element->value, cb.method, cb.handle);
   }
