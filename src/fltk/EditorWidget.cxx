@@ -1061,6 +1061,17 @@ void EditorWidget::setRowCol(int row, int col)
   sprintf(rowcol, "%d", col);
   colStatus->copy_label(rowcol);
   colStatus->redraw();
+
+  // sync the browser widget selection
+  int len = funcList->children() - 1;
+  for (int i = 0; i < len; i++) {
+    int line = (int) funcList->child(i)->user_data();
+    int nextLine = (int) funcList->child(i + 1)->user_data();
+    if (row >= line && (i == len - 1 || row < nextLine)) {
+      funcList->value(i);
+      break;
+    }
+  }
 }
 
 /**
