@@ -7,7 +7,7 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
 #include "sys.h"
 #include "var.h"
@@ -47,6 +47,35 @@ typedef struct Element {
 typedef struct Node {
   Element* element;
 } Node;
+
+#if !defined(tdestroy)
+// tdestroy() is missing from MingW. include code from gnu clib _search.c
+
+typedef struct node_t {
+  void *key;
+  struct node_t *left, *right;
+} node;
+
+typedef void (*__free_fn_t) (void *__nodep);
+
+tdestroy_recurse(node *root, __free_fn_t freefct) {
+  if (root->left != NULL) {
+    tdestroy_recurse(root->left, freefct);
+  }
+  if (root->right != NULL) {
+    tdestroy_recurse(root->right, freefct);
+  }
+  (*freefct) ((void *) root->key);
+  free(root);
+}
+
+void tdestroy(void *vroot, __free_fn_t freefct) {
+  node *root = (node *) vroot;
+  if (root != NULL) {
+    tdestroy_recurse (root, freefct);
+  }
+}
+#endif
 
 /**
  * Returns a new Element 
@@ -177,9 +206,7 @@ void hash_free_cb(void *nodep) {
 void hash_free(var_p_t var_p)
 {
   if (var_p->type == V_HASH) {
-#if defined(tdestroy)
     tdestroy(var_p->v.hash, hash_free_cb);
-#endif
   }
 }
 
