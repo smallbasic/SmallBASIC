@@ -159,6 +159,10 @@ bool MainWindow::basicMain(EditorWidget* editWidget,
     return false;
   }
 
+  // start in the directory of the bas program
+  FileWidget::splitPath(filename, path);
+  chdir(path);
+
   if (editWidget) {
     runEditWidget = editWidget;
     if (!toolExec) {
