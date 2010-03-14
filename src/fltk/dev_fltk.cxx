@@ -40,8 +40,8 @@ extern "C" {
 #else
 #define makedir(f) mkdir(f, 0700)
 #endif
-#define PEN_ON  2
-#define PEN_OFF 0
+#define PEN_OFF   0 // pen mode disabled
+#define PEN_ON    2 // pen mode active
 
 HelpWidget *formView = 0;
 Properties env;
@@ -60,6 +60,9 @@ bool cacheLink(dev_file_t * df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
 void clearOutput();
+
+// in blib_fltk_ui.cxx
+bool form_event();
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -203,6 +206,11 @@ int osd_getpen(int code)
   switch (code) {
   case 0:
     // UNTIL PEN(0) - wait until move click or move
+    if (form_event()) {
+      // clicked a form widget
+      get_mouse_xy();
+      return 1;
+    }
     fltk::wait(); // fallthru to re-test 
 
   case 3:    // returns true if the pen is down (and save curpos)

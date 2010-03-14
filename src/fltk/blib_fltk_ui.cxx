@@ -45,6 +45,7 @@ struct Form : public Group {
 
 Form* form = 0;
 
+// control types available using the BUTTON command
 enum ControlType {
   ctrl_button,
   ctrl_radio,
@@ -56,6 +57,9 @@ enum ControlType {
 };
 
 enum Mode { m_reset, m_init, m_active, m_selected } mode = m_reset;
+
+// whether a widget event has fired
+bool form_event() { return mode == m_selected; }
 
 int prev_x;
 int prev_y;
@@ -242,11 +246,13 @@ bool update_gui(Widget* w, WidgetInfo* inf)
     case ctrl_dropdown:
       delete((Choice*) w)->list();
       ((Choice*) w)->list(new DropListModel(0, inf->var));
+      w->layout();
       return true;
 
     case ctrl_listbox:
       delete((Browser*) w)->list();
       ((Browser*) w)->list(new DropListModel(0, inf->var));
+      w->layout();
       return true;
 
     case ctrl_label:
@@ -375,7 +381,9 @@ void transfer_data(Widget* w, WidgetInfo* inf)
     model = (DropListModel*) dropdown->list();
     if (dropdown->value() != -1) {
       String* s = model->getElementAt(dropdown->value());
-      v_setstr(inf->var, s->c_str());
+      if (s) {
+        v_setstr(inf->var, s->c_str());
+      }
     }
     break;
 
@@ -384,7 +392,9 @@ void transfer_data(Widget* w, WidgetInfo* inf)
     model = (DropListModel*) listbox->list();
     if (listbox->value() != -1) {
       String* s = model->getElementAt(listbox->value());
-      v_setstr(inf->var, s->c_str());
+      if (s) {
+        v_setstr(inf->var, s->c_str());
+      }
     }
     break;
 
@@ -454,9 +464,16 @@ void widget_cb(Widget* w, void* v)
     transfer_data(w, (WidgetInfo*) v);
 
     mode = m_selected;
-    
+
     if (form->var) {
-      v_set(form->var, inf->var);
+      // array type cannot be used in program select statement
+      if (inf->var->type == V_ARRAY) {
+        v_zerostr(form->var);
+      }
+      else {
+        // set the form variable from the widget var
+        v_set(form->var, inf->var);
+      }
     }
   }
 }
@@ -625,7 +642,7 @@ void cmd_button()
         inf->type = ctrl_label;
         Widget* widget = new Widget(x, y, w, h);
         widget->box(FLAT_BOX);
-        widget->align(ALIGN_LEFT | ALIGN_INSIDE);
+        widget->align(ALIGN_LEFT | ALIGN_INSIDE | ALIGN_CLIP);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
       }
       else if (strcasecmp("listbox", type) == 0 || strcasecmp("list", type) == 0) {
@@ -638,7 +655,7 @@ void cmd_button()
           widget->value(model->focus_index);
         }
         update_widget(widget, inf, rect);
-        form->resizable(widget);
+        widget->when(WHEN_RELEASE_ALWAYS);
       }
       else if (strcasecmp("dropdown", type) == 0 || strcasecmp("choice", type) == 0) {
         inf->type = ctrl_dropdown;
@@ -731,6 +748,7 @@ void cmd_doform()
     ui_reset();
   }
   else if (wnd->penMode) {
+    mode = m_active;
     fltk::wait();
   }
   else {
