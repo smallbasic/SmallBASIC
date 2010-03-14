@@ -1,4 +1,3 @@
-// -*- c-file-style: "java" -*-
 // $Id$
 // This file is part of SmallBASIC
 //
@@ -50,30 +49,33 @@ typedef int FileHand;
 // FILE TABLE
 static dev_file_t file_table[OS_FILEHANDLES];
 
-/*
- *       Basic wild-cards 
+/**
+ * Basic wild-cards 
  */
 int wc_match(const char *mask, char *name)
 {
-  if (mask == NULL)
+  if (mask == NULL) {
     return 1;
-  if (*mask == '\0')
+  }
+  if (*mask == '\0') {
     return 1;
-  if (strcmp(mask, "*") == 0)
+  }
+  if (strcmp(mask, "*") == 0) {
     return 1;
-
+  }
   return (reg_match(mask, name) == 0);
 }
 
-/*
- *       initialize file system
+/**
+ * initialize file system
  */
 int dev_initfs()
 {
   int i;
 
-  for (i = 0; i < OS_FILEHANDLES; i++)
+  for (i = 0; i < OS_FILEHANDLES; i++) {
     file_table[i].handle = -1;
+  }
 
   // drivers initialization
   if (memo_mount() == 0) {
@@ -83,45 +85,46 @@ int dev_initfs()
   return 1;
 }
 
-/*
- *       cleanup file system
+/**
+ * cleanup file system
  */
 void dev_closefs()
 {
   int i;
 
   for (i = 0; i < OS_FILEHANDLES; i++) {
-    if (file_table[i].handle != -1)
+    if (file_table[i].handle != -1) {
       dev_fclose(i + 1);
+    }
   }
 
   // drivers deinit
   memo_umount();
 }
 
-/*
- *       returns a free file handle for user's commands
+/**
+ * returns a free file handle for user's commands
  */
 int dev_freefilehandle()
 {
   int i;
 
   for (i = 0; i < OS_FILEHANDLES; i++) {
-    if (file_table[i].handle == -1)
-      return i + 1;             // Warning: BASIC's handles starting from
-    // 1
+    if (file_table[i].handle == -1) {
+      return i + 1;             // Warning: BASIC's handles starting from 1
+    }
   }
 
   rt_raise(FSERR_TOO_MANY_FILES);
   return -1;
 }
 
-/*
+/**
+ *
  */
 dev_file_t *dev_getfileptr(int handle)
 {
-  handle--;                     // Warning: BASIC's handles starting from
-  // 1
+  handle--;     // Warning: BASIC's handles starting from 1
 
   if (handle < 0 || handle >= OS_FILEHANDLES) {
     rt_raise(FSERR_HANDLE);
@@ -131,24 +134,25 @@ dev_file_t *dev_getfileptr(int handle)
   return &file_table[handle];
 }
 
-/*
- *       returns true if the file is opened
+/**
+ * returns true if the file is opened
  */
 int dev_fstatus(int handle)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(handle)) == NULL)
+  if ((f = dev_getfileptr(handle)) == NULL) {
     return 0;
+  }
 
   return (f->handle != -1);
 }
 
-#if defined(_UnixOS) && !defined(_Win32) && !defined(__MINGW32__)
-/*
- *       terminal speed
- *       select the correct system constant
+/**
+ * terminal speed
+ * select the correct system constant
  */
+#if defined(_UnixOS) && !defined(_Win32) && !defined(__MINGW32__)
 int select_unix_serial_speed(int n)
 {
   switch (n) {
@@ -173,18 +177,19 @@ int select_unix_serial_speed(int n)
 }
 #endif
 
-/*
- *       opens a file
+/**
+ * opens a file
  *
- *       returns true on success
+ * returns true on success
  */
 int dev_fopen(int sb_handle, const char *name, int flags)
 {
   dev_file_t *f;
   int i;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   memset(f, 0, sizeof(dev_file_t));
 
@@ -200,23 +205,26 @@ int dev_fopen(int sb_handle, const char *name, int flags)
   // 
   if (strlen(f->name) > 4) {
     if (f->name[4] == ':') {
-      for (i = 0; i < 5; i++)
+      for (i = 0; i < 5; i++) {
         f->name[i] = to_upper(f->name[i]);
-
-      if (strncmp(f->name, "MEMO:", 5) == 0)
+      }
+      if (strncmp(f->name, "MEMO:", 5) == 0) {
         f->type = ft_memo;
-      else if (strncmp(f->name, "PDOC:", 5) == 0)
+      }
+      else if (strncmp(f->name, "PDOC:", 5) == 0) {
         f->type = ft_pdoc;
+      }
       else if (strncmp(f->name, "COM", 3) == 0) {
         f->type = ft_serial_port;
         f->port = f->name[3] - '1';
-        if (f->port < 0)
+        if (f->port < 0) {
           f->port = 10;
-
-        if (strlen(f->name) > 5)
+        }
+        if (strlen(f->name) > 5) {
           f->devspeed = xstrtol(f->name + 5);
-        else
+        } else {
           f->devspeed = 9600;
+        }
 
 #if defined(_UnixOS) && !defined(_Win32) && !defined(__MINGW32__)
         f->devspeed = select_unix_serial_speed(f->devspeed);
@@ -225,34 +233,42 @@ int dev_fopen(int sb_handle, const char *name, int flags)
       else if (strncmp(f->name, "IRD", 3) == 0) {
         f->type = ft_irda_port;
         f->port = f->name[3] - '1';
-        if (strlen(f->name) > 5)
+        if (strlen(f->name) > 5) {
           f->devspeed = xstrtol(name + 5);
-        else
+        } 
+        else {
           f->devspeed = 9600;
+        }
       }
-      else if (strncmp(f->name, "SOCL:", 5) == 0)
+      else if (strncmp(f->name, "SOCL:", 5) == 0) {
         f->type = ft_socket_client;
-      else if (strncasecmp(f->name, "HTTP:", 5) == 0)
+      }
+      else if (strncasecmp(f->name, "HTTP:", 5) == 0) {
         f->type = ft_http_client;
+      }
       else if (strncmp(f->name, "SOUT:", 5) == 0 ||
                strncmp(f->name, "SDIN:", 5) == 0 ||
-               strncmp(f->name, "SERR:", 5) == 0)
+               strncmp(f->name, "SERR:", 5) == 0) {
         f->type = ft_stream;
+      }
       else {
         // external-lib
         f->vfslib = sblmgr_getvfs(f->name);
-        if (f->vfslib == -1)
+        if (f->vfslib == -1) {
           // no such driver
           rt_raise(FSERR_WRONG_DRIVER);
-        else
+        }
+        else {
           f->type = ft_vfslib;
+        }
         return 0;
       }
 
     }
     else if (f->name[3] == ':') {
-      for (i = 0; i < 4; i++)
+      for (i = 0; i < 4; i++) {
         f->name[i] = to_upper(f->name[i]);
+      }
 
       if (strncmp(f->name, "CON:", 4) == 0) {
         strcpy(f->name, "SOUT:");
@@ -263,7 +279,7 @@ int dev_fopen(int sb_handle, const char *name, int flags)
         f->type = ft_stream;
       }
     }
-  }                             // device
+  } // device
 
   // 
   // open
@@ -292,15 +308,16 @@ int dev_fopen(int sb_handle, const char *name, int flags)
   return 0;
 }
 
-/*
- *       returns true on success
+/**
+ * returns true on success
  */
 int dev_fclose(int sb_handle)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   switch (f->type) {
   case ft_stream:
@@ -324,15 +341,16 @@ int dev_fclose(int sb_handle)
   return 0;
 }
 
-/*
- *       returns true on success
+/**
+ * returns true on success
  */
 int dev_fwrite(int sb_handle, byte * data, dword size)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   switch (f->type) {
   case ft_memo:
@@ -355,15 +373,16 @@ int dev_fwrite(int sb_handle, byte * data, dword size)
   return 0;
 }
 
-/*
- *       returns true on success
+/**
+ * returns true on success
  */
 int dev_fread(int sb_handle, byte * data, dword size)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   switch (f->type) {
   case ft_memo:
@@ -386,14 +405,16 @@ int dev_fread(int sb_handle, byte * data, dword size)
   return 0;
 }
 
-/*
+/**
+ *
  */
 dword dev_ftell(int sb_handle)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   switch (f->type) {
   case ft_stream:
@@ -406,14 +427,16 @@ dword dev_ftell(int sb_handle)
   return 0;
 }
 
-/*
+/**
+ *
  */
 dword dev_flength(int sb_handle)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   switch (f->type) {
   case ft_stream:
@@ -436,14 +459,16 @@ dword dev_flength(int sb_handle)
   return 0;
 }
 
-/*
+/**
+ *
  */
 dword dev_fseek(int sb_handle, dword offset)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   switch (f->type) {
   case ft_memo:
@@ -459,14 +484,16 @@ dword dev_fseek(int sb_handle, dword offset)
   return -1;
 }
 
-/*
+/**
+ *
  */
 int dev_feof(int sb_handle)
 {
   dev_file_t *f;
 
-  if ((f = dev_getfileptr(sb_handle)) == NULL)
+  if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
+  }
 
   switch (f->type) {
   case ft_stream:
@@ -490,52 +517,56 @@ int dev_feof(int sb_handle)
   return 0;
 }
 
-/*
- *       deletes a file
- *       returns true on success
+/**
+ * deletes a file
+ * returns true on success
  */
 int dev_fremove(const char *file)
 {
   int success, vfslib;
 
-  /*
-   *       common for all, execute driver's function
-   */
-  if (strncasecmp(file, "memo:", 5) == 0)
+  // common for all, execute driver's function
+  if (strncasecmp(file, "memo:", 5) == 0) {
     success = memo_delete(file);
-  else if (strncasecmp(file, "pdoc:", 5) == 0)
+  }
+  else if (strncasecmp(file, "pdoc:", 5) == 0) {
     success = pdoc_remove(file);
-  else if ((vfslib = sblmgr_getvfs(file)) != -1)
+  }
+  else if ((vfslib = sblmgr_getvfs(file)) != -1) {
     success = sblmgr_vfsdirexec(lib_vfs_remove, vfslib, file + 5);
-  else
+  }
+  else {
 #if defined(_PalmOS)
     success = (FileDelete(0, (char *)file) == 0);
 #elif defined(_VTOS)
     success = (unlink((char *)file) != 0);
 #else
     success = (remove(file) == 0);
-#endif
-  if (!success)
+#endif 
+  }
+  if (!success) {
     rt_raise(FSERR_ACCESS);
+  }
   return success;
 }
 
-/*
- *       returns true if the file exists
+/**
+ * returns true if the file exists
  */
 int dev_fexists(const char *file)
 {
   int vfslib;
 
-  /*
-   *       common for all, execute driver's function
-   */
-  if (strncasecmp(file, "memo:", 5) == 0)
+  // common for all, execute driver's function
+  if (strncasecmp(file, "memo:", 5) == 0) {
     return memo_exist(file);
-  else if (strncasecmp(file, "pdoc:", 5) == 0)
+  }
+  else if (strncasecmp(file, "pdoc:", 5) == 0) {
     return pdoc_exist(file);
-  else if ((vfslib = sblmgr_getvfs(file)) != -1)
+  }
+  else if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_exist, vfslib, file + 5);
+  }
 
 #if defined(_PalmOS)
   return (DmFindDatabase(0, (char *)file) != 0);
@@ -546,9 +577,9 @@ int dev_fexists(const char *file)
 #endif
 }
 
-/*
- *       copy file
- *       returns true on success
+/**
+ * copy file
+ * returns true on success
  */
 int dev_fcopy(const char *file, const char *newfile)
 {
@@ -564,17 +595,21 @@ int dev_fcopy(const char *file, const char *newfile)
     }
 
     src = dev_freefilehandle();
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
     dev_fopen(src, file, DEV_FILE_INPUT);
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
     dst = dev_freefilehandle();
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
     dev_fopen(dst, newfile, DEV_FILE_OUTPUT);
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
 
     file_len = dev_flength(src);
     if (file_len != -1 && file_len > 0) {
@@ -612,95 +647,101 @@ int dev_fcopy(const char *file, const char *newfile)
     }
 
     dev_fclose(src);
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
     dev_fclose(dst);
-    if (prog_error)
+    if (prog_error) {
       return 0;
+    }
     return 1;
   }
-  return 0;                     // source file does not exists
+  return 0;  // source file does not exists
 }
 
-/*
- *       rename file
- *       returns true on success
+/**
+ * rename file
+ * returns true on success
  */
 int dev_frename(const char *file, const char *newname)
 {
-  if (dev_fcopy(file, newname))
+  if (dev_fcopy(file, newname)) {
     return dev_fremove(file);
+  }
   return 0;
 }
 
-/*
- *       create a directory
- *       BUG: no drivers supported
+/**
+ * create a directory
+ * BUG: no drivers supported
  */
 void dev_mkdir(const char *dir)
 {
 #if defined(_PalmOS) || defined(_VTOS)
   err_unsup();
 #elif defined(_Win32) || defined(__MINGW32__)
-  if (mkdir(dir) != 0)
+  if (mkdir(dir) != 0) {
     err_file(errno);
+  }
 #else
-  if (mkdir(dir, 0777) != 0)
+  if (mkdir(dir, 0777) != 0) {
     err_file(errno);
+  }
 #endif
 }
 
-/*
- *       removes a directory
- *       BUG: no drivers supported
+/**
+ * removes a directory
+ * BUG: no drivers supported
  */
 void dev_rmdir(const char *dir)
 {
 #if defined(_PalmOS) || defined(_VTOS)
   err_unsup();
-#else
-  if (rmdir(dir) != 0)
+#else 
+  if (rmdir(dir) != 0) {
     err_file(errno);
+  }
 #endif
 }
 
-/*
- *       changes the current directory
- *       BUG: no drivers supported
+/**
+ * changes the current directory
+ * BUG: no drivers supported
  */
 void dev_chdir(const char *dir)
 {
 #if defined(_PalmOS) || defined(_VTOS)
   err_unsup();
 #else
-  if (chdir(dir) != 0)
+  if (chdir(dir) != 0) {
     err_file(errno);
+  }
   setsysvar_str(SYSVAR_PWD, dev_getcwd());
 #endif
 }
 
-/*
- *       create a file-list using wildcards
+/**
+ * create a file-list using wildcards
  */
 char_p_t *dev_create_file_list(const char *wc, int *count)
 {
-  /*
-   *       common for all, execute driver's function
-   */
+  // common for all, execute driver's function
   if (wc) {
     int vfslib;
 
-    if (strncasecmp(wc, "MEMO:", 5) == 0)
+    if (strncasecmp(wc, "MEMO:", 5) == 0) {
       return memo_create_file_list(wc + 5, count);
-    else if (strncasecmp(wc, "PDOC:", 5) == 0)
+    }
+    else if (strncasecmp(wc, "PDOC:", 5) == 0) {
       return pdoc_create_file_list(wc + 5, count);
-    else if ((vfslib = sblmgr_getvfs(wc)) != -1)
+    }
+    else if ((vfslib = sblmgr_getvfs(wc)) != -1) {
       return (char_p_t *) sblmgr_vfsdirexec(lib_vfs_list, vfslib, wc + 5, count);
+    }
   }
 
-  /*
-   *       do it for "local disk"
-   */
+  // do it for "local disk"
   {
 #if defined(_PalmOS)
     int db_count, i;
@@ -709,7 +750,6 @@ char_p_t *dev_create_file_list(const char *wc, int *count)
     char temp[65];
     char_p_t *list;
 
-    // ////////////
     db_count = DmNumDatabases(0);
     list = tmp_alloc(db_count * sizeof(char_p_t));
     *count = 0;
@@ -777,8 +817,9 @@ char_p_t *dev_create_file_list(const char *wc, int *count)
       else {
         strcpy(wc2, p + 1);
         *(p + 1) = '\0';
-        if (strlen(wc2) == 0)
+        if (strlen(wc2) == 0) {
           strcpy(wc2, "*");
+        }
       }
     }
     else {
@@ -794,13 +835,15 @@ char_p_t *dev_create_file_list(const char *wc, int *count)
     size = 256;
     list = tmp_alloc(sizeof(char_p_t) * size);
 
-    if ((dp = opendir(path)) == NULL)
+    if ((dp = opendir(path)) == NULL) {
       return list;
+    }
 
     while ((e = readdir(dp)) != NULL) {
       name = e->d_name;
-      if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0))
+      if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
         continue;
+      }
       if (wc_match(wc2, name)) {
         if ((*count + 1) == size) {
           size += 256;
@@ -815,12 +858,11 @@ char_p_t *dev_create_file_list(const char *wc, int *count)
     closedir(dp);
 #endif
 
-    /*
-     *       common for all, if there are no files, return NULL
-     */
+    // common for all, if there are no files, return NULL
     if (*count == 0) {
-      if (list)
+      if (list) {
         tmp_free(list);
+      }
       list = NULL;
     }
     return list;
@@ -829,21 +871,22 @@ char_p_t *dev_create_file_list(const char *wc, int *count)
   return NULL;
 }
 
-/*
- *       destroy the file-list
+/**
+ * destroy the file-list
  */
 void dev_destroy_file_list(char_p_t * list, int count)
 {
   int i;
 
-  for (i = 0; i < count; i++)
+  for (i = 0; i < count; i++) {
     tmp_free(list[i]);
+  }
   tmp_free(list);
 }
 
-/*
- *       returns the current directory
- *       BUG: no drivers supported
+/**
+ * returns the current directory
+ * BUG: no drivers supported
  */
 char *dev_getcwd()
 {
@@ -864,27 +907,29 @@ char *dev_getcwd()
   return retbuf;
 }
 
-/*
- *       returns the file attributes
- *       1-1-1 = link - directory - regular file
+/**
+ * returns the file attributes
+ * 1-1-1 = link - directory - regular file
  */
 int dev_fattr(const char *file)
 {
   int vfslib;
 
-  /*
-   *       common for all, execute driver's function
-   */
-  if (strncasecmp(file, "memo:", 5) == 0)
+  // common for all, execute driver's function
+  if (strncasecmp(file, "memo:", 5) == 0) {
     return memo_fattr(file);
-  else if (strncasecmp(file, "pdoc:", 5) == 0)
+  }
+  else if (strncasecmp(file, "pdoc:", 5) == 0) {
     return pdoc_fattr(file);
-  else if ((vfslib = sblmgr_getvfs(file)) != -1)
+  }
+  else if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_attr, vfslib, file + 5);
+  }
 
 #if defined(_PalmOS) || defined(_VTOS)
-  if (dev_fexists(file))
+  if (dev_fexists(file)) {
     return VFS_ATTR_FILE;
+  }
   return 0;
 #else
   {
@@ -903,22 +948,23 @@ int dev_fattr(const char *file)
 #endif
 }
 
-/*
- *       returns the access rights of the file
+/**
+ * returns the access rights of the file
  */
 int dev_faccess(const char *file)
 {
   int vfslib;
 
-  /*
-   *       common for all, execute driver's function
-   */
-  if (strncasecmp(file, "memo:", 5) == 0)
+  // common for all, execute driver's function
+  if (strncasecmp(file, "memo:", 5) == 0) {
     return memo_access(file);
-  else if (strncasecmp(file, "pdoc:", 5) == 0)
+  }
+  else if (strncasecmp(file, "pdoc:", 5) == 0) {
     return pdoc_access(file);
-  else if ((vfslib = sblmgr_getvfs(file)) != -1)
+  }
+  else if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_access, vfslib, file + 5);
+  }
 
 #if defined(_PalmOS) || defined(_VTOS)
   // TODO: if file's type is 'appl' return 0777
@@ -927,8 +973,9 @@ int dev_faccess(const char *file)
   {
     struct stat st;
 
-    if (stat(file, &st) == 0)
+    if (stat(file, &st) == 0) {
       return st.st_mode;
+    }
   }
   return 0;
 #endif
