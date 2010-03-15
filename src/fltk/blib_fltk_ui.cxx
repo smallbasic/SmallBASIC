@@ -252,6 +252,9 @@ bool update_gui(Widget* w, WidgetInfo* inf)
     case ctrl_listbox:
       delete((Browser*) w)->list();
       ((Browser*) w)->list(new DropListModel(0, inf->var));
+      ((Browser*) w)->xposition(0);
+      ((Browser*) w)->yposition(0);
+      ((Browser*) w)->select(0);
       w->layout();
       return true;
 
