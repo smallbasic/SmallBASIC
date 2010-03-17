@@ -2,6 +2,11 @@
 ' $Id$
 '
 
+const bl_w = 25
+const bl_h = 25
+const bl_x = 45
+const bl_y = 45
+
 '
 ' loads any sokoban games found in filename
 ' for more games see: http://www.sourcecode.se/sokoban/levels.php
@@ -40,6 +45,11 @@ func loadGame(filename)
       nextGame << nextLine
     fi
   next i
+
+  if blockFound then
+    ' store the last game block
+    games(gameName) = nextGame
+  fi
 
   loadGame = games
 end
@@ -89,15 +99,14 @@ func openFile
   
   ' define the interface
   color 1,7
-  button  5, 10, 345, -1, cwd, "", "label"
-  button  5, 35, 150, 200, dir_list, "", "listbox"
+  button  35, 10, 345, -1, cwd, "", "label"
+  button  35, 35, 150, 200, dir_list, "", "listbox"
   button -5, 35, 150, 200, file_list, "", "listbox"
   button -5, 35, -5,  -5,  up_button, "OK"
 
   ' run the interface
   while 1
     doform form_var
-
     select case form_var
     case "OK"
       exit loop
@@ -121,6 +130,37 @@ func openFile
   openFile = cwd + selected_file
 end
 
+sub draw_block(x, y, c)
+  local px = bl_x + (x * bl_w)
+  local py = bl_y + (y * bl_h)
+  rect px, py, step bl_w, bl_h, c filled
+  rect px, py, step bl_w, bl_h, c+1
+end
+
+'
+'
+'
+sub draw_board(game)
+  local row, col, row_len, x, y, ch
+  
+  rect 0, 0, xmax, ymax, 6 filled
+  y = 0
+  for row in game
+    row_len = len(row)
+    for x = 1 to row_len
+      ch = mid(row, x, 1)
+      select case ch
+        case "#"' ' border
+          draw_block x, y, 3
+        case "@" ' sokoban man
+        case "." ' block target
+        case "$" ' moveable block
+      end select 
+    next i
+    y++
+  next row
+end
+
 '
 ' main game loop
 '
@@ -132,10 +172,32 @@ sub main
   for i in games
     game_names << i
   next i
+  
+  sort game_names
 
-  button 5, 10, 345, 20, game_names, "", "choice"
-  doform sel_game
-  ? sel_game
+  button 5,  1, 100, 20, game_names, "", "choice"
+  button -1, 1, -1,  20, ok_bn,      "View", "button"
+  button -1, 1, -1,  20, ok_play,    "Play", "button"
+
+  local sel_game = game_names(0)
+  draw_board games(sel_game)  
+
+  local form_var
+  
+  while 1
+    doform form_var
+    select case form_var
+    case "View"
+      draw_board games(sel_game)
+    case "Play"
+      ? "play!"
+      exit loop
+    case else
+      sel_game = form_var
+    end select
+  wend
+  
+  doform 0
 end
 
 main

@@ -1111,6 +1111,26 @@ void dev_printf(const char *fmt, ...)
 
 }
 
+void log_printf(const char *format, ...)
+{
+  char buf[4096], *p = buf;
+  va_list args;
+
+  va_start(args, format);
+  p += vsnprintf(p, sizeof buf - 1, format, args);
+  va_end(args);
+
+  while (p > buf && isspace(p[-1])) {
+    *--p = '\0';
+  }
+
+  *p++ = '\r';
+  *p++ = '\n';
+  *p = '\0';
+
+  lwrite(buf);
+}
+
 /*
  * clears the screen
  */

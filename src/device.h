@@ -365,8 +365,17 @@ void dev_print(const char *str) SEC(BIO); // write a string to the console
  * @param fmt the format
  * @param ... the format's parameters
  */
-void dev_printf(const char *fmt, ...);  // write a formated string to the
-// console
+void dev_printf(const char *fmt, ...);
+
+/**
+ * @ingroup dev_g
+ *
+ * prints a string by using printf-style to the SB's log file/console
+ *
+ * @param fmt the format
+ * @param ... the format's parameters
+ */
+void log_printf(const char *fmt, ...);
 
 /**
  * @ingroup dev_g

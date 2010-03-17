@@ -53,9 +53,10 @@ int comp_error_if_keyword(const char *name) SEC(BCSC3);
 void bc_store_exports(const char *slist) SEC(BCSC2);
 addr_t comp_next_bc_cmd(addr_t ip) SEC(BCSC3);
 addr_t comp_search_bc_eoc(addr_t ip) SEC(BCSC3);
-addr_t comp_search_bc_stack(addr_t start, code_t code, int level) SEC(BCSC3);
+addr_t comp_search_bc_stack(addr_t start, code_t code, 
+                            byte level, bid_t block_id) SEC(BCSC3);
 addr_t comp_search_bc_stack_backward(addr_t start, code_t code,
-                                     int level) SEC(BCSC3);
+                                     byte level, bid_t block_id) SEC(BCSC3);
 void print_pass2_stack(addr_t pos, code_t lcode, int level) SEC(BCSC2);
 void comp_pass2_scan(void) SEC(BCSC3);
 char *comp_format_text(const char *source) SEC(BCSC2);
@@ -1763,6 +1764,7 @@ int comp_single_line_if(char *text)
         comp_push(comp_prog.count);
         bc_add_ctrl(&comp_prog, kwENDIF, 0, 0);
         comp_block_level--;
+        comp_block_id--;
         return 1;
       }
       else {                    // *p == ':'
@@ -2650,6 +2652,7 @@ void comp_text_line(char *text)
       comp_push(comp_prog.count);
       bc_add_ctrl(&comp_prog, idx, 0, 0);
       comp_block_level--;
+      comp_block_id--;
       break;
 
     case kwWEND:
@@ -2657,6 +2660,7 @@ void comp_text_line(char *text)
       comp_push(comp_prog.count);
       bc_add_ctrl(&comp_prog, idx, 0, 0);
       comp_block_level--;
+      comp_block_id--;
       comp_expression(comp_bc_parm, 0);
       break;
 
@@ -2684,6 +2688,7 @@ void comp_text_line(char *text)
         comp_push(comp_prog.count);
         bc_add_ctrl(&comp_prog, idx, 0, 0);
         comp_block_level--;
+        comp_block_id--;
       }
       else if (comp_proc_level) {
         char *dol;
@@ -2701,7 +2706,14 @@ void comp_text_line(char *text)
 
         comp_proc_level--;
         comp_block_level--;
-        comp_block_id++;
+        if (!comp_block_level) {
+          // advance to next block for next UDP/F
+          comp_block_id++;
+        }
+        else {
+          // stay on current level
+          comp_block_id--;
+        }
       }
       else {
         // END OF PROG
@@ -2830,7 +2842,6 @@ addr_t comp_next_bc_cmd(addr_t ip)
   case kwTYPE_VAR:             // [addr|id]
   case kwTYPE_UDS:
   case kwTYPE_UDS_EL:
-  case kwSELECT:
     ip += ADDRSZ;
     break;
   case kwTYPE_PTR:
@@ -2921,7 +2932,8 @@ addr_t comp_search_bc_eoc(addr_t ip)
 /*
  * search stack
  */
-addr_t comp_search_bc_stack(addr_t start, code_t code, int level)
+addr_t comp_search_bc_stack(addr_t start, code_t code, 
+                            byte level, bid_t block_id)
 {
   addr_t i;
   comp_pass_node_t node;
@@ -2930,7 +2942,8 @@ addr_t comp_search_bc_stack(addr_t start, code_t code, int level)
     dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
 
     if (comp_prog.ptr[node.pos] == code) {
-      if (node.level == level) {
+      if (node.level == level && (block_id == -1 || 
+                                  block_id == node.block_id)) {
         return node.pos;
       }
     }
@@ -2941,7 +2954,8 @@ addr_t comp_search_bc_stack(addr_t start, code_t code, int level)
 /*
  * search stack backward
  */
-addr_t comp_search_bc_stack_backward(addr_t start, code_t code, int level)
+addr_t comp_search_bc_stack_backward(addr_t start, code_t code, 
+                                     byte level, bid_t block_id)
 {
   addr_t i = start;
   comp_pass_node_t node;
@@ -2951,7 +2965,8 @@ addr_t comp_search_bc_stack_backward(addr_t start, code_t code, int level)
     // IN RANGE [0..STK_COUNT]
     dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
     if (comp_prog.ptr[node.pos] == code) {
-      if (node.level == level) {
+      if (node.level == level && (block_id == -1 || 
+                                  block_id == node.block_id)) {
         return node.pos;
       }
     }
@@ -2998,20 +3013,23 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   // search for closest keyword (forward)
 #if !defined(OS_LIMITED)
   buff[0] = 0;
+
+#if !defined(_FLTK)
   dev_printf(MSG_DETAILED_REPORT_Q);
   dev_gets(buff, sizeof(buff));
   details = (buff[0] == 'y' || buff[0] == 'Y');
+#endif
 
   if (details) {
-    ip = comp_search_bc_stack(pos + 1, code, level - 1);
+    ip = comp_search_bc_stack(pos + 1, code, level - 1, -1);
     if (ip == INVALID_ADDR) {
-      ip = comp_search_bc_stack(pos + 1, code, level + 1);
+      ip = comp_search_bc_stack(pos + 1, code, level + 1, -1);
       if (ip == INVALID_ADDR) {
         int cnt = 0;
         for (i = pos + 1; i < comp_sp; i++) {
           dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
           if (comp_prog.ptr[node.pos] == code) {
-            dev_printf
+            log_printf
               ("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                cmd, node.level, node.pos, level, pos);
             cnt++;
@@ -3022,13 +3040,13 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
         }
       }
       else {
-        dev_printf
+        log_printf
           ("\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd,
            level + 1, node.pos, level, pos);
       }
     }
     else {
-      dev_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
+      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                  cmd, level - 1, node.pos, level, pos);
     }
   }
@@ -3038,12 +3056,12 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   cs_count = 0;
 #if !defined(OS_LIMITED)
   if (details) {
-    dev_printf("\n");
-    dev_printf
+    log_printf("\n");
+    log_printf
       ("--- Pass 2 - stack ------------------------------------------------------\n");
-    dev_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i",
+    log_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i",
                "Command", "Section", "Addr", "Line", "Level", "BlkID", "Count");
-    dev_printf
+    log_printf
       ("-------------------------------------------------------------------------\n");
   }
 #endif
@@ -3075,7 +3093,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
 #if !defined(OS_LIMITED)
     if (details) {
       // info
-      dev_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
+      log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
                  ((i == pos) ? ">>" : "  "), i, cmd, node.sec, node.pos,
                  node.line, node.level, node.block_id, csum[cs_idx]);
     }
@@ -3085,20 +3103,20 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   // sum
 #if !defined(OS_LIMITED)
   if (details) {
-    dev_printf("\n");
-    dev_printf
+    log_printf("\n");
+    log_printf
       ("--- Sum -----------------------------------------------------------------\n");
     for (i = 0; i < cs_count; i++) {
       code = ccode[i];
       if (!kw_getcmdname(code, cmd))
         sprintf(cmd, "(%d)", code);
-      dev_printf("%16s - %5d\n", cmd, csum[i]);
+      log_printf("%16s - %5d\n", cmd, csum[i]);
     }
   }
 #endif
 
   // decide
-  dev_printf("\n");
+  log_printf("\n");
   for (i = 0; start_code[i] != 0; i++) {
     int sa, sb;
     code_t ca, cb;
@@ -3128,17 +3146,17 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
       kw_getcmdname(ca, cmd);
       kw_getcmdname(cb, cmd2);
       if (sa > sb) {
-        dev_printf("Hint: Missing %d %s or there is/are %d more %s\n",
+        log_printf("Hint: Missing %d %s or there is/are %d more %s\n",
                    sa - sb, cmd2, sa - sb, cmd);
       }
       else {
-        dev_printf("Hint: There is/are %d more %s or missing %d %s\n",
+        log_printf("Hint: There is/are %d more %s or missing %d %s\n",
                    sb - sa, cmd2, sb - sa, cmd);
       }
     }
   }
 
-  dev_printf("\n\n");
+  log_printf("\n\n");
 }
 
 /*
@@ -3166,6 +3184,7 @@ void comp_pass2_scan()
   // for each node in stack
   for (i = 0; i < comp_sp; i++) {
     if (!opt_quiet && !opt_interactive) {
+
 #if defined(_UnixOS)
       if (isatty(STDOUT_FILENO))
 #endif
@@ -3173,6 +3192,7 @@ void comp_pass2_scan()
           dev_printf(MSG_PASS2_COUNT, i, comp_sp);
         }
     }
+
 #if defined(_WinBCB)
     if ((i % SB_KEYWORD_SIZE) == 0) {
       bcb_comp(2, i, comp_sp);
@@ -3187,10 +3207,11 @@ void comp_pass2_scan()
     if (code == kwTYPE_EOC || code == kwTYPE_LINE) {
       continue;
     }
-//              debug (node.pos = the address of the error)
-//
-//              if      ( node.pos == 360 || node.pos == 361 )
-//                      printf("=== stack code %d\n", code);
+
+    // debug (node.pos = the address of the error)
+    //
+    // if (node.pos == 360 || node.pos == 361)
+    // trace("=== stack code %d\n", code);
 
     if (code != kwGOTO &&
         code != kwRESTORE &&
@@ -3198,7 +3219,9 @@ void comp_pass2_scan()
         code != kwONJMP &&
         code != kwTYPE_PTR &&
         code != kwTYPE_CALL_UDP &&
-        code != kwTYPE_CALL_UDF && code != kwPROC && code != kwFUNC &&
+        code != kwTYPE_CALL_UDF && 
+        code != kwPROC && 
+        code != kwFUNC &&
         code != kwTYPE_RET) {
       // default - calculate true-ip
       true_ip = comp_search_bc_eoc(node.pos + (BC_CTRLSZ + 1));
@@ -3209,7 +3232,7 @@ void comp_pass2_scan()
     case kwPROC:
     case kwFUNC:
       // update start's GOTO
-      true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, node.level) + 1;
+      true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, node.level, -1) + 1;
       if (true_ip == INVALID_ADDR) {
         sc_raise(MSG_UDP_MISSING_END);
         print_pass2_stack(i, kwTYPE_RET, node.level);
@@ -3288,7 +3311,7 @@ void comp_pass2_scan()
       else if (a_ip > b_ip) {
         a_ip = b_ip;
       }
-      false_ip = comp_search_bc_stack(i + 1, kwNEXT, node.level);
+      false_ip = comp_search_bc_stack(i + 1, kwNEXT, node.level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_NEXT);
@@ -3308,7 +3331,7 @@ void comp_pass2_scan()
       break;
 
     case kwWHILE:
-      false_ip = comp_search_bc_stack(i + 1, kwWEND, node.level);
+      false_ip = comp_search_bc_stack(i + 1, kwWEND, node.level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_WEND);
@@ -3319,7 +3342,7 @@ void comp_pass2_scan()
       break;
 
     case kwREPEAT:
-      false_ip = comp_search_bc_stack(i + 1, kwUNTIL, node.level);
+      false_ip = comp_search_bc_stack(i + 1, kwUNTIL, node.level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_UNTIL);
@@ -3338,9 +3361,9 @@ void comp_pass2_scan()
 
     case kwIF:
     case kwELIF:
-      a_ip = comp_search_bc_stack(i + 1, kwENDIF, node.level);
-      b_ip = comp_search_bc_stack(i + 1, kwELSE, node.level);
-      c_ip = comp_search_bc_stack(i + 1, kwELIF, node.level);
+      a_ip = comp_search_bc_stack(i + 1, kwENDIF, node.level, -1);
+      b_ip = comp_search_bc_stack(i + 1, kwELSE, node.level, -1);
+      c_ip = comp_search_bc_stack(i + 1, kwELIF, node.level, -1);
 
       false_ip = a_ip;
       if (b_ip != INVALID_ADDR && b_ip < false_ip) {
@@ -3359,7 +3382,7 @@ void comp_pass2_scan()
       break;
 
     case kwELSE:
-      false_ip = comp_search_bc_stack(i + 1, kwENDIF, node.level);
+      false_ip = comp_search_bc_stack(i + 1, kwENDIF, node.level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_ENDIF);
@@ -3374,7 +3397,7 @@ void comp_pass2_scan()
       break;
 
     case kwWEND:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwWHILE, node.level);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwWHILE, node.level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_WHILE);
         print_pass2_stack(i, kwWHILE, node.level);
@@ -3384,7 +3407,7 @@ void comp_pass2_scan()
       break;
 
     case kwUNTIL:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwREPEAT, node.level);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwREPEAT, node.level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_REPEAT);
         print_pass2_stack(i, kwREPEAT, node.level);
@@ -3394,7 +3417,7 @@ void comp_pass2_scan()
       break;
 
     case kwNEXT:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwFOR, node.level);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwFOR, node.level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_FOR);
         print_pass2_stack(i, kwFOR, node.level);
@@ -3404,7 +3427,7 @@ void comp_pass2_scan()
       break;
 
     case kwENDIF:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwIF, node.level);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwIF, node.level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_IF);
         print_pass2_stack(i, kwIF, node.level);
@@ -3425,11 +3448,14 @@ void comp_pass2_scan()
 
     case kwCASE:
       // false path is either next case statement or "end select"
-      false_ip = comp_search_bc_stack(i + 1, kwCASE, node.level);
+      false_ip = comp_search_bc_stack(i + 1, kwCASE, 
+                                      node.level, node.block_id);
       if (false_ip == INVALID_ADDR) {
-        false_ip = comp_search_bc_stack(i + 1, kwCASE_ELSE, node.level);
+        false_ip = comp_search_bc_stack(i + 1, kwCASE_ELSE, 
+                                        node.level, node.block_id);
         if (false_ip == INVALID_ADDR) {
-          false_ip = comp_search_bc_stack(i + 1, kwENDSELECT, node.level);
+          false_ip = comp_search_bc_stack(i + 1, kwENDSELECT, 
+                                          node.level, node.block_id);
           if (false_ip == INVALID_ADDR) {
             sc_raise(MSG_MISSING_END_SELECT);
             print_pass2_stack(i, kwCASE, node.level);
@@ -3437,27 +3463,31 @@ void comp_pass2_scan()
           }
         }
       }
+
       // if expression returns false jump to the next case
       memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwCASE_ELSE:
       // check for END SELECT statement
-      false_ip = comp_search_bc_stack(i + 1, kwENDSELECT, node.level);
+      false_ip = comp_search_bc_stack(i + 1, kwENDSELECT, 
+                                      node.level, node.block_id);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_END_SELECT);
         print_pass2_stack(i, kwCASE, node.level);
         return;
       }
       // validate no futher CASE expr statements
-      j = comp_search_bc_stack(i + 1, kwCASE, node.level);
+      j = comp_search_bc_stack(i + 1, kwCASE, 
+                               node.level, node.block_id);
       if (j != INVALID_ADDR && j < false_ip) {
         sc_raise(MSG_CASE_CASE_ELSE);
         print_pass2_stack(i, kwCASE, node.level);
         return;
       }
       // validate no futher CASE ELSE expr statements
-      j = comp_search_bc_stack(i + 1, kwCASE_ELSE, node.level);
+      j = comp_search_bc_stack(i + 1, kwCASE_ELSE, 
+                               node.level, node.block_id);
       if (j != INVALID_ADDR && j < false_ip) {
         sc_raise(MSG_CASE_CASE_ELSE);
         print_pass2_stack(i, kwCASE_ELSE, node.level);
@@ -3468,7 +3498,8 @@ void comp_pass2_scan()
       break;
 
     case kwENDSELECT:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwSELECT, node.level);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwSELECT, 
+                                               node.level, node.block_id);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_SELECT);
         print_pass2_stack(i, kwSELECT, node.level);
@@ -3545,7 +3576,9 @@ void comp_init()
       comp_imptable == -1 ||
       comp_libtable == -1 ||
       comp_exptable == -1 ||
-      comp_udstable == -1 || comp_labtable == -1 || !comp_udptable ||
+      comp_udstable == -1 || 
+      comp_labtable == -1 || 
+      !comp_udptable ||
       comp_stack == -1)
     panic("comp_init(): OUT OF MEMORY");
 #else
@@ -4147,7 +4180,7 @@ int comp_pass1(const char *section, const char *text)
   char *code_line;
   char *new_text;
   int len_option, len_import, len_unit, len_unit_path, len_inc;
-  int len_sub, len_func, len_def, len_end;
+  int len_sub, len_func, len_def, len_end, len_select;
 
   code_line = tmp_alloc(SB_SOURCELINE_SIZE + 1);
   memset(comp_bc_sec, 0, SB_KEYWORD_SIZE + 1);
@@ -4159,16 +4192,13 @@ int comp_pass1(const char *section, const char *text)
   }
   new_text = comp_format_text(text);
 
-  /*
-   *      second (we can change it to support preprocessor)
-   *
-   *      Check for:
-   *      include (#inc:)
-   *      units-dir (#unit-path:)
-   *      IMPORT
-   *      UDF and UDP declarations
-   *      PREDEF OPTIONS
-   */
+  // second (we can change it to support preprocessor)
+  // Check for:
+  // include (#inc:)
+  // units-dir (#unit-path:)
+  // IMPORT
+  // UDF and UDP declarations
+  // PREDEF OPTIONS
   p = ps = new_text;
   comp_proc_level = 0;
   *comp_bc_proc = '\0';
@@ -4183,6 +4213,7 @@ int comp_pass1(const char *section, const char *text)
   len_func = strlen(LCN_FUNC_WRS);
   len_def = strlen(LCN_DEF_WRS);
   len_end = strlen(LCN_END_WRS);
+  len_select = strlen(LCN_SELECT);
 
   while (*p) {
     // OPTION environment parameters
@@ -4361,6 +4392,7 @@ int comp_pass1(const char *section, const char *text)
             p++;
           }
         }
+
         // add declaration
         if (comp_udp_getip(pname) == INVALID_ADDR) {
           comp_add_udp(pname);
@@ -4395,17 +4427,21 @@ int comp_pass1(const char *section, const char *text)
         // SUB/FUNC/DEF - Automatic declaration - END
         if (strncmp(LCN_END_WRS, p, len_end) == 0 ||
             strncmp(LCN_END_WNL, p, len_end) == 0) {
-          char *dol = strrchr(comp_bc_proc, '/');
-          if (dol) {
-            *dol = '\0';
+          // avoid seeing "END SELECT" which doesn't end a SUB/F
+          char* p_end = p + len_end;
+          if (!p_end || strncmp(p_end, LCN_SELECT, len_select) != 0) {
+            char *dol = strrchr(comp_bc_proc, '/');
+            if (dol) {
+              *dol = '\0';
+            }
+            else {
+              *comp_bc_proc = '\0';
+            }
+            comp_proc_level--;
           }
-          else {
-            *comp_bc_proc = '\0';
-          }
-          comp_proc_level--;
         }
       }
-    }                           // OPTION
+    }  // OPTION
 
     // skip text line
     while (*p != '\0' && *p != '\n') {
@@ -4517,7 +4553,7 @@ int comp_pass1(const char *section, const char *text)
   tmp_free(new_text);
 
   // undefined keywords... by default are UDP, but if there is no
-  // UDP-boddy then ring the bell
+  // UDP-body then ring the bell
   if (!comp_error) {
     for (i = 0; i < comp_udpcount; i++) {
       if (comp_udptable[i].ip == INVALID_ADDR) {
