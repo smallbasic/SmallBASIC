@@ -473,6 +473,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_WEND                "WEND"
 #define LCN_IF                  "IF"
 #define LCN_SELECT              "SELECT"
+#define LCN_END_SELECT          "END SELECT"
 #define LCN_CASE                "CASE"
 #define LCN_INPUT_WRS           "INPUT "
 #define LCN_OPTION              "OPTION"

@@ -91,6 +91,11 @@ extern void bcb_comp(int pass, int pmin, int pmax);
 
 #define GROWSIZE  128
 
+#if defined(_FLTK)
+#undef dev_printf
+#define dev_printf log_printf
+#endif
+
 void err_wrongproc(const char *name)
 {
   sc_raise(MSG_WRONG_PROCNAME, name);
@@ -2706,14 +2711,7 @@ void comp_text_line(char *text)
 
         comp_proc_level--;
         comp_block_level--;
-        if (!comp_block_level) {
-          // advance to next block for next UDP/F
-          comp_block_id++;
-        }
-        else {
-          // stay on current level
-          comp_block_id--;
-        }
+        comp_block_id++; // advance to next block
       }
       else {
         // END OF PROG
@@ -3029,7 +3027,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
         for (i = pos + 1; i < comp_sp; i++) {
           dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
           if (comp_prog.ptr[node.pos] == code) {
-            log_printf
+            dev_printf
               ("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                cmd, node.level, node.pos, level, pos);
             cnt++;
@@ -3040,13 +3038,13 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
         }
       }
       else {
-        log_printf
+        dev_printf
           ("\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd,
            level + 1, node.pos, level, pos);
       }
     }
     else {
-      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
+      dev_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                  cmd, level - 1, node.pos, level, pos);
     }
   }
@@ -3056,12 +3054,12 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   cs_count = 0;
 #if !defined(OS_LIMITED)
   if (details) {
-    log_printf("\n");
-    log_printf
+    dev_printf("\n");
+    dev_printf
       ("--- Pass 2 - stack ------------------------------------------------------\n");
-    log_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i",
+    dev_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i",
                "Command", "Section", "Addr", "Line", "Level", "BlkID", "Count");
-    log_printf
+    dev_printf
       ("-------------------------------------------------------------------------\n");
   }
 #endif
@@ -3093,7 +3091,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
 #if !defined(OS_LIMITED)
     if (details) {
       // info
-      log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
+      dev_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
                  ((i == pos) ? ">>" : "  "), i, cmd, node.sec, node.pos,
                  node.line, node.level, node.block_id, csum[cs_idx]);
     }
@@ -3103,20 +3101,20 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   // sum
 #if !defined(OS_LIMITED)
   if (details) {
-    log_printf("\n");
-    log_printf
+    dev_printf("\n");
+    dev_printf
       ("--- Sum -----------------------------------------------------------------\n");
     for (i = 0; i < cs_count; i++) {
       code = ccode[i];
       if (!kw_getcmdname(code, cmd))
         sprintf(cmd, "(%d)", code);
-      log_printf("%16s - %5d\n", cmd, csum[i]);
+      dev_printf("%16s - %5d\n", cmd, csum[i]);
     }
   }
 #endif
 
   // decide
-  log_printf("\n");
+  dev_printf("\n");
   for (i = 0; start_code[i] != 0; i++) {
     int sa, sb;
     code_t ca, cb;
@@ -3146,17 +3144,17 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
       kw_getcmdname(ca, cmd);
       kw_getcmdname(cb, cmd2);
       if (sa > sb) {
-        log_printf("Hint: Missing %d %s or there is/are %d more %s\n",
+        dev_printf("Hint: Missing %d %s or there is/are %d more %s\n",
                    sa - sb, cmd2, sa - sb, cmd);
       }
       else {
-        log_printf("Hint: There is/are %d more %s or missing %d %s\n",
+        dev_printf("Hint: There is/are %d more %s or missing %d %s\n",
                    sb - sa, cmd2, sb - sa, cmd);
       }
     }
   }
 
-  log_printf("\n\n");
+  dev_printf("\n\n");
 }
 
 /*
@@ -4180,7 +4178,7 @@ int comp_pass1(const char *section, const char *text)
   char *code_line;
   char *new_text;
   int len_option, len_import, len_unit, len_unit_path, len_inc;
-  int len_sub, len_func, len_def, len_end, len_select;
+  int len_sub, len_func, len_def, len_end, len_end_select;
 
   code_line = tmp_alloc(SB_SOURCELINE_SIZE + 1);
   memset(comp_bc_sec, 0, SB_KEYWORD_SIZE + 1);
@@ -4213,7 +4211,7 @@ int comp_pass1(const char *section, const char *text)
   len_func = strlen(LCN_FUNC_WRS);
   len_def = strlen(LCN_DEF_WRS);
   len_end = strlen(LCN_END_WRS);
-  len_select = strlen(LCN_SELECT);
+  len_end_select = strlen(LCN_END_SELECT);
 
   while (*p) {
     // OPTION environment parameters
@@ -4428,8 +4426,7 @@ int comp_pass1(const char *section, const char *text)
         if (strncmp(LCN_END_WRS, p, len_end) == 0 ||
             strncmp(LCN_END_WNL, p, len_end) == 0) {
           // avoid seeing "END SELECT" which doesn't end a SUB/F
-          char* p_end = p + len_end;
-          if (!p_end || strncmp(p_end, LCN_SELECT, len_select) != 0) {
+          if (strncmp(p, LCN_END_SELECT, len_end_select) != 0) {
             char *dol = strrchr(comp_bc_proc, '/');
             if (dol) {
               *dol = '\0';
