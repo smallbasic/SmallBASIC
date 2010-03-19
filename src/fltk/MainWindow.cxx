@@ -137,31 +137,30 @@ void MainWindow::showEditTab(EditorWidget* editWidget)
  * run the give file. returns whether break was hit
  */
 bool MainWindow::basicMain(EditorWidget* editWidget, 
-                           const char *filename, bool toolExec)
+                           const char *fullpath, bool toolExec)
 {
-  int len = strlen(filename);
+  int len = strlen(fullpath);
   char path[MAX_PATH];
   bool breakToLine = false; // whether to restore the editor cursor 
 
-  if (strcasecmp(filename + len - 4, ".htm") == 0 ||
-      strcasecmp(filename + len - 5, ".html") == 0) {
+  if (strcasecmp(fullpath + len - 4, ".htm") == 0 ||
+      strcasecmp(fullpath + len - 5, ".html") == 0) {
     // render html edit buffer
-    sprintf(path, "file:%s", filename);
+    sprintf(path, "file:%s", fullpath);
     updateForm(path);
     if (editWidget) {
       editWidget->take_focus();
     }
     return false;
   }
-  if (access(filename, 0) != 0) {
-    pathMessage(filename);
+  if (access(fullpath, 0) != 0) {
+    pathMessage(fullpath);
     runMode = edit_state;
     return false;
   }
 
   // start in the directory of the bas program
-  FileWidget::splitPath(filename, path);
-  chdir(path);
+  const char* filename = FileWidget::splitPath(fullpath, path);
 
   if (editWidget) {
     runEditWidget = editWidget;
@@ -187,7 +186,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget,
       // run in a separate window with the ide hidden
       fullScreen = new BaseWindow(w(), h());
       profile->restoreAppPosition(fullScreen);
-      fullScreen->copy_label(FileWidget::splitPath(filename, null));
+      fullScreen->copy_label(filename);
       fullScreen->callback(quit_cb);
       fullScreen->shortcut(0);
       fullScreen->add(out);
@@ -209,6 +208,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget,
   do {
     restart = false;
     runMode = run_state;
+    chdir(path);
     success = sbasic_main(filename);
   }
   while (restart);
@@ -757,6 +757,7 @@ int arg_cb(int argc, char **argv, int &i)
 {
   const char *s = argv[i];
   int len = strlen(s);
+  int c;
 
   if (strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0) {
     runfile = strdup(s);
@@ -765,24 +766,17 @@ int arg_cb(int argc, char **argv, int &i)
     return 1;
   }
 
-  if (strcmp(argv[i], "-n") == 0) {
-    i += 1;
-    opt_interactive = 0;
-    return 1;
+  if (argv[i][0] != '-') {
+    return 0;
   }
 
-  if (argv[i][0] == '-'  && !argv[i][2] && argv[i + 1]) {
+  if (!argv[i][2] && argv[i + 1]) {
+    // commands that take an additional file name argument
     switch (argv[i][1]) {
     case 'e':
       runfile = strdup(argv[i + 1]);
       runMode = edit_state;
       i += 2;
-      return 1;
-
-    case 'v':
-      i += 1;
-      opt_verbose = 1;
-      opt_quiet = 0;
       return 1;
 
     case 'r':
@@ -799,19 +793,31 @@ int arg_cb(int argc, char **argv, int &i)
     }
   }
 
-  if (argv[i][0] == '-' && argv[i][1] == '-') {
+  switch (argv[i][1]) {
+  case 'n':
+    i += 1;
+    opt_interactive = 0;
+    return 1;
+    
+  case 'v':
+    i += 1;
+    opt_verbose = 1;
+    opt_quiet = 0;
+    return 1;
+
+  case '-': 
     // echo foo | sbasic foo.bas --
-    int c;
     while ((c = fgetc(stdin)) != EOF) {
       int len = strlen(opt_command);
       opt_command[len] = c;
       opt_command[len + 1] = 0;
     }
     i++;
-    return 1;
+    return 1;    
   }
 
   if (runMode == run_state) {
+    // remaining text is .bas program argument
     if (opt_command[0]) {
       strcat(opt_command, " ");
     }
@@ -1211,16 +1217,16 @@ EditorWidget* MainWindow::getEditor(Group* group)
   return editWidget;
 }
 
-EditorWidget* MainWindow::getEditor(const char* fullPath) 
+EditorWidget* MainWindow::getEditor(const char* fullpath) 
 {
-  if (fullPath != 0 && fullPath[0] != 0) {
+  if (fullpath != 0 && fullpath[0] != 0) {
     int n = tabGroup->children();
     for (int c = 0; c < n; c++) {
       Group* group = (Group*)tabGroup->child(c);
       if (gw_editor == ((GroupWidget) (int)group->user_data())) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         const char* fileName = editWidget->getFilename();
-        if (fileName && strcmp(fullPath, fileName) == 0) {
+        if (fileName && strcmp(fullpath, fileName) == 0) {
           return editWidget;
         }
       }
