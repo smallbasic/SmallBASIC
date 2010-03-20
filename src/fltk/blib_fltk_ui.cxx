@@ -598,8 +598,8 @@ C_LINKAGE_BEGIN void ui_reset()
     form = 0;
 
     wnd->out->show();
-    wnd->out->take_focus();
     wnd->out->redraw();
+    wnd->take_focus();
   }
   mode = m_reset;
 }
