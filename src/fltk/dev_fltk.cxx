@@ -576,9 +576,9 @@ Image *getImage(dev_file_t * filep, int index)
   }
 
   if (image) {
-    // force SharedImage::_draw() to call image->read()
-    image->draw(fltk::Rectangle(0, 0));
+    image->fetch_if_needed();
   }
+
   return image;
 }
 
