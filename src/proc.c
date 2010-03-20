@@ -862,8 +862,9 @@ int par_getipoly(ipt_t ** poly_pp)
   }
   // 
   el = v_elem(var, 0);
-  if (el->type == V_ARRAY)
-    style = 1;                  // nested --- [ [x1,y1], [x2,y2], ... ]
+  if (el && el->type == V_ARRAY) {
+    style = 1;   // nested --- [ [x1,y1], [x2,y2], ... ]
+  }
   // else
   // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
 
@@ -903,13 +904,15 @@ int par_getipoly(ipt_t ** poly_pp)
       el = v_elem(var, i);
 
       // error check
-      if (el->type != V_ARRAY)
+      if (el->type != V_ARRAY) {
         err_parsepoly(i, 3);
-      else if (el->v.a.size != 2)
+      }
+      else if (el->v.a.size != 2) {
         err_parsepoly(i, 4);
-      if (prog_error)
+      }
+      if (prog_error) {
         break;
-
+      }
       // store point
       poly[i].x = v_getint(v_elem(el, 0));
       poly[i].y = v_getint(v_elem(el, 1));
@@ -920,9 +923,9 @@ int par_getipoly(ipt_t ** poly_pp)
 
     for (i = j = 0; i < count; i++, j += 2) {
       // error check
-      if (prog_error)
+      if (prog_error) {
         break;
-
+      }
       // store point
       poly[i].x = v_getint(v_elem(var, j));
       poly[i].y = v_getint(v_elem(var, j + 1));
