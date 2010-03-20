@@ -865,6 +865,12 @@ int EditorWidget::handle(int e)
     fltk::focus(editor);
     handleFileChange();
     return 1;
+  case KEY:
+    if (event_key() == EscapeKey) {
+      take_focus();
+      return 1;
+    }
+    break;
   case ENTER:
     if (rename_active) {
       // prevent drawing over the inplace editor child control
@@ -1437,7 +1443,7 @@ void EditorWidget::setCommand(CommandOpt command) {
     commandChoice->label("With:");
     break;
   case cmd_goto:
-    commandChoice->label("@>; Goto:");
+    commandChoice->label("Goto:");
     break;
   }
   commandChoice->redraw();
