@@ -1590,6 +1590,9 @@ int BaseWindow::handle(int e)
   case run_state:
   case modal_state:
     switch (e) {
+    case FOCUS:
+      // accept key events into handleKeyEvent
+      return 1;
     case PUSH:
       if (keymap_invoke(SB_KEY_MK_PUSH)) {
         return 1;
@@ -1617,7 +1620,10 @@ int BaseWindow::handle(int e)
       break;
     case SHORTCUT:
     case KEY:
-      handleKeyEvent();
+      if (handleKeyEvent()) {
+        // no default processing by Window
+        return 1;
+      }
       break;
     }
     break;
@@ -1647,8 +1653,10 @@ int BaseWindow::handle(int e)
   return Window::handle(e);
 }
 
-void BaseWindow::handleKeyEvent() {
+bool BaseWindow::handleKeyEvent() {
   int k = event_key();
+  bool key_pushed = true;
+
   switch (k) {
   case TabKey:
     dev_pushkey(SB_KEY_TAB);
@@ -1745,6 +1753,7 @@ void BaseWindow::handleKeyEvent() {
     if (event_key_state(LeftCtrlKey) ||
         event_key_state(RightCtrlKey)) {
       wnd->run_break();
+      key_pushed = false;
       break;
     }
     dev_pushkey(k);
@@ -1753,6 +1762,7 @@ void BaseWindow::handleKeyEvent() {
     if (event_key_state(LeftCtrlKey) ||
         event_key_state(RightCtrlKey)) {
       wnd->quit();
+      key_pushed = false;
       break;
     }
     dev_pushkey(k);
@@ -1760,11 +1770,13 @@ void BaseWindow::handleKeyEvent() {
     
   default:
     if (k >= LeftShiftKey && k <= RightAltKey) {
+      key_pushed = false;
       break;                  // ignore caps+shift+ctrl+alt
     }
     dev_pushkey(k);
     break;
   }
+  return key_pushed;
 }
 
 LineInput::LineInput(int x, int y, int w, int h) : fltk::Input(x, y, w, h) {
