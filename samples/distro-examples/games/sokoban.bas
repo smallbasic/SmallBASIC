@@ -38,6 +38,15 @@ sub draw_block(x, y)
 end
 
 '
+' draw the empty space within the grid
+'
+sub draw_space(x, y)
+  local px = bl_x + (x * bl_w)
+  local py = bl_y + (y * bl_h)
+  rect px, py, step bl_w, bl_h, 8 filled
+end
+
+'
 ' draw the sokoban man
 '
 sub draw_soko(x, y)
@@ -68,17 +77,27 @@ sub draw_soko(x, y)
   DrawPoly PolyArray Color 3 Filled  
 end
 
+
 '
 ' returns any block at the x/y location
 '
-func get_block(blocks, x, y)
+func get_block(byref blocks, x, y)
+  local result = 0
+  local i
+  local len_blocks
+  for i in blocks
+    if (i(0) = x && i(1) = y) then
+      result = i
+    fi
+  next i
+  get_block = result
 end
 
 '
 ' draw the game board
 '
-func init_game(grid)
-  local row, col, row_len, x, y, ch, game
+sub init_game(grid, byref game)
+  local row, col, row_len, x, y, ch
   dim blocks
   
   ' cls
@@ -108,15 +127,23 @@ func init_game(grid)
   
   game.blocks = blocks
   game.grid = grid
-  
-  init_game = game
 end
 
 '
 ' return whether the x/y location touches the border
 '
-func is_border(grid, x, y) 
-  
+func is_border(byref grid, x, y) 
+  is_border = mid(grid(y), x, 1) == "#"
+end
+
+'
+' whether soko is current over a drop target
+'
+func is_target(byref game)
+  local grid = game.grid
+  local x = game.soko_x
+  local y = game.soko_y  
+  is_target = mid(grid(y), x, 1) == "."
 end
 
 '
@@ -132,7 +159,7 @@ func loadGame(filename)
 
   dim nextGame
   dim games
-
+  
   for i = 0 to buffLen
     nextLine = buffer(i)
     firstChar = left(trim(nextLine), 1)
@@ -162,7 +189,7 @@ func loadGame(filename)
     ' store the last game block
     games(gameName) = nextGame
   fi
-
+  
   loadGame = games
 end
 
@@ -246,30 +273,41 @@ end
 ' main game loop
 '
 sub main
-  local filename, games, sel_game, game, i, form_var
+  local filename, games, sel_game, game, game_names, i, form_var
   
-  filename = "sokoban.levels" 'openFile
-  games = loadGame(filename)
+  sub open_game(filename)
+    games = loadGame(filename)
 
-  dim game_names
-  for i in games
-    game_names << i
-  next i
-  
-  sort game_names
+    if (len(games) > 0) then
+      ' get the sorted list of game names
+      dim game_names
+      for i in games
+        game_names << i
+      next i
+      sort game_names
+      
+      sel_game = game_names(0)
+      init_game games(sel_game), game
+    fi
+    
+    ' build the gui
+    button 5,  1, 100, 20, game_names, "", "choice"
+    button -1, 1, -1,  20, ok_open,    "Open", "button"  
+    button -1, 1, -1,  20, ok_bn,      "View", "button"
+    button -1, 1, -1,  20, ok_play,    "Play", "button"
+  end 
 
-  button 5,  1, 100, 20, game_names, "", "choice"
-  button -1, 1, -1,  20, ok_bn,      "View", "button"
-  button -1, 1, -1,  20, ok_play,    "Play", "button"
-
-  sel_game = game_names(0)
-  game = init_game(games(sel_game))
+  open_game "sokoban.levels"
 
   while 1
     doform form_var
     select case form_var
+    case "Open"
+      doform 0
+      rect 0, 0, xmax, ymax, 8 filled      
+      open_game openFile
     case "View"
-      game = init_game(games(sel_game))
+      init_game games(sel_game), game
     case "Play"
       exit loop  
     case else
@@ -283,41 +321,61 @@ sub main
 end
 
 '
+' erase soko from the current position before a move
+'
+sub move_erase(byref game)
+  if (is_target(game)) then
+    ' redraw the now empty target
+    draw_target game.soko_x, game.soko_y
+  else
+    draw_space game.soko_x, game.soko_y
+  fi
+end
+
+'
 ' move up
 '
-sub move_up(is_push)
-  
+sub move_up(byref game, is_push)
+  move_erase game
+  game.soko_y--
+  draw_soko game.soko_x, game.soko_y
 end
 
 '
 ' move down
 '
-sub move_down(is_push)
-  
+sub move_down(byref game, is_push)
+  move_erase game
+  game.soko_y++
+  draw_soko game.soko_x, game.soko_y
 end
 
 '
 ' move left
 '
-sub move_left(is_push)
-  
+sub move_left(byref game, is_push)
+  move_erase game
+  game.soko_x--
+  draw_soko game.soko_x, game.soko_y
 end
 
 '
 ' move right
 '
-sub move_right(is_push)
-  
+sub move_right(byref game, is_push)
+  move_erase game
+  game.soko_x++
+  draw_soko game.soko_x, game.soko_y
 end
 
 '
 ' play the game
 '
-sub play_game(game)
+sub play_game(byref game)
   local k, ch
   local game_over = false
   while game_over = false
-    delay 250
+    delay 150
     k = inkey
     if len(k) = 2 then
       ch = asc(right(k,1))
@@ -325,37 +383,37 @@ sub play_game(game)
       case "4" 'left arrow"
         if (is_border(game.grid, game.soko_x-1, game.soko_y) = false) then
           if (get_block(game.blocks, game.soko_x-1, game.soko_y) = false) then
-            move_left false
+            move_left game, false
           elif (is_border(game.grid, game.soko_x-2, game.soko_y) = false && &
                 get_block(game.blocks, game.soko_x-2, game.soko_y) = false) then
-            move_left true
+            move_left game, true
           fi
         fi
       case "5" 'right arrow"
         if (is_border(game.grid, game.soko_x+1, game.soko_y) = false) then
           if (get_block(game.blocks, game.soko_x+1, game.soko_y) = false) then
-            move_right false
+            move_right game, false
           elif (is_border(game.grid, game.soko_x+2, game.soko_y) = false && &
                 get_block(game.blocks, game.soko_x+2, game.soko_y) = false) then
-            move_right true
+            move_right game, true
           fi
         fi
       case "9" 'up arrow"
         if (is_border(game.grid, game.soko_x, game.soko_y-1) = false) then
           if (get_block(game.blocks, game.soko_x, game.soko_y-1) = false) then
-            move_up false
+            move_up game, false
           elif (is_border(game.grid, game.soko_x, game.soko_y-2) = false && &
                 get_block(game.blocks, game.soko_x, game.soko_y-2) = false) then
-            move_up true
+            move_up game, true
           fi
         fi
       case "10" 'down arrow"
         if (is_border(game.grid, game.soko_x, game.soko_y+1) = false) then
           if (get_block(game.blocks, game.soko_x, game.soko_y+1) = false) then
-            move_down false
+            move_down game, false
           elif (is_border(game.grid, game.soko_x, game.soko_y+2) = false && &
                 get_block(game.blocks, game.soko_x, game.soko_y+2) = false) then
-            move_down true
+            move_down game, true
           fi
         fi
       end select
