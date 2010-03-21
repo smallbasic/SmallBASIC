@@ -75,6 +75,7 @@ void v_free(var_t *v)
     break;
   case V_HASH:
     hash_free(v);
+    break;
   }
 
   v_init(v);

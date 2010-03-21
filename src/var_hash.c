@@ -207,6 +207,7 @@ void hash_free(var_p_t var_p)
 {
   if (var_p->type == V_HASH) {
     tdestroy(var_p->v.hash, hash_free_cb);
+    var_p->v.hash = 0;
   }
 }
 
