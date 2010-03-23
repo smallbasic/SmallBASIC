@@ -36,10 +36,10 @@
 int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) SEC(BLIB);
 void sb_bubble(var_t * var_p, addr_t use_ip, int n) SEC(BLIB);
 
-//
-// LET v[(x)] = any
-// CONST v[(x)] = any
-//
+/**
+ * LET v[(x)] = any
+ * CONST v[(x)] = any
+ */
 void cmd_let(int allowConst)
 {
   var_t *var_p = NULL;
@@ -68,9 +68,9 @@ void cmd_let(int allowConst)
   }
 }
 
-//
-//  DIM var([lower TO] uppper [, ...])
-//
+/**
+ *  DIM var([lower TO] uppper [, ...])
+ */
 void cmd_dim(int preserve)
 {
   int exitf = 0;
@@ -180,19 +180,19 @@ void cmd_dim(int preserve)
   } while (!exitf && !prog_error);
 }
 
-//
-// REDIM x
-//
+/**
+ * REDIM x
+ */
 void cmd_redim()
 {
   cmd_dim(1);
 }
 
-//
-// APPEND A, x1 [, x2, ...]
-// or
-// A << x1 [, x2, ...]
-//
+/**
+ * APPEND A, x1 [, x2, ...]
+ * or
+ * A << x1 [, x2, ...]
+ */
 void cmd_ladd()
 {
   var_t *var_p, *elem_p, *arg_p;
@@ -253,9 +253,9 @@ void cmd_ladd()
   tmp_free(arg_p);
 }
 
-//
-// INSERT A, index, v1 [, vN]
-//
+/**
+ * INSERT A, index, v1 [, vN]
+ */
 void cmd_lins()
 {
   var_t *var_p, *elem_p, *arg_p;
@@ -340,9 +340,9 @@ void cmd_lins()
   tmp_free(arg_p);
 }
 
-//
-// DELETE A, index[, count]
-//
+/**
+ * DELETE A, index[, count]
+ */
 void cmd_ldel()
 {
   var_t *var_p, *arg_p;
@@ -418,9 +418,9 @@ void cmd_ldel()
   tmp_free(arg_p);
 }
 
-//
-// ERASE var1 [, var2[, ...]]
-//
+/**
+ * ERASE var1 [, var2[, ...]]
+ */
 void cmd_erase()
 {
   byte code;
@@ -460,9 +460,9 @@ void cmd_erase()
   } while (1);
 }
 
-//
-// PRINT ...
-//
+/**
+ * PRINT ...
+ */
 void cmd_print(int output)
 {
   byte code, last_op = 0;
@@ -623,9 +623,9 @@ void cmd_logprint()
   cmd_print(PV_LOG);
 }
 
-//
-// INPUT ...
-//
+/**
+ * INPUT ...
+ */
 void cmd_input(int input)
 {
   byte code;
@@ -936,9 +936,9 @@ void cmd_input(int input)
   v_free(&prompt);
 }
 
-//
-// RTE ...
-//
+/**
+ * RTE ...
+ */
 void cmd_RTE()
 {
   code_t code;
@@ -981,9 +981,9 @@ void cmd_RTE()
   prog_error = 0x1000;
 }
 
-//
-// ON x GOTO|GOSUB ...
-//
+/**
+ * ON x GOTO|GOSUB ...
+ */
 void cmd_on_go()
 {
   addr_t next_ip, expr_ip, table_ip, dest_ip;
@@ -1037,9 +1037,9 @@ void cmd_on_go()
   }
 }
 
-//
-// GOSUB label
-//
+/**
+ * GOSUB label
+ */
 void cmd_gosub()
 {
   stknode_t node;
@@ -1053,18 +1053,18 @@ void cmd_gosub()
 }
 
 /**
- *   Call a user-defined procedure or function
+ * Call a user-defined procedure or function
  *
- *   What will happend to the stack
- *       [param 1]
- *       ...
- *       [param N]
- *       [udp-call node]
+ * What will happend to the stack
+ * [param 1]
+ * ...
+ * [param N]
+ * [udp-call node]
  *
- *   p1...pN nodes will be removed by cmd_param()
- *   cmd_param is the first UDP/F's command
+ * p1...pN nodes will be removed by cmd_param()
+ * cmd_param is the first UDP/F's command
  *
- *   @param cmd is the type of the udp (function or procedure)
+ * @param cmd is the type of the udp (function or procedure)
  */
 void cmd_udp(int cmd)
 {
@@ -1188,12 +1188,12 @@ void cmd_udp(int cmd)
 }
 
 /**
- *   Call a user-defined procedure or function OF ANOTHER UNIT
+ * Call a user-defined procedure or function OF ANOTHER UNIT
  *
- *   @param cmd is the type of the udp (function or procedure)
- *   @param udp_tid is the UDP's task-id
- *   @param goto_addr address of UDP
- *   @param rvid return-var-id on callers task (this task)
+ * @param cmd is the type of the udp (function or procedure)
+ * @param udp_tid is the UDP's task-id
+ * @param goto_addr address of UDP
+ * @param rvid return-var-id on callers task (this task)
  */
 void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid)
 {
@@ -1320,10 +1320,10 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid)
 }
 
 /**
- *   Create dynamic-variables (actually local-variables)
+ * Create dynamic-variables (actually local-variables)
  *
- *   In older versions ( <= 5.8?) there was only one variable-table...
- *   The global's one.
+ * In older versions ( <= 5.8?) there was only one variable-table...
+ * The global's one.
  */
 void cmd_crvar()
 {
@@ -1350,13 +1350,13 @@ void cmd_crvar()
 }
 
 /**
- *   user defined procedure or function - parse parameters code
+ * user defined procedure or function - parse parameters code
  *
- *   this code will be called by udp/f to pop parameter node
- *   which was stored in stack by the cmd_udp (call to udp/f)
+ * this code will be called by udp/f to pop parameter node
+ * which was stored in stack by the cmd_udp (call to udp/f)
  *
- *   'by value' parameters are stored as local variables in the stack (kwTYPE_CRVAR)
- *   'by reference' parameters are stored as local variables in the stack (kwTYPE_BYREF)
+ * 'by value' parameters are stored as local variables in the stack (kwTYPE_CRVAR)
+ * 'by reference' parameters are stored as local variables in the stack (kwTYPE_BYREF)
  */
 void cmd_param()
 {
@@ -1437,9 +1437,9 @@ void cmd_param()
   }
 }
 
-//
-// Return from user-defined procedure or function
-//
+/**
+ * Return from user-defined procedure or function
+ */
 void cmd_udpret()
 {
   stknode_t node, rval;
@@ -1484,9 +1484,9 @@ void cmd_udpret()
   prog_ip = node.x.vcall.ret_ip;  // jump to caller's next address
 }
 
-//
-// EXIT [FOR|LOOP|FUNC|PROC]
-//
+/**
+ * EXIT [FOR|LOOP|FUNC|PROC]
+ */
 int cmd_exit()
 {
   stknode_t node;
@@ -1563,9 +1563,9 @@ int cmd_exit()
   return exit_from_udp;
 }
 
-//
-// RETURN
-//
+/**
+ * RETURN
+ */
 void cmd_return()
 {
   stknode_t node;
@@ -1589,9 +1589,9 @@ void cmd_return()
   code_jump(node.x.vgosub.ret_ip);
 }
 
-//
-// IF expr [THEN]
-//
+/**
+ * IF expr [THEN]
+ */
 void cmd_if()
 {
   addr_t true_ip, false_ip;
@@ -1613,9 +1613,9 @@ void cmd_if()
   code_push(&node);
 }
 
-//
-// ELSE
-//
+/**
+ * ELSE
+ */
 void cmd_else()
 {
   addr_t true_ip, false_ip;
@@ -1644,9 +1644,9 @@ void cmd_else()
   code_jump((!node.x.vif.lcond) ? true_ip : false_ip);
 }
 
-//
-// ELIF
-//
+/**
+ * ELIF
+ */
 void cmd_elif()
 {
   addr_t true_ip, false_ip;
@@ -1692,9 +1692,9 @@ void cmd_elif()
   }
 }
 
-//
-// FOR var = expr TO expr [STEP expr]
-//
+/**
+ * FOR var = expr TO expr [STEP expr]
+ */
 void cmd_for()
 {
   byte code;
@@ -1872,9 +1872,9 @@ void cmd_for()
   v_free(&varstep);
 }
 
-//
-// WHILE expr
-//
+/**
+ * WHILE expr
+ */
 void cmd_while()
 {
   addr_t true_ip, false_ip;
@@ -1900,9 +1900,9 @@ void cmd_while()
   v_free(&var);
 }
 
-//
-// WEND
-//
+/**
+ * WEND
+ */
 void cmd_wend()
 {
   stknode_t node;
@@ -1914,9 +1914,9 @@ void cmd_wend()
   code_pop(&node);
 }
 
-//
-// UNTIL expr
-//
+/**
+ * UNTIL expr
+ */
 void cmd_until()
 {
   addr_t jump_ip;
@@ -1936,9 +1936,9 @@ void cmd_until()
   v_free(&var);
 }
 
-//
-// NEXT
-//
+/**
+ * NEXT
+ */
 void cmd_next()
 {
   addr_t next_ip, jump_ip;
@@ -2080,9 +2080,9 @@ void cmd_next()
   v_free(&var_step);
 }
 
-//
-// READ var [, var [, ...]]
-//
+/**
+ * READ var [, var [, ...]]
+ */
 void cmd_read()
 {
   byte code, exitf = 0;
@@ -2170,26 +2170,26 @@ void cmd_read()
   } while (!exitf);
 }
 
-//
-// DATA ...
-//
+/**
+ * DATA ...
+ */
 void cmd_data()
 {
   rt_raise("CANNOT EXECUTE DATA");  // if you see it, I did something
   // stupid
 }
 
-//
-// RESTORE label
-//
+/**
+ * RESTORE label
+ */
 void cmd_restore()
 {
   prog_dp = code_getaddr();
 }
 
-//
-// RANDOMIZE [num]
-//
+/**
+ * RANDOMIZE [num]
+ */
 void cmd_randomize()
 {
   byte code;
@@ -2217,9 +2217,9 @@ void cmd_randomize()
   };
 }
 
-//
-// DELAY
-//
+/**
+ * DELAY
+ */
 void cmd_delay()
 {
   dword ms;
@@ -2231,9 +2231,9 @@ void cmd_delay()
   dev_delay(ms);
 }
 
-//
-// AT x,y
-//
+/**
+ * AT x,y
+ */
 void cmd_at()
 {
   var_int_t x, y;
@@ -2244,9 +2244,9 @@ void cmd_at()
   }
 }
 
-//
-// LOCATE y,x
-//
+/**
+ * LOCATE y,x
+ */
 void cmd_locate()
 {
   var_int_t x, y;
@@ -2267,9 +2267,9 @@ void cmd_locate()
 #endif
 }
 
-//
-// PAUSE [secs]
-//
+/**
+ * PAUSE [secs]
+ */
 void cmd_pause()
 {
   int x = 0, evc;
@@ -2362,9 +2362,9 @@ void cmd_pause()
   }
 }
 
-//
-// COLOR fg[,text_bg]
-//
+/**
+ * COLOR fg[,text_bg]
+ */
 void cmd_color()
 {
   int fg, bg = -1;
@@ -2388,7 +2388,7 @@ void cmd_color()
 }
 
 /*
- *   SPLIT string, delimiters, array()
+ * SPLIT string, delimiters, array()
  void    cmd_split()
  {
  int     count, i;
@@ -2470,9 +2470,9 @@ void cmd_split()
   cmd_wsplit();
 }
 
-//
-// SPLIT string, delimiters, array() [, pairs] [USE ...]
-//
+/**
+ * SPLIT string, delimiters, array() [, pairs] [USE ...]
+ */
 void cmd_wsplit()
 {
   int count, i, wait_q;
@@ -2575,9 +2575,9 @@ void cmd_wsplit()
   }
 }
 
-//
-// JOIN array(), delimiter, dest-var
-//
+/**
+ * JOIN array(), delimiter, dest-var
+ */
 void cmd_wjoin()
 {
   var_t *str, del, *var_p, *elem_p, e_str;
@@ -2642,9 +2642,9 @@ void cmd_wjoin()
   v_free(&del);
 }
 
-//
-// ENVIRON string
-//
+/**
+ * ENVIRON string
+ */
 void cmd_environ()
 {
   var_t str;
@@ -2659,9 +2659,9 @@ void cmd_environ()
   v_free(&str);
 }
 
-//
-// DATEDMY string|julian, m, d, y
-//
+/**
+ * DATEDMY string|julian, m, d, y
+ */
 void cmd_datedmy()
 {
   long d, m, y;
@@ -2718,9 +2718,9 @@ void cmd_datedmy()
   vy->v.i = y;
 }
 
-//
-// TIMEHMS string|timer, h, m, s
-//
+/**
+ * TIMEHMS string|timer, h, m, s
+ */
 void cmd_timehms()
 {
   long h, m, s;
@@ -2778,9 +2778,9 @@ void cmd_timehms()
   vs->v.i = s;
 }
 
-//
-// SORT array [USE ...]
-//
+/**
+ * SORT array [USE ...]
+ */
 int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
 {
   if (use_ip == INVALID_ADDR) {
@@ -2836,9 +2836,9 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip)
   }
 }
 
-//
-// bubble sort
-//
+/**
+ * bubble sort
+ */
 void sb_bubble(var_t * var_p, addr_t use_ip, int n)
 {
   int i, j;
@@ -2929,9 +2929,9 @@ void cmd_sort()
   }
 }
 
-//
-// SEARCH A(), key, BYREF ridx [USE ...]
-//
+/**
+ * SEARCH A(), key, BYREF ridx [USE ...]
+ */
 void cmd_search()
 {
   addr_t use_ip, exit_ip;
@@ -3013,9 +3013,9 @@ void cmd_search()
   v_free(&vkey);
 }
 
-//
-// SWAP a, b
-//
+/**
+ * SWAP a, b
+ */
 void cmd_swap(void)
 {
   var_t *va, *vb, *vc;
@@ -3047,9 +3047,9 @@ void cmd_swap(void)
   tmp_free(vc);
 }
 
-//
-// POKE addr, byte
-//
+/**
+ * POKE addr, byte
+ */
 void cmd_poke(void)
 {
   int32 addr, val;
@@ -3071,9 +3071,9 @@ void cmd_poke(void)
   *baddr = (byte) val;
 }
 
-//
-// POKE16 addr, word
-//
+/**
+ * POKE16 addr, word
+ */
 void cmd_poke16(void)
 {
   int32 addr, val;
@@ -3095,9 +3095,9 @@ void cmd_poke16(void)
   *baddr = (word) val;
 }
 
-//
-// POKE32 addr, dword
-//
+/**
+ * POKE32 addr, dword
+ */
 void cmd_poke32(void)
 {
   int32 addr, val;
@@ -3119,9 +3119,9 @@ void cmd_poke32(void)
   *baddr = (dword) val;
 }
 
-//
-// BCOPY srcadr, dstadr, size
-//
+/**
+ * BCOPY srcadr, dstadr, size
+ */
 void cmd_bcopy(void)
 {
   int32 addr, size;
@@ -3154,9 +3154,9 @@ void cmd_bcopy(void)
   memcpy(bdst, bsrc, size);
 }
 
-//
-// EXPRSEQ @array, xmin, xmax, count USE f(x)
-//
+/**
+ * EXPRSEQ @array, xmin, xmax, count USE f(x)
+ */
 void cmd_exprseq(void)
 {
   var_t *var_p, *elem_p;
@@ -3204,10 +3204,10 @@ void cmd_exprseq(void)
   }
 }
 
-//
-// HTML html, [title,] [x,y,w,h]
-// Display html text
-//
+/**
+ * HTML html, [title,] [x,y,w,h]
+ * Display html text
+ */
 void cmd_html()
 {
   char *html = 0;
@@ -3222,10 +3222,10 @@ void cmd_html()
   pfree2(html, title);
 }
 
-//
-// IMAGE #handle, index, x, y [,sx,sy [,w,h]]
-// Display html text
-//
+/**
+ * IMAGE #handle, index, x, y [,sx,sy [,w,h]]
+ * Display html text
+ */
 void cmd_image()
 {
   var_int_t h, i, x, y;
@@ -3243,18 +3243,18 @@ void cmd_image()
   }
 }
 
-//
-// evaluate the select expression and then store it on the stack
-// syntax is:
-// select expr
-// case expr
-//   stmt
-// case expr
-//   stmt
-// case else
-//   default stmt
-// end select
-//
+/**
+ * evaluate the select expression and then store it on the stack
+ * syntax is:
+ * select expr
+ * case expr
+ * stmt
+ * case expr
+ * stmt
+ * case else
+ * default stmt
+ * end select
+ */
 void cmd_select()
 {
   stknode_t node;
@@ -3270,11 +3270,11 @@ void cmd_select()
   code_push(&node);
 }
 
-//
-// compare the case expression with the saved select expression
-// if true then branch to true_ip otherwise branch to false_ip
-// which could either be another case line or "end select"
-//
+/**
+ * compare the case expression with the saved select expression
+ * if true then branch to true_ip otherwise branch to false_ip
+ * which could either be another case line or "end select"
+ */
 void cmd_case()
 {
   stknode_t *node;
@@ -3307,9 +3307,9 @@ void cmd_case()
   v_free(&var_p);
 }
 
-//
-// skip to cmd_end_select if a previous case was true
-//
+/**
+ * skip to cmd_end_select if a previous case was true
+ */
 void cmd_case_else()
 {
   stknode_t *node;
@@ -3321,9 +3321,9 @@ void cmd_case_else()
   code_jump(node->x.vfor.flags ? false_ip : true_ip);
 }
 
-//
-// free the stored select expression created in cmd_select()
-//
+/**
+ * free the stored select expression created in cmd_select()
+ */
 void cmd_end_select()
 {
   stknode_t node;
@@ -3335,9 +3335,9 @@ void cmd_end_select()
   code_jump(code_getaddr());
 }
 
-//
-// define keyboard event handling
-//
+/**
+ * define keyboard event handling
+ */
 void cmd_definekey(void) {
   var_t var;
 
@@ -3361,3 +3361,4 @@ void cmd_definekey(void) {
   }
   v_free(&var);
 }
+
