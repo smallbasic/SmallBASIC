@@ -1,7 +1,7 @@
 '
 ' $Id$
 '
-
+ 
 const bl_w = 25
 const bl_h = 25
 const bl_x = 45
@@ -74,22 +74,26 @@ sub draw_soko(x, y)
                [bx + 5 * dx, by + 3 * dy], &
                [bx + 5 * dx, by + 0 * dy] ]
 
+  draw_space x, y
   DrawPoly PolyArray Color 3 Filled  
 end
 
-
 '
-' returns any block at the x/y location
+' whether there is a block at the x/y location
 '
 func get_block(byref blocks, x, y)
-  local result = 0
   local i
-  local len_blocks
-  for i in blocks
-    if (i(0) = x && i(1) = y) then
-      result = i
+  local result = false
+  local bl_len = len(game.blocks) - 1
+  
+  for i = 0 to bl_len
+    local block = game.blocks(i)
+    if (block(0) = x && block(1) = y) then
+      result = true
+      i = bl_len      
     fi
   next i
+  
   get_block = result
 end
 
@@ -124,7 +128,7 @@ sub init_game(grid, byref game)
     next i
     y++
   next row
-  
+
   game.blocks = blocks
   game.grid = grid
 end
@@ -292,11 +296,12 @@ sub main
     
     ' build the gui
     button 5,  1, 100, 20, game_names, "", "choice"
+    button -1, 1, -1,  20, ok_bn,      "View", "button"    
     button -1, 1, -1,  20, ok_open,    "Open", "button"  
-    button -1, 1, -1,  20, ok_bn,      "View", "button"
     button -1, 1, -1,  20, ok_play,    "Play", "button"
   end 
 
+  cls
   open_game "sokoban.levels"
 
   while 1
@@ -321,6 +326,27 @@ sub main
 end
 
 '
+' move the block covered by soko
+'
+sub move_push(byref game, xdir, ydir)
+  local i
+  local x = game.soko_x
+  local y = game.soko_y
+  local bl_len = len(game.blocks) - 1
+  
+  for i = 0 to bl_len
+    local block = game.blocks(i)
+    if (block(0) = x && block(1) = y) then
+      block(0) = block(0) + xdir
+      block(1) = block(1) + ydir
+      draw_block block(0), block(1)
+      game.blocks(i) = block
+      i = bl_len
+    fi
+  next i
+end
+
+'
 ' erase soko from the current position before a move
 '
 sub move_erase(byref game)
@@ -339,6 +365,9 @@ sub move_up(byref game, is_push)
   move_erase game
   game.soko_y--
   draw_soko game.soko_x, game.soko_y
+  if is_push then
+    move_push game, 0, -1
+  fi
 end
 
 '
@@ -348,6 +377,9 @@ sub move_down(byref game, is_push)
   move_erase game
   game.soko_y++
   draw_soko game.soko_x, game.soko_y
+  if is_push then
+    move_push game, 0, 1
+  fi
 end
 
 '
@@ -357,6 +389,9 @@ sub move_left(byref game, is_push)
   move_erase game
   game.soko_x--
   draw_soko game.soko_x, game.soko_y
+  if is_push then
+    move_push game, -1, 0
+  fi
 end
 
 '
@@ -366,6 +401,9 @@ sub move_right(byref game, is_push)
   move_erase game
   game.soko_x++
   draw_soko game.soko_x, game.soko_y
+  if is_push then
+    move_push game, 1, 0
+  fi
 end
 
 '
@@ -384,36 +422,40 @@ sub play_game(byref game)
         if (is_border(game.grid, game.soko_x-1, game.soko_y) = false) then
           if (get_block(game.blocks, game.soko_x-1, game.soko_y) = false) then
             move_left game, false
-          elif (is_border(game.grid, game.soko_x-2, game.soko_y) = false && &
-                get_block(game.blocks, game.soko_x-2, game.soko_y) = false) then
-            move_left game, true
+          else if (is_border(game.grid, game.soko_x-2, game.soko_y) = false) then
+            if (get_block(game.blocks, game.soko_x-2, game.soko_y) = false) then
+              move_left game, true
+            fi
           fi
         fi
       case "5" 'right arrow"
         if (is_border(game.grid, game.soko_x+1, game.soko_y) = false) then
           if (get_block(game.blocks, game.soko_x+1, game.soko_y) = false) then
             move_right game, false
-          elif (is_border(game.grid, game.soko_x+2, game.soko_y) = false && &
-                get_block(game.blocks, game.soko_x+2, game.soko_y) = false) then
-            move_right game, true
+          elif (is_border(game.grid, game.soko_x+2, game.soko_y) = false) then
+            if (get_block(game.blocks, game.soko_x+2, game.soko_y) = false) then
+              move_right game, true
+            fi
           fi
         fi
       case "9" 'up arrow"
         if (is_border(game.grid, game.soko_x, game.soko_y-1) = false) then
           if (get_block(game.blocks, game.soko_x, game.soko_y-1) = false) then
             move_up game, false
-          elif (is_border(game.grid, game.soko_x, game.soko_y-2) = false && &
-                get_block(game.blocks, game.soko_x, game.soko_y-2) = false) then
-            move_up game, true
+          elif (is_border(game.grid, game.soko_x, game.soko_y-2) = false) then
+            if (get_block(game.blocks, game.soko_x, game.soko_y-2) = false) then
+              move_up game, true
+            fi
           fi
         fi
       case "10" 'down arrow"
         if (is_border(game.grid, game.soko_x, game.soko_y+1) = false) then
           if (get_block(game.blocks, game.soko_x, game.soko_y+1) = false) then
             move_down game, false
-          elif (is_border(game.grid, game.soko_x, game.soko_y+2) = false && &
-                get_block(game.blocks, game.soko_x, game.soko_y+2) = false) then
-            move_down game, true
+          elif (is_border(game.grid, game.soko_x, game.soko_y+2) = false) then
+            if (get_block(game.blocks, game.soko_x, game.soko_y+2) = false) then
+              move_down game, true
+            fi
           fi
         fi
       end select
