@@ -138,6 +138,7 @@ void code_push(stknode_t * node)
   }
 
   prog_stack[prog_stack_count] = *node;
+  prog_stack[prog_stack_count].line = prog_line;
 #if defined(_UnixOS) && defined(_CHECK_STACK)
   for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
     if (node->type == keyword_table[i].code) {
