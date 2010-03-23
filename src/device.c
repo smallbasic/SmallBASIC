@@ -1062,8 +1062,9 @@ void dev_settextcolor(long fg, long bg)
 #endif
 }
 
-
-//      prints a string
+/**
+ * prints a string
+ */
 void dev_print(const char *str)
 {
 #if USE_TERM_IO
@@ -1078,7 +1079,7 @@ void dev_print(const char *str)
 #endif
 }
 
-/*
+/**
  * printf
  *
  * WARNING: PalmOS ver is limited to 256 bytes
@@ -1108,9 +1109,12 @@ void dev_printf(const char *fmt, ...)
 #endif
   dev_print(buf);
   tmp_free(buf);
-
 }
 
+/**
+ * In the FLTK build, prints to the LOG window, in other builds
+ * prints to the output device as per dev_printf
+ */
 void log_printf(const char *format, ...)
 {
   char buf[4096], *p = buf;
@@ -1128,10 +1132,14 @@ void log_printf(const char *format, ...)
   *p++ = '\n';
   *p = '\0';
 
+#if defined(_FLTK)
   lwrite(buf);
+#else
+  dev_print(buf);
+#endif
 }
 
-/*
+/**
  * clears the screen
  */
 void dev_cls()
