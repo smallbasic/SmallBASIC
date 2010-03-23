@@ -91,11 +91,6 @@ extern void bcb_comp(int pass, int pmin, int pmax);
 
 #define GROWSIZE  128
 
-#if defined(_FLTK)
-#undef dev_printf
-#define dev_printf log_printf
-#endif
-
 void err_wrongproc(const char *name)
 {
   sc_raise(MSG_WRONG_PROCNAME, name);
@@ -335,7 +330,7 @@ bid_t comp_label_getID(const char *label_name)
   if (idx == -1) {
 #if !defined(OS_LIMITED)
     if (opt_verbose) {
-      dev_printf(MSG_NEW_LABEL, comp_line, name, comp_labcount);
+      log_printf(MSG_NEW_LABEL, comp_line, name, comp_labcount);
     }
 #endif
     strcpy(label.name, name);
@@ -478,7 +473,7 @@ bid_t comp_add_udp(const char *proc_name)
     else {
 #if !defined(OS_LIMITED)
       if (opt_verbose) {
-        dev_printf(MSG_NEW_UDP, comp_line, name, comp_udpcount);
+        log_printf(MSG_NEW_UDP, comp_line, name, comp_udpcount);
       }
 #endif
       comp_udptable[comp_udpcount].name = tmp_alloc(strlen(name) + 1);
@@ -681,7 +676,7 @@ int comp_create_var(const char *name)
     }
 #if !defined(OS_LIMITED)
     if (opt_verbose) {
-      dev_printf(MSG_NEW_VAR, comp_line, name, comp_varcount);
+      log_printf(MSG_NEW_VAR, comp_line, name, comp_varcount);
     }
 #endif
     comp_vartable[comp_varcount].name = tmp_alloc(strlen(name) + 1);
@@ -3013,7 +3008,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   buff[0] = 0;
 
 #if !defined(_FLTK)
-  dev_printf(MSG_DETAILED_REPORT_Q);
+  log_printf(MSG_DETAILED_REPORT_Q);
   dev_gets(buff, sizeof(buff));
   details = (buff[0] == 'y' || buff[0] == 'Y');
 #endif
@@ -3027,7 +3022,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
         for (i = pos + 1; i < comp_sp; i++) {
           dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
           if (comp_prog.ptr[node.pos] == code) {
-            dev_printf
+            log_printf
               ("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                cmd, node.level, node.pos, level, pos);
             cnt++;
@@ -3038,13 +3033,13 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
         }
       }
       else {
-        dev_printf
+        log_printf
           ("\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd,
            level + 1, node.pos, level, pos);
       }
     }
     else {
-      dev_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
+      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                  cmd, level - 1, node.pos, level, pos);
     }
   }
@@ -3054,12 +3049,12 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   cs_count = 0;
 #if !defined(OS_LIMITED)
   if (details) {
-    dev_printf("\n");
-    dev_printf
+    log_printf("\n");
+    log_printf
       ("--- Pass 2 - stack ------------------------------------------------------\n");
-    dev_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i",
+    log_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i",
                "Command", "Section", "Addr", "Line", "Level", "BlkID", "Count");
-    dev_printf
+    log_printf
       ("-------------------------------------------------------------------------\n");
   }
 #endif
@@ -3091,7 +3086,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
 #if !defined(OS_LIMITED)
     if (details) {
       // info
-      dev_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
+      log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n",
                  ((i == pos) ? ">>" : "  "), i, cmd, node.sec, node.pos,
                  node.line, node.level, node.block_id, csum[cs_idx]);
     }
@@ -3101,20 +3096,20 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
   // sum
 #if !defined(OS_LIMITED)
   if (details) {
-    dev_printf("\n");
-    dev_printf
+    log_printf("\n");
+    log_printf
       ("--- Sum -----------------------------------------------------------------\n");
     for (i = 0; i < cs_count; i++) {
       code = ccode[i];
       if (!kw_getcmdname(code, cmd))
         sprintf(cmd, "(%d)", code);
-      dev_printf("%16s - %5d\n", cmd, csum[i]);
+      log_printf("%16s - %5d\n", cmd, csum[i]);
     }
   }
 #endif
 
   // decide
-  dev_printf("\n");
+  log_printf("\n");
   for (i = 0; start_code[i] != 0; i++) {
     int sa, sb;
     code_t ca, cb;
@@ -3144,17 +3139,17 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
       kw_getcmdname(ca, cmd);
       kw_getcmdname(cb, cmd2);
       if (sa > sb) {
-        dev_printf("Hint: Missing %d %s or there is/are %d more %s\n",
+        log_printf("Hint: Missing %d %s or there is/are %d more %s\n",
                    sa - sb, cmd2, sa - sb, cmd);
       }
       else {
-        dev_printf("Hint: There is/are %d more %s or missing %d %s\n",
+        log_printf("Hint: There is/are %d more %s or missing %d %s\n",
                    sb - sa, cmd2, sb - sa, cmd);
       }
     }
   }
 
-  dev_printf("\n\n");
+  log_printf("\n\n");
 }
 
 /*
@@ -3173,7 +3168,7 @@ void comp_pass2_scan()
 #if defined(_UnixOS)
     if (isatty(STDOUT_FILENO))
 #endif
-      dev_printf(MSG_PASS2_COUNT, i, comp_sp);
+      log_printf(MSG_PASS2_COUNT, i, comp_sp);
   }
 #if defined(_WinBCB)
   bcb_comp(2, i, comp_sp);
@@ -3187,7 +3182,7 @@ void comp_pass2_scan()
       if (isatty(STDOUT_FILENO))
 #endif
         if ((i % SB_KEYWORD_SIZE) == 0) {
-          dev_printf(MSG_PASS2_COUNT, i, comp_sp);
+          log_printf(MSG_PASS2_COUNT, i, comp_sp);
         }
     }
 
@@ -3508,8 +3503,8 @@ void comp_pass2_scan()
   }
 
   if (!opt_quiet && !opt_interactive) {
-    dev_printf(MSG_PASS2_COUNT, comp_sp, comp_sp);
-    dev_printf("\n");
+    log_printf(MSG_PASS2_COUNT, comp_sp, comp_sp);
+    log_printf("\n");
   }
 #if defined(_WinBCB)
   bcb_comp(2, comp_sp, comp_sp);
@@ -3927,9 +3922,9 @@ char *comp_format_text(const char *source)
  */
 void err_grmode()
 {
-  // dev_printf() instead of sc_raise()... it is just a warning...
+  // log_printf() instead of sc_raise()... it is just a warning...
 #if !defined(OS_LIMITED)
-  dev_printf(MSG_GRMODE_ERR);
+  log_printf(MSG_GRMODE_ERR);
 #endif
 }
 
@@ -4462,14 +4457,14 @@ int comp_pass1(const char *section, const char *text)
       fprintf(stdout, "%s: %s\n", WORD_FILE, comp_file_name);
     }
     else {
-      dev_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
+      log_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
     }
 #elif defined(_PalmOS)          // if (code-sections)
-    dev_printf
+    log_printf
       ("%s: \033[1m%s\033[0m\n\033[80m%s: \033[1m%s\033[0m\033[80m\n",
        WORD_FILE, comp_file_name, WORD_SECTION, comp_bc_sec);
 #else
-    dev_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
+    log_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
 #endif
   }
   // Start
@@ -4482,7 +4477,7 @@ int comp_pass1(const char *section, const char *text)
       }
       else {
 #endif
-        dev_printf(MSG_PASS1_COUNT, comp_line + 1);
+        log_printf(MSG_PASS1_COUNT, comp_line + 1);
 
 #if defined(_UnixOS)
       }
@@ -4506,7 +4501,7 @@ int comp_pass1(const char *section, const char *text)
 #if defined(_PalmOS)
             if ((comp_line % 16) == 0) {
               if ((comp_line % 64) == 0)
-                dev_printf(MSG_PASS1_COUNT, comp_line);
+                log_printf(MSG_PASS1_COUNT, comp_line);
               if (dev_events(0) < 0) {
                 dev_print("\n\n\a*** interrupted ***\n");
                 comp_error = -1;
@@ -4514,7 +4509,7 @@ int comp_pass1(const char *section, const char *text)
             }
 #else
             if ((comp_line % 256) == 0) {
-              dev_printf(MSG_PASS1_COUNT, comp_line);
+              log_printf(MSG_PASS1_COUNT, comp_line);
             }
 #endif
 
@@ -4564,14 +4559,14 @@ int comp_pass1(const char *section, const char *text)
   bc_resize(&comp_prog, comp_prog.count);
   if (!comp_error) {
     if (!opt_quiet && !opt_interactive) {
-      dev_printf(MSG_PASS1_FIN, comp_line + 1);
+      log_printf(MSG_PASS1_FIN, comp_line + 1);
 #if !defined(_PalmOS)
 #if !defined(MALLOC_LIMITED)
-      dev_printf("\rSB-MemMgr: Maximum use of memory: %dKB\n",
+      log_printf("\rSB-MemMgr: Maximum use of memory: %dKB\n",
                  (memmgr_getmaxalloc() + 512) / 1024);
 #endif
 #endif
-      dev_printf("\n");
+      log_printf("\n");
     }
   }
 
@@ -4641,7 +4636,7 @@ int comp_pass2()
     }
     else {
 #endif
-      dev_printf(MSG_PASS2);
+      log_printf(MSG_PASS2);
 #if defined(_UnixOS)
     }
 #endif
@@ -4683,10 +4678,10 @@ mem_t comp_create_bin()
 
   if (!opt_quiet && !opt_interactive) {
     if (comp_unit_flag) {
-      dev_printf(MSG_CREATING_UNIT, comp_unit_name);
+      log_printf(MSG_CREATING_UNIT, comp_unit_name);
     }
     else {
-      dev_printf(MSG_CREATING_BC);
+      log_printf(MSG_CREATING_BC);
     }
   }
   // 
@@ -4794,19 +4789,19 @@ mem_t comp_create_bin()
 
   // print statistics
   if (!opt_quiet && !opt_interactive) {
-    dev_printf("\n");
-    dev_printf(RES_NUMBER_OF_VARS, comp_varcount, comp_varcount - 18);
+    log_printf("\n");
+    log_printf(RES_NUMBER_OF_VARS, comp_varcount, comp_varcount - 18);
     // system variables
-    dev_printf(RES_NUMBER_OF_LABS, comp_labcount);
-    dev_printf(RES_NUMBER_OF_UDPS, comp_udpcount);
-    dev_printf(RES_CODE_SIZE, comp_prog.count);
-    dev_printf("\n");
-    dev_printf(RES_IMPORTED_LIBS, comp_libcount);
-    dev_printf(RES_IMPORTED_SYMS, comp_impcount);
-    dev_printf(RES_EXPORTED_SYMS, comp_expcount);
-    dev_printf("\n");
-    dev_printf(RES_FINAL_SIZE, size);
-    dev_printf("\n");
+    log_printf(RES_NUMBER_OF_LABS, comp_labcount);
+    log_printf(RES_NUMBER_OF_UDPS, comp_udpcount);
+    log_printf(RES_CODE_SIZE, comp_prog.count);
+    log_printf("\n");
+    log_printf(RES_IMPORTED_LIBS, comp_libcount);
+    log_printf(RES_IMPORTED_SYMS, comp_impcount);
+    log_printf(RES_EXPORTED_SYMS, comp_expcount);
+    log_printf("\n");
+    log_printf(RES_FINAL_SIZE, size);
+    log_printf("\n");
   }
 
   return buff_h;
@@ -4844,7 +4839,7 @@ int comp_save_bin(mem_t h_bc)
     close(h);
     mem_unlock(h_bc);
     if (!opt_quiet && !opt_interactive) {
-      dev_printf(MSG_BC_FILE_CREATED, fname);
+      log_printf(MSG_BC_FILE_CREATED, fname);
     }
   }
   else {
