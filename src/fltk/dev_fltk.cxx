@@ -268,9 +268,7 @@ void osd_cls()
 {
   // send reset and clear screen codes
   wnd->out->print("\033[0m\xC");
-  if (wnd->logPrint()) {
-    wnd->tty()->clearScreen();
-  }
+  wnd->tty()->clearScreen();
 }
 
 int osd_textwidth(const char *str)
