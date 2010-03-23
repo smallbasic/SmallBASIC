@@ -1,5 +1,4 @@
 // $Id$
-// -*- c-file-style: "java" -*-
 // This file is part of SmallBASIC
 //
 // SmallBASIC run-time errors
@@ -24,7 +23,8 @@ extern void bcb_comp(int pass, int pmin, int pmax); // Win32GUI progress
 void err_common_msg(const char *seg, const char *file, int line,
                     const char *descr) SEC(TRASH);
 
-/*
+/**
+ * common message handler
  */
 void err_common_msg(const char *seg, const char *file, int line, const char *descr)
 {
@@ -64,8 +64,8 @@ void err_common_msg(const char *seg, const char *file, int line, const char *des
 #endif
 }
 
-/*
- *   raise a compiler error
+/**
+ * raise a compiler error
  */
 void sc_raise2(const char *sec, int scline, const char *buff)
 {
@@ -73,13 +73,14 @@ void sc_raise2(const char *sec, int scline, const char *buff)
   err_common_msg(WORD_COMP, sec, scline, buff);
 }
 
-/*
- *   run-time error
+/**
+ * run-time error
  */
 void rt_raise(const char *fmt, ...)
 {
   char *buff;
   va_list ap;
+  int i_stack, i_kw;
 
   prog_error = 0x80;
 
@@ -93,8 +94,26 @@ void rt_raise(const char *fmt, ...)
   va_end(ap);
 
   err_common_msg(WORD_RTE, prog_file, prog_line, buff);
-
   tmp_free(buff);
+
+  // log the stack trace
+  for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
+    stknode_t node = prog_stack[i_stack];
+    switch (node.type) {
+    case 0xFF:
+    case kwBYREF:
+    case kwTYPE_CRVAR:
+      // ignore these types
+      break;
+
+    default:
+      for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
+        if (node.type == keyword_table[i_kw].code) {
+          log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
+        }
+      }
+    }
+  }
 }
 
 /* ERROR MESSAGES */
@@ -172,147 +191,183 @@ void err_missing_rp(void)
 {
   rt_raise(ERR_MISSING_RP);
 }
+
 void err_matdim(void)
 {
   rt_raise(ERR_MATRIX_DIM);
 }
+
 void err_syntax(void)
 {
   rt_raise(ERR_SYNTAX);
 }
+
 void err_syntaxsep(int c)
 {
   rt_raise(ERR_MISSING_SEP, c);
 }
+
 void err_parm_num(void)
 {
   rt_raise(ERR_PARCOUNT);
 }
 #endif
+
 void err_stackoverflow(void)
 {
   rt_raise(ERR_STACK_OVERFLOW);
 }
+
 void err_stackunderflow(void)
 {
   rt_raise(ERR_STACK_UNDERFLOW);
 }
+
 void err_stackmess()
 {
   rt_raise(ERR_STACK);
 }
+
 void err_arrmis_lp(void)
 {
   rt_raise(ERR_ARRAY_MISSING_LP);
 }
+
 void err_arrmis_rp(void)
 {
   rt_raise(ERR_ARRAY_MISSING_RP);
 }
+
 void err_arridx(int i, int m)
 {
   rt_raise(ERR_ARRAY_RANGE, i, m);
 }
+
 void err_typemismatch(void)
 {
   rt_raise(ERR_TYPE);
 }
+
 void err_argerr(void)
 {
   rt_raise(ERR_PARAM);
 }
+
 void err_varisarray(void)
 {
   rt_raise(EVAL_VAR_IS_ARRAY);
 }
+
 void err_varisnotarray(void)
 {
   rt_raise(EVAL_VAR_IS_NOT_ARRAY);
 }
+
 void err_vararridx(int i, int m)
 {
   rt_raise(ERR_ARRAY_RANGE, i, m);
 }
+
 void err_varnotnum(void)
 {
   rt_raise(EVAL_NOT_A_NUM);
 }
+
 void err_evsyntax(void)
 {
   rt_raise(EVAL_SYNTAX);
 }
+
 void err_evtype(void)
 {
   rt_raise(EVAL_TYPE);
 }
+
 void err_evargerr(void)
 {
   rt_raise(EVAL_PARAM);
 }
+
 void err_unsup(void)
 {
   rt_raise(ERR_UNSUPPORTED);
 }
+
 void err_const(void)
 {
   rt_raise(ERR_CONST);
 }
+
 void err_notavar(void)
 {
   rt_raise(ERR_NOT_A_VAR);
 }
+
 void err_notarray(void)
 {
   rt_raise(ERR_NOT_ARR_OR_FUNC);
 }
+
 void err_out_of_range(void)
 {
   rt_raise(ERR_RANGE);
 }
+
 void err_missing_sep(void)
 {
   rt_raise(ERR_MISSING_SEP_OR_PAR);
 }
+
 void err_division_by_zero(void)
 {
   rt_raise(ERR_DIVZERO);
 }
+
 void err_matop(void)
 {
   rt_raise(ERR_OPERATOR);
 }
+
 void err_matsig(void)
 {
   rt_raise(ERR_MATSIG);
 }
+
 void err_missing_lp(void)
 {
   rt_raise(ERR_MISSING_LP);
 }
+
 void err_parfmt(const char *fmt)
 {
   rt_raise(ERR_PARFMT, fmt);
 }
+
 void err_parm_byref(int n)
 {
   rt_raise(ERR_BYREF, n);
 }
+
 void err_stridx(int n)
 {
   rt_raise(ERR_STR_RANGE, n);
 }
+
 void err_fopen(void)
 {
   rt_raise(ERR_BAD_FILE_HANDLE);
 }
+
 void err_syntaxanysep(const char *seps)
 {
   rt_raise(ERR_SEP_FMT, seps);
 }
+
 void err_parsepoly(int idx, int mark)
 {
   rt_raise(ERR_POLY, idx, mark);
 }
+
 void err_bfn_err(long code)
 {
   rt_raise(ERR_CRITICAL_MISSING_FUNC, code);
@@ -344,8 +399,8 @@ void err_invkw(addr_t addr, byte code)
   rt_raise(ERR_PARCOUNT_SP, addr, (int)code);
 }
 
-/*
- *   the DONE message
+/**
+ * the DONE message
  */
 void inf_done()
 {
@@ -372,9 +427,9 @@ void inf_done()
 #endif
 }
 
-/*
-*   the BREAK message
-*/
+/**
+ * the BREAK message
+ */
 void inf_break(int pline)
 {
   gsb_last_line = pline;
@@ -406,9 +461,9 @@ void inf_break(int pline)
 #endif
 }
 
-/*
-*   if bytecode files are keeped; messages of the compiler why recompile is needed
-*/
+/**
+ * if bytecode files are keeped; messages of the compiler why recompile is needed
+ */
 void inf_comprq_dv()
 {
   if (!opt_quiet) {
@@ -439,8 +494,8 @@ void inf_comprq_prq()
   }
 }
 
-/*
- *   Low-battery event/signal
+/**
+ * Low-battery event/signal
  */
 void inf_low_battery()
 {
