@@ -766,54 +766,52 @@ int arg_cb(int argc, char **argv, int &i)
     return 1;
   }
 
-  if (argv[i][0] != '-') {
-    return 0;
-  }
-
-  if (!argv[i][2] && argv[i + 1]) {
-    // commands that take an additional file name argument
-    switch (argv[i][1]) {
-    case 'e':
-      runfile = strdup(argv[i + 1]);
-      runMode = edit_state;
-      i += 2;
-      return 1;
-
-    case 'r':
-      runfile = strdup(argv[i + 1]);
-      runMode = run_state;
-      i += 2;
-      return 1;
-
-    case 'm':
-      opt_loadmod = 1;
-      strcpy(opt_modlist, argv[i + 1]);
-      i += 2;
-      return 1;
+  if (argv[i][0] == '-') {
+    if (!argv[i][2] && argv[i + 1]) {
+      // commands that take an additional file name argument
+      switch (argv[i][1]) {
+      case 'e':
+        runfile = strdup(argv[i + 1]);
+        runMode = edit_state;
+        i += 2;
+        return 1;
+        
+      case 'r':
+        runfile = strdup(argv[i + 1]);
+        runMode = run_state;
+        i += 2;
+        return 1;
+        
+      case 'm':
+        opt_loadmod = 1;
+        strcpy(opt_modlist, argv[i + 1]);
+        i += 2;
+        return 1;
+      }
     }
-  }
-
-  switch (argv[i][1]) {
-  case 'n':
-    i += 1;
-    opt_interactive = 0;
-    return 1;
     
-  case 'v':
-    i += 1;
-    opt_verbose = 1;
-    opt_quiet = 0;
-    return 1;
-
-  case '-': 
-    // echo foo | sbasic foo.bas --
-    while ((c = fgetc(stdin)) != EOF) {
-      int len = strlen(opt_command);
-      opt_command[len] = c;
-      opt_command[len + 1] = 0;
+    switch (argv[i][1]) {
+    case 'n':
+      i += 1;
+      opt_interactive = 0;
+      return 1;
+      
+    case 'v':
+      i += 1;
+      opt_verbose = 1;
+      opt_quiet = 0;
+      return 1;
+      
+    case '-': 
+      // echo foo | sbasic foo.bas --
+      while ((c = fgetc(stdin)) != EOF) {
+        int len = strlen(opt_command);
+        opt_command[len] = c;
+        opt_command[len + 1] = 0;
+      }
+      i++;
+      return 1;    
     }
-    i++;
-    return 1;    
   }
 
   if (runMode == run_state) {
