@@ -171,6 +171,7 @@ typedef struct lab_s lab_t;
 struct stknode_s {
   code_t type;              /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
   addr_t exit_ip;           /**< EXIT command IP to go */
+  int line;                 /** line number of current execution **/
 
   union {
     /**
