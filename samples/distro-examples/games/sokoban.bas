@@ -31,51 +31,57 @@ end
 ' draw the movable block
 '
 sub draw_block(x, y)
-  local px = bl_x + (x * bl_w)
-  local py = bl_y + (y * bl_h)
-  rect px, py, step bl_w, bl_h, 5 filled
-  rect px, py, step bl_w, bl_h, 6
+  local px = bl_x + (x * bl_w) + 1
+  local py = bl_y + (y * bl_h) + 1
+  rect px, py, step bl_w - 1, bl_h - 1, 5 filled
+  rect px, py, step bl_w - 2, bl_h - 2, 6
 end
 
 '
 ' draw the empty space within the grid
 '
 sub draw_space(x, y)
-  local px = bl_x + (x * bl_w)
-  local py = bl_y + (y * bl_h)
-  rect px, py, step bl_w, bl_h, 8 filled
+  local px = bl_x + (x * bl_w) + 1
+  local py = bl_y + (y * bl_h) + 1
+  rect px, py, step bl_w - 1, bl_h - 1, 8 filled
 end
 
 '
 ' draw the sokoban man
 '
-sub draw_soko(x, y)
+sub draw_soko(x, y, direction)
   local bx = bl_x + (x * bl_w)
   local by = bl_y + (y * bl_h)
   local dx, dy, PolyArray  
 
-  dx = bl_w / 6
-  dy = bl_w / 6
+  dx = bl_w / 5
+  dy = bl_w / 5
 
-  PolyArray = [[bx + 2 * dx, by + 0 * dy], &
-               [bx + 2 * dx, by + 3 * dy], &
-               [bx + 1 * dx, by + 3 * dy], &
-               [bx + 1 * dx, by + 5 * dy], &
-               [bx + 2 * dx, by + 5 * dy], &
-               [bx + 2 * dx, by + 4 * dy], &
-               [bx + 3 * dx, by + 4 * dy], &
-               [bx + 3 * dx, by + 5 * dy], &
-               [bx + 4 * dx, by + 5 * dy], &
-               [bx + 4 * dx, by + 4 * dy], &
-               [bx + 5 * dx, by + 4 * dy], &
-               [bx + 5 * dx, by + 5 * dy], &
-               [bx + 6 * dx, by + 5 * dy], &
-               [bx + 6 * dx, by + 3 * dy], &
-               [bx + 5 * dx, by + 3 * dy], &
-               [bx + 5 * dx, by + 0 * dy] ]
+  PolyArray = [[3 * dx, 1 * dy], &
+               [5 * dx, 2 * dy], &
+               [4 * dx, 2 * dy], &
+               [4 * dx, 4 * dy], &
+               [3 * dx, 3 * dy], &
+               [2 * dx, 4 * dy], &
+               [2 * dx, 2 * dy], &
+               [1 * dx, 2 * dy], &
+               [3 * dx, 1 * dy]]
 
-  draw_space x, y
-  DrawPoly PolyArray Color 3 Filled  
+  DrawPoly PolyArray, bx, by Color 9 filled
+  Circle dx * 3 + bx, by + 5, 3 color 9 filled
+end
+
+'
+' show the game status
+'
+sub game_status(byref game)
+  local help  
+
+  ' count the number of blocks over the targts
+
+  color 1,8
+  help = "  [e]=exit, [u]=undo"
+  at 10, 5: ? cat(1); "Moves: "; game.moves; " Pushes: "; game.pushes; cat(-1); help ; spc(20)
 end
 
 '
@@ -116,7 +122,7 @@ sub init_game(grid, byref game)
       case "#"' ' border
         draw_walls x, y
       case "@" ' sokoban man
-        draw_soko x, y
+        draw_soko x, y, 1
         game.soko_x = x
         game.soko_y = y
       case "." ' block target
@@ -277,10 +283,21 @@ end
 ' main game loop
 '
 sub main
-  local filename, games, sel_game, game, game_names, i, form_var
+  local filename, games, sel_game, game, game_names, i, form_var, game_file, start_dir
+
+  ' remember the starting directory
+  start_dir = cwd
   
-  sub open_game(filename)
-    games = loadGame(filename)
+  sub open_game
+    games = loadGame(game_file)
+
+    if (len(games) = 0 && game_file != "sokoban.levels") then
+      ' revert back to the default game file
+      ? " Levels file was empty - reverting to 'sokoban.levels' (Press any key...)"
+      pause
+      game_file = start_dir + "sokoban.levels"
+      games = loadGame(game_file)
+    fi
 
     if (len(games) > 0) then
       ' get the sorted list of game names
@@ -295,6 +312,7 @@ sub main
     fi
     
     ' build the gui
+    color 1,7
     button 5,  1, 100, 20, game_names, "", "choice"
     button -1, 1, -1,  20, ok_bn,      "View", "button"    
     button -1, 1, -1,  20, ok_open,    "Open", "button"  
@@ -302,7 +320,8 @@ sub main
   end 
 
   cls
-  open_game "sokoban.levels"
+  game_file = "sokoban.levels"
+  open_game
 
   while 1
     doform form_var
@@ -310,19 +329,19 @@ sub main
     case "Open"
       doform 0
       rect 0, 0, xmax, ymax, 8 filled      
-      open_game openFile
+      game_file = openFile
+      open_game
     case "View"
       init_game games(sel_game), game
     case "Play"
-      exit loop  
+      doform 0
+      play_game game
+      open_game
     case else
       sel_game = form_var
     end select
   wend
 
-  doform 0
-  
-  play_game game
 end
 
 '
@@ -364,9 +383,12 @@ end
 sub move_up(byref game, is_push)
   move_erase game
   game.soko_y--
-  draw_soko game.soko_x, game.soko_y
+  move_erase game
+  game.moves++  
+  draw_soko game.soko_x, game.soko_y, 1
   if is_push then
     move_push game, 0, -1
+    game.pushes++    
   fi
 end
 
@@ -376,9 +398,12 @@ end
 sub move_down(byref game, is_push)
   move_erase game
   game.soko_y++
-  draw_soko game.soko_x, game.soko_y
+  move_erase game
+  game.moves++
+  draw_soko game.soko_x, game.soko_y, 2
   if is_push then
     move_push game, 0, 1
+    game.pushes++
   fi
 end
 
@@ -388,9 +413,12 @@ end
 sub move_left(byref game, is_push)
   move_erase game
   game.soko_x--
-  draw_soko game.soko_x, game.soko_y
+  move_erase game
+  game.moves++  
+  draw_soko game.soko_x, game.soko_y, 3
   if is_push then
     move_push game, -1, 0
+    game.pushes++    
   fi
 end
 
@@ -400,9 +428,12 @@ end
 sub move_right(byref game, is_push)
   move_erase game
   game.soko_x++
-  draw_soko game.soko_x, game.soko_y
+  move_erase game
+  game.moves++  
+  draw_soko game.soko_x, game.soko_y, 4
   if is_push then
     move_push game, 1, 0
+    game.pushes++    
   fi
 end
 
@@ -411,10 +442,9 @@ end
 '
 sub play_game(byref game)
   local k, ch
-  local game_over = false
-  while game_over = false
-    delay 150
-    k = inkey
+  game.game_over = false
+  while game.game_over = false
+    delay 25: k = inkey
     if len(k) = 2 then
       ch = asc(right(k,1))
       select case ch
@@ -422,7 +452,7 @@ sub play_game(byref game)
         if (is_border(game.grid, game.soko_x-1, game.soko_y) = false) then
           if (get_block(game.blocks, game.soko_x-1, game.soko_y) = false) then
             move_left game, false
-          else if (is_border(game.grid, game.soko_x-2, game.soko_y) = false) then
+          elif (is_border(game.grid, game.soko_x-2, game.soko_y) = false) then
             if (get_block(game.blocks, game.soko_x-2, game.soko_y) = false) then
               move_left game, true
             fi
@@ -459,7 +489,15 @@ sub play_game(byref game)
           fi
         fi
       end select
+    else
+      select case k
+      case "u"
+        ? "Sorry: not yet implemented"
+      case "e"
+        game.game_over = true
+      end select  
     fi
+    game_status game
   wend
 end
 
