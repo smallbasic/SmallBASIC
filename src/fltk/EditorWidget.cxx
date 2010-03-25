@@ -86,6 +86,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   funcList = new Browser(editor->w(), 0, browserWidth, editHeight);
   funcList->labelfont(HELVETICA);
   funcList->indented(1);
+  funcList->when(WHEN_RELEASE);
   funcList->add(scanLabel);
 
   tty = new TtyWidget(0, editHeight, w, ttyHeight, TTY_ROWS);
@@ -777,6 +778,14 @@ void EditorWidget::fileChanged(bool loadfile)
  */
 void EditorWidget::focusWidget() {
   switch (event_key()) {
+  case 'e':
+    take_focus();
+    break;
+
+  case 'b':
+    funcList->take_focus();
+    break;
+
   case 'i':
     setCommand(cmd_find_inc);
     break;
