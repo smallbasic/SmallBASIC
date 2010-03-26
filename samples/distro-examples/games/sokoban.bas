@@ -75,10 +75,36 @@ end
 ' show the game status
 '
 sub game_status(byref game)
-  local help  
-
+  local help, num_over
+  
   ' count the number of blocks over the targts
-
+  local bl_len = len(game.blocks) - 1
+  
+  num_over = 0
+  
+  for i = 0 to bl_len
+    local block = game.blocks(i)
+    local x = block(0)
+    local y = block(1)
+    if (mid(game.grid(y), x, 1) == ".") then
+      num_over++
+    fi
+  next i
+  
+  if (num_over == bl_len + 1) then
+    local y_loc = 5 + txth("T")
+    for i = 0 to 10 
+      at 10, y_loc
+      if (i mod 2 == 0) then
+        ? "*** GAME OVER ***"
+      else
+        ? spc(20)
+      fi
+      delay 300
+    next i
+    game.game_over = true    
+  fi
+  
   color 1,8
   help = "  [e]=exit, [u]=undo"
   at 10, 5: ? cat(1); "Moves: "; game.moves; " Pushes: "; game.pushes; cat(-1); help ; spc(20)
@@ -112,6 +138,8 @@ sub init_game(grid, byref game)
   
   ' cls
   rect 0, 0, xmax, ymax, 8 filled
+
+  erase game
 
   y = 0
   for row in grid
@@ -314,7 +342,6 @@ sub main
     ' build the gui
     color 1,7
     button 5,  1, 100, 20, game_names, "", "choice"
-    button -1, 1, -1,  20, ok_bn,      "View", "button"    
     button -1, 1, -1,  20, ok_open,    "Open", "button"  
     button -1, 1, -1,  20, ok_play,    "Play", "button"
   end 
@@ -331,14 +358,13 @@ sub main
       rect 0, 0, xmax, ymax, 8 filled      
       game_file = openFile
       open_game
-    case "View"
-      init_game games(sel_game), game
     case "Play"
       doform 0
       play_game game
       open_game
     case else
       sel_game = form_var
+      init_game games(sel_game), game      
     end select
   wend
 
@@ -442,6 +468,9 @@ end
 '
 sub play_game(byref game)
   local k, ch
+  
+  repeat: until len(inkey) = 0
+  
   game.game_over = false
   while game.game_over = false
     delay 25: k = inkey
@@ -492,7 +521,7 @@ sub play_game(byref game)
     else
       select case k
       case "u"
-        ? "Sorry: not yet implemented"
+        ? " Sorry: not yet implemented"
       case "e"
         game.game_over = true
       end select  
@@ -500,6 +529,7 @@ sub play_game(byref game)
     game_status game
   wend
 end
+
 
 '
 ' program entry point
