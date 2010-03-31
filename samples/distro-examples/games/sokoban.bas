@@ -165,6 +165,9 @@ sub init_game(grid, byref game)
 
   game.blocks = blocks
   game.grid = grid
+  game.undo_top = 0
+  
+  dim game.undo
 end
 
 '
@@ -373,10 +376,8 @@ end
 '
 ' move the block covered by soko
 '
-sub move_push(byref game, xdir, ydir)
+sub move_block(byref game, xdir, ydir, x, y)
   local i
-  local x = game.soko_x
-  local y = game.soko_y
   local bl_len = len(game.blocks) - 1
   
   for i = 0 to bl_len
@@ -413,7 +414,7 @@ sub move_up(byref game, is_push)
   game.moves++  
   draw_soko game.soko_x, game.soko_y, 1
   if is_push then
-    move_push game, 0, -1
+    move_block game, 0, -1, game.soko_x, game.soko_y
     game.pushes++    
   fi
 end
@@ -428,7 +429,7 @@ sub move_down(byref game, is_push)
   game.moves++
   draw_soko game.soko_x, game.soko_y, 2
   if is_push then
-    move_push game, 0, 1
+    move_block game, 0, 1, game.soko_x, game.soko_y
     game.pushes++
   fi
 end
@@ -443,7 +444,7 @@ sub move_left(byref game, is_push)
   game.moves++  
   draw_soko game.soko_x, game.soko_y, 3
   if is_push then
-    move_push game, -1, 0
+    move_block game, -1, 0, game.soko_x, game.soko_y
     game.pushes++    
   fi
 end
@@ -458,7 +459,7 @@ sub move_right(byref game, is_push)
   game.moves++  
   draw_soko game.soko_x, game.soko_y, 4
   if is_push then
-    move_push game, 1, 0
+    move_block game, 1, 0, game.soko_x, game.soko_y
     game.pushes++    
   fi
 end
@@ -481,9 +482,11 @@ sub play_game(byref game)
         if (is_border(game.grid, game.soko_x-1, game.soko_y) = false) then
           if (get_block(game.blocks, game.soko_x-1, game.soko_y) = false) then
             move_left game, false
+            undo_push game, "R", 0, 0
           elif (is_border(game.grid, game.soko_x-2, game.soko_y) = false) then
             if (get_block(game.blocks, game.soko_x-2, game.soko_y) = false) then
               move_left game, true
+              undo_push game, "R", game.soko_x-1, game.soko_y
             fi
           fi
         fi
@@ -491,9 +494,11 @@ sub play_game(byref game)
         if (is_border(game.grid, game.soko_x+1, game.soko_y) = false) then
           if (get_block(game.blocks, game.soko_x+1, game.soko_y) = false) then
             move_right game, false
+            undo_push game, "L", 0, 0
           elif (is_border(game.grid, game.soko_x+2, game.soko_y) = false) then
             if (get_block(game.blocks, game.soko_x+2, game.soko_y) = false) then
               move_right game, true
+              undo_push game, "L", game.soko_x+1, game.soko_y
             fi
           fi
         fi
@@ -501,9 +506,11 @@ sub play_game(byref game)
         if (is_border(game.grid, game.soko_x, game.soko_y-1) = false) then
           if (get_block(game.blocks, game.soko_x, game.soko_y-1) = false) then
             move_up game, false
+            undo_push game, "D", 0, 0
           elif (is_border(game.grid, game.soko_x, game.soko_y-2) = false) then
             if (get_block(game.blocks, game.soko_x, game.soko_y-2) = false) then
               move_up game, true
+              undo_push game, "D", game.soko_x, game.soko_y-1
             fi
           fi
         fi
@@ -511,17 +518,21 @@ sub play_game(byref game)
         if (is_border(game.grid, game.soko_x, game.soko_y+1) = false) then
           if (get_block(game.blocks, game.soko_x, game.soko_y+1) = false) then
             move_down game, false
+            undo_push game, "U", 0, 0
           elif (is_border(game.grid, game.soko_x, game.soko_y+2) = false) then
             if (get_block(game.blocks, game.soko_x, game.soko_y+2) = false) then
               move_down game, true
+              undo_push game, "U", game.soko_x, game.soko_y+1
             fi
           fi
         fi
       end select
     else
       select case k
+      case "r"
+        restart game
       case "u"
-        ? " Sorry: not yet implemented"
+        undo game
       case "e"
         game.game_over = true
       end select  
@@ -530,6 +541,57 @@ sub play_game(byref game)
   wend
 end
 
+'
+' restart the game
+'
+sub restart(byref game)
+end
+
+'
+' undo the last move
+'
+sub undo(byref game)
+  local top = len(game.undo) - 1
+  if (top != -1) then
+    local undo_el = game.undo(top)
+    local soko_dir = undo_el.soko_dir
+    local block_x = undo_el.block_x
+    local block_y = undo_el.block_y
+
+    delete game.undo, top
+
+    select case soko_dir
+    case "U": move_up game, false
+    case "D": move_down game, false
+    case "L": move_left game, false
+    case "R": move_right game, false
+    end select
+
+    if (block_x != 0 && block_y != 0) then
+      ' erase the previous cell
+      draw_space block_x, block_y
+
+      ' move to the previous position
+      select case soko_dir
+      case "U": move_block game, 0, -1, block_x, block_y
+      case "D": move_block game, 0,  1, block_x, block_y
+      case "L": move_block game, -1, 0, block_x, block_y
+      case "R": move_block game, 1,  0, block_x, block_y
+      end select
+    fi
+  fi
+end
+
+'
+' add an element to the undo stack
+'
+sub undo_push(byref game, soko_dir, block_x, block_y)
+  local undo_el
+  undo_el.soko_dir = soko_dir
+  undo_el.block_x = block_x
+  undo_el.block_y = block_y
+  game.undo << undo_el
+end
 
 '
 ' program entry point
