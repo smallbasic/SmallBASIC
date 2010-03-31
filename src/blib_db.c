@@ -880,26 +880,29 @@ void dirwalk(char *dir, char *wc, addr_t use_ip)
   int callusr, contf = 1;
 
   if ((dfd = opendir(dir)) == NULL) {
-    rt_raise("DIRWALK: can't open %s", dir);
+    log_printf("DIRWALK: can't open %s", dir);
     return;
   }
 
   while ((dp = readdir(dfd)) != NULL) {
-    if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
+    if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0) {
       continue;                 /* skip self and parent */
-    if (strlen(dir) + strlen(dp->d_name) + 2 > sizeof(name))
+    }
+    if (strlen(dir) + strlen(dp->d_name) + 2 > sizeof(name)) {
       rt_raise("DIRWALK: name %s/%s too long", dir, dp->d_name);
+    }
     else {
       sprintf(name, "%s%c%s", dir, OS_DIRSEP, dp->d_name);
 
       /*
        *   check filename
        */
-      if (!wc)
+      if (!wc) {
         callusr = 1;
-      else
+      } 
+      else {
         callusr = wc_match(wc, dp->d_name);
-
+      }
       if (callusr) {
         /*
          *   call user's function
@@ -913,9 +916,9 @@ void dirwalk(char *dir, char *wc, addr_t use_ip)
         v_free(var);
         tmp_free(var);
       }
-      if (!contf)
+      if (!contf) {
         break;
-
+      }
       /*
        *   proceed to the next
        */
