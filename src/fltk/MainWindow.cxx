@@ -1638,7 +1638,9 @@ int BaseWindow::handle(int e)
             wnd->help_contents(0, (void*) true);
             return 1;
           }
-          editWidget->focusWidget();
+          if (editWidget->focusWidget()) {
+            return 1;
+          }
         }
       }
     }
