@@ -267,10 +267,12 @@ void osd_setxy(int x, int y)
 void osd_cls()
 {
   // send reset and clear screen codes
-  wnd->out->print("\033[0m\xC");
-  TtyWidget* tty = wnd->tty();
-  if (tty) {
-    tty->clearScreen();
+  if (opt_interactive) {
+    wnd->out->print("\033[0m\xC");
+    TtyWidget* tty = wnd->tty();
+    if (tty) {
+      tty->clearScreen();
+    }
   }
 }
 
