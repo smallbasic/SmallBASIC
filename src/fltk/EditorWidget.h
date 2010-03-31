@@ -107,7 +107,7 @@ public:
   void copyText();
   void doSaveFile(const char *newfile);
   void fileChanged(bool loadfile);
-  void focusWidget();
+  bool focusWidget();
   const char* getFilename() { return filename; }
   int getFontSize();
   void getRowCol(int* row, int* col);

@@ -776,19 +776,15 @@ void EditorWidget::fileChanged(bool loadfile)
 /**
  * keyboard shortcut handler
  */
-void EditorWidget::focusWidget() {
+bool EditorWidget::focusWidget() {
   switch (event_key()) {
+  case 'b':
+    setBreakToLine(!isBreakToLine());
+    return true;
+
   case 'e':
     take_focus();
-    break;
-
-  case 'b':
-    funcList->take_focus();
-    break;
-
-  case 'i':
-    setCommand(cmd_find_inc);
-    break;
+    return true;
 
   case 'f':
     if (strlen(commandText->value()) > 0 && commandOpt == cmd_find) {
@@ -797,8 +793,21 @@ void EditorWidget::focusWidget() {
                           event_key_state(RightShiftKey)) ? 0 : 1));
     }
     setCommand(cmd_find);
-    break;
+    return true;
+
+  case 'i':
+    setCommand(cmd_find_inc);
+    return true;
+
+  case 't':
+    setLogPrint(!isLogPrint());
+    return true;
+
+  case 'w':
+    setHideIde(!isHideIDE());
+    return true;
   }
+  return false;
 }
 
 /**
