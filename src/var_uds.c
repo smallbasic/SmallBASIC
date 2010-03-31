@@ -206,7 +206,7 @@ void uds_free(var_p_t var_p)
 }
 
 /**
- * reference values from one structure to another
+ * copy values from one structure to another
  */
 void uds_set(var_p_t dest, const var_p_t src)
 {
@@ -219,14 +219,14 @@ void uds_set(var_p_t dest, const var_p_t src)
   while (src_node) {
     if (dest->v.uds == 0) {
       // head of the list
-      dest->v.uds = uds_new_field(src_node->field_id, 0);
-      dest->v.uds->var = src_node->var;
+      dest->v.uds = uds_new_field(src_node->field_id, 1);
+      v_set(dest->v.uds->var, src_node->var);
       dest_node = dest->v.uds;
     }
     else {
       // subsequent list item
-      dest_node->next = uds_new_field(src_node->field_id, 0);
-      dest_node->next->var = src_node->var;
+      dest_node->next = uds_new_field(src_node->field_id, 1);
+      v_set(dest_node->next->var, src_node->var);
       dest_node = dest_node->next;
     }
     src_node = src_node->next;
