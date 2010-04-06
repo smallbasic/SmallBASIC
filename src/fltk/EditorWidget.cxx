@@ -417,39 +417,37 @@ void EditorWidget::find(Widget* w, void* eventData)
  */
 void EditorWidget::command(Widget* w, void* eventData)
 {
-  if (!readonly()) {
-    bool found = false;
-    bool forward = (int) eventData;
-    bool updatePos = (commandOpt != cmd_find_inc);
-
-    if (event_button() == RightButton) {
-      // right click
-      forward = 0;
-    }
-
-    switch (commandOpt) {
-    case cmd_find_inc:
-    case cmd_find:
-      found = editor->findText(commandText->value(), forward, updatePos);
-      commandText->textcolor(found ? commandChoice->textcolor() : RED);
-      commandText->redraw();
-      break;
-
-    case cmd_replace:
-      commandBuffer.empty();
-      commandBuffer.append(commandText->value());
-      setCommand(cmd_replace_with);
-      break;
-
-    case cmd_replace_with:
-      replace_next();
-      break;
-
-    case cmd_goto:
-      gotoLine(atoi(commandText->value()));
-      take_focus();
-      break;
-    }
+  bool found = false;
+  bool forward = (int) eventData;
+  bool updatePos = (commandOpt != cmd_find_inc);
+  
+  if (event_button() == RightButton) {
+    // right click
+    forward = 0;
+  }
+  
+  switch (commandOpt) {
+  case cmd_find_inc:
+  case cmd_find:
+    found = editor->findText(commandText->value(), forward, updatePos);
+    commandText->textcolor(found ? commandChoice->textcolor() : RED);
+    commandText->redraw();
+    break;
+    
+  case cmd_replace:
+    commandBuffer.empty();
+    commandBuffer.append(commandText->value());
+    setCommand(cmd_replace_with);
+    break;
+    
+  case cmd_replace_with:
+    replace_next();
+    break;
+    
+  case cmd_goto:
+    gotoLine(atoi(commandText->value()));
+    take_focus();
+    break;
   }
 }
 
@@ -783,6 +781,7 @@ bool EditorWidget::focusWidget() {
     return true;
 
   case 'e':
+    setCommand(cmd_find);
     take_focus();
     return true;
 
