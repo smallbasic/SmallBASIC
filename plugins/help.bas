@@ -108,6 +108,64 @@ sub showIndex()
 end
 
 #
+# returns files in the given directory and below
+#
+sub get_files(dir, byref result)
+  local list, f
+  chdir dir
+  list = files("*")
+  for f in list
+    if (isdir(f)) then
+     get_files dir + "/" + f, result
+     chdir dir
+   else
+     if (right(f, 4) == ".bas") then
+       result << dir + "/" + f
+     fi
+   fi
+  next i
+end
+
+#
+# search for the given keyword in the samples dir
+#
+sub searchKeyword(keyword)
+  local f_name, f_len, b_len, b, buffer, out, i, b, found
+
+  ' append to the context output
+  showContext keyword
+  tload getHelpOutputFilename, out
+  out <<  "<br>"
+
+  dim result
+  get_files env("PKG_HOME"), result
+  f_len = len(result) -1
+  
+  keyword = upper(keyword)
+  found = false
+
+  for i = 0 to f_len
+    f_name = result(i)
+    tload f_name, buffer
+    b_len = len(buffer) - 1
+    for b = 0 to b_len
+      if instr(upper(buffer(b)), keyword) != 0 then
+        out << "<br><a href=" + f_name + ">" + f_name + "</a>"
+        b = b_len ' only show first occurence
+        found = true
+      fi
+    next b
+  next i
+
+  if (found == false) then
+    out << "<b>No examples found</b>"
+  fi
+
+  ' save the updated context page
+  tsave getHelpOutputFilename, out  
+end
+
+#
 # show the contents of the given chapter
 #
 sub showChapter(chapter)
@@ -162,7 +220,7 @@ sub showContext(keyword)
         out << unquote(cols(5)) 'help information
         out << "<br><br><i>See also: <a href=http://smallbasic.sf.net/?q=node/" + cols(3) + ">"
         out << cols(2) + " home page on smallbasic.sf.net</a>"
-         out << " - CTRL+F1 = log window help</i><hr>"
+        out << " - CTRL+F1 = log window help</i><hr>"
 
         rem draw next and previous links
         out << navButton("Index", "~")  
@@ -178,6 +236,7 @@ sub showContext(keyword)
           kw = unquote(cols(2))
           out << navButton(kw, kw)          
         fi
+        out << navButton("Find Examples", "#" + keyword)
         exit for
       fi
     fi
@@ -201,6 +260,8 @@ sub main
     showIndex
   elif left(command, 1) = "!" then
     showChapter right(command, len(command)-1)
+  elif left(command, 1) = "#" then
+    searchKeyword right(command, len(command)-1)
   else
     showContext upper(command)
   fi
