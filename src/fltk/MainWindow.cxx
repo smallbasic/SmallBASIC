@@ -84,8 +84,9 @@ struct ScanFont {
       char label[256];
       sprintf(label, "&View/Font/%s", fonts[index]->system_name());
       setfont(font(fonts[index]->name()), 12);
-      if (getwidth("QW#@") == getwidth("il:(")) {
-        menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
+      if (getdescent() < MAX_DESCENT && (getwidth("QW#@") == getwidth("il:("))) {
+        Widget* w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
+        w->textfont(getfont());
       }
       index++;
     }
@@ -377,9 +378,15 @@ void MainWindow::execHelp() {
 void do_help_contents_anchor(void *)
 {
   fltk::remove_check(do_help_contents_anchor);
-  strcpy(opt_command, wnd->getHelp()->getEventName());
-  wnd->execHelp();
-  wnd->showHelpPage();
+  String eventName = wnd->getHelp()->getEventName();
+  if (access(eventName, R_OK) == 0) {
+    wnd->editFile(eventName);
+  }
+  else {
+    strcpy(opt_command, eventName);
+    wnd->execHelp();
+    wnd->showHelpPage();
+  }
 }
 
 void MainWindow::help_contents_anchor(Widget* w, void* eventData) {

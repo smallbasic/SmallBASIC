@@ -32,6 +32,7 @@
 #define MNU_HEIGHT 22
 #define DEF_FONT_SIZE 12
 #define NUM_RECENT_ITEMS 9
+#define MAX_DESCENT 8 // filter to avoid non-text fonts
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
