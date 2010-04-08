@@ -150,7 +150,7 @@ sub searchKeyword(keyword)
     b_len = len(buffer) - 1
     for b = 0 to b_len
       if instr(upper(buffer(b)), keyword) != 0 then
-        out << "<br><a href=" + f_name + ">" + f_name + "</a>"
+        out << "<br><a href='" + f_name + "'>" + f_name + "</a>"
         b = b_len ' only show first occurence
         found = true
       fi
