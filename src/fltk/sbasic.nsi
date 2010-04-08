@@ -43,6 +43,8 @@ Section "Start Menu Shortcut"
   CreateDirectory "$SMPROGRAMS\SmallBASIC 0.10.7"
   SetOutPath $INSTDIR
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Sokoban.lnk" "$INSTDIR\games\sokoban.bas"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Tetris.lnk" "$INSTDIR\games\tetris.bas"
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
@@ -71,6 +73,9 @@ Section "SmallBASIC" SecMain
   File sbasici.exe
   File ..\..\documentation\sbasic_ref.csv
   File /r ..\..\samples\distro-examples\*.bas
+
+  SetOutPath "$INSTDIR\games"
+  File ..\..\samples\distro-examples\games\sokoban.levels
 
   SetOutPath $INSTDIR\plugins
   File "..\..\plugins\*.*"
