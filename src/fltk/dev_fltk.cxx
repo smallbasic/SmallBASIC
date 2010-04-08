@@ -502,6 +502,9 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h)
   if (html == 0 || html[0] == 0) {
     closeForm();
   }
+  else if (access(html, R_OK) == 0) {
+    browseFile(html);
+  }
   else if (t && t[0]) {
     // offset from main window
     x += wnd->x();
