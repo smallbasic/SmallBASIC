@@ -1,5 +1,5 @@
 'tool-plug-in
-'menu Indent
+'menu _Indent
 
 split command, "|", args() use trim(x)
 local inbuf, outbuf
