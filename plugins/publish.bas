@@ -9,9 +9,10 @@ local url = "http://smallbasic.sourceforge.net?q=node/1021"
 
 dim out
 out << "<form name=publish method=post enctype=multipart/form-data action=" + url + ">"
-out << "<input type=text name=submitted[filename] style=display:none value=" + fname + ">"
+out << "<input type=text name=submitted[filename] style=display:none value='" + fname + "'>"
 out << "<input type=hidden name=form_id value=webform_client_form_1021 />"
 out << "<input type=hidden name=op value=Submit />"
+out << "<input type=hidden name=submitted[sbasic] value=sbasic />"
 out << "<textarea name=submitted[code] style=display:none>"
 
 len_b = len(buffer) - 1
