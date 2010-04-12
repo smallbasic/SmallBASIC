@@ -13,6 +13,7 @@
 #include "osd.h"
 #include "blib_ui.h"
 
+#include <fltk/ask.h>
 #include <fltk/run.h>
 #include <fltk/events.h>
 #include <fltk/SharedImage.h>
@@ -671,6 +672,17 @@ void enter_cb(Widget *, void *v)
 
 char *dev_gets(char *dest, int size)
 {
+  if (!wnd->isInteractive()) {
+    const char* input = fltk::input(dest);
+    if (input) {
+      strcpy(dest, input);
+    }
+    else {
+      dest[0] = 0;
+    }
+    return dest;
+  }
+
   wnd->tabGroup->selected_child(wnd->outputGroup);
   wnd->outputGroup->begin();
 
