@@ -584,7 +584,10 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
         runMode = run_state;
         editWidget->runState(rs_run);
         sprintf(path, "%s/%s", packageHome, (const char *)eventData);
+        int interactive = opt_interactive;
+        opt_interactive = false;
         int success = sbasic_main(path);
+        opt_interactive = interactive;
         editWidget->runState(success ? rs_ready : rs_err);
         editWidget->loadFile(filename);
         editor->insert_position(pos);
@@ -600,6 +603,9 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
   }
 }
 
+/**
+ * callback for tool-plug-in plug-ins.
+ */
 void MainWindow::tool_plugin(Widget* w, void* eventData)
 {
   if (runMode == edit_state) {
@@ -1422,7 +1428,15 @@ void MainWindow::resetPen()
  * returns any active tty widget
  */
 TtyWidget* MainWindow::tty() {
-  return runEditWidget != 0 ? runEditWidget->tty : 0;
+  TtyWidget* result = 0;
+  EditorWidget* editor = runEditWidget;
+  if (!editor) {
+    editor = getEditor(false);
+  }
+  if (editor) {
+    result = editor->tty;
+  }
+  return result;
 }
 
 /**
