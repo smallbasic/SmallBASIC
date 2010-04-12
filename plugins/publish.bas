@@ -1,8 +1,23 @@
 'tool-plug-in
-'menu Publish
+'menu Publish Online
 
 split command, "|", args() use trim(x)
 fname = args(0)
+
+pkgHome = lower(env("PKG_HOME"))
+path = lower(left(fname, len(pkgHome)))
+if (pkgHome == path) then
+  logprint "Please do not submit packaged programs"
+  exit
+fi 
+
+logprint "This will publish " + fname + " to smallbasic.sourceforge.net."
+logprint "The server will only accept a limited number of submissions from a single IP address"
+input "Enter Y to continue", k
+if (upper(k) != "Y") then
+  exit
+fi
+
 tload fname, buffer
 
 local url = "http://smallbasic.sourceforge.net?q=node/1021"
