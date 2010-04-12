@@ -139,8 +139,8 @@ end
 func createForm
   local w = 60
   local h = 60
-  local y = (ymax / 2) - (h * 2)
-  local x = (xmax / 2) - (w * 3)
+  local y = 80
+  local x = 10
   local fcb = 3
   local ncb = 4
   local ocb = 5

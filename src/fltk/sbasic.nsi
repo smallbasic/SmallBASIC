@@ -45,6 +45,7 @@ Section "Start Menu Shortcut"
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Sokoban.lnk" "$INSTDIR\games\sokoban.bas"
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Tetris.lnk" "$INSTDIR\games\tetris.bas"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Calculator.lnk" "$INSTDIR\apps\calc.bas"
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
