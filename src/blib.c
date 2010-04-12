@@ -752,6 +752,13 @@ void cmd_input(int input)
       case PV_CONSOLE:
         // console
         inps = tmp_alloc(SB_TEXTLINE_SIZE + 1);
+        if (prompt.v.p.ptr) {
+          // prime output buffer with prompt text
+          int prompt_len = strlen(prompt.v.p.ptr);
+          int len = prompt_len < SB_TEXTLINE_SIZE ? prompt_len : SB_TEXTLINE_SIZE;
+          strncpy(inps, prompt.v.p.ptr, len);
+          inps[len] = 0;
+        }
         dev_gets(inps, SB_TEXTLINE_SIZE);
         break;
       case PV_STRING:
