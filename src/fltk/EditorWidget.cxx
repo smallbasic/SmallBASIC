@@ -615,6 +615,7 @@ void EditorWidget::set_color(Widget* w, void* eventData)
     setColor(w->label(), styleField);
   }
   wnd->updateConfig(this);
+  wnd->show();
 }
 
 /**
