@@ -672,7 +672,7 @@ void enter_cb(Widget *, void *v)
 
 char *dev_gets(char *dest, int size)
 {
-  if (!wnd->isInteractive()) {
+  if (!wnd->isInteractive() || wnd->logPrint()) {
     const char* input = fltk::input(dest);
     if (input) {
       strcpy(dest, input);
