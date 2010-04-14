@@ -448,6 +448,10 @@ void EditorWidget::command(Widget* w, void* eventData)
     gotoLine(atoi(commandText->value()));
     take_focus();
     break;
+
+  case cmd_input_text:
+    wnd->setModal(false);
+    break;
   }
 }
 
@@ -816,6 +820,30 @@ bool EditorWidget::focusWidget() {
 int EditorWidget::getFontSize()
 {
   return editor->getFontSize();
+}
+
+/**
+ * use the input control as the INPUT basic command handler
+ */
+void EditorWidget::getInput(char* result, int size) 
+{
+  setCommand(cmd_input_text);
+  statusMsg(result);
+  wnd->setModal(true);
+  while (wnd->isModal()) {
+    fltk::wait();
+  }
+  if (wnd->isBreakExec()) {
+    brun_break();
+  }
+  else {
+    const char* value = commandText->value();
+    int valueLen = strlen(value);
+    int len = (valueLen < size) ? valueLen : size;
+    strncpy(result, value, len);
+    result[len] = 0;
+  }
+  setCommand(cmd_find);
 }
 
 /**
@@ -1446,6 +1474,10 @@ void EditorWidget::setColor(const char* label, StyleField field) {
  * sets the current command
  */
 void EditorWidget::setCommand(CommandOpt command) {
+  if (commandOpt == cmd_input_text) {
+    wnd->setModal(false);
+  }
+
   commandOpt = command;
   switch (command) {
   case cmd_find:
@@ -1462,6 +1494,9 @@ void EditorWidget::setCommand(CommandOpt command) {
     break;
   case cmd_goto:
     commandChoice->label("Goto:");
+    break;
+  case cmd_input_text:
+    commandChoice->label("INPUT:");
     break;
   }
   commandChoice->redraw();

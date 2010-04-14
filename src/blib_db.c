@@ -460,6 +460,7 @@ void cmd_flineinput()
       var_p->type = V_STR;
       var_p->v.p.ptr = tmp_alloc(SB_TEXTLINE_SIZE + 1);
       var_p->v.p.size = SB_TEXTLINE_SIZE + 1;
+      ((char*) var_p->v.p.ptr)[0] = 0;
       dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
       dev_print("\n");
     }

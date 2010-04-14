@@ -71,6 +71,7 @@ enum CommandOpt {
   cmd_replace,
   cmd_replace_with,
   cmd_goto,
+  cmd_input_text,
 };
 
 class EditorWidget : public Group, StatusBar {
@@ -110,6 +111,7 @@ public:
   bool focusWidget();
   const char* getFilename() { return filename; }
   int getFontSize();
+  void getInput(char* result, int size);
   void getRowCol(int* row, int* col);
   char* getSelection(int* start, int* end);
   void getSelEndRowCol(int* row, int* col);

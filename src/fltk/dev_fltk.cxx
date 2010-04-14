@@ -673,12 +673,12 @@ void enter_cb(Widget *, void *v)
 char *dev_gets(char *dest, int size)
 {
   if (!wnd->isInteractive() || wnd->logPrint()) {
-    const char* input = fltk::input(dest);
-    if (input) {
-      strcpy(dest, input);
+    EditorWidget* editor = wnd->runEditWidget;
+    if (!editor) {
+      editor = wnd->getEditor(false);
     }
-    else {
-      dest[0] = 0;
+    if (editor) {
+      editor->getInput(dest, size);
     }
     return dest;
   }
