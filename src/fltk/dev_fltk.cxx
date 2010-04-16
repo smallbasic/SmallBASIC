@@ -729,21 +729,32 @@ C_LINKAGE_END
 
 void getHomeDir(char *fileName)
 {
-  const char *home = getenv("HOME");
-  if (home == 0) {
-    home = getenv("TMP");
-  }
-  if (home == 0) {
-    home = getenv("TEMP");
-  }
-  if (home == 0) {
-    home = getenv("TMPDIR");
-  }
-  sprintf(fileName, "%s/.config/", home);
-  makedir(fileName);
+  char* vars[] = {
+    "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
+  };
+  
+  int vars_len = sizeof(vars) / sizeof(vars[0]);
 
-  strcat(fileName, "smallbasic/");
-  makedir(fileName);
+  strcpy(fileName, "");
+
+  for (int i = 0; i < vars_len; i++) {
+    const char *home = getenv(vars[i]);
+    if (home && access(home, R_OK) == 0) {
+      strcpy(fileName, home);
+      if (i == 0) {
+        // windows path
+        strcat(fileName, "/SmallBASIC/");
+      }
+      else {
+        // unix path
+        strcat(fileName, "/.config/");
+        makedir(fileName);
+        strcat(fileName, "smallbasic/");
+      }
+      makedir(fileName);
+      break;
+    }
+  }
 }
 
 void closeForm()
