@@ -327,11 +327,7 @@ bool TtyWidget::copySelection() {
     }
     if (rowText.length()) {
       selection.append(rowText);
-#ifdef __MINGW32__
-      selection.append("\r\n");
-#else
       selection.append("\n");
-#endif
     }
   }
 

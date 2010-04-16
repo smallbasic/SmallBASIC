@@ -48,6 +48,7 @@ out << "}"
 out << "</script>"
 
 fname = env("BAS_HOME") + "/publish.html"
+logprint "Loading: " + fname
 tsave fname, out
-html fname
+html "file:///" + fname
 

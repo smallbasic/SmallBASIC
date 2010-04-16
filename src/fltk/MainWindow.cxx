@@ -64,7 +64,7 @@ const char* aboutText =
   "the Free Software Foundation.<br><br>" "<i>Press F1 for help";
 
 // in dev_fltk.cpp
-void getHomeDir(char *filename);
+void getHomeDir(char *filename, bool appendSlash=true);
 bool cacheLink(dev_file_t * df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
@@ -907,7 +907,7 @@ bool initialise(int argc, char **argv)
 
   // bas_home contains user editable files along with generated help
   strcpy(path, basHome);
-  getHomeDir(path + strlen(basHome));
+  getHomeDir(path + strlen(basHome), false);
   dev_putenv(path);
 
   wnd = new MainWindow(800, 650);

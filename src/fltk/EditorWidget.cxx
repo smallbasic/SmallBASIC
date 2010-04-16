@@ -35,7 +35,7 @@ extern const char* historyFile;
 extern const char* untitledFile;
 
 // in dev_fltk.cpp
-void getHomeDir(char *filename);
+void getHomeDir(char *filename, bool appendSlash=true);
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];

@@ -56,7 +56,7 @@ dword eventsPerTick;
 #define EVT_PAUSE_TIME 0.005
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
-void getHomeDir(char *fileName);
+void getHomeDir(char *fileName, bool appendSlash=true);
 bool cacheLink(dev_file_t * df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
@@ -503,7 +503,8 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h)
   if (html == 0 || html[0] == 0) {
     closeForm();
   }
-  else if (access(html, R_OK) == 0) {
+  else if (strncmp(html, "file:///", 8) == 0 ||
+           strncmp(html, "http://", 7) == 0) {
     browseFile(html);
   }
   else if (t && t[0]) {
@@ -727,7 +728,7 @@ C_LINKAGE_END
 
 //--HTML Utils------------------------------------------------------------------
 
-void getHomeDir(char *fileName)
+void getHomeDir(char *fileName, bool appendSlash)
 {
   char* vars[] = {
     "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
@@ -735,21 +736,20 @@ void getHomeDir(char *fileName)
   
   int vars_len = sizeof(vars) / sizeof(vars[0]);
 
-  strcpy(fileName, "");
+  fileName[0] = 0;
 
   for (int i = 0; i < vars_len; i++) {
     const char *home = getenv(vars[i]);
     if (home && access(home, R_OK) == 0) {
       strcpy(fileName, home);
-      if (i == 0) {
-        // windows path
-        strcat(fileName, "/SmallBASIC/");
-      }
-      else {
+      if (i == 1) {
         // unix path
-        strcat(fileName, "/.config/");
+        strcat(fileName, "/.config");
         makedir(fileName);
-        strcat(fileName, "smallbasic/");
+      }
+      strcat(fileName, "/SmallBASIC");
+      if (appendSlash) {
+        strcat(fileName, "/");
       }
       makedir(fileName);
       break;
@@ -792,7 +792,7 @@ bool cacheLink(dev_file_t * df, char *localFile)
   bool httpOK = false;
 
   getHomeDir(localFile);
-  strcat(localFile, "cache/");
+  strcat(localFile, "/cache/");
   makedir(localFile);
 
   // create host name component

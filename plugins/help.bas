@@ -11,7 +11,7 @@ end
 # write the help html file
 #
 func getHelpOutputFilename
-  getHelpOutputFilename = env("BAS_HOME") + "help.html"
+  getHelpOutputFilename = env("BAS_HOME") + "/help.html"
 end
 
 #
