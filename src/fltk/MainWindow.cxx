@@ -592,6 +592,7 @@ void MainWindow::editor_plugin(Widget* w, void* eventData)
         editWidget->loadFile(filename);
         editor->insert_position(pos);
         editor->show_insert_position();
+        editWidget->setRowCol(row, col + 1);
         showEditTab(editWidget);
         runMode = edit_state;
         opt_command[0] = 0;
