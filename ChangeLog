@@ -1,14 +1,50 @@
+2010-04-19
+	Added new sample programs, tetris and sokoban
+	Fix to make plugins work with files containing dos file line endings
+	Added select-all command.
+	Run-selection now works with logprint mode.
+	Fixed run startup mode on linux
+	Added ctrl+f1 help mode
+	Fix for executor cleanup crash when breaking from invalid call to sub
+	Included missing tdestroy function for MingW build (fix for memory leak under windows)
+        Programs now run with cwd set to the .bas filename
+	Updated help for doform and button commands
+	Fix for display of list and label form button types after their variable contents have changed
+	Fixed a problem with SELECT/CASE with complex program usage (tracker id 1683450)
+	Fix for -v command line arg when passed w/out another arg
+	Fix for PolyLine crash when invalid args passed
+	Pass focus to MainWindow when closing the form to ensure inkey gets updated
+	Prevent default window key processing when keys passed into basic program
+	Esc key returns focus to editor when command or browser widget has focus
+	Added simple stack trace as part of runtime error message
+	New hot-key - ctrl+e to focus the editor
+	New editor keystrokes - ctrl+b toggle break-to-line, ctrl+t toggle log-print, ctrl+w toggle hide-ide
+	Cls command does nothing in non-interactive mode
+	Fix for regression with returning and passing UDS values
+	DIRWALK now just logs an error (instead of terminating the program) when it encounters a folder that it cannot open
+	Added search examples option for keyword help
+	Fix for find and goto commands to work with readonly files
+	Show font selection menu using the target font.
+	Fix to allow help page link to a system file
+	Can now pass a url to the html command which opens in a real browser
+	Imlemented new code publish tool
+	Editor plugins now invoked in non-interactive mode
+	INPUT command now issues a prompt dialog when in non-interactive mode
+	Restore main window focus after closing color selection window
+	Updated getHomeDir() to use APPDATA env-var for windows
+	BAS_HOME var no longer contains trailing slash-char.
+
 2010-03-08
 	UDS and HASH types now work with FOR-IN and also return sensible
 	values when used with the LEN command. Fixed crash when converting
 	between UDS and HASH types.
-	
+
 2010-03-07
 	Fixed a bug where hitting break from inside a SUB that had the
 	result being assigned to another variable would cause a crash
-	
+
 2010-02-18
-	Updated saving and restoring from config.txt
+	Updated saving and restoring many properties from config.txt
 	File open uses current buffer file path
         Creates backup files
 	Fixed minor display issues with the File Open Widget
@@ -17,8 +53,12 @@
 	Updated the editor code browser
 
 2010-01-29
-	Added DEFINEKEY command
-	fixed inkey
+	Added the DEFINEKEY command
+	Updated internal event handling to allow INKEY to function correctly without
+	excessive CPU usage
+
+2009-12-14
+	Version 0.10.6 released
 
 2009-11-27
 	Implemented TTY widget
