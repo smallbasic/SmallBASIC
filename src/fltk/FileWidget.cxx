@@ -31,7 +31,8 @@ enum SORT_BY {e_name, e_size, e_time} sortBy;
 bool sortDesc;
 
 struct FileNode : public Object {
-  FileNode(const char* arg_name, time_t arg_m_time, off_t arg_size, bool arg_isdir) :
+  FileNode(const char* arg_name, time_t arg_m_time, 
+           off_t arg_size, bool arg_isdir) :
     name(arg_name, strlen(arg_name)),
     m_time(arg_m_time),
     size(arg_size),
@@ -154,8 +155,13 @@ const char* FileWidget::splitPath(const char* filename, char* path) {
   if (path) {
     // return the path component
     int len = result - filename - 1;
-    strncpy(path, filename, len);
-    path[len] = 0;
+    if (len > 0) {
+      strncpy(path, filename, len);
+      path[len] = 0;
+    }
+    else {
+      path[0] = 0;
+    }
   }
 
   return result;

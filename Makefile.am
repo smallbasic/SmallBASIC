@@ -39,12 +39,10 @@ EXTRA_DIST =					\
     documentation/README.HELIO			\
     documentation/README.PALM			\
     documentation/README.UNIX			\
-    plugins/calc.bas				\
     plugins/comment_in.bas			\
     plugins/comment_out.bas			\
     plugins/dos2unix.bas			\
     plugins/indent.bas				\
-    plugins/filemgr.bas				\
     translator/SB.g                             \
     translator/Makefile                         \
     translator/Translator.java                  \

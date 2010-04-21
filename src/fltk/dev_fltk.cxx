@@ -730,7 +730,7 @@ C_LINKAGE_END
 
 void getHomeDir(char *fileName, bool appendSlash)
 {
-  char* vars[] = {
+  const char* vars[] = {
     "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
   };
   
