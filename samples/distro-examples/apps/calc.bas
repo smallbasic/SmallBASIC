@@ -11,6 +11,7 @@
 ' Download the GNU Public License (GPL) from www.gnu.org
 '
 '
+option predef grmode 390X330
 
 out_x = 0
 out_y = 0
@@ -185,7 +186,7 @@ func createForm
 end
 
 func showResult(result)
-  at out_x, out_y: ? chr(27) + "[K" + chr(27) + "[40 C" + result
+  at out_x, out_y: ? chr(27) + "[K" + chr(27) + "[25 C" + result
 end
 
 sub main

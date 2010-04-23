@@ -1,7 +1,9 @@
 '
 ' $Id$
 '
- 
+
+option predef grmode 700x500
+
 const bl_w = 25
 const bl_h = 25
 const bl_x = 45

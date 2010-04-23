@@ -4,6 +4,8 @@
 ' falling blocks - tetris clone
 '
 
+option predef grmode 300x300
+
 ' cell size in pixels
 const c_w = 10
 const c_h = 10
