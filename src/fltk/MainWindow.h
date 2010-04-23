@@ -102,8 +102,9 @@ struct MainWindow : public BaseWindow {
   bool isIdeHidden(); // whether to run without the IDE displayed
   bool isInteractive(); // whether to run without an interface
   bool isModal(); // whether a modal gui loop is active
+  void addPlugin(Menu* menu, const char* label, const char* filename);
   void busyMessage();
-  void execHelp();
+  bool execHelp();
   void execLink(const char* file);
   void loadIcon(const char* prefix, int resourceId);
   void pathMessage(const char *file);

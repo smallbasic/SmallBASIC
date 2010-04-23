@@ -76,7 +76,14 @@ C_LINKAGE_BEGIN int osd_devinit()
   if ((opt_pref_width || opt_pref_height) && wnd->isIdeHidden()) {
     int delta_x = wnd->w() - wnd->out->w();
     int delta_y = wnd->h() - wnd->out->h();
-    wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
+    if (opt_pref_width < 10) {
+      opt_pref_width = 10;
+    }
+    if (opt_pref_height < 10) {
+      opt_pref_height = 10;
+    }
+    wnd->outputGroup->resize(opt_pref_width + delta_x,
+                             opt_pref_height + delta_y);
   } 
 
   // show the output-group in case it's the full-screen container. a possible

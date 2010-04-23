@@ -1,5 +1,4 @@
-'tool-plug-in
-'menu Publish Online
+# $Id: $
 
 split command, "|", args() use trim(x)
 fname = args(0)

@@ -1099,6 +1099,11 @@ void EditorWidget::setFontSize(int size)
 void EditorWidget::setIndentLevel(int level)
 {
   ((BasicEditor *) editor)->indentLevel = level;
+
+  // update environment var for running programs
+  char path[MAX_PATH];
+  sprintf(path, "INDENT_LEVEL=%d", level);
+  putenv(path);
 }
 
 /**

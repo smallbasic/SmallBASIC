@@ -194,7 +194,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget,
       fullScreen->resizable(fullScreen);
 
       outputGroup = fullScreen;
-      out->resize(w(), h());
+      out->resize(0, 0, w(), h());
       hide();
     }
     else {
@@ -343,6 +343,9 @@ void MainWindow::quit(Widget* w, void* eventData)
   }
 }
 
+/**
+ * opens the smallbasic home page in a browser window
+ */
 void MainWindow::help_home(Widget* w, void* eventData)
 {
   browseFile("http://smallbasic.sf.net");
@@ -360,16 +363,23 @@ void MainWindow::showHelpPage() {
   help->loadFile(path);
 }
 
-void MainWindow::execHelp() {
+/**
+ * when opt_command is a URL, opens the URL in a browser window
+ * otherwise runs help.bas with opt_command as the program argument
+ */
+bool MainWindow::execHelp() {
+  bool result = true;
   char path[MAX_PATH];
   if (strncmp(opt_command, "http://", 7) == 0) {
     // launch in real browser
     browseFile(opt_command);
+    result = false;
   }
   else {
     sprintf(path, "%s/%s/help.bas", packageHome, pluginHome);
     basicMain(getEditor(), path, true);
   }
+  return result;
 }
 
 /**
@@ -384,8 +394,9 @@ void do_help_contents_anchor(void *)
   }
   else {
     strcpy(opt_command, eventName);
-    wnd->execHelp();
-    wnd->showHelpPage();
+    if (wnd->execHelp()) {
+      wnd->showHelpPage();
+    }
   }
 }
 
@@ -400,6 +411,7 @@ void MainWindow::help_contents_anchor(Widget* w, void* eventData) {
  */
 void MainWindow::help_contents(Widget* w, void* eventData)
 {
+  bool showHelp = true;
   if (runMode == edit_state) {
     EditorWidget* editWidget = getEditor();
     if (editWidget && event_key() != 0) {
@@ -413,14 +425,17 @@ void MainWindow::help_contents(Widget* w, void* eventData)
       opt_command[0] = 0;
     }
 
-    execHelp();
+    showHelp = execHelp();
   }
 
-  if (!eventData) {
+  if (!eventData && showHelp) {
     showHelpPage();
   }
 }
 
+/**
+ * displays the program help page in a browser window
+ */
 void MainWindow::help_app(Widget* w, void* eventData)
 {
   browseFile("http://smallbasic.sourceforge.net/?q=node/955");
@@ -657,9 +672,21 @@ void MainWindow::load_file(Widget* w, void* eventData)
 //--Startup functions-----------------------------------------------------------
 
 /**
+ * Adds a plug-in to the menu
+ */
+void MainWindow::addPlugin(Menu* menu, const char* label, const char* filename)
+{
+  char path[MAX_PATH];
+  sprintf(path, "%s/%s", pluginHome, filename);
+  if (access(path, R_OK) == 0) {
+    menu->add(label, 0, editor_plugin_cb, strdup(path));
+  }
+}
+
+/**
  * scan for recent files
  */
-void MainWindow::scanRecentFiles(Menu * menu)
+void MainWindow::scanRecentFiles(Menu* menu)
 {
   FILE *fp;
   char buffer[MAX_PATH];
@@ -754,8 +781,7 @@ void MainWindow::scanPlugIns(Menu* menu)
         // use an absolute path
         sprintf(path, "%s/%s", pluginHome, filename);
         menu->add(label, 0, (Callback *)
-                  (editorTool ? MainWindow::editor_plugin_cb : MainWindow::tool_plugin_cb),
-                  strdup(path));
+                  (editorTool ? editor_plugin_cb : tool_plugin_cb), strdup(path));
       }
       fclose(file);
     }
@@ -991,6 +1017,7 @@ MainWindow::MainWindow(int w, int h) : BaseWindow(w, h)
   m->add("&File/_&Close", CTRL + F4Key, close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", CTRL + SHIFT + 'S', save_file_as_cb);
+  addPlugin(m, "&File/_Publish Online", "publish.bas");
   m->add("&File/E&xit", CTRL + 'q', quit_cb);
   m->add("&Edit/_&Undo", CTRL + 'z', EditorWidget::undo_cb);
   m->add("&Edit/Cu&t", CTRL + 'x', EditorWidget::cut_text_cb);
