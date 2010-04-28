@@ -32,7 +32,6 @@ int net_init()
 {
 #if defined(_WIN32)
   WSADATA wsadata;
-
   if (inetlib_init) {
     inetlib_init++;
     return 1;
@@ -307,7 +306,7 @@ socket_t net_listen(int server_port)
   }
 
   FD_ZERO(&readfds);
-  close(listener);
+  net_disconnect(listener);
 
   return s;
 }
@@ -317,8 +316,11 @@ socket_t net_listen(int server_port)
  */
 void net_disconnect(socket_t s)
 {
+#if defined(_WIN32)
+  closesocket(s);
+#else
   close(s);
-  net_close();
+#endif
 }
 
 /* End of "$Id: inet.c 681 2009-08-14 12:59:38Z zeeb90au $". */

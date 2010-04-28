@@ -434,6 +434,9 @@ int dev_restore()
   signal(SIGINT, SIG_DFL);
   signal(SIGQUIT, SIG_DFL);
 #endif
+
+  net_close();
+
   return 1;
 }
 

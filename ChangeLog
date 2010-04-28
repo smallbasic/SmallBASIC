@@ -1,3 +1,7 @@
+2010-04-28
+	fix for windows socket handling
+	cleanup code for display of break message
+
 2010-04-19
 	Added new sample programs, tetris and sokoban
 	Fix to make plugins work with files containing dos file line endings

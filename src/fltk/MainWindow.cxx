@@ -241,24 +241,10 @@ bool MainWindow::basicMain(EditorWidget* editWidget,
     if (!toolExec && editWidget && (!was_break || breakToLine)) {
       editWidget->gotoLine(gsb_last_line);
     }
-    if (was_break) {
-      // override any possible stack error
-      sprintf(gsb_last_errmsg, "BREAK AT LINE %d", gsb_last_line);
-    }
-    else {
-      int len = strlen(gsb_last_errmsg);
-      if (gsb_last_errmsg[len - 1] == '\n') {
-        gsb_last_errmsg[len - 1] = 0;
-      }
-    }
     closeForm();  // unhide the error
     if (editWidget) {
       showEditTab(editWidget);
       editWidget->runState(was_break ? rs_ready : rs_err);
-      if (!was_break || !editWidget->isLogPrint()) {
-        // avoid showing repeated break message in logprint window
-        editWidget->statusMsg(gsb_last_errmsg);
-      }
     }
   }
   else if (!toolExec && editWidget) {
@@ -288,8 +274,7 @@ void MainWindow::close_tab(Widget* w, void* eventData) {
         }
         // check whether the editor is a running program
         if (editWidget == runEditWidget) {
-          brun_break();
-          runMode = break_state;
+          setBreak();
           return;
         }
       }
@@ -301,9 +286,8 @@ void MainWindow::close_tab(Widget* w, void* eventData) {
 
 void MainWindow::restart_run(Widget* w, void* eventData) {
   if (runMode == run_state) {
-    brun_break();
+    setBreak();
     restart = true;
-    runMode = break_state;
   }
 }
 
@@ -337,8 +321,7 @@ void MainWindow::quit(Widget* w, void* eventData)
     case 0:
       exit(0);
     case 1:
-      brun_break();
-      runMode = break_state;
+      setBreak();
     }
   }
 }
@@ -554,8 +537,7 @@ void MainWindow::run(Widget* w, void* eventData)
 void MainWindow::run_break(Widget* w, void* eventData)
 {
   if (runMode == run_state || runMode == modal_state) {
-    runMode = break_state;
-    brun_break();
+    setBreak();
   }
 }
 
@@ -1424,6 +1406,7 @@ void MainWindow::setModal(bool modal)
 
 void MainWindow::setBreak()
 {
+  brun_break();
   runMode = break_state;
 }
 

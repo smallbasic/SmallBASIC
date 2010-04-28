@@ -35,29 +35,13 @@ void err_common_msg(const char *seg, const char *file, int line, const char *des
   prog_errmsg[SB_ERRMSG_SIZE] = '\0';
   strcpy(gsb_last_errmsg, prog_errmsg);
 
-  if (opt_ide == IDE_NONE) {
-#if defined(_UnixOS) && !defined(_FLTK)
-    if (!isatty(STDOUT_FILENO)) {
-      // hm... out or err ?
-      fprintf(stdout, "\n* %s-%s %s:%d # %s\n", seg, WORD_ERROR_AT, file, line,
-              descr);
-    }
-    else {
-#endif
-
-      dev_printf("\n\033[0m\033[80m\n");
-      dev_printf("\033[7m * %s-%s %s:%d * \033[0m\a\n\n", seg, WORD_ERROR_AT, file,
-                 line);
-      dev_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
+  log_printf("\n\033[0m\033[80m\n");
+  log_printf("\033[7m * %s-%s %s:%d * \033[0m\a\n\n", seg, WORD_ERROR_AT, file, line);
+  log_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
 #if defined(_PalmOS)
-      dev_printf("\n\033[4mPress '.' to return...\033[0m\n");
+  log_printf("\n\033[4mPress '.' to return...\033[0m\n");
 #endif
-      dev_printf("\033[80m\033[0m");
-
-#if defined(_UnixOS) && !defined(_FLTK)
-    }
-#endif
-  }
+  log_printf("\033[80m\033[0m");
 
 #if defined(_WinBCB)
   bcb_comp(-1, line, 0);
@@ -82,34 +66,40 @@ void rt_raise(const char *fmt, ...)
   va_list ap;
   int i_stack, i_kw;
 
-  prog_error = 0x80;
+  if (!gsb_last_error) {
+    prog_error = 0x80;
 
-  va_start(ap, fmt);
-  buff = tmp_alloc(SB_TEXTLINE_SIZE + 1);
+    va_start(ap, fmt);
+    buff = tmp_alloc(SB_TEXTLINE_SIZE + 1);
 #if defined(_PalmOS)
-  StrVPrintF(buff, fmt, ap);
+    StrVPrintF(buff, fmt, ap);
 #else
-  vsprintf(buff, fmt, ap);
+    vsprintf(buff, fmt, ap);
 #endif
-  va_end(ap);
+    va_end(ap);
 
-  err_common_msg(WORD_RTE, prog_file, prog_line, buff);
-  tmp_free(buff);
+    err_common_msg(WORD_RTE, prog_file, prog_line, buff);
+    tmp_free(buff);
 
-  // log the stack trace
-  for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
-    stknode_t node = prog_stack[i_stack];
-    switch (node.type) {
-    case 0xFF:
-    case kwBYREF:
-    case kwTYPE_CRVAR:
-      // ignore these types
-      break;
+    if (prog_stack_count) {
+      log_printf("\033[4mStack:\033[0m\n");
+    }
 
-    default:
-      for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
-        if (node.type == keyword_table[i_kw].code) {
-          log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
+    // log the stack trace
+    for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
+      stknode_t node = prog_stack[i_stack];
+      switch (node.type) {
+      case 0xFF:
+      case kwBYREF:
+      case kwTYPE_CRVAR:
+        // ignore these types
+        break;
+        
+      default:
+        for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
+          if (node.type == keyword_table[i_kw].code) {
+            log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
+          }
         }
       }
     }
@@ -437,27 +427,14 @@ void inf_break(int pline)
   strcpy(gsb_last_file, prog_file);
   sprintf(gsb_last_errmsg, "%s %d", WORD_BREAK_AT, pline);
 
-#if defined(_UnixOS) && !defined(_FLTK)
-  if (!isatty(STDOUT_FILENO)) {
-    fprintf(stdout, "\n* %s %d *\n", WORD_BREAK_AT, pline);
-  }
-  else {
-#endif
-
-    dev_settextcolor(15, 0);
+  dev_settextcolor(15, 0);
 #if defined(_PalmOS)
-    dev_print("\a\n");
-    dev_setxy(0, os_graf_my - 9);
-    dev_printf
-      ("\033[91m\033[0m\033[7m * %s %d * - Press '.' to return\4 \033[80m\033[0m",
-       WORD_BREAK_AT, pline);
+  dev_print("\a\n");
+  dev_setxy(0, os_graf_my - 9);
+  dev_printf("\033[91m\033[0m\033[7m * %s %d * - Press '.' to return\4 \033[80m\033[0m",
+             WORD_BREAK_AT, pline);
 #else
-    dev_printf("\n\033[0m\033[80m\a\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT,
-               pline);
-#endif
-
-#if defined(_UnixOS) && !defined(_FLTK)
-  }
+  log_printf("\n\033[0m\033[80m\a\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT, pline);
 #endif
 }
 
