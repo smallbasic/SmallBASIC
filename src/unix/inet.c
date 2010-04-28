@@ -31,18 +31,15 @@ static int inetlib_init = 0;
 int net_init()
 {
 #if defined(_WIN32)
-  WSADATA wsadata;
-  if (inetlib_init) {
-    inetlib_init++;
+  if (!inetlib_init) {
+    inetlib_init = 1;
+    WSADATA wsadata;
+    if (WSAStartup(MAKEWORD(2, 0), &wsadata)) {
+      return 0;
+    }
     return 1;
   }
-
-  if (WSAStartup(MAKEWORD(2, 0), &wsadata)) {
-    return 0;
-  }
-  inetlib_init = 1;
 #endif
-
   return 1;
 }
 
@@ -52,8 +49,7 @@ int net_init()
 int net_close()
 {
 #if defined(_WIN32)
-  inetlib_init--;
-  if (inetlib_init <= 0) {
+  if (inetlib_init) {
     WSACleanup();
     inetlib_init = 0;
   }
