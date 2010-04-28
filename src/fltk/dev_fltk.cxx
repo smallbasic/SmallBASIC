@@ -829,7 +829,7 @@ bool cacheLink(dev_file_t * df, char *localFile)
     strcat(localFile, pathEnd + 1);
   }
 
-  fp = fopen(localFile, "w");
+  fp = fopen(localFile, "wb");
   if (fp == 0) {
     if (df->handle != -1) {
       shutdown(df->handle, df->handle);
