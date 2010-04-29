@@ -1159,10 +1159,10 @@ void MainWindow::open_file(Widget* w, void* eventData)
     GroupWidget gw = (GroupWidget) (int) group->user_data();
     switch (gw) {
     case gw_output:
-      getHomeDir(path);
+      strcpy(path, packageHome);
       break;
     case gw_help:
-      strcpy(path, packageHome);
+      getHomeDir(path);
       break;
     default:
       path[0] = 0;
