@@ -182,10 +182,8 @@ end
 '
 ' whether soko is current over a drop target
 '
-func is_target(byref game)
+func is_target(byref game, x, y)
   local grid = game.grid
-  local x = game.soko_x
-  local y = game.soko_y  
   is_target = mid(grid(y), x, 1) == "."
 end
 
@@ -398,7 +396,7 @@ end
 ' erase soko from the current position before a move
 '
 sub move_erase(byref game)
-  if (is_target(game)) then
+  if (is_target(game, game.soko_x, game.soko_y)) then
     ' redraw the now empty target
     draw_target game.soko_x, game.soko_y
   else
@@ -571,7 +569,11 @@ sub undo(byref game)
 
     if (block_x != 0 && block_y != 0) then
       ' erase the previous cell
-      draw_space block_x, block_y
+      if (is_target(game, block_x, block_y)) then      
+        draw_target block_x, block_y
+      else
+        draw_space block_x, block_y
+      fi
 
       ' move to the previous position
       select case soko_dir
