@@ -12,6 +12,7 @@
 #include "pproc.h"
 #include "device.h"
 #include "smbas.h"
+#include "keymap.h"
 
 #include <fltk/Browser.h>
 #include <fltk/Button.h>
@@ -36,11 +37,16 @@ extern "C" {
 extern MainWindow* wnd;
 
 struct Form : public Group {
-  Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {}
+  Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {
+    this->cmd = 0;
+    this->var = 0;
+    this->kb_handle = false;
+  }
   ~Form() {}
   void draw(); // avoid drawing over the tab-bar
   var_t* var; // form variable contains the value of the event widget
   int cmd; // doform argument by value
+  bool kb_handle; // whether doform returns on a keyboard event
 };
 
 Form* form = 0;
@@ -741,6 +747,15 @@ void cmd_doform()
       form->cmd = v_getint(&var);
       form->var = 0;
       v_free(&var);
+
+      // apply any configuration options
+      switch (form->cmd) {
+      case 1:
+        form->kb_handle = true;
+        return;
+      default:
+        break;
+      }
     }
     break;
   };
@@ -757,8 +772,16 @@ void cmd_doform()
   else {
     // pump system messages until there is a widget callback
     mode = m_active;
+
+    if (form->kb_handle) {
+      dev_clrkb();
+    }
     while (wnd->isRunning() && mode == m_active) {
       fltk::wait();
+
+      if (form->kb_handle && keymap_kbhit()) {
+        break;
+      }
     }
     form_update(form);
   }

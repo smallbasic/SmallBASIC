@@ -11,7 +11,7 @@
 ' Download the GNU Public License (GPL) from www.gnu.org
 '
 '
-option predef grmode 390X330
+option predef grmode 390X290
 
 out_x = 0
 out_y = 0
@@ -140,7 +140,7 @@ end
 func createForm
   local w = 60
   local h = 60
-  local y = 80
+  local y = 40
   local x = 10
   local fcb = 3
   local ncb = 4
@@ -150,8 +150,8 @@ func createForm
   local ncf = 15
   local ocf = 7
 
-  out_x = x
-  out_y = y - h
+  out_x = x + 4
+  out_y = 5
   
   color fcf, fcb: button  x, y, w, h, b_mc,   "MC"
   color ncf, ncb: button -1, y, w, h, b_7,    "7"
@@ -186,11 +186,20 @@ func createForm
 end
 
 func showResult(result)
-  at out_x, out_y: ? chr(27) + "[K" + chr(27) + "[25 C" + result
+  local bgnd = 7
+  local w = 360
+  local h = 30
+ 
+  rect out_x, out_y STEP w, h,  COLOR bgnd FILLED
+  rect out_x - 1, out_y - 1 STEP w + 1, h + 1,  COLOR 0 
+    
+  color 1, bgnd
+  at out_x, out_y + 5
+  print chr(27) + "[18 C" + result
 end
 
 sub main
-  local result = ""
+  local result = "0"
   local mem = ""
     
   createForm
@@ -198,8 +207,21 @@ sub main
   color 1,8: cls
   showResult result  
 
+  ' turn on keyboard mode
+  doform 1
+
   while 1
     doform form_var
+    
+    k = inkey
+    if (len(k) == 1) then
+      if (asc(k) == 127) then
+        form_var = b_bs
+      else
+        form_var = k
+      fi
+    fi
+    
     select case form_var
     case b_ce
       ' clear all

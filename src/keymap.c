@@ -99,6 +99,13 @@ int keymap_invoke(word key) {
 }
 
 /**
+ * returns whether a key has been pressed
+ */
+int keymap_kbhit() {
+  return (keytail != keyhead);
+}
+
+/**
  * clear keyboard buffer
  */
 void dev_clrkb() {

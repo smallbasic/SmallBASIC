@@ -1,3 +1,8 @@
+2010-05-01
+	inkey now returns shifted keys
+	added DOFORM option return on a key event
+	updated calc to use the keyboard
+
 2010-04-28
 	fix for windows socket handling
 	cleanup code for display of break message

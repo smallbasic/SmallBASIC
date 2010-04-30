@@ -1788,7 +1788,7 @@ bool BaseWindow::handleKeyEvent() {
       key_pushed = false;
       break;
     }
-    dev_pushkey(k);
+    dev_pushkey(event_text()[0]);
     break;
   case 'q':
     if (event_key_state(LeftCtrlKey) ||
@@ -1797,7 +1797,7 @@ bool BaseWindow::handleKeyEvent() {
       key_pushed = false;
       break;
     }
-    dev_pushkey(k);
+    dev_pushkey(event_text()[0]);
     break;
     
   default:
@@ -1805,7 +1805,7 @@ bool BaseWindow::handleKeyEvent() {
       key_pushed = false;
       break;                  // ignore caps+shift+ctrl+alt
     }
-    dev_pushkey(k);
+    dev_pushkey(event_text()[0]);
     break;
   }
   return key_pushed;
