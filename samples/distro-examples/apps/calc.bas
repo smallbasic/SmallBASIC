@@ -150,7 +150,7 @@ func createForm
   local ncf = 15
   local ocf = 7
 
-  out_x = x + 4
+  out_x = x + 3
   out_y = 5
   
   color fcf, fcb: button  x, y, w, h, b_mc,   "MC"
@@ -186,25 +186,33 @@ func createForm
 end
 
 func showResult(result)
-  local bgnd = 7
-  local w = 360
+  local bgnd = 3
+  local w = 362
   local h = 30
  
   rect out_x, out_y STEP w, h,  COLOR bgnd FILLED
-  rect out_x - 1, out_y - 1 STEP w + 1, h + 1,  COLOR 0 
-    
-  color 1, bgnd
-  at out_x, out_y + 5
-  print chr(27) + "[18 C" + result
+  rect out_x - 1, out_y - 1 STEP w + 1, h + 1,  COLOR 2
+
+  local out_str = chr(27) + "[15 C" + result
+  local out_str_w = textwidth(result)
+  local x = (out_x + w) - out_str_w - textwidth("0")
+
+  if (x < out_x) then
+    x = out_x
+    out_str =  " ERR"
+  fi
+  
+  color 15, bgnd
+  at x, out_y + 7
+  print cat(1) + out_str
 end
 
 sub main
   local result = "0"
   local mem = ""
-    
-  createForm
 
-  color 1,8: cls
+  rect 0, 0, xmax, ymax, 1 FILLED
+  createForm
   showResult result  
 
   ' turn on keyboard mode
@@ -225,7 +233,7 @@ sub main
     select case form_var
     case b_ce
       ' clear all
-      result = 0
+      result = "0"
     case b_bs
       ' back space
       if len(result) > 1 then
