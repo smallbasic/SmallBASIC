@@ -121,8 +121,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   gotoLineBn->align(ALIGN_INSIDE|ALIGN_LEFT|ALIGN_CENTER);
 #endif
 
-  colStatus = new Widget(gotoLineBn->x() - (st_w + 2), 2, st_w, st_h);
-  rowStatus = new Widget(colStatus->x() - (st_w + 2), 2, st_w, st_h);
+  colStatus = new Button(gotoLineBn->x() - (st_w + 2), 2, st_w, st_h);
+  rowStatus = new Button(colStatus->x() - (st_w + 2), 2, st_w, st_h);
   runStatus = new Button(rowStatus->x() - (st_w + 2), 2, st_w, st_h);
   modStatus = new Button(runStatus->x() - (st_w + 2), 2, st_w, st_h);
 
@@ -159,6 +159,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) : Group(x, y, w, h)
   funcList->callback(func_list_cb, 0);
   logPrintBn->callback(un_select_cb, (void*) hideIdeBn);
   hideIdeBn->callback(un_select_cb, (void*) logPrintBn);
+  colStatus->callback(goto_line_cb, 0);
+  rowStatus->callback(goto_line_cb, 0);
 
   // setup icons
   logPrintBn->label("@i;@b;T"); // italic bold T
