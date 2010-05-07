@@ -376,16 +376,10 @@ int dev_putenv(const char *s)
 
   envs.empty();
   envs.append(s);
+
   String lv = envs.lvalue();
   String rv = envs.rvalue();
 
-  if (lv.equals("TITLE")) {
-    rv.append(" - SmallBASIC");
-    wnd->copy_label(rv);
-  }
-  else if (lv.equals("INDENT_LEVEL") && wnd->getEditor()) {
-    wnd->getEditor()->setIndentLevel(rv.toInteger());
-  }
   env.put(lv, rv);
   return 1;
 }

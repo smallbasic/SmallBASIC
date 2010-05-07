@@ -187,18 +187,18 @@ bool MainWindow::basicMain(EditorWidget* editWidget,
       // run in a separate window with the ide hidden
       fullScreen = new BaseWindow(w(), h());
       profile->restoreAppPosition(fullScreen);
-      fullScreen->copy_label(filename);
+
       fullScreen->callback(quit_cb);
       fullScreen->shortcut(0);
       fullScreen->add(out);
       fullScreen->resizable(fullScreen);
-
+      setTitle(fullScreen, filename);
       outputGroup = fullScreen;
       out->resize(0, 0, w(), h());
       hide();
     }
     else {
-      copy_label("SmallBASIC +");
+      setTitle(this, filename);
     }
   }
   else {
@@ -226,7 +226,7 @@ bool MainWindow::basicMain(EditorWidget* editWidget,
 
     outputGroup = oldOutputGroup;
     outputGroup->add(out);
-    out->resize(old_w, old_h);
+    out->resize(2, 2, old_w, old_h);
     show();
   }
   else {
@@ -1402,6 +1402,21 @@ bool MainWindow::isRunning(void)
 void MainWindow::setModal(bool modal)
 {
   runMode = modal ? modal_state : run_state;
+}
+
+/**
+ * sets the window title based on the filename
+ */
+void MainWindow::setTitle(Window* widget, const char* filename) {
+  char title[MAX_PATH];
+  char *dot = strrchr(filename, '.');
+  int len = (dot ? dot - filename : strlen(filename));
+
+  strncpy(title, filename, len);
+  title[len] = 0;
+  title[0] = toupper(title[0]);
+  strcat(title, " - SmallBASIC");
+  widget->copy_label(title);
 }
 
 void MainWindow::setBreak()

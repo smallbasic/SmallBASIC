@@ -114,6 +114,7 @@ struct MainWindow : public BaseWindow {
   void scanRecentFiles(Menu * menu);
   void setBreak();
   void setModal(bool modal);
+  void setTitle(Window* widget, const char* filename);
   void showEditTab(EditorWidget* editWidget);
   void showHelpPage();
   void statusMsg(RunMessage runMessage, const char *filename);

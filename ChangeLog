@@ -1,3 +1,6 @@
+2010-05-07
+	updated window title display
+
 2010-05-01
 	inkey now returns shifted keys
 	added DOFORM option return on a key event
