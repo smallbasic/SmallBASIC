@@ -1,20 +1,15 @@
-/*
-*	SmallBASIC platform driver for Unix,
-*	UNIX TERMINAL DRIVER
-*
-*	2001-12-12, Nicholas Christopoulos
-*
-*	This program is distributed under the terms of the GPL v2.0 or later
-*	Download the GNU Public License (GPL) from www.gnu.org
-*/
+// $Id$
+// This file is part of SmallBASIC
+//
+// SmallBASIC platform driver for Unix,
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2001-12-12, Nicholas Christopoulos
 
-/*
-*	terminal codes in Unix is a really mess
-*	ncurses is a very good library but, I don't know if its
-*	working under dumb terminals or serial lines
-*/
 #include "device.h"
-#include "keys.h"
+#include "keymap.h"
 #include "str.h"
 #include <stdio.h>
 #include <sys/types.h>
