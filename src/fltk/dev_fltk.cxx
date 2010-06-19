@@ -459,7 +459,7 @@ void doEvent(void *)
       return;
     }
   }
-  wnd->execLink(eventName.toString());
+  wnd->execLink(eventName);
 }
 
 void modeless_cb(Widget * w, void *v)

@@ -830,7 +830,6 @@ int EditorWidget::getFontSize()
 void EditorWidget::getInput(char* result, int size) 
 {
   setCommand(cmd_input_text);
-  statusMsg(result);
   wnd->setModal(true);
   while (wnd->isModal()) {
     fltk::wait();

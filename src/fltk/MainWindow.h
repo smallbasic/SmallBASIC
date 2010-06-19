@@ -105,7 +105,7 @@ struct MainWindow : public BaseWindow {
   void addPlugin(Menu* menu, const char* label, const char* filename);
   void busyMessage();
   bool execHelp();
-  void execLink(const char* file);
+  void execLink(String& file);
   void loadIcon(const char* prefix, int resourceId);
   void pathMessage(const char *file);
   void resetPen();

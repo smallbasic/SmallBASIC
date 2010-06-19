@@ -369,7 +369,7 @@ void FileWidget::displayPath()
 
   if (saveEditorAs) {
     const char* path = saveEditorAs->getFilename();
-    char* slash = strrchr(path, '/');
+    const char* slash = strrchr(path, '/');
     html.append("<p><b>Save ").append(slash ? slash + 1 : path).append(" as:<br>")
      .append("<input size=220 type=text value='").append(slash ? slash + 1 : path)
      .append("' name=saveas>&nbsp;<input type=button onclick='")

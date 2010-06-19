@@ -1,3 +1,11 @@
+2010-06-19
+	Fix form TEXT command to use correct integer datatype
+	Fix misc issues with const char* uncovered with new gcc
+	Fix duplicate prompt whe INPUT command used in text mode
+
+2010-05-15
+	Version 0.10.7 was released
+
 2010-05-07
 	updated window title display
 

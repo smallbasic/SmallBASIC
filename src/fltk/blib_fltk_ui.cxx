@@ -122,7 +122,7 @@ struct DropListModel : StringList {
     int item_index = 0;
     int len = items ? strlen(items) : 0;
     for (int i = 0; i < len; i++) {
-      char* c = strchr(items + i, '|');
+      const char* c = strchr(items + i, '|');
       int end_index = c ? c - items : len;
       if (end_index > 0) {
         String* s = new String(items + i, end_index - i);
@@ -697,7 +697,7 @@ void cmd_button()
 // When DOFORM returns the variable contains the user entered value
 void cmd_text()
 {
-  int x, y, w, h;
+  var_int_t x, y, w, h;
   var_t* v = 0;
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {

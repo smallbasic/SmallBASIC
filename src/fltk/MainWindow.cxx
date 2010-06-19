@@ -1409,7 +1409,7 @@ void MainWindow::setModal(bool modal)
  */
 void MainWindow::setTitle(Window* widget, const char* filename) {
   char title[MAX_PATH];
-  char *dot = strrchr(filename, '.');
+  const char *dot = strrchr(filename, '.');
   int len = (dot ? dot - filename : strlen(filename));
 
   strncpy(title, filename, len);
@@ -1472,12 +1472,13 @@ bool MainWindow::logPrint() {
   return (runEditWidget && runEditWidget->tty && runEditWidget->isLogPrint());
 }
 
-void MainWindow::execLink(const char *file)
+void MainWindow::execLink(String& link)
 {
-  if (!file || !file[0]) {
+  if (!link.length()) {
     return;
   }
 
+  char* file = (char*) link.toString();
   EditorWidget* editWidget = getEditor(true);
   siteHome.empty();
   bool execFile = false;
