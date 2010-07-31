@@ -1,3 +1,8 @@
+smallbasic (0.10.8) unstable; urgency=low
+  * Fix misc issues with const char* uncovered with new gcc
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 31 July 2010 09:45:25 +1000
+  
 smallbasic (0.10.7) unstable; urgency=low
   * Added defineKey and fixed delay problems with the inkey command
 

@@ -710,6 +710,7 @@ void cmd_input(int input)
       code_skipsep();
     }
     if (!code_isvar()) {
+      trace("here");
       v_free(&prompt);
       eval(&prompt);
 
@@ -2342,8 +2343,9 @@ void cmd_pause()
       }
 
       if (evc) {
-        if (dev_kbhit())
+        if (dev_kbhit()) {
           dev_getch();
+        }
         break;
       }
 #if defined(_PalmOS)
@@ -2357,7 +2359,7 @@ void cmd_pause()
       now = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
 #endif
 
-      if (now > start + x) {
+      if (now >= start + x) {
         break;
       }
       dev_delay(50);
