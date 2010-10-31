@@ -54,7 +54,13 @@ EXTRA_DIST =					\
     images/sb-desktop-32x32.png			\
     ide/smallbasic.lang				\
     ide/small-basic-mode.el			\
-    ide/smallbasic.syn
+    ide/smallbasic.syn                          \
+    rpm/SRPMS                                   \
+    rpm/SPECS/opensuse.spec                     \
+    rpm/README                                  \
+    rpm/BUILD                                   \
+    rpm/SOURCES                                 \
+    rpm/RPMS
 
 deb:
 	fakeroot dpkg-buildpackage
