@@ -710,7 +710,6 @@ void cmd_input(int input)
       code_skipsep();
     }
     if (!code_isvar()) {
-      trace("here");
       v_free(&prompt);
       eval(&prompt);
 
