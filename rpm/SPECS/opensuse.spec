@@ -28,7 +28,7 @@ SmallBASIC is licensed under the GPL.
 %setup -q
 
 %build
-./configure --enable-fltk
+./configure --enable-fltk --prefix=/usr
 make -s
 
 %install
@@ -47,4 +47,5 @@ make install prefix=$RPM_BUILD_ROOT/usr
 /usr/share/smallbasic/plugins/dos2unix.bas
 /usr/share/smallbasic/plugins/indent.bas
 /usr/share/smallbasic/plugins/publish.bas
+/usr/share/smallbasic/plugins/help.bas
 /usr/share/smallbasic/sbasic_ref.csv
