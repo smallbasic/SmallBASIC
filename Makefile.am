@@ -56,12 +56,7 @@ EXTRA_DIST =					\
     ide/smallbasic.lang				\
     ide/small-basic-mode.el			\
     ide/smallbasic.syn                          \
-    rpm/SRPMS                                   \
-    rpm/SPECS/opensuse.spec                     \
-    rpm/README                                  \
-    rpm/BUILD                                   \
-    rpm/SOURCES                                 \
-    rpm/RPMS
+    rpm/SPECS/opensuse.spec
 
 deb:
 	fakeroot dpkg-buildpackage

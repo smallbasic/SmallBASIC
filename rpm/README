@@ -2,10 +2,14 @@
    
    ./configure --enable-dist
 
-2. copy the resulting .tar.gz file into the SOURCES directory:
+2. create extra subdirectories:
+  
+   cd rpm && mkdir SRPMS BUILD SOURCES RPM
+
+3. copy the resulting .tar.gz file into the SOURCES directory:
 
    mv smallbasic-0.10.8.tar.gz rpm/SOURCES
 
-3. invoke rpmbuild:
+4. invoke rpmbuild:
 
    rpmbuild -v -bb --clean SPECS/opensuse.spec
