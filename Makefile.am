@@ -56,6 +56,7 @@ EXTRA_DIST =					\
     ide/smallbasic.lang				\
     ide/small-basic-mode.el			\
     ide/smallbasic.syn                          \
+    rpm/README                                  \
     rpm/SPECS/opensuse.spec
 
 deb:
