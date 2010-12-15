@@ -17,21 +17,20 @@
 #include "messages.h"
 #include "blib_math.h"
 
-#define FMT_USE_i32
-#if defined(FMT_USE_i32)
-// limits for use with 32bit integer algorithm
-#define FMT_xMIN        1e-8          // lowest limit to use the exp. format
-#define FMT_xMAX        1e+9          // highest limit to use the exp. format
-#define FMT_RND         9             // rounding on x digits
-#define FMT_xRND        1e+9          // 1 * 10 ^ FMT_RND
-#define FMT_xRND2       1e+8          // 1 * 10 ^ (FMT_RND-1)
-#else
+#if defined OS_PREC64
 // limits for use with 64bit integer or 64bit fp algorithm
 #define FMT_xMIN        1e-8
 #define FMT_xMAX        1e+14
 #define FMT_RND         14
 #define FMT_xRND        1e+14
 #define FMT_xRND2       1e+13
+#else
+// limits for use with 32bit integer algorithm
+#define FMT_xMIN        1e-8          // lowest limit to use the exp. format
+#define FMT_xMAX        1e+9          // highest limit to use the exp. format
+#define FMT_RND         9             // rounding on x digits
+#define FMT_xRND        1e+9          // 1 * 10 ^ FMT_RND
+#define FMT_xRND2       1e+8          // 1 * 10 ^ (FMT_RND-1)
 #endif
 
 // PRINT USING; format-list
@@ -200,7 +199,12 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx)
     // format right part
     *d++ = '.';
 
-    fdif = fpart;
+    fdif = frac(x) * FMT_xRND;
+    if (fdif < fpart) {
+      // rounded value has greater precision
+      fdif = fpart;
+    }
+
     while (fdif < FMT_xRND2) {
       fdif *= 10;
       *d++ = '0';

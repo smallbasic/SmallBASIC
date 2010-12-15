@@ -1,5 +1,9 @@
+2010-12-15
+	Fix for floating point display (tracker 3136093) issue
+	found with printing 1/1000
+
 2010-07-31
-	Fix for PAUSE cmd (tracker 1651503) to pause correct length of 
+	Fix for PAUSE cmd (tracker 1651503) to pause correct length of
 	time - Case was	mostly already fixed in 0.10.7.
 
 2010-06-19
