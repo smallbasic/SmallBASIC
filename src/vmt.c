@@ -418,7 +418,7 @@ void dbt_write(dbt_t t, int index, void *ptr, int size)
     // store data
     if (vmt[t].m_table[index] == 0) // empty record
       vmt[t].m_table[index] = mem_alloc(size);
-    else if (size != MemHandleSize(vmt[t].m_table[index])) {  // resize
+    else if (size != mem_handle_size(vmt[t].m_table[index])) {  // resize
       // record
       mem_free(vmt[t].m_table[index]);
       vmt[t].m_table[index] = mem_alloc(size);
@@ -469,7 +469,7 @@ void dbt_read(dbt_t t, int index, void *ptr, int size)
     // get the data
     if (vmt[t].m_table[index] == 0)
       vmt[t].m_table[index] = mem_alloc(size);
-    else if (size > MemHandleSize(vmt[t].m_table[index]))
+    else if (size > mem_handle_size(vmt[t].m_table[index]))
       vmt[t].m_table[index] = mem_realloc(vmt[t].m_table[index], size);
 
     // copy data
@@ -613,7 +613,7 @@ int dbt_recsize(dbt_t t, int index)
   else {
     // memory
     if (vmt[t].m_table[index])
-      size = MemHandleSize(vmt[t].m_table[index]);
+      size = mem_handle_size(vmt[t].m_table[index]);
     else
       size = 0;
   }

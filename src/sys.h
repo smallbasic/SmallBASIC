@@ -274,37 +274,32 @@ extern void MessageBox(char *title, char *msg, int fatal);
 //--Linux/WIN32-----------------------------------------------------------------
 //
 
+#include <string.h>
+
+#define memmgr_setabort(v) (v)
+#define memmgr_getmaxalloc(v) (0)
+#define mem_lock(h) (void*)(h)
+#define mem_unlock(h)
+
+#if !HAVE_MALLOC_USABLE_SIZE
+
+#define HAVE_MALLOC_USABLE_SIZE 1
 #if defined(__MINGW32__)
 #define malloc_usable_size _msize
 #endif
 
-#include <string.h>
-
-#define CPU_BIGENDIAN
-
-#ifdef HAVE_C_MALLOC
+// simplified versions of functions in mem.c
 #define tmp_alloc(s) malloc(s)
 #define tmp_realloc(ptr, size) realloc(ptr, size)
 #define tmp_free(p)  free(p)
+#define tmp_strdup(str) strdup(str)
 #define mem_alloc(p) (mem_t)malloc(p)
 #define mem_realloc(ptr, size) (mem_t)realloc((void*)ptr, size)
 #define mem_free(h)  free((void*)h)
-#define tmp_strdup(str) strdup(str)
-#define mem_lock(h) (void*)(h)
-#define mem_unlock(h)
 #define mem_handle_size(p) malloc_usable_size((void*)p)
-#define MemHandleSize(p) malloc_usable_size((void*)p)
-#define MemPtrSize(p) malloc_usable_size(p)
-#define MemHandleSizeX(p,f,l) malloc_usable_size(p)
-#define memmgr_setabort(v) (v)
-#define memmgr_getmaxalloc(v) (0)
-#define MemPtrNew(x) malloc(x)
-#define MemPtrFree(x) free(x)
-
-#elif !defined(UNIX_MEMMGR)
-#define MALLOC_LIMITED
 #endif
 
+#define CPU_BIGENDIAN
 #define OS_PATHNAME_SIZE    1024
 #define OS_FILENAME_SIZE    256
 #define OS_FILEHANDLES      256

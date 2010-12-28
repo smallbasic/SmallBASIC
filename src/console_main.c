@@ -353,9 +353,6 @@ int process_options(int argc, char *argv[])
     if (opt_interactive) {
       // get it from console
 #ifdef INTERACTIVE_CONSOLE
-#ifndef HAVE_C_MALLOC
-      memmgr_init();
-#endif
       interactive_mode(g_file);
 #endif
     }
@@ -415,9 +412,6 @@ int MAIN_FUNC(int argc, char *argv[])
 
     // run it
     if (!opt_interactive) {
-#ifndef HAVE_C_MALLOC
-      memmgr_init();
-#endif
       sbasic_main(g_file);
     }
 

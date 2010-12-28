@@ -14,9 +14,8 @@
 #include "smbas.h"
 #include "var_hash.h"
 
-#ifdef HAVE_SEARCH_H
+#if HAVE_SEARCH_H
 #include <search.h>
-#endif
 
 /**
  * Globals for callback access
@@ -307,5 +306,22 @@ void hash_write(const var_p_t var_p, int method, int handle)
     pv_write("]", method, handle);
   }
 }
+
+#else
+
+// search.h not supported on this platform
+int hash_compare(const var_p_t var_a, const var_p_t var_b) {}
+int hash_is_empty(const var_p_t var_p) {}
+int hash_to_int(const var_p_t var_p) {}
+int hash_length(const var_p_t var_p) {}
+var_p_t hash_elem(const var_p_t var_p, int index) {}
+void hash_clear(const var_p_t var_p) {}
+void hash_free(var_p_t var_p)  {}
+void hash_get_value(var_p_t base, var_p_t key, var_p_t *result)  {}
+void hash_set(var_p_t dest, const var_p_t src)  {}
+void hash_to_str(const var_p_t var_p, char *out, int max_len) {}
+void hash_write(const var_p_t var_p, int method, int handle)  {}
+
+#endif
 
 // End of $Id$

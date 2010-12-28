@@ -511,7 +511,9 @@ void sblmgr_init(int mcount, const char *mlist)
     }
     if (all) {
       // the -m argument specifies the location of all modules
-#if defined(LNX_EXTLIB)
+#if defined(LNX_EXTLIB) && !defined(PACKAGE_LIB_DIR)
+      sblmgr_scanlibs(opt_modlist);
+#elif defined(LNX_EXTLIB)
       sblmgr_scanlibs(opt_modlist[0] ? opt_modlist : PACKAGE_LIB_DIR);
 #elif defined(__CYGWIN__) || defined(__MINGW32__)
       sblmgr_scanlibs(opt_modlist);
