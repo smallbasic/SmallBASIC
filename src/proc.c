@@ -206,6 +206,87 @@ void exec_usefunc3(var_t * var1, var_t * var2, var_t * var3, addr_t ip)
   tmp_free(old_z);
 }
 
+#if !defined(_FLTK)
+
+/**
+ * Write to the log file
+ */
+void lwrite(const char *buf)
+{
+  int log_dev;             /* logfile file handle */
+  char log_name[OS_PATHNAME_SIZE + 1]; /* LOGFILE filename */
+
+#if defined(_PalmOS)
+  Err ferr;
+#elif defined(_Win32)
+  char *p;
+#endif
+
+  // //////
+  // open
+#if defined(_PalmOS)
+  log_dev = FileOpen(0, "SB.LOG", ID_UFST, ID_SmBa, fileModeAppend, &ferr);
+  if (ferr != 0) {
+    panic("LOG: Error on creating log-file");
+  }
+#elif defined(_VTOS)
+  log_dev = fopen("sb.log", "w+t");
+  if (log_dev == NULL) {
+    panic("LOG: Error on creating log-file");
+  }
+  fseek(log_dev, 0, SEEK_END);
+#else
+#if defined(_Win32) || defined(__MINGW32__)
+  if (getenv("SBLOG")) {
+    strcpy(log_name, getenv("SBLOG"));
+  }
+  else {
+    sprintf(log_name, "c:%csb.log", OS_DIRSEP);
+  }
+#else /* a real OS */
+  sprintf(log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
+#endif
+
+  log_dev = open(log_name, O_RDWR, 0660);
+  lseek(log_dev, 0, SEEK_END);
+  if (log_dev == -1) {
+    log_dev = open(log_name, O_CREAT | O_RDWR, 0660);
+  }
+  if (log_dev == -1) {
+    panic("LOG: Error on creating log file");
+  }
+#endif
+
+  // /////////
+  // write
+#if defined(_PalmOS)
+  FileWrite(log_dev, (char *)buf, strlen(buf), 1, &ferr);
+  if (ferr) {
+    if (ferr != fileErrEOF) {
+      panic("LOG: write failed (ERR:%d)", ferr);
+    }
+  }
+#elif defined(_VTOS)
+  if (fwrite(buf, 1, strlen(buf), log_dev) != strlen(buf)) {
+    panic("LOG: write failed");
+  }
+#else
+  if (write(log_dev, buf, strlen(buf)) == -1) {
+    panic("LOG: write failed");
+  }
+#endif
+
+  // / close
+#if defined(_PalmOS)
+  FileClose(log_dev);
+#elif defined(_VTOS)
+  fclose(log_dev);
+#else
+  close(log_dev);
+#endif
+}
+#endif // NOT FLTK
+
 /*
  * Write string to output device
  */

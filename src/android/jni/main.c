@@ -1,26 +1,18 @@
-/*
- * Copyright (C) 2010 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// $Id var_hash.c 783 2010-03-21 122127Z zeeb90au $
+// This file is part of SmallBASIC
+//
+// Unsupported functionality due to platform limitations
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2010 Chris Warren-Smith. [http//tinyurl.com/ja2ss]
 
-//BEGIN_INCLUDE(all)
 #include <jni.h>
 #include <errno.h>
 
 #include <EGL/egl.h>
-#include <GLES/gl.h>
+#include <GLES2/gl2.h>
 
 #include <android/sensor.h>
 #include <android/log.h>
@@ -117,9 +109,9 @@ static int engine_init_display(struct engine* engine) {
   engine->state.angle = 0;
 
   // Initialize GL state.
-  glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+  //  glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
   glEnable(GL_CULL_FACE);
-  glShadeModel(GL_SMOOTH);
+  //glShadeModel(GL_SMOOTH);
   glDisable(GL_DEPTH_TEST);
 
   return 0;
@@ -129,17 +121,14 @@ static int engine_init_display(struct engine* engine) {
  * Just the current frame in the display.
  */
 static void engine_draw_frame(struct engine* engine) {
-  if (engine->display == NULL) {
-    // No display.
-    return;
+  if (engine->display) {
+    // Just fill the screen with a color.
+    glClearColor(((float)engine->state.x)/engine->width, engine->state.angle,
+                 ((float)engine->state.y)/engine->height, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    eglSwapBuffers(engine->display, engine->surface);
   }
-
-  // Just fill the screen with a color.
-  glClearColor(((float)engine->state.x)/engine->width, engine->state.angle,
-               ((float)engine->state.y)/engine->height, 1);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  eglSwapBuffers(engine->display, engine->surface);
 }
 
 /**
@@ -304,4 +293,4 @@ void android_main(struct android_app* state) {
     }
   }
 }
-//END_INCLUDE(all)
+

@@ -1,4 +1,4 @@
-# $Id: $
+# $Id$
 # This file is part of SmallBASIC
 #
 # This program is distributed under the terms of the GPL v2.0 or later
@@ -18,6 +18,7 @@ LOCAL_CFLAGS    := -D_UnixOS=1 \
                    -DOS_PREC64=1 \
                    -DUSE_TERM_IO=0 \
                    -DHAVE_SEARCH_H=0 \
+                   -DHAVE_C_MALLOC=1 \
                    -DHAVE_MALLOC_USABLE_SIZE=0
 
 LOCAL_SRC_FILES := main.c			\
@@ -69,7 +70,7 @@ LOCAL_SRC_FILES := main.c			\
                    ../../var.c			\
                    ../../vmt.c
 
-LOCAL_LDLIBS    := -llog -landroid -lEGL -lGLESv2 -lc
+LOCAL_LDLIBS    := -llog -landroid -lEGL -lGLESv2
 LOCAL_STATIC_LIBRARIES := android_native_app_glue
 
 include $(BUILD_SHARED_LIBRARY)

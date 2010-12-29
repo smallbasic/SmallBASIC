@@ -281,9 +281,10 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #define mem_lock(h) (void*)(h)
 #define mem_unlock(h)
 
-#if !HAVE_MALLOC_USABLE_SIZE
+#if !HAVE_MALLOC_USABLE_SIZE && !defined(HAVE_MALLOC_USABLE_SIZE)
 
 #define HAVE_MALLOC_USABLE_SIZE 1
+
 #if defined(__MINGW32__)
 #define malloc_usable_size _msize
 #endif
@@ -437,6 +438,7 @@ extern void MessageBox(char *title, char *msg, int fatal);
 #if !defined(_PalmOS) && !defined(HAVE_C_MALLOC)
 #include "unx_memmgr.h"         // on MALLOC_LIMITED it is has empty routines
 #endif
+
 #include "pmem.h"
 #include "panic.h"
 #include "str.h"
