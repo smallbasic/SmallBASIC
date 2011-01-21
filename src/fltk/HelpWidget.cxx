@@ -1311,39 +1311,39 @@ InputNode::InputNode(Group * parent, Attributes * a) : BaseNode()
   String *type = a->getType();
   if (type != null && type->equals("text")) {
     button = new Input(0, 0, INPUT_WIDTH, 0);
-    button->user_data((void *)ID_TEXTBOX);
+    button->argument(ID_TEXTBOX);
   }
   else if (type != null && type->equals("readonly")) {
     button = new Widget(0, 0, INPUT_WIDTH, 0);
-    button->user_data((void *)ID_READONLY);
+    button->argument(ID_READONLY);
   }
   else if (type != null && type->equals("checkbox")) {
     button = new CheckButton(0, 0, BUTTON_WIDTH, 0);
-    button->user_data((void *)ID_CHKBOX);
+    button->argument(ID_CHKBOX);
   }
   else if (type != null && type->equals("radio")) {
     button = new RadioButton(0, 0, BUTTON_WIDTH, 0);
-    button->user_data((void *)ID_RADIO);
+    button->argument(ID_RADIO);
   }
   else if (type != null && type->equals("slider")) {
     button = new Slider(0, 0, BUTTON_WIDTH, 0);
-    button->user_data((void *)ID_RANGEVAL);
+    button->argument(ID_RANGEVAL);
   }
   else if (type != null && type->equals("valueinput")) {
     button = new ValueInput(0, 0, BUTTON_WIDTH, 0);
-    button->user_data((void *)ID_RANGEVAL);
+    button->argument(ID_RANGEVAL);
   }
   else if (type != null && type->equals("thumbwheel")) {
     button = new ThumbWheel(0, 0, BUTTON_WIDTH, 0);
-    button->user_data((void *)ID_RANGEVAL);
+    button->argument(ID_RANGEVAL);
   }
   else if (type != null && type->equals("hidden")) {
     button = new Widget(0, 0, 0, 0);
-    button->user_data((void *)ID_HIDDEN);
+    button->argument(ID_HIDDEN);
   }
   else {
     button = new Button(0, 0, 0, 0);
-    button->user_data((void *)ID_BUTTON);
+    button->argument(ID_BUTTON);
     button->callback(def_button_callback);
   }
   parent->end();
@@ -1358,12 +1358,12 @@ InputNode::InputNode(Group * parent, Attributes * a, const char *s,
     String str;
     str.append(s, len);
     button = new Widget(0, 0, INPUT_WIDTH, 0);
-    button->user_data((void *)ID_READONLY);
+    button->argument(ID_READONLY);
     button->copy_label(str.toString());
   }
   else {
     button = new Input(0, 0, INPUT_WIDTH, 0);
-    button->user_data((void *)ID_TEXTAREA);
+    button->argument(ID_TEXTAREA);
     ((Input *) button)->value(s, len);
   }
   parent->end();
@@ -1374,7 +1374,7 @@ InputNode::InputNode(Group * parent) : BaseNode()
   // creates a select control
   parent->begin();
   button = new Choice(0, 0, INPUT_WIDTH, 0);
-  button->user_data((void *)ID_SELECT);
+  button->argument(ID_SELECT);
   parent->end();
 }
 
@@ -1414,7 +1414,7 @@ void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
     value = env->get(name->toString());
   }
 
-  switch ((int)button->user_data()) {
+  switch (button->argument()) {
   case ID_READONLY:
     button->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
     if (value && value->length()) {
@@ -1529,12 +1529,12 @@ void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
 
 void InputNode::display(Display * out)
 {
-  if (button == 0 || ID_HIDDEN == (int)button->user_data()) {
+  if (button == 0 || ID_HIDDEN == button->argument()) {
     return;
   }
 
   int height = 4 + (int)(getascent() + getdescent());
-  switch ((int)button->user_data()) {
+  switch (button->argument()) {
   case ID_SELECT:
     height += 4;
     break;
@@ -1707,7 +1707,7 @@ const char *HelpWidget::getInputValue(Widget * widget)
   if (widget == 0) {
     return null;
   }
-  switch ((int)widget->user_data()) {
+  switch (widget->argument()) {
   case ID_TEXTBOX:
   case ID_TEXTAREA:
     return ((Input *) widget)->value();
@@ -1791,7 +1791,7 @@ bool HelpWidget::setInputValue(const char *assignment)
     if (ni->name.equals(name)) {
       Widget *button = ni->input->button;
 
-      switch ((int)button->user_data()) {
+      switch (button->argument()) {
       case ID_TEXTBOX:
       case ID_TEXTAREA:
         ((Input *) button)->value(value.toString());
@@ -2751,7 +2751,7 @@ int HelpWidget::handle(int event)
         this->event.append(pushedAnchor->href.toString());
         if (this->event.length()) {
           // href has been set
-          user_data((void *)this->event.toString());
+          user_data((void*)this->event.toString());
           do_callback();
         }
       }

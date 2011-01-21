@@ -267,7 +267,7 @@ void MainWindow::close_tab(Widget* w, void* eventData) {
   if (tabGroup->children() > 1) {
     Group* group = getSelectedTab();
     if (group && group != outputGroup) {
-      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+      if (gw_editor == getGroupWidget(group)) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         if (!editWidget->checkSave(true)) {
           return;
@@ -299,7 +299,7 @@ void MainWindow::quit(Widget* w, void* eventData)
     for (int c = 0; c<n; c++) {
       Group* group = (Group*)tabGroup->child(c);
       char path[MAX_PATH];
-      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+      if (gw_editor == getGroupWidget(group)) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         const char *filename = editWidget->getFilename();
         int offs = strlen(filename) - strlen(untitledFile);
@@ -623,7 +623,7 @@ void MainWindow::tool_plugin(Widget* w, void* eventData)
 
 void MainWindow::load_file(Widget* w, void* eventData)
 {
-  int pathIndex = ((int)eventData) - 1;
+  int pathIndex = ((intptr_t)eventData) - 1;
   const char *path = recentPath[pathIndex].toString();
   EditorWidget* editWidget = getEditor(path);
   if (!editWidget) {
@@ -1156,7 +1156,7 @@ void MainWindow::open_file(Widget* w, void* eventData)
   }
   else {
     Group* group = (Group*) tabGroup->selected_child();
-    GroupWidget gw = (GroupWidget) (int) group->user_data();
+    GroupWidget gw = getGroupWidget(group);
     switch (gw) {
     case gw_output:
       strcpy(path, packageHome);
@@ -1216,7 +1216,7 @@ EditorWidget* MainWindow::getEditor(bool select)
     int n = tabGroup->children();
     for (int c = 0; c<n; c++) {
       Group* group = (Group*)tabGroup->child(c);
-      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+      if (gw_editor == getGroupWidget(group)) {
         result = (EditorWidget*)group->child(0);
         tabGroup->selected_child(group);
         break;
@@ -1232,7 +1232,7 @@ EditorWidget* MainWindow::getEditor(bool select)
 EditorWidget* MainWindow::getEditor(Group* group) 
 {
   EditorWidget* editWidget = 0;
-  if (group != 0 && gw_editor == ((GroupWidget) (int)group->user_data())) {
+  if (group != 0 && gw_editor == getGroupWidget(group)) {
     editWidget = (EditorWidget*)group->resizable();
   }
   return editWidget;
@@ -1244,7 +1244,7 @@ EditorWidget* MainWindow::getEditor(const char* fullpath)
     int n = tabGroup->children();
     for (int c = 0; c < n; c++) {
       Group* group = (Group*)tabGroup->child(c);
-      if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+      if (gw_editor == getGroupWidget(group)) {
         EditorWidget* editWidget = (EditorWidget*)group->child(0);
         const char* fileName = editWidget->getFilename();
         if (fileName && strcmp(fullpath, fileName) == 0) {
@@ -1294,7 +1294,7 @@ Group* MainWindow::findTab(GroupWidget groupWidget)
   int n = tabGroup->children();
   for (int c = 0; c<n; c++) {
     Group* child = (Group*)tabGroup->child(c);
-    if (groupWidget == ((GroupWidget) (int) child->user_data())) {
+    if (groupWidget == getGroupWidget(child)) {
       return child;
     }
   }
@@ -1321,7 +1321,7 @@ void MainWindow::updateConfig(EditorWidget* current)
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group* group = (Group*)tabGroup->child(c);
-    if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+    if (gw_editor == getGroupWidget(group)) {
       EditorWidget* editWidget = (EditorWidget*)group->child(0);
       if (editWidget != current) {
         editWidget->updateConfig(current);
@@ -1338,7 +1338,7 @@ void MainWindow::updateEditTabName(EditorWidget* editWidget)
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group* group = (Group*)tabGroup->child(c);
-    if (gw_editor == ((GroupWidget) (int)group->user_data()) &&
+    if (gw_editor == getGroupWidget(group) && 
         editWidget == (EditorWidget*)group->child(0)) {
       const char* editFileName = editWidget->getFilename();
       if (editFileName && editFileName[0]) {

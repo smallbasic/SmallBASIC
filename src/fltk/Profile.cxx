@@ -300,7 +300,7 @@ void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
   int n = wnd->tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group* group = (Group*) wnd->tabGroup->child(c);
-    if (gw_editor == ((GroupWidget) (int)group->user_data())) {
+    if (gw_editor == ((GroupWidget) (intptr_t)group->user_data())) {
       EditorWidget* editWidget = (EditorWidget*) group->child(0);
 
       bool logPrint = editWidget->isLogPrint();

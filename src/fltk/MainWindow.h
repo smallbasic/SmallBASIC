@@ -132,6 +132,9 @@ struct MainWindow : public BaseWindow {
   Group* selectTab(const char* label);
   Group* findTab(const char* label);
   Group* findTab(GroupWidget groupWidget);
+  GroupWidget getGroupWidget(Group* group) { 
+    return (GroupWidget) (intptr_t) group->user_data();
+  }
   bool logPrint();
   FILE* openConfig(const char* fileName, const char* flags="w");
   TtyWidget* tty();

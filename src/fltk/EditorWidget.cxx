@@ -243,7 +243,7 @@ void EditorWidget::change_case(Widget* w, void* eventData)
  */
 void EditorWidget::command_opt(Widget* w, void* eventData)
 {
-  setCommand((CommandOpt) (int) eventData);
+  setCommand((CommandOpt) (intptr_t) eventData);
 }
 
 /**
@@ -420,7 +420,7 @@ void EditorWidget::find(Widget* w, void* eventData)
 void EditorWidget::command(Widget* w, void* eventData)
 {
   bool found = false;
-  bool forward = (int) eventData;
+  bool forward = (intptr_t) eventData;
   bool updatePos = (commandOpt != cmd_find_inc);
   
   if (event_button() == RightButton) {
@@ -480,7 +480,7 @@ void EditorWidget::func_list(Widget* w, void* eventData)
         funcList->add(scanLabel);
       }
       else {
-        gotoLine((int) funcList->item()->user_data());
+        gotoLine(funcList->item()->argument());
         take_focus();
       }
     }
@@ -605,7 +605,7 @@ void EditorWidget::select_all(Widget* w, void* eventData)
  */
 void EditorWidget::set_color(Widget* w, void* eventData)
 {
-  StyleField styleField = (StyleField) (int) eventData;
+  StyleField styleField = (StyleField) (intptr_t) eventData;
   if (styleField == st_background || styleField == st_background_def) {
     uchar r,g,b;
     split_color(editor->color(),r,g,b);
@@ -1123,8 +1123,8 @@ void EditorWidget::setRowCol(int row, int col)
   // sync the browser widget selection
   int len = funcList->children() - 1;
   for (int i = 0; i < len; i++) {
-    int line = (int) funcList->child(i)->user_data();
-    int nextLine = (int) funcList->child(i + 1)->user_data();
+    int line = (int) funcList->child(i)->argument();
+    int nextLine = (int) funcList->child(i + 1)->argument();
     if (row >= line && (i == len - 1 || row < nextLine)) {
       funcList->value(i);
       break;

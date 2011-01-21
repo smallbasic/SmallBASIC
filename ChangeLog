@@ -1,3 +1,6 @@
+2011-01-22
+	Fix compilation errors (fltk build) for 64bit ubuntu
+
 2010-12-15
 	Fix for floating point display (tracker 3136093) issue
 	found with printing 1/1000
