@@ -1,23 +1,38 @@
 $Id$
 
-== Installation from source for FLTK, SDL, N770(GTK) or command line versions ==
+>> Setup instructions for building FLTK version under a fresh ubuntu system
 
-> sh autogen.sh
+1. Install tools using synaptic package manager. Be sure to accept all included 
+   dependencies. Note, some of these are only required for building FLTK to 
+   completion but are not actually used in SmallBASIC:
 
-For FLTK version
+ * subversion
+ * autotools-dev
+ * autogen
+ * autoconf
+ * libxft-dev
+ * g++
+ * libxi-dev
+ * libgl1-mesa-dev
+ * libglut3-dev
+ * libsdl1.2-dev
+ * libreadline-dev
 
-Download, build and install FLTK, see www.fltk.org.
+2. Download code from subversion:
 
-> ./configure --enable-fltk
-> make
-> sudo make install
+ $ mkdir src && cd src
+ $ svn co http://svn.easysw.com/public/fltk/fltk/trunk fltk-2.0
+ $ svn co https://smallbasic.svn.sourceforge.net/svnroot/smallbasic/trunk/smallbasic
+ $ cd fltk-2.0 
+ $ make (needs to complete at least up to building tests)
+ $ sudo make install
+ $ cd ../smallbasic
+ $ sh autogen.sh
+ $ configure --enable-fltk
+ $ make
+ $ sudo make install
 
-Setup instructions for building FLTK version under cygwin
-
-Update the fltk makeinclude file:
-STRIP		= /cygdrive/c/cygwin/bin/strip
-LIBCOMMAND	= /cygdrive/c/cygwin/bin/ar cr
-RANLIB		= /cygdrive/c/cygwin/bin/ranlib
+>> Setup instructions for building FLTK version under cygwin
 
 Download and install cygwin
 --> http://www.cygwin.com/
@@ -32,26 +47,33 @@ Setup $HOME/.bash_profile:
  alias make=mingw32-make
 --cut-here--
 
-For GTK version
-> ./configure --enable-gtk
-> make
+Obtain and install FLTK as per the ubuntu instructions, then update
+the fltk makeinclude file:
 
-For N770 version
-> ./configure --enable-gtk --enable-hildon
-> make deb
+STRIP		= /cygdrive/c/cygwin/bin/strip
+LIBCOMMAND	= /cygdrive/c/cygwin/bin/ar cr
+RANLIB		= /cygdrive/c/cygwin/bin/ranlib
 
-For SDL version
+>> Building the GTK version
+ $ ./configure --enable-gtk
+ $ make
+
+>> Building the N770 version
+ $ ./configure --enable-gtk --enable-hildon
+ $ make deb
+
+>> Building the SDL version
 
 Optionally install guichan - see http://guichan.sourceforge.net/wiki/index.php
 
-> ./configure --enable-sdl
-> make
+ $ ./configure --enable-sdl
+ $ make
 
-For non-graphical console version (cygwin or linux)
-> ./configure
-> make
+>> Building the non-graphical console version (cygwin or linux)
+ $ ./configure
+ $ make
 
-== Indent settings ==
+>> Code indent settings ==
 
 -bap 
 -br 
