@@ -210,8 +210,11 @@ void AnsiWidget::print(const char *str) {
           break;
         }
       }
-            
+
       QPainter painter(this->img);
+      painter.setFont(font());
+      painter.setBackground(invert ? this->fg : this->bg);
+      painter.setPen(invert ? this->bg : this->fg);
       painter.fillRect(curX, curY, cx, fontHeight, invert ? this->fg : this->bg);
       painter.drawText(curX, curY + ascent, QString::fromAscii((const char*)p, numChars));
 
@@ -354,7 +357,7 @@ void AnsiWidget::newLine() {
   curX = INITXY;
   if (curY + (fontHeight * 2) >= h) {
     QRegion exposed;
-    img->scroll(-fontHeight, 0, 0, 0, width(), h, &exposed);
+    img->scroll(0, -fontHeight, 0, 0, width(), h, &exposed);
 
     QPainter painter(this->img);
     painter.fillRect(exposed.boundingRect(), this->bg);
@@ -397,22 +400,22 @@ void AnsiWidget::resizeEvent(QResizeEvent* event) {
 /*! reset the current drawing variables
  */
 void AnsiWidget::reset(bool init) {
-  curY = INITXY; // allow for input control border
-  curX = INITXY;
-  tabSize = 40; // tab size in pixels (160/32 = 5)
-
   if (init) {
-    curYSaved = 0;
-    curXSaved = 0;
-    invert = false;
-    underline = false;
-    bold = false;
-    italic = false;
-    fg = Qt::black;
-    bg = Qt::white;
-    textSize = 10;
-    updateFont();
+    curY = INITXY; // allow for input control border
+    curX = INITXY;
+    tabSize = 40; // tab size in pixels (160/32 = 5)
   }
+
+  curYSaved = 0;
+  curXSaved = 0;
+  invert = false;
+  underline = false;
+  bold = false;
+  italic = false;
+  fg = Qt::black;
+  bg = Qt::white;
+  textSize = 10;
+  updateFont();
 }
 
 /*! Handles the given escape character. Returns whether the font has changed
@@ -538,10 +541,11 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
 /*! Updated the current font according to accumulated flags
  */
 void AnsiWidget::updateFont() {
-  QFont font = QFont("Courier", textSize);
+  QFont font = QFont("Helvetica");
+  font.setFixedPitch(true);
+  font.setPointSize(textSize);
   font.setBold(bold);
   font.setItalic(italic);
-  font.setFixedPitch(true);
   this->setFont(font);
 }
 
