@@ -8,9 +8,43 @@
 //
 
 #include <QApplication>
+#include <QRect>
+#include <QPaintEvent>
+
+#include <stdio.h>
 #include "ansiwidget.h"
 
+/*! \class AnsiWidget
+ 
+  Displays ANSI escape codes. 
+
+  Escape sequences start with the characters ESC (ASCII 27d / 1Bh / 033o ) 
+  and [ (left bracket). This sequence is called CSI for 
+  "Control Sequence Introducer".
+
+  For more information about ANSI code see:
+  http://en.wikipedia.org/wiki/ANSI_escape_code
+  http://www.uv.tietgen.dk/staff/mlha/PC/Soft/Prog/BAS/VB/Function.html
+  http://bjh21.me.uk/all-escapes/all-escapes.txt
+
+  Supported control codes:
+  \t      tab (20 px)
+  \a      beep
+  \r      return
+  \n      next line
+  \xC     clear screen
+  \e[K    clear to end of line
+  \e[0m   reset all attributes to their defaults
+  \e[1m   set bold on
+  \e[4m   set underline on
+  \e[7m   reverse video
+  \e[21m  set bold off
+  \e[24m  set underline off
+  \e[27m  set reverse off
+*/
+
 #define INITXY 2
+
 static QColor colors[] = {
   Qt::black,        // 0 black
   Qt::darkBlue,     // 1 blue
@@ -30,9 +64,9 @@ static QColor colors[] = {
   Qt::white         // 15 bright white
 };
 
-AnsiWidget::AnsiWidget(QWidget *parent) : QLabel(parent), img(0) {
-  init();
-  reset();
+AnsiWidget::AnsiWidget(QWidget *parent) : QWidget(parent), img(0) {
+  reset(true);
+  initImage();
 }
 
 /*! widget clean up
@@ -41,81 +75,27 @@ AnsiWidget::~AnsiWidget() {
   destroyImage();
 }
 
-/*! clean up the offscreen buffer
+/*! create audible beep sound
  */
-void AnsiWidget::destroyImage() {
-  if (img) {
-    delete img;
-    img = 0;
-  }
-}
-
-/*! widget initialisation
- */
-void AnsiWidget::init() {
-  curY = INITXY; // allow for input control border
-  curX = INITXY;
-  tabSize = 40; // tab size in pixels (160/32 = 5)
-  if (img == NULL) {
-    img = new QPixmap(width(), height());
-    img->fill(this->bg);
-  }
-}
-
-/*! force a screen redraw following changes to the offscreen buffer 
- */
-void AnsiWidget::redraw() {
-  setPixmap(*img);
-}
-
-/*! reset the current drawing variables
- */
-void AnsiWidget::reset() {
-  curYSaved = 0;
-  curXSaved = 0;
-  invert = false;
-  underline = false;
-  bold = false;
-  italic = false;
-  fg = Qt::black;
-  bg = Qt::white;
-  textSize = 10;
-  updateFont();
-}
-
-/*! Updated the current font according to accumulated flags
- */
-void AnsiWidget::updateFont() {
-  QFont font = QFont("Courier", textSize);
-  font.setBold(bold);
-  font.setItalic(italic);
-  font.setFixedPitch(true);
-  this->setFont(font);
+void AnsiWidget::beep() const {
+  QApplication::beep();
 }
 
 /*! clear the offscreen buffer
  */
 void AnsiWidget::clearScreen() {
-  if (img != 0) {
-    init();
-
-    QPainter painter(this->img);
-    painter.fillRect(this->geometry(), this->bg);
-    redraw();
-  }
+  reset(false);
+  QPainter painter(this->img);
+  painter.fillRect(this->geometry(), this->bg);
+  update();
 }
 
-/*! sets the current text drawing color
+/*! draws the given image onto the offscreen buffer
  */
-void AnsiWidget::setTextColor(long fg, long bg) {
-  this->bg = ansiToQt(fg);
-  this->fg = ansiToQt(bg);
-}
-
-/*! sets the current drawing color
- */
-void AnsiWidget::setColor(long fg) {
-  this->bg = ansiToQt(fg);
+void AnsiWidget::drawImage(QImage* image, int x, int y, int sx, int sy, int w, int h) {
+  QPainter painter(this->img);
+  painter.drawImage(x, y, *image, sx, sy, w, h); 
+  update();
 }
 
 /*! draw a line onto the offscreen buffer
@@ -124,15 +104,7 @@ void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
   painter.setPen(this->bg);
   painter.drawLine(x1, y1, x2-x1, y2-y1);
-  redraw();
-}
-
-/*! draw a filled rectangle onto the offscreen buffer
- */
-void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
-  QPainter painter(this->img);
-  painter.fillRect(x1, y1, x2-x1, y2-y1, this->bg);
-  redraw();
+  update(x1, y1, x2-x1, y2-y1);
 }
 
 /*! draw a rectangle onto the offscreen buffer
@@ -141,15 +113,124 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
   painter.setPen(this->bg);
   painter.drawRect(x1, y1, x2-x1, y2-y1);
-  redraw();
+  update(x1, y1, x2-x1, y2-y1);
 }
 
-/*! draws the given image onto the offscreen buffer
+/*! draw a filled rectangle onto the offscreen buffer
  */
-void AnsiWidget::drawImage(QImage* image, int x, int y, int sx, int sy, int w, int h) {
+void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
-  painter.drawImage(x, y, *image, sx, sy, w, h); 
-  redraw();
+  painter.fillRect(x1, y1, x2-x1, y2-y1, this->bg);
+  update(x1, y1, x2-x1, y2-y1);
+}
+
+/*! returns the color of the pixel at the given xy location
+ */
+QRgb AnsiWidget::getPixel(int x, int y) {
+  return img->copy(x, y, 1, 1).toImage().pixel(0, 0);
+}
+
+/*! Returns the height in pixels using the current font setting
+ */
+int AnsiWidget::textHeight(void) {
+  QFontMetrics fm = fontMetrics();
+  return fm.ascent() + fm.descent();
+}
+
+/*! Returns the width in pixels using the current font setting
+ */
+int AnsiWidget::textWidth(const char* s) {
+  QFontMetrics fm = fontMetrics();
+  return fm.width(s);
+}
+
+/*! Prints the contents of the given string onto the backbuffer
+ */
+void AnsiWidget::print(const char *str) {
+  int len = strlen(str);
+  if (len <= 0) {
+    return;
+  }
+
+  QFontMetrics fm = fontMetrics();
+  int ascent = fm.ascent();
+  int fontHeight = fm.ascent() + fm.descent();
+  unsigned char *p = (unsigned char*)str;
+
+  while (*p) {
+    switch (*p) {
+    case '\a':   // beep
+      beep();
+      break;
+    case '\t':
+      curX = calcTab(curX+1);
+      break;
+    case '\xC':
+      {
+        reset(false);
+        QPainter painter(this->img);
+        painter.fillRect(this->geometry(), this->bg);
+      }
+      break;
+    case '\033':  // ESC ctrl chars
+      if (*(p+1) == '[' ) {
+        p += 2;
+        while (doEscape(p)) {
+          // continue
+        }
+      }
+      break;
+    case '\n': // new line
+      newLine();
+      break;
+    case '\r': // return
+      {
+        curX = INITXY;
+        QPainter painter(this->img);
+        painter.fillRect(0, curY, width(), fontHeight, this->bg);
+      }
+      break;
+    default:
+      int numChars = 1; // print minimum of one character
+      int cx = fontMetrics().width((const char*) p, 1);
+      int w = width() - 1;
+
+      if (curX + cx >= w) {
+        newLine();
+      }
+
+      // print further non-control, non-null characters 
+      // up to the width of the line
+      while (p[numChars] > 31) {
+        cx += fontMetrics().width((const char*) p + numChars, 1);
+        if (curX + cx < w) {
+          numChars++;
+        } 
+        else {
+          break;
+        }
+      }
+            
+      QPainter painter(this->img);
+      painter.fillRect(curX, curY, cx, fontHeight, invert ? this->fg : this->bg);
+      painter.drawText(curX, curY + ascent, QString::fromAscii((const char*)p, numChars));
+
+      if (underline) {
+        painter.drawLine(curX, curY+ascent+1, curX+cx, curY+ascent+1);
+      }
+            
+      // advance
+      p += numChars-1; // allow for p++ 
+      curX += cx;
+    };
+        
+    if (*p == '\0') {
+      break;
+    }
+    p++;
+  }
+
+  update();
 }
 
 /*! save the offscreen buffer to the given filename
@@ -165,71 +246,26 @@ void AnsiWidget::saveImage(const char* filename, int x, int y, int w, int h) {
   img->copy(x, y, w, h).save(filename);
 }
 
+/*! sets the current drawing color
+ */
+void AnsiWidget::setColor(long fg) {
+  this->bg = ansiToQt(fg);
+}
+
 /*! sets the pixel to the given color at the given xy location
  */
 void AnsiWidget::setPixel(int x, int y, int c) {
   QPainter painter(this->img);
   painter.setPen(c);
   painter.drawPoint(x, y);
-  redraw();
+  update(x, y, 1, 1);
 }
 
-/*! returns the color of the pixel at the given xy location
+/*! sets the current text drawing color
  */
-QRgb AnsiWidget::getPixel(int x, int y) {
-  return img->copy(x, y, 1, 1).toImage().pixel(0, 0);
-}
-
-/*! create audible beep sound
- */
-void AnsiWidget::beep() const {
-  QApplication::beep();
-}
-
-/*! Returns the width in pixels using the current font setting
- */
-int AnsiWidget::textWidth(const char* s) {
-  QFontMetrics fm = fontMetrics();
-  return fm.width(s);
-}
-
-/*! Returns the height in pixels using the current font setting
- */
-int AnsiWidget::textHeight(void) {
-  QFontMetrics fm = fontMetrics();
-  return fm.ascent() + fm.descent();
-}
-
-/*! Handles the \n character
- */
-void AnsiWidget::newLine() {
-  int h = height();
-  int fontHeight = textHeight();
-
-  curX = INITXY;
-  if (curY + (fontHeight * 2) >= h) {
-    QRegion exposed;
-    img->scroll(-fontHeight, 0, 0, 0, width(), h, &exposed);
-
-    QPainter painter(this->img);
-    painter.fillRect(exposed.boundingRect(), this->bg);
-
-    redraw();
-  } 
-  else {
-    curY += fontHeight;
-  }
-}
-
-/*! Calculate the pixel movement for the given cursor position
- */
-int AnsiWidget::calcTab(int x) const {
-  int c = 1;
-  while (x > tabSize) {
-    x -= tabSize;
-    c++;
-  }
-  return c * tabSize;
+void AnsiWidget::setTextColor(long fg, long bg) {
+  this->bg = ansiToQt(fg);
+  this->fg = ansiToQt(bg);
 }
 
 /*! Converts ANSI colors to FLTK colors
@@ -246,6 +282,137 @@ QColor AnsiWidget::ansiToQt(long c) {
   }
 
   return (c > 16) ? Qt::white : colors[c];
+}
+
+/*! Calculate the pixel movement for the given cursor position
+ */
+int AnsiWidget::calcTab(int x) const {
+  int c = 1;
+  while (x > tabSize) {
+    x -= tabSize;
+    c++;
+  }
+  return c * tabSize;
+}
+
+/*! clean up the offscreen buffer
+ */
+void AnsiWidget::destroyImage() {
+  if (img) {
+    delete img;
+    img = 0;
+  }
+}
+
+/*! Handles the characters following the \e[ sequence. Returns whether a further call
+ * is required to complete the process.
+ */
+bool AnsiWidget::doEscape(unsigned char* &p) {
+  int escValue = 0;
+
+  while (isdigit(*p)) {
+    escValue = (escValue * 10) + (*p - '0');
+    p++;
+  }
+
+  if (*p == ' ') {
+    p++;
+    switch (*p) {
+    case 'C':
+      // GSS  Graphic Size Selection
+      textSize = escValue;
+      updateFont();
+      break;
+    }
+  } 
+  else if (setGraphicsRendition(*p, escValue)) {
+    updateFont();
+  }
+    
+  if (*p == ';') {
+    p++; // next rendition
+    return true;
+  }
+  return false;
+}
+
+/*! widget initialisation
+ */
+void AnsiWidget::initImage() {
+  if (img == NULL) {
+    img = new QPixmap(parentWidget()->width(), parentWidget()->height());
+    img->fill(this->bg);
+  }
+}
+
+/*! Handles the \n character
+ */
+void AnsiWidget::newLine() {
+  int h = height();
+  int fontHeight = textHeight();
+
+  curX = INITXY;
+  if (curY + (fontHeight * 2) >= h) {
+    QRegion exposed;
+    img->scroll(-fontHeight, 0, 0, 0, width(), h, &exposed);
+
+    QPainter painter(this->img);
+    painter.fillRect(exposed.boundingRect(), this->bg);
+
+    update();
+  } 
+  else {
+    curY += fontHeight;
+  }
+}
+
+void AnsiWidget::paintEvent(QPaintEvent* event) {
+  QPainter painter(this);
+  QRect dirtyRect = event->rect();
+  painter.drawPixmap(dirtyRect, *img, dirtyRect);
+}
+
+void AnsiWidget::resizeEvent(QResizeEvent* event) {
+  int imgW = img->width();
+  int imgH = img->height();
+
+  if (width() > imgW) {
+    imgW = width();
+  }
+  
+  if (height() > imgH) {
+    imgH = height();
+  }
+  
+  QPixmap* old = img;
+  img = new QPixmap(imgW, imgH);
+  QPainter painter(img);
+  painter.fillRect(0, 0, imgW, imgH, this->bg);
+  painter.drawPixmap(0, 0, old->width(), old->height(), *old);
+  delete old;
+
+  QWidget::resizeEvent(event);
+}
+
+/*! reset the current drawing variables
+ */
+void AnsiWidget::reset(bool init) {
+  curY = INITXY; // allow for input control border
+  curX = INITXY;
+  tabSize = 40; // tab size in pixels (160/32 = 5)
+
+  if (init) {
+    curYSaved = 0;
+    curXSaved = 0;
+    invert = false;
+    underline = false;
+    bold = false;
+    italic = false;
+    fg = Qt::black;
+    bg = Qt::white;
+    textSize = 10;
+    updateFont();
+  }
 }
 
 /*! Handles the given escape character. Returns whether the font has changed
@@ -276,7 +443,7 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   case 'm': // \e[...m  - ANSI terminal
     switch (escValue) {
     case 0:  // reset
-      reset();
+      reset(false);
       break;
     case 1: // set bold on
       bold = true;
@@ -368,125 +535,14 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   return false;
 }
 
-/*! Handles the characters following the \e[ sequence. Returns whether a further call
- * is required to complete the process.
+/*! Updated the current font according to accumulated flags
  */
-bool AnsiWidget::doEscape(unsigned char* &p) {
-  int escValue = 0;
-
-  while (isdigit(*p)) {
-    escValue = (escValue * 10) + (*p - '0');
-    p++;
-  }
-
-  if (*p == ' ') {
-    p++;
-    switch (*p) {
-    case 'C':
-      // GSS  Graphic Size Selection
-      textSize = escValue;
-      updateFont();
-      break;
-    }
-  } 
-  else if (setGraphicsRendition(*p, escValue)) {
-    updateFont();
-  }
-    
-  if (*p == ';') {
-    p++; // next rendition
-    return true;
-  }
-  return false;
-}
-
-/*! Prints the contents of the given string onto the backbuffer
- */
-void AnsiWidget::print(const char *str) {
-  int len = strlen(str);
-  if (len <= 0) {
-    return;
-  }
-
-  QFontMetrics fm = fontMetrics();
-  int ascent = fm.ascent();
-  int fontHeight = fm.ascent() + fm.descent();
-  unsigned char *p = (unsigned char*)str;
-
-  while (*p) {
-    switch (*p) {
-    case '\a':   // beep
-      beep();
-      break;
-    case '\t':
-      curX = calcTab(curX+1);
-      break;
-    case '\xC':
-      {
-        init();
-        QPainter painter(this->img);
-        painter.fillRect(this->geometry(), this->bg);
-      }
-      break;
-    case '\033':  // ESC ctrl chars
-      if (*(p+1) == '[' ) {
-        p += 2;
-        while (doEscape(p)) {
-          // continue
-        }
-      }
-      break;
-    case '\n': // new line
-      newLine();
-      break;
-    case '\r': // return
-      {
-        curX = INITXY;
-        QPainter painter(this->img);
-        painter.fillRect(0, curY, width(), fontHeight, this->bg);
-      }
-      break;
-    default:
-      int numChars = 1; // print minimum of one character
-      int cx = fontMetrics().width((const char*) p, 1);
-      int w = width() - 1;
-
-      if (curX + cx >= w) {
-        newLine();
-      }
-
-      // print further non-control, non-null characters 
-      // up to the width of the line
-      while (p[numChars] > 31) {
-        cx += fontMetrics().width((const char*) p + numChars, 1);
-        if (curX + cx < w) {
-          numChars++;
-        } 
-        else {
-          break;
-        }
-      }
-            
-      QPainter painter(this->img);
-      painter.fillRect(curX, curY, cx, fontHeight, invert ? this->fg : this->bg);
-      painter.drawText(curX, curY + ascent, QString::fromAscii((const char*)p, numChars));
-
-      if (underline) {
-        painter.drawLine(curX, curY+ascent+1, curX+cx, curY+ascent+1);
-      }
-            
-      // advance
-      p += numChars-1; // allow for p++ 
-      curX += cx;
-    };
-        
-    if (*p == '\0') {
-      break;
-    }
-    p++;
-  }
-
-  redraw();
+void AnsiWidget::updateFont() {
+  QFont font = QFont("Courier", textSize);
+  font.setBold(bold);
+  font.setItalic(italic);
+  font.setFixedPitch(true);
+  this->setFont(font);
 }
 
 // End of "$Id: AnsiWidget.cxx 757 2010-03-05 10:47:36Z zeeb90au $".

@@ -10,11 +10,11 @@
 #ifndef ANSIWIDGET_H
 #define ANSIWIDGET_H
 
-#include <QLabel>
+#include <QWidget>
 #include <QPainter>
 #include <QColor>
 
-class AnsiWidget : public QLabel
+class AnsiWidget : public QWidget
 {
   Q_OBJECT
 public:
@@ -22,24 +22,22 @@ public:
   ~AnsiWidget();
 
   // public api
-  QRgb getPixel(int x, int y);
-  int getFontSize();
-  int getHeight() {return height();}
-  int getWidth()  {return width();}
-  int getX() {return curX;}
-  int getY() {return curY;}
-  int textHeight(void);
-  int textWidth(const char* s);
   void beep() const;
   void clearScreen();
   void drawImage(QImage* img, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
+  QRgb getPixel(int x, int y);
+  int  getHeight() {return height();}
+  int  getWidth()  {return width();}
+  int  getX() {return curX;}
+  int  getY() {return curY;}
+  int  textHeight(void);
+  int  textWidth(const char* s);
   void print(const char *str);
   void saveImage(const char* fn, int x, int y, int w, int h);
   void setColor(long color);
-  void setFontSize(float i);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
   void setXY(int x, int y) {curX=x; curY=y;}
@@ -49,15 +47,16 @@ signals:
 public slots:
 
 private:
-  bool doEscape(unsigned char *&p);
-  bool setGraphicsRendition(char c, int escValue);
-  int  calcTab(int x) const;
   QColor ansiToQt(long color);
+  int  calcTab(int x) const;
   void destroyImage();
-  void init();
+  bool doEscape(unsigned char *&p);
+  void initImage();
   void newLine();
-  void redraw();
-  void reset();
+  void paintEvent(QPaintEvent* event);
+  void resizeEvent(QResizeEvent* event); 
+  void reset(bool init);
+  bool setGraphicsRendition(char c, int escValue);
   void updateFont();
 
   QPixmap* img;
