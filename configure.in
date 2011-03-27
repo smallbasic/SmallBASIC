@@ -41,6 +41,11 @@ AC_ARG_ENABLE(sdl,
   [ac_build_sdl="yes"],
   [ac_build_sdl="no"])
 
+AC_ARG_ENABLE(qt,
+  AC_HELP_STRING([--enable-qt], [build QT version(default=no)]),
+  [ac_build_qt="yes"],
+  [ac_build_qt="no"])
+
 AC_ARG_ENABLE(dist,
   AC_HELP_STRING([--enable-dist], [prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
@@ -400,6 +405,49 @@ function buildSDL() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildQT() {
+   TARGET="Building QT version."
+ 
+   dnl Checks for qmake
+   AC_CHECK_PROG(have_qt, qmake, [yes], [no])
+ 
+   if test "${HAVE_API_VERSION}" = "no" ; then
+       AC_MSG_ERROR([
+     You need QT version 4.*
+     configure failed.
+   ])
+   fi
+ 
+   dnl avoid using MSCRT versions of printf for long double
+   case "${host_os}" in
+     cygwin*)
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
+   esac
+
+   AM_CONDITIONAL(WITH_HILDON, false)
+ 
+   dnl preconfigured values for FLTK build
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
+   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
+ 
+   BUILD_SUBDIRS="src src/qt"
+   AC_SUBST(BUILD_SUBDIRS)
+   AC_SUBST(FLTK_CXXFLAGS)
+
+   desktopentrydir='$(datarootdir)'/applications
+   AC_SUBST(desktopentrydir)
+
+   dnl generate qt project files
+   (cd src/qt && qmake -o Makefile.qt)
+}
+
 function buildConsole() {
    AM_CONDITIONAL(WITH_HILDON, false)
 
@@ -463,6 +511,7 @@ function buildDist() {
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/cygwin"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/unix"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/mingw"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/qt"
    AC_SUBST(BUILD_SUBDIRS)
    AM_CONDITIONAL(WITH_HILDON, false)
 }
@@ -477,6 +526,8 @@ elif test x$ac_build_fltk = xyes; then
    buildFLTK
 elif test x$ac_build_sdl = xyes; then
    buildSDL
+elif test x$ac_build_qt = xyes; then
+   buildQT
 else
    buildConsole
 fi  
@@ -496,6 +547,7 @@ src/gtk/data/Makefile
 src/gtk/icons/Makefile
 src/fltk/Makefile
 src/sdl/Makefile
+src/qt/Makefile
 src/cygwin/Makefile
 src/mingw/Makefile
 src/unix/Makefile

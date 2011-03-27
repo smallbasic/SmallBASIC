@@ -1,4 +1,4 @@
-// $Id: $
+// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -53,11 +53,15 @@ private:
   bool doEscape(unsigned char *&p);
   void initImage();
   void newLine();
-  void paintEvent(QPaintEvent* event);
-  void resizeEvent(QResizeEvent* event); 
   void reset(bool init);
   bool setGraphicsRendition(char c, int escValue);
   void updateFont();
+
+  void mouseMoveEvent(QMouseEvent* event);
+  void mousePressEvent(QMouseEvent* event);
+  void mouseReleaseEvent(QMouseEvent* event);
+  void paintEvent(QPaintEvent* event);
+  void resizeEvent(QResizeEvent* event); 
 
   QPixmap* img;
   QColor bg;
@@ -73,6 +77,9 @@ private:
   int curXSaved;
   int tabSize;
   int textSize;
+
+  // clipboard handling
+  int markX, markY, pointX, pointY;
 };
 
 #endif // ANSIWIDGET_H

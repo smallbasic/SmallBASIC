@@ -1,4 +1,4 @@
-// $Id: $
+// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -369,34 +369,6 @@ void AnsiWidget::newLine() {
   }
 }
 
-void AnsiWidget::paintEvent(QPaintEvent* event) {
-  QPainter painter(this);
-  QRect dirtyRect = event->rect();
-  painter.drawPixmap(dirtyRect, *img, dirtyRect);
-}
-
-void AnsiWidget::resizeEvent(QResizeEvent* event) {
-  int imgW = img->width();
-  int imgH = img->height();
-
-  if (width() > imgW) {
-    imgW = width();
-  }
-  
-  if (height() > imgH) {
-    imgH = height();
-  }
-  
-  QPixmap* old = img;
-  img = new QPixmap(imgW, imgH);
-  QPainter painter(img);
-  painter.fillRect(0, 0, imgW, imgH, this->bg);
-  painter.drawPixmap(0, 0, old->width(), old->height(), *old);
-  delete old;
-
-  QWidget::resizeEvent(event);
-}
-
 /*! reset the current drawing variables
  */
 void AnsiWidget::reset(bool init) {
@@ -404,6 +376,7 @@ void AnsiWidget::reset(bool init) {
     curY = INITXY; // allow for input control border
     curX = INITXY;
     tabSize = 40; // tab size in pixels (160/32 = 5)
+    markX = markY = pointX = pointY = 0;
   }
 
   curYSaved = 0;
@@ -549,4 +522,61 @@ void AnsiWidget::updateFont() {
   this->setFont(font);
 }
 
-// End of "$Id: AnsiWidget.cxx 757 2010-03-05 10:47:36Z zeeb90au $".
+void AnsiWidget::mouseMoveEvent(QMouseEvent* event) {
+  pointX = event->x();
+  pointY = event->y();
+  update();
+}
+
+void AnsiWidget::mousePressEvent(QMouseEvent* event) {
+  bool selected = (markX != pointX || markY != pointY);
+  markX = pointX = event->x();
+  markY = pointY = event->y();
+  if (selected) {
+    update();
+  }
+}
+
+void AnsiWidget::mouseReleaseEvent(QMouseEvent* event) {
+  bool selected = (markX != pointX || markY != pointY);
+  if (selected) {
+    update();
+  }
+}
+
+void AnsiWidget::paintEvent(QPaintEvent* event) {
+  QPainter painter(this);
+  QRect dirtyRect = event->rect();
+  painter.drawPixmap(dirtyRect, *img, dirtyRect);
+
+  // draw the mouse selection
+  if (markX != pointX || markY != pointY) {
+    painter.setPen(Qt::DashDotDotLine);
+    painter.setBackgroundMode(Qt::TransparentMode);
+    painter.drawRect(markX, markY, pointX - markX, pointY - markY);
+  }
+}
+
+void AnsiWidget::resizeEvent(QResizeEvent* event) {
+  int imgW = img->width();
+  int imgH = img->height();
+
+  if (width() > imgW) {
+    imgW = width();
+  }
+  
+  if (height() > imgH) {
+    imgH = height();
+  }
+  
+  QPixmap* old = img;
+  img = new QPixmap(imgW, imgH);
+  QPainter painter(img);
+  painter.fillRect(0, 0, imgW, imgH, this->bg);
+  painter.drawPixmap(0, 0, old->width(), old->height(), *old);
+  delete old;
+
+  QWidget::resizeEvent(event);
+}
+
+// End of "$Id$".
