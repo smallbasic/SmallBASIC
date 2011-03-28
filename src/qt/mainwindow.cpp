@@ -12,6 +12,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "config.h"
+#include "sbapp.h"
 #include <stdio.h>
 
 const char* aboutText =
@@ -38,6 +39,7 @@ MainWindow::~MainWindow() {
 bool MainWindow::event(QEvent* event) {
   if (event->type() == QEvent::ShowToParent) {
     ui->widget->print(aboutText);
+    sbasic_main("s");
   }
   return QMainWindow::event(event);
 }

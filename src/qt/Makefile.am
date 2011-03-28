@@ -14,7 +14,9 @@ sbasicb_SOURCES =				\
   ansiwidget.h					\
   main.cpp					\
   mainwindow.cpp				\
-  mainwindow.h
+  mainwindow.h					\
+  device.cpp
+  form_ui.cpp	
 
 bin_PROGRAMS = sbasicb
 

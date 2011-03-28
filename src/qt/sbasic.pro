@@ -17,10 +17,12 @@ FORMS    = mainwindow.ui
 
 SOURCES += main.cpp \
            mainwindow.cpp \
-           ansiwidget.cpp
+           ansiwidget.cpp \
+           device.cpp \
+           form_ui.cpp
 
 HEADERS += mainwindow.h \
-            ansiwidget.h
+           ansiwidget.h
 
 INCLUDEPATH += ../ ../../
 
