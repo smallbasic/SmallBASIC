@@ -6,6 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
 #include "sys.h"
 #include "var.h"
 #include "kw.h"
@@ -13,14 +14,11 @@
 #include "device.h"
 #include "smbas.h"
 #include "keymap.h"
-
-#include "MainWindow.h"
-#include "StringLib.h"
+#include "mainwindow.h"
 
 extern "C" {
 #include "blib_ui.h"
 }
-extern MainWindow* wnd;
 
 struct Form : public Group {
   Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {

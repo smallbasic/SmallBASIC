@@ -11,10 +11,19 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "ansiwidget.h"
 
 namespace Ui {
   class MainWindow;
 }
+
+#define C_LINKAGE_BEGIN extern "C" {
+#define C_LINKAGE_END }
+
+extern "C" void trace(const char* format, ...);
+
+struct MainWindow;
+extern MainWindow *wnd;
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -23,11 +32,26 @@ public:
   explicit MainWindow(QWidget *parent = 0);
   ~MainWindow();
 
+  AnsiWidget* out;
+
+  bool isBreakExec();
+  bool getPenMode();
+  void setModal(bool flag);
+  void resetPen();
+  void setPenMode(int flag);
+  int getMouseX();
+  int getMouseY();
+
 public slots:
+  void endModal();
   
 private:
   bool event(QEvent* event);
   Ui::MainWindow *ui;
+
+  int mouseX;
+  int mouseY;
+  int penMode; // PEN ON/OFF
 };
 
 #endif // MAINWINDOW_H

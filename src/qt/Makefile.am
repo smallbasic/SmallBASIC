@@ -9,13 +9,13 @@ EXTRA_DIST =					\
   sbasic.pro					\
   mainwindow.ui
 
-sbasicb_SOURCES =				\
-  ansiwidget.cpp				\
-  ansiwidget.h					\
-  main.cpp					\
-  mainwindow.cpp				\
-  mainwindow.h					\
-  device.cpp
+sbasicb_SOURCES =					\
+  ansiwidget.cpp					\
+  ansiwidget.h						\
+  main.cpp						\
+  mainwindow.cpp					\
+  mainwindow.h						\
+  dev_qt.cpp                                    	\
   form_ui.cpp	
 
 bin_PROGRAMS = sbasicb

@@ -18,7 +18,7 @@ FORMS    = mainwindow.ui
 SOURCES += main.cpp \
            mainwindow.cpp \
            ansiwidget.cpp \
-           device.cpp \
+           dev_qt.cpp \
            form_ui.cpp
 
 HEADERS += mainwindow.h \

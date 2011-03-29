@@ -7,11 +7,25 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
 
+#include "config.h"
 #include "sys.h"
 #include "device.h"
 #include "smbas.h"
 #include "osd.h"
 #include "blib_ui.h"
+#include "mainwindow.h"
+
+#include <QCoreApplication>
+#include <QEventLoop>
+#include <QMap>
+#include <QString>
+#include <QStringList>
+#include <QTimer>
+#include <QtGlobal>
+
+extern "C" {
+#include "fs_socket_client.h"
+}
 
 #ifdef WIN32
 #include <windows.h>
@@ -33,58 +47,49 @@
 clock_t lastEventTime;
 dword eventsPerTick;
 
+QMap<QString, QString> env;
+
 #define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
-#define EVT_PAUSE_TIME 0.005
+#define EVT_PAUSE_TIME 5 // MS
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
 void getHomeDir(char *fileName, bool appendSlash=true);
 bool cacheLink(dev_file_t * df, char *localFile);
-void updateForm(const char *s);
-void closeForm();
-void clearOutput();
 
 // in form_ui.cxx
 bool form_event();
 
 //--ANSI Output-----------------------------------------------------------------
 
-C_LINKAGE_BEGIN int osd_devinit() {
+C_LINKAGE_BEGIN 
+
+int osd_devinit() {
   wnd->resetPen();
   os_graphics = 1;
 
   // allow the application to set the preferred width and height
-  if ((opt_pref_width || opt_pref_height) && wnd->isIdeHidden()) {
-    int delta_x = wnd->w() - wnd->out->w();
-    int delta_y = wnd->h() - wnd->out->h();
+  if ((opt_pref_width || opt_pref_height)) {
+    int delta_x = wnd->width() - wnd->out->width();
+    int delta_y = wnd->height() - wnd->out->height();
     if (opt_pref_width < 10) {
       opt_pref_width = 10;
     }
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    wnd->outputGroup->resize(opt_pref_width + delta_x,
-                             opt_pref_height + delta_y);
+    //    wnd->outputGroup->resize(opt_pref_width + delta_x,
+    //                       opt_pref_height + delta_y);
   } 
 
-  // show the output-group in case it's the full-screen container. a possible
-  // bug with fltk on x11 prevents resize after the window has been shown
-  if (wnd->isInteractive() && !wnd->logPrint()) {
-    wnd->outputGroup->show();
-  }
+  os_graf_mx = wnd->out->width();
+  os_graf_my = wnd->out->height();
 
-  os_graf_mx = wnd->out->w();
-  os_graf_my = wnd->out->h();
-
-  os_ver = FL_MAJOR_VERSION + FL_MINOR_VERSION + FL_PATCH_VERSION;
+  os_ver = QT_VERSION;
   os_color = 1;
   os_color_depth = 16;
   setsysvar_str(SYSVAR_OSNAME, "QT");
-  if (SharedImage::first_image) {
-    SharedImage::first_image->clear_cache();
-  }
 
   osd_cls();
-  saveForm = false;
   dev_clrkb();
   ui_reset();
   return 1;
@@ -99,7 +104,7 @@ void osd_settextcolor(long fg, long bg) {
 }
 
 void osd_refresh() {
-  wnd->out->redraw();
+  wnd->out->update();
 }
 
 int osd_devrestore() {
@@ -131,54 +136,37 @@ int osd_events(int wait_flag) {
   switch (wait_flag) {
   case 1:
     // wait for an event
-    fltk::wait();
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
     break;
   case 2:
     // pause
-    fltk::wait(EVT_PAUSE_TIME);
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, EVT_PAUSE_TIME);
     break;
   default:
     // pump messages without pausing
-    fltk::check();
+    QCoreApplication::flush();
   }
 
   if (wnd->isBreakExec()) {
-    clearOutput();
+    ui_reset();
     return -2;
   }
   return 0;
 }
 
 void osd_setpenmode(int enable) {
-  wnd->penMode = (enable ? PEN_ON : PEN_OFF);
-}
-
-/**
- * sets the current mouse position and returns whether the mouse is within the output window
- */
-bool get_mouse_xy() {
-  fltk::Rectangle rc;
-  int x,y;
-
-  fltk::get_mouse(x, y);
-  wnd->out->get_absolute_rect(&rc);
-
-  // convert mouse screen rect to out-client rect
-  wnd->penDownX = x - rc.x();
-  wnd->penDownY = y - rc.y();
-  
-  return rc.contains(x,y);
+  wnd->setPenMode(enable ? PEN_ON : PEN_OFF);
 }
 
 int osd_getpen(int code) {
   if (wnd->isBreakExec()) {
-    clearOutput();
+    ui_reset();
     brun_break();
     return 0;
   }
 
-  if (wnd->penMode == PEN_OFF) {
-    fltk::wait();
+  if (wnd->getPenMode() == PEN_OFF) {
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
   }
 
   switch (code) {
@@ -186,43 +174,42 @@ int osd_getpen(int code) {
     // UNTIL PEN(0) - wait until move click or move
     if (form_event()) {
       // clicked a form widget
-      get_mouse_xy();
       return 1;
     }
-    fltk::wait(); // fallthru to re-test 
+
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+    // fallthru to re-test 
 
   case 3:    // returns true if the pen is down (and save curpos)
-    if (event_state() & ANY_BUTTON) {
-      if (get_mouse_xy()) {
-        return 1;
-      }
-    }
+    //if (event_state() & ANY_BUTTON) {
+    //  if (get_mouse_xy()) {
+    //    return 1;
+    //  }
+    //}
     return 0;
 
   case 1:                      // last pen-down x
-    return wnd->penDownX;
+    return wnd->getMouseX();
 
   case 2:                      // last pen-down y
-    return wnd->penDownY;
+    return wnd->getMouseY();
 
   case 4:                      // cur pen-down x
   case 10:
-    get_mouse_xy();
-    return wnd->penDownX;
+    return wnd->getMouseX();
 
   case 5:                      // cur pen-down y
   case 11:
-    get_mouse_xy();
-    return wnd->penDownY;
+    return wnd->getMouseY();
 
   case 12:                     // true if left button pressed
-    return (event_state() & BUTTON1);
+    return 0;//(event_state() & BUTTON1);
 
   case 13:                     // true if right button pressed
-    return (event_state() & BUTTON3);
+    return 0;//(event_state() & BUTTON3);
 
   case 14:                     // true if middle button pressed
-    return (event_state() & BUTTON2);
+    return 0;//(event_state() & BUTTON2);
   }
   return 0;
 }
@@ -231,8 +218,7 @@ int osd_getx() {
   return wnd->out->getX();
 }
 
-int osd_gety()
-{
+int osd_gety() {
   return wnd->out->getY();
 }
 
@@ -244,15 +230,11 @@ void osd_cls() {
   // send reset and clear screen codes
   if (opt_interactive) {
     wnd->out->print("\033[0m\xC");
-    TtyWidget* tty = wnd->tty();
-    if (tty) {
-      tty->clearScreen();
-    }
   }
 }
 
 int osd_textwidth(const char *str) {
-  return (int)wnd->out->textWidth(str);
+  return (int) wnd->out->textWidth(str);
 }
 
 int osd_textheight(const char *str) {
@@ -267,17 +249,6 @@ long osd_getpixel(int x, int y) {
   int xoffs = 0;
   int yoffs = 0;
 
-#if !defined(WIN32)
-  // offset x/y as getPixel is relative to the outer window
-  fltk::Rectangle rc;
-  wnd->out->get_absolute_rect(&rc);
-  xoffs = rc.x();
-  yoffs = rc.y();
-
-  wnd->get_absolute_rect(&rc);
-  xoffs -= rc.x();
-  yoffs -= rc.y();
-#endif
   return wnd->out->getPixel(x + xoffs, y + yoffs);
 }
 
@@ -299,70 +270,43 @@ void osd_beep() {
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
-#ifdef WIN32
-  if (!bgplay) {
-    ::Beep(frq, ms);
-  }
-#endif // WIN32
 }
 
 void osd_clear_sound_queue() {
 }
 
 void osd_write(const char* s) {
-  if (wnd->tty() && wnd->logPrint()) {
-    wnd->tty()->print(s);
-  }
   wnd->out->print(s);
 }
 
 void lwrite(const char* s) {
-  TtyWidget* tty = wnd->tty();
-  if (tty) {
-    tty->print(s);
-  }
+  wnd->out->print(s);
 }
 
 //--ENV-------------------------------------------------------------------------
 
 int dev_putenv(const char *s) {
-  if (formView && formView->setInputValue(s)) {
-    return 1;                   // updated form variable
-  }
-
-  envs.empty();
-  envs.append(s);
-
-  String lv = envs.lvalue();
-  String rv = envs.rvalue();
-
-  env.put(lv, rv);
+  QStringList elems = QString::fromAscii(s).split("=");
+  QString s1 = elems.at(0);
+  QString s2 = elems.at(1);
+  env.insert(s1, s2);
   return 1;
 }
 
-char *dev_getenv(const char *s) {
-  if (formView) {
-    char *var = (char *)(formView->getInputValue(formView->getInput(s)));
-    if (var) {
-      return var;
-    }
-  }
-  String *str = env.get(s);
-  return str ? (char *)str->toString() : getenv(s);
+char* dev_getenv(const char *s) {
+  QString str = env.value(s);
+  return str.count() ? str.toAscii().data() : getenv(s);
 }
 
-char *dev_getenv_n(int n) {
-  if (formView) {
-    return (char *)(formView->getInputValue(n));
-  }
-
-  int count = env.length();
+char* dev_getenv_n(int n) {
+  int count = env.count();
   if (n < count) {
-    envs.empty();
-    envs.append(env.getKey(n));
-    envs.append("=");
-    envs.append(env.get(n));
-    return (char *)envs.toString();
+    // first n number of elements exist in the qmap
+    QString e;
+    e.append(env.keys().at(n));
+    e.append("=");
+    e.append(env.values().at(n));
+    return e.toAscii().data();
   }
 
   while (environ[count]) {
@@ -375,144 +319,18 @@ char *dev_getenv_n(int n) {
 }
 
 int dev_env_count() {
-  if (formView) {
-    Properties p;
-    formView->getInputProperties(&p);
-    return p.length();
-  }
-  int count = env.length();
+  int count = env.count();
   while (environ[count]) {
     count++;
   }
   return count;
 }
 
-//--HTML------------------------------------------------------------------------
-
-void doEvent(void *) {
-  fltk::remove_check(doEvent);
-  if (eventName[0] == '|') {
-    // user flag to indicate UI should remain
-    // for next program execution
-    const char *filename = eventName.toString();
-    int len = strlen(filename);
-    if (strcasecmp(filename + len - 4, ".htm") == 0 ||
-        strcasecmp(filename + len - 5, ".html") == 0) {
-      // "execute" a html file
-      formView->loadFile(filename + 1, true);
-      return;
-    }
-    saveForm = true;
-  }
-  else if (wnd->siteHome.length() == 0) {
-    // not currently visiting a remote site
-    if (wnd->getEditor() && 
-        wnd->getEditor()->checkSave(true) == false) {
-      return;
-    }
-  }
-  wnd->execLink(eventName);
-}
-
-void modeless_cb(Widget * w, void *v) {
-  if (wnd->isEdit()) {
-    // create a full url path from the given relative path
-    const String & path = formView->getEventName();
-    eventName.empty();
-    if (path[0] != '!' &&
-        path[0] != '|' &&
-        path.startsWith("http://") == false && wnd->siteHome.length() > 0) {
-      int i = wnd->siteHome.indexOf('/', 7);  // siteHome root
-      if (path[0] == '/' && i != -1) {
-        // add to absolute path from http://hostname/
-        eventName.append(wnd->siteHome.substring(0, i));
-      }
-      else {
-        // append path to siteHome
-        eventName.append(wnd->siteHome);
-      }
-      if (eventName[eventName.length() - 1] != '/') {
-        eventName.append("/");
-      }
-      eventName.append(path[0] == '/' ? path.substring(1) : path);
-    }
-    else {
-      eventName.append(path);
-    }
-
-    fltk::add_check(doEvent);   // post message
-  }
-}
-
-void modal_cb(Widget * w, void *v) {
-  fltk::exit_modal();
-  dev_putenv(((HelpWidget *) w)->getEventName());
-}
-
-void dev_html(const char *html, const char *t, int x, int y, int w, int h) {
-  if (html == 0 || html[0] == 0) {
-    closeForm();
-  }
-  else if (strncmp(html, "file:///", 8) == 0 ||
-           strncmp(html, "http://", 7) == 0) {
-    browseFile(html);
-  }
-  else if (t && t[0]) {
-    // offset from main window
-    x += wnd->x();
-    y += wnd->y();
-    Group::current(0);
-    Window window(x, y, w, h, t);
-    window.begin();
-    HelpWidget out(0, 0, w, h);
-    out.loadBuffer(html);
-    out.callback(modal_cb);
-    window.resizable(&out);
-    window.end();
-    window.exec(wnd);
-    out.getInputProperties(&env);
-  }
-  else {
-    // fit within output window
-    if (x < wnd->out->x()) {
-      x = wnd->out->x();
-    }
-    if (y < wnd->out->y()) {
-      y = wnd->out->y();
-    }
-    int wmax = wnd->out->x() + wnd->out->w() - x;
-    int hmax = wnd->out->y() + wnd->out->h() - y;
-    if (w > wmax || w == 0) {
-      w = wmax;
-    }
-    if (h > hmax || h == 0) {
-      h = hmax;
-    }
-    closeForm();
-    wnd->outputGroup->begin();
-    formView = new HelpWidget(x, y, w, h);
-    wnd->outputGroup->end();
-    formView->callback(modeless_cb);
-    formView->loadBuffer(html);
-    formView->show();
-    formView->take_focus();
-
-    // update the window title using the html <title> tag contents
-    const char *s = formView->getTitle();
-    if (s && s[0]) {
-      String title;
-      title.append(s);
-      title.append(" - SmallBASIC");
-      wnd->copy_label(title);
-    }
-  }
-}
-
 //--IMAGE-----------------------------------------------------------------------
 
-Image *getImage(dev_file_t * filep, int index) {
+QImage *getImage(dev_file_t * filep, int index) {
   // check for cached imaged
-  SharedImage *image = loadImage(filep->name, 0);
+  QImage *image = new QImage(filep->name);
   char localFile[PATH_MAX];
 
   // read image from web server
@@ -523,17 +341,13 @@ Image *getImage(dev_file_t * filep, int index) {
       return 0;
     }
     strcpy(filep->name, localFile);
-    image = loadImage(filep->name, 0);
+    image = new QImage(filep->name);
     break;
   case ft_stream:
     // loaded in SharedImage
     break;
   default:
     return 0;
-  }
-
-  if (image) {
-    image->fetch_if_needed();
   }
 
   return image;
@@ -548,10 +362,11 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
   }
 
   if (filep->open_flags == DEV_FILE_INPUT) {
-    Image *img = getImage(filep, index);
+    QImage *img = getImage(filep, index);
     if (img != 0) {
       // input/read image and display
-      img->measure(imgw, imgh);
+      imgw = img->width();
+      imgh = img->height();
       wnd->out->drawImage(img, x, y, sx, sy,
                           (w == 0 ? imgw : w), (h == 0 ? imgh : h));
     }
@@ -564,77 +379,52 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
 
 int dev_image_width(int handle, int index) {
   int imgw = -1;
-  int imgh = -1;
   dev_file_t *filep = dev_getfileptr(handle);
   if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
     return 0;
   }
 
-  Image *img = getImage(filep, index);
+  QImage *img = getImage(filep, index);
   if (img) {
-    img->measure(imgw, imgh);
+    imgw = img->width();
   }
   return imgw;
 }
 
 int dev_image_height(int handle, int index) {
-  int imgw = -1;
   int imgh = -1;
   dev_file_t *filep = dev_getfileptr(handle);
   if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
     return 0;
   }
 
-  Image *img = getImage(filep, index);
+  QImage *img = getImage(filep, index);
   if (img) {
-    img->measure(imgw, imgh);
+    imgh = img->height();
   }
   return imgh;
 }
 
 //--DELAY-----------------------------------------------------------------------
 
-void timeout_callback(void* data) {
-  if (wnd->isModal()) {
-    wnd->setModal(false);
-  }
-}
-
 void dev_delay(dword ms) {
   if (!wnd->isBreakExec()) {
-    add_timeout(((float)ms)/1000, timeout_callback, 0);
     wnd->setModal(true);
+    QTimer::singleShot(ms, wnd, SLOT(endModal()));
+
     while (wnd->isModal()) {
-      fltk::wait(0.1);
+      QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, 100);
     }
   }
 }
 
 //--INPUT-----------------------------------------------------------------------
 
-void enter_cb(Widget *, void *v) {
-  wnd->setModal(false);
-}
-
 char *dev_gets(char *dest, int size) {
-  if (!wnd->isInteractive() || wnd->logPrint()) {
-    EditorWidget* editor = wnd->runEditWidget;
-    if (!editor) {
-      editor = wnd->getEditor(false);
-    }
-    if (editor) {
-      editor->getInput(dest, size);
-    }
-    return dest;
-  }
-
-  wnd->tabGroup->selected_child(wnd->outputGroup);
-  wnd->outputGroup->begin();
-
   LineInput *in = new LineInput(wnd->out->getX() + 2,
                                 wnd->out->getY() + 1,
                                 20, wnd->out->textHeight() + 4);
-  wnd->outputGroup->end();
+
   in->callback(enter_cb);
   in->reserve(size);
   in->textfont(wnd->out->labelfont());
@@ -643,11 +433,11 @@ char *dev_gets(char *dest, int size) {
   wnd->setModal(true);
 
   while (wnd->isModal()) {
-    fltk::wait();
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, 100);
   }
 
   if (wnd->isBreakExec()) {
-    clearOutput();
+    ui_reset();    
     brun_break();
   }
 
@@ -660,10 +450,6 @@ char *dev_gets(char *dest, int size) {
   // reposition x to adjust for input box
   wnd->out->setXY(wnd->out->getX() + 4, wnd->out->getY());
   wnd->out->print(dest);
-
-  if (formView) {
-    formView->redraw();
-  }
 
   return dest;
 }
@@ -700,25 +486,6 @@ void getHomeDir(char *fileName, bool appendSlash) {
   }
 }
 
-void closeForm() {
-  if (formView != 0) {
-    formView->parent()->remove(formView);
-    formView->parent(0);
-    delete formView;
-    formView = 0;
-  }
-  wnd->out->redraw();
-}
-
-void clearOutput() {
-  closeForm();
-  ui_reset();
-}
-
-bool isFormActive() {
-  return formView != null;
-}
-
 // copy the url into the local cache
 bool cacheLink(dev_file_t * df, char *localFile) {
   char rxbuff[1024];
@@ -738,9 +505,6 @@ bool cacheLink(dev_file_t * df, char *localFile) {
   strncat(localFile, url + 7, pathBegin - url - 7);
   strcat(localFile, "/");
   makedir(localFile);
-  if (formView) {
-    formView->setDocHome(localFile);
-  }
 
   if (pathBegin != 0 && pathBegin < pathEnd) {
     // re-create the server path in cache
@@ -780,7 +544,6 @@ bool cacheLink(dev_file_t * df, char *localFile) {
     }
   }
 
-  // TODO: move this to a separate thread
   while (true) {
     int bytes = recv(df->handle, (char *)rxbuff, sizeof(rxbuff), 0);
     if (bytes == 0) {
@@ -842,18 +605,6 @@ bool cacheLink(dev_file_t * df, char *localFile) {
   fclose(fp);
   shutdown(df->handle, df->handle);
   return httpOK;
-}
-
-// redisplay the help widget and associated images
-void updateForm(const char *s) {
-  if (formView) {
-    formView->loadBuffer(s);
-    formView->show();
-    formView->take_focus();
-  }
-  else {
-    dev_html(s, 0, 0, 0, 0, 0);
-  }
 }
 
 // End of "$Id$".

@@ -426,20 +426,19 @@ function buildQT() {
 
    AM_CONDITIONAL(WITH_HILDON, false)
  
-   dnl preconfigured values for FLTK build
+   dnl preconfigured values for QT build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
+   AC_DEFINE(_QT, 1, [Defined for QT build.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
-   AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
+   AC_DEFINE(IMPL_HTML, 0, [Driver implements the html command])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
  
    BUILD_SUBDIRS="src src/qt"
    AC_SUBST(BUILD_SUBDIRS)
-   AC_SUBST(FLTK_CXXFLAGS)
 
    desktopentrydir='$(datarootdir)'/applications
    AC_SUBST(desktopentrydir)

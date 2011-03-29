@@ -30,6 +30,8 @@ const char* aboutText =
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   ui(new Ui::MainWindow) {
   ui->setupUi(this);
+  wnd = this;
+  out = ui->widget;
 }
 
 MainWindow::~MainWindow() {
@@ -38,8 +40,7 @@ MainWindow::~MainWindow() {
 
 bool MainWindow::event(QEvent* event) {
   if (event->type() == QEvent::ShowToParent) {
-    ui->widget->print(aboutText);
-    sbasic_main("s");
+    out->print(aboutText);
   }
   return QMainWindow::event(event);
 }
