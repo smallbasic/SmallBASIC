@@ -216,7 +216,7 @@ void AnsiWidget::print(const char *str) {
       painter.setBackground(invert ? this->fg : this->bg);
       painter.setPen(invert ? this->bg : this->fg);
       painter.fillRect(curX, curY, cx, fontHeight, invert ? this->fg : this->bg);
-      painter.drawText(curX, curY + ascent, QString::fromAscii((const char*)p, numChars));
+      painter.drawText(curX, curY + ascent, QString::fromUtf8((const char*)p, numChars));
 
       if (underline) {
         painter.drawLine(curX, curY+ascent+1, curX+cx, curY+ascent+1);

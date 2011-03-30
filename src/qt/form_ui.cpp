@@ -16,12 +16,17 @@
 #include "keymap.h"
 #include "mainwindow.h"
 
-#include <QWidget>
-#include <QCheckBox>
-#include <QString>
-#include <QStringList>
-#include <QVariant>
 #include <QAbstractItemModel>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QListView>
+#include <QPlainTextEdit>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QString>
+#include <QVariantList>
+#include <QVariant>
+#include <QWidget>
 
 extern "C" {
 #include "blib_ui.h"
@@ -101,7 +106,7 @@ struct WidgetInfo : public QVariant {
 
 // implements abstract StringList as a list of strings
 struct DropListModel : QAbstractItemModel {
-  QStringList list;
+  QVariantList list;
   int focus_index;
 
   DropListModel(const char* items, var_t* v) : QAbstractItemModel() {
@@ -119,11 +124,11 @@ struct DropListModel : QAbstractItemModel {
       const char* c = strchr(items + i, '|');
       int end_index = c ? c - items : len;
       if (end_index > 0) {
-        QString* s = new QString(items + i, end_index - i);
-        list.add(s);
+        QString s = QString::fromUtf8(items + i, end_index - i);
+        list.append(s);
         i = end_index;
         if (v != 0 && v->type == V_STR && v->v.p.ptr &&
-            strcasecmp((const char*)v->v.p.ptr, s->toUtf8().data()) == 0) {
+            strcasecmp((const char*)v->v.p.ptr, s.toUtf8().data()) == 0) {
           focus_index = item_index;
         }
         item_index++;
@@ -161,7 +166,7 @@ struct DropListModel : QAbstractItemModel {
 
   // parent of the model item with the given index
   QModelIndex parent(const QModelIndex &index) const {
-    return createIndex(-1);
+    return createIndex(-1, -1);
   }
 
   // return the number of rows under the given parent
@@ -201,19 +206,19 @@ void array_to_string(QString& s, var_t* v) {
 
 // set basic string variable to widget state when the variable has changed
 bool update_gui(QWidget* w, WidgetInfo* inf) {
-  Choice* dropdown;
-  Browser* listbox;
+  QComboBox* dropdown;
+  QListView* listbox;
   DropListModel* model;
 
   if (inf->var->type == V_INT && inf->var->v.i != inf->orig.i) {
     // update list control with new int variable
     switch (inf->type) {
     case ctrl_dropdown:
-      ((Choice*) w)->value(inf->var->v.i);
+      ((QComboBox*) w)->value(inf->var->v.i);
       return true;
 
     case ctrl_listbox:
-      ((Browser*) w)->select(inf->var->v.i);
+      ((QListView*) w)->select(inf->var->v.i);
       return true;
 
     default:
@@ -227,17 +232,17 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
 
     switch (inf->type) {
     case ctrl_dropdown:
-      delete((Choice*) w)->list();
-      ((Choice*) w)->list(new DropListModel(0, inf->var));
+      delete((QComboBox*) w)->list();
+      ((QComboBox*) w)->list(new DropListModel(0, inf->var));
       w->layout();
       return true;
 
     case ctrl_listbox:
-      delete((Browser*) w)->list();
-      ((Browser*) w)->list(new DropListModel(0, inf->var));
-      ((Browser*) w)->xposition(0);
-      ((Browser*) w)->yposition(0);
-      ((Browser*) w)->select(0);
+      delete((QListView*) w)->list();
+      ((QListView*) w)->list(new DropListModel(0, inf->var));
+      ((QListView*) w)->xposition(0);
+      ((QListView*) w)->yposition(0);
+      ((QListView*) w)->select(0);
       w->layout();
       return true;
 
@@ -248,7 +253,7 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
 
     case ctrl_text:
       array_to_string(s, inf->var);
-      ((Input*) w)->text(s.c_str());
+      ((QPlainTextEdit*) w)->text(s.c_str());
       break;
 
     default:
@@ -260,7 +265,7 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
     // update list control with new string variable
     switch (inf->type) {
     case ctrl_dropdown:
-      dropdown = (Choice*) w;
+      dropdown = (QComboBox*) w;
       model = (DropListModel*) dropdown->list();
       if (strchr((const char*)inf->var->v.p.ptr, '|')) {
         // create a new list of items
@@ -278,7 +283,7 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
       break;
 
     case ctrl_listbox:
-      listbox = (Browser*) w;
+      listbox = (QListView*) w;
       model = (DropListModel*) listbox->list();
       if (strchr((const char*)inf->var->v.p.ptr, '|')) {
         // create a new list of items
@@ -305,7 +310,7 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
       break;
 
     case ctrl_text:
-      ((Input*)w)->text((const char*)inf->var->v.p.ptr);
+      ((QPlainTextEdit*)w)->text((const char*)inf->var->v.p.ptr);
       break;
 
     case ctrl_button:
@@ -322,8 +327,8 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
 
 // synchronise basic variable and widget state
 void transfer_data(Widget* w, WidgetInfo* inf) {
-  Choice* dropdown;
-  Browser* listbox;
+  QComboBox* dropdown;
+  QListView* listbox;
   DropListModel* model;
 
   if (update_gui(w, inf)) {
@@ -334,7 +339,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
   // set widget state to basic variable
   switch (inf->type) {
   case ctrl_check:
-    if (((CheckButton*) w)->value()) {
+    if (((QCheckBox*) w)->value()) {
       v_setstr(inf->var, w->label());
     }
     else {
@@ -343,7 +348,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
     break;
 
   case ctrl_radio:
-    if (((RadioButton*) w)->value() && w->label() != 0) {
+    if (((QRadioButton*) w)->value() && w->label() != 0) {
       v_setstr(inf->var, w->label());
     }
     else if (!inf->is_group_radio) {
@@ -353,8 +358,8 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
     break;
 
   case ctrl_text:
-    if (((Input*)w)->text()) {
-      v_setstr(inf->var, ((Input*)w)->text());
+    if (((QPlainTextEdit*)w)->text()) {
+      v_setstr(inf->var, ((QPlainTextEdit*)w)->text());
     }
     else {
       v_zerostr(inf->var);
@@ -362,7 +367,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
     break;
 
   case ctrl_dropdown:
-    dropdown = (Choice*) w;
+    dropdown = (QComboBox*) w;
     model = (DropListModel*) dropdown->list();
     if (dropdown->value() != -1) {
       QString* s = model->getElementAt(dropdown->value());
@@ -373,7 +378,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
     break;
 
   case ctrl_listbox:
-    listbox = (Browser*) w;
+    listbox = (QListView*) w;
     model = (DropListModel*) listbox->list();
     if (listbox->value() != -1) {
       QString* s = model->getElementAt(listbox->value());
@@ -421,7 +426,7 @@ Group* findRadioGroup(Group* parent, var_t* v) {
 
 // radio control's belong to the same group when they share
 // a common basic variable
-void update_radio_group(WidgetInfo* radioInf, RadioButton* radio) {
+void update_radio_group(WidgetInfo* radioInf, QRadioButton* radio) {
   var_t* v = radioInf->var;
 
   if (v == 0 || v->type != V_STR) {
@@ -431,7 +436,7 @@ void update_radio_group(WidgetInfo* radioInf, RadioButton* radio) {
   Group* radioGroup = findRadioGroup(form, v);
 
   if (!radioGroup) {
-    radioGroup = new Group(0, 0, form->w(), form->h());
+    radioGroup = new Group(0, 0, form->width(), form->height());
     form->add(radioGroup);
   }
   else {
@@ -462,24 +467,24 @@ void widget_cb(Widget* w, void* v) {
 }
 
 void update_widget(QWidget* widget, WidgetInfo* inf, QRect& rect) {
-  if (rect.w() != -1) {
-    widget->w(rect.w());
+  if (rect.width() != -1) {
+    widget->setFixedWidth(rect.width());
   }
 
-  if (rect.h() != -1) {
-    widget->h(rect.h());
+  if (rect.height() != -1) {
+    widget->setFixedHeight(rect.height());
   }
 
   if (rect.x() < 0) {
-    rect.x(prev_x - rect.x());
+    rect.setX(prev_x - rect.x());
   }
 
   if (rect.y() < 0) {
-    rect.y(prev_y - rect.y());
+    rect.setY(prev_y - rect.y());
   }
 
-  prev_x = rect.x() + rect.w();
-  prev_y = rect.y() + rect.h();
+  prev_x = rect.x() + rect.width();
+  prev_y = rect.y() + rect.height();
 
   widget->x(rect.x());
   widget->y(rect.y());
@@ -563,7 +568,7 @@ C_LINKAGE_BEGIN void ui_reset() {
     form->hide();
     QObjectList children = form->children();
     // qDeleteAll(list.begin(), list.end());
-    //list.clear();
+    // list.clear();
 
     int n = form->children().count();
     for (int i = 0; i < n; i++) {
@@ -577,7 +582,7 @@ C_LINKAGE_BEGIN void ui_reset() {
     form = 0;
 
     wnd->out->show();
-    wnd->out->redraw();
+    wnd->out->update();
     wnd->take_focus();
   }
   mode = m_reset;
@@ -605,18 +610,18 @@ void cmd_button() {
         inf->type = ctrl_radio;
         inf->is_group_radio = false;
         form_end(); // add widget to RadioGroup
-        RadioButton* widget = new RadioButton(x, y, w, h);
+        QRadioButton* widget = new QRadioButton(x, y, w, h);
         update_radio_group(inf, widget);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
       }
       else if (strcasecmp("checkbox", type) == 0 || strcasecmp("check", type) == 0) {
         inf->type = ctrl_check;
-        CheckButton* widget = new CheckButton(x, y, w, h);
+        QCheckBox* widget = new QCheckBox(x, y, w, h);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
       }
       else if (strcasecmp("button", type) == 0) {
         inf->type = ctrl_button;
-        Button* widget = new Button(x, y, w, h);
+        QPushButton* widget = new QPushButton(x, y, w, h);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
       }
       else if (strcasecmp("label", type) == 0) {
@@ -629,7 +634,7 @@ void cmd_button() {
       }
       else if (strcasecmp("listbox", type) == 0 || strcasecmp("list", type) == 0) {
         inf->type = ctrl_listbox;
-        Browser* widget = new Browser(x, y, w, h);
+        QListView* widget = new QListView(x, y, w, h);
         DropListModel* model = new DropListModel(caption, v);
         widget->list(model);
         widget->box(BORDER_BOX);
@@ -641,7 +646,7 @@ void cmd_button() {
       }
       else if (strcasecmp("dropdown", type) == 0 || strcasecmp("choice", type) == 0) {
         inf->type = ctrl_dropdown;
-        Choice* widget = new Choice(x, y, w, h);
+        QComboBox* widget = new QComboBox(x, y, w, h);
         DropListModel* model = new DropListModel(caption, v);
         widget->list(model);
         widget->box(BORDER_BOX);
@@ -657,7 +662,7 @@ void cmd_button() {
     }
     else {
       inf->type = ctrl_button;
-      Button* widget = new Button(x, y, w, h);
+      QPushButton* widget = new QPushButton(x, y, w, h);
       update_button(widget, inf, caption, rect, BN_W, BN_H);
     }
   }
@@ -674,7 +679,7 @@ void cmd_text() {
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {
     form_create();
-    Input* widget = new Input(x, y, w, h);
+    QPlainTextEdit* widget = new QPlainTextEdit(x, y, w, h);
     widget->box(BORDER_BOX);
     QRect rect(x, y, w, h);
     WidgetInfo* inf = new WidgetInfo();
@@ -682,7 +687,7 @@ void cmd_text() {
     inf->type = ctrl_text;
     update_widget(widget, inf, rect);
     if (rect.h() > (getascent() + getdescent() + BN_H)) {
-      widget->type(Input::MULTILINE | Input::WORDWRAP);
+      widget->type(QPlainTextEdit::MULTILINE | QPlainTextEdit::WORDWRAP);
     }
     form->end();
   }
