@@ -16,18 +16,25 @@
 #include "keymap.h"
 #include "mainwindow.h"
 
+#include <QWidget>
+#include <QCheckBox>
+#include <QString>
+#include <QStringList>
+#include <QVariant>
+#include <QAbstractItemModel>
+
 extern "C" {
 #include "blib_ui.h"
 }
 
-struct Form : public Group {
-  Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {
+struct Form : public QWidget {
+  Form(int x1, int x2, int y1, int y2) : QWidget() {
+    setGeometry(x1, x2, y1, y2);
     this->cmd = 0;
     this->var = 0;
     this->kb_handle = false;
   }
   ~Form() {}
-  void draw(); // avoid drawing over the tab-bar
   var_t* var; // form variable contains the value of the event widget
   int cmd; // doform argument by value
   bool kb_handle; // whether doform returns on a keyboard event
@@ -60,7 +67,10 @@ int prev_y;
 #define RAD_W 22
 #define RAD_H  0
 
-struct WidgetInfo {
+struct WidgetInfo : public QVariant {
+  WidgetInfo() : QVariant(1, this) {
+  }
+
   ControlType type;
   var_t* var;
   bool is_group_radio;
@@ -90,11 +100,11 @@ struct WidgetInfo {
 };
 
 // implements abstract StringList as a list of strings
-struct DropListModel : StringList {
-  strlib::List list;
+struct DropListModel : QAbstractItemModel {
+  QStringList list;
   int focus_index;
 
-  DropListModel(const char* items, var_t* v) : StringList() {
+  DropListModel(const char* items, var_t* v) : QAbstractItemModel() {
     focus_index = -1;
 
     if (v && v->type == V_ARRAY) {
@@ -109,11 +119,11 @@ struct DropListModel : StringList {
       const char* c = strchr(items + i, '|');
       int end_index = c ? c - items : len;
       if (end_index > 0) {
-        String* s = new String(items + i, end_index - i);
+        QString* s = new QString(items + i, end_index - i);
         list.add(s);
         i = end_index;
         if (v != 0 && v->type == V_STR && v->v.p.ptr &&
-            strcasecmp((const char*)v->v.p.ptr, s->toString()) == 0) {
+            strcasecmp((const char*)v->v.p.ptr, s->toUtf8().data()) == 0) {
           focus_index = item_index;
         }
         item_index++;
@@ -121,16 +131,14 @@ struct DropListModel : StringList {
     }
   }
 
-  virtual ~DropListModel() {
-    list.removeAll();
-  }
+  virtual ~DropListModel() {}
 
   // construct from an array of values
   void fromArray(const char* caption, var_t* v) {
     for (int i = 0; i < v->v.a.size; i++) {
       var_t* el_p = (var_t*) (v->v.a.ptr + sizeof(var_t)* i);
       if (el_p->type == V_STR) {
-        list.add((const char*)el_p->v.p.ptr);
+        list << (const char*) el_p->v.p.ptr;
         if (caption && strcasecmp((const char*)el_p->v.p.ptr, caption) == 0) {
           focus_index = i;
         }
@@ -138,7 +146,7 @@ struct DropListModel : StringList {
       else if (el_p->type == V_INT) {
         char buff[40];
         sprintf(buff, VAR_INT_FMT, el_p->v.i);
-        list.add(buff);
+        list << buff;
       }
       else if (el_p->type == V_ARRAY) {
         fromArray(caption, el_p);
@@ -146,46 +154,34 @@ struct DropListModel : StringList {
     }
   }
 
-  // return the number of elements
-  int children(const Menu*) {
-    return list.length();
+  // index of the item in the model 
+  QModelIndex index(int row, int column) const {
+    return createIndex(row, column);
   }
 
-  // return the label at the given index
-  const char* label(const Menu*, int index) {
-    return getElementAt(index)->c_str();
+  // parent of the model item with the given index
+  QModelIndex parent(const QModelIndex &index) const {
+    return createIndex(-1);
   }
 
-  String* getElementAt(int index) {
-    return (String*) list.get(index);
+  // return the number of rows under the given parent
+  int rowCount(const QModelIndex& parent) const {
+    return parent.isValid() ? 0 : list.count();
   }
 
-  // returns the index corresponding to the given string
-  int getPosition(const char* t) {
-    int size = list.length();
-    for (int i = 0; i < size; i++) {
-      if (!strcasecmp(((String*) list.get(i))->c_str(), t)) {
-        return i;
-      }
-    }
-    return -1;
+  // return the number of columns
+  int columnCount(const QModelIndex& parent) const {
+    return 1;
+  }
+
+  // return the data at the given index
+  QVariant data(const QModelIndex& index) const {
+    return list.at(index.row());
   }
 };
 
-void Form::draw() {
-  int numchildren = children();
-  Rectangle r(w(), h());
-  push_clip(r);
-  for (int n = 0; n < numchildren; n++) {
-    Widget & w = *child(n);
-    draw_child(w);
-    draw_outside_label(w);
-  }
-  pop_clip();
-}
-
-// convert a basic array into a std::string
-void array_to_string(String& s, var_t* v) {
+// convert a basic array into a QString
+void array_to_string(QString& s, var_t* v) {
   for (int i = 0; i < v->v.a.size; i++) {
     var_t*el_p = (var_t*) (v->v.a.ptr + sizeof(var_t)* i);
     if (el_p->type == V_STR) {
@@ -204,7 +200,7 @@ void array_to_string(String& s, var_t* v) {
 }
 
 // set basic string variable to widget state when the variable has changed
-bool update_gui(Widget* w, WidgetInfo* inf) {
+bool update_gui(QWidget* w, WidgetInfo* inf) {
   Choice* dropdown;
   Browser* listbox;
   DropListModel* model;
@@ -227,7 +223,7 @@ bool update_gui(Widget* w, WidgetInfo* inf) {
 
   if (inf->var->type == V_ARRAY && inf->var->v.p.ptr != inf->orig.ptr) {
     // update list control with new array variable
-    String s;
+    QString s;
 
     switch (inf->type) {
     case ctrl_dropdown:
@@ -300,7 +296,7 @@ bool update_gui(Widget* w, WidgetInfo* inf) {
 
     case ctrl_check:
     case ctrl_radio:
-      ((CheckButton*) w)->
+      ((QCheckBox*) w)->
         value(!strcasecmp((const char*)inf->var->v.p.ptr, w->label()));
       break;
 
@@ -369,7 +365,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
     dropdown = (Choice*) w;
     model = (DropListModel*) dropdown->list();
     if (dropdown->value() != -1) {
-      String* s = model->getElementAt(dropdown->value());
+      QString* s = model->getElementAt(dropdown->value());
       if (s) {
         v_setstr(inf->var, s->c_str());
       }
@@ -380,7 +376,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
     listbox = (Browser*) w;
     model = (DropListModel*) listbox->list();
     if (listbox->value() != -1) {
-      String* s = model->getElementAt(listbox->value());
+      QString* s = model->getElementAt(listbox->value());
       if (s) {
         v_setstr(inf->var, s->c_str());
       }
@@ -405,12 +401,12 @@ Group* findRadioGroup(Group* parent, var_t* v) {
   Group* radioGroup = 0;
   int n = parent->children();
   for (int i = 0; i < n && !radioGroup; i++) {
-    Widget* w = parent->child(i);
+    QWidget* w = parent->child(i);
     if (!w->user_data()) {
       radioGroup = findRadioGroup((Group*) w, v);
     }
     else {
-      WidgetInfo* inf = (WidgetInfo*) w->user_data();
+      WidgetInfo* inf = (WidgetInfo*) w->property();
       if (inf->type == ctrl_radio &&
           inf->var->type == V_STR &&
           (inf->var == v || inf->var->v.p.ptr == v->v.p.ptr)) {
@@ -465,7 +461,7 @@ void widget_cb(Widget* w, void* v) {
   }
 }
 
-void update_widget(Widget* widget, WidgetInfo* inf, Rectangle& rect) {
+void update_widget(QWidget* widget, WidgetInfo* inf, QRect& rect) {
   if (rect.w() != -1) {
     widget->w(rect.w());
   }
@@ -500,8 +496,8 @@ void update_widget(Widget* widget, WidgetInfo* inf, Rectangle& rect) {
   widget->textcolor(wnd->out->labelcolor());
 }
 
-void update_button(Widget* widget, WidgetInfo* inf,
-                   const char* caption, Rectangle& rect, int def_w, int def_h) {
+void update_button(QWidget* widget, WidgetInfo* inf,
+                   const char* caption, QRect& rect, int def_w, int def_h) {
   if (rect.w() < 0 && caption != 0) {
     rect.w((int) getwidth(caption) + def_w + (-rect.w() - 1));
   }
@@ -543,7 +539,7 @@ void form_update(Group* group) {
   if (group && wnd->isRunning()) {
     int n = group->children();
     for (int i = 0; i < n; i++) {
-      Widget* w = group->child(i);
+      QWidget* w = group->child(i);
       if (!w->user_data()) {
         form_update((Group*) w);
       }
@@ -565,7 +561,11 @@ void form_end() {
 C_LINKAGE_BEGIN void ui_reset() {
   if (form != 0) {
     form->hide();
-    int n = form->children();
+    QObjectList children = form->children();
+    // qDeleteAll(list.begin(), list.end());
+    //list.clear();
+
+    int n = form->children().count();
     for (int i = 0; i < n; i++) {
       WidgetInfo* inf = (WidgetInfo*) form->child(i)->user_data();
       delete inf;
@@ -595,7 +595,7 @@ void cmd_button() {
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
     WidgetInfo* inf = new WidgetInfo();
     inf->var = v;
-    Rectangle rect(x, y, w, h);
+    QRect rect(x, y, w, h);
 
     if (prog_error) {
       return;
@@ -621,7 +621,8 @@ void cmd_button() {
       }
       else if (strcasecmp("label", type) == 0) {
         inf->type = ctrl_label;
-        Widget* widget = new Widget(x, y, w, h);
+        QWidget* widget = new QWidget();
+        widget->setGeometry(x, y, w, h);
         widget->box(FLAT_BOX);
         widget->align(ALIGN_LEFT | ALIGN_INSIDE | ALIGN_CLIP);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
@@ -675,7 +676,7 @@ void cmd_text() {
     form_create();
     Input* widget = new Input(x, y, w, h);
     widget->box(BORDER_BOX);
-    Rectangle rect(x, y, w, h);
+    QRect rect(x, y, w, h);
     WidgetInfo* inf = new WidgetInfo();
     inf->var = v;
     inf->type = ctrl_text;
