@@ -17,6 +17,7 @@
 
 #include <QCoreApplication>
 #include <QEventLoop>
+#include <QLineEdit>
 #include <QMap>
 #include <QString>
 #include <QStringList>
@@ -295,7 +296,7 @@ int dev_putenv(const char *s) {
 
 char* dev_getenv(const char *s) {
   QString str = env.value(s);
-  return str.count() ? str.toAscii().data() : getenv(s);
+  return str.count() ? str.toUtf8().data() : getenv(s);
 }
 
 char* dev_getenv_n(int n) {
@@ -306,7 +307,7 @@ char* dev_getenv_n(int n) {
     e.append(env.keys().at(n));
     e.append("=");
     e.append(env.values().at(n));
-    return e.toAscii().data();
+    return e.toUtf8().data();
   }
 
   while (environ[count]) {
@@ -421,15 +422,13 @@ void dev_delay(dword ms) {
 //--INPUT-----------------------------------------------------------------------
 
 char *dev_gets(char *dest, int size) {
-  LineInput *in = new LineInput(wnd->out->getX() + 2,
-                                wnd->out->getY() + 1,
-                                20, wnd->out->textHeight() + 4);
+  QLineEdit *in = new QLineEdit(wnd->out);
 
-  in->callback(enter_cb);
-  in->reserve(size);
-  in->textfont(wnd->out->labelfont());
-  in->textsize(wnd->out->labelsize());
-
+  in->setGeometry(wnd->out->getX() + 2,
+                  wnd->out->getY() + 1, 20, 
+                  wnd->out->textHeight() + 4);
+  in->setFont(wnd->out->font());
+  in->connect(in, SIGNAL(returnPressed()), wnd, SLOT(endModal()));
   wnd->setModal(true);
 
   while (wnd->isModal()) {
@@ -441,9 +440,9 @@ char *dev_gets(char *dest, int size) {
     brun_break();
   }
 
-  wnd->outputGroup->remove(in);
-  int len = in->size() < size ? in->size() : size;
-  strncpy(dest, in->value(), len);
+  QString text = in->text();
+  int len = text.length() < size ? text.length() : size;
+  strncpy(dest, text.toUtf8().data(), len);
   dest[len] = 0;
   delete in;
 
