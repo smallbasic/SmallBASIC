@@ -17,6 +17,7 @@
 #include "mainwindow.h"
 
 #include <QAbstractItemModel>
+#include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QListView>
@@ -24,8 +25,8 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QString>
-#include <QVariantList>
 #include <QVariant>
+#include <QVariantList>
 #include <QWidget>
 
 extern "C" {
@@ -160,7 +161,7 @@ struct DropListModel : QAbstractItemModel {
   }
 
   // index of the item in the model 
-  QModelIndex index(int row, int column) const {
+  QModelIndex index(int row, int column, const QModelIndex& index) const {
     return createIndex(row, column);
   }
 
@@ -180,7 +181,7 @@ struct DropListModel : QAbstractItemModel {
   }
 
   // return the data at the given index
-  QVariant data(const QModelIndex& index) const {
+  QVariant data(const QModelIndex& index, int role) const {
     return list.at(index.row());
   }
 };
@@ -214,11 +215,14 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
     // update list control with new int variable
     switch (inf->type) {
     case ctrl_dropdown:
-      ((QComboBox*) w)->value(inf->var->v.i);
+      ((QComboBox*) w)->setCurrentIndex(inf->var->v.i);
       return true;
 
-    case ctrl_listbox:
-      ((QListView*) w)->select(inf->var->v.i);
+    case ctrl_listbox: 
+      {
+        QAbstractItemModel* model = ((QListView*) w)->model(); 
+        ((QListView*) w)->setCurrentIndex(model->index(inf->var->v.i, 0));
+      }
       return true;
 
     default:
@@ -232,14 +236,14 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
 
     switch (inf->type) {
     case ctrl_dropdown:
-      delete((QComboBox*) w)->list();
-      ((QComboBox*) w)->list(new DropListModel(0, inf->var));
+      delete ((QComboBox*) w)->model();
+      ((QComboBox*) w)->setModel(new DropListModel(0, inf->var));
       w->layout();
       return true;
 
     case ctrl_listbox:
-      delete((QListView*) w)->list();
-      ((QListView*) w)->list(new DropListModel(0, inf->var));
+      delete ((QListView*) w)->model();
+      ((QListView*) w)->setModel(new DropListModel(0, inf->var));
       ((QListView*) w)->xposition(0);
       ((QListView*) w)->yposition(0);
       ((QListView*) w)->select(0);
@@ -266,12 +270,12 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
     switch (inf->type) {
     case ctrl_dropdown:
       dropdown = (QComboBox*) w;
-      model = (DropListModel*) dropdown->list();
+      model = (DropListModel*) dropdown->model();
       if (strchr((const char*)inf->var->v.p.ptr, '|')) {
         // create a new list of items
         delete model;
         model = new DropListModel((const char*)inf->var->v.p.ptr, 0);
-        dropdown->list(model);
+        dropdown->setModel(model);
       }
       else {
         // select one of the existing list items
@@ -284,12 +288,12 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
 
     case ctrl_listbox:
       listbox = (QListView*) w;
-      model = (DropListModel*) listbox->list();
+      model = (DropListModel*) listbox->model();
       if (strchr((const char*)inf->var->v.p.ptr, '|')) {
         // create a new list of items
         delete model;
         model = new DropListModel((const char*)inf->var->v.p.ptr, 0);
-        listbox->list(model);
+        listbox->setModel(model);
       }
       else {
         int selection = model->getPosition((const char*)inf->var->v.p.ptr);
@@ -326,7 +330,7 @@ bool update_gui(QWidget* w, WidgetInfo* inf) {
 }
 
 // synchronise basic variable and widget state
-void transfer_data(Widget* w, WidgetInfo* inf) {
+void transfer_data(QWidget* w, WidgetInfo* inf) {
   QComboBox* dropdown;
   QListView* listbox;
   DropListModel* model;
@@ -368,7 +372,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
 
   case ctrl_dropdown:
     dropdown = (QComboBox*) w;
-    model = (DropListModel*) dropdown->list();
+    model = (DropListModel*) dropdown->model();
     if (dropdown->value() != -1) {
       QString* s = model->getElementAt(dropdown->value());
       if (s) {
@@ -379,7 +383,7 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
 
   case ctrl_listbox:
     listbox = (QListView*) w;
-    model = (DropListModel*) listbox->list();
+    model = (DropListModel*) listbox->model();
     if (listbox->value() != -1) {
       QString* s = model->getElementAt(listbox->value());
       if (s) {
@@ -402,13 +406,13 @@ void transfer_data(Widget* w, WidgetInfo* inf) {
 }
 
 // find the radio group of the given variable from within the parent
-Group* findRadioGroup(Group* parent, var_t* v) {
-  Group* radioGroup = 0;
+QButtonGroup* findRadioGroup(QWidget* parent, var_t* v) {
+  QButtonGroup* radioGroup = 0;
   int n = parent->children();
   for (int i = 0; i < n && !radioGroup; i++) {
     QWidget* w = parent->child(i);
     if (!w->user_data()) {
-      radioGroup = findRadioGroup((Group*) w, v);
+      radioGroup = findRadioGroup((QButtonGroup*) w, v);
     }
     else {
       WidgetInfo* inf = (WidgetInfo*) w->property();
@@ -433,10 +437,10 @@ void update_radio_group(WidgetInfo* radioInf, QRadioButton* radio) {
     return;
   }
 
-  Group* radioGroup = findRadioGroup(form, v);
+  QButtonGroup* radioGroup = findRadioGroup(form, v);
 
   if (!radioGroup) {
-    radioGroup = new Group(0, 0, form->width(), form->height());
+    radioGroup = new QButtonGroup(0, 0, form->width(), form->height());
     form->add(radioGroup);
   }
   else {
@@ -486,8 +490,8 @@ void update_widget(QWidget* widget, WidgetInfo* inf, QRect& rect) {
   prev_x = rect.x() + rect.width();
   prev_y = rect.y() + rect.height();
 
-  widget->x(rect.x());
-  widget->y(rect.y());
+  widget->setX(rect.x());
+  widget->setY(rect.y());
   widget->callback(widget_cb);
   widget->user_data(inf);
 
@@ -628,7 +632,6 @@ void cmd_button() {
         inf->type = ctrl_label;
         QWidget* widget = new QWidget();
         widget->setGeometry(x, y, w, h);
-        widget->box(FLAT_BOX);
         widget->align(ALIGN_LEFT | ALIGN_INSIDE | ALIGN_CLIP);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
       }
@@ -636,8 +639,7 @@ void cmd_button() {
         inf->type = ctrl_listbox;
         QListView* widget = new QListView(x, y, w, h);
         DropListModel* model = new DropListModel(caption, v);
-        widget->list(model);
-        widget->box(BORDER_BOX);
+        widget->setModel(model);
         if (model->focus_index != -1) {
           widget->value(model->focus_index);
         }
@@ -648,8 +650,7 @@ void cmd_button() {
         inf->type = ctrl_dropdown;
         QComboBox* widget = new QComboBox(x, y, w, h);
         DropListModel* model = new DropListModel(caption, v);
-        widget->list(model);
-        widget->box(BORDER_BOX);
+        widget->setModel(model);
         if (model->focus_index != -1) {
           widget->value(model->focus_index);
         }
@@ -680,7 +681,6 @@ void cmd_text() {
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &v)) {
     form_create();
     QPlainTextEdit* widget = new QPlainTextEdit(x, y, w, h);
-    widget->box(BORDER_BOX);
     QRect rect(x, y, w, h);
     WidgetInfo* inf = new WidgetInfo();
     inf->var = v;
