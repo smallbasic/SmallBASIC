@@ -35,6 +35,7 @@ public:
   AnsiWidget* out;
 
   bool isBreakExec();
+  bool isRunning();
   bool getPenMode();
   void setModal(bool flag);
   void resetPen();

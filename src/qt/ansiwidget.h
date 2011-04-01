@@ -28,6 +28,8 @@ public:
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
+  QColor getBackgroundColor() {return bg;}
+  QColor getColor() {return fg;}
   QRgb getPixel(int x, int y);
   int  getHeight() {return height();}
   int  getWidth()  {return width();}
