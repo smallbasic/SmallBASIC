@@ -56,3 +56,5 @@ private:
 };
 
 #endif // MAINWINDOW_H
+
+// End of "$Id$".

@@ -206,7 +206,7 @@ void exec_usefunc3(var_t * var1, var_t * var2, var_t * var3, addr_t ip)
   tmp_free(old_z);
 }
 
-#if !defined(_FLTK)
+#ifndef IMPL_LOG_WRITE
 
 /**
  * Write to the log file

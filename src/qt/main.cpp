@@ -9,10 +9,17 @@
 
 #include <QtGui/QApplication>
 #include "mainwindow.h"
+#include "form_ui.h"
+
+MainWindow* wnd;
 
 int main(int argc, char *argv[]) {
+  // register WidgetInfo to enable invoked() slot
+  qRegisterMetaType<WidgetInfo>("WidgetInfo");
+
   QApplication a(argc, argv);
   MainWindow w;
+  wnd = &w;
   w.show();
   
   return a.exec();

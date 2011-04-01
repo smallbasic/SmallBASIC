@@ -15,6 +15,7 @@
 #include "smbas.h"
 #include "keymap.h"
 #include "mainwindow.h"
+#include "form_ui.h"
 
 #include <QApplication>
 #include <QAbstractButton>
@@ -53,17 +54,6 @@ struct Form : public QWidget {
 
 Form* form = 0;
 
-// control types available using the BUTTON command
-enum ControlType {
-  ctrl_button,
-  ctrl_radio,
-  ctrl_check,
-  ctrl_text,
-  ctrl_label,
-  ctrl_listbox,
-  ctrl_dropdown
-};
-
 enum Mode { m_reset, m_init, m_active, m_selected } mode = m_reset;
 
 // whether a widget event has fired
@@ -75,61 +65,43 @@ bool form_event() { return mode == m_selected; }
 #define RAD_W 22
 #define RAD_H  0
 
-struct WidgetInfo;
+// forward declared for invoked()
 void transfer_data(QWidget* w, WidgetInfo* inf);
 
-struct WidgetInfo : public QObject {
-  WidgetInfo() : QObject() {
+// default constructor for Q_DECLARE_METATYPE
+WidgetInfo::WidgetInfo() : QObject() {}
+
+// copy constructor for Q_DECLARE_METATYPE
+WidgetInfo::WidgetInfo(const WidgetInfo& winf) : QObject() {
+  widget = winf.widget;
+  type = winf.type;
+  var = winf.var;
+  is_group_radio = winf.is_group_radio;
+  orig = winf.orig;
+}
+
+// public destructor for Q_DECLARE_METATYPE  
+WidgetInfo::~WidgetInfo() {}
+
+// update the smallbasic variable
+void WidgetInfo::update_var_flag() {
+  switch (var->type) {
+  case V_STR:
+    orig.ptr = var->v.p.ptr;
+    break;
+  case V_ARRAY:
+    orig.ptr = var->v.a.ptr;
+    break;
+  case V_INT:
+    orig.i = var->v.i;
+    break;
+  default:
+    orig.i = 0;
   }
-
-  WidgetInfo(const WidgetInfo& winf) : QObject() {
-    widget = winf.widget;
-    //type = winf.type;
-    var = winf.var;
-    is_group_radio = winf.is_group_radio;
-    //orig.i = winf.orig.i;
-  }
-  
-  ~WidgetInfo() {
-  }
-
-  QWidget* widget;
-  ControlType type;
-  var_t* var;
-  bool is_group_radio;
-
-  // startup value used to check if
-  // exec has altered a bound variable
-  union {
-    long i;
-    byte* ptr;
-  } orig;
-
-  void update_var_flag() {
-    switch (var->type) {
-    case V_STR:
-      orig.ptr = var->v.p.ptr;
-      break;
-    case V_ARRAY:
-      orig.ptr = var->v.a.ptr;
-      break;
-    case V_INT:
-      orig.i = var->v.i;
-      break;
-    default:
-      orig.i = 0;
-    }
-  }
-
-  public slots: 
-  void clicked();
-};
-
-typedef WidgetInfo* WidgetInfoPtr;
-Q_DECLARE_METATYPE(WidgetInfoPtr);
+}
 
 // slot/callback for the widget info called when the widget has been invoked
-void WidgetInfo::clicked() {
+void WidgetInfo::invoked() {
   if (wnd->isRunning()) {
     transfer_data(widget, this);
 
@@ -229,12 +201,12 @@ struct DropListModel : QAbstractItemModel {
   }
 
   // index of the item in the model 
-  QModelIndex index(int row, int column, const QModelIndex& index) const {
+  QModelIndex index(int row, int column, const QModelIndex& /*index*/) const {
     return createIndex(row, column);
   }
 
   // parent of the model item with the given index
-  QModelIndex parent(const QModelIndex &index) const {
+  QModelIndex parent(const QModelIndex& /*index*/) const {
     return createIndex(-1, -1);
   }
 
@@ -244,7 +216,7 @@ struct DropListModel : QAbstractItemModel {
   }
 
   // return the number of columns
-  int columnCount(const QModelIndex& parent) const {
+  int columnCount(const QModelIndex& /*parent*/) const {
     return 1;
   }
 
@@ -575,7 +547,7 @@ void update_button(QAbstractButton* widget, WidgetInfoPtr inf,
 
   update_widget(widget, inf, rect);
   widget->setText(caption);
-  //  widget->connect(widget, SIGNAL(clicked(bool)), inf, SLOT(clicked()));
+  widget->connect(widget, SIGNAL(clicked(bool)), inf, SLOT(invoked()));
 }
 
 // create a new form

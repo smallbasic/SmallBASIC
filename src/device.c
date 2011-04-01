@@ -1945,8 +1945,7 @@ int dev_run(const char *src, int retflg)
 #endif
 }
 
-#if !defined(_FLTK)
-
+#ifndef IMPL_DEV_ENV
 /*
  * ENVIRONMENT VARIABLES
  */

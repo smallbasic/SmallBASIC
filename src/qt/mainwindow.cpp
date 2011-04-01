@@ -16,7 +16,6 @@
 #include <stdio.h>
 
 const char* aboutText =
-  "\033[1mAbout SmallBASIC...\033[0m\n"
   "QT Version " VERSION "\n"
   "Copyright (c) 2002-2011 Chris Warren-Smith. \n"
   "Copyright (c) 2000-2006 Nicholas Christopoulos\n"
@@ -45,3 +44,39 @@ bool MainWindow::event(QEvent* event) {
   return QMainWindow::event(event);
 }
 
+bool MainWindow::isBreakExec() {
+  return false;
+}
+
+bool MainWindow::isRunning() {
+  return false;
+}
+
+void MainWindow::setModal(bool flag) {
+  
+}
+
+void MainWindow::endModal() {
+}
+
+bool MainWindow::getPenMode() {
+  return false;
+}
+
+void MainWindow::resetPen() {
+
+}
+
+void MainWindow::setPenMode(int flag) {
+
+}
+
+int MainWindow::getMouseX() {
+  return 0;
+}
+
+int MainWindow::getMouseY() {
+  return 0;
+}
+
+// End of "$Id$".
