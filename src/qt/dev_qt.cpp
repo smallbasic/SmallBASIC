@@ -14,6 +14,7 @@
 #include "osd.h"
 #include "blib_ui.h"
 #include "mainwindow.h"
+#include "form_ui.h"
 
 #include <QCoreApplication>
 #include <QEventLoop>
@@ -56,9 +57,6 @@ QMap<QString, QString> env;
 
 void getHomeDir(char *fileName, bool appendSlash=true);
 bool cacheLink(dev_file_t * df, char *localFile);
-
-// in form_ui.cxx
-bool form_event();
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -182,26 +180,21 @@ int osd_getpen(int code) {
     // fallthru to re-test 
 
   case 3:    // returns true if the pen is down (and save curpos)
-    //if (event_state() & ANY_BUTTON) {
-    //  if (get_mouse_xy()) {
-    //    return 1;
-    //  }
-    //}
-    return 0;
+    return wnd->getMouseX(true) != -1;
 
   case 1:                      // last pen-down x
-    return wnd->getMouseX();
+    return wnd->getMouseX(false);
 
   case 2:                      // last pen-down y
-    return wnd->getMouseY();
+    return wnd->getMouseY(false);
 
   case 4:                      // cur pen-down x
   case 10:
-    return wnd->getMouseX();
+    return wnd->getMouseX(true);
 
   case 5:                      // cur pen-down y
   case 11:
-    return wnd->getMouseY();
+    return wnd->getMouseY(true);
 
   case 12:                     // true if left button pressed
     return 0;//(event_state() & BUTTON1);

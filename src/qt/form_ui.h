@@ -10,6 +10,9 @@
 #include "sys.h"
 #include "var.h"
 
+// whether a widget event has fired
+bool form_event();
+
 // control types available using the BUTTON command
 enum ControlType {
   ctrl_button,

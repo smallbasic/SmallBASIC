@@ -22,6 +22,14 @@ namespace Ui {
 
 extern "C" void trace(const char* format, ...);
 
+enum ExecState {
+  init_state,
+  run_state,
+  modal_state,
+  break_state,
+  quit_state
+};
+
 struct MainWindow;
 extern MainWindow *wnd;
 
@@ -36,23 +44,33 @@ public:
 
   bool isBreakExec();
   bool isRunning();
-  bool getPenMode();
-  void setModal(bool flag);
+  bool getPenMode() {return penMode;}
+  void setModal(bool modal);
   void resetPen();
-  void setPenMode(int flag);
-  int getMouseX();
-  int getMouseY();
+  void runBreak();
+  void runQuit();
+  void setPenMode(bool mode);
+  int getMouseX(bool current) {return current ? mouseX : prevMouseX;}
+  int getMouseY(bool current) {return current ? mouseY : prevMouseY;}
 
 public slots:
   void endModal();
   
 private:
+  void mousePressEvent(QMouseEvent* event);
+  void mouseReleaseEvent(QMouseEvent* event);
+  void mouseMoveEvent(QMouseEvent* event);
+  void keyPressEvent(QKeyEvent* event);
+
   bool event(QEvent* event);
   Ui::MainWindow *ui;
 
   int mouseX;
   int mouseY;
-  int penMode; // PEN ON/OFF
+  int prevMouseX;
+  int prevMouseY;
+  bool penMode; // PEN ON/OFF
+  ExecState runMode;
 };
 
 #endif // MAINWINDOW_H
