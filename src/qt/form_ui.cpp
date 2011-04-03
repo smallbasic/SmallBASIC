@@ -566,8 +566,6 @@ void form_create() {
 void form_init() {
   if (form) {
     form->setGeometry(0, 0, form->width(), form->height());
-    //form->take_focus();
-    //form->show();
   }
 }
 

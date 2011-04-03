@@ -22,7 +22,8 @@ SOURCES += main.cpp \
            form_ui.cpp
 
 HEADERS += mainwindow.h \
-           ansiwidget.h
+           ansiwidget.h \
+           form_ui.h
 
 INCLUDEPATH += ../ ../../
 

@@ -197,13 +197,13 @@ int osd_getpen(int code) {
     return wnd->getMouseY(true);
 
   case 12:                     // true if left button pressed
-    return 0;//(event_state() & BUTTON1);
+    return wnd->getMouseX(true) != -1;
 
   case 13:                     // true if right button pressed
-    return 0;//(event_state() & BUTTON3);
+    return 0;
 
   case 14:                     // true if middle button pressed
-    return 0;//(event_state() & BUTTON2);
+    return 0;
   }
   return 0;
 }
@@ -566,14 +566,6 @@ bool cacheLink(dev_file_t * df, char *localFile) {
         if (strstr(rxbuff + iattr, "200 OK") != 0) {
           httpOK = true;
         }
-//                 if (strncmp(rxbuff+iattr, "Last-Modified: ", 15) == 0) {
-//                     // Last-Modified: Tue, 29 Jul 2003 20:19:10 GMT 
-//                     if (access(localFile, 0) == 0) {
-//                         fclose(fp);
-//                         shutdown(df->handle, df->handle);
-//                         return true;
-//                     }
-//                 }
         if (strncmp(rxbuff + iattr, "Location: ", 10) == 0) {
           // handle redirection
           shutdown(df->handle, df->handle);
