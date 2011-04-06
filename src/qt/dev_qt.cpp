@@ -240,10 +240,7 @@ void osd_setpixel(int x, int y) {
 }
 
 long osd_getpixel(int x, int y) {
-  int xoffs = 0;
-  int yoffs = 0;
-
-  return wnd->out->getPixel(x + xoffs, y + yoffs);
+  return wnd->out->getPixel(x, y);
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
@@ -303,20 +300,11 @@ char* dev_getenv_n(int n) {
     return e.toUtf8().data();
   }
 
-  while (environ[count]) {
-    if (n == count) {
-      return environ[count];
-    }
-    count++;
-  }
   return 0;
 }
 
 int dev_env_count() {
   int count = env.count();
-  while (environ[count]) {
-    count++;
-  }
   return count;
 }
 

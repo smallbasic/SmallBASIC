@@ -271,6 +271,26 @@ void AnsiWidget::setTextColor(long fg, long bg) {
   this->fg = ansiToQt(bg);
 }
 
+/*! public slot - copy selected text to the clipboard
+ */
+void AnsiWidget::copySelection() {
+}
+
+/*! public slot - find the next text item
+ */
+void AnsiWidget::findNextText() {
+}
+
+/*! public slot - find text
+ */
+void AnsiWidget::findText() {
+}
+
+/*! public slot - select all text
+ */
+void AnsiWidget::selectAll() {
+}
+
 /*! Converts ANSI colors to FLTK colors
  */
 QColor AnsiWidget::ansiToQt(long c) {

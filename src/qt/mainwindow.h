@@ -47,7 +47,6 @@ public:
   bool getPenMode() {return penMode;}
   void setModal(bool modal);
   void resetPen();
-  void runBreak();
   void runQuit();
   void setPenMode(bool mode);
   int getMouseX(bool current) {return current ? mouseX : prevMouseX;}
@@ -55,6 +54,17 @@ public:
 
 public slots:
   void endModal();
+  void fileOpen();
+  void helpAbout();
+  void helpHomePage();
+  void runBreak();
+  void runRefresh();
+  void runRestart();
+  void runStart();
+  void viewErrorConsole();
+  void viewPreferences();
+  void viewProgramSource();
+  void viewToolbar();
   
 private:
   void mousePressEvent(QMouseEvent* event);

@@ -8,8 +8,9 @@
 //
 
 #include <QEvent>
-#include <QMouseEvent>
 #include <QKeyEvent>
+#include <QLineEdit>
+#include <QMouseEvent>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -31,8 +32,31 @@ const char* aboutText =
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow) {
   ui->setupUi(this);
+
+  QLineEdit* urlInput = new QLineEdit();
+  ui->toolBar->addWidget(urlInput);
+  ui->toolBar->addAction(ui->actionStart);
+
+  // connect signals and slots
+  connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
+  connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(fileOpen()));
+  connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(helpAbout()));
+  connect(ui->actionCopy, SIGNAL(triggered()), ui->ansiWidget, SLOT(copySelection()));
+  connect(ui->actionFind, SIGNAL(triggered()), ui->ansiWidget, SLOT(findText()));
+  connect(ui->actionFindAgain, SIGNAL(triggered()), ui->ansiWidget, SLOT(findNextText()));
+  connect(ui->actionSelectAll, SIGNAL(triggered()), ui->ansiWidget, SLOT(selectAll()));
+  connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(viewPreferences()));
+  connect(ui->actionToolbar, SIGNAL(triggered()), this, SLOT(viewToolbar()));
+  connect(ui->actionHomePage, SIGNAL(triggered()), this, SLOT(helpHomePage()));
+  connect(ui->actionBreak, SIGNAL(triggered()), this, SLOT(runBreak()));
+  connect(ui->actionRun, SIGNAL(triggered()), this, SLOT(runRestart()));
+  connect(ui->actionRefresh, SIGNAL(triggered()), this, SLOT(runRefresh()));
+  connect(ui->actionStart, SIGNAL(triggered()), this, SLOT(runStart()));
+  connect(ui->actionProgramSource, SIGNAL(triggered()), this, SLOT(viewProgramSource()));
+  connect(ui->actionErrorConsole, SIGNAL(triggered()), this, SLOT(viewErrorConsole()));
+
   wnd = this;
-  out = ui->widget;
+  out = ui->ansiWidget;
 }
 
 MainWindow::~MainWindow() {
@@ -67,13 +91,6 @@ void MainWindow::resetPen() {
   setMouseTracking(false);
 }
 
-void MainWindow::runBreak() {
-  if (runMode == run_state || runMode == modal_state) {
-    brun_break();
-    runMode = break_state;
-  }
-}
-
 void MainWindow::runQuit() {
 }
 
@@ -82,6 +99,53 @@ bool MainWindow::event(QEvent* event) {
     out->print(aboutText);
   }
   return QMainWindow::event(event);
+}
+
+void MainWindow::fileOpen() {
+
+}
+
+void MainWindow::helpAbout() {
+
+}
+
+void MainWindow::helpHomePage() {
+
+}
+
+void MainWindow::runBreak() {
+  if (runMode == run_state || runMode == modal_state) {
+    brun_break();
+    runMode = break_state;
+  }
+}
+
+void MainWindow::runRefresh() {
+
+}
+
+void MainWindow::runRestart() {
+
+}
+
+void MainWindow::runStart() {
+
+}
+
+void MainWindow::viewErrorConsole() {
+
+}
+
+void MainWindow::viewPreferences() {
+
+}
+
+void MainWindow::viewProgramSource() {
+
+}
+
+void MainWindow::viewToolbar() {
+
 }
 
 void MainWindow::mousePressEvent(QMouseEvent* event) {

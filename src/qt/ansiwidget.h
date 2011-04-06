@@ -47,6 +47,10 @@ public:
 signals:
 
 public slots:
+  void copySelection();
+  void findNextText();
+  void findText();
+  void selectAll();
 
 private:
   QColor ansiToQt(long color);

@@ -28,3 +28,6 @@ HEADERS += mainwindow.h \
 INCLUDEPATH += ../ ../../
 
 LIBS    += -L../ -lsb_common
+
+RESOURCES += \
+    sbasic.qrc
