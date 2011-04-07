@@ -58,6 +58,7 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="actionNewWindow"/>
     <addaction name="actionOpen"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -81,8 +82,8 @@
     <addaction name="actionFind"/>
     <addaction name="actionFindAgain"/>
     <addaction name="separator"/>
-    <addaction name="actionProgramSource"/>
     <addaction name="actionErrorConsole"/>
+    <addaction name="actionProgramSource"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
    </widget>
@@ -104,7 +105,7 @@
     <string>toolBar</string>
    </property>
    <property name="allowedAreas">
-    <set>Qt::TopToolBarArea</set>
+    <set>Qt::BottomToolBarArea|Qt::TopToolBarArea</set>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -127,7 +128,7 @@
   </action>
   <action name="actionOpen">
    <property name="text">
-    <string>&amp;Open</string>
+    <string>&amp;Open File...</string>
    </property>
   </action>
   <action name="actionAbout">
@@ -231,6 +232,11 @@
   <action name="actionBookmarkProgram">
    <property name="text">
     <string>Bookmark This Program</string>
+   </property>
+  </action>
+  <action name="actionNewWindow">
+   <property name="text">
+    <string>&amp;New Window</string>
    </property>
   </action>
  </widget>

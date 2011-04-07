@@ -57,6 +57,7 @@ public slots:
   void fileOpen();
   void helpAbout();
   void helpHomePage();
+  void newWindow();
   void runBreak();
   void runRefresh();
   void runRestart();

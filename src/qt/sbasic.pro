@@ -13,7 +13,8 @@ TARGET   = sbasicb
 
 TEMPLATE = app
 
-FORMS    = mainwindow.ui
+FORMS    = mainwindow.ui \
+           source_view.ui
 
 SOURCES += main.cpp \
            mainwindow.cpp \

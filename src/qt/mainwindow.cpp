@@ -7,27 +7,34 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <QDesktopServices>
+#include <QDialog>
 #include <QEvent>
+#include <QFileDialog>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QMouseEvent>
+#include <QProcess>
+#include <QUrl>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "ui_source_view.h"
 #include "config.h"
 #include "sbapp.h"
 #include <stdio.h>
 
 const char* aboutText =
- "QT Version " VERSION "\n"
+ "QT Version " VERSION "\n\n"
  "Copyright (c) 2002-2011 Chris Warren-Smith. \n"
- "Copyright (c) 2000-2006 Nicholas Christopoulos\n"
- "http://smallbasic.sourceforge.net\n"
- "\033[3mSmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
+ "Copyright (c) 2000-2006 Nicholas Christopoulos\n\n"
+ "http://smallbasic.sourceforge.net\n\n"
+ "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
  "This program is free software; you can use it\n"
  "redistribute it and/or modify it under the terms of the\n"
  "GNU General Public License version 2 as published by\n"
- "the Free Software Foundation.\033[0m\n";
+ "the Free Software Foundation.";
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow) {
@@ -48,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(viewPreferences()));
   connect(ui->actionToolbar, SIGNAL(triggered()), this, SLOT(viewToolbar()));
   connect(ui->actionHomePage, SIGNAL(triggered()), this, SLOT(helpHomePage()));
+  connect(ui->actionNewWindow, SIGNAL(triggered()), this, SLOT(newWindow()));
   connect(ui->actionBreak, SIGNAL(triggered()), this, SLOT(runBreak()));
   connect(ui->actionRun, SIGNAL(triggered()), this, SLOT(runRestart()));
   connect(ui->actionRefresh, SIGNAL(triggered()), this, SLOT(runRefresh()));
@@ -96,21 +104,31 @@ void MainWindow::runQuit() {
 
 bool MainWindow::event(QEvent* event) {
   if (event->type() == QEvent::ShowToParent) {
-    out->print(aboutText);
+    // launch home page program
   }
   return QMainWindow::event(event);
 }
 
 void MainWindow::fileOpen() {
-
+  QString fileName =
+  QFileDialog::getOpenFileName(this, 
+                               tr("Open Program"), 
+                               QString(), 
+                               tr("BASIC Files (*.bas)"));
 }
 
 void MainWindow::helpAbout() {
-
+  int ret = QMessageBox::information(this, tr("SmallBASIC"),
+                                     tr(aboutText), 
+                                     QMessageBox::Ok);
 }
 
 void MainWindow::helpHomePage() {
+  QDesktopServices::openUrl(QUrl("http://smallbasic.sourceforge.net"));
+}
 
+void MainWindow::newWindow() {
+  QProcess::startDetached(QCoreApplication::applicationFilePath());
 }
 
 void MainWindow::runBreak() {
@@ -141,7 +159,10 @@ void MainWindow::viewPreferences() {
 }
 
 void MainWindow::viewProgramSource() {
-
+  Ui::SourceDialog sourceDialog;
+  QDialog dlg;
+  sourceDialog.setupUi(&dlg);
+  dlg.exec();
 }
 
 void MainWindow::viewToolbar() {

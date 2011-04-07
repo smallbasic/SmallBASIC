@@ -7,7 +7,13 @@
 
 EXTRA_DIST =					\
   sbasic.pro					\
-  mainwindow.ui
+  sbasic.qrc					\
+  mainwindow.ui					\
+  source_view.ui				\
+  images/jump.png				\
+  images/refresh.png				\
+  images/run.png				\
+  images/stop.png
 
 sbasicb_SOURCES =				\
   ansiwidget.cpp				\
