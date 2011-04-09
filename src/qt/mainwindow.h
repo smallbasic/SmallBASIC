@@ -68,9 +68,11 @@ private:
   void mousePressEvent();
   void mouseReleaseEvent();
 
-  void keyPressEvent(QKeyEvent* event);
+  void dragEnterEvent(QDragEnterEvent* event); 
+  void dropEvent(QDropEvent* event);
   bool event(QEvent* event);
-  
+  void keyPressEvent(QKeyEvent* event);
+
   // private methods
   void basicMain();
 

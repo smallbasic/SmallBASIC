@@ -49,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 
   // accept keyboard input
   setFocusPolicy(Qt::ClickFocus);
+  setAcceptDrops(true);
 
   // setup the URL input widget
   textInput = new QLineEdit();
@@ -134,6 +135,31 @@ void MainWindow::endModal() {
 void MainWindow::runQuit() {
 }
 
+void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
+  if (event->mimeData()->hasText()) {
+    QString path = event->mimeData()->text().trimmed();
+    if (path.startsWith("file://")) {
+      path = path.remove(0, 7);
+    }
+    if (QFileInfo(path).isFile() && QString::compare(path, programPath) != 0) {
+      event->accept();
+    }
+  }
+  else {
+    event->ignore();
+  }
+}
+
+void MainWindow::dropEvent(QDropEvent* event) {
+  QString path = event->mimeData()->text().trimmed();
+  if (path.startsWith("file://")) {
+    path = path.remove(0, 7);
+  }
+  textInput->setText(path);
+  programPath = path;
+  basicMain();
+}
+
 bool MainWindow::event(QEvent* event) {
   if (event->type() == QEvent::ShowToParent) {
     // launch home page program
@@ -154,8 +180,8 @@ void MainWindow::fileOpen() {
 }
 
 void MainWindow::helpAbout() {
-  int ret = QMessageBox::information(this, tr("SmallBASIC"),
-                                     tr(aboutText), QMessageBox::Ok);
+  QMessageBox::information(this, tr("SmallBASIC"),
+                           tr(aboutText), QMessageBox::Ok);
 }
 
 void MainWindow::helpHomePage() {
