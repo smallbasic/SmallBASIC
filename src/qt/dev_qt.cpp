@@ -63,7 +63,7 @@ bool cacheLink(dev_file_t * df, char *localFile);
 C_LINKAGE_BEGIN 
 
 int osd_devinit() {
-  wnd->resetPen();
+  wnd->out->resetMouse();
   os_graphics = 1;
 
   // allow the application to set the preferred width and height
@@ -154,7 +154,7 @@ int osd_events(int wait_flag) {
 }
 
 void osd_setpenmode(int enable) {
-  wnd->setPenMode(enable ? PEN_ON : PEN_OFF);
+  wnd->out->setMouseMode(enable ? PEN_ON : PEN_OFF);
 }
 
 int osd_getpen(int code) {
@@ -164,7 +164,7 @@ int osd_getpen(int code) {
     return 0;
   }
 
-  if (wnd->getPenMode() == PEN_OFF) {
+  if (wnd->out->getMouseMode() == PEN_OFF) {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
   }
 
@@ -180,24 +180,24 @@ int osd_getpen(int code) {
     // fallthru to re-test 
 
   case 3:    // returns true if the pen is down (and save curpos)
-    return wnd->getMouseX(true) != -1;
+    return wnd->out->getMouseX(true) != -1;
 
   case 1:                      // last pen-down x
-    return wnd->getMouseX(false);
+    return wnd->out->getMouseX(false);
 
   case 2:                      // last pen-down y
-    return wnd->getMouseY(false);
+    return wnd->out->getMouseY(false);
 
   case 4:                      // cur pen-down x
   case 10:
-    return wnd->getMouseX(true);
+    return wnd->out->getMouseX(true);
 
   case 5:                      // cur pen-down y
   case 11:
-    return wnd->getMouseY(true);
+    return wnd->out->getMouseY(true);
 
   case 12:                     // true if left button pressed
-    return wnd->getMouseX(true) != -1;
+    return wnd->out->getMouseX(true) != -1;
 
   case 13:                     // true if right button pressed
     return 0;
@@ -271,7 +271,7 @@ void osd_write(const char* s) {
 }
 
 void lwrite(const char* s) {
-  wnd->out->print(s);
+  wnd->logWrite(s);
 }
 
 //--ENV-------------------------------------------------------------------------

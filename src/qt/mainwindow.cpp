@@ -7,10 +7,13 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <QCompleter>
 #include <QDesktopServices>
 #include <QDialog>
 #include <QEvent>
+#include <QFileInfo>
 #include <QFileDialog>
+#include <QFileSystemModel>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -19,6 +22,7 @@
 #include <QUrl>
 
 #include "mainwindow.h"
+#include "ui_console_view.h"
 #include "ui_mainwindow.h"
 #include "ui_source_view.h"
 #include "config.h"
@@ -39,32 +43,68 @@ const char* aboutText =
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow) {
   ui->setupUi(this);
-
-  QLineEdit* urlInput = new QLineEdit();
-  ui->toolBar->addWidget(urlInput);
-  ui->toolBar->addAction(ui->actionStart);
-
-  // connect signals and slots
-  connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
-  connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(fileOpen()));
-  connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(helpAbout()));
-  connect(ui->actionCopy, SIGNAL(triggered()), ui->ansiWidget, SLOT(copySelection()));
-  connect(ui->actionFind, SIGNAL(triggered()), ui->ansiWidget, SLOT(findText()));
-  connect(ui->actionFindAgain, SIGNAL(triggered()), ui->ansiWidget, SLOT(findNextText()));
-  connect(ui->actionSelectAll, SIGNAL(triggered()), ui->ansiWidget, SLOT(selectAll()));
-  connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(viewPreferences()));
-  connect(ui->actionToolbar, SIGNAL(triggered()), this, SLOT(viewToolbar()));
-  connect(ui->actionHomePage, SIGNAL(triggered()), this, SLOT(helpHomePage()));
-  connect(ui->actionNewWindow, SIGNAL(triggered()), this, SLOT(newWindow()));
-  connect(ui->actionBreak, SIGNAL(triggered()), this, SLOT(runBreak()));
-  connect(ui->actionRun, SIGNAL(triggered()), this, SLOT(runRestart()));
-  connect(ui->actionRefresh, SIGNAL(triggered()), this, SLOT(runRefresh()));
-  connect(ui->actionStart, SIGNAL(triggered()), this, SLOT(runStart()));
-  connect(ui->actionProgramSource, SIGNAL(triggered()), this, SLOT(viewProgramSource()));
-  connect(ui->actionErrorConsole, SIGNAL(triggered()), this, SLOT(viewErrorConsole()));
-
   wnd = this;
   out = ui->ansiWidget;
+  out->setMouseListener(this);
+
+  // accept keyboard input
+  setFocusPolicy(Qt::ClickFocus);
+
+  // setup the URL input widget
+  textInput = new QLineEdit();
+  QCompleter* completer = new QCompleter(this);
+  QFileSystemModel* fsModel = new QFileSystemModel(completer);
+  fsModel->setRootPath("");
+  fsModel->setNameFilters(QStringList("*.bas"));
+  completer->setModel(fsModel);
+  textInput->setCompleter(completer);
+  ui->toolBar->addWidget(textInput);
+  ui->toolBar->addAction(ui->actionStart);
+
+  // setup dialogs
+  logDialog = new QDialog();
+  Ui::ErrorConsole* errorUi = new Ui::ErrorConsole();
+  errorUi->setupUi(logDialog);
+
+  sourceDialog = new QDialog();
+  Ui::SourceDialog* sourceUi = new Ui::SourceDialog();
+  sourceUi->setupUi(sourceDialog);
+
+  // connect signals and slots
+  connect(ui->actionExit, SIGNAL(triggered()), 
+          this, SLOT(close()));
+  connect(ui->actionOpen, SIGNAL(triggered()), 
+          this, SLOT(fileOpen()));
+  connect(ui->actionAbout, SIGNAL(triggered()), 
+          this, SLOT(helpAbout()));
+  connect(ui->actionCopy, SIGNAL(triggered()), 
+          ui->ansiWidget, SLOT(copySelection()));
+  connect(ui->actionFind, SIGNAL(triggered()), 
+          ui->ansiWidget, SLOT(findText()));
+  connect(ui->actionFindAgain, SIGNAL(triggered()), 
+          ui->ansiWidget, SLOT(findNextText()));
+  connect(ui->actionSelectAll, SIGNAL(triggered()), 
+          ui->ansiWidget, SLOT(selectAll()));
+  connect(ui->actionPreferences, SIGNAL(triggered()), 
+          this, SLOT(viewPreferences()));
+  connect(ui->actionHomePage, SIGNAL(triggered()), 
+          this, SLOT(helpHomePage()));
+  connect(ui->actionNewWindow, SIGNAL(triggered()), 
+          this, SLOT(newWindow()));
+  connect(ui->actionBreak, SIGNAL(triggered()), 
+          this, SLOT(runBreak()));
+  connect(ui->actionRun, SIGNAL(triggered()), 
+          this, SLOT(runRestart()));
+  connect(ui->actionRefresh, SIGNAL(triggered()), 
+          this, SLOT(runRestart()));
+  connect(ui->actionStart, SIGNAL(triggered()), 
+          this, SLOT(runStart()));
+  connect(textInput, SIGNAL(returnPressed()), 
+          this, SLOT(runStart()));
+  connect(ui->actionProgramSource, SIGNAL(triggered()), 
+          this, SLOT(viewProgramSource()));
+  connect(ui->actionErrorConsole, SIGNAL(triggered()), 
+          this, SLOT(viewErrorConsole()));
 }
 
 MainWindow::~MainWindow() {
@@ -79,24 +119,16 @@ bool MainWindow::isRunning() {
   return (runMode == run_state || runMode == modal_state);
 }
 
+void MainWindow::logWrite(const char* msg) {
+
+}
+
 void MainWindow::setModal(bool modal) {
   runMode = modal ? modal_state : run_state;  
 }
 
 void MainWindow::endModal() {
   runMode = run_state;
-}
-
-void MainWindow::setPenMode(bool flag) {
-  penMode = flag;
-  setMouseTracking(flag);
-}
-
-void MainWindow::resetPen() {
-  mouseX = 0;
-  mouseY = 0;
-  penMode = false;
-  setMouseTracking(false);
 }
 
 void MainWindow::runQuit() {
@@ -106,21 +138,24 @@ bool MainWindow::event(QEvent* event) {
   if (event->type() == QEvent::ShowToParent) {
     // launch home page program
   }
+
   return QMainWindow::event(event);
 }
 
 void MainWindow::fileOpen() {
-  QString fileName =
-  QFileDialog::getOpenFileName(this, 
-                               tr("Open Program"), 
-                               QString(), 
-                               tr("BASIC Files (*.bas)"));
+  QString path = QFileDialog::getOpenFileName(this, tr("Open Program"),
+                                              QString(), 
+                                             tr("BASIC Files (*.bas)"));
+  if (QFileInfo(path).isFile() && QString::compare(programPath, path) != 0) {
+    textInput->setText(path);
+    programPath = path;
+    basicMain();
+  }
 }
 
 void MainWindow::helpAbout() {
   int ret = QMessageBox::information(this, tr("SmallBASIC"),
-                                     tr(aboutText), 
-                                     QMessageBox::Ok);
+                                     tr(aboutText), QMessageBox::Ok);
 }
 
 void MainWindow::helpHomePage() {
@@ -138,60 +173,46 @@ void MainWindow::runBreak() {
   }
 }
 
-void MainWindow::runRefresh() {
-
-}
-
 void MainWindow::runRestart() {
 
 }
 
 void MainWindow::runStart() {
-
+  if (QFileInfo(textInput->text()).isFile() && 
+      QString::compare(programPath, textInput->text()) != 0) {
+    programPath = textInput->text();
+    basicMain();
+  }
 }
 
 void MainWindow::viewErrorConsole() {
-
+  logDialog->show();
+  logDialog->raise();
 }
 
 void MainWindow::viewPreferences() {
-
 }
 
 void MainWindow::viewProgramSource() {
-  Ui::SourceDialog sourceDialog;
-  QDialog dlg;
-  sourceDialog.setupUi(&dlg);
-  dlg.exec();
+  sourceDialog->show();
+  sourceDialog->raise();
 }
 
-void MainWindow::viewToolbar() {
-
-}
-
-void MainWindow::mousePressEvent(QMouseEvent* event) {
+void MainWindow::mousePressEvent() {
   if (isRunning()) {
-    mouseX = event->x();
-    mouseY = event->y();
     keymap_invoke(SB_KEY_MK_PUSH);
   }
 }
 
-void MainWindow::mouseReleaseEvent(QMouseEvent* event) {
+void MainWindow::mouseReleaseEvent() {
   if (isRunning()) {
-    prevMouseX = mouseX;
-    prevMouseY = mouseY;
-    mouseX = -1;
-    mouseY = -1;
     keymap_invoke(SB_KEY_MK_RELEASE);
   }
 }
 
-void MainWindow::mouseMoveEvent(QMouseEvent* event) {
+void MainWindow::mouseMoveEvent(bool down) {
   if (isRunning()) {
-    mouseX = event->x();
-    mouseY = event->y();
-    keymap_invoke(penMode && mouseX == -1 ? SB_KEY_MK_MOVE : SB_KEY_MK_DRAG);
+    keymap_invoke(down ? SB_KEY_MK_DRAG : SB_KEY_MK_MOVE);
   }
 }
 
@@ -306,6 +327,9 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
       break;
     }
   }
+}
+
+void MainWindow::basicMain() {
 }
 
 // End of "$Id$".

@@ -10,6 +10,7 @@ EXTRA_DIST =					\
   sbasic.qrc					\
   mainwindow.ui					\
   source_view.ui				\
+  console_view.ui				\
   images/jump.png				\
   images/refresh.png				\
   images/run.png				\

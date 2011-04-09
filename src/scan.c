@@ -3007,7 +3007,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level)
 #if !defined(OS_LIMITED)
   buff[0] = 0;
 
-#if !defined(_FLTK)
+#if !defined(NO_SCAN_ERROR_PROMPT)
   log_printf(MSG_DETAILED_REPORT_Q);
   dev_gets(buff, sizeof(buff));
   details = (buff[0] == 'y' || buff[0] == 'Y');

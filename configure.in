@@ -224,7 +224,9 @@ function buildGTK() {
    AC_DEFINE(HILDON_DISABLE_DEPRECATED, 1, [avoid building obsolete code)])
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
- 
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
+   AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
+
    BUILD_SUBDIRS="src src/gtk/src src/gtk/data src/gtk/icons"
    AC_SUBST(BUILD_SUBDIRS)
 }
@@ -285,7 +287,10 @@ function buildFLTK() {
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
- 
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
+   AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
+   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()]) 
+
    BUILD_SUBDIRS="src src/fltk"
    AC_SUBST(BUILD_SUBDIRS)
    AC_SUBST(FLTK_CXXFLAGS)
@@ -439,7 +444,10 @@ function buildQT() {
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
- 
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
+   AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
+   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()])
+
    BUILD_SUBDIRS="src src/qt"
    AC_SUBST(BUILD_SUBDIRS)
 
@@ -486,6 +494,7 @@ function buildConsole() {
          AC_DEFINE(__MINGW32__, 1, [as above])
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
          AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+         AC_DEFINE(IMPL_EMPTY_TERM_EVENTS, 1, [Implement a dummy term_events()])
          PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole"
          BUILD_SUBDIRS="src src/mingw"
       fi

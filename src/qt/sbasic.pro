@@ -14,7 +14,8 @@ TARGET   = sbasicb
 TEMPLATE = app
 
 FORMS    = mainwindow.ui \
-           source_view.ui
+           source_view.ui \
+           console_view.ui
 
 SOURCES += main.cpp \
            mainwindow.cpp \

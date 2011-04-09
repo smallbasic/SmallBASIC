@@ -11,6 +11,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QLineEdit>
 #include "ansiwidget.h"
 
 namespace Ui {
@@ -33,7 +34,7 @@ enum ExecState {
 struct MainWindow;
 extern MainWindow *wnd;
 
-class MainWindow : public QMainWindow {
+class MainWindow : public QMainWindow, MouseListener {
   Q_OBJECT
     
 public:
@@ -44,13 +45,9 @@ public:
 
   bool isBreakExec();
   bool isRunning();
-  bool getPenMode() {return penMode;}
-  void setModal(bool modal);
-  void resetPen();
+  void logWrite(const char* msg);
   void runQuit();
-  void setPenMode(bool mode);
-  int getMouseX(bool current) {return current ? mouseX : prevMouseX;}
-  int getMouseY(bool current) {return current ? mouseY : prevMouseY;}
+  void setModal(bool modal);
 
 public slots:
   void endModal();
@@ -59,28 +56,31 @@ public slots:
   void helpHomePage();
   void newWindow();
   void runBreak();
-  void runRefresh();
   void runRestart();
   void runStart();
   void viewErrorConsole();
   void viewPreferences();
   void viewProgramSource();
-  void viewToolbar();
   
 private:
-  void mousePressEvent(QMouseEvent* event);
-  void mouseReleaseEvent(QMouseEvent* event);
-  void mouseMoveEvent(QMouseEvent* event);
+  // private inherited events
+  void mouseMoveEvent(bool down);
+  void mousePressEvent();
+  void mouseReleaseEvent();
+
   void keyPressEvent(QKeyEvent* event);
-
   bool event(QEvent* event);
-  Ui::MainWindow *ui;
+  
+  // private methods
+  void basicMain();
 
-  int mouseX;
-  int mouseY;
-  int prevMouseX;
-  int prevMouseY;
-  bool penMode; // PEN ON/OFF
+  // private state variables
+  Ui::MainWindow* ui;
+  QDialog* logDialog;
+  QDialog* sourceDialog;
+  QLineEdit* textInput;
+  QString programPath;
+
   ExecState runMode;
 };
 

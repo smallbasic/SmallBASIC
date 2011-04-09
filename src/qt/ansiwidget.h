@@ -14,6 +14,12 @@
 #include <QPainter>
 #include <QColor>
 
+struct MouseListener {
+  virtual void mouseMoveEvent(bool down) = 0;
+  virtual void mousePressEvent() = 0;
+  virtual void mouseReleaseEvent() = 0;
+};
+
 class AnsiWidget : public QWidget
 {
   Q_OBJECT
@@ -44,6 +50,14 @@ public:
   void setTextColor(long fg, long bg);
   void setXY(int x, int y) {curX=x; curY=y;}
 
+  // mouse support
+  int getMouseX(bool current) {return current ? pointX : prevMouseX;}
+  int getMouseY(bool current) {return current ? pointY : prevMouseY;}
+  bool getMouseMode() {return mouseMode;}
+  void resetMouse();
+  void setMouseMode(bool mode);
+  void setMouseListener(MouseListener* ml) {mouseListener = ml;}
+  
 signals:
 
 public slots:
@@ -86,6 +100,12 @@ private:
 
   // clipboard handling
   int markX, markY, pointX, pointY;
+
+  // mouse handling
+  int prevMouseX;
+  int prevMouseY;
+  bool mouseMode; // PEN ON/OFF
+  MouseListener* mouseListener;
 };
 
 #endif // ANSIWIDGET_H

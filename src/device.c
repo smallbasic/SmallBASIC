@@ -50,14 +50,6 @@ static int drvsound_ok;
 static int drvmouse_ok;
 #endif
 
-#ifndef USE_TERM_IO
-#if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
-#define USE_TERM_IO 1
-#else
-#define USE_TERM_IO 0
-#endif
-#endif
-
 #if USE_TERM_IO
 #include "dev_term.h"
 #endif
@@ -65,44 +57,6 @@ static int drvmouse_ok;
 #ifdef __MINGW32__
 #include <windows.h>
 #define usleep(s) Sleep((DWORD)((s+500)/1000))
-#endif
-
-#ifndef DEV_EVENTS_OSD
-#if defined(_FRANKLIN_EBM) || defined(_FLTK) || defined(_SDL)
-#define DEV_EVENTS_OSD 1
-#endif
-#endif
-
-#ifndef DRV_BEEP
-#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_FLTK)
-#define DRV_BEEP 1
-#endif
-#endif
-
-#ifndef KBHIT_PWR_CONSERVE
-#if defined(_FRANKLIN_EBM)
-#define KBHIT_PWR_CONSERVE 1
-#else
-#define KBHIT_PWR_CONSERVE 0
-#endif
-#endif
-
-#ifndef IMPL_IMAGE
-#if defined(_FRANKLIN_EBM) || defined(_FLTK) || defined(_SDL)
-#define IMPL_IMAGE
-#endif
-#endif
-
-#ifndef IMPL_HTML
-#if defined(_FRANKLIN_EBM) || defined(_FLTK)
-#define IMPL_HTML
-#endif
-#endif
-
-#ifndef IMPL_DEV_GETS
-#if defined(_FLTK)
-#define IMPL_DEV_GETS
-#endif
 #endif
 
 void dev_drawcursor(int x, int y) SEC(BIO);
@@ -440,7 +394,7 @@ int dev_restore()
   return 1;
 }
 
-#if defined(__MINGW32__) && !defined(_FLTK)
+#if IMPL_EMPTY_TERM_EVENTS
 int term_events() {return 0;}
 #endif
 
@@ -1135,7 +1089,7 @@ void log_printf(const char *format, ...)
   *p++ = '\n';
   *p = '\0';
 
-#if defined(_FLTK)
+#if defined(IMPL_LOG_WRITE)
   lwrite(buf);
 #else
   dev_print(buf);
@@ -1530,7 +1484,7 @@ void dev_beep()
  */
 void dev_sound(int frq, int ms, int vol, int bgplay)
 {
-#if defined(_PalmOS) || defined(_VTOS) || defined(_FRANKLIN_EBM) || defined(_FLTK)
+#if IMPL_OSD_SOUND
   osd_sound(frq, ms, vol, bgplay);
 #else
 

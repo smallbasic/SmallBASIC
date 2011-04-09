@@ -14,8 +14,8 @@
    <string>SmallBASIC</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>../smallbasic/images/smallbasic.png</normaloff>../smallbasic/images/smallbasic.png</iconset>
+   <iconset resource="sbasic.qrc">
+    <normaloff>:/images/smallbasic.png</normaloff>:/images/smallbasic.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">

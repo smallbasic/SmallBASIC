@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SourceDialog</class>
- <widget class="QDialog" name="SourceDialog">
+ <class>ErrorConsole</class>
+ <widget class="QDialog" name="ErrorConsole">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>587</width>
-    <height>514</height>
+    <width>609</width>
+    <height>492</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>SmallBASIC - Program Source</string>
+   <string>SmallBASIC - Error Console</string>
   </property>
   <property name="windowIcon">
    <iconset resource="sbasic.qrc">
@@ -25,11 +25,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QPlainTextEdit" name="plainTextEdit">
-     <property name="plainText">
-      <string/>
-     </property>
-    </widget>
+    <widget class="QPlainTextEdit" name="plainTextEdit"/>
    </item>
   </layout>
  </widget>

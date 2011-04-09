@@ -774,7 +774,7 @@ void cmd_doform() {
   if (!form->cmd) {
     ui_reset();
   }
-  else if (wnd->getPenMode()) {
+  else if (wnd->out->getMouseMode()) {
     mode = m_active;
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);    
   }

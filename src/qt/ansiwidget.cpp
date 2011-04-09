@@ -271,6 +271,21 @@ void AnsiWidget::setTextColor(long fg, long bg) {
   this->fg = ansiToQt(bg);
 }
 
+/*! sets mouse mode on or off
+ */
+void AnsiWidget::setMouseMode(bool flag) {
+  mouseMode = flag;
+  setMouseTracking(flag);
+}
+
+/*! resets mouse mode to false
+ */
+void AnsiWidget::resetMouse() {
+  pointX = pointY = markX = markY = 0;
+  mouseMode = false;
+  setMouseTracking(false);
+}
+
 /*! public slot - copy selected text to the clipboard
  */
 void AnsiWidget::copySelection() {
@@ -546,6 +561,9 @@ void AnsiWidget::mouseMoveEvent(QMouseEvent* event) {
   pointX = event->x();
   pointY = event->y();
   update();
+  if (mouseMode && mouseListener) {
+    mouseListener->mouseMoveEvent(event->button());
+  }
 }
 
 void AnsiWidget::mousePressEvent(QMouseEvent* event) {
@@ -555,12 +573,20 @@ void AnsiWidget::mousePressEvent(QMouseEvent* event) {
   if (selected) {
     update();
   }
+  if (mouseMode && mouseListener) {
+    mouseListener->mousePressEvent();
+  }
 }
 
 void AnsiWidget::mouseReleaseEvent(QMouseEvent* event) {
   bool selected = (markX != pointX || markY != pointY);
   if (selected) {
+    prevMouseX = pointX;
+    prevMouseY = pointY;
     update();
+  }
+  if (mouseMode && mouseListener) {
+    mouseListener->mousePressEvent();
   }
 }
 

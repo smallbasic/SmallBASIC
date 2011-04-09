@@ -6,7 +6,7 @@
 # 
 
 # see: http://www.cygwin.com/ml/cygwin/2004-03/msg00289.html
-AM_CFLAGS = @PACKAGE_CFLAGS@
+AM_CFLAGS = @PACKAGE_CFLAGS@ -Wno-unused-result
 
 INCLUDES = -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
 

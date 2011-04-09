@@ -19,14 +19,6 @@
 #include "smbas.h"
 #include "fmt.h"
 
-#ifndef USE_TERM_IO
-#if (defined(_UnixOS) || defined(_DOS)) && !defined(_FLTK)
-#define USE_TERM_IO 1
-#else
-#define USE_TERM_IO 0
-#endif
-#endif
-
 #if USE_TERM_IO
 #include "dev_term.h"
 #endif
@@ -526,7 +518,7 @@ void cmd_print(int output)
 #if defined(_PalmOS)
     handle = (unsigned long int)vuser_p;
 #else
-    handle = (int)vuser_p;
+    handle = (mem_t)vuser_p;
 #endif
   }
 
@@ -695,7 +687,7 @@ void cmd_input(int input)
 #if defined(_PalmOS)
     handle = (unsigned long int)vuser_p;
 #else
-    handle = (int)vuser_p;
+    handle = (mem_t)vuser_p;
 #endif
   }
 

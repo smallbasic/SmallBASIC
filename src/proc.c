@@ -285,7 +285,7 @@ void lwrite(const char *buf)
   close(log_dev);
 #endif
 }
-#endif // NOT FLTK
+#endif // NOT IMPL_LOG_WRITE
 
 /*
  * Write string to output device
