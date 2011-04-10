@@ -12,6 +12,7 @@
 
 #include <QMainWindow>
 #include <QLineEdit>
+#include <QMimeData>
 #include "ansiwidget.h"
 
 namespace Ui {
@@ -75,6 +76,7 @@ private:
 
   // private methods
   void basicMain();
+  QString dropFile(const QMimeData* mimeData);
 
   // private state variables
   Ui::MainWindow* ui;

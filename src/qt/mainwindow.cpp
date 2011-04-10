@@ -112,62 +112,65 @@ MainWindow::~MainWindow() {
   delete ui;
 }
 
+// return whether the break key was pressed 
 bool MainWindow::isBreakExec() {
   return (runMode == break_state || runMode == quit_state);
 }
 
+// return whether a smallbasic program is running
 bool MainWindow::isRunning() {
   return (runMode == run_state || runMode == modal_state);
 }
 
+// append to the log window
 void MainWindow::logWrite(const char* msg) {
 
 }
 
+// set the program modal state
 void MainWindow::setModal(bool modal) {
   runMode = modal ? modal_state : run_state;  
 }
 
+// end the program modal state
 void MainWindow::endModal() {
   runMode = run_state;
 }
 
+// cause the basicMain loop to end
 void MainWindow::runQuit() {
 }
 
+// handle file drag and drop from a desktop file manager
 void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
-  if (event->mimeData()->hasText()) {
-    QString path = event->mimeData()->text().trimmed();
-    if (path.startsWith("file://")) {
-      path = path.remove(0, 7);
-    }
-    if (QFileInfo(path).isFile() && QString::compare(path, programPath) != 0) {
-      event->accept();
-    }
+  QString path = dropFile(event->mimeData());
+  if (path.length() > 0) {
+    event->accept();
   }
   else {
     event->ignore();
   }
 }
 
+// handle file drag and drop from a desktop file manager
 void MainWindow::dropEvent(QDropEvent* event) {
-  QString path = event->mimeData()->text().trimmed();
-  if (path.startsWith("file://")) {
-    path = path.remove(0, 7);
+  QString path = dropFile(event->mimeData());
+  if (path.length() > 0) {
+    textInput->setText(path);
+    programPath = path;
+    basicMain();
   }
-  textInput->setText(path);
-  programPath = path;
-  basicMain();
 }
 
+// launch home page program
 bool MainWindow::event(QEvent* event) {
   if (event->type() == QEvent::ShowToParent) {
-    // launch home page program
-  }
 
+  }
   return QMainWindow::event(event);
 }
 
+// open a new file system program file
 void MainWindow::fileOpen() {
   QString path = QFileDialog::getOpenFileName(this, tr("Open Program"),
                                               QString(), 
@@ -179,19 +182,23 @@ void MainWindow::fileOpen() {
   }
 }
 
+// display the about box
 void MainWindow::helpAbout() {
   QMessageBox::information(this, tr("SmallBASIC"),
                            tr(aboutText), QMessageBox::Ok);
 }
 
+// show our home page
 void MainWindow::helpHomePage() {
   QDesktopServices::openUrl(QUrl("http://smallbasic.sourceforge.net"));
 }
 
+// opens a new program window
 void MainWindow::newWindow() {
   QProcess::startDetached(QCoreApplication::applicationFilePath());
 }
 
+// program break button handler
 void MainWindow::runBreak() {
   if (runMode == run_state || runMode == modal_state) {
     brun_break();
@@ -199,10 +206,12 @@ void MainWindow::runBreak() {
   }
 }
 
+// program restart button handler
 void MainWindow::runRestart() {
 
 }
 
+// program start button handler
 void MainWindow::runStart() {
   if (QFileInfo(textInput->text()).isFile() && 
       QString::compare(programPath, textInput->text()) != 0) {
@@ -211,37 +220,44 @@ void MainWindow::runStart() {
   }
 }
 
+// view the error console
 void MainWindow::viewErrorConsole() {
   logDialog->show();
   logDialog->raise();
 }
 
+// view the preferences dialog
 void MainWindow::viewPreferences() {
 }
 
+// view the program source code
 void MainWindow::viewProgramSource() {
   sourceDialog->show();
   sourceDialog->raise();
 }
 
+// convert mouse press event into a smallbasic mouse press event
 void MainWindow::mousePressEvent() {
   if (isRunning()) {
     keymap_invoke(SB_KEY_MK_PUSH);
   }
 }
 
+// convert mouse release event into a smallbasic mouse release event
 void MainWindow::mouseReleaseEvent() {
   if (isRunning()) {
     keymap_invoke(SB_KEY_MK_RELEASE);
   }
 }
 
+// convert mouse move event into a smallbasic mouse move event
 void MainWindow::mouseMoveEvent(bool down) {
   if (isRunning()) {
     keymap_invoke(down ? SB_KEY_MK_DRAG : SB_KEY_MK_MOVE);
   }
 }
 
+// convert keystrokes into smallbasic key events
 void MainWindow::keyPressEvent(QKeyEvent* event) {
   if (isRunning()) {
     switch (event->key()) {
@@ -355,7 +371,25 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
   }
 }
 
+// main basic program loop
 void MainWindow::basicMain() {
+}
+
+// return any new .bas program filename from mimeData 
+QString MainWindow::dropFile(const QMimeData* mimeData) {
+  QString result;
+  if (mimeData->hasText()) {
+    QString path = mimeData->text().trimmed();
+    if (path.startsWith("file://")) {
+      path = path.remove(0, 7);
+    }
+    if (QFileInfo(path).isFile() &&
+        path.endsWith(".bas") &&
+        QString::compare(path, this->programPath) != 0) {
+      result = path;
+    }
+  }
+  return result;
 }
 
 // End of "$Id$".
