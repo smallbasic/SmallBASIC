@@ -106,6 +106,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
           this, SLOT(viewProgramSource()));
   connect(ui->actionErrorConsole, SIGNAL(triggered()), 
           this, SLOT(viewErrorConsole()));
+
+  // setup state
+  runMode = init_state;
+  opt_ide = IDE_NONE;
+  opt_graphics = true;
+  opt_pref_bpp = 0;
+  opt_nosave = true;
+  opt_interactive = true;
+  opt_verbose = false;
+  opt_quiet = true;
+  os_graphics = 1;
 }
 
 MainWindow::~MainWindow() {
@@ -373,6 +384,29 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 
 // main basic program loop
 void MainWindow::basicMain() {
+  opt_pref_width = 0;
+  opt_pref_height = 0;
+
+  do {
+    runMode = run_state;
+
+    // start in the directory of the bas program
+    QString path = programPath.replace("\\", "/");
+    int index = path.lastIndexOf("/");
+    if (index != -1) {
+      if (!chdir(path.left(index).toUtf8().data())) {
+        path = path.right(path.length() - index - 1);
+      }
+    }
+    sbasic_main(path.toUtf8().data());
+  }
+  while (runMode == restart_state);
+
+  if (runMode == quit_state) {
+    exit(0);
+  }
+
+  runMode = init_state;
 }
 
 // return any new .bas program filename from mimeData 

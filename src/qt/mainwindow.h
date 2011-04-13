@@ -27,6 +27,7 @@ extern "C" void trace(const char* format, ...);
 enum ExecState {
   init_state,
   run_state,
+  restart_state,
   modal_state,
   break_state,
   quit_state

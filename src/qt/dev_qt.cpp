@@ -20,6 +20,7 @@
 #include <QEventLoop>
 #include <QLineEdit>
 #include <QMap>
+#include <QProcess>
 #include <QString>
 #include <QStringList>
 #include <QTimer>
@@ -64,7 +65,6 @@ C_LINKAGE_BEGIN
 
 int osd_devinit() {
   wnd->out->resetMouse();
-  os_graphics = 1;
 
   // allow the application to set the preferred width and height
   if ((opt_pref_width || opt_pref_height)) {
@@ -256,6 +256,14 @@ void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
   }
 }
 
+void dev_arc(int xc, int yc, double r, double start, double end, double aspect) {
+  wnd->out->drawArc(xc, yc, r, start, end, aspect);
+}
+
+void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill) {
+  wnd->out->drawEllipse(xc, yc, xr, yr, aspect, fill);
+}
+
 void osd_beep() {
   wnd->out->beep();
 }
@@ -272,6 +280,20 @@ void osd_write(const char* s) {
 
 void lwrite(const char* s) {
   wnd->logWrite(s);
+}
+
+/**
+ * run a program (if retflg wait and return; otherwise just exec())
+ */
+int dev_run(const char *src, int retflg) {
+  int result = 0;
+  if (retflg) {
+    result = QProcess::execute(src);
+  }
+  else {
+    QProcess::startDetached(src);
+  }
+  return result;
 }
 
 //--ENV-------------------------------------------------------------------------

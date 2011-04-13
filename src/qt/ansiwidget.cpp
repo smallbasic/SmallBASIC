@@ -90,6 +90,22 @@ void AnsiWidget::clearScreen() {
   update();
 }
 
+/*! draws an arc onto the offscreen buffer
+ */
+void AnsiWidget::drawArc(int xc, int yc, double r, 
+                         double start, double end, double aspect) {
+  QPainter painter(this->img);
+  update();
+}
+
+/*! draws an ellipse onto the offscreen buffer
+ */
+void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr, 
+                             double aspect, int fill) {
+  QPainter painter(this->img);
+  update();
+}
+
 /*! draws the given image onto the offscreen buffer
  */
 void AnsiWidget::drawImage(QImage* image, int x, int y, int sx, int sy, int w, int h) {
@@ -252,7 +268,7 @@ void AnsiWidget::saveImage(const char* filename, int x, int y, int w, int h) {
 /*! sets the current drawing color
  */
 void AnsiWidget::setColor(long fg) {
-  this->bg = ansiToQt(fg);
+  this->fg = ansiToQt(fg);
 }
 
 /*! sets the pixel to the given color at the given xy location
@@ -267,8 +283,8 @@ void AnsiWidget::setPixel(int x, int y, int c) {
 /*! sets the current text drawing color
  */
 void AnsiWidget::setTextColor(long fg, long bg) {
-  this->bg = ansiToQt(fg);
-  this->fg = ansiToQt(bg);
+  this->bg = ansiToQt(bg);
+  this->fg = ansiToQt(fg);
 }
 
 /*! sets mouse mode on or off

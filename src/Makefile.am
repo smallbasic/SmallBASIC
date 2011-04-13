@@ -51,6 +51,8 @@ libsb_common_a_SOURCES =			\
     circle.c					\
     decomp.c					\
     device.c device.h				\
+    screen.c					\
+    system.c					\
     dev_genfb.h dev_term.h			\
     drvmouse.h drvsound.h			\
     eval.c					\
@@ -79,8 +81,8 @@ libsb_common_a_SOURCES =			\
     str.c str.h					\
     tasks.c tasks.h				\
     var_uds.c var_uds.h				\
-    var_hash.c var_hash.h		        \
-    keymap.c keymap.h		        	\
+    var_hash.c var_hash.h			\
+    keymap.c keymap.h				\
     units.c units.h				\
     var.c var.h					\
     vmt.c vmt.h					\

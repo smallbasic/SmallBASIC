@@ -30,6 +30,8 @@ public:
   // public api
   void beep() const;
   void clearScreen();
+  void drawArc(int xc, int yc, double r, double start, double end, double aspect);
+  void drawEllipse(int xc, int yc, int xr, int yr, double aspect, int fill);
   void drawImage(QImage* img, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);

@@ -447,6 +447,8 @@ function buildQT() {
    AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
    AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()])
+   AC_DEFINE(IMPL_DEV_RUN, 1, [Driver implements dev_run()])
+   AC_DEFINE(IMPL_DEV_CIRCLE, 1, [Driver implements circle/elipse funcs])
 
    BUILD_SUBDIRS="src src/qt"
    AC_SUBST(BUILD_SUBDIRS)

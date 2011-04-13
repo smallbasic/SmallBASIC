@@ -6,8 +6,12 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
+#include "config.h"
 #include "device.h"
 #include "osd.h"
+
+#ifndef IMPL_DEV_CIRCLE
+
 #if !defined(_PalmOS)
 #include <math.h>
 #endif
@@ -133,3 +137,5 @@ void dev_arc(int xc, int yc, double r, double start, double end, double aspect)
   }
   dev_line(x, y, xe, ye);
 }
+
+#endif
