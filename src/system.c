@@ -8,14 +8,13 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "sys.h"
-#include "str.h"
-#include "var.h"
 #include "device.h"
-#include "osd.h"
-#include "smbas.h"
-#include "sberr.h"
-#include "messages.h"
+
+// add-on drivers
+#if defined(DRV_SOUND)
+#include "drvsound.h"
+static int drvsound_ok;
+#endif
 
 #if !defined(_PalmOS)
 #include <signal.h>
