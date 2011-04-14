@@ -682,24 +682,6 @@ var_int_t cmd_imath1(long funcCode, var_t *arg)
   x = v_getint(arg);
 
   switch (funcCode) {
-  case kwPEEK:
-    //
-    // byte <- PEEK(addr)
-    //
-    r = (var_int_t) (int) ((byte*) &x);
-    break;
-  case kwPEEK16:
-    //
-    // word <- PEEK16(addr)
-    //
-    r = (var_int_t) (int) ((word*) &x);
-    break;
-  case kwPEEK32:
-    //
-    // dword <- PEEK32(addr)
-    //
-    r = (var_int_t) (int) ((dword*) &x);
-    break;
   case kwTIMER:
     //
     // int <- TIMER // seconds from 00:00

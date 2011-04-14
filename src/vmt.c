@@ -256,7 +256,7 @@ dbt_t dbt_create(const char *fileName, int flags)
   for (i = 0; i < MAX_VMT_FILES; i++) {
     if (vmt[i].used == 0) {
       t = i;
-      vmt[t].sign = (dword) "VMTH";
+      vmt[t].sign = (intptr_t) "VMTH";
       vmt[t].ver = 1;
       vmt[t].flags = flags;
       vmt[t].count = 0;

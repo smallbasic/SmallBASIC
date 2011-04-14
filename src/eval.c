@@ -918,7 +918,7 @@ void eval(var_t *r)
           vp = code_getvarptr();
           if (!prog_error) {
             r->type = V_INT;
-            r->v.i = (dword) vp->v.p.ptr;
+            r->v.i = (intptr_t) vp->v.p.ptr;
           }
 
           if (CODE_PEEK() != kwTYPE_LEVEL_END) {
@@ -1200,10 +1200,6 @@ void eval(var_t *r)
       case kwEOF:
       case kwSEEKF:
       case kwLOF:
-      case kwPEEK:
-      case kwPEEK16:
-      case kwPEEK32:
-
         V_FREE(r);
 
         if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {

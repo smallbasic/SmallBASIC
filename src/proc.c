@@ -311,7 +311,7 @@ void pv_write(char *str, int method, int handle)
     lwrite(str);
     break;
   case PV_STRING:
-    vp = (var_t *) handle;
+    vp = (var_t*) (intptr_t) handle;
     l = strlen(str) + strlen(str) + 1;
     if (vp->v.p.size <= l) {
       vp->v.p.size = l + 128;

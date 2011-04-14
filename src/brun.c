@@ -1348,18 +1348,6 @@ void bc_loop(int isf)
         case kwBPUTC:
           cmd_bputc();
           break;
-        case kwPOKE:
-          cmd_poke();
-          break;
-        case kwPOKE16:
-          cmd_poke16();
-          break;
-        case kwPOKE32:
-          cmd_poke32();
-          break;
-        case kwBCOPY:
-          cmd_bcopy();
-          break;
         case kwBSAVE:
           cmd_bsave();
           break;

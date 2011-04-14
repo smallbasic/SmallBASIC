@@ -1,3 +1,7 @@
+2011-04-14
+	Removed POKE and BCOPY. These never really worked correcly
+	and would be fairly insecure in the web model if they did.
+
 2011-03-19
 	QT port started
 
