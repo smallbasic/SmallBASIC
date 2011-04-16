@@ -111,33 +111,29 @@ void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr,
 void AnsiWidget::drawImage(QImage* image, int x, int y, int sx, int sy, int w, int h) {
   QPainter painter(this->img);
   painter.drawImage(x, y, *image, sx, sy, w, h); 
-  update();
 }
 
 /*! draw a line onto the offscreen buffer
  */
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
-  painter.setPen(this->bg);
-  painter.drawLine(x1, y1, x2-x1, y2-y1);
-  update(x1, y1, x2-x1, y2-y1);
+  painter.setPen(this->fg);
+  painter.drawLine(x1, y1, x2, y2);
 }
 
 /*! draw a rectangle onto the offscreen buffer
  */
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
-  painter.setPen(this->bg);
-  painter.drawRect(x1, y1, x2-x1, y2-y1);
-  update(x1, y1, x2-x1, y2-y1);
+  painter.setPen(this->fg);
+  painter.drawRect(x1, y1, x2, y2);
 }
 
 /*! draw a filled rectangle onto the offscreen buffer
  */
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
-  painter.fillRect(x1, y1, x2-x1, y2-y1, this->bg);
-  update(x1, y1, x2-x1, y2-y1);
+  painter.fillRect(x1, y1, x2, y2, this->fg);
 }
 
 /*! returns the color of the pixel at the given xy location
@@ -428,6 +424,7 @@ void AnsiWidget::reset(bool init) {
     curX = INITXY;
     tabSize = 40; // tab size in pixels (160/32 = 5)
     markX = markY = pointX = pointY = 0;
+    copyMode = false;
   }
 
   curYSaved = 0;
@@ -506,52 +503,52 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
       break;
       // colors - 30..37 foreground, 40..47 background
     case 30: // set black fg
-      this->bg = ansiToQt(0);
-      break;
-    case 31: // set red fg
-      this->bg = ansiToQt(4);
-      break;
-    case 32: // set green fg
-      this->bg = ansiToQt(2);
-      break;
-    case 33: // set yellow fg
-      this->bg = ansiToQt(6);
-      break;
-    case 34: // set blue fg
-      this->bg = ansiToQt(1);
-      break;
-    case 35: // set magenta fg
-      this->bg = ansiToQt(5);
-      break;
-    case 36: // set cyan fg
-      this->bg = ansiToQt(3);
-      break;
-    case 37: // set white fg
-      this->bg = ansiToQt(7);
-      break;
-    case 40: // set black bg
       this->fg = ansiToQt(0);
       break;
-    case 41: // set red bg
+    case 31: // set red fg
       this->fg = ansiToQt(4);
       break;
-    case 42: // set green bg
+    case 32: // set green fg
       this->fg = ansiToQt(2);
       break;
-    case 43: // set yellow bg
+    case 33: // set yellow fg
       this->fg = ansiToQt(6);
       break;
-    case 44: // set blue bg
+    case 34: // set blue fg
       this->fg = ansiToQt(1);
       break;
-    case 45: // set magenta bg
+    case 35: // set magenta fg
       this->fg = ansiToQt(5);
       break;
-    case 46: // set cyan bg
+    case 36: // set cyan fg
       this->fg = ansiToQt(3);
       break;
+    case 37: // set white fg
+      this->fg = ansiToQt(7);
+      break;
+    case 40: // set black bg
+      this->bg = ansiToQt(0);
+      break;
+    case 41: // set red bg
+      this->bg = ansiToQt(4);
+      break;
+    case 42: // set green bg
+      this->bg = ansiToQt(2);
+      break;
+    case 43: // set yellow bg
+      this->bg = ansiToQt(6);
+      break;
+    case 44: // set blue bg
+      this->bg = ansiToQt(1);
+      break;
+    case 45: // set magenta bg
+      this->bg = ansiToQt(5);
+      break;
+    case 46: // set cyan bg
+      this->bg = ansiToQt(3);
+      break;
     case 47: // set white bg
-      this->fg = ansiToQt(15);
+      this->bg = ansiToQt(15);
       break;
     case 48: // subscript on
       break;
@@ -565,7 +562,7 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
 /*! Updated the current font according to accumulated flags
  */
 void AnsiWidget::updateFont() {
-  QFont font = QFont("Helvetica");
+  QFont font = QFont();
   font.setFixedPitch(true);
   font.setPointSize(textSize);
   font.setBold(bold);
@@ -612,7 +609,7 @@ void AnsiWidget::paintEvent(QPaintEvent* event) {
   painter.drawPixmap(dirtyRect, *img, dirtyRect);
 
   // draw the mouse selection
-  if (markX != pointX || markY != pointY) {
+  if (copyMode && (markX != pointX || markY != pointY)) {
     painter.setPen(Qt::DashDotDotLine);
     painter.setBackgroundMode(Qt::TransparentMode);
     painter.drawRect(markX, markY, pointX - markX, pointY - markY);

@@ -17,6 +17,8 @@ EXTRA_DIST =					\
   images/stop.png
 
 sbasicb_SOURCES =				\
+  httpfile.cpp					\
+  httpfile.h					\
   ansiwidget.cpp				\
   ansiwidget.h					\
   main.cpp					\

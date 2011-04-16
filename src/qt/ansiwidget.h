@@ -102,6 +102,7 @@ private:
 
   // clipboard handling
   int markX, markY, pointX, pointY;
+  bool copyMode;
 
   // mouse handling
   int prevMouseX;

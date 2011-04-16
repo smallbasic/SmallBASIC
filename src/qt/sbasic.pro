@@ -9,7 +9,7 @@
 
 # CONFIG   += qt debug
 
-QT       += core gui
+QT       += core gui network
 
 TARGET   = sbasicb
 
@@ -23,11 +23,13 @@ SOURCES += main.cpp \
            mainwindow.cpp \
            ansiwidget.cpp \
            dev_qt.cpp \
-           form_ui.cpp
+           form_ui.cpp \
+           httpfile.cpp
 
 HEADERS += mainwindow.h \
            ansiwidget.h \
-           form_ui.h
+           form_ui.h \
+           httpfile.h
 
 INCLUDEPATH += ../ ../../
 

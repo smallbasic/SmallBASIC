@@ -11,20 +11,19 @@
 #include <QDesktopServices>
 #include <QDialog>
 #include <QEvent>
-#include <QFileInfo>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFileSystemModel>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QProcess>
+#include <QTextStream>
 #include <QUrl>
 
 #include "mainwindow.h"
-#include "ui_console_view.h"
-#include "ui_mainwindow.h"
-#include "ui_source_view.h"
 #include "config.h"
 #include "sbapp.h"
 #include <stdio.h>
@@ -64,11 +63,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 
   // setup dialogs
   logDialog = new QDialog();
-  Ui::ErrorConsole* errorUi = new Ui::ErrorConsole();
+  errorUi = new Ui::ErrorConsole();
   errorUi->setupUi(logDialog);
 
   sourceDialog = new QDialog();
-  Ui::SourceDialog* sourceUi = new Ui::SourceDialog();
+  sourceUi = new Ui::SourceDialog();
   sourceUi->setupUi(sourceDialog);
 
   // connect signals and slots
@@ -117,6 +116,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   opt_verbose = false;
   opt_quiet = true;
   os_graphics = 1;
+
+  ui->statusbar->addPermanentWidget(new QLabel(ui->statusbar));
+  showStatus(false);
 }
 
 MainWindow::~MainWindow() {
@@ -135,7 +137,9 @@ bool MainWindow::isRunning() {
 
 // append to the log window
 void MainWindow::logWrite(const char* msg) {
-
+  QString buffer = errorUi->plainTextEdit->toPlainText();
+  buffer.append(msg);
+  errorUi->plainTextEdit->setPlainText(buffer);
 }
 
 // set the program modal state
@@ -167,16 +171,17 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
 void MainWindow::dropEvent(QDropEvent* event) {
   QString path = dropFile(event->mimeData());
   if (path.length() > 0) {
-    textInput->setText(path);
-    programPath = path;
-    basicMain();
+    loadPath(path);
   }
 }
 
 // launch home page program
 bool MainWindow::event(QEvent* event) {
   if (event->type() == QEvent::ShowToParent) {
-
+    QStringList args = QCoreApplication::arguments();
+    if (args.count() == 2) {
+      loadPath(args.value(1));
+    }
   }
   return QMainWindow::event(event);
 }
@@ -187,9 +192,7 @@ void MainWindow::fileOpen() {
                                               QString(), 
                                              tr("BASIC Files (*.bas)"));
   if (QFileInfo(path).isFile() && QString::compare(programPath, path) != 0) {
-    textInput->setText(path);
-    programPath = path;
-    basicMain();
+    loadPath(path);
   }
 }
 
@@ -219,16 +222,22 @@ void MainWindow::runBreak() {
 
 // program restart button handler
 void MainWindow::runRestart() {
-
+  switch (runMode) {
+  case init_state:
+    basicMain(programPath);
+    break;
+  case run_state:
+    runMode = restart_state;
+    brun_break();
+    break;
+  default:
+    break;
+  }
 }
 
 // program start button handler
 void MainWindow::runStart() {
-  if (QFileInfo(textInput->text()).isFile() && 
-      QString::compare(programPath, textInput->text()) != 0) {
-    programPath = textInput->text();
-    basicMain();
-  }
+  loadPath(textInput->text());
 }
 
 // view the error console
@@ -383,12 +392,16 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 }
 
 // main basic program loop
-void MainWindow::basicMain() {
+void MainWindow::basicMain(QString path) {
+  programPath = path;
+
   opt_pref_width = 0;
   opt_pref_height = 0;
-
+  bool success = false;
+  
   do {
     runMode = run_state;
+    showStatus(false);
 
     // start in the directory of the bas program
     QString path = programPath.replace("\\", "/");
@@ -398,7 +411,7 @@ void MainWindow::basicMain() {
         path = path.right(path.length() - index - 1);
       }
     }
-    sbasic_main(path.toUtf8().data());
+    success = sbasic_main(path.toUtf8().data());
   }
   while (runMode == restart_state);
 
@@ -407,6 +420,7 @@ void MainWindow::basicMain() {
   }
 
   runMode = init_state;
+  showStatus(!success);
 }
 
 // return any new .bas program filename from mimeData 
@@ -424,6 +438,52 @@ QString MainWindow::dropFile(const QMimeData* mimeData) {
     }
   }
   return result;
+}
+
+// resolve the path to a local file then call basicMain
+void MainWindow::loadPath(QString path, bool showPath) {
+  if (showPath) {
+    textInput->setText(path);
+  }
+
+  if (QFileInfo(path).isFile()) {
+    // populate the source view window
+    QFile file(path);
+    if (file.open(QFile::ReadOnly)) {
+      QTextStream stream(&file);
+      sourceUi->plainTextEdit->setPlainText(stream.readAll());
+    }
+    sourceUi->plainTextEdit->setReadOnly(true);
+    setFocus();
+    basicMain(path);
+  }
+  else if (path.startsWith("http://")) {
+    new HttpFile(this, path);
+  }
+}
+
+// called from HttpFile when a loading error occurs
+void MainWindow::loadError(QString message) {
+  out->print(message.toUtf8().data());
+}
+
+// display the status depending on the current state
+void MainWindow::showStatus(bool error) {
+  if (error) {
+    ui->statusbar->showMessage(gsb_last_errmsg);
+  }
+  else {
+    switch (runMode) {
+    case init_state:
+      ui->statusbar->showMessage("Ready");
+      break;
+    case run_state:
+      ui->statusbar->showMessage("RUN");
+      break;
+    default:
+      break;
+    }
+  }
 }
 
 // End of "$Id$".

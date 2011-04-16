@@ -10,10 +10,15 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
 #include <QLineEdit>
+#include <QMainWindow>
 #include <QMimeData>
+
 #include "ansiwidget.h"
+#include "httpfile.h"
+#include "ui_console_view.h"
+#include "ui_mainwindow.h"
+#include "ui_source_view.h"
 
 namespace Ui {
   class MainWindow;
@@ -36,7 +41,7 @@ enum ExecState {
 struct MainWindow;
 extern MainWindow *wnd;
 
-class MainWindow : public QMainWindow, MouseListener {
+class MainWindow : public QMainWindow, MouseListener, ReadyListener {
   Q_OBJECT
     
 public:
@@ -76,16 +81,21 @@ private:
   void keyPressEvent(QKeyEvent* event);
 
   // private methods
-  void basicMain();
+  void basicMain(QString path);
   QString dropFile(const QMimeData* mimeData);
+  void loadPath(QString path, bool showPath=true);
+  void loadError(QString message);
+  void showStatus(bool error);
 
   // private state variables
   Ui::MainWindow* ui;
+  Ui::ErrorConsole* errorUi;
+  Ui::SourceDialog* sourceUi;
+
   QDialog* logDialog;
   QDialog* sourceDialog;
   QLineEdit* textInput;
   QString programPath;
-
   ExecState runMode;
 };
 
