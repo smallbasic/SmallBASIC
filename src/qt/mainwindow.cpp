@@ -158,6 +158,14 @@ void MainWindow::endModal() {
 void MainWindow::runQuit() {
 }
 
+// ensure any running program is terminated upon closing
+void MainWindow::closeEvent(QCloseEvent* event) {
+  if (runMode == run_state || runMode == modal_state) {
+    brun_break();
+    runMode = quit_state;
+  }
+}
+
 // handle file drag and drop from a desktop file manager
 void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
   QString path = dropFile(event->mimeData());
@@ -226,7 +234,7 @@ void MainWindow::runBreak() {
 void MainWindow::runRestart() {
   switch (runMode) {
   case init_state:
-    basicMain(programPath);
+    runStart();
     break;
   case run_state:
     runMode = restart_state;
@@ -400,7 +408,7 @@ void MainWindow::basicMain(QString path) {
   opt_pref_width = 0;
   opt_pref_height = 0;
   bool success = false;
-  
+
   do {
     runMode = run_state;
     showStatus(false);

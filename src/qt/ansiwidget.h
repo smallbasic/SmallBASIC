@@ -53,8 +53,8 @@ public:
   void setXY(int x, int y) {curX=x; curY=y;}
 
   // mouse support
-  int getMouseX(bool current) {return current ? pointX : prevMouseX;}
-  int getMouseY(bool current) {return current ? pointY : prevMouseY;}
+  int getMouseX(bool down) {return down ? markX : pointX;}
+  int getMouseY(bool down) {return down ? markY : pointY;}
   bool getMouseMode() {return mouseMode;}
   void resetMouse();
   void setMouseMode(bool mode);
@@ -105,8 +105,6 @@ private:
   bool copyMode;
 
   // mouse handling
-  int prevMouseX;
-  int prevMouseY;
   bool mouseMode; // PEN ON/OFF
   MouseListener* mouseListener;
 };

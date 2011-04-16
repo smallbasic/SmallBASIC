@@ -71,7 +71,7 @@
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
-   <widget class="QMenu" name="menu_View">
+   <widget class="QMenu" name="menuView">
     <property name="title">
      <string>&amp;View</string>
     </property>
@@ -95,7 +95,7 @@
     <addaction name="separator"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menu_View"/>
+   <addaction name="menuView"/>
    <addaction name="menuBookmarks"/>
    <addaction name="menuHelp"/>
   </widget>

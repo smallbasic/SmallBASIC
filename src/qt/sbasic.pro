@@ -7,7 +7,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-# CONFIG   += qt debug
+CONFIG   += qt debug
 
 QT       += core gui network
 

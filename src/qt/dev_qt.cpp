@@ -170,40 +170,39 @@ int osd_getpen(int code) {
 
   switch (code) {
   case 0:
-    // UNTIL PEN(0) - wait until move click or move
+    // UNTIL PEN(0) - wait until click or move
     if (form_event()) {
       // clicked a form widget
       return 1;
     }
-
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
     // fallthru to re-test 
 
-  case 3:    // returns true if the pen is down (and save curpos)
-    return wnd->out->getMouseX(true) != -1;
+  case 3:  // returns true if the pen is down (and save curpos)
+    return (Qt::LeftButton == QApplication::mouseButtons());
 
-  case 1:                      // last pen-down x
-    return wnd->out->getMouseX(false);
-
-  case 2:                      // last pen-down y
-    return wnd->out->getMouseY(false);
-
-  case 4:                      // cur pen-down x
-  case 10:
+  case 1:  // last down x
     return wnd->out->getMouseX(true);
 
-  case 5:                      // cur pen-down y
-  case 11:
+  case 2:  // last down y
     return wnd->out->getMouseY(true);
 
-  case 12:                     // true if left button pressed
-    return wnd->out->getMouseX(true) != -1;
+  case 4:  // cur x
+  case 10:
+    return wnd->out->getMouseX(false);
 
-  case 13:                     // true if right button pressed
-    return 0;
+  case 5:  // cur y
+  case 11:
+    return wnd->out->getMouseY(false);
 
-  case 14:                     // true if middle button pressed
-    return 0;
+  case 12: // true if left button pressed
+    return (Qt::LeftButton == QApplication::mouseButtons());
+
+  case 13: // true if right button pressed
+    return (Qt::RightButton == QApplication::mouseButtons());
+
+  case 14: // true if middle button pressed
+    return (Qt::MiddleButton == QApplication::mouseButtons());
   }
   return 0;
 }

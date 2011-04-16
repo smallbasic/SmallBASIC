@@ -75,6 +75,7 @@ private:
   void mousePressEvent();
   void mouseReleaseEvent();
 
+  void closeEvent(QCloseEvent* event);
   void dragEnterEvent(QDragEnterEvent* event); 
   void dropEvent(QDropEvent* event);
   bool event(QEvent* event);

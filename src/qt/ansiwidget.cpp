@@ -573,7 +573,9 @@ void AnsiWidget::updateFont() {
 void AnsiWidget::mouseMoveEvent(QMouseEvent* event) {
   pointX = event->x();
   pointY = event->y();
-  update();
+  if (copyMode) {
+    update();
+  }
   if (mouseMode && mouseListener) {
     mouseListener->mouseMoveEvent(event->button());
   }
@@ -583,19 +585,17 @@ void AnsiWidget::mousePressEvent(QMouseEvent* event) {
   bool selected = (markX != pointX || markY != pointY);
   markX = pointX = event->x();
   markY = pointY = event->y();
-  if (selected) {
+  if (mouseMode && selected) {
     update();
   }
-  if (mouseMode && mouseListener) {
+  if (copyMode && mouseListener) {
     mouseListener->mousePressEvent();
   }
 }
 
 void AnsiWidget::mouseReleaseEvent(QMouseEvent* event) {
   bool selected = (markX != pointX || markY != pointY);
-  if (selected) {
-    prevMouseX = pointX;
-    prevMouseY = pointY;
+  if (copyMode && selected) {
     update();
   }
   if (mouseMode && mouseListener) {
