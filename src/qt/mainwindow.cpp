@@ -65,10 +65,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   logDialog = new QDialog();
   errorUi = new Ui::ErrorConsole();
   errorUi->setupUi(logDialog);
+  errorUi->plainTextEdit->setReadOnly(true);
 
   sourceDialog = new QDialog();
   sourceUi = new Ui::SourceDialog();
   sourceUi->setupUi(sourceDialog);
+  sourceUi->plainTextEdit->setReadOnly(true);
 
   // connect signals and slots
   connect(ui->actionExit, SIGNAL(triggered()), 
@@ -453,7 +455,6 @@ void MainWindow::loadPath(QString path, bool showPath) {
       QTextStream stream(&file);
       sourceUi->plainTextEdit->setPlainText(stream.readAll());
     }
-    sourceUi->plainTextEdit->setReadOnly(true);
     setFocus();
     basicMain(path);
   }
