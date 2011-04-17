@@ -143,7 +143,7 @@ int osd_events(int wait_flag) {
     break;
   default:
     // pump messages without pausing
-    QCoreApplication::flush();
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   }
 
   if (wnd->isBreakExec()) {
@@ -175,7 +175,13 @@ int osd_getpen(int code) {
       // clicked a form widget
       return 1;
     }
+
+    // flush any waiting update/paint events to allow mouse events to fire
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+    // receive any mouse events in wnd->out
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+
     // fallthru to re-test 
 
   case 3:  // returns true if the pen is down (and save curpos)

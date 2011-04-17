@@ -126,14 +126,14 @@ void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
   painter.setPen(this->fg);
-  painter.drawRect(x1, y1, x2, y2);
+  painter.drawRect(x1, y1, x2-x1, y2-y1);
 }
 
 /*! draw a filled rectangle onto the offscreen buffer
  */
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
-  painter.fillRect(x1, y1, x2, y2, this->fg);
+  painter.fillRect(x1, y1, x2-x1, y2-y1, this->fg);
 }
 
 /*! returns the color of the pixel at the given xy location
@@ -562,7 +562,7 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
 /*! Updated the current font according to accumulated flags
  */
 void AnsiWidget::updateFont() {
-  QFont font = QFont();
+  QFont font = QFont("TypeWriter");
   font.setFixedPitch(true);
   font.setPointSize(textSize);
   font.setBold(bold);
