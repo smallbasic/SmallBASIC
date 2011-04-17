@@ -137,6 +137,11 @@ bool MainWindow::isRunning() {
   return (runMode == run_state || runMode == modal_state);
 }
 
+// return whether a smallbasic program is running in modal mode
+bool MainWindow::isRunModal() {
+  return (runMode == modal_state);
+}
+
 // append to the log window
 void MainWindow::logWrite(const char* msg) {
   QString buffer = errorUi->plainTextEdit->toPlainText();
@@ -145,7 +150,7 @@ void MainWindow::logWrite(const char* msg) {
 }
 
 // set the program modal state
-void MainWindow::setModal(bool modal) {
+void MainWindow::setRunModal(bool modal) {
   runMode = modal ? modal_state : run_state;  
 }
 
@@ -159,7 +164,7 @@ void MainWindow::runQuit() {
 }
 
 // ensure any running program is terminated upon closing
-void MainWindow::closeEvent(QCloseEvent* event) {
+void MainWindow::closeEvent(QCloseEvent*) {
   if (runMode == run_state || runMode == modal_state) {
     brun_break();
     runMode = quit_state;

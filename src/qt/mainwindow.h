@@ -52,9 +52,10 @@ public:
 
   bool isBreakExec();
   bool isRunning();
+  bool isRunModal();
   void logWrite(const char* msg);
   void runQuit();
-  void setModal(bool modal);
+  void setRunModal(bool modal);
 
 public slots:
   void endModal();

@@ -8,8 +8,8 @@
 //
 
 #include <QApplication>
-#include <QRect>
 #include <QPaintEvent>
+#include <QRect>
 
 #include <stdio.h>
 #include "ansiwidget.h"
@@ -103,6 +103,18 @@ void AnsiWidget::drawArc(int xc, int yc, double r,
 void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr, 
                              double aspect, int fill) {
   QPainter painter(this->img);
+  painter.setRenderHint(QPainter::HighQualityAntialiasing);
+  const QPoint center(xc, yc);
+  if (fill) {
+    QPainterPath path;
+    QBrush brush(this->fg);
+    path.addEllipse(center, xr, yr * aspect);
+    painter.fillPath(path, brush);
+  }
+  else {
+    painter.setPen(this->fg);
+    painter.drawEllipse(center, xr, static_cast<int>(yr * aspect));
+  }
   update();
 }
 
@@ -224,6 +236,7 @@ void AnsiWidget::print(const char *str) {
       }
 
       QPainter painter(this->img);
+      painter.setRenderHint(QPainter::TextAntialiasing);
       painter.setFont(font());
       painter.setBackground(invert ? this->fg : this->bg);
       painter.setPen(invert ? this->bg : this->fg);
@@ -435,7 +448,7 @@ void AnsiWidget::reset(bool init) {
   italic = false;
   fg = Qt::black;
   bg = Qt::white;
-  textSize = 10;
+  textSize = 8;
   updateFont();
 }
 

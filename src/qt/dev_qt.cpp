@@ -167,7 +167,7 @@ int osd_getpen(int code) {
   if (wnd->out->getMouseMode() == PEN_OFF) {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
   }
-
+    
   switch (code) {
   case 0:
     // UNTIL PEN(0) - wait until click or move
@@ -180,6 +180,9 @@ int osd_getpen(int code) {
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     // receive any mouse events in wnd->out
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+
+    // second wait required following out.newLine() to avoid race condition
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
 
     // fallthru to re-test 
@@ -195,10 +198,12 @@ int osd_getpen(int code) {
 
   case 4:  // cur x
   case 10:
+    //QCoreApplication::processEvents(QEventLoop::AllEvents);
     return wnd->out->getMouseX(false);
 
   case 5:  // cur y
   case 11:
+    //QCoreApplication::processEvents(QEventLoop::AllEvents);
     return wnd->out->getMouseY(false);
 
   case 12: // true if left button pressed
@@ -418,10 +423,10 @@ int dev_image_height(int handle, int index) {
 
 void dev_delay(dword ms) {
   if (!wnd->isBreakExec()) {
-    wnd->setModal(true);
+    wnd->setRunModal(true);
     QTimer::singleShot(ms, wnd, SLOT(endModal()));
 
-    while (wnd->isModal()) {
+    while (wnd->isRunModal()) {
       QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, 100);
     }
   }
@@ -437,10 +442,10 @@ char *dev_gets(char *dest, int size) {
                   wnd->out->textHeight() + 4);
   in->setFont(wnd->out->font());
   in->connect(in, SIGNAL(returnPressed()), wnd, SLOT(endModal()));
-  wnd->setModal(true);
+  wnd->setRunModal(true);
 
-  while (wnd->isModal()) {
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, 100);
+  while (wnd->isRunModal()) {
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
   }
 
   if (wnd->isBreakExec()) {
