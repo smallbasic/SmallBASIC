@@ -21,10 +21,10 @@
 #include <QLineEdit>
 #include <QMap>
 #include <QProcess>
+#include <QSettings>
 #include <QString>
 #include <QStringList>
 #include <QTimer>
-#include <QtGlobal>
 
 extern "C" {
 #include "fs_socket_client.h"
@@ -313,12 +313,28 @@ int dev_putenv(const char *s) {
   QString s1 = elems.at(0);
   QString s2 = elems.at(1);
   env.insert(s1, s2);
+
+  if (wnd->isResourceApp()) {
+    QSettings settings;
+    settings.beginGroup("env");
+    settings.setValue(s1, s2);
+    settings.endGroup();
+  }
+
   return 1;
 }
 
 char* dev_getenv(const char *s) {
   QString str = env.value(s);
-  return str.count() ? str.toUtf8().data() : getenv(s);
+
+  if (!str.count() && wnd->isResourceApp()) {
+    QSettings settings;
+    settings.beginGroup("env");
+    str = settings.value(QString(s)).toString();
+    settings.endGroup();
+  }
+
+  return str.count() ? str.toUtf8().data() : 0;
 }
 
 char* dev_getenv_n(int n) {
@@ -337,6 +353,12 @@ char* dev_getenv_n(int n) {
 
 int dev_env_count() {
   int count = env.count();
+  if (wnd->isResourceApp()) {
+    QSettings settings;
+    settings.beginGroup("env");
+    count += settings.childKeys().size();
+    settings.endGroup();
+  }
   return count;
 }
 

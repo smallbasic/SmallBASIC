@@ -52,6 +52,7 @@ public:
   AnsiWidget* out;
 
   bool isBreakExec();
+  bool isResourceApp() {return resourceApp;}
   bool isRunning();
   bool isRunModal();
   void logWrite(const char* msg);
@@ -59,6 +60,7 @@ public:
   void setRunModal(bool modal);
 
 public slots:
+  void bookmarkProgram();
   void endModal();
   void fileOpen();
   void helpAbout();
@@ -98,12 +100,13 @@ private:
   Ui::ErrorConsole* errorUi;
   Ui::SourceDialog* sourceUi;
 
-  QDialog* logDialog;
-  QDialog* sourceDialog;
-  QLineEdit* textInput;
-  QString programPath;
-  ExecState runMode;
-  QLabel status;
+  QDialog* logDialog;    // log window widget
+  QDialog* sourceDialog; // source dialog widget
+  QLineEdit* textInput;  // text input control
+  QString programPath;   // path to the current program
+  ExecState runMode;     // current run state
+  QLabel status;         // the status bar widget
+  bool resourceApp;      // permission to use settings
 };
 
 #endif // MAINWINDOW_H

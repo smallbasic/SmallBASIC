@@ -19,6 +19,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QProcess>
+#include <QSetIterator>
 #include <QSettings>
 #include <QTextStream>
 #include <QUrl>
@@ -72,6 +73,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   sourceUi->plainTextEdit->setReadOnly(true);
 
   // connect signals and slots
+  connect(ui->actionBookmarkProgram, SIGNAL(triggered()), 
+          this, SLOT(bookmarkProgram()));
   connect(ui->actionExit, SIGNAL(triggered()), 
           this, SLOT(close()));
   connect(ui->actionOpen, SIGNAL(triggered()), 
@@ -110,6 +113,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
           this, SLOT(viewErrorConsole()));
 
   // setup state
+  resourceApp = false;
   runMode = init_state;
   opt_ide = IDE_NONE;
   opt_graphics = true;
@@ -124,9 +128,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   showStatus(false);
 
   // restore settings
-  QCoreApplication::setOrganizationName("smallbasic");
-  QCoreApplication::setOrganizationDomain("sourceforge.net");
+  QCoreApplication::setOrganizationName("SmallBASIC");
   QCoreApplication::setApplicationName("SmallBASIC");
+  QCoreApplication::setOrganizationDomain("sourceforge.net");
 
   QSettings settings;
   settings.beginGroup("MainWindow");
@@ -222,6 +226,31 @@ bool MainWindow::event(QEvent* event) {
     }
   }
   return QMainWindow::event(event);
+}
+
+// adds the current program to the bookmark list
+void MainWindow::bookmarkProgram() {
+  if (programPath.length() > 0 && !programPath.contains("qt_temp")) {
+    QSettings settings;
+    
+    QSet<QString> paths;
+    int size = settings.beginReadArray("bookmarks");
+    for (int i = 0; i < size; i++) {
+      settings.setArrayIndex(i);
+      paths << settings.value("path").toString();
+    }
+    paths << programPath;
+    settings.endArray();
+
+    settings.beginWriteArray("bookmarks");
+    QSetIterator<QString> iter(paths);
+    int i = 0;
+    while (iter.hasNext()) {
+      settings.setArrayIndex(i++);
+      settings.setValue("path", iter.next());
+    }
+    settings.endArray();
+  }
 }
 
 // open a new file system program file
@@ -493,6 +522,7 @@ QString MainWindow::dropFile(const QMimeData* mimeData) {
 void MainWindow::loadResource(QString key, QString path) {
   QSettings settings;
   QString homePath = settings.value(key).toString();
+  resourceApp = true;
 
   if (!homePath.length()) {
     // show the default home page
@@ -512,6 +542,7 @@ void MainWindow::loadResource(QString key, QString path) {
   else {
     loadPath(homePath);
   }
+  resourceApp = false;
 }
 
 // resolve the path to a local file then call basicMain
