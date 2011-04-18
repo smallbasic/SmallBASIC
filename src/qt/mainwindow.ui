@@ -92,7 +92,7 @@
      <string>&amp;Bookmarks</string>
     </property>
     <addaction name="actionBookmarkProgram"/>
-    <addaction name="separator"/>
+    <addaction name="actionViewBookmarks"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -116,9 +116,9 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionBreak"/>
-   <addaction name="actionRun"/>
    <addaction name="actionRefresh"/>
+   <addaction name="actionBreak"/>
+   <addaction name="actionHome"/>
    <addaction name="separator"/>
   </widget>
   <action name="actionExit">
@@ -161,11 +161,6 @@
     <string>Prefere&amp;nces</string>
    </property>
   </action>
-  <action name="actionToolbar">
-   <property name="text">
-    <string>&amp;Toolbar</string>
-   </property>
-  </action>
   <action name="actionHomePage">
    <property name="text">
     <string>&amp;Home page</string>
@@ -174,7 +169,7 @@
   <action name="actionBreak">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/images/stop.png</normaloff>:/images/stop.png</iconset>
+     <normaloff>:/res/stop.png</normaloff>:/res/stop.png</iconset>
    </property>
    <property name="text">
     <string>Break</string>
@@ -183,40 +178,16 @@
     <string>Halt the currently running program</string>
    </property>
   </action>
-  <action name="actionRun">
-   <property name="icon">
-    <iconset resource="sbasic.qrc">
-     <normaloff>:/images/run.png</normaloff>:/images/run.png</iconset>
-   </property>
-   <property name="text">
-    <string>run</string>
-   </property>
-   <property name="toolTip">
-    <string>Restart the halted program</string>
-   </property>
-  </action>
   <action name="actionRefresh">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/images/refresh.png</normaloff>:/images/refresh.png</iconset>
+     <normaloff>:/res/refresh.png</normaloff>:/res/refresh.png</iconset>
    </property>
    <property name="text">
     <string>refresh</string>
    </property>
    <property name="toolTip">
     <string>Restart the currently running program</string>
-   </property>
-  </action>
-  <action name="actionStart">
-   <property name="icon">
-    <iconset resource="sbasic.qrc">
-     <normaloff>:/images/jump.png</normaloff>:/images/jump.png</iconset>
-   </property>
-   <property name="text">
-    <string>start</string>
-   </property>
-   <property name="toolTip">
-    <string>Launch the entered program </string>
    </property>
   </action>
   <action name="actionProgramSource">
@@ -237,6 +208,35 @@
   <action name="actionNewWindow">
    <property name="text">
     <string>&amp;New Window</string>
+   </property>
+  </action>
+  <action name="actionViewBookmarks">
+   <property name="text">
+    <string>&amp;View &amp;Bookmarks</string>
+   </property>
+  </action>
+  <action name="actionHome">
+   <property name="icon">
+    <iconset resource="sbasic.qrc">
+     <normaloff>:/res/home.png</normaloff>:/res/home.png</iconset>
+   </property>
+   <property name="text">
+    <string>home</string>
+   </property>
+   <property name="toolTip">
+    <string>Run the home program</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="icon">
+    <iconset resource="sbasic.qrc">
+     <normaloff>:/res/jump.png</normaloff>:/res/jump.png</iconset>
+   </property>
+   <property name="text">
+    <string>start</string>
+   </property>
+   <property name="toolTip">
+    <string>Start the entered program</string>
    </property>
   </action>
  </widget>

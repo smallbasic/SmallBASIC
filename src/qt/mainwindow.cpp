@@ -18,15 +18,14 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
-#include <QMouseEvent>
 #include <QProcess>
+#include <QSettings>
 #include <QTextStream>
 #include <QUrl>
 
 #include "mainwindow.h"
 #include "config.h"
 #include "sbapp.h"
-#include <stdio.h>
 
 const char* aboutText =
  "QT Version " VERSION "\n\n"
@@ -93,16 +92,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
           this, SLOT(helpHomePage()));
   connect(ui->actionNewWindow, SIGNAL(triggered()), 
           this, SLOT(newWindow()));
-  connect(ui->actionBreak, SIGNAL(triggered()), 
-          this, SLOT(runBreak()));
-  connect(ui->actionRun, SIGNAL(triggered()), 
-          this, SLOT(runRestart()));
   connect(ui->actionRefresh, SIGNAL(triggered()), 
           this, SLOT(runRestart()));
+  connect(ui->actionBreak, SIGNAL(triggered()), 
+          this, SLOT(runBreak()));
+  connect(ui->actionHome, SIGNAL(triggered()), 
+          this, SLOT(runHome()));
   connect(ui->actionStart, SIGNAL(triggered()), 
           this, SLOT(runStart()));
   connect(textInput, SIGNAL(returnPressed()), 
           this, SLOT(runStart()));
+  connect(ui->actionViewBookmarks, SIGNAL(triggered()), 
+          this, SLOT(viewBookmarks()));
   connect(ui->actionProgramSource, SIGNAL(triggered()), 
           this, SLOT(viewProgramSource()));
   connect(ui->actionErrorConsole, SIGNAL(triggered()), 
@@ -119,8 +120,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   opt_quiet = true;
   os_graphics = 1;
 
-  ui->statusbar->addPermanentWidget(new QLabel(ui->statusbar));
+  ui->statusbar->addWidget(&status);
   showStatus(false);
+
+  // restore settings
+  QCoreApplication::setOrganizationName("smallbasic");
+  QCoreApplication::setOrganizationDomain("sourceforge.net");
+  QCoreApplication::setApplicationName("SmallBASIC");
+
+  QSettings settings;
+  settings.beginGroup("MainWindow");
+  resize(settings.value("size", size()).toSize());
+  move(settings.value("pos", pos()).toPoint());
+  settings.endGroup();
 }
 
 MainWindow::~MainWindow() {
@@ -161,6 +173,8 @@ void MainWindow::endModal() {
 
 // cause the basicMain loop to end
 void MainWindow::runQuit() {
+  runBreak();
+  close();
 }
 
 // ensure any running program is terminated upon closing
@@ -169,6 +183,12 @@ void MainWindow::closeEvent(QCloseEvent*) {
     brun_break();
     runMode = quit_state;
   }
+
+  QSettings settings;
+  settings.beginGroup("MainWindow");
+  settings.setValue("size", size());
+  settings.setValue("pos", pos());
+  settings.endGroup();
 }
 
 // handle file drag and drop from a desktop file manager
@@ -196,6 +216,9 @@ bool MainWindow::event(QEvent* event) {
     QStringList args = QCoreApplication::arguments();
     if (args.count() == 2) {
       loadPath(args.value(1));
+    }
+    else {
+      runHome();
     }
   }
   return QMainWindow::event(event);
@@ -235,6 +258,11 @@ void MainWindow::runBreak() {
   }
 }
 
+// program home button handler
+void MainWindow::runHome() {
+  loadResource("home", ":/res/home.bas");
+}
+
 // program restart button handler
 void MainWindow::runRestart() {
   switch (runMode) {
@@ -255,6 +283,11 @@ void MainWindow::runStart() {
   loadPath(textInput->text());
 }
 
+// view bookmarks
+void MainWindow::viewBookmarks() {
+  loadResource("bookmarks", ":/res/bookmarks.bas");
+}
+
 // view the error console
 void MainWindow::viewErrorConsole() {
   logDialog->show();
@@ -263,6 +296,7 @@ void MainWindow::viewErrorConsole() {
 
 // view the preferences dialog
 void MainWindow::viewPreferences() {
+  loadResource("bookmarks", ":/res/settings.bas");
 }
 
 // view the program source code
@@ -455,8 +489,35 @@ QString MainWindow::dropFile(const QMimeData* mimeData) {
   return result;
 }
 
+// loads and runs a resource program
+void MainWindow::loadResource(QString key, QString path) {
+  QSettings settings;
+  QString homePath = settings.value(key).toString();
+
+  if (!homePath.length()) {
+    // show the default home page
+    QTemporaryFile tmpFile;
+    QFile file(path);
+
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      tmpFile.open();
+      tmpFile.write(file.readAll());
+      tmpFile.close();
+      file.close();
+    }
+
+    homePath = tmpFile.fileName();
+    loadPath(homePath, false);
+  }
+  else {
+    loadPath(homePath);
+  }
+}
+
 // resolve the path to a local file then call basicMain
 void MainWindow::loadPath(QString path, bool showPath) {
+  runBreak();
+
   if (showPath) {
     textInput->setText(path);
   }
@@ -484,15 +545,15 @@ void MainWindow::loadError(QString message) {
 // display the status depending on the current state
 void MainWindow::showStatus(bool error) {
   if (error) {
-    ui->statusbar->showMessage(gsb_last_errmsg);
+    status.setText(gsb_last_errmsg);
   }
   else {
     switch (runMode) {
     case init_state:
-      ui->statusbar->showMessage("Ready");
+      status.setText("Ready");
       break;
     case run_state:
-      ui->statusbar->showMessage("RUN");
+      status.setText("RUN");
       break;
     default:
       break;

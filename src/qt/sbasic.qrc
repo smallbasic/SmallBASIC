@@ -1,9 +1,12 @@
 <RCC>
   <qresource prefix="/">
+    <file>res/bookmarks.bas</file>
+    <file>res/settings.bas</file>
+    <file>res/home.bas</file>
     <file>../../images/smallbasic.png</file>
-    <file>images/jump.png</file>
-    <file>images/refresh.png</file>
-    <file>images/run.png</file>
-    <file>images/stop.png</file>
+    <file>res/jump.png</file>
+    <file>res/refresh.png</file>
+    <file>res/stop.png</file>
+    <file>res/home.png</file>
   </qresource>
 </RCC>

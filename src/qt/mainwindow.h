@@ -10,6 +10,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QLabel>
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QMimeData>
@@ -64,8 +65,10 @@ public slots:
   void helpHomePage();
   void newWindow();
   void runBreak();
+  void runHome();
   void runRestart();
   void runStart();
+  void viewBookmarks();
   void viewErrorConsole();
   void viewPreferences();
   void viewProgramSource();
@@ -85,6 +88,7 @@ private:
   // private methods
   void basicMain(QString path);
   QString dropFile(const QMimeData* mimeData);
+  void loadResource(QString key, QString path); 
   void loadPath(QString path, bool showPath=true);
   void loadError(QString message);
   void showStatus(bool error);
@@ -99,6 +103,7 @@ private:
   QLineEdit* textInput;
   QString programPath;
   ExecState runMode;
+  QLabel status;
 };
 
 #endif // MAINWINDOW_H

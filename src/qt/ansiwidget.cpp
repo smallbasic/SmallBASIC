@@ -84,7 +84,7 @@ void AnsiWidget::beep() const {
 /*! clear the offscreen buffer
  */
 void AnsiWidget::clearScreen() {
-  reset(false);
+  reset(true);
   QPainter painter(this->img);
   painter.fillRect(this->geometry(), this->bg);
   update();
@@ -190,11 +190,7 @@ void AnsiWidget::print(const char *str) {
       curX = calcTab(curX+1);
       break;
     case '\xC':
-      {
-        reset(false);
-        QPainter painter(this->img);
-        painter.fillRect(this->geometry(), this->bg);
-      }
+      clearScreen();
       break;
     case '\033':  // ESC ctrl chars
       if (*(p+1) == '[' ) {

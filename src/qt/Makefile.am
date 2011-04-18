@@ -11,10 +11,13 @@ EXTRA_DIST =					\
   mainwindow.ui					\
   source_view.ui				\
   console_view.ui				\
-  images/jump.png				\
-  images/refresh.png				\
-  images/run.png				\
-  images/stop.png
+  res/jump.png					\
+  res/home.png					\
+  res/refresh.png				\
+  res/stop.png					\
+  res/settings.bas				\
+  res/bookmarks.bas				\
+  res/home.bas                       
 
 sbasicb_SOURCES =				\
   httpfile.cpp					\
