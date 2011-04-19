@@ -20,6 +20,8 @@ EXTRA_DIST =					\
   res/home.bas                       
 
 sbasicb_SOURCES =				\
+  fixedlayout.cpp				\
+  fixedlayout.h					\
   httpfile.cpp					\
   httpfile.h					\
   ansiwidget.cpp				\

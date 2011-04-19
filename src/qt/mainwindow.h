@@ -17,6 +17,7 @@
 
 #include "ansiwidget.h"
 #include "httpfile.h"
+#include "fixedlayout.h"
 #include "ui_console_view.h"
 #include "ui_mainwindow.h"
 #include "ui_source_view.h"
@@ -58,6 +59,8 @@ public:
   void logWrite(const char* msg);
   void runQuit();
   void setRunModal(bool modal);
+  void addWidget(QWidget* widget);
+  void removeWidget(QWidget* widget);
 
 public slots:
   void bookmarkProgram();
@@ -100,6 +103,7 @@ private:
   Ui::ErrorConsole* errorUi;
   Ui::SourceDialog* sourceUi;
 
+  FixedLayout* fixedLayout;
   QDialog* logDialog;    // log window widget
   QDialog* sourceDialog; // source dialog widget
   QLineEdit* textInput;  // text input control

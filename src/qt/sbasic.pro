@@ -24,12 +24,14 @@ SOURCES += main.cpp \
            ansiwidget.cpp \
            dev_qt.cpp \
            form_ui.cpp \
-           httpfile.cpp
+           httpfile.cpp \
+           fixedlayout.cpp
 
 HEADERS += mainwindow.h \
            ansiwidget.h \
            form_ui.h \
-           httpfile.h
+           httpfile.h \
+           fixedlayout.h
 
 INCLUDEPATH += ../ ../../
 

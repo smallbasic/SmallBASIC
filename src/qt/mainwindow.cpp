@@ -46,6 +46,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   out = ui->ansiWidget;
   out->setMouseListener(this);
 
+  // setup the fixed layout
+  fixedLayout = new FixedLayout(out);
+
   // accept keyboard input
   setFocusPolicy(Qt::ClickFocus);
   setAcceptDrops(true);
@@ -181,6 +184,19 @@ void MainWindow::runQuit() {
   close();
 }
 
+// adds widget to the fixed layout and sets parent to this
+void MainWindow::addWidget(QWidget* widget) {
+  fixedLayout->addWidget(widget);
+  widget->setParent(this);
+  widget->setFont(out->font());
+  widget->setFocus();
+}
+
+// removes the widget from the fixed layout
+void MainWindow::removeWidget(QWidget* widget) {
+  fixedLayout->removeWidget(widget);
+}
+
 // ensure any running program is terminated upon closing
 void MainWindow::closeEvent(QCloseEvent*) {
   if (runMode == run_state || runMode == modal_state) {
@@ -193,6 +209,17 @@ void MainWindow::closeEvent(QCloseEvent*) {
   settings.setValue("size", size());
   settings.setValue("pos", pos());
   settings.endGroup();
+
+  settings.beginGroup("settings");
+  bool emptyEnv = settings.value("emptyEnv", true).toBool();
+  settings.endGroup();
+
+  if (emptyEnv) {
+    // clear the environment
+    settings.beginGroup("env");
+    settings.remove("");
+    settings.endGroup();
+  }
 }
 
 // handle file drag and drop from a desktop file manager
@@ -234,7 +261,7 @@ void MainWindow::bookmarkProgram() {
     QSettings settings;
     
     QSet<QString> paths;
-    int size = settings.beginReadArray("bookmarks");
+    int size = settings.beginReadArray("settings");
     for (int i = 0; i < size; i++) {
       settings.setArrayIndex(i);
       paths << settings.value("path").toString();
@@ -242,7 +269,7 @@ void MainWindow::bookmarkProgram() {
     paths << programPath;
     settings.endArray();
 
-    settings.beginWriteArray("bookmarks");
+    settings.beginWriteArray("settings");
     QSetIterator<QString> iter(paths);
     int i = 0;
     while (iter.hasNext()) {
@@ -447,7 +474,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
     case Qt::Key_Return:
       dev_pushkey(13);
       break;
-    case 'b':
+    case Qt::Key_B:
       if (event->modifiers() & Qt::ControlModifier) {
         runBreak();
         break;

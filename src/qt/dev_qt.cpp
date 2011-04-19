@@ -49,8 +49,7 @@ extern "C" {
 
 clock_t lastEventTime;
 dword eventsPerTick;
-
-QMap<QString, QString> env;
+QString envBuffer;
 
 #define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
 #define EVT_PAUSE_TIME 5 // MS
@@ -312,53 +311,53 @@ int dev_putenv(const char *s) {
   QStringList elems = QString::fromAscii(s).split("=");
   QString s1 = elems.at(0);
   QString s2 = elems.at(1);
-  env.insert(s1, s2);
 
-  if (wnd->isResourceApp()) {
-    QSettings settings;
-    settings.beginGroup("env");
-    settings.setValue(s1, s2);
-    settings.endGroup();
-  }
+  QSettings settings;
+  settings.beginGroup(wnd->isResourceApp() ? "settings" : "env");
+  settings.setValue(s1, s2);
+  settings.endGroup();
 
   return 1;
 }
 
 char* dev_getenv(const char *s) {
-  QString str = env.value(s);
-
-  if (!str.count() && wnd->isResourceApp()) {
-    QSettings settings;
-    settings.beginGroup("env");
-    str = settings.value(QString(s)).toString();
-    settings.endGroup();
-  }
-
-  return str.count() ? str.toUtf8().data() : 0;
+  QSettings settings;
+  settings.beginGroup("env");
+  settings.beginGroup(wnd->isResourceApp() ? "settings" : "env");
+  envBuffer.resize(0);
+  envBuffer.append(settings.value(QString(s)).toString());
+  settings.endGroup();
+  return envBuffer.toUtf8().data();
 }
 
 char* dev_getenv_n(int n) {
-  int count = env.count();
+  QSettings settings;
+  settings.beginGroup(wnd->isResourceApp() ? "settings" : "env");
+  QStringList keys = settings.childKeys();
+  int count = keys.size();
   if (n < count) {
     // first n number of elements exist in the qmap
-    QString e;
-    e.append(env.keys().at(n));
-    e.append("=");
-    e.append(env.values().at(n));
-    return e.toUtf8().data();
+    QString key = keys.at(n);
+    QString value = settings.value(key).toString();
+
+    envBuffer.resize(0);
+    envBuffer.append(key);
+    envBuffer.append("=");
+    envBuffer.append(value);
+    return envBuffer.toUtf8().data();
   }
 
   return 0;
 }
 
 int dev_env_count() {
-  int count = env.count();
-  if (wnd->isResourceApp()) {
-    QSettings settings;
-    settings.beginGroup("env");
-    count += settings.childKeys().size();
-    settings.endGroup();
-  }
+  QSettings settings;
+  int count;
+
+  settings.beginGroup(wnd->isResourceApp() ? "settings" : "env");
+  count = settings.childKeys().size();
+  settings.endGroup();
+
   return count;
 }
 
@@ -457,13 +456,15 @@ void dev_delay(dword ms) {
 //--INPUT-----------------------------------------------------------------------
 
 char *dev_gets(char *dest, int size) {
-  QLineEdit *in = new QLineEdit(wnd->out);
-
-  in->setGeometry(wnd->out->getX() + 2,
-                  wnd->out->getY() + 1, 20, 
-                  wnd->out->textHeight() + 4);
-  in->setFont(wnd->out->font());
+  LineInput* in = new LineInput();
   in->connect(in, SIGNAL(returnPressed()), wnd, SLOT(endModal()));
+
+  // TODO: call mapTo() or mapFrom()
+  in->setGeometry(wnd->out->getX() + 1,
+                  wnd->out->getY() + 1, 
+                  wnd->out->textWidth("Z") * 3,
+                  wnd->out->textHeight() + 8);
+  wnd->addWidget(in);
   wnd->setRunModal(true);
 
   while (wnd->isRunModal()) {
@@ -475,6 +476,7 @@ char *dev_gets(char *dest, int size) {
     brun_break();
   }
 
+  wnd->removeWidget(in);
   QString text = in->text();
   int len = text.length() < size ? text.length() : size;
   strncpy(dest, text.toUtf8().data(), len);
