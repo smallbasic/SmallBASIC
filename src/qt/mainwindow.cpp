@@ -39,6 +39,10 @@ const char* aboutText =
  "GNU General Public License version 2 as published by\n"
  "the Free Software Foundation.";
 
+// post message event ids
+const int DeferPathExec = QEvent::registerEventType();
+const int DeferResourceExec = QEvent::registerEventType();
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow) {
   ui->setupUi(this);
@@ -257,8 +261,11 @@ bool MainWindow::event(QEvent* event) {
       runHome();
     }
   }
-  else if (event->type() == QEvent::User) {
-    basicMain(deferPath);
+  else if (event->type() == DeferResourceExec) {
+    loadResource(deferPath);
+  }
+  else if (event->type() == DeferPathExec) {
+    loadPath(deferPath, false);
   }
   return QMainWindow::event(event);
 }
@@ -340,7 +347,7 @@ void MainWindow::runBreak() {
 
 // program home button handler
 void MainWindow::runHome() {
-  loadResource("home", ":/res/home.bas");
+  loadResource(":/res/home.bas");
 }
 
 // program restart button handler
@@ -365,7 +372,7 @@ void MainWindow::runStart() {
 
 // view bookmarks
 void MainWindow::viewBookmarks() {
-  loadResource("bookmarks", ":/res/bookmarks.bas");
+  loadResource(":/res/bookmarks.bas");
 }
 
 // view the error console
@@ -376,7 +383,7 @@ void MainWindow::viewErrorConsole() {
 
 // view the preferences dialog
 void MainWindow::viewPreferences() {
-  loadResource("bookmarks", ":/res/settings.bas");
+  loadResource(":/res/settings.bas");
 }
 
 // view the program source code
@@ -522,51 +529,54 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 
 // main basic program loop
 void MainWindow::basicMain(QString path) {
-  if (isRunning()) {
-    // schedule this to be called once the existing task has completed
-    runBreak();
-    deferPath = path;
-    QCoreApplication::postEvent(this, new QEvent(QEvent::User), Qt::LowEventPriority);
+  programPath = path;
+  
+  // set or append to history
+  if (historyIndex > 0 && historyIndex < history.count()) {
+    history[historyIndex] = path;
   }
   else {
-    programPath = path;
-    
-    // set or append to history
-    if (historyIndex > 0 && historyIndex < history.count()) {
-      history[historyIndex] = path;
-    }
-    else {
-      history.append(path);
-      historyIndex++;
-    }
-    
-    opt_pref_width = 0;
-    opt_pref_height = 0;
-    bool success = false;
-    
-    do {
-      runMode = run_state;
-      showStatus(false);
-      
-      // start in the directory of the bas program
-      QString path = programPath.replace("\\", "/");
-      int index = path.lastIndexOf("/");
-      if (index != -1) {
-        if (!chdir(path.left(index).toUtf8().data())) {
-          path = path.right(path.length() - index - 1);
-        }
-      }
-      success = sbasic_main(path.toUtf8().data());
-    }
-    while (runMode == restart_state);
-    
-    if (runMode == quit_state) {
-      exit(0);
-    }
-    
-    runMode = init_state;
-    showStatus(!success);
+    history.append(path);
+    historyIndex++;
   }
+  
+  opt_pref_width = 0;
+  opt_pref_height = 0;
+  bool success = false;
+  
+  do {
+    runMode = run_state;
+    showStatus(false);
+    
+    // start in the directory of the bas program
+    QString path = programPath.replace("\\", "/");
+    int index = path.lastIndexOf("/");
+    if (index != -1) {
+      if (!chdir(path.left(index).toUtf8().data())) {
+        path = path.right(path.length() - index - 1);
+      }
+    }
+    success = sbasic_main(path.toUtf8().data());
+  }
+  while (runMode == restart_state);
+  
+  if (runMode == quit_state) {
+    exit(0);
+  }
+  
+  runMode = init_state;
+  showStatus(!success);
+}
+
+// whether the program start is deferred until the current program has stopped
+bool MainWindow::deferExec(QString path, int event) {
+  bool result = isRunning();
+  if (result) {
+    runBreak();
+    deferPath = path;
+    QCoreApplication::postEvent(this, new QEvent((enum QEvent::Type) event), Qt::LowEventPriority);
+  }
+  return result;
 }
 
 // return any new .bas program filename from mimeData 
@@ -587,28 +597,34 @@ QString MainWindow::dropFile(const QMimeData* mimeData) {
 }
 
 // loads and runs a resource program
-void MainWindow::loadResource(QString key, QString path) {
-  QSettings settings;
-  QString homePath = settings.value(key).toString();
-  resourceApp = true;
+void MainWindow::loadResource(QString path) {
+  if (!deferExec(path, DeferResourceExec)) {
+    QSettings settings;
+    QString homePath;
 
-  if (!homePath.length()) {
-    // show the default home page
-    QTemporaryFile tmpFile;
-    QFile file(path);
-
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      tmpFile.open();
-      tmpFile.write(file.readAll());
-      tmpFile.close();
-      file.close();
+    settings.beginGroup("settings");
+    homePath = settings.value(path).toString();
+    settings.endGroup();
+    resourceApp = true;
+    
+    if (!homePath.length()) {
+      // show the default home page
+      QTemporaryFile tmpFile;
+      QFile file(path);
+      
+      if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        tmpFile.open();
+        tmpFile.write(file.readAll());
+        tmpFile.close();
+        file.close();
+      }
+      
+      homePath = tmpFile.fileName();
+      loadPath(homePath, false);
     }
-
-    homePath = tmpFile.fileName();
-    loadPath(homePath, false);
-  }
-  else {
-    loadPath(homePath);
+    else {
+      loadPath(homePath);
+    }
   }
   resourceApp = false;
 }
@@ -619,18 +635,20 @@ void MainWindow::loadPath(QString path, bool showPath) {
     textInput->setText(path);
   }
 
-  if (QFileInfo(path).isFile()) {
-    // populate the source view window
-    QFile file(path);
-    if (file.open(QFile::ReadOnly)) {
-      QTextStream stream(&file);
-      sourceUi->plainTextEdit->setPlainText(stream.readAll());
+  if (!deferExec(path, DeferPathExec)) {
+    if (QFileInfo(path).isFile()) {
+      // populate the source view window
+      QFile file(path);
+      if (file.open(QFile::ReadOnly)) {
+        QTextStream stream(&file);
+        sourceUi->plainTextEdit->setPlainText(stream.readAll());
+      }
+      setFocus();
+      basicMain(path);
     }
-    setFocus();
-    basicMain(path);
-  }
-  else if (path.startsWith("http://")) {
-    new HttpFile(this, path);
+    else if (path.startsWith("http://")) {
+      new HttpFile(this, path);
+    }
   }
 }
 

@@ -94,8 +94,9 @@ private:
 
   // private methods
   void basicMain(QString path);
+  bool deferExec(QString path, int message);
   QString dropFile(const QMimeData* mimeData);
-  void loadResource(QString key, QString path); 
+  void loadResource(QString path); 
   void loadPath(QString path, bool showPath=true);
   void loadError(QString message);
   void showStatus(bool error);
