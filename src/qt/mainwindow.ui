@@ -116,6 +116,9 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionBack"/>
+   <addaction name="actionNext"/>
+   <addaction name="separator"/>
    <addaction name="actionRefresh"/>
    <addaction name="actionBreak"/>
    <addaction name="actionHome"/>
@@ -155,6 +158,9 @@
    <property name="text">
     <string>Select &amp;All</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
   </action>
   <action name="actionPreferences">
    <property name="text">
@@ -176,6 +182,9 @@
    </property>
    <property name="toolTip">
     <string>Halt the currently running program</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
    </property>
   </action>
   <action name="actionRefresh">
@@ -209,6 +218,9 @@
    <property name="text">
     <string>&amp;New Window</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
   </action>
   <action name="actionViewBookmarks">
    <property name="text">
@@ -226,6 +238,9 @@
    <property name="toolTip">
     <string>Run the home program</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
   </action>
   <action name="actionStart">
    <property name="icon">
@@ -237,6 +252,39 @@
    </property>
    <property name="toolTip">
     <string>Start the entered program</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="actionBack">
+   <property name="icon">
+    <iconset resource="sbasic.qrc">
+     <normaloff>:/res/previous.png</normaloff>:/res/previous.png</iconset>
+   </property>
+   <property name="text">
+    <string>back</string>
+   </property>
+   <property name="toolTip">
+    <string>Run previous program</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Left</string>
+   </property>
+  </action>
+  <action name="actionNext">
+   <property name="icon">
+    <iconset resource="sbasic.qrc">
+     <normaloff>:/res/next.png</normaloff>:/res/next.png</iconset>
+   </property>
+   <property name="text">
+    <string>next</string>
+   </property>
+   <property name="toolTip">
+    <string>Run next program</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Right</string>
    </property>
   </action>
  </widget>

@@ -11,6 +11,8 @@ EXTRA_DIST =					\
   mainwindow.ui					\
   source_view.ui				\
   console_view.ui				\
+  res/next.png					\
+  res/previous.png				\
   res/jump.png					\
   res/home.png					\
   res/refresh.png				\

@@ -14,20 +14,18 @@
 #include <QLayoutItem>
 #include <QLineEdit>
 
-class LineInput : public QLineEdit {
-public:
-  LineInput() : QLineEdit() {}
+struct LineInput : public QLineEdit {
+  LineInput(const QFont& font, int x, int y);
+  ~LineInput() {};
   void keyPressEvent(QKeyEvent* event);
 };
 
-class FixedLayout : public QLayout {
-public:
-  FixedLayout(QWidget* parent) : QLayout(parent) {}
+struct FixedLayout : public QLayout {
+  FixedLayout(QWidget* parent);
   ~FixedLayout();
   
   void addItem(QLayoutItem* item);
   QSize sizeHint() const;
-  QSize minimumSize() const;
   int count() const;
   QLayoutItem* itemAt(int) const;
   QLayoutItem* takeAt(int);

@@ -68,6 +68,8 @@ public slots:
   void fileOpen();
   void helpAbout();
   void helpHomePage();
+  void historyBackward();
+  void historyForward();
   void newWindow();
   void runBreak();
   void runHome();
@@ -108,6 +110,9 @@ private:
   QDialog* sourceDialog; // source dialog widget
   QLineEdit* textInput;  // text input control
   QString programPath;   // path to the current program
+  QString deferPath;     // path to the deferred program 
+  QList<QString> history;// history buffer
+  int historyIndex;      // history index
   ExecState runMode;     // current run state
   QLabel status;         // the status bar widget
   bool resourceApp;      // permission to use settings

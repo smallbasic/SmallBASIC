@@ -456,16 +456,15 @@ void dev_delay(dword ms) {
 //--INPUT-----------------------------------------------------------------------
 
 char *dev_gets(char *dest, int size) {
-  LineInput* in = new LineInput();
-  in->connect(in, SIGNAL(returnPressed()), wnd, SLOT(endModal()));
-
-  // TODO: call mapTo() or mapFrom()
-  in->setGeometry(wnd->out->getX() + 1,
-                  wnd->out->getY() + 1, 
-                  wnd->out->textWidth("Z") * 3,
-                  wnd->out->textHeight() + 8);
+  LineInput* in = new LineInput(wnd->out->font(),
+                                wnd->out->getX() + 2,
+                                wnd->out->getY() - 4);
   wnd->addWidget(in);
   wnd->setRunModal(true);
+
+  in->setMaxLength(size);
+  in->connect(in, SIGNAL(returnPressed()), wnd, SLOT(endModal()));
+  in->setFocus();
 
   while (wnd->isRunModal()) {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);

@@ -106,6 +106,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
           this, SLOT(runHome()));
   connect(ui->actionStart, SIGNAL(triggered()), 
           this, SLOT(runStart()));
+  connect(ui->actionBack, SIGNAL(triggered()), 
+          this, SLOT(historyBackward()));
+  connect(ui->actionNext, SIGNAL(triggered()), 
+          this, SLOT(historyForward()));
   connect(textInput, SIGNAL(returnPressed()), 
           this, SLOT(runStart()));
   connect(ui->actionViewBookmarks, SIGNAL(triggered()), 
@@ -126,6 +130,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   opt_verbose = false;
   opt_quiet = true;
   os_graphics = 1;
+  historyIndex = -1;
 
   ui->statusbar->addWidget(&status);
   showStatus(false);
@@ -189,7 +194,7 @@ void MainWindow::addWidget(QWidget* widget) {
   fixedLayout->addWidget(widget);
   widget->setParent(this);
   widget->setFont(out->font());
-  widget->setFocus();
+  widget->move(mapFromGlobal(out->mapToGlobal(widget->pos())));
 }
 
 // removes the widget from the fixed layout
@@ -252,6 +257,9 @@ bool MainWindow::event(QEvent* event) {
       runHome();
     }
   }
+  else if (event->type() == QEvent::User) {
+    basicMain(deferPath);
+  }
   return QMainWindow::event(event);
 }
 
@@ -299,6 +307,22 @@ void MainWindow::helpAbout() {
 // show our home page
 void MainWindow::helpHomePage() {
   QDesktopServices::openUrl(QUrl("http://smallbasic.sourceforge.net"));
+}
+
+// run the previous program
+void MainWindow::historyBackward() {
+  if (historyIndex > 0) {
+    historyIndex--;
+    loadPath(history[historyIndex]);
+  }
+}
+
+// run the next program in the history buffer
+void MainWindow::historyForward() {
+  if (historyIndex != -1 && historyIndex + 1 < history.count()) {
+    historyIndex++;
+    loadPath(history[historyIndex]);
+  }
 }
 
 // opens a new program window
@@ -498,34 +522,51 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 
 // main basic program loop
 void MainWindow::basicMain(QString path) {
-  programPath = path;
-
-  opt_pref_width = 0;
-  opt_pref_height = 0;
-  bool success = false;
-
-  do {
-    runMode = run_state;
-    showStatus(false);
-
-    // start in the directory of the bas program
-    QString path = programPath.replace("\\", "/");
-    int index = path.lastIndexOf("/");
-    if (index != -1) {
-      if (!chdir(path.left(index).toUtf8().data())) {
-        path = path.right(path.length() - index - 1);
-      }
+  if (isRunning()) {
+    // schedule this to be called once the existing task has completed
+    runBreak();
+    deferPath = path;
+    QCoreApplication::postEvent(this, new QEvent(QEvent::User), Qt::LowEventPriority);
+  }
+  else {
+    programPath = path;
+    
+    // set or append to history
+    if (historyIndex > 0 && historyIndex < history.count()) {
+      history[historyIndex] = path;
     }
-    success = sbasic_main(path.toUtf8().data());
+    else {
+      history.append(path);
+      historyIndex++;
+    }
+    
+    opt_pref_width = 0;
+    opt_pref_height = 0;
+    bool success = false;
+    
+    do {
+      runMode = run_state;
+      showStatus(false);
+      
+      // start in the directory of the bas program
+      QString path = programPath.replace("\\", "/");
+      int index = path.lastIndexOf("/");
+      if (index != -1) {
+        if (!chdir(path.left(index).toUtf8().data())) {
+          path = path.right(path.length() - index - 1);
+        }
+      }
+      success = sbasic_main(path.toUtf8().data());
+    }
+    while (runMode == restart_state);
+    
+    if (runMode == quit_state) {
+      exit(0);
+    }
+    
+    runMode = init_state;
+    showStatus(!success);
   }
-  while (runMode == restart_state);
-
-  if (runMode == quit_state) {
-    exit(0);
-  }
-
-  runMode = init_state;
-  showStatus(!success);
 }
 
 // return any new .bas program filename from mimeData 
@@ -574,8 +615,6 @@ void MainWindow::loadResource(QString key, QString path) {
 
 // resolve the path to a local file then call basicMain
 void MainWindow::loadPath(QString path, bool showPath) {
-  runBreak();
-
   if (showPath) {
     textInput->setText(path);
   }
