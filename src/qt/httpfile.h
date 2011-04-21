@@ -15,7 +15,8 @@
 #include <QTemporaryFile>
 
 struct ReadyListener {
-  virtual void loadPath(QString path, bool showPath=true) = 0;
+  virtual void loadPath(QString path, bool showPath=true, 
+                        bool setHistory=true) = 0;
   virtual void loadError(QString message) = 0;
 };
 

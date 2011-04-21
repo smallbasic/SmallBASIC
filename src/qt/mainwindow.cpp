@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   opt_interactive = true;
   opt_verbose = false;
   opt_quiet = true;
+  opt_command[0] = 0;
   os_graphics = 1;
   historyIndex = -1;
 
@@ -157,7 +158,7 @@ MainWindow::~MainWindow() {
 
 // return whether the break key was pressed 
 bool MainWindow::isBreakExec() {
-  return (runMode == break_state || runMode == quit_state);
+  return (runMode == break_state || runMode == quit_state || runMode == restart_state);
 }
 
 // return whether a smallbasic program is running
@@ -179,18 +180,16 @@ void MainWindow::logWrite(const char* msg) {
 
 // set the program modal state
 void MainWindow::setRunModal(bool modal) {
-  runMode = modal ? modal_state : run_state;  
+  if (isRunning()) {
+    runMode = modal ? modal_state : run_state;  
+  }
 }
 
 // end the program modal state
 void MainWindow::endModal() {
-  runMode = run_state;
-}
-
-// cause the basicMain loop to end
-void MainWindow::runQuit() {
-  runBreak();
-  close();
+  if (isRunning()) {
+    runMode = run_state;
+  }
 }
 
 // adds widget to the fixed layout and sets parent to this
@@ -208,9 +207,9 @@ void MainWindow::removeWidget(QWidget* widget) {
 
 // ensure any running program is terminated upon closing
 void MainWindow::closeEvent(QCloseEvent*) {
-  if (runMode == run_state || runMode == modal_state) {
+  if (isRunning()) {
     brun_break();
-    runMode = quit_state;
+    runMode = quit_state; // force exit
   }
 
   QSettings settings;
@@ -320,7 +319,7 @@ void MainWindow::helpHomePage() {
 void MainWindow::historyBackward() {
   if (historyIndex > 0) {
     historyIndex--;
-    loadPath(history[historyIndex]);
+    loadPath(history[historyIndex], true, false);
   }
 }
 
@@ -328,7 +327,7 @@ void MainWindow::historyBackward() {
 void MainWindow::historyForward() {
   if (historyIndex != -1 && historyIndex + 1 < history.count()) {
     historyIndex++;
-    loadPath(history[historyIndex]);
+    loadPath(history[historyIndex], true, false);
   }
 }
 
@@ -339,15 +338,15 @@ void MainWindow::newWindow() {
 
 // program break button handler
 void MainWindow::runBreak() {
-  if (runMode == run_state || runMode == modal_state) {
-    brun_break();
+  if (isRunning()) {
     runMode = break_state;
+    brun_break();
   }
 }
 
 // program home button handler
 void MainWindow::runHome() {
-  loadResource(":/res/home.bas");
+  loadResource(":/bas/home.bas");
 }
 
 // program restart button handler
@@ -357,6 +356,7 @@ void MainWindow::runRestart() {
     runStart();
     break;
   case run_state:
+  case modal_state:
     runMode = restart_state;
     brun_break();
     break;
@@ -367,12 +367,12 @@ void MainWindow::runRestart() {
 
 // program start button handler
 void MainWindow::runStart() {
-  loadPath(textInput->text());
+  loadPath(textInput->text(), false);
 }
 
 // view bookmarks
 void MainWindow::viewBookmarks() {
-  loadResource(":/res/bookmarks.bas");
+  loadResource(":/bas/bookmarks.bas");
 }
 
 // view the error console
@@ -383,7 +383,7 @@ void MainWindow::viewErrorConsole() {
 
 // view the preferences dialog
 void MainWindow::viewPreferences() {
-  loadResource(":/res/settings.bas");
+  loadResource(":/bas/settings.bas");
 }
 
 // view the program source code
@@ -512,42 +512,27 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
       }
       dev_pushkey(event->key());
       break;
-    case 'q':
-      if (event->modifiers() & Qt::ControlModifier) {
-        runQuit();
-        break;
-      }
-      dev_pushkey(event->key());
-      break;
     
     default:
       dev_pushkey(event->key());
       break;
     }
   }
+  QMainWindow::keyPressEvent(event);
 }
 
 // main basic program loop
 void MainWindow::basicMain(QString path) {
   programPath = path;
   
-  // set or append to history
-  if (historyIndex > 0 && historyIndex < history.count()) {
-    history[historyIndex] = path;
-  }
-  else {
-    history.append(path);
-    historyIndex++;
-  }
-  
   opt_pref_width = 0;
   opt_pref_height = 0;
   bool success = false;
-  
+
   do {
     runMode = run_state;
     showStatus(false);
-    
+
     // start in the directory of the bas program
     QString path = programPath.replace("\\", "/");
     int index = path.lastIndexOf("/");
@@ -559,13 +544,14 @@ void MainWindow::basicMain(QString path) {
     success = sbasic_main(path.toUtf8().data());
   }
   while (runMode == restart_state);
-  
+
   if (runMode == quit_state) {
     exit(0);
   }
-  
-  runMode = init_state;
-  showStatus(!success);
+  else {
+    runMode = init_state;
+    showStatus(!success);
+  }
 }
 
 // whether the program start is deferred until the current program has stopped
@@ -620,22 +606,25 @@ void MainWindow::loadResource(QString path) {
       }
       
       homePath = tmpFile.fileName();
-      loadPath(homePath, false);
+      loadPath(homePath, false, false);
     }
     else {
-      loadPath(homePath);
+      loadPath(homePath, true, false);
     }
   }
   resourceApp = false;
 }
 
 // resolve the path to a local file then call basicMain
-void MainWindow::loadPath(QString path, bool showPath) {
+void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
+  path = QFileInfo(path).canonicalFilePath();
+
   if (showPath) {
     textInput->setText(path);
   }
 
   if (!deferExec(path, DeferPathExec)) {
+    bool notFound = false;
     if (QFileInfo(path).isFile()) {
       // populate the source view window
       QFile file(path);
@@ -648,6 +637,23 @@ void MainWindow::loadPath(QString path, bool showPath) {
     }
     else if (path.startsWith("http://")) {
       new HttpFile(this, path);
+    }
+    else {
+      notFound = true;
+      if (!QFileInfo(path).isDir()) {
+        status.setText(tr("File not found"));
+      }
+    }
+
+    if (!notFound && setHistory) {
+      // set or append to history
+      if (historyIndex > 0 && historyIndex < history.count()) {
+        history[historyIndex] = path;
+      }
+      else {
+        history.append(path);
+        historyIndex++;
+      }
     }
   }
 }

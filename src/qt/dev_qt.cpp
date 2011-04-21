@@ -52,7 +52,7 @@ dword eventsPerTick;
 QString envBuffer;
 
 #define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
-#define EVT_PAUSE_TIME 5 // MS
+#define EVT_PAUSE_TIME 500 // MS
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
 void getHomeDir(char *fileName, bool appendSlash=true);
@@ -75,9 +75,9 @@ int osd_devinit() {
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    //    wnd->outputGroup->resize(opt_pref_width + delta_x,
-    //                       opt_pref_height + delta_y);
-  } 
+    wnd->out->resize(opt_pref_width + delta_x,
+                     opt_pref_height + delta_y);
+  }
 
   os_graf_mx = wnd->out->width();
   os_graf_my = wnd->out->height();
@@ -138,7 +138,7 @@ int osd_events(int wait_flag) {
     break;
   case 2:
     // pause
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, EVT_PAUSE_TIME);
+    dev_delay(EVT_PAUSE_TIME);
     break;
   default:
     // pump messages without pausing
@@ -179,10 +179,14 @@ int osd_getpen(int code) {
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     // receive any mouse events in wnd->out
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+    if (!wnd->isBreakExec()) {
+      QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+    }
 
     // second wait required following out.newLine() to avoid race condition
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+    if (!wnd->isBreakExec()) {
+      QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
+    }
 
     // fallthru to re-test 
 
@@ -197,12 +201,10 @@ int osd_getpen(int code) {
 
   case 4:  // cur x
   case 10:
-    //QCoreApplication::processEvents(QEventLoop::AllEvents);
     return wnd->out->getMouseX(false);
 
   case 5:  // cur y
   case 11:
-    //QCoreApplication::processEvents(QEventLoop::AllEvents);
     return wnd->out->getMouseY(false);
 
   case 12: // true if left button pressed
@@ -327,7 +329,7 @@ char* dev_getenv(const char *s) {
   envBuffer.resize(0);
   envBuffer.append(settings.value(QString(s)).toString());
   settings.endGroup();
-  return envBuffer.toUtf8().data();
+  return envBuffer.length() ? envBuffer.toUtf8().data() : 0;
 }
 
 char* dev_getenv_n(int n) {
@@ -448,7 +450,7 @@ void dev_delay(dword ms) {
     QTimer::singleShot(ms, wnd, SLOT(endModal()));
 
     while (wnd->isRunModal()) {
-      QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents, 100);
+      QApplication::processEvents(QEventLoop::WaitForMoreEvents);
     }
   }
 }

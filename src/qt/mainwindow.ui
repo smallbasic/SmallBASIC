@@ -175,7 +175,7 @@
   <action name="actionBreak">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/res/stop.png</normaloff>:/res/stop.png</iconset>
+     <normaloff>:/images/stop.png</normaloff>:/images/stop.png</iconset>
    </property>
    <property name="text">
     <string>Break</string>
@@ -190,7 +190,7 @@
   <action name="actionRefresh">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/res/refresh.png</normaloff>:/res/refresh.png</iconset>
+     <normaloff>:/images/refresh.png</normaloff>:/images/refresh.png</iconset>
    </property>
    <property name="text">
     <string>refresh</string>
@@ -230,7 +230,7 @@
   <action name="actionHome">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/res/home.png</normaloff>:/res/home.png</iconset>
+     <normaloff>:/images/home.png</normaloff>:/images/home.png</iconset>
    </property>
    <property name="text">
     <string>home</string>
@@ -245,7 +245,7 @@
   <action name="actionStart">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/res/jump.png</normaloff>:/res/jump.png</iconset>
+     <normaloff>:/images/jump.png</normaloff>:/images/jump.png</iconset>
    </property>
    <property name="text">
     <string>start</string>
@@ -260,7 +260,7 @@
   <action name="actionBack">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/res/previous.png</normaloff>:/res/previous.png</iconset>
+     <normaloff>:/images/previous.png</normaloff>:/images/previous.png</iconset>
    </property>
    <property name="text">
     <string>back</string>
@@ -275,7 +275,7 @@
   <action name="actionNext">
    <property name="icon">
     <iconset resource="sbasic.qrc">
-     <normaloff>:/res/next.png</normaloff>:/res/next.png</iconset>
+     <normaloff>:/images/next.png</normaloff>:/images/next.png</iconset>
    </property>
    <property name="text">
     <string>next</string>

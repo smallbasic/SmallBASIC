@@ -11,15 +11,15 @@ EXTRA_DIST =					\
   mainwindow.ui					\
   source_view.ui				\
   console_view.ui				\
-  res/next.png					\
-  res/previous.png				\
-  res/jump.png					\
-  res/home.png					\
-  res/refresh.png				\
-  res/stop.png					\
-  res/settings.bas				\
-  res/bookmarks.bas				\
-  res/home.bas                       
+  images/next.png				\
+  images/previous.png				\
+  images/jump.png				\
+  images/home.png				\
+  images/refresh.png				\
+  images/stop.png				\
+  bas/settings.bas				\
+  bas/bookmarks.bas				\
+  bas/home.bas                       
 
 sbasicb_SOURCES =				\
   fixedlayout.cpp				\

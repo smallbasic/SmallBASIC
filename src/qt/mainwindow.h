@@ -57,7 +57,6 @@ public:
   bool isRunning();
   bool isRunModal();
   void logWrite(const char* msg);
-  void runQuit();
   void setRunModal(bool modal);
   void addWidget(QWidget* widget);
   void removeWidget(QWidget* widget);
@@ -97,7 +96,7 @@ private:
   bool deferExec(QString path, int message);
   QString dropFile(const QMimeData* mimeData);
   void loadResource(QString path); 
-  void loadPath(QString path, bool showPath=true);
+  void loadPath(QString path, bool showPath=true, bool setHistory=true);
   void loadError(QString message);
   void showStatus(bool error);
 

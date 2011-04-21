@@ -1,0 +1,2 @@
+# process bookmarks
+print "Bookmarks"
