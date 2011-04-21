@@ -158,7 +158,9 @@ MainWindow::~MainWindow() {
 
 // return whether the break key was pressed 
 bool MainWindow::isBreakExec() {
-  return (runMode == break_state || runMode == quit_state || runMode == restart_state);
+  return (runMode == break_state || 
+          runMode == quit_state || 
+          runMode == restart_state);
 }
 
 // return whether a smallbasic program is running
