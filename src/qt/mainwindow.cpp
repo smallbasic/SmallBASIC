@@ -173,13 +173,6 @@ bool MainWindow::isRunModal() {
   return (runMode == modal_state);
 }
 
-// append to the log window
-void MainWindow::logWrite(const char* msg) {
-  QString buffer = errorUi->plainTextEdit->toPlainText();
-  buffer.append(msg);
-  errorUi->plainTextEdit->setPlainText(buffer);
-}
-
 // set the program modal state
 void MainWindow::setRunModal(bool modal) {
   if (isRunning()) {
@@ -205,6 +198,13 @@ void MainWindow::addWidget(QWidget* widget) {
 // removes the widget from the fixed layout
 void MainWindow::removeWidget(QWidget* widget) {
   fixedLayout->removeWidget(widget);
+}
+
+// append to the log window
+void MainWindow::logWrite(const char* msg) {
+  QString buffer = errorUi->plainTextEdit->toPlainText();
+  buffer.append(msg);
+  errorUi->plainTextEdit->setPlainText(buffer);
 }
 
 // ensure any running program is terminated upon closing
