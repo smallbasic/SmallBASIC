@@ -99,6 +99,7 @@ private:
   void loadPath(QString path, bool showPath=true, bool setHistory=true);
   void loadError(QString message);
   void showStatus(bool error);
+  void updateHistory(QString path, bool setHistory);
 
   // private state variables
   Ui::MainWindow* ui;

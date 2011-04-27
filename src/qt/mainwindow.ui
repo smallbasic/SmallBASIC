@@ -181,7 +181,7 @@
     <string>Break</string>
    </property>
    <property name="toolTip">
-    <string>Halt the currently running program</string>
+    <string>Halt current program</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>
@@ -196,7 +196,7 @@
     <string>refresh</string>
    </property>
    <property name="toolTip">
-    <string>Restart the currently running program</string>
+    <string>Reload current program</string>
    </property>
   </action>
   <action name="actionProgramSource">
@@ -266,7 +266,7 @@
     <string>back</string>
    </property>
    <property name="toolTip">
-    <string>Run previous program</string>
+    <string>Go back</string>
    </property>
    <property name="shortcut">
     <string>Alt+Left</string>
@@ -281,10 +281,18 @@
     <string>next</string>
    </property>
    <property name="toolTip">
-    <string>Run next program</string>
+    <string>Go forward</string>
    </property>
    <property name="shortcut">
     <string>Alt+Right</string>
+   </property>
+  </action>
+  <action name="focusUrl">
+   <property name="text">
+    <string>focusUrl</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+D</string>
    </property>
   </action>
  </widget>

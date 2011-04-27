@@ -43,6 +43,8 @@ const char* aboutText =
 const int DeferPathExec = QEvent::registerEventType();
 const int DeferResourceExec = QEvent::registerEventType();
 
+const int MaxHistory = 100;
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow) {
   ui->setupUi(this);
@@ -78,6 +80,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   sourceUi = new Ui::SourceDialog();
   sourceUi->setupUi(sourceDialog);
   sourceUi->plainTextEdit->setReadOnly(true);
+
+  // setup additional shortcut actions
+  addAction(ui->focusUrl);
 
   // connect signals and slots
   connect(ui->actionBookmarkProgram, SIGNAL(triggered()), 
@@ -122,6 +127,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
           this, SLOT(viewProgramSource()));
   connect(ui->actionErrorConsole, SIGNAL(triggered()), 
           this, SLOT(viewErrorConsole()));
+  connect(ui->focusUrl, SIGNAL(triggered()), 
+          textInput, SLOT(setFocus()));
 
   // setup state
   resourceApp = false;
@@ -135,6 +142,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   opt_quiet = true;
   opt_command[0] = 0;
   os_graphics = 1;
+
+  // setup history
+  ui->actionBack->setEnabled(false);
+  ui->actionNext->setEnabled(false);
   historyIndex = -1;
 
   ui->statusbar->addWidget(&status);
@@ -320,7 +331,13 @@ void MainWindow::helpHomePage() {
 // run the previous program
 void MainWindow::historyBackward() {
   if (historyIndex > 0) {
+    ui->actionNext->setEnabled(true);
+    ui->actionNext->setToolTip(QFileInfo(history[historyIndex]).fileName());
     historyIndex--;
+    if (historyIndex == 0) {
+      ui->actionBack->setEnabled(false);
+      ui->actionBack->setToolTip(tr("Go back"));
+    }
     loadPath(history[historyIndex], true, false);
   }
 }
@@ -328,7 +345,13 @@ void MainWindow::historyBackward() {
 // run the next program in the history buffer
 void MainWindow::historyForward() {
   if (historyIndex != -1 && historyIndex + 1 < history.count()) {
+    ui->actionBack->setEnabled(true);
+    ui->actionBack->setToolTip(QFileInfo(history[historyIndex]).fileName());
     historyIndex++;
+    if (historyIndex + 1 == history.count()) {
+      ui->actionNext->setEnabled(false);
+      ui->actionNext->setToolTip(tr("Go forward"));
+    }
     loadPath(history[historyIndex], true, false);
   }
 }
@@ -626,7 +649,6 @@ void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
   }
 
   if (!deferExec(path, DeferPathExec)) {
-    bool notFound = false;
     if (QFileInfo(path).isFile()) {
       // populate the source view window
       QFile file(path);
@@ -634,27 +656,18 @@ void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
         QTextStream stream(&file);
         sourceUi->plainTextEdit->setPlainText(stream.readAll());
       }
+
       setFocus();
+      updateHistory(path, setHistory);
       basicMain(path);
     }
     else if (path.startsWith("http://")) {
+      updateHistory(path, setHistory);
       new HttpFile(this, path);
     }
     else {
-      notFound = true;
       if (!QFileInfo(path).isDir()) {
         status.setText(tr("File not found"));
-      }
-    }
-
-    if (!notFound && setHistory) {
-      // set or append to history
-      if (historyIndex > 0 && historyIndex < history.count()) {
-        history[historyIndex] = path;
-      }
-      else {
-        history.append(path);
-        historyIndex++;
       }
     }
   }
@@ -676,10 +689,27 @@ void MainWindow::showStatus(bool error) {
       status.setText("Ready");
       break;
     case run_state:
-      status.setText("RUN");
+      status.setText("Running");
       break;
     default:
       break;
+    }
+  }
+}
+
+// set or append to history
+void MainWindow::updateHistory(QString path, bool setHistory) {
+  if (setHistory) {
+    if (historyIndex == -1 || history[historyIndex] != path) {
+      if (historyIndex < MaxHistory) {
+        history.append(path);
+        historyIndex++;
+      }
+    }
+    if (historyIndex > 0) {
+      QString tooltip = QFileInfo(history[historyIndex - 1]).fileName();
+      ui->actionBack->setEnabled(true);
+      ui->actionBack->setToolTip(tooltip);
     }
   }
 }
