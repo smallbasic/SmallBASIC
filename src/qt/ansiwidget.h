@@ -10,19 +10,21 @@
 #ifndef ANSIWIDGET_H
 #define ANSIWIDGET_H
 
-#include <QWidget>
-#include <QPainter>
+#include <QAbstractButton>
 #include <QColor>
+#include <QPainter>
+#include <QWidget>
 
-struct MouseListener {
+struct AnsiWidgetListener {
   virtual void mouseMoveEvent(bool down) = 0;
   virtual void mousePressEvent() = 0;
   virtual void mouseReleaseEvent() = 0;
+  virtual void loadPath(QString path, bool showPath, bool setHistory) = 0;
 };
 
-class AnsiWidget : public QWidget
-{
+class AnsiWidget : public QWidget {
   Q_OBJECT
+
 public:
   explicit AnsiWidget(QWidget *parent = 0);
   ~AnsiWidget();
@@ -58,12 +60,13 @@ public:
   bool getMouseMode() {return mouseMode;}
   void resetMouse();
   void setMouseMode(bool mode);
-  void setMouseListener(MouseListener* ml) {mouseListener = ml;}
+  void setMouseListener(AnsiWidgetListener* ml) {listener = ml;}
   
 signals:
 
 public slots:
   void copySelection();
+  void linkClicked();
   void findNextText();
   void findText();
   void selectAll();
@@ -71,6 +74,7 @@ public slots:
 private:
   QColor ansiToQt(long color);
   int  calcTab(int x) const;
+  void createLink(unsigned char *&p, bool execLink);
   void destroyImage();
   bool doEscape(unsigned char *&p);
   void initImage();
@@ -106,7 +110,8 @@ private:
 
   // mouse handling
   bool mouseMode; // PEN ON/OFF
-  MouseListener* mouseListener;
+  AnsiWidgetListener* listener;
+  QList<QAbstractButton*> hyperlinks;
 };
 
 #endif // ANSIWIDGET_H

@@ -9,6 +9,7 @@
 
 #include <QApplication>
 #include <QPaintEvent>
+#include <QPushButton>
 #include <QRect>
 
 #include <stdio.h>
@@ -312,6 +313,16 @@ void AnsiWidget::resetMouse() {
 void AnsiWidget::copySelection() {
 }
 
+/*! public slot - a hyperlink has been clicked
+ */
+void AnsiWidget::linkClicked() {
+  QPushButton* button = (QPushButton*) sender();
+  QString url = button->property("url").toString();
+  if (listener) {
+    listener->loadPath(url, true, true);
+  }
+}
+
 /*! public slot - find the next text item
  */
 void AnsiWidget::findNextText() {
@@ -354,6 +365,70 @@ int AnsiWidget::calcTab(int x) const {
   return c * tabSize;
 }
 
+/*! Creates a hyperlink, eg // ^[ hwww.foo.com:title:hover;More text
+ */
+void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
+  QString url;
+  QString text;
+  QString tooltip;
+
+  unsigned char* next = p + 1;
+  bool eot = false;
+  int segment = 0;
+
+  while (*p && !eot) {
+    p++;
+
+    switch (*p) {
+    case '\033':
+    case '\n':
+    case ':':
+      eot = true;
+      // fallthru
+
+    case ';':
+      switch (segment++) {
+      case 0:
+        url = QString::fromUtf8((const char*) next, (p - next));
+        text = tooltip = url;
+        break;
+      case 1:
+        text = QString::fromUtf8((const char*) next, (p - next));
+        tooltip = text;
+        break;
+      case 2:
+        tooltip = QString::fromUtf8((const char*) next, (p - next));
+        eot = true;
+        break;
+      default:
+        break;
+      }
+      next = p + 1;
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  if (execLink && listener) {
+    listener->loadPath(url, true, true);
+  }
+  else {
+    QPushButton* button = new QPushButton(text, this);
+    button->setFlat(true);
+    button->setToolTip(tooltip);
+    button->setProperty("url", QVariant::fromValue(url));
+    button->connect(button, SIGNAL(clicked(bool)),
+                    this, SLOT(linkClicked()));
+    button->show();
+    hyperlinks.append(button);
+
+    QRect rect = button->geometry();
+    curX += rect.width();
+  }
+}
+
 /*! clean up the offscreen buffer
  */
 void AnsiWidget::destroyImage() {
@@ -381,6 +456,12 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
       // GSS  Graphic Size Selection
       textSize = escValue;
       updateFont();
+      break;
+    case 'h':
+      createLink(p, false);
+      break;
+    case 'H':
+      createLink(p, true);
       break;
     }
   } 
@@ -435,6 +516,15 @@ void AnsiWidget::reset(bool init) {
     markX = markY = pointX = pointY = 0;
     copyMode = false;
   }
+
+  // cleanup any hyperlinks
+  int n = hyperlinks.size();
+  for (int i = 0; i < n; i++) {
+    QAbstractButton* nextObject = hyperlinks.at(i);
+    nextObject->setParent(NULL);
+    nextObject->deleteLater();
+  }
+  hyperlinks.clear();
 
   curYSaved = 0;
   curXSaved = 0;
@@ -585,8 +675,8 @@ void AnsiWidget::mouseMoveEvent(QMouseEvent* event) {
   if (copyMode) {
     update();
   }
-  if (mouseMode && mouseListener) {
-    mouseListener->mouseMoveEvent(event->button());
+  if (mouseMode && listener) {
+    listener->mouseMoveEvent(event->button());
   }
 }
 
@@ -597,18 +687,18 @@ void AnsiWidget::mousePressEvent(QMouseEvent* event) {
   if (mouseMode && selected) {
     update();
   }
-  if (copyMode && mouseListener) {
-    mouseListener->mousePressEvent();
+  if (copyMode && listener) {
+    listener->mousePressEvent();
   }
 }
 
-void AnsiWidget::mouseReleaseEvent(QMouseEvent* event) {
+void AnsiWidget::mouseReleaseEvent(QMouseEvent*) {
   bool selected = (markX != pointX || markY != pointY);
   if (copyMode && selected) {
     update();
   }
-  if (mouseMode && mouseListener) {
-    mouseListener->mousePressEvent();
+  if (mouseMode && listener) {
+    listener->mousePressEvent();
   }
 }
 
@@ -623,6 +713,8 @@ void AnsiWidget::paintEvent(QPaintEvent* event) {
     painter.setBackgroundMode(Qt::TransparentMode);
     painter.drawRect(markX, markY, pointX - markX, pointY - markY);
   }
+
+  QWidget::paintEvent(event);
 }
 
 void AnsiWidget::resizeEvent(QResizeEvent* event) {

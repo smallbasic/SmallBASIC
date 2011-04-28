@@ -12,7 +12,8 @@
 
 QNetworkAccessManager manager;
 
-HttpFile::HttpFile(ReadyListener* listener, const QString path) : QTemporaryFile() {
+HttpFile::HttpFile(HttpFileListener* listener, 
+                   const QString path) : QTemporaryFile() {
   this->listener = listener;
   this->url = QUrl(path);
   requestFile();
@@ -50,7 +51,7 @@ void HttpFile::finished() {
   }
   else {
     // success
-    listener->loadPath(fileName(), false);
+    listener->loadPath(fileName(), false, true);
     deleteLater();
   }
 }

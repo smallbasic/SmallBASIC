@@ -18,6 +18,7 @@ EXTRA_DIST =					\
   images/refresh.png				\
   images/stop.png				\
   bas/settings.bas				\
+  bas/list.bas					\
   bas/bookmarks.bas				\
   bas/home.bas                       
 

@@ -43,7 +43,7 @@ enum ExecState {
 struct MainWindow;
 extern MainWindow *wnd;
 
-class MainWindow : public QMainWindow, MouseListener, ReadyListener {
+class MainWindow : public QMainWindow, AnsiWidgetListener, HttpFileListener {
   Q_OBJECT
     
 public:
@@ -106,7 +106,7 @@ private:
   Ui::ErrorConsole* errorUi;
   Ui::SourceDialog* sourceUi;
 
-  FixedLayout* fixedLayout;
+  FixedLayout* fixedLayout; // for positioning child widgets
   QDialog* logDialog;    // log window widget
   QDialog* sourceDialog; // source dialog widget
   QLineEdit* textInput;  // text input control

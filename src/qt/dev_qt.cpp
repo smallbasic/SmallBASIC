@@ -75,8 +75,7 @@ int osd_devinit() {
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    wnd->out->resize(opt_pref_width + delta_x,
-                     opt_pref_height + delta_y);
+    wnd->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
   }
 
   os_graf_mx = wnd->out->width();

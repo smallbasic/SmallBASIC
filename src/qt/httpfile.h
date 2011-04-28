@@ -14,9 +14,8 @@
 #include <QNetworkRequest>
 #include <QTemporaryFile>
 
-struct ReadyListener {
-  virtual void loadPath(QString path, bool showPath=true, 
-                        bool setHistory=true) = 0;
+struct HttpFileListener {
+  virtual void loadPath(QString path, bool showPath, bool setHistory) = 0;
   virtual void loadError(QString message) = 0;
 };
 
@@ -24,7 +23,7 @@ class HttpFile : public QTemporaryFile {
   Q_OBJECT
 
 public:
-  HttpFile(ReadyListener* listener, const QString path);
+  HttpFile(HttpFileListener* listener, const QString path);
   ~HttpFile();
 
 public slots:
@@ -36,7 +35,7 @@ private:
 
   QUrl url;
   QNetworkReply* reply;
-  ReadyListener* listener;
+  HttpFileListener* listener;
 };
 
 #endif

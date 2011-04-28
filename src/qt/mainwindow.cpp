@@ -129,6 +129,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
           this, SLOT(viewErrorConsole()));
   connect(ui->focusUrl, SIGNAL(triggered()), 
           textInput, SLOT(setFocus()));
+  connect(ui->focusUrl, SIGNAL(triggered()), 
+          textInput, SLOT(selectAll()));
 
   // setup state
   resourceApp = false;
@@ -642,14 +644,31 @@ void MainWindow::loadResource(QString path) {
 
 // resolve the path to a local file then call basicMain
 void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
-  path = QFileInfo(path).canonicalFilePath();
+  bool httpPath = path.startsWith("http://") || path.startsWith("www.");
+
+  if (!httpPath) {
+    int delim = path.indexOf("?");
+    if (delim != -1) {
+      // extract web arguments
+      QString args = path.right(path.length() - delim - 1);
+      strcpy(opt_command, args.toUtf8().data());
+      path = path.left(delim);
+    }
+  }
+
+  QFileInfo pathInfo(path);
+  path = pathInfo.canonicalFilePath();
 
   if (showPath) {
     textInput->setText(path);
   }
 
   if (!deferExec(path, DeferPathExec)) {
-    if (QFileInfo(path).isFile()) {
+    if (httpPath) {
+      updateHistory(path, setHistory);
+      new HttpFile(this, path);
+    }
+    else if (pathInfo.isFile()) {
       // populate the source view window
       QFile file(path);
       if (file.open(QFile::ReadOnly)) {
@@ -661,14 +680,12 @@ void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
       updateHistory(path, setHistory);
       basicMain(path);
     }
-    else if (path.startsWith("http://")) {
-      updateHistory(path, setHistory);
-      new HttpFile(this, path);
+    else if (pathInfo.isDir()) {
+      strcpy(opt_command, path.toUtf8().data());
+      loadResource(":/bas/list.bas");
     }
     else {
-      if (!QFileInfo(path).isDir()) {
-        status.setText(tr("File not found"));
-      }
+      status.setText(tr("File not found"));      
     }
   }
 }
@@ -686,7 +703,7 @@ void MainWindow::showStatus(bool error) {
   else {
     switch (runMode) {
     case init_state:
-      status.setText("Ready");
+      status.setText("Stopped");
       break;
     case run_state:
       status.setText("Running");
