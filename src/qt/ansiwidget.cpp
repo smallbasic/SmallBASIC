@@ -65,6 +65,32 @@ static QColor colors[] = {
   Qt::white         // 15 bright white
 };
 
+struct HyperlinkButton : public QAbstractButton {
+  HyperlinkButton(QString url, QString text, QWidget* parent) : 
+    QAbstractButton(parent) {
+    this->url = url;
+    setText(text);
+  };
+
+  void paintEvent(QPaintEvent* event) {
+    AnsiWidget* out = (AnsiWidget*) parent();
+    QPainter painter(this);
+    QPoint pt = pos();
+    QFontMetrics fm = fontMetrics();
+    int width = fm.width(text());
+    pt.setY(pt.y() + fm.ascent() - 2);
+
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    painter.setFont(out->font());
+    painter.setPen(isDown() ? Qt::blue: Qt::red);
+
+    painter.drawText(pt.x(), pt.y(), text());
+    painter.drawLine(pt.x(), pt.y() + 2, width, pt.y() + 2);
+  }
+
+  QString url;
+};
+
 AnsiWidget::AnsiWidget(QWidget *parent) : QWidget(parent), img(0) {
   reset(true);
   initImage();
@@ -316,10 +342,9 @@ void AnsiWidget::copySelection() {
 /*! public slot - a hyperlink has been clicked
  */
 void AnsiWidget::linkClicked() {
-  QPushButton* button = (QPushButton*) sender();
-  QString url = button->property("url").toString();
+  HyperlinkButton* button = (HyperlinkButton*) sender();
   if (listener) {
-    listener->loadPath(url, true, true);
+    listener->loadPath(button->url, true, true);
   }
 }
 
@@ -415,17 +440,15 @@ void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
     listener->loadPath(url, true, true);
   }
   else {
-    QPushButton* button = new QPushButton(text, this);
-    button->setFlat(true);
+    HyperlinkButton* button = new HyperlinkButton(url, text, this);
     button->setToolTip(tooltip);
-    button->setProperty("url", QVariant::fromValue(url));
+    button->move(curX, curY);
     button->connect(button, SIGNAL(clicked(bool)),
                     this, SLOT(linkClicked()));
     button->show();
     hyperlinks.append(button);
 
-    QRect rect = button->geometry();
-    curX += rect.width();
+    curX += textWidth(text.toUtf8().data()) + 4;
   }
 }
 
