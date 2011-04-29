@@ -75,17 +75,18 @@ struct HyperlinkButton : public QAbstractButton {
   void paintEvent(QPaintEvent* event) {
     AnsiWidget* out = (AnsiWidget*) parent();
     QPainter painter(this);
-    QPoint pt = pos();
     QFontMetrics fm = fontMetrics();
     int width = fm.width(text());
-    pt.setY(pt.y() + fm.ascent() - 2);
+    int y = fm.ascent();
 
     painter.setRenderHint(QPainter::TextAntialiasing);
     painter.setFont(out->font());
-    painter.setPen(isDown() ? Qt::blue: Qt::red);
+    painter.setPen(isDown() ? Qt::blue : underMouse() ? Qt::red : Qt::darkGreen);
 
-    painter.drawText(pt.x(), pt.y(), text());
-    painter.drawLine(pt.x(), pt.y() + 2, width, pt.y() + 2);
+    painter.drawText(0, y, text());
+    if (underMouse()) {
+      painter.drawLine(0, y + 2, width, y + 2);
+    }
   }
 
   QString url;
@@ -441,14 +442,19 @@ void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
   }
   else {
     HyperlinkButton* button = new HyperlinkButton(url, text, this);
+    QFontMetrics fm = fontMetrics();
+    int width = fm.width(text) + 2;
+    int height = fm.ascent() + fm.descent() + 4;
+
+    button->setGeometry(curX, curY, width, height);
     button->setToolTip(tooltip);
-    button->move(curX, curY);
     button->connect(button, SIGNAL(clicked(bool)),
                     this, SLOT(linkClicked()));
+    button->setCursor(Qt::PointingHandCursor);
     button->show();
-    hyperlinks.append(button);
 
-    curX += textWidth(text.toUtf8().data()) + 4;
+    hyperlinks.append(button);
+    curX += width;
   }
 }
 
@@ -521,8 +527,22 @@ void AnsiWidget::newLine() {
 
     QPainter painter(this->img);
     painter.fillRect(exposed.boundingRect(), this->bg);
-
     update();
+
+    // scroll any hyperlinks
+    int n = hyperlinks.size();
+    for (int i = 0; i < n; i++) {
+      QAbstractButton* nextObject = hyperlinks.at(i);
+      QPoint pt = nextObject->pos();
+      if (pt.y() < -fontHeight) {
+        delete nextObject;
+        hyperlinks.removeAt(i);
+        n--;
+      }
+      else {
+        nextObject->move(pt.x(), pt.y() - fontHeight);
+      }
+    }
   } 
   else {
     curY += fontHeight;
@@ -544,8 +564,7 @@ void AnsiWidget::reset(bool init) {
   int n = hyperlinks.size();
   for (int i = 0; i < n; i++) {
     QAbstractButton* nextObject = hyperlinks.at(i);
-    nextObject->setParent(NULL);
-    nextObject->deleteLater();
+    delete nextObject;
   }
   hyperlinks.clear();
 
