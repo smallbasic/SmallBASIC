@@ -5,7 +5,7 @@ sort f
 ? chr(27) + "[ h" + command + "/..;..:"
 
 for a in f
-  if (isdir(a) or right(a, 4) == ".bas") then
+  if (isdir(command + "/" + a) or right(a, 4) == ".bas") then
     ? chr(27) + "[ h" + command + "/" + a + ";" + a + ":"
   endif
 next a
