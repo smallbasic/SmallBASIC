@@ -9,7 +9,7 @@
 
 #include <QApplication>
 #include <QPaintEvent>
-#include <QPushButton>
+#include <QPainter>
 #include <QRect>
 
 #include <stdio.h>
@@ -94,7 +94,11 @@ struct HyperlinkButton : public QAbstractButton {
 
 AnsiWidget::AnsiWidget(QWidget *parent) : QWidget(parent), img(0) {
   reset(true);
-  initImage();
+
+  // setup scrolling
+  scrollSize = 250;
+  scrollbar = new QScrollBar(Qt::Vertical, this);
+  connect(scrollbar, SIGNAL(valueChanged(int)), this, SLOT(scrollChanged(int)));
 }
 
 /*! widget clean up
@@ -115,7 +119,8 @@ void AnsiWidget::clearScreen() {
   reset(true);
   QPainter painter(this->img);
   painter.fillRect(this->geometry(), this->bg);
-  update();
+  scrollbar->setMaximum(0);
+  scrollbar->setValue(0);
 }
 
 /*! draws an arc onto the offscreen buffer
@@ -320,6 +325,12 @@ void AnsiWidget::setTextColor(long fg, long bg) {
   this->fg = ansiToQt(fg);
 }
 
+/*! sets the number of scrollback lines
+ */
+void AnsiWidget::setScrollSize(int scrollSize) {
+  this->scrollSize = scrollSize;
+}
+
 /*! sets mouse mode on or off
  */
 void AnsiWidget::setMouseMode(bool flag) {
@@ -362,6 +373,19 @@ void AnsiWidget::findText() {
 /*! public slot - select all text
  */
 void AnsiWidget::selectAll() {
+}
+
+/*! private slot - scrollbar position has changed
+ */
+void AnsiWidget::scrollChanged(int value) {
+  int n = hyperlinks.size();
+
+  for (int i = 0; i < n; i++) {
+    QAbstractButton* nextObject = hyperlinks.at(i);
+    QPoint pt = nextObject->pos();
+    nextObject->move(pt.x(), pt.y() - value);
+  }
+  update();
 }
 
 /*! Converts ANSI colors to FLTK colors
@@ -505,25 +529,16 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
   return false;
 }
 
-/*! widget initialisation
- */
-void AnsiWidget::initImage() {
-  if (img == NULL) {
-    img = new QPixmap(parentWidget()->width(), parentWidget()->height());
-    img->fill(this->bg);
-  }
-}
-
 /*! Handles the \n character
  */
 void AnsiWidget::newLine() {
-  int h = height();
+  int imgH = img->height();
   int fontHeight = textHeight();
 
   curX = INITXY;
-  if (curY + (fontHeight * 2) >= h) {
+  if (curY + (fontHeight * 2) >= imgH) {
     QRegion exposed;
-    img->scroll(0, -fontHeight, 0, 0, width(), h, &exposed);
+    img->scroll(0, -fontHeight, 0, 0, width(), imgH, &exposed);
 
     QPainter painter(this->img);
     painter.fillRect(exposed.boundingRect(), this->bg);
@@ -543,7 +558,13 @@ void AnsiWidget::newLine() {
         nextObject->move(pt.x(), pt.y() - fontHeight);
       }
     }
-  } 
+  }
+  else if (curY + (fontHeight * 2) >= height()) {
+    // setup scrollbar scrolling
+    scrollbar->setMaximum(scrollbar->maximum() + fontHeight);
+    scrollbar->setValue(scrollbar->value() + fontHeight);
+    curY += fontHeight;
+  }
   else {
     curY += fontHeight;
   }
@@ -746,8 +767,10 @@ void AnsiWidget::mouseReleaseEvent(QMouseEvent*) {
 
 void AnsiWidget::paintEvent(QPaintEvent* event) {
   QPainter painter(this);
-  QRect dirtyRect = event->rect();
-  painter.drawPixmap(dirtyRect, *img, dirtyRect);
+  QRect rc = event->rect();
+
+  painter.drawPixmap(rc.x(), rc.y(), rc.width(), rc.height(), *img,
+                     0, scrollbar->value(), width(), height());
 
   // draw the mouse selection
   if (copyMode && (markX != pointX || markY != pointY)) {
@@ -760,25 +783,47 @@ void AnsiWidget::paintEvent(QPaintEvent* event) {
 }
 
 void AnsiWidget::resizeEvent(QResizeEvent* event) {
-  int imgW = img->width();
-  int imgH = img->height();
+  scrollbar->resize(18, event->size().height());
+  scrollbar->move(event->size().width() - scrollbar->width(), 0);
 
-  if (width() > imgW) {
-    imgW = width();
-  }
-  
-  if (height() > imgH) {
-    imgH = height();
-  }
-  
-  QPixmap* old = img;
-  img = new QPixmap(imgW, imgH);
-  QPainter painter(img);
-  painter.fillRect(0, 0, imgW, imgH, this->bg);
-  painter.drawPixmap(0, 0, old->width(), old->height(), *old);
-  delete old;
+  if (img) {
+    int scrollH = textSize * scrollSize;
+    int imgW = img->width();
+    int imgH = img->height() - scrollH;
+    
+    if (width() > imgW) {
+      imgW = width();
+    }
+    
+    if (height() > imgH) {
+      imgH = height();
+    }
 
+    imgH += scrollH;
+    scrollbar->setPageStep(event->size().height());
+    
+    QPixmap* old = img;
+    img = new QPixmap(imgW, imgH);
+    QPainter painter(img);
+    painter.fillRect(0, 0, imgW, imgH, this->bg);
+    painter.drawPixmap(0, 0, old->width(), old->height(), *old);
+    delete old;
+  }
+    
   QWidget::resizeEvent(event);
+}
+
+void AnsiWidget::showEvent(QShowEvent* event) {
+  if (img == NULL) {
+    int imgH = parentWidget()->height() + (textSize * scrollSize);
+    img = new QPixmap(parentWidget()->width(), imgH);
+    img->fill(this->bg);
+    
+    scrollbar->setPageStep(parentWidget()->height());
+    scrollbar->setSingleStep(textSize);
+    scrollbar->setValue(0);
+    scrollbar->setRange(0, 0);
+  }
 }
 
 // End of "$Id$".

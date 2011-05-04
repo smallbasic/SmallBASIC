@@ -12,7 +12,7 @@
 
 #include <QAbstractButton>
 #include <QColor>
-#include <QPainter>
+#include <QScrollBar>
 #include <QWidget>
 
 struct AnsiWidgetListener {
@@ -41,19 +41,20 @@ public:
   QColor getBackgroundColor() {return bg;}
   QColor getColor() {return fg;}
   QRgb getPixel(int x, int y);
-  int  getHeight() {return height();}
-  int  getWidth()  {return width();}
-  int  getX() {return curX;}
-  int  getY() {return curY;}
-  int  textHeight(void);
-  int  textWidth(const char* s);
+  int getHeight() {return height();}
+  int getWidth()  {return width();}
+  int getX() {return curX;}
+  int getY() {return curY;}
+  int textHeight(void);
+  int textWidth(const char* s);
   void print(const char *str);
   void saveImage(const char* fn, int x, int y, int w, int h);
   void setColor(long color);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
   void setXY(int x, int y) {curX=x; curY=y;}
-
+  void setScrollSize(int scrollSize);
+  
   // mouse support
   int getMouseX(bool down) {return down ? markX : pointX;}
   int getMouseY(bool down) {return down ? markY : pointY;}
@@ -62,8 +63,6 @@ public:
   void setMouseMode(bool mode);
   void setMouseListener(AnsiWidgetListener* ml) {listener = ml;}
   
-signals:
-
 public slots:
   void copySelection();
   void linkClicked();
@@ -71,27 +70,31 @@ public slots:
   void findText();
   void selectAll();
 
+private slots:
+  void scrollChanged(int value);
+
 private:
   QColor ansiToQt(long color);
-  int  calcTab(int x) const;
+  int calcTab(int x) const;
   void createLink(unsigned char *&p, bool execLink);
   void destroyImage();
   bool doEscape(unsigned char *&p);
-  void initImage();
   void newLine();
   void reset(bool init);
   bool setGraphicsRendition(char c, int escValue);
   void updateFont();
-
+  
   void mouseMoveEvent(QMouseEvent* event);
   void mousePressEvent(QMouseEvent* event);
   void mouseReleaseEvent(QMouseEvent* event);
   void paintEvent(QPaintEvent* event);
   void resizeEvent(QResizeEvent* event); 
+  void showEvent(QShowEvent* event);
 
   QPixmap* img;
   QColor bg;
   QColor fg;
+  QScrollBar* scrollbar;
 
   bool underline;
   bool invert;
@@ -103,6 +106,7 @@ private:
   int curXSaved;
   int tabSize;
   int textSize;
+  int scrollSize;
 
   // clipboard handling
   int markX, markY, pointX, pointY;

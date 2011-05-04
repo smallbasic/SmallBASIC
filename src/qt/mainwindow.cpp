@@ -40,10 +40,11 @@ const char* aboutText =
  "the Free Software Foundation.";
 
 // post message event ids
-const int DeferPathExec = QEvent::registerEventType();
+const int DeferPathExec = QEvent::registerEventType(); 
 const int DeferResourceExec = QEvent::registerEventType();
 
-const int MaxHistory = 100;
+// max number of history items
+const int MaxHistory = 50;
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow) {
@@ -334,11 +335,9 @@ void MainWindow::helpHomePage() {
 void MainWindow::historyBackward() {
   if (historyIndex > 0) {
     ui->actionNext->setEnabled(true);
-    ui->actionNext->setToolTip(QFileInfo(history[historyIndex]).fileName());
     historyIndex--;
     if (historyIndex == 0) {
       ui->actionBack->setEnabled(false);
-      ui->actionBack->setToolTip(tr("Go back"));
     }
     loadPath(history[historyIndex], true, false);
   }
@@ -348,11 +347,9 @@ void MainWindow::historyBackward() {
 void MainWindow::historyForward() {
   if (historyIndex != -1 && historyIndex + 1 < history.count()) {
     ui->actionBack->setEnabled(true);
-    ui->actionBack->setToolTip(QFileInfo(history[historyIndex]).fileName());
     historyIndex++;
     if (historyIndex + 1 == history.count()) {
       ui->actionNext->setEnabled(false);
-      ui->actionNext->setToolTip(tr("Go forward"));
     }
     loadPath(history[historyIndex], true, false);
   }
@@ -682,6 +679,7 @@ void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
     }
     else if (pathInfo.isDir()) {
       strcpy(opt_command, path.toUtf8().data());
+      updateHistory(path, setHistory);
       loadResource(":/bas/list.bas");
     }
     else {
@@ -718,15 +716,20 @@ void MainWindow::showStatus(bool error) {
 void MainWindow::updateHistory(QString path, bool setHistory) {
   if (setHistory) {
     if (historyIndex == -1 || history[historyIndex] != path) {
-      if (historyIndex < MaxHistory) {
-        history.append(path);
-        historyIndex++;
+      if (history.size() == MaxHistory) {
+        history.removeFirst();
+        if (historyIndex == history.size()) {
+          historyIndex--;
+          ui->actionNext->setEnabled(false);
+        }
       }
+
+      history.append(path);
+      historyIndex++;
     }
+
     if (historyIndex > 0) {
-      QString tooltip = QFileInfo(history[historyIndex - 1]).fileName();
       ui->actionBack->setEnabled(true);
-      ui->actionBack->setToolTip(tooltip);
     }
   }
 }

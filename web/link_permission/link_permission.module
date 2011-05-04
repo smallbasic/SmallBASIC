@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * @file
+ * Implements a permission to post forum messages containing a hyperlink.
+ *
+ * Based on the blockanonymouslinks module
+ */
+
+/**
+ * Tests content for spam and takes appropriate action
+ */
+function block_spammer($user, $body) {
+  if ($user->uid && // logged in
+      !user_access('post hyperlinks') && // not permitted
+      preg_match("@(http://|https://|ftp://|mailto:|smb://|afp://|file://|gopher://|news://|ssl://|sslv2://|sslv3://|tls://|tcp://|udp://)+@se", $body) || 
+      preg_match("@(www\.[a-zA-Z0-9\@:%_+*~#?&=.,/;-]*[a-zA-Z0-9\@:%_+~#\&=/;-])+@se", $body)) {
+    // perform block operation
+    watchdog('action', 'Blocked spammer.', array('%name' => check_plain($user->name)));
+    form_set_error('time', t('Invalid content, computer says "no".'));
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function link_permission_permission() {
+  return array (
+    'administer link permission' => array (
+      'title' => t('Post Hyperlinks'), 
+      'description' => t('Allow posting hyperlinks.'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_comment().
+ * http://api.drupal.org/api/drupal/modules--comment--comment.api.php/function/hook_comment_insert/7
+ */
+function link_permission_comment_insert($comment) {
+  global $user;
+  $text = $comment->comment_body[LANGUAGE_NONE][0]['value'];
+  block_spammer($user, $text);
+}
+
+/**
+ * Implementation of hook_node_validate().
+ * http://api.drupal.org/api/drupal/modules--node--node.api.php/function/hook_node_validate/7
+ */
+function link_permission_node_validate($node, $form, &$form_state) {
+  global $user;
+  $text = $node->body[$node->language][0]['value'];
+  block_spammer($user, $text);
+}
+
+

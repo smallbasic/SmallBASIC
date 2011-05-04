@@ -1,0 +1,12 @@
+; $Id: $
+name = Link Permission
+description = "Implements a permission to post forum messages containing a hyperlink."
+core = 7.x
+package = "Spam control"
+
+; Information added by drupal.org packaging script on 2011-01-10
+version = "7.x-1.1"
+core = "7.x"
+project = "link_permission"
+datestamp = "1294662167"
+
