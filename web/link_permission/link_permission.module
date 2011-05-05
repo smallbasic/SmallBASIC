@@ -11,14 +11,17 @@
  * Tests content for spam and takes appropriate action
  */
 function block_spammer($user, $body) {
+  $result = true;
   if ($user->uid && // logged in
       !user_access('post hyperlinks') && // not permitted
-      preg_match("@(http://|https://|ftp://|mailto:|smb://|afp://|file://|gopher://|news://|ssl://|sslv2://|sslv3://|tls://|tcp://|udp://)+@se", $body) || 
-      preg_match("@(www\.[a-zA-Z0-9\@:%_+*~#?&=.,/;-]*[a-zA-Z0-9\@:%_+~#\&=/;-])+@se", $body)) {
+      (preg_match("@(http://|https://|ftp://|mailto:|smb://|afp://|file://|gopher://|news://|ssl://|sslv2://|sslv3://|tls://|tcp://|udp://)+@se", $body) || 
+       preg_match("@(www\.[a-zA-Z0-9\@:%_+*~#?&=.,/;-]*[a-zA-Z0-9\@:%_+~#\&=/;-])+@se", $body))) {
     // perform block operation
     watchdog('action', 'Blocked spammer.', array('%name' => check_plain($user->name)));
-    form_set_error('time', t('Invalid content, computer says "no".'));
+    form_set_error('time', t('You are not permitted to post links. This is an anti-spam measure.'));
+    $result = false;
   }
+  return $result;
 }
 
 /**
@@ -34,13 +37,18 @@ function link_permission_permission() {
 }
 
 /**
- * Implementation of hook_comment().
- * http://api.drupal.org/api/drupal/modules--comment--comment.api.php/function/hook_comment_insert/7
+ * Implementation of hook_field_attach_validate
+ * http://api.drupal.org/api/drupal/modules--field--field.attach.inc/function/field_attach_validate/7      
  */
-function link_permission_comment_insert($comment) {
+function link_permission_field_attach_validate($entity_type, $entity, &$errors) {
   global $user;
-  $text = $comment->comment_body[LANGUAGE_NONE][0]['value'];
-  block_spammer($user, $text);
+
+  if ($entity_type == 'comment') {
+    $text = $entity->comment_body[LANGUAGE_NONE][0]['value'];
+    if (!block_spammer($user, $text)) {
+      $errors = true;
+    }
+  }
 }
 
 /**
@@ -52,5 +60,3 @@ function link_permission_node_validate($node, $form, &$form_state) {
   $text = $node->body[$node->language][0]['value'];
   block_spammer($user, $text);
 }
-
-
