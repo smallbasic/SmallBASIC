@@ -6,41 +6,59 @@
  */
 
 /**
- * Implementation of hook_link().
+ * Adds the "Export Code" menu item
  */
 function export_code_node_view($node, $view_mode) {
-  if ($node->type == 'book' && strpos($node->title, ".") !== false) {
-    $text = $node->body[$node->language][0]['value'];
-    if (strpos($text, "<code") !== false && strpos($text, "</code>") !== false) {
-      $links['book_export_code'] = 
-        array('title' => t('Download'), 
-               'href' => 'book/export/code/'. $node->nid, 
-         'attributes' => array('title' => t('Download ' . $node->title)),
-               'html' => FALSE);
-      $node->content['links']['blog'] = array(
-        '#theme' => 'links',
-        '#links' => $links,
-        '#attributes' => array('class' => array('links', 'inline')),
-      );
+  if (user_access('export code')) {
+    if ($node->type == 'book' && strpos($node->title, ".") !== false) {
+      $text = $node->body[$node->language][0]['value'];
+      if (strpos($text, "<code") !== false && strpos($text, "</code>") !== false) {
+        $links['book_export_code'] = 
+          array('title' => t('Download'), 
+                 'href' => 'export/code/'. $node->nid, 
+           'attributes' => array('title' => t('Download ' . $node->title)),
+                 'html' => FALSE);
+        $node->content['links']['blog'] = array(
+          '#theme' => 'links',
+          '#links' => $links,
+          '#attributes' => array('class' => array('links', 'inline')),
+        );
+      }
     }
   }
 }
 
 /**
- * menu handler
- *
+ * Setup the 'export code' permission
  */
-function book_export_code($nid) {
-  return export_book_page($nid);
+function export_code_permission() {
+  return array (
+    'export code' => array (
+      'title' => t('Download code'), 
+      'description' => t('Allow code downloads.'),
+    ),
+  );
+}
+
+/**
+ * Setup the menu
+ */
+function export_code_menu() {
+  $items['export/code'] = array(
+    'page callback' => 'export_code_main',
+    'access arguments' => array('export code'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
 }
 
 /**
  * main program entry
- *
  */
-function export_book_page($nid) {
+function export_code_main($nid) {
   $node = node_load($nid);
-  $result = false;
+  $result = MENU_NOT_FOUND;
 
   if ($node->body) {
     $content = $node->body[$node->language][0]['value'];
@@ -58,14 +76,11 @@ function export_book_page($nid) {
         drupal_add_http_header('Content-Disposition', 'attachment; filename="' . 
                                $node->title . '"');
         $result = substr($content, $code_begin + 1, $code_end - $code_begin -1);
-        $result = strip_tags($result);
+        echo $result;
+        echo "\nREM Downloaded from http://smallbasic.sourceforge.net/?q=node/" . $nid;
+        drupal_exit();
       }
     }
-  }
-
-  if ($result === false) {
-    drupal_set_message(t('No &lt;code&gt; found on this page.'));
-    drupal_not_found();
   }
 
   return $result;
