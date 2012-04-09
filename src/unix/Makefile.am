@@ -36,4 +36,8 @@ sbasic_SOURCES =				\
 
 sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src -lsb_common
 
+if !WITH_WIN32
+sbasic_LDADD += -ldl
+endif
+
 sbasic_DEPENDENCIES = ../libsb_common.a

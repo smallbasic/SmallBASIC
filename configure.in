@@ -508,6 +508,7 @@ function buildConsole() {
       AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
       AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
       AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
+      AC_DEFINE(OS_PREC64, 1, [64 bit variables])
       AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline"
       BUILD_SUBDIRS="src src/unix"
