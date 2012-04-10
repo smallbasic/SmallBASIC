@@ -223,7 +223,7 @@ long hextol(const char *str) SEC(BIO3);
  * @param str the string
  * @return the number
  */
-double sb_strtof(const char *str) SEC(BIO3);
+var_num_t sb_strtof(const char *str) SEC(BIO3);
 #define xsb_strtof(s) sb_strtof((s))
 
 /**

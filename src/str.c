@@ -414,7 +414,8 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
   byte base = 10;
   byte dpc = 0, stupid_e_fmt = 0, eop = '+';
   int sign = 1;
-  double power = 1.0, num;
+  var_num_t power = 1.0;
+  var_num_t num;
 
   *type = 0;
   *lv = 0;
@@ -748,12 +749,13 @@ long hextol(const char *str)
 /**
  * string to double
  */
-double sb_strtof(const char *str)
+var_num_t sb_strtof(const char *str)
 {
   char *p = (char *)str;
-  double r = 0.0, d = 10.0;
+  var_num_t r = 0.0;
+  var_num_t d = 10.0;
+  var_num_t sign = 1;
   int decp = 0;
-  double sign = 1;
 
   if (p == NULL) {
     return 0;
@@ -786,7 +788,7 @@ double sb_strtof(const char *str)
     p++;
   }
 
-  return r * ((double)sign);
+  return r * sign;
 }
 
 /**
