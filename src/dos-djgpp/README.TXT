@@ -1,3 +1,0 @@
-DO NOT DELETE ME
-
-DOS drivers
