@@ -1,3 +1,0 @@
-application { "SmallBASIC" SmBa stack=20480 }
-multiple code { "BCSCAN" "BCSC2" "BCSC3" "BEXEC" "TRASH" "IDE" "BLIB" "BMATH" "BMATH2" "BIO" "BIO2" "BIO3" "PALMFS" }
-

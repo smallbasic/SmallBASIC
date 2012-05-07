@@ -1,4 +1,0 @@
-DO NOT DELETE ME
-
-VTOS Drivers and IDE
-

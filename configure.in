@@ -1,6 +1,4 @@
 dnl 
-dnl "$Id$"
-dnl 
 dnl Configure script for SmallBASIC
 dnl
 dnl Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -575,4 +573,4 @@ if test x$ac_build_dist = xyes; then
    make dist
 fi
 
-dnl End of "$Id$".
+dnl End of configure.in

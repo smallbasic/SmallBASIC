@@ -1,9 +1,0 @@
-segment code 1 start $100000 "Timer stack size, ebos vector-count"
-segment code 0 start $100008 "Executable code"
-segment code 31 start after code 0 "Entry point"
-segment data 0 start after code 31 alignment 4096 "Constant data"
-segment data 1 start after data 0 "Values for pre-initialized variables"
-
-segment ram 1 start after data 1 alignment 4096 "Variables with initial values"
-segment ram 0 start after ram 1 "Uninitialized variables (all set to 0)"
-segment ram 2 start after ram 0 "Space for malloc"

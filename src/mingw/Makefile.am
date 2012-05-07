@@ -9,9 +9,9 @@ INCLUDES = -I../ -I. -I/usr/include @PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 
-sbasic_SOURCES =				\
-  ../console_main.c				\
-  ../dev_null.c
+sbasic_SOURCES =																\
+  ../unix/console_main.c												\
+  ../unix/dev_null.c
 
 sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src -lsb_common -lwsock32
 
