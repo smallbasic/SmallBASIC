@@ -1,6 +1,6 @@
 SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes. SmallBASIC includes trigonometric, matrices and algebra functions, a built in IDE, a powerful string library, system, sound, and graphic commands along with structured programming syntax
 
-<h1>Setup instructions for building FLTK version under a fresh ubuntu system</h1>
+== Setup instructions for building FLTK version under a fresh ubuntu system
 
 1. Install tools using synaptic package manager. Be sure to accept all included 
    dependencies. Note, some of these are only required for building FLTK to 
@@ -32,7 +32,7 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
  $ make
  $ sudo make install
 
-<h1>Setup instructions for building FLTK version under cygwin</h1>
+== Setup instructions for building FLTK version under cygwin
 
 Download and install cygwin
 --> http://www.cygwin.com/
@@ -54,26 +54,26 @@ STRIP		= /cygdrive/c/cygwin/bin/strip
 LIBCOMMAND	= /cygdrive/c/cygwin/bin/ar cr
 RANLIB		= /cygdrive/c/cygwin/bin/ranlib
 
-<h1>Building the GTK version</h>
+== Building the GTK version
  $ ./configure --enable-gtk
  $ make
 
-<h1>Building the N770 version</h>
+== Building the N770 version
  $ ./configure --enable-gtk --enable-hildon
  $ make deb
 
-<h1> Building the SDL version</h>
+== Building the SDL version
 
 Optionally install guichan - see http://guichan.sourceforge.net/wiki/index.php
 
  $ ./configure --enable-sdl
  $ make
 
-<h1>Building the non-graphical console version (cygwin or linux)</h>
+== Building the non-graphical console version (cygwin or linux)
  $ ./configure
  $ make
 
-<h1Code indent settings</h1>
+== Code indent settings
 
 -bap 
 -br 

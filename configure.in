@@ -193,7 +193,7 @@ function buildGTK() {
 
       if test "${have_glade}" = "yes" ; then
          dnl build the user interface 
-         glade-2 -w src/gtk/sbgtk.glade
+         glade-2 -w src/platform/gtk/sbgtk.glade
          AC_DEFINE(gtk_widget_unref, g_object_unref, [hack for glade-2.])
       else
          AC_MSG_ERROR([
@@ -225,7 +225,7 @@ function buildGTK() {
    AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
 
-   BUILD_SUBDIRS="src src/gtk/src src/gtk/data src/gtk/icons"
+   BUILD_SUBDIRS="src src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -277,6 +277,7 @@ function buildFLTK() {
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+   AC_DEFINE(USE_CLIB, 1, [Implements clibmgr.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
@@ -289,7 +290,7 @@ function buildFLTK() {
    AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
    AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()]) 
 
-   BUILD_SUBDIRS="src src/fltk"
+   BUILD_SUBDIRS="src/common src/platform/fltk"
    AC_SUBST(BUILD_SUBDIRS)
    AC_SUBST(FLTK_CXXFLAGS)
 
@@ -297,7 +298,7 @@ function buildFLTK() {
    AC_SUBST(desktopentrydir)
 
    dnl generate kwp.h
-   (cd src/fltk && g++ -o build_kwp build_kwp.cxx && ./build_kwp)
+   (cd src/platform/fltk && g++ -o build_kwp build_kwp.cxx && ./build_kwp)
 }
 
 function buildSDL() {
@@ -406,7 +407,7 @@ function buildSDL() {
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
 
-   BUILD_SUBDIRS="src src/sdl"
+   BUILD_SUBDIRS="src src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -448,14 +449,14 @@ function buildQT() {
    AC_DEFINE(IMPL_DEV_RUN, 1, [Driver implements dev_run()])
    AC_DEFINE(IMPL_DEV_CIRCLE, 1, [Driver implements circle/elipse funcs])
 
-   BUILD_SUBDIRS="src src/qt"
+   BUILD_SUBDIRS="src src/platform/qt"
    AC_SUBST(BUILD_SUBDIRS)
 
    desktopentrydir='$(datarootdir)'/applications
    AC_SUBST(desktopentrydir)
 
    dnl generate qt project files
-   (cd src/qt && qmake -o Makefile.qt)
+   (cd src/platform/qt && qmake -o Makefile.qt)
 }
 
 function buildConsole() {
@@ -487,7 +488,7 @@ function buildConsole() {
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
          PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
-         BUILD_SUBDIRS="src src/cygwin"
+         BUILD_SUBDIRS="src src/platform/cygwin"
       else
          dnl preconfigured values for cygwin mingw console build
          TARGET="Building Cygwin MinGW console version."
@@ -496,7 +497,7 @@ function buildConsole() {
          AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
          AC_DEFINE(IMPL_EMPTY_TERM_EVENTS, 1, [Implement a dummy term_events()])
          PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole"
-         BUILD_SUBDIRS="src src/mingw"
+         BUILD_SUBDIRS="src src/platform/mingw"
       fi
    else 
       dnl preconfigured values for unix console build
@@ -509,7 +510,7 @@ function buildConsole() {
       AC_DEFINE(OS_PREC64, 1, [64 bit variables])
       AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline"
-      BUILD_SUBDIRS="src src/unix"
+      BUILD_SUBDIRS="src src/platform/unix"
    fi
 
    AC_SUBST(BUILD_SUBDIRS)
@@ -517,13 +518,13 @@ function buildConsole() {
 
 function buildDist() {
    TARGET="Building source code release."
-   BUILD_SUBDIRS="src src/gtk/src src/gtk/data src/gtk/icons"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/fltk"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/sdl"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/cygwin"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/unix"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/mingw"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/qt"
+   BUILD_SUBDIRS="src src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/fltk"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/sdl"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/cygwin"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/unix"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/mingw"
+   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/qt"
    AC_SUBST(BUILD_SUBDIRS)
    AM_CONDITIONAL(WITH_HILDON, false)
 }
@@ -551,18 +552,18 @@ checkForWindows
 
 AC_OUTPUT([
 Makefile
-src/Makefile
-src/gtk/src/Makefile
-src/gtk/data/sbasic.desktop
-src/gtk/data/com.nokia.sbasic.service
-src/gtk/data/Makefile
-src/gtk/icons/Makefile
-src/fltk/Makefile
-src/sdl/Makefile
-src/qt/Makefile
-src/cygwin/Makefile
-src/mingw/Makefile
-src/unix/Makefile
+src/common/Makefile
+src/platform/gtk/src/Makefile
+src/platform/gtk/data/sbasic.desktop
+src/platform/gtk/data/com.nokia.sbasic.service
+src/platform/gtk/data/Makefile
+src/platform/gtk/icons/Makefile
+src/platform/fltk/Makefile
+src/platform/sdl/Makefile
+src/platform/qt/Makefile
+src/platform/cygwin/Makefile
+src/platform/mingw/Makefile
+src/platform/unix/Makefile
 ])
 
 echo

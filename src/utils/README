@@ -1,4 +1,0 @@
-
-u2d, d2u = unix2dos & dos2unix text file convertors
-
-mksmall = changes the names (of the files) to lowercase names

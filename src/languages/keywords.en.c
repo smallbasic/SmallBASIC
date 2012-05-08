@@ -1,4 +1,3 @@
-// $Id: scan.c 664 2009-07-09 11:44:15Z zeeb90au $
 // This file is part of SmallBASIC
 //
 // SB Keywords in English - Latin1
