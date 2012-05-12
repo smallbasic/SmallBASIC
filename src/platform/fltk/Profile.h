@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -25,13 +24,13 @@ struct EditorWidget;
 struct Profile {
   Profile();
 
-  void loadConfig(EditorWidget* editor);
-  void restore(MainWindow* wnd);
-  void restoreAppPosition(Rectangle* wnd);
-  void save(MainWindow* wnd);
+  void loadConfig(EditorWidget *editor);
+  void restore(MainWindow *wnd);
+  void restoreAppPosition(Rectangle *wnd);
+  void save(MainWindow *wnd);
 
   Color color;
-  Font* font;
+  Font *font;
   Rectangle appPosition;
 
   int fontSize;
@@ -39,21 +38,20 @@ struct Profile {
   int createBackups;
   int lineNumbers;
 
-  private:
+private:
   bool loaded;
-  int nextInteger(const char* s, int len, int& index);
-  Rectangle restoreRect(Properties* profile, const char* key);
-  void restoreStyles(Properties* profile);
-  void restoreTabs(MainWindow* wnd, Properties* profile);
-  void restoreValue(Properties* profile, const char* key, int* value);
-  void restoreWindowPos(MainWindow* wnd, Rectangle& rc);
-  void saveRect(FILE* fp, const char* key, Rectangle* wnd);
+  int nextInteger(const char *s, int len, int &index);
+  Rectangle restoreRect(Properties *profile, const char *key);
+  void restoreStyles(Properties *profile);
+  void restoreTabs(MainWindow *wnd, Properties *profile);
+  void restoreValue(Properties *profile, const char *key, int *value);
+  void restoreWindowPos(MainWindow *wnd, Rectangle &rc);
+  void saveRect(FILE *fp, const char *key, Rectangle *wnd);
   void saveStyles(FILE *fp);
-  void saveTabs(FILE* fp, MainWindow* wnd);
-  void saveValue(FILE* fp, const char* key, const char* value);
-  void saveValue(FILE* fp, const char* key, int value);
+  void saveTabs(FILE *fp, MainWindow *wnd);
+  void saveValue(FILE *fp, const char *key, const char *value);
+  void saveValue(FILE *fp, const char *key, int value);
 };
 
 #endif
 
-// $Id$

@@ -51,24 +51,20 @@ struct spopr_keyword_s {
 #include "../kw.h"
 #include "../languages/keywords.en.c"
 
-void add_key(const char *key)
-{
+void add_key(const char *key) {
   strcpy(ktable[kcount].key, key);
   kcount++;
 }
 
-int key_cmp(const void *a, const void *b)
-{
+int key_cmp(const void *a, const void *b) {
   return strcasecmp(((kw_t *) a)->key, ((kw_t *) b)->key);
 }
 
-void sort_ktable()
-{
+void sort_ktable() {
   qsort(ktable, kcount, sizeof(kw_t), key_cmp);
 }
 
-void print_ktable(FILE * fp)
-{
+void print_ktable(FILE *fp) {
   int i;
   for (i = 0; i < kcount; i++) {
     fprintf(fp, "\"%s\"", ktable[i].key);
@@ -81,8 +77,7 @@ void print_ktable(FILE * fp)
   }
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   FILE *fo = fopen("kwp.h", "wt");
   fprintf(fo, "/* automagicaly generated file */\n");
 

@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -41,9 +40,8 @@ extern "C" {
 #else
 #define makedir(f) mkdir(f, 0700)
 #endif
-#define PEN_OFF   0 // pen mode disabled
-#define PEN_ON    2 // pen mode active
-
+#define PEN_OFF   0             // pen mode disabled
+#define PEN_ON    2             // pen mode active
 HelpWidget *formView = 0;
 Properties env;
 String envs;
@@ -56,8 +54,8 @@ dword eventsPerTick;
 #define EVT_PAUSE_TIME 0.005
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
-void getHomeDir(char *fileName, bool appendSlash=true);
-bool cacheLink(dev_file_t * df, char *localFile);
+void getHomeDir(char *fileName, bool appendSlash = true);
+bool cacheLink(dev_file_t *df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
 void clearOutput();
@@ -67,8 +65,7 @@ bool form_event();
 
 //--ANSI Output-----------------------------------------------------------------
 
-C_LINKAGE_BEGIN int osd_devinit()
-{
+C_LINKAGE_BEGIN int osd_devinit() {
   wnd->resetPen();
   os_graphics = 1;
 
@@ -82,10 +79,8 @@ C_LINKAGE_BEGIN int osd_devinit()
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    wnd->outputGroup->resize(opt_pref_width + delta_x,
-                             opt_pref_height + delta_y);
-  } 
-
+    wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
+  }
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
   if (wnd->isInteractive() && !wnd->logPrint()) {
@@ -112,23 +107,19 @@ C_LINKAGE_BEGIN int osd_devinit()
   return 1;
 }
 
-void osd_setcolor(long color)
-{
+void osd_setcolor(long color) {
   wnd->out->setColor(color);
 }
 
-void osd_settextcolor(long fg, long bg)
-{
+void osd_settextcolor(long fg, long bg) {
   wnd->out->setTextColor(fg, bg);
 }
 
-void osd_refresh()
-{
+void osd_refresh() {
   wnd->out->redraw();
 }
 
-int osd_devrestore()
-{
+int osd_devrestore() {
   ui_reset();
   return 1;
 }
@@ -140,8 +131,7 @@ int osd_devrestore()
  *  -1 close sbpad application
  *  -2 stop running basic application
  */
-int osd_events(int wait_flag)
-{
+int osd_events(int wait_flag) {
   if (!wait_flag) {
     // pause when we have been called too frequently
     clock_t now = clock();
@@ -176,18 +166,16 @@ int osd_events(int wait_flag)
   return 0;
 }
 
-void osd_setpenmode(int enable)
-{
+void osd_setpenmode(int enable) {
   wnd->penMode = (enable ? PEN_ON : PEN_OFF);
 }
 
 /**
  * sets the current mouse position and returns whether the mouse is within the output window
  */
-bool get_mouse_xy()
-{
+bool get_mouse_xy() {
   fltk::Rectangle rc;
-  int x,y;
+  int x, y;
 
   fltk::get_mouse(x, y);
   wnd->out->get_absolute_rect(&rc);
@@ -195,12 +183,11 @@ bool get_mouse_xy()
   // convert mouse screen rect to out-client rect
   wnd->penDownX = x - rc.x();
   wnd->penDownY = y - rc.y();
-  
-  return rc.contains(x,y);
+
+  return rc.contains(x, y);
 }
 
-int osd_getpen(int code)
-{
+int osd_getpen(int code) {
   if (wnd->isBreakExec()) {
     clearOutput();
     brun_break();
@@ -219,9 +206,9 @@ int osd_getpen(int code)
       get_mouse_xy();
       return 1;
     }
-    fltk::wait(); // fallthru to re-test 
+    fltk::wait();               // fallthru to re-test 
 
-  case 3:    // returns true if the pen is down (and save curpos)
+  case 3:                      // returns true if the pen is down (and save curpos)
     if (event_state() & ANY_BUTTON) {
       if (get_mouse_xy()) {
         return 1;
@@ -257,50 +244,42 @@ int osd_getpen(int code)
   return 0;
 }
 
-int osd_getx()
-{
+int osd_getx() {
   return wnd->out->getX();
 }
 
-int osd_gety()
-{
+int osd_gety() {
   return wnd->out->getY();
 }
 
-void osd_setxy(int x, int y)
-{
+void osd_setxy(int x, int y) {
   wnd->out->setXY(x, y);
 }
 
-void osd_cls()
-{
+void osd_cls() {
   // send reset and clear screen codes
   if (opt_interactive) {
     wnd->out->print("\033[0m\xC");
-    TtyWidget* tty = wnd->tty();
+    TtyWidget *tty = wnd->tty();
     if (tty) {
       tty->clearScreen();
     }
   }
 }
 
-int osd_textwidth(const char *str)
-{
+int osd_textwidth(const char *str) {
   return (int)wnd->out->textWidth(str);
 }
 
-int osd_textheight(const char *str)
-{
+int osd_textheight(const char *str) {
   return wnd->out->textHeight();
 }
 
-void osd_setpixel(int x, int y)
-{
+void osd_setpixel(int x, int y) {
   wnd->out->setPixel(x, y, dev_fgcolor);
 }
 
-long osd_getpixel(int x, int y)
-{
+long osd_getpixel(int x, int y) {
   int xoffs = 0;
   int yoffs = 0;
 
@@ -318,28 +297,23 @@ long osd_getpixel(int x, int y)
   return wnd->out->getPixel(x + xoffs, y + yoffs);
 }
 
-void osd_line(int x1, int y1, int x2, int y2)
-{
+void osd_line(int x1, int y1, int x2, int y2) {
   wnd->out->drawLine(x1, y1, x2, y2);
 }
 
-void osd_rect(int x1, int y1, int x2, int y2, int bFill)
-{
+void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
   if (bFill) {
     wnd->out->drawRectFilled(x1, y1, x2, y2);
-  }
-  else {
+  } else {
     wnd->out->drawRect(x1, y1, x2, y2);
   }
 }
 
-void osd_beep()
-{
+void osd_beep() {
   wnd->out->beep();
 }
 
-void osd_sound(int frq, int ms, int vol, int bgplay)
-{
+void osd_sound(int frq, int ms, int vol, int bgplay) {
 #ifdef WIN32
   if (!bgplay) {
     ::Beep(frq, ms);
@@ -347,20 +321,18 @@ void osd_sound(int frq, int ms, int vol, int bgplay)
 #endif // WIN32
 }
 
-void osd_clear_sound_queue()
-{
+void osd_clear_sound_queue() {
 }
 
-void osd_write(const char* s)
-{
+void osd_write(const char *s) {
   if (wnd->tty() && wnd->logPrint()) {
     wnd->tty()->print(s);
   }
   wnd->out->print(s);
 }
 
-void lwrite(const char* s) {
-  TtyWidget* tty = wnd->tty();
+void lwrite(const char *s) {
+  TtyWidget *tty = wnd->tty();
   if (tty) {
     tty->print(s);
   }
@@ -368,8 +340,7 @@ void lwrite(const char* s) {
 
 //--ENV-------------------------------------------------------------------------
 
-int dev_putenv(const char *s)
-{
+int dev_putenv(const char *s) {
   if (formView && formView->setInputValue(s)) {
     return 1;                   // updated form variable
   }
@@ -384,8 +355,7 @@ int dev_putenv(const char *s)
   return 1;
 }
 
-char *dev_getenv(const char *s)
-{
+char *dev_getenv(const char *s) {
   if (formView) {
     char *var = (char *)(formView->getInputValue(formView->getInput(s)));
     if (var) {
@@ -396,8 +366,7 @@ char *dev_getenv(const char *s)
   return str ? (char *)str->toString() : getenv(s);
 }
 
-char *dev_getenv_n(int n)
-{
+char *dev_getenv_n(int n) {
   if (formView) {
     return (char *)(formView->getInputValue(n));
   }
@@ -420,8 +389,7 @@ char *dev_getenv_n(int n)
   return 0;
 }
 
-int dev_env_count()
-{
+int dev_env_count() {
   if (formView) {
     Properties p;
     formView->getInputProperties(&p);
@@ -436,47 +404,41 @@ int dev_env_count()
 
 //--HTML------------------------------------------------------------------------
 
-void doEvent(void *)
-{
+void doEvent(void *) {
   fltk::remove_check(doEvent);
   if (eventName[0] == '|') {
     // user flag to indicate UI should remain
     // for next program execution
     const char *filename = eventName.toString();
     int len = strlen(filename);
-    if (strcasecmp(filename + len - 4, ".htm") == 0 ||
+    if (strcasecmp(filename + len - 4, ".htm") == 0 || 
         strcasecmp(filename + len - 5, ".html") == 0) {
       // "execute" a html file
       formView->loadFile(filename + 1, true);
       return;
     }
     saveForm = true;
-  }
-  else if (wnd->siteHome.length() == 0) {
+  } else if (wnd->siteHome.length() == 0) {
     // not currently visiting a remote site
-    if (wnd->getEditor() && 
-        wnd->getEditor()->checkSave(true) == false) {
+    if (wnd->getEditor() && wnd->getEditor()->checkSave(true) == false) {
       return;
     }
   }
   wnd->execLink(eventName);
 }
 
-void modeless_cb(Widget * w, void *v)
-{
+void modeless_cb(Widget *w, void *v) {
   if (wnd->isEdit()) {
     // create a full url path from the given relative path
     const String & path = formView->getEventName();
     eventName.empty();
-    if (path[0] != '!' &&
-        path[0] != '|' &&
-        path.startsWith("http://") == false && wnd->siteHome.length() > 0) {
-      int i = wnd->siteHome.indexOf('/', 7);  // siteHome root
+    if (path[0] != '!' && path[0] != '|' && path.startsWith("http://") == false && 
+        wnd->siteHome.length() > 0) {
+      int i = wnd->siteHome.indexOf('/', 7);    // siteHome root
       if (path[0] == '/' && i != -1) {
         // add to absolute path from http://hostname/
         eventName.append(wnd->siteHome.substring(0, i));
-      }
-      else {
+      } else {
         // append path to siteHome
         eventName.append(wnd->siteHome);
       }
@@ -484,8 +446,7 @@ void modeless_cb(Widget * w, void *v)
         eventName.append("/");
       }
       eventName.append(path[0] == '/' ? path.substring(1) : path);
-    }
-    else {
+    } else {
       eventName.append(path);
     }
 
@@ -493,22 +454,18 @@ void modeless_cb(Widget * w, void *v)
   }
 }
 
-void modal_cb(Widget * w, void *v)
-{
+void modal_cb(Widget *w, void *v) {
   fltk::exit_modal();
   dev_putenv(((HelpWidget *) w)->getEventName());
 }
 
-void dev_html(const char *html, const char *t, int x, int y, int w, int h)
-{
+void dev_html(const char *html, const char *t, int x, int y, int w, int h) {
   if (html == 0 || html[0] == 0) {
     closeForm();
-  }
-  else if (strncmp(html, "file:///", 8) == 0 ||
-           strncmp(html, "http://", 7) == 0) {
+  } else if (strncmp(html, "file:///", 8) == 0 || 
+             strncmp(html, "http://", 7) == 0) {
     browseFile(html);
-  }
-  else if (t && t[0]) {
+  } else if (t && t[0]) {
     // offset from main window
     x += wnd->x();
     y += wnd->y();
@@ -522,8 +479,7 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h)
     window.end();
     window.exec(wnd);
     out.getInputProperties(&env);
-  }
-  else {
+  } else {
     // fit within output window
     if (x < wnd->out->x()) {
       x = wnd->out->x();
@@ -561,8 +517,7 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h)
 
 //--IMAGE-----------------------------------------------------------------------
 
-Image *getImage(dev_file_t * filep, int index)
-{
+Image *getImage(dev_file_t *filep, int index) {
   // check for cached imaged
   SharedImage *image = loadImage(filep->name, 0);
   char localFile[PATH_MAX];
@@ -591,8 +546,7 @@ Image *getImage(dev_file_t * filep, int index)
   return image;
 }
 
-void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h)
-{
+void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h) {
   int imgw = -1;
   int imgh = -1;
   dev_file_t *filep = dev_getfileptr(handle);
@@ -605,18 +559,15 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
     if (img != 0) {
       // input/read image and display
       img->measure(imgw, imgh);
-      wnd->out->drawImage(img, x, y, sx, sy,
-                          (w == 0 ? imgw : w), (h == 0 ? imgh : h));
+      wnd->out->drawImage(img, x, y, sx, sy, (w == 0 ? imgw : w), (h == 0 ? imgh : h));
     }
-  }
-  else {
+  } else {
     // output screen area image to jpeg
     wnd->out->saveImage(filep->name, x, y, sx, sy);
   }
 }
 
-int dev_image_width(int handle, int index)
-{
+int dev_image_width(int handle, int index) {
   int imgw = -1;
   int imgh = -1;
   dev_file_t *filep = dev_getfileptr(handle);
@@ -631,8 +582,7 @@ int dev_image_width(int handle, int index)
   return imgw;
 }
 
-int dev_image_height(int handle, int index)
-{
+int dev_image_height(int handle, int index) {
   int imgw = -1;
   int imgh = -1;
   dev_file_t *filep = dev_getfileptr(handle);
@@ -649,7 +599,7 @@ int dev_image_height(int handle, int index)
 
 //--DELAY-----------------------------------------------------------------------
 
-void timeout_callback(void* data) {
+void timeout_callback(void *data) {
   if (wnd->isModal()) {
     wnd->setModal(false);
   }
@@ -657,7 +607,7 @@ void timeout_callback(void* data) {
 
 void dev_delay(dword ms) {
   if (!wnd->isBreakExec()) {
-    add_timeout(((float)ms)/1000, timeout_callback, 0);
+    add_timeout(((float)ms) / 1000, timeout_callback, 0);
     wnd->setModal(true);
     while (wnd->isModal()) {
       fltk::wait(0.1);
@@ -667,15 +617,13 @@ void dev_delay(dword ms) {
 
 //--INPUT-----------------------------------------------------------------------
 
-void enter_cb(Widget *, void *v)
-{
+void enter_cb(Widget *, void *v) {
   wnd->setModal(false);
 }
 
-char *dev_gets(char *dest, int size)
-{
+char *dev_gets(char *dest, int size) {
   if (!wnd->isInteractive() || wnd->logPrint()) {
-    EditorWidget* editor = wnd->runEditWidget;
+    EditorWidget *editor = wnd->runEditWidget;
     if (!editor) {
       editor = wnd->getEditor(false);
     }
@@ -728,13 +676,11 @@ char *dev_gets(char *dest, int size)
 C_LINKAGE_END
 
 //--HTML Utils------------------------------------------------------------------
-
-void getHomeDir(char *fileName, bool appendSlash)
-{
-  const char* vars[] = {
+void getHomeDir(char *fileName, bool appendSlash) {
+  const char *vars[] = {
     "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
   };
-  
+
   int vars_len = sizeof(vars) / sizeof(vars[0]);
 
   fileName[0] = 0;
@@ -758,8 +704,7 @@ void getHomeDir(char *fileName, bool appendSlash)
   }
 }
 
-void closeForm()
-{
+void closeForm() {
   if (formView != 0) {
     formView->parent()->remove(formView);
     formView->parent(0);
@@ -769,20 +714,17 @@ void closeForm()
   wnd->out->redraw();
 }
 
-void clearOutput()
-{
+void clearOutput() {
   closeForm();
   ui_reset();
 }
 
-bool isFormActive()
-{
+bool isFormActive() {
   return formView != null;
 }
 
 // copy the url into the local cache
-bool cacheLink(dev_file_t * df, char *localFile)
-{
+bool cacheLink(dev_file_t *df, char *localFile) {
   char rxbuff[1024];
   FILE *fp;
   const char *url = df->name;
@@ -813,13 +755,12 @@ bool cacheLink(dev_file_t * df, char *localFile)
       strncat(localFile, pathBegin, pathNext - pathBegin + 1);
       makedir(localFile);
       pathBegin = pathNext + 1;
-    } 
+    }
     while (pathBegin < pathEnd && ++level < 20);
   }
   if (pathEnd == 0 || pathEnd[1] == 0 || pathEnd[1] == '?') {
     strcat(localFile, "index.html");
-  }
-  else {
+  } else {
     strcat(localFile, pathEnd + 1);
   }
 
@@ -841,7 +782,6 @@ bool cacheLink(dev_file_t * df, char *localFile)
       return false;
     }
   }
-
   // TODO: move this to a separate thread
   while (true) {
     int bytes = recv(df->handle, (char *)rxbuff, sizeof(rxbuff), 0);
@@ -892,8 +832,7 @@ bool cacheLink(dev_file_t * df, char *localFile)
           break;                // scan next header
         }
       }
-    }
-    else {
+    } else {
       if (!fwrite(rxbuff, bytes, 1, fp)) {
         break;
       }
@@ -907,54 +846,12 @@ bool cacheLink(dev_file_t * df, char *localFile)
 }
 
 // redisplay the help widget and associated images
-void updateForm(const char *s)
-{
+void updateForm(const char *s) {
   if (formView) {
     formView->loadBuffer(s);
     formView->show();
     formView->take_focus();
-  }
-  else {
+  } else {
     dev_html(s, 0, 0, 0, 0, 0);
   }
-
-//     List images;
-//     char localFile[PATH_MAX];
-//     dev_file_t df;
-//     bool newContent = false;
-//     formView->getImageNames(&images);
-//     int len = images.length();
-//     if (len == 0) {
-//         return;
-//     }
-//     memset(&df, 0, sizeof(dev_file_t));
-//     const char* host = wnd->siteHome.toString();
-//     const char* hostRoot = strchr(host+7, '/');
-//     int pathLen = hostRoot ? hostRoot-host : strlen(host);
-//     Object** list = images.getList();
-
-//     for (int i=0; i<len; i++) {
-//         String* s = (String*)list[i];
-//         eventName.empty();
-//         if ((*s)[0] == '/') {
-//             // append abs image path to root of host path
-//             eventName.append(host, pathLen);
-//         } else {
-//             // append relative image path to host path
-//             eventName.append(host);
-//             eventName.append("/");
-//         }
-//         eventName.append(s);
-//         strcpy(df.name, eventName);
-//         df.handle = -1;
-//         if (cacheLink(&df, localFile)) {
-//             newContent = true;
-//         }
-//         shutdown(df.handle, df.handle);
-//     }
-//     if (newContent) {
-//         formView->reloadImages();
-//     }
 }
-
-// End of "$Id$".

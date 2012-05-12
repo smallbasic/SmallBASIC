@@ -1,4 +1,3 @@
-// $Id: EditorWidget.h 622 2008-07-14 13:08:59Z zeeb90au $
 //
 // FileWidget
 //
@@ -15,27 +14,27 @@
 #include "EditorWidget.h"
 #include <limits.h>
 
-struct FileWidget : public HelpWidget {
+struct FileWidget:public HelpWidget {
   FileWidget(int x, int y, int w, int h);
   ~FileWidget();
 
-  static const char* forwardSlash(char *filename);
-  static const char* splitPath(const char* filename, char* path);
-  static const char* trimEOL(char *buffer);
+  static const char *forwardSlash(char *filename);
+  static const char *splitPath(const char *filename, char *path);
+  static const char *trimEOL(char *buffer);
 
   void anchorClick();
-  void fileOpen(EditorWidget* saveEditorAs);
-  void openPath(const char* newPath);
+  void fileOpen(EditorWidget *saveEditorAs);
+  void openPath(const char *newPath);
 
-  private:
-  void changeDir(const char* target);
+private:
+  void changeDir(const char *target);
   void displayPath();
   void enterPath();
   int handle(int e);
   void saveAs();
 
-  char path[PATH_MAX+1];
-  EditorWidget* saveEditorAs;
+  char path[PATH_MAX + 1];
+  EditorWidget *saveEditorAs;
 };
 
 #endif

@@ -1,4 +1,3 @@
-// $Id$
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
@@ -41,79 +40,50 @@
 using namespace fltk;
 using namespace strlib;
 
-SharedImage *loadImage(const char *name, uchar * buff);
+SharedImage *loadImage(const char *name, uchar *buff);
 void browseFile(const char *s);
 
-class HelpWidget:public Group {
+class HelpWidget : public Group {
 public:
   HelpWidget(int x, int y, int width, int height, int defsize = MIN_FONT_SIZE);
-    virtual ~ HelpWidget();
+  virtual ~HelpWidget();
 
   void loadBuffer(const char *buffer);
   void loadFile(const char *fileName, bool useDocHome = false);
   void navigateTo(const char *fileName);
   void scrollTo(const char *anchorName);
   void scrollTo(int vscroll);
-  int getVScroll() {
-    return vscroll;
-  }
-  int getHScroll() {
-    return hscroll;
-  }
+  int getVScroll() { return vscroll; }
+  int getHScroll() { return hscroll; }
   bool find(const char *s, bool matchCase);
   Widget *getInput(const char *name);
-  const char *getInputValue(Widget * button);
+  const char *getInputValue(Widget *button);
   const char *getInputValue(int i);
-  const char *getInputName(Widget * button);
-  const char *getTitle() {
-    return title;
-  }
-  const char *getFileName() {
-    return fileName;
-  }
-  const char *getDocHome() {
-    return docHome;
-  }
-  const char *getSelection() {
-    return selection;
-  }
-  const String getEventName() {
-    return event;
-  }
-  void getText(String * s);
-  void getInputProperties(Properties * p);
-  void setCookies(Properties * p) {
-    cookies = p;
-  }
+  const char *getInputName(Widget *button);
+  const char *getTitle() { return title; }
+  const char *getFileName() { return fileName; }
+  const char *getDocHome() { return docHome; }
+  const char *getSelection() { return selection; }
+  const String getEventName() { return event; }
+  void getText(String *s);
+  void getInputProperties(Properties *p);
+  void setCookies(Properties *p) { cookies = p; }
   bool setInputValue(const char *assignment);
   void selectAll();
   void copySelection();
-  void onclick(Widget * button);  // private
+  void onclick(Widget *button);        // private
   void setDocHome(const char *home);
   void getImageNames(strlib::List *);
   void reloadImages();
   void setFontSize(int i);
-  int getFontSize() {
-    return (int)labelsize();
-  }
-  void setSelectMode() {
-    mouseMode = mm_select;
-  }
-  void setPageMode() {
-    mouseMode = mm_page;
-  }
-  void setScrollMode() {
-    mouseMode = mm_scroll;
-  }
-  int getNumAnchors() {
-    return anchors.length();
-  }
+  int getFontSize() { return (int)labelsize(); }
+  void setSelectMode() { mouseMode = mm_select; }
+  void setPageMode() { mouseMode = mm_page; }
+  void setScrollMode() { mouseMode = mm_scroll; }
+  int getNumAnchors() { return anchors.length(); }
   const char *getAnchor(int index);
   bool isHtmlFile();
-  void setTitle(const char *s) {
-    title.empty();
-    title.append(s);
-  }
+  void setTitle(const char *s) { title.empty(); title.append(s); }
 
 protected:
   void reloadPage();
@@ -142,7 +112,7 @@ private:
   strlib::List inputs;
   strlib::List anchors;
   strlib::List images;
-  strlib::Properties * cookies;
+  strlib::Properties *cookies;
   strlib::String htmlStr;
   strlib::String event;
   strlib::String fileName;
@@ -342,7 +312,7 @@ struct ENTITY_MAP {
   "gt;", 4, '>'}, {
   "lt;", 4, '<'}, {
   "amp;", 5, '&'}, {
-"quot;", 6, '\"'},};
+  "quot;", 6, '\"'},};
 
 int entityMapLen = (int)(sizeof(entityMap) / sizeof(entityMap[0]));
 

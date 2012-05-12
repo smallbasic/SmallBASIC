@@ -6,7 +6,7 @@
 # 
 
 INCLUDES =																										\
-  -I../ -I.																										\
+  -I../common -I.																							\
   -DPACKAGE_PREFIX=\""$(prefix)"\"														\
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"											\
   -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
@@ -39,7 +39,7 @@ sbasici_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 sbasici_DEPENDENCIES = ../libsb_common.a
 
 iconsdir = $(datadir)/icons/hicolor/32x32/apps
-icons_DATA = ../../images/sb-desktop-32x32.png
+icons_DATA = ../../../images/sb-desktop-32x32.png
 desktopentry_DATA = smallbasic.desktop
 
 if WITH_WIN32

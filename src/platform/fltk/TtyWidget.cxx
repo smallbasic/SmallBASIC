@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -17,7 +16,7 @@
 //
 // TtyWidget constructor
 //
-TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
+TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) : 
   Group(x, y, w, h, 0) {
 
   // initialize the buffer
@@ -44,7 +43,7 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
 }
 
 TtyWidget::~TtyWidget() {
-  delete[] buffer;
+  delete[]buffer;
 }
 
 //
@@ -52,11 +51,10 @@ TtyWidget::~TtyWidget() {
 //
 void TtyWidget::draw() {
   // get the text drawing rectangle
-  Rectangle rc = Rectangle(0, 0, w(), h()+1);
+  Rectangle rc = Rectangle(0, 0, w(), h() + 1);
   if (vscrollbar->visible()) {
     rc.move_r(-vscrollbar->w());
   }
-
   // prepare escape state variables
   bool bold = false;
   bool italic = false;
@@ -69,7 +67,7 @@ void TtyWidget::draw() {
   int vscroll = vscrollbar->value();
   int hscroll = hscrollbar->value();
   int numRows = textRows < pageRows ? textRows : pageRows;
-  int firstRow = tail + vscroll; // from start plus scroll offset
+  int firstRow = tail + vscroll;        // from start plus scroll offset
 
   // setup the background colour
   setcolor(color());
@@ -78,13 +76,12 @@ void TtyWidget::draw() {
   setcolor(BLACK);
   drawline(0, 0, w(), 0);
   setcolor(labelcolor());
-  setfont(labelfont(), (int) labelsize());
+  setfont(labelfont(), (int)labelsize());
 
   int pageWidth = 0;
-  for (int row = firstRow, rows = 0, y = rc.y() + lineHeight;
-       rows < numRows; row++, rows++, y += lineHeight) {
-    Row* line = getLine(row); // next logical row
-    TextSeg* seg = line->head;
+  for (int row = firstRow, rows = 0, y = rc.y() + lineHeight; rows < numRows; row++, rows++, y += lineHeight) {
+    Row *line = getLine(row);   // next logical row
+    TextSeg *seg = line->head;
     int x = 2 - hscroll;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
@@ -95,17 +92,16 @@ void TtyWidget::draw() {
       if (seg->str) {
         if (invert) {
           setcolor(labelcolor());
-          fillrect(x, (y-lineHeight) + (int) getdescent(), width, lineHeight);
+          fillrect(x, (y - lineHeight) + (int)getdescent(), width, lineHeight);
           setcolor(color());
           drawtext(seg->str, x, y);
           setcolor(labelcolor());
-        }
-        else {
+        } else {
           drawtext(seg->str, x, y);
         }
       }
       if (underline) {
-        drawline(x, y+1, x+width, y+1);
+        drawline(x, y + 1, x + width, y + 1);
       }
       x += width;
       seg = seg->next;
@@ -127,9 +123,9 @@ void TtyWidget::draw() {
 //
 // draw the background for selected text
 //
-void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
+void TtyWidget::drawSelection(TextSeg *seg, String *s, int row, int x, int y) {
   if (markX != pointX || markY != pointY) {
-    Rectangle rc(0, y - (int) getascent(), 0, lineHeight);
+    Rectangle rc(0, y - (int)getascent(), 0, lineHeight);
     int r1 = markY;
     int r2 = pointY;
     int x1 = markX;
@@ -152,15 +148,14 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
       if (s) {
         s->append(seg->str);
       }
-    }
-    else if (row == r1 && (r2 > r1 || x < x2)) {
+    } else if (row == r1 && (r2 > r1 || x < x2)) {
       // top selection row
       int i = 0;
       int len = seg->numChars();
 
       // find start of selection
       while (x < x1 && i < len) {
-        x += (int) getwidth(seg->str + (i++), 1);
+        x += (int)getwidth(seg->str + (i++), 1);
       }
       rc.x(x);
 
@@ -169,11 +164,10 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
         if (s) {
           s->append(seg->str[i]);
         }
-        x += (int) getwidth(seg->str + (i++), 1);
+        x += (int)getwidth(seg->str + (i++), 1);
       }
       rc.set_r(x);
-    }
-    else if (row == r2) {
+    } else if (row == r2) {
       // bottom selection row
       rc.x(x);
 
@@ -184,7 +178,7 @@ void TtyWidget::drawSelection(TextSeg* seg, String* s, int row, int x, int y) {
         if (s) {
           s->append(seg->str[i]);
         }
-        x += (int) getwidth(seg->str + (i++), 1);
+        x += (int)getwidth(seg->str + (i++), 1);
       }
       rc.set_r(x);
     }
@@ -218,7 +212,7 @@ int TtyWidget::handle(int e) {
         redraw(DAMAGE_HIGHLIGHT);
       }
       leftButtonDown = true;
-      return 1; // become belowmouse to receive RELEASE event
+      return 1;                 // become belowmouse to receive RELEASE event
     }
     break;
 
@@ -233,9 +227,7 @@ int TtyWidget::handle(int e) {
         int value = vscrollbar->value();
         if (event_y() < 0 && value > 0) {
           vscrollbar->value(value - 1);
-        }
-        else if ((event_y() > h()) &&
-                 (value + getPageRows() < getTextRows())) {
+        } else if ((event_y() > h()) && (value + getPageRows() < getTextRows())) {
           vscrollbar->value(value + 1);
         }
       }
@@ -245,7 +237,7 @@ int TtyWidget::handle(int e) {
   case RELEASE:
     leftButtonDown = false;
     return 1;
-    
+
   case MOUSEWHEEL:
     if (vscrollbar->visible()) {
       return vscrollbar->handle(e);
@@ -276,8 +268,7 @@ void TtyWidget::layout() {
     vscrollbar->value(value, pageRows, 0, textRows);
     hscrollX -= SCROLL_W;
     hscrollW -= SCROLL_W;
-  }
-  else {
+  } else {
     vscrollbar->clear_visible();
     vscrollbar->value(0);
   }
@@ -286,8 +277,7 @@ void TtyWidget::layout() {
     hscrollbar->set_visible();
     hscrollbar->resize(hscrollX, 1, HSCROLL_W, SCROLL_H);
     hscrollbar->value(hscrollbar->value(), hscrollW, 0, width);
-  }
-  else {
+  } else {
     hscrollbar->clear_visible();
     hscrollbar->value(0);
   }
@@ -313,8 +303,8 @@ bool TtyWidget::copySelection() {
   String selection;
 
   for (int row = r1; row <= r2; row++) {
-    Row* line = getLine(row); // next logical row
-    TextSeg* seg = line->head;
+    Row *line = getLine(row);   // next logical row
+    TextSeg *seg = line->head;
     int x = 2 - hscroll;
     String rowText;
     while (seg != NULL) {
@@ -359,7 +349,7 @@ void TtyWidget::clearScreen() {
 //
 void TtyWidget::print(const char *str) {
   int strLength = strlen(str);
-  Row* line = getLine(head); // pointer to current line
+  Row *line = getLine(head);    // pointer to current line
 
   // need the current font set to calculate text widths
   fltk::setfont(labelfont(), labelsize());
@@ -368,7 +358,7 @@ void TtyWidget::print(const char *str) {
   for (int i = 0; i < strLength; i++) {
     // check for telnet IAC codes
     switch (str[i]) {
-    case '\r': // return
+    case '\r':                 // return
       // move to the start of the line
       break;
 
@@ -376,19 +366,19 @@ void TtyWidget::print(const char *str) {
       // beep!
       break;
 
-    case '\n': // new line
+    case '\n':                 // new line
       // scroll by moving logical last line
       if (getTextRows() == rows) {
         tail = (tail + 1 >= rows) ? 0 : tail + 1;
       }
       head = (head + 1 >= rows) ? 0 : head + 1;
-      
+
       // clear the new line
       line = getLine(head);
       line->clear();
       break;
 
-    case '\b': // backspace
+    case '\b':                 // backspace
       break;
 
     case '\t':
@@ -401,13 +391,12 @@ void TtyWidget::print(const char *str) {
 
     default:
       i += processLine(line, &str[i]);
-    } // end case
+    }                           // end case
   }
 
   if (!scrollLock) {
     vscrollbar->value(getTextRows() - getPageRows());
   }
-
   // schedule a layout and redraw
   relayout();
   redraw();
@@ -416,7 +405,7 @@ void TtyWidget::print(const char *str) {
 //
 // return a pointer to the specified line of the display.
 //
-Row* TtyWidget::getLine(int pos) {
+Row *TtyWidget::getLine(int pos) {
   if (pos < 0) {
     pos += rows;
   }
@@ -430,11 +419,11 @@ Row* TtyWidget::getLine(int pos) {
 //
 // interpret ANSI escape codes in linePtr and return number of chars consumed
 //
-int TtyWidget::processLine(Row* line, const char* linePtr) {
-  TextSeg* segment = new TextSeg();
+int TtyWidget::processLine(Row *line, const char *linePtr) {
+  TextSeg *segment = new TextSeg();
   line->append(segment);
 
-  const char* linePtrStart = linePtr;
+  const char *linePtrStart = linePtr;
 
   // Determine if we are at an end-of-line or an escape
   bool escaped = false;
@@ -452,30 +441,38 @@ int TtyWidget::processLine(Row* line, const char* linePtr) {
         // Walk the escape sequence
         switch (*linePtr) {
         case 'm':
-          escaped = false;  // fall through
-          
-        case ';':  // Parameter seperator
+          escaped = false;      // fall through
+
+        case ';':              // Parameter seperator
           setGraphicsRendition(segment, param);
           param = 0;
           break;
-          
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
           // Numeric OK; continue till delimeter or illegal char
           param = (param * 10) + (*linePtr - '0');
           break;
-          
-        default: // Illegal character - reset
+
+        default:               // Illegal character - reset
           segment->flags = 0;
           escaped = false;
           break;
         }
         linePtr += 1;
-      } // while escaped and not null
+      }                         // while escaped and not null
     }
   }
 
-  const char* linePtrNext = linePtr;
+  const char *linePtrNext = linePtr;
 
   // Walk the line of text until an escape char or end-of-line
   // is encountered.
@@ -498,7 +495,6 @@ int TtyWidget::processLine(Row* line, const char* linePtr) {
       cols = lineChars;
     }
   }
-
   // return the number of eaten chars (less 1)
   return linePtr == linePtrStart ? 0 : (linePtr - linePtrStart) - 1;
 }
@@ -506,33 +502,33 @@ int TtyWidget::processLine(Row* line, const char* linePtr) {
 //
 // performs the ANSI text SGI function.
 //
-void TtyWidget::setGraphicsRendition(TextSeg* segment, int c) {
+void TtyWidget::setGraphicsRendition(TextSeg *segment, int c) {
   switch (c) {
   case 0:
     segment->reset();
     break;
 
-  case 1:  // Bold on
+  case 1:                      // Bold on
     segment->set(TextSeg::BOLD, true);
     break;
 
-  case 2:  // Faint on
+  case 2:                      // Faint on
     segment->set(TextSeg::BOLD, false);
     break;
 
-  case 3:  // Italic on
+  case 3:                      // Italic on
     segment->set(TextSeg::ITALIC, true);
     break;
 
-  case 4:  // Underscrore
+  case 4:                      // Underscrore
     segment->set(TextSeg::UNDERLINE, true);
     break;
 
-  case 7: // reverse video on
+  case 7:                      // reverse video on
     segment->set(TextSeg::INVERT, true);
     break;
 
-  case 21: // set bold off
+  case 21:                     // set bold off
     segment->set(TextSeg::BOLD, false);
     break;
 
@@ -540,43 +536,43 @@ void TtyWidget::setGraphicsRendition(TextSeg* segment, int c) {
     segment->set(TextSeg::ITALIC, false);
     break;
 
-  case 24: // set underline off
+  case 24:                     // set underline off
     segment->set(TextSeg::UNDERLINE, false);
     break;
 
-  case 27: // reverse video off
+  case 27:                     // reverse video off
     segment->set(TextSeg::INVERT, false);
     break;
 
-  case 30: // Black
+  case 30:                     // Black
     segment->color = BLACK;
     break;
 
-  case 31: // Red
+  case 31:                     // Red
     segment->color = RED;
     break;
 
-  case 32: // Green
+  case 32:                     // Green
     segment->color = GREEN;
     break;
 
-  case 33: // Yellow
+  case 33:                     // Yellow
     segment->color = YELLOW;
     break;
 
-  case 34: // Blue
+  case 34:                     // Blue
     segment->color = BLUE;
     break;
 
-  case 35: // Magenta
+  case 35:                     // Magenta
     segment->color = MAGENTA;
     break;
 
-  case 36: // Cyan
+  case 36:                     // Cyan
     segment->color = CYAN;
     break;
 
-  case 37: // White
+  case 37:                     // White
     segment->color = WHITE;
     break;
   }
@@ -586,7 +582,7 @@ void TtyWidget::setGraphicsRendition(TextSeg* segment, int c) {
 // update the current drawing font
 //
 void TtyWidget::setfont(bool bold, bool italic) {
-  Font* font = labelfont();
+  Font *font = labelfont();
   if (bold) {
     font = font->bold();
   }
@@ -599,7 +595,7 @@ void TtyWidget::setfont(bool bold, bool italic) {
 //
 // update the current drawing font and remember the face/size
 //
-void TtyWidget::setfont(Font* font, int size) {
+void TtyWidget::setfont(Font *font, int size) {
   if (font) {
     labelfont(font);
   }
@@ -607,7 +603,6 @@ void TtyWidget::setfont(Font* font, int size) {
     labelsize(size);
   }
   fltk::setfont(labelfont(), labelsize());
-  lineHeight = (int) (getascent() + getdescent());
+  lineHeight = (int)(getascent() + getdescent());
 }
 
-// End of "$Id$".

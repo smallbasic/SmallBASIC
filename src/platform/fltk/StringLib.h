@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of EBjLib
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -42,39 +41,37 @@ namespace strlib {
 
 struct Object {
   Object();
-  virtual ~ Object();
+  virtual ~Object();
 };
-
+ 
 //--String----------------------------------------------------------------------
-
+ 
 struct String : public Object {
-  virtual~ String();
+  virtual ~String();
   String();
   String(const char *s);
   String(const char *s, int len);
-  String(const String & s);
-  const String& operator=(const String & s);
-  const String& operator=(const char *s);
-  const String& operator=(const char c);
-  const void operator+=(const String & s);
+  String(const String &s);
+  const String &operator=(const String &s);
+  const String &operator=(const char *s);
+  const String &operator=(const char c);
+  const void operator+=(const String &s);
   const void operator+=(const char *s);
   const void operator+=(int i);
   const char operator[] (int index);
-  const String operator+(const String & s);
+  const String operator+(const String &s);
   const String operator+(int i);
-  const String& operator=(int i);
-  String& append(const String & s);
-  String& append(const String * s);
-  String& append(int i);
-  String& append(char c);
-  String& append(double d);
-  String& append(int i, int padding);
-  String& append(const char *s);
-  String& append(const char *s, int numCopy);
-  String& append(FILE * fp, long len);
-  operator const char *() const {
-    return buffer;
-  }
+  const String & operator=(int i);
+  String &append(const String &s);
+  String &append(const String *s);
+  String &append(int i);
+  String &append(char c);
+  String &append(double d);
+  String &append(int i, int padding);
+  String &append(const char *s);
+  String &append(const char *s, int numCopy);
+  String &append(FILE *fp, long len);
+  operator const char *() const { return buffer; } 
   const char *toString() const;
   int length() const;
   void replaceAll(char a, char b);
@@ -82,11 +79,11 @@ struct String : public Object {
   void toLowerCase();
   int toInteger() const;
   double toNumber() const;
-  bool equals(const String & s, bool ignoreCase = true) const;
+  bool equals(const String &s, bool ignoreCase = true) const;
   bool equals(const char *s, bool ignoreCase = true) const;
   bool equalsIgnoreCase(const char *s) const;
   bool startsWith(const char *s, bool ignoreCase = true) const;
-  int indexOf(const String & s, int fromIndex) const;
+  int indexOf(const String &s, int fromIndex) const;
   int lastIndexOf(char chr, int untilIndex) const;
   void empty();
   void trim();
@@ -98,13 +95,13 @@ struct String : public Object {
   String substring(int beginIndex, int endIndex) const;
   String replaceAll(const char *srch, const char *repl);
   String getPath(const char *fileName);
-  const char* c_str() {return toString();}
+  const char *c_str() { return toString(); } 
 
-  protected:
+protected:
   void init() {
     buffer = 0;
     owner = true;
-  }
+  } 
   char *buffer;
   bool owner;
 };
@@ -113,26 +110,26 @@ struct String : public Object {
 
 struct List {
   List(int growSize = 20);
-  virtual~ List();
-  void removeAll();     // Removes the list and the list contents
-  void emptyList();     // Empties the list without deleteing the list objects
-  int length() const {return count;}
+  virtual ~List();
+  void removeAll();           // Removes the list and the list contents
+  void emptyList();           // Empties the list without deleteing the list objects
+  int length() const { return count; } 
   Object *operator[] (const int index)const;
   Object *get(const int index) const;
   void iterateInit(int ibegin = 0);
   bool hasNext() const;
   Object *next();
-  void add(Object* object);
-  void add(const char* s) {add(new String(s, strlen(s)));}
-  void addSet(String* s);
-  Object **getList() {return head;}
-  void sort(bool desc=true);
+  void add(Object *object);
+  void add(const char *s) { add(new String(s, strlen(s))); } 
+  void addSet(String *s);
+  Object **getList() { return head; }
+  void sort(bool desc = true);
   
   // convert the String contents into a char* array - you are// responsible
   // for ensuring the array is deleted 
   const char **toArray();
   
-  protected:
+protected:
   void init();
   static int compare(const void *a, const void *b);
   Object **head;
@@ -144,32 +141,30 @@ struct List {
 
 //--Stack-----------------------------------------------------------------------
 
-struct Stack : public List {
+struct Stack:public List {
   Stack();
   Stack(int growSize);
   Object *peek();
   Object *pop();
-  void push(Object * o);
+  void push(Object *o);
 };
-
+ 
 //--Properties------------------------------------------------------------------
 
-struct Properties : public List {
+struct Properties:public List {
   Properties();
   Properties(int growSize);
-  virtual~ Properties();
+  virtual ~Properties();
   
   void load(const char *s);
   void load(const char *s, int len);
   String *get(const char *key);
   String *get(int i) const;
   String *getKey(int i) const;
-  int length() const {
-    return count / 2;
-  }
-  void get(const char *key, List * arrayValues);
-  void operator=(Properties & p);
-  void put(String & key, String & value);
+  int length() const { return count / 2; } 
+  void get(const char *key, List *arrayValues);
+  void operator=(Properties &p);
+  void put(String &key, String &value);
   void put(const char *key, const char *value);
   String toString();
 };
@@ -178,4 +173,3 @@ struct Properties : public List {
 
 #endif
 
-//--EndOfFile-------------------------------------------------------------------

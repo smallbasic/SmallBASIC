@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -14,16 +13,16 @@
 #include "Profile.h"
 #include "MainWindow.h"
 
-const char* configFile = "config.txt";
-const char* pathKey = "path";
-const char* indentLevelKey = "indentLevel";
-const char* fontNameKey = "fontName";
-const char* fontSizeKey = "fontSize";
-const char* windowPosKey = "windowPos";
-const char* activeTabKey = "activeTab";
-const char* createBackupsKey = "createBackups";
-const char* lineNumbersKey = "lineNumbers";
-const char* appPositionKey = "appPosition";
+const char *configFile = "config.txt";
+const char *pathKey = "path";
+const char *indentLevelKey = "indentLevel";
+const char *fontNameKey = "fontName";
+const char *fontSizeKey = "fontSize";
+const char *windowPosKey = "windowPos";
+const char *activeTabKey = "activeTab";
+const char *createBackupsKey = "createBackups";
+const char *lineNumbersKey = "lineNumbers";
+const char *appPositionKey = "appPosition";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -31,7 +30,7 @@ extern TextDisplay::StyleTableEntry styletable[];
 //
 // Profile constructor
 //
-Profile::Profile() : appPosition(0,0,640,480) {
+Profile::Profile() : appPosition(0, 0, 640, 480) {
   // defaults
   indentLevel = 2;
   font = COURIER;
@@ -45,7 +44,7 @@ Profile::Profile() : appPosition(0,0,640,480) {
 //
 // setup the editor defaults
 //
-void Profile::loadConfig(EditorWidget* editWidget) {
+void Profile::loadConfig(EditorWidget *editWidget) {
   editWidget->setIndentLevel(indentLevel);
   editWidget->setFont(font);
   editWidget->setFontSize(fontSize);
@@ -56,7 +55,7 @@ void Profile::loadConfig(EditorWidget* editWidget) {
 //
 // restore saved settings
 //
-void Profile::restore(MainWindow* wnd) {
+void Profile::restore(MainWindow *wnd) {
   strlib::String buffer;
   Properties profile;
   long len;
@@ -94,7 +93,7 @@ void Profile::restore(MainWindow* wnd) {
 //
 // restore the standalone window position
 //
-void Profile::restoreAppPosition(Rectangle* wnd) {
+void Profile::restoreAppPosition(Rectangle *wnd) {
   if (!appPosition.empty()) {
     wnd->w(appPosition.w());
     wnd->h(appPosition.h());
@@ -108,7 +107,7 @@ void Profile::restoreAppPosition(Rectangle* wnd) {
 //
 // persist profile values
 //
-void Profile::save(MainWindow* wnd) {
+void Profile::save(MainWindow *wnd) {
   if (loaded) {
     // prevent overwriting config when not initially used
     FILE *fp = wnd->openConfig(configFile);
@@ -128,7 +127,7 @@ void Profile::save(MainWindow* wnd) {
 //
 // returns the next integer from the given string
 //
-int Profile::nextInteger(const char* s, int len, int& index) {
+int Profile::nextInteger(const char *s, int len, int &index) {
   int result = 0;
   while (isdigit(s[index]) && index < len) {
     result = (result * 10) + (s[index] - '0');
@@ -143,11 +142,11 @@ int Profile::nextInteger(const char* s, int len, int& index) {
 //
 // restore a rectangle value with the given key
 //
-Rectangle Profile::restoreRect(Properties* profile, const char* key) {
-  Rectangle result(0,0,0,0);
-  String* value = profile->get(key);
+Rectangle Profile::restoreRect(Properties *profile, const char *key) {
+  Rectangle result(0, 0, 0, 0);
+  String *value = profile->get(key);
   if (value != null) {
-    const char* buffer = value->toString();
+    const char *buffer = value->toString();
     int index = 0;
     int len = strlen(buffer);
 
@@ -162,10 +161,10 @@ Rectangle Profile::restoreRect(Properties* profile, const char* key) {
 //
 // load any stored font or color settings
 //
-void Profile::restoreStyles(Properties* profile) {
+void Profile::restoreStyles(Properties *profile) {
   // restore size and face
   restoreValue(profile, fontSizeKey, &fontSize);
-  String* fontName = profile->get(fontNameKey);
+  String *fontName = profile->get(fontNameKey);
   if (fontName) {
     font = fltk::font(fontName->toString());
   }
@@ -173,14 +172,13 @@ void Profile::restoreStyles(Properties* profile) {
   for (int i = 0; i <= st_background; i++) {
     char buffer[4];
     sprintf(buffer, "%02d", i);
-    String* color = profile->get(buffer);
+    String *color = profile->get(buffer);
     if (color) {
       Color c = fltk::color(color->toString());
       if (c != NO_COLOR) {
         if (i == st_background) {
           this->color = c;
-        }
-        else {
+        } else {
           styletable[i].color = c;
         }
       }
@@ -191,15 +189,15 @@ void Profile::restoreStyles(Properties* profile) {
 //
 // restore the editor tabs
 //
-void Profile::restoreTabs(MainWindow* wnd, Properties* profile) {
+void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
   bool usedEditor = false;
   strlib::List paths;
   profile->get(pathKey, &paths);
-  Object** list = paths.getList();
+  Object **list = paths.getList();
   int len = paths.length();
 
   for (int i = 0; i < len; i++) {
-    const char* buffer = ((String *) list[i])->toString();
+    const char *buffer = ((String *) list[i])->toString();
     int index = 0;
     int len = strlen(buffer);
     int logPrint = nextInteger(buffer, len, index);
@@ -209,15 +207,14 @@ void Profile::restoreTabs(MainWindow* wnd, Properties* profile) {
     int insertPos = nextInteger(buffer, len, index);
     int topLineNo = nextInteger(buffer, len, index);
 
-    const char* path = buffer + index;
+    const char *path = buffer + index;
 
-    EditorWidget* editWidget = 0;
+    EditorWidget *editWidget = 0;
     if (usedEditor) {
       // constructor will call loadConfig
-      Group* group = wnd->createEditor(path);
+      Group *group = wnd->createEditor(path);
       editWidget = wnd->getEditor(group);
-    }
-    else {
+    } else {
       // load into the initial buffer
       editWidget = wnd->getEditor(true);
       loadConfig(editWidget);
@@ -235,9 +232,9 @@ void Profile::restoreTabs(MainWindow* wnd, Properties* profile) {
   }
 
   // restore the active tab
-  String* activeTab = profile->get(activeTabKey);
+  String *activeTab = profile->get(activeTabKey);
   if (activeTab != null) {
-    EditorWidget* editWidget = wnd->getEditor(activeTab->toString());
+    EditorWidget *editWidget = wnd->getEditor(activeTab->toString());
     if (editWidget) {
       wnd->showEditTab(editWidget);
     }
@@ -247,8 +244,8 @@ void Profile::restoreTabs(MainWindow* wnd, Properties* profile) {
 //
 // restore the int value
 //
-void Profile::restoreValue(Properties* p, const char* key, int* value) {
-  String* s = p->get(key);
+void Profile::restoreValue(Properties *p, const char *key, int *value) {
+  String *s = p->get(key);
   if (s) {
     *value = s->toInteger();
   }
@@ -257,14 +254,14 @@ void Profile::restoreValue(Properties* p, const char* key, int* value) {
 //
 // restore the main window position
 //
-void Profile::restoreWindowPos(MainWindow* wnd, Rectangle& rc) {
+void Profile::restoreWindowPos(MainWindow *wnd, Rectangle &rc) {
   int x = rc.x();
   int y = rc.y();
   int w = rc.w();
   int h = rc.h();
 
   if (x > 0 && y > 0 && w > 100 && h > 100) {
-    const Monitor& monitor = Monitor::all();
+    const Monitor & monitor = Monitor::all();
     if (x < monitor.w() && y < monitor.h()) {
       wnd->resize(x, y, w, h);
     }
@@ -274,7 +271,7 @@ void Profile::restoreWindowPos(MainWindow* wnd, Rectangle& rc) {
 //
 // save the window position
 //
-void Profile::saveRect(FILE* fp, const char* key, Rectangle* rc) {
+void Profile::saveRect(FILE *fp, const char *key, Rectangle *rc) {
   fprintf(fp, "%s=%d;%d;%d;%d\n", key, rc->x(), rc->y(), rc->w(), rc->h());
 }
 
@@ -282,42 +279,41 @@ void Profile::saveRect(FILE* fp, const char* key, Rectangle* rc) {
 // saves the current font size, face and colour configuration
 //
 void Profile::saveStyles(FILE *fp) {
-  uchar r,g,b;
+  uchar r, g, b;
 
-  saveValue(fp, fontSizeKey, (int) styletable[0].size);
+  saveValue(fp, fontSizeKey, (int)styletable[0].size);
   saveValue(fp, fontNameKey, styletable[0].font->name());
-  
+
   for (int i = 0; i <= st_background; i++) {
-    split_color(i == st_background ? color : styletable[i].color, r,g,b);
-    fprintf(fp, "%02d=#%02x%02x%02x\n", i, r,g,b);
+    split_color(i == st_background ? color : styletable[i].color, r, g, b);
+    fprintf(fp, "%02d=#%02x%02x%02x\n", i, r, g, b);
   }
 }
 
 //
 // persist the editor tabs
 //
-void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
+void Profile::saveTabs(FILE *fp, MainWindow *wnd) {
   int n = wnd->tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group* group = (Group*) wnd->tabGroup->child(c);
-    if (gw_editor == ((GroupWidget) (intptr_t)group->user_data())) {
-      EditorWidget* editWidget = (EditorWidget*) group->child(0);
+    Group *group = (Group *) wnd->tabGroup->child(c);
+    if (gw_editor == ((GroupWidget) (intptr_t) group->user_data())) {
+      EditorWidget *editWidget = (EditorWidget *) group->child(0);
 
       bool logPrint = editWidget->isLogPrint();
       bool scrollLock = editWidget->isScrollLock();
-      bool hideIde =  editWidget->isHideIDE();
+      bool hideIde = editWidget->isHideIDE();
       bool gotoLine = editWidget->isBreakToLine();
       int insertPos = editWidget->editor->insert_position();
       int topLineNo = editWidget->editor->top_line();
 
-      fprintf(fp, "%s='%d;%d;%d;%d;%d;%d;%s'\n", pathKey, 
-              logPrint, scrollLock, hideIde, gotoLine, insertPos, topLineNo,
-              editWidget->getFilename());
+      fprintf(fp, "%s='%d;%d;%d;%d;%d;%d;%s'\n", pathKey,
+              logPrint, scrollLock, hideIde, gotoLine, insertPos, topLineNo, editWidget->getFilename());
     }
   }
 
   // save the active tab
-  EditorWidget* editWidget = wnd->getEditor(false);
+  EditorWidget *editWidget = wnd->getEditor(false);
   if (editWidget) {
     saveValue(fp, activeTabKey, editWidget->getFilename());
   }
@@ -326,15 +322,13 @@ void Profile::saveTabs(FILE* fp, MainWindow* wnd) {
 //
 // persist a single value
 //
-void Profile::saveValue(FILE* fp, const char* key, const char* value) {
+void Profile::saveValue(FILE *fp, const char *key, const char *value) {
   fprintf(fp, "%s='%s'\n", key, value);
 }
 
 //
 // persist a single value
 //
-void Profile::saveValue(FILE* fp, const char* key, int value) {
+void Profile::saveValue(FILE *fp, const char *key, int value) {
   fprintf(fp, "%s=%d\n", key, value);
 }
-
-// End of "$Id$".

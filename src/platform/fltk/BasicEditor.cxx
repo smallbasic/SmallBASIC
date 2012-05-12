@@ -19,16 +19,16 @@ using namespace fltk;
 using namespace strlib;
 
 Color defaultColor[] = {
-  BLACK,                 // A - Plain
-  color(0, 128, 0),      // B - Comments
-  color(0, 0, 192),      // C - Strings
-  color(192, 0, 0),      // D - code_keywords
-  color(128, 128, 0),    // E - code_functions
-  color(0, 128, 128),    // F - code_procedures
-  color(128, 0, 128),    // G - Find matches
-  color(0, 128, 0),      // H - Italic Comments ';
-  color(0, 128, 128),    // I - Numbers
-  color(128, 128, 64),   // J - Operators
+  BLACK,                        // A - Plain
+  color(0, 128, 0),             // B - Comments
+  color(0, 0, 192),             // C - Strings
+  color(192, 0, 0),             // D - code_keywords
+  color(128, 128, 0),           // E - code_functions
+  color(0, 128, 128),           // F - code_procedures
+  color(128, 0, 128),           // G - Find matches
+  color(0, 128, 0),             // H - Italic Comments ';
+  color(0, 128, 128),           // I - Numbers
+  color(128, 128, 64),          // J - Operators
 };
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table
@@ -69,35 +69,32 @@ bool isvar(int c) {
 /**
  * Compare two keywords
  */
-int compare_keywords(const void *a, const void *b)
-{
+int compare_keywords(const void *a, const void *b) {
   return (strcasecmp(*((const char **)a), *((const char **)b)));
 }
 
 /**
  * Update unfinished styles.
  */
-void style_unfinished_cb(int, void *)
-{
+void style_unfinished_cb(int, void *) {
 }
 
 /**
  * Update the style buffer
  */
-void style_update_cb(int pos,      // I - Position of update
-                     int nInserted,  // I - Number of inserted chars
-                     int nDeleted, // I - Number of deleted chars
-                     int /* nRestyled */ , // I - Number of restyled chars
-                     const char * /* deletedText */ ,  // I - Text that was deleted
-                     void *cbArg)
-{                               // I - Callback data
-  int start;              // Start of text
-  int end;                // End of text
-  char last;              // Last style on line
-  char *text_range;       // Text data
-  char *style_range;      // Text data
+void style_update_cb(int pos,   // I - Position of update
+                     int nInserted,     // I - Number of inserted chars
+                     int nDeleted,      // I - Number of deleted chars
+                     int /* nRestyled */ ,      // I - Number of restyled chars
+                     const char * /* deletedText */ ,   // I - Text that was deleted
+                     void *cbArg) {     // I - Callback data
+  int start;                    // Start of text
+  int end;                      // End of text
+  char last;                    // Last style on line
+  char *text_range;             // Text data
+  char *style_range;            // Text data
 
-  BasicEditor *editor = (BasicEditor*) cbArg;
+  BasicEditor *editor = (BasicEditor *) cbArg;
   TextBuffer *stylebuf = editor->stylebuf;
   TextBuffer *textbuf = editor->textbuf;
 
@@ -106,7 +103,6 @@ void style_update_cb(int pos,      // I - Position of update
     stylebuf->unselect();
     return;
   }
-
   // track changes in the text buffer
   if (nInserted > 0) {
     // insert characters into the style buffer
@@ -114,9 +110,8 @@ void style_update_cb(int pos,      // I - Position of update
     memset(stylex, PLAIN, nInserted);
     stylex[nInserted] = '\0';
     stylebuf->replace(pos, pos + nDeleted, stylex);
-    delete[] stylex;
-  }
-  else {
+    delete[]stylex;
+  } else {
     // just delete characters in the style buffer
     stylebuf->remove(pos, pos + nDeleted);
   }
@@ -159,25 +154,24 @@ void style_update_cb(int pos,      // I - Position of update
 
 //--BasicEditor------------------------------------------------------------------
 
-BasicEditor::BasicEditor(int x, int y, int w, int h, StatusBar* status) : 
-  TextEditor(x, y, w, h), status(status) {
+BasicEditor::BasicEditor(int x, int y, int w, int h, StatusBar *status) :
+  TextEditor(x, y, w, h),
+  status(status) {
   readonly = false;
   const char *s = getenv("INDENT_LEVEL");
   indentLevel = (s && s[0] ? atoi(s) : 2);
   matchingBrace = -1;
 
-  textbuf = buffer(); // reference only
+  textbuf = buffer();           // reference only
   stylebuf = new TextBuffer();
   search[0] = 0;
   highlight_data(stylebuf, styletable,
-                 sizeof(styletable) / sizeof(styletable[0]),
+                 sizeof(styletable) / sizeof(styletable[0]), 
                  PLAIN, style_unfinished_cb, 0);
-
   textbuf->add_modify_callback(style_update_cb, this);
 }
 
-BasicEditor::~BasicEditor()
-{
+BasicEditor::~BasicEditor() {
   // cleanup
   delete stylebuf;
 }
@@ -185,8 +179,7 @@ BasicEditor::~BasicEditor()
 /**
  * Parse text and produce style data.
  */
-void BasicEditor::styleParse(const char *text, char *style, int length)
-{
+void BasicEditor::styleParse(const char *text, char *style, int length) {
   char current = PLAIN;
   int last = 0;                 // prev char was alpha-num
   char buf[255];
@@ -210,19 +203,16 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
         if (length == 0) {
           break;
         }
-      }
-      else if (strncmp(text, "\\\"", 2) == 0) {
+      } else if (strncmp(text, "\\\"", 2) == 0) {
         // quoted quote
         *style++ = current;
         *style++ = current;
         text++;
         length--;
         continue;
-      }
-      else if (*text == '\"') {
+      } else if (*text == '\"') {
         current = STRINGS;
-      }
-      else if (!last) {
+      } else if (!last) {
         // begin keyword/number search at non-alnum boundary
 
         // test for digit sequence
@@ -241,14 +231,12 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
           }
           continue;
         }
-
         // test for a keyword
         temp = text;
         bufptr = buf;
         while (*temp != 0 && *temp != ' ' &&
                *temp != '\n' && *temp != '\r' && *temp != '"' &&
-               *temp != '(' && *temp != ')' && *temp != '=' &&
-               bufptr < (buf + sizeof(buf) - 1)) {
+               *temp != '(' && *temp != ')' && *temp != '=' && bufptr < (buf + sizeof(buf) - 1)) {
           *bufptr++ = tolower(*temp++);
         }
 
@@ -275,8 +263,7 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
           }
         }
 
-        if (bsearch(&bufptr, code_keywords, numCodeKeywords,
-                    sizeof(code_keywords[0]), compare_keywords)) {
+        if (bsearch(&bufptr, code_keywords, numCodeKeywords, sizeof(code_keywords[0]), compare_keywords)) {
           while (text < temp) {
             *style++ = KEYWORDS;
             text++;
@@ -286,9 +273,8 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
           length++;
           last = 1;
           continue;
-        }
-        else if (bsearch(&bufptr, code_functions, numCodeFunctions,
-                         sizeof(code_functions[0]), compare_keywords)) {
+        } else if (bsearch(&bufptr, code_functions, numCodeFunctions,
+                           sizeof(code_functions[0]), compare_keywords)) {
           while (text < temp) {
             *style++ = FUNCTIONS;
             text++;
@@ -298,9 +284,8 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
           length++;
           last = 1;
           continue;
-        }
-        else if (bsearch(&bufptr, code_procedures, numCodeProcedures,
-                         sizeof(code_procedures[0]), compare_keywords)) {
+        } else if (bsearch(&bufptr, code_procedures, numCodeProcedures,
+                           sizeof(code_procedures[0]), compare_keywords)) {
           while (text < temp) {
             *style++ = PROCEDURES;
             text++;
@@ -312,8 +297,7 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
           continue;
         }
       }
-    }
-    else if (current == STRINGS) {
+    } else if (current == STRINGS) {
       // continuing in string
       if (strncmp(text, "\\\"", 2) == 0) {
         // quoted end quote
@@ -322,15 +306,13 @@ void BasicEditor::styleParse(const char *text, char *style, int length)
         text++;
         length--;
         continue;
-      }
-      else if (*text == '\"') {
+      } else if (*text == '\"') {
         // End quote
         *style++ = current;
         current = PLAIN;
         continue;
       }
     }
-
     // copy style info
     *style++ = current;
     last = isvar(*text) || *text == '.';
@@ -353,8 +335,7 @@ void BasicEditor::styleChanged() {
 /**
  * display the editor buffer
  */
-void BasicEditor::draw()
-{
+void BasicEditor::draw() {
   TextEditor::draw();
   if (matchingBrace != -1) {
     // highlight the matching brace
@@ -371,8 +352,7 @@ void BasicEditor::draw()
 /**
  * returns the indent position level
  */
-unsigned BasicEditor::getIndent(char *spaces, int len, int pos)
-{
+unsigned BasicEditor::getIndent(char *spaces, int len, int pos) {
   // count the indent level and find the start of text
   char *buf = buffer()->line_text(pos);
   int i = 0;
@@ -414,7 +394,6 @@ unsigned BasicEditor::getIndent(char *spaces, int len, int pos)
         return i;
       }
     }
-
     // indent new line
     for (int j = 0; j < indentLevel; j++, i++) {
       spaces[i] = ' ';
@@ -428,8 +407,7 @@ unsigned BasicEditor::getIndent(char *spaces, int len, int pos)
 /**
  * handler for the TAB character
  */
-void BasicEditor::handleTab()
-{
+void BasicEditor::handleTab() {
   char spaces[250];
   int indent;
 
@@ -441,7 +419,6 @@ void BasicEditor::handleTab()
     // allows for a single blank line between statments
     prevLineStart = buffer()->line_start(prevLineStart - 1);
   }
-
   // note - spaces not used in this context
   indent = prevLineStart == 0 ? 0 : getIndent(spaces, sizeof(spaces), prevLineStart);
 
@@ -479,20 +456,17 @@ void BasicEditor::handleTab()
     if (cursor_pos_ - lineStart < indent) {
       // jump cursor to start of text
       cursor_pos_ = lineStart + indent;
-    }
-    else {
+    } else {
       // move cursor along with text movement, staying on same line
       int maxpos = buffer()->line_end(lineStart);
       if (cursor_pos_ + len <= maxpos) {
         cursor_pos_ += len;
       }
     }
-  }
-  else if (curIndent > indent) {
+  } else if (curIndent > indent) {
     // remove excess spaces
     buffer()->remove(lineStart, lineStart + (curIndent - indent));
-  }
-  else {
+  } else {
     // already have ideal indent - soft-tab to indent
     insert_position(lineStart + indent);
   }
@@ -502,8 +476,7 @@ void BasicEditor::handleTab()
 /**
  * sets the current display font
  */
-void BasicEditor::setFont(Font* font)
-{
+void BasicEditor::setFont(Font *font) {
   if (font) {
     int len = sizeof(styletable) / sizeof(styletable[0]);
     for (int i = 0; i < len; i++) {
@@ -516,8 +489,7 @@ void BasicEditor::setFont(Font* font)
 /**
  * sets the current font size
  */
-void BasicEditor::setFontSize(int size)
-{
+void BasicEditor::setFontSize(int size) {
   int len = sizeof(styletable) / sizeof(styletable[0]);
   for (int i = 0; i < len; i++) {
     styletable[i].size = size;
@@ -528,8 +500,7 @@ void BasicEditor::setFontSize(int size)
 /**
  * display the matching brace
  */
-void BasicEditor::showMatchingBrace()
-{
+void BasicEditor::showMatchingBrace() {
   char cursorChar = buffer()->character(cursor_pos_ - 1);
   char cursorMatch = 0;
   int pair = -1;
@@ -566,8 +537,7 @@ void BasicEditor::showMatchingBrace()
       }
       if (nextChar == cursorChar) {
         level++;                // nested char
-      }
-      else if (nextChar == cursorMatch) {
+      } else if (nextChar == cursorMatch) {
         level--;
         if (level == 0) {
           // found matching char at pos
@@ -597,8 +567,7 @@ void BasicEditor::showMatchingBrace()
 /**
  * highlight the given search text
  */
-void BasicEditor::showFindText(const char *find)
-{
+void BasicEditor::showFindText(const char *find) {
   // copy lowercase search string for high-lighting
   strcpy(search, find);
   int findLen = strlen(search);
@@ -613,8 +582,7 @@ void BasicEditor::showFindText(const char *find)
 /**
  * FLTK event handler
  */
-int BasicEditor::handle(int e)
-{
+int BasicEditor::handle(int e) {
   int cursorPos = cursor_pos_;
   char spaces[250];
   int indent;
@@ -645,7 +613,6 @@ int BasicEditor::handle(int e)
     handleTab();
     return 1;                   // skip default handler
   }
-
   // call default handler then process keys
   int rtn = TextEditor::handle(e);
   switch (e) {
@@ -658,7 +625,6 @@ int BasicEditor::handle(int e)
         redraw(DAMAGE_ALL);
       }
     }
-
     // fallthru to show row-col
   case RELEASE:
     showMatchingBrace();
@@ -672,8 +638,7 @@ int BasicEditor::handle(int e)
 /**
  * displays the current row and col position
  */
-void BasicEditor::showRowCol()
-{
+void BasicEditor::showRowCol() {
   int row = -1;
   int col = 0;
 
@@ -694,17 +659,15 @@ void BasicEditor::showRowCol()
 /**
  * sets the cursor to the given line number
  */
-void BasicEditor::gotoLine(int line)
-{
+void BasicEditor::gotoLine(int line) {
   int numLines = buffer()->count_lines(0, buffer()->length());
   if (line < 1) {
     line = 1;
-  }
-  else if (line > numLines) {
+  } else if (line > numLines) {
     line = numLines;
   }
   int pos = buffer()->skip_lines(0, line - 1);  // find pos at line-1
-  insert_position(buffer()->line_start(pos)); // insert at column 0
+  insert_position(buffer()->line_start(pos));   // insert at column 0
   show_insert_position();
   status->setRowCol(line, 1);
   scroll(line, hor_offset());
@@ -713,15 +676,13 @@ void BasicEditor::gotoLine(int line)
 /**
  * returns where text selection starts
  */
-void BasicEditor::getSelStartRowCol(int *row, int *col)
-{
+void BasicEditor::getSelStartRowCol(int *row, int *col) {
   int start = buffer()->primary_selection()->start();
   int end = buffer()->primary_selection()->end();
   if (start == end) {
     *row = -1;
     *col = -1;
-  }
-  else {
+  } else {
     position_to_linecol(start, row, col);
   }
 }
@@ -729,15 +690,13 @@ void BasicEditor::getSelStartRowCol(int *row, int *col)
 /**
  * returns where text selection ends
  */
-void BasicEditor::getSelEndRowCol(int *row, int *col)
-{
+void BasicEditor::getSelEndRowCol(int *row, int *col) {
   int start = buffer()->primary_selection()->start();
   int end = buffer()->primary_selection()->end();
   if (start == end) {
     *row = -1;
     *col = -1;
-  }
-  else {
+  } else {
     position_to_linecol(end, row, col);
   }
 }
@@ -745,21 +704,19 @@ void BasicEditor::getSelEndRowCol(int *row, int *col)
 /**
  * return the selected text and its coordinate rectangle
  */
-char* BasicEditor::getSelection(Rectangle* rc) {
-  char* result = 0;
+char *BasicEditor::getSelection(Rectangle *rc) {
+  char *result = 0;
   if (!readonly) {
     int x1, y1, x2, y2, start, end;
 
     if (textbuf->selected()) {
       textbuf->selection_position(&start, &end);
-    }
-    else {
+    } else {
       int pos = insert_position();
       if (isvar(textbuf->character(pos))) {
         start = textbuf->word_start(pos);
         end = textbuf->word_end(pos);
-      }
-      else {
+      } else {
         start = end = 0;
       }
     }
@@ -767,7 +724,7 @@ char* BasicEditor::getSelection(Rectangle* rc) {
     if (start != end) {
       position_to_xy(start, &x1, &y1);
       position_to_xy(end, &x2, &y2);
-    
+
       rc->x(x1);
       rc->y(y1);
       rc->w(x2 - x1);
@@ -781,23 +738,21 @@ char* BasicEditor::getSelection(Rectangle* rc) {
 /**
  * returns the current font size
  */
-int BasicEditor::getFontSize()
-{
+int BasicEditor::getFontSize() {
   return (int)styletable[0].size;
 }
 
 /**
  * returns the current font face name
  */
-const char* BasicEditor::getFontName()
-{
+const char *BasicEditor::getFontName() {
   return styletable[0].font->name();
 }
 
 /**
  * returns the BASIC keyword list
  */
-void BasicEditor::getKeywords(strlib::List& keywords) {
+void BasicEditor::getKeywords(strlib::List &keywords) {
   for (int i = 0; i < numCodeKeywords; i++) {
     keywords.add(new String(code_keywords[i]));
   }
@@ -814,16 +769,14 @@ void BasicEditor::getKeywords(strlib::List& keywords) {
 /**
  * returns the row and col position for the current cursor position
  */
-void BasicEditor::getRowCol(int *row, int *col)
-{
+void BasicEditor::getRowCol(int *row, int *col) {
   position_to_linecol(cursor_pos_, row, col);
 }
 
 /**
  * find text within the editor buffer
  */
-bool BasicEditor::findText(const char *find, bool forward, bool updatePos)
-{
+bool BasicEditor::findText(const char *find, bool forward, bool updatePos) {
   showFindText(find);
 
   bool found = false;
@@ -840,4 +793,3 @@ bool BasicEditor::findText(const char *find, bool forward, bool updatePos)
   return found;
 }
 
-//--EndOfFile-------------------------------------------------------------------

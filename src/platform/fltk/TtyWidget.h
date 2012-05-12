@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -24,7 +23,7 @@
 #define SCROLL_H 15
 #define HSCROLL_W 80
 
-extern "C" void trace(const char* format, ...);
+extern "C" void trace(const char *format, ...);
 
 using namespace fltk;
 using namespace strlib;
@@ -48,11 +47,11 @@ struct TextSeg {
     this->flags = 0;
     this->color = NO_COLOR;
     this->next = 0;
-  }
-
+  } 
+  
   ~TextSeg() {
     if (str) {
-      delete[] str;
+      delete[]str;
     }
   }
 
@@ -64,11 +63,10 @@ struct TextSeg {
     set(INVERT, false);
   }
 
-  void setText(const char* str, int n) {
+  void setText(const char *str, int n) {
     if ((!str || !n)) {
       this->str = 0;
-    }
-    else {
+    } else {
       this->str = new char[n + 1];
       strncpy(this->str, str, n);
       this->str[n] = 0;
@@ -86,8 +84,7 @@ struct TextSeg {
   void set(int f, bool value) {
     if (value) {
       flags |= f;
-    }
-    else {
+    } else {
       flags &= ~f;
     }
     flags |= (f << 16);
@@ -99,7 +96,7 @@ struct TextSeg {
   }
 
   // return the flag value if set, otherwise return value
-  bool get(int f, bool* value) {
+  bool get(int f, bool *value) {
     bool result = *value;
     if (flags & (f << 16)) {
       result = (flags & f);
@@ -109,16 +106,16 @@ struct TextSeg {
 
   // width of this segment in pixels
   int width() {
-    return !str ? 0 : (int) getwidth(str);
+    return !str ? 0 : (int)getwidth(str);
   }
-  
+
   // number of chars in this segment
   int numChars() {
     return !str ? 0 : strlen(str);
   }
 
   // update font and state variables when set in this segment
-  bool escape(bool* bold, bool* italic, bool* underline, bool* invert) {
+  bool escape(bool *bold, bool *italic, bool *underline, bool *invert) {
     *bold = get(BOLD, bold);
     *italic = get(ITALIC, italic);
     *underline = get(UNDERLINE, underline);
@@ -131,25 +128,24 @@ struct TextSeg {
     return set(BOLD) || set(ITALIC);
   }
 
-  char* str;
+  char *str;
   int flags;
   Color color;
-  TextSeg* next;
+  TextSeg *next;
 };
 
 struct Row {
-  Row(): head(0) {}
-
+  Row() : head(0) {
+  } 
   ~Row() {
     clear();
   }
 
   // append a segment to this row
-  void append(TextSeg* node) {
+  void append(TextSeg *node) {
     if (!head) {
       head = node;
-    }
-    else {
+    } else {
       tail(head)->next = node;
     }
     node->next = 0;
@@ -166,7 +162,7 @@ struct Row {
     return numChars(this->head);
   }
 
-  int numChars(TextSeg* next) {
+  int numChars(TextSeg *next) {
     int n = 0;
     if (next) {
       n = next->numChars() + numChars(next->next);
@@ -174,26 +170,26 @@ struct Row {
     return n;
   }
 
-  void remove(TextSeg* next) {
+  void remove(TextSeg *next) {
     if (next) {
       remove(next->next);
       delete next;
     }
   }
-  
+
   // move to the tab position
   void tab() {
     int tabSize = 6;
     int num = numChars(this->head);
     int pos = tabSize - (num % tabSize);
     if (pos) {
-      TextSeg* next = new TextSeg();
+      TextSeg *next = new TextSeg();
       next->tab(pos);
       append(next);
     }
   }
 
-  TextSeg* tail(TextSeg* next) {
+  TextSeg *tail(TextSeg *next) {
     return !next->next ? next : tail(next->next);
   }
 
@@ -201,18 +197,18 @@ struct Row {
     return width(this->head);
   }
 
-  int width(TextSeg* next) {
+  int width(TextSeg *next) {
     int n = 0;
     if (next) {
       n = next->width() + width(next->next);
     }
     return n;
   }
-  
-  TextSeg* head;
+
+  TextSeg *head;
 };
 
-struct TtyWidget : public Group {
+struct TtyWidget:public Group {
   TtyWidget(int x, int y, int w, int h, int numRows);
   virtual ~TtyWidget();
 
@@ -225,17 +221,25 @@ struct TtyWidget : public Group {
   void clearScreen();
   bool copySelection();
   void print(const char *str);
-  void setFont(Font* font) {setfont(font, 0); redraw();};
-  void setFontSize(int size) {setfont(0, size); redraw();};
-  void setScrollLock(bool b) { scrollLock = b; };
+  void setFont(Font *font) {
+    setfont(font, 0);
+    redraw();
+  };
+  void setFontSize(int size) {
+    setfont(0, size);
+    redraw();
+  };
+  void setScrollLock(bool b) {
+    scrollLock = b;
+  };
 
 private:
-  void drawSelection(TextSeg* seg, String* s, int row, int x, int y);
-  Row* getLine(int ndx);
-  int processLine(Row* line, const char* linePtr);
+  void drawSelection(TextSeg *seg, String *s, int row, int x, int y);
+  Row *getLine(int ndx);
+  int processLine(Row *line, const char *linePtr);
   void setfont(bool bold, bool italic);
-  void setfont(Font* font, int size);
-  void setGraphicsRendition(TextSeg* segment, int c);
+  void setfont(Font *font, int size);
+  void setGraphicsRendition(TextSeg *segment, int c);
 
   // returns the number of display text rows held in the buffer
   int getTextRows() {
@@ -253,12 +257,12 @@ private:
   }
 
   // buffer management
-  Row* buffer;
-  int head; // current head of buffer
-  int tail; // buffer last line
-  int rows; // total number of rows - size of buffer
-  int cols; // maximum number of characters in a row
-  int width; // the maximum width of the buffer text in pixels
+  Row *buffer;
+  int head;                     // current head of buffer
+  int tail;                     // buffer last line
+  int rows;                     // total number of rows - size of buffer
+  int cols;                     // maximum number of characters in a row
+  int width;                    // the maximum width of the buffer text in pixels
 
   // scrollbars
   Scrollbar *vscrollbar;
@@ -271,5 +275,3 @@ private:
 };
 
 #endif
-
-// $Id$

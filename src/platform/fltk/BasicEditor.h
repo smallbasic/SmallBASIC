@@ -1,6 +1,6 @@
 //
-// Based on test/editor.cxx - A simple text editor program for the Fast 
-// Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK 
+// Based on test/editor.cxx - A simple text editor program for the Fast
+// Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK
 // Programmer's Guide.
 // Copyright 1998-2003 by Bill Spitzak and others.
 //
@@ -18,7 +18,7 @@
 
 using namespace fltk;
 
-extern "C" void trace(const char* format, ...);
+extern "C" void trace(const char *format, ...);
 
 bool isvar(int c);
 
@@ -27,7 +27,7 @@ struct StatusBar {
 };
 
 struct BasicEditor : public TextEditor {
-  BasicEditor(int x, int y, int w, int h, StatusBar* status);
+  BasicEditor(int x, int y, int w, int h, StatusBar *status);
   ~BasicEditor();
 
   bool findText(const char *find, bool forward, bool updatePos);
@@ -35,22 +35,22 @@ struct BasicEditor : public TextEditor {
   unsigned getIndent(char *indent, int len, int pos);
   void draw();
   int getFontSize();
-  const char* getFontName();
-  void getKeywords(strlib::List& keywords);
+  const char *getFontName();
+  void getKeywords(strlib::List &keywords);
   void getRowCol(int *row, int *col);
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
-  char* getSelection(Rectangle* rc);
+  char *getSelection(Rectangle *rc);
   void gotoLine(int line);
   void handleTab();
-  void setFont(Font* font);
+  void setFont(Font *font);
   void setFontSize(int size);
   void showFindText(const char *text);
   void showMatchingBrace();
   void showRowCol();
   void styleChanged();
   void styleParse(const char *text, char *style, int length);
-  
+
   bool readonly;
   int indentLevel;
   int matchingBrace;
@@ -58,7 +58,7 @@ struct BasicEditor : public TextEditor {
   TextBuffer *stylebuf;
   TextBuffer *textbuf;
   char search[256];
-  StatusBar* status;
+  StatusBar *status;
 };
 
 #endif

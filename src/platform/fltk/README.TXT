@@ -1,4 +1,4 @@
-Copyright (c) 2002-2008 Chris Warren-Smith
+Copyright (c) 2002-2012 Chris Warren-Smith
 
 0. TODO:
 
@@ -49,5 +49,4 @@ Copyright (c) 2002-2008 Chris Warren-Smith
     SB_FLTK_0_9_6_4 (2 Sept 2005)
     SB_FLTK_0_9_6_1 (16 May 2005)
 
-$Id: README.TXT,v 1.23 2006/10/24 21:07:56 zeeb90au Exp $
 

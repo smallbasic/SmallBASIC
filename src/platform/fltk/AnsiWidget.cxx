@@ -35,7 +35,7 @@
 #include <fltk/Group.h>
 #include <fltk/ask.h>
 
-#if defined(WIN32) 
+#if defined(WIN32)
 #include <fltk/win32.h>
 #include <wingdi.h>
 extern HDC fl_bitmap_dc;
@@ -50,11 +50,11 @@ extern HDC fl_bitmap_dc;
 using namespace fltk;
 
 /*! \class fltk::AnsiWidget
- 
-  Displays ANSI escape codes. 
 
-  Escape sequences start with the characters ESC (ASCII 27d / 1Bh / 033o ) 
-  and [ (left bracket). This sequence is called CSI for 
+  Displays ANSI escape codes.
+
+  Escape sequences start with the characters ESC (ASCII 27d / 1Bh / 033o )
+  and [ (left bracket). This sequence is called CSI for
   "Control Sequence Introducer".
 
   For more information about ANSI code see:
@@ -80,22 +80,22 @@ using namespace fltk;
 */
 
 static Color colors[] = {
-  BLACK,             // 0 black
-  color(0,0,128),    // 1 blue
-  color(0,128,0),    // 2 green
-  color(0,128,128),  // 3 cyan
-  color(128,0,0),    // 4 red
-  color(128,0,128),  // 5 magenta
-  color(128,128,0),  // 6 yellow
-  color(192,192,192),// 7 white
-  color(128,128,128),// 8 gray
-  color(0,0,255),    // 9 light blue
-  color(0,255,0),    // 10 light green
-  color(0,255,255),  // 11 light cyan
-  color(255,0,0),    // 12 light red
-  color(255,0,255),  // 13 light magenta
-  color(255,255,0),  // 14 light yellow
-  WHITE              // 15 bright white
+  BLACK,                        // 0 black
+  color(0, 0, 128),             // 1 blue
+  color(0, 128, 0),             // 2 green
+  color(0, 128, 128),           // 3 cyan
+  color(128, 0, 0),             // 4 red
+  color(128, 0, 128),           // 5 magenta
+  color(128, 128, 0),           // 6 yellow
+  color(192, 192, 192),         // 7 white
+  color(128, 128, 128),         // 8 gray
+  color(0, 0, 255),             // 9 light blue
+  color(0, 255, 0),             // 10 light green
+  color(0, 255, 255),           // 11 light cyan
+  color(255, 0, 0),             // 12 light red
+  color(255, 0, 255),           // 13 light magenta
+  color(255, 255, 0),           // 14 light yellow
+  WHITE                         // 15 bright white
 };
 
 #define begin_offscreen()                       \
@@ -107,8 +107,8 @@ static Color colors[] = {
  */
 AnsiWidget::AnsiWidget(int x, int y, int w, int h, int defsize) : 
   Widget(x, y, w, h, 0) {
-  labelsize(float(defsize)); // default size
-  textsize(float(defsize)); // settable size
+  labelsize(float (defsize));   // default size
+  textsize(float (defsize));    // settable size
   init();
   reset();
   img = 0;
@@ -148,9 +148,9 @@ void AnsiWidget::initImage() {
 /*! widget initialisation
  */
 void AnsiWidget::init() {
-  curY = INITXY; // allow for input control border
+  curY = INITXY;                // allow for input control border
   curX = INITXY;
-  tabSize = 40; // tab size in pixels (160/32 = 5)
+  tabSize = 40;                 // tab size in pixels (160/32 = 5)
 }
 
 /*! reset the current drawing variables
@@ -162,30 +162,30 @@ void AnsiWidget::reset() {
   underline = false;
   bold = false;
   italic = false;
-  color(WHITE); // bg
-  labelcolor(BLACK); // fg
+  color(WHITE);                 // bg
+  labelcolor(BLACK);            // fg
   labelfont(COURIER);
-  textsize(labelsize()); 
+  textsize(labelsize());
   setFont();
 }
 
 /*! handle resize changes
  */
 void AnsiWidget::layout() {
-  if (img && (layout_damage() & LAYOUT_WH)) { 
+  if (img && (layout_damage() & LAYOUT_WH)) {
     // can't use GSave here in X
     resized = true;
   }
   Widget::layout();
 }
 
-/*! output the offscreen buffer 
+/*! output the offscreen buffer
  */
 void AnsiWidget::draw() {
   // ensure this widget has lowest z-order
   int siblings = parent()->children();
   for (int n = 0; n < siblings; n++) {
-    Widget* w = parent()->child(n);
+    Widget *w = parent()->child(n);
     if (w != this) {
       w->redraw();
     }
@@ -200,7 +200,7 @@ void AnsiWidget::draw() {
       if (h() > H) {
         H = h();
       }
-      Image* old = img;
+      Image *old = img;
       img = new Image(W, H);
       GSave gsave;
       img->make_current();
@@ -260,7 +260,7 @@ void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   begin_offscreen();
   setcolor(labelcolor());
-  fillrect(Rectangle(x1, y1, x2-x1, y2-y1));
+  fillrect(Rectangle(x1, y1, x2 - x1, y2 - y1));
   redraw();
 }
 
@@ -278,47 +278,45 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
 
 /*! draws the given image onto the offscreen buffer
  */
-void AnsiWidget::drawImage(Image* image, int x, int y, int sx, int sy, 
-                           int width, int height) {
+void AnsiWidget::drawImage(Image *image, int x, int y, int sx, int sy, int width, int height) {
   begin_offscreen();
   image->draw(Rectangle(sx, sy, width, height), // from
-              Rectangle(x, y, width, height)); // to
+              Rectangle(x, y, width, height));  // to
   redraw();
 }
 
 /*! save the offscreen buffer to the given filename
  */
-void AnsiWidget::saveImage(const char* filename, int x, int y,
-                           int width, int height) {
+void AnsiWidget::saveImage(const char *filename, int x, int y, int width, int height) {
   if (width == 0) {
     width = w();
   }
   if (height == 0) {
     height = h();
   }
-  uchar* pixels = (uchar*)malloc(width*height*3);
+  uchar *pixels = (uchar *) malloc(width * height * 3);
   begin_offscreen();
-  readimage(pixels, RGB, Rectangle(x,y,width,height));
+  readimage(pixels, RGB, Rectangle(x, y, width, height));
   fltk::rgbImage jpg(pixels, RGB, width, height);
-  //jpg.write_jpeg(filename);
-  //TODO: re-enable jpeg write function
-  free((void*)pixels);
+  // jpg.write_jpeg(filename);
+  // TODO: re-enable jpeg write function
+  free((void *)pixels);
 }
 
 /*! sets the pixel to the given color at the given xy location
  */
 void AnsiWidget::setPixel(int x, int y, int c) {
   begin_offscreen();
-#if defined(WIN32) 
+#if defined(WIN32)
   if (c < 0) {
-    ::SetPixel(fl_bitmap_dc, x,y, -c);
+    ::SetPixel(fl_bitmap_dc, x, y, -c);
   } else {
     setcolor(ansiToFltk(c));
-    drawpoint(x,y);
+    drawpoint(x, y);
   }
 #else
   setcolor(ansiToFltk(c));
-  drawpoint(x,y);
+  drawpoint(x, y);
 #endif
   redraw();
 }
@@ -327,8 +325,7 @@ void AnsiWidget::setPixel(int x, int y, int c) {
  */
 int AnsiWidget::getPixel(int x, int y) {
 #if USE_X11
-  XImage *image = 
-    XGetImage(fltk::xdisplay, xwindow, x, y, 1, 1, AllPlanes, ZPixmap);
+  XImage *image = XGetImage(fltk::xdisplay, xwindow, x, y, 1, 1, AllPlanes, ZPixmap);
   if (image) {
     int color = XGetPixel(image, 0, 0);
     XDestroyImage(image);
@@ -338,7 +335,7 @@ int AnsiWidget::getPixel(int x, int y) {
   begin_offscreen();
   // needs to return a -ve number to distiguish from basic 16 color values
   // unpacked in later calls to ansiToFltk()
-  return -int(::GetPixel(fl_bitmap_dc, x, y));
+  return -int (::GetPixel(fl_bitmap_dc, x, y));
 #elif defined(__APPLE__)
   // TODO !
 #endif
@@ -353,7 +350,7 @@ void AnsiWidget::beep() const {
 
 /*! Returns the width in pixels using the current font setting
  */
-int AnsiWidget::textWidth(const char* s) {
+int AnsiWidget::textWidth(const char *s) {
   begin_offscreen();
   setFont();
   return (int)getwidth(s);
@@ -364,13 +361,13 @@ int AnsiWidget::textWidth(const char* s) {
 int AnsiWidget::textHeight(void) {
   begin_offscreen();
   setFont();
-  return (int)(getascent()+getdescent());
+  return (int)(getascent() + getdescent());
 }
 
 /*! callback for scrollrect
  */
-void eraseBottomLine(void* data, const fltk::Rectangle& r) {
-  AnsiWidget* out = (AnsiWidget*)data;
+void eraseBottomLine(void *data, const fltk::Rectangle &r) {
+  AnsiWidget *out = (AnsiWidget *) data;
   setcolor(out->color());
   fillrect(r);
 }
@@ -379,10 +376,10 @@ void eraseBottomLine(void* data, const fltk::Rectangle& r) {
  */
 void AnsiWidget::newLine() {
   int height = h();
-  int fontHeight = (int)(getascent()+getdescent());
+  int fontHeight = (int)(getascent() + getdescent());
 
   curX = INITXY;
-  if (curY+(fontHeight*2) >= height) {
+  if (curY + (fontHeight * 2) >= height) {
     scrollrect(Rectangle(w(), height), 0, -fontHeight, eraseBottomLine, this);
   } else {
     curY += fontHeight;
@@ -407,8 +404,8 @@ Color AnsiWidget::ansiToFltk(long c) {
     // assume color is windows style RGB packing
     // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
     c = -c;
-    int r = (c>>16) & 0xFF;
-    int g = (c>>8) & 0xFF;
+    int r = (c >> 16) & 0xFF;
+    int g = (c >> 8) & 0xFF;
     int b = (c) & 0xFF;
     return fltk::color(r, g, b);
   }
@@ -420,116 +417,116 @@ Color AnsiWidget::ansiToFltk(long c) {
  */
 bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   switch (c) {
-  case 'K': // \e[K - clear to eol
+  case 'K':                    // \e[K - clear to eol
     setcolor(color());
-    fillrect(Rectangle(curX, curY, w()-curX, (int)(getascent()+getdescent())));
+    fillrect(Rectangle(curX, curY, w() - curX, (int)(getascent() + getdescent())));
     break;
-  case 'G': // move to column
+  case 'G':                    // move to column
     curX = escValue;
     break;
-  case 'T': // non-standard: move to n/80th of screen width
-    curX = escValue*w()/80;
+  case 'T':                    // non-standard: move to n/80th of screen width
+    curX = escValue * w() / 80;
     break;
-  case 's': // save cursor position
+  case 's':                    // save cursor position
     curYSaved = curX;
     curXSaved = curY;
     break;
-  case 'u': // restore cursor position
+  case 'u':                    // restore cursor position
     curX = curYSaved;
     curY = curXSaved;
     break;
-  case ';': // fallthru
-  case 'm': // \e[...m  - ANSI terminal
+  case ';':                    // fallthru
+  case 'm':                    // \e[...m - ANSI terminal
     switch (escValue) {
-    case 0:  // reset
+    case 0:                    // reset
       reset();
       break;
-    case 1: // set bold on
+    case 1:                    // set bold on
       bold = true;
       return true;
-    case 2: // set faint on
+    case 2:                    // set faint on
       break;
-    case 3: // set italic on
+    case 3:                    // set italic on
       italic = true;
       return true;
-    case 4: // set underline on
+    case 4:                    // set underline on
       underline = true;
       break;
-    case 5: // set blink on
+    case 5:                    // set blink on
       break;
-    case 6: // rapid blink on
+    case 6:                    // rapid blink on
       break;
-    case 7: // reverse video on
+    case 7:                    // reverse video on
       invert = true;
       break;
-    case 8: // conceal on
+    case 8:                    // conceal on
       break;
-    case 21: // set bold off
+    case 21:                   // set bold off
       bold = false;
       return true;
     case 23:
       italic = false;
       return true;
-    case 24: // set underline off
+    case 24:                   // set underline off
       underline = false;
       break;
-    case 27: // reverse video off
+    case 27:                   // reverse video off
       invert = false;
       break;
       // colors - 30..37 foreground, 40..47 background
-    case 30: // set black fg
+    case 30:                   // set black fg
       labelcolor(ansiToFltk(0));
       break;
-    case 31: // set red fg
+    case 31:                   // set red fg
       labelcolor(ansiToFltk(4));
       break;
-    case 32: // set green fg
+    case 32:                   // set green fg
       labelcolor(ansiToFltk(2));
       break;
-    case 33: // set yellow fg
+    case 33:                   // set yellow fg
       labelcolor(ansiToFltk(6));
       break;
-    case 34: // set blue fg
+    case 34:                   // set blue fg
       labelcolor(ansiToFltk(1));
       break;
-    case 35: // set magenta fg
+    case 35:                   // set magenta fg
       labelcolor(ansiToFltk(5));
       break;
-    case 36: // set cyan fg
+    case 36:                   // set cyan fg
       labelcolor(ansiToFltk(3));
       break;
-    case 37: // set white fg
+    case 37:                   // set white fg
       labelcolor(ansiToFltk(7));
       break;
-    case 40: // set black bg
+    case 40:                   // set black bg
       color(ansiToFltk(0));
       break;
-    case 41: // set red bg
+    case 41:                   // set red bg
       color(ansiToFltk(4));
       break;
-    case 42: // set green bg
+    case 42:                   // set green bg
       color(ansiToFltk(2));
       break;
-    case 43: // set yellow bg
+    case 43:                   // set yellow bg
       color(ansiToFltk(6));
       break;
-    case 44: // set blue bg
+    case 44:                   // set blue bg
       color(ansiToFltk(1));
       break;
-    case 45: // set magenta bg
+    case 45:                   // set magenta bg
       color(ansiToFltk(5));
       break;
-    case 46: // set cyan bg
+    case 46:                   // set cyan bg
       color(ansiToFltk(3));
       break;
-    case 47: // set white bg
+    case 47:                   // set white bg
       color(ansiToFltk(15));
       break;
-    case 48: // subscript on
+    case 48:                   // subscript on
       break;
-    case 49: // superscript
+    case 49:                   // superscript
       break;
-    };                        
+    };
   }
   return false;
 }
@@ -537,7 +534,7 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
 /*! Handles the characters following the \e[ sequence. Returns whether a further call
  * is required to complete the process.
  */
-bool AnsiWidget::doEscape(unsigned char* &p) {
+bool AnsiWidget::doEscape(unsigned char *&p) {
   int escValue = 0;
 
   while (isdigit(*p)) {
@@ -549,7 +546,7 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
     p++;
     switch (*p) {
     case 'C':
-      // GSS  Graphic Size Selection
+      // GSS Graphic Size Selection
       textsize(escValue);
       setFont();
       break;
@@ -557,9 +554,9 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
   } else if (setGraphicsRendition(*p, escValue)) {
     setFont();
   }
-    
+
   if (*p == ';') {
-    p++; // next rendition
+    p++;                        // next rendition
     return true;
   }
   return false;
@@ -568,7 +565,7 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
 /*! Prepares to display text according to accumulated flags
  */
 void AnsiWidget::setFont() {
-  fltk::Font* font = labelfont();
+  fltk::Font *font = labelfont();
   if (bold) {
     font = font->bold();
   }
@@ -589,79 +586,77 @@ void AnsiWidget::print(const char *str) {
   begin_offscreen();
   setFont();
   int ascent = (int)getascent();
-  int fontHeight = (int)(ascent+getdescent());
-  unsigned char *p = (unsigned char*)str;
+  int fontHeight = (int)(ascent + getdescent());
+  unsigned char *p = (unsigned char *)str;
 
   while (*p) {
     switch (*p) {
-    case '\a':   // beep
+    case '\a':                 // beep
       beep();
       break;
     case '\t':
-      curX = calcTab(curX+1);
+      curX = calcTab(curX + 1);
       break;
     case '\xC':
       init();
       setcolor(color());
       fillrect(Rectangle(w(), h()));
       break;
-    case '\033':  // ESC ctrl chars
-      if (*(p+1) == '[' ) {
+    case '\033':               // ESC ctrl chars
+      if (*(p + 1) == '[') {
         p += 2;
         while (doEscape(p)) {
           // continue
         }
       }
       break;
-    case '\n': // new line
+    case '\n':                 // new line
       newLine();
       break;
-    case '\r': // return
+    case '\r':                 // return
       curX = INITXY;
       setcolor(color());
       fillrect(Rectangle(0, curY, w(), fontHeight));
       break;
     default:
-      int numChars = 1; // print minimum of one character
-      int cx = (int)getwidth((const char*)p, 1);
-      int width = w()-1;
+      int numChars = 1;         // print minimum of one character
+      int cx = (int)getwidth((const char *)p, 1);
+      int width = w() - 1;
 
       if (curX + cx >= width) {
         newLine();
       }
-
-      // print further non-control, non-null characters 
+      // print further non-control, non-null characters
       // up to the width of the line
       while (p[numChars] > 31) {
-        cx += (int)getwidth((const char*)p+numChars, 1);
+        cx += (int)getwidth((const char *)p + numChars, 1);
         if (curX + cx < width) {
           numChars++;
         } else {
           break;
         }
       }
-            
+
       if (invert) {
         setcolor(labelcolor());
         fillrect(curX, curY, cx, fontHeight);
         setcolor(color());
-        drawtext((const char*)p, numChars, float(curX), float(curY+ascent));
+        drawtext((const char *)p, numChars, float (curX), float (curY + ascent));
       } else {
         setcolor(color());
         fillrect(curX, curY, cx, fontHeight);
         setcolor(labelcolor());
-        drawtext((const char*)p, numChars, float(curX), float(curY+ascent));
+        drawtext((const char *)p, numChars, float (curX), float (curY + ascent));
       }
 
       if (underline) {
-        drawline(curX, curY+ascent+1, curX+cx, curY+ascent+1);
+        drawline(curX, curY + ascent + 1, curX + cx, curY + ascent + 1);
       }
-            
       // advance
-      p += numChars-1; // allow for p++ 
+      p += numChars - 1;        // allow for p++
       curX += cx;
     };
-        
+
     if (*p == '\0') {
       break;
     }
@@ -671,7 +666,7 @@ void AnsiWidget::print(const char *str) {
   redraw();
 }
 
-/*! 
+/*!
  */
 int AnsiWidget::handle(int e) {
   if (e == FOCUS) {
@@ -680,4 +675,3 @@ int AnsiWidget::handle(int e) {
   return Widget::handle(e);
 }
 
-// End of "$Id$".

@@ -1,4 +1,3 @@
-// $Id$
 //
 // Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
@@ -10,7 +9,7 @@
 //
 
 #ifdef HAVE_CONFIG_H
-#  include <config.h>
+#include <config.h>
 #endif
 
 #include <errno.h>
@@ -60,7 +59,7 @@
 #define IMG_TEXT_BORDER 25
 
 extern "C" void trace(const char *format, ...);
-Color getColor(String * s, Color def);
+Color getColor(String *s, Color def);
 void lineBreak(const char *s, int slen, int width, int &stlen, int &pxlen);
 const char *skipWhite(const char *s);
 bool unquoteTag(const char *tagBegin, const char *&tagEnd);
@@ -100,16 +99,14 @@ struct Display {
   Group *wnd;
   AnchorNode *anchor;
 
-  void drawBackground(Rectangle& rc) {
+  void drawBackground(Rectangle &rc) {
     if (background != NO_COLOR) {
       Color oldColor = fltk::getcolor();
       setcolor(background);
       fillrect(rc);
       setcolor(oldColor);
     }
-  }
-
-  void endImageFlow() {
+  } void endImageFlow() {
     // end text flow around images
     if (imgY != -1) {
       indent = imgIndent;
@@ -119,11 +116,11 @@ struct Display {
     }
   }
 
-  void newRow(U16 nrows = 1, bool doBackground=true) {
-    int bgY = y1 + (int) getdescent();
+  void newRow(U16 nrows = 1, bool doBackground = true) {
+    int bgY = y1 + (int)getdescent();
 
     x1 = indent;
-    y1 += nrows * lineHeight;
+    y1 += nrows *lineHeight;
     // flow around images
     if (imgY != -1 && y1 > imgY) {
       imgY = -1;
@@ -151,9 +148,8 @@ struct Display {
     }
   }
 
-  private:
+private:
   Color oldBackground;
-
 };
 
 //--Attributes------------------------------------------------------------------
@@ -165,7 +161,7 @@ struct Value {
 
 struct Attributes : public Properties {
   Attributes(int growSize) : Properties(growSize) {
-  } 
+  }
   String *getValue() {
     return get("value");
   }
@@ -199,16 +195,16 @@ struct Attributes : public Properties {
   bool isReadonly() {
     return get("readonly") != 0;
   }
-  void getValue(String & s) {
+  void getValue(String &s) {
     s.append(getValue());
   }
-  void getName(String & s) {
+  void getName(String &s) {
     s.append(getName());
   }
-  void getHref(String & s) {
+  void getHref(String &s) {
     s.append(getHref());
   }
-  void getType(String & s) {
+  void getType(String &s) {
     s.append(getType());
   }
   Value getWidth(int def = -1) {
@@ -242,14 +238,12 @@ struct Attributes : public Properties {
   Value getValue(const char *attr, int def);
 };
 
-int Attributes::getIntValue(const char *attr, int def)
-{
+int Attributes::getIntValue(const char *attr, int def) {
   String *s = get(attr);
   return (s != null ? s->toInteger() : def);
 }
 
-Value Attributes::getValue(const char *attr, int def)
-{
+Value Attributes::getValue(const char *attr, int def) {
   Value val;
   val.relative = false;
   String *s = get(attr);
@@ -259,8 +253,7 @@ Value Attributes::getValue(const char *attr, int def)
       val.relative = true;
     }
     val.value = s->toInteger();
-  }
-  else {
+  } else {
     val.value = def;
   }
   return val;
@@ -269,12 +262,12 @@ Value Attributes::getValue(const char *attr, int def)
 //--BaseNode--------------------------------------------------------------------
 
 struct BaseNode : public Object {
-  virtual void display(Display * out) {
-  }
+  virtual void display(Display *out) {
+  } 
   virtual int indexOf(const char *sFind, U8 matchCase) {
     return -1;
   }
-  virtual void getText(String * s) {
+  virtual void getText(String *s) {
   }
   virtual int getY() {
     return -1;
@@ -284,17 +277,16 @@ struct BaseNode : public Object {
 //--FontNode--------------------------------------------------------------------
 
 struct FontNode : public BaseNode {
-  FontNode(Font * font, int fontSize, Color color, bool bold, bool italic);
-  void display(Display * out);
+  FontNode(Font *font, int fontSize, Color color, bool bold, bool italic);
+  void display(Display *out);
 
   Font *font;                   // includes face,bold,italic
   U16 fontSize;
   Color color;
 };
 
-FontNode::FontNode(Font * font, int fontSize, Color color, bool bold,
-                   bool italic) : BaseNode()
-{
+FontNode::FontNode(Font *font, int fontSize, Color color, bool bold, bool italic) :
+  BaseNode() {
   this->font = font;
   this->fontSize = fontSize;
   this->color = color;
@@ -306,15 +298,13 @@ FontNode::FontNode(Font * font, int fontSize, Color color, bool bold,
   }
 }
 
-void FontNode::display(Display * out)
-{
+void FontNode::display(Display *out) {
   if (font) {
     setfont(font, fontSize);
   }
   if (color == (Color) - 1) {
     setcolor(out->color);       // </font> restores color
-  }
-  else if (color != 0) {
+  } else if (color != 0) {
     setcolor(color);
   }
   int oldLineHeight = out->lineHeight;
@@ -331,13 +321,12 @@ void FontNode::display(Display * out)
 struct BrNode : public BaseNode {
   BrNode(U8 premode) {
     this->premode = premode;
-  }
-  void display(Display * out) {
+  } 
+  void display(Display *out) {
     // when <pre> is active don't flow text around images
     if (premode && out->imgY != -1) {
       out->endImageFlow();
-    }
-    else {
+    } else {
       out->newRow(1);
     }
     out->lineHeight = (int)(getascent() + getdescent());
@@ -348,13 +337,13 @@ struct BrNode : public BaseNode {
 //--AnchorNode------------------------------------------------------------------
 
 struct AnchorNode : public BaseNode {
-  AnchorNode(Attributes & p):BaseNode() {
+  AnchorNode(Attributes &p) : BaseNode() {
     p.getName(name);
     p.getHref(href);
     wrapxy = 0;
     pushed = 0;
   }
-  void display(Display * out) {
+  void display(Display *out) {
     if (pushed) {
       out->uline = true;
     }
@@ -396,7 +385,7 @@ AnchorNode *pushedAnchor = 0;
 struct AnchorEndNode : public BaseNode {
   AnchorEndNode() : BaseNode() {
   }
-  void display(Display * out) {
+  void display(Display *out) {
     AnchorNode *beginNode = out->anchor;
     if (beginNode) {
       beginNode->x2 = out->x1;
@@ -415,8 +404,7 @@ struct StyleNode : public BaseNode {
   StyleNode(U8 uline, U8 center) {
     this->uline = uline;
     this->center = center;
-  }
-  void display(Display * out) {
+  } void display(Display *out) {
     out->uline = uline;
     out->center = center;
   }
@@ -429,8 +417,7 @@ struct StyleNode : public BaseNode {
 struct UlNode : public BaseNode {
   UlNode(bool ordered) {
     this->ordered = ordered;
-  }
-  void display(Display * out) {
+  } void display(Display *out) {
     nextId = 0;
     out->newRow(1);
     out->indent += LI_INDENT;
@@ -441,18 +428,16 @@ struct UlNode : public BaseNode {
 
 struct UlEndNode : public BaseNode {
   UlEndNode() {
-  }
-  void display(Display * out) {
+  } void display(Display *out) {
     out->indent -= LI_INDENT;
     out->newRow(2);
   }
 };
 
 struct LiNode : public BaseNode {
-  LiNode(UlNode * ulNode) {
+  LiNode(UlNode *ulNode) {
     this->ulNode = ulNode;
-  }
-  void display(Display * out) {
+  } void display(Display *out) {
     out->content = true;
     out->x1 = out->indent;
     out->y1 += out->lineHeight;
@@ -463,8 +448,7 @@ struct LiNode : public BaseNode {
         char t[10];
         sprintf(t, "%d.", ++ulNode->nextId);
         drawtext(t, 2, x, out->y1);
-      }
-      else {
+      } else {
         dotImage.draw(Rectangle(x, y, 5, 5));
         // draw messes with the current font - restore
         setfont(out->font, out->fontSize);
@@ -477,12 +461,12 @@ struct LiNode : public BaseNode {
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-  ImageNode(const Style * style, String * docHome, Attributes * a);
-  ImageNode(const Style * style, String * docHome, String * src, bool fixed);
-  ImageNode(const Style * style, const Image * image);
-  void makePath(String * src, String * docHome);
+  ImageNode(const Style *style, String *docHome, Attributes *a);
+  ImageNode(const Style *style, String *docHome, String *src, bool fixed);
+  ImageNode(const Style *style, const Image *image);
+  void makePath(String *src, String *docHome);
   void reload();
-  void display(Display * out);
+  void display(Display *out);
   const Image *image;
   const Style *style;
   String path, url;
@@ -491,9 +475,7 @@ struct ImageNode : public BaseNode {
   U8 valign;                    // 0=top, 1=center, 2=bottom
 };
 
-ImageNode::ImageNode(const Style * style, String * docHome,
-                     Attributes * a) : BaseNode()
-{
+ImageNode::ImageNode(const Style *style, String *docHome, Attributes *a) : BaseNode() {
   this->style = style;
   makePath(a->getSrc(), docHome);
   image = loadImage(path.toString());
@@ -505,9 +487,7 @@ ImageNode::ImageNode(const Style * style, String * docHome,
   valign = 0;
 }
 
-ImageNode::ImageNode(const Style * style, String * docHome, String * src,
-                     bool fixed) : BaseNode()
-{
+ImageNode::ImageNode(const Style *style, String *docHome, String *src, bool fixed) : BaseNode() {
   this->style = style;
   this->fixed = fixed;
   makePath(src, docHome);
@@ -519,8 +499,7 @@ ImageNode::ImageNode(const Style * style, String * docHome, String * src,
   valign = 0;
 }
 
-ImageNode::ImageNode(const Style * style, const Image * image) : BaseNode()
-{
+ImageNode::ImageNode(const Style *style, const Image *image) : BaseNode() {
   this->style = style;
   this->image = image;
   this->fixed = true;
@@ -531,23 +510,20 @@ ImageNode::ImageNode(const Style * style, const Image * image) : BaseNode()
   valign = 2;
 }
 
-void ImageNode::makePath(String * src, String * docHome)
-{
+void ImageNode::makePath(String *src, String *docHome) {
   // <img src=blah/images/g.gif>
   url.append(src);              // html path
   path.append(docHome);         // local file system path
   if (src) {
     if ((*src)[0] == '/') {
       path.append(src->substring(1));
-    }
-    else {
+    } else {
       path.append(src);
     }
   }
 }
 
-void ImageNode::reload()
-{
+void ImageNode::reload() {
   int iw, ih;
   image = loadImage(path.toString());
   image->measure(iw, ih);
@@ -559,14 +535,12 @@ void ImageNode::reload()
   }
 }
 
-void ImageNode::display(Display * out)
-{
+void ImageNode::display(Display *out) {
   if (image == 0) {
     return;
   }
-  int iw = w.relative ? (w.value * (out->x2 - out->x1) / 100) :
-    w.value < out->x2 ? w.value : out->x2;
-  int ih = h.relative ? (h.value * (out->wnd->h() - out->y1) / 100) : h.value;
+  int iw = w.relative ? (w.value *(out->x2 - out->x1) / 100) : w.value < out->x2 ? w.value : out->x2;
+  int ih = h.relative ? (h.value *(out->wnd->h() - out->y1) / 100) : h.value;
   if (out->measure == false) {
     if (background) {
       // tile image inside rect x,y,tabW,tabH
@@ -581,14 +555,12 @@ void ImageNode::display(Display * out)
         for (int ix = 0; ix <= numHorz; ix++) {
           if (x1 + w.value > x + out->tabW) {
             iw = out->tabW - (x1 - x);
-          }
-          else {
+          } else {
             iw = w.value;
           }
           if (y1 + h.value > y + out->tabH) {
             ih = out->tabH - (y1 - y);
-          }
-          else {
+          } else {
             ih = h.value;
           }
           image->draw(Rectangle(x1, y1, iw, ih));
@@ -596,8 +568,7 @@ void ImageNode::display(Display * out)
         }
         y1 += h.value;
       }
-    }
-    else {
+    } else {
       int x = out->x1 + DEFAULT_INDENT;
       int y = out->y1;
       switch (valign) {
@@ -622,25 +593,24 @@ void ImageNode::display(Display * out)
       out->x1 = out->indent;
       out->y1 += ih;
       out->imgY = -1;
-    }
-    else {
+    } else {
       out->imgY = out->y1 + ih;
       out->imgIndent = out->indent;
       out->x1 += iw + DEFAULT_INDENT;
       out->indent = out->x1;
     }
   }
-  setfont(out->font, out->fontSize);  // restore font
+  setfont(out->font, out->fontSize);    // restore font
 }
 
 //--TextNode--------------------------------------------------------------------
 
 struct TextNode : public BaseNode {
   TextNode(const char *s, U16 textlen);
-  void display(Display * out);
-  void drawSelection(const char *s, U16 len, U16 width, Display * out);
+  void display(Display *out);
+  void drawSelection(const char *s, U16 len, U16 width, Display *out);
   int indexOf(const char *sFind, U8 matchCase);
-  void getText(String * s);
+  void getText(String *s);
 
   int getY();
 
@@ -650,21 +620,18 @@ struct TextNode : public BaseNode {
   S16 ybegin;                   // 4
 };
 
-TextNode::TextNode(const char *s, U16 textlen) : BaseNode()
-{
+TextNode::TextNode(const char *s, U16 textlen) : BaseNode() {
   this->s = s;
   this->textlen = textlen;
   this->width = 0;
   this->ybegin = 0;
 }
 
-void TextNode::getText(String * s)
-{
+void TextNode::getText(String *s) {
   s->append(this->s, this->textlen);
 }
 
-void TextNode::drawSelection(const char *s, U16 len, U16 width, Display * out)
-{
+void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
   int out_y = out->y1 - (int)getascent();
   if (out->pointY < out_y) {
     return;                     // selection above text
@@ -684,8 +651,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display * out)
       if (out->markX < out->pointX) {
         leftX = out->markX;
         rightX = out->pointX;
-      }
-      else {                    // invert selection
+      } else {                  // invert selection
         leftX = out->pointX;
         rightX = out->markX;
       }
@@ -710,15 +676,13 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display * out)
             if (x > leftX) {
               left = false;
             }
-          }
-          else if (s[i] == ' ' && x > rightX) {
+          } else if (s[i] == ' ' && x > rightX) {
             rc.w(x - rc.x() - width);
             selEnd = i;
             break;
           }
         }
-      }
-      else {
+      } else {
         // drag row - draw around character boundary
         for (int i = 0; i < len; i++) {
           x += (int)getwidth(s + i, 1);
@@ -726,20 +690,17 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display * out)
             if (x < leftX) {
               rc.set_x(x);
               selBegin = i + 1;
-            }
-            else {
+            } else {
               left = false;
             }
-          }
-          else if (x > rightX) {
+          } else if (x > rightX) {
             rc.w(x - rc.x());
             selEnd = i + 1;
             break;
           }
         }
       }
-    }
-    else {
+    } else {
       // top row multiline - find the left margin
       S16 leftX = out->invertedSel ? out->pointX : out->markX;
       if (leftX > out->x1 + width) {
@@ -751,14 +712,12 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display * out)
         if (x < leftX) {
           rc.set_x(x);
           selBegin = i;
-        }
-        else {
+        } else {
           break;
         }
       }
     }
-  }
-  else {
+  } else {
     if (out->pointY < out_y + out->lineHeight) {
       // bottom row multiline - find the right margin
       S16 rightX = out->invertedSel ? out->markX : out->pointX;
@@ -787,8 +746,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display * out)
   setcolor(out->color);
 }
 
-void TextNode::display(Display * out)
-{
+void TextNode::display(Display *out) {
   ybegin = out->y1;
   out->content = true;
 
@@ -813,8 +771,7 @@ void TextNode::display(Display * out)
       }
     }
     out->x1 += width;
-  }
-  else {
+  } else {
     int linelen, linepx, cliplen;
     int len = textlen;
     const char *p = s;
@@ -832,7 +789,6 @@ void TextNode::display(Display * out)
             out->anchor->wrapxy = true;
           }
         }
-
         // clip long text - leave room for elipses
         int cellW = out->x2 - out->indent - ELIPSE_LEN;
         if (linepx > cellW) {
@@ -841,7 +797,7 @@ void TextNode::display(Display * out)
           do {
             linepx += (int)getwidth(p + cliplen, 1);
             cliplen++;
-          } 
+          }
           while (linepx < cellW);
         }
       }
@@ -867,21 +823,18 @@ void TextNode::display(Display * out)
       }
       if (out->x1 + linepx < out->x2) {
         out->x1 += linepx;
-      }
-      else {
+      } else {
         out->newRow();
       }
     }
   }
 }
 
-int TextNode::indexOf(const char *sFind, U8 matchCase)
-{
+int TextNode::indexOf(const char *sFind, U8 matchCase) {
   int numMatch = 0;
   int findLen = strlen(sFind);
   for (int i = 0; i < textlen; i++) {
-    U8 equals = matchCase ?
-      s[i] == sFind[numMatch] : toupper(s[i]) == toupper(sFind[numMatch]);
+    U8 equals = matchCase ? s[i] == sFind[numMatch] : toupper(s[i]) == toupper(sFind[numMatch]);
     numMatch = (equals ? numMatch + 1 : 0);
     if (numMatch == findLen) {
       return i + 1;
@@ -890,8 +843,7 @@ int TextNode::indexOf(const char *sFind, U8 matchCase)
   return -1;
 }
 
-int TextNode::getY()
-{
+int TextNode::getY() {
   return ybegin;
 }
 
@@ -900,7 +852,7 @@ int TextNode::getY()
 struct HrNode : public BaseNode {
   HrNode() : BaseNode() {
   }
-  void display(Display * out) {
+  void display(Display *out) {
     if (out->imgY != -1) {
       out->endImageFlow();
       out->y1 -= out->lineHeight;
@@ -923,8 +875,8 @@ struct HrNode : public BaseNode {
 struct TableNode;
 
 struct TrNode : public BaseNode {
-  TrNode(TableNode * tableNode, Attributes * a);
-  void display(Display * out);
+  TrNode(TableNode *tableNode, Attributes *a);
+  void display(Display *out);
 
   TableNode *table;
   U16 cols;
@@ -933,15 +885,15 @@ struct TrNode : public BaseNode {
 };
 
 struct TrEndNode : public BaseNode {
-  TrEndNode(TrNode * trNode);
-  void display(Display * out);
+  TrEndNode(TrNode *trNode);
+  void display(Display *out);
 
   TrNode *tr;
 };
 
 struct TdNode : public BaseNode {
-  TdNode(TrNode * trNode, Attributes * a);
-  void display(Display * out);
+  TdNode(TrNode *trNode, Attributes *a);
+  void display(Display *out);
 
   TrNode *tr;
   Color background, foreground;
@@ -950,19 +902,19 @@ struct TdNode : public BaseNode {
 };
 
 struct TdEndNode : public BaseNode {
-  TdEndNode(TdNode * tdNode);
-  void display(Display * out);
+  TdEndNode(TdNode *tdNode);
+  void display(Display *out);
 
   TdNode *td;
 };
 
 struct TableNode : public BaseNode {
-  TableNode(Attributes * a);
+  TableNode(Attributes *a);
   ~TableNode();
-  void display(Display * out);
-  void doEndTD(Display * out, TrNode * tr, Value * tdWidth);
-  void doEndTable(Display * out);
-  void setColWidth(Value * width);
+  void display(Display *out);
+  void doEndTD(Display *out, TrNode *tr, Value *tdWidth);
+  void doEndTable(Display *out);
+  void setColWidth(Value *width);
   void cleanup();
 
   U16 *columns;
@@ -978,16 +930,15 @@ struct TableNode : public BaseNode {
 };
 
 struct TableEndNode : public BaseNode {
-  TableEndNode(TableNode * tableNode);
-  void display(Display * out);
+  TableEndNode(TableNode *tableNode);
+  void display(Display *out);
 
   TableNode *table;
 };
 
 //--TableNode-------------------------------------------------------------------
 
-TableNode::TableNode(Attributes * a) : BaseNode()
-{
+TableNode::TableNode(Attributes *a) : BaseNode() {
   rows = 0;
   cols = 0;
   columns = 0;
@@ -995,13 +946,11 @@ TableNode::TableNode(Attributes * a) : BaseNode()
   border = a->getBorder();
 }
 
-TableNode::~TableNode()
-{
+TableNode::~TableNode() {
   cleanup();
 }
 
-void TableNode::display(Display * out)
-{
+void TableNode::display(Display *out) {
   nextCol = 0;
   nextRow = 0;
   out->endImageFlow();
@@ -1012,7 +961,7 @@ void TableNode::display(Display * out)
 
   if (out->content) {
     // update table initial row position- we remember content
-    // state on re-visiting the table via the value of initY 
+    // state on re-visiting the table via the value of initY
     initY += out->lineHeight;
     maxY = initY;
   }
@@ -1025,8 +974,8 @@ void TableNode::display(Display * out)
       out->measure = true;
     }
     cleanup();
-    columns = (U16 *) malloc(sizeof(U16) * cols);
-    sizes = (S16 *) malloc(sizeof(S16) * cols);
+    columns = (U16 *) malloc(sizeof(U16) *cols);
+    sizes = (S16 *) malloc(sizeof(S16) *cols);
     int cellW = width / cols;
     for (int i = 0; i < cols; i++) {
       columns[i] = cellW * (i + 1);
@@ -1041,16 +990,12 @@ void TableNode::display(Display * out)
 }
 
 // called from </td> to prepare for wrapping and resizing
-void TableNode::doEndTD(Display * out, TrNode * tr, Value * tdWidth)
-{
+void TableNode::doEndTD(Display *out, TrNode *tr, Value *tdWidth) {
   int index = nextCol - 1;
   if (out->y1 > maxY || tdWidth->value != -1) {
     // veto column changes - wrapped or fixed-width cell
     sizes[index] = -1;
-  }
-  else if (out->y1 == tr->y1 &&
-           out->x1 < columns[index] &&
-           out->x1 > sizes[index] && sizes[index] != -1) {
+  } else if (out->y1 == tr->y1 && out->x1 < columns[index] && out->x1 > sizes[index] && sizes[index] != -1) {
     // largest <td></td> on same line, less than the default width
     // add CELL_SPACING*2 since <td> reduces width by CELL_SPACING
     sizes[index] = out->x1 + (CELL_SPACING * 3);
@@ -1059,13 +1004,11 @@ void TableNode::doEndTD(Display * out, TrNode * tr, Value * tdWidth)
   if (out->y1 > maxY) {
     maxY = out->y1;             // new max table height
   }
-
   // close image flow to prevent bleeding into previous cell
   out->imgY = -1;
 }
 
-void TableNode::doEndTable(Display * out)
-{
+void TableNode::doEndTable(Display *out) {
   out->x2 = width;
   out->indent = initX;
   out->x1 = initX;
@@ -1086,8 +1029,7 @@ void TableNode::doEndTable(Display * out)
         int spacing = columns[i] - sizes[i];
         columns[i] = sizes[i] - delta;
         delta += spacing;
-      }
-      else {
+      } else {
         // apply delta only to wrapped column
         columns[i] -= delta;
       }
@@ -1100,11 +1042,9 @@ void TableNode::doEndTable(Display * out)
   }
 }
 
-void TableNode::setColWidth(Value * colw)
-{
+void TableNode::setColWidth(Value *colw) {
   // set user specified column width
-  int tdw = colw->relative ? colw->value * width / 100 :
-    colw->value < width ? colw->value : width;
+  int tdw = colw->relative ? colw->value * width / 100 : colw->value < width ? colw->value : width;
   int delta = columns[nextCol] - tdw;
   columns[nextCol] = tdw;
   for (int i = nextCol + 1; i < cols - 1; i++) {
@@ -1112,8 +1052,7 @@ void TableNode::setColWidth(Value * colw)
   }
 }
 
-void TableNode::cleanup()
-{
+void TableNode::cleanup() {
   if (columns) {
     free(columns);
   }
@@ -1122,13 +1061,11 @@ void TableNode::cleanup()
   }
 }
 
-TableEndNode::TableEndNode(TableNode* tableNode) : BaseNode()
-{
+TableEndNode::TableEndNode(TableNode *tableNode) : BaseNode() {
   table = tableNode;
 }
 
-void TableEndNode::display(Display* out)
-{
+void TableEndNode::display(Display *out) {
   if (table) {
     table->doEndTable(out);
   }
@@ -1136,8 +1073,7 @@ void TableEndNode::display(Display* out)
 
 //--TrNode----------------------------------------------------------------------
 
-TrNode::TrNode(TableNode* tableNode, Attributes* a) : BaseNode()
-{
+TrNode::TrNode(TableNode *tableNode, Attributes *a) : BaseNode() {
   table = tableNode;
   y1 = height = cols = 0;
   if (table) {
@@ -1147,8 +1083,7 @@ TrNode::TrNode(TableNode* tableNode, Attributes* a) : BaseNode()
   background = getColor(a->getBgColor(), NO_COLOR);
 }
 
-void TrNode::display(Display* out)
-{
+void TrNode::display(Display *out) {
   out->setColors(foreground, background);
 
   if (table == 0) {
@@ -1170,16 +1105,14 @@ void TrNode::display(Display* out)
   }
 }
 
-TrEndNode::TrEndNode(TrNode * trNode) : BaseNode()
-{
+TrEndNode::TrEndNode(TrNode *trNode) : BaseNode() {
   tr = trNode;
   if (tr && tr->table && tr->cols > tr->table->cols) {
     tr->table->cols = tr->cols;
   }
 }
 
-void TrEndNode::display(Display* out)
-{
+void TrEndNode::display(Display *out) {
   out->restoreColors();
 
   if (tr && tr->table) {
@@ -1189,8 +1122,7 @@ void TrEndNode::display(Display* out)
 
 //--TdNode----------------------------------------------------------------------
 
-TdNode::TdNode(TrNode * trNode, Attributes * a) : BaseNode()
-{
+TdNode::TdNode(TrNode *trNode, Attributes *a) : BaseNode() {
   tr = trNode;
   if (tr) {
     tr->cols++;
@@ -1198,11 +1130,10 @@ TdNode::TdNode(TrNode * trNode, Attributes * a) : BaseNode()
   foreground = getColor(a->getFgColor(), NO_COLOR);
   background = getColor(a->getBgColor(), NO_COLOR);
   width = a->getWidth();
-  colspan = a->getColSpan(1) - 1; // count 1 for each additional col
+  colspan = a->getColSpan(1) - 1;       // count 1 for each additional col
 }
 
-void TdNode::display(Display* out)
-{
+void TdNode::display(Display *out) {
   out->setColors(foreground, background);
 
   if (tr == 0 || tr->table == 0 || tr->table->cols == 0) {
@@ -1214,8 +1145,7 @@ void TdNode::display(Display* out)
     table->setColWidth(&width);
   }
 
-  out->x1 = table->initX + DEFAULT_INDENT +
-    (table->nextCol == 0 ? 0 : table->columns[table->nextCol - 1]);
+  out->x1 = table->initX + DEFAULT_INDENT + (table->nextCol == 0 ? 0 : table->columns[table->nextCol - 1]);
 
   out->y1 = tr->y1;             // top+left of next cell
 
@@ -1236,8 +1166,7 @@ void TdNode::display(Display* out)
 
   if (out->measure == false) {
     Rectangle rc(out->indent - CELL_SPACING,
-                 tr->y1 - (int)getascent(),
-                 out->x2 - out->indent + (CELL_SPACING * 2), out->lineHeight);
+                 tr->y1 - (int)getascent(), out->x2 - out->indent + (CELL_SPACING * 2), out->lineHeight);
     out->drawBackground(rc);
     if (table->border > 0) {
       Color oldColor = getcolor();
@@ -1249,13 +1178,11 @@ void TdNode::display(Display* out)
 
 }
 
-TdEndNode::TdEndNode(TdNode* tdNode) : BaseNode()
-{
+TdEndNode::TdEndNode(TdNode *tdNode) : BaseNode() {
   td = tdNode;
 }
 
-void TdEndNode::display(Display* out)
-{
+void TdEndNode::display(Display *out) {
   out->restoreColors();
 
   if (td && td->tr && td->tr->table) {
@@ -1266,10 +1193,10 @@ void TdEndNode::display(Display* out)
 //--NamedInput------------------------------------------------------------------
 
 struct NamedInput : public Object {
-  NamedInput(InputNode * node, String * name) {
+  NamedInput(InputNode *node, String *name) {
     this->input = node;
     this->name.append(name->toString());
-  } 
+  }
   ~NamedInput() {
   }
   InputNode *input;
@@ -1278,13 +1205,11 @@ struct NamedInput : public Object {
 
 //--InputNode-------------------------------------------------------------------
 
-static void onclick_callback(Widget * button, void *buttonId)
-{
+static void onclick_callback(Widget *button, void *buttonId) {
   ((HelpWidget *) button->parent())->onclick(button);
 }
 
-static void def_button_callback(Widget * button, void *buttonId)
-{
+static void def_button_callback(Widget *button, void *buttonId) {
   // supply "onclick=fff" to make it do something useful
   // check for parent of HelpWidget
   if (fltk::modal() == button->parent()->parent()) {
@@ -1293,11 +1218,11 @@ static void def_button_callback(Widget * button, void *buttonId)
 }
 
 struct InputNode : public BaseNode {
-  InputNode(Group * parent);
-  InputNode(Group * parent, Attributes * a, const char *v, int len);
-  InputNode(Group * parent, Attributes * a);
-  void update(strlib::List * namedInputs, Properties * p, Attributes * a);
-  void display(Display * out);
+  InputNode(Group *parent);
+  InputNode(Group *parent, Attributes *a, const char *v, int len);
+  InputNode(Group *parent, Attributes *a);
+  void update(strlib::List *namedInputs, Properties *p, Attributes *a);
+  void display(Display *out);
 
   Widget *button;
   String onclick;
@@ -1305,43 +1230,34 @@ struct InputNode : public BaseNode {
 };
 
 // creates either a text, checkbox, radio, hidden or button control
-InputNode::InputNode(Group * parent, Attributes * a) : BaseNode()
-{
+InputNode::InputNode(Group *parent, Attributes *a) : BaseNode() {
   parent->begin();
   String *type = a->getType();
   if (type != null && type->equals("text")) {
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_TEXTBOX);
-  }
-  else if (type != null && type->equals("readonly")) {
+  } else if (type != null && type->equals("readonly")) {
     button = new Widget(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_READONLY);
-  }
-  else if (type != null && type->equals("checkbox")) {
+  } else if (type != null && type->equals("checkbox")) {
     button = new CheckButton(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_CHKBOX);
-  }
-  else if (type != null && type->equals("radio")) {
+  } else if (type != null && type->equals("radio")) {
     button = new RadioButton(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RADIO);
-  }
-  else if (type != null && type->equals("slider")) {
+  } else if (type != null && type->equals("slider")) {
     button = new Slider(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RANGEVAL);
-  }
-  else if (type != null && type->equals("valueinput")) {
+  } else if (type != null && type->equals("valueinput")) {
     button = new ValueInput(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RANGEVAL);
-  }
-  else if (type != null && type->equals("thumbwheel")) {
+  } else if (type != null && type->equals("thumbwheel")) {
     button = new ThumbWheel(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RANGEVAL);
-  }
-  else if (type != null && type->equals("hidden")) {
+  } else if (type != null && type->equals("hidden")) {
     button = new Widget(0, 0, 0, 0);
     button->argument(ID_HIDDEN);
-  }
-  else {
+  } else {
     button = new Button(0, 0, 0, 0);
     button->argument(ID_BUTTON);
     button->callback(def_button_callback);
@@ -1349,9 +1265,7 @@ InputNode::InputNode(Group * parent, Attributes * a) : BaseNode()
   parent->end();
 }
 
-InputNode::InputNode(Group * parent, Attributes * a, const char *s,
-                     int len) : BaseNode()
-{
+InputNode::InputNode(Group *parent, Attributes *a, const char *s, int len) : BaseNode() {
   // creates a textarea control
   parent->begin();
   if (a->isReadonly()) {
@@ -1360,8 +1274,7 @@ InputNode::InputNode(Group * parent, Attributes * a, const char *s,
     button = new Widget(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_READONLY);
     button->copy_label(str.toString());
-  }
-  else {
+  } else {
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_TEXTAREA);
     ((Input *) button)->value(s, len);
@@ -1369,8 +1282,7 @@ InputNode::InputNode(Group * parent, Attributes * a, const char *s,
   parent->end();
 }
 
-InputNode::InputNode(Group * parent) : BaseNode()
-{
+InputNode::InputNode(Group *parent) : BaseNode() {
   // creates a select control
   parent->begin();
   button = new Choice(0, 0, INPUT_WIDTH, 0);
@@ -1378,8 +1290,7 @@ InputNode::InputNode(Group * parent) : BaseNode()
   parent->end();
 }
 
-void createDropList(InputNode * node, strlib::List * options)
-{
+void createDropList(InputNode *node, strlib::List *options) {
   Choice *menu = (Choice *) node->button;
   menu->begin();
   Object **list = options->getList();
@@ -1392,8 +1303,7 @@ void createDropList(InputNode * node, strlib::List * options)
   menu->end();
 }
 
-void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
-{
+void InputNode::update(strlib::List *names, Properties *env, Attributes *a) {
   Valuator *valuator;
   Input *input;
   Color color;
@@ -1408,7 +1318,6 @@ void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
   if (button == 0) {
     return;
   }
-
   // value uses environment/external attributes
   if (value == 0 && name != 0 && env) {
     value = env->get(name->toString());
@@ -1449,8 +1358,7 @@ void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
   case ID_BUTTON:
     if (value && value->length()) {
       button->copy_label(value->toString());
-    }
-    else {
+    } else {
       button->copy_label(" ");
     }
     break;
@@ -1466,27 +1374,23 @@ void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
   if (size != -1) {
     button->w(size);
   }
-
   // set callback
   onclick.append(a->getOnclick());
   if (onclick.length()) {
     button->callback(onclick_callback);
   }
-
   // set colors
   color = getColor(a->getBgColor(), 0);
   if (color) {
     button->color(color);       // background
-  }
-  else {
+  } else {
     button->color(BUTTON_COLOR);
   }
   color = getColor(a->getFgColor(), 0);
   if (color) {
     button->labelcolor(color);  // foreground
     button->textcolor(color);
-  }
-  else {
+  } else {
     button->labelcolor(ANCHOR_COLOR);
     button->textcolor(ANCHOR_COLOR);
   }
@@ -1495,21 +1399,16 @@ void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
   if (align != 0) {
     if (align->equals("right")) {
       button->align(ALIGN_INSIDE_RIGHT | ALIGN_CLIP);
-    }
-    else if (align->equals("center")) {
+    } else if (align->equals("center")) {
       button->align(ALIGN_CENTER | ALIGN_CLIP);
-    }
-    else if (align->equals("top")) {
+    } else if (align->equals("top")) {
       button->align(ALIGN_INSIDE_TOP | ALIGN_CLIP);
-    }
-    else if (align->equals("bottom")) {
+    } else if (align->equals("bottom")) {
       button->align(ALIGN_INSIDE_BOTTOM | ALIGN_CLIP);
-    }
-    else {
+    } else {
       button->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
     }
   }
-
   // set border
   switch (a->getBorder(0)) {
   case 1:
@@ -1527,8 +1426,7 @@ void InputNode::update(strlib::List * names, Properties * env, Attributes * a)
   }
 }
 
-void InputNode::display(Display * out)
-{
+void InputNode::display(Display *out) {
   if (button == 0 || ID_HIDDEN == button->argument()) {
     return;
   }
@@ -1564,8 +1462,7 @@ void InputNode::display(Display * out)
   button->labelsize(out->fontSize);
   if (button->y() + button->h() < out->y2 && button->y() >= 0) {
     button->clear_flag(INVISIBLE);
-  }
-  else {
+  } else {
     // draw a fake control in case partially visible
     setcolor(button->color());
     fillrect(*button);
@@ -1578,7 +1475,8 @@ void InputNode::display(Display * out)
 //--EnvNode---------------------------------------------------------------------
 
 struct EnvNode : public TextNode {
-  EnvNode(Properties * p, const char *s, U16 textlen):TextNode(0, 0) {
+  EnvNode(Properties *p, const char *s, U16 textlen) : 
+    TextNode(0, 0) {
     String var;
     var.append(s, textlen);
     var.trim();
@@ -1598,20 +1496,17 @@ struct EnvNode : public TextNode {
 
 //--HelpWidget------------------------------------------------------------------
 
-static void scrollbar_callback(Widget * scrollBar, void *helpWidget)
-{
+static void scrollbar_callback(Widget *scrollBar, void *helpWidget) {
   ((HelpWidget *) helpWidget)->scrollTo(((Scrollbar *) scrollBar)->value());
 }
 
-static void anchor_callback(Widget * helpWidget, void *target)
-{
+static void anchor_callback(Widget *helpWidget, void *target) {
   ((HelpWidget *) helpWidget)->navigateTo((const char *)target);
 }
 
-HelpWidget::HelpWidget(int x, int y, int width, int height, int defsize) : 
-  Group(x, y, width, height), 
-  nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5)
-{
+HelpWidget::HelpWidget(int x, int y, int width, int height, int defsize) :
+Group(x, y, width, height),
+  nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5) {
   begin();
   scrollbar = new Scrollbar(width - SCROLL_W, 0, SCROLL_W, height);
   scrollbar->set_vertical();
@@ -1628,13 +1523,11 @@ HelpWidget::HelpWidget(int x, int y, int width, int height, int defsize) :
   mouseMode = mm_select;
 }
 
-HelpWidget::~HelpWidget()
-{
+HelpWidget::~HelpWidget() {
   cleanup();
 }
 
-void HelpWidget::init()
-{
+void HelpWidget::init() {
   vscroll = 0;
   hscroll = 0;
   scrollHeight = h();
@@ -1643,21 +1536,18 @@ void HelpWidget::init()
   endSelection();
 }
 
-void HelpWidget::endSelection()
-{
+void HelpWidget::endSelection() {
   markX = pointX = -1;
   markY = pointY = -1;
   selection.empty();
 }
 
-void HelpWidget::setFontSize(int i)
-{
+void HelpWidget::setFontSize(int i) {
   labelsize(i);
   reloadPage();
 }
 
-void HelpWidget::cleanup()
-{
+void HelpWidget::cleanup() {
   int len = inputs.length();
   Object **list = inputs.getList();
   for (int i = 0; i < len; i++) {
@@ -1669,7 +1559,7 @@ void HelpWidget::cleanup()
     }
   }
 
-  // button/anchor items destroyed in nodeList 
+  // button/anchor items destroyed in nodeList
   inputs.emptyList();
   anchors.emptyList();
   images.emptyList();
@@ -1678,8 +1568,7 @@ void HelpWidget::cleanup()
   title.empty();
 }
 
-void HelpWidget::reloadPage()
-{
+void HelpWidget::reloadPage() {
   cleanup();
   init();
   compile();
@@ -1688,8 +1577,7 @@ void HelpWidget::reloadPage()
 }
 
 // returns the control with the given name
-Widget *HelpWidget::getInput(const char *name)
-{
+Widget *HelpWidget::getInput(const char *name) {
   Object **list = namedInputs.getList();
   int len = namedInputs.length();
   for (int i = 0; i < len; i++) {
@@ -1702,8 +1590,7 @@ Widget *HelpWidget::getInput(const char *name)
 }
 
 // return the value of the given control
-const char *HelpWidget::getInputValue(Widget * widget)
-{
+const char *HelpWidget::getInputValue(Widget *widget) {
   if (widget == 0) {
     return null;
   }
@@ -1728,8 +1615,7 @@ const char *HelpWidget::getInputValue(Widget * widget)
 }
 
 // return the nth form value
-const char *HelpWidget::getInputValue(int i)
-{
+const char *HelpWidget::getInputValue(int i) {
   int len = namedInputs.length();
   if (i < len) {
     Object **list = namedInputs.getList();
@@ -1740,8 +1626,7 @@ const char *HelpWidget::getInputValue(int i)
 }
 
 // return the name of the given button control
-const char *HelpWidget::getInputName(Widget * button)
-{
+const char *HelpWidget::getInputName(Widget *button) {
   Object **list = namedInputs.getList();
   int len = namedInputs.length();
   for (int i = 0; i < len; i++) {
@@ -1754,8 +1639,7 @@ const char *HelpWidget::getInputName(Widget * button)
 }
 
 // return all of the forms names and values - except hidden ones
-void HelpWidget::getInputProperties(Properties * p)
-{
+void HelpWidget::getInputProperties(Properties *p) {
   if (p == 0) {
     return;
   }
@@ -1770,10 +1654,9 @@ void HelpWidget::getInputProperties(Properties * p)
   }
 }
 
-// update a widget's display value using the given string based 
+// update a widget's display value using the given string based
 // assignment statement, eg val=1000
-bool HelpWidget::setInputValue(const char *assignment)
-{
+bool HelpWidget::setInputValue(const char *assignment) {
   String s = assignment;
   String name = s.lvalue();
   String value = s.rvalue();
@@ -1820,8 +1703,7 @@ bool HelpWidget::setInputValue(const char *assignment)
   return false;
 }
 
-void HelpWidget::scrollTo(const char *anchorName)
-{
+void HelpWidget::scrollTo(const char *anchorName) {
   int len = anchors.length();
   Object **list = anchors.getList();
   for (int i = 0; i < len; i++) {
@@ -1829,8 +1711,7 @@ void HelpWidget::scrollTo(const char *anchorName)
     if (p->name.equals(anchorName)) {
       if (p->getY() > scrollHeight) {
         vscroll = -scrollHeight;
-      }
-      else {
+      } else {
         vscroll = -p->getY();
       }
       redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
@@ -1839,8 +1720,7 @@ void HelpWidget::scrollTo(const char *anchorName)
   }
 }
 
-void HelpWidget::scrollTo(int scroll)
-{
+void HelpWidget::scrollTo(int scroll) {
   // called from the scrollbar using scrollbar units
   if (vscroll != scroll) {
     vscroll = -(scroll * scrollHeight / SCROLL_SIZE);
@@ -1848,14 +1728,12 @@ void HelpWidget::scrollTo(int scroll)
   }
 }
 
-void HelpWidget::layout()
-{
+void HelpWidget::layout() {
   scrollbar->resize(w() - SCROLL_W, 0, SCROLL_W, h());
   endSelection();
 }
 
-void HelpWidget::draw()
-{
+void HelpWidget::draw() {
   if (damage() == DAMAGE_CHILD) {
     Group::draw();
     return;
@@ -1896,8 +1774,7 @@ void HelpWidget::draw()
       out.markY = markY;
       out.pointY = pointY;
       out.invertedSel = false;
-    }
-    else {
+    } else {
       out.markY = pointY;
       out.pointY = markY;
       out.invertedSel = true;
@@ -1913,7 +1790,6 @@ void HelpWidget::draw()
       out.selection->empty();
     }
   }
-
   // must call setfont() before getascent() etc
   setfont(out.font, out.fontSize);
   out.y1 = (int)getascent();
@@ -1928,14 +1804,13 @@ void HelpWidget::draw()
     push_clip(Rectangle(0, pushedAnchor->y1, out.x2, h));
     havePushedAnchor = true;
   }
-
   // draw the background
   setcolor(out.background);
   fillrect(Rectangle(0, 0, w() - SCROLL_W, out.y2));
   setcolor(out.color);
 
   out.background = NO_COLOR;
-  
+
   // hide any inputs
   int len = inputs.length();
   Object **list = inputs.getList();
@@ -1966,8 +1841,7 @@ void HelpWidget::draw()
       }
       out.exposed = (damage() & DAMAGE_EXPOSE) ? 1 : 0;
     }
-    if (out.exposed == false &&
-        out.tableLevel == 0 && out.y1 - out.lineHeight > out.y2) {
+    if (out.exposed == false && out.tableLevel == 0 && out.y1 - out.lineHeight > out.y2) {
       // clip remaining content
       break;
     }
@@ -1985,8 +1859,7 @@ void HelpWidget::draw()
       scrollbar->slider_size(10);
       scrollbar->value(0, 1, 0, SCROLL_SIZE);
       vscroll = 0;
-    }
-    else {
+    } else {
       int value = SCROLL_SIZE * -vscroll / scrollH;
       int sliderH = height * height / pageHeight;
       scrollHeight = scrollH;
@@ -2000,7 +1873,6 @@ void HelpWidget::draw()
       }
     }
   }
-
   // draw child controls
   draw_child(*scrollbar);
 
@@ -2021,8 +1893,7 @@ void HelpWidget::draw()
   pop_clip();
 }
 
-void HelpWidget::compile()
-{
+void HelpWidget::compile() {
   U8 pre = !isHtmlFile();
   U8 bold = false;
   U8 italic = false;
@@ -2053,11 +1924,11 @@ void HelpWidget::compile()
   const char *tagPair = 0;
 
 #define ADD_PREV_SEGMENT                        \
-    prevlen = i-pindex;                         \
-    if (prevlen > 0) {                          \
-        nodeList.add(new TextNode(p, prevlen)); \
-        padlines = true;                        \
-    }
+  prevlen = i-pindex;                           \
+  if (prevlen > 0) {                            \
+    nodeList.add(new TextNode(p, prevlen));     \
+    padlines = true;                            \
+  }
 
   while (text && *text) {
     // find the start of the next tag
@@ -2074,8 +1945,7 @@ void HelpWidget::compile()
       }
       text = tagEnd + 1;        // adjoining tags
     }
-
-    // process open text leading to the found tag 
+    // process open text leading to the found tag
     if (tagBegin > text && tagPair == 0) {
       textlen = tagBegin - text;
       const char *p = text;
@@ -2098,18 +1968,15 @@ void HelpWidget::compile()
             if (ch == 133) {
               node = new ImageNode(style(), &ellipseImage);
               nodeList.add(node);
-            }
-            else if (ch > 129 && ch < 256) {
+            } else if (ch > 129 && ch < 256) {
               node = new TextNode(&entityMap[ch].xlat, 1);
               nodeList.add(node);
             }
             pindex = i;
             p = text + pindex;
-          }
-          else
+          } else
             for (int j = 0; j < entityMapLen; j++) {
-              if (0 == strncasecmp(text + i + 1, entityMap[j].ent,
-                                   entityMap[j].elen - 1)) {
+              if (0 == strncasecmp(text + i + 1, entityMap[j].ent, entityMap[j].elen - 1)) {
                 ADD_PREV_SEGMENT;
                 // save entity replacement
                 node = new TextNode(&entityMap[j].xlat, 1);
@@ -2133,8 +2000,7 @@ void HelpWidget::compile()
           }
           if (pre) {
             nodeList.add(new BrNode(pre));
-          }
-          else if (padlines == true) {
+          } else if (padlines == true) {
             nodeList.add(new TextNode(spacestr, 1));
             padlines = false;   // don't add consequtive spacestrs
           }
@@ -2189,7 +2055,6 @@ void HelpWidget::compile()
         padlines = true;
       }
     }
-
     // move to after end tag
     text = *tagEnd == 0 ? 0 : tagEnd + 1;
 
@@ -2204,19 +2069,14 @@ void HelpWidget::compile()
           bold = false;
           node = new FontNode(font, fontSize, 0, bold, italic);
           nodeList.add(node);
-        }
-        else if (0 == strncasecmp(tag, "i", 1)) {
+        } else if (0 == strncasecmp(tag, "i", 1)) {
           italic = false;
           node = new FontNode(font, fontSize, 0, bold, italic);
           nodeList.add(node);
-        }
-        else if (0 == strncasecmp(tag, "center", 6)) {
+        } else if (0 == strncasecmp(tag, "center", 6)) {
           center = false;
           nodeList.add(new StyleNode(uline, center));
-        }
-        else if (0 == strncasecmp(tag, "font", 4) || 
-                 0 == strncasecmp(tag, "code", 4) || 
-                 0 == strncasecmp(tag, "h", 1)) { // </h1>
+        } else if (0 == strncasecmp(tag, "font", 4) || 0 == strncasecmp(tag, "code", 4) || 0 == strncasecmp(tag, "h", 1)) {     // </h1>
           if (0 == strncasecmp(tag, "h", 1)) {
             if (bold > 0) {
               bold--;
@@ -2228,50 +2088,41 @@ void HelpWidget::compile()
           font = fltk::HELVETICA;
           node = new FontNode(font, fontSize, color, bold, italic);
           nodeList.add(node);
-        }
-        else if (0 == strncasecmp(tag, "pre", 3)) {
+        } else if (0 == strncasecmp(tag, "pre", 3)) {
           pre = false;
           node = new FontNode(font, fontSize, 0, bold, italic);
           nodeList.add(node);
           nodeList.add(new BrNode(pre));
-        }
-        else if (0 == strncasecmp(tag, "a", 1)) {
+        } else if (0 == strncasecmp(tag, "a", 1)) {
           nodeList.add(new AnchorEndNode());
-        }
-        else if (0 == strncasecmp(tag, "ul", 2) || 0 == strncasecmp(tag, "ol", 2)) {
+        } else if (0 == strncasecmp(tag, "ul", 2) || 0 == strncasecmp(tag, "ol", 2)) {
           nodeList.add(new UlEndNode());
           olStack.pop();
           padlines = false;
-        }
-        else if (0 == strncasecmp(tag, "u", 1)) {
+        } else if (0 == strncasecmp(tag, "u", 1)) {
           uline = false;
           nodeList.add(new StyleNode(uline, center));
-        }
-        else if (0 == strncasecmp(tag, "td", 2)) {
+        } else if (0 == strncasecmp(tag, "td", 2)) {
           nodeList.add(new TdEndNode((TdNode *) tdStack.pop()));
           text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "tr", 2)) {
+        } else if (0 == strncasecmp(tag, "tr", 2)) {
           node = new TrEndNode((TrNode *) trStack.pop());
           nodeList.add(node);
           padlines = false;
           text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "table", 5)) {
+        } else if (0 == strncasecmp(tag, "table", 5)) {
           node = new TableEndNode((TableNode *) tableStack.pop());
           nodeList.add(node);
           padlines = false;
           text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "textarea", 8) && tagPair) {
+        } else if (0 == strncasecmp(tag, "textarea", 8) && tagPair) {
           inputNode = new InputNode(this, &p, tagPair, tagBegin - tagPair);
           nodeList.add(inputNode);
           inputs.add(inputNode);
           inputNode->update(&namedInputs, cookies, &p);
           tagPair = 0;
           p.removeAll();
-        }
-        else if (0 == strncasecmp(tag, "select", 6) && tagPair) {
+        } else if (0 == strncasecmp(tag, "select", 6) && tagPair) {
           inputNode = new InputNode(this);
           createDropList(inputNode, &options);
           nodeList.add(inputNode);
@@ -2279,77 +2130,62 @@ void HelpWidget::compile()
           inputNode->update(&namedInputs, cookies, &p);
           tagPair = 0;
           p.removeAll();
-        }
-        else if (0 == strncasecmp(tag, "option", 6) && tagPair) {
+        } else if (0 == strncasecmp(tag, "option", 6) && tagPair) {
           String *option = new String();
           option->append(tagPair, tagBegin - tagPair);
           options.add(option);  // continue scan for more options
-        }
-        else if (0 == strncasecmp(tag, "title", 5) && tagPair) {
+        } else if (0 == strncasecmp(tag, "title", 5) && tagPair) {
           title.empty();
           title.append(tagPair, tagBegin - tagPair);
           tagPair = 0;
-        }
-        else if (0 == strncasecmp(tag, "script", 6) ||
-                 0 == strncasecmp(tag, "style", 5)) {
+        } else if (0 == strncasecmp(tag, "script", 6) || 0 == strncasecmp(tag, "style", 5)) {
           tagPair = 0;
         }
-      }
-      else if (isalpha(tag[0]) || tag[0] == '!') {
+      } else if (isalpha(tag[0]) || tag[0] == '!') {
         // process the start of the tag
         if (0 == strncasecmp(tag, "br", 2) || 0 == strncasecmp(tag, "p>", 2)) {
           nodeList.add(new BrNode(pre));
           padlines = false;
           text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "b>", 2)) {
+        } else if (0 == strncasecmp(tag, "b>", 2)) {
           bold = true;
           node = new FontNode(font, fontSize, 0, bold, italic);
           nodeList.add(node);
-        }
-        else if (0 == strncasecmp(tag, "i>", 2)) {
+        } else if (0 == strncasecmp(tag, "i>", 2)) {
           italic = true;
           node = new FontNode(font, fontSize, 0, bold, italic);
           nodeList.add(node);
-        }
-        else if (0 == strncasecmp(tag, "center", 6)) {
+        } else if (0 == strncasecmp(tag, "center", 6)) {
           center = true;
           nodeList.add(new StyleNode(uline, center));
-        }
-        else if (0 == strncasecmp(tag, "hr", 2)) {
+        } else if (0 == strncasecmp(tag, "hr", 2)) {
           nodeList.add(new HrNode());
           padlines = false;
-        }
-        else if (0 == strncasecmp(tag, "title", 5)) {
+        } else if (0 == strncasecmp(tag, "title", 5)) {
           tagPair = text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "pre", 3)) {
+        } else if (0 == strncasecmp(tag, "pre", 3)) {
           pre = true;
           node = new FontNode(COURIER, fontSize, 0, bold, italic);
           nodeList.add(node);
           nodeList.add(new BrNode(pre));
-        }
-        else if (0 == strncasecmp(tag, "code", 4)) {
+        } else if (0 == strncasecmp(tag, "code", 4)) {
           node = new FontNode(COURIER, fontSize, 0, bold, italic);
           nodeList.add(node);
-        }
-        else if (0 == strncasecmp(tag, "td", 2)) {
+        } else if (0 == strncasecmp(tag, "td", 2)) {
           p.removeAll();
           p.load(tag + 2, taglen - 2);
           node = new TdNode((TrNode *) trStack.peek(), &p);
           nodeList.add(node);
           tdStack.push(node);
           text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "tr", 2)) {
+        } else if (0 == strncasecmp(tag, "tr", 2)) {
           p.removeAll();
           p.load(tag + 2, taglen - 2);
           node = new TrNode((TableNode *) tableStack.peek(), &p);
           nodeList.add(node);
           trStack.push(node);
           text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "table", 5)) {
+        } else if (0 == strncasecmp(tag, "table", 5)) {
           p.removeAll();
           p.load(tag + 5, taglen - 5);
           node = new TableNode(&p);
@@ -2366,31 +2202,26 @@ void HelpWidget::compile()
             nodeList.add(node);
             images.add(node);
           }
-        }
-        else if (0 == strncasecmp(tag, "ul>", 3) || 0 == strncasecmp(tag, "ol>", 3)) {
+        } else if (0 == strncasecmp(tag, "ul>", 3) || 0 == strncasecmp(tag, "ol>", 3)) {
           node = new UlNode(tag[0] == 'o' || tag[0] == 'O');
           olStack.push(node);
           nodeList.add(node);
           padlines = false;
-        }
-        else if (0 == strncasecmp(tag, "u>", 2)) {
+        } else if (0 == strncasecmp(tag, "u>", 2)) {
           uline = true;
           nodeList.add(new StyleNode(uline, center));
-        }
-        else if (0 == strncasecmp(tag, "li>", 3)) {
+        } else if (0 == strncasecmp(tag, "li>", 3)) {
           node = new LiNode((UlNode *) olStack.peek());
           nodeList.add(node);
           padlines = false;
           text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "a ", 2)) {
+        } else if (0 == strncasecmp(tag, "a ", 2)) {
           p.removeAll();
           p.load(tag + 2, taglen - 2);
           node = new AnchorNode(p);
           nodeList.add(node);
           anchors.add(node);
-        }
-        else if (0 == strncasecmp(tag, "font ", 5)) {
+        } else if (0 == strncasecmp(tag, "font ", 5)) {
           p.removeAll();
           p.load(tag + 5, taglen - 5);
           color = getColor(p.get("color"), 0);
@@ -2399,8 +2230,7 @@ void HelpWidget::compile()
             // convert from points to pixels
             const fltk::Monitor & monitor = fltk::Monitor::all();
             fontSize = (int)(prop->toInteger() * monitor.dpi_y() / 72.0);
-          }
-          else {
+          } else {
             prop = p.get("size");
             if (prop != null) {
               fontSize = 7 + (prop->toInteger() * 2);
@@ -2412,16 +2242,14 @@ void HelpWidget::compile()
           }
           node = new FontNode(font, fontSize, color, bold, italic);
           nodeList.add(node);
-        }
-        else if (taglen == 2 && 0 == strncasecmp(tag, "h", 1)) {
+        } else if (taglen == 2 && 0 == strncasecmp(tag, "h", 1)) {
           // H1-H6 from large to small
           int size = FONT_SIZE_H1 - ((tag[1] - '1') * 2);
           node = new FontNode(font, size, 0, ++bold, italic);
           nodeList.add(new BrNode(pre));
           nodeList.add(node);
           padlines = false;
-        }
-        else if (0 == strncasecmp(tag, "input ", 6)) {
+        } else if (0 == strncasecmp(tag, "input ", 6)) {
           // check for quoted values including '>'
           if (unquoteTag(tagBegin + 6, tagEnd)) {
             taglen = tagEnd - tagBegin - 1;
@@ -2433,27 +2261,22 @@ void HelpWidget::compile()
           nodeList.add(inputNode);
           inputs.add(inputNode);
           inputNode->update(&namedInputs, cookies, &p);
-        }
-        else if (0 == strncasecmp(tag, "textarea", 8)) {
+        } else if (0 == strncasecmp(tag, "textarea", 8)) {
           p.load(tag + 8, taglen - 8);
           tagPair = text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "select", 6)) {
+        } else if (0 == strncasecmp(tag, "select", 6)) {
           p.load(tag + 6, taglen - 6);
           tagPair = text = skipWhite(tagEnd + 1);
           options.removeAll();
-        }
-        else if (0 == strncasecmp(tag, "option", 6)) {
+        } else if (0 == strncasecmp(tag, "option", 6)) {
           tagPair = text = skipWhite(tagEnd + 1);
-        }
-        else if (0 == strncasecmp(tag, "img ", 4)) {
+        } else if (0 == strncasecmp(tag, "img ", 4)) {
           p.removeAll();
           p.load(tag + 4, taglen - 4);
           node = new ImageNode(style(), &docHome, &p);
           nodeList.add(node);
           images.add(node);
-        }
-        else if (0 == strncasecmp(tag, "body ", 5)) {
+        } else if (0 == strncasecmp(tag, "body ", 5)) {
           p.removeAll();
           p.load(tag + 5, taglen - 5);
           text = skipWhite(tagEnd + 1);
@@ -2465,20 +2288,15 @@ void HelpWidget::compile()
             nodeList.add(node);
             images.add(node);
           }
-        }
-        else if (0 == strncasecmp(tag, "script", 6) ||
-                 0 == strncasecmp(tag, "style", 5)) {
+        } else if (0 == strncasecmp(tag, "script", 6) || 0 == strncasecmp(tag, "style", 5)) {
           tagPair = text;
-        }
-        else {
+        } else {
           // unknown tag
           text = skipWhite(tagEnd + 1);
         }
-      }
-      else if (tag[0] == '?') {
+      } else if (tag[0] == '?') {
         nodeList.add(new EnvNode(cookies, tag + 1, taglen - 1));
-      }
-      else {
+      } else {
         // '<' is a literal character
         nodeList.add(new TextNode(anglestr, 1));
         tagEnd = tagBegin;
@@ -2499,8 +2317,7 @@ void HelpWidget::compile()
 }
 
 // handle click from form button
-void HelpWidget::onclick(Widget * button)
-{
+void HelpWidget::onclick(Widget *button) {
   int len = inputs.length();
   Object **list = inputs.getList();
   for (int i = 0; i < len; i++) {
@@ -2515,8 +2332,7 @@ void HelpWidget::onclick(Widget * button)
   }
 }
 
-int HelpWidget::onMove(int event)
-{
+int HelpWidget::onMove(int event) {
   int ex = fltk::event_x();
   int ey = fltk::event_y();
 
@@ -2528,8 +2344,7 @@ int HelpWidget::onMove(int event)
       redraw(DAMAGE_PUSHED);
     }
     return 1;
-  }
-  else {
+  } else {
     int len = anchors.length();
     Object **list = anchors.getList();
     for (int i = 0; i < len; i++) {
@@ -2558,9 +2373,8 @@ int HelpWidget::onMove(int event)
         scrollY = ey;
         if (scroll > 0) {
           scroll = 0;           // too far up
-        }
-        else if (-scroll > scrollHeight) {
-          scroll = -scrollHeight; // too far down
+        } else if (-scroll > scrollHeight) {
+          scroll = -scrollHeight;       // too far down
         }
         if (scroll != vscroll) {
           vscroll = scroll;
@@ -2577,8 +2391,7 @@ int HelpWidget::onMove(int event)
   return 0;
 }
 
-int HelpWidget::onPush(int event)
-{
+int HelpWidget::onPush(int event) {
   Object **list = anchors.getList();
   int len = anchors.length();
   pushedAnchor = 0;
@@ -2603,8 +2416,7 @@ int HelpWidget::onPush(int event)
     if (event_state(SHIFT)) {
       pointX = (ex - hscroll);
       pointY = (ey - vscroll);
-    }
-    else {
+    } else {
       markX = pointX = (ex - hscroll);
       markY = pointY = (ey - vscroll);
     }
@@ -2619,15 +2431,13 @@ int HelpWidget::onPush(int event)
     if (ey > h() / 2) {
       // page down/up
       scroll += ex > w() / 2 ? -h() : h();
-    }
-    else {
+    } else {
       // home/end
       scroll = ex > w() / 2 ? -scrollHeight : 0;
     }
     if (scroll > 0) {
       scroll = 0;               // too far up
-    }
-    else if (-scroll > scrollHeight) {
+    } else if (-scroll > scrollHeight) {
       scroll = -scrollHeight;   // too far down
     }
     if (scroll != vscroll) {
@@ -2639,8 +2449,7 @@ int HelpWidget::onPush(int event)
   return 1;                     // return 1 to become the belowmouse
 }
 
-int HelpWidget::handle(int event)
-{
+int HelpWidget::handle(int event) {
   int handled = Group::handle(event);
   if (handled && event != fltk::MOVE) {
     return handled;
@@ -2751,18 +2560,17 @@ int HelpWidget::handle(int event)
         this->event.append(pushedAnchor->href.toString());
         if (this->event.length()) {
           // href has been set
-          user_data((void*)this->event.toString());
+          user_data((void *)this->event.toString());
           do_callback();
         }
       }
       return 1;
     }
   }
-  return scrollbar->active() ? scrollbar->handle(event) : 0;
+  return scrollbar->active()? scrollbar->handle(event) : 0;
 }
 
-bool HelpWidget::find(const char *s, bool matchCase)
-{
+bool HelpWidget::find(const char *s, bool matchCase) {
   if (s == 0 || s[0] == 0) {
     return false;
   }
@@ -2797,13 +2605,11 @@ bool HelpWidget::find(const char *s, bool matchCase)
   return true;
 }
 
-void HelpWidget::copySelection()
-{
+void HelpWidget::copySelection() {
   fltk::copy(selection.toString(), selection.length(), true);
 }
 
-void HelpWidget::selectAll()
-{
+void HelpWidget::selectAll() {
   markX = markY = 0;
   pointX = w();
   pointY = scrollHeight + h();
@@ -2812,8 +2618,7 @@ void HelpWidget::selectAll()
   redraw();
 }
 
-void HelpWidget::navigateTo(const char *s)
-{
+void HelpWidget::navigateTo(const char *s) {
   if (strncmp(s, "http://", 7) == 0) {
     // launch in real browser
     browseFile(s);
@@ -2827,26 +2632,22 @@ void HelpWidget::navigateTo(const char *s)
   if (len && path[len - 1] == '/' && s[0] == '/') {
     // avoid adding double slashes
     path.append(s + 1);
-  }
-  else {
+  } else {
     path.append(s);
   }
   loadFile(path.toString());
 }
 
-void HelpWidget::loadBuffer(const char *str)
-{
+void HelpWidget::loadBuffer(const char *str) {
   if (strncasecmp("file:", str, 5) == 0) {
     loadFile(str + 5);
-  }
-  else {
+  } else {
     htmlStr = str;
     reloadPage();
   }
 }
 
-void HelpWidget::loadFile(const char *f, bool useDocHome)
-{
+void HelpWidget::loadFile(const char *f, bool useDocHome) {
   FILE *fp;
   long len;
 
@@ -2872,8 +2673,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome)
     int i = fileName.lastIndexOf('/', 0);
     if (i != -1) {
       docHome = fileName.substring(0, i + 1);
-    }
-    else {
+    } else {
       docHome.append("./");
     }
     if (docHome[docHome.length() - 1] != '/') {
@@ -2886,8 +2686,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome)
     rewind(fp);
     htmlStr.append(fp, len);
     fclose(fp);
-  }
-  else {
+  } else {
     htmlStr.append("File not found: \"");
     htmlStr.append(fileName.toString());
     htmlStr.append("\" - ");
@@ -2902,8 +2701,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome)
   }
 }
 
-void HelpWidget::getImageNames(strlib::List * nameList)
-{
+void HelpWidget::getImageNames(strlib::List *nameList) {
   nameList->removeAll();
   Object **list = images.getList();
   int len = images.length();
@@ -2913,9 +2711,8 @@ void HelpWidget::getImageNames(strlib::List * nameList)
   }
 }
 
-// reload broken images 
-void HelpWidget::reloadImages()
-{
+// reload broken images
+void HelpWidget::reloadImages() {
   Object **list = images.getList();
   int len = images.length();
   for (int i = 0; i < len; i++) {
@@ -2927,8 +2724,7 @@ void HelpWidget::reloadImages()
   redraw();
 }
 
-void HelpWidget::setDocHome(const char *s)
-{
+void HelpWidget::setDocHome(const char *s) {
   docHome.empty();
   docHome.append(s);
   if (s && s[strlen(s) - 1] != '/') {
@@ -2936,8 +2732,7 @@ void HelpWidget::setDocHome(const char *s)
   }
 }
 
-const char *HelpWidget::getAnchor(int index)
-{
+const char *HelpWidget::getAnchor(int index) {
   int len = anchors.length();
   if (index < len && index > -1) {
     Object **list = anchors.getList();
@@ -2947,8 +2742,7 @@ const char *HelpWidget::getAnchor(int index)
   return null;
 }
 
-void HelpWidget::getText(String * s)
-{
+void HelpWidget::getText(String *s) {
   Object **list = nodeList.getList();
   int len = nodeList.length();
   for (int i = 0; i < len; i++) {
@@ -2957,25 +2751,22 @@ void HelpWidget::getText(String * s)
   }
 }
 
-bool HelpWidget::isHtmlFile()
-{
+bool HelpWidget::isHtmlFile() {
   const char *filename = fileName.toString();
   if (!fileName || !fileName[0]) {
     return false;
   }
   int len = strlen(filename);
-  return (strcasecmp(filename + len - 4, ".htm") == 0 ||
-          strcasecmp(filename + len - 5, ".html") == 0);
+  return (strcasecmp(filename + len - 4, ".htm") == 0 || strcasecmp(filename + len - 5, ".html") == 0);
 }
 
 //--Helper functions------------------------------------------------------------
 
 /**
  * Returns the number of characters that will fit within
- * the gixen pixel width. 
+ * the gixen pixel width.
  */
-void lineBreak(const char *s, int slen, int width, int &linelen, int &linepx)
-{
+void lineBreak(const char *s, int slen, int width, int &linelen, int &linepx) {
   // find the end of the first word
   int i = 0;
   int txtWidth;
@@ -2995,7 +2786,6 @@ void lineBreak(const char *s, int slen, int width, int &linelen, int &linepx)
     linepx = (int)getwidth(s, slen);
     return;
   }
-
   // find the last break-point within the available width
   txtWidth = (int)getwidth(s, i);
   ibreak = i;
@@ -3016,8 +2806,7 @@ void lineBreak(const char *s, int slen, int width, int &linelen, int &linepx)
     // entire segment fits
     linelen = slen;
     linepx = txtWidth;
-  }
-  else {
+  } else {
     // first break-point is after boundary
     linelen = ibreak;
     linepx = breakWidth;
@@ -3025,8 +2814,7 @@ void lineBreak(const char *s, int slen, int width, int &linelen, int &linepx)
 }
 
 // return a new tagEnd if the current '>' is embedded in quotes
-bool unquoteTag(const char *tagBegin, const char *&tagEnd)
-{
+bool unquoteTag(const char *tagBegin, const char *&tagEnd) {
   bool quote = false;
   int len = tagEnd - tagBegin;
   int i = 1;
@@ -3067,11 +2855,10 @@ bool unquoteTag(const char *tagBegin, const char *&tagEnd)
 }
 
 /**
- * skip white space between tags: 
+ * skip white space between tags:
  * <table>-skip-<tr>-skip-<td></td>-skip</tr>-skip-</table>
  */
-const char *skipWhite(const char *s)
-{
+const char *skipWhite(const char *s) {
   if (s == 0 || s[0] == 0) {
     return 0;
   }
@@ -3081,8 +2868,7 @@ const char *skipWhite(const char *s)
   return s;
 }
 
-Color getColor(String * s, Color def)
-{
+Color getColor(String *s, Color def) {
   if (s == 0 || s->length() == 0) {
     return def;
   }
@@ -3095,85 +2881,63 @@ Color getColor(String * s, Color def)
     int g = (rgb >> 8) & 255;
     int b = rgb & 255;
     return fltk::color((uchar) r, (uchar) g, (uchar) b);
-  }
-  else if (strcasecmp(n, "black") == 0) {
+  } else if (strcasecmp(n, "black") == 0) {
     return BLACK;
-  }
-  else if (strcasecmp(n, "red") == 0) {
+  } else if (strcasecmp(n, "red") == 0) {
     return RED;
-  }
-  else if (strcasecmp(n, "green") == 0) {
+  } else if (strcasecmp(n, "green") == 0) {
     return fltk::color(0, 0x80, 0);
-  }
-  else if (strcasecmp(n, "yellow") == 0) {
+  } else if (strcasecmp(n, "yellow") == 0) {
     return YELLOW;
-  }
-  else if (strcasecmp(n, "blue") == 0) {
+  } else if (strcasecmp(n, "blue") == 0) {
     return BLUE;
-  }
-  else if (strcasecmp(n, "magenta") == 0 || strcasecmp(n, "fuchsia") == 0) {
+  } else if (strcasecmp(n, "magenta") == 0 || strcasecmp(n, "fuchsia") == 0) {
     return MAGENTA;
-  }
-  else if (strcasecmp(n, "cyan") == 0 || strcasecmp(n, "aqua") == 0) {
+  } else if (strcasecmp(n, "cyan") == 0 || strcasecmp(n, "aqua") == 0) {
     return CYAN;
-  }
-  else if (strcasecmp(n, "white") == 0) {
+  } else if (strcasecmp(n, "white") == 0) {
     return WHITE;
-  }
-  else if (strcasecmp(n, "gray") == 0 || strcasecmp(n, "grey") == 0) {
+  } else if (strcasecmp(n, "gray") == 0 || strcasecmp(n, "grey") == 0) {
     return fltk::color(0x80, 0x80, 0x80);
-  }
-  else if (strcasecmp(n, "lime") == 0) {
+  } else if (strcasecmp(n, "lime") == 0) {
     return GREEN;
-  }
-  else if (strcasecmp(n, "maroon") == 0) {
+  } else if (strcasecmp(n, "maroon") == 0) {
     return fltk::color(0x80, 0, 0);
-  }
-  else if (strcasecmp(n, "navy") == 0) {
+  } else if (strcasecmp(n, "navy") == 0) {
     return fltk::color(0, 0, 0x80);
-  }
-  else if (strcasecmp(n, "olive") == 0) {
+  } else if (strcasecmp(n, "olive") == 0) {
     return fltk::color(0x80, 0x80, 0);
-  }
-  else if (strcasecmp(n, "purple") == 0) {
+  } else if (strcasecmp(n, "purple") == 0) {
     return fltk::color(0x80, 0, 0x80);
-  }
-  else if (strcasecmp(n, "silver") == 0) {
+  } else if (strcasecmp(n, "silver") == 0) {
     return fltk::color(0xc0, 0xc0, 0xc0);
-  }
-  else if (strcasecmp(n, "teal") == 0) {
+  } else if (strcasecmp(n, "teal") == 0) {
     return fltk::color(0, 0x80, 0x80);
   }
   return def;
 }
 
 // image factory based on file extension
-SharedImage *loadImage(const char *name, uchar * buff)
-{
+SharedImage *loadImage(const char *name, uchar *buff) {
   int len = strlen(name);
-  SharedImage* result = 0;
-  if (strcasecmp(name + (len - 4), ".jpg") == 0 ||
-      strcasecmp(name + (len - 5), ".jpeg") == 0) {
+  SharedImage *result = 0;
+  if (strcasecmp(name + (len - 4), ".jpg") == 0 || strcasecmp(name + (len - 5), ".jpeg") == 0) {
     result = jpegImage::get(name, buff);
-  }
-  else if (strcasecmp(name + (len - 4), ".gif") == 0) {
+  } else if (strcasecmp(name + (len - 4), ".gif") == 0) {
     result = gifImage::get(name, buff);
-  }
-  else if (strcasecmp(name + (len - 4), ".png") == 0) {
+  } else if (strcasecmp(name + (len - 4), ".png") == 0) {
     result = pngImage::get(name, buff);
-  }
-  else if (strcasecmp(name + (len - 4), ".xpm") == 0) {
+  } else if (strcasecmp(name + (len - 4), ".xpm") == 0) {
     result = xpmFileImage::get(name, buff);
   }
   if (result) {
     // load the image
-    ((Image* )result)->fetch();
+    ((Image *) result)->fetch();
   }
   return result;
 }
 
-Image *loadImage(const char *imgSrc)
-{
+Image *loadImage(const char *imgSrc) {
   if (imgSrc == 0 || access(imgSrc, 0) != 0) {
     return &brokenImage;
   }
@@ -3187,8 +2951,7 @@ Image *loadImage(const char *imgSrc)
 #include <fltk/win32.h>
 #endif
 
-void browseFile(const char *url)
-{
+void browseFile(const char *url) {
 #if defined(WIN32)
   ShellExecute(xid(Window::first()), "open", url, 0, 0, SW_SHOWNORMAL);
 #else
@@ -3199,9 +2962,7 @@ void browseFile(const char *url)
     execlp("htmlview", "htmlview", url, NULL);
     execlp("firefox", "firefox", url, NULL);
     execlp("mozilla", "mozilla", url, NULL);
-    ::exit(0);    // in case exec failed 
+    ::exit(0);                  // in case exec failed
   }
 #endif
 }
-
-// End of "$Id$".
