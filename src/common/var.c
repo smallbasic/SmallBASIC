@@ -70,7 +70,7 @@ void v_free(var_t *v) {
     uds_free(v);
     break;
   case V_HASH:
-    hash_free(v);
+    hash_free_var(v);
     break;
   }
 

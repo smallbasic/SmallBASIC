@@ -254,8 +254,7 @@ dword serial_length(dev_file_t * f) {
   }
   return num;
 
-  // /////////////////////////////////////////////////////////////////////////////////////////
-#elif defined(_UnixOS)
+#elif defined(_UnixOS) && !defined(SERIAL_UNSUP)
   fd_set readfs;
   struct timeval tv;
   int res;

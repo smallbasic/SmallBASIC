@@ -13,7 +13,7 @@
 #include "common/smbas.h"
 #include "common/var_hash.h"
 
-#if HAVE_SEARCH_H
+#if defined(HAVE_SEARCH_H)
 #include <search.h>
 
 /**
@@ -27,7 +27,7 @@ typedef struct CallbackData {
   int firstElement;
   void* hash;
   var_p_t var;
-}CallbackData;
+} CallbackData;
 
 CallbackData cb;
 
@@ -37,22 +37,22 @@ CallbackData cb;
 typedef struct Element {
   var_p_t key;
   var_p_t value;
-}Element;
+} Element;
 
 /**
  * Return value from search routines
  */
 typedef struct Node {
-  Element* element;
-}Node;
+  Element *element;
+} Node;
 
-#if !defined(tdestroy)
+#if !defined(tdestroy) && !defined(HAVE_TDESTROY)
 // tdestroy() is missing from MingW. include code from gnu clib _search.c
 
 typedef struct node_t {
   void *key;
   struct node_t *left, *right;
-}node;
+} node;
 
 typedef void (*__free_fn_t) (void *__nodep);
 
@@ -103,8 +103,7 @@ void delete_element(Element* element) {
 /**
  * Callback to compare Element's
  */
-int cmp_fn(const void *a, const void *b)
-{
+int cmp_fn(const void *a, const void *b) {
   Element* el_a = (Element*) a;
   Element* el_b = (Element*) b;
   return strcasecmp(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
@@ -113,32 +112,28 @@ int cmp_fn(const void *a, const void *b)
 /**
  * Compare one HASH to another. see v_compare comments for return spec.
  */
-int hash_compare(const var_p_t var_a, const var_p_t var_b)
-{
+int hash_compare(const var_p_t var_a, const var_p_t var_b) {
   return 0;
 }
 
 /**
  * Return true if the structure is empty
  */
-int hash_is_empty(const var_p_t var_p)
-{
+int hash_is_empty(const var_p_t var_p) {
   return (var_p->v.hash == 0);
 }
 
 /**
  * Return the contents of the structure as an integer
  */
-int hash_to_int(const var_p_t var_p)
-{
+int hash_to_int(const var_p_t var_p) {
   return hash_length(var_p);
 }
 
 /**
  * Helper for hash_length
  */
-void hash_length_cb(const void *nodep, VISIT value, int level)
-{
+void hash_length_cb(const void *nodep, VISIT value, int level) {
   if (value == leaf || value == endorder) {
     cb.count++;
   }
@@ -147,8 +142,7 @@ void hash_length_cb(const void *nodep, VISIT value, int level)
 /**
  * Return the number of elements
  */
-int hash_length(const var_p_t var_p)
-{
+int hash_length(const var_p_t var_p) {
   cb.count = 0;
   if (var_p->type == V_HASH) {
     twalk(var_p->v.hash, hash_length_cb);
@@ -159,8 +153,7 @@ int hash_length(const var_p_t var_p)
 /**
  * Helper for hash_length
  */
-void hash_elem_cb(const void *nodep, VISIT value, int level)
-{
+void hash_elem_cb(const void *nodep, VISIT value, int level) {
   if (value == leaf || value == endorder) {
     if (cb.count++ == cb.index) {
       Element* element = ((Node*) nodep)->element;
@@ -185,13 +178,12 @@ var_p_t hash_elem(const var_p_t var_p, int index) {
 /**
  * Empty struct values
  */
-void hash_clear(const var_p_t var)
-{
-  hash_free(var);
+void hash_clear(const var_p_t var) {
+  hash_free_var(var);
 }
 
 /**
- * Helper for hash_free
+ * Helper for hash_free_var
  */
 void hash_free_cb(void *nodep) {
   Element* element = (Element*) nodep;
@@ -201,8 +193,7 @@ void hash_free_cb(void *nodep) {
 /**
  * Delete the given structure
  */
-void hash_free(var_p_t var_p)
-{
+void hash_free_var(var_p_t var_p) {
   if (var_p->type == V_HASH) {
     tdestroy(var_p->v.hash, hash_free_cb);
     var_p->v.hash = 0;
@@ -213,8 +204,7 @@ void hash_free(var_p_t var_p)
  * Return the variable in base keyed by key, if not found then creates
  * an empty variable that will be returned in a further call
  */
-void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result)
-{
+void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
   if (base->type != V_HASH) {
     // initialise as hash
     v_free(base);
@@ -254,8 +244,7 @@ void hash_set_cb(const void *nodep, VISIT value, int level) {
 /**
  * Reference values from one structure to another
  */
-void hash_set(var_p_t dest, const var_p_t src)
-{
+void hash_set(var_p_t dest, const var_p_t src) {
   v_free(dest);
   cb.hash = 0;
 
@@ -270,8 +259,7 @@ void hash_set(var_p_t dest, const var_p_t src)
 /**
  * Return the contents of the structure as a string
  */
-void hash_to_str(const var_p_t var_p, char *out, int max_len)
-{
+void hash_to_str(const var_p_t var_p, char *out, int max_len) {
   sprintf(out, "HASH:%d", hash_to_int(var_p));
 }
 
@@ -294,8 +282,7 @@ void hash_write_cb(const void *nodep, VISIT value, int level) {
 /**
  * Print the contents of the structure
  */
-void hash_write(const var_p_t var_p, int method, int handle)
-{
+void hash_write(const var_p_t var_p, int method, int handle) {
   if (var_p->type == V_HASH) {
     cb.method = method;
     cb.handle = handle;
@@ -321,7 +308,7 @@ var_p_t hash_elem(const var_p_t var_p, int index) {
 }
 void hash_clear(const var_p_t var_p) {
 }
-void hash_free(var_p_t var_p) {
+void hash_free_var(var_p_t var_p) {
 }
 void hash_get_value(var_p_t base, var_p_t key, var_p_t *result) {
 }

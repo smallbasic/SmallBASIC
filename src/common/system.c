@@ -327,7 +327,7 @@ int dev_run(const char *src, int retflg) {
       (true, &state, 0x6170706C, progid, true, &card, &lid) == 0)
   return (SysUIAppSwitch(card, lid, sysAppLaunchCmdNormalLaunch, NULL) == 0);
   return 0;
-#elif defined(_VTOS) || defined(_FRANKLIN_EBM)
+#elif defined(RUN_UNSUP)
   return 0;
 #elif defined(_Win32)
   int r;

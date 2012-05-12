@@ -1740,8 +1740,7 @@ void cmd_strN(long funcCode, var_t * r) {
     par_getstr(&arg1);
 
     if (!prog_error) {
-#if defined(_PalmOS) || defined(_VTOS)
-      // TODO: StdIOProvider API --- Is there any application that work stdio ?
+#if defined(RUN_UNSUP)
       err_unsup();
       r->type = V_STR;
       r->v.p.ptr = tmp_alloc(2);

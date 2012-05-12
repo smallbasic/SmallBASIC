@@ -33,26 +33,10 @@ typedef int FileHand;
 /*
  */
 int irda_open(dev_file_t * f) {
-#if defined(_PalmOS)
-  // /////////////////////////////////////////////////////////////////////////////////////////
-  // PalmOS
-  SysLibFind(irLibName, &f->libHandle);
-  if (f->devspeed > 57600)
-  f->devspeed = irOpenOptSpeed115200;
-  else if (f->devspeed < 57600)
-  f->devspeed = irOpenOptSpeed9600;
-  else
-  f->devspeed = irOpenOptSpeed57600;
-
-  f->last_error = IrOpen(f->libHandle, f->devspeed);
-  f->handle = 1;
-  if (f->last_error)
-  rt_raise("IROPEN() ERROR %d", f->last_error);
-
-  return (f->last_error == 0);
-
+#if defined(IRDA_UNSUP)
+  err_unsup();
+  return 0;
 #elif USE_TERM_IO
-  // /////////////////////////////////////////////////////////////////////////////////////////
   // Unix
   sprintf(f->name, "/dev/irda%d", f->port);
 
@@ -77,8 +61,6 @@ int irda_open(dev_file_t * f) {
   return (f->handle >= 0);
 
 #elif defined(_DOS)
-  // /////////////////////////////////////////////////////////////////////////////////////////
-  // DOS
   sprintf(f->name, "COM%d", f->port);
 
   f->handle = open(f->name, O_RDWR | O_NOCTTY);
@@ -86,7 +68,6 @@ int irda_open(dev_file_t * f) {
   err_file((f->last_error = errno));
   return (f->handle >= 0);
 #elif defined(_Win32) || defined(__CYGWIN__) || defined(__MINGW32__)
-  // /////////////////////////////////////////////////////////////////////////////////////////
   // Win32
   DCB dcb;
   HANDLE hCom;
@@ -124,23 +105,17 @@ int irda_open(dev_file_t * f) {
   f->handle = (int)hCom;
   return 1;
 #else
-  // /////////////////////////////////////////////////////////////////////////////////////////
-  // ERROR
   err_unsup();
-  return 0;                     // failed
+  return 0;
 #endif
 }
 
 /*
  */
 int irda_close(dev_file_t * f) {
-#if defined(_PalmOS)
-  f->last_error = IrClose(f->libHandle);
-  f->handle = -1;
-  if (f->last_error)
-  rt_raise("IRCLOSE() ERROR %d", f->last_error);
-  return (f->last_error == 0);
-
+#if defined(IRDA_UNSUP)
+  err_unsup();
+  return 0;
 #elif USE_TERM_IO
   tcsetattr(f->handle, TCSANOW, &f->oldtio);
   close(f->handle);
@@ -165,17 +140,13 @@ int irda_close(dev_file_t * f) {
 /*
  */
 int irda_write(dev_file_t * f, byte * data, dword size) {
-#if defined(_PalmOS)
-//      SerSend(f->libHandle, data, size, &f->last_error);
-  if (f->last_error)
-  rt_raise("SERSEND() ERROR %d", f->last_error);
-  return (f->last_error == 0);
-
+#if defined(IRDA_UNSUP)
+  err_unsup();
+  return 0;
 #elif defined(_UnixOS) || defined(_DOS)
   return stream_write(f, data, size);
 #elif defined(_Win32)
   DWORD bytes;
-
   f->last_error = !WriteFile((HANDLE) f->handle, data, size, &bytes, NULL);
   return bytes;
 #else
@@ -186,31 +157,9 @@ int irda_write(dev_file_t * f, byte * data, dword size) {
 /*
  */
 int irda_read(dev_file_t * f, byte * data, dword size) {
-#if defined(_PalmOS)
-  dword num;
-  int ev;
-
-  do {
-//              f->last_error = SerReceiveCheck(f->libHandle, &num);
-    ev = dev_events(0);
-
-    if (f->last_error || prog_error || ev < 0) {
-      IrClose(f->libHandle);
-      f->handle = -1;
-      break;
-    }
-    if (num >= size)
-    break;
-  }while (1);
-
-//      if      ( num >= size )
-//              f->last_error = SerReceive10(f->libHandle, data, size, -1);
-
-  if (f->last_error)
-  rt_raise("SERRECEIVE10() ERROR %d", f->last_error);
-
-  return (f->last_error == 0);
-
+#if defined(IRDA_UNSUP)
+  err_unsup();
+  return 0;
 #elif defined(_UnixOS) || defined(_DOS)
   return stream_read(f, data, size);
 #elif defined(_Win32)
@@ -227,18 +176,9 @@ int irda_read(dev_file_t * f, byte * data, dword size) {
  *	Returns the number of the available data on serial port
  */
 dword irda_length(dev_file_t * f) {
-#if defined(_PalmOS)
-  dword num;
-
-//      f->last_error = SerReceiveCheck(f->libHandle, &num);
-  if (f->last_error) {
-    IrClose(f->libHandle);
-    f->handle = -1;
-    num = 0;
-  }
-  return num;
-
-  // /////////////////////////////////////////////////////////////////////////////////////////
+#if defined(IRDA_UNSUP)
+  err_unsup();
+  return 0;
 #elif defined(_UnixOS) || defined(_DOS)
   fd_set readfs;
   struct timeval tv;
@@ -270,9 +210,8 @@ dword irda_length(dev_file_t * f) {
  *	Returns true (EOF) if the connection is broken
  */
 dword irda_eof(dev_file_t * f) {
-#if defined(_PalmOS)
-//      Boolean a, b;
-//      return (SerGetStatus(f->libHandle, &a, &b) != 0);
+#if defined(IRDA_UNSUP)
+  err_unsup();
   return 0;
 #else
   return f->last_error;

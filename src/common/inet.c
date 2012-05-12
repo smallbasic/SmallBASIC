@@ -11,7 +11,7 @@
 #include "common/inet.h"
 #include "common/device.h"
 
-#if defined(NULL_INET)
+#if defined(INET_UNSUP)
  int net_init(void) { return 0; }
  int net_close(void) { return 0; }
  void net_print(socket_t s, const char *str) {}

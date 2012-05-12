@@ -52,7 +52,6 @@ libsb_common_a_SOURCES =												\
     device.c device.h														\
     screen.c																		\
     system.c																		\
-    dev_genfb.h dev_term.h											\
     drvmouse.h drvsound.h												\
     eval.c																			\
     extlib.c extlib.h														\
@@ -85,13 +84,12 @@ libsb_common_a_SOURCES =												\
     units.c units.h															\
     var.c var.h																	\
     vmt.c vmt.h																	\
-    interactive_mode.h													\
     messages.h																	\
     osd.h																				\
     pdb.h																				\
     pmem.h																			\
     sbapp.h																			\
     smbas.h																			\
-    sys.h																				\
-    unx_memmgr.h
+    sys.h
+
 

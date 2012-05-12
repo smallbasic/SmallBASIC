@@ -25,7 +25,7 @@ extern "C" {
  *
  * @return non-zero on success
  */
-int osd_devinit(void);        // in main seg please //SEC(BIO);
+int osd_devinit(void);
 
 /**
  * @ingroup lgraf
@@ -34,8 +34,7 @@ int osd_devinit(void);        // in main seg please //SEC(BIO);
  *
  * @return non-zero on success
  */
-int osd_devrestore(void)
-SEC(BIO);
+int osd_devrestore(void);
 
 /**
  * @ingroup lgraf
@@ -58,8 +57,7 @@ int osd_events(int wait_flag);
  *
  *   clear screen
  */
-void osd_cls(void)
-SEC(BIO);
+void osd_cls(void);
 
 /**
  * @ingroup lgraf
@@ -69,8 +67,7 @@ SEC(BIO);
  * @param x the x position in pixels
  * @param y the y position in pixels
  */
-void osd_setxy(int x, int y)
-SEC(BIO);
+void osd_setxy(int x, int y);
 
 /**
  * @ingroup lgraf
@@ -79,8 +76,7 @@ SEC(BIO);
  *
  *   @return the current x position
  */
-int osd_getx(void)
-SEC(BIO);
+int osd_getx(void);
 
 /**
  * @ingroup lgraf
@@ -89,8 +85,7 @@ SEC(BIO);
  *
  *   @return the current y position
  */
-int osd_gety(void)
-SEC(BIO);
+int osd_gety(void);
 
 /**
  * @ingroup lgraf
@@ -100,8 +95,7 @@ SEC(BIO);
  * @param str the text
  * @return the width of the text in pixels
  */
-int osd_textwidth(const char *str)
-SEC(BIO);
+int osd_textwidth(const char *str);
 
 /**
  * @ingroup lgraf
@@ -111,8 +105,7 @@ SEC(BIO);
  * @param str the text
  * @return the height of the text in pixels
  */
-int osd_textheight(const char *str)
-SEC(BIO);
+int osd_textheight(const char *str);
 
 /**
  * @ingroup lgraf
@@ -125,8 +118,7 @@ SEC(BIO);
  *
  * @param enable non-zero to enable pen/mouse driver.
  */
-void osd_setpenmode(int enable)
-SEC(BIO);
+void osd_setpenmode(int enable);
 
 /**
  * @ingroup lgraf
@@ -165,8 +157,7 @@ SEC(BIO);
  * @param code is the information code
  * @return a value based on 'code'
  */
-int osd_getpen(int mode)
-SEC(BIO);
+int osd_getpen(int mode);
 
 /**
  * @ingroup lgraf
@@ -197,8 +188,7 @@ SEC(BIO);
  *
  * @param str the string
  */
-void osd_write(const char *str)
-SEC(BIO);
+void osd_write(const char *str);
 
 /**
  * @ingroup lgraf
@@ -208,8 +198,7 @@ SEC(BIO);
  *
  * @param color the foreground color
  */
-void osd_setcolor(long color)
-SEC(BIO);
+void osd_setcolor(long color);
 
 /**
  * @ingroup lgraf
@@ -224,8 +213,7 @@ SEC(BIO);
  * @param fg the foreground color
  * @param bg the background color
  */
-void osd_settextcolor(long fg, long bg)
-SEC(BIO);
+void osd_settextcolor(long fg, long bg);
 
 /**
  * @ingroup lgraf
@@ -235,7 +223,7 @@ SEC(BIO);
  * @param x the x position
  * @param y the y position
  */
-void osd_setpixel(int x, int y);  // in main seg please //SEC(BIO);
+void osd_setpixel(int x, int y);
 
 /**
  * @ingroup lgraf
@@ -249,8 +237,7 @@ void osd_setpixel(int x, int y);  // in main seg please //SEC(BIO);
  * @param y the y position
  * @return the color
  */
-long osd_getpixel(int x, int y)
-SEC(BIO);
+long osd_getpixel(int x, int y);
 
 /**
  * @ingroup lgraf
@@ -262,8 +249,7 @@ SEC(BIO);
  * @param x2 line coordinates
  * @param y2 line coordinates
  */
-void osd_line(int x1, int y1, int x2, int y2);  // in main seg please
-// //SEC(BIO);
+void osd_line(int x1, int y1, int x2, int y2);
 
 /**
  * @ingroup lgraf
@@ -276,8 +262,7 @@ void osd_line(int x1, int y1, int x2, int y2);  // in main seg please
  * @param y2 lower-right corner
  * @param fill non-zero to fill it with foreground color
  */
-void osd_rect(int x1, int y1, int x2, int y2, int fill)
-SEC(BIO);
+void osd_rect(int x1, int y1, int x2, int y2, int fill);
 
 /**
  * @ingroup lgraf
@@ -296,24 +281,21 @@ SEC(BIO);
  * @param vol_prc is the volume (0-99)
  * @param bgplay non-zero for play the tone in background
  */
-void osd_sound(int frq, int dur, int vol, int bgplay)
-SEC(BIO);
+void osd_sound(int frq, int dur, int vol, int bgplay);
 
 /**
  * @ingroup lgraf
  *
  * clears background-sound queue
  */
-void osd_clear_sound_queue()
-SEC(BIO);
+void osd_clear_sound_queue();
 
 /**
  * @ingroup lgraf
  *
  * produce the standard system's beep :)
  */
-void osd_beep(void)
-SEC(BIO);
+void osd_beep(void);
 
 /**
  * @ingroup lgraf
@@ -321,8 +303,7 @@ SEC(BIO);
  * this routine it is called by SB every ~50ms.
  *   if framebuffer technique is used; this routine must write buffer to video-ram
  */
-void osd_refresh(void)
-SEC(BIO);
+void osd_refresh(void);
 
 /**
  * @ingroup lgraf
@@ -335,8 +316,7 @@ SEC(BIO);
  * @param y2 lower-right corner
  * @return the image's size in bytes
  */
-long osd_bmpsize(int x1, int y1, int x2, int y2)
-SEC(BIO);
+long osd_bmpsize(int x1, int y1, int x2, int y2);
 
 /**
  * @ingroup lgraf
@@ -349,8 +329,7 @@ SEC(BIO);
  * @param y2 lower-right corner
  * @param buf the memory block to store the image
  */
-void osd_bmpget(int x1, int y1, int x2, int y2, char *buf)
-SEC(BIO);
+void osd_bmpget(int x1, int y1, int x2, int y2, char *buf);
 
 /**
  * @ingroup lgraf
@@ -366,8 +345,7 @@ SEC(BIO);
  * @param write_mode the write-mode
  * @param buf the image
  */
-void osd_bmpput(int x, int y, int write_mode, char *buf)
-SEC(BIO);
+void osd_bmpput(int x, int y, int write_mode, char *buf);
 
 #if defined(__cplusplus)
 }

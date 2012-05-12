@@ -20,7 +20,7 @@
 #include <sys/types.h>
 #include <errno.h>
 
-#if !defined(NULL_INET)
+#if !defined(INET_UNSUP)
  #if defined(_Win32) || defined(__MINGW32__)
   #include <winsock2.h>           // @#@!$@#!$ it uses 'byte'
   #undef V_ARRAY                  /* defined in oleauto.h in mingw build */
