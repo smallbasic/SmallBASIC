@@ -5,42 +5,42 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-EXTRA_DIST =					\
-  sbasic.pro					\
-  sbasic.qrc					\
-  mainwindow.ui					\
-  source_view.ui				\
-  console_view.ui				\
-  images/next.png				\
-  images/previous.png				\
-  images/jump.png				\
-  images/home.png				\
-  images/refresh.png				\
-  images/stop.png				\
-  bas/settings.bas				\
-  bas/list.bas					\
-  bas/bookmarks.bas				\
+EXTRA_DIST =																		\
+  sbasic.pro																		\
+  sbasic.qrc																		\
+  mainwindow.ui																	\
+  source_view.ui																\
+  console_view.ui																\
+  images/next.png																\
+  images/previous.png														\
+  images/jump.png																\
+  images/home.png																\
+  images/refresh.png														\
+  images/stop.png																\
+  bas/settings.bas															\
+  bas/list.bas																	\
+  bas/bookmarks.bas															\
   bas/home.bas                       
 
-sbasicb_SOURCES =				\
-  fixedlayout.cpp				\
-  fixedlayout.h					\
-  httpfile.cpp					\
-  httpfile.h					\
-  ansiwidget.cpp				\
-  ansiwidget.h					\
-  main.cpp					\
-  mainwindow.cpp				\
-  mainwindow.h					\
-  dev_qt.cpp					\
-  form_ui.cpp					\
+sbasicb_SOURCES =																\
+  fixedlayout.cpp																\
+  fixedlayout.h																	\
+  httpfile.cpp																	\
+  httpfile.h																		\
+  ansiwidget.cpp																\
+  ansiwidget.h																	\
+  main.cpp																			\
+  mainwindow.cpp																\
+  mainwindow.h																	\
+  dev_qt.cpp																		\
+  form_ui.cpp																		\
   form_ui.h		
 
 bin_PROGRAMS = sbasicb
 
-sbasicb_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
+sbasicb_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
-sbasicb_DEPENDENCIES = ../libsb_common.a
+sbasicb_DEPENDENCIES = ../common/libsb_common.a
 
 sbasicb: ${sbasicb_SOURCES}
 	$(MAKE) -f Makefile.qt

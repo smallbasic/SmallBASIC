@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = -I../ -I. -I/usr/include @PACKAGE_CFLAGS@
+INCLUDES = -I../common -I. -I/usr/include @PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 

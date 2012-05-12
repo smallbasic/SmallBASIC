@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = -I../ -I. @PACKAGE_CFLAGS@
+INCLUDES = -I../common -I. @PACKAGE_CFLAGS@
 
 EXTRA_DIST =																		\
     chr2c.c																			\
