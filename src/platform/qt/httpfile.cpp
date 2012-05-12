@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -12,8 +11,8 @@
 
 QNetworkAccessManager manager;
 
-HttpFile::HttpFile(HttpFileListener* listener, 
-                   const QString path) : QTemporaryFile() {
+HttpFile::HttpFile(HttpFileListener *listener, const QString path) : 
+  QTemporaryFile() {
   this->listener = listener;
   this->url = QUrl(path);
   requestFile();
@@ -27,7 +26,7 @@ void HttpFile::requestFile() {
   QNetworkRequest request;
   request.setUrl(url);
   request.setRawHeader("User-Agent", "SmallBASIC - QT");
-  
+
   open(QIODevice::WriteOnly);
   reply = manager.get(request);
   connect(reply, SIGNAL(readyRead()), this, SLOT(readyRead()));
@@ -42,14 +41,12 @@ void HttpFile::finished() {
   if (reply->error()) {
     listener->loadError(reply->errorString());
     deleteLater();
-  } 
-  else if (!redirectionTarget.isNull()) {
+  } else if (!redirectionTarget.isNull()) {
     url = url.resolved(redirectionTarget.toUrl());
     open(QIODevice::WriteOnly);
     resize(0);
     requestFile();
-  }
-  else {
+  } else {
     // success
     listener->loadPath(fileName(), false, true);
     deleteLater();
@@ -62,5 +59,3 @@ void HttpFile::finished() {
 void HttpFile::readyRead() {
   write(reply->readAll());
 }
-
-// End of "$Id$".

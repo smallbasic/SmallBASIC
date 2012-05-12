@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -47,33 +46,33 @@
 #define INITXY 2
 
 static QColor colors[] = {
-  Qt::black,        // 0 black
-  Qt::darkBlue,     // 1 blue
-  Qt::darkGreen,    // 2 green
-  Qt::darkCyan,     // 3 cyan
-  Qt::darkRed,      // 4 red
-  Qt::darkMagenta,  // 5 magenta
-  Qt::darkYellow,   // 6 yellow
-  Qt::lightGray,    // 7 white
-  Qt::gray,         // 8 gray
-  Qt::blue,         // 9 light blue
-  Qt::green,        // 10 light green
-  Qt::cyan,         // 11 light cyan
-  Qt::red,          // 12 light red
-  Qt::magenta,      // 13 light magenta
-  Qt::yellow,       // 14 light yellow
-  Qt::white         // 15 bright white
+  Qt::black,                    // 0 black
+  Qt::darkBlue,                 // 1 blue
+  Qt::darkGreen,                // 2 green
+  Qt::darkCyan,                 // 3 cyan
+  Qt::darkRed,                  // 4 red
+  Qt::darkMagenta,              // 5 magenta
+  Qt::darkYellow,               // 6 yellow
+  Qt::lightGray,                // 7 white
+  Qt::gray,                     // 8 gray
+  Qt::blue,                     // 9 light blue
+  Qt::green,                    // 10 light green
+  Qt::cyan,                     // 11 light cyan
+  Qt::red,                      // 12 light red
+  Qt::magenta,                  // 13 light magenta
+  Qt::yellow,                   // 14 light yellow
+  Qt::white                     // 15 bright white
 };
 
 struct HyperlinkButton : public QAbstractButton {
-  HyperlinkButton(QString url, QString text, QWidget* parent) : 
+  HyperlinkButton(QString url, QString text, QWidget *parent) : 
     QAbstractButton(parent) {
     this->url = url;
     setText(text);
   };
 
-  void paintEvent(QPaintEvent* event) {
-    AnsiWidget* out = (AnsiWidget*) parent();
+  void paintEvent(QPaintEvent *event) {
+    AnsiWidget *out = (AnsiWidget *) parent();
     QPainter painter(this);
     QFontMetrics fm = fontMetrics();
     int width = fm.width(text());
@@ -92,7 +91,8 @@ struct HyperlinkButton : public QAbstractButton {
   QString url;
 };
 
-AnsiWidget::AnsiWidget(QWidget *parent) : QWidget(parent), img(0) {
+AnsiWidget::AnsiWidget(QWidget *parent) : 
+  QWidget(parent), img(0) {
   reset(true);
 
   // setup scrolling
@@ -133,8 +133,7 @@ void AnsiWidget::drawArc(int xc, int yc, double r,
 
 /*! draws an ellipse onto the offscreen buffer
  */
-void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr, 
-                             double aspect, int fill) {
+void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr, double aspect, int fill) {
   QPainter painter(this->img);
   painter.setRenderHint(QPainter::HighQualityAntialiasing);
   const QPoint center(xc, yc);
@@ -143,8 +142,7 @@ void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr,
     QBrush brush(this->fg);
     path.addEllipse(center, xr, yr * aspect);
     painter.fillPath(path, brush);
-  }
-  else {
+  } else {
     painter.setPen(this->fg);
     painter.drawEllipse(center, xr, static_cast<int>(yr * aspect));
   }
@@ -153,9 +151,9 @@ void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr,
 
 /*! draws the given image onto the offscreen buffer
  */
-void AnsiWidget::drawImage(QImage* image, int x, int y, int sx, int sy, int w, int h) {
+void AnsiWidget::drawImage(QImage *image, int x, int y, int sx, int sy, int w, int h) {
   QPainter painter(this->img);
-  painter.drawImage(x, y, *image, sx, sy, w, h); 
+  painter.drawImage(x, y, *image, sx, sy, w, h);
 }
 
 /*! draw a line onto the offscreen buffer
@@ -178,7 +176,7 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
  */
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   QPainter painter(this->img);
-  painter.fillRect(x1, y1, x2-x1, y2-y1, this->fg);
+  painter.fillRect(x1, y1, x2 - x1, y2 - y1, this->fg);
 }
 
 /*! returns the color of the pixel at the given xy location
@@ -196,7 +194,7 @@ int AnsiWidget::textHeight(void) {
 
 /*! Returns the width in pixels using the current font setting
  */
-int AnsiWidget::textWidth(const char* s) {
+int AnsiWidget::textWidth(const char *s) {
   QFontMetrics fm = fontMetrics();
   return fm.width(s);
 }
@@ -212,31 +210,31 @@ void AnsiWidget::print(const char *str) {
   QFontMetrics fm = fontMetrics();
   int ascent = fm.ascent();
   int fontHeight = fm.ascent() + fm.descent();
-  unsigned char *p = (unsigned char*)str;
+  unsigned char *p = (unsigned char *)str;
 
   while (*p) {
     switch (*p) {
-    case '\a':   // beep
+    case '\a':                 // beep
       beep();
       break;
     case '\t':
-      curX = calcTab(curX+1);
+      curX = calcTab(curX + 1);
       break;
     case '\xC':
       clearScreen();
       break;
-    case '\033':  // ESC ctrl chars
-      if (*(p+1) == '[' ) {
+    case '\033':               // ESC ctrl chars
+      if (*(p + 1) == '[') {
         p += 2;
         while (doEscape(p)) {
           // continue
         }
       }
       break;
-    case '\n': // new line
+    case '\n':                 // new line
       newLine();
       break;
-    case '\r': // return
+    case '\r':                 // return
       {
         curX = INITXY;
         QPainter painter(this->img);
@@ -244,22 +242,20 @@ void AnsiWidget::print(const char *str) {
       }
       break;
     default:
-      int numChars = 1; // print minimum of one character
-      int cx = fontMetrics().width((const char*) p, 1);
+      int numChars = 1;         // print minimum of one character
+      int cx = fontMetrics().width((const char *)p, 1);
       int w = width() - 1;
 
       if (curX + cx >= w) {
         newLine();
       }
-
       // print further non-control, non-null characters 
       // up to the width of the line
       while (p[numChars] > 31) {
-        cx += fontMetrics().width((const char*) p + numChars, 1);
+        cx += fontMetrics().width((const char *)p + numChars, 1);
         if (curX + cx < w) {
           numChars++;
-        } 
-        else {
+        } else {
           break;
         }
       }
@@ -270,17 +266,16 @@ void AnsiWidget::print(const char *str) {
       painter.setBackground(invert ? this->fg : this->bg);
       painter.setPen(invert ? this->bg : this->fg);
       painter.fillRect(curX, curY, cx, fontHeight, invert ? this->fg : this->bg);
-      painter.drawText(curX, curY + ascent, QString::fromUtf8((const char*)p, numChars));
+      painter.drawText(curX, curY + ascent, QString::fromUtf8((const char *)p, numChars));
 
       if (underline) {
-        painter.drawLine(curX, curY+ascent+1, curX+cx, curY+ascent+1);
+        painter.drawLine(curX, curY + ascent + 1, curX + cx, curY + ascent + 1);
       }
-            
       // advance
-      p += numChars-1; // allow for p++ 
+      p += numChars - 1;        // allow for p++ 
       curX += cx;
     };
-        
+
     if (*p == '\0') {
       break;
     }
@@ -292,14 +287,14 @@ void AnsiWidget::print(const char *str) {
 
 /*! save the offscreen buffer to the given filename
  */
-void AnsiWidget::saveImage(const char* filename, int x, int y, int w, int h) {
+void AnsiWidget::saveImage(const char *filename, int x, int y, int w, int h) {
   if (w == 0) {
     w = width();
   }
   if (h == 0) {
     h = height();
   }
-  
+
   img->copy(x, y, w, h).save(filename);
 }
 
@@ -354,7 +349,7 @@ void AnsiWidget::copySelection() {
 /*! public slot - a hyperlink has been clicked
  */
 void AnsiWidget::linkClicked() {
-  HyperlinkButton* button = (HyperlinkButton*) sender();
+  HyperlinkButton *button = (HyperlinkButton *) sender();
   if (listener) {
     listener->loadPath(button->url, true, true);
   }
@@ -381,7 +376,7 @@ void AnsiWidget::scrollChanged(int value) {
   int n = hyperlinks.size();
 
   for (int i = 0; i < n; i++) {
-    QAbstractButton* nextObject = hyperlinks.at(i);
+    QAbstractButton *nextObject = hyperlinks.at(i);
     QPoint pt = nextObject->pos();
     nextObject->move(pt.x(), pt.y() - value);
   }
@@ -395,8 +390,8 @@ QColor AnsiWidget::ansiToQt(long c) {
     // assume color is windows style RGB packing
     // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
     c = -c;
-    int r = (c>>16) & 0xFF;
-    int g = (c>>8) & 0xFF;
+    int r = (c >> 16) & 0xFF;
+    int g = (c >> 8) & 0xFF;
     int b = (c) & 0xFF;
     return QColor(r, g, b);
   }
@@ -422,7 +417,7 @@ void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
   QString text;
   QString tooltip;
 
-  unsigned char* next = p + 1;
+  unsigned char *next = p + 1;
   bool eot = false;
   int segment = 0;
 
@@ -439,15 +434,15 @@ void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
     case ';':
       switch (segment++) {
       case 0:
-        url = QString::fromUtf8((const char*) next, (p - next));
+        url = QString::fromUtf8((const char *)next, (p - next));
         text = tooltip = url;
         break;
       case 1:
-        text = QString::fromUtf8((const char*) next, (p - next));
+        text = QString::fromUtf8((const char *)next, (p - next));
         tooltip = text;
         break;
       case 2:
-        tooltip = QString::fromUtf8((const char*) next, (p - next));
+        tooltip = QString::fromUtf8((const char *)next, (p - next));
         eot = true;
         break;
       default:
@@ -463,17 +458,15 @@ void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
 
   if (execLink && listener) {
     listener->loadPath(url, true, true);
-  }
-  else {
-    HyperlinkButton* button = new HyperlinkButton(url, text, this);
+  } else {
+    HyperlinkButton *button = new HyperlinkButton(url, text, this);
     QFontMetrics fm = fontMetrics();
     int width = fm.width(text) + 2;
     int height = fm.ascent() + fm.descent() + 4;
 
     button->setGeometry(curX, curY, width, height);
     button->setToolTip(tooltip);
-    button->connect(button, SIGNAL(clicked(bool)),
-                    this, SLOT(linkClicked()));
+    button->connect(button, SIGNAL(clicked(bool)), this, SLOT(linkClicked()));
     button->setCursor(Qt::PointingHandCursor);
     button->show();
 
@@ -494,11 +487,11 @@ void AnsiWidget::destroyImage() {
 /*! Handles the characters following the \e[ sequence. Returns whether a further call
  * is required to complete the process.
  */
-bool AnsiWidget::doEscape(unsigned char* &p) {
+bool AnsiWidget::doEscape(unsigned char *&p) {
   int escValue = 0;
 
   while (isdigit(*p)) {
-    escValue = (escValue * 10) + (*p - '0');
+    escValue = (escValue *10) + (*p - '0');
     p++;
   }
 
@@ -506,7 +499,7 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
     p++;
     switch (*p) {
     case 'C':
-      // GSS  Graphic Size Selection
+      // GSS Graphic Size Selection
       textSize = escValue;
       updateFont();
       break;
@@ -517,13 +510,12 @@ bool AnsiWidget::doEscape(unsigned char* &p) {
       createLink(p, true);
       break;
     }
-  } 
-  else if (setGraphicsRendition(*p, escValue)) {
+  } else if (setGraphicsRendition(*p, escValue)) {
     updateFont();
   }
-    
+
   if (*p == ';') {
-    p++; // next rendition
+    p++;                        // next rendition
     return true;
   }
   return false;
@@ -547,25 +539,22 @@ void AnsiWidget::newLine() {
     // scroll any hyperlinks
     int n = hyperlinks.size();
     for (int i = 0; i < n; i++) {
-      QAbstractButton* nextObject = hyperlinks.at(i);
+      QAbstractButton *nextObject = hyperlinks.at(i);
       QPoint pt = nextObject->pos();
       if (pt.y() < -fontHeight) {
         delete nextObject;
         hyperlinks.removeAt(i);
         n--;
-      }
-      else {
+      } else {
         nextObject->move(pt.x(), pt.y() - fontHeight);
       }
     }
-  }
-  else if (curY + (fontHeight * 2) >= height()) {
+  } else if (curY + (fontHeight * 2) >= height()) {
     // setup scrollbar scrolling
     scrollbar->setMaximum(scrollbar->maximum() + fontHeight);
     scrollbar->setValue(scrollbar->value() + fontHeight);
     curY += fontHeight;
-  }
-  else {
+  } else {
     curY += fontHeight;
   }
 }
@@ -574,17 +563,16 @@ void AnsiWidget::newLine() {
  */
 void AnsiWidget::reset(bool init) {
   if (init) {
-    curY = INITXY; // allow for input control border
+    curY = INITXY;              // allow for input control border
     curX = INITXY;
-    tabSize = 40; // tab size in pixels (160/32 = 5)
+    tabSize = 40;               // tab size in pixels (160/32 = 5)
     markX = markY = pointX = pointY = 0;
     copyMode = false;
   }
-
   // cleanup any hyperlinks
   int n = hyperlinks.size();
   for (int i = 0; i < n; i++) {
-    QAbstractButton* nextObject = hyperlinks.at(i);
+    QAbstractButton *nextObject = hyperlinks.at(i);
     delete nextObject;
   }
   hyperlinks.clear();
@@ -605,118 +593,118 @@ void AnsiWidget::reset(bool init) {
  */
 bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   switch (c) {
-  case 'K': 
-    { // \e[K - clear to eol 
+  case 'K':
+    {                           // \e[K - clear to eol 
       QPainter painter(this->img);
       painter.fillRect(curX, curY, width() - curX, textHeight(), this->bg);
     }
     break;
-  case 'G': // move to column
+  case 'G':                    // move to column
     curX = escValue;
     break;
-  case 'T': // non-standard: move to n/80th of screen width
+  case 'T':                    // non-standard: move to n/80th of screen width
     curX = escValue * width() / 80;
     break;
-  case 's': // save cursor position
+  case 's':                    // save cursor position
     curYSaved = curX;
     curXSaved = curY;
     break;
-  case 'u': // restore cursor position
+  case 'u':                    // restore cursor position
     curX = curYSaved;
     curY = curXSaved;
     break;
-  case ';': // fallthru
-  case 'm': // \e[...m  - ANSI terminal
+  case ';':                    // fallthru
+  case 'm':                    // \e[...m - ANSI terminal
     switch (escValue) {
-    case 0:  // reset
+    case 0:                    // reset
       reset(false);
       break;
-    case 1: // set bold on
+    case 1:                    // set bold on
       bold = true;
       return true;
-    case 2: // set faint on
+    case 2:                    // set faint on
       break;
-    case 3: // set italic on
+    case 3:                    // set italic on
       italic = true;
       return true;
-    case 4: // set underline on
+    case 4:                    // set underline on
       underline = true;
       break;
-    case 5: // set blink on
+    case 5:                    // set blink on
       break;
-    case 6: // rapid blink on
+    case 6:                    // rapid blink on
       break;
-    case 7: // reverse video on
+    case 7:                    // reverse video on
       invert = true;
       break;
-    case 8: // conceal on
+    case 8:                    // conceal on
       break;
-    case 21: // set bold off
+    case 21:                   // set bold off
       bold = false;
       return true;
     case 23:
       italic = false;
       return true;
-    case 24: // set underline off
+    case 24:                   // set underline off
       underline = false;
       break;
-    case 27: // reverse video off
+    case 27:                   // reverse video off
       invert = false;
       break;
       // colors - 30..37 foreground, 40..47 background
-    case 30: // set black fg
+    case 30:                   // set black fg
       this->fg = ansiToQt(0);
       break;
-    case 31: // set red fg
+    case 31:                   // set red fg
       this->fg = ansiToQt(4);
       break;
-    case 32: // set green fg
+    case 32:                   // set green fg
       this->fg = ansiToQt(2);
       break;
-    case 33: // set yellow fg
+    case 33:                   // set yellow fg
       this->fg = ansiToQt(6);
       break;
-    case 34: // set blue fg
+    case 34:                   // set blue fg
       this->fg = ansiToQt(1);
       break;
-    case 35: // set magenta fg
+    case 35:                   // set magenta fg
       this->fg = ansiToQt(5);
       break;
-    case 36: // set cyan fg
+    case 36:                   // set cyan fg
       this->fg = ansiToQt(3);
       break;
-    case 37: // set white fg
+    case 37:                   // set white fg
       this->fg = ansiToQt(7);
       break;
-    case 40: // set black bg
+    case 40:                   // set black bg
       this->bg = ansiToQt(0);
       break;
-    case 41: // set red bg
+    case 41:                   // set red bg
       this->bg = ansiToQt(4);
       break;
-    case 42: // set green bg
+    case 42:                   // set green bg
       this->bg = ansiToQt(2);
       break;
-    case 43: // set yellow bg
+    case 43:                   // set yellow bg
       this->bg = ansiToQt(6);
       break;
-    case 44: // set blue bg
+    case 44:                   // set blue bg
       this->bg = ansiToQt(1);
       break;
-    case 45: // set magenta bg
+    case 45:                   // set magenta bg
       this->bg = ansiToQt(5);
       break;
-    case 46: // set cyan bg
+    case 46:                   // set cyan bg
       this->bg = ansiToQt(3);
       break;
-    case 47: // set white bg
+    case 47:                   // set white bg
       this->bg = ansiToQt(15);
       break;
-    case 48: // subscript on
+    case 48:                   // subscript on
       break;
-    case 49: // superscript
+    case 49:                   // superscript
       break;
-    };                        
+    };
   }
   return false;
 }
@@ -732,7 +720,7 @@ void AnsiWidget::updateFont() {
   this->setFont(font);
 }
 
-void AnsiWidget::mouseMoveEvent(QMouseEvent* event) {
+void AnsiWidget::mouseMoveEvent(QMouseEvent *event) {
   pointX = event->x();
   pointY = event->y();
   if (copyMode) {
@@ -743,7 +731,7 @@ void AnsiWidget::mouseMoveEvent(QMouseEvent* event) {
   }
 }
 
-void AnsiWidget::mousePressEvent(QMouseEvent* event) {
+void AnsiWidget::mousePressEvent(QMouseEvent *event) {
   bool selected = (markX != pointX || markY != pointY);
   markX = pointX = event->x();
   markY = pointY = event->y();
@@ -755,7 +743,7 @@ void AnsiWidget::mousePressEvent(QMouseEvent* event) {
   }
 }
 
-void AnsiWidget::mouseReleaseEvent(QMouseEvent*) {
+void AnsiWidget::mouseReleaseEvent(QMouseEvent *) {
   bool selected = (markX != pointX || markY != pointY);
   if (copyMode && selected) {
     update();
@@ -765,7 +753,7 @@ void AnsiWidget::mouseReleaseEvent(QMouseEvent*) {
   }
 }
 
-void AnsiWidget::paintEvent(QPaintEvent* event) {
+void AnsiWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
   QRect rc = event->rect();
 
@@ -782,7 +770,7 @@ void AnsiWidget::paintEvent(QPaintEvent* event) {
   QWidget::paintEvent(event);
 }
 
-void AnsiWidget::resizeEvent(QResizeEvent* event) {
+void AnsiWidget::resizeEvent(QResizeEvent *event) {
   scrollbar->resize(18, event->size().height());
   scrollbar->move(event->size().width() - scrollbar->width(), 0);
 
@@ -790,40 +778,38 @@ void AnsiWidget::resizeEvent(QResizeEvent* event) {
     int scrollH = textSize * scrollSize;
     int imgW = img->width();
     int imgH = img->height() - scrollH;
-    
+
     if (width() > imgW) {
       imgW = width();
     }
-    
+
     if (height() > imgH) {
       imgH = height();
     }
 
     imgH += scrollH;
     scrollbar->setPageStep(event->size().height());
-    
-    QPixmap* old = img;
+
+    QPixmap *old = img;
     img = new QPixmap(imgW, imgH);
     QPainter painter(img);
     painter.fillRect(0, 0, imgW, imgH, this->bg);
     painter.drawPixmap(0, 0, old->width(), old->height(), *old);
     delete old;
   }
-    
+
   QWidget::resizeEvent(event);
 }
 
-void AnsiWidget::showEvent(QShowEvent* event) {
+void AnsiWidget::showEvent(QShowEvent *event) {
   if (img == NULL) {
-    int imgH = parentWidget()->height() + (textSize * scrollSize);
+    int imgH = parentWidget()->height() + (textSize *scrollSize);
     img = new QPixmap(parentWidget()->width(), imgH);
     img->fill(this->bg);
-    
+
     scrollbar->setPageStep(parentWidget()->height());
     scrollbar->setSingleStep(textSize);
     scrollbar->setValue(0);
     scrollbar->setRange(0, 0);
   }
 }
-
-// End of "$Id$".

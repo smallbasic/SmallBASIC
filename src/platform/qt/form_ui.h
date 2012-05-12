@@ -1,4 +1,4 @@
-// $Id$
+// This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
@@ -27,28 +27,25 @@ enum ControlType {
 // binds a smallbasic variable with a QT widget
 struct WidgetInfo : public QObject {
   WidgetInfo();
-  WidgetInfo(const WidgetInfo& winf);
-  ~WidgetInfo();
+  WidgetInfo(const WidgetInfo &winf);
+   ~WidgetInfo();
 
-  QWidget* widget;
+  QWidget *widget;
   ControlType type;
-  var_t* var;
+  var_t *var;
   bool is_group_radio;
 
   // startup value used to check if
   // exec has altered a bound variable
   union {
     long i;
-    byte* ptr;
+    byte *ptr;
   } orig;
 
   void update_var_flag();
 
-  public slots: 
-  void invoked();
+  public slots:void invoked();
 };
 
-typedef WidgetInfo* WidgetInfoPtr;
+typedef WidgetInfo *WidgetInfoPtr;
 Q_DECLARE_METATYPE(WidgetInfoPtr);
-
-// End of "$Id$".

@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -28,26 +27,25 @@
 #include "config.h"
 #include "sbapp.h"
 
-const char* aboutText =
- "QT Version " VERSION "\n\n"
- "Copyright (c) 2002-2011 Chris Warren-Smith. \n"
- "Copyright (c) 2000-2006 Nicholas Christopoulos\n\n"
- "http://smallbasic.sourceforge.net\n\n"
- "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
- "This program is free software; you can use it\n"
- "redistribute it and/or modify it under the terms of the\n"
- "GNU General Public License version 2 as published by\n"
- "the Free Software Foundation.";
+const char *aboutText =
+  "QT Version " VERSION "\n\n"
+  "Copyright (c) 2002-2011 Chris Warren-Smith. \n"
+  "Copyright (c) 2000-2006 Nicholas Christopoulos\n\n"
+  "http://smallbasic.sourceforge.net\n\n"
+  "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
+  "This program is free software; you can use it\n"
+  "redistribute it and/or modify it under the terms of the\n"
+  "GNU General Public License version 2 as published by\n" "the Free Software Foundation.";
 
 // post message event ids
-const int DeferPathExec = QEvent::registerEventType(); 
+const int DeferPathExec = QEvent::registerEventType();
 const int DeferResourceExec = QEvent::registerEventType();
 
 // max number of history items
 const int MaxHistory = 50;
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
-                                          ui(new Ui::MainWindow) {
+MainWindow::MainWindow(QWidget *parent) : 
+  QMainWindow(parent), ui(new Ui::MainWindow) {
   ui->setupUi(this);
   wnd = this;
   out = ui->ansiWidget;
@@ -62,8 +60,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 
   // setup the URL input widget
   textInput = new QLineEdit();
-  QCompleter* completer = new QCompleter(this);
-  QFileSystemModel* fsModel = new QFileSystemModel(completer);
+  QCompleter *completer = new QCompleter(this);
+  QFileSystemModel *fsModel = new QFileSystemModel(completer);
   fsModel->setRootPath("");
   fsModel->setNameFilters(QStringList("*.bas"));
   completer->setModel(fsModel);
@@ -86,52 +84,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   addAction(ui->focusUrl);
 
   // connect signals and slots
-  connect(ui->actionBookmarkProgram, SIGNAL(triggered()), 
-          this, SLOT(bookmarkProgram()));
-  connect(ui->actionExit, SIGNAL(triggered()), 
-          this, SLOT(close()));
-  connect(ui->actionOpen, SIGNAL(triggered()), 
-          this, SLOT(fileOpen()));
-  connect(ui->actionAbout, SIGNAL(triggered()), 
-          this, SLOT(helpAbout()));
-  connect(ui->actionCopy, SIGNAL(triggered()), 
-          ui->ansiWidget, SLOT(copySelection()));
-  connect(ui->actionFind, SIGNAL(triggered()), 
-          ui->ansiWidget, SLOT(findText()));
-  connect(ui->actionFindAgain, SIGNAL(triggered()), 
-          ui->ansiWidget, SLOT(findNextText()));
-  connect(ui->actionSelectAll, SIGNAL(triggered()), 
-          ui->ansiWidget, SLOT(selectAll()));
-  connect(ui->actionPreferences, SIGNAL(triggered()), 
-          this, SLOT(viewPreferences()));
-  connect(ui->actionHomePage, SIGNAL(triggered()), 
-          this, SLOT(helpHomePage()));
-  connect(ui->actionNewWindow, SIGNAL(triggered()), 
-          this, SLOT(newWindow()));
-  connect(ui->actionRefresh, SIGNAL(triggered()), 
-          this, SLOT(runRestart()));
-  connect(ui->actionBreak, SIGNAL(triggered()), 
-          this, SLOT(runBreak()));
-  connect(ui->actionHome, SIGNAL(triggered()), 
-          this, SLOT(runHome()));
-  connect(ui->actionStart, SIGNAL(triggered()), 
-          this, SLOT(runStart()));
-  connect(ui->actionBack, SIGNAL(triggered()), 
-          this, SLOT(historyBackward()));
-  connect(ui->actionNext, SIGNAL(triggered()), 
-          this, SLOT(historyForward()));
-  connect(textInput, SIGNAL(returnPressed()), 
-          this, SLOT(runStart()));
-  connect(ui->actionViewBookmarks, SIGNAL(triggered()), 
-          this, SLOT(viewBookmarks()));
-  connect(ui->actionProgramSource, SIGNAL(triggered()), 
-          this, SLOT(viewProgramSource()));
-  connect(ui->actionErrorConsole, SIGNAL(triggered()), 
-          this, SLOT(viewErrorConsole()));
-  connect(ui->focusUrl, SIGNAL(triggered()), 
-          textInput, SLOT(setFocus()));
-  connect(ui->focusUrl, SIGNAL(triggered()), 
-          textInput, SLOT(selectAll()));
+  connect(ui->actionBookmarkProgram, SIGNAL(triggered()), this, SLOT(bookmarkProgram()));
+  connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
+  connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(fileOpen()));
+  connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(helpAbout()));
+  connect(ui->actionCopy, SIGNAL(triggered()), ui->ansiWidget, SLOT(copySelection()));
+  connect(ui->actionFind, SIGNAL(triggered()), ui->ansiWidget, SLOT(findText()));
+  connect(ui->actionFindAgain, SIGNAL(triggered()), ui->ansiWidget, SLOT(findNextText()));
+  connect(ui->actionSelectAll, SIGNAL(triggered()), ui->ansiWidget, SLOT(selectAll()));
+  connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(viewPreferences()));
+  connect(ui->actionHomePage, SIGNAL(triggered()), this, SLOT(helpHomePage()));
+  connect(ui->actionNewWindow, SIGNAL(triggered()), this, SLOT(newWindow()));
+  connect(ui->actionRefresh, SIGNAL(triggered()), this, SLOT(runRestart()));
+  connect(ui->actionBreak, SIGNAL(triggered()), this, SLOT(runBreak()));
+  connect(ui->actionHome, SIGNAL(triggered()), this, SLOT(runHome()));
+  connect(ui->actionStart, SIGNAL(triggered()), this, SLOT(runStart()));
+  connect(ui->actionBack, SIGNAL(triggered()), this, SLOT(historyBackward()));
+  connect(ui->actionNext, SIGNAL(triggered()), this, SLOT(historyForward()));
+  connect(textInput, SIGNAL(returnPressed()), this, SLOT(runStart()));
+  connect(ui->actionViewBookmarks, SIGNAL(triggered()), this, SLOT(viewBookmarks()));
+  connect(ui->actionProgramSource, SIGNAL(triggered()), this, SLOT(viewProgramSource()));
+  connect(ui->actionErrorConsole, SIGNAL(triggered()), this, SLOT(viewErrorConsole()));
+  connect(ui->focusUrl, SIGNAL(triggered()), textInput, SLOT(setFocus()));
+  connect(ui->focusUrl, SIGNAL(triggered()), textInput, SLOT(selectAll()));
 
   // setup state
   resourceApp = false;
@@ -172,9 +147,7 @@ MainWindow::~MainWindow() {
 
 // return whether the break key was pressed 
 bool MainWindow::isBreakExec() {
-  return (runMode == break_state || 
-          runMode == quit_state || 
-          runMode == restart_state);
+  return (runMode == break_state || runMode == quit_state || runMode == restart_state);
 }
 
 // return whether a smallbasic program is running
@@ -190,7 +163,7 @@ bool MainWindow::isRunModal() {
 // set the program modal state
 void MainWindow::setRunModal(bool modal) {
   if (isRunning()) {
-    runMode = modal ? modal_state : run_state;  
+    runMode = modal ? modal_state : run_state;
   }
 }
 
@@ -202,7 +175,7 @@ void MainWindow::endModal() {
 }
 
 // adds widget to the fixed layout and sets parent to this
-void MainWindow::addWidget(QWidget* widget) {
+void MainWindow::addWidget(QWidget *widget) {
   fixedLayout->addWidget(widget);
   widget->setParent(this);
   widget->setFont(out->font());
@@ -210,22 +183,22 @@ void MainWindow::addWidget(QWidget* widget) {
 }
 
 // removes the widget from the fixed layout
-void MainWindow::removeWidget(QWidget* widget) {
+void MainWindow::removeWidget(QWidget *widget) {
   fixedLayout->removeWidget(widget);
 }
 
 // append to the log window
-void MainWindow::logWrite(const char* msg) {
+void MainWindow::logWrite(const char *msg) {
   QString buffer = errorUi->plainTextEdit->toPlainText();
   buffer.append(msg);
   errorUi->plainTextEdit->setPlainText(buffer);
 }
 
 // ensure any running program is terminated upon closing
-void MainWindow::closeEvent(QCloseEvent*) {
+void MainWindow::closeEvent(QCloseEvent *) {
   if (isRunning()) {
     brun_break();
-    runMode = quit_state; // force exit
+    runMode = quit_state;       // force exit
   }
 
   QSettings settings;
@@ -247,18 +220,17 @@ void MainWindow::closeEvent(QCloseEvent*) {
 }
 
 // handle file drag and drop from a desktop file manager
-void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
+void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
   QString path = dropFile(event->mimeData());
   if (path.length() > 0) {
     event->accept();
-  }
-  else {
+  } else {
     event->ignore();
   }
 }
 
 // handle file drag and drop from a desktop file manager
-void MainWindow::dropEvent(QDropEvent* event) {
+void MainWindow::dropEvent(QDropEvent *event) {
   QString path = dropFile(event->mimeData());
   if (path.length() > 0) {
     loadPath(path);
@@ -266,20 +238,17 @@ void MainWindow::dropEvent(QDropEvent* event) {
 }
 
 // launch home page program
-bool MainWindow::event(QEvent* event) {
+bool MainWindow::event(QEvent *event) {
   if (event->type() == QEvent::ShowToParent) {
     QStringList args = QCoreApplication::arguments();
     if (args.count() == 2) {
       loadPath(args.value(1));
-    }
-    else {
+    } else {
       runHome();
     }
-  }
-  else if (event->type() == DeferResourceExec) {
+  } else if (event->type() == DeferResourceExec) {
     loadResource(deferPath);
-  }
-  else if (event->type() == DeferPathExec) {
+  } else if (event->type() == DeferPathExec) {
     loadPath(deferPath, false);
   }
   return QMainWindow::event(event);
@@ -289,8 +258,8 @@ bool MainWindow::event(QEvent* event) {
 void MainWindow::bookmarkProgram() {
   if (programPath.length() > 0 && !programPath.contains("qt_temp")) {
     QSettings settings;
-    
-    QSet<QString> paths;
+
+    QSet < QString > paths;
     int size = settings.beginReadArray("settings");
     for (int i = 0; i < size; i++) {
       settings.setArrayIndex(i);
@@ -300,7 +269,7 @@ void MainWindow::bookmarkProgram() {
     settings.endArray();
 
     settings.beginWriteArray("settings");
-    QSetIterator<QString> iter(paths);
+    QSetIterator < QString > iter(paths);
     int i = 0;
     while (iter.hasNext()) {
       settings.setArrayIndex(i++);
@@ -313,8 +282,8 @@ void MainWindow::bookmarkProgram() {
 // open a new file system program file
 void MainWindow::fileOpen() {
   QString path = QFileDialog::getOpenFileName(this, tr("Open Program"),
-                                              QString(), 
-                                             tr("BASIC Files (*.bas)"));
+                                              QString(),
+                                              tr("BASIC Files (*.bas)"));
   if (QFileInfo(path).isFile() && QString::compare(programPath, path) != 0) {
     loadPath(path);
   }
@@ -322,8 +291,7 @@ void MainWindow::fileOpen() {
 
 // display the about box
 void MainWindow::helpAbout() {
-  QMessageBox::information(this, tr("SmallBASIC"),
-                           tr(aboutText), QMessageBox::Ok);
+  QMessageBox::information(this, tr("SmallBASIC"), tr(aboutText), QMessageBox::Ok);
 }
 
 // show our home page
@@ -438,7 +406,7 @@ void MainWindow::mouseMoveEvent(bool down) {
 }
 
 // convert keystrokes into smallbasic key events
-void MainWindow::keyPressEvent(QKeyEvent* event) {
+void MainWindow::keyPressEvent(QKeyEvent *event) {
   if (isRunning()) {
     switch (event->key()) {
     case Qt::Key_Tab:
@@ -468,7 +436,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
     case Qt::Key_Slash:
       dev_pushkey(SB_KEY_KP_DIV);
       break;
-    case Qt::Key_F1:       
+    case Qt::Key_F1:
       dev_pushkey(SB_KEY_F(1));
       break;
     case Qt::Key_F2:
@@ -536,7 +504,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
       }
       dev_pushkey(event->key());
       break;
-    
+
     default:
       dev_pushkey(event->key());
       break;
@@ -548,7 +516,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 // main basic program loop
 void MainWindow::basicMain(QString path) {
   programPath = path;
-  
+
   opt_pref_width = 0;
   opt_pref_height = 0;
   bool success = false;
@@ -571,8 +539,7 @@ void MainWindow::basicMain(QString path) {
 
   if (runMode == quit_state) {
     exit(0);
-  }
-  else {
+  } else {
     runMode = init_state;
     showStatus(!success);
   }
@@ -584,13 +551,14 @@ bool MainWindow::deferExec(QString path, int event) {
   if (result) {
     runBreak();
     deferPath = path;
-    QCoreApplication::postEvent(this, new QEvent((enum QEvent::Type) event), Qt::LowEventPriority);
+    QCoreApplication::postEvent(this, new QEvent((enum QEvent::Type)event),
+                                Qt::LowEventPriority);
   }
   return result;
 }
 
 // return any new .bas program filename from mimeData 
-QString MainWindow::dropFile(const QMimeData* mimeData) {
+QString MainWindow::dropFile(const QMimeData *mimeData) {
   QString result;
   if (mimeData->hasText()) {
     QString path = mimeData->text().trimmed();
@@ -598,8 +566,7 @@ QString MainWindow::dropFile(const QMimeData* mimeData) {
       path = path.remove(0, 7);
     }
     if (QFileInfo(path).isFile() &&
-        path.endsWith(".bas") &&
-        QString::compare(path, this->programPath) != 0) {
+        path.endsWith(".bas") && QString::compare(path, this->programPath) != 0) {
       result = path;
     }
   }
@@ -616,23 +583,22 @@ void MainWindow::loadResource(QString path) {
     homePath = settings.value(path).toString();
     settings.endGroup();
     resourceApp = true;
-    
+
     if (!homePath.length()) {
       // show the default home page
       QTemporaryFile tmpFile;
       QFile file(path);
-      
+
       if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         tmpFile.open();
         tmpFile.write(file.readAll());
         tmpFile.close();
         file.close();
       }
-      
+
       homePath = tmpFile.fileName();
       loadPath(homePath, false, false);
-    }
-    else {
+    } else {
       loadPath(homePath, true, false);
     }
   }
@@ -664,8 +630,7 @@ void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
     if (httpPath) {
       updateHistory(path, setHistory);
       new HttpFile(this, path);
-    }
-    else if (pathInfo.isFile()) {
+    } else if (pathInfo.isFile()) {
       // populate the source view window
       QFile file(path);
       if (file.open(QFile::ReadOnly)) {
@@ -676,14 +641,12 @@ void MainWindow::loadPath(QString path, bool showPath, bool setHistory) {
       setFocus();
       updateHistory(path, setHistory);
       basicMain(path);
-    }
-    else if (pathInfo.isDir()) {
+    } else if (pathInfo.isDir()) {
       strcpy(opt_command, path.toUtf8().data());
       updateHistory(path, setHistory);
       loadResource(":/bas/list.bas");
-    }
-    else {
-      status.setText(tr("File not found"));      
+    } else {
+      status.setText(tr("File not found"));
     }
   }
 }
@@ -697,8 +660,7 @@ void MainWindow::loadError(QString message) {
 void MainWindow::showStatus(bool error) {
   if (error) {
     status.setText(gsb_last_errmsg);
-  }
-  else {
+  } else {
     switch (runMode) {
     case init_state:
       status.setText("Stopped");
@@ -733,5 +695,3 @@ void MainWindow::updateHistory(QString path, bool setHistory) {
     }
   }
 }
-
-// End of "$Id$".

@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -28,8 +27,7 @@ namespace Ui {
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
-
-extern "C" void trace(const char* format, ...);
+extern "C" void trace(const char *format, ...);
 
 enum ExecState {
   init_state,
@@ -50,16 +48,16 @@ public:
   explicit MainWindow(QWidget *parent = 0);
   ~MainWindow();
 
-  AnsiWidget* out;
+  AnsiWidget *out;
 
   bool isBreakExec();
   bool isResourceApp() {return resourceApp;}
   bool isRunning();
   bool isRunModal();
-  void logWrite(const char* msg);
+  void logWrite(const char *msg);
   void setRunModal(bool modal);
-  void addWidget(QWidget* widget);
-  void removeWidget(QWidget* widget);
+  void addWidget(QWidget *widget);
+  void removeWidget(QWidget *widget);
 
 public slots:
   void bookmarkProgram();
@@ -78,47 +76,45 @@ public slots:
   void viewErrorConsole();
   void viewPreferences();
   void viewProgramSource();
-  
+
 private:
   // private inherited events
   void mouseMoveEvent(bool down);
   void mousePressEvent();
   void mouseReleaseEvent();
 
-  void closeEvent(QCloseEvent* event);
-  void dragEnterEvent(QDragEnterEvent* event); 
-  void dropEvent(QDropEvent* event);
-  bool event(QEvent* event);
-  void keyPressEvent(QKeyEvent* event);
+  void closeEvent(QCloseEvent *event);
+  void dragEnterEvent(QDragEnterEvent *event);
+  void dropEvent(QDropEvent *event);
+  bool event(QEvent *event);
+  void keyPressEvent(QKeyEvent *event);
 
   // private methods
   void basicMain(QString path);
   bool deferExec(QString path, int message);
-  QString dropFile(const QMimeData* mimeData);
-  void loadResource(QString path); 
-  void loadPath(QString path, bool showPath=true, bool setHistory=true);
+  QString dropFile(const QMimeData *mimeData);
+  void loadResource(QString path);
+  void loadPath(QString path, bool showPath = true, bool setHistory = true);
   void loadError(QString message);
   void showStatus(bool error);
   void updateHistory(QString path, bool setHistory);
 
   // private state variables
-  Ui::MainWindow* ui;
-  Ui::ErrorConsole* errorUi;
-  Ui::SourceDialog* sourceUi;
+  Ui::MainWindow *ui;
+  Ui::ErrorConsole *errorUi;
+  Ui::SourceDialog *sourceUi;
 
-  FixedLayout* fixedLayout; // for positioning child widgets
-  QDialog* logDialog;    // log window widget
-  QDialog* sourceDialog; // source dialog widget
-  QLineEdit* textInput;  // text input control
-  QString programPath;   // path to the current program
-  QString deferPath;     // path to the deferred program 
-  QList<QString> history;// history buffer
-  int historyIndex;      // history index
-  ExecState runMode;     // current run state
-  QLabel status;         // the status bar widget
-  bool resourceApp;      // permission to use settings
+  FixedLayout *fixedLayout;     // for positioning child widgets
+  QDialog *logDialog;           // log window widget
+  QDialog *sourceDialog;        // source dialog widget
+  QLineEdit *textInput;         // text input control
+  QString programPath;          // path to the current program
+  QString deferPath;            // path to the deferred program 
+  QList < QString > history;    // history buffer
+  int historyIndex;             // history index
+  ExecState runMode;            // current run state
+  QLabel status;                // the status bar widget
+  bool resourceApp;             // permission to use settings
 };
 
 #endif // MAINWINDOW_H
-
-// End of "$Id$".

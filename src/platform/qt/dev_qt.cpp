@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
@@ -29,7 +28,6 @@
 extern "C" {
 #include "fs_socket_client.h"
 }
-
 #ifdef WIN32
 #include <windows.h>
 #ifdef __MINGW32__
@@ -43,20 +41,18 @@ extern "C" {
 #else
 #define makedir(f) mkdir(f, 0700)
 #endif
-
-#define PEN_OFF   0 // pen mode disabled
-#define PEN_ON    2 // pen mode active
-
+#define PEN_OFF   0             // pen mode disabled
+#define PEN_ON    2             // pen mode active
 clock_t lastEventTime;
 dword eventsPerTick;
 QString envBuffer;
 
 #define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
-#define EVT_PAUSE_TIME 500 // MS
+#define EVT_PAUSE_TIME 500      // MS
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
-void getHomeDir(char *fileName, bool appendSlash=true);
-bool cacheLink(dev_file_t * df, char *localFile);
+void getHomeDir(char *fileName, bool appendSlash = true);
+bool cacheLink(dev_file_t *df, char *localFile);
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -165,7 +161,7 @@ int osd_getpen(int code) {
   if (wnd->out->getMouseMode() == PEN_OFF) {
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
   }
-    
+
   switch (code) {
   case 0:
     // UNTIL PEN(0) - wait until click or move
@@ -173,7 +169,6 @@ int osd_getpen(int code) {
       // clicked a form widget
       return 1;
     }
-
     // flush any waiting update/paint events to allow mouse events to fire
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
@@ -181,38 +176,36 @@ int osd_getpen(int code) {
     if (!wnd->isBreakExec()) {
       QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
     }
-
     // second wait required following out.newLine() to avoid race condition
     if (!wnd->isBreakExec()) {
       QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
     }
-
     // fallthru to re-test 
 
-  case 3:  // returns true if the pen is down (and save curpos)
+  case 3:                      // returns true if the pen is down (and save curpos)
     return (Qt::LeftButton == QApplication::mouseButtons());
 
-  case 1:  // last down x
+  case 1:                      // last down x
     return wnd->out->getMouseX(true);
 
-  case 2:  // last down y
+  case 2:                      // last down y
     return wnd->out->getMouseY(true);
 
-  case 4:  // cur x
+  case 4:                      // cur x
   case 10:
     return wnd->out->getMouseX(false);
 
-  case 5:  // cur y
+  case 5:                      // cur y
   case 11:
     return wnd->out->getMouseY(false);
 
-  case 12: // true if left button pressed
+  case 12:                     // true if left button pressed
     return (Qt::LeftButton == QApplication::mouseButtons());
 
-  case 13: // true if right button pressed
+  case 13:                     // true if right button pressed
     return (Qt::RightButton == QApplication::mouseButtons());
 
-  case 14: // true if middle button pressed
+  case 14:                     // true if middle button pressed
     return (Qt::MiddleButton == QApplication::mouseButtons());
   }
   return 0;
@@ -238,7 +231,7 @@ void osd_cls() {
 }
 
 int osd_textwidth(const char *str) {
-  return (int) wnd->out->textWidth(str);
+  return (int)wnd->out->textWidth(str);
 }
 
 int osd_textheight(const char *str) {
@@ -260,8 +253,7 @@ void osd_line(int x1, int y1, int x2, int y2) {
 void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
   if (bFill) {
     wnd->out->drawRectFilled(x1, y1, x2, y2);
-  }
-  else {
+  } else {
     wnd->out->drawRect(x1, y1, x2, y2);
   }
 }
@@ -284,11 +276,11 @@ void osd_sound(int frq, int ms, int vol, int bgplay) {
 void osd_clear_sound_queue() {
 }
 
-void osd_write(const char* s) {
+void osd_write(const char *s) {
   wnd->out->print(s);
 }
 
-void lwrite(const char* s) {
+void lwrite(const char *s) {
   wnd->logWrite(s);
 }
 
@@ -299,8 +291,7 @@ int dev_run(const char *src, int retflg) {
   int result = 0;
   if (retflg) {
     result = QProcess::execute(src);
-  }
-  else {
+  } else {
     QProcess::startDetached(src);
   }
   return result;
@@ -321,7 +312,7 @@ int dev_putenv(const char *s) {
   return 1;
 }
 
-char* dev_getenv(const char *s) {
+char *dev_getenv(const char *s) {
   QSettings settings;
   settings.beginGroup("env");
   settings.beginGroup(wnd->isResourceApp() ? "settings" : "env");
@@ -331,7 +322,7 @@ char* dev_getenv(const char *s) {
   return envBuffer.length() ? envBuffer.toUtf8().data() : 0;
 }
 
-char* dev_getenv_n(int n) {
+char *dev_getenv_n(int n) {
   QSettings settings;
   settings.beginGroup(wnd->isResourceApp() ? "settings" : "env");
   QStringList keys = settings.childKeys();
@@ -364,7 +355,7 @@ int dev_env_count() {
 
 //--IMAGE-----------------------------------------------------------------------
 
-QImage *getImage(dev_file_t * filep, int index) {
+QImage *getImage(dev_file_t *filep, int index) {
   // check for cached imaged
   QImage *image = new QImage(filep->name);
   char localFile[PATH_MAX];
@@ -403,11 +394,9 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
       // input/read image and display
       imgw = img->width();
       imgh = img->height();
-      wnd->out->drawImage(img, x, y, sx, sy,
-                          (w == 0 ? imgw : w), (h == 0 ? imgh : h));
+      wnd->out->drawImage(img, x, y, sx, sy, (w == 0 ? imgw : w), (h == 0 ? imgh : h));
     }
-  }
-  else {
+  } else {
     // output screen area image to jpeg
     wnd->out->saveImage(filep->name, x, y, sx, sy);
   }
@@ -457,7 +446,7 @@ void dev_delay(dword ms) {
 //--INPUT-----------------------------------------------------------------------
 
 char *dev_gets(char *dest, int size) {
-  LineInput* in = new LineInput(wnd->out->font(),
+  LineInput *in = new LineInput(wnd->out->font(),
                                 wnd->out->getX() + 2,
                                 wnd->out->getY() - 4);
   wnd->addWidget(in);
@@ -472,7 +461,7 @@ char *dev_gets(char *dest, int size) {
   }
 
   if (wnd->isBreakExec()) {
-    ui_reset();    
+    ui_reset();
     brun_break();
   }
 
@@ -493,12 +482,11 @@ char *dev_gets(char *dest, int size) {
 C_LINKAGE_END
 
 //--HTML Utils------------------------------------------------------------------
-
 void getHomeDir(char *fileName, bool appendSlash) {
-  const char* vars[] = {
+  const char *vars[] = {
     "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
   };
-  
+
   int vars_len = sizeof(vars) / sizeof(vars[0]);
 
   fileName[0] = 0;
@@ -523,7 +511,7 @@ void getHomeDir(char *fileName, bool appendSlash) {
 }
 
 // copy the url into the local cache
-bool cacheLink(dev_file_t * df, char *localFile) {
+bool cacheLink(dev_file_t *df, char *localFile) {
   char rxbuff[1024];
   FILE *fp;
   const char *url = df->name;
@@ -551,13 +539,12 @@ bool cacheLink(dev_file_t * df, char *localFile) {
       strncat(localFile, pathBegin, pathNext - pathBegin + 1);
       makedir(localFile);
       pathBegin = pathNext + 1;
-    } 
+    }
     while (pathBegin < pathEnd && ++level < 20);
   }
   if (pathEnd == 0 || pathEnd[1] == 0 || pathEnd[1] == '?') {
     strcat(localFile, "index.html");
-  }
-  else {
+  } else {
     strcat(localFile, pathEnd + 1);
   }
 
@@ -621,8 +608,7 @@ bool cacheLink(dev_file_t * df, char *localFile) {
           break;                // scan next header
         }
       }
-    }
-    else {
+    } else {
       if (!fwrite(rxbuff, bytes, 1, fp)) {
         break;
       }
@@ -634,5 +620,3 @@ bool cacheLink(dev_file_t * df, char *localFile) {
   shutdown(df->handle, df->handle);
   return httpOK;
 }
-
-// End of "$Id$".
