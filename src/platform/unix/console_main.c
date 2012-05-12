@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // SmallBASIC, main() console versions

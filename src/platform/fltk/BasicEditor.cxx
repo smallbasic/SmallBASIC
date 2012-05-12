@@ -1,5 +1,3 @@
-// $Id$
-//
 // Based on test/editor.cxx - A simple text editor program for the Fast
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK
 // Programmer's Guide.

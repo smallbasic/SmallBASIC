@@ -1,4 +1,3 @@
-// "$Id$"
 //
 // Copyright 1998-2006 by Bill Spitzak and others.
 // Original code Copyright Chris Warren-Smith.  Permission to distribute under

@@ -1,6 +1,4 @@
 //
-// "$Id$"
-//
 // Copyright 2001-2006 by Bill Spitzak and others.
 // Original code Copyright Chris Warren-Smith.  Permission to distribute under
 // the LGPL for the FLTK library granted by Chris Warren-Smith.
