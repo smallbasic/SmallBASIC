@@ -225,7 +225,7 @@ function buildGTK() {
    AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
 
-   BUILD_SUBDIRS="src src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
+   BUILD_SUBDIRS="src/common src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -345,11 +345,11 @@ function buildSDL() {
    esac
 
    dnl Check for SDL
-   SDL_VERSION=1.2.10
-   AM_PATH_SDL($SDL_VERSION,
-            :,
-        AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
-   )
+   dnl SDL_VERSION=1.2.10
+   dnl AM_PATH_SDL($SDL_VERSION,
+   dnl         :,
+   dnl     AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
+   dnl )
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${SDL_CFLAGS}"
    PACKAGE_LIBS="${PACKAGE_LIBS} ${SDL_LIBS} ${MATHLIB}"
@@ -407,7 +407,7 @@ function buildSDL() {
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
 
-   BUILD_SUBDIRS="src src/platform/sdl"
+   BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -449,7 +449,7 @@ function buildQT() {
    AC_DEFINE(IMPL_DEV_RUN, 1, [Driver implements dev_run()])
    AC_DEFINE(IMPL_DEV_CIRCLE, 1, [Driver implements circle/elipse funcs])
 
-   BUILD_SUBDIRS="src src/platform/qt"
+   BUILD_SUBDIRS="src/common src/platform/qt"
    AC_SUBST(BUILD_SUBDIRS)
 
    desktopentrydir='$(datarootdir)'/applications
@@ -488,7 +488,7 @@ function buildConsole() {
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
          PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
-         BUILD_SUBDIRS="src src/platform/cygwin"
+         BUILD_SUBDIRS="src/common src/platform/cygwin"
       else
          dnl preconfigured values for cygwin mingw console build
          TARGET="Building Cygwin MinGW console version."
@@ -497,7 +497,7 @@ function buildConsole() {
          AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
          AC_DEFINE(IMPL_EMPTY_TERM_EVENTS, 1, [Implement a dummy term_events()])
          PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole"
-         BUILD_SUBDIRS="src src/platform/mingw"
+         BUILD_SUBDIRS="src/common src/platform/mingw"
       fi
    else 
       dnl preconfigured values for unix console build
@@ -510,7 +510,7 @@ function buildConsole() {
       AC_DEFINE(OS_PREC64, 1, [64 bit variables])
       AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline"
-      BUILD_SUBDIRS="src src/platform/unix"
+      BUILD_SUBDIRS="src/common src/platform/unix"
    fi
 
    AC_SUBST(BUILD_SUBDIRS)
@@ -518,7 +518,7 @@ function buildConsole() {
 
 function buildDist() {
    TARGET="Building source code release."
-   BUILD_SUBDIRS="src src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
+   BUILD_SUBDIRS="src/common src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/fltk"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/sdl"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/cygwin"
