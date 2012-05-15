@@ -1,13 +1,10 @@
-/* -*- c-file-style: "java" -*-
- * $Id$
- * This file is part of SmallBASIC
- *
- * Copyright(C) 2001-2006 Chris Warren-Smith. Gawler, South Australia
- * cwarrens@twpo.com.au
- *
- * This program is distributed under the terms of the GPL v2.0 or later
- * Download the GNU Public License (GPL) from www.gnu.org
- */ 
+// This file is part of SmallBASIC
+//
+// Copyright(C) 2001-2012 Chris Warren-Smith.
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
 
 #ifndef DEV_GTK_OUTPUT_MODEL_H
 #define DEV_GTK_OUTPUT_MODEL_H
@@ -30,35 +27,35 @@
 #define C_BRIGHT_WH 15
 
 typedef struct OutputModel {
-    GdkPixmap* pixmap; /* Backing pixmap for drawing area */
-    GtkWidget* widget; /* the drawing_area widget */
-    GtkWidget *main_view;
-    GdkGC* gc;         /* current drawing colors */
-    PangoFontDescription* font_desc; /* bold, italic */
-    GdkColor fg,bg;    /* couldn't find a gdk_gc_get_rgb_fg_color */
-    PangoLayout* layout;
+  GdkPixmap *pixmap;            /* Backing pixmap for drawing area */
+  GtkWidget *widget;            /* the drawing_area widget */
+  GtkWidget *main_view;
+  GdkGC *gc;                    /* current drawing colors */
+  PangoFontDescription *font_desc;      /* bold, italic */
+  GdkColor fg, bg;              /* couldn't find a gdk_gc_get_rgb_fg_color */
+  PangoLayout *layout;
 #ifdef USE_HILDON
-    osso_context_t* osso;
+  osso_context_t *osso;
 #endif
-    int ascent;
-    int descent;
-    int font_width;
-    int underline;
-    int invert;
-    int resized;
-    int cur_x;
-    int cur_y;
-    int cur_y_saved;
-    int cur_x_saved;
-    int tab_size;
-    int pen_mode;
-    int pen_down;     /* index to current mouse button */
-    int pen_down_x;
-    int pen_down_y;
-    int break_exec;
-    int modal_flag;
-    int width;
-    int height;
+  int ascent;
+  int descent;
+  int font_width;
+  int underline;
+  int invert;
+  int resized;
+  int cur_x;
+  int cur_y;
+  int cur_y_saved;
+  int cur_x_saved;
+  int tab_size;
+  int pen_mode;
+  int pen_down;                 /* index to current mouse button */
+  int pen_down_x;
+  int pen_down_y;
+  int break_exec;
+  int modal_flag;
+  int width;
+  int height;
 } OutputModel;
 
 void om_reset(int reset_cursor);
@@ -85,4 +82,3 @@ void om_calc_font_metrics();
 
 #endif
 
-/* End of "$Id$". */

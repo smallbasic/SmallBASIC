@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2012 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -37,13 +37,13 @@ public:
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
-  QColor getBackgroundColor() {return bg;}
-  QColor getColor() {return fg;}
+  QColor getBackgroundColor() { return bg; }
+  QColor getColor() { return fg; }
   QRgb getPixel(int x, int y);
-  int getHeight() {return height();}
-  int getWidth()  {return width();}
-  int getX() {return curX;}
-  int getY() {return curY;}
+  int getHeight() { return height(); }
+  int getWidth()  { return width(); }
+  int getX() { return curX; }
+  int getY() { return curY; }
   int textHeight(void);
   int textWidth(const char *s);
   void print(const char *str);
@@ -51,20 +51,21 @@ public:
   void setColor(long color);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
-  void setXY(int x, int y) {curX=x; curY=y;}
+  void setXY(int x, int y) { curX=x; curY=y; }
   void setScrollSize(int scrollSize);
 
   // mouse support
-  int getMouseX(bool down) {return down ? markX : pointX;}
-  int getMouseY(bool down) {return down ? markY : pointY;}
-  bool getMouseMode() {return mouseMode;}
+  int getMouseX(bool down) { return down ? markX : pointX; }
+  int getMouseY(bool down) { return down ? markY : pointY; }
+  bool getMouseMode() { return mouseMode; }
   void resetMouse();
   void setMouseMode(bool mode);
   void setMouseListener(AnsiWidgetListener *ml) {
     listener = ml;
   }
 
-  public slots:void copySelection();
+public slots:
+  void copySelection();
   void linkClicked();
   void findNextText();
   void findText();

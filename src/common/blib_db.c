@@ -825,9 +825,7 @@ void cmd_chmod() {
     return;
   }
 
-#if !defined(_PalmOS) && !defined(_VTOS)
   chmod((char *) str.v.p.ptr, mode);
-#endif
   v_free(&str);
 }
 

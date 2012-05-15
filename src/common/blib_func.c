@@ -606,33 +606,21 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = x;
     break;
   case kwXPOS:
-#if defined(_PalmOS)
-    r = dev_getx() / dev_textwidth("0");
-#else
     if (os_graphics)
       r = dev_getx() / dev_textwidth("0");
     else
       r = dev_getx();
     r++;
-#endif
     break;
   case kwYPOS:
-#if defined(_PalmOS)
-    r = dev_gety() / dev_textheight("0");
-#else
     if (os_graphics)
       r = dev_gety() / dev_textheight("0");
     else
       r = dev_gety();
     r++;
-#endif
     break;
   case kwRND:
-#if defined(_PalmOS)
-    r = ((var_num_t)SysRandom(0)) / ((var_num_t)sysRandomMax + 1.0);
-#else
     r = ((var_num_t) rand()) / (RAND_MAX + 1.0);
-#endif
     break;
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (2)", funcCode);
@@ -656,34 +644,20 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     // int <- TIMER // seconds from 00:00
     //
   {
-#if defined(_PalmOS)
-    DateTimeType cur_date;
-
-    x = TimGetSeconds();
-    TimSecondsToDateTime(x, &cur_date);
-    r = cur_date.hour * 3600L + cur_date.minute * 60L + cur_date.second;
-#elif defined(_VTOS)
-    RTM now;
-
-    RtcGetTime(&now);
-    r = now.hour * 3600L + now.min * 60L + now.sec;
-#else
     struct tm tms;
     time_t now;
 
     time(&now);
     tms = *localtime(&now);
     r = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
-#endif
   }
     break;
   case kwTICKS:
     //
     // int <- TICKS // clock()
     //
-#if defined(_PalmOS)
     r = TimGetTicks();
-#elif defined(_Win32)
+#if defined(_Win32)
     {
       __int64 start, freq;
       QueryPerformanceFrequency((LARGE_INTEGER *) & freq);
@@ -701,9 +675,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     //
     // int <- TICKSPERSEC
     //
-#if defined(_PalmOS)
-    r = SysTicksPerSecond();
-#elif defined(_Win32)
+#if defined(_Win32)
     {
       __int64 freq;
       QueryPerformanceFrequency((LARGE_INTEGER *) & freq);
@@ -791,75 +763,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     // int <- FRE(-43) // battery warning voltage value * 1000
     //
   {
-#if defined(_PalmOS)
-    dword dwfre, dwmax;
-    Ptr sts, ste;
-    UInt32 romsz, ramsz, freesz;
-
-    MemHeapFreeBytes(0, &dwfre, &dwmax);
-    romsz = ramsz = freesz = 0;
-    MemCardInfo(0, NULL, NULL, NULL, NULL, &romsz, &ramsz, &freesz);
-
-    r = 0;
-    switch (x) {
-      // --- qb ---
-      case -1:
-      r = (dwmax / (4 + sizeof(var_t))) - sizeof(var_t);
-      break;
-      case -2:
-      SysGetStackInfo(&sts, &ste);
-      r = (((sts <= ste) ? ste - sts : sts - ste)) + 1;
-      // this is the total stack, I dont know 68000 assembly to get the SP
-      break;
-      case -3:
-      r = dwmax;
-      break;
-      case 0:
-      r = dwfre;
-      break;
-      // --- memory info ---
-      case -12:
-      r = dwfre;
-      break;
-      case -16:
-      r = I2MAX(romsz, ramsz);
-      break;
-      case -17:
-      r = I2MAX(romsz, ramsz) - freesz;
-      break;
-      case -18:
-      r = freesz;
-      break;
-      // --- battery ---
-      case -40:// battery current voltage (*1000)
-      r = SysBatteryInfo(0, NULL, NULL, NULL, NULL, NULL, NULL) * 10;
-      break;
-      case -41:// battery voltage-percent
-      {
-        UInt8 prc;
-
-        SysBatteryInfo(0, NULL, NULL, NULL, NULL, NULL, &prc);
-        r = prc;
-      }
-      break;
-      case -42:                // critical voltage
-      {
-        UInt16 val;
-
-        SysBatteryInfo(0, NULL, &val, NULL, NULL, NULL, NULL);
-        r = val * 10;
-      }
-      break;
-      case -43:                // warning voltage
-      {
-        UInt16 val;
-
-        SysBatteryInfo(0, &val, NULL, NULL, NULL, NULL, NULL);
-        r = val * 10;
-      }
-      break;
-    }
-#elif defined(_UnixOS)
+#if defined(_UnixOS)
     int memfd;
 
     memfd = open("/proc/meminfo", O_RDONLY);
@@ -1145,34 +1049,8 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r) {
     //
     // str <- OCT$(n)
     //
-#if defined(_PalmOS)
-    // GAC - PalmOS does not support %lo in StrPrintF :(
-    tb = tmp_alloc(64);
-    p = tb;
-    l = 0;
-    // Skip leading zeros
-    for (i = 33; l == 0 && i > 0; i -= 3) {
-      l = (v_getint(arg) >> i) & 0x7;
-    }
-    if (l == 0) {
-      wp = r->v.p.ptr = tmp_alloc(2);
-      wp[0] = '0';
-      wp[1] = '\0';
-    }
-    else {
-      // Add chars as needed
-      for (i += 3; i >= 0; i -= 3) {
-        *(p++) = ((v_getint(arg) >> i) & 0x7) + '0';
-      }
-      *p = '\0';
-      r->v.p.ptr = tmp_alloc(strlen(tb) + 1);
-      strcpy(r->v.p.ptr, tb);
-    }
-    tmp_free(tb);
-#else
     r->v.p.ptr = (byte *) tmp_alloc(64);
     sprintf((char *) r->v.p.ptr, "%lo", (unsigned long) v_getint(arg));
-#endif
     r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
     break;
     //
@@ -1198,28 +1076,8 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r) {
     //
     // str <- HEX$(n)
     //
-#if defined(_PalmOS)
-    tb = tmp_alloc(64);
-    StrPrintF(tb, "%lX", (unsigned long)v_getint(arg));
-    p = tb;
-    while (*p == '0')
-    p++;
-
-    if (*p == '\0') {
-      wp = r->v.p.ptr = tmp_alloc(2);
-      wp[0] = '0';
-      wp[1] = '\0';
-    }
-    else {
-      r->v.p.ptr = tmp_alloc(strlen(p) + 1);
-      strcpy(r->v.p.ptr, p);
-    }
-    tmp_free(tb);
-
-#else
     r->v.p.ptr = (byte *) tmp_alloc(64);
     sprintf((char *) r->v.p.ptr, "%lX", (unsigned long) v_getint(arg));
-#endif
     r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
     break;
   case kwLCASE:
@@ -1443,15 +1301,8 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r) {
 void cmd_str0(long funcCode, var_t * r) {
   word ch;
   char tmp[3];
-#if defined(_PalmOS)
-  ULong dts;
-  DateTimeType cur_date;
-#elif defined(_VTOS)
-  RTM now;
-#else
   struct tm tms;
   time_t now;
-#endif
 
   IF_ERR_RETURN;
   switch (funcCode) {
@@ -1525,58 +1376,23 @@ void cmd_str0(long funcCode, var_t * r) {
     //
     // str <- DATE$
     //
-#if defined(_PalmOS)
-    dts = TimGetSeconds();
-    TimSecondsToDateTime(dts, &cur_date);
-
-    r->type = V_STR;
-    r->v.p.ptr = tmp_alloc(32);
-    r->v.p.size = 32;
-    StrPrintF(r->v.p.ptr, "%02d/%02d/%04d", cur_date.day, cur_date.month,
-        cur_date.year);
-#elif defined(_VTOS)
-    RtcGetTime(&now);
-    r->type = V_STR;
-    r->v.p.ptr = tmp_alloc(32);
-    r->v.p.size = 32;
-    RtcFormatDate(&now, "DD/MM/YY", r->v.p.ptr);
-#else
     time(&now);
     tms = *localtime(&now);
     r->type = V_STR;
     r->v.p.ptr = tmp_alloc(32);
     r->v.p.size = 32;
     sprintf((char *) r->v.p.ptr, "%02d/%02d/%04d", tms.tm_mday, tms.tm_mon + 1, tms.tm_year + 1900);
-#endif
     break;
   case kwTIME:
     //
     // str <- TIME$
     //
-#if defined(_PalmOS)
-    dts = TimGetSeconds();
-    TimSecondsToDateTime(dts, &cur_date);
-
-    r->type = V_STR;
-    r->v.p.ptr = tmp_alloc(32);
-    r->v.p.size = 32;
-
-    StrPrintF(r->v.p.ptr, "%02d:%02d:%02d", cur_date.hour, cur_date.minute,
-        cur_date.second);
-#elif defined(_VTOS)
-    RtcGetTime(&now);
-    r->type = V_STR;
-    r->v.p.ptr = tmp_alloc(32);
-    r->v.p.size = 32;
-    RtcFormatDate(&now, "hh:mm:ss", r->v.p.ptr);
-#else
     time(&now);
     tms = *localtime(&now);
     r->type = V_STR;
     r->v.p.ptr = tmp_alloc(32);
     r->v.p.size = 32;
     sprintf((char *) r->v.p.ptr, "%02d:%02d:%02d", tms.tm_hour, tms.tm_min, tms.tm_sec);
-#endif
     break;
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (6)", funcCode);

@@ -483,11 +483,7 @@ void cmd_print(int output) {
     vuser_p->v.p.size = 256;
     vuser_p->v.p.ptr = tmp_alloc(vuser_p->v.p.size);
     vuser_p->v.p.ptr[0] = '\0';
-#if defined(_PalmOS)
-    handle = (unsigned long int)vuser_p;
-#else
-    handle = (mem_t) vuser_p;
-#endif
+    handle = (mem_t)vuser_p;
   }
 
   /*
@@ -589,11 +585,7 @@ void cmd_input(int input) {
 
   var_t prompt, *vuser_p = NULL;
 
-#if defined(_PalmOS)
-  unsigned long int handle = 0;
-#else
   int handle = 0;
-#endif
   int cur_par_idx, unused_vars;
   char *inps = NULL, *inp_p;
   int pcount = 0, redo = 0;
@@ -647,11 +639,7 @@ void cmd_input(int input) {
     }
 
     vuser_p->v.p.pos = 0;
-#if defined(_PalmOS)
-    handle = (unsigned long int)vuser_p;
-#else
     handle = (mem_t) vuser_p;
-#endif
   }
 
   /*
@@ -2095,20 +2083,12 @@ void cmd_randomize() {
   switch (code) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
-#if defined(_PalmOS)
-    SysRandom(TimGetTicks());
-#else
     srand(clock());
-#endif
     break;
   default:
     seed = par_getint();
     if (!prog_error) {
-#if defined(_PalmOS)
-      SysRandom(seed);
-#else
       srand(seed);
-#endif
     }
   };
 }
@@ -2148,15 +2128,11 @@ void cmd_locate() {
   if (prog_error) {
     return;
   }
-#if defined(_PalmOS)
-  dev_setxy(x * dev_textwidth("0"), y * dev_textheight("0"));
-#else
   if (os_graphics) {
     dev_setxy(x * dev_textwidth("0"), y * dev_textheight("0"));
   } else {
     dev_setxy(x, y);
   }
-#endif
 }
 
 /**
@@ -2196,22 +2172,12 @@ void cmd_pause() {
 
     dev_getch();
   } else {
-#if defined(_PalmOS)
-    start = TimGetTicks();
-    tps = SysTicksPerSecond();
-#elif defined(_VTOS)
-    RTM timenow;
-
-    RtcGetTime(&timenow);
-    start = timenow.hour * 3600L + timenow.min * 60L + timenow.sec;
-#else
     struct tm tms;
     time_t timenow;
-
     time(&timenow);
     tms = *localtime(&timenow);
     start = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
-#endif
+
     while (!dev_kbhit()) {
       switch ((evc = dev_events(0))) {
       case 0:                  // no event
@@ -2228,16 +2194,9 @@ void cmd_pause() {
         }
         break;
       }
-#if defined(_PalmOS)
-      now = TimGetTicks();
-#elif defined(_VTOS)
-      RtcGetTime(&timenow);
-      now = timenow.hour * 3600L + timenow.min * 60L + timenow.sec;
-#else
       time(&timenow);
       tms = *localtime(&timenow);
       now = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
-#endif
 
       if (now >= start + x) {
         break;

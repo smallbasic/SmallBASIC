@@ -73,26 +73,7 @@ Optionally install guichan - see http://guichan.sourceforge.net/wiki/index.php
  $ ./configure
  $ make
 
-== Code indent settings
+== .indent.pro settings
 
--bap 
--br 
--brs
--cdb
--cdw 
--ce 
--cli0
--fca
--i2
--l95
--lc95
--lp
--nbbo
--nbc 
--ncs 
--nip 
--npcs 
--npsl 
--nut
--ppi0
--sc 
+ -brf -nbap -br -brs -cdb -cdw -ce -cli0 -fca -i2 -l110 -lc110 -lp
+ -nbbo -nbc -ncs -nip -npcs -npsl -nut -ppi0 -sc 

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2011 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2012 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -51,7 +51,7 @@ public:
   AnsiWidget *out;
 
   bool isBreakExec();
-  bool isResourceApp() {return resourceApp;}
+  bool isResourceApp() { return resourceApp; }
   bool isRunning();
   bool isRunModal();
   void logWrite(const char *msg);
@@ -110,7 +110,7 @@ private:
   QLineEdit *textInput;         // text input control
   QString programPath;          // path to the current program
   QString deferPath;            // path to the deferred program 
-  QList < QString > history;    // history buffer
+  QList <QString> history;      // history buffer
   int historyIndex;             // history index
   ExecState runMode;            // current run state
   QLabel status;                // the status bar widget
