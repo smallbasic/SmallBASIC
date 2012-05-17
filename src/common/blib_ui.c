@@ -62,8 +62,6 @@ static int ui_count;
 static int ui_nx, ui_ny;
 static int ui_curel;
 
-/* -------------------------------------------------------------------------- */
-
 /**
  * close/reset ui data
  */
@@ -89,25 +87,18 @@ void ui_reset() {
 /**
  *
  */
-void ui_fix_cs2(int *x, int *y) SEC(TRASH);
 void ui_fix_cs2(int *x, int *y) {
   if (opt_uipos) {              // in chars
-#if defined(_PalmOS)
-    *x *= dev_textwidth("0");
-    *y *= dev_textheight("0");
-#else
     if (os_graphics) {
       *x *= dev_textwidth("0");
       *y *= dev_textheight("0");
     }
-#endif
   }
 }
 
 /**
  * add a button
  */
-void ui_add_button(const char *text, int x, int y) SEC(TRASH);
 void ui_add_button(const char *text, int x, int y) {
   ui_node_t *node;
 
@@ -143,7 +134,6 @@ void ui_add_button(const char *text, int x, int y) {
 /**
  * add a prompt
  */
-void ui_add_prompt(const char *text, int x, int y) SEC(TRASH);
 void ui_add_prompt(const char *text, int x, int y) {
   ui_node_t *node;
 
@@ -180,7 +170,6 @@ void ui_add_prompt(const char *text, int x, int y) {
 /**
  * add a text
  */
-void ui_add_text(const char *text, int x, int y) SEC(TRASH);
 void ui_add_text(const char *text, int x, int y) {
   ui_node_t *node;
 
@@ -219,11 +208,9 @@ void ui_add_text(const char *text, int x, int y) {
 /**
  * draw button
  */
-void ui_draw_button(ui_button_t * args) SEC(TRASH);
 void ui_draw_button(ui_button_t * args) {
   int x1, y1, x2, y2;
 
-#if !defined(_PalmOS)
   if (!os_graphics) {
     x1 = args->x - 1;
     y1 = args->y - 1;
@@ -235,7 +222,7 @@ void ui_draw_button(ui_button_t * args) {
     dev_print(args->text);
     return;
   }
-#endif
+
   x1 = args->x - 2;
   y1 = args->y - 2;
   x2 = args->x + args->w;
@@ -257,7 +244,6 @@ void ui_draw_button(ui_button_t * args) {
 /**
  * draw text
  */
-void ui_draw_text(ui_text_t * args) SEC(TRASH);
 void ui_draw_text(ui_text_t * args) {
   dev_setxy(args->x, args->y);
   dev_print(args->text);
@@ -266,7 +252,6 @@ void ui_draw_text(ui_text_t * args) {
 /**
  * draw form
  */
-void ui_draw_all(void) SEC(TRASH);
 void ui_draw_all() {
   int i;
 
@@ -281,8 +266,6 @@ void ui_draw_all() {
     }
   }
 }
-
-/* -------------------------------------------------------------------------- */
 
 /**
  * execute it
@@ -306,8 +289,6 @@ void ui_exec() {
     };
   } while (key != 27 && key != SB_KEY_ALT('x'));
 }
-
-/* -------------------------------------------------------------------------- */
 
 //
 //      BUTTON x, y, text

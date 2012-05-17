@@ -1,11 +1,11 @@
 # SmallBASIC for SDL
-# Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+# Copyright(C) 2001-2012 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = -I../ -I. @PACKAGE_CFLAGS@
+INCLUDES = -I../../common -I. @PACKAGE_CFLAGS@
 
 EXTRA_DIST =																		\
     fixedfont.xpm																\
@@ -21,4 +21,4 @@ sbasicg_SOURCES =																\
 
 sbasicg_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
 
-sbasicg_DEPENDENCIES = ../libsb_common.a
+sbasicg_DEPENDENCIES = ../../common/libsb_common.a

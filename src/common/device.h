@@ -202,7 +202,7 @@ extern word os_ccpass2;
  * @param flags zero for normal (internal flags for reinitialize, used by win32 driver)
  * @return non-zero on success
  */
-int dev_init(int mode, int flags) SEC(BIO);
+int dev_init(int mode, int flags);
 
 /**
  * @ingroup dev
@@ -211,7 +211,7 @@ int dev_init(int mode, int flags) SEC(BIO);
  *
  * @return non-zero on success
  */
-int dev_restore(void) SEC(BIO);
+int dev_restore(void);
 
 /*
  *
@@ -226,7 +226,7 @@ int dev_restore(void) SEC(BIO);
  *
  * @param ch the key-code
  */
-void dev_pushkey(word ch) SEC(BIO);
+void dev_pushkey(word ch);
 
 /**
  * @ingroup dev_i
@@ -235,14 +235,14 @@ void dev_pushkey(word ch) SEC(BIO);
  *
  * @return non-zero if there is a key on keyboard-buffer
  */
-int dev_kbhit(void) SEC(BIO);
+int dev_kbhit(void);
 
 /**
  * @ingroup dev_i
  *
  * Internal keyboard buffer: clears keyboard buffer
  */
-void dev_clrkb(void) SEC(BIO);
+void dev_clrkb(void);
 
 /**
  * @ingroup dev
@@ -253,7 +253,7 @@ void dev_clrkb(void) SEC(BIO);
  * @param retflg non-zero for return (system()); otherwise dev_run() never returns (exec())
  * @return non-zero on success
  */
-int dev_run(const char *prog, int retflg) SEC(BIO);
+int dev_run(const char *prog, int retflg);
 
 #if defined(_Win32)
 char *pw_shell(const char *cmd);
@@ -326,7 +326,7 @@ void dev_delay(dword ms);
  * @param code is the information code
  * @return a value based on 'code'
  */
-int dev_getpen(int code) SEC(BIO);  // returns the pen/mouse status
+int dev_getpen(int code);  // returns the pen/mouse status
 // (PEN(code))
 
 /**
@@ -340,7 +340,7 @@ int dev_getpen(int code) SEC(BIO);  // returns the pen/mouse status
  *
  * @param enable non-zero to enable pen/mouse driver.
  */
-void dev_setpenmode(int enable) SEC(BIO); // enables or disables pen/mouse
+void dev_setpenmode(int enable); // enables or disables pen/mouse
 // driver (PEN ON|OFF)
 
 /*
@@ -356,7 +356,7 @@ void dev_setpenmode(int enable) SEC(BIO); // enables or disables pen/mouse
  *
  * @param str the string
  */
-void dev_print(const char *str) SEC(BIO); // write a string to the console
+void dev_print(const char *str); // write a string to the console
 
 /**
  * @ingroup dev_g
@@ -383,14 +383,14 @@ void log_printf(const char *fmt, ...);
  *
  * clear screen
  */
-void dev_cls(void) SEC(BIO);  // clear the screen
+void dev_cls(void);  // clear the screen
 
 /**
  * @ingroup dev_g
  *
  * clear from cursor to end-of-line
  */
-void dev_clreol(void) SEC(BIO); // clear the console line from the current
+void dev_clreol(void); // clear the console line from the current
 // pos. until the end of the line
 
 /**
@@ -403,8 +403,7 @@ void dev_clreol(void) SEC(BIO); // clear the console line from the current
  * @param x the x in pixels
  * @param y the y in pixels
  */
-void dev_setxy(int x, int y) SEC(BIO);  // set cursor position. parameters in
-// pixels.
+void dev_setxy(int x, int y);  // set cursor position. parameters in pixels.
 
 /**
  * @ingroup dev_g
@@ -413,8 +412,7 @@ void dev_setxy(int x, int y) SEC(BIO);  // set cursor position. parameters in
  *
  * @return the current x position
  */
-int dev_getx(void) SEC(BIO);  // returns the current cursor x position (in
-// pixels)
+int dev_getx(void);  // returns the current cursor x position (in pixels)
 
 /**
  * @ingroup dev_g
@@ -423,8 +421,7 @@ int dev_getx(void) SEC(BIO);  // returns the current cursor x position (in
  *
  * @return the current y position
  */
-int dev_gety(void) SEC(BIO);  // returns the current cursor y position (in
-// pixels)
+int dev_gety(void);  // returns the current cursor y position (in pixels)
 
 /**
  * @ingroup dev_g
@@ -434,9 +431,7 @@ int dev_gety(void) SEC(BIO);  // returns the current cursor y position (in
  * @param fg the standard VGA foreground color
  * @param bg the standard VGA foreground color
  */
-void dev_settextcolor(long fg, long bg) SEC(BIO); // set the text colors. (fg
-// = foreground, bg =
-// background)
+void dev_settextcolor(long fg, long bg); // set the text colors. (fg = foreground, bg = background)
 
 /**
  * @ingroup dev_i
@@ -445,8 +440,7 @@ void dev_settextcolor(long fg, long bg) SEC(BIO); // set the text colors. (fg
  *
  * @return the key-code
  */
-long int dev_getch(void) SEC(BIO);  // waits until a key is pressed and
-// returns its code
+long int dev_getch(void);  // waits until a key is pressed and returns its code
 
 /**
  * @ingroup dev_i
@@ -459,8 +453,7 @@ long int dev_getch(void) SEC(BIO);  // waits until a key is pressed and
  * @param size the size of the buffer
  * @return the buf or NULL on ESCAPE
  */
-char *dev_gets(char *buf, int size) SEC(BIO); // the real INPUT command. Gets
-// a string from the console
+char *dev_gets(char *buf, int size); // the real INPUT command. Gets a string from the console
 
 /*
  *
@@ -482,7 +475,7 @@ char *dev_gets(char *buf, int size) SEC(BIO); // the real INPUT command. Gets
  * @param x2 right
  * @param y2 bottom
  */
-void dev_viewport(int x1, int y1, int x2, int y2) SEC(BIO);
+void dev_viewport(int x1, int y1, int x2, int y2);
 
 /**
  * @ingroup dev_g
@@ -497,7 +490,7 @@ void dev_viewport(int x1, int y1, int x2, int y2) SEC(BIO);
  * @param x2 right
  * @param y2 bottom
  */
-void dev_window(int x1, int y1, int x2, int y2) SEC(BIO);
+void dev_window(int x1, int y1, int x2, int y2);
 
 /**
  * @ingroup dev_g
@@ -507,7 +500,7 @@ void dev_window(int x1, int y1, int x2, int y2) SEC(BIO);
  * @param str the text
  * @return the width of the text in pixels
  */
-int dev_textwidth(const char *str) SEC(BIO);
+int dev_textwidth(const char *str);
 
 /**
  * @ingroup dev_g
@@ -517,7 +510,7 @@ int dev_textwidth(const char *str) SEC(BIO);
  * @param str the text
  * @return the height of the text in pixels
  */
-int dev_textheight(const char *str) SEC(BIO);
+int dev_textheight(const char *str);
 
 /**
  * @ingroup dev_g
@@ -529,7 +522,7 @@ int dev_textheight(const char *str) SEC(BIO);
  *
  * @param color the foreground color
  */
-void dev_setcolor(long color) SEC(BIO);
+void dev_setcolor(long color);
 
 /**
  * @ingroup dev_g
@@ -539,7 +532,7 @@ void dev_setcolor(long color) SEC(BIO);
  * @param x the x position
  * @param y the y position
  */
-void dev_setpixel(int x, int y) SEC(BIO);
+void dev_setpixel(int x, int y);
 
 /**
  * @ingroup dev_g
@@ -553,7 +546,7 @@ void dev_setpixel(int x, int y) SEC(BIO);
  * @param y the y position
  * @return the color
  */
-long dev_getpixel(int x, int y) SEC(BIO);
+long dev_getpixel(int x, int y);
 
 /**
  * @ingroup dev_g
@@ -566,7 +559,7 @@ long dev_getpixel(int x, int y) SEC(BIO);
  * @param y2 line coordinates
  * @param visible non-zero if the line or part of the line is visible
  */
-void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible) SEC(BIO);
+void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible);
 
 /**
  * @ingroup dev_g
@@ -578,7 +571,7 @@ void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible) SEC(BIO);
  * @param x2 line coordinates
  * @param y2 line coordinates
  */
-void dev_line(int x1, int y1, int x2, int y2) SEC(BIO);
+void dev_line(int x1, int y1, int x2, int y2);
 
 /**
  * @ingroup dev_g
@@ -591,7 +584,7 @@ void dev_line(int x1, int y1, int x2, int y2) SEC(BIO);
  * @param y2 lower-right corner
  * @param fill non-zero to fill it with foreground color
  */
-void dev_rect(int x1, int y1, int x2, int y2, int fill) SEC(BIO);
+void dev_rect(int x1, int y1, int x2, int y2, int fill);
 
 /**
  * @ingroup dev_g
@@ -605,7 +598,7 @@ void dev_rect(int x1, int y1, int x2, int y2, int fill) SEC(BIO);
  * @param aspect x/y (use 1)
  * @param fill non-zero to fill it with foreground color
  */
-void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill) SEC(BIO);
+void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill);
 
 /**
  * @ingroup dev_g
@@ -620,7 +613,7 @@ void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill) SEC(BI
  * @param aspect x/y (use 1)
  */
 void dev_arc(int xc, int yc, double r, double as, double ae,
-             double aspect) SEC(BIO);
+             double aspect);
 
 /**
  * @ingroup dev_g
@@ -642,7 +635,7 @@ void dev_arc(int xc, int yc, double r, double as, double ae,
  * @param fill_color the color to use for fill
  * @param border_color the color of the border, use -1 for scan-while algorithm
  */
-void dev_ffill(word x0, word y0, long fill_color, long border_color) SEC(BIO);
+void dev_ffill(word x0, word y0, long fill_color, long border_color);
 
 /**
  * @ingroup dev_g
@@ -652,7 +645,7 @@ void dev_ffill(word x0, word y0, long fill_color, long border_color) SEC(BIO);
  * @param pts is a table of points
  * @param ptNum is the number of the points to use
  */
-void dev_pfill(ipt_t * pts, int ptNum) SEC(BIO);
+void dev_pfill(ipt_t * pts, int ptNum);
 
 /*
  *
@@ -665,7 +658,7 @@ void dev_pfill(ipt_t * pts, int ptNum) SEC(BIO);
  *
  * produce the standard system's beep :)
  */
-void dev_beep(void) SEC(BIO); // just a BEEP! :)
+void dev_beep(void); // just a BEEP! :)
 
 /**
  * @ingroup dev_s
@@ -677,7 +670,7 @@ void dev_beep(void) SEC(BIO); // just a BEEP! :)
  * @param vol_prc is the volume (0-99)
  * @param bgplay non-zero for play the tone in background
  */
-void dev_sound(int freq, int dur_ms, int vol_prc, int bgplay) SEC(BIO); // note:
+void dev_sound(int freq, int dur_ms, int vol_prc, int bgplay); // note:
 // duration
 // in
 // ms,
@@ -711,7 +704,7 @@ void dev_clear_sound_queue();
  * @param name is the filename
  * @return non-zero on success
  */
-int wc_match(const char *mask, char *name) SEC(BIO);
+int wc_match(const char *mask, char *name);
 
 /**
  * @ingroup dev_f
@@ -720,14 +713,14 @@ int wc_match(const char *mask, char *name) SEC(BIO);
  *
  * @return non-zero on success
  */
-int dev_initfs(void) SEC(BIO);
+int dev_initfs(void);
 
 /**
  * @ingroup dev_f
  *
  * close file-system (closes all files and all the drivers)
  */
-void dev_closefs(void) SEC(BIO);
+void dev_closefs(void);
 
 /**
  * @ingroup dev_f
@@ -737,7 +730,7 @@ void dev_closefs(void) SEC(BIO);
  * @param file is the filename
  * @return non-zero if file exists
  */
-int dev_fexists(const char *file) SEC(BIO);
+int dev_fexists(const char *file);
 
 /**
  * @ingroup dev_f
@@ -748,7 +741,7 @@ int dev_fexists(const char *file) SEC(BIO);
  * @param file is the target
  * @return non-zero on success
  */
-int dev_fcopy(const char *file, const char *newfile) SEC(BIO);
+int dev_fcopy(const char *file, const char *newfile);
 
 /**
  * @ingroup dev_f
@@ -759,7 +752,7 @@ int dev_fcopy(const char *file, const char *newfile) SEC(BIO);
  * @param file is the target
  * @return non-zero on success
  */
-int dev_frename(const char *file, const char *newname) SEC(BIO);
+int dev_frename(const char *file, const char *newname);
 
 /**
  * @ingroup dev_f
@@ -769,7 +762,7 @@ int dev_frename(const char *file, const char *newname) SEC(BIO);
  * @param file is the filename
  * @return non-zero on success
  */
-int dev_fremove(const char *file) SEC(BIO);
+int dev_fremove(const char *file);
 
 /**
  * @ingroup dev_f
@@ -779,7 +772,7 @@ int dev_fremove(const char *file) SEC(BIO);
  * @param file is the filename
  * @return the access attributes of the file
  */
-int dev_faccess(const char *file) SEC(BIO);
+int dev_faccess(const char *file);
 
 #define VFS_ATTR_FILE   1 /**< dev_fattr(), regular file      @ingroup dev_f */
 #define VFS_ATTR_DIR    2 /**< dev_fattr(), directory       @ingroup dev_f */
@@ -795,7 +788,7 @@ int dev_faccess(const char *file) SEC(BIO);
  * @param file is the filename
  * @return the access attributes of the file
  */
-int dev_fattr(const char *file) SEC(BIO);
+int dev_fattr(const char *file);
 
 /*
  *
@@ -843,18 +836,8 @@ typedef struct {
   struct termios oldtio, newtio;  /**< termios info */
 #endif
 
-#if defined(_PalmOS)
-  UInt16 libHandle;         /**< lib-handle if a lib is used */
-  //  DmOpenRef ref;
-  int handle;           /**< stream's file-handle */
-  Err last_error;         /**< the last error-code */
-#elif defined(_VTOS)
-  FILE *handle;         /**< the file-pointer */
-  int last_error;         /**< the last error-code */
-#else
   int handle;           /**< the file handle */
   int last_error;         /**< the last error-code */
-#endif
   int vfslib;           /**< vfs-module, handle */
   int open_flags;         /**< the open()'s flags */
 } dev_file_t;
@@ -872,7 +855,7 @@ typedef struct {
  *
  * @return a free file handle
  */
-int dev_freefilehandle(void) SEC(BIO);
+int dev_freefilehandle(void);
 
 /**
  * @ingroup dev_f
@@ -881,7 +864,7 @@ int dev_freefilehandle(void) SEC(BIO);
  *
  * @return on success the file info; otherwise returns NULL
  */
-dev_file_t *dev_getfileptr(int handle) SEC(BIO);
+dev_file_t *dev_getfileptr(int handle);
 
 /**
  * @ingroup dev_f
@@ -890,7 +873,7 @@ dev_file_t *dev_getfileptr(int handle) SEC(BIO);
  *
  * @return true if the file is opened
  */
-int dev_fstatus(int handle) SEC(BIO);
+int dev_fstatus(int handle);
 
 /**
  * @ingroup dev_f
@@ -902,7 +885,7 @@ int dev_fstatus(int handle) SEC(BIO);
  * @param flags are the flags for open-mode (see DEV_FILE_xxx macros)
  * @returns non-zero on success
  */
-int dev_fopen(int SBHandle, const char *name, int flags) SEC(BIO);
+int dev_fopen(int SBHandle, const char *name, int flags);
 
 /**
  * @ingroup dev_f
@@ -912,7 +895,7 @@ int dev_fopen(int SBHandle, const char *name, int flags) SEC(BIO);
  * @param SBHandle is the RTL's file-handle
  * @return the size of the available data
  */
-dword dev_flength(int SBHandle) SEC(BIO);
+dword dev_flength(int SBHandle);
 
 /**
  * @ingroup dev_f
@@ -922,7 +905,7 @@ dword dev_flength(int SBHandle) SEC(BIO);
  * @param SBHandle is the RTL's file-handle
  * @returns non-zero on success
  */
-int dev_fclose(int SBHandle) SEC(BIO);
+int dev_fclose(int SBHandle);
 
 /**
  * @ingroup dev_f
@@ -933,7 +916,7 @@ int dev_fclose(int SBHandle) SEC(BIO);
  * @param offset the new position
  * @returns the new position
  */
-dword dev_fseek(int SBHandle, dword offset) SEC(BIO);
+dword dev_fseek(int SBHandle, dword offset);
 
 /**
  * @ingroup dev_f
@@ -943,7 +926,7 @@ dword dev_fseek(int SBHandle, dword offset) SEC(BIO);
  * @param SBHandle is the RTL's file-handle
  * @return the file-position-pointer
  */
-dword dev_ftell(int SBHandle) SEC(BIO);
+dword dev_ftell(int SBHandle);
 
 /**
  * @ingroup dev_f
@@ -953,7 +936,7 @@ dword dev_ftell(int SBHandle) SEC(BIO);
  * @param SBHandle is the RTL's file-handle
  * @return non-zero if eof
  */
-int dev_feof(int SBHandle) SEC(BIO);
+int dev_feof(int SBHandle);
 
 /**
  * @ingroup dev_f
@@ -965,7 +948,7 @@ int dev_feof(int SBHandle) SEC(BIO);
  * @param size is the size of the data
  * @return non-zero on success
  */
-int dev_fwrite(int SBHandle, byte * buff, dword size) SEC(BIO);
+int dev_fwrite(int SBHandle, byte * buff, dword size);
 
 /**
  * @ingroup dev_f
@@ -977,7 +960,7 @@ int dev_fwrite(int SBHandle, byte * buff, dword size) SEC(BIO);
  * @param size is the number of bytes to read
  * @return non-zero on success
  */
-int dev_fread(int SBHandle, byte * buff, dword size) SEC(BIO);
+int dev_fread(int SBHandle, byte * buff, dword size);
 
 /**
  * @ingroup dev_f
@@ -986,7 +969,7 @@ int dev_fread(int SBHandle, byte * buff, dword size) SEC(BIO);
  *
  * @param dir is the directory
  */
-void dev_mkdir(const char *dir) SEC(BIO);
+void dev_mkdir(const char *dir);
 
 /**
  * @ingroup dev_f
@@ -995,7 +978,7 @@ void dev_mkdir(const char *dir) SEC(BIO);
  *
  * @param dir is the directory
  */
-void dev_rmdir(const char *dir) SEC(BIO);
+void dev_rmdir(const char *dir);
 
 /**
  * @ingroup dev_f
@@ -1004,7 +987,7 @@ void dev_rmdir(const char *dir) SEC(BIO);
  *
  * @param dir is the directory
  */
-void dev_chdir(const char *dir) SEC(BIO);
+void dev_chdir(const char *dir);
 
 /**
  * @ingroup dev_f
@@ -1013,7 +996,7 @@ void dev_chdir(const char *dir) SEC(BIO);
  *
  * @return the current directory
  */
-char *dev_getcwd(void) SEC(BIO);
+char *dev_getcwd(void);
 
 /**
  * @ingroup dev
@@ -1023,7 +1006,7 @@ char *dev_getcwd(void) SEC(BIO);
  * @param var the name of the variable
  * @return on success the value; otherwise NULL
  */
-char *dev_getenv(const char *var) SEC(BIO);
+char *dev_getenv(const char *var);
 
 /**
  * @ingroup dev
@@ -1031,7 +1014,7 @@ char *dev_getenv(const char *var) SEC(BIO);
  * returns the number of the environment variables
  * @return the number of the environment variables
  */
-int dev_env_count() SEC(BIO);
+int dev_env_count();
 
 /**
  * @ingroup dev
@@ -1041,7 +1024,7 @@ int dev_env_count() SEC(BIO);
  * @param n the index of the variable
  * @return on success the value; otherwise NULL
  */
-char *dev_getenv_n(int n) SEC(BIO);
+char *dev_getenv_n(int n);
 
 /**
  * @ingroup dev
@@ -1051,7 +1034,7 @@ char *dev_getenv_n(int n) SEC(BIO);
  * @param setvar is a string in style "var=value"
  * @return non-zero on success
  */
-int dev_putenv(const char *setvar) SEC(BIO);
+int dev_putenv(const char *setvar);
 
 /**
  * @ingroup dev_f
@@ -1062,7 +1045,7 @@ int dev_putenv(const char *setvar) SEC(BIO);
  * @param count is the number of the elements (returned)
  * @return a char** array
  */
-char_p_t *dev_create_file_list(const char *wc, int *count) SEC(BIO);
+char_p_t *dev_create_file_list(const char *wc, int *count);
 
 /**
  * @ingroup dev_f
@@ -1072,7 +1055,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) SEC(BIO);
  * @param list is the char** array
  * @param count is the number of the elements
  */
-void dev_destroy_file_list(char_p_t * list, int count) SEC(BIO);
+void dev_destroy_file_list(char_p_t * list, int count);
 
 /**
  * @html
@@ -1088,7 +1071,7 @@ void dev_destroy_file_list(char_p_t * list, int count) SEC(BIO);
  *
  */
 void dev_html(const char *html, const char *title, int x, int y, int w,
-              int h) SEC(BIO);
+              int h);
 
 /**
  * @image
@@ -1102,7 +1085,7 @@ void dev_html(const char *html, const char *title, int x, int y, int w,
  *
  */
 void dev_image(int handle, int index, int x, int y, int sx, int sy, int w,
-               int h) SEC(BIO);
+               int h);
 
 /**
  * @imagew
@@ -1113,7 +1096,7 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w,
  * @param image index
  *
  */
-int dev_image_width(int handle, int index) SEC(BIO);
+int dev_image_width(int handle, int index);
 
 /**
  * @imageh
@@ -1124,7 +1107,7 @@ int dev_image_width(int handle, int index) SEC(BIO);
  * @param image index
  *
  */
-int dev_image_height(int handle, int index) SEC(BIO);
+int dev_image_height(int handle, int index);
 
 #if defined(__cplusplus)
 }

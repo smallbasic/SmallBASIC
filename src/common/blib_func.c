@@ -19,18 +19,16 @@
 #include "common/fmt.h"
 #include "common/geom.h"
 #include "common/messages.h"
+
 #if defined(_UnixOS)
 #include <unistd.h>
 #endif
-#if defined(_DOS)
-#include <dpmi.h>
-#endif
 
-var_int_t r2int(var_num_t x, var_int_t l, var_int_t h) SEC(BMATH);
-void dar_first(long funcCode, var_t *r, var_t *elem_p) SEC(BMATH);
-void dar_next(long funcCode, var_t *r, var_t *elem_p) SEC(BMATH);
-void dar_final(long funcCode, var_t *r, int count) SEC(BMATH);
-int date_weekday(long d, long m, long y) SEC(BMATH);
+var_int_t r2int(var_num_t x, var_int_t l, var_int_t h);
+void dar_first(long funcCode, var_t *r, var_t *elem_p);
+void dar_next(long funcCode, var_t *r, var_t *elem_p);
+void dar_final(long funcCode, var_t *r, int count);
+int date_weekday(long d, long m, long y);
 
 struct code_array_node_s {
   var_t *v;
@@ -656,7 +654,6 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     //
     // int <- TICKS // clock()
     //
-    r = TimGetTicks();
 #if defined(_Win32)
     {
       __int64 start, freq;

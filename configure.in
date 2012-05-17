@@ -1,7 +1,7 @@
 dnl 
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+dnl Copyright(C) 2001-2012 Chris Warren-Smith.
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
@@ -10,7 +10,7 @@ dnl
 AC_INIT(configure.in)
 
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.11.0)
+AM_INIT_AUTOMAKE(smallbasic, 0.11.1)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -43,6 +43,11 @@ AC_ARG_ENABLE(qt,
   AC_HELP_STRING([--enable-qt], [build QT version(default=no)]),
   [ac_build_qt="yes"],
   [ac_build_qt="no"])
+
+AC_ARG_ENABLE(mosync,
+  AC_HELP_STRING([--enable-mosync], [build common library for Mosync(default=no)]),
+  [ac_build_mosync="yes"],
+  [ac_build_mosync="no"])
 
 AC_ARG_ENABLE(dist,
   AC_HELP_STRING([--enable-dist], [prepare to run make dist(default=no)]),
@@ -459,6 +464,32 @@ function buildQT() {
    (cd src/platform/qt && qmake -o Makefile.qt)
 }
 
+function buildMosync() {
+   TARGET="Building common library for Mosync."
+
+   AM_CONDITIONAL(WITH_HILDON, false)
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
+   AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
+   AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
+   AC_DEFINE(IRDA_UNSUP, 1, [irda not supported.])
+   AC_DEFINE(RUN_UNSUP, 1, [run not supported.])
+   AC_DEFINE(SERIAL_UNSUP, 1, [serial not supported.])
+   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
+
+   dnl Checks for mosync
+   AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
+ 
+   PACKAGE_CFLAGS="-DPLATFORM_ANDROID -DVARIANT_ANDROID_2_X -MMD -S -g -DMAPIP -O2 -MF "
+
+   dnl find out where mosync is installed
+   MOSYNC_HOME="`which xgcc | cygpath -m -f - | sed 's/\/bin\/xgcc//'`"
+   AC_SUBST(MOSYNC_HOME)
+
+   BUILD_SUBDIRS="src/platform/mosync/common"
+   AC_SUBST(BUILD_SUBDIRS)
+}
+
 function buildConsole() {
    AM_CONDITIONAL(WITH_HILDON, false)
 
@@ -541,6 +572,8 @@ elif test x$ac_build_sdl = xyes; then
    buildSDL
 elif test x$ac_build_qt = xyes; then
    buildQT
+elif test x$ac_build_mosync = xyes; then
+   buildMosync
 else
    buildConsole
 fi  
@@ -564,6 +597,7 @@ src/platform/qt/Makefile
 src/platform/cygwin/Makefile
 src/platform/mingw/Makefile
 src/platform/unix/Makefile
+src/platform/mosync/common/Makefile
 ])
 
 echo

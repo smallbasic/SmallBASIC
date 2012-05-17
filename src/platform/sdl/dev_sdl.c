@@ -44,8 +44,6 @@
  *         terminate the string)
  *
  *     and correct a lot of small error
- *  
- *  
  * 
  */
 
@@ -161,7 +159,7 @@ static SDL_Rect Update_rect;
 
 struct voice_info {
   int period;                   // we don't need float because we could
-                                // calculate just integer 
+  // calculate just integer 
   // number of sample
   int toggle;                   // and integer calculation is much quicker!
   int setting;
@@ -245,15 +243,14 @@ static int keymap[] = {
  *       if the sound is quicker we have to fill the buffer with the next sound
  *       because without that, sound stream will have a silent (unwanted staccato!)
  */
-void audio_callback(void *user, unsigned char *stream, int length)
-{
+void audio_callback(void *user, unsigned char *stream, int length) {
   int volume;
   int mix = 0;
   int sound_len_us;             // this chunk length in microsec
   int one_sample_len_us;        // one sample length in microsec
   struct voice_info *info;
 
-  memset(mixbuf, audiospec.silence, length);  // fill whole buffer with silent 
+  memset(mixbuf, audiospec.silence, length);    // fill whole buffer with silent 
   if (audio_head != audio_tail || audio_info[audio_head].remain_ms) {
     int left = length, j = 0;
     int count;
@@ -261,13 +258,13 @@ void audio_callback(void *user, unsigned char *stream, int length)
     info = &audio_info[audio_head];
     // volume = (info->vol * SDL_MIX_MAXVOLUME) / 100;
     volume = SDL_MIX_MAXVOLUME; // we implemented the volume handling in
-                                // software
+    // software
     // because
     // don't know hardware mixer device is working or not!
-    sound_len_us = info->remain_ms * 1000;  // get the length of the sound /
-                                            // silent in
+    sound_len_us = info->remain_ms * 1000;      // get the length of the sound /
+    // silent in
     // microsec
-    one_sample_len_us = 1000 * 1000 / audiospec.freq; // one sample length in
+    one_sample_len_us = 1000 * 1000 / audiospec.freq;   // one sample length in
     // microsec (cc. 23 microsec)
     // in case of freq 44100
     mix = 1;
@@ -276,8 +273,8 @@ void audio_callback(void *user, unsigned char *stream, int length)
         count = (info->toggle < left) ? (int)info->toggle : left;
         left -= count;
         info->toggle -= count;
-        sound_len_us -= count * one_sample_len_us;  // yes theoretically the
-                                                    // sound 
+        sound_len_us -= count * one_sample_len_us;      // yes theoretically the
+        // sound 
         // length can be 
         // quicker than half period but it is unrealistic!
         // while (count--) mixbuf[j++] = audiospec.silence + info->setting; 
@@ -292,7 +289,7 @@ void audio_callback(void *user, unsigned char *stream, int length)
         }
         if (sound_len_us <= 0) {
           info->remain_ms = 0;  // ok we finished this sound
-          if (audio_head != audio_tail) { // we have more sound
+          if (audio_head != audio_tail) {       // we have more sound
             audio_head++;       // get the next sound
             if (audio_head >= AUDIO_STACK_MAX)
               audio_head = 0;
@@ -300,23 +297,21 @@ void audio_callback(void *user, unsigned char *stream, int length)
             sound_len_us = info->remain_ms * 1000;
           }
         }
-      }
-      else {                    // we have no sound but calculate length of
-                                // silence
+      } else {                  // we have no sound but calculate length of
+        // silence
         count = sound_len_us / one_sample_len_us;
         if (count < left) {
           sound_len_us = 0;
           info->remain_ms = 0;  // ok we finished the this sound/silent
-          if (audio_head != audio_tail) { // we have more sound
+          if (audio_head != audio_tail) {       // we have more sound
             audio_head++;       // get the next sound
             if (audio_head >= AUDIO_STACK_MAX)
               audio_head = 0;
             info = &audio_info[audio_head];
             sound_len_us = info->remain_ms * 1000;
           }
-        }
-        else {
-          sound_len_us -= left * one_sample_len_us; // the remaining length in
+        } else {
+          sound_len_us -= left * one_sample_len_us;     // the remaining length in
           // microsec
           count = left;
         }
@@ -326,21 +321,20 @@ void audio_callback(void *user, unsigned char *stream, int length)
       // do until buffer has space and there is playable sound
     } while (left > 0 && (info->remain_ms || (audio_head != audio_tail)));
 
-    if (left <= 0 && sound_len_us > 0) {  // we have remain some portion of the 
-                                          // sound /
+    if (left <= 0 && sound_len_us > 0) {        // we have remain some portion of the 
+      // sound /
       // silent!
-      info->remain_ms = sound_len_us / 1000;  // take back to que
+      info->remain_ms = sound_len_us / 1000;    // take back to que
     }
 
     if (mix) {
-      SDL_MixAudio(stream, (unsigned char *)mixbuf, length, volume);  
+      SDL_MixAudio(stream, (unsigned char *)mixbuf, length, volume);
       // and do the task - play 
     }
   }
 }
 
-void make_update(int x, int y, int x1, int y1)
-{
+void make_update(int x, int y, int x1, int y1) {
   // calculate the rectangle which should be updated on next refresh
   int tx, ty, tx1, ty1;
   // first reset clipping zone
@@ -348,16 +342,14 @@ void make_update(int x, int y, int x1, int y1)
   if (x < x1) {
     tx = x;
     tx1 = x1;
-  }
-  else {
+  } else {
     tx = x1;
     tx1 = x;
   }
   if (y < y1) {
     ty = y;
     ty1 = y1;
-  }
-  else {
+  } else {
     ty = y1;
     ty1 = y;
   }
@@ -373,7 +365,6 @@ void make_update(int x, int y, int x1, int y1)
   if (ty1 > os_graf_my - 1) {
     ty1 = os_graf_my - 1;
   }
-
   // the rectangle in correct order is tx,ty,tx1,ty1
   if (Update_rect.x < 0) {
     Update_rect.x = tx;
@@ -400,16 +391,14 @@ void make_update(int x, int y, int x1, int y1)
   scr_update = 1;
 }
 
-unsigned char *zstr(char *a, char *b)
-{
+unsigned char *zstr(char *a, char *b) {
   return (unsigned char *)strstr((char *)a, (char *)b);
 }
 
 /*
  * initialise system fonts and colors
  */
-int init_font()
-{
+int init_font() {
   SDL_Color colors[256];
   int i;
 
@@ -447,17 +436,14 @@ int init_font()
 #endif
     }
     SDL_SetColors(screen, colors, 0, 256);
-  }
-  else {
+  } else {
     for (i = 0; i < 16; i++) {
 #if defined(CPU_BIGENDIAN)
       cmap[i] = SDL_MapRGB(screen->format,
-                           (vga16[i] & 0xFF0000) >> 16,
-                           (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF));
+                           (vga16[i] & 0xFF0000) >> 16, (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF));
 #else
       cmap[i] = SDL_MapRGB(screen->format,
-                           (vga16[i] & 0xFF),
-                           (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF0000) >> 16);
+                           (vga16[i] & 0xFF), (vga16[i] & 0xFF00) >> 8, (vga16[i] & 0xFF0000) >> 16);
 #endif
     }
   }
@@ -466,8 +452,7 @@ int init_font()
 /**
  * set the font to initial startup values
  */
-void reset_font()
-{
+void reset_font() {
   con_use_bold = 0;
   con_use_ul = 0;
   con_use_reverse = 0;
@@ -499,8 +484,7 @@ void reset_font()
 #ifdef main
 #undef main
 #endif
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     fprintf(stderr, "SDL: Couldn't initialize SDL: %s\n", SDL_GetError());
     return 0;
@@ -514,8 +498,7 @@ int main(int argc, char *argv[])
 
     if (getenv("SBGRAF")) {
       ps = p = buf = strdup(getenv("SBGRAF"));
-    }
-    else {
+    } else {
       ps = p = buf = strdup(getenv("SB_SDLMODE"));
     }
     p = strchr(buf, 'x');
@@ -531,8 +514,7 @@ int main(int argc, char *argv[])
         if (*p) {
           dev_d = atoi(ps);
         }
-      }
-      else if (*ps) {
+      } else if (*ps) {
         dev_h = atoi(ps);
       }
     }
@@ -573,10 +555,10 @@ int main(int argc, char *argv[])
 
   sb_console_main(argc, argv);
 
-  if (SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) { // if syntax error
-                                                      // happened no
-                                                      // osd_devrestore was
-                                                      // performed
+  if (SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {   // if syntax error
+    // happened no
+    // osd_devrestore was
+    // performed
     fast_exit = 1;
     osd_devrestore();
   }
@@ -586,8 +568,7 @@ int main(int argc, char *argv[])
 /*
  * initialise the system prior to the next program execution
  */
-int osd_devinit()
-{
+int osd_devinit() {
   char cbuf[256];
 
   /*
@@ -644,13 +625,11 @@ int osd_devinit()
     // Open the audio device, forcing the desired format
     if (SDL_OpenAudio(&wanted, &audiospec) < 0) {
       has_audio = 0;
-    }
-    else {
-      mixbuf = (char *)malloc(audiospec.size + 10); // +10 just for to be safe
+    } else {
+      mixbuf = (char *)malloc(audiospec.size + 10);     // +10 just for to be safe
       SDL_PauseAudio(0);        // set state play
     }
   }
-
 #ifdef HAVE_SDL_IMAGE
   Init_cache();
 #endif
@@ -660,7 +639,7 @@ int osd_devinit()
 
   // Enable Unicode translation 
   SDL_EnableUNICODE(1);
-  
+
   init_font();
   reset_font();
 
@@ -675,10 +654,10 @@ int osd_devinit()
   SDL_WM_SetCaption(cbuf, NULL);
 
   os_graf_mx = screen->w;       // need to reinitialize again because in brun.c 
-                                // sbasic_exec calling dev_init which calling
-                                // term_init 
+  // sbasic_exec calling dev_init which calling
+  // term_init 
   os_graf_my = screen->h;       // which overwrite our original value of
-                                // screen->w, screen->h
+  // screen->w, screen->h
 
   // clear the keyboard queue
   dev_clrkb();
@@ -688,8 +667,7 @@ int osd_devinit()
 /*
  *   close
  */
-int osd_devrestore()
-{
+int osd_devrestore() {
   cur_x = 0;
   cur_y = os_graf_my - font_h;
 
@@ -701,7 +679,7 @@ int osd_devrestore()
     }
   }
 
-  SDL_PauseAudio(1); // pause after possible beep in dev_kbhit() to prevent lockup
+  SDL_PauseAudio(1);            // pause after possible beep in dev_kbhit() to prevent lockup
 
   // if the user would like to quit w/o wait just set the same zero for fg and
   // bg like COLOR 
@@ -718,29 +696,24 @@ int osd_devrestore()
   return 1;
 }
 
-static long get_screen_color(int fgbg)
-{
+static long get_screen_color(int fgbg) {
   long color = 0;
   switch (fgbg) {
   case GET_FG_COLOR:
     if (dev_fgcolor < 0) {
       color = fg_screen_color;
-    }
-    else if (dev_fgcolor < 16) {
+    } else if (dev_fgcolor < 16) {
       color = cmap[dev_fgcolor];
-    } 
-    else {
+    } else {
       color = -1;
     }
     break;
   case GET_BG_COLOR:
     if (dev_bgcolor < 0) {
       color = bg_screen_color;
-    } 
-    else if (dev_bgcolor < 16) {
+    } else if (dev_bgcolor < 16) {
       color = cmap[dev_bgcolor];
-    }
-    else {
+    } else {
       color = -1;
     }
     break;
@@ -752,8 +725,7 @@ static long get_screen_color(int fgbg)
 
 /*
  */
-void direct_setpixel(int x, int y, long c)
-{
+void direct_setpixel(int x, int y, long c) {
   int offset;
 
   if (c == -1) {
@@ -795,8 +767,7 @@ void direct_setpixel(int x, int y, long c)
 /*
  *   return's the value of the pixel
  */
-long osd_getpixel(int x, int y)
-{
+long osd_getpixel(int x, int y) {
   int offset, i;
   long color = 0;
   unsigned char r, g, b;
@@ -850,8 +821,7 @@ long osd_getpixel(int x, int y)
 
 /*
  */
-void direct_hline(int x, int x2, int y)
-{
+void direct_hline(int x, int x2, int y) {
   long offset, i, len;
 
   if (fg_screen_color == -1) {
@@ -922,14 +892,12 @@ void direct_hline(int x, int x2, int y)
 
 //
 //#define SDL_FASTPIX(x,y)   *(((byte *)screen->pixels)+(y)*screen->w+(x)) = dev_fgcolor
-void g_setpixel(int x, int y)
-{
+void g_setpixel(int x, int y) {
   direct_setpixel(x, y, fg_screen_color);
 }
 
 /* Bresenham's algorithm for drawing line */
-void direct_line(int x1, int y1, int x2, int y2)
-{
+void direct_line(int x1, int y1, int x2, int y2) {
   if (y1 == y2) {
     direct_hline(x1, x2, y1);
     return;
@@ -937,8 +905,7 @@ void direct_line(int x1, int y1, int x2, int y2)
   g_line(x1, y1, x2, y2, g_setpixel);
 }
 
-void direct_fillrect(int x1, int y1, int x2, int y2, long c)
-{
+void direct_fillrect(int x1, int y1, int x2, int y2, long c) {
   int i;
   long co = fg_screen_color;
 
@@ -952,8 +919,7 @@ void direct_fillrect(int x1, int y1, int x2, int y2, long c)
   fg_screen_color = co;
 }
 
-void osd_settextcolor(long fg, long bg)
-{
+void osd_settextcolor(long fg, long bg) {
   osd_setcolor(fg);
   if (bg != -1) {
     osd_setbgcolor(bg);
@@ -961,8 +927,7 @@ void osd_settextcolor(long fg, long bg)
 }
 
 //
-void osd_drawchar(int x, int y, byte ch, int overwrite, long fg_rgb, long bg_rgb)
-{
+void osd_drawchar(int x, int y, byte ch, int overwrite, long fg_rgb, long bg_rgb) {
   int offset;
   int bit, i;
   unsigned char data, data1;
@@ -976,8 +941,7 @@ void osd_drawchar(int x, int y, byte ch, int overwrite, long fg_rgb, long bg_rgb
       for (bit = 0; bit < 8; bit++) {
         if (data & (1 << (7 - bit))) {
           direct_setpixel(x + bit, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + bit, y + i, bg_rgb);
         }
       }
@@ -985,232 +949,196 @@ void osd_drawchar(int x, int y, byte ch, int overwrite, long fg_rgb, long bg_rgb
       case 16:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         if (data1 & (1 << 6)) {
           direct_setpixel(x + 9, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 9, y + i, bg_rgb);
         }
         if (data1 & (1 << 5)) {
           direct_setpixel(x + 10, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 10, y + i, bg_rgb);
         }
         if (data1 & (1 << 4)) {
           direct_setpixel(x + 11, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 11, y + i, bg_rgb);
         }
         if (data1 & (1 << 3)) {
           direct_setpixel(x + 12, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 12, y + i, bg_rgb);
         }
         if (data1 & (1 << 2)) {
           direct_setpixel(x + 13, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 13, y + i, bg_rgb);
         }
         if (data1 & (1 << 1)) {
           direct_setpixel(x + 14, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 14, y + i, bg_rgb);
         }
         if (data1 & (1 << 0)) {
           direct_setpixel(x + 15, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 15, y + i, bg_rgb);
         }
         break;
       case 15:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         if (data1 & (1 << 6)) {
           direct_setpixel(x + 9, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 9, y + i, bg_rgb);
         }
         if (data1 & (1 << 5)) {
           direct_setpixel(x + 10, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 10, y + i, bg_rgb);
         }
         if (data1 & (1 << 4)) {
           direct_setpixel(x + 11, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 11, y + i, bg_rgb);
         }
         if (data1 & (1 << 3)) {
           direct_setpixel(x + 12, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 12, y + i, bg_rgb);
         }
         if (data1 & (1 << 2)) {
           direct_setpixel(x + 13, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 13, y + i, bg_rgb);
         }
         if (data1 & (1 << 1)) {
           direct_setpixel(x + 14, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 14, y + i, bg_rgb);
         }
         break;
       case 14:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         if (data1 & (1 << 6)) {
           direct_setpixel(x + 9, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 9, y + i, bg_rgb);
         }
         if (data1 & (1 << 5)) {
           direct_setpixel(x + 10, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 10, y + i, bg_rgb);
         }
         if (data1 & (1 << 4)) {
           direct_setpixel(x + 11, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 11, y + i, bg_rgb);
         }
         if (data1 & (1 << 3)) {
           direct_setpixel(x + 12, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 12, y + i, bg_rgb);
         }
         if (data1 & (1 << 2)) {
           direct_setpixel(x + 13, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 13, y + i, bg_rgb);
         }
         break;
       case 13:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         if (data1 & (1 << 6)) {
           direct_setpixel(x + 9, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 9, y + i, bg_rgb);
         }
         if (data1 & (1 << 5)) {
           direct_setpixel(x + 10, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 10, y + i, bg_rgb);
         }
         if (data1 & (1 << 4)) {
           direct_setpixel(x + 11, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 11, y + i, bg_rgb);
         }
         if (data1 & (1 << 3)) {
           direct_setpixel(x + 12, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 12, y + i, bg_rgb);
         }
         break;
       case 12:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         if (data1 & (1 << 6)) {
           direct_setpixel(x + 9, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 9, y + i, bg_rgb);
         }
         if (data1 & (1 << 5)) {
           direct_setpixel(x + 10, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 10, y + i, bg_rgb);
         }
         if (data1 & (1 << 4)) {
           direct_setpixel(x + 11, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 11, y + i, bg_rgb);
         }
         break;
       case 11:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         if (data1 & (1 << 6)) {
           direct_setpixel(x + 9, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 9, y + i, bg_rgb);
         }
         if (data1 & (1 << 5)) {
           direct_setpixel(x + 10, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 10, y + i, bg_rgb);
         }
         break;
       case 10:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         if (data1 & (1 << 6)) {
           direct_setpixel(x + 9, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 9, y + i, bg_rgb);
         }
         break;
       case 9:
         if (data1 & (1 << 7)) {
           direct_setpixel(x + 8, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + 8, y + i, bg_rgb);
         }
         break;
@@ -1218,15 +1146,13 @@ void osd_drawchar(int x, int y, byte ch, int overwrite, long fg_rgb, long bg_rgb
         break;
       }
     }
-  }
-  else {
+  } else {
     for (i = 0; i < font_h; i++, offset++) {
       data = *(currentfont + offset);
       for (bit = 0; bit <= font_w; bit++) {
         if (data & (1 << (font_w - bit))) {
           direct_setpixel(x + bit, y + i, fg_rgb);
-        }
-        else if (overwrite) {
+        } else if (overwrite) {
           direct_setpixel(x + bit, y + i, bg_rgb);
         }
       }
@@ -1238,15 +1164,13 @@ void osd_drawchar(int x, int y, byte ch, int overwrite, long fg_rgb, long bg_rgb
 /*
  *   enable or disable PEN code
  */
-void osd_setpenmode(int enable)
-{
+void osd_setpenmode(int enable) {
   mouse_mode = enable;
 }
 
 /*
  */
-int osd_getpen(int code)
-{
+int osd_getpen(int code) {
   int r = 0;
 
   osd_events(0);
@@ -1300,32 +1224,27 @@ int osd_getpen(int code)
 /*
  *   clear screen
  */
-void osd_cls()
-{
+void osd_cls() {
   cur_x = cur_y = 0;
 
   LOCK();
-  direct_fillrect(0, 0, os_graf_mx - 1, os_graf_my - 1,
-                  get_screen_color(GET_BG_COLOR));
+  direct_fillrect(0, 0, os_graf_mx - 1, os_graf_my - 1, get_screen_color(GET_BG_COLOR));
   make_update(0, 0, os_graf_mx - 1, os_graf_my - 1);
   UNLOCK();
 }
 
 //   returns the current x position
-int osd_getx()
-{
+int osd_getx() {
   return cur_x;
 }
 
 //   returns the current y position
-int osd_gety()
-{
+int osd_gety() {
   return cur_y;
 }
 
 //
-void osd_setxy(int x, int y)
-{
+void osd_setxy(int x, int y) {
   cur_x = x;
   cur_y = y;
 }
@@ -1333,14 +1252,12 @@ void osd_setxy(int x, int y)
 /**
  *   next line
  */
-void osd_nextln()
-{
+void osd_nextln() {
   cur_x = 0;
 
   if (cur_y < (os_graf_my - font_h)) {
     cur_y += font_h;
-  }
-  else {
+  } else {
     int len, to;
 
     // scroll
@@ -1351,8 +1268,7 @@ void osd_nextln()
     }
     memcpy((char *)screen->pixels, (char *)screen->pixels + to, len);
     cur_y = os_graf_my - 1 - font_h;
-    direct_fillrect(0, cur_y, os_graf_mx - 1, os_graf_my - 1,
-                    get_screen_color(GET_BG_COLOR));
+    direct_fillrect(0, cur_y, os_graf_mx - 1, os_graf_my - 1, get_screen_color(GET_BG_COLOR));
     make_update(0, 0, os_graf_mx - 1, os_graf_my - 1);
   }
 }
@@ -1360,8 +1276,7 @@ void osd_nextln()
 /*
  *   calc next tab position
  */
-int osd_calctab(int x)
-{
+int osd_calctab(int x) {
   int c = 1;
 
   while (x > tabsize) {
@@ -1395,8 +1310,7 @@ int osd_calctab(int x)
  *   \e[8?m   set system font - aka character set
  *   \e[9?m   set SB font - aka font size
  */
-void osd_write(const char *str)
-{
+void osd_write(const char *str) {
   int len, cx = font_w, esc_val, esc_cmd;
   byte *p, buf[3];
   static int next_is_graphic = 0;
@@ -1433,16 +1347,13 @@ void osd_write(const char *str)
 
       // TODO: ??? SJIS on Linux ???
       if (!con_use_reverse) {
-        osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_FG_COLOR),
-                     get_screen_color(GET_BG_COLOR));
+        osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_FG_COLOR), get_screen_color(GET_BG_COLOR));
         if (con_use_bold) {
           osd_drawchar(cur_x - 1, cur_y, *p, 0, get_screen_color(GET_FG_COLOR),
                        get_screen_color(GET_BG_COLOR));
         }
-      }
-      else {
-        osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_BG_COLOR),
-                     get_screen_color(GET_FG_COLOR));
+      } else {
+        osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_BG_COLOR), get_screen_color(GET_FG_COLOR));
         if (con_use_bold) {
           osd_drawchar(cur_x - 1, cur_y, *p, 0, get_screen_color(GET_BG_COLOR),
                        get_screen_color(GET_FG_COLOR));
@@ -1457,8 +1368,7 @@ void osd_write(const char *str)
       // advance
       cur_x += cx;
       next_is_graphic = 0;
-    }
-    else
+    } else
       switch (*p) {             // evaluate the character in normal way
       case '\a':               // beep
         osd_beep();
@@ -1484,20 +1394,18 @@ void osd_write(const char *str)
             }
 
             esc_cmd = *p;
-          }
-          else {
+          } else {
             esc_cmd = *p;
           }
 
           // control characters
           switch (esc_cmd) {
           case 'K':            // \e[K - clear to eol
-            direct_fillrect(cur_x, cur_y, os_graf_mx - cur_x, cur_y + font_h,
-                            get_screen_color(GET_BG_COLOR));
+            direct_fillrect(cur_x, cur_y, os_graf_mx - cur_x, cur_y + font_h, get_screen_color(GET_BG_COLOR));
             make_update(cur_x, cur_y, os_graf_mx - cur_x, cur_y + font_h);
             break;
           case 'G':
-            dev_setxy(esc_val * font_w, dev_gety());  // default font = 9x16
+            dev_setxy(esc_val * font_w, dev_gety());    // default font = 9x16
             break;
           case 'N':
             next_is_graphic = 1;
@@ -1655,15 +1563,13 @@ void osd_write(const char *str)
           default:
             {
               char buf[128];
-              sprintf(buf, "Unknown escape sequence command after [ (%d)\n",
-                      esc_cmd);
+              sprintf(buf, "Unknown escape sequence command after [ (%d)\n", esc_cmd);
               osd_write(buf);
               osd_refresh();
             }
             break;
           }
-        }
-        else {
+        } else {
           {
             char buf[128];
             sprintf(buf, "Unknown escape sequence command (%d)\n", *(p + 1));
@@ -1677,14 +1583,13 @@ void osd_write(const char *str)
         osd_nextln();
         if ((dev_fgcolor == dev_bgcolor) && (dev_fgcolor == 0)) {
           fast_exit = 1;        // the user don't want to see anything at the
-                                // end
+          // end
         }
         // LOCK();
         break;
       case '\r':               // return
         cur_x = 0;
-        direct_fillrect(cur_x, cur_y, os_graf_mx - cur_x, cur_y + font_h,
-                        get_screen_color(GET_BG_COLOR));
+        direct_fillrect(cur_x, cur_y, os_graf_mx - cur_x, cur_y + font_h, get_screen_color(GET_BG_COLOR));
         make_update(cur_x, cur_y, os_graf_mx - cur_x, cur_y + font_h);
         break;
       default:
@@ -1701,21 +1606,17 @@ void osd_write(const char *str)
         if (cur_y + font_h >= os_graf_my) {
           osd_nextln();
         }
-
         // draw
 
         // TODO: ??? SJIS on Linux ???
         if (!con_use_reverse) {
-          osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_FG_COLOR),
-                       get_screen_color(GET_BG_COLOR));
+          osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_FG_COLOR), get_screen_color(GET_BG_COLOR));
           if (con_use_bold) {
             osd_drawchar(cur_x - 1, cur_y, *p, 0, get_screen_color(GET_FG_COLOR),
                          get_screen_color(GET_BG_COLOR));
           }
-        }
-        else {
-          osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_BG_COLOR),
-                       get_screen_color(GET_FG_COLOR));
+        } else {
+          osd_drawchar(cur_x, cur_y, *p, 1, get_screen_color(GET_BG_COLOR), get_screen_color(GET_FG_COLOR));
           if (con_use_bold)
             osd_drawchar(cur_x - 1, cur_y, *p, 0, get_screen_color(GET_BG_COLOR),
                          get_screen_color(GET_FG_COLOR));
@@ -1740,20 +1641,17 @@ void osd_write(const char *str)
   // UNLOCK();
 }
 
-
 /*
  * check SDL's events
  */
-int osd_events(int wait_flag)
-{
+int osd_events(int wait_flag) {
   int ch, button, i;
   int evc = 0;
   SDL_Event ev;
 
   if (scr_update) {
     // refresh
-    SDL_UpdateRect(screen, Update_rect.x, Update_rect.y, Update_rect.w + 1,
-                   Update_rect.h + 1);
+    SDL_UpdateRect(screen, Update_rect.x, Update_rect.y, Update_rect.w + 1, Update_rect.h + 1);
     scr_update = 0;
     Update_rect.x = -1;
     Update_rect.y = -1;
@@ -1777,12 +1675,11 @@ int osd_events(int wait_flag)
         exit_app = 1;
         // break
         return -2;
-      }
-      else {
+      } else {
         // dev_printf("--- K=0x%X ---", ch);
         // scan keymap
         for (i = 0; keymap[i] != 0; i += 2) {
-          if (keymap[i] == ch) {  // !!!!!!!!!!!!!!!
+          if (keymap[i] == ch) {        // !!!!!!!!!!!!!!!
             if (keymap[i + 1] != -1) {
               dev_pushkey(keymap[i + 1]);
             }
@@ -1846,67 +1743,55 @@ int osd_events(int wait_flag)
 
 ///////////////////////////////////////////////////////////////
 
-static void osd_setbgcolor(long color)
-{
+static void osd_setbgcolor(long color) {
   dev_bgcolor = color;
   if (color >= 0 && color <= 15) {
     bg_screen_color = cmap[color];
-  }
-  else if (color < 0) {
+  } else if (color < 0) {
     bg_screen_color = -color;
 #if defined(CPU_BIGENDIAN)
     bg_screen_color = SDL_MapRGB(screen->format,
                                  (bg_screen_color & 0xFF0000) >> 16,
-                                 (bg_screen_color & 0xFF00) >> 8,
-                                 (bg_screen_color & 0xFF));
+                                 (bg_screen_color & 0xFF00) >> 8, (bg_screen_color & 0xFF));
 #else
     bg_screen_color = SDL_MapRGB(screen->format,
                                  (bg_screen_color & 0xFF),
-                                 (bg_screen_color & 0xFF00) >> 8,
-                                 (bg_screen_color & 0xFF0000) >> 16);
+                                 (bg_screen_color & 0xFF00) >> 8, (bg_screen_color & 0xFF0000) >> 16);
 #endif
   }
 }
 
-
-void osd_setcolor(long color)
-{
+void osd_setcolor(long color) {
   dev_fgcolor = color;
   if (color >= 0 && color <= 15) {
     fg_screen_color = cmap[color];
-  }
-  else if (color < 0) {
+  } else if (color < 0) {
     fg_screen_color = -color;
 #if defined(CPU_BIGENDIAN)
     fg_screen_color = SDL_MapRGB(screen->format,
                                  (fg_screen_color & 0xFF0000) >> 16,
-                                 (fg_screen_color & 0xFF00) >> 8,
-                                 (fg_screen_color & 0xFF));
+                                 (fg_screen_color & 0xFF00) >> 8, (fg_screen_color & 0xFF));
 #else
     fg_screen_color = SDL_MapRGB(screen->format,
                                  (fg_screen_color & 0xFF),
-                                 (fg_screen_color & 0xFF00) >> 8,
-                                 (fg_screen_color & 0xFF0000) >> 16);
+                                 (fg_screen_color & 0xFF00) >> 8, (fg_screen_color & 0xFF0000) >> 16);
 #endif
   }
 }
 
-void osd_line(int x1, int y1, int x2, int y2)
-{
+void osd_line(int x1, int y1, int x2, int y2) {
   LOCK();
 
   if ((x1 == x2) && (y1 == y2)) {
     direct_setpixel(x1, y1, fg_screen_color);
-  }
-  else {
+  } else {
     direct_line(x1, y1, x2, y2);
   }
   make_update(x1, y1, x2, y2);
   UNLOCK();
 }
 
-void osd_setpixel(int x, int y)
-{
+void osd_setpixel(int x, int y) {
   LOCK();
 
   direct_setpixel(x, y, fg_screen_color);
@@ -1914,8 +1799,7 @@ void osd_setpixel(int x, int y)
   UNLOCK();
 }
 
-void osd_rect(int x1, int y1, int x2, int y2, int fill)
-{
+void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   int y;
 
   LOCK();
@@ -1924,8 +1808,7 @@ void osd_rect(int x1, int y1, int x2, int y2, int fill)
     for (y = y1; y <= y2; y++) {
       direct_hline(x1, x2, y);
     }
-  }
-  else {
+  } else {
     direct_line(x1, y1, x1, y2);
     direct_line(x1, y2, x2, y2);
     direct_line(x2, y2, x2, y1);
@@ -1938,8 +1821,7 @@ void osd_rect(int x1, int y1, int x2, int y2, int fill)
 
 ///////////////////////////////////////////////////////////////
 
-void osd_sound(int freq, int ms, int vol, int bgplay)
-{
+void osd_sound(int freq, int ms, int vol, int bgplay) {
   struct voice_info *info;
   int i, loops, last_loop, lchunk;
 
@@ -1947,16 +1829,15 @@ void osd_sound(int freq, int ms, int vol, int bgplay)
     if (!freq) {
       freq = audiospec.freq / 2;
     }
-
     // wrong!! loops = ((ms * audiospec.freq / freq / 2.0) / audiospec.samples) 
     // / 1000;
     // calculate how many chunk needed for the required ms
     lchunk = audiospec.samples * 1000 / audiospec.freq;
     // one chunk longness in milisec - take care on int rounding!!
     loops = (int)ms / lchunk;   // the longness is rounded to chunk size!! cc.
-                                // 100
+    // 100
     // msec!
-    last_loop = ms - (int)(loops * lchunk); // length of last chunk in msec
+    last_loop = ms - (int)(loops * lchunk);     // length of last chunk in msec
 
     SDL_LockAudio();
 
@@ -1965,12 +1846,12 @@ void osd_sound(int freq, int ms, int vol, int bgplay)
       vol = 0;
     if (vol > 100)
       vol = 100;                // volume should be between 0 and 100 according 
-                                // to spec!
+    // to spec!
     info->vol = vol;
     // the correct info->setting is according to the volume because we don't
     // know hardware 
     // mixer is working or not!
-    info->setting = ((audiospec.format & 0xff) == 0x8) ? 0x7f : 0x7fff; 
+    info->setting = ((audiospec.format & 0xff) == 0x8) ? 0x7f : 0x7fff;
     // 8 or 16 bit
 
     // sample
@@ -1980,9 +1861,8 @@ void osd_sound(int freq, int ms, int vol, int bgplay)
 
     if ((freq < audiospec.freq / 2) && (freq != 0)) {
       info->period = (int)(audiospec.freq / freq / 2.0);
-    }
-    else {
-      info->period = 0; 
+    } else {
+      info->period = 0;
       // we generate silent!! for example sound 32767 
       // definitely
       // larger then 22050!
@@ -1992,8 +1872,8 @@ void osd_sound(int freq, int ms, int vol, int bgplay)
     // 
 
     if (loops)
-      for (i = 1; i <= loops; i++) {  // handling consecutive chunks - long
-                                      // sound
+      for (i = 1; i <= loops; i++) {    // handling consecutive chunks - long
+        // sound
         audio_info[audio_tail] = *info;
         audio_info[audio_tail].remain_ms = lchunk;
         // next line try to compensate the noise if the end of the previous
@@ -2010,7 +1890,7 @@ void osd_sound(int freq, int ms, int vol, int bgplay)
         }
       }
     if (last_loop)              // handling the last chunk from a long sound or 
-                                // a quick one
+      // a quick one
     {
       audio_info[audio_tail] = *info;
       audio_info[audio_tail].remain_ms = last_loop;
@@ -2041,8 +1921,7 @@ void osd_sound(int freq, int ms, int vol, int bgplay)
   }
 }
 
-void osd_beep()
-{
+void osd_beep() {
   if (has_audio) {
     osd_sound(440, 250, 75, 0);
   } else {
@@ -2050,8 +1929,7 @@ void osd_beep()
   }
 }
 
-void osd_clear_sound_queue()
-{
+void osd_clear_sound_queue() {
   if (has_audio) {
     SDL_LockAudio();
     audio_head = audio_tail;
@@ -2061,26 +1939,22 @@ void osd_clear_sound_queue()
 
 ///////////////////////////////////////////////////////////////
 
-int osd_textwidth(const char *str)
-{
+int osd_textwidth(const char *str) {
   int l = strlen(str);
 
   // SJIS ???
   return (l * font_w);
 }
 
-int osd_textheight(const char *str)
-{
+int osd_textheight(const char *str) {
   // TODO: count CRLF or just LF or just CR or ????
   return font_h;
 }
 
-void osd_refresh()
-{
+void osd_refresh() {
   if (scr_update) {
     // refresh
-    SDL_UpdateRect(screen, Update_rect.x, Update_rect.y, Update_rect.w + 1,
-                   Update_rect.h + 1);
+    SDL_UpdateRect(screen, Update_rect.x, Update_rect.y, Update_rect.w + 1, Update_rect.h + 1);
     scr_update = 0;
     Update_rect.x = -1;
     Update_rect.y = -1;
@@ -2092,8 +1966,7 @@ void osd_refresh()
 #ifdef HAVE_SDL_IMAGE
 // image part 
 
-static void Init_cache()
-{
+static void Init_cache() {
   int i;
 
   for (i = 0; i < MAX_IMAGE_IN_CACHE; ++i) {
@@ -2104,8 +1977,7 @@ static void Init_cache()
   maxpixelcount = 0;
 }
 
-void Clear_cache()
-{
+void Clear_cache() {
   int i;
 
   for (i = 0; i < MAX_IMAGE_IN_CACHE; ++i) {
@@ -2122,8 +1994,7 @@ void Clear_cache()
   maxpixelcount = 0;
 }
 
-static SDL_Surface *Look_in_cache(char *filename)
-{
+static SDL_Surface *Look_in_cache(char *filename) {
   int i;
 
   for (i = 0; i < MAX_IMAGE_IN_CACHE; ++i) {
@@ -2136,14 +2007,13 @@ static SDL_Surface *Look_in_cache(char *filename)
   return NULL;
 }
 
-static void Add_to_cache(SDL_Surface * image, char *filename)
-{
+static void Add_to_cache(SDL_Surface * image, char *filename) {
   int i, save;
   long usage;
 
   if (image->w * image->h > MAX_IMAGE_PIXEL_COUNT) {
     return;                     // if the image alone larger than the cache
-                                // size just return.
+    // size just return.
   }
   for (i = 0; i < MAX_IMAGE_IN_CACHE; ++i) {
     if (i_cache[i].file_name)
@@ -2152,7 +2022,7 @@ static void Add_to_cache(SDL_Surface * image, char *filename)
   }
   if ((maxpixelcount + image->w * image->h) < MAX_IMAGE_PIXEL_COUNT)
     for (i = 0; i < MAX_IMAGE_IN_CACHE; ++i) {
-      if (!i_cache[i].file_name) {  // we found a not used entry
+      if (!i_cache[i].file_name) {      // we found a not used entry
         i_cache[i].file_name = strdup(filename);
         i_cache[i].image_entry = image;
         i_cache[i].usage_count = 0;
@@ -2174,14 +2044,13 @@ static void Add_to_cache(SDL_Surface * image, char *filename)
     // save contain the lowest usage count cache entry index
     if (i_cache[save].image_entry) {
       maxpixelcount -= i_cache[save].image_entry->w * i_cache[save].image_entry->h;
-      SDL_FreeSurface(i_cache[save].image_entry); // free the memory
+      SDL_FreeSurface(i_cache[save].image_entry);       // free the memory
       free(i_cache[save].file_name);
       i_cache[save].image_entry = NULL;
       i_cache[save].file_name = NULL;
       i_cache[save].usage_count = 0;
-    }
-    else
-      i_cache[save].usage_count = 0;  // should not be happen but ....
+    } else
+      i_cache[save].usage_count = 0;    // should not be happen but ....
   } while ((maxpixelcount + image->w * image->h) > MAX_IMAGE_PIXEL_COUNT);
 
   i_cache[save].file_name = strdup(filename);
@@ -2191,9 +2060,7 @@ static void Add_to_cache(SDL_Surface * image, char *filename)
   return;
 }
 
-void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h)
-{
-
+void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h) {
   SDL_Rect srect = { 0, 0, 0, 0 };
   SDL_Rect drect = { 0, 0, 0, 0 };
   char BMPfilename[256];
@@ -2221,7 +2088,7 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
       // open!
       // img1 = SDL_LoadBMP((char *) &BMPfilename);
       img1 = IMG_Load_RW(SDL_RWFromFile((const char *)&BMPfilename, "rb"), 1);  // SDL_image 
-                                                                                // 
+      // 
       // support!
       if (img1 == NULL) {
         // sprintf(buf, "Couldn't load %s: %s\n", filep->name, SDL_GetError());
@@ -2230,8 +2097,8 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
         osd_refresh();
         return;
       }
-      img = SDL_DisplayFormat(img1);  // convert the image to the same format
-                                      // of
+      img = SDL_DisplayFormat(img1);    // convert the image to the same format
+      // of
       // screen for fast blitting
       SDL_FreeSurface(img1);
       // dev_fopen(handle,(char *) &BMPfilename,saveflags); // reopen the file
@@ -2247,37 +2114,32 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
       srect.y = sy;
       drect.x = x;
       drect.y = y;              // drect.w, .h ignored as input by BlitSurface
-                                // but updated!
+      // but updated!
       if (index < 0) {
         transparentcolor = -index;
 #if defined(CPU_BIGENDIAN)
         transparentcolor = SDL_MapRGB(img->format,
                                       (transparentcolor & 0xFF0000) >> 16,
-                                      (transparentcolor & 0xFF00) >> 8,
-                                      (transparentcolor & 0xFF));
+                                      (transparentcolor & 0xFF00) >> 8, (transparentcolor & 0xFF));
 #else
         transparentcolor = SDL_MapRGB(img->format,
                                       (transparentcolor & 0xFF),
-                                      (transparentcolor & 0xFF00) >> 8,
-                                      (transparentcolor & 0xFF0000) >> 16);
+                                      (transparentcolor & 0xFF00) >> 8, (transparentcolor & 0xFF0000) >> 16);
 #endif
         SDL_SetColorKey(img, SDL_SRCCOLORKEY, transparentcolor);
-      }
-      else                      // clear colorkeying even if it was declared in 
-                                // the image file
+      } else                    // clear colorkeying even if it was declared in 
+        // the image file
         SDL_SetColorKey(img, 0, 0);
       SDL_BlitSurface(img, &srect, screen, &drect);
       make_update(drect.x, drect.y, drect.x + drect.w, drect.y + drect.h);
       osd_refresh();            // show the screen
-    }
-    else {
+    } else {
       sprintf(buf, "Couldn't load %s: %s\n", filep->name, SDL_GetError());
       osd_write(buf);
       osd_refresh();
       return;
     }
-  }
-  else {
+  } else {
     // output selected area of screen image to BMP
     img1 = IMG_Load_RW(SDL_RWFromFile((const char *)&BMPfilename, "rb"), 1);
     if (img1 != NULL) {
@@ -2291,12 +2153,11 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
                                  screen->format->Bmask, screen->format->Amask);
       SDL_FillRect(img, NULL, get_screen_color(GET_BG_COLOR));
       // fill the surface with the background color
-      SDL_BlitSurface(img1, NULL, img, NULL); // copy the whole original image
-                                              // to
+      SDL_BlitSurface(img1, NULL, img, NULL);   // copy the whole original image
+      // to
       // 0,0
       SDL_FreeSurface(img1);
-    }
-    else
+    } else
       img = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, screen->format->BitsPerPixel,
                                  screen->format->Rmask, screen->format->Gmask,
                                  screen->format->Bmask, screen->format->Amask);
@@ -2310,18 +2171,17 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
     drect.h = h;
     SDL_BlitSurface(screen, &srect, img, &drect);
     dev_fclose(handle);         // We have to close the file because
-                                // SDL_SaveBMP do not use a
+    // SDL_SaveBMP do not use a
     // shared open!
     SDL_SaveBMP(img, BMPfilename);
     SDL_FreeSurface(img);
-    dev_fopen(handle, (char *)&BMPfilename, DEV_FILE_APPEND); // reopen the
-                                                              // file
+    dev_fopen(handle, (char *)&BMPfilename, DEV_FILE_APPEND);   // reopen the
+    // file
     // with APPEND!!!
   }
 }
 
-int dev_image_width(int handle, int index)
-{
+int dev_image_width(int handle, int index) {
   int i = -1;
   char BMPfilename[256];
   int savehandle;
@@ -2352,7 +2212,7 @@ int dev_image_width(int handle, int index)
           return 0;
         }
         img = SDL_DisplayFormat(img1);  // convert the image to the same format 
-                                        // of
+        // of
         // screen for fast blitting
         SDL_FreeSurface(img1);
         // dev_fopen(handle,(char *) &BMPfilename,saveflags); // reopen the
@@ -2370,8 +2230,7 @@ int dev_image_width(int handle, int index)
   return i;
 }
 
-int dev_image_height(int handle, int index)
-{
+int dev_image_height(int handle, int index) {
   int i = -1;
   char BMPfilename[256];
   int savehandle;
@@ -2402,7 +2261,7 @@ int dev_image_height(int handle, int index)
           return 0;
         }
         img = SDL_DisplayFormat(img1);  // convert the image to the same format 
-                                        // of
+        // of
         // screen for fast blitting
         SDL_FreeSurface(img1);
         // dev_fopen(handle,(char *) &BMPfilename,saveflags); // reopen the
@@ -2423,18 +2282,15 @@ int dev_image_height(int handle, int index)
 #else
 
 // HAVE_SDL_IMAGE not defined
-int dev_image_width(int handle, int index)
-{
+int dev_image_width(int handle, int index) {
   return -1;
 }
 
-int dev_image_height(int handle, int index)
-{
+int dev_image_height(int handle, int index) {
   return -1;
 }
 
-void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h)
-{
+void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h) {
 }
 
 #endif

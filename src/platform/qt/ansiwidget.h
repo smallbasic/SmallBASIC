@@ -60,9 +60,7 @@ public:
   bool getMouseMode() { return mouseMode; }
   void resetMouse();
   void setMouseMode(bool mode);
-  void setMouseListener(AnsiWidgetListener *ml) {
-    listener = ml;
-  }
+  void setMouseListener(AnsiWidgetListener *ml) { listener = ml; }
 
 public slots:
   void copySelection();

@@ -47,6 +47,7 @@ typedef unsigned long MemHandle;
 #endif
 
 #ifdef HAVE_C_MALLOC
+#include <stdint.h>
 typedef intptr_t MemHandle;
 #endif
 

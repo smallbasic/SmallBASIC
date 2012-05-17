@@ -1,6 +1,5 @@
-// $Id$
 //
-// Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2007-2012 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -86,30 +85,31 @@ struct WidgetInfo {
       break;
     case V_ARRAY:
       orig.ptr = var->v.a.ptr;
-      break;
+      break
     case V_INT:
       orig.i = var->v.i;
       break;
     default:
       orig.i = 0;
+      break;
     }
   }
 };
 
 // a ScrollArea with content cleanup
-struct ScrollBox : gcn::ScrollArea {
-  ScrollBox(gcn::Widget * w) : ScrollArea(w) {} 
+struct ScrollBox:gcn::ScrollArea {
+  ScrollBox(gcn::Widget *w) : ScrollArea(w) {}
   ~ScrollBox() {
     delete getContent();
   }
 };
 
 // implements abstract gcn::ListModel as a list of strings
-struct DropListModel : gcn::ListModel {
-  std::vector < std::string > list;
+struct DropListModel:gcn::ListModel {
+  std::vector <std::string> list;
   int focus_index;
 
-  DropListModel(const char *items, var_t * v) {
+  DropListModel(const char *items, var_t *v) {
     focus_index = -1;
 
     if (v && v->type == V_ARRAY) {
@@ -126,7 +126,7 @@ struct DropListModel : gcn::ListModel {
         std::string s(items + i, end_index - i);
         list.push_back(s);
         i = end_index;
-        if (v != 0 && v->type == V_STR && v->v.p.ptr &&
+        if (v != 0 && v->type == V_STR && v->v.p.ptr && 
             strcasecmp((const char *)v->v.p.ptr, s.c_str()) == 0) {
           focus_index = item_index;
         }
@@ -136,7 +136,7 @@ struct DropListModel : gcn::ListModel {
   }
 
   // construct from an array of values
-  void fromArray(const char *caption, var_t * v) {
+  void fromArray(const char *caption, var_t *v) {
     for (int i = 0; i < v->v.a.size; i++) {
       var_t *el_p = (var_t *) (v->v.a.ptr + sizeof(var_t) * i);
       if (el_p->type == V_STR) {
@@ -144,13 +144,11 @@ struct DropListModel : gcn::ListModel {
         if (strcasecmp((const char *)el_p->v.p.ptr, caption) == 0) {
           focus_index = i;
         }
-      }
-      else if (el_p->type == V_INT) {
+      } else if (el_p->type == V_INT) {
         char buff[40];
         sprintf(buff, "%d", el_p->v.i);
         list.push_back(buff);
-      }
-      else if (el_p->type == V_ARRAY) {
+      } else if (el_p->type == V_ARRAY) {
         fromArray(caption, el_p);
       }
     }
@@ -179,17 +177,17 @@ struct DropListModel : gcn::ListModel {
 
 // load the font image from a static xpixmap structure
 struct FontImageLoader:gcn::SDLImageLoader {
-  Image *load(const std::string & filename, bool convertToDisplayFormat = true) {
-    SDL_Surface* loadedSurface = NULL;
+  Image *load(const std::string &filename, bool convertToDisplayFormat = true) {
+    SDL_Surface *loadedSurface = NULL;
     if (filename == "fixed_font.xpm") {
       loadedSurface = IMG_ReadXPMFromArray((char **)fixedfont_xpm);
-    } 
+    }
     // else test and load other embedded fonts 
     if (loadedSurface == NULL) {
       throw std::string("Unable to load font data");
     }
 
-    SDL_Surface* surface = convertToStandardFormat(loadedSurface);
+    SDL_Surface *surface = convertToStandardFormat(loadedSurface);
     SDL_FreeSurface(loadedSurface);
 
     if (surface == NULL) {
@@ -202,48 +200,43 @@ struct FontImageLoader:gcn::SDLImageLoader {
 FontImageLoader *imageLoader = 0;
 
 // convert a basic array into a std::string
-void array_to_string(std::string & s, var_t * v)
-{
+void array_to_string(std::string &s, var_t *v) {
   for (int i = 0; i < v->v.a.size; i++) {
     var_t *el_p = (var_t *) (v->v.a.ptr + sizeof(var_t) * i);
     if (el_p->type == V_STR) {
       s.append((const char *)el_p->v.p.ptr);
       s.append("\n");
-    }
-    else if (el_p->type == V_INT) {
+    } else if (el_p->type == V_INT) {
       char buff[40];
       sprintf(buff, "%d\n", el_p->v.i);
       s.append(buff);
-    }
-    else if (el_p->type == V_ARRAY) {
+    } else if (el_p->type == V_ARRAY) {
       array_to_string(s, el_p);
     }
   }
 }
 
 // map iterator
-typedef std::map < gcn::Widget *, WidgetInfo * >::iterator WI;
+typedef std::map <gcn::Widget *, WidgetInfo *>::iterator WI;
 
 struct Form:gcn::Container, gcn::ActionListener {
   void update();
-  void action(const ActionEvent & actionEvent);
-  void add_button(gcn::Widget * widget, WidgetInfo * inf,
-                  const char *caption, Rectangle & rect, int def_w, int def_h);
-  void add_widget(gcn::Widget * widget, WidgetInfo * inf, Rectangle & rect);
-  bool update_gui(gcn::Widget * w, WidgetInfo * inf);
-  void transfer_data(gcn::Widget * w, WidgetInfo * inf);
-  bool set_radio_group(var_t * v, RadioButton * radio);
-  std::map < gcn::Widget *, WidgetInfo * >widget_map;
+  void action(const ActionEvent &actionEvent);
+  void add_button(gcn::Widget *widget, WidgetInfo *inf,
+                  const char *caption, Rectangle &rect, int def_w, int def_h);
+  void add_widget(gcn::Widget *widget, WidgetInfo *inf, Rectangle &rect);
+  bool update_gui(gcn::Widget *w, WidgetInfo *inf);
+  void transfer_data(gcn::Widget *w, WidgetInfo *inf);
+  bool set_radio_group(var_t *v, RadioButton *radio);
+  std::map <gcn::Widget *, WidgetInfo *>widget_map;
   ~Form();
-  Form() : prev_x(0), prev_y(0) {
-  } 
-  int prev_x, prev_y;
+  Form():prev_x(0), prev_y(0) {
+  } int prev_x, prev_y;
 };
 
 Form *form = 0;
 
-Form::~Form()
-{
+Form::~Form() {
   Container::clear();
   for (WI iter = widget_map.begin(); iter != widget_map.end(); iter++) {
     delete iter->first;         // cleanup widget
@@ -251,9 +244,8 @@ Form::~Form()
   }
 }
 
-void Form::add_button(gcn::Widget * widget, WidgetInfo * inf,
-                      const char *caption, Rectangle & rect, int def_w, int def_h)
-{
+void Form::add_button(gcn::Widget *widget, WidgetInfo *inf,
+                      const char *caption, Rectangle &rect, int def_w, int def_h) {
   if (rect.width == -1 && caption != 0) {
     rect.width = font->getWidth(caption) + def_w;
   }
@@ -265,8 +257,7 @@ void Form::add_button(gcn::Widget * widget, WidgetInfo * inf,
   add_widget(widget, inf, rect);
 }
 
-void Form::add_widget(gcn::Widget * widget, WidgetInfo * inf, Rectangle & rect)
-{
+void Form::add_widget(gcn::Widget *widget, WidgetInfo *inf, Rectangle &rect) {
   if (rect.width != -1) {
     widget->setWidth(rect.width);
   }
@@ -295,8 +286,7 @@ void Form::add_widget(gcn::Widget * widget, WidgetInfo * inf, Rectangle & rect)
   widget->requestFocus();
 }
 
-void Form::action(const gcn::ActionEvent & actionEvent)
-{
+void Form::action(const gcn::ActionEvent &actionEvent) {
   // find the WidgetInfo for the event's widget
   WI iter = widget_map.find(actionEvent.getSource());
   if (iter != widget_map.end()) {
@@ -317,16 +307,14 @@ void Form::action(const gcn::ActionEvent & actionEvent)
 }
 
 // copy all modeless widget fields into variables
-void Form::update()
-{
+void Form::update() {
   for (WI iter = widget_map.begin(); iter != widget_map.end(); iter++) {
     transfer_data(iter->first, iter->second);
   }
 }
 
 // set basic string variable to widget state
-bool Form::update_gui(gcn::Widget * w, WidgetInfo * inf)
-{
+bool Form::update_gui(gcn::Widget *w, WidgetInfo *inf) {
   DropDown *dropdown;
   ListBox *listbox;
   DropListModel *model;
@@ -388,8 +376,7 @@ bool Form::update_gui(gcn::Widget * w, WidgetInfo * inf)
         delete model;
         model = new DropListModel((const char *)inf->var->v.p.ptr, 0);
         dropdown->setListModel(model);
-      }
-      else {
+      } else {
         // select one of the existing list items
         int selection = model->getPosition((const char *)inf->var->v.p.ptr);
         if (selection != -1) {
@@ -406,8 +393,7 @@ bool Form::update_gui(gcn::Widget * w, WidgetInfo * inf)
         delete model;
         model = new DropListModel((const char *)inf->var->v.p.ptr, 0);
         listbox->setListModel(model);
-      }
-      else {
+      } else {
         int selection = model->getPosition((const char *)inf->var->v.p.ptr);
         if (selection != -1) {
           listbox->setSelected(selection);
@@ -417,8 +403,7 @@ bool Form::update_gui(gcn::Widget * w, WidgetInfo * inf)
 
     case ctrl_check:
       ((CheckBox *) w)->setSelected(!strcasecmp((const char *)inf->var->v.p.ptr,
-                                                ((CheckBox *) w)->getCaption().
-                                                c_str()));
+                                                ((CheckBox *) w)->getCaption().c_str()));
       break;
 
     case ctrl_label:
@@ -426,8 +411,7 @@ bool Form::update_gui(gcn::Widget * w, WidgetInfo * inf)
       break;
 
     case ctrl_text:
-      ((TextBox *) ((ScrollBox *) w)->getContent())->setText((const char *)inf->var->
-                                                             v.p.ptr);
+      ((TextBox *) ((ScrollBox *) w)->getContent())->setText((const char *)inf->var->v.p.ptr);
       break;
     }
     return true;
@@ -436,8 +420,7 @@ bool Form::update_gui(gcn::Widget * w, WidgetInfo * inf)
 }
 
 // synchronise basic variable and widget state
-void Form::transfer_data(gcn::Widget * w, WidgetInfo * inf)
-{
+void Form::transfer_data(gcn::Widget *w, WidgetInfo *inf) {
   DropDown *dropdown;
   ListBox *listbox;
   DropListModel *model;
@@ -446,14 +429,12 @@ void Form::transfer_data(gcn::Widget * w, WidgetInfo * inf)
     inf->update_var_flag();
     return;
   }
-
   // set widget state to basic variable
   switch (inf->type) {
   case ctrl_check:
     if (((CheckBox *) w)->isSelected()) {
       v_setstr(inf->var, ((CheckBox *) w)->getCaption().c_str());
-    }
-    else {
+    } else {
       v_zerostr(inf->var);
     }
     break;
@@ -461,16 +442,14 @@ void Form::transfer_data(gcn::Widget * w, WidgetInfo * inf)
   case ctrl_radio:
     if (((RadioButton *) w)->isSelected()) {
       v_setstr(inf->var, ((RadioButton *) w)->getCaption().c_str());
-    }
-    else if (!inf->is_group_radio) {
+    } else if (!inf->is_group_radio) {
       // reset radio variable for radio that is not part of a group
       v_zerostr(inf->var);
     }
     break;
 
   case ctrl_text:
-    v_setstr(inf->var,
-             ((TextBox *) ((ScrollBox *) w)->getContent())->getText().c_str());
+    v_setstr(inf->var, ((TextBox *) ((ScrollBox *) w)->getContent())->getText().c_str());
     break;
 
   case ctrl_dropdown:
@@ -501,18 +480,16 @@ void Form::transfer_data(gcn::Widget * w, WidgetInfo * inf)
 
 // radio control's belong to the same group when they share
 // a common basic variable
-bool Form::set_radio_group(var_t * v, RadioButton * radio)
-{
+bool Form::set_radio_group(var_t *v, RadioButton *radio) {
   if (v == 0 || v->type != V_STR) {
     return false;
   }
 
   for (WI iter = widget_map.begin(); iter != widget_map.end(); iter++) {
-    gcn::Widget * widget = iter->first;
+    gcn::Widget *widget = iter->first;
     WidgetInfo *inf = iter->second;
     if (inf->type == ctrl_radio &&
-        inf->var->type == V_STR &&
-        (inf->var == v || inf->var->v.p.ptr == v->v.p.ptr)) {
+        inf->var->type == V_STR && (inf->var == v || inf->var->v.p.ptr == v->v.p.ptr)) {
       // another ctrl_radio is linked to the same variable
       radio->setGroup(((RadioButton *) widget)->getGroup());
       inf->is_group_radio = true;
@@ -523,8 +500,7 @@ bool Form::set_radio_group(var_t * v, RadioButton * radio)
 }
 
 // initialize and create the Guichan gui
-void form_begin()
-{
+void form_begin() {
   if (form == 0) {
     form = new Form();
     graphics = new gcn::SDLGraphics();
@@ -569,8 +545,7 @@ void form_begin()
 }
 
 // poll SDL events
-void form_iteration()
-{
+void form_iteration() {
   try {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -593,9 +568,9 @@ void form_iteration()
     }
 
     gui->logic();               // Let the gui perform it's logic (like handle
-                                // input)
+    // input)
     gui->draw();                // Draw the gui
-    SDL_Flip(graphics->getTarget());  // Update the screen
+    SDL_Flip(graphics->getTarget());    // Update the screen
     if (mode != m_closed) {
       SDL_WaitEvent(NULL);
     }
@@ -606,8 +581,7 @@ void form_iteration()
   }
 }
 
-extern "C" void ui_reset()
-{
+extern "C" void ui_reset() {
   if (form) {
     delete form;
     delete font;
@@ -624,8 +598,7 @@ extern "C" void ui_reset()
 }
 
 // BUTTON x, y, w, h, variable, caption [,type]
-extern "C" void cmd_button()
-{
+extern "C" void cmd_button() {
   int x, y, w, h;
   var_t *v = 0;
   char *caption = 0;
@@ -650,27 +623,23 @@ extern "C" void cmd_button()
         inf->is_group_radio = form->set_radio_group(v, widget);
         form->add_button(widget, inf, caption, rect, RAD_W, RAD_H);
         form->update_gui(widget, inf);
-      }
-      else if (strcasecmp("checkbox", type) == 0 || strcasecmp("check", type) == 0) {
+      } else if (strcasecmp("checkbox", type) == 0 || strcasecmp("check", type) == 0) {
         inf->type = ctrl_check;
         CheckBox *widget = new CheckBox();
         widget->setCaption(caption);
         form->add_button(widget, inf, caption, rect, RAD_W, RAD_H);
         form->update_gui(widget, inf);
-      }
-      else if (strcasecmp("button", type) == 0) {
+      } else if (strcasecmp("button", type) == 0) {
         inf->type = ctrl_button;
         Button *widget = new Button();
         widget->setCaption(caption);
         form->add_button(widget, inf, caption, rect, BN_W, BN_H);
-      }
-      else if (strcasecmp("label", type) == 0) {
+      } else if (strcasecmp("label", type) == 0) {
         inf->type = ctrl_label;
         Label *widget = new Label();
         widget->setCaption(caption);
         form->add_button(widget, inf, caption, rect, BN_W, BN_H);
-      }
-      else if (strcasecmp("listbox", type) == 0 || strcasecmp("list", type) == 0) {
+      } else if (strcasecmp("listbox", type) == 0 || strcasecmp("list", type) == 0) {
         inf->type = ctrl_listbox;
         ListBox *widget = new ListBox();
         DropListModel *model = new DropListModel(caption, v);
@@ -679,8 +648,7 @@ extern "C" void cmd_button()
           widget->setSelected(model->focus_index);
         }
         form->add_widget(widget, inf, rect);
-      }
-      else if (strcasecmp("dropdown", type) == 0 || strcasecmp("choice", type) == 0) {
+      } else if (strcasecmp("dropdown", type) == 0 || strcasecmp("choice", type) == 0) {
         inf->type = ctrl_dropdown;
         DropDown *widget = new DropDown();
         DropListModel *model = new DropListModel(caption, v);
@@ -689,13 +657,11 @@ extern "C" void cmd_button()
           widget->setSelected(model->focus_index);
         }
         form->add_widget(widget, inf, rect);
-      }
-      else {
+      } else {
         ui_reset();
         rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);
       }
-    }
-    else {
+    } else {
       inf->type = ctrl_button;
       Button *widget = new Button();
       widget->setCaption(caption);
@@ -707,8 +673,7 @@ extern "C" void cmd_button()
 
 // TEXT x, y, w, h, variable
 // When DOFORM returns the variable contains the user entered value
-extern "C" void cmd_text()
-{
+extern "C" void cmd_text() {
   int x, y, w, h;
   var_t *v = 0;
 
@@ -736,8 +701,7 @@ extern "C" void cmd_text()
 //   BUTTON ....
 //   DOFORM 'continue modeless form
 //
-extern "C" void cmd_doform()
-{
+extern "C" void cmd_doform() {
   int x, y, w, h;
   int num_args;
 
@@ -760,7 +724,6 @@ extern "C" void cmd_doform()
       rt_raise("UI: FORM HAS CLOSED");
       return;
     }
-
     // set form position in initial iteration
     if (mode == m_init) {
       mode = m_modeless;
@@ -771,8 +734,7 @@ extern "C" void cmd_doform()
         w = modeless_w;
         h = modeless_h;
       }
-    }
-    else {
+    } else {
       // pump system messages until button is clicked
       form->update();
       while (mode == m_modeless) {
@@ -816,4 +778,3 @@ extern "C" void cmd_doform()
 
 #endif
 
-// End of "$Id$".

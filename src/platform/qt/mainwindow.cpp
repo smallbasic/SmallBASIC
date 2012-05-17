@@ -29,7 +29,7 @@
 
 const char *aboutText =
   "QT Version " VERSION "\n\n"
-  "Copyright (c) 2002-2011 Chris Warren-Smith. \n"
+  "Copyright (c) 2002-2012 Chris Warren-Smith. \n"
   "Copyright (c) 2000-2006 Nicholas Christopoulos\n\n"
   "http://smallbasic.sourceforge.net\n\n"
   "SmallBASIC comes with ABSOLUTELY NO WARRANTY.\n"
