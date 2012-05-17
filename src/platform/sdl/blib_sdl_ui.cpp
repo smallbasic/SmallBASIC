@@ -85,7 +85,7 @@ struct WidgetInfo {
       break;
     case V_ARRAY:
       orig.ptr = var->v.a.ptr;
-      break
+      break;
     case V_INT:
       orig.i = var->v.i;
       break;
