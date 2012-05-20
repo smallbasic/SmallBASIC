@@ -645,7 +645,7 @@ void dev_ffill(word x0, word y0, long fill_color, long border_color);
  * @param pts is a table of points
  * @param ptNum is the number of the points to use
  */
-void dev_pfill(ipt_t * pts, int ptNum);
+void dev_pfill(ipt_t *pts, int ptNum);
 
 /*
  *
@@ -805,19 +805,19 @@ typedef enum {
   ft_stream,          /**< simple file */
   ft_random,
 
-  ft_serial_port,         /**< COMx:speed, serial port */
-  ft_printer_port,        /**< LPTx: parallel port */
+  ft_serial_port,     /**< COMx:speed, serial port */
+  ft_printer_port,    /**< LPTx: parallel port */
   ft_irda_port,       /**< IRDx: infrared "port" */
 
-  ft_socket_client,           /**< SCLT:address:port, socket client */
-  ft_socket_server,           // SSVR:address:port
+  ft_socket_client,   /**< SCLT:address:port, socket client */
+  ft_socket_server,   // SSVR:address:port
   ft_http_client,
-  ft_ftp_client,              // FTP is a good example also
-  ft_mail_client,             // MAIL (at least SMTP)
+  ft_ftp_client,      // FTP is a good example also
+  ft_mail_client,     // MAIL (at least SMTP)
   ft_memo,
   ft_pdoc,
   ft_ztxt,
-  ft_vfslib       /**< vfs-module */
+  ft_vfslib           /**< vfs-module */
 } dev_ftype_t;
 
 /**
@@ -836,10 +836,10 @@ typedef struct {
   struct termios oldtio, newtio;  /**< termios info */
 #endif
 
-  int handle;           /**< the file handle */
-  int last_error;         /**< the last error-code */
-  int vfslib;           /**< vfs-module, handle */
-  int open_flags;         /**< the open()'s flags */
+  int handle;         /**< the file handle */
+  int last_error;     /**< the last error-code */
+  int vfslib;         /**< vfs-module, handle */
+  int open_flags;     /**< the open()'s flags */
 } dev_file_t;
 
 // flags for dev_fopen()
@@ -948,7 +948,7 @@ int dev_feof(int SBHandle);
  * @param size is the size of the data
  * @return non-zero on success
  */
-int dev_fwrite(int SBHandle, byte * buff, dword size);
+int dev_fwrite(int SBHandle, byte *buff, dword size);
 
 /**
  * @ingroup dev_f
@@ -960,7 +960,17 @@ int dev_fwrite(int SBHandle, byte * buff, dword size);
  * @param size is the number of bytes to read
  * @return non-zero on success
  */
-int dev_fread(int SBHandle, byte * buff, dword size);
+int dev_fread(int SBHandle, byte *buff, dword size);
+
+/**
+ * @ingroup dev_f
+ *
+ * returns the entire file contents
+ *
+ * @param fileName the file to read
+ * @return contents of the given file
+ */
+char *dev_read(const char *fileName);
 
 /**
  * @ingroup dev_f
@@ -1055,7 +1065,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count);
  * @param list is the char** array
  * @param count is the number of the elements
  */
-void dev_destroy_file_list(char_p_t * list, int count);
+void dev_destroy_file_list(char_p_t *list, int count);
 
 /**
  * @html

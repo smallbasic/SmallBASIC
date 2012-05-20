@@ -9,7 +9,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "ansiwidget.h"
+#include "platform/mosync/ansiwidget.h"
+#include "platform/mosync/utils.h"
 
 /*! \class AnsiWidget
  
@@ -61,6 +62,25 @@ static int colors[] = {
   0xFF00FF,                     // 13 light magenta
   0xFFFF00,                     // 14 light yellow
   0xFFFFFF                      // 15 bright white
+};
+
+/*
+ * Workaround for API's which don't take a length argument
+ */
+struct TextBuffer {
+  TextBuffer(const char *s, int len) : 
+    str(s), len(len) {
+    c = str[len];
+    ((char *)str)[len] = 0;
+  }
+
+  ~TextBuffer() {
+    ((char *)str)[len] = c;
+  }
+
+  const char *str;
+  char c;
+  int len;
 };
 
 /*
@@ -134,15 +154,23 @@ AnsiWidget::AnsiWidget(int width, int height) :
 }
 
 bool AnsiWidget::construct() {
-  reset(true);
+  bool result = false;
   image = maCreatePlaceholder();
-  return (RES_OK != maCreateDrawableImage(image, width, height));
+  if (image && RES_OK == maCreateDrawableImage(image, width, height)) {
+    reset(true);
+    clearScreen();
+    result = true;
+  }
+  return result;
 }
 
 /*! widget clean up
  */
 AnsiWidget::~AnsiWidget() {
   maDestroyPlaceholder(image);
+  if (font) {
+    maFontDelete(font);
+  }
 }
 
 /*! create audible beep sound
@@ -156,40 +184,14 @@ void AnsiWidget::beep() const {
  */
 void AnsiWidget::clearScreen() {
   reset(true);
-  Backbuffer(image, bg);
+  Backbuffer backbuffer(image, bg);
   maFillRect(0, 0, width, height);
-}
-
-/*! draws an arc onto the offscreen buffer
- */
-void AnsiWidget::drawArc(int xc, int yc, double r, 
-                         double start, double end, double aspect) {
-  Backbuffer(image, fg);
-
-}
-
-/*! draws an ellipse onto the offscreen buffer
- */
-void AnsiWidget::drawEllipse(int xc, int yc, int xr, int yr, double aspect, int fill) {
-  Backbuffer(image, fg);
-
-  //  painter.setRenderHint(QPainter::HighQualityAntialiasing);
-  //  const QPoint center(xc, yc);
-  //  if (fill) {
-  //    QPainterPath path;
-  //    QBrush brush(this->fg);
-  //    path.addEllipse(center, xr, yr * aspect);
-  //    painter.fillPath(path, brush);
-  //  } else {
-  //    painter.setPen(this->fg);
-  //    painter.drawEllipse(center, xr, static_cast<int>(yr * aspect));
-  //  }
 }
 
 /*! draws the given image onto the offscreen buffer
  */
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
-  Backbuffer(image, fg);
+  Backbuffer backbuffer(image, fg);
 
   //  painter.drawImage(x, y, *image, sx, sy, w, h);
 }
@@ -197,14 +199,14 @@ void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, 
 /*! draw a line onto the offscreen buffer
  */
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
-  Backbuffer(image, fg);
+  Backbuffer backbuffer(image, fg);
   maLine(x1, y1, x2, y2);
 }
 
 /*! draw a rectangle onto the offscreen buffer
  */
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
-  Backbuffer(image, fg);
+  Backbuffer backbuffer(image, fg);
   maLine(x1, y1, x2, y1); // top
   maLine(x1, y2, x2, y2); // bottom
   maLine(x1, y1, x1, y2); // left
@@ -214,7 +216,7 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
 /*! draw a filled rectangle onto the offscreen buffer
  */
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
-  Backbuffer(image, fg);
+  Backbuffer backbuffer(image, fg);
   maFillRect(x1, y1, x2 - x1, y2 - y1);
 }
 
@@ -236,7 +238,7 @@ int AnsiWidget::getPixel(int x, int y) {
 /*! Returns the height in pixels using the current font setting
  */
 int AnsiWidget::textHeight(void) {
-  return EXTENT_Y(maGetTextSize("Q"));
+  return EXTENT_Y(maGetTextSize("Q@"));
 }
 
 /*! Returns the width in pixels using the current font setting
@@ -244,10 +246,8 @@ int AnsiWidget::textHeight(void) {
 int AnsiWidget::textWidth(const char *str, int len) {
   int result;
   if (len != -1) {
-    char *buffer = new char[len];
-    strncpy(buffer, str, len);
-    result = EXTENT_X(maGetTextSize(buffer));
-    delete []buffer;
+    TextBuffer text(str, len);
+    result = EXTENT_X(maGetTextSize(text.str));
   } else {
     result = EXTENT_X(maGetTextSize(str));
   }
@@ -257,8 +257,7 @@ int AnsiWidget::textWidth(const char *str, int len) {
 /*! Prints the contents of the given string onto the backbuffer
  */
 void AnsiWidget::print(const char *str) {
-  Backbuffer(image, fg);
-
+  Backbuffer backBuffer(image, fg);
   int len = strlen(str);
   if (len <= 0) {
     return;
@@ -266,7 +265,12 @@ void AnsiWidget::print(const char *str) {
 
   int fontHeight = textHeight();
   int ascent = 0;
-  unsigned char *p = (unsigned char *)str;
+
+  // copy the string to allow length manipulation
+  char *buffer = new char[len + 1];
+  strncpy(buffer, str, len);
+  buffer[len] = 0;
+  char *p = buffer;
 
   while (*p) {
     switch (*p) {
@@ -291,11 +295,9 @@ void AnsiWidget::print(const char *str) {
       newLine();
       break;
     case '\r':                 // return
-      {
-        curX = INITXY;
-        maSetColor(this->bg);
-        maFillRect(0, curY, width, fontHeight);
-      }
+      curX = INITXY;
+      maSetColor(this->bg);
+      maFillRect(0, curY, width, fontHeight);
       break;
     default:
       int numChars = 1;         // print minimum of one character
@@ -316,15 +318,13 @@ void AnsiWidget::print(const char *str) {
         }
       }
 
-      //painter.setFont(font());
-      //painter.setBackground(invert ? this->fg : this->bg);
-      //painter.setPen(invert ? this->bg : this->fg);
-
+      // erase the background
       maSetColor(invert ? this->fg : this->bg);
       maFillRect(curX, curY, cx, fontHeight);
 
-      maDrawText(curX, curY + ascent, (const char *)p);
-      //painter.drawText(, QString::fromUtf8((const char *)p, numChars));
+      // draw the text buffer
+      maSetColor(invert ? this->bg : this->fg);
+      maDrawText(curX, curY + ascent, TextBuffer((const char *)p, numChars).str);
 
       if (underline) {
         maLine(curX, curY + ascent + 1, curX + cx, curY + ascent + 1);
@@ -339,19 +339,51 @@ void AnsiWidget::print(const char *str) {
     }
     p++;
   }
+
+  // cleanup
+  delete [] buffer;
 }
 
-/*! save the offscreen buffer to the given filename
+/*! Display the contents of the back buffer
  */
-void AnsiWidget::saveImage(const char *filename, int x, int y, int w, int h) {
-  if (w == 0) {
-    w = width;
+void AnsiWidget::refresh() {
+  Backbuffer(image, bg);
+}
+
+/*! Update the widget to new dimensions
+ */
+void AnsiWidget::resize(int newWidth, int newHeight) {
+  MAHandle newImage = maCreatePlaceholder();
+  maCreateDrawableImage(newImage, newWidth, newHeight);
+  
+  MARect srcRect;
+  MAPoint2d dstPoint;
+  
+  srcRect.left = 0;
+  srcRect.top = 0;
+  srcRect.width = (width > newWidth ? newWidth : width);
+  srcRect.height = (height > newHeight ? newHeight : height);
+  dstPoint.x = 0;
+  dstPoint.y = 0;
+
+  maSetDrawTarget(newImage);
+  maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
+  
+  maDestroyPlaceholder(image);
+  image = newImage;
+  width = newWidth;
+  height = newHeight;
+
+  if (curY >= height) {
+    curY = height - textHeight();
   }
-  if (h == 0) {
-    h = height;
+  if (curX >= width) {
+    curX = 0;
   }
 
-  //image->copy(x, y, w, h).save(filename);
+  maSetDrawTarget(HANDLE_SCREEN);
+  maDrawImage(image, 0, 0);
+  maUpdateScreen();
 }
 
 /*! sets the current drawing color
@@ -363,7 +395,7 @@ void AnsiWidget::setColor(long fg) {
 /*! sets the pixel to the given color at the given xy location
  */
 void AnsiWidget::setPixel(int x, int y, int c) {
-  Backbuffer(image, c);
+  Backbuffer backbuffer(image, c);
   maPlot(x, y);
 }
 
@@ -450,7 +482,7 @@ int AnsiWidget::calcTab(int x) const {
 
 /*! Creates a hyperlink, eg // ^[ hwww.foo.com:title:hover;More text
  */
-void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
+void AnsiWidget::createLink(char *&p, bool execLink) {
   /*
   QString url;
   QString text;
@@ -518,7 +550,7 @@ void AnsiWidget::createLink(unsigned char *&p, bool execLink) {
 /*! Handles the characters following the \e[ sequence. Returns whether a further call
  * is required to complete the process.
  */
-bool AnsiWidget::doEscape(unsigned char *&p) {
+bool AnsiWidget::doEscape(char *&p) {
   int escValue = 0;
 
   while (isdigit(*p)) {
@@ -555,36 +587,30 @@ bool AnsiWidget::doEscape(unsigned char *&p) {
 /*! Handles the \n character
  */
 void AnsiWidget::newLine() {
-  int imageH = height;
   int fontHeight = textHeight();
-
   curX = INITXY;
-  if (curY + (fontHeight * 2) >= imageH) {
-    //QRegion exposed;
-    //image->scroll(0, -fontHeight, 0, 0, width(), imageH, &exposed);
+  if (curY + (fontHeight * 2) >= height) {
+    MAHandle newImage = maCreatePlaceholder();
+    maCreateDrawableImage(newImage, width, height);
 
-    //painter.fillRect(exposed.boundingRect(), this->bg);
+    MARect srcRect;
+    MAPoint2d dstPoint;
 
-    // scroll any hyperlinks
-    /*
-    int n = hyperlinks.size();
-    for (int i = 0; i < n; i++) {
-      QAbstractButton *nextObject = hyperlinks.at(i);
-      QPoint pt = nextObject->pos();
-      if (pt.y() < -fontHeight) {
-        delete nextObject;
-        hyperlinks.removeAt(i);
-        n--;
-      } else {
-        nextObject->move(pt.x(), pt.y() - fontHeight);
-      }
-    }
-    */
-  } else if (curY + (fontHeight * 2) >= height) {
-    // setup scrollbar scrolling
-    //scrollbar->setMaximum(scrollbar->maximum() + fontHeight);
-    //scrollbar->setValue(scrollbar->value() + fontHeight);
-    curY += fontHeight;
+    srcRect.left = 0;
+    srcRect.top = fontHeight;
+    srcRect.width = width;
+    srcRect.height = height - fontHeight;
+    dstPoint.x = 0;
+    dstPoint.y = 0;
+
+    maSetDrawTarget(newImage);
+    maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
+    maSetColor(bg);
+    maFillRect(0, height - fontHeight, width, fontHeight);
+
+    maSetDrawTarget(image);
+    maDrawImage(newImage, 0, 0);
+    maDestroyPlaceholder(newImage);
   } else {
     curY += fontHeight;
   }
@@ -600,6 +626,7 @@ void AnsiWidget::reset(bool init) {
     markX = markY = pointX = pointY = 0;
     copyMode = false;
   }
+
   // cleanup any hyperlinks
   //  int n = hyperlinks.size();
   //  for (int i = 0; i < n; i++) {
@@ -614,9 +641,9 @@ void AnsiWidget::reset(bool init) {
   underline = false;
   bold = false;
   italic = false;
-  fg = colors[BLACK];
-  bg = colors[WHITE];
-  textSize = 8;
+  fg = 0xffba00;
+  bg = colors[BLACK];
+  textSize = height / 40;
   updateFont();
 }
 
@@ -625,10 +652,8 @@ void AnsiWidget::reset(bool init) {
 bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   switch (c) {
   case 'K':
-    {                           // \e[K - clear to eol 
-      maSetColor(this->bg);
-      maFillRect(curX, curY, width - curX, textHeight());
-    }
+    maSetColor(this->bg);      // \e[K - clear to eol 
+    maFillRect(curX, curY, width - curX, textHeight());
     break;
   case 'G':                    // move to column
     curX = escValue;
@@ -748,29 +773,17 @@ void AnsiWidget::updateFont() {
   }
   int style = FONT_STYLE_NORMAL;
   if (italic) {
-    style += FONT_STYLE_ITALIC;
+    style |= FONT_STYLE_ITALIC;
   }
   if (bold) {
-    style += FONT_STYLE_BOLD;
+    style |= FONT_STYLE_BOLD;
   }
+
   font = maFontLoadDefault(FONT_TYPE_MONOSPACE, style, textSize);
   maFontSetCurrent(font);
 }
 
-/*! private slot - scrollbar position has changed
- */
 /*
-void AnsiWidget::scrollChanged(int value) {
-  int n = hyperlinks.size();
-
-  for (int i = 0; i < n; i++) {
-    QAbstractButton *nextObject = hyperlinks.at(i);
-    QPoint pt = nextObject->pos();
-    nextObject->move(pt.x(), pt.y() - value);
-  }
-  update();
-}
-
 void AnsiWidget::mouseMoveEvent(QMouseEvent *event) {
   pointX = event->x();
   pointY = event->y();
@@ -804,64 +817,4 @@ void AnsiWidget::mouseReleaseEvent(QMouseEvent *) {
   }
 }
 
-void AnsiWidget::paintEvent(QPaintEvent *event) {
-  QPainter painter(this);
-  QRect rc = event->rect();
-
-  painter.drawPixmap(rc.x(), rc.y(), rc.width(), rc.height(), *image,
-                     0, scrollbar->value(), width(), height());
-
-  // draw the mouse selection
-  if (copyMode && (markX != pointX || markY != pointY)) {
-    painter.setPen(Qt::DashDotDotLine);
-    painter.setBackgroundMode(Qt::TransparentMode);
-    painter.drawRect(markX, markY, pointX - markX, pointY - markY);
-  }
-
-  QWidget::paintEvent(event);
-}
-
-void AnsiWidget::resizeEvent(QResizeEvent *event) {
-  scrollbar->resize(18, event->size().height());
-  scrollbar->move(event->size().width() - scrollbar->width(), 0);
-
-  if (image) {
-    int scrollH = textSize * scrollSize;
-    int imageW = image->width();
-    int imageH = image->height() - scrollH;
-
-    if (width() > imageW) {
-      imageW = width();
-    }
-
-    if (height() > imageH) {
-      imageH = height();
-    }
-
-    imageH += scrollH;
-    scrollbar->setPageStep(event->size().height());
-
-    QPixmap *old = image;
-    image = new QPixmap(imageW, imageH);
-    QPainter painter(image);
-    painter.fillRect(0, 0, imageW, imageH, this->bg);
-    painter.drawPixmap(0, 0, old->width(), old->height(), *old);
-    delete old;
-  }
-
-  QWidget::resizeEvent(event);
-}
-
-void AnsiWidget::showEvent(QShowEvent *event) {
-  if (image == NULL) {
-    int imageH = parentWidget()->height() + (textSize *scrollSize);
-    image = new QPixmap(parentWidget()->width(), imageH);
-    image->fill(this->bg);
-
-    scrollbar->setPageStep(parentWidget()->height());
-    scrollbar->setSingleStep(textSize);
-    scrollbar->setValue(0);
-    scrollbar->setRange(0, 0);
-  }
-}
 */

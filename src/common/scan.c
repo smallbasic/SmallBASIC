@@ -3454,67 +3454,12 @@ int comp_bas_exist(const char *basfile) {
  */
 char *comp_load(const char *file_name) {
   char *buf = NULL;
-
-#if defined(_PalmOS)
-  // PalmOS uses databases instead of stream
-  DmOpenRef fp;
-  LocalID lid;
-  int l, i, size = 0;
-  VoidPtr rec_p = NULL;
-  VoidHand rec_h = NULL;
-
-  strcpy(comp_file_name, file_name);
-  lid = DmFindDatabase(0, (char *)file_name);
-  fp = DmOpenDatabase(0, lid, dmModeReadWrite);
-  if (!fp) {
-    panic("LOAD: CAN'T OPEN FILE %s", file_name);
-    return NULL;
-  }
-  l = DmNumRecords(fp) - 1;
-  if (l <= 0) {
-    panic("LOAD: BAD FILE STRUCTURE %s", file_name);
-    return NULL;
-  }
-
-  for (i = 0; i < l; i++) {
-    rec_h = DmGetRecord(fp, i + 1);
-    if (!rec_h) {
-      panic("LOAD: CAN'T GET RECORD %s", file_name);
-    }
-    rec_p = mem_lock(rec_h);
-    if (!rec_p)
-    panic("LOAD: CAN'T LOCK RECORD %s", file_name);
-
-//              if      ( i == 0 && strlen(rec_p+6) == 0 )
-//                      bc_scan("Main", rec_p+70);      // + sizeof(sec_t);
-//              else
-//                      bc_scan(rec_p+6, rec_p+70);     // + sizeof(sec_t);
-
-    if (i == 0) {
-      size = strlen(rec_p + 70) + 1;
-      buf = tmp_alloc(size + 1);
-      strcpy(buf, rec_p + 70);
-      buf[size] = '\0';
-    }
-    else {
-      size += strlen(rec_p + 70);
-      buf = tmp_realloc(buf, size);
-      strcat(buf, rec_p + 70);
-      buf[size] = '\0';
-    }
-
-    mem_unlock(rec_h);
-    DmReleaseRecord(fp, i + 1, 0);
-  }
-
-  DmCloseDatabase(fp);
-  return buf;
-
-#else
-  // --- normal ---
   int h;
 
   strcpy(comp_file_name, file_name);
+#if defined(IMPL_DEV_READ)
+  buf = dev_read(file_name);
+#else 
   h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
   if (h == -1) {
 #if defined(__CYGWIN__)
@@ -3536,7 +3481,6 @@ char *comp_load(const char *file_name) {
     close(h);
   }
 #endif
-
   return buf;
 }
 

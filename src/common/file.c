@@ -310,7 +310,7 @@ int dev_fclose(int sb_handle) {
 /**
  * returns true on success
  */
-int dev_fwrite(int sb_handle, byte * data, dword size) {
+int dev_fwrite(int sb_handle, byte *data, dword size) {
   dev_file_t *f;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
@@ -341,7 +341,7 @@ int dev_fwrite(int sb_handle, byte * data, dword size) {
 /**
  * returns true on success
  */
-int dev_fread(int sb_handle, byte * data, dword size) {
+int dev_fread(int sb_handle, byte *data, dword size) {
   dev_file_t *f;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
@@ -817,7 +817,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
 /**
  * destroy the file-list
  */
-void dev_destroy_file_list(char_p_t * list, int count) {
+void dev_destroy_file_list(char_p_t *list, int count) {
   int i;
 
   for (i = 0; i < count; i++) {

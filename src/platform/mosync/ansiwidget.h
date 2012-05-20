@@ -10,7 +10,10 @@
 #define ANSIWIDGET_H
 
 #include <maapi.h>
-#include <MAUtil/List.h>
+#include <MAUtil/String.h>
+#include <MAUtil/Vector.h>
+
+using namespace MAUtil;
 
 struct AnsiWidgetListener {
   virtual void mouseMoveEvent(bool down) = 0;
@@ -24,13 +27,9 @@ public:
   explicit AnsiWidget(int width, int height);
   ~AnsiWidget();
 
-  bool construct();
-
-  // public api
   void beep() const;
   void clearScreen();
-  void drawArc(int xc, int yc, double r, double start, double end, double aspect);
-  void drawEllipse(int xc, int yc, int xr, int yr, double aspect, int fill);
+  bool construct();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
@@ -45,7 +44,8 @@ public:
   int textHeight(void);
   int textWidth(const char *s, int len=-1);
   void print(const char *str);
-  void saveImage(const char *fn, int x, int y, int w, int h);
+  void refresh();
+  void resize(int width, int height);
   void setColor(long color);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
@@ -68,22 +68,12 @@ public:
 private:
   int ansiToMosync(long color);
   int calcTab(int x) const;
-  void createLink(unsigned char *&p, bool execLink);
-  bool doEscape(unsigned char *&p);
+  void createLink(char *&p, bool execLink);
+  bool doEscape(char *&p);
   void newLine();
   void reset(bool init);
   bool setGraphicsRendition(char c, int escValue);
   void updateFont();
-
-  /*
-  void mouseMoveEvent(QMouseEvent *event);
-  void mousePressEvent(QMouseEvent *event);
-  void mouseReleaseEvent(QMouseEvent *event);
-  void paintEvent(QPaintEvent *event);
-  void resizeEvent(QResizeEvent *event);
-  void showEvent(QShowEvent *event);
-  void scrollChanged(int value);
-  */
 
   MAHandle image;
   MAHandle font;
@@ -111,7 +101,7 @@ private:
   // mouse handling
   bool mouseMode;               // PEN ON/OFF
   AnsiWidgetListener *listener;
-  //List <QAbstractButton *>hyperlinks;
+  Vector <String *>hyperlinks;
 };
 
 #endif // ANSIWIDGET_H

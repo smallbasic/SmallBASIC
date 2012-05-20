@@ -7,66 +7,47 @@
 //
 
 #include <ma.h>
-#include <conprint.h>
 
-#include "ansiwidget.h"
+#include "stdio.h"
+#include "config.h"
+#include "MAHeaders.h"
+
+#include "platform/mosync/ansiwidget.h"
+#include "platform/mosync/utils.h"
+#include "common/sbapp.h"
 
 AnsiWidget *output;
 
-extern "C" int MAMain() {
-  InitConsole();
-	gConsoleLogging = 1;
+void setupOptions() {
+  opt_ide = IDE_NONE;
+  opt_graphics = true;
+  opt_pref_bpp = 0;
+  opt_nosave = true;
+  opt_interactive = true;
+  opt_verbose = false;
+  opt_quiet = true;
+  opt_command[0] = 0;
+  os_graphics = 1;
+}
 
-  printf("there");
+extern "C" int MAMain() {
   MAExtent screenSize = maGetScrSize();
   output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
+  output->print("Welcome to SmallBASIC");
+  setupOptions();
 
-  output->print("hello");
+  char path[MAX_PATH];
+  int success;
+  int restart;
 
-	bool run = true;
-	bool focus = true;
-	while (run) {
-		if (focus) {
-      
-		} else {
-			maWait(0);
-		}
+  do {
+    restart = false;
+    //chdir(path);
+    success = sbasic_main("main.bas");
+  }
+  while (restart);
 
-		// Get any available events.
-		// If MAK_FIRE is pressed, change mode.
-		// On Close event or MAK_0 press, close program.
-		MAEvent event;
-		while (maGetEvent(&event)) {
-      switch (event.type) {
-      case EVENT_TYPE_KEY_PRESSED:
-				switch(event.key) {
-        case MAK_FIRE:
-        case MAK_5:
-          break;
-        case MAK_SOFTRIGHT:
-        case MAK_0:
-        case MAK_BACK:
-          run = false;
-          break;
-				}
-        break;
-      case EVENT_TYPE_SCREEN_CHANGED:
-        break;
-      case EVENT_TYPE_POINTER_PRESSED:
-        break;
-			case EVENT_TYPE_CLOSE:
-				run = false;
-        break;
-			case EVENT_TYPE_FOCUS_LOST:
-				focus = false;
-        break;
-      case EVENT_TYPE_FOCUS_GAINED:
-				focus = true;
-      default:
-        break;
-			}
-		}
-	}
-	return 0;
+  delete output;
+  return 0;
 }
