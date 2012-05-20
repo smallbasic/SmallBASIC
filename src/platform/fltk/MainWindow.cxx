@@ -76,7 +76,7 @@ struct ScanFont {
     fltk::add_idle(ScanFont::scan_font_cb, this);
   } 
   static void scan_font_cb(void *eventData) {
-    ((ScanFont *) eventData)->scanNext();
+    ((ScanFont *)eventData)->scanNext();
   }
   void scanNext() {
     if (index < numfonts) {
@@ -84,7 +84,7 @@ struct ScanFont {
       sprintf(label, "&View/Font/%s", fonts[index]->system_name());
       setfont(font(fonts[index]->name()), 12);
       if (getdescent() < MAX_DESCENT && (getwidth("QW#@") == getwidth("il:("))) {
-        Widget *w = menu->add(label, 0, (Callback *) EditorWidget::font_name_cb);
+        Widget *w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
         w->textfont(getfont());
       }
       index++;
@@ -257,7 +257,7 @@ void MainWindow::close_tab(Widget *w, void *eventData) {
     Group *group = getSelectedTab();
     if (group && group != outputGroup) {
       if (gw_editor == getGroupWidget(group)) {
-        EditorWidget *editWidget = (EditorWidget *) group->child(0);
+        EditorWidget *editWidget = (EditorWidget *)group->child(0);
         if (!editWidget->checkSave(true)) {
           return;
         }
@@ -285,10 +285,10 @@ void MainWindow::quit(Widget *w, void *eventData) {
     // auto-save scratchpad
     int n = tabGroup->children();
     for (int c = 0; c < n; c++) {
-      Group *group = (Group *) tabGroup->child(c);
+      Group *group = (Group *)tabGroup->child(c);
       char path[MAX_PATH];
       if (gw_editor == getGroupWidget(group)) {
-        EditorWidget *editWidget = (EditorWidget *) group->child(0);
+        EditorWidget *editWidget = (EditorWidget *)group->child(0);
         const char *filename = editWidget->getFilename();
         int offs = strlen(filename) - strlen(untitledFile);
         if (filename[0] == 0 || (offs > 0 && strcasecmp(filename + offs, untitledFile) == 0)) {
@@ -351,7 +351,7 @@ bool MainWindow::execHelp() {
 /**
  * handle click from within help window
  */
-void do_help_contents_anchor(void *) {
+void do_help_contents_anchor(void *){
   fltk::remove_check(do_help_contents_anchor);
   String eventName = wnd->getHelp()->getEventName();
   if (access(eventName, R_OK) == 0) {
@@ -407,7 +407,7 @@ void MainWindow::help_about(Widget *w, void *eventData) {
 }
 
 void MainWindow::set_flag(Widget *w, void *eventData) {
-  bool *flag = (bool *) eventData;
+  bool *flag = (bool *)eventData;
   *flag = (w->flags() & STATE);
 }
 
@@ -808,7 +808,7 @@ void run_mode_startup(void *data) {
 
   if (data) {
     fltk::wait();
-    Window *w = (Window *) data;
+    Window *w = (Window *)data;
     w->destroy();
   }
 
@@ -843,7 +843,10 @@ bool initialise(int argc, char **argv) {
   if (args(argc, argv, i, arg_cb) < argc) {
     fatal("Options are:\n"
           " -e[dit] file.bas\n"
-          " -r[un] file.bas\n" " -v[erbose]\n" " -n[on]-interactive\n" " -m[odule]-home\n\n%s", help);
+          " -r[un] file.bas\n" 
+          " -v[erbose]\n" 
+          " -n[on]-interactive\n" 
+          " -m[odule]-home\n\n%s", help);
   }
   // package home contains installed components
 #if defined(WIN32)
@@ -1085,7 +1088,7 @@ void MainWindow::open_file(Widget *w, void *eventData) {
     openFileGroup->end();
     tabGroup->end();
   } else {
-    fileWidget = (FileWidget *) openFileGroup->resizable();
+    fileWidget = (FileWidget *)openFileGroup->resizable();
   }
 
   // change to the directory of the current editor widget
@@ -1095,7 +1098,7 @@ void MainWindow::open_file(Widget *w, void *eventData) {
   if (editWidget) {
     FileWidget::splitPath(editWidget->getFilename(), path);
   } else {
-    Group *group = (Group *) tabGroup->selected_child();
+    Group *group = (Group *)tabGroup->selected_child();
     GroupWidget gw = getGroupWidget(group);
     switch (gw) {
     case gw_output:
@@ -1118,7 +1121,7 @@ void MainWindow::save_file_as(Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     open_file(w, eventData);
-    FileWidget *fileWidget = (FileWidget *) getSelectedTab()->resizable();
+    FileWidget *fileWidget = (FileWidget *)getSelectedTab()->resizable();
     fileWidget->fileOpen(editWidget);
   }
 }
@@ -1140,7 +1143,7 @@ HelpWidget *MainWindow::getHelp() {
     helpGroup->resizable(help);
     tabGroup->end();
   } else {
-    help = (HelpWidget *) helpGroup->resizable();
+    help = (HelpWidget *)helpGroup->resizable();
   }
   tabGroup->selected_child(helpGroup);
   return help;
@@ -1151,9 +1154,9 @@ EditorWidget *MainWindow::getEditor(bool select) {
   if (select) {
     int n = tabGroup->children();
     for (int c = 0; c < n; c++) {
-      Group *group = (Group *) tabGroup->child(c);
+      Group *group = (Group *)tabGroup->child(c);
       if (gw_editor == getGroupWidget(group)) {
-        result = (EditorWidget *) group->child(0);
+        result = (EditorWidget *)group->child(0);
         tabGroup->selected_child(group);
         break;
       }
@@ -1167,7 +1170,7 @@ EditorWidget *MainWindow::getEditor(bool select) {
 EditorWidget *MainWindow::getEditor(Group *group) {
   EditorWidget *editWidget = 0;
   if (group != 0 && gw_editor == getGroupWidget(group)) {
-    editWidget = (EditorWidget *) group->resizable();
+    editWidget = (EditorWidget *)group->resizable();
   }
   return editWidget;
 }
@@ -1176,9 +1179,9 @@ EditorWidget *MainWindow::getEditor(const char *fullpath) {
   if (fullpath != 0 && fullpath[0] != 0) {
     int n = tabGroup->children();
     for (int c = 0; c < n; c++) {
-      Group *group = (Group *) tabGroup->child(c);
+      Group *group = (Group *)tabGroup->child(c);
       if (gw_editor == getGroupWidget(group)) {
-        EditorWidget *editWidget = (EditorWidget *) group->child(0);
+        EditorWidget *editWidget = (EditorWidget *)group->child(0);
         const char *fileName = editWidget->getFilename();
         if (fileName && strcmp(fullpath, fileName) == 0) {
           return editWidget;
@@ -1202,7 +1205,7 @@ void MainWindow::editFile(const char *filePath) {
 }
 
 Group *MainWindow::getSelectedTab() {
-  return (Group *) tabGroup->selected_child();
+  return (Group *)tabGroup->selected_child();
 }
 
 /**
@@ -1211,7 +1214,7 @@ Group *MainWindow::getSelectedTab() {
 Group *MainWindow::findTab(const char *label) {
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *child = (Group *) tabGroup->child(c);
+    Group *child = (Group *)tabGroup->child(c);
     if (strcmp(child->label(), label) == 0) {
       return child;
     }
@@ -1222,7 +1225,7 @@ Group *MainWindow::findTab(const char *label) {
 Group *MainWindow::findTab(GroupWidget groupWidget) {
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *child = (Group *) tabGroup->child(c);
+    Group *child = (Group *)tabGroup->child(c);
     if (groupWidget == getGroupWidget(child)) {
       return child;
     }
@@ -1247,9 +1250,9 @@ Group *MainWindow::selectTab(const char *label) {
 void MainWindow::updateConfig(EditorWidget *current) {
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *group = (Group *) tabGroup->child(c);
+    Group *group = (Group *)tabGroup->child(c);
     if (gw_editor == getGroupWidget(group)) {
-      EditorWidget *editWidget = (EditorWidget *) group->child(0);
+      EditorWidget *editWidget = (EditorWidget *)group->child(0);
       if (editWidget != current) {
         editWidget->updateConfig(current);
       }
@@ -1263,8 +1266,8 @@ void MainWindow::updateConfig(EditorWidget *current) {
 void MainWindow::updateEditTabName(EditorWidget *editWidget) {
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *group = (Group *) tabGroup->child(c);
-    if (gw_editor == getGroupWidget(group) && editWidget == (EditorWidget *) group->child(0)) {
+    Group *group = (Group *)tabGroup->child(c);
+    if (gw_editor == getGroupWidget(group) && editWidget == (EditorWidget *)group->child(0)) {
       const char *editFileName = editWidget->getFilename();
       if (editFileName && editFileName[0]) {
         const char *slash = strrchr(editFileName, '/');
@@ -1280,12 +1283,12 @@ void MainWindow::updateEditTabName(EditorWidget *editWidget) {
 Group *MainWindow::getNextTab(Group *current) {
   int n = tabGroup->children();
   for (int c = 0; c < n - 1; c++) {
-    Group *child = (Group *) tabGroup->child(c);
+    Group *child = (Group *)tabGroup->child(c);
     if (child == current) {
-      return (Group *) tabGroup->child(c + 1);
+      return (Group *)tabGroup->child(c + 1);
     }
   }
-  return (Group *) tabGroup->child(0);
+  return (Group *)tabGroup->child(0);
 }
 
 /**
@@ -1294,12 +1297,12 @@ Group *MainWindow::getNextTab(Group *current) {
 Group *MainWindow::getPrevTab(Group *current) {
   int n = tabGroup->children();
   for (int c = n - 1; c > 0; c--) {
-    Group *child = (Group *) tabGroup->child(c);
+    Group *child = (Group *)tabGroup->child(c);
     if (child == current) {
-      return (Group *) tabGroup->child(c - 1);
+      return (Group *)tabGroup->child(c - 1);
     }
   }
-  return (Group *) tabGroup->child(n - 1);
+  return (Group *)tabGroup->child(n - 1);
 }
 
 /**
@@ -1429,7 +1432,8 @@ void MainWindow::execLink(String &link) {
       // display as html
       int len = strlen(localFile);
       if (strcasecmp(localFile + len - 4, ".gif") == 0 ||
-          strcasecmp(localFile + len - 4, ".jpeg") == 0 || strcasecmp(localFile + len - 4, ".jpg") == 0) {
+          strcasecmp(localFile + len - 4, ".jpeg") == 0 || 
+          strcasecmp(localFile + len - 4, ".jpg") == 0) {
         sprintf(path, "<img src=%s>", localFile);
       } else {
         sprintf(path, "file:%s", localFile);
@@ -1447,7 +1451,8 @@ void MainWindow::execLink(String &link) {
   }
 
   char *extn = strrchr(file, '.');
-  if (extn && (0 == strncasecmp(extn, ".bas ", 5) || 0 == strncasecmp(extn, ".sbx ", 5))) {
+  if (extn && (0 == strncasecmp(extn, ".bas ", 5) || 
+               0 == strncasecmp(extn, ".sbx ", 5))) {
     strcpy(opt_command, extn + 5);
     extn[4] = 0;                // make args available to bas program
   }

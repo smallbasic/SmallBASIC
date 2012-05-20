@@ -456,7 +456,7 @@ void modeless_cb(Widget *w, void *v) {
 
 void modal_cb(Widget *w, void *v) {
   fltk::exit_modal();
-  dev_putenv(((HelpWidget *) w)->getEventName());
+  dev_putenv(((HelpWidget *)w)->getEventName());
 }
 
 void dev_html(const char *html, const char *t, int x, int y, int w, int h) {

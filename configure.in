@@ -476,6 +476,7 @@ function buildMosync() {
    AC_DEFINE(RUN_UNSUP, 1, [run not supported.])
    AC_DEFINE(SERIAL_UNSUP, 1, [serial not supported.])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
+   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])

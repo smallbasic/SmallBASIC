@@ -350,7 +350,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
   int curIndex = -1;
   int numWords = keywords.length();
   for (int i = 0; i < numWords; i++) {
-    const char *keyword = ((String *) keywords.get(i))->toString();
+    const char *keyword = ((String *)keywords.get(i))->toString();
     if (strncasecmp(expandWord, keyword, expandWordLen) == 0) {
       if (firstIndex == -1) {
         firstIndex = i;
@@ -378,7 +378,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
       lastIndex = curIndex + 1;
     }
 
-    const char *keyword = ((String *) keywords.get(lastIndex))->toString();
+    const char *keyword = ((String *)keywords.get(lastIndex))->toString();
     // updated the segment of the replacement text
     // that completes the current selection
     if (textbuf->selected()) {
@@ -616,7 +616,7 @@ void EditorWidget::undo(Widget *w, void *eventData) {
  * de-select the button specified in the eventData
  */
 void EditorWidget::un_select(Widget *w, void *eventData) {
-  ((Button *) eventData)->value(false);
+  ((Button *)eventData)->value(false);
 }
 
 //--Public methods--------------------------------------------------------------
@@ -808,7 +808,7 @@ void EditorWidget::getInput(char *result, int size) {
  * returns the row and col position for the current cursor position
  */
 void EditorWidget::getRowCol(int *row, int *col) {
-  return ((BasicEditor *) editor)->getRowCol(row, col);
+  return ((BasicEditor *)editor)->getRowCol(row, col);
 }
 
 /**
@@ -836,21 +836,21 @@ char *EditorWidget::getSelection(int *start, int *end) {
  * returns where text selection ends
  */
 void EditorWidget::getSelEndRowCol(int *row, int *col) {
-  return ((BasicEditor *) editor)->getSelEndRowCol(row, col);
+  return ((BasicEditor *)editor)->getSelEndRowCol(row, col);
 }
 
 /**
  * returns where text selection starts
  */
 void EditorWidget::getSelStartRowCol(int *row, int *col) {
-  return ((BasicEditor *) editor)->getSelStartRowCol(row, col);
+  return ((BasicEditor *)editor)->getSelStartRowCol(row, col);
 }
 
 /**
  * sets the cursor to the given line number
  */
 void EditorWidget::gotoLine(int line) {
-  ((BasicEditor *) editor)->gotoLine(line);
+  ((BasicEditor *)editor)->gotoLine(line);
 }
 
 /**
@@ -929,7 +929,7 @@ void EditorWidget::loadFile(const char *newfile) {
  * returns the buffer readonly flag
  */
 bool EditorWidget::readonly() {
-  return ((BasicEditor *) editor)->readonly;
+  return ((BasicEditor *)editor)->readonly;
 }
 
 /**
@@ -943,7 +943,7 @@ void EditorWidget::readonly(bool is_readonly) {
   modStatus->label(is_readonly ? "RO" : "@line");
   modStatus->redraw();
   editor->cursor_style(is_readonly ? TextDisplay::DIM_CURSOR : TextDisplay::NORMAL_CURSOR);
-  ((BasicEditor *) editor)->readonly = is_readonly;
+  ((BasicEditor *)editor)->readonly = is_readonly;
 }
 
 /**
@@ -1041,7 +1041,7 @@ void EditorWidget::setFontSize(int size) {
  * sets the indent level to the given amount
  */
 void EditorWidget::setIndentLevel(int level) {
-  ((BasicEditor *) editor)->indentLevel = level;
+  ((BasicEditor *)editor)->indentLevel = level;
 
   // update environment var for running programs
   char path[MAX_PATH];
@@ -1248,7 +1248,7 @@ void EditorWidget::findFunc(const char *find) {
  * returns the current selection text
  */
 char *EditorWidget::getSelection(Rectangle *rc) {
-  return ((BasicEditor *) editor)->getSelection(rc);
+  return ((BasicEditor *)editor)->getSelection(rc);
 }
 
 /**

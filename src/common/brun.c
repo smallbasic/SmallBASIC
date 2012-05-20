@@ -2142,7 +2142,8 @@ int sbasic_compile(const char *file) {
   if (opt_nosave) {
     comp_rq = 1;
   } else {
-    char exename[OS_PATHNAME_SIZE + 1];char *p;
+    char exename[OS_PATHNAME_SIZE + 1];
+    char *p;
 
     // executable name
     strcpy(exename, file);
