@@ -7,6 +7,8 @@
 //
 
 #include <ma.h>
+#include <MAUtil/Environment.h>
+#include <limits.h>
 
 #include "stdio.h"
 #include "config.h"
@@ -15,8 +17,10 @@
 #include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/utils.h"
 #include "common/sbapp.h"
+#include "common/osd.h"
 
 AnsiWidget *output;
+ExecState runMode;
 
 void setupOptions() {
   opt_ide = IDE_NONE;
@@ -30,23 +34,29 @@ void setupOptions() {
   os_graphics = 1;
 }
 
+struct Environ : Environment {
+  Environ() : Environment() {
+  };
+};
+
 extern "C" int MAMain() {
+  Environ e;
   MAExtent screenSize = maGetScrSize();
   output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
-  output->print("Welcome to SmallBASIC");
   setupOptions();
 
-  char path[MAX_PATH];
-  int success;
-  int restart;
+  char path[PATH_MAX];
+  runMode = init_state;
 
   do {
-    restart = false;
     //chdir(path);
-    success = sbasic_main("main.bas");
+    int success = sbasic_main("test.bas");
+    if (!success) {
+      
+    }
   }
-  while (restart);
+  while (runMode != quit_state);
 
   delete output;
   return 0;

@@ -65,7 +65,9 @@ bool form_event();
 
 //--ANSI Output-----------------------------------------------------------------
 
-C_LINKAGE_BEGIN int osd_devinit() {
+C_LINKAGE_BEGIN
+
+int osd_devinit() {
   wnd->resetPen();
   os_graphics = 1;
 

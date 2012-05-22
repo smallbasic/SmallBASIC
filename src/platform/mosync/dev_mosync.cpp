@@ -6,7 +6,12 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <MAUI/Screen.h>
+#include <MAUI/Layout.h>
+#include <MAUI/EditBox.h>
+
 #include "platform/mosync/ansiwidget.h"
+#include "platform/mosync/utils.h"
 
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -14,8 +19,10 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 
-extern AnsiWidget *output;
+using namespace MAUI;
 
+extern AnsiWidget *output;
+extern ExecState runMode;
 clock_t lastEventTime;
 dword eventsPerTick;
 int penMode;
@@ -73,6 +80,7 @@ bool processEvents() {
   }
 
   if (!result) {
+    runMode = quit_state;
     ui_reset();
     brun_break();
   }
@@ -80,23 +88,14 @@ bool processEvents() {
   return result;
 }
 
-extern "C" int access(const char *path, int amode) {
-  return 0;
-}
-
-extern "C" void chmod(const char *s, int mode) {
-}
-
 char *dev_read(const char *fileName) {
   //  char buffer[maGetDataSize(TEST_BAS) + 1];
   //  maReadData(TEST_BAS, &buffer, 0, maGetDataSize(TEST_BAS));
   //  buffer[maGetDataSize(TEST_BAS)] = '\0';
-
-  return 0;
-}
-
-int usleep(useconds_t useconds) {
-  return 0;
+  // FOR TESTING:
+  char *buf = (char *) tmp_alloc(100);
+  strcpy(buf, "? \"Hello world !\ninput n\nprint n\"");
+  return buf;
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
@@ -127,6 +126,7 @@ int osd_devinit(void) {
   osd_cls();
   dev_clrkb();
   ui_reset();
+  runMode = run_state;
   return 1;
 }
 
@@ -148,11 +148,15 @@ int osd_events(int wait_flag) {
     lastEventTime = now;
   }
 
+  int result = 0;
+
   switch (wait_flag) {
   case 1:
     // wait for an event
     maWait(-1);
-    processEvents();
+    if (!processEvents()) {
+      result = -2;
+    }
     break;
   case 2:
     // pause
@@ -160,9 +164,10 @@ int osd_events(int wait_flag) {
     break;
   default:
     // pump messages without pausing
+    maWait(1);
     break;
   }
-  return 0;
+  return result;
 }
 
 int osd_getpen(int mode) {
@@ -228,3 +233,69 @@ int osd_textwidth(const char *str) {
 void osd_write(const char *str) {
   output->print(str);
 }
+
+C_LINKAGE_BEGIN
+
+int access(const char *path, int amode) {
+  return 0;
+}
+
+void chmod(const char *s, int mode) {
+}
+
+void dev_delay(dword ms) {
+  if (runMode == run_state) {
+    int msWait = ms / 2;
+    int msStart = maGetMilliSecondCount();
+    runMode = modal_state;
+    while (runMode == modal_state) {
+      if (maGetMilliSecondCount() - msStart >= ms) {
+        runMode = run_state;
+        break;
+      }
+      maWait(msWait);
+      processEvents();
+    }
+  }
+}
+
+char *dev_gets(char *dest, int size) {
+  if (runMode == run_state) {
+    Screen screen;
+    int width = output->getWidth() - output->getX();
+    int height = output->textHeight();
+    Layout *layout = new Layout(0, 0, output->getWidth(), output->getHeight());// width, height);
+    EditBox *editBox = new EditBox(output->getX(), 
+                                   output->getY(),
+                                   width, height,
+                                   layout,  // parent
+                                   "",       // text
+                                   0,        // backColor
+                                   NULL,     // font
+                                   true,     // manageNavigation
+                                   false,    // multiLine
+                                   size);    // maxLength
+    editBox->setEnabled(true);
+    editBox->activate();
+    screen.setMain(layout);
+    screen.show();
+    
+    runMode = modal_state;
+    while (runMode == modal_state) {
+      maWait(-1);
+      processEvents();
+    }
+    
+    if (runMode != quit_state) {
+      const String& result = editBox->getText();
+      int len = result.size() < size ? result.size() : size;
+      strncpy(dest, result.pointer(), len);
+      dest[len] = 0;
+    }
+    
+    delete editBox;
+  }
+  return dest;
+}
+
+C_LINKAGE_END

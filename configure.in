@@ -478,6 +478,8 @@ function buildMosync() {
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
