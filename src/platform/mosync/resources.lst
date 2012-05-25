@@ -1,0 +1,4 @@
+.res RES_FONT
+.bin
+.include "resources/Font.mof"
+

@@ -6,15 +6,6 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-enum ExecState {
-  init_state,
-  run_state,
-  restart_state,
-  modal_state,
-  break_state,
-  quit_state
-};
-
 void trace(const char *format, ...);
 
 #if defined(_DEBUG)

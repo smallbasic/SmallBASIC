@@ -7,57 +7,29 @@
 //
 
 #include <ma.h>
-#include <MAUtil/Environment.h>
-#include <limits.h>
 
-#include "stdio.h"
-#include "config.h"
-#include "MAHeaders.h"
-
-#include "platform/mosync/ansiwidget.h"
+#include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
-#include "common/sbapp.h"
-#include "common/osd.h"
 
-AnsiWidget *output;
-ExecState runMode;
-
-void setupOptions() {
-  opt_ide = IDE_NONE;
-  opt_graphics = true;
-  opt_pref_bpp = 0;
-  opt_nosave = true;
-  opt_interactive = true;
-  opt_verbose = false;
-  opt_quiet = true;
-  opt_command[0] = 0;
-  os_graphics = 1;
-}
-
-struct Environ : Environment {
-  Environ() : Environment() {
-  };
-};
+Controller *controller;
 
 extern "C" int MAMain() {
-  Environ e;
-  MAExtent screenSize = maGetScrSize();
-  output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
-  output->construct();
-  setupOptions();
+  controller = new Controller();
 
-  char path[PATH_MAX];
-  runMode = init_state;
+  // remember the initial path
+  //   char path[PATH_MAX];
 
   do {
+    // restore initial path
     //chdir(path);
     int success = sbasic_main("test.bas");
     if (!success) {
-      
+      // allow the user to view any error until they
+      // touch to continue
     }
   }
-  while (runMode != quit_state);
+  while (!controller->isExit());
 
-  delete output;
+  delete controller;
   return 0;
 }
