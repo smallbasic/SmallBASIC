@@ -43,6 +43,8 @@
 
 #define INITXY 2
 #define BLACK  0
+#define BLUE   1
+#define GREEN  2
 #define WHITE  15
 
 static int colors[] = {
@@ -102,34 +104,22 @@ struct Backbuffer {
   }
 };
 
-/*
-struct HyperlinkButton : public QAbstractButton {
-  HyperlinkButton(QString url, QString text, QWidget *parent) : 
-    QAbstractButton(parent) {
-    this->url = url;
-    setText(text);
-  };
+Hyperlink::Hyperlink(String &url, String &label, 
+                     int x, int y, int w, int h) :
+  url(url),
+  label(label),
+  pressed(false),
+  x(x),
+  y(y),
+  w(w),
+  h(h) {
+}
 
-  void paintEvent(QPaintEvent *event) {
-    AnsiWidget *out = (AnsiWidget *) parent();
-    QPainter painter(this);
-    QFontMetrics fm = fontMetrics();
-    int width = fm.width(text());
-    int y = fm.ascent();
-
-    painter.setRenderHint(QPainter::TextAntialiasing);
-    painter.setFont(out->font());
-    painter.setPen(isDown() ? Qt::blue : underMouse() ? Qt::red : Qt::darkGreen);
-
-    painter.drawText(0, y, text());
-    if (underMouse()) {
-      maLine(0, y + 2, width, y + 2);
-    }
-  }
-
-  QString url;
-};
-*/
+void Hyperlink::draw() {
+  maSetColor(pressed ? colors[BLUE] : colors[GREEN]);
+  maDrawText(x, y, !label.size() ? url.c_str() : label.c_str());
+  maLine(x, y + h - 1, x + w, y + h - 1);
+}
 
 AnsiWidget::AnsiWidget(int width, int height) :
   image(0),
@@ -192,8 +182,6 @@ void AnsiWidget::clearScreen() {
  */
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
   Backbuffer backbuffer(image, fg);
-
-  //  painter.drawImage(x, y, *image, sx, sy, w, h);
 }
 
 /*! draw a line onto the offscreen buffer
@@ -459,13 +447,10 @@ void AnsiWidget::selectAll() {
 int AnsiWidget::ansiToMosync(long c) {
   int result = c;
   if (c < 0) {
-    // assume color is windows style RGB packing
-    // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
     result = -c;
   } else {
     result = (c > 16) ? colors[WHITE] : colors[c];
   }
-
   return result;
 }
 
@@ -483,12 +468,10 @@ int AnsiWidget::calcTab(int x) const {
 /*! Creates a hyperlink, eg // ^[ hwww.foo.com:title:hover;More text
  */
 void AnsiWidget::createLink(char *&p, bool execLink) {
-  /*
-  QString url;
-  QString text;
-  QString tooltip;
+  String url;
+  String text;
 
-  unsigned char *next = p + 1;
+  char *next = p + 1;
   bool eot = false;
   int segment = 0;
 
@@ -498,23 +481,17 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
     switch (*p) {
     case '\033':
     case '\n':
-    case ':':
+    case ';':
       eot = true;
       // fallthru
 
-    case ';':
+    case ':':
       switch (segment++) {
       case 0:
-        url = QString::fromUtf8((const char *)next, (p - next));
-        text = tooltip = url;
+        url.append((const char *)next, (p - next));
         break;
       case 1:
-        text = QString::fromUtf8((const char *)next, (p - next));
-        tooltip = text;
-        break;
-      case 2:
-        tooltip = QString::fromUtf8((const char *)next, (p - next));
-        eot = true;
+        text.append((const char *)next, (p - next));
         break;
       default:
         break;
@@ -528,23 +505,23 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
   }
 
   if (execLink && listener) {
-    listener->loadPath(url, true, true);
+    listener->loadPath(url.c_str(), true, true);
   } else {
-    HyperlinkButton *button = new HyperlinkButton(url, text, this);
-    QFontMetrics fm = fontMetrics();
-    int width = fm.width(text) + 2;
-    int height = fm.ascent() + fm.descent() + 4;
-
-    button->setGeometry(curX, curY, width, height);
-    button->setToolTip(tooltip);
-    button->connect(button, SIGNAL(clicked(bool)), this, SLOT(linkClicked()));
-    button->setCursor(Qt::PointingHandCursor);
-    button->show();
-
-    hyperlinks.append(button);
-    curX += width;
+    MAExtent textSize = maGetTextSize(text.c_str());
+    int w = EXTENT_X(textSize) + 2;
+    int h = EXTENT_Y(textSize) + 2;
+    int x = curX;
+    int y = curY;
+    if (curX + w >= width) {
+      w = width - curX; // clipped
+      newLine();
+    } else {
+      curX += w;      
+    }
+    Hyperlink *link = new Hyperlink(url, text, x, y, w, h);
+    hyperlinks.add(link);
+    link->draw();
   }
-*/
 }
 
 /*! Handles the characters following the \e[ sequence. Returns whether a further call
@@ -628,12 +605,10 @@ void AnsiWidget::reset(bool init) {
   }
 
   // cleanup any hyperlinks
-  //  int n = hyperlinks.size();
-  //  for (int i = 0; i < n; i++) {
-  //    QAbstractButton *nextObject = hyperlinks.at(i);
-  //    delete nextObject;
-  //  }
-  //  hyperlinks.clear();
+  Vector_each(Hyperlink*, iHyperlink, hyperlinks) {
+    delete iHyperlink;
+  }
+  hyperlinks.clear();
 
   curYSaved = 0;
   curXSaved = 0;
@@ -641,8 +616,8 @@ void AnsiWidget::reset(bool init) {
   underline = false;
   bold = false;
   italic = false;
-  fg = 0xffba00;
-  bg = colors[BLACK];
+  fg = DEFAULT_COLOR;
+  bg = 0;
   textSize = height / 40;
   updateFont();
 }

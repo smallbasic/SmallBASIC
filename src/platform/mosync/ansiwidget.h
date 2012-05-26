@@ -22,6 +22,18 @@ struct AnsiWidgetListener {
   virtual void loadPath(const char *path, bool showPath, bool setHistory) = 0;
 };
 
+struct Hyperlink {
+  Hyperlink(String &url, String &label, int x, int y, int w, int h);
+  virtual ~Hyperlink() {};
+  void draw();
+  String url;
+  String label;
+  bool pressed;
+  int x,y,w,h;
+};
+
+#define DEFAULT_COLOR 0xffba00
+
 class AnsiWidget {
 public:
   explicit AnsiWidget(int width, int height);
@@ -30,6 +42,7 @@ public:
   void beep() const;
   void clearScreen();
   bool construct();
+  void draw();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
@@ -101,7 +114,7 @@ private:
   // mouse handling
   bool mouseMode;               // PEN ON/OFF
   AnsiWidgetListener *listener;
-  Vector <String *>hyperlinks;
+  Vector <Hyperlink *>hyperlinks;
 };
 
 #endif // ANSIWIDGET_H

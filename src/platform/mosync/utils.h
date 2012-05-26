@@ -8,6 +8,8 @@
 
 void trace(const char *format, ...);
 
+#define MAIN_BAS_RES "main.bas"
+
 #if defined(_DEBUG)
  #define logEntered() trace("%s entered (%s %d)", \
                             __FUNCTION__, __FILE__, __LINE__);

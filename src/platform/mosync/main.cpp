@@ -22,7 +22,7 @@ extern "C" int MAMain() {
   do {
     // restore initial path
     //chdir(path);
-    int success = sbasic_main("test.bas");
+    int success = sbasic_main(MAIN_BAS_RES);
     if (!success) {
       // allow the user to view any error until they
       // touch to continue

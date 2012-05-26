@@ -10,6 +10,8 @@
 #include <MAUI/Layout.h>
 #include <MAUI/EditBox.h>
 
+#include "MAHeaders.h"
+
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
@@ -25,17 +27,6 @@ int penMode;
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 #define PEN_OFF   0             // pen mode disabled
 #define PEN_ON    2             // pen mode active
-
-// process the event queue
-char *dev_read(const char *fileName) {
-  //  char buffer[maGetDataSize(TEST_BAS) + 1];
-  //  maReadData(TEST_BAS, &buffer, 0, maGetDataSize(TEST_BAS));
-  //  buffer[maGetDataSize(TEST_BAS)] = '\0';
-  // FOR TESTING:
-  char *buf = (char *) tmp_alloc(100);
-  strcpy(buf, "? \"Hello world !\ninput n\nprint n\"");
-  return buf;
-}
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
 
@@ -54,6 +45,8 @@ void osd_cls(void) {
 }
 
 int osd_devinit(void) {
+  dev_fgcolor = -DEFAULT_COLOR;
+  dev_bgcolor = 0;
   os_graf_mx = controller->output->getWidth();
   os_graf_my = controller->output->getHeight();
 
@@ -169,13 +162,38 @@ void osd_write(const char *str) {
   controller->output->print(str);
 }
 
-C_LINKAGE_BEGIN
+char *dev_read(const char *fileName) {
+  char *buffer = 0;
 
-int access(const char *path, int amode) {
+  if (strcasecmp(MAIN_BAS_RES, fileName) == 0) {
+    // load as resource
+    int len = maGetDataSize(MAIN_BAS);
+    buffer = (char *)tmp_alloc(len + 1);
+    maReadData(MAIN_BAS, buffer, 0, len);
+    buffer[len] = '\0';
+  } else {
+    // load from file system
+    MAHandle handle = maFileOpen(fileName, MA_ACCESS_READ);
+    if (maFileExists(handle)) {
+      int len = maFileSize(handle);
+      buffer = (char *)tmp_alloc(len);
+      maFileRead(handle, buffer, len);
+    }
+    maFileClose(handle);
+  }
+  return buffer;
+}
+
+void dev_image(int handle, int index,
+               int x, int y, int sx, int sy, int w, int h) {
+}
+
+int dev_image_width(int handle, int index) {
   return 0;
 }
 
-void chmod(const char *s, int mode) {
+int dev_image_height(int handle, int index) {
+  return 0;
 }
 
 void dev_delay(dword ms) {
@@ -190,6 +208,7 @@ char *dev_gets(char *dest, int maxSize) {
         dest[i] = buffer[i];
       }
       dest[maxSize] = 0;
+      osd_write(dest);
     } else {
       dest[0] = 0;
     }
@@ -198,4 +217,10 @@ char *dev_gets(char *dest, int maxSize) {
   return dest;
 }
 
-C_LINKAGE_END
+extern "C" int access(const char *path, int amode) {
+  return 0;
+}
+
+extern "C" void chmod(const char *s, int mode) {
+}
+
