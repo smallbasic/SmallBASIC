@@ -26,37 +26,28 @@
 #include "common/pproc.h"
 #include "common/var_uds.h"
 
-int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) SEC(BEXEC);
-int exec_close_task() SEC(BEXEC);
-void exec_setup_predefined_variables() SEC(BEXEC);
-var_t *code_isvar_arridx(var_t * basevar_p) SEC(BEXEC);
-void code_pop_until(int type) SEC(BEXEC);
-void code_pop_and_free(stknode_t * node) SEC(BEXEC);
-stknode_t *code_stackpeek() SEC(BEXEC);
-void sys_before_comp() SEC(TRASH);
-void sys_after_comp() SEC(TRASH);
-void sys_before_run() SEC(TRASH);
-void sys_after_run() SEC(TRASH);
-int sbasic_exec_task(int tid) SEC(BEXEC);
-int sbasic_recursive_exec(int tid) SEC(BEXEC);
-void sbasic_exec_prepare(const char *filename) SEC(BEXEC);
-int sbasic_exec(const char *file) SEC(BEXEC);
-int sbasic_main(const char *file) SEC(BEXEC);
-int exec_close(int tid) SEC(BEXEC);
-int sbasic_exec(const char *file) SEC(BEXEC);
-void cmd_options(void) SEC(BLIB);
-var_t* code_resolve_varptr(var_t* var_p, int until_parens);
+int brun_create_task(const char *filename, mem_t preloaded_bc, int libf);
+int exec_close_task();
+void exec_setup_predefined_variables();
+var_t *code_isvar_arridx(var_t *basevar_p);
+void code_pop_until(int type);
+void code_pop_and_free(stknode_t *node);
+stknode_t *code_stackpeek();
+void sys_before_comp();
+void sys_after_comp();
+void sys_before_run();
+void sys_after_run();
+int sbasic_exec_task(int tid);
+int sbasic_recursive_exec(int tid);
+void sbasic_exec_prepare(const char *filename);
+int sbasic_exec(const char *file);
+int sbasic_main(const char *file);
+int exec_close(int tid);
+int sbasic_exec(const char *file);
+void cmd_options(void);
+var_t *code_resolve_varptr(var_t* var_p, int until_parens);
 
-#if defined(_WinBCB)
-extern void bcb_comp(int pass, int pmin, int pmax); // Win32GUI progress
-#endif
-
-#if defined(SONY_CLIE)
-extern int font_h;
-extern int maxline;
-#endif
 static dword evt_check_every;
-
 static char fileName[OS_FILENAME_SIZE + 1];
 static int main_tid;
 static int exec_tid;
@@ -349,7 +340,7 @@ var_t *code_getvarptr_arridx(var_t* basevar_p) {
 
     if (!prog_error) {
       if ((int) array_index < basevar_p->v.a.size && (int) array_index >= 0) {
-        var_p = (var_t *) (basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
+        var_p = (var_t *)(basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
 
         if (code_peek() == kwTYPE_LEVEL_END) {
           code_skipnext();      // ')', ')' level
@@ -457,7 +448,7 @@ var_t *code_isvar_arridx(var_t * basevar_p) {
 
     if (!prog_error) {
       if ((int) array_index < basevar_p->v.a.size) {
-        var_p = (var_t *) (basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
+        var_p = (var_t *)(basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
 
         if (code_peek() == kwTYPE_LEVEL_END) {
           code_skipnext();      // ')', ')' level
@@ -763,7 +754,7 @@ void cmd_chain(void) {
     int el;
     int len = 0;
     for (el = 0; el < var.v.a.size; el++) {
-      var_t *el_p = (var_t *) (var.v.a.ptr + sizeof(var_t) * el);
+      var_t *el_p = (var_t *)(var.v.a.ptr + sizeof(var_t) * el);
       if (el_p->type == V_STR) {
         int str_len = strlen(el_p->v.a.ptr) + 2;
         if (len) {
@@ -913,11 +904,7 @@ void bc_loop(int isf) {
   }
   while (prog_ip < prog_length) {
 
-#if defined(_PalmOS)
-    now = TimGetTicks();
-#elif defined(_FRANKLIN_EBM)
-    now = time_get_onOS();
-#elif defined(_Win32)
+#if defined(_Win32)
     now = GetTickCount();
 #else
     now = clock();
@@ -1540,7 +1527,7 @@ void dump_stack() {
           case kwGOSUB:
             dev_printf(" RIP: %d", node.x.vgosub.ret_ip);
             if (prog_source[node.x.vgosub.ret_ip] == kwTYPE_LINE) {
-              dev_printf(" = LI %d", (*((word *) (prog_source + node.x.vgosub.ret_ip + 1))) - 1);
+              dev_printf(" = LI %d", (*((word *)(prog_source + node.x.vgosub.ret_ip + 1))) - 1);
             }
             break;
           }
@@ -1619,7 +1606,7 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
     read(h, &hdr, sizeof(bc_head_t));
 
     bc_h = mem_alloc(hdr.size + 4);
-    source = (byte *) mem_lock(bc_h);
+    source = (byte *)mem_lock(bc_h);
 
     lseek(h, 0, SEEK_SET);
     read(h, source, hdr.size);
@@ -1643,7 +1630,7 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
 
     // copy export-symbols from BC
     if (prog_expcount) {
-      prog_exptable = (unit_sym_t *) tmp_alloc(prog_expcount * sizeof(unit_sym_t));
+      prog_exptable = (unit_sym_t *)tmp_alloc(prog_expcount * sizeof(unit_sym_t));
       for (i = 0; i < prog_expcount; i++) {
         memcpy(&prog_exptable[i], cp, sizeof(unit_sym_t));
         cp += sizeof(unit_sym_t);
@@ -1688,7 +1675,7 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   }
   // build import-lib table
   if (prog_libcount) {
-    prog_libtable = (bc_lib_rec_t *) tmp_alloc(prog_libcount * sizeof(bc_lib_rec_t));
+    prog_libtable = (bc_lib_rec_t *)tmp_alloc(prog_libcount * sizeof(bc_lib_rec_t));
     for (i = 0; i < prog_libcount; i++) {
       memcpy(&prog_libtable[i], cp, sizeof(bc_lib_rec_t));
       cp += sizeof(bc_lib_rec_t);
@@ -1696,7 +1683,7 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   }
   // build import-symbol table
   if (prog_symcount) {
-    prog_symtable = (bc_symbol_rec_t *) tmp_alloc(prog_symcount * sizeof(bc_symbol_rec_t));
+    prog_symtable = (bc_symbol_rec_t *)tmp_alloc(prog_symcount * sizeof(bc_symbol_rec_t));
     for (i = 0; i < prog_symcount; i++) {
       memcpy(&prog_symtable[i], cp, sizeof(bc_symbol_rec_t));
       cp += sizeof(bc_symbol_rec_t);
@@ -1959,77 +1946,30 @@ void sys_before_comp() {
   // unit file (.sbu)
   // #endif
 
-#if defined(SONY_CLIE)
-  if (use_sony_clie) {
-    HRFntSetFont(sony_refHR, hrStdFont);
-    font_h = FntCharHeight();
-    maxline = 320 / font_h;
-    os_graf_mx = 320;
-    os_graf_my = 320;
-  }
-#endif
-
-#if defined(_VTOS)
-  // Speed up initial parsing by 2x under VTOS
-  extern void CpuChangeSpeed(int);
-  CpuChangeSpeed(0 << 10);
-#endif
-
-#if !defined(_PalmOS) && !defined(_VTOS)
   // setup prefered screen mode variables
   if (dev_getenv("SBGRAF")) {
     if (dev_getenv("SBGRAF"))
       comp_preproc_grmode(dev_getenv("SBGRAF"));
     opt_graphics = 2;
   }
-#endif
-
-#if defined(_PalmOS)
-  // setup environment emulation
-  env_table = dbt_create("SBI-ENV", 0);
-  dev_init(1, 0);// initialize output device; needed for
-  // console I/O
-#endif
 }
 
 /**
  * system specific things - after compilation
  */
 void sys_after_comp() {
-#if defined(_VTOS)
-  // Run at normal CPU speed
-  CpuChangeSpeed(1 << 10);
-#endif
-
-#if defined(_PalmOS)
-  dev_restore();
-  dbt_close(env_table);
-#endif
 }
 
 /**
  * system specific things - before execution
  */
 void sys_before_run() {
-#if defined(_PalmOS)
-  // setup environment emulation
-  env_table = dbt_create("SBI-ENV", 0);
-#endif
-#if defined(_WinBCB)
-  bcb_comp(4, 0, 0);
-#endif
 }
 
 /**
  * system specific things - after execution
  */
 void sys_after_run() {
-#if defined(_PalmOS)
-  dbt_close(env_table);
-#endif
-#if defined(_WinBCB)
-  bcb_comp(5, 0, 0);
-#endif
 }
 
 /**
@@ -2074,10 +2014,9 @@ int sbasic_recursive_exec(int tid) {
     exec_sync_variables(0);
 
     // run
-#if !defined(_WinBCB)
-    if (!(opt_quiet || opt_interactive))
+    if (!(opt_quiet || opt_interactive)) {
       dev_printf("Initializing #%d (%s) ...\n", ctask->tid, ctask->file);
-#endif
+    }
     success = sbasic_exec_task(ctask->tid);
   }
 
@@ -2324,16 +2263,6 @@ int sbasic_main(const char *file) {
   unit_mgr_close();             // shutdown SB's unit manager
   sblmgr_close();               // shutdown C-coded modules
   destroy_tasks();              // closes all remaining tasks
-
-#if defined(_PalmOS)
-  {
-    EventType e;
-
-    e.eType = menuEvent;
-    e.data.menu.itemID = 1601;  // SBFinishNotify;
-    EvtAddEventToQueue(&e);
-  }
-#endif
 
   return success;
 }

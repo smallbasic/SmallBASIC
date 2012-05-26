@@ -45,7 +45,6 @@ static vmt_t vmt[MAX_VMT_FILES];  // table of VMTs
 /**
  * update dbt header 
  */
-void dbt_file_write_header(dbt_t t) SEC(PALMFS);
 void dbt_file_write_header(dbt_t t) {
   lseek(vmt[t].i_handle, 0, SEEK_SET);
   int n = write(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
@@ -54,7 +53,6 @@ void dbt_file_write_header(dbt_t t) {
 /**
  * read dbt header 
  */
-void dbt_file_read_header(dbt_t t) SEC(PALMFS);
 void dbt_file_read_header(dbt_t t) {
   lseek(vmt[t].i_handle, 0, SEEK_SET);
   int n = read(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
@@ -63,7 +61,6 @@ void dbt_file_read_header(dbt_t t) {
 /**
  * read index-record
  */
-void dbt_file_read_rec_t(dbt_t t, int index, vmt_rec_t * rec) SEC(PALMFS);
 void dbt_file_read_rec_t(dbt_t t, int index, vmt_rec_t * rec) {
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
   int n = read(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
@@ -72,7 +69,6 @@ void dbt_file_read_rec_t(dbt_t t, int index, vmt_rec_t * rec) {
 /**
  * write index-record
  */
-void dbt_file_write_rec_t(dbt_t t, int index, vmt_rec_t * rec) SEC(PALMFS);
 void dbt_file_write_rec_t(dbt_t t, int index, vmt_rec_t * rec) {
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
   int n = write(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
@@ -81,7 +77,6 @@ void dbt_file_write_rec_t(dbt_t t, int index, vmt_rec_t * rec) {
 /**
  * read record data
  */
-void dbt_file_read_data(dbt_t t, int index, char *data, int size) SEC(PALMFS);
 void dbt_file_read_data(dbt_t t, int index, char *data, int size) {
   vmt_rec_t rec;
 
@@ -97,7 +92,6 @@ void dbt_file_read_data(dbt_t t, int index, char *data, int size) {
 /**
  * write record data
  */
-void dbt_file_write_data(dbt_t t, int index, char *data, int size) SEC(PALMFS);
 void dbt_file_write_data(dbt_t t, int index, char *data, int size) {
   vmt_rec_t rec;
   int n;
@@ -132,7 +126,6 @@ void dbt_file_write_data(dbt_t t, int index, char *data, int size) {
 /**
  * allocates additional space on database for 'recs' records of 'recsize' size
  */
-int dbt_file_append(dbt_t t, int recs, int recsize) SEC(PALMFS);
 int dbt_file_append(dbt_t t, int recs, int recsize) {
   vmt_rec_t rec;
   int i;
@@ -171,7 +164,6 @@ int dbt_file_append(dbt_t t, int recs, int recsize) {
 /**
  * removes deleted chuncks (defrag)
  */
-void dbt_file_pack(dbt_t t) SEC(PALMFS);
 void dbt_file_pack(dbt_t t) {
   vmt_rec_t rec;
   int i, idx_offset, new_h, new_offset, n;
@@ -219,27 +211,9 @@ void dbt_file_pack(dbt_t t) {
 dbt_t dbt_create(const char *fileName, int flags) {
   int i, t = -1;
 
-  if (opt_usevmt)
+  if (opt_usevmt) {
     flags |= 1;
-
-#if defined(_PalmOS)            // if ( freemem() < 128K ) flags |= 1;
-//      if      ( (flags & 1) == 0 )    {       // memory file
-//              dword   romVersion;
-
-//          FtrGet(sysFtrCreator, sysFtrNumROMVersion, &romVersion);
-//              if ( romVersion < sysVersion35 )
-//                      flags |= 1;     // there is no memory, so, create it to "disk"
-
-  // ndc 16/9/2002:
-  // It is crazy! the new VMT (file-streams) is faster than standard
-  // mem_alloc/mem_free!!!
-  // However, it is need time to allocate/free the space in the file 
-  // (so, that is why the delay before and after compilation)
-  // I am suspecting that is depended on emulator (on real Palm the results may 
-  // 
-  // be different)
-//              }
-#endif
+  }
 
   // find a free VMT
   for (i = 0; i < MAX_VMT_FILES; i++) {
@@ -296,9 +270,10 @@ dbt_t dbt_create(const char *fileName, int flags) {
     vmt[t].m_handle = mem_alloc(sizeof(mem_t) * vmt[t].size);
 
     // reset new data
-    vmt[t].m_table = (mem_t *) mem_lock(vmt[t].m_handle);
-    for (i = 0; i < vmt[t].size; i++)
+    vmt[t].m_table = (mem_t *)mem_lock(vmt[t].m_handle);
+    for (i = 0; i < vmt[t].size; i++) {
       vmt[t].m_table[i] = 0;    // make them NULL
+    }
 
     // 
     vmt[t].used = 1;
@@ -321,17 +296,18 @@ void dbt_close(dbt_t t) {
     close(vmt[t].i_handle);
     vmt[t].used = 0;
 
-    if (dblen > VMT_DEFRAG_SIZE
-      )  // too big, defrag it
+    if (dblen > VMT_DEFRAG_SIZE) { // too big, defrag it
       dbt_file_pack(t);
+    }
   } else {
     // VMT: use memory
     int i;
 
     // free records
     for (i = 0; i < vmt[t].size; i++) {
-      if (vmt[t].m_table[i])
+      if (vmt[t].m_table[i]) {
         mem_free(vmt[t].m_table[i]);
+      }
     }
 
     // free table
@@ -349,8 +325,9 @@ void dbt_prealloc(dbt_t t, int num, int recsize) {
     int newsize;
 
     newsize = num - vmt[t].size;
-    if (newsize > 0)
+    if (newsize > 0) {
       dbt_file_append(t, newsize, recsize);
+    }
   } else {
     // use memory
     int i;
@@ -359,9 +336,10 @@ void dbt_prealloc(dbt_t t, int num, int recsize) {
       mem_unlock(vmt[t].m_handle);
       vmt[t].m_handle = mem_realloc(vmt[t].m_handle, sizeof(mem_t) * num);
 
-      vmt[t].m_table = (mem_t *) mem_lock(vmt[t].m_handle);
-      for (i = vmt[t].size; i < num; i++)
+      vmt[t].m_table = (mem_t *)mem_lock(vmt[t].m_handle);
+      for (i = vmt[t].size; i < num; i++) {
         vmt[t].m_table[i] = mem_alloc(recsize);
+      }
       vmt[t].size = num;
     }
   }
@@ -385,18 +363,19 @@ void dbt_write(dbt_t t, int index, void *ptr, int size) {
     if (vmt[t].size <= index) {
       mem_unlock(vmt[t].m_handle);
       vmt[t].m_handle = mem_realloc(vmt[t].m_handle,
-          sizeof(mem_t) * (vmt[t].size + MEM_VMT_GROWSIZE));
+                                    sizeof(mem_t) * (vmt[t].size + MEM_VMT_GROWSIZE));
 
-      vmt[t].m_table = (mem_t *) mem_lock(vmt[t].m_handle);
-      for (i = vmt[t].size; i < vmt[t].size + MEM_VMT_GROWSIZE; i++)
+      vmt[t].m_table = (mem_t *)mem_lock(vmt[t].m_handle);
+      for (i = vmt[t].size; i < vmt[t].size + MEM_VMT_GROWSIZE; i++) {
         vmt[t].m_table[i] = 0;
+      }
       vmt[t].size += MEM_VMT_GROWSIZE;
     }
 
     // store data
-    if (vmt[t].m_table[index] == 0) // empty record
+    if (vmt[t].m_table[index] == 0) { // empty record
       vmt[t].m_table[index] = mem_alloc(size);
-    else if (size != mem_handle_size(vmt[t].m_table[index])) {  // resize
+    } else if (size != mem_handle_size(vmt[t].m_table[index])) {  // resize
       // record
       mem_free(vmt[t].m_table[index]);
       vmt[t].m_table[index] = mem_alloc(size);
@@ -410,8 +389,9 @@ void dbt_write(dbt_t t, int index, void *ptr, int size) {
   // update counter
   if (vmt[t].count <= index) {
     vmt[t].count = index + 1;
-    if (vmt[t].flags & 1)
+    if (vmt[t].flags & 1) {
       dbt_file_write_header(t);
+    }
   }
 }
 
@@ -421,8 +401,9 @@ void dbt_write(dbt_t t, int index, void *ptr, int size) {
 void dbt_read(dbt_t t, int index, void *ptr, int size) {
   if (vmt[t].flags & 1) {
     // use file
-    if (vmt[t].size <= index)
+    if (vmt[t].size <= index) {
       dbt_file_append(t, (index - vmt[t].count) + FILE_VMT_GROWSIZE, size);
+    }
     dbt_file_read_data(t, index, ptr, size);
   } else {
     // use memory
@@ -433,20 +414,21 @@ void dbt_read(dbt_t t, int index, void *ptr, int size) {
     if (vmt[t].size <= index) {
       mem_unlock(vmt[t].m_handle);
       vmt[t].m_handle = mem_realloc(vmt[t].m_handle,
-          sizeof(mem_t) * (vmt[t].size + MEM_VMT_GROWSIZE));
+                                    sizeof(mem_t) * (vmt[t].size + MEM_VMT_GROWSIZE));
 
-      vmt[t].m_table = (mem_t *) mem_lock(vmt[t].m_handle);
-      for (i = vmt[t].size; i < vmt[t].size + MEM_VMT_GROWSIZE; i++)
+      vmt[t].m_table = (mem_t *)mem_lock(vmt[t].m_handle);
+      for (i = vmt[t].size; i < vmt[t].size + MEM_VMT_GROWSIZE; i++) {
         vmt[t].m_table[i] = 0;
+      }
       vmt[t].size += MEM_VMT_GROWSIZE;
     }
 
     // get the data
-    if (vmt[t].m_table[index] == 0)
+    if (vmt[t].m_table[index] == 0) {
       vmt[t].m_table[index] = mem_alloc(size);
-    else if (size > mem_handle_size(vmt[t].m_table[index])
-      )
+    } else if (size > mem_handle_size(vmt[t].m_table[index])) {
       vmt[t].m_table[index] = mem_realloc(vmt[t].m_table[index], size);
+    }
 
     // copy data
     mp = mem_lock(vmt[t].m_table[index]);
@@ -569,7 +551,7 @@ char *dbt_getvar(dbt_t fh, const char *varname) {
 }
 
 /**
- *       return the size of the record
+ * return the size of the record
  */
 int dbt_recsize(dbt_t t, int index) {
   int size;

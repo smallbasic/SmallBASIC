@@ -18,64 +18,59 @@
 #include "common/extlib.h"
 #include "common/messages.h"
 
-void comp_text_line(char *text) SEC(BCSC3);
-int comp_single_line_if(char *text) SEC(BCSC3);
-addr_t comp_search_bc(addr_t ip, code_t code) SEC(BCSC3);
-char *comp_prepare_name(char *dest, const char *source, int size) SEC(BCSC3);
-bid_t comp_label_getID(const char *label_name) SEC(BCSC2);
-void comp_label_setip(bid_t idx) SEC(BCSC2);
-void comp_prepare_udp_name(char *dest, const char *basename) SEC(BCSC2);
-bid_t comp_udp_id(const char *proc_name, int scan_tree) SEC(BCSC3);
-bid_t comp_add_udp(const char *proc_name) SEC(BCSC3);
-bid_t comp_udp_setip(const char *proc_name, addr_t ip) SEC(BCSC2);
-addr_t comp_udp_getip(const char *proc_name) SEC(BCSC3);
-char *get_param_sect(char *text, const char *delim, char *dest) SEC(BCSC3);
-int comp_check_labels(void) SEC(BCSC3);
-int comp_check_lib(const char *name) SEC(BCSC3);
-int comp_create_var(const char *name) SEC(BCSC2);
-bid_t comp_var_getID(const char *var_name) SEC(BCSC3);
-void comp_push(addr_t ip) SEC(BCSC3);
-char *comp_next_char(char *source) SEC(BCSC3);
-char *comp_prev_char(const char *root, const char *ptr) SEC(BCSC3);
-const char *comp_next_word(const char *text, char *dest) SEC(BCSC3);
-void comp_expression(char *expr, byte no_parser) SEC(BCSC3);
-void comp_data_seg(char *source) SEC(BCSC2);
-int comp_getlist(char *source, char_p_t * args, char *delims, int maxarg) SEC(BCSC2);
-char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims, int maxarg, int *count) SEC(BCSC2);
-void comp_array_params(char *src) SEC(BCSC2);
-char *comp_array_uds_field(char *p, bc_t * bc) SEC(BCSC2);
+void comp_text_line(char *text);
+int comp_single_line_if(char *text);
+addr_t comp_search_bc(addr_t ip, code_t code);
+char *comp_prepare_name(char *dest, const char *source, int size);
+bid_t comp_label_getID(const char *label_name);
+void comp_label_setip(bid_t idx);
+void comp_prepare_udp_name(char *dest, const char *basename);
+bid_t comp_udp_id(const char *proc_name, int scan_tree);
+bid_t comp_add_udp(const char *proc_name);
+bid_t comp_udp_setip(const char *proc_name, addr_t ip);
+addr_t comp_udp_getip(const char *proc_name);
+char *get_param_sect(char *text, const char *delim, char *dest);
+int comp_check_labels(void);
+int comp_check_lib(const char *name);
+int comp_create_var(const char *name);
+bid_t comp_var_getID(const char *var_name);
+void comp_push(addr_t ip);
+char *comp_next_char(char *source);
+char *comp_prev_char(const char *root, const char *ptr);
+const char *comp_next_word(const char *text, char *dest);
+void comp_expression(char *expr, byte no_parser);
+void comp_data_seg(char *source);
+int comp_getlist(char *source, char_p_t * args, char *delims, int maxarg);
+char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims, int maxarg, int *count);
+void comp_array_params(char *src);
+char *comp_array_uds_field(char *p, bc_t * bc);
 int comp_check_uds(const char *name);
 int comp_get_uds_field_id(const char *field_name, int len);
-void comp_cmd_option(char *src) SEC(BCSC2);
-int comp_error_if_keyword(const char *name) SEC(BCSC3);
-void bc_store_exports(const char *slist) SEC(BCSC2);
-addr_t comp_next_bc_cmd(addr_t ip) SEC(BCSC3);
-addr_t comp_search_bc_eoc(addr_t ip) SEC(BCSC3);
-addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_id) SEC(BCSC3);
-addr_t comp_search_bc_stack_backward(addr_t start, code_t code, byte level, bid_t block_id) SEC(BCSC3);
-void print_pass2_stack(addr_t pos, code_t lcode, int level) SEC(BCSC2);
-void comp_pass2_scan(void) SEC(BCSC3);
-char *comp_format_text(const char *source) SEC(BCSC2);
-void err_grmode() SEC(BCSC2);
-void comp_preproc_import(const char *slist) SEC(BCSC2);
-void comp_preproc_remove_line(char *s, int cmd_sep_allowed) SEC(BCSC2);
-void comp_preproc_unit(char *name) SEC(BCSC2);
-int comp_pass2_exports(void) SEC(BCSC2);
-int comp_save_bin(mem_t h_bc) SEC(BCSC2);
+void comp_cmd_option(char *src);
+int comp_error_if_keyword(const char *name);
+void bc_store_exports(const char *slist);
+addr_t comp_next_bc_cmd(addr_t ip);
+addr_t comp_search_bc_eoc(addr_t ip);
+addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_id);
+addr_t comp_search_bc_stack_backward(addr_t start, code_t code, byte level, bid_t block_id);
+void print_pass2_stack(addr_t pos, code_t lcode, int level);
+void comp_pass2_scan(void);
+char *comp_format_text(const char *source);
+void err_grmode();
+void comp_preproc_import(const char *slist);
+void comp_preproc_remove_line(char *s, int cmd_sep_allowed);
+void comp_preproc_unit(char *name);
+int comp_pass2_exports(void);
+int comp_save_bin(mem_t h_bc);
 
-extern void expr_parser(bc_t * bc) SEC(BCSCAN);
+extern void expr_parser(bc_t * bc);
 
-void err_comp_label_not_def(const char *name) SEC(BCSC2);
-void err_comp_missing_lp() SEC(BCSC2);
-void err_comp_missing_rp() SEC(BCSC2);
-void err_wrongproc(const char *name) SEC(BCSC2);
+void err_comp_label_not_def(const char *name);
+void err_comp_missing_lp();
+void err_comp_missing_rp();
+void err_wrongproc(const char *name);
 
 extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
-
-#if defined(_WinBCB)
-// Win32GUI progress
-extern void bcb_comp(int pass, int pmin, int pmax);
-#endif
 
 #define SKIP_SPACES(p) \
     while (*p == ' ' || *p == '\t') { \
@@ -131,10 +126,10 @@ int comp_add_external_proc(const char *proc_name, int lib_id) {
   // TODO: scan for conflicts
   if (comp_extproctable == NULL) {
     comp_extprocsize = 16;
-    comp_extproctable = (ext_proc_node_t *) tmp_alloc(sizeof(ext_proc_node_t) * comp_extprocsize);
+    comp_extproctable = (ext_proc_node_t *)tmp_alloc(sizeof(ext_proc_node_t) * comp_extprocsize);
   } else if (comp_extprocsize <= (comp_extproccount + 1)) {
     comp_extprocsize += 16;
-    comp_extproctable = (ext_proc_node_t *) tmp_realloc(comp_extproctable,
+    comp_extproctable = (ext_proc_node_t *)tmp_realloc(comp_extproctable,
         sizeof(ext_proc_node_t) * comp_extprocsize);
   }
 
@@ -165,10 +160,10 @@ int comp_add_external_func(const char *func_name, int lib_id) {
   // TODO: scan for conflicts
   if (comp_extfunctable == NULL) {
     comp_extfuncsize = 16;
-    comp_extfunctable = (ext_func_node_t *) tmp_alloc(sizeof(ext_func_node_t) * comp_extfuncsize);
+    comp_extfunctable = (ext_func_node_t *)tmp_alloc(sizeof(ext_func_node_t) * comp_extfuncsize);
   } else if (comp_extfuncsize <= (comp_extfunccount + 1)) {
     comp_extfuncsize += 16;
-    comp_extfunctable = (ext_func_node_t *) tmp_realloc(comp_extfunctable,
+    comp_extfunctable = (ext_func_node_t *)tmp_realloc(comp_extfunctable,
         sizeof(ext_func_node_t) * comp_extfuncsize);
   }
 
@@ -244,8 +239,7 @@ int comp_is_external_func(const char *name) {
 /*
  * error messages
  */
-void sc_raise(const char *fmt, ...)
-{
+void sc_raise(const char *fmt, ...) {
   char *buff;
   va_list ap;
 
@@ -254,24 +248,22 @@ void sc_raise(const char *fmt, ...)
   comp_error = 1;
 
   buff = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-#if defined(_PalmOS)
-    StrVPrintF(buff, fmt, ap);
-#elif defined(_DOS)
-    vsprintf(buff, fmt, ap);
+#if defined(_DOS)
+  vsprintf(buff, fmt, ap);
 #else
-    vsnprintf(buff, SB_SOURCELINE_SIZE, fmt, ap);
+  vsnprintf(buff, SB_SOURCELINE_SIZE, fmt, ap);
 #endif
-    va_end(ap);
+  va_end(ap);
 
-    sc_raise2(comp_bc_sec, comp_line, buff);  // sberr.h
-    tmp_free(buff);
-  }
+  sc_raise2(comp_bc_sec, comp_line, buff);  // sberr.h
+  tmp_free(buff);
+}
 
 /*
  * prepare name (keywords, variables, labels, proc/func names)
  */
 char *comp_prepare_name(char *dest, const char *source, int size) {
-  char *p = (char *) source;
+  char *p = (char *)source;
   SKIP_SPACES(p);
 
   strncpy(dest, p, size);
@@ -496,7 +488,7 @@ addr_t comp_udp_getip(const char *proc_name) {
  * parameters string-section
  */
 char *get_param_sect(char *text, const char *delim, char *dest) {
-  char *p = (char *) text;
+  char *p = (char *)text;
   char *d = dest;
   int quotes = 0, level = 0, skip_ch = 0;
 
@@ -864,7 +856,7 @@ int comp_is_keyword(const char *name) {
   // I don't want to increase the size of keywords table.
   idx = strlen(name) - 1;
   if (name[idx] == '$') {
-    *((char *) (name + idx)) = '\0';
+    *((char *)(name + idx)) = '\0';
     dolar_sup++;
   }
 
@@ -875,7 +867,7 @@ int comp_is_keyword(const char *name) {
   }
 
   if (dolar_sup) {
-    *((char *) (name + idx)) = '$';
+    *((char *)(name + idx)) = '$';
   }
   return -1;
 }
@@ -893,7 +885,7 @@ fcode_t comp_is_func(const char *name) {
   // I don't want to increase the size of keywords table.
   idx = strlen(name) - 1;
   if (name[idx] == '$') {
-    *((char *) (name + idx)) = '\0';
+    *((char *)(name + idx)) = '\0';
     dolar_sup++;
   }
 
@@ -904,7 +896,7 @@ fcode_t comp_is_func(const char *name) {
   }
 
   if (dolar_sup) {
-    *((char *) (name + idx)) = '$';
+    *((char *)(name + idx)) = '$';
   }
 
   return -1;
@@ -972,12 +964,12 @@ char *comp_next_char(char *source) {
 /*
  */
 char *comp_prev_char(const char *root, const char *ptr) {
-  char *p = (char *) ptr;
+  char *p = (char *)ptr;
 
   if (p > root) {
     p--;
   } else {
-    return (char *) root;
+    return (char *)root;
   }
   while (p > root) {
     if (*p != ' ') {
@@ -1051,7 +1043,7 @@ const char *comp_next_word(const char *text, char *dest) {
  * scan expression
  */
 void comp_expression(char *expr, byte no_parser) {
-  char *ptr = (char *) expr;
+  char *ptr = (char *)expr;
   long idx;
   int level = 0, check_udf = 0;
   int kw_exec_more = 0;
@@ -1088,7 +1080,7 @@ void comp_expression(char *expr, byte no_parser) {
       break;
     } else if (is_alpha(*ptr) || *ptr == '?' || *ptr == '_') {
       // A NAME 
-      ptr = (char *) comp_next_word(ptr, comp_bc_name);
+      ptr = (char *)comp_next_word(ptr, comp_bc_name);
       idx = comp_is_func(comp_bc_name);
       // special case for INPUT
       if (idx == kwINPUTF) {
@@ -1552,7 +1544,7 @@ char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims,
  * IF expr THEN ... ELSE ... ---> IF expr THEN (:) .... (:ELSE:) ... (:FI)
  */
 int comp_single_line_if(char *text) {
-  char *p = (char *) text;       // *text points to 'expr'
+  char *p = (char *)text;       // *text points to 'expr'
   char *pthen, *pelse;
   char buf[SB_SOURCELINE_SIZE + 1];
 
@@ -1802,7 +1794,7 @@ void bc_store_exports(const char *slist) {
   char *newlist;
   unit_sym_t sym;
 
-  newlist = (char *) tmp_alloc(strlen(slist) + 3);
+  newlist = (char *)tmp_alloc(strlen(slist) + 3);
   strcpy(newlist, "(");
   strcat(newlist, slist);
   strcat(newlist, ")");
@@ -1859,7 +1851,7 @@ void comp_text_line(char *text) {
     return;
   }
 
-  lb_end = p = (char *) comp_next_word(text, comp_bc_name);
+  lb_end = p = (char *)comp_next_word(text, comp_bc_name);
   last_cmd = p;
   p = get_param_sect(p, ":", comp_bc_parm);
 
@@ -1872,7 +1864,7 @@ void comp_text_line(char *text) {
       return;
     }
     // continue
-    last_cmd = p = (char *) comp_next_word(lb_end, comp_bc_name);
+    last_cmd = p = (char *)comp_next_word(lb_end, comp_bc_name);
     if (strlen(comp_bc_name) == 0) {
       if (!p) {
         return;
@@ -1920,12 +1912,12 @@ void comp_text_line(char *text) {
   if (idx == kwLET) {           // old-style keyword LET
     char *p;
     idx = -1;
-    p = (char *) comp_next_word(comp_bc_parm, comp_bc_name);
+    p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
     strcpy(comp_bc_parm, p);
   } else if (idx == kwDECLARE) {  // declaration
     char *p;
     decl = 1;
-    p = (char *) comp_next_word(comp_bc_parm, comp_bc_name);
+    p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
     idx = comp_is_keyword(comp_bc_name);
     if (idx == -1) {
       idx = comp_is_proc(comp_bc_name);
@@ -1966,7 +1958,7 @@ void comp_text_line(char *text) {
     char *parms = comp_bc_parm;
     if (idx == kwCONST) {
       // const a=10: b=10
-      p = (char *) comp_next_word(comp_bc_parm, comp_bc_name);
+      p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
       p = get_param_sect(p, ":", comp_bc_parm);
       parms = comp_bc_parm;
       bc_add_code(&comp_prog, kwCONST);
@@ -2960,9 +2952,6 @@ void comp_pass2_scan() {
 #endif
     log_printf(MSG_PASS2_COUNT, i, comp_sp);
   }
-#if defined(_WinBCB)
-  bcb_comp(2, i, comp_sp);
-#endif
 
   // for each node in stack
   for (i = 0; i < comp_sp; i++) {
@@ -2975,12 +2964,6 @@ void comp_pass2_scan() {
         log_printf(MSG_PASS2_COUNT, i, comp_sp);
       }
     }
-
-#if defined(_WinBCB)
-    if ((i % SB_KEYWORD_SIZE) == 0) {
-      bcb_comp(2, i, comp_sp);
-    }
-#endif
 
     dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
     comp_line = node.line;
@@ -3276,9 +3259,6 @@ void comp_pass2_scan() {
     log_printf(MSG_PASS2_COUNT, comp_sp, comp_sp);
     log_printf("\n");
   }
-#if defined(_WinBCB)
-  bcb_comp(2, comp_sp, comp_sp);
-#endif
 }
 
 /*
@@ -3311,8 +3291,8 @@ void comp_init() {
   comp_proc_level = 0;
   comp_bc_proc[0] = '\0';
 
-  comp_vartable = (comp_var_t *) tmp_alloc(GROWSIZE * sizeof(comp_var_t));
-  comp_udptable = (comp_udp_t *) tmp_alloc(GROWSIZE * sizeof(comp_udp_t));
+  comp_vartable = (comp_var_t *)tmp_alloc(GROWSIZE * sizeof(comp_var_t));
+  comp_udptable = (comp_udp_t *)tmp_alloc(GROWSIZE * sizeof(comp_udp_t));
 
   sprintf(comp_bc_temp, "SBI-LBL%d", ctask->tid);
   comp_labtable = dbt_create(comp_bc_temp, 0);
@@ -3413,9 +3393,6 @@ void comp_close() {
 int comp_bas_exist(const char *basfile) {
   int check = 0;
   char *p, *fileName;
-#if defined(_PalmOS)
-  LocalID lid;
-#endif
 
   fileName = tmp_alloc(strlen(basfile) + 5);
   strcpy(fileName, basfile);
@@ -3424,25 +3401,11 @@ int comp_bas_exist(const char *basfile) {
   if (!p) {
     strcat(fileName, ".bas");
   }
-#if defined(_PalmOS)
-  lid = DmFindDatabase(0, fileName);
-  check = (lid != 0);
-#elif defined(_VTOS)
-  {
-    FILE *fp;
-    check = FALSE;
-    fp = fopen(fileName, "rb");
-    if (fp) {
-      fclose(fp);
-      check = TRUE;
-    }
-  }
-#else
+
 #if !defined(_UnixOS)
   check = (access(fileName, 0) == 0);
 #else
   check = (access(fileName, R_OK) == 0);
-#endif
 #endif
 
   tmp_free(fileName);
@@ -3475,7 +3438,7 @@ char *comp_load(const char *file_name) {
     size = lseek(h, 0, SEEK_END);
     lseek(h, 0, SEEK_SET);
 
-    buf = (char *) tmp_alloc(size + 1);
+    buf = (char *)tmp_alloc(size + 1);
     read(h, buf, size);
     buf[size] = '\0';
     close(h);
@@ -3994,21 +3957,12 @@ int comp_pass1(const char *section, const char *text) {
         strcpy(code_line, p);
         *crp = lc;
         str_alltrim(code_line);
-#if defined(_PalmOS)
-        {
-#else
         if (!comp_bas_exist(code_line)) {
           sc_raise(MSG_INC_FILE_DNE, comp_file_name, code_line);
         } else {
-#endif
-#if defined(_PalmOS)
-          char fileName[65];
-          char sec[64];
-#else
           char fileName[1024];
           char sec[SB_KEYWORD_SIZE + 1];
-#endif
-strcpy          (sec, comp_bc_sec);
+          strcpy(sec, comp_bc_sec);
           strcpy(fileName, comp_file_name);
           if (strchr(code_line, '.') == NULL) {
             strcat(code_line, ".bas");
@@ -4140,9 +4094,6 @@ strcpy          (sec, comp_bc_sec);
     }
 #endif
     }
-#if defined(_WinBCB)
-    bcb_comp(1, comp_line + 1, 0);
-#endif
 
     ps = p = new_text;
     while (*p) {
@@ -4174,11 +4125,6 @@ strcpy          (sec, comp_bc_sec);
         }
 #endif
         }
-#if defined(_WinBCB)
-        if ((comp_line % 256) == 0) {
-          bcb_comp(1, comp_line + 1, 0);
-        }
-#endif
 
         // add debug info: line-number
         bc_add_code(&comp_prog, kwTYPE_LINE);
@@ -4461,8 +4407,8 @@ mem_t comp_create_bin() {
  */
 int comp_save_bin(mem_t h_bc) {
   int h;
-  char fname[OS_FILENAME_SIZE + 1];char
-  *buf;
+  char fname[OS_FILENAME_SIZE + 1];
+  char *buf;
   char *p;
   int result = 1;
 
@@ -4479,7 +4425,7 @@ int comp_save_bin(mem_t h_bc) {
 
   h = open(fname, O_BINARY | O_RDWR | O_TRUNC | O_CREAT, 0660);
   if (h != -1) {
-    buf = (char *) mem_lock(h_bc);
+    buf = (char *)mem_lock(h_bc);
     write(h, buf, mem_handle_size(h_bc));
     close(h);
     mem_unlock(h_bc);
@@ -4505,10 +4451,6 @@ int comp_compile(const char *sb_file_name) {
   int tid, prev_tid;
   int success = 0;
   mem_t h_bc = 0;
-
-#if defined(_WinBCB)
-  bcb_comp(0, 0, 0);
-#endif
 
   tid = create_task(sb_file_name);
   prev_tid = activate_task(tid);
@@ -4543,9 +4485,6 @@ int comp_compile(const char *sb_file_name) {
   } else if (h_bc) {
     mem_free(h_bc);
   }
-#if defined(_WinBCB)
-  bcb_comp(3, success, 0);
-#endif
 
   return success;
 }

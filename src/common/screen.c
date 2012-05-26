@@ -19,54 +19,12 @@
 #define CLIPENCODE(x,y,c) { c = (x < dev_Vx1); c |= ((y < dev_Vy1) << 1); c |= ((x > dev_Vx2) << 2); c |= ((y > dev_Vy2) << 3); }
 #define CLIPIN(c)       ((c & 0xF) == 0)
 
-#if defined(_FRANKLIN_EBM)
-// /
-// / EBM
-// /
-byte os_graphics = 1;
-int os_graf_mx = 200;
-int os_graf_my = 240;
-dword os_ver = 0x20000;
-byte os_color = 1;
-dword os_color_depth = 16;
-#elif defined(_PalmOS)
-// /
-// / PalmOS
-// /
-dword os_ver = 0x30100;
-dword os_color_depth = 1;
-byte os_color = 0;
-#if defined(SONY_CLIE)
-byte use_sony_clie = 0;
-UInt16 sony_refHR;
-int os_graf_mx = 320;
-int os_graf_my = 320;
-#else
-int os_graf_mx = 160;
-int os_graf_my = 160;
-#endif
-byte os_graphics = 1;
-#elif defined(_VTOS)
-// /
-// / VTOS
-// /
-dword os_ver = OS_VER;
-dword os_color_depth = 1;
-byte os_color = 0;
-byte os_graphics = 1;
-int os_graf_mx = 160;
-int os_graf_my = 160;
-#else
-// /
-// / Unix/DOS/Windows
-// /
 dword os_ver = 0x40000;
 byte os_color = 1;
 dword os_color_depth = 16;
 byte os_graphics = 0; // CONSOLE
 int os_graf_mx = 80;
 int os_graf_my = 25;
-#endif
 
 // cache
 word os_cclabs1 = 256;

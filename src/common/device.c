@@ -70,11 +70,7 @@ int dev_init(int mode, int flags) {
 #endif
   dev_initfs();
   dev_fgcolor = 0;
-#if defined(_PalmOS)
-  dev_bgcolor = 15;
-#else
   dev_bgcolor = (os_graphics) ? 15 : 0;
-#endif
 
 #if USE_TERM_IO
   os_graphics = mode;
@@ -97,13 +93,9 @@ int dev_init(int mode, int flags) {
       }
     }
 #endif
-
-    if (osd_devinit() == 0)
-#if defined(_WinBCB)
-    panic("osd_devinit() failed");
-#else
-    exit(1);
-#endif
+    if (osd_devinit() == 0) {
+      panic("osd_devinit() failed");
+    }
   }
 #else
   osd_devinit();
@@ -200,17 +192,10 @@ int dev_init(int mode, int flags) {
 #elif defined(_DOS)
   os_ver = ((_osmajor << 16) | (_osminor)) << 8;
   setsysvar_int(SYSVAR_OSVER, os_ver);
-#elif defined(_WinBCB)
-  if (flags == 0) {
-    setsysvar_int(SYSVAR_OSVER, os_ver);
-  }
 #else
   setsysvar_int(SYSVAR_OSVER, os_ver);
 #endif
 
-#if defined(_WinBCB)
-  if (flags == 0) {
-#endif
   setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
   setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
   if (os_graphics) {
@@ -218,9 +203,6 @@ int dev_init(int mode, int flags) {
   } else {
     setsysvar_int(SYSVAR_BPP, 4);
   }
-#if defined(_WinBCB)
-}
-#endif
 
 #if USE_TERM_IO && !defined(__MINGW32__)
   signal(SIGINT, termination_handler);
@@ -280,7 +262,7 @@ int term_events() {return 0;}
  * returns 0 for no events in queue
  */
 int dev_events(int wait_flag) {
-#if !defined(_PalmOS) && !defined(DEV_EVENTS_OSD)
+#if !defined(DEV_EVENTS_OSD)
   if (os_graphics) {
     osd_refresh();
   }
@@ -300,44 +282,27 @@ int dev_events(int wait_flag) {
 #if DEV_EVENTS_OSD
   return osd_events(wait_flag);
 #else
-
   if (wait_flag) {
     int evc;
-
-#if defined(_VTOS)
-    {
-      extern int osd_events_sleep();
-      evc = osd_events_sleep();
-    }
-#else
     while ((evc = dev_events(0)) == 0)
-#if defined(_UnixOS)
+ #if defined(_UnixOS)
       usleep(31250);
-#elif defined(_Win32)
+ #elif defined(_Win32)
       ;
-#elif defined(_PalmOS)
-      ;                         //
-#else
+ #else
       dev_delay(31);            // sleep for 1000/32 and try again
-#endif
-#endif
+ #endif
     return evc;
   } else {
-#if defined(DRV_SOUND)
+ #if defined(DRV_SOUND)
     drvsound_event();
-#endif
-
-#if defined(_PalmOS) || defined(_WinBCB) || defined(_VTOS)
-    return osd_events(0);
-#else
+ #endif
     if (os_graphics) {
       return osd_events(0);
     }
     return term_events();
-#endif
   }
-
-#endif // _FRANKLIN_EBM
+#endif // DEV_EVENTS_OSD
 }
 
 #ifndef IMPL_DEV_DELAY
@@ -346,30 +311,7 @@ int dev_events(int wait_flag) {
  * delay for a specified amount of milliseconds
  */
 void dev_delay(dword ms) {
-#if defined(_PalmOS)
-  dword start, tps, now;
-  int evc;
-
-  start = TimGetTicks();
-  tps = SysTicksPerSecond();
-  while (1) {
-    SysTaskDelay(1);
-
-    switch ((evc = dev_events(0))) {
-      case 0:                    // no event
-      break;
-      case -2:// break
-      brun_break();
-      case -1:// break
-      return;
-    }
-
-    now = TimGetTicks();
-
-    if (now > (start + (tps * ms) / 1000L))
-    return;
-  }
-#elif defined(_Win32)
+#if defined(_Win32)
   Sleep(ms);
 #elif defined(_DOS)
   delay(ms);
@@ -425,7 +367,7 @@ int dev_input_char2str(int ch, byte * cstr) {
   default:
     cstr[0] = ch;
   };
-  return strlen((char *) cstr);
+  return strlen((char *)cstr);
 }
 
 /**
@@ -459,7 +401,7 @@ int dev_input_insert_char(int ch, byte * dest, int pos, int replace_mode) {
   // store character into buffer
   if (replace_mode) {
     // overwrite mode
-    remain = strlen((char *) (dest + pos));
+    remain = strlen((char *)(dest + pos));
     buf = tmp_alloc(remain + 1);
     strcpy(buf, dest + pos);
     memcpy(dest + pos, cstr, count);
@@ -471,17 +413,17 @@ int dev_input_insert_char(int ch, byte * dest, int pos, int replace_mode) {
       count = 1;
     }
     if (buf[0]) {                // not a '\0'
-      strcat((char *) dest, (char *) (buf + count));
+      strcat((char *)dest, (char *)(buf + count));
     }
     tmp_free(buf);
   } else {
     // insert mode
-    remain = strlen((char *) (dest + pos));
+    remain = strlen((char *)(dest + pos));
     buf = tmp_alloc(remain + 1);
     strcpy(buf, dest + pos);
     memcpy(dest + pos, cstr, count);
     dest[pos + count] = '\0';
-    strcat((char *) dest, (char *) buf);
+    strcat((char *)dest, (char *)buf);
     tmp_free(buf);
   }
 
@@ -502,12 +444,12 @@ int dev_input_remove_char(byte * dest, int pos) {
     } else {
       count = 1;
     }
-    remain = strlen((char *) (dest + pos + 1));
+    remain = strlen((char *)(dest + pos + 1));
     buf = tmp_alloc(remain + 1);
     strcpy(buf, dest + pos + count);
 
     dest[pos] = '\0';
-    strcat((char *) dest, (char *) buf);
+    strcat((char *)dest, (char *)buf);
     tmp_free(buf);
     return count;
   }
@@ -690,17 +632,15 @@ char *dev_gets(char *dest, int size) {
         break;
       case SB_KEY_BACKSPACE:   // backspace
         if (pos > 0) {
-          pos -= dev_input_remove_char((byte *) dest, pos - 1);
+          pos -= dev_input_remove_char((byte *)dest, pos - 1);
           len = strlen(dest);
-        } else
+        } else {
           dev_beep();
+        }
         break;
-#if defined(_PalmOS)
-        case SB_KEY_PALM_BTN1:
-#endif
       case SB_KEY_DELETE:      // delete
         if (pos < len) {
-          dev_input_remove_char((byte *) dest, pos);
+          dev_input_remove_char((byte *)dest, pos);
           len = strlen(dest);
         } else
           dev_beep();
@@ -710,21 +650,21 @@ char *dev_gets(char *dest, int size) {
         break;
       case SB_KEY_LEFT:
         if (pos > 0) {
-          pos -= dev_input_count_char((byte *) dest, pos);
+          pos -= dev_input_count_char((byte *)dest, pos);
         } else {
           dev_beep();
         }
         break;
       case SB_KEY_RIGHT:
         if (pos < len) {
-          pos += dev_input_count_char((byte *) dest, pos);
+          pos += dev_input_count_char((byte *)dest, pos);
         } else {
           dev_beep();
         }
         break;
       default:
         if ((ch & 0xFF00) != 0xFF00) { // Not an hardware key
-          pos += dev_input_insert_char(ch, (byte *) dest, pos, replace_mode);
+          pos += dev_input_insert_char(ch, (byte *)dest, pos, replace_mode);
         } else {
           ch = 0;
         }
@@ -843,7 +783,6 @@ void dev_clear_sound_queue() {
 /**
  * printf
  *
- * WARNING: PalmOS ver is limited to 256 bytes
  * WARNING: Win32/Unix ver is limited to 1024 bytes
  */
 void dev_printf(const char *fmt, ...) {
@@ -851,25 +790,17 @@ void dev_printf(const char *fmt, ...) {
   va_list ap;
 
   va_start(ap, fmt);
-
-#if defined(_PalmOS)
-    buf = tmp_alloc(256);
-    StrVPrintF(buf, fmt, ap);
-    va_end(ap);
-
+  buf = tmp_alloc(1024);
+#if defined(_DOS) || defined(_Win32)
+  vsprintf(buf, fmt, ap);
 #else
-    buf = tmp_alloc(1024);
-#if defined(_DOS) || defined(_Win32) || defined(_VTOS) || defined(_FRANKLIN_EBM)
-    vsprintf(buf, fmt, ap);
-#else
-    vsnprintf(buf, 1024, fmt, ap);
+  vsnprintf(buf, 1024, fmt, ap);
 #endif
-    va_end(ap);
+  va_end(ap);
 
-#endif
-    dev_print(buf);
-    tmp_free(buf);
-  }
+  dev_print(buf);
+  tmp_free(buf);
+}
 
 /**
  * In the FLTK build, prints to the LOG window, in other builds
