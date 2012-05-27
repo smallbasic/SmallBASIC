@@ -7,6 +7,7 @@
 //
 
 #include <MAUtil/Environment.h>
+#include <MAUtil/String.h>
 
 #include "config.h"
 #include "common/sbapp.h"
@@ -18,7 +19,9 @@
 
 #include "platform/mosync/ansiwidget.h"
 
-struct Controller : public MAUtil::Environment {
+using namespace MAUtil;
+
+struct Controller : public Environment {
   Controller();
   virtual ~Controller();
 
@@ -28,18 +31,23 @@ struct Controller : public MAUtil::Environment {
     restart_state,
     modal_state,
     break_state,
+    conn_state,
     exit_state
   };
 
   void modalLoop();
   void pause(int ms);
-  void processEvents(int ms);
+  MAEvent processEvents(int ms, int untilType);
+  char *readConnection(const char *url);
 
   bool isExit() { return runMode == exit_state; }
   bool isModal() { return runMode == modal_state; }
   bool isRun() { return runMode == run_state; }
+  void setRunning() { runMode = run_state; }
 
-  ExecState runMode;
   AnsiWidget *output;
+
+private:
+  ExecState runMode;
 };
 

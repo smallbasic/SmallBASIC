@@ -19,7 +19,7 @@
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
-Controller::Controller() : MAUtil::Environment() {
+Controller::Controller() : Environment() {
   MAExtent screenSize = maGetScrSize();
   output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
@@ -48,7 +48,7 @@ Controller::~Controller() {
 void Controller::modalLoop() {
   runMode = modal_state;
   while (runMode == modal_state) {
-    processEvents(-1);
+    processEvents(-1, -1);
   }
 }
 
@@ -63,13 +63,13 @@ void Controller::pause(int ms) {
         runMode = run_state;
         break;
       }
-      processEvents(msWait);
+      processEvents(msWait, -1);
     }
   }
 }
 
 // process events on the system event queue
-void Controller::processEvents(int ms) {
+MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
   MAExtent screenSize;
 
@@ -144,6 +144,10 @@ void Controller::processEvents(int ms) {
       fireCustomEventListeners(event);
       break;
     }
+    if (untilType != -1 && untilType == event.type) {
+      // found target event
+      break;
+    }
   }
 
   if (runMode == exit_state) {
@@ -156,6 +160,70 @@ void Controller::processEvents(int ms) {
     runIdleListeners();
     maWait(ms);
   }
+
+  return event;
+}
+
+// returns the contents of the given url
+char *Controller::readConnection(const char *url) {
+  char *result = NULL;
+  MAHandle conn = maConnect(url);
+  //connection = new Connection(this);
+  if (conn > 0) {
+    //if (connection->connect(url)) {
+    runMode = modal_state;
+    output->print("Connecting to ");
+    output->print(url);
+    bool connected = false;
+    char buffer[1024];
+    int length = 0;
+    int size = 0;
+    MAEvent event;
+
+    // pause until connected
+    while (runMode == modal_state) {
+      event = processEvents(50, EVENT_TYPE_CONN);
+      if (event.type == EVENT_TYPE_CONN) {
+        switch (event.conn.opType) {
+        case CONNOP_CONNECT:
+          // connection established
+          if (!connected) {
+            connected = (event.conn.result > 0);
+            output->print(connected ? " connected" : " failed");
+            if (connected) {
+              maConnRead(conn, buffer, sizeof(buffer) - 1);
+            }
+          }
+          break;
+        case CONNOP_READ:
+          // connRead completed
+          if (event.conn.result > 0) {
+            size = event.conn.result;
+            buffer[size] = 0;
+            if (result == NULL) {
+              result = (char *)tmp_alloc(size + 1);
+              strncpy(result, buffer, size);
+              length = size;
+            } else {
+              result = (char *)tmp_realloc(result, length + size + 1);
+              strncpy(result + length, buffer, size);
+              length += size;
+            }
+            result[length] = 0;
+            // try to read more data
+            maConnRead(conn, buffer, sizeof(buffer) - 1);
+          } else {
+            // no more data
+            runMode = init_state;
+          }
+          break;
+        }
+      }
+    }
+    maConnClose(conn);
+  }
+  trace(">%s<", result);
+  return result;
 }
 
 void trace(const char *format, ...) {

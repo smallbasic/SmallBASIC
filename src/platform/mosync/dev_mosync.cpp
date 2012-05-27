@@ -14,6 +14,7 @@
 
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
+#include "languages/messages.en.h"
 
 using namespace MAUI;
 
@@ -58,7 +59,7 @@ int osd_devinit(void) {
   osd_cls();
   dev_clrkb();
   ui_reset();
-  controller->runMode = Controller::run_state;
+  controller->setRunning();
   return 1;
 }
 
@@ -83,7 +84,7 @@ int osd_events(int wait_flag) {
   switch (wait_flag) {
   case 1:
     // wait for an event
-    controller->processEvents(-1);
+    controller->processEvents(-1, -1);
     break;
   case 2:
     // pause
@@ -163,24 +164,31 @@ void osd_write(const char *str) {
 }
 
 char *dev_read(const char *fileName) {
-  char *buffer = 0;
-
+  char *buffer = NULL;
+  
   if (strcasecmp(MAIN_BAS_RES, fileName) == 0) {
     // load as resource
     int len = maGetDataSize(MAIN_BAS);
-    buffer = (char *)tmp_alloc(len + 1);
+    buffer = (char *)mem_alloc(len + 1);
     maReadData(MAIN_BAS, buffer, 0, len);
     buffer[len] = '\0';
+  } else if (strstr(fileName, "://")) {
+    buffer = controller->readConnection(fileName);
   } else {
     // load from file system
     MAHandle handle = maFileOpen(fileName, MA_ACCESS_READ);
     if (maFileExists(handle)) {
       int len = maFileSize(handle);
-      buffer = (char *)tmp_alloc(len);
+      buffer = (char *)mem_alloc(len);
       maFileRead(handle, buffer, len);
     }
     maFileClose(handle);
   }
+
+  if (buffer == NULL) {
+    panic(MSG_CANT_OPEN_FILE, fileName);
+  }
+
   return buffer;
 }
 
