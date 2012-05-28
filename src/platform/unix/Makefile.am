@@ -27,10 +27,10 @@ bin_PROGRAMS = sbasic
 sbasic_SOURCES =																\
 		dev_ndcfb.c																	\
 	  dev_genfb.c																	\
-		device.c																		\
 		dev_oss.c																		\
 		dev_term.c																	\
 	  console_main.c															\
+		../../common/device.c												\
     ../../common/g_line.c												\
 	  ../../common/decomp.c
 
@@ -40,4 +40,4 @@ if !WITH_WIN32
 sbasic_LDADD += -ldl
 endif
 
-sbasic_DEPENDENCIES = ../libsb_common.a
+sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a

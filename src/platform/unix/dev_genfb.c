@@ -1,6 +1,13 @@
+// This file is part of SmallBASIC
+//
+// SmallBASIC, Generic 'framebuffer' techique graphics driver
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
+
 /*
- * Generic 'framebuffer' techique graphics driver
- *
  * This is a common routines for 'framebuffer' technique (not the linux-driver)
  * This driver stores the image into a buffer (dev_vpage) so the parent driver
  * can use that buffer to dump it into the screen (like bitmap, perhaps on every
@@ -12,11 +19,11 @@
  * Nicholas Christopoulos
  */
 
-#include "dev_genfb.h"
-#include "device.h"             // externals dev_fgcolor, dev_bgcolor
+#include "platform/unix/dev_genfb.h"
+#include "common/device.h"      // externals dev_fgcolor, dev_bgcolor
 
-static int dev_width, dev_height, dev_depth;  // screen size
-static int dev_linelen, dev_video_size, dev_bytespp;  // optimization
+static int dev_width, dev_height, dev_depth;    // screen size
+static int dev_linelen, dev_video_size, dev_bytespp;    // optimization
 static byte *dev_vpage;         // framebuffer itself :)
 static word *dev_vpage16;       // framebuffer itself :)
 static dword *dev_vpage32;      // framebuffer itself :)
@@ -36,7 +43,7 @@ static int con_use_reverse = 0;
 static int update;
 
 // the font itself
-#include "unix/rom16.c"
+#include "platform/unix/rom16.c"
 
 // EGA/VGA16 colors in RGB
 static dword vga16[] = {
@@ -67,8 +74,7 @@ static long directgetpixel_32(int x, int y);
 /*
 * initialization
 */
-int gfb_init(int width, int height, int bpp)
-{
+int gfb_init(int width, int height, int bpp) {
   int i;
 
   dev_width = width;
@@ -92,7 +98,7 @@ int gfb_init(int width, int height, int bpp)
   dev_video_size = dev_linelen * dev_height;
 
   // setting up vram
-  dev_vpage = tmp_alloc(dev_video_size + (dev_linelen * 17)); // the
+  dev_vpage = tmp_alloc(dev_video_size + (dev_linelen * 17));   // the
   // additional
   // size is
   // added for
@@ -179,8 +185,7 @@ int gfb_init(int width, int height, int bpp)
 /*
 * set's the color map (palette)
 */
-void gfb_setcmap(long *newcmap)
-{
+void gfb_setcmap(long *newcmap) {
   int i;
 
   for (i = 0; i < 16; i++)
@@ -189,8 +194,7 @@ void gfb_setcmap(long *newcmap)
 
 /*
 */
-int gfb_close()
-{
+int gfb_close() {
   tmp_free(dev_vpage);
   return 1;
 }
@@ -198,24 +202,21 @@ int gfb_close()
 /*
 * returns a pointer to buffer
 */
-byte *gfb_vram()
-{
+byte *gfb_vram() {
   return dev_vpage;
 }
 
 /*
 * returns the size of buffer (video ram)
 */
-dword gfb_vramsize()
-{
+dword gfb_vramsize() {
   return dev_video_size;
 }
 
 /*
 * resize video ram!
 */
-void gfb_resize(int width, int height)
-{
+void gfb_resize(int width, int height) {
   byte *newbuf;
   int i, min_ll, min_h, vsize, linelen = width;
 
@@ -253,19 +254,17 @@ void gfb_resize(int width, int height)
 /*
 * create new buffer
 */
-byte *gfb_alloc()
-{
+byte *gfb_alloc() {
   byte *newbuf;
 
-  newbuf = tmp_alloc(dev_video_size + (dev_linelen * 17));  // TODO: fix
+  newbuf = tmp_alloc(dev_video_size + (dev_linelen * 17));      // TODO: fix
   return newbuf;
 }
 
 /*
 * create new buffer (clone of active buffer)
 */
-byte *gfb_clone()
-{
+byte *gfb_clone() {
   byte *newbuf;
 
   newbuf = tmp_alloc(dev_video_size + (dev_linelen * 17));
@@ -276,16 +275,14 @@ byte *gfb_clone()
 /*
 * delete buffer
 */
-void gfb_free(byte * buf)
-{
+void gfb_free(byte * buf) {
   tmp_free(buf);
 }
 
 /*
 * set active buffer
 */
-byte *gfb_switch(byte * buf)
-{
+byte *gfb_switch(byte * buf) {
   byte *page = dev_vpage;
 
   if (buf) {
@@ -302,16 +299,14 @@ byte *gfb_switch(byte * buf)
 * true = redraw req. (new things had been added)
 * false = no redraw is req.
 */
-int gfb_getuf()
-{
+int gfb_getuf() {
   return update;
 }
 
 /*
 * clears the update-flag
 */
-void gfb_resetuf()
-{
+void gfb_resetuf() {
   update = 0;
 }
 
@@ -320,8 +315,7 @@ void gfb_resetuf()
 /*
 * 1bit mode 
 */
-static void directsetpixel_1(int x, int y)
-{
+static void directsetpixel_1(int x, int y) {
   long offset;
   int shift, mask;
 
@@ -331,8 +325,7 @@ static void directsetpixel_1(int x, int y)
   dev_vpage[offset] = (dev_vpage[offset] & mask) | (dcolor << shift);
 }
 
-static long directgetpixel_1(int x, int y)
-{
+static long directgetpixel_1(int x, int y) {
   long offset;
   int shift, mask;
 
@@ -345,8 +338,7 @@ static long directgetpixel_1(int x, int y)
 /*
 * 2bit mode 
 */
-static void directsetpixel_2(int x, int y)
-{
+static void directsetpixel_2(int x, int y) {
   long offset;
   byte shift, mask;
 
@@ -373,8 +365,7 @@ static void directsetpixel_2(int x, int y)
   dev_vpage[offset] = (dev_vpage[offset] & mask) | (dcolor << shift);
 }
 
-static long directgetpixel_2(int x, int y)
-{
+static long directgetpixel_2(int x, int y) {
   long offset;
   byte shift, mask;
 
@@ -405,8 +396,7 @@ static long directgetpixel_2(int x, int y)
 /*
 * 4bit mode
 */
-static void directsetpixel_4(int x, int y)
-{
+static void directsetpixel_4(int x, int y) {
   long offset;
 
   offset = (y * (dev_width >> 1)) + (x >> 1);
@@ -420,8 +410,7 @@ static void directsetpixel_4(int x, int y)
     dev_vpage[offset] = (dev_vpage[offset] & 0xF0) | dcolor;
 }
 
-static long directgetpixel_4(int x, int y)
-{
+static long directgetpixel_4(int x, int y) {
   long offset;
   int shift, mask;
 
@@ -446,34 +435,29 @@ static long directgetpixel_4(int x, int y)
 /*
 * 8bit mode
 */
-static void directsetpixel_8(int x, int y)
-{
+static void directsetpixel_8(int x, int y) {
   dev_vpage[y * dev_linelen + x] = dcolor;
 }
 
-static long directgetpixel_8(int x, int y)
-{
+static long directgetpixel_8(int x, int y) {
   return dev_vpage[y * dev_linelen + x];
 }
 
 /*
 * 15/16bit mode
 */
-static void directsetpixel_16(int x, int y)
-{
+static void directsetpixel_16(int x, int y) {
   dev_vpage16[y * dev_width + x] = dcolor;
 }
 
-static long directgetpixel_16(int x, int y)
-{
+static long directgetpixel_16(int x, int y) {
   return dev_vpage16[y * dev_width + x];
 }
 
 /*
 * 24bit mode
 */
-static void directsetpixel_24(int x, int y)
-{
+static void directsetpixel_24(int x, int y) {
   long offset;
 
   offset = y * dev_linelen + x * 3;
@@ -482,25 +466,21 @@ static void directsetpixel_24(int x, int y)
   *(dev_vpage + offset + 2) = (dcolor & 0xFF);
 }
 
-static long directgetpixel_24(int x, int y)
-{
+static long directgetpixel_24(int x, int y) {
   long offset;
 
   offset = y * dev_linelen + x * 3;
-  return (*(dev_vpage + offset) << 16) + (*(dev_vpage + offset + 1) << 8) +
-    ((long)*(dev_vpage + offset + 2));
+  return (*(dev_vpage + offset) << 16) + (*(dev_vpage + offset + 1) << 8) + ((long)*(dev_vpage + offset + 2));
 }
 
 /*
 * 32bit mode
 */
-static void directsetpixel_32(int x, int y)
-{
+static void directsetpixel_32(int x, int y) {
   dev_vpage32[y * dev_width + x] = dcolor;
 }
 
-static long directgetpixel_32(int x, int y)
-{
+static long directgetpixel_32(int x, int y) {
   return dev_vpage32[y * dev_width + x];
 }
 
@@ -513,8 +493,7 @@ static long directgetpixel_32(int x, int y)
 * The returned color can be the actuall color
 * or the color-index (see cmap)
 */
-long osd_getpixel(int x, int y)
-{
+long osd_getpixel(int x, int y) {
   int i;
   long color;
 
@@ -536,8 +515,7 @@ long osd_getpixel(int x, int y)
 /*
 * draw horizontial line
 */
-static void direct_hline(int x, int x2, int y)
-{
+static void direct_hline(int x, int x2, int y) {
   long offset, i, len;
   long co;
   byte l[2];
@@ -619,16 +597,14 @@ static void direct_hline(int x, int x2, int y)
 /*
 * Bresenham's algorithm for drawing line 
 */
-static void direct_line(int x1, int y1, int x2, int y2)
-{
+static void direct_line(int x1, int y1, int x2, int y2) {
   g_line(x1, y1, x2, y2, direct_setpixel);
   update = 1;
 }
 
 /*
 */
-static void direct_fillrect(int x1, int y1, int x2, int y2)
-{
+static void direct_fillrect(int x1, int y1, int x2, int y2) {
   int i;
 
   for (i = y1; i <= y2; i++)
@@ -640,8 +616,7 @@ static void direct_fillrect(int x1, int y1, int x2, int y2)
 *
 * Clear screen
 */
-void osd_cls()
-{
+void osd_cls() {
   long color = dcolor;
 
   cur_x = cur_y = 0;
@@ -656,8 +631,7 @@ void osd_cls()
 *
 * returns the current x position
 */
-int osd_getx()
-{
+int osd_getx() {
   return cur_x;
 }
 
@@ -666,8 +640,7 @@ int osd_getx()
 *
 * returns the current y position
 */
-int osd_gety()
-{
+int osd_gety() {
   return cur_y;
 }
 
@@ -676,8 +649,7 @@ int osd_gety()
 *
 * sets x,y position (for text)
 */
-void osd_setxy(int x, int y)
-{
+void osd_setxy(int x, int y) {
   cur_x = x;
   cur_y = y;
 }
@@ -685,14 +657,12 @@ void osd_setxy(int x, int y)
 /*
 * next line
 */
-static void osd_nextln()
-{
+static void osd_nextln() {
   cur_x = 0;
 
   if (cur_y < ((maxline - 1) * font_h)) {
     cur_y += font_h;
-  }
-  else {
+  } else {
     int len, to;
     long color = dcolor;
 
@@ -713,8 +683,7 @@ static void osd_nextln()
 /*
 * calc next tab position
 */
-static int osd_calctab(int x)
-{
+static int osd_calctab(int x) {
   int c = 1;
 
   while (x > tabsize) {
@@ -727,9 +696,7 @@ static int osd_calctab(int x)
 /*
 * drawing bitmap character (8x16)
 */
-static void direct_drawchar(int x, int y, byte ch, int overwrite, int fg_rgb,
-                            int bg_rgb)
-{
+static void direct_drawchar(int x, int y, byte ch, int overwrite, int fg_rgb, int bg_rgb) {
   byte *char_offset;
   int bit, i;
   long oldcolor = dcolor;
@@ -741,8 +708,7 @@ static void direct_drawchar(int x, int y, byte ch, int overwrite, int fg_rgb,
       if (*char_offset & (1 << (8 - bit))) {
         dcolor = fg_rgb;
         direct_setpixel(x + bit, y + i);
-      }
-      else if (overwrite) {
+      } else if (overwrite) {
         dcolor = bg_rgb;
         direct_setpixel(x + bit, y + i);
       }
@@ -770,8 +736,7 @@ static void direct_drawchar(int x, int y, byte ch, int overwrite, int fg_rgb,
 * \e[24m  set underline off
 * \e[27m  set reverse off
 */
-void osd_write(const char *str)
-{
+void osd_write(const char *str) {
   int len, cx = 8, esc_val, esc_cmd;
   byte *p, buf[3];
   long color = dcolor;
@@ -808,8 +773,7 @@ void osd_write(const char *str)
           }
 
           esc_cmd = *p;
-        }
-        else
+        } else
           esc_cmd = *p;
 
         // control characters
@@ -820,7 +784,7 @@ void osd_write(const char *str)
           dcolor = color;
           break;
         case 'G':
-          dev_setxy(esc_val * 8, dev_gety()); // default font = 9x16
+          dev_setxy(esc_val * 8, dev_gety());   // default font = 9x16
           break;
         case 'm':              // \e[...m - ANSI terminal
           switch (esc_val) {
@@ -932,21 +896,17 @@ void osd_write(const char *str)
       if (!con_use_reverse) {
         direct_drawchar(cur_x, cur_y, *p, 1, cmap[dev_fgcolor], cmap[dev_bgcolor]);
         if (con_use_bold)
-          direct_drawchar(cur_x + 1, cur_y, *p, 0, cmap[dev_fgcolor],
-                          cmap[dev_bgcolor]);
-      }
-      else {
+          direct_drawchar(cur_x + 1, cur_y, *p, 0, cmap[dev_fgcolor], cmap[dev_bgcolor]);
+      } else {
         direct_drawchar(cur_x, cur_y, *p, 1, cmap[dev_bgcolor], cmap[dev_fgcolor]);
         if (con_use_bold)
-          direct_drawchar(cur_x + 1, cur_y, *p, 0, cmap[dev_bgcolor],
-                          cmap[dev_fgcolor]);
+          direct_drawchar(cur_x + 1, cur_y, *p, 0, cmap[dev_bgcolor], cmap[dev_fgcolor]);
       }
 
       if (con_use_ul) {
         osd_setcolor(dev_fgcolor);
         direct_line(cur_x, (cur_y + font_h) - 1, cur_x + cx, (cur_y + font_h) - 1);
       }
-
       // advance
       cur_x += cx;
     };
@@ -965,8 +925,7 @@ void osd_write(const char *str)
 *
 * Sets the current drawing color
 */
-void osd_setcolor(long color)
-{
+void osd_setcolor(long color) {
   dev_fgcolor = color;
   if (dev_fgcolor >= 0 && dev_fgcolor <= 16)
     dcolor = cmap[dev_fgcolor];
@@ -979,8 +938,7 @@ void osd_setcolor(long color)
 *
 * Sets the current drawing color and the background color (used for text)
 */
-void osd_settextcolor(long fg, long bg)
-{
+void osd_settextcolor(long fg, long bg) {
   osd_setcolor(fg);
   if (bg != -1)
     dev_bgcolor = bg;
@@ -991,8 +949,7 @@ void osd_settextcolor(long fg, long bg)
 *
 * draw a line
 */
-void osd_line(int x1, int y1, int x2, int y2)
-{
+void osd_line(int x1, int y1, int x2, int y2) {
   if ((x1 == x2) && (y1 == y2))
     direct_setpixel(x1, y1);
   else
@@ -1005,8 +962,7 @@ void osd_line(int x1, int y1, int x2, int y2)
 *
 * draw a pixel
 */
-void osd_setpixel(int x, int y)
-{
+void osd_setpixel(int x, int y) {
   direct_setpixel(x, y);
   update = 1;
 }
@@ -1016,15 +972,13 @@ void osd_setpixel(int x, int y)
 *
 * draw a parallelogram (filled or not)
 */
-void osd_rect(int x1, int y1, int x2, int y2, int fill)
-{
+void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   int y;
 
   if (fill) {
     for (y = y1; y <= y2; y++)
       direct_hline(x1, x2, y);
-  }
-  else {
+  } else {
     direct_line(x1, y1, x1, y2);
     direct_line(x1, y2, x2, y2);
     direct_line(x2, y2, x2, y1);
@@ -1038,8 +992,7 @@ void osd_rect(int x1, int y1, int x2, int y2, int fill)
 *
 * returns the width of the text str in pixels
 */
-int osd_textwidth(const char *str)
-{
+int osd_textwidth(const char *str) {
   return strlen(str) * 8;
 }
 
@@ -1048,7 +1001,6 @@ int osd_textwidth(const char *str)
 *
 * returns the height of the text str in pixels
 */
-int osd_textheight(const char *str)
-{
+int osd_textheight(const char *str) {
   return font_h;
 }

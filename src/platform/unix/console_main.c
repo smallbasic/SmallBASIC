@@ -49,10 +49,10 @@ void remove_temp_file(void) {
 void set_bas_dir(const char *cwd, const char *bas_file) {
   char bas_dir[OS_PATHNAME_SIZE + 10];
   int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
-  
+
   bas_dir[0] = 0;
   strcat(bas_dir, "BASDIR=");
-  
+
   if (bas_file[0] == OS_DIRSEP) {
     // full path
     strncat(bas_dir, bas_file, path_len + 1);
@@ -312,7 +312,6 @@ int process_options(int argc, char *argv[]) {
       // check if it is a terminal.
       opt_interactive = 1;
     }
-
 #if defined(_Win32) || defined(_DOS)
     char *slash = strchr(argv[0], OS_DIRSEP);
     if (slash) {
@@ -327,7 +326,7 @@ int process_options(int argc, char *argv[]) {
 #elif defined(_UnixOS)
     sprintf(g_file, "%ctmp%csb%d.bas", OS_DIRSEP, OS_DIRSEP, getpid());
 #else
-    sprintf(g_file, "sb%d.bas", getpid());  // for minimal GNU systems like 
+    sprintf(g_file, "sb%d.bas", getpid());      // for minimal GNU systems like 
     // MINGW
 #endif
 
@@ -390,7 +389,6 @@ int MAIN_FUNC(int argc, char *argv[]) {
     if (!opt_quiet) {
       printf("SmallBASIC version %s, use -h for help\n", SB_STR_VER);
     }
-
     // run it
     if (!opt_interactive) {
       sbasic_main(g_file);

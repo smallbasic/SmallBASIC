@@ -1,7 +1,11 @@
-/*
-*	/dev/dsp driver
-*	Nicholas Christopoulos
-*/
+// This file is part of SmallBASIC
+//
+// SmallBASIC /dev/dsp driver
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 /*
 *	This code is based on tonegen program.
@@ -52,8 +56,7 @@ void *ossdsp_backg(void *);
 /*
 *	open dsp
 */
-int drvsound_init()
-{
+int drvsound_init() {
   strcpy(device, DSPDEV);
 
   // open
@@ -61,8 +64,7 @@ int drvsound_init()
     if (!opt_quiet)
       perror("SB/OSS DRIVER");
     return 0;
-  }
-  else {
+  } else {
     // init
     if (ioctl(oss_h, SNDCTL_DSP_GETFMTS, &gotmask) == -1) {
       if (!opt_quiet)
@@ -95,8 +97,7 @@ int drvsound_init()
 /*
 *	close
 */
-void drvsound_close()
-{
+void drvsound_close() {
   if (oss_init) {
     oss_init = 0;
     usleep(1000);
@@ -109,16 +110,14 @@ void drvsound_close()
 /*
 *	clear background queue
 */
-void drvsound_clear_queue()
-{
+void drvsound_clear_queue() {
   q_head = q_tail;
 }
 
 /*
 *	play a tone
 */
-void ossdsp_play(int freq, int time_ms, int vol)
-{
+void ossdsp_play(int freq, int time_ms, int vol) {
   int count, loops;
   double cyclesamples;
   double f, sinnum, fu;
@@ -160,8 +159,7 @@ void ossdsp_play(int freq, int time_ms, int vol)
 /*
 *	execute audio-list
 */
-void *ossdsp_backg(void *nil)
-{
+void *ossdsp_backg(void *nil) {
   oss_node *node;
 
   while (1) {
@@ -178,14 +176,11 @@ void *ossdsp_backg(void *nil)
             if (q_head == QSIZE)
               q_head = 0;
           }
-        }
-        else
+        } else
           usleep(1000);         // sleep 1ms, wait for message
-      }
-      else
+      } else
         usleep(100);            // sleep 0.1 ms, locked
-    }
-    else
+    } else
       usleep(1000000);
   }
 
@@ -195,8 +190,7 @@ void *ossdsp_backg(void *nil)
 /*
 *	store sound to audio-list
 */
-void drvsound_sound(int frq, int ms, int vol, int bgplay)
-{
+void drvsound_sound(int frq, int ms, int vol, int bgplay) {
   oss_node *node;
 
   if (oss_init) {
@@ -219,14 +213,12 @@ void drvsound_sound(int frq, int ms, int vol, int bgplay)
 /*
 *	BEEP :)
 */
-void drvsound_beep()
-{
+void drvsound_beep() {
   drvsound_sound(440, 250, 75, 0);
 }
 
 /*
 *	not used
 */
-void drvsound_event()
-{
+void drvsound_event() {
 }

@@ -1,6 +1,13 @@
+// This file is part of SmallBASIC
+//
+// SmallBASIC, Generic 'framebuffer' techique graphics driver
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
+
 /*
- * Generic 'framebuffer' techique graphics driver
- *
  * This is a common routines for 'framebuffer' technique (not the linux-driver)
  * This driver stores the image into a buffer (dev_vpage) so the parent driver
  * can use that buffer to dump it into the screen (like bitmap, perhaps on every
@@ -15,8 +22,8 @@
 #if !defined(_dev_genfb_h)
 #define _dev_genfb_h
 
-#include "sys.h"
-#include "osd.h"
+#include "common/sys.h"
+#include "common/osd.h"
 
 int gfb_init(int width, int height, int bpp);
 void gfb_setcmap(long *newcmap);

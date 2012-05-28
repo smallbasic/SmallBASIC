@@ -1,4 +1,3 @@
-// $Id: inet.c 681 2009-08-14 12:59:38Z zeeb90au $
 // This file is part of SmallBASIC
 //
 // Network library (byte-stream sockets)
@@ -28,8 +27,7 @@ static int inetlib_init = 0;
 /**
  * prepare to use the network
  */
-int net_init()
-{
+int net_init() {
 #if defined(_WIN32)
   if (!inetlib_init) {
     inetlib_init = 1;
@@ -46,8 +44,7 @@ int net_init()
 /**
  * stop using the network
  */
-int net_close()
-{
+int net_close() {
 #if defined(_WIN32)
   if (inetlib_init) {
     WSACleanup();
@@ -60,16 +57,14 @@ int net_close()
 /**
  * sends a string to socket
  */
-void net_print(socket_t s, const char *str)
-{
+void net_print(socket_t s, const char *str) {
   send(s, str, strlen(str), 0);
 }
 
 /**
  * sends a string to socket
  */
-void net_printf(socket_t s, const char *fmt, ...)
-{
+void net_printf(socket_t s, const char *fmt, ...) {
   char buf[1025];
   va_list argp;
 
@@ -82,8 +77,7 @@ void net_printf(socket_t s, const char *fmt, ...)
 /**
  * read the specified number of bytes from the socket
  */
-int net_read(socket_t s, char *buf, int size)
-{
+int net_read(socket_t s, char *buf, int size) {
   fd_set readfds;
   struct timeval tv;
   int rv;
@@ -100,15 +94,13 @@ int net_read(socket_t s, char *buf, int size)
     if (rv == -1) {
       // an error occured
       return 0;
-    }
-    else if (rv == 0) {
+    } else if (rv == 0) {
       // timeout occured
       if (0 != dev_events(0)) {
         s = 0;
         break;
       }
-    }
-    else {
+    } else {
       // ready to read
       return recv(s, buf, size, 0);
     }
@@ -119,8 +111,7 @@ int net_read(socket_t s, char *buf, int size)
 /**
  * read a string from a socket until a char from delim str found.
  */
-int net_input(socket_t s, char* buf, int size, const char* delim)
-{
+int net_input(socket_t s, char *buf, int size, const char *delim) {
   // wait for remote input without eating cpu
   fd_set readfds;
   struct timeval tv;
@@ -132,20 +123,18 @@ int net_input(socket_t s, char* buf, int size, const char* delim)
 
   while (1) {
     tv.tv_sec = 0;
-    tv.tv_usec = BLOCK_INTERVAL; // time is reset in select() call in linux
+    tv.tv_usec = BLOCK_INTERVAL;        // time is reset in select() call in linux
     FD_SET(s, &readfds);
 
     int rv = select(s + 1, &readfds, NULL, NULL, &tv);
     if (rv == -1) {
-      return 0;  // an error occured
-    }
-    else if (rv == 0) {
+      return 0;                 // an error occured
+    } else if (rv == 0) {
       // timeout occured - check for program break
       if (0 != dev_events(0)) {
         return 0;
       }
-    }
-    else if (FD_ISSET(s, &readfds)) {
+    } else if (FD_ISSET(s, &readfds)) {
       // ready for reading
       break;
     }
@@ -157,20 +146,19 @@ int net_input(socket_t s, char* buf, int size, const char* delim)
   while (count < size) {
     int bytes = net_read(s, &ch, 1);
     if (bytes <= 0) {
-      return count;        // no more data
-    }
-    else {
+      return count;             // no more data
+    } else {
       if (ch == 0) {
         return count;
       }
       if (delim) {
         if ((strchr(delim, ch) != NULL)) {
-          return count;    // delimiter found
+          return count;         // delimiter found
         }
       }
-      if (ch != '\015') {  // ignore it
+      if (ch != '\015') {       // ignore it
         buf[count] = ch;
-        count += bytes;    // actually ++
+        count += bytes;         // actually ++
       }
     }
   }
@@ -181,8 +169,7 @@ int net_input(socket_t s, char* buf, int size, const char* delim)
 /**
  * return true if there something waiting
  */
-int net_peek(socket_t s)
-{
+int net_peek(socket_t s) {
 #if defined(_WIN32)
   unsigned long bytes;
 
@@ -199,8 +186,7 @@ int net_peek(socket_t s)
 /**
  * connect to server and returns the socket
  */
-socket_t net_connect(const char *server_name, int server_port)
-{
+socket_t net_connect(const char *server_name, int server_port) {
   socket_t sock;
   dword inaddr;
   struct sockaddr_in ad;
@@ -217,8 +203,7 @@ socket_t net_connect(const char *server_name, int server_port)
       return -1;
     }
     memcpy(&ad.sin_addr, hp->h_addr, hp->h_length);
-  }
-  else {
+  } else {
     memcpy(&ad.sin_addr, &inaddr, sizeof(inaddr));
   }
 
@@ -237,8 +222,7 @@ socket_t net_connect(const char *server_name, int server_port)
  * listen for an incoming connection on the given port and 
  * returns the socket once a connection has been established
  */
-socket_t net_listen(int server_port)
-{
+socket_t net_listen(int server_port) {
   int listener;
   struct sockaddr_in addr, remoteaddr;
   socket_t s;
@@ -256,44 +240,40 @@ socket_t net_listen(int server_port)
   }
 
   addr.sin_family = AF_INET;
-  addr.sin_port = htons(server_port); // clients connect to this port
-  addr.sin_addr.s_addr = INADDR_ANY;  // autoselect IP address
+  addr.sin_port = htons(server_port);   // clients connect to this port
+  addr.sin_addr.s_addr = INADDR_ANY;    // autoselect IP address
 
   // prevent address already in use bind errors
   if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
     return -1;
-  } 
-
+  }
   // set s up to be a server (listening) socket
-  if (bind(listener, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+  if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
     return -1;
   }
 
   if (listen(listener, 1) == -1) {
     return -1;
   }
-
   // clear the set
   FD_ZERO(&readfds);
 
   while (1) {
-    tv.tv_sec = 0;  // block at 1 second intervals
-    tv.tv_usec = 500000; // time is reset in select() call in linux
+    tv.tv_sec = 0;              // block at 1 second intervals
+    tv.tv_usec = 500000;        // time is reset in select() call in linux
     FD_SET(listener, &readfds);
 
     rv = select(listener + 1, &readfds, NULL, NULL, &tv);
     if (rv == -1) {
       s = 0;
-      break;  // an error occured
-    }
-    else if (rv == 0) {
+      break;                    // an error occured
+    } else if (rv == 0) {
       // timeout occured - check for program break
       if (0 != dev_events(0)) {
         s = 0;
         break;
       }
-    }
-    else if (FD_ISSET(listener, &readfds)) {
+    } else if (FD_ISSET(listener, &readfds)) {
       // connection is ready
       socklen_t remoteaddr_len = sizeof(remoteaddr);
       s = accept(listener, (struct sockaddr *)&remoteaddr, &remoteaddr_len);
@@ -310,8 +290,7 @@ socket_t net_listen(int server_port)
 /**
  * disconnect the given network connection
  */
-void net_disconnect(socket_t s)
-{
+void net_disconnect(socket_t s) {
 #if defined(_WIN32)
   closesocket(s);
 #else

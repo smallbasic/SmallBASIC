@@ -1,13 +1,13 @@
-/**
-*	SmallBASIC, console editor (interactive mode)
-*
-*	This program is distributed under the terms of the GPL v2.0 or later
-*	Download the GNU Public License (GPL) from www.gnu.org
-*
-*	Nicholas Christopoulos
-*/
+// This file is part of SmallBASIC
+//
+// SmallBASIC console editor (interactive mode)
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
-#include "sbapp.h"
+#include "common/sbapp.h"
 #include <stdio.h>
 #include <errno.h>
 #include <readline/readline.h>
@@ -60,8 +60,7 @@ char *intm_tab2spc(char *src);
 /*
 *	initialize interactive mode shell
 */
-void intm_init()
-{
+void intm_init() {
   intm_head = NULL;
 
   scr_w = 79;
@@ -84,8 +83,7 @@ void intm_init()
 
   use_ansi =
     (strstr(getenv("TERM"), "linux") != NULL) ||
-    (strstr(getenv("TERM"), "xterm") != NULL) ||
-    (strstr(getenv("TERM"), "ansi") != NULL);
+    (strstr(getenv("TERM"), "xterm") != NULL) || (strstr(getenv("TERM"), "ansi") != NULL);
 #endif
 }
 
@@ -94,8 +92,7 @@ void intm_init()
 /**
 *	next word
 */
-const char *intm_getword(const char *text, char *dest)
-{
+const char *intm_getword(const char *text, char *dest) {
   char *p = (char *)text;
   char *d = dest;
   int dp = 0;
@@ -119,8 +116,7 @@ const char *intm_getword(const char *text, char *dest)
       d++;
       p++;
     }
-  }
-  else {
+  } else {
     // quoted
     while (*p && *p != '\"') {
       *d = *p;
@@ -151,8 +147,7 @@ const char *intm_getword(const char *text, char *dest)
 /*
 *	removes spaces and returns a new string
 */
-char *intm_trimdup(const char *str)
-{
+char *intm_trimdup(const char *str) {
   char *buf;
   char *p;
 
@@ -183,8 +178,7 @@ char *intm_trimdup(const char *str)
 /*
 *	true if the word is integer
 */
-int intm_is_integer(const char *src)
-{
+int intm_is_integer(const char *src) {
   const char *p = src;
 
   while (*p == ' ' || *p == '\t')
@@ -202,8 +196,7 @@ int intm_is_integer(const char *src)
 /*
 *	beautify code line
 */
-void intm_beautify(char *src)
-{
+void intm_beautify(char *src) {
   char *dest, *d;
   char *p;
   int dq = 0;
@@ -218,17 +211,14 @@ void intm_beautify(char *src)
     if (*p == '\"') {
       dq = !dq;
       *d++ = *p;
-    }
-    else if (!dq) {
+    } else if (!dq) {
       if (*p == ' ' || *p == '\t') {
         *d++ = ' ';
         while (*(p + 1) == ' ' || *(p + 1) == '\t')
           p++;
-      }
-      else
+      } else
         *d++ = to_upper(*p);
-    }
-    else
+    } else
       *d++ = *p;
 
     p++;
@@ -241,8 +231,7 @@ void intm_beautify(char *src)
 /*
 *	convert tabs to spaces
 */
-char *intm_tab2spc(char *src)
-{
+char *intm_tab2spc(char *src) {
   int col = 1, tabsize = 4;
   int new_col, i;
   char *p;
@@ -280,8 +269,7 @@ char *intm_tab2spc(char *src)
 
 /*
 */
-char *sb_strndup(const char *src, int size)
-{
+char *sb_strndup(const char *src, int size) {
   char *p;
 
   p = (char *)malloc(size + 1);
@@ -291,8 +279,7 @@ char *sb_strndup(const char *src, int size)
 }
 
 /* */
-void intm_file_beutify(char *name)
-{
+void intm_file_beutify(char *name) {
   unsigned char *n, *r, *p;
 
   n = intm_trimdup(name);
@@ -313,8 +300,7 @@ void intm_file_beutify(char *name)
 *	print right-adjusted
 */
 #define	rprintf		intm_rprintf
-void intm_rprintf(const char *fmt, ...)
-{
+void intm_rprintf(const char *fmt, ...) {
   va_list ap;
   char msg[2048];
 
@@ -335,8 +321,7 @@ void intm_rprintf(const char *fmt, ...)
 /*
 *	printf at...
 */
-void pratf(int x, int y, const char *fmt, ...)
-{
+void pratf(int x, int y, const char *fmt, ...) {
   va_list ap;
   char msg[2048];
 
@@ -360,8 +345,7 @@ void pratf(int x, int y, const char *fmt, ...)
 *	output header
 */
 #define	header	intm_header
-void intm_header(const char *fmt, ...)
-{
+void intm_header(const char *fmt, ...) {
   va_list ap;
   char msg[2048];
   int i;
@@ -381,8 +365,7 @@ void intm_header(const char *fmt, ...)
     printf("\033[%dG %s", (int)(scr_w - strlen(msg)), msg);
     printf("\033[0m");
     printf("\n\n");
-  }
-  else
+  } else
     printf("[%s]\n\n", msg);
 }
 
@@ -390,8 +373,7 @@ void intm_header(const char *fmt, ...)
 *	output footer
 */
 #define	footer	intm_footer
-void intm_footer(const char *fmt, ...)
-{
+void intm_footer(const char *fmt, ...) {
   va_list ap;
   char msg[2048];
   int i;
@@ -412,8 +394,7 @@ void intm_footer(const char *fmt, ...)
     rprintf(msg);
     printf("\033[0m");
     printf("\n");
-  }
-  else
+  } else
     printf("--- %s\n", msg);
 }
 
@@ -421,16 +402,14 @@ void intm_footer(const char *fmt, ...)
 *	getkey/inkey
 */
 #define	getkey	intm_getkey
-int intm_getkey(int waitf)
-{
+int intm_getkey(int waitf) {
 #if defined(_DOS)
   int c = 0;
 
   if (waitf) {
     if ((c = getch()) == 0)
       c = getch() | 0x100;
-  }
-  else {
+  } else {
     if (kbhit()) {
       if ((c = getch()) == 0)
         c = getch() | 0x100;
@@ -451,7 +430,7 @@ int intm_getkey(int waitf)
 
   // 
   tcgetattr(STDIN_FILENO, &tattr);
-  tattr.c_lflag &= ~(ICANON | ECHO | ECHONL); // Clear ICANON and ECHO.
+  tattr.c_lflag &= ~(ICANON | ECHO | ECHONL);   // Clear ICANON and ECHO.
   tattr.c_cc[VMIN] = 1;
   tattr.c_cc[VTIME] = 0;
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &tattr);
@@ -479,8 +458,7 @@ int intm_getkey(int waitf)
 *	getkey with prompt and range check
 */
 #define	ask	intm_ask
-char intm_ask(const char *prompt, const char *valid)
-{
+char intm_ask(const char *prompt, const char *valid) {
   int ch;
 
   if (use_ansi)
@@ -513,8 +491,7 @@ char intm_ask(const char *prompt, const char *valid)
 *	output header, used inside the output 
 */
 #define	mheader	intm_midheader
-void intm_midheader(const char *fmt, ...)
-{
+void intm_midheader(const char *fmt, ...) {
   va_list ap;
   char msg[2048];
   int i;
@@ -534,8 +511,7 @@ void intm_midheader(const char *fmt, ...)
     printf("\033[%dG %s", (int)(scr_w - strlen(msg)), msg);
     printf("\033[0m");
     printf("\n");
-  }
-  else {
+  } else {
     for (i = 0; i < (scr_w - strlen(msg)) - 1; i++)
       printf("-");
     printf(" %s", msg);
@@ -547,8 +523,7 @@ void intm_midheader(const char *fmt, ...)
 *	display a multi-line text
 */
 #define	less	intm_less
-int intm_less(const char *src, const char *title)
-{
+int intm_less(const char *src, const char *title) {
   int line, termline, stop, len, quit = 0;
   char *buf, *next, *cur;
   char *fs;
@@ -568,8 +543,7 @@ int intm_less(const char *src, const char *title)
       strncpy(buf, cur, len);
       buf[len] = '\0';
       cur = next;
-    }
-    else {
+    } else {
       buf = strdup(cur);
       cur = NULL;
     }
@@ -594,8 +568,7 @@ int intm_less(const char *src, const char *title)
             printf("\033[1m\033[30m%5d:\033[0m ", ++line);
           else
             printf("\033[1m\033[30m%5s:\033[0m ", "...");
-        }
-        else {
+        } else {
           if (i == 0)
             printf("%5d: ", ++line);
           else
@@ -623,15 +596,13 @@ int intm_less(const char *src, const char *title)
             mheader("'%s' at %d", title, line);
           }
         }
-
         // 
         if (stop || quit)
           break;
       }
 
       free(part);
-    }
-    else {
+    } else {
       if (use_ansi)
         printf("\033[1m\033[30m%5d:\033[0m %s", ++line, fs);
       else
@@ -655,7 +626,6 @@ int intm_less(const char *src, const char *title)
         mheader("'%s' at %d", title, line);
       }
     }
-
     // 
     if (stop || quit)
       break;
@@ -670,8 +640,7 @@ int intm_less(const char *src, const char *title)
 *	message 'information' type
 */
 #define	info	intm_info
-void intm_info(const char *fmt, ...)
-{
+void intm_info(const char *fmt, ...) {
   va_list ap;
   char msg[2048];
 
@@ -693,8 +662,7 @@ void intm_info(const char *fmt, ...)
 *	message 'error' type
 */
 #define	errfmt	intm_errfmt
-void intm_errfmt(const char *fmt, ...)
-{
+void intm_errfmt(const char *fmt, ...) {
   va_list ap;
   char msg[2048];
 
@@ -715,8 +683,7 @@ void intm_errfmt(const char *fmt, ...)
 /*
 */
 #define	sysfmt	intm_sysfmt
-void intm_sysfmt(const char *fmt, ...)
-{
+void intm_sysfmt(const char *fmt, ...) {
   va_list ap;
   char msg[2048];
 
@@ -736,8 +703,7 @@ void intm_sysfmt(const char *fmt, ...)
 /*
 *	add program line
 */
-void intm_add_line(int line, const char *text)
-{
+void intm_add_line(int line, const char *text) {
   intm_t *np, *cp, *pp;
 
   if (line <= 0)
@@ -765,8 +731,7 @@ void intm_add_line(int line, const char *text)
       free(cp->buf);
       cp->buf = np->buf;
       free(np);
-    }
-    else {                      // connect it
+    } else {                    // connect it
       if (!cp)                  // add at the end
         pp->next = np;
       else {
@@ -774,8 +739,7 @@ void intm_add_line(int line, const char *text)
           // add at beginning
           np->next = intm_head;
           intm_head = np;
-        }
-        else {
+        } else {
           // add somewhere in the middle
           np->next = pp->next;
           pp->next = np;
@@ -788,8 +752,7 @@ void intm_add_line(int line, const char *text)
 /*
 *	display program list
 */
-void intm_list(int pc, char_p * pt)
-{
+void intm_list(int pc, char_p * pt) {
   intm_t *cp;
   int start = -1;
   int end = -1;
@@ -800,21 +763,17 @@ void intm_list(int pc, char_p * pt)
     else if (pc == 3 && pt[1][0] == '-') {
       start = -1;
       end = atoi(pt[2]);
-    }
-    else if (pc == 3 && pt[2][0] == '-') {
+    } else if (pc == 3 && pt[2][0] == '-') {
       start = atoi(pt[1]);
       end = -1;
-    }
-    else if (pc == 4 && pt[2][0] == '-') {
+    } else if (pc == 4 && pt[2][0] == '-') {
       start = atoi(pt[1]);
       end = atoi(pt[3]);
-    }
-    else {
+    } else {
       errfmt("SYNTAX ERROR");
       return;
     }
   }
-
   // list
   cp = intm_head;
   while (cp) {
@@ -833,8 +792,7 @@ void intm_list(int pc, char_p * pt)
 /*
 *	renums the program lines
 */
-void intm_renum(int pc, char_p * pt)
-{
+void intm_renum(int pc, char_p * pt) {
   intm_t *cp;
   int start = -1;
   int step = 10;
@@ -843,8 +801,7 @@ void intm_renum(int pc, char_p * pt)
   if (pc > 3) {
     start = atoi(pt[1]);
     step = atoi(pt[3]);
-  }
-  else if (pc > 1)
+  } else if (pc > 1)
     step = atoi(pt[1]);
 
   cp = intm_head;
@@ -860,8 +817,7 @@ void intm_renum(int pc, char_p * pt)
 /*
 *	returns the maximum line number in the program list
 */
-int intm_get_maxline()
-{
+int intm_get_maxline() {
   intm_t *cp;
   int n = 0;
 
@@ -876,8 +832,7 @@ int intm_get_maxline()
 /*
 *	kill program list
 */
-void intm_clear_list()
-{
+void intm_clear_list() {
   intm_t *np, *pp;
 
   pp = np = intm_head;
@@ -893,8 +848,7 @@ void intm_clear_list()
 /*
 *	erase program lines
 */
-void intm_erase(int pc, char_p * pt)
-{
+void intm_erase(int pc, char_p * pt) {
   intm_t *cp, *pp, *ep;
   int start = -1;
   int end = -1;
@@ -905,21 +859,17 @@ void intm_erase(int pc, char_p * pt)
     else if (pc == 3 && pt[1][0] == '-') {
       start = -1;
       end = atoi(pt[2]);
-    }
-    else if (pc == 3 && pt[2][0] == '-') {
+    } else if (pc == 3 && pt[2][0] == '-') {
       start = atoi(pt[1]);
       end = -1;
-    }
-    else if (pc == 4 && pt[2][0] == '-') {
+    } else if (pc == 4 && pt[2][0] == '-') {
       start = atoi(pt[1]);
       end = atoi(pt[3]);
-    }
-    else {
+    } else {
       errfmt("SYNTAX ERROR");
       return;
     }
   }
-
   // kill
   cp = pp = intm_head;
   while (cp) {
@@ -935,16 +885,14 @@ void intm_erase(int pc, char_p * pt)
         intm_head = cp = cp->next;
         free(ep->buf);
         free(ep);
-      }
-      else {
+      } else {
         pp->next = cp->next;
         ep = cp;
         cp = cp->next;
         free(ep->buf);
         free(ep);
       }
-    }
-    else {
+    } else {
       pp = cp;
       cp = cp->next;
     }
@@ -954,8 +902,7 @@ void intm_erase(int pc, char_p * pt)
 /*
 *	save SB code
 */
-void intm_save(int pc, char *file)
-{
+void intm_save(int pc, char *file) {
   intm_t *cp;
   FILE *fp;
   char fname[1024];
@@ -965,7 +912,6 @@ void intm_save(int pc, char *file)
     errfmt("SYNTAX ERROR");
     return;
   }
-
   // write
   strcpy(fname, file);
   intm_file_beutify(fname);
@@ -992,8 +938,7 @@ void intm_save(int pc, char *file)
 /*
 *	load or merge sb code
 */
-int intm_load(int pc, const char *file, int merge)
-{
+int intm_load(int pc, const char *file, int merge) {
   FILE *fp;
   char buf[4096], *p;
   int line, step, count = 0;
@@ -1044,27 +989,22 @@ int intm_load(int pc, const char *file, int merge)
 /* --- shell commands ---------------------------------------------------------------------------------------------------- */
 
 /* change directory */
-void intm_chdir(int pc, char *str)
-{
+void intm_chdir(int pc, char *str) {
   if (pc > 1) {
     if (chdir(str))
       errfmt("CD FAILED");
-  }
-  else if (pc == 1) {
+  } else if (pc == 1) {
     char buf[1024];
 
     getcwd(buf, 1024);
     info("Current directory: [%s]", buf);
-  }
-  else
+  } else
     errfmt("SYNTAX ERROR");
 }
 
 /*
 */
-void intm_dirwalk(const char *dir, const char *wc, int inside,
-                  int (*f) (const char *))
-{
+void intm_dirwalk(const char *dir, const char *wc, int inside, int (*f) (const char *)) {
   char name[OS_PATHNAME_SIZE];
   struct dirent *dp;
   DIR *dfd;
@@ -1117,8 +1057,7 @@ void intm_dirwalk(const char *dir, const char *wc, int inside,
 }
 
 /* display a file-name */
-int intm_print_fname(const char *file)
-{
+int intm_print_fname(const char *file) {
   char *s, *ext;
   struct stat st;
   char clr[32], clrrst[32];
@@ -1145,8 +1084,7 @@ int intm_print_fname(const char *file)
       strcpy(clr, "\033[1m\033[34m<dir>");
     else
       strcpy(clr, "<dir>");
-  }
-  else if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) {
+  } else if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) {
     if (use_ansi)
       strcpy(clr, "\033[1m\033[35m<dev>");
     else
@@ -1165,8 +1103,7 @@ int intm_print_fname(const char *file)
       strcpy(clr, "\033[1m\033[32m(exe)");
     else
       strcpy(clr, "(exe)");
-  }
-  else if (use_ansi) {
+  } else if (use_ansi) {
     if (ext) {
       if ((strcmp(ext, ".c") == 0) ||
           (strcmp(ext, ".h") == 0) ||
@@ -1177,31 +1114,24 @@ int intm_print_fname(const char *file)
           (strcmp(ext, ".sb") == 0) ||
           (strcmp(ext, ".pl") == 0) ||
           (strcmp(ext, ".pas") == 0) ||
-          (strcmp(ext, ".py") == 0) ||
-          (strcmp(ext, ".asm") == 0) || (strcmp(ext, ".java") == 0)
+          (strcmp(ext, ".py") == 0) || (strcmp(ext, ".asm") == 0) || (strcmp(ext, ".java") == 0)
         ) {
         strcpy(clr, "\033[1m\033[36m     ");
-      }
-      else if ((strcmp(ext, ".gz") == 0) ||
-               (strcmp(ext, ".zip") == 0) ||
-               (strcmp(ext, ".bz") == 0) ||
-               (strcmp(ext, ".bz2") == 0) || (strcmp(ext, ".tgz") == 0)
+      } else if ((strcmp(ext, ".gz") == 0) ||
+                 (strcmp(ext, ".zip") == 0) ||
+                 (strcmp(ext, ".bz") == 0) || (strcmp(ext, ".bz2") == 0) || (strcmp(ext, ".tgz") == 0)
         ) {
         strcpy(clr, "\033[31m     ");
-      }
-      else
+      } else
         strcpy(clr, "     ");
-    }
-    else
+    } else
       strcpy(clr, "     ");
-  }
-  else
+  } else
     strcpy(clr, "     ");
 
   // size
   if (st.st_size > (1024 * 1024 * 1024))
-    sprintf(size, "%4ld GB   ",
-            (long)(st.st_size + (1024 * 1024 * 512)) / (1024 * 1024 * 1024));
+    sprintf(size, "%4ld GB   ", (long)(st.st_size + (1024 * 1024 * 512)) / (1024 * 1024 * 1024));
   else if (st.st_size > (1024 * 1024))
     sprintf(size, "%4ld MB   ", (long)(st.st_size + (1024 * 512)) / (1024 * 1024));
   if (st.st_size > 1024)
@@ -1225,14 +1155,12 @@ int intm_print_fname(const char *file)
   strcat(attr, (st.st_mode & S_IXOTH) ? "x" : "-");
 
   // print
-  printf("%s%*s%s %s  %s  %s\n", clr, MIN(scr_w / 2, 32), s, clrrst, size, tmbuf,
-         attr);
+  printf("%s%*s%s %s  %s  %s\n", clr, MIN(scr_w / 2, 32), s, clrrst, size, tmbuf, attr);
   return 1;                     // success - continue
 }
 
 /* print the list of files */
-void intm_dir(int pc, const char *buf)
-{
+void intm_dir(int pc, const char *buf) {
   if (pc == 1)
     intm_dirwalk(".", "*", 0, intm_print_fname);
   else
@@ -1240,8 +1168,7 @@ void intm_dir(int pc, const char *buf)
 }
 
 /* */
-int intm_print_dir_name(const char *file)
-{
+int intm_print_dir_name(const char *file) {
   struct stat st;
 
   stat(file, &st);
@@ -1251,8 +1178,7 @@ int intm_print_dir_name(const char *file)
 }
 
 /* print the list of files */
-void intm_dird(int pc, const char *buf)
-{
+void intm_dird(int pc, const char *buf) {
   if (pc == 1)
     intm_dirwalk(".", "*", 0, intm_print_dir_name);
   else
@@ -1260,8 +1186,7 @@ void intm_dird(int pc, const char *buf)
 }
 
 /* */
-int intm_print_exe_name(const char *file)
-{
+int intm_print_exe_name(const char *file) {
   struct stat st;
 
   stat(file, &st);
@@ -1271,8 +1196,7 @@ int intm_print_exe_name(const char *file)
 }
 
 /* print the list of files */
-void intm_dire(int pc, const char *buf)
-{
+void intm_dire(int pc, const char *buf) {
   if (pc == 1)
     intm_dirwalk(".", "*", 0, intm_print_exe_name);
   else
@@ -1280,8 +1204,7 @@ void intm_dire(int pc, const char *buf)
 }
 
 /* */
-int intm_print_bas_name(const char *file)
-{
+int intm_print_bas_name(const char *file) {
   char *ext;
 
   ext = strrchr(file, '.');
@@ -1293,8 +1216,7 @@ int intm_print_bas_name(const char *file)
 }
 
 /* print the list of files */
-void intm_dirb(int pc, const char *buf)
-{
+void intm_dirb(int pc, const char *buf) {
   if (pc == 1)
     intm_dirwalk(".", "*", 0, intm_print_bas_name);
   else
@@ -1305,8 +1227,7 @@ void intm_dirb(int pc, const char *buf)
 
 /*
 */
-char *intm_ascf(const char *src)
-{
+char *intm_ascf(const char *src) {
   char *p;
   char *dest, *d;
 
@@ -1316,7 +1237,7 @@ char *intm_ascf(const char *src)
 
   while (*p) {
     if (*p == '$') {
-      if (strncmp(p, "$b$", 3) == 0)  // bold
+      if (strncmp(p, "$b$", 3) == 0)    // bold
       {
         if (use_ansi) {
           strcpy(d, "\033[1m");
@@ -1324,7 +1245,7 @@ char *intm_ascf(const char *src)
         }
         p += 3;
       }
-      if (strncmp(p, "$i$", 3) == 0)  // italic
+      if (strncmp(p, "$i$", 3) == 0)    // italic
       {
         if (use_ansi) {
           strcpy(d, "\033[36m");
@@ -1340,8 +1261,7 @@ char *intm_ascf(const char *src)
         }
         p += 4;
       }
-    }
-    else
+    } else
       *d++ = *p++;
   }
   *d = '\0';
@@ -1351,8 +1271,7 @@ char *intm_ascf(const char *src)
 
 /*
 */
-void intm_help()
-{
+void intm_help() {
   static char *help_txt =
     "$b$* SmallBASIC INTERACTIVE MODE COMMANDS *$b-$\n\n"
     "$b$HELP$b-$ $i$[sb-keyword]$i-$\n"
@@ -1439,8 +1358,7 @@ void intm_help()
 /*
 *	completition
 */
-char *intm_prg_gen(const char *text, int state)
-{
+char *intm_prg_gen(const char *text, int state) {
   char buf[4096], *pbuf;
   intm_t *cp;
   static int len, idx, found;
@@ -1488,8 +1406,7 @@ char *intm_prg_gen(const char *text, int state)
 /*
 *	completition #2
 */
-char **cons_comp(const char *text, int start, int end)
-{
+char **cons_comp(const char *text, int start, int end) {
   char **matches;
 
   matches = (char **)NULL;
@@ -1503,8 +1420,7 @@ char **cons_comp(const char *text, int start, int end)
 }
 
 /* get history */
-char *intm_get_hist()
-{
+char *intm_get_hist() {
   HIST_ENTRY **the_list;
   int i, size, pos;
   char *s, *dest, *d;
@@ -1530,8 +1446,7 @@ char *intm_get_hist()
 }
 
 /* set history */
-void intm_set_hist(const char *src)
-{
+void intm_set_hist(const char *src) {
   char *p, *e, *np;
   int size;
 
@@ -1549,8 +1464,7 @@ void intm_set_hist(const char *src)
 }
 
 /* code -> history */
-void intm_code_hist()
-{
+void intm_code_hist() {
   intm_t *cp;
 
   clear_history();
@@ -1563,8 +1477,7 @@ void intm_code_hist()
 }
 
 /* */
-void intm_type(int pc, const char *orgfile)
-{
+void intm_type(int pc, const char *orgfile) {
   if (pc > 1) {
     FILE *fp;
     struct stat st;
@@ -1591,8 +1504,7 @@ void intm_type(int pc, const char *orgfile)
       fclose(fp);
     }
     free(file);
-  }
-  else
+  } else
     errfmt("SYNTAX ERROR");
 }
 
@@ -1604,8 +1516,7 @@ void intm_type(int pc, const char *orgfile)
 // we must do something about this. any "law" info?
 #define SB_STR_CPR	"Free Software Foundation, Nicholas Christopoulos"
 
-int interactive_mode(const char *fname)
-{
+int interactive_mode(const char *fname) {
   static char *buf = NULL, *parstr;
   char *p;
   int exitf = 0;
@@ -1619,8 +1530,7 @@ int interactive_mode(const char *fname)
   intm_init();
 
   if (!opt_quiet) {
-    printf("SmallBASIC VERSION %s\n\tCopyright (c) 2000-2003 %s\n\n", SB_STR_VER,
-           SB_STR_CPR);
+    printf("SmallBASIC VERSION %s\n\tCopyright (c) 2000-2003 %s\n\n", SB_STR_VER, SB_STR_CPR);
     printf("Type 'HELP' for help; type 'BYE' or press Ctrl+C for exit.\n\n");
   }
 
@@ -1681,8 +1591,7 @@ int interactive_mode(const char *fname)
         if (num_mode) {
           intm_add_line(line, buf);
           line += step;
-        }
-        else {
+        } else {
           // not - num-mode
           idx = 0;
           if (intm_is_integer(intm_argv[idx])) {
@@ -1697,8 +1606,7 @@ int interactive_mode(const char *fname)
           else if (strcmp(intm_argv[0], "LOAD") == 0) {
             if (intm_load(intm_argc, parstr, 0))
               line = intm_get_maxline() + step;
-          }
-          else if (strcmp(intm_argv[0], "MERGE") == 0) {
+          } else if (strcmp(intm_argv[0], "MERGE") == 0) {
             char *p;
 
             p = strrchr(parstr, ',');
@@ -1707,15 +1615,12 @@ int interactive_mode(const char *fname)
               p++;
               if (intm_load(intm_argc, parstr, atoi(p)))
                 line = intm_get_maxline() + step;
-            }
-            else
+            } else
               errfmt("SYNTAX ERROR");
-          }
-          else if (strcmp(intm_argv[0], "SAVE") == 0)
+          } else if (strcmp(intm_argv[0], "SAVE") == 0)
             intm_save(intm_argc, parstr);
           else if (strcmp(intm_argv[0], "BYE") == 0 ||
-                   strcmp(intm_argv[0], "EXIT") == 0 ||
-                   strcmp(intm_argv[0], "QUIT") == 0)
+                   strcmp(intm_argv[0], "EXIT") == 0 || strcmp(intm_argv[0], "QUIT") == 0)
 
             exitf = -1;
           else if ((strcmp(intm_argv[0], "HELP") == 0) || (intm_argv[0][0] == '?')) {
@@ -1734,14 +1639,12 @@ int interactive_mode(const char *fname)
                 less(hs, "help");
                 footer("SB shell");
                 free(hs);
-              }
-              else {
+              } else {
                 // errfmt("HELP ON '%s' NOT FOUND", command);
                 sysfmt("man %s", command);
               }
             }
-          }
-          else if (strcmp(intm_argv[0], "CLS") == 0)
+          } else if (strcmp(intm_argv[0], "CLS") == 0)
             CLS();
           else if (strcmp(intm_argv[0], "CD") == 0)
             intm_chdir(intm_argc, parstr);
@@ -1773,15 +1676,13 @@ int interactive_mode(const char *fname)
             num_mode = 1;
             cmd_line_hist = intm_get_hist();
             intm_code_hist();
-          }
-          else if (strcmp(intm_argv[0], "RUN") == 0) {
+          } else if (strcmp(intm_argv[0], "RUN") == 0) {
             int errf = 0;
 
             if (intm_argc > 1) {
               if ((errf = !intm_load(intm_argc, parstr, 0)) == 0)
                 line = intm_get_maxline() + step;
             }
-
             // save
             if (!errf) {
               fp = fopen(fname, "wb");
@@ -1799,24 +1700,20 @@ int interactive_mode(const char *fname)
                 clreol();
                 cprintf("\n");
 #endif
-              }
-              else {
+              } else {
                 printf("No any line of code to run!\n");
               }
             }
-          }
-          else if (strcmp(intm_argv[0], "NEW") == 0) {
+          } else if (strcmp(intm_argv[0], "NEW") == 0) {
             intm_clear_list();
             CLS();              // clear screen
             line = step = 10;   // autonumbering, first line = 10, step = 10
-          }
-          else if (idx > 0 || intm_argv[0][0] == '+') {
+          } else if (idx > 0 || intm_argv[0][0] == '+') {
             if (idx == 0) {
               // no line number
               if (intm_argv[idx][0] == '+')
                 intm_add_line(line, parstr);
-            }
-            else {
+            } else {
               // with line number
               p = buf;
               while (strchr(" \t0123456789", *p))
@@ -1825,8 +1722,7 @@ int interactive_mode(const char *fname)
             }
 
             line += step;
-          }
-          else {
+          } else {
             // run tcsh
             p = buf;
             while (*p == ' ' || *p == '\t')
@@ -1835,13 +1731,11 @@ int interactive_mode(const char *fname)
           }
         }
       }
-
       // final reset buffer
       free(parstr);
       free(buf);
       buf = NULL;
-    }
-    else if (!buf)              // ctrl+c/d
+    } else if (!buf)            // ctrl+c/d
       exitf = 1;
     else {                      // empty line
       if (num_mode) {

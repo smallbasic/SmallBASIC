@@ -72,15 +72,13 @@ void osd_write(const char *str) {
   int len = strlen(str);
   if (len) {
     int i, index = 0, escape = 0;
-    char* buffer = (char*)malloc(len);
+    char *buffer = (char *)malloc(len);
     for (i = 0; i < len; i++) {
       if (i + 1 < len && str[i] == '\033' && str[i + 1] == '[') {
         escape = 1;
-      }
-      else if (escape && str[i] == 'm') {
+      } else if (escape && str[i] == 'm') {
         escape = 0;
-      }
-      else if (!escape) {
+      } else if (!escape) {
         buffer[index++] = str[i];
       }
     }

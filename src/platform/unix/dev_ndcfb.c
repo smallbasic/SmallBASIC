@@ -1,8 +1,11 @@
-/*
- * linux framebuffer driver
- *
- * Written by Nicholas Christopoulos
- */
+// This file is part of SmallBASIC
+//
+// SmallBASIC linux framebuffer driver
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2000 Nicholas Christopoulos
 
 #include <stdio.h>
 #include <unistd.h>
@@ -15,25 +18,21 @@
 #include <sys/kd.h>
 #include <signal.h>
 #include <fcntl.h>
-#include "device.h"
-#include "osd.h"
-#include "str.h"
+#include "common/device.h"
+#include "common/osd.h"
+#include "common/str.h"
 #if defined(DRV_MOUSE)
-#include "drvmouse.h"
+#include "common/drvmouse.h"
 #endif
-#include "dev_genfb.h"
-#include "dev_term.h"
-
-//typedef unsigned short int    word;
+#include "platform/unix/dev_genfb.h"
+#include "common/dev_term.h"
 
 static int dev_fd;
 static int dev_width, dev_height, dev_depth;
 static int dev_smemlen;
 static unsigned char *dev_video;
 static unsigned char *dev_vpage;
-//static struct fb_cmap *fbcmap, *old_cmap;
 static long cmap[16];
-//static int    dev_tty = 0;
 
 static int mouse_mode, mouse_x, mouse_y, mouse_b, mouse_upd, mouse_down_x,
   mouse_down_y, mouse_pc_x, mouse_pc_y;
@@ -47,8 +46,7 @@ static unsigned long vga16[] = {
 };
 
 // get vt num
-int vt_getnum(int tty)
-{
+int vt_getnum(int tty) {
   struct vt_stat vs;
 
   ioctl(tty, VT_GETSTATE, &vs);
@@ -56,8 +54,7 @@ int vt_getnum(int tty)
 }
 
 /* take appropriate action to release VT */
-void vt_relsig(int signo)
-{
+void vt_relsig(int signo) {
   sigset_t signalset;
 
   suspend = 1;
@@ -69,8 +66,7 @@ void vt_relsig(int signo)
 }
 
 /* take appropriate action to to aquire VT */
-void vt_acqsig(int signo)
-{
+void vt_acqsig(int signo) {
   sigset_t signalset;
 
   suspend = 0;
@@ -86,15 +82,14 @@ void vt_acqsig(int signo)
 /**
  * initialize vt-switch technicque
  */
-void vt_switch_init()
-{
+void vt_switch_init() {
   struct sigaction sact;
 
   // globals
   VTFD = open("/dev/tty", O_RDWR, 0);
   vtnum = vt_getnum(VTFD);
 
-  //
+  // 
   sigemptyset(&sact.sa_mask);
   sact.sa_flags = 0;
   sact.sa_handler = vt_relsig;
@@ -106,8 +101,7 @@ void vt_switch_init()
 /**
  * stop vt-switch sys
  */
-void vt_switch_destroy()
-{
+void vt_switch_destroy() {
   close(VTFD);
 
   // todo: restore signals
@@ -116,8 +110,7 @@ void vt_switch_destroy()
 /*
  * initialize frame-buffer device
  */
-void fb_init(char *device)
-{
+void fb_init(char *device) {
   char dev[64];
   struct fb_fix_screeninfo finfo;
   struct fb_var_screeninfo vinfo;
@@ -139,7 +132,7 @@ void fb_init(char *device)
   if (ioctl(dev_fd, FBIOGET_VSCREENINFO, &vinfo))
     panic("error reading vinfo");
 
-  //
+  // 
   dev_width = vinfo.xres;
   dev_height = vinfo.yres;
   dev_depth = vinfo.bits_per_pixel;
@@ -157,9 +150,7 @@ void fb_init(char *device)
 
   // map pages into memory
   dev_smemlen = finfo.smem_len;
-  dev_video =
-  (unsigned char *)mmap(0, dev_smemlen, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd,
-                        0);
+  dev_video = (unsigned char *)mmap(0, dev_smemlen, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, 0);
   dev_video += voffset;
 
   if ((int)dev_video == -1)
@@ -172,32 +163,20 @@ void fb_init(char *device)
   switch (dev_depth) {
   case 8:
     /*
-      fbcmap   = (struct fb_cmap *) malloc(sizeof(struct fb_cmap));
-      fbcmap->start = 0;
-      fbcmap->len   = 256;
-
-      fbcmap->red    = (word *) malloc(512);
-      fbcmap->green  = (word *) malloc(512);
-      fbcmap->blue   = (word *) malloc(512);
-      fbcmap->transp = (word *) malloc(512);
-
-      ioctl(dev_fd, FBIOGETCMAP, fbcmap);
-
-      for ( i = 0; i < 16; i ++ ) {
-      fbcmap->red[i]    = (vga16[i] & 0xFF        ) << 8;
-      fbcmap->green[i]  = ((vga16[i] & 0xFF00) >> 8   ) << 8;
-      fbcmap->blue[i]   = ((vga16[i] & 0xFF0000) >> 16  ) << 8;
-      fbcmap->transp[i] = 0;
-      }
-
-      ioctl(dev_fd, FBIOPUTCMAP, fbcmap);
-
-      free(fbcmap->red);
-      free(fbcmap->green);
-      free(fbcmap->blue);
-      free(fbcmap->transp);
-      free(fbcmap);
-    */
+     * fbcmap = (struct fb_cmap *) malloc(sizeof(struct fb_cmap)); fbcmap->start = 0; fbcmap->len = 256;
+     * 
+     * fbcmap->red = (word *) malloc(512); fbcmap->green = (word *) malloc(512); fbcmap->blue = (word *)
+     * malloc(512); fbcmap->transp = (word *) malloc(512);
+     * 
+     * ioctl(dev_fd, FBIOGETCMAP, fbcmap);
+     * 
+     * for ( i = 0; i < 16; i ++ ) { fbcmap->red[i] = (vga16[i] & 0xFF ) << 8; fbcmap->green[i] = ((vga16[i]
+     * & 0xFF00) >> 8 ) << 8; fbcmap->blue[i] = ((vga16[i] & 0xFF0000) >> 16 ) << 8; fbcmap->transp[i] = 0; }
+     * 
+     * ioctl(dev_fd, FBIOPUTCMAP, fbcmap);
+     * 
+     * free(fbcmap->red); free(fbcmap->green); free(fbcmap->blue); free(fbcmap->transp); free(fbcmap); 
+     */
     for (i = 0; i < 16; i++)
       cmap[i] = i;
     break;
@@ -230,8 +209,7 @@ void fb_init(char *device)
 
 /*
  */
-void fb_close()
-{
+void fb_close() {
   munmap((char *)dev_video, dev_smemlen);
   close(dev_fd);
   // vt-switch close
@@ -241,8 +219,7 @@ void fb_close()
 /*
  * SB: Initialization
  */
-int osd_devinit()
-{
+int osd_devinit() {
   fb_init("/dev/fb0");
 
   os_graf_mx = dev_width;
@@ -261,12 +238,11 @@ int osd_devinit()
  * display the current video page
  * (called every ~50ms)
  */
-void osd_refresh()
-{
+void osd_refresh() {
   if (suspend)
     return;
   if (gfb_getuf()) {            // if it is modified
-    memcpy(dev_vpage, gfb_vram(), gfb_vramsize());  // redraw
+    memcpy(dev_vpage, gfb_vram(), gfb_vramsize());      // redraw
     gfb_resetuf();              // clear modified-flag
   }
 }
@@ -274,8 +250,7 @@ void osd_refresh()
 /*
  * close
  */
-int osd_devrestore()
-{
+int osd_devrestore() {
   gfb_close();
   fb_close();
   return 1;
@@ -284,16 +259,14 @@ int osd_devrestore()
 /*
  * enable or disable PEN code
  */
-void osd_setpenmode(int enable)
-{
+void osd_setpenmode(int enable) {
   mouse_mode = enable;
 }
 
 /*
  * returns the status of the light-pen (mouse here)
  */
-int osd_getpen(int code)
-{
+int osd_getpen(int code) {
   int r = 0;
 
   osd_events(0);
@@ -338,8 +311,7 @@ int osd_getpen(int code)
 /*
  * check events
  */
-int osd_events(int wait_flag)
-{
+int osd_events(int wait_flag) {
   int r;
 #if defined(DRV_MOUSE)
   int x, y, b;
@@ -385,16 +357,13 @@ int osd_events(int wait_flag)
 
 #if !defined(DRV_SOUND)
 
-void osd_beep()
-{
+void osd_beep() {
 }
 
-void osd_sound(int frq, int dur, int vol, int bgplay)
-{
+void osd_sound(int frq, int dur, int vol, int bgplay) {
 }
 
-void osd_clear_sound_queue()
-{
+void osd_clear_sound_queue() {
 }
 
 #endif

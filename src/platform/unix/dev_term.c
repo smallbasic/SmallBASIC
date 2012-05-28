@@ -31,8 +31,8 @@
 
 static char pchar = '@';
 static int rawmode = 0;         // file i/o style
-static int cur_x = 0, cur_y = 0;  // cursor position
-static int scr_w = 80, scr_h = 24;  // screen size
+static int cur_x = 0, cur_y = 0;        // cursor position
+static int scr_w = 80, scr_h = 24;      // screen size
 static int linux_term = 0, ansi_term = 0, xterm_term = 0;
 static int tabsize = 8;
 
@@ -231,8 +231,7 @@ void term_setup_term() {
       if (success <= 0)
         termcap_is_alive = 0;
       linux_term = (strncasecmp(termtype, "linux", 5) == 0);
-      xterm_term = (strncasecmp(termtype, "xterm", 5) == 0) ||
-        (strncasecmp(termtype, "x1", 2) == 0);
+      xterm_term = (strncasecmp(termtype, "xterm", 5) == 0) || (strncasecmp(termtype, "x1", 2) == 0);
       ansi_term = (strncasecmp(termtype, "ansi", 4) == 0) || linux_term;
     }
 
@@ -301,8 +300,7 @@ static void term_build_kbtable() {
         term_addkey(tgetstr(termcapkeys[i].scode, NULL), termcapkeys[i].icode);
 #else
       if (tgetstr(termcapkeys[i].scode, &tctemp_buf))
-        term_addkey(tgetstr(termcapkeys[i].scode, &tctemp_buf),
-                    termcapkeys[i].icode);
+        term_addkey(tgetstr(termcapkeys[i].scode, &tctemp_buf), termcapkeys[i].icode);
 #endif
     }
   }
@@ -371,7 +369,6 @@ static void term_build_cmds() {
 #endif
     }
   }
-
 #endif
 }
 
@@ -385,8 +382,7 @@ void term_disp_cmds() {
   if (termcap_is_alive) {
     for (i = 0; termcapstrs[i].func != tc_null; i++) {
       if (strlen(termcapstrs[i].str))
-        printf("TC: %s %d\t\\e%s\n", termcapstrs[i].scode, i,
-               termcapstrs[i].str + 1);
+        printf("TC: %s %d\t\\e%s\n", termcapstrs[i].scode, i, termcapstrs[i].str + 1);
       else
         printf("TC: %s %d\t%s\n", termcapstrs[i].scode, i, "NIL");
     }
@@ -426,19 +422,16 @@ static void term_cmd(int fcode, ...) {
                 term_cmd(tc_move_right_one);
             }
           }
-        }
-        else if (fcode == tc_cpr_rq && linux_term) {
+        } else if (fcode == tc_cpr_rq && linux_term) {
           if (termcapstrs[i].str[0] == 0)
             printf("\033[6n");
           else
             printf(termcapstrs[i].str);
-        }
-        else if (fcode == tc_move_cursor) {
+        } else if (fcode == tc_move_cursor) {
           r = va_arg(ap, int);
           c = va_arg(ap, int);
           printf("%s", tgoto(termcapstrs[i].str, c, r));
-        }
-        else {
+        } else {
           vprintf(termcapstrs[i].str, ap);
           break;
         }
@@ -594,7 +587,7 @@ int term_events() {
 
         for (i = 0; keytable[i].icode; i++) {
           if (strcmp(buf, keytable[i].scode + 1) == 0) {
-            if (keytable[i].icode == SB_KEY_BREAK)  // CTRL+C (break)
+            if (keytable[i].icode == SB_KEY_BREAK)      // CTRL+C (break)
               return -2;
             else
               dev_pushkey(keytable[i].icode);
@@ -834,7 +827,7 @@ void term_print(const char *str) {
 
         len = (ts - (x % ts));
         gotoxy(x + len, wherey());
-      } else if ((*p > 31) || (*p & 0x80))  // non-control code
+      } else if ((*p > 31) || (*p & 0x80))      // non-control code
         cprintf("%c", *p);
       else
         printf("%c", *p);
@@ -1180,7 +1173,7 @@ void term_setcursor(int style) {
 #if defined(_UnixOS)
     term_cmd(tc_show_cursor);
 #elif defined(_DOS)
-    _setcursortype(_SOLIDCURSOR); // ???
+    _setcursortype(_SOLIDCURSOR);       // ???
 #endif
     break;
   }
