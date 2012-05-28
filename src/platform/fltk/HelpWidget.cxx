@@ -2076,7 +2076,9 @@ void HelpWidget::compile() {
         } else if (0 == strncasecmp(tag, "center", 6)) {
           center = false;
           nodeList.add(new StyleNode(uline, center));
-        } else if (0 == strncasecmp(tag, "font", 4) || 0 == strncasecmp(tag, "code", 4) || 0 == strncasecmp(tag, "h", 1)) {     // </h1>
+        } else if (0 == strncasecmp(tag, "font", 4) || 
+                   0 == strncasecmp(tag, "code", 4) || 
+                   0 == strncasecmp(tag, "h", 1)) {     // </h1>
           if (0 == strncasecmp(tag, "h", 1)) {
             if (bold > 0) {
               bold--;
@@ -2138,12 +2140,14 @@ void HelpWidget::compile() {
           title.empty();
           title.append(tagPair, tagBegin - tagPair);
           tagPair = 0;
-        } else if (0 == strncasecmp(tag, "script", 6) || 0 == strncasecmp(tag, "style", 5)) {
+        } else if (0 == strncasecmp(tag, "script", 6) || 
+                   0 == strncasecmp(tag, "style", 5)) {
           tagPair = 0;
         }
       } else if (isalpha(tag[0]) || tag[0] == '!') {
         // process the start of the tag
-        if (0 == strncasecmp(tag, "br", 2) || 0 == strncasecmp(tag, "p>", 2)) {
+        if (0 == strncasecmp(tag, "br", 2) || 
+            0 == strncasecmp(tag, "p>", 2)) {
           nodeList.add(new BrNode(pre));
           padlines = false;
           text = skipWhite(tagEnd + 1);
@@ -2202,7 +2206,8 @@ void HelpWidget::compile() {
             nodeList.add(node);
             images.add(node);
           }
-        } else if (0 == strncasecmp(tag, "ul>", 3) || 0 == strncasecmp(tag, "ol>", 3)) {
+        } else if (0 == strncasecmp(tag, "ul>", 3) || 
+                   0 == strncasecmp(tag, "ol>", 3)) {
           node = new UlNode(tag[0] == 'o' || tag[0] == 'O');
           olStack.push(node);
           nodeList.add(node);
@@ -2288,7 +2293,8 @@ void HelpWidget::compile() {
             nodeList.add(node);
             images.add(node);
           }
-        } else if (0 == strncasecmp(tag, "script", 6) || 0 == strncasecmp(tag, "style", 5)) {
+        } else if (0 == strncasecmp(tag, "script", 6) || 
+                   0 == strncasecmp(tag, "style", 5)) {
           tagPair = text;
         } else {
           // unknown tag
@@ -2757,7 +2763,8 @@ bool HelpWidget::isHtmlFile() {
     return false;
   }
   int len = strlen(filename);
-  return (strcasecmp(filename + len - 4, ".htm") == 0 || strcasecmp(filename + len - 5, ".html") == 0);
+  return (strcasecmp(filename + len - 4, ".htm") == 0 || 
+          strcasecmp(filename + len - 5, ".html") == 0);
 }
 
 //--Helper functions------------------------------------------------------------
@@ -2891,13 +2898,16 @@ Color getColor(String *s, Color def) {
     return YELLOW;
   } else if (strcasecmp(n, "blue") == 0) {
     return BLUE;
-  } else if (strcasecmp(n, "magenta") == 0 || strcasecmp(n, "fuchsia") == 0) {
+  } else if (strcasecmp(n, "magenta") == 0 || 
+             strcasecmp(n, "fuchsia") == 0) {
     return MAGENTA;
-  } else if (strcasecmp(n, "cyan") == 0 || strcasecmp(n, "aqua") == 0) {
+  } else if (strcasecmp(n, "cyan") == 0 || 
+             strcasecmp(n, "aqua") == 0) {
     return CYAN;
   } else if (strcasecmp(n, "white") == 0) {
     return WHITE;
-  } else if (strcasecmp(n, "gray") == 0 || strcasecmp(n, "grey") == 0) {
+  } else if (strcasecmp(n, "gray") == 0 || 
+             strcasecmp(n, "grey") == 0) {
     return fltk::color(0x80, 0x80, 0x80);
   } else if (strcasecmp(n, "lime") == 0) {
     return GREEN;
@@ -2921,7 +2931,8 @@ Color getColor(String *s, Color def) {
 SharedImage *loadImage(const char *name, uchar *buff) {
   int len = strlen(name);
   SharedImage *result = 0;
-  if (strcasecmp(name + (len - 4), ".jpg") == 0 || strcasecmp(name + (len - 5), ".jpeg") == 0) {
+  if (strcasecmp(name + (len - 4), ".jpg") == 0 || 
+      strcasecmp(name + (len - 5), ".jpeg") == 0) {
     result = jpegImage::get(name, buff);
   } else if (strcasecmp(name + (len - 4), ".gif") == 0) {
     result = gifImage::get(name, buff);

@@ -130,7 +130,7 @@ int comp_add_external_proc(const char *proc_name, int lib_id) {
   } else if (comp_extprocsize <= (comp_extproccount + 1)) {
     comp_extprocsize += 16;
     comp_extproctable = (ext_proc_node_t *)tmp_realloc(comp_extproctable,
-        sizeof(ext_proc_node_t) * comp_extprocsize);
+                                                       sizeof(ext_proc_node_t) * comp_extprocsize);
   }
 
   comp_extproctable[comp_extproccount].lib_id = lib_id;
@@ -164,7 +164,7 @@ int comp_add_external_func(const char *func_name, int lib_id) {
   } else if (comp_extfuncsize <= (comp_extfunccount + 1)) {
     comp_extfuncsize += 16;
     comp_extfunctable = (ext_func_node_t *)tmp_realloc(comp_extfunctable,
-        sizeof(ext_func_node_t) * comp_extfuncsize);
+                                                       sizeof(ext_func_node_t) * comp_extfuncsize);
   }
 
   comp_extfunctable[comp_extfunccount].lib_id = lib_id;
@@ -1185,7 +1185,8 @@ void comp_expression(char *expr, byte no_parser) {
                     sc_raise("PTR to invalid SUB/FUNC");
                     kw_exec_more = level = 0;
                     break;
-                  }SKIP_SPACES(ptr);
+                  }
+                  SKIP_SPACES(ptr);
                   if (*ptr == '(') {
                     if (*(ptr + 1) == ')') {
                       // null array
@@ -3984,7 +3985,8 @@ int comp_pass1(const char *section, const char *text) {
           p += len_func;
         } else {
           p += len_def;
-        }SKIP_SPACES(p);
+        }
+        SKIP_SPACES(p);
 
         // copy proc/func name
         dp = pname;

@@ -1,12 +1,12 @@
 # SmallBASIC for FLTK
-# Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+# Copyright(C) 2001-2012 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
 INCLUDES =																										\
-  -I../common -I.																							\
+  -I$(top_builddir)/src -I.																		\
   -DPACKAGE_PREFIX=\""$(prefix)"\"														\
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"											\
   -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\

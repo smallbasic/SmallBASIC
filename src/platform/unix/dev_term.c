@@ -1,4 +1,3 @@
-// $Id$
 // This file is part of SmallBASIC
 //
 // SmallBASIC platform driver for Unix,
@@ -8,9 +7,11 @@
 //
 // Copyright(C) 2001-12-12, Nicholas Christopoulos
 
-#include "device.h"
-#include "keymap.h"
-#include "str.h"
+#include "common/device.h"
+#include "common/keymap.h"
+#include "common/str.h"
+#include "common/dev_term.h"
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -20,23 +21,15 @@
 #if !defined(__CYGWIN__)
 #include <term.h>
 #else
-#include <termcap.h>
+#include <ncurses/termcap.h>
 #endif
 #include <termios.h>
 #include <sys/ioctl.h>
 #elif defined(_DOS)
 #include <conio.h>
 #endif
-#include "dev_term.h"
 
-#if defined(_DOS)
-//static char *pdepth = ".,-+*#@Û";
-#else
-/////////////////////////01234 567
-//static char *pdepth = " .-+\4*#@";
-#endif
 static char pchar = '@';
-
 static int rawmode = 0;         // file i/o style
 static int cur_x = 0, cur_y = 0;  // cursor position
 static int scr_w = 80, scr_h = 24;  // screen size
@@ -175,8 +168,7 @@ static vttermcapstr_t termcapstrs[] = {
 /*
 *	save vt state
 */
-void term_savemode()
-{
+void term_savemode() {
 #if defined(_UnixOS)
   if (isatty(STDIN_FILENO))
     tcgetattr(STDIN_FILENO, &saved_stdin_attributes);
@@ -190,8 +182,7 @@ void term_savemode()
 /*
 *	restore vt state
 */
-void term_restoremode()
-{
+void term_restoremode() {
 #if defined(_UnixOS)
   if (isatty(STDIN_FILENO))
     tcsetattr(STDIN_FILENO, TCSANOW, &saved_stdin_attributes);
@@ -205,8 +196,7 @@ void term_restoremode()
 /*
 *	setup terminal
 */
-void term_setup_term()
-{
+void term_setup_term() {
 #if defined(_UnixOS)
   struct termios tattr;
   char *termtype;
@@ -236,8 +226,7 @@ void term_setup_term()
     if (termtype == 0) {
       printf("\n\aSpecify a terminal type with `setenv TERM <yourtype>'.\n");
       termcap_is_alive = 0;
-    }
-    else {
+    } else {
       success = tgetent(termcap_buf, termtype);
       if (success <= 0)
         termcap_is_alive = 0;
@@ -270,8 +259,7 @@ void term_setup_term()
     }
 #endif
 
-  }
-  else
+  } else
     rawmode = 1;
 #endif
 }
@@ -279,8 +267,7 @@ void term_setup_term()
 /*
 *	Add a keyboard code to keyboard table
 */
-static void term_addkey(const char *scode, int icode)
-{
+static void term_addkey(const char *scode, int icode) {
   vtkey_t *key;
 
   if (scode) {
@@ -296,8 +283,7 @@ static void term_addkey(const char *scode, int icode)
 /*
 *	build keyboard table
 */
-static void term_build_kbtable()
-{
+static void term_build_kbtable() {
 #if defined(_UnixOS)
   int i;
   char *altkeys = " `1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./";
@@ -370,8 +356,7 @@ static void term_build_kbtable()
 /*
 *	build command index
 */
-static void term_build_cmds()
-{
+static void term_build_cmds() {
 #if defined(_UnixOS)
   int i;
 
@@ -393,8 +378,7 @@ static void term_build_cmds()
 /*
 *	debug - display termcap entries
 */
-void term_disp_cmds()
-{
+void term_disp_cmds() {
 #if defined(_UnixOS)
   int i;
 
@@ -413,8 +397,7 @@ void term_disp_cmds()
 /*
 *	run a terminal command
 */
-static void term_cmd(int fcode, ...)
-{
+static void term_cmd(int fcode, ...) {
 #if defined(_UnixOS)
   int i, r, c;
   va_list ap;
@@ -429,8 +412,7 @@ static void term_cmd(int fcode, ...)
         if (fcode == tc_move_tocol) {
           c = va_arg(ap, int);
           printf("%s", tparm(termcapstrs[i].str, c));
-        }
-        else if (fcode == tc_move_right) {
+        } else if (fcode == tc_move_right) {
           c = va_arg(ap, int);
           if (termcapstrs[i].str[0])
             printf("%s", tparm(termcapstrs[i].str, c));
@@ -471,8 +453,7 @@ static void term_cmd(int fcode, ...)
 /*
 *	Initialization
 */
-int term_init()
-{
+int term_init() {
   keytable_count = 0;
 
   /*
@@ -482,7 +463,7 @@ int term_init()
   term_setup_term();
   term_build_kbtable();
   term_build_cmds();
-//      term_disp_cmds();
+// term_disp_cmds();
 
   /*
    * get current x,y 
@@ -507,8 +488,7 @@ int term_init()
 /*
 *	close
 */
-int term_restore()
-{
+int term_restore() {
 #if defined(TAKE_SCREENSHOT)
   write_vram("term.txt");
 #endif
@@ -520,8 +500,7 @@ int term_restore()
 
 /*
 */
-int term_getc()
-{
+int term_getc() {
 #if defined(_UnixOS)
   fd_set rfds;
   struct timeval tv;
@@ -538,8 +517,7 @@ int term_getc()
       read(0, &c, 1);
       return c;
     }
-  }
-  else {
+  } else {
     if (feof(stdin))
       return -1;
     return fgetc(stdin);
@@ -568,8 +546,7 @@ int term_getc()
 /*
 *	events
 */
-int term_events()
-{
+int term_events() {
   char buf[16];
   int pos = 0, i, evc = 0;
   int c;
@@ -626,13 +603,11 @@ int term_events()
             break;
           }
         }
-      }
-      else {
+      } else {
         dev_pushkey(c);
         evc++;
       }
-    }
-    else {
+    } else {
       dev_pushkey(c);
       evc++;
     }
@@ -643,16 +618,14 @@ int term_events()
 
 /*
 */
-int term_getch()
-{
+int term_getch() {
   return dev_getch();
 }
 
 /*
 * 	return's true if there is working on raw-mode
 */
-int term_israw()
-{
+int term_israw() {
   return rawmode;
 }
 
@@ -664,8 +637,7 @@ int term_israw()
 *
 *	tm - 0 = before, 1 = while, 1 = after
 */
-void term_getsdraw(char *dest, int pos, int tm)
-{
+void term_getsdraw(char *dest, int pos, int tm) {
   int len;
 #if defined(_DOS)
   static int px, py;
@@ -690,8 +662,7 @@ void term_getsdraw(char *dest, int pos, int tm)
     term_cmd(tc_save);
     fflush(stdout);
 #endif
-  }
-  else {
+  } else {
 #if defined(_DOS)
     gotoxy(px, py);
 #else
@@ -729,8 +700,7 @@ void term_getsdraw(char *dest, int pos, int tm)
 /*
 *	print...
 */
-void term_print(const char *str)
-{
+void term_print(const char *str) {
 #if defined(_DOS)
   int len, esc_val, esc_cmd;
   byte *p;
@@ -764,9 +734,9 @@ void term_print(const char *str)
           }
 
           esc_cmd = *p;
-        }
-        else
+        } else {
           esc_cmd = *p;
+        }
 
         // control characters
         switch (esc_cmd) {
@@ -864,8 +834,7 @@ void term_print(const char *str)
 
         len = (ts - (x % ts));
         gotoxy(x + len, wherey());
-      }
-      else if ((*p > 31) || (*p & 0x80))  // non-control code
+      } else if ((*p > 31) || (*p & 0x80))  // non-control code
         cprintf("%c", *p);
       else
         printf("%c", *p);
@@ -887,8 +856,7 @@ void term_print(const char *str)
 *
 *	CPR req.
 */
-int term_getx()
-{
+int term_getx() {
 #if defined(_DOS)
   return wherex() - 1;
 #else
@@ -911,8 +879,7 @@ int term_getx()
 *
 *	CPR req.
 */
-int term_gety()
-{
+int term_gety() {
 #if defined(_DOS)
   return wherey() - 1;
 #else
@@ -933,8 +900,7 @@ int term_gety()
 /*
 *	set cursor position
 */
-void term_setxy(int x, int y)
-{
+void term_setxy(int x, int y) {
 #if defined(_DOS)
   gotoxy(x + 1, y + 1);
 #else
@@ -948,8 +914,7 @@ void term_setxy(int x, int y)
 /*
 *	set text colors
 */
-void term_settextcolor(int fg, int bg)
-{
+void term_settextcolor(int fg, int bg) {
 #if defined(_UnixOS)
   int c = 0, hi = 0;
 
@@ -1057,8 +1022,7 @@ void term_settextcolor(int fg, int bg)
 /*
 *	Clear screen
 */
-void term_cls()
-{
+void term_cls() {
 #if defined(_DOS)
   clrscr();
 #else
@@ -1075,8 +1039,7 @@ void term_cls()
 /*
 *	update video structure
 */
-void term_update_color(int x, int y, int ch, int fg, int bg)
-{
+void term_update_color(int x, int y, int ch, int fg, int bg) {
   int ofs;
 
   ofs = scr_w * y + x;
@@ -1088,8 +1051,7 @@ void term_update_color(int x, int y, int ch, int fg, int bg)
 /*
 *	setpixel emulation
 */
-void term_drawpoint(int x, int y)
-{
+void term_drawpoint(int x, int y) {
 #if defined(_DOS)
   int px, py;
 #endif
@@ -1113,8 +1075,7 @@ void term_drawpoint(int x, int y)
 /*
 *	returns the color of x,y character
 */
-int term_getpoint(int x, int y)
-{
+int term_getpoint(int x, int y) {
   int ofs;
 
   ofs = scr_w * y + x;
@@ -1124,15 +1085,13 @@ int term_getpoint(int x, int y)
 /*
 *	The classic line algorithm
 */
-void term_drawline(int x1, int y1, int x2, int y2)
-{
+void term_drawline(int x1, int y1, int x2, int y2) {
   g_line(x1, y1, x2, y2, term_drawpoint);
 }
 
 /*
 */
-void term_drawrect(int x1, int y1, int x2, int y2, int fill)
-{
+void term_drawrect(int x1, int y1, int x2, int y2, int fill) {
   int y, x;
 
   if (!fill) {
@@ -1168,9 +1127,7 @@ void term_drawrect(int x1, int y1, int x2, int y2, int fill)
     term_setxy(x2, y2);
     term_print("+");
     term_update_color(x2, y2, '+', dev_fgcolor, dev_bgcolor);
-  }
-  else {
-
+  } else {
     term_settextcolor(dev_bgcolor, dev_fgcolor);
     for (y = y1; y <= y2; y++) {
       for (x = x1; x <= x2; x++) {
@@ -1187,22 +1144,19 @@ void term_drawrect(int x1, int y1, int x2, int y2, int fill)
 
 /**
 */
-void term_settab(int tabsz)
-{
+void term_settab(int tabsz) {
   tabsize = tabsz;
 }
 
 /**
 */
-int term_cols()
-{
+int term_cols() {
   return scr_w;
 }
 
 /**
 */
-int term_rows()
-{
+int term_rows() {
   return scr_h;
 }
 
@@ -1211,8 +1165,7 @@ int term_rows()
 *	style = 1 - on
 *	style = 2 - half (not yet)
 */
-void term_setcursor(int style)
-{
+void term_setcursor(int style) {
   switch (style) {
   case 0:
     // disable cursor
@@ -1233,8 +1186,7 @@ void term_setcursor(int style)
   }
 }
 
-void term_recalc_size()
-{
+void term_recalc_size() {
 #if	defined(_UnixOS)
 #if defined(TIOCGWINSZ)
   {
@@ -1259,7 +1211,7 @@ void term_recalc_size()
   }
 #endif
 #elif defined(_DOS)
-//      scr_w = peekb(0, 0x449);
-//      scr_h = peekb(0, 0x449);
+// scr_w = peekb(0, 0x449);
+// scr_h = peekb(0, 0x449);
 #endif
 }

@@ -110,6 +110,11 @@ function checkSearch() {
    fi
 }
 
+function defaultConditionals() {
+   AM_CONDITIONAL(WITH_HILDON, false)
+   AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
+}
+
 function checkHILDON() {
    # copied from 
    # https://stage.maemo.org/svn/maemo/projects/tools/branches/maemopad/chinook/configure.ac
@@ -184,6 +189,7 @@ function buildGTK() {
      [ac_hildon_build="no"])
 
    AM_CONDITIONAL(WITH_HILDON, test "x$ac_hildon_build" = "xyes")
+   AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
 
    if test "x$ac_hildon_build" = "xyes"; then
       AC_DEFINE(USE_HILDON, 1, [Define if building for hildon/maemo/n770.])
@@ -276,7 +282,7 @@ function buildFLTK() {
      PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32"
    esac
 
-   AM_CONDITIONAL(WITH_HILDON, false)
+   defaultConditionals
  
    dnl preconfigured values for FLTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -308,7 +314,7 @@ function buildFLTK() {
 
 function buildSDL() {
    TARGET="Building SDL version."
-   AM_CONDITIONAL(WITH_HILDON, false)
+   defaultConditionals
 
    dnl The following code was taken from the SDL test/configure.in
    dnl Figure out which math library to use
@@ -435,7 +441,7 @@ function buildQT() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
    esac
 
-   AM_CONDITIONAL(WITH_HILDON, false)
+   defaultConditionals
  
    dnl preconfigured values for QT build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -467,7 +473,8 @@ function buildQT() {
 function buildMosync() {
    TARGET="Building common library for Mosync."
 
-   AM_CONDITIONAL(WITH_HILDON, false)
+   defaultConditionals
+
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
    AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
@@ -496,13 +503,14 @@ function buildMosync() {
 }
 
 function buildConsole() {
-   AM_CONDITIONAL(WITH_HILDON, false)
-
    win32=no
    case "${host_os}" in
      *mingw* | pw32* | cygwin*)
         win32="yes"
    esac
+
+   AM_CONDITIONAL(WITH_HILDON, false)
+   AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, test $win32 = yes)
 
    if test $win32 = yes; then
       dnl test whether to build using mingw
@@ -518,12 +526,13 @@ function buildConsole() {
       if test x$have_cygwin = xyes; then
          dnl preconfigured values for cygwin console build (depends on cygwin.dll)
          TARGET="Building Cygwin console version."
+         AC_CHECK_HEADER(ncurses/termcap.h, [], [AC_MSG_ERROR("install libncurses-dev")])
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
          AC_DEFINE(USE_TERM_IO, 1, [Uses terminal-io functions.])
          AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
-         PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -ltermcap"
+         PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lncurses"
          BUILD_SUBDIRS="src/common src/platform/cygwin"
       else
          dnl preconfigured values for cygwin mingw console build
@@ -554,6 +563,7 @@ function buildConsole() {
 
 function buildDist() {
    TARGET="Building source code release."
+   defaultConditionals
    BUILD_SUBDIRS="src/common src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/fltk"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/sdl"
@@ -562,7 +572,6 @@ function buildDist() {
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/mingw"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/qt"
    AC_SUBST(BUILD_SUBDIRS)
-   AM_CONDITIONAL(WITH_HILDON, false)
 }
 
 AC_DEFINE(HAVE_C_MALLOC, 1, [allocate memory with regular malloc calls])

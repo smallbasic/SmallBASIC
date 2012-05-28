@@ -222,7 +222,6 @@ char *Controller::readConnection(const char *url) {
     }
     maConnClose(conn);
   }
-  trace(">%s<", result);
   return result;
 }
 

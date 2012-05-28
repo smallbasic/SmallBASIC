@@ -6,9 +6,11 @@
 # 
 
 # see: http://www.cygwin.com/ml/cygwin/2004-03/msg00289.html
-AM_CFLAGS = @PACKAGE_CFLAGS@ -Wno-unused-result
+if !WITH_CYGWIN_CONSOLE
+  AM_CFLAGS = @PACKAGE_CFLAGS@ -Wno-unused-result
+endif
 
-INCLUDES = -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
+INCLUDES = -I$(top_builddir)/src -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
 
 EXTRA_DIST =																		\
     keywords.c																	\

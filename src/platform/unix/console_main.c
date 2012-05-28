@@ -8,17 +8,17 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "sbapp.h"
+#include "common/sbapp.h"
 
 #ifdef INTERACTIVE_CONSOLE
-#include "interactive_mode.h"
+#include "platform/unix/interactive_mode.h"
 #ifndef HELP_SUBSYS
 #define HELP_SUBSYS
 #endif
 #endif
 
 #ifdef HELP_SUBSYS
-#include "help_subsys.h"
+#include "platform/unix/help_subsys.h"
 #endif
 
 #if defined(_SDL) || defined(_Win32)
@@ -37,8 +37,7 @@ char g_file[OS_PATHNAME_SIZE + 1];
  * its called by atexit() only if the
  * source file it had been created in /tmp
  */
-void remove_temp_file(void)
-{
+void remove_temp_file(void) {
   unlink(g_file);
 }
 
@@ -47,8 +46,7 @@ void remove_temp_file(void)
  * current working directory. BASDIR indicates the directory
  * location of the running program
  */
-void set_bas_dir(const char *cwd, const char *bas_file)
-{
+void set_bas_dir(const char *cwd, const char *bas_file) {
   char bas_dir[OS_PATHNAME_SIZE + 10];
   int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
   
@@ -58,15 +56,13 @@ void set_bas_dir(const char *cwd, const char *bas_file)
   if (bas_file[0] == OS_DIRSEP) {
     // full path
     strncat(bas_dir, bas_file, path_len + 1);
-  }
-  else if (path_len > 0) {
+  } else if (path_len > 0) {
     // relative path
     // append the non file part of bas_file to cwd
     strcat(bas_dir, cwd);
     strcat(bas_dir, "/");
     strncat(bas_dir, bas_file, path_len + 1);
-  }
-  else {
+  } else {
     // in current dir
     strcat(bas_dir, cwd);
     strcat(bas_dir, "/");
@@ -77,8 +73,7 @@ void set_bas_dir(const char *cwd, const char *bas_file)
 /*
  *   Generic help-page
  */
-void show_help()
-{
+void show_help() {
   printf("usage: sbasic [options] source [--] [program parameters]\n");
   printf("-c      syntax check (compile only)\n");
   printf("-g      enable graphics\n");
@@ -107,8 +102,7 @@ void show_help()
 /*
  * handles the command "sbasic -pkw"
  */
-void print_keywords()
-{
+void print_keywords() {
   int j;
 
   printf("SmallBASIC keywords table\n");
@@ -160,8 +154,7 @@ void print_keywords()
 /*
  * process command-line parameters
  */
-int process_options(int argc, char *argv[])
-{
+int process_options(int argc, char *argv[]) {
   int i;
   int opt_ihavename = 0;
   int opt_nomore = 0;
@@ -174,13 +167,11 @@ int process_options(int argc, char *argv[])
           // +1 for space +1 for the trailing zero
           strcat(opt_command, " ");
           strcat(opt_command, argv[i]);
-        }
-        else {
+        } else {
           fprintf(stderr, "Too long command line! (%s)\n", argv[i]);
           return 1;
         }
-      }
-      else {
+      } else {
         switch (argv[i][1]) {
         case '-':
           // the following parameters are going to script
@@ -269,14 +260,12 @@ int process_options(int argc, char *argv[])
               char *command = argv[i] + 3;
               help_printinfo(command);
 #endif
-            }
-            else if (argv[i][2] == 'x') {
+            } else if (argv[i][2] == 'x') {
               // print all
               // printf("%s\n", help_text);
               ;
             }
-          }
-          else {
+          } else {
             show_help();
           }
           return 1;
@@ -286,8 +275,7 @@ int process_options(int argc, char *argv[])
           return 1;
         };
       }
-    }
-    else {
+    } else {
       // no - switch
       // this is the filename or script-parameters
       if (opt_ihavename == 0) {
@@ -304,14 +292,12 @@ int process_options(int argc, char *argv[])
           return 1;
         }
         opt_ihavename = 1;
-      }
-      else {
+      } else {
         if (strlen(opt_command) + strlen(argv[i]) + 2 < OPT_CMD_SZ) {
           // +1 for space +1 for the trailing zero
           strcat(opt_command, " ");
           strcat(opt_command, argv[i]);
-        }
-        else {
+        } else {
           fprintf(stderr, "Too long command line! (%s)\n", argv[i]);
           return 1;
         }
@@ -335,8 +321,7 @@ int process_options(int argc, char *argv[])
       *slash = OS_DIRSEP;
       *(slash + 1) = '\0';
       strcat(g_file, "sbasic.tmp");
-    }
-    else {
+    } else {
       sprintf(g_file, "sbasic.tmp");
     }
 #elif defined(_UnixOS)
@@ -354,8 +339,7 @@ int process_options(int argc, char *argv[])
 #ifdef INTERACTIVE_CONSOLE
       interactive_mode(g_file);
 #endif
-    }
-    else {
+    } else {
       // get it from stdin
       FILE *fp = fopen(g_file, "wb");
       int c;
@@ -364,8 +348,7 @@ int process_options(int argc, char *argv[])
           fputc(c, fp);
         }
         fclose(fp);
-      }
-      else {
+      } else {
         fprintf(stderr, "file not writeable - %s\n", g_file);
         return 1;
       }
@@ -377,8 +360,7 @@ int process_options(int argc, char *argv[])
 /*
  * program entry point
  */
-int MAIN_FUNC(int argc, char *argv[])
-{
+int MAIN_FUNC(int argc, char *argv[]) {
   char prev_cwd[OS_PATHNAME_SIZE + 1];
 
 #ifdef _SDL

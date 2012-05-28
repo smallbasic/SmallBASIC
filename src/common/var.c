@@ -728,7 +728,7 @@ void v_tostr(var_t *arg) {
       break;
     case V_HASH:
       hash_to_str(arg, tmp, 64);
-      hash_free(arg);
+      hash_free_var(arg);
       break;
     case V_PTR:
       ltostr(arg->v.ap.p, tmp);

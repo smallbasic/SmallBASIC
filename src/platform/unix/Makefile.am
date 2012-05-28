@@ -1,11 +1,11 @@
 # SmallBASIC command line version
-# Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+# Copyright(C) 2001-2012 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = -I../common -I. @PACKAGE_CFLAGS@
+INCLUDES = -I$(top_builddir)/src -I. @PACKAGE_CFLAGS@
 
 EXTRA_DIST =																		\
     chr2c.c																			\
@@ -34,7 +34,7 @@ sbasic_SOURCES =																\
     ../../common/g_line.c												\
 	  ../../common/decomp.c
 
-sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src -lsb_common
+sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src/common -lsb_common
 
 if !WITH_WIN32
 sbasic_LDADD += -ldl

@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = -I../../common -I. -I/usr/include @PACKAGE_CFLAGS@
+INCLUDES = -I$(top_builddir)/src -I. -I/usr/include @PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 
@@ -14,6 +14,6 @@ sbasic_SOURCES =																\
   ../unix/dev_null.c														\
   ../unix/dev_term.c ../unix/dev_term.h
 
-sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src -lsb_common
+sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src/common -lsb_common
 
 sbasic_DEPENDENCIES = ../../common/libsb_common.a
