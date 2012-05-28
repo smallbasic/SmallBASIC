@@ -21,7 +21,7 @@
 #include "MainWindow.h"
 #include "EditorWidget.h"
 #include "FileWidget.h"
-#include "smbas.h"
+#include "common/smbas.h"
 
 using namespace fltk;
 

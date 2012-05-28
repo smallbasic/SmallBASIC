@@ -22,7 +22,7 @@
 #include "StringLib.h"
 #include "HelpWidget.h"
 #include "FileWidget.h"
-#include "device.h"
+#include "common/device.h"
 
 FileWidget *fileWidget;
 String click;

@@ -20,7 +20,7 @@
 #include "EditorWidget.h"
 #include "HelpWidget.h"
 #include "FileWidget.h"
-#include "sbapp.h"
+#include "common/sbapp.h"
 #include "StringLib.h"
 
 #if defined(WIN32)

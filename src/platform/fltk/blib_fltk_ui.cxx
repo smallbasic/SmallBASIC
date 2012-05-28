@@ -5,13 +5,13 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include "sys.h"
-#include "var.h"
-#include "kw.h"
-#include "pproc.h"
-#include "device.h"
-#include "smbas.h"
-#include "keymap.h"
+#include "common/sys.h"
+#include "common/var.h"
+#include "common/kw.h"
+#include "common/pproc.h"
+#include "common/device.h"
+#include "common/smbas.h"
+#include "common/keymap.h"
 
 #include <fltk/Browser.h>
 #include <fltk/Button.h>

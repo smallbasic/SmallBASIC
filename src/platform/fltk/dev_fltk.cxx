@@ -6,11 +6,11 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
 
-#include "sys.h"
-#include "device.h"
-#include "smbas.h"
-#include "osd.h"
-#include "blib_ui.h"
+#include "common/sys.h"
+#include "common/device.h"
+#include "common/smbas.h"
+#include "common/osd.h"
+#include "common/blib_ui.h"
 
 #include <fltk/ask.h>
 #include <fltk/run.h>
