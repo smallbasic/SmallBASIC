@@ -2949,30 +2949,26 @@ void comp_pass2_scan() {
 
   if (!opt_quiet && !opt_interactive) {
 #if defined(_UnixOS)
-    //    if (isatty(STDOUT_FILENO))
+    if (isatty(STDOUT_FILENO))
 #endif
-    //    log_printf(MSG_PASS2_COUNT, i, comp_sp);
+      log_printf(MSG_PASS2_COUNT, i, comp_sp);
   }
 
   // for each node in stack
   for (i = 0; i < comp_sp; i++) {
     if (!opt_quiet && !opt_interactive) {
-      //  return;
-
 #if defined(_UnixOS)
-      //      if (isatty(STDOUT_FILENO))
+      if (isatty(STDOUT_FILENO))
 #endif
-      //      if ((i % SB_KEYWORD_SIZE) == 0) {
-      //        log_printf(MSG_PASS2_COUNT, i, comp_sp);
-      //      }
+      if ((i % SB_KEYWORD_SIZE) == 0) {
+        log_printf(MSG_PASS2_COUNT, i, comp_sp);
+      }
     }
-    //    return;
+
     dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-    return;// fails
     comp_line = node.line;
     strcpy(comp_bc_sec, node.sec);
     code = comp_prog.ptr[node.pos];
-  // return;
     if (code == kwTYPE_EOC || code == kwTYPE_LINE) {
       continue;
     }
@@ -4226,7 +4222,6 @@ int comp_pass2_exports() {
  * PASS 2
  */
 int comp_pass2() {
-  /*
   if (!opt_quiet && !opt_interactive) {
 #if defined(_UnixOS)
     if (!isatty(STDOUT_FILENO)) {
@@ -4239,7 +4234,7 @@ int comp_pass2() {
   }
 #endif
   }
-  */
+
   if (comp_proc_level) {
     sc_raise(MSG_MISSING_END_3);
   } else {
