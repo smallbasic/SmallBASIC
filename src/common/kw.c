@@ -12,15 +12,46 @@
 /*
  * valid exit codes from eval
  */
-code_t kw_eval_validexit[] = { kwTYPE_EOC, kwTYPE_LINE, kwTYPE_SEP, kwFILLED, kwCOLOR, kwUSE, kwTO, kwIN,
-    kwSTEP, kwFORSEP, kwINPUTSEP, kwINPUT, kwOUTPUTSEP, kwAPPENDSEP, kwAS, kwUSING, kwTHEN, kwDO, kwBACKG, 0 };
+code_t kw_eval_validexit[] = { 
+  kwTYPE_EOC, 
+  kwTYPE_LINE, 
+  kwTYPE_SEP, 
+  kwFILLED, 
+  kwCOLOR, 
+  kwUSE, 
+  kwTO, 
+  kwIN,
+  kwSTEP,
+  kwFORSEP,
+  kwINPUTSEP,
+  kwINPUT, 
+  kwOUTPUTSEP, 
+  kwAPPENDSEP,
+  kwAS,
+  kwUSING,
+  kwTHEN,
+  kwDO,
+  kwBACKG,
+  0
+};
 
 /*
  * functions without parameters
  */
-fcode_t kw_noarg_func_table[] = { kwINKEY, kwTIME, kwDATE, kwTICKS, kwTICKSPERSEC, kwTIMER, kwPROGLINE,
-																	kwFREEFILE, kwXPOS, kwYPOS, kwRND,
-																	0 };
+fcode_t kw_noarg_func_table[] = { 
+  kwINKEY, 
+  kwTIME,
+  kwDATE,
+  kwTICKS,
+  kwTICKSPERSEC,
+  kwTIMER,
+  kwPROGLINE,
+  kwFREEFILE,
+  kwXPOS,
+  kwYPOS,
+  kwRND,
+  0
+};
 
 //
 int kw_check(code_t * table, code_t code) {

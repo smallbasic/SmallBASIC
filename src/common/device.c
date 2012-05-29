@@ -46,7 +46,6 @@ void termination_handler(int signum) {
   }
   else if (ctrlc_count == 3) {
     dev_restore();
-    memmgr_setabort(1);
     exit(1);
   }
 }

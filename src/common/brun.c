@@ -603,7 +603,7 @@ void exec_setup_predefined_variables() {
   setsysvar_int(SYSVAR_OSVER, os_ver);
   setsysvar_str(SYSVAR_OSNAME, OS_NAME);
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
-  setsysvar_num(SYSVAR_PI, 3.14159265358979323846);
+  setsysvar_num(SYSVAR_PI, SB_PI);
 
   // Change from Haraszti - 30/3/2007 Thanks Atilla :)
   // setsysvar_int(SYSVAR_XMAX, 159);
@@ -2117,11 +2117,9 @@ int sbasic_compile(const char *file) {
 
   // compile it
   if (comp_rq) {
-    sys_before_comp();          // system specific preparations for
-    // compilation
+    sys_before_comp();  // system specific preparations for compilation
     success = comp_compile(file);
-    sys_after_comp();           // system specific things; after
-    // compilation
+    sys_after_comp();   // system specific things; after compilation
   }
   return success;
 }
@@ -2162,9 +2160,9 @@ int sbasic_exec(const char *file) {
   strcpy(gsb_last_file, file);
   strcpy(gsb_last_errmsg, "");
 
-  success = sbasic_compile(file); // compile it (if opt_nosave,
-  // bytecode_h is a 
-  // memory handle of BC; otherwise you must run the file)
+  // compile it - if opt_nosave, bytecode_h is a 
+  // memory handle of BC; otherwise you must run the file
+  success = sbasic_compile(file); 
 
   if (opt_syntaxcheck)          // this is a command-line flag to
     // syntax-check only

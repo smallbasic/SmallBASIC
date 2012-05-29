@@ -6,7 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-void trace(const char *format, ...);
+extern "C" void trace(const char *format, ...);
 
 #define MAIN_BAS_RES "main.bas"
 

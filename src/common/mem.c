@@ -61,8 +61,7 @@ void err_memfree(void) {
 /**
  * Allocate local memory
  */
-void *tmp_alloc(dword size)
-{
+void *tmp_alloc(dword size) {
   byte *ptr;
 
   if (size < 0) {
@@ -116,7 +115,7 @@ void *tmp_realloc(void *p, dword size) {
 
   // copy data from old to the new block
   memcpy(newp + sizeof(mbi_t), ((byte *) ptr) + sizeof(mbi_t),
-      I2MIN(size, old_size));
+         I2MIN(size, old_size));
   ((mbi_t *) newp)->size = size;
 
   // free old

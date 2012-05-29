@@ -36,6 +36,8 @@
 #define  MAX_VMT_FILES 256
 #endif
 
+void trace(const char *format, ...);
+
 static vmt_t vmt[MAX_VMT_FILES];  // table of VMTs
 
 #define MEM_VMT_GROWSIZE     128
@@ -422,14 +424,16 @@ void dbt_read(dbt_t t, int index, void *ptr, int size) {
       }
       vmt[t].size += MEM_VMT_GROWSIZE;
     }
+    //    trace("n=%d", vmt[t].m_table[index]);
 
+    //    return;
     // get the data
     if (vmt[t].m_table[index] == 0) {
       vmt[t].m_table[index] = mem_alloc(size);
-    } else if (size > mem_handle_size(vmt[t].m_table[index])) {
+    } else if (0 && size > mem_handle_size(vmt[t].m_table[index])) {
       vmt[t].m_table[index] = mem_realloc(vmt[t].m_table[index], size);
     }
-
+    return;
     // copy data
     mp = mem_lock(vmt[t].m_table[index]);
     memcpy(ptr, mp, size);

@@ -77,9 +77,9 @@ void show_help() {
   printf("usage: sbasic [options] source [--] [program parameters]\n");
   printf("-c      syntax check (compile only)\n");
   printf("-g      enable graphics\n");
-  printf("-g[<width>x<height>[x<bpp>]]\n");
+  printf("-g      [<width>x<height>[x<bpp>]]\n");
   printf("        enable graphics & setup the graphics mode (depends on driver)\n");
-  printf("-m [mod1,mod2,...]\n");
+  printf("-m      [mod1,mod2,...]\n");
   printf("        load all or the specified modules\n");
   printf("-pkw    print all keywords \n");
   printf("        (for creating editor color-syntax macros)\n");

@@ -488,6 +488,7 @@ function buildMosync() {
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
@@ -574,6 +575,9 @@ function buildDist() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+OS_NAME=`uname -a`
+
+AC_DEFINE_UNQUOTED(OS_NAME, "${OS_NAME}", [SB system variable])
 AC_DEFINE(HAVE_C_MALLOC, 1, [allocate memory with regular malloc calls])
 
 if test x$ac_build_dist = xyes; then

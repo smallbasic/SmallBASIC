@@ -33,10 +33,11 @@ Controller::Controller() : Environment() {
   opt_graphics = true;
   opt_pref_bpp = 0;
   opt_nosave = true;
-  opt_interactive = true;
-  opt_verbose = false;
-  opt_quiet = true;
+  opt_interactive = false;//true;
+  opt_verbose = true;//false;
+  opt_quiet = false;//true;
   opt_command[0] = 0;
+  opt_usevmt = 0;
   os_graphics = 1;
 }
 
@@ -223,24 +224,5 @@ char *Controller::readConnection(const char *url) {
     maConnClose(conn);
   }
   return result;
-}
-
-void trace(const char *format, ...) {
-  char buf[4096], *p = buf;
-  va_list args;
-
-  va_start(args, format);
-  p += vsnprintf(p, sizeof buf - 1, format, args);
-  va_end(args);
-
-  while (p > buf && isspace(p[-1])) {
-    *--p = '\0';
-  }
-
-  *p++ = '\r';
-  *p++ = '\n';
-  *p = '\0';
-
-  maWriteLog(buf, strlen(buf));
 }
 
