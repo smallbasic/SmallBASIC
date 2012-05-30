@@ -117,7 +117,7 @@ char *tmp_strdup(const char *source);
  * @param size is the block's size
  * @return a handle to the block
  */
-mem_t mem_allocX(dword size, const char *file, int line);
+mem_t mem_alloc(dword size);
 
 /**
  * @ingroup mem
@@ -137,17 +137,7 @@ mem_t mem_realloc(mem_t handle, dword new_size);
  *
  * @param handle the block's handle
  */
-void mem_freeX(mem_t h, const char *file, int line);
-
-/**
- * @ingroup mem
- *
- * clones a string by using mem_alloc()
- *
- * @param str the string
- * @return a handle to newly allocated string
- */
-mem_t mem_new_text(const char *text);
+void mem_free(mem_t h);
 
 /**
  * @ingroup mem
