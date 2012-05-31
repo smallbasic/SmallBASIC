@@ -6,18 +6,17 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-extern "C" void trace(const char *format, ...);
-
 #define MAIN_BAS_RES "main.bas"
+#define ERROR_BAS "? \"Failed to open program file\":pause"
 
 #if defined(_DEBUG)
- #define logEntered() trace("%s entered (%s %d)", \
+#define logEntered() printf("%s entered (%s %d)",               \
                             __FUNCTION__, __FILE__, __LINE__);
- #define logLeaving() trace("%s leaving (%s %d)", \
+#define logLeaving() printf("%s leaving (%s %d)",               \
                             __FUNCTION__, __FILE__, __LINE__);
 #else
- #define logEntered()
- #define logLeaving()
+#define logEntered()
+#define logLeaving()
 #endif
 
 #define C_LINKAGE_BEGIN extern "C" {

@@ -35,6 +35,9 @@ struct Controller : public Environment {
     exit_state
   };
 
+  void fireEvent(MAEvent &event);
+  const char *getLoadPath();
+  bool hasGUI();
   void modalLoop();
   void pause(int ms);
   MAEvent processEvents(int ms, int untilType);

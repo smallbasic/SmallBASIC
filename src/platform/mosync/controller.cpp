@@ -33,9 +33,9 @@ Controller::Controller() : Environment() {
   opt_graphics = true;
   opt_pref_bpp = 0;
   opt_nosave = true;
-  opt_interactive = false;//true;
-  opt_verbose = true;//false;
-  opt_quiet = false;//true;
+  opt_interactive = true;
+  opt_verbose = false;
+  opt_quiet = true;
   opt_command[0] = 0;
   opt_usevmt = 0;
   os_graphics = 1;
@@ -43,6 +43,16 @@ Controller::Controller() : Environment() {
 
 Controller::~Controller() {
   delete output;
+}
+
+// returns any active program to load
+const char *Controller::getLoadPath() {
+  return 0;
+}
+
+// whether a GUI is active which may yield a load path
+bool Controller::hasGUI() {
+  return false;
 }
 
 // process events while in modal state
@@ -69,12 +79,73 @@ void Controller::pause(int ms) {
   }
 }
 
+// pass the next event into the framework
+void Controller::fireEvent(MAEvent &event) {
+  switch (event.type) {
+  case EVENT_TYPE_CLOSE:
+    fireCloseEvent();
+    break;
+  case EVENT_TYPE_FOCUS_GAINED:
+    fireFocusGainedEvent();
+    break;
+  case EVENT_TYPE_FOCUS_LOST:
+    fireFocusLostEvent();
+    break;
+  case EVENT_TYPE_KEY_PRESSED:
+    fireKeyPressEvent(event.key, event.nativeKey);
+    break;
+  case EVENT_TYPE_KEY_RELEASED:
+    fireKeyReleaseEvent(event.key, event.nativeKey);
+    break;
+  case EVENT_TYPE_CHAR:
+    fireCharEvent(event.character);
+    break;
+  case EVENT_TYPE_POINTER_PRESSED:
+    if (event.touchId == 0) {
+      firePointerPressEvent(event.point);
+    }
+    fireMultitouchPressEvent(event.point, event.touchId);
+    break;
+  case EVENT_TYPE_POINTER_DRAGGED:
+    if (event.touchId == 0) {
+      firePointerMoveEvent(event.point);
+    }
+    fireMultitouchMoveEvent(event.point, event.touchId);
+    break;
+  case EVENT_TYPE_POINTER_RELEASED:
+    if (event.touchId == 0) {
+      firePointerReleaseEvent(event.point);
+    }
+    fireMultitouchReleaseEvent(event.point, event.touchId);
+    break;
+  case EVENT_TYPE_CONN:
+    fireConnEvent(event.conn);
+    break;
+  case EVENT_TYPE_BT:
+    fireBluetoothEvent(event.state);
+    break;
+  case EVENT_TYPE_TEXTBOX:
+    fireTextBoxListeners(event.textboxResult, event.textboxLength);
+    break;
+  case EVENT_TYPE_SENSOR:
+    fireSensorListeners(event.sensor);
+    break;
+  default:
+    fireCustomEventListeners(event);
+    break;
+  }
+}
+
 // process events on the system event queue
 MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
   MAExtent screenSize;
 
-  while (maGetEvent(&event)) {
+  while (!isExit() && maGetEvent(&event)) {
+    if (isModal()) {
+      // process events for any active GUI
+      fireEvent(event);
+    }
     switch (event.type) {
     case EVENT_TYPE_SCREEN_CHANGED:
       screenSize = maGetScrSize();
@@ -82,15 +153,17 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       os_graf_mx = output->getWidth();
       os_graf_my = output->getHeight();
       break;
+    case EVENT_TYPE_POINTER_PRESSED:
+      output->pointerReleaseEvent(event);
+      break;
+    case EVENT_TYPE_POINTER_DRAGGED:
+      output->pointerMoveEvent(event);
+      break;
+    case EVENT_TYPE_POINTER_RELEASED:
+      output->pointerReleaseEvent(event);
+      break;
     case EVENT_TYPE_CLOSE:
-      fireCloseEvent();
       runMode = exit_state;
-      break;
-    case EVENT_TYPE_FOCUS_GAINED:
-      fireFocusGainedEvent();
-      break;
-    case EVENT_TYPE_FOCUS_LOST:
-      fireFocusLostEvent();
       break;
     case EVENT_TYPE_KEY_PRESSED:
       switch (event.key) {
@@ -103,46 +176,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
         runMode = exit_state;
         break;
       }
-      fireKeyPressEvent(event.key, event.nativeKey);
-      break;
-    case EVENT_TYPE_KEY_RELEASED:
-      fireKeyReleaseEvent(event.key, event.nativeKey);
-      break;
-    case EVENT_TYPE_CHAR:
-      fireCharEvent(event.character);
-      break;
-    case EVENT_TYPE_POINTER_PRESSED:
-      if (event.touchId == 0) {
-        firePointerPressEvent(event.point);
-      }
-      fireMultitouchPressEvent(event.point, event.touchId);
-      break;
-    case EVENT_TYPE_POINTER_DRAGGED:
-      if (event.touchId == 0) {
-        firePointerMoveEvent(event.point);
-      }
-      fireMultitouchMoveEvent(event.point, event.touchId);
-      break;
-    case EVENT_TYPE_POINTER_RELEASED:
-      if (event.touchId == 0) {
-        firePointerReleaseEvent(event.point);
-      }
-      fireMultitouchReleaseEvent(event.point, event.touchId);
-      break;
-    case EVENT_TYPE_CONN:
-      fireConnEvent(event.conn);
-      break;
-    case EVENT_TYPE_BT:
-      fireBluetoothEvent(event.state);
-      break;
-    case EVENT_TYPE_TEXTBOX:
-      fireTextBoxListeners(event.textboxResult, event.textboxLength);
-      break;
-    case EVENT_TYPE_SENSOR:
-      fireSensorListeners(event.sensor);
-      break;
-    default:
-      fireCustomEventListeners(event);
       break;
     }
     if (untilType != -1 && untilType == event.type) {
@@ -169,9 +202,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
 char *Controller::readConnection(const char *url) {
   char *result = NULL;
   MAHandle conn = maConnect(url);
-  //connection = new Connection(this);
   if (conn > 0) {
-    //if (connection->connect(url)) {
     runMode = modal_state;
     output->print("Connecting to ");
     output->print(url);
@@ -190,9 +221,10 @@ char *Controller::readConnection(const char *url) {
           // connection established
           if (!connected) {
             connected = (event.conn.result > 0);
-            output->print(connected ? " connected" : " failed");
             if (connected) {
               maConnRead(conn, buffer, sizeof(buffer) - 1);
+            } else {
+              runMode = init_state;
             }
           }
           break;

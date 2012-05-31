@@ -38,7 +38,7 @@ void osd_clear_sound_queue() {
 }
 
 void osd_beep(void) {
-
+  controller->output->beep();
 }
 
 void osd_cls(void) {
@@ -186,7 +186,8 @@ char *dev_read(const char *fileName) {
   }
 
   if (buffer == NULL) {
-    panic(MSG_CANT_OPEN_FILE, fileName);
+    buffer = (char *)mem_alloc(strlen(ERROR_BAS) + 1);
+    strcpy(buffer, ERROR_BAS);
   }
 
   return buffer;

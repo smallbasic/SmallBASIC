@@ -8,6 +8,8 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/utils.h"
@@ -139,8 +141,9 @@ AnsiWidget::AnsiWidget(int width, int height) :
   scrollSize(0),
   width(width),
   height(height),
+  dirty(0),
   mouseMode(0),
-  listener(0) {
+  hyperlinkListener(0) {
 }
 
 bool AnsiWidget::construct() {
@@ -332,6 +335,26 @@ void AnsiWidget::print(const char *str) {
   delete [] buffer;
 }
 
+void AnsiWidget::printf(const char *format, ...) {
+  char buf[4096], *p = buf;
+  va_list args;
+
+  va_start(args, format);
+  p += vsnprintf(p, sizeof buf - 1, format, args);
+  va_end(args);
+
+  while (p > buf && isspace(p[-1])) {
+    *--p = '\0';
+  }
+
+  *p++ = '\r';
+  *p++ = '\n';
+  *p = '\0';
+
+  print(buf);
+}
+
+
 /*! Display the contents of the back buffer
  */
 void AnsiWidget::refresh() {
@@ -418,15 +441,6 @@ void AnsiWidget::resetMouse() {
 void AnsiWidget::copySelection() {
 }
 
-/*! public slot - a hyperlink has been clicked
- */
-void AnsiWidget::linkClicked() {
-  //HyperlinkButton *button = (HyperlinkButton *) sender();
-  if (listener) {
-    // listener->loadPath(button->url, true, true);
-  }
-}
-
 /*! public slot - find the next text item
  */
 void AnsiWidget::findNextText() {
@@ -504,8 +518,8 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
     }
   }
 
-  if (execLink && listener) {
-    listener->loadPath(url.c_str(), true, true);
+  if (execLink && hyperlinkListener) {
+    hyperlinkListener->clicked(url.c_str());
   } else {
     MAExtent textSize = maGetTextSize(text.c_str());
     int w = EXTENT_X(textSize) + 2;
@@ -758,38 +772,29 @@ void AnsiWidget::updateFont() {
   maFontSetCurrent(font);
 }
 
-/*
-void AnsiWidget::mouseMoveEvent(QMouseEvent *event) {
-  pointX = event->x();
-  pointY = event->y();
-  if (copyMode) {
-    update();
-  }
-  if (mouseMode && listener) {
-    listener->mouseMoveEvent(event->button());
-  }
-}
-
-void AnsiWidget::mousePressEvent(QMouseEvent *event) {
+void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   bool selected = (markX != pointX || markY != pointY);
-  markX = pointX = event->x();
-  markY = pointY = event->y();
+  markX = pointX = event.point.x;
+  markY = pointY = event.point.y;
   if (mouseMode && selected) {
-    update();
-  }
-  if (copyMode && listener) {
-    listener->mousePressEvent();
+    // update();
   }
 }
 
-void AnsiWidget::mouseReleaseEvent(QMouseEvent *) {
+void AnsiWidget::pointerMoveEvent(MAEvent &event) {
+  pointX = event.point.x;
+  pointY = event.point.y;
+  if (copyMode) {
+    // update();
+  }
+
+}
+
+void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   bool selected = (markX != pointX || markY != pointY);
   if (copyMode && selected) {
-    update();
+    // update();
   }
-  if (mouseMode && listener) {
-    listener->mousePressEvent();
-  }
+
 }
 
-*/

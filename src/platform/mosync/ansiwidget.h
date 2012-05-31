@@ -15,13 +15,6 @@
 
 using namespace MAUtil;
 
-struct AnsiWidgetListener {
-  virtual void mouseMoveEvent(bool down) = 0;
-  virtual void mousePressEvent() = 0;
-  virtual void mouseReleaseEvent() = 0;
-  virtual void loadPath(const char *path, bool showPath, bool setHistory) = 0;
-};
-
 struct Hyperlink {
   Hyperlink(String &url, String &label, int x, int y, int w, int h);
   virtual ~Hyperlink() {};
@@ -30,6 +23,10 @@ struct Hyperlink {
   String label;
   bool pressed;
   int x,y,w,h;
+};
+
+struct HyperlinkListener {
+  virtual void clicked(const char *url) = 0;
 };
 
 #define DEFAULT_COLOR 0xffba00
@@ -57,6 +54,7 @@ public:
   int textHeight(void);
   int textWidth(const char *s, int len=-1);
   void print(const char *str);
+  void printf(const char *str, ...);
   void refresh();
   void resize(int width, int height);
   void setColor(long color);
@@ -71,12 +69,15 @@ public:
   bool getMouseMode() { return mouseMode; }
   void resetMouse();
   void setMouseMode(bool mode);
-  void setMouseListener(AnsiWidgetListener *ml) { listener = ml; }
+  void setHyperlinkListener(HyperlinkListener *hll) { hyperlinkListener = hll; }
   void copySelection();
-  void linkClicked();
   void findNextText();
   void findText();
   void selectAll();
+  
+  void pointerTouchEvent(MAEvent &event);
+  void pointerMoveEvent(MAEvent &event);
+  void pointerReleaseEvent(MAEvent &event);
 
 private:
   int ansiToMosync(long color);
@@ -106,6 +107,7 @@ private:
   int scrollSize;
   int width;
   int height;
+  int dirty;
 
   // clipboard handling
   int markX, markY, pointX, pointY;
@@ -113,7 +115,7 @@ private:
 
   // mouse handling
   bool mouseMode;               // PEN ON/OFF
-  AnsiWidgetListener *listener;
+  HyperlinkListener *hyperlinkListener;
   Vector <Hyperlink *>hyperlinks;
 };
 
