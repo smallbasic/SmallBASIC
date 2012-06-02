@@ -19,7 +19,15 @@
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
-Controller::Controller() : Environment() {
+Controller::Controller() :
+  Environment(),
+  runMode(init_state),
+  lastEventTime(0),
+  eventsPerTick(0),
+  penMode(PEN_OFF),
+  penDownX(0),
+  penDownY(0) {
+
   MAExtent screenSize = maGetScrSize();
   output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
@@ -50,9 +58,89 @@ const char *Controller::getLoadPath() {
   return 0;
 }
 
+int Controller::getPen(int code) {
+  int result = 0;
+
+  if (isExit()) {
+    ui_reset();
+    brun_break();
+  } else {
+    if (penMode == PEN_OFF) {
+      processEvents(0, -1);
+    }
+
+    switch (code) {
+    case 0:
+      // UNTIL PEN(0) - wait until move click or move
+      processEvents(0, -1);    // fallthru to re-test 
+
+    case 3:                    // returns true if the pen is down (and save curpos)
+      processEvents(1, -1);
+      if (penDownX != -1 && penDownY != -1) {
+        result = 1;
+      }
+      break;
+
+    case 1:                      // last pen-down x
+      result = penDownX;
+      break;
+      
+    case 2:                      // last pen-down y
+      result = penDownY;
+      break;
+      
+    case 4:                      // cur pen-down x
+    case 10:
+      processEvents(1, -1);
+      result = penDownX;
+      break;
+      
+    case 5:                      // cur pen-down y
+    case 11:
+      processEvents(1, -1);
+      result = penDownY;
+      break;
+    }
+  }
+  return result;
+}
+
 // whether a GUI is active which may yield a load path
 bool Controller::hasGUI() {
   return false;
+}
+
+// runtime system event processor
+int Controller::handleEvents(int waitFlag) {
+  if (!waitFlag) {
+    // pause when we have been called too frequently
+    clock_t now = clock();
+    if (now - lastEventTime <= EVT_CHECK_EVERY) {
+      eventsPerTick += (now - lastEventTime);
+      if (eventsPerTick >= EVT_MAX_BURN_TIME) {
+        eventsPerTick = 0;
+        waitFlag = 2;
+      }
+    }
+    lastEventTime = now;
+  }
+
+  switch (waitFlag) {
+  case 1:
+    // wait for an event
+    processEvents(-1, -1);
+    break;
+  case 2:
+    // pause
+    processEvents(EVT_PAUSE_TIME, -1);
+    break;
+  default:
+    // pump messages without pausing
+    processEvents(1, -1);
+    break;
+  }
+
+  return isExit() ? -2 : 0;
 }
 
 // process events while in modal state
@@ -79,63 +167,6 @@ void Controller::pause(int ms) {
   }
 }
 
-// pass the next event into the framework
-void Controller::fireEvent(MAEvent &event) {
-  switch (event.type) {
-  case EVENT_TYPE_CLOSE:
-    fireCloseEvent();
-    break;
-  case EVENT_TYPE_FOCUS_GAINED:
-    fireFocusGainedEvent();
-    break;
-  case EVENT_TYPE_FOCUS_LOST:
-    fireFocusLostEvent();
-    break;
-  case EVENT_TYPE_KEY_PRESSED:
-    fireKeyPressEvent(event.key, event.nativeKey);
-    break;
-  case EVENT_TYPE_KEY_RELEASED:
-    fireKeyReleaseEvent(event.key, event.nativeKey);
-    break;
-  case EVENT_TYPE_CHAR:
-    fireCharEvent(event.character);
-    break;
-  case EVENT_TYPE_POINTER_PRESSED:
-    if (event.touchId == 0) {
-      firePointerPressEvent(event.point);
-    }
-    fireMultitouchPressEvent(event.point, event.touchId);
-    break;
-  case EVENT_TYPE_POINTER_DRAGGED:
-    if (event.touchId == 0) {
-      firePointerMoveEvent(event.point);
-    }
-    fireMultitouchMoveEvent(event.point, event.touchId);
-    break;
-  case EVENT_TYPE_POINTER_RELEASED:
-    if (event.touchId == 0) {
-      firePointerReleaseEvent(event.point);
-    }
-    fireMultitouchReleaseEvent(event.point, event.touchId);
-    break;
-  case EVENT_TYPE_CONN:
-    fireConnEvent(event.conn);
-    break;
-  case EVENT_TYPE_BT:
-    fireBluetoothEvent(event.state);
-    break;
-  case EVENT_TYPE_TEXTBOX:
-    fireTextBoxListeners(event.textboxResult, event.textboxLength);
-    break;
-  case EVENT_TYPE_SENSOR:
-    fireSensorListeners(event.sensor);
-    break;
-  default:
-    fireCustomEventListeners(event);
-    break;
-  }
-}
-
 // process events on the system event queue
 MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
@@ -154,28 +185,25 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       os_graf_my = output->getHeight();
       break;
     case EVENT_TYPE_POINTER_PRESSED:
-      output->pointerReleaseEvent(event);
+      penDownX = event.point.x;
+      penDownY = event.point.y;
+      dev_pushkey(SB_KEY_MK_PUSH);
+      output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
+      dev_pushkey(SB_KEY_MK_DRAG);
       output->pointerMoveEvent(event);
       break;
     case EVENT_TYPE_POINTER_RELEASED:
+      penDownX = penDownY = -1;
+      dev_pushkey(SB_KEY_MK_RELEASE);
       output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
       runMode = exit_state;
       break;
     case EVENT_TYPE_KEY_PRESSED:
-      switch (event.key) {
-      case MAK_FIRE:
-      case MAK_5:
-        break;
-      case MAK_SOFTRIGHT:
-      case MAK_0:
-      case MAK_BACK:
-        runMode = exit_state;
-        break;
-      }
+      handleKey(event.key);
       break;
     }
     if (untilType != -1 && untilType == event.type) {
@@ -258,3 +286,143 @@ char *Controller::readConnection(const char *url) {
   return result;
 }
 
+// commence runtime state
+void Controller::setRunning() { 
+  dev_fgcolor = -DEFAULT_COLOR;
+  dev_bgcolor = 0;
+  os_graf_mx = output->getWidth();
+  os_graf_my = output->getHeight();
+
+  os_ver = 1;
+  os_color = 1;
+  os_color_depth = 16;
+  setsysvar_str(SYSVAR_OSNAME, "MoSync");
+
+  osd_cls();
+  dev_clrkb();
+  ui_reset();
+  
+  runMode = run_state; 
+}
+
+// pass the event into the mosync framework
+void Controller::fireEvent(MAEvent &event) {
+  switch (event.type) {
+  case EVENT_TYPE_CLOSE:
+    fireCloseEvent();
+    break;
+  case EVENT_TYPE_FOCUS_GAINED:
+    fireFocusGainedEvent();
+    break;
+  case EVENT_TYPE_FOCUS_LOST:
+    fireFocusLostEvent();
+    break;
+  case EVENT_TYPE_KEY_PRESSED:
+    fireKeyPressEvent(event.key, event.nativeKey);
+    break;
+  case EVENT_TYPE_KEY_RELEASED:
+    fireKeyReleaseEvent(event.key, event.nativeKey);
+    break;
+  case EVENT_TYPE_CHAR:
+    fireCharEvent(event.character);
+    break;
+  case EVENT_TYPE_POINTER_PRESSED:
+    if (event.touchId == 0) {
+      firePointerPressEvent(event.point);
+    }
+    fireMultitouchPressEvent(event.point, event.touchId);
+    break;
+  case EVENT_TYPE_POINTER_DRAGGED:
+    if (event.touchId == 0) {
+      firePointerMoveEvent(event.point);
+    }
+    fireMultitouchMoveEvent(event.point, event.touchId);
+    break;
+  case EVENT_TYPE_POINTER_RELEASED:
+    if (event.touchId == 0) {
+      firePointerReleaseEvent(event.point);
+    }
+    fireMultitouchReleaseEvent(event.point, event.touchId);
+    break;
+  case EVENT_TYPE_CONN:
+    fireConnEvent(event.conn);
+    break;
+  case EVENT_TYPE_BT:
+    fireBluetoothEvent(event.state);
+    break;
+  case EVENT_TYPE_TEXTBOX:
+    fireTextBoxListeners(event.textboxResult, event.textboxLength);
+    break;
+  case EVENT_TYPE_SENSOR:
+    fireSensorListeners(event.sensor);
+    break;
+  default:
+    fireCustomEventListeners(event);
+    break;
+  }
+}
+
+// pass the key into the smallbasic keyboard handler
+void Controller::handleKey(int key) {
+  switch (key) {
+  case MAK_FIRE:
+  case MAK_5:
+    break;
+  case MAK_SOFTRIGHT:
+  case MAK_BACK:
+    runMode = exit_state;
+    break;
+  case MAK_TAB:
+    dev_pushkey(SB_KEY_TAB);
+    break;
+  case MAK_HOME:
+    dev_pushkey(SB_KEY_KP_HOME);
+    break;
+  case MAK_END:
+    dev_pushkey(SB_KEY_END);
+    break;
+  case MAK_INSERT:
+    dev_pushkey(SB_KEY_INSERT);
+    break;
+  case MAK_MENU:
+    dev_pushkey(SB_KEY_MENU);
+    break;
+  case MAK_KP_MULTIPLY:
+    dev_pushkey(SB_KEY_KP_MUL);
+    break;
+  case MAK_KP_PLUS:
+    dev_pushkey(SB_KEY_KP_PLUS);
+    break;
+  case MAK_KP_MINUS:
+    dev_pushkey(SB_KEY_KP_MINUS);
+    break;
+  case MAK_SLASH:
+    dev_pushkey(SB_KEY_KP_DIV);
+    break;
+  case MAK_PAGEUP:
+    dev_pushkey(SB_KEY_PGUP);
+    break;
+  case MAK_PAGEDOWN:
+    dev_pushkey(SB_KEY_PGDN);
+    break;
+  case MAK_UP:
+    dev_pushkey(SB_KEY_UP);
+    break;
+  case MAK_DOWN:
+    dev_pushkey(SB_KEY_DN);
+    break;
+  case MAK_LEFT:
+    dev_pushkey(SB_KEY_LEFT);
+    break;
+  case MAK_RIGHT:
+    dev_pushkey(SB_KEY_RIGHT);
+    break;
+  case MAK_BACKSPACE:
+  case MAK_DELETE:
+    dev_pushkey(SB_KEY_BACKSPACE);
+    break;
+  default:
+    dev_pushkey(key);
+    break;
+  }
+}

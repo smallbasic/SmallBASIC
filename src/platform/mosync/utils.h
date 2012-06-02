@@ -9,12 +9,15 @@
 #define MAIN_BAS_RES "main.bas"
 #define ERROR_BAS "? \"Failed to open program file\":pause"
 
-#if defined(_DEBUG)
-#define logEntered() printf("%s entered (%s %d)",               \
-                            __FUNCTION__, __FILE__, __LINE__);
-#define logLeaving() printf("%s leaving (%s %d)",               \
-                            __FUNCTION__, __FILE__, __LINE__);
+#if defined(VARIANT_MOSYNC_EMULATOR) || defined(_DEBUG)
+#include <mavsprintf.h>
+#define trace lprintfln
+#define logEntered() trace("%s entered (%s %d)",               \
+                           __FUNCTION__, __FILE__, __LINE__);
+#define logLeaving() trace("%s leaving (%s %d)",               \
+                           __FUNCTION__, __FILE__, __LINE__);
 #else
+#define trace(...)
 #define logEntered()
 #define logLeaving()
 #endif

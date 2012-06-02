@@ -493,7 +493,7 @@ function buildMosync() {
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
  
-   PACKAGE_CFLAGS="-DPLATFORM_ANDROID -DVARIANT_ANDROID_2_X -MMD -S -g -DMAPIP -O2 -MF "
+   PACKAGE_CFLAGS="-MMD -S -DMAPIP -O2 -MF "
 
    dnl find out where mosync is installed
    MOSYNC_HOME="`which xgcc | cygpath -m -f - | sed 's/\/bin\/xgcc//'`"

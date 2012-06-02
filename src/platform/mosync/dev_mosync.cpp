@@ -19,15 +19,6 @@
 using namespace MAUI;
 
 extern Controller *controller;
-clock_t lastEventTime;
-dword eventsPerTick;
-int penMode;
-
-#define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
-#define EVT_PAUSE_TIME 5
-#define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
-#define PEN_OFF   0             // pen mode disabled
-#define PEN_ON    2             // pen mode active
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
 
@@ -46,19 +37,6 @@ void osd_cls(void) {
 }
 
 int osd_devinit(void) {
-  dev_fgcolor = -DEFAULT_COLOR;
-  dev_bgcolor = 0;
-  os_graf_mx = controller->output->getWidth();
-  os_graf_my = controller->output->getHeight();
-
-  os_ver = 1;
-  os_color = 1;
-  os_color_depth = 16;
-  setsysvar_str(SYSVAR_OSNAME, "MoSync");
-
-  osd_cls();
-  dev_clrkb();
-  ui_reset();
   controller->setRunning();
   return 1;
 }
@@ -68,39 +46,11 @@ int osd_devrestore(void) {
 }
 
 int osd_events(int wait_flag) {
-  if (!wait_flag) {
-    // pause when we have been called too frequently
-    clock_t now = clock();
-    if (now - lastEventTime <= EVT_CHECK_EVERY) {
-      eventsPerTick += (now - lastEventTime);
-      if (eventsPerTick >= EVT_MAX_BURN_TIME) {
-        eventsPerTick = 0;
-        wait_flag = 2;
-      }
-    }
-    lastEventTime = now;
-  }
-
-  switch (wait_flag) {
-  case 1:
-    // wait for an event
-    controller->processEvents(-1, -1);
-    break;
-  case 2:
-    // pause
-    maWait(EVT_PAUSE_TIME);
-    break;
-  default:
-    // pump messages without pausing
-    maWait(1);
-    break;
-  }
-
-  return controller->isExit() ? -2 : 0;
+  return controller->handleEvents(wait_flag);
 }
 
 int osd_getpen(int mode) {
-  return 0;
+  return controller->getPen(mode);
 }
 
 long osd_getpixel(int x, int y) {
@@ -136,7 +86,7 @@ void osd_setcolor(long color) {
 }
 
 void osd_setpenmode(int enable) {
-  penMode = (enable ? PEN_ON : PEN_OFF);
+  controller->setPenMode(enable);
 }
 
 void osd_setpixel(int x, int y) {

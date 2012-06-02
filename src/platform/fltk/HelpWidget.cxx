@@ -106,7 +106,8 @@ struct Display {
       fillrect(rc);
       setcolor(oldColor);
     }
-  } void endImageFlow() {
+  } 
+  void endImageFlow() {
     // end text flow around images
     if (imgY != -1) {
       indent = imgIndent;
@@ -359,7 +360,8 @@ struct AnchorNode : public BaseNode {
   bool ptInSegment(int x, int y) {
     if (y > y1 && y < y2) {
       // found row
-      if ((x < x1 && y < y1 + lineHeight) || (x > x2 && y > y2 - lineHeight)) {
+      if ((x < x1 && y < y1 + lineHeight) || 
+          (x > x2 && y > y2 - lineHeight)) {
         // outside row start or end
         return false;
       }
@@ -404,7 +406,8 @@ struct StyleNode : public BaseNode {
   StyleNode(U8 uline, U8 center) {
     this->uline = uline;
     this->center = center;
-  } void display(Display *out) {
+  } 
+  void display(Display *out) {
     out->uline = uline;
     out->center = center;
   }
@@ -417,7 +420,8 @@ struct StyleNode : public BaseNode {
 struct UlNode : public BaseNode {
   UlNode(bool ordered) {
     this->ordered = ordered;
-  } void display(Display *out) {
+  } 
+  void display(Display *out) {
     nextId = 0;
     out->newRow(1);
     out->indent += LI_INDENT;
@@ -428,7 +432,8 @@ struct UlNode : public BaseNode {
 
 struct UlEndNode : public BaseNode {
   UlEndNode() {
-  } void display(Display *out) {
+  } 
+  void display(Display *out) {
     out->indent -= LI_INDENT;
     out->newRow(2);
   }
@@ -437,7 +442,8 @@ struct UlEndNode : public BaseNode {
 struct LiNode : public BaseNode {
   LiNode(UlNode *ulNode) {
     this->ulNode = ulNode;
-  } void display(Display *out) {
+  } 
+  void display(Display *out) {
     out->content = true;
     out->x1 = out->indent;
     out->y1 += out->lineHeight;

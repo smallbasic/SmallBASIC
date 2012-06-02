@@ -15,7 +15,7 @@ Controller *controller;
 
 extern "C" int MAMain() {
   controller = new Controller();
-
+  trace("HERE!");
   sbasic_main(MAIN_BAS_RES);
   while (!controller->isExit()) {
     controller->processEvents(-1, -1);

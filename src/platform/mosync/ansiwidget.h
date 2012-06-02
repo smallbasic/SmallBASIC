@@ -16,9 +16,10 @@
 using namespace MAUtil;
 
 struct Hyperlink {
-  Hyperlink(String &url, String &label, int x, int y, int w, int h);
+  Hyperlink(const char *url, const char *label, int x, int y, int w, int h);
   virtual ~Hyperlink() {};
   void draw();
+  bool overlaps(MAPoint2d pt);
   String url;
   String label;
   bool pressed;
@@ -70,11 +71,6 @@ public:
   void resetMouse();
   void setMouseMode(bool mode);
   void setHyperlinkListener(HyperlinkListener *hll) { hyperlinkListener = hll; }
-  void copySelection();
-  void findNextText();
-  void findText();
-  void selectAll();
-  
   void pointerTouchEvent(MAEvent &event);
   void pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);
@@ -83,10 +79,14 @@ private:
   int ansiToMosync(long color);
   int calcTab(int x) const;
   void createLink(char *&p, bool execLink);
+  void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p);
+  Vector<String *> *getItems(char *&p);
   void newLine();
   void reset(bool init);
   bool setGraphicsRendition(char c, int escValue);
+  void setPopupMode(int mode);
+  void showAlert(char *&p);
   void updateFont();
 
   MAHandle image;
@@ -116,6 +116,7 @@ private:
   // mouse handling
   bool mouseMode;               // PEN ON/OFF
   HyperlinkListener *hyperlinkListener;
+  Hyperlink *activeLink;
   Vector <Hyperlink *>hyperlinks;
 };
 

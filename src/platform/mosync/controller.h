@@ -21,6 +21,12 @@
 
 using namespace MAUtil;
 
+#define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
+#define EVT_PAUSE_TIME 5
+#define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
+#define PEN_OFF   0             // pen mode disabled
+#define PEN_ON    2             // pen mode active
+
 struct Controller : public Environment {
   Controller();
   virtual ~Controller();
@@ -35,9 +41,10 @@ struct Controller : public Environment {
     exit_state
   };
 
-  void fireEvent(MAEvent &event);
   const char *getLoadPath();
+  int getPen(int code);
   bool hasGUI();
+  int handleEvents(int waitFlag);
   void modalLoop();
   void pause(int ms);
   MAEvent processEvents(int ms, int untilType);
@@ -46,11 +53,20 @@ struct Controller : public Environment {
   bool isExit() { return runMode == exit_state; }
   bool isModal() { return runMode == modal_state; }
   bool isRun() { return runMode == run_state; }
-  void setRunning() { runMode = run_state; }
+  void setPenMode(int b) { penMode = (b ? PEN_ON : PEN_OFF); }
+  void setRunning();
 
   AnsiWidget *output;
 
 private:
+  void fireEvent(MAEvent &event);
+  void handleKey(int key);
+
   ExecState runMode;
+  clock_t lastEventTime;
+  dword eventsPerTick;
+  int penMode;
+  int penDownX;
+  int penDownY;
 };
 

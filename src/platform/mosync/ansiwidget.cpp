@@ -14,7 +14,7 @@
 #include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/utils.h"
 
-/*! \class AnsiWidget
+/* class AnsiWidget
  
   Displays ANSI escape codes. 
 
@@ -68,9 +68,7 @@ static int colors[] = {
   0xFFFFFF                      // 15 bright white
 };
 
-/*
- * Workaround for API's which don't take a length argument
- */
+// Workaround for API's which don't take a length argument
 struct TextBuffer {
   TextBuffer(const char *s, int len) : 
     str(s), len(len) {
@@ -87,9 +85,7 @@ struct TextBuffer {
   int len;
 };
 
-/*
- * Handles drawing to a backbuffer
- */
+// Handles drawing to a backbuffer
 struct Backbuffer {
   MAHandle image;
   
@@ -106,7 +102,7 @@ struct Backbuffer {
   }
 };
 
-Hyperlink::Hyperlink(String &url, String &label, 
+Hyperlink::Hyperlink(const char *url, const char *label, 
                      int x, int y, int w, int h) :
   url(url),
   label(label),
@@ -121,6 +117,11 @@ void Hyperlink::draw() {
   maSetColor(pressed ? colors[BLUE] : colors[GREEN]);
   maDrawText(x, y, !label.size() ? url.c_str() : label.c_str());
   maLine(x, y + h - 1, x + w, y + h - 1);
+}
+
+bool Hyperlink::overlaps(MAPoint2d pt) {
+  bool outside = (pt.x < x || pt.y < y || pt.x > x + w || pt.y > y + h);
+  return !outside;
 }
 
 AnsiWidget::AnsiWidget(int width, int height) :
@@ -143,7 +144,8 @@ AnsiWidget::AnsiWidget(int width, int height) :
   height(height),
   dirty(0),
   mouseMode(0),
-  hyperlinkListener(0) {
+  hyperlinkListener(0),
+  activeLink(0) {
 }
 
 bool AnsiWidget::construct() {
@@ -157,8 +159,7 @@ bool AnsiWidget::construct() {
   return result;
 }
 
-/*! widget clean up
- */
+// widget clean up
 AnsiWidget::~AnsiWidget() {
   maDestroyPlaceholder(image);
   if (font) {
@@ -166,36 +167,31 @@ AnsiWidget::~AnsiWidget() {
   }
 }
 
-/*! create audible beep sound
- */
+// create audible beep sound
 void AnsiWidget::beep() const {
   //  QApplication::beep();
   // http://www.mosync.com/documentation/manualpages/using-audio-api
 }
 
-/*! clear the offscreen buffer
- */
+// clear the offscreen buffer
 void AnsiWidget::clearScreen() {
   reset(true);
   Backbuffer backbuffer(image, bg);
   maFillRect(0, 0, width, height);
 }
 
-/*! draws the given image onto the offscreen buffer
- */
+// draws the given image onto the offscreen buffer
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
   Backbuffer backbuffer(image, fg);
 }
 
-/*! draw a line onto the offscreen buffer
- */
+// draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   Backbuffer backbuffer(image, fg);
   maLine(x1, y1, x2, y2);
 }
 
-/*! draw a rectangle onto the offscreen buffer
- */
+// draw a rectangle onto the offscreen buffer
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
   Backbuffer backbuffer(image, fg);
   maLine(x1, y1, x2, y1); // top
@@ -204,15 +200,13 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
   maLine(x2, y1, x2, y2); // right
 }
 
-/*! draw a filled rectangle onto the offscreen buffer
- */
+// draw a filled rectangle onto the offscreen buffer
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   Backbuffer backbuffer(image, fg);
   maFillRect(x1, y1, x2 - x1, y2 - y1);
 }
 
-/*! returns the color of the pixel at the given xy location
- */
+// returns the color of the pixel at the given xy location
 int AnsiWidget::getPixel(int x, int y) {
   MARect rc;
   rc.left = x;
@@ -226,14 +220,12 @@ int AnsiWidget::getPixel(int x, int y) {
   return result[0];
 }
 
-/*! Returns the height in pixels using the current font setting
- */
+// Returns the height in pixels using the current font setting
 int AnsiWidget::textHeight(void) {
   return EXTENT_Y(maGetTextSize("Q@"));
 }
 
-/*! Returns the width in pixels using the current font setting
- */
+// returns the width in pixels using the current font setting
 int AnsiWidget::textWidth(const char *str, int len) {
   int result;
   if (len != -1) {
@@ -245,8 +237,7 @@ int AnsiWidget::textWidth(const char *str, int len) {
   return result;
 }
 
-/*! Prints the contents of the given string onto the backbuffer
- */
+// prints the contents of the given string onto the backbuffer
 void AnsiWidget::print(const char *str) {
   Backbuffer backBuffer(image, fg);
   int len = strlen(str);
@@ -335,6 +326,7 @@ void AnsiWidget::print(const char *str) {
   delete [] buffer;
 }
 
+// prints the contents of the given string onto the backbuffer
 void AnsiWidget::printf(const char *format, ...) {
   char buf[4096], *p = buf;
   va_list args;
@@ -355,14 +347,12 @@ void AnsiWidget::printf(const char *format, ...) {
 }
 
 
-/*! Display the contents of the back buffer
- */
+// display the contents of the back buffer
 void AnsiWidget::refresh() {
   Backbuffer(image, bg);
 }
 
-/*! Update the widget to new dimensions
- */
+// update the widget to new dimensions
 void AnsiWidget::resize(int newWidth, int newHeight) {
   MAHandle newImage = maCreatePlaceholder();
   maCreateDrawableImage(newImage, newWidth, newHeight);
@@ -397,67 +387,95 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
   maUpdateScreen();
 }
 
-/*! sets the current drawing color
- */
+// sets the current drawing color
 void AnsiWidget::setColor(long fg) {
   this->fg = ansiToMosync(fg);
 }
 
-/*! sets the pixel to the given color at the given xy location
- */
+// sets the pixel to the given color at the given xy location
 void AnsiWidget::setPixel(int x, int y, int c) {
   Backbuffer backbuffer(image, c);
   maPlot(x, y);
 }
 
-/*! sets the current text drawing color
- */
+// sets the current text drawing color
 void AnsiWidget::setTextColor(long fg, long bg) {
   this->bg = ansiToMosync(bg);
   this->fg = ansiToMosync(fg);
 }
 
-/*! sets the number of scrollback lines
- */
+// sets the number of scrollback lines
 void AnsiWidget::setScrollSize(int scrollSize) {
   this->scrollSize = scrollSize;
 }
 
-/*! sets mouse mode on or off
- */
-void AnsiWidget::setMouseMode(bool flag) {
-  mouseMode = flag;
-}
-
-/*! resets mouse mode to false
- */
+// resets mouse mode to false
 void AnsiWidget::resetMouse() {
   pointX = pointY = markX = markY = 0;
   mouseMode = false;
 }
 
-/*! public slot - copy selected text to the clipboard
- */
-void AnsiWidget::copySelection() {
+// sets mouse mode on or off
+void AnsiWidget::setMouseMode(bool flag) {
+  mouseMode = flag;
 }
 
-/*! public slot - find the next text item
- */
-void AnsiWidget::findNextText() {
+// handler for pointer touch events
+void AnsiWidget::pointerTouchEvent(MAEvent &event) {
+  bool selected = (markX != pointX || markY != pointY);
+  markX = pointX = event.point.x;
+  markY = pointY = event.point.y;
+  if (mouseMode && selected) {
+    // update();
+  }
+
+  Vector_each(Hyperlink*, it, hyperlinks) {
+    if ((*it)->overlaps(event.point)) {
+      Backbuffer backbuffer(image, fg);
+      activeLink = (*it);
+      activeLink->pressed = true;
+      activeLink->draw();
+      break;
+    }
+  }
 }
 
-/*! public slot - find text
- */
-void AnsiWidget::findText() {
+// handler for pointer move events
+void AnsiWidget::pointerMoveEvent(MAEvent &event) {
+  pointX = event.point.x;
+  pointY = event.point.y;
+  if (copyMode) {
+    // update();
+  }
+
+  if (activeLink != NULL) {
+    bool pressed = activeLink->overlaps(event.point);
+    if (pressed != activeLink->pressed) {
+      Backbuffer backbuffer(image, fg);
+      activeLink->pressed = pressed;
+      activeLink->draw();
+    }
+  }
 }
 
-/*! public slot - select all text
- */
-void AnsiWidget::selectAll() {
+// handler for pointer release events
+void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
+  bool selected = (markX != pointX || markY != pointY);
+  if (copyMode && selected) {
+    // update();
+  }
+  
+  if (activeLink != NULL && activeLink->pressed) {
+    Backbuffer backbuffer(image, fg);
+    activeLink->pressed = false;
+    activeLink->draw();
+    if (hyperlinkListener) {
+      hyperlinkListener->clicked(activeLink->url.c_str());
+    }
+  }
 }
 
-/*! Converts ANSI colors to FLTK colors
- */
+// converts ANSI colors to FLTK colors
 int AnsiWidget::ansiToMosync(long c) {
   int result = c;
   if (c < 0) {
@@ -468,8 +486,7 @@ int AnsiWidget::ansiToMosync(long c) {
   return result;
 }
 
-/*! Calculate the pixel movement for the given cursor position
- */
+// calculate the pixel movement for the given cursor position
 int AnsiWidget::calcTab(int x) const {
   int c = 1;
   while (x > tabSize) {
@@ -479,49 +496,16 @@ int AnsiWidget::calcTab(int x) const {
   return c * tabSize;
 }
 
-/*! Creates a hyperlink, eg // ^[ hwww.foo.com:title:hover;More text
- */
+// creates a hyperlink, eg // ^[ hwww.foo.com:title:hover;More text
 void AnsiWidget::createLink(char *&p, bool execLink) {
-  String url;
-  String text;
-
-  char *next = p + 1;
-  bool eot = false;
-  int segment = 0;
-
-  while (*p && !eot) {
-    p++;
-
-    switch (*p) {
-    case '\033':
-    case '\n':
-    case ';':
-      eot = true;
-      // fallthru
-
-    case ':':
-      switch (segment++) {
-      case 0:
-        url.append((const char *)next, (p - next));
-        break;
-      case 1:
-        text.append((const char *)next, (p - next));
-        break;
-      default:
-        break;
-      }
-      next = p + 1;
-      break;
-
-    default:
-      break;
-    }
-  }
+  Vector<String *> *items = getItems(p);
+  const char *url = items->size() > 0 ? (*items)[0]->c_str() : "";
+  const char *text = items->size() > 1 ? (*items)[1]->c_str() : "";
 
   if (execLink && hyperlinkListener) {
-    hyperlinkListener->clicked(url.c_str());
+    hyperlinkListener->clicked(url);
   } else {
-    MAExtent textSize = maGetTextSize(text.c_str());
+    MAExtent textSize = maGetTextSize(text);
     int w = EXTENT_X(textSize) + 2;
     int h = EXTENT_Y(textSize) + 2;
     int x = curX;
@@ -536,11 +520,20 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
     hyperlinks.add(link);
     link->draw();
   }
+
+  deleteItems(items);
 }
 
-/*! Handles the characters following the \e[ sequence. Returns whether a further call
- * is required to complete the process.
- */
+// cleanup the string list created in getItems()
+void AnsiWidget::deleteItems(Vector<String *> *items) {
+  Vector_each(String*, it, *items) {
+    delete (*it);
+  }
+  delete items;
+}
+
+// handles the characters following the \e[ sequence. Returns whether a further call
+// is required to complete the process.
 bool AnsiWidget::doEscape(char *&p) {
   int escValue = 0;
 
@@ -563,20 +556,56 @@ bool AnsiWidget::doEscape(char *&p) {
     case 'H':
       createLink(p, true);
       break;
+    case 'p':
+    case 'P':
+      setPopupMode(escValue);
+      break;
+    case 'a':
+    case 'A':
+      showAlert(p);
+      break;
     }
   } else if (setGraphicsRendition(*p, escValue)) {
     updateFont();
   }
 
+  bool result = false;
   if (*p == ';') {
+    result = true;
     p++;                        // next rendition
-    return true;
   }
-  return false;
+  return result;
 }
 
-/*! Handles the \n character
- */
+// returns list of strings extracted from the semi-colon separated input string
+Vector<String *> *AnsiWidget::getItems(char *&p) {
+  Vector<String *> *result = new Vector<String *>();
+  char *next = p + 1;
+  bool eot = false;
+  int index = 0;
+
+  while (*p && !eot) {
+    p++;
+    switch (*p) {
+    case '\033':
+    case '\n':
+    case ';':
+      eot = true;
+      // fallthru
+
+    case ':':
+      result->add(new String((const char *)next, (p - next)));
+      next = p + 1;
+      break;
+
+    default:
+      break;
+    }
+  }
+  return result;
+}
+
+// handles the \n character
 void AnsiWidget::newLine() {
   int fontHeight = textHeight();
   curX = INITXY;
@@ -607,8 +636,7 @@ void AnsiWidget::newLine() {
   }
 }
 
-/*! reset the current drawing variables
- */
+// reset the current drawing variables
 void AnsiWidget::reset(bool init) {
   if (init) {
     curY = INITXY;              // allow for input control border
@@ -619,8 +647,8 @@ void AnsiWidget::reset(bool init) {
   }
 
   // cleanup any hyperlinks
-  Vector_each(Hyperlink*, iHyperlink, hyperlinks) {
-    delete iHyperlink;
+  Vector_each(Hyperlink*, it, hyperlinks) {
+    delete (*it);
   }
   hyperlinks.clear();
 
@@ -636,8 +664,7 @@ void AnsiWidget::reset(bool init) {
   updateFont();
 }
 
-/*! Handles the given escape character. Returns whether the font has changed
- */
+// handles the given escape character. Returns whether the font has changed
 bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   switch (c) {
   case 'K':
@@ -754,8 +781,26 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   return false;
 }
 
-/*! Updated the current font according to accumulated flags
- */
+// commence or end displaying into the popup image
+void AnsiWidget::setPopupMode(int mode) {
+
+}
+
+// display an alert box - eg // ^[ aAlert!!;
+void AnsiWidget::showAlert(char *&p) {
+  Vector<String *> *items = getItems(p);
+
+  const char *title = items->size() > 0 ? (*items)[0]->c_str() : "";
+  const char *message = items->size() > 1 ? (*items)[1]->c_str() : "";
+  const char *button1 = items->size() > 2 ? (*items)[2]->c_str() : "";
+  const char *button2 = items->size() > 3 ? (*items)[3]->c_str() : "";
+  const char *button3 = items->size() > 4 ? (*items)[4]->c_str() : "";
+
+  maAlert(title, message, button1, button2, button3);
+  deleteItems(items);
+}
+
+// updated the current font according to accumulated flags
 void AnsiWidget::updateFont() {
   if (font) {
     maFontDelete(font);
@@ -771,30 +816,3 @@ void AnsiWidget::updateFont() {
   font = maFontLoadDefault(FONT_TYPE_MONOSPACE, style, textSize);
   maFontSetCurrent(font);
 }
-
-void AnsiWidget::pointerTouchEvent(MAEvent &event) {
-  bool selected = (markX != pointX || markY != pointY);
-  markX = pointX = event.point.x;
-  markY = pointY = event.point.y;
-  if (mouseMode && selected) {
-    // update();
-  }
-}
-
-void AnsiWidget::pointerMoveEvent(MAEvent &event) {
-  pointX = event.point.x;
-  pointY = event.point.y;
-  if (copyMode) {
-    // update();
-  }
-
-}
-
-void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
-  bool selected = (markX != pointX || markY != pointY);
-  if (copyMode && selected) {
-    // update();
-  }
-
-}
-
