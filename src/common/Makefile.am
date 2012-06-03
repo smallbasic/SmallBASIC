@@ -60,9 +60,6 @@ libsb_common_a_SOURCES =												\
     file.c																			\
     ffill.c																			\
     fmt.c fmt.h																	\
-    fs_irda.c fs_irda.h													\
-    fs_memo.c fs_memo.h													\
-    fs_pdoc.c fs_pdoc.h													\
     fs_serial.c fs_serial.h											\
     fs_socket_client.c fs_socket_client.h				\
     fs_stream.c fs_stream.h											\

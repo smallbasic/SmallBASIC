@@ -10,7 +10,6 @@
 #include "common/g_bmp.h"
 
 // combine dest with source using AND and store result to dest
-void bmp_combine_AND(unsigned char *dest, unsigned char *source, int bpl) SEC(BIO);
 void bmp_combine_AND(unsigned char *dest, unsigned char *source, int bpl) {
   unsigned char *p = source;
   unsigned char *d = dest;
@@ -22,7 +21,6 @@ void bmp_combine_AND(unsigned char *dest, unsigned char *source, int bpl) {
 }
 
 // combine dest with source using OR and store result to dest
-void bmp_combine_OR(unsigned char *dest, unsigned char *source, int bpl) SEC(BIO);
 void bmp_combine_OR(unsigned char *dest, unsigned char *source, int bpl) {
   unsigned char *p = source;
   unsigned char *d = dest;
@@ -34,7 +32,6 @@ void bmp_combine_OR(unsigned char *dest, unsigned char *source, int bpl) {
 }
 
 // combine dest with source using XOR and store result to dest
-void bmp_combine_XOR(unsigned char *dest, unsigned char *source, int bpl) SEC(BIO);
 void bmp_combine_XOR(unsigned char *dest, unsigned char *source, int bpl) {
   unsigned char *p = source;
   unsigned char *d = dest;
@@ -46,7 +43,6 @@ void bmp_combine_XOR(unsigned char *dest, unsigned char *source, int bpl) {
 }
 
 // combine dest with source using NOT and store result to dest
-void bmp_combine_NOT(unsigned char *dest, unsigned char *source, int bpl) SEC(BIO);
 void bmp_combine_NOT(unsigned char *dest, unsigned char *source, int bpl) {
   unsigned char *p = source;
   unsigned char *d = dest;
@@ -59,7 +55,6 @@ void bmp_combine_NOT(unsigned char *dest, unsigned char *source, int bpl) {
 }
 
 // combine dest with source using NAND and store result to dest
-void bmp_combine_NAND(unsigned char *dest, unsigned char *source, int bpl) SEC(BIO);
 void bmp_combine_NAND(unsigned char *dest, unsigned char *source, int bpl) {
   unsigned char *p = source;
   unsigned char *d = dest;
@@ -72,7 +67,6 @@ void bmp_combine_NAND(unsigned char *dest, unsigned char *source, int bpl) {
 }
 
 // combine dest with source using NOR and store result to dest
-void bmp_combine_NOR(unsigned char *dest, unsigned char *source, int bpl) SEC(BIO);
 void bmp_combine_NOR(unsigned char *dest, unsigned char *source, int bpl) {
   unsigned char *p = source;
   unsigned char *d = dest;
@@ -85,7 +79,6 @@ void bmp_combine_NOR(unsigned char *dest, unsigned char *source, int bpl) {
 }
 
 // combine dest with source using XNOR and store result to dest
-void bmp_combine_XNOR(unsigned char *dest, unsigned char *source, int bpl) SEC(BIO);
 void bmp_combine_XNOR(unsigned char *dest, unsigned char *source, int bpl) {
   unsigned char *p = source;
   unsigned char *d = dest;

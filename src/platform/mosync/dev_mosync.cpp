@@ -78,7 +78,7 @@ void osd_rect(int x1, int y1, int x2, int y2, int fill) {
 }
 
 void osd_refresh(void) {
-  controller->output->refresh();
+  controller->output->flush(true);
 }
 
 void osd_setcolor(long color) {

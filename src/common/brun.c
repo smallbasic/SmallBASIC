@@ -876,7 +876,6 @@ void cmd_options(void) {
 void bc_loop(int isf) {
   dword now;
   static dword next_check;
-  stknode_t node;
   byte code, pops;
   byte trace_flag = 0;
   addr_t next_ip;
@@ -971,18 +970,15 @@ void bc_loop(int isf) {
         continue;
       case kwGOSUB:
         cmd_gosub();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwRETURN:
         cmd_return();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwONJMP:
         cmd_on_go();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwPRINT:
         cmd_print(PV_CONSOLE);
@@ -992,82 +988,59 @@ void bc_loop(int isf) {
         break;
       case kwIF:
         cmd_if();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwELIF:
         cmd_elif();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwELSE:
         cmd_else();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwENDIF:
-        code_pop(&node);
-        while (node.type != kwIF) {
-          code_pop(&node);
-          IF_ERR_BREAK;
-        }
-
-        if (!prog_error) {
-          prog_ip += (ADDRSZ + ADDRSZ);
-          continue;
-        }
-        break;
+        cmd_endif();
+        IF_ERR_BREAK;
+        continue;
       case kwFOR:
         cmd_for();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwNEXT:
         cmd_next();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwWHILE:
         cmd_while();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwWEND:
         cmd_wend();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwREPEAT:
-        node.type = kwREPEAT;
-        code_skipaddr();
-        next_ip = (code_getaddr()) + 1;
-        node.exit_ip = code_peekaddr(next_ip);
-        code_push(&node);
+        cmd_repeat();
+        IF_ERR_BREAK;
         continue;
       case kwUNTIL:
         cmd_until();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwSELECT:
         cmd_select();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwCASE:
         cmd_case();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwCASE_ELSE:
         cmd_case_else();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwENDSELECT:
         cmd_end_select();
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwDIM:
         cmd_dim(0);
@@ -1345,8 +1318,7 @@ void bc_loop(int isf) {
         if (isf) {
           proc_level++;
         }
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwTYPE_CALL_UDF:    // user defined function
         if (isf) {
@@ -1355,8 +1327,7 @@ void bc_loop(int isf) {
         } else {
           err_syntax();
         }
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwTYPE_RET:
         cmd_udpret();
@@ -1365,8 +1336,7 @@ void bc_loop(int isf) {
           if (proc_level == 0)
             return;
         }
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
       case kwTYPE_CRVAR:
         cmd_crvar();
@@ -1381,8 +1351,7 @@ void bc_loop(int isf) {
           if (proc_level == 0)
             return;
         }
-        IF_ERR_BREAK
-        ;
+        IF_ERR_BREAK;
         continue;
 
         // //////////////

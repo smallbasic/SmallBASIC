@@ -24,7 +24,7 @@ extern "C" {
  * @param fmt the printf's style format
  * @param ... the format's parameters
  */
-void panic(const char *fmt, ...) SEC(IDE);
+void panic(const char *fmt, ...);
 
 /**
  * @ingroup sys
@@ -34,7 +34,7 @@ void panic(const char *fmt, ...) SEC(IDE);
  * @param fmt the printf's style format
  * @param ... the format's parameters
  */
-void warning(const char *fmt, ...) SEC(IDE);
+void warning(const char *fmt, ...);
 
 /**
  * @ingroup sys
@@ -44,7 +44,7 @@ void warning(const char *fmt, ...) SEC(IDE);
  * @param fmt the printf's style format
  * @param ... the format's parameters
  */
-void debug(const char *fmt, ...) SEC(IDE);
+void debug(const char *fmt, ...);
 
 /**
  * @ingroup sys
@@ -54,7 +54,7 @@ void debug(const char *fmt, ...) SEC(IDE);
  * @param block is the block
  * @param size is the size of the block
  */
-void hex_dump(const unsigned char *block, int size) SEC(IDE);
+void hex_dump(const unsigned char *block, int size);
 
 #if defined(__cplusplus)
   }

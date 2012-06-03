@@ -1602,6 +1602,20 @@ void cmd_elif() {
   }
 }
 
+void cmd_endif() {
+  stknode_t node;
+
+  code_pop(&node);
+  while (node.type != kwIF) {
+    code_pop(&node);
+    IF_ERR_BREAK;
+  }
+  
+  if (!prog_error) {
+    prog_ip += (ADDRSZ + ADDRSZ);
+  }
+}
+
 /**
  * FOR var = expr TO expr [STEP expr]
  */
@@ -1789,13 +1803,12 @@ void cmd_while() {
   eval(&var);
   if (v_sign(&var)) {
     code_jump(true_ip);
-
     node.type = kwWHILE;
     node.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
     code_push(&node);
-  } else
+  } else {
     code_jump(false_ip + ADDRSZ + ADDRSZ + 1);
-
+  }
   v_free(&var);
 }
 
@@ -1810,6 +1823,20 @@ void cmd_wend() {
   jump_ip = code_getaddr();
   code_jump(jump_ip);
   code_pop(&node);
+}
+
+/**
+ * REPEAT ... UNTIL
+ */
+void cmd_repeat() {
+  stknode_t node;
+  addr_t next_ip;
+
+  node.type = kwREPEAT;
+  code_skipaddr();
+  next_ip = (code_getaddr()) + 1;
+  node.exit_ip = code_peekaddr(next_ip);
+  code_push(&node);
 }
 
 /**

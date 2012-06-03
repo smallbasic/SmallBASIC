@@ -479,7 +479,6 @@ function buildMosync() {
    AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
    AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
    AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
-   AC_DEFINE(IRDA_UNSUP, 1, [irda not supported.])
    AC_DEFINE(RUN_UNSUP, 1, [run not supported.])
    AC_DEFINE(SERIAL_UNSUP, 1, [serial not supported.])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
@@ -489,6 +488,7 @@ function buildMosync() {
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
+   AC_DEFINE(CPU_BIGENDIAN, 1, [Mosync uses big-endian])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])

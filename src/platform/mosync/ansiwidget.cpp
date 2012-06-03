@@ -43,6 +43,7 @@
   \e[27m  set reverse off
 */
 
+#define MAX_PENDING_UPDATES 10
 #define INITXY 2
 #define BLACK  0
 #define BLUE   1
@@ -83,23 +84,6 @@ struct TextBuffer {
   const char *str;
   char c;
   int len;
-};
-
-// Handles drawing to a backbuffer
-struct Backbuffer {
-  MAHandle image;
-  
-  Backbuffer(MAHandle image, int color) : image(image) {
-    maSetDrawTarget(image);
-    maSetColor(color);
-  }
-
-  ~Backbuffer() {
-    maSetDrawTarget(HANDLE_SCREEN);
-    maDrawImage(image, 0, 0);
-    maUpdateScreen();
-    maResetBacklight();
-  }
 };
 
 Hyperlink::Hyperlink(const char *url, const char *label, 
@@ -176,34 +160,65 @@ void AnsiWidget::beep() const {
 // clear the offscreen buffer
 void AnsiWidget::clearScreen() {
   reset(true);
-  Backbuffer backbuffer(image, bg);
+  maSetDrawTarget(image);
+  maSetColor(bg);
   maFillRect(0, 0, width, height);
+  flush(dirty = true);
 }
 
 // draws the given image onto the offscreen buffer
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
-  Backbuffer backbuffer(image, fg);
+  maSetDrawTarget(image);
+  maSetColor(fg);
+
+  // TODO - draw image
+
+  flush(false);
 }
 
 // draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
-  Backbuffer backbuffer(image, fg);
+  maSetDrawTarget(image);
+  maSetColor(fg);
   maLine(x1, y1, x2, y2);
+  flush(false);
 }
 
 // draw a rectangle onto the offscreen buffer
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
-  Backbuffer backbuffer(image, fg);
+  maSetDrawTarget(image);
+  maSetColor(fg);
   maLine(x1, y1, x2, y1); // top
   maLine(x1, y2, x2, y2); // bottom
   maLine(x1, y1, x1, y2); // left
   maLine(x2, y1, x2, y2); // right
+  flush(false);
 }
 
 // draw a filled rectangle onto the offscreen buffer
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
-  Backbuffer backbuffer(image, fg);
+  maSetDrawTarget(image);
+  maSetColor(fg);
   maFillRect(x1, y1, x2 - x1, y2 - y1);
+  flush(false);
+}
+
+// display and pending images changed
+void AnsiWidget::flush(bool force) {
+  bool update = false;
+  if (force) {
+    update = dirty;
+  } else {
+    update = (++dirty == MAX_PENDING_UPDATES);
+  }
+
+  if (update) {
+    maSetDrawTarget(HANDLE_SCREEN);
+    maDrawImage(image, 0, 0);
+    maUpdateScreen();
+    maResetBacklight();
+    dirty = 0;
+  }
 }
 
 // returns the color of the pixel at the given xy location
@@ -239,14 +254,15 @@ int AnsiWidget::textWidth(const char *str, int len) {
 
 // prints the contents of the given string onto the backbuffer
 void AnsiWidget::print(const char *str) {
-  Backbuffer backBuffer(image, fg);
+  maSetDrawTarget(image);
+  maSetColor(fg);
+
   int len = strlen(str);
   if (len <= 0) {
     return;
   }
 
   int fontHeight = textHeight();
-  int ascent = 0;
 
   // copy the string to allow length manipulation
   char *buffer = new char[len + 1];
@@ -277,13 +293,11 @@ void AnsiWidget::print(const char *str) {
       newLine();
       break;
     case '\r':                 // return
-      curX = INITXY;
-      maSetColor(this->bg);
-      maFillRect(0, curY, width, fontHeight);
+      curX = INITXY;           // erasing the line will clear any previous text
       break;
     default:
       int numChars = 1;         // print minimum of one character
-      int cx = textWidth((const char *)p, 1);
+      int cx = charWidth(*p);
       int w = width - 1;
 
       if (curX + cx >= w) {
@@ -292,7 +306,7 @@ void AnsiWidget::print(const char *str) {
       // print further non-control, non-null characters 
       // up to the width of the line
       while (p[numChars] > 31) {
-        cx += textWidth((const char *)p + numChars, 1);
+        cx += charWidth(*p);
         if (curX + cx < w) {
           numChars++;
         } else {
@@ -306,10 +320,10 @@ void AnsiWidget::print(const char *str) {
 
       // draw the text buffer
       maSetColor(invert ? this->bg : this->fg);
-      maDrawText(curX, curY + ascent, TextBuffer((const char *)p, numChars).str);
+      maDrawText(curX, curY, TextBuffer((const char *)p, numChars).str);
 
       if (underline) {
-        maLine(curX, curY + ascent + 1, curX + cx, curY + ascent + 1);
+        maLine(curX, curY + fontHeight - 1, curX + cx, curY + fontHeight - 1);
       }
       // advance
       p += numChars - 1;        // allow for p++ 
@@ -324,32 +338,7 @@ void AnsiWidget::print(const char *str) {
 
   // cleanup
   delete [] buffer;
-}
-
-// prints the contents of the given string onto the backbuffer
-void AnsiWidget::printf(const char *format, ...) {
-  char buf[4096], *p = buf;
-  va_list args;
-
-  va_start(args, format);
-  p += vsnprintf(p, sizeof buf - 1, format, args);
-  va_end(args);
-
-  while (p > buf && isspace(p[-1])) {
-    *--p = '\0';
-  }
-
-  *p++ = '\r';
-  *p++ = '\n';
-  *p = '\0';
-
-  print(buf);
-}
-
-
-// display the contents of the back buffer
-void AnsiWidget::refresh() {
-  Backbuffer(image, bg);
+  flush(false);
 }
 
 // update the widget to new dimensions
@@ -394,7 +383,8 @@ void AnsiWidget::setColor(long fg) {
 
 // sets the pixel to the given color at the given xy location
 void AnsiWidget::setPixel(int x, int y, int c) {
-  Backbuffer backbuffer(image, c);
+  maSetDrawTarget(image);
+  maSetColor(c);
   maPlot(x, y);
 }
 
@@ -431,10 +421,11 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
 
   Vector_each(Hyperlink*, it, hyperlinks) {
     if ((*it)->overlaps(event.point)) {
-      Backbuffer backbuffer(image, fg);
+      maSetDrawTarget(image);
       activeLink = (*it);
       activeLink->pressed = true;
       activeLink->draw();
+      flush(dirty = true);
       break;
     }
   }
@@ -451,9 +442,10 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   if (activeLink != NULL) {
     bool pressed = activeLink->overlaps(event.point);
     if (pressed != activeLink->pressed) {
-      Backbuffer backbuffer(image, fg);
+      maSetDrawTarget(image);
       activeLink->pressed = pressed;
       activeLink->draw();
+      flush(dirty = true);
     }
   }
 }
@@ -466,11 +458,13 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   }
   
   if (activeLink != NULL && activeLink->pressed) {
-    Backbuffer backbuffer(image, fg);
+    maSetDrawTarget(image);
+    maSetColor(fg);
     activeLink->pressed = false;
     activeLink->draw();
+    flush(dirty = true);
     if (hyperlinkListener) {
-      hyperlinkListener->clicked(activeLink->url.c_str());
+      hyperlinkListener->linkClicked(activeLink->url.c_str());
     }
   }
 }
@@ -496,14 +490,21 @@ int AnsiWidget::calcTab(int x) const {
   return c * tabSize;
 }
 
-// creates a hyperlink, eg // ^[ hwww.foo.com:title:hover;More text
+// calculate the pixel width of the given character
+int AnsiWidget::charWidth(char c) {
+  char measure[] = { c, 0 };
+  int result = EXTENT_X(maGetTextSize(measure));
+  return result;
+}
+
+// creates a hyperlink, eg // ^[ hwww.foo.com|title|hover;More text
 void AnsiWidget::createLink(char *&p, bool execLink) {
   Vector<String *> *items = getItems(p);
   const char *url = items->size() > 0 ? (*items)[0]->c_str() : "";
   const char *text = items->size() > 1 ? (*items)[1]->c_str() : "";
 
   if (execLink && hyperlinkListener) {
-    hyperlinkListener->clicked(url);
+    hyperlinkListener->linkClicked(url);
   } else {
     MAExtent textSize = maGetTextSize(text);
     int w = EXTENT_X(textSize) + 2;
@@ -593,7 +594,7 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
       eot = true;
       // fallthru
 
-    case ':':
+    case '|':
       result->add(new String((const char *)next, (p - next)));
       next = p + 1;
       break;
@@ -644,13 +645,13 @@ void AnsiWidget::reset(bool init) {
     tabSize = 40;               // tab size in pixels (160/32 = 5)
     markX = markY = pointX = pointY = 0;
     copyMode = false;
-  }
 
-  // cleanup any hyperlinks
-  Vector_each(Hyperlink*, it, hyperlinks) {
-    delete (*it);
+    // cleanup any hyperlinks
+    Vector_each(Hyperlink*, it, hyperlinks) {
+      delete (*it);
+    }
+    hyperlinks.clear();
   }
-  hyperlinks.clear();
 
   curYSaved = 0;
   curXSaved = 0;

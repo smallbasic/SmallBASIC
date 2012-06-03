@@ -664,6 +664,7 @@ void dev_beep(void); // just a BEEP! :)
  * @ingroup dev_s
  *
  * produce a tone
+ * duration in ms, volume in percent, bgplay = play on background
  *
  * @param freq is the frequency
  * @param dur_ms is the duration in milliseconds
@@ -671,17 +672,6 @@ void dev_beep(void); // just a BEEP! :)
  * @param bgplay non-zero for play the tone in background
  */
 void dev_sound(int freq, int dur_ms, int vol_prc, int bgplay); // note:
-// duration
-// in
-// ms,
-// volume
-// in
-// percent,
-// bgplay
-// =
-// play
-// on
-// background
 
 /**
  * @ingroup dev_f
@@ -804,18 +794,13 @@ int dev_fattr(const char *file);
 typedef enum {
   ft_stream,          /**< simple file */
   ft_random,
-
   ft_serial_port,     /**< COMx:speed, serial port */
   ft_printer_port,    /**< LPTx: parallel port */
-  ft_irda_port,       /**< IRDx: infrared "port" */
-
   ft_socket_client,   /**< SCLT:address:port, socket client */
   ft_socket_server,   // SSVR:address:port
   ft_http_client,
   ft_ftp_client,      // FTP is a good example also
   ft_mail_client,     // MAIL (at least SMTP)
-  ft_memo,
-  ft_pdoc,
   ft_ztxt,
   ft_vfslib           /**< vfs-module */
 } dev_ftype_t;

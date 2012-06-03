@@ -114,7 +114,7 @@ void dev_clrkb() {
  * stores a key in keyboard buffer
  */
 void dev_pushkey(word key) {
-  if (key < SB_KEY_MK_FIRST || key > SB_KEY_MK_LAST) {
+  if (key <= SB_KEY_MK_LAST) {
     keybuff[keytail] = key;
     keytail++;
     if (keytail >= PCKBSIZE) {

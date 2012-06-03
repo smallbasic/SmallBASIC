@@ -122,7 +122,6 @@ typedef long int var_int_t;
 #define mem_handle_size(p) malloc_usable_size((void *)p)
 #endif
 
-#define CPU_BIGENDIAN
 #define OS_PATHNAME_SIZE    1024
 #define OS_FILENAME_SIZE    256
 #define OS_FILEHANDLES      256
@@ -133,15 +132,6 @@ typedef long int var_int_t;
 #define SEC(x)  __attribute__((section(#x)))
 #else
 #define SEC(x)
-#endif
-
-#if defined(CPU_BIGENDIAN)      // __i386__
-#define BS16(x) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
-#define BS32(x) ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
-                 (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
-#else
-#define BS16(x) (x)
-#define BS32(x) (x)
 #endif
 
 // SB's constants

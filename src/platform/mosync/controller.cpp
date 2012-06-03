@@ -31,6 +31,7 @@ Controller::Controller() :
   MAExtent screenSize = maGetScrSize();
   output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
+  output->setHyperlinkListener(this);
 
   // install the default font
   MAUI::Engine& engine = MAUI::Engine::getSingleton();
@@ -53,9 +54,8 @@ Controller::~Controller() {
   delete output;
 }
 
-// returns any active program to load
 const char *Controller::getLoadPath() {
-  return 0;
+  return !loadPath.size() ? NULL : loadPath.c_str();
 }
 
 int Controller::getPen(int code) {
@@ -107,7 +107,8 @@ int Controller::getPen(int code) {
 
 // whether a GUI is active which may yield a load path
 bool Controller::hasGUI() {
-  return false;
+  bool result = output->hasLinks();
+  return result;
 }
 
 // runtime system event processor
@@ -140,6 +141,7 @@ int Controller::handleEvents(int waitFlag) {
     break;
   }
 
+  output->flush(true);
   return isExit() ? -2 : 0;
 }
 
@@ -229,6 +231,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
 // returns the contents of the given url
 char *Controller::readConnection(const char *url) {
   char *result = NULL;
+
   MAHandle conn = maConnect(url);
   if (conn > 0) {
     runMode = modal_state;
@@ -301,7 +304,8 @@ void Controller::setRunning() {
   osd_cls();
   dev_clrkb();
   ui_reset();
-  
+
+  loadPath.clear();
   runMode = run_state; 
 }
 
@@ -425,4 +429,10 @@ void Controller::handleKey(int key) {
     dev_pushkey(key);
     break;
   }
+}
+
+// handler for hyperlink click actions
+void Controller::linkClicked(const char *url) {
+  loadPath.clear();
+  loadPath.append(url, strlen(url));
 }

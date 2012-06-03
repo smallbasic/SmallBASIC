@@ -27,7 +27,7 @@ struct Hyperlink {
 };
 
 struct HyperlinkListener {
-  virtual void clicked(const char *url) = 0;
+  virtual void linkClicked(const char *url) = 0;
 };
 
 #define DEFAULT_COLOR 0xffba00
@@ -45,6 +45,7 @@ public:
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
+  void flush(bool force);
   int getBackgroundColor() { return bg; }
   int getColor() { return fg; }
   int getPixel(int x, int y);
@@ -55,8 +56,6 @@ public:
   int textHeight(void);
   int textWidth(const char *s, int len=-1);
   void print(const char *str);
-  void printf(const char *str, ...);
-  void refresh();
   void resize(int width, int height);
   void setColor(long color);
   void setPixel(int x, int y, int c);
@@ -68,6 +67,7 @@ public:
   int getMouseX(bool down) { return down ? markX : pointX; }
   int getMouseY(bool down) { return down ? markY : pointY; }
   bool getMouseMode() { return mouseMode; }
+  bool hasLinks() { return hyperlinks.size() > 0; }
   void resetMouse();
   void setMouseMode(bool mode);
   void setHyperlinkListener(HyperlinkListener *hll) { hyperlinkListener = hll; }
@@ -78,6 +78,7 @@ public:
 private:
   int ansiToMosync(long color);
   int calcTab(int x) const;
+  int charWidth(char c);
   void createLink(char *&p, bool execLink);
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p);

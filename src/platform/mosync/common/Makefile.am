@@ -11,7 +11,7 @@ CC=$(MOSYNC_HOME)/bin/xgcc.exe
 
 AR=$(MOSYNC_HOME)/bin/pipe-tool.exe
 
-ARFLAGS = -L
+ARFLAGS = -L -quiet
 
 RANLIB=echo
 
@@ -43,9 +43,6 @@ libsb_common_a_SOURCES =                                      \
     $(COMMON)/file.c                                          \
     $(COMMON)/ffill.c                                         \
     $(COMMON)/fmt.c $(COMMON)/fmt.h                           \
-    $(COMMON)/fs_irda.c $(COMMON)/fs_irda.h                   \
-    $(COMMON)/fs_memo.c $(COMMON)/fs_memo.h                   \
-    $(COMMON)/fs_pdoc.c $(COMMON)/fs_pdoc.h                   \
     $(COMMON)/fs_serial.c $(COMMON)/fs_serial.h               \
     $(COMMON)/fs_socket_client.c $(COMMON)/fs_socket_client.h \
     $(COMMON)/fs_stream.c $(COMMON)/fs_stream.h               \

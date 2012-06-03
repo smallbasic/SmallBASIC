@@ -27,7 +27,7 @@ using namespace MAUtil;
 #define PEN_OFF   0             // pen mode disabled
 #define PEN_ON    2             // pen mode active
 
-struct Controller : public Environment {
+struct Controller : public Environment, HyperlinkListener {
   Controller();
   virtual ~Controller();
 
@@ -61,6 +61,7 @@ struct Controller : public Environment {
 private:
   void fireEvent(MAEvent &event);
   void handleKey(int key);
+  void linkClicked(const char *url);
 
   ExecState runMode;
   clock_t lastEventTime;
@@ -68,5 +69,6 @@ private:
   int penMode;
   int penDownX;
   int penDownY;
+  String loadPath;
 };
 

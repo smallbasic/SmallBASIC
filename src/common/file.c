@@ -28,9 +28,6 @@ typedef int FileHand;
 // drivers
 #include "common/fs_stream.h"
 #include "common/fs_serial.h"
-#include "common/fs_irda.h"
-#include "common/fs_memo.h"
-#include "common/fs_pdoc.h"
 #include "common/fs_socket_client.h"
 
 // FILE TABLE
@@ -62,11 +59,6 @@ int dev_initfs() {
     file_table[i].handle = -1;
   }
 
-  // drivers initialization
-  if (memo_mount() == 0) {
-    rt_raise("MEMOFS DRIVER FAILED");
-    return 0;
-  }
   return 1;
 }
 
@@ -81,9 +73,6 @@ void dev_closefs() {
       dev_fclose(i + 1);
     }
   }
-
-  // drivers deinit
-  memo_umount();
 }
 
 /**
@@ -187,11 +176,7 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
       for (i = 0; i < 5; i++) {
         f->name[i] = to_upper(f->name[i]);
       }
-      if (strncmp(f->name, "MEMO:", 5) == 0) {
-        f->type = ft_memo;
-      } else if (strncmp(f->name, "PDOC:", 5) == 0) {
-        f->type = ft_pdoc;
-      } else if (strncmp(f->name, "COM", 3) == 0) {
+      if (strncmp(f->name, "COM", 3) == 0) {
         f->type = ft_serial_port;
         f->port = f->name[3] - '1';
         if (f->port < 0) {
@@ -206,20 +191,13 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
 #if USE_TERM_IO
         f->devspeed = select_unix_serial_speed(f->devspeed);
 #endif
-      } else if (strncmp(f->name, "IRD", 3) == 0) {
-        f->type = ft_irda_port;
-        f->port = f->name[3] - '1';
-        if (strlen(f->name) > 5) {
-          f->devspeed = xstrtol(name + 5);
-        } else {
-          f->devspeed = 9600;
-        }
       } else if (strncmp(f->name, "SOCL:", 5) == 0) {
         f->type = ft_socket_client;
       } else if (strncasecmp(f->name, "HTTP:", 5) == 0) {
         f->type = ft_http_client;
-      } else if (strncmp(f->name, "SOUT:", 5) == 0 || strncmp(f->name, "SDIN:", 5) == 0
-          || strncmp(f->name, "SERR:", 5) == 0) {
+      } else if (strncmp(f->name, "SOUT:", 5) == 0 || 
+                 strncmp(f->name, "SDIN:", 5) == 0 ||
+                 strncmp(f->name, "SERR:", 5) == 0) {
         f->type = ft_stream;
       } else {
         // external-lib
@@ -252,20 +230,14 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
   // open
   // 
   switch (f->type) {
-  case ft_memo:
-    return memo_open(f);
   case ft_stream:
     return stream_open(f);
-  case ft_pdoc:
-    return pdoc_open(f);
   case ft_socket_client:
     return sockcl_open(f);
   case ft_http_client:
     return http_open(f);
   case ft_serial_port:
     return serial_open(f);
-  case ft_irda_port:
-    return irda_open(f);
   case ft_vfslib:
     return sblmgr_vfsexec(lib_vfs_open, f);
   default:
@@ -288,14 +260,8 @@ int dev_fclose(int sb_handle) {
   switch (f->type) {
   case ft_stream:
     return stream_close(f);
-  case ft_memo:
-    return memo_close(f);
   case ft_serial_port:
     return serial_close(f);
-  case ft_irda_port:
-    return irda_close(f);
-  case ft_pdoc:
-    return pdoc_close(f);
   case ft_socket_client:
   case ft_http_client:
     return sockcl_close(f);
@@ -318,15 +284,10 @@ int dev_fwrite(int sb_handle, byte *data, dword size) {
   }
 
   switch (f->type) {
-  case ft_memo:
-    return memo_write(f, data, size);
   case ft_stream:
-  case ft_pdoc:
     return stream_write(f, data, size);
   case ft_serial_port:
     return serial_write(f, data, size);
-  case ft_irda_port:
-    return irda_write(f, data, size);
   case ft_socket_client:
   case ft_http_client:
     return sockcl_write(f, data, size);
@@ -349,15 +310,10 @@ int dev_fread(int sb_handle, byte *data, dword size) {
   }
 
   switch (f->type) {
-  case ft_memo:
-    return memo_read(f, data, size);
   case ft_stream:
-  case ft_pdoc:
     return stream_read(f, data, size);
   case ft_serial_port:
     return serial_read(f, data, size);
-  case ft_irda_port:
-    return irda_read(f, data, size);
   case ft_socket_client:
   case ft_http_client:
     return sockcl_read(f, data, size);
@@ -402,14 +358,9 @@ dword dev_flength(int sb_handle) {
 
   switch (f->type) {
   case ft_stream:
-  case ft_pdoc:
     return stream_length(f);
   case ft_serial_port:
     return serial_length(f);
-  case ft_irda_port:
-    return irda_length(f);
-  case ft_memo:
-    return memo_length(f);
   case ft_socket_client:
   case ft_http_client:
     return sockcl_length(f);
@@ -432,10 +383,7 @@ dword dev_fseek(int sb_handle, dword offset) {
   }
 
   switch (f->type) {
-  case ft_memo:
-    return memo_seek(f, offset);
   case ft_stream:
-  case ft_pdoc:
     return stream_seek(f, offset);
   case ft_vfslib:
     return sblmgr_vfsexec(lib_vfs_seek, f, offset);
@@ -457,14 +405,9 @@ int dev_feof(int sb_handle) {
 
   switch (f->type) {
   case ft_stream:
-  case ft_pdoc:
     return stream_eof(f);
-  case ft_memo:
-    return memo_eof(f);
   case ft_serial_port:
     return serial_eof(f);
-  case ft_irda_port:
-    return irda_eof(f);
   case ft_socket_client:
   case ft_http_client:
     return sockcl_eof(f);
@@ -485,20 +428,10 @@ int dev_fremove(const char *file) {
   int success, vfslib;
 
   // common for all, execute driver's function
-  if (strncasecmp(file, "memo:", 5) == 0) {
-    success = memo_delete(file);
-  } else if (strncasecmp(file, "pdoc:", 5) == 0) {
-    success = pdoc_remove(file);
-  } else if ((vfslib = sblmgr_getvfs(file)) != -1) {
+  if ((vfslib = sblmgr_getvfs(file)) != -1) {
     success = sblmgr_vfsdirexec(lib_vfs_remove, vfslib, file + 5);
   } else {
-#if defined(_PalmOS)
-    success = (FileDelete(0, (char *)file) == 0);
-#elif defined(_VTOS)
-    success = (unlink((char *)file) != 0);
-#else
     success = (remove(file) == 0);
-#endif 
   }
   if (!success) {
     rt_raise(FSERR_ACCESS);
@@ -513,21 +446,11 @@ int dev_fexists(const char *file) {
   int vfslib;
 
   // common for all, execute driver's function
-  if (strncasecmp(file, "memo:", 5) == 0) {
-    return memo_exist(file);
-  } else if (strncasecmp(file, "pdoc:", 5) == 0) {
-    return pdoc_exist(file);
-  } else if ((vfslib = sblmgr_getvfs(file)) != -1) {
+  if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_exist, vfslib, file + 5);
   }
 
-#if defined(_PalmOS)
-  return (DmFindDatabase(0, (char *)file) != 0);
-#elif defined(_VTOS)
-  return fexists(file);
-#else
   return (access(file, 0) == 0);
-#endif
 }
 
 /**
@@ -627,9 +550,7 @@ int dev_frename(const char *file, const char *newname) {
  * BUG: no drivers supported
  */
 void dev_mkdir(const char *dir) {
-#if defined(_PalmOS) || defined(_VTOS)
-  err_unsup();
-#elif defined(_Win32) || defined(__MINGW32__)
+#if defined(_Win32) || defined(__MINGW32__)
   if (mkdir(dir) != 0) {
     err_file(errno);
   }
@@ -645,13 +566,9 @@ void dev_mkdir(const char *dir) {
  * BUG: no drivers supported
  */
 void dev_rmdir(const char *dir) {
-#if defined(_PalmOS) || defined(_VTOS)
-  err_unsup();
-#else 
   if (rmdir(dir) != 0) {
     err_file(errno);
   }
-#endif
 }
 
 /**
@@ -659,14 +576,10 @@ void dev_rmdir(const char *dir) {
  * BUG: no drivers supported
  */
 void dev_chdir(const char *dir) {
-#if defined(_PalmOS) || defined(_VTOS)
-  err_unsup();
-#else
   if (chdir(dir) != 0) {
     err_file(errno);
   }
   setsysvar_str(SYSVAR_PWD, dev_getcwd());
-#endif
 }
 
 /**
@@ -677,141 +590,77 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
   if (wc) {
     int vfslib;
 
-    if (strncasecmp(wc, "MEMO:", 5) == 0) {
-      return memo_create_file_list(wc + 5, count);
-    } else if (strncasecmp(wc, "PDOC:", 5) == 0) {
-      return pdoc_create_file_list(wc + 5, count);
-    } else if ((vfslib = sblmgr_getvfs(wc)) != -1) {
+    if ((vfslib = sblmgr_getvfs(wc)) != -1) {
       return (char_p_t *) sblmgr_vfsdirexec(lib_vfs_list, vfslib, wc + 5, count);
     }
   }
 
-  // do it for "local disk"
-  {
-#if defined(_PalmOS)
-    int db_count, i;
-    dword type, creator;
-    LocalID LID;
-    char temp[65];
-    char_p_t *list;
-
-    db_count = DmNumDatabases(0);
-    list = tmp_alloc(db_count * sizeof(char_p_t));
-    *count = 0;
-
-    for (i = 0; i < db_count; i++) {
-      LID = DmGetDatabase(0, i);
-
-      if (LID) {
-        temp[0] = '\0';
-        if (DmDatabaseInfo(0, LID,
-                temp,
-                NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                NULL, &type, &creator) == 0) {
-
-          if (creator == ID_SmBa && type == ID_UFST) {
-            if (wc_match(wc, temp)) {
-              list[*count] = (char *)tmp_alloc(strlen(temp) + 1);
-              strcpy(list[*count], temp);
-              *count = *count + 1;
-            }
-          }                     // type
-        }                       // DmDatabaseInfo
-      }                         // LID
-    }                           // for
-
-#elif defined(_VTOS)
-    int db_count, i;
-    char_p_t *list;
-    unsigned char *mem, *ptr;
-
-    ptr = mem = qmalloc(256 * 32);
-    db_count = listalldbs(NULL, mem, 255);
-
-    list = tmp_alloc(db_count * sizeof(char_p_t));
-    *count = 0;
-
-    for (i = 0; i < db_count; i++) {
-      if (wc_match(wc, ptr)) {
-        list[*count] = (char *)tmp_alloc(strlen(ptr) + 1);
-        strcpy(list[*count], ptr);
-        *count = *count + 1;
-      }
-      ptr += 32;
-    }                           // type
-    qfree(mem);
-#else
-
-    DIR *dp;
-    struct dirent *e;
-    char *p, wc2[OS_FILENAME_SIZE + 1], *name;
-    char path[OS_PATHNAME_SIZE + 1];int
-    l, size;
-    char_p_t *list;
-
-    if (wc) {
-      strcpy(path, wc);
-      if ((p = strrchr(path, OS_DIRSEP)) == NULL) {
-        getcwd(path, OS_PATHNAME_SIZE);
-        if (path[(l = strlen(path))] != OS_DIRSEP) {
-          path[l] = OS_DIRSEP;
-          path[l + 1] = '\0';
-        }
-        strcpy(wc2, wc);
-      } else {
-        strcpy(wc2, p + 1);
-        *(p + 1) = '\0';
-        if (strlen(wc2) == 0) {
-          strcpy(wc2, "*");
-        }
-      }
-    } else {
+  DIR *dp;
+  struct dirent *e;
+  char *p, wc2[OS_FILENAME_SIZE + 1], *name;
+  char path[OS_PATHNAME_SIZE + 1];
+  int l, size;
+  char_p_t *list;
+  
+  if (wc) {
+    strcpy(path, wc);
+    if ((p = strrchr(path, OS_DIRSEP)) == NULL) {
       getcwd(path, OS_PATHNAME_SIZE);
       if (path[(l = strlen(path))] != OS_DIRSEP) {
         path[l] = OS_DIRSEP;
         path[l + 1] = '\0';
       }
-      wc2[0] = '\0';
-    }
-
-    *count = 0;
-    size = 256;
-    list = tmp_alloc(sizeof(char_p_t) * size);
-
-    if ((dp = opendir(path)) == NULL) {
-      return list;
-    }
-
-    while ((e = readdir(dp)) != NULL) {
-      name = e->d_name;
-      if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
-        continue;
-      }
-      if (wc_match(wc2, name)) {
-        if ((*count + 1) == size) {
-          size += 256;
-          list = tmp_realloc(list, sizeof(char_p_t) * size);
-        }
-        list[*count] = (char *) tmp_alloc(strlen(name) + 1);
-        strcpy(list[*count], name);
-        *count = *count + 1;
+      strcpy(wc2, wc);
+    } else {
+      strcpy(wc2, p + 1);
+      *(p + 1) = '\0';
+      if (strlen(wc2) == 0) {
+        strcpy(wc2, "*");
       }
     }
-
-    closedir(dp);
-#endif
-
-    // common for all, if there are no files, return NULL
-    if (*count == 0) {
-      if (list) {
-        tmp_free(list);
-      }
-      list = NULL;
+  } else {
+    getcwd(path, OS_PATHNAME_SIZE);
+    if (path[(l = strlen(path))] != OS_DIRSEP) {
+      path[l] = OS_DIRSEP;
+      path[l + 1] = '\0';
     }
+    wc2[0] = '\0';
+  }
+  
+  *count = 0;
+  size = 256;
+  list = tmp_alloc(sizeof(char_p_t) * size);
+  
+  if ((dp = opendir(path)) == NULL) {
     return list;
   }
+  
+  while ((e = readdir(dp)) != NULL) {
+    name = e->d_name;
+    if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
+      continue;
+    }
+    if (wc_match(wc2, name)) {
+      if ((*count + 1) == size) {
+        size += 256;
+        list = tmp_realloc(list, sizeof(char_p_t) * size);
+      }
+      list[*count] = (char *) tmp_alloc(strlen(name) + 1);
+      strcpy(list[*count], name);
+      *count = *count + 1;
+    }
+  }
+  
+  closedir(dp);
 
-  return NULL;
+  // common for all, if there are no files, return NULL
+  if (*count == 0) {
+    if (list) {
+      tmp_free(list);
+    }
+    list = NULL;
+  }
+  return list;
 }
 
 /**
@@ -833,10 +682,7 @@ void dev_destroy_file_list(char_p_t *list, int count) {
 char *dev_getcwd() {
   static char retbuf[OS_PATHNAME_SIZE + 1];
 
-#if defined(_PalmOS) || defined(_VTOS)
-  *retbuf = '\0';
-#else
-int  l;
+  int  l;
 
   getcwd(retbuf, OS_PATHNAME_SIZE);
   l = strlen(retbuf);
@@ -844,7 +690,6 @@ int  l;
     retbuf[l] = OS_DIRSEP;
     retbuf[l + 1] = '\0';
   }
-#endif
   return retbuf;
 }
 
@@ -854,36 +699,22 @@ int  l;
  */
 int dev_fattr(const char *file) {
   int vfslib;
+  struct stat st;
+  int r = 0;
 
   // common for all, execute driver's function
-  if (strncasecmp(file, "memo:", 5) == 0) {
-    return memo_fattr(file);
-  } else if (strncasecmp(file, "pdoc:", 5) == 0) {
-    return pdoc_fattr(file);
-  } else if ((vfslib = sblmgr_getvfs(file)) != -1) {
+  if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_attr, vfslib, file + 5);
   }
-
-#if defined(_PalmOS) || defined(_VTOS)
-  if (dev_fexists(file)) {
-    return VFS_ATTR_FILE;
-  }
-  return 0;
-#else
-  {
-    struct stat st;
-    int r = 0;
-
-    if (stat(file, &st) == 0) {
-      r |= ((S_ISREG(st.st_mode)) ? VFS_ATTR_FILE : 0);
-      r |= ((S_ISDIR(st.st_mode)) ? VFS_ATTR_DIR : 0);
+  
+  if (stat(file, &st) == 0) {
+    r |= ((S_ISREG(st.st_mode)) ? VFS_ATTR_FILE : 0);
+    r |= ((S_ISDIR(st.st_mode)) ? VFS_ATTR_DIR : 0);
 #if defined(_UnixOS) && !defined(__MINGW32__)
-      r |= ((S_ISLNK(st.st_mode)) ? VFS_ATTR_LINK : 0);
+    r |= ((S_ISLNK(st.st_mode)) ? VFS_ATTR_LINK : 0);
 #endif
-    }
-    return r;
   }
-#endif
+  return r;
 }
 
 /**
@@ -891,27 +722,15 @@ int dev_fattr(const char *file) {
  */
 int dev_faccess(const char *file) {
   int vfslib;
+  struct stat st;
 
   // common for all, execute driver's function
-  if (strncasecmp(file, "memo:", 5) == 0) {
-    return memo_access(file);
-  } else if (strncasecmp(file, "pdoc:", 5) == 0) {
-    return pdoc_access(file);
-  } else if ((vfslib = sblmgr_getvfs(file)) != -1) {
+  if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_access, vfslib, file + 5);
   }
 
-#if defined(_PalmOS) || defined(_VTOS)
-  // TODO: if file's type is 'appl' return 0777
-  return 0666;
-#else
-  {
-    struct stat st;
-
-    if (stat(file, &st) == 0) {
-      return st.st_mode;
-    }
+  if (stat(file, &st) == 0) {
+    return st.st_mode;
   }
   return 0;
-#endif
 }

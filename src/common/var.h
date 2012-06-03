@@ -804,42 +804,16 @@ stknode_t *code_stackpeek();
 #define code_skipnext32()   prog_ip+=4  /**< IP += 4; @ingroup exec */
 #define code_skipnext64()   prog_ip+=8  /**< IP += 8; @ingroup exec */
 
-#if defined(_FRANKLIN_EBM)
-// has the same layout as per unix but is done this way
-// to stop the simulator from throwing sig/traps
-#define code_getnext16() (U16)(prog_ip+=2, prog_source[prog_ip-1]<<8|prog_source[prog_ip-2])
-#define code_peeknext16()(U16)(prog_source[prog_ip-1]<<8|prog_source[prog_ip-2])
-#define code_peek16(o)   (U16)(prog_source[o+1]<<8|prog_source[o])
-#define code_peek32(o)   (U32)(code_peek16(o+2)|code_peek16(o))
-#elif !defined(_PalmOS) && !defined(_VTOS)
-#define code_getnext16()        (*((word *) (prog_source+(prog_ip+=2)-2)))
-#define code_peeknext16()       (*((word *) (prog_source+prog_ip)))
-#define code_peek16(o)          (*((word *) (prog_source+(o))))
-#define code_peek32(o)          (*((dword *) (prog_source+(o))))
-#else                           // !!!
 #if defined(CPU_BIGENDIAN)
-#define code_getnext16()  (prog_ip+=2, (prog_source[prog_ip-1]<<8)|prog_source[prog_ip-2])  
-    // R(2-byte-word+
-#define code_peeknext16()   ((prog_source[prog_ip+1]<<8)|prog_source[prog_ip])
-#define code_peek16(o)      ((prog_source[(o)+1]<<8)|prog_source[(o)])  // R(2-byte-word)
-    // <- Cod+
-#define code_peek32(o)      (((addr_t) code_peek16((o)+2) << 16) + (addr_t) code_peek16((o)))
+#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1])
+#define code_peeknext16()   ((prog_source[prog_ip]<<8)|prog_source[prog_ip+1])
+#define code_peek16(o)      ((prog_source[(o)]<<8)|prog_source[(o)+1])
+#define code_peek32(o)      (((addr_t)code_peek16((o)) << 16) + (addr_t)code_peek16((o)+2))
 #else
-#define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1]) 
-    // R(2-byte-word)
-// <-
-// Code[IP];
-// IP
-// +=
-// 2;
-#define code_peeknext16()   ((prog_source[prog_ip]<<8)|prog_source[prog_ip+1])  // R(2-byte-word)
-// <-
-// Code[IP];
-#define code_peek16(o)      ((prog_source[(o)]<<8)|prog_source[(o)+1])  // R(2-byte-word)
-// <-
-// Code[IP+o];
-#define code_peek32(o)      ( ((addr_t) code_peek16((o)) << 16) + (addr_t) code_peek16((o)+2) )
-#endif
+#define code_getnext16()    (*((word *)(prog_source+(prog_ip+=2)-2)))
+#define code_peeknext16()   (*((word *)(prog_source+prog_ip)))
+#define code_peek16(o)      (*((word *)(prog_source+(o))))
+#define code_peek32(o)      (*((dword *)(prog_source+(o))))
 #endif
 
 /*
@@ -916,7 +890,7 @@ void setsysvar_num(int index, var_num_t val);
  * @param index is the system variable's index
  * @param val the value
  */
-void setsysvar_str(int index, const char *value) SEC(BLIB);
+void setsysvar_str(int index, const char *value);
 
 /*
  * in eval.c

@@ -16,15 +16,6 @@
 #include "common/messages.h"
 #include "common/fs_socket_client.h"
 
-#if defined(__BORLANDC__)
-#define F_OK    0
-#define R_OK    4
-#define W_OK    6
-#endif
-
-void write_encoded_var(int handle, var_t * var) SEC(BIO);
-int read_encoded_var(int handle, var_t * var) SEC(BIO);
-
 struct file_encoded_var {
   byte sign;                    // always '$'
   byte version;                 //
@@ -78,7 +69,7 @@ void cmd_fopen() {
       handle = par_getint();
       if (!prog_error) {
         if (dev_fstatus(handle) == 0)
-          dev_fopen(handle, (char *) file_name.v.p.ptr, flags);
+          dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
         else
           rt_raise("OPEN: FILE IS ALREADY OPENED");
       }
@@ -157,33 +148,33 @@ void write_encoded_var(int handle, var_t * var) {
   switch (var->type) {
   case V_INT:
     fv.size = 4;
-    dev_fwrite(handle, (byte *) &fv, sizeof(struct file_encoded_var));
-    dev_fwrite(handle, (byte *) &var->v.i, fv.size);
+    dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
+    dev_fwrite(handle, (byte *)&var->v.i, fv.size);
     break;
   case V_NUM:
     fv.size = 8;
-    dev_fwrite(handle, (byte *) &fv, sizeof(struct file_encoded_var));
-    dev_fwrite(handle, (byte *) &var->v.n, fv.size);
+    dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
+    dev_fwrite(handle, (byte *)&var->v.n, fv.size);
     break;
   case V_STR:
-    fv.size = strlen((char *) var->v.p.ptr);
-    dev_fwrite(handle, (byte *) &fv, sizeof(struct file_encoded_var));
-    dev_fwrite(handle, (byte *) var->v.p.ptr, fv.size);
+    fv.size = strlen((char *)var->v.p.ptr);
+    dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
+    dev_fwrite(handle, (byte *)var->v.p.ptr, fv.size);
     break;
   case V_ARRAY:
     fv.size = var->v.a.size;
-    dev_fwrite(handle, (byte *) &fv, sizeof(struct file_encoded_var));
+    dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
 
     // write additional data about array
     dev_fwrite(handle, &var->v.a.maxdim, 1);
     for (i = 0; i < var->v.a.maxdim; i++) {
-      dev_fwrite(handle, (byte *) &var->v.a.lbound[i], sizeof(int));
-      dev_fwrite(handle, (byte *) &var->v.a.ubound[i], sizeof(int));
+      dev_fwrite(handle, (byte *)&var->v.a.lbound[i], sizeof(int));
+      dev_fwrite(handle, (byte *)&var->v.a.ubound[i], sizeof(int));
     }
 
     // write elements
     for (i = 0; i < var->v.a.size; i++) {
-      elem = (var_t *) (var->v.a.ptr + sizeof(var_t) * i);
+      elem = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
       write_encoded_var(handle, elem);
     }
     break;
@@ -198,7 +189,7 @@ int read_encoded_var(int handle, var_t * var) {
   var_t *elem;
   int i;
 
-  dev_fread(handle, (byte *) &fv, sizeof(struct file_encoded_var));
+  dev_fread(handle, (byte *)&fv, sizeof(struct file_encoded_var));
   if (fv.sign != '$') {
     rt_raise("READ: BAD SIGNATURE");
     return -1;                  // bad signature
@@ -208,16 +199,16 @@ int read_encoded_var(int handle, var_t * var) {
   switch (fv.type) {
   case V_INT:
     var->type = V_INT;
-    dev_fread(handle, (byte *) &var->v.i, fv.size);
+    dev_fread(handle, (byte *)&var->v.i, fv.size);
     break;
   case V_NUM:
     var->type = V_NUM;
-    dev_fread(handle, (byte *) &var->v.n, fv.size);
+    dev_fread(handle, (byte *)&var->v.n, fv.size);
     break;
   case V_STR:
     var->type = V_STR;
     var->v.p.ptr = tmp_alloc(fv.size + 1);
-    dev_fread(handle, (byte *) var->v.p.ptr, fv.size);
+    dev_fread(handle, (byte *)var->v.p.ptr, fv.size);
     var->v.p.ptr[fv.size] = '\0';
     break;
   case V_ARRAY:
@@ -226,15 +217,15 @@ int read_encoded_var(int handle, var_t * var) {
     var->v.a.size = fv.size;
 
     // read additional data about array
-    dev_fread(handle, (byte *) &var->v.a.maxdim, 1);
+    dev_fread(handle, (byte *)&var->v.a.maxdim, 1);
     for (i = 0; i < var->v.a.maxdim; i++) {
-      dev_fread(handle, (byte *) &var->v.a.lbound[i], sizeof(int));
-      dev_fread(handle, (byte *) &var->v.a.ubound[i], sizeof(int));
+      dev_fread(handle, (byte *)&var->v.a.lbound[i], sizeof(int));
+      dev_fread(handle, (byte *)&var->v.a.ubound[i], sizeof(int));
     }
 
     // write elements
     for (i = 0; i < var->v.a.size; i++) {
-      elem = (var_t *) (var->v.a.ptr + sizeof(var_t) * i);
+      elem = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
       v_init(elem);
       read_encoded_var(handle, elem);
     }
@@ -258,10 +249,8 @@ void cmd_fwrite() {
     handle = par_getint();
     if (!prog_error) {
 
-      if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {  // There
-        // are
-        // no
-        // parameters
+      if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {  
+        // There are no parameters
         if (!dev_fstatus(handle)) {
           // dev_fwrite(handle, "\n", 1);
           ;
@@ -274,9 +263,7 @@ void cmd_fwrite() {
       par_getsep();             // allow commas
 
       if (!prog_error) {
-
         if (dev_fstatus(handle)) {
-
           byte code, exitf = 0;
           var_t *var_p;
 
@@ -323,15 +310,16 @@ void cmd_fread() {
   par_getsharp();
   if (!prog_error) {
     handle = par_getint();
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
 
     par_getsep();               // allow commas
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
 
     if (dev_fstatus(handle)) {
-
       // get the variables
       do {
         if (prog_error)
@@ -339,13 +327,13 @@ void cmd_fread() {
 
         // get variable's ptr
         var_p = par_getvar_ptr();
-        if (prog_error)
+        if (prog_error) {
           return;
-
+        }
         read_encoded_var(handle, var_p);
-        if (prog_error)
+        if (prog_error) {
           return;
-
+        }
         // next
         code = code_peek();
         if (code == kwTYPE_SEP)
@@ -353,8 +341,9 @@ void cmd_fread() {
         else
           break;
       } while (1);
-    } else
+    } else {
       rt_raise("FIO: FILE IS NOT OPENED");
+    }
   }
 }
 
@@ -381,9 +370,7 @@ void cmd_flineinput() {
         par_getsep();           // allow commas
 
         if (!prog_error) {
-
           if (dev_fstatus(handle)) {
-
             // get the variable
             code = code_peek();
             if (code != kwTYPE_VAR) {
@@ -441,8 +428,8 @@ void cmd_flineinput() {
       var_p->type = V_STR;
       var_p->v.p.ptr = tmp_alloc(SB_TEXTLINE_SIZE + 1);
       var_p->v.p.size = SB_TEXTLINE_SIZE + 1;
-      ((char*) var_p->v.p.ptr)[0] = 0;
-      dev_gets((char *) var_p->v.p.ptr, SB_TEXTLINE_SIZE);
+      ((char *)var_p->v.p.ptr)[0] = 0;
+      dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
       dev_print("\n");
     }
   }
@@ -466,8 +453,8 @@ void cmd_fkill() {
   par_getstr(&file_name);
   if (prog_error)
     return;
-  if (dev_fexists((char *) file_name.v.p.ptr))
-    dev_fremove((char *) file_name.v.p.ptr);
+  if (dev_fexists((char *)file_name.v.p.ptr))
+    dev_fremove((char *)file_name.v.p.ptr);
   // else
   // rt_raise("KILL: FILE DOES NOT EXIST");
   v_free(&file_name);
@@ -496,11 +483,11 @@ void cmd_filecp(int mv) {
     return;
   }
 
-  if (dev_fexists((char *) src.v.p.ptr)) {
+  if (dev_fexists((char *)src.v.p.ptr)) {
     if (!mv) {
-      dev_fcopy((char *) src.v.p.ptr, (char *) dst.v.p.ptr);
+      dev_fcopy((char *)src.v.p.ptr, (char *)dst.v.p.ptr);
     } else {
-      dev_frename((char *) src.v.p.ptr, (char *) dst.v.p.ptr);
+      dev_frename((char *)src.v.p.ptr, (char *)dst.v.p.ptr);
     }
   } else {
     rt_raise("COPY/RENAME: FILE DOES NOT EXIST");
@@ -520,7 +507,7 @@ void cmd_chdir() {
   par_getstr(&dir);
   if (prog_error)
     return;
-  dev_chdir((char *) dir.v.p.ptr);
+  dev_chdir((char *)dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -535,7 +522,7 @@ void cmd_rmdir() {
   par_getstr(&dir);
   if (prog_error)
     return;
-  dev_rmdir((char *) dir.v.p.ptr);
+  dev_rmdir((char *)dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -550,7 +537,7 @@ void cmd_mkdir() {
   par_getstr(&dir);
   if (prog_error)
     return;
-  dev_mkdir((char *) dir.v.p.ptr);
+  dev_mkdir((char *)dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -635,7 +622,7 @@ void cmd_floadln() {
       return;
     }
 
-    dev_fopen(handle, (char *) file_name.v.p.ptr, flags);
+    dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
   }
@@ -652,7 +639,7 @@ void cmd_floadln() {
 
     while (!eof) {
       // build var for line
-      var_p = (var_t *) (array_p->v.a.ptr + (sizeof(var_t) * index));
+      var_p = (var_t *)(array_p->v.a.ptr + (sizeof(var_t) * index));
       size = GROW_SIZE;
       var_p->type = V_STR;
       var_p->v.p.ptr = tmp_alloc(size);
@@ -671,7 +658,7 @@ void cmd_floadln() {
           bufIndex = 0;
           unreadBytes -= bufLen;
 
-          dev_fread(handle, (byte *) buf, bufLen);
+          dev_fread(handle, (byte *)buf, bufLen);
           if (prog_error) {
             eof = 1;
             break;
@@ -768,7 +755,7 @@ void cmd_fsaveln() {
       return;
     }
 
-    dev_fopen(handle, (char *) file_name.v.p.ptr, flags);
+    dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
   }
@@ -776,9 +763,9 @@ void cmd_fsaveln() {
   if (var_p->type == V_ARRAY) {
     // parameter is an array
     for (i = 0; i < array_p->v.a.size; i++) {
-      var_p = (var_t *) (array_p->v.a.ptr + (sizeof(var_t) * i));
+      var_p = (var_t *)(array_p->v.a.ptr + (sizeof(var_t) * i));
       fprint_var(handle, var_p);
-      dev_fwrite(handle, (byte *) "\n", 1);
+      dev_fwrite(handle, (byte *)"\n", 1);
     }
   } else {
     // parameter is an string
@@ -825,16 +812,14 @@ void cmd_chmod() {
     return;
   }
 
-  chmod((char *) str.v.p.ptr, mode);
+  chmod((char *)str.v.p.ptr, mode);
   v_free(&str);
 }
 
 /*
  * walk on dirs
  */
-#if defined(_UnixOS) || defined(_DOS) || defined(_Win32)
-void dirwalk(char *dir, char *wc, addr_t use_ip)
-{
+void dirwalk(char *dir, char *wc, addr_t use_ip) {
   char name[OS_PATHNAME_SIZE];
   struct dirent *dp;
   DIR *dfd;
@@ -894,7 +879,6 @@ void dirwalk(char *dir, char *wc, addr_t use_ip)
   }
   closedir(dfd);
 }
-#endif
 
 /*
  * walking on directories
@@ -916,12 +900,8 @@ void cmd_dirwalk() {
     } else {
       use_ip = exit_ip = INVALID_ADDR;
     }
-    //
-#if defined(_UnixOS) || defined(_DOS) || defined(_Win32)
     dirwalk(dir, wc, use_ip);
-#endif
 
-    //
     if (exit_ip != INVALID_ADDR) {
       code_jump(exit_ip);
     }
@@ -986,13 +966,13 @@ void cmd_bload() {
         if (!prog_error) {
           var_int_t *data;
 
-          dev_fread(handle, (byte*) &idata, sizeof(idata));
+          dev_fread(handle, (byte *)&idata, sizeof(idata));
           if (ofs == -1) {
             ofs = idata;
           }
-          dev_fread(handle, (byte*) &len, sizeof(len));
+          dev_fread(handle, (byte *)&len, sizeof(len));
           data = &ofs;
-          dev_fread(handle, (byte*) data, len);
+          dev_fread(handle, (byte *)data, len);
           dev_fclose(handle);
         }
       }
@@ -1021,10 +1001,10 @@ void cmd_bsave() {
         if (!prog_error) {
           var_int_t *data;
 
-          dev_fwrite(handle, (byte*) &ofs, sizeof(ofs));
-          dev_fwrite(handle, (byte*) &len, sizeof(len));
+          dev_fwrite(handle, (byte *)&ofs, sizeof(ofs));
+          dev_fwrite(handle, (byte *)&len, sizeof(len));
           data = &ofs;
-          dev_fwrite(handle, (byte*) data, len);
+          dev_fwrite(handle, (byte *)data, len);
           dev_fclose(handle);
         }
       }
