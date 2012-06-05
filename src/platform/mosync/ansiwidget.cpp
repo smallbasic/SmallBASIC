@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/utils.h"
@@ -44,6 +45,8 @@
 */
 
 #define MAX_PENDING_UPDATES 10
+#define V_HEIGHT 5
+#define V_WIDTH  1
 #define INITXY 2
 #define BLACK  0
 #define BLUE   1
@@ -51,22 +54,22 @@
 #define WHITE  15
 
 static int colors[] = {
-  0x000000,                     // 0 black
-  0x000080,                     // 1 blue
-  0x008000,                     // 2 green
-  0x008080,                     // 3 cyan
-  0x800000,                     // 4 red
-  0x800080,                     // 5 magenta
-  0x808000,                     // 6 yellow
-  0xC0C0C0,                     // 7 white
-  0x808080,                     // 8 gray
-  0x0000FF,                     // 9 light blue
-  0x00FF00,                     // 10 light green
-  0x00FFFF,                     // 11 light cyan
-  0xFF0000,                     // 12 light red
-  0xFF00FF,                     // 13 light magenta
-  0xFFFF00,                     // 14 light yellow
-  0xFFFFFF                      // 15 bright white
+  0x000000, // 0 black
+  0x000080, // 1 blue
+  0x008000, // 2 green
+  0x008080, // 3 cyan
+  0x800000, // 4 red
+  0x800080, // 5 magenta
+  0x808000, // 6 yellow
+  0xC0C0C0, // 7 white
+  0x808080, // 8 gray
+  0x0000FF, // 9 light blue
+  0x00FF00, // 10 light green
+  0x00FFFF, // 11 light cyan
+  0xFF0000, // 12 light red
+  0xFF00FF, // 13 light magenta
+  0xFFFF00, // 14 light yellow
+  0xFFFFFF  // 15 bright white
 };
 
 // Workaround for API's which don't take a length argument
@@ -123,11 +126,15 @@ AnsiWidget::AnsiWidget(int width, int height) :
   curXSaved(0),
   tabSize(0),
   textSize(0),
-  scrollSize(0),
+  dirty(0),
   width(width),
   height(height),
-  dirty(0),
-  mouseMode(0),
+  virtualWidth(width * V_WIDTH),
+  virtualHeight(height * V_HEIGHT),
+  scrollY(0),
+  touchX(-1),
+  touchY(-1),
+  touchMode(0),
   hyperlinkListener(0),
   activeLink(0) {
 }
@@ -135,7 +142,7 @@ AnsiWidget::AnsiWidget(int width, int height) :
 bool AnsiWidget::construct() {
   bool result = false;
   image = maCreatePlaceholder();
-  if (image && RES_OK == maCreateDrawableImage(image, width, height)) {
+  if (image && RES_OK == maCreateDrawableImage(image, virtualWidth, virtualHeight)) {
     reset(true);
     clearScreen();
     result = true;
@@ -213,8 +220,17 @@ void AnsiWidget::flush(bool force) {
   }
 
   if (update) {
-    maSetDrawTarget(HANDLE_SCREEN);
-    maDrawImage(image, 0, 0);
+    MARect srcRect;
+    MAPoint2d dstPoint;
+    srcRect.left = 0;
+    srcRect.top = scrollY;
+    srcRect.width = width;
+    srcRect.height = height;
+    dstPoint.x = 0;
+    dstPoint.y = 0;
+
+    maSetDrawTarget(HANDLE_SCREEN);    
+    maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
     maUpdateScreen();
     maResetBacklight();
     dirty = 0;
@@ -262,7 +278,7 @@ void AnsiWidget::print(const char *str) {
     return;
   }
 
-  int fontHeight = textHeight();
+  int lineHeight = textHeight();
 
   // copy the string to allow length manipulation
   char *buffer = new char[len + 1];
@@ -316,14 +332,14 @@ void AnsiWidget::print(const char *str) {
 
       // erase the background
       maSetColor(invert ? this->fg : this->bg);
-      maFillRect(curX, curY, cx, fontHeight);
+      maFillRect(curX, curY, cx, lineHeight);
 
       // draw the text buffer
       maSetColor(invert ? this->bg : this->fg);
       maDrawText(curX, curY, TextBuffer((const char *)p, numChars).str);
 
       if (underline) {
-        maLine(curX, curY + fontHeight - 1, curX + cx, curY + fontHeight - 1);
+        maLine(curX, curY + lineHeight - 1, curX + cx, curY + lineHeight - 1);
       }
       // advance
       p += numChars - 1;        // allow for p++ 
@@ -343,37 +359,46 @@ void AnsiWidget::print(const char *str) {
 
 // update the widget to new dimensions
 void AnsiWidget::resize(int newWidth, int newHeight) {
-  MAHandle newImage = maCreatePlaceholder();
-  maCreateDrawableImage(newImage, newWidth, newHeight);
-  
-  MARect srcRect;
-  MAPoint2d dstPoint;
-  
-  srcRect.left = 0;
-  srcRect.top = 0;
-  srcRect.width = (width > newWidth ? newWidth : width);
-  srcRect.height = (height > newHeight ? newHeight : height);
-  dstPoint.x = 0;
-  dstPoint.y = 0;
+  if (newWidth > virtualWidth || newHeight > virtualHeight) {
+    // screen is larger than existing virtual size
+    int newVWidth = newHeight * V_WIDTH;
+    int newVHeight = newHeight * V_HEIGHT;
 
-  maSetDrawTarget(newImage);
-  maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-  
-  maDestroyPlaceholder(image);
-  image = newImage;
-  width = newWidth;
-  height = newHeight;
+    MAHandle newImage = maCreatePlaceholder();
+    maCreateDrawableImage(newImage, newVWidth, newVHeight);
+    
+    MARect srcRect;
+    MAPoint2d dstPoint;
 
-  if (curY >= height) {
-    curY = height - textHeight();
+    // overlay the old image onto the new image
+    srcRect.left = 0;
+    srcRect.top = 0;
+    srcRect.width = (virtualWidth > newVWidth ? newVWidth : virtualWidth);
+    srcRect.height = (virtualHeight > newVHeight ? newVHeight : virtualHeight);
+    dstPoint.x = 0;
+    dstPoint.y = 0;
+    
+    maSetDrawTarget(newImage);
+    maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
+    
+    maDestroyPlaceholder(image);
+    image = newImage;
+    width = newWidth;
+    height = newHeight;
+    virtualWidth = newVWidth;
+    virtualHeight = newVHeight;
+    
+    if (curY >= height) {
+      curY = height - textHeight();
+    }
+    if (curX >= width) {
+      curX = 0;
+    }
+    
+    maSetDrawTarget(HANDLE_SCREEN);
+    maDrawImage(image, 0, 0);
+    maUpdateScreen();
   }
-  if (curX >= width) {
-    curX = 0;
-  }
-
-  maSetDrawTarget(HANDLE_SCREEN);
-  maDrawImage(image, 0, 0);
-  maUpdateScreen();
 }
 
 // sets the current drawing color
@@ -394,30 +419,21 @@ void AnsiWidget::setTextColor(long fg, long bg) {
   this->fg = ansiToMosync(fg);
 }
 
-// sets the number of scrollback lines
-void AnsiWidget::setScrollSize(int scrollSize) {
-  this->scrollSize = scrollSize;
-}
-
 // resets mouse mode to false
 void AnsiWidget::resetMouse() {
-  pointX = pointY = markX = markY = 0;
-  mouseMode = false;
+  touchX = touchY = -1;
+  touchMode = false;
 }
 
 // sets mouse mode on or off
 void AnsiWidget::setMouseMode(bool flag) {
-  mouseMode = flag;
+  touchMode = flag;
 }
 
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
-  bool selected = (markX != pointX || markY != pointY);
-  markX = pointX = event.point.x;
-  markY = pointY = event.point.y;
-  if (mouseMode && selected) {
-    // update();
-  }
+  touchX = event.point.x;
+  touchY = event.point.y;
 
   Vector_each(Hyperlink*, it, hyperlinks) {
     if ((*it)->overlaps(event.point)) {
@@ -433,12 +449,6 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
 
 // handler for pointer move events
 void AnsiWidget::pointerMoveEvent(MAEvent &event) {
-  pointX = event.point.x;
-  pointY = event.point.y;
-  if (copyMode) {
-    // update();
-  }
-
   if (activeLink != NULL) {
     bool pressed = activeLink->overlaps(event.point);
     if (pressed != activeLink->pressed) {
@@ -447,16 +457,21 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
       activeLink->draw();
       flush(dirty = true);
     }
+  } else {
+    // scroll up/down
+    int lineHeight = textHeight();
+    int vscroll = (touchY - event.point.y) / lineHeight;
+    if (vscroll > 0 && vscroll < virtualHeight - height) {
+      scrollY = vscroll;
+      touchX = event.point.x;
+      touchY = event.point.y;
+      flush(dirty = true);
+    }
   }
 }
 
 // handler for pointer release events
 void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
-  bool selected = (markX != pointX || markY != pointY);
-  if (copyMode && selected) {
-    // update();
-  }
-  
   if (activeLink != NULL && activeLink->pressed) {
     maSetDrawTarget(image);
     maSetColor(fg);
@@ -467,6 +482,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
       hyperlinkListener->linkClicked(activeLink->url.c_str());
     }
   }
+  touchX = touchY = -1;
 }
 
 // converts ANSI colors to FLTK colors
@@ -608,32 +624,39 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
 
 // handles the \n character
 void AnsiWidget::newLine() {
-  int fontHeight = textHeight();
+  int lineHeight = textHeight();
+  int offset = curY + (lineHeight * 2);
   curX = INITXY;
-  if (curY + (fontHeight * 2) >= height) {
-    MAHandle newImage = maCreatePlaceholder();
-    maCreateDrawableImage(newImage, width, height);
 
-    MARect srcRect;
-    MAPoint2d dstPoint;
-
-    srcRect.left = 0;
-    srcRect.top = fontHeight;
-    srcRect.width = width;
-    srcRect.height = height - fontHeight;
-    dstPoint.x = 0;
-    dstPoint.y = 0;
-
-    maSetDrawTarget(newImage);
-    maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-    maSetColor(bg);
-    maFillRect(0, height - fontHeight, width, fontHeight);
-
-    maSetDrawTarget(image);
-    maDrawImage(newImage, 0, 0);
-    maDestroyPlaceholder(newImage);
+  if (offset >= height) {
+    if (offset >= virtualHeight - height) {
+      MAHandle newImage = maCreatePlaceholder();
+      maCreateDrawableImage(newImage, virtualWidth, virtualHeight);
+      
+      MARect srcRect;
+      MAPoint2d dstPoint;
+      
+      srcRect.left = 0;
+      srcRect.top = lineHeight;
+      srcRect.width = virtualWidth;
+      srcRect.height = virtualHeight - lineHeight;
+      dstPoint.x = 0;
+      dstPoint.y = 0;
+      
+      maSetDrawTarget(newImage);
+      maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
+      maSetColor(bg);
+      maFillRect(0, virtualHeight - lineHeight, virtualWidth, lineHeight);
+      
+      maSetDrawTarget(image);
+      maDrawImage(newImage, 0, 0);
+      maDestroyPlaceholder(newImage);
+    } else {
+      scrollY += lineHeight;
+      curY += lineHeight;
+    }
   } else {
-    curY += fontHeight;
+    curY += lineHeight;
   }
 }
 
@@ -643,8 +666,6 @@ void AnsiWidget::reset(bool init) {
     curY = INITXY;              // allow for input control border
     curX = INITXY;
     tabSize = 40;               // tab size in pixels (160/32 = 5)
-    markX = markY = pointX = pointY = 0;
-    copyMode = false;
 
     // cleanup any hyperlinks
     Vector_each(Hyperlink*, it, hyperlinks) {

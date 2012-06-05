@@ -189,16 +189,15 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     case EVENT_TYPE_POINTER_PRESSED:
       penDownX = event.point.x;
       penDownY = event.point.y;
-      dev_pushkey(SB_KEY_MK_PUSH);
+      handleKey(SB_KEY_MK_PUSH);
       output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
-      dev_pushkey(SB_KEY_MK_DRAG);
       output->pointerMoveEvent(event);
       break;
     case EVENT_TYPE_POINTER_RELEASED:
       penDownX = penDownY = -1;
-      dev_pushkey(SB_KEY_MK_RELEASE);
+      handleKey(SB_KEY_MK_RELEASE);
       output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
@@ -234,7 +233,7 @@ char *Controller::readConnection(const char *url) {
 
   MAHandle conn = maConnect(url);
   if (conn > 0) {
-    runMode = modal_state;
+    runMode = conn_state;
     output->print("Connecting to ");
     output->print(url);
     bool connected = false;
@@ -244,7 +243,7 @@ char *Controller::readConnection(const char *url) {
     MAEvent event;
 
     // pause until connected
-    while (runMode == modal_state) {
+    while (runMode == conn_state) {
       event = processEvents(50, EVENT_TYPE_CONN);
       if (event.type == EVENT_TYPE_CONN) {
         switch (event.conn.opType) {
@@ -376,58 +375,63 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     runMode = exit_state;
     break;
-  case MAK_TAB:
-    dev_pushkey(SB_KEY_TAB);
-    break;
-  case MAK_HOME:
-    dev_pushkey(SB_KEY_KP_HOME);
-    break;
-  case MAK_END:
-    dev_pushkey(SB_KEY_END);
-    break;
-  case MAK_INSERT:
-    dev_pushkey(SB_KEY_INSERT);
-    break;
-  case MAK_MENU:
-    dev_pushkey(SB_KEY_MENU);
-    break;
-  case MAK_KP_MULTIPLY:
-    dev_pushkey(SB_KEY_KP_MUL);
-    break;
-  case MAK_KP_PLUS:
-    dev_pushkey(SB_KEY_KP_PLUS);
-    break;
-  case MAK_KP_MINUS:
-    dev_pushkey(SB_KEY_KP_MINUS);
-    break;
-  case MAK_SLASH:
-    dev_pushkey(SB_KEY_KP_DIV);
-    break;
-  case MAK_PAGEUP:
-    dev_pushkey(SB_KEY_PGUP);
-    break;
-  case MAK_PAGEDOWN:
-    dev_pushkey(SB_KEY_PGDN);
-    break;
-  case MAK_UP:
-    dev_pushkey(SB_KEY_UP);
-    break;
-  case MAK_DOWN:
-    dev_pushkey(SB_KEY_DN);
-    break;
-  case MAK_LEFT:
-    dev_pushkey(SB_KEY_LEFT);
-    break;
-  case MAK_RIGHT:
-    dev_pushkey(SB_KEY_RIGHT);
-    break;
-  case MAK_BACKSPACE:
-  case MAK_DELETE:
-    dev_pushkey(SB_KEY_BACKSPACE);
-    break;
-  default:
-    dev_pushkey(key);
-    break;
+  }
+
+  if (isRunning()) {
+    switch (key) {
+    case MAK_TAB:
+      dev_pushkey(SB_KEY_TAB);
+      break;
+    case MAK_HOME:
+      dev_pushkey(SB_KEY_KP_HOME);
+      break;
+    case MAK_END:
+      dev_pushkey(SB_KEY_END);
+      break;
+    case MAK_INSERT:
+      dev_pushkey(SB_KEY_INSERT);
+      break;
+    case MAK_MENU:
+      dev_pushkey(SB_KEY_MENU);
+      break;
+    case MAK_KP_MULTIPLY:
+      dev_pushkey(SB_KEY_KP_MUL);
+      break;
+    case MAK_KP_PLUS:
+      dev_pushkey(SB_KEY_KP_PLUS);
+      break;
+    case MAK_KP_MINUS:
+      dev_pushkey(SB_KEY_KP_MINUS);
+      break;
+    case MAK_SLASH:
+      dev_pushkey(SB_KEY_KP_DIV);
+      break;
+    case MAK_PAGEUP:
+      dev_pushkey(SB_KEY_PGUP);
+      break;
+    case MAK_PAGEDOWN:
+      dev_pushkey(SB_KEY_PGDN);
+      break;
+    case MAK_UP:
+      dev_pushkey(SB_KEY_UP);
+      break;
+    case MAK_DOWN:
+      dev_pushkey(SB_KEY_DN);
+      break;
+    case MAK_LEFT:
+      dev_pushkey(SB_KEY_LEFT);
+      break;
+    case MAK_RIGHT:
+      dev_pushkey(SB_KEY_RIGHT);
+      break;
+    case MAK_BACKSPACE:
+    case MAK_DELETE:
+      dev_pushkey(SB_KEY_BACKSPACE);
+      break;
+    default:
+      dev_pushkey(key);
+      break;
+    }
   }
 }
 

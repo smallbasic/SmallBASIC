@@ -803,7 +803,7 @@ void AnsiWidget::resizeEvent(QResizeEvent *event) {
 
 void AnsiWidget::showEvent(QShowEvent *event) {
   if (img == NULL) {
-    int imgH = parentWidget()->height() + (textSize *scrollSize);
+    int imgH = parentWidget()->height() + (textSize * scrollSize);
     img = new QPixmap(parentWidget()->width(), imgH);
     img->fill(this->bg);
 

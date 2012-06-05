@@ -31,16 +31,6 @@ struct Controller : public Environment, HyperlinkListener {
   Controller();
   virtual ~Controller();
 
-  enum ExecState {
-    init_state,
-    run_state,
-    restart_state,
-    modal_state,
-    break_state,
-    conn_state,
-    exit_state
-  };
-
   const char *getLoadPath();
   int getPen(int code);
   bool hasGUI();
@@ -52,7 +42,7 @@ struct Controller : public Environment, HyperlinkListener {
 
   bool isExit() { return runMode == exit_state; }
   bool isModal() { return runMode == modal_state; }
-  bool isRun() { return runMode == run_state; }
+  bool isRunning() { return runMode == run_state || runMode == modal_state; }
   void setPenMode(int b) { penMode = (b ? PEN_ON : PEN_OFF); }
   void setRunning();
 
@@ -62,6 +52,16 @@ private:
   void fireEvent(MAEvent &event);
   void handleKey(int key);
   void linkClicked(const char *url);
+
+  enum ExecState {
+    init_state,
+    run_state,
+    restart_state,
+    modal_state,
+    break_state,
+    conn_state,
+    exit_state
+  };
 
   ExecState runMode;
   clock_t lastEventTime;

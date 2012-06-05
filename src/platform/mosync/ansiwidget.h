@@ -64,9 +64,9 @@ public:
   void setScrollSize(int scrollSize);
 
   // mouse support
-  int getMouseX(bool down) { return down ? markX : pointX; }
-  int getMouseY(bool down) { return down ? markY : pointY; }
-  bool getMouseMode() { return mouseMode; }
+  int getTouchX() { return touchX; }
+  int getTouchY() { return touchY; }
+  bool getTouchMode() { return touchMode; }
   bool hasLinks() { return hyperlinks.size() > 0; }
   void resetMouse();
   void setMouseMode(bool mode);
@@ -92,7 +92,6 @@ private:
 
   MAHandle image;
   MAHandle font;
-
   int bg;
   int fg;
   bool underline;
@@ -104,18 +103,16 @@ private:
   int curYSaved;
   int curXSaved;
   int tabSize;
-  int textSize;
-  int scrollSize;
-  int width;
-  int height;
-  int dirty;
-
-  // clipboard handling
-  int markX, markY, pointX, pointY;
-  bool copyMode;
-
-  // mouse handling
-  bool mouseMode;               // PEN ON/OFF
+  int textSize;       // font size
+  int dirty;          // whether refresh is required
+  int width;          // screen width
+  int height;         // screen height
+  int virtualWidth;   // available horizontal space
+  int virtualHeight;  // available vertical space
+  int scrollY;        // position within document
+  int touchX;         // active touch x value
+  int touchY;         // active touch y value
+  bool touchMode;     // PEN ON/OFF
   HyperlinkListener *hyperlinkListener;
   Hyperlink *activeLink;
   Vector <Hyperlink *>hyperlinks;

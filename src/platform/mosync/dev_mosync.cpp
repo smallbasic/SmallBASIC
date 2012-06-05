@@ -160,7 +160,7 @@ void dev_delay(dword ms) {
 }
 
 char *dev_gets(char *dest, int maxSize) {
-  if (controller->isRun()) {
+  if (controller->isRunning()) {
     wchar_t *buffer = new wchar_t[maxSize + 1];
     if (maTextBox(L"INPUT:", L"", buffer, maxSize, 0) >=0) {
       for (int i = 0; i < maxSize; i++) {
