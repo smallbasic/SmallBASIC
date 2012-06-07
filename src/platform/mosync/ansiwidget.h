@@ -13,13 +13,16 @@
 #include <MAUtil/String.h>
 #include <MAUtil/Vector.h>
 
+#define DEFAULT_COLOR 0xffba00
+#define MAX_SCREENS   4
+
 using namespace MAUtil;
 
 struct Hyperlink {
   Hyperlink(const char *url, const char *label, int x, int y, int w, int h);
   virtual ~Hyperlink() {};
   void draw();
-  bool overlaps(MAPoint2d pt);
+  bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   String url;
   String label;
   bool pressed;
@@ -30,7 +33,43 @@ struct HyperlinkListener {
   virtual void linkClicked(const char *url) = 0;
 };
 
-#define DEFAULT_COLOR 0xffba00
+struct Screen {
+  Screen(int width, int height);
+  virtual ~Screen();
+
+  int ansiToMosync(long color);
+  void calcTab();
+  bool construct();
+  void drawInto(bool background=false);
+  void drawText(const char *text, int len, int x, int lineHeight);
+  void flush(int w, int h);
+  void setColor(long color) { fg = ansiToMosync(color); }
+  void setTextColor(long fg, long bg);
+  void reset(bool init);
+  void resize(int width, int height, int lineHeight);
+  void newLine(int displayHeight, int lineHeight);
+  bool setGraphicsRendition(char c, int escValue, int lineHeight);
+  void updateFont();
+
+  MAHandle image;
+  MAHandle font;
+  bool underline;
+  bool invert;
+  bool bold;
+  bool italic;
+  int width;
+  int height;
+  int scrollX;
+  int scrollY;
+  int bg;
+  int fg;
+  int curY;
+  int curX;
+  int curYSaved;
+  int curXSaved;
+  int tabSize;
+  int fontSize; 
+};
 
 class AnsiWidget {
 public:
@@ -46,13 +85,13 @@ public:
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
   void flush(bool force);
-  int getBackgroundColor() { return bg; }
-  int getColor() { return fg; }
+  int getBackgroundColor() { return back->bg; }
+  int getColor() { return back->fg; }
   int getPixel(int x, int y);
   int getHeight() { return height; }
   int getWidth()  { return width; }
-  int getX() { return curX; }
-  int getY() { return curY; }
+  int getX() { return back->curX; }
+  int getY() { return back->curY; }
   int textHeight(void);
   int textWidth(const char *s, int len=-1);
   void print(const char *str);
@@ -60,7 +99,7 @@ public:
   void setColor(long color);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
-  void setXY(int x, int y) { curX=x; curY=y; }
+  void setXY(int x, int y) { back->curX=x; back->curY=y; }
   void setScrollSize(int scrollSize);
 
   // mouse support
@@ -76,43 +115,23 @@ public:
   void pointerReleaseEvent(MAEvent &event);
 
 private:
-  int ansiToMosync(long color);
-  int calcTab(int x) const;
   int charWidth(char c);
   void createLink(char *&p, bool execLink);
   void deleteItems(Vector<String *> *items);
-  bool doEscape(char *&p);
+  bool doEscape(char *&p, int textHeight);
   Vector<String *> *getItems(char *&p);
-  void newLine();
   void reset(bool init);
-  bool setGraphicsRendition(char c, int escValue);
-  void setPopupMode(int mode);
   void showAlert(char *&p);
-  void updateFont();
 
-  MAHandle image;
-  MAHandle font;
-  int bg;
-  int fg;
-  bool underline;
-  bool invert;
-  bool bold;
-  bool italic;
-  int curY;
-  int curX;
-  int curYSaved;
-  int curXSaved;
-  int tabSize;
-  int textSize;       // font size
-  int dirty;          // whether refresh is required
-  int width;          // screen width
-  int height;         // screen height
-  int virtualWidth;   // available horizontal space
-  int virtualHeight;  // available vertical space
-  int scrollY;        // position within document
-  int touchX;         // active touch x value
-  int touchY;         // active touch y value
-  bool touchMode;     // PEN ON/OFF
+  Screen *screens[MAX_SCREENS];
+  Screen *back;   // screen being painted
+  Screen *front;  // screen to display 
+  int dirty;      // whether refresh is required
+  int width;      // device screen width
+  int height;     // device screen height
+  int touchX;     // active touch x value
+  int touchY;     // active touch y value
+  bool touchMode; // PEN ON/OFF
   HyperlinkListener *hyperlinkListener;
   Hyperlink *activeLink;
   Vector <Hyperlink *>hyperlinks;

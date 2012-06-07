@@ -489,6 +489,7 @@ function buildMosync() {
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
    AC_DEFINE(CPU_BIGENDIAN, 1, [Mosync uses big-endian])
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
