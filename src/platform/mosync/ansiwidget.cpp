@@ -45,9 +45,9 @@
 */
 
 #define MAX_PENDING_UPDATES 10
-#define SCROLL_BUFFER 10
-#define V_HEIGHT 5
-#define V_WIDTH  1
+#define MAX_HEIGHT 10000
+#define SCROLL_OFFS 10
+#define SCROLL_IND 4
 #define INITXY 2
 #define BLACK  0
 #define BLUE   1
@@ -122,12 +122,12 @@ Screen::Screen(int width, int height) :
   invert(0),
   bold(0),
   italic(0),
-  width(width),
-  height(height),
-  scrollX(0),
-  scrollY(0),
   bg(0),
   fg(0),
+  width(width),
+  height(height),
+  pageHeight(0),
+  scrollY(0),
   curY(0),
   curX(0),
   curYSaved(0),
@@ -187,12 +187,12 @@ void Screen::draw(int w, int h, bool vscroll) {
 
   if (vscroll) {
     // display the vertical scrollbar
-    int barHeight = scrollY * h / (curY - (h - SCROLL_BUFFER));
-    if (barHeight > 0) {
-      maSetColor(fg);
-      maLine(w - 3, 3, w - 3, barHeight - 3);
-      maLine(w - 4, 3, w - 4, barHeight - 3);
-    }
+    int barSize = h * h / pageHeight;
+    int barRange = h - (barSize + SCROLL_IND * 2);
+    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (h - SCROLL_OFFS)));
+    maSetColor(fg);
+    maLine(w - 3, barTop, w - 3, barTop + barSize);
+    maLine(w - 4, barTop, w - 4, barTop + barSize);
   }
 
   maUpdateScreen();
@@ -229,7 +229,6 @@ void Screen::reset(bool init) {
     curY = INITXY;  // allow for input control border
     curX = INITXY;
     tabSize = 40;   // tab size in pixels (160/32 = 5)
-    scrollX = 0;
     scrollY = 0;
   }
   curYSaved = 0;
@@ -248,33 +247,32 @@ void Screen::reset(bool init) {
 void Screen::resize(int newWidth, int newHeight, int lineHeight) {
   if (newWidth > width || newHeight > height) {
     // screen is larger than existing virtual size
-    int newVWidth = newHeight * V_WIDTH;
-    int newVHeight = newHeight * V_HEIGHT;
-
-    MAHandle newImage = maCreatePlaceholder();
-    maCreateDrawableImage(newImage, newVWidth, newVHeight);
-    
     MARect srcRect;
     MAPoint2d dstPoint;
+    MAHandle newImage = maCreatePlaceholder();
+    int imageWidth = max(newWidth, width);
+    int imageHeight = max(newHeight, height);
 
-    // overlay the old image onto the new image
     srcRect.left = 0;
     srcRect.top = 0;
-    srcRect.width = (width > newVWidth ? newVWidth : width);
-    srcRect.height = (height > newVHeight ? newVHeight : height);
+    srcRect.width = min(width, imageWidth);
+    srcRect.height = min(height, imageHeight);
     dstPoint.x = 0;
     dstPoint.y = 0;
-    
+
+    maCreateDrawableImage(newImage, imageWidth, imageHeight);    
     maSetDrawTarget(newImage);
+    maSetColor(bg);
+    maFillRect(0, 0, imageWidth, imageHeight);
     maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-    
     maDestroyPlaceholder(image);
+
     image = newImage;
-    width = newVWidth;
-    height = newVHeight;
-    
+    width = imageWidth;
+    height = imageHeight;
     if (curY >= height) {
       curY = height - lineHeight;
+      pageHeight = curY;
     }
     if (curX >= width) {
       curX = 0;
@@ -284,38 +282,41 @@ void Screen::resize(int newWidth, int newHeight, int lineHeight) {
 
 // handles the \n character
 void Screen::newLine(int displayHeight, int lineHeight) {
-  int offset = curY + (lineHeight * 2);
   curX = INITXY;
-
-  if (offset >= displayHeight) {
-    if (offset >= height - displayHeight) {
-      MAHandle newImage = maCreatePlaceholder();
-      maCreateDrawableImage(newImage, width, height);
-      
-      MARect srcRect;
-      MAPoint2d dstPoint;
-
-      srcRect.left = 0;
-      srcRect.top = lineHeight;
-      srcRect.width = width;
-      srcRect.height = height - lineHeight;
-      dstPoint.x = 0;
-      dstPoint.y = 0;
-      
-      maSetDrawTarget(newImage);
-      maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-      maSetColor(bg);
-      maFillRect(0, height - lineHeight, width, lineHeight);
-      
-      maSetDrawTarget(image);
-      maDrawImage(newImage, 0, 0);
-      maDestroyPlaceholder(newImage);
-    } else {
+  if (height < MAX_HEIGHT) {
+    int offset = curY + (lineHeight * 2);
+    if (offset >= displayHeight) {
+      if (offset >= height) {
+        // extend the base image by another page size
+        MAHandle newImage = maCreatePlaceholder();
+        maCreateDrawableImage(newImage, width, height + displayHeight);
+        
+        MARect srcRect;
+        MAPoint2d dstPoint;
+        
+        srcRect.left = 0;
+        srcRect.top = 0;
+        srcRect.width = width;
+        srcRect.height = height;
+        dstPoint.x = 0;
+        dstPoint.y = 0;
+        
+        maSetDrawTarget(newImage);
+        maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
+        
+        // clear the new segment
+        maSetColor(bg);
+        maFillRect(0, height, width, height + displayHeight);
+        height += displayHeight;
+        
+        // cleanup the old image
+        maDestroyPlaceholder(image);
+        image = newImage;
+      }
       scrollY += lineHeight;
-      curY += lineHeight;
     }
-  } else {
     curY += lineHeight;
+    pageHeight += lineHeight;
   }
 }
 
@@ -471,7 +472,7 @@ AnsiWidget::AnsiWidget(int width, int height) :
 
 bool AnsiWidget::construct() {
   bool result = false;
-  back = new Screen(width * V_WIDTH, height * V_HEIGHT);
+  back = new Screen(width, height);
   if (back && back->construct()) {
     screens[0] = front = back;
     reset(true);
@@ -703,7 +704,7 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   touchY = event.point.y;
 
   Vector_each(Hyperlink*, it, hyperlinks) {
-    if ((*it)->overlaps(event.point, back->scrollX, back->scrollY)) {
+    if ((*it)->overlaps(event.point, 0, back->scrollY)) {
       back->drawInto();
       activeLink = (*it);
       activeLink->pressed = true;
@@ -717,7 +718,7 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
 // handler for pointer move events
 void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   if (activeLink != NULL) {
-    bool pressed = activeLink->overlaps(event.point, back->scrollX, back->scrollY);
+    bool pressed = activeLink->overlaps(event.point, 0, back->scrollY);
     if (pressed != activeLink->pressed) {
       back->drawInto();
       activeLink->pressed = pressed;
@@ -727,7 +728,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   } else {
     // scroll up/down
     int vscroll = back->scrollY + (touchY - event.point.y);
-    if (vscroll > 0 && vscroll < (back->curY - (height - SCROLL_BUFFER))) {
+    if (vscroll > 0 && vscroll < (back->curY - (height - SCROLL_OFFS))) {
       back->scrollY = vscroll;
       touchX = event.point.x;
       touchY = event.point.y;

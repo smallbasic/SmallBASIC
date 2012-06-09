@@ -57,12 +57,12 @@ struct Screen {
   bool invert;
   bool bold;
   bool italic;
-  int width;
-  int height;
-  int scrollX;
-  int scrollY;
   int bg;
   int fg;
+  int width;
+  int height;
+  int pageHeight;
+  int scrollY;
   int curY;
   int curX;
   int curYSaved;

@@ -9,6 +9,13 @@
 #define MAIN_BAS_RES "main.bas"
 #define ERROR_BAS "? \"Failed to open program file\":pause"
 
+#ifndef max
+#define max(a,b) ((a<b) ? (b) : (a))
+#endif
+#ifndef min
+#define min(a,b) ((a>b) ? (b) : (a))
+#endif
+
 #if defined(VARIANT_MOSYNC_EMULATOR) || defined(_DEBUG)
 #include <mavsprintf.h>
 #define trace lprintfln
