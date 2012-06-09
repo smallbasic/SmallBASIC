@@ -45,6 +45,7 @@
 */
 
 #define MAX_PENDING_UPDATES 10
+#define SCROLL_BUFFER 10
 #define V_HEIGHT 5
 #define V_WIDTH  1
 #define INITXY 2
@@ -171,6 +172,33 @@ bool Screen::construct() {
   return (image && RES_OK == maCreateDrawableImage(image, width, height));
 }
 
+void Screen::draw(int w, int h, bool vscroll) {
+  MARect srcRect;
+  MAPoint2d dstPoint;
+  srcRect.left = 0;
+  srcRect.top = scrollY;
+  srcRect.width = w;
+  srcRect.height = h;
+  dstPoint.x = 0;
+  dstPoint.y = 0;
+  
+  maSetDrawTarget(HANDLE_SCREEN);    
+  maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
+
+  if (vscroll) {
+    // display the vertical scrollbar
+    int barHeight = scrollY * h / (curY - (h - SCROLL_BUFFER));
+    if (barHeight > 0) {
+      maSetColor(fg);
+      maLine(w - 3, 3, w - 3, barHeight - 3);
+      maLine(w - 4, 3, w - 4, barHeight - 3);
+    }
+  }
+
+  maUpdateScreen();
+  maResetBacklight();
+}
+
 void Screen::drawInto(bool background) {
   maSetDrawTarget(image);
   maSetColor(background ? bg : fg);
@@ -188,22 +216,6 @@ void Screen::drawText(const char *text, int len, int x, int lineHeight) {
   if (underline) {
     maLine(curX, curY + lineHeight - 1, curX + x, curY + lineHeight - 1);
   }
-}
-
-void Screen::flush(int w, int h) {
-  MARect srcRect;
-  MAPoint2d dstPoint;
-  srcRect.left = 0;
-  srcRect.top = scrollY;
-  srcRect.width = w;
-  srcRect.height = h;
-  dstPoint.x = 0;
-  dstPoint.y = 0;
-  
-  maSetDrawTarget(HANDLE_SCREEN);    
-  maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-  maUpdateScreen();
-  maResetBacklight();
 }
 
 void Screen::setTextColor(long foreground, long background) {
@@ -282,7 +294,7 @@ void Screen::newLine(int displayHeight, int lineHeight) {
       
       MARect srcRect;
       MAPoint2d dstPoint;
-      
+
       srcRect.left = 0;
       srcRect.top = lineHeight;
       srcRect.width = width;
@@ -311,7 +323,7 @@ void Screen::newLine(int displayHeight, int lineHeight) {
 bool Screen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   switch (c) {
   case 'K':
-    maSetColor(bg);      // \e[K - clear to eol 
+    maSetColor(bg);            // \e[K - clear to eol 
     maFillRect(curX, curY, width - curX, lineHeight);
     break;
   case 'G':                    // move to column
@@ -522,7 +534,7 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
 }
 
 // display and pending images changed
-void AnsiWidget::flush(bool force) {
+void AnsiWidget::flush(bool force, bool vscroll) {
   bool update = false;
   if (force) {
     update = dirty;
@@ -531,7 +543,7 @@ void AnsiWidget::flush(bool force) {
   }
 
   if (update) {
-    front->flush(width, height);
+    front->draw(width, height, vscroll);
     dirty = 0;
   }
 }
@@ -652,7 +664,9 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
       screens[i]->resize(newWidth, newHeight, lineHeight);
     }
   }
-  front->flush(width, height);
+  width = newWidth;
+  height = newHeight;
+  front->draw(width, height, false);
 }
 
 // sets the current drawing color
@@ -713,11 +727,11 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   } else {
     // scroll up/down
     int vscroll = back->scrollY + (touchY - event.point.y);
-    if (vscroll > 0 && vscroll < back->height - height) {
+    if (vscroll > 0 && vscroll < (back->curY - (height - SCROLL_BUFFER))) {
       back->scrollY = vscroll;
       touchX = event.point.x;
       touchY = event.point.y;
-      flush(dirty = true);
+      flush(dirty = true, true);
     }
   }
 }
@@ -732,6 +746,8 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     if (hyperlinkListener) {
       hyperlinkListener->linkClicked(activeLink->url.c_str());
     }
+  } else if (touchY != -1) {
+    flush(dirty = true);
   }
   touchX = touchY = -1;
   activeLink = NULL;
@@ -821,7 +837,7 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
   return result;
 }
 
-// returns list of strings extracted from the semi-colon separated input string
+// returns list of strings extracted from the vertical-bar separated input string
 Vector<String *> *AnsiWidget::getItems(char *&p) {
   Vector<String *> *result = new Vector<String *>();
   char *next = p + 1;

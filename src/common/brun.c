@@ -2155,23 +2155,16 @@ int sbasic_exec(const char *file) {
     sbasic_exec_prepare(file);
 
     sys_before_run();           // system specific things; before run
-    dev_init(opt_graphics, 0);  // initialize output device for
-    // graphics
-    evt_check_every = (50 * CLOCKS_PER_SEC) / 1000; // setup event
-    // checker time =
-    // 50ms
+    dev_init(opt_graphics, 0);  // initialize output device for graphics
+    evt_check_every = (50 * CLOCKS_PER_SEC) / 1000; // setup event checker time = 50ms
     srand(clock());             // randomize
 
     // run 
     sbasic_recursive_exec(exec_tid);
 
-    // normal exit - restore screen
-    if (gsb_last_error == 0 || prog_error == -1) {
-      if (os_graphics)
-        dev_settextcolor(0, 15);
-
-      if (!opt_quiet)
-        inf_done();
+    // normal exit
+    if (!opt_quiet) {
+      inf_done();
     }
 
     exec_close(exec_tid);       // clean up executor's garbages

@@ -137,7 +137,7 @@ int Controller::handleEvents(int waitFlag) {
     break;
   default:
     // pump messages without pausing
-    processEvents(1, -1);
+    processEvents(0, -1);
     break;
   }
 
@@ -221,7 +221,9 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   else {
     // pump messages into the engine
     runIdleListeners();
-    maWait(ms);
+    if (ms != 0) {
+      maWait(ms);
+    }
   }
 
   return event;

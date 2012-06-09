@@ -40,9 +40,9 @@ struct Screen {
   int ansiToMosync(long color);
   void calcTab();
   bool construct();
+  void draw(int w, int h, bool vscroll);
   void drawInto(bool background=false);
   void drawText(const char *text, int len, int x, int lineHeight);
-  void flush(int w, int h);
   void setColor(long color) { fg = ansiToMosync(color); }
   void setTextColor(long fg, long bg);
   void reset(bool init);
@@ -84,7 +84,7 @@ public:
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
-  void flush(bool force);
+  void flush(bool force, bool vscroll=false);
   int getBackgroundColor() { return back->bg; }
   int getColor() { return back->fg; }
   int getPixel(int x, int y);
