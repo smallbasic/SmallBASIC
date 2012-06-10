@@ -24,12 +24,6 @@
 #include <unistd.h>
 #endif
 
-var_int_t r2int(var_num_t x, var_int_t l, var_int_t h);
-void dar_first(long funcCode, var_t *r, var_t *elem_p);
-void dar_next(long funcCode, var_t *r, var_t *elem_p);
-void dar_final(long funcCode, var_t *r, int count);
-int date_weekday(long d, long m, long y);
-
 struct code_array_node_s {
   var_t *v;
   var_int_t col;

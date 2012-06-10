@@ -24,9 +24,6 @@
 
 #include "common/messages.h"
 
-int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) SEC(BLIB);
-void sb_bubble(var_t * var_p, addr_t use_ip, int n) SEC(BLIB);
-
 /**
  * LET v[(x)] = any
  * CONST v[(x)] = any

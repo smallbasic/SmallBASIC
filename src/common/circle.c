@@ -19,10 +19,6 @@
 #define M_PI  3.14159265358979323846
 #endif
 
-void set_4pixel(int x, int y, int xc, int yc) SEC(BIO);
-void set_4line(int x, int y, int xc, int yc) SEC(BIO);
-void simple_ellipse(int xc, int yc, int rx, int ry, int fill) SEC(BIO);
-
 void set_4pixel(int x, int y, int xc, int yc) {
   dev_setpixel(xc + x, yc + y);
   dev_setpixel(xc - x, yc + y);

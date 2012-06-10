@@ -13,11 +13,6 @@
 #include <assert.h>
 #endif
 
-void bc_add2c(bc_t *bc, byte code, byte v) SEC(BCSCAN);
-void bc_add2i(bc_t *bc, byte code, word p1) SEC(BCSCAN);
-void bc_add2l(bc_t *bc, byte code, long p1) SEC(BCSCAN);
-void bc_add2s(bc_t *bc, byte code, const char *p1) SEC(BCSCAN);
-
 /*
  * Create a bytecode segment
  */
