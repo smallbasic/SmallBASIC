@@ -37,13 +37,12 @@ struct Screen {
   Screen(int width, int height);
   virtual ~Screen();
 
-  int ansiToMosync(long color);
   void calcTab();
   bool construct();
   void draw(int w, int h, bool vscroll);
   void drawInto(bool background=false);
   void drawText(const char *text, int len, int x, int lineHeight);
-  void setColor(long color) { fg = ansiToMosync(color); }
+  void setColor(long color);
   void setTextColor(long fg, long bg);
   void reset(bool init);
   void resize(int width, int height, int lineHeight);

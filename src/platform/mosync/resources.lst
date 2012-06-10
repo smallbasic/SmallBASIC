@@ -6,3 +6,39 @@
 .bin
 .include "resources/main.bas"
 
+.res RES_IMAGE_HOME_BIN
+.ubin
+.include "resources/home.png"
+ 
+.res RES_IMAGE_HOME
+.placeholder
+
+.res RES_IMAGE_NEXT_BIN
+.ubin
+.include "resources/next.png"
+ 
+.res RES_IMAGE_NEXT
+.placeholder
+
+.res RES_IMAGE_PREVIOUS_BIN
+.ubin
+.include "resources/previous.png"
+ 
+.res RES_IMAGE_PREVIOUS
+.placeholder
+
+.res RES_IMAGE_STOP_BIN
+.ubin
+.include "resources/stop.png"
+ 
+.res RES_IMAGE_STOP
+.placeholder
+
+.res RES_IMAGE_REFRESH_BIN
+.ubin
+.include "resources/refresh.png"
+ 
+.res RES_IMAGE_REFRESH
+.placeholder
+
+

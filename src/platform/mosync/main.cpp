@@ -15,6 +15,7 @@ Controller *controller;
 
 extern "C" int MAMain() {
   controller = new Controller();
+  controller->construct();
 
   sbasic_main(MAIN_BAS_RES);
   while (!controller->isExit()) {

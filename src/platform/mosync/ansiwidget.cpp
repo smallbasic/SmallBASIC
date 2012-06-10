@@ -16,11 +16,11 @@
 #include "platform/mosync/utils.h"
 
 /* class AnsiWidget
- 
-  Displays ANSI escape codes. 
 
-  Escape sequences start with the characters ESC (ASCII 27d / 1Bh / 033o ) 
-  and [ (left bracket). This sequence is called CSI for 
+  Displays ANSI escape codes.
+
+  Escape sequences start with the characters ESC (ASCII 27d / 1Bh / 033o )
+  and [ (left bracket). This sequence is called CSI for
   "Control Sequence Introducer".
 
   For more information about ANSI code see:
@@ -73,9 +73,20 @@ static int colors[] = {
   0xFFFFFF  // 15 bright white
 };
 
+// converts ANSI colors to FLTK colors
+int ansiToMosync(long c) {
+  int result = c;
+  if (c < 0) {
+    result = -c;
+  } else {
+    result = (c > 16) ? colors[WHITE] : colors[c];
+  }
+  return result;
+}
+
 // Workaround for API's which don't take a length argument
 struct TextBuffer {
-  TextBuffer(const char *s, int len) : 
+  TextBuffer(const char *s, int len) :
     str(s), len(len) {
     c = str[len];
     ((char *)str)[len] = 0;
@@ -90,7 +101,7 @@ struct TextBuffer {
   int len;
 };
 
-Hyperlink::Hyperlink(const char *url, const char *label, 
+Hyperlink::Hyperlink(const char *url, const char *label,
                      int x, int y, int w, int h) :
   url(url),
   label(label),
@@ -108,11 +119,7 @@ void Hyperlink::draw() {
 }
 
 bool Hyperlink::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
-  bool outside = (pt.x < (x - scrollX) || 
-                  pt.y < (y - scrollY) || 
-                  pt.x > (x + w - scrollX) ||
-                  pt.y > (y + h - scrollY));
-  return !outside;
+  return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
 }
 
 Screen::Screen(int width, int height) :
@@ -145,17 +152,6 @@ Screen::~Screen() {
   }
 }
 
-// converts ANSI colors to FLTK colors
-int Screen::ansiToMosync(long c) {
-  int result = c;
-  if (c < 0) {
-    result = -c;
-  } else {
-    result = (c > 16) ? colors[WHITE] : colors[c];
-  }
-  return result;
-}
-
 // calculate the pixel movement for the given cursor position
 void Screen::calcTab() {
   int c = 1;
@@ -181,8 +177,8 @@ void Screen::draw(int w, int h, bool vscroll) {
   srcRect.height = h;
   dstPoint.x = 0;
   dstPoint.y = 0;
-  
-  maSetDrawTarget(HANDLE_SCREEN);    
+
+  maSetDrawTarget(HANDLE_SCREEN);
   maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
 
   if (vscroll) {
@@ -216,6 +212,10 @@ void Screen::drawText(const char *text, int len, int x, int lineHeight) {
   if (underline) {
     maLine(curX, curY + lineHeight - 1, curX + x, curY + lineHeight - 1);
   }
+}
+
+void Screen::setColor(long color) {
+  fg = ansiToMosync(color);
 }
 
 void Screen::setTextColor(long foreground, long background) {
@@ -260,7 +260,7 @@ void Screen::resize(int newWidth, int newHeight, int lineHeight) {
     dstPoint.x = 0;
     dstPoint.y = 0;
 
-    maCreateDrawableImage(newImage, imageWidth, imageHeight);    
+    maCreateDrawableImage(newImage, imageWidth, imageHeight);
     maSetDrawTarget(newImage);
     maSetColor(bg);
     maFillRect(0, 0, imageWidth, imageHeight);
@@ -290,25 +290,25 @@ void Screen::newLine(int displayHeight, int lineHeight) {
         // extend the base image by another page size
         MAHandle newImage = maCreatePlaceholder();
         maCreateDrawableImage(newImage, width, height + displayHeight);
-        
+
         MARect srcRect;
         MAPoint2d dstPoint;
-        
+
         srcRect.left = 0;
         srcRect.top = 0;
         srcRect.width = width;
         srcRect.height = height;
         dstPoint.x = 0;
         dstPoint.y = 0;
-        
+
         maSetDrawTarget(newImage);
         maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-        
+
         // clear the new segment
         maSetColor(bg);
         maFillRect(0, height, width, height + displayHeight);
         height += displayHeight;
-        
+
         // cleanup the old image
         maDestroyPlaceholder(image);
         image = newImage;
@@ -324,7 +324,7 @@ void Screen::newLine(int displayHeight, int lineHeight) {
 bool Screen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   switch (c) {
   case 'K':
-    maSetColor(bg);            // \e[K - clear to eol 
+    maSetColor(bg);            // \e[K - clear to eol
     maFillRect(curX, curY, width - curX, lineHeight);
     break;
   case 'G':                    // move to column
@@ -627,7 +627,7 @@ void AnsiWidget::print(const char *str) {
         if (back->curX + cx >= w) {
           back->newLine(height, lineHeight);
         }
-        // print further non-control, non-null characters 
+        // print further non-control, non-null characters
         // up to the width of the line
         while (p[numChars] > 31) {
           cx += charWidth(*p);
@@ -641,7 +641,7 @@ void AnsiWidget::print(const char *str) {
         back->drawText((const char *)p, numChars, cx, lineHeight);
 
         // advance
-        p += numChars - 1;        // allow for p++ 
+        p += numChars - 1;        // allow for p++
         back->curX += cx;
       };
 
@@ -659,7 +659,7 @@ void AnsiWidget::print(const char *str) {
 
 // update the widget to new dimensions
 void AnsiWidget::resize(int newWidth, int newHeight) {
-  int lineHeight = textHeight();  
+  int lineHeight = textHeight();
   for (int i = 0; i < MAX_SCREENS; i++) {
     if (screens[i]) {
       screens[i]->resize(newWidth, newHeight, lineHeight);
@@ -678,7 +678,7 @@ void AnsiWidget::setColor(long fg) {
 // sets the pixel to the given color at the given xy location
 void AnsiWidget::setPixel(int x, int y, int c) {
   back->drawInto();
-  maSetColor(c);
+  maSetColor(ansiToMosync(c));
   maPlot(x, y);
 }
 
@@ -779,7 +779,7 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
       w = width - back->curX; // clipped
       back->newLine(height, EXTENT_Y(textSize));
     } else {
-      back->curX += w;      
+      back->curX += w;
     }
     Hyperlink *link = new Hyperlink(url, text, x, y, w, h);
     hyperlinks.add(link);

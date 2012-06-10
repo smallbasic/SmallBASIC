@@ -26,11 +26,17 @@ using namespace MAUtil;
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 #define PEN_OFF   0             // pen mode disabled
 #define PEN_ON    2             // pen mode active
+#define NUM_TOOLBAR_BUTTONS 5
+
+struct ToolbarButton {
+  int id,x,y;
+};
 
 struct Controller : public Environment, HyperlinkListener {
   Controller();
   virtual ~Controller();
 
+  bool construct();
   const char *getLoadPath();
   int getPen(int code);
   bool hasGUI();
@@ -49,9 +55,12 @@ struct Controller : public Environment, HyperlinkListener {
   AnsiWidget *output;
 
 private:
+  void drawStatusBar();
   void fireEvent(MAEvent &event);
   void handleKey(int key);
+  void handleToolbarButton(int x, int y);
   void linkClicked(const char *url);
+  void setupToolbarButton(int index, int id, int x, int y);
 
   enum ExecState {
     init_state,
@@ -64,11 +73,13 @@ private:
   };
 
   ExecState runMode;
-  clock_t lastEventTime;
-  dword eventsPerTick;
+  int lastEventTime;
+  int eventsPerTick;
   int penMode;
   int penDownX;
   int penDownY;
+  int penDownTime;
   String loadPath;
+  ToolbarButton buttons[NUM_TOOLBAR_BUTTONS];
 };
 

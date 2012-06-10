@@ -16,6 +16,9 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
+#define OUTSIDE_RECT(px, py, x, y, w, h) \
+  (px < (x) || py < (y) || px > ((x)+(w)) || py > ((y)+(h)))
+
 #if defined(VARIANT_MOSYNC_EMULATOR) || defined(_DEBUG)
 #include <mavsprintf.h>
 #define trace lprintfln

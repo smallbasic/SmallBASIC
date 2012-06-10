@@ -92,8 +92,10 @@
 #define SB_KEY_MK_RELEASE 0xFFC3
 #define SB_KEY_MK_WHEEL   0xFFC4
 
+#define SB_PKEY_SIZE_CHG  0xFFC5
+
 #define SB_KEY_MK_FIRST   SB_KEY_MK_PUSH
-#define SB_KEY_MK_LAST    SB_KEY_MK_WHEEL
+#define SB_KEY_MK_LAST    SB_PKEY_SIZE_CHG
 
 void keymap_init();
 void keymap_free();
