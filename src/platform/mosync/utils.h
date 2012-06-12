@@ -6,6 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <mavsprintf.h>
+
 #define MAIN_BAS_RES "main.bas"
 #define ERROR_BAS "? \"Failed to open program file\":pause"
 
@@ -20,7 +22,6 @@
   (px < (x) || py < (y) || px > ((x)+(w)) || py > ((y)+(h)))
 
 #if defined(VARIANT_MOSYNC_EMULATOR) || defined(_DEBUG)
-#include <mavsprintf.h>
 #define trace lprintfln
 #define logEntered() trace("%s entered (%s %d)",               \
                            __FUNCTION__, __FILE__, __LINE__);

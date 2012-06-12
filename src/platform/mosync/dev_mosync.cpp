@@ -143,6 +143,10 @@ char *dev_read(const char *fileName) {
   return buffer;
 }
 
+void lwrite(const char *s) {
+  lprintfln(s);
+}
+
 void dev_image(int handle, int index,
                int x, int y, int sx, int sy, int w, int h) {
 }

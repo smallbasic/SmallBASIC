@@ -18,21 +18,6 @@
 
 using namespace MAUtil;
 
-struct Hyperlink {
-  Hyperlink(const char *url, const char *label, int x, int y, int w, int h);
-  virtual ~Hyperlink() {};
-  void draw();
-  bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
-  String url;
-  String label;
-  bool pressed;
-  int x,y,w,h;
-};
-
-struct HyperlinkListener {
-  virtual void linkClicked(const char *url) = 0;
-};
-
 struct Screen {
   Screen(int width, int height);
   virtual ~Screen();
@@ -68,6 +53,34 @@ struct Screen {
   int curXSaved;
   int tabSize;
   int fontSize; 
+};
+
+struct Hyperlink {
+  Hyperlink(const char *action, Screen *screen, int x, int y, int w, int h);
+  virtual ~Hyperlink() {};
+  virtual void draw() = 0;
+  bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
+  String action;
+  bool pressed;
+  int bg, fg;
+  int x,y,w,h;
+};
+
+struct Textlink : public Hyperlink {
+  Textlink(const char *action, const char *label, Screen *screen,
+           int x, int y, int w, int h);
+  void draw();
+  String label;
+};
+
+struct Blocklink : public Hyperlink {
+  Blocklink(const char *action, Screen *screen,
+            int x, int y, int w, int h);
+  void draw();
+};
+
+struct HyperlinkListener {
+  virtual void linkClicked(const char *url) = 0;
 };
 
 class AnsiWidget {
@@ -115,6 +128,7 @@ public:
 
 private:
   int charWidth(char c);
+  void createButton(char *&p);
   void createLink(char *&p, bool execLink);
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);

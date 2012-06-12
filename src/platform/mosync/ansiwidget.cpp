@@ -101,25 +101,47 @@ struct TextBuffer {
   int len;
 };
 
-Hyperlink::Hyperlink(const char *url, const char *label,
+Hyperlink::Hyperlink(const char* action, Screen *screen,
                      int x, int y, int w, int h) :
-  url(url),
-  label(label),
+  action(action),
   pressed(false),
+  bg(screen->bg),
+  fg(screen->fg),
   x(x),
   y(y),
   w(w),
   h(h) {
 }
 
-void Hyperlink::draw() {
-  maSetColor(pressed ? colors[BLUE] : colors[GREEN]);
-  maDrawText(x, y, !label.size() ? url.c_str() : label.c_str());
-  maLine(x, y + h - 1, x + w, y + h - 1);
-}
-
 bool Hyperlink::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
+}
+
+Blocklink::Blocklink(const char *action, Screen *screen,
+                     int x, int y, int w, int h) :
+  Hyperlink(action, screen, x, y, w, h) {  
+}
+
+void Blocklink::draw() {
+  int r = x+w;
+  int b = y+h;
+  maSetColor(pressed ? bg : fg);
+  maLine(x, y, r, y); // top
+  maLine(x, b, r, b); // bottom
+  maLine(x, y, x, b); // left
+  maLine(r, y, r, b); // right
+}
+
+Textlink::Textlink(const char *action, const char *label, Screen *screen,
+                   int x, int y, int w, int h) :
+  Hyperlink(action, screen, x, y, w, h),
+  label(label) {
+}
+
+void Textlink::draw() {
+  maSetColor(pressed ? bg : fg);
+  maDrawText(x, y, !label.size() ? action.c_str() : label.c_str());
+  maLine(x, y + h - 1, x + w, y + h - 1);
 }
 
 Screen::Screen(int width, int height) :
@@ -745,7 +767,8 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     activeLink->draw();
     flush(dirty = true);
     if (hyperlinkListener) {
-      hyperlinkListener->linkClicked(activeLink->url.c_str());
+      trace("clicked %s", activeLink->action.c_str());
+      hyperlinkListener->linkClicked(activeLink->action.c_str());
     }
   } else if (touchY != -1) {
     flush(dirty = true);
@@ -761,14 +784,30 @@ int AnsiWidget::charWidth(char c) {
   return result;
 }
 
+// creates a hotspot button, eg // ^[ b10|10|10|10|x;
+void AnsiWidget::createButton(char *&p) {
+  Vector<String *> *items = getItems(p);
+  int x = atoi(items->size() > 0 ? (*items)[0]->c_str() : "");
+  int y = atoi(items->size() > 1 ? (*items)[1]->c_str() : "");
+  int w = atoi(items->size() > 2 ? (*items)[2]->c_str() : "");
+  int h = atoi(items->size() > 3 ? (*items)[3]->c_str() : "");
+  const char *action = items->size() > 4 ? (*items)[4]->c_str() : "";
+
+  Hyperlink *link = new Blocklink(action, back, x, y, w, h);
+  hyperlinks.add(link);
+  link->draw();
+
+  deleteItems(items);
+}
+
 // creates a hyperlink, eg // ^[ hwww.foo.com|title|hover;More text
 void AnsiWidget::createLink(char *&p, bool execLink) {
   Vector<String *> *items = getItems(p);
-  const char *url = items->size() > 0 ? (*items)[0]->c_str() : "";
+  const char *action = items->size() > 0 ? (*items)[0]->c_str() : "";
   const char *text = items->size() > 1 ? (*items)[1]->c_str() : "";
 
   if (execLink && hyperlinkListener) {
-    hyperlinkListener->linkClicked(url);
+    hyperlinkListener->linkClicked(action);
   } else {
     MAExtent textSize = maGetTextSize(text);
     int w = EXTENT_X(textSize) + 2;
@@ -781,7 +820,7 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
     } else {
       back->curX += w;
     }
-    Hyperlink *link = new Hyperlink(url, text, x, y, w, h);
+    Hyperlink *link = new Textlink(action, text, back, x, y, w, h);
     hyperlinks.add(link);
     link->draw();
   }
@@ -810,6 +849,14 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
   if (*p == ' ') {
     p++;
     switch (*p) {
+    case 'a':
+    case 'A':
+      showAlert(p);
+      break;
+    case 'b':
+    case 'B':
+      createButton(p);
+      break;
     case 'C':
       // GSS Graphic Size Selection
       back->fontSize = escValue;
@@ -820,10 +867,6 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       break;
     case 'H':
       createLink(p, true);
-      break;
-    case 'a':
-    case 'A':
-      showAlert(p);
       break;
     }
   } else if (back->setGraphicsRendition(*p, escValue, textHeight)) {
