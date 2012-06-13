@@ -19,12 +19,13 @@
 using namespace MAUtil;
 
 struct Screen {
-  Screen(int width, int height);
+  Screen(int x, int y, int width, int height);
   virtual ~Screen();
 
   void calcTab();
   bool construct();
-  void draw(int w, int h, bool vscroll);
+  void clear();
+  void draw(bool vscroll);
   void drawInto(bool background=false);
   void drawText(const char *text, int len, int x, int lineHeight);
   void setColor(long color);
@@ -43,6 +44,7 @@ struct Screen {
   bool italic;
   int bg;
   int fg;
+  int x,y;
   int width;
   int height;
   int pageHeight;
@@ -133,8 +135,12 @@ private:
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);
   Vector<String *> *getItems(char *&p);
+  void paintScreen(char *&p);
+  void removeScreen(char *&p);
   void reset(bool init);
+  void selectScreen(char *&p);
   void showAlert(char *&p);
+  void swapScreens();
 
   Screen *screens[MAX_SCREENS];
   Screen *back;   // screen being painted

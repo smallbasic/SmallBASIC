@@ -202,7 +202,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   if (penDownTime != 0) {
     int now = maGetMilliSecondCount();
     if ((now - penDownTime) > LONG_PRESS_TIME) {
-      trace("long press!");
       penDownTime = now;
     }
   }
@@ -534,7 +533,12 @@ void Controller::handleToolbarButton(int x, int y) {
 // handler for hyperlink click actions
 void Controller::linkClicked(const char *url) {
   loadPath.clear();
-  loadPath.append(url, strlen(url));
+  int len = strlen(url);
+  if (len == 1) {
+    handleKey(url[0]);
+  } else {
+    loadPath.append(url, strlen(url));
+  }
 }
 
 // helper for drawStatusBar

@@ -126,9 +126,11 @@ void Blocklink::draw() {
   int r = x+w;
   int b = y+h;
   maSetColor(pressed ? bg : fg);
-  maLine(x, y, r, y); // top
-  maLine(x, b, r, b); // bottom
+  maLine(x, y, r-1, y); // top
   maLine(x, y, x, b); // left
+
+  maSetColor(pressed ? fg : bg);
+  maLine(x, b, r, b); // bottom
   maLine(r, y, r, b); // right
 }
 
@@ -144,7 +146,7 @@ void Textlink::draw() {
   maLine(x, y + h - 1, x + w, y + h - 1);
 }
 
-Screen::Screen(int width, int height) :
+Screen::Screen(int x, int y, int width, int height) :
   image(0),
   font(0),
   underline(0),
@@ -153,6 +155,8 @@ Screen::Screen(int width, int height) :
   italic(0),
   bg(0),
   fg(0),
+  x(x),
+  y(y),
   width(width),
   height(height),
   pageHeight(0),
@@ -190,27 +194,32 @@ bool Screen::construct() {
   return (image && RES_OK == maCreateDrawableImage(image, width, height));
 }
 
-void Screen::draw(int w, int h, bool vscroll) {
+void Screen::clear() {
+  drawInto(true);
+  maFillRect(0, 0, width, height);
+}
+
+void Screen::draw(bool vscroll) {
   MARect srcRect;
   MAPoint2d dstPoint;
-  srcRect.left = 0;
-  srcRect.top = scrollY;
-  srcRect.width = w;
-  srcRect.height = h;
+  srcRect.left = x;
+  srcRect.top = y + scrollY;
+  srcRect.width = width;
+  srcRect.height = height;
   dstPoint.x = 0;
   dstPoint.y = 0;
 
   maSetDrawTarget(HANDLE_SCREEN);
   maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
 
-  if (vscroll) {
+  if (vscroll && pageHeight) {
     // display the vertical scrollbar
-    int barSize = h * h / pageHeight;
-    int barRange = h - (barSize + SCROLL_IND * 2);
-    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (h - SCROLL_OFFS)));
+    int barSize = height * height / pageHeight;
+    int barRange = height - (barSize + SCROLL_IND * 2);
+    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - SCROLL_OFFS)));
     maSetColor(fg);
-    maLine(w - 3, barTop, w - 3, barTop + barSize);
-    maLine(w - 4, barTop, w - 4, barTop + barSize);
+    maLine(width - 3, barTop, width - 3, barTop + barSize);
+    maLine(width - 4, barTop, width - 4, barTop + barSize);
   }
 
   maUpdateScreen();
@@ -339,6 +348,9 @@ void Screen::newLine(int displayHeight, int lineHeight) {
     }
     curY += lineHeight;
     pageHeight += lineHeight;
+  } else {
+    curY = INITXY;
+    pageHeight = 0;
   }
 }
 
@@ -494,7 +506,7 @@ AnsiWidget::AnsiWidget(int width, int height) :
 
 bool AnsiWidget::construct() {
   bool result = false;
-  back = new Screen(width, height);
+  back = new Screen(0, 0, width, height);
   if (back && back->construct()) {
     screens[0] = front = back;
     reset(true);
@@ -519,8 +531,7 @@ void AnsiWidget::beep() const {
 // clear the offscreen buffer
 void AnsiWidget::clearScreen() {
   reset(true);
-  back->drawInto(true);
-  maFillRect(0, 0, back->width, back->height);
+  back->clear();
   flush(dirty = true);
 }
 
@@ -562,11 +573,11 @@ void AnsiWidget::flush(bool force, bool vscroll) {
   if (force) {
     update = dirty;
   } else {
-    update = (++dirty == MAX_PENDING_UPDATES);
+    update = (++dirty >= MAX_PENDING_UPDATES);
   }
 
-  if (update) {
-    front->draw(width, height, vscroll);
+  if (update && front == back) {
+    back->draw(vscroll);
     dirty = 0;
   }
 }
@@ -689,7 +700,7 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
   }
   width = newWidth;
   height = newHeight;
-  front->draw(width, height, false);
+  back->draw(false);
 }
 
 // sets the current drawing color
@@ -767,7 +778,6 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     activeLink->draw();
     flush(dirty = true);
     if (hyperlinkListener) {
-      trace("clicked %s", activeLink->action.c_str());
       hyperlinkListener->linkClicked(activeLink->action.c_str());
     }
   } else if (touchY != -1) {
@@ -787,10 +797,10 @@ int AnsiWidget::charWidth(char c) {
 // creates a hotspot button, eg // ^[ b10|10|10|10|x;
 void AnsiWidget::createButton(char *&p) {
   Vector<String *> *items = getItems(p);
-  int x = atoi(items->size() > 0 ? (*items)[0]->c_str() : "");
-  int y = atoi(items->size() > 1 ? (*items)[1]->c_str() : "");
-  int w = atoi(items->size() > 2 ? (*items)[2]->c_str() : "");
-  int h = atoi(items->size() > 3 ? (*items)[3]->c_str() : "");
+  int x = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  int y = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
+  int w = items->size() > 2 ? atoi((*items)[2]->c_str()) : 0;
+  int h = items->size() > 3 ? atoi((*items)[3]->c_str()) : 0;
   const char *action = items->size() > 4 ? (*items)[4]->c_str() : "";
 
   Hyperlink *link = new Blocklink(action, back, x, y, w, h);
@@ -849,11 +859,9 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
   if (*p == ' ') {
     p++;
     switch (*p) {
-    case 'a':
     case 'A':
       showAlert(p);
       break;
-    case 'b':
     case 'B':
       createButton(p);
       break;
@@ -867,6 +875,18 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       break;
     case 'H':
       createLink(p, true);
+      break;
+    case 'P':
+      paintScreen(p);
+      break;
+    case 'X':
+      swapScreens();
+      break;
+    case 'R':
+      removeScreen(p);
+      break;
+    case 'S':
+      selectScreen(p);
       break;
     }
   } else if (back->setGraphicsRendition(*p, escValue, textHeight)) {
@@ -909,6 +929,37 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
   return result;
 }
 
+// paint the specified screen
+void AnsiWidget::paintScreen(char *&p) {
+  Vector<String *> *items = getItems(p);
+  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  if (n < 0 || n >= MAX_SCREENS || screens[n] == NULL) {
+    print("ERR screen#");
+  } else {
+    screens[n]->draw(false);
+  }
+  deleteItems(items);
+}
+
+// remove the specified screen
+void AnsiWidget::removeScreen(char *&p) {
+  Vector<String *> *items = getItems(p);
+  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  if (n < 1 || n >= MAX_SCREENS) {
+    print("ERR screen#");
+  } else if (screens[n] != NULL) {
+    if (back = screens[n]) {
+      back = screens[0];
+    }
+    if (front = screens[n]) {
+      front = screens[0];
+    }
+    delete screens[n];
+    screens[n] = NULL;
+  }
+  deleteItems(items);
+}
+
 // reset the current drawing variables
 void AnsiWidget::reset(bool init) {
   if (init) {
@@ -919,6 +970,28 @@ void AnsiWidget::reset(bool init) {
     hyperlinks.clear();
   }
   back->reset(init);
+}
+
+// select the specified screen
+void AnsiWidget::selectScreen(char *&p) {
+  Vector<String *> *items = getItems(p);
+  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
+  int y = items->size() > 2 ? atoi((*items)[2]->c_str()) : 0;
+  int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : 0;
+  int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : 0;
+
+  if (n < 0 || n >= MAX_SCREENS) {
+    print("ERR screen#");
+  } else if (screens[n] != NULL) {
+    back = front = screens[n];
+  } else {
+    back = new Screen(x, y, max(width, w), max(height, h));
+    if (back && back->construct()) {
+      screens[n] = front = back;
+    }
+  }
+  deleteItems(items);
 }
 
 // display an alert box - eg // ^[ aAlert!!;
@@ -933,4 +1006,24 @@ void AnsiWidget::showAlert(char *&p) {
 
   maAlert(title, message, button1, button2, button3);
   deleteItems(items);
+}
+
+// transpose the front and back screens
+void AnsiWidget::swapScreens() {
+  if (front == back) {
+    if (screens[1] != NULL) {
+      front = screens[1];
+    } else {
+      front = new Screen(0, 0, width, height);
+      screens[1] = front;
+    }
+  } else {
+    Screen *tmp = front; 
+    front = back;
+    back = tmp;
+    if (dirty) {
+      front->draw(false);
+      dirty = 0;
+    }
+  }
 }
