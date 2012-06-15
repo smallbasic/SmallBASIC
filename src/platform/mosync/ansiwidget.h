@@ -13,10 +13,12 @@
 #include <MAUtil/String.h>
 #include <MAUtil/Vector.h>
 
-#define DEFAULT_COLOR 0xffba00
+#define DEFAULT_COLOR 0xa1a1a1
 #define MAX_SCREENS   4
 
 using namespace MAUtil;
+
+struct Hyperlink;
 
 struct Screen {
   Screen(int x, int y, int width, int height);
@@ -28,11 +30,12 @@ struct Screen {
   void draw(bool vscroll);
   void drawInto(bool background=false);
   void drawText(const char *text, int len, int x, int lineHeight);
-  void setColor(long color);
-  void setTextColor(long fg, long bg);
+  void newLine(int lineHeight);
+  int  print(const char *p, int lineHeight);
   void reset(bool init);
   void resize(int width, int height, int lineHeight);
-  void newLine(int displayHeight, int lineHeight);
+  void setColor(long color);
+  void setTextColor(long fg, long bg);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
   void updateFont();
 
@@ -47,6 +50,8 @@ struct Screen {
   int x,y;
   int width;
   int height;
+  int imageWidth;
+  int imageHeight;
   int pageHeight;
   int scrollY;
   int curY;
@@ -55,13 +60,15 @@ struct Screen {
   int curXSaved;
   int tabSize;
   int fontSize; 
+  Vector <Hyperlink *>hyperlinks;
 };
 
 struct Hyperlink {
-  Hyperlink(const char *action, Screen *screen, int x, int y, int w, int h);
+  Hyperlink(Screen *screen, const char *action, int x, int y, int w, int h);
   virtual ~Hyperlink() {};
   virtual void draw() = 0;
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
+
   String action;
   bool pressed;
   int bg, fg;
@@ -69,14 +76,14 @@ struct Hyperlink {
 };
 
 struct Textlink : public Hyperlink {
-  Textlink(const char *action, const char *label, Screen *screen,
+  Textlink(Screen *screen, const char *action, const char *label,
            int x, int y, int w, int h);
   void draw();
   String label;
 };
 
 struct Blocklink : public Hyperlink {
-  Blocklink(const char *action, Screen *screen,
+  Blocklink(Screen *screen, const char *action,
             int x, int y, int w, int h);
   void draw();
 };
@@ -87,7 +94,7 @@ struct HyperlinkListener {
 
 class AnsiWidget {
 public:
-  explicit AnsiWidget(int width, int height);
+  explicit AnsiWidget(HyperlinkListener *listener, int width, int height);
   ~AnsiWidget();
 
   void beep() const;
@@ -120,16 +127,14 @@ public:
   int getTouchX() { return touchX; }
   int getTouchY() { return touchY; }
   bool getTouchMode() { return touchMode; }
-  bool hasLinks() { return hyperlinks.size() > 0; }
+  bool hasUI();
   void resetMouse();
   void setMouseMode(bool mode);
-  void setHyperlinkListener(HyperlinkListener *hll) { hyperlinkListener = hll; }
   void pointerTouchEvent(MAEvent &event);
   void pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);
 
 private:
-  int charWidth(char c);
   void createButton(char *&p);
   void createLink(char *&p, bool execLink);
   void deleteItems(Vector<String *> *items);
@@ -153,7 +158,6 @@ private:
   bool touchMode; // PEN ON/OFF
   HyperlinkListener *hyperlinkListener;
   Hyperlink *activeLink;
-  Vector <Hyperlink *>hyperlinks;
 };
 
 #endif // ANSIWIDGET_H

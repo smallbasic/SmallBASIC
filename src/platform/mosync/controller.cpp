@@ -38,10 +38,10 @@ Controller::Controller() :
 
 bool Controller::construct() {
   MAExtent screenSize = maGetScrSize();
-  output = new AnsiWidget(EXTENT_X(screenSize),
+  output = new AnsiWidget(this,
+                          EXTENT_X(screenSize),
                           EXTENT_Y(screenSize) - STATUS_HEIGHT);
   output->construct();
-  output->setHyperlinkListener(this);
 
   // install the default font
   MAUI::Engine& engine = MAUI::Engine::getSingleton();
@@ -131,9 +131,8 @@ int Controller::getPen(int code) {
 }
 
 // whether a GUI is active which may yield a load path
-bool Controller::hasGUI() {
-  bool result = output->hasLinks();
-  return result;
+bool Controller::hasUI() {
+  return output->hasUI();
 }
 
 // runtime system event processor
@@ -365,7 +364,7 @@ void Controller::drawStatusBar() {
   maSetDrawTarget(HANDLE_SCREEN);
   maSetColor(0);
   maFillRect(left, top, right, top + STATUS_HEIGHT);
-  maSetColor(0xa1a1a1);
+  maSetColor(DEFAULT_COLOR);
   maLine(left, top, right, top);
 
   top += 1;

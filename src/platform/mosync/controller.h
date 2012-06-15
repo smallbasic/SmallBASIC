@@ -39,7 +39,7 @@ struct Controller : public Environment, HyperlinkListener {
   bool construct();
   const char *getLoadPath();
   int getPen(int code);
-  bool hasGUI();
+  bool hasUI();
   int handleEvents(int waitFlag);
   void modalLoop();
   void pause(int ms);

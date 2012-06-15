@@ -84,6 +84,12 @@ int ansiToMosync(long c) {
   return result;
 }
 
+// calculate the pixel width of the given character
+int charWidth(char c) {
+  char measure[] = { c, 0 };
+  return EXTENT_X(maGetTextSize(measure));
+}
+
 // Workaround for API's which don't take a length argument
 struct TextBuffer {
   TextBuffer(const char *s, int len) :
@@ -101,7 +107,7 @@ struct TextBuffer {
   int len;
 };
 
-Hyperlink::Hyperlink(const char* action, Screen *screen,
+Hyperlink::Hyperlink(Screen *screen, const char* action,
                      int x, int y, int w, int h) :
   action(action),
   pressed(false),
@@ -117,9 +123,9 @@ bool Hyperlink::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
 }
 
-Blocklink::Blocklink(const char *action, Screen *screen,
+Blocklink::Blocklink(Screen *screen, const char *action,
                      int x, int y, int w, int h) :
-  Hyperlink(action, screen, x, y, w, h) {  
+  Hyperlink(screen, action, x, y, w, h) {  
 }
 
 void Blocklink::draw() {
@@ -127,16 +133,16 @@ void Blocklink::draw() {
   int b = y+h;
   maSetColor(pressed ? bg : fg);
   maLine(x, y, r-1, y); // top
-  maLine(x, y, x, b); // left
+  maLine(x, y, x, b);   // left
 
   maSetColor(pressed ? fg : bg);
   maLine(x, b, r, b); // bottom
   maLine(r, y, r, b); // right
 }
 
-Textlink::Textlink(const char *action, const char *label, Screen *screen,
+Textlink::Textlink(Screen *screen, const char *action, const char *label,
                    int x, int y, int w, int h) :
-  Hyperlink(action, screen, x, y, w, h),
+  Hyperlink(screen, action, x, y, w, h),
   label(label) {
 }
 
@@ -159,6 +165,8 @@ Screen::Screen(int x, int y, int width, int height) :
   y(y),
   width(width),
   height(height),
+  imageWidth(width),
+  imageHeight(height),
   pageHeight(0),
   scrollY(0),
   curY(0),
@@ -176,6 +184,9 @@ Screen::~Screen() {
   if (font) {
     maFontDelete(font);
   }
+  Vector_each(Hyperlink*, it, hyperlinks) {
+    delete (Hyperlink*)(*it);
+  }
 }
 
 // calculate the pixel movement for the given cursor position
@@ -191,23 +202,29 @@ void Screen::calcTab() {
 
 bool Screen::construct() {
   image = maCreatePlaceholder();
-  return (image && RES_OK == maCreateDrawableImage(image, width, height));
+  return (image && RES_OK == maCreateDrawableImage(image, imageWidth, imageHeight));
 }
 
 void Screen::clear() {
   drawInto(true);
-  maFillRect(0, 0, width, height);
+  maSetColor(bg);
+  maFillRect(0, 0, imageWidth, imageHeight);
+
+  curY = INITXY;
+  curX = INITXY;
+  scrollY = 0;
+  pageHeight = 0;
 }
 
 void Screen::draw(bool vscroll) {
   MARect srcRect;
   MAPoint2d dstPoint;
-  srcRect.left = x;
-  srcRect.top = y + scrollY;
+  srcRect.left = 0;
+  srcRect.top = scrollY;
   srcRect.width = width;
   srcRect.height = height;
-  dstPoint.x = 0;
-  dstPoint.y = 0;
+  dstPoint.x = x;
+  dstPoint.y = y;
 
   maSetDrawTarget(HANDLE_SCREEN);
   maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
@@ -218,8 +235,8 @@ void Screen::draw(bool vscroll) {
     int barRange = height - (barSize + SCROLL_IND * 2);
     int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - SCROLL_OFFS)));
     maSetColor(fg);
-    maLine(width - 3, barTop, width - 3, barTop + barSize);
-    maLine(width - 4, barTop, width - 4, barTop + barSize);
+    maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
+    maLine(x + width - 4, y + barTop, x + width - 4, y + barTop + barSize);
   }
 
   maUpdateScreen();
@@ -245,22 +262,88 @@ void Screen::drawText(const char *text, int len, int x, int lineHeight) {
   }
 }
 
-void Screen::setColor(long color) {
-  fg = ansiToMosync(color);
+// handles the \n character
+void Screen::newLine(int lineHeight) {
+  curX = INITXY;
+  if (height < MAX_HEIGHT) {
+    int offset = curY + (lineHeight * 2);
+    if (offset >= height) {
+      if (offset >= imageHeight) {
+        // extend the base image by another page size
+        MAHandle newImage = maCreatePlaceholder();
+        maCreateDrawableImage(newImage, imageWidth, imageHeight + height);
+
+        MARect srcRect;
+        MAPoint2d dstPoint;
+
+        srcRect.left = 0;
+        srcRect.top = 0;
+        srcRect.width = imageWidth;
+        srcRect.height = imageHeight;
+        dstPoint.x = 0;
+        dstPoint.y = 0;
+
+        maSetDrawTarget(newImage);
+        maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
+
+        // clear the new segment
+        maSetColor(bg);
+        maFillRect(0, imageHeight, imageWidth, imageHeight + height);
+        imageHeight += height;
+
+        // cleanup the old image
+        maDestroyPlaceholder(image);
+        image = newImage;
+      }
+      scrollY += lineHeight;
+    }
+    curY += lineHeight;
+    pageHeight += lineHeight;
+  } else {
+    // overflow
+    curY = INITXY;
+    pageHeight = 0;
+  }
 }
 
-void Screen::setTextColor(long foreground, long background) {
-  bg = ansiToMosync(background);
-  fg = ansiToMosync(foreground);
+int Screen::print(const char *p, int lineHeight) {
+  int numChars = 1;         // print minimum of one character
+  int cx = charWidth(*p);
+  int w = width - 1;
+  
+  if (curX + cx >= w) {
+    newLine(lineHeight);
+  }
+
+  // print further non-control, non-null characters
+  // up to the width of the line
+  while (p[numChars] > 31) {
+    cx += charWidth(*p);
+    if (curX + cx < w) {
+      numChars++;
+    } else {
+      break;
+    }
+  }
+  
+  drawText(p, numChars, cx, lineHeight);
+  
+  curX += cx;
+  return numChars;
 }
 
 // reset the current drawing variables
 void Screen::reset(bool init) {
   if (init) {
-    curY = INITXY;  // allow for input control border
+    curY = INITXY;
     curX = INITXY;
     tabSize = 40;   // tab size in pixels (160/32 = 5)
     scrollY = 0;
+    // cleanup any hyperlinks
+    Vector_each(Hyperlink*, it, hyperlinks) {
+      delete (*it);
+    }
+    hyperlinks.clear();
   }
   curYSaved = 0;
   curXSaved = 0;
@@ -276,31 +359,34 @@ void Screen::reset(bool init) {
 
 // update the widget to new dimensions
 void Screen::resize(int newWidth, int newHeight, int lineHeight) {
-  if (newWidth > width || newHeight > height) {
+  if (x > 0 && y > 0 && (newWidth > imageWidth || newHeight > imageHeight)) {
     // screen is larger than existing virtual size
     MARect srcRect;
     MAPoint2d dstPoint;
     MAHandle newImage = maCreatePlaceholder();
-    int imageWidth = max(newWidth, width);
-    int imageHeight = max(newHeight, height);
+    int newImageWidth = max(newWidth, imageWidth);
+    int newImageHeight = max(newHeight, imageHeight);
 
     srcRect.left = 0;
     srcRect.top = 0;
-    srcRect.width = min(width, imageWidth);
-    srcRect.height = min(height, imageHeight);
+    srcRect.width = min(imageWidth, newImageWidth);
+    srcRect.height = min(imageHeight, newImageHeight);
     dstPoint.x = 0;
     dstPoint.y = 0;
 
-    maCreateDrawableImage(newImage, imageWidth, imageHeight);
+    maCreateDrawableImage(newImage, newImageWidth, newImageHeight);
     maSetDrawTarget(newImage);
     maSetColor(bg);
-    maFillRect(0, 0, imageWidth, imageHeight);
+    maFillRect(0, 0, newImageWidth, newImageHeight);
     maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
     maDestroyPlaceholder(image);
 
     image = newImage;
-    width = imageWidth;
-    height = imageHeight;
+    imageWidth = newImageWidth;
+    imageHeight = newImageHeight;
+    width = newWidth;
+    height = newHeight;
+
     if (curY >= height) {
       curY = height - lineHeight;
       pageHeight = curY;
@@ -311,47 +397,13 @@ void Screen::resize(int newWidth, int newHeight, int lineHeight) {
   }
 }
 
-// handles the \n character
-void Screen::newLine(int displayHeight, int lineHeight) {
-  curX = INITXY;
-  if (height < MAX_HEIGHT) {
-    int offset = curY + (lineHeight * 2);
-    if (offset >= displayHeight) {
-      if (offset >= height) {
-        // extend the base image by another page size
-        MAHandle newImage = maCreatePlaceholder();
-        maCreateDrawableImage(newImage, width, height + displayHeight);
+void Screen::setColor(long color) {
+  fg = ansiToMosync(color);
+}
 
-        MARect srcRect;
-        MAPoint2d dstPoint;
-
-        srcRect.left = 0;
-        srcRect.top = 0;
-        srcRect.width = width;
-        srcRect.height = height;
-        dstPoint.x = 0;
-        dstPoint.y = 0;
-
-        maSetDrawTarget(newImage);
-        maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-
-        // clear the new segment
-        maSetColor(bg);
-        maFillRect(0, height, width, height + displayHeight);
-        height += displayHeight;
-
-        // cleanup the old image
-        maDestroyPlaceholder(image);
-        image = newImage;
-      }
-      scrollY += lineHeight;
-    }
-    curY += lineHeight;
-    pageHeight += lineHeight;
-  } else {
-    curY = INITXY;
-    pageHeight = 0;
-  }
+void Screen::setTextColor(long foreground, long background) {
+  bg = ansiToMosync(background);
+  fg = ansiToMosync(foreground);
 }
 
 // handles the given escape character. Returns whether the font has changed
@@ -488,7 +540,7 @@ void Screen::updateFont() {
   maFontSetCurrent(font);
 }
 
-AnsiWidget::AnsiWidget(int width, int height) :
+AnsiWidget::AnsiWidget(HyperlinkListener *listener, int width, int height) :
   back(0),
   front(0),
   dirty(0),
@@ -497,7 +549,7 @@ AnsiWidget::AnsiWidget(int width, int height) :
   touchX(-1),
   touchY(-1),
   touchMode(0),
-  hyperlinkListener(0),
+  hyperlinkListener(listener),
   activeLink(0) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
@@ -530,7 +582,6 @@ void AnsiWidget::beep() const {
 
 // clear the offscreen buffer
 void AnsiWidget::clearScreen() {
-  reset(true);
   back->clear();
   flush(dirty = true);
 }
@@ -647,35 +698,13 @@ void AnsiWidget::print(const char *str) {
         }
         break;
       case '\n':                 // new line
-        back->newLine(height, lineHeight);
+        back->newLine(lineHeight);
         break;
       case '\r':                 // return
         back->curX = INITXY;           // erasing the line will clear any previous text
         break;
       default:
-        int numChars = 1;         // print minimum of one character
-        int cx = charWidth(*p);
-        int w = width - 1;
-
-        if (back->curX + cx >= w) {
-          back->newLine(height, lineHeight);
-        }
-        // print further non-control, non-null characters
-        // up to the width of the line
-        while (p[numChars] > 31) {
-          cx += charWidth(*p);
-          if (back->curX + cx < w) {
-            numChars++;
-          } else {
-            break;
-          }
-        }
-
-        back->drawText((const char *)p, numChars, cx, lineHeight);
-
-        // advance
-        p += numChars - 1;        // allow for p++
-        back->curX += cx;
+        p += back->print(p, lineHeight) - 1; // allow for p++
       };
 
       if (*p == '\0') {
@@ -720,6 +749,17 @@ void AnsiWidget::setTextColor(long fg, long bg) {
   back->setTextColor(fg, bg);
 }
 
+// return whether any of the screens contain a hyperlink
+bool AnsiWidget::hasUI() {
+  bool result = false;
+  for (int i = 0; i < MAX_SCREENS && !result; i++) {
+    if (screens[i] != NULL && screens[i]->hyperlinks.size() > 0) {
+      result = true;
+    }
+  }
+  return result;
+}
+
 // resets mouse mode to false
 void AnsiWidget::resetMouse() {
   touchX = touchY = -1;
@@ -736,7 +776,7 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   touchX = event.point.x;
   touchY = event.point.y;
 
-  Vector_each(Hyperlink*, it, hyperlinks) {
+  Vector_each(Hyperlink*, it, back->hyperlinks) {
     if ((*it)->overlaps(event.point, 0, back->scrollY)) {
       back->drawInto();
       activeLink = (*it);
@@ -761,7 +801,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   } else {
     // scroll up/down
     int vscroll = back->scrollY + (touchY - event.point.y);
-    if (vscroll > 0 && vscroll < (back->curY - (height - SCROLL_OFFS))) {
+    if (vscroll > 0 && vscroll < (back->curY - (back->height - SCROLL_OFFS))) {
       back->scrollY = vscroll;
       touchX = event.point.x;
       touchY = event.point.y;
@@ -787,13 +827,6 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   activeLink = NULL;
 }
 
-// calculate the pixel width of the given character
-int AnsiWidget::charWidth(char c) {
-  char measure[] = { c, 0 };
-  int result = EXTENT_X(maGetTextSize(measure));
-  return result;
-}
-
 // creates a hotspot button, eg // ^[ b10|10|10|10|x;
 void AnsiWidget::createButton(char *&p) {
   Vector<String *> *items = getItems(p);
@@ -803,8 +836,8 @@ void AnsiWidget::createButton(char *&p) {
   int h = items->size() > 3 ? atoi((*items)[3]->c_str()) : 0;
   const char *action = items->size() > 4 ? (*items)[4]->c_str() : "";
 
-  Hyperlink *link = new Blocklink(action, back, x, y, w, h);
-  hyperlinks.add(link);
+  Hyperlink *link = new Blocklink(back, action, x, y, w, h);
+  back->hyperlinks.add(link);
   link->draw();
 
   deleteItems(items);
@@ -826,12 +859,12 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
     int y = back->curY;
     if (back->curX + w >= width) {
       w = width - back->curX; // clipped
-      back->newLine(height, EXTENT_Y(textSize));
+      back->newLine(EXTENT_Y(textSize));
     } else {
       back->curX += w;
     }
-    Hyperlink *link = new Textlink(action, text, back, x, y, w, h);
-    hyperlinks.add(link);
+    Hyperlink *link = new Textlink(back, action, text, x, y, w, h);
+    back->hyperlinks.add(link);
     link->draw();
   }
 
@@ -962,13 +995,6 @@ void AnsiWidget::removeScreen(char *&p) {
 
 // reset the current drawing variables
 void AnsiWidget::reset(bool init) {
-  if (init) {
-    // cleanup any hyperlinks
-    Vector_each(Hyperlink*, it, hyperlinks) {
-      delete (*it);
-    }
-    hyperlinks.clear();
-  }
   back->reset(init);
 }
 
@@ -978,15 +1004,15 @@ void AnsiWidget::selectScreen(char *&p) {
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
   int y = items->size() > 2 ? atoi((*items)[2]->c_str()) : 0;
-  int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : 0;
-  int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : 0;
+  int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : width;
+  int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : height;
 
   if (n < 0 || n >= MAX_SCREENS) {
     print("ERR screen#");
   } else if (screens[n] != NULL) {
     back = front = screens[n];
   } else {
-    back = new Screen(x, y, max(width, w), max(height, h));
+    back = new Screen(x, y, min(width, w), min(height, h));
     if (back && back->construct()) {
       screens[n] = front = back;
     }

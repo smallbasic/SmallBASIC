@@ -22,7 +22,7 @@ extern "C" int MAMain() {
     controller->processEvents(-1, -1);
     if (controller->getLoadPath() != NULL) {
       sbasic_main(controller->getLoadPath());
-    } else if (!controller->hasGUI()) {
+    } else if (!controller->hasUI()) {
       sbasic_main(MAIN_BAS_RES);
     }
   }
