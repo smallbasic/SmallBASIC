@@ -355,6 +355,17 @@ void Controller::setRunning() {
   runMode = run_state;
 }
 
+// handler for hyperlink click actions
+void Controller::buttonClicked(const char *url) {
+  loadPath.clear();
+  int len = strlen(url);
+  if (len == 1) {
+    handleKey(url[0]);
+  } else {
+    loadPath.append(url, strlen(url));
+  }
+}
+
 // display the system statusbar/menu
 void Controller::drawStatusBar() {
   int top = output->getHeight();
@@ -526,17 +537,6 @@ void Controller::handleToolbarButton(int x, int y) {
       }
       break;
     }
-  }
-}
-
-// handler for hyperlink click actions
-void Controller::linkClicked(const char *url) {
-  loadPath.clear();
-  int len = strlen(url);
-  if (len == 1) {
-    handleKey(url[0]);
-  } else {
-    loadPath.append(url, strlen(url));
   }
 }
 

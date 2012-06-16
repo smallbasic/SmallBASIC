@@ -18,7 +18,7 @@
 
 using namespace MAUtil;
 
-struct Hyperlink;
+struct Button;
 
 struct Screen {
   Screen(int x, int y, int width, int height);
@@ -33,7 +33,7 @@ struct Screen {
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
   void reset(bool init);
-  void resize(int width, int height, int lineHeight);
+  void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void setColor(long color);
   void setTextColor(long fg, long bg);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
@@ -60,12 +60,12 @@ struct Screen {
   int curXSaved;
   int tabSize;
   int fontSize; 
-  Vector <Hyperlink *>hyperlinks;
+  Vector <Button *>buttons;
 };
 
-struct Hyperlink {
-  Hyperlink(Screen *screen, const char *action, int x, int y, int w, int h);
-  virtual ~Hyperlink() {};
+struct Button {
+  Button(Screen *screen, const char *action, int x, int y, int w, int h);
+  virtual ~Button() {};
   virtual void draw() = 0;
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
 
@@ -75,26 +75,26 @@ struct Hyperlink {
   int x,y,w,h;
 };
 
-struct Textlink : public Hyperlink {
-  Textlink(Screen *screen, const char *action, const char *label,
+struct TextButton : public Button {
+  TextButton(Screen *screen, const char *action, const char *label,
            int x, int y, int w, int h);
   void draw();
   String label;
 };
 
-struct Blocklink : public Hyperlink {
-  Blocklink(Screen *screen, const char *action,
+struct BlockButton : public Button {
+  BlockButton(Screen *screen, const char *action,
             int x, int y, int w, int h);
   void draw();
 };
 
-struct HyperlinkListener {
-  virtual void linkClicked(const char *url) = 0;
+struct ButtonListener {
+  virtual void buttonClicked(const char *url) = 0;
 };
 
 class AnsiWidget {
 public:
-  explicit AnsiWidget(HyperlinkListener *listener, int width, int height);
+  explicit AnsiWidget(ButtonListener *listener, int width, int height);
   ~AnsiWidget();
 
   void beep() const;
@@ -156,8 +156,8 @@ private:
   int touchX;     // active touch x value
   int touchY;     // active touch y value
   bool touchMode; // PEN ON/OFF
-  HyperlinkListener *hyperlinkListener;
-  Hyperlink *activeLink;
+  ButtonListener *buttonListener;
+  Button *activeLink;
 };
 
 #endif // ANSIWIDGET_H

@@ -107,8 +107,8 @@ struct TextBuffer {
   int len;
 };
 
-Hyperlink::Hyperlink(Screen *screen, const char* action,
-                     int x, int y, int w, int h) :
+Button::Button(Screen *screen, const char* action,
+               int x, int y, int w, int h) :
   action(action),
   pressed(false),
   bg(screen->bg),
@@ -119,16 +119,16 @@ Hyperlink::Hyperlink(Screen *screen, const char* action,
   h(h) {
 }
 
-bool Hyperlink::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
+bool Button::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
 }
 
-Blocklink::Blocklink(Screen *screen, const char *action,
+BlockButton::BlockButton(Screen *screen, const char *action,
                      int x, int y, int w, int h) :
-  Hyperlink(screen, action, x, y, w, h) {  
+  Button(screen, action, x, y, w, h) {  
 }
 
-void Blocklink::draw() {
+void BlockButton::draw() {
   int r = x+w;
   int b = y+h;
   maSetColor(pressed ? bg : fg);
@@ -140,13 +140,13 @@ void Blocklink::draw() {
   maLine(r, y, r, b); // right
 }
 
-Textlink::Textlink(Screen *screen, const char *action, const char *label,
+TextButton::TextButton(Screen *screen, const char *action, const char *label,
                    int x, int y, int w, int h) :
-  Hyperlink(screen, action, x, y, w, h),
+  Button(screen, action, x, y, w, h),
   label(label) {
 }
 
-void Textlink::draw() {
+void TextButton::draw() {
   maSetColor(pressed ? bg : fg);
   maDrawText(x, y, !label.size() ? action.c_str() : label.c_str());
   maLine(x, y + h - 1, x + w, y + h - 1);
@@ -184,8 +184,8 @@ Screen::~Screen() {
   if (font) {
     maFontDelete(font);
   }
-  Vector_each(Hyperlink*, it, hyperlinks) {
-    delete (Hyperlink*)(*it);
+  Vector_each(Button*, it, buttons) {
+    delete (Button*)(*it);
   }
 }
 
@@ -339,11 +339,11 @@ void Screen::reset(bool init) {
     curX = INITXY;
     tabSize = 40;   // tab size in pixels (160/32 = 5)
     scrollY = 0;
-    // cleanup any hyperlinks
-    Vector_each(Hyperlink*, it, hyperlinks) {
+    // cleanup any buttons
+    Vector_each(Button*, it, buttons) {
       delete (*it);
     }
-    hyperlinks.clear();
+    buttons.clear();
   }
   curYSaved = 0;
   curXSaved = 0;
@@ -358,8 +358,9 @@ void Screen::reset(bool init) {
 }
 
 // update the widget to new dimensions
-void Screen::resize(int newWidth, int newHeight, int lineHeight) {
-  if (x > 0 && y > 0 && (newWidth > imageWidth || newHeight > imageHeight)) {
+void Screen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight) {
+  bool fullscreen = ((width - x) == oldWidth && (height - y) == oldHeight);
+  if (fullscreen && (newWidth > imageWidth || newHeight > imageHeight)) {
     // screen is larger than existing virtual size
     MARect srcRect;
     MAPoint2d dstPoint;
@@ -387,11 +388,11 @@ void Screen::resize(int newWidth, int newHeight, int lineHeight) {
     width = newWidth;
     height = newHeight;
 
-    if (curY >= height) {
+    if (curY >= imageHeight) {
       curY = height - lineHeight;
       pageHeight = curY;
     }
-    if (curX >= width) {
+    if (curX >= imageWidth) {
       curX = 0;
     }
   }
@@ -540,7 +541,7 @@ void Screen::updateFont() {
   maFontSetCurrent(font);
 }
 
-AnsiWidget::AnsiWidget(HyperlinkListener *listener, int width, int height) :
+AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   back(0),
   front(0),
   dirty(0),
@@ -549,7 +550,7 @@ AnsiWidget::AnsiWidget(HyperlinkListener *listener, int width, int height) :
   touchX(-1),
   touchY(-1),
   touchMode(0),
-  hyperlinkListener(listener),
+  buttonListener(listener),
   activeLink(0) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
@@ -724,7 +725,10 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
   int lineHeight = textHeight();
   for (int i = 0; i < MAX_SCREENS; i++) {
     if (screens[i]) {
-      screens[i]->resize(newWidth, newHeight, lineHeight);
+      screens[i]->resize(newWidth, newHeight, width, height, lineHeight);
+      if (screens[i] != back) {
+        screens[i]->draw(false);
+      }
     }
   }
   width = newWidth;
@@ -753,7 +757,7 @@ void AnsiWidget::setTextColor(long fg, long bg) {
 bool AnsiWidget::hasUI() {
   bool result = false;
   for (int i = 0; i < MAX_SCREENS && !result; i++) {
-    if (screens[i] != NULL && screens[i]->hyperlinks.size() > 0) {
+    if (screens[i] != NULL && screens[i]->buttons.size() > 0) {
       result = true;
     }
   }
@@ -776,7 +780,7 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   touchX = event.point.x;
   touchY = event.point.y;
 
-  Vector_each(Hyperlink*, it, back->hyperlinks) {
+  Vector_each(Button*, it, back->buttons) {
     if ((*it)->overlaps(event.point, 0, back->scrollY)) {
       back->drawInto();
       activeLink = (*it);
@@ -817,8 +821,8 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     activeLink->pressed = false;
     activeLink->draw();
     flush(dirty = true);
-    if (hyperlinkListener) {
-      hyperlinkListener->linkClicked(activeLink->action.c_str());
+    if (buttonListener) {
+      buttonListener->buttonClicked(activeLink->action.c_str());
     }
   } else if (touchY != -1) {
     flush(dirty = true);
@@ -836,8 +840,8 @@ void AnsiWidget::createButton(char *&p) {
   int h = items->size() > 3 ? atoi((*items)[3]->c_str()) : 0;
   const char *action = items->size() > 4 ? (*items)[4]->c_str() : "";
 
-  Hyperlink *link = new Blocklink(back, action, x, y, w, h);
-  back->hyperlinks.add(link);
+  Button *link = new BlockButton(back, action, x, y, w, h);
+  back->buttons.add(link);
   link->draw();
 
   deleteItems(items);
@@ -849,8 +853,8 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
   const char *action = items->size() > 0 ? (*items)[0]->c_str() : "";
   const char *text = items->size() > 1 ? (*items)[1]->c_str() : "";
 
-  if (execLink && hyperlinkListener) {
-    hyperlinkListener->linkClicked(action);
+  if (execLink && buttonListener) {
+    buttonListener->buttonClicked(action);
   } else {
     MAExtent textSize = maGetTextSize(text);
     int w = EXTENT_X(textSize) + 2;
@@ -863,8 +867,8 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
     } else {
       back->curX += w;
     }
-    Hyperlink *link = new Textlink(back, action, text, x, y, w, h);
-    back->hyperlinks.add(link);
+    Button *link = new TextButton(back, action, text, x, y, w, h);
+    back->buttons.add(link);
     link->draw();
   }
 
@@ -1012,7 +1016,7 @@ void AnsiWidget::selectScreen(char *&p) {
   } else if (screens[n] != NULL) {
     back = front = screens[n];
   } else {
-    back = new Screen(x, y, min(width, w), min(height, h));
+    back = new Screen(x, y, w, h);
     if (back && back->construct()) {
       screens[n] = front = back;
     }

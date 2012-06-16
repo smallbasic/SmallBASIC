@@ -32,7 +32,7 @@ struct ToolbarButton {
   int id,x,y;
 };
 
-struct Controller : public Environment, HyperlinkListener {
+struct Controller : public Environment, ButtonListener {
   Controller();
   virtual ~Controller();
 
@@ -55,11 +55,11 @@ struct Controller : public Environment, HyperlinkListener {
   AnsiWidget *output;
 
 private:
+  void buttonClicked(const char *url);
   void drawStatusBar();
   void fireEvent(MAEvent &event);
   void handleKey(int key);
   void handleToolbarButton(int x, int y);
-  void linkClicked(const char *url);
   void setupToolbarButton(int index, int id, int x, int y);
 
   enum ExecState {
