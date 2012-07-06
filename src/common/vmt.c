@@ -2,7 +2,7 @@
 //
 // Tables
 //
-// VMTs are an easy solution for PalmOS limited memory.
+// VMTs are an easy solution for limited memory.
 // It is a system to support dynamic arrays on "disk".
 //
 // + Each VMT is a dynamic table of variable-length records

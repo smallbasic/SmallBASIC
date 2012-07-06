@@ -84,13 +84,7 @@ int kw_getcmdname(code_t code, char *dest) {
     }
   }
   if (!found) {
-#if defined(_PalmOS)
-    strcpy(dest, "(");
-    StrIToA(dest + 1, code);
-    strcat(dest, ")");
-#else
     sprintf(dest, "(%d)", (int) code);
-#endif
   }
   return found;
 }
@@ -110,13 +104,7 @@ int kw_getfuncname(fcode_t code, char *dest) {
     }
   }
   if (!found) {
-#if defined(_PalmOS)
-    strcpy(dest, "(");
-    StrIToA(dest + 1, code);
-    strcat(dest, ")");
-#else
     sprintf(dest, "(%d)", code);
-#endif
   }
   return found;
 }
@@ -136,13 +124,7 @@ int kw_getprocname(pcode_t code, char *dest) {
     }
   }
   if (!found) {
-#if defined(_PalmOS)
-    strcpy(dest, "(");
-    StrIToA(dest + 1, code);
-    strcat(dest, ")");
-#else
     sprintf(dest, "(%d)", code);
-#endif
   }
   return found;
 }

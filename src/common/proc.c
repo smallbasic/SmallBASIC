@@ -14,8 +14,6 @@
 #include "common/var_hash.h"
 #include <limits.h>
 
-int par_massget_type_check(char fmt, par_t * par) SEC(BLIB);
-
 /*
  * returns the last-modified time of the file
  *
@@ -43,7 +41,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
   const char *ps, *p;
   char cur_path[OS_PATHNAME_SIZE + 1];
 
-if(  path == NULL) {
+  if (path == NULL) {
     return 0;
   }
   if (strlen(path) == 0) {
@@ -209,26 +207,8 @@ void lwrite(const char *buf) {
   int log_dev; /* logfile file handle */
   char log_name[OS_PATHNAME_SIZE + 1]; /* LOGFILE filename */
 
-#if defined(_PalmOS)
-  Err ferr;
-#elif defined(_Win32)
-  char *p;
-#endif
-
   // //////
   // open
-#if defined(_PalmOS)
-  log_dev = FileOpen(0, "SB.LOG", ID_UFST, ID_SmBa, fileModeAppend, &ferr);
-  if (ferr != 0) {
-    panic("LOG: Error on creating log-file");
-  }
-#elif defined(_VTOS)
-  log_dev = fopen("sb.log", "w+t");
-  if (log_dev == NULL) {
-    panic("LOG: Error on creating log-file");
-  }
-  fseek(log_dev, 0, SEEK_END);
-#else
 #if defined(_Win32) || defined(__MINGW32__)
   if (getenv("SBLOG")) {
     strcpy(log_name, getenv("SBLOG"));
@@ -236,8 +216,8 @@ void lwrite(const char *buf) {
   else {
     sprintf(log_name, "c:%csb.log", OS_DIRSEP);
   }
-#else /* a real OS */
-sprintf  (log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
+#else
+  sprintf(log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
 #endif
 
   log_dev = open(log_name, O_RDWR, 0660);
@@ -248,50 +228,21 @@ sprintf  (log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
   if (log_dev == -1) {
     panic("LOG: Error on creating log file");
   }
-#endif
 
   // /////////
   // write
-#if defined(_PalmOS)
-  FileWrite(log_dev, (char *)buf, strlen(buf), 1, &ferr);
-  if (ferr) {
-    if (ferr != fileErrEOF) {
-      panic("LOG: write failed (ERR:%d)", ferr);
-    }
-  }
-#elif defined(_VTOS)
-  if (fwrite(buf, 1, strlen(buf), log_dev) != strlen(buf)) {
-    panic("LOG: write failed");
-  }
-#else
   if (write(log_dev, buf, strlen(buf)) == -1) {
     panic("LOG: write failed");
   }
-#endif
 
-  // / close
-#if defined(_PalmOS)
-  FileClose(log_dev);
-#elif defined(_VTOS)
-  fclose(log_dev);
-#else
   close(log_dev);
-#endif
 }
 #endif // NOT IMPL_LOG_WRITE
+
 /*
  * Write string to output device
  */
-#if defined(_WinBCB)
-extern void bcb_lwrite(char *s);
-#endif
-
-#if defined(_PalmOS)
-void pv_write(char *str, int method, unsigned long int handle)
-#else
-void pv_write(char *str, int method, int handle)
-#endif
-{
+void pv_write(char *str, int method, int handle) {
   var_t *vp;
   int l;
 
@@ -313,21 +264,13 @@ void pv_write(char *str, int method, int handle)
     break;
   default:
     dev_print(str);
-#if defined(_WinBCB)
-    bcb_lwrite(str);
-#endif
   }
 }
 
 /*
  * just prints the value of variable 'var'
  */
-#if defined(_PalmOS)
-void pv_writevar(var_t * var, int method, unsigned long int handle)
-#else
-void pv_writevar(var_t * var, int method, int handle)
-#endif
-{
+void pv_writevar(var_t * var, int method, int handle) {
   char tmpsb[64];
 
   // start with a clean buffer
@@ -1174,8 +1117,7 @@ int par_massget_type_check(char fmt, par_t * par) {
  *
  * pfree2(s1, v);
  */
-int par_massget(const char *fmt, ...)
-{
+int par_massget(const char *fmt, ...) {
   char *fmt_p = NULL;
   int pcount = 0, rqcount, optcount, curpar;
   int opt = 0, ignore = 0;
@@ -1188,120 +1130,121 @@ int par_massget(const char *fmt, ...)
   var_t **vt;
 
   // get ptable
-    pcount = par_getpartable(&ptable, NULL);
-    if (pcount == -1)
+  pcount = par_getpartable(&ptable, NULL);
+  if (pcount == -1) {
     return -1;
-
-    /*
-     *      count pars
-     */
-    fmt_p = (char *)fmt;
-    rqcount = optcount = 0;
-    while (*fmt_p) {
-      if (*fmt_p >= 'a')
+  }
+  
+  /*
+   *      count pars
+   */
+  fmt_p = (char *)fmt;
+  rqcount = optcount = 0;
+  while (*fmt_p) {
+    if (*fmt_p >= 'a')
       optcount++;
-      else
+    else
       rqcount++;
+    fmt_p++;
+  }
+  
+  if (rqcount > pcount) {
+    err_parfmt(fmt);
+  }
+  else {
+    /*
+     *      parse
+     */
+    va_start(ap, fmt);
+    curpar = 0;
+    fmt_p = (char *)fmt;
+    while (*fmt_p) {
+      if (*fmt_p >= 'a' && optcount &&
+          ((curpar < pcount) ? par_massget_type_check(*fmt_p, &ptable[curpar]) : 0)) {
+        (optcount--, opt = 1, ignore = 0);
+      }
+      else if (*fmt_p >= 'a' && optcount) {
+        (optcount--, opt = 0, ignore = 1);
+      }
+      else if (*fmt_p < 'a' && rqcount) {
+        (rqcount--, opt = 0, ignore = 0);
+      }
+      else {
+        err_parfmt(fmt);
+        break;
+      }
+
+      if (pcount <= curpar && ignore == 0) {
+        err_parfmt(fmt);
+        // rt_raise("%s\nb: pc=%d, oc=%d, rc=%d", fmt, pcount, optcount, rqcount);
+        break;
+      }
+
+      switch (*fmt_p) {
+      case 's':
+        // optional string
+        if (!opt) {
+          s = va_arg(ap, char**);
+          break;
+        }
+      case 'S':
+        // string
+        s = va_arg(ap, char**);
+        *s = tmp_strdup(v_getstr(ptable[curpar].var));
+        curpar++;
+        break;
+      case 'i':
+        // optional integer
+        if (!opt) {
+          i = va_arg(ap, var_int_t*);
+          break;
+        }
+      case 'I':
+        // integer
+        i = va_arg(ap, var_int_t*);
+        *i = v_getint(ptable[curpar].var);
+        curpar++;
+        break;
+      case 'f':
+        // optional real (var_num_t)
+        if (!opt) {
+          f = va_arg(ap, var_num_t*);
+          break;
+        }
+      case 'F':
+        // real (var_num_t)
+        f = va_arg(ap, var_num_t*);
+        *f = v_getnum(ptable[curpar].var);
+        curpar++;
+        break;
+      case 'p':
+        // optional variable
+        if (!opt) {
+          vt = va_arg(ap, var_t**);
+          break;
+        }
+      case 'P':
+        // variable
+        vt = va_arg(ap, var_t**);
+        if (ptable[curpar].flags == 0)// byref 
+          *vt = ptable[curpar].var;
+        else {
+          err_syntax();
+          break;
+        }
+        curpar++;
+        break;
+      }
+
       fmt_p++;
     }
-
-    if (rqcount > pcount) {
-      err_parfmt(fmt);
-    }
-    else {
-      /*
-       *      parse
-       */
-      va_start(ap, fmt);
-      curpar = 0;
-      fmt_p = (char *)fmt;
-      while (*fmt_p) {
-        if (*fmt_p >= 'a' && optcount &&
-            ((curpar < pcount) ? par_massget_type_check(*fmt_p, &ptable[curpar]) : 0)) {
-          (optcount--, opt = 1, ignore = 0);
-        }
-        else if (*fmt_p >= 'a' && optcount) {
-          (optcount--, opt = 0, ignore = 1);
-        }
-        else if (*fmt_p < 'a' && rqcount) {
-          (rqcount--, opt = 0, ignore = 0);
-        }
-        else {
-          err_parfmt(fmt);
-          break;
-        }
-
-        if (pcount <= curpar && ignore == 0) {
-          err_parfmt(fmt);
-          // rt_raise("%s\nb: pc=%d, oc=%d, rc=%d", fmt, pcount, optcount, rqcount);
-          break;
-        }
-
-        switch (*fmt_p) {
-          case 's':
-          // optional string
-          if (!opt) {
-            s = va_arg(ap, char**);
-            break;
-          }
-          case 'S':
-          // string
-          s = va_arg(ap, char**);
-          *s = tmp_strdup(v_getstr(ptable[curpar].var));
-          curpar++;
-          break;
-          case 'i':
-          // optional integer
-          if (!opt) {
-            i = va_arg(ap, var_int_t*);
-            break;
-          }
-          case 'I':
-          // integer
-          i = va_arg(ap, var_int_t*);
-          *i = v_getint(ptable[curpar].var);
-          curpar++;
-          break;
-          case 'f':
-          // optional real (var_num_t)
-          if (!opt) {
-            f = va_arg(ap, var_num_t*);
-            break;
-          }
-          case 'F':
-          // real (var_num_t)
-          f = va_arg(ap, var_num_t*);
-          *f = v_getnum(ptable[curpar].var);
-          curpar++;
-          break;
-          case 'p':
-          // optional variable
-          if (!opt) {
-            vt = va_arg(ap, var_t**);
-            break;
-          }
-          case 'P':
-          // variable
-          vt = va_arg(ap, var_t**);
-          if (ptable[curpar].flags == 0)// byref 
-          *vt = ptable[curpar].var;
-          else {
-            err_syntax();
-            break;
-          }
-          curpar++;
-          break;
-        }
-
-        fmt_p++;
-      }
-      va_end(ap);
-    }
-
-    // 
-    par_freepartable(&ptable, pcount);
-    if (prog_error) {
-      return -1;
-    }
-    return pcount;
+    va_end(ap);
   }
+
+  // 
+  par_freepartable(&ptable, pcount);
+  if (prog_error) {
+    return -1;
+  }
+  return pcount;
+}

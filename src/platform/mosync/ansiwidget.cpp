@@ -125,7 +125,7 @@ bool Button::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
 
 BlockButton::BlockButton(Screen *screen, const char *action,
                      int x, int y, int w, int h) :
-  Button(screen, action, x, y, w, h) {  
+  Button(screen, action, x, y, w, h) {
 }
 
 void BlockButton::draw() {
@@ -310,7 +310,7 @@ int Screen::print(const char *p, int lineHeight) {
   int numChars = 1;         // print minimum of one character
   int cx = charWidth(*p);
   int w = width - 1;
-  
+
   if (curX + cx >= w) {
     newLine(lineHeight);
   }
@@ -325,9 +325,9 @@ int Screen::print(const char *p, int lineHeight) {
       break;
     }
   }
-  
+
   drawText(p, numChars, cx, lineHeight);
-  
+
   curX += cx;
   return numChars;
 }
@@ -1048,7 +1048,7 @@ void AnsiWidget::swapScreens() {
       screens[1] = front;
     }
   } else {
-    Screen *tmp = front; 
+    Screen *tmp = front;
     front = back;
     back = tmp;
     if (dirty) {

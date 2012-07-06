@@ -28,28 +28,14 @@ static char preload_panic_buffer[SB_PANICMSG_SIZE + 1];
 void panic(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-#if defined(_PalmOS)
-    StrVPrintF(preload_panic_buffer, fmt, ap);
-#elif defined(_DOS)
-    vsprintf(preload_panic_buffer, fmt, ap);
-#else
-    vsnprintf(preload_panic_buffer, SB_PANICMSG_SIZE, fmt, ap);
-#endif
-    va_end(ap);
+  vsnprintf(preload_panic_buffer, SB_PANICMSG_SIZE, fmt, ap);
+  va_end(ap);
 
-#if defined(_BCB_W32_IDE)
-    bcb_mgrerr("%s", preload_panic_buffer);
-#elif defined(_WinGUI) || defined(_Win32)
+#if defined(_WinGUI) || defined(_Win32)
     MessageBox(NULL, preload_panic_buffer, "SB Panic", MB_OK);
 #elif defined (__MINGW32__)
     MessageBox(NULL, preload_panic_buffer, "SB Panic", MB_OK);
     exit(1);
-#elif defined(_VTOS)
-    MessageBox("FATAL PANIC", preload_panic_buffer, TRUE);
-#elif defined(_FRANKLIN_EBM)
-    GUI_Alert(ALERT_ERROR, preload_panic_buffer);
-#elif defined(_PalmOS)
-    ErrDisplay(preload_panic_buffer);
 #else
     fprintf(stderr, "\n\nPANIC: %s\a\n\n", preload_panic_buffer);
     fflush(stderr);
@@ -66,26 +52,15 @@ void panic(const char *fmt, ...) {
 void warning(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-#if defined(_PalmOS)
-    StrVPrintF(preload_panic_buffer, fmt, ap);
-#else
-    vsprintf(preload_panic_buffer, fmt, ap);
-#endif
-    va_end(ap);
+  vsprintf(preload_panic_buffer, fmt, ap);
+  va_end(ap);
 
 #if defined(_WinGUI) || defined(_Win32)
     MessageBox(NULL, preload_panic_buffer, "SB Warning", MB_OK);
-#elif defined(_PalmOS)
-    FrmCustomAlert(InfoAlertID, "Warning:", preload_panic_buffer, "");
-//      ErrNonFatalDisplay(preload_panic_buffer);
-#elif defined(_VTOS)
-    MessageBox("WARNING", preload_panic_buffer, FALSE);
-#elif defined(_FRANKLIN_EBM)
-    GUI_Alert(ALERT_ERROR, preload_panic_buffer);
 #else // defined(_UnixOS)
     fprintf(stderr, preload_panic_buffer, 0);
 #endif
-  }
+}
 
 /**
  *
@@ -94,21 +69,11 @@ void debug(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   strcpy(preload_panic_buffer, "DEBUG: ");
-#if defined(_PalmOS)
-    StrVPrintF(&preload_panic_buffer[7], fmt, ap);
-#else
-    vsprintf(&preload_panic_buffer[7], fmt, ap);
-#endif
-    va_end(ap);
+  vsprintf(&preload_panic_buffer[7], fmt, ap);
+  va_end(ap);
 
 #if defined(_WinGUI) || defined(_Win32)
     MessageBox(NULL, preload_panic_buffer, "SB Debug", MB_OK);
-#elif defined(_PalmOS)
-    SysFatalAlert(preload_panic_buffer);
-#elif defined(_VTOS)
-    MessageBox("WARNING", preload_panic_buffer, FALSE);
-#elif defined(_FRANKLIN_EBM)
-    GUI_Alert(ALERT_ERROR, preload_panic_buffer);
 #else // defined(_UnixOS)
     fprintf(stderr, preload_panic_buffer, 0);
 #endif

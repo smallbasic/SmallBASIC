@@ -10,14 +10,8 @@
 #include "common/smbas.h"
 #include "common/pproc.h"
 #include "common/messages.h"
-#if !defined(_PalmOS)
 #include <string.h>
 #include <errno.h>
-#endif
-
-#if defined(_WinBCB)
-extern void bcb_comp(int pass, int pmin, int pmax); // Win32GUI progress
-#endif
 
 void err_common_msg(const char *seg, const char *file, int line, const char *descr) SEC(TRASH);
 
@@ -39,10 +33,6 @@ void err_common_msg(const char *seg, const char *file, int line, const char *des
   log_printf("\n\033[4mPress '.' to return...\033[0m\n");
 #endif
   log_printf("\033[80m\033[0m");
-
-#if defined(_WinBCB)
-  bcb_comp(-1, line, 0);
-#endif
 }
 
 /**
@@ -67,11 +57,7 @@ void rt_raise(const char *fmt, ...)
 
     va_start(ap, fmt);
     buff = tmp_alloc(SB_TEXTLINE_SIZE + 1);
-#if defined(_PalmOS)
-    StrVPrintF(buff, fmt, ap);
-#else
     vsprintf(buff, fmt, ap);
-#endif
     va_end(ap);
 
     err_common_msg(WORD_RTE, prog_file, prog_line, buff);
@@ -104,60 +90,6 @@ void rt_raise(const char *fmt, ...)
 
 /* ERROR MESSAGES */
 void err_file(dword code) {
-#if defined(_PalmOS)
-  switch (code) {
-    case fileErrMemError:
-    rt_raise(FSERR_OUT_OF_MEMORY);
-    break;
-    case fileErrInvalidParam:
-    rt_raise(FSERR_INVALID_PARAMETER);
-    break;
-    case fileErrCorruptFile:
-    rt_raise(FSERR_CORRUPTED);
-    break;
-    case fileErrNotFound:
-    rt_raise(FSERR_NOT_FOUND);
-    break;
-    case fileErrTypeCreatorMismatch:
-    rt_raise(FSERR_TYPE_MSM);
-    break;
-    case fileErrReplaceError:
-    rt_raise(FSERR_OVERWRITE);
-    break;
-    case fileErrCreateError:
-    rt_raise(FSERR_CREATE);
-    break;
-    case fileErrOpenError:
-    rt_raise(FSERR_OPEN);
-    break;
-    case fileErrInUse:
-    rt_raise(FSERR_USED);
-    break;
-    case fileErrReadOnly:
-    rt_raise(FSERR_READ_ONLY);
-    break;
-    case fileErrInvalidDescriptor:
-    rt_raise(FSERR_HANDLE);
-    break;
-    case fileErrCloseError:
-    rt_raise(FSERR_CLOSE);
-    break;
-    case fileErrOutOfBounds:
-    rt_raise(FSERR_EOF);
-    break;
-    case fileErrPermissionDenied:
-    rt_raise(FSERR_ACCESS);
-    break;
-    case fileErrIOError:
-    rt_raise(FSERR_GENERIC);
-    break;
-    case fileErrEOF:
-    rt_raise(FSERR_PALM_EOF);
-    break;
-    case fileErrNotStream:
-    rt_raise(FSERR_ANOMALO);
-  }
-#else
   char buf[1024], *p;
 
   strcpy(buf, strerror(code));
@@ -167,7 +99,6 @@ void err_file(dword code) {
     p++;
   }
   rt_raise(FSERR_FMT, code, buf);
-#endif
 }
 
 #if defined(OS_LIMITED)

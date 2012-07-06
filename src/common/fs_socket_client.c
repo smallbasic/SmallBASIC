@@ -13,19 +13,7 @@
 #include "common/sberr.h"
 #include <time.h>
 
-#if !defined(_PalmOS)
-#if defined(_VTOS)
-typedef FILE *FileHand;
-#else
-typedef long FileHand;
-#endif
-#endif
-
 int sockcl_open(dev_file_t * f) {
-#if defined(_VTOS)
-  err_unsup();
-  return 0;
-#else
   char *p;
   int port;
   char server[129];
@@ -52,16 +40,10 @@ int sockcl_open(dev_file_t * f) {
   }
 
   return 1;
-#endif
 }
 
 // open a web server connection
 int http_open(dev_file_t * f) {
-#if defined(_VTOS)
-  err_unsup();
-  return 0;
-#else
-
   char host[250];
   char txbuf[1024];
   f->port = 0;
@@ -134,7 +116,6 @@ int http_open(dev_file_t * f) {
   strcat(txbuf, "\r\n");
   net_print(s, txbuf);
   return 1;
-#endif
 }
 
 // read from a web server connection

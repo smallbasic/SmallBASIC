@@ -781,8 +781,7 @@ void v_setstrn(var_t *var, const char *string, int len) {
 /*
  * set the value of 'var' to string
  */
-void v_setstrf(var_t *var, const char *fmt, ...)
-{
+void v_setstrf(var_t *var, const char *fmt, ...) {
   char *buf;
   va_list ap;
 
@@ -792,17 +791,11 @@ void v_setstrf(var_t *var, const char *fmt, ...)
 #else
     buf = tmp_alloc(0x10000);
 #endif
-#if defined(_PalmOS)
-    StrVPrintF(buf, fmt, ap);
-#elif defined(_DOS)
-    vsprintf(buf, fmt, ap);
-#else
-    vsnprintf(buf, 1024, fmt, ap);
-#endif
-    v_setstr(var, buf);
-    tmp_free(buf);
-    va_end(ap);
-  }
+  vsnprintf(buf, 1024, fmt, ap);
+  v_setstr(var, buf);
+  tmp_free(buf);
+  va_end(ap);
+}
 
 /*
  * adds a string to current string value

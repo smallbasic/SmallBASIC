@@ -639,20 +639,6 @@ void exec_setup_predefined_variables() {
     homedir[l + 1] = '\0';
   }
   setsysvar_str(SYSVAR_HOME, homedir);
-#elif defined(_PalmOS)
-  if (dev_getenv("HOME")) {
-    strcpy(homedir, dev_getenv("HOME"));
-  }
-  else {
-    strcpy(homedir, "");
-  }
-#elif defined(_DOS)
-  if (dev_getenv("HOME")) {
-    strcpy(homedir, dev_getenv("HOME"));
-  }
-  else {
-    setsysvar_str(SYSVAR_HOME, "c:/");  // djgpp uses /
-  }
 #elif defined(_Win32)
   if (dev_getenv("HOME")) {     // this works on cygwin
     strcpy(homedir, dev_getenv("HOME"));
@@ -822,7 +808,6 @@ void cmd_chain(void) {
 /**
  * RUN "program"
  *
- * For PalmOS use RUN CreatorID (i.e. run "calc")
  */
 void cmd_run(int retf) {
   var_t var;

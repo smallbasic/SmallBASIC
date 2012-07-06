@@ -15,26 +15,19 @@
 static int drvsound_ok;
 #endif
 
-#if !defined(_PalmOS)
 #include <stdio.h>
 #if defined(_UnixOS)
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>           // struct timeval
 #include <unistd.h>
-extern char **environ;
-#elif defined(_DOS)
-#include <sys/time.h>           // struct timeval
-#include <unistd.h>
-#include <conio.h>
-extern char **environ;
 #elif defined(_Win32) || defined(__MINGW32__)
 #include <windows.h>
 #include <process.h>
 #include <dir.h>
+#endif
+
 extern char **environ;
-#endif
-#endif
 
 #ifndef IMPL_DEV_RUN
 
@@ -314,20 +307,7 @@ char *pw_shell(const char *cmd) {
  * run a program (if retflg wait and return; otherwise just exec())
  */
 int dev_run(const char *src, int retflg) {
-#if defined(_PalmOS)
-  LocalID lid;
-  dword progid;
-  word card;
-  DmSearchStateType state;
-
-  progid =
-  ((dword) src[0] << 24) + ((dword) src[1] << 16) + ((dword) src[2] << 8) +
-  (dword) src[3];
-  if (DmGetNextDatabaseByTypeCreator
-      (true, &state, 0x6170706C, progid, true, &card, &lid) == 0)
-  return (SysUIAppSwitch(card, lid, sysAppLaunchCmdNormalLaunch, NULL) == 0);
-  return 0;
-#elif defined(RUN_UNSUP)
+#if defined(RUN_UNSUP)
   return 0;
 #elif defined(_Win32)
   int r;

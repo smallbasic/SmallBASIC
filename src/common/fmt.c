@@ -81,11 +81,7 @@ static double nfta_eminus[] = { 1e-8, 1e-16, 1e-24, 1e-32, 1e-40, 1e-48, 1e-56, 
  */
 void fptoa(var_num_t x, char *dest) {
   dest[0] = '\0';
-#if defined(_PalmOS)
-  StrIToA(dest, x);
-#else
   sprintf(dest, VAR_INT_NUM_FMT, x);
-#endif
 }
 
 /*
@@ -806,12 +802,7 @@ void build_format(const char *fmt_cnst) {
 /*
  * print simple strings (parts of format)
  */
-#if defined(_TEST)
-void fmt_printL()
-#else
-void fmt_printL(int output, int handle)
-#endif
-{
+void fmt_printL(int output, int handle) {
   fmt_node_t *node;
 
   if (fmt_count == 0) {
@@ -820,11 +811,7 @@ void fmt_printL(int output, int handle)
     do {
       node = &fmt_stack[fmt_cur];
       if (node->type == 0) {
-#if defined(_TEST)
-        dev_print(node->fmt);
-#else
         pv_write(node->fmt, output, handle);
-#endif
         fmt_cur++;
         if (fmt_cur >= fmt_count) {
           fmt_cur = 0;
@@ -837,40 +824,23 @@ void fmt_printL(int output, int handle)
 /*
  * print formated number
  */
-#if defined(_TEST)
-void fmt_printN(double x)
-#else
-void fmt_printN(var_num_t x, int output, int handle)
-#endif
-{
+void fmt_printN(var_num_t x, int output, int handle) {
   fmt_node_t *node;
   char buf[64];
 
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
   } else {
-#if defined(_TEST)
-    fmt_printL();
-#else
     fmt_printL(output, handle);
-#endif
     node = &fmt_stack[fmt_cur];
     fmt_cur++;
     if (fmt_cur >= fmt_count)
       fmt_cur = 0;
     if (node->type == 1) {
       format_num(buf, node->fmt, x);
-#if defined(_TEST)
-      dev_print(buf);
-#else
       pv_write(buf, output, handle);
-#endif
       if (fmt_cur != 0) {
-#if defined(_TEST)
-        fmt_printL();
-#else
         fmt_printL(output, handle);
-#endif
       }
     } else {
       rt_raise(ERR_FORMAT_INVALID_FORMAT);
@@ -881,27 +851,14 @@ void fmt_printN(var_num_t x, int output, int handle)
 /*
  * print formated string
  */
-#if defined(_TEST)
-void fmt_printS(const char *str)
-#else
-void fmt_printS(const char *str, int output, int handle)
-#endif
-{
+void fmt_printS(const char *str, int output, int handle) {
   fmt_node_t *node;
-#if defined(_PalmOS)
-  char buf[64];
-#else
   char buf[1024];
-#endif
 
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
   } else {
-#if defined(_TEST)
-    fmt_printL();
-#else
     fmt_printL(output, handle);
-#endif
     node = &fmt_stack[fmt_cur];
     fmt_cur++;
     if (fmt_cur >= fmt_count) {
@@ -909,17 +866,9 @@ void fmt_printS(const char *str, int output, int handle)
     }
     if (node->type == 2) {
       format_str(buf, node->fmt, str);
-#if defined(_TEST)
-      dev_print(buf);
-#else
       pv_write(buf, output, handle);
-#endif
       if (fmt_cur != 0) {
-#if defined(_TEST)
-        fmt_printL();
-#else
         fmt_printL(output, handle);
-#endif
       }
     } else {
       rt_raise(ERR_FORMAT_INVALID_FORMAT);
@@ -927,54 +876,3 @@ void fmt_printS(const char *str, int output, int handle)
   }
 }
 
-#if defined(_TEST_)
-/*
- */
-int main()
-{
-  char buf[1024];
-  double x;
-
-  build_format("Total --#,##0.00 of / / goods");  // PRINT USING - build
-  // format
-
-  do {
-    // input
-    printf("\nx? ");
-    gets(buf);
-    if (buf[0] == 'q')
-    break;
-    sscanf(buf, "%lf", &x);
-
-    // numbers
-    bestfta(x, buf);
-    printf("bestfta(): [%s]\n", buf);
-
-    format_num(buf, "#,###,##0.00", x);
-    printf("fmt_num(): [%s]\n", buf);
-
-    format_num(buf, "^^^^^^", x);
-    printf("fmt_num(): [%s]\n", buf);
-
-    // strings
-    format_str(buf, "12/ /34", "Hello, World");
-    printf("fmt_str(): [%s]\n", buf);
-
-    format_str(buf, "/ /", "Hello, World");
-    printf("fmt_str(): [%s]\n", buf);
-
-    format_str(buf, "12 !34", "Hello, World");
-    printf("fmt_str(): [%s]\n", buf);
-
-    format_str(buf, "123 & 4", "Hello, World");
-    printf("fmt_str(): [%s]\n", buf);
-
-    // PRINT USING
-    fmt_printN(x);
-    fmt_printS("ABCDEF");
-
-  }while (1);
-
-  free_format();                // PRINT USING - free format-data
-}
-#endif

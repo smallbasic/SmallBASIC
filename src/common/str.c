@@ -756,11 +756,7 @@ long xstrtol(const char *str) {
   if (str == NULL) {
     return 0;
   }
-#if defined(_PalmOS)
-  return StrAToI(str);
-#else
   return atoi(str);
-#endif
 }
 
 /**
@@ -810,29 +806,9 @@ char *ltostr(var_int_t num, char *dest) {
   if (dest == NULL) {
     panic("l2s(..,null)");
   }
-#if defined(_PalmOS)
-  StrIToA(dest, num);
-#else
   sprintf(dest, VAR_INT_FMT, num);
-#endif
   return dest;
 }
-
-#if defined(_PalmOS)
-char *strrchr(const char *source, int ch)
-{
-  char *p = (char *)source;
-  char *last_p = NULL;
-
-  while (*p) {
-    if (*p == ch)
-    last_p = p;
-    p++;
-  }
-
-  return last_p;
-}
-#endif
 
 /**
  * newdir must ends with dirsep

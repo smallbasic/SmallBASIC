@@ -11,31 +11,17 @@
 #include "common/device.h"
 #include "common/pproc.h"
 #include "common/match.h"
-#if defined(_PalmOS)
-#include <FileStream.h>
-#else
+
 #include <errno.h>
 
 #if defined(_UnixOS)
 #include <sys/time.h>
 #include <unistd.h>
 #endif
-#if defined(_VTOS)
-typedef FILE *FileHand;
-#else
-#include <dirent.h>             // POSIX standard (Note: Borland C++ compiler
-// supports it; VC no)
-
-typedef int FileHand;
-#endif
-#endif
+#include <dirent.h>
 
 #if !defined(O_BINARY)
-#define O_BINARY    0
-#endif
-
-#if defined(_WinBCB)
-void bcb_remove_readonly(const char *name);
+#define O_BINARY 0
 #endif
 
 #include "common/fs_stream.h"
@@ -104,11 +90,6 @@ int stream_close(dev_file_t * f) {
   if (r) {
     err_file((f->last_error = errno));
   }
-#if defined(_WinBCB)
-  if (f->open_flags & DEV_FILE_OUTPUT) {
-    bcb_remove_readonly(f->name);
-  }
-#endif
   return (r == 0);
 }
 

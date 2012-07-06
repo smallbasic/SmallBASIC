@@ -11,9 +11,7 @@
 
 #ifndef IMPL_DEV_CIRCLE
 
-#if !defined(_PalmOS)
 #include <math.h>
-#endif
 
 #if !defined(M_PI)
 #define M_PI  3.14159265358979323846

@@ -33,17 +33,7 @@ typedef int FileHand;
 /*
  */
 int serial_open(dev_file_t * f) {
-#if defined(_PalmOS)
-  // /////////////////////////////////////////////////////////////////////////////////////////
-  // PalmOS
-  SysLibFind("Serial Library", &f->libHandle);
-  f->last_error = SerOpen(f->libHandle, f->port, f->devspeed);
-  f->handle = 1;
-  if (f->last_error)
-  rt_raise("SEROPEN() ERROR %d", f->last_error);
-  return (f->last_error == 0);
-
-#elif USE_TERM_IO
+#if USE_TERM_IO
   // /////////////////////////////////////////////////////////////////////////////////////////
   // Unix
   sprintf(f->name, "/dev/ttyS%d", f->port);
@@ -68,24 +58,6 @@ int serial_open(dev_file_t * f) {
   tcsetattr(f->handle, TCSANOW, &f->newtio);
   return (f->handle >= 0);
 
-#elif defined(_DOS)
-  // /////////////////////////////////////////////////////////////////////////////////////////
-  // DOS
-  // (1-comport per time)
-  sprintf(f->name, "COM%d", f->port - 1);
-
-  f->handle = f->port - 1;
-  if (SVAsyncInit(f->handle))
-  f->handle = -1;
-  else {
-    SVAsyncFifoInit();
-    SVAsyncSet(f->devspeed, BITS_8 | STOP_1 | NO_PARITY);
-    SVAsyncHand(DTR | RTS);
-  }
-
-  if (f->handle < 0)
-  err_file((f->last_error = errno));
-  return (f->handle >= 0);
 #elif defined(_Win32) || defined(__CYGWIN__)
   // /////////////////////////////////////////////////////////////////////////////////////////
   // Win32
@@ -135,22 +107,10 @@ int serial_open(dev_file_t * f) {
 /*
  */
 int serial_close(dev_file_t * f) {
-#if defined(_PalmOS)
-  f->last_error = SerClose(f->libHandle);
-  f->handle = -1;
-  if (f->last_error)
-  rt_raise("SERCLOSE() ERROR %d", f->last_error);
-  return (f->last_error == 0);
-
-#elif USE_TERM_IO
+#if USE_TERM_IO
   tcsetattr(f->handle, TCSANOW, &f->oldtio);
   close(f->handle);
   f->handle = -1;
-  return 1;
-
-#elif defined(_DOS)
-  SVAsyncStop();
-  f->handle = (FileHand) - 1;
   return 1;
 
 #elif defined(_Win32) || defined(__CYGWIN__) || defined(__MINGW32__)
@@ -166,20 +126,8 @@ int serial_close(dev_file_t * f) {
 /*
  */
 int serial_write(dev_file_t * f, byte * data, dword size) {
-#if defined(_PalmOS)
-  SerSend(f->libHandle, data, size, &f->last_error);
-  if (f->last_error)
-  rt_raise("SERSEND() ERROR %d", f->last_error);
-  return (f->last_error == 0);
-
-#elif defined(_UnixOS)
+#if defined(_UnixOS)
   return stream_write(f, data, size);
-#elif defined(_DOS)
-  int i;
-
-  for (i = 0; i < size; i++)
-  SVAsyncOut(data[i]);
-  return size;
 #elif defined(_Win32)
   DWORD bytes;
 
@@ -193,42 +141,8 @@ int serial_write(dev_file_t * f, byte * data, dword size) {
 /*
  */
 int serial_read(dev_file_t * f, byte * data, dword size) {
-#if defined(_PalmOS)
-  dword num;
-  int ev;
-
-  do {
-    f->last_error = SerReceiveCheck(f->libHandle, &num);
-    ev = dev_events(0);
-
-    if (f->last_error || prog_error || ev < 0) {
-      SerClose(f->libHandle);
-      f->handle = -1;
-      break;
-    }
-    if (num >= size)
-    break;
-  }while (1);
-
-  if (num >= size)
-  f->last_error = SerReceive10(f->libHandle, data, size, -1);
-
-  if (f->last_error)
-  rt_raise("SERRECEIVE10() ERROR %d", f->last_error);
-
-  return (f->last_error == 0);
-
-#elif defined(_UnixOS)
+#if defined(_UnixOS)
   return stream_read(f, data, size);
-#elif defined(_DOS)
-  int i;
-
-  for (i = 0; i < size; i++) {
-    while (SVAsyncInStat() == 0)
-    usleep(50000);
-    data[i] = SVAsyncIn();
-  }
-  return size;
 #elif defined(_Win32)
   DWORD bytes;
 
@@ -243,18 +157,7 @@ int serial_read(dev_file_t * f, byte * data, dword size) {
  *	Returns the number of the available data on serial port
  */
 dword serial_length(dev_file_t * f) {
-#if defined(_PalmOS)
-  dword num;
-
-  f->last_error = SerReceiveCheck(f->libHandle, &num);
-  if (f->last_error) {
-    SerClose(f->libHandle);
-    f->handle = -1;
-    num = 0;
-  }
-  return num;
-
-#elif defined(_UnixOS) && !defined(SERIAL_UNSUP)
+#if defined(_UnixOS) && !defined(SERIAL_UNSUP)
   fd_set readfs;
   struct timeval tv;
   int res;
@@ -270,8 +173,6 @@ dword serial_length(dev_file_t * f) {
   return 1;
 
   return 0;
-#elif defined(_DOS)
-  return SVAsyncInStat();
 #elif defined(_Win32)
   COMSTAT cs;
   DWORD de = CE_BREAK;
@@ -287,12 +188,5 @@ dword serial_length(dev_file_t * f) {
  *	Returns true (EOF) if the connection is broken
  */
 dword serial_eof(dev_file_t * f) {
-#if defined(_PalmOS)
-  Boolean a, b;
-  return (SerGetStatus(f->libHandle, &a, &b) != 0);
-#elif defined(_DOS)
-  return (SVAsyncInStat() == 0);
-#else
   return f->last_error;
-#endif
 }
