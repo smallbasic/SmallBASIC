@@ -60,6 +60,7 @@ struct Screen {
   int curXSaved;
   int tabSize;
   int fontSize; 
+  int charWidth;
   Vector <Button *>buttons;
 };
 

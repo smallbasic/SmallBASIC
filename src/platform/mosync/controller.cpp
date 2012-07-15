@@ -20,9 +20,6 @@
 #include "platform/mosync/utils.h"
 
 #define LONG_PRESS_TIME 3000
-#define STATUS_HEIGHT 26
-#define BUTTON_SIZE 24
-#define BUTTON_GAP BUTTON_SIZE + 6
 
 Controller::Controller() :
   Environment(),
@@ -34,30 +31,17 @@ Controller::Controller() :
   penDownX(-1),
   penDownY(-1),
   penDownTime(0) {
+  logEntered();
 }
 
 bool Controller::construct() {
   MAExtent screenSize = maGetScrSize();
-  output = new AnsiWidget(this,
-                          EXTENT_X(screenSize),
-                          EXTENT_Y(screenSize) - STATUS_HEIGHT);
+  output = new AnsiWidget(this, EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
 
   // install the default font
   MAUI::Engine& engine = MAUI::Engine::getSingleton();
   engine.setDefaultFont(new MAUI::Font(RES_FONT));
-
-  // load the toolbar images
-  maCreateImageFromData(RES_IMAGE_HOME, RES_IMAGE_HOME_BIN, 0,
-                        maGetDataSize(RES_IMAGE_HOME_BIN));
-  maCreateImageFromData(RES_IMAGE_NEXT, RES_IMAGE_NEXT_BIN, 0,
-                        maGetDataSize(RES_IMAGE_NEXT_BIN));
-  maCreateImageFromData(RES_IMAGE_PREVIOUS, RES_IMAGE_PREVIOUS_BIN, 0,
-                        maGetDataSize(RES_IMAGE_PREVIOUS_BIN));
-  maCreateImageFromData(RES_IMAGE_STOP, RES_IMAGE_STOP_BIN, 0,
-                        maGetDataSize(RES_IMAGE_STOP_BIN));
-  maCreateImageFromData(RES_IMAGE_REFRESH, RES_IMAGE_REFRESH_BIN, 0,
-                        maGetDataSize(RES_IMAGE_REFRESH_BIN));
 
   runMode = init_state;
   opt_ide = IDE_NONE;
@@ -71,7 +55,6 @@ bool Controller::construct() {
   opt_usevmt = 0;
   os_graphics = 1;
 
-  drawStatusBar();
   return true;
 }
 
@@ -190,6 +173,14 @@ void Controller::pause(int ms) {
       }
       processEvents(msWait, -1);
     }
+  } else {
+    MAEvent event;
+    int msStart = maGetMilliSecondCount();
+    while (maGetMilliSecondCount() - msStart < ms) {
+      if (!maGetEvent(&event)) {
+        maWait(10);
+      }
+    }
   }
 }
 
@@ -214,23 +205,17 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     switch (event.type) {
     case EVENT_TYPE_SCREEN_CHANGED:
       screenSize = maGetScrSize();
-      output->resize(EXTENT_X(screenSize),
-                     EXTENT_Y(screenSize) - STATUS_HEIGHT);
+      output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
       os_graf_mx = output->getWidth();
       os_graf_my = output->getHeight();
       handleKey(SB_PKEY_SIZE_CHG);
-      drawStatusBar();
       break;
     case EVENT_TYPE_POINTER_PRESSED:
-      if (event.point.y < output->getHeight()) {
-        penDownTime = maGetMilliSecondCount();
-        penDownX = event.point.x;
-        penDownY = event.point.y;
-        handleKey(SB_KEY_MK_PUSH);
-        output->pointerTouchEvent(event);
-      } else {
-        handleToolbarButton(event.point.x, event.point.y);
-      }
+      penDownTime = maGetMilliSecondCount();
+      penDownX = event.point.x;
+      penDownY = event.point.y;
+      handleKey(SB_KEY_MK_PUSH);
+      output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
       if (event.point.y < output->getHeight()) {
@@ -337,6 +322,8 @@ char *Controller::readConnection(const char *url) {
 
 // commence runtime state
 void Controller::setRunning() {
+  logEntered();
+
   dev_fgcolor = -DEFAULT_COLOR;
   dev_bgcolor = 0;
   os_graf_mx = output->getWidth();
@@ -364,29 +351,6 @@ void Controller::buttonClicked(const char *url) {
   } else {
     loadPath.append(url, strlen(url));
   }
-}
-
-// display the system statusbar/menu
-void Controller::drawStatusBar() {
-  int top = output->getHeight();
-  int right = output->getWidth();
-  int left = 0;
-
-  maSetDrawTarget(HANDLE_SCREEN);
-  maSetColor(0);
-  maFillRect(left, top, right, top + STATUS_HEIGHT);
-  maSetColor(DEFAULT_COLOR);
-  maLine(left, top, right, top);
-
-  top += 1;
-  left = (right - (5 * BUTTON_GAP)) / 2;
-
-  setupToolbarButton(0, RES_IMAGE_HOME, left, top);
-  setupToolbarButton(1, RES_IMAGE_REFRESH, left += BUTTON_GAP, top);
-  setupToolbarButton(2, RES_IMAGE_PREVIOUS, left += BUTTON_GAP, top);
-  setupToolbarButton(3, RES_IMAGE_NEXT, left += BUTTON_GAP, top);
-  setupToolbarButton(4, RES_IMAGE_STOP, left += BUTTON_GAP, top);
-  maUpdateScreen();
 }
 
 // pass the event into the mosync framework
@@ -513,39 +477,5 @@ void Controller::handleKey(int key) {
       dev_pushkey(key);
       break;
     }
-  }
-}
-
-void Controller::handleToolbarButton(int x, int y) {
-  for (int i = 0; i < NUM_TOOLBAR_BUTTONS; i++) {
-    if (!(OUTSIDE_RECT(x, y, buttons[i].x, buttons[i].y, 
-                       BUTTON_SIZE, BUTTON_SIZE))) {
-      switch (buttons[i].id) {
-      case RES_IMAGE_HOME:
-        break;
-      case RES_IMAGE_REFRESH:
-        break;
-      case RES_IMAGE_PREVIOUS:
-        break;
-      case RES_IMAGE_NEXT:
-        break;
-      case RES_IMAGE_STOP:
-        ui_reset();
-        brun_break();
-        runMode = break_state;
-        break;
-      }
-      break;
-    }
-  }
-}
-
-// helper for drawStatusBar
-void Controller::setupToolbarButton(int index, int id, int x, int y) {
-  if (index < NUM_TOOLBAR_BUTTONS) {
-    buttons[index].id = id;
-    buttons[index].x = x;
-    buttons[index].y = y;
-    maDrawImage(id, x, y);
   }
 }

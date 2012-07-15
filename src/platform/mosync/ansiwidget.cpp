@@ -54,6 +54,10 @@
 #define GREEN  2
 #define WHITE  15
 
+#define MIN_TIMER_INTERVAL 20
+#define MAX_TIMER_INTERVAL 260
+#define TIMER_INTERVAL_INCR 20
+
 static int colors[] = {
   0x000000, // 0 black
   0x000080, // 1 blue
@@ -79,15 +83,9 @@ int ansiToMosync(long c) {
   if (c < 0) {
     result = -c;
   } else {
-    result = (c > 16) ? colors[WHITE] : colors[c];
+    result = (c > 15) ? colors[WHITE] : colors[c];
   }
   return result;
-}
-
-// calculate the pixel width of the given character
-int charWidth(char c) {
-  char measure[] = { c, 0 };
-  return EXTENT_X(maGetTextSize(measure));
 }
 
 // Workaround for API's which don't take a length argument
@@ -174,7 +172,8 @@ Screen::Screen(int x, int y, int width, int height) :
   curYSaved(0),
   curXSaved(0),
   tabSize(0),
-  fontSize(0) {
+  fontSize(0),
+  charWidth(0) {
 }
 
 Screen::~Screen() {
@@ -202,7 +201,12 @@ void Screen::calcTab() {
 
 bool Screen::construct() {
   image = maCreatePlaceholder();
-  return (image && RES_OK == maCreateDrawableImage(image, imageWidth, imageHeight));
+  bool result = (image && RES_OK == 
+                 maCreateDrawableImage(image, imageWidth, imageHeight));
+  if (result) {
+    reset(true);
+  }
+  return result;
 }
 
 void Screen::clear() {
@@ -210,8 +214,8 @@ void Screen::clear() {
   maSetColor(bg);
   maFillRect(0, 0, imageWidth, imageHeight);
 
-  curY = INITXY;
   curX = INITXY;
+  curY = INITXY;
   scrollY = 0;
   pageHeight = 0;
 }
@@ -308,7 +312,7 @@ void Screen::newLine(int lineHeight) {
 
 int Screen::print(const char *p, int lineHeight) {
   int numChars = 1;         // print minimum of one character
-  int cx = charWidth(*p);
+  int cx = charWidth;
   int w = width - 1;
 
   if (curX + cx >= w) {
@@ -318,7 +322,7 @@ int Screen::print(const char *p, int lineHeight) {
   // print further non-control, non-null characters
   // up to the width of the line
   while (p[numChars] > 31) {
-    cx += charWidth(*p);
+    cx += charWidth;
     if (curX + cx < w) {
       numChars++;
     } else {
@@ -335,8 +339,8 @@ int Screen::print(const char *p, int lineHeight) {
 // reset the current drawing variables
 void Screen::reset(bool init) {
   if (init) {
-    curY = INITXY;
     curX = INITXY;
+    curY = INITXY;
     tabSize = 40;   // tab size in pixels (160/32 = 5)
     scrollY = 0;
     // cleanup any buttons
@@ -345,15 +349,15 @@ void Screen::reset(bool init) {
     }
     buttons.clear();
   }
-  curYSaved = 0;
   curXSaved = 0;
+  curYSaved = 0;
   invert = false;
   underline = false;
   bold = false;
   italic = false;
   fg = DEFAULT_COLOR;
   bg = 0;
-  fontSize = height / 40;
+  fontSize = EXTENT_Y(maGetScrSize()) / 40;
   updateFont();
 }
 
@@ -538,7 +542,16 @@ void Screen::updateFont() {
   }
 
   font = maFontLoadDefault(FONT_TYPE_MONOSPACE, style, fontSize);
-  maFontSetCurrent(font);
+
+  if (font == -1) {
+    trace("maFontLoadDefault failed: style=%d size=%d", style, fontSize);
+  } else {
+    maFontSetCurrent(font);
+
+    MAExtent extent = maGetTextSize("W");
+    charWidth = EXTENT_X(extent);
+    trace("charWidth:%d fontSize:%d", charWidth, fontSize);
+  }
 }
 
 AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
@@ -555,6 +568,7 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
+  trace("width: %d height: %d", width, height);
 }
 
 bool AnsiWidget::construct() {
@@ -562,7 +576,6 @@ bool AnsiWidget::construct() {
   back = new Screen(0, 0, width, height);
   if (back && back->construct()) {
     screens[0] = front = back;
-    reset(true);
     clearScreen();
     result = true;
   }
@@ -702,7 +715,7 @@ void AnsiWidget::print(const char *str) {
         back->newLine(lineHeight);
         break;
       case '\r':                 // return
-        back->curX = INITXY;           // erasing the line will clear any previous text
+        back->curX = INITXY;     // erasing the line will clear any previous text
         break;
       default:
         p += back->print(p, lineHeight) - 1; // allow for p++
@@ -805,7 +818,13 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   } else {
     // scroll up/down
     int vscroll = back->scrollY + (touchY - event.point.y);
-    if (vscroll > 0 && vscroll < (back->curY - (back->height - SCROLL_OFFS))) {
+    int maxScroll = back->curY - (back->height - SCROLL_OFFS);
+    if (vscroll < 0) {
+      vscroll = 0;
+    } else if (vscroll > maxScroll) {
+      vscroll = maxScroll;
+    }
+    if (vscroll != back->scrollY) {
       back->scrollY = vscroll;
       touchX = event.point.x;
       touchY = event.point.y;
@@ -1019,6 +1038,8 @@ void AnsiWidget::selectScreen(char *&p) {
     back = new Screen(x, y, w, h);
     if (back && back->construct()) {
       screens[n] = front = back;
+    } else {
+      trace("failed to create screen %d", n);
     }
   }
   deleteItems(items);
@@ -1045,7 +1066,11 @@ void AnsiWidget::swapScreens() {
       front = screens[1];
     } else {
       front = new Screen(0, 0, width, height);
-      screens[1] = front;
+      if (front && front->construct()) {
+        screens[1] = front;
+      } else {
+        trace("failed to create screen");
+      }
     }
   } else {
     Screen *tmp = front;
