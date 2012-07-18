@@ -39,7 +39,7 @@ struct Controller : public Environment, ButtonListener {
   void modalLoop();
   void pause(int ms);
   MAEvent processEvents(int ms, int untilType);
-  char *readConnection(const char *url);
+  char *readSource(const char *fileName);
 
   bool isExit() { return runMode == exit_state; }
   bool isModal() { return runMode == modal_state; }
@@ -53,6 +53,7 @@ private:
   void buttonClicked(const char *url);
   void fireEvent(MAEvent &event);
   void handleKey(int key);
+  char *readConnection(const char *url);
 
   enum ExecState {
     init_state,
@@ -73,4 +74,3 @@ private:
   int penDownTime;
   String loadPath;
 };
-

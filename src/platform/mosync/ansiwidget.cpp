@@ -53,10 +53,10 @@
 #define BLUE   1
 #define GREEN  2
 #define WHITE  15
-
 #define MIN_TIMER_INTERVAL 20
 #define MAX_TIMER_INTERVAL 260
 #define TIMER_INTERVAL_INCR 20
+#define SWIPE_TIME 60
 
 static int colors[] = {
   0x000000, // 0 black
@@ -562,6 +562,7 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   height(height),
   touchX(-1),
   touchY(-1),
+  moveTime(0),
   touchMode(0),
   buttonListener(listener),
   activeLink(0) {
@@ -790,17 +791,21 @@ void AnsiWidget::setMouseMode(bool flag) {
 
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
-  touchX = event.point.x;
-  touchY = event.point.y;
+  if (!OUTSIDE_RECT(event.point.x, event.point.y,
+                    back->x, back->y, 
+                    back->width, back->height)) {
+    touchX = event.point.x;
+    touchY = event.point.y;
 
-  Vector_each(Button*, it, back->buttons) {
-    if ((*it)->overlaps(event.point, 0, back->scrollY)) {
-      back->drawInto();
-      activeLink = (*it);
-      activeLink->pressed = true;
-      activeLink->draw();
-      flush(dirty = true);
-      break;
+    Vector_each(Button*, it, back->buttons) {
+      if ((*it)->overlaps(event.point, 0, back->scrollY)) {
+        back->drawInto();
+        activeLink = (*it);
+        activeLink->pressed = true;
+        activeLink->draw();
+        flush(dirty = true);
+        break;
+      }
     }
   }
 }
@@ -817,18 +822,23 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
     }
   } else {
     // scroll up/down
-    int vscroll = back->scrollY + (touchY - event.point.y);
-    int maxScroll = back->curY - (back->height - SCROLL_OFFS);
-    if (vscroll < 0) {
-      vscroll = 0;
-    } else if (vscroll > maxScroll) {
-      vscroll = maxScroll;
-    }
-    if (vscroll != back->scrollY) {
-      back->scrollY = vscroll;
-      touchX = event.point.x;
-      touchY = event.point.y;
-      flush(dirty = true, true);
+    if (!OUTSIDE_RECT(event.point.x, event.point.y,
+                      back->x, back->y, 
+                      back->width, back->height)) {
+      moveTime = maGetMilliSecondCount();
+      int vscroll = back->scrollY + (touchY - event.point.y);
+      int maxScroll = back->curY - (back->height - SCROLL_OFFS);
+      if (vscroll < 0) {
+        vscroll = 0;
+      } else if (vscroll > maxScroll) {
+        vscroll = maxScroll;
+      }
+      if (vscroll != back->scrollY) {
+        back->scrollY = vscroll;
+        touchX = event.point.x;
+        touchY = event.point.y;
+        flush(dirty = true, true);
+      }
     }
   }
 }
@@ -844,6 +854,10 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
       buttonListener->buttonClicked(activeLink->action.c_str());
     }
   } else if (touchY != -1) {
+    if ((maGetMilliSecondCount() - moveTime) < SWIPE_TIME) {
+      // swiped
+      // TODO...
+    }
     flush(dirty = true);
   }
   touchX = touchY = -1;

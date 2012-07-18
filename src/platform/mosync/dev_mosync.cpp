@@ -114,33 +114,7 @@ void osd_write(const char *str) {
 }
 
 char *dev_read(const char *fileName) {
-  char *buffer = NULL;
-  
-  if (strcasecmp(MAIN_BAS_RES, fileName) == 0) {
-    // load as resource
-    int len = maGetDataSize(MAIN_BAS);
-    buffer = (char *)mem_alloc(len + 1);
-    maReadData(MAIN_BAS, buffer, 0, len);
-    buffer[len] = '\0';
-  } else if (strstr(fileName, "://")) {
-    buffer = controller->readConnection(fileName);
-  } else {
-    // load from file system
-    MAHandle handle = maFileOpen(fileName, MA_ACCESS_READ);
-    if (maFileExists(handle)) {
-      int len = maFileSize(handle);
-      buffer = (char *)mem_alloc(len);
-      maFileRead(handle, buffer, len);
-    }
-    maFileClose(handle);
-  }
-
-  if (buffer == NULL) {
-    buffer = (char *)mem_alloc(strlen(ERROR_BAS) + 1);
-    strcpy(buffer, ERROR_BAS);
-  }
-
-  return buffer;
+  return controller->readSource(fileName);
 }
 
 void lwrite(const char *s) {

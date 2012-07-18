@@ -259,65 +259,34 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   return event;
 }
 
-// returns the contents of the given url
-char *Controller::readConnection(const char *url) {
-  char *result = NULL;
-
-  MAHandle conn = maConnect(url);
-  if (conn > 0) {
-    runMode = conn_state;
-    output->print("Connecting to ");
-    output->print(url);
-    bool connected = false;
-    char buffer[1024];
-    int length = 0;
-    int size = 0;
-    MAEvent event;
-
-    // pause until connected
-    while (runMode == conn_state) {
-      event = processEvents(50, EVENT_TYPE_CONN);
-      if (event.type == EVENT_TYPE_CONN) {
-        switch (event.conn.opType) {
-        case CONNOP_CONNECT:
-          // connection established
-          if (!connected) {
-            connected = (event.conn.result > 0);
-            if (connected) {
-              maConnRead(conn, buffer, sizeof(buffer) - 1);
-            } else {
-              runMode = init_state;
-            }
-          }
-          break;
-        case CONNOP_READ:
-          // connRead completed
-          if (event.conn.result > 0) {
-            size = event.conn.result;
-            buffer[size] = 0;
-            if (result == NULL) {
-              result = (char *)tmp_alloc(size + 1);
-              strncpy(result, buffer, size);
-              length = size;
-            } else {
-              result = (char *)tmp_realloc(result, length + size + 1);
-              strncpy(result + length, buffer, size);
-              length += size;
-            }
-            result[length] = 0;
-            // try to read more data
-            maConnRead(conn, buffer, sizeof(buffer) - 1);
-          } else {
-            // no more data
-            runMode = init_state;
-          }
-          break;
-        }
-      }
+char *Controller::readSource(const char *fileName) {
+  char *buffer = NULL;
+  
+  if (strcasecmp(MAIN_BAS_RES, fileName) == 0) {
+    // load as resource
+    int len = maGetDataSize(MAIN_BAS);
+    buffer = (char *)mem_alloc(len + 1);
+    maReadData(MAIN_BAS, buffer, 0, len);
+    buffer[len] = '\0';
+  } else if (strstr(fileName, "://")) {
+    buffer = readConnection(fileName);
+  } else {
+    // load from file system
+    MAHandle handle = maFileOpen(fileName, MA_ACCESS_READ);
+    if (maFileExists(handle)) {
+      int len = maFileSize(handle);
+      buffer = (char *)mem_alloc(len);
+      maFileRead(handle, buffer, len);
     }
-    maConnClose(conn);
+    maFileClose(handle);
   }
-  return result;
+
+  if (buffer == NULL) {
+    buffer = (char *)mem_alloc(strlen(ERROR_BAS) + 1);
+    strcpy(buffer, ERROR_BAS);
+  }
+
+  return buffer;
 }
 
 // commence runtime state
@@ -479,3 +448,65 @@ void Controller::handleKey(int key) {
     }
   }
 }
+
+// returns the contents of the given url
+char *Controller::readConnection(const char *url) {
+  char *result = NULL;
+
+  MAHandle conn = maConnect(url);
+  if (conn > 0) {
+    runMode = conn_state;
+    output->print("Connecting to ");
+    output->print(url);
+    bool connected = false;
+    char buffer[1024];
+    int length = 0;
+    int size = 0;
+    MAEvent event;
+
+    // pause until connected
+    while (runMode == conn_state) {
+      event = processEvents(50, EVENT_TYPE_CONN);
+      if (event.type == EVENT_TYPE_CONN) {
+        switch (event.conn.opType) {
+        case CONNOP_CONNECT:
+          // connection established
+          if (!connected) {
+            connected = (event.conn.result > 0);
+            if (connected) {
+              maConnRead(conn, buffer, sizeof(buffer) - 1);
+            } else {
+              runMode = init_state;
+            }
+          }
+          break;
+        case CONNOP_READ:
+          // connRead completed
+          if (event.conn.result > 0) {
+            size = event.conn.result;
+            buffer[size] = 0;
+            if (result == NULL) {
+              result = (char *)tmp_alloc(size + 1);
+              strncpy(result, buffer, size);
+              length = size;
+            } else {
+              result = (char *)tmp_realloc(result, length + size + 1);
+              strncpy(result + length, buffer, size);
+              length += size;
+            }
+            result[length] = 0;
+            // try to read more data
+            maConnRead(conn, buffer, sizeof(buffer) - 1);
+          } else {
+            // no more data
+            runMode = init_state;
+          }
+          break;
+        }
+      }
+    }
+    maConnClose(conn);
+  }
+  return result;
+}
+
