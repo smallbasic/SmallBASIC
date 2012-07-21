@@ -157,6 +157,7 @@ private:
   int touchX;     // active touch x value
   int touchY;     // active touch y value
   int moveTime;   // last move time
+  bool moveDown;  // last move direction was down
   bool touchMode; // PEN ON/OFF
   ButtonListener *buttonListener;
   Button *activeLink;

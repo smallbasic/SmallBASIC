@@ -53,10 +53,9 @@
 #define BLUE   1
 #define GREEN  2
 #define WHITE  15
-#define MIN_TIMER_INTERVAL 20
-#define MAX_TIMER_INTERVAL 260
-#define TIMER_INTERVAL_INCR 20
-#define SWIPE_TIME 60
+#define MAX_TIMER_INTERVAL 3000
+#define SWIPE_DELAY_STEP 50
+#define SWIPE_TIME 80
 
 static int colors[] = {
   0x000000, // 0 black
@@ -238,9 +237,11 @@ void Screen::draw(bool vscroll) {
     int barSize = height * height / pageHeight;
     int barRange = height - (barSize + SCROLL_IND * 2);
     int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - SCROLL_OFFS)));
-    maSetColor(fg);
-    maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
-    maLine(x + width - 4, y + barTop, x + width - 4, y + barTop + barSize);
+    if (barSize < height) {
+      maSetColor(fg);
+      maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
+      maLine(x + width - 4, y + barTop, x + width - 4, y + barTop + barSize);
+    }
   }
 
   maUpdateScreen();
@@ -563,6 +564,7 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   touchX(-1),
   touchY(-1),
   moveTime(0),
+  moveDown(false),
   touchMode(0),
   buttonListener(listener),
   activeLink(0) {
@@ -825,7 +827,6 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
     if (!OUTSIDE_RECT(event.point.x, event.point.y,
                       back->x, back->y, 
                       back->width, back->height)) {
-      moveTime = maGetMilliSecondCount();
       int vscroll = back->scrollY + (touchY - event.point.y);
       int maxScroll = back->curY - (back->height - SCROLL_OFFS);
       if (vscroll < 0) {
@@ -834,6 +835,8 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
         vscroll = maxScroll;
       }
       if (vscroll != back->scrollY) {
+        moveTime = maGetMilliSecondCount();
+        moveDown = (back->scrollY < vscroll);
         back->scrollY = vscroll;
         touchX = event.point.x;
         touchY = event.point.y;
@@ -854,9 +857,41 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
       buttonListener->buttonClicked(activeLink->action.c_str());
     }
   } else if (touchY != -1) {
-    if ((maGetMilliSecondCount() - moveTime) < SWIPE_TIME) {
+    int start = maGetMilliSecondCount();
+    if (start - moveTime < SWIPE_TIME) {
       // swiped
-      // TODO...
+      MAEvent event;
+      int elapsed = 0;
+      int vscroll = back->scrollY;
+      int maxScroll = back->curY - (back->height - SCROLL_OFFS);
+      int scrollSize = 10;
+      int swipeStep = SWIPE_DELAY_STEP;
+      
+      while (elapsed < MAX_TIMER_INTERVAL) {
+        if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
+          break;
+        }
+        elapsed += (maGetMilliSecondCount() - start);
+        if (elapsed > swipeStep && scrollSize > 1) {
+          scrollSize -= 1;
+          swipeStep += SWIPE_DELAY_STEP;
+        }
+        if (scrollSize == 1) {
+          maWait(20);
+        }
+        vscroll += moveDown ? scrollSize : -scrollSize;
+        if (vscroll < 0) {
+          vscroll = 0;
+        } else if (vscroll > maxScroll) {
+          vscroll = maxScroll;
+        }
+        if (vscroll != back->scrollY) {
+          back->scrollY = vscroll;
+          flush(dirty = true, true);
+        } else {
+          break;
+        }
+      }
     }
     flush(dirty = true);
   }
