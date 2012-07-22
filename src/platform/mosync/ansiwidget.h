@@ -138,6 +138,7 @@ public:
 private:
   void createButton(char *&p);
   void createLink(char *&p, bool execLink);
+  void createOptionsBox(char *&p);
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);
   Vector<String *> *getItems(char *&p);

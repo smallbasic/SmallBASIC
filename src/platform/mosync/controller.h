@@ -72,5 +72,6 @@ private:
   int penDownX;
   int penDownY;
   int penDownTime;
+  bool systemMenu;
   String loadPath;
 };

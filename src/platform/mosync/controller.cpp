@@ -19,7 +19,13 @@
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
-#define LONG_PRESS_TIME 3000
+#define LONG_PRESS_TIME 4000
+#define SYSTEM_MENU "\033[ OHome|Options|View Source|Break|Help|About;"
+
+#define MENU_HOME  1
+#define MENU_SRC   2
+#define MENU_HELP  3
+#define MENU_BREAK 4
 
 Controller::Controller() :
   Environment(),
@@ -30,7 +36,8 @@ Controller::Controller() :
   penMode(PEN_OFF),
   penDownX(-1),
   penDownY(-1),
-  penDownTime(0) {
+  penDownTime(0),
+  systemMenu(false) {
   logEntered();
 }
 
@@ -189,10 +196,13 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
   MAExtent screenSize;
 
+  // long press = menu
   if (penDownTime != 0) {
     int now = maGetMilliSecondCount();
     if ((now - penDownTime) > LONG_PRESS_TIME) {
       penDownTime = now;
+      systemMenu = true;
+      output->print(SYSTEM_MENU);
     }
   }
 
@@ -203,6 +213,23 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
 
     switch (event.type) {
+    case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
+      if (systemMenu) {
+        systemMenu = false;
+        switch (event.optionsBoxButtonIndex) {
+        case MENU_HOME:
+          break;
+        case MENU_SRC:
+          break;
+        case MENU_HELP:
+          break;
+        case MENU_BREAK:
+          break;
+        }
+      } else {
+        dev_pushkey(event.optionsBoxButtonIndex);
+      }
+      break;
     case EVENT_TYPE_SCREEN_CHANGED:
       screenSize = maGetScrSize();
       output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
@@ -389,6 +416,10 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     runMode = exit_state;
     break;
+  case MAK_MENU:
+    systemMenu = true;
+    output->print(SYSTEM_MENU);
+    break;
   }
 
   if (isRunning()) {
@@ -404,9 +435,6 @@ void Controller::handleKey(int key) {
       break;
     case MAK_INSERT:
       dev_pushkey(SB_KEY_INSERT);
-      break;
-    case MAK_MENU:
-      dev_pushkey(SB_KEY_MENU);
       break;
     case MAK_KP_MULTIPLY:
       dev_pushkey(SB_KEY_KP_MUL);

@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
 
 #include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/utils.h"
@@ -943,6 +944,34 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
   deleteItems(items);
 }
 
+// create an options dialog
+void AnsiWidget::createOptionsBox(char *&p) {
+  Vector<String *> *items = getItems(p);
+  if (items->size()) {
+    // calculate the size of the options buffer
+    int optionsBytes = sizeof(int);
+    Vector_each(String*, it, *items) {
+      const char *str = (*it)->c_str();
+      optionsBytes += (strlen(str) + 1) * sizeof(wchar);
+    }
+
+    // create the options buffer
+    char *buffer = new char[optionsBytes];
+    *(int *)buffer = items->size();
+    wchar_t *dst = (wchar_t *)(buffer + sizeof(int));
+
+    Vector_each(String*, it, *items) {
+      const char *str = (*it)->c_str();
+      int len = strlen(str);
+      swprintf(dst, len + 1, L"%hs", str);
+      dst[len] = 0;
+      dst += (len + 1);
+    }
+    maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)buffer, optionsBytes);
+  }
+  deleteItems(items);
+}
+
 // cleanup the string list created in getItems()
 void AnsiWidget::deleteItems(Vector<String *> *items) {
   Vector_each(String*, it, *items) {
@@ -980,6 +1009,9 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       break;
     case 'H':
       createLink(p, true);
+      break;
+    case 'O':
+      createOptionsBox(p);
       break;
     case 'P':
       paintScreen(p);
