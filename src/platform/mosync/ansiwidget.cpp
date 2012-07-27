@@ -34,7 +34,7 @@
   \a      beep
   \r      return
   \n      next line
-  \xC     clear screen
+  \xC     clear screen (new page)
   \e[K    clear to end of line
   \e[0m   reset all attributes to their defaults
   \e[1m   set bold on
@@ -230,7 +230,7 @@ void Screen::draw(bool vscroll) {
   dstPoint.x = x;
   dstPoint.y = y;
 
-  maSetDrawTarget(HANDLE_SCREEN);
+  MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
 
   if (vscroll && pageHeight) {
@@ -247,6 +247,7 @@ void Screen::draw(bool vscroll) {
 
   maUpdateScreen();
   maResetBacklight();
+  maSetDrawTarget(currentHandle);
 }
 
 void Screen::drawInto(bool background) {
@@ -557,8 +558,9 @@ void Screen::updateFont() {
 }
 
 AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
-  back(0),
-  front(0),
+  back(NULL),
+  front(NULL),
+  saved(NULL),
   dirty(0),
   width(width),
   height(height),
@@ -566,9 +568,9 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   touchY(-1),
   moveTime(0),
   moveDown(false),
-  touchMode(0),
+  touchMode(false),
   buttonListener(listener),
-  activeLink(0) {
+  activeLink(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
@@ -644,9 +646,8 @@ void AnsiWidget::flush(bool force, bool vscroll) {
   } else {
     update = (++dirty >= MAX_PENDING_UPDATES);
   }
-
   if (update && front == back) {
-    back->draw(vscroll);
+    front->draw(vscroll);
     dirty = 0;
   }
 }
@@ -835,7 +836,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
       } else if (vscroll > maxScroll) {
         vscroll = maxScroll;
       }
-      if (vscroll != back->scrollY) {
+      if (vscroll != back->scrollY && maxScroll > 0) {
         moveTime = maGetMilliSecondCount();
         moveDown = (back->scrollY < vscroll);
         back->scrollY = vscroll;
@@ -857,44 +858,47 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     if (buttonListener) {
       buttonListener->buttonClicked(activeLink->action.c_str());
     }
-  } else if (touchY != -1) {
-    int start = maGetMilliSecondCount();
-    if (start - moveTime < SWIPE_TIME) {
-      // swiped
-      MAEvent event;
-      int elapsed = 0;
-      int vscroll = back->scrollY;
-      int maxScroll = back->curY - (back->height - SCROLL_OFFS);
-      int scrollSize = 10;
-      int swipeStep = SWIPE_DELAY_STEP;
-      
-      while (elapsed < MAX_TIMER_INTERVAL) {
-        if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
-          break;
-        }
-        elapsed += (maGetMilliSecondCount() - start);
-        if (elapsed > swipeStep && scrollSize > 1) {
-          scrollSize -= 1;
-          swipeStep += SWIPE_DELAY_STEP;
-        }
-        if (scrollSize == 1) {
-          maWait(20);
-        }
-        vscroll += moveDown ? scrollSize : -scrollSize;
-        if (vscroll < 0) {
-          vscroll = 0;
-        } else if (vscroll > maxScroll) {
-          vscroll = maxScroll;
-        }
-        if (vscroll != back->scrollY) {
-          back->scrollY = vscroll;
-          flush(dirty = true, true);
-        } else {
-          break;
+  } else {
+    int maxScroll = back->curY - (back->height - SCROLL_OFFS);
+    if (touchY != -1 && maxScroll > 0) {
+      int start = maGetMilliSecondCount();
+      if (start - moveTime < SWIPE_TIME) {
+        // swiped
+        MAEvent event;
+        int elapsed = 0;
+        int vscroll = back->scrollY;
+        int scrollSize = 10;
+        int swipeStep = SWIPE_DELAY_STEP;
+        
+        while (elapsed < MAX_TIMER_INTERVAL) {
+          if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
+            break;
+          }
+          elapsed += (maGetMilliSecondCount() - start);
+          if (elapsed > swipeStep && scrollSize > 1) {
+            scrollSize -= 1;
+            swipeStep += SWIPE_DELAY_STEP;
+          }
+          if (scrollSize == 1) {
+            maWait(20);
+          }
+          vscroll += moveDown ? scrollSize : -scrollSize;
+          if (vscroll < 0) {
+            vscroll = 0;
+          } else if (vscroll > maxScroll) {
+            vscroll = maxScroll;
+          }
+          if (vscroll != back->scrollY) {
+            back->scrollY = vscroll;
+            flush(dirty = true, true);
+          } else {
+            break;
+          }
         }
       }
+      flush(dirty = true);
+      moveTime = 0;
     }
-    flush(dirty = true);
   }
   touchX = touchY = -1;
   activeLink = NULL;
@@ -1013,17 +1017,37 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
     case 'O':
       createOptionsBox(p);
       break;
-    case 'P':
+    case 'P': // select the specified screen for display
       paintScreen(p);
       break;
-    case 'X':
+    case 'X': // double buffering - transpose write and display screens
       swapScreens();
       break;
-    case 'R':
+    case 'R': // remove a screen
       removeScreen(p);
       break;
-    case 'S':
+    case 'S': // select new write and display screens
+      saved = back;
+      if (selectScreen(p)) {
+        front = back;
+        flush(dirty = true);
+      }
+      break;
+    case 's': // restore the saved write and display screens
+      if (saved) {
+        back = front = saved;
+        back->drawInto();
+        flush(dirty = true);
+        saved = NULL;
+      }
+      break;
+    case 'W': // select new write screen
       selectScreen(p);
+      break;
+    case 'w': // restore write screen
+      if (front) {
+        back = front;
+      }
       break;
     }
   } else if (back->setGraphicsRendition(*p, escValue, textHeight)) {
@@ -1073,7 +1097,9 @@ void AnsiWidget::paintScreen(char *&p) {
   if (n < 0 || n >= MAX_SCREENS || screens[n] == NULL) {
     print("ERR screen#");
   } else {
-    screens[n]->draw(false);
+    dirty = (front != screens[n]);
+    front = screens[n];
+    flush(dirty = true);
   }
   deleteItems(items);
 }
@@ -1103,7 +1129,7 @@ void AnsiWidget::reset(bool init) {
 }
 
 // select the specified screen
-void AnsiWidget::selectScreen(char *&p) {
+bool AnsiWidget::selectScreen(char *&p) {
   Vector<String *> *items = getItems(p);
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
@@ -1111,19 +1137,29 @@ void AnsiWidget::selectScreen(char *&p) {
   int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : width;
   int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : height;
 
+  bool result = true;
+  flush(dirty = true);
+
   if (n < 0 || n >= MAX_SCREENS) {
     print("ERR screen#");
+    result = false;
   } else if (screens[n] != NULL) {
-    back = front = screens[n];
+    back = screens[n];
+    back->drawInto();
   } else {
     back = new Screen(x, y, w, h);
     if (back && back->construct()) {
-      screens[n] = front = back;
+      screens[n] = back;
+      back->drawInto();
+      back->clear();
     } else {
       trace("failed to create screen %d", n);
+      result = false;
     }
   }
+
   deleteItems(items);
+  return result;
 }
 
 // display an alert box - eg // ^[ aAlert!!;

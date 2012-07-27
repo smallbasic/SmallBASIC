@@ -145,13 +145,14 @@ private:
   void paintScreen(char *&p);
   void removeScreen(char *&p);
   void reset(bool init);
-  void selectScreen(char *&p);
+  bool selectScreen(char *&p);
   void showAlert(char *&p);
   void swapScreens();
 
   Screen *screens[MAX_SCREENS];
-  Screen *back;   // screen being painted
+  Screen *back;   // screen being painted/written
   Screen *front;  // screen to display 
+  Screen *saved;  // saved screen 
   int dirty;      // whether refresh is required
   int width;      // device screen width
   int height;     // device screen height

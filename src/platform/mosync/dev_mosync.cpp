@@ -37,7 +37,7 @@ void osd_cls(void) {
 }
 
 int osd_devinit(void) {
-  controller->setRunning();
+  controller->setRunning(true);
   return 1;
 }
 
@@ -117,8 +117,10 @@ char *dev_read(const char *fileName) {
   return controller->readSource(fileName);
 }
 
-void lwrite(const char *s) {
-  lprintfln(s);
+void lwrite(const char *str) {
+  controller->output->print("\033[ W3;");
+  controller->output->print(str);
+  controller->output->print("\033[ w;");
 }
 
 void dev_image(int handle, int index,
@@ -155,9 +157,11 @@ char *dev_gets(char *dest, int maxSize) {
 }
 
 extern "C" int access(const char *path, int amode) {
+  logEntered();
   return 0;
 }
 
 extern "C" void chmod(const char *s, int mode) {
+  logEntered();
 }
 

@@ -34,7 +34,6 @@ struct Controller : public Environment, ButtonListener {
   bool construct();
   const char *getLoadPath();
   int getPen(int code);
-  bool hasUI();
   int handleEvents(int waitFlag);
   void modalLoop();
   void pause(int ms);
@@ -42,10 +41,12 @@ struct Controller : public Environment, ButtonListener {
   char *readSource(const char *fileName);
 
   bool isExit() { return runMode == exit_state; }
+  bool isBack() { return runMode == back_state; }
   bool isModal() { return runMode == modal_state; }
   bool isRunning() { return runMode == run_state || runMode == modal_state; }
   void setPenMode(int b) { penMode = (b ? PEN_ON : PEN_OFF); }
-  void setRunning();
+  void setExit() { runMode = exit_state; }
+  void setRunning(bool running);
 
   AnsiWidget *output;
 
@@ -62,6 +63,7 @@ private:
     modal_state,
     break_state,
     conn_state,
+    back_state,
     exit_state
   };
 
@@ -73,5 +75,6 @@ private:
   int penDownY;
   int penDownTime;
   bool systemMenu;
+  bool systemScreen;
   String loadPath;
 };

@@ -20,12 +20,10 @@
 #include "platform/mosync/utils.h"
 
 #define LONG_PRESS_TIME 4000
-#define SYSTEM_MENU "\033[ OHome|Options|View Source|Break|Help|About;"
-
-#define MENU_HOME  1
-#define MENU_SRC   2
-#define MENU_HELP  3
-#define MENU_BREAK 4
+#define SYSTEM_MENU "\033[ OView Source|Log Messages|Show Keypad\n"
+#define MENU_SOURCE 0
+#define MENU_LOG    1
+#define MENU_KEYPAD 2
 
 Controller::Controller() :
   Environment(),
@@ -37,7 +35,8 @@ Controller::Controller() :
   penDownX(-1),
   penDownY(-1),
   penDownTime(0),
-  systemMenu(false) {
+  systemMenu(false),
+  systemScreen(false) {
   logEntered();
 }
 
@@ -118,11 +117,6 @@ int Controller::getPen(int code) {
     }
   }
   return result;
-}
-
-// whether a GUI is active which may yield a load path
-bool Controller::hasUI() {
-  return output->hasUI();
 }
 
 // runtime system event processor
@@ -217,16 +211,22 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       if (systemMenu) {
         systemMenu = false;
         switch (event.optionsBoxButtonIndex) {
-        case MENU_HOME:
+        case MENU_SOURCE:
+          output->print("\033[ S2\nTODO");
+          systemScreen = true;
           break;
-        case MENU_SRC:
+        case MENU_LOG:
+          output->print("\033[ S3\n");
+          systemScreen = true;
           break;
-        case MENU_HELP:
-          break;
-        case MENU_BREAK:
+        case MENU_KEYPAD:
+          maShowVirtualKeyboard();
           break;
         }
-      } else {
+        if (!isRunning()) {
+          output->flush(true);
+        }
+      } else if (isRunning()) {
         dev_pushkey(event.optionsBoxButtonIndex);
       }
       break;
@@ -270,8 +270,9 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
   }
 
-  if (runMode == exit_state) {
+  if (runMode == exit_state || runMode == back_state) {
     // terminate the running program
+    loadPath.clear();
     ui_reset();
     brun_break();
   }
@@ -317,25 +318,27 @@ char *Controller::readSource(const char *fileName) {
 }
 
 // commence runtime state
-void Controller::setRunning() {
-  logEntered();
-
-  dev_fgcolor = -DEFAULT_COLOR;
-  dev_bgcolor = 0;
-  os_graf_mx = output->getWidth();
-  os_graf_my = output->getHeight();
-
-  os_ver = 1;
-  os_color = 1;
-  os_color_depth = 16;
-  setsysvar_str(SYSVAR_OSNAME, "MoSync");
-
-  osd_cls();
-  dev_clrkb();
-  ui_reset();
-
-  loadPath.clear();
-  runMode = run_state;
+void Controller::setRunning(bool running) {
+  if (running) {
+    dev_fgcolor = -DEFAULT_COLOR;
+    dev_bgcolor = 0;
+    os_graf_mx = output->getWidth();
+    os_graf_my = output->getHeight();
+    
+    os_ver = 1;
+    os_color = 1;
+    os_color_depth = 16;
+    setsysvar_str(SYSVAR_OSNAME, "MoSync");
+    
+    osd_cls();
+    dev_clrkb();
+    ui_reset();
+    
+    loadPath.clear();
+    runMode = run_state;
+  } else {
+    runMode = init_state;    
+  }
 }
 
 // handler for hyperlink click actions
@@ -414,7 +417,13 @@ void Controller::handleKey(int key) {
     break;
   case MAK_SOFTRIGHT:
   case MAK_BACK:
-    runMode = exit_state;
+    if (systemScreen) {
+      // restore the runtime screen
+      output->print("\033[ s");
+      systemScreen = false;
+    } else {
+      runMode = back_state;
+    }
     break;
   case MAK_MENU:
     systemMenu = true;
