@@ -151,7 +151,7 @@ int Controller::handleEvents(int waitFlag) {
     break;
   }
 
-  output->flush(true);
+  output->flush(false);
   return isExit() ? -2 : 0;
 }
 
@@ -320,6 +320,8 @@ char *Controller::readSource(const char *fileName) {
   delete [] programSrc;
   programSrc = new char[strlen(buffer) + 1];
   strcpy(programSrc, buffer);
+  logPrint("Opened: ");
+  logPrint(fileName);
 
   return buffer;
 }
@@ -346,6 +348,12 @@ void Controller::setRunning(bool running) {
   } else {
     runMode = init_state;    
   }
+}
+
+void Controller::logPrint(const char *str) {
+  output->print("\033[ W3\n");
+  output->print(str);
+  output->print("\033[ w\n");
 }
 
 // handler for hyperlink click actions
@@ -426,11 +434,9 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     if (systemScreen) {
       // restore the runtime screen
-      trace("restore scren");
       output->print("\033[ s");
       systemScreen = false;
     } else {
-      trace("going back");
       runMode = back_state;
     }
     break;
@@ -502,8 +508,8 @@ char *Controller::readConnection(const char *url) {
   MAHandle conn = maConnect(url);
   if (conn > 0) {
     runMode = conn_state;
-    output->print("Connecting to ");
-    output->print(url);
+    logPrint("Connecting to ");
+    logPrint(url);
     bool connected = false;
     char buffer[1024];
     int length = 0;

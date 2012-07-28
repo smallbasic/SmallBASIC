@@ -61,6 +61,8 @@ struct Screen {
   int tabSize;
   int fontSize; 
   int charWidth;
+  int charHeight;
+  int dirty;
   Vector <Button *>buttons;
 };
 
@@ -153,7 +155,6 @@ private:
   Screen *back;   // screen being painted/written
   Screen *front;  // screen to display 
   Screen *saved;  // saved screen 
-  int dirty;      // whether refresh is required
   int width;      // device screen width
   int height;     // device screen height
   int touchX;     // active touch x value

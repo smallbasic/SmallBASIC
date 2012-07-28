@@ -3,7 +3,7 @@ sub slow_print(s)
   local ch, len_s
   len_s = len(s)
   for ch = 1 to len_s 
-    ? mid(s, ch, 1) + " ";
+    ? mid(s, ch, 1) + " " + chr(3);
     delay 40
   next ch
 end

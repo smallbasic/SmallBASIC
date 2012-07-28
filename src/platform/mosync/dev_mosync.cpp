@@ -118,9 +118,7 @@ char *dev_read(const char *fileName) {
 }
 
 void lwrite(const char *str) {
-  controller->output->print("\033[ W3;");
-  controller->output->print(str);
-  controller->output->print("\033[ w;");
+  controller->logPrint(str);
 }
 
 void dev_image(int handle, int index,

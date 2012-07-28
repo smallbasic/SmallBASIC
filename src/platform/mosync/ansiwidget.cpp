@@ -45,8 +45,8 @@
   \e[27m  set reverse off
 */
 
-#define MAX_PENDING_UPDATES 10
-#define MAX_HEIGHT 10000
+#define MAX_PENDING 250
+#define MAX_HEIGHT  10000
 #define SCROLL_OFFS 10
 #define SCROLL_IND 4
 #define INITXY 2
@@ -173,7 +173,9 @@ Screen::Screen(int x, int y, int width, int height) :
   curXSaved(0),
   tabSize(0),
   fontSize(0),
-  charWidth(0) {
+  charWidth(0),
+  charHeight(0),
+  dirty(0) {
 }
 
 Screen::~Screen() {
@@ -248,11 +250,13 @@ void Screen::draw(bool vscroll) {
   maUpdateScreen();
   maResetBacklight();
   maSetDrawTarget(currentHandle);
+  dirty = 0;
 }
 
 void Screen::drawInto(bool background) {
   maSetDrawTarget(image);
   maSetColor(background ? bg : fg);
+  dirty = maGetMilliSecondCount();
 }
 
 void Screen::drawText(const char *text, int len, int x, int lineHeight) {
@@ -553,7 +557,8 @@ void Screen::updateFont() {
 
     MAExtent extent = maGetTextSize("W");
     charWidth = EXTENT_X(extent);
-    trace("charWidth:%d fontSize:%d", charWidth, fontSize);
+    charHeight = 4 + EXTENT_Y(extent);
+    trace("charWidth:%d charHeight:%d fontSize:%d %d", charWidth, charHeight, fontSize);
   }
 }
 
@@ -561,7 +566,6 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   back(NULL),
   front(NULL),
   saved(NULL),
-  dirty(0),
   width(width),
   height(height),
   touchX(-1),
@@ -603,7 +607,7 @@ void AnsiWidget::beep() const {
 // clear the offscreen buffer
 void AnsiWidget::clearScreen() {
   back->clear();
-  flush(dirty = true);
+  flush(true);
 }
 
 // draws the given image onto the offscreen buffer
@@ -641,14 +645,15 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
 // display and pending images changed
 void AnsiWidget::flush(bool force, bool vscroll) {
   bool update = false;
-  if (force) {
-    update = dirty;
-  } else {
-    update = (++dirty >= MAX_PENDING_UPDATES);
-  }
-  if (update && front == back) {
-    front->draw(vscroll);
-    dirty = 0;
+  if (front == back) {
+    if (force) {
+      update = back->dirty;
+    } else if (back->dirty) {
+      update = (maGetMilliSecondCount() - back->dirty >= MAX_PENDING);
+    }
+    if (update) {
+      front->draw(vscroll);
+    }
   }
 }
 
@@ -668,7 +673,7 @@ int AnsiWidget::getPixel(int x, int y) {
 
 // Returns the height in pixels using the current font setting
 int AnsiWidget::textHeight(void) {
-  return EXTENT_Y(maGetTextSize("Q@"));
+  return back->charHeight;
 }
 
 // returns the width in pixels using the current font setting
@@ -699,16 +704,19 @@ void AnsiWidget::print(const char *str) {
 
     while (*p) {
       switch (*p) {
-      case '\a':                 // beep
+      case '\a':   // beep
         beep();
         break;
       case '\t':
         back->calcTab();
         break;
+      case '\003': // end of text
+        flush(true);
+        break;
       case '\xC':
         clearScreen();
         break;
-      case '\033':               // ESC ctrl chars
+      case '\033': // ESC ctrl chars
         if (*(p + 1) == '[') {
           p += 2;
           while (doEscape(p, lineHeight)) {
@@ -716,10 +724,10 @@ void AnsiWidget::print(const char *str) {
           }
         }
         break;
-      case '\n':                 // new line
+      case '\n':   // new line
         back->newLine(lineHeight);
         break;
-      case '\r':                 // return
+      case '\r':   // return
         back->curX = INITXY;     // erasing the line will clear any previous text
         break;
       default:
@@ -807,7 +815,7 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
         activeLink = (*it);
         activeLink->pressed = true;
         activeLink->draw();
-        flush(dirty = true);
+        flush(true);
         break;
       }
     }
@@ -822,7 +830,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
       back->drawInto();
       activeLink->pressed = pressed;
       activeLink->draw();
-      flush(dirty = true);
+      flush(true);
     }
   } else {
     // scroll up/down
@@ -842,7 +850,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
         back->scrollY = vscroll;
         touchX = event.point.x;
         touchY = event.point.y;
-        flush(dirty = true, true);
+        flush(true, true);
       }
     }
   }
@@ -854,7 +862,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     back->drawInto();
     activeLink->pressed = false;
     activeLink->draw();
-    flush(dirty = true);
+    flush(true);
     if (buttonListener) {
       buttonListener->buttonClicked(activeLink->action.c_str());
     }
@@ -890,13 +898,13 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
           }
           if (vscroll != back->scrollY) {
             back->scrollY = vscroll;
-            flush(dirty = true, true);
+            flush(true, true);
           } else {
             break;
           }
         }
       }
-      flush(dirty = true);
+      flush(true);
       moveTime = 0;
     }
   }
@@ -1029,14 +1037,14 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
     case 'S': // select new write and display screens
       if (selectScreen(p, true)) {
         front = back;
-        flush(dirty = true);
+        flush(true);
       }
       break;
     case 's': // restore the saved write and display screens
       if (saved) {
         back = front = saved;
         back->drawInto();
-        flush(dirty = true);
+        flush(true);
         saved = NULL;
       }
       break;
@@ -1096,9 +1104,8 @@ void AnsiWidget::paintScreen(char *&p) {
   if (n < 0 || n >= MAX_SCREENS || screens[n] == NULL) {
     print("ERR screen#");
   } else {
-    dirty = (front != screens[n]);
     front = screens[n];
-    flush(dirty = true);
+    flush(true);
   }
   deleteItems(items);
 }
@@ -1137,7 +1144,7 @@ void AnsiWidget::reset(bool init) {
   int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : height;
 
   bool result = true;
-  flush(dirty = true);
+  flush(true);
 
   if (n < 0 || n >= MAX_SCREENS) {
     print("ERR screen#");
@@ -1198,9 +1205,8 @@ void AnsiWidget::swapScreens() {
     Screen *tmp = front;
     front = back;
     back = tmp;
-    if (dirty) {
+    if (front->dirty) {
       front->draw(false);
-      dirty = 0;
     }
   }
 }

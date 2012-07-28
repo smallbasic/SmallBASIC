@@ -47,6 +47,7 @@ struct Controller : public Environment, ButtonListener {
   void setPenMode(int b) { penMode = (b ? PEN_ON : PEN_OFF); }
   void setExit() { runMode = exit_state; }
   void setRunning(bool running);
+  void logPrint(const char *str);
 
   AnsiWidget *output;
 
