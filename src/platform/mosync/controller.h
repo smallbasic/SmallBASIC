@@ -77,4 +77,5 @@ private:
   bool systemMenu;
   bool systemScreen;
   String loadPath;
+  char *programSrc;
 };

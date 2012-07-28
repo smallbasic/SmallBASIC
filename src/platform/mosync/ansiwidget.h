@@ -145,7 +145,7 @@ private:
   void paintScreen(char *&p);
   void removeScreen(char *&p);
   void reset(bool init);
-  bool selectScreen(char *&p);
+  bool selectScreen(char *&p, bool setSaved);
   void showAlert(char *&p);
   void swapScreens();
 

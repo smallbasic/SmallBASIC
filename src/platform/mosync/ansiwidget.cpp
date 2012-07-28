@@ -1027,8 +1027,7 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       removeScreen(p);
       break;
     case 'S': // select new write and display screens
-      saved = back;
-      if (selectScreen(p)) {
+      if (selectScreen(p, true)) {
         front = back;
         flush(dirty = true);
       }
@@ -1042,7 +1041,7 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       }
       break;
     case 'W': // select new write screen
-      selectScreen(p);
+      selectScreen(p, false);
       break;
     case 'w': // restore write screen
       if (front) {
@@ -1129,7 +1128,7 @@ void AnsiWidget::reset(bool init) {
 }
 
 // select the specified screen
-bool AnsiWidget::selectScreen(char *&p) {
+ bool AnsiWidget::selectScreen(char *&p, bool setSaved) {
   Vector<String *> *items = getItems(p);
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
@@ -1144,16 +1143,22 @@ bool AnsiWidget::selectScreen(char *&p) {
     print("ERR screen#");
     result = false;
   } else if (screens[n] != NULL) {
+    if (setSaved && back != screens[n]) {
+      saved = back;
+    }
     back = screens[n];
     back->drawInto();
   } else {
+    if (setSaved) {
+      saved = back;
+    }
     back = new Screen(x, y, w, h);
     if (back && back->construct()) {
       screens[n] = back;
       back->drawInto();
       back->clear();
     } else {
-      trace("failed to create screen %d", n);
+      trace("Failed to create screen %d", n);
       result = false;
     }
   }
@@ -1186,7 +1191,7 @@ void AnsiWidget::swapScreens() {
       if (front && front->construct()) {
         screens[1] = front;
       } else {
-        trace("failed to create screen");
+        trace("Failed to create screen");
       }
     }
   } else {

@@ -20,7 +20,7 @@
 #include "platform/mosync/utils.h"
 
 #define LONG_PRESS_TIME 4000
-#define SYSTEM_MENU "\033[ OView Source|Log Messages|Show Keypad\n"
+#define SYSTEM_MENU "\033[ OView Source|Debug Messages|Show Keypad\n"
 #define MENU_SOURCE 0
 #define MENU_LOG    1
 #define MENU_KEYPAD 2
@@ -36,7 +36,8 @@ Controller::Controller() :
   penDownY(-1),
   penDownTime(0),
   systemMenu(false),
-  systemScreen(false) {
+  systemScreen(false),
+  programSrc(NULL) {
   logEntered();
 }
 
@@ -66,6 +67,7 @@ bool Controller::construct() {
 
 Controller::~Controller() {
   delete output;
+  delete [] programSrc;
 }
 
 const char *Controller::getLoadPath() {
@@ -212,7 +214,8 @@ MAEvent Controller::processEvents(int ms, int untilType) {
         systemMenu = false;
         switch (event.optionsBoxButtonIndex) {
         case MENU_SOURCE:
-          output->print("\033[ S2\nTODO");
+          output->print("\033[ S2\n\014");
+          output->print(programSrc);
           systemScreen = true;
           break;
         case MENU_LOG:
@@ -313,6 +316,10 @@ char *Controller::readSource(const char *fileName) {
     buffer = (char *)mem_alloc(strlen(ERROR_BAS) + 1);
     strcpy(buffer, ERROR_BAS);
   }
+
+  delete [] programSrc;
+  programSrc = new char[strlen(buffer) + 1];
+  strcpy(programSrc, buffer);
 
   return buffer;
 }
@@ -419,9 +426,11 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     if (systemScreen) {
       // restore the runtime screen
+      trace("restore scren");
       output->print("\033[ s");
       systemScreen = false;
     } else {
+      trace("going back");
       runMode = back_state;
     }
     break;
