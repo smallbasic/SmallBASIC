@@ -3058,10 +3058,12 @@ void cmd_end_select() {
   stknode_t node;
 
   code_pop(&node);
-  v_free(node.x.vfor.var_ptr);  // if V_new() was string or array release the
-  // allocated memory
+
+  // if v_new() was string or array release the allocated memory
+  v_free(node.x.vfor.var_ptr);
+
+  // cleanup v_new()
   tmp_free(node.x.vfor.var_ptr);
-  // v_new()
   code_jump(code_getaddr());
 }
 

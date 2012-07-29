@@ -18,69 +18,21 @@
 #include "common/extlib.h"
 #include "common/messages.h"
 
-void comp_text_line(char *text);
-int comp_single_line_if(char *text);
-addr_t comp_search_bc(addr_t ip, code_t code);
-char *comp_prepare_name(char *dest, const char *source, int size);
-bid_t comp_label_getID(const char *label_name);
-void comp_label_setip(bid_t idx);
-void comp_prepare_udp_name(char *dest, const char *basename);
-bid_t comp_udp_id(const char *proc_name, int scan_tree);
-bid_t comp_add_udp(const char *proc_name);
-bid_t comp_udp_setip(const char *proc_name, addr_t ip);
-addr_t comp_udp_getip(const char *proc_name);
-char *get_param_sect(char *text, const char *delim, char *dest);
-int comp_check_labels(void);
-int comp_check_lib(const char *name);
-int comp_create_var(const char *name);
-bid_t comp_var_getID(const char *var_name);
-void comp_push(addr_t ip);
-char *comp_next_char(char *source);
-char *comp_prev_char(const char *root, const char *ptr);
-const char *comp_next_word(const char *text, char *dest);
-void comp_expression(char *expr, byte no_parser);
-void comp_data_seg(char *source);
-int comp_getlist(char *source, char_p_t * args, char *delims, int maxarg);
-char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims, int maxarg, int *count);
-void comp_array_params(char *src);
 char *comp_array_uds_field(char *p, bc_t * bc);
-int comp_check_uds(const char *name);
-int comp_get_uds_field_id(const char *field_name, int len);
-void comp_cmd_option(char *src);
-int comp_error_if_keyword(const char *name);
-void bc_store_exports(const char *slist);
-addr_t comp_next_bc_cmd(addr_t ip);
-addr_t comp_search_bc_eoc(addr_t ip);
-addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_id);
-addr_t comp_search_bc_stack_backward(addr_t start, code_t code, byte level, bid_t block_id);
-void print_pass2_stack(addr_t pos, code_t lcode, int level);
-void comp_pass2_scan(void);
-char *comp_format_text(const char *source);
-void err_grmode();
-void comp_preproc_import(const char *slist);
-void comp_preproc_remove_line(char *s, int cmd_sep_allowed);
-void comp_preproc_unit(char *name);
-int comp_pass2_exports(void);
-int comp_save_bin(mem_t h_bc);
-
+void comp_text_line(char *text);
+addr_t comp_search_bc(addr_t ip, code_t code);
 extern void expr_parser(bc_t * bc);
-
-void err_comp_label_not_def(const char *name);
-void err_comp_missing_lp();
-void err_comp_missing_rp();
-void err_wrongproc(const char *name);
-
 extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 
 #define SKIP_SPACES(p) \
-    while (*p == ' ' || *p == '\t') { \
-        p++; \
-    }
+  while (*p == ' ' || *p == '\t') { \
+    p++; \
+  }
 
 #define CHKOPT(x) \
    (strncmp(p, (x), strlen((x))) == 0)
 
-#define GROWSIZE  128
+#define GROWSIZE 128
 
 void err_wrongproc(const char *name) {
   sc_raise(MSG_WRONG_PROCNAME, name);
@@ -2978,9 +2930,16 @@ void comp_pass2_scan() {
     // if (node.pos == 360 || node.pos == 361)
     // trace("=== stack code %d\n", code);
 
-    if (code != kwGOTO && code != kwRESTORE && code != kwSELECT && code != kwONJMP && code != kwTYPE_PTR
-        && code != kwTYPE_CALL_UDP && code != kwTYPE_CALL_UDF && code != kwPROC && code != kwFUNC
-        && code != kwTYPE_RET) {
+    if (code != kwGOTO && 
+        code != kwRESTORE && 
+        code != kwSELECT && 
+        code != kwONJMP && 
+        code != kwTYPE_PTR && 
+        code != kwTYPE_CALL_UDP && 
+        code != kwTYPE_CALL_UDF && 
+        code != kwPROC && 
+        code != kwFUNC && 
+        code != kwTYPE_RET) {
       // default - calculate true-ip
       true_ip = comp_search_bc_eoc(node.pos + (BC_CTRLSZ + 1));
       memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
@@ -3201,10 +3160,14 @@ void comp_pass2_scan() {
     case kwCASE:
       // false path is either next case statement or "end select"
       false_ip = comp_search_bc_stack(i + 1, kwCASE, node.level, node.block_id);
-      if (false_ip == INVALID_ADDR) {
+
+      // avoid finding another CASE or CASE ELSE on the same level, but after END SELECT
+      j = comp_search_bc_stack(i + 1, kwENDSELECT, node.level, node.block_id);
+      
+      if (false_ip == INVALID_ADDR || false_ip > j) {
         false_ip = comp_search_bc_stack(i + 1, kwCASE_ELSE, node.level, node.block_id);
-        if (false_ip == INVALID_ADDR) {
-          false_ip = comp_search_bc_stack(i + 1, kwENDSELECT, node.level, node.block_id);
+        if (false_ip == INVALID_ADDR || false_ip > j) {
+          false_ip = j;
           if (false_ip == INVALID_ADDR) {
             sc_raise(MSG_MISSING_END_SELECT);
             print_pass2_stack(i, kwCASE, node.level);
