@@ -20,7 +20,7 @@
 #include "platform/mosync/utils.h"
 
 #define LONG_PRESS_TIME 4000
-#define SYSTEM_MENU "\033[ OView Source|Debug Messages|Show Keypad\n"
+#define SYSTEM_MENU "\033[ OView Source|Debug Messages|Show Keypad\034"
 #define MENU_SOURCE 0
 #define MENU_LOG    1
 #define MENU_KEYPAD 2
@@ -76,11 +76,7 @@ const char *Controller::getLoadPath() {
 
 int Controller::getPen(int code) {
   int result = 0;
-
-  if (isExit()) {
-    ui_reset();
-    brun_break();
-  } else {
+  if (!isExit()) {
     if (penMode == PEN_OFF) {
       processEvents(0, -1);
     }
@@ -152,7 +148,7 @@ int Controller::handleEvents(int waitFlag) {
   }
 
   output->flush(false);
-  return isExit() ? -2 : 0;
+  return isBreak() ? -2 : 0;
 }
 
 // process events while in modal state
@@ -202,7 +198,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
   }
 
-  while (!isExit() && maGetEvent(&event)) {
+  while (!isBreak() && maGetEvent(&event)) {
     if (isModal()) {
       // process events for any active GUI
       fireEvent(event);
@@ -214,12 +210,12 @@ MAEvent Controller::processEvents(int ms, int untilType) {
         systemMenu = false;
         switch (event.optionsBoxButtonIndex) {
         case MENU_SOURCE:
-          output->print("\033[ S2\n\014");
+          output->print("\033[ S2\034\014");
           output->print(programSrc);
           systemScreen = true;
           break;
         case MENU_LOG:
-          output->print("\033[ S3\n");
+          output->print("\033[ S3\034");
           systemScreen = true;
           break;
         case MENU_KEYPAD:
@@ -248,50 +244,40 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
-      if (event.point.y < output->getHeight()) {
-        output->pointerMoveEvent(event);
-      }
+      output->pointerMoveEvent(event);
       break;
     case EVENT_TYPE_POINTER_RELEASED:
-      if (event.point.y < output->getHeight()) {
-        penDownTime = 0;
-        penDownX = penDownY = -1;
-        handleKey(SB_KEY_MK_RELEASE);
-        output->pointerReleaseEvent(event);
-      }
+      penDownTime = 0;
+      penDownX = penDownY = -1;
+      handleKey(SB_KEY_MK_RELEASE);
+      output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
-      runMode = exit_state;
+      setExit(false);
       break;
     case EVENT_TYPE_KEY_PRESSED:
       handleKey(event.key);
       break;
     }
-    if (untilType != -1 && untilType == event.type) {
-      // found target event
+    if ((untilType != -1 && untilType == event.type) || loadPath.size()) {
+      // found target event or populated loadPath 
       break;
     }
   }
 
-  if (runMode == exit_state || runMode == back_state) {
-    // terminate the running program
-    loadPath.clear();
-    ui_reset();
-    brun_break();
-  }
-  else {
+  if (isRunning() || !loadPath.size()) {
     // pump messages into the engine
     runIdleListeners();
     if (ms != 0) {
       maWait(ms);
     }
   }
-
   return event;
 }
 
 char *Controller::readSource(const char *fileName) {
   char *buffer = NULL;
+  trace("readSource %s", fileName);
   
   if (strcasecmp(MAIN_BAS_RES, fileName) == 0) {
     // load as resource
@@ -326,6 +312,15 @@ char *Controller::readSource(const char *fileName) {
   return buffer;
 }
 
+// stop and running program
+void Controller::setExit(bool back) {
+  if (isRunning()) {
+    ui_reset();
+    brun_break();
+  }
+  runMode = back ? back_state : exit_state; 
+}
+
 // commence runtime state
 void Controller::setRunning(bool running) {
   if (running) {
@@ -346,14 +341,15 @@ void Controller::setRunning(bool running) {
     loadPath.clear();
     runMode = run_state;
   } else {
+    trace("runMode was %d now %d", runMode, init_state);
     runMode = init_state;    
   }
 }
 
 void Controller::logPrint(const char *str) {
-  output->print("\033[ W3\n");
+  output->print("\033[ W3\034");
   output->print(str);
-  output->print("\033[ w\n");
+  output->print("\033[ w\034");
 }
 
 // handler for hyperlink click actions
@@ -434,10 +430,10 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     if (systemScreen) {
       // restore the runtime screen
-      output->print("\033[ s");
+      output->print("\033[ S0\034");
       systemScreen = false;
     } else {
-      runMode = back_state;
+      setExit(true);
     }
     break;
   case MAK_MENU:
@@ -504,6 +500,7 @@ void Controller::handleKey(int key) {
 // returns the contents of the given url
 char *Controller::readConnection(const char *url) {
   char *result = NULL;
+  logEntered();
 
   MAHandle conn = maConnect(url);
   if (conn > 0) {
@@ -559,6 +556,8 @@ char *Controller::readConnection(const char *url) {
     }
     maConnClose(conn);
   }
+
+  logLeaving();
   return result;
 }
 

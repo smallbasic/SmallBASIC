@@ -144,7 +144,6 @@ private:
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);
   Vector<String *> *getItems(char *&p);
-  void paintScreen(char *&p);
   void removeScreen(char *&p);
   void reset(bool init);
   bool selectScreen(char *&p, bool setSaved);

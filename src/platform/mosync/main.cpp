@@ -24,11 +24,9 @@ extern "C" int MAMain() {
   bool home = true;
   sbasic_main(MAIN_BAS_RES);
   while (!controller->isExit()) {
-    controller->setRunning(false);
-    controller->processEvents(-1, -1);
     if (controller->isBack()) {
       if (home) {
-        controller->setExit();
+        controller->setExit(false);
       } else {
         sbasic_main(MAIN_BAS_RES);
         home = true;
@@ -36,6 +34,9 @@ extern "C" int MAMain() {
     } else if (controller->getLoadPath() != NULL) {
       sbasic_main(controller->getLoadPath());
       home = false;
+    } else {
+      controller->setRunning(false);
+      controller->processEvents(-1, -1);
     }
   }
 

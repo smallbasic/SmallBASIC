@@ -203,7 +203,7 @@ void Screen::calcTab() {
 
 bool Screen::construct() {
   image = maCreatePlaceholder();
-  bool result = (image && RES_OK == 
+  bool result = (image && RES_OK ==
                  maCreateDrawableImage(image, imageWidth, imageHeight));
   if (result) {
     reset(true);
@@ -724,6 +724,9 @@ void AnsiWidget::print(const char *str) {
           }
         }
         break;
+      case '\034':
+        // file separator
+        break;
       case '\n':   // new line
         back->newLine(lineHeight);
         break;
@@ -804,7 +807,7 @@ void AnsiWidget::setMouseMode(bool flag) {
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   if (!OUTSIDE_RECT(event.point.x, event.point.y,
-                    back->x, back->y, 
+                    back->x, back->y,
                     back->width, back->height)) {
     touchX = event.point.x;
     touchY = event.point.y;
@@ -835,7 +838,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   } else {
     // scroll up/down
     if (!OUTSIDE_RECT(event.point.x, event.point.y,
-                      back->x, back->y, 
+                      back->x, back->y,
                       back->width, back->height)) {
       int vscroll = back->scrollY + (touchY - event.point.y);
       int maxScroll = back->curY - (back->height - SCROLL_OFFS);
@@ -847,6 +850,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
       if (vscroll != back->scrollY && maxScroll > 0) {
         moveTime = maGetMilliSecondCount();
         moveDown = (back->scrollY < vscroll);
+        back->drawInto();
         back->scrollY = vscroll;
         touchX = event.point.x;
         touchY = event.point.y;
@@ -869,6 +873,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   } else {
     int maxScroll = back->curY - (back->height - SCROLL_OFFS);
     if (touchY != -1 && maxScroll > 0) {
+      back->drawInto();
       int start = maGetMilliSecondCount();
       if (start - moveTime < SWIPE_TIME) {
         // swiped
@@ -877,13 +882,14 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
         int vscroll = back->scrollY;
         int scrollSize = 10;
         int swipeStep = SWIPE_DELAY_STEP;
-        
+
         while (elapsed < MAX_TIMER_INTERVAL) {
           if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
             break;
           }
           elapsed += (maGetMilliSecondCount() - start);
           if (elapsed > swipeStep && scrollSize > 1) {
+            // step down to a lesser scroll amount
             scrollSize -= 1;
             swipeStep += SWIPE_DELAY_STEP;
           }
@@ -897,6 +903,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
             vscroll = maxScroll;
           }
           if (vscroll != back->scrollY) {
+            back->dirty = true;
             back->scrollY = vscroll;
             flush(true, true);
           } else {
@@ -928,7 +935,7 @@ void AnsiWidget::createButton(char *&p) {
   deleteItems(items);
 }
 
-// creates a hyperlink, eg // ^[ hwww.foo.com|title|hover;More text
+// creates a hyperlink, eg // ^[ hwww.foo.com|title;More text
 void AnsiWidget::createLink(char *&p, bool execLink) {
   Vector<String *> *items = getItems(p);
   const char *action = items->size() > 0 ? (*items)[0]->c_str() : "";
@@ -1025,9 +1032,6 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
     case 'O':
       createOptionsBox(p);
       break;
-    case 'P': // select the specified screen for display
-      paintScreen(p);
-      break;
     case 'X': // double buffering - transpose write and display screens
       swapScreens();
       break;
@@ -1079,6 +1083,7 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
   while (*p && !eot) {
     p++;
     switch (*p) {
+    case '\034':
     case '\033':
     case '\n':
     case ';':
@@ -1095,19 +1100,6 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
     }
   }
   return result;
-}
-
-// paint the specified screen
-void AnsiWidget::paintScreen(char *&p) {
-  Vector<String *> *items = getItems(p);
-  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
-  if (n < 0 || n >= MAX_SCREENS || screens[n] == NULL) {
-    print("ERR screen#");
-  } else {
-    front = screens[n];
-    flush(true);
-  }
-  deleteItems(items);
 }
 
 // remove the specified screen

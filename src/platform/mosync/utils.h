@@ -9,7 +9,7 @@
 #include <mavsprintf.h>
 
 #define MAIN_BAS_RES "main.bas"
-#define ERROR_BAS "? \"Failed to open program file\":pause"
+#define ERROR_BAS "? \"Failed to open program file\""
 
 #ifndef max
 #define max(a,b) ((a<b) ? (b) : (a))

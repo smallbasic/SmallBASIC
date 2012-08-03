@@ -43,10 +43,11 @@ struct Controller : public Environment, ButtonListener {
   bool isExit() { return runMode == exit_state; }
   bool isBack() { return runMode == back_state; }
   bool isModal() { return runMode == modal_state; }
+  bool isBreak() { return runMode == exit_state || runMode == back_state; }
   bool isRunning() { return runMode == run_state || runMode == modal_state; }
   void setPenMode(int b) { penMode = (b ? PEN_ON : PEN_OFF); }
-  void setExit() { runMode = exit_state; }
-  void setRunning(bool running);
+  void setExit(bool back);
+  void setRunning(bool running = true);
   void logPrint(const char *str);
 
   AnsiWidget *output;
