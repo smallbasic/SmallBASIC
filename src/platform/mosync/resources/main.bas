@@ -1,9 +1,9 @@
 
-sub slow_print(s)
+sub space_print(s)
   local ch, len_s
   len_s = len(s)
   for ch = 1 to len_s 
-    print mid(s, ch, 1) + " " + chr(3);
+    print mid(s, ch, 1) + " ";
   next ch
 end
 
@@ -15,24 +15,30 @@ sub intro()
   print e+"92m"+e+"33m"+"Welcome to SmallBASIC"
   print e+"93m"+e+"34m"+"Welcome to SmallBASIC"
   print e+"0m"+e+"90m"
-  slow_print "Welcome to SmallBASIC"
+  space_print "Welcome to SmallBASIC"
   print chr$(27)+"[90m"
 end
 
-intro
+sub about()
+  print "Copyright (c) 2002-2012 Chris Warren-Smith"
+  print "Copyright (c) 2000-2006 Nicholas Christopoulos." + chr(10)
+  print "http://smallbasic.sourceforge.net" + chr(10)
+  print "SmallBASIC comes with ABSOLUTELY NO WARRANTY."
+  print "This program is free software; you can use it"
+  print "redistribute it and/or modify it under the terms of the"
+  print "GNU General Public License version 2 as published by"
+  print "the Free Software Foundation."
+end
 
-print
-print chr(27) + "[ hsmallbasic.sourceforge.net/?q=node/195|Online programs" + chr(28)
-print
-print
-print "Copyright (c) 2002-2012 Chris Warren-Smith"
-print "Copyright (c) 2000-2006 Nicholas Christopoulos."
-print
-print "http://smallbasic.sourceforge.net"
-print
-print "SmallBASIC comes with ABSOLUTELY NO WARRANTY."
-print "This program is free software; you can use it"
-print "redistribute it and/or modify it under the terms of the"
-print "GNU General Public License version 2 as published by"
-print "the Free Software Foundation."
+sub buttons() {
+  local e, bns
+  e = chr(27) + "[ B"
+  bns = chr(10) + e + "smallbasic.sourceforge.net/?q=node/195|Online programs" + chr(28)
+  bns += " " + e + "filemgr.bas|File Manager" + chr(28) + chr(10)
+  print bns
+end
+
+intro
+buttons
+about
 

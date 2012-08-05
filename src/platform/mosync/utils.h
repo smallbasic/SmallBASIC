@@ -9,6 +9,7 @@
 #include <mavsprintf.h>
 
 #define MAIN_BAS_RES "main.bas"
+#define FILE_MGR_RES "filemgr.bas"
 #define ERROR_BAS "? \"Failed to open program file\""
 
 #ifndef max

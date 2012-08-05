@@ -6,6 +6,10 @@
 .bin
 .include "resources/main.bas"
 
+.res FILEMGR_BAS
+.bin
+.include "resources/filemgr.bas"
+
 
 
 

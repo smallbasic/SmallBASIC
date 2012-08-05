@@ -285,6 +285,12 @@ char *Controller::readSource(const char *fileName) {
     buffer = (char *)mem_alloc(len + 1);
     maReadData(MAIN_BAS, buffer, 0, len);
     buffer[len] = '\0';
+  } else if (strcasecmp(FILE_MGR_RES, fileName) == 0) {
+    // load as resource
+    int len = maGetDataSize(FILEMGR_BAS);
+    buffer = (char *)mem_alloc(len + 1);
+    maReadData(FILEMGR_BAS, buffer, 0, len);
+    buffer[len] = '\0';
   } else if (strstr(fileName, "://")) {
     buffer = readConnection(fileName);
   } else {
@@ -341,7 +347,6 @@ void Controller::setRunning(bool running) {
     loadPath.clear();
     runMode = run_state;
   } else {
-    trace("runMode was %d now %d", runMode, init_state);
     runMode = init_state;    
   }
 }

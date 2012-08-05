@@ -57,6 +57,7 @@
 #define MAX_TIMER_INTERVAL 3000
 #define SWIPE_DELAY_STEP 50
 #define SWIPE_TIME 80
+#define BUTTON_PADDING 8
 
 static int colors[] = {
   0x000000, // 0 black
@@ -105,9 +106,10 @@ struct TextBuffer {
   int len;
 };
 
-Button::Button(Screen *screen, const char* action,
+Button::Button(Screen *screen, const char* action, const char *label,
                int x, int y, int w, int h) :
   action(action),
+  label(label),
   pressed(false),
   bg(screen->bg),
   fg(screen->fg),
@@ -121,14 +123,18 @@ bool Button::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
 }
 
-BlockButton::BlockButton(Screen *screen, const char *action,
-                     int x, int y, int w, int h) :
-  Button(screen, action, x, y, w, h) {
+BlockButton::BlockButton(Screen *screen, const char *action, const char *label,
+                         int x, int y, int w, int h) :
+  Button(screen, action, label, x, y, w, h) {
 }
 
 void BlockButton::draw() {
   int r = x+w;
   int b = y+h;
+
+  maSetColor(0x606060);
+  maFillRect(x, y, w, h);
+
   maSetColor(pressed ? bg : fg);
   maLine(x, y, r-1, y); // top
   maLine(x, y, x, b);   // left
@@ -136,18 +142,20 @@ void BlockButton::draw() {
   maSetColor(pressed ? fg : bg);
   maLine(x, b, r, b); // bottom
   maLine(r, y, r, b); // right
+
+  maSetColor(fg);
+  maDrawText(x + 4, y + 4, label.c_str());
 }
 
 TextButton::TextButton(Screen *screen, const char *action, const char *label,
-                   int x, int y, int w, int h) :
-  Button(screen, action, x, y, w, h),
-  label(label) {
+                       int x, int y, int w, int h) :
+  Button(screen, action, label, x, y, w, h) {
 }
 
 void TextButton::draw() {
   maSetColor(pressed ? bg : fg);
-  maDrawText(x, y, !label.size() ? action.c_str() : label.c_str());
-  maLine(x, y + h - 1, x + w, y + h - 1);
+  maDrawText(x, y, label.c_str());
+  maLine(x, y + h + 1, x + w, y + h + 1);
 }
 
 Screen::Screen(int x, int y, int width, int height) :
@@ -175,7 +183,8 @@ Screen::Screen(int x, int y, int width, int height) :
   fontSize(0),
   charWidth(0),
   charHeight(0),
-  dirty(0) {
+  dirty(0),
+  linePadding(0) {
 }
 
 Screen::~Screen() {
@@ -275,6 +284,8 @@ void Screen::drawText(const char *text, int len, int x, int lineHeight) {
 
 // handles the \n character
 void Screen::newLine(int lineHeight) {
+  lineHeight += linePadding;
+  linePadding = 0;
   curX = INITXY;
   if (height < MAX_HEIGHT) {
     int offset = curY + (lineHeight * 2);
@@ -919,27 +930,11 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   activeLink = NULL;
 }
 
-// creates a hotspot button, eg // ^[ b10|10|10|10|x;
-void AnsiWidget::createButton(char *&p) {
-  Vector<String *> *items = getItems(p);
-  int x = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
-  int y = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
-  int w = items->size() > 2 ? atoi((*items)[2]->c_str()) : 0;
-  int h = items->size() > 3 ? atoi((*items)[3]->c_str()) : 0;
-  const char *action = items->size() > 4 ? (*items)[4]->c_str() : "";
-
-  Button *link = new BlockButton(back, action, x, y, w, h);
-  back->buttons.add(link);
-  link->draw();
-
-  deleteItems(items);
-}
-
 // creates a hyperlink, eg // ^[ hwww.foo.com|title;More text
-void AnsiWidget::createLink(char *&p, bool execLink) {
+void AnsiWidget::createLink(char *&p, bool execLink, bool button) {
   Vector<String *> *items = getItems(p);
   const char *action = items->size() > 0 ? (*items)[0]->c_str() : "";
-  const char *text = items->size() > 1 ? (*items)[1]->c_str() : "";
+  const char *text = items->size() > 1 ? (*items)[1]->c_str() : action;
 
   if (execLink && buttonListener) {
     buttonListener->buttonClicked(action);
@@ -949,13 +944,24 @@ void AnsiWidget::createLink(char *&p, bool execLink) {
     int h = EXTENT_Y(textSize) + 2;
     int x = back->curX;
     int y = back->curY;
+    
+    if (button) {
+      w += BUTTON_PADDING;
+      h += BUTTON_PADDING;
+      back->linePadding = BUTTON_PADDING;
+    }
     if (back->curX + w >= width) {
       w = width - back->curX; // clipped
       back->newLine(EXTENT_Y(textSize));
     } else {
       back->curX += w;
     }
-    Button *link = new TextButton(back, action, text, x, y, w, h);
+    Button *link;
+    if (button) {
+      link = new BlockButton(back, action, text, x, y, w, h);
+    } else {
+      link = new TextButton(back, action, text, x, y, w, h);
+    }
     back->buttons.add(link);
     link->draw();
   }
@@ -1016,18 +1022,18 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       showAlert(p);
       break;
     case 'B':
-      createButton(p);
+      createLink(p, false, true);
       break;
     case 'C':
       // GSS Graphic Size Selection
       back->fontSize = escValue;
       back->updateFont();
       break;
-    case 'h':
-      createLink(p, false);
-      break;
     case 'H':
-      createLink(p, true);
+      createLink(p, false, false);
+      break;
+    case 'h':
+      createLink(p, true, false);
       break;
     case 'O':
       createOptionsBox(p);

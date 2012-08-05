@@ -63,16 +63,19 @@ struct Screen {
   int charWidth;
   int charHeight;
   int dirty;
+  int linePadding;
   Vector <Button *>buttons;
 };
 
 struct Button {
-  Button(Screen *screen, const char *action, int x, int y, int w, int h);
+  Button(Screen *screen, const char *action, const char *label,
+         int x, int y, int w, int h);
   virtual ~Button() {};
   virtual void draw() = 0;
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
 
   String action;
+  String label;
   bool pressed;
   int bg, fg;
   int x,y,w,h;
@@ -80,14 +83,13 @@ struct Button {
 
 struct TextButton : public Button {
   TextButton(Screen *screen, const char *action, const char *label,
-           int x, int y, int w, int h);
+             int x, int y, int w, int h);
   void draw();
-  String label;
 };
 
 struct BlockButton : public Button {
-  BlockButton(Screen *screen, const char *action,
-            int x, int y, int w, int h);
+  BlockButton(Screen *screen, const char *action, const char *label,
+              int x, int y, int w, int h);
   void draw();
 };
 
@@ -138,8 +140,7 @@ public:
   void pointerReleaseEvent(MAEvent &event);
 
 private:
-  void createButton(char *&p);
-  void createLink(char *&p, bool execLink);
+  void createLink(char *&p, bool execLink, bool button);
   void createOptionsBox(char *&p);
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);
