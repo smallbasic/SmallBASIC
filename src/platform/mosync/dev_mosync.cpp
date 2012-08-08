@@ -20,6 +20,10 @@ using namespace MAUI;
 
 extern Controller *controller;
 
+#define ACCESS_EXIST 0
+#define ACCESS_WRITE 2
+#define ACCESS_READ  4
+
 void osd_sound(int frq, int dur, int vol, int bgplay) {
 
 }
@@ -155,11 +159,17 @@ char *dev_gets(char *dest, int maxSize) {
 }
 
 extern "C" int access(const char *path, int amode) {
-  logEntered();
-  return 0;
+  int result = -1;
+  int mode = (amode && ACCESS_WRITE) ? MA_ACCESS_READ_WRITE : MA_ACCESS_READ;
+  MAHandle handle = maFileOpen(path, mode);
+  if (maFileExists(handle)) {
+    result = 0;
+  }
+  maFileClose(handle);
+  trace("access() %s %d = %d", path, amode, result);
+  return result;
 }
 
-extern "C" void chmod(const char *s, int mode) {
-  logEntered();
+extern "C" void chmod(const char *path, int mode) {
+  trace("chmod() %s %d", path, mode);
 }
-

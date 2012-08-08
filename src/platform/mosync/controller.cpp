@@ -46,10 +46,6 @@ bool Controller::construct() {
   output = new AnsiWidget(this, EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
 
-  // install the default font
-  MAUI::Engine& engine = MAUI::Engine::getSingleton();
-  engine.setDefaultFont(new MAUI::Font(RES_FONT));
-
   runMode = init_state;
   opt_ide = IDE_NONE;
   opt_graphics = true;
@@ -277,15 +273,22 @@ MAEvent Controller::processEvents(int ms, int untilType) {
 
 char *Controller::readSource(const char *fileName) {
   char *buffer = NULL;
-  trace("readSource %s", fileName);
+  const char *delim = strchr(fileName, '?');
+  int len = strlen(fileName);
+  int endIndex = delim ? (delim - fileName) : len;
+  if (delim) {
+    strcpy(opt_command, delim + 1);
+  }
+
+  trace("readSource %s %d", fileName, endIndex);
   
-  if (strcasecmp(MAIN_BAS_RES, fileName) == 0) {
+  if (strncasecmp(MAIN_BAS_RES, fileName, endIndex) == 0) {
     // load as resource
     int len = maGetDataSize(MAIN_BAS);
     buffer = (char *)mem_alloc(len + 1);
     maReadData(MAIN_BAS, buffer, 0, len);
     buffer[len] = '\0';
-  } else if (strcasecmp(FILE_MGR_RES, fileName) == 0) {
+  } else if (strncasecmp(FILE_MGR_RES, fileName, endIndex) == 0) {
     // load as resource
     int len = maGetDataSize(FILEMGR_BAS);
     buffer = (char *)mem_alloc(len + 1);
@@ -352,6 +355,7 @@ void Controller::setRunning(bool running) {
 }
 
 void Controller::logPrint(const char *str) {
+  trace(str);
   output->print("\033[ W3\034");
   output->print(str);
   output->print("\033[ w\034");

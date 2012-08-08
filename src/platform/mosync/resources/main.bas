@@ -1,4 +1,3 @@
-
 sub space_print(s)
   local ch, len_s
   len_s = len(s)
@@ -10,13 +9,13 @@ end
 sub intro()
   local e
   e = chr(27) + "["
-  print e+"90m"+e+"31m"+"Welcome to SmallBASIC"
-  print e+"91m"+e+"32m"+"Welcome to SmallBASIC"
-  print e+"92m"+e+"33m"+"Welcome to SmallBASIC"
-  print e+"93m"+e+"34m"+"Welcome to SmallBASIC"
-  print e+"0m"+e+"90m"
+  print e + "90m" + e + "31m" + "Welcome to SmallBASIC"
+  print e + "91m" + e + "32m" + "Welcome to SmallBASIC"
+  print e + "92m" + e + "33m" + "Welcome to SmallBASIC"
+  print e + "93m" + e + "34m" + "Welcome to SmallBASIC"
+  print e + "0m" + e + "90m"
   space_print "Welcome to SmallBASIC"
-  print chr$(27)+"[90m"
+  print chr$(27) + "[90m"
 end
 
 sub about()
@@ -31,14 +30,13 @@ sub about()
 end
 
 sub buttons() {
-  local e, bns
+  local e
   e = chr(27) + "[ B"
-  bns = chr(10) + e + "smallbasic.sourceforge.net/?q=node/195|Online programs" + chr(28)
-  bns += " " + e + "filemgr.bas|File Manager" + chr(28) + chr(10)
-  print bns
+  print chr(10);
+  print e + "smallbasic.sourceforge.net/?q=node/195|Online programs" + chr(28);
+  print " " + e + "filemgr.bas|Open file" + chr(28) + chr(10)
 end
 
 intro
 buttons
 about
-

@@ -54,10 +54,13 @@
 #define BLUE   1
 #define GREEN  2
 #define WHITE  15
-#define MAX_TIMER_INTERVAL 3000
-#define SWIPE_DELAY_STEP 50
-#define SWIPE_TIME 80
 #define BUTTON_PADDING 8
+#define SWIPE_MAX_TIMER 6000
+#define SWIPE_DELAY_STEP 250
+#define SWIPE_SCROLL_FAST 20
+#define SWIPE_SCROLL_SLOW 10
+#define SWIPE_TRIGGER_FAST 40
+#define SWIPE_TRIGGER_SLOW 80
 
 static int colors[] = {
   0x000000, // 0 black
@@ -132,7 +135,7 @@ void BlockButton::draw() {
   int r = x+w;
   int b = y+h;
 
-  maSetColor(0x606060);
+  maSetColor(0x505050);
   maFillRect(x, y, w, h);
 
   maSetColor(pressed ? bg : fg);
@@ -886,17 +889,18 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     if (touchY != -1 && maxScroll > 0) {
       back->drawInto();
       int start = maGetMilliSecondCount();
-      if (start - moveTime < SWIPE_TIME) {
+      if (start - moveTime < SWIPE_TRIGGER_SLOW) {
         // swiped
         MAEvent event;
         int elapsed = 0;
         int vscroll = back->scrollY;
-        int scrollSize = 10;
+        int scrollSize = (start - moveTime < SWIPE_TRIGGER_FAST) ? 
+                         SWIPE_SCROLL_FAST : SWIPE_SCROLL_SLOW;
         int swipeStep = SWIPE_DELAY_STEP;
 
-        while (elapsed < MAX_TIMER_INTERVAL) {
+        while (elapsed < SWIPE_MAX_TIMER) {
           if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
-            break;
+            scrollSize = 1;
           }
           elapsed += (maGetMilliSecondCount() - start);
           if (elapsed > swipeStep && scrollSize > 1) {

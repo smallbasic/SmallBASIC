@@ -1,7 +1,3 @@
-.res RES_FONT
-.bin
-.include "resources/Font.mof"
-
 .res MAIN_BAS
 .bin
 .include "resources/main.bas"
