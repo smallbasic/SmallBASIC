@@ -206,12 +206,12 @@ MAEvent Controller::processEvents(int ms, int untilType) {
         systemMenu = false;
         switch (event.optionsBoxButtonIndex) {
         case MENU_SOURCE:
-          output->print("\033[ S2\034\014");
+          output->print(PRINT_SOURCE);
           output->print(programSrc);
           systemScreen = true;
           break;
         case MENU_LOG:
-          output->print("\033[ S3\034");
+          output->print(PRINT_LOG);
           systemScreen = true;
           break;
         case MENU_KEYPAD:
@@ -280,7 +280,7 @@ char *Controller::readSource(const char *fileName) {
     strcpy(opt_command, delim + 1);
   }
 
-  trace("readSource %s %d", fileName, endIndex);
+  trace("readSource %s %d %s", fileName, endIndex, opt_command);
   
   if (strncasecmp(MAIN_BAS_RES, fileName, endIndex) == 0) {
     // load as resource
@@ -315,9 +315,8 @@ char *Controller::readSource(const char *fileName) {
   delete [] programSrc;
   programSrc = new char[strlen(buffer) + 1];
   strcpy(programSrc, buffer);
-  logPrint("Opened: ");
-  logPrint(fileName);
 
+  logPrint("Opened: %s\n", fileName);
   return buffer;
 }
 
@@ -347,17 +346,25 @@ void Controller::setRunning(bool running) {
     dev_clrkb();
     ui_reset();
     
-    loadPath.clear();
     runMode = run_state;
   } else {
     runMode = init_state;    
   }
+  loadPath.clear();
 }
 
-void Controller::logPrint(const char *str) {
-  trace(str);
+void Controller::logPrint(const char *format, ...) {
+  char buf[4096], *p = buf;
+  va_list args;
+
+  va_start(args, format);
+  p += vsnprintf(p, sizeof(buf) - 1, format, args);
+  va_end(args);
+  *p = '\0';
+
+  trace(buf);
   output->print("\033[ W3\034");
-  output->print(str);
+  output->print(buf);
   output->print("\033[ w\034");
 }
 
@@ -514,8 +521,7 @@ char *Controller::readConnection(const char *url) {
   MAHandle conn = maConnect(url);
   if (conn > 0) {
     runMode = conn_state;
-    logPrint("Connecting to ");
-    logPrint(url);
+    logPrint("Connecting to %s\n", url);
     bool connected = false;
     char buffer[1024];
     int length = 0;

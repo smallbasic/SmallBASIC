@@ -28,11 +28,15 @@ extern "C" int MAMain() {
       if (home) {
         controller->setExit(false);
       } else {
+        opt_command[0] = '\0';
         sbasic_main(MAIN_BAS_RES);
         home = true;
       }
     } else if (controller->getLoadPath() != NULL) {
-      sbasic_main(controller->getLoadPath());
+      if (!sbasic_main(controller->getLoadPath())) {
+        controller->setRunning(false);
+        controller->output->print(PRINT_LOG);
+      }
       home = false;
     } else {
       controller->setRunning(false);

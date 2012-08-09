@@ -218,7 +218,11 @@ bool Screen::construct() {
   bool result = (image && RES_OK ==
                  maCreateDrawableImage(image, imageWidth, imageHeight));
   if (result) {
-    reset(true);
+    curX = INITXY;
+    curY = INITXY;
+    tabSize = 40;   // tab size in pixels (160/32 = 5)
+    scrollY = 0;
+    reset();
   }
   return result;
 }
@@ -232,6 +236,12 @@ void Screen::clear() {
   curY = INITXY;
   scrollY = 0;
   pageHeight = 0;
+
+  // cleanup any buttons
+  Vector_each(Button*, it, buttons) {
+    delete (*it);
+  }
+  buttons.clear();
 }
 
 void Screen::draw(bool vscroll) {
@@ -358,18 +368,7 @@ int Screen::print(const char *p, int lineHeight) {
 }
 
 // reset the current drawing variables
-void Screen::reset(bool init) {
-  if (init) {
-    curX = INITXY;
-    curY = INITXY;
-    tabSize = 40;   // tab size in pixels (160/32 = 5)
-    scrollY = 0;
-    // cleanup any buttons
-    Vector_each(Button*, it, buttons) {
-      delete (*it);
-    }
-    buttons.clear();
-  }
+void Screen::reset() {
   curXSaved = 0;
   curYSaved = 0;
   invert = false;
@@ -457,7 +456,7 @@ bool Screen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   case 'm':                    // \e[...m - ANSI terminal
     switch (escValue) {
     case 0:                    // reset
-      reset(false);
+      reset();
       break;
     case 1:                    // set bold on
       bold = true;
@@ -1129,11 +1128,6 @@ void AnsiWidget::removeScreen(char *&p) {
     screens[n] = NULL;
   }
   deleteItems(items);
-}
-
-// reset the current drawing variables
-void AnsiWidget::reset(bool init) {
-  back->reset(init);
 }
 
 // select the specified screen

@@ -32,7 +32,7 @@ struct Screen {
   void drawText(const char *text, int len, int x, int lineHeight);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
-  void reset(bool init);
+  void reset();
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void setColor(long color);
   void setTextColor(long fg, long bg);
@@ -146,7 +146,6 @@ private:
   bool doEscape(char *&p, int textHeight);
   Vector<String *> *getItems(char *&p);
   void removeScreen(char *&p);
-  void reset(bool init);
   bool selectScreen(char *&p, bool setSaved);
   void showAlert(char *&p);
   void swapScreens();

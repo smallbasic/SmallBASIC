@@ -122,7 +122,7 @@ char *dev_read(const char *fileName) {
 }
 
 void lwrite(const char *str) {
-  controller->logPrint(str);
+  controller->logPrint("%s", str);
 }
 
 void dev_image(int handle, int index,
