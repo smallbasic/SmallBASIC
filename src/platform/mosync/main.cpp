@@ -21,23 +21,22 @@ extern "C" int MAMain() {
   controller->pause(500); // de-bounce screen events
   controller->construct();
 
-  bool home = true;
+  bool execHome = true;
   sbasic_main(MAIN_BAS_RES);
   while (!controller->isExit()) {
     if (controller->isBack()) {
-      if (home) {
+      if (execHome) {
         controller->setExit(false);
       } else {
         opt_command[0] = '\0';
+        execHome = true;
         sbasic_main(MAIN_BAS_RES);
-        home = true;
       }
     } else if (controller->getLoadPath() != NULL) {
+      execHome = false;
       if (!sbasic_main(controller->getLoadPath())) {
-        controller->setRunning(false);
-        controller->output->print(PRINT_LOG);
+        controller->showError();
       }
-      home = false;
     } else {
       controller->setRunning(false);
       controller->processEvents(-1, -1);

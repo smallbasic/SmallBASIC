@@ -146,14 +146,14 @@ private:
   bool doEscape(char *&p, int textHeight);
   Vector<String *> *getItems(char *&p);
   void removeScreen(char *&p);
-  bool selectScreen(char *&p, bool setSaved);
+  bool selectScreen(char *&p);
   void showAlert(char *&p);
   void swapScreens();
 
   Screen *screens[MAX_SCREENS];
   Screen *back;   // screen being painted/written
   Screen *front;  // screen to display 
-  Screen *saved;  // saved screen 
+  Screen *pushed; // saved/previous screen
   int width;      // device screen width
   int height;     // device screen height
   int touchX;     // active touch x value

@@ -48,6 +48,7 @@ struct Controller : public Environment, ButtonListener {
   void setPenMode(int b) { penMode = (b ? PEN_ON : PEN_OFF); }
   void setExit(bool back);
   void setRunning(bool running = true);
+  void showError();
   void logPrint(const char *format, ...);
 
   AnsiWidget *output;
@@ -57,6 +58,7 @@ private:
   void fireEvent(MAEvent &event);
   void handleKey(int key);
   char *readConnection(const char *url);
+  void showSystemScreen(bool logScreen);
 
   enum ExecState {
     init_state,

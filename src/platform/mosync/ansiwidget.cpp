@@ -306,8 +306,7 @@ void Screen::newLine(int lineHeight) {
       if (offset >= imageHeight) {
         // extend the base image by another page size
         MAHandle newImage = maCreatePlaceholder();
-        maCreateDrawableImage(newImage, imageWidth, imageHeight + height);
-
+        int result = maCreateDrawableImage(newImage, imageWidth, imageHeight + height);
         MARect srcRect;
         MAPoint2d dstPoint;
 
@@ -320,7 +319,6 @@ void Screen::newLine(int lineHeight) {
 
         maSetDrawTarget(newImage);
         maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-
         // clear the new segment
         maSetColor(bg);
         maFillRect(0, imageHeight, imageWidth, imageHeight + height);
@@ -578,7 +576,7 @@ void Screen::updateFont() {
 AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   back(NULL),
   front(NULL),
-  saved(NULL),
+  pushed(NULL),
   width(width),
   height(height),
   touchX(-1),
@@ -1031,6 +1029,7 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       // GSS Graphic Size Selection
       back->fontSize = escValue;
       back->updateFont();
+      p++;
       break;
     case 'H':
       createLink(p, false, false);
@@ -1048,25 +1047,31 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       removeScreen(p);
       break;
     case 'S': // select new write and display screens
-      if (selectScreen(p, true)) {
+      if (selectScreen(p)) {
         front = back;
         flush(true);
       }
       break;
-    case 's': // restore the saved write and display screens
-      if (saved) {
-        back = front = saved;
+    case 'P': // remember the current screen
+      p++;
+      pushed = back;
+      break;
+    case 'p': // restore the saved write and display screens
+      if (pushed) {
+        back = front = pushed;
         back->drawInto();
         flush(true);
-        saved = NULL;
+        pushed = NULL;
       }
       break;
-    case 'W': // select new write screen
-      selectScreen(p, false);
+    case 'W': // select write screen only
+      selectScreen(p);
       break;
     case 'w': // restore write screen
-      if (front) {
-        back = front;
+      if (pushed) {
+        back = pushed;
+        back->drawInto();
+        pushed = NULL;
       }
       break;
     }
@@ -1130,8 +1135,8 @@ void AnsiWidget::removeScreen(char *&p) {
   deleteItems(items);
 }
 
-// select the specified screen
- bool AnsiWidget::selectScreen(char *&p, bool setSaved) {
+// select the specified screen - returns whether the screen was changed
+bool AnsiWidget::selectScreen(char *&p) {
   Vector<String *> *items = getItems(p);
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
@@ -1146,15 +1151,14 @@ void AnsiWidget::removeScreen(char *&p) {
     print("ERR screen#");
     result = false;
   } else if (screens[n] != NULL) {
-    if (setSaved && back != screens[n]) {
-      saved = back;
+    // specified screen already exists
+    if (back == screens[n]) {
+      result = false;
+    } else {
+      back = screens[n];
+      back->drawInto();
     }
-    back = screens[n];
-    back->drawInto();
   } else {
-    if (setSaved) {
-      saved = back;
-    }
     back = new Screen(x, y, w, h);
     if (back && back->construct()) {
       screens[n] = back;
@@ -1165,7 +1169,7 @@ void AnsiWidget::removeScreen(char *&p) {
       result = false;
     }
   }
-
+  trace("Selected screen %d %x %d", n, back, back->buttons.size());
   deleteItems(items);
   return result;
 }

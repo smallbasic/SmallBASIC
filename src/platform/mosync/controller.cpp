@@ -20,10 +20,15 @@
 #include "platform/mosync/utils.h"
 
 #define LONG_PRESS_TIME 4000
-#define SYSTEM_MENU "\033[ OView Source|Debug Messages|Show Keypad\034"
+#define SYSTEM_MENU "\033[ OView Source|Error Messages|Show Keypad\034"
 #define MENU_SOURCE 0
 #define MENU_LOG    1
 #define MENU_KEYPAD 2
+
+#define FILE_MGR_RES "filemgr.bas"
+#define ERROR_BAS "? \"Failed to open program file\""
+#define PRINT_LOG "\033[ S3\034"
+#define PRINT_SOURCE "\033[ S2\034\014"
 
 Controller::Controller() :
   Environment(),
@@ -206,13 +211,13 @@ MAEvent Controller::processEvents(int ms, int untilType) {
         systemMenu = false;
         switch (event.optionsBoxButtonIndex) {
         case MENU_SOURCE:
-          output->print(PRINT_SOURCE);
-          output->print(programSrc);
-          systemScreen = true;
+          if (programSrc != NULL) {
+            showSystemScreen(false);
+            output->print(programSrc);
+          }
           break;
         case MENU_LOG:
-          output->print(PRINT_LOG);
-          systemScreen = true;
+          showSystemScreen(true);
           break;
         case MENU_KEYPAD:
           maShowVirtualKeyboard();
@@ -313,10 +318,13 @@ char *Controller::readSource(const char *fileName) {
   }
 
   delete [] programSrc;
-  programSrc = new char[strlen(buffer) + 1];
-  strcpy(programSrc, buffer);
+  len = strlen(buffer);
+  //  if (len>3070) len = 3070; // 3600,3200 3100 3080 err 3000 3050 3060 ok
+  programSrc = new char[len + 1];
+  strncpy(programSrc, buffer, len);
+  programSrc[len] = 0;
 
-  logPrint("Opened: %s\n", fileName);
+  logPrint("Opened: %s %d\n", fileName, len);
   return buffer;
 }
 
@@ -347,10 +355,16 @@ void Controller::setRunning(bool running) {
     ui_reset();
     
     runMode = run_state;
+    loadPath.clear();
   } else {
-    runMode = init_state;    
+    runMode = init_state;
   }
+}
+
+void Controller::showError() {
+  runMode = init_state;
   loadPath.clear();
+  showSystemScreen(true);
 }
 
 void Controller::logPrint(const char *format, ...) {
@@ -363,9 +377,13 @@ void Controller::logPrint(const char *format, ...) {
   *p = '\0';
 
   trace(buf);
-  output->print("\033[ W3\034");
-  output->print(buf);
-  output->print("\033[ w\034");
+  if (systemScreen) {
+    output->print(buf);
+  } else {
+    output->print("\033[ P; W3\034");
+    output->print(buf);
+    output->print("\033[ w\034");
+  }
 }
 
 // handler for hyperlink click actions
@@ -446,7 +464,7 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     if (systemScreen) {
       // restore the runtime screen
-      output->print("\033[ S0\034");
+      output->print("\033[ p\034");
       systemScreen = false;
     } else {
       setExit(true);
@@ -576,3 +594,11 @@ char *Controller::readConnection(const char *url) {
   return result;
 }
 
+void Controller::showSystemScreen(bool logScreen) {
+  if (!systemScreen) {
+    // remember the current user screen
+    output->print("\033[ P\034");
+  }
+  output->print(logScreen ? PRINT_LOG : PRINT_SOURCE);
+  systemScreen = true;
+}

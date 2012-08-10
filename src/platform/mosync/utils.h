@@ -9,10 +9,6 @@
 #include <mavsprintf.h>
 
 #define MAIN_BAS_RES "main.bas"
-#define FILE_MGR_RES "filemgr.bas"
-#define ERROR_BAS "? \"Failed to open program file\""
-#define PRINT_LOG "\033[ S3\034"
-#define PRINT_SOURCE "\033[ S2\034\014"
 
 #ifndef max
 #define max(a,b) ((a<b) ? (b) : (a))

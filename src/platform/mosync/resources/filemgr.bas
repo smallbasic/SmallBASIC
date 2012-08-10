@@ -34,7 +34,7 @@ sub listFiles(path)
   sort basList
 
   if (path != "/") then
-    print " " + esc + app + backPath + "|< back >" + chr(28)
+    print " " + chr(27) + "[ B" + app + backPath + "|Back" + chr(28)
   endif    
 
   for ent in dirList
