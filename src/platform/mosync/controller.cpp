@@ -188,6 +188,7 @@ void Controller::pause(int ms) {
 MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
   MAExtent screenSize;
+  int loadPathSize = loadPath.size();
 
   // long press = menu
   if (penDownTime != 0) {
@@ -260,15 +261,18 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       handleKey(event.key);
       break;
     }
-    if ((untilType != -1 && untilType == event.type) || loadPath.size()) {
-      // found target event or populated loadPath 
+    if ((untilType != -1 && untilType == event.type) || 
+        (loadPathSize != loadPath.size())) {
+      // found target event or loadPath changed
       break;
     }
   }
 
-  if (isRunning() || !loadPath.size()) {
+  if (isRunning() || (loadPathSize == loadPath.size())) {
     // pump messages into the engine
     runIdleListeners();
+
+    // avoid pausing when loadPath has changed
     if (ms != 0) {
       maWait(ms);
     }
@@ -544,7 +548,7 @@ char *Controller::readConnection(const char *url) {
     runMode = conn_state;
     logPrint("Connecting to %s\n", url);
     bool connected = false;
-    byte buffer[128];
+    byte buffer[256];
     int length = 0;
     int size = 0;
     int now = maGetMilliSecondCount();
@@ -552,8 +556,7 @@ char *Controller::readConnection(const char *url) {
 
     // pause until connected
     while (runMode == conn_state) {
-      maWait(2000);
-      event = processEvents(-1, EVENT_TYPE_CONN);
+      event = processEvents(0, EVENT_TYPE_CONN);
       if (event.type == EVENT_TYPE_CONN) {
         switch (event.conn.opType) {
         case CONNOP_CONNECT:
@@ -572,6 +575,9 @@ char *Controller::readConnection(const char *url) {
         case CONNOP_READ:
           // connRead completed
           if (event.conn.result > 0) {
+            // ensure previous read has completed. the next
+            // or final completion event will unblock this
+            maWait(500);
             size = event.conn.result;
             if (result == NULL) {
               result = (char *)tmp_alloc(size + 1);
