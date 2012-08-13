@@ -20,7 +20,7 @@
 #include "platform/mosync/utils.h"
 
 #define LONG_PRESS_TIME 4000
-#define SYSTEM_MENU "\033[ OView Source|Error Messages|Show Keypad\034"
+#define SYSTEM_MENU "\033[ OView Source|Show Console|Show Keypad\034"
 #define MENU_SOURCE 0
 #define MENU_LOG    1
 #define MENU_KEYPAD 2
@@ -319,12 +319,11 @@ char *Controller::readSource(const char *fileName) {
 
   delete [] programSrc;
   len = strlen(buffer);
-  //  if (len>3070) len = 3070; // 3600,3200 3100 3080 err 3000 3050 3060 ok
   programSrc = new char[len + 1];
   strncpy(programSrc, buffer, len);
   programSrc[len] = 0;
 
-  logPrint("Opened: %s %d\n", fileName, len);
+  logPrint("Opened: %s %d bytes\n", fileName, len);
   return buffer;
 }
 
@@ -536,19 +535,25 @@ char *Controller::readConnection(const char *url) {
   char *result = NULL;
   logEntered();
 
+  output->print("\nLoading...");
+
   MAHandle conn = maConnect(url);
-  if (conn > 0) {
+  if (conn < 1) {
+    logPrint("Failed connecting to %s\n", url);
+  } else {
     runMode = conn_state;
     logPrint("Connecting to %s\n", url);
     bool connected = false;
-    char buffer[1024];
+    byte buffer[128];
     int length = 0;
     int size = 0;
+    int now = maGetMilliSecondCount();
     MAEvent event;
 
     // pause until connected
     while (runMode == conn_state) {
-      event = processEvents(50, EVENT_TYPE_CONN);
+      maWait(2000);
+      event = processEvents(-1, EVENT_TYPE_CONN);
       if (event.type == EVENT_TYPE_CONN) {
         switch (event.conn.opType) {
         case CONNOP_CONNECT:
@@ -556,8 +561,10 @@ char *Controller::readConnection(const char *url) {
           if (!connected) {
             connected = (event.conn.result > 0);
             if (connected) {
-              maConnRead(conn, buffer, sizeof(buffer) - 1);
+              memset(buffer, 0, sizeof(buffer));
+              maConnRead(conn, buffer, sizeof(buffer));
             } else {
+              logPrint("Connection error\n");
               runMode = init_state;
             }
           }
@@ -566,31 +573,34 @@ char *Controller::readConnection(const char *url) {
           // connRead completed
           if (event.conn.result > 0) {
             size = event.conn.result;
-            buffer[size] = 0;
             if (result == NULL) {
               result = (char *)tmp_alloc(size + 1);
-              strncpy(result, buffer, size);
+              memcpy(result, buffer, size);
               length = size;
             } else {
               result = (char *)tmp_realloc(result, length + size + 1);
-              strncpy(result + length, buffer, size);
+              memcpy(result + length, buffer, size);
               length += size;
             }
             result[length] = 0;
-            // try to read more data
-            maConnRead(conn, buffer, sizeof(buffer) - 1);
+            memset(buffer, 0, sizeof(buffer));
+            maConnRead(conn, buffer, sizeof(buffer));
           } else {
             // no more data
             runMode = init_state;
           }
           break;
+        default:
+          logPrint("Connection error\n");
+          runMode = init_state;
         }
       }
     }
-    maConnClose(conn);
+    logPrint("Loaded in %d msecs\n", maGetMilliSecondCount() - now);
   }
 
-  logLeaving();
+  output->print("done");
+  maConnClose(conn);
   return result;
 }
 

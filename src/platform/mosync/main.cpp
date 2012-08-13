@@ -35,7 +35,16 @@ extern "C" int MAMain() {
     } else if (controller->getLoadPath() != NULL) {
       execHome = false;
       if (!sbasic_main(controller->getLoadPath())) {
+        // highlight the error
         controller->showError();
+      } else if (!controller->output->hasUI()) {
+        // display an indication the program has completed
+        int w = controller->output->getWidth() - 1;
+        int h = controller->output->getHeight() - 1;
+        int c = controller->output->getColor();
+        controller->output->setColor(1);
+        controller->output->drawRect(0, 0, w, h);
+        controller->output->setColor(c);
       }
     } else {
       controller->setRunning(false);

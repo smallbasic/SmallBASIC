@@ -214,15 +214,16 @@ void Screen::calcTab() {
 }
 
 bool Screen::construct() {
+  bool result = true;
   image = maCreatePlaceholder();
-  bool result = (image && RES_OK ==
-                 maCreateDrawableImage(image, imageWidth, imageHeight));
-  if (result) {
+  if (maCreateDrawableImage(image, imageWidth, imageHeight) == RES_OK) {
     curX = INITXY;
     curY = INITXY;
     tabSize = 40;   // tab size in pixels (160/32 = 5)
     scrollY = 0;
     reset();
+  } else {
+    result = false;
   }
   return result;
 }
@@ -306,27 +307,35 @@ void Screen::newLine(int lineHeight) {
       if (offset >= imageHeight) {
         // extend the base image by another page size
         MAHandle newImage = maCreatePlaceholder();
-        int result = maCreateDrawableImage(newImage, imageWidth, imageHeight + height);
-        MARect srcRect;
-        MAPoint2d dstPoint;
+        int newHeight = imageHeight + height;
+        trace("allocate %d bytes", imageWidth * newHeight);
+        if (maCreateDrawableImage(newImage, imageWidth, newHeight) != RES_OK) {
+          // failed to create image
+          clear();
+          lineHeight = 0;
+        } else {
+          MARect srcRect;
+          MAPoint2d dstPoint;
+          
+          srcRect.left = 0;
+          srcRect.top = 0;
+          srcRect.width = imageWidth;
+          srcRect.height = imageHeight;
+          dstPoint.x = 0;
+          dstPoint.y = 0;
+          
+          maSetDrawTarget(newImage);
+          maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
 
-        srcRect.left = 0;
-        srcRect.top = 0;
-        srcRect.width = imageWidth;
-        srcRect.height = imageHeight;
-        dstPoint.x = 0;
-        dstPoint.y = 0;
-
-        maSetDrawTarget(newImage);
-        maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-        // clear the new segment
-        maSetColor(bg);
-        maFillRect(0, imageHeight, imageWidth, imageHeight + height);
-        imageHeight += height;
-
-        // cleanup the old image
-        maDestroyPlaceholder(image);
-        image = newImage;
+          // clear the new segment
+          maSetColor(bg);
+          maFillRect(0, imageHeight, imageWidth, imageHeight + height);
+          imageHeight += height;
+          
+          // cleanup the old image
+          maDestroyPlaceholder(image);
+          image = newImage;
+        }
       }
       scrollY += lineHeight;
     }
@@ -334,8 +343,7 @@ void Screen::newLine(int lineHeight) {
     pageHeight += lineHeight;
   } else {
     // overflow
-    curY = INITXY;
-    pageHeight = 0;
+    clear();
   }
 }
 
@@ -381,6 +389,7 @@ void Screen::reset() {
 
 // update the widget to new dimensions
 void Screen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight) {
+  logEntered();
   bool fullscreen = ((width - x) == oldWidth && (height - y) == oldHeight);
   if (fullscreen && (newWidth > imageWidth || newHeight > imageHeight)) {
     // screen is larger than existing virtual size
@@ -882,7 +891,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
       buttonListener->buttonClicked(activeLink->action.c_str());
     }
   } else {
-    int maxScroll = back->curY - (back->height - SCROLL_OFFS);
+    int maxScroll = back->curY - (back->height + 100);// SCROLL_OFFS);
     if (touchY != -1 && maxScroll > 0) {
       back->drawInto();
       int start = maGetMilliSecondCount();
@@ -1169,7 +1178,6 @@ bool AnsiWidget::selectScreen(char *&p) {
       result = false;
     }
   }
-  trace("Selected screen %d %x %d", n, back, back->buttons.size());
   deleteItems(items);
   return result;
 }
