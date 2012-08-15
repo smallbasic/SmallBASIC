@@ -49,6 +49,7 @@ struct Controller : public Environment, ButtonListener {
   void setExit(bool back);
   void setRunning(bool running = true);
   void showError();
+  void showCompletion(bool success);
   void logPrint(const char *format, ...);
 
   AnsiWidget *output;

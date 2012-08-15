@@ -28,7 +28,6 @@ extern "C" int MAMain() {
       if (execHome) {
         controller->setExit(false);
       } else {
-        opt_command[0] = '\0';
         execHome = true;
         sbasic_main(MAIN_BAS_RES);
       }
@@ -36,17 +35,14 @@ extern "C" int MAMain() {
       execHome = false;
       bool success = sbasic_main(controller->getLoadPath());
       if (!controller->isBack()) {
-        // display an indication the program has completed
-        int w = controller->output->getWidth() - 1;
-        int h = controller->output->getHeight() - 1;
-        int c = controller->output->getColor();
-        controller->output->setColor(1);
-        controller->output->drawRect(0, 0, w, h);
-        controller->output->setColor(c);
-      }
-      if (!success) {
-        // highlight the error
-        controller->showError();
+        if (!controller->output->hasUI()) {
+          // display an indication the program has completed
+          controller->showCompletion(success);
+        }
+        if (!success) {
+          // highlight the error
+          controller->showError();
+        }
       }
     } else {
       controller->setRunning(false);

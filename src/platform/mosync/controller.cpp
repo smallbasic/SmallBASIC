@@ -282,42 +282,44 @@ MAEvent Controller::processEvents(int ms, int untilType) {
 
 char *Controller::readSource(const char *fileName) {
   char *buffer = NULL;
+  bool networkFile = strstr(fileName, "://");
   const char *delim = strchr(fileName, '?');
   int len = strlen(fileName);
   int endIndex = delim ? (delim - fileName) : len;
-  if (delim) {
+  if (delim && !networkFile) {
     strcpy(opt_command, delim + 1);
   }
 
   trace("readSource %s %d %s", fileName, endIndex, opt_command);
   
-  if (strncasecmp(MAIN_BAS_RES, fileName, endIndex) == 0) {
+  if (networkFile) {
+    buffer = readConnection(fileName);
+  } else if (strncasecmp(MAIN_BAS_RES, fileName, endIndex) == 0) {
     // load as resource
     int len = maGetDataSize(MAIN_BAS);
-    buffer = (char *)mem_alloc(len + 1);
+    buffer = (char *)tmp_alloc(len + 1);
     maReadData(MAIN_BAS, buffer, 0, len);
     buffer[len] = '\0';
   } else if (strncasecmp(FILE_MGR_RES, fileName, endIndex) == 0) {
     // load as resource
     int len = maGetDataSize(FILEMGR_BAS);
-    buffer = (char *)mem_alloc(len + 1);
+    buffer = (char *)tmp_alloc(len + 1);
     maReadData(FILEMGR_BAS, buffer, 0, len);
     buffer[len] = '\0';
-  } else if (strstr(fileName, "://")) {
-    buffer = readConnection(fileName);
   } else {
     // load from file system
     MAHandle handle = maFileOpen(fileName, MA_ACCESS_READ);
     if (maFileExists(handle)) {
       int len = maFileSize(handle);
-      buffer = (char *)mem_alloc(len);
+      buffer = (char *)tmp_alloc(len + 1);
       maFileRead(handle, buffer, len);
+      buffer[len] = '\0';
     }
     maFileClose(handle);
   }
 
   if (buffer == NULL) {
-    buffer = (char *)mem_alloc(strlen(ERROR_BAS) + 1);
+    buffer = (char *)tmp_alloc(strlen(ERROR_BAS) + 1);
     strcpy(buffer, ERROR_BAS);
   }
 
@@ -353,12 +355,12 @@ void Controller::setRunning(bool running) {
     os_color_depth = 16;
     setsysvar_str(SYSVAR_OSNAME, "MoSync");
     
-    osd_cls();
     dev_clrkb();
     ui_reset();
     
     runMode = run_state;
     loadPath.clear();
+    output->reset();
   } else {
     runMode = init_state;
   }
@@ -368,6 +370,16 @@ void Controller::showError() {
   runMode = init_state;
   loadPath.clear();
   showSystemScreen(true);
+}
+
+void Controller::showCompletion(bool success) {
+  int w = output->getWidth() - 1;
+  int h = output->getHeight() - 1;
+  int c = output->getColor();
+  output->setColor(success ? 1 : 4);
+  output->drawRect(0, 0, w, h);
+  output->setColor(c);
+  output->flush(true);
 }
 
 void Controller::logPrint(const char *format, ...) {
@@ -577,7 +589,7 @@ char *Controller::readConnection(const char *url) {
           if (event.conn.result > 0) {
             // ensure previous read has completed. the next
             // or final completion event will unblock this
-            maWait(500);
+            maWait(1000);
             size = event.conn.result;
             if (result == NULL) {
               result = (char *)tmp_alloc(size + 1);

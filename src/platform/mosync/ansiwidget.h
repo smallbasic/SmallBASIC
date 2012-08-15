@@ -103,7 +103,7 @@ public:
   ~AnsiWidget();
 
   void beep() const;
-  void clearScreen();
+  void clearScreen() { back->clear(); }
   bool construct();
   void draw();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
@@ -121,6 +121,7 @@ public:
   int textHeight(void);
   int textWidth(const char *s, int len=-1);
   void print(const char *str);
+  void reset();
   void resize(int width, int height);
   void setColor(long color);
   void setPixel(int x, int y, int c);

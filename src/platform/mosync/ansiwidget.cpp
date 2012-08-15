@@ -624,12 +624,6 @@ void AnsiWidget::beep() const {
   // http://www.mosync.com/documentation/manualpages/using-audio-api
 }
 
-// clear the offscreen buffer
-void AnsiWidget::clearScreen() {
-  back->clear();
-  flush(true);
-}
-
 // draws the given image onto the offscreen buffer
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
   back->drawInto();
@@ -767,6 +761,13 @@ void AnsiWidget::print(const char *str) {
     delete [] buffer;
     flush(false);
   }
+}
+
+// reinit for new program run
+void AnsiWidget::reset() {
+  back = front = screens[0];
+  back->reset();
+  back->clear();
 }
 
 // update the widget to new dimensions
