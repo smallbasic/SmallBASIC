@@ -26,9 +26,7 @@
 #define MENU_KEYPAD 2
 
 #define FILE_MGR_RES "filemgr.bas"
-#define ERROR_BAS "? \"Failed to open program file\""
-#define PRINT_LOG "\033[ S3\034"
-#define PRINT_SOURCE "\033[ S2\034\014"
+#define ERROR_BAS "print \"Failed to open program file\""
 
 Controller::Controller() :
   Environment(),
@@ -212,13 +210,10 @@ MAEvent Controller::processEvents(int ms, int untilType) {
         systemMenu = false;
         switch (event.optionsBoxButtonIndex) {
         case MENU_SOURCE:
-          if (programSrc != NULL) {
-            showSystemScreen(false);
-            output->print(programSrc);
-          }
+          showSystemScreen(true);
           break;
         case MENU_LOG:
-          showSystemScreen(true);
+          showSystemScreen(false);
           break;
         case MENU_KEYPAD:
           maShowVirtualKeyboard();
@@ -369,7 +364,7 @@ void Controller::setRunning(bool running) {
 void Controller::showError() {
   runMode = init_state;
   loadPath.clear();
-  showSystemScreen(true);
+  showSystemScreen(false);
 }
 
 void Controller::showCompletion(bool success) {
@@ -395,9 +390,9 @@ void Controller::logPrint(const char *format, ...) {
   if (systemScreen) {
     output->print(buf);
   } else {
-    output->print("\033[ P; W3\034");
+    output->print("\033[ SW3\034");
     output->print(buf);
-    output->print("\033[ w\034");
+    output->print("\033[ Sw\034");
   }
 }
 
@@ -479,7 +474,7 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     if (systemScreen) {
       // restore the runtime screen
-      output->print("\033[ p\034");
+      output->print("\033[ Sp\034");
       systemScreen = false;
     } else {
       setExit(true);
@@ -622,11 +617,24 @@ char *Controller::readConnection(const char *url) {
   return result;
 }
 
-void Controller::showSystemScreen(bool logScreen) {
+void Controller::showSystemScreen(bool showSrc) {
   if (!systemScreen) {
     // remember the current user screen
-    output->print("\033[ P\034");
+    output->print("\033[ SP\034");
   }
-  output->print(logScreen ? PRINT_LOG : PRINT_SOURCE);
+
   systemScreen = true;
+
+  if (showSrc) {
+    // screen command write screen 2 (\014=CLS)
+    output->print("\033[ SW2\034\014");
+    if (programSrc) {
+      output->print(programSrc);
+    }
+    // screen command display write screen
+    output->print("\033[ Sd\034");
+  } else {
+    // screen command display screen 3
+    output->print("\033[ SD3\034");
+  }
 }

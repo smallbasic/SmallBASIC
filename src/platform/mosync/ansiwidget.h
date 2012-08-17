@@ -147,7 +147,8 @@ private:
   bool doEscape(char *&p, int textHeight);
   Vector<String *> *getItems(char *&p);
   void removeScreen(char *&p);
-  bool selectScreen(char *&p);
+  void screenCommand(char *&p);
+  Screen *selectScreen(char *&p);
   void showAlert(char *&p);
   void swapScreens();
 

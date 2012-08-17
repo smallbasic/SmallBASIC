@@ -59,7 +59,7 @@ private:
   void fireEvent(MAEvent &event);
   void handleKey(int key);
   char *readConnection(const char *url);
-  void showSystemScreen(bool logScreen);
+  void showSystemScreen(bool showSrc);
 
   enum ExecState {
     init_state,

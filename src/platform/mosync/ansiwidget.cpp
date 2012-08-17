@@ -279,7 +279,9 @@ void Screen::draw(bool vscroll) {
 void Screen::drawInto(bool background) {
   maSetDrawTarget(image);
   maSetColor(background ? bg : fg);
-  dirty = maGetMilliSecondCount();
+  if (!dirty) {
+    dirty = maGetMilliSecondCount();
+  }
 }
 
 void Screen::drawText(const char *text, int len, int x, int lineHeight) {
@@ -308,7 +310,6 @@ void Screen::newLine(int lineHeight) {
         // extend the base image by another page size
         MAHandle newImage = maCreatePlaceholder();
         int newHeight = imageHeight + height;
-        trace("allocate %d bytes", imageWidth * newHeight);
         if (maCreateDrawableImage(newImage, imageWidth, newHeight) != RES_OK) {
           // failed to create image
           clear();
@@ -659,11 +660,11 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
 // display and pending images changed
 void AnsiWidget::flush(bool force, bool vscroll) {
   bool update = false;
-  if (front == back) {
+  if (front != NULL) {
     if (force) {
-      update = back->dirty;
-    } else if (back->dirty) {
-      update = (maGetMilliSecondCount() - back->dirty >= MAX_PENDING);
+      update = front->dirty;
+    } else if (front->dirty) {
+      update = (maGetMilliSecondCount() - front->dirty >= MAX_PENDING);
     }
     if (update) {
       front->draw(vscroll);
@@ -925,7 +926,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
             vscroll = maxScroll;
           }
           if (vscroll != back->scrollY) {
-            back->dirty = true;
+            back->dirty = true; // forced
             back->scrollY = vscroll;
             flush(true, true);
           } else {
@@ -1050,39 +1051,8 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
     case 'O':
       createOptionsBox(p);
       break;
-    case 'X': // double buffering - transpose write and display screens
-      swapScreens();
-      break;
-    case 'R': // remove a screen
-      removeScreen(p);
-      break;
-    case 'S': // select new write and display screens
-      if (selectScreen(p)) {
-        front = back;
-        flush(true);
-      }
-      break;
-    case 'P': // remember the current screen
-      p++;
-      pushed = back;
-      break;
-    case 'p': // restore the saved write and display screens
-      if (pushed) {
-        back = front = pushed;
-        back->drawInto();
-        flush(true);
-        pushed = NULL;
-      }
-      break;
-    case 'W': // select write screen only
-      selectScreen(p);
-      break;
-    case 'w': // restore write screen
-      if (pushed) {
-        back = pushed;
-        back->drawInto();
-        pushed = NULL;
-      }
+    case 'S':
+      screenCommand(p);
       break;
     }
   } else if (back->setGraphicsRendition(*p, escValue, textHeight)) {
@@ -1145,8 +1115,62 @@ void AnsiWidget::removeScreen(char *&p) {
   deleteItems(items);
 }
 
+// screen escape commands
+void AnsiWidget::screenCommand(char *&p) {
+  Screen *selected;
+  p++;
+
+  switch (*p) {
+  case 'X': // double buffering - transpose write and display screens
+    swapScreens();
+    break;
+  case 'R': // remove a screen
+    removeScreen(p);
+    break;
+  case 'P': // remember the current screen
+    pushed = back;
+    p++;
+    break;
+  case 'p': // restore the saved write and display screens
+    if (pushed) {
+      back = front = pushed;
+      back->drawInto();
+      flush(true);
+      pushed = NULL;
+    }
+    break;
+  case 'W': // select write/back screen
+    selected = selectScreen(p);
+    if (selected) {
+      back = selected;
+    }
+    break;
+  case 'w': // revert write/back to front screen
+    back = front;
+    p++;
+    break;
+  case 'D': // select display/front screen
+    selected = selectScreen(p);
+    if (selected) {
+      front = selected;
+      front->dirty = true;
+      flush(true);
+    }
+    break;
+  case 'd': // revert display/front to back screen
+    front = back;
+    front->dirty = true;
+    flush(true);
+    p++;
+    break;
+  default:
+    print("ERR unknown screen command");
+    break;
+  }    
+}
+
 // select the specified screen - returns whether the screen was changed
-bool AnsiWidget::selectScreen(char *&p) {
+Screen *AnsiWidget::selectScreen(char *&p) {
   Vector<String *> *items = getItems(p);
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
@@ -1154,29 +1178,22 @@ bool AnsiWidget::selectScreen(char *&p) {
   int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : width;
   int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : height;
 
-  bool result = true;
+  Screen *result = NULL;
   flush(true);
 
   if (n < 0 || n >= MAX_SCREENS) {
-    print("ERR screen#");
-    result = false;
+    print("ERR invalid screen number");
   } else if (screens[n] != NULL) {
     // specified screen already exists
-    if (back == screens[n]) {
-      result = false;
-    } else {
-      back = screens[n];
-      back->drawInto();
-    }
+    result = screens[n];
   } else {
-    back = new Screen(x, y, w, h);
-    if (back && back->construct()) {
-      screens[n] = back;
-      back->drawInto();
-      back->clear();
+    result = new Screen(x, y, w, h);
+    if (result && result->construct()) {
+      screens[n] = result;
+      result->drawInto();
+      result->clear();
     } else {
       trace("Failed to create screen %d", n);
-      result = false;
     }
   }
   deleteItems(items);
