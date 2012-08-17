@@ -829,14 +829,14 @@ void AnsiWidget::setMouseMode(bool flag) {
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   if (!OUTSIDE_RECT(event.point.x, event.point.y,
-                    back->x, back->y,
-                    back->width, back->height)) {
+                    front->x, front->y,
+                    front->width, front->height)) {
     touchX = event.point.x;
     touchY = event.point.y;
 
-    Vector_each(Button*, it, back->buttons) {
-      if ((*it)->overlaps(event.point, 0, back->scrollY)) {
-        back->drawInto();
+    Vector_each(Button*, it, front->buttons) {
+      if ((*it)->overlaps(event.point, 0, front->scrollY)) {
+        front->drawInto();
         activeLink = (*it);
         activeLink->pressed = true;
         activeLink->draw();
@@ -850,9 +850,9 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
 // handler for pointer move events
 void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   if (activeLink != NULL) {
-    bool pressed = activeLink->overlaps(event.point, 0, back->scrollY);
+    bool pressed = activeLink->overlaps(event.point, 0, front->scrollY);
     if (pressed != activeLink->pressed) {
-      back->drawInto();
+      front->drawInto();
       activeLink->pressed = pressed;
       activeLink->draw();
       flush(true);
@@ -860,20 +860,20 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   } else {
     // scroll up/down
     if (!OUTSIDE_RECT(event.point.x, event.point.y,
-                      back->x, back->y,
-                      back->width, back->height)) {
-      int vscroll = back->scrollY + (touchY - event.point.y);
-      int maxScroll = back->curY - (back->height - SCROLL_OFFS);
+                      front->x, front->y,
+                      front->width, front->height)) {
+      int vscroll = front->scrollY + (touchY - event.point.y);
+      int maxScroll = front->curY - (front->height - SCROLL_OFFS);
       if (vscroll < 0) {
         vscroll = 0;
       } else if (vscroll > maxScroll) {
         vscroll = maxScroll;
       }
-      if (vscroll != back->scrollY && maxScroll > 0) {
+      if (vscroll != front->scrollY && maxScroll > 0) {
         moveTime = maGetMilliSecondCount();
-        moveDown = (back->scrollY < vscroll);
-        back->drawInto();
-        back->scrollY = vscroll;
+        moveDown = (front->scrollY < vscroll);
+        front->drawInto();
+        front->scrollY = vscroll;
         touchX = event.point.x;
         touchY = event.point.y;
         flush(true, true);
@@ -885,7 +885,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
 // handler for pointer release events
 void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   if (activeLink != NULL && activeLink->pressed) {
-    back->drawInto();
+    front->drawInto();
     activeLink->pressed = false;
     activeLink->draw();
     flush(true);
@@ -893,15 +893,15 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
       buttonListener->buttonClicked(activeLink->action.c_str());
     }
   } else {
-    int maxScroll = back->curY - (back->height + 100);// SCROLL_OFFS);
+    int maxScroll = front->curY - (front->height - SCROLL_OFFS);
     if (touchY != -1 && maxScroll > 0) {
-      back->drawInto();
+      front->drawInto();
       int start = maGetMilliSecondCount();
       if (start - moveTime < SWIPE_TRIGGER_SLOW) {
         // swiped
         MAEvent event;
         int elapsed = 0;
-        int vscroll = back->scrollY;
+        int vscroll = front->scrollY;
         int scrollSize = (start - moveTime < SWIPE_TRIGGER_FAST) ? 
                          SWIPE_SCROLL_FAST : SWIPE_SCROLL_SLOW;
         int swipeStep = SWIPE_DELAY_STEP;
@@ -925,9 +925,9 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
           } else if (vscroll > maxScroll) {
             vscroll = maxScroll;
           }
-          if (vscroll != back->scrollY) {
-            back->dirty = true; // forced
-            back->scrollY = vscroll;
+          if (vscroll != front->scrollY) {
+            front->dirty = true; // forced
+            front->scrollY = vscroll;
             flush(true, true);
           } else {
             break;
@@ -1101,7 +1101,7 @@ void AnsiWidget::removeScreen(char *&p) {
   Vector<String *> *items = getItems(p);
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   if (n < 1 || n >= MAX_SCREENS) {
-    print("ERR screen#");
+    print("ERR invalid screen number");
   } else if (screens[n] != NULL) {
     if (back = screens[n]) {
       back = screens[0];
