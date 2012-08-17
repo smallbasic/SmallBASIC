@@ -119,6 +119,10 @@ void dev_ffill(word x0, word y0, long fill_color, long border_color) {
    * main loop 
    */
   for (;;) {
+    if (dev_events(0) < 0) {
+      break;
+    }
+
     /*
      * if the queue is empty, switch queues 
      */
@@ -152,8 +156,7 @@ void dev_ffill(word x0, word y0, long fill_color, long border_color) {
     /*
      * remove previously-filled runs from the current queue 
      */
-    if (Q->d == UP
-      )
+    if (Q->d == UP)
       while ((Q->h > qp) && (Q->run[Q->h].y < (y - 1)))
         Q->h--;
     else
