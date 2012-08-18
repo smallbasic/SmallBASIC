@@ -129,13 +129,9 @@ public:
   void setXY(int x, int y) { back->curX=x; back->curY=y; }
   void setScrollSize(int scrollSize);
 
-  // mouse support
-  int getTouchX() { return touchX; }
-  int getTouchY() { return touchY; }
-  bool getTouchMode() { return touchMode; }
   bool hasUI();
-  void resetMouse();
-  void setMouseMode(bool mode);
+  //void resetMouse();
+  //void setMouseMode(bool mode);
   void pointerTouchEvent(MAEvent &event);
   void pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);
@@ -162,7 +158,7 @@ private:
   int touchY;     // active touch y value
   int moveTime;   // last move time
   bool moveDown;  // last move direction was down
-  bool touchMode; // PEN ON/OFF
+  bool swipeExit; // last touch-down was swipe exit
   ButtonListener *buttonListener;
   Button *activeLink;
 };

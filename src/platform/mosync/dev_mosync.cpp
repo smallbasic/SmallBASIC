@@ -90,7 +90,7 @@ void osd_setcolor(long color) {
 }
 
 void osd_setpenmode(int enable) {
-  controller->setPenMode(enable);
+  // touch mode is always active
 }
 
 void osd_setpixel(int x, int y) {

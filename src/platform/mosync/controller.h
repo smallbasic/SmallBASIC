@@ -24,8 +24,6 @@ using namespace MAUtil;
 #define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
 #define EVT_PAUSE_TIME 5
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
-#define PEN_OFF   0             // pen mode disabled
-#define PEN_ON    2             // pen mode active
 
 struct Controller : public Environment, ButtonListener {
   Controller();
@@ -45,7 +43,6 @@ struct Controller : public Environment, ButtonListener {
   bool isModal() { return runMode == modal_state; }
   bool isBreak() { return runMode == exit_state || runMode == back_state; }
   bool isRunning() { return runMode == run_state || runMode == modal_state; }
-  void setPenMode(int b) { penMode = (b ? PEN_ON : PEN_OFF); }
   void setExit(bool back);
   void setRunning(bool running = true);
   void showError();
@@ -75,9 +72,10 @@ private:
   ExecState runMode;
   int lastEventTime;
   int eventsPerTick;
-  int penMode;
   int penDownX;
   int penDownY;
+  int penDownCurX;
+  int penDownCurY;
   int penDownTime;
   bool systemMenu;
   bool systemScreen;

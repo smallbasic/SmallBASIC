@@ -593,7 +593,7 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   touchY(-1),
   moveTime(0),
   moveDown(false),
-  touchMode(false),
+  swipeExit(false),
   buttonListener(listener),
   activeLink(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
@@ -816,15 +816,15 @@ bool AnsiWidget::hasUI() {
 }
 
 // resets mouse mode to false
-void AnsiWidget::resetMouse() {
-  touchX = touchY = -1;
-  touchMode = false;
-}
+//void AnsiWidget::resetMouse() {
+//  touchX = touchY = -1;
+//  touchMode = false;
+//}
 
 // sets mouse mode on or off
-void AnsiWidget::setMouseMode(bool flag) {
-  touchMode = flag;
-}
+//void AnsiWidget::setMouseMode(bool flag) {
+//  touchMode = flag;
+//}
 
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
@@ -857,7 +857,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
       activeLink->draw();
       flush(true);
     }
-  } else {
+  } else if (!swipeExit) {
     // scroll up/down
     if (!OUTSIDE_RECT(event.point.x, event.point.y,
                       front->x, front->y,
@@ -892,6 +892,8 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     if (buttonListener) {
       buttonListener->buttonClicked(activeLink->action.c_str());
     }
+  } else if (swipeExit) {
+    swipeExit = false;
   } else {
     int maxScroll = front->curY - (front->height - SCROLL_OFFS);
     if (touchY != -1 && maxScroll > 0) {
@@ -908,7 +910,9 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
 
         while (elapsed < SWIPE_MAX_TIMER) {
           if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
-            scrollSize = 1;
+            // ignore the next move and release events
+            swipeExit = true;
+            break;
           }
           elapsed += (maGetMilliSecondCount() - start);
           if (elapsed > swipeStep && scrollSize > 1) {
@@ -933,7 +937,11 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
             break;
           }
         }
+        // pause before removing the scrollbar
+        maWait(500);
       }
+      // ensure the scrollbar is removed
+      front->dirty = true;
       flush(true);
       moveTime = 0;
     }

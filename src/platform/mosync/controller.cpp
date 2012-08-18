@@ -34,9 +34,10 @@ Controller::Controller() :
   runMode(init_state),
   lastEventTime(0),
   eventsPerTick(0),
-  penMode(PEN_OFF),
   penDownX(-1),
   penDownY(-1),
+  penDownCurX(-1),
+  penDownCurY(-1),
   penDownTime(0),
   systemMenu(false),
   systemScreen(false),
@@ -76,40 +77,36 @@ const char *Controller::getLoadPath() {
 int Controller::getPen(int code) {
   int result = 0;
   if (!isExit()) {
-    if (penMode == PEN_OFF) {
-      processEvents(0, -1);
-    }
-
     switch (code) {
     case 0:
-      // UNTIL PEN(0) - wait until move click or move
-      processEvents(1, -1);    // fallthru to re-test
+      // UNTIL PEN(0) - wait until click or move
+      processEvents(-1, EVENT_TYPE_POINTER_PRESSED);
+      // fallthru
 
-    case 3:                    // returns true if the pen is down (and save curpos)
-      processEvents(0, -1);
+    case 3:   // returns true if the pen is down (and save curpos)
       if (penDownX != -1 && penDownY != -1) {
         result = 1;
+      } else {
+        processEvents(0, -1);
       }
       break;
 
-    case 1:                      // last pen-down x
+    case 1:   // last pen-down x
       result = penDownX;
       break;
 
-    case 2:                      // last pen-down y
+    case 2:   // last pen-down y
       result = penDownY;
       break;
 
-    case 4:                      // cur pen-down x
+    case 4:   // cur pen-down x
     case 10:
-      processEvents(0, -1);
-      result = penDownX;
+      result = penDownCurX;
       break;
 
-    case 5:                      // cur pen-down y
+    case 5:   // cur pen-down y
     case 11:
-      processEvents(0, -1);
-      result = penDownY;
+      result = penDownCurY;
       break;
     }
   }
@@ -198,6 +195,13 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
   }
 
+  if (isRunning() && ms < 0 && untilType != -1) {
+    // flush the display before pausing for target event
+    output->flush(true);
+    maWait(ms);
+    ms = 0;
+  }
+
   while (!isBreak() && maGetEvent(&event)) {
     if (isModal()) {
       // process events for any active GUI
@@ -235,17 +239,19 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       break;
     case EVENT_TYPE_POINTER_PRESSED:
       penDownTime = maGetMilliSecondCount();
-      penDownX = event.point.x;
-      penDownY = event.point.y;
+      penDownX = penDownCurX = event.point.x;
+      penDownY = penDownCurY = event.point.y;
       handleKey(SB_KEY_MK_PUSH);
       output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
+      penDownCurX = event.point.x;
+      penDownCurY = event.point.y;
       output->pointerMoveEvent(event);
       break;
     case EVENT_TYPE_POINTER_RELEASED:
       penDownTime = 0;
-      penDownX = penDownY = -1;
+      penDownX = penDownY = penDownCurX = penDownCurY = -1;
       handleKey(SB_KEY_MK_RELEASE);
       output->pointerReleaseEvent(event);
       break;
@@ -256,18 +262,19 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       handleKey(event.key);
       break;
     }
+
     if ((untilType != -1 && untilType == event.type) || 
         (loadPathSize != loadPath.size())) {
-      // found target event or loadPath changed
+      // skip next maWait() - found target event or loadPath changed
+      ms = 0;
       break;
     }
   }
-
-  if (isRunning() || (loadPathSize == loadPath.size())) {
+  
+  if (isRunning()) {
     // pump messages into the engine
     runIdleListeners();
 
-    // avoid pausing when loadPath has changed
     if (ms != 0) {
       maWait(ms);
     }
