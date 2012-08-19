@@ -32,6 +32,7 @@ Controller::Controller() :
   Environment(),
   output(0),
   runMode(init_state),
+  formWidget(NULL),
   lastEventTime(0),
   eventsPerTick(0),
   penDownX(-1),
@@ -113,6 +114,32 @@ int Controller::getPen(int code) {
   return result;
 }
 
+char *Controller::getText(char *dest, int maxSize) {
+  int x = output->getX();
+  int y = output->getY();
+  int w = output->textWidth("sample text");
+  int h = output->textHeight();
+
+  dest[0] = '\0';
+  runMode = modal_state;
+  formWidget = output->createLineInput(dest, maxSize, x, y, w, h);
+  output->flush(true);
+  maShowVirtualKeyboard();
+
+  while (runMode == modal_state) {
+    processEvents(-1, EVENT_TYPE_KEY_PRESSED);
+  }
+
+  if (isRunning()) {
+    formWidget->close();
+  }
+
+  delete formWidget;
+  formWidget = NULL;
+
+  return dest;
+}
+
 // runtime system event processor
 int Controller::handleEvents(int waitFlag) {
   if (!waitFlag) {
@@ -145,14 +172,6 @@ int Controller::handleEvents(int waitFlag) {
 
   output->flush(false);
   return isBreak() ? -2 : 0;
-}
-
-// process events while in modal state
-void Controller::modalLoop() {
-  runMode = modal_state;
-  while (runMode == modal_state) {
-    processEvents(-1, -1);
-  }
 }
 
 // pause for the given number of milliseconds
@@ -203,11 +222,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   }
 
   while (!isBreak() && maGetEvent(&event)) {
-    if (isModal()) {
-      // process events for any active GUI
-      fireEvent(event);
-    }
-
     switch (event.type) {
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
       if (systemMenu) {
@@ -414,63 +428,6 @@ void Controller::buttonClicked(const char *url) {
   }
 }
 
-// pass the event into the mosync framework
-void Controller::fireEvent(MAEvent &event) {
-  switch (event.type) {
-  case EVENT_TYPE_CLOSE:
-    fireCloseEvent();
-    break;
-  case EVENT_TYPE_FOCUS_GAINED:
-    fireFocusGainedEvent();
-    break;
-  case EVENT_TYPE_FOCUS_LOST:
-    fireFocusLostEvent();
-    break;
-  case EVENT_TYPE_KEY_PRESSED:
-    fireKeyPressEvent(event.key, event.nativeKey);
-    break;
-  case EVENT_TYPE_KEY_RELEASED:
-    fireKeyReleaseEvent(event.key, event.nativeKey);
-    break;
-  case EVENT_TYPE_CHAR:
-    fireCharEvent(event.character);
-    break;
-  case EVENT_TYPE_POINTER_PRESSED:
-    if (event.touchId == 0) {
-      firePointerPressEvent(event.point);
-    }
-    fireMultitouchPressEvent(event.point, event.touchId);
-    break;
-  case EVENT_TYPE_POINTER_DRAGGED:
-    if (event.touchId == 0) {
-      firePointerMoveEvent(event.point);
-    }
-    fireMultitouchMoveEvent(event.point, event.touchId);
-    break;
-  case EVENT_TYPE_POINTER_RELEASED:
-    if (event.touchId == 0) {
-      firePointerReleaseEvent(event.point);
-    }
-    fireMultitouchReleaseEvent(event.point, event.touchId);
-    break;
-  case EVENT_TYPE_CONN:
-    fireConnEvent(event.conn);
-    break;
-  case EVENT_TYPE_BT:
-    fireBluetoothEvent(event.state);
-    break;
-  case EVENT_TYPE_TEXTBOX:
-    fireTextBoxListeners(event.textboxResult, event.textboxLength);
-    break;
-  case EVENT_TYPE_SENSOR:
-    fireSensorListeners(event.sensor);
-    break;
-  default:
-    fireCustomEventListeners(event);
-    break;
-  }
-}
-
 // pass the key into the smallbasic keyboard handler
 void Controller::handleKey(int key) {
   switch (key) {
@@ -494,56 +451,64 @@ void Controller::handleKey(int key) {
   }
 
   if (isRunning()) {
-    switch (key) {
-    case MAK_TAB:
-      dev_pushkey(SB_KEY_TAB);
-      break;
-    case MAK_HOME:
-      dev_pushkey(SB_KEY_KP_HOME);
-      break;
-    case MAK_END:
-      dev_pushkey(SB_KEY_END);
-      break;
-    case MAK_INSERT:
-      dev_pushkey(SB_KEY_INSERT);
-      break;
-    case MAK_KP_MULTIPLY:
-      dev_pushkey(SB_KEY_KP_MUL);
-      break;
-    case MAK_KP_PLUS:
-      dev_pushkey(SB_KEY_KP_PLUS);
-      break;
-    case MAK_KP_MINUS:
-      dev_pushkey(SB_KEY_KP_MINUS);
-      break;
-    case MAK_SLASH:
-      dev_pushkey(SB_KEY_KP_DIV);
-      break;
-    case MAK_PAGEUP:
-      dev_pushkey(SB_KEY_PGUP);
-      break;
-    case MAK_PAGEDOWN:
-      dev_pushkey(SB_KEY_PGDN);
-      break;
-    case MAK_UP:
-      dev_pushkey(SB_KEY_UP);
-      break;
-    case MAK_DOWN:
-      dev_pushkey(SB_KEY_DN);
-      break;
-    case MAK_LEFT:
-      dev_pushkey(SB_KEY_LEFT);
-      break;
-    case MAK_RIGHT:
-      dev_pushkey(SB_KEY_RIGHT);
-      break;
-    case MAK_BACKSPACE:
-    case MAK_DELETE:
-      dev_pushkey(SB_KEY_BACKSPACE);
-      break;
-    default:
-      dev_pushkey(key);
-      break;
+    if (runMode == modal_state && formWidget != NULL) {
+      if (key == 10) {
+        runMode = run_state;
+      } else {
+        formWidget->edit(key);
+      }
+    } else {
+      switch (key) {
+      case MAK_TAB:
+        dev_pushkey(SB_KEY_TAB);
+        break;
+      case MAK_HOME:
+        dev_pushkey(SB_KEY_KP_HOME);
+        break;
+      case MAK_END:
+        dev_pushkey(SB_KEY_END);
+        break;
+      case MAK_INSERT:
+        dev_pushkey(SB_KEY_INSERT);
+        break;
+      case MAK_KP_MULTIPLY:
+        dev_pushkey(SB_KEY_KP_MUL);
+        break;
+      case MAK_KP_PLUS:
+        dev_pushkey(SB_KEY_KP_PLUS);
+        break;
+      case MAK_KP_MINUS:
+        dev_pushkey(SB_KEY_KP_MINUS);
+        break;
+      case MAK_SLASH:
+        dev_pushkey(SB_KEY_KP_DIV);
+        break;
+      case MAK_PAGEUP:
+        dev_pushkey(SB_KEY_PGUP);
+        break;
+      case MAK_PAGEDOWN:
+        dev_pushkey(SB_KEY_PGDN);
+        break;
+      case MAK_UP:
+        dev_pushkey(SB_KEY_UP);
+        break;
+      case MAK_DOWN:
+        dev_pushkey(SB_KEY_DN);
+        break;
+      case MAK_LEFT:
+        dev_pushkey(SB_KEY_LEFT);
+        break;
+      case MAK_RIGHT:
+        dev_pushkey(SB_KEY_RIGHT);
+        break;
+      case MAK_BACKSPACE:
+      case MAK_DELETE:
+        dev_pushkey(SB_KEY_BACKSPACE);
+        break;
+      default:
+        dev_pushkey(key);
+        break;
+      }
     }
   }
 }
@@ -629,19 +594,17 @@ void Controller::showSystemScreen(bool showSrc) {
     // remember the current user screen
     output->print("\033[ SP\034");
   }
-
-  systemScreen = true;
-
   if (showSrc) {
     // screen command write screen 2 (\014=CLS)
     output->print("\033[ SW2\034\014");
     if (programSrc) {
       output->print(programSrc);
     }
-    // screen command display write screen
-    output->print("\033[ Sd\034");
+    // restore write screen, display screen 2
+    output->print("\033[ Sw; SD2\034");
   } else {
     // screen command display screen 3
     output->print("\033[ SD3\034");
   }
+  systemScreen = true;
 }

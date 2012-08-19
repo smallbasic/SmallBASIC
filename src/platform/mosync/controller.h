@@ -32,8 +32,8 @@ struct Controller : public Environment, ButtonListener {
   bool construct();
   const char *getLoadPath();
   int getPen(int code);
+  char *getText(char *dest, int maxSize);
   int handleEvents(int waitFlag);
-  void modalLoop();
   void pause(int ms);
   MAEvent processEvents(int ms, int untilType);
   char *readSource(const char *fileName);
@@ -53,7 +53,6 @@ struct Controller : public Environment, ButtonListener {
 
 private:
   void buttonClicked(const char *url);
-  void fireEvent(MAEvent &event);
   void handleKey(int key);
   char *readConnection(const char *url);
   void showSystemScreen(bool showSrc);
@@ -70,6 +69,7 @@ private:
   };
 
   ExecState runMode;
+  FormWidget *formWidget;
   int lastEventTime;
   int eventsPerTick;
   int penDownX;

@@ -93,6 +93,27 @@ struct BlockButton : public Button {
   void draw();
 };
 
+struct FormWidget {
+  virtual void edit(int key) = 0;
+  virtual void close() = 0;
+};
+
+struct LineInput : public Button, FormWidget {
+  LineInput(Screen *screen, char *buffer, int maxSize, 
+            int x, int y, int w, int h);
+  ~LineInput() {}
+
+  void close();
+  void draw();
+  void edit(int key);
+
+private:
+  Screen *screen;
+  char *buffer;
+  int maxSize;
+  int scroll;
+};
+
 struct ButtonListener {
   virtual void buttonClicked(const char *url) = 0;
 };
@@ -105,6 +126,7 @@ public:
   void beep() const;
   void clearScreen() { back->clear(); }
   bool construct();
+  FormWidget *createLineInput(char *buffer, int maxSize, int x, int y, int w, int h);
   void draw();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);
@@ -130,8 +152,6 @@ public:
   void setScrollSize(int scrollSize);
 
   bool hasUI();
-  //void resetMouse();
-  //void setMouseMode(bool mode);
   void pointerTouchEvent(MAEvent &event);
   void pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);

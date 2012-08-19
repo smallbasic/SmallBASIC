@@ -142,20 +142,7 @@ void dev_delay(dword ms) {
 }
 
 char *dev_gets(char *dest, int maxSize) {
-  if (controller->isRunning()) {
-    wchar_t *buffer = new wchar_t[maxSize + 1];
-    if (maTextBox(L"INPUT:", L"", buffer, maxSize, 0) >=0) {
-      for (int i = 0; i < maxSize; i++) {
-        dest[i] = buffer[i];
-      }
-      dest[maxSize] = 0;
-      osd_write(dest);
-    } else {
-      dest[0] = 0;
-    }
-    delete [] buffer;
-  }
-  return dest;
+  return controller->getText(dest, maxSize);
 }
 
 extern "C" int access(const char *path, int amode) {

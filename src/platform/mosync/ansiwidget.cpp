@@ -54,6 +54,7 @@
 #define BLUE   1
 #define GREEN  2
 #define WHITE  15
+#define GRAY   0x505050
 #define BUTTON_PADDING 8
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
@@ -135,7 +136,7 @@ void BlockButton::draw() {
   int r = x+w;
   int b = y+h;
 
-  maSetColor(0x505050);
+  maSetColor(GRAY);
   maFillRect(x, y, w, h);
 
   maSetColor(pressed ? bg : fg);
@@ -159,6 +160,72 @@ void TextButton::draw() {
   maSetColor(pressed ? bg : fg);
   maDrawText(x, y, label.c_str());
   maLine(x, y + h + 1, x + w, y + h + 1);
+}
+
+LineInput::LineInput(Screen *screen, char *buffer, int maxSize, 
+                     int x, int y, int w, int h) :
+  Button(screen, "", "", x, y, w, h),
+  screen(screen),
+  buffer(buffer),
+  maxSize(maxSize),
+  scroll(0) {
+}
+
+void LineInput::close() {
+  // remove from screen buttons list
+  Vector_each(Button*, it, screen->buttons) {
+    Button *button = (Button*)(*it);
+    if (button == this) {
+      screen->buttons.remove(it);
+      break;
+    }
+  }
+}
+
+void LineInput::draw() {
+  maSetColor(GRAY);
+  maFillRect(x, y, w, h);
+  maSetColor(fg);
+  maDrawText(x, y, buffer + scroll);
+}
+
+void LineInput::edit(int key) {
+  bool changed = false;
+  int len = strlen(buffer);
+
+  if (key >= MAK_SPACE && key <= MAK_Z) {
+    // insert
+    if (len < maxSize - 1) {
+      buffer[len] = key;
+      buffer[++len] = '\0';
+      int textWidth = EXTENT_X(maGetTextSize(buffer));
+      if (textWidth > w) {
+        if (textWidth > screen->width) {
+          scroll++;
+        } else {
+          w += screen->charWidth;
+        }
+      }
+      changed = true;
+    }
+  } else if (key == MAK_CLEAR) {
+    // delete
+    if (len > 0) {
+      buffer[len - 1] = '\0';
+      if (scroll) {
+        scroll--;
+      }
+      changed = true;
+    }
+  } else {
+    trace("unused key = %d", key);
+  }
+
+  if (changed) {
+    screen->drawInto(true);
+    draw();
+    screen->draw(false);
+  }
 }
 
 Screen::Screen(int x, int y, int width, int height) :
@@ -625,6 +692,15 @@ void AnsiWidget::beep() const {
   // http://www.mosync.com/documentation/manualpages/using-audio-api
 }
 
+// creates a LineInput attached to the current back screen
+FormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
+                                        int x, int y, int w, int h) {
+  LineInput *lineInput = new LineInput(back, buffer, maxSize, x, y, w, h);
+  back->buttons.add(lineInput);
+  lineInput->draw();
+  return lineInput;
+}
+
 // draws the given image onto the offscreen buffer
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
   back->drawInto();
@@ -814,17 +890,6 @@ bool AnsiWidget::hasUI() {
   }
   return result;
 }
-
-// resets mouse mode to false
-//void AnsiWidget::resetMouse() {
-//  touchX = touchY = -1;
-//  touchMode = false;
-//}
-
-// sets mouse mode on or off
-//void AnsiWidget::setMouseMode(bool flag) {
-//  touchMode = flag;
-//}
 
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
@@ -1154,7 +1219,7 @@ void AnsiWidget::screenCommand(char *&p) {
     }
     break;
   case 'w': // revert write/back to front screen
-    back = front;
+    back = pushed != NULL ? pushed : front;
     p++;
     break;
   case 'D': // select display/front screen
