@@ -70,7 +70,7 @@ struct Screen {
 struct Button {
   Button(Screen *screen, const char *action, const char *label,
          int x, int y, int w, int h);
-  virtual ~Button() {};
+  virtual ~Button() {}
   virtual void draw() = 0;
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
 
@@ -94,8 +94,8 @@ struct BlockButton : public Button {
 };
 
 struct FormWidget {
+  virtual ~FormWidget() {}
   virtual void edit(int key) = 0;
-  virtual void close() = 0;
 };
 
 struct LineInput : public Button, FormWidget {
@@ -115,6 +115,7 @@ private:
 };
 
 struct ButtonListener {
+  virtual ~ButtonListener() {}
   virtual void buttonClicked(const char *url) = 0;
 };
 

@@ -127,16 +127,11 @@ char *Controller::getText(char *dest, int maxSize) {
   maShowVirtualKeyboard();
 
   while (runMode == modal_state) {
-    processEvents(-1, EVENT_TYPE_KEY_PRESSED);
-  }
-
-  if (isRunning()) {
-    formWidget->close();
+    processEvents(1000, EVENT_TYPE_KEY_PRESSED);
   }
 
   delete formWidget;
   formWidget = NULL;
-
   return dest;
 }
 
@@ -451,10 +446,10 @@ void Controller::handleKey(int key) {
   }
 
   if (isRunning()) {
-    if (runMode == modal_state && formWidget != NULL) {
+    if (runMode == modal_state) {
       if (key == 10) {
         runMode = run_state;
-      } else {
+      } else if (formWidget != NULL) {
         formWidget->edit(key);
       }
     } else {

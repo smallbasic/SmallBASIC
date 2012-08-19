@@ -171,19 +171,8 @@ LineInput::LineInput(Screen *screen, char *buffer, int maxSize,
   scroll(0) {
 }
 
-void LineInput::close() {
-  // remove from screen buttons list
-  Vector_each(Button*, it, screen->buttons) {
-    Button *button = (Button*)(*it);
-    if (button == this) {
-      screen->buttons.remove(it);
-      break;
-    }
-  }
-}
-
 void LineInput::draw() {
-  maSetColor(GRAY);
+  maSetColor(0x303030);
   maFillRect(x, y, w, h);
   maSetColor(fg);
   maDrawText(x, y, buffer + scroll);
@@ -218,7 +207,7 @@ void LineInput::edit(int key) {
       changed = true;
     }
   } else {
-    trace("unused key = %d", key);
+    maShowVirtualKeyboard();
   }
 
   if (changed) {
@@ -696,7 +685,6 @@ void AnsiWidget::beep() const {
 FormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
                                         int x, int y, int w, int h) {
   LineInput *lineInput = new LineInput(back, buffer, maxSize, x, y, w, h);
-  back->buttons.add(lineInput);
   lineInput->draw();
   return lineInput;
 }
