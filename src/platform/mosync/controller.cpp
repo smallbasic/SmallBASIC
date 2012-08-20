@@ -305,17 +305,11 @@ char *Controller::readSource(const char *fileName) {
   
   if (networkFile) {
     buffer = readConnection(fileName);
-  } else if (strncasecmp(MAIN_BAS_RES, fileName, endIndex) == 0) {
+  } else if (strncasecmp("main.bas", fileName, endIndex) == 0) {
     // load as resource
     int len = maGetDataSize(MAIN_BAS);
     buffer = (char *)tmp_alloc(len + 1);
     maReadData(MAIN_BAS, buffer, 0, len);
-    buffer[len] = '\0';
-  } else if (strncasecmp(FILE_MGR_RES, fileName, endIndex) == 0) {
-    // load as resource
-    int len = maGetDataSize(FILEMGR_BAS);
-    buffer = (char *)tmp_alloc(len + 1);
-    maReadData(FILEMGR_BAS, buffer, 0, len);
     buffer[len] = '\0';
   } else {
     // load from file system
@@ -446,10 +440,11 @@ void Controller::handleKey(int key) {
   }
 
   if (isRunning()) {
-    if (runMode == modal_state) {
+    if (runMode == modal_state && formWidget != NULL) {
+      // formWidget modal_state
       if (key == 10) {
         runMode = run_state;
-      } else if (formWidget != NULL) {
+      } else {
         formWidget->edit(key);
       }
     } else {

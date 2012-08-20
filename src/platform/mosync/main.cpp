@@ -20,19 +20,26 @@ extern "C" int MAMain() {
   controller = new Controller();
   controller->pause(500); // de-bounce screen events
   controller->construct();
+  
+  bool mainBas = true;
+  sbasic_main("main.bas?welcome");
 
-  bool execHome = true;
-  sbasic_main(MAIN_BAS_RES);
   while (!controller->isExit()) {
     if (controller->isBack()) {
-      if (execHome) {
-        controller->setExit(false);
-      } else {
-        execHome = true;
-        sbasic_main(MAIN_BAS_RES);
+      if (mainBas) {
+        if (!opt_command[0] || !opt_command[1] || 
+            !strcmp(opt_command, "welcome")) {
+          controller->setExit(false);
+        } else {
+          opt_command[0] = '\0';
+        }
+      }
+      if (!controller->isExit()) {
+        mainBas = true;
+        sbasic_main("main.bas");
       }
     } else if (controller->getLoadPath() != NULL) {
-      execHome = false;
+      mainBas = (strncmp(controller->getLoadPath(), "main.bas", 8) == 0);
       bool success = sbasic_main(controller->getLoadPath());
       if (!controller->isBack()) {
         if (!controller->output->hasUI()) {

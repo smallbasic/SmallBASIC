@@ -8,10 +8,6 @@
 
 #include <mavsprintf.h>
 
-// resource program names
-#define MAIN_BAS_RES "main.bas"
-#define FILE_MGR_RES "filemgr.bas"
-
 #ifndef max
 #define max(a,b) ((a<b) ? (b) : (a))
 #endif
