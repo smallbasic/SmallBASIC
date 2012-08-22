@@ -16,11 +16,11 @@ Controller *controller;
 extern "C" int MAMain() {
   maScreenSetOrientation(SCREEN_ORIENTATION_DYNAMIC);
   maScreenSetFullscreen(0);
-  
+
   controller = new Controller();
   controller->pause(500); // de-bounce screen events
   controller->construct();
-  
+ 
   bool mainBas = true;
   sbasic_main("main.bas?welcome");
 

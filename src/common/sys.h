@@ -81,6 +81,10 @@ typedef unsigned int addr_t;
 #include <assert.h>
 #include <stdlib.h>
 
+#if defined(NONSTANDARD_PORT)
+#  include <portdefs.h>
+#endif
+
 #if defined OS_PREC64
 typedef long double var_num_t;
 typedef long long int var_int_t;

@@ -160,3 +160,7 @@ extern "C" int access(const char *path, int amode) {
 extern "C" void chmod(const char *path, int mode) {
   trace("chmod() %s %d", path, mode);
 }
+
+extern "C" int dev_clock() {
+  return maGetMilliSecondCount();
+}

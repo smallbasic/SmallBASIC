@@ -73,6 +73,7 @@ struct Button {
   virtual ~Button() {}
   virtual void draw() = 0;
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
+  int getBackground(int buttonColor);
 
   String action;
   String label;

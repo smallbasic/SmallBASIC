@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project supports-build-configs="true" version="1.4">
+<build.cfg id="Debug" types="Debug"/>
+<build.cfg id="Release" types="Release"/>
+<criteria>
+<filter mgr="0" profiles="" require="0" type="com.mobilesorcery.mosync.filters.profile" vendors="Android"/>
+<filter type="com.mobilesorcery.sdk.capabilities.devices.elementfactory">
+<capabilities optional="" required="File\ Storage Internet\ Access"/>
+</filter>
+</criteria>
+<properties>
+<property key="android:package.name" value="net.sourceforge.smallbasic"/>
+<property key="build.prefs:additional.include.paths/Debug" value="%mosync-home%/include/newlib,%current-project%,%current-project%/src,%current-project%/src/platform/mosync,%current-project%/src/platform/mosync/common"/>
+<property key="build.prefs:additional.include.paths/Release" value="%mosync-home%/include/newlib,%current-project%,%current-project%/src,%current-project%/src/platform/mosync,%current-project%/src/platform/mosync/common"/>
+<property key="build.prefs:additional.libraries/Debug" value="newlib.lib,MAUtil.lib,libsb_common.a"/>
+<property key="build.prefs:additional.libraries/Release" value="newlib.lib,MAUtil.lib,maui.lib,libsb_common.a"/>
+<property key="build.prefs:additional.library.paths/Debug" value="%mosync-home%/lib/pipe,%mosync-home%/lib/newlib_release,%current-project%/src/platform/mosync/common"/>
+<property key="build.prefs:additional.library.paths/Release" value="%mosync-home%/lib/newlib_release,%current-project%/src/platform/mosync/common"/>
+<property key="build.prefs:app.permissions" value="File\ Storage Internet\ Access Orientation Vibration"/>
+<property key="build.prefs:app.vendor/Debug" value="Chris Warren-Smith"/>
+<property key="build.prefs:app.vendor/Release" value="Chris Warren-Smith"/>
+<property key="build.prefs:app.version/Debug" value="0.11.1"/>
+<property key="build.prefs:app.version/Release" value="0.11.01"/>
+<property key="build.prefs:dead.code.elim/Release" value="false"/>
+<property key="build.prefs:extra.link.sw/Debug" value=""/>
+<property key="build.prefs:extra.link.sw/Release" value=""/>
+<property key="build.prefs:extra.res.sw/Debug" value=""/>
+<property key="build.prefs:extra.res.sw/Release" value=""/>
+<property key="build.prefs:gcc.switches/Debug" value="-O0 -DPLATFORM_%platform-family% -DVARIANT_%platform-variant% -DHAVE_CONFIG_H -D_DEBUG"/>
+<property key="build.prefs:gcc.switches/Release" value="-O2 -DPLATFORM_%platform-family% -DVARIANT_%platform-variant% -DHAVE_CONFIG_H"/>
+<property key="build.prefs:gcc.warnings/Debug" value="0"/>
+<property key="build.prefs:gcc.warnings/Release" value="0"/>
+<property key="build.prefs:ignore.default.include.paths/Debug" value="true"/>
+<property key="build.prefs:ignore.default.include.paths/Release" value="true"/>
+<property key="build.prefs:ignore.default.libraries/Debug" value="true"/>
+<property key="build.prefs:ignore.default.libraries/Release" value="true"/>
+<property key="build.prefs:ignore.default.library.paths/Debug" value="true"/>
+<property key="build.prefs:ignore.default.library.paths/Release" value="true"/>
+<property key="build.prefs:memory.data/Debug" value="16384"/>
+<property key="build.prefs:memory.data/Release" value="4096"/>
+<property key="build.prefs:memory.heap/Debug" value="8192"/>
+<property key="build.prefs:memory.heap/Release" value="2048"/>
+<property key="build.prefs:memory.stack/Debug" value="7168"/>
+<property key="build.prefs:memory.stack/Release" value="1024"/>
+<property key="build.prefs:output.static.recompilation/Release" value="false"/>
+<property key="build.prefs:project.type" value=""/>
+<property key="dependency.strategy" value="0"/>
+<property key="excludes/Debug" value="debian documentation ide images plugins rpm samples translator web src/languages src/modules src/units src/platform/cygwin src/platform/fltk src/platform/gtk src/platform/mingw src/platform/qt src/platform/sdl src/platform/unix src/platform/mosync/main.c.old src/common"/>
+<property key="excludes/Release" value="debian documentation ide images plugins rpm samples translator web src/languages src/modules src/units src/platform/cygwin src/platform/fltk src/platform/gtk src/platform/mingw src/platform/qt src/platform/sdl src/platform/unix src/platform/mosync/main.c.old src/common"/>
+<property key="profile.mgr.type" value="0"/>
+<property key="symbian.uids:uid.s60v2uid" value="0x0506da72"/>
+<property key="symbian.uids:uid.s60v3uid" value="0xe2cd4f45"/>
+<property key="template.id" value="project.nativeui"/>
+<property key="winmobilecs:guid" value="a7d28a50-83cc-102f-80a2-9f712501dd2c"/>
+</properties>
+</project>

@@ -271,7 +271,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       handleKey(event.key);
       break;
     }
-
     if ((untilType != -1 && untilType == event.type) || 
         (loadPathSize != loadPath.size())) {
       // skip next maWait() - found target event or loadPath changed
@@ -280,13 +279,8 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
   }
   
-  if (isRunning()) {
-    // pump messages into the engine
-    runIdleListeners();
-
-    if (ms != 0) {
-      maWait(ms);
-    }
+  if (isRunning() && ms != 0) {
+    maWait(ms);
   }
   return event;
 }
@@ -396,7 +390,8 @@ void Controller::logPrint(const char *format, ...) {
   va_end(args);
   *p = '\0';
 
-  trace(buf);
+  lprintfln(buf);
+
   if (systemScreen) {
     output->print(buf);
   } else {

@@ -490,6 +490,7 @@ function buildMosync() {
    AC_DEFINE(CPU_BIGENDIAN, 1, [Mosync uses big-endian])
    AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(NONSTANDARD_PORT, 1, [sys.h should include portdefs.h])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])

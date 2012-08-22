@@ -54,7 +54,8 @@
 #define BLUE   1
 #define GREEN  2
 #define WHITE  15
-#define GRAY   0x505050
+#define BLOCK_BUTTON_COL 0x505050
+#define LINE_INPUT_COL   0x303030
 #define BUTTON_PADDING 8
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
@@ -127,6 +128,15 @@ bool Button::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
 }
 
+// returns setBG when the program colours are default
+int Button::getBackground(int buttonColor) {
+  int result = bg;
+  if (fg == DEFAULT_COLOR && bg == 0) {
+    result = buttonColor;
+  }
+  return result;
+}
+
 BlockButton::BlockButton(Screen *screen, const char *action, const char *label,
                          int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {
@@ -136,7 +146,7 @@ void BlockButton::draw() {
   int r = x+w;
   int b = y+h;
 
-  maSetColor(GRAY);
+  maSetColor(getBackground(BLOCK_BUTTON_COL));
   maFillRect(x, y, w, h);
 
   maSetColor(pressed ? bg : fg);
@@ -172,7 +182,7 @@ LineInput::LineInput(Screen *screen, char *buffer, int maxSize,
 }
 
 void LineInput::draw() {
-  maSetColor(0x303030);
+  maSetColor(getBackground(LINE_INPUT_COL));
   maFillRect(x, y, w, h);
   maSetColor(fg);
   maDrawText(x, y, buffer + scroll);
@@ -744,10 +754,13 @@ int AnsiWidget::getPixel(int x, int y) {
   rc.width = 1;
   rc.height = 1;
 
-  int result[1];
+  int data[1];
+  int result = 0;
 
-  maGetImageData(back->image, &result, &rc, 1);
-  return result[0];
+  int now = maGetMilliSecondCount();
+  maGetImageData(back->image, &data, &rc, 1);
+  result = -(data[0] & 0x00FFFFFF);
+  return result;
 }
 
 // Returns the height in pixels using the current font setting
