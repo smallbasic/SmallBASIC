@@ -56,6 +56,7 @@
 #define WHITE  15
 #define BLOCK_BUTTON_COL 0x505050
 #define LINE_INPUT_COL   0x303030
+#define FONT_SIZE 18
 #define BUTTON_PADDING 8
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
@@ -450,7 +451,7 @@ void Screen::reset() {
   italic = false;
   fg = DEFAULT_COLOR;
   bg = 0;
-  fontSize = EXTENT_Y(maGetScrSize()) / 40;
+  fontSize = FONT_SIZE;
   updateFont();
 }
 
@@ -483,8 +484,6 @@ void Screen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, in
     image = newImage;
     imageWidth = newImageWidth;
     imageHeight = newImageHeight;
-    width = newWidth;
-    height = newHeight;
 
     if (curY >= imageHeight) {
       curY = height - lineHeight;
@@ -494,6 +493,9 @@ void Screen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, in
       curX = 0;
     }
   }
+  scrollY = 0;
+  width = newWidth;
+  height = newHeight;
 }
 
 void Screen::setColor(long color) {
@@ -645,7 +647,7 @@ void Screen::updateFont() {
     MAExtent extent = maGetTextSize("W");
     charWidth = EXTENT_X(extent);
     charHeight = 4 + EXTENT_Y(extent);
-    trace("charWidth:%d charHeight:%d fontSize:%d %d", charWidth, charHeight, fontSize);
+    trace("charWidth:%d charHeight:%d fontSize:%d", charWidth, charHeight, fontSize);
   }
 }
 
@@ -854,9 +856,6 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     if (screens[i]) {
       screens[i]->resize(newWidth, newHeight, width, height, lineHeight);
-      if (screens[i] != back) {
-        screens[i]->draw(false);
-      }
     }
   }
   width = newWidth;

@@ -279,9 +279,9 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
   }
   
-  if (isRunning() && ms != 0) {
+  if (ms != 0) {
     maWait(ms);
-  }
+  } 
   return event;
 }
 
