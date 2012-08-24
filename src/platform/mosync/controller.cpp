@@ -372,12 +372,11 @@ void Controller::showError() {
 }
 
 void Controller::showCompletion(bool success) {
-  int w = output->getWidth() - 1;
-  int h = output->getHeight() - 1;
-  int c = output->getColor();
-  output->setColor(success ? 1 : 4);
-  output->drawRect(0, 0, w, h);
-  output->setColor(c);
+  if (success) {
+    output->print("\033[ LProgram completed - press [back]\034");
+  } else {
+    output->print("\033[ SProgram error (See console for details)\034");
+  }
   output->flush(true);
 }
 

@@ -65,6 +65,7 @@ struct Screen {
   int dirty;
   int linePadding;
   Vector <Button *>buttons;
+  String label;
 };
 
 struct Button {
@@ -159,6 +160,7 @@ public:
   void pointerReleaseEvent(MAEvent &event);
 
 private:
+  void createLabel(char *&p);
   void createLink(char *&p, bool execLink, bool button);
   void createOptionsBox(char *&p);
   void deleteItems(Vector<String *> *items);

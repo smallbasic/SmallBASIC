@@ -310,6 +310,7 @@ void Screen::clear() {
     delete (*it);
   }
   buttons.clear();
+  label.clear();
 }
 
 void Screen::draw(bool vscroll) {
@@ -335,6 +336,20 @@ void Screen::draw(bool vscroll) {
       maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
       maLine(x + width - 4, y + barTop, x + width - 4, y + barTop + barSize);
     }
+  }
+  
+  // display the label
+  if (label.length()) {
+    MAExtent extent = maGetTextSize(label.c_str());
+    int w = EXTENT_X(extent);
+    int h = EXTENT_Y(extent);
+    int top = height - h - 6;
+    int left = width - w - 12;
+
+    maSetColor(LINE_INPUT_COL);
+    maFillRect(left - 2, top, w + 8, h + 4);
+    maSetColor(0x808080);
+    maDrawText(left, top, label.c_str());
   }
 
   maUpdateScreen();
@@ -1015,6 +1030,14 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   activeLink = NULL;
 }
 
+// creates a status-bar label
+void AnsiWidget::createLabel(char *&p) {
+  Vector<String *> *items = getItems(p);
+  const char *label = items->size() > 0 ? (*items)[0]->c_str() : "";
+  back->label = label;
+  deleteItems(items);
+}
+
 // creates a hyperlink, eg // ^[ hwww.foo.com|title;More text
 void AnsiWidget::createLink(char *&p, bool execLink, bool button) {
   Vector<String *> *items = getItems(p);
@@ -1121,6 +1144,8 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
     case 'h':
       createLink(p, true, false);
       break;
+    case 'L':
+      createLabel(p);
     case 'O':
       createOptionsBox(p);
       break;
