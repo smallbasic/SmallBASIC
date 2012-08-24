@@ -343,13 +343,13 @@ void Screen::draw(bool vscroll) {
     MAExtent extent = maGetTextSize(label.c_str());
     int w = EXTENT_X(extent);
     int h = EXTENT_Y(extent);
-    int top = height - h - 6;
+    int top = height - h - 8;
     int left = width - w - 12;
 
     maSetColor(LINE_INPUT_COL);
-    maFillRect(left - 2, top, w + 8, h + 4);
-    maSetColor(0x808080);
-    maDrawText(left, top, label.c_str());
+    maFillRect(left - 2, top, w + 8, h + 8);
+    maSetColor(0x909090);
+    maDrawText(left, top + 2, label.c_str());
   }
 
   maUpdateScreen();
