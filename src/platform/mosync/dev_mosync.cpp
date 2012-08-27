@@ -106,11 +106,11 @@ void osd_setxy(int x, int y) {
 }
 
 int osd_textheight(const char *str) {
-  return EXTENT_Y(maGetTextSize(str));
+  return controller->output->textHeight();
 }
 
 int osd_textwidth(const char *str) {
-  return EXTENT_X(maGetTextSize(str));
+  return controller->output->textWidth(str);
 }
 
 void osd_write(const char *str) {

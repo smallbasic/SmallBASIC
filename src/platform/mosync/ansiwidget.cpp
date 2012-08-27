@@ -56,7 +56,6 @@
 #define WHITE  15
 #define BLOCK_BUTTON_COL 0x505050
 #define LINE_INPUT_COL   0x303030
-#define FONT_SIZE 18
 #define BUTTON_PADDING 8
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
@@ -228,7 +227,7 @@ void LineInput::edit(int key) {
   }
 }
 
-Screen::Screen(int x, int y, int width, int height) :
+Screen::Screen(int x, int y, int width, int height, int fontSize) :
   image(0),
   font(0),
   underline(0),
@@ -250,7 +249,7 @@ Screen::Screen(int x, int y, int width, int height) :
   curYSaved(0),
   curXSaved(0),
   tabSize(0),
-  fontSize(0),
+  fontSize(fontSize),
   charWidth(0),
   charHeight(0),
   dirty(0),
@@ -457,7 +456,7 @@ int Screen::print(const char *p, int lineHeight) {
 }
 
 // reset the current drawing variables
-void Screen::reset() {
+void Screen::reset(int argFontSize) {
   curXSaved = 0;
   curYSaved = 0;
   invert = false;
@@ -466,7 +465,9 @@ void Screen::reset() {
   italic = false;
   fg = DEFAULT_COLOR;
   bg = 0;
-  fontSize = FONT_SIZE;
+  if (argFontSize != -1) {
+    fontSize = argFontSize;
+  }
   updateFont();
 }
 
@@ -661,7 +662,7 @@ void Screen::updateFont() {
 
     MAExtent extent = maGetTextSize("W");
     charWidth = EXTENT_X(extent);
-    charHeight = 4 + EXTENT_Y(extent);
+    charHeight = EXTENT_Y(extent) + LINE_SPACING;
     trace("charWidth:%d charHeight:%d fontSize:%d", charWidth, charHeight, fontSize);
   }
 }
@@ -682,12 +683,13 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
-  trace("width: %d height: %d", width, height);
+  fontSize = min(width, height) / 44;
+  trace("width: %d height: %d fontSize:%d", width, height, fontSize);
 }
 
 bool AnsiWidget::construct() {
   bool result = false;
-  back = new Screen(0, 0, width, height);
+  back = new Screen(0, 0, width, height, fontSize);
   if (back && back->construct()) {
     screens[0] = front = back;
     clearScreen();
@@ -861,7 +863,7 @@ void AnsiWidget::print(const char *str) {
 // reinit for new program run
 void AnsiWidget::reset() {
   back = front = screens[0];
-  back->reset();
+  back->reset(fontSize);
   back->clear();
 }
 
@@ -1060,7 +1062,7 @@ void AnsiWidget::createLink(char *&p, bool execLink, bool button) {
     }
     if (back->curX + w >= width) {
       w = width - back->curX; // clipped
-      back->newLine(EXTENT_Y(textSize));
+      back->newLine(EXTENT_Y(textSize) + LINE_SPACING);
     } else {
       back->curX += w;
     }
@@ -1285,7 +1287,7 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     // specified screen already exists
     result = screens[n];
   } else {
-    result = new Screen(x, y, w, h);
+    result = new Screen(x, y, w, h, fontSize);
     if (result && result->construct()) {
       screens[n] = result;
       result->drawInto();
@@ -1318,7 +1320,7 @@ void AnsiWidget::swapScreens() {
     if (screens[1] != NULL) {
       front = screens[1];
     } else {
-      front = new Screen(0, 0, width, height);
+      front = new Screen(0, 0, width, height, fontSize);
       if (front && front->construct()) {
         screens[1] = front;
       } else {

@@ -14,14 +14,15 @@
 #include <MAUtil/Vector.h>
 
 #define DEFAULT_COLOR 0xa1a1a1
-#define MAX_SCREENS   4
+#define LINE_SPACING 4
+#define MAX_SCREENS  4
 
 using namespace MAUtil;
 
 struct Button;
 
 struct Screen {
-  Screen(int x, int y, int width, int height);
+  Screen(int x, int y, int width, int height, int fontSize);
   virtual ~Screen();
 
   void calcTab();
@@ -32,7 +33,7 @@ struct Screen {
   void drawText(const char *text, int len, int x, int lineHeight);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
-  void reset();
+  void reset(int fontSize = -1);
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void setColor(long color);
   void setTextColor(long fg, long bg);
@@ -178,6 +179,7 @@ private:
   Screen *pushed; // saved/previous screen
   int width;      // device screen width
   int height;     // device screen height
+  int fontSize;   // font height based on screen size
   int touchX;     // active touch x value
   int touchY;     // active touch y value
   int moveTime;   // last move time

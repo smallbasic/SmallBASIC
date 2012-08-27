@@ -373,7 +373,7 @@ void Controller::showError() {
 
 void Controller::showCompletion(bool success) {
   if (success) {
-    output->print("\033[ LProgram completed - press [back]\034");
+    output->print("\033[ LFinished - press [back]\034");
   } else {
     output->print("\033[ SProgram error (See console for details)\034");
   }
