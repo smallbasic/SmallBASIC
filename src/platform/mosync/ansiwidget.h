@@ -99,6 +99,7 @@ struct BlockButton : public Button {
 struct FormWidget {
   virtual ~FormWidget() {}
   virtual void edit(int key) = 0;
+  virtual Screen *getScreen() = 0;
 };
 
 struct LineInput : public Button, FormWidget {
@@ -109,6 +110,7 @@ struct LineInput : public Button, FormWidget {
   void close();
   void draw();
   void edit(int key);
+  Screen *getScreen() { return screen; }
 
 private:
   Screen *screen;
@@ -136,6 +138,7 @@ public:
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
+  void edit(FormWidget *formWidget, int c);
   void flush(bool force, bool vscroll=false);
   int getBackgroundColor() { return back->bg; }
   int getColor() { return back->fg; }
@@ -166,6 +169,7 @@ private:
   void createOptionsBox(char *&p);
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);
+  void doSwipe(int start, int maxScroll);
   Vector<String *> *getItems(char *&p);
   void removeScreen(char *&p);
   void screenCommand(char *&p);

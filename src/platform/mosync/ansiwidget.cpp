@@ -47,7 +47,6 @@
 
 #define MAX_PENDING 250
 #define MAX_HEIGHT  10000
-#define SCROLL_OFFS 10
 #define SCROLL_IND 4
 #define INITXY 2
 #define BLACK  0
@@ -59,9 +58,9 @@
 #define BUTTON_PADDING 8
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
-#define SWIPE_SCROLL_FAST 20
-#define SWIPE_SCROLL_SLOW 10
-#define SWIPE_TRIGGER_FAST 40
+#define SWIPE_SCROLL_FAST 30
+#define SWIPE_SCROLL_SLOW 20
+#define SWIPE_TRIGGER_FAST 55
 #define SWIPE_TRIGGER_SLOW 80
 
 static int colors[] = {
@@ -169,7 +168,7 @@ TextButton::TextButton(Screen *screen, const char *action, const char *label,
 void TextButton::draw() {
   maSetColor(pressed ? bg : fg);
   maDrawText(x, y, label.c_str());
-  maLine(x, y + h + 1, x + w, y + h + 1);
+  maLine(x + 2, y + h + 1, x + w, y + h + 1);
 }
 
 LineInput::LineInput(Screen *screen, char *buffer, int maxSize, 
@@ -329,7 +328,7 @@ void Screen::draw(bool vscroll) {
     // display the vertical scrollbar
     int barSize = height * height / pageHeight;
     int barRange = height - (barSize + SCROLL_IND * 2);
-    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - SCROLL_OFFS)));
+    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - charHeight)));
     if (barSize < height) {
       maSetColor(fg);
       maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
@@ -342,8 +341,8 @@ void Screen::draw(bool vscroll) {
     MAExtent extent = maGetTextSize(label.c_str());
     int w = EXTENT_X(extent);
     int h = EXTENT_Y(extent);
-    int top = height - h - 8;
-    int left = width - w - 12;
+    int top = height - h - h;
+    int left = (width - w) / 2;
 
     maSetColor(LINE_INPUT_COL);
     maFillRect(left - 2, top, w + 8, h + 8);
@@ -683,7 +682,7 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
-  fontSize = min(width, height) / 44;
+  fontSize = min(width, height) / 40;
   trace("width: %d height: %d fontSize:%d", width, height, fontSize);
 }
 
@@ -748,6 +747,13 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   back->drawInto();
   maFillRect(x1, y1, x2 - x1, y2 - y1);
   flush(false);
+}
+
+// perform editing when the formWidget belongs to the front screen
+void AnsiWidget::edit(FormWidget *formWidget, int c) {
+  if (front == formWidget->getScreen()) {
+    formWidget->edit(c);
+  }
 }
 
 // display and pending images changed
@@ -945,11 +951,9 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
                       front->x, front->y,
                       front->width, front->height)) {
       int vscroll = front->scrollY + (touchY - event.point.y);
-      int maxScroll = front->curY - (front->height - SCROLL_OFFS);
+      int maxScroll = (front->curY - front->height) + fontSize;
       if (vscroll < 0) {
         vscroll = 0;
-      } else if (vscroll > maxScroll) {
-        vscroll = maxScroll;
       }
       if (vscroll != front->scrollY && maxScroll > 0) {
         moveTime = maGetMilliSecondCount();
@@ -977,50 +981,14 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   } else if (swipeExit) {
     swipeExit = false;
   } else {
-    int maxScroll = front->curY - (front->height - SCROLL_OFFS);
+    int maxScroll = (front->curY - front->height) + fontSize;
     if (touchY != -1 && maxScroll > 0) {
       front->drawInto();
       int start = maGetMilliSecondCount();
       if (start - moveTime < SWIPE_TRIGGER_SLOW) {
-        // swiped
-        MAEvent event;
-        int elapsed = 0;
-        int vscroll = front->scrollY;
-        int scrollSize = (start - moveTime < SWIPE_TRIGGER_FAST) ? 
-                         SWIPE_SCROLL_FAST : SWIPE_SCROLL_SLOW;
-        int swipeStep = SWIPE_DELAY_STEP;
-
-        while (elapsed < SWIPE_MAX_TIMER) {
-          if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
-            // ignore the next move and release events
-            swipeExit = true;
-            break;
-          }
-          elapsed += (maGetMilliSecondCount() - start);
-          if (elapsed > swipeStep && scrollSize > 1) {
-            // step down to a lesser scroll amount
-            scrollSize -= 1;
-            swipeStep += SWIPE_DELAY_STEP;
-          }
-          if (scrollSize == 1) {
-            maWait(20);
-          }
-          vscroll += moveDown ? scrollSize : -scrollSize;
-          if (vscroll < 0) {
-            vscroll = 0;
-          } else if (vscroll > maxScroll) {
-            vscroll = maxScroll;
-          }
-          if (vscroll != front->scrollY) {
-            front->dirty = true; // forced
-            front->scrollY = vscroll;
-            flush(true, true);
-          } else {
-            break;
-          }
-        }
-        // pause before removing the scrollbar
-        maWait(500);
+        doSwipe(start, maxScroll);
+      } else if (front->scrollY > maxScroll) {
+        front->scrollY = maxScroll;
       }
       // ensure the scrollbar is removed
       front->dirty = true;
@@ -1140,6 +1108,10 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       back->updateFont();
       p++;
       break;
+    case 'K':
+      maShowVirtualKeyboard();
+      p++;
+      break;
     case 'H':
       createLink(p, false, false);
       break;
@@ -1165,6 +1137,48 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
     p++;                        // next rendition
   }
   return result;
+}
+
+// swipe handler for pointerReleaseEvent()
+void AnsiWidget::doSwipe(int start, int maxScroll) {
+  MAEvent event;
+  int elapsed = 0;
+  int vscroll = front->scrollY;
+  int scrollSize = (start - moveTime < SWIPE_TRIGGER_FAST) ? 
+                   SWIPE_SCROLL_FAST : SWIPE_SCROLL_SLOW;
+  int swipeStep = SWIPE_DELAY_STEP;
+  while (elapsed < SWIPE_MAX_TIMER) {
+    if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
+      // ignore the next move and release events
+      swipeExit = true;
+      break;
+    }
+    elapsed += (maGetMilliSecondCount() - start);
+    if (elapsed > swipeStep && scrollSize > 1) {
+      // step down to a lesser scroll amount
+      scrollSize -= 1;
+      swipeStep += SWIPE_DELAY_STEP;
+    }
+    if (scrollSize == 1) {
+      maWait(20);
+    }
+    vscroll += moveDown ? scrollSize : -scrollSize;
+    if (vscroll < 0) {
+      vscroll = 0;
+    } else if (vscroll > maxScroll) {
+      vscroll = maxScroll;
+    }
+    if (vscroll != front->scrollY) {
+      front->dirty = true; // forced
+      front->scrollY = vscroll;
+      flush(true, true);
+    } else {
+      break;
+    }
+  }
+  
+  // pause before removing the scrollbar
+  maWait(500);
 }
 
 // returns list of strings extracted from the vertical-bar separated input string
