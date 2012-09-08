@@ -35,7 +35,7 @@ sub buttons() {
   local e
   e = chr(27) + "[ B"
   print chr(10);
-  print e + "http://smallbasic.sourceforge.net/?q=export/code/70|Online programs" + chr(28);
+  print e + "http://smallbasic.sourceforge.net/?q=export/code/1102|Online programs" + chr(28);
   print " " + e + app + "/|Open file" + chr(28) + chr(10)
 end
 

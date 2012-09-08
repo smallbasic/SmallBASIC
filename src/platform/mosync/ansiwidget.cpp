@@ -54,7 +54,8 @@
 #define GREEN  2
 #define WHITE  15
 #define BLOCK_BUTTON_COL 0x505050
-#define LINE_INPUT_COL   0x303030
+#define GRAY_BG_COL      0x383f42
+#define LABEL_TEXT_COL   0xebebeb
 #define BUTTON_PADDING 8
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
@@ -181,7 +182,7 @@ LineInput::LineInput(Screen *screen, char *buffer, int maxSize,
 }
 
 void LineInput::draw() {
-  maSetColor(getBackground(LINE_INPUT_COL));
+  maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, w, h);
   maSetColor(fg);
   maDrawText(x, y, buffer + scroll);
@@ -344,9 +345,9 @@ void Screen::draw(bool vscroll) {
     int top = height - h - h;
     int left = (width - w) / 2;
 
-    maSetColor(LINE_INPUT_COL);
+    maSetColor(GRAY_BG_COL);
     maFillRect(left - 2, top, w + 8, h + 8);
-    maSetColor(0x909090);
+    maSetColor(LABEL_TEXT_COL);
     maDrawText(left, top + 2, label.c_str());
   }
 

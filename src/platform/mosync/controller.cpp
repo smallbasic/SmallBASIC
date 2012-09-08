@@ -209,9 +209,11 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
   }
 
-  if (isRunning() && ms < 0 && untilType != -1) {
+  if (ms < 0 && untilType != -1) {
     // flush the display before pausing for target event
-    output->flush(true);
+    if (isRunning()) {
+      output->flush(true);
+    }
     maWait(ms);
     ms = 0;
   }
@@ -373,7 +375,7 @@ void Controller::showError() {
 
 void Controller::showCompletion(bool success) {
   if (success) {
-    output->print("\033[ LFinished - press [back]\034");
+    output->print("\033[ LDone - press back [<-]\034");
   } else {
     output->print("\033[ LError - see console\034");
   }
@@ -501,8 +503,7 @@ void Controller::handleKey(int key) {
 char *Controller::readConnection(const char *url) {
   char *result = NULL;
   logEntered();
-
-  output->print("\nLoading...");
+  output->print("\033[ LLoading...\034");
 
   MAHandle conn = maConnect(url);
   if (conn < 1) {
@@ -510,8 +511,9 @@ char *Controller::readConnection(const char *url) {
   } else {
     runMode = conn_state;
     logPrint("Connecting to %s\n", url);
+
     bool connected = false;
-    byte buffer[256];
+    byte buffer[1024];
     int length = 0;
     int size = 0;
     int now = maGetMilliSecondCount();
@@ -519,7 +521,7 @@ char *Controller::readConnection(const char *url) {
 
     // pause until connected
     while (runMode == conn_state) {
-      event = processEvents(0, EVENT_TYPE_CONN);
+      event = processEvents(-1, EVENT_TYPE_CONN);
       if (event.type == EVENT_TYPE_CONN) {
         switch (event.conn.opType) {
         case CONNOP_CONNECT:
@@ -538,9 +540,6 @@ char *Controller::readConnection(const char *url) {
         case CONNOP_READ:
           // connRead completed
           if (event.conn.result > 0) {
-            // ensure previous read has completed. the next
-            // or final completion event will unblock this
-            maWait(1000);
             size = event.conn.result;
             if (result == NULL) {
               result = (char *)tmp_alloc(size + 1);
@@ -568,7 +567,6 @@ char *Controller::readConnection(const char *url) {
     logPrint("Loaded in %d msecs\n", maGetMilliSecondCount() - now);
   }
 
-  output->print("done");
   maConnClose(conn);
   return result;
 }
