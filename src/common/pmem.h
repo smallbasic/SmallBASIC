@@ -89,6 +89,11 @@ typedef dword addr_t;
 void *tmp_alloc(dword size);
 
 /**
+ * Free allocated memory
+ */
+void tmp_free(void *ptr);
+
+/**
  * @ingroup mem
  *
  * reallocate

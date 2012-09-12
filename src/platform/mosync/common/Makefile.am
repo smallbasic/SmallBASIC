@@ -27,7 +27,6 @@ libsb_common_a_SOURCES =                                      \
     $(COMMON)/blib_graph.c                                    \
     $(COMMON)/blib_math.c                                     \
     $(COMMON)/matrix.c                                        \
-    $(COMMON)/blib_ui.c $(COMMON)/blib_ui.h                   \
     $(COMMON)/blib_math.h                                     \
     $(COMMON)/blib_sound.c                                    \
     $(COMMON)/brun.c                                          \

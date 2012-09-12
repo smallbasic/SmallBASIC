@@ -6,17 +6,10 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <MAUI/Screen.h>
-#include <MAUI/Layout.h>
-#include <MAUI/EditBox.h>
-
 #include "MAHeaders.h"
 
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
-#include "languages/messages.en.h"
-
-using namespace MAUI;
 
 extern Controller *controller;
 

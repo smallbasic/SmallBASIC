@@ -44,7 +44,8 @@ struct WidgetInfo : public QObject {
 
   void update_var_flag();
 
-  public slots:void invoked();
+  public slots:
+  void invoked();
 };
 
 typedef WidgetInfo *WidgetInfoPtr;

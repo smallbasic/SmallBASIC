@@ -96,10 +96,24 @@ struct BlockButton : public Button {
   void draw();
 };
 
+struct FormWidgetListModel {
+  virtual ~FormWidgetListModel() {}
+  virtual const char *getTextAt(int index) = 0;
+  virtual int getIndex(const char *label) = 0;
+  virtual int rowCount() const = 0;
+  virtual int selectedIndex() const = 0;
+  virtual void setSelectedIndex(int index) = 0;
+};
+
 struct FormWidget {
   virtual ~FormWidget() {}
   virtual void edit(int key) = 0;
   virtual Screen *getScreen() = 0;
+  virtual FormWidgetListModel *getList() const = 0;
+  virtual const char *getText() const = 0;
+  virtual void setText(const char *text) = 0;
+  virtual void setWidth(int w) = 0;
+  virtual void setHeight(int h) = 0;
 };
 
 struct LineInput : public Button, FormWidget {
@@ -111,6 +125,11 @@ struct LineInput : public Button, FormWidget {
   void draw();
   void edit(int key);
   Screen *getScreen() { return screen; }
+  const char *getText() const { return buffer; }
+  FormWidgetListModel *getList() const { return NULL; }
+  void setText(const char *text) { }
+  void setWidth(int w) { }
+  void setHeight(int h) { }
 
 private:
   Screen *screen;
