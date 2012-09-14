@@ -6,14 +6,14 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#ifndef FORM_UI_H
+#define FORM_UI_H
+
 #include "config.h"
 #include "common/sys.h"
 #include "common/var.h"
 
 #include "ansiwidget.h"
-
-// whether a widget event has fired
-bool form_event();
 
 // control types available using the BUTTON command
 enum ControlType {
@@ -24,9 +24,9 @@ enum ControlType {
 };
 
 // binds a smallbasic variable with a form widget
-struct WidgetInfo {
-  WidgetInfo(FormWidget *widget, ControlType type, var_t *var);
-  WidgetInfo(const WidgetInfo &winf);
+struct WidgetData {
+  WidgetData(FormWidget *widget, ControlType type, var_t *var);
+  WidgetData(const WidgetData &winf);
 
   FormWidget *widget;
   ControlType type;
@@ -40,24 +40,35 @@ struct WidgetInfo {
     byte *ptr;
   } orig;
 
+  void setupWidget();
   bool updateGui();
   void updateVarFlag();
   void invoked();
   void transferData();
 };
 
-typedef WidgetInfo *WidgetInfoPtr;
-
-enum Mode { m_reset, m_init, m_active, m_selected };
+typedef WidgetData *WidgetDataPtr;
 
 struct Form {
   Form();
   virtual ~Form();
 
+  void add(WidgetDataPtr widgetData) { items.add(widgetData); }
+  bool hasEvent() { return mode == m_selected; }
+  void invoke(WidgetDataPtr widgetData);
+  void execute();
   void update();
 
+  enum Mode { 
+    m_reset, 
+    m_init, 
+    m_active, 
+    m_selected 
+  };
+
+private:
   Mode mode;
-  Vector<WidgetInfoPtr> items; // form child items
+  Vector<WidgetDataPtr> items; // form child items
   var_t *var;                  // form variable contains the value of the event widget
   int cmd;                     // doform argument by value
   bool kb_handle;              // whether doform returns on a keyboard event
@@ -65,3 +76,4 @@ struct Form {
   int prev_y;
 };
 
+#endif

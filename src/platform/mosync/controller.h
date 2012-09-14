@@ -69,14 +69,13 @@ private:
   };
 
   ExecState runMode;
-  FormWidget *formWidget;
   int lastEventTime;
   int eventsPerTick;
-  int penDownX;
-  int penDownY;
-  int penDownCurX;
-  int penDownCurY;
-  int penDownTime;
+  int touchX;
+  int touchY;
+  int touchCurX;
+  int touchCurY;
+  int touchTime;
   bool systemMenu;
   bool systemScreen;
   String loadPath;

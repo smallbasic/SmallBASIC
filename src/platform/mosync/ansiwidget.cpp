@@ -718,6 +718,22 @@ FormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
   return lineInput;
 }
 
+// creates a Button attached to the current back screen
+FormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h) {
+  return NULL;
+}
+
+// creates a Label attached to the current back screen
+FormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) {
+  return NULL;
+}
+
+// creates a List attached to the current back screen
+FormWidget *AnsiWidget::createList(FormWidgetListModel *model, 
+                                   int x, int y, int w, int h) {
+  return NULL;
+}
+
 // draws the given image onto the offscreen buffer
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
   back->drawInto();

@@ -151,7 +151,10 @@ public:
   void beep() const;
   void clearScreen() { back->clear(); }
   bool construct();
+  FormWidget *createButton(char *caption, int x, int y, int w, int h);
+  FormWidget *createLabel(char *caption, int x, int y, int w, int h);
   FormWidget *createLineInput(char *buffer, int maxSize, int x, int y, int w, int h);
+  FormWidget *createList(FormWidgetListModel *model, int x, int y, int w, int h);
   void draw();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);

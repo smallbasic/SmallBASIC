@@ -33,12 +33,7 @@
 #define RAD_H  0
 
 extern Controller *controller;
-Form *form = 0;
-
-// whether a widget event has fired
-bool form_event() {
-  return (form && form->mode == m_selected);
-}
+Form *form;
 
 // convert a basic array into a String
 void array_to_string(String &s, var_t *v) {
@@ -56,41 +51,6 @@ void array_to_string(String &s, var_t *v) {
       array_to_string(s, el_p);
     }
   }
-}
-
-void update_widget(FormWidget *widget, MARect &rect) {
-  if (rect.width != -1) {
-    widget->setWidth(rect.width);
-  }
-
-  if (rect.height != -1) {
-    widget->setHeight(rect.height);
-  }
-
-  if (rect.left < 0) {
-    rect.left = form->prev_x - rect.left;
-  }
-
-  if (rect.top < 0) {
-    rect.top = form->prev_y - rect.top;
-  }
-
-  form->prev_x = rect.left + rect.width;
-  form->prev_y = rect.top + rect.height;
-}
-
-void update_button(FormWidget *widget, WidgetInfoPtr inf,
-                   const char *caption, MARect &rect, int def_w, int def_h) {
-  if (rect.width < 0 && caption != 0) {
-    //    rect.setWidth((int)wnd->out->textWidth(caption) + def_w + (-rect.width - 1));
-  }
-
-  if (rect.height < 0) {
-    //    rect.setHeight((int)(wnd->out->textheight + def_h + (-rect.height - 1)));
-  }
-
-  update_widget(widget, rect);
-  widget->setText(caption);
 }
 
 // implements abstract StringList as a list of strings
@@ -202,7 +162,7 @@ Form::Form() :
 } 
 
 Form::~Form() {
-  Vector_each(WidgetInfoPtr, it, items) {
+  Vector_each(WidgetDataPtr, it, items) {
     delete (*it);
   }
 }
@@ -210,24 +170,92 @@ Form::~Form() {
 // copy all widget fields into variables
 void Form::update() {
   if (controller->isRunning()) {
-    Vector_each(WidgetInfoPtr, it, items) {
+    Vector_each(WidgetDataPtr, it, items) {
       (*it)->transferData();
     }
   }
 }
 
-// WidgetInfo constructor
-WidgetInfo::WidgetInfo(FormWidget *widget, ControlType type, var_t *var) :
+void Form::execute() {
+  switch (code_peek()) {
+  case kwTYPE_LINE:
+  case kwTYPE_EOC:
+  case kwTYPE_SEP:
+    cmd = -1;
+    var = 0;
+    break;
+  default:
+    if (code_isvar()) {
+      var = code_getvarptr();
+      cmd = -1;
+    } else {
+      var_t variable;
+      v_init(&variable);
+      eval(&variable);
+      cmd = v_getint(&variable);
+      v_free(&variable);
+      var = 0;
+
+      // apply any configuration options
+      switch (cmd) {
+      case 1:
+        kb_handle = true;
+        return;
+      default:
+        break;
+      }
+    }
+    break;
+  };
+
+  update();
+
+  if (!cmd) {
+    ui_reset();
+  } else {
+    // pump system messages until there is a widget callback
+    mode = m_active;
+
+    if (kb_handle) {
+      dev_clrkb();
+    }
+    while (controller->isRunning() && mode == m_active) {
+      controller->processEvents(-1, -1);
+      if (kb_handle && keymap_kbhit()) {
+        break;
+      }
+    }
+    update();
+  }
+}
+
+void Form::invoke(WidgetDataPtr widgetData) {
+  mode = m_selected;
+
+  if (var) {
+    // array type cannot be used in program select statement
+    if (widgetData->var->type == V_ARRAY) {
+      v_zerostr(var);
+    } else {
+      // set the form variable from the widget var
+      v_set(var, widgetData->var);
+    }
+  }
+}
+
+// WidgetData constructor
+WidgetData::WidgetData(FormWidget *widget, ControlType type, var_t *var) :
   widget(widget),
   type(type),
   var(var),
   is_group_radio(false) {
   orig.ptr = 0;
   orig.i = 0;
+  setupWidget();
 }
 
 // copy constructor
-WidgetInfo::WidgetInfo(const WidgetInfo &winf) :
+WidgetData::WidgetData(const WidgetData &winf) :
   widget(winf.widget),
   type(winf.type),
   var(winf.var),
@@ -235,8 +263,36 @@ WidgetInfo::WidgetInfo(const WidgetInfo &winf) :
   orig(winf.orig) {
 }
 
+void WidgetData::setupWidget() {
+  if (form == 0) {
+    form = new Form();
+  }
+  form->add(this);
+
+  /*
+  if (rect.width != -1) {
+    widget->setWidth(rect.width);
+  }
+
+  if (rect.height != -1) {
+    widget->setHeight(rect.height);
+  }
+
+  if (rect.left < 0) {
+    rect.left = form->prev_x - rect.left;
+  }
+
+  if (rect.top < 0) {
+    rect.top = form->prev_y - rect.top;
+  }
+
+  form->prev_x = rect.left + rect.width;
+  form->prev_y = rect.top + rect.height;
+  */
+}
+
 // update the smallbasic variable
-void WidgetInfo::updateVarFlag() {
+void WidgetData::updateVarFlag() {
   switch (var->type) {
   case V_STR:
     orig.ptr = var->v.p.ptr;
@@ -253,26 +309,15 @@ void WidgetInfo::updateVarFlag() {
 }
 
 // callback for the widget info called when the widget has been invoked
-void WidgetInfo::invoked() {
+void WidgetData::invoked() {
   if (controller->isRunning()) {
     transferData();
-
-    form->mode = m_selected;
-
-    if (form->var) {
-      // array type cannot be used in program select statement
-      if (this->var->type == V_ARRAY) {
-        v_zerostr(form->var);
-      } else {
-        // set the form variable from the widget var
-        v_set(form->var, this->var);
-      }
-    }
+    form->invoke(this);
   }
 }
 
 // set basic string variable to widget state when the variable has changed
-bool WidgetInfo::updateGui() {
+bool WidgetData::updateGui() {
   ListModel *model;
 
   if (var->type == V_INT && var->v.i != orig.i) {
@@ -339,7 +384,7 @@ bool WidgetInfo::updateGui() {
 }
 
 // synchronise basic variable and widget state
-void WidgetInfo::transferData() {
+void WidgetData::transferData() {
   const char *s;
   ListModel *model;
 
@@ -400,36 +445,25 @@ void cmd_button() {
 
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type)) {
     FormWidget *widget;
-    WidgetInfoPtr inf;
-    MARect rect;
-    rect.left = x;
-    rect.top = y;
-    rect.width = w;
-    rect.height = h;
-
-    if (form == 0) {
-      form = new Form();
-    }
-
     if (type) {
       if (strcasecmp("button", type) == 0) {
-        inf = new WidgetInfo(widget, ctrl_button, var);
-        update_button(widget, inf, caption, rect, BN_W, BN_H);
+        widget = controller->output->createButton(caption, x, y, w, h);
+        new WidgetData(widget, ctrl_button, var);
       } else if (strcasecmp("label", type) == 0) {
-        inf = new WidgetInfo(widget, ctrl_label, var);
-        update_widget(widget, rect);
+        widget = controller->output->createLabel(caption, x, y, w, h);
+        new WidgetData(widget, ctrl_label, var);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {
-        inf = new WidgetInfo(widget, ctrl_listbox, var);
         ListModel *model = new ListModel(caption, var);
-        update_widget(widget, rect);
+        widget = controller->output->createList(model, x, y, w, h);
+        new WidgetData(widget, ctrl_listbox, var);
       } else {
         ui_reset();
         rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);
       }
     } else {
-      inf = new WidgetInfo(widget, ctrl_button, var);
-      update_button(widget, inf, caption, rect, BN_W, BN_H);
+      widget = controller->output->createButton(caption, x, y, w, h);
+      new WidgetData(widget, ctrl_button, var);
     }
   }
 
@@ -443,79 +477,18 @@ void cmd_text() {
   var_t *var = 0;
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &var)) {
-    FormWidget *widget;
-    WidgetInfoPtr inf = new WidgetInfo(widget, ctrl_text, var);
-    MARect rect;
-    rect.left = x;
-    rect.top = y;
-    rect.width = w;
-    rect.height = h;
-
-    if (form == 0) {
-      form = new Form();
-    }
-
-    update_widget(widget, rect);
+    FormWidget *widget = controller->output->createLineInput(NULL, 0, x, y, w, h);
+    new WidgetData(widget, ctrl_text, var);
   }
 }
 
 // DOFORM [FLAG|VAR]
 // Executes the form
 void cmd_doform() {
-  if (form == 0) {
+  if (!form) {
     rt_raise("UI: FORM NOT READY");
-    return;
-  }
-
-  switch (code_peek()) {
-  case kwTYPE_LINE:
-  case kwTYPE_EOC:
-  case kwTYPE_SEP:
-    form->cmd = -1;
-    form->var = 0;
-    break;
-  default:
-    if (code_isvar()) {
-      form->var = code_getvarptr();
-      form->cmd = -1;
-    } else {
-      var_t var;
-      v_init(&var);
-      eval(&var);
-      form->cmd = v_getint(&var);
-      form->var = 0;
-      v_free(&var);
-
-      // apply any configuration options
-      switch (form->cmd) {
-      case 1:
-        form->kb_handle = true;
-        return;
-      default:
-        break;
-      }
-    }
-    break;
-  };
-
-  form->update();
-
-  if (!form->cmd) {
-    ui_reset();
   } else {
-    // pump system messages until there is a widget callback
-    form->mode = m_active;
-
-    if (form->kb_handle) {
-      dev_clrkb();
-    }
-    while (controller->isRunning() && form->mode == m_active) {
-      controller->processEvents(-1, -1);
-      if (form->kb_handle && keymap_kbhit()) {
-        break;
-      }
-    }
-    form->update();
+    form->execute();
   }
 }
 

@@ -30,16 +30,15 @@
 
 Controller::Controller() :
   Environment(),
-  output(0),
+  output(NULL),
   runMode(init_state),
-  formWidget(NULL),
   lastEventTime(0),
   eventsPerTick(0),
-  penDownX(-1),
-  penDownY(-1),
-  penDownCurX(-1),
-  penDownCurY(-1),
-  penDownTime(0),
+  touchX(-1),
+  touchY(-1),
+  touchCurX(-1),
+  touchCurY(-1),
+  touchTime(0),
   systemMenu(false),
   systemScreen(false),
   programSrc(NULL) {
@@ -85,7 +84,7 @@ int Controller::getPen(int code) {
       // fallthru
 
     case 3:   // returns true if the pen is down (and save curpos)
-      if (penDownX != -1 && penDownY != -1) {
+      if (touchX != -1 && touchY != -1) {
         result = 1;
       } else {
         processEvents(0, -1);
@@ -93,21 +92,21 @@ int Controller::getPen(int code) {
       break;
 
     case 1:   // last pen-down x
-      result = penDownX;
+      result = touchX;
       break;
 
     case 2:   // last pen-down y
-      result = penDownY;
+      result = touchY;
       break;
 
     case 4:   // cur pen-down x
     case 10:
-      result = penDownCurX;
+      result = touchCurX;
       break;
 
     case 5:   // cur pen-down y
     case 11:
-      result = penDownCurY;
+      result = touchCurY;
       break;
     }
   }
@@ -122,12 +121,22 @@ char *Controller::getText(char *dest, int maxSize) {
 
   dest[0] = '\0';
   runMode = modal_state;
-  formWidget = output->createLineInput(dest, maxSize, x, y, w, h);
+  FormWidget *formWidget = output->createLineInput(dest, maxSize, x, y, w, h);
   output->flush(true);
   maShowVirtualKeyboard();
 
-  while (runMode == modal_state) {
-    processEvents(1000, EVENT_TYPE_KEY_PRESSED);
+  while (isModal()) {
+    MAEvent event = processEvents(1000, EVENT_TYPE_KEY_PRESSED);
+    if (event.type == EVENT_TYPE_KEY_PRESSED) {
+      dev_clrkb();
+      if (isModal()) {
+        if (event.key == 10) {
+          runMode = run_state;
+        } else {
+          output->edit(formWidget, event.key);
+        }
+      }
+    }
   }
 
   delete formWidget;
@@ -200,10 +209,10 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   int loadPathSize = loadPath.size();
 
   // long press = menu
-  if (penDownTime != 0) {
+  if (touchTime != 0) {
     int now = maGetMilliSecondCount();
-    if ((now - penDownTime) > LONG_PRESS_TIME) {
-      penDownTime = now;
+    if ((now - touchTime) > LONG_PRESS_TIME) {
+      touchTime = now;
       systemMenu = true;
       output->print(SYSTEM_MENU);
     }
@@ -249,20 +258,20 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       handleKey(SB_PKEY_SIZE_CHG);
       break;
     case EVENT_TYPE_POINTER_PRESSED:
-      penDownTime = maGetMilliSecondCount();
-      penDownX = penDownCurX = event.point.x;
-      penDownY = penDownCurY = event.point.y;
+      touchTime = maGetMilliSecondCount();
+      touchX = touchCurX = event.point.x;
+      touchY = touchCurY = event.point.y;
       handleKey(SB_KEY_MK_PUSH);
       output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
-      penDownCurX = event.point.x;
-      penDownCurY = event.point.y;
+      touchCurX = event.point.x;
+      touchCurY = event.point.y;
       output->pointerMoveEvent(event);
       break;
     case EVENT_TYPE_POINTER_RELEASED:
-      penDownTime = 0;
-      penDownX = penDownY = penDownCurX = penDownCurY = -1;
+      touchTime = 0;
+      touchX = touchY = touchCurX = touchCurY = -1;
       handleKey(SB_KEY_MK_RELEASE);
       output->pointerReleaseEvent(event);
       break;
@@ -436,65 +445,56 @@ void Controller::handleKey(int key) {
   }
 
   if (isRunning()) {
-    if (runMode == modal_state && formWidget != NULL) {
-      // formWidget modal_state
-      if (key == 10) {
-        runMode = run_state;
-      } else {
-        output->edit(formWidget, key);
-      }
-    } else {
-      switch (key) {
-      case MAK_TAB:
-        dev_pushkey(SB_KEY_TAB);
-        break;
-      case MAK_HOME:
-        dev_pushkey(SB_KEY_KP_HOME);
-        break;
-      case MAK_END:
-        dev_pushkey(SB_KEY_END);
-        break;
-      case MAK_INSERT:
-        dev_pushkey(SB_KEY_INSERT);
-        break;
-      case MAK_KP_MULTIPLY:
-        dev_pushkey(SB_KEY_KP_MUL);
-        break;
-      case MAK_KP_PLUS:
-        dev_pushkey(SB_KEY_KP_PLUS);
-        break;
-      case MAK_KP_MINUS:
-        dev_pushkey(SB_KEY_KP_MINUS);
-        break;
-      case MAK_SLASH:
-        dev_pushkey(SB_KEY_KP_DIV);
-        break;
-      case MAK_PAGEUP:
-        dev_pushkey(SB_KEY_PGUP);
-        break;
-      case MAK_PAGEDOWN:
-        dev_pushkey(SB_KEY_PGDN);
-        break;
-      case MAK_UP:
-        dev_pushkey(SB_KEY_UP);
-        break;
-      case MAK_DOWN:
-        dev_pushkey(SB_KEY_DN);
-        break;
-      case MAK_LEFT:
-        dev_pushkey(SB_KEY_LEFT);
-        break;
-      case MAK_RIGHT:
-        dev_pushkey(SB_KEY_RIGHT);
-        break;
-      case MAK_BACKSPACE:
-      case MAK_DELETE:
-        dev_pushkey(SB_KEY_BACKSPACE);
-        break;
-      default:
-        dev_pushkey(key);
-        break;
-      }
+    switch (key) {
+    case MAK_TAB:
+      dev_pushkey(SB_KEY_TAB);
+      break;
+    case MAK_HOME:
+      dev_pushkey(SB_KEY_KP_HOME);
+      break;
+    case MAK_END:
+      dev_pushkey(SB_KEY_END);
+      break;
+    case MAK_INSERT:
+      dev_pushkey(SB_KEY_INSERT);
+      break;
+    case MAK_KP_MULTIPLY:
+      dev_pushkey(SB_KEY_KP_MUL);
+      break;
+    case MAK_KP_PLUS:
+      dev_pushkey(SB_KEY_KP_PLUS);
+      break;
+    case MAK_KP_MINUS:
+      dev_pushkey(SB_KEY_KP_MINUS);
+      break;
+    case MAK_SLASH:
+      dev_pushkey(SB_KEY_KP_DIV);
+      break;
+    case MAK_PAGEUP:
+      dev_pushkey(SB_KEY_PGUP);
+      break;
+    case MAK_PAGEDOWN:
+      dev_pushkey(SB_KEY_PGDN);
+      break;
+    case MAK_UP:
+      dev_pushkey(SB_KEY_UP);
+      break;
+    case MAK_DOWN:
+      dev_pushkey(SB_KEY_DN);
+      break;
+    case MAK_LEFT:
+      dev_pushkey(SB_KEY_LEFT);
+      break;
+    case MAK_RIGHT:
+      dev_pushkey(SB_KEY_RIGHT);
+      break;
+    case MAK_BACKSPACE:
+    case MAK_DELETE:
+      dev_pushkey(SB_KEY_BACKSPACE);
+      break;
+    default:
+      dev_pushkey(key);
+      break;
     }
   }
 }
