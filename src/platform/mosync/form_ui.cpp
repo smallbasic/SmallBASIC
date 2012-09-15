@@ -54,7 +54,7 @@ void array_to_string(String &s, var_t *v) {
 }
 
 // implements abstract StringList as a list of strings
-struct ListModel : FormWidgetListModel {
+struct ListModel : IFormWidgetListModel {
   Vector<String *> list;
   int focusIndex;
 
@@ -244,7 +244,7 @@ void Form::invoke(WidgetDataPtr widgetData) {
 }
 
 // WidgetData constructor
-WidgetData::WidgetData(FormWidget *widget, ControlType type, var_t *var) :
+WidgetData::WidgetData(IFormWidget *widget, ControlType type, var_t *var) :
   widget(widget),
   type(type),
   var(var),
@@ -254,13 +254,8 @@ WidgetData::WidgetData(FormWidget *widget, ControlType type, var_t *var) :
   setupWidget();
 }
 
-// copy constructor
-WidgetData::WidgetData(const WidgetData &winf) :
-  widget(winf.widget),
-  type(winf.type),
-  var(winf.var),
-  is_group_radio(winf.is_group_radio),
-  orig(winf.orig) {
+WidgetData::~WidgetData() {
+  delete widget;
 }
 
 void WidgetData::setupWidget() {
@@ -268,6 +263,7 @@ void WidgetData::setupWidget() {
     form = new Form();
   }
   form->add(this);
+  widget->setListener(this);
 
   /*
   if (rect.width != -1) {
@@ -309,7 +305,7 @@ void WidgetData::updateVarFlag() {
 }
 
 // callback for the widget info called when the widget has been invoked
-void WidgetData::invoked() {
+void WidgetData::buttonClicked(const char *action) {
   if (controller->isRunning()) {
     transferData();
     form->invoke(this);
@@ -444,7 +440,7 @@ void cmd_button() {
   char *type = 0;
 
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type)) {
-    FormWidget *widget;
+    IFormWidget *widget;
     if (type) {
       if (strcasecmp("button", type) == 0) {
         widget = controller->output->createButton(caption, x, y, w, h);
@@ -477,7 +473,7 @@ void cmd_text() {
   var_t *var = 0;
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &var)) {
-    FormWidget *widget = controller->output->createLineInput(NULL, 0, x, y, w, h);
+    IFormWidget *widget = controller->output->createLineInput(NULL, 0, x, y, w, h);
     new WidgetData(widget, ctrl_text, var);
   }
 }

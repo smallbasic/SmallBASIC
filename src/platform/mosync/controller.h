@@ -25,7 +25,7 @@ using namespace MAUtil;
 #define EVT_PAUSE_TIME 5
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
-struct Controller : public Environment, ButtonListener {
+struct Controller : public Environment, IButtonListener {
   Controller();
   virtual ~Controller();
 

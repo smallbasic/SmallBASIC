@@ -24,11 +24,11 @@ enum ControlType {
 };
 
 // binds a smallbasic variable with a form widget
-struct WidgetData {
-  WidgetData(FormWidget *widget, ControlType type, var_t *var);
-  WidgetData(const WidgetData &winf);
+struct WidgetData  : public IButtonListener {
+  WidgetData(IFormWidget *widget, ControlType type, var_t *var);
+  virtual ~WidgetData();
 
-  FormWidget *widget;
+  IFormWidget *widget;
   ControlType type;
   var_t *var;
   bool is_group_radio;
@@ -40,10 +40,10 @@ struct WidgetData {
     byte *ptr;
   } orig;
 
+  void buttonClicked(const char *action);
   void setupWidget();
   bool updateGui();
   void updateVarFlag();
-  void invoked();
   void transferData();
 };
 

@@ -111,30 +111,38 @@ struct TextBuffer {
   int len;
 };
 
-Button::Button(Screen *screen, const char* action, const char *label,
-               int x, int y, int w, int h) :
-  action(action),
-  label(label),
+Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
   pressed(false),
-  bg(screen->bg),
-  fg(screen->fg),
+  bg(bg),
+  fg(fg),
   x(x),
   y(y),
   w(w),
   h(h) {
 }
 
-bool Button::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
+bool Widget::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
 }
 
 // returns setBG when the program colours are default
-int Button::getBackground(int buttonColor) {
+int Widget::getBackground(int buttonColor) {
   int result = bg;
   if (fg == DEFAULT_COLOR && bg == 0) {
     result = buttonColor;
   }
   return result;
+}
+
+Button::Button(Screen *screen, const char* action, const char *label,
+               int x, int y, int w, int h) :
+  Widget(screen->bg, screen->fg, x, y, w, h),
+  action(action),
+  label(label) {
+}
+
+void Button::clicked(IButtonListener *listener) { 
+  listener->buttonClicked(action.c_str()); 
 }
 
 BlockButton::BlockButton(Screen *screen, const char *action, const char *label,
@@ -172,23 +180,37 @@ void TextButton::draw() {
   maLine(x + 2, y + h + 1, x + w, y + h + 1);
 }
 
-LineInput::LineInput(Screen *screen, char *buffer, int maxSize, 
-                     int x, int y, int w, int h) :
-  Button(screen, "", "", x, y, w, h),
+FormWidget::FormWidget(Screen *screen, int x, int y, int w, int h) :
+  Widget(screen->bg, screen->fg, x, y, w, h),
   screen(screen),
+  listener(NULL) {
+}
+
+void FormWidget::clicked(IButtonListener *listener) { 
+  this->listener->buttonClicked(NULL); 
+}
+
+FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize, 
+                             int x, int y, int w, int h) :
+  FormWidget(screen, x, y, w, h),
   buffer(buffer),
   maxSize(maxSize),
   scroll(0) {
+  getScreen()->add(this);
 }
 
-void LineInput::draw() {
+FormLineInput::~FormLineInput() { 
+  getScreen()->remove(this); 
+}
+
+void FormLineInput::draw() {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, w, h);
   maSetColor(fg);
   maDrawText(x, y, buffer + scroll);
 }
 
-void LineInput::edit(int key) {
+void FormLineInput::edit(int key) {
   bool changed = false;
   int len = strlen(buffer);
 
@@ -199,10 +221,10 @@ void LineInput::edit(int key) {
       buffer[++len] = '\0';
       int textWidth = EXTENT_X(maGetTextSize(buffer));
       if (textWidth > w) {
-        if (textWidth > screen->width) {
+        if (textWidth > getScreen()->width) {
           scroll++;
         } else {
-          w += screen->charWidth;
+          w += getScreen()->charWidth;
         }
       }
       changed = true;
@@ -221,9 +243,9 @@ void LineInput::edit(int key) {
   }
 
   if (changed) {
-    screen->drawInto(true);
+    getScreen()->drawInto(true);
     draw();
-    screen->draw(false);
+    getScreen()->draw(false);
   }
 }
 
@@ -263,8 +285,8 @@ Screen::~Screen() {
   if (font) {
     maFontDelete(font);
   }
-  Vector_each(Button*, it, buttons) {
-    delete (Button*)(*it);
+  Vector_each(Widget*, it, buttons) {
+    delete (Widget*)(*it);
   }
 }
 
@@ -305,7 +327,7 @@ void Screen::clear() {
   pageHeight = 0;
 
   // cleanup any buttons
-  Vector_each(Button*, it, buttons) {
+  Vector_each(Widget*, it, buttons) {
     delete (*it);
   }
   buttons.clear();
@@ -453,6 +475,17 @@ int Screen::print(const char *p, int lineHeight) {
 
   curX += cx;
   return numChars;
+}
+
+// remove the button from the list
+void Screen::remove(Widget *button) {
+  Vector_each(Widget*, it, buttons) {
+    Widget *next = (*it);
+    if (next == button) {
+      buttons.remove(it);
+      break;
+    }
+  }
 }
 
 // reset the current drawing variables
@@ -667,7 +700,7 @@ void Screen::updateFont() {
   }
 }
 
-AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
+AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   back(NULL),
   front(NULL),
   pushed(NULL),
@@ -679,7 +712,7 @@ AnsiWidget::AnsiWidget(ButtonListener *listener, int width, int height) :
   moveDown(false),
   swipeExit(false),
   buttonListener(listener),
-  activeLink(NULL) {
+  activeButton(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
@@ -711,25 +744,25 @@ void AnsiWidget::beep() const {
 }
 
 // creates a LineInput attached to the current back screen
-FormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
-                                        int x, int y, int w, int h) {
-  LineInput *lineInput = new LineInput(back, buffer, maxSize, x, y, w, h);
+IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
+                                         int x, int y, int w, int h) {
+  FormLineInput *lineInput = new FormLineInput(back, buffer, maxSize, x, y, w, h);
   lineInput->draw();
   return lineInput;
 }
 
 // creates a Button attached to the current back screen
-FormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h) {
+IFormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h) {
   return NULL;
 }
 
 // creates a Label attached to the current back screen
-FormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) {
+IFormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) {
   return NULL;
 }
 
 // creates a List attached to the current back screen
-FormWidget *AnsiWidget::createList(FormWidgetListModel *model, 
+IFormWidget *AnsiWidget::createList(IFormWidgetListModel *model, 
                                    int x, int y, int w, int h) {
   return NULL;
 }
@@ -767,8 +800,8 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
 }
 
 // perform editing when the formWidget belongs to the front screen
-void AnsiWidget::edit(FormWidget *formWidget, int c) {
-  if (front == formWidget->getScreen()) {
+void AnsiWidget::edit(IFormWidget *formWidget, int c) {
+  if (front == ((FormWidget *)formWidget)->getScreen()) {
     formWidget->edit(c);
   }
 }
@@ -939,12 +972,12 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
     touchX = event.point.x;
     touchY = event.point.y;
 
-    Vector_each(Button*, it, front->buttons) {
+    Vector_each(Widget*, it, front->buttons) {
       if ((*it)->overlaps(event.point, 0, front->scrollY)) {
         front->drawInto();
-        activeLink = (*it);
-        activeLink->pressed = true;
-        activeLink->draw();
+        activeButton = (*it);
+        activeButton->pressed = true;
+        activeButton->draw();
         flush(true);
         break;
       }
@@ -954,12 +987,12 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
 
 // handler for pointer move events
 void AnsiWidget::pointerMoveEvent(MAEvent &event) {
-  if (activeLink != NULL) {
-    bool pressed = activeLink->overlaps(event.point, 0, front->scrollY);
-    if (pressed != activeLink->pressed) {
+  if (activeButton != NULL) {
+    bool pressed = activeButton->overlaps(event.point, 0, front->scrollY);
+    if (pressed != activeButton->pressed) {
       front->drawInto();
-      activeLink->pressed = pressed;
-      activeLink->draw();
+      activeButton->pressed = pressed;
+      activeButton->draw();
       flush(true);
     }
   } else if (!swipeExit) {
@@ -987,14 +1020,12 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
 
 // handler for pointer release events
 void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
-  if (activeLink != NULL && activeLink->pressed) {
+  if (activeButton != NULL && activeButton->pressed) {
     front->drawInto();
-    activeLink->pressed = false;
-    activeLink->draw();
+    activeButton->pressed = false;
+    activeButton->draw();
     flush(true);
-    if (buttonListener) {
-      buttonListener->buttonClicked(activeLink->action.c_str());
-    }
+    activeButton->clicked(buttonListener);
   } else if (swipeExit) {
     swipeExit = false;
   } else {
@@ -1014,7 +1045,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     }
   }
   touchX = touchY = -1;
-  activeLink = NULL;
+  activeButton = NULL;
 }
 
 // creates a status-bar label

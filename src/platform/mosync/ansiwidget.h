@@ -19,12 +19,38 @@
 
 using namespace MAUtil;
 
-struct Button;
+struct IButtonListener {
+  virtual ~IButtonListener() {}
+  virtual void buttonClicked(const char *action) = 0;
+};
+
+struct IFormWidgetListModel {
+  virtual ~IFormWidgetListModel() {}
+  virtual const char *getTextAt(int index) = 0;
+  virtual int getIndex(const char *label) = 0;
+  virtual int rowCount() const = 0;
+  virtual int selectedIndex() const = 0;
+  virtual void setSelectedIndex(int index) = 0;
+};
+
+struct IFormWidget {
+  virtual ~IFormWidget() {}
+  virtual void edit(int key) = 0;
+  virtual IFormWidgetListModel *getList() const = 0;
+  virtual const char *getText() const = 0;
+  virtual void setText(const char *text) = 0;
+  virtual void setWidth(int w) = 0;
+  virtual void setHeight(int h) = 0;
+  virtual void setListener(IButtonListener *listener) = 0;
+};
+
+struct Widget;
 
 struct Screen {
   Screen(int x, int y, int width, int height, int fontSize);
   virtual ~Screen();
 
+  void add(Widget *button) { buttons.add(button); }
   void calcTab();
   bool construct();
   void clear();
@@ -33,6 +59,7 @@ struct Screen {
   void drawText(const char *text, int len, int x, int lineHeight);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
+  void remove(Widget *button);
   void reset(int fontSize = -1);
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void setColor(long color);
@@ -65,102 +92,114 @@ struct Screen {
   int charHeight;
   int dirty;
   int linePadding;
-  Vector <Button *>buttons;
+  Vector <Widget *>buttons;
   String label;
 };
 
-struct Button {
-  Button(Screen *screen, const char *action, const char *label,
-         int x, int y, int w, int h);
-  virtual ~Button() {}
+// base implementation for all buttons
+struct Widget {
+  Widget(int bg, int fg, int x, int y, int w, int h);
+  virtual ~Widget() {}
+
   virtual void draw() = 0;
+  virtual void clicked(IButtonListener *listener) = 0;
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   int getBackground(int buttonColor);
 
-  String action;
-  String label;
   bool pressed;
   int bg, fg;
   int x,y,w,h;
 };
 
+// base implementation for all internal buttons
+struct Button : public Widget {
+  Button(Screen *screen, const char *action, const char *label,
+         int x, int y, int w, int h);
+  virtual ~Button() {}
+
+  void clicked(IButtonListener *listener);
+
+  String action;
+  String label;
+};
+
+// internal text button
 struct TextButton : public Button {
   TextButton(Screen *screen, const char *action, const char *label,
              int x, int y, int w, int h);
   void draw();
 };
 
+// internal block button
 struct BlockButton : public Button {
   BlockButton(Screen *screen, const char *action, const char *label,
               int x, int y, int w, int h);
   void draw();
 };
 
-struct FormWidgetListModel {
-  virtual ~FormWidgetListModel() {}
-  virtual const char *getTextAt(int index) = 0;
-  virtual int getIndex(const char *label) = 0;
-  virtual int rowCount() const = 0;
-  virtual int selectedIndex() const = 0;
-  virtual void setSelectedIndex(int index) = 0;
-};
-
-struct FormWidget {
+// base implementation for all external buttons
+struct FormWidget : public Widget, IFormWidget {
+  FormWidget(Screen *screen, int x, int y, int w, int h);
   virtual ~FormWidget() {}
-  virtual void edit(int key) = 0;
-  virtual Screen *getScreen() = 0;
-  virtual FormWidgetListModel *getList() const = 0;
-  virtual const char *getText() const = 0;
-  virtual void setText(const char *text) = 0;
-  virtual void setWidth(int w) = 0;
-  virtual void setHeight(int h) = 0;
+
+  void setListener(IButtonListener *listener) { this->listener = listener; }
+  Screen *getScreen() { return screen; }
+  void clicked(IButtonListener *listener);
+
+  IFormWidgetListModel *getList() const { return NULL; }
+  void setText(const char *text) {}
+  void setWidth(int w) { this->w = w; }
+  void setHeight(int h) { this->h = h; }
+
+private:
+  Screen *screen;
+  IButtonListener *listener;
 };
 
-struct LineInput : public Button, FormWidget {
-  LineInput(Screen *screen, char *buffer, int maxSize, 
-            int x, int y, int w, int h);
-  ~LineInput() {}
+struct FormLabel : public FormWidget {
+  FormLabel(Screen *screen, int x, int y, int w, int h);
+  virtual ~FormLabel() {}
+};
+
+struct FormLineInput : public FormWidget {
+  FormLineInput(Screen *screen, char *buffer, int maxSize, 
+                int x, int y, int w, int h);
+  virtual ~FormLineInput();
 
   void close();
   void draw();
   void edit(int key);
-  Screen *getScreen() { return screen; }
   const char *getText() const { return buffer; }
-  FormWidgetListModel *getList() const { return NULL; }
-  void setText(const char *text) { }
-  void setWidth(int w) { }
-  void setHeight(int h) { }
 
 private:
-  Screen *screen;
   char *buffer;
   int maxSize;
   int scroll;
 };
 
-struct ButtonListener {
-  virtual ~ButtonListener() {}
-  virtual void buttonClicked(const char *url) = 0;
+struct FormList : public FormWidget {
+  FormList(Screen *screen, char *buffer, int maxSize, 
+           int x, int y, int w, int h);
+  virtual ~FormList() {}
 };
 
-class AnsiWidget {
-public:
-  explicit AnsiWidget(ButtonListener *listener, int width, int height);
+struct AnsiWidget {
+  explicit AnsiWidget(IButtonListener *listener, int width, int height);
   ~AnsiWidget();
 
   void beep() const;
   void clearScreen() { back->clear(); }
   bool construct();
-  FormWidget *createButton(char *caption, int x, int y, int w, int h);
-  FormWidget *createLabel(char *caption, int x, int y, int w, int h);
-  FormWidget *createLineInput(char *buffer, int maxSize, int x, int y, int w, int h);
-  FormWidget *createList(FormWidgetListModel *model, int x, int y, int w, int h);
+  IFormWidget *createButton(char *caption, int x, int y, int w, int h);
+  IFormWidget *createLabel(char *caption, int x, int y, int w, int h);
+  IFormWidget *createLineInput(char *buffer, int maxSize, int x, int y, int w, int h);
+  IFormWidget *createList(IFormWidgetListModel *model, int x, int y, int w, int h);
   void draw();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
-  void edit(FormWidget *formWidget, int c);
+  void edit(IFormWidget *formWidget, int c);
   void flush(bool force, bool vscroll=false);
   int getBackgroundColor() { return back->bg; }
   int getColor() { return back->fg; }
@@ -211,8 +250,8 @@ private:
   int moveTime;   // last move time
   bool moveDown;  // last move direction was down
   bool swipeExit; // last touch-down was swipe exit
-  ButtonListener *buttonListener;
-  Button *activeLink;
+  IButtonListener *buttonListener;
+  Widget *activeButton;
 };
 
 #endif // ANSIWIDGET_H
