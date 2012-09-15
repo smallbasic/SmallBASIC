@@ -121,6 +121,25 @@ Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
   h(h) {
 }
 
+void Widget::drawButton(const char *caption) {
+  int r = x+w;
+  int b = y+h;
+
+  maSetColor(getBackground(BLOCK_BUTTON_COL));
+  maFillRect(x, y, w, h);
+
+  maSetColor(pressed ? bg : fg);
+  maLine(x, y, r-1, y); // top
+  maLine(x, y, x, b);   // left
+
+  maSetColor(pressed ? fg : bg);
+  maLine(x, b, r, b); // bottom
+  maLine(r, y, r, b); // right
+
+  maSetColor(fg);
+  maDrawText(x + 4, y + 4, caption);
+}
+
 bool Widget::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, w, h));
 }
@@ -150,25 +169,6 @@ BlockButton::BlockButton(Screen *screen, const char *action, const char *label,
   Button(screen, action, label, x, y, w, h) {
 }
 
-void BlockButton::draw() {
-  int r = x+w;
-  int b = y+h;
-
-  maSetColor(getBackground(BLOCK_BUTTON_COL));
-  maFillRect(x, y, w, h);
-
-  maSetColor(pressed ? bg : fg);
-  maLine(x, y, r-1, y); // top
-  maLine(x, y, x, b);   // left
-
-  maSetColor(pressed ? fg : bg);
-  maLine(x, b, r, b); // bottom
-  maLine(r, y, r, b); // right
-
-  maSetColor(fg);
-  maDrawText(x + 4, y + 4, label.c_str());
-}
-
 TextButton::TextButton(Screen *screen, const char *action, const char *label,
                        int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {
@@ -188,6 +188,16 @@ FormWidget::FormWidget(Screen *screen, int x, int y, int w, int h) :
 
 void FormWidget::clicked(IButtonListener *listener) { 
   this->listener->buttonClicked(NULL); 
+}
+
+FormButton::FormButton(Screen *screen, const char *caption, int x, int y, int w, int h) :
+  FormWidget(screen, x, y, w, h),
+  caption(caption) {
+}
+
+FormLabel::FormLabel(Screen *screen, const char *caption, int x, int y, int w, int h) :
+  FormWidget(screen, x, y, w, h),
+  caption(caption) {
 }
 
 FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize, 
@@ -247,6 +257,15 @@ void FormLineInput::edit(int key) {
     draw();
     getScreen()->draw(false);
   }
+}
+
+FormList::FormList(Screen *screen, IFormWidgetListModel *model,
+                   int x, int y, int w, int h) :
+  FormWidget(screen, x, y, w, h),
+  model(model) {
+}
+
+void FormList::draw() {
 }
 
 Screen::Screen(int x, int y, int width, int height, int fontSize) :
@@ -753,18 +772,24 @@ IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
 
 // creates a Button attached to the current back screen
 IFormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h) {
-  return NULL;
+  FormButton *button = new FormButton(back, caption, x, y, w, h);
+  button->draw();
+  return button;
 }
 
 // creates a Label attached to the current back screen
 IFormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) {
-  return NULL;
+  FormLabel *label = new FormLabel(back, caption, x, y, w, h);
+  label->draw();
+  return label;
 }
 
 // creates a List attached to the current back screen
 IFormWidget *AnsiWidget::createList(IFormWidgetListModel *model, 
-                                   int x, int y, int w, int h) {
-  return NULL;
+                                    int x, int y, int w, int h) {
+  FormList *list = new FormList(back, model, x, y, w, h);
+  list->draw();
+  return list;
 }
 
 // draws the given image onto the offscreen buffer

@@ -103,6 +103,8 @@ struct Widget {
 
   virtual void draw() = 0;
   virtual void clicked(IButtonListener *listener) = 0;
+
+  void drawButton(const char *caption);
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   int getBackground(int buttonColor);
 
@@ -134,7 +136,7 @@ struct TextButton : public Button {
 struct BlockButton : public Button {
   BlockButton(Screen *screen, const char *action, const char *label,
               int x, int y, int w, int h);
-  void draw();
+  void draw() { drawButton(label.c_str()); }
 };
 
 // base implementation for all external buttons
@@ -150,15 +152,33 @@ struct FormWidget : public Widget, IFormWidget {
   void setText(const char *text) {}
   void setWidth(int w) { this->w = w; }
   void setHeight(int h) { this->h = h; }
+  void edit(int key) {}
 
 private:
   Screen *screen;
   IButtonListener *listener;
 };
 
+struct FormButton : public FormWidget {
+  FormButton(Screen *screen, const char *caption, int x, int y, int w, int h);
+  virtual ~FormButton() {}
+
+  const char *getText() const { return caption.c_str(); }
+  void draw() { drawButton(caption.c_str()); }
+
+private:
+  String caption;
+};
+
 struct FormLabel : public FormWidget {
-  FormLabel(Screen *screen, int x, int y, int w, int h);
+  FormLabel(Screen *screen, const char *caption, int x, int y, int w, int h);
   virtual ~FormLabel() {}
+
+  const char *getText() const { return caption.c_str(); }
+  void draw() { drawButton(caption.c_str()); }
+
+private:
+  String caption;
 };
 
 struct FormLineInput : public FormWidget {
@@ -178,9 +198,15 @@ private:
 };
 
 struct FormList : public FormWidget {
-  FormList(Screen *screen, char *buffer, int maxSize, 
+  FormList(Screen *screen, IFormWidgetListModel *model, 
            int x, int y, int w, int h);
   virtual ~FormList() {}
+
+  const char *getText() const { return NULL; }
+  void draw();
+
+private:
+  IFormWidgetListModel *model;
 };
 
 struct AnsiWidget {
