@@ -35,121 +35,80 @@
 extern Controller *controller;
 Form *form;
 
-// convert a basic array into a String
-void array_to_string(String &s, var_t *v) {
-  for (int i = 0; i < v->v.a.size; i++) {
-    var_t *el_p = (var_t *)(v->v.a.ptr + sizeof(var_t) * i);
-    if (el_p->type == V_STR) {
-      const char *p = (const char *)el_p->v.p.ptr;
-      s.append(p, strlen(p));
-      s.append("\n", 1);
-    } else if (el_p->type == V_INT) {
-      char buff[40];
-      sprintf(buff, VAR_INT_FMT "\n", el_p->v.i);
-      s.append(buff, strlen(buff));
-    } else if (el_p->type == V_ARRAY) {
-      array_to_string(s, el_p);
+ListModel::ListModel(const char *items, var_t *v) {
+  create(items, v);
+}
+
+void ListModel::clear() {
+  Vector_each(String*, it, list) {
+    delete (*it);
+  }
+  list.clear();
+  focusIndex = -1;
+}
+
+void ListModel::create(const char *items, var_t *v) {
+  if (v && v->type == V_ARRAY) {
+    fromArray(items, v);
+  } else {
+    // construct from a string like "Easy|Medium|Hard"
+    int item_index = 0;
+    int len = items ? strlen(items) : 0;
+    for (int i = 0; i < len; i++) {
+      const char *c = strchr(items + i, '|');
+      int end_index = c ? c - items : len;
+      if (end_index > 0) {
+        String *s = new String(items + i, end_index - i);
+        list.add(s);
+        i = end_index;
+        if (v != 0 && v->type == V_STR && v->v.p.ptr &&
+            strcasecmp((const char *)v->v.p.ptr, s->c_str()) == 0) {
+          focusIndex = item_index;
+        }
+        item_index++;
+      }
     }
   }
 }
 
-// implements abstract StringList as a list of strings
-struct ListModel : IFormWidgetListModel {
-  Vector<String *> list;
-  int focusIndex;
-
-  ListModel(const char *items, var_t *v) {
-    create(items, v);
-  }
-
-  virtual ~ListModel() {
-    clear();
-  }
-
-  void clear() {
-    Vector_each(String*, it, list) {
-      delete (*it);
-    }
-    list.clear();
-    focusIndex = -1;
-  }
-
-  void create(const char *items, var_t *v) {
-    if (v && v->type == V_ARRAY) {
-      fromArray(items, v);
-    } else {
-      // construct from a string like "Easy|Medium|Hard"
-      int item_index = 0;
-      int len = items ? strlen(items) : 0;
-      for (int i = 0; i < len; i++) {
-        const char *c = strchr(items + i, '|');
-        int end_index = c ? c - items : len;
-        if (end_index > 0) {
-          String *s = new String(items + i, end_index - i);
-          list.add(s);
-          i = end_index;
-          if (v != 0 && v->type == V_STR && v->v.p.ptr &&
-              strcasecmp((const char *)v->v.p.ptr, s->c_str()) == 0) {
-            focusIndex = item_index;
-          }
-          item_index++;
-        }
+// construct from an array of values
+void ListModel::fromArray(const char *caption, var_t *v) {
+  for (int i = 0; i < v->v.a.size; i++) {
+    var_t *el_p = (var_t *)(v->v.a.ptr + sizeof(var_t) * i);
+    if (el_p->type == V_STR) {
+      list.add(new String((const char *)el_p->v.p.ptr));
+      if (caption && strcasecmp((const char *)el_p->v.p.ptr, caption) == 0) {
+        focusIndex = i;
       }
+    } else if (el_p->type == V_INT) {
+      char buff[40];
+      sprintf(buff, VAR_INT_FMT, el_p->v.i);
+      list.add(new String(buff));
+    } else if (el_p->type == V_ARRAY) {
+      fromArray(caption, el_p);
     }
   }
+}
 
-  // construct from an array of values
-  void fromArray(const char *caption, var_t *v) {
-    for (int i = 0; i < v->v.a.size; i++) {
-      var_t *el_p = (var_t *)(v->v.a.ptr + sizeof(var_t) * i);
-      if (el_p->type == V_STR) {
-        list.add(new String((const char *)el_p->v.p.ptr));
-        if (caption && strcasecmp((const char *)el_p->v.p.ptr, caption) == 0) {
-          focusIndex = i;
-        }
-      } else if (el_p->type == V_INT) {
-        char buff[40];
-        sprintf(buff, VAR_INT_FMT, el_p->v.i);
-        list.add(new String(buff));
-      } else if (el_p->type == V_ARRAY) {
-        fromArray(caption, el_p);
-      }
+// return the text at the given index
+const char *ListModel::getTextAt(int index) {
+  const char *s = 0;
+  if (index > -1 && index < list.size()) {
+    s = list[index]->c_str();
+  }
+  return s;
+}
+
+// returns the model index corresponding to the given string
+int ListModel::getIndex(const char *t) {
+  int size = list.size();
+  for (int i = 0; i < size; i++) {
+    if (!strcasecmp(list[i]->c_str(), t)) {
+      return i;
     }
   }
-
-  // return the text at the given index
-  const char *getTextAt(int index) {
-    const char *s = 0;
-    if (index > -1 && index < list.size()) {
-      s = list[index]->c_str();
-    }
-    return s;
-  }
-
-  // returns the model index corresponding to the given string
-  int getIndex(const char *t) {
-    int size = list.size();
-    for (int i = 0; i < size; i++) {
-      if (!strcasecmp(list[i]->c_str(), t)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  // return the number of rows under the given parent
-  int rowCount() const {
-    return list.size();
-  }
-
-  int selectedIndex() const {
-    return focusIndex;
-  }
-  
-  void setSelectedIndex(int index) {
-    focusIndex = index;
-  }
-};
+  return -1;
+}
 
 // Form constructor
 Form::Form() :
@@ -244,21 +203,37 @@ void Form::invoke(WidgetDataPtr widgetData) {
 }
 
 // WidgetData constructor
-WidgetData::WidgetData(IFormWidget *widget, ControlType type, var_t *var) :
-  widget(widget),
+WidgetData::WidgetData(ControlType type, var_t *var) :
+  widget(NULL),
   type(type),
-  var(var),
-  is_group_radio(false) {
-  orig.ptr = 0;
-  orig.i = 0;
-  setupWidget();
+  var(var) {
+  updateVarFlag();
 }
 
 WidgetData::~WidgetData() {
   delete widget;
 }
 
-void WidgetData::setupWidget() {
+// convert a basic array into a String
+void WidgetData::arrayToString(String &s, var_t *v) {
+  for (int i = 0; i < v->v.a.size; i++) {
+    var_t *el_p = (var_t *)(v->v.a.ptr + sizeof(var_t) * i);
+    if (el_p->type == V_STR) {
+      const char *p = (const char *)el_p->v.p.ptr;
+      s.append(p, strlen(p));
+      s.append("\n", 1);
+    } else if (el_p->type == V_INT) {
+      char buff[40];
+      sprintf(buff, VAR_INT_FMT "\n", el_p->v.i);
+      s.append(buff, strlen(buff));
+    } else if (el_p->type == V_ARRAY) {
+      arrayToString(s, el_p);
+    }
+  }
+}
+
+void WidgetData::setupWidget(IFormWidget *widget) {
+  this->widget = widget;
   if (form == 0) {
     form = new Form();
   }
@@ -339,7 +314,7 @@ bool WidgetData::updateGui() {
 
     case ctrl_label:
     case ctrl_text:
-      array_to_string(s, var);
+      arrayToString(s, var);
       widget->setText(s.c_str());
       break;
 
@@ -386,39 +361,33 @@ void WidgetData::transferData() {
 
   if (updateGui()) {
     updateVarFlag();
-    return;
-  }
+  } else {
+    // set widget state to basic variable
+    switch (type) {
+    case ctrl_text:
+      s = widget->getText();
+      if (s && s[0]) {
+        v_setstr(var, s);
+      } else {
+        v_zerostr(var);
+      }
+      break;
 
-  // set widget state to basic variable
-  switch (type) {
-  case ctrl_text:
-    s = widget->getText();
-    if (s && s[0]) {
-      v_setstr(var, s);
-    } else {
-      v_zerostr(var);
+    case ctrl_listbox:
+      model = (ListModel *)widget->getList();
+      const char *s = model->getTextAt(model->selectedIndex());
+      if (s) {
+        v_setstr(var, s);
+      }
+      break;
+
+    default:
+      break;
     }
-    break;
 
-  case ctrl_listbox:
-    model = (ListModel *)widget->getList();
-    const char *s = model->getTextAt(model->selectedIndex());
-    if (s) {
-      v_setstr(var, s);
-    }
-    break;
-
-  case ctrl_button:
-    // update the basic variable with the button label
-    v_setstr(var, widget->getText());
-    break;
-
-  default:
-    break;
+    // only update the gui when the variable is changed in basic code
+    updateVarFlag();
   }
-
-  // only update the gui when the variable is changed in basic code
-  updateVarFlag();
 }
 
 C_LINKAGE_BEGIN 
@@ -431,6 +400,7 @@ void ui_reset() {
   }
 }
 
+//
 // BUTTON x, y, w, h, variable, caption [,type]
 //
 void cmd_button() {
@@ -441,45 +411,53 @@ void cmd_button() {
 
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type)) {
     IFormWidget *widget;
+    WidgetData *wd;
     if (type) {
       if (strcasecmp("button", type) == 0) {
+        wd = new WidgetData(ctrl_button, var);
         widget = controller->output->createButton(caption, x, y, w, h);
-        new WidgetData(widget, ctrl_button, var);
       } else if (strcasecmp("label", type) == 0) {
+        wd = new WidgetData(ctrl_label, var);
         widget = controller->output->createLabel(caption, x, y, w, h);
-        new WidgetData(widget, ctrl_label, var);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {
         ListModel *model = new ListModel(caption, var);
+        wd = new WidgetData(ctrl_listbox, var);
         widget = controller->output->createList(model, x, y, w, h);
-        new WidgetData(widget, ctrl_listbox, var);
       } else {
         ui_reset();
         rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);
       }
     } else {
+      wd = new WidgetData(ctrl_button, var);
       widget = controller->output->createButton(caption, x, y, w, h);
-      new WidgetData(widget, ctrl_button, var);
+    }
+    if (widget) {
+      wd->setupWidget(widget);
     }
   }
 
   pfree2(caption, type);
 }
 
+//
 // TEXT x, y, w, h, variable
 // When DOFORM returns the variable contains the user entered value
+//
 void cmd_text() {
   var_int_t x, y, w, h;
   var_t *var = 0;
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &var)) {
+    WidgetData *wd = new WidgetData(ctrl_text, var);
     IFormWidget *widget = controller->output->createLineInput(NULL, 0, x, y, w, h);
-    new WidgetData(widget, ctrl_text, var);
+    wd->setupWidget(widget);
   }
 }
 
-// DOFORM [FLAG|VAR]
-// Executes the form
+//
+// DOFORM [FLAG|VAR] - executes the form
+//
 void cmd_doform() {
   if (!form) {
     rt_raise("UI: FORM NOT READY");

@@ -13,8 +13,6 @@
 #include "common/sys.h"
 #include "common/var.h"
 
-#include "ansiwidget.h"
-
 // control types available using the BUTTON command
 enum ControlType {
   ctrl_button,
@@ -23,15 +21,32 @@ enum ControlType {
   ctrl_listbox,
 };
 
+struct ListModel : IFormWidgetListModel {
+  ListModel(const char *items, var_t *v);
+  virtual ~ListModel() { clear(); }
+
+  void clear();
+  void create(const char *items, var_t *v);
+  void fromArray(const char *caption, var_t *v);
+  const char *getTextAt(int index);
+  int getIndex(const char *t);
+  int rowCount() const { return list.size(); }
+  int selectedIndex() const { return focusIndex; }
+  void setSelectedIndex(int index) { focusIndex = index; }
+
+private:
+  Vector<String *> list;
+  int focusIndex;
+};
+
 // binds a smallbasic variable with a form widget
 struct WidgetData  : public IButtonListener {
-  WidgetData(IFormWidget *widget, ControlType type, var_t *var);
+  WidgetData(ControlType type, var_t *var);
   virtual ~WidgetData();
 
   IFormWidget *widget;
   ControlType type;
   var_t *var;
-  bool is_group_radio;
 
   // startup value used to check if
   // exec has altered a bound variable
@@ -40,8 +55,9 @@ struct WidgetData  : public IButtonListener {
     byte *ptr;
   } orig;
 
+  void arrayToString(String &s, var_t *v);
   void buttonClicked(const char *action);
-  void setupWidget();
+  void setupWidget(IFormWidget *widget);
   bool updateGui();
   void updateVarFlag();
   void transferData();
