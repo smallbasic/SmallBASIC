@@ -19,7 +19,6 @@
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
-#define LONG_PRESS_TIME 4000
 #define SYSTEM_MENU "\033[ OView Source|Show Console|Show Keypad\034"
 #define MENU_SOURCE 0
 #define MENU_LOG    1
@@ -38,7 +37,6 @@ Controller::Controller() :
   touchY(-1),
   touchCurX(-1),
   touchCurY(-1),
-  touchTime(0),
   systemMenu(false),
   systemScreen(false),
   programSrc(NULL) {
@@ -80,14 +78,14 @@ int Controller::getPen(int code) {
     switch (code) {
     case 0:
       // UNTIL PEN(0) - wait until click or move
-      processEvents(-1, EVENT_TYPE_POINTER_PRESSED);
+      processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_POINTER_PRESSED);
       // fallthru
 
     case 3:   // returns true if the pen is down (and save curpos)
       if (touchX != -1 && touchY != -1) {
         result = 1;
       } else {
-        processEvents(0, -1);
+        processEvents(EVENT_WAIT_NONE);
       }
       break;
 
@@ -126,7 +124,7 @@ char *Controller::getText(char *dest, int maxSize) {
   maShowVirtualKeyboard();
 
   while (isModal()) {
-    MAEvent event = processEvents(1000, EVENT_TYPE_KEY_PRESSED);
+    MAEvent event = processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_KEY_PRESSED);
     if (event.type == EVENT_TYPE_KEY_PRESSED) {
       dev_clrkb();
       if (isModal()) {
@@ -140,7 +138,6 @@ char *Controller::getText(char *dest, int maxSize) {
   }
 
   delete formWidget;
-  formWidget = NULL;
   return dest;
 }
 
@@ -149,9 +146,9 @@ int Controller::handleEvents(int waitFlag) {
   if (!waitFlag) {
     // pause when we have been called too frequently
     int now = maGetMilliSecondCount();
-    if (now - lastEventTime <= EVT_CHECK_EVERY) {
+    if (now - lastEventTime <= EVENT_CHECK_EVERY) {
       eventsPerTick += (now - lastEventTime);
-      if (eventsPerTick >= EVT_MAX_BURN_TIME) {
+      if (eventsPerTick >= EVENT_MAX_BURN_TIME) {
         eventsPerTick = 0;
         waitFlag = 2;
       }
@@ -162,15 +159,15 @@ int Controller::handleEvents(int waitFlag) {
   switch (waitFlag) {
   case 1:
     // wait for an event
-    processEvents(-1, -1);
+    processEvents(EVENT_WAIT_INFINITE);
     break;
   case 2:
     // pause
-    processEvents(EVT_PAUSE_TIME, -1);
+    processEvents(EVENT_PAUSE_TIME);
     break;
   default:
     // pump messages without pausing
-    processEvents(0, -1);
+    processEvents(EVENT_WAIT_NONE);
     break;
   }
 
@@ -189,7 +186,7 @@ void Controller::pause(int ms) {
         runMode = run_state;
         break;
       }
-      processEvents(msWait, -1);
+      processEvents(msWait);
     }
   } else {
     MAEvent event;
@@ -208,23 +205,13 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   MAExtent screenSize;
   int loadPathSize = loadPath.size();
 
-  // long press = menu
-  if (touchTime != 0) {
-    int now = maGetMilliSecondCount();
-    if ((now - touchTime) > LONG_PRESS_TIME) {
-      touchTime = now;
-      systemMenu = true;
-      output->print(SYSTEM_MENU);
-    }
-  }
-
   if (ms < 0 && untilType != -1) {
     // flush the display before pausing for target event
     if (isRunning()) {
       output->flush(true);
     }
     maWait(ms);
-    ms = 0;
+    ms = EVENT_WAIT_NONE;
   }
 
   while (!isBreak() && maGetEvent(&event)) {
@@ -258,7 +245,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       handleKey(SB_PKEY_SIZE_CHG);
       break;
     case EVENT_TYPE_POINTER_PRESSED:
-      touchTime = maGetMilliSecondCount();
       touchX = touchCurX = event.point.x;
       touchY = touchCurY = event.point.y;
       handleKey(SB_KEY_MK_PUSH);
@@ -270,7 +256,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       output->pointerMoveEvent(event);
       break;
     case EVENT_TYPE_POINTER_RELEASED:
-      touchTime = 0;
       touchX = touchY = touchCurX = touchCurY = -1;
       handleKey(SB_KEY_MK_RELEASE);
       output->pointerReleaseEvent(event);
@@ -282,15 +267,16 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       handleKey(event.key);
       break;
     }
-    if ((untilType != -1 && untilType == event.type) || 
-        (loadPathSize != loadPath.size())) {
+    if (untilType == EVENT_TYPE_EXIT_ANY || 
+        untilType == event.type ||
+        loadPathSize != loadPath.size()) {
       // skip next maWait() - found target event or loadPath changed
-      ms = 0;
+      ms = EVENT_WAIT_NONE;
       break;
     }
   }
-  
-  if (ms != 0) {
+
+  if (ms != EVENT_WAIT_NONE) {
     maWait(ms);
   } 
   return event;
@@ -521,7 +507,7 @@ char *Controller::readConnection(const char *url) {
 
     // pause until connected
     while (runMode == conn_state) {
-      event = processEvents(-1, EVENT_TYPE_CONN);
+      event = processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_CONN);
       if (event.type == EVENT_TYPE_CONN) {
         switch (event.conn.opType) {
         case CONNOP_CONNECT:

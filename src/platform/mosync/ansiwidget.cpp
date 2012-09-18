@@ -184,6 +184,11 @@ FormWidget::FormWidget(Screen *screen, int x, int y, int w, int h) :
   Widget(screen->bg, screen->fg, x, y, w, h),
   screen(screen),
   listener(NULL) {
+  getScreen()->add(this); 
+}
+
+FormWidget::~FormWidget() {
+  getScreen()->remove(this);
 }
 
 void FormWidget::clicked(IButtonListener *listener) { 
@@ -206,11 +211,6 @@ FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize,
   buffer(buffer),
   maxSize(maxSize),
   scroll(0) {
-  getScreen()->add(this);
-}
-
-FormLineInput::~FormLineInput() { 
-  getScreen()->remove(this); 
 }
 
 void FormLineInput::draw() {
@@ -266,6 +266,7 @@ FormList::FormList(Screen *screen, IFormWidgetListModel *model,
 }
 
 void FormList::draw() {
+  // TODO: implement me
 }
 
 Screen::Screen(int x, int y, int width, int height, int fontSize) :
@@ -766,21 +767,27 @@ void AnsiWidget::beep() const {
 IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
                                          int x, int y, int w, int h) {
   FormLineInput *lineInput = new FormLineInput(back, buffer, maxSize, x, y, w, h);
+  back->drawInto();
   lineInput->draw();
+  flush(false);
   return lineInput;
 }
 
 // creates a Button attached to the current back screen
 IFormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h) {
   FormButton *button = new FormButton(back, caption, x, y, w, h);
+  back->drawInto();
   button->draw();
+  flush(false);
   return button;
 }
 
 // creates a Label attached to the current back screen
 IFormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) {
   FormLabel *label = new FormLabel(back, caption, x, y, w, h);
+  back->drawInto();
   label->draw();
+  flush(false);
   return label;
 }
 
@@ -788,7 +795,9 @@ IFormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) 
 IFormWidget *AnsiWidget::createList(IFormWidgetListModel *model, 
                                     int x, int y, int w, int h) {
   FormList *list = new FormList(back, model, x, y, w, h);
+  back->drawInto();
   list->draw();
+  flush(false);
   return list;
 }
 

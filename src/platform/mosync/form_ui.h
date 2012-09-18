@@ -75,11 +75,11 @@ struct Form {
   void execute();
   void update();
 
-  enum Mode { 
-    m_reset, 
-    m_init, 
-    m_active, 
-    m_selected 
+  enum Mode {
+    m_reset,
+    m_init,
+    m_active,
+    m_selected
   };
 
 private:

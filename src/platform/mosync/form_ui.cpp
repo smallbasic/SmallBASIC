@@ -179,7 +179,8 @@ void Form::execute() {
       dev_clrkb();
     }
     while (controller->isRunning() && mode == m_active) {
-      controller->processEvents(-1, -1);
+      controller->output->flush(true);
+      controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
       if (kb_handle && keymap_kbhit()) {
         break;
       }
@@ -190,7 +191,6 @@ void Form::execute() {
 
 void Form::invoke(WidgetDataPtr widgetData) {
   mode = m_selected;
-
   if (var) {
     // array type cannot be used in program select statement
     if (widgetData->var->type == V_ARRAY) {
@@ -364,6 +364,7 @@ void WidgetData::transferData() {
   } else {
     // set widget state to basic variable
     switch (type) {
+    case ctrl_button:
     case ctrl_text:
       s = widget->getText();
       if (s && s[0]) {

@@ -21,9 +21,13 @@
 
 using namespace MAUtil;
 
-#define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
-#define EVT_PAUSE_TIME 5
-#define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
+#define EVENT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
+#define EVENT_PAUSE_TIME 5
+#define EVENT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
+
+#define EVENT_TYPE_EXIT_ANY 0
+#define EVENT_WAIT_INFINITE -1
+#define EVENT_WAIT_NONE 0
 
 struct Controller : public Environment, IButtonListener {
   Controller();
@@ -35,7 +39,7 @@ struct Controller : public Environment, IButtonListener {
   char *getText(char *dest, int maxSize);
   int handleEvents(int waitFlag);
   void pause(int ms);
-  MAEvent processEvents(int ms, int untilType);
+  MAEvent processEvents(int ms, int untilType = -1);
   char *readSource(const char *fileName);
 
   bool isExit() { return runMode == exit_state; }
@@ -75,7 +79,6 @@ private:
   int touchY;
   int touchCurX;
   int touchCurY;
-  int touchTime;
   bool systemMenu;
   bool systemScreen;
   String loadPath;

@@ -142,7 +142,7 @@ struct BlockButton : public Button {
 // base implementation for all external buttons
 struct FormWidget : public Widget, IFormWidget {
   FormWidget(Screen *screen, int x, int y, int w, int h);
-  virtual ~FormWidget() {}
+  virtual ~FormWidget();
 
   void setListener(IButtonListener *listener) { this->listener = listener; }
   Screen *getScreen() { return screen; }
@@ -184,12 +184,13 @@ private:
 struct FormLineInput : public FormWidget {
   FormLineInput(Screen *screen, char *buffer, int maxSize, 
                 int x, int y, int w, int h);
-  virtual ~FormLineInput();
+  virtual ~FormLineInput() {}
 
   void close();
   void draw();
   void edit(int key);
   const char *getText() const { return buffer; }
+  void setText(const char *text) {}
 
 private:
   char *buffer;
