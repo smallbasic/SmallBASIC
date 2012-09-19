@@ -39,9 +39,16 @@ struct IFormWidget {
   virtual IFormWidgetListModel *getList() const = 0;
   virtual const char *getText() const = 0;
   virtual void setText(const char *text) = 0;
-  virtual void setWidth(int w) = 0;
-  virtual void setHeight(int h) = 0;
   virtual void setListener(IButtonListener *listener) = 0;
+  virtual void show() = 0;
+  virtual int getX() = 0;
+  virtual int getY() = 0;
+  virtual int getW() = 0;
+  virtual int getH() = 0;
+  virtual void setX(int x) = 0;
+  virtual void setY(int y) = 0;
+  virtual void setW(int w) = 0;
+  virtual void setH(int h) = 0;
 };
 
 struct Widget;
@@ -147,12 +154,20 @@ struct FormWidget : public Widget, IFormWidget {
   void setListener(IButtonListener *listener) { this->listener = listener; }
   Screen *getScreen() { return screen; }
   void clicked(IButtonListener *listener);
+  void show();
 
   IFormWidgetListModel *getList() const { return NULL; }
   void setText(const char *text) {}
-  void setWidth(int w) { this->w = w; }
-  void setHeight(int h) { this->h = h; }
   void edit(int key) {}
+
+  int getX() { return this->x; }
+  int getY() { return this->y; }
+  int getW() { return this->w; }
+  int getH() { return this->h; }
+  void setX(int x) { this->x = x; }
+  void setY(int y) { this->y = y; }
+  void setW(int w) { this->w = w; }
+  void setH(int h) { this->h = h; }
 
 private:
   Screen *screen;

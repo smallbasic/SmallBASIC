@@ -13,28 +13,22 @@
 
 #include "config.h"
 #include "common/sys.h"
-#include "common/var.h"
-#include "common/kw.h"
-#include "common/pproc.h"
-#include "common/device.h"
-#include "common/smbas.h"
-#include "common/keymap.h"
 #include "common/blib_ui.h"
 
 #include "platform/mosync/controller.h"
-#include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/utils.h"
 #include "platform/mosync/form_ui.h"
 
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W  16
 #define BN_H   8
-#define RAD_W 22
-#define RAD_H  0
 
 extern Controller *controller;
 Form *form;
 
+//
+// ListModel
+//
 ListModel::ListModel(const char *items, var_t *v) {
   create(items, v);
 }
@@ -110,20 +104,59 @@ int ListModel::getIndex(const char *t) {
   return -1;
 }
 
-// Form constructor
+//
+// Form
+//
 Form::Form() :
   mode(m_init),
   cmd(0), 
   var(0),
-  kb_handle(false),
-  prev_x(0),
-  prev_y(0) {
+  kbHandle(false),
+  prevX(0),
+  prevY(0) {
 } 
 
 Form::~Form() {
   Vector_each(WidgetDataPtr, it, items) {
     delete (*it);
   }
+}
+
+// setup the widget
+void Form::setupWidget(WidgetDataPtr widgetData) { 
+  items.add(widgetData);
+
+  IFormWidget *widget = widgetData->widget;
+  const char *caption = widget->getText();
+
+  int textW = 0;
+  int textH = 0;
+  if (caption) {
+    MAExtent extent = maGetTextSize(caption);
+    textW = EXTENT_X(extent);
+    textH = EXTENT_Y(extent);
+  }
+
+  if (widget->getW() < 0 && caption != NULL) {
+    widget->setW(textW + BN_W);
+  }
+
+  if (widget->getH() < 0) {
+    widget->setH(textH + BN_H);
+  }
+
+  if (widget->getX() < 0) {
+    widget->setX(prevX - widget->getX());
+  }
+
+  if (widget->getY() < 0) {
+    widget->setY(prevY - widget->getY());
+  }
+
+  prevX = widget->getX() + widget->getW();
+  prevY = widget->getY() + widget->getH();
+  
+  widget->show();
 }
 
 // copy all widget fields into variables
@@ -158,7 +191,7 @@ void Form::execute() {
       // apply any configuration options
       switch (cmd) {
       case 1:
-        kb_handle = true;
+        kbHandle = true;
         return;
       default:
         break;
@@ -175,13 +208,12 @@ void Form::execute() {
     // pump system messages until there is a widget callback
     mode = m_active;
 
-    if (kb_handle) {
+    if (kbHandle) {
       dev_clrkb();
     }
     while (controller->isRunning() && mode == m_active) {
-      controller->output->flush(true);
       controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
-      if (kb_handle && keymap_kbhit()) {
+      if (kbHandle && keymap_kbhit()) {
         break;
       }
     }
@@ -202,7 +234,9 @@ void Form::invoke(WidgetDataPtr widgetData) {
   }
 }
 
-// WidgetData constructor
+//
+// WidgetData
+//
 WidgetData::WidgetData(ControlType type, var_t *var) :
   widget(NULL),
   type(type),
@@ -234,32 +268,13 @@ void WidgetData::arrayToString(String &s, var_t *v) {
 
 void WidgetData::setupWidget(IFormWidget *widget) {
   this->widget = widget;
+  this->widget->setListener(this);
+
   if (form == 0) {
     form = new Form();
   }
-  form->add(this);
-  widget->setListener(this);
 
-  /*
-  if (rect.width != -1) {
-    widget->setWidth(rect.width);
-  }
-
-  if (rect.height != -1) {
-    widget->setHeight(rect.height);
-  }
-
-  if (rect.left < 0) {
-    rect.left = form->prev_x - rect.left;
-  }
-
-  if (rect.top < 0) {
-    rect.top = form->prev_y - rect.top;
-  }
-
-  form->prev_x = rect.left + rect.width;
-  form->prev_y = rect.top + rect.height;
-  */
+  form->setupWidget(this);
 }
 
 // update the smallbasic variable

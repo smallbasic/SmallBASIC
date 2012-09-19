@@ -40,20 +40,9 @@ private:
 };
 
 // binds a smallbasic variable with a form widget
-struct WidgetData  : public IButtonListener {
+struct WidgetData : public IButtonListener {
   WidgetData(ControlType type, var_t *var);
   virtual ~WidgetData();
-
-  IFormWidget *widget;
-  ControlType type;
-  var_t *var;
-
-  // startup value used to check if
-  // exec has altered a bound variable
-  union {
-    long i;
-    byte *ptr;
-  } orig;
 
   void arrayToString(String &s, var_t *v);
   void buttonClicked(const char *action);
@@ -61,6 +50,19 @@ struct WidgetData  : public IButtonListener {
   bool updateGui();
   void updateVarFlag();
   void transferData();
+
+  IFormWidget *widget;
+  var_t *var;
+
+private:
+  ControlType type;
+
+  // startup value used to check if
+  // exec has altered a bound variable
+  union {
+    long i;
+    byte *ptr;
+  } orig;
 };
 
 typedef WidgetData *WidgetDataPtr;
@@ -69,7 +71,7 @@ struct Form {
   Form();
   virtual ~Form();
 
-  void add(WidgetDataPtr widgetData) { items.add(widgetData); }
+  void setupWidget(WidgetDataPtr widgetData);
   bool hasEvent() { return mode == m_selected; }
   void invoke(WidgetDataPtr widgetData);
   void execute();
@@ -87,9 +89,9 @@ private:
   Vector<WidgetDataPtr> items; // form child items
   var_t *var;                  // form variable contains the value of the event widget
   int cmd;                     // doform argument by value
-  bool kb_handle;              // whether doform returns on a keyboard event
-  int prev_x;
-  int prev_y;
+  bool kbHandle;              // whether doform returns on a keyboard event
+  int prevX;
+  int prevY;
 };
 
 #endif
