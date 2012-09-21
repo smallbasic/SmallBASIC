@@ -75,7 +75,6 @@ struct Form {
   bool hasEvent() { return mode == m_selected; }
   void invoke(WidgetDataPtr widgetData);
   void execute();
-  void update();
 
   enum Mode {
     m_reset,

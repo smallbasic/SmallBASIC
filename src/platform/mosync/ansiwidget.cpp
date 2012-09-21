@@ -56,7 +56,7 @@
 #define BLOCK_BUTTON_COL 0x505050
 #define GRAY_BG_COL      0x383f42
 #define LABEL_TEXT_COL   0xebebeb
-#define BUTTON_PADDING 8
+#define BUTTON_PADDING 10
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
 #define SWIPE_SCROLL_FAST 30
@@ -122,19 +122,33 @@ Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
 }
 
 void Widget::drawButton(const char *caption) {
-  int r = x+w;
-  int b = y+h;
+  int r = x+w-1;
+  int b = y+h-1;
 
   maSetColor(getBackground(BLOCK_BUTTON_COL));
-  maFillRect(x, y, w, h);
+  maFillRect(x, y, w-1, h-1);
 
-  maSetColor(pressed ? bg : fg);
-  maLine(x, y, r-1, y); // top
-  maLine(x, y, x, b);   // left
-
-  maSetColor(pressed ? fg : bg);
-  maLine(x, b, r, b); // bottom
-  maLine(r, y, r, b); // right
+  if (pressed) {
+    maSetColor(0x909090);
+    maLine(x, y, r, y); // top
+    maLine(x, y, x, b); // left
+    maSetColor(0xd0d0d0);
+    maLine(x+1, b, r, b); // bottom
+    maLine(r, y+1, r, b); // right
+    maSetColor(0x606060);
+    maLine(x+1, y+1, r-1, y+1); // bottom
+    maLine(x+1, b-1, x+1, b-1); // right
+  } else {
+    maSetColor(0xd0d0d0);
+    maLine(x, y, r, y); // top
+    maLine(x, y, x, b); // left
+    maSetColor(0x606060);
+    maLine(x, b, r, b); // bottom
+    maLine(r, y, r, b); // right
+    maSetColor(0x909090);
+    maLine(x+1, b-1, r-1, b-1); // bottom
+    maLine(r-1, y+1, r-1, b-1); // right
+  }
 
   maSetColor(fg);
   maDrawText(x + 4, y + 4, caption);
@@ -1181,11 +1195,9 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       // GSS Graphic Size Selection
       back->fontSize = escValue;
       back->updateFont();
-      p++;
       break;
     case 'K':
       maShowVirtualKeyboard();
-      p++;
       break;
     case 'H':
       createLink(p, false, false);
@@ -1195,12 +1207,17 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       break;
     case 'L':
       createLabel(p);
+      break;
     case 'O':
       createOptionsBox(p);
       break;
     case 'S':
       screenCommand(p);
       break;
+    }
+    if (p[1] == ';') {
+      // advance to the separator
+      p++;
     }
   } else if (back->setGraphicsRendition(*p, escValue, textHeight)) {
     back->updateFont();
@@ -1209,7 +1226,8 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
   bool result = false;
   if (*p == ';') {
     result = true;
-    p++;                        // next rendition
+    // advance to next rendition
+    p++;  
   }
   return result;
 }
@@ -1318,7 +1336,6 @@ void AnsiWidget::screenCommand(char *&p) {
     break;
   case 'P': // remember the current screen
     pushed = back;
-    p++;
     break;
   case 'p': // restore the saved write and display screens
     if (pushed) {
@@ -1336,7 +1353,6 @@ void AnsiWidget::screenCommand(char *&p) {
     break;
   case 'w': // revert write/back to front screen
     back = pushed != NULL ? pushed : front;
-    p++;
     break;
   case 'D': // select display/front screen
     selected = selectScreen(p);
@@ -1350,7 +1366,6 @@ void AnsiWidget::screenCommand(char *&p) {
     front = back;
     front->dirty = true;
     flush(true);
-    p++;
     break;
   default:
     print("ERR unknown screen command");

@@ -20,8 +20,8 @@
 #include "platform/mosync/form_ui.h"
 
 // width and height fudge factors for when button w+h specified as -1
-#define BN_W  16
-#define BN_H   8
+#define BN_W 16
+#define BN_H 8
 
 extern Controller *controller;
 Form *form;
@@ -146,26 +146,17 @@ void Form::setupWidget(WidgetDataPtr widgetData) {
   }
 
   if (widget->getX() < 0) {
-    widget->setX(prevX - widget->getX());
+    widget->setX((prevX - widget->getX()) + 1);
   }
 
   if (widget->getY() < 0) {
-    widget->setY(prevY - widget->getY());
+    widget->setY((prevY - widget->getY()) + 1);
   }
 
   prevX = widget->getX() + widget->getW();
   prevY = widget->getY() + widget->getH();
   
   widget->show();
-}
-
-// copy all widget fields into variables
-void Form::update() {
-  if (controller->isRunning()) {
-    Vector_each(WidgetDataPtr, it, items) {
-      (*it)->transferData();
-    }
-  }
 }
 
 void Form::execute() {
@@ -200,7 +191,12 @@ void Form::execute() {
     break;
   };
 
-  update();
+  // apply any variable changes onto attached widgets
+  if (controller->isRunning()) {
+    Vector_each(WidgetDataPtr, it, items) {
+      (*it)->updateGui();
+    }
+  }
 
   if (!cmd) {
     ui_reset();
@@ -217,7 +213,6 @@ void Form::execute() {
         break;
       }
     }
-    update();
   }
 }
 
@@ -241,7 +236,8 @@ WidgetData::WidgetData(ControlType type, var_t *var) :
   widget(NULL),
   type(type),
   var(var) {
-  updateVarFlag();
+  orig.ptr = 0;
+  orig.i = 0;
 }
 
 WidgetData::~WidgetData() {
@@ -297,7 +293,9 @@ void WidgetData::updateVarFlag() {
 // callback for the widget info called when the widget has been invoked
 void WidgetData::buttonClicked(const char *action) {
   if (controller->isRunning()) {
-    transferData();
+    if (!updateGui()) {
+      transferData();
+    }
     form->invoke(this);
   }
 }
@@ -305,18 +303,16 @@ void WidgetData::buttonClicked(const char *action) {
 // set basic string variable to widget state when the variable has changed
 bool WidgetData::updateGui() {
   ListModel *model;
+  bool updated = false;
 
   if (var->type == V_INT && var->v.i != orig.i) {
     // update list control with new int variable
     if (type == ctrl_listbox) {
       model = (ListModel *)widget->getList();
       model->setSelectedIndex(var->v.i);
-      return true;
+      updated = true;
     }
-    return false;
-  }
-
-  if (var->type == V_ARRAY && var->v.p.ptr != orig.ptr) {
+  } else if (var->type == V_ARRAY && var->v.p.ptr != orig.ptr) {
     // update list control with new array variable
     String s;
 
@@ -325,20 +321,20 @@ bool WidgetData::updateGui() {
       model = (ListModel *)widget->getList();
       model->clear();
       model->create(0, var);
-      return true;
+      updated = true;
+      break;
 
     case ctrl_label:
     case ctrl_text:
       arrayToString(s, var);
       widget->setText(s.c_str());
+      updated = true;
       break;
 
     default:
-      return false;
+      break;
     }
-  }
-
-  if (var->type == V_STR && orig.ptr != var->v.p.ptr) {
+  } else if (var->type == V_STR && orig.ptr != var->v.p.ptr) {
     // update list control with new string variable
     switch (type) {
     case ctrl_listbox:
@@ -353,56 +349,54 @@ bool WidgetData::updateGui() {
           model->setSelectedIndex(selection);
         }
       }
+      updated = true;
       break;
 
     case ctrl_label:
     case ctrl_text:
     case ctrl_button:
       widget->setText((const char *)var->v.p.ptr);
+      updated = true;
       break;
 
     default:
       break;
     }
-    return true;
   }
-  return false;
+  if (updated) {
+    updateVarFlag();
+    widget->show();
+  }
+  return updated;
 }
 
-// synchronise basic variable and widget state
+// transfer the widget state onto the assiciated variable
 void WidgetData::transferData() {
+  logEntered();
   const char *s;
   ListModel *model;
 
-  if (updateGui()) {
-    updateVarFlag();
-  } else {
-    // set widget state to basic variable
-    switch (type) {
-    case ctrl_button:
-    case ctrl_text:
-      s = widget->getText();
-      if (s && s[0]) {
-        v_setstr(var, s);
-      } else {
-        v_zerostr(var);
-      }
-      break;
-
-    case ctrl_listbox:
-      model = (ListModel *)widget->getList();
-      const char *s = model->getTextAt(model->selectedIndex());
-      if (s) {
-        v_setstr(var, s);
-      }
-      break;
-
-    default:
-      break;
+  switch (type) {
+  case ctrl_button:
+  case ctrl_text:
+    s = widget->getText();
+    if (s && s[0]) {
+      v_setstr(var, s);
+    } else {
+      v_zerostr(var);
     }
-
-    // only update the gui when the variable is changed in basic code
-    updateVarFlag();
+    break;
+    
+  case ctrl_listbox:
+    model = (ListModel *)widget->getList();
+    const char *s = model->getTextAt(model->selectedIndex());
+    if (s) {
+      v_setstr(var, s);
+    }
+    break;
+    
+  default:
+    break;
   }
 }
 

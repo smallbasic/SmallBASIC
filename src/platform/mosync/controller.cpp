@@ -247,7 +247,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     case EVENT_TYPE_POINTER_PRESSED:
       touchX = touchCurX = event.point.x;
       touchY = touchCurY = event.point.y;
-      handleKey(SB_KEY_MK_PUSH);
       output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
@@ -257,7 +256,6 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       break;
     case EVENT_TYPE_POINTER_RELEASED:
       touchX = touchY = touchCurX = touchCurY = -1;
-      handleKey(SB_KEY_MK_RELEASE);
       output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
