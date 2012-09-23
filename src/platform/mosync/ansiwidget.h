@@ -13,9 +13,9 @@
 #include <MAUtil/String.h>
 #include <MAUtil/Vector.h>
 
-#define DEFAULT_COLOR 0xa1a1a1
-#define LINE_SPACING 4
-#define MAX_SCREENS  4
+#include "platform/mosync/screen.h"
+
+#define MAX_SCREENS 4
 
 using namespace MAUtil;
 
@@ -51,60 +51,8 @@ struct IFormWidget {
   virtual void setH(int h) = 0;
 };
 
-struct Widget;
-
-struct Screen {
-  Screen(int x, int y, int width, int height, int fontSize);
-  virtual ~Screen();
-
-  void add(Widget *button) { buttons.add(button); }
-  void calcTab();
-  bool construct();
-  void clear();
-  void draw(bool vscroll);
-  void drawInto(bool background=false);
-  void drawText(const char *text, int len, int x, int lineHeight);
-  void newLine(int lineHeight);
-  int  print(const char *p, int lineHeight);
-  void remove(Widget *button);
-  void reset(int fontSize = -1);
-  void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
-  void setColor(long color);
-  void setTextColor(long fg, long bg);
-  bool setGraphicsRendition(char c, int escValue, int lineHeight);
-  void updateFont();
-
-  MAHandle image;
-  MAHandle font;
-  bool underline;
-  bool invert;
-  bool bold;
-  bool italic;
-  int bg;
-  int fg;
-  int x,y;
-  int width;
-  int height;
-  int imageWidth;
-  int imageHeight;
-  int pageHeight;
-  int scrollY;
-  int curY;
-  int curX;
-  int curYSaved;
-  int curXSaved;
-  int tabSize;
-  int fontSize; 
-  int charWidth;
-  int charHeight;
-  int dirty;
-  int linePadding;
-  Vector <Widget *>buttons;
-  String label;
-};
-
 // base implementation for all buttons
-struct Widget {
+struct Widget : public Rectangle {
   Widget(int bg, int fg, int x, int y, int w, int h);
   virtual ~Widget() {}
 
@@ -117,7 +65,6 @@ struct Widget {
 
   bool pressed;
   int bg, fg;
-  int x,y,w,h;
 };
 
 // base implementation for all internal buttons
@@ -162,12 +109,12 @@ struct FormWidget : public Widget, IFormWidget {
 
   int getX() { return this->x; }
   int getY() { return this->y; }
-  int getW() { return this->w; }
-  int getH() { return this->h; }
+  int getW() { return this->width; }
+  int getH() { return this->height; }
   void setX(int x) { this->x = x; }
   void setY(int y) { this->y = y; }
-  void setW(int w) { this->w = w; }
-  void setH(int h) { this->h = h; }
+  void setW(int w) { this->width = w; }
+  void setH(int h) { this->height = h; }
 
 private:
   Screen *screen;

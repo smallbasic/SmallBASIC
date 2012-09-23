@@ -200,7 +200,7 @@ void Controller::pause(int ms) {
 }
 
 // process events on the system event queue
-MAEvent Controller::processEvents(int ms, int untilType) {
+MAEvent Controller::processEvents(int ms, int untilType, bool touchAsKey) {
   MAEvent event;
   MAExtent screenSize;
   int loadPathSize = loadPath.size();
@@ -247,6 +247,9 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     case EVENT_TYPE_POINTER_PRESSED:
       touchX = touchCurX = event.point.x;
       touchY = touchCurY = event.point.y;
+      if (touchAsKey) {
+        handleKey(SB_KEY_MK_PUSH);
+      }
       output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
@@ -256,6 +259,9 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       break;
     case EVENT_TYPE_POINTER_RELEASED:
       touchX = touchY = touchCurX = touchCurY = -1;
+      if (touchAsKey) {
+        handleKey(SB_KEY_MK_RELEASE);
+      }
       output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
@@ -265,7 +271,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       handleKey(event.key);
       break;
     }
-    if (untilType == EVENT_TYPE_EXIT_ANY || 
+    if (untilType == EVENT_TYPE_EXIT_ANY ||
         untilType == event.type ||
         loadPathSize != loadPath.size()) {
       // skip next maWait() - found target event or loadPath changed
@@ -276,7 +282,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
 
   if (ms != EVENT_WAIT_NONE) {
     maWait(ms);
-  } 
+  }
   return event;
 }
 
@@ -291,7 +297,7 @@ char *Controller::readSource(const char *fileName) {
   }
 
   trace("readSource %s %d %s", fileName, endIndex, opt_command);
-  
+
   if (networkFile) {
     buffer = readConnection(fileName);
   } else if (strncasecmp("main.bas", fileName, endIndex) == 0) {
@@ -333,7 +339,7 @@ void Controller::setExit(bool back) {
     ui_reset();
     brun_break();
   }
-  runMode = back ? back_state : exit_state; 
+  runMode = back ? back_state : exit_state;
 }
 
 // commence runtime state
@@ -343,15 +349,15 @@ void Controller::setRunning(bool running) {
     dev_bgcolor = 0;
     os_graf_mx = output->getWidth();
     os_graf_my = output->getHeight();
-    
+
     os_ver = 1;
     os_color = 1;
     os_color_depth = 16;
     setsysvar_str(SYSVAR_OSNAME, "MoSync");
-    
+
     dev_clrkb();
     ui_reset();
-    
+
     runMode = run_state;
     loadPath.clear();
     output->reset();
@@ -411,7 +417,7 @@ void Controller::handleKey(int key) {
   switch (key) {
   case MAK_FIRE:
   case MAK_5:
-    break;
+    return;
   case MAK_SOFTRIGHT:
   case MAK_BACK:
     if (systemScreen) {
@@ -421,11 +427,11 @@ void Controller::handleKey(int key) {
     } else {
       setExit(true);
     }
-    break;
+    return;
   case MAK_MENU:
     systemMenu = true;
     output->print(SYSTEM_MENU);
-    break;
+    return;
   }
 
   if (isRunning()) {

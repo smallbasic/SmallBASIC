@@ -39,7 +39,7 @@ struct Controller : public Environment, IButtonListener {
   char *getText(char *dest, int maxSize);
   int handleEvents(int waitFlag);
   void pause(int ms);
-  MAEvent processEvents(int ms, int untilType = -1);
+  MAEvent processEvents(int ms, int untilType = -1, bool touchAsKey=true);
   char *readSource(const char *fileName);
 
   bool isExit() { return runMode == exit_state; }

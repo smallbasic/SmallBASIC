@@ -208,7 +208,7 @@ void Form::execute() {
       dev_clrkb();
     }
     while (controller->isRunning() && mode == m_active) {
-      controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
+      controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY, false);
       if (kbHandle && keymap_kbhit()) {
         break;
       }
