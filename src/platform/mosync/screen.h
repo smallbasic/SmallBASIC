@@ -46,9 +46,9 @@ struct Rectangle {
   int x, y, width, height;
 };
 
-struct AbstractScreen : public Rectangle {
-  AbstractScreen(int x, int y, int width, int height, int fontSize);
-  virtual ~AbstractScreen();
+struct Screen : public Rectangle {
+  Screen(int x, int y, int width, int height, int fontSize);
+  virtual ~Screen();
   
   virtual void calcTab() = 0;
   virtual bool construct() = 0;
@@ -62,25 +62,32 @@ struct AbstractScreen : public Rectangle {
   virtual void resize(int newWidth, int newHeight, int oldWidth, 
                       int oldHeight, int lineHeight) = 0;
   virtual void updateFont() = 0;
+  virtual int getPixel(int x, int y) = 0;
 
   int ansiToMosync(long c);
   void add(Rectangle *button) { buttons.add(button); }
   void remove(Rectangle *button);
   void setColor(long color);
   void setTextColor(long fg, long bg);
+  void setFont(bool bold, bool italic);
 
+  MAHandle font;
   int fontSize;
   int charWidth;
   int charHeight;
   int scrollY;
   int bg, fg;
+  int curY;
+  int curX;
+  int dirty;
+  int linePadding;
   Vector <Rectangle *>buttons;
   String label;
 };
 
-struct Screen : public AbstractScreen {
-  Screen(int x, int y, int width, int height, int fontSize);
-  virtual ~Screen();
+struct GraphicScreen : public Screen {
+  GraphicScreen(int x, int y, int width, int height, int fontSize);
+  virtual ~GraphicScreen();
 
   void calcTab();
   bool construct();
@@ -93,9 +100,9 @@ struct Screen : public AbstractScreen {
   void reset(int fontSize = -1);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
-  void updateFont();
+  void updateFont() { setFont(bold, italic); }
+  int getPixel(int x, int y);
 
-  MAHandle font;
   MAHandle image;
   bool underline;
   bool invert;
@@ -104,13 +111,9 @@ struct Screen : public AbstractScreen {
   int imageWidth;
   int imageHeight;
   int pageHeight;
-  int curY;
-  int curX;
   int curYSaved;
   int curXSaved;
   int tabSize;
-  int dirty;
-  int linePadding;
 };
 
 struct Point {
@@ -206,7 +209,7 @@ struct TextSeg {
     *invert = get(INVERT, invert);
 
     if (this->color != NO_COLOR) {
-      //fltk::setcolor(this->color);
+      maSetColor(this->color);
     }
 
     return set(BOLD) || set(ITALIC);
@@ -300,7 +303,7 @@ struct Row {
   TextSeg *head;
 };
 
-struct TextScreen : public AbstractScreen {
+struct TextScreen : public Screen {
   TextScreen(int x, int y, int w, int h, int fontSize);
   virtual ~TextScreen();
 
@@ -308,7 +311,7 @@ struct TextScreen : public AbstractScreen {
   bool construct();
   void clear();
   void draw(bool vscroll);
-  void drawInto(bool background=false);
+  void drawInto(bool background=false) {}
   void drawText(const char *text, int len, int x, int lineHeight);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
@@ -316,7 +319,8 @@ struct TextScreen : public AbstractScreen {
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
-  void updateFont();
+  void updateFont() {}
+  int getPixel(int x, int y) { return 0; }
 
 private:
   Row *getLine(int ndx);

@@ -35,24 +35,32 @@ static int colors[] = {
   0xFFFFFF  // 15 bright white
 };
 
-AbstractScreen::AbstractScreen(int x, int y, int width, int height, int fontSize) :
+Screen::Screen(int x, int y, int width, int height, int fontSize) :
   Rectangle(x, y, width, height),
+  font(0),
   fontSize(fontSize),
   charWidth(0),
   charHeight(0),
   scrollY(0),
   bg(0),
-  fg(0) {
+  fg(0),
+  curY(0),
+  curX(0),
+  dirty(0),
+  linePadding(0) {
 }
 
-AbstractScreen::~AbstractScreen() {
+Screen::~Screen() {
   Vector_each(Rectangle*, it, buttons) {
     delete (Rectangle *)(*it);
+  }
+  if (font) {
+    maFontDelete(font);
   }
 }
 
 // converts ANSI colors to MoSync colors
-int AbstractScreen::ansiToMosync(long c) {
+int Screen::ansiToMosync(long c) {
   int result = c;
   if (c < 0) {
     result = -c;
@@ -62,12 +70,12 @@ int AbstractScreen::ansiToMosync(long c) {
   return result;
 }
 
-void AbstractScreen::drawInto(bool background) {
+void Screen::drawInto(bool background) {
   maSetColor(background ? bg : fg);
 }
 
 // remove the button from the list
-void AbstractScreen::remove(Rectangle *button) {
+void Screen::remove(Rectangle *button) {
   Vector_each(Rectangle*, it, buttons) {
     Rectangle *next = (*it);
     if (next == button) {
@@ -77,21 +85,47 @@ void AbstractScreen::remove(Rectangle *button) {
   }
 }
 
-void AbstractScreen::setColor(long color) {
+void Screen::setColor(long color) {
   fg = ansiToMosync(color);
 }
 
-void AbstractScreen::setTextColor(long foreground, long background) {
+void Screen::setTextColor(long foreground, long background) {
   bg = ansiToMosync(background);
   fg = ansiToMosync(foreground);
+}
+
+// updated the current font according to accumulated flags
+void Screen::setFont(bool bold, bool italic) {
+  if (font) {
+    maFontDelete(font);
+  }
+  int style = FONT_STYLE_NORMAL;
+  if (italic) {
+    style |= FONT_STYLE_ITALIC;
+  }
+  if (bold) {
+    style |= FONT_STYLE_BOLD;
+  }
+
+  font = maFontLoadDefault(FONT_TYPE_MONOSPACE, style, fontSize);
+
+  if (font == -1) {
+    trace("maFontLoadDefault failed: style=%d size=%d", style, fontSize);
+  } else {
+    maFontSetCurrent(font);
+
+    MAExtent extent = maGetTextSize("W");
+    charWidth = EXTENT_X(extent);
+    charHeight = EXTENT_Y(extent) + LINE_SPACING;
+    trace("charWidth:%d charHeight:%d fontSize:%d", charWidth, charHeight, fontSize);
+  }
 }
 
 //
 // Graphics and text based screen with limited scrollback support
 //
-Screen::Screen(int x, int y, int width, int height, int fontSize) :
-  AbstractScreen(x, y, width, height, fontSize),
-  font(0),
+GraphicScreen::GraphicScreen(int x, int y, int width, int height, int fontSize) :
+  Screen(x, y, width, height, fontSize),
   image(0),
   underline(0),
   invert(0),
@@ -100,26 +134,19 @@ Screen::Screen(int x, int y, int width, int height, int fontSize) :
   imageWidth(width),
   imageHeight(height),
   pageHeight(0),
-  curY(0),
-  curX(0),
   curYSaved(0),
   curXSaved(0),
-  tabSize(0),
-  dirty(0),
-  linePadding(0) {
+  tabSize(0) {
 }
 
-Screen::~Screen() {
+GraphicScreen::~GraphicScreen() {
   if (image) {
     maDestroyPlaceholder(image);
-  }
-  if (font) {
-    maFontDelete(font);
   }
 }
 
 // calculate the pixel movement for the given cursor position
-void Screen::calcTab() {
+void GraphicScreen::calcTab() {
   int c = 1;
   int x = curX + 1;
   while (x > tabSize) {
@@ -129,7 +156,7 @@ void Screen::calcTab() {
   curX = c * tabSize;
 }
 
-bool Screen::construct() {
+bool GraphicScreen::construct() {
   bool result = true;
   image = maCreatePlaceholder();
   if (maCreateDrawableImage(image, imageWidth, imageHeight) == RES_OK) {
@@ -144,7 +171,7 @@ bool Screen::construct() {
   return result;
 }
 
-void Screen::clear() {
+void GraphicScreen::clear() {
   drawInto(true);
   maSetColor(bg);
   maFillRect(0, 0, imageWidth, imageHeight);
@@ -162,7 +189,7 @@ void Screen::clear() {
   label.clear();
 }
 
-void Screen::draw(bool vscroll) {
+void GraphicScreen::draw(bool vscroll) {
   MARect srcRect;
   MAPoint2d dstPoint;
   srcRect.left = 0;
@@ -207,7 +234,7 @@ void Screen::draw(bool vscroll) {
   dirty = 0;
 }
 
-void Screen::drawText(const char *text, int len, int x, int lineHeight) {
+void GraphicScreen::drawText(const char *text, int len, int x, int lineHeight) {
   // erase the background
   maSetColor(invert ? fg : bg);
   maFillRect(curX, curY, x, lineHeight);
@@ -221,16 +248,31 @@ void Screen::drawText(const char *text, int len, int x, int lineHeight) {
   }
 }
 
-void Screen::drawInto(bool background) {
-  AbstractScreen::drawInto(background);
+void GraphicScreen::drawInto(bool background) {
+  Screen::drawInto(background);
   maSetDrawTarget(image);
   if (!dirty) {
     dirty = maGetMilliSecondCount();
   }
 }
 
+int GraphicScreen::getPixel(int x, int y) {
+  MARect rc;
+  rc.left = x;
+  rc.top = y;
+  rc.width = 1;
+  rc.height = 1;
+
+  int data[1];
+  int result = 0;
+
+  maGetImageData(image, &data, &rc, 1);
+  result = -(data[0] & 0x00FFFFFF);
+  return result;
+}
+
 // handles the \n character
-void Screen::newLine(int lineHeight) {
+void GraphicScreen::newLine(int lineHeight) {
   lineHeight += linePadding;
   linePadding = 0;
   curX = INITXY;
@@ -279,7 +321,7 @@ void Screen::newLine(int lineHeight) {
   }
 }
 
-int Screen::print(const char *p, int lineHeight) {
+int GraphicScreen::print(const char *p, int lineHeight) {
   int numChars = 1;         // print minimum of one character
   int cx = charWidth;
   int w = width - 1;
@@ -306,7 +348,7 @@ int Screen::print(const char *p, int lineHeight) {
 }
 
 // reset the current drawing variables
-void Screen::reset(int argFontSize) {
+void GraphicScreen::reset(int argFontSize) {
   curXSaved = 0;
   curYSaved = 0;
   invert = false;
@@ -318,11 +360,11 @@ void Screen::reset(int argFontSize) {
   if (argFontSize != -1) {
     fontSize = argFontSize;
   }
-  updateFont();
+  setFont(bold, italic);
 }
 
 // update the widget to new dimensions
-void Screen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight) {
+void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight) {
   logEntered();
   bool fullscreen = ((width - x) == oldWidth && (height - y) == oldHeight);
   if (fullscreen && (newWidth > imageWidth || newHeight > imageHeight)) {
@@ -364,35 +406,8 @@ void Screen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, in
   height = newHeight;
 }
 
-// updated the current font according to accumulated flags
-void Screen::updateFont() {
-  if (font) {
-    maFontDelete(font);
-  }
-  int style = FONT_STYLE_NORMAL;
-  if (italic) {
-    style |= FONT_STYLE_ITALIC;
-  }
-  if (bold) {
-    style |= FONT_STYLE_BOLD;
-  }
-
-  font = maFontLoadDefault(FONT_TYPE_MONOSPACE, style, fontSize);
-
-  if (font == -1) {
-    trace("maFontLoadDefault failed: style=%d size=%d", style, fontSize);
-  } else {
-    maFontSetCurrent(font);
-
-    MAExtent extent = maGetTextSize("W");
-    charWidth = EXTENT_X(extent);
-    charHeight = EXTENT_Y(extent) + LINE_SPACING;
-    trace("charWidth:%d charHeight:%d fontSize:%d", charWidth, charHeight, fontSize);
-  }
-}
-
 // handles the given escape character. Returns whether the font has changed
-bool Screen::setGraphicsRendition(char c, int escValue, int lineHeight) {
+bool GraphicScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   switch (c) {
   case 'K':
     maSetColor(bg);            // \e[K - clear to eol
@@ -512,7 +527,7 @@ bool Screen::setGraphicsRendition(char c, int escValue, int lineHeight) {
 // Text based screen with a large scrollback buffer
 //
 TextScreen::TextScreen(int x, int y, int w, int h, int fontSize) : 
-  AbstractScreen(x, y, w, h, fontSize),
+  Screen(x, y, w, h, fontSize),
   rows(TEXT_ROWS),
   cols(0),
   width(0),
@@ -557,11 +572,13 @@ void TextScreen::draw(bool vscroll) {
   // calculate rows to display
   int pageRows = getPageRows();
   int textRows = getTextRows();
-  int hscroll = 0; // TODO
   int numRows = textRows < pageRows ? textRows : pageRows;
   int firstRow = tail + scrollY;        // from start plus scroll offset
 
-  // TODO: fixme
+  // setup the background colour
+  maSetColor(bg);
+  maFillRect(x, y, width-1, height-1);
+  maSetColor(fg);
 
   int pageWidth = 0;
   for (int row = firstRow, rows = 0, nextY = y + lineHeight; 
@@ -569,21 +586,25 @@ void TextScreen::draw(bool vscroll) {
        row++, rows++, nextY += lineHeight) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->head;
-    int x = 2 - hscroll;
+    int x = INITXY;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
-        //setfont(bold, italic);
+        setFont(bold, italic);
       }
       int width = seg->width();
       if (seg->str) {
         if (invert) {
-          // TODO: draw inverted
+          maSetColor(fg);
+          maFillRect(x, y - charHeight, width, charHeight);
+          maSetColor(bg);
+          maDrawText(x, y, seg->str);
+          maSetColor(fg);
         } else {
-          // TODO: draw
+          maDrawText(x, y, seg->str);
         }
       }
       if (underline) {
-        //drawline(x, y + 1, x + width, y + 1);
+        maLine(x, y + 1, x + width, y + 1);
       }
       x += width;
       seg = seg->next;
@@ -593,10 +614,6 @@ void TextScreen::draw(bool vscroll) {
       pageWidth = rowWidth;
     }
   }
-}
-
-void TextScreen::drawInto(bool background) {
-  // TODO
 }
 
 //
@@ -671,8 +688,11 @@ int TextScreen::print(const char *p, int lineHeight) {
   return numChars;
 }
 
-void TextScreen::reset(int fontSize) {
-  updateFont();
+void TextScreen::reset(int argFontSize) {
+  if (argFontSize != -1) {
+    fontSize = argFontSize;
+  }
+  setFont(false, false);
 }
 
 void TextScreen::resize(int newWidth, int newHeight, int oldWidth, 
@@ -760,8 +780,4 @@ bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
     segment->color = ansiToMosync(7);
     break;
   }
-}
-
-void TextScreen::updateFont() {
-  // TODO
 }

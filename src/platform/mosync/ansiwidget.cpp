@@ -254,7 +254,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
 
 bool AnsiWidget::construct() {
   bool result = false;
-  back = new Screen(0, 0, width, height, fontSize);
+  back = new GraphicScreen(0, 0, width, height, fontSize);
   if (back && back->construct()) {
     screens[0] = front = back;
     clearScreen();
@@ -357,19 +357,7 @@ void AnsiWidget::flush(bool force, bool vscroll) {
 
 // returns the color of the pixel at the given xy location
 int AnsiWidget::getPixel(int x, int y) {
-  MARect rc;
-  rc.left = x;
-  rc.top = y;
-  rc.width = 1;
-  rc.height = 1;
-
-  int data[1];
-  int result = 0;
-
-  int now = maGetMilliSecondCount();
-  maGetImageData(back->image, &data, &rc, 1);
-  result = -(data[0] & 0x00FFFFFF);
-  return result;
+  return back->getPixel(x, y);
 }
 
 // Returns the height in pixels using the current font setting
@@ -885,7 +873,7 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     // specified screen already exists
     result = screens[n];
   } else {
-    result = new Screen(x, y, w, h, fontSize);
+    result = new GraphicScreen(x, y, w, h, fontSize);
     if (result && result->construct()) {
       screens[n] = result;
       result->drawInto();
@@ -918,7 +906,7 @@ void AnsiWidget::swapScreens() {
     if (screens[1] != NULL) {
       front = screens[1];
     } else {
-      front = new Screen(0, 0, width, height, fontSize);
+      front = new GraphicScreen(0, 0, width, height, fontSize);
       if (front && front->construct()) {
         screens[1] = front;
       } else {
