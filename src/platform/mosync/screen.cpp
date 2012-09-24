@@ -41,6 +41,7 @@ Screen::Screen(int x, int y, int width, int height, int fontSize) :
   fontSize(fontSize),
   charWidth(0),
   charHeight(0),
+  pageHeight(0),
   scrollY(0),
   bg(0),
   fg(0),
@@ -68,6 +69,34 @@ int Screen::ansiToMosync(long c) {
     result = (c > 15) ? colors[WHITE] : colors[c];
   }
   return result;
+}
+
+void Screen::draw(bool vscroll) {
+  if (vscroll && pageHeight) {
+    // display the vertical scrollbar
+    int barSize = height * height / pageHeight;
+    int barRange = height - (barSize + SCROLL_IND * 2);
+    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - charHeight)));
+    if (barSize < height) {
+      maSetColor(fg);
+      maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
+      maLine(x + width - 4, y + barTop, x + width - 4, y + barTop + barSize);
+    }
+  }
+  
+  // display the label
+  if (label.length()) {
+    MAExtent extent = maGetTextSize(label.c_str());
+    int w = EXTENT_X(extent);
+    int h = EXTENT_Y(extent);
+    int top = height - h - h;
+    int left = (width - w) / 2;
+
+    maSetColor(GRAY_BG_COL);
+    maFillRect(left - 2, top, w + 8, h + 8);
+    maSetColor(LABEL_TEXT_COL);
+    maDrawText(left, top + 2, label.c_str());
+  }
 }
 
 void Screen::drawInto(bool background) {
@@ -133,7 +162,6 @@ GraphicScreen::GraphicScreen(int x, int y, int width, int height, int fontSize) 
   italic(0),
   imageWidth(width),
   imageHeight(height),
-  pageHeight(0),
   curYSaved(0),
   curXSaved(0),
   tabSize(0) {
@@ -201,32 +229,8 @@ void GraphicScreen::draw(bool vscroll) {
 
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-
-  if (vscroll && pageHeight) {
-    // display the vertical scrollbar
-    int barSize = height * height / pageHeight;
-    int barRange = height - (barSize + SCROLL_IND * 2);
-    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - charHeight)));
-    if (barSize < height) {
-      maSetColor(fg);
-      maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
-      maLine(x + width - 4, y + barTop, x + width - 4, y + barTop + barSize);
-    }
-  }
   
-  // display the label
-  if (label.length()) {
-    MAExtent extent = maGetTextSize(label.c_str());
-    int w = EXTENT_X(extent);
-    int h = EXTENT_Y(extent);
-    int top = height - h - h;
-    int left = (width - w) / 2;
-
-    maSetColor(GRAY_BG_COL);
-    maFillRect(left - 2, top, w + 8, h + 8);
-    maSetColor(LABEL_TEXT_COL);
-    maDrawText(left, top + 2, label.c_str());
-  }
+  Screen::draw(vscroll);
 
   maUpdateScreen();
   maResetBacklight();
@@ -576,10 +580,12 @@ void TextScreen::draw(bool vscroll) {
   int firstRow = tail + scrollY;        // from start plus scroll offset
 
   // setup the background colour
+  MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetColor(bg);
   maFillRect(x, y, width-1, height-1);
   maSetColor(fg);
 
+  // draw the visible segments
   int pageWidth = 0;
   for (int row = firstRow, rows = 0, nextY = y + lineHeight; 
        rows < numRows; 
@@ -614,6 +620,22 @@ void TextScreen::draw(bool vscroll) {
       pageWidth = rowWidth;
     }
   }
+
+  // draw any visible buttons
+  Vector_each(Rectangle*, it, buttons) {
+    Rectangle *rect = (Rectangle *)(*it);
+    if (rect->y >= y + scrollY && 
+        rect->y <= y + scrollY + height) {
+      rect->draw();
+    }
+  }
+
+  // draw the base components
+  Screen::draw(vscroll);
+
+  maUpdateScreen();
+  maResetBacklight();
+  maSetDrawTarget(currentHandle);
 }
 
 //

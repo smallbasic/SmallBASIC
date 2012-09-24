@@ -56,7 +56,6 @@ struct Widget : public Rectangle {
   Widget(int bg, int fg, int x, int y, int w, int h);
   virtual ~Widget() {}
 
-  virtual void draw() = 0;
   virtual void clicked(IButtonListener *listener) = 0;
 
   void drawButton(const char *caption);

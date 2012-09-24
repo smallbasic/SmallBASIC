@@ -67,7 +67,7 @@ void Widget::drawButton(const char *caption) {
   int textX = x + 4;
   int textY = y + 4;
 
-  maSetColor(getBackground(BLOCK_BUTTON_COL));
+  maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, width-1, height-1);
 
   if (pressed) {

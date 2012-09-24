@@ -16,10 +16,9 @@
 #define INITXY 2
 #define LINE_SPACING 4
 #define NO_COLOR -1
-#define DEFAULT_COLOR 0xa1a1a1
-#define BLOCK_BUTTON_COL 0x505050
-#define GRAY_BG_COL      0x383f42
-#define LABEL_TEXT_COL   0xebebeb
+#define DEFAULT_COLOR  0xa1a1a1
+#define GRAY_BG_COL    0x383f42
+#define LABEL_TEXT_COL 0xebebeb
 
 using namespace MAUtil;
 
@@ -43,6 +42,8 @@ struct TextBuffer {
 struct Rectangle {
   Rectangle(int x, int y, int w, int h) : x(x), y(y), width(w), height(h) {}
   virtual ~Rectangle() {}
+  virtual void draw() {}
+
   int x, y, width, height;
 };
 
@@ -53,7 +54,7 @@ struct Screen : public Rectangle {
   virtual void calcTab() = 0;
   virtual bool construct() = 0;
   virtual void clear() = 0;
-  virtual void draw(bool vscroll) = 0;
+  virtual void draw(bool vscroll);
   virtual void drawInto(bool background=false) = 0;
   virtual void newLine(int lineHeight) = 0;
   virtual int print(const char *p, int lineHeight) = 0;
@@ -75,6 +76,7 @@ struct Screen : public Rectangle {
   int fontSize;
   int charWidth;
   int charHeight;
+  int pageHeight;
   int scrollY;
   int bg, fg;
   int curY;
@@ -110,7 +112,6 @@ struct GraphicScreen : public Screen {
   bool italic;
   int imageWidth;
   int imageHeight;
-  int pageHeight;
   int curYSaved;
   int curXSaved;
   int tabSize;
