@@ -1,3 +1,6 @@
+2012-09-25
+	MoSync port nearing completion
+
 2011-04-14
 	Removed POKE and BCOPY. These never really worked correcly
 	and would be fairly insecure in the web model if they did.

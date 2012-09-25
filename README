@@ -1,5 +1,53 @@
 SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes. SmallBASIC includes trigonometric, matrices and algebra functions, a built in IDE, a powerful string library, system, sound, and graphic commands along with structured programming syntax
 
+== Building the MoSync port
+
+1. Download and install the MoSync IDE: http://www.mosync.com/download
+
+2. Download and install cygwin: http://www.cygwin.com/
+
+Install the following packages:
+
+- automake
+- autoconf
+- make
+- gcc, gcc-g++
+
+3. Download and unzip SmallBASIC from github:
+
+https://github.com/smallbasic/SmallBASIC/zipball/master
+
+Unzip the resulting smallbasic-SmallBASIC-xxx.zip file into a clean directory (the following steps will refer to this as $SB_HOME).
+
+4. Build the common components:
+
+$ cd $SB_HOME
+$ sh autogen.sh
+$ ./configure --enable-mosync
+$ make -s
+
+You should now see libsb_common.a in $SB_HOME/src/platform/mosync/common
+
+Next, copy the dot files in $SB_HOME/ide/mosync into $SB_HOME
+
+5. Setup the MoSync IDE project
+
+Launch the MoSync IDE, then create a new workspace.
+
+Click: Import / MoSync / Exiting MoSync project into workspace
+
+Select root directory = $SB_HOME
+
+Enter Ctrl+B to build the project.
+
+6. Useful bash profile settings for MoSync android development:
+
+alias adb="/c/Program\ Files\ \(x86\)/Android/android-sdk/platform-tools/adb.exe"
+export ANDROID_LOG_TAGS="ActivityManager:I maWriteLog:I *:S"
+alias adebug="adb -d logcat -c && adb -d logcat"
+
+===========================================================================
+
 == Setup instructions for building FLTK version under a fresh ubuntu system
 
 1. Install tools using synaptic package manager. Be sure to accept all included 
