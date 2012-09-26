@@ -39,35 +39,35 @@ struct TextBuffer {
   int len;
 };
 
-struct Rectangle {
-  Rectangle(int x, int y, int w, int h) : x(x), y(y), width(w), height(h) {}
-  virtual ~Rectangle() {}
+struct Shape {
+  Shape(int x, int y, int w, int h) : x(x), y(y), width(w), height(h) {}
+  virtual ~Shape() {}
   virtual void draw() {}
 
   int x, y, width, height;
 };
 
-struct Screen : public Rectangle {
+struct Screen : public Shape {
   Screen(int x, int y, int width, int height, int fontSize);
   virtual ~Screen();
   
   virtual void calcTab() = 0;
   virtual bool construct() = 0;
-  virtual void clear() = 0;
+  virtual void clear();
   virtual void draw(bool vscroll);
-  virtual void drawInto(bool background=false) = 0;
+  virtual void drawInto(bool background=false);
   virtual void newLine(int lineHeight) = 0;
-  virtual int print(const char *p, int lineHeight) = 0;
+  virtual int print(const char *p, int lineHeight);
   virtual bool setGraphicsRendition(char c, int escValue, int lineHeight) = 0;
-  virtual void reset(int fontSize = -1) = 0;
+  virtual void reset(int fontSize = -1);
   virtual void resize(int newWidth, int newHeight, int oldWidth, 
                       int oldHeight, int lineHeight) = 0;
   virtual void updateFont() = 0;
   virtual int getPixel(int x, int y) = 0;
 
   int ansiToMosync(long c);
-  void add(Rectangle *button) { buttons.add(button); }
-  void remove(Rectangle *button);
+  void add(Shape *button) { shapes.add(button); }
+  void remove(Shape *button);
   void setColor(long color);
   void setTextColor(long fg, long bg);
   void setFont(bool bold, bool italic);
@@ -76,14 +76,13 @@ struct Screen : public Rectangle {
   int fontSize;
   int charWidth;
   int charHeight;
-  int pageHeight;
   int scrollY;
   int bg, fg;
-  int curY;
   int curX;
+  int curY;
   int dirty;
   int linePadding;
-  Vector <Rectangle *>buttons;
+  Vector <Shape *>shapes;
   String label;
 };
 
@@ -96,7 +95,6 @@ struct GraphicScreen : public Screen {
   void clear();
   void draw(bool vscroll);
   void drawInto(bool background=false);
-  void drawText(const char *text, int len, int x, int lineHeight);
   void newLine(int lineHeight);
   int print(const char *p, int lineHeight);
   void reset(int fontSize = -1);
@@ -115,11 +113,6 @@ struct GraphicScreen : public Screen {
   int curYSaved;
   int curXSaved;
   int tabSize;
-};
-
-struct Point {
-  int x;
-  int y;
 };
 
 struct TextSeg {
@@ -312,11 +305,9 @@ struct TextScreen : public Screen {
   bool construct();
   void clear();
   void draw(bool vscroll);
-  void drawInto(bool background=false) {}
   void drawText(const char *text, int len, int x, int lineHeight);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
-  void reset(int fontSize = -1);
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
@@ -333,7 +324,7 @@ private:
 
   // returns the number of rows available for display
   int getPageRows() {
-    return (height - 1) / lineHeight;
+    return (height - 1) / charHeight;
   }
 
   // buffer management
@@ -342,8 +333,6 @@ private:
   int tail;         // buffer last line
   int rows;         // total number of rows - size of buffer
   int cols;         // maximum number of characters in a row
-  int width;        // the maximum width of the buffer text in pixels
-  int lineHeight;
 };
 
 #endif

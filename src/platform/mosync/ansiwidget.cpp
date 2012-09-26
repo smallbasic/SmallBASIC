@@ -55,7 +55,7 @@
 #define SWIPE_TRIGGER_SLOW 80
 
 Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
-  Rectangle(x, y, w, h),
+  Shape(x, y, w, h),
   pressed(false),
   bg(bg),
   fg(fg) {
@@ -479,7 +479,7 @@ void AnsiWidget::setTextColor(long fg, long bg) {
 bool AnsiWidget::hasUI() {
   bool result = false;
   for (int i = 0; i < MAX_SCREENS && !result; i++) {
-    if (screens[i] != NULL && screens[i]->buttons.size() > 0) {
+    if (screens[i] != NULL && screens[i]->shapes.size() > 0) {
       result = true;
     }
   }
@@ -494,7 +494,7 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
     touchX = event.point.x;
     touchY = event.point.y;
 
-    Vector_each(Rectangle*, it, front->buttons) {
+    Vector_each(Shape*, it, front->shapes) {
       Widget *widget = (Widget *)(*it);
       if (widget->overlaps(event.point, 0, front->scrollY)) {
         front->drawInto();
@@ -524,7 +524,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
                       front->x, front->y,
                       front->width, front->height)) {
       int vscroll = front->scrollY + (touchY - event.point.y);
-      int maxScroll = (front->curY - front->height) + fontSize;
+      int maxScroll = (front->curY - front->height) + (2 * fontSize);
       if (vscroll < 0) {
         vscroll = 0;
       }
@@ -552,7 +552,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   } else if (swipeExit) {
     swipeExit = false;
   } else {
-    int maxScroll = (front->curY - front->height) + fontSize;
+    int maxScroll = (front->curY - front->height) + (2 * fontSize);
     if (touchY != -1 && maxScroll > 0) {
       front->drawInto();
       int start = maGetMilliSecondCount();
@@ -611,7 +611,7 @@ void AnsiWidget::createLink(char *&p, bool execLink, bool button) {
     } else {
       link = new TextButton(back, action, text, x, y, w, h);
     }
-    back->buttons.add(link);
+    back->shapes.add(link);
     link->draw();
   }
 
@@ -873,7 +873,11 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     // specified screen already exists
     result = screens[n];
   } else {
-    result = new GraphicScreen(x, y, w, h, fontSize);
+    if (n > 1) {
+      result = new TextScreen(x, y, w, h, fontSize);
+    } else {
+      result = new GraphicScreen(x, y, w, h, fontSize);
+    }    
     if (result && result->construct()) {
       screens[n] = result;
       result->drawInto();

@@ -36,24 +36,23 @@ static int colors[] = {
 };
 
 Screen::Screen(int x, int y, int width, int height, int fontSize) :
-  Rectangle(x, y, width, height),
+  Shape(x, y, width, height),
   font(0),
   fontSize(fontSize),
   charWidth(0),
   charHeight(0),
-  pageHeight(0),
   scrollY(0),
   bg(0),
   fg(0),
-  curY(0),
-  curX(0),
+  curX(INITXY),
+  curY(INITXY),
   dirty(0),
   linePadding(0) {
 }
 
 Screen::~Screen() {
-  Vector_each(Rectangle*, it, buttons) {
-    delete (Rectangle *)(*it);
+  Vector_each(Shape*, it, shapes) {
+    delete (Shape *)(*it);
   }
   if (font) {
     maFontDelete(font);
@@ -71,12 +70,25 @@ int Screen::ansiToMosync(long c) {
   return result;
 }
 
+void Screen::clear() {
+  curX = INITXY;
+  curY = INITXY;
+  scrollY = 0;
+
+  // cleanup any shapes
+  Vector_each(Shape*, it, shapes) {
+    delete (*it);
+  }
+  shapes.clear();
+  label.clear();
+}
+
 void Screen::draw(bool vscroll) {
-  if (vscroll && pageHeight) {
+  if (vscroll && curY) {
     // display the vertical scrollbar
-    int barSize = height * height / pageHeight;
+    int barSize = height * height / curY;
     int barRange = height - (barSize + SCROLL_IND * 2);
-    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - (height - charHeight)));
+    int barTop = SCROLL_IND + (barRange * scrollY / (curY - (height - charHeight)));
     if (barSize < height) {
       maSetColor(fg);
       maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
@@ -97,21 +109,57 @@ void Screen::draw(bool vscroll) {
     maSetColor(LABEL_TEXT_COL);
     maDrawText(left, top + 2, label.c_str());
   }
+
+  maUpdateScreen();
+  maResetBacklight();
+  dirty = 0;
 }
 
 void Screen::drawInto(bool background) {
   maSetColor(background ? bg : fg);
+  if (!dirty) {
+    dirty = maGetMilliSecondCount();
+  }
 }
 
-// remove the button from the list
-void Screen::remove(Rectangle *button) {
-  Vector_each(Rectangle*, it, buttons) {
-    Rectangle *next = (*it);
-    if (next == button) {
-      buttons.remove(it);
+int Screen::print(const char *p, int lineHeight) {
+  int numChars = 1;         // print minimum of one character
+  int cx = charWidth;
+  int w = width - 1;
+
+  // print further non-control, non-null characters
+  // up to the width of the line
+  while (p[numChars] > 31) {
+    cx += charWidth;
+    if (curX + cx < w) {
+      numChars++;
+    } else {
       break;
     }
   }
+
+  curX += cx;
+  return numChars;
+}
+
+// remove the button from the list
+void Screen::remove(Shape *button) {
+  Vector_each(Shape*, it, shapes) {
+    Shape *next = (*it);
+    if (next == button) {
+      shapes.remove(it);
+      break;
+    }
+  }
+}
+
+void Screen::reset(int argFontSize) {
+  fg = DEFAULT_COLOR;
+  bg = 0;
+  if (argFontSize != -1) {
+    fontSize = argFontSize;
+  }
+  setFont(false, false);
 }
 
 void Screen::setColor(long color) {
@@ -164,7 +212,7 @@ GraphicScreen::GraphicScreen(int x, int y, int width, int height, int fontSize) 
   imageHeight(height),
   curYSaved(0),
   curXSaved(0),
-  tabSize(0) {
+  tabSize(40) {  // tab size in pixels (160/32 = 5)
 }
 
 GraphicScreen::~GraphicScreen() {
@@ -188,10 +236,6 @@ bool GraphicScreen::construct() {
   bool result = true;
   image = maCreatePlaceholder();
   if (maCreateDrawableImage(image, imageWidth, imageHeight) == RES_OK) {
-    curX = INITXY;
-    curY = INITXY;
-    tabSize = 40;   // tab size in pixels (160/32 = 5)
-    scrollY = 0;
     reset();
   } else {
     result = false;
@@ -203,18 +247,7 @@ void GraphicScreen::clear() {
   drawInto(true);
   maSetColor(bg);
   maFillRect(0, 0, imageWidth, imageHeight);
-
-  curX = INITXY;
-  curY = INITXY;
-  scrollY = 0;
-  pageHeight = 0;
-
-  // cleanup any buttons
-  Vector_each(Rectangle*, it, buttons) {
-    delete (*it);
-  }
-  buttons.clear();
-  label.clear();
+  Screen::clear();
 }
 
 void GraphicScreen::draw(bool vscroll) {
@@ -229,35 +262,13 @@ void GraphicScreen::draw(bool vscroll) {
 
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
-  
   Screen::draw(vscroll);
-
-  maUpdateScreen();
-  maResetBacklight();
   maSetDrawTarget(currentHandle);
-  dirty = 0;
-}
-
-void GraphicScreen::drawText(const char *text, int len, int x, int lineHeight) {
-  // erase the background
-  maSetColor(invert ? fg : bg);
-  maFillRect(curX, curY, x, lineHeight);
-
-  // draw the text buffer
-  maSetColor(invert ? bg : fg);
-  maDrawText(curX, curY, TextBuffer(text, len).str);
-
-  if (underline) {
-    maLine(curX, curY + lineHeight - 1, curX + x, curY + lineHeight - 1);
-  }
 }
 
 void GraphicScreen::drawInto(bool background) {
   Screen::drawInto(background);
   maSetDrawTarget(image);
-  if (!dirty) {
-    dirty = maGetMilliSecondCount();
-  }
 }
 
 int GraphicScreen::getPixel(int x, int y) {
@@ -318,7 +329,6 @@ void GraphicScreen::newLine(int lineHeight) {
       scrollY += lineHeight;
     }
     curY += lineHeight;
-    pageHeight += lineHeight;
   } else {
     // overflow
     clear();
@@ -326,45 +336,37 @@ void GraphicScreen::newLine(int lineHeight) {
 }
 
 int GraphicScreen::print(const char *p, int lineHeight) {
-  int numChars = 1;         // print minimum of one character
-  int cx = charWidth;
-  int w = width - 1;
-
-  if (curX + cx >= w) {
+  if (curX + charWidth >= width - 1) {
     newLine(lineHeight);
   }
 
-  // print further non-control, non-null characters
-  // up to the width of the line
-  while (p[numChars] > 31) {
-    cx += charWidth;
-    if (curX + cx < w) {
-      numChars++;
-    } else {
-      break;
-    }
+  int cx = curX;
+  int numChars = Screen::print(p, lineHeight);
+
+  // erase the background
+  maSetColor(invert ? fg : bg);
+  maFillRect(cx, curY, curX-cx, lineHeight);
+
+  // draw the text buffer
+  maSetColor(invert ? bg : fg);
+  maDrawText(cx, curY, TextBuffer(p, numChars).str);
+
+  if (underline) {
+    maLine(cx, curY + lineHeight - 1, cx + curX, curY + lineHeight - 1);
   }
 
-  drawText(p, numChars, cx, lineHeight);
-
-  curX += cx;
   return numChars;
 }
 
 // reset the current drawing variables
-void GraphicScreen::reset(int argFontSize) {
+void GraphicScreen::reset(int fontSize) {
+  Screen::reset(fontSize);
   curXSaved = 0;
   curYSaved = 0;
   invert = false;
   underline = false;
   bold = false;
   italic = false;
-  fg = DEFAULT_COLOR;
-  bg = 0;
-  if (argFontSize != -1) {
-    fontSize = argFontSize;
-  }
-  setFont(bold, italic);
 }
 
 // update the widget to new dimensions
@@ -399,7 +401,6 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
 
     if (curY >= imageHeight) {
       curY = height - lineHeight;
-      pageHeight = curY;
     }
     if (curX >= imageWidth) {
       curX = 0;
@@ -532,11 +533,11 @@ bool GraphicScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
 //
 TextScreen::TextScreen(int x, int y, int w, int h, int fontSize) : 
   Screen(x, y, w, h, fontSize),
+  buffer(NULL),
+  head(0),
+  tail(0),
   rows(TEXT_ROWS),
-  cols(0),
-  width(0),
-  head(NULL),
-  tail(NULL) {
+  cols(0) {
 }
 
 TextScreen::~TextScreen() {
@@ -549,7 +550,7 @@ void TextScreen::calcTab() {
 }
 
 bool TextScreen::construct() {
-  // initialize the buffer
+  reset();
   buffer = new Row[rows];
   return (buffer != NULL);
 }
@@ -558,9 +559,9 @@ bool TextScreen::construct() {
 // clear the screen
 //
 void TextScreen::clear() {
-  head = tail = 0;
-  cols = width = 0;
+  head = tail = cols = 0;
   getLine(0)->clear();
+  Screen::clear();
 }
 
 //
@@ -577,22 +578,22 @@ void TextScreen::draw(bool vscroll) {
   int pageRows = getPageRows();
   int textRows = getTextRows();
   int numRows = textRows < pageRows ? textRows : pageRows;
-  int firstRow = tail + scrollY;        // from start plus scroll offset
+  int firstRow = tail + (scrollY / charHeight);
 
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetColor(bg);
-  maFillRect(x, y, width-1, height-1);
+  maFillRect(x, y, width, height);
   maSetColor(fg);
 
   // draw the visible segments
   int pageWidth = 0;
-  for (int row = firstRow, rows = 0, nextY = y + lineHeight; 
+  for (int row = firstRow, rows = 0, py = y + charHeight;
        rows < numRows; 
-       row++, rows++, nextY += lineHeight) {
+       row++, rows++, py += charHeight) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->head;
-    int x = INITXY;
+    int px = INITXY;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setFont(bold, italic);
@@ -601,18 +602,18 @@ void TextScreen::draw(bool vscroll) {
       if (seg->str) {
         if (invert) {
           maSetColor(fg);
-          maFillRect(x, y - charHeight, width, charHeight);
+          maFillRect(px, py - charHeight, width, charHeight);
           maSetColor(bg);
-          maDrawText(x, y, seg->str);
+          maDrawText(px, py, seg->str);
           maSetColor(fg);
         } else {
-          maDrawText(x, y, seg->str);
+          maDrawText(px, py, seg->str);
         }
       }
       if (underline) {
-        maLine(x, y + 1, x + width, y + 1);
+        maLine(px, py + 1, px + width, py + 1);
       }
-      x += width;
+      px += width;
       seg = seg->next;
     }
     int rowWidth = line->width();
@@ -621,9 +622,9 @@ void TextScreen::draw(bool vscroll) {
     }
   }
 
-  // draw any visible buttons
-  Vector_each(Rectangle*, it, buttons) {
-    Rectangle *rect = (Rectangle *)(*it);
+  // draw any visible shapes
+  Vector_each(Shape*, it, shapes) {
+    Shape *rect = (Shape *)(*it);
     if (rect->y >= y + scrollY && 
         rect->y <= y + scrollY + height) {
       rect->draw();
@@ -632,9 +633,6 @@ void TextScreen::draw(bool vscroll) {
 
   // draw the base components
   Screen::draw(vscroll);
-
-  maUpdateScreen();
-  maResetBacklight();
   maSetDrawTarget(currentHandle);
 }
 
@@ -662,6 +660,12 @@ void TextScreen::newLine(int lineHeight) {
   // clear the new line
   Row* line = getLine(head);
   line->clear();
+
+  lineHeight += linePadding;
+  linePadding = 0;
+
+  curX = INITXY;
+  curY += lineHeight;
 }
 
 //
@@ -672,49 +676,17 @@ int TextScreen::print(const char *p, int lineHeight) {
   TextSeg *segment = new TextSeg();
   line->append(segment);
 
-  int numChars = 1;         // print minimum of one character
-  int cx = charWidth;
-  int w = width - 1;
-  int curX = line->width();
-
-  if (curX + cx >= w) {
-    newLine(lineHeight);
-    line = getLine(head);
-  }
-
-  // print further non-control, non-null characters
-  // up to the width of the line
-  while (p[numChars] > 31) {
-    cx += charWidth;
-    if (curX + cx < w) {
-      numChars++;
-    } else {
-      break;
-    }
-  }
+  int numChars = Screen::print(p, lineHeight);
 
   // Print the next (possible) line of text
   segment->setText(p, numChars);
 
-  // save max rows encountered
-  int lineWidth = line->width();
-  if (lineWidth > width) {
-    width = lineWidth;
-  }
-  
   int lineChars = line->numChars();
   if (lineChars > cols) {
     cols = lineChars;
   }
 
   return numChars;
-}
-
-void TextScreen::reset(int argFontSize) {
-  if (argFontSize != -1) {
-    fontSize = argFontSize;
-  }
-  setFont(false, false);
 }
 
 void TextScreen::resize(int newWidth, int newHeight, int oldWidth, 

@@ -52,7 +52,7 @@ struct IFormWidget {
 };
 
 // base implementation for all buttons
-struct Widget : public Rectangle {
+struct Widget : public Shape {
   Widget(int bg, int fg, int x, int y, int w, int h);
   virtual ~Widget() {}
 
