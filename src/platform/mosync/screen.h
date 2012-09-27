@@ -231,15 +231,6 @@ struct Row {
     node->next = 0;
   }
 
-  // return the current segment
-  TextSeg *current() {
-    TextSeg *result = NULL;
-    if (head) {
-      result = tail(head);
-    }
-    return result;
-  }
-
   // clear the contents of this row
   void clear() {
     remove(head);

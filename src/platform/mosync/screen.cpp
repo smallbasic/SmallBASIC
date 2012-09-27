@@ -86,9 +86,10 @@ void Screen::clear() {
 void Screen::draw(bool vscroll) {
   if (vscroll && curY) {
     // display the vertical scrollbar
-    int barSize = height * height / curY;
+    int pageHeight = curY + charHeight + charHeight;
+    int barSize = height * height / pageHeight;
     int barRange = height - (barSize + SCROLL_IND * 2);
-    int barTop = SCROLL_IND + (barRange * scrollY / (curY - (height - charHeight)));
+    int barTop = SCROLL_IND + (barRange * scrollY / (pageHeight - height));
     if (barSize < height) {
       maSetColor(fg);
       maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
@@ -602,7 +603,7 @@ void TextScreen::draw(bool vscroll) {
       if (seg->str) {
         if (invert) {
           maSetColor(fg);
-          maFillRect(px, py - charHeight, width, charHeight);
+          maFillRect(px, py, width, charHeight);
           maSetColor(bg);
           maDrawText(px, py, seg->str);
           maSetColor(fg);
@@ -611,7 +612,7 @@ void TextScreen::draw(bool vscroll) {
         }
       }
       if (underline) {
-        maLine(px, py + 1, px + width, py + 1);
+        maLine(px, py + charHeight, width, py + charHeight);
       }
       px += width;
       seg = seg->next;
@@ -699,79 +700,84 @@ void TextScreen::resize(int newWidth, int newHeight, int oldWidth,
 // performs the ANSI text SGI function.
 //
 bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
-  TextSeg *segment = getLine(head)->current();
+  //  TextSeg *segment = getLine(head)->current();
+  if (c == ';' || c == 'm') {
+    Row *line = getLine(head);
+    TextSeg *segment = new TextSeg();
+    line->append(segment);
+    
+    switch (escValue) {
+    case 0:
+      segment->reset();
+      break;
 
-  switch (c) {
-  case 0:
-    segment->reset();
-    break;
+    case 1:                      // Bold on
+      segment->set(TextSeg::BOLD, true);
+      break;
 
-  case 1:                      // Bold on
-    segment->set(TextSeg::BOLD, true);
-    break;
+    case 2:                      // Faint on
+      segment->set(TextSeg::BOLD, false);
+      break;
 
-  case 2:                      // Faint on
-    segment->set(TextSeg::BOLD, false);
-    break;
+    case 3:                      // Italic on
+      segment->set(TextSeg::ITALIC, true);
+      break;
 
-  case 3:                      // Italic on
-    segment->set(TextSeg::ITALIC, true);
-    break;
+    case 4:                      // Underscrore
+      segment->set(TextSeg::UNDERLINE, true);
+      break;
 
-  case 4:                      // Underscrore
-    segment->set(TextSeg::UNDERLINE, true);
-    break;
+    case 7:                      // reverse video on
+      segment->set(TextSeg::INVERT, true);
+      break;
 
-  case 7:                      // reverse video on
-    segment->set(TextSeg::INVERT, true);
-    break;
+    case 21:                     // set bold off
+      segment->set(TextSeg::BOLD, false);
+      break;
 
-  case 21:                     // set bold off
-    segment->set(TextSeg::BOLD, false);
-    break;
+    case 23:
+      segment->set(TextSeg::ITALIC, false);
+      break;
 
-  case 23:
-    segment->set(TextSeg::ITALIC, false);
-    break;
+    case 24:                     // set underline off
+      segment->set(TextSeg::UNDERLINE, false);
+      break;
 
-  case 24:                     // set underline off
-    segment->set(TextSeg::UNDERLINE, false);
-    break;
+    case 27:                     // reverse video off
+      segment->set(TextSeg::INVERT, false);
+      break;
 
-  case 27:                     // reverse video off
-    segment->set(TextSeg::INVERT, false);
-    break;
+    case 30:                     // Black
+      segment->color = ansiToMosync(0);
+      break;
 
-  case 30:                     // Black
-    segment->color = ansiToMosync(0);
-    break;
+    case 31:                     // Red
+      segment->color = ansiToMosync(4);
+      break;
 
-  case 31:                     // Red
-    segment->color = ansiToMosync(4);
-    break;
+    case 32:                     // Green
+      segment->color = ansiToMosync(2);
+      break;
 
-  case 32:                     // Green
-    segment->color = ansiToMosync(2);
-    break;
+    case 33:                     // Yellow
+      segment->color = ansiToMosync(6);
+      break;
 
-  case 33:                     // Yellow
-    segment->color = ansiToMosync(6);
-    break;
+    case 34:                     // Blue
+      segment->color = ansiToMosync(1);
+      break;
 
-  case 34:                     // Blue
-    segment->color = ansiToMosync(1);
-    break;
+    case 35:                     // Magenta
+      segment->color = ansiToMosync(5);
+      break;
 
-  case 35:                     // Magenta
-    segment->color = ansiToMosync(5);
-    break;
+    case 36:                     // Cyan
+      segment->color = ansiToMosync(3);
+      break;
 
-  case 36:                     // Cyan
-    segment->color = ansiToMosync(3);
-    break;
-
-  case 37:                     // White
-    segment->color = ansiToMosync(7);
-    break;
+    case 37:                     // White
+      segment->color = ansiToMosync(7);
+      break;
+    }
   }
 }
