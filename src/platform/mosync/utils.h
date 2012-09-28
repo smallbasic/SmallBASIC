@@ -30,5 +30,7 @@
 #define logLeaving()
 #endif
 
+int get_text_width(char *s);
+
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }

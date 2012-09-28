@@ -114,7 +114,7 @@ int Controller::getPen(int code) {
 char *Controller::getText(char *dest, int maxSize) {
   int x = output->getX();
   int y = output->getY();
-  int w = output->textWidth("sample text");
+  int w = EXTENT_X(maGetTextSize("sample text"));
   int h = output->textHeight();
 
   dest[0] = '\0';

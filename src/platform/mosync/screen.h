@@ -13,6 +13,8 @@
 #include <MAUtil/String.h>
 #include <MAUtil/Vector.h>
 
+#include "platform/mosync/utils.h"
+
 #define INITXY 2
 #define LINE_SPACING 4
 #define NO_COLOR -1
@@ -56,14 +58,18 @@ struct Screen : public Shape {
   virtual void clear();
   virtual void draw(bool vscroll);
   virtual void drawInto(bool background=false);
+  virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
+  virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
+  virtual void drawRectFilled(int x1, int y1, int x2, int y2) = 0;
+  virtual int getPixel(int x, int y) = 0;
   virtual void newLine(int lineHeight) = 0;
   virtual int print(const char *p, int lineHeight);
   virtual bool setGraphicsRendition(char c, int escValue, int lineHeight) = 0;
+  virtual void setPixel(int x, int y, int c) = 0;
   virtual void reset(int fontSize = -1);
   virtual void resize(int newWidth, int newHeight, int oldWidth, 
                       int oldHeight, int lineHeight) = 0;
   virtual void updateFont() = 0;
-  virtual int getPixel(int x, int y) = 0;
 
   int ansiToMosync(long c);
   void add(Shape *button) { shapes.add(button); }
@@ -96,9 +102,13 @@ struct GraphicScreen : public Screen {
   void draw(bool vscroll);
   void drawInto(bool background=false);
   void newLine(int lineHeight);
+  void drawLine(int x1, int y1, int x2, int y2);
+  void drawRect(int x1, int y1, int x2, int y2);
+  void drawRectFilled(int x1, int y1, int x2, int y2);
   int print(const char *p, int lineHeight);
   void reset(int fontSize = -1);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
+  void setPixel(int x, int y, int c);
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void updateFont() { setFont(bold, italic); }
   int getPixel(int x, int y);
@@ -187,7 +197,7 @@ struct TextSeg {
 
   // width of this segment in pixels
   int width() {
-    return !str ? 0 : EXTENT_X(maGetTextSize(str));
+    return get_text_width(str);
   }
 
   // number of chars in this segment
@@ -297,13 +307,17 @@ struct TextScreen : public Screen {
   void clear();
   void draw(bool vscroll);
   void drawText(const char *text, int len, int x, int lineHeight);
+  void drawLine(int x1, int y1, int x2, int y2);
+  void drawRect(int x1, int y1, int x2, int y2);
+  void drawRectFilled(int x1, int y1, int x2, int y2);
+  int  getPixel(int x, int y) { return 0; }
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
+  void setPixel(int x, int y, int c) {}
   void updateFont() {}
-  int getPixel(int x, int y) { return 0; }
 
 private:
   Row *getLine(int ndx);

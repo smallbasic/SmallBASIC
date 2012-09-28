@@ -17,6 +17,26 @@ extern Controller *controller;
 #define ACCESS_WRITE 2
 #define ACCESS_READ  4
 
+// workaround for android/mosync bug where outer spaces are not counted
+int get_text_width(char *s) {
+  int result = 0;
+  if (s && s[0]) {
+    int e = strlen(s) - 1;
+    char c1 = s[0];
+    char c2 = s[e];
+    if (c1 == ' ') {
+      s[0] = '_';
+    }
+    if (c2 == ' ') {
+      s[e] = '_';
+    }
+    result = EXTENT_X(maGetTextSize(s));
+    s[0] = c1;
+    s[e] = c2;
+  }
+  return result;
+}
+
 void osd_sound(int frq, int dur, int vol, int bgplay) {
 
 }
@@ -103,7 +123,7 @@ int osd_textheight(const char *str) {
 }
 
 int osd_textwidth(const char *str) {
-  return controller->output->textWidth(str);
+  return get_text_width((char*) str);
 }
 
 void osd_write(const char *str) {

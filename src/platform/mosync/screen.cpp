@@ -272,6 +272,24 @@ void GraphicScreen::drawInto(bool background) {
   maSetDrawTarget(image);
 }
 
+void GraphicScreen::drawLine(int x1, int y1, int x2, int y2) {
+  drawInto();
+  maLine(x1, y1, x2, y2);
+}
+
+void GraphicScreen::drawRect(int x1, int y1, int x2, int y2) {
+  drawInto();
+  maLine(x1, y1, x2, y1); // top
+  maLine(x1, y2, x2, y2); // bottom
+  maLine(x1, y1, x1, y2); // left
+  maLine(x2, y1, x2, y2); // right
+}
+
+void GraphicScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
+  drawInto();
+  maFillRect(x1, y1, x2 - x1, y2 - y1);
+}
+
 int GraphicScreen::getPixel(int x, int y) {
   MARect rc;
   rc.left = x;
@@ -529,6 +547,12 @@ bool GraphicScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   return false;
 }
 
+void GraphicScreen::setPixel(int x, int y, int c) {
+  drawInto();
+  maSetColor(ansiToMosync(c));
+  maPlot(x, y);
+}
+
 //
 // Text based screen with a large scrollback buffer
 //
@@ -580,6 +604,7 @@ void TextScreen::draw(bool vscroll) {
   int textRows = getTextRows();
   int numRows = textRows < pageRows ? textRows : pageRows;
   int firstRow = tail + (scrollY / charHeight);
+  int yoffs = scrollY % charHeight;
 
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
@@ -589,7 +614,7 @@ void TextScreen::draw(bool vscroll) {
 
   // draw the visible segments
   int pageWidth = 0;
-  for (int row = firstRow, rows = 0, py = y + charHeight;
+  for (int row = firstRow, rows = 0, py = y + charHeight - yoffs;
        rows < numRows; 
        row++, rows++, py += charHeight) {
     Row *line = getLine(row);   // next logical row
@@ -610,9 +635,9 @@ void TextScreen::draw(bool vscroll) {
         } else {
           maDrawText(px, py, seg->str);
         }
-      }
-      if (underline) {
-        maLine(px, py + charHeight, width, py + charHeight);
+        if (underline) {
+          maLine(px, py + charHeight, width, py + charHeight);
+        }
       }
       px += width;
       seg = seg->next;
@@ -635,6 +660,18 @@ void TextScreen::draw(bool vscroll) {
   // draw the base components
   Screen::draw(vscroll);
   maSetDrawTarget(currentHandle);
+}
+
+void TextScreen::drawLine(int x1, int y1, int x2, int y2) {
+
+}
+
+void TextScreen::drawRect(int x1, int y1, int x2, int y2) {
+
+}
+
+void TextScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
+
 }
 
 //

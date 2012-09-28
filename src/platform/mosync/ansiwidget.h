@@ -197,7 +197,6 @@ struct AnsiWidget {
   int getX() { return back->curX; }
   int getY() { return back->curY; }
   int textHeight(void);
-  int textWidth(const char *s, int len=-1);
   void print(const char *str);
   void reset();
   void resize(int width, int height);

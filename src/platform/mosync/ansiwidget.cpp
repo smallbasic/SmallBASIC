@@ -133,8 +133,9 @@ TextButton::TextButton(Screen *screen, const char *action, const char *label,
 }
 
 void TextButton::draw() {
-  maSetColor(pressed ? bg : fg);
+  maSetColor(fg);
   maDrawText(x, y, label.c_str());
+  maSetColor(pressed ? fg : bg);
   maLine(x + 2, y + height + 1, x + width, y + height + 1);
 }
 
@@ -192,7 +193,7 @@ void FormLineInput::edit(int key) {
     if (len < maxSize - 1) {
       buffer[len] = key;
       buffer[++len] = '\0';
-      int textWidth = EXTENT_X(maGetTextSize(buffer));
+      int textWidth = get_text_width(buffer);
       if (textWidth > width) {
         if (textWidth > getScreen()->width) {
           scroll++;
@@ -311,25 +312,19 @@ void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, 
 
 // draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
-  back->drawInto();
-  maLine(x1, y1, x2, y2);
+  back->drawLine(x1, y1, x2, y2);
   flush(false);
 }
 
 // draw a rectangle onto the offscreen buffer
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
-  back->drawInto();
-  maLine(x1, y1, x2, y1); // top
-  maLine(x1, y2, x2, y2); // bottom
-  maLine(x1, y1, x1, y2); // left
-  maLine(x2, y1, x2, y2); // right
+  back->drawRect(x1, y1, x2, y2);
   flush(false);
 }
 
 // draw a filled rectangle onto the offscreen buffer
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
-  back->drawInto();
-  maFillRect(x1, y1, x2 - x1, y2 - y1);
+  back->drawRectFilled(x1, y1, x2, y2);
   flush(false);
 }
 
@@ -363,18 +358,6 @@ int AnsiWidget::getPixel(int x, int y) {
 // Returns the height in pixels using the current font setting
 int AnsiWidget::textHeight(void) {
   return back->charHeight;
-}
-
-// returns the width in pixels using the current font setting
-int AnsiWidget::textWidth(const char *str, int len) {
-  int result;
-  if (len != -1) {
-    TextBuffer text(str, len);
-    result = EXTENT_X(maGetTextSize(text.str));
-  } else {
-    result = EXTENT_X(maGetTextSize(str));
-  }
-  return result;
 }
 
 // prints the contents of the given string onto the backbuffer
@@ -465,9 +448,7 @@ void AnsiWidget::setColor(long fg) {
 
 // sets the pixel to the given color at the given xy location
 void AnsiWidget::setPixel(int x, int y, int c) {
-  back->drawInto();
-  maSetColor(back->ansiToMosync(c));
-  maPlot(x, y);
+  back->setPixel(x, y, c);
 }
 
 // sets the current text drawing color
