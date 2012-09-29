@@ -75,8 +75,8 @@ void Widget::drawButton(const char *caption) {
     maLine(x, y, r, y); // top
     maLine(x, y, x, b); // left
     maSetColor(0xd0d0d0);
-    maLine(x+1, b, r, b); // bottom
-    maLine(r, y+1, r, b); // right
+    maLine(x+1, b, r, b);     // bottom
+    maLine(r-1, y+1, r-1, b); // right
     maSetColor(0x606060);
     maLine(x+1, y+1, r-1, y+1); // bottom
     maLine(x+1, b-1, x+1, b-1); // right
@@ -245,7 +245,8 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   moveDown(false),
   swipeExit(false),
   buttonListener(listener),
-  activeButton(NULL) {
+  activeButton(NULL),
+  options(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
@@ -269,6 +270,7 @@ AnsiWidget::~AnsiWidget() {
   for (int i = 0; i < MAX_SCREENS; i++) {
     delete screens[i];
   }
+  delete [] options;
 }
 
 // create audible beep sound
@@ -611,9 +613,10 @@ void AnsiWidget::createOptionsBox(char *&p) {
     }
 
     // create the options buffer
-    char *buffer = new char[optionsBytes];
-    *(int *)buffer = items->size();
-    wchar_t *dst = (wchar_t *)(buffer + sizeof(int));
+    delete [] options;
+    options = new char[optionsBytes];
+    *(int *)options = items->size();
+    wchar_t *dst = (wchar_t *)(options + sizeof(int));
 
     Vector_each(String*, it, *items) {
       const char *str = (*it)->c_str();
@@ -622,7 +625,7 @@ void AnsiWidget::createOptionsBox(char *&p) {
       dst[len] = 0;
       dst += (len + 1);
     }
-    maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)buffer, optionsBytes);
+    maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)options, optionsBytes);
   }
   deleteItems(items);
 }

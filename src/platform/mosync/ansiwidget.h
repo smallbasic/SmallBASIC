@@ -239,6 +239,7 @@ private:
   bool swipeExit; // last touch-down was swipe exit
   IButtonListener *buttonListener;
   Widget *activeButton;
+  char *options;
 };
 
 #endif // ANSIWIDGET_H
