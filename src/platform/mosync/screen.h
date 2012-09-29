@@ -16,7 +16,7 @@
 #include "platform/mosync/utils.h"
 
 #define INITXY 2
-#define LINE_SPACING 4
+#define LINE_SPACING 6
 #define NO_COLOR -1
 #define DEFAULT_COLOR  0xa1a1a1
 #define GRAY_BG_COL    0x383f42
@@ -320,7 +320,6 @@ struct TextScreen : public Screen {
   int  getPixel(int x, int y) { return 0; }
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
-  void reset(int fontSize = -1);
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);

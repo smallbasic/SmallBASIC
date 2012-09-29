@@ -771,11 +771,6 @@ int TextScreen::print(const char *p, int lineHeight) {
   return numChars;
 }
 
-void TextScreen::reset(int fontSize) {
-  Screen::reset(fontSize);
-  getLine(head)->next()->reset();
-}
-
 void TextScreen::resize(int newWidth, int newHeight, int oldWidth, 
                         int oldHeight, int lineHeight) {
   width = newWidth;
@@ -786,13 +781,15 @@ void TextScreen::resize(int newWidth, int newHeight, int oldWidth,
 // performs the ANSI text SGI function.
 //
 bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
-  //  TextSeg *segment = getLine(head)->current();
   if (c == ';' || c == 'm') {
     Row *line = getLine(head);
     TextSeg *segment = line->next();
 
     switch (escValue) {
     case 0:
+      segment = new TextSeg();
+      line->append(segment);
+      segment->reset();
       reset();
       break;
 
