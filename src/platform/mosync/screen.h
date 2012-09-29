@@ -131,6 +131,7 @@ struct TextSeg {
     ITALIC = 0x00000002,
     UNDERLINE = 0x00000004,
     INVERT = 0x00000008,
+    RESET = 0x00000010,
   };
 
   // create a new segment
@@ -146,13 +147,15 @@ struct TextSeg {
     }
   }
 
-  // reset all flags
-  void reset() {
-    set(BOLD, false);
-    set(ITALIC, false);
-    set(UNDERLINE, false);
-    set(INVERT, false);
+  // sets the reset flag
+  void reset() { 
+    set(RESET, true); 
   }
+
+  // returns whether the reset flag is set
+  bool isReset() const { 
+    return set(RESET); 
+  } 
 
   void setText(const char *str, int n) {
     if ((!str || !n)) {
@@ -182,12 +185,12 @@ struct TextSeg {
   }
 
   // return whether the flag was set (to true or false)
-  bool set(int f) {
-    return (flags & (f << 16));
+  bool set(int f) const { 
+    return (flags & (f << 16)); 
   }
 
   // return the flag value if set, otherwise return value
-  bool get(int f, bool *value) {
+  bool get(int f, bool *value) const {
     bool result = *value;
     if (flags & (f << 16)) {
       result = (flags & f);
@@ -196,13 +199,13 @@ struct TextSeg {
   }
 
   // width of this segment in pixels
-  int width() {
-    return get_text_width(str);
+  int width() const { 
+    return get_text_width(str); 
   }
 
   // number of chars in this segment
-  int numChars() {
-    return !str ? 0 : strlen(str);
+  int numChars() const { 
+    return !str ? 0 : strlen(str); 
   }
 
   // update font and state variables when set in this segment
@@ -211,11 +214,6 @@ struct TextSeg {
     *italic = get(ITALIC, italic);
     *underline = get(UNDERLINE, underline);
     *invert = get(INVERT, invert);
-
-    if (this->color != NO_COLOR) {
-      maSetColor(this->color);
-    }
-
     return set(BOLD) || set(ITALIC);
   }
 
@@ -247,12 +245,21 @@ struct Row {
     head = 0;
   }
 
+  TextSeg *next() {
+    TextSeg *result = head;
+    if (!result) {
+      result = new TextSeg();
+      append(result);
+    }
+    return result;
+  }
+
   // number of characters in this row
-  int numChars() {
+  int numChars() const {
     return numChars(this->head);
   }
 
-  int numChars(TextSeg *next) {
+  int numChars(TextSeg *next) const {
     int n = 0;
     if (next) {
       n = next->numChars() + numChars(next->next);
@@ -283,11 +290,11 @@ struct Row {
     return !next->next ? next : tail(next->next);
   }
 
-  int width() {
+  int width() const {
     return width(this->head);
   }
 
-  int width(TextSeg *next) {
+  int width(TextSeg *next) const {
     int n = 0;
     if (next) {
       n = next->width() + width(next->next);
@@ -313,6 +320,7 @@ struct TextScreen : public Screen {
   int  getPixel(int x, int y) { return 0; }
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight);
+  void reset(int fontSize = -1);
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);

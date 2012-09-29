@@ -11,13 +11,12 @@ end
 sub intro()
   local e
   e = chr(27) + "["
-  print e + "90m" + e + "31m" + "Welcome to SmallBASIC"
-  print e + "91m" + e + "32m" + "Welcome to SmallBASIC"
-  print e + "92m" + e + "33m" + "Welcome to SmallBASIC"
-  print e + "93m" + e + "34m" + "Welcome to SmallBASIC"
-  print e + "0m" + e + "90m"
+  print e + "31m" + "Welcome to SmallBASIC"
+  print e + "32m" + "Welcome to SmallBASIC"
+  print e + "33m" + "Welcome to SmallBASIC"
+  print e + "34m" + "Welcome to SmallBASIC"
+  print e + "0m"
   space_print "Welcome to SmallBASIC"
-  print chr$(27) + "[90m"
 end
 
 sub about()

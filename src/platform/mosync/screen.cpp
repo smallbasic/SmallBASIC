@@ -553,6 +553,34 @@ void GraphicScreen::setPixel(int x, int y, int c) {
   maPlot(x, y);
 }
 
+struct LineShape : Shape {
+  LineShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
+  void draw() {
+    maLine(x, y, width, height);
+  }
+};
+
+struct RectShape : Shape {
+  RectShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
+  void draw() {
+    int x1 = x;
+    int y1 = y;
+    int x2 = x + width;
+    int y2 = y + width;
+    maLine(x1, y1, x2, y1); // top
+    maLine(x1, y2, x2, y2); // bottom
+    maLine(x1, y1, x1, y2); // left
+    maLine(x2, y1, x2, y2); // right
+  }
+};
+
+struct RectFilledShape : Shape {
+  RectFilledShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
+  void draw() {
+    maFillRect(x, y, width, height);
+  }
+};
+
 //
 // Text based screen with a large scrollback buffer
 //
@@ -598,23 +626,24 @@ void TextScreen::draw(bool vscroll) {
   bool italic = false;
   bool underline = false;
   bool invert = false;
+  int color = DEFAULT_COLOR;
 
   // calculate rows to display
   int pageRows = getPageRows();
   int textRows = getTextRows();
   int numRows = textRows < pageRows ? textRows : pageRows;
   int firstRow = tail + (scrollY / charHeight);
-  int yoffs = scrollY % charHeight;
+  int yoffs = scrollY % charHeight; // smooth scrolling offset
 
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetColor(bg);
   maFillRect(x, y, width, height);
-  maSetColor(fg);
+  maSetColor(color);
 
   // draw the visible segments
   int pageWidth = 0;
-  for (int row = firstRow, rows = 0, py = y + charHeight - yoffs;
+  for (int row = firstRow, rows = 0, py = y - yoffs;
        rows < numRows; 
        row++, rows++, py += charHeight) {
     Row *line = getLine(row);   // next logical row
@@ -623,6 +652,18 @@ void TextScreen::draw(bool vscroll) {
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setFont(bold, italic);
+      } else if (seg->isReset()) {
+        reset();
+        bold = false;
+        italic = false;
+        underline = false;
+        invert = false;
+        color = DEFAULT_COLOR;
+        maSetColor(color);
+      }
+      if (seg->color != NO_COLOR) {
+        color = seg->color;
+        maSetColor(color);
       }
       int width = seg->width();
       if (seg->str) {
@@ -631,7 +672,7 @@ void TextScreen::draw(bool vscroll) {
           maFillRect(px, py, width, charHeight);
           maSetColor(bg);
           maDrawText(px, py, seg->str);
-          maSetColor(fg);
+          maSetColor(color);
         } else {
           maDrawText(px, py, seg->str);
         }
@@ -653,7 +694,10 @@ void TextScreen::draw(bool vscroll) {
     Shape *rect = (Shape *)(*it);
     if (rect->y >= y + scrollY && 
         rect->y <= y + scrollY + height) {
+      int y = rect->y;
+      rect->y -= scrollY;
       rect->draw();
+      rect->y = y;
     }
   }
 
@@ -663,15 +707,15 @@ void TextScreen::draw(bool vscroll) {
 }
 
 void TextScreen::drawLine(int x1, int y1, int x2, int y2) {
-
+  add(new LineShape(x1, y1, x2, y2));
 }
 
 void TextScreen::drawRect(int x1, int y1, int x2, int y2) {
-
+  add(new RectShape(x1, y1, x2, y2));
 }
 
 void TextScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
-
+  add(new RectFilledShape(x1, y1, x2, y2));
 }
 
 //
@@ -719,12 +763,17 @@ int TextScreen::print(const char *p, int lineHeight) {
   // Print the next (possible) line of text
   segment->setText(p, numChars);
 
-  int lineChars = line->numChars();
-  if (lineChars > cols) {
-    cols = lineChars;
+  // remember the maximum line length
+  if (numChars > cols) {
+    cols = numChars;
   }
 
   return numChars;
+}
+
+void TextScreen::reset(int fontSize) {
+  Screen::reset(fontSize);
+  getLine(head)->next()->reset();
 }
 
 void TextScreen::resize(int newWidth, int newHeight, int oldWidth, 
@@ -740,12 +789,11 @@ bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   //  TextSeg *segment = getLine(head)->current();
   if (c == ';' || c == 'm') {
     Row *line = getLine(head);
-    TextSeg *segment = new TextSeg();
-    line->append(segment);
-    
+    TextSeg *segment = line->next();
+
     switch (escValue) {
     case 0:
-      segment->reset();
+      reset();
       break;
 
     case 1:                      // Bold on
@@ -785,35 +833,35 @@ bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
       break;
 
     case 30:                     // Black
-      segment->color = ansiToMosync(0);
+      fg = segment->color = ansiToMosync(0);
       break;
 
     case 31:                     // Red
-      segment->color = ansiToMosync(4);
+      fg = segment->color = ansiToMosync(4);
       break;
 
     case 32:                     // Green
-      segment->color = ansiToMosync(2);
+      fg = segment->color = ansiToMosync(2);
       break;
 
     case 33:                     // Yellow
-      segment->color = ansiToMosync(6);
+      fg = segment->color = ansiToMosync(6);
       break;
 
     case 34:                     // Blue
-      segment->color = ansiToMosync(1);
+      fg = segment->color = ansiToMosync(1);
       break;
 
     case 35:                     // Magenta
-      segment->color = ansiToMosync(5);
+      fg = segment->color = ansiToMosync(5);
       break;
 
     case 36:                     // Cyan
-      segment->color = ansiToMosync(3);
+      fg = segment->color = ansiToMosync(3);
       break;
 
     case 37:                     // White
-      segment->color = ansiToMosync(7);
+      fg = segment->color = ansiToMosync(7);
       break;
     }
   }

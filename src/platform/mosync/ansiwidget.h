@@ -15,7 +15,7 @@
 
 #include "platform/mosync/screen.h"
 
-#define MAX_SCREENS 4
+#define MAX_SCREENS 8
 
 using namespace MAUtil;
 

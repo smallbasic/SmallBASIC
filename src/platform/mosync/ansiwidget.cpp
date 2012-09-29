@@ -87,11 +87,11 @@ void Widget::drawButton(const char *caption) {
     maLine(x, y, r, y); // top
     maLine(x, y, x, b); // left
     maSetColor(0x606060);
-    maLine(x, b, r, b); // bottom
-    maLine(r, y, r, b); // right
+    maLine(x, b, r, b);     // bottom
+    maLine(r-1, y, r-1, b); // right
     maSetColor(0x909090);
     maLine(x+1, b-1, r-1, b-1); // bottom
-    maLine(r-1, y+1, r-1, b-1); // right
+    maLine(r-2, y+1, r-2, b-1); // right
   }
 
   maSetColor(fg);
@@ -574,7 +574,7 @@ void AnsiWidget::createLink(char *&p, bool execLink, bool button) {
     int h = EXTENT_Y(textSize) + 2;
     int x = back->curX;
     int y = back->curY;
-    
+
     if (button) {
       w += BUTTON_PADDING;
       h += BUTTON_PADDING;
