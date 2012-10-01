@@ -111,6 +111,18 @@ void Screen::draw(bool vscroll) {
     maDrawText(left, top + 2, label.c_str());
   }
 
+  // draw any visible shapes
+  Vector_each(Shape*, it, shapes) {
+    Shape *rect = (Shape *)(*it);
+    if (rect->y >= y + scrollY && 
+        rect->y <= y + scrollY + height) {
+      int y = rect->y;
+      rect->y -= scrollY;
+      rect->draw();
+      rect->y = y;
+    }
+  }
+
   maUpdateScreen();
   maResetBacklight();
   dirty = 0;
@@ -686,18 +698,6 @@ void TextScreen::draw(bool vscroll) {
     int rowWidth = line->width();
     if (rowWidth > pageWidth) {
       pageWidth = rowWidth;
-    }
-  }
-
-  // draw any visible shapes
-  Vector_each(Shape*, it, shapes) {
-    Shape *rect = (Shape *)(*it);
-    if (rect->y >= y + scrollY && 
-        rect->y <= y + scrollY + height) {
-      int y = rect->y;
-      rect->y -= scrollY;
-      rect->draw();
-      rect->y = y;
     }
   }
 

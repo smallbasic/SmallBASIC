@@ -235,7 +235,9 @@ MAEvent Controller::processEvents(int ms, int untilType, bool touchAsKey) {
           output->flush(true);
         }
       } else if (isRunning()) {
-        dev_pushkey(event.optionsBoxButtonIndex);
+        if (!output->optionSelected(event.optionsBoxButtonIndex)) {
+          dev_pushkey(event.optionsBoxButtonIndex);
+        }
       }
       break;
     case EVENT_TYPE_SCREEN_CHANGED:

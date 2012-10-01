@@ -54,6 +54,9 @@
 #define SWIPE_TRIGGER_FAST 55
 #define SWIPE_TRIGGER_SLOW 80
 
+char *options = NULL;
+FormList *clickedList = NULL;
+
 Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
   Shape(x, y, w, h),
   pressed(false),
@@ -233,32 +236,41 @@ FormList::FormList(Screen *screen, IFormWidgetListModel *model,
 }
 
 void FormList::clicked(IButtonListener *listener, int x, int y) {
-  if (model) {
-    if (x < width / 2) {
-      // select previous
-      if (model->selected() > 0) {
-        model->selected(model->selected() - 1);
-      } else {
-        model->selected(model->rows() - 1);
-      }
-    } else {
-      // select next
-      if (model->selected() < model->rows() -1) {
-        model->selected(model->selected() + 1);
-      } else {
-        model->selected(0);
-      }
-    }
+    // calculate the size of the options buffer
+  int optionsBytes = sizeof(int);
+  for (int i = 0; i < model->rows(); i++) {
+    const char *str = model->getTextAt(i);
+    optionsBytes += (strlen(str) + 1) * sizeof(wchar);
   }
-  FormWidget::clicked(listener, x, y);
+
+  // create the options buffer
+  delete [] options;
+  options = new char[optionsBytes];
+  *(int *)options = model->rows();
+  wchar_t *dst = (wchar_t *)(options + sizeof(int));
+  
+  for (int i = 0; i < model->rows(); i++) {
+    const char *str = model->getTextAt(i);
+    int len = strlen(str);
+    swprintf(dst, len + 1, L"%hs", str);
+    dst[len] = 0;
+    dst += (len + 1);
+  }
+  
+  clickedList = this;
+  maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)options, optionsBytes);
 }
 
 void FormList::draw() {
   if (model) {
-    maSetColor(getBackground(GRAY_BG_COL));
-    maFillRect(x, y, width, height);
-    maSetColor(fg);
-    maDrawText(x, y, getText());
+    drawButton(getText());
+  }
+}
+
+void FormList::optionSelected(int index) {
+  if (index < model->rows()) {
+    model->selected(index);
+    FormWidget::clicked(NULL, -1, -1);
   }
 }
 
@@ -274,8 +286,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   moveDown(false),
   swipeExit(false),
   buttonListener(listener),
-  activeButton(NULL),
-  options(NULL) {
+  activeButton(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
@@ -389,6 +400,16 @@ int AnsiWidget::getPixel(int x, int y) {
 // Returns the height in pixels using the current font setting
 int AnsiWidget::textHeight(void) {
   return back->charHeight;
+}
+
+bool AnsiWidget::optionSelected(int index) {
+  bool result = false;
+  if (clickedList != NULL) {
+    clickedList->optionSelected(index);
+    clickedList = NULL;
+    result = false;
+  } 
+  return result;
 }
 
 // prints the contents of the given string onto the backbuffer

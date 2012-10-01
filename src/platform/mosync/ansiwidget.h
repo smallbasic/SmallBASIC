@@ -168,6 +168,7 @@ struct FormList : public FormWidget {
   const char *getText() const { return model->getTextAt(model->selected()); }
   void clicked(IButtonListener *listener, int x, int y);
   void draw();
+  void optionSelected(int index);
 
 private:
   IFormWidgetListModel *model;
@@ -199,6 +200,7 @@ struct AnsiWidget {
   int getX() { return back->curX; }
   int getY() { return back->curY; }
   int textHeight(void);
+  bool optionSelected(int index);
   void print(const char *str);
   void reset();
   void resize(int width, int height);
@@ -241,7 +243,6 @@ private:
   bool swipeExit; // last touch-down was swipe exit
   IButtonListener *buttonListener;
   Widget *activeButton;
-  char *options;
 };
 
 #endif // ANSIWIDGET_H

@@ -21,7 +21,7 @@
 
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W 16
-#define BN_H 8
+#define BN_H 12
 
 extern Controller *controller;
 Form *form;
@@ -142,7 +142,7 @@ void Form::setupWidget(WidgetDataPtr widgetData) {
     widget->setW(textW + BN_W);
   }
 
-  if (widget->getH() < 0) {
+  if (widget->getH() < 0 || widget->getH() < (textH + BN_H)) {
     widget->setH(textH + BN_H);
   }
 
