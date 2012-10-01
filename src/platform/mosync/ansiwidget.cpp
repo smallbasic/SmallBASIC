@@ -118,8 +118,8 @@ Button::Button(Screen *screen, const char* action, const char *label,
   label(label) {
 }
 
-void Button::clicked(IButtonListener *listener) { 
-  listener->buttonClicked(action.c_str()); 
+void Button::clicked(IButtonListener *listener, int x, int y) { 
+  listener->buttonClicked(action.c_str());
 }
 
 BlockButton::BlockButton(Screen *screen, const char *action, const char *label,
@@ -150,7 +150,7 @@ FormWidget::~FormWidget() {
   getScreen()->remove(this);
 }
 
-void FormWidget::clicked(IButtonListener *listener) { 
+void FormWidget::clicked(IButtonListener *listener, int x, int y) { 
   this->listener->buttonClicked(NULL); 
 }
 
@@ -227,10 +227,39 @@ FormList::FormList(Screen *screen, IFormWidgetListModel *model,
                    int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
   model(model) {
+  if (model->rows()) {
+    model->selected(0);
+  }
+}
+
+void FormList::clicked(IButtonListener *listener, int x, int y) {
+  if (model) {
+    if (x < width / 2) {
+      // select previous
+      if (model->selected() > 0) {
+        model->selected(model->selected() - 1);
+      } else {
+        model->selected(model->rows() - 1);
+      }
+    } else {
+      // select next
+      if (model->selected() < model->rows() -1) {
+        model->selected(model->selected() + 1);
+      } else {
+        model->selected(0);
+      }
+    }
+  }
+  FormWidget::clicked(listener, x, y);
 }
 
 void FormList::draw() {
-  // TODO: implement me
+  if (model) {
+    maSetColor(getBackground(GRAY_BG_COL));
+    maFillRect(x, y, width, height);
+    maSetColor(fg);
+    maDrawText(x, y, getText());
+  }
 }
 
 AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
@@ -529,9 +558,9 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   if (activeButton != NULL && activeButton->pressed) {
     front->drawInto();
     activeButton->pressed = false;
+    activeButton->clicked(buttonListener, event.point.x, event.point.y);
     activeButton->draw();
     flush(true);
-    activeButton->clicked(buttonListener);
   } else if (swipeExit) {
     swipeExit = false;
   } else {

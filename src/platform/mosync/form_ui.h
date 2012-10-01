@@ -27,14 +27,14 @@ struct ListModel : IFormWidgetListModel {
 
   void clear();
   void create(const char *items, var_t *v);
-  void fromArray(const char *caption, var_t *v);
   const char *getTextAt(int index);
   int getIndex(const char *t);
-  int rowCount() const { return list.size(); }
-  int selectedIndex() const { return focusIndex; }
-  void setSelectedIndex(int index) { focusIndex = index; }
+  int rows() const { return list.size(); }
+  int selected() const { return focusIndex; }
+  void selected(int index) { focusIndex = index; }
 
 private:
+  void fromArray(const char *caption, var_t *v);
   Vector<String *> list;
   int focusIndex;
 };

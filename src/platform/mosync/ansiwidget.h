@@ -28,9 +28,9 @@ struct IFormWidgetListModel {
   virtual ~IFormWidgetListModel() {}
   virtual const char *getTextAt(int index) = 0;
   virtual int getIndex(const char *label) = 0;
-  virtual int rowCount() const = 0;
-  virtual int selectedIndex() const = 0;
-  virtual void setSelectedIndex(int index) = 0;
+  virtual int rows() const = 0;
+  virtual int selected() const = 0;
+  virtual void selected(int index) = 0;
 };
 
 struct IFormWidget {
@@ -56,7 +56,7 @@ struct Widget : public Shape {
   Widget(int bg, int fg, int x, int y, int w, int h);
   virtual ~Widget() {}
 
-  virtual void clicked(IButtonListener *listener) = 0;
+  virtual void clicked(IButtonListener *listener, int x, int y) = 0;
 
   void drawButton(const char *caption);
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
@@ -72,7 +72,7 @@ struct Button : public Widget {
          int x, int y, int w, int h);
   virtual ~Button() {}
 
-  void clicked(IButtonListener *listener);
+  void clicked(IButtonListener *listener, int x, int y);
 
   String action;
   String label;
@@ -99,7 +99,7 @@ struct FormWidget : public Widget, IFormWidget {
 
   void setListener(IButtonListener *listener) { this->listener = listener; }
   Screen *getScreen() { return screen; }
-  void clicked(IButtonListener *listener);
+  void clicked(IButtonListener *listener, int x, int y);
   void show();
 
   IFormWidgetListModel *getList() const { return NULL; }
@@ -164,7 +164,9 @@ struct FormList : public FormWidget {
            int x, int y, int w, int h);
   virtual ~FormList() {}
 
-  const char *getText() const { return NULL; }
+  IFormWidgetListModel *getList() const { return model; }
+  const char *getText() const { return model->getTextAt(model->selected()); }
+  void clicked(IButtonListener *listener, int x, int y);
   void draw();
 
 private:

@@ -37,6 +37,24 @@ int get_text_width(char *s) {
   return result;
 }
 
+// set the current working directory to the given path
+void set_path(const char *filename) {
+  const char *slash = strrchr(filename, '/');
+  if (!slash) {
+    slash = strrchr(filename, '\\');
+  }
+
+  if (slash) {
+    int len = slash - filename;
+    if (len > 0) {
+      char path[1024];
+      strncpy(path, filename, len);
+      path[len] = 0;
+      chdir(path);
+    }
+  }
+}
+
 void osd_sound(int frq, int dur, int vol, int bgplay) {
 
 }

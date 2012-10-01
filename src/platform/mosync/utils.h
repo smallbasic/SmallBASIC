@@ -31,6 +31,7 @@
 #endif
 
 int get_text_width(char *s);
+void set_path(const char *filename);
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }

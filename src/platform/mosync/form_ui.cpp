@@ -29,7 +29,8 @@ Form *form;
 //
 // ListModel
 //
-ListModel::ListModel(const char *items, var_t *v) {
+ListModel::ListModel(const char *items, var_t *v) :
+  focusIndex(-1) {
   create(items, v);
 }
 
@@ -271,6 +272,9 @@ void WidgetData::setupWidget(IFormWidget *widget) {
   }
 
   form->setupWidget(this);
+  
+  // setup the originating variable
+  updateVarFlag();
 }
 
 // update the smallbasic variable
@@ -309,7 +313,7 @@ bool WidgetData::updateGui() {
     // update list control with new int variable
     if (type == ctrl_listbox) {
       model = (ListModel *)widget->getList();
-      model->setSelectedIndex(var->v.i);
+      model->selected(var->v.i);
       updated = true;
     }
   } else if (var->type == V_ARRAY && var->v.p.ptr != orig.ptr) {
@@ -346,7 +350,7 @@ bool WidgetData::updateGui() {
       } else {
         int selection = model->getIndex((const char *)var->v.p.ptr);
         if (selection != -1) {
-          model->setSelectedIndex(selection);
+          model->selected(selection);
         }
       }
       updated = true;
@@ -389,7 +393,7 @@ void WidgetData::transferData() {
     
   case ctrl_listbox:
     model = (ListModel *)widget->getList();
-    const char *s = model->getTextAt(model->selectedIndex());
+    const char *s = model->getTextAt(model->selected());
     if (s) {
       v_setstr(var, s);
     }
@@ -431,6 +435,11 @@ void cmd_button() {
         widget = controller->output->createLabel(caption, x, y, w, h);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {
+        ListModel *model = new ListModel(caption, var);
+        wd = new WidgetData(ctrl_listbox, var);
+        widget = controller->output->createList(model, x, y, w, h);
+      } else if (strcasecmp("choice", type) == 0 || 
+                 strcasecmp("dropdown", type) == 0) {
         ListModel *model = new ListModel(caption, var);
         wd = new WidgetData(ctrl_listbox, var);
         widget = controller->output->createList(model, x, y, w, h);

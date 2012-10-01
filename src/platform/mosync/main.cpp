@@ -40,6 +40,9 @@ extern "C" int MAMain() {
       }
     } else if (controller->getLoadPath() != NULL) {
       mainBas = (strncmp(controller->getLoadPath(), "main.bas", 8) == 0);
+      if (!mainBas) {
+        set_path(controller->getLoadPath());
+      }
       bool success = sbasic_main(controller->getLoadPath());
       if (!controller->isBack()) {
         if (!controller->output->hasUI()) {
