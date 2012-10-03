@@ -24,6 +24,8 @@ group_id = ""
 for i in rows
   if left(i, 4) == "bc. " then
      i = mid(i, 4)
+  elif left(i, 5) == "bc.. " then
+     i = mid(i, 5)
   elif left(i, 3) == "p. " then
      i = mid(i, 3)
   elif left(i, 4) == "bq. " then
