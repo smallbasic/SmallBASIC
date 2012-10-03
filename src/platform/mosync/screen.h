@@ -75,6 +75,7 @@ struct Screen : public Shape {
   void add(Shape *button) { shapes.add(button); }
   void remove(Shape *button);
   void setColor(long color);
+  void setDirty() { if (!dirty) { dirty = maGetMilliSecondCount(); } }
   void setTextColor(long fg, long bg);
   void setFont(bool bold, bool italic);
 

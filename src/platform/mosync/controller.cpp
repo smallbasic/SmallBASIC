@@ -120,8 +120,7 @@ char *Controller::getText(char *dest, int maxSize) {
   dest[0] = '\0';
   runMode = modal_state;
   IFormWidget *formWidget = output->createLineInput(dest, maxSize, x, y, w, h);
-  formWidget->show();
-  output->flush(true);
+  output->redraw();
   maShowVirtualKeyboard();
 
   while (isModal()) {

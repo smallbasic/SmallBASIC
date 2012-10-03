@@ -157,11 +157,6 @@ void FormWidget::clicked(IButtonListener *listener, int x, int y) {
   this->listener->buttonClicked(NULL); 
 }
 
-void FormWidget::show() {
-  screen->drawInto();
-  draw();
-}
-
 FormButton::FormButton(Screen *screen, const char *caption, int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
   caption(caption) {
@@ -187,7 +182,7 @@ void FormLineInput::draw() {
   maDrawText(x, y, buffer + scroll);
 }
 
-void FormLineInput::edit(int key) {
+bool FormLineInput::edit(int key) {
   bool changed = false;
   int len = strlen(buffer);
 
@@ -219,11 +214,7 @@ void FormLineInput::edit(int key) {
     maShowVirtualKeyboard();
   }
 
-  if (changed) {
-    getScreen()->drawInto(true);
-    draw();
-    getScreen()->draw(false);
-  }
+  return changed;
 }
 
 FormList::FormList(Screen *screen, IFormWidgetListModel *model,
@@ -236,7 +227,7 @@ FormList::FormList(Screen *screen, IFormWidgetListModel *model,
 }
 
 void FormList::clicked(IButtonListener *listener, int x, int y) {
-    // calculate the size of the options buffer
+  // calculate the size of the options buffer
   int optionsBytes = sizeof(int);
   for (int i = 0; i < model->rows(); i++) {
     const char *str = model->getTextAt(i);
@@ -373,7 +364,9 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
 // perform editing when the formWidget belongs to the front screen
 void AnsiWidget::edit(IFormWidget *formWidget, int c) {
   if (front == ((FormWidget *)formWidget)->getScreen()) {
-    formWidget->edit(c);
+    if (formWidget->edit(c)) {
+      redraw();
+    }
   }
 }
 
@@ -473,6 +466,12 @@ void AnsiWidget::print(const char *str) {
   }
 }
 
+// redraws and flushes the front screen
+void AnsiWidget::redraw() {
+  front->drawInto();
+  flush(true);
+}
+
 // reinit for new program run
 void AnsiWidget::reset() {
   back = front = screens[0];
@@ -530,11 +529,9 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
     Vector_each(Shape*, it, front->shapes) {
       Widget *widget = (Widget *)(*it);
       if (widget->overlaps(event.point, 0, front->scrollY)) {
-        front->drawInto();
         activeButton = widget;
         activeButton->pressed = true;
-        activeButton->draw();
-        flush(true);
+        redraw();
         break;
       }
     }
@@ -546,10 +543,8 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   if (activeButton != NULL) {
     bool pressed = activeButton->overlaps(event.point, 0, front->scrollY);
     if (pressed != activeButton->pressed) {
-      front->drawInto();
       activeButton->pressed = pressed;
-      activeButton->draw();
-      flush(true);
+      redraw();
     }
   } else if (!swipeExit) {
     // scroll up/down
@@ -577,11 +572,9 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
 // handler for pointer release events
 void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   if (activeButton != NULL && activeButton->pressed) {
-    front->drawInto();
     activeButton->pressed = false;
     activeButton->clicked(buttonListener, event.point.x, event.point.y);
-    activeButton->draw();
-    flush(true);
+    redraw();
   } else if (swipeExit) {
     swipeExit = false;
   } else {
@@ -645,7 +638,6 @@ void AnsiWidget::createLink(char *&p, bool execLink, bool button) {
       link = new TextButton(back, action, text, x, y, w, h);
     }
     back->shapes.add(link);
-    link->draw();
   }
 
   deleteItems(items);

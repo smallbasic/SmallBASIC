@@ -35,12 +35,11 @@ struct IFormWidgetListModel {
 
 struct IFormWidget {
   virtual ~IFormWidget() {}
-  virtual void edit(int key) = 0;
+  virtual bool edit(int key) = 0;
   virtual IFormWidgetListModel *getList() const = 0;
   virtual const char *getText() const = 0;
   virtual void setText(const char *text) = 0;
   virtual void setListener(IButtonListener *listener) = 0;
-  virtual void show() = 0;
   virtual int getX() = 0;
   virtual int getY() = 0;
   virtual int getW() = 0;
@@ -100,11 +99,10 @@ struct FormWidget : public Widget, IFormWidget {
   void setListener(IButtonListener *listener) { this->listener = listener; }
   Screen *getScreen() { return screen; }
   void clicked(IButtonListener *listener, int x, int y);
-  void show();
 
   IFormWidgetListModel *getList() const { return NULL; }
   void setText(const char *text) {}
-  void edit(int key) {}
+  bool edit(int key) { return false; }
 
   int getX() { return this->x; }
   int getY() { return this->y; }
@@ -149,7 +147,7 @@ struct FormLineInput : public FormWidget {
 
   void close();
   void draw();
-  void edit(int key);
+  bool edit(int key);
   const char *getText() const { return buffer; }
   void setText(const char *text) {}
 
@@ -202,6 +200,7 @@ struct AnsiWidget {
   int textHeight(void);
   bool optionSelected(int index);
   void print(const char *str);
+  void redraw();
   void reset();
   void resize(int width, int height);
   void setColor(long color);

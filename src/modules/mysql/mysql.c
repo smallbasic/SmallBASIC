@@ -1,4 +1,3 @@
-// $Id: $
 // This file is part of SmallBASIC
 //
 // SmallBASIC - MySQL client module based on mysql command-line client
@@ -23,8 +22,7 @@ static int hcount;
 /*
  * find and return a free handle
  */
-static int get_free_handle()
-{
+static int get_free_handle() {
   int i;
 
   if (hcount == 0) {
@@ -49,8 +47,7 @@ static int get_free_handle()
 /*
  * returns true if the 'handle' is a valid handle
  */
-static int is_valid_handle(int handle)
-{
+static int is_valid_handle(int handle) {
   if (handle < 1 || handle >= hcount) {
     return 0;
   }
@@ -63,8 +60,7 @@ static int is_valid_handle(int handle)
 /*
  * handle <- CONNECT(host, database, user[, password])
  */
-int mq_connect(slib_par_t * params, int pcount, var_t * retval)
-{
+int mq_connect(slib_par_t * params, int pcount, var_t * retval) {
   char *host, *dbname, *user, *paswd;
   int success = 1;
 
@@ -104,8 +100,7 @@ int mq_connect(slib_par_t * params, int pcount, var_t * retval)
 /*
  * DISCONNECT handle
  */
-int mq_disconnect(slib_par_t * params, int pcount, var_t * retval)
-{
+int mq_disconnect(slib_par_t * params, int pcount, var_t * retval) {
   int success, handle;
 
   success = mod_parint(0, params, pcount, &handle);
@@ -131,8 +126,7 @@ int mq_disconnect(slib_par_t * params, int pcount, var_t * retval)
 /*
  * USE handle, database
  */
-int mq_use(slib_par_t * params, int pcount, var_t * retval)
-{
+int mq_use(slib_par_t * params, int pcount, var_t * retval) {
   int success, handle;
   char *dbname;
 
@@ -160,8 +154,7 @@ int mq_use(slib_par_t * params, int pcount, var_t * retval)
 /*
  * build the return-variable as array filled with the query-result's rows x fields
  */
-void mq_build_result_array(MYSQL * mysql, MYSQL_RES * result, var_t * retval)
-{
+void mq_build_result_array(MYSQL * mysql, MYSQL_RES * result, var_t * retval) {
   MYSQL_ROW row;
   int num_fields, i;
   int num_rows, crow = 0;
@@ -200,8 +193,7 @@ void mq_build_result_array(MYSQL * mysql, MYSQL_RES * result, var_t * retval)
 /*
  * array <- QUERY(handle, query)
  */
-int mq_query(slib_par_t * params, int pcount, var_t * retval)
-{
+int mq_query(slib_par_t * params, int pcount, var_t * retval) {
   int success = 1, handle;
   char *query;
   MYSQL_RES *result;
@@ -254,8 +246,7 @@ int mq_query(slib_par_t * params, int pcount, var_t * retval)
 /*
  * array <- TABLES(handle[, wildcards])
  */
-int mq_listtbls(slib_par_t * params, int pcount, var_t * retval)
-{
+int mq_listtbls(slib_par_t * params, int pcount, var_t * retval) {
   int success = 1, handle;
   char *wc;
   MYSQL_RES *result;
@@ -289,8 +280,7 @@ int mq_listtbls(slib_par_t * params, int pcount, var_t * retval)
 /*
  * array <- DBS(handle[, wildcards])
  */
-int mq_listdbs(slib_par_t * params, int pcount, var_t * retval)
-{
+int mq_listdbs(slib_par_t * params, int pcount, var_t * retval) {
   int success = 1, handle;
   char *wc;
   MYSQL_RES *result;
@@ -324,8 +314,7 @@ int mq_listdbs(slib_par_t * params, int pcount, var_t * retval)
 /*
  * array <- FIELDS(handle, table[, wildcards])
  */
-int mq_listflds(slib_par_t * params, int pcount, var_t * retval)
-{
+int mq_listflds(slib_par_t * params, int pcount, var_t * retval) {
   int success = 1, handle;
   char *dbtable, *wc;
   MYSQL_RES *result;
@@ -385,8 +374,7 @@ static mod_kw proc_names[] = {
 /*
  * returns the number of the procedures
  */
-int sblib_proc_count(void)
-{
+int sblib_proc_count(void) {
   int i;
 
   for (i = 0; proc_names[i].name; i++);
@@ -396,8 +384,7 @@ int sblib_proc_count(void)
 /*
  * returns the number of the functions
  */
-int sblib_func_count(void)
-{
+int sblib_func_count(void) {
   int i;
 
   for (i = 0; func_names[i].name; i++);
@@ -407,8 +394,7 @@ int sblib_func_count(void)
 /*
  * returns the 'index' procedure name
  */
-int sblib_proc_getname(int index, char *proc_name)
-{
+int sblib_proc_getname(int index, char *proc_name) {
   strcpy(proc_name, proc_names[index].name);
   return 1;
 }
@@ -416,8 +402,7 @@ int sblib_proc_getname(int index, char *proc_name)
 /*
  * returns the 'index' function name
  */
-int sblib_func_getname(int index, char *proc_name)
-{
+int sblib_func_getname(int index, char *proc_name) {
   strcpy(proc_name, func_names[index].name);
   return 1;
 }
@@ -425,15 +410,13 @@ int sblib_func_getname(int index, char *proc_name)
 /*
  * execute the 'index' procedure
  */
-int sblib_proc_exec(int index, int param_count, slib_par_t * params, var_t * retval)
-{
+int sblib_proc_exec(int index, int param_count, slib_par_t * params, var_t * retval) {
   return proc_names[index].command(params, param_count, retval);
 }
 
 /*
  * execute the 'index' function
  */
-int sblib_func_exec(int index, int param_count, slib_par_t * params, var_t * retval)
-{
+int sblib_func_exec(int index, int param_count, slib_par_t * params, var_t * retval) {
   return func_names[index].command(params, param_count, retval);
 }

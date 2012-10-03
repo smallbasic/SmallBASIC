@@ -130,9 +130,7 @@ void Screen::draw(bool vscroll) {
 
 void Screen::drawInto(bool background) {
   maSetColor(background ? bg : fg);
-  if (!dirty) {
-    dirty = maGetMilliSecondCount();
-  }
+  setDirty();
 }
 
 int Screen::print(const char *p, int lineHeight) {
@@ -161,6 +159,7 @@ void Screen::remove(Shape *button) {
     Shape *next = (*it);
     if (next == button) {
       shapes.remove(it);
+      setDirty();
       break;
     }
   }
@@ -207,7 +206,7 @@ void Screen::setFont(bool bold, bool italic) {
     MAExtent extent = maGetTextSize("W");
     charWidth = EXTENT_X(extent);
     charHeight = EXTENT_Y(extent) + LINE_SPACING;
-    trace("charWidth:%d charHeight:%d fontSize:%d", charWidth, charHeight, fontSize);
+    //    trace("charWidth:%d charHeight:%d fontSize:%d", charWidth, charHeight, fontSize);
   }
 }
 

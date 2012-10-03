@@ -156,8 +156,6 @@ void Form::setupWidget(WidgetDataPtr widgetData) {
 
   prevX = widget->getX() + widget->getW();
   prevY = widget->getY() + widget->getH();
-  
-  widget->show();
 }
 
 void Form::execute() {
@@ -369,7 +367,6 @@ bool WidgetData::updateGui() {
   }
   if (updated) {
     updateVarFlag();
-    widget->show();
   }
   return updated;
 }
