@@ -47,6 +47,7 @@
 
 #define MAX_PENDING 250
 #define BUTTON_PADDING 10
+#define SWIPE_DISTANCE 100
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
 #define SWIPE_SCROLL_FAST 30
@@ -271,8 +272,10 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   pushed(NULL),
   width(width),
   height(height),
-  touchX(-1),
-  touchY(-1),
+  xTouch(-1),
+  yTouch(-1),
+  xMove(-1),
+  yMove(-1),
   moveTime(0),
   moveDown(false),
   swipeExit(false),
@@ -523,8 +526,8 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   if (!OUTSIDE_RECT(event.point.x, event.point.y,
                     front->x, front->y,
                     front->width, front->height)) {
-    touchX = event.point.x;
-    touchY = event.point.y;
+    xTouch = xMove = event.point.x;
+    yTouch = yMove = event.point.y;
 
     Vector_each(Shape*, it, front->shapes) {
       Widget *widget = (Widget *)(*it);
@@ -551,7 +554,7 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
     if (!OUTSIDE_RECT(event.point.x, event.point.y,
                       front->x, front->y,
                       front->width, front->height)) {
-      int vscroll = front->scrollY + (touchY - event.point.y);
+      int vscroll = front->scrollY + (yMove - event.point.y);
       int maxScroll = (front->curY - front->height) + (2 * fontSize);
       if (vscroll < 0) {
         vscroll = 0;
@@ -561,8 +564,8 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
         moveDown = (front->scrollY < vscroll);
         front->drawInto();
         front->scrollY = vscroll;
-        touchX = event.point.x;
-        touchY = event.point.y;
+        xMove = event.point.x;
+        yMove = event.point.y;
         flush(true, true);
       }
     }
@@ -579,10 +582,12 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     swipeExit = false;
   } else {
     int maxScroll = (front->curY - front->height) + (2 * fontSize);
-    if (touchY != -1 && maxScroll > 0) {
+    if (yMove != -1 && maxScroll > 0) {
       front->drawInto();
+      bool swiped = (abs(xTouch - xMove) > (width / 3) ||
+                     abs(yTouch - yMove) > (height / 3));
       int start = maGetMilliSecondCount();
-      if (start - moveTime < SWIPE_TRIGGER_SLOW) {
+      if (swiped && start - moveTime < SWIPE_TRIGGER_SLOW) {
         doSwipe(start, maxScroll);
       } else if (front->scrollY > maxScroll) {
         front->scrollY = maxScroll;
@@ -593,7 +598,9 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
       moveTime = 0;
     }
   }
-  touchX = touchY = -1;
+
+  xTouch = xMove = -1;
+  yTouch = yMove = -1;
   activeButton = NULL;
 }
 

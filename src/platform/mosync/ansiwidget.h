@@ -235,8 +235,10 @@ private:
   int width;      // device screen width
   int height;     // device screen height
   int fontSize;   // font height based on screen size
-  int touchX;     // active touch x value
-  int touchY;     // active touch y value
+  int xTouch;     // touch x value
+  int yTouch;     // touch y value
+  int xMove;      // touch move x value
+  int yMove;      // touch move y value
   int moveTime;   // last move time
   bool moveDown;  // last move direction was down
   bool swipeExit; // last touch-down was swipe exit
