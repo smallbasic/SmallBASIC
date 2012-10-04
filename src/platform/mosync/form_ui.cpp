@@ -158,7 +158,7 @@ void Form::setupWidget(WidgetDataPtr widgetData) {
   prevY = widget->getY() + widget->getH();
 }
 
-void Form::execute() {
+bool Form::execute() {
   switch (code_peek()) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
@@ -180,16 +180,20 @@ void Form::execute() {
 
       // apply any configuration options
       switch (cmd) {
+      case 0:
+        // close the form
+        return true;
       case 1:
+        // turn on keyboard mode
         kbHandle = true;
-        return;
+        return false;
       default:
         break;
       }
     }
     break;
   };
-
+  
   // apply any variable changes onto attached widgets
   if (controller->isRunning()) {
     Vector_each(WidgetDataPtr, it, items) {
@@ -197,22 +201,24 @@ void Form::execute() {
     }
   }
 
-  if (!cmd) {
-    ui_reset();
-  } else {
-    // pump system messages until there is a widget callback
-    mode = m_active;
+  // pump system messages until there is a widget callback
+  mode = m_active;
 
-    if (kbHandle) {
-      dev_clrkb();
-    }
-    while (controller->isRunning() && mode == m_active) {
-      controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY, false);
-      if (kbHandle && keymap_kbhit()) {
-        break;
-      }
+  // clear the keyboard when keyboard mode is active
+  if (kbHandle) {
+    dev_clrkb();
+  }
+
+  // process events
+  while (controller->isRunning() && mode == m_active) {
+    controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY, false);
+    if (kbHandle && keymap_kbhit()) {
+      break;
     }
   }
+
+  // return whether to close the form
+  return controller->isBreak();
 }
 
 void Form::invoke(WidgetDataPtr widgetData) {
@@ -265,7 +271,7 @@ void WidgetData::setupWidget(IFormWidget *widget) {
   this->widget = widget;
   this->widget->setListener(this);
 
-  if (form == 0) {
+  if (form == NULL) {
     form = new Form();
   }
 
@@ -405,9 +411,9 @@ C_LINKAGE_BEGIN
 
 // destroy the form
 void ui_reset() {
-  if (form != 0) {
+  if (form != NULL) {
     delete form;
-    form = 0;
+    form = NULL;
   }
 }
 
@@ -477,8 +483,8 @@ void cmd_text() {
 void cmd_doform() {
   if (!form) {
     rt_raise("UI: FORM NOT READY");
-  } else {
-    form->execute();
+  } else if (form->execute()) {
+    ui_reset();
   }
 }
 

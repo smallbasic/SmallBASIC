@@ -338,7 +338,6 @@ char *Controller::readSource(const char *fileName) {
 // stop and running program
 void Controller::setExit(bool back) {
   if (isRunning()) {
-    ui_reset();
     brun_break();
   }
   runMode = back ? back_state : exit_state;
