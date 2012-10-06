@@ -804,6 +804,8 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
   while (*p && !eot) {
     p++;
     switch (*p) {
+      
+    case '\0':
     case '\034':
     case '\033':
     case '\n':

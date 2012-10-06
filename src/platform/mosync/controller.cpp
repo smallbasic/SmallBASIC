@@ -19,7 +19,7 @@
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
-#define SYSTEM_MENU "\033[ OView Source|Show Console|Show Keypad\034"
+#define SYSTEM_MENU "\033[ OView Source|Show Console|Show Keypad"
 #define MENU_SOURCE 0
 #define MENU_LOG    1
 #define MENU_KEYPAD 2
@@ -375,9 +375,9 @@ void Controller::showError() {
 
 void Controller::showCompletion(bool success) {
   if (success) {
-    output->print("\033[ LDone - press back [<-]\034");
+    output->print("\033[ LDone - press back [<-]");
   } else {
-    output->print("\033[ LError - see console\034");
+    output->print("\033[ LError - see console");
   }
   output->flush(true);
 }
@@ -396,9 +396,9 @@ void Controller::logPrint(const char *format, ...) {
   if (systemScreen) {
     output->print(buf);
   } else {
-    output->print("\033[ SW7\034");
+    output->print("\033[ SW7");
     output->print(buf);
-    output->print("\033[ Sw\034");
+    output->print("\033[ Sw");
   }
 }
 
@@ -423,7 +423,7 @@ void Controller::handleKey(int key) {
   case MAK_BACK:
     if (systemScreen) {
       // restore user screens
-      output->print("\033[ SR\034");
+      output->print("\033[ SR");
       systemScreen = false;
     } else {
       setExit(true);
@@ -494,7 +494,7 @@ void Controller::handleKey(int key) {
 char *Controller::readConnection(const char *url) {
   char *result = NULL;
   logEntered();
-  output->print("\033[ LLoading...\034");
+  output->print("\033[ LLoading...");
 
   MAHandle conn = maConnect(url);
   if (conn < 1) {
@@ -565,15 +565,15 @@ char *Controller::readConnection(const char *url) {
 void Controller::showSystemScreen(bool showSrc) {
   if (showSrc) {
     // screen command write screen 2 (\014=CLS)
-    output->print("\033[ SW6\034\014");
+    output->print("\033[ SW6\014");
     if (programSrc) {
       output->print(programSrc);
     }
     // restore write screen, display screen 6 (source)
-    output->print("\033[ Sw; SD6\034");
+    output->print("\033[ Sw; SD6");
   } else {
     // screen command display screen 7 (console)
-    output->print("\033[ SD7\034");
+    output->print("\033[ SD7");
   }
   systemScreen = true;
 }
