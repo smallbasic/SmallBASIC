@@ -16,6 +16,7 @@
 #include "platform/mosync/screen.h"
 
 #define MAX_SCREENS 8
+#define SYSTEM_SCREENS 6
 
 using namespace MAUtil;
 
@@ -231,7 +232,6 @@ private:
   Screen *screens[MAX_SCREENS];
   Screen *back;   // screen being painted/written
   Screen *front;  // screen to display 
-  Screen *pushed; // saved/previous screen
   int width;      // device screen width
   int height;     // device screen height
   int fontSize;   // font height based on screen size

@@ -47,7 +47,6 @@
 
 #define MAX_PENDING 250
 #define BUTTON_PADDING 10
-#define SWIPE_DISTANCE 100
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
 #define SWIPE_SCROLL_FAST 30
@@ -269,7 +268,6 @@ void FormList::optionSelected(int index) {
 AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   back(NULL),
   front(NULL),
-  pushed(NULL),
   width(width),
   height(height),
   xTouch(-1),
@@ -340,9 +338,7 @@ IFormWidget *AnsiWidget::createList(IFormWidgetListModel *model,
 
 // draws the given image onto the offscreen buffer
 void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h) {
-  back->drawInto();
   // TODO - draw image
-
   flush(false);
 }
 
@@ -480,19 +476,28 @@ void AnsiWidget::reset() {
   back = front = screens[0];
   back->reset(fontSize);
   back->clear();
+
+  // reset non-system screens
+  for (int i = 1; i < SYSTEM_SCREENS; i++) {
+    delete screens[i];
+    screens[i] = NULL;
+  }
 }
 
 // update the widget to new dimensions
 void AnsiWidget::resize(int newWidth, int newHeight) {
   int lineHeight = textHeight();
   for (int i = 0; i < MAX_SCREENS; i++) {
-    if (screens[i]) {
-      screens[i]->resize(newWidth, newHeight, width, height, lineHeight);
+    Screen *screen = screens[i];
+    if (screen) {
+      screen->resize(newWidth, newHeight, width, height, lineHeight);
+      if (screen == front || i < SYSTEM_SCREENS) {
+        screen->draw(false);
+      }
     }
   }
   width = newWidth;
   height = newHeight;
-  back->draw(false);
 }
 
 // sets the current drawing color
@@ -820,6 +825,7 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
 
 // remove the specified screen
 void AnsiWidget::removeScreen(char *&p) {
+  logEntered();
   Vector<String *> *items = getItems(p);
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   if (n < 1 || n >= MAX_SCREENS) {
@@ -846,18 +852,15 @@ void AnsiWidget::screenCommand(char *&p) {
   case 'X': // double buffering - transpose write and display screens
     swapScreens();
     break;
-  case 'R': // remove a screen
+  case 'E': // erase a screen
     removeScreen(p);
     break;
-  case 'P': // remember the current screen
-    pushed = back;
-    break;
-  case 'p': // restore the saved write and display screens
-    if (pushed) {
-      back = front = pushed;
-      back->drawInto();
-      flush(true);
-      pushed = NULL;
+  case 'R': // redraw all user screens
+    for (int i = 0; i < MAX_SCREENS; i++) {
+      if (screens[i] && i < SYSTEM_SCREENS) {
+        screens[i]->draw(false);
+        front = back = screens[i];
+      }
     }
     break;
   case 'W': // select write/back screen
@@ -867,7 +870,7 @@ void AnsiWidget::screenCommand(char *&p) {
     }
     break;
   case 'w': // revert write/back to front screen
-    back = pushed != NULL ? pushed : front;
+    back = front;
     break;
   case 'D': // select display/front screen
     selected = selectScreen(p);
@@ -877,10 +880,13 @@ void AnsiWidget::screenCommand(char *&p) {
       flush(true);
     }
     break;
-  case 'd': // revert display/front to back screen
-    front = back;
-    front->dirty = true;
-    flush(true);
+  case 'O': // open screen # for write/display
+    selected = selectScreen(p);
+    if (selected) {
+      front = back = selected;
+      front->dirty = true;
+      flush(true);
+    }
     break;
   default:
     print("ERR unknown screen command");
@@ -902,21 +908,33 @@ Screen *AnsiWidget::selectScreen(char *&p) {
 
   if (n < 0 || n >= MAX_SCREENS) {
     print("ERR invalid screen number");
-  } else if (screens[n] != NULL) {
-    // specified screen already exists
-    result = screens[n];
   } else {
-    if (n > 1) {
-      result = new TextScreen(x, y, w, h, fontSize);
-    } else {
-      result = new GraphicScreen(x, y, w, h, fontSize);
-    }    
-    if (result && result->construct()) {
-      screens[n] = result;
-      result->drawInto();
-      result->clear();
-    } else {
-      trace("Failed to create screen %d", n);
+    result = screens[n];
+
+    if (result != NULL) {
+      // specified screen already exists
+      if (result->x != x ||
+          result->y != y ||
+          result->width != width ||
+          result->height != height) {
+        delete result;
+        result = NULL;
+      }
+    }
+    
+    if (result == NULL) {
+      if (n > 1) {
+        result = new TextScreen(x, y, w, h, fontSize);
+      } else {
+        result = new GraphicScreen(x, y, w, h, fontSize);
+      }    
+      if (result && result->construct()) {
+        screens[n] = result;
+        result->drawInto();
+        result->clear();
+      } else {
+        trace("Failed to create screen %d", n);
+      }
     }
   }
   deleteItems(items);

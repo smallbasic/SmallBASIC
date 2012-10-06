@@ -97,20 +97,6 @@ void Screen::draw(bool vscroll) {
     }
   }
   
-  // display the label
-  if (label.length()) {
-    MAExtent extent = maGetTextSize(label.c_str());
-    int w = EXTENT_X(extent);
-    int h = EXTENT_Y(extent);
-    int top = height - h - h;
-    int left = (width - w) / 2;
-
-    maSetColor(GRAY_BG_COL);
-    maFillRect(left - 2, top, w + 8, h + 8);
-    maSetColor(LABEL_TEXT_COL);
-    maDrawText(left, top + 2, label.c_str());
-  }
-
   // draw any visible shapes
   Vector_each(Shape*, it, shapes) {
     Shape *rect = (Shape *)(*it);
@@ -121,6 +107,24 @@ void Screen::draw(bool vscroll) {
       rect->draw();
       rect->y = y;
     }
+  }
+
+  // display the label
+  if (label.length()) {
+    MAExtent extent = maGetTextSize(label.c_str());
+    MAExtent screenSize = maGetScrSize();
+    int screenW = EXTENT_X(screenSize);
+    int screenH = EXTENT_Y(screenSize);
+    int w = EXTENT_X(extent);
+    int h = EXTENT_Y(extent);
+    int top = screenH - h - h;
+    int left = (screenW - w) / 2;
+
+    maSetClipRect(0, 0, screenW, screenH);
+    maSetColor(GRAY_BG_COL);
+    maFillRect(left - 2, top, w + 8, h + 8);
+    maSetColor(LABEL_TEXT_COL);
+    maDrawText(left, top + 2, label.c_str());
   }
 
   maUpdateScreen();
@@ -271,8 +275,8 @@ void GraphicScreen::draw(bool vscroll) {
   srcRect.height = height;
   dstPoint.x = x;
   dstPoint.y = y;
-
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+  maSetClipRect(x, y, width, height);
   maDrawImageRegion(image, &srcRect, &dstPoint, TRANS_NONE);
   Screen::draw(vscroll);
   maSetDrawTarget(currentHandle);
@@ -439,6 +443,9 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
   scrollY = 0;
   width = newWidth;
   height = newHeight;
+  if (!fullscreen) {
+    draw(false);
+  }
 }
 
 // handles the given escape character. Returns whether the font has changed
@@ -648,6 +655,7 @@ void TextScreen::draw(bool vscroll) {
 
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+  maSetClipRect(x, y, width, height);
   maSetColor(bg);
   maFillRect(x, y, width, height);
   maSetColor(color);
@@ -659,7 +667,7 @@ void TextScreen::draw(bool vscroll) {
        row++, rows++, py += charHeight) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->head;
-    int px = INITXY;
+    int px = x + INITXY;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setFont(bold, italic);
@@ -772,8 +780,12 @@ int TextScreen::print(const char *p, int lineHeight) {
 
 void TextScreen::resize(int newWidth, int newHeight, int oldWidth, 
                         int oldHeight, int lineHeight) {
-  width = newWidth;
-  height = newHeight;
+  if (width == oldWidth) {
+    width = newWidth;
+  }
+  if (height == oldHeight) {
+    height = newHeight;
+  }
 }
 
 //

@@ -396,7 +396,7 @@ void Controller::logPrint(const char *format, ...) {
   if (systemScreen) {
     output->print(buf);
   } else {
-    output->print("\033[ SW3\034");
+    output->print("\033[ SW7\034");
     output->print(buf);
     output->print("\033[ Sw\034");
   }
@@ -422,8 +422,8 @@ void Controller::handleKey(int key) {
   case MAK_SOFTRIGHT:
   case MAK_BACK:
     if (systemScreen) {
-      // restore the runtime screen
-      output->print("\033[ Sp\034");
+      // restore user screens
+      output->print("\033[ SR\034");
       systemScreen = false;
     } else {
       setExit(true);
@@ -563,21 +563,17 @@ char *Controller::readConnection(const char *url) {
 }
 
 void Controller::showSystemScreen(bool showSrc) {
-  if (!systemScreen) {
-    // remember the current user screen
-    output->print("\033[ SP\034");
-  }
   if (showSrc) {
     // screen command write screen 2 (\014=CLS)
-    output->print("\033[ SW2\034\014");
+    output->print("\033[ SW6\034\014");
     if (programSrc) {
       output->print(programSrc);
     }
-    // restore write screen, display screen 2
-    output->print("\033[ Sw; SD2\034");
+    // restore write screen, display screen 6 (source)
+    output->print("\033[ Sw; SD6\034");
   } else {
-    // screen command display screen 3
-    output->print("\033[ SD3\034");
+    // screen command display screen 7 (console)
+    output->print("\033[ SD7\034");
   }
   systemScreen = true;
 }
