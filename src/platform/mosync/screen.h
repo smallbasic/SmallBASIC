@@ -94,7 +94,7 @@ struct Screen : public Shape {
 };
 
 struct GraphicScreen : public Screen {
-  GraphicScreen(int x, int y, int width, int height, int fontSize);
+  GraphicScreen(int width, int height, int fontSize);
   virtual ~GraphicScreen();
 
   void calcTab();
@@ -307,7 +307,8 @@ struct Row {
 };
 
 struct TextScreen : public Screen {
-  TextScreen(int x, int y, int w, int h, int fontSize);
+  TextScreen(int width, int height, int fontSize, 
+             int x, int y, int w, int h);
   virtual ~TextScreen();
 
   void calcTab();
@@ -340,8 +341,10 @@ private:
     return (height - 1) / charHeight;
   }
 
-  // buffer management
-  Row *buffer;
+  void setSizes(int screenW, int screenH);
+
+  Shape rectangle;  // relative screen size (percentage)
+  Row *buffer;      // buffer management
   int head;         // current head of buffer
   int tail;         // buffer last line
   int rows;         // total number of rows - size of buffer

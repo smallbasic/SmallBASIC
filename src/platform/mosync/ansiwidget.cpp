@@ -288,7 +288,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
 
 bool AnsiWidget::construct() {
   bool result = false;
-  back = new GraphicScreen(0, 0, width, height, fontSize);
+  back = new GraphicScreen(width, height, fontSize);
   if (back && back->construct()) {
     screens[0] = front = back;
     clearScreen();
@@ -902,43 +902,49 @@ Screen *AnsiWidget::selectScreen(char *&p) {
   int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
   int y = items->size() > 2 ? atoi((*items)[2]->c_str()) : 0;
-  int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : width;
-  int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : height;
+  int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : 100;
+  int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : 100;
 
   Screen *result = NULL;
   flush(true);
 
-  if (n < 0 || n >= MAX_SCREENS) {
-    print("ERR invalid screen number");
-  } else {
-    result = screens[n];
+  if (n < 1 || n >= MAX_SCREENS) {
+    n = 1;
+  }
 
-    if (result != NULL) {
-      // specified screen already exists
-      if (result->x != x ||
-          result->y != y ||
-          result->width != width ||
-          result->height != height) {
-        delete result;
-        result = NULL;
-      }
-    }
-    
-    if (result == NULL) {
-      if (n > 1) {
-        result = new TextScreen(x, y, w, h, fontSize);
-      } else {
-        result = new GraphicScreen(x, y, w, h, fontSize);
-      }    
-      if (result && result->construct()) {
-        screens[n] = result;
-        result->drawInto();
-        result->clear();
-      } else {
-        trace("Failed to create screen %d", n);
-      }
+  x = min(max(x, 0), 100);
+  y = min(max(y, 0), 100);
+  w = min(max(w, 0), 100);
+  h = min(max(h, 0), 100);
+
+  result = screens[n];
+
+  if (result != NULL) {
+    // specified screen already exists
+    if (result->x != x ||
+        result->y != y ||
+        result->width != width ||
+        result->height != height) {
+      delete result;
+      result = NULL;
     }
   }
+  
+  if (result == NULL) {
+    if (n > 1) {
+      result = new TextScreen(width, height, fontSize, x, y, w, h);
+    } else {
+      front = new GraphicScreen(width, height, fontSize);
+    }    
+    if (result && result->construct()) {
+      screens[n] = result;
+      result->drawInto();
+      result->clear();
+    } else {
+      trace("Failed to create screen %d", n);
+    }
+  }
+  
   deleteItems(items);
   return result;
 }
@@ -963,7 +969,7 @@ void AnsiWidget::swapScreens() {
     if (screens[1] != NULL) {
       front = screens[1];
     } else {
-      front = new GraphicScreen(0, 0, width, height, fontSize);
+      front = new GraphicScreen(width, height, fontSize);
       if (front && front->construct()) {
         screens[1] = front;
       } else {

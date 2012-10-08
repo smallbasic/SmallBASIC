@@ -217,8 +217,8 @@ void Screen::setFont(bool bold, bool italic) {
 //
 // Graphics and text based screen with limited scrollback support
 //
-GraphicScreen::GraphicScreen(int x, int y, int width, int height, int fontSize) :
-  Screen(x, y, width, height, fontSize),
+GraphicScreen::GraphicScreen(int width, int height, int fontSize) :
+  Screen(0, 0, width, height, fontSize),
   image(0),
   underline(0),
   invert(0),
@@ -602,13 +602,16 @@ struct RectFilledShape : Shape {
 //
 // Text based screen with a large scrollback buffer
 //
-TextScreen::TextScreen(int x, int y, int w, int h, int fontSize) : 
-  Screen(x, y, w, h, fontSize),
+TextScreen::TextScreen(int width, int height, int fontSize,
+                       int x, int y, int w, int h) :
+  Screen(0, 0, width, height, fontSize),
+  rectangle(x, y, w, h),
   buffer(NULL),
   head(0),
   tail(0),
   rows(TEXT_ROWS),
   cols(0) {
+  setSizes(width, height);
 }
 
 TextScreen::~TextScreen() {
@@ -780,12 +783,14 @@ int TextScreen::print(const char *p, int lineHeight) {
 
 void TextScreen::resize(int newWidth, int newHeight, int oldWidth, 
                         int oldHeight, int lineHeight) {
-  if (width == oldWidth) {
-    width = newWidth;
-  }
-  if (height == oldHeight) {
-    height = newHeight;
-  }
+  setSizes(newWidth, newHeight);
+}
+
+void TextScreen::setSizes(int screenW, int screenH) {
+  x = screenW * rectangle.x / 100;
+  y = screenH * rectangle.y / 100;
+  width = (screenW * rectangle.width / 100) - x;
+  height = (screenH * rectangle.height / 100) - y;
 }
 
 //
