@@ -565,8 +565,7 @@ char *Controller::readConnection(const char *url) {
 void Controller::showSystemScreen(bool showSrc) {
   if (showSrc) {
     // screen command write screen 2 (\014=CLS)
-    output->print("\033[ SW6");
-    output->clearScreen();
+    output->print("\033[ SW6\014");
     if (programSrc) {
       output->print(programSrc);
     }

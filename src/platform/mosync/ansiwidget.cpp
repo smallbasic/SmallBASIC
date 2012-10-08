@@ -802,24 +802,26 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
   int index = 0;
 
   while (*p && !eot) {
-    p++;
-    switch (*p) {
-      
-    case '\0':
-    case '\034':
-    case '\033':
-    case '\n':
-    case ';':
+    if (p[1] < 32) {
+      // end when control character encountered
+      int len = (p - next) + 1;
+      if (len) {
+        result->add(new String((const char *)next, len));
+      }
       eot = true;
-      // fallthru
-
-    case '|':
-      result->add(new String((const char *)next, (p - next)));
-      next = p + 1;
-      break;
-
-    default:
-      break;
+    } else {
+      p++;
+      switch (*p) {
+      case ';':
+        eot = true;
+        // fallthru
+      case '|':
+        result->add(new String((const char *)next, (p - next)));
+        next = p + 1;
+        break;
+      default:
+        break;
+      }
     }
   }
   return result;
