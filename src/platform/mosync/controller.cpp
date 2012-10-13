@@ -23,8 +23,6 @@
 #define MENU_SOURCE 0
 #define MENU_LOG    1
 #define MENU_KEYPAD 2
-
-#define FILE_MGR_RES "filemgr.bas"
 #define ERROR_BAS "print \"Failed to open program file\""
 
 Controller::Controller() :

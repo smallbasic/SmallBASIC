@@ -180,10 +180,12 @@ extern "C" int access(const char *path, int amode) {
   int result = -1;
   int mode = (amode && ACCESS_WRITE) ? MA_ACCESS_READ_WRITE : MA_ACCESS_READ;
   MAHandle handle = maFileOpen(path, mode);
-  if (maFileExists(handle)) {
-    result = 0;
+  if (handle != MA_FERR_WRONG_TYPE) {
+    if (maFileExists(handle)) {
+      result = 0;
+    }
+    maFileClose(handle);
   }
-  maFileClose(handle);
   trace("access() %s %d = %d", path, amode, result);
   return result;
 }

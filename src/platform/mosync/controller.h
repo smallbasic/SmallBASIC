@@ -24,7 +24,6 @@ using namespace MAUtil;
 #define EVENT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
 #define EVENT_PAUSE_TIME 5
 #define EVENT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
-
 #define EVENT_TYPE_EXIT_ANY 0
 #define EVENT_WAIT_INFINITE -1
 #define EVENT_WAIT_NONE 0
