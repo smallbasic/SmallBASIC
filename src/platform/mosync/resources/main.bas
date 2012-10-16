@@ -19,6 +19,37 @@ sub intro()
   space_print "Welcome to SmallBASIC"
 end
 
+sub icon() 
+  print "..                  .                     ..."
+  print "   7B@B@@@B@B@B@B@G   ,OB@@@B@B@B@B@B@B@i  .."
+  print " vMB@@@B@B@u.,iO@B@B2 .O@@@B@@@B@;:,5B@@@Mv ."
+  print " 5B@O@B@B@O.   M@@B@@, 5BMZ@B@B@7    ZB@@@U  "
+  print " 5@BOB@B@BN     i7uXr .X@M@B@B@Bv    M@B@BS  "
+  print " 7Z@B@B@B@@qivr.      ,OBBB@B@B@XvrruBB@Bu: ."
+  print ".  ;@B@B@B@B@B@B@B@r  ,E@OBB@B@M@B@B@B@B2   ."
+  print "               uB@B@M. SB@B@@@B@7   .MB@B@U  "
+  print " 2@@@@@B@B@:   U@BBBG  5@B@B@B@Bj   :M@B@Bj ."
+  print " GB@B@B@B@B    YB@B@B. 1B@B@B@B@i    8B@@@5  "
+  print " .:O@B@B@B@B@B@B@B@u. :B@B@B@B@@@B@B@B@B@:. ."
+  print "    iuukS5jXOO8U7v.    .i7rrrrr7vFkXuYv2   .."
+  print " :v.              .:::,                 .7i ."
+  print " FB@B@Oi iSGNZL, 7M@B@B@B@B@@@B@@@B@BMM@B@k. "
+  print ".  v@Bk8q. ,FuuF7  :0B@PJr:.,i: ,ii..7@@u   ."
+  print "..   2BM1Z2  :PFLUi  rO@Ok28MMOBM@F70@k    .."
+  print "...   .X@OkFv  rEFLv,  Y@B@MOZOBNrPBO.  ....."
+  print ".....   :GBOkui  7Ek7r  .kBPqM57u@Oi   ......"
+  print ".......  .YM@GEYr:iJqFLi..i5GqOMOu:  ........"
+  print ".........  :q@BMY. :LFk1:  :JqM8i  .........."
+  print "...........  UO,  .  vL   . .Lr   ..........."
+  print "............    ....    ....   .............."
+end
+
+sub logo()
+  print "  / __/_ _  ___ _/ / / _ )/ _ | / __/  _/ ___/"
+  print " _\ \/  ' \/ _ `/ / / _  / __ |_\ \_/ // /__  "
+  print "/___/_/_/_/\_,_/_/_/____/_/ |_/___/___/\___/  "
+end
+
 sub about()
   print "Copyright (c) 2002-2012 Chris Warren-Smith"
   print "Copyright (c) 2000-2006 Nicholas Christopoulos." + chr(10)
@@ -86,6 +117,8 @@ sub listFiles(path)
 end
 
 if (command == "welcome") then
+  icon
+  logo  
   intro
   buttons
   about

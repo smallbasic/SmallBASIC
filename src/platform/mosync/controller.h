@@ -37,7 +37,6 @@ struct Controller : public Environment, IButtonListener {
   int getPen(int code);
   char *getText(char *dest, int maxSize);
   int handleEvents(int waitFlag);
-  void pause(int ms);
   MAEvent processEvents(int ms, int untilType = -1, bool touchAsKey=true);
   char *readSource(const char *fileName);
 

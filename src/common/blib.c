@@ -2191,9 +2191,8 @@ void cmd_pause() {
       case -1:                 // break
         return;
       }
-      dev_delay(50);
+      dev_delay(CMD_PAUSE_DELAY);
     }
-
     dev_getch();
   } else {
     struct tm tms;
@@ -2225,7 +2224,7 @@ void cmd_pause() {
       if (now >= start + x) {
         break;
       }
-      dev_delay(50);
+      dev_delay(CMD_PAUSE_DELAY);
     }
 
     if (dev_kbhit()) {

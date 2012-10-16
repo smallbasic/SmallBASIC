@@ -59,7 +59,7 @@ typedef struct {
  */
 typedef struct {
   char lib[OS_FILENAME_SIZE + 1]; /**< library name */
-int  type; /**< library type (unit, c-module) */
+  int  type; /**< library type (unit, c-module) */
   int id; /**< lib-id in this byte-code */
   int tid; /**< task id (updated on loading) */
 } bc_lib_rec_t;
@@ -76,11 +76,10 @@ typedef struct {
   int lib_id; /**< lib-id in this byte-code */
   int sym_id; /**< symbol-id in this byte-code */
   int var_id; /**< related variable-id in this byte-code */
-
   int task_id; /**< task id which library is loaded (updated on loading) */
   int exp_idx; /**< export symbol-index in librarys space (updated on loading) */
 
-}bc_symbol_rec_t;
+} bc_symbol_rec_t;
 
 #define BRUN_RUNNING    0       /**< brun_status(), the program is still running  @ingroup exec */
 #define BRUN_STOPPED    1       /**< brun_status(), an error or 'break' has already stoped the program @ingroup exec */
@@ -149,15 +148,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_file           prog_file
 #define comp_errmsg         ctask->errmsg
 #define prog_errmsg         ctask->errmsg
-
-//#define   prog_error          gsb_last_error
-//#define   comp_error          gsb_last_error
-//#define   prog_line           gsb_last_line
-//#define   comp_line           gsb_last_line
-//#define   prog_file           ctask->file
-//#define   comp_file           ctask->file
-//#define   prog_errmsg         gsb_last_errmsg
-//#define   comp_errmsg         gsb_last_errmsg
 
 #define bytecode_h          ctask->bytecode_h
 #define prog_length         ctask->sbe.exec.length
@@ -235,18 +225,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define prog_stack_sp       prog_sp
 #define prog_stack_count    prog_stack_sp
 
-#if defined(_PalmOS)
-#define bytecode_fp         ctask->bytecode_fp
-#define bytecode_recidx     ctask->bytecode_recidx
-#elif defined (_FRANKLIN_EBM)
-#define bytecode_fp         ctask->bytecode_fp
-#endif
-
-#if defined(_PalmOS)
-// environment emulation
-EXTERN dbt_t env_table;
-#endif
-
 #undef EXTERN
 
 /**
@@ -256,14 +234,14 @@ EXTERN dbt_t env_table;
  *
  *   the 'break' will stops the program's execution
  */
-void brun_break(void) SEC(BLIB);
+void brun_break(void);
 
 /**
  *   @ingroup exec
  *
  *   stops the program's execution
  */
-void brun_stop(void) SEC(BLIB);
+void brun_stop(void);
 
 /**
  *   @ingroup exec
@@ -272,7 +250,7 @@ void brun_stop(void) SEC(BLIB);
  *
  *   @return BRUN_STOPPED or BRUN_RUNNING
  */
-int brun_status(void) SEC(BLIB);
+int brun_status(void);
 
 #if !defined(OS_LIMITED)
 /**
@@ -290,7 +268,7 @@ void dump_bytecode(FILE * output);
  *   @param file the filename
  *   @return the last-modified time of the file; on error returns 0L
  */
-time_t sys_filetime(const char *file) SEC(PALMFS);
+time_t sys_filetime(const char *file);
 
 /*
  *   search a set of directories for the given file
@@ -302,7 +280,7 @@ time_t sys_filetime(const char *file) SEC(PALMFS);
  *   @return non-zero if found
  */
 
-int sys_search_path(const char *path, const char *file, char *retbuf) SEC(PALMFS);
+int sys_search_path(const char *path, const char *file, char *retbuf);
 
 /**
  *   synchronize exported variables

@@ -193,7 +193,11 @@ extern char **g_argv; /**< global pointer to **argv   @ingroup sys */
 extern int g_argc; /**< global to argc             @ingroup sys */
 
 #if !defined(O_BINARY)
-#define O_BINARY    0
+#define O_BINARY 0
+#endif
+
+#if !defined(CMD_PAUSE_DELAY)
+#define CMD_PAUSE_DELAY 50
 #endif
 
 #if defined(__cplusplus)

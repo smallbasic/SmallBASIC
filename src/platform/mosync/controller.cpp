@@ -173,30 +173,6 @@ int Controller::handleEvents(int waitFlag) {
   return isBreak() ? -2 : 0;
 }
 
-// pause for the given number of milliseconds
-void Controller::pause(int ms) {
-  if (runMode == run_state) {
-    int msWait = ms / 2;
-    int msStart = maGetMilliSecondCount();
-    runMode = modal_state;
-    while (runMode == modal_state) {
-      if (maGetMilliSecondCount() - msStart >= ms) {
-        runMode = run_state;
-        break;
-      }
-      processEvents(msWait);
-    }
-  } else {
-    MAEvent event;
-    int msStart = maGetMilliSecondCount();
-    while (maGetMilliSecondCount() - msStart < ms) {
-      if (!maGetEvent(&event)) {
-        maWait(10);
-      }
-    }
-  }
-}
-
 // process events on the system event queue
 MAEvent Controller::processEvents(int ms, int untilType, bool touchAsKey) {
   MAEvent event;

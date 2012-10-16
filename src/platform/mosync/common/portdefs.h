@@ -11,6 +11,8 @@ extern "C" {
 #endif
 
 int dev_clock();
+
+#define CMD_PAUSE_DELAY -1
  
 #undef clock
 #define clock dev_clock

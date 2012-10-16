@@ -169,7 +169,7 @@ int dev_image_height(int handle, int index) {
 }
 
 void dev_delay(dword ms) {
-  controller->pause(ms);
+  controller->processEvents(ms, EVENT_TYPE_EXIT_ANY);
 }
 
 char *dev_gets(char *dest, int maxSize) {
