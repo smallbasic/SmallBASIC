@@ -122,7 +122,7 @@ void Screen::draw(bool vscroll) {
 
     maSetClipRect(0, 0, screenW, screenH);
     maSetColor(GRAY_BG_COL);
-    maFillRect(left - 2, top, w + 8, h + 8);
+    maFillRect(left - 6, top, w + 14, h + 8);
     maSetColor(LABEL_TEXT_COL);
     maDrawText(left, top + 2, label.c_str());
   }
@@ -656,6 +656,11 @@ void TextScreen::draw(bool vscroll) {
   int firstRow = tail + (scrollY / charHeight);
   int yoffs = scrollY % charHeight; // smooth scrolling offset
 
+  // prevent drawing beyond available text
+  if (numRows > textRows - firstRow) {
+    numRows = textRows - firstRow;
+  }
+
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetClipRect(x, y, width, height);
@@ -666,7 +671,7 @@ void TextScreen::draw(bool vscroll) {
   // draw the visible segments
   int pageWidth = 0;
   for (int row = firstRow, rows = 0, py = y - yoffs;
-       rows < numRows; 
+       rows < numRows;
        row++, rows++, py += charHeight) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->head;

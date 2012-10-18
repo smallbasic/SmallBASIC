@@ -30,7 +30,7 @@ Controller::Controller() :
   output(NULL),
   runMode(init_state),
   lastEventTime(0),
-  eventsPerTick(0),
+  eventTicks(0),
   touchX(-1),
   touchY(-1),
   touchCurX(-1),
@@ -142,16 +142,17 @@ char *Controller::getText(char *dest, int maxSize) {
 // runtime system event processor
 int Controller::handleEvents(int waitFlag) {
   if (!waitFlag) {
-    // pause when we have been called too frequently
+    // detect when we have been called too frequently
     int now = maGetMilliSecondCount();
-    if (now - lastEventTime <= EVENT_CHECK_EVERY) {
-      eventsPerTick += (now - lastEventTime);
-      if (eventsPerTick >= EVENT_MAX_BURN_TIME) {
-        eventsPerTick = 0;
-        waitFlag = 2;
+    eventTicks++;
+    if (now - lastEventTime >= EVENT_CHECK_EVERY) {
+      // next time inspection interval
+      if (eventTicks >= EVENT_MAX_BURN_TIME) {
+        output->print("\033[ LBattery drain");
       }
+      lastEventTime = now;
+      eventTicks = 0;
     }
-    lastEventTime = now;
   }
 
   switch (waitFlag) {
@@ -336,6 +337,7 @@ void Controller::setRunning(bool running) {
     runMode = run_state;
     loadPath.clear();
     output->reset();
+    lastEventTime = maGetMilliSecondCount();
   } else {
     runMode = init_state;
   }
