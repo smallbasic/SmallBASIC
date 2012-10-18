@@ -22,8 +22,8 @@
 using namespace MAUtil;
 
 #define EVENT_CHECK_EVERY 2000
-#define EVENT_MAX_BURN_TIME 35
-#define EVENT_PAUSE_TIME 350
+#define EVENT_MAX_BURN_TIME 30
+#define EVENT_PAUSE_TIME 400
 #define EVENT_TYPE_EXIT_ANY 0
 #define EVENT_WAIT_INFINITE -1
 #define EVENT_WAIT_NONE 0
@@ -79,6 +79,7 @@ private:
   int touchCurY;
   bool systemMenu;
   bool systemScreen;
+  bool drainError;
   String loadPath;
   char *programSrc;
 };

@@ -37,6 +37,7 @@ Controller::Controller() :
   touchCurY(-1),
   systemMenu(false),
   systemScreen(false),
+  drainError(false),
   programSrc(NULL) {
   logEntered();
 }
@@ -149,6 +150,10 @@ int Controller::handleEvents(int waitFlag) {
       // next time inspection interval
       if (eventTicks >= EVENT_MAX_BURN_TIME) {
         output->print("\033[ LBattery drain");
+        drainError = true;
+      } else if (drainError) {
+        output->print("\033[ L");
+        drainError = false;
       }
       lastEventTime = now;
       eventTicks = 0;
@@ -337,7 +342,10 @@ void Controller::setRunning(bool running) {
     runMode = run_state;
     loadPath.clear();
     output->reset();
+
     lastEventTime = maGetMilliSecondCount();
+    eventTicks = 0;
+    drainError = false;
   } else {
     runMode = init_state;
   }
