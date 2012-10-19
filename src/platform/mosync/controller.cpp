@@ -180,7 +180,7 @@ int Controller::handleEvents(int waitFlag) {
 }
 
 // process events on the system event queue
-MAEvent Controller::processEvents(int ms, int untilType, bool touchAsKey) {
+MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
   MAExtent screenSize;
   int loadPathSize = loadPath.size();
@@ -229,9 +229,7 @@ MAEvent Controller::processEvents(int ms, int untilType, bool touchAsKey) {
     case EVENT_TYPE_POINTER_PRESSED:
       touchX = touchCurX = event.point.x;
       touchY = touchCurY = event.point.y;
-      if (touchAsKey) {
-        handleKey(SB_KEY_MK_PUSH);
-      }
+      handleKey(SB_KEY_MK_PUSH);
       output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
@@ -241,9 +239,7 @@ MAEvent Controller::processEvents(int ms, int untilType, bool touchAsKey) {
       break;
     case EVENT_TYPE_POINTER_RELEASED:
       touchX = touchY = touchCurX = touchCurY = -1;
-      if (touchAsKey) {
-        handleKey(SB_KEY_MK_RELEASE);
-      }
+      handleKey(SB_KEY_MK_RELEASE);
       output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
@@ -463,6 +459,7 @@ void Controller::handleKey(int key) {
     case MAK_RIGHT:
       dev_pushkey(SB_KEY_RIGHT);
       break;
+    case MAK_CLEAR:
     case MAK_BACKSPACE:
     case MAK_DELETE:
       dev_pushkey(SB_KEY_BACKSPACE);

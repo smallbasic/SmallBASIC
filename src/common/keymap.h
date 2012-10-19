@@ -102,6 +102,7 @@ void keymap_free();
 void keymap_add(int key, addr_t ip);
 int keymap_invoke(word key);
 int keymap_kbhit();
+int keymap_kbpeek();
 
 #endif
 

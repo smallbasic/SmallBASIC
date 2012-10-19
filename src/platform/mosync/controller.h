@@ -37,7 +37,7 @@ struct Controller : public Environment, IButtonListener {
   int getPen(int code);
   char *getText(char *dest, int maxSize);
   int handleEvents(int waitFlag);
-  MAEvent processEvents(int ms, int untilType = -1, bool touchAsKey=true);
+  MAEvent processEvents(int ms, int untilType = -1);
   char *readSource(const char *fileName);
 
   bool isExit() { return runMode == exit_state; }

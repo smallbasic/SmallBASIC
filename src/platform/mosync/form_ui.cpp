@@ -211,9 +211,13 @@ bool Form::execute() {
 
   // process events
   while (controller->isRunning() && mode == m_active) {
-    controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY, false);
+    controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
     if (kbHandle && keymap_kbhit()) {
-      break;
+      int key = keymap_kbpeek();
+      if (key != SB_KEY_MK_PUSH && key != SB_KEY_MK_RELEASE) {
+        // avoid exiting on "mouse" keyboard keys
+        break;
+      }
     }
   }
 

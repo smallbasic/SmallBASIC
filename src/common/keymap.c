@@ -104,6 +104,13 @@ int keymap_kbhit() {
 }
 
 /**
+ * returns the last key without removing it
+ */
+int keymap_kbpeek() {
+  return keybuff[keyhead];
+}
+
+/**
  * clear keyboard buffer
  */
 void dev_clrkb() {
