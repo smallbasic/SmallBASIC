@@ -883,4 +883,5 @@ bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
       break;
     }
   }
+  return false;
 }

@@ -7,9 +7,9 @@
 
 COMMON=$(top_srcdir)/src/common
 
-CC=$(MOSYNC_HOME)/bin/xgcc.exe
+CC=$(MOSYNC_HOME)/bin/xgcc${EXTN}
 
-AR=$(MOSYNC_HOME)/bin/pipe-tool.exe
+AR=$(MOSYNC_HOME)/bin/pipe-tool${EXTN}
 
 ARFLAGS = -L -quiet
 

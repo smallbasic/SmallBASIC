@@ -110,8 +110,8 @@ int ListModel::getIndex(const char *t) {
 //
 Form::Form() :
   mode(m_init),
-  cmd(0), 
   var(0),
+  cmd(0), 
   kbHandle(false),
   prevX(0),
   prevY(0) {
@@ -243,8 +243,8 @@ void Form::invoke(WidgetDataPtr widgetData) {
 //
 WidgetData::WidgetData(ControlType type, var_t *var) :
   widget(NULL),
-  type(type),
-  var(var) {
+  var(var),
+  type(type) {
   orig.ptr = 0;
   orig.i = 0;
 }
@@ -431,8 +431,8 @@ void cmd_button() {
   char *type = 0;
 
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type)) {
-    IFormWidget *widget;
-    WidgetData *wd;
+    IFormWidget *widget = NULL;
+    WidgetData *wd = NULL;
     if (type) {
       if (strcasecmp("button", type) == 0) {
         wd = new WidgetData(ctrl_button, var);

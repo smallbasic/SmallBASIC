@@ -223,6 +223,7 @@ private:
   bool doEscape(char *&p, int textHeight);
   void doSwipe(int start, int maxScroll);
   Vector<String *> *getItems(char *&p);
+  void handleEscape(char *&p, int textHeight);
   void removeScreen(char *&p);
   void screenCommand(char *&p);
   Screen *selectScreen(char *&p);

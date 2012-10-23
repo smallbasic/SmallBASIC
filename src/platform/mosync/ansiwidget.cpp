@@ -433,12 +433,7 @@ void AnsiWidget::print(const char *str) {
         clearScreen();
         break;
       case '\033': // ESC ctrl chars
-        if (*(p + 1) == '[') {
-          p += 2;
-          while (doEscape(p, lineHeight)) {
-            // continue
-          }
-        }
+        handleEscape(p, lineHeight);
         break;
       case '\034':
         // file separator
@@ -799,7 +794,6 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
   Vector<String *> *result = new Vector<String *>();
   char *next = p + 1;
   bool eot = false;
-  int index = 0;
 
   while (*p && !eot) {
     if (p[1] < 32) {
@@ -825,6 +819,16 @@ Vector<String *> *AnsiWidget::getItems(char *&p) {
     }
   }
   return result;
+}
+
+// print() helper
+void AnsiWidget::handleEscape(char *&p, int lineHeight) {
+  if (*(p + 1) == '[') {
+    p += 2;
+    while (doEscape(p, lineHeight)) {
+      // continue
+    }
+  }
 }
 
 // remove the specified screen

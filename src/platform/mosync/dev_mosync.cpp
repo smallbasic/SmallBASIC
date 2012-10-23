@@ -78,6 +78,7 @@ int osd_devinit(void) {
 
 int osd_devrestore(void) {
   ui_reset();
+  return 0;
 }
 
 int osd_events(int wait_flag) {

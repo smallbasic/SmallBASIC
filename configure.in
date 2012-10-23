@@ -96,6 +96,10 @@ function checkPCRE() {
      have_pcre="no"
    esac
 
+   if test x$ac_build_mosync = xyes; then
+     have_pcre="no"
+   fi
+
    if test "${have_pcre}" = "yes" ; then
      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])
      PACKAGE_LIBS="${PACKAGE_LIBS} `pcre-config --libs`"
@@ -491,6 +495,7 @@ function buildMosync() {
    AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(NONSTANDARD_PORT, 1, [sys.h should include portdefs.h])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
@@ -498,8 +503,21 @@ function buildMosync() {
    PACKAGE_CFLAGS="-MMD -S -DMAPIP -O2 -MF "
 
    dnl find out where mosync is installed
-   MOSYNC_HOME="`which xgcc | cygpath -m -f - | sed 's/\/bin\/xgcc//'`"
+   win32=no
+   case "${host_os}" in
+     *mingw* | pw32* | cygwin*)
+        win32="yes"
+   esac
+   if test $win32 = yes; then
+     MOSYNC_HOME="`which xgcc | cygpath -m -f - | sed 's/\/bin\/xgcc//'`"
+     EXTN=".exe"
+   else
+     dnl see: http://www.mosync.com/documentation/manualpages/building-mosync-source-linux
+     MOSYNC_HOME=${MOSYNCDIR}
+     EXTN=""
+   fi
    AC_SUBST(MOSYNC_HOME)
+   AC_SUBST(EXTN)
 
    BUILD_SUBDIRS="src/platform/mosync/common"
    AC_SUBST(BUILD_SUBDIRS)
