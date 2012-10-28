@@ -68,6 +68,7 @@ void osd_beep(void) {
 }
 
 void osd_cls(void) {
+  ui_reset();
   controller->output->clearScreen();
 }
 

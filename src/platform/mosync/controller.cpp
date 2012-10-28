@@ -385,12 +385,7 @@ void Controller::logPrint(const char *format, ...) {
 // handler for hyperlink click actions
 void Controller::buttonClicked(const char *url) {
   loadPath.clear();
-  int len = strlen(url);
-  if (len == 1) {
-    handleKey(url[0]);
-  } else {
-    loadPath.append(url, strlen(url));
-  }
+  loadPath.append(url, strlen(url));
 }
 
 // pass the key into the smallbasic keyboard handler

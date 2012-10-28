@@ -101,6 +101,13 @@ void Widget::drawButton(const char *caption) {
   maDrawText(textX, textY, caption);
 }
 
+void Widget::drawLink(const char *caption) {
+  maSetColor(fg);
+  maDrawText(x, y, caption);
+  maSetColor(pressed ? fg : bg);
+  maLine(x + 2, y + height + 1, x + width, y + height + 1);
+}
+
 bool Widget::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, width, height));
 }
@@ -119,27 +126,11 @@ Button::Button(Screen *screen, const char* action, const char *label,
   Widget(screen->bg, screen->fg, x, y, w, h),
   action(action),
   label(label) {
+  screen->shapes.add(this);
 }
 
-void Button::clicked(IButtonListener *listener, int x, int y) { 
+void Button::clicked(IButtonListener *listener, int x, int y) {
   listener->buttonClicked(action.c_str());
-}
-
-BlockButton::BlockButton(Screen *screen, const char *action, const char *label,
-                         int x, int y, int w, int h) :
-  Button(screen, action, label, x, y, w, h) {
-}
-
-TextButton::TextButton(Screen *screen, const char *action, const char *label,
-                       int x, int y, int w, int h) :
-  Button(screen, action, label, x, y, w, h) {
-}
-
-void TextButton::draw() {
-  maSetColor(fg);
-  maDrawText(x, y, label.c_str());
-  maSetColor(pressed ? fg : bg);
-  maLine(x + 2, y + height + 1, x + width, y + height + 1);
 }
 
 FormWidget::FormWidget(Screen *screen, int x, int y, int w, int h) :
@@ -165,6 +156,11 @@ FormButton::FormButton(Screen *screen, const char *caption, int x, int y, int w,
 FormLabel::FormLabel(Screen *screen, const char *caption, int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
   caption(caption) {
+}
+
+FormLink::FormLink(Screen *screen, const char *link, int x, int y, int w, int h) :
+  FormWidget(screen, x, y, w, h),
+  link(link) {
 }
 
 FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize, 
@@ -310,13 +306,6 @@ void AnsiWidget::beep() const {
   // http://www.mosync.com/documentation/manualpages/using-audio-api
 }
 
-// creates a LineInput attached to the current back screen
-IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
-                                         int x, int y, int w, int h) {
-  FormLineInput *lineInput = new FormLineInput(back, buffer, maxSize, x, y, w, h);
-  return lineInput;
-}
-
 // creates a Button attached to the current back screen
 IFormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h) {
   FormButton *button = new FormButton(back, caption, x, y, w, h);
@@ -327,6 +316,19 @@ IFormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h)
 IFormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) {
   FormLabel *label = new FormLabel(back, caption, x, y, w, h);
   return label;
+}
+
+// creates a LineInput attached to the current back screen
+IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
+                                         int x, int y, int w, int h) {
+  FormLineInput *lineInput = new FormLineInput(back, buffer, maxSize, x, y, w, h);
+  return lineInput;
+}
+
+// creates a form based hyperlink
+IFormWidget *AnsiWidget::createLink(char *caption) {
+  Widget *link = createLink(caption, caption, true, false);
+  return (IFormWidget *)link;
 }
 
 // creates a List attached to the current back screen
@@ -613,41 +615,43 @@ void AnsiWidget::createLabel(char *&p) {
 }
 
 // creates a hyperlink, eg // ^[ hwww.foo.com|title;More text
-void AnsiWidget::createLink(char *&p, bool execLink, bool button) {
+Widget *AnsiWidget::createLink(char *&p, bool formLink, bool button) {
   Vector<String *> *items = getItems(p);
   const char *action = items->size() > 0 ? (*items)[0]->c_str() : "";
   const char *text = items->size() > 1 ? (*items)[1]->c_str() : action;
-
-  if (execLink && buttonListener) {
-    buttonListener->buttonClicked(action);
-  } else {
-    MAExtent textSize = maGetTextSize(text);
-    int w = EXTENT_X(textSize) + 2;
-    int h = EXTENT_Y(textSize) + 2;
-    int x = back->curX;
-    int y = back->curY;
-
-    if (button) {
-      w += BUTTON_PADDING;
-      h += BUTTON_PADDING;
-      back->linePadding = BUTTON_PADDING;
-    }
-    if (back->curX + w >= width) {
-      w = width - back->curX; // clipped
-      back->newLine(EXTENT_Y(textSize) + LINE_SPACING);
-    } else {
-      back->curX += w;
-    }
-    Button *link;
-    if (button) {
-      link = new BlockButton(back, action, text, x, y, w, h);
-    } else {
-      link = new TextButton(back, action, text, x, y, w, h);
-    }
-    back->shapes.add(link);
-  }
-
+  Widget *result = createLink(action, text, formLink, button);
   deleteItems(items);
+  return result;
+}
+
+Widget *AnsiWidget::createLink(const char *action, const char *text,
+                               bool formLink, bool button) {
+  MAExtent textSize = maGetTextSize(text);
+  int w = EXTENT_X(textSize) + 2;
+  int h = EXTENT_Y(textSize) + 2;
+  int x = back->curX;
+  int y = back->curY;
+  
+  if (button) {
+    w += BUTTON_PADDING;
+    h += BUTTON_PADDING;
+    back->linePadding = BUTTON_PADDING;
+  }
+  if (back->curX + w >= width) {
+    w = width - back->curX; // clipped
+    back->newLine(EXTENT_Y(textSize) + LINE_SPACING);
+  } else {
+    back->curX += w;
+  }
+  Widget *result;
+  if (formLink) {
+    result = new FormLink(back, action, x, y, w, h);
+  } else if (button) {
+    result = new BlockButton(back, action, text, x, y, w, h);
+  } else {
+    result = new TextButton(back, action, text, x, y, w, h);
+  }
+  return result;
 }
 
 // create an options dialog
@@ -716,9 +720,6 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       break;
     case 'H':
       createLink(p, false, false);
-      break;
-    case 'h':
-      createLink(p, true, false);
       break;
     case 'L':
       createLabel(p);

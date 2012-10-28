@@ -405,6 +405,10 @@ void WidgetData::transferData() {
       v_setstr(var, s);
     }
     break;
+
+  case ctrl_link:
+    controller->buttonClicked((const char *)var->v.p.ptr);
+    break;
     
   default:
     break;
@@ -429,8 +433,16 @@ void cmd_button() {
   var_t *var = 0;
   char *caption = 0;
   char *type = 0;
+  int numParams;
 
-  if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type)) {
+  if (code_isvar()) {
+    x = y = w = h = 0;
+    numParams = par_massget("PSs", &var, &caption, &type);
+  } else {
+    numParams = par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type);
+  }
+
+  if (numParams != -1) {
     IFormWidget *widget = NULL;
     WidgetData *wd = NULL;
     if (type) {
@@ -440,6 +452,9 @@ void cmd_button() {
       } else if (strcasecmp("label", type) == 0) {
         wd = new WidgetData(ctrl_label, var);
         widget = controller->output->createLabel(caption, x, y, w, h);
+      } else if (strcasecmp("link", type) == 0) {
+        wd = new WidgetData(ctrl_label, var);
+        widget = controller->output->createLink(caption);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {
         ListModel *model = new ListModel(caption, var);

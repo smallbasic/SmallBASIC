@@ -39,7 +39,6 @@ struct Controller : public Environment, IButtonListener {
   int handleEvents(int waitFlag);
   MAEvent processEvents(int ms, int untilType = -1);
   char *readSource(const char *fileName);
-
   bool isExit() { return runMode == exit_state; }
   bool isBack() { return runMode == back_state; }
   bool isModal() { return runMode == modal_state; }
@@ -50,11 +49,10 @@ struct Controller : public Environment, IButtonListener {
   void showError();
   void showCompletion(bool success);
   void logPrint(const char *format, ...);
-
+  void buttonClicked(const char *url);
   AnsiWidget *output;
 
 private:
-  void buttonClicked(const char *url);
   void handleKey(int key);
   char *readConnection(const char *url);
   void showSystemScreen(bool showSrc);

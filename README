@@ -10,8 +10,8 @@ Install the following packages:
 
 - automake
 - autoconf
+- pkg-config
 - make
-- gcc, gcc-g++
 
 3. Download and unzip SmallBASIC from github:
 

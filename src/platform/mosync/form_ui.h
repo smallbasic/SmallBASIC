@@ -16,6 +16,7 @@
 // control types available using the BUTTON command
 enum ControlType {
   ctrl_button,
+  ctrl_link,
   ctrl_text,
   ctrl_label,
   ctrl_listbox,

@@ -59,6 +59,7 @@ struct Widget : public Shape {
   virtual void clicked(IButtonListener *listener, int x, int y) = 0;
 
   void drawButton(const char *caption);
+  void drawLink(const char *caption);
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   int getBackground(int buttonColor);
 
@@ -81,14 +82,16 @@ struct Button : public Widget {
 // internal text button
 struct TextButton : public Button {
   TextButton(Screen *screen, const char *action, const char *label,
-             int x, int y, int w, int h);
-  void draw();
+             int x, int y, int w, int h) :
+  Button(screen, action, label, x, y, w, h) {}
+  void draw() { drawLink(label.c_str()); }
 };
 
 // internal block button
 struct BlockButton : public Button {
   BlockButton(Screen *screen, const char *action, const char *label,
-              int x, int y, int w, int h);
+              int x, int y, int w, int h) :
+  Button(screen, action, label, x, y, w, h) {}
   void draw() { drawButton(label.c_str()); }
 };
 
@@ -141,6 +144,17 @@ private:
   String caption;
 };
 
+struct FormLink : public FormWidget {
+  FormLink(Screen *screen, const char *link, int x, int y, int w, int h);
+  virtual ~FormLink() {}
+
+  const char *getText() const { return link.c_str(); }
+  void draw() { drawLink(link.c_str()); }
+
+private:
+  String link;
+};
+
 struct FormLineInput : public FormWidget {
   FormLineInput(Screen *screen, char *buffer, int maxSize, 
                 int x, int y, int w, int h);
@@ -183,6 +197,7 @@ struct AnsiWidget {
   IFormWidget *createButton(char *caption, int x, int y, int w, int h);
   IFormWidget *createLabel(char *caption, int x, int y, int w, int h);
   IFormWidget *createLineInput(char *buffer, int maxSize, int x, int y, int w, int h);
+  IFormWidget *createLink(char *caption);
   IFormWidget *createList(IFormWidgetListModel *model, int x, int y, int w, int h);
   void draw();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
@@ -209,7 +224,6 @@ struct AnsiWidget {
   void setTextColor(long fg, long bg);
   void setXY(int x, int y) { back->curX=x; back->curY=y; }
   void setScrollSize(int scrollSize);
-
   bool hasUI();
   void pointerTouchEvent(MAEvent &event);
   void pointerMoveEvent(MAEvent &event);
@@ -217,7 +231,9 @@ struct AnsiWidget {
 
 private:
   void createLabel(char *&p);
-  void createLink(char *&p, bool execLink, bool button);
+  Widget *createLink(char *&p, bool formLink, bool button);
+  Widget *createLink(const char *action, const char *text,
+                     bool formLink, bool button);
   void createOptionsBox(char *&p);
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);
