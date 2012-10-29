@@ -21,7 +21,7 @@
 
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W 16
-#define BN_H 12
+#define BN_H 2
 
 extern Controller *controller;
 Form *form;
@@ -118,6 +118,7 @@ Form::Form() :
 } 
 
 Form::~Form() {
+  logEntered();
   Vector_each(WidgetDataPtr, it, items) {
     delete (*it);
   }
@@ -304,6 +305,7 @@ void WidgetData::updateVarFlag() {
 
 // callback for the widget info called when the widget has been invoked
 void WidgetData::buttonClicked(const char *action) {
+  logEntered();
   if (controller->isRunning()) {
     if (!updateGui()) {
       transferData();
@@ -406,8 +408,9 @@ void WidgetData::transferData() {
     }
     break;
 
-  case ctrl_link:
+  case ctrl_exit_link:
     controller->buttonClicked((const char *)var->v.p.ptr);
+    brun_break();
     break;
     
   default:
@@ -453,7 +456,10 @@ void cmd_button() {
         wd = new WidgetData(ctrl_label, var);
         widget = controller->output->createLabel(caption, x, y, w, h);
       } else if (strcasecmp("link", type) == 0) {
-        wd = new WidgetData(ctrl_label, var);
+        wd = new WidgetData(ctrl_link, var);
+        widget = controller->output->createLink(caption);
+      } else if (strcasecmp("exit_link", type) == 0) {
+        wd = new WidgetData(ctrl_exit_link, var);
         widget = controller->output->createLink(caption);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {

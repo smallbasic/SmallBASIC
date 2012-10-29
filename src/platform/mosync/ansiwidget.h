@@ -224,7 +224,6 @@ struct AnsiWidget {
   void setTextColor(long fg, long bg);
   void setXY(int x, int y) { back->curX=x; back->curY=y; }
   void setScrollSize(int scrollSize);
-  bool hasUI();
   void pointerTouchEvent(MAEvent &event);
   void pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);

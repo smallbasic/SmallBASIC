@@ -17,6 +17,7 @@
 enum ControlType {
   ctrl_button,
   ctrl_link,
+  ctrl_exit_link,
   ctrl_text,
   ctrl_label,
   ctrl_listbox,

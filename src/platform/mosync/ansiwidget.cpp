@@ -144,8 +144,10 @@ FormWidget::~FormWidget() {
   getScreen()->remove(this);
 }
 
-void FormWidget::clicked(IButtonListener *listener, int x, int y) { 
-  this->listener->buttonClicked(NULL); 
+void FormWidget::clicked(IButtonListener *, int x, int y) {
+  if (this->listener) {
+    this->listener->buttonClicked(NULL); 
+  }
 }
 
 FormButton::FormButton(Screen *screen, const char *caption, int x, int y, int w, int h) :
@@ -328,7 +330,7 @@ IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
 // creates a form based hyperlink
 IFormWidget *AnsiWidget::createLink(char *caption) {
   Widget *link = createLink(caption, caption, true, false);
-  return (IFormWidget *)link;
+  return (FormLink *)link;
 }
 
 // creates a List attached to the current back screen
@@ -510,17 +512,6 @@ void AnsiWidget::setPixel(int x, int y, int c) {
 // sets the current text drawing color
 void AnsiWidget::setTextColor(long fg, long bg) {
   back->setTextColor(fg, bg);
-}
-
-// return whether any of the screens contain a hyperlink
-bool AnsiWidget::hasUI() {
-  bool result = false;
-  for (int i = 0; i < MAX_SCREENS && !result; i++) {
-    if (screens[i] != NULL && screens[i]->shapes.size() > 0) {
-      result = true;
-    }
-  }
-  return result;
 }
 
 // handler for pointer touch events

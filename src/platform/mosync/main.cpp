@@ -42,7 +42,7 @@ extern "C" int MAMain() {
       }
       bool success = sbasic_main(controller->getLoadPath());
       if (!controller->isBack()) {
-        if (!controller->output->hasUI()) {
+        if (!mainBas) {
           // display an indication the program has completed
           controller->showCompletion(success);
         }
