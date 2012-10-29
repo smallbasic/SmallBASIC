@@ -13,6 +13,11 @@
 #include "common/sys.h"
 #include "common/var.h"
 
+// width and height fudge factors for when button w+h specified as -1
+#define BN_W 16
+#define BN_H 12
+#define LN_H 2
+
 // control types available using the BUTTON command
 enum ControlType {
   ctrl_button,
@@ -52,6 +57,8 @@ struct WidgetData : public IButtonListener {
   bool updateGui();
   void updateVarFlag();
   void transferData();
+  bool isLink() { return type == ctrl_link || type == ctrl_exit_link; }
+  int padding() { return isLink() ? LN_H : BN_H; }
 
   IFormWidget *widget;
   var_t *var;

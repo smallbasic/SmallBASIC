@@ -19,10 +19,6 @@
 #include "platform/mosync/utils.h"
 #include "platform/mosync/form_ui.h"
 
-// width and height fudge factors for when button w+h specified as -1
-#define BN_W 16
-#define BN_H 2
-
 extern Controller *controller;
 Form *form;
 
@@ -143,8 +139,8 @@ void Form::setupWidget(WidgetDataPtr widgetData) {
     widget->setW(textW + BN_W);
   }
 
-  if (widget->getH() < 0 || widget->getH() < (textH + BN_H)) {
-    widget->setH(textH + BN_H);
+  if (widget->getH() < 0 || widget->getH() < (textH + widgetData->padding())) {
+    widget->setH(textH + widgetData->padding());
   }
 
   if (widget->getX() < 0) {
@@ -457,10 +453,10 @@ void cmd_button() {
         widget = controller->output->createLabel(caption, x, y, w, h);
       } else if (strcasecmp("link", type) == 0) {
         wd = new WidgetData(ctrl_link, var);
-        widget = controller->output->createLink(caption);
+        widget = controller->output->createLink(caption, x, y, w, h);
       } else if (strcasecmp("exit_link", type) == 0) {
         wd = new WidgetData(ctrl_exit_link, var);
-        widget = controller->output->createLink(caption);
+        widget = controller->output->createLink(caption, x, y, w, h);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {
         ListModel *model = new ListModel(caption, var);

@@ -197,7 +197,7 @@ struct AnsiWidget {
   IFormWidget *createButton(char *caption, int x, int y, int w, int h);
   IFormWidget *createLabel(char *caption, int x, int y, int w, int h);
   IFormWidget *createLineInput(char *buffer, int maxSize, int x, int y, int w, int h);
-  IFormWidget *createLink(char *caption);
+  IFormWidget *createLink(char *caption, int x, int y, int w, int h);
   IFormWidget *createList(IFormWidgetListModel *model, int x, int y, int w, int h);
   void draw();
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);

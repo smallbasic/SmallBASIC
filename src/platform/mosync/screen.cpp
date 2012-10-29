@@ -806,10 +806,14 @@ bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
     Row *line = getLine(head);
     TextSeg *segment = line->next();
 
-    switch (escValue) {
-    case 0:
+    if (segment->flags || segment->color != NO_COLOR) {
+      // avoid overwriting existing flags
       segment = new TextSeg();
       line->append(segment);
+    }
+
+    switch (escValue) {
+    case 0:
       segment->reset();
       reset();
       break;

@@ -328,9 +328,14 @@ IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
 }
 
 // creates a form based hyperlink
-IFormWidget *AnsiWidget::createLink(char *caption) {
-  Widget *link = createLink(caption, caption, true, false);
-  return (FormLink *)link;
+IFormWidget *AnsiWidget::createLink(char *caption, int x, int y, int w, int h) {
+  FormLink *result;
+  if (w == 0 && h == 0) {
+    result = (FormLink *)createLink(caption, caption, true, false);
+  } else {
+    result = new FormLink(back, caption, x, y, w, h);
+  }
+  return result;
 }
 
 // creates a List attached to the current back screen
