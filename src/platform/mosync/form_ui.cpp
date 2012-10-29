@@ -432,16 +432,8 @@ void cmd_button() {
   var_t *var = 0;
   char *caption = 0;
   char *type = 0;
-  int numParams;
 
-  if (code_isvar()) {
-    x = y = w = h = 0;
-    numParams = par_massget("PSs", &var, &caption, &type);
-  } else {
-    numParams = par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type);
-  }
-
-  if (numParams != -1) {
+  if (par_massget("IIIIPSs", &x, &y, &w, &h, &var, &caption, &type) != -1) {
     IFormWidget *widget = NULL;
     WidgetData *wd = NULL;
     if (type) {
