@@ -189,28 +189,32 @@ void Screen::setTextColor(long foreground, long background) {
 
 // updated the current font according to accumulated flags
 void Screen::setFont(bool bold, bool italic) {
+  int style = FONT_STYLE_NORMAL;
+  int type = FONT_TYPE_MONOSPACE;
+
   if (font) {
     maFontDelete(font);
   }
-  int style = FONT_STYLE_NORMAL;
   if (italic) {
     style |= FONT_STYLE_ITALIC;
+    type = FONT_TYPE_SERIF;
   }
   if (bold) {
     style |= FONT_STYLE_BOLD;
+    if (!italic) {
+      type = FONT_TYPE_SANS_SERIF;
+    }
   }
 
-  font = maFontLoadDefault(FONT_TYPE_MONOSPACE, style, fontSize);
+  font = maFontLoadDefault(type, style, fontSize);
 
-  if (font == -1) {
-    trace("maFontLoadDefault failed: style=%d size=%d", style, fontSize);
-  } else {
+  if (font != -1) {
     maFontSetCurrent(font);
-
     MAExtent extent = maGetTextSize("W");
     charWidth = EXTENT_X(extent);
     charHeight = EXTENT_Y(extent) + LINE_SPACING;
-    //    trace("charWidth:%d charHeight:%d fontSize:%d", charWidth, charHeight, fontSize);
+  } else {
+    trace("maFontLoadDefault failed: style=%d size=%d", style, fontSize);
   }
 }
 
@@ -386,7 +390,7 @@ int GraphicScreen::print(const char *p, int lineHeight) {
   maDrawText(cx, curY, TextBuffer(p, numChars).str);
 
   if (underline) {
-    maLine(cx, curY + lineHeight - 1, cx + curX, curY + lineHeight - 1);
+    maLine(cx, curY + lineHeight - 2, curX, curY + lineHeight - 2);
   }
 
   return numChars;
