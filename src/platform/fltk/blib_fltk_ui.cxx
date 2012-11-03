@@ -31,7 +31,7 @@
 #include "StringLib.h"
 
 extern "C" {
-#include "blib_ui.h"
+#include "common/blib_ui.h"
 } 
 
 extern MainWindow *wnd;
@@ -117,7 +117,8 @@ struct DropListModel:StringList {
       fromArray(items, v);
       return;
     }
-    // construct from a string like "Easy|Medium|Hard" int item_index = 0;
+    // construct from a string like "Easy|Medium|Hard" 
+    int item_index = 0;
     int len = items ? strlen(items) : 0;
     for (int i = 0; i < len; i++) {
       const char *c = strchr(items + i, '|');

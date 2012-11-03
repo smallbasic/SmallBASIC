@@ -48,8 +48,8 @@ struct spopr_keyword_s {
   code_t code;
 };
 
-#include "../kw.h"
-#include "../languages/keywords.en.c"
+#include "../../common/kw.h"
+#include "../../languages/keywords.en.c"
 
 void add_key(const char *key) {
   strcpy(ktable[kcount].key, key);

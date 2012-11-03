@@ -185,15 +185,15 @@ String & String::append(FILE *fp, long filelen) {
   return *this;
 }
 
-const char *String::toString() const const {
+const char *String::toString() const {
   return buffer;
 }
 
-int String::length() const const {
+int String::length() const {
   return (buffer == 0 ? 0 : strlen(buffer));
 }
 
-String String::substring(int beginIndex) constconst {
+String String::substring(int beginIndex) const {
   String out;
   if (beginIndex < length()) {
     out.append(buffer + beginIndex);
@@ -201,7 +201,7 @@ String String::substring(int beginIndex) constconst {
   return out;
 }
 
-String String::substring(int beginIndex, int endIndex) constconst {
+String String::substring(int beginIndex, int endIndex) const {
   String out;
   int len = length();
   if (endIndex > len) {
@@ -263,31 +263,31 @@ void String::toLowerCase() {
   }
 }
 
-int String::toInteger() const const {
+int String::toInteger() const {
   return (buffer == 0 ? 0 : atoi(buffer));
 }
 
-double String::toNumber() const const {
+double String::toNumber() const {
   return (buffer == 0 ? 0 : atof(buffer));
 }
 
-bool String::equals(const String & s, bool ignoreCase) constconst {
+bool String::equals(const String & s, bool ignoreCase) const {
   return (buffer == 0 ? s.buffer == 0 : ignoreCase ?
           strcasecmp(buffer, s.buffer) == 0 : strcmp(buffer, s.buffer) == 0);
 }
 
-bool String::equals(const char *s, bool ignoreCase) constconst {
+bool String::equals(const char *s, bool ignoreCase) const {
   return (buffer == 0 ? s == 0 : ignoreCase ? strcasecmp(buffer, s) == 0 : strcmp(buffer, s) == 0);
 }
 
-bool String::startsWith(const char *s, bool ignoreCase) constconst {
+bool String::startsWith(const char *s, bool ignoreCase) const {
   if (s == 0 || s[0] == 0) {
     return (buffer == 0 || buffer[0] == 0);
   }
   return (ignoreCase ? strncasecmp(buffer, s, strlen(s)) == 0 : strncmp(buffer, s, strlen(s)) == 0);
 }
 
-int String::indexOf(const String & s, int fromIndex) const const {
+int String::indexOf(const String & s, int fromIndex) const {
   int len = length();
   if (fromIndex >= len) {
     return -1;
@@ -301,7 +301,7 @@ int String::indexOf(const String & s, int fromIndex) const const {
   }
 }
 
-int String::indexOf(char chr, int fromIndex) const const {
+int String::indexOf(char chr, int fromIndex) const {
   int len = length();
   if (fromIndex >= len) {
     return -1;
@@ -310,7 +310,7 @@ int String::indexOf(char chr, int fromIndex) const const {
   return (c == NULL ? -1 : (c - buffer));
 }
 
-int String::lastIndexOf(char chr, int untilIndex) const const {
+int String::lastIndexOf(char chr, int untilIndex) const {
   int len = length();
   if (untilIndex >= len || untilIndex < 0) {
     return -1;
@@ -319,7 +319,7 @@ int String::lastIndexOf(char chr, int untilIndex) const const {
   return (c == NULL ? -1 : (c - buffer));
 }
 
-char String::charAt(int i) const const {
+char String::charAt(int i) const {
   if (i < length()) {
     return buffer[i];
   }
@@ -423,7 +423,9 @@ void List::emptyList() {
 Object *List::operator[] (const int index)
 const {
   return index < count ? head[index] : 0;
-} Object *List::get(const int index) constconst {
+}
+
+Object *List::get(const int index) const {
   return index < count ? head[index] : 0;
 }
 
@@ -453,7 +455,7 @@ void List::iterateInit(int ibegin /*=0*/ ) {
   iterator = ibegin;
 }
 
-bool List::hasNext() const const {
+bool List::hasNext() const {
   return (iterator < count);
 }
 
@@ -623,12 +625,12 @@ String *Properties::get(const char *key) {
   return null;
 }
 
-String *Properties::get(int i) constconst {
+String *Properties::get(int i) const {
   int index = (i * 2) + 1;
   return index < count ? (String *) head[index] : 0;
 }
 
-String *Properties::getKey(int i) constconst {
+String *Properties::getKey(int i) const {
   int index = i * 2;
   return index < count ? (String *) head[index] : 0;
 }

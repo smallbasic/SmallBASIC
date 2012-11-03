@@ -6,7 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include "sys.h"
+#include "common/sys.h"
 
 #include <fltk/Item.h>
 #include <fltk/MenuBar.h>
@@ -28,7 +28,7 @@
 #endif
 
 extern "C" {
-#include "fs_socket_client.h"
+#include "common/fs_socket_client.h"
 } 
 using namespace fltk;
 

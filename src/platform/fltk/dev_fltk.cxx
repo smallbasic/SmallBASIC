@@ -25,7 +25,7 @@
 #include "TtyWidget.h"
 
 extern "C" {
-#include "fs_socket_client.h"
+#include "common/fs_socket_client.h"
 }
 #ifdef WIN32
 #include <windows.h>
