@@ -47,6 +47,7 @@
 
 #define MAX_PENDING 250
 #define BUTTON_PADDING 10
+#define OVER_SCROLL 100
 #define SWIPE_MAX_TIMER 6000
 #define SWIPE_DELAY_STEP 250
 #define SWIPE_SCROLL_FAST 30
@@ -65,10 +66,13 @@ Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
 }
 
 void Widget::drawButton(const char *caption) {
-  int r = x+width-1;
-  int b = y+height-1;
-  int textX = x + 4;
-  int textY = y + 4;
+  int r = x + width - 1;
+  int b = y + height - 1;
+  MAExtent textSize = maGetTextSize(caption);
+  int textW = EXTENT_X(textSize);
+  int textH = EXTENT_Y(textSize);
+  int textX = x + (width - textW - 1) / 2;
+  int textY = y + (height - textH - 1) / 2;
 
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, width-1, height-1);
@@ -83,8 +87,8 @@ void Widget::drawButton(const char *caption) {
     maSetColor(0x606060);
     maLine(x+1, y+1, r-1, y+1); // bottom
     maLine(x+1, b-1, x+1, b-1); // right
-    textX += 1;
-    textY += 1;
+    textX += 2;
+    textY += 2;
   } else {
     maSetColor(0xd0d0d0);
     maLine(x, y, r, y); // top
@@ -557,7 +561,8 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
       if (vscroll < 0) {
         vscroll = 0;
       }
-      if (vscroll != front->scrollY && maxScroll > 0) {
+      if (vscroll != front->scrollY && maxScroll > 0 && 
+          vscroll < maxScroll + OVER_SCROLL) {
         moveTime = maGetMilliSecondCount();
         moveDown = (front->scrollY < vscroll);
         front->drawInto();
@@ -627,7 +632,7 @@ Widget *AnsiWidget::createLink(const char *action, const char *text,
   int h = EXTENT_Y(textSize) + 2;
   int x = back->curX;
   int y = back->curY;
-  
+
   if (button) {
     w += BUTTON_PADDING;
     h += BUTTON_PADDING;
@@ -937,7 +942,7 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     if (n > 1) {
       result = new TextScreen(width, height, fontSize, x, y, w, h);
     } else {
-      front = new GraphicScreen(width, height, fontSize);
+      result = new GraphicScreen(width, height, fontSize);
     }    
     if (result && result->construct()) {
       screens[n] = result;
