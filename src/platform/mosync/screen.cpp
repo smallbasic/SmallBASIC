@@ -100,12 +100,9 @@ void Screen::draw(bool vscroll) {
   // draw any visible shapes
   Vector_each(Shape*, it, shapes) {
     Shape *rect = (Shape *)(*it);
-    if (rect->y >= y + scrollY && 
-        rect->y <= y + scrollY + height) {
-      int y = rect->y;
-      rect->y -= scrollY;
-      rect->draw();
-      rect->y = y;
+    if (rect->y >= scrollY && 
+        rect->y <= scrollY + height) {
+      rect->draw(x + rect->x, y + rect->y - scrollY);
     }
   }
 

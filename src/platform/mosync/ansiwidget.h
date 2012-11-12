@@ -58,8 +58,8 @@ struct Widget : public Shape {
 
   virtual void clicked(IButtonListener *listener, int x, int y) = 0;
 
-  void drawButton(const char *caption);
-  void drawLink(const char *caption);
+  void drawButton(const char *caption, int x, int y);
+  void drawLink(const char *caption, int x, int y);
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   int getBackground(int buttonColor);
 
@@ -84,7 +84,7 @@ struct TextButton : public Button {
   TextButton(Screen *screen, const char *action, const char *label,
              int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {}
-  void draw() { drawLink(label.c_str()); }
+  void draw(int x, int y) { drawLink(label.c_str(), x, y); }
 };
 
 // internal block button
@@ -92,7 +92,7 @@ struct BlockButton : public Button {
   BlockButton(Screen *screen, const char *action, const char *label,
               int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {}
-  void draw() { drawButton(label.c_str()); }
+  void draw(int x, int y) { drawButton(label.c_str(), x, y); }
 };
 
 // base implementation for all external buttons
@@ -127,7 +127,7 @@ struct FormButton : public FormWidget {
   virtual ~FormButton() {}
 
   const char *getText() const { return caption.c_str(); }
-  void draw() { drawButton(caption.c_str()); }
+  void draw(int x, int y) { drawButton(caption.c_str(), x, y); }
 
 private:
   String caption;
@@ -138,7 +138,7 @@ struct FormLabel : public FormWidget {
   virtual ~FormLabel() {}
 
   const char *getText() const { return caption.c_str(); }
-  void draw() { drawButton(caption.c_str()); }
+  void draw(int x, int y) { drawButton(caption.c_str(), x, y); }
 
 private:
   String caption;
@@ -149,7 +149,7 @@ struct FormLink : public FormWidget {
   virtual ~FormLink() {}
 
   const char *getText() const { return link.c_str(); }
-  void draw() { drawLink(link.c_str()); }
+  void draw(int x, int y) { drawLink(link.c_str(), x, y); }
 
 private:
   String link;
@@ -161,7 +161,7 @@ struct FormLineInput : public FormWidget {
   virtual ~FormLineInput() {}
 
   void close();
-  void draw();
+  void draw(int x, int y);
   bool edit(int key);
   const char *getText() const { return buffer; }
   void setText(const char *text) {}
@@ -180,7 +180,7 @@ struct FormList : public FormWidget {
   IFormWidgetListModel *getList() const { return model; }
   const char *getText() const { return model->getTextAt(model->selected()); }
   void clicked(IButtonListener *listener, int x, int y);
-  void draw();
+  void draw(int dx, int dy);
   void optionSelected(int index);
 
 private:

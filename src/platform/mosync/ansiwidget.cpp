@@ -65,55 +65,55 @@ Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
   fg(fg) {
 }
 
-void Widget::drawButton(const char *caption) {
-  int r = x + width - 1;
-  int b = y + height - 1;
+void Widget::drawButton(const char *caption, int dx, int dy) {
+  int r = dx + width - 1;
+  int b = dy + height - 1;
   MAExtent textSize = maGetTextSize(caption);
   int textW = EXTENT_X(textSize);
   int textH = EXTENT_Y(textSize);
-  int textX = x + (width - textW - 1) / 2;
-  int textY = y + (height - textH - 1) / 2;
+  int textX = dx + (width - textW - 1) / 2;
+  int textY = dy + (height - textH - 1) / 2;
 
   maSetColor(getBackground(GRAY_BG_COL));
-  maFillRect(x, y, width-1, height-1);
+  maFillRect(dx, dy, width-1, height-1);
 
   if (pressed) {
     maSetColor(0x909090);
-    maLine(x, y, r, y); // top
-    maLine(x, y, x, b); // left
+    maLine(dx, dy, r, dy);  // top
+    maLine(dx, dy, dx, b);  // left
     maSetColor(0xd0d0d0);
-    maLine(x+1, b, r, b);     // bottom
-    maLine(r-1, y+1, r-1, b); // right
+    maLine(dx+1, b, r, b);     // bottom
+    maLine(r-1, dy+1, r-1, b); // right
     maSetColor(0x606060);
-    maLine(x+1, y+1, r-1, y+1); // bottom
-    maLine(x+1, b-1, x+1, b-1); // right
+    maLine(dx+1, dy+1, r-1, dy+1); // bottom
+    maLine(dx+1, b-1, dx+1, b-1); // right
     textX += 2;
     textY += 2;
   } else {
     maSetColor(0xd0d0d0);
-    maLine(x, y, r, y); // top
-    maLine(x, y, x, b); // left
+    maLine(dx, dy, r, dy); // top
+    maLine(dx, dy, dx, b); // left
     maSetColor(0x606060);
-    maLine(x, b, r, b);     // bottom
-    maLine(r-1, y, r-1, b); // right
+    maLine(dx, b, r, b);     // bottom
+    maLine(r-1, dy, r-1, b); // right
     maSetColor(0x909090);
-    maLine(x+1, b-1, r-1, b-1); // bottom
-    maLine(r-2, y+1, r-2, b-1); // right
+    maLine(dx+1, b-1, r-1, b-1); // bottom
+    maLine(r-2, dy+1, r-2, b-1); // right
   }
 
   maSetColor(fg);
   maDrawText(textX, textY, caption);
 }
 
-void Widget::drawLink(const char *caption) {
+void Widget::drawLink(const char *caption, int dx, int dy) {
   maSetColor(fg);
-  maDrawText(x, y, caption);
+  maDrawText(dx, dy, caption);
   maSetColor(pressed ? fg : bg);
-  maLine(x + 2, y + height + 1, x + width, y + height + 1);
+  maLine(dx + 2, dy + height + 1, dx + width, dy + height + 1);
 }
 
-bool Widget::overlaps(MAPoint2d pt, int scrollX, int scrollY) {
-  return !(OUTSIDE_RECT(pt.x, pt.y, x - scrollX, y - scrollY, width, height));
+bool Widget::overlaps(MAPoint2d pt, int offsX, int offsY) {
+  return !(OUTSIDE_RECT(pt.x, pt.y, x + offsX, y + offsY, width, height));
 }
 
 // returns setBG when the program colours are default
@@ -177,11 +177,11 @@ FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize,
   scroll(0) {
 }
 
-void FormLineInput::draw() {
+void FormLineInput::draw(int dx, int dy) {
   maSetColor(getBackground(GRAY_BG_COL));
-  maFillRect(x, y, width, height);
+  maFillRect(dx, dy, width, height);
   maSetColor(fg);
-  maDrawText(x, y, buffer + scroll);
+  maDrawText(dx, dy, buffer + scroll);
 }
 
 bool FormLineInput::edit(int key) {
@@ -254,9 +254,9 @@ void FormList::clicked(IButtonListener *listener, int x, int y) {
   maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)options, optionsBytes);
 }
 
-void FormList::draw() {
+void FormList::draw(int x, int y) {
   if (model) {
-    drawButton(getText());
+    drawButton(getText(), x, y);
   }
 }
 
@@ -533,7 +533,8 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
 
     Vector_each(Shape*, it, front->shapes) {
       Widget *widget = (Widget *)(*it);
-      if (widget->overlaps(event.point, 0, front->scrollY)) {
+      if (widget->overlaps(event.point, front->x,
+                           front->y - front->scrollY)) {
         activeButton = widget;
         activeButton->pressed = true;
         redraw();
@@ -546,7 +547,8 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
 // handler for pointer move events
 void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   if (activeButton != NULL) {
-    bool pressed = activeButton->overlaps(event.point, 0, front->scrollY);
+    bool pressed = activeButton->overlaps(event.point, front->x,
+                                          front->y - front->scrollY);
     if (pressed != activeButton->pressed) {
       activeButton->pressed = pressed;
       redraw();

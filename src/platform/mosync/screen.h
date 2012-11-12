@@ -44,7 +44,7 @@ struct TextBuffer {
 struct Shape {
   Shape(int x, int y, int w, int h) : x(x), y(y), width(w), height(h) {}
   virtual ~Shape() {}
-  virtual void draw() {}
+  virtual void draw(int x, int y) {}
 
   int x, y, width, height;
 };

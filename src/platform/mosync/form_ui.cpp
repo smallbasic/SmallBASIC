@@ -135,11 +135,11 @@ void Form::setupWidget(WidgetDataPtr widgetData) {
     textH = EXTENT_Y(extent);
   }
 
-  if (widget->getW() < 0 && caption != NULL) {
+  if (widget->getW() <= 0 && caption != NULL) {
     widget->setW(textW + BN_W);
   }
 
-  if (widget->getH() < 0 || widget->getH() < (textH + widgetData->padding())) {
+  if (widget->getH() <= 0 || widget->getH() < (textH + widgetData->padding())) {
     widget->setH(textH + widgetData->padding());
   }
 
