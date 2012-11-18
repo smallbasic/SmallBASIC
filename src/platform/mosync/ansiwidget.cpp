@@ -807,7 +807,6 @@ void AnsiWidget::drawActiveButton() {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     int x = focus->x + activeButton->x;
     int y = focus->y + activeButton->y - focus->scrollY;
-    trace("draw %d %d %d %d %d", x,y, focus->x,focus->y,activeButton->pressed);
     maSetClipRect(x, y, activeButton->width, activeButton->height);
     activeButton->draw(x, y);
     maUpdateScreen();
