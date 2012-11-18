@@ -154,6 +154,11 @@ int Screen::print(const char *p, int lineHeight) {
   return numChars;
 }
 
+// whether the given point overlaps with the screen rectangle
+bool Screen::overlaps(int px, int py) {
+  return (!OUTSIDE_RECT(px, py, x, y, width, height));
+}
+
 // remove the button from the list
 void Screen::remove(Shape *button) {
   Vector_each(Shape*, it, shapes) {

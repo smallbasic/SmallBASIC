@@ -73,6 +73,7 @@ struct Screen : public Shape {
 
   int ansiToMosync(long c);
   void add(Shape *button) { shapes.add(button); }
+  bool overlaps(int px, int py);
   void remove(Shape *button);
   void setColor(long color);
   void setDirty() { if (!dirty) { dirty = maGetMilliSecondCount(); } }

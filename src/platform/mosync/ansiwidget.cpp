@@ -270,6 +270,7 @@ void FormList::optionSelected(int index) {
 AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   back(NULL),
   front(NULL),
+  focus(NULL),
   width(width),
   height(height),
   xTouch(-1),
@@ -525,39 +526,43 @@ void AnsiWidget::setTextColor(long fg, long bg) {
 
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
-  if (!OUTSIDE_RECT(event.point.x, event.point.y,
-                    front->x, front->y,
-                    front->width, front->height)) {
-    xTouch = xMove = event.point.x;
-    yTouch = yMove = event.point.y;
-
-    Vector_each(Shape*, it, front->shapes) {
-      Widget *widget = (Widget *)(*it);
-      if (widget->overlaps(event.point, front->x,
-                           front->y - front->scrollY)) {
-        activeButton = widget;
-        activeButton->pressed = true;
-        redraw();
-        break;
+  // hit test buttons on the front screen
+  if (setActiveButton(event, front)) {
+    focus = front;
+  } else {
+    // hit test buttons on remaining screens
+    for (int i = 0; i < SYSTEM_SCREENS; i++) {
+      if (screens[i] != NULL && screens[i] != front) {
+        if (setActiveButton(event, screens[i])) {
+          focus = screens[i];
+          break;
+        }
       }
     }
+  }
+  // paint the pressed button
+  if (activeButton != NULL) {
+    drawActiveButton();
+  }
+  // setup vars for page scrolling
+  if (front->overlaps(event.point.x, event.point.y)) {
+    xTouch = xMove = event.point.x;
+    yTouch = yMove = event.point.y;
   }
 }
 
 // handler for pointer move events
 void AnsiWidget::pointerMoveEvent(MAEvent &event) {
   if (activeButton != NULL) {
-    bool pressed = activeButton->overlaps(event.point, front->x,
-                                          front->y - front->scrollY);
+    bool pressed = activeButton->overlaps(event.point, focus->x,
+                                          focus->y - focus->scrollY);
     if (pressed != activeButton->pressed) {
       activeButton->pressed = pressed;
-      redraw();
+      drawActiveButton();
     }
   } else if (!swipeExit) {
     // scroll up/down
-    if (!OUTSIDE_RECT(event.point.x, event.point.y,
-                      front->x, front->y,
-                      front->width, front->height)) {
+    if (front->overlaps(event.point.x, event.point.y)) {
       int vscroll = front->scrollY + (yMove - event.point.y);
       int maxScroll = (front->curY - front->height) + (2 * fontSize);
       if (vscroll < 0) {
@@ -582,7 +587,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   if (activeButton != NULL && activeButton->pressed) {
     activeButton->pressed = false;
     activeButton->clicked(buttonListener, event.point.x, event.point.y);
-    redraw();
+    drawActiveButton();
   } else if (swipeExit) {
     swipeExit = false;
   } else {
@@ -607,6 +612,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   xTouch = xMove = -1;
   yTouch = yMove = -1;
   activeButton = NULL;
+  focus = NULL;
 }
 
 // creates a status-bar label
@@ -793,6 +799,23 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
   maWait(500);
 }
 
+// draws the focus screen
+void AnsiWidget::drawActiveButton() {
+  if (focus == front) {
+    redraw();
+  } else {
+    MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+    int x = focus->x + activeButton->x;
+    int y = focus->y + activeButton->y - focus->scrollY;
+    trace("draw %d %d %d %d %d", x,y, focus->x,focus->y,activeButton->pressed);
+    maSetClipRect(x, y, activeButton->width, activeButton->height);
+    activeButton->draw(x, y);
+    maUpdateScreen();
+    maResetBacklight();
+    maSetDrawTarget(currentHandle);
+  }
+}
+
 // returns list of strings extracted from the vertical-bar separated input string
 Vector<String *> *AnsiWidget::getItems(char *&p) {
   Vector<String *> *result = new Vector<String *>();
@@ -904,6 +927,24 @@ void AnsiWidget::screenCommand(char *&p) {
     print("ERR unknown screen command");
     break;
   }    
+}
+
+// returns whether the event is over the given screen
+bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
+  bool result = false;
+  if (screen->overlaps(event.point.x, event.point.y)) {
+    Vector_each(Shape*, it, screen->shapes) {
+      Widget *widget = (Widget *)(*it);
+      if (widget->overlaps(event.point, screen->x,
+                           screen->y - screen->scrollY)) {
+        activeButton = widget;
+        activeButton->pressed = true;
+        break;
+      }
+    }
+    result = true;
+  }
+  return result;
 }
 
 // select the specified screen - returns whether the screen was changed

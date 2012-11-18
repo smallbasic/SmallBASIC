@@ -237,10 +237,12 @@ private:
   void deleteItems(Vector<String *> *items);
   bool doEscape(char *&p, int textHeight);
   void doSwipe(int start, int maxScroll);
+  void drawActiveButton();
   Vector<String *> *getItems(char *&p);
   void handleEscape(char *&p, int textHeight);
   void removeScreen(char *&p);
   void screenCommand(char *&p);
+  bool setActiveButton(MAEvent &event, Screen *screen);
   Screen *selectScreen(char *&p);
   void showAlert(char *&p);
   void swapScreens();
@@ -248,6 +250,7 @@ private:
   Screen *screens[MAX_SCREENS];
   Screen *back;   // screen being painted/written
   Screen *front;  // screen to display 
+  Screen *focus;  // screen with the active button
   int width;      // device screen width
   int height;     // device screen height
   int fontSize;   // font height based on screen size
