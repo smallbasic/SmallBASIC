@@ -586,8 +586,8 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
 void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   if (activeButton != NULL && activeButton->pressed) {
     activeButton->pressed = false;
-    activeButton->clicked(buttonListener, event.point.x, event.point.y);
     drawActiveButton();
+    activeButton->clicked(buttonListener, event.point.x, event.point.y);
   } else if (swipeExit) {
     swipeExit = false;
   } else {
@@ -801,18 +801,14 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
 
 // draws the focus screen
 void AnsiWidget::drawActiveButton() {
-  if (focus == front) {
-    redraw();
-  } else {
-    MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
-    int x = focus->x + activeButton->x;
-    int y = focus->y + activeButton->y - focus->scrollY;
-    maSetClipRect(x, y, activeButton->width, activeButton->height);
-    activeButton->draw(x, y);
-    maUpdateScreen();
-    maResetBacklight();
-    maSetDrawTarget(currentHandle);
-  }
+  MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+  int x = focus->x + activeButton->x;
+  int y = focus->y + activeButton->y - focus->scrollY;
+  maSetClipRect(x, y, activeButton->width, activeButton->height + 2);
+  activeButton->draw(x, y);
+  maUpdateScreen();
+  maResetBacklight();
+  maSetDrawTarget(currentHandle);
 }
 
 // returns list of strings extracted from the vertical-bar separated input string
@@ -914,7 +910,7 @@ void AnsiWidget::screenCommand(char *&p) {
       flush(true);
     }
     break;
-  case 'O': // open screen # for write/display
+  case '#': // open screen # for write/display
     selected = selectScreen(p);
     if (selected) {
       front = back = selected;
@@ -941,7 +937,7 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
         break;
       }
     }
-    result = true;
+    result = (screen->shapes.size() != 0);
   }
   return result;
 }

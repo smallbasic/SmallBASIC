@@ -1,4 +1,7 @@
 const app = "main.bas?"
+const exitLinkType = "exit_link"
+const exitButtonType = "exit_button"
+const linkType = "link"
 
 sub space_print(s)
   local ch, len_s
@@ -9,48 +12,24 @@ sub space_print(s)
 end
 
 sub intro()
-  local e
-  e = chr(27) + "["
-  print e + "31m" + "Welcome to SmallBASIC"
-  print e + "32m" + "Welcome to SmallBASIC"
-  print e + "33m" + "Welcome to SmallBASIC"
-  print e + "34m" + "Welcome to SmallBASIC"
-  print e + "0m"
+  local i
+  for i = 1 to 4
+    color i, 0: print "Welcome to SmallBASIC"
+  next i
+  color 7, 0
   space_print "Welcome to SmallBASIC"
-end
-
-sub icon() 
-  print "..                  .                     ..."
-  print "   7B@B@@@B@B@B@B@G   ,OB@@@B@B@B@B@B@B@i  .."
-  print " vMB@@@B@B@u.,iO@B@B2 .O@@@B@@@B@;:,5B@@@Mv ."
-  print " 5B@O@B@B@O.   M@@B@@, 5BMZ@B@B@7    ZB@@@U  "
-  print " 5@BOB@B@BN     i7uXr .X@M@B@B@Bv    M@B@BS  "
-  print " 7Z@B@B@B@@qivr.      ,OBBB@B@B@XvrruBB@Bu: ."
-  print ".  ;@B@B@B@B@B@B@B@r  ,E@OBB@B@M@B@B@B@B2   ."
-  print "               uB@B@M. SB@B@@@B@7   .MB@B@U  "
-  print " 2@@@@@B@B@:   U@BBBG  5@B@B@B@Bj   :M@B@Bj ."
-  print " GB@B@B@B@B    YB@B@B. 1B@B@B@B@i    8B@@@5  "
-  print " .:O@B@B@B@B@B@B@B@u. :B@B@B@B@@@B@B@B@B@:. ."
-  print "    iuukS5jXOO8U7v.    .i7rrrrr7vFkXuYv2   .."
-  print " :v.              .:::,                 .7i ."
-  print " FB@B@Oi iSGNZL, 7M@B@B@B@B@@@B@@@B@BMM@B@k. "
-  print ".  v@Bk8q. ,FuuF7  :0B@PJr:.,i: ,ii..7@@u   ."
-  print "..   2BM1Z2  :PFLUi  rO@Ok28MMOBM@F70@k    .."
-  print "...   .X@OkFv  rEFLv,  Y@B@MOZOBNrPBO.  ....."
-  print ".....   :GBOkui  7Ek7r  .kBPqM57u@Oi   ......"
-  print ".......  .YM@GEYr:iJqFLi..i5GqOMOu:  ........"
-  print ".........  :q@BMY. :LFk1:  :JqM8i  .........."
-  print "...........  UO,  .  vL   . .Lr   ..........."
-  print "............    ....    ....   .............."
-end
-
-sub logo()
-  print "  / __/_ _  ___ _/ / / _ )/ _ | / __/  _/ ___/"
-  print " _\ \/  ' \/ _ `/ / / _  / __ |_\ \_/ // /__  "
-  print "/___/_/_/_/\_,_/_/_/____/_/ |_/___/___/\___/  "
+  print ""
 end
 
 sub about()
+  local bn_ok
+  cls
+  print "  / __/_ _  ___ _/ / / _ )/ _ | / __/  _/ ___/"
+  print " _\ \/  ' \/ _ `/ / / _  / __ |_\ \_/ // /__  "
+  print "/___/_/_/_/\_,_/_/_/____/_/ |_/___/___/\___/  "
+  print
+  print "Version 0.11.1"
+  print
   print "Copyright (c) 2002-2012 Chris Warren-Smith"
   print "Copyright (c) 2000-2006 Nicholas Christopoulos." + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
@@ -59,32 +38,25 @@ sub about()
   print "redistribute it and/or modify it under the terms of the"
   print "GNU General Public License version 2 as published by"
   print "the Free Software Foundation."
+  print 
+  color 10, 8
+  button xmax / 2, ypos * txth("A"), 0, 0, bn_ok,  "OK"
+  doform
+  color 7, 0
+  cls
 end
 
-sub buttons() {
-  local e
-  e = chr(27) + "[ B"
-  print chr(10);
-  print e + "http://smallbasic.sourceforge.net/?q=export/code/1102|Online programs" + chr(28);
-  print " " + e + app + "/|Open file" + chr(28) + chr(10)
-end
+sub listFiles(path, byref basList, byref dirList)
+  local fileList, ent, esc, name, lastItem
 
-sub listFiles(path)
-  local fileList, ent, esc, basList, dirList, name, backPath, index
-
-  dim basList
-  dim dirList
-
-  backPath = ""
-  index = iff(isstring(path), rinstr(path, "/"), 0)
-  if (index > 1) 
-    backPath = left(path, index - 1)
-  endif
-
+  erase basList
+  erase dirList
+  
   if (right(path, 1) != "/") then
     path += "/"
   endif
 
+  color 7, 0
   print "Files in " + path
   
   esc = chr(27) + "[ H"
@@ -102,26 +74,86 @@ sub listFiles(path)
   sort dirList
   sort basList
 
-  if (path != "/") then
-    print " " + chr(27) + "[ B" + app + backPath + "|Back" + chr(28)
-  endif    
-
-  for ent in dirList
-    print " " + esc + app + path + ent + "|[" + ent + "]" + chr(28)
+  color 3, 0
+  lastItem = len(dirList) - 1
+  for i = 0 to lastItem
+    button 0, -1, 0, 0, dirList(i), "[" + dirList(i) + "]", linkType
+    dirList(i) = path + dirList(i)
+    print
   next ent
 
-  print chr(27) + "[1;32m";
-  for ent in basList
-    print " " + esc + path + ent + "|" + ent + chr(28)
+  color 2, 0
+  lastItem = len(basList) - 1
+  for i = 0 to lastItem
+    button 0, -1, 0, 0, basList(i), basList(i), exitLinkType
+    basList(i) = path + basList(i)
+    print
   next ent
 end
 
-if (command == "welcome") then
-  icon
-  logo  
-  intro
-  buttons
-  about
-else 
-  listFiles command
-endif
+sub main
+  local basList, dirList, path
+  local form_var, bn_back, bn_about, bn_online
+  local y_height, do_intro
+
+  dim basList
+  dim dirList
+
+  form_var = ""
+  bn_back = "_back"
+  bn_about= "_about"
+  bn_online = "http://smallbasic.sourceforge.net/?q=export/code/1102"
+  y_height = txth(about_button) + 5
+
+  sub make_ui(path, welcome)
+    color 10, 8
+    button 0,  0, 0, 0, bn_back,   "Back"
+    button -4, 0, 0, 0, bn_online, "Online", exitButtonType
+    button -4, 0, 0, 0, bn_about,  "About"
+    at 0, y_height
+    if (welcome) then
+      intro
+    fi
+    listFiles path, basList, dirList        
+  end
+
+  sub go_back
+    local backPath, index
+    backPath = ""
+    index = iff(isstring(path), rinstr(path, "/"), 0)
+    if (index > 1) 
+      backPath = left(path, index - 1)
+    endif
+    path = backPath
+  end
+
+  path = command
+  do_intro = false
+  if (command == "welcome") then
+    do_intro = true
+    path = "/"
+  else 
+    path = cwd
+  fi
+
+  make_ui path, do_intro
+
+  while 1
+    doform form_var
+    cls
+
+    if (isdir(form_var)) then
+      path = form_var    
+      chdir path
+      make_ui path, false
+    elif form_var == "About" then
+      about
+      make_ui path, false
+    elif form_var == "Back" then
+      go_back
+      make_ui path, false
+    fi
+  wend
+end
+
+main

@@ -405,6 +405,7 @@ void WidgetData::transferData() {
     break;
 
   case ctrl_exit_link:
+  case ctrl_exit_button:
     controller->buttonClicked((const char *)var->v.p.ptr);
     brun_break();
     break;
@@ -439,6 +440,9 @@ void cmd_button() {
     if (type) {
       if (strcasecmp("button", type) == 0) {
         wd = new WidgetData(ctrl_button, var);
+        widget = controller->output->createButton(caption, x, y, w, h);
+      } else if (strcasecmp("exit_button", type) == 0) {
+        wd = new WidgetData(ctrl_exit_button, var);
         widget = controller->output->createButton(caption, x, y, w, h);
       } else if (strcasecmp("label", type) == 0) {
         wd = new WidgetData(ctrl_label, var);
