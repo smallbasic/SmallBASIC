@@ -43,7 +43,6 @@ void set_path(const char *filename) {
   if (!slash) {
     slash = strrchr(filename, '\\');
   }
-
   if (slash) {
     int len = slash - filename;
     if (len > 0) {
@@ -53,6 +52,31 @@ void set_path(const char *filename) {
       chdir(path);
     }
   }
+}
+
+// change the current working directory to the parent level folder
+bool set_parent_path() {
+  bool result = true;
+  char path[OS_PATHNAME_SIZE + 1];
+  getcwd(path, OS_PATHNAME_SIZE);
+  if (!path[0] || strcmp(path, "/") == 0) {
+    result = false;
+  } else {
+    int len = strlen(path);
+    if (path[len - 1] == '/') {
+      // eg /sdcard/bas/
+      path[len - 1] = '\0';
+    }
+    const char *slash = strrchr(path, '/');
+    len = slash - path;
+    if (!len) {
+      strcpy(path, "/");
+    } else {
+      path[len] = 0;
+    }
+    chdir(path);
+  }
+  return result;
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {

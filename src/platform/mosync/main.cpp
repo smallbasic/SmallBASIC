@@ -24,15 +24,11 @@ extern "C" int MAMain() {
   while (!controller->isExit()) {
     if (controller->isBack()) {
       if (mainBas) {
-        if (!opt_command[0] || !opt_command[1] || 
-            !strcmp(opt_command, "welcome")) {
-          controller->setExit(false);
-        } else {
-          opt_command[0] = '\0';
-        }
+        controller->setExit(set_parent_path());
       }
       if (!controller->isExit()) {
         mainBas = true;
+        opt_command[0] = '\0';
         sbasic_main("main.bas");
       }
     } else if (controller->getLoadPath() != NULL) {
