@@ -136,6 +136,11 @@ char *Controller::getText(char *dest, int maxSize) {
     }
   }
 
+  // paint the widget result onto the backing screen
+  if (dest[0]) {
+    output->print(dest);
+  }
+
   delete formWidget;
   return dest;
 }

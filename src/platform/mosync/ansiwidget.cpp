@@ -937,7 +937,8 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
         break;
       }
     }
-    result = (screen->shapes.size() != 0);
+    // screen overlaps event - avoid search in other screens
+    result = true;
   }
   return result;
 }
