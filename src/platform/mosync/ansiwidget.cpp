@@ -54,6 +54,7 @@
 #define SWIPE_SCROLL_SLOW 20
 #define SWIPE_TRIGGER_FAST 55
 #define SWIPE_TRIGGER_SLOW 80
+#define FONT_FACTOR 32
 
 char *options = NULL;
 FormList *clickedList = NULL;
@@ -285,7 +286,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   for (int i = 0; i < MAX_SCREENS; i++) {
     screens[i] = NULL;
   }
-  fontSize = min(width, height) / 40;
+  fontSize = min(width, height) / FONT_FACTOR;
   trace("width: %d height: %d fontSize:%d", width, height, fontSize);
 }
 
@@ -512,6 +513,17 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
 // sets the current drawing color
 void AnsiWidget::setColor(long fg) {
   back->setColor(fg);
+}
+
+// sets the text font size
+void AnsiWidget::setFontSize(int fontSize) {
+  this->fontSize = fontSize;
+  for (int i = 0; i < SYSTEM_SCREENS; i++) {
+    if (screens[i] != NULL) {
+      screens[i]->reset(fontSize);
+    }
+  }
+  redraw();
 }
 
 // sets the pixel to the given color at the given xy location

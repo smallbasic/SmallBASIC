@@ -208,6 +208,7 @@ struct AnsiWidget {
   void flush(bool force, bool vscroll=false);
   int getBackgroundColor() { return back->bg; }
   int getColor() { return back->fg; }
+  int getFontSize() { return fontSize; }
   int getPixel(int x, int y);
   int getHeight() { return height; }
   int getWidth()  { return width; }
@@ -220,6 +221,7 @@ struct AnsiWidget {
   void reset();
   void resize(int width, int height);
   void setColor(long color);
+  void setFontSize(int fontSize);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
   void setXY(int x, int y) { back->curX=x; back->curY=y; }

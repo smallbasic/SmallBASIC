@@ -19,10 +19,13 @@
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
-#define SYSTEM_MENU "\033[ OView Source|Show Console|Show Keypad"
-#define MENU_SOURCE 0
-#define MENU_LOG    1
-#define MENU_KEYPAD 2
+#define SHELL_MENU "\033[ OConsole|Show Keypad|View Source|Zoom +|Zoom -"
+#define APP_MENU   "\033[ OConsole|Show Keypad|View Source"
+#define MENU_CONSOLE  0
+#define MENU_KEYPAD   1
+#define MENU_SOURCE   2
+#define MENU_ZOOM_UP  3
+#define MENU_ZOOM_DN  4
 #define ERROR_BAS "print \"Failed to open program file\""
 
 Controller::Controller() :
@@ -35,6 +38,8 @@ Controller::Controller() :
   touchY(-1),
   touchCurX(-1),
   touchCurY(-1),
+  initialFontSize(0),
+  mainBas(false),
   systemMenu(false),
   systemScreen(false),
   drainError(false),
@@ -46,6 +51,7 @@ bool Controller::construct() {
   MAExtent screenSize = maGetScrSize();
   output = new AnsiWidget(this, EXTENT_X(screenSize), EXTENT_Y(screenSize));
   output->construct();
+  initialFontSize = output->getFontSize();
 
   runMode = init_state;
   opt_ide = IDE_NONE;
@@ -184,6 +190,48 @@ int Controller::handleEvents(int waitFlag) {
   return isBreak() ? -2 : 0;
 }
 
+// handle the system menu
+void Controller::handleMenu(int menuId) {
+  int fontSize = output->getFontSize();
+  systemMenu = false;
+
+  switch (menuId) {
+  case MENU_SOURCE:
+    showSystemScreen(true);
+    break;
+  case MENU_CONSOLE:
+    showSystemScreen(false);
+    break;
+  case MENU_KEYPAD:
+    maShowVirtualKeyboard();
+    break;
+  case MENU_ZOOM_UP:
+    fontSize = output->getFontSize();
+    if (fontSize < initialFontSize * 2) {
+      fontSize += (initialFontSize / 4);
+    }
+    break;
+  case MENU_ZOOM_DN:
+    fontSize = output->getFontSize();
+    if (fontSize > initialFontSize / 2) {
+      fontSize -= (initialFontSize / 4);
+    }
+    break;
+  }
+
+  if (fontSize != output->getFontSize()) {
+    output->setFontSize(fontSize);
+    // restart the shell
+    buttonClicked("main.bas");
+    brun_break();
+    runMode = break_state;
+  }
+  
+  if (!isRunning()) {
+    output->flush(true);
+  }
+}
+
 // process events on the system event queue
 MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
@@ -203,21 +251,8 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     switch (event.type) {
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
       if (systemMenu) {
-        systemMenu = false;
-        switch (event.optionsBoxButtonIndex) {
-        case MENU_SOURCE:
-          showSystemScreen(true);
-          break;
-        case MENU_LOG:
-          showSystemScreen(false);
-          break;
-        case MENU_KEYPAD:
-          maShowVirtualKeyboard();
-          break;
-        }
-        if (!isRunning()) {
-          output->flush(true);
-        }
+        handleMenu(event.optionsBoxButtonIndex);
+        ms = EVENT_WAIT_NONE;
       } else if (isRunning()) {
         if (!output->optionSelected(event.optionsBoxButtonIndex)) {
           dev_pushkey(event.optionsBoxButtonIndex);
@@ -278,7 +313,8 @@ char *Controller::readSource(const char *fileName) {
   if (delim && !networkFile) {
     strcpy(opt_command, delim + 1);
   }
-
+  
+  mainBas = false;
   trace("readSource %s %d %s", fileName, endIndex, opt_command);
 
   if (networkFile) {
@@ -289,6 +325,7 @@ char *Controller::readSource(const char *fileName) {
     buffer = (char *)tmp_alloc(len + 1);
     maReadData(MAIN_BAS, buffer, 0, len);
     buffer[len] = '\0';
+    mainBas = true;
   } else {
     // load from file system
     MAHandle handle = maFileOpen(fileName, MA_ACCESS_READ);
@@ -411,7 +448,7 @@ void Controller::handleKey(int key) {
     return;
   case MAK_MENU:
     systemMenu = true;
-    output->print(SYSTEM_MENU);
+    output->print(mainBas ? SHELL_MENU : APP_MENU);
     return;
   }
 
