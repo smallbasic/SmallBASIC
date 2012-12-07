@@ -28,7 +28,7 @@ sub about()
   print " _\ \/  ' \/ _ `/ / / _  / __ |_\ \_/ // /__  "
   print "/___/_/_/_/\_,_/_/_/____/_/ |_/___/___/\___/  "
   print
-  print "Version 0.11.1"
+  print "Version 0.11.2"
   print
   print "Copyright (c) 2002-2012 Chris Warren-Smith"
   print "Copyright (c) 2000-2006 Nicholas Christopoulos." + chr(10)
@@ -121,20 +121,25 @@ sub main
     local backPath, index
     backPath = ""
     index = iff(isstring(path), rinstr(path, "/"), 0)
-    if (index > 1) 
+    if (index > 0 && index == len(path)) then
+      index = rinstr(left(path, index - 1), "/")
+    fi
+    if (index == 1) then
+      index++
+    fi
+    if (index > 0) 
       backPath = left(path, index - 1)
+    else 
+      backPath = "/"
     endif
     path = backPath
   end
 
-  path = command
   do_intro = false
   if (command == "welcome") then
     do_intro = true
-    path = "/"
-  else 
-    path = cwd
   fi
+  path = cwd
 
   make_ui path, do_intro
 

@@ -57,8 +57,8 @@ void set_path(const char *filename) {
 // change the current working directory to the parent level folder
 bool set_parent_path() {
   bool result = true;
-  char path[OS_PATHNAME_SIZE + 1];
-  getcwd(path, OS_PATHNAME_SIZE);
+  char path[FILENAME_MAX + 1];
+  getcwd(path, FILENAME_MAX);
   if (!path[0] || strcmp(path, "/") == 0) {
     result = false;
   } else {

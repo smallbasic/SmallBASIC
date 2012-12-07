@@ -45,10 +45,11 @@ struct Controller : public Environment, IButtonListener {
   bool isModal() { return runMode == modal_state; }
   bool isBreak() { return runMode == exit_state || runMode == back_state; }
   bool isRunning() { return runMode == run_state || runMode == modal_state; }
-  void setExit(bool back);
+  void setExit(bool quit);
   void setRunning(bool running = true);
   void showError();
   void showCompletion(bool success);
+  void showMenu();
   void logPrint(const char *format, ...);
   void buttonClicked(const char *url);
   AnsiWidget *output;
@@ -77,6 +78,7 @@ private:
   int touchCurX;
   int touchCurY;
   int initialFontSize;
+  int fontScale;
   bool mainBas;
   bool systemMenu;
   bool systemScreen;

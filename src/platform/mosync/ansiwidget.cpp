@@ -54,7 +54,7 @@
 #define SWIPE_SCROLL_SLOW 20
 #define SWIPE_TRIGGER_FAST 55
 #define SWIPE_TRIGGER_SLOW 80
-#define FONT_FACTOR 32
+#define FONT_FACTOR 30
 
 char *options = NULL;
 FormList *clickedList = NULL;

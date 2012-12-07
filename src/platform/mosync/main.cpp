@@ -24,7 +24,7 @@ extern "C" int MAMain() {
   while (!controller->isExit()) {
     if (controller->isBack()) {
       if (mainBas) {
-        controller->setExit(set_parent_path());
+        controller->setExit(!set_parent_path());
       }
       if (!controller->isExit()) {
         mainBas = true;

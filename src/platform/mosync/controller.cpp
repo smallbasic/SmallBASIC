@@ -19,14 +19,17 @@
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 
-#define SHELL_MENU "\033[ OConsole|Show Keypad|View Source|Zoom +|Zoom -"
-#define APP_MENU   "\033[ OConsole|Show Keypad|View Source"
+#define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source"
 #define MENU_CONSOLE  0
 #define MENU_KEYPAD   1
 #define MENU_SOURCE   2
 #define MENU_ZOOM_UP  3
 #define MENU_ZOOM_DN  4
 #define ERROR_BAS "print \"Failed to open program file\""
+#define FONT_SCALE_INTERVAL 10
+#define FONT_MIN 20
+#define FONT_MAX 200
+#define STORE_VERSION 1
 
 Controller::Controller() :
   Environment(),
@@ -39,6 +42,7 @@ Controller::Controller() :
   touchCurX(-1),
   touchCurY(-1),
   initialFontSize(0),
+  fontScale(100),
   mainBas(false),
   systemMenu(false),
   systemScreen(false),
@@ -65,10 +69,73 @@ bool Controller::construct() {
   opt_usevmt = 0;
   os_graphics = 1;
 
+  // restore the selected font scale and path
+  MAHandle data = maCreatePlaceholder();
+  MAHandle store = maOpenStore(PACKAGE, 0);
+
+  if (store != STERR_NONEXISTENT) {
+    if (maReadStore(store, data) == RES_OK) {
+      int offset = 0;
+      int storeVersion;
+      int pathLength;
+      char path[FILENAME_MAX + 1];
+      
+      maReadData(data, &storeVersion, offset, sizeof(int));
+      offset += sizeof(int);
+
+      if (storeVersion == STORE_VERSION) {
+        maReadData(data, &fontScale, offset, sizeof(int));
+        offset += sizeof(int);        
+
+        if (fontScale != 100) {
+          int fontSize = (initialFontSize * fontScale / 100);
+          output->setFontSize(fontSize);
+        }
+        
+        maReadData(data, &pathLength, offset, sizeof(int));
+        maReadData(data, &path, offset+ sizeof(int), pathLength);
+        if (pathLength > 1) {
+          chdir(path);
+        }
+      }
+    }
+    maCloseStore(store, 1);
+  }
+  maDestroyPlaceholder(data);
+
   return true;
 }
 
 Controller::~Controller() {
+  // remember the selected font scale and path
+  char path[FILENAME_MAX + 1];
+  getcwd(path, FILENAME_MAX);
+  int pathLength = strlen(path) + 1;
+  int dataLength = (sizeof(int) * 3) + pathLength;
+  MAHandle data = maCreatePlaceholder();
+
+  if (maCreateData(data, dataLength) == RES_OK) {
+    int storeVersion = STORE_VERSION;
+    int offset = 0;
+
+    // write the version number
+    maWriteData(data, &storeVersion, offset, sizeof(int));
+    offset += sizeof(int);
+
+    // write the fontScale
+    maWriteData(data, &fontScale, offset, sizeof(int));
+    offset += sizeof(int);
+    
+    // write the current path
+    maWriteData(data, &pathLength, offset, sizeof(int));
+    maWriteData(data, path, offset + sizeof(int), pathLength);
+
+    MAHandle store = maOpenStore(PACKAGE, MAS_CREATE_IF_NECESSARY);
+    maWriteStore(store, data);
+    maCloseStore(store, 0);
+  }
+  maDestroyPlaceholder(data);
+
   delete output;
   delete [] programSrc;
 }
@@ -206,15 +273,15 @@ void Controller::handleMenu(int menuId) {
     maShowVirtualKeyboard();
     break;
   case MENU_ZOOM_UP:
-    fontSize = output->getFontSize();
-    if (fontSize < initialFontSize * 2) {
-      fontSize += (initialFontSize / 4);
+    if (fontScale > FONT_MIN) {
+      fontScale -= FONT_SCALE_INTERVAL;
+      fontSize = (initialFontSize * fontScale / 100);
     }
     break;
   case MENU_ZOOM_DN:
-    fontSize = output->getFontSize();
-    if (fontSize > initialFontSize / 2) {
-      fontSize -= (initialFontSize / 4);
+    if (fontScale < FONT_MAX) {
+      fontScale += FONT_SCALE_INTERVAL;
+      fontSize = (initialFontSize * fontScale / 100);
     }
     break;
   }
@@ -283,7 +350,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
       output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
-      setExit(false);
+      setExit(true);
       break;
     case EVENT_TYPE_KEY_PRESSED:
       handleKey(event.key);
@@ -354,11 +421,11 @@ char *Controller::readSource(const char *fileName) {
 }
 
 // stop and running program
-void Controller::setExit(bool back) {
+void Controller::setExit(bool quit) {
   if (isRunning()) {
     brun_break();
   }
-  runMode = back ? back_state : exit_state;
+  runMode = quit ? exit_state : back_state;
 }
 
 // commence runtime state
@@ -404,6 +471,19 @@ void Controller::showCompletion(bool success) {
   output->flush(true);
 }
 
+void Controller::showMenu() {
+  systemMenu = true;
+  if (mainBas) {
+    char buffer[128];
+    sprintf(buffer, "%s|Zoom %d%%|Zoom %d%%", SYSTEM_MENU, 
+            fontScale - FONT_SCALE_INTERVAL,
+            fontScale + FONT_SCALE_INTERVAL);
+    output->print(buffer);
+  } else {
+    output->print(SYSTEM_MENU);
+  }
+}
+
 void Controller::logPrint(const char *format, ...) {
   char buf[4096], *p = buf;
   va_list args;
@@ -443,12 +523,12 @@ void Controller::handleKey(int key) {
       output->print("\033[ SR");
       systemScreen = false;
     } else {
-      setExit(true);
+      // quit app when shell is active
+      setExit(mainBas);
     }
     return;
   case MAK_MENU:
-    systemMenu = true;
-    output->print(mainBas ? SHELL_MENU : APP_MENU);
+    showMenu();
     return;
   }
 
