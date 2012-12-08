@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="net.sourceforge.smallbasic"
 	android:versionCode="2"
-	android:versionName="0.11.1">	
+	android:versionName="0.11.2">	
   <application
 		  android:icon="@drawable/icon"
 		  android:label="@string/app_name">
