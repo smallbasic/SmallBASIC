@@ -518,7 +518,7 @@ void AnsiWidget::setColor(long fg) {
 // sets the text font size
 void AnsiWidget::setFontSize(int fontSize) {
   this->fontSize = fontSize;
-  for (int i = 0; i < SYSTEM_SCREENS; i++) {
+  for (int i = 0; i < MAX_SCREENS; i++) {
     if (screens[i] != NULL) {
       screens[i]->reset(fontSize);
     }
@@ -543,7 +543,7 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
     focus = front;
   } else {
     // hit test buttons on remaining screens
-    for (int i = 0; i < SYSTEM_SCREENS; i++) {
+    for (int i = 0; i < MAX_SCREENS; i++) {
       if (screens[i] != NULL && screens[i] != front) {
         if (setActiveButton(event, screens[i])) {
           focus = screens[i];
@@ -899,7 +899,7 @@ void AnsiWidget::screenCommand(char *&p) {
     break;
   case 'R': // redraw all user screens
     for (int i = 0; i < MAX_SCREENS; i++) {
-      if (screens[i] && i < SYSTEM_SCREENS) {
+      if (screens[i] != NULL && i < SYSTEM_SCREENS) {
         screens[i]->draw(false);
         front = back = screens[i];
       }
