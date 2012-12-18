@@ -43,8 +43,7 @@ void termination_handler(int signum) {
   ctrlc_count++;
   if (ctrlc_count == 1) {
     dev_printf("\n\n\033[0m\033[7m\a * %s %d * \033[0m\n", WORD_BREAK_AT, prog_line);
-  }
-  else if (ctrlc_count == 3) {
+  } else if (ctrlc_count == 3) {
     dev_restore();
     exit(1);
   }
@@ -80,14 +79,12 @@ int dev_init(int mode, int flags) {
 
     if (term_israw()) {
       setsysvar_str(SYSVAR_OSNAME, "Unix/RAW");
-    }
-    else {
+    } else {
       if (getenv("TERM")) {
         strcpy(buf, "Unix/Terminal:");
         strcat(buf, getenv("TERM"));
         setsysvar_str(SYSVAR_OSNAME, buf);
-      }
-      else {
+      } else {
         setsysvar_str(SYSVAR_OSNAME, "Unix/Stream");
       }
     }
@@ -163,8 +160,7 @@ int dev_init(int mode, int flags) {
         if (is_digit(*p)) {
           vi = (vi << 4) + (*p - '0');
           dg++;
-        }
-        else if (*p == '.') {
+        }  else if (*p == '.') {
           switch (dg) {
             case 0:
             vi = vi << 8;
@@ -523,9 +519,9 @@ char *dev_gets(char *dest, int size) {
 #endif
 
   /*
-   *      the 'input'
+   * the 'input'
    *
-   *      warning: getx/y routines are required
+   * warning: getx/y routines are required
    */
   *dest = '\0';
 
@@ -557,45 +553,37 @@ char *dev_gets(char *dest, int size) {
     }
     else {
 #endif
-    dev_setxy(prev_x, prev_y);
-    dev_print(dest);
-    dev_input_clreol(cx, cy);
+      dev_setxy(prev_x, prev_y, 0);
+      dev_print(dest);
+      dev_input_clreol(cx, cy);
 
-    //
-    tmp_lines = (prev_x + dev_textwidth(dest)) / os_graf_mx;
-    if (tmp_lines > lines) {
-      lines = tmp_lines;
-      while ((lines * cy) + prev_y >= (lpp * cy)) {
-        prev_y -= cy;
+      //
+      tmp_lines = (prev_x + dev_textwidth(dest)) / os_graf_mx;
+      if (tmp_lines > lines) {
+        lines = tmp_lines;
+        while ((lines * cy) + prev_y >= (lpp * cy)) {
+          prev_y -= cy;
+        }
       }
-    }
 
-    //
-    prev_ch = dest[pos];
-    dest[pos] = '\0';
-    w = dev_textwidth(dest);
-    dest[pos] = prev_ch;
+      //
+      prev_ch = dest[pos];
+      dest[pos] = '\0';
+      w = dev_textwidth(dest);
+      dest[pos] = prev_ch;
 
-    tmp_lines = (prev_x + w) / os_graf_mx;
+      tmp_lines = (prev_x + w) / os_graf_mx;
+      
+      disp_y = prev_y + tmp_lines * cy;
+      disp_x = (prev_x + w) - (tmp_lines * os_graf_mx) + (tmp_lines * dev_textwidth(" ")); 
 
-    disp_y = prev_y + tmp_lines * cy;
-    disp_x = (prev_x + w) - (tmp_lines * os_graf_mx) + (tmp_lines * dev_textwidth(" "));  // TODO:
-                                                                                          //
-    // +
-    // width
-    // of
-    // chars
-    // at
-    // the
-    // end
-    // of
-    // prev
-    // lines
+      // TODO:
+      // + width of chars at the end of prev lines
 
-    dev_setxy(disp_x, disp_y);
-    dev_drawcursor(disp_x, disp_y);
+      dev_setxy(disp_x, disp_y, 0);
+      dev_drawcursor(disp_x, disp_y);
 #if USE_TERM_IO
-  }
+    }
 #endif
 
     // wait for event
@@ -676,6 +664,7 @@ char *dev_gets(char *dest, int size) {
     }                           // dev_kbhit() loop
 
   } while (ch != '\n' && ch != '\r');
+  
   dest[len] = '\0';
 
 #if USE_TERM_IO
@@ -684,25 +673,15 @@ char *dev_gets(char *dest, int size) {
   }
   else {
 #endif
-  dev_setxy(prev_x, prev_y);
-  dev_print(dest);
-  dev_input_clreol(cx, cy);
+    dev_setxy(prev_x, prev_y, 0);
+    dev_print(dest);
+    dev_input_clreol(cx, cy);
 #if USE_TERM_IO
-}
+  }
 #endif
   return dest;
 }
 #endif // #ifndef IMPL_DEV_GETS
-/**
- * returns data from pointing-device
- * (see PEN(x), osd_getpen(x))
- */
-int dev_getpen(int code) {
-  if (os_graphics) {
-    return osd_getpen(code);
-  }
-  return 0;
-}
 
 /**
  * BEEP :)

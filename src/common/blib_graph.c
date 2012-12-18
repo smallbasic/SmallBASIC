@@ -70,8 +70,9 @@ void cmd_view() {
     }
     dev_setcolor(prev_color);
     dev_viewport(p1.x, p1.y, p2.x, p2.y);
-  } else
+  } else {
     dev_viewport(0, 0, 0, 0);
+  }
 }
 
 //
@@ -92,8 +93,9 @@ void cmd_window() {
       return;
     dev_window(p1.x, p2.y, p2.x, p1.y); // QB compatible
     // dev_window(p1.x, p1.y, p2.x, p2.y); // SB default (logical one)
-  } else
+  } else {
     dev_window(0, 0, 0, 0);
+  }
 }
 
 //
@@ -160,12 +162,12 @@ void cmd_line() {
   }
 
   p1 = par_getipt();
-  if (step)
+  if (step) {
     (p1.x += gra_x, p1.y += gra_y, step = 0);
-
-  if (code_peek() == kwTYPE_SEP)
+  }
+  if (code_peek() == kwTYPE_SEP) {
     par_getcomma();
-
+  }
   /*
    * x, y [,] ---> [STEP] ?
    */
@@ -568,8 +570,9 @@ void cmd_arc() {
     dev_setcolor(color);
     dev_arc(pt.x, pt.y, r, as, ae, aspect);
     dev_setcolor(prev_color);
-  } else
+  } else {
     dev_arc(pt.x, pt.y, r, as, ae, aspect);
+  }
 }
 
 //
@@ -594,29 +597,34 @@ void cmd_paint() {
 
   // xc,yc
   pt = par_getipt();
-  if (prog_error)
+  if (prog_error) {
     return;
-  if (step)
+  }
+  if (step) {
     (pt.x += gra_x, pt.y += gra_y);
-
+  }
   // fillcolor
   if (code_peek() == kwTYPE_SEP) {
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
     fc = par_getint();
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
   }
 
   // bordercolor
   if (code_peek() == kwTYPE_SEP) {
     par_getcomma();
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
     bc = par_getint();
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
   }
 
   dev_setcolor(color);
@@ -638,8 +646,9 @@ char *draw_getval(const char *src, int *c) {
     p++;
   }
 
-  while (is_digit(*p))
+  while (is_digit(*p)) {
     *dst++ = *p++;
+  }
   *dst = '\0';
 
   *c = xstrtol(buf);
@@ -657,8 +666,9 @@ void cmd_draw() {
   var_t var;
 
   par_getstr(&var);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   p = (char *) var.v.p.ptr;
   while (*p) {
 
@@ -688,40 +698,49 @@ void cmd_draw() {
     case 'U':
     case 'u':                  // up
       p = draw_getval(p, &y);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x, gra_y - y);
-      if (update)
+      }
+      if (update) {
         gra_y -= y;
+      }
       continue;
     case 'D':
     case 'd':                  // down
       p = draw_getval(p, &y);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x, gra_y + y);
-      if (update)
+      }
+      if (update) {
         gra_y += y;
+      }
       continue;
     case 'L':
     case 'l':                  // left
       p = draw_getval(p, &x);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x - x, gra_y);
-      if (update)
+      }
+      if (update) {
         gra_x -= x;
+      }
       continue;
     case 'R':
     case 'r':                  // right
       p = draw_getval(p, &x);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x + x, gra_y);
-      if (update)
+      }
+      if (update) {
         gra_x += x;
+      }
       continue;
     case 'E':
     case 'e':                  // up & right
       p = draw_getval(p, &x);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x + x, gra_y - x);
+      }
       if (update) {
         gra_x += x;
         gra_y -= x;
@@ -730,8 +749,9 @@ void cmd_draw() {
     case 'F':
     case 'f':                  // down & right
       p = draw_getval(p, &x);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x + x, gra_y + x);
+      }
       if (update) {
         gra_x += x;
         gra_y += x;
@@ -740,8 +760,9 @@ void cmd_draw() {
     case 'G':
     case 'g':                  // down & left
       p = draw_getval(p, &x);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x - x, gra_y + x);
+      }
       if (update) {
         gra_x -= x;
         gra_y += x;
@@ -750,8 +771,9 @@ void cmd_draw() {
     case 'H':
     case 'h':                  // up & left
       p = draw_getval(p, &x);
-      if (draw)
+      if (draw) {
         dev_line(gra_x, gra_y, gra_x - x, gra_y - x);
+      }
       if (update) {
         gra_x -= x;
         gra_y -= x;
@@ -766,9 +788,9 @@ void cmd_draw() {
       if (*(p + 1) == '+') {    // relative
         r = 1;
         p++;
-      } else
+      } else {
         r = 0;                  // absolute
-
+      }
       p = draw_getval(p, &x);
       if (*p != ',') {
         rt_raise(ERR_DRAW_SEP);
@@ -789,8 +811,9 @@ void cmd_draw() {
           gra_y += x * r;
         }
       } else {
-        if (draw)
+        if (draw) {
           dev_line(gra_x, gra_y, x, y);
+        }
         if (update) {
           gra_x = x;
           gra_y = y;
@@ -836,24 +859,27 @@ void cmd_draw() {
 void cmd_chart_fstr(var_num_t v, char *buf) {
   if (fabs(v) >= 10E+9) {
     ftostr(v / 1E+9, buf);
-    if (buf[3] == '.')
+    if (buf[3] == '.') {
       buf[3] = '\0';
-    else
+    } else {
       buf[4] = '\0';
+    }
     strcat(buf, "G");
   } else if (fabs(v) >= 10E+6) {
     ftostr(v / 1E+6, buf);
-    if (buf[3] == '.')
+    if (buf[3] == '.') {
       buf[3] = '\0';
-    else
+    } else {
       buf[4] = '\0';
+    }
     strcat(buf, "M");
   } else if (fabs(v) >= 10E+3) {
     ftostr(v / 1E+3, buf);
-    if (buf[3] == '.')
+    if (buf[3] == '.') {
       buf[3] = '\0';
-    else
+    } else {
       buf[4] = '\0';
+    }
     strcat(buf, "K");
   } else {
     ftostr(v, buf);
@@ -872,7 +898,7 @@ void cmd_chart_fstr(var_num_t v, char *buf) {
  *   marks = marks type (2 & ruler, 1 & marks)
  */
 void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_num_t *xvals, int xcount,
-    int chart, int marks) {
+                int chart, int marks) {
   int *pts;
   int rx1, dx, dy, i;
   var_num_t vmin, vmax, lx, ly;
@@ -905,17 +931,20 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
   // limits
   vmin = vmax = vals[0];
   for (i = 1; i < count; i++) {
-    if (vmin > vals[i])
+    if (vmin > vals[i]) {
       vmin = vals[i];
-    if (vmax < vals[i])
+    }
+    if (vmax < vals[i]) {
       vmax = vals[i];
+    }
   }
 
-  if (chart == 1)               // line-chart
+  if (chart == 1) {
+    // line-chart
     lx = ((var_num_t) dx) / (var_num_t) (count - 1);
-  else
+  } else {
     lx = ((var_num_t) dx) / (var_num_t) count;
-
+  }
   ly = ((var_num_t) dy) / (vmax - vmin);
 
   // calc points
@@ -935,22 +964,23 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
 
     if ((n - 1) > 0) {
       for (i = 0; i <= n; i++) {
-        if (i == 0)
+        if (i == 0) {
           v = vmin;
-        else if (i == n)
+        }
+        else if (i == n) {
           v = vmax;
-        else
+        } else {
           v = vmin + (((var_num_t) i + 1) * ((vmax - vmin) / (var_num_t) (n + 1)));
-
+        }
         cmd_chart_fstr(v, buf);
 
         y = y1 + (dy - ((v - vmin) * ly));
 
-        if (i != 0)
-          dev_setxy(rx1 + 1, y + 1);
-        else
-          dev_setxy(rx1 + 1, y - fh);
-
+        if (i != 0) {
+          dev_setxy(rx1 + 1, y + 1, 0);
+        } else {
+          dev_setxy(rx1 + 1, y - fh, 0);
+        }
         dev_print(buf);
         dev_line(x1 - 4, y, x1, y);
       }
@@ -960,21 +990,21 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
     fw = dev_textwidth("000");
     n = -1;
     if (count <= 24) {
-      if (count * (fw * 1.34) < dx)
+      if (count * (fw * 1.34) < dx) {
         n = count;
+      }
     }
 
-    if (n == -1)
+    if (n == -1) {
       n = dx / (fw * 1.5);
-
+    }
     if ((n - 1) > 0) {
       for (i = 0; i < n; i++) {
-
-        if (i == 0)
+        if (i == 0) {
           v = 0;
-        else
+        } else {
           v = i * ((var_num_t) count / (var_num_t) n);
-
+        }
         if (xvals) {
           // I have xvals
           var_num_t x, dx;
@@ -983,13 +1013,13 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
           xmin = xvals[0];
           xmax = xvals[xcount - 1];
           dx = xmax - xmin;
-          if (i == 0)
+          if (i == 0) {
             x = xmin;
-          else if (i == n)
+          } else if (i == n) {
             x = xmax;
-          else
+          } else {
             x = xmin + ((dx / n) * i);
-
+          }
           ftostr(x, buf);
         } else {
           // i don't have xvals
@@ -1002,11 +1032,12 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
 
         x = x1 + v * lx;
 
-        if (chart == 1 || chart == 5)
-          dev_setxy(x - fw, y2 + 1);
-        else {
-          if (x + fw + 1 < x2)
-            dev_setxy(x + 1, y2 + 1);
+        if (chart == 1 || chart == 5) {
+          dev_setxy(x - fw, y2 + 1, 0);
+        } else {
+          if (x + fw + 1 < x2) {
+            dev_setxy(x + 1, y2 + 1, 0);
+          }
         }
 
         dev_print(buf);
@@ -1029,11 +1060,13 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
   case 1:                      // line chart
   case 5:                      // points
     if (chart == 5) {
-      for (i = 0; i < count; i++)
+      for (i = 0; i < count; i++) {
         dev_setpixel(pts[i * 2], pts[i * 2 + 1]);
+      }
     } else {
-      for (i = 1; i < count; i++)
+      for (i = 1; i < count; i++) {
         dev_line(pts[(i - 1) * 2], pts[(i - 1) * 2 + 1], pts[i * 2], pts[i * 2 + 1]);
+      }
     }
 
     // draw marks
@@ -1050,16 +1083,17 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
         mx = pts[i * 2] - fw / 2;
         my = pts[i * 2 + 1];
 
-        if (my > (y1 + (y2 - y1) / 2))
+        if (my > (y1 + (y2 - y1) / 2)) {
           my -= fh;
-        if (mx <= x1)
+        }
+        if (mx <= x1) {
           mx = x1 + 1;
-        if (mx + fw >= x2)
+        }
+        if (mx + fw >= x2) {
           mx = x2 - fw;
-
-        dev_setxy(mx, my);
+        }
+        dev_setxy(mx, my, 0);
         dev_print(buf);
-
         dev_rect(pts[i * 2] - 2, pts[i * 2 + 1] - 2, pts[i * 2] + 2, pts[i * 2 + 1] + 2, 1);
       }
     }
@@ -1072,14 +1106,16 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
       if (os_color_depth > 2) {
         dev_setcolor(color);
         color++;
-        if (color >= 15)
+        if (color >= 15) {
           color = 0;
+        }
       }
       dev_rect(pts[(i - 1) * 2], pts[(i - 1) * 2 + 1], pts[i * 2] - 2, y2, 1);
     }
 
-    if (os_color_depth > 2)
+    if (os_color_depth > 2) {
       dev_setcolor(color);
+    }
     dev_rect(pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[(count - 1) * 2] + lx - 1, y2, 1);
 
     // draw marks
@@ -1098,29 +1134,32 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
         my = pts[i * 2 + 1];
 
         if (os_color_depth > 2) {
-          if (my - fh >= y1)
+          if (my - fh >= y1) {
             dev_settextcolor(0, 15);
-          else {
-            if (color >= 7 && color != 8)
+          } else {
+            if (color >= 7 && color != 8) {
               dev_settextcolor(0, color);
-            else
+            } else {
               dev_settextcolor(15, color);
+            }
           }
 
           color++;
-          if (color >= 15)
+          if (color >= 15) {
             color = 0;
+          }
         }
 
-        if (my - fh >= y1)
+        if (my - fh >= y1) {
           my -= fh;
-
-        if (mx <= x1)
+        }
+        if (mx <= x1) {
           mx = x1 + 1;
-        if (mx + fw >= x2)
+        }
+        if (mx + fw >= x2) {
           mx = x2 - fw;
-
-        dev_setxy(mx, my);
+        }
+        dev_setxy(mx, my, 0);
         dev_print(buf);
       }
     }
@@ -1341,8 +1380,9 @@ void cmd_m3rotate() {
     if (prog_error)
       return;
     y = par_getnum();
-    if (prog_error)
+    if (prog_error) {
       return;
+    }
   }
 
   c = cos(angle);

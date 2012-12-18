@@ -73,7 +73,7 @@ void plot_draw_x_axis(var_num_t xmin, var_num_t xmax, int left, int right, int y
     ftostr(x, buf);
     buf[3] = '\0';
     fw = dev_textwidth(buf);
-    dev_setxy(sx - fw, y + 1);
+    dev_setxy(sx - fw, y + 1, 0);
     dev_print(buf);
     dev_line(sx, y, sx, y + smin_dy);
   }
@@ -103,7 +103,7 @@ void plot_draw_y_axis(var_num_t ymin, var_num_t ymax, int top, int bottom, int x
     ftostr(y, buf);
     buf[3] = '\0';
     fh = dev_textheight(buf);
-    dev_setxy(x - dev_textwidth(buf), sy - fh);
+    dev_setxy(x - dev_textwidth(buf), sy - fh, 0);
     dev_print(buf);
     dev_line(x, sy, x - smin_dx, sy);
   }

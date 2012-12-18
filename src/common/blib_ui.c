@@ -218,7 +218,7 @@ void ui_draw_button(ui_button_t * args) {
     y2 = args->y + args->h;
 
     dev_rect(x1, y1, x2, y2, 0);
-    dev_setxy(args->x, args->y);
+    dev_setxy(args->x, args->y, 0);
     dev_print(args->text);
     return;
   }
@@ -237,7 +237,7 @@ void ui_draw_button(ui_button_t * args) {
   dev_line(x1 + 1, y2 + 1, x2 + 1, y2 + 1);
   dev_line(x2 + 1, y1 + 1, x2 + 1, y2 + 1);
   dev_settextcolor(0, 15);
-  dev_setxy(args->x, args->y);
+  dev_setxy(args->x, args->y, 0);
   dev_print(args->text);
 }
 
@@ -245,7 +245,7 @@ void ui_draw_button(ui_button_t * args) {
  * draw text
  */
 void ui_draw_text(ui_text_t * args) {
-  dev_setxy(args->x, args->y);
+  dev_setxy(args->x, args->y, 0);
   dev_print(args->text);
 }
 

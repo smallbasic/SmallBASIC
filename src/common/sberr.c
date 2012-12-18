@@ -13,8 +13,6 @@
 #include <string.h>
 #include <errno.h>
 
-void err_common_msg(const char *seg, const char *file, int line, const char *descr) SEC(TRASH);
-
 /**
  * common message handler
  */
@@ -29,9 +27,6 @@ void err_common_msg(const char *seg, const char *file, int line, const char *des
   log_printf("\n\033[0m\033[80m\n");
   log_printf("\033[7m * %s-%s %s:%d * \033[0m\a\n\n", seg, WORD_ERROR_AT, file, line);
   log_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
-#if defined(_PalmOS)
-  log_printf("\n\033[4mPress '.' to return...\033[0m\n");
-#endif
   log_printf("\033[80m\033[0m");
 }
 
@@ -102,28 +97,23 @@ void err_file(dword code) {
 }
 
 #if defined(OS_LIMITED)
-void err_missing_rp(void)
-{
+void err_missing_rp(void) {
   rt_raise(ERR_MISSING_RP);
 }
 
-void err_matdim(void)
-{
+void err_matdim(void) {
   rt_raise(ERR_MATRIX_DIM);
 }
 
-void err_syntax(void)
-{
+void err_syntax(void) {
   rt_raise(ERR_SYNTAX);
 }
 
-void err_syntaxsep(int c)
-{
+void err_syntaxsep(int c) {
   rt_raise(ERR_MISSING_SEP, c);
 }
 
-void err_parm_num(void)
-{
+void err_parm_num(void) {
   rt_raise(ERR_PARCOUNT);
 }
 #endif
@@ -288,16 +278,7 @@ void inf_done() {
   else {
 #endif
 
-#if defined(_PalmOS)
-  dev_print("\a\n");
-  dev_settextcolor(15, 0);
-  dev_setxy(0, os_graf_my - 9);
-  dev_printf
-  ("\033[91m\033[0m\033[7m * %s * - Press '.' to return\4 \033[80m\033[0m",
-      WORD_DONE);
-#else
   dev_printf("\n\033[0m\033[80m\a\033[7m * %s * \033[0m\n", WORD_DONE);
-#endif
 
 #if USE_TERM_IO
 }
@@ -314,14 +295,7 @@ void inf_break(int pline) {
   sprintf(gsb_last_errmsg, "%s %d", WORD_BREAK_AT, pline);
 
   dev_settextcolor(15, 0);
-#if defined(_PalmOS)
-  dev_print("\a\n");
-  dev_setxy(0, os_graf_my - 9);
-  dev_printf("\033[91m\033[0m\033[7m * %s %d * - Press '.' to return\4 \033[80m\033[0m",
-      WORD_BREAK_AT, pline);
-#else
   log_printf("\n\033[0m\033[80m\a\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT, pline);
-#endif
 }
 
 /**

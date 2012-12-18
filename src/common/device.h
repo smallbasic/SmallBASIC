@@ -403,7 +403,7 @@ void dev_clreol(void); // clear the console line from the current
  * @param x the x in pixels
  * @param y the y in pixels
  */
-void dev_setxy(int x, int y);  // set cursor position. parameters in pixels.
+void dev_setxy(int x, int y, int transform);  // set cursor position. parameters in pixels.
 
 /**
  * @ingroup dev_g

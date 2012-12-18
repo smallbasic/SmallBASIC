@@ -99,7 +99,7 @@ bool Controller::construct() {
         }
       }
     }
-    maCloseStore(store, 1);
+    maCloseStore(store, 0);
   }
   maDestroyPlaceholder(data);
 

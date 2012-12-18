@@ -12,12 +12,17 @@
 #include "common/device.h"
 #include "common/messages.h"
 
-#define W2X(x)  ( ( (((x)-dev_Wx1)*dev_Vdx)/dev_Wdx ) + dev_Vx1 )
-#define W2Y(y)  ( ( (((y)-dev_Wy1)*dev_Vdy)/dev_Wdy ) + dev_Vy1 )
+#define W2X(x) (((((x) - dev_Wx1) * dev_Vdx) / dev_Wdx) + dev_Vx1)
+#define W2Y(y) (((((y) - dev_Wy1) * dev_Vdy) / dev_Wdy) + dev_Vy1)
+#define X2W(x) (((((x) - dev_Vx1) * dev_Wdx) / dev_Vdx) + dev_Wx1)
+#define Y2W(y) (((((y) - dev_Vy1) * dev_Wdy) / dev_Vdy) + dev_Wy1)
 #define W2D2(x,y) { (x) = W2X((x)); (y) = W2Y((y)); }
 #define W2D4(x1,y1,x2,y2) { W2D2((x1),(y1)); W2D2((x2),(y2)); }
-#define CLIPENCODE(x,y,c) { c = (x < dev_Vx1); c |= ((y < dev_Vy1) << 1); c |= ((x > dev_Vx2) << 2); c |= ((y > dev_Vy2) << 3); }
-#define CLIPIN(c)       ((c & 0xF) == 0)
+#define CLIPENCODE(x,y,c) { c = (x < dev_Vx1); \
+                            c |= ((y < dev_Vy1) << 1); \
+                            c |= ((x > dev_Vx2) << 2); \
+                            c |= ((y > dev_Vy2) << 3); }
+#define CLIPIN(c) ((c & 0xF) == 0)
 
 dword os_ver = 0x40000;
 byte os_color = 1;
@@ -49,6 +54,31 @@ long dev_fgcolor = 0;
 long dev_bgcolor = 15;
 
 /**
+ * Returns data from pointing-device
+ * (see PEN(x), osd_getpen(x))
+ */
+int dev_getpen(int code) {
+  int result = 0;
+  if (os_graphics) {
+    result = osd_getpen(code);
+    switch (code) {
+    case 1:
+    case 4:
+    case 10:
+      result = X2W(result);
+      break;
+
+    case 2:
+    case 5:
+    case 11:
+      result = Y2W(result);
+      break;
+    }
+  }
+  return result;
+}
+
+/**
  * enable/disable default pointing device (pen or mouse)
  */
 void dev_setpenmode(int enable) {
@@ -61,7 +91,7 @@ void dev_setpenmode(int enable) {
  * clear to eol
  */
 void dev_clreol() {
-  dev_print("\033[K");          // ANSI
+  dev_print("\033[K");
 }
 
 /**
@@ -96,18 +126,23 @@ int dev_gety() {
  * sets the position of cursor
  * x,y are in pixels
  */
-void dev_setxy(int x, int y) {
+void dev_setxy(int x, int y, int transform) {
   if (x < 0 || x > os_graf_mx) {
     return;
   }
   if (y < 0 || y > os_graf_my) {
     return;
   }
+
+  if (transform) {
+    x = W2X(x);
+    y = W2Y(y);
+  }
+
 #if USE_TERM_IO
   if (os_graphics) {
     osd_setxy(x, y);
-  }
-  else {
+  } else {
     term_setxy(x, y);
   }
 #else
@@ -123,36 +158,34 @@ void dev_settextcolor(long fg, long bg) {
 #if USE_TERM_IO
   if (os_graphics) {
 #endif
-  if (bg == -1) {
-    bg = dev_bgcolor;
-  }
-
-  if ((fg <= 15) && (bg <= 15) && (fg >= 0) && (bg >= 0)) { // VGA
-    if (bg != -1) {
-      dev_bgcolor = bg;
+    if (bg == -1) {
+      bg = dev_bgcolor;
     }
-    osd_settextcolor(dev_fgcolor = fg, dev_bgcolor);
-  } else {
-    osd_settextcolor((dev_fgcolor = fg), (dev_bgcolor = bg));
-  }
+
+    if ((fg <= 15) && (bg <= 15) && (fg >= 0) && (bg >= 0)) { // VGA
+      if (bg != -1) {
+        dev_bgcolor = bg;
+      }
+      osd_settextcolor(dev_fgcolor = fg, dev_bgcolor);
+    } else {
+      osd_settextcolor((dev_fgcolor = fg), (dev_bgcolor = bg));
+    }
 
 #if USE_TERM_IO
-      }
-      else {
-        term_settextcolor(fg, bg);
-      }
+  } else {
+    term_settextcolor(fg, bg);
+  }
 #endif
-      }
+}
 
-    /**
-     * prints a string
-     */
+/**
+ * prints a string
+ */
 void dev_print(const char *str) {
 #if USE_TERM_IO
   if (os_graphics) {
     osd_write(str);
-  }
-  else {
+  } else {
     term_print(str);
   }
 #else
@@ -167,8 +200,7 @@ void dev_cls() {
 #if USE_TERM_IO
   if (os_graphics) {
     osd_cls();
-  }
-  else {
+  } else {
     term_cls();
   }
 #else
@@ -203,18 +235,17 @@ void dev_setcolor(long color) {
 #if USE_TERM_IO
   if (os_graphics) {
 #endif
-  if (color <= 15 && color >= 0) {
-    osd_setcolor(dev_fgcolor = color);
-  } else if (color < 0) {
-    osd_setcolor((dev_fgcolor = color));
-  }
+    if (color <= 15 && color >= 0) {
+      osd_setcolor(dev_fgcolor = color);
+    } else if (color < 0) {
+      osd_setcolor((dev_fgcolor = color));
+    }
 #if USE_TERM_IO
-}
-else {
-  if (color <= 15 && color >= 0) {
-    term_settextcolor(color, -1);
+  } else {
+    if (color <= 15 && color >= 0) {
+      term_settextcolor(color, -1);
+    }
   }
-}
 #endif
 }
 

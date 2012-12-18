@@ -2138,7 +2138,7 @@ void cmd_at() {
 
   par_massget("II", &x, &y);
   if (!prog_error) {
-    dev_setxy(x, y);
+    dev_setxy(x, y, 1);
   }
 }
 
@@ -2153,9 +2153,9 @@ void cmd_locate() {
     return;
   }
   if (os_graphics) {
-    dev_setxy(x * dev_textwidth("0"), y * dev_textheight("0"));
+    dev_setxy(x * dev_textwidth("0"), y * dev_textheight("0"), 0);
   } else {
-    dev_setxy(x, y);
+    dev_setxy(x, y, 0);
   }
 }
 
