@@ -34,7 +34,7 @@ sbasic_SOURCES =																\
     ../../common/g_line.c												\
 	  ../../common/decomp.c
 
-sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src/common -lsb_common
+sbasic_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
 if !WITH_WIN32
 sbasic_LDADD += -ldl

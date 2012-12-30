@@ -784,7 +784,7 @@ void osd_write(const char *str) {
           dcolor = color;
           break;
         case 'G':
-          dev_setxy(esc_val * 8, dev_gety());   // default font = 9x16
+          dev_setxy(esc_val * 8, dev_gety(), 0);   // default font = 9x16
           break;
         case 'm':              // \e[...m - ANSI terminal
           switch (esc_val) {
