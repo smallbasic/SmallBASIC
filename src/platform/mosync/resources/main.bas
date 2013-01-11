@@ -28,7 +28,7 @@ sub about()
   print " _\ \/  ' \/ _ `/ / / _  / __ |_\ \_/ // /__  "
   print "/___/_/_/_/\_,_/_/_/____/_/ |_/___/___/\___/  "
   print
-  print "Version 0.11.3"
+  print "Version 0.11.4"
   print
   print "Copyright (c) 2002-2012 Chris Warren-Smith"
   print "Copyright (c) 2000-2006 Nicholas Christopoulos." + chr(10)
