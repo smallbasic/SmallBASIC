@@ -319,7 +319,7 @@ int GraphicScreen::getPixel(int x, int y) {
   rc.height = 1;
 
   int data[1];
-  int result = 0;
+  int result;
 
   maGetImageData(image, &data, &rc, 1);
   result = -(data[0] & 0x00FFFFFF);

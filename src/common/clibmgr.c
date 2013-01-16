@@ -114,7 +114,7 @@ void clib_unloadlib(int handle) {
     if (table[handle].handle) {
 #if defined(_UnixOS)
       dlclose(table[handle].handle);
-#elif defined(_Win32
+#elif defined(_Win32)
       FreeLibrary((HMODULE) table[handle].handle);
 #endif
       table[handle].handle = NULL;

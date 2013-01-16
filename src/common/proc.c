@@ -1119,7 +1119,7 @@ int par_massget_type_check(char fmt, par_t * par) {
  */
 int par_massget(const char *fmt, ...) {
   char *fmt_p = NULL;
-  int pcount = 0, rqcount, optcount, curpar;
+  int pcount, rqcount, optcount, curpar;
   int opt = 0, ignore = 0;
   va_list ap;
   par_t *ptable;

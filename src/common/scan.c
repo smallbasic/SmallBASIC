@@ -1445,7 +1445,7 @@ int comp_getlist(char *source, char_p_t * args, char *delims, int maxarg) {
  * returns the next position in 'source' (after the sep[1])
  */
 char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims, int maxarg, int *count) {
-  char *p = source;
+  char *p;
   char *ps;
   int level = 1;
 
@@ -3378,7 +3378,7 @@ int comp_bas_exist(const char *basfile) {
  * load a source file
  */
 char *comp_load(const char *file_name) {
-  char *buf = NULL;
+  char *buf;
   int h;
 
   strcpy(comp_file_name, file_name);

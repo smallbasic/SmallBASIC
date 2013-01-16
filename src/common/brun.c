@@ -1930,7 +1930,7 @@ void sys_after_run() {
  * execute the code on this task
  */
 int sbasic_exec_task(int tid) {
-  int prev_tid, success = 1;
+  int prev_tid, success;
 
   prev_tid = activate_task(tid);
 

@@ -38,7 +38,7 @@ void cmd_beep() {
 // SOUND frq, dur [, vol] [BG]
 //
 void cmd_sound() {
-  int frq = 440, ms = 250, vol = 100;
+  int frq, ms = 250, vol = 100;
   int bg = 0;
 
   frq = par_getint();

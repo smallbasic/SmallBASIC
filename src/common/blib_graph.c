@@ -1181,7 +1181,8 @@ void cmd_chart() {
   int32 prev_bgcolor = dev_bgcolor;
 
   // parameters
-  int chart = 0, marks = 0;
+  int chart;
+  int marks = 0;
   int x1 = 0, y1 = 0, x2 = os_graf_mx, y2 = os_graf_my;
 
   // chart type

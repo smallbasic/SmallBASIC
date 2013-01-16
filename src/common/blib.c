@@ -29,7 +29,7 @@
  * CONST v[(x)] = any
  */
 void cmd_let(int allowConst) {
-  var_t *var_p = NULL;
+  var_t *var_p;
   var_t arg;
 
   var_p = code_getvarptr();
@@ -2914,15 +2914,12 @@ void cmd_exprseq(void) {
     use_ip = code_getaddr();
     exit_ip = code_getaddr();
 
-    //
     if (count > 1) {
       v_toarray1(var_p, count);
       dx = (xmax - xmin) / (count - 1);
 
       // add the entries
       for (i = 0, x = xmin; i < count; i++, x += dx) {
-        elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * i));
-
         elem_p = v_elem(var_p, i);
         v_setreal(elem_p, x);
         exec_usefunc(elem_p, use_ip);
@@ -2935,7 +2932,6 @@ void cmd_exprseq(void) {
       v_toarray1(var_p, 0);
     }
 
-    //
     code_jump(exit_ip);
   }
 }
@@ -2953,7 +2949,8 @@ void cmd_html() {
   par_massget("Ssiiii", &html, &title, &x, &y, &w, &h);
   if (!prog_error) {
     dev_html(html, title, x, y, w, h);
-  }pfree2(html, title);
+  }
+  pfree2(html, title);
 }
 
 /**

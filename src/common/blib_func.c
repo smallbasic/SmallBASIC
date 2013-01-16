@@ -2860,7 +2860,8 @@ void cmd_genfunc(long funcCode, var_t * r) {
     //
   case kwGAUSSJORDAN: {
     var_num_t toler = 0.0;
-    var_num_t *m1 = NULL, *m2 = NULL;
+    var_num_t *m1;
+    var_num_t *m2 = NULL;
     int32 n, rows, cols;
     var_t *a, *b;
 
@@ -2924,7 +2925,7 @@ void cmd_genfunc(long funcCode, var_t * r) {
     // array <- INVERSE(A)
     //
   case kwINVERSE: {
-    var_num_t *m1 = NULL;
+    var_num_t *m1;
     int32 n, rows, cols;
     var_t *a;
 
