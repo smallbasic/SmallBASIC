@@ -302,8 +302,8 @@ void MainWindow::quit(Widget *w, void *eventData) {
     }
     exit(0);
   } else {
-    switch (choice("Terminate running program?", "Exit", "Break", "Cancel")) {
-    case 0:
+    switch (choice("Terminate running program?", "*Exit", "Break", "Cancel")) {
+    case 2:
       exit(0);
     case 1:
       setBreak();
@@ -804,10 +804,7 @@ int arg_cb(int argc, char **argv, int &i) {
  * start the application in run mode
  */
 void run_mode_startup(void *data) {
-  remove_check(run_mode_startup, data);
-
   if (data) {
-    fltk::wait();
     Window *w = (Window *)data;
     w->destroy();
   }
@@ -894,7 +891,7 @@ bool initialise(int argc, char **argv) {
   case run_state:
     run_wnd = new Window(0, 0);
     run_wnd->show();
-    add_check(run_mode_startup, run_wnd);
+    add_timeout(0.5f, run_mode_startup, run_wnd);
     break;
 
   case edit_state:
