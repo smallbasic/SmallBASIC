@@ -1,7 +1,7 @@
 /** 
  * Convert BASIC programs of various dialects into SmallBASIC programs
  *
- * Copyright(C) 2009 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+ * Copyright(C) 2009-2013 Chris Warren-Smith.
  *
  * This program is distributed under the terms of the GPL v2.0 or later
  * Download the GNU Public License (GPL) from www.gnu.org
@@ -14,11 +14,16 @@ options {
 }
 
 @header {
+package net.sourceforge.smallbasic.translator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+}
+
+@lexer::header {
+package net.sourceforge.smallbasic.translator;
 }
 
 @members {

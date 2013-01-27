@@ -1,4 +1,15 @@
-CLASSPATH:="/home/chris/antlr/antlr-3.1.2/lib/antlr-3.1.2.jar:."
+CLASSPATH:="c:/devtools/antlr/antlr-3.5-complete-no-st3.jar;."
+
+#
+# JAR files deployed with project
+#
+#./war/WEB-INF/lib/antlr-runtime-3.5.jar
+#./war/WEB-INF/lib/appengine-api-1.0-sdk-1.7.4.jar
+#./war/WEB-INF/lib/appengine-api-labs.jar
+#./war/WEB-INF/lib/appengine-endpoints.jar
+#./war/WEB-INF/lib/appengine-jsr107cache-1.7.4.jar
+#./war/WEB-INF/lib/jsr107cache-1.1.jar
+#
 
 all: Translator.class
 
