@@ -147,12 +147,12 @@ void write_encoded_var(int handle, var_t * var) {
   fv.type = var->type;
   switch (var->type) {
   case V_INT:
-    fv.size = 4;
+    fv.size = OS_INTSZ;
     dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
     dev_fwrite(handle, (byte *)&var->v.i, fv.size);
     break;
   case V_NUM:
-    fv.size = 8;
+    fv.size = OS_REALSZ;
     dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
     dev_fwrite(handle, (byte *)&var->v.n, fv.size);
     break;

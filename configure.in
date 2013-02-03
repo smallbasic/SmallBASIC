@@ -553,6 +553,7 @@ function buildConsole() {
          AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
+         AC_DEFINE(OS_PREC64, 1, [64 bit variables])
          PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lncurses"
          BUILD_SUBDIRS="src/common src/platform/cygwin"
       else
