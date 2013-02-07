@@ -235,8 +235,8 @@ char *comp_prepare_name(char *dest, const char *source, int size) {
  */
 bid_t comp_label_getID(const char *label_name) {
   bid_t idx = -1, i;
-  char name[SB_KEYWORD_SIZE + 1];comp_label_t
-  label;
+  char name[SB_KEYWORD_SIZE + 1];
+  comp_label_t label;
 
   comp_prepare_name(name, label_name, SB_KEYWORD_SIZE);
 
@@ -288,11 +288,10 @@ void comp_label_setip(bid_t idx) {
 void comp_prepare_udp_name(char *dest, const char *basename) {
   char tmp[SB_SOURCELINE_SIZE + 1];
 
-comp_prepare_name  (tmp, baseof(basename, '/'), SB_KEYWORD_SIZE);
+  comp_prepare_name(tmp, baseof(basename, '/'), SB_KEYWORD_SIZE);
   if (comp_proc_level) {
     sprintf(dest, "%s/%s", comp_bc_proc, tmp);
-  }
-  else {
+  } else {
     strcpy(dest, tmp);
   }
 }
@@ -303,8 +302,8 @@ comp_prepare_name  (tmp, baseof(basename, '/'), SB_KEYWORD_SIZE);
 bid_t comp_udp_id(const char *proc_name, int scan_tree) {
   bid_t i;
   char *name = comp_bc_temp, *p;
-  char base[SB_KEYWORD_SIZE + 1];char
-  *root;
+  char base[SB_KEYWORD_SIZE + 1];
+  char *root;
   int len;
 
   if (scan_tree) {
@@ -330,7 +329,6 @@ bid_t comp_udp_id(const char *proc_name, int scan_tree) {
           return i;
         }
       }
-
     } while (len);
 
     // not found
@@ -626,8 +624,8 @@ int comp_add_external_var(const char *name, int lib_id) {
  */
 bid_t comp_var_getID(const char *var_name) {
   bid_t idx = -1, i;
-  char tmp[SB_KEYWORD_SIZE + 1];char
-  *name = comp_bc_temp;
+  char tmp[SB_KEYWORD_SIZE + 1];
+  char *name = comp_bc_temp;
 
   comp_prepare_name(tmp, baseof(var_name, '/'), SB_KEYWORD_SIZE);
 
@@ -992,6 +990,21 @@ const char *comp_next_word(const char *text, char *dest) {
 }
 
 /*
+ * skips past any leading empty "()" parentheses characters
+ */
+char *trim_empty_parentheses(char *text) {
+  char *result = text;
+  char *next = comp_next_char(text);
+  if (*next == '(') {
+    next = comp_next_char(next + 1);
+    if (*next == ')') {
+      result = comp_next_char(next + 1);
+    }
+  }
+  return result;
+}
+
+/*
  * scan expression
  */
 void comp_expression(char *expr, byte no_parser) {
@@ -1128,9 +1141,8 @@ void comp_expression(char *expr, byte no_parser) {
                   }
                   check_udf++;
                   bc_add_addr(&bc, udf);
-                  bc_add_addr(&bc, 0);  // var
-                  // place
-                  // holder
+                  bc_add_addr(&bc, 0);  // var place holder
+                  ptr = trim_empty_parentheses(ptr);
                 } else {
                   // VARIABLE
                   if (addr_opr != 0) {
@@ -1781,7 +1793,8 @@ void comp_text_line(char *text) {
 #endif
   int sharp, ladd, linc, ldec, decl = 0, vattr;
   int leqop;
-  char pname[SB_KEYWORD_SIZE + 1], vname[SB_KEYWORD_SIZE + 1];
+  char pname[SB_KEYWORD_SIZE + 1];
+  char vname[SB_KEYWORD_SIZE + 1];
 
   if (comp_error) {
     return;
@@ -1843,14 +1856,16 @@ void comp_text_line(char *text) {
         bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
         // allow cmd_udp to find the initial var-ptr arg
         bc_add_code(&comp_prog, kwTYPE_CALL_PTR);
-        comp_expression(comp_bc_parm, 0);
+        char *next = trim_empty_parentheses(comp_bc_parm);
+        comp_expression(next, 0);
         bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
       } else {
         // simple buildin procedure
         // there is no need to check it more...
         // save it and return (go to next)
         bc_add_pcode(&comp_prog, idx);
-        comp_expression(comp_bc_parm, 0);
+        char *next = trim_empty_parentheses(comp_bc_parm);
+        comp_expression(next, 0);
       }
 
       if (*p == ':') {          // command separator
@@ -1887,7 +1902,6 @@ void comp_text_line(char *text) {
 
   sharp = (comp_bc_parm[0] == '#'); // if # -> file commands
   ladd = (strncmp(comp_bc_parm, "<<", 2) == 0); // if << -> array, 
-  // 
 
   // append
   linc = (strncmp(comp_bc_parm, "++", 2) == 0);
@@ -1903,8 +1917,10 @@ void comp_text_line(char *text) {
     return;
   }
 
-  if ((idx == kwCONST)
-      || ((comp_bc_parm[0] == '=' || comp_bc_parm[0] == '(' || ladd || linc || ldec || leqop) && (idx == -1))) {
+  if ((idx == kwCONST) || 
+      ((comp_bc_parm[0] == '=' || 
+        (comp_bc_parm[0] == '(' && *comp_next_char(comp_bc_parm + 1) != ')') || 
+        ladd || linc || ldec || leqop) && (idx == -1))) {
     // 
     // LET/CONST commands
     // 
@@ -1963,7 +1979,6 @@ void comp_text_line(char *text) {
             // ARRAY (LEFT)
             *p = '\0';
             comp_array_params(parms);
-
             *p = '=';
             if (!comp_error) {
               bc_add_code(&comp_prog, kwTYPE_CMPOPR);
@@ -2117,8 +2132,7 @@ void comp_text_line(char *text) {
               bc_add_code(&comp_prog, kwTYPE_PARAM);
               // params
               bc_add_code(&comp_prog, 0);
-              // pcount
-              // = 0
+              // pcount = 0
             }
 
             bc_eoc(&comp_prog); // EOC
@@ -2379,8 +2393,7 @@ void comp_text_line(char *text) {
       comp_block_id++;
       comp_push(comp_prog.count);
       bc_add_code(&comp_prog, idx);
-      // if comp_bc_parm starts with "CASE ", then skip first 5
-      // chars
+      // if comp_bc_parm starts with "CASE ", then skip first 5 chars
       int index = strncasecmp("CASE ", comp_bc_parm, 5) == 0 ? 5 : 0;
       comp_expression(comp_bc_parm + index, 0);
       break;
@@ -2512,9 +2525,11 @@ void comp_text_line(char *text) {
       // EXTERNAL OR USER-DEFINED PROCEDURE
       udp = comp_is_external_proc(comp_bc_name);
       if (udp > -1) {
-        bc_add_extpcode(&comp_prog, comp_extproctable[udp].lib_id, comp_extproctable[udp].symbol_index);
+        bc_add_extpcode(&comp_prog, comp_extproctable[udp].lib_id, 
+                        comp_extproctable[udp].symbol_index);
         bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
-        comp_expression(comp_bc_parm, 0);
+        char *next = trim_empty_parentheses(comp_bc_parm);
+        comp_expression(next, 0);
         bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
       } else {
         udp = comp_udp_id(comp_bc_name, 1);
@@ -2524,7 +2539,8 @@ void comp_text_line(char *text) {
         comp_push(comp_prog.count);
         bc_add_ctrl(&comp_prog, kwTYPE_CALL_UDP, udp, 0);
         bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
-        comp_expression(comp_bc_parm, 0);
+        char *next = trim_empty_parentheses(comp_bc_parm);
+        comp_expression(next, 0);
         bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
       }
       break;
