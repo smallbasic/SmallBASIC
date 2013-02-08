@@ -763,7 +763,8 @@ void comp_add_variable(bc_t * bc, const char *var_name) {
         len = strlen(dot + 1);
         var_id = comp_get_uds_field_id(dot + 1, len);
         dot = 0;
-      }bc_add_code(bc, kwTYPE_UDS_EL);
+      }
+      bc_add_code(bc, kwTYPE_UDS_EL);
       bc_add_addr(bc, var_id);
     }
 
@@ -1000,6 +1001,21 @@ char *trim_empty_parentheses(char *text) {
     if (*next == ')') {
       result = comp_next_char(next + 1);
     }
+  }
+  return result;
+}
+
+/*
+ * return whether the given name is a func or sub
+ */
+int comp_is_function(char *name) {
+  int result = 0;
+  if (comp_is_proc(name) != -1 ||
+      comp_is_func(name) != -1 ||
+      comp_is_external_proc(name) != -1 ||
+      comp_is_external_func(name) != -1 ||
+      comp_udp_id(comp_bc_name, 1) != -1) {
+    result = 1;
   }
   return result;
 }
@@ -1919,7 +1935,7 @@ void comp_text_line(char *text) {
 
   if ((idx == kwCONST) || 
       ((comp_bc_parm[0] == '=' || 
-        (comp_bc_parm[0] == '(' && *comp_next_char(comp_bc_parm + 1) != ')') || 
+        (comp_bc_parm[0] == '(' && !comp_is_function(comp_bc_name)) ||
         ladd || linc || ldec || leqop) && (idx == -1))) {
     // 
     // LET/CONST commands
@@ -3344,7 +3360,8 @@ void comp_close() {
   }
   for (i = 0; i < comp_udpcount; i++) {
     tmp_free(comp_udptable[i].name);
-  }tmp_free(comp_vartable);
+  }
+  tmp_free(comp_vartable);
   dbt_close(comp_labtable);
   dbt_close(comp_exptable);
   dbt_close(comp_imptable);
