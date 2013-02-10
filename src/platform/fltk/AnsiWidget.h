@@ -23,11 +23,13 @@
 #ifndef FL_ANSI_WIDGET
 #define FL_ANSI_WIDGET
 
-#include <fltk/Widget.h>
-#include <fltk/draw.h>
-#include <fltk/Image.h>
+#include <fltk3/Widget.h>
+#include <fltk3/draw.h>
+#include <fltk3/Image.h>
 
-using namespace fltk;
+#include "fltk2.h"
+
+using namespace fltk3;
 
 class AnsiWidget : public Widget {
 public:

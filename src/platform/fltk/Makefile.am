@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES =																										\
+AM_CPPFLAGS =																										\
   -I$(top_builddir)/src -I.																		\
   -DPACKAGE_PREFIX=\""$(prefix)"\"														\
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"											\

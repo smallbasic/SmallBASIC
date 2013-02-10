@@ -17,35 +17,28 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <fltk/ask.h>
-#include <fltk/run.h>
-#include <fltk/draw.h>
-#include <fltk/layout.h>
-#include <fltk/Rectangle.h>
-#include <fltk/Font.h>
-#include <fltk/events.h>
-#include <fltk/Cursor.h>
-#include <fltk/damage.h>
-#include <fltk/xpmImage.h>
-#include <fltk/CheckButton.h>
-#include <fltk/RadioButton.h>
-#include <fltk/Choice.h>
-#include <fltk/Item.h>
-#include <fltk/Input.h>
-#include <fltk/Output.h>
-#include <fltk/SharedImage.h>
-#include <fltk/Slider.h>
-#include <fltk/ValueInput.h>
-#include <fltk/ThumbWheel.h>
-#include <fltk/Monitor.h>
+#include <fltk3/ask.h>
+#include <fltk3/run.h>
+#include <fltk3/draw.h>
+#include <fltk3/Rectangle.h>
+#include <fltk3/xpmImage.h>
+#include <fltk3/CheckButton.h>
+#include <fltk3/RadioButton.h>
+#include <fltk3/Choice.h>
+#include <fltk3/Input.h>
+#include <fltk3/Output.h>
+#include <fltk3/SharedImage.h>
+#include <fltk3/Slider.h>
+#include <fltk3/ValueInput.h>
+#include <fltk3images/all.h>
 
 #define FL_HELP_WIDGET_RESOURCES
 #include "HelpWidget.h"
 
-#define FOREGROUND_COLOR Widget::default_style->textcolor()
-#define BACKGROUND_COLOR Widget::default_style->color()
-#define ANCHOR_COLOR fltk::color(0,0,128)
-#define BUTTON_COLOR Widget::default_style->buttoncolor()
+#define FOREGROUND_COLOR fltk3::default_style.color()
+#define BACKGROUND_COLOR fltk3::default_style.color2()
+#define ANCHOR_COLOR fltk3::rgb_color(0,0,128)
+#define BUTTON_COLOR fltk3::default_style.labelcolor()
 #define DEFAULT_INDENT 2
 #define LI_INDENT 18
 #define FONT_SIZE_H1 23
@@ -59,7 +52,7 @@
 #define IMG_TEXT_BORDER 25
 
 extern "C" void trace(const char *format, ...);
-Color getColor(String *s, Color def);
+Color getColor(strlib::String *s, Color def);
 void lineBreak(const char *s, int slen, int width, int &stlen, int &pxlen);
 const char *skipWhite(const char *s);
 bool unquoteTag(const char *tagBegin, const char *&tagEnd);
@@ -92,16 +85,16 @@ struct Display {
   U8 selected;
   U8 invertedSel;
   S16 markX, markY, pointX, pointY;
-  String *selection;
-  Font *font;
+  strlib::String *selection;
+  Font font;
   Color color;
   Color background;
   Group *wnd;
   AnchorNode *anchor;
 
-  void drawBackground(Rectangle &rc) {
+  void drawBackground(fltk3::Rectangle &rc) {
     if (background != NO_COLOR) {
-      Color oldColor = fltk::getcolor();
+      Color oldColor = getcolor();
       setcolor(background);
       fillrect(rc);
       setcolor(oldColor);
@@ -129,7 +122,7 @@ struct Display {
     }
 
     if (!measure && background != NO_COLOR && doBackground) {
-      Rectangle rc(x1, bgY, x2 - x1 + CELL_SPACING, lineHeight);
+      fltk3::Rectangle rc(x1, bgY, x2 - x1 + CELL_SPACING, lineHeight);
       drawBackground(rc);
     }
   }
@@ -163,49 +156,49 @@ struct Value {
 struct Attributes : public Properties {
   Attributes(int growSize) : Properties(growSize) {
   }
-  String *getValue() {
+  strlib::String *getValue() {
     return get("value");
   }
-  String *getName() {
+  strlib::String *getName() {
     return get("name");
   }
-  String *getHref() {
+  strlib::String *getHref() {
     return get("href");
   }
-  String *getType() {
+  strlib::String *getType() {
     return get("type");
   }
-  String *getSrc() {
+  strlib::String *getSrc() {
     return get("src");
   }
-  String *getOnclick() {
+  strlib::String *getOnclick() {
     return get("onclick");
   }
-  String *getBgColor() {
+  strlib::String *getBgColor() {
     return get("bgcolor");
   }
-  String *getFgColor() {
+  strlib::String *getFgColor() {
     return get("fgcolor");
   }
-  String *getBackground() {
+  strlib::String *getBackground() {
     return get("background");
   }
-  String *getAlign() {
+  strlib::String *getAlign() {
     return get("align");
   }
   bool isReadonly() {
     return get("readonly") != 0;
   }
-  void getValue(String &s) {
+  void getValue(strlib::String &s) {
     s.append(getValue());
   }
-  void getName(String &s) {
+  void getName(strlib::String &s) {
     s.append(getName());
   }
-  void getHref(String &s) {
+  void getHref(strlib::String &s) {
     s.append(getHref());
   }
-  void getType(String &s) {
+  void getType(strlib::String &s) {
     s.append(getType());
   }
   Value getWidth(int def = -1) {
@@ -240,14 +233,14 @@ struct Attributes : public Properties {
 };
 
 int Attributes::getIntValue(const char *attr, int def) {
-  String *s = get(attr);
+  strlib::String *s = get(attr);
   return (s != null ? s->toInteger() : def);
 }
 
 Value Attributes::getValue(const char *attr, int def) {
   Value val;
   val.relative = false;
-  String *s = get(attr);
+  strlib::String *s = get(attr);
   if (s) {
     int ipc = s->indexOf('%', 0);
     if (ipc != -1) {
@@ -262,13 +255,13 @@ Value Attributes::getValue(const char *attr, int def) {
 
 //--BaseNode--------------------------------------------------------------------
 
-struct BaseNode : public Object {
+struct BaseNode : public strlib::Object {
   virtual void display(Display *out) {
   } 
   virtual int indexOf(const char *sFind, U8 matchCase) {
     return -1;
   }
-  virtual void getText(String *s) {
+  virtual void getText(strlib::String *s) {
   }
   virtual int getY() {
     return -1;
@@ -278,24 +271,27 @@ struct BaseNode : public Object {
 //--FontNode--------------------------------------------------------------------
 
 struct FontNode : public BaseNode {
-  FontNode(Font *font, int fontSize, Color color, bool bold, bool italic);
+  FontNode(Font font, int fontSize, Color color, bool bold, bool italic);
   void display(Display *out);
 
-  Font *font;                   // includes face,bold,italic
+  Font font;                   // includes face,bold,italic
   U16 fontSize;
   Color color;
 };
 
-FontNode::FontNode(Font *font, int fontSize, Color color, bool bold, bool italic) :
-  BaseNode() {
-  this->font = font;
-  this->fontSize = fontSize;
-  this->color = color;
-  if (this->font && bold) {
-    this->font = this->font->bold();
+FontNode::FontNode(Font font, int fontSize, Color color, bool bold, bool italic) :
+  BaseNode(),
+  font(font),
+  fontSize(fontSize),
+  color(color) {
+  if (!this->font) {
+    this->font = fltk3::COURIER;
   }
-  if (this->font && italic) {
-    this->font = this->font->italic();
+  if (bold) {
+    this->font += HELVETICA_BOLD;
+  }
+  if (italic) {
+    this->font += HELVETICA_ITALIC;
   }
 }
 
@@ -374,8 +370,8 @@ struct AnchorNode : public BaseNode {
     return y1;
   }
 
-  String name;
-  String href;
+  strlib::String name;
+  strlib::String href;
   S16 x1, x2, y1, y2;
   U16 lineHeight;
   U8 wrapxy;                    // begin on page boundary
@@ -455,7 +451,7 @@ struct LiNode : public BaseNode {
         sprintf(t, "%d.", ++ulNode->nextId);
         drawtext(t, 2, x, out->y1);
       } else {
-        dotImage.draw(Rectangle(x, y, 5, 5));
+        dotImage.draw(x, y, 5, 5);
         // draw messes with the current font - restore
         setfont(out->font, out->fontSize);
       }
@@ -467,56 +463,54 @@ struct LiNode : public BaseNode {
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-  ImageNode(const Style *style, String *docHome, Attributes *a);
-  ImageNode(const Style *style, String *docHome, String *src, bool fixed);
+  ImageNode(const Style *style, strlib::String *docHome, Attributes *a);
+  ImageNode(const Style *style, strlib::String *docHome, strlib::String *src, bool fixed);
   ImageNode(const Style *style, const Image *image);
-  void makePath(String *src, String *docHome);
+  void makePath(strlib::String *src, strlib::String *docHome);
   void reload();
   void display(Display *out);
   const Image *image;
   const Style *style;
-  String path, url;
+  strlib::String path, url;
   Value w, h;
   U8 background, fixed;
   U8 valign;                    // 0=top, 1=center, 2=bottom
 };
 
-ImageNode::ImageNode(const Style *style, String *docHome, Attributes *a) : BaseNode() {
-  this->style = style;
+ImageNode::ImageNode(const Style *style, strlib::String *docHome, Attributes *a) : 
+  BaseNode(), style(style) {
   makePath(a->getSrc(), docHome);
   image = loadImage(path.toString());
-  image->measure(w.value, h.value);
-  w = a->getWidth(w.value);
-  h = a->getHeight(h.value);
+  w = a->getWidth(image->w());
+  h = a->getHeight(image->h());
   background = false;
   fixed = false;
   valign = 0;
 }
 
-ImageNode::ImageNode(const Style *style, String *docHome, String *src, bool fixed) : BaseNode() {
-  this->style = style;
-  this->fixed = fixed;
+ImageNode::ImageNode(const Style *style, strlib::String *docHome, strlib::String *src, bool fixed) : 
+  BaseNode(), style(style), fixed(fixed) {
   makePath(src, docHome);
   image = loadImage(path.toString());
-  image->measure(w.value, h.value);
+  w.value = image->w();
+  h.value = image->h();
   w.relative = 0;
   h.relative = 0;
   background = true;
   valign = 0;
 }
 
-ImageNode::ImageNode(const Style *style, const Image *image) : BaseNode() {
-  this->style = style;
-  this->image = image;
-  this->fixed = true;
-  image->measure(w.value, h.value);
+ImageNode::ImageNode(const Style *style, const Image *image) : 
+  BaseNode(), image(image), style(style), fixed(true) {
+  w.value = image->w();
+  h.value = image->h();
   w.relative = 0;
   h.relative = 0;
   background = false;
   valign = 2;
 }
 
-void ImageNode::makePath(String *src, String *docHome) {
+void ImageNode::makePath(strlib::String *src, strlib::String *docHome) {
   // <img src=blah/images/g.gif>
   url.append(src);              // html path
   path.append(docHome);         // local file system path
@@ -530,14 +524,12 @@ void ImageNode::makePath(String *src, String *docHome) {
 }
 
 void ImageNode::reload() {
-  int iw, ih;
   image = loadImage(path.toString());
-  image->measure(iw, ih);
   if (w.relative == 0) {
-    w.value = iw;
+    w.value = image->w();
   }
   if (h.relative == 0) {
-    h.value = ih;
+    h.value = image->h();
   }
 }
 
@@ -569,7 +561,8 @@ void ImageNode::display(Display *out) {
           } else {
             ih = h.value;
           }
-          image->draw(Rectangle(x1, y1, iw, ih));
+          //image->draw(x1, y1, iw, ih);
+          // TODO: fixme
           x1 += w.value;
         }
         y1 += h.value;
@@ -590,7 +583,8 @@ void ImageNode::display(Display *out) {
         x += 1;
         y += 1;
       }
-      image->draw(Rectangle(x, y, iw, ih));
+      // image->draw(x, y, iw, ih);
+      // TODO: fixme
     }
   }
   if (background == 0) {
@@ -616,7 +610,7 @@ struct TextNode : public BaseNode {
   void display(Display *out);
   void drawSelection(const char *s, U16 len, U16 width, Display *out);
   int indexOf(const char *sFind, U8 matchCase);
-  void getText(String *s);
+  void getText(strlib::String *s);
 
   int getY();
 
@@ -633,7 +627,7 @@ TextNode::TextNode(const char *s, U16 textlen) : BaseNode() {
   this->ybegin = 0;
 }
 
-void TextNode::getText(String *s) {
+void TextNode::getText(strlib::String *s) {
   s->append(this->s, this->textlen);
 }
 
@@ -646,7 +640,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
     return;                     // selection below text
   }
 
-  Rectangle rc(out->x1, out_y, width, out->lineHeight);
+  fltk3::Rectangle rc(out->x1, out_y, width, out->lineHeight);
   int selBegin = 0;             // selection index into the draw string
   int selEnd = len;
 
@@ -1106,7 +1100,7 @@ void TrNode::display(Display *out) {
   table->nextRow++;
 
   if (background && out->measure == false) {
-    Rectangle rc(table->initX, y1 - (int)getascent(), table->width, out->lineHeight);
+    fltk3::Rectangle rc(table->initX, y1 - (int)getascent(), table->width, out->lineHeight);
     out->drawBackground(rc);
   }
 }
@@ -1171,13 +1165,14 @@ void TdNode::display(Display *out) {
   table->nextCol++;
 
   if (out->measure == false) {
-    Rectangle rc(out->indent - CELL_SPACING,
-                 tr->y1 - (int)getascent(), out->x2 - out->indent + (CELL_SPACING * 2), out->lineHeight);
+    fltk3::Rectangle rc(out->indent - CELL_SPACING,
+                        tr->y1 - (int)getascent(), out->x2 - out->indent + (CELL_SPACING * 2), 
+                        out->lineHeight);
     out->drawBackground(rc);
     if (table->border > 0) {
       Color oldColor = getcolor();
       setcolor(BLACK);
-      strokerect(rc);
+      fillrect(rc);
       setcolor(oldColor);
     }
   }
@@ -1198,15 +1193,15 @@ void TdEndNode::display(Display *out) {
 
 //--NamedInput------------------------------------------------------------------
 
-struct NamedInput : public Object {
-  NamedInput(InputNode *node, String *name) {
+struct NamedInput : public strlib::Object {
+  NamedInput(InputNode *node, strlib::String *name) {
     this->input = node;
     this->name.append(name->toString());
   }
   ~NamedInput() {
   }
   InputNode *input;
-  String name;
+  strlib::String name;
 };
 
 //--InputNode-------------------------------------------------------------------
@@ -1218,8 +1213,9 @@ static void onclick_callback(Widget *button, void *buttonId) {
 static void def_button_callback(Widget *button, void *buttonId) {
   // supply "onclick=fff" to make it do something useful
   // check for parent of HelpWidget
-  if (fltk::modal() == button->parent()->parent()) {
-    fltk::exit_modal();
+  if (fltk3::modal() == button->parent()->parent()) {
+    // fltk3::exit_modal();
+    // TODO: fixme
   }
 }
 
@@ -1231,14 +1227,14 @@ struct InputNode : public BaseNode {
   void display(Display *out);
 
   Widget *button;
-  String onclick;
+  strlib::String onclick;
   U16 rows, cols;
 };
 
 // creates either a text, checkbox, radio, hidden or button control
 InputNode::InputNode(Group *parent, Attributes *a) : BaseNode() {
   parent->begin();
-  String *type = a->getType();
+  strlib::String *type = a->getType();
   if (type != null && type->equals("text")) {
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_TEXTBOX);
@@ -1258,8 +1254,9 @@ InputNode::InputNode(Group *parent, Attributes *a) : BaseNode() {
     button = new ValueInput(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RANGEVAL);
   } else if (type != null && type->equals("thumbwheel")) {
-    button = new ThumbWheel(0, 0, BUTTON_WIDTH, 0);
-    button->argument(ID_RANGEVAL);
+    //    button = new ThumbWheel(0, 0, BUTTON_WIDTH, 0);
+    //    button->argument(ID_RANGEVAL);
+    // TODO: fixme
   } else if (type != null && type->equals("hidden")) {
     button = new Widget(0, 0, 0, 0);
     button->argument(ID_HIDDEN);
@@ -1275,7 +1272,7 @@ InputNode::InputNode(Group *parent, Attributes *a, const char *s, int len) : Bas
   // creates a textarea control
   parent->begin();
   if (a->isReadonly()) {
-    String str;
+    strlib::String str;
     str.append(s, len);
     button = new Widget(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_READONLY);
@@ -1297,25 +1294,26 @@ InputNode::InputNode(Group *parent) : BaseNode() {
 }
 
 void createDropList(InputNode *node, strlib::List *options) {
-  Choice *menu = (Choice *) node->button;
-  menu->begin();
-  Object **list = options->getList();
+  //  Choice *menu = (Choice *) node->button;
+  //  menu->begin();
+  //strlib::Object **list = options->getList();
   int len = options->length();
   for (int i = 0; i < len; i++) {
-    String *s = (String *) list[i];
-    Item *item = new Item();
-    item->copy_label(s->toString());
+    //strlib::String *s = (strlib::String *) list[i];
+    //Item *item = new Item();
+    //item->copy_label(s->toString());
+    // TODO: fixme
   }
-  menu->end();
+  //  menu->end();
 }
 
 void InputNode::update(strlib::List *names, Properties *env, Attributes *a) {
   Valuator *valuator;
   Input *input;
   Color color;
-  String *name = a->getName();
-  String *value = a->getValue();
-  String *align = a->getAlign();
+  strlib::String *name = a->getName();
+  strlib::String *value = a->getValue();
+  strlib::String *align = a->getAlign();
 
   if (name != null) {
     names->add(new NamedInput(this, name));
@@ -1331,7 +1329,7 @@ void InputNode::update(strlib::List *names, Properties *env, Attributes *a) {
 
   switch (button->argument()) {
   case ID_READONLY:
-    button->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
+    button->align(ALIGN_LEFT | ALIGN_CLIP);
     if (value && value->length()) {
       button->copy_label(value->toString());
     }
@@ -1341,7 +1339,7 @@ void InputNode::update(strlib::List *names, Properties *env, Attributes *a) {
     rows = a->getRows();
     cols = a->getCols();
     if (rows > 1) {
-      button->type(fltk::Input::MULTILINE);
+      button->type(fltk3::MULTILINE_INPUT);
     }
     break;
   case ID_RANGEVAL:
@@ -1404,15 +1402,15 @@ void InputNode::update(strlib::List *names, Properties *env, Attributes *a) {
   // set alignment
   if (align != 0) {
     if (align->equals("right")) {
-      button->align(ALIGN_INSIDE_RIGHT | ALIGN_CLIP);
+      button->align(ALIGN_RIGHT | ALIGN_CLIP);
     } else if (align->equals("center")) {
       button->align(ALIGN_CENTER | ALIGN_CLIP);
     } else if (align->equals("top")) {
-      button->align(ALIGN_INSIDE_TOP | ALIGN_CLIP);
+      button->align(ALIGN_TOP | ALIGN_CLIP);
     } else if (align->equals("bottom")) {
-      button->align(ALIGN_INSIDE_BOTTOM | ALIGN_CLIP);
+      button->align(ALIGN_BOTTOM | ALIGN_CLIP);
     } else {
-      button->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
+      button->align(ALIGN_LEFT | ALIGN_CLIP);
     }
   }
   // set border
@@ -1467,11 +1465,12 @@ void InputNode::display(Display *out) {
   button->textsize(out->fontSize);
   button->labelsize(out->fontSize);
   if (button->y() + button->h() < out->y2 && button->y() >= 0) {
-    button->clear_flag(INVISIBLE);
+    // button->clear_flag(INVISIBLE);
+    // TODO: fixme
   } else {
     // draw a fake control in case partially visible
     setcolor(button->color());
-    fillrect(*button);
+    rectf(button->x(), button->y(), button->w(), button->h());
     setcolor(out->color);
   }
   out->x1 += button->w();
@@ -1483,21 +1482,21 @@ void InputNode::display(Display *out) {
 struct EnvNode : public TextNode {
   EnvNode(Properties *p, const char *s, U16 textlen) : 
     TextNode(0, 0) {
-    String var;
+    strlib::String var;
     var.append(s, textlen);
     var.trim();
     if (p) {
-      String *s = p->get(var.toString());
+      strlib::String *s = p->get(var.toString());
       value.append(s);
     }
     if (value.length() == 0) {
-      value.append(getenv(var.toString()));
+      value.append(::getenv(var.toString()));
     }
     this->s = value.toString();
     this->textlen = value.length();
   }
   // here to provide value cleanup
-  String value;
+  strlib::String value;
 };
 
 //--HelpWidget------------------------------------------------------------------
@@ -1515,7 +1514,8 @@ Group(x, y, width, height),
   nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5) {
   begin();
   scrollbar = new Scrollbar(width - SCROLL_W, 0, SCROLL_W, height);
-  scrollbar->set_vertical();
+  // scrollbar->set_vertical();
+  // TODO: fixme
   scrollbar->value(0, 1, 0, SCROLL_SIZE);
   scrollbar->user_data(this);
   scrollbar->callback(scrollbar_callback);
@@ -1555,7 +1555,7 @@ void HelpWidget::setFontSize(int i) {
 
 void HelpWidget::cleanup() {
   int len = inputs.length();
-  Object **list = inputs.getList();
+  strlib::Object **list = inputs.getList();
   for (int i = 0; i < len; i++) {
     InputNode *p = (InputNode *) list[i];
     if (p->button) {
@@ -1578,13 +1578,13 @@ void HelpWidget::reloadPage() {
   cleanup();
   init();
   compile();
-  redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
+  damage(DAMAGE_ALL | DAMAGE_CONTENTS);
   pushedAnchor = 0;
 }
 
 // returns the control with the given name
 Widget *HelpWidget::getInput(const char *name) {
-  Object **list = namedInputs.getList();
+  strlib::Object **list = namedInputs.getList();
   int len = namedInputs.length();
   for (int i = 0; i < len; i++) {
     NamedInput *ni = (NamedInput *) list[i];
@@ -1608,7 +1608,8 @@ const char *HelpWidget::getInputValue(Widget *widget) {
   case ID_CHKBOX:
     return ((RadioButton *) widget)->value()? truestr : falsestr;
   case ID_SELECT:
-    widget = ((Choice *) widget)->item();
+    //    widget = ((Choice *) widget)->item();
+    // TODO: fixme
     return widget ? widget->label() : null;
   case ID_RANGEVAL:
     sprintf(rangeValue, "%f", ((Valuator *) widget)->value());
@@ -1624,7 +1625,7 @@ const char *HelpWidget::getInputValue(Widget *widget) {
 const char *HelpWidget::getInputValue(int i) {
   int len = namedInputs.length();
   if (i < len) {
-    Object **list = namedInputs.getList();
+    strlib::Object **list = namedInputs.getList();
     NamedInput *ni = (NamedInput *) list[i];
     return getInputValue(ni->input->button);
   }
@@ -1633,7 +1634,7 @@ const char *HelpWidget::getInputValue(int i) {
 
 // return the name of the given button control
 const char *HelpWidget::getInputName(Widget *button) {
-  Object **list = namedInputs.getList();
+  strlib::Object **list = namedInputs.getList();
   int len = namedInputs.length();
   for (int i = 0; i < len; i++) {
     NamedInput *ni = (NamedInput *) list[i];
@@ -1649,7 +1650,7 @@ void HelpWidget::getInputProperties(Properties *p) {
   if (p == 0) {
     return;
   }
-  Object **list = namedInputs.getList();
+  strlib::Object **list = namedInputs.getList();
   int len = namedInputs.length();
   for (int i = 0; i < len; i++) {
     NamedInput *ni = (NamedInput *) list[i];
@@ -1663,10 +1664,10 @@ void HelpWidget::getInputProperties(Properties *p) {
 // update a widget's display value using the given string based
 // assignment statement, eg val=1000
 bool HelpWidget::setInputValue(const char *assignment) {
-  String s = assignment;
-  String name = s.lvalue();
-  String value = s.rvalue();
-  Object **list = namedInputs.getList();
+  strlib::String s = assignment;
+  strlib::String name = s.lvalue();
+  strlib::String value = s.rvalue();
+  strlib::Object **list = namedInputs.getList();
   int len = namedInputs.length();
   Choice *choice;
   Widget *item;
@@ -1691,9 +1692,10 @@ bool HelpWidget::setInputValue(const char *assignment) {
         break;
       case ID_SELECT:
         choice = (Choice *) button;
-        item = choice->find(value.toString());
+        //item = choice->find(value.toString());
+        // TODO: fixme
         if (item) {
-          choice->set_focus(item);
+          //choice->set_focus(item);
         }
         break;
       case ID_RANGEVAL:
@@ -1711,7 +1713,7 @@ bool HelpWidget::setInputValue(const char *assignment) {
 
 void HelpWidget::scrollTo(const char *anchorName) {
   int len = anchors.length();
-  Object **list = anchors.getList();
+  strlib::Object **list = anchors.getList();
   for (int i = 0; i < len; i++) {
     AnchorNode *p = (AnchorNode *) list[i];
     if (p->name.equals(anchorName)) {
@@ -1720,7 +1722,7 @@ void HelpWidget::scrollTo(const char *anchorName) {
       } else {
         vscroll = -p->getY();
       }
-      redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
+      damage(DAMAGE_ALL | DAMAGE_CONTENTS);
       return;
     }
   }
@@ -1730,7 +1732,7 @@ void HelpWidget::scrollTo(int scroll) {
   // called from the scrollbar using scrollbar units
   if (vscroll != scroll) {
     vscroll = -(scroll * scrollHeight / SCROLL_SIZE);
-    redraw(DAMAGE_ALL);
+    damage(DAMAGE_ALL);
   }
 }
 
@@ -1802,24 +1804,24 @@ void HelpWidget::draw() {
   out.lineHeight = out.y1 + (int)getdescent();
   out.y1 += vscroll;
 
-  push_clip(Rectangle(w(), h()));
+  push_clip(0, 0, w(), h());
   bool havePushedAnchor = false;
   if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
     // just draw the anchor-push
     int h = (pushedAnchor->y2 - pushedAnchor->y1) + pushedAnchor->lineHeight;
-    push_clip(Rectangle(0, pushedAnchor->y1, out.x2, h));
+    push_clip(0, pushedAnchor->y1, out.x2, h);
     havePushedAnchor = true;
   }
   // draw the background
   setcolor(out.background);
-  fillrect(Rectangle(0, 0, w() - SCROLL_W, out.y2));
+  fillrect(fltk3::Rectangle(0, 0, w() - SCROLL_W, out.y2));
   setcolor(out.color);
 
   out.background = NO_COLOR;
 
   // hide any inputs
   int len = inputs.length();
-  Object **list = inputs.getList();
+  strlib::Object **list = inputs.getList();
   for (int i = 0; i < len; i++) {
     InputNode *p = (InputNode *) list[i];
     if (p->button) {
@@ -1871,7 +1873,8 @@ void HelpWidget::draw() {
       scrollHeight = scrollH;
       scrollbar->activate();
       scrollbar->value(value, 1, 0, SCROLL_SIZE);
-      scrollbar->pagesize(SCROLL_SIZE * height / scrollH);
+      //scrollbar->pagesize(SCROLL_SIZE * height / scrollH);
+      // TODO: fixme
       scrollbar->linesize(SCROLL_SIZE * out.lineHeight / scrollH);
       scrollbar->slider_size(max(10, min(sliderH, height - 40)));
       if (height - vscroll > pageHeight) {
@@ -1883,7 +1886,7 @@ void HelpWidget::draw() {
   draw_child(*scrollbar);
 
   // prevent other child controls from drawing over the scrollbar
-  push_clip(Rectangle(0, 0, w() - SCROLL_W, h()));
+  push_clip(0, 0, w() - SCROLL_W, h());
   int numchildren = children();
   for (int n = 0; n < numchildren; n++) {
     Widget & w = *child(n);
@@ -1907,7 +1910,7 @@ void HelpWidget::compile() {
   U8 uline = false;
 
   Color color = 0;
-  Font *font = fltk::HELVETICA;
+  Font font = fltk3::HELVETICA;
   int fontSize = (int)labelsize();
   int taglen = 0;
   int textlen = 0;
@@ -1919,7 +1922,7 @@ void HelpWidget::compile() {
   strlib::Stack olStack(5);
   strlib::List options(5);
   Attributes p(5);
-  String *prop;
+  strlib::String *prop;
   BaseNode *node;
   InputNode *inputNode;
 
@@ -2093,7 +2096,7 @@ void HelpWidget::compile() {
             padlines = false;
           }
           color = (0 == strncasecmp(tag, "f", 1) ? (Color) - 1 : 0);
-          font = fltk::HELVETICA;
+          font = fltk3::HELVETICA;
           node = new FontNode(font, fontSize, color, bold, italic);
           nodeList.add(node);
         } else if (0 == strncasecmp(tag, "pre", 3)) {
@@ -2139,7 +2142,7 @@ void HelpWidget::compile() {
           tagPair = 0;
           p.removeAll();
         } else if (0 == strncasecmp(tag, "option", 6) && tagPair) {
-          String *option = new String();
+          strlib::String *option = new strlib::String();
           option->append(tagPair, tagBegin - tagPair);
           options.add(option);  // continue scan for more options
         } else if (0 == strncasecmp(tag, "title", 5) && tagPair) {
@@ -2175,11 +2178,11 @@ void HelpWidget::compile() {
           tagPair = text = skipWhite(tagEnd + 1);
         } else if (0 == strncasecmp(tag, "pre", 3)) {
           pre = true;
-          node = new FontNode(COURIER, fontSize, 0, bold, italic);
+          node = new FontNode(NULL, fontSize, 0, bold, italic);
           nodeList.add(node);
           nodeList.add(new BrNode(pre));
         } else if (0 == strncasecmp(tag, "code", 4)) {
-          node = new FontNode(COURIER, fontSize, 0, bold, italic);
+          node = new FontNode(NULL, fontSize, 0, bold, italic);
           nodeList.add(node);
         } else if (0 == strncasecmp(tag, "td", 2)) {
           p.removeAll();
@@ -2239,8 +2242,9 @@ void HelpWidget::compile() {
           prop = p.get("font-size");
           if (prop != null) {
             // convert from points to pixels
-            const fltk::Monitor & monitor = fltk::Monitor::all();
-            fontSize = (int)(prop->toInteger() * monitor.dpi_y() / 72.0);
+            //const fltk3::Monitor & monitor = fltk3::Monitor::all();
+            //fontSize = (int)(prop->toInteger() * monitor.dpi_y() / 72.0);
+            // TODO: fixme
           } else {
             prop = p.get("size");
             if (prop != null) {
@@ -2249,7 +2253,8 @@ void HelpWidget::compile() {
           }
           prop = p.get("face");
           if (prop != null) {
-            font = fltk::font(*prop->toString());
+            // TODO: fixme
+            // font = fltk3::font(prop->toString());
           }
           node = new FontNode(font, fontSize, color, bold, italic);
           nodeList.add(node);
@@ -2331,7 +2336,7 @@ void HelpWidget::compile() {
 // handle click from form button
 void HelpWidget::onclick(Widget *button) {
   int len = inputs.length();
-  Object **list = inputs.getList();
+  strlib::Object **list = inputs.getList();
   for (int i = 0; i < len; i++) {
     InputNode *p = (InputNode *) list[i];
     if (p->button == button) {
@@ -2345,37 +2350,37 @@ void HelpWidget::onclick(Widget *button) {
 }
 
 int HelpWidget::onMove(int event) {
-  int ex = fltk::event_x();
-  int ey = fltk::event_y();
+  int ex = fltk3::event_x();
+  int ey = fltk3::event_y();
 
-  if (pushedAnchor && event == fltk::DRAG) {
+  if (pushedAnchor && event == fltk3::DRAG) {
     bool pushed = pushedAnchor->ptInSegment(ex, ey);
     if (pushedAnchor->pushed != pushed) {
-      Widget::cursor(fltk::CURSOR_HAND);
+      fltk3::cursor(fltk3::CURSOR_HAND);
       pushedAnchor->pushed = pushed;
-      redraw(DAMAGE_PUSHED);
+      damage(DAMAGE_PUSHED);
     }
     return 1;
   } else {
     int len = anchors.length();
-    Object **list = anchors.getList();
+    strlib::Object **list = anchors.getList();
     for (int i = 0; i < len; i++) {
       AnchorNode *p = (AnchorNode *) list[i];
       if (p->ptInSegment(ex, ey)) {
-        Widget::cursor(fltk::CURSOR_HAND);
+        fltk3::cursor(fltk3::CURSOR_HAND);
         return 1;
       }
     }
-    Widget::cursor(fltk::CURSOR_DEFAULT);
+    fltk3::cursor(fltk3::CURSOR_DEFAULT);
   }
 
-  if (event == fltk::DRAG) {
+  if (event == fltk3::DRAG) {
     switch (mouseMode) {
     case mm_select:
       // drag text selection
       pointX = ex - hscroll;
       pointY = ey - vscroll;
-      redraw(DAMAGE_HIGHLIGHT);
+      damage(DAMAGE_HIGHLIGHT);
       break;
     case mm_scroll:
       // follow the mouse navigation
@@ -2390,7 +2395,7 @@ int HelpWidget::onMove(int event) {
         }
         if (scroll != vscroll) {
           vscroll = scroll;
-          redraw(DAMAGE_EXPOSE);
+          damage(DAMAGE_EXPOSE);
         }
       }
       break;
@@ -2404,11 +2409,11 @@ int HelpWidget::onMove(int event) {
 }
 
 int HelpWidget::onPush(int event) {
-  Object **list = anchors.getList();
+  strlib::Object **list = anchors.getList();
   int len = anchors.length();
   pushedAnchor = 0;
-  int ex = fltk::event_x();
-  int ey = fltk::event_y();
+  int ex = fltk3::event_x();
+  int ey = fltk3::event_y();
   S16 scroll = vscroll;
 
   for (int i = 0; i < len; i++) {
@@ -2416,8 +2421,8 @@ int HelpWidget::onPush(int event) {
     if (p->ptInSegment(ex, ey)) {
       pushedAnchor = p;
       pushedAnchor->pushed = true;
-      Widget::cursor(fltk::CURSOR_HAND);
-      redraw(DAMAGE_PUSHED);
+      fltk3::cursor(fltk3::CURSOR_HAND);
+      damage(DAMAGE_PUSHED);
       return 1;
     }
   }
@@ -2432,7 +2437,7 @@ int HelpWidget::onPush(int event) {
       markX = pointX = (ex - hscroll);
       markY = pointY = (ey - vscroll);
     }
-    redraw(DAMAGE_HIGHLIGHT);
+    damage(DAMAGE_HIGHLIGHT);
     break;
 
   case mm_scroll:
@@ -2454,7 +2459,7 @@ int HelpWidget::onPush(int event) {
     }
     if (scroll != vscroll) {
       vscroll = scroll;
-      redraw(DAMAGE_EXPOSE);
+      damage(DAMAGE_EXPOSE);
     }
     break;
   }
@@ -2463,7 +2468,7 @@ int HelpWidget::onPush(int event) {
 
 int HelpWidget::handle(int event) {
   int handled = Group::handle(event);
-  if (handled && event != fltk::MOVE) {
+  if (handled && event != fltk3::MOVE) {
     return handled;
   }
 
@@ -2489,46 +2494,48 @@ int HelpWidget::handle(int event) {
     return 1;
 
   case EVENT_FIND:
-    find(fltk::input("Find:"), false);
+    find(fltk3::input("Find:"), false);
     return 1;
 
   case EVENT_PG_DOWN:
     if (scrollbar->active()) {
-      scrollbar->handle_drag(scrollbar->value() + scrollbar->pagesize());
+      //scrollbar->handle_drag(scrollbar->value() + scrollbar->pagesize());
+      // TODO: fixme
     }
     return 1;
 
   case EVENT_PG_UP:
     if (scrollbar->active()) {
-      scrollbar->handle_drag(scrollbar->value() - scrollbar->pagesize());
+      // scrollbar->handle_drag(scrollbar->value() - scrollbar->pagesize());
+      // TODO: fixme
     }
     return 1;
 
-  case fltk::SHOW:
+  case fltk3::SHOW:
     focus(this);
     break;
 
-  case fltk::FOCUS:
+  case fltk3::FOCUS:
     return 1;                   // aquire focus
 
-  case fltk::PUSH:
+  case fltk3::PUSH:
     return onPush(event);
 
-  case fltk::ENTER:
+  case fltk3::ENTER:
     return 1;
 
-  case fltk::KEY:
-    if (event_key_state(RightKey) && -hscroll < w() / 2) {
+  case fltk3::KEYBOARD:
+    if (event_state(fltk3::RightKey) && -hscroll < w() / 2) {
       hscroll -= HSCROLL_STEP;
       redraw();
       return 1;
     }
-    if (event_key_state(LeftKey) && hscroll < 0) {
+    if (event_state(fltk3::LeftKey) && hscroll < 0) {
       hscroll += HSCROLL_STEP;
       redraw();
       return 1;
     }
-    if (event_key_state(RightCtrlKey) || event_key_state(LeftCtrlKey)) {
+    if (event_state(ControlRKey) || event_state(ControlLKey)) {
       switch (event_key()) {
       case 'u':
         return handle(EVENT_PG_UP);
@@ -2538,7 +2545,7 @@ int HelpWidget::handle(int event) {
         reloadPage();
         return 1;
       case 'f':                // find
-        find(fltk::input("Find:"), false);
+        find(fltk3::input("Find:"), false);
         return 1;
       case 'a':                // select-all
         selectAll();
@@ -2549,24 +2556,25 @@ int HelpWidget::handle(int event) {
         return 1;
       case 'b':                // break popup
       case 'q':
-        if (fltk::modal() == parent()) {
-          fltk::exit_modal();
+        if (fltk3::modal() == parent()) {
+          //fltk3::exit_modal();
+          // TODO: fixme
         }
         break;                  // handle in default
       }
     }
     break;
 
-  case fltk::DRAG:
-  case fltk::MOVE:
+  case fltk3::DRAG:
+  case fltk3::MOVE:
     return onMove(event);
 
-  case fltk::RELEASE:
+  case fltk3::RELEASE:
     if (pushedAnchor) {
-      Widget::cursor(fltk::CURSOR_DEFAULT);
+      fltk3::cursor(fltk3::CURSOR_DEFAULT);
       bool pushed = pushedAnchor->pushed;
       pushedAnchor->pushed = false;
-      redraw(DAMAGE_PUSHED);
+      damage(DAMAGE_PUSHED);
       if (pushed) {
         this->event.empty();
         this->event.append(pushedAnchor->href.toString());
@@ -2587,7 +2595,7 @@ bool HelpWidget::find(const char *s, bool matchCase) {
     return false;
   }
 
-  Object **list = nodeList.getList();
+  strlib::Object **list = nodeList.getList();
   int len = nodeList.length();
   int foundRow = 0;
   int lineHeight = (int)(getascent() + getdescent());
@@ -2613,12 +2621,12 @@ bool HelpWidget::find(const char *s, bool matchCase) {
     vscroll = -scrollHeight;
   }
 
-  redraw(DAMAGE_ALL | DAMAGE_CONTENTS);
+  damage(DAMAGE_ALL | DAMAGE_CONTENTS);
   return true;
 }
 
 void HelpWidget::copySelection() {
-  fltk::copy(selection.toString(), selection.length(), true);
+  fltk3::copy(selection.toString(), selection.length(), true);
 }
 
 void HelpWidget::selectAll() {
@@ -2637,7 +2645,7 @@ void HelpWidget::navigateTo(const char *s) {
     return;
   }
 
-  String path;
+  strlib::String path;
   path.append(docHome);
 
   int len = path.length();
@@ -2692,7 +2700,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
       docHome.append("/");
     }
   }
-  if ((fp = fopen(fileName.toString(), "rb")) != NULL) {
+  if ((fp = ::fopen(fileName.toString(), "rb")) != NULL) {
     fseek(fp, 0, SEEK_END);
     len = ftell(fp);
     rewind(fp);
@@ -2708,14 +2716,14 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
   reloadPage();
   if (target) {
     // draw to obtain dimensions
-    fltk::flush();
+    fltk3::flush();
     scrollTo(target + 1);
   }
 }
 
 void HelpWidget::getImageNames(strlib::List *nameList) {
   nameList->removeAll();
-  Object **list = images.getList();
+  strlib::Object **list = images.getList();
   int len = images.length();
   for (int i = 0; i < len; i++) {
     ImageNode *imageNode = (ImageNode *) list[i];
@@ -2725,7 +2733,7 @@ void HelpWidget::getImageNames(strlib::List *nameList) {
 
 // reload broken images
 void HelpWidget::reloadImages() {
-  Object **list = images.getList();
+  strlib::Object **list = images.getList();
   int len = images.length();
   for (int i = 0; i < len; i++) {
     ImageNode *imageNode = (ImageNode *) list[i];
@@ -2747,15 +2755,15 @@ void HelpWidget::setDocHome(const char *s) {
 const char *HelpWidget::getAnchor(int index) {
   int len = anchors.length();
   if (index < len && index > -1) {
-    Object **list = anchors.getList();
+    strlib::Object **list = anchors.getList();
     AnchorNode *p = (AnchorNode *) list[index];
     return p->href.toString();
   }
   return null;
 }
 
-void HelpWidget::getText(String *s) {
-  Object **list = nodeList.getList();
+void HelpWidget::getText(strlib::String *s) {
+  strlib::Object **list = nodeList.getList();
   int len = nodeList.length();
   for (int i = 0; i < len; i++) {
     BaseNode *p = (BaseNode *) list[i];
@@ -2769,8 +2777,8 @@ bool HelpWidget::isHtmlFile() {
     return false;
   }
   int len = strlen(filename);
-  return (strcasecmp(filename + len - 4, ".htm") == 0 || 
-          strcasecmp(filename + len - 5, ".html") == 0);
+  return (::strcasecmp(filename + len - 4, ".htm") == 0 || 
+          ::strcasecmp(filename + len - 5, ".html") == 0);
 }
 
 //--Helper functions------------------------------------------------------------
@@ -2881,7 +2889,7 @@ const char *skipWhite(const char *s) {
   return s;
 }
 
-Color getColor(String *s, Color def) {
+Color getColor(strlib::String *s, Color def) {
   if (s == 0 || s->length() == 0) {
     return def;
   }
@@ -2893,69 +2901,73 @@ Color getColor(String *s, Color def) {
     int r = rgb >> 16;
     int g = (rgb >> 8) & 255;
     int b = rgb & 255;
-    return fltk::color((uchar) r, (uchar) g, (uchar) b);
-  } else if (strcasecmp(n, "black") == 0) {
+    return fltk3::rgb_color((uchar) r, (uchar) g, (uchar) b);
+  } else if (::strcasecmp(n, "black") == 0) {
     return BLACK;
-  } else if (strcasecmp(n, "red") == 0) {
+  } else if (::strcasecmp(n, "red") == 0) {
     return RED;
-  } else if (strcasecmp(n, "green") == 0) {
-    return fltk::color(0, 0x80, 0);
-  } else if (strcasecmp(n, "yellow") == 0) {
+  } else if (::strcasecmp(n, "green") == 0) {
+    return fltk3::rgb_color(0, 0x80, 0);
+  } else if (::strcasecmp(n, "yellow") == 0) {
     return YELLOW;
-  } else if (strcasecmp(n, "blue") == 0) {
+  } else if (::strcasecmp(n, "blue") == 0) {
     return BLUE;
-  } else if (strcasecmp(n, "magenta") == 0 || 
-             strcasecmp(n, "fuchsia") == 0) {
+  } else if (::strcasecmp(n, "magenta") == 0 || 
+             ::strcasecmp(n, "fuchsia") == 0) {
     return MAGENTA;
-  } else if (strcasecmp(n, "cyan") == 0 || 
-             strcasecmp(n, "aqua") == 0) {
+  } else if (::strcasecmp(n, "cyan") == 0 || 
+             ::strcasecmp(n, "aqua") == 0) {
     return CYAN;
-  } else if (strcasecmp(n, "white") == 0) {
+  } else if (::strcasecmp(n, "white") == 0) {
     return WHITE;
-  } else if (strcasecmp(n, "gray") == 0 || 
-             strcasecmp(n, "grey") == 0) {
-    return fltk::color(0x80, 0x80, 0x80);
-  } else if (strcasecmp(n, "lime") == 0) {
+  } else if (::strcasecmp(n, "gray") == 0 || 
+             ::strcasecmp(n, "grey") == 0) {
+    return fltk3::rgb_color(0x80, 0x80, 0x80);
+  } else if (::strcasecmp(n, "lime") == 0) {
     return GREEN;
-  } else if (strcasecmp(n, "maroon") == 0) {
-    return fltk::color(0x80, 0, 0);
-  } else if (strcasecmp(n, "navy") == 0) {
-    return fltk::color(0, 0, 0x80);
-  } else if (strcasecmp(n, "olive") == 0) {
-    return fltk::color(0x80, 0x80, 0);
-  } else if (strcasecmp(n, "purple") == 0) {
-    return fltk::color(0x80, 0, 0x80);
-  } else if (strcasecmp(n, "silver") == 0) {
-    return fltk::color(0xc0, 0xc0, 0xc0);
-  } else if (strcasecmp(n, "teal") == 0) {
-    return fltk::color(0, 0x80, 0x80);
+  } else if (::strcasecmp(n, "maroon") == 0) {
+    return fltk3::rgb_color(0x80, 0, 0);
+  } else if (::strcasecmp(n, "navy") == 0) {
+    return fltk3::rgb_color(0, 0, 0x80);
+  } else if (::strcasecmp(n, "olive") == 0) {
+    return fltk3::rgb_color(0x80, 0x80, 0);
+  } else if (::strcasecmp(n, "purple") == 0) {
+    return fltk3::rgb_color(0x80, 0, 0x80);
+  } else if (::strcasecmp(n, "silver") == 0) {
+    return fltk3::rgb_color(0xc0, 0xc0, 0xc0);
+  } else if (::strcasecmp(n, "teal") == 0) {
+    return fltk3::rgb_color(0, 0x80, 0x80);
   }
   return def;
 }
 
 // image factory based on file extension
 SharedImage *loadImage(const char *name, uchar *buff) {
+  return NULL;
+  /*
+    TODO: fixme
   int len = strlen(name);
   SharedImage *result = 0;
-  if (strcasecmp(name + (len - 4), ".jpg") == 0 || 
-      strcasecmp(name + (len - 5), ".jpeg") == 0) {
-    result = jpegImage::get(name, buff);
-  } else if (strcasecmp(name + (len - 4), ".gif") == 0) {
+  if (::strcasecmp(name + (len - 4), ".jpg") == 0 || 
+      ::strcasecmp(name + (len - 5), ".jpeg") == 0) {
+    result = JPEGImage::get(name, buff);
+  } else if (::strcasecmp(name + (len - 4), ".gif") == 0) {
     result = gifImage::get(name, buff);
-  } else if (strcasecmp(name + (len - 4), ".png") == 0) {
+  } else if (::strcasecmp(name + (len - 4), ".png") == 0) {
     result = pngImage::get(name, buff);
-  } else if (strcasecmp(name + (len - 4), ".xpm") == 0) {
-    result = xpmFileImage::get(name, buff);
+  } else if (::strcasecmp(name + (len - 4), ".xpm") == 0) {
+    result = XPMFileImage::get(name, buff);
   }
   if (result) {
     // load the image
     ((Image *) result)->fetch();
   }
   return result;
+  */
 }
 
 Image *loadImage(const char *imgSrc) {
-  if (imgSrc == 0 || access(imgSrc, 0) != 0) {
+  if (imgSrc == 0 || fltk3::access(imgSrc, 0) != 0) {
     return &brokenImage;
   }
   Image *image = loadImage(imgSrc, 0);
@@ -2964,13 +2976,13 @@ Image *loadImage(const char *imgSrc) {
 
 #if defined(WIN32)
 #include <windows.h>
-#include <fltk/window.h>
-#include <fltk/win32.h>
+#include <fltk3/window.h>
 #endif
 
 void browseFile(const char *url) {
 #if defined(WIN32)
-  ShellExecute(xid(Window::first()), "open", url, 0, 0, SW_SHOWNORMAL);
+  // TODO: fixme
+  //  ShellExecute(xid(fltk3::Window::first()), "open", url, 0, 0, SW_SHOWNORMAL);
 #else
   if (fork() == 0) {
     fclose(stderr);

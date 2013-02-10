@@ -13,19 +13,19 @@
 #include "common/smbas.h"
 #include "common/keymap.h"
 
-#include <fltk/Browser.h>
-#include <fltk/Button.h>
-#include <fltk/CheckButton.h>
-#include <fltk/Choice.h>
-#include <fltk/Group.h>
-#include <fltk/Input.h>
-#include <fltk/Item.h>
-#include <fltk/RadioButton.h>
-#include <fltk/Rectangle.h>
-#include <fltk/StringList.h>
-#include <fltk/draw.h>
-#include <fltk/events.h>
-#include <fltk/run.h>
+#include <fltk3/Browser.h>
+#include <fltk3/Button.h>
+#include <fltk3/CheckButton.h>
+#include <fltk3/Choice.h>
+#include <fltk3/Group.h>
+#include <fltk3/Input.h>
+#include <fltk3/Item.h>
+#include <fltk3/RadioButton.h>
+#include <fltk3/Rectangle.h>
+#include <fltk3/StringList.h>
+#include <fltk3/draw.h>
+#include <fltk3/events.h>
+#include <fltk3/run.h>
 
 #include "MainWindow.h"
 #include "StringLib.h"

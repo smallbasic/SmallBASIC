@@ -12,13 +12,13 @@
 #include "common/osd.h"
 #include "common/blib_ui.h"
 
-#include <fltk/ask.h>
-#include <fltk/run.h>
-#include <fltk/events.h>
-#include <fltk/SharedImage.h>
-#include <fltk/FL_VERSION.h>
-#include <fltk/Rectangle.h>
-#include <fltk/damage.h>
+#include <fltk3/ask.h>
+#include <fltk3/run.h>
+#include <fltk3/events.h>
+#include <fltk3/SharedImage.h>
+#include <fltk3/FL_VERSION.h>
+#include <fltk3/Rectangle.h>
+#include <fltk3/damage.h>
 
 #include "MainWindow.h"
 #include "HelpWidget.h"

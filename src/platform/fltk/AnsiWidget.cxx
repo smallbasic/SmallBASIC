@@ -25,31 +25,27 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <fltk/layout.h>
-#include <fltk/Image.h>
-#include <fltk/rgbImage.h>
-#include <fltk/events.h>
-#include <fltk/draw.h>
-#include <fltk/Font.h>
-#include <fltk/Rectangle.h>
-#include <fltk/Group.h>
-#include <fltk/ask.h>
+#include <fltk3/Image.h>
+#include <fltk3/rgbImage.h>
+#include <fltk3/draw.h>
+#include <fltk3/Rectangle.h>
+#include <fltk3/Group.h>
+#include <fltk3/ask.h>
 
 #if defined(WIN32)
-#include <fltk/win32.h>
 #include <wingdi.h>
 extern HDC fl_bitmap_dc;
 #else
-#include <fltk/x.h>
+#include <fltk3/x.h>
 #endif
 
 #define INITXY 2
 
 #include "AnsiWidget.h"
 
-using namespace fltk;
+using namespace fltk3;
 
-/*! \class fltk::AnsiWidget
+/*! \class fltk3::AnsiWidget
 
   Displays ANSI escape codes.
 
@@ -81,27 +77,26 @@ using namespace fltk;
 
 static Color colors[] = {
   BLACK,                        // 0 black
-  color(0, 0, 128),             // 1 blue
-  color(0, 128, 0),             // 2 green
-  color(0, 128, 128),           // 3 cyan
-  color(128, 0, 0),             // 4 red
-  color(128, 0, 128),           // 5 magenta
-  color(128, 128, 0),           // 6 yellow
-  color(192, 192, 192),         // 7 white
-  color(128, 128, 128),         // 8 gray
-  color(0, 0, 255),             // 9 light blue
-  color(0, 255, 0),             // 10 light green
-  color(0, 255, 255),           // 11 light cyan
-  color(255, 0, 0),             // 12 light red
-  color(255, 0, 255),           // 13 light magenta
-  color(255, 255, 0),           // 14 light yellow
+  rgb_color(0, 0, 128),             // 1 blue
+  rgb_color(0, 128, 0),             // 2 green
+  rgb_color(0, 128, 128),           // 3 cyan
+  rgb_color(128, 0, 0),             // 4 red
+  rgb_color(128, 0, 128),           // 5 magenta
+  rgb_color(128, 128, 0),           // 6 yellow
+  rgb_color(192, 192, 192),         // 7 white
+  rgb_color(128, 128, 128),         // 8 gray
+  rgb_color(0, 0, 255),             // 9 light blue
+  rgb_color(0, 255, 0),             // 10 light green
+  rgb_color(0, 255, 255),           // 11 light cyan
+  rgb_color(255, 0, 0),             // 12 light red
+  rgb_color(255, 0, 255),           // 13 light magenta
+  rgb_color(255, 255, 0),           // 14 light yellow
   WHITE                         // 15 bright white
 };
 
+// TODO: fixme
 #define begin_offscreen()                       \
-  initImage();                                  \
-  GSave gsave;                                  \
-  img->make_current();
+  initImage();                                
 
 /*! Standard constructor for a widget.
  */
@@ -125,7 +120,8 @@ AnsiWidget::~AnsiWidget() {
  */
 void AnsiWidget::destroyImage() {
   if (img) {
-    img->destroy();
+    //img->destroy();
+    // TODO: fixme
     delete img;
     img = 0;
   }
@@ -136,11 +132,12 @@ void AnsiWidget::destroyImage() {
 */
 void AnsiWidget::initImage() {
   if (img == 0) {
-    img = new Image(w(), h());
-    GSave gsave;
-    img->make_current();
+    //img = new Image(w(), h());
+    //    GSave gsave;
+    // TODO: fixme
+    //img->make_current();
     setcolor(color());
-    fillrect(Rectangle(w(), h()));
+    rectf(0, 0, w(), h());
     setFont();
   }
 }
@@ -172,11 +169,12 @@ void AnsiWidget::reset() {
 /*! handle resize changes
  */
 void AnsiWidget::layout() {
-  if (img && (layout_damage() & LAYOUT_WH)) {
-    // can't use GSave here in X
-    resized = true;
-  }
-  Widget::layout();
+  // TODO: fixme
+  //  if (img && (layout_damage() & LAYOUT_WH)) {
+  //    // can't use GSave here in X
+  //    resized = true;
+  //  }
+  //  Widget::layout();
 }
 
 /*! output the offscreen buffer
@@ -200,24 +198,25 @@ void AnsiWidget::draw() {
       if (h() > H) {
         H = h();
       }
-      Image *old = img;
-      img = new Image(W, H);
-      GSave gsave;
-      img->make_current();
+      // TODO: fixme
+      // Image *old = img;
+      //img = new Image(W, H);
+      //GSave gsave;
+      //img->make_current();
       setcolor(color());
       setFont();
-      fillrect(Rectangle(W, H));
-      old->draw(Rectangle(old->w(), old->h()));
-      old->destroy();
-      delete old;
+      rectf(0, 0, W, H);
+      //old->draw(Rectangle(old->w(), old->h()));
+      //old->destroy();
+      //delete old;
       resized = false;
     }
-    push_clip(Rectangle(w(), h()));
-    img->draw(Rectangle(img->w(), img->h()));
+    push_clip(0, 0, w(), h());
+    //img->draw(Rectangle(img->w(), img->h()));
     pop_clip();
   } else {
     setcolor(color());
-    fillrect(Rectangle(w(), h()));
+    rectf(0, 0, w(), h());
   }
 }
 
@@ -228,7 +227,7 @@ void AnsiWidget::clearScreen() {
     init();
     begin_offscreen();
     setcolor(color());
-    fillrect(Rectangle(w(), h()));
+    rectf(0, 0, w(), h());
     redraw();
   }
 }
@@ -260,7 +259,7 @@ void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   begin_offscreen();
   setcolor(labelcolor());
-  fillrect(Rectangle(x1, y1, x2 - x1, y2 - y1));
+  rectf(x1, y1, x2 - x1, y2 - y1);
   redraw();
 }
 
@@ -280,8 +279,9 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
  */
 void AnsiWidget::drawImage(Image *image, int x, int y, int sx, int sy, int width, int height) {
   begin_offscreen();
-  image->draw(Rectangle(sx, sy, width, height), // from
-              Rectangle(x, y, width, height));  // to
+  // TODO: fixme
+  //  image->draw(Rectangle(sx, sy, width, height), // from
+  //              Rectangle(x, y, width, height));  // to
   redraw();
 }
 
@@ -296,8 +296,9 @@ void AnsiWidget::saveImage(const char *filename, int x, int y, int width, int he
   }
   uchar *pixels = (uchar *) malloc(width * height * 3);
   begin_offscreen();
-  readimage(pixels, RGB, Rectangle(x, y, width, height));
-  fltk::rgbImage jpg(pixels, RGB, width, height);
+  // TODO: fixme
+  //readimage(pixels, RGB, Rectangle(x, y, width, height));
+  //fltk3::rgbImage jpg(pixels, RGB, width, height);
   // jpg.write_jpeg(filename);
   // TODO: re-enable jpeg write function
   free((void *)pixels);
@@ -325,7 +326,7 @@ void AnsiWidget::setPixel(int x, int y, int c) {
  */
 int AnsiWidget::getPixel(int x, int y) {
 #if USE_X11
-  XImage *image = XGetImage(fltk::xdisplay, xwindow, x, y, 1, 1, AllPlanes, ZPixmap);
+  XImage *image = XGetImage(fltk3::xdisplay, xwindow, x, y, 1, 1, AllPlanes, ZPixmap);
   if (image) {
     int color = XGetPixel(image, 0, 0);
     XDestroyImage(image);
@@ -345,7 +346,7 @@ int AnsiWidget::getPixel(int x, int y) {
 /*! create audible beep sound
  */
 void AnsiWidget::beep() const {
-  fltk::beep(fltk::BEEP_MESSAGE);
+  fltk3::beep(fltk3::BEEP_MESSAGE);
 }
 
 /*! Returns the width in pixels using the current font setting
@@ -366,7 +367,7 @@ int AnsiWidget::textHeight(void) {
 
 /*! callback for scrollrect
  */
-void eraseBottomLine(void *data, const fltk::Rectangle &r) {
+void eraseBottomLine(void *data, const fltk3::Rectangle &r) {
   AnsiWidget *out = (AnsiWidget *) data;
   setcolor(out->color());
   fillrect(r);
@@ -380,7 +381,8 @@ void AnsiWidget::newLine() {
 
   curX = INITXY;
   if (curY + (fontHeight * 2) >= height) {
-    scrollrect(Rectangle(w(), height), 0, -fontHeight, eraseBottomLine, this);
+    // TODO: fixme
+    //scrollrect(Rectangle(w(), height), 0, -fontHeight, eraseBottomLine, this);
   } else {
     curY += fontHeight;
   }
@@ -407,7 +409,7 @@ Color AnsiWidget::ansiToFltk(long c) {
     int r = (c >> 16) & 0xFF;
     int g = (c >> 8) & 0xFF;
     int b = (c) & 0xFF;
-    return fltk::color(r, g, b);
+    return fltk3::rgb_color(r, g, b);
   }
 
   return (c > 16) ? WHITE : colors[c];
@@ -419,7 +421,7 @@ bool AnsiWidget::setGraphicsRendition(char c, int escValue) {
   switch (c) {
   case 'K':                    // \e[K - clear to eol
     setcolor(color());
-    fillrect(Rectangle(curX, curY, w() - curX, (int)(getascent() + getdescent())));
+    rectf(curX, curY, w() - curX, (int)(getascent() + getdescent()));
     break;
   case 'G':                    // move to column
     curX = escValue;
@@ -565,14 +567,15 @@ bool AnsiWidget::doEscape(unsigned char *&p) {
 /*! Prepares to display text according to accumulated flags
  */
 void AnsiWidget::setFont() {
-  fltk::Font *font = labelfont();
-  if (bold) {
-    font = font->bold();
-  }
-  if (italic) {
-    font = font->italic();
-  }
-  setfont(font, textsize());
+  //  fltk3::Font *font = labelfont();
+  //  if (bold) {
+  //    font = font->bold();
+  //  }
+  //  if (italic) {
+  //    font = font->italic();
+  //  }
+  //  setfont(font, textsize());
+  // TODO: fixme
 }
 
 /*! Prints the contents of the given string onto the backbuffer
@@ -600,7 +603,7 @@ void AnsiWidget::print(const char *str) {
     case '\xC':
       init();
       setcolor(color());
-      fillrect(Rectangle(w(), h()));
+      rectf(0, 0, w(), h());
       break;
     case '\033':               // ESC ctrl chars
       if (*(p + 1) == '[') {
@@ -616,7 +619,7 @@ void AnsiWidget::print(const char *str) {
     case '\r':                 // return
       curX = INITXY;
       setcolor(color());
-      fillrect(Rectangle(0, curY, w(), fontHeight));
+      rectf(0, curY, w(), fontHeight);
       break;
     default:
       int numChars = 1;         // print minimum of one character
@@ -639,12 +642,12 @@ void AnsiWidget::print(const char *str) {
 
       if (invert) {
         setcolor(labelcolor());
-        fillrect(curX, curY, cx, fontHeight);
+        rectf(curX, curY, cx, fontHeight);
         setcolor(color());
         drawtext((const char *)p, numChars, float (curX), float (curY + ascent));
       } else {
         setcolor(color());
-        fillrect(curX, curY, cx, fontHeight);
+        rectf(curX, curY, cx, fontHeight);
         setcolor(labelcolor());
         drawtext((const char *)p, numChars, float (curX), float (curY + ascent));
       }

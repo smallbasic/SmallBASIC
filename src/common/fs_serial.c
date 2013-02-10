@@ -7,6 +7,11 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#define __addr_t_defined
+#include <windows.h>
+#endif
+
 #include "common/sys.h"
 #include "common/device.h"
 #include "common/pproc.h"
@@ -25,10 +30,6 @@ typedef int FileHand;
 
 #include "common/fs_stream.h"
 #include "common/fs_serial.h"
-
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-#include <windows.h>
-#endif
 
 /*
  */

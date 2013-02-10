@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 #if !defined(NULL)
-#define NULL  (void*)0L
+#define NULL (void*)0L
 #endif
 
 /*
@@ -34,7 +34,9 @@ extern "C" {
 typedef intptr_t MemHandle;
 typedef MemHandle mem_t;
 
-#define byte  unsigned char
+#if !defined(byte)
+  #define byte unsigned char
+#endif
 typedef byte *byte_p_t;
 typedef char *char_p_t;
 

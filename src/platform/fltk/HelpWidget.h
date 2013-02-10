@@ -8,14 +8,16 @@
 #ifndef FL_HELP_WIDGET
 #define FL_HELP_WIDGET
 
-#include <fltk/Widget.h>
-#include <fltk/draw.h>
-#include <fltk/Image.h>
-#include <fltk/SharedImage.h>
-#include <fltk/Group.h>
-#include <fltk/Scrollbar.h>
+#include <fltk3/Widget.h>
+#include <fltk3/draw.h>
+#include <fltk3/Image.h>
+#include <fltk3/SharedImage.h>
+#include <fltk3/Group.h>
+#include <fltk3/Scrollbar.h>
+#include <fltk3/XPMImage.h>
 
 #include "StringLib.h"
+#include "fltk2.h"
 
 #define ID_BUTTON   1
 #define ID_TEXTBOX  2
@@ -37,7 +39,8 @@
 #define EVENT_PG_DOWN       105
 #define EVENT_PG_UP         106
 
-using namespace fltk;
+
+using namespace fltk3;
 using namespace strlib;
 
 SharedImage *loadImage(const char *name, uchar *buff);
@@ -64,8 +67,8 @@ public:
   const char *getFileName() { return fileName; }
   const char *getDocHome() { return docHome; }
   const char *getSelection() { return selection; }
-  const String getEventName() { return event; }
-  void getText(String *s);
+  const strlib::String getEventName() { return event; }
+  void getText(strlib::String *s);
   void getInputProperties(Properties *p);
   void setCookies(Properties *p) { cookies = p; }
   bool setInputValue(const char *assignment);
@@ -136,7 +139,7 @@ static const char *dot_xpm[] = {
   ".+++."
 };
 
-static xpmImage dotImage(dot_xpm);
+static XPMImage dotImage((const char *)dot_xpm);
 
 static const char *ellipse_xpm[] = {
   "6 1 2 1",
@@ -145,7 +148,7 @@ static const char *ellipse_xpm[] = {
   " . . ."
 };
 
-static xpmImage ellipseImage(ellipse_xpm);
+static XPMImage ellipseImage((const char *)ellipse_xpm);
 
 static const char *broken_xpm[] = {
   "16 18 4 1",
@@ -175,7 +178,7 @@ static const char *broken_xpm[] = {
   NULL
 };
 
-static xpmImage brokenImage(broken_xpm);
+static XPMImage brokenImage((const char *)broken_xpm);
 
 struct ENTITY_MAP {
   const char *ent;

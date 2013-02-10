@@ -7,21 +7,22 @@
 //
 // Copyright(C) 2001 Nicholas Christopoulos
 
-#include "common/smbas.h"
-#include "common/extlib.h"
-#include "common/pproc.h"
-
-#if defined(__linux__) && defined(_UnixOS)
-#define LNX_EXTLIB
-#endif
-
 #if defined(__CYGWIN__)
+#define __addr_t_defined
 #include <w32api/windows.h>
 #include <sys/cygwin.h>
 #define WIN_EXTLIB
 #elif defined(__MINGW32__)
 #include <windows.h>
 #define WIN_EXTLIB
+#endif
+
+#include "common/smbas.h"
+#include "common/extlib.h"
+#include "common/pproc.h"
+
+#if defined(__linux__) && defined(_UnixOS)
+#define LNX_EXTLIB
 #endif
 
 #ifdef LNX_EXTLIB

@@ -13,21 +13,21 @@
 #ifndef EDITOR_WIDGET_H
 #define EDITOR_WIDGET_H
 
-#include <fltk/Browser.h>
-#include <fltk/Window.h>
-#include <fltk/Widget.h>
-#include <fltk/Input.h>
-#include <fltk/ToggleButton.h>
-#include <fltk/Button.h>
-#include <fltk/TextEditor.h>
-#include <fltk/Choice.h>
+#include <fltk3/Browser.h>
+#include <fltk3/Window.h>
+#include <fltk3/Widget.h>
+#include <fltk3/Input.h>
+#include <fltk3/ToggleButton.h>
+#include <fltk3/Button.h>
+#include <fltk3/TextEditor.h>
+#include <fltk3/Choice.h>
 #include <limits.h>
 
 #include "StringLib.h"
 #include "TtyWidget.h"
 #include "BasicEditor.h"
 
-using namespace fltk;
+using namespace fltk3;
 
 #ifdef CALLBACK_METHOD
 #undef CALLBACK_METHOD

@@ -9,21 +9,21 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include <fltk/Browser.h>
-#include <fltk/ColorChooser.h>
-#include <fltk/Item.h>
-#include <fltk/TiledGroup.h>
-#include <fltk/ask.h>
-#include <fltk/damage.h>
-#include <fltk/events.h>
-#include <fltk/run.h>
+#include <fltk3/Browser.h>
+#include <fltk3/ColorChooser.h>
+#include <fltk3/Item.h>
+#include <fltk3/TiledGroup.h>
+#include <fltk3/ask.h>
+#include <fltk3/damage.h>
+#include <fltk3/events.h>
+#include <fltk3/run.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
 #include "FileWidget.h"
 #include "common/smbas.h"
 
-using namespace fltk;
+using namespace fltk3;
 
 #define TTY_ROWS 1000
 
@@ -76,7 +76,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   editor = new BasicEditor(0, 0, w - browserWidth, editHeight, this);
   editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
-  editor->selection_color(fltk::color(190, 189, 188));
+  editor->selection_color(fltk3::rgb_color(190, 189, 188));
   editor->textbuf->add_modify_callback(changed_cb, this);
   editor->box(NO_BOX);
   editor->take_focus();
@@ -443,7 +443,7 @@ void EditorWidget::command(Widget *w, void *eventData) {
  * font menu selection handler
  */
 void EditorWidget::font_name(Widget *w, void *eventData) {
-  setFont(fltk::font(w->label(), 0));
+  setFont(fltk3::font(w->label(), 0));
   wnd->updateConfig(this);
 }
 
@@ -501,7 +501,7 @@ void EditorWidget::rename_word(Widget *w, void *eventData) {
 
       rename_active = true;
       while (rename_active && in->focused()) {
-        fltk::wait();
+        fltk3::wait();
       }
 
       showFindText("");
@@ -579,8 +579,8 @@ void EditorWidget::set_color(Widget *w, void *eventData) {
     uchar r, g, b;
     split_color(editor->color(), r, g, b);
     if (color_chooser(w->label(), r, g, b)) {
-      Color c = fltk::color(r, g, b);
-      set_color_index(fltk::FREE_COLOR + styleField, c);
+      Color c = fltk3::rgb_color(r, g, b);
+      set_color_index(fltk3::FREE_COLOR + styleField, c);
       setEditorColor(c, styleField == st_background_def);
       editor->styleChanged();
     }
@@ -790,7 +790,7 @@ void EditorWidget::getInput(char *result, int size) {
   setCommand(cmd_input_text);
   wnd->setModal(true);
   while (wnd->isModal()) {
-    fltk::wait();
+    fltk3::wait();
   }
   if (wnd->isBreakExec()) {
     brun_break();
@@ -860,7 +860,7 @@ int EditorWidget::handle(int e) {
   switch (e) {
   case SHOW:
   case FOCUS:
-    fltk::focus(editor);
+    fltk3::focus(editor);
     handleFileChange();
     return 1;
   case KEY:
@@ -1389,8 +1389,8 @@ void EditorWidget::setColor(const char *label, StyleField field) {
   uchar r, g, b;
   split_color(styletable[field].color, r, g, b);
   if (color_chooser(label, r, g, b)) {
-    Color c = fltk::color(r, g, b);
-    set_color_index(fltk::FREE_COLOR + field, c);
+    Color c = fltk3::rgb_color(r, g, b);
+    set_color_index(fltk3::FREE_COLOR + field, c);
     styletable[field].color = c;
     editor->styleChanged();
   }

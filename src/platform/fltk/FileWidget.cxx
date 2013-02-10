@@ -14,9 +14,9 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <fltk/ask.h>
-#include <fltk/events.h>
-#include <fltk/run.h>
+#include <fltk3/ask.h>
+#include <fltk3/events.h>
+#include <fltk3/run.h>
 
 #include "MainWindow.h"
 #include "StringLib.h"

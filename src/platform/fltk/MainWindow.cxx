@@ -8,13 +8,10 @@
 
 #include "common/sys.h"
 
-#include <fltk/Item.h>
-#include <fltk/MenuBar.h>
-#include <fltk/TabGroup.h>
-#include <fltk/ask.h>
-#include <fltk/error.h>
-#include <fltk/events.h>
-#include <fltk/run.h>
+#include <fltk3/MenuBar.h>
+#include <fltk3/TabGroup.h>
+#include <fltk3/ask.h>
+#include <fltk3/run.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
@@ -24,13 +21,13 @@
 #include "StringLib.h"
 
 #if defined(WIN32)
-#include <fltk/win32.h>
+#include <fltk3/win32.h>
 #endif
 
 extern "C" {
 #include "common/fs_socket_client.h"
 } 
-using namespace fltk;
+using namespace fltk3;
 
 char *packageHome;
 char *runfile = 0;
@@ -72,8 +69,8 @@ bool isFormActive();
 // scan for fixed pitch fonts in the background
 struct ScanFont {
   ScanFont(Menu *argMenu) : menu(argMenu), index(0) {
-    numfonts = fltk::list_fonts(fonts);
-    fltk::add_idle(ScanFont::scan_font_cb, this);
+    numfonts = fltk3::list_fonts(fonts);
+    fltk3::add_idle(ScanFont::scan_font_cb, this);
   } 
   static void scan_font_cb(void *eventData) {
     ((ScanFont *)eventData)->scanNext();
@@ -89,7 +86,7 @@ struct ScanFont {
       }
       index++;
     } else {
-      fltk::remove_idle(scan_font_cb, this);
+      fltk3::remove_idle(scan_font_cb, this);
       delete this;
     }
   }
@@ -352,7 +349,7 @@ bool MainWindow::execHelp() {
  * handle click from within help window
  */
 void do_help_contents_anchor(void *){
-  fltk::remove_check(do_help_contents_anchor);
+  fltk3::remove_check(do_help_contents_anchor);
   String eventName = wnd->getHelp()->getEventName();
   if (access(eventName, R_OK) == 0) {
     wnd->editFile(eventName);
@@ -366,7 +363,7 @@ void do_help_contents_anchor(void *){
 
 void MainWindow::help_contents_anchor(Widget *w, void *eventData) {
   if (runMode == edit_state) {
-    fltk::add_check(do_help_contents_anchor);
+    fltk3::add_check(do_help_contents_anchor);
   }
 }
 
@@ -412,7 +409,7 @@ void MainWindow::set_flag(Widget *w, void *eventData) {
 }
 
 void MainWindow::set_options(Widget *w, void *eventData) {
-  const char *args = fltk::input("Enter program command line", opt_command);
+  const char *args = fltk3::input("Enter program command line", opt_command);
   if (args) {
     strcpy(opt_command, args);
   }
@@ -1733,14 +1730,14 @@ bool BaseWindow::handleKeyEvent() {
 }
 
 LineInput::LineInput(int x, int y, int w, int h) : 
-  fltk::Input(x, y, w, h) {
+  fltk3::Input(x, y, w, h) {
   this->orig_x = x;
   this->orig_y = y;
   this->orig_w = w;
   this->orig_h = h;
   when(WHEN_ENTER_KEY_ALWAYS);
   box(BORDER_BOX);
-  color(fltk::color(220, 220, 220));
+  color(fltk3::color(220, 220, 220));
   take_focus();
 }
 
@@ -1764,7 +1761,7 @@ bool LineInput::replace(int b, int e, const char *text, int ilen) {
  * veto the layout changes
  */
 void LineInput::layout() {
-  fltk::Input::layout();
+  fltk3::Input::layout();
   x(orig_x);
   y(orig_y);
   w(orig_w);
@@ -1772,7 +1769,7 @@ void LineInput::layout() {
 }
 
 int LineInput::handle(int event) {
-  if (event == fltk::KEY) {
+  if (event == fltk3::KEY) {
     if ((event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) && event_key() == 'b') {
       if (!wnd->isEdit()) {
         wnd->setBreak();
@@ -1782,7 +1779,7 @@ int LineInput::handle(int event) {
       do_callback();
     }
   }
-  return fltk::Input::handle(event);
+  return fltk3::Input::handle(event);
 }
 
 //--Debug support---------------------------------------------------------------

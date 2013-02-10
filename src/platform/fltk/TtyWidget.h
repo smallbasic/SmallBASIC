@@ -11,13 +11,12 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <fltk/events.h>
-#include <fltk/Font.h>
-#include <fltk/draw.h>
-#include <fltk/Group.h>
-#include <fltk/Scrollbar.h>
+#include <fltk3/draw.h>
+#include <fltk3/Group.h>
+#include <fltk3/Scrollbar.h>
 
 #include "StringLib.h"
+#include "fltk2.h"
 
 #define SCROLL_W 15
 #define SCROLL_H 15
@@ -25,7 +24,7 @@
 
 extern "C" void trace(const char *format, ...);
 
-using namespace fltk;
+using namespace fltk3;
 using namespace strlib;
 
 struct Point {
@@ -122,7 +121,7 @@ struct TextSeg {
     *invert = get(INVERT, invert);
 
     if (this->color != NO_COLOR) {
-      fltk::setcolor(this->color);
+      fltk3::color(this->color);
     }
 
     return set(BOLD) || set(ITALIC);
@@ -208,7 +207,7 @@ struct Row {
   TextSeg *head;
 };
 
-struct TtyWidget:public Group {
+struct TtyWidget : public Group {
   TtyWidget(int x, int y, int w, int h, int numRows);
   virtual ~TtyWidget();
 
@@ -222,7 +221,7 @@ struct TtyWidget:public Group {
   bool copySelection();
   void print(const char *str);
   void setFont(Font *font) {
-    setfont(font, 0);
+    this->setFont(font, 0);
     redraw();
   };
   void setFontSize(int size) {
@@ -234,11 +233,11 @@ struct TtyWidget:public Group {
   };
 
 private:
-  void drawSelection(TextSeg *seg, String *s, int row, int x, int y);
+  void drawSelection(TextSeg *seg, strlib::String *s, int row, int x, int y);
   Row *getLine(int ndx);
   int processLine(Row *line, const char *linePtr);
-  void setfont(bool bold, bool italic);
-  void setfont(Font *font, int size);
+  void setFont(bool bold, bool italic);
+  void setFont(Font *font, int size);
   void setGraphicsRendition(TextSeg *segment, int c);
 
   // returns the number of display text rows held in the buffer

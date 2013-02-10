@@ -9,9 +9,9 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-#include <fltk/Window.h>
-#include <fltk/TabGroup.h>
-#include <fltk/ValueInput.h>
+#include <fltk3/Window.h>
+#include <fltk3/TabGroup.h>
+#include <fltk3/ValueInput.h>
 
 #include "AnsiWidget.h"
 #include "EditorWidget.h"
@@ -55,7 +55,7 @@ enum GroupWidget {
   gw_file
 };
 
-struct LineInput:public fltk::Input {
+struct LineInput: public fltk3::Input {
   LineInput(int x, int y, int w, int h);
   bool replace(int b, int e, const char *text, int ilen);
   void layout();

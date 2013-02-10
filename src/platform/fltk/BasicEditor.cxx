@@ -9,26 +9,26 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <fltk/damage.h>
-#include <fltk/events.h>
+#include <fltk3/damage.h>
+#include <fltk3/events.h>
 
 #include "BasicEditor.h"
 #include "kwp.h"
 
-using namespace fltk;
+using namespace fltk3;
 using namespace strlib;
 
 Color defaultColor[] = {
   BLACK,                        // A - Plain
-  color(0, 128, 0),             // B - Comments
-  color(0, 0, 192),             // C - Strings
-  color(192, 0, 0),             // D - code_keywords
-  color(128, 128, 0),           // E - code_functions
-  color(0, 128, 128),           // F - code_procedures
-  color(128, 0, 128),           // G - Find matches
-  color(0, 128, 0),             // H - Italic Comments ';
-  color(0, 128, 128),           // I - Numbers
-  color(128, 128, 64),          // J - Operators
+  rgb_color(0, 128, 0),         // B - Comments
+  rgb_color(0, 0, 192),         // C - Strings
+  rgb_color(192, 0, 0),         // D - code_keywords
+  rgb_color(128, 128, 0),       // E - code_functions
+  rgb_color(0, 128, 128),       // F - code_procedures
+  rgb_color(128, 0, 128),       // G - Find matches
+  rgb_color(0, 128, 0),         // H - Italic Comments ';
+  rgb_color(0, 128, 128),       // I - Numbers
+  rgb_color(128, 128, 64),      // J - Operators
 };
 
 TextDisplay::StyleTableEntry styletable[] = { // Style table

@@ -6,10 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <fltk/damage.h>
-#include <fltk/events.h>
-#include <fltk/run.h>
-#include <fltk/CheckButton.h>
+#include <fltk3/run.h>
+#include <fltk3/CheckButton.h>
 
 #include "TtyWidget.h"
 
@@ -26,13 +24,14 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   head = tail = 0;
   markX = markY = pointX = pointY = 0;
 
-  setfont(COURIER, 12);
+  setFont(COURIER, 12);
   scrollLock = false;
 
   begin();
   // vertical scrollbar scrolls in row units
   vscrollbar = new Scrollbar(w - SCROLL_W, 1, SCROLL_W, h);
-  vscrollbar->set_vertical();
+  // vscrollbar->set_vertical();
+  // TODO: fixme
   vscrollbar->user_data(this);
 
   // horizontal scrollbar scrolls in pixel units
@@ -72,11 +71,11 @@ void TtyWidget::draw() {
   // setup the background colour
   setcolor(color());
   fillrect(rc);
-  push_clip(rc);
+  push_clip(rc.x(), rc.y(), rc.w(), rc.h());
   setcolor(BLACK);
   drawline(0, 0, w(), 0);
   setcolor(labelcolor());
-  setfont(labelfont(), (int)labelsize());
+  setFont(labelfont(), (int)labelsize());
 
   int pageWidth = 0;
   for (int row = firstRow, rows = 0, y = rc.y() + lineHeight; rows < numRows; row++, rows++, y += lineHeight) {
@@ -85,14 +84,14 @@ void TtyWidget::draw() {
     int x = 2 - hscroll;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
-        setfont(bold, italic);
+        setFont(bold, italic);
       }
       drawSelection(seg, null, row, x, y);
       int width = seg->width();
       if (seg->str) {
         if (invert) {
           setcolor(labelcolor());
-          fillrect(x, (y - lineHeight) + (int)getdescent(), width, lineHeight);
+          rectf(x, (y - lineHeight) + (int)getdescent(), width, lineHeight);
           setcolor(color());
           drawtext(seg->str, x, y);
           setcolor(labelcolor());
@@ -123,7 +122,7 @@ void TtyWidget::draw() {
 //
 // draw the background for selected text
 //
-void TtyWidget::drawSelection(TextSeg *seg, String *s, int row, int x, int y) {
+void TtyWidget::drawSelection(TextSeg *seg, strlib::String *s, int row, int x, int y) {
   if (markX != pointX || markY != pointY) {
     Rectangle rc(0, y - (int)getascent(), 0, lineHeight);
     int r1 = markY;
@@ -198,10 +197,12 @@ int TtyWidget::handle(int e) {
   static bool leftButtonDown = false;
   switch (e) {
   case PUSH:
-    if ((!vscrollbar->visible() || !event_inside(*vscrollbar)) &&
-        (!hscrollbar->visible() || !event_inside(*hscrollbar))) {
+    //    if ((!vscrollbar->visible() || !event_inside(*vscrollbar)) &&
+    //        (!hscrollbar->visible() || !event_inside(*hscrollbar))) {
+    // TODO: fixme
+    if (0) {
       bool selected = (markX != pointX || markY != pointY);
-      if (selected && event_button() == RightButton) {
+      if (selected) {// && event_button() == RightButton) {
         // right click to copy selection
         copySelection();
       }
@@ -209,7 +210,7 @@ int TtyWidget::handle(int e) {
       markY = pointY = rowEvent();
       if (selected) {
         // draw end selection
-        redraw(DAMAGE_HIGHLIGHT);
+        damage(DAMAGE_HIGHLIGHT);
       }
       leftButtonDown = true;
       return 1;                 // become belowmouse to receive RELEASE event
@@ -221,7 +222,7 @@ int TtyWidget::handle(int e) {
     if (leftButtonDown) {
       pointX = event_x();
       pointY = rowEvent();
-      redraw(DAMAGE_HIGHLIGHT);
+      damage(DAMAGE_HIGHLIGHT);
       if (vscrollbar->visible()) {
         // drag to scroll up or down
         int value = vscrollbar->value();
@@ -300,16 +301,16 @@ bool TtyWidget::copySelection() {
     r2 = markY;
   }
 
-  String selection;
+  strlib::String selection;
 
   for (int row = r1; row <= r2; row++) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->head;
     int x = 2 - hscroll;
-    String rowText;
+    strlib::String rowText;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
-        setfont(bold, italic);
+        setFont(bold, italic);
       }
       drawSelection(seg, &rowText, row, x, 0);
       x += seg->width();
@@ -324,7 +325,7 @@ bool TtyWidget::copySelection() {
   bool result = selection.length() > 0;
   if (result) {
     const char *copy = selection.toString();
-    fltk::copy(copy, strlen(copy), true);
+    fltk3::copy(copy, strlen(copy), true);
   }
   return result;
 }
@@ -352,7 +353,8 @@ void TtyWidget::print(const char *str) {
   Row *line = getLine(head);    // pointer to current line
 
   // need the current font set to calculate text widths
-  fltk::setfont(labelfont(), labelsize());
+  //  fltk3::setfont(labelfont(), labelsize());
+  // TODO: fixme
 
   // scan the text, handle any special characters, and display the rest.
   for (int i = 0; i < strLength; i++) {
@@ -398,7 +400,8 @@ void TtyWidget::print(const char *str) {
     vscrollbar->value(getTextRows() - getPageRows());
   }
   // schedule a layout and redraw
-  relayout();
+  //  relayout();
+  // TODO: fixme
   redraw();
 }
 
@@ -581,28 +584,30 @@ void TtyWidget::setGraphicsRendition(TextSeg *segment, int c) {
 //
 // update the current drawing font
 //
-void TtyWidget::setfont(bool bold, bool italic) {
-  Font *font = labelfont();
-  if (bold) {
-    font = font->bold();
-  }
-  if (italic) {
-    font = font->italic();
-  }
-  fltk::setfont(font, labelsize());
+void TtyWidget::setFont(bool bold, bool italic) {
+  //  Font *font = labelfont();
+  //  if (bold) {
+  //    font = font->bold();
+  //  }
+  //  if (italic) {
+  //    font = font->italic();
+  //  }
+  //  fltk3::setfont(font, labelsize());
+  // TODO: fixme
 }
 
 //
 // update the current drawing font and remember the face/size
 //
-void TtyWidget::setfont(Font *font, int size) {
-  if (font) {
-    labelfont(font);
-  }
-  if (size) {
-    labelsize(size);
-  }
-  fltk::setfont(labelfont(), labelsize());
+void TtyWidget::setFont(Font *font, int size) {
+  //  if (font) {
+  //    labelfont(font);
+  //  }
+  //  if (size) {
+  //    labelsize(size);
+  //  }
+  //  fltk3::setfont(labelfont(), labelsize());
+  // TODO: fixme
   lineHeight = (int)(getascent() + getdescent());
 }
 

@@ -13,10 +13,10 @@
 #ifndef BASIC_EDITOR_H
 #define BASIC_EDITOR_H
 
-#include <fltk/TextEditor.h>
+#include <fltk3/TextEditor.h>
 #include "StringLib.h"
 
-using namespace fltk;
+using namespace fltk3;
 
 extern "C" void trace(const char *format, ...);
 

@@ -9,13 +9,11 @@
 #ifndef PROFILE_H
 #define PROFILE_H
 
-#include <fltk/Color.h>
-#include <fltk/Font.h>
-#include <fltk/Rectangle.h>
+#include <fltk3/Rectangle.h>
 
 #include "StringLib.h"
 
-using namespace fltk;
+using namespace fltk3;
 using namespace strlib;
 
 struct MainWindow;

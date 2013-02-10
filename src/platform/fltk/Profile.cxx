@@ -8,7 +8,7 @@
 
 #include <unistd.h>
 #include <ctype.h>
-#include <fltk/Monitor.h>
+#include <fltk3/Monitor.h>
 
 #include "Profile.h"
 #include "MainWindow.h"
