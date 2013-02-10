@@ -7,15 +7,34 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "sys.h"
-#include "inet.h"
-#include "device.h"
+#if !defined(INET_UNSUP)
+ #if defined(_Win32) || defined(__MINGW32__)
+  #define __addr_t_defined
+  #include <winsock2.h>
+ #elif defined(_UnixOS)
+  #include <sys/socket.h>
+  #include <netinet/in.h>
+  #include <sys/param.h>
+  #include <netdb.h>
+  #include <arpa/inet.h>
+ #elif defined(_DOS)
+  #if defined(_DOSTCP_ENABLE)
+  #include <netinet/in.h>
+  #include <socket.h>
+  #define INADDR_NONE NULL
+  #endif
+ #endif
+#endif
 
 #if !defined(_WIN32)
 #include <sys/ioctl.h>
 #else
 static int inetlib_init = 0;
 #endif
+
+#include "sys.h"
+#include "inet.h"
+#include "device.h"
 
 #ifndef socklen_t
 #define socklen_t int

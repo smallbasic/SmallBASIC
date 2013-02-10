@@ -24,12 +24,12 @@ struct Profile {
 
   void loadConfig(EditorWidget *editor);
   void restore(MainWindow *wnd);
-  void restoreAppPosition(Rectangle *wnd);
+  void restoreAppPosition(fltk3::Rectangle *wnd);
   void save(MainWindow *wnd);
 
   Color color;
   Font *font;
-  Rectangle appPosition;
+  fltk3::Rectangle appPosition;
 
   int fontSize;
   int indentLevel;
@@ -39,12 +39,12 @@ struct Profile {
 private:
   bool loaded;
   int nextInteger(const char *s, int len, int &index);
-  Rectangle restoreRect(Properties *profile, const char *key);
+  fltk3::Rectangle restoreRect(Properties *profile, const char *key);
   void restoreStyles(Properties *profile);
   void restoreTabs(MainWindow *wnd, Properties *profile);
   void restoreValue(Properties *profile, const char *key, int *value);
-  void restoreWindowPos(MainWindow *wnd, Rectangle &rc);
-  void saveRect(FILE *fp, const char *key, Rectangle *wnd);
+  void restoreWindowPos(MainWindow *wnd, fltk3::Rectangle &rc);
+  void saveRect(FILE *fp, const char *key, fltk3::Rectangle *wnd);
   void saveStyles(FILE *fp);
   void saveTabs(FILE *fp, MainWindow *wnd);
   void saveValue(FILE *fp, const char *key, const char *value);

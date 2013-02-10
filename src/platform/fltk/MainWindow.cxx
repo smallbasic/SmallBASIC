@@ -20,10 +20,6 @@
 #include "common/sbapp.h"
 #include "StringLib.h"
 
-#if defined(WIN32)
-#include <fltk3/win32.h>
-#endif
-
 extern "C" {
 #include "common/fs_socket_client.h"
 } 
@@ -34,7 +30,7 @@ char *runfile = 0;
 int recentIndex = 0;
 int restart = 0;
 Widget *recentMenu[NUM_RECENT_ITEMS];
-String recentPath[NUM_RECENT_ITEMS];
+strlib::String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 MainWindow *wnd;
 ExecState runMode = init_state;
@@ -68,8 +64,8 @@ bool isFormActive();
 
 // scan for fixed pitch fonts in the background
 struct ScanFont {
-  ScanFont(Menu *argMenu) : menu(argMenu), index(0) {
-    numfonts = fltk3::list_fonts(fonts);
+  ScanFont(MenuBar *argMenu) : menu(argMenu), index(0) {
+    numfonts = 0; // TODO: fixme fltk3::list_fonts(fonts);
     fltk3::add_idle(ScanFont::scan_font_cb, this);
   } 
   static void scan_font_cb(void *eventData) {
@@ -78,19 +74,19 @@ struct ScanFont {
   void scanNext() {
     if (index < numfonts) {
       char label[256];
-      sprintf(label, "&View/Font/%s", fonts[index]->system_name());
-      setfont(font(fonts[index]->name()), 12);
-      if (getdescent() < MAX_DESCENT && (getwidth("QW#@") == getwidth("il:("))) {
-        Widget *w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
-        w->textfont(getfont());
-      }
+      // sprintf(label, "&View/Font/%s", fonts[index]->system_name());
+      //setfont(font(fonts[index]->name()), 12);
+      //if (getdescent() < MAX_DESCENT && (getwidth("QW#@") == getwidth("il:("))) {
+      // Widget *w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
+      // w->textfont(getfont());
+      // }
       index++;
     } else {
       fltk3::remove_idle(scan_font_cb, this);
       delete this;
     }
   }
-  Menu *menu;
+  MenuBar *menu;
   Font **fonts;
   int numfonts;
   int index;
@@ -121,7 +117,7 @@ void MainWindow::pathMessage(const char *file) {
 
 void MainWindow::showEditTab(EditorWidget *editWidget) {
   if (editWidget) {
-    tabGroup->selected_child(editWidget->parent());
+    tabGroup->value(editWidget->parent());
     editWidget->take_focus();
   }
 }
@@ -135,8 +131,8 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   char path[MAX_PATH];
   bool breakToLine = false;     // whether to restore the editor cursor 
 
-  if (strcasecmp(fullpath + len - 4, ".htm") == 0 || 
-      strcasecmp(fullpath + len - 5, ".html") == 0) {
+  if (::strcasecmp(fullpath + len - 4, ".htm") == 0 || 
+      ::strcasecmp(fullpath + len - 5, ".html") == 0) {
     // render html edit buffer
     sprintf(path, "file:%s", fullpath);
     updateForm(path);
@@ -145,7 +141,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
     }
     return false;
   }
-  if (access(fullpath, 0) != 0) {
+  if (::access(fullpath, 0) != 0) {
     pathMessage(fullpath);
     runMode = edit_state;
     return false;
@@ -179,7 +175,8 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
       profile->restoreAppPosition(fullScreen);
 
       fullScreen->callback(quit_cb);
-      fullScreen->shortcut(0);
+      //fullScreen->shortcut(0);
+      // TODO: fixme
       fullScreen->add(out);
       fullScreen->resizable(fullScreen);
       setTitle(fullScreen, filename);
@@ -197,7 +194,8 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   do {
     restart = false;
     runMode = run_state;
-    chdir(path);
+    //chdir(path);
+    // TODO: fixme
     success = sbasic_main(filename);
   }
   while (restart);
@@ -288,7 +286,7 @@ void MainWindow::quit(Widget *w, void *eventData) {
         EditorWidget *editWidget = (EditorWidget *)group->child(0);
         const char *filename = editWidget->getFilename();
         int offs = strlen(filename) - strlen(untitledFile);
-        if (filename[0] == 0 || (offs > 0 && strcasecmp(filename + offs, untitledFile) == 0)) {
+        if (filename[0] == 0 || (offs > 0 && ::strcasecmp(filename + offs, untitledFile) == 0)) {
           getHomeDir(path);
           strcat(path, untitledFile);
           editWidget->doSaveFile(path);
@@ -350,8 +348,8 @@ bool MainWindow::execHelp() {
  */
 void do_help_contents_anchor(void *){
   fltk3::remove_check(do_help_contents_anchor);
-  String eventName = wnd->getHelp()->getEventName();
-  if (access(eventName, R_OK) == 0) {
+  strlib::String eventName = wnd->getHelp()->getEventName();
+  if (::access(eventName, R_OK) == 0) {
     wnd->editFile(eventName);
   } else {
     strcpy(opt_command, eventName);
@@ -405,7 +403,8 @@ void MainWindow::help_about(Widget *w, void *eventData) {
 
 void MainWindow::set_flag(Widget *w, void *eventData) {
   bool *flag = (bool *)eventData;
-  *flag = (w->flags() & STATE);
+  //  *flag = (w->flags() & STATE);
+  // TODO: fixme
 }
 
 void MainWindow::set_options(Widget *w, void *eventData) {
@@ -417,7 +416,7 @@ void MainWindow::set_options(Widget *w, void *eventData) {
 
 void MainWindow::next_tab(Widget *w, void *eventData) {
   Group *group = getNextTab(getSelectedTab());
-  tabGroup->selected_child(group);
+  tabGroup->value(group);
   EditorWidget *editWidget = getEditor(group);
   if (editWidget) {
     editWidget->take_focus();
@@ -426,7 +425,7 @@ void MainWindow::next_tab(Widget *w, void *eventData) {
 
 void MainWindow::prev_tab(Widget *w, void *eventData) {
   Group *group = getPrevTab(getSelectedTab());
-  tabGroup->selected_child(group);
+  tabGroup->value(group);
   EditorWidget *editWidget = getEditor(group);
   if (editWidget) {
     editWidget->take_focus();
@@ -484,7 +483,7 @@ void MainWindow::run(Widget *w, void *eventData) {
           strcat(path, untitledFile);
           filename = path;
           editWidget->doSaveFile(filename);
-        } else if (access(filename, W_OK) == 0) {
+        } else if (::access(filename, W_OK) == 0) {
           editWidget->doSaveFile(filename);
         }
       }
@@ -567,7 +566,7 @@ void MainWindow::tool_plugin(Widget *w, void *eventData) {
     sprintf(opt_command, "%s/%s", packageHome, pluginHome);
     statusMsg(rs_ready, (const char *)eventData);
     sprintf(path, "%s/%s", packageHome, (const char *)eventData);
-    tabGroup->selected_child(outputGroup);
+    tabGroup->value(outputGroup);
     basicMain(0, path, true);
     statusMsg(rs_ready, 0);
     opt_command[0] = 0;
@@ -590,7 +589,7 @@ void MainWindow::load_file(Widget * w, void *eventData) {
     recentPosition[recentIndex] = editor->insert_position();
     recentIndex = pathIndex;
     // load selected file
-    if (access(path, 0) == 0) {
+    if (::access(path, 0) == 0) {
       editWidget->loadFile(path);
       // restore previous position
       editor->insert_position(recentPosition[recentIndex]);
@@ -609,18 +608,19 @@ void MainWindow::load_file(Widget * w, void *eventData) {
 /**
  *Adds a plug-in to the menu
  */
-void MainWindow::addPlugin(Menu *menu, const char *label, const char *filename) {
+void MainWindow::addPlugin(MenuBar *menu, const char *label, const char *filename) {
   char path[MAX_PATH];
   sprintf(path, "%s/%s", pluginHome, filename);
-  if (access(path, R_OK) == 0) {
-    menu->add(label, 0, editor_plugin_cb, strdup(path));
+  if (::access(path, R_OK) == 0) {
+    //menu->add(label, 0, editor_plugin_cb, strdup(path));
+    // TODO: fixme
   }
 }
 
 /**
  * scan for recent files
  */
-void MainWindow::scanRecentFiles(Menu *menu) {
+void MainWindow::scanRecentFiles(MenuBar *menu) {
   FILE *fp;
   char buffer[MAX_PATH];
   char path[MAX_PATH];
@@ -629,11 +629,11 @@ void MainWindow::scanRecentFiles(Menu *menu) {
 
   getHomeDir(path);
   strcat(path, historyFile);
-  fp = fopen(path, "r");
+  fp = ::fopen(path, "r");
   if (fp) {
     while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
       buffer[strlen(buffer) - 1] = 0;   // trim new-line
-      if (access(buffer, 0) == 0) {
+      if (::access(buffer, 0) == 0) {
         char *fileLabel = strrchr(buffer, '/');
         if (fileLabel == 0) {
           fileLabel = strrchr(buffer, '\\');
@@ -643,8 +643,9 @@ void MainWindow::scanRecentFiles(Menu *menu) {
           fileLabel++;
         }
         sprintf(label, "&File/Open Recent File/%s", fileLabel);
-        recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
-                                  load_file_cb, (void *)(i + 1), RAW_LABEL);
+        //        recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
+        //                                  load_file_cb, (void *)(i + 1), RAW_LABEL);
+        // TODO: fixme
         recentPath[i].append(buffer);
         if (++i == NUM_RECENT_ITEMS) {
           break;
@@ -655,8 +656,9 @@ void MainWindow::scanRecentFiles(Menu *menu) {
   }
   while (i < NUM_RECENT_ITEMS) {
     sprintf(label, "&File/Open Recent File/%s", untitledFile);
-    recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
-                              load_file_cb, (void *)(i + 1));
+    //recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
+    //                              load_file_cb, (void *)(i + 1));
+    // TODO: fixme
     recentPath[i].append(untitledFile);
     i++;
   }
@@ -665,7 +667,7 @@ void MainWindow::scanRecentFiles(Menu *menu) {
 /**
  * scan for optional plugins
  */
-void MainWindow::scanPlugIns(Menu *menu) {
+void MainWindow::scanPlugIns(MenuBar *menu) {
   FILE *file;
   char buffer[MAX_PATH];
   char path[MAX_PATH];
@@ -682,9 +684,9 @@ void MainWindow::scanPlugIns(Menu *menu) {
     }
     const char *filename = e->d_name;
     int len = strlen(filename);
-    if (strcasecmp(filename + len - 4, ".bas") == 0) {
+    if (::strcasecmp(filename + len - 4, ".bas") == 0) {
       sprintf(path, "%s/%s/%s", packageHome, pluginHome, filename);
-      file = fopen(path, "r");
+      file = ::fopen(path, "r");
       if (!file) {
         continue;
       }
@@ -695,9 +697,9 @@ void MainWindow::scanPlugIns(Menu *menu) {
       }
       bool editorTool = false;
       FileWidget::trimEOL(buffer);
-      if (strcmp("'tool-plug-in", buffer) == 0) {
+      if (::strcmp("'tool-plug-in", buffer) == 0) {
         editorTool = true;
-      } else if (strcmp("'app-plug-in", buffer) != 0) {
+      } else if (::strcmp("'app-plug-in", buffer) != 0) {
         fclose(file);
         continue;
       }
@@ -711,8 +713,9 @@ void MainWindow::scanPlugIns(Menu *menu) {
         sprintf(label, (editorTool ? "&Edit/Basic/%s" : "&Basic/%s"), buffer + offs);
         // use an absolute path
         sprintf(path, "%s/%s", pluginHome, filename);
-        menu->add(label, 0, (Callback *)
-                  (editorTool ? editor_plugin_cb : tool_plugin_cb), strdup(path));
+        //menu->add(label, 0, (Callback *)
+        //                  (editorTool ? editor_plugin_cb : tool_plugin_cb), strdup(path));
+        // TODO: fixme
       }
       fclose(file);
     }
@@ -729,7 +732,7 @@ int arg_cb(int argc, char **argv, int &i) {
   int len = strlen(s);
   int c;
 
-  if (strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0) {
+  if (::strcasecmp(s + len - 4, ".bas") == 0 && ::access(s, 0) == 0) {
     runfile = strdup(s);
     runMode = run_state;
     i += 1;
@@ -802,8 +805,9 @@ int arg_cb(int argc, char **argv, int &i) {
  */
 void run_mode_startup(void *data) {
   if (data) {
-    Window *w = (Window *)data;
-    w->destroy();
+    fltk3::Window *w = (fltk3::Window *)data;
+    //w->destroy();
+    // TODO: fixme
   }
 
   EditorWidget *editWidget = wnd->getEditor(true);
@@ -871,22 +875,23 @@ bool initialise(int argc, char **argv) {
   // setup styles
   Font *defaultFont = HELVETICA;
   if (defaultFont) {
-    Widget::default_style->labelfont(defaultFont);
-    Button::default_style->labelfont(defaultFont);
-    Widget::default_style->textfont(defaultFont);
-    Button::default_style->textfont(defaultFont);
+    //Widget::default_style->labelfont(defaultFont);
+    //    Button::default_style->labelfont(defaultFont);
+    //    Widget::default_style->textfont(defaultFont);
+    //    Button::default_style->textfont(defaultFont);
+    // TODO: fixme
   }
 
-  Window::xclass("smallbasic");
+  //fltk3::Window::xclass("smallbasic");
 
   wnd->loadIcon(PACKAGE_PREFIX, 101);
   check();
 
-  Window *run_wnd;              // required for x11 plumbing
+  fltk3::Window *run_wnd;   // required for x11 plumbing
 
   switch (runMode) {
   case run_state:
-    run_wnd = new Window(0, 0);
+    run_wnd = new fltk3::Window(0, 0);
     run_wnd->show();
     add_timeout(0.5f, run_mode_startup, run_wnd);
     break;
@@ -937,7 +942,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&File/&New File", CTRL + 'n', new_file_cb);
   m->add("&File/&Open File", CTRL + 'o', open_file_cb);
   scanRecentFiles(m);
-  m->add("&File/_&Close", CTRL + F4Key, close_tab_cb);
+  //m->add("&File/_&Close", CTRL + F4Key, close_tab_cb);  // TODO: fixme
   m->add("&File/&Save File", CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", CTRL + SHIFT + 'S', save_file_as_cb);
   addPlugin(m, "&File/_Publish Online", "publish.bas");
@@ -953,37 +958,37 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Edit/&Find", CTRL + 'f', EditorWidget::find_cb);
   m->add("&Edit/&Replace", CTRL + 'r', EditorWidget::show_replace_cb);
   m->add("&Edit/_&Goto Line", CTRL + 'g', EditorWidget::goto_line_cb);
-  m->add("&View/&Next Tab", F6Key, next_tab_cb);
-  m->add("&View/_&Prev Tab", CTRL + F6Key, prev_tab_cb);
+  // m->add("&View/&Next Tab", F6Key, next_tab_cb); // TODO: fixme
+  //m->add("&View/_&Prev Tab", CTRL + F6Key, prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', font_size_decr_cb);
-  m->add("&View/Text Color/Background Def", 0, EditorWidget::set_color_cb, (void *)st_background_def);
-  m->add("&View/Text Color/_Background", 0, EditorWidget::set_color_cb, (void *)st_background);
-  m->add("&View/Text Color/Text", 0, EditorWidget::set_color_cb, (void *)st_text);
-  m->add("&View/Text Color/Comments", 0, EditorWidget::set_color_cb, (void *)st_comments);
-  m->add("&View/Text Color/_Strings", 0, EditorWidget::set_color_cb, (void *)st_strings);
-  m->add("&View/Text Color/Keywords", 0, EditorWidget::set_color_cb, (void *)st_keywords);
-  m->add("&View/Text Color/Funcs", 0, EditorWidget::set_color_cb, (void *)st_funcs);
-  m->add("&View/Text Color/_Subs", 0, EditorWidget::set_color_cb, (void *)st_subs);
-  m->add("&View/Text Color/Numbers", 0, EditorWidget::set_color_cb, (void *)st_numbers);
-  m->add("&View/Text Color/Operators", 0, EditorWidget::set_color_cb, (void *)st_operators);
-  m->add("&View/Text Color/Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
+  //m->add("&View/Text Color/Background Def", 0, EditorWidget::set_color_cb, (void *)st_background_def);
+  //m->add("&View/Text Color/_Background", 0, EditorWidget::set_color_cb, (void *)st_background);
+  //m->add("&View/Text Color/Text", 0, EditorWidget::set_color_cb, (void *)st_text);
+  //m->add("&View/Text Color/Comments", 0, EditorWidget::set_color_cb, (void *)st_comments);
+  //m->add("&View/Text Color/_strlib::Strings", 0, EditorWidget::set_color_cb, (void *)st_strings);
+  //m->add("&View/Text Color/Keywords", 0, EditorWidget::set_color_cb, (void *)st_keywords);
+  //m->add("&View/Text Color/Funcs", 0, EditorWidget::set_color_cb, (void *)st_funcs);
+  //m->add("&View/Text Color/_Subs", 0, EditorWidget::set_color_cb, (void *)st_subs);
+  //m->add("&View/Text Color/Numbers", 0, EditorWidget::set_color_cb, (void *)st_numbers);
+  //m->add("&View/Text Color/Operators", 0, EditorWidget::set_color_cb, (void *)st_operators);
+  //m->add("&View/Text Color/Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
 
-  new ScanFont(m);
-  scanPlugIns(m);
+  //new ScanFont(m);
+  //scanPlugIns(m);
 
-  m->add("&Program/&Run", F9Key, run_cb);
-  m->add("&Program/_&Run Selection", F8Key, run_selection_cb);
+  //m->add("&Program/&Run", F9Key, run_cb);
+  //m->add("&Program/_&Run Selection", F8Key, run_selection_cb);
   m->add("&Program/&Break", CTRL + 'b', run_break_cb);
-  m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
-  m->add("&Program/&Command", F10Key, set_options_cb);
-  m->add("&Help/_&Help Contents", F1Key, help_contents_cb);
-  m->add("&Help/&Program Help", F11Key, help_app_cb);
-  m->add("&Help/_&Home Page", 0, help_home_cb);
-  m->add("&Help/&About SmallBASIC", F12Key, help_about_cb);
+  //m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
+  //m->add("&Program/&Command", F10Key, set_options_cb);
+  //m->add("&Help/_&Help Contents", F1Key, help_contents_cb);
+  //m->add("&Help/&Program Help", F11Key, help_app_cb);
+  //m->add("&Help/_&Home Page", 0, help_home_cb);
+  //m->add("&Help/&About SmallBASIC", F12Key, help_about_cb);
 
   callback(quit_cb);
-  shortcut(0);                  // remove default EscapeKey shortcut
+  //shortcut(0);     // remove default EscapeKey shortcut
 
   // outer decoration group
   h -= MNU_HEIGHT;
@@ -1037,7 +1042,7 @@ Group *MainWindow::createEditor(const char *title) {
   editGroup->end();
 
   tabGroup->add(editGroup);
-  tabGroup->selected_child(editGroup);
+  tabGroup->value(editGroup);
   tabGroup->end();
   return editGroup;
 }
@@ -1048,7 +1053,7 @@ void MainWindow::new_file(Widget *w, void *eventData) {
   char path[MAX_PATH];
 
   if (untitledEditor) {
-    tabGroup->selected_child(untitledEditor);
+    tabGroup->value(untitledEditor);
     editWidget = getEditor(untitledEditor);
   }
   if (!editWidget) {
@@ -1057,7 +1062,7 @@ void MainWindow::new_file(Widget *w, void *eventData) {
     // preserve the contents of any existing untitled.bas
     getHomeDir(path);
     strcat(path, untitledFile);
-    if (access(path, 0) == 0) {
+    if (::access(path, 0) == 0) {
       editWidget->loadFile(path);
     }
   }
@@ -1092,7 +1097,7 @@ void MainWindow::open_file(Widget *w, void *eventData) {
   if (editWidget) {
     FileWidget::splitPath(editWidget->getFilename(), path);
   } else {
-    Group *group = (Group *)tabGroup->selected_child();
+    Group *group = (Group *)tabGroup->value();
     GroupWidget gw = getGroupWidget(group);
     switch (gw) {
     case gw_output:
@@ -1108,7 +1113,7 @@ void MainWindow::open_file(Widget *w, void *eventData) {
 
   fileWidget->openPath(path);
 
-  tabGroup->selected_child(openFileGroup);
+  tabGroup->value(openFileGroup);
 }
 
 void MainWindow::save_file_as(Widget *w, void *eventData) {
@@ -1139,7 +1144,7 @@ HelpWidget *MainWindow::getHelp() {
   } else {
     help = (HelpWidget *)helpGroup->resizable();
   }
-  tabGroup->selected_child(helpGroup);
+  tabGroup->value(helpGroup);
   return help;
 }
 
@@ -1151,7 +1156,7 @@ EditorWidget *MainWindow::getEditor(bool select) {
       Group *group = (Group *)tabGroup->child(c);
       if (gw_editor == getGroupWidget(group)) {
         result = (EditorWidget *)group->child(0);
-        tabGroup->selected_child(group);
+        tabGroup->value(group);
         break;
       }
     }
@@ -1177,7 +1182,7 @@ EditorWidget *MainWindow::getEditor(const char *fullpath) {
       if (gw_editor == getGroupWidget(group)) {
         EditorWidget *editWidget = (EditorWidget *)group->child(0);
         const char *fileName = editWidget->getFilename();
-        if (fileName && strcmp(fullpath, fileName) == 0) {
+        if (fileName && ::strcmp(fullpath, fileName) == 0) {
           return editWidget;
         }
       }
@@ -1199,7 +1204,7 @@ void MainWindow::editFile(const char *filePath) {
 }
 
 Group *MainWindow::getSelectedTab() {
-  return (Group *)tabGroup->selected_child();
+  return (Group *)tabGroup->value();
 }
 
 /**
@@ -1209,7 +1214,7 @@ Group *MainWindow::findTab(const char *label) {
   int n = tabGroup->children();
   for (int c = 0; c < n; c++) {
     Group *child = (Group *)tabGroup->child(c);
-    if (strcmp(child->label(), label) == 0) {
+    if (::strcmp(child->label(), label) == 0) {
       return child;
     }
   }
@@ -1233,7 +1238,7 @@ Group *MainWindow::findTab(GroupWidget groupWidget) {
 Group *MainWindow::selectTab(const char *label) {
   Group *tab = findTab(label);
   if (tab) {
-    tabGroup->selected_child(tab);
+    tabGroup->value(tab);
   }
   return tab;
 }
@@ -1306,7 +1311,7 @@ FILE *MainWindow::openConfig(const char *fileName, const char *flags) {
   char path[MAX_PATH];
   getHomeDir(path);
   strcat(path, fileName);
-  return fopen(path, flags);
+  return ::fopen(path, flags);
 }
 
 bool MainWindow::isBreakExec(void) {
@@ -1385,7 +1390,7 @@ bool MainWindow::logPrint() {
   return (runEditWidget && runEditWidget->tty && runEditWidget->isLogPrint());
 }
 
-void MainWindow::execLink(String &link) {
+void MainWindow::execLink(strlib::String &link) {
   if (!link.length()) {
     return;
   }
@@ -1425,9 +1430,9 @@ void MainWindow::execLink(String &link) {
     } else {
       // display as html
       int len = strlen(localFile);
-      if (strcasecmp(localFile + len - 4, ".gif") == 0 ||
-          strcasecmp(localFile + len - 4, ".jpeg") == 0 || 
-          strcasecmp(localFile + len - 4, ".jpg") == 0) {
+      if (::strcasecmp(localFile + len - 4, ".gif") == 0 ||
+          ::strcasecmp(localFile + len - 4, ".jpeg") == 0 || 
+          ::strcasecmp(localFile + len - 4, ".jpg") == 0) {
         sprintf(path, "<img src=%s>", localFile);
       } else {
         sprintf(path, "file:%s", localFile);
@@ -1456,18 +1461,18 @@ void MainWindow::execLink(String &link) {
   if (extn && 0 == strncasecmp(extn, ".sbx", 4)) {
     struct stat st_sbx;
     struct stat st_bas;
-    bool sbxExists = (stat(file, &st_sbx) == 0);
+    bool sbxExists = (::stat(file, &st_sbx) == 0);
     strcpy(extn + 1, "bas");    // remains .bas unless sbx valid
     opt_nosave = 0;             // create/use sbx files
     if (sbxExists) {
-      if (stat(file, &st_bas) == 0 && st_sbx.st_mtime > st_bas.st_mtime) {
+      if (::stat(file, &st_bas) == 0 && st_sbx.st_mtime > st_bas.st_mtime) {
         strcpy(extn + 1, "sbx");
         // sbx exists and is newer than .bas
         execFile = true;
       }
     }
   }
-  if (access(file, 0) == 0) {
+  if (::access(file, 0) == 0) {
     statusMsg(rs_ready, file);
     if (execFile) {
       basicMain(0, file, false);
@@ -1506,7 +1511,7 @@ void MainWindow::loadIcon(const char *prefix, int resourceId) {
 
     // read the application desktop file, then scan for the Icon file
     sprintf(path, "%s/share/applications/%s.desktop", prefix, Window::xclass());
-    FILE *fp = fopen(path, "r");
+    FILE *fp = ::fopen(path, "r");
     if (fp) {
       while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
         buffer[strlen(buffer) - 1] = 0; // trim new-line
@@ -1536,6 +1541,8 @@ void MainWindow::loadIcon(const char *prefix, int resourceId) {
 }
 
 int BaseWindow::handle(int e) {
+#if 0
+  // TODO: fixme
   switch (runMode) {
   case run_state:
   case modal_state:
@@ -1601,14 +1608,14 @@ int BaseWindow::handle(int e) {
   default:
     break;
   }
-
+#endif
   return Window::handle(e);
 }
 
 bool BaseWindow::handleKeyEvent() {
   int k = event_key();
   bool key_pushed = true;
-
+#if 0
   switch (k) {
   case TabKey:
     dev_pushkey(SB_KEY_TAB);
@@ -1726,6 +1733,7 @@ bool BaseWindow::handleKeyEvent() {
     dev_pushkey(event_text()[0]);
     break;
   }
+#endif
   return key_pushed;
 }
 
@@ -1737,7 +1745,7 @@ LineInput::LineInput(int x, int y, int w, int h) :
   this->orig_h = h;
   when(WHEN_ENTER_KEY_ALWAYS);
   box(BORDER_BOX);
-  color(fltk3::color(220, 220, 220));
+  color(fltk3::rgb_color(220, 220, 220));
   take_focus();
 }
 
@@ -1761,7 +1769,8 @@ bool LineInput::replace(int b, int e, const char *text, int ilen) {
  * veto the layout changes
  */
 void LineInput::layout() {
-  fltk3::Input::layout();
+  //fltk3::Input::layout();
+  // TODO: fixme
   x(orig_x);
   y(orig_y);
   w(orig_w);
@@ -1769,6 +1778,8 @@ void LineInput::layout() {
 }
 
 int LineInput::handle(int event) {
+  // TODO: fixme
+#if 0
   if (event == fltk3::KEY) {
     if ((event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) && event_key() == 'b') {
       if (!wnd->isEdit()) {
@@ -1779,6 +1790,7 @@ int LineInput::handle(int event) {
       do_callback();
     }
   }
+#endif
   return fltk3::Input::handle(event);
 }
 

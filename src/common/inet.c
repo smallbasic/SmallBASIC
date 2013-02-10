@@ -7,9 +7,7 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "common/sys.h"
-#include "common/inet.h"
-#include "common/device.h"
+#include "inet.h"
 
 #if defined(INET_UNSUP)
  int net_init(void) { return 0; }

@@ -20,11 +20,11 @@
 #include "common/pmem.h"
 
 #ifdef V_INT
-#undefine V_INT
+#undef V_INT
 #endif
 
 #ifdef V_ARRAY
-#undefine V_ARRAY
+#undef V_ARRAY
 #endif
 
 /*

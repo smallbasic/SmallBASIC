@@ -7,11 +7,6 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-#define __addr_t_defined
-#include <windows.h>
-#endif
-
 #include "common/sys.h"
 #include "common/device.h"
 #include "common/pproc.h"

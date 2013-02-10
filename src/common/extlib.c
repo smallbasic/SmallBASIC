@@ -8,7 +8,6 @@
 // Copyright(C) 2001 Nicholas Christopoulos
 
 #if defined(__CYGWIN__)
-#define __addr_t_defined
 #include <w32api/windows.h>
 #include <sys/cygwin.h>
 #define WIN_EXTLIB

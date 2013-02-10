@@ -49,11 +49,16 @@
  *
  */
 
-#if !defined(_sb_sys_h)
-#define _sb_sys_h
+#if !defined(SB_SYS_H)
+#define SB_SYS_H
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
+#endif
+
+#if defined(_WinGUI) || defined(_Win32) || defined(__MINGW32__)
+#define __addr_t_defined
+#include <windows.h>
 #endif
 
 #if defined(__cplusplus)

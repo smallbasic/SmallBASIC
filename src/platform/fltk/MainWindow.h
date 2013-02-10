@@ -79,8 +79,8 @@ extern ExecState runMode;
     wnd->FN(w, v);                              \
   }
 
-struct BaseWindow:public Window {
-  BaseWindow(int w, int h) : Window(w, h, "SmallBASIC") {
+struct BaseWindow: public fltk3::Window {
+  BaseWindow(int w, int h) : fltk3::Window(w, h, "SmallBASIC") {
   } 
   virtual ~ BaseWindow() {
   };
@@ -104,16 +104,16 @@ struct MainWindow : public BaseWindow {
   bool isIdeHidden();           // whether to run without the IDE displayed
   bool isInteractive();         // whether to run without an interface
   bool isModal();               // whether a modal gui loop is active
-  void addPlugin(Menu *menu, const char *label, const char *filename);
+  void addPlugin(MenuBar *menu, const char *label, const char *filename);
   void busyMessage();
   bool execHelp();
-  void execLink(String &file);
+  void execLink(strlib::String &file);
   void loadIcon(const char *prefix, int resourceId);
   void pathMessage(const char *file);
   void resetPen();
   void saveEditConfig(EditorWidget *editWidget);
-  void scanPlugIns(Menu *menu);
-  void scanRecentFiles(Menu *menu);
+  void scanPlugIns(MenuBar *menu);
+  void scanRecentFiles(MenuBar *menu);
   void setBreak();
   void setModal(bool modal);
   void setTitle(Window *widget, const char *filename);
@@ -171,7 +171,7 @@ struct MainWindow : public BaseWindow {
 
   HelpWidget *getHelp();
 
-  String siteHome;
+  strlib::String siteHome;
 
   // main output
   AnsiWidget *out;

@@ -11,11 +11,8 @@
 
 #include <fltk3/Browser.h>
 #include <fltk3/ColorChooser.h>
-#include <fltk3/Item.h>
 #include <fltk3/TiledGroup.h>
 #include <fltk3/ask.h>
-#include <fltk3/damage.h>
-#include <fltk3/events.h>
 #include <fltk3/run.h>
 
 #include "MainWindow.h"
@@ -28,7 +25,7 @@ using namespace fltk3;
 #define TTY_ROWS 1000
 
 // in MainWindow.cxx
-extern String recentPath[];
+extern strlib::String recentPath[];
 extern Widget *recentMenu[];
 extern const char *historyFile;
 extern const char *untitledFile;
@@ -350,7 +347,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
   int curIndex = -1;
   int numWords = keywords.length();
   for (int i = 0; i < numWords; i++) {
-    const char *keyword = ((String *)keywords.get(i))->toString();
+    const char *keyword = ((strlib::String *)keywords.get(i))->toString();
     if (strncasecmp(expandWord, keyword, expandWordLen) == 0) {
       if (firstIndex == -1) {
         firstIndex = i;
@@ -378,7 +375,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
       lastIndex = curIndex + 1;
     }
 
-    const char *keyword = ((String *)keywords.get(lastIndex))->toString();
+    const char *keyword = ((strlib::String *)keywords.get(lastIndex))->toString();
     // updated the segment of the replacement text
     // that completes the current selection
     if (textbuf->selected()) {
@@ -454,7 +451,7 @@ void EditorWidget::func_list(Widget *w, void *eventData) {
   if (funcList && funcList->item()) {
     const char *label = funcList->item()->label();
     if (label) {
-      if (strcmp(label, scanLabel) == 0) {
+      if (::strcmp(label, scanLabel) == 0) {
         funcList->clear();
         createFuncList();
         funcList->add(scanLabel);
@@ -651,7 +648,7 @@ void EditorWidget::copyText() {
  * saves the editor buffer to the given file name
  */
 void EditorWidget::doSaveFile(const char *newfile) {
-  if (!dirty && strcmp(newfile, filename) == 0) {
+  if (!dirty && ::strcmp(newfile, filename) == 0) {
     // neither buffer or filename have changed
     return;
   }
@@ -659,7 +656,7 @@ void EditorWidget::doSaveFile(const char *newfile) {
   char basfile[PATH_MAX];
   TextBuffer *textbuf = editor->textbuf;
 
-  if (wnd->profile->createBackups && access(newfile, 0) == 0) {
+  if (wnd->profile->createBackups && ::access(newfile, 0) == 0) {
     // rename any existing file as a backup
     strcpy(basfile, newfile);
     strcat(basfile, "~");
@@ -713,7 +710,7 @@ void EditorWidget::fileChanged(bool loadfile) {
       bool found = false;
 
       for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-        if (strcmp(filename, recentPath[i].toString()) == 0) {
+        if (::strcmp(filename, recentPath[i].toString()) == 0) {
           found = true;
           break;
         }
@@ -892,7 +889,7 @@ void EditorWidget::loadFile(const char *newfile) {
   strcat(filename, "/");
   strcat(filename, newfile);
 
-  if (access(filename, R_OK) != 0) {
+  if (::access(filename, R_OK) != 0) {
     // filename unreadable, try newfile
     strcpy(filename, newfile);
   }
@@ -936,7 +933,7 @@ bool EditorWidget::readonly() {
  * sets the buffer readonly flag
  */
 void EditorWidget::readonly(bool is_readonly) {
-  if (!is_readonly && access(filename, W_OK) != 0) {
+  if (!is_readonly && ::access(filename, W_OK) != 0) {
     // cannot set writable since file is readonly
     is_readonly = true;
   }
@@ -1111,13 +1108,13 @@ void EditorWidget::addHistory(const char *filename) {
   char path[MAX_PATH];
 
   int len = strlen(filename);
-  if (strcasecmp(filename + len - 4, ".sbx") == 0 || access(filename, R_OK) != 0) {
+  if (::strcasecmp(filename + len - 4, ".sbx") == 0 || ::access(filename, R_OK) != 0) {
     // don't remember bas exe or invalid files
     return;
   }
 
   len -= strlen(untitledFile);
-  if (len > 0 && strcmp(filename + len, untitledFile) == 0) {
+  if (len > 0 && ::strcmp(filename + len, untitledFile) == 0) {
     // don't remember the untitled file
     return;
   }
@@ -1194,7 +1191,7 @@ void EditorWidget::createFuncList() {
           i++;
         }
         if (i > i_begin) {
-          String s(text + i_begin, i - i_begin);
+          strlib::String s(text + i_begin, i - i_begin);
           if (j < 2) {
             menuGroup = funcList->add_group(s.toString(), 0, (void *)curLine);
           } else {
@@ -1327,7 +1324,7 @@ void EditorWidget::reloadFile() {
 int EditorWidget::replaceAll(const char *find, const char *replace, bool restorePos, bool matchWord) {
   int times = 0;
 
-  if (strcmp(find, replace) != 0) {
+  if (::strcmp(find, replace) != 0) {
     TextBuffer *textbuf = editor->textbuf;
     int prevPos = editor->insert_position();
 

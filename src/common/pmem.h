@@ -11,8 +11,8 @@
  * @defgroup mem memory manager
  */
 
-#if !defined(_sb_mem_h)
-#define _sb_mem_h
+#if !defined(SB_MEM_H)
+#define SB_MEM_H
 
 #if defined(MALLOC_LIMITED)
 #include <string.h>
