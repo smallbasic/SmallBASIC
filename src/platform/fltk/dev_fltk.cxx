@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -14,11 +14,8 @@
 
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
-#include <fltk3/events.h>
 #include <fltk3/SharedImage.h>
-#include <fltk3/FL_VERSION.h>
 #include <fltk3/Rectangle.h>
-#include <fltk3/damage.h>
 
 #include "MainWindow.h"
 #include "HelpWidget.h"

@@ -10,6 +10,7 @@
 #define MAIN_WINDOW_H
 
 #include <fltk3/Window.h>
+#include <fltk3/MenuBar.h>
 #include <fltk3/TabGroup.h>
 #include <fltk3/ValueInput.h>
 

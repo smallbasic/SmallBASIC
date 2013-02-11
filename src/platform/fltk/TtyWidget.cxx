@@ -599,7 +599,7 @@ void TtyWidget::setFont(bool bold, bool italic) {
 //
 // update the current drawing font and remember the face/size
 //
-void TtyWidget::setFont(Font *font, int size) {
+void TtyWidget::setFont(Font font, int size) {
   //  if (font) {
   //    labelfont(font);
   //  }

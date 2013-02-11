@@ -28,7 +28,7 @@ struct Profile {
   void save(MainWindow *wnd);
 
   Color color;
-  Font *font;
+  Font font;
   fltk3::Rectangle appPosition;
 
   int fontSize;

@@ -8,10 +8,9 @@
 
 #include <unistd.h>
 #include <ctype.h>
-#include <fltk3/Monitor.h>
 
-#include "Profile.h"
 #include "MainWindow.h"
+#include "Profile.h"
 
 const char *configFile = "config.txt";
 const char *pathKey = "path";
@@ -30,15 +29,15 @@ extern TextDisplay::StyleTableEntry styletable[];
 //
 // Profile constructor
 //
-Profile::Profile() : appPosition(0, 0, 640, 480) {
-  // defaults
-  indentLevel = 2;
-  font = COURIER;
-  fontSize = 12;
-  color = WHITE;
-  loaded = false;
-  createBackups = true;
-  lineNumbers = true;
+Profile::Profile() : 
+  color(WHITE),
+  font(COURIER),
+  appPosition(0, 0, 640, 480),
+  fontSize(12),
+  indentLevel(2),
+  createBackups(true),
+  lineNumbers(true),
+  loaded(false) {
 }
 
 //
@@ -49,7 +48,8 @@ void Profile::loadConfig(EditorWidget *editWidget) {
   editWidget->setFont(font);
   editWidget->setFontSize(fontSize);
   editWidget->setEditorColor(color, false);
-  editWidget->editor->linenumber_width(lineNumbers ? 40 : 1);
+  //editWidget->editor->linenumber_width(lineNumbers ? 40 : 1);
+  // TODO: fixme
 }
 
 //
@@ -74,7 +74,7 @@ void Profile::restore(MainWindow *wnd) {
     restoreValue(&profile, lineNumbersKey, &lineNumbers);
     restoreStyles(&profile);
 
-    Rectangle rc;
+    fltk3::Rectangle rc;
     rc = restoreRect(&profile, appPositionKey);
     if (!rc.empty()) {
       appPosition = rc;
@@ -93,7 +93,7 @@ void Profile::restore(MainWindow *wnd) {
 //
 // restore the standalone window position
 //
-void Profile::restoreAppPosition(Rectangle *wnd) {
+void Profile::restoreAppPosition(fltk3::Rectangle *wnd) {
   if (!appPosition.empty()) {
     wnd->w(appPosition.w());
     wnd->h(appPosition.h());
@@ -142,9 +142,9 @@ int Profile::nextInteger(const char *s, int len, int &index) {
 //
 // restore a rectangle value with the given key
 //
-Rectangle Profile::restoreRect(Properties *profile, const char *key) {
-  Rectangle result(0, 0, 0, 0);
-  String *value = profile->get(key);
+fltk3::Rectangle Profile::restoreRect(Properties *profile, const char *key) {
+  fltk3::Rectangle result(0, 0, 0, 0);
+  strlib::String *value = profile->get(key);
   if (value != null) {
     const char *buffer = value->toString();
     int index = 0;
@@ -164,17 +164,17 @@ Rectangle Profile::restoreRect(Properties *profile, const char *key) {
 void Profile::restoreStyles(Properties *profile) {
   // restore size and face
   restoreValue(profile, fontSizeKey, &fontSize);
-  String *fontName = profile->get(fontNameKey);
+  strlib::String *fontName = profile->get(fontNameKey);
   if (fontName) {
-    font = fltk::font(fontName->toString());
+    // TODO:fixme    font = fltk3::font(fontName->toString());
   }
 
   for (int i = 0; i <= st_background; i++) {
     char buffer[4];
     sprintf(buffer, "%02d", i);
-    String *color = profile->get(buffer);
+    strlib::String *color = profile->get(buffer);
     if (color) {
-      Color c = fltk::color(color->toString());
+      Color c = 0; // TODO: fixme fltk3::color(color->toString());
       if (c != NO_COLOR) {
         if (i == st_background) {
           this->color = c;
@@ -193,11 +193,11 @@ void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
   bool usedEditor = false;
   strlib::List paths;
   profile->get(pathKey, &paths);
-  Object **list = paths.getList();
+  strlib::Object **list = paths.getList();
   int len = paths.length();
 
   for (int i = 0; i < len; i++) {
-    const char *buffer = ((String *) list[i])->toString();
+    const char *buffer = ((strlib::String *) list[i])->toString();
     int index = 0;
     int len = strlen(buffer);
     int logPrint = nextInteger(buffer, len, index);
@@ -232,7 +232,7 @@ void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
   }
 
   // restore the active tab
-  String *activeTab = profile->get(activeTabKey);
+  strlib::String *activeTab = profile->get(activeTabKey);
   if (activeTab != null) {
     EditorWidget *editWidget = wnd->getEditor(activeTab->toString());
     if (editWidget) {
@@ -245,7 +245,7 @@ void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
 // restore the int value
 //
 void Profile::restoreValue(Properties *p, const char *key, int *value) {
-  String *s = p->get(key);
+  strlib::String *s = p->get(key);
   if (s) {
     *value = s->toInteger();
   }
@@ -254,24 +254,25 @@ void Profile::restoreValue(Properties *p, const char *key, int *value) {
 //
 // restore the main window position
 //
-void Profile::restoreWindowPos(MainWindow *wnd, Rectangle &rc) {
+void Profile::restoreWindowPos(MainWindow *wnd, fltk3::Rectangle &rc) {
   int x = rc.x();
   int y = rc.y();
   int w = rc.w();
   int h = rc.h();
 
   if (x > 0 && y > 0 && w > 100 && h > 100) {
-    const Monitor & monitor = Monitor::all();
-    if (x < monitor.w() && y < monitor.h()) {
-      wnd->resize(x, y, w, h);
-    }
+    // TODO: fixme
+    //const Monitor & monitor = Monitor::all();
+    //if (x < monitor.w() && y < monitor.h()) {
+    //wnd->resize(x, y, w, h);
+    //}
   }
 }
 
 //
 // save the window position
 //
-void Profile::saveRect(FILE *fp, const char *key, Rectangle *rc) {
+void Profile::saveRect(FILE *fp, const char *key, fltk3::Rectangle *rc) {
   fprintf(fp, "%s=%d;%d;%d;%d\n", key, rc->x(), rc->y(), rc->w(), rc->h());
 }
 
@@ -282,11 +283,12 @@ void Profile::saveStyles(FILE *fp) {
   uchar r, g, b;
 
   saveValue(fp, fontSizeKey, (int)styletable[0].size);
-  saveValue(fp, fontNameKey, styletable[0].font->name());
+  //  saveValue(fp, fontNameKey, styletable[0].font->name());
 
   for (int i = 0; i <= st_background; i++) {
-    split_color(i == st_background ? color : styletable[i].color, r, g, b);
-    fprintf(fp, "%02d=#%02x%02x%02x\n", i, r, g, b);
+    //    split_color(i == st_background ? color : styletable[i].color, r, g, b);
+    //    fprintf(fp, "%02d=#%02x%02x%02x\n", i, r, g, b);
+    // TODO: fixme
   }
 }
 
@@ -305,7 +307,8 @@ void Profile::saveTabs(FILE *fp, MainWindow *wnd) {
       bool hideIde = editWidget->isHideIDE();
       bool gotoLine = editWidget->isBreakToLine();
       int insertPos = editWidget->editor->insert_position();
-      int topLineNo = editWidget->editor->top_line();
+      // TODO: fixme     int topLineNo = editWidget->editor->top_line();
+      int topLineNo = 0;
 
       fprintf(fp, "%s='%d;%d;%d;%d;%d;%d;%s'\n", pathKey,
               logPrint, scrollLock, hideIde, gotoLine, insertPos, topLineNo, editWidget->getFilename());

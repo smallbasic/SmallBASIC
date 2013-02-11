@@ -3,7 +3,7 @@
 // Programmer's Guide.
 // Copyright 1998-2003 by Bill Spitzak and others.
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -481,11 +481,11 @@ void BasicEditor::handleTab() {
 /**
  * sets the current display font
  */
-void BasicEditor::setFont(Font *font) {
+void BasicEditor::setFont(Font font) {
   if (font) {
     int len = sizeof(styletable) / sizeof(styletable[0]);
     for (int i = 0; i < len; i++) {
-      styletable[i].font = *font;
+      styletable[i].font = font;
     }
     styleChanged();
   }

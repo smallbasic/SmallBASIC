@@ -125,7 +125,7 @@ public:
   void saveSelection(const char *path);
   void setBreakToLine(bool b) { gotoLineBn->value(b); }
   void setEditorColor(Color c, bool defColor);
-  void setFont(Font *font);
+  void setFont(Font font);
   void setFontSize(int i);
   void setHideIde(bool b) { hideIdeBn->value(b); if (b) setLogPrint(!b); }
   void setIndentLevel(int level);

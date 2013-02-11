@@ -43,7 +43,7 @@ struct BasicEditor : public TextEditor {
   char *getSelection(Rectangle *rc);
   void gotoLine(int line);
   void handleTab();
-  void setFont(Font *font);
+  void setFont(Font font);
   void setFontSize(int size);
   void showFindText(const char *text);
   void showMatchingBrace();

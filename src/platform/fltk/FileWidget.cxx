@@ -13,9 +13,10 @@
 
 #include <dirent.h>
 #include <unistd.h>
+#include <direct.h>
 #include <sys/stat.h>
+
 #include <fltk3/ask.h>
-#include <fltk3/events.h>
 #include <fltk3/run.h>
 
 #include "MainWindow.h"
@@ -25,11 +26,11 @@
 #include "common/device.h"
 
 FileWidget *fileWidget;
-String click;
+strlib::String click;
 enum SORT_BY { e_name, e_size, e_time } sortBy;
 bool sortDesc;
 
-struct FileNode:public Object {
+struct FileNode : public strlib::Object {
   FileNode(const char *arg_name, time_t arg_m_time,
            off_t arg_size, bool arg_isdir) : 
     name(arg_name, strlen(arg_name)),
@@ -37,7 +38,7 @@ struct FileNode:public Object {
     size(arg_size), 
     isdir(arg_isdir) {
   } 
-  String name;
+  strlib::String name;
   time_t m_time;
   off_t size;
   bool isdir;
@@ -54,7 +55,7 @@ int fileNodeCompare(const void *a, const void *b) {
     } else if (!n1->isdir && n2->isdir) {
       result = 1;
     } else {
-      result = strcasecmp(n1->name.toString(), n2->name.toString());
+      result = ::strcasecmp(n1->name.toString(), n2->name.toString());
     }
     break;
   case e_size:
@@ -80,7 +81,7 @@ void updateSortBy(SORT_BY newSort) {
 }
 
 static void anchorClick_event(void *) {
-  fltk::remove_check(anchorClick_event);
+  fltk3::remove_check(anchorClick_event);
   fileWidget->anchorClick();
 }
 
@@ -88,7 +89,7 @@ static void anchorClick_cb(Widget *w, void *v) {
   if (fileWidget) {
     click.empty();
     click.append((char *)v);
-    fltk::add_check(anchorClick_event); // post message
+    fltk3::add_check(anchorClick_event); // post message
   }
 }
 
@@ -203,7 +204,7 @@ void FileWidget::anchorClick() {
     return;
   }
 
-  String docHome;
+  strlib::String docHome;
   if (target[0] == '/') {
     const char *base = getDocHome();
     if (base && base[0]) {
@@ -231,7 +232,7 @@ void FileWidget::anchorClick() {
     input->value(target);
   } else {
     setDocHome(docHome);
-    String fullPath;
+    strlib::String fullPath;
     fullPath.append(docHome.toString());
     fullPath.append("/");
     fullPath.append(target[0] == '/' ? target + 1 : target);
@@ -251,10 +252,10 @@ void FileWidget::fileOpen(EditorWidget *saveEditorAs) {
 // display the given path
 //
 void FileWidget::openPath(const char *newPath) {
-  if (newPath && access(newPath, R_OK) == 0) {
+  if (newPath && ::access(newPath, R_OK) == 0) {
     strcpy(path, newPath);
   } else {
-    getcwd(path, sizeof(path));
+    ::getcwd(path, sizeof(path));
   }
 
   forwardSlash(path);
@@ -271,7 +272,7 @@ void FileWidget::changeDir(const char *target) {
   strcpy(newPath, path);
 
   // file browser window
-  if (strcmp(target + 1, "..") == 0) {
+  if (::strcmp(target + 1, "..") == 0) {
     // go up a level c:/src/foo or /src/foo
     char *p = strrchr(newPath, '/');
     if (strchr(newPath, '/') != p) {
@@ -304,7 +305,7 @@ void FileWidget::displayPath() {
   strlib::List files;
   char modifedTime[100];
   int len;
-  String html;
+  strlib::String html;
 
   if (chdir(path) != 0) {
     return;
@@ -318,16 +319,16 @@ void FileWidget::displayPath() {
   while ((entry = readdir(dp)) != 0) {
     char *name = entry->d_name;
     int len = strlen(name);
-    if (strcmp(name, ".") == 0) {
+    if (::strcmp(name, ".") == 0) {
       continue;
     }
 
-    if (strcmp(name, "..") == 0) {
-      if (strcmp(path, "/") != 0 && strcmp(path + 1, ":/") != 0) {
+    if (::strcmp(name, "..") == 0) {
+      if (::strcmp(path, "/") != 0 && ::strcmp(path + 1, ":/") != 0) {
         // not "/" or "C:/"
         files.add(new FileNode("..", stbuf.st_mtime, stbuf.st_size, true));
       }
-    } else if (stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
+    } else if (::stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
       files.add(new FileNode(name, stbuf.st_mtime, stbuf.st_size, true));
     } else if (strncasecmp(name + len - 4, ".htm", 4) == 0 ||
                strncasecmp(name + len - 5, ".html", 5) == 0 ||
@@ -395,7 +396,7 @@ void FileWidget::displayPath() {
 // open the path
 //
 void FileWidget::enterPath() {
-  const char *newPath = fltk::input("Enter path:", path);
+  const char *newPath = fltk3::input("Enter path:", path);
   if (newPath != 0) {
     if (chdir(newPath) == 0) {
       strcpy(path, newPath);
@@ -438,8 +439,8 @@ int FileWidget::handle(int e) {
     break;
 
   case PASTE:
-    strncpy(buffer, fltk::event_text(), fltk::event_length());
-    buffer[fltk::event_length()] = 0;
+    strncpy(buffer, fltk3::event_text(), fltk3::event_length());
+    buffer[fltk3::event_length()] = 0;
     forwardSlash(buffer);
     wnd->editFile(buffer);
     dnd_active = 0;
@@ -476,7 +477,7 @@ void FileWidget::saveAs() {
         strcat(savepath, enteredPath);
       }
       const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
-      if (access(savepath, 0) != 0 || ask(msg, savepath)) {
+      if (::access(savepath, 0) != 0 || ask(msg, savepath)) {
         saveEditorAs->doSaveFile(savepath);
       }
     }

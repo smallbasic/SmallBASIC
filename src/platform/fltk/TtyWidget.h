@@ -220,7 +220,7 @@ struct TtyWidget : public Group {
   void clearScreen();
   bool copySelection();
   void print(const char *str);
-  void setFont(Font *font) {
+  void setFont(Font font) {
     this->setFont(font, 0);
     redraw();
   };
@@ -237,7 +237,7 @@ private:
   Row *getLine(int ndx);
   int processLine(Row *line, const char *linePtr);
   void setFont(bool bold, bool italic);
-  void setFont(Font *font, int size);
+  void setFont(Font font, int size);
   void setGraphicsRendition(TextSeg *segment, int c);
 
   // returns the number of display text rows held in the buffer
