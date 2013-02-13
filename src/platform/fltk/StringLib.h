@@ -141,7 +141,7 @@ protected:
 
 //--Stack-----------------------------------------------------------------------
 
-struct Stack:public List {
+struct Stack : public List {
   Stack();
   Stack(int growSize);
   Object *peek();
@@ -151,7 +151,7 @@ struct Stack:public List {
  
 //--Properties------------------------------------------------------------------
 
-struct Properties:public List {
+struct Properties : public List {
   Properties();
   Properties(int growSize);
   virtual ~Properties();

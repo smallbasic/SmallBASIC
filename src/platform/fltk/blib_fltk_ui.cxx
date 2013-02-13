@@ -19,12 +19,10 @@
 #include <fltk3/Choice.h>
 #include <fltk3/Group.h>
 #include <fltk3/Input.h>
-#include <fltk3/Item.h>
 #include <fltk3/RadioButton.h>
 #include <fltk3/Rectangle.h>
-#include <fltk3/StringList.h>
+#include <fltk3/MenuBar.h>
 #include <fltk3/draw.h>
-#include <fltk3/events.h>
 #include <fltk3/run.h>
 
 #include "MainWindow.h"
@@ -106,11 +104,11 @@ struct WidgetInfo {
 };
 
 // implements abstract StringList as a list of strings
-struct DropListModel:StringList {
+struct DropListModel { // TODO: fixme : StringList {
   strlib::List list;
   int focus_index;
   
-  DropListModel(const char *items, var_t *v) : StringList() {
+  DropListModel(const char *items, var_t *v) { //: StringList() {
     focus_index = -1;
     
     if (v && v->type == V_ARRAY) {
@@ -124,11 +122,11 @@ struct DropListModel:StringList {
       const char *c = strchr(items + i, '|');
       int end_index = c ? c - items : len;
       if (end_index > 0) {
-        String *s = new String(items + i, end_index - i);
+        strlib::String *s = new strlib::String(items + i, end_index - i);
         list.add(s);
         i = end_index;
         if (v != 0 && v->type == V_STR && v->v.p.ptr &&
-            strcasecmp((const char *)v->v.p.ptr, s->toString()) == 0) {
+            ::strcasecmp((const char *)v->v.p.ptr, s->toString()) == 0) {
           focus_index = item_index;
         }
         item_index++;
@@ -146,12 +144,12 @@ struct DropListModel:StringList {
       var_t *el_p = (var_t *) (v->v.a.ptr + sizeof(var_t) * i);
       if (el_p->type == V_STR) {
         list.add((const char *)el_p->v.p.ptr);
-        if (caption && strcasecmp((const char *)el_p->v.p.ptr, caption) == 0) {
+        if (caption && ::strcasecmp((const char *)el_p->v.p.ptr, caption) == 0) {
           focus_index = i;
         }
       } else if (el_p->type == V_INT) {
         char buff[40];
-        sprintf(buff, VAR_INT_FMT, el_p->v.i);
+        // TODO: fixme sprintf(buff, VAR_INT_FMT, el_p->v.i);
         list.add(buff);
       } else if (el_p->type == V_ARRAY) {
         fromArray(caption, el_p);
@@ -160,24 +158,24 @@ struct DropListModel:StringList {
   }
 
   // return the number of elements
-  int children(const Menu *) {
+  int children(const MenuBar *) {
     return list.length();
   }
 
   // return the label at the given index
-  const char *label(const Menu *, int index) {
+  const char *label(const MenuBar *, int index) {
     return getElementAt(index)->c_str();
   }
 
-  String *getElementAt(int index) {
-    return (String *) list.get(index);
+  strlib::String *getElementAt(int index) {
+    return (strlib::String *) list.get(index);
   }
 
   // returns the index corresponding to the given string
   int getPosition(const char *t) {
     int size = list.length();
     for (int i = 0; i < size; i++) {
-      if (!strcasecmp(((String *) list.get(i))->c_str(), t)) {
+      if (!::strcasecmp(((strlib::String *) list.get(i))->c_str(), t)) {
         return i;
       }
     }
@@ -188,7 +186,7 @@ struct DropListModel:StringList {
 void Form::draw() {
   int numchildren = children();
   Rectangle r(w(), h());
-  push_clip(r);
+  // TODO: fixme push_clip(r);
   for (int n = 0; n < numchildren; n++) {
     Widget & w = *child(n);
     draw_child(w);
@@ -198,7 +196,7 @@ void Form::draw() {
 }
 
 // convert a basic array into a std::string
-void array_to_string(String &s, var_t *v) {
+void array_to_string(strlib::String &s, var_t *v) {
   for (int i = 0; i < v->v.a.size; i++) {
     var_t *el_p = (var_t *) (v->v.a.ptr + sizeof(var_t) * i);
     if (el_p->type == V_STR) {
@@ -238,22 +236,22 @@ bool update_gui(Widget *w, WidgetInfo *inf) {
 
   if (inf->var->type == V_ARRAY && inf->var->v.p.ptr != inf->orig.ptr) {
     // update list control with new array variable
-    String s;
+    strlib::String s;
 
     switch (inf->type) {
     case ctrl_dropdown:
-      delete((Choice *) w)->list();
-      ((Choice *) w)->list(new DropListModel(0, inf->var));
-      w->layout();
+      // TODO: fixme delete((Choice *) w)->list();
+      // TODO: fixme       ((Choice *) w)->list(new DropListModel(0, inf->var));
+      // TODO: fixme w->layout();
       return true;
 
     case ctrl_listbox:
-      delete((Browser *) w)->list();
-      ((Browser *) w)->list(new DropListModel(0, inf->var));
-      ((Browser *) w)->xposition(0);
-      ((Browser *) w)->yposition(0);
-      ((Browser *) w)->select(0);
-      w->layout();
+      // TODO: fixme delete((Browser *) w)->list();
+      // ((Browser *) w)->list(new DropListModel(0, inf->var));
+      // ((Browser *) w)->xposition(0);
+      //((Browser *) w)->yposition(0);
+      // ((Browser *) w)->select(0);
+      // w->layout();
       return true;
 
     case ctrl_label:
@@ -263,7 +261,7 @@ bool update_gui(Widget *w, WidgetInfo *inf) {
 
     case ctrl_text:
       array_to_string(s, inf->var);
-      ((Input *) w)->text(s.c_str());
+      // TODO: fixme ((Input *) w)->text(s.c_str());
       break;
 
     default:
@@ -276,12 +274,12 @@ bool update_gui(Widget *w, WidgetInfo *inf) {
     switch (inf->type) {
     case ctrl_dropdown:
       dropdown = (Choice *) w;
-      model = (DropListModel *) dropdown->list();
+      // TODO: fixme model = (DropListModel *) dropdown->list();
       if (strchr((const char *)inf->var->v.p.ptr, '|')) {
         // create a new list of items
         delete model;
         model = new DropListModel((const char *)inf->var->v.p.ptr, 0);
-        dropdown->list(model);
+        // TODO: fixme dropdown->list(model);
       } else {
         // select one of the existing list items
         int selection = model->getPosition((const char *)inf->var->v.p.ptr);
@@ -293,12 +291,12 @@ bool update_gui(Widget *w, WidgetInfo *inf) {
 
     case ctrl_listbox:
       listbox = (Browser *) w;
-      model = (DropListModel *) listbox->list();
+      // TODO: fixme model = (DropListModel *) listbox->list();
       if (strchr((const char *)inf->var->v.p.ptr, '|')) {
         // create a new list of items
         delete model;
         model = new DropListModel((const char *)inf->var->v.p.ptr, 0);
-        listbox->list(model);
+        // TODO: fixme listbox->list(model);
       } else {
         int selection = model->getPosition((const char *)inf->var->v.p.ptr);
         if (selection != -1) {
@@ -309,7 +307,7 @@ bool update_gui(Widget *w, WidgetInfo *inf) {
 
     case ctrl_check:
     case ctrl_radio:
-      ((CheckButton *) w)->value(!strcasecmp((const char *)inf->var->v.p.ptr, w->label()));
+      ((CheckButton *) w)->value(!::strcasecmp((const char *)inf->var->v.p.ptr, w->label()));
       break;
 
     case ctrl_label:
@@ -317,7 +315,7 @@ bool update_gui(Widget *w, WidgetInfo *inf) {
       break;
 
     case ctrl_text:
-      ((Input *) w)->text((const char *)inf->var->v.p.ptr);
+      // TODO: fixme ((Input *) w)->text((const char *)inf->var->v.p.ptr);
       break;
 
     case ctrl_button:
@@ -362,18 +360,18 @@ void transfer_data(Widget *w, WidgetInfo *inf) {
     break;
 
   case ctrl_text:
-    if (((Input *) w)->text()) {
-      v_setstr(inf->var, ((Input *) w)->text());
-    } else {
-      v_zerostr(inf->var);
-    }
+    // TODO: fixme if (((Input *) w)->text()) {
+    //v_setstr(inf->var, ((Input *) w)->text());
+    //} else {
+    //v_zerostr(inf->var);
+    //}
     break;
 
   case ctrl_dropdown:
     dropdown = (Choice *) w;
-    model = (DropListModel *) dropdown->list();
+    // TODO: fixme model = (DropListModel *) dropdown->list();
     if (dropdown->value() != -1) {
-      String *s = model->getElementAt(dropdown->value());
+      strlib::String *s = model->getElementAt(dropdown->value());
       if (s) {
         v_setstr(inf->var, s->c_str());
       }
@@ -382,9 +380,9 @@ void transfer_data(Widget *w, WidgetInfo *inf) {
 
   case ctrl_listbox:
     listbox = (Browser *) w;
-    model = (DropListModel *) listbox->list();
+    // TODO: fixme     model = (DropListModel *) listbox->list();
     if (listbox->value() != -1) {
-      String *s = model->getElementAt(listbox->value());
+      strlib::String *s = model->getElementAt(listbox->value());
       if (s) {
         v_setstr(inf->var, s->c_str());
       }
@@ -465,7 +463,7 @@ void widget_cb(Widget *w, void *v) {
   }
 }
 
-void update_widget(Widget *widget, WidgetInfo *inf, Rectangle &rect) {
+void update_widget(Widget *widget, WidgetInfo *inf, fltk3::Rectangle &rect) {
   if (rect.w() != -1) {
     widget->w(rect.w());
   }
@@ -501,14 +499,14 @@ void update_widget(Widget *widget, WidgetInfo *inf, Rectangle &rect) {
 }
 
 void update_button(Widget *widget, WidgetInfo *inf,
-                   const char *caption, Rectangle &rect, int def_w, int def_h) {
-  if (rect.w() < 0 && caption != 0) {
-    rect.w((int)getwidth(caption) + def_w + (-rect.w() - 1));
-  }
+                   const char *caption, fltk3::Rectangle &rect, int def_w, int def_h) {
+  // TODO: fixme if (rect.w() < 0 && caption != 0) {
+  // rect.w((int)getwidth(caption) + def_w + (-rect.w() - 1));
+  // }
 
-  if (rect.h() < 0) {
-    rect.h((int)(getascent() + getdescent() + def_h + (-rect.h() - 1)));
-  }
+  // if (rect.h() < 0) {
+  // rect.h((int)(getascent() + getdescent() + def_h + (-rect.h() - 1)));
+  // }
 
   update_widget(widget, inf, rect);
   widget->copy_label(caption);
@@ -591,49 +589,52 @@ void cmd_button() {
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
     WidgetInfo *inf = new WidgetInfo();
     inf->var = v;
-    Rectangle rect(x, y, w, h);
+    fltk3::Rectangle rect(x, y, w, h);
 
     if (prog_error) {
       return;
     }
     if (type) {
-      if (strcasecmp("radio", type) == 0) {
+      if (::strcasecmp("radio", type) == 0) {
         inf->type = ctrl_radio;
         inf->is_group_radio = false;
         form_end();             // add widget to RadioGroup
         RadioButton *widget = new RadioButton(x, y, w, h);
         update_radio_group(inf, widget);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
-      } else if (strcasecmp("checkbox", type) == 0 || strcasecmp("check", type) == 0) {
+      } else if (::strcasecmp("checkbox", type) == 0 || 
+                 ::strcasecmp("check", type) == 0) {
         inf->type = ctrl_check;
         CheckButton *widget = new CheckButton(x, y, w, h);
         update_button(widget, inf, caption, rect, RAD_W, RAD_H);
-      } else if (strcasecmp("button", type) == 0) {
+      } else if (::strcasecmp("button", type) == 0) {
         inf->type = ctrl_button;
         Button *widget = new Button(x, y, w, h);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
-      } else if (strcasecmp("label", type) == 0) {
+      } else if (::strcasecmp("label", type) == 0) {
         inf->type = ctrl_label;
         Widget *widget = new Widget(x, y, w, h);
         widget->box(FLAT_BOX);
         widget->align(ALIGN_LEFT | ALIGN_INSIDE | ALIGN_CLIP);
         update_button(widget, inf, caption, rect, BN_W, BN_H);
-      } else if (strcasecmp("listbox", type) == 0 || strcasecmp("list", type) == 0) {
+      } else if (::strcasecmp("listbox", type) == 0 || 
+                 ::strcasecmp("list", type) == 0) {
         inf->type = ctrl_listbox;
         Browser *widget = new Browser(x, y, w, h);
         DropListModel *model = new DropListModel(caption, v);
-        widget->list(model);
+        // TODO: fixme widget->list(model);
         widget->box(BORDER_BOX);
         if (model->focus_index != -1) {
           widget->value(model->focus_index);
         }
         update_widget(widget, inf, rect);
         widget->when(WHEN_RELEASE_ALWAYS);
-      } else if (strcasecmp("dropdown", type) == 0 || strcasecmp("choice", type) == 0) {
+      } else if (::strcasecmp("dropdown", type) == 0 || 
+                 ::strcasecmp("choice", type) == 0) {
         inf->type = ctrl_dropdown;
         Choice *widget = new Choice(x, y, w, h);
         DropListModel *model = new DropListModel(caption, v);
-        widget->list(model);
+        // TODO: fixme widget->list(model);
         widget->box(BORDER_BOX);
         if (model->focus_index != -1) {
           widget->value(model->focus_index);
@@ -664,13 +665,13 @@ void cmd_text() {
     form_create();
     Input *widget = new Input(x, y, w, h);
     widget->box(BORDER_BOX);
-    Rectangle rect(x, y, w, h);
+    fltk3::Rectangle rect(x, y, w, h);
     WidgetInfo *inf = new WidgetInfo();
     inf->var = v;
     inf->type = ctrl_text;
-    update_widget(widget, inf, rect);
+    // TODO: fixme update_widget(widget, inf, rect);
     if (rect.h() > (getascent() + getdescent() + BN_H)) {
-      widget->type(Input::MULTILINE | Input::WORDWRAP);
+      // TODO: fixme widget->type(Input::MULTILINE | Input::WORDWRAP);
     }
     form->end();
   }
@@ -723,7 +724,7 @@ void cmd_doform() {
     ui_reset();
   } else if (wnd->penMode) {
     mode = m_active;
-    fltk::wait();
+    // TODO: fixme fltk::wait();
   } else {
     // pump system messages until there is a widget callback
     mode = m_active;
@@ -732,7 +733,7 @@ void cmd_doform() {
       dev_clrkb();
     }
     while (wnd->isRunning() && mode == m_active) {
-      fltk::wait();
+      // TODO: fixme fltk::wait();
 
       if (form->kb_handle && keymap_kbhit()) {
         break;

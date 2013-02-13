@@ -41,8 +41,8 @@ extern "C" {
 #define PEN_ON    2             // pen mode active
 HelpWidget *formView = 0;
 Properties env;
-String envs;
-String eventName;
+strlib::String envs;
+strlib::String eventName;
 bool saveForm = false;
 clock_t lastEventTime;
 dword eventsPerTick;
@@ -78,7 +78,7 @@ int osd_devinit() {
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
+    // TODO: fixme wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
   }
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
@@ -93,9 +93,9 @@ int osd_devinit() {
   os_color = 1;
   os_color_depth = 16;
   setsysvar_str(SYSVAR_OSNAME, "FLTK");
-  if (SharedImage::first_image) {
-    SharedImage::first_image->clear_cache();
-  }
+  // TODO: fixme if (SharedImage::first_image) {
+  //    SharedImage::first_image->clear_cache();
+  //  }
   if (saveForm == false) {
     closeForm();
   }
@@ -147,15 +147,15 @@ int osd_events(int wait_flag) {
   switch (wait_flag) {
   case 1:
     // wait for an event
-    fltk::wait();
+    fltk3::wait();
     break;
   case 2:
     // pause
-    fltk::wait(EVT_PAUSE_TIME);
+    fltk3::wait(EVT_PAUSE_TIME);
     break;
   default:
     // pump messages without pausing
-    fltk::check();
+    fltk3::check();
   }
 
   if (wnd->isBreakExec()) {
@@ -173,11 +173,11 @@ void osd_setpenmode(int enable) {
  * sets the current mouse position and returns whether the mouse is within the output window
  */
 bool get_mouse_xy() {
-  fltk::Rectangle rc;
+  fltk3::Rectangle rc;
   int x, y;
 
-  fltk::get_mouse(x, y);
-  wnd->out->get_absolute_rect(&rc);
+  fltk3::get_mouse(x, y);
+  // TODO: fixme wnd->out->get_absolute_rect(&rc);
 
   // convert mouse screen rect to out-client rect
   wnd->penDownX = x - rc.x();
@@ -194,7 +194,7 @@ int osd_getpen(int code) {
   }
 
   if (wnd->penMode == PEN_OFF) {
-    fltk::wait();
+    fltk3::wait();
   }
 
   switch (code) {
@@ -205,14 +205,14 @@ int osd_getpen(int code) {
       get_mouse_xy();
       return 1;
     }
-    fltk::wait();               // fallthru to re-test 
+    fltk3::wait();               // fallthru to re-test 
 
   case 3:                      // returns true if the pen is down (and save curpos)
-    if (event_state() & ANY_BUTTON) {
-      if (get_mouse_xy()) {
+    // TODO: fixmeif (event_state() & ANY_BUTTON) {
+    if (get_mouse_xy()) {
         return 1;
       }
-    }
+    ///}
     return 0;
 
   case 1:                      // last pen-down x
@@ -284,7 +284,7 @@ long osd_getpixel(int x, int y) {
 
 #if !defined(WIN32)
   // offset x/y as getPixel is relative to the outer window
-  fltk::Rectangle rc;
+  fltk3::Rectangle rc;
   wnd->out->get_absolute_rect(&rc);
   xoffs = rc.x();
   yoffs = rc.y();
@@ -347,8 +347,8 @@ int dev_putenv(const char *s) {
   envs.empty();
   envs.append(s);
 
-  String lv = envs.lvalue();
-  String rv = envs.rvalue();
+  strlib::String lv = envs.lvalue();
+  strlib::String rv = envs.rvalue();
 
   env.put(lv, rv);
   return 1;
@@ -361,8 +361,8 @@ char *dev_getenv(const char *s) {
       return var;
     }
   }
-  String *str = env.get(s);
-  return str ? (char *)str->toString() : getenv(s);
+  strlib::String *str = env.get(s);
+  return str ? (char *)str->toString() : ::getenv(s);
 }
 
 char *dev_getenv_n(int n) {
@@ -404,14 +404,14 @@ int dev_env_count() {
 //--HTML------------------------------------------------------------------------
 
 void doEvent(void *) {
-  fltk::remove_check(doEvent);
+  fltk3::remove_check(doEvent);
   if (eventName[0] == '|') {
     // user flag to indicate UI should remain
     // for next program execution
     const char *filename = eventName.toString();
     int len = strlen(filename);
-    if (strcasecmp(filename + len - 4, ".htm") == 0 || 
-        strcasecmp(filename + len - 5, ".html") == 0) {
+    if (::strcasecmp(filename + len - 4, ".htm") == 0 || 
+        ::strcasecmp(filename + len - 5, ".html") == 0) {
       // "execute" a html file
       formView->loadFile(filename + 1, true);
       return;
@@ -429,7 +429,7 @@ void doEvent(void *) {
 void modeless_cb(Widget *w, void *v) {
   if (wnd->isEdit()) {
     // create a full url path from the given relative path
-    const String & path = formView->getEventName();
+    const strlib::String &path = formView->getEventName();
     eventName.empty();
     if (path[0] != '!' && path[0] != '|' && path.startsWith("http://") == false && 
         wnd->siteHome.length() > 0) {
@@ -449,12 +449,12 @@ void modeless_cb(Widget *w, void *v) {
       eventName.append(path);
     }
 
-    fltk::add_check(doEvent);   // post message
+    fltk3::add_check(doEvent);   // post message
   }
 }
 
 void modal_cb(Widget *w, void *v) {
-  fltk::exit_modal();
+  // TODO: fixme fltk3::exit_modal();
   dev_putenv(((HelpWidget *)w)->getEventName());
 }
 
@@ -469,14 +469,14 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h) {
     x += wnd->x();
     y += wnd->y();
     Group::current(0);
-    Window window(x, y, w, h, t);
+    fltk3::Window window(x, y, w, h, t);
     window.begin();
     HelpWidget out(0, 0, w, h);
     out.loadBuffer(html);
     out.callback(modal_cb);
     window.resizable(&out);
     window.end();
-    window.exec(wnd);
+    // TODO: fixme window.exec(wnd);
     out.getInputProperties(&env);
   } else {
     // fit within output window
@@ -506,7 +506,7 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h) {
     // update the window title using the html <title> tag contents
     const char *s = formView->getTitle();
     if (s && s[0]) {
-      String title;
+      strlib::String title;
       title.append(s);
       title.append(" - SmallBASIC");
       wnd->copy_label(title);
@@ -539,7 +539,7 @@ Image *getImage(dev_file_t *filep, int index) {
   }
 
   if (image) {
-    image->fetch_if_needed();
+    // TODO: fixme image->fetch_if_needed();
   }
 
   return image;
@@ -557,7 +557,7 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
     Image *img = getImage(filep, index);
     if (img != 0) {
       // input/read image and display
-      img->measure(imgw, imgh);
+      // TODO: fixme img->measure(imgw, imgh);
       wnd->out->drawImage(img, x, y, sx, sy, (w == 0 ? imgw : w), (h == 0 ? imgh : h));
     }
   } else {
@@ -576,7 +576,7 @@ int dev_image_width(int handle, int index) {
 
   Image *img = getImage(filep, index);
   if (img) {
-    img->measure(imgw, imgh);
+ // TODO: fixme    img->measure(imgw, imgh);
   }
   return imgw;
 }
@@ -591,7 +591,7 @@ int dev_image_height(int handle, int index) {
 
   Image *img = getImage(filep, index);
   if (img) {
-    img->measure(imgw, imgh);
+// TODO: fixme    img->measure(imgw, imgh);
   }
   return imgh;
 }
@@ -609,7 +609,7 @@ void dev_delay(dword ms) {
     add_timeout(((float)ms) / 1000, timeout_callback, 0);
     wnd->setModal(true);
     while (wnd->isModal()) {
-      fltk::wait(0.1);
+      fltk3::wait(0.1);
     }
   }
 }
@@ -632,7 +632,7 @@ char *dev_gets(char *dest, int size) {
     return dest;
   }
 
-  wnd->tabGroup->selected_child(wnd->outputGroup);
+// TODO: fixme  wnd->tabGroup->selected_child(wnd->outputGroup);
   wnd->outputGroup->begin();
 
   LineInput *in = new LineInput(wnd->out->getX() + 2,
@@ -640,14 +640,14 @@ char *dev_gets(char *dest, int size) {
                                 20, wnd->out->textHeight() + 4);
   wnd->outputGroup->end();
   in->callback(enter_cb);
-  in->reserve(size);
+// TODO: fixme   in->reserve(size);
   in->textfont(wnd->out->labelfont());
   in->textsize(wnd->out->labelsize());
 
   wnd->setModal(true);
 
   while (wnd->isModal()) {
-    fltk::wait();
+    fltk3::wait();
   }
 
   if (wnd->isBreakExec()) {
@@ -685,8 +685,8 @@ void getHomeDir(char *fileName, bool appendSlash) {
   fileName[0] = 0;
 
   for (int i = 0; i < vars_len; i++) {
-    const char *home = getenv(vars[i]);
-    if (home && access(home, R_OK) == 0) {
+    const char *home = ::getenv(vars[i]);
+    if (home && ::access(home, R_OK) == 0) {
       strcpy(fileName, home);
       if (i == 1) {
         // unix path
@@ -763,7 +763,7 @@ bool cacheLink(dev_file_t *df, char *localFile) {
     strcat(localFile, pathEnd + 1);
   }
 
-  fp = fopen(localFile, "wb");
+  fp = ::fopen(localFile, "wb");
   if (fp == 0) {
     if (df->handle != -1) {
       shutdown(df->handle, df->handle);
@@ -774,7 +774,7 @@ bool cacheLink(dev_file_t *df, char *localFile) {
   if (df->handle == -1) {
     // pass the cache file modified time to the HTTP server
     struct stat st;
-    if (stat(localFile, &st) == 0) {
+    if (::stat(localFile, &st) == 0) {
       df->drv_dw[2] = st.st_mtime;
     }
     if (http_open(df) == 0) {
@@ -783,7 +783,7 @@ bool cacheLink(dev_file_t *df, char *localFile) {
   }
   // TODO: move this to a separate thread
   while (true) {
-    int bytes = recv(df->handle, (char *)rxbuff, sizeof(rxbuff), 0);
+    int bytes = 0; // TODO: fixme recv(df->handle, (char *)rxbuff, sizeof(rxbuff), 0);
     if (bytes == 0) {
       break;                    // no more data
     }
@@ -822,7 +822,7 @@ bool cacheLink(dev_file_t *df, char *localFile) {
 //                 }
         if (strncmp(rxbuff + iattr, "Location: ", 10) == 0) {
           // handle redirection
-          shutdown(df->handle, df->handle);
+          // TODO: fixme shutdown(df->handle, df->handle);
           strcpy(df->name, rxbuff + iattr + 10);
           if (http_open(df) == 0) {
             fclose(fp);
@@ -840,7 +840,7 @@ bool cacheLink(dev_file_t *df, char *localFile) {
 
   // cleanup
   fclose(fp);
-  shutdown(df->handle, df->handle);
+  // TODO: fixme shutdown(df->handle, df->handle);
   return httpOK;
 }
 

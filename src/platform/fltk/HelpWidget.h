@@ -14,7 +14,7 @@
 #include <fltk3/SharedImage.h>
 #include <fltk3/Group.h>
 #include <fltk3/Scrollbar.h>
-#include <fltk3/XPMImage.h>
+//#include <fltk3/XPMImage.h>
 
 #include "StringLib.h"
 #include "fltk2.h"

@@ -7,6 +7,10 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include "inet.h"
 
 #if defined(INET_UNSUP)
@@ -23,5 +27,4 @@
 #elif defined(_UnixOS)
  #include "platform/unix/inet.c"
 #endif
-
 

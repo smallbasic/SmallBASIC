@@ -869,8 +869,9 @@ bool initialise(int argc, char **argv) {
   wnd = new MainWindow(800, 650);
 
   // load startup editors
-  wnd->new_file(0, 0);
-  wnd->profile->restore(wnd);
+  // TODO: fixme
+  //wnd->new_file(0, 0);
+  //wnd->profile->restore(wnd);
 
   // setup styles
   Font *defaultFont = HELVETICA;

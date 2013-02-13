@@ -271,7 +271,7 @@ function buildFLTK() {
  
    dnl avoid using MSCRT versions of printf for long double
    case "${host_os}" in
-     cygwin*)
+     *mingw* | cygwin*)
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
    esac
 
@@ -280,7 +280,7 @@ function buildFLTK() {
 
    dnl do not depend on cygwin.dll under cygwin build
    case "${host_os}" in
-     cygwin*)
+     *mingw* | cygwin*)
      FLTK_CXXFLAGS="-I`cygpath -m /usr/local/include` ${FLTK_CXXFLAGS} -mms-bitfields"
      PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32"
    esac

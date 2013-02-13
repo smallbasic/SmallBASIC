@@ -44,6 +44,7 @@ desktopentry_DATA = smallbasic.desktop
 
 if WITH_WIN32
 sbasici_LDADD += sbfltk.res
+sbasici_DEPENDENCIES += sbfltk.res
 sbfltk.res : sbfltk.rc
 	$(WINDRES) $< -O coff -o $@
 endif

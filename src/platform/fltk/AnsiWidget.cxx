@@ -34,7 +34,7 @@
 
 #if defined(WIN32)
 #include <wingdi.h>
-extern HDC fl_bitmap_dc;
+//extern HDC fl_bitmap_dc;
 #else
 #include <fltk3/x.h>
 #endif
@@ -310,7 +310,7 @@ void AnsiWidget::setPixel(int x, int y, int c) {
   begin_offscreen();
 #if defined(WIN32)
   if (c < 0) {
-    ::SetPixel(fl_bitmap_dc, x, y, -c);
+    // TODO: fixme ::SetPixel(fl_bitmap_dc, x, y, -c);
   } else {
     setcolor(ansiToFltk(c));
     drawpoint(x, y);
@@ -336,7 +336,7 @@ int AnsiWidget::getPixel(int x, int y) {
   begin_offscreen();
   // needs to return a -ve number to distiguish from basic 16 color values
   // unpacked in later calls to ansiToFltk()
-  return -int (::GetPixel(fl_bitmap_dc, x, y));
+  // TODO: fixme return -int (::GetPixel(fl_bitmap_dc, x, y));
 #elif defined(__APPLE__)
   // TODO !
 #endif

@@ -21,7 +21,7 @@
 #include <fltk3/run.h>
 #include <fltk3/draw.h>
 #include <fltk3/Rectangle.h>
-#include <fltk3/xpmImage.h>
+//#include <fltk3/XPMImage.h>
 #include <fltk3/CheckButton.h>
 #include <fltk3/RadioButton.h>
 #include <fltk3/Choice.h>
@@ -32,7 +32,7 @@
 #include <fltk3/ValueInput.h>
 #include <fltk3images/all.h>
 
-#define FL_HELP_WIDGET_RESOURCES
+//#define FL_HELP_WIDGET_RESOURCES
 #include "HelpWidget.h"
 
 #define FOREGROUND_COLOR fltk3::default_style.color()
@@ -451,7 +451,7 @@ struct LiNode : public BaseNode {
         sprintf(t, "%d.", ++ulNode->nextId);
         drawtext(t, 2, x, out->y1);
       } else {
-        dotImage.draw(x, y, 5, 5);
+        //TODO: fixme dotImage.draw(x, y, 5, 5);
         // draw messes with the current font - restore
         setfont(out->font, out->fontSize);
       }
@@ -1975,15 +1975,16 @@ void HelpWidget::compile() {
               i++;
             }
             if (ch == 133) {
-              node = new ImageNode(style(), &ellipseImage);
+              // TODO: fixme              node = new ImageNode(style(), &ellipseImage);
               nodeList.add(node);
             } else if (ch > 129 && ch < 256) {
-              node = new TextNode(&entityMap[ch].xlat, 1);
+              // TODO fixme node = new TextNode(&entityMap[ch].xlat, 1);
               nodeList.add(node);
             }
             pindex = i;
             p = text + pindex;
           } else
+            /*
             for (int j = 0; j < entityMapLen; j++) {
               if (0 == strncasecmp(text + i + 1, entityMap[j].ent, entityMap[j].elen - 1)) {
                 ADD_PREV_SEGMENT;
@@ -1999,6 +2000,7 @@ void HelpWidget::compile() {
                 break;
               }
             }
+            */
           break;
 
         case '\r':
@@ -2737,9 +2739,10 @@ void HelpWidget::reloadImages() {
   int len = images.length();
   for (int i = 0; i < len; i++) {
     ImageNode *imageNode = (ImageNode *) list[i];
-    if (imageNode->image == &brokenImage) {
-      imageNode->reload();
-    }
+    // TODO: fixme
+    //if (imageNode->image == &brokenImage) {
+    //      imageNode->reload();
+    //    }
   }
   redraw();
 }
@@ -2968,10 +2971,11 @@ SharedImage *loadImage(const char *name, uchar *buff) {
 
 Image *loadImage(const char *imgSrc) {
   if (imgSrc == 0 || fltk3::access(imgSrc, 0) != 0) {
-    return &brokenImage;
+    // TODO: fixme return &brokenImage;
   }
   Image *image = loadImage(imgSrc, 0);
-  return image != 0 ? image : &brokenImage;
+  //return image != 0 ? image : &brokenImage;
+  return NULL;
 }
 
 #if defined(WIN32)
