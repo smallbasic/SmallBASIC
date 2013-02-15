@@ -1,11 +1,11 @@
 # SmallBASIC for FLTK
-# Copyright(C) 2001-2012 Chris Warren-Smith.
+# Copyright(C) 2001-2013 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-AM_CPPFLAGS =																										\
+AM_CPPFLAGS =																									\
   -I$(top_builddir)/src -I.																		\
   -DPACKAGE_PREFIX=\""$(prefix)"\"														\
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"											\

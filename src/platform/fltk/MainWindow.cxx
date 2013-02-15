@@ -6,8 +6,6 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include "common/sys.h"
-
 #include <fltk3/MenuBar.h>
 #include <fltk3/TabGroup.h>
 #include <fltk3/ask.h>
@@ -20,9 +18,9 @@
 #include "common/sbapp.h"
 #include "StringLib.h"
 
-extern "C" {
+#include "common/sys.h"
 #include "common/fs_socket_client.h"
-} 
+
 using namespace fltk3;
 
 char *packageHome;
@@ -46,7 +44,7 @@ const char *aboutText =
   "<b>About SmallBASIC...</b><br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
   "FLTK Version " SB_STR_VER "<br>"
-  "Copyright (c) 2002-2010 Chris Warren-Smith.<br><br>"
+  "Copyright (c) 2002-2013 Chris Warren-Smith.<br><br>"
   "<a href=http://smallbasic.sourceforge.net>"
   "http://smallbasic.sourceforge.net</a><br><br>"
   "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
@@ -65,7 +63,7 @@ bool isFormActive();
 // scan for fixed pitch fonts in the background
 struct ScanFont {
   ScanFont(MenuBar *argMenu) : menu(argMenu), index(0) {
-    numfonts = 0; // TODO: fixme fltk3::list_fonts(fonts);
+    numfonts = fltk3::set_fonts("-*");
     fltk3::add_idle(ScanFont::scan_font_cb, this);
   } 
   static void scan_font_cb(void *eventData) {
@@ -73,13 +71,25 @@ struct ScanFont {
   }
   void scanNext() {
     if (index < numfonts) {
+      Font nextFont = (fltk3::Font)index;
       char label[256];
-      // sprintf(label, "&View/Font/%s", fonts[index]->system_name());
-      //setfont(font(fonts[index]->name()), 12);
-      //if (getdescent() < MAX_DESCENT && (getwidth("QW#@") == getwidth("il:("))) {
-      // Widget *w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
-      // w->textfont(getfont());
-      // }
+      int t;
+      const char *name = fltk3::get_font_name(nextFont, &t);
+      if (!(t & fltk3::ITALIC) && name[0] != '@') {
+        if (t & fltk3::BOLD) {
+          sprintf(label, "&View/Font (Bold)/%s", name);
+        } else {
+          sprintf(label, "&View/Font/%s", name);
+        }
+        font(nextFont, 12);
+        if (fltk3::descent() < MAX_DESCENT && 
+            (fltk3::width("QW#@") == fltk3::width("il:("))) {
+          int menuIndex = menu->add(label, (unsigned int)0, 
+                                    (Callback *)EditorWidget::font_name_cb);
+          MenuItem *item = (fltk3::MenuItem *)(menu->menu() + menuIndex);
+          item->labelfont(nextFont);
+        }
+      }
       index++;
     } else {
       fltk3::remove_idle(scan_font_cb, this);
@@ -87,7 +97,6 @@ struct ScanFont {
     }
   }
   MenuBar *menu;
-  Font **fonts;
   int numfonts;
   int index;
 };
@@ -175,7 +184,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
       profile->restoreAppPosition(fullScreen);
 
       fullScreen->callback(quit_cb);
-      //fullScreen->shortcut(0);
+      fullScreen->shortcut(0);
       // TODO: fixme
       fullScreen->add(out);
       fullScreen->resizable(fullScreen);
@@ -975,7 +984,7 @@ MainWindow::MainWindow(int w, int h) :
   //m->add("&View/Text Color/Operators", 0, EditorWidget::set_color_cb, (void *)st_operators);
   //m->add("&View/Text Color/Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
 
-  //new ScanFont(m);
+  new ScanFont(m);
   //scanPlugIns(m);
 
   //m->add("&Program/&Run", F9Key, run_cb);
