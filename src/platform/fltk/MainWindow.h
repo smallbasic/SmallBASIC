@@ -29,7 +29,7 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
-#define MNU_HEIGHT 22
+#define MNU_HEIGHT 28
 #define DEF_FONT_SIZE 12
 #define NUM_RECENT_ITEMS 9
 #define MAX_DESCENT 8           // filter to avoid non-text fonts
@@ -166,7 +166,6 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(run_break);
   CALLBACK_METHOD(run_selection);
   CALLBACK_METHOD(save_file_as);
-  CALLBACK_METHOD(set_flag);
   CALLBACK_METHOD(set_options);
   CALLBACK_METHOD(tool_plugin);
 

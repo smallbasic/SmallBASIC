@@ -6,6 +6,12 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <direct.h>
+
 #include <fltk3/MenuBar.h>
 #include <fltk3/TabGroup.h>
 #include <fltk3/ask.h>
@@ -27,7 +33,7 @@ char *packageHome;
 char *runfile = 0;
 int recentIndex = 0;
 int restart = 0;
-Widget *recentMenu[NUM_RECENT_ITEMS];
+MenuItem *recentMenu[NUM_RECENT_ITEMS];
 strlib::String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 MainWindow *wnd;
@@ -60,11 +66,20 @@ void updateForm(const char *s);
 void closeForm();
 bool isFormActive();
 
+// adds an item to the menu and returns the resulting MenuItem
+MenuItem *addItem(MenuBar *menu, const char *label, unsigned int index, 
+                  Callback *callback, int data = 0) {
+  int menuIndex = menu->add(label, index, callback, (void *)data);
+  return (fltk3::MenuItem *)(menu->menu() + menuIndex);
+}
+
 // scan for fixed pitch fonts in the background
 struct ScanFont {
   ScanFont(MenuBar *argMenu) : menu(argMenu), index(0) {
     numfonts = fltk3::set_fonts("-*");
     fltk3::add_idle(ScanFont::scan_font_cb, this);
+    MenuItem *item = (MenuItem *)menu->find_item("&View");
+    item->deactivate();
   } 
   static void scan_font_cb(void *eventData) {
     ((ScanFont *)eventData)->scanNext();
@@ -84,14 +99,15 @@ struct ScanFont {
         font(nextFont, 12);
         if (fltk3::descent() < MAX_DESCENT && 
             (fltk3::width("QW#@") == fltk3::width("il:("))) {
-          int menuIndex = menu->add(label, (unsigned int)0, 
-                                    (Callback *)EditorWidget::font_name_cb);
-          MenuItem *item = (fltk3::MenuItem *)(menu->menu() + menuIndex);
+          MenuItem *item = addItem(menu, label, 0, EditorWidget::font_name_cb);
           item->labelfont(nextFont);
         }
       }
       index++;
     } else {
+      MenuItem *item = (MenuItem *)menu->find_item("&View");
+      item->activate();
+      menu->redraw_label();
       fltk3::remove_idle(scan_font_cb, this);
       delete this;
     }
@@ -100,6 +116,11 @@ struct ScanFont {
   int numfonts;
   int index;
 };
+
+// remove default EscapeKey shortcut
+int veto_escape(int e) {
+  return (e == fltk3::SHORTCUT);
+}
 
 //--EditWindow functions--------------------------------------------------------
 
@@ -184,8 +205,6 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
       profile->restoreAppPosition(fullScreen);
 
       fullScreen->callback(quit_cb);
-      fullScreen->shortcut(0);
-      // TODO: fixme
       fullScreen->add(out);
       fullScreen->resizable(fullScreen);
       setTitle(fullScreen, filename);
@@ -203,8 +222,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   do {
     restart = false;
     runMode = run_state;
-    //chdir(path);
-    // TODO: fixme
+    chdir(path);
     success = sbasic_main(filename);
   }
   while (restart);
@@ -298,7 +316,7 @@ void MainWindow::quit(Widget *w, void *eventData) {
         if (filename[0] == 0 || (offs > 0 && ::strcasecmp(filename + offs, untitledFile) == 0)) {
           getHomeDir(path);
           strcat(path, untitledFile);
-          editWidget->doSaveFile(path);
+          editWidget->doSaveFile(path, true);
         } else if (!editWidget->checkSave(true)) {
           return;
         }
@@ -408,12 +426,6 @@ void MainWindow::help_app(Widget *w, void *eventData) {
 
 void MainWindow::help_about(Widget *w, void *eventData) {
   getHelp()->loadBuffer(aboutText);
-}
-
-void MainWindow::set_flag(Widget *w, void *eventData) {
-  bool *flag = (bool *)eventData;
-  //  *flag = (w->flags() & STATE);
-  // TODO: fixme
 }
 
 void MainWindow::set_options(Widget *w, void *eventData) {
@@ -621,8 +633,7 @@ void MainWindow::addPlugin(MenuBar *menu, const char *label, const char *filenam
   char path[MAX_PATH];
   sprintf(path, "%s/%s", pluginHome, filename);
   if (::access(path, R_OK) == 0) {
-    //menu->add(label, 0, editor_plugin_cb, strdup(path));
-    // TODO: fixme
+    menu->add(label, (unsigned int)0, editor_plugin_cb, path);
   }
 }
 
@@ -652,9 +663,7 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
           fileLabel++;
         }
         sprintf(label, "&File/Open Recent File/%s", fileLabel);
-        //        recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
-        //                                  load_file_cb, (void *)(i + 1), RAW_LABEL);
-        // TODO: fixme
+        recentMenu[i] = addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
         recentPath[i].append(buffer);
         if (++i == NUM_RECENT_ITEMS) {
           break;
@@ -663,11 +672,11 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
     }
     fclose(fp);
   }
+
+  // fill in the remaining recentMenu slots
   while (i < NUM_RECENT_ITEMS) {
     sprintf(label, "&File/Open Recent File/%s", untitledFile);
-    //recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
-    //                              load_file_cb, (void *)(i + 1));
-    // TODO: fixme
+    recentMenu[i] = addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
     recentPath[i].append(untitledFile);
     i++;
   }
@@ -878,9 +887,8 @@ bool initialise(int argc, char **argv) {
   wnd = new MainWindow(800, 650);
 
   // load startup editors
-  // TODO: fixme
-  //wnd->new_file(0, 0);
-  //wnd->profile->restore(wnd);
+  wnd->new_file(0, 0);
+  wnd->profile->restore(wnd);
 
   // setup styles
   Font *defaultFont = HELVETICA;
@@ -891,8 +899,6 @@ bool initialise(int argc, char **argv) {
     //    Button::default_style->textfont(defaultFont);
     // TODO: fixme
   }
-
-  //fltk3::Window::xclass("smallbasic");
 
   wnd->loadIcon(PACKAGE_PREFIX, 101);
   check();
@@ -952,7 +958,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&File/&New File", CTRL + 'n', new_file_cb);
   m->add("&File/&Open File", CTRL + 'o', open_file_cb);
   scanRecentFiles(m);
-  //m->add("&File/_&Close", CTRL + F4Key, close_tab_cb);  // TODO: fixme
+  m->add("&File/_&Close", CTRL + FKey + 4, close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", CTRL + SHIFT + 'S', save_file_as_cb);
   addPlugin(m, "&File/_Publish Online", "publish.bas");
@@ -968,37 +974,48 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Edit/&Find", CTRL + 'f', EditorWidget::find_cb);
   m->add("&Edit/&Replace", CTRL + 'r', EditorWidget::show_replace_cb);
   m->add("&Edit/_&Goto Line", CTRL + 'g', EditorWidget::goto_line_cb);
-  // m->add("&View/&Next Tab", F6Key, next_tab_cb); // TODO: fixme
-  //m->add("&View/_&Prev Tab", CTRL + F6Key, prev_tab_cb);
+  m->add("&View/&Next Tab", FKey + 6, next_tab_cb);
+  m->add("&View/_&Prev Tab", CTRL + FKey + 6, prev_tab_cb);
   m->add("&View/Text Size/&Increase", CTRL + ']', font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", CTRL + '[', font_size_decr_cb);
-  //m->add("&View/Text Color/Background Def", 0, EditorWidget::set_color_cb, (void *)st_background_def);
-  //m->add("&View/Text Color/_Background", 0, EditorWidget::set_color_cb, (void *)st_background);
-  //m->add("&View/Text Color/Text", 0, EditorWidget::set_color_cb, (void *)st_text);
-  //m->add("&View/Text Color/Comments", 0, EditorWidget::set_color_cb, (void *)st_comments);
-  //m->add("&View/Text Color/_strlib::Strings", 0, EditorWidget::set_color_cb, (void *)st_strings);
-  //m->add("&View/Text Color/Keywords", 0, EditorWidget::set_color_cb, (void *)st_keywords);
-  //m->add("&View/Text Color/Funcs", 0, EditorWidget::set_color_cb, (void *)st_funcs);
-  //m->add("&View/Text Color/_Subs", 0, EditorWidget::set_color_cb, (void *)st_subs);
-  //m->add("&View/Text Color/Numbers", 0, EditorWidget::set_color_cb, (void *)st_numbers);
-  //m->add("&View/Text Color/Operators", 0, EditorWidget::set_color_cb, (void *)st_operators);
-  //m->add("&View/Text Color/Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
+  m->add("&View/Text Color/Background Def", (unsigned int)0,
+         EditorWidget::set_color_cb, (void *)st_background_def);
+  m->add("&View/Text Color/_Background", (unsigned int)0, 
+         EditorWidget::set_color_cb, (void *)st_background);
+  m->add("&View/Text Color/Text", (unsigned int)0, 
+         EditorWidget::set_color_cb, (void *)st_text);
+  m->add("&View/Text Color/Comments", (unsigned int)0, 
+         EditorWidget::set_color_cb, (void *)st_comments);
+  m->add("&View/Text Color/_strlib::Strings", (unsigned int)0, 
+         EditorWidget::set_color_cb, (void *)st_strings);
+  m->add("&View/Text Color/Keywords", (unsigned int)0, 
+         EditorWidget::set_color_cb, (void *)st_keywords);
+  m->add("&View/Text Color/Funcs", (unsigned int)0, 
+         EditorWidget::set_color_cb, (void *)st_funcs);
+  m->add("&View/Text Color/_Subs", (unsigned int)0, 
+         EditorWidget::set_color_cb, (void *)st_subs);
+  m->add("&View/Text Color/Numbers", (unsigned int)0,
+         EditorWidget::set_color_cb, (void *)st_numbers);
+  m->add("&View/Text Color/Operators", (unsigned int)0,
+         EditorWidget::set_color_cb, (void *)st_operators);
+  m->add("&View/Text Color/Find Matches", (unsigned int)0,
+         EditorWidget::set_color_cb, (void *)st_findMatches);
 
   new ScanFont(m);
-  //scanPlugIns(m);
+  scanPlugIns(m);
 
-  //m->add("&Program/&Run", F9Key, run_cb);
-  //m->add("&Program/_&Run Selection", F8Key, run_selection_cb);
+  m->add("&Program/&Run", FKey + 9, run_cb);
+  m->add("&Program/_&Run Selection", FKey + 8, run_selection_cb);
   m->add("&Program/&Break", CTRL + 'b', run_break_cb);
-  //m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
-  //m->add("&Program/&Command", F10Key, set_options_cb);
-  //m->add("&Help/_&Help Contents", F1Key, help_contents_cb);
-  //m->add("&Help/&Program Help", F11Key, help_app_cb);
-  //m->add("&Help/_&Home Page", 0, help_home_cb);
-  //m->add("&Help/&About SmallBASIC", F12Key, help_about_cb);
+  m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
+  m->add("&Program/&Command", FKey + 10, set_options_cb);
+  m->add("&Help/_&Help Contents", FKey + 1, help_contents_cb);
+  m->add("&Help/&Program Help", FKey + 11, help_app_cb);
+  m->add("&Help/_&Home Page", (unsigned int)0, help_home_cb);
+  m->add("&Help/&About SmallBASIC", FKey + 12, help_about_cb);
 
   callback(quit_cb);
-  //shortcut(0);     // remove default EscapeKey shortcut
+  fltk3::add_handler(veto_escape);
 
   // outer decoration group
   h -= MNU_HEIGHT;
@@ -1054,6 +1071,7 @@ Group *MainWindow::createEditor(const char *title) {
   tabGroup->add(editGroup);
   tabGroup->value(editGroup);
   tabGroup->end();
+
   return editGroup;
 }
 
@@ -1073,7 +1091,7 @@ void MainWindow::new_file(Widget *w, void *eventData) {
     getHomeDir(path);
     strcat(path, untitledFile);
     if (::access(path, 0) == 0) {
-      editWidget->loadFile(path);
+    //editWidget->loadFile(path);
     }
   }
 
@@ -1602,7 +1620,7 @@ int BaseWindow::handle(int e) {
       if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
         EditorWidget *editWidget = wnd->getEditor();
         if (editWidget) {
-          if (event_key() == F1Key) {
+          if (event_key() == FKey + 1) {
             // CTRL + F1 key for brief log mode help
             wnd->help_contents(0, (void *)true);
             return 1;
@@ -1654,43 +1672,43 @@ bool BaseWindow::handleKeyEvent() {
   case DivideKey:
     dev_pushkey(SB_KEY_KP_DIV);
     break;
-  case F0Key:
+  case FKey:
     dev_pushkey(SB_KEY_F(0));
     break;
-  case F1Key:
+  case FKey + 1:
     dev_pushkey(SB_KEY_F(1));
     break;
-  case F2Key:
+  case FKey + 2:
     dev_pushkey(SB_KEY_F(2));
     break;
-  case F3Key:
+  case FKey + 3:
     dev_pushkey(SB_KEY_F(3));
     break;
-  case F4Key:
+  case FKey + 4:
     dev_pushkey(SB_KEY_F(4));
     break;
-  case F5Key:
+  case FKey + 5:
     dev_pushkey(SB_KEY_F(5));
     break;
-  case F6Key:
+  case FKey + 6:
     dev_pushkey(SB_KEY_F(6));
     break;
-  case F7Key:
+  case FKey + 7:
     dev_pushkey(SB_KEY_F(7));
     break;
-  case F8Key:
+  case FKey + 8:
     dev_pushkey(SB_KEY_F(8));
     break;
-  case F9Key:
+  case FKey + 9:
     dev_pushkey(SB_KEY_F(9));
     break;
-  case F10Key:
+  case FKey + 10:
     dev_pushkey(SB_KEY_F(10));
     break;
-  case F11Key:
+  case FKey + 11:
     dev_pushkey(SB_KEY_F(11));
     break;
-  case F12Key:
+  case FKey + 12:
     dev_pushkey(SB_KEY_F(12));
     break;
   case PageUpKey:

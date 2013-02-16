@@ -159,9 +159,11 @@ BasicEditor::BasicEditor(int x, int y, int w, int h, StatusBar *status) :
   indentLevel = (s && s[0] ? atoi(s) : 2);
   matchingBrace = -1;
 
-  textbuf = buffer();           // reference only
+  textbuf = new TextBuffer();
   stylebuf = new TextBuffer();
   search[0] = 0;
+
+  buffer(textbuf);
   highlight_data(stylebuf, styletable,
                  sizeof(styletable) / sizeof(styletable[0]), 
                  PLAIN, style_unfinished_cb, 0);

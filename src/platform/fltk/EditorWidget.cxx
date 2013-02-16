@@ -26,7 +26,7 @@ using namespace fltk3;
 
 // in MainWindow.cxx
 extern strlib::String recentPath[];
-extern Widget *recentMenu[];
+extern MenuItem *recentMenu[];
 extern const char *historyFile;
 extern const char *untitledFile;
 
@@ -69,7 +69,6 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
 
   TiledGroup *tile = new TiledGroup(0, 0, w, tileHeight);
   tile->begin();
-
   editor = new BasicEditor(0, 0, w - browserWidth, editHeight, this);
   //TODO: fixme  editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
@@ -650,7 +649,7 @@ void EditorWidget::copyText() {
 /**
  * saves the editor buffer to the given file name
  */
-void EditorWidget::doSaveFile(const char *newfile) {
+void EditorWidget::doSaveFile(const char *newfile, bool exiting) {
   if (!dirty && ::strcmp(newfile, filename) == 0) {
     // neither buffer or filename have changed
     return;
@@ -658,7 +657,6 @@ void EditorWidget::doSaveFile(const char *newfile) {
 
   char basfile[PATH_MAX];
   TextBuffer *textbuf = editor->textbuf;
-
   if (wnd->profile->createBackups && ::access(newfile, 0) == 0) {
     // rename any existing file as a backup
     strcpy(basfile, newfile);
@@ -690,11 +688,13 @@ void EditorWidget::doSaveFile(const char *newfile) {
     textbuf->savefile(basfile);
   }
 
-  textbuf->call_modify_callbacks();
-  showPath();
-  fileChanged(true);
-  addHistory(filename);
-  editor->take_focus();
+  if (!exiting) {
+    textbuf->call_modify_callbacks();
+    showPath();
+    fileChanged(true);
+    addHistory(filename);
+    editor->take_focus();
+  }
 }
 
 /**
@@ -722,7 +722,7 @@ void EditorWidget::fileChanged(bool loadfile) {
       if (found == false) {
         // shift items downwards
         for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
-          recentMenu[i]->copy_label(recentMenu[i - 1]->label());
+          recentMenu[i]->label(recentMenu[i - 1]->label());
           recentPath[i].empty();
           recentPath[i].append(recentPath[i - 1]);
         }
@@ -730,7 +730,7 @@ void EditorWidget::fileChanged(bool loadfile) {
         const char *label = FileWidget::splitPath(filename, null);
         recentPath[0].empty();
         recentPath[0].append(filename);
-        recentMenu[0]->copy_label(label);
+        recentMenu[0]->label(label);
       }
     }
   }

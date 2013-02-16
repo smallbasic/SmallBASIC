@@ -105,7 +105,7 @@ public:
 
   bool checkSave(bool discard);
   void copyText();
-  void doSaveFile(const char *newfile);
+  void doSaveFile(const char *newfile, bool exiting=false);
   void fileChanged(bool loadfile);
   bool focusWidget();
   const char *getFilename() { return filename; }

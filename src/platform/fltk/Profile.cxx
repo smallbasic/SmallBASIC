@@ -208,7 +208,6 @@ void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
     int topLineNo = nextInteger(buffer, len, index);
 
     const char *path = buffer + index;
-
     EditorWidget *editWidget = 0;
     if (usedEditor) {
       // constructor will call loadConfig
