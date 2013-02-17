@@ -607,12 +607,12 @@ int BasicEditor::handle(int e) {
     navigateKey = true;
   }
 
-  if (readonly && ((e == KEY && !navigateKey) || e == PASTE)) {
+  if (readonly && ((e == KEYDOWN && !navigateKey) || e == PASTE)) {
     // prevent buffer modification when in readonly state
     return 0;
   }
 
-  if (e == KEY && event_key() == TabKey) {
+  if (e == KEYDOWN && event_key() == TabKey) {
     if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
       // pass ctrl+key to parent
       return 0;
@@ -623,7 +623,7 @@ int BasicEditor::handle(int e) {
   // call default handler then process keys
   int rtn = TextEditor::handle(e);
   switch (e) {
-  case KEY:
+  case KEYDOWN:
     if (event_key() == ReturnKey) {
       indent = getIndent(spaces, sizeof(spaces), cursorPos);
       if (indent) {

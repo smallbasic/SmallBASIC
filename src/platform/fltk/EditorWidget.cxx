@@ -863,7 +863,7 @@ int EditorWidget::handle(int e) {
     fltk3::focus(editor);
     handleFileChange();
     return 1;
-// TODO: fixme  case KEY:
+// TODO: fixme  case KEYDOWN:
 // TODO: fixme    if (event_key() == EscapeKey) {
 // TODO: fixme      take_focus();
 // TODO: fixme      return 1;

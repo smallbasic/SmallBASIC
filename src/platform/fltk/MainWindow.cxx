@@ -48,9 +48,9 @@ const char *historyFile = "history.txt";
 const char *keywordsFile = "keywords.txt";
 const char *aboutText =
   "<b>About SmallBASIC...</b><br><br>"
-  "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
-  "FLTK Version " SB_STR_VER "<br>"
+  "Version " SB_STR_VER "<br>"
   "Copyright (c) 2002-2013 Chris Warren-Smith.<br><br>"
+  "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
   "<a href=http://smallbasic.sourceforge.net>"
   "http://smallbasic.sourceforge.net</a><br><br>"
   "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
@@ -731,9 +731,8 @@ void MainWindow::scanPlugIns(MenuBar *menu) {
         sprintf(label, (editorTool ? "&Edit/Basic/%s" : "&Basic/%s"), buffer + offs);
         // use an absolute path
         sprintf(path, "%s/%s", pluginHome, filename);
-        //menu->add(label, 0, (Callback *)
-        //                  (editorTool ? editor_plugin_cb : tool_plugin_cb), strdup(path));
-        // TODO: fixme
+        menu->add(label, (unsigned int)0, (Callback *)
+                  (editorTool ? editor_plugin_cb : tool_plugin_cb), strdup(path));
       }
       fclose(file);
     }
@@ -824,8 +823,7 @@ int arg_cb(int argc, char **argv, int &i) {
 void run_mode_startup(void *data) {
   if (data) {
     fltk3::Window *w = (fltk3::Window *)data;
-    //w->destroy();
-    // TODO: fixme
+    delete w;
   }
 
   EditorWidget *editWidget = wnd->getEditor(true);
@@ -891,14 +889,8 @@ bool initialise(int argc, char **argv) {
   wnd->profile->restore(wnd);
 
   // setup styles
-  Font *defaultFont = HELVETICA;
-  if (defaultFont) {
-    //Widget::default_style->labelfont(defaultFont);
-    //    Button::default_style->labelfont(defaultFont);
-    //    Widget::default_style->textfont(defaultFont);
-    //    Button::default_style->textfont(defaultFont);
-    // TODO: fixme
-  }
+  fltk3::default_style.labelfont(HELVETICA);
+  fltk3::default_style.textfont(HELVETICA);
 
   wnd->loadIcon(PACKAGE_PREFIX, 101);
   check();
@@ -1569,8 +1561,6 @@ void MainWindow::loadIcon(const char *prefix, int resourceId) {
 }
 
 int BaseWindow::handle(int e) {
-#if 0
-  // TODO: fixme
   switch (runMode) {
   case run_state:
   case modal_state:
@@ -1604,7 +1594,7 @@ int BaseWindow::handle(int e) {
       }
       break;
     case SHORTCUT:
-    case KEY:
+    case KEYDOWN:
       if (handleKeyEvent()) {
         // no default processing by Window
         return 1;
@@ -1616,8 +1606,8 @@ int BaseWindow::handle(int e) {
   case edit_state:
     switch (e) {
     case SHORTCUT:
-    case KEY:
-      if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
+    case KEYDOWN:
+      if (event_key(ControlLKey) || event_key(ControlRKey)) {
         EditorWidget *editWidget = wnd->getEditor();
         if (editWidget) {
           if (event_key() == FKey + 1) {
@@ -1636,14 +1626,12 @@ int BaseWindow::handle(int e) {
   default:
     break;
   }
-#endif
   return Window::handle(e);
 }
 
 bool BaseWindow::handleKeyEvent() {
-  int k = event_key();
+  unsigned int k = event_key();
   bool key_pushed = true;
-#if 0
   switch (k) {
   case TabKey:
     dev_pushkey(SB_KEY_TAB);
@@ -1660,16 +1648,16 @@ bool BaseWindow::handleKeyEvent() {
   case MenuKey:
     dev_pushkey(SB_KEY_MENU);
     break;
-  case MultiplyKey:
+  case '*':
     dev_pushkey(SB_KEY_KP_MUL);
     break;
-  case AddKey:
+  case '+':
     dev_pushkey(SB_KEY_KP_PLUS);
     break;
-  case SubtractKey:
+  case '-':
     dev_pushkey(SB_KEY_KP_MINUS);
     break;
-  case DivideKey:
+  case '/':
     dev_pushkey(SB_KEY_KP_DIV);
     break;
   case FKey:
@@ -1733,11 +1721,12 @@ bool BaseWindow::handleKeyEvent() {
   case DeleteKey:
     dev_pushkey(SB_KEY_BACKSPACE);
     break;
-  case ReturnKey:
+  case KPEnterKey:
+  case EnterKey:
     dev_pushkey(13);
     break;
   case 'b':
-    if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
+    if (event_state(ControlRKey) || event_state(ControlLKey)) {
       wnd->run_break();
       key_pushed = false;
       break;
@@ -1745,7 +1734,7 @@ bool BaseWindow::handleKeyEvent() {
     dev_pushkey(event_text()[0]);
     break;
   case 'q':
-    if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
+    if (event_state(ControlRKey) || event_state(ControlLKey)) {
       wnd->quit();
       key_pushed = false;
       break;
@@ -1754,14 +1743,13 @@ bool BaseWindow::handleKeyEvent() {
     break;
 
   default:
-    if (k >= LeftShiftKey && k <= RightAltKey) {
+    if (k >= ShiftLKey && k <= ShiftRKey) {
       key_pushed = false;
       break;                    // ignore caps+shift+ctrl+alt
     }
     dev_pushkey(event_text()[0]);
     break;
   }
-#endif
   return key_pushed;
 }
 
@@ -1796,29 +1784,21 @@ bool LineInput::replace(int b, int e, const char *text, int ilen) {
 /**
  * veto the layout changes
  */
-void LineInput::layout() {
-  //fltk3::Input::layout();
-  // TODO: fixme
-  x(orig_x);
-  y(orig_y);
-  w(orig_w);
-  h(orig_h);
+void LineInput::resize(int x, int y, int w, int h) {
 }
 
 int LineInput::handle(int event) {
-  // TODO: fixme
-#if 0
-  if (event == fltk3::KEY) {
-    if ((event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) && event_key() == 'b') {
+  if (event == fltk3::KEYDOWN) {
+    if ((event_state(ControlRKey) || event_state(ControlLKey)) 
+        && event_key() == 'b') {
       if (!wnd->isEdit()) {
         wnd->setBreak();
       }
     }
-    if (event_key_state(EscapeKey)) {
+    if (event_key(EscapeKey)) {
       do_callback();
     }
   }
-#endif
   return fltk3::Input::handle(event);
 }
 

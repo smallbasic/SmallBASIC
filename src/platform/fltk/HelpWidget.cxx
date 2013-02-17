@@ -2526,7 +2526,7 @@ int HelpWidget::handle(int event) {
   case fltk3::ENTER:
     return 1;
 
-  case fltk3::KEYBOARD:
+  case fltk3::KEYDOWN:
     if (event_state(fltk3::RightKey) && -hscroll < w() / 2) {
       hscroll -= HSCROLL_STEP;
       redraw();

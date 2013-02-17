@@ -56,10 +56,10 @@ enum GroupWidget {
   gw_file
 };
 
-struct LineInput: public fltk3::Input {
+struct LineInput : public fltk3::Input {
   LineInput(int x, int y, int w, int h);
   bool replace(int b, int e, const char *text, int ilen);
-  void layout();
+  void resize(int x, int y, int w, int h);
   int handle(int event);
 
 private:
@@ -80,7 +80,7 @@ extern ExecState runMode;
     wnd->FN(w, v);                              \
   }
 
-struct BaseWindow: public fltk3::Window {
+struct BaseWindow : public fltk3::Window {
   BaseWindow(int w, int h) : fltk3::Window(w, h, "SmallBASIC") {
   } 
   virtual ~ BaseWindow() {
