@@ -12,6 +12,8 @@
 #include "BasicEditor.h"
 #include "kwp.h"
 
+#include <fltk3/run.h>
+
 using namespace fltk3;
 using namespace strlib;
 
@@ -67,7 +69,7 @@ bool isvar(int c) {
  * Compare two keywords
  */
 int compare_keywords(const void *a, const void *b) {
-  return (strcasecmp(*((const char **)a), *((const char **)b)));
+  return (::strcasecmp(*((const char **)a), *((const char **)b)));
 }
 
 /**
@@ -155,7 +157,7 @@ BasicEditor::BasicEditor(int x, int y, int w, int h, StatusBar *status) :
   TextEditor(x, y, w, h),
   status(status) {
   readonly = false;
-  const char *s = getenv("INDENT_LEVEL");
+  const char *s = ::getenv("INDENT_LEVEL");
   indentLevel = (s && s[0] ? atoi(s) : 2);
   matchingBrace = -1;
 
@@ -339,15 +341,12 @@ void BasicEditor::draw() {
   if (matchingBrace != -1) {
     // highlight the matching brace
     int X, Y;
-    // TODO: fixme
-    /*
-    int cursor = cursor_style_;
-    cursor_style_ = BLOCK_CURSOR;
+    int cursor = mCursorStyle;
+    mCursorStyle = BLOCK_CURSOR;
     if (position_to_xy(matchingBrace, &X, &Y)) {
       draw_cursor(X, Y);
     }
-    cursor_style_ = cursor;
-    */
+    mCursorStyle = cursor;
   }
 }
 
@@ -412,10 +411,9 @@ unsigned BasicEditor::getIndent(char *spaces, int len, int pos) {
 void BasicEditor::handleTab() {
   char spaces[250];
   int indent;
-  // TODO: fixme
-#if 0
+
   // get the desired indent based on the previous line
-  int lineStart = buffer()->line_start(cursor_pos_);
+  int lineStart = buffer()->line_start(mCursorPos);
   int prevLineStart = buffer()->line_start(lineStart - 1);
 
   if (prevLineStart && prevLineStart + 1 == lineStart) {
@@ -456,19 +454,16 @@ void BasicEditor::handleTab() {
     memset(spaces, ' ', len);
     spaces[len] = 0;
     buffer()->insert(lineStart, spaces);
-    // TODO: fixme
-    /*
-    if (cursor_pos_ - lineStart < indent) {
+    if (mCursorPos - lineStart < indent) {
       // jump cursor to start of text
-      cursor_pos_ = lineStart + indent;
+      mCursorPos = lineStart + indent;
     } else {
       // move cursor along with text movement, staying on same line
       int maxpos = buffer()->line_end(lineStart);
-      if (cursor_pos_ + len <= maxpos) {
-        cursor_pos_ += len;
+      if (mCursorPos + len <= maxpos) {
+        mCursorPos += len;
       }
     }
-    */
   } else if (curIndent > indent) {
     // remove excess spaces
     buffer()->remove(lineStart, lineStart + (curIndent - indent));
@@ -477,7 +472,6 @@ void BasicEditor::handleTab() {
     insert_position(lineStart + indent);
   }
   free((void *)buf);
-#endif
 }
 
 /**
@@ -508,11 +502,11 @@ void BasicEditor::setFontSize(int size) {
  * display the matching brace
  */
 void BasicEditor::showMatchingBrace() {
-  char cursorChar = 0; // TODO: fixme buffer()->character(cursor_pos_ - 1);
+  char cursorChar = buffer()->byte_at(mCursorPos - 1);
   char cursorMatch = 0;
   int pair = -1;
   int iter = -1;
-  int pos = 0; // fixme cursor_pos_ - 2;
+  int pos = mCursorPos - 2;
 
   switch (cursorChar) {
   case ']':
@@ -523,13 +517,13 @@ void BasicEditor::showMatchingBrace() {
     break;
   case '(':
     cursorMatch = ')';
-    // fixme pos = cursor_pos_;
+    pos = mCursorPos;
     iter = 1;
     break;
   case '[':
     cursorMatch = ']';
     iter = 1;
-    // TODO: fixme pos = cursor_pos_;
+    pos = mCursorPos;
     break;
   }
   if (cursorMatch != -0) {
@@ -538,7 +532,7 @@ void BasicEditor::showMatchingBrace() {
     int len = buffer()->length();
     int gap = 0;
     while (pos > 0 && pos < len) {
-      char nextChar = 0; // TODO: fixme buffer()->character(pos);
+      char nextChar = buffer()->byte_at(pos);
       if (nextChar == 0 || nextChar == '\n') {
         break;
       }
@@ -590,11 +584,11 @@ void BasicEditor::showFindText(const char *find) {
  * FLTK event handler
  */
 int BasicEditor::handle(int e) {
-  int cursorPos = 0; // TODO: fixme cursor_pos_;
+  int cursorPos = mCursorPos;
   char spaces[250];
   int indent;
   bool navigateKey = false;
-  /* TODO: fixme
+
   switch (event_key()) {
   case HomeKey:
   case LeftKey:
@@ -613,7 +607,7 @@ int BasicEditor::handle(int e) {
   }
 
   if (e == KEYDOWN && event_key() == TabKey) {
-    if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
+    if (event_key(ControlLKey) || event_key(ControlRKey)) {
       // pass ctrl+key to parent
       return 0;
     }
@@ -624,12 +618,12 @@ int BasicEditor::handle(int e) {
   int rtn = TextEditor::handle(e);
   switch (e) {
   case KEYDOWN:
-    if (event_key() == ReturnKey) {
+    if (event_key() == EnterKey || event_key() == KPEnterKey) {
       indent = getIndent(spaces, sizeof(spaces), cursorPos);
       if (indent) {
-        buffer()->insert(cursor_pos_, spaces);
-        cursor_pos_ += indent;
-        redraw(DAMAGE_ALL);
+        buffer()->insert(mCursorPos, spaces);
+        mCursorPos += indent;
+        damage(DAMAGE_ALL);
       }
     }
     // fallthru to show row-col
@@ -640,8 +634,6 @@ int BasicEditor::handle(int e) {
   }
 
   return rtn;
-  */
-  return 0;
 }
 
 /**
@@ -650,8 +642,7 @@ int BasicEditor::handle(int e) {
 void BasicEditor::showRowCol() {
   int row = -1;
   int col = 0;
-  /* TODO: fixme
-  if (!position_to_linecol(cursor_pos_, &row, &col)) {
+  if (!position_to_linecol(mCursorPos, &row, &col)) {
     // This is a workaround for a bug in the FLTK TextDisplay widget
     // where linewrapping causes a mis-calculation of line offsets which
     // sometimes prevents the display of the last few lines of text.
@@ -659,9 +650,8 @@ void BasicEditor::showRowCol() {
     scroll(0, 0);
     insert_position(buffer()->length());
     scroll(count_lines(0, buffer()->length(), 1), 0);
-    position_to_linecol(cursor_pos_, &row, &col);
+    position_to_linecol(mCursorPos, &row, &col);
   }
-  */
   status->setRowCol(row, col + 1);
 }
 
@@ -721,15 +711,13 @@ char *BasicEditor::getSelection(Rectangle *rc) {
     if (textbuf->selected()) {
       textbuf->selection_position(&start, &end);
     } else {
-      /* TODO: fixme
       int pos = insert_position();
-      if (isvar(textbuf->character(pos))) {
+      if (isvar(textbuf->byte_at(pos))) {
         start = textbuf->word_start(pos);
         end = textbuf->word_end(pos);
       } else {
         start = end = 0;
       }
-      */
     }
 
     if (start != end) {
@@ -782,8 +770,7 @@ void BasicEditor::getKeywords(strlib::List &keywords) {
  * returns the row and col position for the current cursor position
  */
 void BasicEditor::getRowCol(int *row, int *col) {
-  //position_to_linecol(cursor_pos_, row, col);
-  // TODO: fixme
+  position_to_linecol(mCursorPos, row, col);
 }
 
 /**

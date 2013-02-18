@@ -448,21 +448,19 @@ void EditorWidget::font_name(Widget *w, void *eventData) {
  * sub/func selection list handler
  */
 void EditorWidget::func_list(Widget *w, void *eventData) {
-  /* TODO: fixme
-  if (funcList && funcList->item()) {
-    const char *label = funcList->item()->label();
+  if (funcList && funcList->value()) {
+    const char *label = funcList->text(funcList->value());
     if (label) {
       if (::strcmp(label, scanLabel) == 0) {
         funcList->clear();
         createFuncList();
         funcList->add(scanLabel);
       } else {
-        gotoLine(funcList->item()->argument());
+        gotoLine(funcList->value());
         take_focus();
       }
     }
   }
-  */
 }
 
 /**
@@ -863,12 +861,12 @@ int EditorWidget::handle(int e) {
     fltk3::focus(editor);
     handleFileChange();
     return 1;
-// TODO: fixme  case KEYDOWN:
-// TODO: fixme    if (event_key() == EscapeKey) {
-// TODO: fixme      take_focus();
-// TODO: fixme      return 1;
-// TODO: fixme    }
-// TODO: fixme    break;
+  case KEYDOWN:
+    if (event_key() == EscapeKey) {
+      take_focus();
+      return 1;
+    }
+    break;
   case ENTER:
     if (rename_active) {
       // prevent drawing over the inplace editor child control
