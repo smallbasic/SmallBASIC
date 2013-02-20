@@ -16,7 +16,7 @@
 #include <fltk3/Scrollbar.h>
 
 #include "StringLib.h"
-#include "fltk2.h"
+#include "utils.h"
 
 #define SCROLL_W 15
 #define SCROLL_H 15

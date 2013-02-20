@@ -27,7 +27,7 @@
 #include <fltk3/draw.h>
 #include <fltk3/Image.h>
 
-#include "fltk2.h"
+#include "utils.h"
 
 using namespace fltk3;
 

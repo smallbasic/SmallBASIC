@@ -673,10 +673,14 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
     fclose(fp);
   }
 
-  // fill in the remaining recentMenu slots
+  // ensure the first element is populated
   while (i < NUM_RECENT_ITEMS) {
     sprintf(label, "&File/Open Recent File/%s", untitledFile);
-    recentMenu[i] = addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
+    if (i == 0) {
+      recentMenu[i] = addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
+    } else {
+      recentMenu[i] = 0;
+    }
     recentPath[i].append(untitledFile);
     i++;
   }

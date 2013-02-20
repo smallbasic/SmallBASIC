@@ -30,6 +30,9 @@ struct BasicEditor : public TextEditor {
   BasicEditor(int x, int y, int w, int h, StatusBar *status);
   ~BasicEditor();
 
+  /** Return current visible topline */
+  int top_line() const { return mTopLineNum; }
+
   bool findText(const char *find, bool forward, bool updatePos);
   int handle(int e);
   unsigned getIndent(char *indent, int len, int pos);
@@ -51,13 +54,14 @@ struct BasicEditor : public TextEditor {
   void styleChanged();
   void styleParse(const char *text, char *style, int length);
 
-  bool readonly;
-  int indentLevel;
-  int matchingBrace;
-
   TextBuffer *stylebuf;
   TextBuffer *textbuf;
+  bool readonly;
+  int indentLevel;
   char search[256];
+
+protected:
+  int matchingBrace;
   StatusBar *status;
 };
 

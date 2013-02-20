@@ -17,7 +17,7 @@
 //#include <fltk3/XPMImage.h>
 
 #include "StringLib.h"
-#include "fltk2.h"
+#include "utils.h"
 
 #define ID_BUTTON   1
 #define ID_TEXTBOX  2

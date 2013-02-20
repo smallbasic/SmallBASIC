@@ -720,15 +720,20 @@ void EditorWidget::fileChanged(bool loadfile) {
       if (found == false) {
         // shift items downwards
         for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
-          recentMenu[i]->label(recentMenu[i - 1]->label());
-          recentPath[i].empty();
-          recentPath[i].append(recentPath[i - 1]);
+          if (recentMenu[i] && recentMenu[i - 1] && 
+              recentMenu[i] != recentMenu[i - 1])  {
+            recentMenu[i]->label(recentMenu[i - 1]->label());
+            recentPath[i].empty();
+            recentPath[i].append(recentPath[i - 1]);
+          }
         }
-        // create new item in first position
-        const char *label = FileWidget::splitPath(filename, null);
-        recentPath[0].empty();
-        recentPath[0].append(filename);
-        recentMenu[0]->label(label);
+        if (recentMenu[0]) {
+          // create new item in first position
+          const char *label = FileWidget::splitPath(filename, null);
+          recentPath[0].empty();
+          recentPath[0].append(filename);
+          recentMenu[0]->label(label);
+        }
       }
     }
   }

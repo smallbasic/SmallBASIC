@@ -5,8 +5,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef FLTK_2_PORT
-#define FLTK_2_PORT
+#ifndef UTILS_H
+#define UTILS_H
 
 #define NO_COLOR 0
 #define setcolor fltk3::color
@@ -27,5 +27,8 @@
 const fltk3::Color GRAY45 = 42;
 const fltk3::Color GRAY80 = 50;
 const fltk3::Color GRAY99 = 55;
+
+fltk3::Font get_font(const char *name, fltk3::Font defaultFont);
+fltk3::Color parse_color(const char *name);
 
 #endif

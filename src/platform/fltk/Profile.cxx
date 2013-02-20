@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -11,8 +11,9 @@
 
 #include "MainWindow.h"
 #include "Profile.h"
+//#include "utils.h"
 
-const char *configFile = "config.txt";
+const char *configFile = "config_2.txt";
 const char *pathKey = "path";
 const char *indentLevelKey = "indentLevel";
 const char *fontNameKey = "fontName";
@@ -166,7 +167,7 @@ void Profile::restoreStyles(Properties *profile) {
   restoreValue(profile, fontSizeKey, &fontSize);
   strlib::String *fontName = profile->get(fontNameKey);
   if (fontName) {
-    // TODO:fixme    font = fltk3::font(fontName->toString());
+    font = get_font(fontName->toString(), fltk3::COURIER);
   }
 
   for (int i = 0; i <= st_background; i++) {
@@ -174,7 +175,7 @@ void Profile::restoreStyles(Properties *profile) {
     sprintf(buffer, "%02d", i);
     strlib::String *color = profile->get(buffer);
     if (color) {
-      Color c = 0; // TODO: fixme fltk3::color(color->toString());
+      Color c = parse_color(color->toString());
       if (c != NO_COLOR) {
         if (i == st_background) {
           this->color = c;
@@ -282,12 +283,12 @@ void Profile::saveStyles(FILE *fp) {
   uchar r, g, b;
 
   saveValue(fp, fontSizeKey, (int)styletable[0].size);
-  //  saveValue(fp, fontNameKey, styletable[0].font->name());
+  saveValue(fp, fontNameKey, get_font(styletable[0].font));
+  saveValue(fp, fontNameKey, styletable[0].font);
 
   for (int i = 0; i <= st_background; i++) {
-    //    split_color(i == st_background ? color : styletable[i].color, r, g, b);
-    //    fprintf(fp, "%02d=#%02x%02x%02x\n", i, r, g, b);
-    // TODO: fixme
+    get_color(i == st_background ? color : styletable[i].color, r, g, b);
+    fprintf(fp, "%02d=#%02x%02x%02x\n", i, r, g, b);
   }
 }
 
@@ -306,8 +307,7 @@ void Profile::saveTabs(FILE *fp, MainWindow *wnd) {
       bool hideIde = editWidget->isHideIDE();
       bool gotoLine = editWidget->isBreakToLine();
       int insertPos = editWidget->editor->insert_position();
-      // TODO: fixme     int topLineNo = editWidget->editor->top_line();
-      int topLineNo = 0;
+      int topLineNo = editWidget->editor->top_line();
 
       fprintf(fp, "%s='%d;%d;%d;%d;%d;%d;%s'\n", pathKey,
               logPrint, scrollLock, hideIde, gotoLine, insertPos, topLineNo, editWidget->getFilename());

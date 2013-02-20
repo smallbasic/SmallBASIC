@@ -31,6 +31,7 @@ sbasici_SOURCES =																\
     FileWidget.cxx FileWidget.h									\
     Profile.cxx Profile.h												\
     StringLib.cxx StringLib.h										\
+    utils.cxx utils.h														\
     dev_fltk.cxx																\
     blib_fltk_ui.cxx
 
