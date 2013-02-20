@@ -9,10 +9,11 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <fltk3/run.h>
+
 #include "BasicEditor.h"
 #include "kwp.h"
-
-#include <fltk3/run.h>
+#include "utils.h"
 
 using namespace fltk3;
 using namespace strlib;
@@ -670,7 +671,7 @@ void BasicEditor::gotoLine(int line) {
   insert_position(buffer()->line_start(pos));   // insert at column 0
   show_insert_position();
   status->setRowCol(line, 1);
-  //TODO: fixme scroll(line, hor_offset());
+  scroll(line, mHorizOffset);
 }
 
 /**
@@ -728,7 +729,7 @@ char *BasicEditor::getSelection(Rectangle *rc) {
       rc->x(x1);
       rc->y(y1);
       rc->w(x2 - x1);
-      // TODO: fixme rc->h(maxsize_);
+      rc->h(mMaxsize);
       result = textbuf->text_range(start, end);
     }
   }
@@ -746,8 +747,7 @@ int BasicEditor::getFontSize() {
  * returns the current font face name
  */
 const char *BasicEditor::getFontName() {
-  //TODO: fixme  return styletable[0].font->name();
-  return "helv";
+  return get_font(styletable[0].font);
 }
 
 /**
