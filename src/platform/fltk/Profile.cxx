@@ -11,7 +11,7 @@
 
 #include "MainWindow.h"
 #include "Profile.h"
-//#include "utils.h"
+#include "utils.h"
 
 const char *configFile = "config_2.txt";
 const char *pathKey = "path";
@@ -49,8 +49,7 @@ void Profile::loadConfig(EditorWidget *editWidget) {
   editWidget->setFont(font);
   editWidget->setFontSize(fontSize);
   editWidget->setEditorColor(color, false);
-  //editWidget->editor->linenumber_width(lineNumbers ? 40 : 1);
-  // TODO: fixme
+  editWidget->editor->linenumber_width(lineNumbers ? 40 : 1);
 }
 
 //
@@ -261,11 +260,9 @@ void Profile::restoreWindowPos(MainWindow *wnd, fltk3::Rectangle &rc) {
   int h = rc.h();
 
   if (x > 0 && y > 0 && w > 100 && h > 100) {
-    // TODO: fixme
-    //const Monitor & monitor = Monitor::all();
-    //if (x < monitor.w() && y < monitor.h()) {
-    //wnd->resize(x, y, w, h);
-    //}
+    if (x < fltk3::w() && y < fltk3::h()) {
+      wnd->resize(x, y, w, h);
+    }
   }
 }
 

@@ -2244,9 +2244,9 @@ void HelpWidget::compile() {
           prop = p.get("font-size");
           if (prop != null) {
             // convert from points to pixels
-            //const fltk3::Monitor & monitor = fltk3::Monitor::all();
-            //fontSize = (int)(prop->toInteger() * monitor.dpi_y() / 72.0);
-            // TODO: fixme
+            float h, v;
+            fltk3::screen_dpi(h, v);
+            fontSize = (int)(prop->toInteger() * v / 72.0);
           } else {
             prop = p.get("size");
             if (prop != null) {
@@ -2255,8 +2255,7 @@ void HelpWidget::compile() {
           }
           prop = p.get("face");
           if (prop != null) {
-            // TODO: fixme
-            // font = fltk3::font(prop->toString());
+            font = get_font(prop->toString(), fltk3::HELVETICA);
           }
           node = new FontNode(font, fontSize, color, bold, italic);
           nodeList.add(node);

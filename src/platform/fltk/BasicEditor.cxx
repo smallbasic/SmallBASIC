@@ -155,11 +155,12 @@ void style_update_cb(int pos,   // I - Position of update
 
 BasicEditor::BasicEditor(int x, int y, int w, int h, StatusBar *status) :
   TextEditor(x, y, w, h),
+  readonly(false),
+  matchingBrace(-1),
   status(status) {
-  readonly = false;
+
   const char *s = ::getenv("INDENT_LEVEL");
   indentLevel = (s && s[0] ? atoi(s) : 2);
-  matchingBrace = -1;
 
   textbuf = new TextBuffer();
   stylebuf = new TextBuffer();

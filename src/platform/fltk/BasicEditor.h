@@ -30,8 +30,11 @@ struct BasicEditor : public TextEditor {
   BasicEditor(int x, int y, int w, int h, StatusBar *status);
   ~BasicEditor();
 
-  /** Return current visible topline */
+  // return current visible topline
   int top_line() const { return mTopLineNum; }
+
+  // set the line number width
+  void linenumber_width(int width) { mLineNumWidth = width; }
 
   bool findText(const char *find, bool forward, bool updatePos);
   int handle(int e);
