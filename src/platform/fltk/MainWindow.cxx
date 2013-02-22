@@ -99,12 +99,14 @@ struct ScanFont {
         font(nextFont, 12);
         if (fltk3::descent() < MAX_DESCENT && 
             (fltk3::width("QW#@") == fltk3::width("il:("))) {
-          MenuItem *item = addItem(menu, label, 0, EditorWidget::font_name_cb);
+          MenuItem *item = addItem(menu, label, 0, 
+                                   EditorWidget::font_name_cb, nextFont);
           item->labelfont(nextFont);
         }
       }
       index++;
     } else {
+      // end of iteration
       MenuItem *item = (MenuItem *)menu->find_item("&View");
       item->activate();
       menu->redraw_label();

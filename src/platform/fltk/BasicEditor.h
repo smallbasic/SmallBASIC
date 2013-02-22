@@ -41,7 +41,7 @@ struct BasicEditor : public TextEditor {
   unsigned getIndent(char *indent, int len, int pos);
   void draw();
   int getFontSize();
-  const char *getFontName();
+  Font getFont();
   void getKeywords(strlib::List &keywords);
   void getRowCol(int *row, int *col);
   void getSelEndRowCol(int *row, int *col);

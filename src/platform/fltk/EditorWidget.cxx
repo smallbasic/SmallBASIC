@@ -53,13 +53,13 @@ EditorWidget *get_editor() {
 //--EditorWidget----------------------------------------------------------------
 
 EditorWidget::EditorWidget(int x, int y, int w, int h) :
-  Group(x, y, w, h) {
-  filename[0] = 0;
-  dirty = false;
-  loading = false;
-  modifiedTime = 0;
-  box(NO_BOX);
+  Group(x, y, w, h),
+  dirty(false),
+  loading(false),
+  modifiedTime(0) {
 
+  filename[0] = 0;
+  box(NO_BOX);
   begin();
 
   int tileHeight = h - (MNU_HEIGHT + 8);
@@ -70,7 +70,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   TiledGroup *tile = new TiledGroup(0, 0, w, tileHeight);
   tile->begin();
   editor = new BasicEditor(0, 0, w - browserWidth, editHeight, this);
-  //TODO: fixme  editor->linenumber_width(40);
+  editor->linenumber_width(40);
   editor->wrap_mode(true, 0);
   editor->selection_color(fltk3::rgb_color(190, 189, 188));
   editor->textbuf->add_modify_callback(changed_cb, this);
@@ -78,9 +78,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   editor->take_focus();
 
   // sub-func jump droplist
-  funcList = new Browser(editor->w(), 0, browserWidth, editHeight);
+  funcList = new Tree(editor->w(), 0, browserWidth, editHeight);
   funcList->labelfont(HELVETICA);
-  // TODO: fixme  funcList->indented(1);
   funcList->when(WHEN_RELEASE);
   funcList->add(scanLabel);
 
@@ -401,12 +400,10 @@ void EditorWidget::command(Widget *w, void *eventData) {
   bool forward = (intptr_t) eventData;
   bool updatePos = (commandOpt != cmd_find_inc);
 
-  /* TODO: fixme
-  if (event_button() == RightButton) {
+  if (event_button() == RIGHT_MOUSE) {
     // right click
     forward = 0;
   }
-  */
   switch (commandOpt) {
   case cmd_find_inc:
   case cmd_find:
@@ -440,7 +437,7 @@ void EditorWidget::command(Widget *w, void *eventData) {
  * font menu selection handler
  */
 void EditorWidget::font_name(Widget *w, void *eventData) {
-  // TODO: fixme  setFont(fltk3::font(w->label(), 0));
+  setFont((int)eventData);
   wnd->updateConfig(this);
 }
 
@@ -448,16 +445,19 @@ void EditorWidget::font_name(Widget *w, void *eventData) {
  * sub/func selection list handler
  */
 void EditorWidget::func_list(Widget *w, void *eventData) {
-  if (funcList && funcList->value()) {
-    const char *label = funcList->text(funcList->value());
-    if (label) {
-      if (::strcmp(label, scanLabel) == 0) {
-        funcList->clear();
-        createFuncList();
-        funcList->add(scanLabel);
-      } else {
-        gotoLine(funcList->value());
-        take_focus();
+  if (funcList) {
+    fltk3::TreeItem *item = funcList->callback_item();
+    if (item) {
+      const char *label = item->label();
+      if (label) {
+        if (::strcmp(label, scanLabel) == 0) {
+          funcList->clear();
+          createFuncList();
+          funcList->add(scanLabel);
+        } else {
+          gotoLine((int) item->user_data());
+          take_focus();
+        }
       }
     }
   }
@@ -491,15 +491,15 @@ void EditorWidget::rename_word(Widget *w, void *eventData) {
       begin();
       LineInput *in = new LineInput(rc.x(), rc.y(), rc.w() + 10, rc.h());
       end();
-      // TODO: fixme      in->text(selection);
+      in->value(selection);
       in->callback(rename_word_cb);
       in->textfont(COURIER);
       in->textsize(getFontSize());
 
       rename_active = true;
-      //while (rename_active && in->focused()) {
-      //        fltk3::wait();
-      // TODO: fixme      }
+      while (rename_active && in->visible_focus()) {
+        fltk3::wait();
+      }
 
       showFindText("");
       replaceAll(selection, in->value(), true, true);
@@ -515,28 +515,26 @@ void EditorWidget::rename_word(Widget *w, void *eventData) {
  * replace the next find occurance
  */
 void EditorWidget::replace_next(Widget *w, void *eventData) {
-  if (readonly()) {
-    return;
-  }
+  if (!readonly()) {
+    const char *find = commandBuffer;
+    const char *replace = commandText->value();
 
-  const char *find = commandBuffer;
-  const char *replace = commandText->value();
+    TextBuffer *textbuf = editor->textbuf;
+    int pos = editor->insert_position();
+    int found = textbuf->search_forward(pos, find, &pos);
 
-  TextBuffer *textbuf = editor->textbuf;
-  int pos = editor->insert_position();
-  int found = textbuf->search_forward(pos, find, &pos);
-
-  if (found) {
-    // found a match; update the position and replace text
-    textbuf->select(pos, pos + strlen(find));
-    textbuf->remove_selection();
-    textbuf->insert(pos, replace);
-    textbuf->select(pos, pos + strlen(replace));
-    editor->insert_position(pos + strlen(replace));
-    editor->show_insert_position();
-  } else {
-    setCommand(cmd_find);
-    editor->take_focus();
+    if (found) {
+      // found a match; update the position and replace text
+      textbuf->select(pos, pos + strlen(find));
+      textbuf->remove_selection();
+      textbuf->insert(pos, replace);
+      textbuf->select(pos, pos + strlen(replace));
+      editor->insert_position(pos + strlen(replace));
+      editor->show_insert_position();
+    } else {
+      setCommand(cmd_find);
+      editor->take_focus();
+    }
   }
 }
 
@@ -547,7 +545,6 @@ void EditorWidget::save_file(Widget *w, void *eventData) {
   if (filename[0] == '\0') {
     // no filename - get one!
     wnd->save_file_as();
-    return;
   } else {
     doSaveFile(filename);
   }
@@ -557,7 +554,7 @@ void EditorWidget::save_file(Widget *w, void *eventData) {
  * prevent the tty window from scrolling with new data
  */
 void EditorWidget::scroll_lock(Widget *w, void *eventData) {
-  // TODO: fixme  tty->setScrollLock(w->flags() & STATE);
+  tty->setScrollLock(w->active());
 }
 
 /**
@@ -574,10 +571,10 @@ void EditorWidget::set_color(Widget *w, void *eventData) {
   StyleField styleField = (StyleField) (intptr_t) eventData;
   if (styleField == st_background || styleField == st_background_def) {
     uchar r, g, b;
-// TODO: fixme    split_color(editor->color(), r, g, b);
+    get_color(editor->color(), r, g, b);
     if (color_chooser(w->label(), r, g, b)) {
       Color c = fltk3::rgb_color(r, g, b);
-// TODO: fixme      set_color_index(fltk3::FREE_COLOR + styleField, c);
+      fltk3::set_color((Color)fltk3::FREE_COLOR + styleField, c);
       setEditorColor(c, styleField == st_background_def);
       editor->styleChanged();
     }
@@ -758,8 +755,8 @@ bool EditorWidget::focusWidget() {
   case 'f':
     if (strlen(commandText->value()) > 0 && commandOpt == cmd_find) {
       // continue search - shift -> backward else forward
-// TODO: fixme      command(0, (void *)((event_key_state(LeftShiftKey) || 
-// TODO: fixme                           event_key_state(RightShiftKey)) ? 0 : 1));
+      command(0, (void *)((event_key(ShiftLKey) || 
+                           event_key(ShiftRKey)) ? 0 : 1));
     }
     setCommand(cmd_find);
     return true;
@@ -999,7 +996,8 @@ void EditorWidget::setEditorColor(Color c, bool defColor) {
   }
   editor->color(c);
 
-  Color bg = 0; // TODO: fixme lerp(c, BLACK, .1f);       // same offset as editor line numbers
+  // same offset as editor line numbers
+  Color bg = color_average(c, BLACK, .1f);
   Color fg = contrast(c, bg);
   int i;
 
@@ -1065,14 +1063,15 @@ void EditorWidget::setRowCol(int row, int col) {
   colStatus->redraw();
 
   // sync the browser widget selection
-  int len = funcList->children() - 1;
-  for (int i = 0; i < len; i++) {
-    int line = (int)funcList->child(i)->argument();
-    int nextLine = (int)funcList->child(i + 1)->argument();
-    if (row >= line && (i == len - 1 || row < nextLine)) {
-      funcList->value(i);
+  int line = 0;
+  for (fltk3::TreeItem *item = funcList->first(); item != NULL; 
+       item = funcList->next(item)) {
+    int nextLine = (int)item->user_data();
+    if (row >= line && row < nextLine) {
+      funcList->select(item, 0);
       break;
     }
+    line = (int)item->user_data();
   }
 }
 
@@ -1097,7 +1096,7 @@ void EditorWidget::statusMsg(const char *msg) {
  * sets the font face, size and colour
  */
 void EditorWidget::updateConfig(EditorWidget *current) {
-// TODO: fixme  setFont(font(current->editor->getFontName()));
+  setFont(current->editor->getFont());
   setFontSize(current->editor->getFontSize());
   setEditorColor(current->editor->color(), false);
 }
@@ -1170,7 +1169,7 @@ void EditorWidget::createFuncList() {
   for (int j = 0; j < keywords_length; j++) {
     keywords_len[j] = strlen(keywords[j]);
   }
-  Group *menuGroup = 0;
+  TreeItem *menuGroup = 0;
 
   for (int i = 0; i < len; i++) {
     // skip to the newline start
@@ -1199,16 +1198,18 @@ void EditorWidget::createFuncList() {
         if (i > i_begin) {
           strlib::String s(text + i_begin, i - i_begin);
           if (j < 2) {
-            // TODO: fixme menuGroup = funcList->add_group(s.toString(), 0, (void *)curLine);
+            menuGroup = funcList->add(s.toString());
+            menuGroup->user_data((void *)curLine);
           } else {
-            // TODO: fixme funcList->add_leaf(s.toString(), menuGroup, (void *)curLine);
+            TreeItem *leaf = funcList->add(menuGroup, s.toString());
+            leaf->user_data((void *)curLine);
           }
         }
         break;
       }
     }
     if (text[i] == '\n') {
-      i--;                      // avoid eating the entire next line
+      i--;  // avoid eating the entire next line
     }
   }
 }
@@ -1273,7 +1274,7 @@ void EditorWidget::handleFileChange() {
   // handle outside changes to the file
   if (filename[0] && modifiedTime != 0 && modifiedTime != getModifiedTime()) {
     const char *msg = "File %s\nhas changed on disk.\n\n" "Do you want to reload the file?";
-    if (fltk3::ask(msg, filename)) {
+    if (fltk3::vask(msg, filename)) {
       reloadFile();
     } else {
       modifiedTime = 0;
@@ -1340,15 +1341,14 @@ int EditorWidget::replaceAll(const char *find, const char *replace, bool restore
 
     while (textbuf->search_forward(pos, find, &pos)) {
       // found a match; update the position and replace text
-      /* // TODO: fixme
       if (!matchWord ||
-          ((pos == 0 || !isvar(textbuf->character(pos - 1))) &&
-           !isvar(textbuf->character(pos + strlen(find))))) {
+          ((pos == 0 || !isvar(textbuf->char_at(pos - 1))) &&
+           !isvar(textbuf->char_at(pos + strlen(find))))) {
         textbuf->select(pos, pos + strlen(find));
         textbuf->remove_selection();
         textbuf->insert(pos, replace);
       }
-      */
+
       // advance beyond replace string
       pos += strlen(replace);
       editor->insert_position(pos);
@@ -1392,10 +1392,10 @@ bool EditorWidget::searchBackward(const char *text, int startPos,
  */
 void EditorWidget::setColor(const char *label, StyleField field) {
   uchar r, g, b;
-// TODO: fixme  split_color(styletable[field].color, r, g, b);
+  get_color(styletable[field].color, r, g, b);
   if (color_chooser(label, r, g, b)) {
     Color c = fltk3::rgb_color(r, g, b);
-// TODO: fixme    set_color_index(fltk3::FREE_COLOR + field, c);
+    fltk3::set_color(fltk3::FREE_COLOR + field, c);
     styletable[field].color = c;
     editor->styleChanged();
   }

@@ -11,6 +11,7 @@
 #include "common/smbas.h"
 #include "common/osd.h"
 #include "common/blib_ui.h"
+#include "common/fs_socket_client.h"
 
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
@@ -21,9 +22,6 @@
 #include "HelpWidget.h"
 #include "TtyWidget.h"
 
-extern "C" {
-#include "common/fs_socket_client.h"
-}
 #ifdef WIN32
 #include <windows.h>
 #ifdef __MINGW32__

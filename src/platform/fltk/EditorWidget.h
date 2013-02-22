@@ -13,7 +13,7 @@
 #ifndef EDITOR_WIDGET_H
 #define EDITOR_WIDGET_H
 
-#include <fltk3/Browser.h>
+#include <fltk3/Tree.h>
 #include <fltk3/Window.h>
 #include <fltk3/Widget.h>
 #include <fltk3/Input.h>
@@ -176,7 +176,7 @@ private:
   Widget *colStatus;
   Button *runStatus;
   Button *modStatus;
-  Browser *funcList;
+  Tree *funcList;
 
   ToggleButton *logPrintBn;
   ToggleButton *lockBn;

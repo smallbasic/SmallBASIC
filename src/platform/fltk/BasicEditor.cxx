@@ -504,7 +504,7 @@ void BasicEditor::setFontSize(int size) {
  * display the matching brace
  */
 void BasicEditor::showMatchingBrace() {
-  char cursorChar = buffer()->byte_at(mCursorPos - 1);
+  char cursorChar = buffer()->char_at(mCursorPos - 1);
   char cursorMatch = 0;
   int pair = -1;
   int iter = -1;
@@ -534,7 +534,7 @@ void BasicEditor::showMatchingBrace() {
     int len = buffer()->length();
     int gap = 0;
     while (pos > 0 && pos < len) {
-      char nextChar = buffer()->byte_at(pos);
+      char nextChar = buffer()->char_at(pos);
       if (nextChar == 0 || nextChar == '\n') {
         break;
       }
@@ -714,7 +714,7 @@ char *BasicEditor::getSelection(Rectangle *rc) {
       textbuf->selection_position(&start, &end);
     } else {
       int pos = insert_position();
-      if (isvar(textbuf->byte_at(pos))) {
+      if (isvar(textbuf->char_at(pos))) {
         start = textbuf->word_start(pos);
         end = textbuf->word_end(pos);
       } else {
@@ -746,8 +746,8 @@ int BasicEditor::getFontSize() {
 /**
  * returns the current font face name
  */
-const char *BasicEditor::getFontName() {
-  return get_font(styletable[0].font);
+Font BasicEditor::getFont() {
+  return styletable[0].font;
 }
 
 /**
