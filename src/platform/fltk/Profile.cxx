@@ -280,8 +280,7 @@ void Profile::saveStyles(FILE *fp) {
   uchar r, g, b;
 
   saveValue(fp, fontSizeKey, (int)styletable[0].size);
-  saveValue(fp, fontNameKey, get_font(styletable[0].font));
-  saveValue(fp, fontNameKey, styletable[0].font);
+  saveValue(fp, fontNameKey, fltk3::get_font(styletable[0].font));
 
   for (int i = 0; i <= st_background; i++) {
     get_color(i == st_background ? color : styletable[i].color, r, g, b);

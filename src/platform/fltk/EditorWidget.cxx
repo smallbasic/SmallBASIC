@@ -18,20 +18,12 @@
 #include "MainWindow.h"
 #include "EditorWidget.h"
 #include "FileWidget.h"
+#include "utils.h"
 #include "common/smbas.h"
 
 using namespace fltk3;
 
 #define TTY_ROWS 1000
-
-// in MainWindow.cxx
-extern strlib::String recentPath[];
-extern MenuItem *recentMenu[];
-extern const char *historyFile;
-extern const char *untitledFile;
-
-// in dev_fltk.cpp
-void getHomeDir(char *filename, bool appendSlash = true);
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -106,22 +98,14 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   lockBn = new ToggleButton(logPrintBn->x() - (bn_w + 2), 2, bn_w, st_h);
   hideIdeBn = new ToggleButton(lockBn->x() - (bn_w + 2), 2, bn_w, st_h);
   gotoLineBn = new ToggleButton(hideIdeBn->x() - (bn_w + 2), 2, bn_w, st_h);
-
-#ifdef __MINGW32__
-  // fixup alignment under windows
-  logPrintBn->align(ALIGN_INSIDE | ALIGN_LEFT | ALIGN_CENTER);
-  lockBn->align(ALIGN_INSIDE | ALIGN_LEFT | ALIGN_CENTER);
-  hideIdeBn->align(ALIGN_INSIDE | ALIGN_LEFT | ALIGN_CENTER);
-  gotoLineBn->align(ALIGN_INSIDE | ALIGN_LEFT | ALIGN_CENTER);
-#endif
-
   colStatus = new Button(gotoLineBn->x() - (st_w + 2), 2, st_w, st_h);
   rowStatus = new Button(colStatus->x() - (st_w + 2), 2, st_w, st_h);
   runStatus = new Button(rowStatus->x() - (st_w + 2), 2, st_w, st_h);
   modStatus = new Button(runStatus->x() - (st_w + 2), 2, st_w, st_h);
 
   commandChoice = new Button(0, 2, 80, st_h);
-  commandText = new Input(commandChoice->r() + 2, 2, modStatus->x() - commandChoice->r() - 4, st_h);
+  commandText = new Input(commandChoice->r() + 2, 2, 
+                          modStatus->x() - commandChoice->r() - 4, st_h);
   commandText->align(ALIGN_LEFT | ALIGN_CLIP);
   commandText->when(WHEN_ENTER_KEY_ALWAYS);
   commandText->labelfont(HELVETICA);
@@ -129,6 +113,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   for (int n = 0; n < statusBar->children(); n++) {
     Widget *w = statusBar->child(n);
     w->labelfont(HELVETICA);
+    w->labelsize(bn_w - 6);
     w->box(BORDER_BOX);
   }
 
@@ -156,10 +141,10 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   rowStatus->callback(goto_line_cb, 0);
 
   // setup icons
-  logPrintBn->label("@i;@b;T"); // italic bold T
-  lockBn->label("@||;");        // vertical bars
-  hideIdeBn->label("@border_frame;");   // large dot
-  gotoLineBn->label("@>;");     // right arrow (goto)
+  logPrintBn->label("@<-");   // italic bold T
+  lockBn->label("@||");       // vertical bars
+  hideIdeBn->label("@menu");  // large dot
+  gotoLineBn->label("@>");    // right arrow (goto)
 
   // setup tooltips
   commandText->tooltip("Press Ctrl+f or Ctrl+Shift+f to find again");
@@ -701,40 +686,11 @@ void EditorWidget::fileChanged(bool loadfile) {
     // update the func/sub navigator
     createFuncList();
     funcList->redraw();
-
     const char *filename = getFilename();
-    if (filename && filename[0]) {
-      // update the last used file menu
-      bool found = false;
-
-      for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-        if (::strcmp(filename, recentPath[i].toString()) == 0) {
-          found = true;
-          break;
-        }
-      }
-
-      if (found == false) {
-        // shift items downwards
-        for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
-          if (recentMenu[i] && recentMenu[i - 1] && 
-              recentMenu[i] != recentMenu[i - 1])  {
-            recentMenu[i]->label(recentMenu[i - 1]->label());
-            recentPath[i].empty();
-            recentPath[i].append(recentPath[i - 1]);
-          }
-        }
-        if (recentMenu[0]) {
-          // create new item in first position
-          const char *label = FileWidget::splitPath(filename, null);
-          recentPath[0].empty();
-          recentPath[0].append(filename);
-          recentMenu[0]->label(label);
-        }
-      }
+    if (filename && filename[0] && !wnd->isUntitled(filename)) {
+      wnd->addRecentFile(filename);
     }
   }
-
   funcList->add(scanLabel);
 }
 
@@ -997,7 +953,7 @@ void EditorWidget::setEditorColor(Color c, bool defColor) {
   editor->color(c);
 
   // same offset as editor line numbers
-  Color bg = color_average(c, BLACK, .1f);
+  Color bg = color_average(c, BLACK, .8f);
   Color fg = contrast(c, bg);
   int i;
 
@@ -1113,24 +1069,20 @@ void EditorWidget::addHistory(const char *filename) {
   char path[MAX_PATH];
 
   int len = strlen(filename);
-  if (::strcasecmp(filename + len - 4, ".sbx") == 0 || ::access(filename, R_OK) != 0) {
-    // don't remember bas exe or invalid files
+  if (::strcasecmp(filename + len - 4, ".sbx") == 0 || 
+      ::access(filename, R_OK) != 0 ||
+      wnd->isUntitled(filename)) {
+    // don't remember bas exe, invalid or untitled files
     return;
   }
 
-  len -= strlen(untitledFile);
-  if (len > 0 && ::strcmp(filename + len, untitledFile) == 0) {
-    // don't remember the untitled file
-    return;
-  }
   // save paths with unix path separators
   strcpy(updatedfile, filename);
   FileWidget::forwardSlash(updatedfile);
   filename = updatedfile;
 
   // save into the history file
-  getHomeDir(path);
-  strcat(path, historyFile);
+  wnd->getHistoryPath(path);
 
   fp = ::fopen(path, "r");
   if (fp) {
@@ -1285,7 +1237,9 @@ void EditorWidget::handleFileChange() {
 /**
  * prevent the tty and browser from growing when the outer window is resized
  */
-void EditorWidget::layout() {
+void EditorWidget::resize(int x, int y, int w, int h) {
+  trace("%d %d %d %d", x,y,w,h);
+  Group::resize(x, y, w, h);
   Group *tile = editor->parent();
   tile->resizable(editor);
 // TODO: fixme  Group::layout();
@@ -1453,6 +1407,7 @@ void EditorWidget::setModified(bool dirty) {
 void EditorWidget::setWidgetColor(Widget *w, Color bg, Color fg) {
   w->color(bg);
   w->textcolor(fg);
+  w->labelcolor(fg);
   w->redraw();
 }
 

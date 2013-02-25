@@ -38,7 +38,7 @@ public:
 
   // inherited methods
   void draw();
-  void layout();
+  void resize(int x, int y, int w, int h);
   int handle(int e);
 
   // public api

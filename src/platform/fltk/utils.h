@@ -24,11 +24,23 @@
 #define DAMAGE_HIGHLIGHT DAMAGE_SCROLL
 #define DAMAGE_PUSHED DAMAGE_EXPOSE
 
+#if defined(__MINGW32__)
+#define makedir(f) mkdir(f)
+#else
+#define makedir(f) mkdir(f, 0700)
+#endif
+
 const fltk3::Color GRAY45 = 42;
 const fltk3::Color GRAY80 = 50;
 const fltk3::Color GRAY99 = 55;
 
 fltk3::Font get_font(const char *name, fltk3::Font defaultFont);
 fltk3::Color parse_color(const char *name);
+
+// debugging
+extern "C" void trace(const char *format, ...);
+void inspect(fltk3::Group *w, int level=0);
+
+void getHomeDir(char *filename, bool appendSlash = true);
 
 #endif

@@ -33,8 +33,9 @@ char *packageHome;
 char *runfile = 0;
 int recentIndex = 0;
 int restart = 0;
-MenuItem *recentMenu[NUM_RECENT_ITEMS];
+int recentItems = 0;
 strlib::String recentPath[NUM_RECENT_ITEMS];
+strlib::String recentPathLabel[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 MainWindow *wnd;
 ExecState runMode = init_state;
@@ -60,7 +61,6 @@ const char *aboutText =
   "the Free Software Foundation.<br><br>" "<i>Press F1 for help";
 
 // in dev_fltk.cpp
-void getHomeDir(char *filename, bool appendSlash = true);
 bool cacheLink(dev_file_t *df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
@@ -640,6 +640,46 @@ void MainWindow::addPlugin(MenuBar *menu, const char *label, const char *filenam
 }
 
 /**
+ * Adds the given filename to the recent files menu 
+ */
+void MainWindow::addRecentFile(const char *filename) {
+  // update the last used file menu
+  bool found = false;
+  int i;
+  
+  for (i = 0; i < NUM_RECENT_ITEMS; i++) {
+    if (::strcmp(filename, recentPath[i].toString()) == 0) {
+      found = true;
+      break;
+    }
+  }
+  
+  if (!found) {
+    MenuBar *menu = (MenuBar *)child(0);
+    if (recentItems < NUM_RECENT_ITEMS) {
+      // append to the MRU list
+      const char *label = FileWidget::splitPath(filename, null);
+      recentPath[recentItems].empty();
+      recentPath[recentItems].append(filename);
+      addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
+      recentItems++;
+    } else {
+      // shift items downwards
+      for (i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
+        /*
+        if (recentMenu[i] && recentMenu[i - 1] && 
+            recentMenu[i] != recentMenu[i - 1])  {
+          //recentMenu[i]->label(recentMenu[i - 1]->label());
+          recentPath[i].empty();
+          recentPath[i].append(recentPath[i - 1]);
+        }
+        */
+      }
+    }
+  }
+}
+
+/**
  * scan for recent files
  */
 void MainWindow::scanRecentFiles(MenuBar *menu) {
@@ -665,26 +705,15 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
           fileLabel++;
         }
         sprintf(label, "&File/Open Recent File/%s", fileLabel);
-        recentMenu[i] = addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
+        addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
         recentPath[i].append(buffer);
+        recentPathLabel[i].append(label);
         if (++i == NUM_RECENT_ITEMS) {
           break;
         }
       }
     }
     fclose(fp);
-  }
-
-  // ensure the first element is populated
-  while (i < NUM_RECENT_ITEMS) {
-    sprintf(label, "&File/Open Recent File/%s", untitledFile);
-    if (i == 0) {
-      recentMenu[i] = addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
-    } else {
-      recentMenu[i] = 0;
-    }
-    recentPath[i].append(untitledFile);
-    i++;
   }
 }
 
@@ -921,7 +950,6 @@ bool initialise(int argc, char **argv) {
   if (runMode != run_state) {
     wnd->show(argc, argv);
   }
-
   return true;
 }
 
@@ -984,7 +1012,7 @@ MainWindow::MainWindow(int w, int h) :
          EditorWidget::set_color_cb, (void *)st_text);
   m->add("&View/Text Color/Comments", (unsigned int)0, 
          EditorWidget::set_color_cb, (void *)st_comments);
-  m->add("&View/Text Color/_strlib::Strings", (unsigned int)0, 
+  m->add("&View/Text Color/Strings", (unsigned int)0, 
          EditorWidget::set_color_cb, (void *)st_strings);
   m->add("&View/Text Color/Keywords", (unsigned int)0, 
          EditorWidget::set_color_cb, (void *)st_keywords);
@@ -998,10 +1026,6 @@ MainWindow::MainWindow(int w, int h) :
          EditorWidget::set_color_cb, (void *)st_operators);
   m->add("&View/Text Color/Find Matches", (unsigned int)0,
          EditorWidget::set_color_cb, (void *)st_findMatches);
-
-  new ScanFont(m);
-  scanPlugIns(m);
-
   m->add("&Program/&Run", FKey + 9, run_cb);
   m->add("&Program/_&Run Selection", FKey + 8, run_selection_cb);
   m->add("&Program/&Break", CTRL + 'b', run_break_cb);
@@ -1011,6 +1035,16 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Help/&Program Help", FKey + 11, help_app_cb);
   m->add("&Help/_&Home Page", (unsigned int)0, help_home_cb);
   m->add("&Help/&About SmallBASIC", FKey + 12, help_about_cb);
+
+  scanPlugIns(m);
+  new ScanFont(m);
+  const fltk3::MenuItem *mi = m->find_item("&File/Open Recent File");
+  trace("mi = %s", mi->label());
+  //  for (const MenuItem *item = mi->first(); item; item = mi->next()) {
+  //    trace("mi = %s", mi->label());
+  //  }
+
+  //mi->int add(const char*, unsigned int shortcut, fltk3::Callback*, void* =0, int = 0);
 
   callback(quit_cb);
   fltk3::add_handler(veto_escape);
@@ -1376,6 +1410,15 @@ bool MainWindow::isModal() {
   return (runMode == modal_state);
 }
 
+bool MainWindow::isUntitled(const char *filename) {
+  int len = strlen(filename) - strlen(untitledFile);
+  boolean result = false;
+  if (len > 0 && ::strcmp(filename + len, untitledFile) == 0) {
+    result = true;
+  }
+  return result;
+}
+
 bool MainWindow::isEdit() {
   return (runMode == edit_state);
 }
@@ -1513,6 +1556,14 @@ void MainWindow::execLink(strlib::String &link) {
   } else {
     pathMessage(file);
   }
+}
+
+/**
+ * updates buffer with the history path
+ */
+void MainWindow::getHistoryPath(char *path) {
+  getHomeDir(path);
+  strcat(path, historyFile);
 }
 
 /**
@@ -1807,36 +1858,3 @@ int LineInput::handle(int event) {
   }
   return fltk3::Input::handle(event);
 }
-
-//--Debug support---------------------------------------------------------------
-
-#if defined(WIN32)
-#include <windows.h>
-#endif
-// see http://download.sysinternals.com/Files/DebugView.zip
-// for the free DebugView program
-// an alternative debug method is to use insight.exe which
-// is included with cygwin.
-
-extern "C" void trace(const char *format, ...) {
-  char buf[4096], *p = buf;
-  va_list args;
-
-  va_start(args, format);
-  p += vsnprintf(p, sizeof buf - 1, format, args);
-  va_end(args);
-
-  while (p > buf && isspace(p[-1])) {
-    *--p = '\0';
-  }
-
-  *p++ = '\r';
-  *p++ = '\n';
-  *p = '\0';
-#if defined(WIN32)
-  OutputDebugString(buf);
-#else
-  fprintf(stderr, buf, 0);
-#endif
-}
-

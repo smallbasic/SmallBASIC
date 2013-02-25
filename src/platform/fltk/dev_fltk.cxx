@@ -21,6 +21,7 @@
 #include "MainWindow.h"
 #include "HelpWidget.h"
 #include "TtyWidget.h"
+#include "utils.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -29,11 +30,6 @@
 #endif
 #else
 #include <sys/socket.h>
-#endif
-#if defined(__MINGW32__)
-#define makedir(f) mkdir(f)
-#else
-#define makedir(f) mkdir(f, 0700)
 #endif
 #define PEN_OFF   0             // pen mode disabled
 #define PEN_ON    2             // pen mode active
@@ -49,7 +45,6 @@ dword eventsPerTick;
 #define EVT_PAUSE_TIME 0.005
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
-void getHomeDir(char *fileName, bool appendSlash = true);
 bool cacheLink(dev_file_t *df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
@@ -673,34 +668,6 @@ char *dev_gets(char *dest, int size) {
 C_LINKAGE_END
 
 //--HTML Utils------------------------------------------------------------------
-void getHomeDir(char *fileName, bool appendSlash) {
-  const char *vars[] = {
-    "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
-  };
-
-  int vars_len = sizeof(vars) / sizeof(vars[0]);
-
-  fileName[0] = 0;
-
-  for (int i = 0; i < vars_len; i++) {
-    const char *home = ::getenv(vars[i]);
-    if (home && ::access(home, R_OK) == 0) {
-      strcpy(fileName, home);
-      if (i == 1) {
-        // unix path
-        strcat(fileName, "/.config");
-        makedir(fileName);
-      }
-      strcat(fileName, "/SmallBASIC");
-      if (appendSlash) {
-        strcat(fileName, "/");
-      }
-      makedir(fileName);
-      break;
-    }
-  }
-}
-
 void closeForm() {
   if (formView != 0) {
     formView->parent()->remove(formView);

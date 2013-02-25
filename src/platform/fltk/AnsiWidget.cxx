@@ -168,7 +168,7 @@ void AnsiWidget::reset() {
 
 /*! handle resize changes
  */
-void AnsiWidget::layout() {
+void AnsiWidget::resize(int x, int y, int w, int h) {
   // TODO: fixme
   //  if (img && (layout_damage() & LAYOUT_WH)) {
   //    // can't use GSave here in X

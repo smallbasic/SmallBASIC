@@ -38,8 +38,6 @@
 #define MAX_PATH 256
 #endif
 
-extern "C" void trace(const char *format, ...);
-
 enum ExecState {
   init_state,
   edit_state,
@@ -81,22 +79,18 @@ extern ExecState runMode;
   }
 
 struct BaseWindow : public fltk3::Window {
-  BaseWindow(int w, int h) : fltk3::Window(w, h, "SmallBASIC") {
-  } 
-  virtual ~ BaseWindow() {
-  };
+  BaseWindow(int w, int h) : fltk3::Window(w, h, "SmallBASIC") {} 
+  virtual ~BaseWindow() {};
   int handle(int e);
   bool handleKeyEvent();
-
   int penDownX;
   int penDownY;
-  int penMode;                  // PEN ON/OFF
+  int penMode; // PEN ON/OFF
 };
 
 struct MainWindow : public BaseWindow {
   MainWindow(int w, int h);
-  virtual ~MainWindow() {
-  };
+  virtual ~MainWindow() {};
 
   bool basicMain(EditorWidget *editWidget, const char *filename, bool toolExec);
   bool isBreakExec(void);       // whether BREAK mode has been entered
@@ -105,10 +99,13 @@ struct MainWindow : public BaseWindow {
   bool isIdeHidden();           // whether to run without the IDE displayed
   bool isInteractive();         // whether to run without an interface
   bool isModal();               // whether a modal gui loop is active
+  bool isUntitled(const char *path); // whether path is the untitled file
   void addPlugin(MenuBar *menu, const char *label, const char *filename);
+  void addRecentFile(const char *filename);
   void busyMessage();
   bool execHelp();
   void execLink(strlib::String &file);
+  void getHistoryPath(char *path);
   void loadIcon(const char *prefix, int resourceId);
   void pathMessage(const char *file);
   void resetPen();
