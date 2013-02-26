@@ -856,6 +856,7 @@ void EditorWidget::loadFile(const char *newfile) {
   FileWidget::forwardSlash(filename);
 
   loading = true;
+
   if (editor->textbuf->loadfile(filename)) {
     // read failed
     alert("Error reading from file \'%s\':\n%s.", filename, strerror(errno));
@@ -1149,7 +1150,7 @@ void EditorWidget::createFuncList() {
         }
         if (i > i_begin) {
           strlib::String s(text + i_begin, i - i_begin);
-          if (j < 2) {
+          if (j < 2 || !menuGroup) {
             menuGroup = funcList->add(s.toString());
             menuGroup->user_data((void *)curLine);
           } else {
@@ -1238,11 +1239,9 @@ void EditorWidget::handleFileChange() {
  * prevent the tty and browser from growing when the outer window is resized
  */
 void EditorWidget::resize(int x, int y, int w, int h) {
-  trace("%d %d %d %d", x,y,w,h);
-  Group::resize(x, y, w, h);
   Group *tile = editor->parent();
   tile->resizable(editor);
-// TODO: fixme  Group::layout();
+  Group::resize(x, y, w, h);
 
   // when set to editor the tile is not resizable using the mouse
   tile->resizable(null);

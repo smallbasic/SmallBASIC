@@ -35,7 +35,6 @@ int recentIndex = 0;
 int restart = 0;
 int recentItems = 0;
 strlib::String recentPath[NUM_RECENT_ITEMS];
-strlib::String recentPathLabel[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 MainWindow *wnd;
 ExecState runMode = init_state;
@@ -602,6 +601,7 @@ void MainWindow::load_file(Widget * w, void *eventData) {
   int pathIndex = ((intptr_t) eventData) - 1;
   const char *path = recentPath[pathIndex].toString();
   EditorWidget *editWidget = getEditor(path);
+
   if (!editWidget) {
     editWidget = getEditor(createEditor(path));
   }
@@ -611,6 +611,7 @@ void MainWindow::load_file(Widget * w, void *eventData) {
     // save current position
     recentPosition[recentIndex] = editor->insert_position();
     recentIndex = pathIndex;
+
     // load selected file
     if (::access(path, 0) == 0) {
       editWidget->loadFile(path);
@@ -653,27 +654,36 @@ void MainWindow::addRecentFile(const char *filename) {
       break;
     }
   }
-  
+
   if (!found) {
     MenuBar *menu = (MenuBar *)child(0);
+    const char *label = FileWidget::splitPath(filename, null);
     if (recentItems < NUM_RECENT_ITEMS) {
       // append to the MRU list
-      const char *label = FileWidget::splitPath(filename, null);
       recentPath[recentItems].empty();
       recentPath[recentItems].append(filename);
       addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
       recentItems++;
     } else {
-      // shift items downwards
-      for (i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
-        /*
-        if (recentMenu[i] && recentMenu[i - 1] && 
-            recentMenu[i] != recentMenu[i - 1])  {
-          //recentMenu[i]->label(recentMenu[i - 1]->label());
-          recentPath[i].empty();
-          recentPath[i].append(recentPath[i - 1]);
+      // shift items upward. append new item to the bottom, eg:
+      // a > b
+      // b > c
+      // c > new
+      fltk3::MenuItem *item = (fltk3::MenuItem *)menu->find_item(load_file_cb);
+      for (i = 0; item->callback_ == load_file_cb && i < NUM_RECENT_ITEMS; 
+           item++, i++) {
+        fltk3::MenuItem *next = item + 1;
+        recentPath[i].empty();
+        if (next) {
+          next->text = item->text;
+          recentPath[i].append(recentPath[i + 1]);
+        } else {
+          // end of list
+          free((void *)item->text);
+          item->text = strdup(label);
+          recentPath[i].append(filename);
+          break;
         }
-        */
       }
     }
   }
@@ -707,7 +717,6 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
         sprintf(label, "&File/Open Recent File/%s", fileLabel);
         addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
         recentPath[i].append(buffer);
-        recentPathLabel[i].append(label);
         if (++i == NUM_RECENT_ITEMS) {
           break;
         }
@@ -1038,13 +1047,6 @@ MainWindow::MainWindow(int w, int h) :
 
   scanPlugIns(m);
   new ScanFont(m);
-  const fltk3::MenuItem *mi = m->find_item("&File/Open Recent File");
-  trace("mi = %s", mi->label());
-  //  for (const MenuItem *item = mi->first(); item; item = mi->next()) {
-  //    trace("mi = %s", mi->label());
-  //  }
-
-  //mi->int add(const char*, unsigned int shortcut, fltk3::Callback*, void* =0, int = 0);
 
   callback(quit_cb);
   fltk3::add_handler(veto_escape);
@@ -1123,7 +1125,7 @@ void MainWindow::new_file(Widget *w, void *eventData) {
     getHomeDir(path);
     strcat(path, untitledFile);
     if (::access(path, 0) == 0) {
-    //editWidget->loadFile(path);
+      editWidget->loadFile(path);
     }
   }
 
