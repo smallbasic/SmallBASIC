@@ -14,7 +14,7 @@
 #include "EditorWidget.h"
 #include <limits.h>
 
-struct FileWidget:public HelpWidget {
+struct FileWidget : public HelpWidget {
   FileWidget(int x, int y, int w, int h);
   ~FileWidget();
 

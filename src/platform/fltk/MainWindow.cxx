@@ -641,6 +641,24 @@ void MainWindow::addPlugin(MenuBar *menu, const char *label, const char *filenam
 }
 
 /**
+ * Adds an item to the "Open Recent File" menu
+ */
+void MainWindow::addRecentItem(MenuBar *menu, const char *filename, int index) {
+  char label[1024];
+  char *fileLabel = strrchr(filename, '/');
+  if (fileLabel == 0) {
+    fileLabel = strrchr(filename, '\\');
+  }
+  fileLabel = fileLabel ? fileLabel + 1 : (char *)filename;
+  if (fileLabel != 0 && *fileLabel == '_') {
+    fileLabel++;
+  }
+  sprintf(label, "&File/Open Recent File/%s", fileLabel);
+  addItem(menu, label, CTRL + ('1' + index), load_file_cb, (index + 1));
+  recentPath[index].append(filename);
+}
+
+/**
  * Adds the given filename to the recent files menu 
  */
 void MainWindow::addRecentFile(const char *filename) {
@@ -649,7 +667,8 @@ void MainWindow::addRecentFile(const char *filename) {
   int i;
   
   for (i = 0; i < NUM_RECENT_ITEMS; i++) {
-    if (::strcmp(filename, recentPath[i].toString()) == 0) {
+    if (recentPath[i].toString() &&
+        ::strcmp(filename, recentPath[i].toString()) == 0) {
       found = true;
       break;
     }
@@ -660,10 +679,7 @@ void MainWindow::addRecentFile(const char *filename) {
     const char *label = FileWidget::splitPath(filename, null);
     if (recentItems < NUM_RECENT_ITEMS) {
       // append to the MRU list
-      recentPath[recentItems].empty();
-      recentPath[recentItems].append(filename);
-      addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
-      recentItems++;
+      addRecentItem(menu, filename, recentItems++);
     } else {
       // shift items upward. append new item to the bottom, eg:
       // a > b
@@ -673,13 +689,13 @@ void MainWindow::addRecentFile(const char *filename) {
       for (i = 0; item->callback_ == load_file_cb && i < NUM_RECENT_ITEMS; 
            item++, i++) {
         fltk3::MenuItem *next = item + 1;
+        free((void *)item->text);
         recentPath[i].empty();
-        if (next) {
-          next->text = item->text;
+        if (next && next->callback_ == load_file_cb) {
+          item->text = strdup(next->text);
           recentPath[i].append(recentPath[i + 1]);
         } else {
           // end of list
-          free((void *)item->text);
           item->text = strdup(label);
           recentPath[i].append(filename);
           break;
@@ -696,7 +712,6 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
   FILE *fp;
   char buffer[MAX_PATH];
   char path[MAX_PATH];
-  char label[1024];
   int i = 0;
 
   getHomeDir(path);
@@ -706,17 +721,7 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
     while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
       buffer[strlen(buffer) - 1] = 0;   // trim new-line
       if (::access(buffer, 0) == 0) {
-        char *fileLabel = strrchr(buffer, '/');
-        if (fileLabel == 0) {
-          fileLabel = strrchr(buffer, '\\');
-        }
-        fileLabel = fileLabel ? fileLabel + 1 : buffer;
-        if (fileLabel != 0 && *fileLabel == '_') {
-          fileLabel++;
-        }
-        sprintf(label, "&File/Open Recent File/%s", fileLabel);
-        addItem(menu, label, CTRL + '1' + i, load_file_cb, (i + 1));
-        recentPath[i].append(buffer);
+        addRecentItem(menu, buffer, i);
         if (++i == NUM_RECENT_ITEMS) {
           break;
         }
@@ -724,6 +729,7 @@ void MainWindow::scanRecentFiles(MenuBar *menu) {
     }
     fclose(fp);
   }
+  recentItems = i;
 }
 
 /**
@@ -1061,7 +1067,6 @@ MainWindow::MainWindow(int w, int h) :
   w -= 8;
 
   tabGroup = new TabGroup(4, 4, w, h - 6);
-  tabGroup->box(NO_BOX);
 
   // create the output tab
   h -= (MNU_HEIGHT + 8);
@@ -1475,7 +1480,7 @@ void MainWindow::execLink(strlib::String &link) {
     file++;
   }
   // execute a link from the html window
-  if (0 == strncasecmp(file, "http://", 7)) {
+  if (0 == ::strncasecmp(file, "http://", 7)) {
     char localFile[PATH_MAX];
     char path[MAX_PATH];
     dev_file_t df;
@@ -1494,7 +1499,7 @@ void MainWindow::execLink(strlib::String &link) {
       editWidget = getEditor(createEditor(file));
     }
 
-    if (httpOK && extn && 0 == strncasecmp(extn, ".bas", 4)) {
+    if (httpOK && extn && 0 == ::strncasecmp(extn, ".bas", 4)) {
       // run the remote program
       editWidget->loadFile(localFile);
       basicMain(editWidget, localFile, false);
@@ -1521,15 +1526,15 @@ void MainWindow::execLink(strlib::String &link) {
   }
 
   char *extn = strrchr(file, '.');
-  if (extn && (0 == strncasecmp(extn, ".bas ", 5) || 
-               0 == strncasecmp(extn, ".sbx ", 5))) {
+  if (extn && (0 == ::strncasecmp(extn, ".bas ", 5) || 
+               0 == ::strncasecmp(extn, ".sbx ", 5))) {
     strcpy(opt_command, extn + 5);
     extn[4] = 0;                // make args available to bas program
   }
   // if the extension is .sbx and this does not exists or is older
   // than the matching .bas then rename to .bas and set opt_nosave
   // to false - otherwise set execFile flag to true
-  if (extn && 0 == strncasecmp(extn, ".sbx", 4)) {
+  if (extn && 0 == ::strncasecmp(extn, ".sbx", 4)) {
     struct stat st_sbx;
     struct stat st_bas;
     bool sbxExists = (::stat(file, &st_sbx) == 0);
@@ -1594,7 +1599,7 @@ void MainWindow::loadIcon(const char *prefix, int resourceId) {
     if (fp) {
       while (feof(fp) == 0 && fgets(buffer, sizeof(buffer), fp)) {
         buffer[strlen(buffer) - 1] = 0; // trim new-line
-        if (strncasecmp(buffer, key, strlen(key)) == 0) {
+        if (::strncasecmp(buffer, key, strlen(key)) == 0) {
           // found icon spec
           const char *filename = buffer + strlen(key);
           Image *ico = loadImage(filename, 0);  // in HelpWidget.cxx

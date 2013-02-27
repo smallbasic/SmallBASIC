@@ -101,6 +101,7 @@ struct MainWindow : public BaseWindow {
   bool isModal();               // whether a modal gui loop is active
   bool isUntitled(const char *path); // whether path is the untitled file
   void addPlugin(MenuBar *menu, const char *label, const char *filename);
+  void addRecentItem(MenuBar *menu, const char *filename, int index);
   void addRecentFile(const char *filename);
   void busyMessage();
   bool execHelp();

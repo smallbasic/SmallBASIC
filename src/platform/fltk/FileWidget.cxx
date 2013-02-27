@@ -47,6 +47,7 @@ struct FileNode : public strlib::Object {
 int fileNodeCompare(const void *a, const void *b) {
   FileNode *n1 = ((FileNode **) a)[0];
   FileNode *n2 = ((FileNode **) b)[0];
+
   int result = 0;
   switch (sortBy) {
   case e_name:
@@ -253,11 +254,10 @@ void FileWidget::fileOpen(EditorWidget *saveEditorAs) {
 //
 void FileWidget::openPath(const char *newPath) {
   if (newPath && ::access(newPath, R_OK) == 0) {
-    strcpy(path, newPath);
+    ::strcpy(path, newPath);
   } else {
     ::getcwd(path, sizeof(path));
   }
-
   forwardSlash(path);
   displayPath();
   redraw();
@@ -330,16 +330,17 @@ void FileWidget::displayPath() {
       }
     } else if (::stat(name, &stbuf) != -1 && stbuf.st_mode & S_IFDIR) {
       files.add(new FileNode(name, stbuf.st_mtime, stbuf.st_size, true));
-    } else if (strncasecmp(name + len - 4, ".htm", 4) == 0 ||
-               strncasecmp(name + len - 5, ".html", 5) == 0 ||
-               strncasecmp(name + len - 4, ".bas", 4) == 0 || strncasecmp(name + len - 4, ".txt", 4) == 0) {
+    } else if (::strncasecmp(name + len - 4, ".htm", 4) == 0 ||
+               ::strncasecmp(name + len - 5, ".html", 5) == 0 ||
+               ::strncasecmp(name + len - 4, ".bas", 4) == 0 || 
+               ::strncasecmp(name + len - 4, ".txt", 4) == 0) {
       files.add(new FileNode(name, stbuf.st_mtime, stbuf.st_size, false));
     }
   }
   closedir(dp);
 
   if (files.length() > 0) {
-    qsort(files.getList(), files.length(), sizeof(Object), fileNodeCompare);
+    qsort(files.getList(), files.length(), sizeof(strlib::Object), fileNodeCompare);
   }
 
   if (saveEditorAs) {
@@ -477,7 +478,7 @@ void FileWidget::saveAs() {
         strcat(savepath, enteredPath);
       }
       const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
-      if (::access(savepath, 0) != 0 || ask(msg, savepath)) {
+      if (::access(savepath, 0) != 0 || vask(msg, savepath)) {
         saveEditorAs->doSaveFile(savepath);
       }
     }
