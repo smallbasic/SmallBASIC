@@ -74,6 +74,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   funcList->labelfont(HELVETICA);
   funcList->when(WHEN_RELEASE);
   funcList->add(scanLabel);
+  funcList->showroot(0);
+  funcList->selectmode(fltk3::TREE_SELECT_SINGLE);
 
   tty = new TtyWidget(0, editHeight, w, ttyHeight, TTY_ROWS);
   tty->color(WHITE);            // bg
@@ -431,14 +433,12 @@ void EditorWidget::font_name(Widget *w, void *eventData) {
  */
 void EditorWidget::func_list(Widget *w, void *eventData) {
   if (funcList) {
-    fltk3::TreeItem *item = funcList->callback_item();
+    fltk3::TreeItem *item = funcList->first_selected_item();
     if (item) {
       const char *label = item->label();
       if (label) {
         if (::strcmp(label, scanLabel) == 0) {
-          funcList->clear();
           createFuncList();
-          funcList->add(scanLabel);
         } else {
           gotoLine((int) item->user_data());
           take_focus();
@@ -681,17 +681,14 @@ void EditorWidget::doSaveFile(const char *newfile, bool exiting) {
  * called when the buffer has changed
  */
 void EditorWidget::fileChanged(bool loadfile) {
-  funcList->clear();
   if (loadfile) {
     // update the func/sub navigator
     createFuncList();
-    funcList->redraw();
     const char *filename = getFilename();
     if (filename && filename[0] && !wnd->isUntitled(filename)) {
       wnd->addRecentFile(filename);
     }
   }
-  funcList->add(scanLabel);
 }
 
 /**
@@ -967,6 +964,13 @@ void EditorWidget::setEditorColor(Color c, bool defColor) {
   // set the colours on the function list
   setWidgetColor(funcList, bg, fg);
 
+  // set the scanLabel when the list is empty
+  for (fltk3::TreeItem *item = funcList->first(); item; 
+       item = funcList->next(item) ) {
+    item->labelfgcolor(fg);
+    item->labelbgcolor(bg);
+  }
+
   if (defColor) {
     // contrast the default colours against the background
     for (i = 0; i < st_background; i++) {
@@ -1020,15 +1024,22 @@ void EditorWidget::setRowCol(int row, int col) {
   colStatus->redraw();
 
   // sync the browser widget selection
-  int line = 0;
-  for (fltk3::TreeItem *item = funcList->first(); item != NULL; 
-       item = funcList->next(item)) {
-    int nextLine = (int)item->user_data();
-    if (row >= line && row < nextLine) {
-      funcList->select(item, 0);
-      break;
+  fltk3::TreeItem *selected = funcList->first_selected_item();
+  if (!selected || row != (int)selected->user_data()) {
+    // not the select row in the tree widget
+    selected = 0;
+    for (fltk3::TreeItem *item = funcList->first(); item != NULL; 
+         item = funcList->next(item)) {
+      int nextLine = (int)item->user_data();
+      const char *label = item->label();
+      if (label && ::strcmp(label, scanLabel) != 0 &&
+          row >= nextLine) {
+        selected = item;
+      }
     }
-    line = (int)item->user_data();
+    if (selected) {
+      funcList->select_only(selected, 0);
+    }
   }
 }
 
@@ -1089,7 +1100,8 @@ void EditorWidget::addHistory(const char *filename) {
   if (fp) {
     // don't add the item if it already exists
     while (feof(fp) == 0) {
-      if (fgets(buffer, sizeof(buffer), fp) && strncmp(filename, buffer, strlen(filename) - 1) == 0) {
+      if (fgets(buffer, sizeof(buffer), fp) && 
+          strncmp(filename, buffer, strlen(filename) - 1) == 0) {
         fclose(fp);
         return;
       }
@@ -1122,7 +1134,11 @@ void EditorWidget::createFuncList() {
   for (int j = 0; j < keywords_length; j++) {
     keywords_len[j] = strlen(keywords[j]);
   }
+
   TreeItem *menuGroup = 0;
+  Color fg = funcList->labelcolor();
+  Color bg = funcList->color();
+  funcList->clear();
 
   for (int i = 0; i < len; i++) {
     // skip to the newline start
@@ -1142,7 +1158,7 @@ void EditorWidget::createFuncList() {
     }
 
     for (int j = 0; j < keywords_length; j++) {
-      if (!strncasecmp(text + i, keywords[j], keywords_len[j])) {
+      if (!::strncasecmp(text + i, keywords[j], keywords_len[j])) {
         i += keywords_len[j];
         int i_begin = i;
         while (i < len && text[i] != '=' && text[i] != '\r' && text[i] != '\n') {
@@ -1153,9 +1169,13 @@ void EditorWidget::createFuncList() {
           if (j < 2 || !menuGroup) {
             menuGroup = funcList->add(s.toString());
             menuGroup->user_data((void *)curLine);
+            menuGroup->labelfgcolor(fg);
+            menuGroup->labelbgcolor(bg);
           } else {
             TreeItem *leaf = funcList->add(menuGroup, s.toString());
             leaf->user_data((void *)curLine);
+            leaf->labelfgcolor(fg);
+            leaf->labelbgcolor(bg);
           }
         }
         break;
@@ -1165,6 +1185,11 @@ void EditorWidget::createFuncList() {
       i--;  // avoid eating the entire next line
     }
   }
+
+  menuGroup = funcList->add(scanLabel);
+  menuGroup->labelfgcolor(fg);
+  menuGroup->labelbgcolor(bg);
+  funcList->redraw();
 }
 
 /**
@@ -1192,7 +1217,7 @@ void EditorWidget::findFunc(const char *find) {
   int len = editor->textbuf->length();
   int lineNo = 1;
   for (int i = 0; i < len; i++) {
-    if (strncasecmp(text + i, find, findLen) == 0) {
+    if (::strncasecmp(text + i, find, findLen) == 0) {
       gotoLine(lineNo);
       break;
     } else if (text[i] == '\n') {

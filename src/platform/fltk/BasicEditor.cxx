@@ -194,7 +194,7 @@ void BasicEditor::styleParse(const char *text, char *style, int length) {
     if (current == PLAIN) {
       // check for directives, comments, strings, and keywords
       if ((*text == '#' && (*(text - 1) == 0 || *(text - 1) == 10)) ||
-          (strncasecmp(text, "rem", 3) == 0 && text[3] == ' ') || *text == '\'') {
+          (::strncasecmp(text, "rem", 3) == 0 && text[3] == ' ') || *text == '\'') {
         // basic comment
         current = COMMENTS;
         for (; length > 0 && *text != '\n'; length--, text++) {
@@ -364,25 +364,25 @@ unsigned BasicEditor::getIndent(char *spaces, int len, int pos) {
     i++;
   }
 
-  if (strncasecmp(buf + i, "while ", 6) == 0 ||
-      strncasecmp(buf + i, "if ", 3) == 0 ||
-      strncasecmp(buf + i, "elseif ", 7) == 0 ||
-      strncasecmp(buf + i, "elif ", 5) == 0 ||
-      strncasecmp(buf + i, "else", 4) == 0 ||
-      strncasecmp(buf + i, "repeat", 6) == 0 ||
-      strncasecmp(buf + i, "for ", 4) == 0 ||
-      strncasecmp(buf + i, "select ", 7) == 0 ||
-      strncasecmp(buf + i, "case ", 5) == 0 ||
-      strncasecmp(buf + i, "sub ", 4) == 0 ||
-      strncasecmp(buf + i, "func ", 5) == 0) {
+  if (::strncasecmp(buf + i, "while ", 6) == 0 ||
+      ::strncasecmp(buf + i, "if ", 3) == 0 ||
+      ::strncasecmp(buf + i, "elseif ", 7) == 0 ||
+      ::strncasecmp(buf + i, "elif ", 5) == 0 ||
+      ::strncasecmp(buf + i, "else", 4) == 0 ||
+      ::strncasecmp(buf + i, "repeat", 6) == 0 ||
+      ::strncasecmp(buf + i, "for ", 4) == 0 ||
+      ::strncasecmp(buf + i, "select ", 7) == 0 ||
+      ::strncasecmp(buf + i, "case ", 5) == 0 ||
+      ::strncasecmp(buf + i, "sub ", 4) == 0 ||
+      ::strncasecmp(buf + i, "func ", 5) == 0) {
 
     // handle if-then-blah on same line
-    if (strncasecmp(buf + i, "if ", 3) == 0) {
+    if (::strncasecmp(buf + i, "if ", 3) == 0) {
       // find the end of line index
       int j = i + 4;
       while (buf[j] != 0 && buf[j] != '\n') {
         // line also 'ends' at start of comments
-        if (strncasecmp(buf + j, "rem", 3) == 0 || buf[j] == '\'') {
+        if (::strncasecmp(buf + j, "rem", 3) == 0 || buf[j] == '\'') {
           break;
         }
         j++;
@@ -391,7 +391,7 @@ unsigned BasicEditor::getIndent(char *spaces, int len, int pos) {
       while (buf[j - 1] == ' ' && j > i) {
         j--;
       }
-      if (strncasecmp(buf + j - 4, "then", 4) != 0) {
+      if (::strncasecmp(buf + j - 4, "then", 4) != 0) {
         // 'then' is not final text on line
         spaces[i] = 0;
         return i;
@@ -433,16 +433,16 @@ void BasicEditor::handleTab() {
   }
 
   // adjust indent for closure statements
-  if (strncasecmp(buf + curIndent, "wend", 4) == 0 ||
-      strncasecmp(buf + curIndent, "fi", 2) == 0 ||
-      strncasecmp(buf + curIndent, "endif", 5) == 0 ||
-      strncasecmp(buf + curIndent, "elseif ", 7) == 0 ||
-      strncasecmp(buf + curIndent, "elif ", 5) == 0 ||
-      strncasecmp(buf + curIndent, "else", 4) == 0 ||
-      strncasecmp(buf + curIndent, "next", 4) == 0 ||
-      strncasecmp(buf + curIndent, "case", 4) == 0 ||
-      strncasecmp(buf + curIndent, "end", 3) == 0 ||
-      strncasecmp(buf + curIndent, "until ", 6) == 0) {
+  if (::strncasecmp(buf + curIndent, "wend", 4) == 0 ||
+      ::strncasecmp(buf + curIndent, "fi", 2) == 0 ||
+      ::strncasecmp(buf + curIndent, "endif", 5) == 0 ||
+      ::strncasecmp(buf + curIndent, "elseif ", 7) == 0 ||
+      ::strncasecmp(buf + curIndent, "elif ", 5) == 0 ||
+      ::strncasecmp(buf + curIndent, "else", 4) == 0 ||
+      ::strncasecmp(buf + curIndent, "next", 4) == 0 ||
+      ::strncasecmp(buf + curIndent, "case", 4) == 0 ||
+      ::strncasecmp(buf + curIndent, "end", 3) == 0 ||
+      ::strncasecmp(buf + curIndent, "until ", 6) == 0) {
     if (indent >= indentLevel) {
       indent -= indentLevel;
     }

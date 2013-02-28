@@ -292,6 +292,7 @@ void MainWindow::close_tab(Widget *w, void *eventData) {
       }
       tabGroup->remove(group);
       delete group;
+      redraw();
     }
   }
 }
