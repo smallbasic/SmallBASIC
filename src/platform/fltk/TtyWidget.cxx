@@ -30,12 +30,12 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   begin();
   // vertical scrollbar scrolls in row units
   vscrollbar = new Scrollbar(w - SCROLL_W, 1, SCROLL_W, h);
-  // vscrollbar->set_vertical();
-  // TODO: fixme
+  vscrollbar->type(fltk3::VERTICAL);
   vscrollbar->user_data(this);
 
   // horizontal scrollbar scrolls in pixel units
   hscrollbar = new Scrollbar(w - HSCROLL_W - SCROLL_W, 1, HSCROLL_W, SCROLL_H);
+  vscrollbar->type(fltk3::HORIZONTAL);
   vscrollbar->user_data(this);
 
   end();
@@ -197,12 +197,10 @@ int TtyWidget::handle(int e) {
   static bool leftButtonDown = false;
   switch (e) {
   case PUSH:
-    //    if ((!vscrollbar->visible() || !event_inside(*vscrollbar)) &&
-    //        (!hscrollbar->visible() || !event_inside(*hscrollbar))) {
-    // TODO: fixme
-    if (0) {
+    if ((!vscrollbar->visible() || !event_inside(vscrollbar)) &&
+        (!hscrollbar->visible() || !event_inside(hscrollbar))) {
       bool selected = (markX != pointX || markY != pointY);
-      if (selected) {// && event_button() == RightButton) {
+      if (selected && event_button() == RIGHT_MOUSE) {
         // right click to copy selection
         copySelection();
       }
@@ -252,20 +250,22 @@ int TtyWidget::handle(int e) {
 //
 // update scrollbar positions
 //
-void TtyWidget::layout() {
+void TtyWidget::resize(int x, int y, int w, int h) {
   int pageRows = getPageRows();
   int textRows = getTextRows();
-  int hscrollX = w() - HSCROLL_W;
-  int hscrollW = w() - 4;
+  int hscrollX = w - HSCROLL_W;
+  int hscrollW = w - 4;
 
-  if (textRows > pageRows && h() > SCROLL_W) {
+  Group::resize(x, y, w, h);
+
+  if (textRows > pageRows && h > SCROLL_W) {
     vscrollbar->set_visible();
     int value = vscrollbar->value();
     if (value + pageRows > textRows) {
       // prevent value from extending beyond the buffer range
       value = textRows - pageRows;
     }
-    vscrollbar->resize(w() - SCROLL_W, 1, SCROLL_W, h());
+    vscrollbar->resize(w - SCROLL_W, 1, SCROLL_W, h);
     vscrollbar->value(value, pageRows, 0, textRows);
     hscrollX -= SCROLL_W;
     hscrollW -= SCROLL_W;
@@ -353,8 +353,7 @@ void TtyWidget::print(const char *str) {
   Row *line = getLine(head);    // pointer to current line
 
   // need the current font set to calculate text widths
-  //  fltk3::setfont(labelfont(), labelsize());
-  // TODO: fixme
+  fltk3::font(labelfont(), labelsize());
 
   // scan the text, handle any special characters, and display the rest.
   for (int i = 0; i < strLength; i++) {

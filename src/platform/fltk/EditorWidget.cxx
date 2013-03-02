@@ -1039,6 +1039,9 @@ void EditorWidget::setRowCol(int row, int col) {
     }
     if (selected) {
       funcList->select_only(selected, 0);
+      if (!funcList->displayed(selected)) {
+        funcList->show_item(selected);
+      }
     }
   }
 }

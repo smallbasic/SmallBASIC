@@ -14,7 +14,6 @@
 #include <fltk3/SharedImage.h>
 #include <fltk3/Group.h>
 #include <fltk3/Scrollbar.h>
-//#include <fltk3/XPMImage.h>
 
 #include "StringLib.h"
 #include "utils.h"
@@ -38,7 +37,6 @@
 #define EVENT_FIND          104
 #define EVENT_PG_DOWN       105
 #define EVENT_PG_UP         106
-
 
 using namespace fltk3;
 using namespace strlib;
@@ -74,7 +72,7 @@ public:
   bool setInputValue(const char *assignment);
   void selectAll();
   void copySelection();
-  void onclick(Widget *button);        // private
+  void onclick(Widget *button);
   void setDocHome(const char *home);
   void getImageNames(strlib::List *);
   void reloadImages();
@@ -97,7 +95,7 @@ protected:
 
   // fltk methods
   void draw();
-  void layout();
+  void resize(int x, int y, int w, int h);
   int onMove(int event);
   int onPush(int event);
   int handle(int event);
@@ -108,7 +106,7 @@ private:
   S16 vscroll, hscroll;
   U16 scrollHeight;
   S16 markX, markY, pointX, pointY;
-  S16 scrollY;                  // nm_scroll
+  S16 scrollY;
   enum { mm_select, mm_page, mm_scroll } mouseMode;
   strlib::List nodeList;
   strlib::List namedInputs;
