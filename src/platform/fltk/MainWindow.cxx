@@ -225,6 +225,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
     runMode = run_state;
     chdir(path);
     success = sbasic_main(filename);
+    success = false;
   }
   while (restart);
 

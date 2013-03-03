@@ -11,6 +11,11 @@
 
 #include "TtyWidget.h"
 
+// repaint the tty-widget when scrollbar position changed
+static void scrollbar_callback(Widget *scrollbar, void *buttonId) {
+  scrollbar->parent()->redraw();
+}
+
 //
 // TtyWidget constructor
 //
@@ -32,13 +37,17 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   vscrollbar = new Scrollbar(w - SCROLL_W, 1, SCROLL_W, h);
   vscrollbar->type(fltk3::VERTICAL);
   vscrollbar->user_data(this);
+  vscrollbar->callback(scrollbar_callback);
 
   // horizontal scrollbar scrolls in pixel units
   hscrollbar = new Scrollbar(w - HSCROLL_W - SCROLL_W, 1, HSCROLL_W, SCROLL_H);
-  vscrollbar->type(fltk3::HORIZONTAL);
-  vscrollbar->user_data(this);
-
+  hscrollbar->type(fltk3::HORIZONTAL);
+  hscrollbar->user_data(this);
+  hscrollbar->callback(scrollbar_callback);
   end();
+
+  // update the scrollbars
+  resize(x, y, w, h);
 }
 
 TtyWidget::~TtyWidget() {
@@ -50,7 +59,7 @@ TtyWidget::~TtyWidget() {
 //
 void TtyWidget::draw() {
   // get the text drawing rectangle
-  Rectangle rc = Rectangle(0, 0, w(), h() + 1);
+  Rectangle rc = Rectangle(0, 0, w(), h());
   if (vscrollbar->visible()) {
     rc.move_r(-vscrollbar->w());
   }
@@ -111,11 +120,13 @@ void TtyWidget::draw() {
     }
   }
 
+  pop_clip();
+
   // draw scrollbar controls
   if (pageWidth > w()) {
     draw_child(*hscrollbar);
   }
-  pop_clip();
+
   draw_child(*vscrollbar);
 }
 
@@ -211,7 +222,7 @@ int TtyWidget::handle(int e) {
         damage(DAMAGE_HIGHLIGHT);
       }
       leftButtonDown = true;
-      return 1;                 // become belowmouse to receive RELEASE event
+      return 1; // become belowmouse to receive RELEASE event
     }
     break;
 
@@ -399,8 +410,7 @@ void TtyWidget::print(const char *str) {
     vscrollbar->value(getTextRows() - getPageRows());
   }
   // schedule a layout and redraw
-  //  relayout();
-  // TODO: fixme
+  resize(x(), y(), w(), h());  
   redraw();
 }
 
@@ -584,29 +594,27 @@ void TtyWidget::setGraphicsRendition(TextSeg *segment, int c) {
 // update the current drawing font
 //
 void TtyWidget::setFont(bool bold, bool italic) {
-  //  Font *font = labelfont();
-  //  if (bold) {
-  //    font = font->bold();
-  //  }
-  //  if (italic) {
-  //    font = font->italic();
-  //  }
-  //  fltk3::setfont(font, labelsize());
-  // TODO: fixme
+  Font font = labelfont();
+  if (bold) {
+    font += fltk3::BOLD;
+  }
+  if (italic) {
+    font += fltk3::ITALIC;
+  }
+  fltk3::font(font, labelsize());
 }
 
 //
 // update the current drawing font and remember the face/size
 //
 void TtyWidget::setFont(Font font, int size) {
-  //  if (font) {
-  //    labelfont(font);
-  //  }
-  //  if (size) {
-  //    labelsize(size);
-  //  }
-  //  fltk3::setfont(labelfont(), labelsize());
-  // TODO: fixme
+  if (font) {
+    labelfont(font);
+  }
+  if (size) {
+    labelsize(size);
+  }
+  fltk3::font(labelfont(), labelsize());
   lineHeight = (int)(getascent() + getdescent());
 }
 

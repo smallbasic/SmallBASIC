@@ -282,10 +282,10 @@ FontNode::FontNode(Font font, int fontSize, Color color, bool bold, bool italic)
     this->font = fltk3::COURIER;
   }
   if (bold) {
-    this->font += HELVETICA_BOLD;
+    this->font += fltk3::BOLD;
   }
   if (italic) {
-    this->font += HELVETICA_ITALIC;
+    this->font += fltk3::ITALIC;
   }
 }
 

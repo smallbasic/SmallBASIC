@@ -68,6 +68,7 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   editor->textbuf->add_modify_callback(changed_cb, this);
   editor->box(NO_BOX);
   editor->take_focus();
+  tile->resizable(editor);
 
   // sub-func jump droplist
   funcList = new Tree(editor->w(), 0, browserWidth, editHeight);
@@ -827,6 +828,11 @@ int EditorWidget::handle(int e) {
       // prevent drawing over the inplace editor child control
       return 0;
     }
+    break;
+  case MOVE:
+    // allow the editor to be resized within the tab
+    editor->parent()->resizable(null);
+    break;
   }
 
   return Group::handle(e);
@@ -1270,9 +1276,6 @@ void EditorWidget::resize(int x, int y, int w, int h) {
   Group *tile = editor->parent();
   tile->resizable(editor);
   Group::resize(x, y, w, h);
-
-  // when set to editor the tile is not resizable using the mouse
-  tile->resizable(null);
 }
 
 /**
