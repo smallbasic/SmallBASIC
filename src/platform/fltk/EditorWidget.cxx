@@ -1145,8 +1145,6 @@ void EditorWidget::createFuncList() {
   }
 
   TreeItem *menuGroup = 0;
-  Color fg = funcList->labelcolor();
-  Color bg = funcList->color();
   funcList->clear();
 
   for (int i = 0; i < len; i++) {
@@ -1175,16 +1173,15 @@ void EditorWidget::createFuncList() {
         }
         if (i > i_begin) {
           strlib::String s(text + i_begin, i - i_begin);
-          if (j < 2 || !menuGroup) {
-            menuGroup = funcList->add(s.toString());
-            menuGroup->user_data((void *)curLine);
-            menuGroup->labelfgcolor(fg);
-            menuGroup->labelbgcolor(bg);
+          if (j < 2) {
+            // create the parent item
+            menuGroup = createFuncListItem(NULL, s.toString(), curLine);
           } else {
-            TreeItem *leaf = funcList->add(menuGroup, s.toString());
-            leaf->user_data((void *)curLine);
-            leaf->labelfgcolor(fg);
-            leaf->labelbgcolor(bg);
+            // create the leaf item
+            if (!menuGroup) {
+              menuGroup = createFuncListItem(NULL, "Global", curLine);
+            }
+            createFuncListItem(menuGroup, s.toString(), curLine);
           }
         }
         break;
@@ -1195,10 +1192,23 @@ void EditorWidget::createFuncList() {
     }
   }
 
-  menuGroup = funcList->add(scanLabel);
-  menuGroup->labelfgcolor(fg);
-  menuGroup->labelbgcolor(bg);
+  createFuncListItem(NULL, scanLabel, -1);
   funcList->redraw();
+}
+
+TreeItem *EditorWidget::createFuncListItem(TreeItem *parent, const char *label, int line) {
+  TreeItem *result = 0;  
+  if (parent) {
+    result = funcList->add(parent, label);
+  } else {
+    result = funcList->add(label);
+  }
+  if (line != -1) {
+    result->user_data((void *)line);
+  }
+  result->labelfgcolor(funcList->labelcolor());
+  result->labelbgcolor(funcList->color());
+  return result;
 }
 
 /**

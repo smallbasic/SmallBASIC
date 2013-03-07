@@ -147,6 +147,7 @@ public:
 protected:
   void addHistory(const char *filename);
   void createFuncList();
+  TreeItem *createFuncListItem(TreeItem *parent, const char *label, int line);
   void doChange(int inserted, int deleted);
   void findFunc(const char *find);
   char *getSelection(Rectangle *rc);

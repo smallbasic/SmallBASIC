@@ -27,9 +27,28 @@
 #include <fltk3/draw.h>
 #include <fltk3/Image.h>
 
-#include "utils.h"
-
 using namespace fltk3;
+
+struct ScreenBuffer {
+  ScreenBuffer(int w, int h) : _w(w), _h(h) {
+    _os = fl_create_offscreen(w, h);
+  };
+
+  ~ScreenBuffer() {
+    fl_delete_offscreen(_os);
+  };
+
+  void destroy() {
+    fl_delete_offscreen(_os);
+  }
+
+  void draw() {
+    copy_offscreen(0, 0, _w, _h, _os, 0, 0);
+  }
+
+  fltk3::Offscreen _os;
+  int _w, _h;
+};
 
 class AnsiWidget : public Widget {
 public:
@@ -39,7 +58,6 @@ public:
   // inherited methods
   void draw();
   void resize(int x, int y, int w, int h);
-  int handle(int e);
 
   // public api
   void clearScreen();
@@ -76,7 +94,7 @@ private:
   void reset();
   void setFont();
 
-  Image *img;
+  ScreenBuffer *img;
   bool underline;
   bool invert;
   bool bold;
@@ -87,6 +105,7 @@ private:
   int curYSaved;
   int curXSaved;
   int tabSize;
+  Color bg, fg;
 };
 
 #endif
