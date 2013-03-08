@@ -2536,17 +2536,17 @@ int HelpWidget::handle(int event) {
     return 1;
 
   case fltk3::KEYDOWN:
-    if (event_state(fltk3::RightKey) && -hscroll < w() / 2) {
+    if (event_key(fltk3::RightKey) && -hscroll < w() / 2) {
       hscroll -= HSCROLL_STEP;
       redraw();
       return 1;
     }
-    if (event_state(fltk3::LeftKey) && hscroll < 0) {
+    if (event_key(fltk3::LeftKey) && hscroll < 0) {
       hscroll += HSCROLL_STEP;
       redraw();
       return 1;
     }
-    if (event_state(ControlRKey) || event_state(ControlLKey)) {
+    if (event_key(ControlRKey) || event_key(ControlLKey)) {
       switch (event_key()) {
       case 'u':
         return handle(EVENT_PG_UP);

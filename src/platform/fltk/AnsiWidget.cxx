@@ -378,7 +378,7 @@ int AnsiWidget::textHeight(void) {
  */
 void eraseBottomLine(void *data, int X, int Y, int W, int H) {
   AnsiWidget *out = (AnsiWidget *) data;
-  fltk3::color(out->color());
+  fltk3::color(out->getBackground());
   rectf(X, Y, W, H);
 }
 

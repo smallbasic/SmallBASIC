@@ -1791,7 +1791,7 @@ bool BaseWindow::handleKeyEvent() {
     dev_pushkey(13);
     break;
   case 'b':
-    if (event_state(ControlRKey) || event_state(ControlLKey)) {
+    if (event_key(ControlRKey) || event_key(ControlLKey)) {
       wnd->run_break();
       key_pushed = false;
       break;
@@ -1799,7 +1799,7 @@ bool BaseWindow::handleKeyEvent() {
     dev_pushkey(event_text()[0]);
     break;
   case 'q':
-    if (event_state(ControlRKey) || event_state(ControlLKey)) {
+    if (event_key(ControlRKey) || event_key(ControlLKey)) {
       wnd->quit();
       key_pushed = false;
       break;
@@ -1854,7 +1854,7 @@ void LineInput::resize(int x, int y, int w, int h) {
 
 int LineInput::handle(int event) {
   if (event == fltk3::KEYDOWN) {
-    if ((event_state(ControlRKey) || event_state(ControlLKey)) 
+    if ((event_key(ControlRKey) || event_key(ControlLKey)) 
         && event_key() == 'b') {
       if (!wnd->isEdit()) {
         wnd->setBreak();

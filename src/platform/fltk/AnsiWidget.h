@@ -81,6 +81,7 @@ public:
   void setFontSize(float i) { labelsize(i); }
   int getFontSize() { return (int)labelsize(); }
   void beep() const;
+  Color getBackground() { return  bg; }
   static Color ansiToFltk(long color);
 
 private:
