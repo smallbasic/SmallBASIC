@@ -105,7 +105,7 @@ struct TextSeg {
 
   // width of this segment in pixels
   int width() {
-    return !str ? 0 : (int)getwidth(str);
+    return !str ? 0 : (int)fltk3::width(str);
   }
 
   // number of chars in this segment
@@ -225,7 +225,7 @@ struct TtyWidget : public Group {
     redraw();
   };
   void setFontSize(int size) {
-    setfont(0, size);
+    fltk3::font(0, size);
     redraw();
   };
   void setScrollLock(bool b) {

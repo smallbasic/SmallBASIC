@@ -1836,7 +1836,7 @@ LineInput::LineInput(int x, int y, int w, int h) :
 bool LineInput::replace(int b, int e, const char *text, int ilen) {
   bool result = Input::replace(b, e, text, ilen);
   if (ilen) {
-    int strw = (int)(getwidth(text) + getwidth(value())) + 4;
+    int strw = (int)(fltk3::width(text) + fltk3::width(value())) + 4;
     if (strw > w()) {
       w(strw);
       orig_w = strw;

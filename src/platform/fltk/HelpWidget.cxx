@@ -94,10 +94,10 @@ struct Display {
 
   void drawBackground(fltk3::Rectangle &rc) {
     if (background != NO_COLOR) {
-      Color oldColor = getcolor();
-      setcolor(background);
-      fillrect(rc);
-      setcolor(oldColor);
+      Color oldColor = fltk3::color();
+      fltk3::color(background);
+      fltk3::rectf(rc.x(), rc.y(), rc.w(), rc.h());
+      fltk3::color(oldColor);
     }
   } 
   void endImageFlow() {
@@ -111,7 +111,7 @@ struct Display {
   }
 
   void newRow(U16 nrows = 1, bool doBackground = true) {
-    int bgY = y1 + (int)getdescent();
+    int bgY = y1 + (int)fltk3::descent();
 
     x1 = indent;
     y1 += nrows *lineHeight;
@@ -129,12 +129,12 @@ struct Display {
 
   // restore previous colors
   void restoreColors() {
-    setcolor(color);
+    fltk3::color(color);
     background = oldBackground;
   }
 
   void setColors(Color nodeForeground, Color nodeBackground) {
-    setcolor(nodeForeground != NO_COLOR ? nodeForeground : color);
+    fltk3::color(nodeForeground != NO_COLOR ? nodeForeground : color);
 
     oldBackground = background;
     if (nodeBackground != NO_COLOR) {
@@ -291,15 +291,15 @@ FontNode::FontNode(Font font, int fontSize, Color color, bool bold, bool italic)
 
 void FontNode::display(Display *out) {
   if (font) {
-    setfont(font, fontSize);
+    fltk3::font(font, fontSize);
   }
   if (color == (Color) - 1) {
-    setcolor(out->color);       // </font> restores color
+    fltk3::color(out->color);       // </font> restores color
   } else if (color != 0) {
-    setcolor(color);
+    fltk3::color(color);
   }
   int oldLineHeight = out->lineHeight;
-  out->lineHeight = (int)(getascent() + getdescent());
+  out->lineHeight = (int)(fltk3::height() + fltk3::descent());
   if (out->lineHeight > oldLineHeight) {
     out->y1 += (out->lineHeight - oldLineHeight);
   }
@@ -322,7 +322,7 @@ struct BrNode : public BaseNode {
     } else {
       out->newRow(1);
     }
-    out->lineHeight = (int)(getascent() + getdescent());
+    out->lineHeight = (int)(fltk3::height() + fltk3::descent());
   }
   U8 premode;
 };
@@ -346,7 +346,7 @@ struct AnchorNode : public BaseNode {
     y1 = y2 = out->y1 - out->lineHeight;
     wrapxy = 0;
     if (href.length() > 0) {
-      setcolor(ANCHOR_COLOR);
+      fltk3::color(ANCHOR_COLOR);
     }
   }
 
@@ -390,7 +390,7 @@ struct AnchorEndNode : public BaseNode {
     }
     out->uline = false;
     out->anchor = 0;
-    setcolor(out->color);
+    fltk3::color(out->color);
   }
 };
 
@@ -446,16 +446,16 @@ struct LiNode : public BaseNode {
     out->x1 = out->indent;
     out->y1 += out->lineHeight;
     int x = out->x1 - (LI_INDENT - DEFAULT_INDENT);
-    int y = out->y1 - (int)(getascent() - getdescent());
+    int y = out->y1 - (int)(fltk3::height() - fltk3::descent());
     if (out->measure == false) {
       if (ulNode && ulNode->ordered) {
         char t[10];
         sprintf(t, "%d.", ++ulNode->nextId);
-        drawtext(t, 2, x, out->y1);
+        fltk3::draw(t, 2, x, out->y1);
       } else {
         dotImage.draw(x, y, 5, 5);
         // draw messes with the current font - restore
-        setfont(out->font, out->fontSize);
+        fltk3::font(out->font, out->fontSize);
       }
     }
   }
@@ -551,7 +551,7 @@ void ImageNode::display(Display *out) {
     if (background) {
       // tile image inside rect x,y,tabW,tabH
       int x = out->x1 - 1;
-      int y = fixed ? 0 : out->y1 - (int)getascent();
+      int y = fixed ? 0 : out->y1 - (int)fltk3::height();
       int y1 = y;
       int x1 = x;
       int numHorz = out->tabW / w.value;
@@ -579,7 +579,7 @@ void ImageNode::display(Display *out) {
       int y = out->y1;
       switch (valign) {
       case 0:                  // top
-        y -= (int)getascent();
+        y -= (int)fltk3::height();
         break;
       case 1:                  // center
         break;
@@ -606,7 +606,7 @@ void ImageNode::display(Display *out) {
       out->indent = out->x1;
     }
   }
-  setfont(out->font, out->fontSize);    // restore font
+  fltk3::font(out->font, out->fontSize);    // restore font
 }
 
 //--TextNode--------------------------------------------------------------------
@@ -639,7 +639,7 @@ void TextNode::getText(strlib::String *s) {
 }
 
 void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
-  int out_y = out->y1 - (int)getascent();
+  int out_y = out->y1 - (int)fltk3::height();
   if (out->pointY < out_y) {
     return;                     // selection above text
   }
@@ -673,7 +673,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
       if (leftX == rightX) {
         // double click - select word
         for (int i = 0; i < len; i++) {
-          int width = (int)getwidth(s + i, 1);
+          int width = (int)fltk3::width(s + i, 1);
           x += width;
           if (left) {
             if (s[i] == ' ') {
@@ -692,7 +692,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
       } else {
         // drag row - draw around character boundary
         for (int i = 0; i < len; i++) {
-          x += (int)getwidth(s + i, 1);
+          x += (int)fltk3::width(s + i, 1);
           if (left) {
             if (x < leftX) {
               rc.set_x(x);
@@ -715,7 +715,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
       }
       int x = out->x1;
       for (int i = 0; i < len; i++) {
-        x += (int)getwidth(s + i, 1);
+        x += (int)fltk3::width(s + i, 1);
         if (x < leftX) {
           rc.set_x(x);
           selBegin = i;
@@ -733,7 +733,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
       }
       int x = out->x1;
       for (int i = 0; i < len; i++) {
-        x += (int)getwidth(s + i, 1);
+        x += (int)fltk3::width(s + i, 1);
         if (x > rightX) {
           rc.w(x - rc.x());
           selEnd = i + 1;
@@ -748,9 +748,9 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
     // capture the selected text
     out->selection->append(s + selBegin, selEnd - selBegin);
   }
-  setcolor(GRAY80);
-  fillrect(rc);
-  setcolor(out->color);
+  fltk3::color(GRAY80);
+  fltk3::rectf(rc.x(), rc.y(), rc.w(), rc.h());
+  fltk3::color(out->color);
 }
 
 void TextNode::display(Display *out) {
@@ -758,7 +758,7 @@ void TextNode::display(Display *out) {
   out->content = true;
 
   if (width == 0) {
-    width = (int)getwidth(s, textlen);
+    width = (int)fltk3::width(s, textlen);
   }
   if (width < out->x2 - out->x1) {
     // simple non-wrapping textout
@@ -772,9 +772,9 @@ void TextNode::display(Display *out) {
       if (out->selected) {
         drawSelection(s, textlen, width, out);
       }
-      drawtext(s, textlen, out->x1, out->y1);
+      fltk3::draw(s, textlen, out->x1, out->y1);
       if (out->uline) {
-        drawline(out->x1, out->y1 + 1, out->x1 + width, out->y1 + 1);
+        fltk3::line(out->x1, out->y1 + 1, out->x1 + width, out->y1 + 1);
       }
     }
     out->x1 += width;
@@ -802,7 +802,7 @@ void TextNode::display(Display *out) {
           linepx = 0;
           cliplen = 0;
           do {
-            linepx += (int)getwidth(p + cliplen, 1);
+            linepx += (int)fltk3::width(p + cliplen, 1);
             cliplen++;
           }
           while (linepx < cellW);
@@ -812,14 +812,14 @@ void TextNode::display(Display *out) {
         if (out->selected) {
           drawSelection(p, cliplen, linepx, out);
         }
-        drawtext(p, cliplen, out->x1, out->y1);
+        fltk3::draw(p, cliplen, out->x1, out->y1);
         if (out->uline) {
-          drawline(out->x1, out->y1 + 1, out->x1 + linepx, out->y1 + 1);
+          fltk3::line(out->x1, out->y1 + 1, out->x1 + linepx, out->y1 + 1);
         }
         if (cliplen != linelen) {
-          drawpoint(out->x1 + linepx, out->y1);
-          drawpoint(out->x1 + linepx + 2, out->y1);
-          drawpoint(out->x1 + linepx + 4, out->y1);
+          fltk3::point(out->x1 + linepx, out->y1);
+          fltk3::point(out->x1 + linepx + 2, out->y1);
+          fltk3::point(out->x1 + linepx + 4, out->y1);
         }
       }
       p += linelen;
@@ -868,11 +868,11 @@ struct HrNode : public BaseNode {
     out->y1 += 4;
     out->x1 = out->indent;
     if (out->measure == false) {
-      setcolor(GRAY45);
-      drawline(out->x1, out->y1 + 1, out->x2 - 6, out->y1 + 1);
-      setcolor(GRAY99);
-      drawline(out->x1, out->y1 + 2, out->x2 - 6, out->y1 + 2);
-      setcolor(out->color);
+      fltk3::color(GRAY45);
+      fltk3::line(out->x1, out->y1 + 1, out->x2 - 6, out->y1 + 1);
+      fltk3::color(GRAY99);
+      fltk3::line(out->x1, out->y1 + 2, out->x2 - 6, out->y1 + 2);
+      fltk3::color(out->color);
     }
     out->y1 += out->lineHeight + 2;
   }
@@ -991,7 +991,7 @@ void TableNode::display(Display *out) {
       sizes[i] = 0;
     }
   }
-  int lineHeight = (int)(getascent() + getdescent());
+  int lineHeight = (int)(fltk3::height() + fltk3::descent());
   if (lineHeight > out->lineHeight) {
     out->lineHeight = lineHeight;
   }
@@ -1113,7 +1113,7 @@ void TrNode::display(Display *out) {
   table->nextRow++;
 
   if (background && out->measure == false) {
-    fltk3::Rectangle rc(table->initX, y1 - (int)getascent(), table->width, out->lineHeight);
+    fltk3::Rectangle rc(table->initX, y1 - (int)fltk3::height(), table->width, out->lineHeight);
     out->drawBackground(rc);
   }
 }
@@ -1181,14 +1181,14 @@ void TdNode::display(Display *out) {
 
   if (out->measure == false) {
     fltk3::Rectangle rc(out->indent - CELL_SPACING,
-                        tr->y1 - (int)getascent(), out->x2 - out->indent + (CELL_SPACING * 2), 
+                        tr->y1 - (int)fltk3::height(), out->x2 - out->indent + (CELL_SPACING * 2), 
                         out->lineHeight);
     out->drawBackground(rc);
     if (table->border > 0) {
-      Color oldColor = getcolor();
-      setcolor(BLACK);
-      fillrect(rc);
-      setcolor(oldColor);
+      Color oldColor = fltk3::color();
+      fltk3::color(BLACK);
+      fltk3::rectf(rc.x(), rc.y(), rc.w(), rc.h());
+      fltk3::color(oldColor);
     }
   }
 
@@ -1450,20 +1450,20 @@ void InputNode::display(Display *out) {
     return;
   }
 
-  int height = 4 + (int)(getascent() + getdescent());
+  int height = 4 + (int)(fltk3::height() + fltk3::descent());
   switch (button->argument()) {
   case ID_SELECT:
     height += 4;
     break;
   case ID_BUTTON:
     if (button->w() == 0 && button->label()) {
-      button->w(12 + (int)getwidth(button->label()));
+      button->w(12 + (int)fltk3::width(button->label()));
     }
     break;
   case ID_TEXTAREA:
   case ID_READONLY:
-    button->w(4 + ((int)getwidth("$") * cols));
-    height = 4 + ((int)(getascent() + getdescent()) * rows);
+    button->w(4 + ((int)fltk3::width("$") * cols));
+    height = 4 + ((int)(fltk3::height() + fltk3::descent()) * rows);
     break;
   default:
     break;
@@ -1473,7 +1473,7 @@ void InputNode::display(Display *out) {
   }
   out->lineHeight = height;
   button->x(out->x1);
-  button->y(out->y1 - (int)getascent());
+  button->y(out->y1 - (int)fltk3::height());
   button->h(out->lineHeight - 2);
   button->labelfont(out->font);
   button->textfont(out->font);
@@ -1483,9 +1483,9 @@ void InputNode::display(Display *out) {
     button->clear_visible();
   } else {
     // draw a fake control in case partially visible
-    setcolor(button->color());
+    fltk3::color(button->color());
     rectf(button->x(), button->y(), button->w(), button->h());
-    setcolor(out->color);
+    fltk3::color(out->color);
   }
   out->x1 += button->w();
   out->content = true;
@@ -1811,10 +1811,10 @@ void HelpWidget::draw() {
       out.selection->empty();
     }
   }
-  // must call setfont() before getascent() etc
-  setfont(out.font, out.fontSize);
-  out.y1 = (int)getascent();
-  out.lineHeight = out.y1 + (int)getdescent();
+  // must call setfont() before fltk3::height() etc
+  fltk3::font(out.font, out.fontSize);
+  out.y1 = (int)fltk3::height();
+  out.lineHeight = out.y1 + (int)fltk3::descent();
   out.y1 += vscroll;
 
   push_clip(0, 0, w(), h());
@@ -1826,9 +1826,9 @@ void HelpWidget::draw() {
     havePushedAnchor = true;
   }
   // draw the background
-  setcolor(out.background);
-  fillrect(fltk3::Rectangle(0, 0, w() - SCROLL_W, out.y2));
-  setcolor(out.color);
+  fltk3::color(out.background);
+  fltk3::rectf(0, 0, w() - SCROLL_W, out.y2);
+  fltk3::color(out.color);
 
   out.background = NO_COLOR;
 
@@ -2609,7 +2609,7 @@ bool HelpWidget::find(const char *s, bool matchCase) {
   strlib::Object **list = nodeList.getList();
   int len = nodeList.length();
   int foundRow = 0;
-  int lineHeight = (int)(getascent() + getdescent());
+  int lineHeight = (int)(fltk3::height() + fltk3::descent());
   for (int i = 0; i < len; i++) {
     BaseNode *p = (BaseNode *) list[i];
     if (p->indexOf(s, matchCase) != -1) {
@@ -2815,11 +2815,11 @@ void lineBreak(const char *s, int slen, int width, int &linelen, int &linepx) {
   // no break point found
   if (ibreak == -1) {
     linelen = slen;
-    linepx = (int)getwidth(s, slen);
+    linepx = (int)fltk3::width(s, slen);
     return;
   }
   // find the last break-point within the available width
-  txtWidth = (int)getwidth(s, i);
+  txtWidth = (int)fltk3::width(s, i);
   ibreak = i;
   breakWidth = txtWidth;
 
@@ -2831,7 +2831,7 @@ void lineBreak(const char *s, int slen, int width, int &linelen, int &linepx) {
         break;
       }
     }
-    txtWidth += (int)getwidth(s + ibreak, i - ibreak);
+    txtWidth += (int)fltk3::width(s + ibreak, i - ibreak);
   }
 
   if (txtWidth < width) {

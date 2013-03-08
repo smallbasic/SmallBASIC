@@ -670,7 +670,7 @@ void cmd_text() {
     inf->var = v;
     inf->type = ctrl_text;
     // TODO: fixme update_widget(widget, inf, rect);
-    if (rect.h() > (getascent() + getdescent() + BN_H)) {
+    if (rect.h() > (fltk3::height() + fltk3::descent() + BN_H)) {
       // TODO: fixme widget->type(Input::MULTILINE | Input::WORDWRAP);
     }
     form->end();

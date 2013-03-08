@@ -9,17 +9,6 @@
 #define UTILS_H
 
 #define NO_COLOR 0
-#define setcolor fltk3::color
-#define getcolor fltk3::color
-#define getascent fltk3::height
-#define getdescent fltk3::descent
-#define fillrect(r) fltk3::rectf(r.x(),r.y(),r.w(),r.h())
-#define setfont fltk3::font
-#define drawtext fltk3::draw
-#define drawline fltk3::line
-#define drawpoint fltk3::point
-#define getwidth fltk3::width
-
 #define DAMAGE_CONTENTS 0x40
 #define DAMAGE_HIGHLIGHT DAMAGE_SCROLL
 #define DAMAGE_PUSHED DAMAGE_EXPOSE
@@ -37,10 +26,10 @@ const fltk3::Color GRAY99 = 55;
 fltk3::Font get_font(const char *name, fltk3::Font defaultFont);
 fltk3::Color parse_color(const char *name);
 
+void getHomeDir(char *filename, bool appendSlash = true);
+
 // debugging
 extern "C" void trace(const char *format, ...);
 void inspect(fltk3::Group *w, int level=0);
-
-void getHomeDir(char *filename, bool appendSlash = true);
 
 #endif

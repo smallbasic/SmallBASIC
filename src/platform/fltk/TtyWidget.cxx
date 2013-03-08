@@ -78,16 +78,17 @@ void TtyWidget::draw() {
   int firstRow = tail + vscroll;        // from start plus scroll offset
 
   // setup the background colour
-  setcolor(color());
-  fillrect(rc);
+  fltk3::color(color());
+  fltk3::rectf(rc.x(), rc.y(), rc.w(), rc.h());
   push_clip(rc.x(), rc.y(), rc.w(), rc.h());
-  setcolor(BLACK);
-  drawline(0, 0, w(), 0);
-  setcolor(labelcolor());
+  fltk3::color(BLACK);
+  fltk3::line(0, 0, w(), 0);
+  fltk3::color(labelcolor());
   setFont(labelfont(), (int)labelsize());
 
   int pageWidth = 0;
-  for (int row = firstRow, rows = 0, y = rc.y() + lineHeight; rows < numRows; row++, rows++, y += lineHeight) {
+  for (int row = firstRow, rows = 0, y = rc.y() + lineHeight; rows < numRows; 
+       row++, rows++, y += lineHeight) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->head;
     int x = 2 - hscroll;
@@ -99,17 +100,17 @@ void TtyWidget::draw() {
       int width = seg->width();
       if (seg->str) {
         if (invert) {
-          setcolor(labelcolor());
-          rectf(x, (y - lineHeight) + (int)getdescent(), width, lineHeight);
-          setcolor(color());
-          drawtext(seg->str, x, y);
-          setcolor(labelcolor());
+          fltk3::color(labelcolor());
+          fltk3::rectf(x, (y - lineHeight) + (int)descent(), width, lineHeight);
+          fltk3::color(color());
+          fltk3::draw(seg->str, x, y);
+          fltk3::color(labelcolor());
         } else {
-          drawtext(seg->str, x, y);
+          fltk3::draw(seg->str, x, y);
         }
       }
       if (underline) {
-        drawline(x, y + 1, x + width, y + 1);
+        fltk3::line(x, y + 1, x + width, y + 1);
       }
       x += width;
       seg = seg->next;
@@ -135,7 +136,7 @@ void TtyWidget::draw() {
 //
 void TtyWidget::drawSelection(TextSeg *seg, strlib::String *s, int row, int x, int y) {
   if (markX != pointX || markY != pointY) {
-    Rectangle rc(0, y - (int)getascent(), 0, lineHeight);
+    Rectangle rc(0, y - (int)fltk3::height(), 0, lineHeight);
     int r1 = markY;
     int r2 = pointY;
     int x1 = markX;
@@ -165,7 +166,7 @@ void TtyWidget::drawSelection(TextSeg *seg, strlib::String *s, int row, int x, i
 
       // find start of selection
       while (x < x1 && i < len) {
-        x += (int)getwidth(seg->str + (i++), 1);
+        x += (int)fltk3::width(seg->str + (i++), 1);
       }
       rc.x(x);
 
@@ -174,7 +175,7 @@ void TtyWidget::drawSelection(TextSeg *seg, strlib::String *s, int row, int x, i
         if (s) {
           s->append(seg->str[i]);
         }
-        x += (int)getwidth(seg->str + (i++), 1);
+        x += (int)fltk3::width(seg->str + (i++), 1);
       }
       rc.set_r(x);
     } else if (row == r2) {
@@ -188,15 +189,15 @@ void TtyWidget::drawSelection(TextSeg *seg, strlib::String *s, int row, int x, i
         if (s) {
           s->append(seg->str[i]);
         }
-        x += (int)getwidth(seg->str + (i++), 1);
+        x += (int)fltk3::width(seg->str + (i++), 1);
       }
       rc.set_r(x);
     }
 
     if (!s && !rc.empty()) {
-      setcolor(YELLOW);
-      fillrect(rc);
-      setcolor(labelcolor());
+      fltk3::color(YELLOW);
+      fltk3::rectf(rc.x(), rc.y(), rc.w(), rc.h());
+      fltk3::color(labelcolor());
     }
   }
 }
@@ -615,6 +616,6 @@ void TtyWidget::setFont(Font font, int size) {
     labelsize(size);
   }
   fltk3::font(labelfont(), labelsize());
-  lineHeight = (int)(getascent() + getdescent());
+  lineHeight = (int)(fltk3::height() + fltk3::descent());
 }
 

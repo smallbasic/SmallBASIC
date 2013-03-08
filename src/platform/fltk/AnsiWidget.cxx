@@ -186,13 +186,12 @@ void AnsiWidget::draw() {
   for (int n = 0; n < siblings; n++) {
     Widget *w = parent()->child(n);
     if (w != this) {
-      //      w->redraw();
+      w->redraw();
     }
   }
 
   if (img) {
     if (resized) {
-      trace("hERE!");
       int W = img->_w;
       int H = img->_h;
       if (w() > W) {
@@ -203,27 +202,24 @@ void AnsiWidget::draw() {
       }
       ScreenBuffer *old = img;
       img = new ScreenBuffer(W, H);
+      fltk3::push_origin(); 
+      fltk3::origin(0, 0);
       fl_begin_offscreen(img->_os);
       fltk3::color(bg);
-      setFont();
       rectf(0, 0, W, H);
       old->draw();
       delete old;
       resized = false;
       fl_end_offscreen();
+      fltk3::pop_origin();
     }
     push_clip(0, 0, w(), h());
     img->draw();
-    trace("%d %d %d %d", img->_w, img->_h, w(),h());
     pop_clip();
   } else {
-    trace("this then?");
     fltk3::color(bg);
     rectf(0, 0, w(), h());
   }
-
-  //  fltk3::color(bg);
-  //  rectf(0, 0, w(), h());
 }
 
 /*! clear the offscreen buffer
@@ -380,10 +376,10 @@ int AnsiWidget::textHeight(void) {
 
 /*! callback for scrollrect
  */
-void eraseBottomLine(void *data, const fltk3::Rectangle &r) {
-  //  AnsiWidget *out = (AnsiWidget *) data;
-  //fltk3::color(out->fltk3::color());
-  //  rectf(r.x(), r.y(), r.w(), r.h());
+void eraseBottomLine(void *data, int X, int Y, int W, int H) {
+  AnsiWidget *out = (AnsiWidget *) data;
+  fltk3::color(out->color());
+  rectf(X, Y, W, H);
 }
 
 /*! Handles the \n character
@@ -394,8 +390,7 @@ void AnsiWidget::newLine() {
 
   curX = INITXY;
   if (curY + (fontHeight * 2) >= height) {
-    // TODO: fixme
-    //scrollrect(Rectangle(w(), height), 0, -fontHeight, eraseBottomLine, this);
+    fltk3::scroll(0, 0, w(), height, 0, -fontHeight, eraseBottomLine, this);
   } else {
     curY += fontHeight;
   }
