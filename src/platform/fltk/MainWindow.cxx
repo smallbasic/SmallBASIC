@@ -158,7 +158,9 @@ struct ScanFont {
           done = true;
         } else {
           int n = 0;
-          for (char c = fgetc(fp); c != '\n' && !done; c = fgetc(fp)) {
+          for (char c = fgetc(fp); 
+               c != '\n' && !done && n < (int)sizeof(label);
+               c = fgetc(fp)) {
             switch (c) {
             case EOF:
               done = true;
