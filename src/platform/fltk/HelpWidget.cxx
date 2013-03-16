@@ -35,9 +35,9 @@
 #define FL_HELP_WIDGET_RESOURCES
 #include "HelpWidget.h"
 
-#define FOREGROUND_COLOR fltk3::default_style.color()
-#define BACKGROUND_COLOR fltk3::default_style.color2()
-#define ANCHOR_COLOR fltk3::rgb_color(0,0,128)
+#define FOREGROUND_COLOR BLACK
+#define BACKGROUND_COLOR WHITE
+#define ANCHOR_COLOR BLUE
 #define BUTTON_COLOR fltk3::default_style.labelcolor()
 #define DEFAULT_INDENT 2
 #define LI_INDENT 18

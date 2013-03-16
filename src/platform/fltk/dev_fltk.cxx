@@ -71,12 +71,12 @@ int osd_devinit() {
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    // TODO: fixme wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
+    wnd->outputGroup->resize(0, 0, opt_pref_width + delta_x, opt_pref_height + delta_y);
   }
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
   if (wnd->isInteractive() && !wnd->logPrint()) {
-    //wnd->outputGroup->show();
+    wnd->outputGroup->show();
   }
 
   os_graf_mx = wnd->out->w();
@@ -166,16 +166,16 @@ void osd_setpenmode(int enable) {
  * sets the current mouse position and returns whether the mouse is within the output window
  */
 bool get_mouse_xy() {
-  fltk3::Rectangle rc;
+  fltk3::Rectangle rc(wnd->out->dx_window(),
+                      wnd->out->dy_window(),
+                      wnd->out->w(), wnd->out->h());
   int x, y;
-
   fltk3::get_mouse(x, y);
-  // TODO: fixme wnd->out->get_absolute_rect(&rc);
 
   // convert mouse screen rect to out-client rect
   wnd->penDownX = x - rc.x();
   wnd->penDownY = y - rc.y();
-
+  trace("%d %d", wnd->penDownX, wnd->penDownY);
   return rc.contains(x, y);
 }
 
@@ -201,11 +201,11 @@ int osd_getpen(int code) {
     fltk3::wait();               // fallthru to re-test 
 
   case 3:                      // returns true if the pen is down (and save curpos)
-    // TODO: fixmeif (event_state() & ANY_BUTTON) {
-    if (get_mouse_xy()) {
+    if (event_buttons()) {
+      if (get_mouse_xy()) {
         return 1;
       }
-    ///}
+    }
     return 0;
 
   case 1:                      // last pen-down x
@@ -746,11 +746,10 @@ bool cacheLink(dev_file_t *df, char *localFile) {
       return false;
     }
   }
-  // TODO: move this to a separate thread
   while (true) {
-    int bytes = 0; // TODO: fixme recv(df->handle, (char *)rxbuff, sizeof(rxbuff), 0);
+    int bytes = recv(df->handle, (char *)rxbuff, sizeof(rxbuff), 0);
     if (bytes == 0) {
-      break;                    // no more data
+      break;  // no more data
     }
     // assumes http header < 1024 bytes
     if (inHeader) {
@@ -777,17 +776,9 @@ bool cacheLink(dev_file_t *df, char *localFile) {
         if (strstr(rxbuff + iattr, "200 OK") != 0) {
           httpOK = true;
         }
-//                 if (strncmp(rxbuff+iattr, "Last-Modified: ", 15) == 0) {
-//                     // Last-Modified: Tue, 29 Jul 2003 20:19:10 GMT 
-//                     if (access(localFile, 0) == 0) {
-//                         fclose(fp);
-//                         shutdown(df->handle, df->handle);
-//                         return true;
-//                     }
-//                 }
         if (strncmp(rxbuff + iattr, "Location: ", 10) == 0) {
           // handle redirection
-          // TODO: fixme shutdown(df->handle, df->handle);
+          shutdown(df->handle, df->handle);
           strcpy(df->name, rxbuff + iattr + 10);
           if (http_open(df) == 0) {
             fclose(fp);
@@ -805,7 +796,7 @@ bool cacheLink(dev_file_t *df, char *localFile) {
 
   // cleanup
   fclose(fp);
-  // TODO: fixme shutdown(df->handle, df->handle);
+  shutdown(df->handle, df->handle);
   return httpOK;
 }
 

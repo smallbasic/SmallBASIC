@@ -144,6 +144,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(copy_text);
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);
+  CALLBACK_METHOD(find_file);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
   CALLBACK_METHOD(help_about);

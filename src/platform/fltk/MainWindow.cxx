@@ -16,6 +16,7 @@
 #include <fltk3/TabGroup.h>
 #include <fltk3/ask.h>
 #include <fltk3/run.h>
+#include <fltk3/NativeFileChooser.h>
 
 #include "MainWindow.h"
 #include "EditorWidget.h"
@@ -40,6 +41,7 @@ MainWindow *wnd;
 ExecState runMode = init_state;
 
 const char *untitledFile = "untitled.bas";
+const char *fontCache = "fonts_2.txt";
 const char *fileTabName = "File";
 const char *helpTabName = "Help";
 const char *basHome = "BAS_HOME=";
@@ -74,46 +76,111 @@ MenuItem *addItem(MenuBar *menu, const char *label, unsigned int index,
 
 // scan for fixed pitch fonts in the background
 struct ScanFont {
-  ScanFont(MenuBar *argMenu) : menu(argMenu), index(0) {
+  ScanFont(MainWindow *main, MenuBar *menu) :
+    main(main),
+    menu(menu), 
+    fp(0),
+    scanFonts(false), 
+    index(0) {
+
+    menu->deactivate();
     numfonts = fltk3::set_fonts("-*");
+
+    fp = main->openConfig(fontCache, "r");
+    if (!fp) {
+      fp = main->openConfig(fontCache, "w");
+      scanFonts = true;
+    }
     fltk3::add_idle(ScanFont::scan_font_cb, this);
-    MenuItem *item = (MenuItem *)menu->find_item("&View");
-    item->deactivate();
-  } 
-  static void scan_font_cb(void *eventData) {
-    ((ScanFont *)eventData)->scanNext();
   }
-  void scanNext() {
-    if (index < numfonts) {
-      Font nextFont = (fltk3::Font)index;
-      char label[256];
-      int t;
-      const char *name = fltk3::get_font_name(nextFont, &t);
-      if (!(t & fltk3::ITALIC) && name[0] != '@') {
-        if (t & fltk3::BOLD) {
-          sprintf(label, "&View/Font (Bold)/%s", name);
-        } else {
-          sprintf(label, "&View/Font/%s", name);
-        }
+
+  static void scan_font_cb(void *eventData) {
+    ((ScanFont *)eventData)->readFonts();
+  }
+
+  bool addFont(Font nextFont, char *label, bool accept) {
+    int t;
+    const char *name = fltk3::get_font_name(nextFont, &t);
+    if (!(t & fltk3::ITALIC) && name[0] != '@') {
+      if (t & fltk3::BOLD) {
+        sprintf(label, "&View/Font (Bold)/%s", name);
+      } else {
+        sprintf(label, "&View/Font/%s", name);
+      }
+      if (!accept) {
         font(nextFont, 12);
         if (fltk3::descent() < MAX_DESCENT && 
             (fltk3::width("QW#@") == fltk3::width("il:("))) {
-          MenuItem *item = addItem(menu, label, 0, 
-                                   EditorWidget::font_name_cb, nextFont);
-          item->labelfont(nextFont);
+          accept = true;
         }
       }
-      index++;
-    } else {
-      // end of iteration
-      MenuItem *item = (MenuItem *)menu->find_item("&View");
-      item->activate();
-      menu->redraw_label();
-      fltk3::remove_idle(scan_font_cb, this);
-      delete this;
+      if (accept) {
+        MenuItem *item = addItem(menu, label, 0, 
+                                 EditorWidget::font_name_cb, nextFont);
+        item->labelfont(nextFont);
+      }
+    }
+    return accept;
+  }
+
+  // end of iteration
+  void finalise() {
+    if (fp) {
+      fclose(fp);
+    }
+    menu->activate();
+    menu->redraw_label();
+    fltk3::remove_idle(scan_font_cb, this);
+    delete this;
+  }
+
+  void readFonts() {
+    Font nextFont;
+    char label[256];
+
+    if (scanFonts) {
+      if (index < numfonts) {
+        nextFont = (fltk3::Font)index;
+        if (addFont(nextFont, label, false)) {
+          // update the font cache for selected font
+          fprintf(fp, "%d \"%s\"\n", nextFont, label);
+        }
+        index++;
+      } else {
+        finalise();
+      }
+    }
+    else {
+      // read from the font cache
+      boolean done = false;
+      while (!done) {
+        if (fscanf(fp, "%d \"", &nextFont) == EOF) {
+          done = true;
+        } else {
+          int n = 0;
+          for (char c = fgetc(fp); c != '\n' && !done; c = fgetc(fp)) {
+            switch (c) {
+            case EOF:
+              done = true;
+              break;
+            case '\"':
+              label[n] = '\0';
+              addFont(nextFont, label, true);
+              break;
+            default:
+              label[n++] = c;
+            }
+          }
+        }
+      }
+      finalise();
     }
   }
+
+  MainWindow *main;
   MenuBar *menu;
+  FILE *fp;
+  bool scanFonts;
   int numfonts;
   int index;
 };
@@ -187,6 +254,10 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
       editWidget->runState(rs_run);
       breakToLine = editWidget->isBreakToLine();
       opt_ide = editWidget->isHideIDE()? IDE_NONE : IDE_LINKED;
+      if (!logPrint()) {
+        // show the output tab when not in log-print mode
+        tabGroup->value(outputGroup);
+      }
     }
   }
 
@@ -628,6 +699,16 @@ void MainWindow::load_file(Widget * w, void *eventData) {
   }
 }
 
+void MainWindow::find_file(Widget *w, void *eventData) {
+  fltk3::NativeFileChooser fnfc;
+  fnfc.title("Find file");
+  fnfc.type(fltk3::NativeFileChooser::BROWSE_FILE);
+  fnfc.filter("SmallBASIC\t*.bas");
+  if (!fnfc.show()) {
+    editFile(fnfc.filename());
+  }
+}
+
 //--Startup functions-----------------------------------------------------------
 
 /**
@@ -999,6 +1080,7 @@ MainWindow::MainWindow(int w, int h) :
   MenuBar *m = new MenuBar(0, 0, w, MNU_HEIGHT);
   m->add("&File/&New File", CTRL + 'n', new_file_cb);
   m->add("&File/&Open File", CTRL + 'o', open_file_cb);
+  m->add("&File/&Find File...", (unsigned int)0, find_file_cb);
   scanRecentFiles(m);
   m->add("&File/_&Close", CTRL + FKey + 4, close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', EditorWidget::save_file_cb);
@@ -1053,7 +1135,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Help/&About SmallBASIC", FKey + 12, help_about_cb);
 
   scanPlugIns(m);
-  new ScanFont(m);
+  new ScanFont(this, m);
 
   callback(quit_cb);
   fltk3::add_handler(veto_escape);
