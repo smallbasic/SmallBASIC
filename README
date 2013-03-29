@@ -82,6 +82,13 @@ alias adebug="adb -d logcat -c && adb -d logcat"
 
 == Setup instructions for building FLTK version under cygwin
 
+Install cygwin along with mingw-gcc
+
+export LDFLAGS="-static-libgcc -static-libstdc++"
+./configure --host=i686-w64-mingw32 --enable-fltk
+
+--- Old instructions ---
+
 Download and install cygwin
 --> http://www.cygwin.com/
 

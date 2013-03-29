@@ -26,10 +26,6 @@ typedef int FileHand;
 #include "common/fs_stream.h"
 #include "common/fs_serial.h"
 
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-#include <windows.h>
-#endif
-
 /*
  */
 int serial_open(dev_file_t * f) {

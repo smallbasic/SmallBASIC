@@ -15,7 +15,7 @@ ARFLAGS = -L -quiet
 
 RANLIB=echo
 
-INCLUDES=-I$(top_srcdir)/src -I$(MOSYNC_HOME)/include/newlib @PACKAGE_CFLAGS@
+AM_CPPFLAGS=-I$(top_srcdir)/src -I$(MOSYNC_HOME)/include/newlib @PACKAGE_CFLAGS@
 
 noinst_LIBRARIES = libsb_common.a
 

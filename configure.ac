@@ -7,16 +7,15 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT(configure.in)
+AC_INIT([smallbasic], [0.11.5])
+AC_CONFIG_SRCDIR([configure.ac])
 
-AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE(smallbasic, 0.11.4)
-AM_CONFIG_HEADER(config.h)
+AC_CANONICAL_TARGET
+AM_INIT_AUTOMAKE
+AC_CONFIG_HEADERS([config.h])
 AM_MAINTAINER_MODE
 
 AC_PROG_CXX
-AC_PROG_CC
-AM_PROG_CC_STDC
 AC_HEADER_STDC
 AC_PROG_RANLIB
 PKG_PROG_PKG_CONFIG
@@ -25,32 +24,32 @@ TARGET=""
 
 dnl define build arguments
 AC_ARG_ENABLE(gtk,
-  AC_HELP_STRING([--enable-gtk], [build gtk version(default=no)]),
+  AS_HELP_STRING([--enable-gtk],[build gtk version(default=no)]),
   [ac_build_gtk="yes"],
   [ac_build_gtk="no"])
 
 AC_ARG_ENABLE(fltk,
-  AC_HELP_STRING([--enable-fltk], [build fltk version(default=no)]),
+  AS_HELP_STRING([--enable-fltk],[build fltk version(default=no)]),
   [ac_build_fltk="yes"],
   [ac_build_fltk="no"])
 
 AC_ARG_ENABLE(sdl,
-  AC_HELP_STRING([--enable-sdl], [build SDL version(default=no)]),
+  AS_HELP_STRING([--enable-sdl],[build SDL version(default=no)]),
   [ac_build_sdl="yes"],
   [ac_build_sdl="no"])
 
 AC_ARG_ENABLE(qt,
-  AC_HELP_STRING([--enable-qt], [build QT version(default=no)]),
+  AS_HELP_STRING([--enable-qt],[build QT version(default=no)]),
   [ac_build_qt="yes"],
   [ac_build_qt="no"])
 
 AC_ARG_ENABLE(mosync,
-  AC_HELP_STRING([--enable-mosync], [build common library for Mosync(default=no)]),
+  AS_HELP_STRING([--enable-mosync],[build common library for Mosync(default=no)]),
   [ac_build_mosync="yes"],
   [ac_build_mosync="no"])
 
 AC_ARG_ENABLE(dist,
-  AC_HELP_STRING([--enable-dist], [prepare to run make dist(default=no)]),
+  AS_HELP_STRING([--enable-dist],[prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
   [ac_build_dist="no"])
 
@@ -188,7 +187,7 @@ function buildGTK() {
  
    dnl disable build for hildon
    AC_ARG_ENABLE(hildon,
-     AC_HELP_STRING([--enable-hildon], [disable hildon build (default=yes)]),
+     AS_HELP_STRING([--enable-hildon],[disable hildon build (default=yes)]),
      [ac_hildon_build="yes"],
      [ac_hildon_build="no"])
 
@@ -272,7 +271,7 @@ function buildFLTK() {
  
    dnl avoid using MSCRT versions of printf for long double
    case "${host_os}" in
-     cygwin*)
+     *mingw* | cygwin*)
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
    esac
 
@@ -281,9 +280,9 @@ function buildFLTK() {
 
    dnl do not depend on cygwin.dll under cygwin build
    case "${host_os}" in
-     cygwin*)
+     *mingw* | cygwin*)
      FLTK_CXXFLAGS="-I`cygpath -m /usr/local/include` ${FLTK_CXXFLAGS} -mms-bitfields"
-     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32"
+     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -static-libgcc"
    esac
 
    defaultConditionals
@@ -320,7 +319,7 @@ function buildSDL() {
    TARGET="Building SDL version."
    defaultConditionals
 
-   dnl The following code was taken from the SDL test/configure.in
+   dnl The following code was taken from the SDL test/configure.ac
    dnl Figure out which math library to use
    MATHLIB=""
    SYS_GL_LIBS=""
@@ -338,7 +337,7 @@ function buildSDL() {
         SYS_GL_LIBS="-Wl,-framework,OpenGL"
         ;;
     *-*-aix*)
-        if test x$ac_cv_prog_gcc = xyes; then
+        if test x$ac_cv_c_compiler_gnu = xyes; then
             CFLAGS="-mthreads"
         fi
         ;;
@@ -372,12 +371,12 @@ function buildSDL() {
    dnl Check for OpenGL
    AC_MSG_CHECKING(for OpenGL support)
    have_opengl=no
-   AC_TRY_COMPILE([
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
      #include "SDL/SDL_opengl.h"
-     ],[
-     ],[
+     ]], [[
+     ]])],[
      have_opengl=yes
-   ])
+   ],[])
    AC_MSG_RESULT($have_opengl)
    if test x$have_opengl = xyes; then
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -DHAVE_OPENGL "
@@ -387,12 +386,12 @@ function buildSDL() {
    dnl Check for SDL_Image
    AC_MSG_CHECKING(for SDL_Image support)
    have_sdl_image=no
-   AC_TRY_COMPILE([
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
      #include "SDL/SDL_image.h"
-     ],[
-     ],[
+     ]], [[
+     ]])],[
      have_sdl_image=yes
-   ])
+   ],[])
    AC_MSG_RESULT($have_sdl_image)
    if test x$have_sdl_image = xyes; then
       AC_DEFINE(HAVE_SDL_IMAGE, 1, [SDL Image header is present.])
@@ -537,12 +536,12 @@ function buildConsole() {
       dnl test whether to build using mingw
       AC_MSG_CHECKING(for standard cygwin gcc PATH)
       have_cygwin=no
-      AC_TRY_COMPILE([
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
         #include "sys/cygwin.h"
-        ],[
-        ],[
+        ]], [[
+        ]])],[
         have_cygwin=yes
-      ])
+      ],[])
       AC_MSG_RESULT($have_cygwin)
       if test x$have_cygwin = xyes; then
          dnl preconfigured values for cygwin console build (depends on cygwin.dll)
@@ -622,7 +621,7 @@ checkPCRE
 checkDebugMode
 checkForWindows
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 src/common/Makefile
 src/platform/gtk/src/Makefile
@@ -638,6 +637,7 @@ src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/mosync/common/Makefile
 ])
+AC_OUTPUT
 
 echo
 echo ${TARGET}
@@ -647,4 +647,4 @@ if test x$ac_build_dist = xyes; then
    make dist
 fi
 
-dnl End of configure.in
+dnl End of configure.ac

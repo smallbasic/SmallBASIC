@@ -7,16 +7,11 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "common/sys.h"
-
-#if defined(_WinGUI) || defined(_Win32) || defined(__MINGW32__)
-#include <windows.h>
-#endif
-
 #if defined(_UnixOS)
 #include <assert.h>
 #endif
 
+#include "common/sys.h"
 #include "common/panic.h"
 #include <assert.h>
 

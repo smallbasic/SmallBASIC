@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = -I../../common -I. @PACKAGE_CFLAGS@
+AM_CPPFLAGS = -I../../common -I. @PACKAGE_CFLAGS@
 
 EXTRA_DIST =																		\
     fixedfont.xpm																\

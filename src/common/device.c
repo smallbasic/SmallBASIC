@@ -28,7 +28,6 @@ static int drvmouse_ok;
 #endif
 
 #ifdef __MINGW32__
-#include <windows.h>
 #define usleep(s) Sleep((DWORD)((s+500)/1000))
 #endif
 

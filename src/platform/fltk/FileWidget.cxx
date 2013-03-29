@@ -331,7 +331,8 @@ void FileWidget::displayPath() {
       files.add(new FileNode(name, stbuf.st_mtime, stbuf.st_size, true));
     } else if (strncasecmp(name + len - 4, ".htm", 4) == 0 ||
                strncasecmp(name + len - 5, ".html", 5) == 0 ||
-               strncasecmp(name + len - 4, ".bas", 4) == 0 || strncasecmp(name + len - 4, ".txt", 4) == 0) {
+               strncasecmp(name + len - 4, ".bas", 4) == 0 || 
+               strncasecmp(name + len - 4, ".txt", 4) == 0) {
       files.add(new FileNode(name, stbuf.st_mtime, stbuf.st_size, false));
     }
   }
@@ -382,7 +383,8 @@ void FileWidget::displayPath() {
       html.append(fileNode->isdir ? 0 : (int)fileNode->size);
     }
     html.append("</td>");
-    strftime(modifedTime, sizeof(modifedTime), "%a, %d %b %Y %T %Z", localtime(&fileNode->m_time));
+    strftime(modifedTime, sizeof(modifedTime), "%Y-%m-%d %I:%M %p",
+             localtime(&fileNode->m_time));
     html.append("<td>").append(modifedTime).append("</td></tr>");
   }
 

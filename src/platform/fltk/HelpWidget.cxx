@@ -99,7 +99,7 @@ struct Display {
   Group *wnd;
   AnchorNode *anchor;
 
-  void drawBackground(Rectangle &rc) {
+  void drawBackground(fltk::Rectangle &rc) {
     if (background != NO_COLOR) {
       Color oldColor = fltk::getcolor();
       setcolor(background);
@@ -129,7 +129,7 @@ struct Display {
     }
 
     if (!measure && background != NO_COLOR && doBackground) {
-      Rectangle rc(x1, bgY, x2 - x1 + CELL_SPACING, lineHeight);
+      fltk::Rectangle rc(x1, bgY, x2 - x1 + CELL_SPACING, lineHeight);
       drawBackground(rc);
     }
   }
@@ -455,7 +455,7 @@ struct LiNode : public BaseNode {
         sprintf(t, "%d.", ++ulNode->nextId);
         drawtext(t, 2, x, out->y1);
       } else {
-        dotImage.draw(Rectangle(x, y, 5, 5));
+        dotImage.draw(fltk::Rectangle(x, y, 5, 5));
         // draw messes with the current font - restore
         setfont(out->font, out->fontSize);
       }
@@ -569,7 +569,7 @@ void ImageNode::display(Display *out) {
           } else {
             ih = h.value;
           }
-          image->draw(Rectangle(x1, y1, iw, ih));
+          image->draw(fltk::Rectangle(x1, y1, iw, ih));
           x1 += w.value;
         }
         y1 += h.value;
@@ -590,7 +590,7 @@ void ImageNode::display(Display *out) {
         x += 1;
         y += 1;
       }
-      image->draw(Rectangle(x, y, iw, ih));
+      image->draw(fltk::Rectangle(x, y, iw, ih));
     }
   }
   if (background == 0) {
@@ -646,7 +646,7 @@ void TextNode::drawSelection(const char *s, U16 len, U16 width, Display *out) {
     return;                     // selection below text
   }
 
-  Rectangle rc(out->x1, out_y, width, out->lineHeight);
+  fltk::Rectangle rc(out->x1, out_y, width, out->lineHeight);
   int selBegin = 0;             // selection index into the draw string
   int selEnd = len;
 
@@ -1106,7 +1106,7 @@ void TrNode::display(Display *out) {
   table->nextRow++;
 
   if (background && out->measure == false) {
-    Rectangle rc(table->initX, y1 - (int)getascent(), table->width, out->lineHeight);
+    fltk::Rectangle rc(table->initX, y1 - (int)getascent(), table->width, out->lineHeight);
     out->drawBackground(rc);
   }
 }
@@ -1171,8 +1171,8 @@ void TdNode::display(Display *out) {
   table->nextCol++;
 
   if (out->measure == false) {
-    Rectangle rc(out->indent - CELL_SPACING,
-                 tr->y1 - (int)getascent(), out->x2 - out->indent + (CELL_SPACING * 2), out->lineHeight);
+    fltk::Rectangle rc(out->indent - CELL_SPACING,
+                       tr->y1 - (int)getascent(), out->x2 - out->indent + (CELL_SPACING * 2), out->lineHeight);
     out->drawBackground(rc);
     if (table->border > 0) {
       Color oldColor = getcolor();
@@ -1802,17 +1802,17 @@ void HelpWidget::draw() {
   out.lineHeight = out.y1 + (int)getdescent();
   out.y1 += vscroll;
 
-  push_clip(Rectangle(w(), h()));
+  push_clip(fltk::Rectangle(w(), h()));
   bool havePushedAnchor = false;
   if (pushedAnchor && (damage() == DAMAGE_PUSHED)) {
     // just draw the anchor-push
     int h = (pushedAnchor->y2 - pushedAnchor->y1) + pushedAnchor->lineHeight;
-    push_clip(Rectangle(0, pushedAnchor->y1, out.x2, h));
+    push_clip(fltk::Rectangle(0, pushedAnchor->y1, out.x2, h));
     havePushedAnchor = true;
   }
   // draw the background
   setcolor(out.background);
-  fillrect(Rectangle(0, 0, w() - SCROLL_W, out.y2));
+  fillrect(fltk::Rectangle(0, 0, w() - SCROLL_W, out.y2));
   setcolor(out.color);
 
   out.background = NO_COLOR;
@@ -1883,7 +1883,7 @@ void HelpWidget::draw() {
   draw_child(*scrollbar);
 
   // prevent other child controls from drawing over the scrollbar
-  push_clip(Rectangle(0, 0, w() - SCROLL_W, h()));
+  push_clip(fltk::Rectangle(0, 0, w() - SCROLL_W, h()));
   int numchildren = children();
   for (int n = 0; n < numchildren; n++) {
     Widget & w = *child(n);

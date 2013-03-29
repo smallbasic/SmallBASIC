@@ -11,33 +11,12 @@
  * @defgroup net Network
  */
 
-#if !defined(_inet_ndclib_h)
-#define _inet_ndclib_h
-
-#include "common/sys.h"
+#if !defined(INET_NDCLIB_H)
+#define INET_NDCLIB_H
 
 #include <string.h>
 #include <sys/types.h>
 #include <errno.h>
-
-#if !defined(INET_UNSUP)
- #if defined(_Win32) || defined(__MINGW32__)
-  #include <winsock2.h>           // @#@!$@#!$ it uses 'byte'
-  #undef V_ARRAY                  /* defined in oleauto.h in mingw build */
- #elif defined(_UnixOS)
-  #include <sys/socket.h>
-  #include <netinet/in.h>
-  #include <sys/param.h>
-  #include <netdb.h>
-  #include <arpa/inet.h>
- #elif defined(_DOS)
-  #if defined(_DOSTCP_ENABLE)
-  #include <netinet/in.h>
-  #include <socket.h>
-  #define INADDR_NONE    NULL
-  #endif
- #endif
-#endif
 
 typedef int socket_t;
 

@@ -42,7 +42,7 @@ sbasicb_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
 sbasicb_DEPENDENCIES = ../common/libsb_common.a
 
-sbasicb: ${sbasicb_SOURCES}
+sbasicb$(EXEEXT): ${sbasicb_SOURCES}
 	$(MAKE) -f Makefile.qt
 
 clean-local:

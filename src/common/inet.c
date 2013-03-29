@@ -7,9 +7,11 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "common/sys.h"
-#include "common/inet.h"
-#include "common/device.h"
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#include "inet.h"
 
 #if defined(INET_UNSUP)
  int net_init(void) { return 0; }
@@ -25,5 +27,4 @@
 #elif defined(_UnixOS)
  #include "platform/unix/inet.c"
 #endif
-
 

@@ -7,19 +7,24 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#if !defined(_fs_socket_client_h)
-#define _fs_socket_client_h
+#if !defined(FS_SOCKET_CLIENT_H)
+#define FS_SOCKET_CLIENT_H
 
-int sockcl_open(dev_file_t * f) SEC(BIO);
-int sockcl_close(dev_file_t * f) SEC(BIO);
-int sockcl_write(dev_file_t * f, byte * data, dword size)
-SEC(BIO);
-int sockcl_read(dev_file_t * f, byte * data, dword size)
-SEC(BIO);
-int sockcl_eof(dev_file_t * f) SEC(BIO);
-int sockcl_length(dev_file_t * f) SEC(BIO);
-int http_open(dev_file_t * f) SEC(BIO);
-int http_read(dev_file_t * f, var_t * var_p, int type)
-SEC(BIO);
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+int sockcl_open(dev_file_t *f);
+int sockcl_close(dev_file_t *f);
+int sockcl_write(dev_file_t *f, byte *data, dword size);
+int sockcl_read(dev_file_t *f, byte *data, dword size);
+int sockcl_eof(dev_file_t *f);
+int sockcl_length(dev_file_t *f);
+int http_open(dev_file_t *f);
+int http_read(dev_file_t *f, var_t *var_p, int type);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

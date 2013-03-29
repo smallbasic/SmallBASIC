@@ -1,11 +1,11 @@
 # SmallBASIC for FLTK
-# Copyright(C) 2001-2012 Chris Warren-Smith.
+# Copyright(C) 2001-2013 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES =																										\
+AM_CPPFLAGS =																									\
   -I$(top_builddir)/src -I.																		\
   -DPACKAGE_PREFIX=\""$(prefix)"\"														\
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"											\
@@ -44,6 +44,7 @@ desktopentry_DATA = smallbasic.desktop
 
 if WITH_WIN32
 sbasici_LDADD += sbfltk.res
+sbasici_DEPENDENCIES += sbfltk.res
 sbfltk.res : sbfltk.rc
 	$(WINDRES) $< -O coff -o $@
 endif

@@ -187,7 +187,7 @@ struct DropListModel:StringList {
 
 void Form::draw() {
   int numchildren = children();
-  Rectangle r(w(), h());
+  fltk::Rectangle r(w(), h());
   push_clip(r);
   for (int n = 0; n < numchildren; n++) {
     Widget & w = *child(n);
@@ -465,7 +465,7 @@ void widget_cb(Widget *w, void *v) {
   }
 }
 
-void update_widget(Widget *widget, WidgetInfo *inf, Rectangle &rect) {
+void update_widget(Widget *widget, WidgetInfo *inf, fltk::Rectangle &rect) {
   if (rect.w() != -1) {
     widget->w(rect.w());
   }
@@ -501,7 +501,7 @@ void update_widget(Widget *widget, WidgetInfo *inf, Rectangle &rect) {
 }
 
 void update_button(Widget *widget, WidgetInfo *inf,
-                   const char *caption, Rectangle &rect, int def_w, int def_h) {
+                   const char *caption, fltk::Rectangle &rect, int def_w, int def_h) {
   if (rect.w() < 0 && caption != 0) {
     rect.w((int)getwidth(caption) + def_w + (-rect.w() - 1));
   }
@@ -591,7 +591,7 @@ void cmd_button() {
   if (-1 != par_massget("IIIIPSs", &x, &y, &w, &h, &v, &caption, &type)) {
     WidgetInfo *inf = new WidgetInfo();
     inf->var = v;
-    Rectangle rect(x, y, w, h);
+    fltk::Rectangle rect(x, y, w, h);
 
     if (prog_error) {
       return;
@@ -664,7 +664,7 @@ void cmd_text() {
     form_create();
     Input *widget = new Input(x, y, w, h);
     widget->box(BORDER_BOX);
-    Rectangle rect(x, y, w, h);
+    fltk::Rectangle rect(x, y, w, h);
     WidgetInfo *inf = new WidgetInfo();
     inf->var = v;
     inf->type = ctrl_text;
