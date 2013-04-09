@@ -7,6 +7,10 @@
 //
 // Copyright(C) 2001 Nicholas Christopoulos
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #if defined(__CYGWIN__)
 #include <w32api/windows.h>
 #include <sys/cygwin.h>
@@ -32,8 +36,9 @@
 
 #if defined(LNX_EXTLIB)
 #include <dlfcn.h>
-#include <dirent.h>
 #endif
+
+#include <dirent.h>
 
 #if defined(OS_LIMITED)
 #define MAX_SLIB_N  16
@@ -58,8 +63,7 @@ static int extfunccount; /**< ext-func table count           */
 /*
  * reset the external proc/func lists
  */
-static void slib_reset_externals(void)
-{
+static void slib_reset_externals(void) {
   // reset functions
   if (extfunctable) {
     tmp_free(extfunctable);
@@ -78,8 +82,7 @@ static void slib_reset_externals(void)
 /*
  * add an external procedure to the list
  */
-static int slib_add_external_proc(const char *proc_name, int lib_id)
-{
+static int slib_add_external_proc(const char *proc_name, int lib_id) {
   // TODO: scan for conflicts
   char buf[256];
 
@@ -104,9 +107,9 @@ static int slib_add_external_proc(const char *proc_name, int lib_id)
   strupper(extproctable[extproccount].name);
 
   if (opt_verbose)
-  printf("LID: %d, Idx: %d, PROC '%s'\n", lib_id, extproccount,
-      extproctable[extproccount].name);
-
+    printf("LID: %d, Idx: %d, PROC '%s'\n", lib_id, extproccount,
+           extproctable[extproccount].name);
+  
   extproccount++;
   return extproccount - 1;
 }
@@ -114,8 +117,7 @@ static int slib_add_external_proc(const char *proc_name, int lib_id)
 /*
  * Add an external function to the list
  */
-static int slib_add_external_func(const char *func_name, int lib_id)
-{
+static int slib_add_external_func(const char *func_name, int lib_id) {
   char buf[256];
 
   sprintf(buf, "%s.%s", slib_table[lib_id].name, func_name);
@@ -150,8 +152,7 @@ static int slib_add_external_func(const char *func_name, int lib_id)
 /*
  * returns the external procedure id
  */
-static int slib_is_external_proc(const char *name)
-{
+static int slib_is_external_proc(const char *name) {
   int i;
 
   for (i = 0; i < extproccount; i++) {
@@ -164,8 +165,7 @@ static int slib_is_external_proc(const char *name)
 /*
  * returns the external function id
  */
-static int slib_is_external_func(const char *name)
-{
+static int slib_is_external_func(const char *name) {
   int i;
 
   for (i = 0; i < extfunccount; i++) {

@@ -1,6 +1,6 @@
-// This file was part of EBjLib
+// This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -17,18 +17,11 @@
 
 using namespace strlib;
 
-//--Object----------------------------------------------------------------------
-
-Object::Object() {
-}
-Object::~Object() {
-}
-
 //--String----------------------------------------------------------------------
 
 String::String(const char *s) {
-  owner = false;
-  buffer = (char *)s;
+  _owner = false;
+  _buffer = (char *)s;
 }
 
 String::String(const char *s, int len) {
@@ -38,7 +31,7 @@ String::String(const char *s, int len) {
 
 String::String(const String & s) {
   init();
-  append(s.buffer);
+  append(s._buffer);
 }
 
 String::String() {
@@ -49,28 +42,28 @@ String::~String() {
   empty();
 }
 
-const String & String::operator=(const String & s) {
+const String &String::operator=(const String & s) {
   if (this != &s) {
     empty();
-    append(s.buffer);
+    append(s._buffer);
   }
   return *this;
 }
 
-const String & String::operator=(const char *s) {
+const String &String::operator=(const char *s) {
   empty();
   append(s);
   return *this;
 }
 
-const String & String::operator=(const char c) {
+const String &String::operator=(const char c) {
   empty();
   append(&c, 1);
   return *this;
 }
 
 const void String::operator+=(const String & s) {
-  append(s.buffer);
+  append(s._buffer);
 }
 
 const void String::operator+=(const char *s) {
@@ -83,64 +76,64 @@ const void String::operator+=(int i) {
 
 const String String::operator+(const String & s) {
   String rs;
-  rs.append(buffer);
-  rs.append(s.buffer);
+  rs.append(_buffer);
+  rs.append(s._buffer);
   return rs;
 }
 
 const String String::operator+(int i) {
   String rs;
-  rs.append(buffer);
+  rs.append(_buffer);
   rs.append(i);
   return rs;
 }
 
 const char String::operator[] (int index) {
   if (index < length()) {
-    return buffer[index];
+    return _buffer[index];
   }
   return 0;
 }
 
-const String & String::operator=(int i) {
+const String &String::operator=(int i) {
   empty();
   append(i);
   return *this;
 }
 
-String & String::append(const String & s) {
-  append(s.buffer);
+String &String::append(const String & s) {
+  append(s._buffer);
   return *this;
 }
 
-String & String::append(const String *s) {
+String &String::append(const String *s) {
   if (s && s->length()) {
-    append(s->buffer);
+    append(s->_buffer);
   }
   return *this;
 }
 
-String & String::append(int i) {
+String &String::append(int i) {
   char t[20];
   sprintf(t, "%i", i);
   append(t);
   return *this;
 }
 
-String & String::append(char c) {
+String &String::append(char c) {
   char t[2] = { c, 0 };
   append(t);
   return *this;
 }
 
-String & String::append(double d) {
+String &String::append(double d) {
   char t[20];
   sprintf(t, "%g", d);
   append(t);
   return *this;
 }
 
-String & String::append(int i, int padding) {
+String &String::append(int i, int padding) {
   char buf[20];
   char fmt[20];
   fmt[0] = '%';
@@ -152,17 +145,17 @@ String & String::append(int i, int padding) {
   return *this;
 }
 
-String & String::append(const char *s) {
-  if (s != null && s[0] && owner) {
+String &String::append(const char *s) {
+  if (s != null && s[0] && _owner) {
     int len = length();
-    buffer = (char *)realloc(buffer, len + strlen(s) + 1);
-    strcpy(buffer + len, s);
+    _buffer = (char *)realloc(_buffer, len + strlen(s) + 1);
+    strcpy(_buffer + len, s);
   }
   return *this;
 }
 
-String & String::append(const char *s, int numCopy) {
-  if (!owner || s == null || numCopy < 1) {
+String &String::append(const char *s, int numCopy) {
+  if (!_owner || s == null || numCopy < 1) {
     return *this;
   }
   int len = strlen(s);
@@ -171,32 +164,32 @@ String & String::append(const char *s, int numCopy) {
   }
 
   len = length();
-  buffer = (char *)realloc(buffer, len + numCopy + 1);
-  strncpy(buffer + len, s, numCopy);
-  buffer[len + numCopy] = '\0';
+  _buffer = (char *)realloc(_buffer, len + numCopy + 1);
+  strncpy(_buffer + len, s, numCopy);
+  _buffer[len + numCopy] = '\0';
   return *this;
 }
 
-String & String::append(FILE *fp, long filelen) {
+String &String::append(FILE *fp, long filelen) {
   int len = length();
-  buffer = (char *)realloc(buffer, len + filelen + 1);
-  fread((void *)(len + buffer), 1, filelen, fp);
-  buffer[len + filelen] = 0;
+  _buffer = (char *)realloc(_buffer, len + filelen + 1);
+  fread((void *)(len + _buffer), 1, filelen, fp);
+  _buffer[len + filelen] = 0;
   return *this;
 }
 
 const char *String::toString() const {
-  return buffer;
+  return _buffer;
 }
 
 int String::length() const {
-  return (buffer == 0 ? 0 : strlen(buffer));
+  return (_buffer == 0 ? 0 : strlen(_buffer));
 }
 
 String String::substring(int beginIndex) const {
   String out;
   if (beginIndex < length()) {
-    out.append(buffer + beginIndex);
+    out.append(_buffer + beginIndex);
   }
   return out;
 }
@@ -208,7 +201,7 @@ String String::substring(int beginIndex, int endIndex) const {
     endIndex = len;
   }
   if (beginIndex < length()) {
-    out.append(buffer + beginIndex, endIndex - beginIndex);
+    out.append(_buffer + beginIndex, endIndex - beginIndex);
   }
   return out;
 }
@@ -216,8 +209,8 @@ String String::substring(int beginIndex, int endIndex) const {
 void String::replaceAll(char a, char b) {
   int len = length();
   for (int i = 0; i < len; i++) {
-    if (buffer[i] == a) {
-      buffer[i] = b;
+    if (_buffer[i] == a) {
+      _buffer[i] = b;
     }
   }
 }
@@ -231,11 +224,11 @@ String String::replaceAll(const char *srch, const char *repl) {
   int srchLen = strlen(srch);
 
   for (int i = 0; i < len; i++) {
-    numMatch = (buffer[i] == srch[numMatch]) ? numMatch + 1 : 0;
+    numMatch = (_buffer[i] == srch[numMatch]) ? numMatch + 1 : 0;
     if (numMatch == srchLen) {
       numCopy = 1 + i - begin - srchLen;
       if (numCopy > 0) {
-        out.append(buffer + begin, numCopy);
+        out.append(_buffer + begin, numCopy);
       }
       out.append(repl);
       numMatch = 0;
@@ -244,7 +237,7 @@ String String::replaceAll(const char *srch, const char *repl) {
   }
 
   if (begin < len) {
-    out.append(buffer + begin);
+    out.append(_buffer + begin);
   }
   return out;
 }
@@ -252,39 +245,39 @@ String String::replaceAll(const char *srch, const char *repl) {
 void String::toUpperCase() {
   int len = length();
   for (int i = 0; i < len; i++) {
-    buffer[i] = toupper(buffer[i]);
+    _buffer[i] = toupper(_buffer[i]);
   }
 }
 
 void String::toLowerCase() {
   int len = length();
   for (int i = 0; i < len; i++) {
-    buffer[i] = tolower(buffer[i]);
+    _buffer[i] = tolower(_buffer[i]);
   }
 }
 
 int String::toInteger() const {
-  return (buffer == 0 ? 0 : atoi(buffer));
+  return (_buffer == 0 ? 0 : atoi(_buffer));
 }
 
 double String::toNumber() const {
-  return (buffer == 0 ? 0 : atof(buffer));
+  return (_buffer == 0 ? 0 : atof(_buffer));
 }
 
 bool String::equals(const String & s, bool ignoreCase) const {
-  return (buffer == 0 ? s.buffer == 0 : ignoreCase ?
-          strcasecmp(buffer, s.buffer) == 0 : strcmp(buffer, s.buffer) == 0);
+  return (_buffer == 0 ? s._buffer == 0 : ignoreCase ?
+          strcasecmp(_buffer, s._buffer) == 0 : strcmp(_buffer, s._buffer) == 0);
 }
 
 bool String::equals(const char *s, bool ignoreCase) const {
-  return (buffer == 0 ? s == 0 : ignoreCase ? strcasecmp(buffer, s) == 0 : strcmp(buffer, s) == 0);
+  return (_buffer == 0 ? s == 0 : ignoreCase ? strcasecmp(_buffer, s) == 0 : strcmp(_buffer, s) == 0);
 }
 
 bool String::startsWith(const char *s, bool ignoreCase) const {
   if (s == 0 || s[0] == 0) {
-    return (buffer == 0 || buffer[0] == 0);
+    return (_buffer == 0 || _buffer[0] == 0);
   }
-  return (ignoreCase ? strncasecmp(buffer, s, strlen(s)) == 0 : strncmp(buffer, s, strlen(s)) == 0);
+  return (ignoreCase ? strncasecmp(_buffer, s, strlen(s)) == 0 : strncmp(_buffer, s, strlen(s)) == 0);
 }
 
 int String::indexOf(const String & s, int fromIndex) const {
@@ -293,11 +286,11 @@ int String::indexOf(const String & s, int fromIndex) const {
     return -1;
   }
   if (s.length() == 1) {
-    char *c = strchr(buffer + fromIndex, s.buffer[0]);
-    return (c == NULL ? -1 : (c - buffer));
+    char *c = strchr(_buffer + fromIndex, s._buffer[0]);
+    return (c == NULL ? -1 : (c - _buffer));
   } else {
-    char *c = strstr(buffer + fromIndex, s.buffer);
-    return (c == NULL ? -1 : (c - buffer));
+    char *c = strstr(_buffer + fromIndex, s._buffer);
+    return (c == NULL ? -1 : (c - _buffer));
   }
 }
 
@@ -306,8 +299,8 @@ int String::indexOf(char chr, int fromIndex) const {
   if (fromIndex >= len) {
     return -1;
   }
-  char *c = strchr(buffer + fromIndex, chr);
-  return (c == NULL ? -1 : (c - buffer));
+  char *c = strchr(_buffer + fromIndex, chr);
+  return (c == NULL ? -1 : (c - _buffer));
 }
 
 int String::lastIndexOf(char chr, int untilIndex) const {
@@ -315,23 +308,23 @@ int String::lastIndexOf(char chr, int untilIndex) const {
   if (untilIndex >= len || untilIndex < 0) {
     return -1;
   }
-  char *c = strrchr(buffer + untilIndex, chr);
-  return (c == NULL ? -1 : (c - buffer));
+  char *c = strrchr(_buffer + untilIndex, chr);
+  return (c == NULL ? -1 : (c - _buffer));
 }
 
 char String::charAt(int i) const {
   if (i < length()) {
-    return buffer[i];
+    return _buffer[i];
   }
   return 0;
 }
 
 void String::empty() {
-  if (buffer != null && owner) {
-    free(buffer);
+  if (_buffer != null && _owner) {
+    free(_buffer);
   }
-  buffer = 0;
-  owner = true;
+  _buffer = 0;
+  _owner = true;
 }
 
 void String::trim() {
@@ -340,11 +333,11 @@ void String::trim() {
     return;
   }
   int ibegin = 0;
-  while (isWhite(buffer[ibegin])) {
+  while (isWhite(_buffer[ibegin])) {
     ibegin++;
   }
   int iend = len;
-  while (isWhite(buffer[iend - 1])) {
+  while (isWhite(_buffer[iend - 1])) {
     iend--;
   }
   String s = substring(ibegin, iend);
@@ -368,168 +361,12 @@ String String::rvalue() {
   return substring(endIndex + 1, length());
 }
 
-/**
- * extract the directory path from this string and append fileName
- */
-String String::getPath(const char *fileName) {
-  String path;
-  int i = lastIndexOf('/', 0);
-  if (i != -1) {
-    path = substring(0, i + 1);
-    path.append(fileName);
-    if (access(path.toString(), 0) == 0) {
-      return path;
-    }
-  }
-  path.empty();
-  path.append(fileName);
-  return path;
-}
-
-//--List------------------------------------------------------------------------
-
-List::List(int growSize) {
-  this->growSize = growSize;
-  init();
-}
-
-List::~List() {
-  for (int i = 0; i < count; i++) {
-    delete head[i];
-  }
-  free(head);
-  head = 0;
-  count = 0;
-}
-
-void List::init() {
-  count = 0;
-  size = growSize;
-  head = (Object **) malloc(sizeof(Object *) *size);
-}
-
-void List::removeAll() {
-  for (int i = 0; i < count; i++) {
-    delete head[i];
-  }
-  emptyList();
-}
-
-void List::emptyList() {
-  free(head);
-  init();
-}
-
-Object *List::operator[] (const int index)
-const {
-  return index < count ? head[index] : 0;
-}
-
-Object *List::get(const int index) const {
-  return index < count ? head[index] : 0;
-}
-
-void List::add(Object *object) {
-  if (++count > size) {
-    size += growSize;
-    head = (Object **) realloc(head, sizeof(Object *) * size);
-  }
-  head[count - 1] = object;
-}
-
-// append unique strings
-void List::addSet(String *s) {
-  if (s == 0 || s->length() == 0) {
-    return;
-  }
-  for (int i = 0; i < count; i++) {
-    String *item = (String *) head[i];
-    if (item->equals(s->toString())) {
-      return;
-    }
-  }
-  add(new String(*s));
-}
-
-void List::iterateInit(int ibegin /*=0*/ ) {
-  iterator = ibegin;
-}
-
-bool List::hasNext() const {
-  return (iterator < count);
-}
-
-Object *List::next() {
-  return head[iterator++];
-}
-
-const char **List::toArray() {
-  if (length()) {
-    int i = 0;
-    const char **array = new const char *[length()];
-    iterateInit();
-    while (hasNext()) {
-      array[i++] = ((String *) next())->toString();
-    }
-    return array;
-  }
-  return 0;
-}
-
-int List::compare(const void *a, const void *b) {
-  String *s1 = ((String **) a)[0];
-  String *s2 = ((String **) b)[0];
-  return strcasecmp(s1->toString(), s2->toString());
-}
-
-void List::sort(bool desc) {
-  if (count > 0) {
-    qsort(head, count, sizeof(Object), compare);
-  }
-}
-
-//--Stack-----------------------------------------------------------------------
-
-Stack::Stack() : List() {
-}
-
-Stack::Stack(int growSize) : List(growSize) {
-}
-
-Object *Stack::peek() {
-  if (count == 0) {
-    return 0;
-  }
-  return head[count - 1];
-}
-
-Object *Stack::pop() {
-  if (count == 0) {
-    return 0;
-  }
-  return head[--count];
-}
-
-void Stack::push(Object *o) {
-  add(o);
-}
-
 //--Properties------------------------------------------------------------------
 
-Properties::Properties(int growSize) : List(growSize) {
-}
-
-Properties::Properties() {
-}
-
-Properties::~Properties() {
-}
-
 void Properties::load(const char *s) {
-  if (s == 0 || s[0] == 0) {
-    return;
+  if (s && s[0]) {
+    load(s, strlen(s));
   }
-  load(s, strlen(s));
 }
 
 void Properties::load(const char *s, int slen) {
@@ -609,12 +446,12 @@ void Properties::load(const char *s, int slen) {
 }
 
 String *Properties::get(const char *key) {
-  for (int i = 0; i < count; i++) {
-    String *nextKey = (String *) head[i++];
-    if (nextKey == null || i == count) {
+  for (int i = 0; i < this->_count; i++) {
+    String *nextKey = (String *) _head[i++];
+    if (nextKey == null || i == _count) {
       return null;
     }
-    String *nextValue = (String *) head[i];
+    String *nextValue = (String *) _head[i];
     if (nextValue == null) {
       return null;
     }
@@ -627,21 +464,21 @@ String *Properties::get(const char *key) {
 
 String *Properties::get(int i) const {
   int index = (i * 2) + 1;
-  return index < count ? (String *) head[index] : 0;
+  return index < _count ? (String *) _head[index] : 0;
 }
 
 String *Properties::getKey(int i) const {
   int index = i * 2;
-  return index < count ? (String *) head[index] : 0;
+  return index < _count ? (String *) _head[index] : 0;
 }
 
-void Properties::get(const char *key, List *arrayValues) {
-  for (int i = 0; i < count; i++) {
-    String *nextKey = (String *) head[i++];
-    if (nextKey == null || i == count) {
+void Properties::get(const char *key, List<String *> *arrayValues) {
+  for (int i = 0; i < _count; i++) {
+    String *nextKey = (String *) _head[i++];
+    if (nextKey == null || i == _count) {
       break;
     }
-    String *nextValue = (String *) head[i];
+    String *nextValue = (String *) _head[i];
     if (nextValue == null) {
       break;
     }
@@ -651,7 +488,7 @@ void Properties::get(const char *key, List *arrayValues) {
   }
 }
 
-void Properties::put(String & key, String & value) {
+void Properties::put(String &key, String &value) {
   String *prev = get(key.toString());
   if (prev) {
     prev->empty();
@@ -679,12 +516,12 @@ void Properties::put(const char *key, const char *value) {
 
 String Properties::toString() {
   String s;
-  for (int i = 0; i < count; i++) {
-    String *nextKey = (String *) head[i++];
-    if (nextKey == null || nextKey->length() == 0 || i == count) {
+  for (int i = 0; i < _count; i++) {
+    String *nextKey = (String *) _head[i++];
+    if (nextKey == null || nextKey->length() == 0 || i == _count) {
       break;
     }
-    String *nextValue = (String *) head[i];
+    String *nextValue = (String *) _head[i];
     if (nextValue != null && nextValue->length() > 0) {
       s.append(nextKey->toString());
       s.append("='");
@@ -695,10 +532,10 @@ String Properties::toString() {
   return s;
 }
 
-void Properties::operator=(Properties & p) {
+void Properties::operator=(Properties &p) {
   removeAll();
-  for (int i = 0; i < p.count; i++) {
-    add(p.head[i]);
+  for (int i = 0; i < p._count; i++) {
+    add(p._head[i]);
   }
   p.emptyList();
 }

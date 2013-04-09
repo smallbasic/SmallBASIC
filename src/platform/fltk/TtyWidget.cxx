@@ -1,10 +1,10 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-//
+// 
 
 #include <fltk/damage.h>
 #include <fltk/events.h>
@@ -20,7 +20,7 @@ TtyWidget::TtyWidget(int x, int y, int w, int h, int numRows) :
   Group(x, y, w, h, 0) {
 
   // initialize the buffer
-  buffer = new Row[numRows];
+  buffer = new TtyRow[numRows];
   rows = numRows;
   cols = width = 0;
   head = tail = 0;
@@ -80,8 +80,8 @@ void TtyWidget::draw() {
 
   int pageWidth = 0;
   for (int row = firstRow, rows = 0, y = rc.y() + lineHeight; rows < numRows; row++, rows++, y += lineHeight) {
-    Row *line = getLine(row);   // next logical row
-    TextSeg *seg = line->head;
+    TtyRow *line = getLine(row);   // next logical row
+    TtyTextSeg *seg = line->head;
     int x = 2 - hscroll;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
@@ -123,7 +123,7 @@ void TtyWidget::draw() {
 //
 // draw the background for selected text
 //
-void TtyWidget::drawSelection(TextSeg *seg, String *s, int row, int x, int y) {
+void TtyWidget::drawSelection(TtyTextSeg *seg, strlib::String *s, int row, int x, int y) {
   if (markX != pointX || markY != pointY) {
     Rectangle rc(0, y - (int)getascent(), 0, lineHeight);
     int r1 = markY;
@@ -300,13 +300,13 @@ bool TtyWidget::copySelection() {
     r2 = markY;
   }
 
-  String selection;
+  strlib::String selection;
 
   for (int row = r1; row <= r2; row++) {
-    Row *line = getLine(row);   // next logical row
-    TextSeg *seg = line->head;
+    TtyRow *line = getLine(row);   // next logical row
+    TtyTextSeg *seg = line->head;
     int x = 2 - hscroll;
-    String rowText;
+    strlib::String rowText;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setfont(bold, italic);
@@ -349,7 +349,7 @@ void TtyWidget::clearScreen() {
 //
 void TtyWidget::print(const char *str) {
   int strLength = strlen(str);
-  Row *line = getLine(head);    // pointer to current line
+  TtyRow *line = getLine(head);    // pointer to current line
 
   // need the current font set to calculate text widths
   fltk::setfont(labelfont(), labelsize());
@@ -405,7 +405,7 @@ void TtyWidget::print(const char *str) {
 //
 // return a pointer to the specified line of the display.
 //
-Row *TtyWidget::getLine(int pos) {
+TtyRow *TtyWidget::getLine(int pos) {
   if (pos < 0) {
     pos += rows;
   }
@@ -419,8 +419,8 @@ Row *TtyWidget::getLine(int pos) {
 //
 // interpret ANSI escape codes in linePtr and return number of chars consumed
 //
-int TtyWidget::processLine(Row *line, const char *linePtr) {
-  TextSeg *segment = new TextSeg();
+int TtyWidget::processLine(TtyRow *line, const char *linePtr) {
+  TtyTextSeg *segment = new TtyTextSeg();
   line->append(segment);
 
   const char *linePtrStart = linePtr;
@@ -502,46 +502,46 @@ int TtyWidget::processLine(Row *line, const char *linePtr) {
 //
 // performs the ANSI text SGI function.
 //
-void TtyWidget::setGraphicsRendition(TextSeg *segment, int c) {
+void TtyWidget::setGraphicsRendition(TtyTextSeg *segment, int c) {
   switch (c) {
   case 0:
     segment->reset();
     break;
 
   case 1:                      // Bold on
-    segment->set(TextSeg::BOLD, true);
+    segment->set(TtyTextSeg::BOLD, true);
     break;
 
   case 2:                      // Faint on
-    segment->set(TextSeg::BOLD, false);
+    segment->set(TtyTextSeg::BOLD, false);
     break;
 
   case 3:                      // Italic on
-    segment->set(TextSeg::ITALIC, true);
+    segment->set(TtyTextSeg::ITALIC, true);
     break;
 
   case 4:                      // Underscrore
-    segment->set(TextSeg::UNDERLINE, true);
+    segment->set(TtyTextSeg::UNDERLINE, true);
     break;
 
   case 7:                      // reverse video on
-    segment->set(TextSeg::INVERT, true);
+    segment->set(TtyTextSeg::INVERT, true);
     break;
 
   case 21:                     // set bold off
-    segment->set(TextSeg::BOLD, false);
+    segment->set(TtyTextSeg::BOLD, false);
     break;
 
   case 23:
-    segment->set(TextSeg::ITALIC, false);
+    segment->set(TtyTextSeg::ITALIC, false);
     break;
 
   case 24:                     // set underline off
-    segment->set(TextSeg::UNDERLINE, false);
+    segment->set(TtyTextSeg::UNDERLINE, false);
     break;
 
   case 27:                     // reverse video off
-    segment->set(TextSeg::INVERT, false);
+    segment->set(TtyTextSeg::INVERT, false);
     break;
 
   case 30:                     // Black

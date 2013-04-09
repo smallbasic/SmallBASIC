@@ -13,6 +13,8 @@
 #include "common/sys.h"
 #include "common/var.h"
 
+#include "platform/common/StringLib.h"
+
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W 16
 #define BN_H 12
@@ -37,13 +39,13 @@ struct ListModel : IFormWidgetListModel {
   void create(const char *items, var_t *v);
   const char *getTextAt(int index);
   int getIndex(const char *t);
-  int rows() const { return list.size(); }
+  int rows() const { return list.length(); }
   int selected() const { return focusIndex; }
   void selected(int index) { focusIndex = index; }
 
 private:
   void fromArray(const char *caption, var_t *v);
-  Vector<String *> list;
+  List<String *> list;
   int focusIndex;
 };
 
@@ -95,10 +97,10 @@ struct Form {
 
 private:
   Mode mode;
-  Vector<WidgetDataPtr> items; // form child items
-  var_t *var;                  // form variable contains the value of the event widget
-  int cmd;                     // doform argument by value
-  bool kbHandle;              // whether doform returns on a keyboard event
+  List<WidgetDataPtr> items; // form child items
+  var_t *var;                // form variable contains the value of the event widget
+  int cmd;                   // doform argument by value
+  bool kbHandle;             // whether doform returns on a keyboard event
   int prevX;
   int prevY;
 };

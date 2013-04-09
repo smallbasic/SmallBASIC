@@ -1,9 +1,10 @@
+// This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-//
+// 
 
 #include <unistd.h>
 #include <errno.h>
@@ -178,8 +179,8 @@ EditorWidget::EditorWidget(int x, int y, int w, int h) :
   gotoLineBn->tooltip("Position the cursor to the last program line after BREAK");
 
   // setup defaults or restore settings
-  if (wnd && wnd->profile) {
-    wnd->profile->loadConfig(this);
+  if (wnd && wnd->_profile) {
+    wnd->_profile->loadConfig(this);
   } else {
     setEditorColor(WHITE, true);
   }
@@ -341,7 +342,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
 
   completionIndex = -1;         // no more buffer expansions
 
-  strlib::List keywords;
+  strlib::List<String *> keywords;
   editor->getKeywords(keywords);
 
   // find the next replacement
@@ -659,7 +660,7 @@ void EditorWidget::doSaveFile(const char *newfile) {
   char basfile[PATH_MAX];
   TextBuffer *textbuf = editor->textbuf;
 
-  if (wnd->profile->createBackups && access(newfile, 0) == 0) {
+  if (wnd->_profile->_createBackups && access(newfile, 0) == 0) {
     // rename any existing file as a backup
     strcpy(basfile, newfile);
     strcat(basfile, "~");
@@ -684,7 +685,7 @@ void EditorWidget::doSaveFile(const char *newfile) {
   wnd->showEditTab(this);
 
   // store a copy in lastedit.bas
-  if (wnd->profile->createBackups) {
+  if (wnd->_profile->_createBackups) {
     getHomeDir(basfile);
     strcat(basfile, "lastedit.bas");
     textbuf->savefile(basfile);
@@ -991,8 +992,8 @@ void EditorWidget::saveSelection(const char *path) {
  * Sets the editor and editor toolbar color
  */
 void EditorWidget::setEditorColor(Color c, bool defColor) {
-  if (wnd && wnd->profile) {
-    wnd->profile->color = c;
+  if (wnd && wnd->_profile) {
+    wnd->_profile->_color = c;
   }
   editor->color(c);
 
@@ -1024,7 +1025,7 @@ void EditorWidget::setFont(Font *font) {
   if (font) {
     editor->setFont(font);
     tty->setFont(font);
-    wnd->profile->font = font;
+    wnd->_profile->_font = font;
   }
 }
 
@@ -1034,7 +1035,7 @@ void EditorWidget::setFont(Font *font) {
 void EditorWidget::setFontSize(int size) {
   editor->setFontSize(size);
   tty->setFontSize(size);
-  wnd->profile->fontSize = size;
+  wnd->_profile->_fontSize = size;
 }
 
 /**

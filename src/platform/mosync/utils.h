@@ -6,8 +6,6 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <mavsprintf.h>
-
 #ifndef max
 #define max(a,b) ((a<b) ? (b) : (a))
 #endif
@@ -17,6 +15,10 @@
 
 #define OUTSIDE_RECT(px, py, x, y, w, h) \
   (px < (x) || py < (y) || px > ((x)+(w)) || py > ((y)+(h)))
+
+#if defined(MAPIP)
+#include <mavsprintf.h>
+#endif
 
 #if defined(VARIANT_MOSYNC_EMULATOR) || defined(_DEBUG)
 #define trace lprintfln

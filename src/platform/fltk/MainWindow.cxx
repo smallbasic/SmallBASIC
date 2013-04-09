@@ -1,12 +1,16 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2012 Chris Warren-Smith.
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include "common/sys.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <dirent.h>
 
 #include <fltk/Item.h>
 #include <fltk/MenuBar.h>
@@ -21,23 +25,19 @@
 #include "HelpWidget.h"
 #include "FileWidget.h"
 #include "common/sbapp.h"
-#include "StringLib.h"
+#include "platform/common/StringLib.h"
 
-#if defined(WIN32)
-#include <fltk/win32.h>
-#endif
-
-extern "C" {
+#include "common/sys.h"
 #include "common/fs_socket_client.h"
-} 
+
 using namespace fltk;
 
 char *packageHome;
 char *runfile = 0;
 int recentIndex = 0;
 int restart = 0;
-Widget *recentMenu[NUM_RECENT_ITEMS];
-String recentPath[NUM_RECENT_ITEMS];
+fltk::Widget *recentMenu[NUM_RECENT_ITEMS];
+strlib::String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 MainWindow *wnd;
 ExecState runMode = init_state;
@@ -51,9 +51,9 @@ const char *historyFile = "history.txt";
 const char *keywordsFile = "keywords.txt";
 const char *aboutText =
   "<b>About SmallBASIC...</b><br><br>"
+  "Version " SB_STR_VER "<br>"
+  "Copyright (c) 2002-2013 Chris Warren-Smith.<br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
-  "FLTK Version " SB_STR_VER "<br>"
-  "Copyright (c) 2002-2010 Chris Warren-Smith.<br><br>"
   "<a href=http://smallbasic.sourceforge.net>"
   "http://smallbasic.sourceforge.net</a><br><br>"
   "SmallBASIC comes with ABSOLUTELY NO WARRANTY. "
@@ -84,7 +84,7 @@ struct ScanFont {
       sprintf(label, "&View/Font/%s", fonts[index]->system_name());
       setfont(font(fonts[index]->name()), 12);
       if (getdescent() < MAX_DESCENT && (getwidth("QW#@") == getwidth("il:("))) {
-        Widget *w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
+        fltk::Widget *w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
         w->textfont(getfont());
       }
       index++;
@@ -124,7 +124,7 @@ void MainWindow::pathMessage(const char *file) {
 
 void MainWindow::showEditTab(EditorWidget *editWidget) {
   if (editWidget) {
-    tabGroup->selected_child(editWidget->parent());
+    _tabGroup->selected_child(editWidget->parent());
     editWidget->take_focus();
   }
 }
@@ -157,7 +157,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   const char *filename = FileWidget::splitPath(fullpath, path);
 
   if (editWidget) {
-    runEditWidget = editWidget;
+    _runEditWidget = editWidget;
     if (!toolExec) {
       editWidget->readonly(true);
       editWidget->runState(rs_run);
@@ -170,24 +170,24 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   opt_pref_height = 0;
 
   Window *fullScreen = NULL;
-  Group *oldOutputGroup = outputGroup;
-  int old_w = out->w();
-  int old_h = out->h();
+  Group *oldOutputGroup = _outputGroup;
+  int old_w = _out->w();
+  int old_h = _out->h();
   int interactive = opt_interactive;
 
   if (!toolExec) {
     if (opt_ide == IDE_NONE) {
       // run in a separate window with the ide hidden
       fullScreen = new BaseWindow(w(), h());
-      profile->restoreAppPosition(fullScreen);
+      _profile->restoreAppPosition(fullScreen);
 
       fullScreen->callback(quit_cb);
       fullScreen->shortcut(0);
-      fullScreen->add(out);
+      fullScreen->add(_out);
       fullScreen->resizable(fullScreen);
       setTitle(fullScreen, filename);
-      outputGroup = fullScreen;
-      out->resize(0, 0, w(), h());
+      _outputGroup = fullScreen;
+      _out->resize(0, 0, w(), h());
       hide();
     } else {
       setTitle(this, filename);
@@ -209,15 +209,15 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   bool was_break = (runMode == break_state);
 
   if (fullScreen != NULL) {
-    profile->appPosition = *fullScreen;
+    _profile->_appPosition = *fullScreen;
 
     closeForm();                // cleanup any global formView
-    fullScreen->remove(out);
+    fullScreen->remove(_out);
     delete fullScreen;
 
-    outputGroup = oldOutputGroup;
-    outputGroup->add(out);
-    out->resize(2, 2, old_w, old_h);
+    _outputGroup = oldOutputGroup;
+    _outputGroup->add(_out);
+    _out->resize(2, 2, old_w, old_h);
     show();
   } else {
     copy_label("SmallBASIC");
@@ -246,46 +246,46 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   }
 
   runMode = edit_state;
-  runEditWidget = 0;
+  _runEditWidget = 0;
   return was_break;
 }
 
 //--Menu callbacks--------------------------------------------------------------
 
-void MainWindow::close_tab(Widget *w, void *eventData) {
-  if (tabGroup->children() > 1) {
+void MainWindow::close_tab(fltk::Widget *w, void *eventData) {
+  if (_tabGroup->children() > 1) {
     Group *group = getSelectedTab();
-    if (group && group != outputGroup) {
+    if (group && group != _outputGroup) {
       if (gw_editor == getGroupWidget(group)) {
         EditorWidget *editWidget = (EditorWidget *)group->child(0);
         if (!editWidget->checkSave(true)) {
           return;
         }
         // check whether the editor is a running program
-        if (editWidget == runEditWidget) {
+        if (editWidget == _runEditWidget) {
           setBreak();
           return;
         }
       }
-      tabGroup->remove(group);
+      _tabGroup->remove(group);
       delete group;
     }
   }
 }
 
-void MainWindow::restart_run(Widget *w, void *eventData) {
+void MainWindow::restart_run(fltk::Widget *w, void *eventData) {
   if (runMode == run_state) {
     setBreak();
     restart = true;
   }
 }
 
-void MainWindow::quit(Widget *w, void *eventData) {
+void MainWindow::quit(fltk::Widget *w, void *eventData) {
   if (runMode == edit_state || runMode == quit_state) {
     // auto-save scratchpad
-    int n = tabGroup->children();
+    int n = _tabGroup->children();
     for (int c = 0; c < n; c++) {
-      Group *group = (Group *)tabGroup->child(c);
+      Group *group = (Group *)_tabGroup->child(c);
       char path[MAX_PATH];
       if (gw_editor == getGroupWidget(group)) {
         EditorWidget *editWidget = (EditorWidget *)group->child(0);
@@ -314,7 +314,7 @@ void MainWindow::quit(Widget *w, void *eventData) {
 /**
  * opens the smallbasic home page in a browser window
  */
-void MainWindow::help_home(Widget *w, void *eventData) {
+void MainWindow::help_home(fltk::Widget *w, void *eventData) {
   browseFile("http://smallbasic.sf.net");
 }
 
@@ -353,7 +353,7 @@ bool MainWindow::execHelp() {
  */
 void do_help_contents_anchor(void *){
   fltk::remove_check(do_help_contents_anchor);
-  String eventName = wnd->getHelp()->getEventName();
+  strlib::String eventName = wnd->getHelp()->getEventName();
   if (access(eventName, R_OK) == 0) {
     wnd->editFile(eventName);
   } else {
@@ -364,7 +364,7 @@ void do_help_contents_anchor(void *){
   }
 }
 
-void MainWindow::help_contents_anchor(Widget *w, void *eventData) {
+void MainWindow::help_contents_anchor(fltk::Widget *w, void *eventData) {
   if (runMode == edit_state) {
     fltk::add_check(do_help_contents_anchor);
   }
@@ -373,7 +373,7 @@ void MainWindow::help_contents_anchor(Widget *w, void *eventData) {
 /**
  * handle f1 context help
  */
-void MainWindow::help_contents(Widget *w, void *eventData) {
+void MainWindow::help_contents(fltk::Widget *w, void *eventData) {
   bool showHelp = true;
   if (runMode == edit_state) {
     EditorWidget *editWidget = getEditor();
@@ -398,45 +398,45 @@ void MainWindow::help_contents(Widget *w, void *eventData) {
 /**
  * displays the program help page in a browser window
  */
-void MainWindow::help_app(Widget *w, void *eventData) {
+void MainWindow::help_app(fltk::Widget *w, void *eventData) {
   browseFile("http://smallbasic.sourceforge.net/?q=node/955");
 }
 
-void MainWindow::help_about(Widget *w, void *eventData) {
+void MainWindow::help_about(fltk::Widget *w, void *eventData) {
   getHelp()->loadBuffer(aboutText);
 }
 
-void MainWindow::set_flag(Widget *w, void *eventData) {
+void MainWindow::set_flag(fltk::Widget *w, void *eventData) {
   bool *flag = (bool *)eventData;
   *flag = (w->flags() & STATE);
 }
 
-void MainWindow::set_options(Widget *w, void *eventData) {
+void MainWindow::set_options(fltk::Widget *w, void *eventData) {
   const char *args = fltk::input("Enter program command line", opt_command);
   if (args) {
     strcpy(opt_command, args);
   }
 }
 
-void MainWindow::next_tab(Widget *w, void *eventData) {
+void MainWindow::next_tab(fltk::Widget *w, void *eventData) {
   Group *group = getNextTab(getSelectedTab());
-  tabGroup->selected_child(group);
+  _tabGroup->selected_child(group);
   EditorWidget *editWidget = getEditor(group);
   if (editWidget) {
     editWidget->take_focus();
   }
 }
 
-void MainWindow::prev_tab(Widget *w, void *eventData) {
+void MainWindow::prev_tab(fltk::Widget *w, void *eventData) {
   Group *group = getPrevTab(getSelectedTab());
-  tabGroup->selected_child(group);
+  _tabGroup->selected_child(group);
   EditorWidget *editWidget = getEditor(group);
   if (editWidget) {
     editWidget->take_focus();
   }
 }
 
-void MainWindow::copy_text(Widget *w, void *eventData) {
+void MainWindow::copy_text(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     editWidget->copyText();
@@ -445,35 +445,35 @@ void MainWindow::copy_text(Widget *w, void *eventData) {
   }
 }
 
-void MainWindow::font_size_incr(Widget *w, void *eventData) {
+void MainWindow::font_size_incr(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     int size = editWidget->getFontSize();
     if (size < MAX_FONT_SIZE) {
       editWidget->setFontSize(size + 1);
       updateConfig(editWidget);
-      out->setFontSize(size + 1);
+      _out->setFontSize(size + 1);
     }
   } else {
     handle(EVENT_INCREASE_FONT);
   }
 }
 
-void MainWindow::font_size_decr(Widget *w, void *eventData) {
+void MainWindow::font_size_decr(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     int size = editWidget->getFontSize();
     if (size > MIN_FONT_SIZE) {
       editWidget->setFontSize(size - 1);
       updateConfig(editWidget);
-      out->setFontSize(size - 1);
+      _out->setFontSize(size - 1);
     }
   } else {
     handle(EVENT_DECREASE_FONT);
   }
 }
 
-void MainWindow::run(Widget *w, void *eventData) {
+void MainWindow::run(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     const char *filename = editWidget->getFilename();
@@ -498,7 +498,7 @@ void MainWindow::run(Widget *w, void *eventData) {
   }
 }
 
-void MainWindow::run_break(Widget *w, void *eventData) {
+void MainWindow::run_break(fltk::Widget *w, void *eventData) {
   if (runMode == run_state || runMode == modal_state) {
     setBreak();
   }
@@ -507,7 +507,7 @@ void MainWindow::run_break(Widget *w, void *eventData) {
 /**
  * run the selected text as the main program
  */
-void MainWindow::run_selection(Widget *w, void *eventData) {
+void MainWindow::run_selection(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     char path[MAX_PATH];
@@ -522,7 +522,7 @@ void MainWindow::run_selection(Widget *w, void *eventData) {
  * callback for editor-plug-in plug-ins. we assume the target
  * program will be changing the contents of the editor buffer
  */
-void MainWindow::editor_plugin(Widget *w, void *eventData) {
+void MainWindow::editor_plugin(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     TextEditor *editor = editWidget->editor;
@@ -564,13 +564,13 @@ void MainWindow::editor_plugin(Widget *w, void *eventData) {
 /**
  * callback for tool-plug-in plug-ins.
  */
-void MainWindow::tool_plugin(Widget *w, void *eventData) {
+void MainWindow::tool_plugin(fltk::Widget *w, void *eventData) {
   if (runMode == edit_state) {
     char path[MAX_PATH];
     sprintf(opt_command, "%s/%s", packageHome, pluginHome);
     statusMsg(rs_ready, (const char *)eventData);
     sprintf(path, "%s/%s", packageHome, (const char *)eventData);
-    tabGroup->selected_child(outputGroup);
+    _tabGroup->selected_child(_outputGroup);
     basicMain(0, path, true);
     statusMsg(rs_ready, 0);
     opt_command[0] = 0;
@@ -579,7 +579,7 @@ void MainWindow::tool_plugin(Widget *w, void *eventData) {
   }
 }
 
-void MainWindow::load_file(Widget * w, void *eventData) {
+void MainWindow::load_file(fltk::Widget * w, void *eventData) {
   int pathIndex = ((intptr_t) eventData) - 1;
   const char *path = recentPath[pathIndex].toString();
   EditorWidget *editWidget = getEditor(path);
@@ -869,15 +869,15 @@ bool initialise(int argc, char **argv) {
 
   // load startup editors
   wnd->new_file(0, 0);
-  wnd->profile->restore(wnd);
+  wnd->_profile->restore(wnd);
 
   // setup styles
   Font *defaultFont = HELVETICA;
   if (defaultFont) {
-    Widget::default_style->labelfont(defaultFont);
-    Button::default_style->labelfont(defaultFont);
-    Widget::default_style->textfont(defaultFont);
-    Button::default_style->textfont(defaultFont);
+    fltk::Widget::default_style->labelfont(defaultFont);
+    fltk::Button::default_style->labelfont(defaultFont);
+    fltk::Widget::default_style->textfont(defaultFont);
+    fltk::Button::default_style->textfont(defaultFont);
   }
 
   Window::xclass("smallbasic");
@@ -913,7 +913,7 @@ bool initialise(int argc, char **argv) {
  * save application state at program exit
  */
 void save_profile(void) {
-  wnd->profile->save(wnd);
+  wnd->_profile->save(wnd);
 }
 
 /**
@@ -930,8 +930,8 @@ int main(int argc, char **argv) {
 
 MainWindow::MainWindow(int w, int h) : 
   BaseWindow(w, h) {
-  runEditWidget = 0;
-  profile = new Profile();
+  _runEditWidget = 0;
+  _profile = new Profile();
   size_range(250, 250);
 
   FileWidget::forwardSlash(runfile);
@@ -997,27 +997,27 @@ MainWindow::MainWindow(int w, int h) :
   // group for all tabs
   w -= 8;
 
-  tabGroup = new TabGroup(4, 4, w, h - 6);
-  tabGroup->box(NO_BOX);
+  _tabGroup = new TabGroup(4, 4, w, h - 6);
+  _tabGroup->box(NO_BOX);
 
   // create the output tab
   h -= (MNU_HEIGHT + 8);
-  tabGroup->begin();
-  outputGroup = new Group(0, MNU_HEIGHT, w, h, "Output");
-  outputGroup->box(THIN_DOWN_BOX);
-  outputGroup->hide();
-  outputGroup->user_data((void *)gw_output);
-  outputGroup->begin();
-  out = new AnsiWidget(2, 2, w - 4, h - 4, DEF_FONT_SIZE);
-  outputGroup->resizable(out);
-  outputGroup->end();
+  _tabGroup->begin();
+  _outputGroup = new Group(0, MNU_HEIGHT, w, h, "Output");
+  _outputGroup->box(THIN_DOWN_BOX);
+  _outputGroup->hide();
+  _outputGroup->user_data((void *)gw_output);
+  _outputGroup->begin();
+  _out = new MosyncWidget(2, 2, w - 4, h - 4, DEF_FONT_SIZE);
+  _outputGroup->resizable(_out);
+  _outputGroup->end();
 
-  tabGroup->resizable(outputGroup);
-  tabGroup->end();
+  _tabGroup->resizable(_outputGroup);
+  _tabGroup->end();
   outer->end();
   end();
 
-  outer->resizable(tabGroup);
+  outer->resizable(_tabGroup);
   resizable(outer);
 }
 
@@ -1025,10 +1025,10 @@ MainWindow::MainWindow(int w, int h) :
  * create a new help widget and add it to the tab group
  */
 Group *MainWindow::createEditor(const char *title) {
-  int w = tabGroup->w();
-  int h = tabGroup->h() - MNU_HEIGHT;
+  int w = _tabGroup->w();
+  int h = _tabGroup->h() - MNU_HEIGHT;
 
-  tabGroup->begin();
+  _tabGroup->begin();
   Group *editGroup = new Group(0, MNU_HEIGHT, w, h - 2);
   const char *slash = strrchr(title, '/');
   editGroup->copy_label(slash ? slash + 1 : title);
@@ -1039,19 +1039,19 @@ Group *MainWindow::createEditor(const char *title) {
   editGroup->user_data((void *)gw_editor);
   editGroup->end();
 
-  tabGroup->add(editGroup);
-  tabGroup->selected_child(editGroup);
-  tabGroup->end();
+  _tabGroup->add(editGroup);
+  _tabGroup->selected_child(editGroup);
+  _tabGroup->end();
   return editGroup;
 }
 
-void MainWindow::new_file(Widget *w, void *eventData) {
+void MainWindow::new_file(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = 0;
   Group *untitledEditor = findTab(untitledFile);
   char path[MAX_PATH];
 
   if (untitledEditor) {
-    tabGroup->selected_child(untitledEditor);
+    _tabGroup->selected_child(untitledEditor);
     editWidget = getEditor(untitledEditor);
   }
   if (!editWidget) {
@@ -1069,13 +1069,13 @@ void MainWindow::new_file(Widget *w, void *eventData) {
   textbuf->select(0, textbuf->length());
 }
 
-void MainWindow::open_file(Widget *w, void *eventData) {
+void MainWindow::open_file(fltk::Widget *w, void *eventData) {
   FileWidget *fileWidget = null;
   Group *openFileGroup = findTab(gw_file);
   if (!openFileGroup) {
-    int w = tabGroup->w();
-    int h = tabGroup->h() - MNU_HEIGHT;
-    tabGroup->begin();
+    int w = _tabGroup->w();
+    int h = _tabGroup->h() - MNU_HEIGHT;
+    _tabGroup->begin();
     openFileGroup = new Group(0, MNU_HEIGHT, w, h, fileTabName);
     openFileGroup->begin();
     fileWidget = new FileWidget(2, 2, w - 4, h - 4);
@@ -1083,7 +1083,7 @@ void MainWindow::open_file(Widget *w, void *eventData) {
     openFileGroup->user_data((void *)gw_file);
     openFileGroup->resizable(fileWidget);
     openFileGroup->end();
-    tabGroup->end();
+    _tabGroup->end();
   } else {
     fileWidget = (FileWidget *)openFileGroup->resizable();
   }
@@ -1095,7 +1095,7 @@ void MainWindow::open_file(Widget *w, void *eventData) {
   if (editWidget) {
     FileWidget::splitPath(editWidget->getFilename(), path);
   } else {
-    Group *group = (Group *)tabGroup->selected_child();
+    Group *group = (Group *)_tabGroup->selected_child();
     GroupWidget gw = getGroupWidget(group);
     switch (gw) {
     case gw_output:
@@ -1111,10 +1111,10 @@ void MainWindow::open_file(Widget *w, void *eventData) {
 
   fileWidget->openPath(path);
 
-  tabGroup->selected_child(openFileGroup);
+  _tabGroup->selected_child(openFileGroup);
 }
 
-void MainWindow::save_file_as(Widget *w, void *eventData) {
+void MainWindow::save_file_as(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
   if (editWidget) {
     open_file(w, eventData);
@@ -1127,9 +1127,9 @@ HelpWidget *MainWindow::getHelp() {
   HelpWidget *help = 0;
   Group *helpGroup = findTab(gw_help);
   if (!helpGroup) {
-    int w = tabGroup->w();
-    int h = tabGroup->h() - MNU_HEIGHT;
-    tabGroup->begin();
+    int w = _tabGroup->w();
+    int h = _tabGroup->h() - MNU_HEIGHT;
+    _tabGroup->begin();
     helpGroup = new Group(0, MNU_HEIGHT, w, h, helpTabName);
     helpGroup->box(THIN_DOWN_BOX);
     helpGroup->hide();
@@ -1138,23 +1138,23 @@ HelpWidget *MainWindow::getHelp() {
     help = new HelpWidget(2, 2, w - 4, h - 4);
     help->callback(help_contents_anchor_cb);
     helpGroup->resizable(help);
-    tabGroup->end();
+    _tabGroup->end();
   } else {
     help = (HelpWidget *)helpGroup->resizable();
   }
-  tabGroup->selected_child(helpGroup);
+  _tabGroup->selected_child(helpGroup);
   return help;
 }
 
 EditorWidget *MainWindow::getEditor(bool select) {
   EditorWidget *result = 0;
   if (select) {
-    int n = tabGroup->children();
+    int n = _tabGroup->children();
     for (int c = 0; c < n; c++) {
-      Group *group = (Group *)tabGroup->child(c);
+      Group *group = (Group *)_tabGroup->child(c);
       if (gw_editor == getGroupWidget(group)) {
         result = (EditorWidget *)group->child(0);
-        tabGroup->selected_child(group);
+        _tabGroup->selected_child(group);
         break;
       }
     }
@@ -1174,9 +1174,9 @@ EditorWidget *MainWindow::getEditor(Group *group) {
 
 EditorWidget *MainWindow::getEditor(const char *fullpath) {
   if (fullpath != 0 && fullpath[0] != 0) {
-    int n = tabGroup->children();
+    int n = _tabGroup->children();
     for (int c = 0; c < n; c++) {
-      Group *group = (Group *)tabGroup->child(c);
+      Group *group = (Group *)_tabGroup->child(c);
       if (gw_editor == getGroupWidget(group)) {
         EditorWidget *editWidget = (EditorWidget *)group->child(0);
         const char *fileName = editWidget->getFilename();
@@ -1202,16 +1202,16 @@ void MainWindow::editFile(const char *filePath) {
 }
 
 Group *MainWindow::getSelectedTab() {
-  return (Group *)tabGroup->selected_child();
+  return (Group *)_tabGroup->selected_child();
 }
 
 /**
  * returns the tab with the given name
  */
 Group *MainWindow::findTab(const char *label) {
-  int n = tabGroup->children();
+  int n = _tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *child = (Group *)tabGroup->child(c);
+    Group *child = (Group *)_tabGroup->child(c);
     if (strcmp(child->label(), label) == 0) {
       return child;
     }
@@ -1220,9 +1220,9 @@ Group *MainWindow::findTab(const char *label) {
 }
 
 Group *MainWindow::findTab(GroupWidget groupWidget) {
-  int n = tabGroup->children();
+  int n = _tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *child = (Group *)tabGroup->child(c);
+    Group *child = (Group *)_tabGroup->child(c);
     if (groupWidget == getGroupWidget(child)) {
       return child;
     }
@@ -1236,7 +1236,7 @@ Group *MainWindow::findTab(GroupWidget groupWidget) {
 Group *MainWindow::selectTab(const char *label) {
   Group *tab = findTab(label);
   if (tab) {
-    tabGroup->selected_child(tab);
+    _tabGroup->selected_child(tab);
   }
   return tab;
 }
@@ -1245,9 +1245,9 @@ Group *MainWindow::selectTab(const char *label) {
  * copies the configuration from the current editor to any remaining editors
  */
 void MainWindow::updateConfig(EditorWidget *current) {
-  int n = tabGroup->children();
+  int n = _tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *group = (Group *)tabGroup->child(c);
+    Group *group = (Group *)_tabGroup->child(c);
     if (gw_editor == getGroupWidget(group)) {
       EditorWidget *editWidget = (EditorWidget *)group->child(0);
       if (editWidget != current) {
@@ -1261,9 +1261,9 @@ void MainWindow::updateConfig(EditorWidget *current) {
  * updates the names of the editor tabs based on the enclosed editing file
  */
 void MainWindow::updateEditTabName(EditorWidget *editWidget) {
-  int n = tabGroup->children();
+  int n = _tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *group = (Group *)tabGroup->child(c);
+    Group *group = (Group *)_tabGroup->child(c);
     if (gw_editor == getGroupWidget(group) && editWidget == (EditorWidget *)group->child(0)) {
       const char *editFileName = editWidget->getFilename();
       if (editFileName && editFileName[0]) {
@@ -1278,28 +1278,28 @@ void MainWindow::updateEditTabName(EditorWidget *editWidget) {
  * returns the tab following the given tab
  */
 Group *MainWindow::getNextTab(Group *current) {
-  int n = tabGroup->children();
+  int n = _tabGroup->children();
   for (int c = 0; c < n - 1; c++) {
-    Group *child = (Group *)tabGroup->child(c);
+    Group *child = (Group *)_tabGroup->child(c);
     if (child == current) {
-      return (Group *)tabGroup->child(c + 1);
+      return (Group *)_tabGroup->child(c + 1);
     }
   }
-  return (Group *)tabGroup->child(0);
+  return (Group *)_tabGroup->child(0);
 }
 
 /**
  * returns the tab prior the given tab or null if not found
  */
 Group *MainWindow::getPrevTab(Group *current) {
-  int n = tabGroup->children();
+  int n = _tabGroup->children();
   for (int c = n - 1; c > 0; c--) {
-    Group *child = (Group *)tabGroup->child(c);
+    Group *child = (Group *)_tabGroup->child(c);
     if (child == current) {
-      return (Group *)tabGroup->child(c - 1);
+      return (Group *)_tabGroup->child(c - 1);
     }
   }
-  return (Group *)tabGroup->child(n - 1);
+  return (Group *)_tabGroup->child(n - 1);
 }
 
 /**
@@ -1361,9 +1361,9 @@ bool MainWindow::isIdeHidden() {
 }
 
 void MainWindow::resetPen() {
-  penDownX = 0;
-  penDownY = 0;
-  penMode = 0;
+  _penDownX = 0;
+  _penDownY = 0;
+  _penMode = 0;
 }
 
 /**
@@ -1371,7 +1371,7 @@ void MainWindow::resetPen() {
  */
 TtyWidget *MainWindow::tty() {
   TtyWidget *result = 0;
-  EditorWidget *editor = runEditWidget;
+  EditorWidget *editor = _runEditWidget;
   if (!editor) {
     editor = getEditor(false);
   }
@@ -1385,17 +1385,17 @@ TtyWidget *MainWindow::tty() {
  * returns whether printing to the tty widget is active
  */
 bool MainWindow::logPrint() {
-  return (runEditWidget && runEditWidget->tty && runEditWidget->isLogPrint());
+  return (_runEditWidget && _runEditWidget->tty && _runEditWidget->isLogPrint());
 }
 
-void MainWindow::execLink(String &link) {
+void MainWindow::execLink(strlib::String &link) {
   if (!link.length()) {
     return;
   }
 
   char *file = (char *)link.toString();
   EditorWidget *editWidget = getEditor(true);
-  siteHome.empty();
+  _siteHome.empty();
   bool execFile = false;
   if (file[0] == '!' || file[0] == '|') {
     execFile = true;            // exec flag passed with name
@@ -1435,8 +1435,8 @@ void MainWindow::execLink(String &link) {
       } else {
         sprintf(path, "file:%s", localFile);
       }
-      siteHome.append(df.name, df.drv_dw[1]);
-      statusMsg(rs_ready, siteHome.toString());
+      _siteHome.append(df.name, df.drv_dw[1]);
+      statusMsg(rs_ready, _siteHome.toString());
       updateForm(path);
     }
     return;
@@ -1784,36 +1784,3 @@ int LineInput::handle(int event) {
   }
   return fltk::Input::handle(event);
 }
-
-//--Debug support---------------------------------------------------------------
-
-#if defined(WIN32)
-#include <windows.h>
-#endif
-// see http://download.sysinternals.com/Files/DebugView.zip
-// for the free DebugView program
-// an alternative debug method is to use insight.exe which
-// is included with cygwin.
-
-extern "C" void trace(const char *format, ...) {
-  char buf[4096], *p = buf;
-  va_list args;
-
-  va_start(args, format);
-  p += vsnprintf(p, sizeof buf - 1, format, args);
-  va_end(args);
-
-  while (p > buf && isspace(p[-1])) {
-    *--p = '\0';
-  }
-
-  *p++ = '\r';
-  *p++ = '\n';
-  *p = '\0';
-#if defined(WIN32)
-  OutputDebugString(buf);
-#else
-  fprintf(stderr, buf, 0);
-#endif
-}
-

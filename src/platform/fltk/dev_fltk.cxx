@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -24,9 +24,8 @@
 #include "HelpWidget.h"
 #include "TtyWidget.h"
 
-extern "C" {
 #include "common/fs_socket_client.h"
-}
+
 #ifdef WIN32
 #include <windows.h>
 #ifdef __MINGW32__
@@ -35,13 +34,16 @@ extern "C" {
 #else
 #include <sys/socket.h>
 #endif
+
 #if defined(__MINGW32__)
 #define makedir(f) mkdir(f)
 #else
 #define makedir(f) mkdir(f, 0700)
 #endif
+
 #define PEN_OFF   0             // pen mode disabled
 #define PEN_ON    2             // pen mode active
+
 HelpWidget *formView = 0;
 Properties env;
 String envs;
@@ -73,24 +75,24 @@ int osd_devinit() {
 
   // allow the application to set the preferred width and height
   if ((opt_pref_width || opt_pref_height) && wnd->isIdeHidden()) {
-    int delta_x = wnd->w() - wnd->out->w();
-    int delta_y = wnd->h() - wnd->out->h();
+    int delta_x = wnd->w() - wnd->_out->w();
+    int delta_y = wnd->h() - wnd->_out->h();
     if (opt_pref_width < 10) {
       opt_pref_width = 10;
     }
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    wnd->outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
+    wnd->_outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
   }
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
   if (wnd->isInteractive() && !wnd->logPrint()) {
-    wnd->outputGroup->show();
+    wnd->_outputGroup->show();
   }
 
-  os_graf_mx = wnd->out->w();
-  os_graf_my = wnd->out->h();
+  os_graf_mx = wnd->_out->w();
+  os_graf_my = wnd->_out->h();
 
   os_ver = FL_MAJOR_VERSION + FL_MINOR_VERSION + FL_PATCH_VERSION;
   os_color = 1;
@@ -110,15 +112,15 @@ int osd_devinit() {
 }
 
 void osd_setcolor(long color) {
-  wnd->out->setColor(color);
+  wnd->_out->setColor(color);
 }
 
 void osd_settextcolor(long fg, long bg) {
-  wnd->out->setTextColor(fg, bg);
+  wnd->_out->setTextColor(fg, bg);
 }
 
 void osd_refresh() {
-  wnd->out->redraw();
+  wnd->_out->redraw();
 }
 
 int osd_devrestore() {
@@ -169,7 +171,7 @@ int osd_events(int wait_flag) {
 }
 
 void osd_setpenmode(int enable) {
-  wnd->penMode = (enable ? PEN_ON : PEN_OFF);
+  wnd->_penMode = (enable ? PEN_ON : PEN_OFF);
 }
 
 /**
@@ -180,11 +182,11 @@ bool get_mouse_xy() {
   int x, y;
 
   fltk::get_mouse(x, y);
-  wnd->out->get_absolute_rect(&rc);
+  wnd->_out->get_absolute_rect(&rc);
 
   // convert mouse screen rect to out-client rect
-  wnd->penDownX = x - rc.x();
-  wnd->penDownY = y - rc.y();
+  wnd->_penDownX = x - rc.x();
+  wnd->_penDownY = y - rc.y();
 
   return rc.contains(x, y);
 }
@@ -196,7 +198,7 @@ int osd_getpen(int code) {
     return 0;
   }
 
-  if (wnd->penMode == PEN_OFF) {
+  if (wnd->_penMode == PEN_OFF) {
     fltk::wait();
   }
 
@@ -219,20 +221,20 @@ int osd_getpen(int code) {
     return 0;
 
   case 1:                      // last pen-down x
-    return wnd->penDownX;
+    return wnd->_penDownX;
 
   case 2:                      // last pen-down y
-    return wnd->penDownY;
+    return wnd->_penDownY;
 
   case 4:                      // cur pen-down x
   case 10:
     get_mouse_xy();
-    return wnd->penDownX;
+    return wnd->_penDownX;
 
   case 5:                      // cur pen-down y
   case 11:
     get_mouse_xy();
-    return wnd->penDownY;
+    return wnd->_penDownY;
 
   case 12:                     // true if left button pressed
     return (event_state() & BUTTON1);
@@ -247,21 +249,21 @@ int osd_getpen(int code) {
 }
 
 int osd_getx() {
-  return wnd->out->getX();
+  return wnd->_out->getX();
 }
 
 int osd_gety() {
-  return wnd->out->getY();
+  return wnd->_out->getY();
 }
 
 void osd_setxy(int x, int y) {
-  wnd->out->setXY(x, y);
+  wnd->_out->setXY(x, y);
 }
 
 void osd_cls() {
   // send reset and clear screen codes
   if (opt_interactive) {
-    wnd->out->print("\033[0m\xC");
+    wnd->_out->print("\033[0m\xC");
     TtyWidget *tty = wnd->tty();
     if (tty) {
       tty->clearScreen();
@@ -270,15 +272,15 @@ void osd_cls() {
 }
 
 int osd_textwidth(const char *str) {
-  return (int)wnd->out->textWidth(str);
+  return (int)wnd->_out->textWidth(str);
 }
 
 int osd_textheight(const char *str) {
-  return wnd->out->textHeight();
+  return wnd->_out->textHeight();
 }
 
 void osd_setpixel(int x, int y) {
-  wnd->out->setPixel(x, y, dev_fgcolor);
+  wnd->_out->setPixel(x, y, dev_fgcolor);
 }
 
 long osd_getpixel(int x, int y) {
@@ -288,7 +290,7 @@ long osd_getpixel(int x, int y) {
 #if !defined(WIN32)
   // offset x/y as getPixel is relative to the outer window
   fltk::Rectangle rc;
-  wnd->out->get_absolute_rect(&rc);
+  wnd->_out->get_absolute_rect(&rc);
   xoffs = rc.x();
   yoffs = rc.y();
 
@@ -296,23 +298,23 @@ long osd_getpixel(int x, int y) {
   xoffs -= rc.x();
   yoffs -= rc.y();
 #endif
-  return wnd->out->getPixel(x + xoffs, y + yoffs);
+  return wnd->_out->getPixel(x + xoffs, y + yoffs);
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
-  wnd->out->drawLine(x1, y1, x2, y2);
+  wnd->_out->drawLine(x1, y1, x2, y2);
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
   if (bFill) {
-    wnd->out->drawRectFilled(x1, y1, x2, y2);
+    wnd->_out->drawRectFilled(x1, y1, x2, y2);
   } else {
-    wnd->out->drawRect(x1, y1, x2, y2);
+    wnd->_out->drawRect(x1, y1, x2, y2);
   }
 }
 
 void osd_beep() {
-  wnd->out->beep();
+  wnd->_out->beep();
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
@@ -330,7 +332,7 @@ void osd_write(const char *s) {
   if (wnd->tty() && wnd->logPrint()) {
     wnd->tty()->print(s);
   }
-  wnd->out->print(s);
+  wnd->_out->print(s);
 }
 
 void lwrite(const char *s) {
@@ -420,7 +422,7 @@ void doEvent(void *) {
       return;
     }
     saveForm = true;
-  } else if (wnd->siteHome.length() == 0) {
+  } else if (wnd->_siteHome.length() == 0) {
     // not currently visiting a remote site
     if (wnd->getEditor() && wnd->getEditor()->checkSave(true) == false) {
       return;
@@ -435,14 +437,14 @@ void modeless_cb(Widget *w, void *v) {
     const String & path = formView->getEventName();
     eventName.empty();
     if (path[0] != '!' && path[0] != '|' && path.startsWith("http://") == false && 
-        wnd->siteHome.length() > 0) {
-      int i = wnd->siteHome.indexOf('/', 7);    // siteHome root
+        wnd->_siteHome.length() > 0) {
+      int i = wnd->_siteHome.indexOf('/', 7);    // siteHome root
       if (path[0] == '/' && i != -1) {
         // add to absolute path from http://hostname/
-        eventName.append(wnd->siteHome.substring(0, i));
+        eventName.append(wnd->_siteHome.substring(0, i));
       } else {
         // append path to siteHome
-        eventName.append(wnd->siteHome);
+        eventName.append(wnd->_siteHome);
       }
       if (eventName[eventName.length() - 1] != '/') {
         eventName.append("/");
@@ -483,14 +485,14 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h) {
     out.getInputProperties(&env);
   } else {
     // fit within output window
-    if (x < wnd->out->x()) {
-      x = wnd->out->x();
+    if (x < wnd->_out->x()) {
+      x = wnd->_out->x();
     }
-    if (y < wnd->out->y()) {
-      y = wnd->out->y();
+    if (y < wnd->_out->y()) {
+      y = wnd->_out->y();
     }
-    int wmax = wnd->out->x() + wnd->out->w() - x;
-    int hmax = wnd->out->y() + wnd->out->h() - y;
+    int wmax = wnd->_out->x() + wnd->_out->w() - x;
+    int hmax = wnd->_out->y() + wnd->_out->h() - y;
     if (w > wmax || w == 0) {
       w = wmax;
     }
@@ -498,9 +500,9 @@ void dev_html(const char *html, const char *t, int x, int y, int w, int h) {
       h = hmax;
     }
     closeForm();
-    wnd->outputGroup->begin();
+    wnd->_outputGroup->begin();
     formView = new HelpWidget(x, y, w, h);
-    wnd->outputGroup->end();
+    wnd->_outputGroup->end();
     formView->callback(modeless_cb);
     formView->loadBuffer(html);
     formView->show();
@@ -561,11 +563,11 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
     if (img != 0) {
       // input/read image and display
       img->measure(imgw, imgh);
-      wnd->out->drawImage(img, x, y, sx, sy, (w == 0 ? imgw : w), (h == 0 ? imgh : h));
+      wnd->_out->drawImage(img, x, y, sx, sy, (w == 0 ? imgw : w), (h == 0 ? imgh : h));
     }
   } else {
     // output screen area image to jpeg
-    wnd->out->saveImage(filep->name, x, y, sx, sy);
+    wnd->_out->saveImage(filep->name, x, y, sx, sy);
   }
 }
 
@@ -625,7 +627,7 @@ void enter_cb(Widget *, void *v) {
 
 char *dev_gets(char *dest, int size) {
   if (!wnd->isInteractive() || wnd->logPrint()) {
-    EditorWidget *editor = wnd->runEditWidget;
+    EditorWidget *editor = wnd->_runEditWidget;
     if (!editor) {
       editor = wnd->getEditor(false);
     }
@@ -635,17 +637,17 @@ char *dev_gets(char *dest, int size) {
     return dest;
   }
 
-  wnd->tabGroup->selected_child(wnd->outputGroup);
-  wnd->outputGroup->begin();
+  wnd->_tabGroup->selected_child(wnd->_outputGroup);
+  wnd->_outputGroup->begin();
 
-  LineInput *in = new LineInput(wnd->out->getX() + 2,
-                                wnd->out->getY() + 1,
-                                20, wnd->out->textHeight() + 4);
-  wnd->outputGroup->end();
+  LineInput *in = new LineInput(wnd->_out->getX() + 2,
+                                wnd->_out->getY() + 1,
+                                20, wnd->_out->textHeight() + 4);
+  wnd->_outputGroup->end();
   in->callback(enter_cb);
   in->reserve(size);
-  in->textfont(wnd->out->labelfont());
-  in->textsize(wnd->out->labelsize());
+  in->textfont(wnd->_out->labelfont());
+  in->textsize(wnd->_out->labelsize());
 
   wnd->setModal(true);
 
@@ -658,15 +660,15 @@ char *dev_gets(char *dest, int size) {
     brun_break();
   }
 
-  wnd->outputGroup->remove(in);
+  wnd->_outputGroup->remove(in);
   int len = in->size() < size ? in->size() : size;
   strncpy(dest, in->value(), len);
   dest[len] = 0;
   delete in;
 
   // reposition x to adjust for input box
-  wnd->out->setXY(wnd->out->getX() + 4, wnd->out->getY());
-  wnd->out->print(dest);
+  wnd->_out->setXY(wnd->_out->getX() + 4, wnd->_out->getY());
+  wnd->_out->print(dest);
 
   if (formView) {
     formView->redraw();
@@ -713,7 +715,7 @@ void closeForm() {
     delete formView;
     formView = 0;
   }
-  wnd->out->redraw();
+  wnd->_out->redraw();
 }
 
 void clearOutput() {

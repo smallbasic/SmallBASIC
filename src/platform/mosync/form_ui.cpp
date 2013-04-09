@@ -8,9 +8,6 @@
 
 #include <ma.h>
 
-#include <MAUtil/String.h>
-#include <MAUtil/Vector.h>
-
 #include "config.h"
 #include "common/sys.h"
 #include "common/blib_ui.h"
@@ -31,10 +28,7 @@ ListModel::ListModel(const char *items, var_t *v) :
 }
 
 void ListModel::clear() {
-  Vector_each(String*, it, list) {
-    delete (*it);
-  }
-  list.clear();
+  list.removeAll();
   focusIndex = -1;
 }
 
@@ -84,7 +78,7 @@ void ListModel::fromArray(const char *caption, var_t *v) {
 // return the text at the given index
 const char *ListModel::getTextAt(int index) {
   const char *s = 0;
-  if (index > -1 && index < list.size()) {
+  if (index > -1 && index < list.length()) {
     s = list[index]->c_str();
   }
   return s;
@@ -92,7 +86,7 @@ const char *ListModel::getTextAt(int index) {
 
 // returns the model index corresponding to the given string
 int ListModel::getIndex(const char *t) {
-  int size = list.size();
+  int size = list.length();
   for (int i = 0; i < size; i++) {
     if (!strcasecmp(list[i]->c_str(), t)) {
       return i;
@@ -115,7 +109,7 @@ Form::Form() :
 
 Form::~Form() {
   logEntered();
-  Vector_each(WidgetDataPtr, it, items) {
+  List_each(WidgetDataPtr, it, items) {
     delete (*it);
   }
 }
@@ -193,7 +187,7 @@ bool Form::execute() {
   
   // apply any variable changes onto attached widgets
   if (controller->isRunning()) {
-    Vector_each(WidgetDataPtr, it, items) {
+    List_each(WidgetDataPtr, it, items) {
       (*it)->updateGui();
     }
   }

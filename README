@@ -87,6 +87,9 @@ Install cygwin along with mingw-gcc
 export LDFLAGS="-static-libgcc -static-libstdc++"
 ./configure --host=i686-w64-mingw32 --enable-fltk
 
+For 32 bit build:
+./configure --host=i686-pc-mingw32 --enable-fltk
+
 --- Old instructions ---
 
 Download and install cygwin

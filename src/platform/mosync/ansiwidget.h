@@ -9,16 +9,23 @@
 #ifndef ANSIWIDGET_H
 #define ANSIWIDGET_H
 
-#include <maapi.h>
-#include <MAUtil/String.h>
-#include <MAUtil/Vector.h>
+#if defined(HAVE_CONFIG_H)
+#include <config.h>
+#endif
 
+#if defined(_FLTK)
+  #include "platform/common/maapi.h"
+#else
+  #include <maapi.h>
+#endif
+
+#include "platform/common/StringLib.h"
 #include "platform/mosync/screen.h"
 
 #define MAX_SCREENS 8
 #define SYSTEM_SCREENS 6
 
-using namespace MAUtil;
+using namespace strlib;
 
 struct IButtonListener {
   virtual ~IButtonListener() {}
@@ -236,11 +243,11 @@ private:
   Widget *createLink(const char *action, const char *text,
                      bool formLink, bool button);
   void createOptionsBox(char *&p);
-  void deleteItems(Vector<String *> *items);
+  void deleteItems(List<String *> *items);
   bool doEscape(char *&p, int textHeight);
   void doSwipe(int start, int maxScroll);
   void drawActiveButton();
-  Vector<String *> *getItems(char *&p);
+  List<String *> *getItems(char *&p);
   void handleEscape(char *&p, int textHeight);
   void removeScreen(char *&p);
   void screenCommand(char *&p);

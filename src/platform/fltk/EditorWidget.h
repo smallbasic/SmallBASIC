@@ -1,10 +1,9 @@
 //
 // Based on test/editor.cxx - A simple text editor program for the Fast
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK
-// Programmer's Guide.
-// Copyright 1998-2003 by Bill Spitzak and others.
+// Programmer's Guide. Copyright 1998-2003 by Bill Spitzak and others.
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -23,7 +22,7 @@
 #include <fltk/Choice.h>
 #include <limits.h>
 
-#include "StringLib.h"
+#include "platform/common/StringLib.h"
 #include "TtyWidget.h"
 #include "BasicEditor.h"
 
@@ -150,7 +149,7 @@ protected:
   void doChange(int inserted, int deleted);
   void findFunc(const char *find);
   char *getSelection(Rectangle *rc);
-  void getKeywords(strlib::List &keywords);
+  void getKeywords(strlib::List<String *> &keywords);
   U32 getModifiedTime();
   void handleFileChange();
   void layout();
@@ -174,8 +173,8 @@ private:
   Input *commandText;
   Widget *rowStatus;
   Widget *colStatus;
-  Button *runStatus;
-  Button *modStatus;
+  fltk::Button *runStatus;
+  fltk::Button *modStatus;
   Browser *funcList;
 
   ToggleButton *logPrintBn;
@@ -185,7 +184,7 @@ private:
 
   // same order as display items
   CommandOpt commandOpt;
-  Button *commandChoice;
+  fltk::Button *commandChoice;
 
   strlib::String commandBuffer;
 };

@@ -141,7 +141,7 @@ Controller::~Controller() {
 }
 
 const char *Controller::getLoadPath() {
-  return !loadPath.size() ? NULL : loadPath.c_str();
+  return !loadPath.length() ? NULL : loadPath.c_str();
 }
 
 int Controller::getPen(int code) {
@@ -303,7 +303,7 @@ void Controller::handleMenu(int menuId) {
 MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
   MAExtent screenSize;
-  int loadPathSize = loadPath.size();
+  int loadPathSize = loadPath.length();
 
   if (ms < 0 && untilType != -1) {
     // flush the display before pausing for target event
@@ -358,7 +358,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
     if (untilType == EVENT_TYPE_EXIT_ANY ||
         untilType == event.type ||
-        loadPathSize != loadPath.size()) {
+        loadPathSize != loadPath.length()) {
       // skip next maWait() - found target event or loadPath changed
       ms = EVENT_WAIT_NONE;
       break;
@@ -445,7 +445,7 @@ void Controller::setRunning(bool running) {
     ui_reset();
 
     runMode = run_state;
-    loadPath.clear();
+    loadPath.empty();
     output->reset();
 
     lastEventTime = maGetMilliSecondCount();
@@ -458,7 +458,7 @@ void Controller::setRunning(bool running) {
 
 void Controller::showError() {
   runMode = init_state;
-  loadPath.clear();
+  loadPath.empty();
   showSystemScreen(false);
 }
 
@@ -506,7 +506,7 @@ void Controller::logPrint(const char *format, ...) {
 
 // handler for hyperlink click actions
 void Controller::buttonClicked(const char *url) {
-  loadPath.clear();
+  loadPath.empty();
   loadPath.append(url, strlen(url));
 }
 

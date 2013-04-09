@@ -9,11 +9,20 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#include <maapi.h>
-#include <MAUtil/String.h>
-#include <MAUtil/Vector.h>
+#if defined(HAVE_CONFIG_H)
+#include <config.h>
+#endif
 
+#if defined(_FLTK)
+  #include "platform/common/maapi.h"
+#else
+  #include <maapi.h>
+#endif
+
+#include "platform/common/StringLib.h"
 #include "platform/mosync/utils.h"
+
+using namespace strlib;
 
 #define INITXY 2
 #define LINE_SPACING 6
@@ -21,25 +30,6 @@
 #define DEFAULT_COLOR  0xa1a1a1
 #define GRAY_BG_COL    0x383f42
 #define LABEL_TEXT_COL 0xebebeb
-
-using namespace MAUtil;
-
-// Workaround for API's which don't take a length argument
-struct TextBuffer {
-  TextBuffer(const char *s, int len) :
-    str(s), len(len) {
-    c = str[len];
-    ((char *)str)[len] = 0;
-  }
-
-  ~TextBuffer() {
-    ((char *)str)[len] = c;
-  }
-
-  const char *str;
-  char c;
-  int len;
-};
 
 struct Shape {
   Shape(int x, int y, int w, int h) : x(x), y(y), width(w), height(h) {}
@@ -90,7 +80,7 @@ struct Screen : public Shape {
   int curY;
   int dirty;
   int linePadding;
-  Vector <Shape *>shapes;
+  List<Shape *>shapes;
   String label;
 };
 

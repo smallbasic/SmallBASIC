@@ -1,12 +1,10 @@
+// This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
-
-// Based on my ebookman HTMLWindow.cpp with some methods borrowed
-// from the fltk HelpView
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-//
+// 
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -59,7 +57,7 @@
 #define IMG_TEXT_BORDER 25
 
 extern "C" void trace(const char *format, ...);
-Color getColor(String *s, Color def);
+Color getColor(strlib::String *s, Color def);
 void lineBreak(const char *s, int slen, int width, int &stlen, int &pxlen);
 const char *skipWhite(const char *s);
 bool unquoteTag(const char *tagBegin, const char *&tagEnd);
@@ -92,7 +90,7 @@ struct Display {
   U8 selected;
   U8 invertedSel;
   S16 markX, markY, pointX, pointY;
-  String *selection;
+  strlib::String *selection;
   Font *font;
   Color color;
   Color background;
@@ -163,49 +161,49 @@ struct Value {
 struct Attributes : public Properties {
   Attributes(int growSize) : Properties(growSize) {
   }
-  String *getValue() {
+  strlib::String *getValue() {
     return get("value");
   }
-  String *getName() {
+  strlib::String *getName() {
     return get("name");
   }
-  String *getHref() {
+  strlib::String *getHref() {
     return get("href");
   }
-  String *getType() {
+  strlib::String *getType() {
     return get("type");
   }
-  String *getSrc() {
+  strlib::String *getSrc() {
     return get("src");
   }
-  String *getOnclick() {
+  strlib::String *getOnclick() {
     return get("onclick");
   }
-  String *getBgColor() {
+  strlib::String *getBgColor() {
     return get("bgcolor");
   }
-  String *getFgColor() {
+  strlib::String *getFgColor() {
     return get("fgcolor");
   }
-  String *getBackground() {
+  strlib::String *getBackground() {
     return get("background");
   }
-  String *getAlign() {
+  strlib::String *getAlign() {
     return get("align");
   }
   bool isReadonly() {
     return get("readonly") != 0;
   }
-  void getValue(String &s) {
+  void getValue(strlib::String &s) {
     s.append(getValue());
   }
-  void getName(String &s) {
+  void getName(strlib::String &s) {
     s.append(getName());
   }
-  void getHref(String &s) {
+  void getHref(strlib::String &s) {
     s.append(getHref());
   }
-  void getType(String &s) {
+  void getType(strlib::String &s) {
     s.append(getType());
   }
   Value getWidth(int def = -1) {
@@ -240,14 +238,14 @@ struct Attributes : public Properties {
 };
 
 int Attributes::getIntValue(const char *attr, int def) {
-  String *s = get(attr);
+  strlib::String *s = get(attr);
   return (s != null ? s->toInteger() : def);
 }
 
 Value Attributes::getValue(const char *attr, int def) {
   Value val;
   val.relative = false;
-  String *s = get(attr);
+  strlib::String *s = get(attr);
   if (s) {
     int ipc = s->indexOf('%', 0);
     if (ipc != -1) {
@@ -262,17 +260,11 @@ Value Attributes::getValue(const char *attr, int def) {
 
 //--BaseNode--------------------------------------------------------------------
 
-struct BaseNode : public Object {
-  virtual void display(Display *out) {
-  } 
-  virtual int indexOf(const char *sFind, U8 matchCase) {
-    return -1;
-  }
-  virtual void getText(String *s) {
-  }
-  virtual int getY() {
-    return -1;
-  }
+struct BaseNode {
+  virtual void display(Display *out) {} 
+  virtual int indexOf(const char *sFind, U8 matchCase) { return -1; }
+  virtual void getText(strlib::String *s) {}
+  virtual int getY() { return -1; }
 };
 
 //--FontNode--------------------------------------------------------------------
@@ -281,16 +273,16 @@ struct FontNode : public BaseNode {
   FontNode(Font *font, int fontSize, Color color, bool bold, bool italic);
   void display(Display *out);
 
-  Font *font;                   // includes face,bold,italic
+  Font *font; // includes face,bold,italic
   U16 fontSize;
   Color color;
 };
 
 FontNode::FontNode(Font *font, int fontSize, Color color, bool bold, bool italic) :
-  BaseNode() {
-  this->font = font;
-  this->fontSize = fontSize;
-  this->color = color;
+  BaseNode(),
+  font(font),
+  fontSize(fontSize),
+  color(color) {
   if (this->font && bold) {
     this->font = this->font->bold();
   }
@@ -320,9 +312,11 @@ void FontNode::display(Display *out) {
 //--BrNode----------------------------------------------------------------------
 
 struct BrNode : public BaseNode {
-  BrNode(U8 premode) {
-    this->premode = premode;
-  } 
+  BrNode(U8 premode) : 
+    BaseNode(),
+    premode(premode) {
+  }
+
   void display(Display *out) {
     // when <pre> is active don't flow text around images
     if (premode && out->imgY != -1) {
@@ -338,12 +332,14 @@ struct BrNode : public BaseNode {
 //--AnchorNode------------------------------------------------------------------
 
 struct AnchorNode : public BaseNode {
-  AnchorNode(Attributes &p) : BaseNode() {
+  AnchorNode(Attributes &p) : 
+    BaseNode(), 
+    wrapxy(0), 
+    pushed(0) {
     p.getName(name);
     p.getHref(href);
-    wrapxy = 0;
-    pushed = 0;
   }
+
   void display(Display *out) {
     if (pushed) {
       out->uline = true;
@@ -374,19 +370,21 @@ struct AnchorNode : public BaseNode {
     return y1;
   }
 
-  String name;
-  String href;
+  strlib::String name;
+  strlib::String href;
   S16 x1, x2, y1, y2;
   U16 lineHeight;
-  U8 wrapxy;                    // begin on page boundary
+  U8 wrapxy;  // begin on page boundary
   U8 pushed;
 };
 
 AnchorNode *pushedAnchor = 0;
 
 struct AnchorEndNode : public BaseNode {
-  AnchorEndNode() : BaseNode() {
+  AnchorEndNode() : 
+    BaseNode() {
   }
+
   void display(Display *out) {
     AnchorNode *beginNode = out->anchor;
     if (beginNode) {
@@ -403,24 +401,26 @@ struct AnchorEndNode : public BaseNode {
 //--StyleNode-------------------------------------------------------------------
 
 struct StyleNode : public BaseNode {
-  StyleNode(U8 uline, U8 center) {
-    this->uline = uline;
-    this->center = center;
-  } 
+  StyleNode(U8 uline, U8 center) : 
+    BaseNode(),
+    uline(uline), center(center) {
+  }
+
   void display(Display *out) {
     out->uline = uline;
     out->center = center;
   }
-  U8 uline;                     // 2
-  U8 center;                    // 2
+  U8 uline;     // 2
+  U8 center;    // 2
 };
 
 //--LiNode----------------------------------------------------------------------
 
 struct UlNode : public BaseNode {
-  UlNode(bool ordered) {
-    this->ordered = ordered;
-  } 
+  UlNode(bool ordered) :
+    BaseNode(),
+    ordered(ordered) {
+  }
   void display(Display *out) {
     nextId = 0;
     out->newRow(1);
@@ -431,8 +431,9 @@ struct UlNode : public BaseNode {
 };
 
 struct UlEndNode : public BaseNode {
-  UlEndNode() {
-  } 
+  UlEndNode() :
+    BaseNode() {
+  }
   void display(Display *out) {
     out->indent -= LI_INDENT;
     out->newRow(2);
@@ -440,9 +441,10 @@ struct UlEndNode : public BaseNode {
 };
 
 struct LiNode : public BaseNode {
-  LiNode(UlNode *ulNode) {
-    this->ulNode = ulNode;
-  } 
+  LiNode(UlNode *ulNode) :
+    ulNode(ulNode) {
+  }
+
   void display(Display *out) {
     out->content = true;
     out->x1 = out->indent;
@@ -467,56 +469,59 @@ struct LiNode : public BaseNode {
 //--ImageNode-------------------------------------------------------------------
 
 struct ImageNode : public BaseNode {
-  ImageNode(const Style *style, String *docHome, Attributes *a);
-  ImageNode(const Style *style, String *docHome, String *src, bool fixed);
+  ImageNode(const Style *style, strlib::String *docHome, Attributes *a);
+  ImageNode(const Style *style, strlib::String *docHome, strlib::String *src, bool fixed);
   ImageNode(const Style *style, const Image *image);
-  void makePath(String *src, String *docHome);
+  void makePath(strlib::String *src, strlib::String *docHome);
   void reload();
   void display(Display *out);
   const Image *image;
   const Style *style;
-  String path, url;
+  strlib::String path, url;
   Value w, h;
   U8 background, fixed;
-  U8 valign;                    // 0=top, 1=center, 2=bottom
+  U8 valign; // 0=top, 1=center, 2=bottom
 };
 
-ImageNode::ImageNode(const Style *style, String *docHome, Attributes *a) : BaseNode() {
-  this->style = style;
+ImageNode::ImageNode(const Style *style, strlib::String *docHome, Attributes *a) : 
+  BaseNode(), 
+  style(style),
+  background(false),
+  fixed(false),
+  valign(0) {
   makePath(a->getSrc(), docHome);
   image = loadImage(path.toString());
-  image->measure(w.value, h.value);
-  w = a->getWidth(w.value);
-  h = a->getHeight(h.value);
-  background = false;
-  fixed = false;
-  valign = 0;
+  w = a->getWidth(image->w());
+  h = a->getHeight(image->h());
 }
 
-ImageNode::ImageNode(const Style *style, String *docHome, String *src, bool fixed) : BaseNode() {
-  this->style = style;
-  this->fixed = fixed;
+ImageNode::ImageNode(const Style *style, strlib::String *docHome, strlib::String *src, bool fixed) : 
+  BaseNode(), 
+  style(style), 
+  background(false),
+  fixed(false),
+  valign(0) {
   makePath(src, docHome);
   image = loadImage(path.toString());
   image->measure(w.value, h.value);
   w.relative = 0;
   h.relative = 0;
-  background = true;
-  valign = 0;
 }
 
-ImageNode::ImageNode(const Style *style, const Image *image) : BaseNode() {
-  this->style = style;
-  this->image = image;
-  this->fixed = true;
+ImageNode::ImageNode(const Style *style, const Image *image) :
+  BaseNode(), 
+  image(image), 
+  style(style), 
+  background(false),
+  fixed(false),
+  valign(2) {
   image->measure(w.value, h.value);
   w.relative = 0;
   h.relative = 0;
-  background = false;
   valign = 2;
 }
 
-void ImageNode::makePath(String *src, String *docHome) {
+void ImageNode::makePath(strlib::String *src, strlib::String *docHome) {
   // <img src=blah/images/g.gif>
   url.append(src);              // html path
   path.append(docHome);         // local file system path
@@ -616,7 +621,7 @@ struct TextNode : public BaseNode {
   void display(Display *out);
   void drawSelection(const char *s, U16 len, U16 width, Display *out);
   int indexOf(const char *sFind, U8 matchCase);
-  void getText(String *s);
+  void getText(strlib::String *s);
 
   int getY();
 
@@ -626,14 +631,15 @@ struct TextNode : public BaseNode {
   S16 ybegin;                   // 4
 };
 
-TextNode::TextNode(const char *s, U16 textlen) : BaseNode() {
-  this->s = s;
-  this->textlen = textlen;
-  this->width = 0;
-  this->ybegin = 0;
+TextNode::TextNode(const char *s, U16 textlen) : 
+  BaseNode(),
+  s(s),
+  textlen(textlen),
+  width(0),
+  ybegin(0) {
 }
 
-void TextNode::getText(String *s) {
+void TextNode::getText(strlib::String *s) {
   s->append(this->s, this->textlen);
 }
 
@@ -856,7 +862,8 @@ int TextNode::getY() {
 //--HrNode----------------------------------------------------------------------
 
 struct HrNode : public BaseNode {
-  HrNode() : BaseNode() {
+  HrNode() : 
+    BaseNode() {
   }
   void display(Display *out) {
     if (out->imgY != -1) {
@@ -944,11 +951,12 @@ struct TableEndNode : public BaseNode {
 
 //--TableNode-------------------------------------------------------------------
 
-TableNode::TableNode(Attributes *a) : BaseNode() {
-  rows = 0;
-  cols = 0;
-  columns = 0;
-  sizes = 0;
+TableNode::TableNode(Attributes *a) : 
+  BaseNode(),
+  columns(0),
+  sizes(0),
+  rows(0),
+  cols(0) {
   border = a->getBorder();
 }
 
@@ -1067,8 +1075,9 @@ void TableNode::cleanup() {
   }
 }
 
-TableEndNode::TableEndNode(TableNode *tableNode) : BaseNode() {
-  table = tableNode;
+TableEndNode::TableEndNode(TableNode *tableNode) : 
+  BaseNode(),
+  table(tableNode) {
 }
 
 void TableEndNode::display(Display *out) {
@@ -1079,9 +1088,12 @@ void TableEndNode::display(Display *out) {
 
 //--TrNode----------------------------------------------------------------------
 
-TrNode::TrNode(TableNode *tableNode, Attributes *a) : BaseNode() {
-  table = tableNode;
-  y1 = height = cols = 0;
+TrNode::TrNode(TableNode *tableNode, Attributes *a) : 
+  BaseNode(),
+  table(tableNode),
+  cols(0),
+  y1(0),
+  height(0) {
   if (table) {
     table->rows++;
   }
@@ -1111,8 +1123,9 @@ void TrNode::display(Display *out) {
   }
 }
 
-TrEndNode::TrEndNode(TrNode *trNode) : BaseNode() {
-  tr = trNode;
+TrEndNode::TrEndNode(TrNode *trNode) : 
+  BaseNode(),
+  tr(trNode) {
   if (tr && tr->table && tr->cols > tr->table->cols) {
     tr->table->cols = tr->cols;
   }
@@ -1128,8 +1141,9 @@ void TrEndNode::display(Display *out) {
 
 //--TdNode----------------------------------------------------------------------
 
-TdNode::TdNode(TrNode *trNode, Attributes *a) : BaseNode() {
-  tr = trNode;
+TdNode::TdNode(TrNode *trNode, Attributes *a) : 
+  BaseNode(),
+  tr(trNode) {
   if (tr) {
     tr->cols++;
   }
@@ -1184,8 +1198,9 @@ void TdNode::display(Display *out) {
 
 }
 
-TdEndNode::TdEndNode(TdNode *tdNode) : BaseNode() {
-  td = tdNode;
+TdEndNode::TdEndNode(TdNode *tdNode) : 
+  BaseNode(),
+  td(tdNode) {
 }
 
 void TdEndNode::display(Display *out) {
@@ -1198,15 +1213,15 @@ void TdEndNode::display(Display *out) {
 
 //--NamedInput------------------------------------------------------------------
 
-struct NamedInput : public Object {
-  NamedInput(InputNode *node, String *name) {
+struct NamedInput {
+  NamedInput(InputNode *node, strlib::String *name) {
     this->input = node;
     this->name.append(name->toString());
   }
   ~NamedInput() {
   }
   InputNode *input;
-  String name;
+  strlib::String name;
 };
 
 //--InputNode-------------------------------------------------------------------
@@ -1227,18 +1242,19 @@ struct InputNode : public BaseNode {
   InputNode(Group *parent);
   InputNode(Group *parent, Attributes *a, const char *v, int len);
   InputNode(Group *parent, Attributes *a);
-  void update(strlib::List *namedInputs, Properties *p, Attributes *a);
+  void update(strlib::List<NamedInput *> *namedInputs, Properties *p, Attributes *a);
   void display(Display *out);
 
   Widget *button;
-  String onclick;
+  strlib::String onclick;
   U16 rows, cols;
 };
 
 // creates either a text, checkbox, radio, hidden or button control
-InputNode::InputNode(Group *parent, Attributes *a) : BaseNode() {
+InputNode::InputNode(Group *parent, Attributes *a) : 
+  BaseNode() {
   parent->begin();
-  String *type = a->getType();
+  strlib::String *type = a->getType();
   if (type != null && type->equals("text")) {
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_TEXTBOX);
@@ -1271,11 +1287,12 @@ InputNode::InputNode(Group *parent, Attributes *a) : BaseNode() {
   parent->end();
 }
 
-InputNode::InputNode(Group *parent, Attributes *a, const char *s, int len) : BaseNode() {
+InputNode::InputNode(Group *parent, Attributes *a, const char *s, int len) : 
+  BaseNode() {
   // creates a textarea control
   parent->begin();
   if (a->isReadonly()) {
-    String str;
+    strlib::String str;
     str.append(s, len);
     button = new Widget(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_READONLY);
@@ -1288,7 +1305,8 @@ InputNode::InputNode(Group *parent, Attributes *a, const char *s, int len) : Bas
   parent->end();
 }
 
-InputNode::InputNode(Group *parent) : BaseNode() {
+InputNode::InputNode(Group *parent) : 
+  BaseNode() {
   // creates a select control
   parent->begin();
   button = new Choice(0, 0, INPUT_WIDTH, 0);
@@ -1296,26 +1314,25 @@ InputNode::InputNode(Group *parent) : BaseNode() {
   parent->end();
 }
 
-void createDropList(InputNode *node, strlib::List *options) {
+void createDropList(InputNode *node, strlib::List<String *> *options) {
   Choice *menu = (Choice *) node->button;
   menu->begin();
-  Object **list = options->getList();
-  int len = options->length();
-  for (int i = 0; i < len; i++) {
-    String *s = (String *) list[i];
+
+  List_each(String*, it, *options) {
+    String *s = (*it);
     Item *item = new Item();
     item->copy_label(s->toString());
   }
   menu->end();
 }
 
-void InputNode::update(strlib::List *names, Properties *env, Attributes *a) {
+void InputNode::update(strlib::List<NamedInput *> *names, Properties *env, Attributes *a) {
   Valuator *valuator;
   Input *input;
   Color color;
-  String *name = a->getName();
-  String *value = a->getValue();
-  String *align = a->getAlign();
+  strlib::String *name = a->getName();
+  strlib::String *value = a->getValue();
+  strlib::String *align = a->getAlign();
 
   if (name != null) {
     names->add(new NamedInput(this, name));
@@ -1483,11 +1500,11 @@ void InputNode::display(Display *out) {
 struct EnvNode : public TextNode {
   EnvNode(Properties *p, const char *s, U16 textlen) : 
     TextNode(0, 0) {
-    String var;
+    strlib::String var;
     var.append(s, textlen);
     var.trim();
     if (p) {
-      String *s = p->get(var.toString());
+      strlib::String *s = p->get(var.toString());
       value.append(s);
     }
     if (value.length() == 0) {
@@ -1497,7 +1514,7 @@ struct EnvNode : public TextNode {
     this->textlen = value.length();
   }
   // here to provide value cleanup
-  String value;
+  strlib::String value;
 };
 
 //--HelpWidget------------------------------------------------------------------
@@ -1511,7 +1528,7 @@ static void anchor_callback(Widget *helpWidget, void *target) {
 }
 
 HelpWidget::HelpWidget(int x, int y, int width, int height, int defsize) :
-Group(x, y, width, height),
+  Group(x, y, width, height),
   nodeList(100), namedInputs(5), inputs(5), anchors(5), images(5) {
   begin();
   scrollbar = new Scrollbar(width - SCROLL_W, 0, SCROLL_W, height);
@@ -1554,10 +1571,8 @@ void HelpWidget::setFontSize(int i) {
 }
 
 void HelpWidget::cleanup() {
-  int len = inputs.length();
-  Object **list = inputs.getList();
-  for (int i = 0; i < len; i++) {
-    InputNode *p = (InputNode *) list[i];
+  List_each(InputNode*, it, inputs) {
+    InputNode *p = (*it);
     if (p->button) {
       remove(p->button);
       delete p->button;
@@ -1584,10 +1599,8 @@ void HelpWidget::reloadPage() {
 
 // returns the control with the given name
 Widget *HelpWidget::getInput(const char *name) {
-  Object **list = namedInputs.getList();
-  int len = namedInputs.length();
-  for (int i = 0; i < len; i++) {
-    NamedInput *ni = (NamedInput *) list[i];
+  List_each(NamedInput*, it, namedInputs) {
+    NamedInput *ni = (*it);
     if (ni->name.equals(name)) {
       return ni->input->button;
     }
@@ -1624,8 +1637,7 @@ const char *HelpWidget::getInputValue(Widget *widget) {
 const char *HelpWidget::getInputValue(int i) {
   int len = namedInputs.length();
   if (i < len) {
-    Object **list = namedInputs.getList();
-    NamedInput *ni = (NamedInput *) list[i];
+    NamedInput *ni = namedInputs[i];
     return getInputValue(ni->input->button);
   }
   return 0;
@@ -1633,10 +1645,8 @@ const char *HelpWidget::getInputValue(int i) {
 
 // return the name of the given button control
 const char *HelpWidget::getInputName(Widget *button) {
-  Object **list = namedInputs.getList();
-  int len = namedInputs.length();
-  for (int i = 0; i < len; i++) {
-    NamedInput *ni = (NamedInput *) list[i];
+  List_each(NamedInput*, it, namedInputs) {
+    NamedInput *ni = (*it);
     if (ni->input->button == button) {
       return ni->name.toString();
     }
@@ -1646,16 +1656,13 @@ const char *HelpWidget::getInputName(Widget *button) {
 
 // return all of the forms names and values - except hidden ones
 void HelpWidget::getInputProperties(Properties *p) {
-  if (p == 0) {
-    return;
-  }
-  Object **list = namedInputs.getList();
-  int len = namedInputs.length();
-  for (int i = 0; i < len; i++) {
-    NamedInput *ni = (NamedInput *) list[i];
-    const char *value = getInputValue(ni->input->button);
-    if (value) {
-      p->put(ni->name.toString(), value);
+  if (p != 0) {
+    List_each(NamedInput*, it, namedInputs) {
+      NamedInput *ni = (*it);
+      const char *value = getInputValue(ni->input->button);
+      if (value) {
+        p->put(ni->name.toString(), value);
+      }
     }
   }
 }
@@ -1663,11 +1670,9 @@ void HelpWidget::getInputProperties(Properties *p) {
 // update a widget's display value using the given string based
 // assignment statement, eg val=1000
 bool HelpWidget::setInputValue(const char *assignment) {
-  String s = assignment;
-  String name = s.lvalue();
-  String value = s.rvalue();
-  Object **list = namedInputs.getList();
-  int len = namedInputs.length();
+  strlib::String s = assignment;
+  strlib::String name = s.lvalue();
+  strlib::String value = s.rvalue();
   Choice *choice;
   Widget *item;
 
@@ -1675,8 +1680,8 @@ bool HelpWidget::setInputValue(const char *assignment) {
     return false;
   }
 
-  for (int i = 0; i < len; i++) {
-    NamedInput *ni = (NamedInput *) list[i];
+  List_each(NamedInput*, it, namedInputs) {
+    NamedInput *ni = (*it);
     if (ni->name.equals(name)) {
       Widget *button = ni->input->button;
 
@@ -1710,10 +1715,8 @@ bool HelpWidget::setInputValue(const char *assignment) {
 }
 
 void HelpWidget::scrollTo(const char *anchorName) {
-  int len = anchors.length();
-  Object **list = anchors.getList();
-  for (int i = 0; i < len; i++) {
-    AnchorNode *p = (AnchorNode *) list[i];
+  List_each(AnchorNode*, it, anchors) {
+    AnchorNode *p = (*it);
     if (p->name.equals(anchorName)) {
       if (p->getY() > scrollHeight) {
         vscroll = -scrollHeight;
@@ -1745,7 +1748,6 @@ void HelpWidget::draw() {
     return;
   }
 
-  BaseNode *p = 0;
   Display out;
   out.uline = false;
   out.center = false;
@@ -1818,30 +1820,26 @@ void HelpWidget::draw() {
   out.background = NO_COLOR;
 
   // hide any inputs
-  int len = inputs.length();
-  Object **list = inputs.getList();
-  for (int i = 0; i < len; i++) {
-    InputNode *p = (InputNode *) list[i];
+  List_each(InputNode*, it, inputs) {
+    InputNode *p = (*it);
     if (p->button) {
       p->button->set_flag(INVISIBLE);
     }
   }
 
-  list = nodeList.getList();
-  len = nodeList.length();
-  for (int i = 0; i < len; i++) {
-    p = (BaseNode *) list[i];
-    out.nodeId = i;
+  int id = 0;
+  List_each(BaseNode*, it, nodeList) {
+    BaseNode *p = (*it);
+    out.nodeId = id;
     p->display(&out);
-
-    if (out.nodeId < i) {
+    if (out.nodeId < id) {
       // perform second pass on previous outer table
-      TableNode *table = (TableNode *) list[out.nodeId];
+      TableNode *table = (TableNode *) nodeList[out.nodeId];
       out.x1 = table->initX;
       out.y1 = table->initY;
       out.exposed = false;
-      for (int j = out.nodeId; j <= i; j++) {
-        p = (BaseNode *) list[j];
+      for (int j = out.nodeId; j <= id; j++) {
+        p = nodeList[j];
         out.nodeId = j;
         p->display(&out);
       }
@@ -1851,6 +1849,7 @@ void HelpWidget::draw() {
       // clip remaining content
       break;
     }
+    id++;
   }
 
   if (out.exposed) {
@@ -1913,13 +1912,13 @@ void HelpWidget::compile() {
   int textlen = 0;
   U8 padlines = false;          // padding between line-breaks
 
-  strlib::Stack tableStack(5);
-  strlib::Stack trStack(5);
-  strlib::Stack tdStack(5);
-  strlib::Stack olStack(5);
-  strlib::List options(5);
+  strlib::Stack<TableNode *> tableStack(5);
+  strlib::Stack<TrNode *> trStack(5);
+  strlib::Stack<TdNode *> tdStack(5);
+  strlib::Stack<UlNode *> olStack(5);
+  strlib::List<String *> options(5);
   Attributes p(5);
-  String *prop;
+  strlib::String *prop;
   BaseNode *node;
   InputNode *inputNode;
 
@@ -1980,7 +1979,7 @@ void HelpWidget::compile() {
             }
             pindex = i;
             p = text + pindex;
-          } else
+          } else {
             for (int j = 0; j < entityMapLen; j++) {
               if (0 == strncasecmp(text + i + 1, entityMap[j].ent, entityMap[j].elen - 1)) {
                 ADD_PREV_SEGMENT;
@@ -1996,6 +1995,7 @@ void HelpWidget::compile() {
                 break;
               }
             }
+          }
           break;
 
         case '\r':
@@ -2139,7 +2139,7 @@ void HelpWidget::compile() {
           tagPair = 0;
           p.removeAll();
         } else if (0 == strncasecmp(tag, "option", 6) && tagPair) {
-          String *option = new String();
+          strlib::String *option = new String();
           option->append(tagPair, tagBegin - tagPair);
           options.add(option);  // continue scan for more options
         } else if (0 == strncasecmp(tag, "title", 5) && tagPair) {
@@ -2186,21 +2186,21 @@ void HelpWidget::compile() {
           p.load(tag + 2, taglen - 2);
           node = new TdNode((TrNode *) trStack.peek(), &p);
           nodeList.add(node);
-          tdStack.push(node);
+          tdStack.push((TdNode *)node);
           text = skipWhite(tagEnd + 1);
         } else if (0 == strncasecmp(tag, "tr", 2)) {
           p.removeAll();
           p.load(tag + 2, taglen - 2);
           node = new TrNode((TableNode *) tableStack.peek(), &p);
           nodeList.add(node);
-          trStack.push(node);
+          trStack.push((TrNode *)node);
           text = skipWhite(tagEnd + 1);
         } else if (0 == strncasecmp(tag, "table", 5)) {
           p.removeAll();
           p.load(tag + 5, taglen - 5);
           node = new TableNode(&p);
           nodeList.add(node);
-          tableStack.push(node);
+          tableStack.push((TableNode *)node);
           padlines = false;
           text = skipWhite(tagEnd + 1);
           // continue the font in case we resize
@@ -2210,12 +2210,12 @@ void HelpWidget::compile() {
           if (prop != null) {
             node = new ImageNode(style(), &docHome, prop, false);
             nodeList.add(node);
-            images.add(node);
+            images.add((ImageNode *)node);
           }
         } else if (0 == strncasecmp(tag, "ul>", 3) || 
                    0 == strncasecmp(tag, "ol>", 3)) {
           node = new UlNode(tag[0] == 'o' || tag[0] == 'O');
-          olStack.push(node);
+          olStack.push((UlNode *)node);
           nodeList.add(node);
           padlines = false;
         } else if (0 == strncasecmp(tag, "u>", 2)) {
@@ -2231,7 +2231,7 @@ void HelpWidget::compile() {
           p.load(tag + 2, taglen - 2);
           node = new AnchorNode(p);
           nodeList.add(node);
-          anchors.add(node);
+          anchors.add((AnchorNode *)node);
         } else if (0 == strncasecmp(tag, "font ", 5)) {
           p.removeAll();
           p.load(tag + 5, taglen - 5);
@@ -2286,7 +2286,7 @@ void HelpWidget::compile() {
           p.load(tag + 4, taglen - 4);
           node = new ImageNode(style(), &docHome, &p);
           nodeList.add(node);
-          images.add(node);
+          images.add((ImageNode *)node);
         } else if (0 == strncasecmp(tag, "body ", 5)) {
           p.removeAll();
           p.load(tag + 5, taglen - 5);
@@ -2297,7 +2297,7 @@ void HelpWidget::compile() {
           if (prop != null) {
             node = new ImageNode(style(), &docHome, prop, true);
             nodeList.add(node);
-            images.add(node);
+            images.add((ImageNode *)node);
           }
         } else if (0 == strncasecmp(tag, "script", 6) || 
                    0 == strncasecmp(tag, "style", 5)) {
@@ -2330,10 +2330,8 @@ void HelpWidget::compile() {
 
 // handle click from form button
 void HelpWidget::onclick(Widget *button) {
-  int len = inputs.length();
-  Object **list = inputs.getList();
-  for (int i = 0; i < len; i++) {
-    InputNode *p = (InputNode *) list[i];
+  List_each(InputNode*, it, inputs) {
+    InputNode *p = (*it);
     if (p->button == button) {
       this->event.empty();
       this->event.append(p->onclick.toString());
@@ -2357,10 +2355,8 @@ int HelpWidget::onMove(int event) {
     }
     return 1;
   } else {
-    int len = anchors.length();
-    Object **list = anchors.getList();
-    for (int i = 0; i < len; i++) {
-      AnchorNode *p = (AnchorNode *) list[i];
+    List_each(AnchorNode*, it, anchors) {
+      AnchorNode *p = (*it);
       if (p->ptInSegment(ex, ey)) {
         Widget::cursor(fltk::CURSOR_HAND);
         return 1;
@@ -2404,15 +2400,13 @@ int HelpWidget::onMove(int event) {
 }
 
 int HelpWidget::onPush(int event) {
-  Object **list = anchors.getList();
-  int len = anchors.length();
   pushedAnchor = 0;
   int ex = fltk::event_x();
   int ey = fltk::event_y();
   S16 scroll = vscroll;
 
-  for (int i = 0; i < len; i++) {
-    AnchorNode *p = (AnchorNode *) list[i];
+  List_each(AnchorNode*, it, anchors) {
+    AnchorNode *p = (*it);
     if (p->ptInSegment(ex, ey)) {
       pushedAnchor = p;
       pushedAnchor->pushed = true;
@@ -2587,12 +2581,11 @@ bool HelpWidget::find(const char *s, bool matchCase) {
     return false;
   }
 
-  Object **list = nodeList.getList();
-  int len = nodeList.length();
   int foundRow = 0;
   int lineHeight = (int)(getascent() + getdescent());
-  for (int i = 0; i < len; i++) {
-    BaseNode *p = (BaseNode *) list[i];
+
+  List_each(BaseNode*, it, nodeList) {
+    BaseNode *p = (*it);
     if (p->indexOf(s, matchCase) != -1) {
       foundRow = p->getY() - vscroll;
       if (foundRow > -vscroll + lineHeight) {
@@ -2637,7 +2630,7 @@ void HelpWidget::navigateTo(const char *s) {
     return;
   }
 
-  String path;
+  strlib::String path;
   path.append(docHome);
 
   int len = path.length();
@@ -2713,22 +2706,10 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
   }
 }
 
-void HelpWidget::getImageNames(strlib::List *nameList) {
-  nameList->removeAll();
-  Object **list = images.getList();
-  int len = images.length();
-  for (int i = 0; i < len; i++) {
-    ImageNode *imageNode = (ImageNode *) list[i];
-    nameList->addSet(&imageNode->url);
-  }
-}
-
 // reload broken images
 void HelpWidget::reloadImages() {
-  Object **list = images.getList();
-  int len = images.length();
-  for (int i = 0; i < len; i++) {
-    ImageNode *imageNode = (ImageNode *) list[i];
+  List_each(ImageNode*, it, images) {
+    ImageNode *imageNode = (*it);
     if (imageNode->image == &brokenImage) {
       imageNode->reload();
     }
@@ -2747,18 +2728,14 @@ void HelpWidget::setDocHome(const char *s) {
 const char *HelpWidget::getAnchor(int index) {
   int len = anchors.length();
   if (index < len && index > -1) {
-    Object **list = anchors.getList();
-    AnchorNode *p = (AnchorNode *) list[index];
-    return p->href.toString();
+    return anchors[index]->href.toString();
   }
   return null;
 }
 
-void HelpWidget::getText(String *s) {
-  Object **list = nodeList.getList();
-  int len = nodeList.length();
-  for (int i = 0; i < len; i++) {
-    BaseNode *p = (BaseNode *) list[i];
+void HelpWidget::getText(strlib::String *s) {
+  List_each(BaseNode*, it, nodeList) {
+    BaseNode *p = (*it);
     p->getText(s);
   }
 }
@@ -2881,7 +2858,7 @@ const char *skipWhite(const char *s) {
   return s;
 }
 
-Color getColor(String *s, Color def) {
+Color getColor(strlib::String *s, Color def) {
   if (s == 0 || s->length() == 0) {
     return def;
   }

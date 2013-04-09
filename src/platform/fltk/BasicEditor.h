@@ -4,7 +4,7 @@
 // Programmer's Guide.
 // Copyright 1998-2003 by Bill Spitzak and others.
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -14,11 +14,9 @@
 #define BASIC_EDITOR_H
 
 #include <fltk/TextEditor.h>
-#include "StringLib.h"
+#include "platform/common/StringLib.h"
 
 using namespace fltk;
-
-extern "C" void trace(const char *format, ...);
 
 bool isvar(int c);
 
@@ -36,7 +34,7 @@ struct BasicEditor : public TextEditor {
   void draw();
   int getFontSize();
   const char *getFontName();
-  void getKeywords(strlib::List &keywords);
+  void getKeywords(strlib::List<strlib::String *> &keywords);
   void getRowCol(int *row, int *col);
   void getSelEndRowCol(int *row, int *col);
   void getSelStartRowCol(int *row, int *col);
@@ -55,8 +53,8 @@ struct BasicEditor : public TextEditor {
   int indentLevel;
   int matchingBrace;
 
-  TextBuffer *stylebuf;
-  TextBuffer *textbuf;
+  fltk::TextBuffer *stylebuf;
+  fltk::TextBuffer *textbuf;
   char search[256];
   StatusBar *status;
 };

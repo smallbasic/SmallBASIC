@@ -1,9 +1,8 @@
 // Based on test/editor.cxx - A simple text editor program for the Fast
 // Light Tool Kit (FLTK). This program is described in Chapter 4 of the FLTK
-// Programmer's Guide.
-// Copyright 1998-2003 by Bill Spitzak and others.
+// Programmer's Guide. Copyright 1998-2003 by Bill Spitzak and others.
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -752,7 +751,7 @@ const char *BasicEditor::getFontName() {
 /**
  * returns the BASIC keyword list
  */
-void BasicEditor::getKeywords(strlib::List &keywords) {
+void BasicEditor::getKeywords(strlib::List<String *> &keywords) {
   for (int i = 0; i < numCodeKeywords; i++) {
     keywords.add(new String(code_keywords[i]));
   }

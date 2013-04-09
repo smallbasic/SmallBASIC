@@ -53,11 +53,10 @@
 #define SB_SYS_H
 
 #ifdef HAVE_CONFIG_H
-#  include <config.h>
+#include <config.h>
 #endif
 
-#if defined(_WinGUI) || defined(_Win32) || defined(__MINGW32__)
-#define __addr_t_defined
+#if defined(_Win32)
 #include <windows.h>
 #endif
 
@@ -66,7 +65,6 @@ extern "C" {
 #endif
 
 #if defined(__CYGWIN__)
-#define __addr_t_defined
 typedef unsigned int addr_t;
 #endif
 
@@ -81,7 +79,6 @@ typedef unsigned int addr_t;
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <dirent.h>
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>

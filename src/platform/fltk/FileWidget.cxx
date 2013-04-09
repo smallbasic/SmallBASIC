@@ -1,11 +1,10 @@
+// This file is part of SmallBASIC
 //
-// FileWidget
-//
-// Copyright(C) 2001-2009 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-//
+// 
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -19,9 +18,9 @@
 #include <fltk/run.h>
 
 #include "MainWindow.h"
-#include "StringLib.h"
 #include "HelpWidget.h"
 #include "FileWidget.h"
+#include "platform/common/StringLib.h"
 #include "common/device.h"
 
 FileWidget *fileWidget;
@@ -29,7 +28,7 @@ String click;
 enum SORT_BY { e_name, e_size, e_time } sortBy;
 bool sortDesc;
 
-struct FileNode:public Object {
+struct FileNode {
   FileNode(const char *arg_name, time_t arg_m_time,
            off_t arg_size, bool arg_isdir) : 
     name(arg_name, strlen(arg_name)),
@@ -301,9 +300,8 @@ void FileWidget::changeDir(const char *target) {
 void FileWidget::displayPath() {
   dirent *entry;
   struct stat stbuf;
-  strlib::List files;
+  strlib::List<FileNode *> files;
   char modifedTime[100];
-  int len;
   String html;
 
   if (chdir(path) != 0) {
@@ -338,9 +336,7 @@ void FileWidget::displayPath() {
   }
   closedir(dp);
 
-  if (files.length() > 0) {
-    qsort(files.getList(), files.length(), sizeof(Object), fileNodeCompare);
-  }
+  files.sort(fileNodeCompare);
 
   if (saveEditorAs) {
     const char *path = saveEditorAs->getFilename();
@@ -360,9 +356,8 @@ void FileWidget::displayPath() {
       .append("<td><a href=").append(CMD_SORT_SIZE).append("><b><u>Size</u></b></a></td>")
       .append("<td><a href=").append(CMD_SORT_DATE).append("><b><u>Date</u></b></a></td></tr>");
 
-  len = files.length();
-  for (int i = 0; i < len; i++) {
-    FileNode *fileNode = (FileNode *) files.get(i);
+  List_each(FileNode*, it, files) {
+    FileNode *fileNode = (*it);
     html.append("<tr bgcolor=#f1f1f1>").append("<td><a href='");
     if (fileNode->isdir) {
       html.append(CMD_CHG_DIR);

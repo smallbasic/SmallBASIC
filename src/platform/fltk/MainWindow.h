@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -13,7 +13,7 @@
 #include <fltk/TabGroup.h>
 #include <fltk/ValueInput.h>
 
-#include "AnsiWidget.h"
+#include "MosyncWidget.h"
 #include "EditorWidget.h"
 #include "HelpWidget.h"
 #include "Profile.h"
@@ -36,8 +36,6 @@
 #ifndef MAX_PATH
 #define MAX_PATH 256
 #endif
-
-extern "C" void trace(const char *format, ...);
 
 enum ExecState {
   init_state,
@@ -80,22 +78,19 @@ extern ExecState runMode;
   }
 
 struct BaseWindow:public Window {
-  BaseWindow(int w, int h) : Window(w, h, "SmallBASIC") {
-  } 
-  virtual ~ BaseWindow() {
-  };
+  BaseWindow(int w, int h) : Window(w, h, "SmallBASIC") {} 
+  virtual ~BaseWindow() {};
   int handle(int e);
   bool handleKeyEvent();
 
-  int penDownX;
-  int penDownY;
-  int penMode;                  // PEN ON/OFF
+  int _penDownX;
+  int _penDownY;
+  int _penMode;   // PEN ON/OFF
 };
 
 struct MainWindow : public BaseWindow {
   MainWindow(int w, int h);
-  virtual ~MainWindow() {
-  };
+  virtual ~MainWindow() {};
 
   bool basicMain(EditorWidget *editWidget, const char *filename, bool toolExec);
   bool isBreakExec(void);       // whether BREAK mode has been entered
@@ -107,7 +102,7 @@ struct MainWindow : public BaseWindow {
   void addPlugin(Menu *menu, const char *label, const char *filename);
   void busyMessage();
   bool execHelp();
-  void execLink(String &file);
+  void execLink(strlib::String &file);
   void loadIcon(const char *prefix, int resourceId);
   void pathMessage(const char *file);
   void resetPen();
@@ -171,19 +166,19 @@ struct MainWindow : public BaseWindow {
 
   HelpWidget *getHelp();
 
-  String siteHome;
+  strlib::String _siteHome;
 
   // main output
-  AnsiWidget *out;
-  Group *outputGroup;
+  MosyncWidget *_out;
+  Group *_outputGroup;
 
-  EditorWidget *runEditWidget;
+  EditorWidget *_runEditWidget;
 
   // tab parent
-  TabGroup *tabGroup;
+  TabGroup *_tabGroup;
 
   // configuration
-  Profile *profile;
+  Profile *_profile;
 };
 
 #endif

@@ -7,16 +7,20 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-/**
- * @defgroup net Network
- */
+#if !defined(INET_H)
+#define INET_H
 
-#if !defined(INET_NDCLIB_H)
-#define INET_NDCLIB_H
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
+#if defined(_Win32)
+#include <winsock.h>
+#else
 #include <string.h>
-#include <sys/types.h>
 #include <errno.h>
+#include <sys/types.h>
+#endif
 
 typedef int socket_t;
 

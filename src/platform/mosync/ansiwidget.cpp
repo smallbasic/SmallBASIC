@@ -629,17 +629,17 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
 
 // creates a status-bar label
 void AnsiWidget::createLabel(char *&p) {
-  Vector<String *> *items = getItems(p);
-  const char *label = items->size() > 0 ? (*items)[0]->c_str() : "";
+  List<String *> *items = getItems(p);
+  const char *label = items->length() > 0 ? (*items)[0]->c_str() : "";
   back->label = label;
   deleteItems(items);
 }
 
 // creates a hyperlink, eg // ^[ hwww.foo.com|title;More text
 Widget *AnsiWidget::createLink(char *&p, bool formLink, bool button) {
-  Vector<String *> *items = getItems(p);
-  const char *action = items->size() > 0 ? (*items)[0]->c_str() : "";
-  const char *text = items->size() > 1 ? (*items)[1]->c_str() : action;
+  List<String *> *items = getItems(p);
+  const char *action = items->length() > 0 ? (*items)[0]->c_str() : "";
+  const char *text = items->length() > 1 ? (*items)[1]->c_str() : action;
   Widget *result = createLink(action, text, formLink, button);
   deleteItems(items);
   return result;
@@ -677,11 +677,11 @@ Widget *AnsiWidget::createLink(const char *action, const char *text,
 
 // create an options dialog
 void AnsiWidget::createOptionsBox(char *&p) {
-  Vector<String *> *items = getItems(p);
-  if (items->size()) {
+  List<String *> *items = getItems(p);
+  if (items->length()) {
     // calculate the size of the options buffer
     int optionsBytes = sizeof(int);
-    Vector_each(String*, it, *items) {
+    List_each(String*, it, *items) {
       const char *str = (*it)->c_str();
       optionsBytes += (strlen(str) + 1) * sizeof(wchar);
     }
@@ -689,10 +689,10 @@ void AnsiWidget::createOptionsBox(char *&p) {
     // create the options buffer
     delete [] options;
     options = new char[optionsBytes];
-    *(int *)options = items->size();
+    *(int *)options = items->length();
     wchar_t *dst = (wchar_t *)(options + sizeof(int));
 
-    Vector_each(String*, it, *items) {
+    List_each(String*, it, *items) {
       const char *str = (*it)->c_str();
       int len = strlen(str);
       swprintf(dst, len + 1, L"%hs", str);
@@ -705,8 +705,8 @@ void AnsiWidget::createOptionsBox(char *&p) {
 }
 
 // cleanup the string list created in getItems()
-void AnsiWidget::deleteItems(Vector<String *> *items) {
-  Vector_each(String*, it, *items) {
+void AnsiWidget::deleteItems(List<String *> *items) {
+  List_each(String*, it, *items) {
     delete (*it);
   }
   delete items;
@@ -824,8 +824,8 @@ void AnsiWidget::drawActiveButton() {
 }
 
 // returns list of strings extracted from the vertical-bar separated input string
-Vector<String *> *AnsiWidget::getItems(char *&p) {
-  Vector<String *> *result = new Vector<String *>();
+List<String *> *AnsiWidget::getItems(char *&p) {
+  List<String *> *result = new List<String *>();
   char *next = p + 1;
   bool eot = false;
 
@@ -868,15 +868,15 @@ void AnsiWidget::handleEscape(char *&p, int lineHeight) {
 // remove the specified screen
 void AnsiWidget::removeScreen(char *&p) {
   logEntered();
-  Vector<String *> *items = getItems(p);
-  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  List<String *> *items = getItems(p);
+  int n = items->length() > 0 ? atoi((*items)[0]->c_str()) : 0;
   if (n < 1 || n >= MAX_SCREENS) {
     print("ERR invalid screen number");
   } else if (screens[n] != NULL) {
-    if (back = screens[n]) {
+    if (back == screens[n]) {
       back = screens[0];
     }
-    if (front = screens[n]) {
+    if (front == screens[n]) {
       front = screens[0];
     }
     delete screens[n];
@@ -940,7 +940,7 @@ void AnsiWidget::screenCommand(char *&p) {
 bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
   bool result = false;
   if (screen->overlaps(event.point.x, event.point.y)) {
-    Vector_each(Shape*, it, screen->shapes) {
+    List_each(Shape*, it, screen->shapes) {
       Widget *widget = (Widget *)(*it);
       if (widget->overlaps(event.point, screen->x,
                            screen->y - screen->scrollY)) {
@@ -957,12 +957,12 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
 
 // select the specified screen - returns whether the screen was changed
 Screen *AnsiWidget::selectScreen(char *&p) {
-  Vector<String *> *items = getItems(p);
-  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
-  int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
-  int y = items->size() > 2 ? atoi((*items)[2]->c_str()) : 0;
-  int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : 100;
-  int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : 100;
+  List<String *> *items = getItems(p);
+  int n = items->length() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  int x = items->length() > 1 ? atoi((*items)[1]->c_str()) : 0;
+  int y = items->length() > 2 ? atoi((*items)[2]->c_str()) : 0;
+  int w = items->length() > 3 ? atoi((*items)[3]->c_str()) : 100;
+  int h = items->length() > 4 ? atoi((*items)[4]->c_str()) : 100;
 
   Screen *result = NULL;
   flush(true);
@@ -1010,13 +1010,13 @@ Screen *AnsiWidget::selectScreen(char *&p) {
 
 // display an alert box - eg // ^[ aAlert!!;
 void AnsiWidget::showAlert(char *&p) {
-  Vector<String *> *items = getItems(p);
+  List<String *> *items = getItems(p);
 
-  const char *title = items->size() > 0 ? (*items)[0]->c_str() : "";
-  const char *message = items->size() > 1 ? (*items)[1]->c_str() : "";
-  const char *button1 = items->size() > 2 ? (*items)[2]->c_str() : "";
-  const char *button2 = items->size() > 3 ? (*items)[3]->c_str() : "";
-  const char *button3 = items->size() > 4 ? (*items)[4]->c_str() : "";
+  const char *title = items->length() > 0 ? (*items)[0]->c_str() : "";
+  const char *message = items->length() > 1 ? (*items)[1]->c_str() : "";
+  const char *button1 = items->length() > 2 ? (*items)[2]->c_str() : "";
+  const char *button2 = items->length() > 3 ? (*items)[3]->c_str() : "";
+  const char *button3 = items->length() > 4 ? (*items)[4]->c_str() : "";
 
   maAlert(title, message, button1, button2, button3);
   deleteItems(items);

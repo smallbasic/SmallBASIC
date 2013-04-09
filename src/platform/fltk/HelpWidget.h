@@ -1,9 +1,10 @@
+// This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-//
+// 
 
 #ifndef FL_HELP_WIDGET
 #define FL_HELP_WIDGET
@@ -15,7 +16,7 @@
 #include <fltk/Group.h>
 #include <fltk/Scrollbar.h>
 
-#include "StringLib.h"
+#include "platform/common/StringLib.h"
 
 #define ID_BUTTON   1
 #define ID_TEXTBOX  2
@@ -43,6 +44,12 @@ using namespace strlib;
 SharedImage *loadImage(const char *name, uchar *buff);
 void browseFile(const char *s);
 
+struct BaseNode;
+struct NamedInput;
+struct InputNode;
+struct AnchorNode;
+struct ImageNode;
+
 class HelpWidget : public Group {
 public:
   HelpWidget(int x, int y, int width, int height, int defsize = MIN_FONT_SIZE);
@@ -64,8 +71,8 @@ public:
   const char *getFileName() { return fileName; }
   const char *getDocHome() { return docHome; }
   const char *getSelection() { return selection; }
-  const String getEventName() { return event; }
-  void getText(String *s);
+  const strlib::String getEventName() { return event; }
+  void getText(strlib::String *s);
   void getInputProperties(Properties *p);
   void setCookies(Properties *p) { cookies = p; }
   bool setInputValue(const char *assignment);
@@ -73,7 +80,6 @@ public:
   void copySelection();
   void onclick(Widget *button);        // private
   void setDocHome(const char *home);
-  void getImageNames(strlib::List *);
   void reloadImages();
   void setFontSize(int i);
   int getFontSize() { return (int)labelsize(); }
@@ -107,11 +113,11 @@ private:
   S16 markX, markY, pointX, pointY;
   S16 scrollY;                  // nm_scroll
   enum { mm_select, mm_page, mm_scroll } mouseMode;
-  strlib::List nodeList;
-  strlib::List namedInputs;
-  strlib::List inputs;
-  strlib::List anchors;
-  strlib::List images;
+  strlib::List<BaseNode *> nodeList;
+  strlib::List<NamedInput *> namedInputs;
+  strlib::List<InputNode *> inputs;
+  strlib::List<AnchorNode *> anchors;
+  strlib::List<ImageNode *> images;
   strlib::Properties *cookies;
   strlib::String htmlStr;
   strlib::String event;

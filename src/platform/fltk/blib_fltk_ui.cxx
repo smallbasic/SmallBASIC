@@ -1,5 +1,6 @@
+// This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2008 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -28,7 +29,7 @@
 #include <fltk/run.h>
 
 #include "MainWindow.h"
-#include "StringLib.h"
+#include "platform/common/StringLib.h"
 
 extern "C" {
 #include "common/blib_ui.h"
@@ -106,8 +107,8 @@ struct WidgetInfo {
 };
 
 // implements abstract StringList as a list of strings
-struct DropListModel:StringList {
-  strlib::List list;
+struct DropListModel : StringList {
+  strlib::List<String *> list;
   int focus_index;
   
   DropListModel(const char *items, var_t *v) : StringList() {
@@ -495,9 +496,9 @@ void update_widget(Widget *widget, WidgetInfo *inf, fltk::Rectangle &rect) {
   inf->orig.i = 0;
 
   // copy output widget colors
-  widget->color(wnd->out->color());
-  widget->labelcolor(wnd->out->labelcolor());
-  widget->textcolor(wnd->out->labelcolor());
+  widget->color(wnd->_out->color());
+  widget->labelcolor(wnd->_out->labelcolor());
+  widget->textcolor(wnd->_out->labelcolor());
 }
 
 void update_button(Widget *widget, WidgetInfo *inf,
@@ -517,10 +518,10 @@ void update_button(Widget *widget, WidgetInfo *inf,
 // create a new form
 void form_create() {
   if (form == 0) {
-    wnd->outputGroup->begin();
-    form = new Form(wnd->out->x() + 2, wnd->out->y() + 2, wnd->out->w() - 2, wnd->out->h() - 2);
+    wnd->_outputGroup->begin();
+    form = new Form(wnd->_out->x() + 2, wnd->_out->y() + 2, wnd->_out->w() - 2, wnd->_out->h() - 2);
     form->resizable(0);
-    wnd->outputGroup->end();
+    wnd->_outputGroup->end();
   }
   form->begin();
   mode = m_init;
@@ -567,13 +568,13 @@ C_LINKAGE_BEGIN void ui_reset() {
       delete inf;
     }
     form->clear();
-    wnd->outputGroup->remove(form);
+    wnd->_outputGroup->remove(form);
     form->parent(0);
     delete form;
     form = 0;
 
-    wnd->out->show();
-    wnd->out->redraw();
+    wnd->_out->show();
+    wnd->_out->redraw();
     wnd->take_focus();
   }
   mode = m_reset;
@@ -721,7 +722,7 @@ void cmd_doform() {
 
   if (!form->cmd) {
     ui_reset();
-  } else if (wnd->penMode) {
+  } else if (wnd->_penMode) {
     mode = m_active;
     fltk::wait();
   } else {

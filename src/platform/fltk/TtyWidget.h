@@ -1,10 +1,10 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-//
+// 
 
 #ifndef FL_TTY_WIDGET
 #define FL_TTY_WIDGET
@@ -17,13 +17,11 @@
 #include <fltk/Group.h>
 #include <fltk/Scrollbar.h>
 
-#include "StringLib.h"
+#include "platform/common/StringLib.h"
 
 #define SCROLL_W 15
 #define SCROLL_H 15
 #define HSCROLL_W 80
-
-extern "C" void trace(const char *format, ...);
 
 using namespace fltk;
 using namespace strlib;
@@ -33,7 +31,7 @@ struct Point {
   int y;
 };
 
-struct TextSeg {
+struct TtyTextSeg {
   enum {
     BOLD = 0x00000001,
     ITALIC = 0x00000002,
@@ -42,14 +40,14 @@ struct TextSeg {
   };
 
   // create a new segment
-  TextSeg() {
+  TtyTextSeg() {
     this->str = 0;
     this->flags = 0;
     this->color = NO_COLOR;
     this->next = 0;
   } 
   
-  ~TextSeg() {
+  ~TtyTextSeg() {
     if (str) {
       delete[]str;
     }
@@ -121,7 +119,7 @@ struct TextSeg {
     *underline = get(UNDERLINE, underline);
     *invert = get(INVERT, invert);
 
-    if (this->color != NO_COLOR) {
+    if (this->color != (Color)NO_COLOR) {
       fltk::setcolor(this->color);
     }
 
@@ -131,18 +129,18 @@ struct TextSeg {
   char *str;
   int flags;
   Color color;
-  TextSeg *next;
+  TtyTextSeg *next;
 };
 
-struct Row {
-  Row() : head(0) {
+struct TtyRow {
+  TtyRow() : head(0) {
   } 
-  ~Row() {
+  ~TtyRow() {
     clear();
   }
 
   // append a segment to this row
-  void append(TextSeg *node) {
+  void append(TtyTextSeg *node) {
     if (!head) {
       head = node;
     } else {
@@ -162,7 +160,7 @@ struct Row {
     return numChars(this->head);
   }
 
-  int numChars(TextSeg *next) {
+  int numChars(TtyTextSeg *next) {
     int n = 0;
     if (next) {
       n = next->numChars() + numChars(next->next);
@@ -170,7 +168,7 @@ struct Row {
     return n;
   }
 
-  void remove(TextSeg *next) {
+  void remove(TtyTextSeg *next) {
     if (next) {
       remove(next->next);
       delete next;
@@ -183,13 +181,13 @@ struct Row {
     int num = numChars(this->head);
     int pos = tabSize - (num % tabSize);
     if (pos) {
-      TextSeg *next = new TextSeg();
+      TtyTextSeg *next = new TtyTextSeg();
       next->tab(pos);
       append(next);
     }
   }
 
-  TextSeg *tail(TextSeg *next) {
+  TtyTextSeg *tail(TtyTextSeg *next) {
     return !next->next ? next : tail(next->next);
   }
 
@@ -197,7 +195,7 @@ struct Row {
     return width(this->head);
   }
 
-  int width(TextSeg *next) {
+  int width(TtyTextSeg *next) {
     int n = 0;
     if (next) {
       n = next->width() + width(next->next);
@@ -205,7 +203,7 @@ struct Row {
     return n;
   }
 
-  TextSeg *head;
+  TtyTextSeg *head;
 };
 
 struct TtyWidget:public Group {
@@ -234,12 +232,12 @@ struct TtyWidget:public Group {
   };
 
 private:
-  void drawSelection(TextSeg *seg, String *s, int row, int x, int y);
-  Row *getLine(int ndx);
-  int processLine(Row *line, const char *linePtr);
+  void drawSelection(TtyTextSeg *seg, strlib::String *s, int row, int x, int y);
+  TtyRow *getLine(int ndx);
+  int processLine(TtyRow *line, const char *linePtr);
   void setfont(bool bold, bool italic);
   void setfont(Font *font, int size);
-  void setGraphicsRendition(TextSeg *segment, int c);
+  void setGraphicsRendition(TtyTextSeg *segment, int c);
 
   // returns the number of display text rows held in the buffer
   int getTextRows() {
@@ -257,7 +255,7 @@ private:
   }
 
   // buffer management
-  Row *buffer;
+  TtyRow *buffer;
   int head;                     // current head of buffer
   int tail;                     // buffer last line
   int rows;                     // total number of rows - size of buffer

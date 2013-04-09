@@ -253,10 +253,10 @@ function buildFLTK() {
    HAVE_API_VERSION=no
  
    if test "${have_fltk}" = "yes" ; then
-      FLTK_API_VERSION="`fltk2-config --api-version`"
-      if test "${FLTK_API_VERSION}" = "2.0" ; then
-         HAVE_API_VERSION=yes
-      fi
+     FLTK_API_VERSION="`fltk2-config --api-version`"
+     if test "${FLTK_API_VERSION}" = "2.0" ; then
+       HAVE_API_VERSION=yes
+     fi
    fi
  
    if test "${HAVE_API_VERSION}" = "no" ; then
@@ -283,6 +283,8 @@ function buildFLTK() {
      *mingw* | cygwin*)
      FLTK_CXXFLAGS="-I`cygpath -m /usr/local/include` ${FLTK_CXXFLAGS} -mms-bitfields"
      PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -static-libgcc"
+     AC_DEFINE(_Win32, 1, [Windows build])
+     AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
    esac
 
    defaultConditionals
@@ -553,6 +555,7 @@ function buildConsole() {
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
          AC_DEFINE(OS_PREC64, 1, [64 bit variables])
+         AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
          PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lncurses"
          BUILD_SUBDIRS="src/common src/platform/cygwin"
       else
@@ -562,9 +565,11 @@ function buildConsole() {
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
          AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
          AC_DEFINE(IMPL_EMPTY_TERM_EVENTS, 1, [Implement a dummy term_events()])
-         PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole"
+         PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole -lmingw32"
          BUILD_SUBDIRS="src/common src/platform/mingw"
       fi
+      AC_DEFINE(_Win32, 1, [Windows build])
+      AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
    else 
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."

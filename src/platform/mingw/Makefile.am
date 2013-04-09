@@ -9,10 +9,10 @@ AM_CPPFLAGS = -I$(top_builddir)/src -I. -I/usr/include @PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 
-sbasic_SOURCES =																\
-  ../unix/console_main.c												\
+sbasic_SOURCES =						\
+  ../unix/console_main.c		\
   ../unix/dev_null.c
 
-sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src -lsb_common -lwsock32
+sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src/common -lsb_common -lwsock32
 
-sbasic_DEPENDENCIES = ../../common/libsb_common.a
+sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a

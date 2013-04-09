@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -13,7 +13,7 @@
 #include <fltk/Font.h>
 #include <fltk/Rectangle.h>
 
-#include "StringLib.h"
+#include "platform/common/StringLib.h"
 
 using namespace fltk;
 using namespace strlib;
@@ -29,17 +29,17 @@ struct Profile {
   void restoreAppPosition(fltk::Rectangle *wnd);
   void save(MainWindow *wnd);
 
-  Color color;
-  Font *font;
-  fltk::Rectangle appPosition;
+  Color _color;
+  Font *_font;
+  fltk::Rectangle _appPosition;
 
-  int fontSize;
-  int indentLevel;
-  int createBackups;
-  int lineNumbers;
+  int _fontSize;
+  int _indentLevel;
+  int _createBackups;
+  int _lineNumbers;
 
 private:
-  bool loaded;
+  bool _loaded;
   int nextInteger(const char *s, int len, int &index);
   fltk::Rectangle restoreRect(Properties *profile, const char *key);
   void restoreStyles(Properties *profile);

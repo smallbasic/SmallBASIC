@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2012 Chris Warren-Smith.
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -9,7 +9,6 @@
 #include <string.h>
 
 #include "platform/mosync/screen.h"
-#include "platform/mosync/utils.h"
 
 #define WHITE 15
 #define SCROLL_IND 4
@@ -35,6 +34,23 @@ static int colors[] = {
   0xFFFFFF  // 15 bright white
 };
 
+// Workaround for API's which don't take a length argument
+struct TextBuffer {
+  TextBuffer(const char *s, int len) :
+    str(s), len(len) {
+    c = str[len];
+    ((char *)str)[len] = 0;
+  }
+
+  ~TextBuffer() {
+    ((char *)str)[len] = c;
+  }
+
+  const char *str;
+  char c;
+  int len;
+};
+
 Screen::Screen(int x, int y, int width, int height, int fontSize) :
   Shape(x, y, width, height),
   font(0),
@@ -51,7 +67,7 @@ Screen::Screen(int x, int y, int width, int height, int fontSize) :
 }
 
 Screen::~Screen() {
-  Vector_each(Shape*, it, shapes) {
+  List_each(Shape*, it, shapes) {
     delete (Shape *)(*it);
   }
   if (font) {
@@ -76,11 +92,8 @@ void Screen::clear() {
   scrollY = 0;
 
   // cleanup any shapes
-  Vector_each(Shape*, it, shapes) {
-    delete (*it);
-  }
-  shapes.clear();
-  label.clear();
+  shapes.removeAll();
+  label.empty();
 }
 
 void Screen::draw(bool vscroll) {
@@ -98,8 +111,8 @@ void Screen::draw(bool vscroll) {
   }
   
   // draw any visible shapes
-  Vector_each(Shape*, it, shapes) {
-    Shape *rect = (Shape *)(*it);
+  List_each(Shape*, it, shapes) {
+    Shape *rect = (*it);
     if (rect->y >= scrollY && 
         rect->y <= scrollY + height) {
       rect->draw(x + rect->x, y + rect->y - scrollY);
@@ -161,7 +174,7 @@ bool Screen::overlaps(int px, int py) {
 
 // remove the button from the list
 void Screen::remove(Shape *button) {
-  Vector_each(Shape*, it, shapes) {
+  List_each(Shape*, it, shapes) {
     Shape *next = (*it);
     if (next == button) {
       shapes.remove(it);

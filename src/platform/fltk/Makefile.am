@@ -5,34 +5,37 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-AM_CPPFLAGS =																									\
-  -I$(top_builddir)/src -I.																		\
-  -DPACKAGE_PREFIX=\""$(prefix)"\"														\
-  -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"											\
-  -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
+AM_CPPFLAGS =                                                 \
+  -I$(top_builddir)/src -I.                                   \
+  -DPACKAGE_PREFIX=\""$(prefix)"\"                            \
+  -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"                      \
+  -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"  \
   @FLTK_CXXFLAGS@
 
-EXTRA_DIST =																		\
-    README.TXT																	\
-    sbfltk.rc																		\
-    sbasic.nsi																	\
-    build_kwp.cxx																\
-    $(desktopentry_DATA)
+EXTRA_DIST =                                  \
+  README.TXT                                  \
+  sbfltk.rc                                   \
+  sbasic.nsi                                  \
+  build_kwp.cxx                               \
+  $(desktopentry_DATA)
 
 bin_PROGRAMS = sbasici
 
-sbasici_SOURCES =																\
-    HelpWidget.cxx HelpWidget.h									\
-    AnsiWidget.cxx AnsiWidget.h									\
-    TtyWidget.cxx TtyWidget.h										\
-    MainWindow.cxx MainWindow.h									\
-    BasicEditor.cxx BasicEditor.h								\
-    EditorWidget.cxx EditorWidget.h							\
-    FileWidget.cxx FileWidget.h									\
-    Profile.cxx Profile.h												\
-    StringLib.cxx StringLib.h										\
-    dev_fltk.cxx																\
-    blib_fltk_ui.cxx
+sbasici_SOURCES =                             \
+  ../mosync/ansiwidget.cpp                    \
+  ../mosync/screen.cpp                        \
+  ../common/StringLib.cpp                     \
+  MosyncWidget.cxx MosyncWidget.h             \
+  HelpWidget.cxx HelpWidget.h                 \
+  TtyWidget.cxx TtyWidget.h                   \
+  MainWindow.cxx MainWindow.h                 \
+  BasicEditor.cxx BasicEditor.h               \
+  EditorWidget.cxx EditorWidget.h             \
+  FileWidget.cxx FileWidget.h                 \
+  Profile.cxx Profile.h                       \
+  dev_fltk.cxx                                \
+  utils.cxx utils.h														\
+  blib_fltk_ui.cxx
 
 sbasici_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 

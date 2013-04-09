@@ -16,6 +16,8 @@
 #include "common/messages.h"
 #include "common/fs_socket_client.h"
 
+#include <dirent.h>
+
 struct file_encoded_var {
   byte sign;                    // always '$'
   byte version;                 //

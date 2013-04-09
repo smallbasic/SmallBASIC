@@ -7,7 +7,6 @@
 //
 
 #include <MAUtil/Environment.h>
-#include <MAUtil/String.h>
 
 #include "config.h"
 #include "common/sbapp.h"
@@ -19,8 +18,6 @@
 
 #include "platform/mosync/ansiwidget.h"
 
-using namespace MAUtil;
-
 #define EVENT_CHECK_EVERY 2000
 #define EVENT_MAX_BURN_TIME 30
 #define EVENT_PAUSE_TIME 400
@@ -28,7 +25,7 @@ using namespace MAUtil;
 #define EVENT_WAIT_INFINITE -1
 #define EVENT_WAIT_NONE 0
 
-struct Controller : public Environment, IButtonListener {
+struct Controller : public MAUtil::Environment, IButtonListener {
   Controller();
   virtual ~Controller();
 

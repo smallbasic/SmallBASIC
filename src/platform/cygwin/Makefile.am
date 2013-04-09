@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-AM_CPPFLAGS = -I$(top_builddir)/src -I. -I/usr/include @PACKAGE_CFLAGS@
+AM_CPPFLAGS = -I$(top_builddir)/src/common -I. -I/usr/include @PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 
@@ -16,4 +16,4 @@ sbasic_SOURCES =																\
 
 sbasic_LDADD = @PACKAGE_LIBS@ -L$(top_srcdir)/src/common -lsb_common
 
-sbasic_DEPENDENCIES = ../../common/libsb_common.a
+sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a

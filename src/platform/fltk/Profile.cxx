@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2001-2013 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -15,14 +15,14 @@
 
 const char *configFile = "config.txt";
 const char *pathKey = "path";
-const char *indentLevelKey = "indentLevel";
+const char *_indentLevelKey = "_indentLevel";
 const char *fontNameKey = "fontName";
-const char *fontSizeKey = "fontSize";
+const char *_fontSizeKey = "_fontSize";
 const char *windowPosKey = "windowPos";
 const char *activeTabKey = "activeTab";
-const char *createBackupsKey = "createBackups";
-const char *lineNumbersKey = "lineNumbers";
-const char *appPositionKey = "appPosition";
+const char *_createBackupsKey = "_createBackups";
+const char *_lineNumbersKey = "_lineNumbers";
+const char *_appPositionKey = "_appPosition";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -30,26 +30,26 @@ extern TextDisplay::StyleTableEntry styletable[];
 //
 // Profile constructor
 //
-Profile::Profile() : appPosition(0, 0, 640, 480) {
-  // defaults
-  indentLevel = 2;
-  font = COURIER;
-  fontSize = 12;
-  color = WHITE;
-  loaded = false;
-  createBackups = true;
-  lineNumbers = true;
+Profile::Profile() : 
+  _color(WHITE),
+  _font(COURIER),
+  _appPosition(0, 0, 640, 480),
+  _fontSize(12),
+  _indentLevel(2),
+  _createBackups(true),
+  _lineNumbers(true),
+  _loaded(false) {
 }
 
 //
 // setup the editor defaults
 //
 void Profile::loadConfig(EditorWidget *editWidget) {
-  editWidget->setIndentLevel(indentLevel);
-  editWidget->setFont(font);
-  editWidget->setFontSize(fontSize);
-  editWidget->setEditorColor(color, false);
-  editWidget->editor->linenumber_width(lineNumbers ? 40 : 1);
+  editWidget->setIndentLevel(_indentLevel);
+  editWidget->setFont(_font);
+  editWidget->setFontSize(_fontSize);
+  editWidget->setEditorColor(_color, false);
+  editWidget->editor->linenumber_width(_lineNumbers ? 40 : 1);
 }
 
 //
@@ -69,15 +69,15 @@ void Profile::restore(MainWindow *wnd) {
     fclose(fp);
     profile.load(buffer.toString(), buffer.length());
 
-    restoreValue(&profile, indentLevelKey, &indentLevel);
-    restoreValue(&profile, createBackupsKey, &createBackups);
-    restoreValue(&profile, lineNumbersKey, &lineNumbers);
+    restoreValue(&profile, _indentLevelKey, &_indentLevel);
+    restoreValue(&profile, _createBackupsKey, &_createBackups);
+    restoreValue(&profile, _lineNumbersKey, &_lineNumbers);
     restoreStyles(&profile);
 
     Rectangle rc;
-    rc = restoreRect(&profile, appPositionKey);
+    rc = restoreRect(&profile, _appPositionKey);
     if (!rc.empty()) {
-      appPosition = rc;
+      _appPosition = rc;
     }
 
     rc = restoreRect(&profile, windowPosKey);
@@ -87,19 +87,19 @@ void Profile::restore(MainWindow *wnd) {
 
     restoreTabs(wnd, &profile);
   }
-  loaded = true;
+  _loaded = true;
 }
 
 //
 // restore the standalone window position
 //
 void Profile::restoreAppPosition(Rectangle *wnd) {
-  if (!appPosition.empty()) {
-    wnd->w(appPosition.w());
-    wnd->h(appPosition.h());
-    if (appPosition.x() != 0) {
-      wnd->x(appPosition.x());
-      wnd->y(appPosition.y());
+  if (!_appPosition.empty()) {
+    wnd->w(_appPosition.w());
+    wnd->h(_appPosition.h());
+    if (_appPosition.x() != 0) {
+      wnd->x(_appPosition.x());
+      wnd->y(_appPosition.y());
     }
   }
 }
@@ -108,16 +108,16 @@ void Profile::restoreAppPosition(Rectangle *wnd) {
 // persist profile values
 //
 void Profile::save(MainWindow *wnd) {
-  if (loaded) {
+  if (_loaded) {
     // prevent overwriting config when not initially used
     FILE *fp = wnd->openConfig(configFile);
     if (fp) {
-      saveValue(fp, indentLevelKey, indentLevel);
-      saveValue(fp, createBackupsKey, createBackups);
-      saveValue(fp, lineNumbersKey, lineNumbers);
+      saveValue(fp, _indentLevelKey, _indentLevel);
+      saveValue(fp, _createBackupsKey, _createBackups);
+      saveValue(fp, _lineNumbersKey, _lineNumbers);
       saveStyles(fp);
       saveTabs(fp, wnd);
-      saveRect(fp, appPositionKey, &appPosition);
+      saveRect(fp, _appPositionKey, &_appPosition);
       saveRect(fp, windowPosKey, wnd);
       fclose(fp);
     }
@@ -163,10 +163,10 @@ Rectangle Profile::restoreRect(Properties *profile, const char *key) {
 //
 void Profile::restoreStyles(Properties *profile) {
   // restore size and face
-  restoreValue(profile, fontSizeKey, &fontSize);
+  restoreValue(profile, _fontSizeKey, &_fontSize);
   String *fontName = profile->get(fontNameKey);
   if (fontName) {
-    font = fltk::font(fontName->toString());
+    _font = fltk::font(fontName->toString());
   }
 
   for (int i = 0; i <= st_background; i++) {
@@ -177,7 +177,7 @@ void Profile::restoreStyles(Properties *profile) {
       Color c = fltk::color(color->toString());
       if (c != NO_COLOR) {
         if (i == st_background) {
-          this->color = c;
+          this->_color = c;
         } else {
           styletable[i].color = c;
         }
@@ -191,13 +191,12 @@ void Profile::restoreStyles(Properties *profile) {
 //
 void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
   bool usedEditor = false;
-  strlib::List paths;
+  strlib::List<String *> paths;
   profile->get(pathKey, &paths);
-  Object **list = paths.getList();
-  int len = paths.length();
 
-  for (int i = 0; i < len; i++) {
-    const char *buffer = ((String *) list[i])->toString();
+  List_each(String*, it, paths) {
+    String *nextString = (*it);
+    const char *buffer = nextString->toString();
     int index = 0;
     int len = strlen(buffer);
     int logPrint = nextInteger(buffer, len, index);
@@ -281,11 +280,11 @@ void Profile::saveRect(FILE *fp, const char *key, Rectangle *rc) {
 void Profile::saveStyles(FILE *fp) {
   uchar r, g, b;
 
-  saveValue(fp, fontSizeKey, (int)styletable[0].size);
+  saveValue(fp, _fontSizeKey, (int)styletable[0].size);
   saveValue(fp, fontNameKey, styletable[0].font->name());
 
   for (int i = 0; i <= st_background; i++) {
-    split_color(i == st_background ? color : styletable[i].color, r, g, b);
+    split_color(i == st_background ? _color : styletable[i].color, r, g, b);
     fprintf(fp, "%02d=#%02x%02x%02x\n", i, r, g, b);
   }
 }
@@ -294,9 +293,9 @@ void Profile::saveStyles(FILE *fp) {
 // persist the editor tabs
 //
 void Profile::saveTabs(FILE *fp, MainWindow *wnd) {
-  int n = wnd->tabGroup->children();
+  int n = wnd->_tabGroup->children();
   for (int c = 0; c < n; c++) {
-    Group *group = (Group *) wnd->tabGroup->child(c);
+    Group *group = (Group *) wnd->_tabGroup->child(c);
     if (gw_editor == ((GroupWidget) (intptr_t) group->user_data())) {
       EditorWidget *editWidget = (EditorWidget *) group->child(0);
 

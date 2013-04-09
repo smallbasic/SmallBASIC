@@ -550,7 +550,7 @@ int dev_frename(const char *file, const char *newname) {
  * BUG: no drivers supported
  */
 void dev_mkdir(const char *dir) {
-#if defined(_Win32) || defined(__MINGW32__)
+#if (defined(_Win32) || defined(__MINGW32__)) && !defined(__CYGWIN__)
   if (mkdir(dir) != 0) {
     err_file(errno);
   }

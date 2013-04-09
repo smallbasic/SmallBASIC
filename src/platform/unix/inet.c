@@ -7,14 +7,18 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "sys.h"
-#include "inet.h"
-#include "device.h"
+#include "common/sys.h"
+#include "common/inet.h"
+#include "common/device.h"
 
-#if !defined(_WIN32)
-#include <sys/ioctl.h>
-#else
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#if defined(_Win32)
 static int inetlib_init = 0;
+#else
+#include <sys/ioctl.h>
 #endif
 
 #ifndef socklen_t
@@ -28,7 +32,7 @@ static int inetlib_init = 0;
  * prepare to use the network
  */
 int net_init() {
-#if defined(_WIN32)
+#if defined(_Win32)
   if (!inetlib_init) {
     inetlib_init = 1;
     WSADATA wsadata;
@@ -45,7 +49,7 @@ int net_init() {
  * stop using the network
  */
 int net_close() {
-#if defined(_WIN32)
+#if defined(_Win32)
   if (inetlib_init) {
     WSACleanup();
     inetlib_init = 0;
@@ -170,7 +174,7 @@ int net_input(socket_t s, char *buf, int size, const char *delim) {
  * return true if there something waiting
  */
 int net_peek(socket_t s) {
-#if defined(_WIN32)
+#if defined(_Win32)
   unsigned long bytes;
 
   ioctlsocket(s, FIONREAD, &bytes);
@@ -291,7 +295,7 @@ socket_t net_listen(int server_port) {
  * disconnect the given network connection
  */
 void net_disconnect(socket_t s) {
-#if defined(_WIN32)
+#if defined(_Win32)
   closesocket(s);
 #else
   close(s);
