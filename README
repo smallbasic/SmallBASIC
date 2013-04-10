@@ -84,11 +84,11 @@ alias adebug="adb -d logcat -c && adb -d logcat"
 
 Install cygwin along with mingw-gcc
 
-export LDFLAGS="-static-libgcc -static-libstdc++"
 ./configure --host=i686-w64-mingw32 --enable-fltk
 
-For 32 bit build:
-./configure --host=i686-pc-mingw32 --enable-fltk
+For 64 bit build:
+
+./configure --host=x86_64-w64-mingw32 --enable-fltk
 
 --- Old instructions ---
 
@@ -128,8 +128,15 @@ Optionally install guichan - see http://guichan.sourceforge.net/wiki/index.php
  $ make
 
 == Building the non-graphical console version (cygwin or linux)
- $ ./configure
- $ make
+ $ ./configure && make
+
+ Windows 32 bit mingw console:
+
+ $./configure --host=i686-w64-mingw32 && make 
+
+ Windows 64 bit mingw console:
+
+ $./configure --host=x86_64-w64-mingw32 && make 
 
 == .indent.pro settings
 

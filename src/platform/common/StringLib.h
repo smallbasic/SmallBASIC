@@ -6,8 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef STRINGLIB__H
-#define STRINGLIB__H
+#ifndef STRINGLIB_H
+#define STRINGLIB_H
 
 #include <string.h>
 #include <stdio.h>
@@ -66,13 +66,13 @@ struct String {
   String &append(const char *s, int numCopy);
   String &append(FILE *fp, long len);
   operator const char *() const { return _buffer; } 
-  const char *toString() const;
-  int length() const;
+  const char *toString() const { return _buffer; }
+  int length() const { return (_buffer == 0 ? 0 : strlen(_buffer)); }
   void replaceAll(char a, char b);
   void toUpperCase();
   void toLowerCase();
-  int toInteger() const;
-  double toNumber() const;
+  int toInteger() const { return (_buffer == 0 ? 0 : atoi(_buffer)); }
+  double toNumber() const { return (_buffer == 0 ? 0 : atof(_buffer)); }
   bool equals(const String &s, bool ignoreCase = true) const;
   bool equals(const char *s, bool ignoreCase = true) const;
   bool equalsIgnoreCase(const char *s) const;
@@ -214,7 +214,7 @@ struct List {
   }
 
   void sort(int(*compareFunc)(const void *p1, const void *p2)) {
-    if (_size > 2) {
+    if (_size > 1) {
       qsort(_head, _count, sizeof(T), compareFunc);
     }
   }

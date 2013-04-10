@@ -178,14 +178,6 @@ String &String::append(FILE *fp, long filelen) {
   return *this;
 }
 
-const char *String::toString() const {
-  return _buffer;
-}
-
-int String::length() const {
-  return (_buffer == 0 ? 0 : strlen(_buffer));
-}
-
 String String::substring(int beginIndex) const {
   String out;
   if (beginIndex < length()) {
@@ -254,14 +246,6 @@ void String::toLowerCase() {
   for (int i = 0; i < len; i++) {
     _buffer[i] = tolower(_buffer[i]);
   }
-}
-
-int String::toInteger() const {
-  return (_buffer == 0 ? 0 : atoi(_buffer));
-}
-
-double String::toNumber() const {
-  return (_buffer == 0 ? 0 : atof(_buffer));
 }
 
 bool String::equals(const String & s, bool ignoreCase) const {

@@ -21,7 +21,7 @@
 #include "platform/unix/help_subsys.h"
 #endif
 
-#if defined(_SDL) || defined(_Win32)
+#if defined(_SDL)
 // sb prefix used to avoid name conflict with SDL
 #define MAIN_FUNC sb_console_main
 #else

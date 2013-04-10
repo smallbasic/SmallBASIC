@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-AM_CPPFLAGS = -I$(top_builddir)/src/common -I. -I/usr/include @PACKAGE_CFLAGS@
+AM_CPPFLAGS = -I$(top_builddir)/src -I. @PACKAGE_CFLAGS@
 
 bin_PROGRAMS = sbasic
 

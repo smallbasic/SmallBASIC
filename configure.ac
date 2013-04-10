@@ -565,7 +565,7 @@ function buildConsole() {
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
          AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
          AC_DEFINE(IMPL_EMPTY_TERM_EVENTS, 1, [Implement a dummy term_events()])
-         PACKAGE_LIBS="${PACKAGE_LIBS} -mno-cygwin -mconsole -lmingw32"
+         PACKAGE_LIBS="${PACKAGE_LIBS} -mconsole -lmingw32"
          BUILD_SUBDIRS="src/common src/platform/mingw"
       fi
       AC_DEFINE(_Win32, 1, [Windows build])
