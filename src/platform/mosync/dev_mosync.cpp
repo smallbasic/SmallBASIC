@@ -88,12 +88,12 @@ void osd_clear_sound_queue() {
 }
 
 void osd_beep(void) {
-  controller->output->beep();
+  controller->_output->beep();
 }
 
 void osd_cls(void) {
   ui_reset();
-  controller->output->clearScreen();
+  controller->_output->clearScreen();
 }
 
 int osd_devinit(void) {
@@ -115,35 +115,35 @@ int osd_getpen(int mode) {
 }
 
 long osd_getpixel(int x, int y) {
-  return controller->output->getPixel(x, y);
+  return controller->_output->getPixel(x, y);
 }
 
 int osd_getx(void) {
-  return controller->output->getX();
+  return controller->_output->getX();
 }
 
 int osd_gety(void) {
-  return controller->output->getY();
+  return controller->_output->getY();
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
-  controller->output->drawLine(x1, y1, x2, y2);
+  controller->_output->drawLine(x1, y1, x2, y2);
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   if (fill) {
-    controller->output->drawRectFilled(x1, y1, x2, y2);
+    controller->_output->drawRectFilled(x1, y1, x2, y2);
   } else {
-    controller->output->drawRect(x1, y1, x2, y2);
+    controller->_output->drawRect(x1, y1, x2, y2);
   }
 }
 
 void osd_refresh(void) {
-  controller->output->flush(true);
+  controller->_output->flush(true);
 }
 
 void osd_setcolor(long color) {
-  controller->output->setColor(color);
+  controller->_output->setColor(color);
 }
 
 void osd_setpenmode(int enable) {
@@ -151,19 +151,19 @@ void osd_setpenmode(int enable) {
 }
 
 void osd_setpixel(int x, int y) {
-  controller->output->setPixel(x, y, dev_fgcolor);
+  controller->_output->setPixel(x, y, dev_fgcolor);
 }
 
 void osd_settextcolor(long fg, long bg) {
-  controller->output->setTextColor(fg, bg);
+  controller->_output->setTextColor(fg, bg);
 }
 
 void osd_setxy(int x, int y) {
-  controller->output->setXY(x, y);
+  controller->_output->setXY(x, y);
 }
 
 int osd_textheight(const char *str) {
-  return controller->output->textHeight();
+  return controller->_output->textHeight();
 }
 
 int osd_textwidth(const char *str) {
@@ -171,7 +171,7 @@ int osd_textwidth(const char *str) {
 }
 
 void osd_write(const char *str) {
-  controller->output->print(str);
+  controller->_output->print(str);
 }
 
 char *dev_read(const char *fileName) {

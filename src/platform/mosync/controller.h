@@ -37,11 +37,11 @@ struct Controller : public MAUtil::Environment, IButtonListener {
   void handleMenu(int menuId);
   MAEvent processEvents(int ms, int untilType = -1);
   char *readSource(const char *fileName);
-  bool isExit() { return runMode == exit_state; }
-  bool isBack() { return runMode == back_state; }
-  bool isModal() { return runMode == modal_state; }
-  bool isBreak() { return runMode == exit_state || runMode == back_state; }
-  bool isRunning() { return runMode == run_state || runMode == modal_state; }
+  bool isExit() { return _runMode == exit_state; }
+  bool isBack() { return _runMode == back_state; }
+  bool isModal() { return _runMode == modal_state; }
+  bool isBreak() { return _runMode == exit_state || _runMode == back_state; }
+  bool isRunning() { return _runMode == run_state || _runMode == modal_state; }
   void setExit(bool quit);
   void setRunning(bool running = true);
   void showError();
@@ -49,7 +49,7 @@ struct Controller : public MAUtil::Environment, IButtonListener {
   void showMenu();
   void logPrint(const char *format, ...);
   void buttonClicked(const char *url);
-  AnsiWidget *output;
+  AnsiWidget *_output;
 
 private:
   void handleKey(int key);
@@ -67,19 +67,19 @@ private:
     exit_state
   };
 
-  ExecState runMode;
-  int lastEventTime;
-  int eventTicks;
-  int touchX;
-  int touchY;
-  int touchCurX;
-  int touchCurY;
-  int initialFontSize;
-  int fontScale;
-  bool mainBas;
-  bool systemMenu;
-  bool systemScreen;
-  bool drainError;
-  String loadPath;
-  char *programSrc;
+  ExecState _runMode;
+  int _lastEventTime;
+  int _eventTicks;
+  int _touchX;
+  int _touchY;
+  int _touchCurX;
+  int _touchCurY;
+  int _initialFontSize;
+  int _fontScale;
+  bool _mainBas;
+  bool _systemMenu;
+  bool _systemScreen;
+  bool _drainError;
+  String _loadPath;
+  char *_programSrc;
 };

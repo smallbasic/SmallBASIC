@@ -39,7 +39,7 @@ extern MainWindow *wnd;
 
 struct Form : public Group {
   Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {
-    this->cmd = 0;
+    this->_cmd = 0;
     this->var = 0;
     this->kb_handle = false;
   } 
@@ -47,7 +47,7 @@ struct Form : public Group {
   }
   void draw();                  // avoid drawing over the tab-bar
   var_t *var;                   // form variable contains the value of the event widget
-  int cmd;                      // doform argument by value
+  int _cmd;                      // doform argument by value
   bool kb_handle;               // whether doform returns on a keyboard event
 };
 
@@ -691,23 +691,23 @@ void cmd_doform() {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
-    form->cmd = -1;
+    form->_cmd = -1;
     form->var = 0;
     break;
   default:
     if (code_isvar()) {
       form->var = code_getvarptr();
-      form->cmd = -1;
+      form->_cmd = -1;
     } else {
       var_t var;
       v_init(&var);
       eval(&var);
-      form->cmd = v_getint(&var);
+      form->_cmd = v_getint(&var);
       form->var = 0;
       v_free(&var);
 
       // apply any configuration options
-      switch (form->cmd) {
+      switch (form->_cmd) {
       case 1:
         form->kb_handle = true;
         return;
@@ -720,7 +720,7 @@ void cmd_doform() {
 
   form_update(form);
 
-  if (!form->cmd) {
+  if (!form->_cmd) {
     ui_reset();
   } else if (wnd->_penMode) {
     mode = m_active;

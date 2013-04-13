@@ -7,8 +7,8 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#if !defined(__sb_app_h)
-#define __sb_app_h
+#if !defined(SB_APP_H)
+#define SB_APP_H
 
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-int sbasic_main(const char *file) SEC(BEXEC);
+int sbasic_main(const char *file);
 
 #if defined(__cplusplus)
 }

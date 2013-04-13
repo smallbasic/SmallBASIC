@@ -12,7 +12,11 @@
 #include <fltk/Widget.h>
 #include <fltk/Image.h>
 
-class MosyncWidget : public fltk::Widget {
+#include "platform/mosync/interface.h"
+
+struct AnsiWidget;
+
+class MosyncWidget : public fltk::Widget, IButtonListener {
 public:
   MosyncWidget(int x, int y, int w, int h, int defsize);
   virtual ~MosyncWidget();
@@ -31,12 +35,14 @@ public:
   void setPixel(int x, int y, int c);
   int getPixel(int x, int y);
   void setXY(int x, int y);
-  int textWidth(const char *s);
   int textHeight(void);
   void setFontSize(float i);
   int getFontSize();
-  void beep() const;
   void resize(int x, int y, int w, int h);
+
+private:
+  void buttonClicked(const char *action);
+  AnsiWidget *_ansiWidget;
 };
 
 #endif

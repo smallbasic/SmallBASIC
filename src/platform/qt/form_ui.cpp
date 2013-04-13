@@ -40,13 +40,13 @@ extern "C" {
 struct Form : public QWidget {
   Form(int x1, int x2, int y1, int y2) : QWidget() {
     setGeometry(x1, x2, y1, y2);
-    this->cmd = 0;
+    this->_cmd = 0;
     this->var = 0;
     this->kb_handle = false;
   } 
   ~Form() {}
   var_t *var;                   // form variable contains the value of the event widget
-  int cmd;                      // doform argument by value
+  int _cmd;                      // doform argument by value
   bool kb_handle;               // whether doform returns on a keyboard event
   int prev_x;
   int prev_y;
@@ -496,8 +496,8 @@ void update_widget(QWidget *widget, WidgetInfoPtr inf, QRect &rect) {
     widget->setFixedWidth(rect.width());
   }
 
-  if (rect.height() != -1) {
-    widget->setFixedHeight(rect.height());
+  if (rect._height() != -1) {
+    widget->setFixedHeight(rect._height());
   }
 
   if (rect.x() < 0) {
@@ -509,7 +509,7 @@ void update_widget(QWidget *widget, WidgetInfoPtr inf, QRect &rect) {
   }
 
   form->prev_x = rect.x() + rect.width();
-  form->prev_y = rect.y() + rect.height();
+  form->prev_y = rect.y() + rect._height();
 
   widget->setGeometry(rect);
   widget->setProperty("widgetInfo", QVariant::fromValue(inf));  
@@ -532,8 +532,8 @@ void update_button(QAbstractButton *widget, WidgetInfoPtr inf,
     rect.setWidth((int)wnd->out->textWidth(caption) + def_w + (-rect.width() - 1));
   }
 
-  if (rect.height() < 0) {
-    rect.setHeight((int)(wnd->out->textHeight() + def_h + (-rect.height() - 1)));
+  if (rect._height() < 0) {
+    rect.setHeight((int)(wnd->out->textHeight() + def_h + (-rect._height() - 1)));
   }
 
   update_widget(widget, inf, rect);
@@ -545,7 +545,7 @@ void update_button(QAbstractButton *widget, WidgetInfoPtr inf,
 void form_create() {
   if (form == 0) {
     form = new Form(wnd->out->x() + 2,
-                    wnd->out->y() + 2, wnd->out->width() - 2, wnd->out->height() - 2);
+                    wnd->out->y() + 2, wnd->out->width() - 2, wnd->out->_height() - 2);
   }
   // form->begin();
   mode = m_init;
@@ -554,7 +554,7 @@ void form_create() {
 // prepare the form for display
 void form_init() {
   if (form) {
-    form->setGeometry(0, 0, form->width(), form->height());
+    form->setGeometry(0, 0, form->width(), form->_height());
   }
 }
 
@@ -701,7 +701,7 @@ void cmd_text() {
     inf->var = v;
     inf->type = ctrl_text;
     update_widget(widget, inf, rect);
-    if (rect.height() > (wnd->out->textHeight() + BN_H)) {
+    if (rect._height() > (wnd->out->textHeight() + BN_H)) {
       // widget->type(QPlainTextEdit::MULTILINE | QPlainTextEdit::WORDWRAP);
     }
   }
@@ -721,23 +721,23 @@ void cmd_doform() {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
-    form->cmd = -1;
+    form->_cmd = -1;
     form->var = 0;
     break;
   default:
     if (code_isvar()) {
       form->var = code_getvarptr();
-      form->cmd = -1;
+      form->_cmd = -1;
     } else {
       var_t var;
       v_init(&var);
       eval(&var);
-      form->cmd = v_getint(&var);
+      form->_cmd = v_getint(&var);
       form->var = 0;
       v_free(&var);
 
       // apply any configuration options
-      switch (form->cmd) {
+      switch (form->_cmd) {
       case 1:
         form->kb_handle = true;
         return;
@@ -750,7 +750,7 @@ void cmd_doform() {
 
   form_update(form);
 
-  if (!form->cmd) {
+  if (!form->_cmd) {
     ui_reset();
   } else if (wnd->out->getMouseMode()) {
     mode = m_active;

@@ -23,13 +23,13 @@ Form *form;
 // ListModel
 //
 ListModel::ListModel(const char *items, var_t *v) :
-  focusIndex(-1) {
+  _focusIndex(-1) {
   create(items, v);
 }
 
 void ListModel::clear() {
-  list.removeAll();
-  focusIndex = -1;
+  _list.removeAll();
+  _focusIndex = -1;
 }
 
 void ListModel::create(const char *items, var_t *v) {
@@ -44,11 +44,11 @@ void ListModel::create(const char *items, var_t *v) {
       int end_index = c ? c - items : len;
       if (end_index > 0) {
         String *s = new String(items + i, end_index - i);
-        list.add(s);
+        _list.add(s);
         i = end_index;
         if (v != 0 && v->type == V_STR && v->v.p.ptr &&
             strcasecmp((const char *)v->v.p.ptr, s->c_str()) == 0) {
-          focusIndex = item_index;
+          _focusIndex = item_index;
         }
         item_index++;
       }
@@ -61,14 +61,14 @@ void ListModel::fromArray(const char *caption, var_t *v) {
   for (int i = 0; i < v->v.a.size; i++) {
     var_t *el_p = (var_t *)(v->v.a.ptr + sizeof(var_t) * i);
     if (el_p->type == V_STR) {
-      list.add(new String((const char *)el_p->v.p.ptr));
+      _list.add(new String((const char *)el_p->v.p.ptr));
       if (caption && strcasecmp((const char *)el_p->v.p.ptr, caption) == 0) {
-        focusIndex = i;
+        _focusIndex = i;
       }
     } else if (el_p->type == V_INT) {
       char buff[40];
       sprintf(buff, VAR_INT_FMT, el_p->v.i);
-      list.add(new String(buff));
+      _list.add(new String(buff));
     } else if (el_p->type == V_ARRAY) {
       fromArray(caption, el_p);
     }
@@ -78,17 +78,17 @@ void ListModel::fromArray(const char *caption, var_t *v) {
 // return the text at the given index
 const char *ListModel::getTextAt(int index) {
   const char *s = 0;
-  if (index > -1 && index < list.length()) {
-    s = list[index]->c_str();
+  if (index > -1 && index < _list.length()) {
+    s = _list[index]->c_str();
   }
   return s;
 }
 
 // returns the model index corresponding to the given string
 int ListModel::getIndex(const char *t) {
-  int size = list.length();
+  int size = _list.length();
   for (int i = 0; i < size; i++) {
-    if (!strcasecmp(list[i]->c_str(), t)) {
+    if (!strcasecmp(_list[i]->c_str(), t)) {
       return i;
     }
   }
@@ -99,26 +99,26 @@ int ListModel::getIndex(const char *t) {
 // Form
 //
 Form::Form() :
-  mode(m_init),
-  var(0),
-  cmd(0), 
-  kbHandle(false),
-  prevX(0),
-  prevY(0) {
+  _mode(m_init),
+  _var(0),
+  _cmd(0), 
+  _kbHandle(false),
+  _prevX(0),
+  _prevY(0) {
 } 
 
 Form::~Form() {
   logEntered();
-  List_each(WidgetDataPtr, it, items) {
+  List_each(WidgetDataPtr, it, _items) {
     delete (*it);
   }
 }
 
 // setup the widget
 void Form::setupWidget(WidgetDataPtr widgetData) { 
-  items.add(widgetData);
+  _items.add(widgetData);
 
-  IFormWidget *widget = widgetData->widget;
+  IFormWidget *widget = widgetData->_widget;
   const char *caption = widget->getText();
 
   int textW = 0;
@@ -138,15 +138,15 @@ void Form::setupWidget(WidgetDataPtr widgetData) {
   }
 
   if (widget->getX() < 0) {
-    widget->setX((prevX - widget->getX()) + 1);
+    widget->setX((_prevX - widget->getX()) + 1);
   }
 
   if (widget->getY() < 0) {
-    widget->setY((prevY - widget->getY()) + 1);
+    widget->setY((_prevY - widget->getY()) + 1);
   }
 
-  prevX = widget->getX() + widget->getW();
-  prevY = widget->getY() + widget->getH();
+  _prevX = widget->getX() + widget->getW();
+  _prevY = widget->getY() + widget->getH();
 }
 
 bool Form::execute() {
@@ -154,29 +154,29 @@ bool Form::execute() {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
-    cmd = -1;
-    var = 0;
+    _cmd = -1;
+    _var = 0;
     break;
   default:
     if (code_isvar()) {
-      var = code_getvarptr();
-      cmd = -1;
+      _var = code_getvarptr();
+      _cmd = -1;
     } else {
       var_t variable;
       v_init(&variable);
       eval(&variable);
-      cmd = v_getint(&variable);
+      _cmd = v_getint(&variable);
       v_free(&variable);
-      var = 0;
+      _var = 0;
 
       // apply any configuration options
-      switch (cmd) {
+      switch (_cmd) {
       case 0:
         // close the form
         return true;
       case 1:
         // turn on keyboard mode
-        kbHandle = true;
+        _kbHandle = true;
         return false;
       default:
         break;
@@ -187,23 +187,23 @@ bool Form::execute() {
   
   // apply any variable changes onto attached widgets
   if (controller->isRunning()) {
-    List_each(WidgetDataPtr, it, items) {
+    List_each(WidgetDataPtr, it, _items) {
       (*it)->updateGui();
     }
   }
 
   // pump system messages until there is a widget callback
-  mode = m_active;
+  _mode = m_active;
 
   // clear the keyboard when keyboard mode is active
-  if (kbHandle) {
+  if (_kbHandle) {
     dev_clrkb();
   }
 
   // process events
-  while (controller->isRunning() && mode == m_active) {
+  while (controller->isRunning() && _mode == m_active) {
     controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
-    if (kbHandle && keymap_kbhit()) {
+    if (_kbHandle && keymap_kbhit()) {
       int key = keymap_kbpeek();
       if (key != SB_KEY_MK_PUSH && key != SB_KEY_MK_RELEASE) {
         // avoid exiting on "mouse" keyboard keys
@@ -217,14 +217,14 @@ bool Form::execute() {
 }
 
 void Form::invoke(WidgetDataPtr widgetData) {
-  mode = m_selected;
-  if (var) {
+  _mode = m_selected;
+  if (_var) {
     // array type cannot be used in program select statement
-    if (widgetData->var->type == V_ARRAY) {
-      v_zerostr(var);
+    if (widgetData->_var->type == V_ARRAY) {
+      v_zerostr(_var);
     } else {
       // set the form variable from the widget var
-      v_set(var, widgetData->var);
+      v_set(_var, widgetData->_var);
     }
   }
 }
@@ -233,15 +233,15 @@ void Form::invoke(WidgetDataPtr widgetData) {
 // WidgetData
 //
 WidgetData::WidgetData(ControlType type, var_t *var) :
-  widget(NULL),
-  var(var),
-  type(type) {
+  _widget(NULL),
+  _var(var),
+  _type(type) {
   orig.ptr = 0;
   orig.i = 0;
 }
 
 WidgetData::~WidgetData() {
-  delete widget;
+  delete _widget;
 }
 
 // convert a basic array into a String
@@ -263,8 +263,8 @@ void WidgetData::arrayToString(String &s, var_t *v) {
 }
 
 void WidgetData::setupWidget(IFormWidget *widget) {
-  this->widget = widget;
-  this->widget->setListener(this);
+  this->_widget = widget;
+  this->_widget->setListener(this);
 
   if (form == NULL) {
     form = new Form();
@@ -278,15 +278,15 @@ void WidgetData::setupWidget(IFormWidget *widget) {
 
 // update the smallbasic variable
 void WidgetData::updateVarFlag() {
-  switch (var->type) {
+  switch (_var->type) {
   case V_STR:
-    orig.ptr = var->v.p.ptr;
+    orig.ptr = _var->v.p.ptr;
     break;
   case V_ARRAY:
-    orig.ptr = var->v.a.ptr;
+    orig.ptr = _var->v.a.ptr;
     break;
   case V_INT:
-    orig.i = var->v.i;
+    orig.i = _var->v.i;
     break;
   default:
     orig.i = 0;
@@ -309,46 +309,46 @@ bool WidgetData::updateGui() {
   ListModel *model;
   bool updated = false;
 
-  if (var->type == V_INT && var->v.i != orig.i) {
+  if (_var->type == V_INT && _var->v.i != orig.i) {
     // update list control with new int variable
-    if (type == ctrl_listbox) {
-      model = (ListModel *)widget->getList();
-      model->selected(var->v.i);
+    if (_type == ctrl_listbox) {
+      model = (ListModel *)_widget->getList();
+      model->selected(_var->v.i);
       updated = true;
     }
-  } else if (var->type == V_ARRAY && var->v.p.ptr != orig.ptr) {
+  } else if (_var->type == V_ARRAY && _var->v.p.ptr != orig.ptr) {
     // update list control with new array variable
     String s;
 
-    switch (type) {
+    switch (_type) {
     case ctrl_listbox:
-      model = (ListModel *)widget->getList();
+      model = (ListModel *)_widget->getList();
       model->clear();
-      model->create(0, var);
+      model->create(0, _var);
       updated = true;
       break;
 
     case ctrl_label:
     case ctrl_text:
-      arrayToString(s, var);
-      widget->setText(s.c_str());
+      arrayToString(s, _var);
+      _widget->setText(s.c_str());
       updated = true;
       break;
 
     default:
       break;
     }
-  } else if (var->type == V_STR && orig.ptr != var->v.p.ptr) {
+  } else if (_var->type == V_STR && orig.ptr != _var->v.p.ptr) {
     // update list control with new string variable
-    switch (type) {
+    switch (_type) {
     case ctrl_listbox:
-      model = (ListModel *)widget->getList();
-      if (strchr((const char *)var->v.p.ptr, '|')) {
+      model = (ListModel *)_widget->getList();
+      if (strchr((const char *)_var->v.p.ptr, '|')) {
         // create a new list of items
         model->clear();
-        model->create((const char *)var->v.p.ptr, 0);
+        model->create((const char *)_var->v.p.ptr, 0);
       } else {
-        int selection = model->getIndex((const char *)var->v.p.ptr);
+        int selection = model->getIndex((const char *)_var->v.p.ptr);
         if (selection != -1) {
           model->selected(selection);
         }
@@ -359,7 +359,7 @@ bool WidgetData::updateGui() {
     case ctrl_label:
     case ctrl_text:
     case ctrl_button:
-      widget->setText((const char *)var->v.p.ptr);
+      _widget->setText((const char *)_var->v.p.ptr);
       updated = true;
       break;
 
@@ -379,28 +379,28 @@ void WidgetData::transferData() {
   const char *s;
   ListModel *model;
 
-  switch (type) {
+  switch (_type) {
   case ctrl_button:
   case ctrl_text:
-    s = widget->getText();
+    s = _widget->getText();
     if (s && s[0]) {
-      v_setstr(var, s);
+      v_setstr(_var, s);
     } else {
-      v_zerostr(var);
+      v_zerostr(_var);
     }
     break;
     
   case ctrl_listbox:
-    model = (ListModel *)widget->getList();
+    model = (ListModel *)_widget->getList();
     const char *s = model->getTextAt(model->selected());
     if (s) {
-      v_setstr(var, s);
+      v_setstr(_var, s);
     }
     break;
 
   case ctrl_exit_link:
   case ctrl_exit_button:
-    controller->buttonClicked((const char *)var->v.p.ptr);
+    controller->buttonClicked((const char *)_var->v.p.ptr);
     brun_break();
     break;
     
@@ -434,36 +434,36 @@ void cmd_button() {
     if (type) {
       if (strcasecmp("button", type) == 0) {
         wd = new WidgetData(ctrl_button, var);
-        widget = controller->output->createButton(caption, x, y, w, h);
+        widget = controller->_output->createButton(caption, x, y, w, h);
       } else if (strcasecmp("exit_button", type) == 0) {
         wd = new WidgetData(ctrl_exit_button, var);
-        widget = controller->output->createButton(caption, x, y, w, h);
+        widget = controller->_output->createButton(caption, x, y, w, h);
       } else if (strcasecmp("label", type) == 0) {
         wd = new WidgetData(ctrl_label, var);
-        widget = controller->output->createLabel(caption, x, y, w, h);
+        widget = controller->_output->createLabel(caption, x, y, w, h);
       } else if (strcasecmp("link", type) == 0) {
         wd = new WidgetData(ctrl_link, var);
-        widget = controller->output->createLink(caption, x, y, w, h);
+        widget = controller->_output->createLink(caption, x, y, w, h);
       } else if (strcasecmp("exit_link", type) == 0) {
         wd = new WidgetData(ctrl_exit_link, var);
-        widget = controller->output->createLink(caption, x, y, w, h);
+        widget = controller->_output->createLink(caption, x, y, w, h);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {
         ListModel *model = new ListModel(caption, var);
         wd = new WidgetData(ctrl_listbox, var);
-        widget = controller->output->createList(model, x, y, w, h);
+        widget = controller->_output->createList(model, x, y, w, h);
       } else if (strcasecmp("choice", type) == 0 || 
                  strcasecmp("dropdown", type) == 0) {
         ListModel *model = new ListModel(caption, var);
         wd = new WidgetData(ctrl_listbox, var);
-        widget = controller->output->createList(model, x, y, w, h);
+        widget = controller->_output->createList(model, x, y, w, h);
       } else {
         ui_reset();
         rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);
       }
     } else {
       wd = new WidgetData(ctrl_button, var);
-      widget = controller->output->createButton(caption, x, y, w, h);
+      widget = controller->_output->createButton(caption, x, y, w, h);
     }
     if (widget) {
       wd->setupWidget(widget);
@@ -483,7 +483,7 @@ void cmd_text() {
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &var)) {
     WidgetData *wd = new WidgetData(ctrl_text, var);
-    IFormWidget *widget = controller->output->createLineInput(NULL, 0, x, y, w, h);
+    IFormWidget *widget = controller->_output->createLineInput(NULL, 0, x, y, w, h);
     wd->setupWidget(widget);
   }
 }

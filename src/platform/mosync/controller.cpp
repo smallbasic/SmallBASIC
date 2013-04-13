@@ -33,31 +33,31 @@
 
 Controller::Controller() :
   Environment(),
-  output(NULL),
-  runMode(init_state),
-  lastEventTime(0),
-  eventTicks(0),
-  touchX(-1),
-  touchY(-1),
-  touchCurX(-1),
-  touchCurY(-1),
-  initialFontSize(0),
-  fontScale(100),
-  mainBas(false),
-  systemMenu(false),
-  systemScreen(false),
-  drainError(false),
-  programSrc(NULL) {
+  _output(NULL),
+  _runMode(init_state),
+  _lastEventTime(0),
+  _eventTicks(0),
+  _touchX(-1),
+  _touchY(-1),
+  _touchCurX(-1),
+  _touchCurY(-1),
+  _initialFontSize(0),
+  _fontScale(100),
+  _mainBas(false),
+  _systemMenu(false),
+  _systemScreen(false),
+  _drainError(false),
+  _programSrc(NULL) {
   logEntered();
 }
 
 bool Controller::construct() {
   MAExtent screenSize = maGetScrSize();
-  output = new AnsiWidget(this, EXTENT_X(screenSize), EXTENT_Y(screenSize));
-  output->construct();
-  initialFontSize = output->getFontSize();
+  _output = new AnsiWidget(this, EXTENT_X(screenSize), EXTENT_Y(screenSize));
+  _output->construct();
+  _initialFontSize = _output->getFontSize();
 
-  runMode = init_state;
+  _runMode = init_state;
   opt_ide = IDE_NONE;
   opt_graphics = true;
   opt_pref_bpp = 0;
@@ -84,12 +84,12 @@ bool Controller::construct() {
       offset += sizeof(int);
 
       if (storeVersion == STORE_VERSION) {
-        maReadData(data, &fontScale, offset, sizeof(int));
+        maReadData(data, &_fontScale, offset, sizeof(int));
         offset += sizeof(int);        
 
-        if (fontScale != 100) {
-          int fontSize = (initialFontSize * fontScale / 100);
-          output->setFontSize(fontSize);
+        if (_fontScale != 100) {
+          int fontSize = (_initialFontSize * _fontScale / 100);
+          _output->setFontSize(fontSize);
         }
         
         maReadData(data, &pathLength, offset, sizeof(int));
@@ -123,7 +123,7 @@ Controller::~Controller() {
     offset += sizeof(int);
 
     // write the fontScale
-    maWriteData(data, &fontScale, offset, sizeof(int));
+    maWriteData(data, &_fontScale, offset, sizeof(int));
     offset += sizeof(int);
     
     // write the current path
@@ -136,12 +136,12 @@ Controller::~Controller() {
   }
   maDestroyPlaceholder(data);
 
-  delete output;
-  delete [] programSrc;
+  delete _output;
+  delete [] _programSrc;
 }
 
 const char *Controller::getLoadPath() {
-  return !loadPath.length() ? NULL : loadPath.c_str();
+  return !_loadPath.length() ? NULL : _loadPath.c_str();
 }
 
 int Controller::getPen(int code) {
@@ -154,7 +154,7 @@ int Controller::getPen(int code) {
       // fallthru
 
     case 3:   // returns true if the pen is down (and save curpos)
-      if (touchX != -1 && touchY != -1) {
+      if (_touchX != -1 && _touchY != -1) {
         result = 1;
       } else {
         processEvents(EVENT_WAIT_NONE);
@@ -162,21 +162,21 @@ int Controller::getPen(int code) {
       break;
 
     case 1:   // last pen-down x
-      result = touchX;
+      result = _touchX;
       break;
 
     case 2:   // last pen-down y
-      result = touchY;
+      result = _touchY;
       break;
 
     case 4:   // cur pen-down x
     case 10:
-      result = touchCurX;
+      result = _touchCurX;
       break;
 
     case 5:   // cur pen-down y
     case 11:
-      result = touchCurY;
+      result = _touchCurY;
       break;
     }
   }
@@ -184,15 +184,15 @@ int Controller::getPen(int code) {
 }
 
 char *Controller::getText(char *dest, int maxSize) {
-  int x = output->getX();
-  int y = output->getY();
+  int x = _output->getX();
+  int y = _output->getY();
   int w = EXTENT_X(maGetTextSize("YNM"));
-  int h = output->textHeight();
+  int h = _output->textHeight();
 
   dest[0] = '\0';
-  runMode = modal_state;
-  IFormWidget *formWidget = output->createLineInput(dest, maxSize, x, y, w, h);
-  output->redraw();
+  _runMode = modal_state;
+  IFormWidget *formWidget = _output->createLineInput(dest, maxSize, x, y, w, h);
+  _output->redraw();
   maShowVirtualKeyboard();
 
   while (isModal()) {
@@ -201,9 +201,9 @@ char *Controller::getText(char *dest, int maxSize) {
       dev_clrkb();
       if (isModal()) {
         if (event.key == 10) {
-          runMode = run_state;
+          _runMode = run_state;
         } else {
-          output->edit(formWidget, event.key);
+          _output->edit(formWidget, event.key);
         }
       }
     }
@@ -211,7 +211,7 @@ char *Controller::getText(char *dest, int maxSize) {
 
   // paint the widget result onto the backing screen
   if (dest[0]) {
-    output->print(dest);
+    _output->print(dest);
   }
 
   delete formWidget;
@@ -223,18 +223,18 @@ int Controller::handleEvents(int waitFlag) {
   if (!waitFlag) {
     // detect when we have been called too frequently
     int now = maGetMilliSecondCount();
-    eventTicks++;
-    if (now - lastEventTime >= EVENT_CHECK_EVERY) {
+    _eventTicks++;
+    if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
       // next time inspection interval
-      if (eventTicks >= EVENT_MAX_BURN_TIME) {
-        output->print("\033[ LBattery drain");
-        drainError = true;
-      } else if (drainError) {
-        output->print("\033[ L");
-        drainError = false;
+      if (_eventTicks >= EVENT_MAX_BURN_TIME) {
+        _output->print("\033[ LBattery drain");
+        _drainError = true;
+      } else if (_drainError) {
+        _output->print("\033[ L");
+        _drainError = false;
       }
-      lastEventTime = now;
-      eventTicks = 0;
+      _lastEventTime = now;
+      _eventTicks = 0;
     }
   }
 
@@ -253,14 +253,14 @@ int Controller::handleEvents(int waitFlag) {
     break;
   }
 
-  output->flush(false);
+  _output->flush(false);
   return isBreak() ? -2 : 0;
 }
 
 // handle the system menu
 void Controller::handleMenu(int menuId) {
-  int fontSize = output->getFontSize();
-  systemMenu = false;
+  int fontSize = _output->getFontSize();
+  _systemMenu = false;
 
   switch (menuId) {
   case MENU_SOURCE:
@@ -273,29 +273,29 @@ void Controller::handleMenu(int menuId) {
     maShowVirtualKeyboard();
     break;
   case MENU_ZOOM_UP:
-    if (fontScale > FONT_MIN) {
-      fontScale -= FONT_SCALE_INTERVAL;
-      fontSize = (initialFontSize * fontScale / 100);
+    if (_fontScale > FONT_MIN) {
+      _fontScale -= FONT_SCALE_INTERVAL;
+      fontSize = (_initialFontSize * _fontScale / 100);
     }
     break;
   case MENU_ZOOM_DN:
-    if (fontScale < FONT_MAX) {
-      fontScale += FONT_SCALE_INTERVAL;
-      fontSize = (initialFontSize * fontScale / 100);
+    if (_fontScale < FONT_MAX) {
+      _fontScale += FONT_SCALE_INTERVAL;
+      fontSize = (_initialFontSize * _fontScale / 100);
     }
     break;
   }
 
-  if (fontSize != output->getFontSize()) {
-    output->setFontSize(fontSize);
+  if (fontSize != _output->getFontSize()) {
+    _output->setFontSize(fontSize);
     // restart the shell
     buttonClicked("main.bas");
     brun_break();
-    runMode = break_state;
+    _runMode = break_state;
   }
   
   if (!isRunning()) {
-    output->flush(true);
+    _output->flush(true);
   }
 }
 
@@ -303,12 +303,12 @@ void Controller::handleMenu(int menuId) {
 MAEvent Controller::processEvents(int ms, int untilType) {
   MAEvent event;
   MAExtent screenSize;
-  int loadPathSize = loadPath.length();
+  int loadPathSize = _loadPath.length();
 
   if (ms < 0 && untilType != -1) {
     // flush the display before pausing for target event
     if (isRunning()) {
-      output->flush(true);
+      _output->flush(true);
     }
     maWait(ms);
     ms = EVENT_WAIT_NONE;
@@ -317,37 +317,37 @@ MAEvent Controller::processEvents(int ms, int untilType) {
   while (!isBreak() && maGetEvent(&event)) {
     switch (event.type) {
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
-      if (systemMenu) {
+      if (_systemMenu) {
         handleMenu(event.optionsBoxButtonIndex);
         ms = EVENT_WAIT_NONE;
       } else if (isRunning()) {
-        if (!output->optionSelected(event.optionsBoxButtonIndex)) {
+        if (!_output->optionSelected(event.optionsBoxButtonIndex)) {
           dev_pushkey(event.optionsBoxButtonIndex);
         }
       }
       break;
     case EVENT_TYPE_SCREEN_CHANGED:
       screenSize = maGetScrSize();
-      output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
-      os_graf_mx = output->getWidth();
-      os_graf_my = output->getHeight();
+      _output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
+      os_graf_mx = _output->getWidth();
+      os_graf_my = _output->getHeight();
       handleKey(SB_PKEY_SIZE_CHG);
       break;
     case EVENT_TYPE_POINTER_PRESSED:
-      touchX = touchCurX = event.point.x;
-      touchY = touchCurY = event.point.y;
+      _touchX = _touchCurX = event.point.x;
+      _touchY = _touchCurY = event.point.y;
       handleKey(SB_KEY_MK_PUSH);
-      output->pointerTouchEvent(event);
+      _output->pointerTouchEvent(event);
       break;
     case EVENT_TYPE_POINTER_DRAGGED:
-      touchCurX = event.point.x;
-      touchCurY = event.point.y;
-      output->pointerMoveEvent(event);
+      _touchCurX = event.point.x;
+      _touchCurY = event.point.y;
+      _output->pointerMoveEvent(event);
       break;
     case EVENT_TYPE_POINTER_RELEASED:
-      touchX = touchY = touchCurX = touchCurY = -1;
+      _touchX = _touchY = _touchCurX = _touchCurY = -1;
       handleKey(SB_KEY_MK_RELEASE);
-      output->pointerReleaseEvent(event);
+      _output->pointerReleaseEvent(event);
       break;
     case EVENT_TYPE_CLOSE:
       setExit(true);
@@ -358,7 +358,7 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     }
     if (untilType == EVENT_TYPE_EXIT_ANY ||
         untilType == event.type ||
-        loadPathSize != loadPath.length()) {
+        loadPathSize != _loadPath.length()) {
       // skip next maWait() - found target event or loadPath changed
       ms = EVENT_WAIT_NONE;
       break;
@@ -381,7 +381,7 @@ char *Controller::readSource(const char *fileName) {
     strcpy(opt_command, delim + 1);
   }
   
-  mainBas = false;
+  _mainBas = false;
   trace("readSource %s %d %s", fileName, endIndex, opt_command);
 
   if (networkFile) {
@@ -392,7 +392,7 @@ char *Controller::readSource(const char *fileName) {
     buffer = (char *)tmp_alloc(len + 1);
     maReadData(MAIN_BAS, buffer, 0, len);
     buffer[len] = '\0';
-    mainBas = true;
+    _mainBas = true;
   } else {
     // load from file system
     MAHandle handle = maFileOpen(fileName, MA_ACCESS_READ);
@@ -410,11 +410,11 @@ char *Controller::readSource(const char *fileName) {
     strcpy(buffer, ERROR_BAS);
   }
 
-  delete [] programSrc;
+  delete [] _programSrc;
   len = strlen(buffer);
-  programSrc = new char[len + 1];
-  strncpy(programSrc, buffer, len);
-  programSrc[len] = 0;
+  _programSrc = new char[len + 1];
+  strncpy(_programSrc, buffer, len);
+  _programSrc[len] = 0;
 
   logPrint("Opened: %s %d bytes\n", fileName, len);
   return buffer;
@@ -425,7 +425,7 @@ void Controller::setExit(bool quit) {
   if (isRunning()) {
     brun_break();
   }
-  runMode = quit ? exit_state : back_state;
+  _runMode = quit ? exit_state : back_state;
 }
 
 // commence runtime state
@@ -433,8 +433,8 @@ void Controller::setRunning(bool running) {
   if (running) {
     dev_fgcolor = -DEFAULT_COLOR;
     dev_bgcolor = 0;
-    os_graf_mx = output->getWidth();
-    os_graf_my = output->getHeight();
+    os_graf_mx = _output->getWidth();
+    os_graf_my = _output->getHeight();
 
     os_ver = 1;
     os_color = 1;
@@ -444,43 +444,43 @@ void Controller::setRunning(bool running) {
     dev_clrkb();
     ui_reset();
 
-    runMode = run_state;
-    loadPath.empty();
-    output->reset();
+    _runMode = run_state;
+    _loadPath.empty();
+    _output->reset();
 
-    lastEventTime = maGetMilliSecondCount();
-    eventTicks = 0;
-    drainError = false;
+    _lastEventTime = maGetMilliSecondCount();
+    _eventTicks = 0;
+    _drainError = false;
   } else {
-    runMode = init_state;
+    _runMode = init_state;
   }
 }
 
 void Controller::showError() {
-  runMode = init_state;
-  loadPath.empty();
+  _runMode = init_state;
+  _loadPath.empty();
   showSystemScreen(false);
 }
 
 void Controller::showCompletion(bool success) {
   if (success) {
-    output->print("\033[ LDone - press back [<-]");
+    _output->print("\033[ LDone - press back [<-]");
   } else {
-    output->print("\033[ LError - see console");
+    _output->print("\033[ LError - see console");
   }
-  output->flush(true);
+  _output->flush(true);
 }
 
 void Controller::showMenu() {
-  systemMenu = true;
-  if (mainBas) {
+  _systemMenu = true;
+  if (_mainBas) {
     char buffer[128];
     sprintf(buffer, "%s|Zoom %d%%|Zoom %d%%", SYSTEM_MENU, 
-            fontScale - FONT_SCALE_INTERVAL,
-            fontScale + FONT_SCALE_INTERVAL);
-    output->print(buffer);
+            _fontScale - FONT_SCALE_INTERVAL,
+            _fontScale + FONT_SCALE_INTERVAL);
+    _output->print(buffer);
   } else {
-    output->print(SYSTEM_MENU);
+    _output->print(SYSTEM_MENU);
   }
 }
 
@@ -495,19 +495,19 @@ void Controller::logPrint(const char *format, ...) {
 
   lprintfln(buf);
 
-  if (systemScreen) {
-    output->print(buf);
+  if (_systemScreen) {
+    _output->print(buf);
   } else {
-    output->print("\033[ SW7");
-    output->print(buf);
-    output->print("\033[ Sw");
+    _output->print("\033[ SW7");
+    _output->print(buf);
+    _output->print("\033[ Sw");
   }
 }
 
 // handler for hyperlink click actions
 void Controller::buttonClicked(const char *url) {
-  loadPath.empty();
-  loadPath.append(url, strlen(url));
+  _loadPath.empty();
+  _loadPath.append(url, strlen(url));
 }
 
 // pass the key into the smallbasic keyboard handler
@@ -518,13 +518,13 @@ void Controller::handleKey(int key) {
     return;
   case MAK_SOFTRIGHT:
   case MAK_BACK:
-    if (systemScreen) {
+    if (_systemScreen) {
       // restore user screens
-      output->print("\033[ SR");
-      systemScreen = false;
+      _output->print("\033[ SR");
+      _systemScreen = false;
     } else {
       // quit app when shell is active
-      setExit(mainBas);
+      setExit(_mainBas);
     }
     return;
   case MAK_MENU:
@@ -592,13 +592,13 @@ void Controller::handleKey(int key) {
 char *Controller::readConnection(const char *url) {
   char *result = NULL;
   logEntered();
-  output->print("\033[ LLoading...");
+  _output->print("\033[ LLoading...");
 
   MAHandle conn = maConnect(url);
   if (conn < 1) {
     logPrint("Failed connecting to %s\n", url);
   } else {
-    runMode = conn_state;
+    _runMode = conn_state;
     logPrint("Connecting to %s\n", url);
 
     bool connected = false;
@@ -609,7 +609,7 @@ char *Controller::readConnection(const char *url) {
     MAEvent event;
 
     // pause until connected
-    while (runMode == conn_state) {
+    while (_runMode == conn_state) {
       event = processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_CONN);
       if (event.type == EVENT_TYPE_CONN) {
         switch (event.conn.opType) {
@@ -622,7 +622,7 @@ char *Controller::readConnection(const char *url) {
               maConnRead(conn, buffer, sizeof(buffer));
             } else {
               logPrint("Connection error\n");
-              runMode = init_state;
+              _runMode = init_state;
             }
           }
           break;
@@ -644,12 +644,12 @@ char *Controller::readConnection(const char *url) {
             maConnRead(conn, buffer, sizeof(buffer));
           } else {
             // no more data
-            runMode = init_state;
+            _runMode = init_state;
           }
           break;
         default:
           logPrint("Connection error\n");
-          runMode = init_state;
+          _runMode = init_state;
         }
       }
     }
@@ -663,15 +663,15 @@ char *Controller::readConnection(const char *url) {
 void Controller::showSystemScreen(bool showSrc) {
   if (showSrc) {
     // screen command write screen 2 (\014=CLS)
-    output->print("\033[ SW6\014");
-    if (programSrc) {
-      output->print(programSrc);
+    _output->print("\033[ SW6\014");
+    if (_programSrc) {
+      _output->print(_programSrc);
     }
     // restore write screen, display screen 6 (source)
-    output->print("\033[ Sw; SD6");
+    _output->print("\033[ Sw; SD6");
   } else {
     // screen command display screen 7 (console)
-    output->print("\033[ SD7");
+    _output->print("\033[ SD7");
   }
-  systemScreen = true;
+  _systemScreen = true;
 }

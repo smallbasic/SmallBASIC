@@ -46,7 +46,8 @@ char *pw_shell(const char *cmd) {
   HANDLE h_inppip, h_outpip, h_errpip, h_pid;
   char buf[BUFSIZE + 1], cv_buf[BUFSIZE + 1];
   char *result = NULL;
-  int block_count = 0, bytes;
+  int block_count = 0;
+  DWORD bytes;
 
   SECURITY_ATTRIBUTES sa;
   STARTUPINFO si;
@@ -57,7 +58,7 @@ char *pw_shell(const char *cmd) {
   sa.bInheritHandle = TRUE;
 
   if (!CreatePipe(&h_inppip, &h_outpip, &sa, BUFSIZE)) {
-    return NULL;                // failed
+    return NULL;
   }
 
   h_pid = GetCurrentProcess();
@@ -75,7 +76,7 @@ char *pw_shell(const char *cmd) {
   si.hStdOutput = h_outpip;
   si.hStdError = h_errpip;
 
-  if (CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+  if (CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
     // close streams
     CloseHandle(pi.hThread);
     CloseHandle(h_outpip);

@@ -64,7 +64,7 @@ int osd_devinit() {
   // allow the application to set the preferred width and height
   if ((opt_pref_width || opt_pref_height)) {
     int delta_x = wnd->width() - wnd->out->width();
-    int delta_y = wnd->height() - wnd->out->height();
+    int delta_y = wnd->_height() - wnd->out->_height();
     if (opt_pref_width < 10) {
       opt_pref_width = 10;
     }
@@ -75,7 +75,7 @@ int osd_devinit() {
   }
 
   os_graf_mx = wnd->out->width();
-  os_graf_my = wnd->out->height();
+  os_graf_my = wnd->out->_height();
 
   os_ver = QT_VERSION;
   os_color = 1;
@@ -393,7 +393,7 @@ void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h
     if (img != 0) {
       // input/read image and display
       imgw = img->width();
-      imgh = img->height();
+      imgh = img->_height();
       wnd->out->drawImage(img, x, y, sx, sy, (w == 0 ? imgw : w), (h == 0 ? imgh : h));
     }
   } else {
@@ -425,7 +425,7 @@ int dev_image_height(int handle, int index) {
 
   QImage *img = getImage(filep, index);
   if (img) {
-    imgh = img->height();
+    imgh = img->_height();
   }
   return imgh;
 }

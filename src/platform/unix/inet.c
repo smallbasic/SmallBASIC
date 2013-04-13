@@ -12,7 +12,7 @@
 #include "common/device.h"
 
 #ifdef HAVE_CONFIG_H
-#  include <config.h>
+#include <config.h>
 #endif
 
 #if defined(_Win32)
@@ -248,7 +248,7 @@ socket_t net_listen(int server_port) {
   addr.sin_addr.s_addr = INADDR_ANY;    // autoselect IP address
 
   // prevent address already in use bind errors
-  if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+  if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(int)) == -1) {
     return -1;
   }
   // set s up to be a server (listening) socket
@@ -302,4 +302,3 @@ void net_disconnect(socket_t s) {
 #endif
 }
 
-/* End of "$Id: inet.c 681 2009-08-14 12:59:38Z zeeb90au $". */

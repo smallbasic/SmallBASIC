@@ -61,9 +61,9 @@ FormList *clickedList = NULL;
 
 Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
   Shape(x, y, w, h),
-  pressed(false),
-  bg(bg),
-  fg(fg) {
+  _pressed(false),
+  _bg(bg),
+  _fg(fg) {
 }
 
 void Widget::drawButton(const char *caption, int dx, int dy) {
@@ -78,7 +78,7 @@ void Widget::drawButton(const char *caption, int dx, int dy) {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(dx, dy, width-1, height-1);
 
-  if (pressed) {
+  if (_pressed) {
     maSetColor(0x909090);
     maLine(dx, dy, r, dy);  // top
     maLine(dx, dy, dx, b);  // left
@@ -102,14 +102,14 @@ void Widget::drawButton(const char *caption, int dx, int dy) {
     maLine(r-2, dy+1, r-2, b-1); // right
   }
 
-  maSetColor(fg);
+  maSetColor(_fg);
   maDrawText(textX, textY, caption);
 }
 
 void Widget::drawLink(const char *caption, int dx, int dy) {
-  maSetColor(fg);
+  maSetColor(_fg);
   maDrawText(dx, dy, caption);
-  maSetColor(pressed ? fg : bg);
+  maSetColor(_pressed ? _fg : _bg);
   maLine(dx + 2, dy + height + 1, dx + width, dy + height + 1);
 }
 
@@ -119,8 +119,8 @@ bool Widget::overlaps(MAPoint2d pt, int offsX, int offsY) {
 
 // returns setBG when the program colours are default
 int Widget::getBackground(int buttonColor) {
-  int result = bg;
-  if (fg == DEFAULT_COLOR && bg == 0) {
+  int result = _bg;
+  if (_fg == DEFAULT_COLOR && _bg == 0) {
     result = buttonColor;
   }
   return result;
@@ -128,20 +128,20 @@ int Widget::getBackground(int buttonColor) {
 
 Button::Button(Screen *screen, const char* action, const char *label,
                int x, int y, int w, int h) :
-  Widget(screen->bg, screen->fg, x, y, w, h),
-  action(action),
-  label(label) {
-  screen->shapes.add(this);
+  Widget(screen->_bg, screen->_fg, x, y, w, h),
+  _action(action),
+  _label(label) {
+  screen->_shapes.add(this);
 }
 
 void Button::clicked(IButtonListener *listener, int x, int y) {
-  listener->buttonClicked(action.c_str());
+  listener->buttonClicked(_action.c_str());
 }
 
 FormWidget::FormWidget(Screen *screen, int x, int y, int w, int h) :
-  Widget(screen->bg, screen->fg, x, y, w, h),
-  screen(screen),
-  listener(NULL) {
+  Widget(screen->_bg, screen->_fg, x, y, w, h),
+  _screen(screen),
+  _listener(NULL) {
   getScreen()->add(this); 
 }
 
@@ -150,56 +150,56 @@ FormWidget::~FormWidget() {
 }
 
 void FormWidget::clicked(IButtonListener *, int x, int y) {
-  if (this->listener) {
-    this->listener->buttonClicked(NULL); 
+  if (this->_listener) {
+    this->_listener->buttonClicked(NULL); 
   }
 }
 
 FormButton::FormButton(Screen *screen, const char *caption, int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
-  caption(caption) {
+  _caption(caption) {
 }
 
 FormLabel::FormLabel(Screen *screen, const char *caption, int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
-  caption(caption) {
+  _caption(caption) {
 }
 
 FormLink::FormLink(Screen *screen, const char *link, int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
-  link(link) {
+  _link(link) {
 }
 
 FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize, 
                              int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
-  buffer(buffer),
-  maxSize(maxSize),
-  scroll(0) {
+  _buffer(buffer),
+  _maxSize(maxSize),
+  _scroll(0) {
 }
 
 void FormLineInput::draw(int dx, int dy) {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(dx, dy, width, height);
-  maSetColor(fg);
-  maDrawText(dx, dy, buffer + scroll);
+  maSetColor(_fg);
+  maDrawText(dx, dy, _buffer + _scroll);
 }
 
 bool FormLineInput::edit(int key) {
   bool changed = false;
-  int len = strlen(buffer);
+  int len = strlen(_buffer);
 
   if (key >= MAK_SPACE && key <= MAK_Z) {
     // insert
-    if (len < maxSize - 1) {
-      buffer[len] = key;
-      buffer[++len] = '\0';
-      int textWidth = get_text_width(buffer);
+    if (len < _maxSize - 1) {
+      _buffer[len] = key;
+      _buffer[++len] = '\0';
+      int textWidth = get_text_width(_buffer);
       if (textWidth > width) {
         if (textWidth > getScreen()->width) {
-          scroll++;
+          _scroll++;
         } else {
-          width += getScreen()->charWidth;
+          width += getScreen()->_charWidth;
         }
       }
       changed = true;
@@ -207,9 +207,9 @@ bool FormLineInput::edit(int key) {
   } else if (key == MAK_CLEAR) {
     // delete
     if (len > 0) {
-      buffer[len - 1] = '\0';
-      if (scroll) {
-        scroll--;
+      _buffer[len - 1] = '\0';
+      if (_scroll) {
+        _scroll--;
       }
       changed = true;
     }
@@ -223,7 +223,7 @@ bool FormLineInput::edit(int key) {
 FormList::FormList(Screen *screen, IFormWidgetListModel *model,
                    int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
-  model(model) {
+  _model(model) {
   if (model->rows()) {
     model->selected(0);
   }
@@ -232,19 +232,19 @@ FormList::FormList(Screen *screen, IFormWidgetListModel *model,
 void FormList::clicked(IButtonListener *listener, int x, int y) {
   // calculate the size of the options buffer
   int optionsBytes = sizeof(int);
-  for (int i = 0; i < model->rows(); i++) {
-    const char *str = model->getTextAt(i);
+  for (int i = 0; i < _model->rows(); i++) {
+    const char *str = _model->getTextAt(i);
     optionsBytes += (strlen(str) + 1) * sizeof(wchar);
   }
 
   // create the options buffer
   delete [] options;
   options = new char[optionsBytes];
-  *(int *)options = model->rows();
+  *(int *)options = _model->rows();
   wchar_t *dst = (wchar_t *)(options + sizeof(int));
   
-  for (int i = 0; i < model->rows(); i++) {
-    const char *str = model->getTextAt(i);
+  for (int i = 0; i < _model->rows(); i++) {
+    const char *str = _model->getTextAt(i);
     int len = strlen(str);
     swprintf(dst, len + 1, L"%hs", str);
     dst[len] = 0;
@@ -256,45 +256,45 @@ void FormList::clicked(IButtonListener *listener, int x, int y) {
 }
 
 void FormList::draw(int x, int y) {
-  if (model) {
+  if (_model) {
     drawButton(getText(), x, y);
   }
 }
 
 void FormList::optionSelected(int index) {
-  if (index < model->rows()) {
-    model->selected(index);
+  if (index < _model->rows()) {
+    _model->selected(index);
     FormWidget::clicked(NULL, -1, -1);
   }
 }
 
 AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
-  back(NULL),
-  front(NULL),
-  focus(NULL),
-  width(width),
-  height(height),
-  xTouch(-1),
-  yTouch(-1),
-  xMove(-1),
-  yMove(-1),
-  moveTime(0),
-  moveDown(false),
-  swipeExit(false),
-  buttonListener(listener),
-  activeButton(NULL) {
+  _back(NULL),
+  _front(NULL),
+  _focus(NULL),
+  _width(width),
+  _height(height),
+  _xTouch(-1),
+  _yTouch(-1),
+  _xMove(-1),
+  _yMove(-1),
+  _moveTime(0),
+  _moveDown(false),
+  _swipeExit(false),
+  _buttonListener(listener),
+  _activeButton(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
-    screens[i] = NULL;
+    _screens[i] = NULL;
   }
-  fontSize = min(width, height) / FONT_FACTOR;
-  trace("width: %d height: %d fontSize:%d", width, height, fontSize);
+  _fontSize = min(width, height) / FONT_FACTOR;
+  trace("width: %d height: %d fontSize:%d", _width, height, _fontSize);
 }
 
 bool AnsiWidget::construct() {
   bool result = false;
-  back = new GraphicScreen(width, height, fontSize);
-  if (back && back->construct()) {
-    screens[0] = front = back;
+  _back = new GraphicScreen(_width, _height, _fontSize);
+  if (_back && _back->construct()) {
+    _screens[0] = _front = _back;
     clearScreen();
     result = true;
   }
@@ -304,7 +304,7 @@ bool AnsiWidget::construct() {
 // widget clean up
 AnsiWidget::~AnsiWidget() {
   for (int i = 0; i < MAX_SCREENS; i++) {
-    delete screens[i];
+    delete _screens[i];
   }
   delete [] options;
 }
@@ -316,20 +316,20 @@ void AnsiWidget::beep() const {
 
 // creates a Button attached to the current back screen
 IFormWidget *AnsiWidget::createButton(char *caption, int x, int y, int w, int h) {
-  FormButton *button = new FormButton(back, caption, x, y, w, h);
+  FormButton *button = new FormButton(_back, caption, x, y, w, h);
   return button;
 }
 
 // creates a Label attached to the current back screen
 IFormWidget *AnsiWidget::createLabel(char *caption, int x, int y, int w, int h) {
-  FormLabel *label = new FormLabel(back, caption, x, y, w, h);
+  FormLabel *label = new FormLabel(_back, caption, x, y, w, h);
   return label;
 }
 
 // creates a LineInput attached to the current back screen
 IFormWidget *AnsiWidget::createLineInput(char *buffer, int maxSize,
                                          int x, int y, int w, int h) {
-  FormLineInput *lineInput = new FormLineInput(back, buffer, maxSize, x, y, w, h);
+  FormLineInput *lineInput = new FormLineInput(_back, buffer, maxSize, x, y, w, h);
   return lineInput;
 }
 
@@ -339,7 +339,7 @@ IFormWidget *AnsiWidget::createLink(char *caption, int x, int y, int w, int h) {
   if (w == 0 && h == 0) {
     result = (FormLink *)createLink(caption, caption, true, false);
   } else {
-    result = new FormLink(back, caption, x, y, w, h);
+    result = new FormLink(_back, caption, x, y, w, h);
   }
   return result;
 }
@@ -347,7 +347,7 @@ IFormWidget *AnsiWidget::createLink(char *caption, int x, int y, int w, int h) {
 // creates a List attached to the current back screen
 IFormWidget *AnsiWidget::createList(IFormWidgetListModel *model, 
                                     int x, int y, int w, int h) {
-  FormList *list = new FormList(back, model, x, y, w, h);
+  FormList *list = new FormList(_back, model, x, y, w, h);
   return list;
 }
 
@@ -359,25 +359,25 @@ void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, 
 
 // draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
-  back->drawLine(x1, y1, x2, y2);
+  _back->drawLine(x1, y1, x2, y2);
   flush(false);
 }
 
 // draw a rectangle onto the offscreen buffer
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
-  back->drawRect(x1, y1, x2, y2);
+  _back->drawRect(x1, y1, x2, y2);
   flush(false);
 }
 
 // draw a filled rectangle onto the offscreen buffer
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
-  back->drawRectFilled(x1, y1, x2, y2);
+  _back->drawRectFilled(x1, y1, x2, y2);
   flush(false);
 }
 
 // perform editing when the formWidget belongs to the front screen
 void AnsiWidget::edit(IFormWidget *formWidget, int c) {
-  if (front == ((FormWidget *)formWidget)->getScreen()) {
+  if (_front == ((FormWidget *)formWidget)->getScreen()) {
     if (formWidget->edit(c)) {
       redraw();
     }
@@ -387,26 +387,26 @@ void AnsiWidget::edit(IFormWidget *formWidget, int c) {
 // display and pending images changed
 void AnsiWidget::flush(bool force, bool vscroll) {
   bool update = false;
-  if (front != NULL) {
+  if (_front != NULL) {
     if (force) {
-      update = front->dirty;
-    } else if (front->dirty) {
-      update = (maGetMilliSecondCount() - front->dirty >= MAX_PENDING);
+      update = _front->_dirty;
+    } else if (_front->_dirty) {
+      update = (maGetMilliSecondCount() - _front->_dirty >= MAX_PENDING);
     }
     if (update) {
-      front->draw(vscroll);
+      _front->draw(vscroll);
     }
   }
 }
 
 // returns the color of the pixel at the given xy location
 int AnsiWidget::getPixel(int x, int y) {
-  return back->getPixel(x, y);
+  return _back->getPixel(x, y);
 }
 
 // Returns the height in pixels using the current font setting
 int AnsiWidget::textHeight(void) {
-  return back->charHeight;
+  return _back->_charHeight;
 }
 
 bool AnsiWidget::optionSelected(int index) {
@@ -423,7 +423,7 @@ bool AnsiWidget::optionSelected(int index) {
 void AnsiWidget::print(const char *str) {
   int len = strlen(str);
   if (len) {
-    back->drawInto();
+    _back->drawInto();
 
     int lineHeight = textHeight();
 
@@ -439,7 +439,7 @@ void AnsiWidget::print(const char *str) {
         beep();
         break;
       case '\t':
-        back->calcTab();
+        _back->calcTab();
         break;
       case '\003': // end of text
         flush(true);
@@ -454,13 +454,13 @@ void AnsiWidget::print(const char *str) {
         // file separator
         break;
       case '\n':   // new line
-        back->newLine(lineHeight);
+        _back->newLine(lineHeight);
         break;
       case '\r':   // return
-        back->curX = INITXY;     // erasing the line will clear any previous text
+        _back->_curX = INITXY;     // erasing the line will clear any previous text
         break;
       default:
-        p += back->print(p, lineHeight) - 1; // allow for p++
+        p += _back->print(p, lineHeight) - 1; // allow for p++
       };
 
       if (*p == '\0') {
@@ -477,20 +477,20 @@ void AnsiWidget::print(const char *str) {
 
 // redraws and flushes the front screen
 void AnsiWidget::redraw() {
-  front->drawInto();
+  _front->drawInto();
   flush(true);
 }
 
 // reinit for new program run
 void AnsiWidget::reset() {
-  back = front = screens[0];
-  back->reset(fontSize);
-  back->clear();
+  _back = _front = _screens[0];
+  _back->reset(_fontSize);
+  _back->clear();
 
   // reset non-system screens
   for (int i = 1; i < SYSTEM_SCREENS; i++) {
-    delete screens[i];
-    screens[i] = NULL;
+    delete _screens[i];
+    _screens[i] = NULL;
   }
 }
 
@@ -498,29 +498,29 @@ void AnsiWidget::reset() {
 void AnsiWidget::resize(int newWidth, int newHeight) {
   int lineHeight = textHeight();
   for (int i = 0; i < MAX_SCREENS; i++) {
-    Screen *screen = screens[i];
+    Screen *screen = _screens[i];
     if (screen) {
-      screen->resize(newWidth, newHeight, width, height, lineHeight);
-      if (screen == front || i < SYSTEM_SCREENS) {
+      screen->resize(newWidth, newHeight, _width, _height, lineHeight);
+      if (screen == _front || i < SYSTEM_SCREENS) {
         screen->draw(false);
       }
     }
   }
-  width = newWidth;
-  height = newHeight;
+  _width = newWidth;
+  _height = newHeight;
 }
 
 // sets the current drawing color
 void AnsiWidget::setColor(long fg) {
-  back->setColor(fg);
+  _back->setColor(fg);
 }
 
 // sets the text font size
 void AnsiWidget::setFontSize(int fontSize) {
-  this->fontSize = fontSize;
+  this->_fontSize = fontSize;
   for (int i = 0; i < MAX_SCREENS; i++) {
-    if (screens[i] != NULL) {
-      screens[i]->reset(fontSize);
+    if (_screens[i] != NULL) {
+      _screens[i]->reset(fontSize);
     }
   }
   redraw();
@@ -528,66 +528,66 @@ void AnsiWidget::setFontSize(int fontSize) {
 
 // sets the pixel to the given color at the given xy location
 void AnsiWidget::setPixel(int x, int y, int c) {
-  back->setPixel(x, y, c);
+  _back->setPixel(x, y, c);
 }
 
 // sets the current text drawing color
 void AnsiWidget::setTextColor(long fg, long bg) {
-  back->setTextColor(fg, bg);
+  _back->setTextColor(fg, bg);
 }
 
 // handler for pointer touch events
 void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   // hit test buttons on the front screen
-  if (setActiveButton(event, front)) {
-    focus = front;
+  if (setActiveButton(event, _front)) {
+    _focus = _front;
   } else {
     // hit test buttons on remaining screens
     for (int i = 0; i < MAX_SCREENS; i++) {
-      if (screens[i] != NULL && screens[i] != front) {
-        if (setActiveButton(event, screens[i])) {
-          focus = screens[i];
+      if (_screens[i] != NULL && _screens[i] != _front) {
+        if (setActiveButton(event, _screens[i])) {
+          _focus = _screens[i];
           break;
         }
       }
     }
   }
   // paint the pressed button
-  if (activeButton != NULL) {
+  if (_activeButton != NULL) {
     drawActiveButton();
   }
   // setup vars for page scrolling
-  if (front->overlaps(event.point.x, event.point.y)) {
-    xTouch = xMove = event.point.x;
-    yTouch = yMove = event.point.y;
+  if (_front->overlaps(event.point.x, event.point.y)) {
+    _xTouch = _xMove = event.point.x;
+    _yTouch = _yMove = event.point.y;
   }
 }
 
 // handler for pointer move events
 void AnsiWidget::pointerMoveEvent(MAEvent &event) {
-  if (activeButton != NULL) {
-    bool pressed = activeButton->overlaps(event.point, focus->x,
-                                          focus->y - focus->scrollY);
-    if (pressed != activeButton->pressed) {
-      activeButton->pressed = pressed;
+  if (_activeButton != NULL) {
+    bool pressed = _activeButton->overlaps(event.point, _focus->x,
+                                          _focus->y - _focus->_scrollY);
+    if (pressed != _activeButton->_pressed) {
+      _activeButton->_pressed = pressed;
       drawActiveButton();
     }
-  } else if (!swipeExit) {
+  } else if (!_swipeExit) {
     // scroll up/down
-    if (front->overlaps(event.point.x, event.point.y)) {
-      int vscroll = front->scrollY + (yMove - event.point.y);
-      int maxScroll = (front->curY - front->height) + (2 * fontSize);
+    if (_front->overlaps(event.point.x, event.point.y)) {
+      int vscroll = _front->_scrollY + (_yMove - event.point.y);
+      int maxScroll = (_front->_curY - _front->height) + (2 * _fontSize);
       if (vscroll < 0) {
         vscroll = 0;
       }
-      if (vscroll != front->scrollY && maxScroll > 0 && 
+      if (vscroll != _front->_scrollY && maxScroll > 0 && 
           vscroll < maxScroll + OVER_SCROLL) {
-        moveTime = maGetMilliSecondCount();
-        moveDown = (front->scrollY < vscroll);
-        front->drawInto();
-        front->scrollY = vscroll;
-        xMove = event.point.x;
-        yMove = event.point.y;
+        _moveTime = maGetMilliSecondCount();
+        _moveDown = (_front->_scrollY < vscroll);
+        _front->drawInto();
+        _front->_scrollY = vscroll;
+        _xMove = event.point.x;
+        _yMove = event.point.y;
         flush(true, true);
       }
     }
@@ -596,42 +596,42 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
 
 // handler for pointer release events
 void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
-  if (activeButton != NULL && activeButton->pressed) {
-    activeButton->pressed = false;
+  if (_activeButton != NULL && _activeButton->_pressed) {
+    _activeButton->_pressed = false;
     drawActiveButton();
-    activeButton->clicked(buttonListener, event.point.x, event.point.y);
-  } else if (swipeExit) {
-    swipeExit = false;
+    _activeButton->clicked(_buttonListener, event.point.x, event.point.y);
+  } else if (_swipeExit) {
+    _swipeExit = false;
   } else {
-    int maxScroll = (front->curY - front->height) + (2 * fontSize);
-    if (yMove != -1 && maxScroll > 0) {
-      front->drawInto();
-      bool swiped = (abs(xTouch - xMove) > (width / 3) ||
-                     abs(yTouch - yMove) > (height / 3));
+    int maxScroll = (_front->_curY - _front->height) + (2 * _fontSize);
+    if (_yMove != -1 && maxScroll > 0) {
+      _front->drawInto();
+      bool swiped = (abs(_xTouch - _xMove) > (_width / 3) ||
+                     abs(_yTouch - _yMove) > (_height / 3));
       int start = maGetMilliSecondCount();
-      if (swiped && start - moveTime < SWIPE_TRIGGER_SLOW) {
+      if (swiped && start - _moveTime < SWIPE_TRIGGER_SLOW) {
         doSwipe(start, maxScroll);
-      } else if (front->scrollY > maxScroll) {
-        front->scrollY = maxScroll;
+      } else if (_front->_scrollY > maxScroll) {
+        _front->_scrollY = maxScroll;
       }
       // ensure the scrollbar is removed
-      front->dirty = true;
+      _front->_dirty = true;
       flush(true);
-      moveTime = 0;
+      _moveTime = 0;
     }
   }
 
-  xTouch = xMove = -1;
-  yTouch = yMove = -1;
-  activeButton = NULL;
-  focus = NULL;
+  _xTouch = _xMove = -1;
+  _yTouch = _yMove = -1;
+  _activeButton = NULL;
+  _focus = NULL;
 }
 
 // creates a status-bar label
 void AnsiWidget::createLabel(char *&p) {
   List<String *> *items = getItems(p);
   const char *label = items->length() > 0 ? (*items)[0]->c_str() : "";
-  back->label = label;
+  _back->_label = label;
   deleteItems(items);
 }
 
@@ -650,27 +650,27 @@ Widget *AnsiWidget::createLink(const char *action, const char *text,
   MAExtent textSize = maGetTextSize(text);
   int w = EXTENT_X(textSize) + 2;
   int h = EXTENT_Y(textSize) + 2;
-  int x = back->curX;
-  int y = back->curY;
+  int x = _back->_curX;
+  int y = _back->_curY;
 
   if (button) {
     w += BUTTON_PADDING;
     h += BUTTON_PADDING;
-    back->linePadding = BUTTON_PADDING;
+    _back->_linePadding = BUTTON_PADDING;
   }
-  if (back->curX + w >= width) {
-    w = width - back->curX; // clipped
-    back->newLine(EXTENT_Y(textSize) + LINE_SPACING);
+  if (_back->_curX + w >= _width) {
+    w = _width - _back->_curX; // clipped
+    _back->newLine(EXTENT_Y(textSize) + LINE_SPACING);
   } else {
-    back->curX += w;
+    _back->_curX += w;
   }
   Widget *result;
   if (formLink) {
-    result = new FormLink(back, action, x, y, w, h);
+    result = new FormLink(_back, action, x, y, w, h);
   } else if (button) {
-    result = new BlockButton(back, action, text, x, y, w, h);
+    result = new BlockButton(_back, action, text, x, y, w, h);
   } else {
-    result = new TextButton(back, action, text, x, y, w, h);
+    result = new TextButton(_back, action, text, x, y, w, h);
   }
   return result;
 }
@@ -733,8 +733,8 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       break;
     case 'C':
       // GSS Graphic Size Selection
-      back->fontSize = escValue;
-      back->updateFont();
+      _back->_fontSize = escValue;
+      _back->updateFont();
       break;
     case 'K':
       maShowVirtualKeyboard();
@@ -756,8 +756,8 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
       // advance to the separator
       p++;
     }
-  } else if (back->setGraphicsRendition(*p, escValue, textHeight)) {
-    back->updateFont();
+  } else if (_back->setGraphicsRendition(*p, escValue, textHeight)) {
+    _back->updateFont();
   }
 
   bool result = false;
@@ -773,14 +773,14 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
 void AnsiWidget::doSwipe(int start, int maxScroll) {
   MAEvent event;
   int elapsed = 0;
-  int vscroll = front->scrollY;
-  int scrollSize = (start - moveTime < SWIPE_TRIGGER_FAST) ? 
+  int vscroll = _front->_scrollY;
+  int scrollSize = (start - _moveTime < SWIPE_TRIGGER_FAST) ? 
                    SWIPE_SCROLL_FAST : SWIPE_SCROLL_SLOW;
   int swipeStep = SWIPE_DELAY_STEP;
   while (elapsed < SWIPE_MAX_TIMER) {
     if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
       // ignore the next move and release events
-      swipeExit = true;
+      _swipeExit = true;
       break;
     }
     elapsed += (maGetMilliSecondCount() - start);
@@ -792,15 +792,15 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
     if (scrollSize == 1) {
       maWait(20);
     }
-    vscroll += moveDown ? scrollSize : -scrollSize;
+    vscroll += _moveDown ? scrollSize : -scrollSize;
     if (vscroll < 0) {
       vscroll = 0;
     } else if (vscroll > maxScroll) {
       vscroll = maxScroll;
     }
-    if (vscroll != front->scrollY) {
-      front->dirty = true; // forced
-      front->scrollY = vscroll;
+    if (vscroll != _front->_scrollY) {
+      _front->_dirty = true; // forced
+      _front->_scrollY = vscroll;
       flush(true, true);
     } else {
       break;
@@ -814,10 +814,10 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
 // draws the focus screen
 void AnsiWidget::drawActiveButton() {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
-  int x = focus->x + activeButton->x;
-  int y = focus->y + activeButton->y - focus->scrollY;
-  maSetClipRect(x, y, activeButton->width, activeButton->height + 2);
-  activeButton->draw(x, y);
+  int x = _focus->x + _activeButton->x;
+  int y = _focus->y + _activeButton->y - _focus->_scrollY;
+  maSetClipRect(x, y, _activeButton->width, _activeButton->height + 2);
+  _activeButton->draw(x, y);
   maUpdateScreen();
   maResetBacklight();
   maSetDrawTarget(currentHandle);
@@ -872,15 +872,15 @@ void AnsiWidget::removeScreen(char *&p) {
   int n = items->length() > 0 ? atoi((*items)[0]->c_str()) : 0;
   if (n < 1 || n >= MAX_SCREENS) {
     print("ERR invalid screen number");
-  } else if (screens[n] != NULL) {
-    if (back == screens[n]) {
-      back = screens[0];
+  } else if (_screens[n] != NULL) {
+    if (_back == _screens[n]) {
+      _back = _screens[0];
     }
-    if (front == screens[n]) {
-      front = screens[0];
+    if (_front == _screens[n]) {
+      _front = _screens[0];
     }
-    delete screens[n];
-    screens[n] = NULL;
+    delete _screens[n];
+    _screens[n] = NULL;
   }
   deleteItems(items);
 }
@@ -899,34 +899,34 @@ void AnsiWidget::screenCommand(char *&p) {
     break;
   case 'R': // redraw all user screens
     for (int i = 0; i < MAX_SCREENS; i++) {
-      if (screens[i] != NULL && i < SYSTEM_SCREENS) {
-        screens[i]->draw(false);
-        front = back = screens[i];
+      if (_screens[i] != NULL && i < SYSTEM_SCREENS) {
+        _screens[i]->draw(false);
+        _front = _back = _screens[i];
       }
     }
     break;
   case 'W': // select write/back screen
     selected = selectScreen(p);
     if (selected) {
-      back = selected;
+      _back = selected;
     }
     break;
   case 'w': // revert write/back to front screen
-    back = front;
+    _back = _front;
     break;
   case 'D': // select display/front screen
     selected = selectScreen(p);
     if (selected) {
-      front = selected;
-      front->dirty = true;
+      _front = selected;
+      _front->_dirty = true;
       flush(true);
     }
     break;
   case '#': // open screen # for write/display
     selected = selectScreen(p);
     if (selected) {
-      front = back = selected;
-      front->dirty = true;
+      _front = _back = selected;
+      _front->_dirty = true;
       flush(true);
     }
     break;
@@ -940,12 +940,12 @@ void AnsiWidget::screenCommand(char *&p) {
 bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
   bool result = false;
   if (screen->overlaps(event.point.x, event.point.y)) {
-    List_each(Shape*, it, screen->shapes) {
+    List_each(Shape*, it, screen->_shapes) {
       Widget *widget = (Widget *)(*it);
       if (widget->overlaps(event.point, screen->x,
-                           screen->y - screen->scrollY)) {
-        activeButton = widget;
-        activeButton->pressed = true;
+                           screen->y - screen->_scrollY)) {
+        _activeButton = widget;
+        _activeButton->_pressed = true;
         break;
       }
     }
@@ -976,14 +976,14 @@ Screen *AnsiWidget::selectScreen(char *&p) {
   w = min(max(w, 0), 100);
   h = min(max(h, 0), 100);
 
-  result = screens[n];
+  result = _screens[n];
 
   if (result != NULL) {
     // specified screen already exists
     if (result->x != x ||
         result->y != y ||
-        result->width != width ||
-        result->height != height) {
+        result->width != _width ||
+        result->height != _height) {
       delete result;
       result = NULL;
     }
@@ -991,12 +991,12 @@ Screen *AnsiWidget::selectScreen(char *&p) {
   
   if (result == NULL) {
     if (n > 1) {
-      result = new TextScreen(width, height, fontSize, x, y, w, h);
+      result = new TextScreen(_width, _height, _fontSize, x, y, w, h);
     } else {
-      result = new GraphicScreen(width, height, fontSize);
+      result = new GraphicScreen(_width, _height, _fontSize);
     }    
     if (result && result->construct()) {
-      screens[n] = result;
+      _screens[n] = result;
       result->drawInto();
       result->clear();
     } else {
@@ -1024,23 +1024,23 @@ void AnsiWidget::showAlert(char *&p) {
 
 // transpose the front and back screens
 void AnsiWidget::swapScreens() {
-  if (front == back) {
-    if (screens[1] != NULL) {
-      front = screens[1];
+  if (_front == _back) {
+    if (_screens[1] != NULL) {
+      _front = _screens[1];
     } else {
-      front = new GraphicScreen(width, height, fontSize);
-      if (front && front->construct()) {
-        screens[1] = front;
+      _front = new GraphicScreen(_width, _height, _fontSize);
+      if (_front && _front->construct()) {
+        _screens[1] = _front;
       } else {
         trace("Failed to create screen");
       }
     }
   } else {
-    Screen *tmp = front;
-    front = back;
-    back = tmp;
-    if (front->dirty) {
-      front->draw(false);
+    Screen *tmp = _front;
+    _front = _back;
+    _back = tmp;
+    if (_front->_dirty) {
+      _front->draw(false);
     }
   }
 }

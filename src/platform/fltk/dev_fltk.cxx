@@ -272,7 +272,7 @@ void osd_cls() {
 }
 
 int osd_textwidth(const char *str) {
-  return (int)wnd->_out->textWidth(str);
+  return (int)fltk::getwidth(str);
 }
 
 int osd_textheight(const char *str) {
@@ -314,7 +314,7 @@ void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
 }
 
 void osd_beep() {
-  wnd->_out->beep();
+  fltk::beep(fltk::BEEP_MESSAGE);
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {

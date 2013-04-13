@@ -62,26 +62,26 @@ struct Screen : public Shape {
   virtual void updateFont() = 0;
 
   int ansiToMosync(long c);
-  void add(Shape *button) { shapes.add(button); }
+  void add(Shape *button) { _shapes.add(button); }
   bool overlaps(int px, int py);
   void remove(Shape *button);
   void setColor(long color);
-  void setDirty() { if (!dirty) { dirty = maGetMilliSecondCount(); } }
+  void setDirty() { if (!_dirty) { _dirty = maGetMilliSecondCount(); } }
   void setTextColor(long fg, long bg);
   void setFont(bool bold, bool italic);
 
-  MAHandle font;
-  int fontSize;
-  int charWidth;
-  int charHeight;
-  int scrollY;
-  int bg, fg;
-  int curX;
-  int curY;
-  int dirty;
-  int linePadding;
-  List<Shape *>shapes;
-  String label;
+  MAHandle _font;
+  int _fontSize;
+  int _charWidth;
+  int _charHeight;
+  int _scrollY;
+  int _bg, _fg;
+  int _curX;
+  int _curY;
+  int _dirty;
+  int _linePadding;
+  List<Shape *>_shapes;
+  String _label;
 };
 
 struct GraphicScreen : public Screen {
@@ -102,19 +102,19 @@ struct GraphicScreen : public Screen {
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
   void setPixel(int x, int y, int c);
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
-  void updateFont() { setFont(bold, italic); }
+  void updateFont() { setFont(_bold, _italic); }
   int getPixel(int x, int y);
 
-  MAHandle image;
-  bool underline;
-  bool invert;
-  bool bold;
-  bool italic;
-  int imageWidth;
-  int imageHeight;
-  int curYSaved;
-  int curXSaved;
-  int tabSize;
+  MAHandle _image;
+  bool _underline;
+  bool _invert;
+  bool _bold;
+  bool _italic;
+  int _imageWidth;
+  int _imageHeight;
+  int _curYSaved;
+  int _curXSaved;
+  int _tabSize;
 };
 
 struct TextSeg {
@@ -128,14 +128,14 @@ struct TextSeg {
 
   // create a new segment
   TextSeg() :
-    str(0),
-    flags(0),
-    color(NO_COLOR),
-    next(0) {}
+    _str(0),
+    _flags(0),
+    _color(NO_COLOR),
+    _next(0) {}
   
   ~TextSeg() {
-    if (str) {
-      delete[]str;
+    if (_str) {
+      delete[]_str;
     }
   }
 
@@ -151,53 +151,53 @@ struct TextSeg {
 
   void setText(const char *str, int n) {
     if ((!str || !n)) {
-      this->str = 0;
+      this->_str = 0;
     } else {
-      this->str = new char[n + 1];
-      strncpy(this->str, str, n);
-      this->str[n] = 0;
+      this->_str = new char[n + 1];
+      strncpy(this->_str, str, n);
+      this->_str[n] = 0;
     }
   }
 
   // create a string of n spaces
   void tab(int n) {
-    this->str = new char[n + 1];
-    memset(this->str, ' ', n);
-    this->str[n] = 0;
+    this->_str = new char[n + 1];
+    memset(this->_str, ' ', n);
+    this->_str[n] = 0;
   }
 
   // set the flag value
   void set(int f, bool value) {
     if (value) {
-      flags |= f;
+      _flags |= f;
     } else {
-      flags &= ~f;
+      _flags &= ~f;
     }
-    flags |= (f << 16);
+    _flags |= (f << 16);
   }
 
   // return whether the flag was set (to true or false)
   bool set(int f) const { 
-    return (flags & (f << 16)); 
+    return (_flags & (f << 16)); 
   }
 
   // return the flag value if set, otherwise return value
   bool get(int f, bool *value) const {
     bool result = *value;
-    if (flags & (f << 16)) {
-      result = (flags & f);
+    if (_flags & (f << 16)) {
+      result = (_flags & f);
     }
     return result;
   }
 
   // width of this segment in pixels
   int width() const { 
-    return get_text_width(str); 
+    return get_text_width(_str); 
   }
 
   // number of chars in this segment
   int numChars() const { 
-    return !str ? 0 : strlen(str); 
+    return !_str ? 0 : strlen(_str); 
   }
 
   // update font and state variables when set in this segment
@@ -209,36 +209,36 @@ struct TextSeg {
     return set(BOLD) || set(ITALIC);
   }
 
-  char *str;
-  int flags;
-  int color;
-  TextSeg *next;
+  char *_str;
+  int _flags;
+  int _color;
+  TextSeg *_next;
 };
 
 struct Row {
-  Row() : head(0) {} 
+  Row() : _head(0) {} 
   ~Row() {
     clear();
   }
 
   // append a segment to this row
   void append(TextSeg *node) {
-    if (!head) {
-      head = node;
+    if (!_head) {
+      _head = node;
     } else {
-      tail(head)->next = node;
+      tail(_head)->_next = node;
     }
-    node->next = 0;
+    node->_next = 0;
   }
 
   // clear the contents of this row
   void clear() {
-    remove(head);
-    head = 0;
+    remove(_head);
+    _head = 0;
   }
 
   TextSeg *next() {
-    TextSeg *result = head;
+    TextSeg *result = _head;
     if (!result) {
       result = new TextSeg();
       append(result);
@@ -248,20 +248,20 @@ struct Row {
 
   // number of characters in this row
   int numChars() const {
-    return numChars(this->head);
+    return numChars(this->_head);
   }
 
   int numChars(TextSeg *next) const {
     int n = 0;
     if (next) {
-      n = next->numChars() + numChars(next->next);
+      n = next->numChars() + numChars(next->_next);
     }
     return n;
   }
 
   void remove(TextSeg *next) {
     if (next) {
-      remove(next->next);
+      remove(next->_next);
       delete next;
     }
   }
@@ -269,7 +269,7 @@ struct Row {
   // move to the tab position
   void tab() {
     int tabSize = 6;
-    int num = numChars(this->head);
+    int num = numChars(this->_head);
     int pos = tabSize - (num % tabSize);
     if (pos) {
       TextSeg *next = new TextSeg();
@@ -279,22 +279,22 @@ struct Row {
   }
 
   TextSeg *tail(TextSeg *next) {
-    return !next->next ? next : tail(next->next);
+    return !next->_next ? next : tail(next->_next);
   }
 
   int width() const {
-    return width(this->head);
+    return width(this->_head);
   }
 
   int width(TextSeg *next) const {
     int n = 0;
     if (next) {
-      n = next->width() + width(next->next);
+      n = next->width() + width(next->_next);
     }
     return n;
   }
 
-  TextSeg *head;
+  TextSeg *_head;
 };
 
 struct TextScreen : public Screen {
@@ -324,22 +324,22 @@ private:
 
   // returns the number of display text rows held in the buffer
   int getTextRows() {
-    return 1 + ((head >= tail) ? (head - tail) : head + (rows - tail));
+    return 1 + ((_head >= _tail) ? (_head - _tail) : _head + (_rows - _tail));
   }
 
   // returns the number of rows available for display
   int getPageRows() {
-    return (height - 1) / charHeight;
+    return (height - 1) / _charHeight;
   }
 
   void setSizes(int screenW, int screenH);
 
-  Shape rectangle;  // relative screen size (percentage)
-  Row *buffer;      // buffer management
-  int head;         // current head of buffer
-  int tail;         // buffer last line
-  int rows;         // total number of rows - size of buffer
-  int cols;         // maximum number of characters in a row
+  Shape _rectangle;  // relative screen size (percentage)
+  Row *_buffer;      // buffer management
+  int _head;         // current head of buffer
+  int _tail;         // buffer last line
+  int _rows;         // total number of rows - size of buffer
+  int _cols;         // maximum number of characters in a row
 };
 
 #endif

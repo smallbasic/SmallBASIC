@@ -21,42 +21,12 @@
 
 #include "platform/common/StringLib.h"
 #include "platform/mosync/screen.h"
+#include "interface.h"
 
 #define MAX_SCREENS 8
 #define SYSTEM_SCREENS 6
 
 using namespace strlib;
-
-struct IButtonListener {
-  virtual ~IButtonListener() {}
-  virtual void buttonClicked(const char *action) = 0;
-};
-
-struct IFormWidgetListModel {
-  virtual ~IFormWidgetListModel() {}
-  virtual const char *getTextAt(int index) = 0;
-  virtual int getIndex(const char *label) = 0;
-  virtual int rows() const = 0;
-  virtual int selected() const = 0;
-  virtual void selected(int index) = 0;
-};
-
-struct IFormWidget {
-  virtual ~IFormWidget() {}
-  virtual bool edit(int key) = 0;
-  virtual IFormWidgetListModel *getList() const = 0;
-  virtual const char *getText() const = 0;
-  virtual void setText(const char *text) = 0;
-  virtual void setListener(IButtonListener *listener) = 0;
-  virtual int getX() = 0;
-  virtual int getY() = 0;
-  virtual int getW() = 0;
-  virtual int getH() = 0;
-  virtual void setX(int x) = 0;
-  virtual void setY(int y) = 0;
-  virtual void setW(int w) = 0;
-  virtual void setH(int h) = 0;
-};
 
 // base implementation for all buttons
 struct Widget : public Shape {
@@ -70,8 +40,8 @@ struct Widget : public Shape {
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   int getBackground(int buttonColor);
 
-  bool pressed;
-  int bg, fg;
+  bool _pressed;
+  int _bg, _fg;
 };
 
 // base implementation for all internal buttons
@@ -82,8 +52,8 @@ struct Button : public Widget {
 
   void clicked(IButtonListener *listener, int x, int y);
 
-  String action;
-  String label;
+  String _action;
+  String _label;
 };
 
 // internal text button
@@ -91,7 +61,7 @@ struct TextButton : public Button {
   TextButton(Screen *screen, const char *action, const char *label,
              int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {}
-  void draw(int x, int y) { drawLink(label.c_str(), x, y); }
+  void draw(int x, int y) { drawLink(_label.c_str(), x, y); }
 };
 
 // internal block button
@@ -99,7 +69,7 @@ struct BlockButton : public Button {
   BlockButton(Screen *screen, const char *action, const char *label,
               int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {}
-  void draw(int x, int y) { drawButton(label.c_str(), x, y); }
+  void draw(int x, int y) { drawButton(_label.c_str(), x, y); }
 };
 
 // base implementation for all external buttons
@@ -107,8 +77,8 @@ struct FormWidget : public Widget, IFormWidget {
   FormWidget(Screen *screen, int x, int y, int w, int h);
   virtual ~FormWidget();
 
-  void setListener(IButtonListener *listener) { this->listener = listener; }
-  Screen *getScreen() { return screen; }
+  void setListener(IButtonListener *listener) { this->_listener = listener; }
+  Screen *getScreen() { return _screen; }
   void clicked(IButtonListener *listener, int x, int y);
 
   IFormWidgetListModel *getList() const { return NULL; }
@@ -125,41 +95,41 @@ struct FormWidget : public Widget, IFormWidget {
   void setH(int h) { this->height = h; }
 
 private:
-  Screen *screen;
-  IButtonListener *listener;
+  Screen *_screen;
+  IButtonListener *_listener;
 };
 
 struct FormButton : public FormWidget {
   FormButton(Screen *screen, const char *caption, int x, int y, int w, int h);
   virtual ~FormButton() {}
 
-  const char *getText() const { return caption.c_str(); }
-  void draw(int x, int y) { drawButton(caption.c_str(), x, y); }
+  const char *getText() const { return _caption.c_str(); }
+  void draw(int x, int y) { drawButton(_caption.c_str(), x, y); }
 
 private:
-  String caption;
+  String _caption;
 };
 
 struct FormLabel : public FormWidget {
   FormLabel(Screen *screen, const char *caption, int x, int y, int w, int h);
   virtual ~FormLabel() {}
 
-  const char *getText() const { return caption.c_str(); }
-  void draw(int x, int y) { drawButton(caption.c_str(), x, y); }
+  const char *getText() const { return _caption.c_str(); }
+  void draw(int x, int y) { drawButton(_caption.c_str(), x, y); }
 
 private:
-  String caption;
+  String _caption;
 };
 
 struct FormLink : public FormWidget {
   FormLink(Screen *screen, const char *link, int x, int y, int w, int h);
   virtual ~FormLink() {}
 
-  const char *getText() const { return link.c_str(); }
-  void draw(int x, int y) { drawLink(link.c_str(), x, y); }
+  const char *getText() const { return _link.c_str(); }
+  void draw(int x, int y) { drawLink(_link.c_str(), x, y); }
 
 private:
-  String link;
+  String _link;
 };
 
 struct FormLineInput : public FormWidget {
@@ -170,13 +140,13 @@ struct FormLineInput : public FormWidget {
   void close();
   void draw(int x, int y);
   bool edit(int key);
-  const char *getText() const { return buffer; }
+  const char *getText() const { return _buffer; }
   void setText(const char *text) {}
 
 private:
-  char *buffer;
-  int maxSize;
-  int scroll;
+  char *_buffer;
+  int _maxSize;
+  int _scroll;
 };
 
 struct FormList : public FormWidget {
@@ -184,14 +154,14 @@ struct FormList : public FormWidget {
            int x, int y, int w, int h);
   virtual ~FormList() {}
 
-  IFormWidgetListModel *getList() const { return model; }
-  const char *getText() const { return model->getTextAt(model->selected()); }
+  IFormWidgetListModel *getList() const { return _model; }
+  const char *getText() const { return _model->getTextAt(_model->selected()); }
   void clicked(IButtonListener *listener, int x, int y);
   void draw(int dx, int dy);
   void optionSelected(int index);
 
 private:
-  IFormWidgetListModel *model;
+  IFormWidgetListModel *_model;
 };
 
 struct AnsiWidget {
@@ -199,7 +169,7 @@ struct AnsiWidget {
   ~AnsiWidget();
 
   void beep() const;
-  void clearScreen() { back->clear(); }
+  void clearScreen() { _back->clear(); }
   bool construct();
   IFormWidget *createButton(char *caption, int x, int y, int w, int h);
   IFormWidget *createLabel(char *caption, int x, int y, int w, int h);
@@ -213,14 +183,14 @@ struct AnsiWidget {
   void drawRectFilled(int x1, int y1, int x2, int y2);
   void edit(IFormWidget *formWidget, int c);
   void flush(bool force, bool vscroll=false);
-  int getBackgroundColor() { return back->bg; }
-  int getColor() { return back->fg; }
-  int getFontSize() { return fontSize; }
+  int getBackgroundColor() { return _back->_bg; }
+  int getColor() { return _back->_fg; }
+  int getFontSize() { return _fontSize; }
   int getPixel(int x, int y);
-  int getHeight() { return height; }
-  int getWidth()  { return width; }
-  int getX() { return back->curX; }
-  int getY() { return back->curY; }
+  int getHeight() { return _height; }
+  int getWidth()  { return _width; }
+  int getX() { return _back->_curX; }
+  int getY() { return _back->_curY; }
   int textHeight(void);
   bool optionSelected(int index);
   void print(const char *str);
@@ -231,7 +201,7 @@ struct AnsiWidget {
   void setFontSize(int fontSize);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
-  void setXY(int x, int y) { back->curX=x; back->curY=y; }
+  void setXY(int x, int y) { _back->_curX=x; _back->_curY=y; }
   void setScrollSize(int scrollSize);
   void pointerTouchEvent(MAEvent &event);
   void pointerMoveEvent(MAEvent &event);
@@ -256,22 +226,22 @@ private:
   void showAlert(char *&p);
   void swapScreens();
 
-  Screen *screens[MAX_SCREENS];
-  Screen *back;   // screen being painted/written
-  Screen *front;  // screen to display 
-  Screen *focus;  // screen with the active button
-  int width;      // device screen width
-  int height;     // device screen height
-  int fontSize;   // font height based on screen size
-  int xTouch;     // touch x value
-  int yTouch;     // touch y value
-  int xMove;      // touch move x value
-  int yMove;      // touch move y value
-  int moveTime;   // last move time
-  bool moveDown;  // last move direction was down
-  bool swipeExit; // last touch-down was swipe exit
-  IButtonListener *buttonListener;
-  Widget *activeButton;
+  Screen *_screens[MAX_SCREENS];
+  Screen *_back;   // screen being painted/written
+  Screen *_front;  // screen to display 
+  Screen *_focus;  // screen with the active button
+  int _width;      // device screen width
+  int _height;     // device screen height
+  int _fontSize;   // font height based on screen size
+  int _xTouch;     // touch x value
+  int _yTouch;     // touch y value
+  int _xMove;      // touch move x value
+  int _yMove;      // touch move y value
+  int _moveTime;   // last move time
+  bool _moveDown;  // last move direction was down
+  bool _swipeExit; // last touch-down was swipe exit
+  IButtonListener *_buttonListener;
+  Widget *_activeButton;
 };
 
 #endif // ANSIWIDGET_H

@@ -39,14 +39,14 @@ struct ListModel : IFormWidgetListModel {
   void create(const char *items, var_t *v);
   const char *getTextAt(int index);
   int getIndex(const char *t);
-  int rows() const { return list.length(); }
-  int selected() const { return focusIndex; }
-  void selected(int index) { focusIndex = index; }
+  int rows() const { return _list.length(); }
+  int selected() const { return _focusIndex; }
+  void selected(int index) { _focusIndex = index; }
 
 private:
   void fromArray(const char *caption, var_t *v);
-  List<String *> list;
-  int focusIndex;
+  List<String *> _list;
+  int _focusIndex;
 };
 
 // binds a smallbasic variable with a form widget
@@ -60,14 +60,14 @@ struct WidgetData : public IButtonListener {
   bool updateGui();
   void updateVarFlag();
   void transferData();
-  bool isLink() { return type == ctrl_link || type == ctrl_exit_link; }
+  bool isLink() { return _type == ctrl_link || _type == ctrl_exit_link; }
   int padding() { return isLink() ? LN_H : BN_H; }
 
-  IFormWidget *widget;
-  var_t *var;
+  IFormWidget *_widget;
+  var_t *_var;
 
 private:
-  ControlType type;
+  ControlType _type;
 
   // startup value used to check if
   // exec has altered a bound variable
@@ -84,7 +84,7 @@ struct Form {
   virtual ~Form();
 
   void setupWidget(WidgetDataPtr widgetData);
-  bool hasEvent() { return mode == m_selected; }
+  bool hasEvent() { return _mode == m_selected; }
   void invoke(WidgetDataPtr widgetData);
   bool execute();
 
@@ -96,13 +96,13 @@ struct Form {
   };
 
 private:
-  Mode mode;
-  List<WidgetDataPtr> items; // form child items
-  var_t *var;                // form variable contains the value of the event widget
-  int cmd;                   // doform argument by value
-  bool kbHandle;             // whether doform returns on a keyboard event
-  int prevX;
-  int prevY;
+  Mode _mode;
+  List<WidgetDataPtr> _items; // form child items
+  var_t *_var;                // form variable contains the value of the event widget
+  int _cmd;                   // doform argument by value
+  bool _kbHandle;             // whether doform returns on a keyboard event
+  int _prevX;
+  int _prevY;
 };
 
 #endif
