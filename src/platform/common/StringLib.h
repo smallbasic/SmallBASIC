@@ -91,22 +91,17 @@ struct String {
   const char *c_str() const { return toString(); };
 
 protected:
-  void init() {
-    _buffer = 0;
-    _owner = true;
-  } 
   char *_buffer;
-  bool _owner;
 };
 
 //--List------------------------------------------------------------------------
 
 #define List_each(type, itr, v) \
-  for (strlib::List<type>::iterator itr = (v).begin(); itr != (v).end(); itr++)
+  for (strlib::List<type>::TP itr = (v).begin(); itr != (v).end(); itr++)
 
 template<typename T>
 struct List {
-  typedef T* iterator;
+  typedef T* TP;
 
   List(int growSize = 20) :
     _head(0),
@@ -121,8 +116,6 @@ struct List {
       delete _head[i];
     }
     free(_head);
-    _head = 0;
-    _count = 0;
   }
 
   /**
@@ -146,17 +139,17 @@ struct List {
   /**
    * Returns the number of items in the list
    */
-  int length() const { return _count; } 
+  int size() const { return _count; } 
 
   /**
    * Returns T at the given index
    */
-  T operator[] (const int index) const { return index < _count ? _head[index] : 0; }
+  T operator[] (const int index) const { return index < _count ? _head[index] : NULL; }
 
   /**
    * Returns T at the given index
    */
-  T get(const int index) const { return index < _count ? _head[index] : 0; }
+  T get(const int index) const { return index < _count ? _head[index] : NULL; }
 
   /**
    * Adds T to the list
@@ -164,16 +157,16 @@ struct List {
   void add(T object) {
     if (++_count > _size) {
       _size += _growSize;
-      _head = (T *) realloc(_head, sizeof(T) * _size);
+      _head = (TP) realloc(_head, sizeof(TP) * _size);
     }
     _head[_count - 1] = object;
   }
 
   /** 
-   * Removes the element pointed to by iterator i.
+   * Removes the element pointed to by TP i.
    */
-  void remove(iterator i) {
-    iterator e = end();
+  void remove(TP i) {
+    TP e = end();
     while(i != (e-1)) {
       *i = *(i+1);
       i++;
@@ -182,14 +175,14 @@ struct List {
   }
 
   /** 
-   * Returns an iterator pointing to the first element of the List.
+   * Returns an TP pointing to the first element of the List.
    */
-  iterator begin() { return _head; }
+  TP begin() { return _head; }
 
   /**
-   * Returns an iterator pointing beyond the last element of the List.
+   * Returns an TP pointing beyond the last element of the List.
    */
-  iterator end() { return _head + _count; }
+  TP end() { return _head + _count; }
 
   /**
    * String specialisation - Add a String to the list
@@ -215,7 +208,7 @@ struct List {
 
   void sort(int(*compareFunc)(const void *p1, const void *p2)) {
     if (_size > 1) {
-      qsort(_head, _count, sizeof(T), compareFunc);
+      qsort(_head, _count, sizeof(TP), compareFunc);
     }
   }
 
@@ -223,10 +216,10 @@ protected:
   void init() {
     _count = 0;
     _size = _growSize;
-    _head = (T *) malloc(sizeof(T) * _size);
+    _head = (TP) malloc(sizeof(TP) * _size);
   }
 
-  T *_head;
+  TP _head;
   int _growSize;
   int _count;
   int _size;

@@ -15,6 +15,8 @@
 
 #include "platform/common/StringLib.h"
 
+using namespace strlib;
+
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W 16
 #define BN_H 12
@@ -39,13 +41,13 @@ struct ListModel : IFormWidgetListModel {
   void create(const char *items, var_t *v);
   const char *getTextAt(int index);
   int getIndex(const char *t);
-  int rows() const { return _list.length(); }
+  int rows() const { return _list.size(); }
   int selected() const { return _focusIndex; }
   void selected(int index) { _focusIndex = index; }
 
 private:
   void fromArray(const char *caption, var_t *v);
-  List<String *> _list;
+  List<strlib::String *> _list;
   int _focusIndex;
 };
 
@@ -54,7 +56,7 @@ struct WidgetData : public IButtonListener {
   WidgetData(ControlType type, var_t *var);
   virtual ~WidgetData();
 
-  void arrayToString(String &s, var_t *v);
+  void arrayToString(strlib::String &s, var_t *v);
   void buttonClicked(const char *action);
   void setupWidget(IFormWidget *widget);
   bool updateGui();

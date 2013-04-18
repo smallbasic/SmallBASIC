@@ -630,18 +630,18 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
 // creates a status-bar label
 void AnsiWidget::createLabel(char *&p) {
   List<String *> *items = getItems(p);
-  const char *label = items->length() > 0 ? (*items)[0]->c_str() : "";
+  const char *label = items->size() > 0 ? (*items)[0]->c_str() : "";
   _back->_label = label;
-  deleteItems(items);
+  delete items;
 }
 
 // creates a hyperlink, eg // ^[ hwww.foo.com|title;More text
 Widget *AnsiWidget::createLink(char *&p, bool formLink, bool button) {
   List<String *> *items = getItems(p);
-  const char *action = items->length() > 0 ? (*items)[0]->c_str() : "";
-  const char *text = items->length() > 1 ? (*items)[1]->c_str() : action;
+  const char *action = items->size() > 0 ? (*items)[0]->c_str() : "";
+  const char *text = items->size() > 1 ? (*items)[1]->c_str() : action;
   Widget *result = createLink(action, text, formLink, button);
-  deleteItems(items);
+  delete items;
   return result;
 }
 
@@ -678,7 +678,7 @@ Widget *AnsiWidget::createLink(const char *action, const char *text,
 // create an options dialog
 void AnsiWidget::createOptionsBox(char *&p) {
   List<String *> *items = getItems(p);
-  if (items->length()) {
+  if (items->size()) {
     // calculate the size of the options buffer
     int optionsBytes = sizeof(int);
     List_each(String*, it, *items) {
@@ -689,7 +689,7 @@ void AnsiWidget::createOptionsBox(char *&p) {
     // create the options buffer
     delete [] options;
     options = new char[optionsBytes];
-    *(int *)options = items->length();
+    *(int *)options = items->size();
     wchar_t *dst = (wchar_t *)(options + sizeof(int));
 
     List_each(String*, it, *items) {
@@ -700,14 +700,6 @@ void AnsiWidget::createOptionsBox(char *&p) {
       dst += (len + 1);
     }
     maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)options, optionsBytes);
-  }
-  deleteItems(items);
-}
-
-// cleanup the string list created in getItems()
-void AnsiWidget::deleteItems(List<String *> *items) {
-  List_each(String*, it, *items) {
-    delete (*it);
   }
   delete items;
 }
@@ -869,7 +861,7 @@ void AnsiWidget::handleEscape(char *&p, int lineHeight) {
 void AnsiWidget::removeScreen(char *&p) {
   logEntered();
   List<String *> *items = getItems(p);
-  int n = items->length() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
   if (n < 1 || n >= MAX_SCREENS) {
     print("ERR invalid screen number");
   } else if (_screens[n] != NULL) {
@@ -882,7 +874,7 @@ void AnsiWidget::removeScreen(char *&p) {
     delete _screens[n];
     _screens[n] = NULL;
   }
-  deleteItems(items);
+  delete items;
 }
 
 // screen escape commands
@@ -958,11 +950,11 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
 // select the specified screen - returns whether the screen was changed
 Screen *AnsiWidget::selectScreen(char *&p) {
   List<String *> *items = getItems(p);
-  int n = items->length() > 0 ? atoi((*items)[0]->c_str()) : 0;
-  int x = items->length() > 1 ? atoi((*items)[1]->c_str()) : 0;
-  int y = items->length() > 2 ? atoi((*items)[2]->c_str()) : 0;
-  int w = items->length() > 3 ? atoi((*items)[3]->c_str()) : 100;
-  int h = items->length() > 4 ? atoi((*items)[4]->c_str()) : 100;
+  int n = items->size() > 0 ? atoi((*items)[0]->c_str()) : 0;
+  int x = items->size() > 1 ? atoi((*items)[1]->c_str()) : 0;
+  int y = items->size() > 2 ? atoi((*items)[2]->c_str()) : 0;
+  int w = items->size() > 3 ? atoi((*items)[3]->c_str()) : 100;
+  int h = items->size() > 4 ? atoi((*items)[4]->c_str()) : 100;
 
   Screen *result = NULL;
   flush(true);
@@ -1004,7 +996,7 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     }
   }
   
-  deleteItems(items);
+  delete items;
   return result;
 }
 
@@ -1012,14 +1004,14 @@ Screen *AnsiWidget::selectScreen(char *&p) {
 void AnsiWidget::showAlert(char *&p) {
   List<String *> *items = getItems(p);
 
-  const char *title = items->length() > 0 ? (*items)[0]->c_str() : "";
-  const char *message = items->length() > 1 ? (*items)[1]->c_str() : "";
-  const char *button1 = items->length() > 2 ? (*items)[2]->c_str() : "";
-  const char *button2 = items->length() > 3 ? (*items)[3]->c_str() : "";
-  const char *button3 = items->length() > 4 ? (*items)[4]->c_str() : "";
+  const char *title = items->size() > 0 ? (*items)[0]->c_str() : "";
+  const char *message = items->size() > 1 ? (*items)[1]->c_str() : "";
+  const char *button1 = items->size() > 2 ? (*items)[2]->c_str() : "";
+  const char *button2 = items->size() > 3 ? (*items)[3]->c_str() : "";
+  const char *button3 = items->size() > 4 ? (*items)[4]->c_str() : "";
 
   maAlert(title, message, button1, button2, button3);
-  deleteItems(items);
+  delete items;
 }
 
 // transpose the front and back screens

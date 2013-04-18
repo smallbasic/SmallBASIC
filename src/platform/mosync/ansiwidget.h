@@ -213,7 +213,6 @@ private:
   Widget *createLink(const char *action, const char *text,
                      bool formLink, bool button);
   void createOptionsBox(char *&p);
-  void deleteItems(List<String *> *items);
   bool doEscape(char *&p, int textHeight);
   void doSwipe(int start, int maxScroll);
   void drawActiveButton();

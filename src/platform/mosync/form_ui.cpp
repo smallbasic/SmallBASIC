@@ -43,7 +43,7 @@ void ListModel::create(const char *items, var_t *v) {
       const char *c = strchr(items + i, '|');
       int end_index = c ? c - items : len;
       if (end_index > 0) {
-        String *s = new String(items + i, end_index - i);
+        strlib::String *s = new strlib::String(items + i, end_index - i);
         _list.add(s);
         i = end_index;
         if (v != 0 && v->type == V_STR && v->v.p.ptr &&
@@ -61,14 +61,14 @@ void ListModel::fromArray(const char *caption, var_t *v) {
   for (int i = 0; i < v->v.a.size; i++) {
     var_t *el_p = (var_t *)(v->v.a.ptr + sizeof(var_t) * i);
     if (el_p->type == V_STR) {
-      _list.add(new String((const char *)el_p->v.p.ptr));
+      _list.add(new strlib::String((const char *)el_p->v.p.ptr));
       if (caption && strcasecmp((const char *)el_p->v.p.ptr, caption) == 0) {
         _focusIndex = i;
       }
     } else if (el_p->type == V_INT) {
       char buff[40];
       sprintf(buff, VAR_INT_FMT, el_p->v.i);
-      _list.add(new String(buff));
+      _list.add(new strlib::String(buff));
     } else if (el_p->type == V_ARRAY) {
       fromArray(caption, el_p);
     }
@@ -78,7 +78,7 @@ void ListModel::fromArray(const char *caption, var_t *v) {
 // return the text at the given index
 const char *ListModel::getTextAt(int index) {
   const char *s = 0;
-  if (index > -1 && index < _list.length()) {
+  if (index > -1 && index < _list.size()) {
     s = _list[index]->c_str();
   }
   return s;
@@ -86,7 +86,7 @@ const char *ListModel::getTextAt(int index) {
 
 // returns the model index corresponding to the given string
 int ListModel::getIndex(const char *t) {
-  int size = _list.length();
+  int size = _list.size();
   for (int i = 0; i < size; i++) {
     if (!strcasecmp(_list[i]->c_str(), t)) {
       return i;
@@ -109,9 +109,6 @@ Form::Form() :
 
 Form::~Form() {
   logEntered();
-  List_each(WidgetDataPtr, it, _items) {
-    delete (*it);
-  }
 }
 
 // setup the widget
@@ -245,7 +242,7 @@ WidgetData::~WidgetData() {
 }
 
 // convert a basic array into a String
-void WidgetData::arrayToString(String &s, var_t *v) {
+void WidgetData::arrayToString(strlib::String &s, var_t *v) {
   for (int i = 0; i < v->v.a.size; i++) {
     var_t *el_p = (var_t *)(v->v.a.ptr + sizeof(var_t) * i);
     if (el_p->type == V_STR) {
@@ -318,7 +315,7 @@ bool WidgetData::updateGui() {
     }
   } else if (_var->type == V_ARRAY && _var->v.p.ptr != orig.ptr) {
     // update list control with new array variable
-    String s;
+    strlib::String s;
 
     switch (_type) {
     case ctrl_listbox:

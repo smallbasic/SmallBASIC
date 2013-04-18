@@ -92,11 +92,13 @@ void osd_beep(void) {
 }
 
 void osd_cls(void) {
+  logEntered();
   ui_reset();
   controller->_output->clearScreen();
 }
 
 int osd_devinit(void) {
+  logEntered();
   controller->setRunning(true);
   return 1;
 }
@@ -171,6 +173,7 @@ int osd_textwidth(const char *str) {
 }
 
 void osd_write(const char *str) {
+  logEntered();
   controller->_output->print(str);
 }
 

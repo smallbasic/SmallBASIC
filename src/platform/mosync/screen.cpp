@@ -67,9 +67,6 @@ Screen::Screen(int x, int y, int width, int height, int fontSize) :
 }
 
 Screen::~Screen() {
-  List_each(Shape*, it, _shapes) {
-    delete (Shape *)(*it);
-  }
   if (_font) {
     maFontDelete(_font);
   }

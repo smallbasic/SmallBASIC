@@ -19,30 +19,26 @@ using namespace strlib;
 
 //--String----------------------------------------------------------------------
 
-String::String(const char *s) {
-  _owner = false;
-  _buffer = (char *)s;
+String::String(const char *s) : _buffer(0) {
+  append(s);
 }
 
-String::String(const char *s, int len) {
-  init();
+String::String(const char *s, int len) : _buffer(0) {
   append(s, len);
 }
 
-String::String(const String & s) {
-  init();
+String::String(const String &s) : _buffer(0) {
   append(s._buffer);
 }
 
-String::String() {
-  init();
+String::String() : _buffer(0) {
 }
 
 String::~String() {
   empty();
 }
 
-const String &String::operator=(const String & s) {
+const String &String::operator=(const String &s) {
   if (this != &s) {
     empty();
     append(s._buffer);
@@ -62,7 +58,7 @@ const String &String::operator=(const char c) {
   return *this;
 }
 
-const void String::operator+=(const String & s) {
+const void String::operator+=(const String &s) {
   append(s._buffer);
 }
 
@@ -74,7 +70,7 @@ const void String::operator+=(int i) {
   append(i);
 }
 
-const String String::operator+(const String & s) {
+const String String::operator+(const String &s) {
   String rs;
   rs.append(_buffer);
   rs.append(s._buffer);
@@ -101,7 +97,7 @@ const String &String::operator=(int i) {
   return *this;
 }
 
-String &String::append(const String & s) {
+String &String::append(const String &s) {
   append(s._buffer);
   return *this;
 }
@@ -146,7 +142,7 @@ String &String::append(int i, int padding) {
 }
 
 String &String::append(const char *s) {
-  if (s != null && s[0] && _owner) {
+  if (s != null && s[0]) {
     int len = length();
     _buffer = (char *)realloc(_buffer, len + strlen(s) + 1);
     strcpy(_buffer + len, s);
@@ -155,7 +151,7 @@ String &String::append(const char *s) {
 }
 
 String &String::append(const char *s, int numCopy) {
-  if (!_owner || s == null || numCopy < 1) {
+  if (s == null || numCopy < 1) {
     return *this;
   }
   int len = strlen(s);
@@ -248,7 +244,7 @@ void String::toLowerCase() {
   }
 }
 
-bool String::equals(const String & s, bool ignoreCase) const {
+bool String::equals(const String &s, bool ignoreCase) const {
   return (_buffer == 0 ? s._buffer == 0 : ignoreCase ?
           strcasecmp(_buffer, s._buffer) == 0 : strcmp(_buffer, s._buffer) == 0);
 }
@@ -264,7 +260,7 @@ bool String::startsWith(const char *s, bool ignoreCase) const {
   return (ignoreCase ? strncasecmp(_buffer, s, strlen(s)) == 0 : strncmp(_buffer, s, strlen(s)) == 0);
 }
 
-int String::indexOf(const String & s, int fromIndex) const {
+int String::indexOf(const String &s, int fromIndex) const {
   int len = length();
   if (fromIndex >= len) {
     return -1;
@@ -304,11 +300,10 @@ char String::charAt(int i) const {
 }
 
 void String::empty() {
-  if (_buffer != null && _owner) {
+  if (_buffer != null) {
     free(_buffer);
   }
   _buffer = 0;
-  _owner = true;
 }
 
 void String::trim() {
@@ -536,5 +531,18 @@ int main(int argc, char **argv) {
   String x = "http://blah";
   printf("starts=%d\n", x.startsWith("http://"));
   printf("starts=%d\n", x.startsWith("sshttp://"));
+  List<String *> list;
+  for (int j = 0; j < 5; j++) {
+    for (int i = 0; i < 5; i++) {
+      String *next = new String();
+      next->append("hello_").append(i).append("_").append(j);
+      list.add(next);
+    }
+    List_each(String *, it, list) {
+      String *next = (*it);
+      printf("next item: '%s'\n", next->toString());
+    }
+    list.removeAll();
+  }
 }
 #endif
