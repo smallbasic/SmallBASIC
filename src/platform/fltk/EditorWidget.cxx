@@ -349,7 +349,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
   int firstIndex = -1;
   int lastIndex = -1;
   int curIndex = -1;
-  int numWords = keywords.length();
+  int numWords = keywords.size();
   for (int i = 0; i < numWords; i++) {
     const char *keyword = ((String *)keywords.get(i))->toString();
     if (strncasecmp(expandWord, keyword, expandWordLen) == 0) {

@@ -79,6 +79,7 @@ function checkDebugMode() {
    then
      CFLAGS="-g -O0"
      CXXFLAGS="-g -O0"
+     AC_DEFINE(_DEBUG, 1, [debugging build enabled])
    else
      CFLAGS="-O3 -Os"
      CXXFLAGS="-O3 -Os"

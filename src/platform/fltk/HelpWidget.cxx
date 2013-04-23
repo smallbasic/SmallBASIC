@@ -1635,7 +1635,7 @@ const char *HelpWidget::getInputValue(Widget *widget) {
 
 // return the nth form value
 const char *HelpWidget::getInputValue(int i) {
-  int len = namedInputs.length();
+  int len = namedInputs.size();
   if (i < len) {
     NamedInput *ni = namedInputs[i];
     return getInputValue(ni->input->button);
@@ -2239,7 +2239,7 @@ void HelpWidget::compile() {
           prop = p.get("font-size");
           if (prop != null) {
             // convert from points to pixels
-            const fltk::Monitor & monitor = fltk::Monitor::all();
+            const fltk::Monitor &monitor = fltk::Monitor::all();
             fontSize = (int)(prop->toInteger() * monitor.dpi_y() / 72.0);
           } else {
             prop = p.get("size");
@@ -2726,7 +2726,7 @@ void HelpWidget::setDocHome(const char *s) {
 }
 
 const char *HelpWidget::getAnchor(int index) {
-  int len = anchors.length();
+  int len = anchors.size();
   if (index < len && index > -1) {
     return anchors[index]->href.toString();
   }

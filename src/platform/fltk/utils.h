@@ -15,7 +15,4 @@
 #define makedir(f) mkdir(f, 0700)
 #endif
 
-// debugging
-extern "C" void trace(const char *format, ...);
-
 #endif

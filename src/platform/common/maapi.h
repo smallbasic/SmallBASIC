@@ -52,9 +52,9 @@ typedef unsigned short ushort;
 typedef unsigned int uint;
 #endif  //_SYSV_TYPES_DEFINED
 
-typedef int MAHandle;
 typedef int MAExtent;
 typedef void* MAAddress;
+typedef int MAHandle;
 
 typedef struct MARect {
   int left;
@@ -101,116 +101,10 @@ typedef struct MAEvent {
   union {
     struct {
       /**
-       * In KEY events, this will be one of the \link #MAK_UNKNOWN MAK \endlink constants.
-       */
-      int key;
-
-      /**
-       * In KEY events, this will be the native keycode.
-       */
-      int nativeKey;
-    };
-
-    /**
-     * In CHAR events, this is the Unicode character that was received.
-     */
-    uint character;
-
-    struct {
-      /**
        * In POINTER events, this will be the location of the pointer.
        */
       MAPoint2d point;
-
-      /**
-       * In POINTER events, this will be the finger triggering the event.
-       */
-      int touchId;
     };
-
-    /**
-     * In \link #EVENT_TYPE_BT BT \endlink events, this will be a value \>= 0 or
-     * one of the \link #CONNERR_GENERIC CONNERR \endlink constants.
-     */
-    int state;
-
-    /**
-     * Valid only in CONN events.
-     */
-    MAConnEventData conn;
-
-    struct {
-      /**
-       * One of the \link #MA_TB_RES_OK MA_TB_RES \endlink codes.
-       */
-      int textboxResult;
-
-      /**
-       * The length, in characters, of the finished text.
-       * Does not include the terminating zero.
-       */
-      int textboxLength;
-    };
-
-    struct {
-      /**
-       * #EVENT_TYPE_IMAGE_PICKER events, this will be 0 if canceled or 1 if Ok was pressed.
-       */
-      int imagePickerState;
-
-      /**
-       * #EVENT_TYPE_IMAGE_PICKER event, contains the new handle to the selected image if the image picker
-       * event return type was set to @link #MA_IMAGE_PICKER_ITEM_EVENT_RETURN_TYPE_IMAGE_HANDLE @endlink
-       * (default value) or the handle to the binary image data if the return type was set to
-       * @link #MA_IMAGE_PICKER_ITEM_EVENT_RETURN_TYPE_IMAGE_DATA @endlink.
-       * Note: Android VM has some limitations when it comes to creating high resolution images. Therefore, if
-       * the user needs to handle the image itself locally and maCreateImageFromData(dataHandle) returns a
-       * RES_OUT_OF_MEMORY, use #MA_IMAGE_PICKER_ITEM_EVENT_RETURN_TYPE_IMAGE_HANDLE instead.
-       */
-      MAHandle imagePickerItem;
-
-      /**
-       * The encoding used for the image. One of the values
-       * @link #MA_IMAGE_PICKER_ITEM_ENCODING_PNG MA_IMAGE_PICKER_ITEM_ENCODING_* @endlink
-       */
-      int imagePickerEncodingType;
-    };
-
-    /**
-     * #EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED event, contains the index of the selected option.
-     */
-    int optionsBoxButtonIndex;
-
-    /**
-     * #EVENT_TYPE_ALERT event. The index of the selected button.
-     * If button1 is pressed, the value is 1.
-     * If button2 is pressed, the value is 2.
-     * If button3 is pressed, the value is 3.
-     */
-    int alertButtonIndex;
-
-    /**
-     * In #EVENT_TYPE_SMS events, this will be one of the
-     * @link #MA_SMS_RESULT_SENT MA_SMS_RESULT_* @endlink constants.
-     */
-    int status;
-
-    /**
-     * Local notification's handle that send the event.
-     * Valid only if the event type is \link #EVENT_TYPE_LOCAL_NOTIFICATION LOCAL_NOTIFICATION \endlink.
-     */
-    MAHandle localNotificationHandle;
-
-    /**
-     * Push notification's handle that send the event.
-     * Valid only if the event type is \link #EVENT_TYPE_PUSH_NOTIFICATION PUSH_NOTIFICATION \endlink.
-     */
-    MAHandle pushNotificationHandle;
-
-    /**
-     * Used by custom events. See invididual event descriptions.
-     */
-    void* data;
   };
 } MAEvent;
 

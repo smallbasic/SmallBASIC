@@ -86,7 +86,7 @@ public:
   void setSelectMode() { mouseMode = mm_select; }
   void setPageMode() { mouseMode = mm_page; }
   void setScrollMode() { mouseMode = mm_scroll; }
-  int getNumAnchors() { return anchors.length(); }
+  int getNumAnchors() { return anchors.size(); }
   const char *getAnchor(int index);
   bool isHtmlFile();
   void setTitle(const char *s) { title.empty(); title.append(s); }

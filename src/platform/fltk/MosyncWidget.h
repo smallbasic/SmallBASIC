@@ -11,15 +11,27 @@
 
 #include <fltk/Widget.h>
 #include <fltk/Image.h>
+#include <fltk/draw.h>
 
 #include "platform/mosync/interface.h"
 
 struct AnsiWidget;
 
+struct MosyncObject {
+  MosyncObject();
+  ~MosyncObject();
+  void createImage(int w, int h);
+  void draw(int w, int h);
+  void resize(int w, int h);
+  fltk::Image *_img;
+  fltk::GSave *_gsave;
+};
+
 class MosyncWidget : public fltk::Widget, IButtonListener {
 public:
   MosyncWidget(int x, int y, int w, int h, int defsize);
   virtual ~MosyncWidget();
+  bool construct();
 
   void clearScreen();
   void print(const char *str);
@@ -39,10 +51,19 @@ public:
   void setFontSize(float i);
   int getFontSize();
   void resize(int x, int y, int w, int h);
+  int getBackgroundColor();
+  MosyncObject *getScreen() { return _screen; }
 
 private:
+  // inherited methods
+  void draw();
+  void layout();
+  int handle(int e);
+
   void buttonClicked(const char *action);
   AnsiWidget *_ansiWidget;
+  MosyncObject *_screen;
+  bool _resized;
 };
 
 #endif

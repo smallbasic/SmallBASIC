@@ -13,6 +13,7 @@
 #include "common/device.h"
 #include "common/smbas.h"
 #include "common/keymap.h"
+#include "common/blib_ui.h"
 
 #include <fltk/Browser.h>
 #include <fltk/Button.h>
@@ -28,27 +29,25 @@
 #include <fltk/events.h>
 #include <fltk/run.h>
 
-#include "MainWindow.h"
+#include "platform/fltk/MainWindow.h"
 #include "platform/common/StringLib.h"
-
-extern "C" {
-#include "common/blib_ui.h"
-} 
 
 extern MainWindow *wnd;
 
 struct Form : public Group {
-  Form(int x1, int x2, int y1, int y2) : Group(x1, x2, y1, y2) {
-    this->_cmd = 0;
-    this->var = 0;
-    this->kb_handle = false;
+  Form(int x1, int x2, int y1, int y2) : 
+    Group(x1, x2, y1, y2),
+    _var(0),
+    _cmd(0),
+    _kb_handle(false) {
   } 
   ~Form() {
   }
-  void draw();                  // avoid drawing over the tab-bar
-  var_t *var;                   // form variable contains the value of the event widget
-  int _cmd;                      // doform argument by value
-  bool kb_handle;               // whether doform returns on a keyboard event
+
+  void draw();                 // avoid drawing over the tab-bar
+  var_t *_var;                 // form variable contains the value of the event widget
+  int _cmd;                    // doform argument by value
+  bool _kb_handle;             // whether doform returns on a keyboard event
 };
 
 Form *form = 0;
@@ -162,7 +161,7 @@ struct DropListModel : StringList {
 
   // return the number of elements
   int children(const Menu *) {
-    return list.length();
+    return list.size();
   }
 
   // return the label at the given index
@@ -176,7 +175,7 @@ struct DropListModel : StringList {
 
   // returns the index corresponding to the given string
   int getPosition(const char *t) {
-    int size = list.length();
+    int size = list.size();
     for (int i = 0; i < size; i++) {
       if (!strcasecmp(((String *) list.get(i))->c_str(), t)) {
         return i;
@@ -454,13 +453,13 @@ void widget_cb(Widget *w, void *v) {
 
     mode = m_selected;
 
-    if (form->var) {
+    if (form->_var) {
       // array type cannot be used in program select statement
       if (inf->var->type == V_ARRAY) {
-        v_zerostr(form->var);
+        v_zerostr(form->_var);
       } else {
         // set the form variable from the widget var
-        v_set(form->var, inf->var);
+        v_set(form->_var, inf->var);
       }
     }
   }
@@ -692,24 +691,24 @@ void cmd_doform() {
   case kwTYPE_EOC:
   case kwTYPE_SEP:
     form->_cmd = -1;
-    form->var = 0;
+    form->_var = 0;
     break;
   default:
     if (code_isvar()) {
-      form->var = code_getvarptr();
+      form->_var = code_getvarptr();
       form->_cmd = -1;
     } else {
       var_t var;
       v_init(&var);
       eval(&var);
       form->_cmd = v_getint(&var);
-      form->var = 0;
+      form->_var = 0;
       v_free(&var);
 
       // apply any configuration options
       switch (form->_cmd) {
       case 1:
-        form->kb_handle = true;
+        form->_kb_handle = true;
         return;
       default:
         break;
@@ -729,13 +728,13 @@ void cmd_doform() {
     // pump system messages until there is a widget callback
     mode = m_active;
 
-    if (form->kb_handle) {
+    if (form->_kb_handle) {
       dev_clrkb();
     }
     while (wnd->isRunning() && mode == m_active) {
       fltk::wait();
 
-      if (form->kb_handle && keymap_kbhit()) {
+      if (form->_kb_handle && keymap_kbhit()) {
         break;
       }
     }
