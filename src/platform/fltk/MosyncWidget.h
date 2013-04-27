@@ -17,21 +17,23 @@
 
 struct AnsiWidget;
 
-struct MosyncObject {
-  MosyncObject();
-  ~MosyncObject();
-  void createImage(int w, int h);
+struct Canvas {
+  Canvas();
+  ~Canvas();
+
+  void create(int w, int h, int bg);
   void draw(int w, int h);
   void resize(int w, int h);
+  void beginDraw();
+
   fltk::Image *_img;
-  fltk::GSave *_gsave;
+  int _rgb;
 };
 
 class MosyncWidget : public fltk::Widget, IButtonListener {
 public:
   MosyncWidget(int x, int y, int w, int h, int defsize);
   virtual ~MosyncWidget();
-  bool construct();
 
   void clearScreen();
   void print(const char *str);
@@ -42,17 +44,20 @@ public:
   void saveImage(const char *fn, int x, int y, int w, int h);
   void setTextColor(long fg, long bg);
   void setColor(long color);
-  int getX();
-  int getY();
+  int  getX();
+  int  getY();
   void setPixel(int x, int y, int c);
-  int getPixel(int x, int y);
+  int  getPixel(int x, int y);
   void setXY(int x, int y);
-  int textHeight(void);
+  int  textHeight(void);
   void setFontSize(float i);
-  int getFontSize();
+  int  getFontSize();
   void resize(int x, int y, int w, int h);
-  int getBackgroundColor();
-  MosyncObject *getScreen() { return _screen; }
+  int  getBackgroundColor();
+  void flush(bool force);
+  void reset();
+
+  Canvas *getScreen() { return _screen; }
 
 private:
   // inherited methods
@@ -62,7 +67,7 @@ private:
 
   void buttonClicked(const char *action);
   AnsiWidget *_ansiWidget;
-  MosyncObject *_screen;
+  Canvas *_screen;
   bool _resized;
 };
 

@@ -108,6 +108,8 @@ int osd_devinit() {
   saveForm = false;
   dev_clrkb();
   ui_reset();
+  wnd->_out->reset();
+
   return 1;
 }
 
@@ -120,6 +122,7 @@ void osd_settextcolor(long fg, long bg) {
 }
 
 void osd_refresh() {
+  wnd->_out->flush(true);
   wnd->_out->redraw();
 }
 
@@ -167,6 +170,9 @@ int osd_events(int wait_flag) {
     clearOutput();
     return -2;
   }
+
+  wnd->_out->flush(false);
+
   return 0;
 }
 

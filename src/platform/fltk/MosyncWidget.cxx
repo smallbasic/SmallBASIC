@@ -21,31 +21,35 @@
 using namespace fltk;
 
 MosyncWidget *widget;
-MosyncObject *drawTarget;
+Canvas *activeCanvas;
 
-MosyncObject::MosyncObject() : 
+Canvas::Canvas() :
   _img(NULL), 
-  _gsave(NULL) {
+  _rgb(BLACK) {
 }
 
-MosyncObject::~MosyncObject() {
+Canvas::~Canvas() {
   if (_img) {
     _img->destroy();
+    delete _img;
   }
-  delete _gsave;
 }
 
-void MosyncObject::createImage(int w, int h) {
+void Canvas::create(int w, int h, int bg) {
+  GSave gsave;
   _img = new Image(w, h);
+  _img->make_current();
+  setcolor(bg);
+  fillrect(0, 0, w, h);
 }
 
-void MosyncObject::draw(int w, int h) {
+void Canvas::draw(int w, int h) {
   push_clip(Rectangle(w, h));
   _img->draw(Rectangle(_img->w(), _img->h()));
   pop_clip();
 }
 
-void MosyncObject::resize(int w, int h) {
+void Canvas::resize(int w, int h) {
   int W = _img->w();
   int H = _img->h();
   if (w > W) {
@@ -66,24 +70,36 @@ void MosyncObject::resize(int w, int h) {
   delete old;
 }
 
+void Canvas::beginDraw() {
+  _img->make_current();
+  setcolor(_rgb);
+}
+
 MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
-  Widget(x, y, w, h, 0), _resized(false) {
-  _ansiWidget = new AnsiWidget(this, w, h);
-  drawTarget = _screen = new MosyncObject();
+  Widget(x, y, w, h, 0), 
+  _ansiWidget(NULL),
+  _screen(NULL),
+  _resized(false) {
   widget = this;
-  logEntered();
 }
 
 MosyncWidget::~MosyncWidget() {
   delete _ansiWidget;
-}
-
-bool MosyncWidget::construct() {
-  return _ansiWidget->construct();
+  delete _screen;
 }
 
 void MosyncWidget::layout() {
-  if (drawTarget->_img && (layout_damage() & LAYOUT_WH)) {
+  // deferred construction until FLTK is ready
+  if (!_screen) {
+    _screen = new Canvas();
+    _screen->create(w(), h(), BLACK);
+    activeCanvas = _screen;
+  }
+  if (!_ansiWidget) {
+    _ansiWidget = new AnsiWidget(this, w(), h());
+    _ansiWidget->construct();
+  }
+  if (activeCanvas->_img && (layout_damage() & LAYOUT_WH)) {
     // can't use GSave here in X
     _resized = true;
   }
@@ -99,16 +115,27 @@ void MosyncWidget::draw() {
       w->redraw();
     }
   }
+
+  if (_resized && _screen->_img) {
+    // resize the backing screen
+    _screen->resize(w(), h());
+    _resized = false;
+  }
+
   if (_screen->_img) {
-    if (_resized) {
-      _screen->resize(w(), h());
-      _resized = false;
-    }
     _screen->draw(w(), h());
   } else {
     setcolor(getBackgroundColor());
     fillrect(Rectangle(w(), h()));
   }
+}
+
+void MosyncWidget::flush(bool force) {
+  _ansiWidget->flush(force);
+}
+
+void MosyncWidget::reset() {
+  _ansiWidget->reset();
 }
 
 int MosyncWidget::handle(int e) {
@@ -220,12 +247,14 @@ int get_text_width(char *s) {
   return fltk::getwidth(s);
 }
 
-int maFontDelete(MAHandle font) {
+int maFontDelete(MAHandle maHandle) {
   return RES_FONT_OK;
 }
 
 int maSetColor(int rgb) {
-  fltk::setcolor(rgb);
+  if (activeCanvas) {
+    activeCanvas->_rgb = rgb;
+  }
   return rgb;
 }
 
@@ -233,19 +262,36 @@ void maSetClipRect(int left, int top, int width, int height) {
 }
 
 void maPlot(int posX, int posY) {
-  fltk::drawpoint(posX, posY);
+  if (activeCanvas) {
+    GSave gsave;
+    activeCanvas->beginDraw();
+    drawpoint(posX, posY);
+  }
 }
 
 void maLine(int startX, int startY, int endX, int endY) {
-  fltk::drawline(startY, startY, endX, endY);
+  if (activeCanvas) {
+    GSave gsave;
+    activeCanvas->beginDraw();
+    drawline(startY, startY, endX, endY);
+  }
 }
 
 void maFillRect(int left, int top, int width, int height) {
-  fltk::fillrect(left, top, width, height);
+  if (activeCanvas) {
+    GSave gsave;
+    activeCanvas->beginDraw();
+    fillrect(left, top, width, height);
+  }
 }
 
 void maDrawText(int left, int top, const char* str) {
-  fltk::drawtext(str, left, top);
+  if (activeCanvas) {
+    setcolor(YELLOW);
+    GSave gsave;
+    activeCanvas->beginDraw();
+    drawtext(str, left, top);
+  }
 }
 
 void maUpdateScreen(void) {
@@ -271,56 +317,58 @@ MAHandle maFontLoadDefault(int type, int style, int size) {
   return 0;
 }
 
-MAHandle maFontSetCurrent(MAHandle font) {
+MAHandle maFontSetCurrent(MAHandle maHandle) {
   // affects maGetTextSize() result
   
   return 0;
 }
 
-void maDrawImageRegion(MAHandle image, const MARect* srcRect, const MAPoint2d* dstPoint, int transformMode) {
+void maDrawImageRegion(MAHandle maHandle, const MARect* srcRect, 
+                       const MAPoint2d* dstPoint, int transformMode) {
+  Canvas *canvas = (Canvas *)maHandle;
+  if (activeCanvas && canvas->_img && canvas != activeCanvas) {
+    int width = canvas->_img->w() - dstPoint->x;
+    int height = canvas->_img->h() - dstPoint->y;
+    Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
+    Rectangle to = Rectangle(dstPoint->x, dstPoint->y, width, height);
+    GSave gsave;
+    activeCanvas->beginDraw();
+    canvas->_img->draw(from, to);
+  }
 }
 
-int maCreateDrawableImage(MAHandle placeholder, int width, int height) {
+int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   int result = RES_OK;
   const fltk::Monitor &monitor = fltk::Monitor::all();
-
   if (height > monitor.h()) {
     result -= 1;
   } else {
-    MosyncObject *holder = (MosyncObject *)placeholder;
-    holder->_img = new Image(width, height);
-    
-    GSave gsave;
-    holder->_img->make_current();
-    setcolor(widget->getBackgroundColor());
-    fillrect(0, 0, width, height);
+    Canvas *canvas = (Canvas *)maHandle;
+    canvas->create(width, height, widget->getBackgroundColor());
   }
   return result;
 }
 
 MAHandle maCreatePlaceholder(void) {
-  return (MAHandle) new MosyncObject();
+  MAHandle maHandle = (MAHandle) new Canvas();
+  return maHandle;
 }
 
-void maDestroyPlaceholder(MAHandle handle) {
-  MosyncObject *holder = (MosyncObject *)handle;
+void maDestroyPlaceholder(MAHandle maHandle) {
+  Canvas *holder = (Canvas *)maHandle;
   delete holder;
 }
 
-void maGetImageData(MAHandle image, void* dst, const MARect* srcRect, int scanlength) {
+void maGetImageData(MAHandle maHandle, void* dst, const MARect* srcRect, int scanlength) {
 }
 
-MAHandle maSetDrawTarget(MAHandle image) {
-  if (image == (MAHandle) HANDLE_SCREEN) {
-    drawTarget = widget->getScreen();
+MAHandle maSetDrawTarget(MAHandle maHandle) {
+  if (maHandle == (MAHandle) HANDLE_SCREEN) {
+    activeCanvas = widget->getScreen();
   } else {
-    drawTarget = (MosyncObject *)handle;
+    activeCanvas = (Canvas *)maHandle;
   }
-
-  //GSave gsave;
-  //img->make_current();
-
-  return (MAHandle) drawTarget;
+  return (MAHandle) activeCanvas;
 }
 
 int maGetMilliSecondCount(void) {

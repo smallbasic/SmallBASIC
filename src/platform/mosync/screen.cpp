@@ -283,6 +283,7 @@ void GraphicScreen::clear() {
 }
 
 void GraphicScreen::draw(bool vscroll) {
+  logEntered();
   MARect srcRect;
   MAPoint2d dstPoint;
   srcRect.left = 0;
