@@ -18,16 +18,19 @@
 struct AnsiWidget;
 
 struct Canvas {
-  Canvas();
+  Canvas(int size);
   ~Canvas();
 
   void create(int w, int h, int bg);
   void draw(int w, int h);
   void resize(int w, int h);
   void beginDraw();
+  void setFont();
 
   fltk::Image *_img;
   int _rgb;
+  int _size;
+  int _style;
 };
 
 class MosyncWidget : public fltk::Widget, IButtonListener {
@@ -58,6 +61,7 @@ public:
   void reset();
 
   Canvas *getScreen() { return _screen; }
+  int getDefaultSize() { return _defsize; }
 
 private:
   // inherited methods
@@ -69,6 +73,7 @@ private:
   AnsiWidget *_ansiWidget;
   Canvas *_screen;
   bool _resized;
+  int _defsize;
 };
 
 #endif

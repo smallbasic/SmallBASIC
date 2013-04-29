@@ -25,6 +25,7 @@
 #include "TtyWidget.h"
 
 #include "common/fs_socket_client.h"
+#include "utils.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -33,12 +34,6 @@
 #endif
 #else
 #include <sys/socket.h>
-#endif
-
-#if defined(__MINGW32__)
-#define makedir(f) mkdir(f)
-#else
-#define makedir(f) mkdir(f, 0700)
 #endif
 
 #define PEN_OFF   0             // pen mode disabled
@@ -93,6 +88,8 @@ int osd_devinit() {
 
   os_graf_mx = wnd->_out->w();
   os_graf_my = wnd->_out->h();
+  dev_fgcolor = -DEFAULT_COLOR;
+  dev_bgcolor = 0;
 
   os_ver = FL_MAJOR_VERSION + FL_MINOR_VERSION + FL_PATCH_VERSION;
   os_color = 1;

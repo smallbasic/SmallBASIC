@@ -6,13 +6,14 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <fltk/run.h>
-#include <fltk/events.h>
-#include <fltk/draw.h>
-#include <fltk/layout.h>
-#include <fltk/group.h>
+#include <fltk/Font.h>
 #include <fltk/Image.h>
 #include <fltk/Monitor.h>
+#include <fltk/draw.h>
+#include <fltk/events.h>
+#include <fltk/group.h>
+#include <fltk/layout.h>
+#include <fltk/run.h>
 
 #include <time.h>
 #include "MosyncWidget.h"
@@ -23,9 +24,11 @@ using namespace fltk;
 MosyncWidget *widget;
 Canvas *activeCanvas;
 
-Canvas::Canvas() :
+Canvas::Canvas(int size) :
   _img(NULL), 
-  _rgb(BLACK) {
+  _rgb(0),
+  _size(size),
+  _style(0) {
 }
 
 Canvas::~Canvas() {
@@ -58,10 +61,10 @@ void Canvas::resize(int w, int h) {
   if (h > H) {
     H = h;
   }
-  Image *old = _img;
-  _img = new Image(W, H);
 
+  Image *old = _img;
   GSave gsave;
+  _img = new Image(W, H);
   _img->make_current();
   setcolor(widget->getBackgroundColor());
   fillrect(0, 0, W, H);
@@ -73,13 +76,28 @@ void Canvas::resize(int w, int h) {
 void Canvas::beginDraw() {
   _img->make_current();
   setcolor(_rgb);
+  setFont();
+}
+
+void Canvas::setFont() {
+  fltk::Font *font = fltk::COURIER;
+  if (_size && _style) {
+    if (_style && FONT_STYLE_BOLD) {
+      font = font->bold();
+    }
+    if (_style && FONT_STYLE_ITALIC) {
+      font = font->italic();
+    }
+  }
+  setfont(font, _size);
 }
 
 MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
   Widget(x, y, w, h, 0), 
   _ansiWidget(NULL),
   _screen(NULL),
-  _resized(false) {
+  _resized(false),
+  _defsize(defsize) {
   widget = this;
 }
 
@@ -91,13 +109,15 @@ MosyncWidget::~MosyncWidget() {
 void MosyncWidget::layout() {
   // deferred construction until FLTK is ready
   if (!_screen) {
-    _screen = new Canvas();
+    _screen = new Canvas(_defsize);
     _screen->create(w(), h(), BLACK);
     activeCanvas = _screen;
   }
   if (!_ansiWidget) {
     _ansiWidget = new AnsiWidget(this, w(), h());
     _ansiWidget->construct();
+    _ansiWidget->setTextColor(DEFAULT_COLOR, 0);
+    _ansiWidget->setFontSize(_defsize);
   }
   if (activeCanvas->_img && (layout_damage() & LAYOUT_WH)) {
     // can't use GSave here in X
@@ -287,10 +307,9 @@ void maFillRect(int left, int top, int width, int height) {
 
 void maDrawText(int left, int top, const char* str) {
   if (activeCanvas) {
-    setcolor(YELLOW);
     GSave gsave;
     activeCanvas->beginDraw();
-    drawtext(str, left, top);
+    drawtext(str, left, top + (int)getascent());
   }
 }
 
@@ -302,9 +321,12 @@ void maResetBacklight(void) {
 }
 
 MAExtent maGetTextSize(const char* str) {
+  if (activeCanvas) {
+    activeCanvas->setFont();
+  }
   short width = (int)getwidth(str);
   short height = (int)(getascent() + getdescent());
-  return (MAExtent)((width << 16) && height);
+  return (MAExtent)((width << 16) + height);
 }
 
 MAExtent maGetScrSize(void) {
@@ -314,13 +336,18 @@ MAExtent maGetScrSize(void) {
 }
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
-  return 0;
+  MAHandle result;
+  if (activeCanvas) {
+    activeCanvas->_style = style;
+    result = (MAHandle)activeCanvas;
+  } else {
+    result = NULL;
+  }
+  return result;
 }
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {
-  // affects maGetTextSize() result
-  
-  return 0;
+  return maHandle;
 }
 
 void maDrawImageRegion(MAHandle maHandle, const MARect* srcRect, 
@@ -350,7 +377,7 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
 }
 
 MAHandle maCreatePlaceholder(void) {
-  MAHandle maHandle = (MAHandle) new Canvas();
+  MAHandle maHandle = (MAHandle) new Canvas(widget->getDefaultSize());
   return maHandle;
 }
 

@@ -9,6 +9,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define DEFAULT_COLOR 0xa1a1a1
+
 #if defined(__MINGW32__)
 #define makedir(f) mkdir(f)
 #else

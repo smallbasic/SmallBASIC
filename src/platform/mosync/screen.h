@@ -15,8 +15,10 @@
 
 #if defined(_FLTK)
   #include "platform/common/maapi.h"
+  #define LINE_SPACING 0
 #else
   #include <maapi.h>
+  #define LINE_SPACING 6
 #endif
 
 #include "platform/common/StringLib.h"
@@ -25,7 +27,6 @@
 using namespace strlib;
 
 #define INITXY 2
-#define LINE_SPACING 6
 #define NO_COLOR -1
 #define DEFAULT_COLOR  0xa1a1a1
 #define GRAY_BG_COL    0x383f42
