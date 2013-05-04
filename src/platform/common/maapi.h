@@ -69,28 +69,6 @@ typedef struct MAPoint2d {
 } MAPoint2d;
 
 /**
- * \brief Data for a connection event, including an indicator or success or failure.
- */
-typedef struct MAConnEventData {
-  // The handle to the connection associated with the event.
-  MAHandle handle;
-
-  // One of the \link #CONNOP_READ CONNOP \endlink constants.
-  int opType;
-
-  // A success value \> 0 or a \link #CONNERR_GENERIC CONNERR \endlink code.
-  int result;
-} MAConnEventData;
-
-/**
- * \brief A structure containing the sensor type and the data sent to the event.
- */
-typedef struct MASensor {
-  int type;
-  float values[3];
-} MASensor;
-
-/**
  * \brief An event; a message indicating that something has happened, e.g. that a key has been pressed.
  */
 typedef struct MAEvent {

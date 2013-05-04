@@ -203,8 +203,8 @@ struct AnsiWidget {
   void setTextColor(long fg, long bg);
   void setXY(int x, int y) { _back->_curX=x; _back->_curY=y; }
   void setScrollSize(int scrollSize);
-  void pointerTouchEvent(MAEvent &event);
-  void pointerMoveEvent(MAEvent &event);
+  bool pointerTouchEvent(MAEvent &event);
+  bool pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);
 
 private:

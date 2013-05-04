@@ -6,6 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <fltk/Cursor.h>
 #include <fltk/Font.h>
 #include <fltk/Image.h>
 #include <fltk/Monitor.h>
@@ -21,11 +22,22 @@
 
 using namespace fltk;
 
-MosyncWidget *widget;
-Canvas *activeCanvas;
+#define SIZE_LIMIT 4
 
+MosyncWidget *widget;
+Canvas *drawTarget;
+bool mouseActive;
+
+int get_text_width(char *s) {
+  return fltk::getwidth(s);
+}
+
+//
+// Canvas
+//
 Canvas::Canvas(int size) :
   _img(NULL), 
+  _clip(NULL),
   _rgb(0),
   _size(size),
   _style(0) {
@@ -34,49 +46,69 @@ Canvas::Canvas(int size) :
 Canvas::~Canvas() {
   if (_img) {
     _img->destroy();
-    delete _img;
   }
-}
-
-void Canvas::create(int w, int h, int bg) {
-  GSave gsave;
-  _img = new Image(w, h);
-  _img->make_current();
-  setcolor(bg);
-  fillrect(0, 0, w, h);
-}
-
-void Canvas::draw(int w, int h) {
-  push_clip(Rectangle(w, h));
-  _img->draw(Rectangle(_img->w(), _img->h()));
-  pop_clip();
-}
-
-void Canvas::resize(int w, int h) {
-  int W = _img->w();
-  int H = _img->h();
-  if (w > W) {
-    W = w;
-  }
-  if (h > H) {
-    H = h;
-  }
-
-  Image *old = _img;
-  GSave gsave;
-  _img = new Image(W, H);
-  _img->make_current();
-  setcolor(widget->getBackgroundColor());
-  fillrect(0, 0, W, H);
-  old->draw(Rectangle(old->w(), old->h()));
-  old->destroy();
-  delete old;
+  delete _img;
+  delete _clip;
 }
 
 void Canvas::beginDraw() {
   _img->make_current();
   setcolor(_rgb);
   setFont();
+  if (_clip) {
+    push_clip(*_clip);
+  }
+}
+
+void Canvas::clear(int bg) {
+  setcolor(bg);
+  fillrect(0, 0, _img->w(), _img->h());
+}
+
+void Canvas::create(int w, int h, int bg) {
+  GSave gsave;
+  _img = new Image(w, h);
+  _img->make_current();
+  clear(bg);
+}
+
+void Canvas::draw(int w, int h) {
+  push_clip(Rectangle(w, h));
+  _img->draw(0, 0);
+  pop_clip();
+}
+
+void Canvas::endDraw() {
+  if (_clip) {
+    pop_clip();
+  }
+}
+
+void Canvas::resize(int w, int h) {
+  if (_img) {
+    int W = _img->w();
+    int H = _img->h();
+    if (w > W) {
+      W = w;
+    }
+    if (h > H) {
+    H = h;
+    }
+    Image *old = _img;
+    GSave gsave;
+    _img = new Image(W, H);
+    _img->make_current();
+    setcolor(widget->getBackgroundColor());
+    fillrect(0, 0, W, H);
+    old->draw(Rectangle(old->w(), old->h()));
+    old->destroy();
+    delete old;
+  }
+}
+
+void Canvas::setClip(int x, int y, int w, int h) {
+  delete _clip;
+  _clip = new Rectangle(x, y, w, h);
 }
 
 void Canvas::setFont() {
@@ -92,6 +124,9 @@ void Canvas::setFont() {
   setfont(font, _size);
 }
 
+//
+// MosyncWidget
+//
 MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
   Widget(x, y, w, h, 0), 
   _ansiWidget(NULL),
@@ -111,7 +146,7 @@ void MosyncWidget::layout() {
   if (!_screen) {
     _screen = new Canvas(_defsize);
     _screen->create(w(), h(), BLACK);
-    activeCanvas = _screen;
+    drawTarget = _screen;
   }
   if (!_ansiWidget) {
     _ansiWidget = new AnsiWidget(this, w(), h());
@@ -119,7 +154,7 @@ void MosyncWidget::layout() {
     _ansiWidget->setTextColor(DEFAULT_COLOR, 0);
     _ansiWidget->setFontSize(_defsize);
   }
-  if (activeCanvas->_img && (layout_damage() & LAYOUT_WH)) {
+  if (layout_damage() & LAYOUT_WH) {
     // can't use GSave here in X
     _resized = true;
   }
@@ -136,8 +171,8 @@ void MosyncWidget::draw() {
     }
   }
 
-  if (_resized && _screen->_img) {
-    // resize the backing screen
+  if (_resized) {
+    // resize the backing screens
     _screen->resize(w(), h());
     _resized = false;
   }
@@ -155,6 +190,8 @@ void MosyncWidget::flush(bool force) {
 }
 
 void MosyncWidget::reset() {
+  _ansiWidget->setTextColor(DEFAULT_COLOR, 0);
+  _ansiWidget->setFontSize(_defsize);
   _ansiWidget->reset();
 }
 
@@ -162,19 +199,30 @@ int MosyncWidget::handle(int e) {
   MAEvent event;
 
   switch (e) {
+  case FOCUS:
+    return 1; 
+
   case PUSH:
-    fltk::get_mouse(event.point.x, event.point.y);
-    _ansiWidget->pointerTouchEvent(event);
-    break;
+    event.point.x = fltk::event_x();
+    event.point.y = fltk::event_y();
+    mouseActive = _ansiWidget->pointerTouchEvent(event);
+    return mouseActive;
 
   case DRAG:
   case MOVE:
-    fltk::get_mouse(event.point.x, event.point.y);
-    _ansiWidget->pointerMoveEvent(event);
+    event.point.x = fltk::event_x();
+    event.point.y = fltk::event_y();
+    if (mouseActive && _ansiWidget->pointerMoveEvent(event)) {
+      Widget::cursor(fltk::CURSOR_HAND);
+      return 1;
+    }
     break;
 
   case RELEASE:
-    fltk::get_mouse(event.point.x, event.point.y);
+    mouseActive = false;
+    Widget::cursor(fltk::CURSOR_DEFAULT);
+    event.point.x = fltk::event_x();
+    event.point.y = fltk::event_y();
     _ansiWidget->pointerReleaseEvent(event);
     break;
   }
@@ -263,66 +311,72 @@ int MosyncWidget::getBackgroundColor() {
   return _ansiWidget->getBackgroundColor();
 }
 
-int get_text_width(char *s) {
-  return fltk::getwidth(s);
-}
-
+//
+// maapi implementation
+//
 int maFontDelete(MAHandle maHandle) {
   return RES_FONT_OK;
 }
 
 int maSetColor(int rgb) {
-  if (activeCanvas) {
-    activeCanvas->_rgb = rgb;
+  if (drawTarget) {
+    drawTarget->_rgb = rgb;
   }
   return rgb;
 }
 
 void maSetClipRect(int left, int top, int width, int height) {
+  if (drawTarget) {
+    drawTarget->setClip(left, top, width, height);
+  }
 }
 
 void maPlot(int posX, int posY) {
-  if (activeCanvas) {
+  if (drawTarget) {
     GSave gsave;
-    activeCanvas->beginDraw();
+    drawTarget->beginDraw();
     drawpoint(posX, posY);
+    drawTarget->endDraw();
   }
 }
 
 void maLine(int startX, int startY, int endX, int endY) {
-  if (activeCanvas) {
+  if (drawTarget) {
     GSave gsave;
-    activeCanvas->beginDraw();
-    drawline(startY, startY, endX, endY);
+    drawTarget->beginDraw();
+    drawline(startX, startY, endX, endY);
+    drawTarget->endDraw();
   }
 }
 
 void maFillRect(int left, int top, int width, int height) {
-  if (activeCanvas) {
+  if (drawTarget) {
     GSave gsave;
-    activeCanvas->beginDraw();
+    drawTarget->beginDraw();
     fillrect(left, top, width, height);
+    drawTarget->endDraw();
   }
 }
 
-void maDrawText(int left, int top, const char* str) {
-  if (activeCanvas) {
+void maDrawText(int left, int top, const char *str) {
+  if (drawTarget) {
     GSave gsave;
-    activeCanvas->beginDraw();
+    drawTarget->beginDraw();
     drawtext(str, left, top + (int)getascent());
+    drawTarget->endDraw();
   }
 }
 
 void maUpdateScreen(void) {
-  fltk::flush();
+  fltk::redraw();
 }
 
 void maResetBacklight(void) {
 }
 
-MAExtent maGetTextSize(const char* str) {
-  if (activeCanvas) {
-    activeCanvas->setFont();
+MAExtent maGetTextSize(const char *str) {
+  if (drawTarget) {
+    drawTarget->setFont();
   }
   short width = (int)getwidth(str);
   short height = (int)(getascent() + getdescent());
@@ -337,9 +391,9 @@ MAExtent maGetScrSize(void) {
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
   MAHandle result;
-  if (activeCanvas) {
-    activeCanvas->_style = style;
-    result = (MAHandle)activeCanvas;
+  if (drawTarget) {
+    drawTarget->_style = style;
+    result = (MAHandle)drawTarget;
   } else {
     result = NULL;
   }
@@ -350,24 +404,23 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
   return maHandle;
 }
 
-void maDrawImageRegion(MAHandle maHandle, const MARect* srcRect, 
-                       const MAPoint2d* dstPoint, int transformMode) {
+void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, 
+                       const MAPoint2d *dstPoint, int transformMode) {
   Canvas *canvas = (Canvas *)maHandle;
-  if (activeCanvas && canvas->_img && canvas != activeCanvas) {
-    int width = canvas->_img->w() - dstPoint->x;
-    int height = canvas->_img->h() - dstPoint->y;
+  if (drawTarget && canvas->_img && canvas != drawTarget) {
     Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
-    Rectangle to = Rectangle(dstPoint->x, dstPoint->y, width, height);
+    Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
     GSave gsave;
-    activeCanvas->beginDraw();
+    drawTarget->beginDraw();
     canvas->_img->draw(from, to);
+    drawTarget->endDraw();
   }
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   int result = RES_OK;
   const fltk::Monitor &monitor = fltk::Monitor::all();
-  if (height > monitor.h()) {
+  if (height > monitor.h() * SIZE_LIMIT) {
     result -= 1;
   } else {
     Canvas *canvas = (Canvas *)maHandle;
@@ -386,16 +439,17 @@ void maDestroyPlaceholder(MAHandle maHandle) {
   delete holder;
 }
 
-void maGetImageData(MAHandle maHandle, void* dst, const MARect* srcRect, int scanlength) {
+void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
+
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
   if (maHandle == (MAHandle) HANDLE_SCREEN) {
-    activeCanvas = widget->getScreen();
+    drawTarget = widget->getScreen();
   } else {
-    activeCanvas = (Canvas *)maHandle;
+    drawTarget = (Canvas *)maHandle;
   }
-  return (MAHandle) activeCanvas;
+  return (MAHandle) drawTarget;
 }
 
 int maGetMilliSecondCount(void) {
@@ -406,12 +460,12 @@ int maShowVirtualKeyboard(void) {
   return 0;
 }
 
-void maOptionsBox(const wchar* title, const wchar* destructiveButtonTitle,
-                  const wchar* cancelButtonTitle, const void* otherButtonTitles,
+void maOptionsBox(const wchar *title, const wchar *destructiveButtonTitle,
+                  const wchar *cancelButtonTitle, const void *otherButtonTitles,
                   int otherButtonTitlesSize) {
 }
 
-int maGetEvent(MAEvent* event) {
+int maGetEvent(MAEvent *event) {
   int result = 0;
   if (check()) {
     switch (fltk::event()) {
@@ -436,6 +490,6 @@ void maWait(int timeout) {
   fltk::wait(timeout);
 }
 
-void maAlert(const char* title, const char* message, const char* button1,
-             const char* button2, const char* button3) {
+void maAlert(const char *title, const char *message, const char *button1,
+             const char *button2, const char *button3) {
 }

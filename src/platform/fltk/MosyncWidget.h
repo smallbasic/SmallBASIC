@@ -21,13 +21,17 @@ struct Canvas {
   Canvas(int size);
   ~Canvas();
 
+  void beginDraw();
+  void clear(int bg);
   void create(int w, int h, int bg);
   void draw(int w, int h);
+  void endDraw();
   void resize(int w, int h);
-  void beginDraw();
+  void setClip(int x, int y, int w, int h);
   void setFont();
 
   fltk::Image *_img;
+  fltk::Rectangle *_clip;
   int _rgb;
   int _size;
   int _style;

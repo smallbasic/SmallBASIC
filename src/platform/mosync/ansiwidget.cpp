@@ -537,7 +537,8 @@ void AnsiWidget::setTextColor(long fg, long bg) {
 }
 
 // handler for pointer touch events
-void AnsiWidget::pointerTouchEvent(MAEvent &event) {
+bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
+  bool result = false;
   // hit test buttons on the front screen
   if (setActiveButton(event, _front)) {
     _focus = _front;
@@ -560,17 +561,21 @@ void AnsiWidget::pointerTouchEvent(MAEvent &event) {
   if (_front->overlaps(event.point.x, event.point.y)) {
     _xTouch = _xMove = event.point.x;
     _yTouch = _yMove = event.point.y;
+    result = true;
   }
+  return result;
 }
 
 // handler for pointer move events
-void AnsiWidget::pointerMoveEvent(MAEvent &event) {
+bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
+  bool result = false;
   if (_activeButton != NULL) {
     bool pressed = _activeButton->overlaps(event.point, _focus->x,
                                           _focus->y - _focus->_scrollY);
     if (pressed != _activeButton->_pressed) {
       _activeButton->_pressed = pressed;
       drawActiveButton();
+      result = true;
     }
   } else if (!_swipeExit) {
     // scroll up/down
@@ -589,9 +594,11 @@ void AnsiWidget::pointerMoveEvent(MAEvent &event) {
         _xMove = event.point.x;
         _yMove = event.point.y;
         flush(true, true);
+        result = true;
       }
     }
   }
+  return result;
 }
 
 // handler for pointer release events
