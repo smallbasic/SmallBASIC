@@ -8,6 +8,8 @@
 
 #include "utils.h"
 #include <stdio.h>
+#include <stdarg.h>
+#include <ctype.h>
 
 //--Debug support---------------------------------------------------------------
 

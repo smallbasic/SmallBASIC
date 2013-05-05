@@ -12,7 +12,7 @@
 #include <fltk/Monitor.h>
 #include <fltk/draw.h>
 #include <fltk/events.h>
-#include <fltk/group.h>
+#include <fltk/Group.h>
 #include <fltk/layout.h>
 #include <fltk/run.h>
 
@@ -60,16 +60,18 @@ void Canvas::beginDraw() {
   }
 }
 
-void Canvas::clear(int bg) {
-  setcolor(bg);
+void Canvas::clear() {
+  setcolor(_rgb);
   fillrect(0, 0, _img->w(), _img->h());
 }
 
-void Canvas::create(int w, int h, int bg) {
-  GSave gsave;
+void Canvas::create(int w, int h) {
   _img = new Image(w, h);
-  _img->make_current();
-  clear(bg);
+
+  GSave gsave;
+  beginDraw();
+  clear();
+  endDraw();
 }
 
 void Canvas::draw(int w, int h) {
@@ -142,18 +144,6 @@ MosyncWidget::~MosyncWidget() {
 }
 
 void MosyncWidget::layout() {
-  // deferred construction until FLTK is ready
-  if (!_screen) {
-    _screen = new Canvas(_defsize);
-    _screen->create(w(), h(), BLACK);
-    drawTarget = _screen;
-  }
-  if (!_ansiWidget) {
-    _ansiWidget = new AnsiWidget(this, w(), h());
-    _ansiWidget->construct();
-    _ansiWidget->setTextColor(DEFAULT_COLOR, 0);
-    _ansiWidget->setFontSize(_defsize);
-  }
   if (layout_damage() & LAYOUT_WH) {
     // can't use GSave here in X
     _resized = true;
@@ -173,6 +163,7 @@ void MosyncWidget::draw() {
 
   if (_resized) {
     // resize the backing screens
+    _ansiWidget->resize(w(), h());
     _screen->resize(w(), h());
     _resized = false;
   }
@@ -199,6 +190,20 @@ int MosyncWidget::handle(int e) {
   MAEvent event;
 
   switch (e) {
+  case SHOW:
+    if (!_screen) {
+      _screen = new Canvas(_defsize);
+      _screen->create(w(), h());
+      drawTarget = _screen;
+    }
+    if (!_ansiWidget) {
+      _ansiWidget = new AnsiWidget(this, w(), h());
+      _ansiWidget->construct();
+      _ansiWidget->setTextColor(DEFAULT_COLOR, 0);
+      _ansiWidget->setFontSize(_defsize);
+    }
+    break;
+
   case FOCUS:
     return 1; 
 
@@ -302,11 +307,6 @@ int MosyncWidget::getFontSize() {
   return _ansiWidget->getFontSize();
 }
 
-void MosyncWidget::resize(int x, int y, int w, int h) {
-  _ansiWidget->resize(w, h);
-  Widget::resize(x, y, w, h);
-}
-
 int MosyncWidget::getBackgroundColor() {
   return _ansiWidget->getBackgroundColor();
 }
@@ -395,7 +395,7 @@ MAHandle maFontLoadDefault(int type, int style, int size) {
     drawTarget->_style = style;
     result = (MAHandle)drawTarget;
   } else {
-    result = NULL;
+    result = (MAHandle)NULL;
   }
   return result;
 }
@@ -424,7 +424,7 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
     result -= 1;
   } else {
     Canvas *canvas = (Canvas *)maHandle;
-    canvas->create(width, height, widget->getBackgroundColor());
+    canvas->create(width, height);
   }
   return result;
 }

@@ -19,6 +19,8 @@
 #if !defined(MAAPI_H)
 #define MAAPI_H
 
+#include <stdint.h>
+
 #define EXTENT_Y(e) ((short)(e))
 #define EXTENT_X(e) ((short)((e) >> 16))
 #define TRANS_NONE 0
@@ -54,7 +56,7 @@ typedef unsigned int uint;
 
 typedef int MAExtent;
 typedef void* MAAddress;
-typedef int MAHandle;
+typedef intptr_t MAHandle;
 
 typedef struct MARect {
   int left;

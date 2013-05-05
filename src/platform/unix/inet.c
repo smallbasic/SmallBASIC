@@ -19,6 +19,8 @@
 static int inetlib_init = 0;
 #else
 #include <sys/ioctl.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #endif
 
 #ifndef socklen_t

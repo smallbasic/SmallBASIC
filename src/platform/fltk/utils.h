@@ -9,6 +9,16 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define C_LINKAGE_BEGIN extern "C" {
+#define C_LINKAGE_END }
+
+#ifndef max
+#define max(a,b) ((a<b) ? (b) : (a))
+#endif
+#ifndef min
+#define min(a,b) ((a>b) ? (b) : (a))
+#endif
+
 #define DEFAULT_COLOR 0xa1a1a1
 
 #if defined(__MINGW32__)

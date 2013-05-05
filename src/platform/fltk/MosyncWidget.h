@@ -22,8 +22,8 @@ struct Canvas {
   ~Canvas();
 
   void beginDraw();
-  void clear(int bg);
-  void create(int w, int h, int bg);
+  void clear();
+  void create(int w, int h);
   void draw(int w, int h);
   void endDraw();
   void resize(int w, int h);
@@ -59,7 +59,6 @@ public:
   int  textHeight(void);
   void setFontSize(float i);
   int  getFontSize();
-  void resize(int x, int y, int w, int h);
   int  getBackgroundColor();
   void flush(bool force);
   void reset();

@@ -13,20 +13,13 @@
 #include <fltk/TabGroup.h>
 #include <fltk/ValueInput.h>
 
+#include <stdint.h>
+
 #include "MosyncWidget.h"
 #include "EditorWidget.h"
 #include "HelpWidget.h"
 #include "Profile.h"
-
-#define C_LINKAGE_BEGIN extern "C" {
-#define C_LINKAGE_END }
-
-#ifndef max
-#define max(a,b) ((a<b) ? (b) : (a))
-#endif
-#ifndef min
-#define min(a,b) ((a>b) ? (b) : (a))
-#endif
+#include "utils.h"
 
 #define MNU_HEIGHT 22
 #define DEF_FONT_SIZE 12
@@ -77,7 +70,7 @@ extern ExecState runMode;
     wnd->FN(w, v);                              \
   }
 
-struct BaseWindow:public Window {
+struct BaseWindow : public Window {
   BaseWindow(int w, int h) : Window(w, h, "SmallBASIC") {} 
   virtual ~BaseWindow() {};
   int handle(int e);
