@@ -6,6 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <fltk/ask.h>
 #include <fltk/Cursor.h>
 #include <fltk/Font.h>
 #include <fltk/Image.h>
@@ -332,11 +333,11 @@ void maSetClipRect(int left, int top, int width, int height) {
 }
 
 void maPlot(int posX, int posY) {
-  if (drawTarget) {
-    GSave gsave;
-    drawTarget->beginDraw();
-    drawpoint(posX, posY);
-    drawTarget->endDraw();
+  if (drawTarget 
+      && posX < drawTarget->_img->buffer_width()
+      && posY < drawTarget->_img->buffer_height()) {
+    U32 *row = (U32*)drawTarget->_img->linebuffer(posY);
+    row[posX] = drawTarget->_rgb;
   }
 }
 
@@ -440,7 +441,15 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 }
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
-
+  Canvas *holder = (Canvas *)maHandle;
+  U32 *dest = (U32*)dst;
+  int index = 0;
+  for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_img->buffer_height(); y++) {
+    for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_img->buffer_width(); x++) {
+      U32 *pixel = (U32*)holder->_img->linebuffer(y + srcRect->top);
+      dest[index++] = pixel[x + srcRect->left];
+    }
+  }
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
@@ -492,4 +501,5 @@ void maWait(int timeout) {
 
 void maAlert(const char *title, const char *message, const char *button1,
              const char *button2, const char *button3) {
+  fltk::alert("%s\n\n%s", title, message);
 }
