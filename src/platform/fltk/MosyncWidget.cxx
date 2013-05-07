@@ -24,6 +24,7 @@
 using namespace fltk;
 
 #define SIZE_LIMIT 4
+extern "C" void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
 
 MosyncWidget *widget;
 Canvas *drawTarget;
@@ -75,10 +76,8 @@ void Canvas::create(int w, int h) {
   endDraw();
 }
 
-void Canvas::draw(int w, int h) {
-  push_clip(Rectangle(w, h));
+void Canvas::draw() {
   _img->draw(0, 0);
-  pop_clip();
 }
 
 void Canvas::endDraw() {
@@ -170,7 +169,7 @@ void MosyncWidget::draw() {
   }
 
   if (_screen->_img) {
-    _screen->draw(w(), h());
+    _screen->draw();
   } else {
     setcolor(getBackgroundColor());
     fillrect(Rectangle(w(), h()));
@@ -225,11 +224,13 @@ int MosyncWidget::handle(int e) {
     break;
 
   case RELEASE:
-    mouseActive = false;
-    Widget::cursor(fltk::CURSOR_DEFAULT);
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    _ansiWidget->pointerReleaseEvent(event);
+    if (mouseActive) {
+      mouseActive = false;
+      Widget::cursor(fltk::CURSOR_DEFAULT);
+      event.point.x = fltk::event_x();
+      event.point.y = fltk::event_y();
+      _ansiWidget->pointerReleaseEvent(event);
+    }
     break;
   }
 
@@ -334,28 +335,37 @@ void maSetClipRect(int left, int top, int width, int height) {
 
 void maPlot(int posX, int posY) {
   if (drawTarget 
+      && posX > -1 && posY > -1
       && posX < drawTarget->_img->buffer_width()
       && posY < drawTarget->_img->buffer_height()) {
-    U32 *row = (U32*)drawTarget->_img->linebuffer(posY);
+    U32 *row = (U32 *)drawTarget->_img->linebuffer(posY);
     row[posX] = drawTarget->_rgb;
   }
 }
 
 void maLine(int startX, int startY, int endX, int endY) {
   if (drawTarget) {
-    GSave gsave;
-    drawTarget->beginDraw();
-    drawline(startX, startY, endX, endY);
-    drawTarget->endDraw();
+    if (startX == endX) {
+      for (int y = startY; y < endY; y++) {
+        maPlot(startX, y);
+      }
+    } else if (startY == endY) {
+      for (int x = startX; x < endX; x++) {
+        maPlot(x, startY);
+      }
+    } else {
+      g_line(startX, startY, endX, endY, maPlot);
+    }
   }
 }
 
 void maFillRect(int left, int top, int width, int height) {
   if (drawTarget) {
-    GSave gsave;
-    drawTarget->beginDraw();
-    fillrect(left, top, width, height);
-    drawTarget->endDraw();
+    for (int y = top; y < height; y++) {
+      for (int x = left; x < width; x++) {
+        maPlot(x, y);
+      }
+    }
   }
 }
 
@@ -369,7 +379,7 @@ void maDrawText(int left, int top, const char *str) {
 }
 
 void maUpdateScreen(void) {
-  fltk::redraw();
+  widget->redraw();
 }
 
 void maResetBacklight(void) {
@@ -408,7 +418,7 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, 
                        const MAPoint2d *dstPoint, int transformMode) {
   Canvas *canvas = (Canvas *)maHandle;
-  if (drawTarget && canvas->_img && canvas != drawTarget) {
+  if (drawTarget && canvas->_img && drawTarget != canvas) {
     Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
     Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
     GSave gsave;
@@ -442,11 +452,11 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
   Canvas *holder = (Canvas *)maHandle;
-  U32 *dest = (U32*)dst;
+  U32 *dest = (U32 *)dst;
   int index = 0;
   for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_img->buffer_height(); y++) {
     for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_img->buffer_width(); x++) {
-      U32 *pixel = (U32*)holder->_img->linebuffer(y + srcRect->top);
+      U32 *pixel = (U32 *)holder->_img->linebuffer(y + srcRect->top);
       dest[index++] = pixel[x + srcRect->left];
     }
   }
