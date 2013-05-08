@@ -419,12 +419,20 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
   Canvas *canvas = (Canvas *)maHandle;
   if (drawTarget && canvas->_img && drawTarget != canvas) {
-    Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
-    Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
-    GSave gsave;
-    drawTarget->beginDraw();
-    canvas->_img->draw(from, to);
-    drawTarget->endDraw();
+    Image *fromImg = canvas->_img;
+    Image *toImg = drawTarget->_img;
+    if (toImg->w() == srcRect->width) {
+      U32 *from = (U32 *)fromImg->linebuffer(srcRect->top);
+      U32 *dest = (U32 *)toImg->linebuffer(dstPoint->y);
+      int size = toImg->buffer_linedelta() * srcRect->height;
+      memcpy(dest + dstPoint->x, from + srcRect->left, size);
+    } else {
+      for (int y = 0; y < srcRect->height; y++) {
+        U32 *from = (U32 *)fromImg->linebuffer(srcRect->top + y);
+        U32 *dest = (U32 *)toImg->linebuffer(dstPoint->y + y);
+        memcpy(dest + dstPoint->x, from + srcRect->left, srcRect->width * sizeof(U32 *));
+      }
+    }
   }
 }
 
