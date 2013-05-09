@@ -24,7 +24,6 @@ struct Canvas {
   void beginDraw();
   void clear();
   void create(int w, int h);
-  void draw();
   void endDraw();
   void resize(int w, int h);
   void setClip(int x, int y, int w, int h);

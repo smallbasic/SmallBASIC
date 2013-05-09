@@ -76,10 +76,6 @@ void Canvas::create(int w, int h) {
   endDraw();
 }
 
-void Canvas::draw() {
-  _img->draw(0, 0);
-}
-
 void Canvas::endDraw() {
   if (_clip) {
     pop_clip();
@@ -88,20 +84,12 @@ void Canvas::endDraw() {
 
 void Canvas::resize(int w, int h) {
   if (_img) {
-    int W = _img->w();
-    int H = _img->h();
-    if (w > W) {
-      W = w;
-    }
-    if (h > H) {
-    H = h;
-    }
     Image *old = _img;
     GSave gsave;
-    _img = new Image(W, H);
+    _img = new Image(w, h);
     _img->make_current();
     setcolor(widget->getBackgroundColor());
-    fillrect(0, 0, W, H);
+    fillrect(0, 0, w, h);
     old->draw(Rectangle(old->w(), old->h()));
     old->destroy();
     delete old;
@@ -163,13 +151,13 @@ void MosyncWidget::draw() {
 
   if (_resized) {
     // resize the backing screens
-    _ansiWidget->resize(w(), h());
     _screen->resize(w(), h());
+    _ansiWidget->resize(w(), h());
     _resized = false;
   }
 
   if (_screen->_img) {
-    _screen->draw();
+    _screen->_img->draw(0, 0);
   } else {
     setcolor(getBackgroundColor());
     fillrect(Rectangle(w(), h()));
@@ -361,9 +349,9 @@ void maLine(int startX, int startY, int endX, int endY) {
 
 void maFillRect(int left, int top, int width, int height) {
   if (drawTarget) {
-    for (int y = top; y < height; y++) {
-      for (int x = left; x < width; x++) {
-        maPlot(x, y);
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        maPlot(x + left, y + top);
       }
     }
   }
@@ -421,18 +409,11 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
   if (drawTarget && canvas->_img && drawTarget != canvas) {
     Image *fromImg = canvas->_img;
     Image *toImg = drawTarget->_img;
-    if (toImg->w() == srcRect->width) {
-      U32 *from = (U32 *)fromImg->linebuffer(srcRect->top);
-      U32 *dest = (U32 *)toImg->linebuffer(dstPoint->y);
-      int size = toImg->buffer_linedelta() * srcRect->height;
-      memcpy(dest + dstPoint->x, from + srcRect->left, size);
-    } else {
-      for (int y = 0; y < srcRect->height; y++) {
-        U32 *from = (U32 *)fromImg->linebuffer(srcRect->top + y);
-        U32 *dest = (U32 *)toImg->linebuffer(dstPoint->y + y);
-        memcpy(dest + dstPoint->x, from + srcRect->left, srcRect->width * sizeof(U32 *));
-      }
-    }
+    U32 *from = (U32 *)fromImg->linebuffer(srcRect->top);
+    U32 *dest = (U32 *)toImg->linebuffer(0);
+    int avail = fromImg->h() - srcRect->top;
+    int size = fromImg->buffer_linedelta() * min(avail, srcRect->height);
+    memcpy(dest, from, size);
   }
 }
 
