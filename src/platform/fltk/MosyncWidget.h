@@ -22,7 +22,6 @@ struct Canvas {
   ~Canvas();
 
   void beginDraw();
-  void clear();
   void create(int w, int h);
   void endDraw();
   void resize(int w, int h);
@@ -31,7 +30,6 @@ struct Canvas {
 
   fltk::Image *_img;
   fltk::Rectangle *_clip;
-  int _rgb;
   int _size;
   int _style;
 };

@@ -29,6 +29,7 @@ extern "C" void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int
 MosyncWidget *widget;
 Canvas *drawTarget;
 bool mouseActive;
+int drawColor;
 
 int get_text_width(char *s) {
   return fltk::getwidth(s);
@@ -40,7 +41,6 @@ int get_text_width(char *s) {
 Canvas::Canvas(int size) :
   _img(NULL), 
   _clip(NULL),
-  _rgb(0),
   _size(size),
   _style(0) {
 }
@@ -55,16 +55,11 @@ Canvas::~Canvas() {
 
 void Canvas::beginDraw() {
   _img->make_current();
-  setcolor(_rgb);
+  setcolor(drawColor);
   setFont();
   if (_clip) {
     push_clip(*_clip);
   }
-}
-
-void Canvas::clear() {
-  setcolor(_rgb);
-  fillrect(0, 0, _img->w(), _img->h());
 }
 
 void Canvas::create(int w, int h) {
@@ -72,7 +67,8 @@ void Canvas::create(int w, int h) {
 
   GSave gsave;
   beginDraw();
-  clear();
+  setcolor(drawColor);
+  fillrect(0, 0, _img->w(), _img->h());
   endDraw();
 }
 
@@ -88,7 +84,7 @@ void Canvas::resize(int w, int h) {
     GSave gsave;
     _img = new Image(w, h);
     _img->make_current();
-    setcolor(widget->getBackgroundColor());
+    setcolor(BLACK);
     fillrect(0, 0, w, h);
     old->draw(Rectangle(old->w(), old->h()));
     old->destroy();
@@ -123,6 +119,7 @@ MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
   _screen(NULL),
   _resized(false),
   _defsize(defsize) {
+  drawColor = BLACK;
   widget = this;
 }
 
@@ -169,7 +166,7 @@ void MosyncWidget::flush(bool force) {
 }
 
 void MosyncWidget::reset() {
-  _ansiWidget->setTextColor(DEFAULT_COLOR, 0);
+  _ansiWidget->setTextColor(DEFAULT_COLOR, BLACK);
   _ansiWidget->setFontSize(_defsize);
   _ansiWidget->reset();
 }
@@ -187,7 +184,7 @@ int MosyncWidget::handle(int e) {
     if (!_ansiWidget) {
       _ansiWidget = new AnsiWidget(this, w(), h());
       _ansiWidget->construct();
-      _ansiWidget->setTextColor(DEFAULT_COLOR, 0);
+      _ansiWidget->setTextColor(DEFAULT_COLOR, BLACK);
       _ansiWidget->setFontSize(_defsize);
     }
     break;
@@ -309,9 +306,7 @@ int maFontDelete(MAHandle maHandle) {
 }
 
 int maSetColor(int rgb) {
-  if (drawTarget) {
-    drawTarget->_rgb = rgb;
-  }
+  drawColor = rgb;
   return rgb;
 }
 
@@ -327,7 +322,7 @@ void maPlot(int posX, int posY) {
       && posX < drawTarget->_img->buffer_width()
       && posY < drawTarget->_img->buffer_height()) {
     U32 *row = (U32 *)drawTarget->_img->linebuffer(posY);
-    row[posX] = drawTarget->_rgb;
+    row[posX] = drawColor;
   }
 }
 
@@ -409,11 +404,26 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
   if (drawTarget && canvas->_img && drawTarget != canvas) {
     Image *fromImg = canvas->_img;
     Image *toImg = drawTarget->_img;
-    U32 *from = (U32 *)fromImg->linebuffer(srcRect->top);
-    U32 *dest = (U32 *)toImg->linebuffer(0);
-    int avail = fromImg->h() - srcRect->top;
-    int size = fromImg->buffer_linedelta() * min(avail, srcRect->height);
-    memcpy(dest, from, size);
+    if (canvas->_img->w() == drawTarget->_img->w() && 
+        canvas->_img->h() == drawTarget->_img->h()) {
+      U32 *dest = (U32 *)toImg->linebuffer(0);
+      U32 *from = (U32 *)fromImg->linebuffer(srcRect->top);
+      int avail = fromImg->h() - srcRect->top;
+      int size = fromImg->buffer_linedelta() * min(avail, srcRect->height);
+      memcpy(dest, from, size);
+      // backfill the remainer of the destination
+      if (avail < toImg->h()) {
+        size = (toImg->h() - avail) * toImg->buffer_linedelta();
+        memset(dest + (avail * toImg->w()), 128, size);
+      }
+    } else {
+      Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
+      Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
+      GSave gsave;
+      drawTarget->beginDraw();
+      canvas->_img->draw(from, to);
+      drawTarget->endDraw();
+    }
   }
 }
 
