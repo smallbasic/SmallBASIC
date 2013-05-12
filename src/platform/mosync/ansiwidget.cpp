@@ -45,7 +45,6 @@
   \e[27m  set reverse off
 */
 
-#define MAX_PENDING 250
 #define BUTTON_PADDING 10
 #define OVER_SCROLL 100
 #define SWIPE_MAX_TIMER 6000
@@ -360,19 +359,19 @@ void AnsiWidget::drawImage(MAHandle image, int x, int y, int sx, int sy, int w, 
 // draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   _back->drawLine(x1, y1, x2, y2);
-  flush(false);
+  flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
 // draw a rectangle onto the offscreen buffer
 void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
   _back->drawRect(x1, y1, x2, y2);
-  flush(false);
+  flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
 // draw a filled rectangle onto the offscreen buffer
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   _back->drawRectFilled(x1, y1, x2, y2);
-  flush(false);
+  flush(true);
 }
 
 // perform editing when the formWidget belongs to the front screen
@@ -385,13 +384,13 @@ void AnsiWidget::edit(IFormWidget *formWidget, int c) {
 }
 
 // display and pending images changed
-void AnsiWidget::flush(bool force, bool vscroll) {
+void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
   bool update = false;
   if (_front != NULL) {
     if (force) {
       update = _front->_dirty;
     } else if (_front->_dirty) {
-      update = (maGetMilliSecondCount() - _front->_dirty >= MAX_PENDING);
+      update = (maGetMilliSecondCount() - _front->_dirty >= maxPending);
     }
     if (update) {
       _front->draw(vscroll);
@@ -529,6 +528,7 @@ void AnsiWidget::setFontSize(int fontSize) {
 // sets the pixel to the given color at the given xy location
 void AnsiWidget::setPixel(int x, int y, int c) {
   _back->setPixel(x, y, c);
+  flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
 // sets the current text drawing color

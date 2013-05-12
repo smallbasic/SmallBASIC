@@ -72,10 +72,87 @@ void Canvas::create(int w, int h) {
   endDraw();
 }
 
+void Canvas::drawImageRegion(const MAPoint2d *dstPoint, const MARect *srcRect) {
+  Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
+  Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
+  GSave gsave;
+  drawTarget->beginDraw();
+  _img->draw(from, to);
+  drawTarget->endDraw();
+}
+
+void Canvas::drawLine(int startX, int startY, int endX, int endY) {
+#if defined(_Win32)
+  if (startX == endX) {
+    for (int y = startY; y < endY; y++) {
+      drawPixel(startX, y, drawColor);
+    }
+  } else if (startY == endY) {
+    for (int x = startX; x < endX; x++) {
+      drawPixel(x, startY, drawColor);
+    }
+  } else {
+    GSave gsave;
+    beginDraw();
+    g_line(startX, startY, endX, endY, fltk::drawpoint);
+    endDraw();
+  }
+#else
+  GSave gsave;
+  beginDraw();
+  if (startX == endX || startY == endY) {
+    fltk::drawline(startX, startY, endX, endY);
+  } else {
+    g_line(startX, startY, endX, endY, fltk::drawpoint);
+  }
+  endDraw();
+#endif
+}
+
+void Canvas::drawPixel(int posX, int posY, int color) {
+  if (posX > -1 && posY > -1
+      && posX < _img->buffer_width()
+      && posY < _img->buffer_height()) {
+    U32 *row = (U32 *)_img->linebuffer(posY);
+    row[posX] = color;
+  }
+#if !defined(_Win32)
+  GSave gsave;
+  beginDraw();
+  drawpoint(posX, posY);
+  endDraw();
+#endif
+}
+
+void Canvas::drawRectFilled(int left, int top, int width, int height) {
+#if defined(_Win32)    
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      drawPixel(x + left, y + top, drawColor);
+    }
+  }
+#else
+  GSave gsave;
+  beginDraw();
+  fltk::fillrect(left, top, width, height);
+  endDraw();
+#endif
+}
+
 void Canvas::endDraw() {
   if (_clip) {
     pop_clip();
   }
+}
+
+int Canvas::getPixel(int x, int y) {
+  int result = 0;
+  if (x > -1 && x < _img->w() &&
+      y > -1 && y < _img->h()) {
+    U32 *pixel = (U32 *)_img->linebuffer(y);
+    result = pixel[x];
+  }
+  return result;
 }
 
 void Canvas::resize(int w, int h) {
@@ -129,7 +206,8 @@ MosyncWidget::~MosyncWidget() {
 }
 
 void MosyncWidget::layout() {
-  if (layout_damage() & LAYOUT_WH) {
+  if (_screen != NULL && _ansiWidget != NULL &&
+      (layout_damage() & LAYOUT_WH)) {
     // can't use GSave here in X
     _resized = true;
   }
@@ -272,6 +350,7 @@ int MosyncWidget::getY() {
 
 void MosyncWidget::setPixel(int x, int y, int c) {
   _ansiWidget->setPixel(x, y, c);
+
 }
 
 int MosyncWidget::getPixel(int x, int y) {
@@ -305,9 +384,16 @@ int maFontDelete(MAHandle maHandle) {
   return RES_FONT_OK;
 }
 
-int maSetColor(int rgb) {
-  drawColor = rgb;
-  return rgb;
+int maSetColor(int c) {
+#if defined(_Win32)
+  drawColor = c;
+#else
+  int r = (c >> 16) & 0xFF;
+  int g = (c >> 8) & 0xFF;
+  int b = (c) & 0xFF;
+  drawColor = color(r,g,b);
+#endif
+  return drawColor;
 }
 
 void maSetClipRect(int left, int top, int width, int height) {
@@ -317,38 +403,20 @@ void maSetClipRect(int left, int top, int width, int height) {
 }
 
 void maPlot(int posX, int posY) {
-  if (drawTarget 
-      && posX > -1 && posY > -1
-      && posX < drawTarget->_img->buffer_width()
-      && posY < drawTarget->_img->buffer_height()) {
-    U32 *row = (U32 *)drawTarget->_img->linebuffer(posY);
-    row[posX] = drawColor;
+  if (drawTarget) {
+    drawTarget->drawPixel(posX, posY, drawColor);
   }
 }
 
 void maLine(int startX, int startY, int endX, int endY) {
   if (drawTarget) {
-    if (startX == endX) {
-      for (int y = startY; y < endY; y++) {
-        maPlot(startX, y);
-      }
-    } else if (startY == endY) {
-      for (int x = startX; x < endX; x++) {
-        maPlot(x, startY);
-      }
-    } else {
-      g_line(startX, startY, endX, endY, maPlot);
-    }
+    drawTarget->drawLine(startX, startY, endX, endY);
   }
 }
 
 void maFillRect(int left, int top, int width, int height) {
   if (drawTarget) {
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        maPlot(x + left, y + top);
-      }
-    }
+    drawTarget->drawRectFilled(left, top, width, height);
   }
 }
 
@@ -398,9 +466,10 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
   return maHandle;
 }
 
-void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, 
+void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
   Canvas *canvas = (Canvas *)maHandle;
+#if defined(_Win32)
   if (drawTarget && canvas->_img && drawTarget != canvas) {
     Image *fromImg = canvas->_img;
     Image *toImg = drawTarget->_img;
@@ -417,14 +486,14 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
         memset(dest + (avail * toImg->w()), 128, size);
       }
     } else {
-      Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
-      Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
-      GSave gsave;
-      drawTarget->beginDraw();
-      canvas->_img->draw(from, to);
-      drawTarget->endDraw();
+      canvas->drawImageRegion(dstPoint, srcRect);
     }
   }
+#else
+  if (drawTarget && canvas->_img && canvas != drawTarget) {
+    canvas->drawImageRegion(dstPoint, srcRect);
+  }
+#endif
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {

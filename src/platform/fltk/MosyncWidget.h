@@ -13,6 +13,7 @@
 #include <fltk/Image.h>
 #include <fltk/draw.h>
 
+#include "platform/common/maapi.h"
 #include "platform/mosync/interface.h"
 
 struct AnsiWidget;
@@ -23,7 +24,12 @@ struct Canvas {
 
   void beginDraw();
   void create(int w, int h);
+  void drawImageRegion(const MAPoint2d *dstPoint, const MARect *srcRect);
+  void drawLine(int startX, int startY, int endX, int endY);
+  void drawPixel(int posX, int posY, int color);
+  void drawRectFilled(int left, int top, int width, int height);
   void endDraw();
+  int  getPixel(int x, int y);
   void resize(int w, int h);
   void setClip(int x, int y, int w, int h);
   void setFont();

@@ -52,9 +52,9 @@ struct Screen : public Shape {
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRectFilled(int x1, int y1, int x2, int y2) = 0;
-  virtual int getPixel(int x, int y) = 0;
+  virtual int  getPixel(int x, int y) = 0;
   virtual void newLine(int lineHeight) = 0;
-  virtual int print(const char *p, int lineHeight);
+  virtual int  print(const char *p, int lineHeight);
   virtual bool setGraphicsRendition(char c, int escValue, int lineHeight) = 0;
   virtual void setPixel(int x, int y, int c) = 0;
   virtual void reset(int fontSize = -1);
@@ -98,13 +98,13 @@ struct GraphicScreen : public Screen {
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
-  int print(const char *p, int lineHeight);
+  int  print(const char *p, int lineHeight);
   void reset(int fontSize = -1);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
   void setPixel(int x, int y, int c);
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void updateFont() { setFont(_bold, _italic); }
-  int getPixel(int x, int y);
+  int  getPixel(int x, int y);
 
   MAHandle _image;
   bool _underline;

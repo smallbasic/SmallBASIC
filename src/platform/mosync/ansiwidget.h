@@ -23,6 +23,8 @@
 #include "platform/mosync/screen.h"
 #include "interface.h"
 
+#define MAX_PENDING 250
+#define MAX_PENDING_GRAPHICS 25
 #define MAX_SCREENS 8
 #define SYSTEM_SCREENS 6
 
@@ -182,16 +184,16 @@ struct AnsiWidget {
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
   void edit(IFormWidget *formWidget, int c);
-  void flush(bool force, bool vscroll=false);
-  int getBackgroundColor() { return _back->_bg; }
-  int getColor() { return _back->_fg; }
-  int getFontSize() { return _fontSize; }
-  int getPixel(int x, int y);
-  int getHeight() { return _height; }
-  int getWidth()  { return _width; }
-  int getX() { return _back->_curX; }
-  int getY() { return _back->_curY; }
-  int textHeight(void);
+  void flush(bool force, bool vscroll=false, int maxPending = MAX_PENDING);
+  int  getBackgroundColor() { return _back->_bg; }
+  int  getColor() { return _back->_fg; }
+  int  getFontSize() { return _fontSize; }
+  int  getPixel(int x, int y);
+  int  getHeight() { return _height; }
+  int  getWidth()  { return _width; }
+  int  getX() { return _back->_curX; }
+  int  getY() { return _back->_curY; }
+  int  textHeight(void);
   bool optionSelected(int index);
   void print(const char *str);
   void redraw();
