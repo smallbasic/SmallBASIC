@@ -119,7 +119,7 @@ bool Widget::overlaps(MAPoint2d pt, int offsX, int offsY) {
 // returns setBG when the program colours are default
 int Widget::getBackground(int buttonColor) {
   int result = _bg;
-  if (_fg == DEFAULT_COLOR && _bg == 0) {
+  if (_fg == DEFAULT_FOREGROUND && _bg == DEFAULT_BACKGROUND) {
     result = buttonColor;
   }
   return result;
@@ -371,7 +371,7 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
 // draw a filled rectangle onto the offscreen buffer
 void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   _back->drawRectFilled(x1, y1, x2, y2);
-  flush(true);
+  flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
 // perform editing when the formWidget belongs to the front screen

@@ -18,7 +18,8 @@
 #include <fltk/run.h>
 
 #include <time.h>
-#include "MosyncWidget.h"
+#include "platform/fltk/MosyncWidget.h"
+#include "platform/fltk/utils.h"
 #include "platform/mosync/ansiwidget.h"
 
 using namespace fltk;
@@ -29,7 +30,8 @@ extern "C" void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int
 MosyncWidget *widget;
 Canvas *drawTarget;
 bool mouseActive;
-int drawColor;
+Color drawColor;
+int drawColorRaw;
 
 int get_text_width(char *s) {
   return fltk::getwidth(s);
@@ -42,7 +44,8 @@ Canvas::Canvas(int size) :
   _img(NULL), 
   _clip(NULL),
   _size(size),
-  _style(0) {
+  _style(0),
+  _isScreen(false) {
 }
 
 Canvas::~Canvas() {
@@ -82,22 +85,6 @@ void Canvas::drawImageRegion(const MAPoint2d *dstPoint, const MARect *srcRect) {
 }
 
 void Canvas::drawLine(int startX, int startY, int endX, int endY) {
-#if defined(_Win32)
-  if (startX == endX) {
-    for (int y = startY; y < endY; y++) {
-      drawPixel(startX, y, drawColor);
-    }
-  } else if (startY == endY) {
-    for (int x = startX; x < endX; x++) {
-      drawPixel(x, startY, drawColor);
-    }
-  } else {
-    GSave gsave;
-    beginDraw();
-    g_line(startX, startY, endX, endY, fltk::drawpoint);
-    endDraw();
-  }
-#else
   GSave gsave;
   beginDraw();
   if (startX == endX || startY == endY) {
@@ -106,15 +93,14 @@ void Canvas::drawLine(int startX, int startY, int endX, int endY) {
     g_line(startX, startY, endX, endY, fltk::drawpoint);
   }
   endDraw();
-#endif
 }
 
-void Canvas::drawPixel(int posX, int posY, int color) {
+void Canvas::drawPixel(int posX, int posY) {
   if (posX > -1 && posY > -1
       && posX < _img->buffer_width()
       && posY < _img->buffer_height()) {
     U32 *row = (U32 *)_img->linebuffer(posY);
-    row[posX] = color;
+    row[posX] = drawColorRaw;
   }
 #if !defined(_Win32)
   GSave gsave;
@@ -126,9 +112,18 @@ void Canvas::drawPixel(int posX, int posY, int color) {
 
 void Canvas::drawRectFilled(int left, int top, int width, int height) {
 #if defined(_Win32)    
+  int w = _img->buffer_width();
+  int h = _img->buffer_height();
   for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-      drawPixel(x + left, y + top, drawColor);
+    int yPos = y + top;
+    if (yPos > -1 && yPos < h) {
+      U32 *row = (U32 *)_img->linebuffer(yPos);
+      for (int x = 0; x < width; x++) {
+        int xPos = x + left;
+        if (xPos > -1 && xPos < w) {
+          row[xPos] = drawColorRaw;
+        }
+      }
     }
   }
 #else
@@ -161,7 +156,7 @@ void Canvas::resize(int w, int h) {
     GSave gsave;
     _img = new Image(w, h);
     _img->make_current();
-    setcolor(BLACK);
+    setcolor(DEFAULT_BACKGROUND);
     fillrect(0, 0, w, h);
     old->draw(Rectangle(old->w(), old->h()));
     old->destroy();
@@ -196,7 +191,8 @@ MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
   _screen(NULL),
   _resized(false),
   _defsize(defsize) {
-  drawColor = BLACK;
+  drawColorRaw = DEFAULT_FOREGROUND;
+  drawColor = maSetColor(drawColorRaw);
   widget = this;
 }
 
@@ -232,7 +228,11 @@ void MosyncWidget::draw() {
   }
 
   if (_screen->_img) {
-    _screen->_img->draw(0, 0);
+    int xScroll, yScroll;
+    _ansiWidget->getScroll(xScroll, yScroll);
+    Rectangle from = Rectangle(xScroll, yScroll, w(), h());
+    Rectangle to = Rectangle(0, 0, w(), h());
+    drawTarget->_img->draw(from, to);
   } else {
     setcolor(getBackgroundColor());
     fillrect(Rectangle(w(), h()));
@@ -244,7 +244,7 @@ void MosyncWidget::flush(bool force) {
 }
 
 void MosyncWidget::reset() {
-  _ansiWidget->setTextColor(DEFAULT_COLOR, BLACK);
+  _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _ansiWidget->setFontSize(_defsize);
   _ansiWidget->reset();
 }
@@ -262,7 +262,7 @@ int MosyncWidget::handle(int e) {
     if (!_ansiWidget) {
       _ansiWidget = new AnsiWidget(this, w(), h());
       _ansiWidget->construct();
-      _ansiWidget->setTextColor(DEFAULT_COLOR, BLACK);
+      _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
       _ansiWidget->setFontSize(_defsize);
     }
     break;
@@ -350,7 +350,6 @@ int MosyncWidget::getY() {
 
 void MosyncWidget::setPixel(int x, int y, int c) {
   _ansiWidget->setPixel(x, y, c);
-
 }
 
 int MosyncWidget::getPixel(int x, int y) {
@@ -385,14 +384,11 @@ int maFontDelete(MAHandle maHandle) {
 }
 
 int maSetColor(int c) {
-#if defined(_Win32)
-  drawColor = c;
-#else
   int r = (c >> 16) & 0xFF;
   int g = (c >> 8) & 0xFF;
   int b = (c) & 0xFF;
   drawColor = color(r,g,b);
-#endif
+  drawColorRaw = c;
   return drawColor;
 }
 
@@ -404,7 +400,7 @@ void maSetClipRect(int left, int top, int width, int height) {
 
 void maPlot(int posX, int posY) {
   if (drawTarget) {
-    drawTarget->drawPixel(posX, posY, drawColor);
+    drawTarget->drawPixel(posX, posY);
   }
 }
 
@@ -469,31 +465,9 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
   Canvas *canvas = (Canvas *)maHandle;
-#if defined(_Win32)
-  if (drawTarget && canvas->_img && drawTarget != canvas) {
-    Image *fromImg = canvas->_img;
-    Image *toImg = drawTarget->_img;
-    if (canvas->_img->w() == drawTarget->_img->w() && 
-        canvas->_img->h() == drawTarget->_img->h()) {
-      U32 *dest = (U32 *)toImg->linebuffer(0);
-      U32 *from = (U32 *)fromImg->linebuffer(srcRect->top);
-      int avail = fromImg->h() - srcRect->top;
-      int size = fromImg->buffer_linedelta() * min(avail, srcRect->height);
-      memcpy(dest, from, size);
-      // backfill the remainer of the destination
-      if (avail < toImg->h()) {
-        size = (toImg->h() - avail) * toImg->buffer_linedelta();
-        memset(dest + (avail * toImg->w()), 128, size);
-      }
-    } else {
-      canvas->drawImageRegion(dstPoint, srcRect);
-    }
-  }
-#else
-  if (drawTarget && canvas->_img && canvas != drawTarget) {
+  if (!drawTarget->_isScreen && drawTarget != canvas) {
     canvas->drawImageRegion(dstPoint, srcRect);
   }
-#endif
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
@@ -532,10 +506,16 @@ void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int sca
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
   if (maHandle == (MAHandle) HANDLE_SCREEN) {
+    drawTarget->_isScreen = true;
+  } else if (maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
     drawTarget = widget->getScreen();
+    drawTarget->_isScreen = false;
   } else {
     drawTarget = (Canvas *)maHandle;
+    drawTarget->_isScreen = false;
   }
+  delete drawTarget->_clip;
+  drawTarget->_clip = NULL;
   return (MAHandle) drawTarget;
 }
 

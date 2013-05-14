@@ -28,7 +28,6 @@ using namespace strlib;
 
 #define INITXY 2
 #define NO_COLOR -1
-#define DEFAULT_COLOR  0xa1a1a1
 #define GRAY_BG_COL    0x383f42
 #define LABEL_TEXT_COL 0xebebeb
 
@@ -47,7 +46,7 @@ struct Screen : public Shape {
   virtual void calcTab() = 0;
   virtual bool construct() = 0;
   virtual void clear();
-  virtual void draw(bool vscroll);
+  virtual void draw(bool vscroll) = 0;
   virtual void drawInto(bool background=false);
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
@@ -64,12 +63,14 @@ struct Screen : public Shape {
 
   int ansiToMosync(long c);
   void add(Shape *button) { _shapes.add(button); }
+  void drawOverlay(bool vscroll);
   bool overlaps(int px, int py);
   void remove(Shape *button);
   void setColor(long color);
   void setDirty() { if (!_dirty) { _dirty = maGetMilliSecondCount(); } }
   void setTextColor(long fg, long bg);
   void setFont(bool bold, bool italic);
+  void getScroll(int &x, int &y) { x = 0; y = _scrollY; }
 
   MAHandle _font;
   int _fontSize;

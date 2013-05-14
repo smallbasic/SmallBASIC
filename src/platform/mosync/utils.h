@@ -13,6 +13,14 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
+#if defined(_FLTK)
+ #define DEFAULT_FOREGROUND 0
+ #define DEFAULT_BACKGROUND 0xecedef
+#else
+ #define DEFAULT_FOREGROUND 0xa1a1a1
+ #define DEFAULT_BACKGROUND 0
+#endif
+
 #define OUTSIDE_RECT(px, py, x, y, w, h) \
   (px < (x) || py < (y) || px > ((x)+(w)) || py > ((y)+(h)))
 

@@ -179,6 +179,7 @@ struct AnsiWidget {
   IFormWidget *createLink(char *caption, int x, int y, int w, int h);
   IFormWidget *createList(IFormWidgetListModel *model, int x, int y, int w, int h);
   void draw();
+  void drawOverlay(bool vscroll) { _back->drawOverlay(vscroll); }
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
@@ -189,6 +190,7 @@ struct AnsiWidget {
   int  getColor() { return _back->_fg; }
   int  getFontSize() { return _fontSize; }
   int  getPixel(int x, int y);
+  void getScroll(int &x, int &y) { _back->getScroll(x, y); }
   int  getHeight() { return _height; }
   int  getWidth()  { return _width; }
   int  getX() { return _back->_curX; }

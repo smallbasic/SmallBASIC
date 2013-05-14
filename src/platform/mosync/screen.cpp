@@ -93,13 +93,14 @@ void Screen::clear() {
   _label.empty();
 }
 
-void Screen::draw(bool vscroll) {
+void Screen::drawOverlay(bool vscroll) {
   if (vscroll && _curY) {
     // display the vertical scrollbar
     int pageHeight = _curY + _charHeight + _charHeight;
     int barSize = height * height / pageHeight;
     int barRange = height - (barSize + SCROLL_IND * 2);
     int barTop = SCROLL_IND + (barRange * _scrollY / (pageHeight - height));
+
     if (barSize < height) {
       maSetColor(_fg);
       maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
@@ -134,7 +135,6 @@ void Screen::draw(bool vscroll) {
     maDrawText(left, top + 2, _label.c_str());
   }
 
-  maUpdateScreen();
   maResetBacklight();
   _dirty = 0;
 }
@@ -182,8 +182,8 @@ void Screen::remove(Shape *button) {
 }
 
 void Screen::reset(int argFontSize) {
-  _fg = DEFAULT_COLOR;
-  _bg = 0;
+  _fg = DEFAULT_FOREGROUND;
+  _bg = DEFAULT_BACKGROUND;
   if (argFontSize != -1) {
     _fontSize = argFontSize;
   }
@@ -294,7 +294,12 @@ void GraphicScreen::draw(bool vscroll) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetClipRect(x, y, width, height);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
-  Screen::draw(vscroll);
+#if defined(_FLTK)
+  _dirty = 0;
+#else
+  drawOverlay(vscroll);
+#endif
+  maUpdateScreen();
   maSetDrawTarget(currentHandle);
 }
 
@@ -663,7 +668,7 @@ void TextScreen::draw(bool vscroll) {
   bool italic = false;
   bool underline = false;
   bool invert = false;
-  int color = DEFAULT_COLOR;
+  int color = DEFAULT_FOREGROUND;
 
   // calculate rows to display
   int pageRows = getPageRows();
@@ -701,7 +706,7 @@ void TextScreen::draw(bool vscroll) {
         italic = false;
         underline = false;
         invert = false;
-        color = DEFAULT_COLOR;
+        color = DEFAULT_FOREGROUND;
         maSetColor(color);
       }
       if (seg->_color != NO_COLOR) {
@@ -733,7 +738,12 @@ void TextScreen::draw(bool vscroll) {
   }
 
   // draw the base components
-  Screen::draw(vscroll);
+#if defined(_FLTK)
+  _dirty = 0;
+#else
+  drawOverlay(vscroll);
+#endif
+  maUpdateScreen();
   maSetDrawTarget(currentHandle);
 }
 

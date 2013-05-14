@@ -19,8 +19,6 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
-#define DEFAULT_COLOR 0xa1a1a1
-
 #if defined(__MINGW32__)
 #define makedir(f) mkdir(f)
 #else

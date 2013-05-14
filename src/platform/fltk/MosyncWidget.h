@@ -26,7 +26,7 @@ struct Canvas {
   void create(int w, int h);
   void drawImageRegion(const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);
-  void drawPixel(int posX, int posY, int color);
+  void drawPixel(int posX, int posY);
   void drawRectFilled(int left, int top, int width, int height);
   void endDraw();
   int  getPixel(int x, int y);
@@ -38,6 +38,7 @@ struct Canvas {
   fltk::Rectangle *_clip;
   int _size;
   int _style;
+  bool _isScreen;
 };
 
 class MosyncWidget : public fltk::Widget, IButtonListener {

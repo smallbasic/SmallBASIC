@@ -25,6 +25,7 @@
 #include "TtyWidget.h"
 
 #include "common/fs_socket_client.h"
+#include "platform/mosync/utils.h"
 #include "utils.h"
 
 #ifdef WIN32
@@ -44,13 +45,12 @@ Properties env;
 String envs;
 String eventName;
 bool saveForm = false;
-bool drainError;
 clock_t lastEventTime;
-dword eventTicks;
+dword eventsPerTick;
 
-#define EVENTT_PAUSE_TIME 0.005
-#define EVENT_CHECK_EVERY 2000
-#define EVENT_MAX_BURN_TIME 30
+#define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
+#define EVT_PAUSE_TIME 0.005
+#define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
 void getHomeDir(char *fileName, bool appendSlash = true);
 bool cacheLink(dev_file_t *df, char *localFile);
@@ -87,12 +87,8 @@ int osd_devinit() {
     wnd->_outputGroup->show();
   }
 
-  lastEventTime = clock();
-  eventTicks = 0;
-  drainError = false;
-
-  dev_fgcolor = -DEFAULT_COLOR;
-  dev_bgcolor = 0;
+  dev_fgcolor = -DEFAULT_FOREGROUND;
+  dev_bgcolor = -DEFAULT_BACKGROUND;
 
   os_graf_mx = wnd->_out->w();
   os_graf_my = wnd->_out->h();
@@ -142,20 +138,16 @@ int osd_devrestore() {
  */
 int osd_events(int wait_flag) {
   if (!wait_flag) {
+    // pause when we have been called too frequently
     clock_t now = clock();
-    eventTicks++;
-    if (now - lastEventTime >= EVENT_CHECK_EVERY) {
-      // next time inspection interval
-      if (eventTicks >= EVENT_MAX_BURN_TIME) {
-        wnd->_out->print("\033[ LCPU%");
-        drainError = true;
-      } else if (drainError) {
-        wnd->_out->print("\033[ L");
-        drainError = false;
+    if (now - lastEventTime <= EVT_CHECK_EVERY) {
+      eventsPerTick += (now - lastEventTime);
+      if (eventsPerTick >= EVT_MAX_BURN_TIME) {
+        eventsPerTick = 0;
+        wait_flag = 2;
       }
-      lastEventTime = now;
-      eventTicks = 0;
     }
+    lastEventTime = now;
   }
 
   switch (wait_flag) {
@@ -165,7 +157,7 @@ int osd_events(int wait_flag) {
     break;
   case 2:
     // pause
-    fltk::wait(EVENTT_PAUSE_TIME);
+    fltk::wait(EVT_PAUSE_TIME);
     break;
   default:
     // pump messages without pausing
@@ -649,6 +641,7 @@ char *dev_gets(char *dest, int size) {
     return dest;
   }
 
+  wnd->_out->flush(true);
   wnd->_tabGroup->selected_child(wnd->_outputGroup);
   wnd->_outputGroup->begin();
 
