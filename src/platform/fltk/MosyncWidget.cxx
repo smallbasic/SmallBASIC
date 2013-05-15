@@ -25,7 +25,6 @@
 using namespace fltk;
 
 #define SIZE_LIMIT 4
-extern "C" void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
 
 MosyncWidget *widget;
 Canvas *drawTarget;
@@ -111,27 +110,32 @@ void Canvas::drawPixel(int posX, int posY) {
 }
 
 void Canvas::drawRectFilled(int left, int top, int width, int height) {
+  if (_isScreen) {
+    fltk::setcolor(drawColor);
+    fltk::fillrect(left, top, width, height);
+  } else {
 #if defined(_Win32)
-  int w = _img->buffer_width();
-  int h = _img->buffer_height();
-  for (int y = 0; y < height; y++) {
-    int yPos = y + top;
-    if (yPos > -1 && yPos < h) {
-      U32 *row = (U32 *)_img->linebuffer(yPos);
-      for (int x = 0; x < width; x++) {
-        int xPos = x + left;
-        if (xPos > -1 && xPos < w) {
-          row[xPos] = drawColorRaw;
+    int w = _img->buffer_width();
+    int h = _img->buffer_height();
+    for (int y = 0; y < height; y++) {
+      int yPos = y + top;
+      if (yPos > -1 && yPos < h) {
+        U32 *row = (U32 *)_img->linebuffer(yPos);
+        for (int x = 0; x < width; x++) {
+          int xPos = x + left;
+          if (xPos > -1 && xPos < w) {
+            row[xPos] = drawColorRaw;
+          }
         }
       }
     }
-  }
 #else
-  GSave gsave;
-  beginDraw();
-  fltk::fillrect(left, top, width, height);
-  endDraw();
+    GSave gsave;
+    beginDraw();
+    fltk::fillrect(left, top, width, height);
+    endDraw();
 #endif
+  }
 }
 
 void Canvas::drawText(int left, int top, const char *str) {
@@ -459,7 +463,7 @@ MAExtent maGetTextSize(const char *str) {
 MAExtent maGetScrSize(void) {
   short width = widget->w();
   short height = widget->h();
-  return (MAExtent)((width << 16) && height);
+  return (MAExtent)((width << 16) + height);
 }
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
