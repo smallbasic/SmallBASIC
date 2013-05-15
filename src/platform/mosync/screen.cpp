@@ -98,13 +98,17 @@ void Screen::drawOverlay(bool vscroll) {
     // display the vertical scrollbar
     int pageHeight = _curY + _charHeight + _charHeight;
     int barSize = height * height / pageHeight;
-    int barRange = height - (barSize + SCROLL_IND * 2);
-    int barTop = SCROLL_IND + (barRange * _scrollY / (pageHeight - height));
 
     if (barSize < height) {
+      int barRange = height - (barSize + SCROLL_IND * 2);
+      int barTop = SCROLL_IND + (barRange * _scrollY / (pageHeight - height));
+      int barBottom = y + barTop + barSize;
+      if (barBottom + SCROLL_IND > height) {
+        barBottom = height - SCROLL_IND;
+      }
       maSetColor(_fg);
-      maLine(x + width - 3, y + barTop, x + width - 3, y + barTop + barSize);
-      maLine(x + width - 4, y + barTop, x + width - 4, y + barTop + barSize);
+      maLine(x + width - 3, y + barTop, x + width - 3, barBottom);
+      maLine(x + width - 4, y + barTop, x + width - 4, barBottom);
     }
   }
   
@@ -136,7 +140,6 @@ void Screen::drawOverlay(bool vscroll) {
   }
 
   maResetBacklight();
-  _dirty = 0;
 }
 
 void Screen::drawInto(bool background) {
@@ -294,11 +297,10 @@ void GraphicScreen::draw(bool vscroll) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetClipRect(x, y, width, height);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
-#if defined(_FLTK)
-  _dirty = 0;
-#else
+#if !defined(_FLTK)
   drawOverlay(vscroll);
 #endif
+  _dirty = 0;
   maUpdateScreen();
   maSetDrawTarget(currentHandle);
 }
@@ -683,7 +685,7 @@ void TextScreen::draw(bool vscroll) {
   }
 
   // setup the background colour
-  MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+  MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN_BUFFER);
   maSetClipRect(x, y, width, height);
   maSetColor(_bg);
   maFillRect(x, y, width, height);
@@ -738,11 +740,10 @@ void TextScreen::draw(bool vscroll) {
   }
 
   // draw the base components
-#if defined(_FLTK)
-  _dirty = 0;
-#else
+#if !defined(_FLTK)
   drawOverlay(vscroll);
 #endif
+  _dirty = 0;
   maUpdateScreen();
   maSetDrawTarget(currentHandle);
 }

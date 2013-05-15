@@ -41,7 +41,7 @@ int get_text_width(char *s) {
 // Canvas
 //
 Canvas::Canvas(int size) :
-  _img(NULL), 
+  _img(NULL),
   _clip(NULL),
   _size(size),
   _style(0),
@@ -59,7 +59,6 @@ Canvas::~Canvas() {
 void Canvas::beginDraw() {
   _img->make_current();
   setcolor(drawColor);
-  setFont();
   if (_clip) {
     push_clip(*_clip);
   }
@@ -75,24 +74,25 @@ void Canvas::create(int w, int h) {
   endDraw();
 }
 
-void Canvas::drawImageRegion(const MAPoint2d *dstPoint, const MARect *srcRect) {
+void Canvas::drawImageRegion(Canvas *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
   Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
   Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
   GSave gsave;
-  drawTarget->beginDraw();
+  dst->beginDraw();
   _img->draw(from, to);
-  drawTarget->endDraw();
+  dst->endDraw();
 }
 
 void Canvas::drawLine(int startX, int startY, int endX, int endY) {
-  GSave gsave;
-  beginDraw();
-  if (startX == endX || startY == endY) {
+  if (_isScreen) {
+    fltk::setcolor(drawColor);
     fltk::drawline(startX, startY, endX, endY);
   } else {
-    g_line(startX, startY, endX, endY, fltk::drawpoint);
+    GSave gsave;
+    beginDraw();
+    fltk::drawline(startX, startY, endX, endY);
+    endDraw();
   }
-  endDraw();
 }
 
 void Canvas::drawPixel(int posX, int posY) {
@@ -111,7 +111,7 @@ void Canvas::drawPixel(int posX, int posY) {
 }
 
 void Canvas::drawRectFilled(int left, int top, int width, int height) {
-#if defined(_Win32)    
+#if defined(_Win32)
   int w = _img->buffer_width();
   int h = _img->buffer_height();
   for (int y = 0; y < height; y++) {
@@ -132,6 +132,19 @@ void Canvas::drawRectFilled(int left, int top, int width, int height) {
   fltk::fillrect(left, top, width, height);
   endDraw();
 #endif
+}
+
+void Canvas::drawText(int left, int top, const char *str) {
+  setFont();
+  if (_isScreen) {
+    fltk::setcolor(drawColor);
+    fltk::drawtext(str, left, top + (int)getascent());
+  } else {
+    GSave gsave;
+    beginDraw();
+    fltk::drawtext(str, left, top + (int)getascent());
+    endDraw();
+  }
 }
 
 void Canvas::endDraw() {
@@ -186,7 +199,7 @@ void Canvas::setFont() {
 // MosyncWidget
 //
 MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
-  Widget(x, y, w, h, 0), 
+  Widget(x, y, w, h, 0),
   _ansiWidget(NULL),
   _screen(NULL),
   _resized(false),
@@ -233,8 +246,13 @@ void MosyncWidget::draw() {
     Rectangle from = Rectangle(xScroll, yScroll, w(), h());
     Rectangle to = Rectangle(0, 0, w(), h());
     drawTarget->_img->draw(from, to);
+    // draw the overlay onto the screen
+    bool isScreen = drawTarget->_isScreen;
+    drawTarget->_isScreen = true;
+    _ansiWidget->drawOverlay(mouseActive);
+    drawTarget->_isScreen = isScreen;
   } else {
-    setcolor(getBackgroundColor());
+    setcolor(drawColor);
     fillrect(Rectangle(w(), h()));
   }
 }
@@ -268,7 +286,7 @@ int MosyncWidget::handle(int e) {
     break;
 
   case FOCUS:
-    return 1; 
+    return 1;
 
   case PUSH:
     event.point.x = fltk::event_x();
@@ -301,7 +319,7 @@ int MosyncWidget::handle(int e) {
 }
 
 void MosyncWidget::buttonClicked(const char *action) {
-  
+
 }
 
 void MosyncWidget::clearScreen() {
@@ -418,10 +436,7 @@ void maFillRect(int left, int top, int width, int height) {
 
 void maDrawText(int left, int top, const char *str) {
   if (drawTarget) {
-    GSave gsave;
-    drawTarget->beginDraw();
-    drawtext(str, left, top + (int)getascent());
-    drawTarget->endDraw();
+    drawTarget->drawText(left, top, str);
   }
 }
 
@@ -466,7 +481,7 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
   Canvas *canvas = (Canvas *)maHandle;
   if (!drawTarget->_isScreen && drawTarget != canvas) {
-    canvas->drawImageRegion(dstPoint, srcRect);
+    canvas->drawImageRegion(drawTarget, dstPoint, srcRect);
   }
 }
 

@@ -16,9 +16,11 @@
 #if defined(_FLTK)
  #define DEFAULT_FOREGROUND 0
  #define DEFAULT_BACKGROUND 0xecedef
+ #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN + 1
 #else
  #define DEFAULT_FOREGROUND 0xa1a1a1
  #define DEFAULT_BACKGROUND 0
+ #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN
 #endif
 
 #define OUTSIDE_RECT(px, py, x, y, w, h) \

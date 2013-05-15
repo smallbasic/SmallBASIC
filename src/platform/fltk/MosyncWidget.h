@@ -24,10 +24,11 @@ struct Canvas {
 
   void beginDraw();
   void create(int w, int h);
-  void drawImageRegion(const MAPoint2d *dstPoint, const MARect *srcRect);
+  void drawImageRegion(Canvas *dst, const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);
   void drawPixel(int posX, int posY);
   void drawRectFilled(int left, int top, int width, int height);
+  void drawText(int left, int top, const char *str);
   void endDraw();
   int  getPixel(int x, int y);
   void resize(int w, int h);

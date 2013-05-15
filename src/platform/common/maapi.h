@@ -35,7 +35,6 @@
 #define RES_BAD_INPUT -2
 #define RES_OK 1
 #define HANDLE_SCREEN 0
-#define HANDLE_SCREEN_BUFFER 1
 #define RES_FONT_OK 1
 #define MAK_SPACE 32
 #define MAK_Z 122
