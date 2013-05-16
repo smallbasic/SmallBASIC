@@ -60,6 +60,7 @@ struct Screen : public Shape {
   virtual void resize(int newWidth, int newHeight, int oldWidth, 
                       int oldHeight, int lineHeight) = 0;
   virtual void updateFont() = 0;
+  virtual void getScroll(int &x, int &y) { x = 0; y = 0; }
 
   int ansiToMosync(long c);
   void add(Shape *button) { _shapes.add(button); }
@@ -70,7 +71,6 @@ struct Screen : public Shape {
   void setDirty() { if (!_dirty) { _dirty = maGetMilliSecondCount(); } }
   void setTextColor(long fg, long bg);
   void setFont(bool bold, bool italic);
-  void getScroll(int &x, int &y) { x = 0; y = _scrollY; }
 
   MAHandle _font;
   int _fontSize;
@@ -106,6 +106,7 @@ struct GraphicScreen : public Screen {
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void updateFont() { setFont(_bold, _italic); }
   int  getPixel(int x, int y);
+  void getScroll(int &x, int &y) { x = 0; y = _scrollY; }
 
   MAHandle _image;
   bool _underline;
