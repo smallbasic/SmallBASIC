@@ -435,7 +435,7 @@ void maFillRect(int left, int top, int width, int height) {
 }
 
 void maDrawText(int left, int top, const char *str) {
-  if (drawTarget) {
+  if (drawTarget && str && str[0]) {
     drawTarget->drawText(left, top, str);
   }
 }
@@ -448,12 +448,16 @@ void maResetBacklight(void) {
 }
 
 MAExtent maGetTextSize(const char *str) {
-  if (drawTarget) {
+  MAExtent result;
+  if (drawTarget && str && str[0]) {
     drawTarget->setFont();
+    short width = (int)getwidth(str);
+    short height = (int)(getascent() + getdescent());
+    result = (MAExtent)((width << 16) + height);
+  } else {
+    result = 0;
   }
-  short width = (int)getwidth(str);
-  short height = (int)(getascent() + getdescent());
-  return (MAExtent)((width << 16) + height);
+  return result;
 }
 
 MAExtent maGetScrSize(void) {

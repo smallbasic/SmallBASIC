@@ -66,8 +66,8 @@ Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
 }
 
 void Widget::drawButton(const char *caption, int dx, int dy) {
-  int r = dx + width - 1;
-  int b = dy + height - 1;
+  int r = dx + width;
+  int b = dy + height - 2;
   MAExtent textSize = maGetTextSize(caption);
   int textW = EXTENT_X(textSize);
   int textH = EXTENT_Y(textSize);
@@ -75,18 +75,18 @@ void Widget::drawButton(const char *caption, int dx, int dy) {
   int textY = dy + (height - textH - 1) / 2;
 
   maSetColor(getBackground(GRAY_BG_COL));
-  maFillRect(dx, dy, width-1, height-1);
+  maFillRect(dx, dy, r-dx, b-dy);
 
   if (_pressed) {
     maSetColor(0x909090);
-    maLine(dx, dy, r, dy);  // top
-    maLine(dx, dy, dx, b);  // left
+    maLine(dx, dy, r, dy); // top
+    maLine(dx, dy, dx, b); // left
     maSetColor(0xd0d0d0);
-    maLine(dx+1, b, r, b);     // bottom
-    maLine(r-1, dy+1, r-1, b); // right
+    maLine(dx+1, b, r, b); // bottom
+    maLine(r, dy+1, r, b); // right
     maSetColor(0x606060);
-    maLine(dx+1, dy+1, r-1, dy+1); // bottom
-    maLine(dx+1, b-1, dx+1, b-1); // right
+    maLine(dx+1, dy+1, r-1, dy+1); // top
+    maLine(dx+1, dy+1, dx+1, b-1); // left
     textX += 2;
     textY += 2;
   } else {
@@ -94,11 +94,11 @@ void Widget::drawButton(const char *caption, int dx, int dy) {
     maLine(dx, dy, r, dy); // top
     maLine(dx, dy, dx, b); // left
     maSetColor(0x606060);
-    maLine(dx, b, r, b);     // bottom
-    maLine(r-1, dy, r-1, b); // right
+    maLine(dx, b, r, b); // bottom
+    maLine(r, dy, r, b); // right
     maSetColor(0x909090);
     maLine(dx+1, b-1, r-1, b-1); // bottom
-    maLine(r-2, dy+1, r-2, b-1); // right
+    maLine(r-1, dy+1, r-1, b-1); // right
   }
 
   maSetColor(_fg);
