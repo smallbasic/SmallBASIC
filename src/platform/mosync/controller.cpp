@@ -15,6 +15,7 @@
 #include <stdio.h>
 
 #include "MAHeaders.h"
+#include <mavsprintf.h>
 
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
@@ -431,8 +432,8 @@ void Controller::setExit(bool quit) {
 // commence runtime state
 void Controller::setRunning(bool running) {
   if (running) {
-    dev_fgcolor = -DEFAULT_COLOR;
-    dev_bgcolor = 0;
+    dev_fgcolor = -DEFAULT_FOREGROUND;
+    dev_bgcolor = -DEFAULT_BACKGROUND;
     os_graf_mx = _output->getWidth();
     os_graf_my = _output->getHeight();
 

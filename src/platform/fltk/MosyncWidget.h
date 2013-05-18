@@ -70,6 +70,7 @@ public:
 
   Canvas *getScreen() { return _screen; }
   int getDefaultSize() { return _defsize; }
+  AnsiWidget *_ansiWidget;
 
 private:
   // inherited methods
@@ -78,7 +79,6 @@ private:
   int handle(int e);
 
   void buttonClicked(const char *action);
-  AnsiWidget *_ansiWidget;
   Canvas *_screen;
   bool _resized;
   int _defsize;

@@ -6,17 +6,24 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <ma.h>
-
 #include "config.h"
+
+#if defined(_FLTK)
+  #include "platform/common/maapi.h"
+#else
+  #include <maapi.h>
+#endif
+
+#include "common/sbapp.h"
 #include "common/sys.h"
+#include "common/smbas.h"
+#include "common/osd.h"
+#include "common/device.h"
 #include "common/blib_ui.h"
 
-#include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
 #include "platform/mosync/form_ui.h"
 
-extern Controller *controller;
 Form *form;
 
 //
@@ -183,7 +190,7 @@ bool Form::execute() {
   };
   
   // apply any variable changes onto attached widgets
-  if (controller->isRunning()) {
+  if (form_ui::isRunning()) {
     List_each(WidgetDataPtr, it, _items) {
       (*it)->updateGui();
     }
@@ -198,8 +205,8 @@ bool Form::execute() {
   }
 
   // process events
-  while (controller->isRunning() && _mode == m_active) {
-    controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
+  while (form_ui::isRunning() && _mode == m_active) {
+    form_ui::processEvents();
     if (_kbHandle && keymap_kbhit()) {
       int key = keymap_kbpeek();
       if (key != SB_KEY_MK_PUSH && key != SB_KEY_MK_RELEASE) {
@@ -210,7 +217,7 @@ bool Form::execute() {
   }
 
   // return whether to close the form
-  return controller->isBreak();
+  return form_ui::isBreak();
 }
 
 void Form::invoke(WidgetDataPtr widgetData) {
@@ -293,7 +300,7 @@ void WidgetData::updateVarFlag() {
 // callback for the widget info called when the widget has been invoked
 void WidgetData::buttonClicked(const char *action) {
   logEntered();
-  if (controller->isRunning()) {
+  if (form_ui::isRunning()) {
     if (!updateGui()) {
       transferData();
     }
@@ -389,15 +396,15 @@ void WidgetData::transferData() {
     
   case ctrl_listbox:
     model = (ListModel *)_widget->getList();
-    const char *s = model->getTextAt(model->selected());
-    if (s) {
+    s = model->getTextAt(model->selected());
+    if (s && s[0]) {
       v_setstr(_var, s);
     }
     break;
 
   case ctrl_exit_link:
   case ctrl_exit_button:
-    controller->buttonClicked((const char *)_var->v.p.ptr);
+    form_ui::buttonClicked((const char *)_var->v.p.ptr);
     brun_break();
     break;
     
@@ -431,36 +438,36 @@ void cmd_button() {
     if (type) {
       if (strcasecmp("button", type) == 0) {
         wd = new WidgetData(ctrl_button, var);
-        widget = controller->_output->createButton(caption, x, y, w, h);
+        widget = form_ui::getOutput()->createButton(caption, x, y, w, h);
       } else if (strcasecmp("exit_button", type) == 0) {
         wd = new WidgetData(ctrl_exit_button, var);
-        widget = controller->_output->createButton(caption, x, y, w, h);
+        widget = form_ui::getOutput()->createButton(caption, x, y, w, h);
       } else if (strcasecmp("label", type) == 0) {
         wd = new WidgetData(ctrl_label, var);
-        widget = controller->_output->createLabel(caption, x, y, w, h);
+        widget = form_ui::getOutput()->createLabel(caption, x, y, w, h);
       } else if (strcasecmp("link", type) == 0) {
         wd = new WidgetData(ctrl_link, var);
-        widget = controller->_output->createLink(caption, x, y, w, h);
+        widget = form_ui::getOutput()->createLink(caption, x, y, w, h);
       } else if (strcasecmp("exit_link", type) == 0) {
         wd = new WidgetData(ctrl_exit_link, var);
-        widget = controller->_output->createLink(caption, x, y, w, h);
+        widget = form_ui::getOutput()->createLink(caption, x, y, w, h);
       } else if (strcasecmp("listbox", type) == 0 || 
                  strcasecmp("list", type) == 0) {
         ListModel *model = new ListModel(caption, var);
         wd = new WidgetData(ctrl_listbox, var);
-        widget = controller->_output->createList(model, x, y, w, h);
+        widget = form_ui::getOutput()->createList(model, x, y, w, h);
       } else if (strcasecmp("choice", type) == 0 || 
                  strcasecmp("dropdown", type) == 0) {
         ListModel *model = new ListModel(caption, var);
         wd = new WidgetData(ctrl_listbox, var);
-        widget = controller->_output->createList(model, x, y, w, h);
+        widget = form_ui::getOutput()->createList(model, x, y, w, h);
       } else {
         ui_reset();
         rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);
       }
     } else {
       wd = new WidgetData(ctrl_button, var);
-      widget = controller->_output->createButton(caption, x, y, w, h);
+      widget = form_ui::getOutput()->createButton(caption, x, y, w, h);
     }
     if (widget) {
       wd->setupWidget(widget);
@@ -480,7 +487,7 @@ void cmd_text() {
 
   if (-1 != par_massget("IIIIP", &x, &y, &w, &h, &var)) {
     WidgetData *wd = new WidgetData(ctrl_text, var);
-    IFormWidget *widget = controller->_output->createLineInput(NULL, 0, x, y, w, h);
+    IFormWidget *widget = form_ui::getOutput()->createLineInput(NULL, 0, x, y, w, h);
     wd->setupWidget(widget);
   }
 }

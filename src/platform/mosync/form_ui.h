@@ -14,8 +14,14 @@
 #include "common/var.h"
 
 #include "platform/common/StringLib.h"
+#include "platform/mosync/ansiwidget.h"
+#include "platform/mosync/interface.h"
 
-using namespace strlib;
+typedef strlib::List<strlib::String *> StringList;
+
+namespace form_ui {
+  AnsiWidget *getOutput();
+}
 
 // width and height fudge factors for when button w+h specified as -1
 #define BN_W 16
@@ -47,7 +53,7 @@ struct ListModel : IFormWidgetListModel {
 
 private:
   void fromArray(const char *caption, var_t *v);
-  List<strlib::String *> _list;
+  StringList _list;
   int _focusIndex;
 };
 
@@ -80,6 +86,7 @@ private:
 };
 
 typedef WidgetData *WidgetDataPtr;
+typedef strlib::List<WidgetDataPtr> WidgetList;
 
 struct Form {
   Form();
@@ -99,10 +106,10 @@ struct Form {
 
 private:
   Mode _mode;
-  List<WidgetDataPtr> _items; // form child items
-  var_t *_var;                // form variable contains the value of the event widget
-  int _cmd;                   // doform argument by value
-  bool _kbHandle;             // whether doform returns on a keyboard event
+  WidgetList _items; // form child items
+  var_t *_var;       // form variable contains the value of the event widget
+  int _cmd;          // doform argument by value
+  bool _kbHandle;    // whether doform returns on a keyboard event
   int _prevX;
   int _prevY;
 };

@@ -24,6 +24,7 @@ bin_PROGRAMS = sbasici
 sbasici_SOURCES =                             \
   ../mosync/ansiwidget.cpp                    \
   ../mosync/screen.cpp                        \
+  ../mosync/form_ui.cpp                       \
   ../common/StringLib.cpp                     \
   MosyncWidget.cxx MosyncWidget.h             \
   HelpWidget.cxx HelpWidget.h                 \
@@ -34,8 +35,7 @@ sbasici_SOURCES =                             \
   FileWidget.cxx FileWidget.h                 \
   Profile.cxx Profile.h                       \
   dev_fltk.cxx                                \
-  utils.cxx utils.h														\
-  blib_fltk_ui.cxx
+  utils.cxx utils.h
 
 sbasici_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 

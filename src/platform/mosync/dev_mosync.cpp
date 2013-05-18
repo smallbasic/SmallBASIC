@@ -10,12 +10,33 @@
 
 #include "platform/mosync/controller.h"
 #include "platform/mosync/utils.h"
+#include "platform/mosync/form_ui.h"
 
 extern Controller *controller;
 
 #define ACCESS_EXIST 0
 #define ACCESS_WRITE 2
 #define ACCESS_READ  4
+
+bool form_ui::isRunning() { 
+  return controller->isRunning(); 
+}
+
+bool form_ui::isBreak() { 
+  return controller->isBreak(); 
+}
+
+void form_ui::processEvents() { 
+  controller->processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY); 
+}
+
+void form_ui::buttonClicked(const char *url) { 
+  controller->buttonClicked(url); 
+}
+
+AnsiWidget *form_ui::getOutput() {
+  return controller->_output;
+}
 
 // workaround for android/mosync bug where outer spaces are not counted
 int get_text_width(char *s) {

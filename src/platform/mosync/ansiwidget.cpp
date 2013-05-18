@@ -812,6 +812,9 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
 
 // draws the focus screen
 void AnsiWidget::drawActiveButton() {
+#if defined(_FLTK)
+  maUpdateScreen();
+#else
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   int x = _focus->x + _activeButton->x;
   int y = _focus->y + _activeButton->y - _focus->_scrollY;
@@ -820,6 +823,7 @@ void AnsiWidget::drawActiveButton() {
   maUpdateScreen();
   maResetBacklight();
   maSetDrawTarget(currentHandle);
+#endif
 }
 
 // returns list of strings extracted from the vertical-bar separated input string

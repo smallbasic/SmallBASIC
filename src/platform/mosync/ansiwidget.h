@@ -21,7 +21,7 @@
 
 #include "platform/common/StringLib.h"
 #include "platform/mosync/screen.h"
-#include "interface.h"
+#include "platform/mosync/interface.h"
 
 #define MAX_PENDING 250
 #define MAX_PENDING_GRAPHICS 25

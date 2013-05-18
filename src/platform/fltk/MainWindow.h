@@ -15,11 +15,11 @@
 
 #include <stdint.h>
 
-#include "MosyncWidget.h"
-#include "EditorWidget.h"
-#include "HelpWidget.h"
-#include "Profile.h"
-#include "utils.h"
+#include "platform/fltk/MosyncWidget.h"
+#include "platform/fltk/EditorWidget.h"
+#include "platform/fltk/HelpWidget.h"
+#include "platform/fltk/Profile.h"
+#include "platform/fltk/utils.h"
 
 #define MNU_HEIGHT 22
 #define DEF_FONT_SIZE 12

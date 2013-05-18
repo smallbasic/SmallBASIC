@@ -21,6 +21,7 @@
 #include "platform/fltk/MosyncWidget.h"
 #include "platform/fltk/utils.h"
 #include "platform/mosync/ansiwidget.h"
+#include "platform/mosync/form_ui.h"
 
 using namespace fltk;
 
@@ -34,6 +35,10 @@ int drawColorRaw;
 
 int get_text_width(char *s) {
   return fltk::getwidth(s);
+}
+
+AnsiWidget *form_ui::getOutput() { 
+  return widget->_ansiWidget;
 }
 
 //
@@ -74,8 +79,8 @@ void Canvas::create(int w, int h) {
 }
 
 void Canvas::drawImageRegion(Canvas *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
-  Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
-  Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
+  fltk::Rectangle from = fltk::Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
+  fltk::Rectangle to = fltk::Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
   GSave gsave;
   dst->beginDraw();
   _img->draw(from, to);
@@ -175,7 +180,7 @@ void Canvas::resize(int w, int h) {
     _img->make_current();
     setcolor(DEFAULT_BACKGROUND);
     fillrect(0, 0, w, h);
-    old->draw(Rectangle(old->w(), old->h()));
+    old->draw(fltk::Rectangle(old->w(), old->h()));
     old->destroy();
     delete old;
   }
@@ -183,7 +188,7 @@ void Canvas::resize(int w, int h) {
 
 void Canvas::setClip(int x, int y, int w, int h) {
   delete _clip;
-  _clip = new Rectangle(x, y, w, h);
+  _clip = new fltk::Rectangle(x, y, w, h);
 }
 
 void Canvas::setFont() {
@@ -228,15 +233,6 @@ void MosyncWidget::layout() {
 }
 
 void MosyncWidget::draw() {
-  // ensure this widget has lowest z-order
-  int siblings = parent()->children();
-  for (int n = 0; n < siblings; n++) {
-    Widget *w = parent()->child(n);
-    if (w != this) {
-      w->redraw();
-    }
-  }
-
   if (_resized) {
     // resize the backing screens
     _screen->resize(w(), h());
@@ -247,8 +243,8 @@ void MosyncWidget::draw() {
   if (_screen->_img) {
     int xScroll, yScroll;
     _ansiWidget->getScroll(xScroll, yScroll);
-    Rectangle from = Rectangle(xScroll, yScroll, w(), h());
-    Rectangle to = Rectangle(0, 0, w(), h());
+    fltk::Rectangle from = fltk::Rectangle(xScroll, yScroll, w(), h());
+    fltk::Rectangle to = fltk::Rectangle(0, 0, w(), h());
     drawTarget->_img->draw(from, to);
     // draw the overlay onto the screen
     bool isScreen = drawTarget->_isScreen;
@@ -257,7 +253,7 @@ void MosyncWidget::draw() {
     drawTarget->_isScreen = isScreen;
   } else {
     setcolor(drawColor);
-    fillrect(Rectangle(w(), h()));
+    fillrect(fltk::Rectangle(w(), h()));
   }
 }
 

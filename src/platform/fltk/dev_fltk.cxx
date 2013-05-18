@@ -20,13 +20,13 @@
 #include <fltk/Rectangle.h>
 #include <fltk/damage.h>
 
-#include "MainWindow.h"
-#include "HelpWidget.h"
-#include "TtyWidget.h"
-
-#include "common/fs_socket_client.h"
+#include "platform/fltk/MainWindow.h"
+#include "platform/fltk/HelpWidget.h"
+#include "platform/fltk/TtyWidget.h"
+#include "platform/fltk/utils.h"
 #include "platform/mosync/utils.h"
-#include "utils.h"
+#include "platform/mosync/interface.h"
+#include "common/fs_socket_client.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -57,9 +57,6 @@ bool cacheLink(dev_file_t *df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
 void clearOutput();
-
-// in blib_fltk_ui.cxx
-bool form_event();
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -153,6 +150,7 @@ int osd_events(int wait_flag) {
   switch (wait_flag) {
   case 1:
     // wait for an event
+    wnd->_out->flush(true);
     fltk::wait();
     break;
   case 2:
@@ -209,11 +207,11 @@ int osd_getpen(int code) {
   switch (code) {
   case 0:
     // UNTIL PEN(0) - wait until move click or move
-    if (form_event()) {
-      // clicked a form widget
-      get_mouse_xy();
-      return 1;
-    }
+    //    if (form_event()) {
+    //      // clicked a form widget
+    //      get_mouse_xy();
+    //      return 1;
+    //    }
     fltk::wait();               // fallthru to re-test 
 
   case 3:                      // returns true if the pen is down (and save curpos)
@@ -684,7 +682,26 @@ char *dev_gets(char *dest, int size) {
 
 C_LINKAGE_END
 
+//--FORM------------------------------------------------------------------------
+
+bool form_ui::isRunning() { 
+  return wnd->isRunning(); 
+}
+
+bool form_ui::isBreak() { 
+  return wnd->isBreakExec(); 
+}
+
+void form_ui::processEvents() { 
+  osd_events(1);
+}
+
+void form_ui::buttonClicked(const char *url) { 
+  // controller->buttonClicked(url); 
+}
+
 //--HTML Utils------------------------------------------------------------------
+
 void getHomeDir(char *fileName, bool appendSlash) {
   const char *vars[] = {
     "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"

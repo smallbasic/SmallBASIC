@@ -40,4 +40,11 @@ struct IFormWidget {
   virtual void setH(int h) = 0;
 };
 
+namespace form_ui {
+  bool isRunning();
+  bool isBreak();
+  void processEvents();
+  void buttonClicked(const char *url);
+};
+
 #endif
