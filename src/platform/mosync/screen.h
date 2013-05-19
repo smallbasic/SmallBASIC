@@ -63,7 +63,7 @@ struct Screen : public Shape {
   virtual void getScroll(int &x, int &y) { x = 0; y = 0; }
 
   int ansiToMosync(long c);
-  void add(Shape *button) { _shapes.add(button); }
+  void add(Shape *button);
   void drawOverlay(bool vscroll);
   bool overlaps(int px, int py);
   void remove(Shape *button);

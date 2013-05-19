@@ -83,6 +83,16 @@ int Screen::ansiToMosync(long c) {
   return result;
 }
 
+void Screen::add(Shape *button) { 
+  _shapes.add(button); 
+  if (button->x + button->width > _curX) {
+    _curX = button->x + button->width;
+  }
+  if (button->y > _curY) {
+    _curY = button->y;
+  }
+}
+
 void Screen::clear() {
   _curX = INITXY;
   _curY = INITXY;
@@ -116,7 +126,7 @@ void Screen::drawOverlay(bool vscroll) {
   List_each(Shape*, it, _shapes) {
     Shape *rect = (*it);
     if (rect->y >= _scrollY && 
-        rect->y <= _scrollY + height) {
+        rect->y + rect->height <= _scrollY + height) {
       rect->draw(x + rect->x, y + rect->y - _scrollY);
     }
   }
@@ -411,7 +421,7 @@ int GraphicScreen::print(const char *p, int lineHeight) {
   if (_underline) {
     maLine(cx, _curY + lineHeight - 2, _curX, _curY + lineHeight - 2);
   }
-
+ 
   return numChars;
 }
 

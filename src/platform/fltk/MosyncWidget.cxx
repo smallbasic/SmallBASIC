@@ -213,7 +213,7 @@ MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
   _screen(NULL),
   _resized(false),
   _defsize(defsize) {
-  drawColorRaw = DEFAULT_FOREGROUND;
+  drawColorRaw = DEFAULT_BACKGROUND;
   drawColor = maSetColor(drawColorRaw);
   widget = this;
 }

@@ -970,8 +970,8 @@ Screen *AnsiWidget::selectScreen(char *&p) {
   Screen *result = NULL;
   flush(true);
 
-  if (n < 1 || n >= MAX_SCREENS) {
-    n = 1;
+  if (n < 0 || n >= MAX_SCREENS) {
+    n = 0;
   }
 
   x = min(max(x, 0), 100);
@@ -997,7 +997,7 @@ Screen *AnsiWidget::selectScreen(char *&p) {
       result = new TextScreen(_width, _height, _fontSize, x, y, w, h);
     } else {
       result = new GraphicScreen(_width, _height, _fontSize);
-    }    
+    }
     if (result && result->construct()) {
       _screens[n] = result;
       result->drawInto();
