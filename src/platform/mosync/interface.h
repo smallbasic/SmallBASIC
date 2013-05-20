@@ -9,6 +9,10 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#include "platform/common/StringLib.h"
+
+typedef strlib::List<strlib::String *> StringList;
+
 struct IButtonListener {
   virtual ~IButtonListener() {}
   virtual void buttonClicked(const char *action) = 0;
@@ -45,6 +49,7 @@ namespace form_ui {
   bool isBreak();
   void processEvents();
   void buttonClicked(const char *url);
+  void optionsBox(StringList *items);
 };
 
 #endif

@@ -697,7 +697,6 @@ void form_ui::processEvents() {
 }
 
 void form_ui::buttonClicked(const char *url) { 
-  // controller->buttonClicked(url); 
 }
 
 //--HTML Utils------------------------------------------------------------------

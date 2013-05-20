@@ -263,22 +263,6 @@ int maGetMilliSecondCount(void);
 int maShowVirtualKeyboard(void);
 
 /**
- * Displays a special kind of dialog that has a list of possible choices.
- * The list of options is displayed as buttons on iOS, and as text views on Android.
- * By clicking any option the dialog gets dismissed and a #EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED event is sent back.
- *
- * \param title The dialog title.
- * \param destructiveButtonTitle The destructive button text. This is an iOS specific feature: it has different color than the other options,
- * and it indicates that it's action has destructive behaviour. On Android it is treated and it looks like a normal option.
- * \param cancelButtonTitle The dialog's Cancel button text. If left empty, the dialog is not cancelable.
- * \param otherButtonTitles The address to the buffer that stores the list of options.
- * \param otherButtonTitlesSize The size of the buffer, in bytes.
- */
-void maOptionsBox(const wchar* title, const wchar* destructiveButtonTitle,
-                  const wchar* cancelButtonTitle, const void* otherButtonTitles,
-                  int otherButtonTitlesSize);
-
-/**
  * There is a FIFO buffer that contains up to #EVENT_BUFFER_SIZE events.
  * Each event has a type. Some types have additional data.
  *

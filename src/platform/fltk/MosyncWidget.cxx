@@ -37,10 +37,6 @@ int get_text_width(char *s) {
   return fltk::getwidth(s);
 }
 
-AnsiWidget *form_ui::getOutput() { 
-  return widget->_ansiWidget;
-}
-
 //
 // Canvas
 //
@@ -319,7 +315,6 @@ int MosyncWidget::handle(int e) {
 }
 
 void MosyncWidget::buttonClicked(const char *action) {
-
 }
 
 void MosyncWidget::clearScreen() {
@@ -546,11 +541,6 @@ int maShowVirtualKeyboard(void) {
   return 0;
 }
 
-void maOptionsBox(const wchar *title, const wchar *destructiveButtonTitle,
-                  const wchar *cancelButtonTitle, const void *otherButtonTitles,
-                  int otherButtonTitlesSize) {
-}
-
 int maGetEvent(MAEvent *event) {
   int result = 0;
   if (check()) {
@@ -580,3 +570,46 @@ void maAlert(const char *title, const char *message, const char *button1,
              const char *button2, const char *button3) {
   fltk::alert("%s\n\n%s", title, message);
 }
+
+//
+// Form UI
+//
+AnsiWidget *form_ui::getOutput() { 
+  return widget->_ansiWidget;
+}
+
+struct Listener : IButtonListener {
+  void buttonClicked(const char *action) {
+    _action = action;
+  }
+  String _action;
+};
+
+void form_ui::optionsBox(StringList *items) {
+  widget->_ansiWidget->print("\033[ S#6");
+  int y = 0;
+  Listener listener;
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    int w = fltk::getwidth(str) + 20;
+    IFormWidget *item = widget->_ansiWidget->createButton(str, 2, y, w, 22);
+    item->setListener(&listener);
+    y += 24;
+  }
+  while (form_ui::isRunning() && !listener._action.length()) {
+    form_ui::processEvents();
+  }
+  int index = 0;
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    if (strcmp(str, listener._action.c_str()) == 0) {
+      break;
+    } else {
+      index++;
+    }
+  }
+  widget->_ansiWidget->print("\033[ SE6");
+  widget->_ansiWidget->optionSelected(index);
+  widget->redraw();
+}
+

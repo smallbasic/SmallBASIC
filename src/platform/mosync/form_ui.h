@@ -17,8 +17,6 @@
 #include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/interface.h"
 
-typedef strlib::List<strlib::String *> StringList;
-
 namespace form_ui {
   AnsiWidget *getOutput();
 }

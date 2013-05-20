@@ -58,6 +58,34 @@
 char *options = NULL;
 FormList *clickedList = NULL;
 
+#if !defined(_FLTK)
+void form_ui::optionsBox(StringList *items) {
+  if (items->size()) {
+    // calculate the size of the options buffer
+    int optionsBytes = sizeof(int);
+    List_each(String*, it, *items) {
+      const char *str = (*it)->c_str();
+      optionsBytes += (strlen(str) + 1) * sizeof(wchar);
+    }
+
+    // create the options buffer
+    delete [] options;
+    options = new char[optionsBytes];
+    *(int *)options = items->size();
+    wchar_t *dst = (wchar_t *)(options + sizeof(int));
+
+    List_each(String*, it, *items) {
+      const char *str = (*it)->c_str();
+      int len = strlen(str);
+      swprintf(dst, len + 1, L"%hs", str);
+      dst[len] = 0;
+      dst += (len + 1);
+    }
+    maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)options, optionsBytes);
+  }
+}
+#endif
+
 Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
   Shape(x, y, w, h),
   _pressed(false),
@@ -159,6 +187,14 @@ FormButton::FormButton(Screen *screen, const char *caption, int x, int y, int w,
   _caption(caption) {
 }
 
+void FormButton::clicked(IButtonListener *listener, int x, int y) {
+  if (this->_listener) {
+    this->_listener->buttonClicked(_caption); 
+  } else {
+    listener->buttonClicked(_caption); 
+  }
+}
+
 FormLabel::FormLabel(Screen *screen, const char *caption, int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
   _caption(caption) {
@@ -229,29 +265,12 @@ FormList::FormList(Screen *screen, IFormWidgetListModel *model,
 }
 
 void FormList::clicked(IButtonListener *listener, int x, int y) {
-  // calculate the size of the options buffer
-  int optionsBytes = sizeof(int);
+  List<String *> options;
   for (int i = 0; i < _model->rows(); i++) {
-    const char *str = _model->getTextAt(i);
-    optionsBytes += (strlen(str) + 1) * sizeof(wchar);
+    options.add(_model->getTextAt(i));
   }
-
-  // create the options buffer
-  delete [] options;
-  options = new char[optionsBytes];
-  *(int *)options = _model->rows();
-  wchar_t *dst = (wchar_t *)(options + sizeof(int));
-  
-  for (int i = 0; i < _model->rows(); i++) {
-    const char *str = _model->getTextAt(i);
-    int len = strlen(str);
-    swprintf(dst, len + 1, L"%hs", str);
-    dst[len] = 0;
-    dst += (len + 1);
-  }
-  
   clickedList = this;
-  maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)options, optionsBytes);
+  form_ui::optionsBox(&options);
 }
 
 void FormList::draw(int x, int y) {
@@ -685,29 +704,7 @@ Widget *AnsiWidget::createLink(const char *action, const char *text,
 // create an options dialog
 void AnsiWidget::createOptionsBox(char *&p) {
   List<String *> *items = getItems(p);
-  if (items->size()) {
-    // calculate the size of the options buffer
-    int optionsBytes = sizeof(int);
-    List_each(String*, it, *items) {
-      const char *str = (*it)->c_str();
-      optionsBytes += (strlen(str) + 1) * sizeof(wchar);
-    }
-
-    // create the options buffer
-    delete [] options;
-    options = new char[optionsBytes];
-    *(int *)options = items->size();
-    wchar_t *dst = (wchar_t *)(options + sizeof(int));
-
-    List_each(String*, it, *items) {
-      const char *str = (*it)->c_str();
-      int len = strlen(str);
-      swprintf(dst, len + 1, L"%hs", str);
-      dst[len] = 0;
-      dst += (len + 1);
-    }
-    maOptionsBox(L"SmallBASIC", NULL, L"Close", (MAAddress)options, optionsBytes);
-  }
+  form_ui::optionsBox(items);
   delete items;
 }
 
@@ -1000,6 +997,8 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     }
     if (result && result->construct()) {
       _screens[n] = result;
+      result->_fg = _front->_fg;
+      result->_bg = _front->_bg;
       result->drawInto();
       result->clear();
     } else {

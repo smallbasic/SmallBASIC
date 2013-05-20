@@ -96,7 +96,7 @@ struct FormWidget : public Widget, IFormWidget {
   void setW(int w) { this->width = w; }
   void setH(int h) { this->height = h; }
 
-private:
+protected:
   Screen *_screen;
   IButtonListener *_listener;
 };
@@ -107,6 +107,7 @@ struct FormButton : public FormWidget {
 
   const char *getText() const { return _caption.c_str(); }
   void draw(int x, int y) { drawButton(_caption.c_str(), x, y); }
+  void clicked(IButtonListener *listener, int x, int y);
 
 private:
   String _caption;
