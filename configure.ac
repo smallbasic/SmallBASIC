@@ -48,6 +48,11 @@ AC_ARG_ENABLE(mosync,
   [ac_build_mosync="yes"],
   [ac_build_mosync="no"])
 
+AC_ARG_ENABLE(tizen,
+  AS_HELP_STRING([--enable-tizen],[build common library for Tizen(default=no)]),
+  [ac_build_tizen="yes"],
+  [ac_build_tizen="no"])
+
 AC_ARG_ENABLE(dist,
   AS_HELP_STRING([--enable-dist],[prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
@@ -525,6 +530,33 @@ function buildMosync() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildTizen() {
+   TARGET="Building common library for Tizen."
+
+   defaultConditionals
+
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
+   AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
+   AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
+   AC_DEFINE(RUN_UNSUP, 1, [run not supported.])
+   AC_DEFINE(SERIAL_UNSUP, 1, [serial not supported.])
+   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
+   AC_DEFINE(CPU_BIGENDIAN, 1, [Mosync uses big-endian])
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(NONSTANDARD_PORT, 1, [sys.h should include portdefs.h])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+
+   BUILD_SUBDIRS="src/platform/tizen/common"
+   AC_SUBST(BUILD_SUBDIRS)
+}
+
 function buildConsole() {
    win32=no
    case "${host_os}" in
@@ -618,6 +650,8 @@ elif test x$ac_build_qt = xyes; then
    buildQT
 elif test x$ac_build_mosync = xyes; then
    buildMosync
+elif test x$ac_build_tizen = xyes; then
+   buildTizen
 else
    buildConsole
 fi  
@@ -642,6 +676,7 @@ src/platform/cygwin/Makefile
 src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/mosync/common/Makefile
+src/platform/tizen/common/Makefile
 ])
 AC_OUTPUT
 
