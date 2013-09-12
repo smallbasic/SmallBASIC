@@ -8,6 +8,7 @@
 
 #include "platform/tizen/form.h"
 #include "platform/tizen/application.h"
+#include "platform/common/utils.h"
 
 Application *TizenApp::createInstance() {
   logEntered();
@@ -20,12 +21,12 @@ TizenApp::TizenApp() : _appForm(NULL) {
 
 TizenApp::~TizenApp() {
   logEntered();
-  if (g_system) {
+//  if (g_system) {
     //    TizenSystem *system = (TizenSystem *)g_system;
     //system->destroyBackend();
     //delete system;
     //g_system = NULL;
-  }
+  //}
 }
 
 bool TizenApp::OnAppInitialized(void) {
@@ -46,7 +47,7 @@ bool TizenApp::OnAppInitializing(AppRegistry &appRegistry) {
 		AppLog("Failed to create appFrame");
 		return NULL;
 	}
-	app->AddFrame(*appFrame);
+	AddFrame(*appFrame);
 
 	TizenAppForm *appForm = new TizenAppForm();
 	if (!appForm) {
@@ -76,9 +77,9 @@ bool TizenApp::OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination
 
 void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
   logEntered();
+  /*
   MessageBox messageBox;
   int modalResult;
-  String *message;
 
   switch (requestId) {
   case USER_MESSAGE_EXIT:
@@ -88,14 +89,6 @@ void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
 
   case USER_MESSAGE_EXIT_ERR:
     // assertion failure termination
-    if (args) {
-      message = (String *)args->GetAt(0);
-    }
-    if (!message) {
-      message = new String("Unknown error");
-    }
-    messageBox.Construct(L"Oops...", *message, MSGBOX_STYLE_OK);
-    messageBox.ShowAndWait(modalResult);
     Terminate();
     break;
 
@@ -107,6 +100,7 @@ void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
     Terminate();
     break;
   }
+  */
 }
 
 void TizenApp::OnForeground(void) {

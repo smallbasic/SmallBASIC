@@ -6,6 +6,9 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#ifndef SB_UI_UTILS_H
+#define SB_UI_UTILS_H
+
 #ifndef max
 #define max(a,b) ((a<b) ? (b) : (a))
 #endif
@@ -13,7 +16,7 @@
 #define min(a,b) ((a>b) ? (b) : (a))
 #endif
 
-#if defined(_FLTK)
+#if defined(_FLTK) || defined (_TIZEN)
  #define DEFAULT_FOREGROUND 0
  #define DEFAULT_BACKGROUND 0xecedef
  #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN + 1
@@ -36,6 +39,8 @@
   #define trace lprintfln
  #elif defined(_FLTK)
   extern "C" void trace(const char *format, ...);
+ #elif defined (_TIZEN)
+  #define trace AppLog
  #endif
 #else
  #define trace(...)
@@ -52,3 +57,5 @@ bool set_parent_path();
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
+
+#endif

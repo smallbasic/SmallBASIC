@@ -6,6 +6,11 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "platform/common/maapi.h"
+#include "platform/common/utils.h"
+#include "platform/mosync/form_ui.h"
+#include "platform/tizen/controller.h"
+
 Controller *controller;
 
 int SBasicMain() {

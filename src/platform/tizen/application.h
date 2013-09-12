@@ -15,7 +15,6 @@
 #include <FUi.h>
 #include <FSystem.h>
 
-#include "platform/tizen/system.h"
 #include "platform/tizen/form.h"
 
 using namespace Tizen::App;

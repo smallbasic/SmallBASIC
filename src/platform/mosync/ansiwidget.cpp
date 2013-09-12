@@ -14,7 +14,7 @@
 #include <wchar.h>
 
 #include "platform/mosync/ansiwidget.h"
-#include "platform/mosync/utils.h"
+#include "platform/common/utils.h"
 
 /* class AnsiWidget
 
@@ -412,7 +412,7 @@ void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
       update = (maGetMilliSecondCount() - _front->_dirty >= maxPending);
     }
     if (update) {
-      _front->draw(vscroll);
+      _front->drawBase(vscroll);
     }
   }
 }
@@ -520,7 +520,7 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
     if (screen) {
       screen->resize(newWidth, newHeight, _width, _height, lineHeight);
       if (screen == _front || i < SYSTEM_SCREENS) {
-        screen->draw(false);
+        screen->drawBase(false);
       }
     }
   }
@@ -900,7 +900,7 @@ void AnsiWidget::screenCommand(char *&p) {
   case 'R': // redraw all user screens
     for (int i = 0; i < MAX_SCREENS; i++) {
       if (_screens[i] != NULL && i < SYSTEM_SCREENS) {
-        _screens[i]->draw(false);
+        _screens[i]->drawBase(false);
         _front = _back = _screens[i];
       }
     }
@@ -1042,7 +1042,7 @@ void AnsiWidget::swapScreens() {
     _front = _back;
     _back = tmp;
     if (_front->_dirty) {
-      _front->draw(false);
+      _front->drawBase(false);
     }
   }
 }

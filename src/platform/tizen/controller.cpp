@@ -11,8 +11,8 @@
 #include <stdio.h>
 
 #include "platform/common/maapi.h"
-#include "platform/mosync/controller.h"
-#include "platform/mosync/utils.h"
+#include "platform/tizen/controller.h"
+#include "platform/common/utils.h"
 
 #define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source"
 #define MENU_CONSOLE  0
@@ -115,6 +115,7 @@ int Controller::getPen(int code) {
 }
 
 char *Controller::getText(char *dest, int maxSize) {
+#if 0
   int x = _output->getX();
   int y = _output->getY();
   int w = EXTENT_X(maGetTextSize("YNM"));
@@ -146,11 +147,13 @@ char *Controller::getText(char *dest, int maxSize) {
   }
 
   delete formWidget;
+#endif
   return dest;
 }
 
 // runtime system event processor
 int Controller::handleEvents(int waitFlag) {
+#if 0
   if (!waitFlag) {
     // detect when we have been called too frequently
     int now = maGetMilliSecondCount();
@@ -183,13 +186,14 @@ int Controller::handleEvents(int waitFlag) {
     processEvents(EVENT_WAIT_NONE);
     break;
   }
-
+#endif
   _output->flush(false);
   return isBreak() ? -2 : 0;
 }
 
 // handle the system menu
 void Controller::handleMenu(int menuId) {
+#if 0
   int fontSize = _output->getFontSize();
   _systemMenu = false;
 
@@ -228,10 +232,12 @@ void Controller::handleMenu(int menuId) {
   if (!isRunning()) {
     _output->flush(true);
   }
+#endif
 }
 
 // process events on the system event queue
 MAEvent Controller::processEvents(int ms, int untilType) {
+#if 0
   MAEvent event;
   MAExtent screenSize;
   int loadPathSize = _loadPath.length();
@@ -300,9 +306,13 @@ MAEvent Controller::processEvents(int ms, int untilType) {
     maWait(ms);
   }
   return event;
+#endif
+  MAEvent event;
+  return event;
 }
 
 char *Controller::readSource(const char *fileName) {
+#if 0
   char *buffer = NULL;
   bool networkFile = strstr(fileName, "://");
   const char *delim = strchr(fileName, '?');
@@ -349,6 +359,8 @@ char *Controller::readSource(const char *fileName) {
 
   logPrint("Opened: %s %d bytes\n", fileName, len);
   return buffer;
+#endif 
+  return 0;
 }
 
 // stop and running program
@@ -416,6 +428,7 @@ void Controller::showMenu() {
 }
 
 void Controller::logPrint(const char *format, ...) {
+#if 0
   char buf[4096], *p = buf;
   va_list args;
 
@@ -433,6 +446,7 @@ void Controller::logPrint(const char *format, ...) {
     _output->print(buf);
     _output->print("\033[ Sw");
   }
+#endif
 }
 
 // handler for hyperlink click actions
@@ -443,6 +457,7 @@ void Controller::buttonClicked(const char *url) {
 
 // pass the key into the smallbasic keyboard handler
 void Controller::handleKey(int key) {
+#if 0
   switch (key) {
   case MAK_FIRE:
   case MAK_5:
@@ -517,10 +532,12 @@ void Controller::handleKey(int key) {
       break;
     }
   }
+#endif
 }
 
 // returns the contents of the given url
 char *Controller::readConnection(const char *url) {
+#if 0
   char *result = NULL;
   logEntered();
   _output->print("\033[ LLoading...");
@@ -589,6 +606,8 @@ char *Controller::readConnection(const char *url) {
 
   maConnClose(conn);
   return result;
+#endif
+  return 0;
 }
 
 void Controller::showSystemScreen(bool showSrc) {

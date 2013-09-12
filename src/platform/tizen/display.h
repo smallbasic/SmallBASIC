@@ -10,17 +10,18 @@
 #define MOSYNC_WIDGET
 
 #include "platform/common/maapi.h"
+#include "platform/mosync/screen.h"
 #include "platform/mosync/interface.h"
 
 struct AnsiWidget;
 
-struct WidgetCanvas {
-  WidgetCanvas(int size);
-  ~WidgetCanvas();
+struct CanvasWidget {
+  CanvasWidget(int size);
+  ~CanvasWidget();
 
   void beginDraw();
   void create(int w, int h);
-  void drawImageRegion(WidgetCanvas *dst, const MAPoint2d *dstPoint, const MARect *srcRect);
+  void drawImageRegion(CanvasWidget *dst, const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);
   void drawPixel(int posX, int posY);
   void drawRectFilled(int left, int top, int width, int height);
@@ -31,24 +32,27 @@ struct WidgetCanvas {
   void setClip(int x, int y, int w, int h);
   void setFont();
 
-  fltk::Image *_img;
-  fltk::Rectangle *_clip;
+  //  fltk::Image *_img;
+  //fltk::Rectangle *_clip;
   int _size;
   int _style;
   bool _isScreen;
 };
 
-class FormWidget : public fltk::Widget, IButtonListener {
+class DisplayWidget : 
+  public Shape, 
+  public IButtonListener {
 public:
-  FormWidget(int x, int y, int w, int h, int defsize);
-  virtual ~FormWidget();
+  DisplayWidget(int x, int y, int w, int h, int defsize);
+  virtual ~DisplayWidget();
 
   void clearScreen();
+  void draw(int x, int y);
   void print(const char *str);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
-  void drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h);
+  //  void drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h);
   void saveImage(const char *fn, int x, int y, int w, int h);
   void setTextColor(long fg, long bg);
   void setColor(long color);
@@ -64,18 +68,18 @@ public:
   void flush(bool force);
   void reset();
 
-  WidgetCanvas *getScreen() { return _screen; }
+  CanvasWidget *getScreen() { return _screen; }
   int getDefaultSize() { return _defsize; }
   AnsiWidget *_ansiWidget;
 
 private:
   // inherited methods
-  void draw();
+
   void layout();
   int handle(int e);
 
   void buttonClicked(const char *action);
-  WidgetCanvas *_screen;
+  CanvasWidget *_screen;
   bool _resized;
   int _defsize;
 };

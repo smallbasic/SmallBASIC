@@ -8,8 +8,8 @@
 
 #include "MAHeaders.h"
 
+#include "platform/common/utils.h"
 #include "platform/mosync/controller.h"
-#include "platform/mosync/utils.h"
 #include "platform/mosync/form_ui.h"
 
 extern Controller *controller;

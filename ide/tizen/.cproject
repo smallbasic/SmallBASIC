@@ -46,8 +46,9 @@
 									<listOptionValue builtIn="false" value="--sysroot=&quot;${SBI_SYSROOT}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.include.paths.211001311" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/src"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/src/platform/tizen"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/src"/>
 									<listOptionValue builtIn="false" value="&quot;/home/chrisws/tizen-sdk/library&quot;"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/osp"/>
@@ -57,6 +58,7 @@
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.2033179855" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="_DEBUG"/>
+									<listOptionValue builtIn="false" value="HAVE_CONFIG_H"/>
 								</option>
 								<inputType id="sbi.gnu.cpp.compiler.tizen.inputType.59549773" superClass="sbi.gnu.cpp.compiler.tizen.inputType"/>
 							</tool>

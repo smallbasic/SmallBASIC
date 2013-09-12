@@ -10,7 +10,7 @@
 #include <FApp.h>
 #include <FSystem.h>
 
-#include "backends/platform/tizen/application.h"
+#include "platform/tizen/application.h"
 
 using namespace Tizen::Base;
 using namespace Tizen::Base::Collection;

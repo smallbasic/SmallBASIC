@@ -9,11 +9,8 @@
 #include <FApp.h>
 #include <FSysSystemTime.h>
 
-#include "common/translation.h"
-#include "base/main.h"
-
-#include "backends/platform/tizen/form.h"
-#include "backends/platform/tizen/system.h"
+#include "platform/tizen/form.h"
+#include "platform/common/utils.h"
 
 using namespace Tizen::Base::Collection;
 using namespace Tizen::Base::Runtime;
@@ -34,7 +31,7 @@ using namespace Tizen::Ui::Controls;
 TizenAppForm::TizenAppForm() :
 	_gestureMode(false),
 	_osdMessage(NULL),
-	_gameThread(NULL),
+	_execThread(NULL),
 	_eventQueueLock(NULL),
 	_state(kInitState),
 	_buttonState(kLeftButton),
@@ -42,9 +39,9 @@ TizenAppForm::TizenAppForm() :
 }
 
 result TizenAppForm::Construct() {
-	TizenSystem *tizenSystem = NULL;
 	result r = Form::Construct(FORM_STYLE_NORMAL);
-	if (!IsFailed(r)) {
+  /*
+    if (!IsFailed(r)) {
 		tizenSystem = new TizenSystem(this);
 		r = tizenSystem != NULL ? E_SUCCESS : E_OUT_OF_MEMORY;
 	}
@@ -52,11 +49,11 @@ result TizenAppForm::Construct() {
 		r = tizenSystem->Construct();
 	}
 	if (!IsFailed(r)) {
-		_gameThread = new Thread();
-		r = _gameThread != NULL ? E_SUCCESS : E_OUT_OF_MEMORY;
+		_execThread = new Thread();
+		r = _execThread != NULL ? E_SUCCESS : E_OUT_OF_MEMORY;
 	}
 	if (!IsFailed(r)) {
-		r = _gameThread->Construct(*this);
+		r = _execThread->Construct(*this);
 	}
 	if (!IsFailed(r)) {
 		_eventQueueLock = new Mutex();
@@ -71,25 +68,26 @@ result TizenAppForm::Construct() {
 	} else {
 		AppLog("Form startup failed");
 		delete tizenSystem;
-		delete _gameThread;
-		_gameThread = NULL;
+		delete _execThread;
+		_execThread = NULL;
 	}
+  */
 	return r;
 }
 
 TizenAppForm::~TizenAppForm() {
 	logEntered();
 
-	if (_gameThread && _state != kErrorState) {
+	if (_execThread && _state != kErrorState) {
 		terminate();
 
-		_gameThread->Stop();
+		_execThread->Stop();
 		if (_state != kErrorState) {
-			_gameThread->Join();
+			_execThread->Join();
 		}
 
-		delete _gameThread;
-		_gameThread = NULL;
+		delete _execThread;
+		_execThread = NULL;
 	}
 
 	delete _eventQueueLock;
@@ -103,15 +101,7 @@ TizenAppForm::~TizenAppForm() {
 //
 void TizenAppForm::terminate() {
 	if (_state == kActiveState) {
-		((TizenSystem *)g_system)->setMute(true);
-
 		_eventQueueLock->Acquire();
-
-		Common::Event e;
-		e.type = Common::EVENT_QUIT;
-		_eventQueue.push(e);
-		_state = kClosingState;
-
 		_eventQueueLock->Release();
 
 		// block while thread ends
@@ -130,10 +120,10 @@ void TizenAppForm::terminate() {
 void TizenAppForm::exitSystem() {
 	_state = kErrorState;
 
-	if (_gameThread) {
-		_gameThread->Stop();
-		delete _gameThread;
-		_gameThread = NULL;
+	if (_execThread) {
+		_execThread->Stop();
+		delete _execThread;
+		_execThread = NULL;
 	}
 }
 
@@ -163,21 +153,22 @@ void TizenAppForm::OnOrientationChanged(const Control &source, OrientationStatus
 	logEntered();
 	if (_state == kInitState) {
 		_state = kActiveState;
-		_gameThread->Start();
+		_execThread->Start();
 	}
 }
 
 Tizen::Base::Object *TizenAppForm::Run() {
 	logEntered();
 
-	scummvm_main(0, 0);
+	//scummvm_main(0, 0);
 	if (_state == kActiveState) {
-		Tizen::App::Application::GetInstance()->SendUserEvent(USER_MESSAGE_EXIT, NULL);
+		//Tizen::App::Application::GetInstance()->SendUserEvent(USER_MESSAGE_EXIT, NULL);
 	}
 	_state = kDoneState;
 	return NULL;
 }
 
+/*
 bool TizenAppForm::pollEvent(Common::Event &event) {
 	bool result = false;
 
@@ -198,8 +189,10 @@ bool TizenAppForm::pollEvent(Common::Event &event) {
 
 	return result;
 }
+*/
 
-void TizenAppForm::pushEvent(Common::EventType type, const Point &currentPosition) {
+//void TizenAppForm::pushEvent(Common::EventType type, const Point &currentPosition) {
+  /*
 	TizenSystem *system = (TizenSystem *)g_system;
 	TizenGraphicsManager *graphics = system->getGraphics();
 	if (graphics) {
@@ -224,8 +217,10 @@ void TizenAppForm::pushEvent(Common::EventType type, const Point &currentPositio
 		_eventQueue.push(e);
 		_eventQueueLock->Release();
 	}
-}
+  */
+//}
 
+/*
 void TizenAppForm::pushKey(Common::KeyCode keycode) {
 	if (_eventQueueLock) {
 		Common::Event e;
@@ -327,7 +322,7 @@ void TizenAppForm::showKeypad() {
 		pushKey(Common::KEYCODE_F7);
 	}
 }
-
+*/
 int TizenAppForm::getTouchCount() {
 	Tizen::Ui::TouchEventManager *touch = Tizen::Ui::TouchEventManager::GetInstance();
 	IListT<TouchEventInfo *> *touchList = touch->GetTouchInfoListN();
@@ -340,8 +335,8 @@ int TizenAppForm::getTouchCount() {
 void TizenAppForm::OnTouchDoublePressed(const Control &source,
 		const Point &currentPosition, const TouchEventInfo &touchInfo) {
 	if (_buttonState != kMoveOnly) {
-		pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONDOWN : Common::EVENT_RBUTTONDOWN,
-							currentPosition);
+		//pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONDOWN : Common::EVENT_RBUTTONDOWN,
+		//					currentPosition);
 	}
 }
 
@@ -357,14 +352,14 @@ void TizenAppForm::OnTouchLongPressed(const Control &source,
 		const Point &currentPosition, const TouchEventInfo &touchInfo) {
 	logEntered();
 	if (_buttonState != kLeftButton) {
-		pushKey(Common::KEYCODE_RETURN);
+		//pushKey(Common::KEYCODE_RETURN);
 	}
 }
 
 void TizenAppForm::OnTouchMoved(const Control &source,
 		const Point &currentPosition, const TouchEventInfo &touchInfo) {
 	if (!_gestureMode) {
-	  pushEvent(Common::EVENT_MOUSEMOVE, currentPosition);
+	  //pushEvent(Common::EVENT_MOUSEMOVE, currentPosition);
 	}
 }
 
@@ -373,8 +368,8 @@ void TizenAppForm::OnTouchPressed(const Control &source,
 	if (getTouchCount() > 1) {
 		_gestureMode = true;
 	} else if (_buttonState != kMoveOnly) {
-		pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONDOWN : Common::EVENT_RBUTTONDOWN,
-							currentPosition);
+		//pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONDOWN : Common::EVENT_RBUTTONDOWN,
+    //							currentPosition);
 	}
 }
 
@@ -391,14 +386,14 @@ void TizenAppForm::OnTouchReleased(const Control &source,
 			_gestureMode = false;
 		}
 	} else if (_buttonState != kMoveOnly) {
-		pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONUP : Common::EVENT_RBUTTONUP,
-							currentPosition);
+		//pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONUP : Common::EVENT_RBUTTONUP,
+		//					currentPosition);
 		if (_buttonState == kRightButtonOnce) {
 			_buttonState = kLeftButton;
 		}
 		// flick to skip dialog
 		if (touchInfo.IsFlicked()) {
-			pushKey(Common::KEYCODE_PERIOD);
+			//pushKey(Common::KEYCODE_PERIOD);
 		}
 	}
 }

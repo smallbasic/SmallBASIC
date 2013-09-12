@@ -7,6 +7,10 @@
 //
 
 #include "config.h"
+
+#include <FBase.h>
+#include <FSystem.h>
+
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"

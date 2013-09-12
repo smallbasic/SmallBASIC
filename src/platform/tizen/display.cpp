@@ -7,190 +7,191 @@
 //
 
 #include <time.h>
-#include "platform/tizen/FormWidget.h"
+#include "platform/tizen/display.h"
 #include "platform/mosync/ansiwidget.h"
 #include "platform/mosync/form_ui.h"
 
 #define SIZE_LIMIT 4
 
-FormWidget *widget;
-WidgetCanvas *drawTarget;
+DisplayWidget *widget;
+CanvasWidget *drawTarget;
 bool mouseActive;
-Color drawColor;
+int drawColor;
 int drawColorRaw;
 
 int get_text_width(char *s) {
-  return fltk::getwidth(s);
+  //return fltk::getwidth(s);
+  return 0;
 }
 
 //
-// WidgetCanvas
+// CanvasWidget
 //
-WidgetCanvas::WidgetCanvas(int size) :
-  _img(NULL),
-  _clip(NULL),
+CanvasWidget::CanvasWidget(int size) :
+  //  _img(NULL),
+  //_clip(NULL),
   _size(size),
   _style(0),
   _isScreen(false) {
 }
 
-WidgetCanvas::~WidgetCanvas() {
-  if (_img) {
-    _img->destroy();
-  }
-  delete _img;
-  delete _clip;
+CanvasWidget::~CanvasWidget() {
+  //if (_img) {
+  //  _img->destroy();
+  //}
+  //delete _img;
+  //delete _clip;
 }
 
-void WidgetCanvas::beginDraw() {
-  _img->make_current();
-  setcolor(drawColor);
-  if (_clip) {
-    push_clip(*_clip);
-  }
+void CanvasWidget::beginDraw() {
+  //_img->make_current();
+  //setcolor(drawColor);
+  //if (_clip) {
+  //  push_clip(*_clip);
+  //}
 }
 
-void WidgetCanvas::create(int w, int h) {
-  _img = new Image(w, h);
+void CanvasWidget::create(int w, int h) {
+  //_img = new Image(w, h);
 
-  GSave gsave;
-  beginDraw();
-  setcolor(drawColor);
-  fillrect(0, 0, _img->w(), _img->h());
-  endDraw();
+  //GSave gsave;
+  //beginDraw();
+  //setcolor(drawColor);
+  //fillrect(0, 0, _img->w(), _img->h());
+  //endDraw();
 }
 
-void WidgetCanvas::drawImageRegion(WidgetCanvas *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
-  fltk::Rectangle from = fltk::Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
-  fltk::Rectangle to = fltk::Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
-  GSave gsave;
-  dst->beginDraw();
-  _img->draw(from, to);
-  dst->endDraw();
+void CanvasWidget::drawImageRegion(CanvasWidget *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
+//  fltk::Rectangle from = fltk::Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
+//  fltk::Rectangle to = fltk::Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
+//  GSave gsave;
+//  dst->beginDraw();
+//  _img->draw(from, to);
+//  dst->endDraw();
 }
 
-void WidgetCanvas::drawLine(int startX, int startY, int endX, int endY) {
-  if (_isScreen) {
-    fltk::setcolor(drawColor);
-    fltk::drawline(startX, startY, endX, endY);
-  } else {
-    GSave gsave;
-    beginDraw();
-    fltk::drawline(startX, startY, endX, endY);
-    endDraw();
-  }
+void CanvasWidget::drawLine(int startX, int startY, int endX, int endY) {
+//  if (_isScreen) {
+//    fltk::setcolor(drawColor);
+//    fltk::drawline(startX, startY, endX, endY);
+//  } else {
+//    GSave gsave;
+//    beginDraw();
+//    fltk::drawline(startX, startY, endX, endY);
+//    endDraw();
+//  }
 }
 
-void WidgetCanvas::drawPixel(int posX, int posY) {
-  if (posX > -1 && posY > -1
-      && posX < _img->buffer_width()
-      && posY < _img->buffer_height()) {
-    U32 *row = (U32 *)_img->linebuffer(posY);
-    row[posX] = drawColorRaw;
-  }
-#if !defined(_Win32)
-  GSave gsave;
-  beginDraw();
-  drawpoint(posX, posY);
-  endDraw();
-#endif
+void CanvasWidget::drawPixel(int posX, int posY) {
+//  if (posX > -1 && posY > -1
+//      && posX < _img->buffer_width()
+//      && posY < _img->buffer_height()) {
+//    U32 *row = (U32 *)_img->linebuffer(posY);
+//    row[posX] = drawColorRaw;
+//  }
+//#if !defined(_Win32)
+//  GSave gsave;
+//  beginDraw();
+//  drawpoint(posX, posY);
+//  endDraw();
+//#endif
 }
 
-void WidgetCanvas::drawRectFilled(int left, int top, int width, int height) {
-  if (_isScreen) {
-    fltk::setcolor(drawColor);
-    fltk::fillrect(left, top, width, height);
-  } else {
-#if defined(_Win32)
-    int w = _img->buffer_width();
-    int h = _img->buffer_height();
-    for (int y = 0; y < height; y++) {
-      int yPos = y + top;
-      if (yPos > -1 && yPos < h) {
-        U32 *row = (U32 *)_img->linebuffer(yPos);
-        for (int x = 0; x < width; x++) {
-          int xPos = x + left;
-          if (xPos > -1 && xPos < w) {
-            row[xPos] = drawColorRaw;
-          }
-        }
-      }
-    }
-#else
-    GSave gsave;
-    beginDraw();
-    fltk::fillrect(left, top, width, height);
-    endDraw();
-#endif
-  }
+void CanvasWidget::drawRectFilled(int left, int top, int width, int height) {
+//  if (_isScreen) {
+//    fltk::setcolor(drawColor);
+//    fltk::fillrect(left, top, width, height);
+//  } else {
+//#if defined(_Win32)
+//    int w = _img->buffer_width();
+//    int h = _img->buffer_height();
+//    for (int y = 0; y < height; y++) {
+//      int yPos = y + top;
+//      if (yPos > -1 && yPos < h) {
+//        U32 *row = (U32 *)_img->linebuffer(yPos);
+//        for (int x = 0; x < width; x++) {
+//          int xPos = x + left;
+//          if (xPos > -1 && xPos < w) {
+//            row[xPos] = drawColorRaw;
+//          }
+//        }
+//      }
+//    }
+//#else
+//    GSave gsave;
+//    beginDraw();
+//    fltk::fillrect(left, top, width, height);
+//    endDraw();
+//#endif
+//  }
 }
 
-void WidgetCanvas::drawText(int left, int top, const char *str) {
-  setFont();
-  if (_isScreen) {
-    fltk::setcolor(drawColor);
-    fltk::drawtext(str, left, top + (int)getascent());
-  } else {
-    GSave gsave;
-    beginDraw();
-    fltk::drawtext(str, left, top + (int)getascent());
-    endDraw();
-  }
+void CanvasWidget::drawText(int left, int top, const char *str) {
+//  setFont();
+//  if (_isScreen) {
+//    fltk::setcolor(drawColor);
+//    fltk::drawtext(str, left, top + (int)getascent());
+//  } else {
+//    GSave gsave;
+//    beginDraw();
+//    fltk::drawtext(str, left, top + (int)getascent());
+//    endDraw();
+//  }
 }
 
-void WidgetCanvas::endDraw() {
-  if (_clip) {
-    pop_clip();
-  }
+void CanvasWidget::endDraw() {
+//  if (_clip) {
+//    pop_clip();
+//  }
 }
 
-int WidgetCanvas::getPixel(int x, int y) {
+int CanvasWidget::getPixel(int x, int y) {
   int result = 0;
-  if (x > -1 && x < _img->w() &&
-      y > -1 && y < _img->h()) {
-    U32 *pixel = (U32 *)_img->linebuffer(y);
-    result = pixel[x];
-  }
+//  if (x > -1 && x < _img->w() &&
+//      y > -1 && y < _img->h()) {
+//    U32 *pixel = (U32 *)_img->linebuffer(y);
+//    result = pixel[x];
+//  }
   return result;
 }
 
-void WidgetCanvas::resize(int w, int h) {
-  if (_img) {
-    Image *old = _img;
-    GSave gsave;
-    _img = new Image(w, h);
-    _img->make_current();
-    setcolor(DEFAULT_BACKGROUND);
-    fillrect(0, 0, w, h);
-    old->draw(fltk::Rectangle(old->w(), old->h()));
-    old->destroy();
-    delete old;
-  }
+void CanvasWidget::resize(int w, int h) {
+//  if (_img) {
+//    Image *old = _img;
+//    GSave gsave;
+//    _img = new Image(w, h);
+//    _img->make_current();
+//    setcolor(DEFAULT_BACKGROUND);
+//    fillrect(0, 0, w, h);
+//    old->draw(fltk::Rectangle(old->w(), old->h()));
+//    old->destroy();
+//    delete old;
+//  }
 }
 
-void WidgetCanvas::setClip(int x, int y, int w, int h) {
-  delete _clip;
-  _clip = new fltk::Rectangle(x, y, w, h);
+void CanvasWidget::setClip(int x, int y, int w, int h) {
+//  delete _clip;
+//  _clip = new fltk::Rectangle(x, y, w, h);
 }
 
-void WidgetCanvas::setFont() {
-  fltk::Font *font = fltk::COURIER;
-  if (_size && _style) {
-    if (_style && FONT_STYLE_BOLD) {
-      font = font->bold();
-    }
-    if (_style && FONT_STYLE_ITALIC) {
-      font = font->italic();
-    }
-  }
-  setfont(font, _size);
+void CanvasWidget::setFont() {
+//  fltk::Font *font = fltk::COURIER;
+//  if (_size && _style) {
+//    if (_style && FONT_STYLE_BOLD) {
+//      font = font->bold();
+//    }
+//    if (_style && FONT_STYLE_ITALIC) {
+//      font = font->italic();
+//    }
+//  }
+//  setfont(font, _size);
 }
 
 //
-// FormWidget
+// DisplayWidget
 //
-FormWidget::FormWidget(int x, int y, int w, int h, int defsize) :
-  Widget(x, y, w, h, 0),
+DisplayWidget::DisplayWidget(int x, int y, int w, int h, int defsize) :
+  Shape(x, y, w, h),
   _ansiWidget(NULL),
   _screen(NULL),
   _resized(false),
@@ -200,62 +201,62 @@ FormWidget::FormWidget(int x, int y, int w, int h, int defsize) :
   widget = this;
 }
 
-FormWidget::~FormWidget() {
+DisplayWidget::~DisplayWidget() {
   delete _ansiWidget;
   delete _screen;
 }
 
-void FormWidget::layout() {
-  if (_screen != NULL && _ansiWidget != NULL &&
-      (layout_damage() & LAYOUT_WH)) {
-    // can't use GSave here in X
-    _resized = true;
-  }
-  Widget::layout();
+void DisplayWidget::layout() {
+//  if (_screen != NULL && _ansiWidget != NULL &&
+//      (layout_damage() & LAYOUT_WH)) {
+//    // can't use GSave here in X
+//    _resized = true;
+//  }
+//  Widget::layout();
 }
 
-void FormWidget::draw() {
-  if (_resized) {
-    // resize the backing screens
-    _screen->resize(w(), h());
-    _ansiWidget->resize(w(), h());
-    _resized = false;
-  }
-
-  if (_screen->_img) {
-    int xScroll, yScroll;
-    _ansiWidget->getScroll(xScroll, yScroll);
-    fltk::Rectangle from = fltk::Rectangle(xScroll, yScroll, w(), h());
-    fltk::Rectangle to = fltk::Rectangle(0, 0, w(), h());
-    drawTarget->_img->draw(from, to);
-    // draw the overlay onto the screen
-    bool isScreen = drawTarget->_isScreen;
-    drawTarget->_isScreen = true;
-    _ansiWidget->drawOverlay(mouseActive);
-    drawTarget->_isScreen = isScreen;
-  } else {
-    setcolor(drawColor);
-    fillrect(fltk::Rectangle(w(), h()));
-  }
+void DisplayWidget::draw(int x, int y) {
+//  if (_resized) {
+//    // resize the backing screens
+//    _screen->resize(w(), h());
+//    _ansiWidget->resize(w(), h());
+//    _resized = false;
+//  }
+//
+//  if (_screen->_img) {
+//    int xScroll, yScroll;
+//    _ansiWidget->getScroll(xScroll, yScroll);
+//    fltk::Rectangle from = fltk::Rectangle(xScroll, yScroll, w(), h());
+//    fltk::Rectangle to = fltk::Rectangle(0, 0, w(), h());
+//    drawTarget->_img->draw(from, to);
+//    // draw the overlay onto the screen
+//    bool isScreen = drawTarget->_isScreen;
+//    drawTarget->_isScreen = true;
+//    _ansiWidget->drawOverlay(mouseActive);
+//    drawTarget->_isScreen = isScreen;
+//  } else {
+//    setcolor(drawColor);
+//    fillrect(fltk::Rectangle(w(), h()));
+//  }
 }
 
-void FormWidget::flush(bool force) {
+void DisplayWidget::flush(bool force) {
   _ansiWidget->flush(force);
 }
 
-void FormWidget::reset() {
+void DisplayWidget::reset() {
   _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _ansiWidget->setFontSize(_defsize);
   _ansiWidget->reset();
 }
 
-int FormWidget::handle(int e) {
-  MAEvent event;
-
+int DisplayWidget::handle(int e) {
+  //  MAEvent event;
+  /*
   switch (e) {
   case SHOW:
     if (!_screen) {
-      _screen = new WidgetCanvas(_defsize);
+      _screen = new CanvasWidget(_defsize);
       _screen->create(w(), h());
       drawTarget = _screen;
     }
@@ -298,80 +299,82 @@ int FormWidget::handle(int e) {
   }
 
   return Widget::handle(e);
+  */
+  return 0;
 }
 
-void FormWidget::buttonClicked(const char *action) {
+void DisplayWidget::buttonClicked(const char *action) {
 }
 
-void FormWidget::clearScreen() {
+void DisplayWidget::clearScreen() {
   _ansiWidget->clearScreen();
 }
 
-void FormWidget::print(const char *str) {
+void DisplayWidget::print(const char *str) {
   _ansiWidget->print(str);
 }
 
-void FormWidget::drawLine(int x1, int y1, int x2, int y2) {
+void DisplayWidget::drawLine(int x1, int y1, int x2, int y2) {
   _ansiWidget->drawLine(x1, y1, x2, y2);
 }
 
-void FormWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
+void DisplayWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   _ansiWidget->drawRectFilled(x1, y1, x2, y2);
 }
 
-void FormWidget::drawRect(int x1, int y1, int x2, int y2) {
+void DisplayWidget::drawRect(int x1, int y1, int x2, int y2) {
   _ansiWidget->drawRect(x1, y1, x2, y2);
 }
 
-void FormWidget::drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h) {
-  _ansiWidget->drawImage((MAHandle) img, x, y, sx, sy, w, h);
-}
+//void DisplayWidget::drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h) {
+//  _ansiWidget->drawImage((MAHandle) img, x, y, sx, sy, w, h);
+//}
 
-void FormWidget::saveImage(const char *fn, int x, int y, int w, int h) {
+void DisplayWidget::saveImage(const char *fn, int x, int y, int w, int h) {
   // TODO
 }
 
-void FormWidget::setTextColor(long fg, long bg) {
+void DisplayWidget::setTextColor(long fg, long bg) {
   _ansiWidget->setTextColor(fg, bg);
 }
 
-void FormWidget::setColor(long color) {
+void DisplayWidget::setColor(long color) {
   _ansiWidget->setColor(color);
 }
 
-int FormWidget::getX() {
+int DisplayWidget::getX() {
   return _ansiWidget->getX();
 }
 
-int FormWidget::getY() {
+int DisplayWidget::getY() {
   return _ansiWidget->getY();
 }
 
-void FormWidget::setPixel(int x, int y, int c) {
+void DisplayWidget::setPixel(int x, int y, int c) {
   _ansiWidget->setPixel(x, y, c);
 }
 
-int FormWidget::getPixel(int x, int y) {
+int DisplayWidget::getPixel(int x, int y) {
   return _ansiWidget->getPixel(x, y);
 }
 
-void FormWidget::setXY(int x, int y) {
+void DisplayWidget::setXY(int x, int y) {
   _ansiWidget->setXY(x, y);
 }
 
-int FormWidget::textHeight(void) {
+int DisplayWidget::textHeight(void) {
   return _ansiWidget->textHeight();
 }
 
-void FormWidget::setFontSize(float i) {
+void DisplayWidget::setFontSize(float i) {
   _ansiWidget->setFontSize(i);
 }
 
-int FormWidget::getFontSize() {
+int DisplayWidget::getFontSize() {
   return _ansiWidget->getFontSize();
 }
 
-int FormWidget::getBackgroundColor() {
+int DisplayWidget::getBackgroundColor() {
   return _ansiWidget->getBackgroundColor();
 }
 
@@ -383,11 +386,11 @@ int maFontDelete(MAHandle maHandle) {
 }
 
 int maSetColor(int c) {
-  int r = (c >> 16) & 0xFF;
-  int g = (c >> 8) & 0xFF;
-  int b = (c) & 0xFF;
-  drawColor = color(r,g,b);
-  drawColorRaw = c;
+  //  int r = (c >> 16) & 0xFF;
+  //int g = (c >> 8) & 0xFF;
+  //int b = (c) & 0xFF;
+  //  drawColor = color(r,g,b);
+  //drawColorRaw = c;
   return drawColor;
 }
 
@@ -422,7 +425,7 @@ void maDrawText(int left, int top, const char *str) {
 }
 
 void maUpdateScreen(void) {
-  widget->redraw();
+  //widget->redraw();
 }
 
 void maResetBacklight(void) {
@@ -432,9 +435,10 @@ MAExtent maGetTextSize(const char *str) {
   MAExtent result;
   if (drawTarget && str && str[0]) {
     drawTarget->setFont();
-    short width = (int)getwidth(str);
-    short height = (int)(getascent() + getdescent());
-    result = (MAExtent)((width << 16) + height);
+    //short width = (int)getwidth(str);
+    //short height = (int)(getascent() + getdescent());
+    //result = (MAExtent)((width << 16) + height);
+    result = 0;
   } else {
     result = 0;
   }
@@ -464,7 +468,7 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
-  WidgetCanvas *canvas = (WidgetCanvas *)maHandle;
+  CanvasWidget *canvas = (CanvasWidget *)maHandle;
   if (!drawTarget->_isScreen && drawTarget != canvas) {
     canvas->drawImageRegion(drawTarget, dstPoint, srcRect);
   }
@@ -472,36 +476,36 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   int result = RES_OK;
-  const fltk::Monitor &monitor = fltk::Monitor::all();
-  if (height > monitor.h() * SIZE_LIMIT) {
-    result -= 1;
-  } else {
-    WidgetCanvas *canvas = (WidgetCanvas *)maHandle;
-    canvas->create(width, height);
-  }
+  //  const fltk::Monitor &monitor = fltk::Monitor::all();
+  //if (height > monitor.h() * SIZE_LIMIT) {
+  //  result -= 1;
+  //} else {
+  //  CanvasWidget *canvas = (CanvasWidget *)maHandle;
+  //  canvas->create(width, height);
+  //}
   return result;
 }
 
 MAHandle maCreatePlaceholder(void) {
-  MAHandle maHandle = (MAHandle) new WidgetCanvas(widget->getDefaultSize());
+  MAHandle maHandle = (MAHandle) new CanvasWidget(widget->getDefaultSize());
   return maHandle;
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {
-  WidgetCanvas *holder = (WidgetCanvas *)maHandle;
+  CanvasWidget *holder = (CanvasWidget *)maHandle;
   delete holder;
 }
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
-  WidgetCanvas *holder = (WidgetCanvas *)maHandle;
-  U32 *dest = (U32 *)dst;
-  int index = 0;
-  for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_img->buffer_height(); y++) {
-    for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_img->buffer_width(); x++) {
-      U32 *pixel = (U32 *)holder->_img->linebuffer(y + srcRect->top);
-      dest[index++] = pixel[x + srcRect->left];
-    }
-  }
+  //CanvasWidget *holder = (CanvasWidget *)maHandle;
+  //U32 *dest = (U32 *)dst;
+  //int index = 0;
+  //  for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_img->buffer_height(); y++) {
+  //  for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_img->buffer_width(); x++) {
+  //    U32 *pixel = (U32 *)holder->_img->linebuffer(y + srcRect->top);
+  //    dest[index++] = pixel[x + srcRect->left];
+  //  }
+  //}
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
@@ -511,11 +515,11 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
     drawTarget = widget->getScreen();
     drawTarget->_isScreen = false;
   } else {
-    drawTarget = (WidgetCanvas *)maHandle;
+    drawTarget = (CanvasWidget *)maHandle;
     drawTarget->_isScreen = false;
   }
-  delete drawTarget->_clip;
-  drawTarget->_clip = NULL;
+  //delete drawTarget->_clip;
+  //drawTarget->_clip = NULL;
   return (MAHandle) drawTarget;
 }
 
@@ -529,6 +533,7 @@ int maShowVirtualKeyboard(void) {
 
 int maGetEvent(MAEvent *event) {
   int result = 0;
+  /*
   if (check()) {
     switch (fltk::event()) {
     case PUSH:
@@ -545,16 +550,17 @@ int maGetEvent(MAEvent *event) {
       break;
     }
   }
+  */
   return result;
 }
 
 void maWait(int timeout) {
-  fltk::wait(timeout);
+  //fltk::wait(timeout);
 }
 
 void maAlert(const char *title, const char *message, const char *button1,
              const char *button2, const char *button3) {
-  fltk::alert("%s\n\n%s", title, message);
+  //fltk::alert("%s\n\n%s", title, message);
 }
 
 //
@@ -577,7 +583,7 @@ void form_ui::optionsBox(StringList *items) {
   Listener listener;
   List_each(String *, it, *items) {
     char *str = (char *)(* it)->c_str();
-    int w = fltk::getwidth(str) + 20;
+    int w = 0;//fltk::getwidth(str) + 20;
     IFormWidget *item = widget->_ansiWidget->createButton(str, 2, y, w, 22);
     item->setListener(&listener);
     y += 24;
@@ -596,6 +602,6 @@ void form_ui::optionsBox(StringList *items) {
   }
   widget->_ansiWidget->print("\033[ SE6");
   widget->_ansiWidget->optionSelected(index);
-  widget->redraw();
+  //widget->redraw();
 }
 

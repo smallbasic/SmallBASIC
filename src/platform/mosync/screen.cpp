@@ -295,7 +295,7 @@ void GraphicScreen::clear() {
   Screen::clear();
 }
 
-void GraphicScreen::draw(bool vscroll) {
+void GraphicScreen::drawBase(bool vscroll) {
   MARect srcRect;
   MAPoint2d dstPoint;
   srcRect.left = 0;
@@ -477,7 +477,7 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
   width = newWidth;
   height = newHeight;
   if (!fullscreen) {
-    draw(false);
+    drawBase(false);
   }
 }
 
@@ -674,7 +674,7 @@ void TextScreen::clear() {
 //
 // draw the text
 //
-void TextScreen::draw(bool vscroll) {
+void TextScreen::drawBase(bool vscroll) {
   // prepare escape state variables
   bool bold = false;
   bool italic = false;

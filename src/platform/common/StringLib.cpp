@@ -519,6 +519,18 @@ void Properties::operator=(Properties &p) {
   p.emptyList();
 }
 
+void List::addSet(String *s) {
+  if (s && s->length()) {
+    List_each(String*, it, this) {
+      String *item = (*it);
+      if (item->equals(s->toString())) {
+        return;
+      }
+    }
+    add(new String(*s));
+  }
+}
+
 #ifdef UNIT_TEST
 #include <stdio.h>
 int main(int argc, char **argv) {

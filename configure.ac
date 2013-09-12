@@ -536,6 +536,7 @@ function buildTizen() {
    defaultConditionals
 
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_TIZEN, 1, [Defined for Tizen build.])
    AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
    AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
    AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
