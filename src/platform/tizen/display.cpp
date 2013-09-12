@@ -566,10 +566,6 @@ void maAlert(const char *title, const char *message, const char *button1,
 //
 // Form UI
 //
-AnsiWidget *form_ui::getOutput() { 
-  return widget->_ansiWidget;
-}
-
 struct Listener : IButtonListener {
   void buttonClicked(const char *action) {
     _action = action;

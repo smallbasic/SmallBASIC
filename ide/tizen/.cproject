@@ -52,6 +52,8 @@
 									<listOptionValue builtIn="false" value="&quot;/home/chrisws/tizen-sdk/library&quot;"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/osp"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/ide/tizen/SmallBASIC/SmallBASIC/inc"/>
 								</option>
 								<option id="sbi.gnu.cpp.compiler.option.frameworks.cpp.375244729" name="Tizen-Frameworks" superClass="sbi.gnu.cpp.compiler.option.frameworks.cpp" valueType="userObjs">
 									<listOptionValue builtIn="false" value="osp"/>
@@ -81,17 +83,21 @@
 									<listOptionValue builtIn="false" value="--sysroot=&quot;${SBI_SYSROOT}&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.1099236250" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/ide/tizen/SmallBASIC/SmallBASIC/inc"/>
-									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/src/platform/tizen"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/src"/>
 									<listOptionValue builtIn="false" value="&quot;/home/chrisws/tizen-sdk/library&quot;"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/osp"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/ide/tizen/SmallBASIC/SmallBASIC/inc"/>
 								</option>
 								<option id="sbi.gnu.c.compiler.option.frameworks.cpp.1670116568" name="Tizen-Frameworks" superClass="sbi.gnu.c.compiler.option.frameworks.cpp" valueType="userObjs">
 									<listOptionValue builtIn="false" value="osp"/>
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.2102091427" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="_DEBUG"/>
+									<listOptionValue builtIn="false" value="HAVE_CONFIG_H"/>
 								</option>
 								<inputType id="sbi.gnu.c.compiler.tizen.inputType.263140101" superClass="sbi.gnu.c.compiler.tizen.inputType"/>
 							</tool>
@@ -133,7 +139,12 @@
 									<listOptionValue builtIn="false" value="-lalut"/>
 									<listOptionValue builtIn="false" value="-lopenal"/>
 								</option>
-								<option id="gnu.cpp.link.option.paths.494319397" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths"/>
+								<option id="gnu.cpp.link.option.paths.494319397" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tizen/common}&quot;"/>
+								</option>
+								<option id="gnu.cpp.link.option.libs.919795026" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="sb_common.a"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1753330053" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -141,11 +152,14 @@
 							</tool>
 							<tool command="i386-linux-gnueabi-as" id="org.tizen.nativeapp.tool.sbi.gnu.assembler.base.1410587602" name="Assembler" superClass="org.tizen.nativeapp.tool.sbi.gnu.assembler.base">
 								<option id="gnu.both.asm.option.include.paths.955686653" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/ide/tizen/SmallBASIC/SmallBASIC/inc"/>
-									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/src/platform/tizen"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/src"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/library"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include"/>
 									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/osp"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/tizen-sdk/platforms/tizen2.2/rootstraps/tizen-emulator-2.2.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="/home/chrisws/src/SmallBASIC/ide/tizen/SmallBASIC/SmallBASIC/inc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.134564169" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -154,7 +168,9 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="common"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tizen"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="mosync"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -286,7 +302,8 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="common"/>
+						<entry excluding="common" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -432,7 +449,8 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="common"/>
+						<entry excluding="common" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

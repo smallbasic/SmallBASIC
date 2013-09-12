@@ -191,11 +191,6 @@ struct List {
     add(new String(s, strlen(s))); 
   }
 
-  /**
-   * String specialisation - Appends unique strings
-   */
-  void addSet(String *s);
-
   void sort(int(*compareFunc)(const void *p1, const void *p2)) {
     if (_size > 1) {
       qsort(_head, _count, sizeof(TP), compareFunc);

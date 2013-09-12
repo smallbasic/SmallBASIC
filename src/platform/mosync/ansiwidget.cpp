@@ -58,7 +58,7 @@
 char *options = NULL;
 FormList *clickedList = NULL;
 
-#if !defined(_FLTK)
+#if !defined(_FLTK) && !defined(_TIZEN)
 void form_ui::optionsBox(StringList *items) {
   if (items->size()) {
     // calculate the size of the options buffer
@@ -304,7 +304,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   for (int i = 0; i < MAX_SCREENS; i++) {
     _screens[i] = NULL;
   }
-  _fontSize = min(width, height) / FONT_FACTOR;
+  _fontSize = MIN(width, height) / FONT_FACTOR;
   trace("width: %d height: %d fontSize:%d", _width, height, _fontSize);
 }
 
@@ -971,10 +971,10 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     n = 0;
   }
 
-  x = min(max(x, 0), 100);
-  y = min(max(y, 0), 100);
-  w = min(max(w, 0), 100);
-  h = min(max(h, 0), 100);
+  x = MIN(MAX(x, 0), 100);
+  y = MIN(MAX(y, 0), 100);
+  w = MIN(MAX(w, 0), 100);
+  h = MIN(MAX(h, 0), 100);
 
   result = _screens[n];
 

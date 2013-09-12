@@ -9,11 +9,11 @@
 #ifndef SB_UI_UTILS_H
 #define SB_UI_UTILS_H
 
-#ifndef max
-#define max(a,b) ((a<b) ? (b) : (a))
+#ifndef MAX
+ #define MAX(a,b) ((a<b) ? (b) : (a))
 #endif
-#ifndef min
-#define min(a,b) ((a>b) ? (b) : (a))
+#ifndef MIN
+ #define MIN(a,b) ((a>b) ? (b) : (a))
 #endif
 
 #if defined(_FLTK) || defined (_TIZEN)
@@ -40,6 +40,7 @@
  #elif defined(_FLTK)
   extern "C" void trace(const char *format, ...);
  #elif defined (_TIZEN)
+  #include <FBaseLog.h>
   #define trace AppLog
  #endif
 #else

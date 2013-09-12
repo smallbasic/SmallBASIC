@@ -6,10 +6,12 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
+
 #include "platform/common/maapi.h"
 #include "platform/common/utils.h"
-#include "platform/mosync/form_ui.h"
 #include "platform/tizen/controller.h"
+#include "platform/mosync/form_ui.h"
 
 Controller *controller;
 
@@ -78,26 +80,6 @@ void form_ui::buttonClicked(const char *url) {
 
 AnsiWidget *form_ui::getOutput() {
   return controller->_output;
-}
-
-// workaround for android/mosync bug where outer spaces are not counted
-int get_text_width(char *s) {
-  int result = 0;
-  if (s && s[0]) {
-    int e = strlen(s) - 1;
-    char c1 = s[0];
-    char c2 = s[e];
-    if (c1 == ' ') {
-      s[0] = '_';
-    }
-    if (c2 == ' ') {
-      s[e] = '_';
-    }
-    result = EXTENT_X(maGetTextSize(s));
-    s[0] = c1;
-    s[e] = c2;
-  }
-  return result;
 }
 
 // set the current working directory to the given path
