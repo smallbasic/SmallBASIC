@@ -6,14 +6,19 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
 
-#ifndef MOSYNC_WIDGET
-#define MOSYNC_WIDGET
+#ifndef TIZEN_DISPLAY
+#define TIZEN_DISPLAY
+
+#include <FApp.h>
+#include <FUi.h>
+#include <FSystem.h>
+#include <FBase.h>
 
 #include "platform/common/maapi.h"
-#include "platform/mosync/screen.h"
-#include "platform/mosync/interface.h"
+#include "platform/tizen/runtime.h"
 
-struct AnsiWidget;
+using namespace Tizen::Ui;
+using namespace Tizen::Graphics;
 
 struct CanvasWidget {
   CanvasWidget(int size);
@@ -39,46 +44,16 @@ struct CanvasWidget {
   bool _isScreen;
 };
 
-class DisplayWidget : 
-  public Shape, 
-  public IButtonListener {
-public:
-  DisplayWidget(int x, int y, int w, int h, int defsize);
+struct DisplayWidget : public Control {
+  DisplayWidget();
   virtual ~DisplayWidget();
 
-  void clearScreen();
-  void draw(int x, int y);
-  void print(const char *str);
-  void drawLine(int x1, int y1, int x2, int y2);
-  void drawRectFilled(int x1, int y1, int x2, int y2);
-  void drawRect(int x1, int y1, int x2, int y2);
-  //  void drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h);
-  void saveImage(const char *fn, int x, int y, int w, int h);
-  void setTextColor(long fg, long bg);
-  void setColor(long color);
-  int  getX();
-  int  getY();
-  void setPixel(int x, int y, int c);
-  int  getPixel(int x, int y);
-  void setXY(int x, int y);
-  int  textHeight(void);
-  void setFontSize(float i);
-  int  getFontSize();
-  int  getBackgroundColor();
-  void flush(bool force);
-  void reset();
-
+  result Construct(void);
   CanvasWidget *getScreen() { return _screen; }
   int getDefaultSize() { return _defsize; }
-  AnsiWidget *_ansiWidget;
 
 private:
-  // inherited methods
-
-  void layout();
-  int handle(int e);
-
-  void buttonClicked(const char *action);
+  result OnDraw();
   CanvasWidget *_screen;
   bool _resized;
   int _defsize;

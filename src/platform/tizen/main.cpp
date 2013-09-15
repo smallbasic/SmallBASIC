@@ -25,7 +25,7 @@ extern "C" _EXPORT_ int OspMain(int argc, char *pArgv[]) {
 	ArrayList args(SingleObjectDeleter);
 	args.Construct();
 	for (int i = 0; i < argc; i++) {
-		args.Add(new (std::nothrow) String(pArgv[i]));
+		args.Add(new (std::nothrow) Tizen::Base::String(pArgv[i]));
 	}
 
 	r = Tizen::App::UiApp::Execute(TizenApp::createInstance, &args);

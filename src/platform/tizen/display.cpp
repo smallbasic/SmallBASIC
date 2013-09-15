@@ -7,9 +7,9 @@
 //
 
 #include <time.h>
+
 #include "platform/tizen/display.h"
-#include "platform/mosync/ansiwidget.h"
-#include "platform/mosync/form_ui.h"
+#include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
 
@@ -190,32 +190,26 @@ void CanvasWidget::setFont() {
 //
 // DisplayWidget
 //
-DisplayWidget::DisplayWidget(int x, int y, int w, int h, int defsize) :
-  Shape(x, y, w, h),
-  _ansiWidget(NULL),
+DisplayWidget::DisplayWidget() :
+  Control(),
   _screen(NULL),
-  _resized(false),
-  _defsize(defsize) {
+  _resized(false) {
+}
+
+result DisplayWidget::Construct(void) {
+  Construct();
   drawColorRaw = DEFAULT_BACKGROUND;
   drawColor = maSetColor(drawColorRaw);
   widget = this;
+  return E_SUCCESS;
 }
 
-DisplayWidget::~DisplayWidget() {
-  delete _ansiWidget;
-  delete _screen;
-}
+result DisplayWidget::OnDraw() {
+  Canvas *canvas = GetCanvasN();
+  if (canvas) {
+    Rectangle rect = GetBounds();
+    //    canvas->Copy(Point(rect.x, rect.y), *_canvas, rect);
 
-void DisplayWidget::layout() {
-//  if (_screen != NULL && _ansiWidget != NULL &&
-//      (layout_damage() & LAYOUT_WH)) {
-//    // can't use GSave here in X
-//    _resized = true;
-//  }
-//  Widget::layout();
-}
-
-void DisplayWidget::draw(int x, int y) {
 //  if (_resized) {
 //    // resize the backing screens
 //    _screen->resize(w(), h());
@@ -238,144 +232,11 @@ void DisplayWidget::draw(int x, int y) {
 //    setcolor(drawColor);
 //    fillrect(fltk::Rectangle(w(), h()));
 //  }
-}
 
-void DisplayWidget::flush(bool force) {
-  _ansiWidget->flush(force);
-}
-
-void DisplayWidget::reset() {
-  _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  _ansiWidget->setFontSize(_defsize);
-  _ansiWidget->reset();
-}
-
-int DisplayWidget::handle(int e) {
-  //  MAEvent event;
-  /*
-  switch (e) {
-  case SHOW:
-    if (!_screen) {
-      _screen = new CanvasWidget(_defsize);
-      _screen->create(w(), h());
-      drawTarget = _screen;
-    }
-    if (!_ansiWidget) {
-      _ansiWidget = new AnsiWidget(this, w(), h());
-      _ansiWidget->construct();
-      _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-      _ansiWidget->setFontSize(_defsize);
-    }
-    break;
-
-  case FOCUS:
-    return 1;
-
-  case PUSH:
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    mouseActive = _ansiWidget->pointerTouchEvent(event);
-    return mouseActive;
-
-  case DRAG:
-  case MOVE:
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    if (mouseActive && _ansiWidget->pointerMoveEvent(event)) {
-      Widget::cursor(fltk::CURSOR_HAND);
-      return 1;
-    }
-    break;
-
-  case RELEASE:
-    if (mouseActive) {
-      mouseActive = false;
-      Widget::cursor(fltk::CURSOR_DEFAULT);
-      event.point.x = fltk::event_x();
-      event.point.y = fltk::event_y();
-      _ansiWidget->pointerReleaseEvent(event);
-    }
-    break;
+    delete canvas;
   }
 
-  return Widget::handle(e);
-  */
-  return 0;
-}
-
-void DisplayWidget::buttonClicked(const char *action) {
-}
-
-void DisplayWidget::clearScreen() {
-  _ansiWidget->clearScreen();
-}
-
-void DisplayWidget::print(const char *str) {
-  _ansiWidget->print(str);
-}
-
-void DisplayWidget::drawLine(int x1, int y1, int x2, int y2) {
-  _ansiWidget->drawLine(x1, y1, x2, y2);
-}
-
-void DisplayWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
-  _ansiWidget->drawRectFilled(x1, y1, x2, y2);
-}
-
-void DisplayWidget::drawRect(int x1, int y1, int x2, int y2) {
-  _ansiWidget->drawRect(x1, y1, x2, y2);
-}
-
-//void DisplayWidget::drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h) {
-//  _ansiWidget->drawImage((MAHandle) img, x, y, sx, sy, w, h);
-//}
-
-void DisplayWidget::saveImage(const char *fn, int x, int y, int w, int h) {
-  // TODO
-}
-
-void DisplayWidget::setTextColor(long fg, long bg) {
-  _ansiWidget->setTextColor(fg, bg);
-}
-
-void DisplayWidget::setColor(long color) {
-  _ansiWidget->setColor(color);
-}
-
-int DisplayWidget::getX() {
-  return _ansiWidget->getX();
-}
-
-int DisplayWidget::getY() {
-  return _ansiWidget->getY();
-}
-
-void DisplayWidget::setPixel(int x, int y, int c) {
-  _ansiWidget->setPixel(x, y, c);
-}
-
-int DisplayWidget::getPixel(int x, int y) {
-  return _ansiWidget->getPixel(x, y);
-}
-
-void DisplayWidget::setXY(int x, int y) {
-  _ansiWidget->setXY(x, y);
-}
-
-int DisplayWidget::textHeight(void) {
-  return _ansiWidget->textHeight();
-}
-
-void DisplayWidget::setFontSize(float i) {
-  _ansiWidget->setFontSize(i);
-}
-
-int DisplayWidget::getFontSize() {
-  return _ansiWidget->getFontSize();
-}
-
-int DisplayWidget::getBackgroundColor() {
-  return _ansiWidget->getBackgroundColor();
+  return E_SUCCESS;
 }
 
 //
@@ -446,8 +307,8 @@ MAExtent maGetTextSize(const char *str) {
 }
 
 MAExtent maGetScrSize(void) {
-  short width = widget->w();
-  short height = widget->h();
+  short width = widget->GetWidth();
+  short height = widget->GetHeight();;
   return (MAExtent)((width << 16) + height);
 }
 
@@ -561,43 +422,5 @@ void maWait(int timeout) {
 void maAlert(const char *title, const char *message, const char *button1,
              const char *button2, const char *button3) {
   //fltk::alert("%s\n\n%s", title, message);
-}
-
-//
-// Form UI
-//
-struct Listener : IButtonListener {
-  void buttonClicked(const char *action) {
-    _action = action;
-  }
-  String _action;
-};
-
-void form_ui::optionsBox(StringList *items) {
-  widget->_ansiWidget->print("\033[ S#6");
-  int y = 0;
-  Listener listener;
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    int w = 0;//fltk::getwidth(str) + 20;
-    IFormWidget *item = widget->_ansiWidget->createButton(str, 2, y, w, 22);
-    item->setListener(&listener);
-    y += 24;
-  }
-  while (form_ui::isRunning() && !listener._action.length()) {
-    form_ui::processEvents();
-  }
-  int index = 0;
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    if (strcmp(str, listener._action.c_str()) == 0) {
-      break;
-    } else {
-      index++;
-    }
-  }
-  widget->_ansiWidget->print("\033[ SE6");
-  widget->_ansiWidget->optionSelected(index);
-  //widget->redraw();
 }
 

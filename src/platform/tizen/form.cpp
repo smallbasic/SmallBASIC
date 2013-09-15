@@ -29,10 +29,7 @@ using namespace Tizen::Ui::Controls;
 // TizenAppForm
 //
 TizenAppForm::TizenAppForm() :
-	_gestureMode(false),
-	_osdMessage(NULL),
 	_execThread(NULL),
-	_eventQueueLock(NULL),
 	_state(kInitState),
 	_buttonState(kLeftButton),
 	_shortcut(kEscapeKey) {
@@ -40,39 +37,26 @@ TizenAppForm::TizenAppForm() :
 
 result TizenAppForm::Construct() {
 	result r = Form::Construct(FORM_STYLE_NORMAL);
-  /*
-    if (!IsFailed(r)) {
-		tizenSystem = new TizenSystem(this);
-		r = tizenSystem != NULL ? E_SUCCESS : E_OUT_OF_MEMORY;
-	}
+
 	if (!IsFailed(r)) {
-		r = tizenSystem->Construct();
-	}
-	if (!IsFailed(r)) {
-		_execThread = new Thread();
+		_execThread = new Runtime();
 		r = _execThread != NULL ? E_SUCCESS : E_OUT_OF_MEMORY;
 	}
 	if (!IsFailed(r)) {
-		r = _execThread->Construct(*this);
+    Rectangle rc = GetClientAreaBounds();
+		r = _execThread->Construct(rc.width, rc.height);
 	}
 	if (!IsFailed(r)) {
-		_eventQueueLock = new Mutex();
-		r = _eventQueueLock != NULL ? E_SUCCESS : E_OUT_OF_MEMORY;
-	}
-	if (!IsFailed(r)) {
-		r = _eventQueueLock->Create();
-	}
-
-	if (!IsFailed(r)) {
-		g_system = tizenSystem;
-	} else {
-		AppLog("Form startup failed");
-		delete tizenSystem;
-		delete _execThread;
-		_execThread = NULL;
-	}
-  */
-	return r;
+    _display = new DisplayWidget();
+    if (_display) {
+      AddControl(_display);
+      SetOrientation(ORIENTATION_AUTOMATIC);
+      AddOrientationEventListener(*this);
+    } else {
+      r = E_OUT_OF_MEMORY;
+    }
+  }
+  return r;
 }
 
 TizenAppForm::~TizenAppForm() {
@@ -90,9 +74,6 @@ TizenAppForm::~TizenAppForm() {
 		_execThread = NULL;
 	}
 
-	delete _eventQueueLock;
-	_eventQueueLock = NULL;
-
 	logLeaving();
 }
 
@@ -101,9 +82,6 @@ TizenAppForm::~TizenAppForm() {
 //
 void TizenAppForm::terminate() {
 	if (_state == kActiveState) {
-		_eventQueueLock->Acquire();
-		_eventQueueLock->Release();
-
 		// block while thread ends
 		AppLog("waiting for shutdown");
 		for (int i = 0; i < EXIT_SLEEP_STEP && _state == kClosingState; i++) {
@@ -144,28 +122,12 @@ result TizenAppForm::OnInitializing(void) {
 	return E_SUCCESS;
 }
 
-result TizenAppForm::OnDraw(void) {
-	logEntered();
-	return E_SUCCESS;
-}
-
 void TizenAppForm::OnOrientationChanged(const Control &source, OrientationStatus orientationStatus) {
 	logEntered();
 	if (_state == kInitState) {
 		_state = kActiveState;
 		_execThread->Start();
 	}
-}
-
-Tizen::Base::Object *TizenAppForm::Run() {
-	logEntered();
-
-	//scummvm_main(0, 0);
-	if (_state == kActiveState) {
-		//Tizen::App::Application::GetInstance()->SendUserEvent(USER_MESSAGE_EXIT, NULL);
-	}
-	_state = kDoneState;
-	return NULL;
 }
 
 /*
@@ -259,69 +221,7 @@ void TizenAppForm::setButtonShortcut() {
 	}
 }
 
-void TizenAppForm::setMessage(const char *message) {
-	if (_eventQueueLock) {
-		_eventQueueLock->Acquire();
-		_osdMessage = message;
-		_eventQueueLock->Release();
-	}
-}
 
-void TizenAppForm::setShortcut() {
-	logEntered();
-	// cycle to the next shortcut
-	switch (_shortcut) {
-	case kControlMouse:
-		setMessage(_s("Escape Key"));
-		_shortcut = kEscapeKey;
-		break;
-
-	case kEscapeKey:
-		setMessage(_s("Game Menu"));
-		_shortcut = kGameMenu;
-		break;
-
-	case kGameMenu:
-		setMessage(_s("Show Keypad"));
-		_shortcut = kShowKeypad;
-		break;
-
-	case kShowKeypad:
-		setMessage(_s("Control Mouse"));
-		_shortcut = kControlMouse;
-		break;
-	}
-}
-
-void TizenAppForm::invokeShortcut() {
-	logEntered();
-	switch (_shortcut) {
-	case kControlMouse:
-		setButtonShortcut();
-		break;
-		
-	case kEscapeKey:
-		pushKey(Common::KEYCODE_ESCAPE);
-		break;
-		
-	case kGameMenu:
-		_buttonState = kLeftButton;
-		pushKey(Common::KEYCODE_F5);
-		break;
-		
-	case kShowKeypad:
-		showKeypad();
-		break;
-	}
-}
-
-void TizenAppForm::showKeypad() {
-	// display the soft keyboard
-	if (_state == kActiveState) {
-		_buttonState = kLeftButton;
-		pushKey(Common::KEYCODE_F7);
-	}
-}
 */
 int TizenAppForm::getTouchCount() {
 	Tizen::Ui::TouchEventManager *touch = Tizen::Ui::TouchEventManager::GetInstance();
@@ -358,15 +258,14 @@ void TizenAppForm::OnTouchLongPressed(const Control &source,
 
 void TizenAppForm::OnTouchMoved(const Control &source,
 		const Point &currentPosition, const TouchEventInfo &touchInfo) {
-	if (!_gestureMode) {
+
 	  //pushEvent(Common::EVENT_MOUSEMOVE, currentPosition);
-	}
+
 }
 
 void TizenAppForm::OnTouchPressed(const Control &source,
 		const Point &currentPosition, const TouchEventInfo &touchInfo) {
 	if (getTouchCount() > 1) {
-		_gestureMode = true;
 	} else if (_buttonState != kMoveOnly) {
 		//pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONDOWN : Common::EVENT_RBUTTONDOWN,
     //							currentPosition);
@@ -374,19 +273,18 @@ void TizenAppForm::OnTouchPressed(const Control &source,
 }
 
 void TizenAppForm::OnTouchReleased(const Control &source,
-		const Point &currentPosition, const TouchEventInfo &touchInfo) {
-	if (_gestureMode) {
-		int touchCount = getTouchCount();
-		if (touchCount == 1) {
-			setShortcut();
-		} else {
-			if (touchCount == 2) {
-				invokeShortcut();
-			}
-			_gestureMode = false;
-		}
-	} else if (_buttonState != kMoveOnly) {
-		//pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONUP : Common::EVENT_RBUTTONUP,
+                                   const Point &currentPosition, 
+                                   const TouchEventInfo &touchInfo) {
+  int touchCount = getTouchCount();
+  if (touchCount == 1) {
+    //setShortcut();
+  } else {
+    if (touchCount == 2) {
+      //invokeShortcut();
+    }
+  }
+  if (_buttonState != kMoveOnly) {
+    //pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONUP : Common::EVENT_RBUTTONUP,
 		//					currentPosition);
 		if (_buttonState == kRightButtonOnce) {
 			_buttonState = kLeftButton;
@@ -401,13 +299,13 @@ void TizenAppForm::OnTouchReleased(const Control &source,
 void TizenAppForm::OnFormBackRequested(Form &source) {
 	logEntered();
 	if (_state == kActiveState) {
-		invokeShortcut();
+		//invokeShortcut();
 	}
 }
 
 void TizenAppForm::OnFormMenuRequested(Form &source) {
 	logEntered();
 	if (_state == kActiveState) {
-		setShortcut();
+		//setShortcut();
 	}
 }
