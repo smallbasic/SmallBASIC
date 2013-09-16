@@ -196,8 +196,9 @@ struct TextSeg {
   }
 
   // width of this segment in pixels
-  int width() const { 
-    return get_text_width(_str); 
+  int width() const {
+    MAExtent textSize = maGetTextSize(_str);
+    return EXTENT_X(textSize);
   }
 
   // number of chars in this segment

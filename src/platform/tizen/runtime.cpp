@@ -7,12 +7,10 @@
 //
 
 #include "config.h"
-
 #include "platform/tizen/runtime.h"
 #include "platform/common/maapi.h"
 #include "platform/common/utils.h"
 #include "platform/mosync/form_ui.h"
-
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -24,9 +22,8 @@
 #define ACCESS_WRITE 2
 #define ACCESS_READ  4
 
-// the runtime thread owns the ansiwidget
-// ansiwidget uses maXXX apis which are handled in the main/UI thread
-
+// the runtime thread owns the ansiwidget, it uses 
+// maXXX apis which are handled in the main/UI thread
 AnsiWidget *output;
 
 Runtime::Runtime():
@@ -63,6 +60,7 @@ result Runtime::Construct(int w, int h) {
 
 Tizen::Base::Object *Runtime::Run() {
   bool mainBas = true;
+
   sbasic_main("main.bas?welcome");
 
   while (isExit()) {
@@ -129,62 +127,10 @@ void Runtime::reset() {
 void Runtime::buttonClicked(const char *action) {
 }
 
-//int DisplayWidget::handle(int e) {
-  //  MAEvent event;
-  /*
-  switch (e) {
-  case SHOW:
-    if (!_screen) {
-      _screen = new CanvasWidget(_defsize);
-      _screen->create(w(), h());
-      drawTarget = _screen;
-    }
-    if (!_ansiWidget) {
-      _ansiWidget = new AnsiWidget(this, w(), h());
-      _ansiWidget->construct();
-      _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-      _ansiWidget->setFontSize(_defsize);
-    }
-    break;
-
-  case FOCUS:
-    return 1;
-
-  case PUSH:
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    mouseActive = _ansiWidget->pointerTouchEvent(event);
-    return mouseActive;
-
-  case DRAG:
-  case MOVE:
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    if (mouseActive && _ansiWidget->pointerMoveEvent(event)) {
-      Widget::cursor(fltk::CURSOR_HAND);
-      return 1;
-    }
-    break;
-
-  case RELEASE:
-    if (mouseActive) {
-      mouseActive = false;
-      Widget::cursor(fltk::CURSOR_DEFAULT);
-      event.point.x = fltk::event_x();
-      event.point.y = fltk::event_y();
-      _ansiWidget->pointerReleaseEvent(event);
-    }
-    break;
-  }
-
-  return Widget::handle(e);
-  */
-//  return 0;
-//}
-
 //
 // form_ui implementation
 //
+
 bool form_ui::isRunning() { 
   return isRunning(); 
 }
@@ -201,9 +147,6 @@ void form_ui::buttonClicked(const char *url) {
   //buttonClicked(url); 
 }
 
-//
-// Form UI
-//
 struct Listener : IButtonListener {
   void buttonClicked(const char *action) {
     _action = action;
@@ -244,49 +187,34 @@ AnsiWidget *form_ui::getOutput() {
 }
 
 //
-// runtime helpers
+// event handling
 //
 
-// set the current working directory to the given path
-void set_path(const char *filename) {
-  const char *slash = strrchr(filename, '/');
-  if (!slash) {
-    slash = strrchr(filename, '\\');
-  }
-  if (slash) {
-    int len = slash - filename;
-    if (len > 0) {
-      char path[1024];
-      strncpy(path, filename, len);
-      path[len] = 0;
-      chdir(path);
+int maGetEvent(MAEvent *event) {
+  int result = 0;
+  /*
+  if (check()) {
+    switch (fltk::event()) {
+    case PUSH:
+      event->type = EVENT_TYPE_POINTER_PRESSED;
+      result = 1;
+      break;
+    case DRAG:
+      event->type = EVENT_TYPE_POINTER_DRAGGED;
+      result = 1;
+      break;
+    case RELEASE:
+      event->type = EVENT_TYPE_POINTER_RELEASED;
+      result = 1;
+      break;
     }
   }
+  */
+  return result;
 }
 
-// change the current working directory to the parent level folder
-bool set_parent_path() {
-  bool result = true;
-  char path[FILENAME_MAX + 1];
-  getcwd(path, FILENAME_MAX);
-  if (!path[0] || strcmp(path, "/") == 0) {
-    result = false;
-  } else {
-    int len = strlen(path);
-    if (path[len - 1] == '/') {
-      // eg /sdcard/bas/
-      path[len - 1] = '\0';
-    }
-    const char *slash = strrchr(path, '/');
-    len = slash - path;
-    if (!len) {
-      strcpy(path, "/");
-    } else {
-      path[len] = 0;
-    }
-    chdir(path);
-  }
-  return result;
+void maWait(int timeout) {
+  //fltk::wait(timeout);
 }
 
 //
@@ -324,6 +252,56 @@ int osd_devrestore(void) {
 
 int osd_events(int wait_flag) {
   //return handleEvents(wait_flag);
+  /*
+  switch (wait_flag) {
+  case 1:
+    // wait for an event
+    wnd->_out->flush(true);
+    fltk::wait();
+    break;
+  case 2:
+    // pause
+    fltk::wait(EVT_PAUSE_TIME);
+    break;
+  default:
+    // pump messages without pausing
+    fltk::check();
+  }
+
+  if (wnd->isBreakExec()) {
+    clearOutput();
+    return -2;
+  }
+
+  wnd->_out->flush(false);
+
+  case PUSH:
+    event.point.x = fltk::event_x();
+    event.point.y = fltk::event_y();
+    mouseActive = _ansiWidget->pointerTouchEvent(event);
+    return mouseActive;
+
+  case DRAG:
+  case MOVE:
+    event.point.x = fltk::event_x();
+    event.point.y = fltk::event_y();
+    if (mouseActive && _ansiWidget->pointerMoveEvent(event)) {
+      Widget::cursor(fltk::CURSOR_HAND);
+      return 1;
+    }
+    break;
+
+  case RELEASE:
+    if (mouseActive) {
+      mouseActive = false;
+      Widget::cursor(fltk::CURSOR_DEFAULT);
+      event.point.x = fltk::event_x();
+      event.point.y = fltk::event_y();
+      _ansiWidget->pointerReleaseEvent(event);
+    }
+    break;
+  }
+  */
   return 0;
 }
 
@@ -385,7 +363,8 @@ int osd_textheight(const char *str) {
 }
 
 int osd_textwidth(const char *str) {
-  return get_text_width((char*) str);
+  MAExtent textSize = maGetTextSize(str);
+  return EXTENT_X(textSize);
 }
 
 void osd_write(const char *str) {

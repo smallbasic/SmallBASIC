@@ -6,10 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <FBase.h>
-#include <FApp.h>
-#include <FSystem.h>
-
+#include "config.h"
 #include "platform/tizen/application.h"
 
 using namespace Tizen::Base;

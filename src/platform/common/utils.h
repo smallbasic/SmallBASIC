@@ -9,6 +9,9 @@
 #ifndef SB_UI_UTILS_H
 #define SB_UI_UTILS_H
 
+void set_path(const char *filename);
+bool set_parent_path();
+
 #ifndef MAX
  #define MAX(a,b) ((a<b) ? (b) : (a))
 #endif

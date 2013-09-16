@@ -9,17 +9,9 @@
 #ifndef TIZEN_FORM_H
 #define TIZEN_FORM_H
 
-#include <FApp.h>
-#include <FUi.h>
-#include <FSystem.h>
-#include <FBase.h>
-#include <FUiITouchEventListener.h>
-#include <FUiITextEventListener.h>
-#include <FUiCtrlIFormBackEventListener.h>
-#include <FUiCtrlIFormMenuEventListener.h>
-
 #include "config.h"
 #include "platform/tizen/display.h"
+#include "platform/tizen/runtime.h"
 
 using namespace Tizen::Ui;
 using namespace Tizen::Graphics;
@@ -77,7 +69,7 @@ private:
   int  getTouchCount();
 
   // event handling
-  DisplayWidget *_display;
+  FormViewable *_display;
   Runtime *_execThread;
   enum { kInitState, kActiveState, kClosingState, kDoneState, kErrorState } _state;
   enum { kLeftButton, kRightButtonOnce, kRightButton, kMoveOnly } _buttonState;

@@ -6,9 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <FApp.h>
-#include <FSysSystemTime.h>
-
+#include "config.h"
 #include "platform/tizen/form.h"
 #include "platform/common/utils.h"
 
@@ -47,7 +45,7 @@ result TizenAppForm::Construct() {
 		r = _execThread->Construct(rc.width, rc.height);
 	}
 	if (!IsFailed(r)) {
-    _display = new DisplayWidget();
+    _display = new FormViewable();
     if (_display) {
       AddControl(_display);
       SetOrientation(ORIENTATION_AUTOMATIC);

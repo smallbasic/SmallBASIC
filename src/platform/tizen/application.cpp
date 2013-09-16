@@ -6,6 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
 #include "platform/tizen/form.h"
 #include "platform/tizen/application.h"
 #include "platform/common/utils.h"
@@ -63,8 +64,6 @@ bool TizenApp::OnAppInitializing(AppRegistry &appRegistry) {
 	}
 
 	appFrame->SetCurrentForm(appForm);
-	appForm->GetVisualElement()->SetShowState(false);
-
 	logLeaving();
 
   return (_appForm != NULL);

@@ -6,44 +6,36 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
 #include <time.h>
-
 #include "platform/tizen/display.h"
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
 
-DisplayWidget *widget;
-CanvasWidget *drawTarget;
+FormViewable *widget;
+Drawable *drawTarget;
 bool mouseActive;
 int drawColor;
 int drawColorRaw;
 
-int get_text_width(char *s) {
-  //return fltk::getwidth(s);
-  return 0;
-}
-
 //
 // CanvasWidget
 //
-CanvasWidget::CanvasWidget(int size) :
-  //  _img(NULL),
-  //_clip(NULL),
+Drawable::Drawable(int size) :
+  _img(NULL),
+  _clip(NULL),
   _size(size),
   _style(0),
   _isScreen(false) {
 }
 
-CanvasWidget::~CanvasWidget() {
-  //if (_img) {
-  //  _img->destroy();
-  //}
-  //delete _img;
-  //delete _clip;
+Drawable::~Drawable() {
+  delete _img;
+  delete _clip;
 }
 
-void CanvasWidget::beginDraw() {
+void Drawable::beginDraw() {
   //_img->make_current();
   //setcolor(drawColor);
   //if (_clip) {
@@ -51,7 +43,7 @@ void CanvasWidget::beginDraw() {
   //}
 }
 
-void CanvasWidget::create(int w, int h) {
+void Drawable::create(int w, int h) {
   //_img = new Image(w, h);
 
   //GSave gsave;
@@ -61,7 +53,7 @@ void CanvasWidget::create(int w, int h) {
   //endDraw();
 }
 
-void CanvasWidget::drawImageRegion(CanvasWidget *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
+void Drawable::drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
 //  fltk::Rectangle from = fltk::Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
 //  fltk::Rectangle to = fltk::Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
 //  GSave gsave;
@@ -70,7 +62,7 @@ void CanvasWidget::drawImageRegion(CanvasWidget *dst, const MAPoint2d *dstPoint,
 //  dst->endDraw();
 }
 
-void CanvasWidget::drawLine(int startX, int startY, int endX, int endY) {
+void Drawable::drawLine(int startX, int startY, int endX, int endY) {
 //  if (_isScreen) {
 //    fltk::setcolor(drawColor);
 //    fltk::drawline(startX, startY, endX, endY);
@@ -82,7 +74,7 @@ void CanvasWidget::drawLine(int startX, int startY, int endX, int endY) {
 //  }
 }
 
-void CanvasWidget::drawPixel(int posX, int posY) {
+void Drawable::drawPixel(int posX, int posY) {
 //  if (posX > -1 && posY > -1
 //      && posX < _img->buffer_width()
 //      && posY < _img->buffer_height()) {
@@ -97,7 +89,7 @@ void CanvasWidget::drawPixel(int posX, int posY) {
 //#endif
 }
 
-void CanvasWidget::drawRectFilled(int left, int top, int width, int height) {
+void Drawable::drawRectFilled(int left, int top, int width, int height) {
 //  if (_isScreen) {
 //    fltk::setcolor(drawColor);
 //    fltk::fillrect(left, top, width, height);
@@ -126,7 +118,7 @@ void CanvasWidget::drawRectFilled(int left, int top, int width, int height) {
 //  }
 }
 
-void CanvasWidget::drawText(int left, int top, const char *str) {
+void Drawable::drawText(int left, int top, const char *str) {
 //  setFont();
 //  if (_isScreen) {
 //    fltk::setcolor(drawColor);
@@ -139,13 +131,13 @@ void CanvasWidget::drawText(int left, int top, const char *str) {
 //  }
 }
 
-void CanvasWidget::endDraw() {
+void Drawable::endDraw() {
 //  if (_clip) {
 //    pop_clip();
 //  }
 }
 
-int CanvasWidget::getPixel(int x, int y) {
+int Drawable::getPixel(int x, int y) {
   int result = 0;
 //  if (x > -1 && x < _img->w() &&
 //      y > -1 && y < _img->h()) {
@@ -155,7 +147,7 @@ int CanvasWidget::getPixel(int x, int y) {
   return result;
 }
 
-void CanvasWidget::resize(int w, int h) {
+void Drawable::resize(int w, int h) {
 //  if (_img) {
 //    Image *old = _img;
 //    GSave gsave;
@@ -169,12 +161,12 @@ void CanvasWidget::resize(int w, int h) {
 //  }
 }
 
-void CanvasWidget::setClip(int x, int y, int w, int h) {
+void Drawable::setClip(int x, int y, int w, int h) {
 //  delete _clip;
 //  _clip = new fltk::Rectangle(x, y, w, h);
 }
 
-void CanvasWidget::setFont() {
+void Drawable::setFont() {
 //  fltk::Font *font = fltk::COURIER;
 //  if (_size && _style) {
 //    if (_style && FONT_STYLE_BOLD) {
@@ -190,21 +182,25 @@ void CanvasWidget::setFont() {
 //
 // DisplayWidget
 //
-DisplayWidget::DisplayWidget() :
+FormViewable::FormViewable() :
   Control(),
   _screen(NULL),
-  _resized(false) {
+  _resized(false),
+  _defsize(10) {
 }
 
-result DisplayWidget::Construct(void) {
-  Construct();
+result FormViewable::Construct(void) {
+  _screen = new Drawable(_defsize);
+  _screen->create(GetWidth(), GetHeight());
+  drawTarget = _screen;
   drawColorRaw = DEFAULT_BACKGROUND;
   drawColor = maSetColor(drawColorRaw);
   widget = this;
-  return E_SUCCESS;
+
+  return Construct();
 }
 
-result DisplayWidget::OnDraw() {
+result FormViewable::OnDraw() {
   Canvas *canvas = GetCanvasN();
   if (canvas) {
     Rectangle rect = GetBounds();
@@ -308,7 +304,7 @@ MAExtent maGetTextSize(const char *str) {
 
 MAExtent maGetScrSize(void) {
   short width = widget->GetWidth();
-  short height = widget->GetHeight();;
+  short height = widget->GetHeight();
   return (MAExtent)((width << 16) + height);
 }
 
@@ -329,7 +325,7 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
-  CanvasWidget *canvas = (CanvasWidget *)maHandle;
+  Drawable *canvas = (Drawable *)maHandle;
   if (!drawTarget->_isScreen && drawTarget != canvas) {
     canvas->drawImageRegion(drawTarget, dstPoint, srcRect);
   }
@@ -348,12 +344,12 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
 }
 
 MAHandle maCreatePlaceholder(void) {
-  MAHandle maHandle = (MAHandle) new CanvasWidget(widget->getDefaultSize());
+  MAHandle maHandle = (MAHandle) new Drawable(widget->getDefaultSize());
   return maHandle;
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {
-  CanvasWidget *holder = (CanvasWidget *)maHandle;
+  Drawable *holder = (Drawable *)maHandle;
   delete holder;
 }
 
@@ -376,7 +372,7 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
     drawTarget = widget->getScreen();
     drawTarget->_isScreen = false;
   } else {
-    drawTarget = (CanvasWidget *)maHandle;
+    drawTarget = (Drawable *)maHandle;
     drawTarget->_isScreen = false;
   }
   //delete drawTarget->_clip;
@@ -390,33 +386,6 @@ int maGetMilliSecondCount(void) {
 
 int maShowVirtualKeyboard(void) {
   return 0;
-}
-
-int maGetEvent(MAEvent *event) {
-  int result = 0;
-  /*
-  if (check()) {
-    switch (fltk::event()) {
-    case PUSH:
-      event->type = EVENT_TYPE_POINTER_PRESSED;
-      result = 1;
-      break;
-    case DRAG:
-      event->type = EVENT_TYPE_POINTER_DRAGGED;
-      result = 1;
-      break;
-    case RELEASE:
-      event->type = EVENT_TYPE_POINTER_RELEASED;
-      result = 1;
-      break;
-    }
-  }
-  */
-  return result;
-}
-
-void maWait(int timeout) {
-  //fltk::wait(timeout);
 }
 
 void maAlert(const char *title, const char *message, const char *button1,

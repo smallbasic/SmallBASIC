@@ -229,7 +229,8 @@ bool FormLineInput::edit(int key) {
     if (len < _maxSize - 1) {
       _buffer[len] = key;
       _buffer[++len] = '\0';
-      int textWidth = get_text_width(_buffer);
+      MAExtent textSize = maGetTextSize(_buffer);
+      int textWidth = EXTENT_X(textSize);
       if (textWidth > width) {
         if (textWidth > getScreen()->width) {
           _scroll++;
