@@ -15,6 +15,8 @@
 #include <FBase.h>
 #include <FUiContainer.h>
 
+#define B Tizen::Graphics::FONT_STYLE_BOLD
+
 #include "platform/common/maapi.h"
 
 using namespace Tizen::Ui;
@@ -24,8 +26,7 @@ struct Drawable {
   Drawable(int size);
   ~Drawable();
 
-  void beginDraw();
-  void create(int w, int h);
+  bool create(int w, int h);
   void drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);
   void drawPixel(int posX, int posY);
@@ -35,10 +36,11 @@ struct Drawable {
   int  getPixel(int x, int y);
   void resize(int w, int h);
   void setClip(int x, int y, int w, int h);
-  void setFont();
+  Font *setFont();
 
-  Canvas *_img;
+  Canvas *_canvas;
   Rectangle *_clip;
+  Font *_font;
   int _size;
   int _style;
   bool _isScreen;

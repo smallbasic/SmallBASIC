@@ -12,45 +12,42 @@
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
+#define TIZEN_FONT_STYLE_BOLD 0x0002
+#define TIZEN_FONT_STYLE_ITALIC 0x0004
 
 FormViewable *widget;
 Drawable *drawTarget;
 bool mouseActive;
-int drawColor;
+Color drawColor;
 int drawColorRaw;
 
 //
 // CanvasWidget
 //
 Drawable::Drawable(int size) :
-  _img(NULL),
+  _canvas(NULL),
   _clip(NULL),
+  _font(NULL),
   _size(size),
   _style(0),
   _isScreen(false) {
 }
 
 Drawable::~Drawable() {
-  delete _img;
+  delete _canvas;
   delete _clip;
+  delete _font;
 }
 
-void Drawable::beginDraw() {
-  //_img->make_current();
-  //setcolor(drawColor);
-  //if (_clip) {
-  //  push_clip(*_clip);
-  //}
-}
-
-void Drawable::create(int w, int h) {
-  //_img = new Image(w, h);
-
-  //GSave gsave;
-  //beginDraw();
-  //setcolor(drawColor);
-  //fillrect(0, 0, _img->w(), _img->h());
-  //endDraw();
+bool Drawable::create(int w, int h) {
+  Rectangle rect = Rectangle(0, 0, w, h);
+  bool result = false;
+  _canvas = new Canvas();
+  if (_canvas && E_SUCCESS == _canvas->Construct(rect)) {
+    _canvas->FillRectangle(drawColor, rect);
+    result = true;
+  }
+  return result;
 }
 
 void Drawable::drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
@@ -58,7 +55,7 @@ void Drawable::drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const M
 //  fltk::Rectangle to = fltk::Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
 //  GSave gsave;
 //  dst->beginDraw();
-//  _img->draw(from, to);
+//  _canvas->draw(from, to);
 //  dst->endDraw();
 }
 
@@ -76,9 +73,9 @@ void Drawable::drawLine(int startX, int startY, int endX, int endY) {
 
 void Drawable::drawPixel(int posX, int posY) {
 //  if (posX > -1 && posY > -1
-//      && posX < _img->buffer_width()
-//      && posY < _img->buffer_height()) {
-//    U32 *row = (U32 *)_img->linebuffer(posY);
+//      && posX < _canvas->buffer_width()
+//      && posY < _canvas->buffer_height()) {
+//    U32 *row = (U32 *)_canvas->linebuffer(posY);
 //    row[posX] = drawColorRaw;
 //  }
 //#if !defined(_Win32)
@@ -95,12 +92,12 @@ void Drawable::drawRectFilled(int left, int top, int width, int height) {
 //    fltk::fillrect(left, top, width, height);
 //  } else {
 //#if defined(_Win32)
-//    int w = _img->buffer_width();
-//    int h = _img->buffer_height();
+//    int w = _canvas->buffer_width();
+//    int h = _canvas->buffer_height();
 //    for (int y = 0; y < height; y++) {
 //      int yPos = y + top;
 //      if (yPos > -1 && yPos < h) {
-//        U32 *row = (U32 *)_img->linebuffer(yPos);
+//        U32 *row = (U32 *)_canvas->linebuffer(yPos);
 //        for (int x = 0; x < width; x++) {
 //          int xPos = x + left;
 //          if (xPos > -1 && xPos < w) {
@@ -139,20 +136,20 @@ void Drawable::endDraw() {
 
 int Drawable::getPixel(int x, int y) {
   int result = 0;
-//  if (x > -1 && x < _img->w() &&
-//      y > -1 && y < _img->h()) {
-//    U32 *pixel = (U32 *)_img->linebuffer(y);
+//  if (x > -1 && x < _canvas->w() &&
+//      y > -1 && y < _canvas->h()) {
+//    U32 *pixel = (U32 *)_canvas->linebuffer(y);
 //    result = pixel[x];
 //  }
   return result;
 }
 
 void Drawable::resize(int w, int h) {
-//  if (_img) {
-//    Image *old = _img;
+//  if (_canvas) {
+//    Image *old = _canvas;
 //    GSave gsave;
-//    _img = new Image(w, h);
-//    _img->make_current();
+//    _canvas = new Image(w, h);
+//    _canvas->make_current();
 //    setcolor(DEFAULT_BACKGROUND);
 //    fillrect(0, 0, w, h);
 //    old->draw(fltk::Rectangle(old->w(), old->h()));
@@ -162,21 +159,16 @@ void Drawable::resize(int w, int h) {
 }
 
 void Drawable::setClip(int x, int y, int w, int h) {
-//  delete _clip;
-//  _clip = new fltk::Rectangle(x, y, w, h);
+  delete _clip;
+  _clip = new Rectangle(x, y, w, h);
 }
 
-void Drawable::setFont() {
-//  fltk::Font *font = fltk::COURIER;
-//  if (_size && _style) {
-//    if (_style && FONT_STYLE_BOLD) {
-//      font = font->bold();
-//    }
-//    if (_style && FONT_STYLE_ITALIC) {
-//      font = font->italic();
-//    }
-//  }
-//  setfont(font, _size);
+Font *Drawable::setFont() {
+  delete _font;
+  _font = new Font();
+  _font->Construct(_style, _size);
+  _canvas->SetFont(*_font);
+  return _font;
 }
 
 //
@@ -190,14 +182,16 @@ FormViewable::FormViewable() :
 }
 
 result FormViewable::Construct(void) {
+  result r = E_FAILURE;
   _screen = new Drawable(_defsize);
-  _screen->create(GetWidth(), GetHeight());
-  drawTarget = _screen;
-  drawColorRaw = DEFAULT_BACKGROUND;
-  drawColor = maSetColor(drawColorRaw);
-  widget = this;
-
-  return Construct();
+  if (_screen && _screen->create(GetWidth(), GetHeight())) {
+    drawTarget = _screen;
+    drawColorRaw = DEFAULT_BACKGROUND;
+    drawColor = Color(maSetColor(drawColorRaw));
+    widget = this;
+    r = Construct();
+  }
+  return r;
 }
 
 result FormViewable::OnDraw() {
@@ -213,12 +207,12 @@ result FormViewable::OnDraw() {
 //    _resized = false;
 //  }
 //
-//  if (_screen->_img) {
+//  if (_screen->_canvas) {
 //    int xScroll, yScroll;
 //    _ansiWidget->getScroll(xScroll, yScroll);
 //    fltk::Rectangle from = fltk::Rectangle(xScroll, yScroll, w(), h());
 //    fltk::Rectangle to = fltk::Rectangle(0, 0, w(), h());
-//    drawTarget->_img->draw(from, to);
+//    drawTarget->_canvas->draw(from, to);
 //    // draw the overlay onto the screen
 //    bool isScreen = drawTarget->_isScreen;
 //    drawTarget->_isScreen = true;
@@ -243,12 +237,12 @@ int maFontDelete(MAHandle maHandle) {
 }
 
 int maSetColor(int c) {
-  //  int r = (c >> 16) & 0xFF;
-  //int g = (c >> 8) & 0xFF;
-  //int b = (c) & 0xFF;
-  //  drawColor = color(r,g,b);
-  //drawColorRaw = c;
-  return drawColor;
+  int r = (c >> 16) & 0xFF;
+  int g = (c >> 8) & 0xFF;
+  int b = (c) & 0xFF;
+  drawColor = Color(r, g, b);
+  drawColorRaw = c;
+  return c;
 }
 
 void maSetClipRect(int left, int top, int width, int height) {
@@ -291,11 +285,9 @@ void maResetBacklight(void) {
 MAExtent maGetTextSize(const char *str) {
   MAExtent result;
   if (drawTarget && str && str[0]) {
-    drawTarget->setFont();
-    //short width = (int)getwidth(str);
-    //short height = (int)(getascent() + getdescent());
-    //result = (MAExtent)((width << 16) + height);
-    result = 0;
+    Dimension dim;
+    drawTarget->setFont()->GetTextExtent(str, strlen(str), dim);
+    result = (MAExtent)((dim.width << 16) + dim.height);
   } else {
     result = 0;
   }
@@ -311,7 +303,17 @@ MAExtent maGetScrSize(void) {
 MAHandle maFontLoadDefault(int type, int style, int size) {
   MAHandle result;
   if (drawTarget) {
-    drawTarget->_style = style;
+    switch (style) {
+    case FONT_STYLE_NORMAL:
+      drawTarget->_style = Tizen::Graphics::FONT_STYLE_PLAIN;
+      break;
+    case FONT_STYLE_BOLD:
+      drawTarget->_style = TIZEN_FONT_STYLE_BOLD;
+      break;
+    case FONT_STYLE_ITALIC:
+      drawTarget->_style = TIZEN_FONT_STYLE_ITALIC;
+      break;
+    }
     result = (MAHandle)drawTarget;
   } else {
     result = (MAHandle)NULL;
@@ -357,9 +359,9 @@ void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int sca
   //CanvasWidget *holder = (CanvasWidget *)maHandle;
   //U32 *dest = (U32 *)dst;
   //int index = 0;
-  //  for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_img->buffer_height(); y++) {
-  //  for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_img->buffer_width(); x++) {
-  //    U32 *pixel = (U32 *)holder->_img->linebuffer(y + srcRect->top);
+  //  for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_canvas->buffer_height(); y++) {
+  //  for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_canvas->buffer_width(); x++) {
+  //    U32 *pixel = (U32 *)holder->_canvas->linebuffer(y + srcRect->top);
   //    dest[index++] = pixel[x + srcRect->left];
   //  }
   //}
