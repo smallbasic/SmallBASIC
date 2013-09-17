@@ -22,7 +22,7 @@ Color drawColor;
 int drawColorRaw;
 
 //
-// CanvasWidget
+// Drawable
 //
 Drawable::Drawable(int size) :
   _canvas(NULL),
@@ -37,6 +37,13 @@ Drawable::~Drawable() {
   delete _canvas;
   delete _clip;
   delete _font;
+}
+
+void Drawable::beginDraw() {
+  _canvas->SetForegroundColor(drawColor);
+  if (_clip) {
+    _canvas->SetClipBounds(*_clip);
+  }
 }
 
 bool Drawable::create(int w, int h) {
@@ -276,7 +283,7 @@ void maDrawText(int left, int top, const char *str) {
 }
 
 void maUpdateScreen(void) {
-  //widget->redraw();
+  widget->RequestRedraw(true);
 }
 
 void maResetBacklight(void) {
@@ -335,13 +342,12 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   int result = RES_OK;
-  //  const fltk::Monitor &monitor = fltk::Monitor::all();
-  //if (height > monitor.h() * SIZE_LIMIT) {
-  //  result -= 1;
-  //} else {
-  //  CanvasWidget *canvas = (CanvasWidget *)maHandle;
-  //  canvas->create(width, height);
-  //}
+  if (height > widget->GetHeight() * SIZE_LIMIT) {
+    result -= 1;
+  } else {
+    Drawable *canvas = (Drawable *)maHandle;
+    canvas->create(width, height);
+  }
   return result;
 }
 
@@ -356,15 +362,27 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 }
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
-  //CanvasWidget *holder = (CanvasWidget *)maHandle;
-  //U32 *dest = (U32 *)dst;
-  //int index = 0;
-  //  for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_canvas->buffer_height(); y++) {
-  //  for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_canvas->buffer_width(); x++) {
-  //    U32 *pixel = (U32 *)holder->_canvas->linebuffer(y + srcRect->top);
-  //    dest[index++] = pixel[x + srcRect->left];
-  //  }
-  //}
+  Drawable *holder = (Drawable *)maHandle;
+
+  BufferInfo bufferInfo;
+  holder->_canvas->Lock(bufferInfo);
+
+  U16 *u16 = (U16 *)bufferInfo.pPixels;
+  U32 *u32 = (U32 *)bufferInfo.pPixels;
+  U32 *dest = (U32 *)dst;
+  int index = 0;
+
+  for (int y = 0; y < srcRect->height && y + srcRect->top < bufferInfo.height; y++) {
+    for (int x = 0; x < srcRect->width && x + srcRect->left < bufferInfo.width; x++) {
+      int offset = (bufferInfo.width * (y + srcRect->top)) + (x + srcRect->left);
+      if (bufferInfo.bitsPerPixel == 16) {
+        dest[index++] = u16[offset];
+      } else {
+        dest[index++] = u32[offset];
+      }
+    }
+  }
+  holder->_canvas->Unlock();
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
@@ -377,8 +395,8 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
     drawTarget = (Drawable *)maHandle;
     drawTarget->_isScreen = false;
   }
-  //delete drawTarget->_clip;
-  //drawTarget->_clip = NULL;
+  delete drawTarget->_clip;
+  drawTarget->_clip = NULL;
   return (MAHandle) drawTarget;
 }
 

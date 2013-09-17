@@ -15,8 +15,6 @@
 #include <FBase.h>
 #include <FUiContainer.h>
 
-#define B Tizen::Graphics::FONT_STYLE_BOLD
-
 #include "platform/common/maapi.h"
 
 using namespace Tizen::Ui;
@@ -26,6 +24,7 @@ struct Drawable {
   Drawable(int size);
   ~Drawable();
 
+  void beginDraw();
   bool create(int w, int h);
   void drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);

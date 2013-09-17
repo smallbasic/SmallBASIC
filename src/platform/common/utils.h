@@ -12,6 +12,12 @@
 void set_path(const char *filename);
 bool set_parent_path();
 
+typedef unsigned char  U8;
+typedef unsigned short U16;
+typedef signed short   S16;
+typedef unsigned long  U32;
+typedef signed long    S32;
+
 #ifndef MAX
  #define MAX(a,b) ((a<b) ? (b) : (a))
 #endif
