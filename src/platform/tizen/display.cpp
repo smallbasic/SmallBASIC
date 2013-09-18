@@ -48,121 +48,86 @@ void Drawable::beginDraw() {
 
 bool Drawable::create(int w, int h) {
   Rectangle rect = Rectangle(0, 0, w, h);
-  bool result = false;
   _canvas = new Canvas();
-  if (_canvas && E_SUCCESS == _canvas->Construct(rect)) {
-    _canvas->FillRectangle(drawColor, rect);
-    result = true;
-  }
-  return result;
+  return (_canvas && E_SUCCESS == _canvas->Construct(rect)
+          && (E_SUCCESS == _canvas->FillRectangle(drawColor, rect)));
 }
 
 void Drawable::drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
-//  fltk::Rectangle from = fltk::Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
-//  fltk::Rectangle to = fltk::Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
-//  GSave gsave;
-//  dst->beginDraw();
-//  _canvas->draw(from, to);
-//  dst->endDraw();
+  const Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
+  const Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
+  dst->beginDraw();
+  if (E_SUCCESS != dst->_canvas->Copy(to, *_canvas, from)) {
+    AppLog("Canvas copy error");
+  }
+  dst->endDraw();
 }
 
 void Drawable::drawLine(int startX, int startY, int endX, int endY) {
-//  if (_isScreen) {
-//    fltk::setcolor(drawColor);
-//    fltk::drawline(startX, startY, endX, endY);
-//  } else {
-//    GSave gsave;
-//    beginDraw();
-//    fltk::drawline(startX, startY, endX, endY);
-//    endDraw();
-//  }
+  if (_isScreen) {
+    // TODO
+  } else {
+    beginDraw();
+    if (E_SUCCESS != _canvas->DrawLine(Point(startX, startY), Point(endX, endY))) {
+      AppLog("drawLine error");
+    }
+    endDraw();
+  }
 }
 
 void Drawable::drawPixel(int posX, int posY) {
-//  if (posX > -1 && posY > -1
-//      && posX < _canvas->buffer_width()
-//      && posY < _canvas->buffer_height()) {
-//    U32 *row = (U32 *)_canvas->linebuffer(posY);
-//    row[posX] = drawColorRaw;
-//  }
-//#if !defined(_Win32)
-//  GSave gsave;
-//  beginDraw();
-//  drawpoint(posX, posY);
-//  endDraw();
-//#endif
+  beginDraw();
+  _canvas->SetPixel(Point(posX, posY));
+  endDraw();
 }
 
 void Drawable::drawRectFilled(int left, int top, int width, int height) {
-//  if (_isScreen) {
-//    fltk::setcolor(drawColor);
-//    fltk::fillrect(left, top, width, height);
-//  } else {
-//#if defined(_Win32)
-//    int w = _canvas->buffer_width();
-//    int h = _canvas->buffer_height();
-//    for (int y = 0; y < height; y++) {
-//      int yPos = y + top;
-//      if (yPos > -1 && yPos < h) {
-//        U32 *row = (U32 *)_canvas->linebuffer(yPos);
-//        for (int x = 0; x < width; x++) {
-//          int xPos = x + left;
-//          if (xPos > -1 && xPos < w) {
-//            row[xPos] = drawColorRaw;
-//          }
-//        }
-//      }
-//    }
-//#else
-//    GSave gsave;
-//    beginDraw();
-//    fltk::fillrect(left, top, width, height);
-//    endDraw();
-//#endif
-//  }
+  if (_isScreen) {
+    // TODO
+  } else {
+    beginDraw();
+    _canvas->FillRectangle(drawColor, Rectangle(left, top, width, height));
+    endDraw();
+  }
 }
 
 void Drawable::drawText(int left, int top, const char *str) {
-//  setFont();
-//  if (_isScreen) {
-//    fltk::setcolor(drawColor);
-//    fltk::drawtext(str, left, top + (int)getascent());
-//  } else {
-//    GSave gsave;
-//    beginDraw();
-//    fltk::drawtext(str, left, top + (int)getascent());
-//    endDraw();
-//  }
+  setFont();
+  if (_isScreen) {
+    // TODO
+  } else {
+    beginDraw();
+    if (E_SUCCESS != _canvas->DrawText(Point(left, top), Tizen::Base::String(str))) {
+      AppLog("drawText error");
+    }
+    endDraw();
+  }
 }
 
 void Drawable::endDraw() {
-//  if (_clip) {
-//    pop_clip();
-//  }
+  if (_clip) {
+    _canvas->SetClipBounds(widget->GetBounds());
+  }
 }
 
 int Drawable::getPixel(int x, int y) {
   int result = 0;
-//  if (x > -1 && x < _canvas->w() &&
-//      y > -1 && y < _canvas->h()) {
-//    U32 *pixel = (U32 *)_canvas->linebuffer(y);
-//    result = pixel[x];
-//  }
+  Color color;
+  if (E_SUCCESS == _canvas->GetPixel(Point(x, y), color)) {
+    result = color.GetRGB32();
+  } else {
+    AppLog("getPixel error");
+  }
   return result;
 }
 
 void Drawable::resize(int w, int h) {
-//  if (_canvas) {
-//    Image *old = _canvas;
-//    GSave gsave;
-//    _canvas = new Image(w, h);
-//    _canvas->make_current();
-//    setcolor(DEFAULT_BACKGROUND);
-//    fillrect(0, 0, w, h);
-//    old->draw(fltk::Rectangle(old->w(), old->h()));
-//    old->destroy();
-//    delete old;
-//  }
+  if (_canvas) {
+    Canvas *old = _canvas;
+    create(w, h);
+    _canvas->Copy(_canvas->GetBounds(), *old, old->GetBounds());
+    delete old;
+  }
 }
 
 void Drawable::setClip(int x, int y, int w, int h) {
@@ -205,18 +170,11 @@ result FormViewable::OnDraw() {
   Canvas *canvas = GetCanvasN();
   if (canvas) {
     Rectangle rect = GetBounds();
+
+  if (_screen->_canvas) {
+//    int xScroll, yScroll;
     //    canvas->Copy(Point(rect.x, rect.y), *_canvas, rect);
 
-//  if (_resized) {
-//    // resize the backing screens
-//    _screen->resize(w(), h());
-//    _ansiWidget->resize(w(), h());
-//    _resized = false;
-//  }
-//
-//  if (_screen->_canvas) {
-//    int xScroll, yScroll;
-//    _ansiWidget->getScroll(xScroll, yScroll);
 //    fltk::Rectangle from = fltk::Rectangle(xScroll, yScroll, w(), h());
 //    fltk::Rectangle to = fltk::Rectangle(0, 0, w(), h());
 //    drawTarget->_canvas->draw(from, to);
@@ -225,10 +183,10 @@ result FormViewable::OnDraw() {
 //    drawTarget->_isScreen = true;
 //    _ansiWidget->drawOverlay(mouseActive);
 //    drawTarget->_isScreen = isScreen;
-//  } else {
+  } else {
 //    setcolor(drawColor);
 //    fillrect(fltk::Rectangle(w(), h()));
-//  }
+  }
 
     delete canvas;
   }
