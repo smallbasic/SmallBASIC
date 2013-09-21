@@ -22,20 +22,39 @@
 #define ACCESS_WRITE 2
 #define ACCESS_READ  4
 
-// the runtime thread owns the ansiwidget, it uses 
+// the runtime thread owns the ansiwidget, it uses
 // maXXX apis which are handled in the main/UI thread
 AnsiWidget *output;
 
-Runtime::Runtime():
+Runtime::Runtime(int w, int h) :
+  _runMode(init_state),
+  _state(kInitState),
+  _w(w),
+  _h(h),
+  _programSrc(NULL),
   _eventQueueLock(NULL) {
 }
 
 Runtime::~Runtime() {
-  delete output;
-	delete _eventQueueLock;
+  delete _eventQueueLock;
 }
 
-result Runtime::Construct(int w, int h) {
+result Runtime::Construct() {
+  _eventQueueLock = new Mutex();
+  return (_eventQueueLock != null && _eventQueueLock->Create() == E_SUCCESS);
+}
+
+void Runtime::exitSystem() {
+  _eventQueueLock->Acquire();
+  _state = kClosingState;
+  // TODO: add exit message
+  _eventQueueLock->Release();
+}
+
+Tizen::Base::Object *Runtime::Run() {
+  logEntered();
+
+  _state = kActiveState;
   opt_ide = IDE_NONE;
   opt_graphics = true;
   opt_pref_bpp = 0;
@@ -46,23 +65,13 @@ result Runtime::Construct(int w, int h) {
   opt_command[0] = 0;
   opt_usevmt = 0;
   os_graphics = 1;
-  _runMode = init_state;
-  output = new AnsiWidget(this, w, h);
+
+  output = new AnsiWidget(this, _w, _h);
   output->construct();
   output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  //output->setFontSize(_defsize);
-
-  _eventQueueLock = new Mutex();
-  _eventQueueLock->Create();
-
-  return E_SUCCESS;
-}
-
-Tizen::Base::Object *Runtime::Run() {
-  bool mainBas = true;
 
   sbasic_main("main.bas?welcome");
-
+  bool mainBas = true;
   while (isExit()) {
     if (isBack()) {
       if (mainBas) {
@@ -95,9 +104,8 @@ Tizen::Base::Object *Runtime::Run() {
     }
   }
 
-  //_eventQueueLock->Acquire();
-  //_eventQueueLock->Release();
-
+  delete output;
+  _state = kDoneState;
   return 0;
 }
 
@@ -131,20 +139,20 @@ void Runtime::buttonClicked(const char *action) {
 // form_ui implementation
 //
 
-bool form_ui::isRunning() { 
-  return isRunning(); 
+bool form_ui::isRunning() {
+  return isRunning();
 }
 
-bool form_ui::isBreak() { 
-  return isBreak(); 
+bool form_ui::isBreak() {
+  return isBreak();
 }
 
-void form_ui::processEvents() { 
-  //processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY); 
+void form_ui::processEvents() {
+  //processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
 }
 
-void form_ui::buttonClicked(const char *url) { 
-  //buttonClicked(url); 
+void form_ui::buttonClicked(const char *url) {
+  //buttonClicked(url);
 }
 
 struct Listener : IButtonListener {
@@ -155,30 +163,30 @@ struct Listener : IButtonListener {
 };
 
 void form_ui::optionsBox(StringList *items) {
-//  widget->_ansiWidget->print("\033[ S#6");
-//  int y = 0;
-//  Listener listener;
-//  List_each(String *, it, *items) {
-//    char *str = (char *)(* it)->c_str();
-//    int w = 0;//fltk::getwidth(str) + 20;
-//    IFormWidget *item = widget->_ansiWidget->createButton(str, 2, y, w, 22);
-//    item->setListener(&listener);
-//    y += 24;
-//  }
-//  while (form_ui::isRunning() && !listener._action.length()) {
-//    form_ui::processEvents();
-//  }
-//  int index = 0;
-//  List_each(String *, it, *items) {
-//    char *str = (char *)(* it)->c_str();
-//    if (strcmp(str, listener._action.c_str()) == 0) {
-//      break;
-//    } else {
-//      index++;
-//    }
-//  }
-//  widget->_ansiWidget->print("\033[ SE6");
-//  widget->_ansiWidget->optionSelected(index);
+  //  widget->_ansiWidget->print("\033[ S#6");
+  //  int y = 0;
+  //  Listener listener;
+  //  List_each(String *, it, *items) {
+  //    char *str = (char *)(* it)->c_str();
+  //    int w = 0;//fltk::getwidth(str) + 20;
+  //    IFormWidget *item = widget->_ansiWidget->createButton(str, 2, y, w, 22);
+  //    item->setListener(&listener);
+  //    y += 24;
+  //  }
+  //  while (form_ui::isRunning() && !listener._action.length()) {
+  //    form_ui::processEvents();
+  //  }
+  //  int index = 0;
+  //  List_each(String *, it, *items) {
+  //    char *str = (char *)(* it)->c_str();
+  //    if (strcmp(str, listener._action.c_str()) == 0) {
+  //      break;
+  //    } else {
+  //      index++;
+  //    }
+  //  }
+  //  widget->_ansiWidget->print("\033[ SE6");
+  //  widget->_ansiWidget->optionSelected(index);
   //widget->redraw();
 }
 
@@ -193,22 +201,22 @@ AnsiWidget *form_ui::getOutput() {
 int maGetEvent(MAEvent *event) {
   int result = 0;
   /*
-  if (check()) {
+    if (check()) {
     switch (fltk::event()) {
     case PUSH:
-      event->type = EVENT_TYPE_POINTER_PRESSED;
-      result = 1;
-      break;
+    event->type = EVENT_TYPE_POINTER_PRESSED;
+    result = 1;
+    break;
     case DRAG:
-      event->type = EVENT_TYPE_POINTER_DRAGGED;
-      result = 1;
-      break;
+    event->type = EVENT_TYPE_POINTER_DRAGGED;
+    result = 1;
+    break;
     case RELEASE:
-      event->type = EVENT_TYPE_POINTER_RELEASED;
-      result = 1;
-      break;
+    event->type = EVENT_TYPE_POINTER_RELEASED;
+    result = 1;
+    break;
     }
-  }
+    }
   */
   return result;
 }
@@ -253,54 +261,54 @@ int osd_devrestore(void) {
 int osd_events(int wait_flag) {
   //return handleEvents(wait_flag);
   /*
-  switch (wait_flag) {
-  case 1:
+    switch (wait_flag) {
+    case 1:
     // wait for an event
     wnd->_out->flush(true);
     fltk::wait();
     break;
-  case 2:
+    case 2:
     // pause
     fltk::wait(EVT_PAUSE_TIME);
     break;
-  default:
+    default:
     // pump messages without pausing
     fltk::check();
-  }
+    }
 
-  if (wnd->isBreakExec()) {
+    if (wnd->isBreakExec()) {
     clearOutput();
     return -2;
-  }
+    }
 
-  wnd->_out->flush(false);
+    wnd->_out->flush(false);
 
-  case PUSH:
+    case PUSH:
     event.point.x = fltk::event_x();
     event.point.y = fltk::event_y();
     mouseActive = _ansiWidget->pointerTouchEvent(event);
     return mouseActive;
 
-  case DRAG:
-  case MOVE:
+    case DRAG:
+    case MOVE:
     event.point.x = fltk::event_x();
     event.point.y = fltk::event_y();
     if (mouseActive && _ansiWidget->pointerMoveEvent(event)) {
-      Widget::cursor(fltk::CURSOR_HAND);
-      return 1;
+    Widget::cursor(fltk::CURSOR_HAND);
+    return 1;
     }
     break;
 
-  case RELEASE:
+    case RELEASE:
     if (mouseActive) {
-      mouseActive = false;
-      Widget::cursor(fltk::CURSOR_DEFAULT);
-      event.point.x = fltk::event_x();
-      event.point.y = fltk::event_y();
-      _ansiWidget->pointerReleaseEvent(event);
+    mouseActive = false;
+    Widget::cursor(fltk::CURSOR_DEFAULT);
+    event.point.x = fltk::event_x();
+    event.point.y = fltk::event_y();
+    _ansiWidget->pointerReleaseEvent(event);
     }
     break;
-  }
+    }
   */
   return 0;
 }

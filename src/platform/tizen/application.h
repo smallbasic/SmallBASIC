@@ -24,31 +24,31 @@ using namespace Tizen::Ui::Controls;
 using namespace Tizen::Base::Collection;
 
 class TizenApp :
-	public UiApp,
-	public IScreenEventListener {
+  public UiApp,
+  public IScreenEventListener {
 
 public:
-	TizenApp();
-	~TizenApp();
+  TizenApp();
+  ~TizenApp();
 
-	static UiApp *createInstance(void);
+  static UiApp *createInstance(void);
 
   bool OnAppInitializing(AppRegistry &appRegistry);
-	bool OnAppInitialized(void);
-	bool OnAppWillTerminate(void);
-	bool OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination = false);
-	void OnLowMemory(void);
-	void OnBatteryLevelChanged(BatteryLevel batteryLevel);
-	void OnUserEventReceivedN(RequestId requestId, IList *pArgs);
-	void OnForeground(void);
-	void OnBackground(void);
-	void OnScreenOn(void);
-	void OnScreenOff(void);
-	void OnScreenBrightnessChanged(int brightness);
+  bool OnAppInitialized(void);
+  bool OnAppWillTerminate(void);
+  bool OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination = false);
+  void OnLowMemory(void);
+  void OnBatteryLevelChanged(BatteryLevel batteryLevel);
+  void OnUserEventReceivedN(RequestId requestId, IList *pArgs);
+  void OnForeground(void);
+  void OnBackground(void);
+  void OnScreenOn(void);
+  void OnScreenOff(void);
+  void OnScreenBrightnessChanged(int brightness);
 
 private:
-	void pauseGame(bool pause);
-	TizenAppForm *_appForm;
+  void pauseRuntime(bool pause);
+  TizenAppForm *_appForm;
 };
 
 #endif

@@ -16,19 +16,19 @@ using namespace Tizen::Base::Collection;
  * The entry function of tizen application called by the operating system.
  */
 extern "C" _EXPORT_ int OspMain(int argc, char *pArgv[]) {
-	result r = E_SUCCESS;
+  result r = E_SUCCESS;
 
-	AppLog("Application started.");
-	ArrayList args(SingleObjectDeleter);
-	args.Construct();
-	for (int i = 0; i < argc; i++) {
-		args.Add(new (std::nothrow) Tizen::Base::String(pArgv[i]));
-	}
+  AppLog("Application started.");
+  ArrayList args(SingleObjectDeleter);
+  args.Construct();
+  for (int i = 0; i < argc; i++) {
+    args.Add(new (std::nothrow) Tizen::Base::String(pArgv[i]));
+  }
 
-	r = Tizen::App::UiApp::Execute(TizenApp::createInstance, &args);
-	TryLog(r == E_SUCCESS, "[%s] Application execution failed", GetErrorMessage(r));
-	AppLog("Application finished.");
+  r = Tizen::App::UiApp::Execute(TizenApp::createInstance, &args);
+  TryLog(r == E_SUCCESS, "[%s] Application execution failed", GetErrorMessage(r));
+  AppLog("Application finished.");
 
-	return static_cast<int>(r);
+  return static_cast<int>(r);
 }
 

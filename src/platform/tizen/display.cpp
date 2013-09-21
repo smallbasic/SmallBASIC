@@ -170,27 +170,13 @@ result FormViewable::OnDraw() {
   Canvas *canvas = GetCanvasN();
   if (canvas) {
     Rectangle rect = GetBounds();
-
-  if (_screen->_canvas) {
-//    int xScroll, yScroll;
-    //    canvas->Copy(Point(rect.x, rect.y), *_canvas, rect);
-
-//    fltk::Rectangle from = fltk::Rectangle(xScroll, yScroll, w(), h());
-//    fltk::Rectangle to = fltk::Rectangle(0, 0, w(), h());
-//    drawTarget->_canvas->draw(from, to);
-//    // draw the overlay onto the screen
-//    bool isScreen = drawTarget->_isScreen;
-//    drawTarget->_isScreen = true;
-//    _ansiWidget->drawOverlay(mouseActive);
-//    drawTarget->_isScreen = isScreen;
-  } else {
-//    setcolor(drawColor);
-//    fillrect(fltk::Rectangle(w(), h()));
-  }
-
+    if (_screen->_canvas) {
+      canvas->Copy(Point(rect.x, rect.y), *_screen->_canvas, rect);
+    } else {
+      canvas->FillRectangle(drawColor, rect);
+    }
     delete canvas;
   }
-
   return E_SUCCESS;
 }
 
@@ -321,26 +307,8 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
   Drawable *holder = (Drawable *)maHandle;
-
-  BufferInfo bufferInfo;
-  holder->_canvas->Lock(bufferInfo);
-
-  U16 *u16 = (U16 *)bufferInfo.pPixels;
-  U32 *u32 = (U32 *)bufferInfo.pPixels;
-  U32 *dest = (U32 *)dst;
-  int index = 0;
-
-  for (int y = 0; y < srcRect->height && y + srcRect->top < bufferInfo.height; y++) {
-    for (int x = 0; x < srcRect->width && x + srcRect->left < bufferInfo.width; x++) {
-      int offset = (bufferInfo.width * (y + srcRect->top)) + (x + srcRect->left);
-      if (bufferInfo.bitsPerPixel == 16) {
-        dest[index++] = u16[offset];
-      } else {
-        dest[index++] = u32[offset];
-      }
-    }
-  }
-  holder->_canvas->Unlock();
+  // maGetImageData is only used for getPixel()
+  *((int *)dst) = holder->getPixel(srcRect->left, srcRect->top);
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {

@@ -31,17 +31,12 @@ class TizenAppForm :
 public:
   TizenAppForm();
   virtual ~TizenAppForm();
-
   result Construct();
-  bool isClosing() { return _state == kClosingState; }
-  bool isStarting() { return _state == kInitState; }
-  void exitSystem();
-  void showKeypad();
 
 private:
   result OnInitializing(void);
   void OnOrientationChanged(const Control &source,
-      OrientationStatus orientationStatus);
+                            OrientationStatus orientationStatus);
   void OnTouchDoublePressed(const Control &source,
                             const Point &currentPosition,
                             const TouchEventInfo &touchInfo);
@@ -65,15 +60,9 @@ private:
                        const TouchEventInfo &touchInfo);
   void OnFormBackRequested(Form &source);
   void OnFormMenuRequested(Form &source);
-  void terminate();
-  int  getTouchCount();
 
-  // event handling
   FormViewable *_display;
-  Runtime *_execThread;
-  enum { kInitState, kActiveState, kClosingState, kDoneState, kErrorState } _state;
-  enum { kLeftButton, kRightButtonOnce, kRightButton, kMoveOnly } _buttonState;
-  enum { kControlMouse, kEscapeKey, kGameMenu, kShowKeypad } _shortcut;
+  Runtime *_runtime;
 };
 
 #endif

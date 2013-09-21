@@ -22,17 +22,19 @@ TizenApp::TizenApp() : _appForm(NULL) {
 
 TizenApp::~TizenApp() {
   logEntered();
-//  if (g_system) {
-    //    TizenSystem *system = (TizenSystem *)g_system;
-    //system->destroyBackend();
-    //delete system;
-    //g_system = NULL;
+  //  if (g_system) {
+  //    TizenSystem *system = (TizenSystem *)g_system;
+  //system->destroyBackend();
+  //delete system;
+  //g_system = NULL;
   //}
 }
 
 bool TizenApp::OnAppInitialized(void) {
   logEntered();
-  _appForm->SetOrientation(Tizen::Ui::ORIENTATION_LANDSCAPE);
+  if (_appForm) {
+    _appForm->SetOrientation(Tizen::Ui::ORIENTATION_LANDSCAPE);
+  }
   return true;
 }
 
@@ -43,30 +45,26 @@ bool TizenApp::OnAppWillTerminate(void) {
 
 bool TizenApp::OnAppInitializing(AppRegistry &appRegistry) {
   logEntered();
-	Frame *appFrame = new (std::nothrow) Frame();
-	if (!appFrame || appFrame->Construct() == E_FAILURE) {
-		AppLog("Failed to create appFrame");
-		return NULL;
-	}
-	AddFrame(*appFrame);
-
-	TizenAppForm *appForm = new TizenAppForm();
-	if (!appForm) {
-		AppLog("Failed to create appForm");
-		return NULL;
-	}
-
-	if (E_SUCCESS != appForm->Construct() ||
-		E_SUCCESS != appFrame->AddControl(appForm)) {
-		delete appForm;
-		AppLog("Failed to construct appForm");
-		return NULL;
-	}
-
-	appFrame->SetCurrentForm(appForm);
-	logLeaving();
-
-  return (_appForm != NULL);
+  bool result = false;
+  Frame *appFrame = new (std::nothrow) Frame();
+  if (appFrame && appFrame->Construct() == E_SUCCESS) {
+    AddFrame(*appFrame);
+    _appForm = new (std::nothrow) TizenAppForm();
+    if (_appForm) {
+      if (_appForm->Construct() == E_SUCCESS &&
+          appFrame->AddControl(_appForm) == E_SUCCESS) {
+        appFrame->SetCurrentForm(_appForm);
+        result = false;
+      }
+      else {
+        AppLog("Failed to create appForm");
+        delete _appForm;
+        _appForm = NULL;
+      }
+    }
+  }
+  logLeaving();
+  return result;
 }
 
 bool TizenApp::OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination) {
@@ -77,39 +75,39 @@ bool TizenApp::OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination
 void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
   logEntered();
   /*
-  MessageBox messageBox;
-  int modalResult;
+    MessageBox messageBox;
+    int modalResult;
 
-  switch (requestId) {
-  case USER_MESSAGE_EXIT:
+    switch (requestId) {
+    case USER_MESSAGE_EXIT:
     // normal program termination
     Terminate();
     break;
 
-  case USER_MESSAGE_EXIT_ERR:
+    case USER_MESSAGE_EXIT_ERR:
     // assertion failure termination
     Terminate();
     break;
 
-  case USER_MESSAGE_EXIT_ERR_CONFIG:
+    case USER_MESSAGE_EXIT_ERR_CONFIG:
     // the config file was corrupted
     messageBox.Construct(L"Config file corrupted",
-        L"Settings have been reverted, please restart.", MSGBOX_STYLE_OK);
+    L"Settings have been reverted, please restart.", MSGBOX_STYLE_OK);
     messageBox.ShowAndWait(modalResult);
     Terminate();
     break;
-  }
+    }
   */
 }
 
 void TizenApp::OnForeground(void) {
   logEntered();
-  pauseGame(false);
+  pauseRuntime(false);
 }
 
 void TizenApp::OnBackground(void) {
   logEntered();
-  pauseGame(true);
+  pauseRuntime(true);
 }
 
 void TizenApp::OnBatteryLevelChanged(BatteryLevel batteryLevel) {
@@ -132,7 +130,7 @@ void TizenApp::OnScreenBrightnessChanged(int brightness) {
   logEntered();
 }
 
-void TizenApp::pauseGame(bool pause) {
+void TizenApp::pauseRuntime(bool pause) {
   if (_appForm) {
     //    if (pause && g_engine && !g_engine->isPaused()) {
     //  _appForm->pushKey(Common::KEYCODE_SPACE);
