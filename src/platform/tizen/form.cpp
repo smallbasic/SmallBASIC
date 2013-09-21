@@ -110,8 +110,6 @@ void TizenAppForm::OnOrientationChanged(const Control &source,
 void TizenAppForm::OnTouchDoublePressed(const Control &source,
                                         const Point &currentPosition,
                                         const TouchEventInfo &touchInfo) {
-  //pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONDOWN : Common::EVENT_RBUTTONDOWN,
-  //          currentPosition);
 }
 
 void TizenAppForm::OnTouchFocusIn(const Control &source,
@@ -162,10 +160,7 @@ void TizenAppForm::OnTouchReleased(const Control &source,
 
 void TizenAppForm::OnFormBackRequested(Form &source) {
   logEntered();
-  if (_runtime->setExit(false)) {
-    AppLog("Closing application");
-    Tizen::App::App::GetInstance()->Terminate();
-  }
+  _runtime->setExit(false);
 }
 
 void TizenAppForm::OnFormMenuRequested(Form &source) {

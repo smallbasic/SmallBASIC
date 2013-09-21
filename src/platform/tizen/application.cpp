@@ -65,30 +65,12 @@ bool TizenApp::OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination
 
 void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
   logEntered();
-  /*
-    MessageBox messageBox;
-    int modalResult;
-
-    switch (requestId) {
-    case USER_MESSAGE_EXIT:
+  switch (requestId) {
+  case USER_MESSAGE_EXIT:
     // normal program termination
     Terminate();
     break;
-
-    case USER_MESSAGE_EXIT_ERR:
-    // assertion failure termination
-    Terminate();
-    break;
-
-    case USER_MESSAGE_EXIT_ERR_CONFIG:
-    // the config file was corrupted
-    messageBox.Construct(L"Config file corrupted",
-    L"Settings have been reverted, please restart.", MSGBOX_STYLE_OK);
-    messageBox.ShowAndWait(modalResult);
-    Terminate();
-    break;
-    }
-  */
+  }
 }
 
 void TizenApp::OnForeground(void) {

@@ -32,13 +32,13 @@ struct RuntimeThread :
   result Construct();
   void buttonClicked(const char *action);
   void pushEvent(MAEvent event);
-  bool setExit(bool quit);
+  void setExit(bool quit);
   void setRunning();
 
-  bool isActive() { return _state != kInitState; }
+  bool isActive() { return _state != kInitState && _state != kDoneState; }
   bool isBack() { return _state == kBackState; }
   bool isBreak() { return _state == kClosingState || _state == kBackState; }
-  bool isClosing() { return _state == kClosingState || _state == kDoneState; }
+  bool isClosing() { return _state == kClosingState; }
   bool isInitial() { return _state == kInitState; }
   bool isModal() { return _state == kModalState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
@@ -56,8 +56,7 @@ private:
     kConnState,    // retrieving remote program source
     kBackState,    // back button detected 
     kClosingState, // thread is terminating
-    kDoneState,    // thread has terminated
-    kErrorState    // error terminating thread
+    kDoneState     // thread has terminated
   } _state;
 
   const char *getLoadPath();

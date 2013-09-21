@@ -7,6 +7,7 @@
 //
 
 #include "config.h"
+#include <FApp.h>
 #include "platform/tizen/runtime.h"
 #include "platform/common/maapi.h"
 #include "platform/common/utils.h"
@@ -115,21 +116,21 @@ Tizen::Base::Object *RuntimeThread::Run() {
   delete output;
   _state = kDoneState;
   logLeaving();
+  Tizen::App::App::GetInstance()->SendUserEvent(USER_MESSAGE_EXIT, NULL);
   return 0;
 }
 
-bool RuntimeThread::setExit(bool quit) {
-  _eventQueueLock->Acquire();
-  if (isRunning()) {
-    brun_break();
+void RuntimeThread::setExit(bool quit) {
+  if (_state != kDoneState) {
+    _eventQueueLock->Acquire();
+    if (isRunning()) {
+      brun_break();
+    }
+    if (!isClosing()) {
+      _state = quit ? kClosingState : kBackState;
+    }
+    _eventQueueLock->Release();
   }
-  if (!isClosing()) {
-    AppLog("setting state");
-    _state = quit ? kClosingState : kBackState;
-  }
-  bool result = _state == kClosingState;
-  _eventQueueLock->Release();
-  return result;
 }
 
 void RuntimeThread::showError() {
