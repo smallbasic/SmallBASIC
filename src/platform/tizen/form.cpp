@@ -36,7 +36,6 @@ result TizenAppForm::Construct(int w, int h) {
     if (_display && _display->Construct(w, h) == E_SUCCESS &&
         AddControl(_display) == E_SUCCESS) {
       SetOrientation(ORIENTATION_AUTOMATIC);
-      AddOrientationEventListener(*this);
     } else {
       AppLog("Failed to create FormViewable");
       r = E_OUT_OF_MEMORY;
@@ -44,7 +43,7 @@ result TizenAppForm::Construct(int w, int h) {
   }
 
   if (!IsFailed(r)) {
-    _runtime = new Runtime(w, h);
+    _runtime = new RuntimeThread(w, h);
     r = _runtime != NULL ? _runtime->Construct() : E_OUT_OF_MEMORY;
   }
 
@@ -64,7 +63,7 @@ TizenAppForm::~TizenAppForm() {
   if (_runtime) {
     if (_runtime->isActive()) {
       // push an exit message onto the thread event queue
-      _runtime->exitSystem();
+      _runtime->setExit(true);
 
       // block while thread ends
       AppLog("Waiting for runtime shutdown");
@@ -87,7 +86,6 @@ result TizenAppForm::OnInitializing(void) {
 
   AddOrientationEventListener(*this);
   AddTouchEventListener(*this);
-  SetMultipointTouchEnabled(true);
   SetFormBackEventListener(this);
   SetFormMenuEventListener(this);
 
@@ -96,6 +94,10 @@ result TizenAppForm::OnInitializing(void) {
   SetFocusable(true);
   SetFocus();
 
+  if (_runtime->isInitial()) {
+    _runtime->Start();
+  }
+
   logLeaving();
   return E_SUCCESS;
 }
@@ -103,9 +105,6 @@ result TizenAppForm::OnInitializing(void) {
 void TizenAppForm::OnOrientationChanged(const Control &source,
                                         OrientationStatus orientationStatus) {
   logEntered();
-  if (_runtime->isInitial()) {
-    _runtime->Start();
-  }
 }
 
 void TizenAppForm::OnTouchDoublePressed(const Control &source,
@@ -129,35 +128,44 @@ void TizenAppForm::OnTouchLongPressed(const Control &source,
                                       const Point &currentPosition,
                                       const TouchEventInfo &touchInfo) {
   logEntered();
-  //pushKey(Common::KEYCODE_RETURN);
 }
 
 void TizenAppForm::OnTouchMoved(const Control &source,
                                 const Point &currentPosition,
                                 const TouchEventInfo &touchInfo) {
-  //pushEvent(Common::EVENT_MOUSEMOVE, currentPosition);
+  MAEvent maEvent;
+  maEvent.type = EVENT_TYPE_POINTER_DRAGGED;
+  maEvent.point.x = touchInfo.GetCurrentPosition().x;
+  maEvent.point.y = touchInfo.GetCurrentPosition().y;
+  _runtime->pushEvent(maEvent);
 }
 
 void TizenAppForm::OnTouchPressed(const Control &source,
                                   const Point &currentPosition,
                                   const TouchEventInfo &touchInfo) {
-  //pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONDOWN : Common::EVENT_RBUTTONDOWN,
-  //              currentPosition);
+  MAEvent maEvent;
+  maEvent.type = EVENT_TYPE_POINTER_PRESSED;
+  maEvent.point.x = touchInfo.GetCurrentPosition().x;
+  maEvent.point.y = touchInfo.GetCurrentPosition().y;
+  _runtime->pushEvent(maEvent);
 }
 
 void TizenAppForm::OnTouchReleased(const Control &source,
                                    const Point &currentPosition,
                                    const TouchEventInfo &touchInfo) {
-  //pushEvent(_buttonState == kLeftButton ? Common::EVENT_LBUTTONUP : Common::EVENT_RBUTTONUP,
-  //          currentPosition);
-  // flick to skip dialog
-  if (touchInfo.IsFlicked()) {
-    //pushKey(Common::KEYCODE_PERIOD);
-  }
+  MAEvent maEvent;
+  maEvent.type = EVENT_TYPE_POINTER_RELEASED;
+  maEvent.point.x = touchInfo.GetCurrentPosition().x;
+  maEvent.point.y = touchInfo.GetCurrentPosition().y;
+  _runtime->pushEvent(maEvent);
 }
 
 void TizenAppForm::OnFormBackRequested(Form &source) {
   logEntered();
+  if (_runtime->setExit(false)) {
+    AppLog("Closing application");
+    Tizen::App::App::GetInstance()->Terminate();
+  }
 }
 
 void TizenAppForm::OnFormMenuRequested(Form &source) {

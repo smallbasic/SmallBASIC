@@ -25,38 +25,44 @@
 // the runtime thread owns the ansiwidget, it uses
 // maXXX apis which are handled in the main/UI thread
 AnsiWidget *output;
+RuntimeThread *thread;
 
-Runtime::Runtime(int w, int h) :
-  _runMode(init_state),
+RuntimeThread::RuntimeThread(int w, int h) :
   _state(kInitState),
-  _w(w),
-  _h(h),
+  _eventQueueLock(NULL),
+  _eventQueue(NULL),
   _programSrc(NULL),
-  _eventQueueLock(NULL) {
+  _w(w),
+  _h(h) {
+  thread = this;
 }
 
-Runtime::~Runtime() {
+RuntimeThread::~RuntimeThread() {
   delete _eventQueueLock;
+  delete _eventQueue;
+  _eventQueueLock = NULL;
+  _eventQueue = NULL;
 }
 
-result Runtime::Construct() {
+void RuntimeThread::buttonClicked(const char *action) {
+  logEntered();
+}
+
+result RuntimeThread::Construct() {
   logEntered();
   result r = Thread::Construct();
   if (!IsFailed(r)) {
     _eventQueueLock = new Mutex();
     r = _eventQueueLock != NULL ? _eventQueueLock->Create() : E_OUT_OF_MEMORY;
   }
+  if (!IsFailed(r)) {
+    _eventQueue = new Queue();
+    r = _eventQueue != NULL ? _eventQueue->Construct() : E_OUT_OF_MEMORY;
+  }
   return r;
 }
 
-void Runtime::exitSystem() {
-  _eventQueueLock->Acquire();
-  _state = kClosingState;
-  // TODO: add exit message
-  _eventQueueLock->Release();
-}
-
-Tizen::Base::Object *Runtime::Run() {
+Tizen::Base::Object *RuntimeThread::Run() {
   logEntered();
 
   _state = kActiveState;
@@ -77,12 +83,12 @@ Tizen::Base::Object *Runtime::Run() {
 
   sbasic_main("main.bas?welcome");
   bool mainBas = true;
-  while (isExit()) {
+  while (!isClosing()) {
     if (isBack()) {
       if (mainBas) {
         setExit(!set_parent_path());
       }
-      if (!isExit()) {
+      if (!isClosing()) {
         mainBas = true;
         opt_command[0] = '\0';
         sbasic_main("main.bas");
@@ -96,54 +102,63 @@ Tizen::Base::Object *Runtime::Run() {
       if (!isBack()) {
         if (!mainBas) {
           // display an indication the program has completed
-          //showCompletion(success);
+          showCompletion(success);
         }
         if (!success) {
           // highlight the error
-          //showError();
+          showError();
         }
       }
-    } else {
-      //setRunning(false);
-      //processEvents(-1, -1);
     }
   }
 
   delete output;
   _state = kDoneState;
+  logLeaving();
   return 0;
 }
 
-void Runtime::setExit(bool quit) {
+bool RuntimeThread::setExit(bool quit) {
+  _eventQueueLock->Acquire();
+  if (isRunning()) {
+    brun_break();
+  }
+  if (!isClosing()) {
+    AppLog("setting state");
+    _state = quit ? kClosingState : kBackState;
+  }
+  bool result = _state == kClosingState;
+  _eventQueueLock->Release();
+  return result;
 }
 
-void Runtime::showError() {
+void RuntimeThread::showError() {
 }
 
-void Runtime::showCompletion(bool success) {
+void RuntimeThread::showCompletion(bool success) {
 }
 
-const char *Runtime::getLoadPath() {
+const char *RuntimeThread::getLoadPath() {
   return !_loadPath.length() ? NULL : _loadPath.c_str();
 }
 
-void Runtime::flush(bool force) {
-  output->flush(force);
+void RuntimeThread::pushEvent(MAEvent maEvent) {
+  _eventQueueLock->Acquire();
+  RuntimeEvent *event = new RuntimeEvent();
+  event->maEvent = maEvent;
+  _eventQueue->Enqueue(event);
+  _eventQueueLock->Release();
 }
 
-void Runtime::reset() {
-  output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  //output->setFontSize(_defsize);
-  output->reset();
-}
-
-void Runtime::buttonClicked(const char *action) {
+void RuntimeThread::setRunning() {
+  _state = kRunState;
+  _loadPath.empty();
+  _drainError = false;
 }
 
 //
 // form_ui implementation
 //
-
 bool form_ui::isRunning() {
   return isRunning();
 }
@@ -254,7 +269,22 @@ void osd_cls(void) {
 
 int osd_devinit(void) {
   logEntered();
-  //setRunning(true);
+  dev_fgcolor = -DEFAULT_FOREGROUND;
+  dev_bgcolor = -DEFAULT_BACKGROUND;
+  os_graf_mx = output->getWidth();
+  os_graf_my = output->getHeight();
+
+  os_ver = 1;
+  os_color = 1;
+  os_color_depth = 16;
+  setsysvar_str(SYSVAR_OSNAME, "Tizen");
+
+  dev_clrkb();
+  ui_reset();
+
+  output->reset();
+  thread->setRunning();
+
   return 1;
 }
 

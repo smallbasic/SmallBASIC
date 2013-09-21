@@ -62,7 +62,7 @@ private:
   void OnFormMenuRequested(Form &source);
 
   FormViewable *_display;
-  Runtime *_runtime;
+  RuntimeThread *_runtime;
 };
 
 #endif

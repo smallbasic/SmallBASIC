@@ -11,64 +11,63 @@
 
 #include <FBase.h>
 
+#include "platform/common/maapi.h"
 #include "platform/mosync/interface.h"
 
+using namespace Tizen::Base::Collection;
 using namespace Tizen::Base::Runtime;
 
-struct Runtime : 
+struct RuntimeEvent : 
+  public Tizen::Base::Object {
+  MAEvent maEvent;
+};
+
+struct RuntimeThread : 
   public IButtonListener,
   public Thread {
 
-  Runtime(int w, int h);
-  ~Runtime();
+  RuntimeThread(int w, int h);
+  ~RuntimeThread();
 
   result Construct();
-  void flush(bool force);
-  void reset();
   void buttonClicked(const char *action);
-  //void pushEvent(Common::EventType type, const Point &currentPosition);
-  void exitSystem();
+  void pushEvent(MAEvent event);
+  bool setExit(bool quit);
+  void setRunning();
 
-  bool isActive() { return _state == kActiveState; }
-  bool isBack() { return _runMode == back_state; }
-  bool isBreak() { return _runMode == exit_state || _runMode == back_state; }
-  bool isClosing() { return _state == kClosingState; }
-  bool isExit() { return _runMode == exit_state; }
+  bool isActive() { return _state != kInitState; }
+  bool isBack() { return _state == kBackState; }
+  bool isBreak() { return _state == kClosingState || _state == kBackState; }
+  bool isClosing() { return _state == kClosingState || _state == kDoneState; }
   bool isInitial() { return _state == kInitState; }
-  bool isModal() { return _runMode == modal_state; }
-  bool isRunning() { return _runMode == run_state || _runMode == modal_state; }
+  bool isModal() { return _state == kModalState; }
+  bool isRunning() { return _state == kRunState || _state == kModalState; }
 
 private:
   Object *Run();
 
-  enum {
-    init_state,
-    run_state,
-    restart_state,
-    modal_state,
-    break_state,
-    conn_state,
-    back_state,
-    exit_state
-  } _runMode; // TODO merge with _state
-
   enum { 
-    kInitState, 
-    kActiveState, 
-    kClosingState, 
-    kDoneState, 
-    kErrorState
+    kInitState,    // thread not active
+    kActiveState,  // thread activated
+    kRunState,     // program is running
+    kRestartState, // running program should restart
+    kModalState,   // retrieving user input inside program
+    kBreakState,   // running program should abort
+    kConnState,    // retrieving remote program source
+    kBackState,    // back button detected 
+    kClosingState, // thread is terminating
+    kDoneState,    // thread has terminated
+    kErrorState    // error terminating thread
   } _state;
 
   const char *getLoadPath();
-  void setExit(bool quit);
-  void setRunning(bool running = true);
   void showError();
   void showCompletion(bool success);
 
-  Tizen::Base::Runtime::Mutex *_eventQueueLock;
-  //Common::Queue<Common::Event> _eventQueue;
+  Mutex *_eventQueueLock;
+  Queue *_eventQueue;
   strlib::String _loadPath;
+  bool _drainError;
   char *_programSrc;
   int _w, _h;
 };

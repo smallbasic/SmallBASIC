@@ -26,9 +26,6 @@ TizenApp::~TizenApp() {
 
 bool TizenApp::OnAppInitialized(void) {
   logEntered();
-  if (_appForm) {
-    _appForm->SetOrientation(Tizen::Ui::ORIENTATION_LANDSCAPE);
-  }
   return true;
 }
 
