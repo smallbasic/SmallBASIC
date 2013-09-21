@@ -49,7 +49,7 @@ struct FormViewable : public Control {
   FormViewable();
   virtual ~FormViewable() {}
 
-  result Construct(void);
+  result Construct(int w, int h);
   Drawable *getScreen() { return _screen; }
   int getDefaultSize() { return _defsize; }
 

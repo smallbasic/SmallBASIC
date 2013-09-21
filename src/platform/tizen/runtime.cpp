@@ -40,8 +40,13 @@ Runtime::~Runtime() {
 }
 
 result Runtime::Construct() {
-  _eventQueueLock = new Mutex();
-  return (_eventQueueLock != null && _eventQueueLock->Create() == E_SUCCESS);
+  logEntered();
+  result r = Thread::Construct();
+  if (!IsFailed(r)) {
+    _eventQueueLock = new Mutex();
+    r = _eventQueueLock != NULL ? _eventQueueLock->Create() : E_OUT_OF_MEMORY;
+  }
+  return r;
 }
 
 void Runtime::exitSystem() {

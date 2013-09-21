@@ -153,15 +153,23 @@ FormViewable::FormViewable() :
   _defsize(10) {
 }
 
-result FormViewable::Construct(void) {
-  result r = E_FAILURE;
-  _screen = new Drawable(_defsize);
-  if (_screen && _screen->create(GetWidth(), GetHeight())) {
-    drawTarget = _screen;
-    drawColorRaw = DEFAULT_BACKGROUND;
-    drawColor = Color(maSetColor(drawColorRaw));
-    widget = this;
-    r = Construct();
+result FormViewable::Construct(int w, int h) {
+  logEntered();
+  result r = Control::Construct();
+  if (!IsFailed(r)) {
+    _screen = new Drawable(_defsize);
+    if (_screen && _screen->create(w, h)) {
+      drawTarget = _screen;
+      drawColorRaw = DEFAULT_BACKGROUND;
+      drawColor = Color(maSetColor(drawColorRaw));
+      widget = this;
+    } else {
+      r = E_OUT_OF_MEMORY;
+    }
+  }
+
+  if (IsFailed(r)) {
+    AppLog("FormViewable::Construct failed");
   }
   return r;
 }

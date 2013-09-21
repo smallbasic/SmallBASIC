@@ -31,7 +31,7 @@ class TizenAppForm :
 public:
   TizenAppForm();
   virtual ~TizenAppForm();
-  result Construct();
+  result Construct(int w, int h);
 
 private:
   result OnInitializing(void);

@@ -27,27 +27,25 @@ TizenAppForm::TizenAppForm() :
   _runtime(NULL) {
 }
 
-result TizenAppForm::Construct() {
+result TizenAppForm::Construct(int w, int h) {
   logEntered();
   result r = Form::Construct(FORM_STYLE_NORMAL);
 
   if (!IsFailed(r)) {
     _display = new FormViewable();
-    if (_display) {
-      AddControl(_display);
+    if (_display && _display->Construct(w, h) == E_SUCCESS &&
+        AddControl(_display) == E_SUCCESS) {
       SetOrientation(ORIENTATION_AUTOMATIC);
       AddOrientationEventListener(*this);
     } else {
+      AppLog("Failed to create FormViewable");
       r = E_OUT_OF_MEMORY;
     }
   }
+
   if (!IsFailed(r)) {
-    Rectangle rc = GetClientAreaBounds();
-    _runtime = new Runtime(rc.width, rc.height);
-    r = _runtime != NULL ? E_SUCCESS : E_OUT_OF_MEMORY;
-  }
-  if (!IsFailed(r)) {
-    r = _runtime->Construct();
+    _runtime = new Runtime(w, h);
+    r = _runtime != NULL ? _runtime->Construct() : E_OUT_OF_MEMORY;
   }
 
   if (IsFailed(r)) {
@@ -57,8 +55,6 @@ result TizenAppForm::Construct() {
     _runtime = NULL;
     _display = NULL;
   }
-
-  logLeaving();
   return r;
 }
 
@@ -71,7 +67,7 @@ TizenAppForm::~TizenAppForm() {
       _runtime->exitSystem();
 
       // block while thread ends
-      AppLog("waiting for shutdown");
+      AppLog("Waiting for runtime shutdown");
       for (int i = 0; i < EXIT_SLEEP_STEP && _runtime->isClosing(); i++) {
         Thread::Sleep(EXIT_SLEEP);
       }

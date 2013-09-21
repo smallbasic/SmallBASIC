@@ -22,12 +22,6 @@ TizenApp::TizenApp() : _appForm(NULL) {
 
 TizenApp::~TizenApp() {
   logEntered();
-  //  if (g_system) {
-  //    TizenSystem *system = (TizenSystem *)g_system;
-  //system->destroyBackend();
-  //delete system;
-  //g_system = NULL;
-  //}
 }
 
 bool TizenApp::OnAppInitialized(void) {
@@ -47,23 +41,23 @@ bool TizenApp::OnAppInitializing(AppRegistry &appRegistry) {
   logEntered();
   bool result = false;
   Frame *appFrame = new (std::nothrow) Frame();
-  if (appFrame && appFrame->Construct() == E_SUCCESS) {
-    AddFrame(*appFrame);
+  if (appFrame && appFrame->Construct() == E_SUCCESS &&
+      AddFrame(*appFrame) == E_SUCCESS) {
+    Rectangle rc = appFrame->GetBounds();
     _appForm = new (std::nothrow) TizenAppForm();
-    if (_appForm) {
-      if (_appForm->Construct() == E_SUCCESS &&
-          appFrame->AddControl(_appForm) == E_SUCCESS) {
-        appFrame->SetCurrentForm(_appForm);
-        result = false;
-      }
-      else {
-        AppLog("Failed to create appForm");
-        delete _appForm;
-        _appForm = NULL;
-      }
+    if (_appForm &&
+        _appForm->Construct(rc.width, rc.height) == E_SUCCESS &&
+        appFrame->AddControl(_appForm) == E_SUCCESS &&
+        appFrame->SetCurrentForm(_appForm) == E_SUCCESS) {
+      result = true;
     }
   }
-  logLeaving();
+
+  if (!result) {
+    AppLog("Application startup failed");
+      delete _appForm;
+    _appForm = NULL;
+  }
   return result;
 }
 
