@@ -39,7 +39,6 @@ struct Drawable {
 
   Canvas *_canvas;
   Rectangle *_clip;
-  bool _isScreen;
 };
 
 struct FontHolder {

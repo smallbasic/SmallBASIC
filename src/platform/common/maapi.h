@@ -27,9 +27,10 @@
 #define FONT_TYPE_SERIF 0
 #define FONT_TYPE_SANS_SERIF 1
 #define FONT_TYPE_MONOSPACE 2
-#define FONT_STYLE_NORMAL 0
-#define FONT_STYLE_BOLD 1
-#define FONT_STYLE_ITALIC 2
+// same values as tizen enum FontStyle
+#define FONT_STYLE_NORMAL 0x0001
+#define FONT_STYLE_BOLD 0x0002
+#define FONT_STYLE_ITALIC 0x0004
 #define HANDLE_LOCAL 0
 #define RES_OUT_OF_MEMORY -1
 #define RES_BAD_INPUT -2

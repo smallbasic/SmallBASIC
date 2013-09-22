@@ -12,9 +12,8 @@
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
-#define DEFAULT_TEXT_SIZE 30
-#define TIZEN_FONT_STYLE_BOLD 0x0002
-#define TIZEN_FONT_STYLE_ITALIC 0x0004
+#define MSG_ID_REDRAW 5000
+#define MSG_ID_SHOW_KEYPAD 5001
 
 FormViewable *widget;
 Drawable *drawTarget;
@@ -28,8 +27,7 @@ int drawColorRaw;
 //
 Drawable::Drawable() :
   _canvas(NULL),
-  _clip(NULL),
-  _isScreen(false) {
+  _clip(NULL) {
 }
 
 Drawable::~Drawable() {
@@ -62,15 +60,11 @@ void Drawable::drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const M
 }
 
 void Drawable::drawLine(int startX, int startY, int endX, int endY) {
-  if (_isScreen) {
-    // TODO
-  } else {
-    beginDraw();
-    if (_canvas->DrawLine(Point(startX, startY), Point(endX, endY)) != E_SUCCESS) {
-      AppLog("drawLine error");
-    }
-    endDraw();
+  beginDraw();
+  if (_canvas->DrawLine(Point(startX, startY), Point(endX, endY)) != E_SUCCESS) {
+    AppLog("drawLine error");
   }
+  endDraw();
 }
 
 void Drawable::drawPixel(int posX, int posY) {
@@ -80,31 +74,23 @@ void Drawable::drawPixel(int posX, int posY) {
 }
 
 void Drawable::drawRectFilled(int left, int top, int width, int height) {
-  if (_isScreen) {
-    // TODO
-  } else {
-    beginDraw();
-    _canvas->FillRectangle(drawColor, Rectangle(left, top, width, height));
-    endDraw();
-  }
+  beginDraw();
+  _canvas->FillRectangle(drawColor, Rectangle(left, top, width, height));
+  endDraw();
 }
 
 void Drawable::drawText(int left, int top, const char *str) {
   AppLog("draw text %d %d %s", left, top, str);
   if (activeFont) {
-    if (_canvas->SetFont(*activeFont->_font) == E_SUCCESS) {
+    if (_canvas->SetFont(*activeFont->_font) != E_SUCCESS) {
       AppLog("Failed to set active font onto canvas");
     }
   }
-  if (_isScreen) {
-    // TODO
-  } else {
-    beginDraw();
-    if (_canvas->DrawText(Point(left, top), Tizen::Base::String(str)) != E_SUCCESS) {
-      AppLog("drawText error");
-    }
-    endDraw();
+  beginDraw();
+  if (_canvas->DrawText(Point(left, top), Tizen::Base::String(str)) != E_SUCCESS) {
+    AppLog("drawText error");
   }
+  endDraw();
 }
 
 void Drawable::endDraw() {
@@ -162,8 +148,7 @@ bool FontHolder::create() {
 FormViewable::FormViewable() :
   Control(),
   _screen(NULL),
-  _resized(false),
-  _defsize(DEFAULT_TEXT_SIZE) {
+  _resized(false) {
 }
 
 FormViewable::~FormViewable() {
@@ -189,11 +174,6 @@ result FormViewable::Construct(int w, int h) {
 
   if (IsFailed(r)) {
     AppLog("FormViewable::Construct failed");
-  } else {
-    Color old = drawColor;
-    drawColor = Color(0x60, 0x60, 0x60, 0xff);
-    _screen->drawText(0, 0, "starting");
-    drawColor = old;
   }
   return r;
 }
@@ -213,8 +193,14 @@ result FormViewable::OnDraw() {
   return E_SUCCESS;
 }
 
-void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* pArgs) {
-
+void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* args) {
+  switch (requestId) {
+  case MSG_ID_SHOW_KEYPAD:
+    break;
+  case MSG_ID_REDRAW:
+    GetParent()->RequestRedraw(true);
+    break;
+  }
 }
 
 //
@@ -269,7 +255,7 @@ void maDrawText(int left, int top, const char *str) {
 }
 
 void maUpdateScreen(void) {
-  widget->RequestRedraw(true);
+  widget->SendUserEvent(MSG_ID_REDRAW, NULL);
 }
 
 void maResetBacklight(void) {
@@ -294,19 +280,7 @@ MAExtent maGetScrSize(void) {
 }
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
-  int tizenStyle;
-  switch (style) {
-  case FONT_STYLE_BOLD:
-    tizenStyle = TIZEN_FONT_STYLE_BOLD;
-    break;
-  case FONT_STYLE_ITALIC:
-    tizenStyle = TIZEN_FONT_STYLE_ITALIC;
-    break;
-  default:
-    tizenStyle = Tizen::Graphics::FONT_STYLE_PLAIN;
-    break;
-  }
-  FontHolder *fontHolder = new FontHolder(tizenStyle, size);
+  FontHolder *fontHolder = new FontHolder(style, size);
   if (!fontHolder->create()) {
     delete fontHolder;
     fontHolder = (FontHolder *)-1;
@@ -321,9 +295,9 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
-  Drawable *canvas = (Drawable *)maHandle;
-  if (!drawTarget->_isScreen && drawTarget != canvas) {
-    canvas->drawImageRegion(drawTarget, dstPoint, srcRect);
+  Drawable *drawable = (Drawable *)maHandle;
+  if (drawTarget != drawable) {
+    drawable->drawImageRegion(drawTarget, dstPoint, srcRect);
   }
 }
 
@@ -355,14 +329,11 @@ void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int sca
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
-  if (maHandle == (MAHandle) HANDLE_SCREEN) {
-    drawTarget->_isScreen = true;
-  } else if (maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
+  if (maHandle == (MAHandle) HANDLE_SCREEN ||
+      maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
     drawTarget = widget->getScreen();
-    drawTarget->_isScreen = false;
   } else {
     drawTarget = (Drawable *)maHandle;
-    drawTarget->_isScreen = false;
   }
   delete drawTarget->_clip;
   drawTarget->_clip = NULL;
@@ -374,6 +345,7 @@ int maGetMilliSecondCount(void) {
 }
 
 int maShowVirtualKeyboard(void) {
+  widget->SendUserEvent(MSG_ID_SHOW_KEYPAD, NULL);
   return 0;
 }
 
