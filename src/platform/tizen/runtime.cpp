@@ -22,9 +22,10 @@
 #define ACCESS_EXIST 0
 #define ACCESS_WRITE 2
 #define ACCESS_READ  4
+#define PAUSE_TIME 500
 
-// the runtime thread owns the ansiwidget, it uses
-// maXXX apis which are handled in the main/UI thread
+// The runtime thread owns the ansiwidget which uses
+// ma apis. The ma apis are handled in the main thread
 AnsiWidget *output;
 RuntimeThread *thread;
 
@@ -110,6 +111,10 @@ Tizen::Base::Object *RuntimeThread::Run() {
           showError();
         }
       }
+    } else {
+      output->flush(false);
+      Sleep(PAUSE_TIME);
+      // nothing to run
     }
   }
 
@@ -418,11 +423,15 @@ void osd_write(const char *str) {
 
 char *dev_read(const char *fileName) {
   //return readSource(fileName);
+  // TODO: does fopen work in tizen?
   return NULL;
 }
 
 void lwrite(const char *str) {
-  //logPrint("%s", str);
+  AppLog(str);
+  //output->print("\033[ SW7");
+  output->print(str);
+  //output->print("\033[ Sw");
 }
 
 void dev_image(int handle, int index,

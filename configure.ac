@@ -543,7 +543,6 @@ function buildTizen() {
    AC_DEFINE(RUN_UNSUP, 1, [run not supported.])
    AC_DEFINE(SERIAL_UNSUP, 1, [serial not supported.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])

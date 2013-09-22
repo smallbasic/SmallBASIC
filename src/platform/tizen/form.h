@@ -35,6 +35,7 @@ public:
 
 private:
   result OnInitializing(void);
+  result OnDraw();
   void OnOrientationChanged(const Control &source,
                             OrientationStatus orientationStatus);
   void OnTouchDoublePressed(const Control &source,

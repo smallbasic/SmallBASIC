@@ -19,9 +19,10 @@
 
 using namespace Tizen::Ui;
 using namespace Tizen::Graphics;
+using namespace Tizen::Base::Collection;
 
 struct Drawable {
-  Drawable(int size);
+  Drawable();
   ~Drawable();
 
   void beginDraw();
@@ -35,26 +36,33 @@ struct Drawable {
   int  getPixel(int x, int y);
   void resize(int w, int h);
   void setClip(int x, int y, int w, int h);
-  Font *setFont();
 
   Canvas *_canvas;
   Rectangle *_clip;
-  Font *_font;
-  int _size;
-  int _style;
   bool _isScreen;
+};
+
+struct FontHolder {
+  FontHolder(int style, int size);
+  ~FontHolder();
+  bool create();
+
+  Font *_font;
+  int _style;
+  int _size;
 };
 
 struct FormViewable : public Control {
   FormViewable();
-  virtual ~FormViewable() {}
+  virtual ~FormViewable();
 
   result Construct(int w, int h);
   Drawable *getScreen() { return _screen; }
   int getDefaultSize() { return _defsize; }
+  result OnDraw();
 
 private:
-  result OnDraw();
+  void OnUserEventReceivedN(RequestId requestId, IList* pArgs);
   Drawable *_screen;
   bool _resized;
   int _defsize;

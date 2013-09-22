@@ -54,6 +54,8 @@ bool TizenApp::OnAppInitializing(AppRegistry &appRegistry) {
     AppLog("Application startup failed");
       delete _appForm;
     _appForm = NULL;
+  } else {
+    appFrame->Invalidate(true);
   }
   return result;
 }

@@ -27,6 +27,30 @@ TizenAppForm::TizenAppForm() :
   _runtime(NULL) {
 }
 
+TizenAppForm::~TizenAppForm() {
+  logEntered();
+
+  if (_runtime) {
+    if (_runtime->isActive()) {
+      // push an exit message onto the thread event queue
+      _runtime->setExit(true);
+
+      // block while thread ends
+      AppLog("Waiting for runtime shutdown");
+      for (int i = 0; i < EXIT_SLEEP_STEP && _runtime->isClosing(); i++) {
+        Thread::Sleep(EXIT_SLEEP);
+      }
+
+      _runtime->Stop();
+      _runtime->Join();
+    }
+    delete _runtime;
+    _runtime = NULL;
+  }
+
+  logLeaving();
+}
+
 result TizenAppForm::Construct(int w, int h) {
   logEntered();
   result r = Form::Construct(FORM_STYLE_NORMAL);
@@ -57,28 +81,18 @@ result TizenAppForm::Construct(int w, int h) {
   return r;
 }
 
-TizenAppForm::~TizenAppForm() {
+result TizenAppForm::OnDraw() {
   logEntered();
+  return _display->OnDraw();
+}
 
-  if (_runtime) {
-    if (_runtime->isActive()) {
-      // push an exit message onto the thread event queue
-      _runtime->setExit(true);
+void TizenAppForm::OnFormBackRequested(Form &source) {
+  logEntered();
+  _runtime->setExit(false);
+}
 
-      // block while thread ends
-      AppLog("Waiting for runtime shutdown");
-      for (int i = 0; i < EXIT_SLEEP_STEP && _runtime->isClosing(); i++) {
-        Thread::Sleep(EXIT_SLEEP);
-      }
-
-      _runtime->Stop();
-      _runtime->Join();
-    }
-    delete _runtime;
-    _runtime = NULL;
-  }
-
-  logLeaving();
+void TizenAppForm::OnFormMenuRequested(Form &source) {
+  logEntered();
 }
 
 result TizenAppForm::OnInitializing(void) {
@@ -158,11 +172,3 @@ void TizenAppForm::OnTouchReleased(const Control &source,
   _runtime->pushEvent(maEvent);
 }
 
-void TizenAppForm::OnFormBackRequested(Form &source) {
-  logEntered();
-  _runtime->setExit(false);
-}
-
-void TizenAppForm::OnFormMenuRequested(Form &source) {
-  logEntered();
-}

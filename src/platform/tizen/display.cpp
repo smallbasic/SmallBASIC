@@ -12,11 +12,13 @@
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
+#define DEFAULT_TEXT_SIZE 30
 #define TIZEN_FONT_STYLE_BOLD 0x0002
 #define TIZEN_FONT_STYLE_ITALIC 0x0004
 
 FormViewable *widget;
 Drawable *drawTarget;
+FontHolder *activeFont;
 bool mouseActive;
 Color drawColor;
 int drawColorRaw;
@@ -24,19 +26,15 @@ int drawColorRaw;
 //
 // Drawable
 //
-Drawable::Drawable(int size) :
+Drawable::Drawable() :
   _canvas(NULL),
   _clip(NULL),
-  _font(NULL),
-  _size(size),
-  _style(0),
   _isScreen(false) {
 }
 
 Drawable::~Drawable() {
   delete _canvas;
   delete _clip;
-  delete _font;
 }
 
 void Drawable::beginDraw() {
@@ -49,15 +47,15 @@ void Drawable::beginDraw() {
 bool Drawable::create(int w, int h) {
   Rectangle rect = Rectangle(0, 0, w, h);
   _canvas = new Canvas();
-  return (_canvas && E_SUCCESS == _canvas->Construct(rect)
-          && (E_SUCCESS == _canvas->FillRectangle(drawColor, rect)));
+  return (_canvas && _canvas->Construct(rect) == E_SUCCESS &&
+          _canvas->FillRectangle(drawColor, rect) == E_SUCCESS);
 }
 
 void Drawable::drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
   const Rectangle from = Rectangle(srcRect->left, srcRect->top, srcRect->width, srcRect->height);
   const Rectangle to = Rectangle(dstPoint->x, dstPoint->y, srcRect->width, srcRect->height);
   dst->beginDraw();
-  if (E_SUCCESS != dst->_canvas->Copy(to, *_canvas, from)) {
+  if (dst->_canvas->Copy(to, *_canvas, from) != E_SUCCESS) {
     AppLog("Canvas copy error");
   }
   dst->endDraw();
@@ -68,7 +66,7 @@ void Drawable::drawLine(int startX, int startY, int endX, int endY) {
     // TODO
   } else {
     beginDraw();
-    if (E_SUCCESS != _canvas->DrawLine(Point(startX, startY), Point(endX, endY))) {
+    if (_canvas->DrawLine(Point(startX, startY), Point(endX, endY)) != E_SUCCESS) {
       AppLog("drawLine error");
     }
     endDraw();
@@ -92,12 +90,17 @@ void Drawable::drawRectFilled(int left, int top, int width, int height) {
 }
 
 void Drawable::drawText(int left, int top, const char *str) {
-  setFont();
+  AppLog("draw text %d %d %s", left, top, str);
+  if (activeFont) {
+    if (_canvas->SetFont(*activeFont->_font) == E_SUCCESS) {
+      AppLog("Failed to set active font onto canvas");
+    }
+  }
   if (_isScreen) {
     // TODO
   } else {
     beginDraw();
-    if (E_SUCCESS != _canvas->DrawText(Point(left, top), Tizen::Base::String(str))) {
+    if (_canvas->DrawText(Point(left, top), Tizen::Base::String(str)) != E_SUCCESS) {
       AppLog("drawText error");
     }
     endDraw();
@@ -113,7 +116,7 @@ void Drawable::endDraw() {
 int Drawable::getPixel(int x, int y) {
   int result = 0;
   Color color;
-  if (E_SUCCESS == _canvas->GetPixel(Point(x, y), color)) {
+  if (_canvas->GetPixel(Point(x, y), color) == E_SUCCESS) {
     result = color.GetRGB32();
   } else {
     AppLog("getPixel error");
@@ -135,29 +138,45 @@ void Drawable::setClip(int x, int y, int w, int h) {
   _clip = new Rectangle(x, y, w, h);
 }
 
-Font *Drawable::setFont() {
+//
+// FontHolder
+//
+FontHolder::FontHolder(int style, int size) :
+  _font(NULL),
+  _style(style),
+  _size(size) {
+}
+
+FontHolder::~FontHolder() {
   delete _font;
+}
+
+bool FontHolder::create() {
   _font = new Font();
-  _font->Construct(_style, _size);
-  _canvas->SetFont(*_font);
-  return _font;
+  return (_font && _font->Construct(_style, _size) == E_SUCCESS);
 }
 
 //
-// DisplayWidget
+// FormViewable
 //
 FormViewable::FormViewable() :
   Control(),
   _screen(NULL),
   _resized(false),
-  _defsize(10) {
+  _defsize(DEFAULT_TEXT_SIZE) {
+}
+
+FormViewable::~FormViewable() {
+  logEntered();
+  delete _screen;
 }
 
 result FormViewable::Construct(int w, int h) {
   logEntered();
   result r = Control::Construct();
   if (!IsFailed(r)) {
-    _screen = new Drawable(_defsize);
+    SetBounds(0, 0, w, h);
+    _screen = new Drawable();
     if (_screen && _screen->create(w, h)) {
       drawTarget = _screen;
       drawColorRaw = DEFAULT_BACKGROUND;
@@ -170,11 +189,17 @@ result FormViewable::Construct(int w, int h) {
 
   if (IsFailed(r)) {
     AppLog("FormViewable::Construct failed");
+  } else {
+    Color old = drawColor;
+    drawColor = Color(0x60, 0x60, 0x60, 0xff);
+    _screen->drawText(0, 0, "starting");
+    drawColor = old;
   }
   return r;
 }
 
 result FormViewable::OnDraw() {
+  logEntered();
   Canvas *canvas = GetCanvasN();
   if (canvas) {
     Rectangle rect = GetBounds();
@@ -188,10 +213,19 @@ result FormViewable::OnDraw() {
   return E_SUCCESS;
 }
 
+void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* pArgs) {
+
+}
+
 //
 // maapi implementation
 //
 int maFontDelete(MAHandle maHandle) {
+  FontHolder *fontHolder = (FontHolder *) maHandle;
+  if (fontHolder == activeFont) {
+    activeFont = NULL;
+  }
+  delete fontHolder;
   return RES_FONT_OK;
 }
 
@@ -243,9 +277,9 @@ void maResetBacklight(void) {
 
 MAExtent maGetTextSize(const char *str) {
   MAExtent result;
-  if (drawTarget && str && str[0]) {
+  if (activeFont && activeFont->_font && str && str[0]) {
     Dimension dim;
-    drawTarget->setFont()->GetTextExtent(str, strlen(str), dim);
+    activeFont->_font->GetTextExtent(str, strlen(str), dim);
     result = (MAExtent)((dim.width << 16) + dim.height);
   } else {
     result = 0;
@@ -260,27 +294,28 @@ MAExtent maGetScrSize(void) {
 }
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
-  MAHandle result;
-  if (drawTarget) {
-    switch (style) {
-    case FONT_STYLE_NORMAL:
-      drawTarget->_style = Tizen::Graphics::FONT_STYLE_PLAIN;
-      break;
-    case FONT_STYLE_BOLD:
-      drawTarget->_style = TIZEN_FONT_STYLE_BOLD;
-      break;
-    case FONT_STYLE_ITALIC:
-      drawTarget->_style = TIZEN_FONT_STYLE_ITALIC;
-      break;
-    }
-    result = (MAHandle)drawTarget;
-  } else {
-    result = (MAHandle)NULL;
+  int tizenStyle;
+  switch (style) {
+  case FONT_STYLE_BOLD:
+    tizenStyle = TIZEN_FONT_STYLE_BOLD;
+    break;
+  case FONT_STYLE_ITALIC:
+    tizenStyle = TIZEN_FONT_STYLE_ITALIC;
+    break;
+  default:
+    tizenStyle = Tizen::Graphics::FONT_STYLE_PLAIN;
+    break;
   }
-  return result;
+  FontHolder *fontHolder = new FontHolder(tizenStyle, size);
+  if (!fontHolder->create()) {
+    delete fontHolder;
+    fontHolder = (FontHolder *)-1;
+  }
+  return (MAHandle) fontHolder;
 }
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {
+  activeFont = (FontHolder *) maHandle;
   return maHandle;
 }
 
@@ -304,7 +339,7 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
 }
 
 MAHandle maCreatePlaceholder(void) {
-  MAHandle maHandle = (MAHandle) new Drawable(widget->getDefaultSize());
+  MAHandle maHandle = (MAHandle) new Drawable();
   return maHandle;
 }
 
