@@ -41,16 +41,6 @@ struct Drawable {
   Rectangle *_clip;
 };
 
-struct FontHolder {
-  FontHolder(int style, int size);
-  ~FontHolder();
-  bool create();
-
-  Font *_font;
-  int _style;
-  int _size;
-};
-
 struct FormViewable : public Control {
   FormViewable();
   virtual ~FormViewable();

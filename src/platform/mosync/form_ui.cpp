@@ -294,6 +294,7 @@ void WidgetData::updateVarFlag() {
     break;
   default:
     orig.i = 0;
+    break;
   }
 }
 

@@ -29,15 +29,18 @@ struct RuntimeThread :
   RuntimeThread(int w, int h);
   ~RuntimeThread();
 
-  result Construct();
   void buttonClicked(const char *action);
+  result Construct();
+  bool hasEvent();
+  MAEvent popEvent();
   void pushEvent(MAEvent event);
+  int processEvents(int waitFlag);
   void setExit(bool quit);
   void setRunning();
 
   bool isActive() { return _state != kInitState && _state != kDoneState; }
   bool isBack() { return _state == kBackState; }
-  bool isBreak() { return _state == kClosingState || _state == kBackState; }
+  bool isBreak() { return _state >= kBreakState; }
   bool isClosing() { return _state == kClosingState; }
   bool isInitial() { return _state == kInitState; }
   bool isModal() { return _state == kModalState; }
@@ -47,25 +50,28 @@ private:
   Object *Run();
 
   enum { 
-    kInitState,    // thread not active
+    kInitState = 0,// thread not active
     kActiveState,  // thread activated
     kRunState,     // program is running
     kRestartState, // running program should restart
     kModalState,   // retrieving user input inside program
-    kBreakState,   // running program should abort
     kConnState,    // retrieving remote program source
+    kBreakState,   // running program should abort
     kBackState,    // back button detected 
     kClosingState, // thread is terminating
     kDoneState     // thread has terminated
   } _state;
 
   const char *getLoadPath();
-  void showError();
   void showCompletion(bool success);
+  void showError();
+  void showSystemScreen(bool showSrc);
 
   Mutex *_eventQueueLock;
   Queue *_eventQueue;
   strlib::String _loadPath;
+  int _lastEventTime;
+  int _eventTicks;
   bool _drainError;
   char *_programSrc;
   int _w, _h;

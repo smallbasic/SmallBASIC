@@ -17,7 +17,7 @@
 
 FormViewable *widget;
 Drawable *drawTarget;
-FontHolder *activeFont;
+Font *activeFont;
 bool mouseActive;
 Color drawColor;
 int drawColorRaw;
@@ -82,9 +82,9 @@ void Drawable::drawRectFilled(int left, int top, int width, int height) {
 void Drawable::drawText(int left, int top, const char *str) {
   AppLog("draw text %d %d %s", left, top, str);
   if (activeFont) {
-    if (_canvas->SetFont(*activeFont->_font) != E_SUCCESS) {
-      AppLog("Failed to set active font onto canvas");
-    }
+    //if (_canvas->SetFont(*activeFont->_font) != E_SUCCESS) {
+    //  AppLog("Failed to set active font onto canvas");
+   // }
   }
   beginDraw();
   if (_canvas->DrawText(Point(left, top), Tizen::Base::String(str)) != E_SUCCESS) {
@@ -122,24 +122,6 @@ void Drawable::resize(int w, int h) {
 void Drawable::setClip(int x, int y, int w, int h) {
   delete _clip;
   _clip = new Rectangle(x, y, w, h);
-}
-
-//
-// FontHolder
-//
-FontHolder::FontHolder(int style, int size) :
-  _font(NULL),
-  _style(style),
-  _size(size) {
-}
-
-FontHolder::~FontHolder() {
-  delete _font;
-}
-
-bool FontHolder::create() {
-  _font = new Font();
-  return (_font && _font->Construct(_style, _size) == E_SUCCESS);
 }
 
 //
@@ -207,11 +189,12 @@ void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* args) {
 // maapi implementation
 //
 int maFontDelete(MAHandle maHandle) {
-  FontHolder *fontHolder = (FontHolder *) maHandle;
-  if (fontHolder == activeFont) {
+  Font *font = (Font *) maHandle;
+  if (font == activeFont) {
     activeFont = NULL;
   }
-  delete fontHolder;
+  AppLog("Delete font %x", font);
+  delete font;
   return RES_FONT_OK;
 }
 
@@ -263,9 +246,9 @@ void maResetBacklight(void) {
 
 MAExtent maGetTextSize(const char *str) {
   MAExtent result;
-  if (activeFont && activeFont->_font && str && str[0]) {
+  if (activeFont && str && str[0]) {
     Dimension dim;
-    activeFont->_font->GetTextExtent(str, strlen(str), dim);
+    activeFont->GetTextExtent(str, strlen(str), dim);
     result = (MAExtent)((dim.width << 16) + dim.height);
   } else {
     result = 0;
@@ -280,16 +263,16 @@ MAExtent maGetScrSize(void) {
 }
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
-  FontHolder *fontHolder = new FontHolder(style, size);
-  if (!fontHolder->create()) {
-    delete fontHolder;
-    fontHolder = (FontHolder *)-1;
+  Font *font = new Font();
+  if (!font || font->Construct(style, size) != E_SUCCESS) {
+    delete font;
+    font = (Font *)-1;
   }
-  return (MAHandle) fontHolder;
+  return (MAHandle) font;
 }
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {
-  activeFont = (FontHolder *) maHandle;
+  activeFont = (Font *) maHandle;
   return maHandle;
 }
 

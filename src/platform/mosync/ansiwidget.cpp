@@ -480,6 +480,7 @@ void AnsiWidget::print(const char *str) {
         break;
       default:
         p += _back->print(p, lineHeight) - 1; // allow for p++
+        break;
       };
 
       if (*p == '\0') {

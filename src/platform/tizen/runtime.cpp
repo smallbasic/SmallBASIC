@@ -19,20 +19,37 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 
-#define ACCESS_EXIST 0
-#define ACCESS_WRITE 2
-#define ACCESS_READ  4
-#define PAUSE_TIME 500
+#define WAIT_INTERVAL 10
+#define EVENT_CHECK_EVERY 2000
+#define EVENT_MAX_BURN_TIME 30
+#define EVENT_PAUSE_TIME 400
+
+using namespace Tizen::App;
+using namespace Tizen::Base::Utility;
 
 // The runtime thread owns the ansiwidget which uses
 // ma apis. The ma apis are handled in the main thread
 AnsiWidget *output;
 RuntimeThread *thread;
+bool systemScreen;
+
+//
+// converts a Tizen (wchar) String into a StringLib (char) string
+//
+String fromString(const Tizen::Base::String &in) {
+  Tizen::Base::ByteBuffer *buf = StringUtil::StringToUtf8N(in);
+	String result((const char*)buf->GetPointer());
+	delete buf;
+	return result;
+}
 
 RuntimeThread::RuntimeThread(int w, int h) :
   _state(kInitState),
   _eventQueueLock(NULL),
   _eventQueue(NULL),
+  _lastEventTime(0),
+  _eventTicks(0),
+  _drainError(false),
   _programSrc(NULL),
   _w(w),
   _h(h) {
@@ -64,6 +81,111 @@ result RuntimeThread::Construct() {
   return r;
 }
 
+bool RuntimeThread::hasEvent() {
+  _eventQueueLock->Acquire();
+  bool result = _eventQueue->GetCount() > 0; 
+  _eventQueueLock->Release();
+  return result;
+}
+
+MAEvent RuntimeThread::popEvent() {
+  _eventQueueLock->Acquire();
+  RuntimeEvent *event = (RuntimeEvent *)_eventQueue->Dequeue();
+  _eventQueueLock->Release();
+
+  MAEvent result = event->maEvent;
+  delete event;
+  return result;
+}
+
+void RuntimeThread::pushEvent(MAEvent maEvent) {
+  _eventQueueLock->Acquire();
+  RuntimeEvent *event = new RuntimeEvent();
+  event->maEvent = maEvent;
+  _eventQueue->Enqueue(event);
+  _eventQueueLock->Release();
+}
+
+int RuntimeThread::processEvents(int waitFlag) {
+  if (thread->isBreak()) {
+    return -2;
+  }
+
+  if (!waitFlag) {
+    // detect when we have been called too frequently
+    int now = maGetMilliSecondCount();
+    _eventTicks++;
+    if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
+      // next time inspection interval
+      if (_eventTicks >= EVENT_MAX_BURN_TIME) {
+        output->print("\033[ LBattery drain");
+        _drainError = true;
+      } else if (_drainError) {
+        output->print("\033[ L");
+        _drainError = false;
+      }
+      _lastEventTime = now;
+      _eventTicks = 0;
+    }
+  }
+
+  // pull events from the queue, invoke ansiwidget event handlers
+  switch (waitFlag) {
+  case 1:
+    // wait for an event
+    output->flush(true);
+    maWait(0);
+    break;
+  case 2:
+    // pause
+    maWait(EVENT_PAUSE_TIME);
+    break;
+  default:
+    // pump messages without pausing
+    break;
+  }
+
+  if (hasEvent()) {
+    MAEvent event = thread->popEvent();
+    switch (event.type) {
+    case EVENT_TYPE_POINTER_PRESSED:
+      output->pointerTouchEvent(event);
+      break;
+
+    case EVENT_TYPE_POINTER_DRAGGED:
+      output->pointerMoveEvent(event);
+      break;
+
+    case EVENT_TYPE_POINTER_RELEASED:
+      output->pointerReleaseEvent(event);
+      break;
+    }
+  }
+  output->flush(false);
+  return 0;
+}
+
+void RuntimeThread::setExit(bool quit) {
+  if (_state != kDoneState) {
+    _eventQueueLock->Acquire();
+    if (isRunning()) {
+      brun_break();
+    }
+    if (!isClosing()) {
+      _state = quit ? kClosingState : kBackState;
+    }
+    _eventQueueLock->Release();
+  }
+}
+
+void RuntimeThread::setRunning() {
+  _state = kRunState;
+  _loadPath.empty();
+  _lastEventTime = maGetMilliSecondCount();
+  _eventTicks = 0;
+  _drainError = false;
+}
+
 Tizen::Base::Object *RuntimeThread::Run() {
   logEntered();
 
@@ -83,19 +205,23 @@ Tizen::Base::Object *RuntimeThread::Run() {
   output->construct();
   output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
 
-  sbasic_main("main.bas?welcome");
+	String resourcePath = fromString(App::GetInstance()->GetAppResourcePath());
+  String mainBasPath = resourcePath + "main.bas";
+
+  strcpy(opt_command, "welcome");
+  sbasic_main(mainBasPath);
   bool mainBas = true;
   while (!isClosing()) {
-    if (isBack()) {
+    if (isBack() || getLoadPath() == NULL) {
       if (mainBas) {
         setExit(!set_parent_path());
       }
       if (!isClosing()) {
         mainBas = true;
         opt_command[0] = '\0';
-        sbasic_main("main.bas");
+        sbasic_main(mainBasPath);
       }
-    } else if (getLoadPath() != NULL) {
+    } else {
       mainBas = (strncmp(getLoadPath(), "main.bas", 8) == 0);
       if (!mainBas) {
         set_path(getLoadPath());
@@ -111,70 +237,64 @@ Tizen::Base::Object *RuntimeThread::Run() {
           showError();
         }
       }
-    } else {
-      output->flush(false);
-      Sleep(PAUSE_TIME);
-      // nothing to run
     }
   }
 
   delete output;
   _state = kDoneState;
   logLeaving();
-  Tizen::App::App::GetInstance()->SendUserEvent(USER_MESSAGE_EXIT, NULL);
+  App::GetInstance()->SendUserEvent(USER_MESSAGE_EXIT, NULL);
   return 0;
 }
 
-void RuntimeThread::setExit(bool quit) {
-  if (_state != kDoneState) {
-    _eventQueueLock->Acquire();
-    if (isRunning()) {
-      brun_break();
-    }
-    if (!isClosing()) {
-      _state = quit ? kClosingState : kBackState;
-    }
-    _eventQueueLock->Release();
+void RuntimeThread::showCompletion(bool success) {
+  if (success) {
+    output->print("\033[ LDone - press back [<-]");
+  } else {
+    output->print("\033[ LError - see console");
   }
+  output->flush(true);
 }
 
 void RuntimeThread::showError() {
+  _state = kActiveState;
+  _loadPath.empty();
+  showSystemScreen(false);
 }
 
-void RuntimeThread::showCompletion(bool success) {
+void RuntimeThread::showSystemScreen(bool showSrc) {
+  if (showSrc) {
+    // screen command write screen 2 (\014=CLS)
+    output->print("\033[ SW6\014");
+    if (_programSrc) {
+      output->print(_programSrc);
+    }
+    // restore write screen, display screen 6 (source)
+    output->print("\033[ Sw; SD6");
+  } else {
+    // screen command display screen 7 (console)
+    output->print("\033[ SD7");
+  }
+  systemScreen = true;
 }
 
 const char *RuntimeThread::getLoadPath() {
   return !_loadPath.length() ? NULL : _loadPath.c_str();
 }
 
-void RuntimeThread::pushEvent(MAEvent maEvent) {
-  _eventQueueLock->Acquire();
-  RuntimeEvent *event = new RuntimeEvent();
-  event->maEvent = maEvent;
-  _eventQueue->Enqueue(event);
-  _eventQueueLock->Release();
-}
-
-void RuntimeThread::setRunning() {
-  _state = kRunState;
-  _loadPath.empty();
-  _drainError = false;
-}
-
 //
 // form_ui implementation
 //
 bool form_ui::isRunning() {
-  return isRunning();
+  return thread->isRunning();
 }
 
 bool form_ui::isBreak() {
-  return isBreak();
+  return thread->isBreak();
 }
 
 void form_ui::processEvents() {
-  //processEvents(EVENT_WAIT_INFINITE, EVENT_TYPE_EXIT_ANY);
+  thread->processEvents(0);
 }
 
 void form_ui::buttonClicked(const char *url) {
@@ -189,31 +309,31 @@ struct Listener : IButtonListener {
 };
 
 void form_ui::optionsBox(StringList *items) {
-  //  widget->_ansiWidget->print("\033[ S#6");
-  //  int y = 0;
-  //  Listener listener;
-  //  List_each(String *, it, *items) {
-  //    char *str = (char *)(* it)->c_str();
-  //    int w = 0;//fltk::getwidth(str) + 20;
-  //    IFormWidget *item = widget->_ansiWidget->createButton(str, 2, y, w, 22);
-  //    item->setListener(&listener);
-  //    y += 24;
-  //  }
-  //  while (form_ui::isRunning() && !listener._action.length()) {
-  //    form_ui::processEvents();
-  //  }
-  //  int index = 0;
-  //  List_each(String *, it, *items) {
-  //    char *str = (char *)(* it)->c_str();
-  //    if (strcmp(str, listener._action.c_str()) == 0) {
-  //      break;
-  //    } else {
-  //      index++;
-  //    }
-  //  }
-  //  widget->_ansiWidget->print("\033[ SE6");
-  //  widget->_ansiWidget->optionSelected(index);
-  //widget->redraw();
+  output->print("\033[ S#6");
+  int y = 0;
+  Listener listener;
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    int w = osd_textwidth(str) + 20;
+    IFormWidget *item = output->createButton(str, 2, y, w, 22);
+    item->setListener(&listener);
+    y += 24;
+  }
+  while (thread->isRunning() && !listener._action.length()) {
+    osd_events(0);
+  }
+  int index = 0;
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    if (strcmp(str, listener._action.c_str()) == 0) {
+      break;
+    } else {
+      index++;
+    }
+  }
+  output->print("\033[ SE6");
+  output->optionSelected(index);
+  maUpdateScreen();
 }
 
 AnsiWidget *form_ui::getOutput() {
@@ -221,50 +341,45 @@ AnsiWidget *form_ui::getOutput() {
 }
 
 //
-// event handling
+// ma event handling
 //
-
 int maGetEvent(MAEvent *event) {
-  int result = 0;
-  /*
-    if (check()) {
-    switch (fltk::event()) {
-    case PUSH:
-    event->type = EVENT_TYPE_POINTER_PRESSED;
+  int result;
+  if (thread->hasEvent()) {
+    MAEvent nextEvent = thread->popEvent();
+    event->point = nextEvent.point;
+    event->type = nextEvent.type;
     result = 1;
-    break;
-    case DRAG:
-    event->type = EVENT_TYPE_POINTER_DRAGGED;
-    result = 1;
-    break;
-    case RELEASE:
-    event->type = EVENT_TYPE_POINTER_RELEASED;
-    result = 1;
-    break;
-    }
-    }
-  */
+  } else {
+    result = 0;
+  }
   return result;
 }
 
 void maWait(int timeout) {
-  //fltk::wait(timeout);
+  int slept = 0;
+  while (1) {
+    if (thread->hasEvent()) {
+      break;
+    }
+    thread->Sleep(WAIT_INTERVAL);
+    slept += WAIT_INTERVAL;
+    if (timeout > 0 && slept > timeout) {
+      break;
+    }
+  }
 }
 
 //
 // sbasic implementation
 //
-
 void osd_sound(int frq, int dur, int vol, int bgplay) {
-
 }
 
 void osd_clear_sound_queue() {
-
 }
 
 void osd_beep(void) {
-  output->beep();
 }
 
 void osd_cls(void) {
@@ -300,58 +415,7 @@ int osd_devrestore(void) {
 }
 
 int osd_events(int wait_flag) {
-  //return handleEvents(wait_flag);
-  /*
-    switch (wait_flag) {
-    case 1:
-    // wait for an event
-    wnd->_out->flush(true);
-    fltk::wait();
-    break;
-    case 2:
-    // pause
-    fltk::wait(EVT_PAUSE_TIME);
-    break;
-    default:
-    // pump messages without pausing
-    fltk::check();
-    }
-
-    if (wnd->isBreakExec()) {
-    clearOutput();
-    return -2;
-    }
-
-    wnd->_out->flush(false);
-
-    case PUSH:
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    mouseActive = _ansiWidget->pointerTouchEvent(event);
-    return mouseActive;
-
-    case DRAG:
-    case MOVE:
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    if (mouseActive && _ansiWidget->pointerMoveEvent(event)) {
-    Widget::cursor(fltk::CURSOR_HAND);
-    return 1;
-    }
-    break;
-
-    case RELEASE:
-    if (mouseActive) {
-    mouseActive = false;
-    Widget::cursor(fltk::CURSOR_DEFAULT);
-    event.point.x = fltk::event_x();
-    event.point.y = fltk::event_y();
-    _ansiWidget->pointerReleaseEvent(event);
-    }
-    break;
-    }
-  */
-  return 0;
+  return thread->processEvents(wait_flag);
 }
 
 int osd_getpen(int mode) {
@@ -421,17 +485,16 @@ void osd_write(const char *str) {
   output->print(str);
 }
 
-char *dev_read(const char *fileName) {
-  //return readSource(fileName);
-  // TODO: does fopen work in tizen?
-  return NULL;
-}
-
 void lwrite(const char *str) {
   AppLog(str);
-  //output->print("\033[ SW7");
-  output->print(str);
-  //output->print("\033[ Sw");
+
+  if (systemScreen) {
+    output->print(str);
+  } else {
+    output->print("\033[ SW7");
+    output->print(str);
+    output->print("\033[ Sw");
+  }
 }
 
 void dev_image(int handle, int index,
@@ -447,14 +510,10 @@ int dev_image_height(int handle, int index) {
 }
 
 void dev_delay(dword ms) {
-  //processEvents(ms, EVENT_TYPE_EXIT_ANY);
+  maWait(ms);
 }
 
 char *dev_gets(char *dest, int maxSize) {
   //return getText(dest, maxSize);
   return NULL;
-}
-
-extern "C" int dev_clock() {
-  return 0;
 }
