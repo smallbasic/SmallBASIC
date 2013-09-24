@@ -6,11 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef SB_UI_UTILS_H
-#define SB_UI_UTILS_H
-
-void set_path(const char *filename);
-bool set_parent_path();
+#ifndef UTILS_H
+#define UTILS_H
 
 typedef unsigned char  U8;
 typedef unsigned short U16;
@@ -65,11 +62,8 @@ typedef signed long    S32;
 #define logLeaving() trace("%s leaving (%s %d)", \
                            __FUNCTION__, __FILE__, __LINE__);
 
-int get_text_width(char *s);
-void set_path(const char *filename);
-bool set_parent_path();
-
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
 
 #endif
+

@@ -88,7 +88,7 @@ result TizenAppForm::OnDraw() {
 
 void TizenAppForm::OnFormBackRequested(Form &source) {
   logEntered();
-  _runtime->setExit(false);
+  _runtime->setBack();
 }
 
 void TizenAppForm::OnFormMenuRequested(Form &source) {

@@ -24,8 +24,8 @@
 #include "platform/fltk/HelpWidget.h"
 #include "platform/fltk/TtyWidget.h"
 #include "platform/fltk/utils.h"
-#include "platform/mosync/utils.h"
-#include "platform/mosync/interface.h"
+#include "platform/common/utils.h"
+#include "platform/common/interface.h"
 #include "common/fs_socket_client.h"
 
 #ifdef WIN32

@@ -26,7 +26,7 @@
 #include "FileWidget.h"
 #include "common/sbapp.h"
 #include "platform/common/StringLib.h"
-#include "platform/mosync/utils.h"
+#include "platform/common/system.h"
 
 #include "common/sys.h"
 #include "common/fs_socket_client.h"

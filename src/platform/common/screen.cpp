@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#include "platform/mosync/screen.h"
+#include "platform/common/screen.h"
 
 #define WHITE 15
 #define SCROLL_IND 4

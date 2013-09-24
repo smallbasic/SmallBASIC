@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 
-#include "platform/mosync/ansiwidget.h"
+#include "platform/common/ansiwidget.h"
 #include "platform/common/utils.h"
 
 /* class AnsiWidget

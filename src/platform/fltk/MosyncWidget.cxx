@@ -20,8 +20,8 @@
 #include <time.h>
 #include "platform/fltk/MosyncWidget.h"
 #include "platform/fltk/utils.h"
-#include "platform/mosync/ansiwidget.h"
-#include "platform/mosync/form_ui.h"
+#include "platform/common/ansiwidget.h"
+#include "platform/common/form_ui.h"
 
 using namespace fltk;
 

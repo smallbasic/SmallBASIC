@@ -96,11 +96,6 @@
 			<locationURI>WORKSPACE_LOC/src/platform/common</locationURI>
 		</link>
 		<link>
-			<name>mosync</name>
-			<type>2</type>
-			<locationURI>WORKSPACE_LOC/src/platform/mosync</locationURI>
-		</link>
-		<link>
 			<name>tizen</name>
 			<type>2</type>
 			<locationURI>WORKSPACE_LOC/src/platform/tizen</locationURI>
@@ -114,42 +109,6 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-projectRelativePath-matches-false-false-*/.tpk</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1379018632501</id>
-			<name>mosync</name>
-			<type>26</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-*</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1379018632528</id>
-			<name>mosync</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-ansiwidget.cpp</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1379018632574</id>
-			<name>mosync</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-form_ui.cpp</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1379018632579</id>
-			<name>mosync</name>
-			<type>5</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-screen.cpp</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>

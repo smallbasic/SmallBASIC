@@ -22,7 +22,7 @@
 #include "common/blib_ui.h"
 
 #include "platform/common/utils.h"
-#include "platform/mosync/form_ui.h"
+#include "platform/common/form_ui.h"
 
 Form *form;
 

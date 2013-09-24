@@ -11,7 +11,7 @@
 #include "platform/tizen/runtime.h"
 #include "platform/common/maapi.h"
 #include "platform/common/utils.h"
-#include "platform/mosync/form_ui.h"
+#include "platform/common/form_ui.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -22,16 +22,18 @@
 #define WAIT_INTERVAL 10
 #define EVENT_CHECK_EVERY 2000
 #define EVENT_MAX_BURN_TIME 30
-#define EVENT_PAUSE_TIME 400
 
 using namespace Tizen::App;
 using namespace Tizen::Base::Utility;
 
+struct RuntimeEvent : 
+  public Tizen::Base::Object {
+  MAEvent maEvent;
+};
+
 // The runtime thread owns the ansiwidget which uses
 // ma apis. The ma apis are handled in the main thread
-AnsiWidget *output;
 RuntimeThread *thread;
-bool systemScreen;
 
 //
 // converts a Tizen (wchar) String into a StringLib (char) string
@@ -44,13 +46,9 @@ String fromString(const Tizen::Base::String &in) {
 }
 
 RuntimeThread::RuntimeThread(int w, int h) :
-  _state(kInitState),
+  System(),
   _eventQueueLock(NULL),
   _eventQueue(NULL),
-  _lastEventTime(0),
-  _eventTicks(0),
-  _drainError(false),
-  _programSrc(NULL),
   _w(w),
   _h(h) {
   thread = this;
@@ -106,7 +104,7 @@ void RuntimeThread::pushEvent(MAEvent maEvent) {
   _eventQueueLock->Release();
 }
 
-int RuntimeThread::processEvents(int waitFlag) {
+int RuntimeThread::processEvents(bool waitFlag) {
   if (thread->isBreak()) {
     return -2;
   }
@@ -118,72 +116,50 @@ int RuntimeThread::processEvents(int waitFlag) {
     if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
       // next time inspection interval
       if (_eventTicks >= EVENT_MAX_BURN_TIME) {
-        output->print("\033[ LBattery drain");
+        _output->print("\033[ LBattery drain");
         _drainError = true;
       } else if (_drainError) {
-        output->print("\033[ L");
+        _output->print("\033[ L");
         _drainError = false;
       }
       _lastEventTime = now;
       _eventTicks = 0;
     }
-  }
-
-  // pull events from the queue, invoke ansiwidget event handlers
-  switch (waitFlag) {
-  case 1:
+  } else {
     // wait for an event
-    output->flush(true);
-    maWait(0);
-    break;
-  case 2:
-    // pause
-    maWait(EVENT_PAUSE_TIME);
-    break;
-  default:
-    // pump messages without pausing
-    break;
+    _output->flush(true);
+    maWait(-1);
   }
 
   if (hasEvent()) {
     MAEvent event = thread->popEvent();
     switch (event.type) {
     case EVENT_TYPE_POINTER_PRESSED:
-      output->pointerTouchEvent(event);
+      _output->pointerTouchEvent(event);
       break;
 
     case EVENT_TYPE_POINTER_DRAGGED:
-      output->pointerMoveEvent(event);
+      _output->pointerMoveEvent(event);
       break;
 
     case EVENT_TYPE_POINTER_RELEASED:
-      output->pointerReleaseEvent(event);
+      _output->pointerReleaseEvent(event);
       break;
     }
   }
-  output->flush(false);
+  _output->flush(false);
   return 0;
 }
 
 void RuntimeThread::setExit(bool quit) {
-  if (_state != kDoneState) {
+  if (!isClosing()) {
     _eventQueueLock->Acquire();
     if (isRunning()) {
       brun_break();
     }
-    if (!isClosing()) {
-      _state = quit ? kClosingState : kBackState;
-    }
+    _state = quit ? kClosingState : kBackState;
     _eventQueueLock->Release();
   }
-}
-
-void RuntimeThread::setRunning() {
-  _state = kRunState;
-  _loadPath.empty();
-  _lastEventTime = maGetMilliSecondCount();
-  _eventTicks = 0;
-  _drainError = false;
 }
 
 Tizen::Base::Object *RuntimeThread::Run() {
@@ -201,85 +177,25 @@ Tizen::Base::Object *RuntimeThread::Run() {
   opt_usevmt = 0;
   os_graphics = 1;
 
-  output = new AnsiWidget(this, _w, _h);
-  output->construct();
-  output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-
 	String resourcePath = fromString(App::GetInstance()->GetAppResourcePath());
   String mainBasPath = resourcePath + "main.bas";
 
-  strcpy(opt_command, "welcome");
-  sbasic_main(mainBasPath);
-  bool mainBas = true;
-  while (!isClosing()) {
-    if (isBack() || getLoadPath() == NULL) {
-      if (mainBas) {
-        setExit(!set_parent_path());
-      }
-      if (!isClosing()) {
-        mainBas = true;
-        opt_command[0] = '\0';
-        sbasic_main(mainBasPath);
-      }
-    } else {
-      mainBas = (strncmp(getLoadPath(), "main.bas", 8) == 0);
-      if (!mainBas) {
-        set_path(getLoadPath());
-      }
-      bool success = sbasic_main(getLoadPath());
-      if (!isBack()) {
-        if (!mainBas) {
-          // display an indication the program has completed
-          showCompletion(success);
-        }
-        if (!success) {
-          // highlight the error
-          showError();
-        }
-      }
-    }
-  }
+  _output = new AnsiWidget(this, _w, _h);
+  _output->construct();
+  _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
 
-  delete output;
+  runMain(mainBasPath);
+
+  delete _output;
   _state = kDoneState;
   logLeaving();
   App::GetInstance()->SendUserEvent(USER_MESSAGE_EXIT, NULL);
   return 0;
 }
 
-void RuntimeThread::showCompletion(bool success) {
-  if (success) {
-    output->print("\033[ LDone - press back [<-]");
-  } else {
-    output->print("\033[ LError - see console");
-  }
-  output->flush(true);
-}
-
-void RuntimeThread::showError() {
-  _state = kActiveState;
-  _loadPath.empty();
-  showSystemScreen(false);
-}
-
-void RuntimeThread::showSystemScreen(bool showSrc) {
-  if (showSrc) {
-    // screen command write screen 2 (\014=CLS)
-    output->print("\033[ SW6\014");
-    if (_programSrc) {
-      output->print(_programSrc);
-    }
-    // restore write screen, display screen 6 (source)
-    output->print("\033[ Sw; SD6");
-  } else {
-    // screen command display screen 7 (console)
-    output->print("\033[ SD7");
-  }
-  systemScreen = true;
-}
-
-const char *RuntimeThread::getLoadPath() {
-  return !_loadPath.length() ? NULL : _loadPath.c_str();
+MAEvent RuntimeThread::getNextEvent() {
+  processEvents(true);
+  return popEvent();
 }
 
 //
@@ -294,11 +210,15 @@ bool form_ui::isBreak() {
 }
 
 void form_ui::processEvents() {
-  thread->processEvents(0);
+  thread->processEvents(true);
 }
 
 void form_ui::buttonClicked(const char *url) {
-  //buttonClicked(url);
+  thread->buttonClicked(url);
+}
+
+AnsiWidget *form_ui::getOutput() {
+  return thread->_output;
 }
 
 struct Listener : IButtonListener {
@@ -309,18 +229,18 @@ struct Listener : IButtonListener {
 };
 
 void form_ui::optionsBox(StringList *items) {
-  output->print("\033[ S#6");
+  thread->_output->print("\033[ S#6");
   int y = 0;
   Listener listener;
   List_each(String *, it, *items) {
     char *str = (char *)(* it)->c_str();
     int w = osd_textwidth(str) + 20;
-    IFormWidget *item = output->createButton(str, 2, y, w, 22);
+    IFormWidget *item = thread->_output->createButton(str, 2, y, w, 22);
     item->setListener(&listener);
     y += 24;
   }
   while (thread->isRunning() && !listener._action.length()) {
-    osd_events(0);
+    osd_events(1);
   }
   int index = 0;
   List_each(String *, it, *items) {
@@ -331,13 +251,9 @@ void form_ui::optionsBox(StringList *items) {
       index++;
     }
   }
-  output->print("\033[ SE6");
-  output->optionSelected(index);
+  thread->_output->print("\033[ SE6");
+  thread->_output->optionSelected(index);
   maUpdateScreen();
-}
-
-AnsiWidget *form_ui::getOutput() {
-  return output;
 }
 
 //
@@ -359,7 +275,9 @@ int maGetEvent(MAEvent *event) {
 void maWait(int timeout) {
   int slept = 0;
   while (1) {
-    if (thread->hasEvent()) {
+    if (thread->hasEvent()
+        || thread->isBack()
+        || thread->isClosing()) {
       break;
     }
     thread->Sleep(WAIT_INTERVAL);
@@ -385,32 +303,19 @@ void osd_beep(void) {
 void osd_cls(void) {
   logEntered();
   ui_reset();
-  output->clearScreen();
+  thread->_output->clearScreen();
 }
 
 int osd_devinit(void) {
   logEntered();
-  dev_fgcolor = -DEFAULT_FOREGROUND;
-  dev_bgcolor = -DEFAULT_BACKGROUND;
-  os_graf_mx = output->getWidth();
-  os_graf_my = output->getHeight();
-
-  os_ver = 1;
-  os_color = 1;
-  os_color_depth = 16;
+  thread->setRunning(true);
   setsysvar_str(SYSVAR_OSNAME, "Tizen");
-
-  dev_clrkb();
-  ui_reset();
-
-  output->reset();
-  thread->setRunning();
-
   return 1;
 }
 
 int osd_devrestore(void) {
   ui_reset();
+  thread->setRunning(false);
   return 0;
 }
 
@@ -419,40 +324,39 @@ int osd_events(int wait_flag) {
 }
 
 int osd_getpen(int mode) {
-  //return getPen(mode);
-  return 0;
+  return thread->getPen(mode);
 }
 
 long osd_getpixel(int x, int y) {
-  return output->getPixel(x, y);
+  return thread->_output->getPixel(x, y);
 }
 
 int osd_getx(void) {
-  return output->getX();
+  return thread->_output->getX();
 }
 
 int osd_gety(void) {
-  return output->getY();
+  return thread->_output->getY();
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
-  output->drawLine(x1, y1, x2, y2);
+  thread->_output->drawLine(x1, y1, x2, y2);
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   if (fill) {
-    output->drawRectFilled(x1, y1, x2, y2);
+    thread->_output->drawRectFilled(x1, y1, x2, y2);
   } else {
-    output->drawRect(x1, y1, x2, y2);
+    thread->_output->drawRect(x1, y1, x2, y2);
   }
 }
 
 void osd_refresh(void) {
-  output->flush(true);
+  thread->_output->flush(true);
 }
 
 void osd_setcolor(long color) {
-  output->setColor(color);
+  thread->_output->setColor(color);
 }
 
 void osd_setpenmode(int enable) {
@@ -460,19 +364,19 @@ void osd_setpenmode(int enable) {
 }
 
 void osd_setpixel(int x, int y) {
-  output->setPixel(x, y, dev_fgcolor);
+  thread->_output->setPixel(x, y, dev_fgcolor);
 }
 
 void osd_settextcolor(long fg, long bg) {
-  output->setTextColor(fg, bg);
+  thread->_output->setTextColor(fg, bg);
 }
 
 void osd_setxy(int x, int y) {
-  output->setXY(x, y);
+  thread->_output->setXY(x, y);
 }
 
 int osd_textheight(const char *str) {
-  return output->textHeight();
+  return thread->_output->textHeight();
 }
 
 int osd_textwidth(const char *str) {
@@ -482,19 +386,12 @@ int osd_textwidth(const char *str) {
 
 void osd_write(const char *str) {
   logEntered();
-  output->print(str);
+  thread->_output->print(str);
 }
 
 void lwrite(const char *str) {
   AppLog(str);
-
-  if (systemScreen) {
-    output->print(str);
-  } else {
-    output->print("\033[ SW7");
-    output->print(str);
-    output->print("\033[ Sw");
-  }
+  thread->systemPrint(str);
 }
 
 void dev_image(int handle, int index,
@@ -514,6 +411,5 @@ void dev_delay(dword ms) {
 }
 
 char *dev_gets(char *dest, int maxSize) {
-  //return getText(dest, maxSize);
-  return NULL;
+  return thread->getText(dest, maxSize);
 }

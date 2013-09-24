@@ -43,6 +43,7 @@
 #define EVENT_TYPE_POINTER_PRESSED 8
 #define EVENT_TYPE_POINTER_RELEASED 9
 #define EVENT_TYPE_POINTER_DRAGGED 10
+#define EVENT_TYPE_KEY_PRESSED 11
 
 #ifndef _WCHAR_DEFINED
 #define _WCHAR_DEFINED
@@ -80,6 +81,18 @@ typedef struct MAEvent {
    */
   int type;
   union {
+		struct {
+			/**
+			* In KEY events, this will be one of the \link #MAK_UNKNOWN MAK \endlink constants.
+			*/
+			int key;
+
+			/**
+			* In KEY events, this will be the native keycode.
+			*/
+			int nativeKey;
+		};
+    
     struct {
       /**
        * In POINTER events, this will be the location of the pointer.

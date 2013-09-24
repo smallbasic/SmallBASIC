@@ -20,8 +20,8 @@
 #endif
 
 #include "platform/common/StringLib.h"
-#include "platform/mosync/screen.h"
-#include "platform/mosync/interface.h"
+#include "platform/common/screen.h"
+#include "platform/common/interface.h"
 
 #define MAX_PENDING 250
 #define MAX_PENDING_GRAPHICS 25
