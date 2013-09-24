@@ -14,6 +14,7 @@
 #define SIZE_LIMIT 4
 #define MSG_ID_REDRAW 5000
 #define MSG_ID_SHOW_KEYPAD 5001
+#define FONT_FACE_NAME "Envy Code R.ttf"
 
 FormViewable *widget;
 Drawable *drawTarget;
@@ -138,7 +139,7 @@ FormViewable::~FormViewable() {
   delete _screen;
 }
 
-result FormViewable::Construct(int w, int h) {
+result FormViewable::Construct(String &resourcePath, int w, int h) {
   logEntered();
   result r = Control::Construct();
   if (!IsFailed(r)) {
@@ -149,6 +150,8 @@ result FormViewable::Construct(int w, int h) {
       drawColorRaw = DEFAULT_BACKGROUND;
       drawColor = Color(maSetColor(drawColorRaw));
       widget = this;
+      fontPath = resourcePath.c_str();
+      fontPath += FONT_FACE_NAME;
     } else {
       r = E_OUT_OF_MEMORY;
     }
@@ -158,6 +161,15 @@ result FormViewable::Construct(int w, int h) {
     AppLog("FormViewable::Construct failed");
   }
   return r;
+}
+
+Font *FormViewable::createFont(int style, int size) {
+  Font *font = new Font();
+  if (!font || font->Construct(fontPath, style, size) != E_SUCCESS) {
+    delete font;
+    font = (Font *)-1;
+  }
+  return font;
 }
 
 result FormViewable::OnDraw() {
@@ -263,12 +275,7 @@ MAExtent maGetScrSize(void) {
 }
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
-  Font *font = new Font();
-  if (!font || font->Construct(style, size) != E_SUCCESS) {
-    delete font;
-    font = (Font *)-1;
-  }
-  return (MAHandle) font;
+  return (MAHandle) widget->createFont(style, size);
 }
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {

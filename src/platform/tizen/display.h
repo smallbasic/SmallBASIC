@@ -16,10 +16,12 @@
 #include <FUiContainer.h>
 
 #include "platform/common/maapi.h"
+#include "platform/common/StringLib.h"
 
 using namespace Tizen::Ui;
 using namespace Tizen::Graphics;
 using namespace Tizen::Base::Collection;
+using namespace strlib;
 
 struct Drawable {
   Drawable();
@@ -45,13 +47,15 @@ struct FormViewable : public Control {
   FormViewable();
   virtual ~FormViewable();
 
-  result Construct(int w, int h);
+  result Construct(String &resourcePath, int w, int h);
+  Font *createFont(int style, int size);
   Drawable *getScreen() { return _screen; }
   int getDefaultSize() { return _defsize; }
   result OnDraw();
 
 private:
   void OnUserEventReceivedN(RequestId requestId, IList* pArgs);
+  Tizen::Base::String fontPath;
   Drawable *_screen;
   bool _resized;
   int _defsize;

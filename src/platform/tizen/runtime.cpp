@@ -24,7 +24,6 @@
 #define EVENT_MAX_BURN_TIME 30
 
 using namespace Tizen::App;
-using namespace Tizen::Base::Utility;
 
 struct RuntimeEvent : 
   public Tizen::Base::Object {
@@ -34,16 +33,6 @@ struct RuntimeEvent :
 // The runtime thread owns the ansiwidget which uses
 // ma apis. The ma apis are handled in the main thread
 RuntimeThread *thread;
-
-//
-// converts a Tizen (wchar) String into a StringLib (char) string
-//
-String fromString(const Tizen::Base::String &in) {
-  Tizen::Base::ByteBuffer *buf = StringUtil::StringToUtf8N(in);
-	String result((const char*)buf->GetPointer());
-	delete buf;
-	return result;
-}
 
 RuntimeThread::RuntimeThread(int w, int h) :
   System(),
@@ -65,7 +54,7 @@ void RuntimeThread::buttonClicked(const char *action) {
   logEntered();
 }
 
-result RuntimeThread::Construct() {
+result RuntimeThread::Construct(String &resourcePath) {
   logEntered();
   result r = Thread::Construct();
   if (!IsFailed(r)) {
@@ -75,6 +64,9 @@ result RuntimeThread::Construct() {
   if (!IsFailed(r)) {
     _eventQueue = new Queue();
     r = _eventQueue != NULL ? _eventQueue->Construct() : E_OUT_OF_MEMORY;
+  }
+  if (!IsFailed(r)) {
+    _mainBasPath = resourcePath + "main.bas";
   }
   return r;
 }
@@ -177,14 +169,11 @@ Tizen::Base::Object *RuntimeThread::Run() {
   opt_usevmt = 0;
   os_graphics = 1;
 
-	String resourcePath = fromString(App::GetInstance()->GetAppResourcePath());
-  String mainBasPath = resourcePath + "main.bas";
-
   _output = new AnsiWidget(this, _w, _h);
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
 
-  runMain(mainBasPath);
+  runMain(_mainBasPath);
 
   delete _output;
   _state = kDoneState;

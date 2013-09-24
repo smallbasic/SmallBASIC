@@ -10,14 +10,26 @@
 #include "platform/tizen/form.h"
 #include "platform/common/utils.h"
 
+using namespace Tizen::App;
 using namespace Tizen::Base::Collection;
 using namespace Tizen::Base::Runtime;
+using namespace Tizen::Base::Utility;
 using namespace Tizen::Ui::Controls;
 
 // block for up to 2.5 seconds during shutdown to
 // allow the runtime thread to exit gracefully.
 #define EXIT_SLEEP_STEP 10
 #define EXIT_SLEEP 250
+
+//
+// converts a Tizen (wchar) String into a StringLib (char) string
+//
+String fromString(const Tizen::Base::String &in) {
+  Tizen::Base::ByteBuffer *buf = StringUtil::StringToUtf8N(in);
+  String result((const char*)buf->GetPointer());
+  delete buf;
+  return result;
+}
 
 //
 // TizenAppForm
@@ -54,10 +66,11 @@ TizenAppForm::~TizenAppForm() {
 result TizenAppForm::Construct(int w, int h) {
   logEntered();
   result r = Form::Construct(FORM_STYLE_NORMAL);
+  String resourcePath = fromString(App::GetInstance()->GetAppResourcePath());
 
   if (!IsFailed(r)) {
     _display = new FormViewable();
-    if (_display && _display->Construct(w, h) == E_SUCCESS &&
+    if (_display && _display->Construct(resourcePath, w, h) == E_SUCCESS &&
         AddControl(_display) == E_SUCCESS) {
       SetOrientation(ORIENTATION_AUTOMATIC);
     } else {
@@ -68,7 +81,7 @@ result TizenAppForm::Construct(int w, int h) {
 
   if (!IsFailed(r)) {
     _runtime = new RuntimeThread(w, h);
-    r = _runtime != NULL ? _runtime->Construct() : E_OUT_OF_MEMORY;
+    r = _runtime != NULL ? _runtime->Construct(resourcePath) : E_OUT_OF_MEMORY;
   }
 
   if (IsFailed(r)) {
