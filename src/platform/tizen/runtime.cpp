@@ -23,6 +23,8 @@
 #define EVENT_CHECK_EVERY 2000
 #define EVENT_MAX_BURN_TIME 30
 
+#define DEFAULT_FONT_SIZE 32
+
 using namespace Tizen::App;
 
 struct RuntimeEvent : 
@@ -172,6 +174,7 @@ Tizen::Base::Object *RuntimeThread::Run() {
   _output = new AnsiWidget(this, _w, _h);
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
+  _output->setFontSize(DEFAULT_FONT_SIZE);
 
   runMain(_mainBasPath);
 

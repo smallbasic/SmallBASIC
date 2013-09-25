@@ -112,11 +112,11 @@ result TizenAppForm::OnInitializing(void) {
   logEntered();
 
   AddOrientationEventListener(*this);
-  AddTouchEventListener(*this);
   SetFormBackEventListener(this);
   SetFormMenuEventListener(this);
 
   // set focus to enable receiving key events
+  _display->AddTouchEventListener(*this);
   SetEnabled(true);
   SetFocusable(true);
   SetFocus();

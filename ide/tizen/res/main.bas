@@ -24,19 +24,19 @@ end
 sub about()
   local bn_ok
   cls
-  print "  / __/_ _  ___ _/ / / _ )/ _ | / __/  _/ ___/"
-  print " _\ \/  ' \/ _ `/ / / _  / __ |_\ \_/ // /__  "
-  print "/___/_/_/_/\_,_/_/_/____/_/ |_/___/___/\___/  "
+  print " __             _      _____ _"
+  print "(_ ._ _  _.||  |_) /\ (_  | / "
+  print "__)| | |(_|||  |_)/--\__)_|_\_"
   print
   print "Version 0.11.4"
   print
   print "Copyright (c) 2002-2012 Chris Warren-Smith"
-  print "Copyright (c) 2000-2006 Nicholas Christopoulos." + chr(10)
+  print "Copyright (c) 2000-2006 Nic Christopoulos." + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
-  print "SmallBASIC comes with ABSOLUTELY NO WARRANTY."
-  print "This program is free software; you can use it"
-  print "redistribute it and/or modify it under the terms of the"
-  print "GNU General Public License version 2 as published by"
+  print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
+  print "This program is free software; you can use it ";
+  print "redistribute it and/or modify it under the terms of the ";
+  print "GNU General Public License version 2 as published by ";
   print "the Free Software Foundation."
   print 
   color 10, 8

@@ -83,9 +83,9 @@ void Drawable::drawRectFilled(int left, int top, int width, int height) {
 void Drawable::drawText(int left, int top, const char *str) {
   AppLog("draw text %d %d %s", left, top, str);
   if (activeFont) {
-    //if (_canvas->SetFont(*activeFont->_font) != E_SUCCESS) {
-    //  AppLog("Failed to set active font onto canvas");
-   // }
+    if (_canvas->SetFont(*activeFont) != E_SUCCESS) {
+      AppLog("Failed to set active font onto canvas");
+    }
   }
   beginDraw();
   if (_canvas->DrawText(Point(left, top), Tizen::Base::String(str)) != E_SUCCESS) {
@@ -201,12 +201,14 @@ void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* args) {
 // maapi implementation
 //
 int maFontDelete(MAHandle maHandle) {
-  Font *font = (Font *) maHandle;
-  if (font == activeFont) {
-    activeFont = NULL;
+  if (maHandle != -1) {
+    Font *font = (Font *) maHandle;
+    if (font == activeFont) {
+      activeFont = NULL;
+    }
+    AppLog("Delete font %x", font);
+    delete font;
   }
-  AppLog("Delete font %x", font);
-  delete font;
   return RES_FONT_OK;
 }
 
