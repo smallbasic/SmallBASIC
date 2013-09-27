@@ -16,8 +16,10 @@
 #include "platform/common/ansiwidget.h"
 #include "platform/common/system.h"
 
+using namespace Tizen::App;
 using namespace Tizen::Base::Collection;
 using namespace Tizen::Base::Runtime;
+using namespace Tizen::Ui;
 
 struct RuntimeThread : 
   public System,
@@ -29,6 +31,7 @@ struct RuntimeThread :
 
   void buttonClicked(const char *action);
   result Construct(String &resourcePath);
+  void handleKey(KeyCode keyCode);
   bool hasEvent();
   MAEvent popEvent();
   void pushEvent(MAEvent event);

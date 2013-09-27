@@ -26,8 +26,8 @@ class AppForm :
   public IActionEventListener,
   public IFormBackEventListener,
   public IFormMenuEventListener,
+  public IKeyEventListener,
   public IOrientationEventListener,
-  public ITextEventListener,
   public ITouchEventListener {
 
 public:
@@ -46,22 +46,24 @@ private:
   void OnFormBackRequested(Form &source);
   void OnFormMenuRequested(Form &source);
   result OnInitializing(void);
+
+  void OnKeyPressed(const Control &source, KeyCode keyCode);
+  void OnKeyReleased(const Control &source, KeyCode keyCode) {};
+  void OnKeyLongPressed(const Control &source, KeyCode keyCode) {}
   void OnOrientationChanged(const Control &source,
                             OrientationStatus orientationStatus);
-  void OnTextValueChanged(const Control &source);
-  void OnTextValueChangeCanceled(const Control &source);
   void OnTouchDoublePressed(const Control &source,
                             const Point &currentPosition,
-                            const TouchEventInfo &touchInfo);
+                            const TouchEventInfo &touchInfo) {}
   void OnTouchFocusIn(const Control &source, 
                       const Point &currentPosition,
-                      const TouchEventInfo &touchInfo);
+                      const TouchEventInfo &touchInfo) {}
   void OnTouchFocusOut(const Control &source,
                        const Point &currentPosition,
-                       const TouchEventInfo &touchInfo);
+                       const TouchEventInfo &touchInfo) {}
   void OnTouchLongPressed(const Control &source,
                           const Point &currentPosition,
-                          const TouchEventInfo &touchInfo);
+                          const TouchEventInfo &touchInfo) {}
   void OnTouchMoved(const Control &source,
                     const Point &currentPosition,
                     const TouchEventInfo &touchInfo);

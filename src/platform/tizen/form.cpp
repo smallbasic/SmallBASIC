@@ -137,7 +137,7 @@ void AppForm::OnFormMenuRequested(Form &source) {
   logEntered();
   MAEvent maEvent;
   maEvent.type = EVENT_TYPE_KEY_PRESSED;
-  maEvent.key = MAK_MENU;
+  maEvent.key = KEY_CONTEXT_MENU;
   _runtime->pushEvent(maEvent);
 }
 
@@ -148,7 +148,7 @@ result AppForm::OnInitializing(void) {
   SetFormBackEventListener(this);
   SetFormMenuEventListener(this);
 
-  _editField->AddTextEventListener(*this);
+  _editField->AddKeyEventListener(*this);
   _editField->SetKeypadEnabled(true);
   _editField->SetKeypadAction(KEYPAD_ACTION_DONE);
   _editField->SetEnabled(true);
@@ -169,37 +169,16 @@ result AppForm::OnInitializing(void) {
   return E_SUCCESS;
 }
 
+void AppForm::OnKeyPressed(const Control &source, KeyCode keyCode) {
+  _editField->Clear();
+  MAEvent maEvent;
+  maEvent.type = EVENT_TYPE_KEY_PRESSED;
+  maEvent.key = keyCode;
+  _runtime->pushEvent(maEvent);
+}
+
 void AppForm::OnOrientationChanged(const Control &source,
                                    OrientationStatus orientationStatus) {
-  logEntered();
-}
-
-void AppForm::OnTextValueChanged(const Control &source) {
-
-}
-
-void AppForm::OnTextValueChangeCanceled(const Control &source) {
-
-}
-
-void AppForm::OnTouchDoublePressed(const Control &source,
-                                   const Point &currentPosition,
-                                   const TouchEventInfo &touchInfo) {
-}
-
-void AppForm::OnTouchFocusIn(const Control &source,
-                             const Point &currentPosition,
-                             const TouchEventInfo &touchInfo) {
-}
-
-void AppForm::OnTouchFocusOut(const Control &source,
-                              const Point &currentPosition,
-                              const TouchEventInfo &touchInfo) {
-}
-
-void AppForm::OnTouchLongPressed(const Control &source,
-                                 const Point &currentPosition,
-                                 const TouchEventInfo &touchInfo) {
   logEntered();
 }
 
@@ -244,7 +223,9 @@ void AppForm::showAlert(ArrayList *args) {
 
 void AppForm::showKeypad() {
   _editField->RequestRedraw();
+  _editField->SetShowState(true);
   _editField->ShowKeypad();
+  _editField->SetFocus();
 }
 
 void AppForm::showMenu(ArrayList *args) {

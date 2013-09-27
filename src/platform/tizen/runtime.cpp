@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include <FApp.h>
+#include <FUi.h>
 #include "platform/tizen/runtime.h"
 #include "platform/common/maapi.h"
 #include "platform/common/utils.h"
@@ -24,8 +25,6 @@
 #define EVENT_MAX_BURN_TIME 30
 
 #define DEFAULT_FONT_SIZE 32
-
-using namespace Tizen::App;
 
 struct RuntimeEvent : 
   public Tizen::Base::Object {
@@ -71,6 +70,63 @@ result RuntimeThread::Construct(String &resourcePath) {
     _mainBasPath = resourcePath + "main.bas";
   }
   return r;
+}
+
+void RuntimeThread::handleKey(KeyCode keyCode) {
+  switch (keyCode) {
+  case KEY_TAB:
+    dev_pushkey(SB_KEY_TAB);
+    break;
+  case KEY_HOME:
+    dev_pushkey(SB_KEY_KP_HOME);
+    break;
+  case KEY_MOVE_END:
+    dev_pushkey(SB_KEY_END);
+    break;
+  case KEY_INSERT:
+    dev_pushkey(SB_KEY_INSERT);
+    break;
+  case KEY_NUMPAD_MULTIPLY:
+    dev_pushkey(SB_KEY_KP_MUL);
+    break;
+  case KEY_NUMPAD_ADD:
+    dev_pushkey(SB_KEY_KP_PLUS);
+    break;
+  case KEY_NUMPAD_SUBTRACT:
+    dev_pushkey(SB_KEY_KP_MINUS);
+    break;
+  case KEY_SLASH:
+    dev_pushkey(SB_KEY_KP_DIV);
+    break;
+  case KEY_PAGE_UP:
+    dev_pushkey(SB_KEY_PGUP);
+    break;
+  case KEY_PAGE_DOWN:
+    dev_pushkey(SB_KEY_PGDN);
+    break;
+  case KEY_UP:
+    dev_pushkey(SB_KEY_UP);
+    break;
+  case KEY_DOWN:
+    dev_pushkey(SB_KEY_DN);
+    break;
+  case KEY_LEFT:
+    dev_pushkey(SB_KEY_LEFT);
+    break;
+  case KEY_RIGHT:
+    dev_pushkey(SB_KEY_RIGHT);
+    break;
+  case KEY_CLEAR:
+  case KEY_BACKSPACE:
+  case KEY_DELETE:
+    dev_pushkey(SB_KEY_BACKSPACE);
+    break;
+  default:
+    if (keyCode >= KEY_A && keyCode <= KEY_Z) {
+      dev_pushkey('a' + (keyCode - KEY_A));
+    }
+    break;
+  }
 }
 
 bool RuntimeThread::hasEvent() {
@@ -162,9 +218,10 @@ int RuntimeThread::processEvents(bool waitFlag) {
       break;
 
     case EVENT_TYPE_KEY_PRESSED:
-     // handleKey(event.key);
-      if (event.key == MAK_MENU) {
+      if (event.key == KEY_CONTEXT_MENU) {
         showMenu();
+      } else if (isRunning()) {
+        handleKey((KeyCode) event.key);
       }
       break;
 
