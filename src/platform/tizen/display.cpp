@@ -13,10 +13,6 @@
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
-#define MSG_ID_REDRAW 5000
-#define MSG_ID_SHOW_KEYPAD 5001
-#define MSG_ID_SHOW_MENU 5002
-#define MSG_ID_SHOW_ALERT 5003
 #define FONT_FACE_NAME "Envy Code R.ttf"
 
 FormViewable *widget;
@@ -26,6 +22,7 @@ bool mouseActive;
 Color drawColor;
 int drawColorRaw;
 
+using namespace Tizen::App;
 using namespace Tizen::Ui::Controls;
 
 //
@@ -202,39 +199,10 @@ result FormViewable::OnDraw() {
   return E_SUCCESS;
 }
 
-void FormViewable::showAlert(ArrayList *args) {
-  int modalResult = 0;
-  MessageBox messageBox;
-  Tizen::Base::String *title = (Tizen::Base::String *)args->GetAt(0);
-  Tizen::Base::String *text = (Tizen::Base::String *)args->GetAt(1);
-  messageBox.Construct(*title, *text, MSGBOX_STYLE_OK);
-  messageBox.ShowAndWait(modalResult);
-}
-
-void FormViewable::showMenu(ArrayList *args) {
-
-}
-
-void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* args) {
-  switch (requestId) {
-  case MSG_ID_SHOW_KEYPAD:
-    break;
-  case MSG_ID_REDRAW:
-    _canvasLock->Acquire();
-    OnDraw();
-    _canvasLock->Release();
-    break;
-  case MSG_ID_SHOW_MENU:
-    showMenu((ArrayList *)args);
-    args->RemoveAll(true);
-    delete args;
-    break;
-  case MSG_ID_SHOW_ALERT:
-    showAlert((ArrayList *)args);
-    args->RemoveAll(true);
-    delete args;
-    break;
-  }
+void FormViewable::redraw() {
+  _canvasLock->Acquire();
+  OnDraw();
+  _canvasLock->Release();
 }
 
 MAHandle FormViewable::setDrawTarget(MAHandle maHandle) {
@@ -264,7 +232,7 @@ void form_ui::optionsBox(StringList *items) {
     char *str = (char *)(* it)->c_str();
     args->Add(new Tizen::Base::String(str));
   }
-  widget->SendUserEvent(MSG_ID_SHOW_MENU, args);
+  Application::GetInstance()->SendUserEvent(MSG_ID_SHOW_MENU, args);
 }
 
 //
@@ -322,7 +290,7 @@ void maDrawText(int left, int top, const char *str) {
 }
 
 void maUpdateScreen(void) {
-  widget->SendUserEvent(MSG_ID_REDRAW, NULL);
+  Application::GetInstance()->SendUserEvent(MSG_ID_REDRAW, NULL);
 }
 
 void maResetBacklight(void) {
@@ -399,7 +367,7 @@ int maGetMilliSecondCount(void) {
 }
 
 int maShowVirtualKeyboard(void) {
-  widget->SendUserEvent(MSG_ID_SHOW_KEYPAD, NULL);
+  Application::GetInstance()->SendUserEvent(MSG_ID_SHOW_KEYPAD, NULL);
   return 0;
 }
 
@@ -409,6 +377,6 @@ void maAlert(const char *title, const char *message, const char *button1,
   args->Construct();
   args->Add(new Tizen::Base::String(title));
   args->Add(new Tizen::Base::String(message));
-  widget->SendUserEvent(MSG_ID_SHOW_ALERT, args);
+  Application::GetInstance()->SendUserEvent(MSG_ID_SHOW_ALERT, args);
 }
 

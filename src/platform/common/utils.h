@@ -32,9 +32,7 @@ typedef signed long    S32;
  #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN
 #endif
 
-#define USER_MESSAGE_EXIT   1000
-#define USER_MESSAGE_EXIT_ERR   1001
-#define USER_MESSAGE_EXIT_ERR_CONFIG 1002
+#define USER_MESSAGE_EXIT 1000
 
 #define OUTSIDE_RECT(px, py, x, y, w, h) \
   (px < (x) || py < (y) || px > ((x)+(w)) || py > ((y)+(h)))

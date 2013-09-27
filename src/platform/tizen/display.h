@@ -18,6 +18,11 @@
 #include "platform/common/maapi.h"
 #include "platform/common/StringLib.h"
 
+#define MSG_ID_REDRAW 5001
+#define MSG_ID_SHOW_KEYPAD 5002
+#define MSG_ID_SHOW_MENU 5003
+#define MSG_ID_SHOW_ALERT 5004
+
 using namespace Tizen::Ui;
 using namespace Tizen::Graphics;
 using namespace Tizen::Base::Collection;
@@ -52,12 +57,9 @@ struct FormViewable : public Control {
   Font *createFont(int style, int size);
   MAHandle setDrawTarget(MAHandle maHandle);
   result OnDraw();
+  void redraw();
 
 private:
-  void OnUserEventReceivedN(RequestId requestId, IList* pArgs);
-  void showAlert(ArrayList *args);
-  void showMenu(ArrayList *args);
-
   Tizen::Base::String fontPath;
   Mutex *_canvasLock;
   Drawable *_screen;

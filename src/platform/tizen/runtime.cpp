@@ -58,7 +58,7 @@ void RuntimeThread::buttonClicked(const char *action) {
 
 result RuntimeThread::Construct(String &resourcePath) {
   logEntered();
-  result r = Thread::Construct(DEFAULT_STACK_SIZE, THREAD_PRIORITY_HIGH);
+  result r = Thread::Construct();
   if (!IsFailed(r)) {
     _eventQueueLock = new Mutex();
     r = _eventQueueLock != NULL ? _eventQueueLock->Create() : E_OUT_OF_MEMORY;
@@ -151,6 +151,23 @@ int RuntimeThread::processEvents(bool waitFlag) {
 
   if (hasEvent) {
     switch (event.type) {
+    case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
+      if (_systemMenu) {
+        handleMenu(event.optionsBoxButtonIndex);
+      } else if (isRunning()) {
+        if (!_output->optionSelected(event.optionsBoxButtonIndex)) {
+          dev_pushkey(event.optionsBoxButtonIndex);
+        }
+      }
+      break;
+
+    case EVENT_TYPE_KEY_PRESSED:
+     // handleKey(event.key);
+      if (event.key == MAK_MENU) {
+        showMenu();
+      }
+      break;
+
     case EVENT_TYPE_POINTER_PRESSED:
       _output->pointerTouchEvent(event);
       break;

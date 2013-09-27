@@ -16,8 +16,6 @@ using namespace Tizen::Base::Runtime;
 using namespace Tizen::Base::Utility;
 using namespace Tizen::Ui::Controls;
 
-// block for up to 2.5 seconds during shutdown to
-// allow the runtime thread to exit gracefully.
 #define EXIT_SLEEP_STEP 10
 #define EXIT_SLEEP 250
 
@@ -32,14 +30,16 @@ String fromString(const Tizen::Base::String &in) {
 }
 
 //
-// TizenAppForm
+// AppForm
 //
-TizenAppForm::TizenAppForm() :
+AppForm::AppForm() :
+  _editField(NULL),
+  _contextMenu(NULL),
   _display(NULL),
   _runtime(NULL) {
 }
 
-TizenAppForm::~TizenAppForm() {
+AppForm::~AppForm() {
   logEntered();
   if (_runtime) {
     if (_runtime->isActive()) {
@@ -62,7 +62,7 @@ TizenAppForm::~TizenAppForm() {
   logLeaving();
 }
 
-result TizenAppForm::Construct(int w, int h) {
+result AppForm::Construct(int w, int h) {
   logEntered();
   result r = Form::Construct(FORM_STYLE_NORMAL);
   String resourcePath = fromString(App::GetInstance()->GetAppResourcePath());
@@ -83,35 +83,77 @@ result TizenAppForm::Construct(int w, int h) {
     r = _runtime != NULL ? _runtime->Construct(resourcePath) : E_OUT_OF_MEMORY;
   }
 
+  if (!IsFailed(r)) {
+    _editField = new EditField();
+    r = _editField == NULL ? E_OUT_OF_MEMORY :
+        _editField->Construct(Rectangle(0, 0, 1, 1),
+                              EDIT_FIELD_STYLE_NORMAL_SMALL,
+                              INPUT_STYLE_OVERLAY,
+                              EDIT_FIELD_TITLE_STYLE_NONE,
+                              true, 100, GROUP_STYLE_SINGLE);
+    if (!IsFailed(r)) {
+      r = AddControl(_editField);
+    }
+  }
+
+  if (!IsFailed(r)) {
+    _contextMenu = new ContextMenu();
+    r = _contextMenu == NULL ? E_OUT_OF_MEMORY :
+        _contextMenu->Construct(Point(0, h), CONTEXT_MENU_STYLE_GRID,
+                                CONTEXT_MENU_ANCHOR_DIRECTION_UPWARD);
+  }
+
   if (IsFailed(r)) {
     AppLog("Form startup failed");
     delete _display;
     delete _runtime;
+    delete _editField;
+    delete _contextMenu;
     _runtime = NULL;
     _display = NULL;
+    _editField = NULL;
+    _contextMenu = NULL;
   }
   return r;
 }
 
-result TizenAppForm::OnDraw() {
+void AppForm::OnActionPerformed(const Control &source, int actionId) {
+  MAEvent maEvent;
+  maEvent.type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
+  maEvent.optionsBoxButtonIndex = actionId;
+  _runtime->pushEvent(maEvent);
+}
+
+result AppForm::OnDraw() {
   return _display->OnDraw();
 }
 
-void TizenAppForm::OnFormBackRequested(Form &source) {
+void AppForm::OnFormBackRequested(Form &source) {
   logEntered();
   _runtime->setBack();
 }
 
-void TizenAppForm::OnFormMenuRequested(Form &source) {
+void AppForm::OnFormMenuRequested(Form &source) {
   logEntered();
+  MAEvent maEvent;
+  maEvent.type = EVENT_TYPE_KEY_PRESSED;
+  maEvent.key = MAK_MENU;
+  _runtime->pushEvent(maEvent);
 }
 
-result TizenAppForm::OnInitializing(void) {
+result AppForm::OnInitializing(void) {
   logEntered();
 
   AddOrientationEventListener(*this);
   SetFormBackEventListener(this);
   SetFormMenuEventListener(this);
+
+  _editField->AddTextEventListener(*this);
+  _editField->SetKeypadEnabled(true);
+  _editField->SetKeypadAction(KEYPAD_ACTION_DONE);
+  _editField->SetEnabled(true);
+  _editField->SetShowState(false);
+  _contextMenu->AddActionEventListener(*this);
 
   // set focus to enable receiving key events
   _display->AddTouchEventListener(*this);
@@ -127,35 +169,43 @@ result TizenAppForm::OnInitializing(void) {
   return E_SUCCESS;
 }
 
-void TizenAppForm::OnOrientationChanged(const Control &source,
-                                        OrientationStatus orientationStatus) {
+void AppForm::OnOrientationChanged(const Control &source,
+                                   OrientationStatus orientationStatus) {
   logEntered();
 }
 
-void TizenAppForm::OnTouchDoublePressed(const Control &source,
-                                        const Point &currentPosition,
-                                        const TouchEventInfo &touchInfo) {
+void AppForm::OnTextValueChanged(const Control &source) {
+
 }
 
-void TizenAppForm::OnTouchFocusIn(const Control &source,
-                                  const Point &currentPosition,
-                                  const TouchEventInfo &touchInfo) {
+void AppForm::OnTextValueChangeCanceled(const Control &source) {
+
 }
 
-void TizenAppForm::OnTouchFocusOut(const Control &source,
+void AppForm::OnTouchDoublePressed(const Control &source,
                                    const Point &currentPosition,
                                    const TouchEventInfo &touchInfo) {
 }
 
-void TizenAppForm::OnTouchLongPressed(const Control &source,
-                                      const Point &currentPosition,
-                                      const TouchEventInfo &touchInfo) {
+void AppForm::OnTouchFocusIn(const Control &source,
+                             const Point &currentPosition,
+                             const TouchEventInfo &touchInfo) {
+}
+
+void AppForm::OnTouchFocusOut(const Control &source,
+                              const Point &currentPosition,
+                              const TouchEventInfo &touchInfo) {
+}
+
+void AppForm::OnTouchLongPressed(const Control &source,
+                                 const Point &currentPosition,
+                                 const TouchEventInfo &touchInfo) {
   logEntered();
 }
 
-void TizenAppForm::OnTouchMoved(const Control &source,
-                                const Point &currentPosition,
-                                const TouchEventInfo &touchInfo) {
+void AppForm::OnTouchMoved(const Control &source,
+                           const Point &currentPosition,
+                           const TouchEventInfo &touchInfo) {
   MAEvent maEvent;
   maEvent.type = EVENT_TYPE_POINTER_DRAGGED;
   maEvent.point.x = touchInfo.GetCurrentPosition().x;
@@ -163,9 +213,9 @@ void TizenAppForm::OnTouchMoved(const Control &source,
   _runtime->pushEvent(maEvent);
 }
 
-void TizenAppForm::OnTouchPressed(const Control &source,
-                                  const Point &currentPosition,
-                                  const TouchEventInfo &touchInfo) {
+void AppForm::OnTouchPressed(const Control &source,
+                             const Point &currentPosition,
+                             const TouchEventInfo &touchInfo) {
   MAEvent maEvent;
   maEvent.type = EVENT_TYPE_POINTER_PRESSED;
   maEvent.point.x = touchInfo.GetCurrentPosition().x;
@@ -173,13 +223,38 @@ void TizenAppForm::OnTouchPressed(const Control &source,
   _runtime->pushEvent(maEvent);
 }
 
-void TizenAppForm::OnTouchReleased(const Control &source,
-                                   const Point &currentPosition,
-                                   const TouchEventInfo &touchInfo) {
+void AppForm::OnTouchReleased(const Control &source,
+                              const Point &currentPosition,
+                              const TouchEventInfo &touchInfo) {
   MAEvent maEvent;
   maEvent.type = EVENT_TYPE_POINTER_RELEASED;
   maEvent.point.x = touchInfo.GetCurrentPosition().x;
   maEvent.point.y = touchInfo.GetCurrentPosition().y;
   _runtime->pushEvent(maEvent);
+}
+
+void AppForm::showAlert(ArrayList *args) {
+  int modalResult = 0;
+  MessageBox messageBox;
+  Tizen::Base::String *title = (Tizen::Base::String *)args->GetAt(0);
+  Tizen::Base::String *text = (Tizen::Base::String *)args->GetAt(1);
+  messageBox.Construct(*title, *text, MSGBOX_STYLE_OK);
+  messageBox.ShowAndWait(modalResult);
+}
+
+void AppForm::showKeypad() {
+  _editField->RequestRedraw();
+  _editField->ShowKeypad();
+}
+
+void AppForm::showMenu(ArrayList *args) {
+  _contextMenu->RemoveAllItems();
+  int len = args->GetCount();
+  for (int i = 0; i < len; i++) {
+    Tizen::Base::String *text = (Tizen::Base::String *)args->GetAt(i);
+    _contextMenu->AddItem(*text, i);
+  }
+  _contextMenu->SetShowState(true);
+  _contextMenu->Show();
 }
 

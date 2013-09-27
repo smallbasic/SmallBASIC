@@ -40,10 +40,12 @@
 #define MAK_SPACE 32
 #define MAK_Z 122
 #define MAK_CLEAR 12
+#define MAK_MENU 293
 #define EVENT_TYPE_POINTER_PRESSED 8
 #define EVENT_TYPE_POINTER_RELEASED 9
 #define EVENT_TYPE_POINTER_DRAGGED 10
 #define EVENT_TYPE_KEY_PRESSED 11
+#define EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED 41
 
 #ifndef _WCHAR_DEFINED
 #define _WCHAR_DEFINED
@@ -99,6 +101,11 @@ typedef struct MAEvent {
        */
       MAPoint2d point;
     };
+
+		/**
+     * #EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED event, contains the index of the selected option.
+     */
+		int optionsBoxButtonIndex;
   };
 } MAEvent;
 

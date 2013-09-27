@@ -19,25 +19,37 @@ using namespace Tizen::Base::Runtime;
 using namespace Tizen::Ui::Controls;
 
 //
-// TizenAppForm
+// AppForm
 //
-class TizenAppForm :
+class AppForm :
   public Controls::Form,
-  public IOrientationEventListener,
-  public ITouchEventListener,
+  public IActionEventListener,
   public IFormBackEventListener,
-  public IFormMenuEventListener {
+  public IFormMenuEventListener,
+  public IOrientationEventListener,
+  public ITextEventListener,
+  public ITouchEventListener {
 
 public:
-  TizenAppForm();
-  virtual ~TizenAppForm();
+  AppForm();
+  virtual ~AppForm();
   result Construct(int w, int h);
 
+  void showAlert(ArrayList *args);
+  void showKeypad();
+  void showMenu(ArrayList *args);
+  void redraw() { _display->redraw(); }
+
 private:
-  result OnInitializing(void);
+  void OnActionPerformed(const Control &source, int actionId);
   result OnDraw();
+  void OnFormBackRequested(Form &source);
+  void OnFormMenuRequested(Form &source);
+  result OnInitializing(void);
   void OnOrientationChanged(const Control &source,
                             OrientationStatus orientationStatus);
+  void OnTextValueChanged(const Control &source);
+  void OnTextValueChangeCanceled(const Control &source);
   void OnTouchDoublePressed(const Control &source,
                             const Point &currentPosition,
                             const TouchEventInfo &touchInfo);
@@ -59,9 +71,9 @@ private:
   void OnTouchReleased(const Control &source,
                        const Point &currentPosition,
                        const TouchEventInfo &touchInfo);
-  void OnFormBackRequested(Form &source);
-  void OnFormMenuRequested(Form &source);
 
+  EditField *_editField;
+  ContextMenu *_contextMenu;
   FormViewable *_display;
   RuntimeThread *_runtime;
 };

@@ -33,22 +33,22 @@ public:
 
   static UiApp *createInstance(void);
 
+private:
   bool OnAppInitializing(AppRegistry &appRegistry);
   bool OnAppInitialized(void);
   bool OnAppWillTerminate(void);
   bool OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination = false);
   void OnLowMemory(void);
   void OnBatteryLevelChanged(BatteryLevel batteryLevel);
-  void OnUserEventReceivedN(RequestId requestId, IList *pArgs);
+  void OnUserEventReceivedN(RequestId requestId, IList *args);
   void OnForeground(void);
   void OnBackground(void);
   void OnScreenOn(void);
   void OnScreenOff(void);
   void OnScreenBrightnessChanged(int brightness);
 
-private:
   void pauseRuntime(bool pause);
-  TizenAppForm *_appForm;
+  AppForm *_appForm;
 };
 
 #endif

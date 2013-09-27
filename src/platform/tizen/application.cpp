@@ -36,7 +36,7 @@ bool TizenApp::OnAppInitializing(AppRegistry &appRegistry) {
   if (appFrame && appFrame->Construct() == E_SUCCESS &&
       AddFrame(*appFrame) == E_SUCCESS) {
     Rectangle rc = appFrame->GetBounds();
-    _appForm = new (std::nothrow) TizenAppForm();
+    _appForm = new (std::nothrow) AppForm();
     if (_appForm &&
         _appForm->Construct(rc.width, rc.height) == E_SUCCESS &&
         appFrame->AddControl(_appForm) == E_SUCCESS &&
@@ -98,20 +98,29 @@ void TizenApp::OnScreenOn(void) {
 void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
   logEntered();
   switch (requestId) {
+  case MSG_ID_REDRAW:
+    _appForm->redraw();
+    break;
   case USER_MESSAGE_EXIT:
-    // normal program termination
     Terminate();
+    break;
+  case MSG_ID_SHOW_KEYPAD:
+    _appForm->showKeypad();
+    break;
+  case MSG_ID_SHOW_MENU:
+    _appForm->showMenu((ArrayList *)args);
+    args->RemoveAll(true);
+    delete args;
+    break;
+  case MSG_ID_SHOW_ALERT:
+    _appForm->showAlert((ArrayList *)args);
+    args->RemoveAll(true);
+    delete args;
     break;
   }
 }
 
 void TizenApp::pauseRuntime(bool pause) {
   if (_appForm) {
-    //    if (pause && g_engine && !g_engine->isPaused()) {
-    //  _appForm->pushKey(Common::KEYCODE_SPACE);
-    //}
-    //if (g_system) {
-    //    ((TizenSystem *)g_system)->setMute(pause);
-    //  }
   }
 }
