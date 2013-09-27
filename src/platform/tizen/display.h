@@ -55,6 +55,9 @@ struct FormViewable : public Control {
 
 private:
   void OnUserEventReceivedN(RequestId requestId, IList* pArgs);
+  void showAlert(ArrayList *args);
+  void showMenu(ArrayList *args);
+
   Tizen::Base::String fontPath;
   Mutex *_canvasLock;
   Drawable *_screen;

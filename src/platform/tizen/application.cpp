@@ -29,11 +29,6 @@ bool TizenApp::OnAppInitialized(void) {
   return true;
 }
 
-bool TizenApp::OnAppWillTerminate(void) {
-  logEntered();
-  return true;
-}
-
 bool TizenApp::OnAppInitializing(AppRegistry &appRegistry) {
   logEntered();
   bool result = false;
@@ -65,19 +60,9 @@ bool TizenApp::OnAppTerminating(AppRegistry &appRegistry, bool forcedTermination
   return true;
 }
 
-void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
+bool TizenApp::OnAppWillTerminate(void) {
   logEntered();
-  switch (requestId) {
-  case USER_MESSAGE_EXIT:
-    // normal program termination
-    Terminate();
-    break;
-  }
-}
-
-void TizenApp::OnForeground(void) {
-  logEntered();
-  pauseRuntime(false);
+  return true;
 }
 
 void TizenApp::OnBackground(void) {
@@ -89,11 +74,16 @@ void TizenApp::OnBatteryLevelChanged(BatteryLevel batteryLevel) {
   logEntered();
 }
 
+void TizenApp::OnForeground(void) {
+  logEntered();
+  pauseRuntime(false);
+}
+
 void TizenApp::OnLowMemory(void) {
   logEntered();
 }
 
-void TizenApp::OnScreenOn(void) {
+void TizenApp::OnScreenBrightnessChanged(int brightness) {
   logEntered();
 }
 
@@ -101,8 +91,18 @@ void TizenApp::OnScreenOff(void) {
   logEntered();
 }
 
-void TizenApp::OnScreenBrightnessChanged(int brightness) {
+void TizenApp::OnScreenOn(void) {
   logEntered();
+}
+
+void TizenApp::OnUserEventReceivedN(RequestId requestId, IList *args) {
+  logEntered();
+  switch (requestId) {
+  case USER_MESSAGE_EXIT:
+    // normal program termination
+    Terminate();
+    break;
+  }
 }
 
 void TizenApp::pauseRuntime(bool pause) {

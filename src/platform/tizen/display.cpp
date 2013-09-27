@@ -9,11 +9,14 @@
 #include "config.h"
 #include <time.h>
 #include "platform/tizen/display.h"
+#include "platform/common/form_ui.h"
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
 #define MSG_ID_REDRAW 5000
 #define MSG_ID_SHOW_KEYPAD 5001
+#define MSG_ID_SHOW_MENU 5002
+#define MSG_ID_SHOW_ALERT 5003
 #define FONT_FACE_NAME "Envy Code R.ttf"
 
 FormViewable *widget;
@@ -22,6 +25,8 @@ Font *activeFont;
 bool mouseActive;
 Color drawColor;
 int drawColorRaw;
+
+using namespace Tizen::Ui::Controls;
 
 //
 // Drawable
@@ -197,6 +202,19 @@ result FormViewable::OnDraw() {
   return E_SUCCESS;
 }
 
+void FormViewable::showAlert(ArrayList *args) {
+  int modalResult = 0;
+  MessageBox messageBox;
+  Tizen::Base::String *title = (Tizen::Base::String *)args->GetAt(0);
+  Tizen::Base::String *text = (Tizen::Base::String *)args->GetAt(1);
+  messageBox.Construct(*title, *text, MSGBOX_STYLE_OK);
+  messageBox.ShowAndWait(modalResult);
+}
+
+void FormViewable::showMenu(ArrayList *args) {
+
+}
+
 void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* args) {
   switch (requestId) {
   case MSG_ID_SHOW_KEYPAD:
@@ -205,6 +223,16 @@ void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* args) {
     _canvasLock->Acquire();
     OnDraw();
     _canvasLock->Release();
+    break;
+  case MSG_ID_SHOW_MENU:
+    showMenu((ArrayList *)args);
+    args->RemoveAll(true);
+    delete args;
+    break;
+  case MSG_ID_SHOW_ALERT:
+    showAlert((ArrayList *)args);
+    args->RemoveAll(true);
+    delete args;
     break;
   }
 }
@@ -224,6 +252,19 @@ MAHandle FormViewable::setDrawTarget(MAHandle maHandle) {
   delete drawTarget->_clip;
   drawTarget->_clip = NULL;
   return (MAHandle) drawTarget;
+}
+
+//
+// form_ui implementation
+//
+void form_ui::optionsBox(StringList *items) {
+  ArrayList *args = new ArrayList();
+  args->Construct();
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    args->Add(new Tizen::Base::String(str));
+  }
+  widget->SendUserEvent(MSG_ID_SHOW_MENU, args);
 }
 
 //
@@ -364,6 +405,10 @@ int maShowVirtualKeyboard(void) {
 
 void maAlert(const char *title, const char *message, const char *button1,
              const char *button2, const char *button3) {
-  //fltk::alert("%s\n\n%s", title, message);
+  ArrayList *args = new ArrayList();
+  args->Construct();
+  args->Add(new Tizen::Base::String(title));
+  args->Add(new Tizen::Base::String(message));
+  widget->SendUserEvent(MSG_ID_SHOW_ALERT, args);
 }
 

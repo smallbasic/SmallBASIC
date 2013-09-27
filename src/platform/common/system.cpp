@@ -18,12 +18,25 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 
+#define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source"
+#define MENU_CONSOLE  0
+#define MENU_KEYPAD   1
+#define MENU_SOURCE   2
+#define MENU_ZOOM_UP  3
+#define MENU_ZOOM_DN  4
+#define FONT_SCALE_INTERVAL 10
+#define FONT_MIN 20
+#define FONT_MAX 200
+
 System::System() :
   _output(NULL),
   _state(kInitState),
   _lastEventTime(0),
   _eventTicks(0),
+  _initialFontSize(0),
+  _fontScale(100),
   _drainError(false),
+  _systemMenu(false),
   _systemScreen(false),
   _mainBas(false),
   _programSrc(NULL) {
@@ -33,45 +46,9 @@ System::~System() {
 }
 
 // set the current working directory to the given path
-void System::setPath(const char *filename) {
-  const char *slash = strrchr(filename, '/');
-  if (!slash) {
-    slash = strrchr(filename, '\\');
-  }
-  if (slash) {
-    int len = slash - filename;
-    if (len > 0) {
-      char path[1024];
-      strncpy(path, filename, len);
-      path[len] = 0;
-      chdir(path);
-    }
-  }
-}
-
 // change the current working directory to the parent level folder
-bool System::setParentPath() {
-  bool result = true;
-  char path[FILENAME_MAX + 1];
-  getcwd(path, FILENAME_MAX);
-  if (!path[0] || strcmp(path, "/") == 0) {
-    result = false;
-  } else {
-    int len = strlen(path);
-    if (path[len - 1] == '/') {
-      // eg /sdcard/bas/
-      path[len - 1] = '\0';
-    }
-    const char *slash = strrchr(path, '/');
-    len = slash - path;
-    if (!len) {
-      strcpy(path, "/");
-    } else {
-      path[len] = 0;
-    }
-    chdir(path);
-  }
-  return result;
+const char *System::getLoadPath() {
+  return !_loadPath.length() ? NULL : _loadPath.c_str();
 }
 
 int System::getPen(int code) {
@@ -149,49 +126,44 @@ char *System::getText(char *dest, int maxSize) {
   return dest;
 }
 
-void System::setBack() {
-  if (_systemScreen) {
-    // restore user screens
-    _output->print("\033[ SR");
-    _systemScreen = false;
-  } else {
-    // quit app when shell is active
-    setExit(_mainBas);
-  }
-}
+void System::handleMenu(int menuId) {
+  int fontSize = _output->getFontSize();
+  _systemMenu = false;
 
-void System::setRunning(bool running) {
-  if (running) {
-    dev_fgcolor = -DEFAULT_FOREGROUND;
-    dev_bgcolor = -DEFAULT_BACKGROUND;
-    os_graf_mx = _output->getWidth();
-    os_graf_my = _output->getHeight();
-    
-    os_ver = 1;
-    os_color = 1;
-    os_color_depth = 16;
-    
-    dev_clrkb();
-    ui_reset();
-    
-    _output->reset();
-    _state = kRunState;
-    _loadPath.empty();
-    _lastEventTime = maGetMilliSecondCount();
-    _eventTicks = 0;
-    _drainError = false;
-  } else if (!isClosing()) {
-    _state = kActiveState;
+  switch (menuId) {
+  case MENU_SOURCE:
+    showSystemScreen(true);
+    break;
+  case MENU_CONSOLE:
+    showSystemScreen(false);
+    break;
+  case MENU_KEYPAD:
+    maShowVirtualKeyboard();
+    break;
+  case MENU_ZOOM_UP:
+    if (_fontScale > FONT_MIN) {
+      _fontScale -= FONT_SCALE_INTERVAL;
+      fontSize = (_initialFontSize * _fontScale / 100);
+    }
+    break;
+  case MENU_ZOOM_DN:
+    if (_fontScale < FONT_MAX) {
+      _fontScale += FONT_SCALE_INTERVAL;
+      fontSize = (_initialFontSize * _fontScale / 100);
+    }
+    break;
   }
-}
 
-void System::systemPrint(const char *str) {
-  if (isSystemScreen()) {
-    _output->print(str);
-  } else {
-    _output->print("\033[ SW7");
-    _output->print(str);
-    _output->print("\033[ Sw");
+  if (fontSize != _output->getFontSize()) {
+    _output->setFontSize(fontSize);
+    // restart the shell
+    brun_break();
+    _mainBas = true;
+    _state = kBackState;
+  }
+
+  if (!isRunning()) {
+    _output->flush(true);
   }
 }
 
@@ -234,6 +206,82 @@ void System::runMain(const char *mainBasPath) {
   }
 }
 
+void System::setBack() {
+  if (_systemScreen) {
+    // restore user screens
+    _output->print("\033[ SR");
+    _systemScreen = false;
+  } else {
+    // quit app when shell is active
+    setExit(_mainBas);
+  }
+}
+
+bool System::setParentPath() {
+  bool result = true;
+  char path[FILENAME_MAX + 1];
+  getcwd(path, FILENAME_MAX);
+  if (!path[0] || strcmp(path, "/") == 0) {
+    result = false;
+  } else {
+    int len = strlen(path);
+    if (path[len - 1] == '/') {
+      // eg /sdcard/bas/
+      path[len - 1] = '\0';
+    }
+    const char *slash = strrchr(path, '/');
+    len = slash - path;
+    if (!len) {
+      strcpy(path, "/");
+    } else {
+      path[len] = 0;
+    }
+    chdir(path);
+  }
+  return result;
+}
+
+void System::setPath(const char *filename) {
+  const char *slash = strrchr(filename, '/');
+  if (!slash) {
+    slash = strrchr(filename, '\\');
+  }
+  if (slash) {
+    int len = slash - filename;
+    if (len > 0) {
+      char path[1024];
+      strncpy(path, filename, len);
+      path[len] = 0;
+      chdir(path);
+    }
+  }
+}
+
+void System::setRunning(bool running) {
+  if (running) {
+    dev_fgcolor = -DEFAULT_FOREGROUND;
+    dev_bgcolor = -DEFAULT_BACKGROUND;
+    os_graf_mx = _output->getWidth();
+    os_graf_my = _output->getHeight();
+
+    os_ver = 1;
+    os_color = 1;
+    os_color_depth = 16;
+
+    dev_clrkb();
+    ui_reset();
+
+    _output->reset();
+    _state = kRunState;
+    _loadPath.empty();
+    _lastEventTime = maGetMilliSecondCount();
+    _eventTicks = 0;
+    _drainError = false;
+  } else if (!isClosing()) {
+    _state = kActiveState;
+  }
+}
+
 void System::showCompletion(bool success) {
   if (success) {
     _output->print("\033[ LDone - press back [<-]");
@@ -247,6 +295,19 @@ void System::showError() {
   _state = kActiveState;
   _loadPath.empty();
   showSystemScreen(false);
+}
+
+void System::showMenu() {
+  _systemMenu = true;
+  if (_mainBas) {
+    char buffer[128];
+    sprintf(buffer, "%s|Zoom %d%%|Zoom %d%%", SYSTEM_MENU, 
+            _fontScale - FONT_SCALE_INTERVAL,
+            _fontScale + FONT_SCALE_INTERVAL);
+    _output->print(buffer);
+  } else {
+    _output->print(SYSTEM_MENU);
+  }
 }
 
 void System::showSystemScreen(bool showSrc) {
@@ -265,7 +326,14 @@ void System::showSystemScreen(bool showSrc) {
   _systemScreen = true;
 }
 
-const char *System::getLoadPath() {
-  return !_loadPath.length() ? NULL : _loadPath.c_str();
+
+void System::systemPrint(const char *str) {
+  if (isSystemScreen()) {
+    _output->print(str);
+  } else {
+    _output->print("\033[ SW7");
+    _output->print(str);
+    _output->print("\033[ Sw");
+  }
 }
 

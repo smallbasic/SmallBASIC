@@ -18,10 +18,6 @@ struct System {
 
   int getPen(int code);
   char *getText(char *dest, int maxSize);
-  void setBack();
-  void setRunning(bool running);
-  void systemPrint(const char *msg);
-
   bool isActive() { return _state != kInitState && _state != kDoneState; }
   bool isBack() { return _state == kBackState; }
   bool isBreak() { return _state >= kBreakState; }
@@ -30,6 +26,9 @@ struct System {
   bool isModal() { return _state == kModalState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
   bool isSystemScreen() { return _systemScreen; }
+  void setBack();
+  void setRunning(bool running);
+  void systemPrint(const char *msg);
 
   AnsiWidget *_output;
 
@@ -37,6 +36,7 @@ protected:
   virtual void setExit(bool quit) = 0;
   virtual MAEvent getNextEvent() = 0;
 
+  void handleMenu(int menuId);
   void runMain(const char *mainBasPath);
   void setPath(const char *filename);
   bool setParentPath();
@@ -44,6 +44,7 @@ protected:
   void showCompletion(bool success);
   void showError();
   void showSystemScreen(bool showSrc);
+  void showMenu();
 
   enum { 
     kInitState = 0,// thread not active
@@ -62,7 +63,10 @@ protected:
   strlib::String _loadPath;
   int _lastEventTime;
   int _eventTicks;
+  int _initialFontSize;
+  int _fontScale;
   bool _drainError;
+  bool _systemMenu;
   bool _systemScreen;
   bool _mainBas;
   char *_programSrc;

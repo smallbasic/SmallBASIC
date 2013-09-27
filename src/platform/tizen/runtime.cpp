@@ -238,41 +238,6 @@ AnsiWidget *form_ui::getOutput() {
   return thread->_output;
 }
 
-struct Listener : IButtonListener {
-  void buttonClicked(const char *action) {
-    _action = action;
-  }
-  String _action;
-};
-
-void form_ui::optionsBox(StringList *items) {
-  thread->_output->print("\033[ S#6");
-  int y = 0;
-  Listener listener;
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    int w = osd_textwidth(str) + 20;
-    IFormWidget *item = thread->_output->createButton(str, 2, y, w, 22);
-    item->setListener(&listener);
-    y += 24;
-  }
-  while (thread->isRunning() && !listener._action.length()) {
-    osd_events(1);
-  }
-  int index = 0;
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    if (strcmp(str, listener._action.c_str()) == 0) {
-      break;
-    } else {
-      index++;
-    }
-  }
-  thread->_output->print("\033[ SE6");
-  thread->_output->optionSelected(index);
-  maUpdateScreen();
-}
-
 //
 // ma event handling
 //
