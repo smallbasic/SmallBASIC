@@ -41,7 +41,6 @@ TizenAppForm::TizenAppForm() :
 
 TizenAppForm::~TizenAppForm() {
   logEntered();
-
   if (_runtime) {
     if (_runtime->isActive()) {
       // push an exit message onto the thread event queue
@@ -95,7 +94,6 @@ result TizenAppForm::Construct(int w, int h) {
 }
 
 result TizenAppForm::OnDraw() {
-  logEntered();
   return _display->OnDraw();
 }
 

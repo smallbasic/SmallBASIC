@@ -81,7 +81,6 @@ void Drawable::drawRectFilled(int left, int top, int width, int height) {
 }
 
 void Drawable::drawText(int left, int top, const char *str) {
-  AppLog("draw text %d %d %s", left, top, str);
   if (activeFont) {
     if (_canvas->SetFont(*activeFont) != E_SUCCESS) {
       AppLog("Failed to set active font onto canvas");
@@ -122,7 +121,12 @@ void Drawable::resize(int w, int h) {
 
 void Drawable::setClip(int x, int y, int w, int h) {
   delete _clip;
-  _clip = new Rectangle(x, y, w, h);
+  Rectangle rect = _canvas->GetBounds();
+  if (rect.x != x || rect.y != y || rect.width != w || rect.height != h) {
+    _clip = new Rectangle(x, y, w, h);
+  } else {
+    _clip = NULL;
+  }
 }
 
 //
@@ -130,18 +134,25 @@ void Drawable::setClip(int x, int y, int w, int h) {
 //
 FormViewable::FormViewable() :
   Control(),
-  _screen(NULL),
-  _resized(false) {
+  _canvasLock(NULL),
+  _screen(NULL) {
 }
 
 FormViewable::~FormViewable() {
   logEntered();
   delete _screen;
+  delete _canvasLock;
+  _screen = NULL;
+  _canvasLock = NULL;
 }
 
 result FormViewable::Construct(String &resourcePath, int w, int h) {
   logEntered();
   result r = Control::Construct();
+  if (!IsFailed(r)) {
+    _canvasLock = new Mutex();
+    r = _canvasLock != NULL ? _canvasLock->Create() : E_OUT_OF_MEMORY;
+  }
   if (!IsFailed(r)) {
     SetBounds(0, 0, w, h);
     _screen = new Drawable();
@@ -156,7 +167,6 @@ result FormViewable::Construct(String &resourcePath, int w, int h) {
       r = E_OUT_OF_MEMORY;
     }
   }
-
   if (IsFailed(r)) {
     AppLog("FormViewable::Construct failed");
   }
@@ -164,6 +174,7 @@ result FormViewable::Construct(String &resourcePath, int w, int h) {
 }
 
 Font *FormViewable::createFont(int style, int size) {
+  logEntered();
   Font *font = new Font();
   if (!font || font->Construct(fontPath, style, size) != E_SUCCESS) {
     delete font;
@@ -173,7 +184,6 @@ Font *FormViewable::createFont(int style, int size) {
 }
 
 result FormViewable::OnDraw() {
-  logEntered();
   Canvas *canvas = GetCanvasN();
   if (canvas) {
     Rectangle rect = GetBounds();
@@ -192,9 +202,28 @@ void FormViewable::OnUserEventReceivedN(RequestId requestId, IList* args) {
   case MSG_ID_SHOW_KEYPAD:
     break;
   case MSG_ID_REDRAW:
-    GetParent()->RequestRedraw(true);
+    _canvasLock->Acquire();
+    OnDraw();
+    _canvasLock->Release();
     break;
   }
+}
+
+MAHandle FormViewable::setDrawTarget(MAHandle maHandle) {
+  if (maHandle == (MAHandle) HANDLE_SCREEN ||
+      maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
+    _canvasLock->Acquire();
+    drawTarget = _screen;
+  } else {
+    drawTarget = (Drawable *)maHandle;
+    if (drawTarget == _screen) {
+      // returning the screen
+      _canvasLock->Release();
+    }
+  }
+  delete drawTarget->_clip;
+  drawTarget->_clip = NULL;
+  return (MAHandle) drawTarget;
 }
 
 //
@@ -321,15 +350,7 @@ void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int sca
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
-  if (maHandle == (MAHandle) HANDLE_SCREEN ||
-      maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
-    drawTarget = widget->getScreen();
-  } else {
-    drawTarget = (Drawable *)maHandle;
-  }
-  delete drawTarget->_clip;
-  drawTarget->_clip = NULL;
-  return (MAHandle) drawTarget;
+  return widget->setDrawTarget(maHandle);
 }
 
 int maGetMilliSecondCount(void) {

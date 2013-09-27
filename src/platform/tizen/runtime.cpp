@@ -58,7 +58,7 @@ void RuntimeThread::buttonClicked(const char *action) {
 
 result RuntimeThread::Construct(String &resourcePath) {
   logEntered();
-  result r = Thread::Construct();
+  result r = Thread::Construct(DEFAULT_STACK_SIZE, THREAD_PRIORITY_HIGH);
   if (!IsFailed(r)) {
     _eventQueueLock = new Mutex();
     r = _eventQueueLock != NULL ? _eventQueueLock->Create() : E_OUT_OF_MEMORY;
@@ -92,14 +92,24 @@ MAEvent RuntimeThread::popEvent() {
 
 void RuntimeThread::pushEvent(MAEvent maEvent) {
   _eventQueueLock->Acquire();
-  RuntimeEvent *event = new RuntimeEvent();
-  event->maEvent = maEvent;
-  _eventQueue->Enqueue(event);
+  bool addItem = true;
+  if (maEvent.type == EVENT_TYPE_POINTER_DRAGGED &&
+      _eventQueue->GetCount() > 0) {
+    RuntimeEvent *previous = (RuntimeEvent *)_eventQueue->Peek();
+    if (previous->maEvent.type == EVENT_TYPE_POINTER_DRAGGED) {
+      addItem = false;
+    }
+  }
+  if (addItem) {
+    RuntimeEvent *event = new RuntimeEvent();
+    event->maEvent = maEvent;
+    _eventQueue->Enqueue(event);
+  }
   _eventQueueLock->Release();
 }
 
 int RuntimeThread::processEvents(bool waitFlag) {
-  if (thread->isBreak()) {
+  if (isBreak()) {
     return -2;
   }
 
@@ -125,8 +135,21 @@ int RuntimeThread::processEvents(bool waitFlag) {
     maWait(-1);
   }
 
-  if (hasEvent()) {
-    MAEvent event = thread->popEvent();
+  MAEvent event;
+  bool hasEvent;
+
+  _eventQueueLock->Acquire();
+  if (_eventQueue->GetCount() > 0) {
+    hasEvent = true;
+    RuntimeEvent *runtimeEvent = (RuntimeEvent *)_eventQueue->Dequeue();
+    event = runtimeEvent->maEvent;
+    delete runtimeEvent;
+  } else {
+    hasEvent = false;
+  }
+  _eventQueueLock->Release();
+
+  if (hasEvent) {
     switch (event.type) {
     case EVENT_TYPE_POINTER_PRESSED:
       _output->pointerTouchEvent(event);
@@ -140,8 +163,10 @@ int RuntimeThread::processEvents(bool waitFlag) {
       _output->pointerReleaseEvent(event);
       break;
     }
+  } else {
+    _output->flush(false);
   }
-  _output->flush(false);
+
   return 0;
 }
 
@@ -377,12 +402,10 @@ int osd_textwidth(const char *str) {
 }
 
 void osd_write(const char *str) {
-  logEntered();
   thread->_output->print(str);
 }
 
 void lwrite(const char *str) {
-  AppLog(str);
   thread->systemPrint(str);
 }
 

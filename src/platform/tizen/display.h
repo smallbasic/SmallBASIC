@@ -21,6 +21,7 @@
 using namespace Tizen::Ui;
 using namespace Tizen::Graphics;
 using namespace Tizen::Base::Collection;
+using namespace Tizen::Base::Runtime;
 using namespace strlib;
 
 struct Drawable {
@@ -49,16 +50,14 @@ struct FormViewable : public Control {
 
   result Construct(String &resourcePath, int w, int h);
   Font *createFont(int style, int size);
-  Drawable *getScreen() { return _screen; }
-  int getDefaultSize() { return _defsize; }
+  MAHandle setDrawTarget(MAHandle maHandle);
   result OnDraw();
 
 private:
   void OnUserEventReceivedN(RequestId requestId, IList* pArgs);
   Tizen::Base::String fontPath;
+  Mutex *_canvasLock;
   Drawable *_screen;
-  bool _resized;
-  int _defsize;
 };
 
 #endif
