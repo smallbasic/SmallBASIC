@@ -41,7 +41,6 @@ protected:
   void runMain(const char *mainBasPath);
   void setPath(const char *filename);
   bool setParentPath();
-  const char *getLoadPath();
   void showCompletion(bool success);
   void showError();
   void showLoadError();

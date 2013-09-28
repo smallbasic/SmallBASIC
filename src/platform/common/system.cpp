@@ -53,12 +53,6 @@ System::~System() {
   delete [] _programSrc;
 }
 
-// set the current working directory to the given path
-// change the current working directory to the parent level folder
-const char *System::getLoadPath() {
-  return !_loadPath.length() ? NULL : _loadPath.c_str();
-}
-
 int System::getPen(int code) {
   int result = 0;
   MAEvent event;
@@ -184,42 +178,41 @@ void System::runMain(const char *mainBasPath) {
   logEntered();
 
   String activePath = mainBasPath;
+  _loadPath = mainBasPath;
   _mainBas = true;
   strcpy(opt_command, "welcome");
-  sbasic_main(mainBasPath);
+  sbasic_main(_loadPath);
 
   while (!isClosing()) {
     if (isRestart()) {
       _loadPath = activePath;
       _state = kActiveState;
-    }
-    if (isBack()) {
-      if (_mainBas) {
-        setExit(!setParentPath());
-      }
-      if (!isClosing()) {
-        _mainBas = true;
-        opt_command[0] = '\0';
-        activePath = mainBasPath;
-        sbasic_main(mainBasPath);
-      }
     } else {
-      if (getLoadPath() != NULL) {
-        activePath = getLoadPath();
-        setPath(getLoadPath());
+      if (_loadPath.length() > 0) {
+        _mainBas = false;
+        activePath = _loadPath;
+        setPath(_loadPath);
       } else {
-        activePath = mainBasPath;
         _mainBas = true;
+        _loadPath = mainBasPath;
+        activePath = mainBasPath;
       }
-      bool success = sbasic_main(getLoadPath());
-      if (!isBack()) {
-        if (!_mainBas) {
-          // display an indication the program has completed
-          showCompletion(success);
-        }
-        if (!success) {
-          // highlight the error
-          showError();
+    }
+    opt_command[0] = '\0';
+    bool success = sbasic_main(_loadPath);
+    if (!isBack()) {
+      if (!_mainBas) {
+        // display an indication the program has completed
+        showCompletion(success);
+      }
+      if (!success) {
+        // highlight the error
+        showError();
+      }
+      if (!_mainBas) {
+        // press back to continue
+        while (!isBack() && !isClosing()) {
+          getNextEvent();
         }
       }
     }
