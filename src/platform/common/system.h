@@ -44,6 +44,7 @@ protected:
   const char *getLoadPath();
   void showCompletion(bool success);
   void showError();
+  void showLoadError();
   void showSystemScreen(bool showSrc);
   void showMenu();
 

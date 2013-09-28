@@ -19,11 +19,9 @@
 #include "common/osd.h"
 #include "common/device.h"
 #include "common/blib_ui.h"
+#include "common/fs_socket_client.h"
 
 #define WAIT_INTERVAL 10
-#define EVENT_CHECK_EVERY 2000
-#define EVENT_MAX_BURN_TIME 30
-
 #define DEFAULT_FONT_SIZE 32
 
 struct RuntimeEvent : 
@@ -51,8 +49,9 @@ RuntimeThread::~RuntimeThread() {
   _eventQueue = NULL;
 }
 
-void RuntimeThread::buttonClicked(const char *action) {
-  logEntered();
+void RuntimeThread::buttonClicked(const char *url) {
+  _loadPath.empty();
+  _loadPath.append(url, strlen(url));
 }
 
 result RuntimeThread::Construct(String &resourcePath) {
@@ -165,82 +164,64 @@ void RuntimeThread::pushEvent(MAEvent maEvent) {
 }
 
 MAEvent RuntimeThread::processEvents(bool waitFlag) {
+  MAEvent event;
+
   if (!waitFlag) {
-    // detect when we have been called too frequently
-    int now = maGetMilliSecondCount();
-    _eventTicks++;
-    if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
-      // next time inspection interval
-      if (_eventTicks >= EVENT_MAX_BURN_TIME) {
-        _output->print("\033[ LBattery drain");
-        _drainError = true;
-      } else if (_drainError) {
-        _output->print("\033[ L");
-        _drainError = false;
-      }
-      _lastEventTime = now;
-      _eventTicks = 0;
-    }
+    showLoadError();
   } else {
     // wait for an event
     _output->flush(true);
     maWait(-1);
   }
 
-  MAEvent event;
-  bool hasEvent;
-
   _eventQueueLock->Acquire();
   if (_eventQueue->GetCount() > 0) {
-    hasEvent = true;
     RuntimeEvent *runtimeEvent = (RuntimeEvent *)_eventQueue->Dequeue();
     event = runtimeEvent->maEvent;
     delete runtimeEvent;
   } else {
-    hasEvent = false;
     event.type = 0;
   }
   _eventQueueLock->Release();
 
-  if (hasEvent) {
-    switch (event.type) {
-    case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
-      if (_systemMenu) {
-        handleMenu(event.optionsBoxButtonIndex);
-      } else if (isRunning()) {
-        if (!_output->optionSelected(event.optionsBoxButtonIndex)) {
-          dev_pushkey(event.optionsBoxButtonIndex);
-        }
+  switch (event.type) {
+  case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
+    if (_systemMenu) {
+      handleMenu(event.optionsBoxButtonIndex);
+    } else if (isRunning()) {
+      if (!_output->optionSelected(event.optionsBoxButtonIndex)) {
+        dev_pushkey(event.optionsBoxButtonIndex);
       }
-      break;
-    case EVENT_TYPE_KEY_PRESSED:
-      if (event.key == KEY_CONTEXT_MENU) {
-        showMenu();
-      } else if (isRunning()) {
-        handleKey((KeyCode) event.key);
-      }
-      break;
-    case EVENT_TYPE_POINTER_PRESSED:
-      _touchX = _touchCurX = event.point.x;
-      _touchY = _touchCurY = event.point.y;
-      dev_pushkey(SB_KEY_MK_PUSH);
-      _output->pointerTouchEvent(event);
-      break;
-    case EVENT_TYPE_POINTER_DRAGGED:
-      _touchCurX = event.point.x;
-      _touchCurY = event.point.y;
-      _output->pointerMoveEvent(event);
-      break;
-    case EVENT_TYPE_POINTER_RELEASED:
-      _touchX = _touchY = _touchCurX = _touchCurY = -1;
-      dev_pushkey(SB_KEY_MK_RELEASE);
-      _output->pointerReleaseEvent(event);
-      break;
     }
-  } else {
+    break;
+  case EVENT_TYPE_KEY_PRESSED:
+    if (event.key == KEY_CONTEXT_MENU) {
+      showMenu();
+    } else if (isRunning()) {
+      handleKey((KeyCode) event.key);
+    }
+    break;
+  case EVENT_TYPE_POINTER_PRESSED:
+    _touchX = _touchCurX = event.point.x;
+    _touchY = _touchCurY = event.point.y;
+    dev_pushkey(SB_KEY_MK_PUSH);
+    _output->pointerTouchEvent(event);
+    break;
+  case EVENT_TYPE_POINTER_DRAGGED:
+    _touchCurX = event.point.x;
+    _touchCurY = event.point.y;
+    _output->pointerMoveEvent(event);
+    break;
+  case EVENT_TYPE_POINTER_RELEASED:
+    _touchX = _touchY = _touchCurX = _touchCurY = -1;
+    dev_pushkey(SB_KEY_MK_RELEASE);
+    _output->pointerReleaseEvent(event);
+    break;
+  default:
+    // no event
     _output->flush(false);
+    break;
   }
-
   return event;
 }
 
@@ -249,7 +230,19 @@ char *RuntimeThread::readSource(const char *fileName) {
   bool networkFile = strstr(fileName, "://");
 
   if (networkFile) {
-    
+    int handle = 1;
+    var_t *var_p = v_new();
+    dev_file_t *f = dev_getfileptr(handle);
+    if (dev_fopen(handle, fileName, 0)) {
+      http_read(f, var_p, 0);
+      int len = var_p->v.p.size;
+      buffer = (char *)tmp_alloc(len + 1);
+      memcpy(buffer, var_p->v.p.ptr, len);
+      buffer[len] = '\0';
+    }
+    dev_fclose(handle);
+    v_free(var_p);
+    tmp_free(var_p);
   } else {
     int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
     if (h != -1) {
@@ -259,13 +252,14 @@ char *RuntimeThread::readSource(const char *fileName) {
       read(h, buffer, len);
       buffer[len] = '\0';
       close(h);
-
-      delete [] _programSrc;
-      len = strlen(buffer);
-      _programSrc = new char[len + 1];
-      strncpy(_programSrc, buffer, len);
-      _programSrc[len] = 0;
     }
+  }
+  if (buffer != NULL) {
+    delete [] _programSrc;
+    int len = strlen(buffer);
+    _programSrc = new char[len + 1];
+    strncpy(_programSrc, buffer, len);
+    _programSrc[len] = 0;
   }
   return buffer;
 }

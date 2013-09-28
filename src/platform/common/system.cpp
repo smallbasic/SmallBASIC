@@ -28,6 +28,8 @@
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
 #define FONT_MAX 200
+#define EVENT_CHECK_EVERY 2000
+#define EVENT_MAX_BURN_TIME 30
 
 System::System() :
   _output(NULL),
@@ -167,7 +169,9 @@ void System::handleMenu(int menuId) {
   if (fontSize != _output->getFontSize()) {
     // restart the shell
     _output->setFontSize(fontSize);
-    brun_break();
+    if (isRunning()) {
+      brun_break();
+    }
     _state = kRestartState;
   }
 
@@ -199,12 +203,14 @@ void System::runMain(const char *mainBasPath) {
         activePath = mainBasPath;
         sbasic_main(mainBasPath);
       }
-    } else if (getLoadPath() != NULL) {
-      _mainBas = (strcmp(getLoadPath(), mainBasPath) == 0);
-      if (!_mainBas) {
+    } else {
+      if (getLoadPath() != NULL) {
+        activePath = getLoadPath();
         setPath(getLoadPath());
+      } else {
+        activePath = mainBasPath;
+        _mainBas = true;
       }
-      activePath = getLoadPath();
       bool success = sbasic_main(getLoadPath());
       if (!isBack()) {
         if (!_mainBas) {
@@ -216,8 +222,6 @@ void System::runMain(const char *mainBasPath) {
           showError();
         }
       }
-    } else {
-      break;
     }
   }
 }
@@ -311,6 +315,24 @@ void System::showError() {
   _state = kActiveState;
   _loadPath.empty();
   showSystemScreen(false);
+}
+
+// detect when we have been called too frequently
+void System::showLoadError() {
+  int now = maGetMilliSecondCount();
+  _eventTicks++;
+  if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
+    // next time inspection interval
+    if (_eventTicks >= EVENT_MAX_BURN_TIME) {
+      _output->print("\033[ LBattery drain");
+      _drainError = true;
+    } else if (_drainError) {
+      _output->print("\033[ L");
+      _drainError = false;
+    }
+    _lastEventTime = now;
+    _eventTicks = 0;
+  }
 }
 
 void System::showMenu() {
