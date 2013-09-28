@@ -164,11 +164,7 @@ void RuntimeThread::pushEvent(MAEvent maEvent) {
   _eventQueueLock->Release();
 }
 
-int RuntimeThread::processEvents(bool waitFlag) {
-  if (isBreak()) {
-    return -2;
-  }
-
+MAEvent RuntimeThread::processEvents(bool waitFlag) {
   if (!waitFlag) {
     // detect when we have been called too frequently
     int now = maGetMilliSecondCount();
@@ -202,6 +198,7 @@ int RuntimeThread::processEvents(bool waitFlag) {
     delete runtimeEvent;
   } else {
     hasEvent = false;
+    event.type = 0;
   }
   _eventQueueLock->Release();
 
@@ -216,7 +213,6 @@ int RuntimeThread::processEvents(bool waitFlag) {
         }
       }
       break;
-
     case EVENT_TYPE_KEY_PRESSED:
       if (event.key == KEY_CONTEXT_MENU) {
         showMenu();
@@ -224,16 +220,20 @@ int RuntimeThread::processEvents(bool waitFlag) {
         handleKey((KeyCode) event.key);
       }
       break;
-
     case EVENT_TYPE_POINTER_PRESSED:
+      _touchX = _touchCurX = event.point.x;
+      _touchY = _touchCurY = event.point.y;
+      dev_pushkey(SB_KEY_MK_PUSH);
       _output->pointerTouchEvent(event);
       break;
-
     case EVENT_TYPE_POINTER_DRAGGED:
+      _touchCurX = event.point.x;
+      _touchCurY = event.point.y;
       _output->pointerMoveEvent(event);
       break;
-
     case EVENT_TYPE_POINTER_RELEASED:
+      _touchX = _touchY = _touchCurX = _touchCurY = -1;
+      dev_pushkey(SB_KEY_MK_RELEASE);
       _output->pointerReleaseEvent(event);
       break;
     }
@@ -241,7 +241,33 @@ int RuntimeThread::processEvents(bool waitFlag) {
     _output->flush(false);
   }
 
-  return 0;
+  return event;
+}
+
+char *RuntimeThread::readSource(const char *fileName) {
+  char *buffer = NULL;
+  bool networkFile = strstr(fileName, "://");
+
+  if (networkFile) {
+    
+  } else {
+    int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
+    if (h != -1) {
+      int len = lseek(h, 0, SEEK_END);
+      lseek(h, 0, SEEK_SET);
+      buffer = (char *)tmp_alloc(len + 1);
+      read(h, buffer, len);
+      buffer[len] = '\0';
+      close(h);
+
+      delete [] _programSrc;
+      len = strlen(buffer);
+      _programSrc = new char[len + 1];
+      strncpy(_programSrc, buffer, len);
+      _programSrc[len] = 0;
+    }
+  }
+  return buffer;
 }
 
 void RuntimeThread::setExit(bool quit) {
@@ -274,6 +300,7 @@ Tizen::Base::Object *RuntimeThread::Run() {
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(DEFAULT_FONT_SIZE);
+  _initialFontSize = _output->getFontSize();
 
   runMain(_mainBasPath);
 
@@ -285,8 +312,7 @@ Tizen::Base::Object *RuntimeThread::Run() {
 }
 
 MAEvent RuntimeThread::getNextEvent() {
-  processEvents(true);
-  return popEvent();
+  return processEvents(true);
 }
 
 //
@@ -301,7 +327,9 @@ bool form_ui::isBreak() {
 }
 
 void form_ui::processEvents() {
-  thread->processEvents(true);
+  if (!isBreak()) {
+    thread->processEvents(true);
+  }
 }
 
 void form_ui::buttonClicked(const char *url) {
@@ -376,7 +404,14 @@ int osd_devrestore(void) {
 }
 
 int osd_events(int wait_flag) {
-  return thread->processEvents(wait_flag);
+  int result;
+  if (thread->isBreak()) {
+    result = -2;
+  } else {
+    thread->processEvents(wait_flag);
+    result = 0;
+  }
+  return result;
 }
 
 int osd_getpen(int mode) {
@@ -466,4 +501,8 @@ void dev_delay(dword ms) {
 
 char *dev_gets(char *dest, int maxSize) {
   return thread->getText(dest, maxSize);
+}
+
+char *dev_read(const char *fileName) {
+  return thread->readSource(fileName);
 }

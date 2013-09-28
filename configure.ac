@@ -537,6 +537,7 @@ function buildTizen() {
 
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_TIZEN, 1, [Defined for Tizen build.])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
    AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])

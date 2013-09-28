@@ -24,6 +24,7 @@ struct System {
   bool isClosing() { return _state >= kClosingState; }
   bool isInitial() { return _state == kInitState; }
   bool isModal() { return _state == kModalState; }
+  bool isRestart() { return _state == kRestartState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
   bool isSystemScreen() { return _systemScreen; }
   void setBack();
@@ -63,6 +64,10 @@ protected:
   strlib::String _loadPath;
   int _lastEventTime;
   int _eventTicks;
+  int _touchX;
+  int _touchY;
+  int _touchCurX;
+  int _touchCurY;
   int _initialFontSize;
   int _fontScale;
   bool _drainError;

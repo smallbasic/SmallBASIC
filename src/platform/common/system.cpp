@@ -18,12 +18,13 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 
-#define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source"
+#define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source|Restart"
 #define MENU_CONSOLE  0
 #define MENU_KEYPAD   1
 #define MENU_SOURCE   2
-#define MENU_ZOOM_UP  3
-#define MENU_ZOOM_DN  4
+#define MENU_RESTART  3
+#define MENU_ZOOM_UP  4
+#define MENU_ZOOM_DN  5
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
 #define FONT_MAX 200
@@ -33,6 +34,10 @@ System::System() :
   _state(kInitState),
   _lastEventTime(0),
   _eventTicks(0),
+  _touchX(-1),
+  _touchY(-1),
+  _touchCurX(-1),
+  _touchCurY(-1),
   _initialFontSize(0),
   _fontScale(100),
   _drainError(false),
@@ -43,6 +48,7 @@ System::System() :
 }
 
 System::~System() {
+  delete [] _programSrc;
 }
 
 // set the current working directory to the given path
@@ -62,29 +68,29 @@ int System::getPen(int code) {
       // fallthru
 
     case 3:   // returns true if the pen is down (and save curpos)
-//      if (_touchX != -1 && _touchY != -1) {
-//        result = 1;
-//      } else {
-//        processEvents(EVENT_WAIT_NONE);
-//      }
+      if (_touchX != -1 && _touchY != -1) {
+        result = 1;
+      } else {
+        osd_events(0);
+      }
       break;
 
     case 1:   // last pen-down x
-//      result = _touchX;
+      result = _touchX;
       break;
 
     case 2:   // last pen-down y
-//      result = _touchY;
+      result = _touchY;
       break;
 
     case 4:   // cur pen-down x
     case 10:
-//      result = _touchCurX;
+      result = _touchCurX;
       break;
 
     case 5:   // cur pen-down y
     case 11:
-//      result = _touchCurY;
+      result = _touchCurY;
       break;
     }
   }
@@ -140,6 +146,10 @@ void System::handleMenu(int menuId) {
   case MENU_KEYPAD:
     maShowVirtualKeyboard();
     break;
+  case MENU_RESTART:
+    brun_break();
+    _state = kRestartState;
+    break;
   case MENU_ZOOM_UP:
     if (_fontScale > FONT_MIN) {
       _fontScale -= FONT_SCALE_INTERVAL;
@@ -155,11 +165,10 @@ void System::handleMenu(int menuId) {
   }
 
   if (fontSize != _output->getFontSize()) {
-    _output->setFontSize(fontSize);
     // restart the shell
+    _output->setFontSize(fontSize);
     brun_break();
-    _mainBas = true;
-    _state = kBackState;
+    _state = kRestartState;
   }
 
   if (!isRunning()) {
@@ -170,11 +179,16 @@ void System::handleMenu(int menuId) {
 void System::runMain(const char *mainBasPath) {
   logEntered();
 
+  String activePath = mainBasPath;
   _mainBas = true;
   strcpy(opt_command, "welcome");
   sbasic_main(mainBasPath);
 
   while (!isClosing()) {
+    if (isRestart()) {
+      _loadPath = activePath;
+      _state = kActiveState;
+    }
     if (isBack()) {
       if (_mainBas) {
         setExit(!setParentPath());
@@ -182,13 +196,15 @@ void System::runMain(const char *mainBasPath) {
       if (!isClosing()) {
         _mainBas = true;
         opt_command[0] = '\0';
+        activePath = mainBasPath;
         sbasic_main(mainBasPath);
       }
     } else if (getLoadPath() != NULL) {
-      _mainBas = (strncmp(getLoadPath(), "main.bas", 8) == 0);
+      _mainBas = (strcmp(getLoadPath(), mainBasPath) == 0);
       if (!_mainBas) {
         setPath(getLoadPath());
       }
+      activePath = getLoadPath();
       bool success = sbasic_main(getLoadPath());
       if (!isBack()) {
         if (!_mainBas) {
@@ -201,7 +217,7 @@ void System::runMain(const char *mainBasPath) {
         }
       }
     } else {
-      getNextEvent();
+      break;
     }
   }
 }
@@ -277,7 +293,7 @@ void System::setRunning(bool running) {
     _lastEventTime = maGetMilliSecondCount();
     _eventTicks = 0;
     _drainError = false;
-  } else if (!isClosing()) {
+  } else if (!isClosing() && !isRestart()) {
     _state = kActiveState;
   }
 }
