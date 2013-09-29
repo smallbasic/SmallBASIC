@@ -224,7 +224,7 @@ bool FormLineInput::edit(int key) {
   bool changed = false;
   int len = strlen(_buffer);
 
-  if (key >= MAK_SPACE && key <= MAK_Z) {
+  if (key >= MAK_SPACE && key <= 255) {
     // insert
     if (len < _maxSize - 1) {
       _buffer[len] = key;

@@ -31,7 +31,7 @@ struct RuntimeThread :
 
   void buttonClicked(const char *action);
   result Construct(String &resourcePath);
-  void handleKey(KeyCode keyCode);
+  void handleKey(MAEvent &event);
   bool hasEvent();
   MAEvent popEvent();
   void pushEvent(MAEvent event);
@@ -43,7 +43,7 @@ private:
   Object *Run();
   MAEvent getNextEvent();
 
-  String _mainBasPath;
+  String _appRootPath;
   Mutex *_eventQueueLock;
   Queue *_eventQueue;
   int _w, _h;

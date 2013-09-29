@@ -47,8 +47,8 @@ private:
   void OnFormMenuRequested(Form &source);
   result OnInitializing(void);
 
-  void OnKeyPressed(const Control &source, KeyCode keyCode);
-  void OnKeyReleased(const Control &source, KeyCode keyCode) {};
+  void OnKeyPressed(const Control &source, KeyCode keyCode) {}
+  void OnKeyReleased(const Control &source, KeyCode keyCode);
   void OnKeyLongPressed(const Control &source, KeyCode keyCode) {}
   void OnOrientationChanged(const Control &source,
                             OrientationStatus orientationStatus);

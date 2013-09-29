@@ -110,7 +110,7 @@ char *System::getText(char *dest, int maxSize) {
     if (event.type == EVENT_TYPE_KEY_PRESSED) {
       dev_clrkb();
       if (isModal()) {
-        if (event.key == 10) {
+        if (event.key == SB_KEY_ENTER) {
           _state = kRunState;
         } else {
           _output->edit(formWidget, event.key);
@@ -143,7 +143,9 @@ void System::handleMenu(int menuId) {
     maShowVirtualKeyboard();
     break;
   case MENU_RESTART:
-    brun_break();
+    if (isRunning()) {
+      brun_break();
+    }
     _state = kRestartState;
     break;
   case MENU_ZOOM_UP:
@@ -211,7 +213,7 @@ void System::runMain(const char *mainBasPath) {
       }
       if (!_mainBas) {
         // press back to continue
-        while (!isBack() && !isClosing()) {
+        while (!isBack() && !isClosing() && !isRestart()) {
           getNextEvent();
         }
       }

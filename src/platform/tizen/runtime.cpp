@@ -54,7 +54,7 @@ void RuntimeThread::buttonClicked(const char *url) {
   _loadPath.append(url, strlen(url));
 }
 
-result RuntimeThread::Construct(String &resourcePath) {
+result RuntimeThread::Construct(String &appRootPath) {
   logEntered();
   result r = Thread::Construct();
   if (!IsFailed(r)) {
@@ -66,65 +66,73 @@ result RuntimeThread::Construct(String &resourcePath) {
     r = _eventQueue != NULL ? _eventQueue->Construct() : E_OUT_OF_MEMORY;
   }
   if (!IsFailed(r)) {
-    _mainBasPath = resourcePath + "main.bas";
+    _appRootPath = appRootPath;
   }
   return r;
 }
 
-void RuntimeThread::handleKey(KeyCode keyCode) {
-  switch (keyCode) {
+void RuntimeThread::handleKey(MAEvent &event) {
+  bool pushed = false;
+  switch ((KeyCode) event.nativeKey) {
   case KEY_TAB:
-    dev_pushkey(SB_KEY_TAB);
+    event.key = SB_KEY_TAB;
     break;
   case KEY_HOME:
-    dev_pushkey(SB_KEY_KP_HOME);
+    event.key = SB_KEY_KP_HOME;
     break;
   case KEY_MOVE_END:
-    dev_pushkey(SB_KEY_END);
+    event.key = SB_KEY_END;
     break;
   case KEY_INSERT:
-    dev_pushkey(SB_KEY_INSERT);
+    event.key = SB_KEY_INSERT;
     break;
   case KEY_NUMPAD_MULTIPLY:
     dev_pushkey(SB_KEY_KP_MUL);
+    pushed = true;
     break;
   case KEY_NUMPAD_ADD:
     dev_pushkey(SB_KEY_KP_PLUS);
+    pushed = true;
     break;
   case KEY_NUMPAD_SUBTRACT:
     dev_pushkey(SB_KEY_KP_MINUS);
+    pushed = true;
     break;
   case KEY_SLASH:
     dev_pushkey(SB_KEY_KP_DIV);
+    pushed = true;
     break;
   case KEY_PAGE_UP:
-    dev_pushkey(SB_KEY_PGUP);
+    event.key = SB_KEY_PGUP;
     break;
   case KEY_PAGE_DOWN:
-    dev_pushkey(SB_KEY_PGDN);
+    event.key = SB_KEY_PGDN;
     break;
   case KEY_UP:
-    dev_pushkey(SB_KEY_UP);
+    event.key = SB_KEY_UP;
     break;
   case KEY_DOWN:
-    dev_pushkey(SB_KEY_DN);
+    event.key = SB_KEY_DN;
     break;
   case KEY_LEFT:
-    dev_pushkey(SB_KEY_LEFT);
+    event.key = SB_KEY_LEFT;
     break;
   case KEY_RIGHT:
-    dev_pushkey(SB_KEY_RIGHT);
+    event.key = SB_KEY_RIGHT;
     break;
   case KEY_CLEAR:
   case KEY_BACKSPACE:
   case KEY_DELETE:
-    dev_pushkey(SB_KEY_BACKSPACE);
+    event.key = MAK_CLEAR;
+    break;
+  case KEY_ENTER:
+    event.key = SB_KEY_ENTER;
     break;
   default:
-    if (keyCode >= KEY_A && keyCode <= KEY_Z) {
-      dev_pushkey('a' + (keyCode - KEY_A));
-    }
     break;
+  }
+  if (!pushed) {
+    dev_pushkey(event.key);
   }
 }
 
@@ -195,10 +203,10 @@ MAEvent RuntimeThread::processEvents(bool waitFlag) {
     }
     break;
   case EVENT_TYPE_KEY_PRESSED:
-    if (event.key == KEY_CONTEXT_MENU) {
+    if (event.nativeKey == KEY_CONTEXT_MENU) {
       showMenu();
     } else if (isRunning()) {
-      handleKey((KeyCode) event.key);
+      handleKey(event);
     }
     break;
   case EVENT_TYPE_POINTER_PRESSED:
@@ -296,7 +304,9 @@ Tizen::Base::Object *RuntimeThread::Run() {
   _output->setFontSize(DEFAULT_FONT_SIZE);
   _initialFontSize = _output->getFontSize();
 
-  runMain(_mainBasPath);
+  String mainBasPath = _appRootPath + "res/main.bas";
+  setPath(_appRootPath);
+  runMain(mainBasPath);
 
   delete _output;
   _state = kDoneState;

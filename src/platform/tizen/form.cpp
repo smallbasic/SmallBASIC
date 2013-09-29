@@ -65,11 +65,11 @@ AppForm::~AppForm() {
 result AppForm::Construct(int w, int h) {
   logEntered();
   result r = Form::Construct(FORM_STYLE_NORMAL);
-  String resourcePath = fromString(App::GetInstance()->GetAppResourcePath());
+  String appRootPath = fromString(App::GetInstance()->GetAppRootPath());
 
   if (!IsFailed(r)) {
     _display = new FormViewable();
-    if (_display && _display->Construct(resourcePath, w, h) == E_SUCCESS &&
+    if (_display && _display->Construct(appRootPath, w, h) == E_SUCCESS &&
         AddControl(_display) == E_SUCCESS) {
       SetOrientation(ORIENTATION_AUTOMATIC);
     } else {
@@ -80,7 +80,7 @@ result AppForm::Construct(int w, int h) {
 
   if (!IsFailed(r)) {
     _runtime = new RuntimeThread(w, h);
-    r = _runtime != NULL ? _runtime->Construct(resourcePath) : E_OUT_OF_MEMORY;
+    r = _runtime != NULL ? _runtime->Construct(appRootPath) : E_OUT_OF_MEMORY;
   }
 
   if (!IsFailed(r)) {
@@ -137,7 +137,7 @@ void AppForm::OnFormMenuRequested(Form &source) {
   logEntered();
   MAEvent maEvent;
   maEvent.type = EVENT_TYPE_KEY_PRESSED;
-  maEvent.key = KEY_CONTEXT_MENU;
+  maEvent.nativeKey = KEY_CONTEXT_MENU;
   _runtime->pushEvent(maEvent);
 }
 
@@ -169,12 +169,21 @@ result AppForm::OnInitializing(void) {
   return E_SUCCESS;
 }
 
-void AppForm::OnKeyPressed(const Control &source, KeyCode keyCode) {
-  _editField->Clear();
+void AppForm::OnKeyReleased(const Control &source, KeyCode keyCode) {
   MAEvent maEvent;
+  wchar_t ch = 0;
   maEvent.type = EVENT_TYPE_KEY_PRESSED;
-  maEvent.key = keyCode;
+  maEvent.nativeKey = keyCode;
+  if (_editField->GetTextLength() > 0 &&
+      _editField->GetText().GetCharAt(0, ch) == E_SUCCESS) {
+    maEvent.key = ch;
+  }
+  _editField->Clear();
   _runtime->pushEvent(maEvent);
+  if (keyCode == KEY_ENTER) {
+    _editField->HideKeypad();
+    _editField->RequestRedraw();
+  }
 }
 
 void AppForm::OnOrientationChanged(const Control &source,

@@ -148,7 +148,7 @@ FormViewable::~FormViewable() {
   _canvasLock = NULL;
 }
 
-result FormViewable::Construct(String &resourcePath, int w, int h) {
+result FormViewable::Construct(String &appRootPath, int w, int h) {
   logEntered();
   result r = Control::Construct();
   if (!IsFailed(r)) {
@@ -163,7 +163,8 @@ result FormViewable::Construct(String &resourcePath, int w, int h) {
       drawColorRaw = DEFAULT_BACKGROUND;
       drawColor = Color(maSetColor(drawColorRaw));
       widget = this;
-      fontPath = resourcePath.c_str();
+      fontPath = appRootPath.c_str();
+      fontPath += "res/";
       fontPath += FONT_FACE_NAME;
     } else {
       r = E_OUT_OF_MEMORY;
