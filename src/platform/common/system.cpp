@@ -116,6 +116,8 @@ char *System::getText(char *dest, int maxSize) {
           _output->edit(formWidget, event.key);
         }
       }
+    } else {
+      maShowVirtualKeyboard();
     }
   }
 

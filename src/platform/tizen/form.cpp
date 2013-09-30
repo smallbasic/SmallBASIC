@@ -149,8 +149,9 @@ result AppForm::OnInitializing(void) {
   SetFormMenuEventListener(this);
 
   _editField->AddKeyEventListener(*this);
+  _editField->AddKeypadEventListener(*this);
   _editField->SetKeypadEnabled(true);
-  _editField->SetKeypadAction(KEYPAD_ACTION_DONE);
+  _editField->SetKeypadAction(KEYPAD_ACTION_GO);
   _editField->SetEnabled(true);
   _editField->SetShowState(false);
   _contextMenu->AddActionEventListener(*this);
@@ -167,6 +168,12 @@ result AppForm::OnInitializing(void) {
 
   logLeaving();
   return E_SUCCESS;
+}
+
+void AppForm::OnKeypadOpened(Control &source) {
+}
+
+void AppForm::OnKeypadClosed(Control &source) {
 }
 
 void AppForm::OnKeyReleased(const Control &source, KeyCode keyCode) {

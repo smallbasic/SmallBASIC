@@ -241,6 +241,7 @@ char *RuntimeThread::readSource(const char *fileName) {
     int handle = 1;
     var_t *var_p = v_new();
     dev_file_t *f = dev_getfileptr(handle);
+    systemPrint(fileName);
     if (dev_fopen(handle, fileName, 0)) {
       http_read(f, var_p, 0);
       int len = var_p->v.p.size;

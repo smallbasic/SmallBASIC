@@ -219,6 +219,13 @@ MosyncWidget::~MosyncWidget() {
   delete _screen;
 }
 
+void MosyncWidget::createAnsiWidget() {
+  _ansiWidget = new AnsiWidget(this, w(), h());
+  _ansiWidget->construct();
+  _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
+  _ansiWidget->setFontSize(_defsize);
+}
+
 void MosyncWidget::layout() {
   if (_screen != NULL && _ansiWidget != NULL &&
       (layout_damage() & LAYOUT_WH)) {
@@ -274,10 +281,7 @@ int MosyncWidget::handle(int e) {
       drawTarget = _screen;
     }
     if (!_ansiWidget) {
-      _ansiWidget = new AnsiWidget(this, w(), h());
-      _ansiWidget->construct();
-      _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-      _ansiWidget->setFontSize(_defsize);
+      createAnsiWidget();
     }
     break;
 
@@ -318,6 +322,9 @@ void MosyncWidget::buttonClicked(const char *action) {
 }
 
 void MosyncWidget::clearScreen() {
+  if (!_ansiWidget) {
+    createAnsiWidget();
+  }
   _ansiWidget->clearScreen();
 }
 

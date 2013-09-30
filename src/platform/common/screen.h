@@ -84,7 +84,7 @@ struct Screen : public Shape {
   int _curY;
   int _dirty;
   int _linePadding;
-  List<Shape *> _shapes;
+  strlib::List<Shape *> _shapes;
   String _label;
 };
 

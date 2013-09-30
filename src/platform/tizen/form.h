@@ -27,6 +27,7 @@ class AppForm :
   public IFormBackEventListener,
   public IFormMenuEventListener,
   public IKeyEventListener,
+  public IKeypadEventListener,
   public IOrientationEventListener,
   public ITouchEventListener {
 
@@ -46,6 +47,11 @@ private:
   void OnFormBackRequested(Form &source);
   void OnFormMenuRequested(Form &source);
   result OnInitializing(void);
+
+  void OnKeypadWillOpen(Control &source) {}
+  void OnKeypadOpened(Control &source);
+  void OnKeypadClosed(Control &source);
+  void OnKeypadActionPerformed(Control &source, KeypadAction keypadAction) {}
 
   void OnKeyPressed(const Control &source, KeyCode keyCode) {}
   void OnKeyReleased(const Control &source, KeyCode keyCode);

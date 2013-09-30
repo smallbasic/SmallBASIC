@@ -77,6 +77,7 @@ private:
   void draw();
   void layout();
   int handle(int e);
+  void createAnsiWidget();
 
   void buttonClicked(const char *action);
   Canvas *_screen;

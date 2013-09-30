@@ -21,6 +21,7 @@ Font *activeFont;
 bool mouseActive;
 Color drawColor;
 int drawColorRaw;
+long long epoch;
 
 using namespace Tizen::App;
 using namespace Tizen::Ui::Controls;
@@ -138,6 +139,7 @@ FormViewable::FormViewable() :
   Control(),
   _canvasLock(NULL),
   _screen(NULL) {
+  Tizen::System::SystemTime::GetTicks(epoch);
 }
 
 FormViewable::~FormViewable() {
@@ -364,7 +366,10 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
 }
 
 int maGetMilliSecondCount(void) {
-  return clock();
+  long long result, ticks = 0;
+  Tizen::System::SystemTime::GetTicks(ticks);
+  result = ticks - epoch;
+  return result;
 }
 
 int maShowVirtualKeyboard(void) {
