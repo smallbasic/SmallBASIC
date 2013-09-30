@@ -276,10 +276,10 @@ char *RuntimeThread::readSource(const char *fileName) {
 void RuntimeThread::setExit(bool quit) {
   if (!isClosing()) {
     _eventQueueLock->Acquire();
+    _state = quit ? kClosingState : kBackState;
     if (isRunning()) {
       brun_break();
     }
-    _state = quit ? kClosingState : kBackState;
     _eventQueueLock->Release();
   }
 }
@@ -448,11 +448,15 @@ void osd_rect(int x1, int y1, int x2, int y2, int fill) {
 }
 
 void osd_refresh(void) {
-  thread->_output->flush(true);
+  if (!thread->isClosing()) {
+    thread->_output->flush(true);
+  }
 }
 
 void osd_setcolor(long color) {
-  thread->_output->setColor(color);
+  if (!thread->isClosing()) {
+    thread->_output->setColor(color);
+  }
 }
 
 void osd_setpenmode(int enable) {
@@ -481,11 +485,15 @@ int osd_textwidth(const char *str) {
 }
 
 void osd_write(const char *str) {
-  thread->_output->print(str);
+  if (!thread->isClosing()) {
+    thread->_output->print(str);
+  }
 }
 
 void lwrite(const char *str) {
-  thread->systemPrint(str);
+  if (!thread->isClosing()) {
+    thread->systemPrint(str);
+  }
 }
 
 void dev_image(int handle, int index,

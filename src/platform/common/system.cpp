@@ -116,7 +116,7 @@ char *System::getText(char *dest, int maxSize) {
           _output->edit(formWidget, event.key);
         }
       }
-    } else {
+    } else if (!_systemScreen) {
       maShowVirtualKeyboard();
     }
   }
@@ -204,7 +204,7 @@ void System::runMain(const char *mainBasPath) {
     }
     opt_command[0] = '\0';
     bool success = sbasic_main(_loadPath);
-    if (!isBack()) {
+    if (!isBack() && !isClosing()) {
       if (!_mainBas) {
         // display an indication the program has completed
         showCompletion(success);
