@@ -222,7 +222,6 @@ MAEvent RuntimeThread::processEvents(bool waitFlag) {
     break;
   case EVENT_TYPE_POINTER_RELEASED:
     _touchX = _touchY = _touchCurX = _touchCurY = -1;
-    dev_pushkey(SB_KEY_MK_RELEASE);
     _output->pointerReleaseEvent(event);
     break;
   default:
@@ -235,7 +234,7 @@ MAEvent RuntimeThread::processEvents(bool waitFlag) {
 
 char *RuntimeThread::readSource(const char *fileName) {
   char *buffer = NULL;
-  bool networkFile = strstr(fileName, "://");
+  bool networkFile = (strstr(fileName, "://") != NULL);
 
   if (networkFile) {
     int handle = 1;

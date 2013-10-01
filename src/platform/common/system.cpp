@@ -205,7 +205,9 @@ void System::runMain(const char *mainBasPath) {
     opt_command[0] = '\0';
     bool success = sbasic_main(_loadPath);
     if (!isBack() && !isClosing()) {
-      if (!_mainBas) {
+      // load the next network file without displaying the previous result
+      bool networkFile = (_loadPath.indexOf("://", 1) != -1);
+      if (!_mainBas && !networkFile) {
         // display an indication the program has completed
         showCompletion(success);
       }
@@ -213,7 +215,7 @@ void System::runMain(const char *mainBasPath) {
         // highlight the error
         showError();
       }
-      if (!_mainBas) {
+      if (!_mainBas && !networkFile) {
         // press back to continue
         while (!isBack() && !isClosing() && !isRestart()) {
           getNextEvent();
@@ -225,7 +227,7 @@ void System::runMain(const char *mainBasPath) {
 
 void System::setBack() {
   if (_systemScreen) {
-    // restore user screens
+    // restore user screens00
     _output->print("\033[ SR");
     _systemScreen = false;
   } else {
@@ -259,17 +261,19 @@ bool System::setParentPath() {
 }
 
 void System::setPath(const char *filename) {
-  const char *slash = strrchr(filename, '/');
-  if (!slash) {
-    slash = strrchr(filename, '\\');
-  }
-  if (slash) {
-    int len = slash - filename;
-    if (len > 0) {
-      char path[1024];
-      strncpy(path, filename, len);
-      path[len] = 0;
-      chdir(path);
+  if (strstr(filename, "://") == NULL) {
+    const char *slash = strrchr(filename, '/');
+    if (!slash) {
+      slash = strrchr(filename, '\\');
+    }
+    if (slash) {
+      int len = slash - filename;
+      if (len > 0) {
+        char path[1024];
+        strncpy(path, filename, len);
+        path[len] = 0;
+        chdir(path);
+      }
     }
   }
 }
@@ -294,7 +298,7 @@ void System::setRunning(bool running) {
     _lastEventTime = maGetMilliSecondCount();
     _eventTicks = 0;
     _drainError = false;
-  } else if (!isClosing() && !isRestart()) {
+  } else if (!isClosing() && !isRestart() && !isBack()) {
     _state = kActiveState;
   }
 }
