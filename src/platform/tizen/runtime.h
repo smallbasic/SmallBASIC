@@ -26,11 +26,11 @@ struct RuntimeThread :
   public IButtonListener,
   public Thread {
 
-  RuntimeThread(int w, int h);
+  RuntimeThread();
   ~RuntimeThread();
 
   void buttonClicked(const char *action);
-  result Construct(String &resourcePath);
+  result Construct(String &resourcePath, int w, int h);
   void handleKey(MAEvent &event);
   bool hasEvent();
   MAEvent popEvent();
@@ -46,7 +46,6 @@ private:
   String _appRootPath;
   Mutex *_eventQueueLock;
   Queue *_eventQueue;
-  int _w, _h;
 };
 
 #endif

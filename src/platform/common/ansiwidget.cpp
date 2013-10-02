@@ -249,7 +249,7 @@ bool FormLineInput::edit(int key) {
       }
       changed = true;
     }
-  } else {
+  } else if (key) {
     maShowVirtualKeyboard();
   }
 

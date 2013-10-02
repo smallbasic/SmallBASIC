@@ -116,8 +116,6 @@ char *System::getText(char *dest, int maxSize) {
           _output->edit(formWidget, event.key);
         }
       }
-    } else if (!_systemScreen) {
-      maShowVirtualKeyboard();
     }
   }
 
@@ -176,6 +174,15 @@ void System::handleMenu(int menuId) {
   if (!isRunning()) {
     _output->flush(true);
   }
+}
+
+void System::resize() {
+  MAExtent screenSize = maGetScrSize();
+  logEntered();
+  _output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
+  os_graf_mx = _output->getWidth();
+  os_graf_my = _output->getHeight();
+  dev_pushkey(SB_PKEY_SIZE_CHG);
 }
 
 void System::runMain(const char *mainBasPath) {

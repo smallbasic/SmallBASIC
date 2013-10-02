@@ -42,6 +42,7 @@ public:
   void redraw() { _display->redraw(); }
 
 private:
+  void layout(bool keypadActive);
   void OnActionPerformed(const Control &source, int actionId);
   result OnDraw();
   void OnFormBackRequested(Form &source);

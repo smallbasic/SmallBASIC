@@ -33,12 +33,10 @@ struct RuntimeEvent :
 // ma apis. The ma apis are handled in the main thread
 RuntimeThread *thread;
 
-RuntimeThread::RuntimeThread(int w, int h) :
+RuntimeThread::RuntimeThread() :
   System(),
   _eventQueueLock(NULL),
-  _eventQueue(NULL),
-  _w(w),
-  _h(h) {
+  _eventQueue(NULL) {
   thread = this;
 }
 
@@ -54,7 +52,7 @@ void RuntimeThread::buttonClicked(const char *url) {
   _loadPath.append(url, strlen(url));
 }
 
-result RuntimeThread::Construct(String &appRootPath) {
+result RuntimeThread::Construct(String &appRootPath, int w, int h) {
   logEntered();
   result r = Thread::Construct();
   if (!IsFailed(r)) {
@@ -67,6 +65,10 @@ result RuntimeThread::Construct(String &appRootPath) {
   }
   if (!IsFailed(r)) {
     _appRootPath = appRootPath;
+    _output = new AnsiWidget(this, w, h);
+    if (!_output) {
+      r = E_OUT_OF_MEMORY;
+    }
   }
   return r;
 }
@@ -202,6 +204,9 @@ MAEvent RuntimeThread::processEvents(bool waitFlag) {
       }
     }
     break;
+  case EVENT_TYPE_SCREEN_CHANGED:
+    resize();
+    break;
   case EVENT_TYPE_KEY_PRESSED:
     if (event.nativeKey == KEY_CONTEXT_MENU) {
       showMenu();
@@ -241,12 +246,15 @@ char *RuntimeThread::readSource(const char *fileName) {
     var_t *var_p = v_new();
     dev_file_t *f = dev_getfileptr(handle);
     systemPrint(fileName);
+    _output->print("\033[ LLoading...");
     if (dev_fopen(handle, fileName, 0)) {
       http_read(f, var_p, 0);
       int len = var_p->v.p.size;
       buffer = (char *)tmp_alloc(len + 1);
       memcpy(buffer, var_p->v.p.ptr, len);
       buffer[len] = '\0';
+    } else {
+      systemPrint("\nfailed");
     }
     dev_fclose(handle);
     v_free(var_p);
@@ -298,7 +306,6 @@ Tizen::Base::Object *RuntimeThread::Run() {
   opt_usevmt = 0;
   os_graphics = 1;
 
-  _output = new AnsiWidget(this, _w, _h);
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(DEFAULT_FONT_SIZE);

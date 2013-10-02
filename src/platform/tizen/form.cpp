@@ -19,6 +19,9 @@ using namespace Tizen::Ui::Controls;
 #define EXIT_SLEEP_STEP 10
 #define EXIT_SLEEP 250
 
+// hack for missing API to obtain the keypad height (unless using ScrollPanel)
+#define KEYPAD_HEIGHT 836
+
 //
 // converts a Tizen (wchar) String into a StringLib (char) string
 //
@@ -68,6 +71,10 @@ result AppForm::Construct(int w, int h) {
   String appRootPath = fromString(App::GetInstance()->GetAppRootPath());
 
   if (!IsFailed(r)) {
+    _runtime = new RuntimeThread();
+    r = _runtime != NULL ? _runtime->Construct(appRootPath, w, h) : E_OUT_OF_MEMORY;
+  }
+  if (!IsFailed(r)) {
     _display = new FormViewable();
     if (_display && _display->Construct(appRootPath, w, h) == E_SUCCESS &&
         AddControl(_display) == E_SUCCESS) {
@@ -77,12 +84,6 @@ result AppForm::Construct(int w, int h) {
       r = E_OUT_OF_MEMORY;
     }
   }
-
-  if (!IsFailed(r)) {
-    _runtime = new RuntimeThread(w, h);
-    r = _runtime != NULL ? _runtime->Construct(appRootPath) : E_OUT_OF_MEMORY;
-  }
-
   if (!IsFailed(r)) {
     _editField = new EditField();
     r = _editField == NULL ? E_OUT_OF_MEMORY :
@@ -90,19 +91,17 @@ result AppForm::Construct(int w, int h) {
                               EDIT_FIELD_STYLE_NORMAL_SMALL,
                               INPUT_STYLE_OVERLAY,
                               EDIT_FIELD_TITLE_STYLE_NONE,
-                              true, 100, GROUP_STYLE_SINGLE);
+                              false, 100, GROUP_STYLE_NONE);
     if (!IsFailed(r)) {
       r = AddControl(_editField);
     }
   }
-
   if (!IsFailed(r)) {
     _contextMenu = new ContextMenu();
     r = _contextMenu == NULL ? E_OUT_OF_MEMORY :
         _contextMenu->Construct(Point(0, h), CONTEXT_MENU_STYLE_GRID,
                                 CONTEXT_MENU_ANCHOR_DIRECTION_UPWARD);
   }
-
   if (IsFailed(r)) {
     AppLog("Form startup failed");
     delete _display;
@@ -117,6 +116,15 @@ result AppForm::Construct(int w, int h) {
   return r;
 }
 
+void AppForm::layout(bool keypadActive) {
+  logEntered();
+  MAEvent maEvent;
+  maEvent.type = EVENT_TYPE_SCREEN_CHANGED;
+  int height = keypadActive ? KEYPAD_HEIGHT : GetHeight();
+  _display->resize(GetWidth(), height);
+  _runtime->pushEvent(maEvent);
+}
+
 void AppForm::OnActionPerformed(const Control &source, int actionId) {
   MAEvent maEvent;
   maEvent.type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
@@ -125,6 +133,7 @@ void AppForm::OnActionPerformed(const Control &source, int actionId) {
 }
 
 result AppForm::OnDraw() {
+  logEntered();
   return _display->OnDraw();
 }
 
@@ -138,6 +147,7 @@ void AppForm::OnFormMenuRequested(Form &source) {
   MAEvent maEvent;
   maEvent.type = EVENT_TYPE_KEY_PRESSED;
   maEvent.nativeKey = KEY_CONTEXT_MENU;
+  maEvent.key = 0;
   _runtime->pushEvent(maEvent);
 }
 
@@ -148,12 +158,16 @@ result AppForm::OnInitializing(void) {
   SetFormBackEventListener(this);
   SetFormMenuEventListener(this);
 
+  Color colorClear = Color(0, 0, 0, 0);
   _editField->AddKeyEventListener(*this);
   _editField->AddKeypadEventListener(*this);
   _editField->SetKeypadEnabled(true);
   _editField->SetKeypadAction(KEYPAD_ACTION_GO);
   _editField->SetEnabled(true);
   _editField->SetShowState(false);
+  _editField->SetColor(EDIT_STATUS_HIGHLIGHTED, colorClear);
+  _editField->SetColor(EDIT_STATUS_PRESSED, colorClear);
+  _editField->SetTextColor(EDIT_TEXT_COLOR_HIGHLIGHTED, colorClear);
   _contextMenu->AddActionEventListener(*this);
 
   // set focus to enable receiving key events
@@ -171,9 +185,12 @@ result AppForm::OnInitializing(void) {
 }
 
 void AppForm::OnKeypadOpened(Control &source) {
+  _editField->SetFocus();
+  layout(true);
 }
 
 void AppForm::OnKeypadClosed(Control &source) {
+  layout(false);
 }
 
 void AppForm::OnKeyReleased(const Control &source, KeyCode keyCode) {
@@ -245,7 +262,9 @@ void AppForm::showKeypad() {
 }
 
 void AppForm::showMenu(ArrayList *args) {
-  _contextMenu->RemoveAllItems();
+  if (_contextMenu->GetItemCount() > 0) {
+    _contextMenu->RemoveAllItems();
+  }
   int len = args->GetCount();
   for (int i = 0; i < len; i++) {
     Tizen::Base::String *text = (Tizen::Base::String *)args->GetAt(i);

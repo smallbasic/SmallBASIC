@@ -38,6 +38,7 @@ protected:
   virtual MAEvent getNextEvent() = 0;
 
   void handleMenu(int menuId);
+  void resize();
   void runMain(const char *mainBasPath);
   void setPath(const char *filename);
   bool setParentPath();

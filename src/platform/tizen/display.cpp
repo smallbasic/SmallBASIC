@@ -138,7 +138,9 @@ void Drawable::setClip(int x, int y, int w, int h) {
 FormViewable::FormViewable() :
   Control(),
   _canvasLock(NULL),
-  _screen(NULL) {
+  _screen(NULL),
+  _w(0),
+  _h(0) {
   Tizen::System::SystemTime::GetTicks(epoch);
 }
 
@@ -159,6 +161,7 @@ result FormViewable::Construct(String &appRootPath, int w, int h) {
   }
   if (!IsFailed(r)) {
     SetBounds(0, 0, w, h);
+    _w = w; _h = h;
     _screen = new Drawable();
     if (_screen && _screen->create(w, h)) {
       drawTarget = _screen;
@@ -191,14 +194,9 @@ Font *FormViewable::createFont(int style, int size) {
 result FormViewable::OnDraw() {
   Canvas *canvas = GetCanvasN();
   if (canvas) {
-    Rectangle rect = GetBounds();
-    if (_screen->_canvas) {
-      canvas->Copy(Point(rect.x, rect.y), *_screen->_canvas, rect);
-    } else {
-      canvas->FillRectangle(drawColor, rect);
-    }
-    delete canvas;
+    canvas->Copy(Point(0, 0), *_screen->_canvas, GetBounds());
   }
+  delete canvas;
   return E_SUCCESS;
 }
 
@@ -312,8 +310,8 @@ MAExtent maGetTextSize(const char *str) {
 }
 
 MAExtent maGetScrSize(void) {
-  short width = widget->GetWidth();
-  short height = widget->GetHeight();
+  short width = widget->getWidth();
+  short height = widget->getHeight();
   return (MAExtent)((width << 16) + height);
 }
 

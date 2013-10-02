@@ -55,14 +55,18 @@ struct FormViewable : public Control {
 
   result Construct(String &resourcePath, int w, int h);
   Font *createFont(int style, int size);
+  int getWidth() { return _w; }
+  int getHeight() { return _h; }
   MAHandle setDrawTarget(MAHandle maHandle);
   result OnDraw();
   void redraw();
+  void resize(int w, int h) { _w = w; _h = h; }
 
 private:
   Tizen::Base::String fontPath;
   Mutex *_canvasLock;
   Drawable *_screen;
+  int _w, _h;
 };
 
 #endif
