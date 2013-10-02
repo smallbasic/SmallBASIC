@@ -107,7 +107,7 @@ sub main
 
   sub make_ui(path, welcome)
     color 10, 8
-    button 0,  0, 0, 0, bn_back,   "Back"
+    button 0,  0, 0, 0, bn_back,   "Go up"
     button -4, 0, 0, 0, bn_online, "Online", exitButtonType
     button -4, 0, 0, 0, bn_about,  "About"
     at 0, y_height
@@ -154,7 +154,7 @@ sub main
     elif form_var == "About" then
       about
       make_ui path, false
-    elif form_var == "Back" then
+    elif form_var == "Go up" then
       go_back
       make_ui path, false
     fi

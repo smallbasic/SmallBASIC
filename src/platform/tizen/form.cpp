@@ -78,7 +78,7 @@ result AppForm::Construct(int w, int h) {
     _display = new FormViewable();
     if (_display && _display->Construct(appRootPath, w, h) == E_SUCCESS &&
         AddControl(_display) == E_SUCCESS) {
-      SetOrientation(ORIENTATION_AUTOMATIC);
+      SetOrientation(ORIENTATION_PORTRAIT);
     } else {
       AppLog("Failed to create FormViewable");
       r = E_OUT_OF_MEMORY;
@@ -158,13 +158,14 @@ result AppForm::OnInitializing(void) {
   SetFormBackEventListener(this);
   SetFormMenuEventListener(this);
 
-  Color colorClear = Color(0, 0, 0, 0);
+  Color colorClear = Color(0, 0, 0, 0xFF);
   _editField->AddKeyEventListener(*this);
   _editField->AddKeypadEventListener(*this);
   _editField->SetKeypadEnabled(true);
   _editField->SetKeypadAction(KEYPAD_ACTION_GO);
   _editField->SetEnabled(true);
   _editField->SetShowState(false);
+  _editField->SetColor(EDIT_STATUS_NORMAL, colorClear);
   _editField->SetColor(EDIT_STATUS_HIGHLIGHTED, colorClear);
   _editField->SetColor(EDIT_STATUS_PRESSED, colorClear);
   _editField->SetTextColor(EDIT_TEXT_COLOR_HIGHLIGHTED, colorClear);

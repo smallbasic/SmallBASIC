@@ -312,7 +312,7 @@ Tizen::Base::Object *RuntimeThread::Run() {
   _initialFontSize = _output->getFontSize();
 
   String mainBasPath = _appRootPath + "res/main.bas";
-  setPath(_appRootPath);
+  setPath(_appRootPath + "res/samples/");
   runMain(mainBasPath);
 
   delete _output;
