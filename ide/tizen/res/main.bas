@@ -30,14 +30,16 @@ sub about()
   print
   print "Version 0.11.4"
   print
-  print "Copyright (c) 2002-2012 Chris Warren-Smith"
-  print "Copyright (c) 2000-2006 Nic Christopoulos." + chr(10)
+  print "Copyright (c) 2002-2013 Chris Warren-Smith"
+  print "Copyright (c) 2000-2006 Nic Christopoulos" + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
   print "GNU General Public License version 2 as published by ";
-  print "the Free Software Foundation."
+  print "the Free Software Foundation." + chr(10)
+  print "Envy Code R Font v0.8 used with permission ";
+  print "http://damieng.com/envy-code-r" + chr(10)
   print 
   color 10, 8
   button xmax / 2, ypos * txth("A"), 0, 0, bn_ok,  "OK"
