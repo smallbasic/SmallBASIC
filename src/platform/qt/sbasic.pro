@@ -33,8 +33,8 @@ HEADERS += mainwindow.h \
            httpfile.h \
            fixedlayout.h
 
-INCLUDEPATH += ../common ../../../
+INCLUDEPATH += ../../common ../.. ../../..
 
-LIBS    += -L../common -lsb_common
+LIBS    += -L../../common -lsb_common
 
 RESOURCES += sbasic.qrc

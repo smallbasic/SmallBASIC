@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-AM_CPPFLAGS = -I../../common -I. @PACKAGE_CFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src -I. @PACKAGE_CFLAGS@
 
 EXTRA_DIST =																		\
     fixedfont.xpm																\
@@ -19,6 +19,6 @@ sbasicg_SOURCES =																\
     dev_sdl.c																		\
     blib_sdl_ui.cpp
 
-sbasicg_LDADD = -L$(top_srcdir)/src -lsb_common @PACKAGE_LIBS@
+sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
-sbasicg_DEPENDENCIES = ../../common/libsb_common.a
+sbasicg_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a

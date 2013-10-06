@@ -338,28 +338,6 @@ function buildSDL() {
         PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
         PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32"
         ;;
-    *-*-beos*)
-        SYS_GL_LIBS="-lGL"
-        ;;
-    *-*-darwin* )
-        SYS_GL_LIBS="-Wl,-framework,OpenGL"
-        ;;
-    *-*-aix*)
-        if test x$ac_cv_c_compiler_gnu = xyes; then
-            CFLAGS="-mthreads"
-        fi
-        ;;
-    *-*-mint*)
-        AC_PATH_PROG(OSMESA_CONFIG, osmesa-config, no)
-        if test "x$OSMESA_CONFIG" = "xyes"; then
-            OSMESA_CFLAGS=`$OSMESA_CONFIG --cflags`
-            OSMESA_LIBS=`$OSMESA_CONFIG --libs`
-            CFLAGS="$CFLAGS $OSMESA_CFLAGS"
-            SYS_GL_LIBS="$OSMESA_LIBS"
-        else
-            SYS_GL_LIBS="-lOSMesa"
-        fi
-        ;;
     *)
         MATHLIB="-lm"
         SYS_GL_LIBS="-lGL"
@@ -373,8 +351,8 @@ function buildSDL() {
    dnl     AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
    dnl )
 
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${SDL_CFLAGS}"
-   PACKAGE_LIBS="${PACKAGE_LIBS} ${SDL_LIBS} ${MATHLIB}"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl-config --cflags`"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `sdl-config --libs` ${MATHLIB}"
 
    dnl Check for OpenGL
    AC_MSG_CHECKING(for OpenGL support)
