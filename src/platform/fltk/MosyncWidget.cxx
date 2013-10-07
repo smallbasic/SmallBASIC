@@ -99,7 +99,8 @@ void Canvas::drawPixel(int posX, int posY) {
   if (posX > -1 && posY > -1
       && posX < _img->buffer_width()
       && posY < _img->buffer_height()) {
-    U32 *row = (U32 *)_img->linebuffer(posY);
+    int delta = _img->buffer_linedelta();
+    U32 *row = (U32 *) (_img->buffer() + (posY * delta));
     row[posX] = drawColorRaw;
   }
 #if !defined(_Win32)
@@ -162,8 +163,9 @@ int Canvas::getPixel(int x, int y) {
   int result = 0;
   if (x > -1 && x < _img->w() &&
       y > -1 && y < _img->h()) {
-    U32 *pixel = (U32 *)_img->linebuffer(y);
-    result = pixel[x];
+    int delta = _img->buffer_linedelta();
+    U32 *row = (U32 *) (_img->buffer() + (y * delta));
+    result = row[x];
   }
   return result;
 }
@@ -515,14 +517,8 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
   Canvas *holder = (Canvas *)maHandle;
-  U32 *dest = (U32 *)dst;
-  int index = 0;
-  for (int y = 0; y < srcRect->height && y + srcRect->top < holder->_img->buffer_height(); y++) {
-    for (int x = 0; x < srcRect->width && x + srcRect->left < holder->_img->buffer_width(); x++) {
-      U32 *pixel = (U32 *)holder->_img->linebuffer(y + srcRect->top);
-      dest[index++] = pixel[x + srcRect->left];
-    }
-  }
+  // maGetImageData is only used for getPixel()
+  *((int *)dst) = holder->getPixel(srcRect->left, srcRect->top);
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {

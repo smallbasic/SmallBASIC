@@ -286,21 +286,7 @@ void osd_setpixel(int x, int y) {
 }
 
 long osd_getpixel(int x, int y) {
-  int xoffs = 0;
-  int yoffs = 0;
-
-#if !defined(WIN32)
-  // offset x/y as getPixel is relative to the outer window
-  fltk::Rectangle rc;
-  wnd->_out->get_absolute_rect(&rc);
-  xoffs = rc.x();
-  yoffs = rc.y();
-
-  wnd->get_absolute_rect(&rc);
-  xoffs -= rc.x();
-  yoffs -= rc.y();
-#endif
-  return wnd->_out->getPixel(x + xoffs, y + yoffs);
+  return wnd->_out->getPixel(x, y);
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
