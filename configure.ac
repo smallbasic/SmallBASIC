@@ -104,6 +104,9 @@ function checkPCRE() {
    if test x$ac_build_mosync = xyes; then
      have_pcre="no"
    fi
+   if test x$ac_build_tizen = xyes; then
+     have_pcre="no"
+   fi
 
    if test "${have_pcre}" = "yes" ; then
      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])

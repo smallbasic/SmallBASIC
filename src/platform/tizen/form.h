@@ -59,18 +59,12 @@ private:
   void OnKeyLongPressed(const Control &source, KeyCode keyCode) {}
   void OnOrientationChanged(const Control &source,
                             OrientationStatus orientationStatus);
-  void OnTouchDoublePressed(const Control &source,
-                            const Point &currentPosition,
-                            const TouchEventInfo &touchInfo) {}
   void OnTouchFocusIn(const Control &source, 
                       const Point &currentPosition,
                       const TouchEventInfo &touchInfo) {}
   void OnTouchFocusOut(const Control &source,
                        const Point &currentPosition,
                        const TouchEventInfo &touchInfo) {}
-  void OnTouchLongPressed(const Control &source,
-                          const Point &currentPosition,
-                          const TouchEventInfo &touchInfo) {}
   void OnTouchMoved(const Control &source,
                     const Point &currentPosition,
                     const TouchEventInfo &touchInfo);
