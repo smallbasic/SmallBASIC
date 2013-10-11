@@ -18,7 +18,7 @@
 #include <mavsprintf.h>
 
 #include "platform/mosync/controller.h"
-#include "platform/mosync/utils.h"
+#include "platform/common/utils.h"
 
 #define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source"
 #define MENU_CONSOLE  0

@@ -27,9 +27,10 @@
 #define FONT_TYPE_SERIF 0
 #define FONT_TYPE_SANS_SERIF 1
 #define FONT_TYPE_MONOSPACE 2
-#define FONT_STYLE_NORMAL 0
-#define FONT_STYLE_BOLD 1
-#define FONT_STYLE_ITALIC 2
+// same values as tizen enum FontStyle
+#define FONT_STYLE_NORMAL 0x0001
+#define FONT_STYLE_BOLD 0x0002
+#define FONT_STYLE_ITALIC 0x0004
 #define HANDLE_LOCAL 0
 #define RES_OUT_OF_MEMORY -1
 #define RES_BAD_INPUT -2
@@ -39,9 +40,13 @@
 #define MAK_SPACE 32
 #define MAK_Z 122
 #define MAK_CLEAR 12
+#define MAK_MENU 293
 #define EVENT_TYPE_POINTER_PRESSED 8
 #define EVENT_TYPE_POINTER_RELEASED 9
 #define EVENT_TYPE_POINTER_DRAGGED 10
+#define EVENT_TYPE_KEY_PRESSED 11
+#define EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED 41
+#define EVENT_TYPE_SCREEN_CHANGED 21
 
 #ifndef _WCHAR_DEFINED
 #define _WCHAR_DEFINED
@@ -79,12 +84,29 @@ typedef struct MAEvent {
    */
   int type;
   union {
+		struct {
+			/**
+			* In KEY events, this will be one of the \link #MAK_UNKNOWN MAK \endlink constants.
+			*/
+			int key;
+
+			/**
+			* In KEY events, this will be the native keycode.
+			*/
+			int nativeKey;
+		};
+    
     struct {
       /**
        * In POINTER events, this will be the location of the pointer.
        */
       MAPoint2d point;
     };
+
+		/**
+     * #EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED event, contains the index of the selected option.
+     */
+		int optionsBoxButtonIndex;
   };
 } MAEvent;
 

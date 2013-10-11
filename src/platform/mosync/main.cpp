@@ -9,7 +9,7 @@
 #include <ma.h>
 
 #include "platform/mosync/controller.h"
-#include "platform/mosync/utils.h"
+#include "platform/common/utils.h"
 
 Controller *controller;
 

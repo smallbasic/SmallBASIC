@@ -7,8 +7,8 @@
 //
 
 #include "config.h"
-#include "sys.h"
-#include "var.h"
+#include "common/sys.h"
+#include "common/var.h"
 
 // whether a widget event has fired
 bool form_event();

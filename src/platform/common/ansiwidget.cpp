@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #include <wchar.h>
 
-#include "platform/mosync/ansiwidget.h"
-#include "platform/mosync/utils.h"
+#include "platform/common/ansiwidget.h"
+#include "platform/common/utils.h"
 
 /* class AnsiWidget
 
@@ -58,7 +58,7 @@
 char *options = NULL;
 FormList *clickedList = NULL;
 
-#if !defined(_FLTK)
+#if !defined(_FLTK) && !defined(_TIZEN)
 void form_ui::optionsBox(StringList *items) {
   if (items->size()) {
     // calculate the size of the options buffer
@@ -224,12 +224,13 @@ bool FormLineInput::edit(int key) {
   bool changed = false;
   int len = strlen(_buffer);
 
-  if (key >= MAK_SPACE && key <= MAK_Z) {
+  if (key >= MAK_SPACE && key <= 255) {
     // insert
     if (len < _maxSize - 1) {
       _buffer[len] = key;
       _buffer[++len] = '\0';
-      int textWidth = get_text_width(_buffer);
+      MAExtent textSize = maGetTextSize(_buffer);
+      int textWidth = EXTENT_X(textSize);
       if (textWidth > width) {
         if (textWidth > getScreen()->width) {
           _scroll++;
@@ -248,7 +249,7 @@ bool FormLineInput::edit(int key) {
       }
       changed = true;
     }
-  } else {
+  } else if (key) {
     maShowVirtualKeyboard();
   }
 
@@ -304,7 +305,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   for (int i = 0; i < MAX_SCREENS; i++) {
     _screens[i] = NULL;
   }
-  _fontSize = min(width, height) / FONT_FACTOR;
+  _fontSize = MIN(width, height) / FONT_FACTOR;
   trace("width: %d height: %d fontSize:%d", _width, height, _fontSize);
 }
 
@@ -412,7 +413,7 @@ void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
       update = (maGetMilliSecondCount() - _front->_dirty >= maxPending);
     }
     if (update) {
-      _front->draw(vscroll);
+      _front->drawBase(vscroll);
     }
   }
 }
@@ -479,6 +480,7 @@ void AnsiWidget::print(const char *str) {
         break;
       default:
         p += _back->print(p, lineHeight) - 1; // allow for p++
+        break;
       };
 
       if (*p == '\0') {
@@ -520,7 +522,7 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
     if (screen) {
       screen->resize(newWidth, newHeight, _width, _height, lineHeight);
       if (screen == _front || i < SYSTEM_SCREENS) {
-        screen->draw(false);
+        screen->drawBase(false);
       }
     }
   }
@@ -900,7 +902,7 @@ void AnsiWidget::screenCommand(char *&p) {
   case 'R': // redraw all user screens
     for (int i = 0; i < MAX_SCREENS; i++) {
       if (_screens[i] != NULL && i < SYSTEM_SCREENS) {
-        _screens[i]->draw(false);
+        _screens[i]->drawBase(false);
         _front = _back = _screens[i];
       }
     }
@@ -971,10 +973,10 @@ Screen *AnsiWidget::selectScreen(char *&p) {
     n = 0;
   }
 
-  x = min(max(x, 0), 100);
-  y = min(max(y, 0), 100);
-  w = min(max(w, 0), 100);
-  h = min(max(h, 0), 100);
+  x = MIN(MAX(x, 0), 100);
+  y = MIN(MAX(y, 0), 100);
+  w = MIN(MAX(w, 0), 100);
+  h = MIN(MAX(h, 0), 100);
 
   result = _screens[n];
 
@@ -1042,7 +1044,7 @@ void AnsiWidget::swapScreens() {
     _front = _back;
     _back = tmp;
     if (_front->_dirty) {
-      _front->draw(false);
+      _front->drawBase(false);
     }
   }
 }

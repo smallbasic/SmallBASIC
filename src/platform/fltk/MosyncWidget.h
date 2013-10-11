@@ -14,7 +14,7 @@
 #include <fltk/draw.h>
 
 #include "platform/common/maapi.h"
-#include "platform/mosync/interface.h"
+#include "platform/common/interface.h"
 
 struct AnsiWidget;
 
@@ -77,6 +77,7 @@ private:
   void draw();
   void layout();
   int handle(int e);
+  void createAnsiWidget();
 
   void buttonClicked(const char *action);
   Canvas *_screen;

@@ -7,13 +7,13 @@
 // Implements GUI commands BUTTON, TEXT and DOFORM
 // using guichan - see http://guichan.sourceforge.net/wiki/index.php
 
-#include "sys.h"
-#include "var.h"
-#include "kw.h"
-#include "pproc.h"
-#include "device.h"
-#include "smbas.h"
-#include "osd.h"
+#include "common/sys.h"
+#include "common/var.h"
+#include "common/kw.h"
+#include "common/pproc.h"
+#include "common/device.h"
+#include "common/smbas.h"
+#include "common/osd.h"
 
 #ifdef IMPL_UI
 

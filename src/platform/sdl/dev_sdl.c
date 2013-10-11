@@ -47,10 +47,10 @@
  * 
  */
 
-#include "device.h"
-#include "osd.h"
-#include "smbas.h"
-#include "str.h"
+#include "common/device.h"
+#include "common/osd.h"
+#include "common/smbas.h"
+#include "common/str.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1405,7 +1405,7 @@ void osd_write(const char *str) {
             make_update(cur_x, cur_y, os_graf_mx - cur_x, cur_y + font_h);
             break;
           case 'G':
-            dev_setxy(esc_val * font_w, dev_gety());    // default font = 9x16
+            dev_setxy(esc_val * font_w, dev_gety(), 0);    // default font = 9x16
             break;
           case 'N':
             next_is_graphic = 1;
