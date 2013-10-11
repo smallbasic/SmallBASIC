@@ -496,8 +496,8 @@ void update_widget(QWidget *widget, WidgetInfoPtr inf, QRect &rect) {
     widget->setFixedWidth(rect.width());
   }
 
-  if (rect._height() != -1) {
-    widget->setFixedHeight(rect._height());
+  if (rect.height() != -1) {
+    widget->setFixedHeight(rect.height());
   }
 
   if (rect.x() < 0) {
@@ -509,7 +509,7 @@ void update_widget(QWidget *widget, WidgetInfoPtr inf, QRect &rect) {
   }
 
   form->prev_x = rect.x() + rect.width();
-  form->prev_y = rect.y() + rect._height();
+  form->prev_y = rect.y() + rect.height();
 
   widget->setGeometry(rect);
   widget->setProperty("widgetInfo", QVariant::fromValue(inf));  
@@ -532,8 +532,8 @@ void update_button(QAbstractButton *widget, WidgetInfoPtr inf,
     rect.setWidth((int)wnd->out->textWidth(caption) + def_w + (-rect.width() - 1));
   }
 
-  if (rect._height() < 0) {
-    rect.setHeight((int)(wnd->out->textHeight() + def_h + (-rect._height() - 1)));
+  if (rect.height() < 0) {
+    rect.setHeight((int)(wnd->out->textHeight() + def_h + (-rect.height() - 1)));
   }
 
   update_widget(widget, inf, rect);
@@ -545,7 +545,7 @@ void update_button(QAbstractButton *widget, WidgetInfoPtr inf,
 void form_create() {
   if (form == 0) {
     form = new Form(wnd->out->x() + 2,
-                    wnd->out->y() + 2, wnd->out->width() - 2, wnd->out->_height() - 2);
+                    wnd->out->y() + 2, wnd->out->width() - 2, wnd->out->height() - 2);
   }
   // form->begin();
   mode = m_init;
@@ -554,7 +554,7 @@ void form_create() {
 // prepare the form for display
 void form_init() {
   if (form) {
-    form->setGeometry(0, 0, form->width(), form->_height());
+    form->setGeometry(0, 0, form->width(), form->height());
   }
 }
 
@@ -701,7 +701,7 @@ void cmd_text() {
     inf->var = v;
     inf->type = ctrl_text;
     update_widget(widget, inf, rect);
-    if (rect._height() > (wnd->out->textHeight() + BN_H)) {
+    if (rect.height() > (wnd->out->textHeight() + BN_H)) {
       // widget->type(QPlainTextEdit::MULTILINE | QPlainTextEdit::WORDWRAP);
     }
   }

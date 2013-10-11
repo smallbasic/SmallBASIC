@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#include "platform/mosync/screen.h"
+#include "platform/common/screen.h"
 
 #define WHITE 15
 #define SCROLL_IND 4
@@ -295,7 +295,7 @@ void GraphicScreen::clear() {
   Screen::clear();
 }
 
-void GraphicScreen::draw(bool vscroll) {
+void GraphicScreen::drawBase(bool vscroll) {
   MARect srcRect;
   MAPoint2d dstPoint;
   srcRect.left = 0;
@@ -445,13 +445,13 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
     MARect srcRect;
     MAPoint2d dstPoint;
     MAHandle newImage = maCreatePlaceholder();
-    int newImageWidth = max(newWidth, _imageWidth);
-    int newImageHeight = max(newHeight, _imageHeight);
+    int newImageWidth = MAX(newWidth, _imageWidth);
+    int newImageHeight = MAX(newHeight, _imageHeight);
 
     srcRect.left = 0;
     srcRect.top = 0;
-    srcRect.width = min(_imageWidth, newImageWidth);
-    srcRect.height = min(_imageHeight, newImageHeight);
+    srcRect.width = MIN(_imageWidth, newImageWidth);
+    srcRect.height = MIN(_imageHeight, newImageHeight);
     dstPoint.x = 0;
     dstPoint.y = 0;
 
@@ -477,7 +477,7 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
   width = newWidth;
   height = newHeight;
   if (!fullscreen) {
-    draw(false);
+    drawBase(false);
   }
 }
 
@@ -606,14 +606,14 @@ void GraphicScreen::setPixel(int x, int y, int c) {
 
 struct LineShape : Shape {
   LineShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
-  void draw() {
+  void draw(int ax, int ay) {
     maLine(x, y, width, height);
   }
 };
 
 struct RectShape : Shape {
   RectShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
-  void draw() {
+  void draw(int ax, int ay) {
     int x1 = x;
     int y1 = y;
     int x2 = x + width;
@@ -627,7 +627,7 @@ struct RectShape : Shape {
 
 struct RectFilledShape : Shape {
   RectFilledShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
-  void draw() {
+  void draw(int ax, int ay) {
     maFillRect(x, y, width, height);
   }
 };
@@ -674,7 +674,7 @@ void TextScreen::clear() {
 //
 // draw the text
 //
-void TextScreen::draw(bool vscroll) {
+void TextScreen::drawBase(bool vscroll) {
   // prepare escape state variables
   bool bold = false;
   bool italic = false;

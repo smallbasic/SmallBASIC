@@ -24,8 +24,8 @@
 #include "platform/fltk/HelpWidget.h"
 #include "platform/fltk/TtyWidget.h"
 #include "platform/fltk/utils.h"
-#include "platform/mosync/utils.h"
-#include "platform/mosync/interface.h"
+#include "platform/common/utils.h"
+#include "platform/common/interface.h"
 #include "common/fs_socket_client.h"
 
 #ifdef WIN32
@@ -286,21 +286,7 @@ void osd_setpixel(int x, int y) {
 }
 
 long osd_getpixel(int x, int y) {
-  int xoffs = 0;
-  int yoffs = 0;
-
-#if !defined(WIN32)
-  // offset x/y as getPixel is relative to the outer window
-  fltk::Rectangle rc;
-  wnd->_out->get_absolute_rect(&rc);
-  xoffs = rc.x();
-  yoffs = rc.y();
-
-  wnd->get_absolute_rect(&rc);
-  xoffs -= rc.x();
-  yoffs -= rc.y();
-#endif
-  return wnd->_out->getPixel(x + xoffs, y + yoffs);
+  return wnd->_out->getPixel(x, y);
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {

@@ -6,8 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef FLTK_UTILS_H
+#define FLTK_UTILS_H
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }

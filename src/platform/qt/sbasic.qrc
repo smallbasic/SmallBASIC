@@ -10,6 +10,6 @@
     <file>images/previous.png</file>
     <file>images/refresh.png</file>
     <file>images/stop.png</file>
-    <file>../../images/smallbasic.png</file>
+    <file>../../../images/sb-desktop-64x64.png</file>
   </qresource>
 </RCC>

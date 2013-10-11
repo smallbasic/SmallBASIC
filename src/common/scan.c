@@ -3420,6 +3420,7 @@ char *comp_load(const char *file_name) {
 #else 
   h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
   if (h == -1) {
+    buf = NULL;
 #if defined(__CYGWIN__)
     char temp[1024];
     getcwd(temp, 1024);

@@ -800,11 +800,11 @@ void log_printf(const char *format, ...) {
   *p = '\0';
 
 #if defined(IMPL_LOG_WRITE)
-    lwrite(buf);
+  lwrite(buf);
 #else
-    dev_print(buf);
+  dev_print(buf);
 #endif
-  }
+}
 
 #ifndef IMPL_HTML
 void dev_html(const char *html, const char *title, int x, int y, int w, int h) {

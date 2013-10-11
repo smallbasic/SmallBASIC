@@ -8,7 +8,7 @@
 
 #include "config.h"
 
-#if defined(_FLTK)
+#if defined(_FLTK) || defined(_TIZEN)
   #include "platform/common/maapi.h"
 #else
   #include <maapi.h>
@@ -21,8 +21,8 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 
-#include "platform/mosync/utils.h"
-#include "platform/mosync/form_ui.h"
+#include "platform/common/utils.h"
+#include "platform/common/form_ui.h"
 
 Form *form;
 
@@ -294,6 +294,7 @@ void WidgetData::updateVarFlag() {
     break;
   default:
     orig.i = 0;
+    break;
   }
 }
 

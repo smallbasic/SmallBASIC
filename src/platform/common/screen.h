@@ -13,7 +13,7 @@
 #include <config.h>
 #endif
 
-#if defined(_FLTK)
+#if defined(_FLTK) || defined(_TIZEN)
   #include "platform/common/maapi.h"
   #define LINE_SPACING 0
 #else
@@ -22,7 +22,7 @@
 #endif
 
 #include "platform/common/StringLib.h"
-#include "platform/mosync/utils.h"
+#include "platform/common/utils.h"
 
 using namespace strlib;
 
@@ -36,6 +36,8 @@ struct Shape {
   virtual ~Shape() {}
   virtual void draw(int x, int y) {}
 
+  int w() { return width; }
+  int h() { return height; }
   int x, y, width, height;
 };
 
@@ -46,7 +48,7 @@ struct Screen : public Shape {
   virtual void calcTab() = 0;
   virtual bool construct() = 0;
   virtual void clear();
-  virtual void draw(bool vscroll) = 0;
+  virtual void drawBase(bool vscroll) = 0;
   virtual void drawInto(bool background=false);
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
@@ -82,7 +84,7 @@ struct Screen : public Shape {
   int _curY;
   int _dirty;
   int _linePadding;
-  List<Shape *> _shapes;
+  strlib::List<Shape *> _shapes;
   String _label;
 };
 
@@ -93,7 +95,7 @@ struct GraphicScreen : public Screen {
   void calcTab();
   bool construct();
   void clear();
-  void draw(bool vscroll);
+  void drawBase(bool vscroll);
   void drawInto(bool background=false);
   void newLine(int lineHeight);
   void drawLine(int x1, int y1, int x2, int y2);
@@ -194,8 +196,9 @@ struct TextSeg {
   }
 
   // width of this segment in pixels
-  int width() const { 
-    return get_text_width(_str); 
+  int width() const {
+    MAExtent textSize = maGetTextSize(_str);
+    return EXTENT_X(textSize);
   }
 
   // number of chars in this segment
@@ -308,7 +311,7 @@ struct TextScreen : public Screen {
   void calcTab();
   bool construct();
   void clear();
-  void draw(bool vscroll);
+  void drawBase(bool vscroll);
   void drawText(const char *text, int len, int x, int lineHeight);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);

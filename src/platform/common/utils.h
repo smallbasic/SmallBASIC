@@ -6,11 +6,20 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef max
-#define max(a,b) ((a<b) ? (b) : (a))
+#ifndef UTILS_H
+#define UTILS_H
+
+typedef unsigned char  U8;
+typedef unsigned short U16;
+typedef signed short   S16;
+typedef unsigned long  U32;
+typedef signed long    S32;
+
+#ifndef MAX
+ #define MAX(a,b) ((a<b) ? (b) : (a))
 #endif
-#ifndef min
-#define min(a,b) ((a>b) ? (b) : (a))
+#ifndef MIN
+ #define MIN(a,b) ((a>b) ? (b) : (a))
 #endif
 
 #if defined(_FLTK)
@@ -22,6 +31,8 @@
  #define DEFAULT_BACKGROUND 0
  #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN
 #endif
+
+#define USER_MESSAGE_EXIT 1000
 
 #define OUTSIDE_RECT(px, py, x, y, w, h) \
   (px < (x) || py < (y) || px > ((x)+(w)) || py > ((y)+(h)))
@@ -36,6 +47,9 @@
   #define trace lprintfln
  #elif defined(_FLTK)
   extern "C" void trace(const char *format, ...);
+ #elif defined (_TIZEN)
+  #include <FBaseLog.h>
+  #define trace AppLog
  #endif
 #else
  #define trace(...)
@@ -46,9 +60,8 @@
 #define logLeaving() trace("%s leaving (%s %d)", \
                            __FUNCTION__, __FILE__, __LINE__);
 
-int get_text_width(char *s);
-void set_path(const char *filename);
-bool set_parent_path();
-
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
+
+#endif
+

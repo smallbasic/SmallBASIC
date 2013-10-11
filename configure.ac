@@ -48,6 +48,11 @@ AC_ARG_ENABLE(mosync,
   [ac_build_mosync="yes"],
   [ac_build_mosync="no"])
 
+AC_ARG_ENABLE(tizen,
+  AS_HELP_STRING([--enable-tizen],[build common library for Tizen(default=no)]),
+  [ac_build_tizen="yes"],
+  [ac_build_tizen="no"])
+
 AC_ARG_ENABLE(dist,
   AS_HELP_STRING([--enable-dist],[prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
@@ -97,6 +102,9 @@ function checkPCRE() {
    esac
 
    if test x$ac_build_mosync = xyes; then
+     have_pcre="no"
+   fi
+   if test x$ac_build_tizen = xyes; then
      have_pcre="no"
    fi
 
@@ -333,28 +341,6 @@ function buildSDL() {
         PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
         PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32"
         ;;
-    *-*-beos*)
-        SYS_GL_LIBS="-lGL"
-        ;;
-    *-*-darwin* )
-        SYS_GL_LIBS="-Wl,-framework,OpenGL"
-        ;;
-    *-*-aix*)
-        if test x$ac_cv_c_compiler_gnu = xyes; then
-            CFLAGS="-mthreads"
-        fi
-        ;;
-    *-*-mint*)
-        AC_PATH_PROG(OSMESA_CONFIG, osmesa-config, no)
-        if test "x$OSMESA_CONFIG" = "xyes"; then
-            OSMESA_CFLAGS=`$OSMESA_CONFIG --cflags`
-            OSMESA_LIBS=`$OSMESA_CONFIG --libs`
-            CFLAGS="$CFLAGS $OSMESA_CFLAGS"
-            SYS_GL_LIBS="$OSMESA_LIBS"
-        else
-            SYS_GL_LIBS="-lOSMesa"
-        fi
-        ;;
     *)
         MATHLIB="-lm"
         SYS_GL_LIBS="-lGL"
@@ -368,8 +354,8 @@ function buildSDL() {
    dnl     AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
    dnl )
 
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${SDL_CFLAGS}"
-   PACKAGE_LIBS="${PACKAGE_LIBS} ${SDL_LIBS} ${MATHLIB}"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl-config --cflags`"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `sdl-config --libs` ${MATHLIB}"
 
    dnl Check for OpenGL
    AC_MSG_CHECKING(for OpenGL support)
@@ -525,6 +511,30 @@ function buildMosync() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildTizen() {
+   TARGET="Building common library for Tizen."
+
+   defaultConditionals
+
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_TIZEN, 1, [Defined for Tizen build.])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
+   AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
+   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
+   AC_DEFINE(CPU_BIGENDIAN, 1, [Tizen uses big-endian])
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+
+   BUILD_SUBDIRS="src/platform/tizen/common"
+   AC_SUBST(BUILD_SUBDIRS)
+}
+
 function buildConsole() {
    win32=no
    case "${host_os}" in
@@ -618,6 +628,8 @@ elif test x$ac_build_qt = xyes; then
    buildQT
 elif test x$ac_build_mosync = xyes; then
    buildMosync
+elif test x$ac_build_tizen = xyes; then
+   buildTizen
 else
    buildConsole
 fi  
@@ -642,6 +654,7 @@ src/platform/cygwin/Makefile
 src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/mosync/common/Makefile
+src/platform/tizen/common/Makefile
 ])
 AC_OUTPUT
 

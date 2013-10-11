@@ -22,9 +22,9 @@ EXTRA_DIST =                                  \
 bin_PROGRAMS = sbasici
 
 sbasici_SOURCES =                             \
-  ../mosync/ansiwidget.cpp                    \
-  ../mosync/screen.cpp                        \
-  ../mosync/form_ui.cpp                       \
+  ../common/ansiwidget.cpp                    \
+  ../common/screen.cpp                        \
+  ../common/form_ui.cpp                       \
   ../common/StringLib.cpp                     \
   MosyncWidget.cxx MosyncWidget.h             \
   HelpWidget.cxx HelpWidget.h                 \
