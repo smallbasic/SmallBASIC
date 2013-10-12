@@ -302,15 +302,23 @@ void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
 }
 
 void osd_beep() {
+#if defined(__linux)
+  system("/usr/bin/beep -f 1000 -l 30 && /usr/bin/beep -f 500 -l 30");
+#else
   fltk::beep(fltk::BEEP_MESSAGE);
+#endif
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
-#ifdef WIN32
+#if defined(__linux)
+  char command[255];
+  sprintf(command, "/usr/bin/beep -f %d -l %d", frq, ms);
+  system(command);
+#elif defined(WIN32)
   if (!bgplay) {
     ::Beep(frq, ms);
   }
-#endif // WIN32
+#endif
 }
 
 void osd_clear_sound_queue() {
