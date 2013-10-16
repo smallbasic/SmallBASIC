@@ -112,7 +112,9 @@ void osd_sound(int frq, int ms, int vol, int bgplay) {
   SDL_PauseAudio(0);
   v = 0;
   do_beep(frq, ms);
-  flush_queue();
+  if (!bgplay) {
+    flush_queue();
+  }
 }
 
 #else
