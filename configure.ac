@@ -11,11 +11,12 @@ AC_INIT([smallbasic], [0.11.5])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 AM_MAINTAINER_MODE
 
 AC_PROG_CXX
+AM_PROG_CC_C_O
 AC_HEADER_STDC
 AC_PROG_RANLIB
 PKG_PROG_PKG_CONFIG
@@ -297,6 +298,14 @@ function buildFLTK() {
    esac
 
    defaultConditionals
+
+   dnl check for sdl-config for sound output
+   AC_CHECK_PROG(have_sdl, sdl-config, [yes], [no])
+   if test "${have_sdl}" = "yes" ; then
+     FLTK_CXXFLAGS="${FLTK_CXXFLAGS} `sdl-config --cflags`"
+     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl-config --libs`"
+     AC_DEFINE(HAVE_SDL, 1, [Windows build])
+   fi
  
    dnl preconfigured values for FLTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -346,13 +355,6 @@ function buildSDL() {
         SYS_GL_LIBS="-lGL"
         ;;
    esac
-
-   dnl Check for SDL
-   dnl SDL_VERSION=1.2.10
-   dnl AM_PATH_SDL($SDL_VERSION,
-   dnl         :,
-   dnl     AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
-   dnl )
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl-config --cflags`"
    PACKAGE_LIBS="${PACKAGE_LIBS} `sdl-config --libs` ${MATHLIB}"

@@ -57,6 +57,8 @@ bool cacheLink(dev_file_t *df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
 void clearOutput();
+void open_audio();
+void close_audio();
 
 //--ANSI Output-----------------------------------------------------------------
 
@@ -104,6 +106,7 @@ int osd_devinit() {
   dev_clrkb();
   ui_reset();
   wnd->_out->reset();
+  open_audio();
 
   return 1;
 }
@@ -123,6 +126,7 @@ void osd_refresh() {
 
 int osd_devrestore() {
   ui_reset();
+  close_audio();
   return 1;
 }
 
@@ -299,21 +303,6 @@ void osd_rect(int x1, int y1, int x2, int y2, int bFill) {
   } else {
     wnd->_out->drawRect(x1, y1, x2, y2);
   }
-}
-
-void osd_beep() {
-  fltk::beep(fltk::BEEP_MESSAGE);
-}
-
-void osd_sound(int frq, int ms, int vol, int bgplay) {
-#ifdef WIN32
-  if (!bgplay) {
-    ::Beep(frq, ms);
-  }
-#endif // WIN32
-}
-
-void osd_clear_sound_queue() {
 }
 
 void osd_write(const char *s) {

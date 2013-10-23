@@ -34,7 +34,7 @@ sbasici_SOURCES =                             \
   EditorWidget.cxx EditorWidget.h             \
   FileWidget.cxx FileWidget.h                 \
   Profile.cxx Profile.h                       \
-  dev_fltk.cxx                                \
+  dev_fltk.cxx audio.cxx                      \
   utils.cxx utils.h
 
 sbasici_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@

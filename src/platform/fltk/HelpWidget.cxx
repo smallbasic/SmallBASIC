@@ -261,6 +261,7 @@ Value Attributes::getValue(const char *attr, int def) {
 //--BaseNode--------------------------------------------------------------------
 
 struct BaseNode {
+  virtual ~BaseNode() {}
   virtual void display(Display *out) {} 
   virtual int indexOf(const char *sFind, U8 matchCase) { return -1; }
   virtual void getText(strlib::String *s) {}

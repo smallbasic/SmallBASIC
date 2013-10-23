@@ -98,7 +98,7 @@ void Canvas::drawLine(int startX, int startY, int endX, int endY) {
 void Canvas::drawPixel(int posX, int posY) {
   if (posX > -1 && posY > -1
       && posX < _img->buffer_width()
-      && posY < _img->buffer_height()) {
+      && posY < _img->buffer_height() - 1) {
     int delta = _img->buffer_linedelta();
     U32 *row = (U32 *) (_img->buffer() + (posY * delta));
     row[posX] = drawColorRaw;
@@ -233,6 +233,7 @@ void MosyncWidget::layout() {
       (layout_damage() & LAYOUT_WH)) {
     // can't use GSave here in X
     _resized = true;
+    trace("resized!");
   }
   Widget::layout();
 }
@@ -281,6 +282,7 @@ int MosyncWidget::handle(int e) {
       _screen = new Canvas(_defsize);
       _screen->create(w(), h());
       drawTarget = _screen;
+      trace("create screen");
     }
     if (!_ansiWidget) {
       createAnsiWidget();
