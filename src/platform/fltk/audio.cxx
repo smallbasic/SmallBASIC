@@ -118,6 +118,12 @@ void osd_sound(int frq, int ms, int vol, int bgplay) {
 }
 
 #else
+
+#include <fltk/ask.h>
+#if defined(WIN32)
+  #include <windows.h>
+#endif
+
 // non SDL based implementation
 void osd_beep() {
   fltk::beep(fltk::BEEP_MESSAGE);

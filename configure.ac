@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.5])
+AC_INIT([smallbasic], [0.11.4])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET

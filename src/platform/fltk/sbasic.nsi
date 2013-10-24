@@ -10,13 +10,13 @@
 ;General
   ;Name and file
   Name "SmallBASIC"
-  OutFile "sbasic_0.10.7.exe"
+  OutFile "sbasic_0.11.4.exe"
 
   ;Default installation folder
-  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.10.7"
+  InstallDir "$PROGRAMFILES\SBW32\FLTK_0.11.4"
   
   ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.10.7" ""
+  InstallDirRegKey HKCU "Software\SmallBASIC\FLTK_0.11.4" ""
 
 ;--------------------------------
 ;Interface Settings
@@ -24,7 +24,7 @@
 
 ;--------------------------------
 ;Pages
-  !insertmacro MUI_PAGE_LICENSE "..\..\documentation\LICENSE"
+  !insertmacro MUI_PAGE_LICENSE "..\..\..\documentation\LICENSE"
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
@@ -40,13 +40,13 @@
 
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcut"
-  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.10.7"
+  CreateDirectory "$SMPROGRAMS\SmallBASIC 0.11.4"
   SetOutPath $INSTDIR
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Sokoban.lnk" "$INSTDIR\games\sokoban.bas"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Tetris.lnk" "$INSTDIR\games\tetris.bas"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Calculator.lnk" "$INSTDIR\apps\calc.bas"
-  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.10.7\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.11.4\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.11.4\Sokoban.lnk" "$INSTDIR\games\sokoban.bas"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.11.4\Tetris.lnk" "$INSTDIR\games\tetris.bas"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.11.4\Calculator.lnk" "$INSTDIR\apps\calc.bas"
+  CreateShortCut "$SMPROGRAMS\SmallBASIC 0.11.4\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "Quick Launch Shortcut"
@@ -72,17 +72,17 @@ SectionEnd
 Section "SmallBASIC" SecMain
   SetOutPath "$INSTDIR"
   File sbasici.exe
-  File ..\..\documentation\sbasic_ref.csv
-  File /r ..\..\samples\distro-examples\*.bas
+  File ..\..\..\documentation\sbasic_ref.csv
+  File /r ..\..\..\samples\distro-examples\*.bas
 
   SetOutPath "$INSTDIR\games"
-  File ..\..\samples\distro-examples\games\sokoban.levels
+  File ..\..\..\samples\distro-examples\games\sokoban.levels
 
   SetOutPath $INSTDIR\plugins
-  File "..\..\plugins\*.*"
+  File "..\..\..\plugins\*.*"
 
   ;Store installation folder
-  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.10.7" "" $INSTDIR
+  WriteRegStr HKCU "Software\SmallBASIC\FLTK_0.11.4" "" $INSTDIR
   
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -104,15 +104,15 @@ SectionEnd
 
 Section "Uninstall"
   ; Remove registry keys
-  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.10.7"
+  DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.11.4"
 
   ; Remove shortcuts, if any
-  Delete "$SMPROGRAMS\SmallBASIC 0.10.7\*.*"
+  Delete "$SMPROGRAMS\SmallBASIC 0.11.4\*.*"
   Delete "$QUICKLAUNCH\SmallBASIC.lnk"
   Delete "$DESKTOP\SmallBASIC.lnk"
 
   ; Remove directories used
-  RMDir "$SMPROGRAMS\SmallBASIC 0.10.7"
+  RMDir "$SMPROGRAMS\SmallBASIC 0.11.4"
   RMDir /r "$INSTDIR"
 
 SectionEnd
