@@ -61,6 +61,7 @@ public:
   void setPixel(int x, int y, int c);
   int  getPixel(int x, int y);
   void setXY(int x, int y);
+  int  textWidth(const char *s);
   int  textHeight(void);
   void setFontSize(float i);
   int  getFontSize();

@@ -21,6 +21,7 @@ using namespace fltk;
 bool isvar(int c);
 
 struct StatusBar {
+  virtual ~StatusBar() {}
   virtual void setRowCol(int row, int col) = 0;
 };
 

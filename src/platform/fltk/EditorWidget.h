@@ -72,10 +72,10 @@ enum CommandOpt {
   cmd_input_text,
 };
 
-class EditorWidget:public Group, StatusBar {
+class EditorWidget : public Group, StatusBar {
 public:
   EditorWidget(int x, int y, int w, int h);
-  ~EditorWidget();
+  virtual ~EditorWidget();
 
   CALLBACK_METHOD(change_case);
   CALLBACK_METHOD(command);

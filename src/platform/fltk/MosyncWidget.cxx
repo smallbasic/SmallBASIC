@@ -33,10 +33,6 @@ bool mouseActive;
 Color drawColor;
 int drawColorRaw;
 
-int get_text_width(char *s) {
-  return fltk::getwidth(s);
-}
-
 //
 // Canvas
 //
@@ -192,10 +188,10 @@ void Canvas::setClip(int x, int y, int w, int h) {
 void Canvas::setFont() {
   fltk::Font *font = fltk::COURIER;
   if (_size && _style) {
-    if (_style && FONT_STYLE_BOLD) {
+    if (_style & FONT_STYLE_BOLD) {
       font = font->bold();
     }
-    if (_style && FONT_STYLE_ITALIC) {
+    if (_style & FONT_STYLE_ITALIC) {
       font = font->italic();
     }
   }
@@ -383,6 +379,17 @@ void MosyncWidget::setXY(int x, int y) {
 
 int MosyncWidget::textHeight(void) {
   return _ansiWidget->textHeight();
+}
+
+int MosyncWidget::textWidth(const char *str) {
+  int result;
+  if (drawTarget && str && str[0]) {
+    drawTarget->setFont();
+    result = (int)getwidth(str);
+  } else {
+    result = 0;
+  }
+  return result;
 }
 
 void MosyncWidget::setFontSize(float i) {

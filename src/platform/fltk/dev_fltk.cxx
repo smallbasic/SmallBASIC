@@ -278,7 +278,7 @@ void osd_cls() {
 }
 
 int osd_textwidth(const char *str) {
-  return (int)fltk::getwidth(str);
+  return wnd->_out->textWidth(str);
 }
 
 int osd_textheight(const char *str) {
