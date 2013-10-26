@@ -78,7 +78,10 @@ int osd_devinit() {
     if (opt_pref_height < 10) {
       opt_pref_height = 10;
     }
-    wnd->_outputGroup->resize(opt_pref_width + delta_x, opt_pref_height + delta_y);
+    int w = opt_pref_width + delta_x;
+    int h = opt_pref_height + delta_y;
+    wnd->_outputGroup->resize(w, h);
+    wnd->_out->resize(w, h);
   }
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown

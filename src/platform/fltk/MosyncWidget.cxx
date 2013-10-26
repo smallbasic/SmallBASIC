@@ -608,17 +608,19 @@ void form_ui::optionsBox(StringList *items) {
   while (form_ui::isRunning() && !listener._action.length()) {
     form_ui::processEvents();
   }
-  int index = 0;
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    if (strcmp(str, listener._action.c_str()) == 0) {
-      break;
-    } else {
-      index++;
+  if (!form_ui::isBreak()) {
+    int index = 0;
+    List_each(String *, it, *items) {
+      char *str = (char *)(* it)->c_str();
+      if (strcmp(str, listener._action.c_str()) == 0) {
+        break;
+      } else {
+        index++;
+      }
     }
+    widget->_ansiWidget->print("\033[ SE6");
+    widget->_ansiWidget->optionSelected(index);
+    widget->redraw();
   }
-  widget->_ansiWidget->print("\033[ SE6");
-  widget->_ansiWidget->optionSelected(index);
-  widget->redraw();
 }
 

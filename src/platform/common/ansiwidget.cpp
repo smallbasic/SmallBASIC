@@ -54,6 +54,7 @@
 #define SWIPE_TRIGGER_FAST 55
 #define SWIPE_TRIGGER_SLOW 80
 #define FONT_FACTOR 30
+#define CHOICE_BN_W 6
 
 char *options = NULL;
 FormList *clickedList = NULL;
@@ -93,19 +94,20 @@ Widget::Widget(int bg, int fg, int x, int y, int w, int h) :
   _fg(fg) {
 }
 
-void Widget::drawButton(const char *caption, int dx, int dy) {
-  int r = dx + width;
-  int b = dy + height - 2;
+void Widget::drawButton(const char *caption, int dx, int dy, 
+                        int w, int h, bool pressed) {
+  int r = dx + w;
+  int b = dy + h - 2;
   MAExtent textSize = maGetTextSize(caption);
   int textW = EXTENT_X(textSize);
   int textH = EXTENT_Y(textSize);
-  int textX = dx + (width - textW - 1) / 2;
-  int textY = dy + (height - textH - 1) / 2;
+  int textX = dx + (w - textW - 1) / 2;
+  int textY = dy + (h - textH - 1) / 2;
 
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(dx, dy, r-dx, b-dy);
 
-  if (_pressed) {
+  if (pressed) {
     maSetColor(0x909090);
     maLine(dx, dy, r, dy); // top
     maLine(dx, dy, dx, b); // left
@@ -130,18 +132,20 @@ void Widget::drawButton(const char *caption, int dx, int dy) {
   }
 
   maSetColor(_fg);
-  maDrawText(textX, textY, caption);
+  if (caption && caption[0]) {
+    maDrawText(textX, textY, caption);
+  }
 }
 
 void Widget::drawLink(const char *caption, int dx, int dy) {
   maSetColor(_fg);
   maDrawText(dx, dy, caption);
   maSetColor(_pressed ? _fg : _bg);
-  maLine(dx + 2, dy + height + 1, dx + width, dy + height + 1);
+  maLine(dx + 2, dy + _height + 1, dx + _width, dy + _height + 1);
 }
 
-bool Widget::overlaps(MAPoint2d pt, int offsX, int offsY) {
-  return !(OUTSIDE_RECT(pt.x, pt.y, x + offsX, y + offsY, width, height));
+bool Widget::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+  return !(OUTSIDE_RECT(pt.x, pt.y, _x + offsX, _y + offsY, _width, _height));
 }
 
 // returns setBG when the program colours are default
@@ -215,7 +219,7 @@ FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize,
 
 void FormLineInput::draw(int dx, int dy) {
   maSetColor(getBackground(GRAY_BG_COL));
-  maFillRect(dx, dy, width, height);
+  maFillRect(dx, dy, _width, _height);
   maSetColor(_fg);
   maDrawText(dx, dy, _buffer + _scroll);
 }
@@ -231,11 +235,11 @@ bool FormLineInput::edit(int key) {
       _buffer[++len] = '\0';
       MAExtent textSize = maGetTextSize(_buffer);
       int textWidth = EXTENT_X(textSize);
-      if (textWidth > width) {
-        if (textWidth > getScreen()->width) {
+      if (textWidth > _width) {
+        if (textWidth > getScreen()->_width) {
           _scroll++;
         } else {
-          width += getScreen()->_charWidth;
+          _width += getScreen()->_charWidth;
         }
       }
       changed = true;
@@ -259,24 +263,12 @@ bool FormLineInput::edit(int key) {
 FormList::FormList(Screen *screen, IFormWidgetListModel *model,
                    int x, int y, int w, int h) :
   FormWidget(screen, x, y, w, h),
-  _model(model) {
+  _model(model),
+  _topIndex(0),
+  _activeIndex(-1),
+  _visibleRows(0) {
   if (model->rows()) {
     model->selected(0);
-  }
-}
-
-void FormList::clicked(IButtonListener *listener, int x, int y) {
-  List<String *> options;
-  for (int i = 0; i < _model->rows(); i++) {
-    options.add(_model->getTextAt(i));
-  }
-  clickedList = this;
-  form_ui::optionsBox(&options);
-}
-
-void FormList::draw(int x, int y) {
-  if (_model) {
-    drawButton(getText(), x, y);
   }
 }
 
@@ -285,6 +277,149 @@ void FormList::optionSelected(int index) {
     _model->selected(index);
     FormWidget::clicked(NULL, -1, -1);
   }
+}
+
+FormListBox::FormListBox(Screen *screen, IFormWidgetListModel *model,
+                         int x, int y, int w, int h) :
+  FormList(screen, model, x, y, w, h) {
+}
+
+void FormListBox::clicked(IButtonListener *listener, int x, int y) {
+  clickedList = this;
+  if (_activeIndex != -1) {
+    optionSelected(_activeIndex + _topIndex);
+  }
+}
+
+void FormListBox::draw(int dx, int dy) {
+  if (_model) {
+    maSetColor(getBackground(GRAY_BG_COL));
+    maFillRect(dx, dy, _width, _height);
+    int textY = dy;
+    for (int i = 0; i < _model->rows(); i++) {
+      const char *str = _model->getTextAt(i + _topIndex);
+      MAExtent textSize = maGetTextSize(_model->getTextAt(i));
+      int textHeight = EXTENT_Y(textSize) + 1;
+      if (textY + textHeight >= _height) {
+        break;
+      }
+      if (i == _activeIndex) {
+        maSetColor(_fg);
+        maFillRect(dx, textY, _width, textHeight);
+        maSetColor(getBackground(GRAY_BG_COL));
+        maDrawText(dx, textY, str);
+      } else {
+        maSetColor(_fg);
+        maDrawText(dx, textY, str);
+      }
+      textY += textHeight;
+      _visibleRows++;
+    }
+  }
+}
+
+bool FormListBox::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+  bool result = FormWidget::overlaps(pt, offsX, offsY, redraw);
+  if (result) {
+    int y = pt.y - (_y + offsY + _height);
+    int rowHeight = _height / _visibleRows;
+    _activeIndex = y / rowHeight;
+    redraw = true;
+  }
+  return result;
+}
+
+FormDropList::FormDropList(Screen *screen, IFormWidgetListModel *model,
+                           int x, int y, int w, int h) :
+  FormList(screen, model, x, y, w, h),
+  _listWidth(w),
+  _listHeight(h),
+  _listActive(false) {
+}
+
+void FormDropList::clicked(IButtonListener *listener, int x, int y) {
+  clickedList = this;
+  if (!_listActive) {
+    _activeIndex = -1;
+  } else if (_activeIndex != -1) {
+    optionSelected(_activeIndex + _topIndex);
+  }
+  _listActive = !_listActive;
+}
+
+void FormDropList::draw(int dx, int dy) {
+  if (_model) {
+    bool pressed = _listActive ? false : _pressed;
+    drawButton(getText(), dx, dy, _width - CHOICE_BN_W, _height, pressed);
+    drawButton("", dx + _width - CHOICE_BN_W, dy, CHOICE_BN_W, _height, false);
+    if (_listActive) {
+      drawList(dx, dy);
+    }
+  }
+}
+
+void FormDropList::drawList(int dx, int dy) {
+  int availHeight = getScreen()->_height - (dy + _y + _height + _height);
+  int textWidth = 0;
+  int textHeight = 0;
+  int textY = _height;
+
+  // determine the available boundary
+  _listHeight = 0;
+  _visibleRows = 0;
+  for (int i = _topIndex; i < _model->rows(); i++) {
+    MAExtent textSize = maGetTextSize(_model->getTextAt(i));
+    textWidth = EXTENT_X(textSize);
+    textHeight = EXTENT_Y(textSize) + 1;
+    if (textWidth > _listWidth) {
+      _listWidth = textWidth;
+    }
+    if (_listHeight + textHeight >= availHeight) {
+      break;
+    }
+    _listHeight += textHeight;
+    _visibleRows++;
+  }
+  maSetColor(getBackground(GRAY_BG_COL));
+  maFillRect(dx, _height, _listWidth, _listHeight);
+  for (int i = 0; i < _visibleRows; i++) {
+    const char *str = _model->getTextAt(i + _topIndex);
+    if (i == _activeIndex) {
+      maSetColor(_fg);
+      maFillRect(dx, textY, _listWidth, textHeight);
+      maSetColor(getBackground(GRAY_BG_COL));
+      maDrawText(dx, textY, str);
+    } else {
+      maSetColor(_fg);
+      maDrawText(dx, textY, str);
+    }
+    textY += textHeight;
+  }
+}
+
+bool FormDropList::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+  bool result;
+  if (_listActive) {
+    result = true;
+    _activeIndex = -1;
+    if (!(OUTSIDE_RECT(pt.x, pt.y, _x + offsX, _y + offsY + _height, 
+                       _listWidth, _listHeight))) {
+      int y = pt.y - (_y + offsY + _height);
+      int rowHeight = _listHeight / _visibleRows;
+      _activeIndex = y / rowHeight;
+      redraw = true;
+    } else if (pt.y < _y + offsY + _height && _topIndex > 0) {
+      _topIndex--;
+      redraw = true;
+    } else if (pt.y > _y + offsY + _height + _listHeight &&
+               _topIndex + _visibleRows < _model->rows()) {
+      _topIndex++;
+      redraw = true;
+    }
+  } else {
+    result = FormWidget::overlaps(pt, offsX, offsY, redraw);
+  }
+  return result;
 }
 
 AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
@@ -364,10 +499,15 @@ IFormWidget *AnsiWidget::createLink(char *caption, int x, int y, int w, int h) {
 }
 
 // creates a List attached to the current back screen
-IFormWidget *AnsiWidget::createList(IFormWidgetListModel *model, 
-                                    int x, int y, int w, int h) {
-  FormList *list = new FormList(_back, model, x, y, w, h);
-  return list;
+IFormWidget *AnsiWidget::createListBox(IFormWidgetListModel *model, 
+                                       int x, int y, int w, int h) {
+  return new FormListBox(_back, model, x, y, w, h);
+}
+
+// creates a List attached to the current back screen
+IFormWidget *AnsiWidget::createDropList(IFormWidgetListModel *model, 
+                                        int x, int y, int w, int h) {
+  return new FormDropList(_back, model, x, y, w, h);
 }
 
 // draws the given image onto the offscreen buffer
@@ -591,9 +731,10 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
 bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
   bool result = false;
   if (_activeButton != NULL) {
-    bool pressed = _activeButton->overlaps(event.point, _focus->x,
-                                          _focus->y - _focus->_scrollY);
-    if (pressed != _activeButton->_pressed) {
+    bool redraw = false;
+    bool pressed = _activeButton->overlaps(event.point, _focus->_x,
+                                           _focus->_y - _focus->_scrollY, redraw);
+    if (redraw || (pressed != _activeButton->_pressed)) {
       _activeButton->_pressed = pressed;
       drawActiveButton();
       result = true;
@@ -602,7 +743,7 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
     // scroll up/down
     if (_front->overlaps(event.point.x, event.point.y)) {
       int vscroll = _front->_scrollY + (_yMove - event.point.y);
-      int maxScroll = (_front->_curY - _front->height) + (2 * _fontSize);
+      int maxScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
       if (vscroll < 0) {
         vscroll = 0;
       }
@@ -631,7 +772,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
   } else if (_swipeExit) {
     _swipeExit = false;
   } else {
-    int maxScroll = (_front->_curY - _front->height) + (2 * _fontSize);
+    int maxScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
     if (_yMove != -1 && maxScroll > 0) {
       _front->drawInto();
       bool swiped = (abs(_xTouch - _xMove) > (_width / 3) ||
@@ -944,8 +1085,9 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
   if (screen->overlaps(event.point.x, event.point.y)) {
     List_each(Shape*, it, screen->_shapes) {
       Widget *widget = (Widget *)(*it);
-      if (widget->overlaps(event.point, screen->x,
-                           screen->y - screen->_scrollY)) {
+      bool redraw = false;
+      if (widget->overlaps(event.point, screen->_x,
+                           screen->_y - screen->_scrollY, redraw)) {
         _activeButton = widget;
         _activeButton->_pressed = true;
         break;
@@ -982,10 +1124,10 @@ Screen *AnsiWidget::selectScreen(char *&p) {
 
   if (result != NULL) {
     // specified screen already exists
-    if (result->x != x ||
-        result->y != y ||
-        result->width != _width ||
-        result->height != _height) {
+    if (result->_x != x ||
+        result->_y != y ||
+        result->_width != _width ||
+        result->_height != _height) {
       delete result;
       result = NULL;
     }

@@ -34,12 +34,10 @@ using namespace strlib;
 struct Widget : public Shape {
   Widget(int bg, int fg, int x, int y, int w, int h);
   virtual ~Widget() {}
-
   virtual void clicked(IButtonListener *listener, int x, int y) = 0;
-
-  void drawButton(const char *caption, int x, int y);
+  virtual bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  void drawButton(const char *caption, int x, int y, int w, int h, bool pressed);
   void drawLink(const char *caption, int x, int y);
-  bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   int getBackground(int buttonColor);
 
   bool _pressed;
@@ -51,7 +49,6 @@ struct Button : public Widget {
   Button(Screen *screen, const char *action, const char *label,
          int x, int y, int w, int h);
   virtual ~Button() {}
-
   void clicked(IButtonListener *listener, int x, int y);
 
   String _action;
@@ -71,7 +68,9 @@ struct BlockButton : public Button {
   BlockButton(Screen *screen, const char *action, const char *label,
               int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {}
-  void draw(int x, int y) { drawButton(_label.c_str(), x, y); }
+  void draw(int x, int y) { 
+    drawButton(_label.c_str(), x, y, _width, _height, _pressed); 
+  }
 };
 
 // base implementation for all external buttons
@@ -87,14 +86,14 @@ struct FormWidget : public Widget, IFormWidget {
   void setText(const char *text) {}
   bool edit(int key) { return false; }
 
-  int getX() { return this->x; }
-  int getY() { return this->y; }
-  int getW() { return this->width; }
-  int getH() { return this->height; }
-  void setX(int x) { this->x = x; }
-  void setY(int y) { this->y = y; }
-  void setW(int w) { this->width = w; }
-  void setH(int h) { this->height = h; }
+  int getX() { return this->_x; }
+  int getY() { return this->_y; }
+  int getW() { return this->_width; }
+  int getH() { return this->_height; }
+  void setX(int x) { this->_x = x; }
+  void setY(int y) { this->_y = y; }
+  void setW(int w) { this->_width = w; }
+  void setH(int h) { this->_height = h; }
 
 protected:
   Screen *_screen;
@@ -106,8 +105,11 @@ struct FormButton : public FormWidget {
   virtual ~FormButton() {}
 
   const char *getText() const { return _caption.c_str(); }
-  void draw(int x, int y) { drawButton(_caption.c_str(), x, y); }
+  void draw(int x, int y) { 
+    drawButton(_caption.c_str(), x, y, _width, _height, _pressed); 
+  }
   void clicked(IButtonListener *listener, int x, int y);
+  void setText(const char *text) { _caption = text; }
 
 private:
   String _caption;
@@ -118,7 +120,10 @@ struct FormLabel : public FormWidget {
   virtual ~FormLabel() {}
 
   const char *getText() const { return _caption.c_str(); }
-  void draw(int x, int y) { drawButton(_caption.c_str(), x, y); }
+  void draw(int x, int y) { 
+    drawButton(_caption.c_str(), x, y, _width, _height, false);
+  }
+  void setText(const char *text) { _caption = text; }
 
 private:
   String _caption;
@@ -159,12 +164,37 @@ struct FormList : public FormWidget {
 
   IFormWidgetListModel *getList() const { return _model; }
   const char *getText() const { return _model->getTextAt(_model->selected()); }
-  void clicked(IButtonListener *listener, int x, int y);
-  void draw(int dx, int dy);
   void optionSelected(int index);
 
-private:
+protected:
   IFormWidgetListModel *_model;
+  int _topIndex;
+  int _activeIndex;
+  int _visibleRows;
+};
+
+struct FormDropList : public FormList {
+  FormDropList(Screen *screen, IFormWidgetListModel *model, 
+               int x, int y, int w, int h);
+  void clicked(IButtonListener *listener, int x, int y);
+  void draw(int dx, int dy);
+  bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  virtual ~FormDropList() {}
+
+protected:
+  void drawList(int dx, int dy);
+  int _listWidth;
+  int _listHeight;
+  bool _listActive;
+};
+
+struct FormListBox : public FormList {
+  FormListBox(Screen *screen, IFormWidgetListModel *model, 
+              int x, int y, int w, int h);
+  void clicked(IButtonListener *listener, int x, int y);
+  void draw(int dx, int dy);
+  bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  virtual ~FormListBox() {}
 };
 
 struct AnsiWidget {
@@ -178,7 +208,8 @@ struct AnsiWidget {
   IFormWidget *createLabel(char *caption, int x, int y, int w, int h);
   IFormWidget *createLineInput(char *buffer, int maxSize, int x, int y, int w, int h);
   IFormWidget *createLink(char *caption, int x, int y, int w, int h);
-  IFormWidget *createList(IFormWidgetListModel *model, int x, int y, int w, int h);
+  IFormWidget *createListBox(IFormWidgetListModel *model, int x, int y, int w, int h);
+  IFormWidget *createDropList(IFormWidgetListModel *model, int x, int y, int w, int h);
   void draw();
   void drawOverlay(bool vscroll) { _back->drawOverlay(vscroll); }
   void drawImage(MAHandle image, int x, int y, int sx, int sy, int w, int h);

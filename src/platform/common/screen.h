@@ -32,13 +32,13 @@ using namespace strlib;
 #define LABEL_TEXT_COL 0xebebeb
 
 struct Shape {
-  Shape(int x, int y, int w, int h) : x(x), y(y), width(w), height(h) {}
+  Shape(int x, int y, int w, int h) : _x(x), _y(y), _width(w), _height(h) {}
   virtual ~Shape() {}
   virtual void draw(int x, int y) {}
 
-  int w() { return width; }
-  int h() { return height; }
-  int x, y, width, height;
+  int w() { return _width; }
+  int h() { return _height; }
+  int _x, _y, _width, _height;
 };
 
 struct Screen : public Shape {
@@ -335,7 +335,7 @@ private:
 
   // returns the number of rows available for display
   int getPageRows() {
-    return (height - 1) / _charHeight;
+    return (_height - 1) / _charHeight;
   }
 
   void setSizes(int screenW, int screenH);

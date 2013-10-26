@@ -61,6 +61,9 @@ void ListModel::create(const char *items, var_t *v) {
       }
     }
   }
+  if (_focusIndex == -1) {
+    _focusIndex = 0;
+  }
 }
 
 // construct from an array of values
@@ -274,10 +277,10 @@ void WidgetData::setupWidget(IFormWidget *widget) {
     form = new Form();
   }
 
-  form->setupWidget(this);
-  
-  // setup the originating variable
+  updateGui();
   updateVarFlag();
+
+  form->setupWidget(this);
 }
 
 // update the smallbasic variable
@@ -378,7 +381,7 @@ bool WidgetData::updateGui() {
   return updated;
 }
 
-// transfer the widget state onto the assiciated variable
+// transfer the widget state onto the associated variable
 void WidgetData::transferData() {
   logEntered();
   const char *s;
@@ -456,12 +459,12 @@ void cmd_button() {
                  strcasecmp("list", type) == 0) {
         ListModel *model = new ListModel(caption, var);
         wd = new WidgetData(ctrl_listbox, var);
-        widget = form_ui::getOutput()->createList(model, x, y, w, h);
+        widget = form_ui::getOutput()->createListBox(model, x, y, w, h);
       } else if (strcasecmp("choice", type) == 0 || 
                  strcasecmp("dropdown", type) == 0) {
         ListModel *model = new ListModel(caption, var);
         wd = new WidgetData(ctrl_listbox, var);
-        widget = form_ui::getOutput()->createList(model, x, y, w, h);
+        widget = form_ui::getOutput()->createDropList(model, x, y, w, h);
       } else {
         ui_reset();
         rt_raise("UI: UNKNOWN BUTTON TYPE: %s", type);

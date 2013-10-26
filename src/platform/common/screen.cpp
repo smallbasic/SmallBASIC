@@ -85,11 +85,11 @@ int Screen::ansiToMosync(long c) {
 
 void Screen::add(Shape *button) { 
   _shapes.add(button); 
-  if (button->x + button->width > _curX) {
-    _curX = button->x + button->width;
+  if (button->_x + button->_width > _curX) {
+    _curX = button->_x + button->_width;
   }
-  if (button->y > _curY) {
-    _curY = button->y;
+  if (button->_y > _curY) {
+    _curY = button->_y;
   }
 }
 
@@ -107,27 +107,27 @@ void Screen::drawOverlay(bool vscroll) {
   if (vscroll && _curY) {
     // display the vertical scrollbar
     int pageHeight = _curY + _charHeight + _charHeight;
-    int barSize = height * height / pageHeight;
+    int barSize = _height * _height / pageHeight;
 
-    if (barSize < height) {
-      int barRange = height - (barSize + SCROLL_IND * 2);
-      int barTop = SCROLL_IND + (barRange * _scrollY / (pageHeight - height));
-      int barBottom = y + barTop + barSize;
-      if (barBottom + SCROLL_IND > height) {
-        barBottom = height - SCROLL_IND;
+    if (barSize < _height) {
+      int barRange = _height - (barSize + SCROLL_IND * 2);
+      int barTop = SCROLL_IND + (barRange * _scrollY / (pageHeight - _height));
+      int barBottom = _y + barTop + barSize;
+      if (barBottom + SCROLL_IND > _height) {
+        barBottom = _height - SCROLL_IND;
       }
       maSetColor(_fg);
-      maLine(x + width - 3, y + barTop, x + width - 3, barBottom);
-      maLine(x + width - 4, y + barTop, x + width - 4, barBottom);
+      maLine(_x + _width - 3, _y + barTop, _x + _width - 3, barBottom);
+      maLine(_x + _width - 4, _y + barTop, _x + _width - 4, barBottom);
     }
   }
   
   // draw any visible shapes
   List_each(Shape*, it, _shapes) {
     Shape *rect = (*it);
-    if (rect->y >= _scrollY && 
-        rect->y + rect->height <= _scrollY + height) {
-      rect->draw(x + rect->x, y + rect->y - _scrollY);
+    if (rect->_y >= _scrollY && 
+        rect->_y + rect->_height <= _scrollY + _height) {
+      rect->draw(_x + rect->_x, _y + rect->_y - _scrollY);
     }
   }
 
@@ -160,7 +160,7 @@ void Screen::drawInto(bool background) {
 int Screen::print(const char *p, int lineHeight) {
   int numChars = 1;         // print minimum of one character
   int cx = _charWidth;
-  int w = width - 1;
+  int w = _width - 1;
 
   // print further non-control, non-null characters
   // up to the width of the line
@@ -179,7 +179,7 @@ int Screen::print(const char *p, int lineHeight) {
 
 // whether the given point overlaps with the screen rectangle
 bool Screen::overlaps(int px, int py) {
-  return (!OUTSIDE_RECT(px, py, x, y, width, height));
+  return (!OUTSIDE_RECT(px, py, _x, _y, _width, _height));
 }
 
 // remove the button from the list
@@ -300,12 +300,12 @@ void GraphicScreen::drawBase(bool vscroll) {
   MAPoint2d dstPoint;
   srcRect.left = 0;
   srcRect.top = _scrollY;
-  srcRect.width = width;
-  srcRect.height = height;
-  dstPoint.x = x;
-  dstPoint.y = y;
+  srcRect.width = _width;
+  srcRect.height = _height;
+  dstPoint.x = _x;
+  dstPoint.y = _y;
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
-  maSetClipRect(x, y, width, height);
+  maSetClipRect(_x, _y, _width, _height);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
 #if !defined(_FLTK)
   drawOverlay(vscroll);
@@ -358,13 +358,13 @@ void GraphicScreen::newLine(int lineHeight) {
   lineHeight += _linePadding;
   _linePadding = 0;
   _curX = INITXY;
-  if (height < MAX_HEIGHT) {
+  if (_height < MAX_HEIGHT) {
     int offset = _curY + (lineHeight * 2);
-    if (offset >= height) {
+    if (offset >= _height) {
       if (offset >= _imageHeight) {
         // extend the base image by another page size
         MAHandle newImage = maCreatePlaceholder();
-        int newHeight = _imageHeight + height;
+        int newHeight = _imageHeight + _height;
         if (maCreateDrawableImage(newImage, _imageWidth, newHeight) != RES_OK) {
           // failed to create image
           clear();
@@ -385,8 +385,8 @@ void GraphicScreen::newLine(int lineHeight) {
 
           // clear the new segment
           maSetColor(_bg);
-          maFillRect(0, _imageHeight, _imageWidth, _imageHeight + height);
-          _imageHeight += height;
+          maFillRect(0, _imageHeight, _imageWidth, _imageHeight + _height);
+          _imageHeight += _height;
           
           // cleanup the old image
           maDestroyPlaceholder(_image);
@@ -403,7 +403,7 @@ void GraphicScreen::newLine(int lineHeight) {
 }
 
 int GraphicScreen::print(const char *p, int lineHeight) {
-  if (_curX + _charWidth >= width - 1) {
+  if (_curX + _charWidth >= _width - 1) {
     newLine(lineHeight);
   }
 
@@ -439,7 +439,7 @@ void GraphicScreen::reset(int fontSize) {
 // update the widget to new dimensions
 void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight) {
   logEntered();
-  bool fullscreen = ((width - x) == oldWidth && (height - y) == oldHeight);
+  bool fullscreen = ((_width - _x) == oldWidth && (_height - _y) == oldHeight);
   if (fullscreen && (newWidth > _imageWidth || newHeight > _imageHeight)) {
     // screen is larger than existing virtual size
     MARect srcRect;
@@ -467,15 +467,15 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
     _imageHeight = newImageHeight;
 
     if (_curY >= _imageHeight) {
-      _curY = height - lineHeight;
+      _curY = _height - lineHeight;
     }
     if (_curX >= _imageWidth) {
       _curX = 0;
     }
   }
   _scrollY = 0;
-  width = newWidth;
-  height = newHeight;
+  _width = newWidth;
+  _height = newHeight;
   if (!fullscreen) {
     drawBase(false);
   }
@@ -486,13 +486,13 @@ bool GraphicScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   switch (c) {
   case 'K':
     maSetColor(_bg);            // \e[K - clear to eol
-    maFillRect(_curX, _curY, width - _curX, lineHeight);
+    maFillRect(_curX, _curY, _width - _curX, lineHeight);
     break;
   case 'G':                    // move to column
     _curX = escValue;
     break;
   case 'T':                    // non-standard: move to n/80th of screen width
-    _curX = escValue * width / 80;
+    _curX = escValue * _width / 80;
     break;
   case 's':                    // save cursor position
     _curYSaved = _curX;
@@ -607,17 +607,17 @@ void GraphicScreen::setPixel(int x, int y, int c) {
 struct LineShape : Shape {
   LineShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
   void draw(int ax, int ay) {
-    maLine(x, y, width, height);
+    maLine(_x, _y, _width, _height);
   }
 };
 
 struct RectShape : Shape {
   RectShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
   void draw(int ax, int ay) {
-    int x1 = x;
-    int y1 = y;
-    int x2 = x + width;
-    int y2 = y + width;
+    int x1 = _x;
+    int y1 = _y;
+    int x2 = _x + _width;
+    int y2 = _y + _width;
     maLine(x1, y1, x2, y1); // top
     maLine(x1, y2, x2, y2); // bottom
     maLine(x1, y1, x1, y2); // left
@@ -628,7 +628,7 @@ struct RectShape : Shape {
 struct RectFilledShape : Shape {
   RectFilledShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
   void draw(int ax, int ay) {
-    maFillRect(x, y, width, height);
+    maFillRect(_x, _y, _width, _height);
   }
 };
 
@@ -696,19 +696,19 @@ void TextScreen::drawBase(bool vscroll) {
 
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN_BUFFER);
-  maSetClipRect(x, y, width, height);
+  maSetClipRect(_x, _y, _width, _height);
   maSetColor(_bg);
-  maFillRect(x, y, width, height);
+  maFillRect(_x, _y, _width, _height);
   maSetColor(color);
 
   // draw the visible segments
   int pageWidth = 0;
-  for (int row = firstRow, rows = 0, py = y - yoffs;
+  for (int row = firstRow, rows = 0, py = _y - yoffs;
        rows < numRows;
        row++, rows++, py += _charHeight) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->_head;
-    int px = x + INITXY;
+    int px = _x + INITXY;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setFont(bold, italic);
@@ -829,10 +829,10 @@ void TextScreen::resize(int newWidth, int newHeight, int oldWidth,
 }
 
 void TextScreen::setSizes(int screenW, int screenH) {
-  x = screenW * _rectangle.x / 100;
-  y = screenH * _rectangle.y / 100;
-  width = (screenW * _rectangle.width / 100) - x;
-  height = (screenH * _rectangle.height / 100) - y;
+  _x = screenW * _rectangle._x / 100;
+  _y = screenH * _rectangle._y / 100;
+  _width = (screenW * _rectangle._width / 100) - _x;
+  _height = (screenH * _rectangle._height / 100) - _y;
 }
 
 //
@@ -926,3 +926,4 @@ bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   }
   return false;
 }
+
