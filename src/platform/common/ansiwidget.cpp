@@ -58,6 +58,7 @@
 
 char *options = NULL;
 FormList *clickedList = NULL;
+FormList *focusList = NULL;
 
 #if !defined(_FLTK) && !defined(_TIZEN)
 void form_ui::optionsBox(StringList *items) {
@@ -265,8 +266,7 @@ FormList::FormList(Screen *screen, IFormWidgetListModel *model,
   FormWidget(screen, x, y, w, h),
   _model(model),
   _topIndex(0),
-  _activeIndex(-1),
-  _visibleRows(0) {
+  _activeIndex(-1) {
   if (model->rows()) {
     model->selected(0);
   }
@@ -295,36 +295,49 @@ void FormListBox::draw(int dx, int dy) {
   if (_model) {
     maSetColor(getBackground(GRAY_BG_COL));
     maFillRect(dx, dy, _width, _height);
+    MAExtent textSize = maGetTextSize(_model->getTextAt(0));
+    int rowHeight = EXTENT_Y(textSize) + 1;
     int textY = dy;
     for (int i = 0; i < _model->rows(); i++) {
       const char *str = _model->getTextAt(i + _topIndex);
-      MAExtent textSize = maGetTextSize(_model->getTextAt(i));
-      int textHeight = EXTENT_Y(textSize) + 1;
-      if (textY + textHeight >= _height) {
+      if (textY + rowHeight >= dy + _height) {
         break;
       }
       if (i == _activeIndex) {
         maSetColor(_fg);
-        maFillRect(dx, textY, _width, textHeight);
+        maFillRect(dx, textY, _width, rowHeight);
         maSetColor(getBackground(GRAY_BG_COL));
         maDrawText(dx, textY, str);
       } else {
         maSetColor(_fg);
         maDrawText(dx, textY, str);
       }
-      textY += textHeight;
-      _visibleRows++;
+      textY += rowHeight;
     }
   }
 }
 
 bool FormListBox::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
   bool result = FormWidget::overlaps(pt, offsX, offsY, redraw);
+  MAExtent textSize = maGetTextSize(_model->getTextAt(0));
+  int rowHeight = EXTENT_Y(textSize) + 1;
+  int visibleRows = _height / rowHeight;
   if (result) {
-    int y = pt.y - (_y + offsY + _height);
-    int rowHeight = _height / _visibleRows;
+    int y = pt.y - (_y + offsY);
     _activeIndex = y / rowHeight;
+    focusList = this;
     redraw = true;
+  } else if (focusList == this && 
+             pt.y < _y + offsY + _height &&  _topIndex > 0) {
+    _topIndex--;
+    redraw = true;
+  } else if (focusList == this &&
+             pt.y > _y + offsY + _height &&
+             _topIndex + visibleRows < _model->rows()) {
+    _topIndex++;
+    redraw = true;
+  } else {
+    focusList = NULL;
   }
   return result;
 }
@@ -334,6 +347,7 @@ FormDropList::FormDropList(Screen *screen, IFormWidgetListModel *model,
   FormList(screen, model, x, y, w, h),
   _listWidth(w),
   _listHeight(h),
+  _visibleRows(0),
   _listActive(false) {
 }
 
@@ -362,7 +376,7 @@ void FormDropList::drawList(int dx, int dy) {
   int availHeight = getScreen()->_height - (dy + _y + _height + _height);
   int textWidth = 0;
   int textHeight = 0;
-  int textY = _height;
+  int textY = dy + _height;
 
   // determine the available boundary
   _listHeight = 0;
@@ -381,7 +395,7 @@ void FormDropList::drawList(int dx, int dy) {
     _visibleRows++;
   }
   maSetColor(getBackground(GRAY_BG_COL));
-  maFillRect(dx, _height, _listWidth, _listHeight);
+  maFillRect(dx, dy + _height, _listWidth, _listHeight);
   for (int i = 0; i < _visibleRows; i++) {
     const char *str = _model->getTextAt(i + _topIndex);
     if (i == _activeIndex) {
@@ -407,11 +421,14 @@ bool FormDropList::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
       int y = pt.y - (_y + offsY + _height);
       int rowHeight = _listHeight / _visibleRows;
       _activeIndex = y / rowHeight;
+      focusList = this;
       redraw = true;
-    } else if (pt.y < _y + offsY + _height && _topIndex > 0) {
+    } else if (focusList == this && 
+               pt.y < _y + offsY + _height && _topIndex > 0) {
       _topIndex--;
       redraw = true;
-    } else if (pt.y > _y + offsY + _height + _listHeight &&
+    } else if (focusList == this && 
+               pt.y > _y + offsY + _height + _listHeight &&
                _topIndex + _visibleRows < _model->rows()) {
       _topIndex++;
       redraw = true;

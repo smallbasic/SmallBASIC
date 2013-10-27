@@ -109,7 +109,10 @@ struct FormButton : public FormWidget {
     drawButton(_caption.c_str(), x, y, _width, _height, _pressed); 
   }
   void clicked(IButtonListener *listener, int x, int y);
-  void setText(const char *text) { _caption = text; }
+  void setText(const char *text) {
+    _caption = text;
+    _screen->setDirty();
+  }
 
 private:
   String _caption;
@@ -123,7 +126,10 @@ struct FormLabel : public FormWidget {
   void draw(int x, int y) { 
     drawButton(_caption.c_str(), x, y, _width, _height, false);
   }
-  void setText(const char *text) { _caption = text; }
+  void setText(const char *text) {
+    _caption = text;
+    _screen->setDirty();
+  }
 
 private:
   String _caption;
@@ -170,7 +176,6 @@ protected:
   IFormWidgetListModel *_model;
   int _topIndex;
   int _activeIndex;
-  int _visibleRows;
 };
 
 struct FormDropList : public FormList {
@@ -181,10 +186,11 @@ struct FormDropList : public FormList {
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   virtual ~FormDropList() {}
 
-protected:
+private:
   void drawList(int dx, int dy);
   int _listWidth;
   int _listHeight;
+  int _visibleRows;
   bool _listActive;
 };
 
