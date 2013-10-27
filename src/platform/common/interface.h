@@ -45,11 +45,11 @@ struct IFormWidget {
 };
 
 namespace form_ui {
-  bool isRunning();
   bool isBreak();
-  void processEvents();
+  bool isRunning();
   void buttonClicked(const char *url);
   void optionsBox(StringList *items);
+  void processEvents();
 };
 
 #endif

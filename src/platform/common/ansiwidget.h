@@ -109,10 +109,7 @@ struct FormButton : public FormWidget {
     drawButton(_caption.c_str(), x, y, _width, _height, _pressed); 
   }
   void clicked(IButtonListener *listener, int x, int y);
-  void setText(const char *text) {
-    _caption = text;
-    _screen->setDirty();
-  }
+  void setText(const char *text) { _caption = text; }
 
 private:
   String _caption;
@@ -126,10 +123,7 @@ struct FormLabel : public FormWidget {
   void draw(int x, int y) { 
     drawButton(_caption.c_str(), x, y, _width, _height, false);
   }
-  void setText(const char *text) {
-    _caption = text;
-    _screen->setDirty();
-  }
+  void setText(const char *text) { _caption = text; }
 
 private:
   String _caption;
@@ -240,6 +234,7 @@ struct AnsiWidget {
   void reset();
   void resize(int width, int height);
   void setColor(long color);
+  void setDirty() { _back->setDirty(); }
   void setFontSize(int fontSize);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);

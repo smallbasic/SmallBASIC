@@ -378,6 +378,7 @@ bool WidgetData::updateGui() {
   }
   if (updated) {
     updateVarFlag();
+    form_ui::getOutput()->setDirty();
   }
   return updated;
 }
