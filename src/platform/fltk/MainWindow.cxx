@@ -1022,7 +1022,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Program/_&Run Selection", F8Key, run_selection_cb);
   m->add("&Program/&Break", CTRL + 'b', run_break_cb);
   m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
-  m->add("&Program/_&Command", F10Key, set_options_cb);
+  m->add("&Program/&Command", F10Key, set_options_cb);
   m->add("&Help/_&Help Contents", F1Key, help_contents_cb);
   m->add("&Help/&Program Help", F11Key, help_app_cb);
   m->add("&Help/_&Home Page", 0, help_home_cb);
