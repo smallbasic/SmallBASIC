@@ -13,7 +13,7 @@
 #include "common/sberr.h"
 #include <time.h>
 
-int sockcl_open(dev_file_t * f) {
+int sockcl_open(dev_file_t *f) {
   char *p;
   int port;
   char server[129];
@@ -43,7 +43,7 @@ int sockcl_open(dev_file_t * f) {
 }
 
 // open a web server connection
-int http_open(dev_file_t * f) {
+int http_open(dev_file_t *f) {
   char host[250];
   char txbuf[1024];
   f->port = 0;
@@ -119,7 +119,7 @@ int http_open(dev_file_t * f) {
 }
 
 // read from a web server connection
-int http_read(dev_file_t * f, var_t * var_p, int type) {
+int http_read(dev_file_t *f, var_t *var_p, int type) {
   char rxbuff[1024];
   int inHeader = 1;
   int httpOK = 0;
@@ -181,7 +181,7 @@ int http_read(dev_file_t * f, var_t * var_p, int type) {
   return httpOK;
 }
 
-int sockcl_close(dev_file_t * f) {
+int sockcl_close(dev_file_t *f) {
   net_disconnect((socket_t) (long) f->handle);
   f->drv_dw[0] = 0;
   f->handle = -1;
@@ -191,7 +191,7 @@ int sockcl_close(dev_file_t * f) {
 /*
  * write to a socket
  */
-int sockcl_write(dev_file_t * f, byte * data, dword size) {
+int sockcl_write(dev_file_t *f, byte *data, dword size) {
   net_print((socket_t) (long) f->handle, data);
   return size;
 }
@@ -199,7 +199,7 @@ int sockcl_write(dev_file_t * f, byte * data, dword size) {
 /*
  * read from a socket
  */
-int sockcl_read(dev_file_t * f, byte * data, dword size) {
+int sockcl_read(dev_file_t *f, byte *data, dword size) {
   f->drv_dw[0] = (dword) net_input((socket_t) (long) f->handle, data, size, NULL);
   return (((long) f->drv_dw[0]) <= 0) ? 0 : (long) f->drv_dw[0];
 }
@@ -207,13 +207,13 @@ int sockcl_read(dev_file_t * f, byte * data, dword size) {
 /*
  * Returns true (EOF) if the connection is broken
  */
-int sockcl_eof(dev_file_t * f) {
+int sockcl_eof(dev_file_t *f) {
   return (((long) f->drv_dw[0]) <= 0) ? 1 : 0;
 }
 
 /*
  * returns the size of the data which are waiting in stream's queue
  */
-int sockcl_length(dev_file_t * f) {
+int sockcl_length(dev_file_t *f) {
   return net_peek((socket_t) (long) f->handle);
 }

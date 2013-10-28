@@ -73,7 +73,7 @@ int stream_open(dev_file_t * f) {
   f->handle = open(f->name, osflags);
 #endif
 
-  if (f->handle < 0) {
+  if (f->handle < 0 && count_tasks()) {
     err_file((f->last_error = errno));
   }
   return (f->handle >= 0);
@@ -87,7 +87,7 @@ int stream_close(dev_file_t * f) {
 
   r = close(f->handle);
   f->handle = -1;
-  if (r) {
+  if (r && count_tasks()) {
     err_file((f->last_error = errno));
   }
   return (r == 0);

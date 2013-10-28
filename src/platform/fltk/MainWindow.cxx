@@ -411,6 +411,45 @@ void MainWindow::set_flag(fltk::Widget *w, void *eventData) {
   *flag = (w->flags() & STATE);
 }
 
+void MainWindow::export_file(fltk::Widget *w, void *eventData) {
+  EditorWidget *editWidget = getEditor();
+  if (editWidget) {
+    if (runMode == edit_state) {
+      int handle = 1;
+      char buffer[PATH_MAX];
+      if (_exportFile.length()) {
+        strcpy(buffer, _exportFile.c_str());
+      } else {
+        buffer[0] = 0;
+      }
+      editWidget->getInput(buffer, PATH_MAX);
+      if (buffer[0]) {
+        _exportFile = buffer;
+        if (dev_fopen(handle, _exportFile, DEV_FILE_OUTPUT)) {
+          TextBuffer *textbuf = editWidget->editor->buffer();
+          const char *data = textbuf->text();
+          if (!dev_fwrite(handle, (byte *)data, textbuf->length())) {
+            sprintf(buffer, "Failed to write: %s", _exportFile.c_str());
+            statusMsg(rs_err, buffer);
+          } else {
+            sprintf(buffer, "Exported %s to %s", editWidget->getFilename(), 
+                    _exportFile.c_str());
+            statusMsg(rs_ready, buffer);
+          }
+        } else {
+          sprintf(buffer, "Failed to open: %s", _exportFile.c_str());
+          statusMsg(rs_err, buffer);
+        }
+        dev_fclose(handle);
+      }
+      // cancel setModal() from editWidget->getInput()
+      runMode = edit_state; 
+    } else {
+      busyMessage();
+    }
+  }
+}
+
 void MainWindow::set_options(fltk::Widget *w, void *eventData) {
   const char *args = fltk::input("Enter program command line", opt_command);
   if (args) {
@@ -499,7 +538,10 @@ void MainWindow::run(fltk::Widget *w, void *eventData) {
 }
 
 void MainWindow::run_break(fltk::Widget *w, void *eventData) {
-  if (runMode == run_state || runMode == modal_state) {
+  if (runMode == modal_state && !count_tasks()) {
+    // break from modal edit mode loop
+    runMode = edit_state;
+  } else if (runMode == run_state || runMode == modal_state) {
     setBreak();
   }
 }
@@ -943,7 +985,8 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&File/_&Close", CTRL + F4Key, close_tab_cb);
   m->add("&File/&Save File", CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", CTRL + SHIFT + 'S', save_file_as_cb);
-  addPlugin(m, "&File/_Publish Online", "publish.bas");
+  addPlugin(m, "&File/Publish Online", "publish.bas");
+  m->add("&File/_Export", CTRL + F9Key, export_file_cb);
   m->add("&File/E&xit", CTRL + 'q', quit_cb);
   m->add("&Edit/_&Undo", CTRL + 'z', EditorWidget::undo_cb);
   m->add("&Edit/Cu&t", CTRL + 'x', EditorWidget::cut_text_cb);
@@ -979,7 +1022,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Program/_&Run Selection", F8Key, run_selection_cb);
   m->add("&Program/&Break", CTRL + 'b', run_break_cb);
   m->add("&Program/_&Restart", CTRL + 'r', restart_run_cb);
-  m->add("&Program/&Command", F10Key, set_options_cb);
+  m->add("&Program/_&Command", F10Key, set_options_cb);
   m->add("&Help/_&Help Contents", F1Key, help_contents_cb);
   m->add("&Help/&Program Help", F11Key, help_app_cb);
   m->add("&Help/_&Home Page", 0, help_home_cb);

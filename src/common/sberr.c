@@ -41,8 +41,7 @@ void sc_raise2(const char *sec, int scline, const char *buff) {
 /**
  * run-time error
  */
-void rt_raise(const char *fmt, ...)
-{
+void rt_raise(const char *fmt, ...) {
   char *buff;
   va_list ap;
   int i_stack, i_kw;

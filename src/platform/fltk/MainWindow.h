@@ -46,7 +46,7 @@ enum GroupWidget {
   gw_file
 };
 
-struct LineInput:public fltk::Input {
+struct LineInput : public fltk::Input {
   LineInput(int x, int y, int w, int h);
   bool replace(int b, int e, const char *text, int ilen);
   void layout();
@@ -133,6 +133,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(copy_text);
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);
+  CALLBACK_METHOD(export_file);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
   CALLBACK_METHOD(help_about);
@@ -160,6 +161,7 @@ struct MainWindow : public BaseWindow {
   HelpWidget *getHelp();
 
   strlib::String _siteHome;
+  strlib::String _exportFile;
 
   // main output
   MosyncWidget *_out;
