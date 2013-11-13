@@ -39,7 +39,7 @@ int stream_open(dev_file_t * f) {
   if (f->open_flags & DEV_FILE_EXCL) {
     osshare = 0;
   } else {
-    osshare = S_IREAD;
+    osshare = S_IRUSR;
   }
 
   // take care not to set any write flags when simply reading a file.
@@ -49,11 +49,11 @@ int stream_open(dev_file_t * f) {
 
   if (f->open_flags & DEV_FILE_OUTPUT) {
     osflags |= (O_CREAT | O_WRONLY);
-    osshare |= S_IWRITE;
+    osshare |= S_IWUSR;
   }
   if (f->open_flags & DEV_FILE_APPEND) {
     osflags |= (O_CREAT | O_APPEND | O_WRONLY);
-    osshare |= S_IWRITE;
+    osshare |= S_IWUSR;
   }
 
 #if defined(_UnixOS)
@@ -73,7 +73,7 @@ int stream_open(dev_file_t * f) {
   f->handle = open(f->name, osflags);
 #endif
 
-  if (f->handle < 0 && count_tasks()) {
+  if (f->handle < 0) {
     err_file((f->last_error = errno));
   }
   return (f->handle >= 0);
@@ -87,7 +87,7 @@ int stream_close(dev_file_t * f) {
 
   r = close(f->handle);
   f->handle = -1;
-  if (r && count_tasks()) {
+  if (r) {
     err_file((f->last_error = errno));
   }
   return (r == 0);

@@ -60,7 +60,7 @@ char *options = NULL;
 FormList *clickedList = NULL;
 FormList *focusList = NULL;
 
-#if !defined(_FLTK) && !defined(_TIZEN)
+#if !defined(_FLTK) && !defined(_TIZEN) && !defined(_ANDROID)
 void form_ui::optionsBox(StringList *items) {
   if (items->size()) {
     // calculate the size of the options buffer
@@ -973,9 +973,9 @@ void AnsiWidget::drawActiveButton() {
   maUpdateScreen();
 #else
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
-  int x = _focus->x + _activeButton->x;
-  int y = _focus->y + _activeButton->y - _focus->_scrollY;
-  maSetClipRect(x, y, _activeButton->width, _activeButton->height + 2);
+  int x = _focus->_x + _activeButton->_x;
+  int y = _focus->_y + _activeButton->_y - _focus->_scrollY;
+  maSetClipRect(x, y, _activeButton->_width, _activeButton->_height + 2);
   _activeButton->draw(x, y);
   maUpdateScreen();
   maResetBacklight();

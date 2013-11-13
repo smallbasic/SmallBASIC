@@ -13,7 +13,7 @@
 #include <config.h>
 #endif
 
-#if defined(_FLTK) || defined(_TIZEN)
+#if defined(_FLTK) || defined(_TIZEN) || defined(_ANDROID)
   #include "platform/common/maapi.h"
 #else
   #include <maapi.h>
