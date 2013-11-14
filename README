@@ -2,20 +2,38 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
 
 == Building the Android port
 
-1. .bashrc settings:
+1. Setup .bashrc:
 
-export PATH=$PATH:~/android-sdk/depot_tools:~/android-sdk/adt-bundle-linux-x86_64-20131030/sdk/platform-tools
+export PATH=$PATH:~/android-sdk/adt-bundle-linux-x86_64-20131030/sdk/platform-tools
 export ANDROID_SDK_ROOT=~/android-sdk/adt-bundle-linux-x86_64-20131030/sdk
 export TARGET_DEVICE=arm
 export PLATFORM_PREFIX=~/android-sdk/android-ext/
+export PATH=${PLATFORM_PREFIX}/bin:${PATH}
 export NDK=~/android-sdk/android-ndk-r9b
 export NDK_PLATFORM=android-9
-export PATH=${PLATFORM_PREFIX}/bin:${PATH}
 
-2. 
+2. Build FreeType:
+
+First, prepare the cross-compiler from the NDK:
+  $NDK_PATH/build/tools/make-standalone-toolchain.sh \
+      --platform=$NDK_PLATFORM --install-dir=$PLATFORM_PREFIX
+
+Then use it to cross-compile freetype:
+  tar xf freetype-2.4.10.tar.bz2
+  cd freetype-2.4.10/
+  CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/freetype --without-zlib --without-png
+  make
+  make install DESTDIR=$(pwd)
+
+3. Build common
 
 ./configure --enable-android --host=arm-linux-androideabi
 
+4. Build the native activity
+
+$ cd src/platform/andoid/jni && $NDK/ndk-build
+
+5. Complete the packaging process using Android eclipse.
 
 == Building the TIZEN port
 
