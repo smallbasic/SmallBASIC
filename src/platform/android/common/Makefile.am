@@ -15,6 +15,8 @@ AM_CPPFLAGS=-I$(top_srcdir)/src @PACKAGE_CFLAGS@
 
 noinst_LIBRARIES = libsb_common.a
 
+all-am: Makefile $(LIBRARIES) apt-build
+
 libsb_common_a_SOURCES =                                      \
     $(COMMON)/bc.c $(COMMON)/bc.h                             \
     $(COMMON)/blib.c $(COMMON)/blib.h                         \
@@ -68,3 +70,13 @@ libsb_common_a_SOURCES =                                      \
     $(COMMON)/sbapp.h                                         \
     $(COMMON)/smbas.h                                         \
     $(COMMON)/sys.h
+
+../libs/armeabi/libsmallbasic.so: libsb_common.a
+
+ndk-build: ../libs/armeabi/libsmallbasic.so
+	(cd ../jni && ${NDK}/ndk-build)
+
+apt-build: ndk-build
+	(cd ../../../../ide/android && ant -quiet debug)
+
+

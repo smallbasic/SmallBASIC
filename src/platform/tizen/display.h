@@ -63,7 +63,7 @@ struct FormViewable : public Control {
   void resize(int w, int h) { _w = w; _h = h; }
 
 private:
-  Tizen::Base::String fontPath;
+  Tizen::Base::String _fontPath;
   Mutex *_canvasLock;
   Drawable *_screen;
   int _w, _h;

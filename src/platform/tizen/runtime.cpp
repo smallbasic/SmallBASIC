@@ -237,49 +237,6 @@ MAEvent RuntimeThread::processEvents(bool waitFlag) {
   return event;
 }
 
-char *RuntimeThread::readSource(const char *fileName) {
-  char *buffer = NULL;
-  bool networkFile = (strstr(fileName, "://") != NULL);
-
-  if (networkFile) {
-    int handle = 1;
-    var_t *var_p = v_new();
-    dev_file_t *f = dev_getfileptr(handle);
-    systemPrint(fileName);
-    _output->print("\033[ LLoading...");
-    if (dev_fopen(handle, fileName, 0)) {
-      http_read(f, var_p, 0);
-      int len = var_p->v.p.size;
-      buffer = (char *)tmp_alloc(len + 1);
-      memcpy(buffer, var_p->v.p.ptr, len);
-      buffer[len] = '\0';
-    } else {
-      systemPrint("\nfailed");
-    }
-    dev_fclose(handle);
-    v_free(var_p);
-    tmp_free(var_p);
-  } else {
-    int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
-    if (h != -1) {
-      int len = lseek(h, 0, SEEK_END);
-      lseek(h, 0, SEEK_SET);
-      buffer = (char *)tmp_alloc(len + 1);
-      read(h, buffer, len);
-      buffer[len] = '\0';
-      close(h);
-    }
-  }
-  if (buffer != NULL) {
-    delete [] _programSrc;
-    int len = strlen(buffer);
-    _programSrc = new char[len + 1];
-    strncpy(_programSrc, buffer, len);
-    _programSrc[len] = 0;
-  }
-  return buffer;
-}
-
 void RuntimeThread::setExit(bool quit) {
   if (!isClosing()) {
     _eventQueueLock->Acquire();

@@ -7,6 +7,8 @@
 //
 
 #include "config.h"
+#include <android/native_window.h>
+
 #include "platform/android/jni/runtime.h"
 #include "platform/common/maapi.h"
 #include "platform/common/utils.h"
@@ -18,6 +20,135 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
+
+#define DEFAULT_FONT_SIZE 32
+
+static int32_t handle_input(struct android_app *app, AInputEvent *event) {
+  Runtime *runtime = (Runtime *)app->userData;
+  int32_t result;
+  switch (AInputEvent_getType(event)) {
+  case AINPUT_EVENT_TYPE_MOTION:
+    //engine->animating = 1;
+    result = 1;
+    break;
+  case AINPUT_EVENT_TYPE_KEY:
+    trace("Key event: action=%d keyCode=%d metaState=0x%x",
+          AKeyEvent_getAction(event),
+          AKeyEvent_getKeyCode(event),
+          AKeyEvent_getMetaState(event));
+    result = 0;
+    break;
+  }
+  return result;
+}
+
+static void handle_cmd(struct android_app *app, int32_t cmd) {
+  Runtime *runtime = (Runtime *)app->userData;
+  switch (cmd) {
+  case APP_CMD_INIT_WINDOW:
+    runtime->redraw();
+    break;
+  case APP_CMD_TERM_WINDOW:
+    //engine_term_display(engine);
+    break;
+  case APP_CMD_LOST_FOCUS:
+    //engine->animating = 0;
+    //engine_draw_frame(engine);
+    break;
+  }
+}
+
+Runtime::Runtime(android_app *app) : 
+  _app(app) {
+}
+
+Runtime::~Runtime() {
+}
+
+void Runtime::buttonClicked(const char *url) {
+  _loadPath.empty();
+  _loadPath.append(url, strlen(url));
+}
+
+bool Runtime::construct() {
+  bool result = true;
+  
+  int w = ANativeWindow_getWidth(_app->window);
+  int h = ANativeWindow_getHeight(_app->window);
+  _output = new AnsiWidget(this, w, h);
+  if (_output) {
+    _app->userData = this;
+    _app->onAppCmd = handle_cmd;
+    _app->onInputEvent = handle_input;
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+void Runtime::runShell() {
+  logEntered();
+
+  _state = kActiveState;
+  opt_ide = IDE_NONE;
+  opt_graphics = true;
+  opt_pref_bpp = 0;
+  opt_nosave = true;
+  opt_interactive = true;
+  opt_verbose = false;
+  opt_quiet = true;
+  opt_command[0] = 0;
+  opt_usevmt = 0;
+  os_graphics = 1;
+
+  _output->construct();
+  _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
+  _output->setFontSize(DEFAULT_FONT_SIZE);
+  _initialFontSize = _output->getFontSize();
+
+  String basePath = _app->activity->internalDataPath;
+  String mainBasPath = basePath + "res/main.bas";
+  setPath(basePath + "res/samples/");
+  runMain(mainBasPath);
+
+  delete _output;
+  _state = kDoneState;
+  logLeaving();
+}
+
+void Runtime::handleKey(MAEvent &event) {
+}
+
+MAEvent Runtime::processEvents(bool waitFlag) {
+  MAEvent event;
+
+  int events;
+  android_poll_source *source;
+  while (ALooper_pollAll(waitFlag ? -1 : 0, NULL, 
+                         &events, (void **)&source) >= 0) {
+    // process this event.
+    if (source != NULL) {
+      source->process(_app, source);
+    }
+    
+    // check if we are exiting.
+    if (_app->destroyRequested != 0) {
+      trace("Engine thread destroy requested!");
+      //engine_term_display(&engine);
+      //return;
+    }
+  }
+  
+  return event;
+}
+
+void Runtime::setExit(bool quit) {
+}
+
+MAEvent Runtime::getNextEvent() {
+  MAEvent event;
+  return event;
+}
 
 //
 // form_ui implementation

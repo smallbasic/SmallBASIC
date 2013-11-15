@@ -36,7 +36,6 @@ struct RuntimeThread :
   MAEvent popEvent();
   void pushEvent(MAEvent event);
   MAEvent processEvents(bool waitFlag);
-  char *readSource(const char *fileName);
   void setExit(bool quit);
 
 private:

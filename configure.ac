@@ -563,7 +563,7 @@ function buildAndroid() {
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
 
-   BUILD_SUBDIRS="src/platform/android/jni/common"
+   BUILD_SUBDIRS="src/platform/android/common"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -689,7 +689,7 @@ src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/mosync/common/Makefile
 src/platform/tizen/common/Makefile
-src/platform/android/jni/common/Makefile
+src/platform/android/common/Makefile
 ])
 AC_OUTPUT
 

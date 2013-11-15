@@ -168,9 +168,9 @@ result FormViewable::Construct(String &appRootPath, int w, int h) {
       drawColorRaw = DEFAULT_BACKGROUND;
       drawColor = Color(maSetColor(drawColorRaw));
       widget = this;
-      fontPath = appRootPath.c_str();
-      fontPath += "res/";
-      fontPath += FONT_FACE_NAME;
+      _fontPath = appRootPath.c_str();
+      _fontPath += "res/";
+      _fontPath += FONT_FACE_NAME;
     } else {
       r = E_OUT_OF_MEMORY;
     }
@@ -184,7 +184,7 @@ result FormViewable::Construct(String &appRootPath, int w, int h) {
 Font *FormViewable::createFont(int style, int size) {
   logEntered();
   Font *font = new Font();
-  if (!font || font->Construct(fontPath, style, size) != E_SUCCESS) {
+  if (!font || font->Construct(_fontPath, style, size) != E_SUCCESS) {
     delete font;
     font = (Font *)-1;
   }

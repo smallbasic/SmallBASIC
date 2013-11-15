@@ -13,7 +13,7 @@ FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.0.1/freetype
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := sb_common
-LOCAL_SRC_FILES := ./common/libsb_common.a
+LOCAL_SRC_FILES := ../common/libsb_common.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -22,7 +22,7 @@ LOCAL_SRC_FILES := $(FREETYPE_HOME)/lib/libfreetype.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE     := native-activity
+LOCAL_MODULE     := smallbasic
 LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1
 LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src \
                     $(FREETYPE_HOME)/include \

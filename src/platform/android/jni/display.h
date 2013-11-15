@@ -9,6 +9,9 @@
 #ifndef ANDROID_DISPLAY
 #define ANDROID_DISPLAY
 
+#include <android/rect.h>
+#include <android/native_window.h>
+
 #include "platform/common/maapi.h"
 #include "platform/common/StringLib.h"
 
@@ -18,6 +21,9 @@
 #define MSG_ID_SHOW_ALERT 5004
 
 using namespace strlib;
+
+struct Font {
+};
 
 struct Drawable {
   Drawable();
@@ -35,31 +41,25 @@ struct Drawable {
   void resize(int w, int h);
   void setClip(int x, int y, int w, int h);
 
-  //  Canvas *_canvas;
-  //Rectangle *_clip;
+  uint16_t *_canvas;
+  ARect *_clip;
 };
 
-/*
-struct FormViewable : public Control {
-  FormViewable();
-  virtual ~FormViewable();
+struct Viewable {
+  Viewable(ANativeWindow *window);
+  virtual ~Viewable();
 
-  result Construct(String &resourcePath, int w, int h);
+  bool construct(String &resourcePath);
   Font *createFont(int style, int size);
-  int getWidth() { return _w; }
-  int getHeight() { return _h; }
+  int getWidth();
+  int getHeight();
   MAHandle setDrawTarget(MAHandle maHandle);
-  result OnDraw();
   void redraw();
-  void resize(int w, int h) { _w = w; _h = h; }
 
 private:
-  Tizen::Base::String fontPath;
-  Mutex *_canvasLock;
+  String _fontPath;
   Drawable *_screen;
-  int _w, _h;
+  ANativeWindow *_window;
 };
-
-*/
 
 #endif

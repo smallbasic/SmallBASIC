@@ -52,7 +52,8 @@ typedef signed long    S32;
   #define trace AppLog
  #elif defined (_ANDROID)
   #include <android/log.h>
-  #define trace(...) __android_log_print(ANDROID_LOG_INFO, "smallbasic", __VA_ARGS__)
+  #define trace(...) __android_log_print(ANDROID_LOG_INFO, \
+                                         "smallbasic", __VA_ARGS__)
  #endif
 #else
  #define trace(...)

@@ -27,6 +27,7 @@ struct System {
   bool isRestart() { return _state == kRestartState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
   bool isSystemScreen() { return _systemScreen; }
+  char *readSource(const char *fileName);
   void setBack();
   void setRunning(bool running);
   void systemPrint(const char *msg);
