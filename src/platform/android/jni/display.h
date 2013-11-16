@@ -27,7 +27,7 @@ struct Font {
 
 struct Drawable {
   Drawable();
-  ~Drawable();
+  virtual ~Drawable();
 
   void beginDraw();
   bool create(int w, int h);
@@ -45,11 +45,11 @@ struct Drawable {
   ARect *_clip;
 };
 
-struct Viewable {
-  Viewable(ANativeWindow *window);
-  virtual ~Viewable();
+struct Window {
+  Window(ANativeWindow *window);
+  virtual ~Window();
 
-  bool construct(String &resourcePath);
+  bool construct(const char *resourcePath);
   Font *createFont(int style, int size);
   int getWidth();
   int getHeight();

@@ -71,3 +71,5 @@ install-exec-hook:																	\
 	 cp plugins/*.* $(pkgdatadir)/plugins &&					\
 	 cp ide/*.* $(pkgdatadir)/ide)
 
+test:
+	(cd $(SUBDIRS) && make test)

@@ -11,6 +11,7 @@ export PLATFORM_PREFIX=~/android-sdk/android-ext/
 export PATH=${PLATFORM_PREFIX}/bin:${PATH}
 export NDK=~/android-sdk/android-ndk-r9b
 export NDK_PLATFORM=android-9
+export ANDROID_LOG_TAGS="DEBUG:I smallbasic:I *:S"
 
 2. Build FreeType:
 

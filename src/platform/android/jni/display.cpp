@@ -18,7 +18,7 @@
 #define SIZE_LIMIT 4
 #define FONT_FACE_NAME "Envy Code R.ttf"
 
-Viewable *widget;
+Window *widget;
 Drawable *drawTarget;
 Font *activeFont;
 bool mouseActive;
@@ -47,6 +47,16 @@ void Drawable::beginDraw() {
 }
 
 bool Drawable::create(int w, int h) {
+  logEntered();
+  bool result;
+  _canvas = new uint16_t[w * h];
+  if (_canvas) {
+    memset(_canvas, 0, w * h);
+    result = true;
+  } else {
+    result = false;
+  }
+  return result;
 }
 
 void Drawable::drawImageRegion(Drawable *dst, const MAPoint2d *dstPoint, const MARect *srcRect) {
@@ -77,38 +87,50 @@ void Drawable::setClip(int x, int y, int w, int h) {
 }
 
 //
-// Viewable implementation
+// Window implementation
 //
-Viewable::Viewable(ANativeWindow *window) :
+Window::Window(ANativeWindow *window) :
   _screen(NULL),
   _window(window) {
 }
 
-Viewable::~Viewable() {
+Window::~Window() {
   delete _screen;
 }
 
-bool Viewable::construct(String &resourcePath) {
-  return true;
+bool Window::construct(const char *resourcePath) {
+  logEntered();
+  bool result = false;
+  _screen = new Drawable();
+  if (_screen && _screen->create(getWidth(), getHeight())) {
+    _fontPath = resourcePath;
+    _fontPath += "res/";
+    _fontPath += FONT_FACE_NAME;
+    drawTarget = _screen;
+    drawColor = maSetColor(DEFAULT_BACKGROUND);
+    widget = this;
+    result = true;
+  }
+  return result;
 }
 
-Font *Viewable::createFont(int style, int size) {
+Font *Window::createFont(int style, int size) {
+  return new Font();
+}
+
+int Window::getWidth() {
+  return ANativeWindow_getWidth(_window);
+}
+
+int Window::getHeight() {
+  return ANativeWindow_getHeight(_window);
+}
+
+MAHandle Window::setDrawTarget(MAHandle maHandle) {
 
 }
 
-int Viewable::getWidth() {
-  return 0;
-}
-
-int Viewable::getHeight() {
-  return 0;
-}
-
-MAHandle Viewable::setDrawTarget(MAHandle maHandle) {
-
-}
-
-void Viewable::redraw() {
+void Window::redraw() {
   if (_window != NULL) {
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(_window, &buffer, NULL) < 0) {
@@ -131,11 +153,10 @@ void form_ui::optionsBox(StringList *items) {
 //
 int maFontDelete(MAHandle maHandle) {
   if (maHandle != -1) {
-    Font *font = (Font *) maHandle;
+    Font *font = (Font *)maHandle;
     if (font == activeFont) {
       activeFont = NULL;
     }
-    trace("Delete font %x", font);
     delete font;
   }
   return RES_FONT_OK;
@@ -226,8 +247,8 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   if (height > widget->getHeight() * SIZE_LIMIT) {
     result -= 1;
   } else {
-    Drawable *canvas = (Drawable *)maHandle;
-    canvas->create(width, height);
+    Drawable *drawable = (Drawable *)maHandle;
+    drawable->create(width, height);
   }
   return result;
 }

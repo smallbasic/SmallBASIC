@@ -25,7 +25,7 @@ struct Runtime :
   Runtime(android_app *app);
   ~Runtime();
 
-  bool construct();
+  void construct();
   void buttonClicked(const char *action);
   void redraw() { _display->redraw(); }
   void handleKey(MAEvent &event);
@@ -37,7 +37,7 @@ struct Runtime :
   void runShell();
 
 private:
-  Viewable *_display;
+  Window *_display;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;
 };

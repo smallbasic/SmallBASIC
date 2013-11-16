@@ -7,15 +7,28 @@
 //
 
 #include "config.h"
-#include "platform/common/utils.h"
 #include "platform/android/jni/runtime.h"
 
 void android_main(android_app *app) {
+  logEntered();
+
   // make sure glue isn't stripped.
   app_dummy();
 
   Runtime *runtime = new Runtime(app);
-  runtime->construct();
-  runtime->runShell();
+
+  // pump events until startup has completed
+  while (runtime->isInitial()) {
+    int events;
+    android_poll_source* source = NULL;
+    while (ALooper_pollAll(10, NULL, &events, (void**)&source) >= 0) {
+      if (source != NULL) {
+        source->process(app, source);
+      }
+    }
+  }
+  if (!runtime->isClosing()) {
+    runtime->runShell();
+  }
   delete runtime;
 }

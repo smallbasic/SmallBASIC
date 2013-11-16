@@ -15,7 +15,7 @@ AM_CPPFLAGS=-I$(top_srcdir)/src @PACKAGE_CFLAGS@
 
 noinst_LIBRARIES = libsb_common.a
 
-all-am: Makefile $(LIBRARIES) apt-build
+all-am: Makefile $(LIBRARIES) ant-build
 
 libsb_common_a_SOURCES =                                      \
     $(COMMON)/bc.c $(COMMON)/bc.h                             \
@@ -74,9 +74,15 @@ libsb_common_a_SOURCES =                                      \
 ../libs/armeabi/libsmallbasic.so: libsb_common.a
 
 ndk-build: ../libs/armeabi/libsmallbasic.so
-	(cd ../jni && ${NDK}/ndk-build)
+	(cd ../jni && ${NDK}/ndk-build NDK_DEBUG=1)
 
-apt-build: ndk-build
-	(cd ../../../../ide/android && ant -quiet debug)
+ant-build: ndk-build
+	(cd ../../../../ide/android && ant -quiet debug install)
+
+test: ant-build
+	(cd ../../../../ide/android && \
+   adb -d logcat -c && \
+   adb shell am start net.sourceforge.smallbasic/android.app.NativeActivity && \
+   adb -d logcat)
 
 

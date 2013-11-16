@@ -25,18 +25,17 @@
 #define DEFAULT_FONT_SIZE 32
 Runtime *runtime;
 
-static int32_t handle_input(struct android_app *app, AInputEvent *event) {
+static int32_t handle_input(android_app *app, AInputEvent *event) {
   Runtime *runtime = (Runtime *)app->userData;
   int32_t result;
 
-  trace("Key event: action=%d keyCode=%d metaState=0x%x",
+  trace("!!!Key event: action=%d keyCode=%d metaState=0x%x",
         AKeyEvent_getAction(event),
         AKeyEvent_getKeyCode(event),
         AKeyEvent_getMetaState(event));
 
   switch (AInputEvent_getType(event)) {
   case AINPUT_EVENT_TYPE_MOTION:
-    //engine->animating = 1;
     result = 1;
     break;
   case AINPUT_EVENT_TYPE_KEY:
@@ -46,30 +45,36 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event) {
   return result;
 }
 
-static void handle_cmd(struct android_app *app, int32_t cmd) {
+static void handle_cmd(android_app *app, int32_t cmd) {
   Runtime *runtime = (Runtime *)app->userData;
+  trace("handle_cmd = %d", cmd);
   switch (cmd) {
   case APP_CMD_INIT_WINDOW:
-    runtime->redraw();
+    // thread is ready to start
+    runtime->construct();
     break;
   case APP_CMD_TERM_WINDOW:
-    //engine_term_display(engine);
+    // thread is ending
+    runtime->setExit(true);
     break;
   case APP_CMD_LOST_FOCUS:
-    //engine->animating = 0;
-    //engine_draw_frame(engine);
     break;
   }
 }
 
 Runtime::Runtime(android_app *app) : 
+  System(),
   _app(app) {
+  _app->userData = this;
+  _app->onAppCmd = handle_cmd;
+  _app->onInputEvent = handle_input;
   runtime = this;
 }
 
 Runtime::~Runtime() {
   delete _output;
   delete _eventQueue;
+  delete _display;
   runtime = NULL;
 }
 
@@ -78,21 +83,21 @@ void Runtime::buttonClicked(const char *url) {
   _loadPath.append(url, strlen(url));
 }
 
-bool Runtime::construct() {
-  bool result = true;
-  
-  int w = ANativeWindow_getWidth(_app->window);
-  int h = ANativeWindow_getHeight(_app->window);
-  _output = new AnsiWidget(this, w, h);
-  if (_output) {
-    _app->userData = this;
-    _app->onAppCmd = handle_cmd;
-    _app->onInputEvent = handle_input;
-    _eventQueue = new Stack<MAEvent *>();
-  } else {
-    result = false;
+void Runtime::construct() {
+  logEntered();
+  _state = kClosingState;
+  _display = new Window(_app->window);
+  if (_display && _display->construct(_app->activity->internalDataPath)) {
+    int w = ANativeWindow_getWidth(_app->window);
+    int h = ANativeWindow_getHeight(_app->window);
+    _output = new AnsiWidget(this, w, h);
+    if (_output && _output->construct()) {
+      _eventQueue = new Stack<MAEvent *>();
+      if (_eventQueue) {
+        _state = kActiveState;
+      }
+    }
   }
-  return result;
 }
 
 void Runtime::runShell() {
@@ -110,12 +115,12 @@ void Runtime::runShell() {
   opt_usevmt = 0;
   os_graphics = 1;
 
-  _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(DEFAULT_FONT_SIZE);
   _initialFontSize = _output->getFontSize();
 
   String basePath = _app->activity->internalDataPath;
+  trace("path=%s", _app->activity->internalDataPath);
   String mainBasPath = basePath + "res/main.bas";
   setPath(basePath + "res/samples/");
   runMain(mainBasPath);
