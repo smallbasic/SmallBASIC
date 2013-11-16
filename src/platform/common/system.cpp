@@ -32,6 +32,8 @@
 #define EVENT_CHECK_EVERY 2000
 #define EVENT_MAX_BURN_TIME 30
 
+System *g_system;
+
 System::System() :
   _output(NULL),
   _state(kInitState),
@@ -48,6 +50,7 @@ System::System() :
   _systemScreen(false),
   _mainBas(false),
   _programSrc(NULL) {
+  g_system = this;
 }
 
 System::~System() {
@@ -426,4 +429,137 @@ void System::systemPrint(const char *str) {
     _output->print("\033[ Sw");
   }
 }
+
+//
+// common device implementation
+//
+void osd_cls(void) {
+  logEntered();
+  ui_reset();
+  g_system->_output->clearScreen();
+}
+
+int osd_devrestore(void) {
+  ui_reset();
+  g_system->setRunning(false);
+  return 0;
+}
+
+int osd_events(int wait_flag) {
+  int result;
+  if (g_system->isBreak()) {
+    result = -2;
+  } else {
+    g_system->processEvents(wait_flag);
+    result = 0;
+  }
+  return result;
+}
+
+int osd_getpen(int mode) {
+  return g_system->getPen(mode);
+}
+
+long osd_getpixel(int x, int y) {
+  return g_system->_output->getPixel(x, y);
+}
+
+int osd_getx(void) {
+  return g_system->_output->getX();
+}
+
+int osd_gety(void) {
+  return g_system->_output->getY();
+}
+
+void osd_line(int x1, int y1, int x2, int y2) {
+  g_system->_output->drawLine(x1, y1, x2, y2);
+}
+
+void osd_rect(int x1, int y1, int x2, int y2, int fill) {
+  if (fill) {
+    g_system->_output->drawRectFilled(x1, y1, x2, y2);
+  } else {
+    g_system->_output->drawRect(x1, y1, x2, y2);
+  }
+}
+
+void osd_refresh(void) {
+  if (!g_system->isClosing()) {
+    g_system->_output->flush(true);
+  }
+}
+
+void osd_setcolor(long color) {
+  if (!g_system->isClosing()) {
+    g_system->_output->setColor(color);
+  }
+}
+
+void osd_setpenmode(int enable) {
+  // touch mode is always active
+}
+
+void osd_setpixel(int x, int y) {
+  g_system->_output->setPixel(x, y, dev_fgcolor);
+}
+
+void osd_settextcolor(long fg, long bg) {
+  g_system->_output->setTextColor(fg, bg);
+}
+
+void osd_setxy(int x, int y) {
+  g_system->_output->setXY(x, y);
+}
+
+int osd_textheight(const char *str) {
+  return g_system->_output->textHeight();
+}
+
+int osd_textwidth(const char *str) {
+  MAExtent textSize = maGetTextSize(str);
+  return EXTENT_X(textSize);
+}
+
+void osd_write(const char *str) {
+  if (!g_system->isClosing()) {
+    g_system->_output->print(str);
+  }
+}
+
+void lwrite(const char *str) {
+  if (!g_system->isClosing()) {
+    g_system->systemPrint(str);
+  }
+}
+
+void dev_delay(dword ms) {
+  maWait(ms);
+}
+
+char *dev_gets(char *dest, int maxSize) {
+  return g_system->getText(dest, maxSize);
+}
+
+char *dev_read(const char *fileName) {
+  return g_system->readSource(fileName);
+}
+
+//
+// common form_ui implementation
+//
+bool form_ui::isRunning() {
+  return g_system->isRunning();
+}
+
+bool form_ui::isBreak() {
+  return g_system->isBreak();
+}
+
+void form_ui::processEvents() {
+  if (!isBreak()) {
+    g_system->processEvents(true);
+  }
+}
+
 

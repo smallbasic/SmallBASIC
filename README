@@ -41,8 +41,8 @@ $ cd src/platform/andoid/jni && $NDK/ndk-build
 
 2. Add the following lines to .bashrc
 
-export TIZEN_SDK=${HOME}/tizen-sdk
-export TIZEN_ROOTSTRAP=${TIZEN_SDK}/platforms/tizen2.2/rootstraps/tizen-device-2.2.native
+TIZEN_SDK=${HOME}/tizen-sdk
+TIZEN_ROOTSTRAP=${TIZEN_SDK}/platforms/mobile-3.0/rootstraps/mobile-3.0-device.native
 export TIZEN_BIN=${TIZEN_SDK}/tools/arm-linux-gnueabi-gcc-4.5/bin
 export TIZEN_LIBS=${HOME}/tizen-lib
 export PATH=${PATH}:${TIZEN_BIN}:~/bin

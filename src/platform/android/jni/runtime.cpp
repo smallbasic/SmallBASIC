@@ -21,21 +21,25 @@
 #include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
 
+#define WAIT_INTERVAL 10
 #define DEFAULT_FONT_SIZE 32
+Runtime *runtime;
 
 static int32_t handle_input(struct android_app *app, AInputEvent *event) {
   Runtime *runtime = (Runtime *)app->userData;
   int32_t result;
+
+  trace("Key event: action=%d keyCode=%d metaState=0x%x",
+        AKeyEvent_getAction(event),
+        AKeyEvent_getKeyCode(event),
+        AKeyEvent_getMetaState(event));
+
   switch (AInputEvent_getType(event)) {
   case AINPUT_EVENT_TYPE_MOTION:
     //engine->animating = 1;
     result = 1;
     break;
   case AINPUT_EVENT_TYPE_KEY:
-    trace("Key event: action=%d keyCode=%d metaState=0x%x",
-          AKeyEvent_getAction(event),
-          AKeyEvent_getKeyCode(event),
-          AKeyEvent_getMetaState(event));
     result = 0;
     break;
   }
@@ -60,9 +64,13 @@ static void handle_cmd(struct android_app *app, int32_t cmd) {
 
 Runtime::Runtime(android_app *app) : 
   _app(app) {
+  runtime = this;
 }
 
 Runtime::~Runtime() {
+  delete _output;
+  delete _eventQueue;
+  runtime = NULL;
 }
 
 void Runtime::buttonClicked(const char *url) {
@@ -80,6 +88,7 @@ bool Runtime::construct() {
     _app->userData = this;
     _app->onAppCmd = handle_cmd;
     _app->onInputEvent = handle_input;
+    _eventQueue = new Stack<MAEvent *>();
   } else {
     result = false;
   }
@@ -143,32 +152,23 @@ MAEvent Runtime::processEvents(bool waitFlag) {
 }
 
 void Runtime::setExit(bool quit) {
-}
-
-MAEvent Runtime::getNextEvent() {
-  MAEvent event;
-  return event;
+  if (!isClosing()) {
+    _state = quit ? kClosingState : kBackState;
+    if (isRunning()) {
+      brun_break();
+    }
+  }
 }
 
 //
 // form_ui implementation
 //
-bool form_ui::isRunning() {
-  return false;
-}
-
-bool form_ui::isBreak() {
-  return false;
-}
-
-void form_ui::processEvents() {
-}
-
 void form_ui::buttonClicked(const char *url) {
+  runtime->buttonClicked(url);
 }
 
 AnsiWidget *form_ui::getOutput() {
-  return NULL;
+  return runtime->_output;
 }
 
 //
@@ -176,15 +176,43 @@ AnsiWidget *form_ui::getOutput() {
 //
 int maGetEvent(MAEvent *event) {
   int result;
+  if (runtime->hasEvent()) {
+    MAEvent *nextEvent = runtime->popEvent();
+    event->point = nextEvent->point;
+    event->type = nextEvent->type;
+    delete nextEvent;
+    result = 1;
+  } else {
+    result = 0;
+  }
   return result;
 }
 
 void maWait(int timeout) {
+  int slept = 0;
+  while (1) {
+    if (runtime->hasEvent()
+        || runtime->isBack()
+        || runtime->isClosing()) {
+      break;
+    }
+    //thread->Sleep(WAIT_INTERVAL);
+    slept += WAIT_INTERVAL;
+    if (timeout > 0 && slept > timeout) {
+      break;
+    }
+  }
 }
 
 //
 // sbasic implementation
 //
+int osd_devinit(void) {
+  setsysvar_str(SYSVAR_OSNAME, "Android");
+  runtime->setRunning(true);
+  return 1;
+}
+
 void osd_sound(int frq, int dur, int vol, int bgplay) {
 }
 
@@ -192,76 +220,6 @@ void osd_clear_sound_queue() {
 }
 
 void osd_beep(void) {
-}
-
-void osd_cls(void) {
-}
-
-int osd_devinit(void) {
-  setsysvar_str(SYSVAR_OSNAME, "Android");
-  return 1;
-}
-
-int osd_devrestore(void) {
-  return 0;
-}
-
-int osd_events(int wait_flag) {
-  int result;
-  return result;
-}
-
-int osd_getpen(int mode) {
-  return 0;
-}
-
-long osd_getpixel(int x, int y) {
-  return 0;
-}
-
-int osd_getx(void) {
-  return 0;
-}
-
-int osd_gety(void) {
-  return 0;
-}
-
-void osd_line(int x1, int y1, int x2, int y2) {
-}
-
-void osd_rect(int x1, int y1, int x2, int y2, int fill) {
-}
-
-void osd_refresh(void) {
-}
-
-void osd_setcolor(long color) {
-}
-
-void osd_setpenmode(int enable) {
-  // touch mode is always active
-}
-
-void osd_setpixel(int x, int y) {
-}
-
-void osd_settextcolor(long fg, long bg) {
-}
-
-void osd_setxy(int x, int y) {
-}
-
-int osd_textheight(const char *str) {
-}
-
-int osd_textwidth(const char *str) {
-}
-
-void osd_write(const char *str) {
-}
-
-void lwrite(const char *str) {
 }
 
 void dev_image(int handle, int index,
@@ -276,14 +234,4 @@ int dev_image_height(int handle, int index) {
   return 0;
 }
 
-void dev_delay(dword ms) {
-  maWait(ms);
-}
 
-char *dev_gets(char *dest, int maxSize) {
-  return NULL;
-}
-
-char *dev_read(const char *fileName) {
-  return NULL;
-}

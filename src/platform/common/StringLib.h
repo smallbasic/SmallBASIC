@@ -216,8 +216,8 @@ template<typename T>
 struct Stack : public List<T> {
   Stack() : List<T>() {}
   Stack(int growSize) : List<T>(growSize) {}
-  T peek() { return !this->_count ? 0 : this->_head[this->_count - 1]; }
-  T pop() { return !this->_count ? 0 : this->_head[--this->_count]; }
+  T peek() { return !this->_count ? (T)NULL : this->_head[this->_count - 1]; }
+  T pop() { return !this->_count ? (T)NULL : this->_head[--this->_count]; }
   void push(T o) { this->add(o); }
 };
  

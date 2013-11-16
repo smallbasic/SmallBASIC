@@ -29,14 +29,17 @@ struct Runtime :
   void buttonClicked(const char *action);
   void redraw() { _display->redraw(); }
   void handleKey(MAEvent &event);
-  MAEvent getNextEvent();
   MAEvent processEvents(bool waitFlag);
+  bool hasEvent() { _eventQueue->size() > 0; }
+  MAEvent *popEvent() { return _eventQueue->pop(); }
+  void pushEvent(MAEvent *event) { _eventQueue->push(event); }
   void setExit(bool quit);
   void runShell();
 
 private:
   Viewable *_display;
   android_app *_app;
+  Stack<MAEvent *> *_eventQueue;
 };
 
 #endif

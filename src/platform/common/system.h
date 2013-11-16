@@ -33,11 +33,11 @@ struct System {
   void systemPrint(const char *msg);
 
   AnsiWidget *_output;
+  virtual MAEvent processEvents(bool waitFlag) = 0;
+  virtual void setExit(bool quit) = 0;
 
 protected:
-  virtual void setExit(bool quit) = 0;
-  virtual MAEvent getNextEvent() = 0;
-
+  MAEvent getNextEvent() { return processEvents(true); }
   void handleMenu(int menuId);
   void resize();
   void runMain(const char *mainBasPath);
@@ -61,7 +61,6 @@ protected:
     kClosingState, // thread is terminating
     kDoneState     // thread has terminated
   } _state;
-
 
   strlib::String _loadPath;
   int _lastEventTime;
