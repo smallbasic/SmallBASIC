@@ -9,11 +9,17 @@
 
 LOCAL_PATH := $(call my-dir)
 SB_HOME := $(LOCAL_PATH)/../../../..
+PNG_HOME := $(HOME)/android-sdk/libpng-1.6.6/png
 FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.0.1/freetype
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := sb_common
 LOCAL_SRC_FILES := ../common/libsb_common.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := png
+LOCAL_SRC_FILES := $(PNG_HOME)/lib/libpng.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -36,7 +42,7 @@ LOCAL_SRC_FILES  := main.cpp \
                     ../../common/StringLib.cpp \
                     ../../common/system.cpp
 LOCAL_LDLIBS     := -llog -landroid -ljnigraphics
-LOCAL_STATIC_LIBRARIES := sb_common freetype android_native_app_glue 
+LOCAL_STATIC_LIBRARIES := sb_common png freetype android_native_app_glue 
 include $(BUILD_SHARED_LIBRARY)
 
 $(call import-module, android/native_app_glue)

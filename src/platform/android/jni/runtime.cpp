@@ -86,8 +86,8 @@ void Runtime::buttonClicked(const char *url) {
 void Runtime::construct() {
   logEntered();
   _state = kClosingState;
-  _display = new Window(_app->window);
-  if (_display && _display->construct(_app->activity->internalDataPath)) {
+  _display = new Window(_app);
+  if (_display && _display->construct()) {
     int w = ANativeWindow_getWidth(_app->window);
     int h = ANativeWindow_getHeight(_app->window);
     _output = new AnsiWidget(this, w, h);

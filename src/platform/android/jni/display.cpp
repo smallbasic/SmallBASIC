@@ -12,9 +12,6 @@
 #include "platform/common/form_ui.h"
 #include "platform/common/utils.h"
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 #define SIZE_LIMIT 4
 #define FONT_FACE_NAME "Envy Code R.ttf"
 
@@ -89,27 +86,54 @@ void Drawable::setClip(int x, int y, int w, int h) {
 //
 // Window implementation
 //
-Window::Window(ANativeWindow *window) :
+Window::Window(android_app *app) :
+  _fontBuffer(NULL),
   _screen(NULL),
-  _window(window) {
+  _app(app) {
 }
 
 Window::~Window() {
   delete _screen;
+
+  if (_fontBuffer) {
+    FT_Done_Face(_fontFace);
+    FT_Done_FreeType(_fontLibrary);
+    delete [] _fontBuffer;
+  }
+  _fontBuffer = NULL;
 }
 
-bool Window::construct(const char *resourcePath) {
+bool Window::construct() {
   logEntered();
   bool result = false;
-  _screen = new Drawable();
-  if (_screen && _screen->create(getWidth(), getHeight())) {
-    _fontPath = resourcePath;
-    _fontPath += "res/";
-    _fontPath += FONT_FACE_NAME;
-    drawTarget = _screen;
-    drawColor = maSetColor(DEFAULT_BACKGROUND);
-    widget = this;
-    result = true;
+  if (loadFont()) {
+    _screen = new Drawable();
+    if (_screen && _screen->create(getWidth(), getHeight())) {
+      drawTarget = _screen;
+      drawColor = maSetColor(DEFAULT_BACKGROUND);
+      widget = this;
+      result = true;
+    }
+  }
+  return result;
+}
+
+bool Window::loadFont() {
+  bool result = false;
+  AAssetManager *assetManager = _app->activity->assetManager;
+  AAsset *fontFile = AAssetManager_open(assetManager, FONT_FACE_NAME, AASSET_MODE_BUFFER);
+  if (fontFile) {
+    off_t len = AAsset_getLength(fontFile);
+    _fontBuffer = new FT_Byte[len + 1];
+    if (AAsset_read(fontFile, _fontBuffer, len) >= 0) {
+      trace("loaded %s", FONT_FACE_NAME);
+      if (!FT_Init_FreeType(&_fontLibrary) &&
+          !FT_New_Memory_Face(_fontLibrary, _fontBuffer, len, 0, &_fontFace)) {
+        trace("loaded freetype face");
+        result = true;
+      }
+    }
+    AAsset_close(fontFile);
   }
   return result;
 }
@@ -119,11 +143,11 @@ Font *Window::createFont(int style, int size) {
 }
 
 int Window::getWidth() {
-  return ANativeWindow_getWidth(_window);
+  return ANativeWindow_getWidth(_app->window);
 }
 
 int Window::getHeight() {
-  return ANativeWindow_getHeight(_window);
+  return ANativeWindow_getHeight(_app->window);
 }
 
 MAHandle Window::setDrawTarget(MAHandle maHandle) {
@@ -131,13 +155,13 @@ MAHandle Window::setDrawTarget(MAHandle maHandle) {
 }
 
 void Window::redraw() {
-  if (_window != NULL) {
+  if (_app->window != NULL) {
     ANativeWindow_Buffer buffer;
-    if (ANativeWindow_lock(_window, &buffer, NULL) < 0) {
+    if (ANativeWindow_lock(_app->window, &buffer, NULL) < 0) {
       trace("Unable to lock window buffer");
     } else {
       //memcpy(surface_buffer.bits, _buffer,  _bufferSize);
-      ANativeWindow_unlockAndPost(_window);
+      ANativeWindow_unlockAndPost(_app->window);
     }
   }
 }

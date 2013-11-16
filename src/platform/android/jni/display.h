@@ -10,15 +10,13 @@
 #define ANDROID_DISPLAY
 
 #include <android/rect.h>
-#include <android/native_window.h>
+#include <android_native_app_glue.h>
 
 #include "platform/common/maapi.h"
 #include "platform/common/StringLib.h"
 
-#define MSG_ID_REDRAW 5001
-#define MSG_ID_SHOW_KEYPAD 5002
-#define MSG_ID_SHOW_MENU 5003
-#define MSG_ID_SHOW_ALERT 5004
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 using namespace strlib;
 
@@ -46,10 +44,10 @@ struct Drawable {
 };
 
 struct Window {
-  Window(ANativeWindow *window);
+  Window(android_app *app);
   virtual ~Window();
 
-  bool construct(const char *resourcePath);
+  bool construct();
   Font *createFont(int style, int size);
   int getWidth();
   int getHeight();
@@ -57,9 +55,13 @@ struct Window {
   void redraw();
 
 private:
-  String _fontPath;
+  bool loadFont();
+
+  FT_Library _fontLibrary;
+  FT_Face _fontFace;
+  FT_Byte *_fontBuffer;
   Drawable *_screen;
-  ANativeWindow *_window;
+  android_app *_app;
 };
 
 #endif
