@@ -74,7 +74,7 @@ Runtime::Runtime(android_app *app) :
 Runtime::~Runtime() {
   delete _output;
   delete _eventQueue;
-  delete _display;
+  delete _graphics;
   runtime = NULL;
 }
 
@@ -86,8 +86,8 @@ void Runtime::buttonClicked(const char *url) {
 void Runtime::construct() {
   logEntered();
   _state = kClosingState;
-  _display = new Window(_app);
-  if (_display && _display->construct()) {
+  _graphics = new Graphics(_app);
+  if (_graphics && _graphics->construct()) {
     int w = ANativeWindow_getWidth(_app->window);
     int h = ANativeWindow_getHeight(_app->window);
     _output = new AnsiWidget(this, w, h);
@@ -123,7 +123,10 @@ void Runtime::runShell() {
   trace("path=%s", _app->activity->internalDataPath);
   String mainBasPath = basePath + "res/main.bas";
   setPath(basePath + "res/samples/");
-  runMain(mainBasPath);
+  //runMain(mainBasPath);
+  _output->print("A");  
+  _output->flush(true);
+  processEvents(true);
 
   delete _output;
   _state = kDoneState;
@@ -148,7 +151,7 @@ MAEvent Runtime::processEvents(bool waitFlag) {
     // check if we are exiting.
     if (_app->destroyRequested != 0) {
       trace("Engine thread destroy requested!");
-      //engine_term_display(&engine);
+      //engine_term_graphics(&engine);
       //return;
     }
   }

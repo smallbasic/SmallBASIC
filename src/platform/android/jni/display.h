@@ -20,6 +20,8 @@
 
 using namespace strlib;
 
+typedef uint16_t pixel_t;
+
 struct Font {
   Font(int style, int size) :
     _style(style),
@@ -28,54 +30,58 @@ struct Font {
   int _size;
 };
 
-struct Drawable {
-  Drawable();
-  virtual ~Drawable();
+struct Canvas {
+  Canvas();
+  virtual ~Canvas();
 
   bool create(int w, int h);
   void setClip(int x, int y, int w, int h);
+  pixel_t *getLine(int y) { return _canvas + (y * _w); }
+  int x() { return _clip ? _clip->left : 0; }
+  int y() { return _clip ? _clip->top : 0; }
+  int w() { return _clip ? _clip->right : _w; }
+  int h() { return _clip ? _clip->bottom : _w; }
 
   int _w;
   int _h;
-  uint16_t *_canvas;
+  pixel_t *_canvas;
   ARect *_clip;
 };
 
-struct Window {
-  Window(android_app *app);
-  virtual ~Window();
+struct Graphics {
+  Graphics(android_app *app);
+  virtual ~Graphics();
 
-  void beginDraw();
   bool construct();
   Font *createFont(int style, int size);
   void deleteFont(Font *font);
-  void drawImageRegion(Drawable *src, const MAPoint2d *dstPoint, const MARect *srcRect);
+  void drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);
   void drawPixel(int posX, int posY);
   void drawRectFilled(int left, int top, int width, int height);
   void drawText(int left, int top, const char *str, int len);
-  void endDraw();
   int  getPixel(int x, int y);
   MAExtent getTextSize(const char *str, int len);
   int getHeight();
   int getWidth();
   void redraw();
   void setClip(int x, int y, int w, int h);
-  void setColor(uint16_t color) {  _drawColor = color; }
+  void setColor(pixel_t color) {  _drawColor = color; }
   void setFont(Font *font) { _font = font; }
   MAHandle setDrawTarget(MAHandle maHandle);
 
 private:
   bool loadFont();
+  void drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y);
 
   FT_Library _fontLibrary;
   FT_Face _fontFace;
   FT_Byte *_fontBuffer;
-  Drawable *_screen;
-  Drawable *_drawTarget;
+  Canvas *_screen;
+  Canvas *_drawTarget;
   Font *_font;
   android_app *_app;
-  uint16_t _drawColor;
+  pixel_t _drawColor;
 };
 
 #endif

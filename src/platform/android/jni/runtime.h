@@ -27,7 +27,7 @@ struct Runtime :
 
   void construct();
   void buttonClicked(const char *action);
-  void redraw() { _display->redraw(); }
+  void redraw() { _graphics->redraw(); }
   void handleKey(MAEvent &event);
   MAEvent processEvents(bool waitFlag);
   bool hasEvent() { _eventQueue->size() > 0; }
@@ -37,7 +37,7 @@ struct Runtime :
   void runShell();
 
 private:
-  Window *_display;
+  Graphics *_graphics;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;
 };

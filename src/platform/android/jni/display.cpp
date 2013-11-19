@@ -15,33 +15,33 @@
 #define SIZE_LIMIT 4
 #define FONT_FACE_NAME "Envy Code R.ttf"
 
-Window *widget;
+Graphics *graphics;
 
-uint16_t make565(int red, int green, int blue) {
-  return (uint16_t)(((red   << 8) & 0xf800) |
-                    ((green << 2) & 0x03e0) |
-                    ((blue  >> 3) & 0x001f));
+pixel_t RGB888_to_RGB565(unsigned rgb) {
+  return ((((rgb >> 19) & 0x1f) << 11) |
+          (((rgb >> 10) & 0x3f) <<  5) |
+          (((rgb >>  3) & 0x1f)));
 }
 
 //
-// Drawable implementation
+// Canvas implementation
 //
-Drawable::Drawable() :
+Canvas::Canvas() :
   _canvas(NULL),
   _clip(NULL) {
 }
 
-Drawable::~Drawable() {
+Canvas::~Canvas() {
   delete _canvas;
   delete _clip;
 }
 
-bool Drawable::create(int w, int h) {
+bool Canvas::create(int w, int h) {
   logEntered();
   bool result;
   _w = w;
   _h = h;
-  _canvas = new uint16_t[w * h];
+  _canvas = new pixel_t[w * h];
   if (_canvas) {
     memset(_canvas, 0, w * h);
     result = true;
@@ -51,7 +51,7 @@ bool Drawable::create(int w, int h) {
   return result;
 }
 
-void Drawable::setClip(int x, int y, int w, int h) {
+void Canvas::setClip(int x, int y, int w, int h) {
   delete _clip;
   if (x != 0 || y != 0 || _w != w || _h != h) {
     _clip = new ARect();
@@ -65,18 +65,18 @@ void Drawable::setClip(int x, int y, int w, int h) {
 }
 
 //
-// Window implementation
+// Graphics implementation
 //
-Window::Window(android_app *app) :
+Graphics::Graphics(android_app *app) :
   _fontBuffer(NULL),
   _screen(NULL),
   _drawTarget(NULL),
   _font(NULL),
   _app(app) {
-  widget = this;
+  graphics = this;
 }
 
-Window::~Window() {
+Graphics::~Graphics() {
   delete _screen;
 
   if (_fontBuffer) {
@@ -87,95 +87,132 @@ Window::~Window() {
   _fontBuffer = NULL;
 }
 
-void Window::beginDraw() {
-}
-
-bool Window::construct() {
+bool Graphics::construct() {
   logEntered();
   bool result = false;
   if (loadFont()) {
-    _screen = new Drawable();
+    _screen = new Canvas();
     if (_screen && _screen->create(getWidth(), getHeight())) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
+      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, WINDOW_FORMAT_RGB_565);
       result = true;
     }
   }
   return result;
 }
 
-Font *Window::createFont(int style, int size) {
+Font *Graphics::createFont(int style, int size) {
   return new Font(style, size);
 }
 
-void Window::deleteFont(Font *font) {
+void Graphics::deleteFont(Font *font) {
   if (font == _font) {
     _font = NULL;
   }
   delete font;
 }
 
-void Window::drawImageRegion(Drawable *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
+void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
+  logEntered();
   if (_drawTarget && _drawTarget != src) {
+    int destY = dstPoint->y;
+    for (int y = srcRect->top; y < srcRect->height; y++, destY++) {
+      pixel_t *line = src->getLine(y) + srcRect->left;
+      pixel_t *dstLine = _drawTarget->getLine(destY) + dstPoint->x;
+      memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
+    }
   }
 }
 
-void Window::drawLine(int startX, int startY, int endX, int endY) {
+void Graphics::drawLine(int startX, int startY, int endX, int endY) {
   if (_drawTarget) {
   }
 }
 
-void Window::drawPixel(int posX, int posY) {
-  if (_drawTarget) {
+void Graphics::drawPixel(int posX, int posY) {
+  if (_drawTarget
+      && posX >= _drawTarget->x() 
+      && posY >= _drawTarget->y()
+      && posX < _drawTarget->w()
+      && posY < _drawTarget->h()) {
+    pixel_t *line = _drawTarget->getLine(posY);
+    line[posX] = _drawColor;
   }
 }
 
-void Window::drawRectFilled(int left, int top, int width, int height) {
+void Graphics::drawRectFilled(int left, int top, int width, int height) {
+  logEntered();
   if (_drawTarget) {
+    int w = _drawTarget->w();
+    int h = _drawTarget->h();
+    for (int y = _drawTarget->y(); y < height; y++) {
+      int posY = y + top;
+      if (posY > -1 && posY < h) {
+        pixel_t *line = _drawTarget->getLine(posY);
+        for (int x = _drawTarget->x(); x < width; x++) {
+          int posX = x + left;
+          if (posX > -1 && posX < w) {
+            line[posX] = _drawColor;
+          }
+        }
+      }
+    }
   }
 }
 
-void Window::drawText(int left, int top, const char *str, int len) {
+void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
+  FT_Int p, q;
+  FT_Int xMax = x + bitmap->width;
+  FT_Int yMax = y + bitmap->rows;
+  for (FT_Int i = x, p = 0; i < xMax; i++, p++) {
+    for (FT_Int j = y, q = 0; j < yMax; j++, q++) {
+      if (i >= 0 
+          && j >= 0 
+          && i < _drawTarget->w() 
+          && j < _drawTarget->h()) {
+        pixel_t *line = _drawTarget->getLine(j);
+        line[i] |= (bitmap->buffer[q * bitmap->width + p]);
+        trace("%d", (bitmap->buffer[q * bitmap->width + p]));
+          //= _drawColor;
+          //}
+      }
+    }
+  }
+}
+
+void Graphics::drawText(int left, int top, const char *str, int len) {
   if (_drawTarget) {
     if (_font) {
       FT_Set_Pixel_Sizes(_fontFace, 0, _font->_size);
     }
     FT_Vector pen;
-    FT_GlyphSlot slot = _fontFace->glyph;
-    pen.x = left * 64;
-    pen.y = (_drawTarget->_h - top) * 64;
+    pen.x = left - _fontFace->glyph->bitmap_left;
+    pen.y = top + _fontFace->glyph->bitmap_top;
     for (int i = 0; i < len; i++) {
       FT_Load_Char(_fontFace, str[i], FT_LOAD_RENDER);
-      FT_Int p, q;
-      FT_Int x = slot->bitmap_left;
-      FT_Int y = _drawTarget->_h - slot->bitmap_top;
-      FT_Int xMax = x + slot->bitmap.width;
-      FT_Int yMax = y + slot->bitmap.rows;
-      for (FT_Int i = x, p = 0; i < xMax; i++, p++) {
-        for (FT_Int j = y, q = 0; j < yMax; j++, q++) {
-          if (i >= 0 && j >= 0 && 
-              i < _drawTarget->_w &&
-              j < _drawTarget->_h) {
-            uint16_t *line = _drawTarget->_canvas + j;
-            line[i] |= slot->bitmap.buffer[q * slot->bitmap.width + p];
-          }
-        }
-      }
-      pen.x += slot->advance.x;
-      pen.y += slot->advance.y;
+      drawChar(&_fontFace->glyph->bitmap, 
+               pen.x + _fontFace->glyph->bitmap_left, 
+               pen.y - _fontFace->glyph->bitmap_top);
+      pen.x += _fontFace->glyph->advance.x / 64;
     }
   }
 }
 
-void Window::endDraw()  {
-}
-
-int Window::getPixel(int x, int y) {
-  if (_drawTarget) {
+int Graphics::getPixel(int posX, int posY) {
+  int result = 0;
+  if (_drawTarget
+      && posX > -1 
+      && posY > -1
+      && posX < _drawTarget->_w
+      && posY < _drawTarget->_h - 1) {
+    pixel_t *line = _drawTarget->getLine(posY);
+    result = line[posX];
   }
+  return result;
 }
 
-MAExtent Window::getTextSize(const char *str, int len) {
+MAExtent Graphics::getTextSize(const char *str, int len) {
   int width = 0;
   int height = 0;
   if (_font) {
@@ -183,54 +220,61 @@ MAExtent Window::getTextSize(const char *str, int len) {
   }
   for (int i = 0; i < len; i++) {
     FT_Load_Char(_fontFace, str[i], FT_LOAD_RENDER);
-    width += _fontFace->glyph->metrics.vertAdvance;
-    if (_fontFace->glyph->metrics.height > height) {
-      height = _fontFace->glyph->metrics.height;
+    width += (_fontFace->glyph->metrics.width / 64);
+    int glyphH = _fontFace->glyph->metrics.height / 64;
+    if (glyphH > height) {
+      height = glyphH;
     }
   }
   return (MAExtent)((width << 16) + height);
 }
 
-int Window::getHeight() {
+int Graphics::getHeight() {
   return ANativeWindow_getHeight(_app->window);
 }
 
-int Window::getWidth() {
+int Graphics::getWidth() {
   return ANativeWindow_getWidth(_app->window);
 }
 
-void Window::redraw() {
+void Graphics::redraw() {
   if (_app->window != NULL) {
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(_app->window, &buffer, NULL) < 0) {
       trace("Unable to lock window buffer");
     } else {
-      //memcpy(surface_buffer.bits, _buffer,  _bufferSize);
-      // _screen;
+      void *pixels = buffer.bits;
+      int width = min(buffer.width, _screen->_w);
+      int height = min(buffer.height, _screen->_h);
+      for (int y = 0; y < height; y++) {
+        pixel_t *line = _screen->getLine(y);
+        memcpy((pixel_t *)pixels, line, width * sizeof(pixel_t));
+        pixels = (pixel_t*)pixels + buffer.stride;
+      }
       ANativeWindow_unlockAndPost(_app->window);
     }
   }
 }
 
-void Window::setClip(int x, int y, int w, int h) {
+void Graphics::setClip(int x, int y, int w, int h) {
   if (_drawTarget) {
     _drawTarget->setClip(x, y, w, h);
   }
 }
 
-MAHandle Window::setDrawTarget(MAHandle maHandle) {
+MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
   if (maHandle == (MAHandle) HANDLE_SCREEN ||
       maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
     _drawTarget = _screen;
   } else {
-    _drawTarget = (Drawable *)maHandle;
+    _drawTarget = (Canvas *)maHandle;
   }
   delete _drawTarget->_clip;
   _drawTarget->_clip = NULL;
   return (MAHandle) _drawTarget;
 }
 
-bool Window::loadFont() {
+bool Graphics::loadFont() {
   bool result = false;
   AAssetManager *assetManager = _app->activity->assetManager;
   AAsset *fontFile = AAssetManager_open(assetManager, FONT_FACE_NAME, AASSET_MODE_BUFFER);
@@ -261,43 +305,40 @@ void form_ui::optionsBox(StringList *items) {
 //
 int maFontDelete(MAHandle maHandle) {
   if (maHandle != -1) {
-    widget->deleteFont((Font *)maHandle);
+    graphics->deleteFont((Font *)maHandle);
   }
   return RES_FONT_OK;
 }
 
 int maSetColor(int c) {
-  int r = (c >> 16) & 0xFF;
-  int g = (c >> 8) & 0xFF;
-  int b = (c) & 0xFF;
-  widget->setColor(make565(r, g, b));
+  graphics->setColor(RGB888_to_RGB565(c));
   return c;
 }
 
 void maSetClipRect(int left, int top, int width, int height) {
-  widget->setClip(left, top, width, height);
+  graphics->setClip(left, top, width, height);
 }
 
 void maPlot(int posX, int posY) {
-  widget->drawPixel(posX, posY);
+  graphics->drawPixel(posX, posY);
 }
 
 void maLine(int startX, int startY, int endX, int endY) {
-  widget->drawLine(startX, startY, endX, endY);
+  graphics->drawLine(startX, startY, endX, endY);
 }
 
 void maFillRect(int left, int top, int width, int height) {
-  widget->drawRectFilled(left, top, width, height);
+  graphics->drawRectFilled(left, top, width, height);
 }
 
 void maDrawText(int left, int top, const char *str) {
   if (str && str[0]) {
-    widget->drawText(left, top, str, strlen(str));
+    graphics->drawText(left, top, str, strlen(str));
   }
 }
 
 void maUpdateScreen(void) {
-  widget->redraw();
+  graphics->redraw();
 }
 
 void maResetBacklight(void) {
@@ -305,8 +346,8 @@ void maResetBacklight(void) {
 
 MAExtent maGetTextSize(const char *str) {
   MAExtent result;
-  if (str && str[0] && widget) {
-    result = widget->getTextSize(str, strlen(str));
+  if (str && str[0] && graphics) {
+    result = graphics->getTextSize(str, strlen(str));
   } else {
     result = 0;
   }
@@ -314,56 +355,56 @@ MAExtent maGetTextSize(const char *str) {
 }
 
 MAExtent maGetScrSize(void) {
-  short width = widget->getWidth();
-  short height = widget->getHeight();
+  short width = graphics->getWidth();
+  short height = graphics->getHeight();
   return (MAExtent)((width << 16) + height);
 }
 
 MAHandle maFontLoadDefault(int type, int style, int size) {
-  return (MAHandle) widget->createFont(style, size);
+  return (MAHandle) graphics->createFont(style, size);
 }
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {
-  if (widget) {
-    widget->setFont((Font *) maHandle);
+  if (graphics) {
+    graphics->setFont((Font *) maHandle);
   }
   return maHandle;
 }
 
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
-  widget->drawImageRegion((Drawable *)maHandle, dstPoint, srcRect);
+  graphics->drawImageRegion((Canvas *)maHandle, dstPoint, srcRect);
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   int result = RES_OK;
-  if (height > widget->getHeight() * SIZE_LIMIT) {
+  if (height > graphics->getHeight() * SIZE_LIMIT) {
     result -= 1;
   } else {
-    Drawable *drawable = (Drawable *)maHandle;
+    Canvas *drawable = (Canvas *)maHandle;
     drawable->create(width, height);
   }
   return result;
 }
 
 MAHandle maCreatePlaceholder(void) {
-  MAHandle maHandle = (MAHandle) new Drawable();
+  MAHandle maHandle = (MAHandle) new Canvas();
   return maHandle;
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {
-  Drawable *holder = (Drawable *)maHandle;
+  Canvas *holder = (Canvas *)maHandle;
   delete holder;
 }
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
-  Drawable *holder = (Drawable *)maHandle;
+  Canvas *holder = (Canvas *)maHandle;
   // maGetImageData is only used for getPixel()
-  *((int *)dst) = widget->getPixel(srcRect->left, srcRect->top);
+  *((int *)dst) = graphics->getPixel(srcRect->left, srcRect->top);
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
-  return widget->setDrawTarget(maHandle);
+  return graphics->setDrawTarget(maHandle);
 }
 
 int maGetMilliSecondCount(void) {
