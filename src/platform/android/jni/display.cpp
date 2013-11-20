@@ -23,6 +23,12 @@ pixel_t RGB888_to_RGB565(unsigned rgb) {
           (((rgb >>  3) & 0x1f)));
 }
 
+void RGB565_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
+  r = (c >> 11) & 0x1f;
+  g = (c >> 5) & 0x3f;
+  b = (c) & 0x1f;
+}
+
 //
 // Canvas implementation
 //
@@ -165,17 +171,29 @@ void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
   FT_Int p, q;
   FT_Int xMax = x + bitmap->width;
   FT_Int yMax = y + bitmap->rows;
+
+  uint8_t sR, sG, sB;
+  RGB565_to_RGB(_drawColor, sR, sG, sB);
+
   for (FT_Int i = x, p = 0; i < xMax; i++, p++) {
     for (FT_Int j = y, q = 0; j < yMax; j++, q++) {
-      if (i >= 0 
-          && j >= 0 
-          && i < _drawTarget->w() 
-          && j < _drawTarget->h()) {
+      if (i >= _drawTarget->x() &&
+          i <  _drawTarget->w() &&
+          j >= _drawTarget->y() &&
+          j <  _drawTarget->h()) {
         pixel_t *line = _drawTarget->getLine(j);
-        line[i] |= (bitmap->buffer[q * bitmap->width + p]);
-        trace("%d", (bitmap->buffer[q * bitmap->width + p]));
-          //= _drawColor;
-          //}
+        uint8_t a = bitmap->buffer[q * bitmap->width + p];
+        if (a == 255) {
+          line[i] = _drawColor;
+        } else {
+          // blend drawColor to the background
+          uint8_t dR, dG, dB;
+          RGB565_to_RGB(line[i], dR, dG, dB);
+          dR = dR + ((sR - dR) * a / 255);
+          dG = dG + ((sG - dG) * a / 255);
+          dB = dB + ((sB - dB) * a / 255);
+          line[i] = ((dR << 11) | (dG << 5) | dB);
+        }
       }
     }
   }
@@ -217,13 +235,15 @@ MAExtent Graphics::getTextSize(const char *str, int len) {
   int height = 0;
   if (_font) {
     FT_Set_Pixel_Sizes(_fontFace, 0, _font->_size);
-  }
-  for (int i = 0; i < len; i++) {
-    FT_Load_Char(_fontFace, str[i], FT_LOAD_RENDER);
-    width += (_fontFace->glyph->metrics.width / 64);
-    int glyphH = _fontFace->glyph->metrics.height / 64;
-    if (glyphH > height) {
-      height = glyphH;
+    for (int i = 0; i < len; i++) {
+      FT_Load_Char(_fontFace, str[i], FT_LOAD_RENDER);
+      // TODO: convert to Font cache
+      FT_GlyphSlot glyph = _fontFace->glyph;
+      width += (int)(glyph->metrics.horiAdvance / 64);
+      int charH = glyph->bitmap.rows + (glyph->metrics.horiBearingX / 64);
+      if (charH > height) {
+        height = charH;
+      }
     }
   }
   return (MAExtent)((width << 16) + height);
