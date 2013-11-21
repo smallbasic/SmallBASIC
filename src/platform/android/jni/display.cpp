@@ -32,26 +32,39 @@ void RGB565_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
   b = (c) & 0x1f;
 }
 
-Font::Font(int size, FT_Face face) :
-  _chW(0),
-  _chH(0),
+Font::Font(FT_Face face, int size, bool italic) :
   _face(face) {
   FT_Set_Pixel_Sizes(face, 0, size);
+  _spacing = FT_MulFix(_face->height, _face->size->metrics.x_scale) / 64;
+  _h = (FT_MulFix(_face->ascender, _face->size->metrics.x_scale) / 64) +
+       (FT_MulFix(_face->descender, _face->size->metrics.x_scale) / 64);
+
+  FT_Matrix  matrix;
+  if (italic) {
+    matrix.xx = 0x10000L;
+    matrix.xy = 0.12 * 0x10000L;
+    matrix.yx = 0;
+    matrix.yy = 0x10000L;
+  }
+
   for (int i = 0; i < MAX_GLYPHS; i++) {
     FT_UInt slot = FT_Get_Char_Index(face, i);
     FT_Load_Glyph(face, slot, FT_LOAD_TARGET_LIGHT);
-    FT_Render_Glyph(face->glyph, FT_RENDER_MODE_LIGHT);
-    FT_Get_Glyph(face->glyph, &_glyph[i]);
-    int w = (int)(face->glyph->metrics.horiAdvance / 64);
-    int h = face->glyph->bitmap.rows + (face->glyph->metrics.horiBearingX / 64);
-    _chW = max(_chW, w);
-    _chH = max(_chH, h);
+    FT_Get_Glyph(face->glyph, &_glyph[i]._slot);
+    if (italic) {
+      FT_Glyph_Transform(_glyph[i]._slot, &matrix, 0 );
+    }
+    FT_Vector origin;
+    origin.x = 0;
+    origin.y = 0;
+    FT_Glyph_To_Bitmap(&_glyph[i]._slot, FT_RENDER_MODE_LIGHT, &origin, 1); 
+    _glyph[i]._w = (int)(face->glyph->metrics.horiAdvance / 64);
   }
 }
 
 Font::~Font() {
   for (int i = 0; i < MAX_GLYPHS; i++) {
-    FT_Done_Glyph(_glyph[i]);
+    FT_Done_Glyph(_glyph[i]._slot);
   }
 }
 
@@ -102,7 +115,6 @@ void Canvas::setClip(int x, int y, int w, int h) {
 Graphics::Graphics(android_app *app) :
   _fontBuffer(NULL),
   _fontBufferB(NULL),
-  _fontBufferI(NULL),
   _screen(NULL),
   _drawTarget(NULL),
   _font(NULL),
@@ -112,13 +124,17 @@ Graphics::Graphics(android_app *app) :
 
 Graphics::~Graphics() {
   delete _screen;
-
+  FT_Done_FreeType(_fontLibrary);
   if (_fontBuffer) {
     FT_Done_Face(_fontFace);
-    FT_Done_FreeType(_fontLibrary);
     delete [] _fontBuffer;
   }
+  if (_fontBufferB) {
+    FT_Done_Face(_fontFaceB);
+    delete [] _fontBufferB;
+  }
   _fontBuffer = NULL;
+  _fontBufferB = NULL;
 }
 
 bool Graphics::construct() {
@@ -138,12 +154,11 @@ bool Graphics::construct() {
 
 Font *Graphics::createFont(int style, int size) {
   Font *result;
+  bool italic = (style & FONT_STYLE_ITALIC);
   if (style & FONT_STYLE_BOLD) {
-    result = new Font(size, _fontFaceB);
-  } else if (style & FONT_STYLE_ITALIC) {
-    result = new Font(size, _fontFaceI);
+    result = new Font(_fontFaceB, size, italic);
   } else {
-    result = new Font(size, _fontFace);
+    result = new Font(_fontFace, size, italic);
   }
   return result;
 }
@@ -238,14 +253,15 @@ void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
 void Graphics::drawText(int left, int top, const char *str, int len) {
   if (_drawTarget && _font) {
     FT_Vector pen;
-    pen.x = left - _font->_face->glyph->bitmap_left;
-    pen.y = top + _font->_face->glyph->bitmap_top;
+    pen.x = left;
+    pen.y = top + _font->_h;
     for (int i = 0; i < len; i++) {
-      FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[str[i]];
+      uint8_t ch = str[i];
+      FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;
       drawChar(&glyph->bitmap, 
                pen.x + glyph->left, 
                pen.y - glyph->top);
-      pen.x += _font->_chW;
+      pen.x += _font->_glyph[ch]._w;
     }
   }
 }
@@ -267,8 +283,11 @@ MAExtent Graphics::getTextSize(const char *str, int len) {
   int width = 0;
   int height = 0;
   if (_font) {
-    width = len * _font->_chW;
-    height = _font->_chH;
+    for (int i = 0; i < len; i++) {
+      uint8_t ch = str[i];
+      width += _font->_glyph[ch]._w;
+    }
+    height = _font->_spacing;
   }
   return (MAExtent)((width << 16) + height);
 }
@@ -321,8 +340,7 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
 bool Graphics::loadFonts() {
   return (!FT_Init_FreeType(&_fontLibrary) &&
           loadFont(FONT_FACE_REGULAR, _fontFace, &_fontBuffer) &&
-          loadFont(FONT_FACE_BOLD, _fontFaceB, &_fontBufferB) &&
-          loadFont(FONT_FACE_ITALIC, _fontFaceI, &_fontBufferI));
+          loadFont(FONT_FACE_BOLD, _fontFaceB, &_fontBufferB));
 }
 
 bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {

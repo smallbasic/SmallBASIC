@@ -25,12 +25,18 @@ using namespace strlib;
 
 typedef uint16_t pixel_t;
 
+struct Glyph {
+  FT_Glyph _slot;
+  int _w;
+};
+
 struct Font {
-  Font(int size, FT_Face face);
+  Font(FT_Face face, int size, bool italic);
   virtual ~Font();
-  int _chW, _chH;
+  int _h;
+  int _spacing;
   FT_Face _face;
-  FT_Glyph _glyph[MAX_GLYPHS];
+  Glyph _glyph[MAX_GLYPHS];
 };
 
 struct Canvas {
@@ -81,10 +87,8 @@ private:
   FT_Library _fontLibrary;
   FT_Face _fontFace;
   FT_Face _fontFaceB;
-  FT_Face _fontFaceI;
   FT_Byte *_fontBuffer;
   FT_Byte *_fontBufferB;
-  FT_Byte *_fontBufferI;
   Canvas *_screen;
   Canvas *_drawTarget;
   Font *_font;
