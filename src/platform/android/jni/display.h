@@ -19,16 +19,18 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
+#define MAX_GLYPHS 255
+
 using namespace strlib;
 
 typedef uint16_t pixel_t;
 
 struct Font {
-  Font(int style, int size) :
-    _style(style),
-    _size(size) {}
-  int _style;
-  int _size;
+  Font(int size, FT_Face face);
+  virtual ~Font();
+  int _chW, _chH;
+  FT_Face _face;
+  FT_Glyph _glyph[MAX_GLYPHS];
 };
 
 struct Canvas {
@@ -72,12 +74,17 @@ struct Graphics {
   MAHandle setDrawTarget(MAHandle maHandle);
 
 private:
-  bool loadFont();
+  bool loadFonts();
+  bool loadFont(const char *name, FT_Face &face, FT_Byte **buffer);
   void drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y);
 
   FT_Library _fontLibrary;
   FT_Face _fontFace;
+  FT_Face _fontFaceB;
+  FT_Face _fontFaceI;
   FT_Byte *_fontBuffer;
+  FT_Byte *_fontBufferB;
+  FT_Byte *_fontBufferI;
   Canvas *_screen;
   Canvas *_drawTarget;
   Font *_font;

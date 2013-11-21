@@ -124,7 +124,7 @@ void Runtime::runShell() {
   String mainBasPath = basePath + "res/main.bas";
   setPath(basePath + "res/samples/");
   //runMain(mainBasPath);
-  _output->print("The cat sat on the mat and that was that");  
+  _output->print("Testing testing 1234567890 !@#$%^&*()_+");  
   _output->flush(true);
   processEvents(true);
 

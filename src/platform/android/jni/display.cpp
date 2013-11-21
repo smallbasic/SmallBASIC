@@ -13,7 +13,10 @@
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
-#define FONT_FACE_NAME "Envy Code R.ttf"
+
+#define FONT_FACE_REGULAR "Envy Code R.ttf"
+#define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
+#define FONT_FACE_ITALIC  "Envy Code R Italic.ttf"
 
 Graphics *graphics;
 
@@ -27,6 +30,29 @@ void RGB565_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
   r = (c >> 11) & 0x1f;
   g = (c >> 5) & 0x3f;
   b = (c) & 0x1f;
+}
+
+Font::Font(int size, FT_Face face) :
+  _chW(0),
+  _chH(0),
+  _face(face) {
+  FT_Set_Pixel_Sizes(face, 0, size);
+  for (int i = 0; i < MAX_GLYPHS; i++) {
+    FT_UInt slot = FT_Get_Char_Index(face, i);
+    FT_Load_Glyph(face, slot, FT_LOAD_TARGET_LIGHT);
+    FT_Render_Glyph(face->glyph, FT_RENDER_MODE_LIGHT);
+    FT_Get_Glyph(face->glyph, &_glyph[i]);
+    int w = (int)(face->glyph->metrics.horiAdvance / 64);
+    int h = face->glyph->bitmap.rows + (face->glyph->metrics.horiBearingX / 64);
+    _chW = max(_chW, w);
+    _chH = max(_chH, h);
+  }
+}
+
+Font::~Font() {
+  for (int i = 0; i < MAX_GLYPHS; i++) {
+    FT_Done_Glyph(_glyph[i]);
+  }
 }
 
 //
@@ -75,6 +101,8 @@ void Canvas::setClip(int x, int y, int w, int h) {
 //
 Graphics::Graphics(android_app *app) :
   _fontBuffer(NULL),
+  _fontBufferB(NULL),
+  _fontBufferI(NULL),
   _screen(NULL),
   _drawTarget(NULL),
   _font(NULL),
@@ -96,7 +124,7 @@ Graphics::~Graphics() {
 bool Graphics::construct() {
   logEntered();
   bool result = false;
-  if (loadFont()) {
+  if (loadFonts()) {
     _screen = new Canvas();
     if (_screen && _screen->create(getWidth(), getHeight())) {
       _drawTarget = _screen;
@@ -109,7 +137,15 @@ bool Graphics::construct() {
 }
 
 Font *Graphics::createFont(int style, int size) {
-  return new Font(style, size);
+  Font *result;
+  if (style & FONT_STYLE_BOLD) {
+    result = new Font(size, _fontFaceB);
+  } else if (style & FONT_STYLE_ITALIC) {
+    result = new Font(size, _fontFaceI);
+  } else {
+    result = new Font(size, _fontFace);
+  }
+  return result;
 }
 
 void Graphics::deleteFont(Font *font) {
@@ -154,11 +190,11 @@ void Graphics::drawRectFilled(int left, int top, int width, int height) {
     int h = _drawTarget->h();
     for (int y = _drawTarget->y(); y < height; y++) {
       int posY = y + top;
-      if (posY > -1 && posY < h) {
+      if (posY >= _drawTarget->y() && posY < h) {
         pixel_t *line = _drawTarget->getLine(posY);
         for (int x = _drawTarget->x(); x < width; x++) {
           int posX = x + left;
-          if (posX > -1 && posX < w) {
+          if (posX > _drawTarget->x() && posX < w) {
             line[posX] = _drawColor;
           }
         }
@@ -200,19 +236,16 @@ void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
 }
 
 void Graphics::drawText(int left, int top, const char *str, int len) {
-  if (_drawTarget) {
-    if (_font) {
-      FT_Set_Pixel_Sizes(_fontFace, 0, _font->_size);
-    }
+  if (_drawTarget && _font) {
     FT_Vector pen;
-    pen.x = left - _fontFace->glyph->bitmap_left;
-    pen.y = top + _fontFace->glyph->bitmap_top;
+    pen.x = left - _font->_face->glyph->bitmap_left;
+    pen.y = top + _font->_face->glyph->bitmap_top;
     for (int i = 0; i < len; i++) {
-      FT_Load_Char(_fontFace, str[i], FT_LOAD_RENDER);
-      drawChar(&_fontFace->glyph->bitmap, 
-               pen.x + _fontFace->glyph->bitmap_left, 
-               pen.y - _fontFace->glyph->bitmap_top);
-      pen.x += _fontFace->glyph->advance.x / 64;
+      FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[str[i]];
+      drawChar(&glyph->bitmap, 
+               pen.x + glyph->left, 
+               pen.y - glyph->top);
+      pen.x += _font->_chW;
     }
   }
 }
@@ -234,17 +267,8 @@ MAExtent Graphics::getTextSize(const char *str, int len) {
   int width = 0;
   int height = 0;
   if (_font) {
-    FT_Set_Pixel_Sizes(_fontFace, 0, _font->_size);
-    for (int i = 0; i < len; i++) {
-      FT_Load_Char(_fontFace, str[i], FT_LOAD_RENDER);
-      // TODO: convert to Font cache
-      FT_GlyphSlot glyph = _fontFace->glyph;
-      width += (int)(glyph->metrics.horiAdvance / 64);
-      int charH = glyph->bitmap.rows + (glyph->metrics.horiBearingX / 64);
-      if (charH > height) {
-        height = charH;
-      }
-    }
+    width = len * _font->_chW;
+    height = _font->_chH;
   }
   return (MAExtent)((width << 16) + height);
 }
@@ -294,24 +318,30 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
   return (MAHandle) _drawTarget;
 }
 
-bool Graphics::loadFont() {
+bool Graphics::loadFonts() {
+  return (!FT_Init_FreeType(&_fontLibrary) &&
+          loadFont(FONT_FACE_REGULAR, _fontFace, &_fontBuffer) &&
+          loadFont(FONT_FACE_BOLD, _fontFaceB, &_fontBufferB) &&
+          loadFont(FONT_FACE_ITALIC, _fontFaceI, &_fontBufferI));
+}
+
+bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {
   bool result = false;
   AAssetManager *assetManager = _app->activity->assetManager;
-  AAsset *fontFile = AAssetManager_open(assetManager, FONT_FACE_NAME, AASSET_MODE_BUFFER);
+  AAsset *fontFile = AAssetManager_open(assetManager, name, AASSET_MODE_BUFFER);
   if (fontFile) {
     off_t len = AAsset_getLength(fontFile);
-    _fontBuffer = new FT_Byte[len + 1];
-    if (AAsset_read(fontFile, _fontBuffer, len) >= 0) {
-      trace("loaded %s", FONT_FACE_NAME);
-      if (!FT_Init_FreeType(&_fontLibrary) &&
-          !FT_New_Memory_Face(_fontLibrary, _fontBuffer, len, 0, &_fontFace)) {
-        trace("loaded freetype face");
+    *buffer = new FT_Byte[len + 1];
+    if (AAsset_read(fontFile, *buffer, len) >= 0) {
+      if (!FT_New_Memory_Face(_fontLibrary, *buffer, len, 0, &face)) {
+        trace("loaded freetype face %s", name);
         result = true;
       }
     }
     AAsset_close(fontFile);
   }
   return result;
+
 }
 
 //
