@@ -41,20 +41,24 @@ typedef signed long    S32;
  #define _DEBUG
 #endif
 
+
+#if defined(MAPIP)
+ #include <mavsprintf.h>
+ #define deviceLog lprintfln
+#elif defined(_FLTK)
+ extern "C" void trace(const char *format, ...);
+ #define deviceLog trace
+#elif defined (_TIZEN)
+ #include <FBaseLog.h>
+ #define deviceLog AppLog
+#elif defined (_ANDROID)
+ #include <android/log.h>
+ #define deviceLog(...) __android_log_print(ANDROID_LOG_INFO, \
+                        "smallbasic", __VA_ARGS__)
+#endif
+
 #if defined(_DEBUG)
- #if defined(MAPIP)
-  #include <mavsprintf.h>
-  #define trace lprintfln
- #elif defined(_FLTK)
-  extern "C" void trace(const char *format, ...);
- #elif defined (_TIZEN)
-  #include <FBaseLog.h>
-  #define trace AppLog
- #elif defined (_ANDROID)
-  #include <android/log.h>
-  #define trace(...) __android_log_print(ANDROID_LOG_INFO, \
-                                         "smallbasic", __VA_ARGS__)
- #endif
+ #define trace(...) deviceLog(__VA_ARGS__)
 #else
  #define trace(...)
 #endif

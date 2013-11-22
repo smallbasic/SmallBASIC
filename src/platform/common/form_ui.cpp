@@ -314,7 +314,6 @@ void WidgetData::buttonClicked(const char *action) {
 
 // set basic string variable to widget state when the variable has changed
 bool WidgetData::updateGui() {
-  logEntered();
   ListModel *model;
   bool updated = false;
 

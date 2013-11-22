@@ -180,11 +180,9 @@ void System::handleMenu(int menuId) {
   }
 }
 
-char *System::readSource(const char *fileName) {
-  char *buffer = NULL;
-  bool networkFile = (strstr(fileName, "://") != NULL);
-
-  if (networkFile) {
+char *System::loadResource(const char *fileName) {
+  char *buffer = null;
+  if (strstr(fileName, "://") != NULL) {
     int handle = 1;
     var_t *var_p = v_new();
     dev_file_t *f = dev_getfileptr(handle);
@@ -202,7 +200,12 @@ char *System::readSource(const char *fileName) {
     dev_fclose(handle);
     v_free(var_p);
     tmp_free(var_p);
-  } else {
+  }
+}
+
+char *System::readSource(const char *fileName) {
+  char *buffer = loadResource(fileName);
+  if (!buffer) {
     int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
     if (h != -1) {
       int len = lseek(h, 0, SEEK_END);
@@ -219,6 +222,7 @@ char *System::readSource(const char *fileName) {
     _programSrc = new char[len + 1];
     strncpy(_programSrc, buffer, len);
     _programSrc[len] = 0;
+    systemPrint("Opened: %s %d bytes\n", fileName, len);
   }
   return buffer;
 }
@@ -419,13 +423,22 @@ void System::showSystemScreen(bool showSrc) {
   _systemScreen = true;
 }
 
+void System::systemPrint(const char *format, ...) {
+  char buf[4096], *p = buf;
+  va_list args;
 
-void System::systemPrint(const char *str) {
+  va_start(args, format);
+  p += vsnprintf(p, sizeof(buf) - 1, format, args);
+  va_end(args);
+  *p = '\0';
+
+  deviceLog("%s", buf);
+
   if (isSystemScreen()) {
-    _output->print(str);
+    _output->print(buf);
   } else {
     _output->print("\033[ SW7");
-    _output->print(str);
+    _output->print(buf);
     _output->print("\033[ Sw");
   }
 }

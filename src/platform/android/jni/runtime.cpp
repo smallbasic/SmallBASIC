@@ -22,7 +22,9 @@
 #include "common/fs_socket_client.h"
 
 #define WAIT_INTERVAL 10
-#define DEFAULT_FONT_SIZE 32
+#define DEFAULT_FONT_SIZE 30
+#define MAIN_BAS "__main_bas__"
+
 Runtime *runtime;
 
 static int32_t handle_input(android_app *app, AInputEvent *event) {
@@ -100,6 +102,23 @@ void Runtime::construct() {
   }
 }
 
+char *Runtime::loadResource(const char *fileName) {
+  char *buffer = System::loadResource(fileName);
+  if (buffer == NULL && strcmp(fileName, MAIN_BAS) == 0) {
+    AAssetManager *assetManager = _app->activity->assetManager;
+    AAsset *mainBasFile = AAssetManager_open(assetManager, "main.bas", AASSET_MODE_BUFFER);
+    off_t len = AAsset_getLength(mainBasFile);
+    buffer = (char *)tmp_alloc(len + 1);
+    if (AAsset_read(mainBasFile, buffer, len) < 0) {
+      trace("failed to read main.bas");
+    }
+    buffer[len] = '\0';
+    trace("loaded main.bas [%ld] bytes", len);
+    AAsset_close(mainBasFile);
+  }
+  return buffer;
+}
+
 void Runtime::runShell() {
   logEntered();
 
@@ -119,13 +138,9 @@ void Runtime::runShell() {
   _output->setFontSize(DEFAULT_FONT_SIZE);
   _initialFontSize = _output->getFontSize();
 
-  String basePath = _app->activity->internalDataPath;
-  trace("path=%s", _app->activity->internalDataPath);
-  String mainBasPath = basePath + "res/main.bas";
-  setPath(basePath + "res/samples/");
-  //runMain(mainBasPath);
-  _output->print("Testing testing 1234567890 !@#$%^&*()_+");  
-  _output->flush(true);
+  trace("internalDataPath=%s", _app->activity->internalDataPath);
+  runMain(MAIN_BAS);
+
   processEvents(true);
 
   delete _output;
@@ -137,8 +152,15 @@ void Runtime::handleKey(MAEvent &event) {
 }
 
 MAEvent Runtime::processEvents(bool waitFlag) {
-  MAEvent event;
+  if (!waitFlag) {
+    showLoadError();
+  } else {
+    // wait for an event
+    _output->flush(true);
+    maWait(-1);
+  }
 
+  MAEvent event;
   int events;
   android_poll_source *source;
   while (ALooper_pollAll(waitFlag ? -1 : 0, NULL, 

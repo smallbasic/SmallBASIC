@@ -27,14 +27,15 @@ struct System {
   bool isRestart() { return _state == kRestartState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
   bool isSystemScreen() { return _systemScreen; }
+  char *readSource(const char *fileName);
   void setBack();
   void setRunning(bool running);
-  void systemPrint(const char *msg);
+  void systemPrint(const char *msg, ...);
 
   AnsiWidget *_output;
   virtual MAEvent processEvents(bool waitFlag) = 0;
   virtual void setExit(bool quit) = 0;
-  virtual char *readSource(const char *fileName);
+  virtual char *loadResource(const char *fileName);
 
 protected:
   MAEvent getNextEvent() { return processEvents(true); }

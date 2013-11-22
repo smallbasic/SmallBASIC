@@ -35,6 +35,7 @@ struct Runtime :
   void pushEvent(MAEvent *event) { _eventQueue->push(event); }
   void setExit(bool quit);
   void runShell();
+  char *loadResource(const char *fileName);
 
 private:
   Graphics *_graphics;

@@ -16,7 +16,6 @@
 
 #define FONT_FACE_REGULAR "Envy Code R.ttf"
 #define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
-#define FONT_FACE_ITALIC  "Envy Code R Italic.ttf"
 
 Graphics *graphics;
 
