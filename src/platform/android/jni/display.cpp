@@ -474,18 +474,3 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
   return graphics->setDrawTarget(maHandle);
 }
 
-int maGetMilliSecondCount(void) {
-  struct timespec t;
-  t.tv_sec = t.tv_nsec = 0;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  return (int)(((int64_t)t.tv_sec) * 1000000000LL + t.tv_nsec)/1000000;
-}
-
-int maShowVirtualKeyboard(void) {
-  return 0;
-}
-
-void maAlert(const char *title, const char *message, const char *button1,
-             const char *button2, const char *button3) {
-}
-

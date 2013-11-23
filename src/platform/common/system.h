@@ -39,6 +39,7 @@ struct System {
 
 protected:
   MAEvent getNextEvent() { return processEvents(true); }
+  void handleEvent(MAEvent event);
   void handleMenu(int menuId);
   void resize();
   void runMain(const char *mainBasPath);

@@ -19,13 +19,7 @@ void android_main(android_app *app) {
 
   // pump events until startup has completed
   while (runtime->isInitial()) {
-    int events;
-    android_poll_source* source = NULL;
-    while (ALooper_pollAll(10, NULL, &events, (void**)&source) >= 0) {
-      if (source != NULL) {
-        source->process(app, source);
-      }
-    }
+    runtime->pollEvents(true);
   }
   if (!runtime->isClosing()) {
     runtime->runShell();

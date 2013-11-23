@@ -73,3 +73,8 @@ install-exec-hook:																	\
 
 test:
 	(cd $(SUBDIRS) && make test)
+
+# produce a stack dump
+ndk-stack:
+	adb logcat | ${NDK}/ndk-stack -sym src/platform/android/obj/local/armeabi
+

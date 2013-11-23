@@ -27,29 +27,51 @@
 
 Runtime *runtime;
 
-static int32_t handle_input(android_app *app, AInputEvent *event) {
-  Runtime *runtime = (Runtime *)app->userData;
-  int32_t result;
-
-  trace("!!!Key event: action=%d keyCode=%d metaState=0x%x",
-        AKeyEvent_getAction(event),
-        AKeyEvent_getKeyCode(event),
-        AKeyEvent_getMetaState(event));
-
-  switch (AInputEvent_getType(event)) {
-  case AINPUT_EVENT_TYPE_MOTION:
-    result = 1;
-    break;
-  case AINPUT_EVENT_TYPE_KEY:
-    result = 0;
-    break;
+static int32_t handleInput(android_app *app, AInputEvent *event) {
+  logEntered();
+  int32_t result = 0;
+  if (runtime->isActive()) {
+    MAEvent *maEvent = NULL;
+    switch (AInputEvent_getType(event)) {
+    case AINPUT_EVENT_TYPE_MOTION:
+      switch (AKeyEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK) {
+      case AMOTION_EVENT_ACTION_DOWN:
+        maEvent = new MAEvent();
+        maEvent->type = EVENT_TYPE_POINTER_PRESSED;
+        maEvent->point.x = AMotionEvent_getX(event, 0);
+        maEvent->point.y = AMotionEvent_getY(event, 0);
+        break;
+      case AMOTION_EVENT_ACTION_UP:
+        maEvent = new MAEvent();
+        maEvent->type = EVENT_TYPE_POINTER_RELEASED;
+        maEvent->point.x = AMotionEvent_getX(event, 0);
+        maEvent->point.y = AMotionEvent_getY(event, 0);
+        break;
+      case AMOTION_EVENT_ACTION_MOVE:
+        maEvent = new MAEvent();
+        maEvent->type = EVENT_TYPE_POINTER_DRAGGED;
+        maEvent->point.x = AMotionEvent_getX(event, 0);
+        maEvent->point.y = AMotionEvent_getY(event, 0);
+        break;
+      }
+      break;
+    case AINPUT_EVENT_TYPE_KEY:
+      maEvent = new MAEvent();
+      maEvent->type = EVENT_TYPE_KEY_PRESSED;
+      maEvent->nativeKey = AKeyEvent_getKeyCode(event);
+      maEvent->key = AKeyEvent_getKeyCode(event);
+      break;
+    }
+    if (maEvent != NULL) {
+      result = 1;
+      runtime->pushEvent(maEvent);
+    }
   }
   return result;
 }
 
-static void handle_cmd(android_app *app, int32_t cmd) {
-  Runtime *runtime = (Runtime *)app->userData;
-  trace("handle_cmd = %d", cmd);
+static void handleCommand(android_app *app, int32_t cmd) {
+  trace("handleCommand = %d", cmd);
   switch (cmd) {
   case APP_CMD_INIT_WINDOW:
     // thread is ready to start
@@ -68,8 +90,8 @@ Runtime::Runtime(android_app *app) :
   System(),
   _app(app) {
   _app->userData = this;
-  _app->onAppCmd = handle_cmd;
-  _app->onInputEvent = handle_input;
+  _app->onAppCmd = handleCommand;
+  _app->onInputEvent = handleInput;
   runtime = this;
 }
 
@@ -122,7 +144,6 @@ char *Runtime::loadResource(const char *fileName) {
 void Runtime::runShell() {
   logEntered();
 
-  _state = kActiveState;
   opt_ide = IDE_NONE;
   opt_graphics = true;
   opt_pref_bpp = 0;
@@ -141,8 +162,6 @@ void Runtime::runShell() {
   trace("internalDataPath=%s", _app->activity->internalDataPath);
   runMain(MAIN_BAS);
 
-  processEvents(true);
-
   delete _output;
   _state = kDoneState;
   logLeaving();
@@ -151,33 +170,37 @@ void Runtime::runShell() {
 void Runtime::handleKey(MAEvent &event) {
 }
 
+void Runtime::pollEvents(bool blocking) {
+  int events;
+  android_poll_source *source;
+  logEntered();
+  ALooper_pollAll(blocking ? -1 : 0, NULL, &events, (void **)&source);
+  if (source != NULL) {
+    source->process(_app, source);
+  }
+  if (_app->destroyRequested != 0) {
+    trace("Thread destroy requested");
+    setExit(true);
+  }
+}
+
 MAEvent Runtime::processEvents(bool waitFlag) {
   if (!waitFlag) {
     showLoadError();
   } else {
-    // wait for an event
     _output->flush(true);
-    maWait(-1);
   }
+  pollEvents(waitFlag);
 
   MAEvent event;
-  int events;
-  android_poll_source *source;
-  while (ALooper_pollAll(waitFlag ? -1 : 0, NULL, 
-                         &events, (void **)&source) >= 0) {
-    // process this event.
-    if (source != NULL) {
-      source->process(_app, source);
-    }
-    
-    // check if we are exiting.
-    if (_app->destroyRequested != 0) {
-      trace("Engine thread destroy requested!");
-      //engine_term_graphics(&engine);
-      //return;
-    }
+  if (hasEvent()) {
+    MAEvent *nextEvent = popEvent();
+    event = *nextEvent;
+    delete nextEvent;
+  } else {
+    event.type = 0;
   }
-  
+  handleEvent(event);
   return event;
 }
 
@@ -219,19 +242,39 @@ int maGetEvent(MAEvent *event) {
 }
 
 void maWait(int timeout) {
-  int slept = 0;
-  while (1) {
-    if (runtime->hasEvent()
-        || runtime->isBack()
-        || runtime->isClosing()) {
-      break;
-    }
-    //thread->Sleep(WAIT_INTERVAL);
-    slept += WAIT_INTERVAL;
-    if (timeout > 0 && slept > timeout) {
-      break;
+  if (timeout == -1) {
+    runtime->pollEvents(true);
+  } else {
+    int slept = 0;
+    while (1) {
+      runtime->pollEvents(false);
+      if (runtime->hasEvent()
+          || runtime->isBack()
+          || runtime->isClosing()) {
+        break;
+      }
+      usleep(WAIT_INTERVAL);
+      slept += WAIT_INTERVAL;
+      if (timeout > 0 && slept > timeout) {
+        break;
+      }
     }
   }
+}
+
+int maGetMilliSecondCount(void) {
+  struct timespec t;
+  t.tv_sec = t.tv_nsec = 0;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  return (int)(((int64_t)t.tv_sec) * 1000000000LL + t.tv_nsec)/1000000;
+}
+
+int maShowVirtualKeyboard(void) {
+  return 0;
+}
+
+void maAlert(const char *title, const char *message, const char *button1,
+             const char *button2, const char *button3) {
 }
 
 //

@@ -30,7 +30,8 @@ struct Runtime :
   void redraw() { _graphics->redraw(); }
   void handleKey(MAEvent &event);
   MAEvent processEvents(bool waitFlag);
-  bool hasEvent() { _eventQueue->size() > 0; }
+  bool hasEvent() { _eventQueue && _eventQueue->size() > 0; }
+  void pollEvents(bool blocking);
   MAEvent *popEvent() { return _eventQueue->pop(); }
   void pushEvent(MAEvent *event) { _eventQueue->push(event); }
   void setExit(bool quit);

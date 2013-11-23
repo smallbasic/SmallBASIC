@@ -180,6 +180,42 @@ void System::handleMenu(int menuId) {
   }
 }
 
+void System::handleEvent(MAEvent event) {
+  switch (event.type) {
+  case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
+    if (_systemMenu) {
+      handleMenu(event.optionsBoxButtonIndex);
+    } else if (isRunning()) {
+      if (!_output->optionSelected(event.optionsBoxButtonIndex)) {
+        dev_pushkey(event.optionsBoxButtonIndex);
+      }
+    }
+    break;
+  case EVENT_TYPE_SCREEN_CHANGED:
+    resize();
+    break;
+  case EVENT_TYPE_POINTER_PRESSED:
+    _touchX = _touchCurX = event.point.x;
+    _touchY = _touchCurY = event.point.y;
+    dev_pushkey(SB_KEY_MK_PUSH);
+    _output->pointerTouchEvent(event);
+    break;
+  case EVENT_TYPE_POINTER_DRAGGED:
+    _touchCurX = event.point.x;
+    _touchCurY = event.point.y;
+    _output->pointerMoveEvent(event);
+    break;
+  case EVENT_TYPE_POINTER_RELEASED:
+    _touchX = _touchY = _touchCurX = _touchCurY = -1;
+    _output->pointerReleaseEvent(event);
+    break;
+  default:
+    // no event
+    _output->flush(false);
+    break;
+  }
+}
+
 char *System::loadResource(const char *fileName) {
   char *buffer = null;
   if (strstr(fileName, "://") != NULL) {
