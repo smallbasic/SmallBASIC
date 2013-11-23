@@ -24,5 +24,14 @@ void android_main(android_app *app) {
   if (!runtime->isClosing()) {
     runtime->runShell();
   }
+
+  ANativeActivity_finish(app->activity);
+  do {
+    runtime->pollEvents(true);
+  }
+  while (app->destroyRequested != 0);
+
   delete runtime;
+  logLeaving();
+  exit(0);
 }

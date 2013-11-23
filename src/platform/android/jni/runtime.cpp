@@ -27,8 +27,7 @@
 
 Runtime *runtime;
 
-static int32_t handleInput(android_app *app, AInputEvent *event) {
-  logEntered();
+int32_t handleInput(android_app *app, AInputEvent *event) {
   int32_t result = 0;
   if (runtime->isActive()) {
     MAEvent *maEvent = NULL;
@@ -70,7 +69,7 @@ static int32_t handleInput(android_app *app, AInputEvent *event) {
   return result;
 }
 
-static void handleCommand(android_app *app, int32_t cmd) {
+void handleCommand(android_app *app, int32_t cmd) {
   trace("handleCommand = %d", cmd);
   switch (cmd) {
   case APP_CMD_INIT_WINDOW:
@@ -78,8 +77,10 @@ static void handleCommand(android_app *app, int32_t cmd) {
     runtime->construct();
     break;
   case APP_CMD_TERM_WINDOW:
-    // thread is ending
-    runtime->setExit(true);
+    if (runtime) {
+      // thread is ending
+      runtime->setExit(true);
+    }
     break;
   case APP_CMD_LOST_FOCUS:
     break;
@@ -89,17 +90,21 @@ static void handleCommand(android_app *app, int32_t cmd) {
 Runtime::Runtime(android_app *app) : 
   System(),
   _app(app) {
-  _app->userData = this;
+  _app->userData = NULL;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
   runtime = this;
 }
 
 Runtime::~Runtime() {
+  logEntered();
   delete _output;
   delete _eventQueue;
   delete _graphics;
   runtime = NULL;
+  _output = NULL;
+  _eventQueue = NULL;
+  _graphics = NULL;
 }
 
 void Runtime::buttonClicked(const char *url) {
@@ -162,18 +167,33 @@ void Runtime::runShell() {
   trace("internalDataPath=%s", _app->activity->internalDataPath);
   runMain(MAIN_BAS);
 
-  delete _output;
   _state = kDoneState;
   logLeaving();
 }
 
-void Runtime::handleKey(MAEvent &event) {
+void Runtime::handleKeyEvent(MAEvent &event) {
+  trace("key = %d", event.nativeKey);
+  switch (event.nativeKey) {
+  case AKEYCODE_BACK:
+    setBack();
+    break;
+  case AKEYCODE_MENU:
+    showMenu();
+    break;
+  default:
+    if (isRunning()) {
+      
+    }
+  }
+}
+
+void Runtime::optionsBox(StringList *items) {
+  logEntered();
 }
 
 void Runtime::pollEvents(bool blocking) {
   int events;
   android_poll_source *source;
-  logEntered();
   ALooper_pollAll(blocking ? -1 : 0, NULL, &events, (void **)&source);
   if (source != NULL) {
     source->process(_app, source);
@@ -200,7 +220,12 @@ MAEvent Runtime::processEvents(bool waitFlag) {
   } else {
     event.type = 0;
   }
-  handleEvent(event);
+
+  if (event.type == EVENT_TYPE_KEY_PRESSED) {
+    handleKeyEvent(event);
+  } else {
+    handleEvent(event);
+  }
   return event;
 }
 
@@ -222,6 +247,10 @@ void form_ui::buttonClicked(const char *url) {
 
 AnsiWidget *form_ui::getOutput() {
   return runtime->_output;
+}
+
+void form_ui::optionsBox(StringList *items) {
+  runtime->optionsBox(items);
 }
 
 //

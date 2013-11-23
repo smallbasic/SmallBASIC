@@ -23,12 +23,12 @@ struct Runtime :
   public IButtonListener {
 
   Runtime(android_app *app);
-  ~Runtime();
+  virtual ~Runtime();
 
   void construct();
   void buttonClicked(const char *action);
   void redraw() { _graphics->redraw(); }
-  void handleKey(MAEvent &event);
+  void handleKeyEvent(MAEvent &event);
   MAEvent processEvents(bool waitFlag);
   bool hasEvent() { _eventQueue && _eventQueue->size() > 0; }
   void pollEvents(bool blocking);
@@ -37,6 +37,7 @@ struct Runtime :
   void setExit(bool quit);
   void runShell();
   char *loadResource(const char *fileName);
+  void optionsBox(StringList *items);
 
 private:
   Graphics *_graphics;

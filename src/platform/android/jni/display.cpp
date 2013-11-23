@@ -122,16 +122,14 @@ Graphics::Graphics(android_app *app) :
 }
 
 Graphics::~Graphics() {
-  delete _screen;
+  logEntered();
+
   FT_Done_FreeType(_fontLibrary);
-  if (_fontBuffer) {
-    FT_Done_Face(_fontFace);
-    delete [] _fontBuffer;
-  }
-  if (_fontBufferB) {
-    FT_Done_Face(_fontFaceB);
-    delete [] _fontBufferB;
-  }
+  delete _screen;
+  delete [] _fontBuffer;
+  delete [] _fontBufferB;
+  graphics = NULL;
+  _screen = NULL;
   _fontBuffer = NULL;
   _fontBufferB = NULL;
 }
@@ -359,12 +357,6 @@ bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {
   }
   return result;
 
-}
-
-//
-// form_ui implementation
-//
-void form_ui::optionsBox(StringList *items) {
 }
 
 //
