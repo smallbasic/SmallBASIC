@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include <android/native_window.h>
+#include <jni.h>
 
 #include "platform/android/jni/runtime.h"
 #include "platform/common/maapi.h"
@@ -55,10 +56,12 @@ int32_t handleInput(android_app *app, AInputEvent *event) {
       }
       break;
     case AINPUT_EVENT_TYPE_KEY:
-      maEvent = new MAEvent();
-      maEvent->type = EVENT_TYPE_KEY_PRESSED;
-      maEvent->nativeKey = AKeyEvent_getKeyCode(event);
-      maEvent->key = AKeyEvent_getKeyCode(event);
+      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN) {
+        maEvent = new MAEvent();
+        maEvent->type = EVENT_TYPE_KEY_PRESSED;
+        maEvent->nativeKey = AKeyEvent_getKeyCode(event);
+        maEvent->key = AKeyEvent_getKeyCode(event);
+      }
       break;
     }
     if (maEvent != NULL) {
@@ -85,6 +88,20 @@ void handleCommand(android_app *app, int32_t cmd) {
   case APP_CMD_LOST_FOCUS:
     break;
   }
+}
+
+/*
+ * Class:     net_sourceforge_smallbasic_MainActivity
+ * Method:    optionSelected
+ * Signature: (I)Z
+ */
+extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
+  (JNIEnv *env, jclass jclazz , jint index) {
+  MAEvent *maEvent = new MAEvent();
+  maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
+  maEvent->optionsBoxButtonIndex = index;
+  runtime->pushEvent(maEvent);
+  return true;
 }
 
 Runtime::Runtime(android_app *app) : 
@@ -189,6 +206,20 @@ void Runtime::handleKeyEvent(MAEvent &event) {
 
 void Runtime::optionsBox(StringList *items) {
   logEntered();
+
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+
+  jstring elem = env->NewStringUTF(items->get(0)->c_str());
+  jclass stringClass = env->GetObjectClass(elem);
+  jobjectArray array = env->NewObjectArray(items->size(), stringClass, elem);
+  for (int i = 1; i < items->size(); i++) {
+    elem = env->NewStringUTF(items->get(i)->c_str());
+    env->SetObjectArrayElement(array, i, elem);
+  }
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID optionsBox = env->GetMethodID(clazz, "optionsBox", "([Ljava/lang/String;)V");
+  env->CallObjectMethod(_app->activity->clazz, optionsBox, array);
 }
 
 void Runtime::pollEvents(bool blocking) {

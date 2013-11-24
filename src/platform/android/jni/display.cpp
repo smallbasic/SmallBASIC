@@ -196,7 +196,6 @@ void Graphics::drawPixel(int posX, int posY) {
 }
 
 void Graphics::drawRectFilled(int left, int top, int width, int height) {
-  logEntered();
   if (_drawTarget) {
     int w = _drawTarget->w();
     int h = _drawTarget->h();
