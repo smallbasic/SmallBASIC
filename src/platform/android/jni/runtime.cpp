@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include <android/native_window.h>
+#include <android/keycodes.h>
 #include <jni.h>
 
 #include "platform/android/jni/runtime.h"
@@ -60,7 +61,7 @@ int32_t handleInput(android_app *app, AInputEvent *event) {
         maEvent = new MAEvent();
         maEvent->type = EVENT_TYPE_KEY_PRESSED;
         maEvent->nativeKey = AKeyEvent_getKeyCode(event);
-        maEvent->key = AKeyEvent_getKeyCode(event);
+        maEvent->key = AMotionEvent_getMetaState(event);
       }
       break;
     }
@@ -90,11 +91,7 @@ void handleCommand(android_app *app, int32_t cmd) {
   }
 }
 
-/*
- * Class:     net_sourceforge_smallbasic_MainActivity
- * Method:    optionSelected
- * Signature: (I)Z
- */
+// callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
   (JNIEnv *env, jclass jclazz , jint index) {
   MAEvent *maEvent = new MAEvent();
@@ -127,6 +124,15 @@ Runtime::~Runtime() {
 void Runtime::buttonClicked(const char *url) {
   _loadPath.empty();
   _loadPath.append(url, strlen(url));
+}
+
+int Runtime::getUnicodeChar(int keyCode, int metaState) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID getUnicodeChar = env->GetMethodID(clazz, "getUnicodeChar", "(II)I");
+  jint result = env->CallIntMethod(_app->activity->clazz, getUnicodeChar, keyCode, metaState);
+  return result;
 }
 
 void Runtime::construct() {
@@ -189,7 +195,8 @@ void Runtime::runShell() {
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {
-  trace("key = %d", event.nativeKey);
+  trace("key = %d %d", event.nativeKey, event.key);
+
   switch (event.nativeKey) {
   case AKEYCODE_BACK:
     setBack();
@@ -197,10 +204,61 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case AKEYCODE_MENU:
     showMenu();
     break;
+  case AKEYCODE_TAB:
+    event.key = SB_KEY_TAB;
+    break;
+  case AKEYCODE_HOME:
+    event.key = SB_KEY_KP_HOME;
+    break;
+    // These are not available in android-9
+    //  case AKEYCODE_MOVE_END:
+    //    event.key = SB_KEY_END;
+    //    break;
+    //  case AKEYCODE_INSERT:
+    //    event.key = SB_KEY_INSERT;
+    //    break;
+    //  case AKEYCODE_NUMPAD_MULTIPLY:
+    //    event.key = SB_KEY_KP_MUL;
+    //    break;
+    //  case AKEYCODE_NUMPAD_ADD:
+    //    event.key = SB_KEY_KP_PLUS;
+    //    break;
+    //  case AKEYCODE_NUMPAD_SUBTRACT:
+    //    event.key = SB_KEY_KP_MINUS;
+    //    break;
+  case AKEYCODE_SLASH:
+    event.key = SB_KEY_KP_DIV;
+    break;
+  case AKEYCODE_PAGE_UP:
+    event.key = SB_KEY_PGUP;
+    break;
+  case AKEYCODE_PAGE_DOWN:
+    event.key = SB_KEY_PGDN;
+    break;
+  case AKEYCODE_DPAD_UP:
+    event.key = SB_KEY_UP;
+    break;
+  case AKEYCODE_DPAD_DOWN:
+    event.key = SB_KEY_DN;
+    break;
+  case AKEYCODE_DPAD_LEFT:
+    event.key = SB_KEY_LEFT;
+    break;
+  case AKEYCODE_DPAD_RIGHT:
+    event.key = SB_KEY_RIGHT;
+    break;
+  case AKEYCODE_CLEAR:
+    event.key = MAK_CLEAR;
+    break;
+  case AKEYCODE_ENTER:
+    event.key = SB_KEY_ENTER;
+    break;
   default:
-    if (isRunning()) {
-      
-    }
+    event.key = getUnicodeChar(event.nativeKey, event.key);
+    break;
+  }
+  if (isRunning() && event.key) {
+    dev_pushkey(event.key);
   }
 }
 
@@ -220,6 +278,7 @@ void Runtime::optionsBox(StringList *items) {
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID optionsBox = env->GetMethodID(clazz, "optionsBox", "([Ljava/lang/String;)V");
   env->CallObjectMethod(_app->activity->clazz, optionsBox, array);
+  env->DeleteLocalRef(array);
 }
 
 void Runtime::pollEvents(bool blocking) {
@@ -267,6 +326,16 @@ void Runtime::setExit(bool quit) {
       brun_break();
     }
   }
+}
+
+void Runtime::showKeypad() {
+  logEntered();
+
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID showKeypad = env->GetMethodID(clazz, "showKeypad", "()V");
+  env->CallObjectMethod(_app->activity->clazz, showKeypad);
 }
 
 //
@@ -330,6 +399,7 @@ int maGetMilliSecondCount(void) {
 }
 
 int maShowVirtualKeyboard(void) {
+  runtime->showKeypad();
   return 0;
 }
 

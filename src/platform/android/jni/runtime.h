@@ -27,6 +27,7 @@ struct Runtime :
 
   void construct();
   void buttonClicked(const char *action);
+  int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   MAEvent processEvents(bool waitFlag);
@@ -38,6 +39,7 @@ struct Runtime :
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
+  void showKeypad();
 
 private:
   Graphics *_graphics;
