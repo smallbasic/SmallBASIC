@@ -40,6 +40,7 @@ struct Runtime :
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void showKeypad();
+  void screenChanged();
 
 private:
   Graphics *_graphics;

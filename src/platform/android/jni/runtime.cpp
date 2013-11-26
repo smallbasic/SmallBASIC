@@ -101,12 +101,17 @@ extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivi
   return true;
 }
 
+void onConfigChanged(ANativeActivity *ac) {
+  runtime->screenChanged();
+}
+
 Runtime::Runtime(android_app *app) : 
   System(),
   _app(app) {
   _app->userData = NULL;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
+  _app->activity->callbacks->onConfigurationChanged = onConfigChanged;
   runtime = this;
 }
 
@@ -132,6 +137,8 @@ int Runtime::getUnicodeChar(int keyCode, int metaState) {
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID getUnicodeChar = env->GetMethodID(clazz, "getUnicodeChar", "(II)I");
   jint result = env->CallIntMethod(_app->activity->clazz, getUnicodeChar, keyCode, metaState);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
   return result;
 }
 
@@ -278,7 +285,14 @@ void Runtime::optionsBox(StringList *items) {
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID optionsBox = env->GetMethodID(clazz, "optionsBox", "([Ljava/lang/String;)V");
   env->CallObjectMethod(_app->activity->clazz, optionsBox, array);
+
+  for (int i = 0; i < items->size(); i++) {
+    env->DeleteLocalRef(env->GetObjectArrayElement(array, i));
+  }
+  env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(array);
+  env->DeleteLocalRef(stringClass);
+  _app->activity->vm->DetachCurrentThread();
 }
 
 void Runtime::pollEvents(bool blocking) {
@@ -336,6 +350,18 @@ void Runtime::showKeypad() {
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID showKeypad = env->GetMethodID(clazz, "showKeypad", "()V");
   env->CallObjectMethod(_app->activity->clazz, showKeypad);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
+void Runtime::screenChanged() {
+  logEntered();
+  ALooper_acquire(_app->looper);
+  MAEvent *maEvent = new MAEvent();
+  maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
+  runtime->pushEvent(maEvent);
+  ALooper_wake(_app->looper);
+  ALooper_release(_app->looper);
 }
 
 //

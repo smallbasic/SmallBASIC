@@ -49,7 +49,7 @@ struct Canvas {
   int x() { return _clip ? _clip->left : 0; }
   int y() { return _clip ? _clip->top : 0; }
   int w() { return _clip ? _clip->right : _w; }
-  int h() { return _clip ? _clip->bottom : _w; }
+  int h() { return _clip ? _clip->bottom : _h; }
 
   int _w;
   int _h;
