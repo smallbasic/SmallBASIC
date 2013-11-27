@@ -33,8 +33,8 @@ struct Runtime :
   MAEvent processEvents(bool waitFlag);
   bool hasEvent() { _eventQueue && _eventQueue->size() > 0; }
   void pollEvents(bool blocking);
-  MAEvent *popEvent() { return _eventQueue->pop(); }
-  void pushEvent(MAEvent *event) { _eventQueue->push(event); }
+  MAEvent *popEvent();
+  void pushEvent(MAEvent *event);
   void setExit(bool quit);
   void runShell();
   char *loadResource(const char *fileName);
@@ -46,6 +46,7 @@ private:
   Graphics *_graphics;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;
+  pthread_mutex_t _mutex;
 };
 
 #endif

@@ -82,7 +82,7 @@ ant-build: ndk-build
 test: ant-build
 	(cd ../../../../ide/android && \
    adb -d logcat -c && \
-   adb shell am start net.sourceforge.smallbasic/android.app.NativeActivity && \
+   adb shell am start net.sourceforge.smallbasic/net.sourceforge.smallbasic.MainActivity && \
    adb -d logcat)
 
 

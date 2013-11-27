@@ -113,6 +113,7 @@ Runtime::Runtime(android_app *app) :
   _app->onInputEvent = handleInput;
   _app->activity->callbacks->onConfigurationChanged = onConfigChanged;
   runtime = this;
+  pthread_mutex_init(&_mutex, NULL);
 }
 
 Runtime::~Runtime() {
@@ -124,6 +125,7 @@ Runtime::~Runtime() {
   _output = NULL;
   _eventQueue = NULL;
   _graphics = NULL;
+  pthread_mutex_destroy(&_mutex);
 }
 
 void Runtime::buttonClicked(const char *url) {
@@ -174,6 +176,19 @@ char *Runtime::loadResource(const char *fileName) {
     AAsset_close(mainBasFile);
   }
   return buffer;
+}
+
+void Runtime::pushEvent(MAEvent *event) {
+  pthread_mutex_lock(&_mutex);
+  _eventQueue->push(event);
+  pthread_mutex_unlock(&_mutex);
+}
+
+MAEvent *Runtime::popEvent() { 
+  pthread_mutex_lock(&_mutex);
+  MAEvent *result = _eventQueue->pop();
+  pthread_mutex_unlock(&_mutex);
+  return result;
 }
 
 void Runtime::runShell() {

@@ -37,7 +37,6 @@ Font::Font(FT_Face face, int size, bool italic) :
   _spacing = FT_MulFix(_face->height, _face->size->metrics.x_scale) / 64;
   _h = (FT_MulFix(_face->ascender, _face->size->metrics.x_scale) / 64) +
        (FT_MulFix(_face->descender, _face->size->metrics.x_scale) / 64);
-
   FT_Matrix  matrix;
   if (italic) {
     matrix.xx = 0x10000L;
@@ -168,7 +167,6 @@ void Graphics::deleteFont(Font *font) {
 }
 
 void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
-  logEntered();
   if (_drawTarget && _drawTarget != src) {
     int destY = dstPoint->y;
     for (int y = srcRect->top; y < srcRect->height; y++, destY++) {
@@ -181,6 +179,26 @@ void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MAR
 
 void Graphics::drawLine(int startX, int startY, int endX, int endY) {
   if (_drawTarget) {
+    if (startY == endY) {
+      // horizontal
+      pixel_t *line = _drawTarget->getLine(startY);
+      for (int x = startX; x < endX; x++) {
+        if (x >= _drawTarget->x() && x <= _drawTarget->w()) {
+          line[x] = _drawColor;
+        }
+      }
+    } else if (startX == endX) {
+      // vertical
+      for (int y = startY; y < endY; y++) {
+        if (y >= _drawTarget->y() && y <= _drawTarget->h()) {
+          pixel_t *line = _drawTarget->getLine(y);
+          line[startX] = _drawColor;
+        }
+      }
+    } else {
+      // gradient
+      
+    }
   }
 }
 
@@ -250,7 +268,7 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
   if (_drawTarget && _font) {
     FT_Vector pen;
     pen.x = left;
-    pen.y = top + _font->_h;
+    pen.y = top + _font->_h + ((_font->_spacing - _font->_h) / 2);
     for (int i = 0; i < len; i++) {
       uint8_t ch = str[i];
       FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;

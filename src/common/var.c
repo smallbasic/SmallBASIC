@@ -273,7 +273,7 @@ void v_resize_array(var_t *v, dword size)
         prev = v->v.a.ptr;
         v->v.a.ptr = tmp_alloc((size + ARR_ALLOC) * sizeof(var_t));
       } else {
-        if (mem_handle_size(v->v.a.ptr) < size * sizeof(var_t)) {
+        if (mem_handle_size((mem_t)v->v.a.ptr) < size * sizeof(var_t)) {
           // resize & copy
           prev = v->v.a.ptr;
           v->v.a.ptr = tmp_alloc((size + ARR_ALLOC) * sizeof(var_t));

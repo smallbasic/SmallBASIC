@@ -243,8 +243,7 @@ WidgetData::WidgetData(ControlType type, var_t *var) :
   _widget(NULL),
   _var(var),
   _type(type) {
-  orig.ptr = 0;
-  orig.i = 0;
+  updateVarFlag();
 }
 
 WidgetData::~WidgetData() {
