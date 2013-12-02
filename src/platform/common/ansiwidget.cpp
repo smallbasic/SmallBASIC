@@ -50,8 +50,7 @@
 #define OVER_SCROLL 100
 
 #define SWIPE_MAX_TIMER 3000
-#define SWIPE_DELAY_STEP 250
-#define SWIPE_SCROLL_SIZE 40
+#define SWIPE_DELAY_STEP 200
 #define SWIPE_MAX_DURATION 300
 #define SWIPE_MIN_DISTANCE 60
 #define FONT_FACTOR 30
@@ -451,7 +450,6 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   _xMove(-1),
   _yMove(-1),
   _touchTime(0),
-  _moveDown(false),
   _swipeExit(false),
   _buttonListener(listener),
   _activeButton(NULL) {
@@ -759,31 +757,29 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
       drawActiveButton();
       result = true;
     }
-  } else if (!_swipeExit) {
-    // scroll up/down
-    if (_front->overlaps(event.point.x, event.point.y)) {
-      int hscroll = _front->_scrollX + (_xMove - event.point.x);
-      int vscroll = _front->_scrollY + (_yMove - event.point.y);
-      int maxHScroll = _front->getMaxHScroll();
-      int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
-      if (hscroll < 0) {
-        hscroll = 0;
-      }
-      if (vscroll < 0) {
-        vscroll = 0;
-      }
-      if ((hscroll != _front->_scrollX && maxHScroll > 0 && 
-           hscroll < maxHScroll + OVER_SCROLL) ||
-          (vscroll != _front->_scrollY && maxVScroll > 0 && 
-           vscroll < maxVScroll + OVER_SCROLL)) {
-        _front->drawInto();
-        _front->_scrollX = hscroll;
-        _front->_scrollY = vscroll;
-        _xMove = event.point.x;
-        _yMove = event.point.y;
-        flush(true, true);
-        result = true;
-      }
+  } else if (!_swipeExit && _xMove != -1 && _yMove != -1 &&
+             _front->overlaps(event.point.x, event.point.y)) {
+    int hscroll = _front->_scrollX + (_xMove - event.point.x);
+    int vscroll = _front->_scrollY + (_yMove - event.point.y);
+    int maxHScroll = _front->getMaxHScroll();
+    int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
+    if (hscroll < 0) {
+      hscroll = 0;
+    }
+    if (vscroll < 0) {
+      vscroll = 0;
+    }
+    if ((hscroll != _front->_scrollX && maxHScroll > 0 && 
+         hscroll < maxHScroll + OVER_SCROLL) ||
+        (vscroll != _front->_scrollY && maxVScroll > 0 && 
+         vscroll < maxVScroll + OVER_SCROLL)) {
+      _front->drawInto();
+      _front->_scrollX = hscroll;
+      _front->_scrollY = vscroll;
+      _xMove = event.point.x;
+      _yMove = event.point.y;
+      flush(true, true);
+      result = true;
     }
   }
   return result;
@@ -808,8 +804,8 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
       int distance = (int) fabs(sqrt(deltaX * deltaX + deltaY * deltaY));
       int now = maGetMilliSecondCount();
       if (distance >= SWIPE_MIN_DISTANCE && (now - _touchTime) < SWIPE_MAX_DURATION) {
-        _moveDown = (deltaY >= SWIPE_MIN_DISTANCE);
-        doSwipe(now, maxScroll);
+        bool moveDown = (deltaY >= SWIPE_MIN_DISTANCE);
+        doSwipe(now, moveDown, distance, maxScroll);
       } else if (_front->_scrollY > maxScroll) {
         _front->_scrollY = maxScroll;
       }
@@ -939,14 +935,14 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
 }
 
 // swipe handler for pointerReleaseEvent()
-void AnsiWidget::doSwipe(int start, int maxScroll) {
+void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) {
   MAEvent event;
   int elapsed = 0;
   int vscroll = _front->_scrollY;
-  int scrollSize = SWIPE_SCROLL_SIZE;
+  int scrollSize = distance / 3;
   int swipeStep = SWIPE_DELAY_STEP;
   while (elapsed < SWIPE_MAX_TIMER) {
-    if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
+    if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_RELEASED) {
       // ignore the next move and release events
       _swipeExit = true;
       break;
@@ -960,7 +956,7 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
     if (scrollSize == 1) {
       maWait(20);
     }
-    vscroll += _moveDown ? scrollSize : -scrollSize;
+    vscroll += moveDown ? scrollSize : -scrollSize;
     if (vscroll < 0) {
       vscroll = 0;
     } else if (vscroll > maxScroll) {

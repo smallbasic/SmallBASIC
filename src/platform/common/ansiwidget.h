@@ -251,7 +251,7 @@ private:
                      bool formLink, bool button);
   void createOptionsBox(char *&p);
   bool doEscape(char *&p, int textHeight);
-  void doSwipe(int start, int maxScroll);
+  void doSwipe(int start, bool moveDown, int distance, int maxScroll);
   void drawActiveButton();
   List<String *> *getItems(char *&p);
   void handleEscape(char *&p, int textHeight);
@@ -274,7 +274,6 @@ private:
   int _xMove;      // touch move x value
   int _yMove;      // touch move y value
   int _touchTime;  // last move time
-  bool _moveDown;  // last move direction was down
   bool _swipeExit; // last touch-down was swipe exit
   IButtonListener *_buttonListener;
   Widget *_activeButton;
