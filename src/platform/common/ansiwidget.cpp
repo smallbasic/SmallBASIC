@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <math.h>
 
 #include "platform/common/ansiwidget.h"
 #include "platform/common/utils.h"
@@ -47,12 +48,12 @@
 
 #define BUTTON_PADDING 10
 #define OVER_SCROLL 100
-#define SWIPE_MAX_TIMER 6000
+
+#define SWIPE_MAX_TIMER 3000
 #define SWIPE_DELAY_STEP 250
-#define SWIPE_SCROLL_FAST 30
-#define SWIPE_SCROLL_SLOW 20
-#define SWIPE_TRIGGER_FAST 55
-#define SWIPE_TRIGGER_SLOW 80
+#define SWIPE_SCROLL_SIZE 40
+#define SWIPE_MAX_DURATION 300
+#define SWIPE_MIN_DISTANCE 60
 #define FONT_FACTOR 30
 #define CHOICE_BN_W 6
 
@@ -449,7 +450,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   _yTouch(-1),
   _xMove(-1),
   _yMove(-1),
-  _moveTime(0),
+  _touchTime(0),
   _moveDown(false),
   _swipeExit(false),
   _buttonListener(listener),
@@ -737,10 +738,12 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
   }
   // setup vars for page scrolling
   if (_front->overlaps(event.point.x, event.point.y)) {
+    _touchTime = maGetMilliSecondCount();
     _xTouch = _xMove = event.point.x;
     _yTouch = _yMove = event.point.y;
     result = true;
   }
+
   return result;
 }
 
@@ -759,16 +762,22 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
   } else if (!_swipeExit) {
     // scroll up/down
     if (_front->overlaps(event.point.x, event.point.y)) {
+      int hscroll = _front->_scrollX + (_xMove - event.point.x);
       int vscroll = _front->_scrollY + (_yMove - event.point.y);
-      int maxScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
+      int maxHScroll = _front->getMaxHScroll();
+      int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
+      if (hscroll < 0) {
+        hscroll = 0;
+      }
       if (vscroll < 0) {
         vscroll = 0;
       }
-      if (vscroll != _front->_scrollY && maxScroll > 0 && 
-          vscroll < maxScroll + OVER_SCROLL) {
-        _moveTime = maGetMilliSecondCount();
-        _moveDown = (_front->_scrollY < vscroll);
+      if ((hscroll != _front->_scrollX && maxHScroll > 0 && 
+           hscroll < maxHScroll + OVER_SCROLL) ||
+          (vscroll != _front->_scrollY && maxVScroll > 0 && 
+           vscroll < maxVScroll + OVER_SCROLL)) {
         _front->drawInto();
+        _front->_scrollX = hscroll;
         _front->_scrollY = vscroll;
         _xMove = event.point.x;
         _yMove = event.point.y;
@@ -792,18 +801,22 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     int maxScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
     if (_yMove != -1 && maxScroll > 0) {
       _front->drawInto();
-      bool swiped = (abs(_xTouch - _xMove) > (_width / 3) ||
-                     abs(_yTouch - _yMove) > (_height / 3));
-      int start = maGetMilliSecondCount();
-      if (swiped && start - _moveTime < SWIPE_TRIGGER_SLOW) {
-        doSwipe(start, maxScroll);
+
+      // swipe test - min distance and not max duration
+      int deltaX = _xTouch - event.point.x;
+      int deltaY = _yTouch - event.point.y;
+      int distance = (int) fabs(sqrt(deltaX * deltaX + deltaY * deltaY));
+      int now = maGetMilliSecondCount();
+      if (distance >= SWIPE_MIN_DISTANCE && (now - _touchTime) < SWIPE_MAX_DURATION) {
+        _moveDown = (deltaY >= SWIPE_MIN_DISTANCE);
+        doSwipe(now, maxScroll);
       } else if (_front->_scrollY > maxScroll) {
         _front->_scrollY = maxScroll;
       }
       // ensure the scrollbar is removed
       _front->_dirty = true;
       flush(true);
-      _moveTime = 0;
+      _touchTime = 0;
     }
   }
 
@@ -930,8 +943,7 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
   MAEvent event;
   int elapsed = 0;
   int vscroll = _front->_scrollY;
-  int scrollSize = (start - _moveTime < SWIPE_TRIGGER_FAST) ? 
-                   SWIPE_SCROLL_FAST : SWIPE_SCROLL_SLOW;
+  int scrollSize = SWIPE_SCROLL_SIZE;
   int swipeStep = SWIPE_DELAY_STEP;
   while (elapsed < SWIPE_MAX_TIMER) {
     if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {

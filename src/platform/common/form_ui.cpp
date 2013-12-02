@@ -243,7 +243,8 @@ WidgetData::WidgetData(ControlType type, var_t *var) :
   _widget(NULL),
   _var(var),
   _type(type) {
-  updateVarFlag();
+  orig.ptr = 0;
+  orig.i = 0;
 }
 
 WidgetData::~WidgetData() {
@@ -360,13 +361,6 @@ bool WidgetData::updateGui() {
           model->selected(selection);
         }
       }
-      updated = true;
-      break;
-
-    case ctrl_label:
-    case ctrl_text:
-    case ctrl_button:
-      _widget->setText((const char *)_var->v.p.ptr);
       updated = true;
       break;
 

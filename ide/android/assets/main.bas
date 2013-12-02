@@ -24,9 +24,9 @@ end
 sub about()
   local bn_ok
   cls
-  print " __             _      _____ _"
-  print "(_ ._ _  _.||  |_) /\ (_  | / "
-  print "__)| | |(_|||  |_)/--\__)_|_\_"
+  print " __             _      ___ _"
+  print "(_ ._ _  _.||  |_) /\ (_ |/ "
+  print "__)| | |(_|||  |_)/--\__)|\_"
   print
   print "Version 0.11.4"
   print
@@ -150,7 +150,7 @@ sub main
     cls
 
     if (isdir(form_var)) then
-      path = form_var    
+      path = form_var
       chdir path
       make_ui path, false
     elif form_var == "About" then

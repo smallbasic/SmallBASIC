@@ -433,10 +433,10 @@ void maWait(int timeout) {
 }
 
 int maGetMilliSecondCount(void) {
-  struct timespec t;
+  timespec t;
   t.tv_sec = t.tv_nsec = 0;
   clock_gettime(CLOCK_MONOTONIC, &t);
-  return (int)(((int64_t)t.tv_sec) * 1000000000LL + t.tv_nsec)/1000000;
+  return (int) (1000L * t.tv_sec + ((double) t.tv_nsec / 1e6));
 }
 
 int maShowVirtualKeyboard(void) {

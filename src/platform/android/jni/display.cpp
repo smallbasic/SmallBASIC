@@ -223,7 +223,7 @@ void Graphics::drawRectFilled(int left, int top, int width, int height) {
         pixel_t *line = _drawTarget->getLine(posY);
         for (int x = _drawTarget->x(); x < width; x++) {
           int posX = x + left;
-          if (posX > _drawTarget->x() && posX < w) {
+          if (posX >= _drawTarget->x() && posX < w) {
             line[posX] = _drawColor;
           }
         }

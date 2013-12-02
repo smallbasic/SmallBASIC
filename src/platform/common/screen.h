@@ -55,14 +55,14 @@ struct Screen : public Shape {
   virtual void drawRectFilled(int x1, int y1, int x2, int y2) = 0;
   virtual int  getPixel(int x, int y) = 0;
   virtual void newLine(int lineHeight) = 0;
-  virtual int  print(const char *p, int lineHeight);
+  virtual int  print(const char *p, int lineHeight, bool allChars=false);
   virtual bool setGraphicsRendition(char c, int escValue, int lineHeight) = 0;
   virtual void setPixel(int x, int y, int c) = 0;
   virtual void reset(int fontSize = -1);
   virtual void resize(int newWidth, int newHeight, int oldWidth, 
                       int oldHeight, int lineHeight) = 0;
   virtual void updateFont() = 0;
-  virtual void getScroll(int &x, int &y) { x = 0; y = 0; }
+  virtual int  getMaxHScroll() = 0;
 
   int ansiToMosync(long c);
   void add(Shape *button);
@@ -73,11 +73,13 @@ struct Screen : public Shape {
   void setDirty() { if (!_dirty) { _dirty = maGetMilliSecondCount(); } }
   void setTextColor(long fg, long bg);
   void setFont(bool bold, bool italic);
+  void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
 
   MAHandle _font;
   int _fontSize;
   int _charWidth;
   int _charHeight;
+  int _scrollX;
   int _scrollY;
   int _bg, _fg;
   int _curX;
@@ -101,14 +103,14 @@ struct GraphicScreen : public Screen {
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
-  int  print(const char *p, int lineHeight);
+  int  print(const char *p, int lineHeight, bool allChars=false);
   void reset(int fontSize = -1);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
   void setPixel(int x, int y, int c);
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
   void updateFont() { setFont(_bold, _italic); }
   int  getPixel(int x, int y);
-  void getScroll(int &x, int &y) { x = 0; y = _scrollY; }
+  int  getMaxHScroll() { return 0; }
 
   MAHandle _image;
   bool _underline;
@@ -318,12 +320,13 @@ struct TextScreen : public Screen {
   void drawRectFilled(int x1, int y1, int x2, int y2);
   int  getPixel(int x, int y) { return 0; }
   void newLine(int lineHeight);
-  int  print(const char *p, int lineHeight);
+  int  print(const char *p, int lineHeight, bool allChars=false);
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
   void setPixel(int x, int y, int c) {}
   void updateFont() {}
+  int  getMaxHScroll() { return _cols * _charWidth; }
 
 private:
   Row *getLine(int ndx);

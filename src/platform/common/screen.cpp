@@ -57,6 +57,7 @@ Screen::Screen(int x, int y, int width, int height, int fontSize) :
   _fontSize(fontSize),
   _charWidth(0),
   _charHeight(0),
+  _scrollX(0),
   _scrollY(0),
   _bg(0),
   _fg(0),
@@ -157,8 +158,9 @@ void Screen::drawInto(bool background) {
   setDirty();
 }
 
-int Screen::print(const char *p, int lineHeight) {
-  int numChars = 1;         // print minimum of one character
+int Screen::print(const char *p, int lineHeight, bool allChars) {
+  // print minimum of one character
+  int numChars = 1;
   int cx = _charWidth;
   int w = _width - 1;
 
@@ -166,7 +168,7 @@ int Screen::print(const char *p, int lineHeight) {
   // up to the width of the line
   while (p[numChars] > 31) {
     cx += _charWidth;
-    if (_curX + cx < w) {
+    if (allChars || _curX + cx < w) {
       numChars++;
     } else {
       break;
@@ -409,7 +411,7 @@ void GraphicScreen::newLine(int lineHeight) {
   }
 }
 
-int GraphicScreen::print(const char *p, int lineHeight) {
+int GraphicScreen::print(const char *p, int lineHeight, bool allChars) {
   if (_curX + _charWidth >= _width - 1) {
     newLine(lineHeight);
   }
@@ -715,7 +717,7 @@ void TextScreen::drawBase(bool vscroll) {
        row++, rows++, py += _charHeight) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->_head;
-    int px = _x + INITXY;
+    int px = (_x + INITXY) - _scrollX;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setFont(bold, italic);
@@ -812,12 +814,12 @@ void TextScreen::newLine(int lineHeight) {
 //
 // Creates a new segment then prints the line
 //
-int TextScreen::print(const char *p, int lineHeight) {
+int TextScreen::print(const char *p, int lineHeight, bool allChars) {
   Row *line = getLine(_head);
   TextSeg *segment = new TextSeg();
   line->append(segment);
 
-  int numChars = Screen::print(p, lineHeight);
+  int numChars = Screen::print(p, lineHeight, true);
 
   // Print the next (possible) line of text
   segment->setText(p, numChars);

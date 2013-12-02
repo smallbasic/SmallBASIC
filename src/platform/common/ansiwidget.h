@@ -273,7 +273,7 @@ private:
   int _yTouch;     // touch y value
   int _xMove;      // touch move x value
   int _yMove;      // touch move y value
-  int _moveTime;   // last move time
+  int _touchTime;  // last move time
   bool _moveDown;  // last move direction was down
   bool _swipeExit; // last touch-down was swipe exit
   IButtonListener *_buttonListener;
