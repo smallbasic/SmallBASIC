@@ -19,7 +19,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
-#define MAX_GLYPHS 255
+#define MAX_GLYPHS 256
 
 using namespace strlib;
 

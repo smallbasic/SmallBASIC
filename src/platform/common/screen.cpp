@@ -309,13 +309,6 @@ void GraphicScreen::drawBase(bool vscroll) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetClipRect(_x, _y, _width, _height);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
-#if defined(_ANDROID)
-  // erase the region below the copied image
-  if (_scrollY > 0) {
-    maSetColor(_bg);
-    maFillRect(_x, _height - _scrollY, _width, _scrollY);
-  }
-#endif
 #if !defined(_FLTK)
   drawOverlay(vscroll);
 #endif

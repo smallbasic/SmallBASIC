@@ -24,9 +24,9 @@ end
 sub about()
   local bn_ok
   cls
-  print " __             _      _____ _"
-  print "(_ ._ _  _.||  |_) /\ (_  | / "
-  print "__)| | |(_|||  |_)/--\__)_|_\_"
+  print " __           _      _____ _"
+  print "(_ ._ _  _.|||_) /\ (_  | / "
+  print "__)| | |(_||||_)/--\__)_|_\_"
   print
   print "Version 0.11.4"
   print

@@ -13,7 +13,6 @@
 #include "platform/common/utils.h"
 
 #define SIZE_LIMIT 4
-
 #define FONT_FACE_REGULAR "Envy Code R.ttf"
 #define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
 
@@ -47,15 +46,24 @@ Font::Font(FT_Face face, int size, bool italic) :
 
   for (int i = 0; i < MAX_GLYPHS; i++) {
     FT_UInt slot = FT_Get_Char_Index(face, i);
-    FT_Load_Glyph(face, slot, FT_LOAD_TARGET_LIGHT);
-    FT_Get_Glyph(face->glyph, &_glyph[i]._slot);
+    FT_Error error = FT_Load_Glyph(face, slot, FT_LOAD_TARGET_LIGHT);
+    if (error) {
+      trace("Failed to load %d", i);
+    }
+    error = FT_Get_Glyph(face->glyph, &_glyph[i]._slot);
+    if (error) {
+      trace("Failed to get glyph %d", i);
+    }
     if (italic) {
       FT_Glyph_Transform(_glyph[i]._slot, &matrix, 0 );
     }
     FT_Vector origin;
     origin.x = 0;
     origin.y = 0;
-    FT_Glyph_To_Bitmap(&_glyph[i]._slot, FT_RENDER_MODE_LIGHT, &origin, 1); 
+    error = FT_Glyph_To_Bitmap(&_glyph[i]._slot, FT_RENDER_MODE_LIGHT, &origin, 1);
+    if (error) {
+      trace("Failed to get bitmap %d", i);
+    }
     _glyph[i]._w = (int)(face->glyph->metrics.horiAdvance / 64);
   }
 }
@@ -169,8 +177,8 @@ void Graphics::deleteFont(Font *font) {
 void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
   if (_drawTarget && _drawTarget != src) {
     int destY = dstPoint->y;
-    for (int y = srcRect->top; y < srcRect->height; y++, destY++) {
-      pixel_t *line = src->getLine(y) + srcRect->left;
+    for (int y = 0; y < srcRect->height; y++, destY++) {
+      pixel_t *line = src->getLine(y + srcRect->top) + srcRect->left;
       pixel_t *dstLine = _drawTarget->getLine(destY) + dstPoint->x;
       memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
     }
@@ -271,11 +279,13 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
     pen.y = top + _font->_h + ((_font->_spacing - _font->_h) / 2);
     for (int i = 0; i < len; i++) {
       uint8_t ch = str[i];
-      FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;
-      drawChar(&glyph->bitmap, 
-               pen.x + glyph->left, 
-               pen.y - glyph->top);
-      pen.x += _font->_glyph[ch]._w;
+      if (ch < MAX_GLYPHS) {
+        FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;
+        drawChar(&glyph->bitmap,
+                 pen.x + glyph->left,
+                 pen.y - glyph->top);
+        pen.x += _font->_glyph[ch]._w;
+      }
     }
   }
 }
