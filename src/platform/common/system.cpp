@@ -217,7 +217,7 @@ void System::handleEvent(MAEvent event) {
 }
 
 char *System::loadResource(const char *fileName) {
-  char *buffer = null;
+  char *buffer = NULL;
   if (strstr(fileName, "://") != NULL) {
     int handle = 1;
     var_t *var_p = v_new();
@@ -237,6 +237,7 @@ char *System::loadResource(const char *fileName) {
     v_free(var_p);
     tmp_free(var_p);
   }
+  return buffer;
 }
 
 char *System::readSource(const char *fileName) {
