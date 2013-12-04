@@ -26,6 +26,9 @@
 #define WAIT_INTERVAL 10
 #define DEFAULT_FONT_SIZE 30
 #define MAIN_BAS "__main_bas__"
+#define CONFIG_FILE "/settings.txt"
+#define PATH_KEY "path"
+#define FONT_SCALE_KEY "fontScale"
 
 Runtime *runtime;
 
@@ -205,15 +208,62 @@ void Runtime::runShell() {
   opt_usevmt = 0;
   os_graphics = 1;
 
+  loadConfig();
+  runMain(MAIN_BAS);
+  saveConfig();
+
+  _state = kDoneState;
+  logLeaving();
+}
+
+void Runtime::loadConfig() {
+  String buffer;
+  String path;
+  Properties profile;
+
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(DEFAULT_FONT_SIZE);
   _initialFontSize = _output->getFontSize();
 
-  trace("internalDataPath=%s", _app->activity->internalDataPath);
-  runMain(MAIN_BAS);
+  path.append(_app->activity->internalDataPath);
+  path.append(CONFIG_FILE);
+  FILE *fp = fopen(path.c_str(), "r");
+  if (fp) {
+    fseek(fp, 0, SEEK_END);
+    long len = ftell(fp);
+    rewind(fp);
+    buffer.append(fp, len);
+    fclose(fp);
+    profile.load(buffer.toString(), buffer.length());
+    String *s = profile.get(FONT_SCALE_KEY);
+    if (s) {
+      _fontScale = s->toInteger();
+      trace("_fontScale = %d", _fontScale);
+      if (_fontScale != 100) {
+        int fontSize = (_initialFontSize * _fontScale / 100);
+        _output->setFontSize(fontSize);
+      }
+    }
+    s = profile.get(PATH_KEY);
+    if (s) {
+      trace("path = %s", s->c_str());
+      chdir(s->c_str());
+    }
+  }
+}
 
-  _state = kDoneState;
-  logLeaving();
+void Runtime::saveConfig() {
+  String path;
+  path.append(_app->activity->internalDataPath);
+  path.append(CONFIG_FILE);
+  FILE *fp = fopen(path.c_str(), "w");
+  if (fp) {
+    char path[FILENAME_MAX + 1];
+    getcwd(path, FILENAME_MAX);
+    fprintf(fp, "%s='%s'\n", PATH_KEY, path);
+    fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
+    fclose(fp);
+  }
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {

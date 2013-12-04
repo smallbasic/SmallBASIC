@@ -41,6 +41,8 @@ struct Runtime :
   void optionsBox(StringList *items);
   void showKeypad();
   void screenChanged();
+  void loadConfig();
+  void saveConfig();
 
 private:
   Graphics *_graphics;
