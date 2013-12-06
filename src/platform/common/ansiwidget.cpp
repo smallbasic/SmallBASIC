@@ -765,13 +765,15 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
     int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
     if (hscroll < 0) {
       hscroll = 0;
+    } else if (hscroll > maxHScroll) {
+      hscroll = maxHScroll;
     }
     if (vscroll < 0) {
       vscroll = 0;
     }
-    if ((hscroll != _front->_scrollX && maxHScroll > 0 && 
-         hscroll < maxHScroll + OVER_SCROLL) ||
-        (vscroll != _front->_scrollY && maxVScroll > 0 && 
+    if ((hscroll != _front->_scrollX && maxHScroll > 0 &&
+         hscroll <= maxHScroll) ||
+        (vscroll != _front->_scrollY && maxVScroll > 0 &&
          vscroll < maxVScroll + OVER_SCROLL)) {
       _front->drawInto();
       _front->_scrollX = hscroll;

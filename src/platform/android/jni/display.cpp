@@ -11,6 +11,7 @@
 #include "platform/android/jni/display.h"
 #include "platform/common/form_ui.h"
 #include "platform/common/utils.h"
+#include "common/device.h"
 
 #define SIZE_LIMIT 4
 #define FONT_FACE_REGULAR "Envy Code R.ttf"
@@ -85,6 +86,8 @@ Canvas::Canvas() :
 Canvas::~Canvas() {
   delete _canvas;
   delete _clip;
+  _canvas = NULL;
+  _clip = NULL;
 }
 
 bool Canvas::create(int w, int h) {
@@ -205,7 +208,7 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
       }
     } else {
       // gradient
-      
+      g_line(startX, startY, endX, endY, maPlot);
     }
   }
 }

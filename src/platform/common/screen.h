@@ -326,7 +326,7 @@ struct TextScreen : public Screen {
   bool setGraphicsRendition(char c, int escValue, int lineHeight);
   void setPixel(int x, int y, int c) {}
   void updateFont() {}
-  int  getMaxHScroll() { return _cols * _charWidth; }
+  int  getMaxHScroll() { return (_cols * _charWidth) - w(); }
 
 private:
   Row *getLine(int ndx);
