@@ -32,6 +32,14 @@
 
 Runtime *runtime;
 
+MAEvent *getMotionEvent(int type, AInputEvent *event) {
+  MAEvent *result = new MAEvent();
+  result->type = type;
+  result->point.x = AMotionEvent_getX(event, 0);
+  result->point.y = AMotionEvent_getY(event, 0);
+  return result;
+}
+
 int32_t handleInput(android_app *app, AInputEvent *event) {
   int32_t result = 0;
   if (runtime->isActive()) {
@@ -40,22 +48,13 @@ int32_t handleInput(android_app *app, AInputEvent *event) {
     case AINPUT_EVENT_TYPE_MOTION:
       switch (AKeyEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK) {
       case AMOTION_EVENT_ACTION_DOWN:
-        maEvent = new MAEvent();
-        maEvent->type = EVENT_TYPE_POINTER_PRESSED;
-        maEvent->point.x = AMotionEvent_getX(event, 0);
-        maEvent->point.y = AMotionEvent_getY(event, 0);
-        break;
-      case AMOTION_EVENT_ACTION_UP:
-        maEvent = new MAEvent();
-        maEvent->type = EVENT_TYPE_POINTER_RELEASED;
-        maEvent->point.x = AMotionEvent_getX(event, 0);
-        maEvent->point.y = AMotionEvent_getY(event, 0);
+        maEvent = getMotionEvent(EVENT_TYPE_POINTER_PRESSED, event);
         break;
       case AMOTION_EVENT_ACTION_MOVE:
-        maEvent = new MAEvent();
-        maEvent->type = EVENT_TYPE_POINTER_DRAGGED;
-        maEvent->point.x = AMotionEvent_getX(event, 0);
-        maEvent->point.y = AMotionEvent_getY(event, 0);
+        maEvent = getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, event);
+        break;
+      case AMOTION_EVENT_ACTION_UP:
+        maEvent = getMotionEvent(EVENT_TYPE_POINTER_RELEASED, event);
         break;
       }
       break;
@@ -64,7 +63,7 @@ int32_t handleInput(android_app *app, AInputEvent *event) {
         maEvent = new MAEvent();
         maEvent->type = EVENT_TYPE_KEY_PRESSED;
         maEvent->nativeKey = AKeyEvent_getKeyCode(event);
-        maEvent->key = AMotionEvent_getMetaState(event);
+        maEvent->key = AKeyEvent_getMetaState(event);
       }
       break;
     }
