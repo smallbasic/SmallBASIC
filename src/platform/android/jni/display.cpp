@@ -13,7 +13,6 @@
 #include "platform/common/utils.h"
 #include "common/device.h"
 
-#define SIZE_LIMIT 4
 #define FONT_FACE_REGULAR "Envy Code R.ttf"
 #define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
 
@@ -346,6 +345,13 @@ void Graphics::redraw() {
   }
 }
 
+void Graphics::resize() {
+  delete _screen;
+  _screen = new Canvas();
+  _screen->create(getWidth(), getHeight());
+  _drawTarget = NULL;
+}
+
 void Graphics::setClip(int x, int y, int w, int h) {
   if (_drawTarget) {
     _drawTarget->setClip(x, y, w, h);
@@ -386,7 +392,6 @@ bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {
     AAsset_close(fontFile);
   }
   return result;
-
 }
 
 //
@@ -466,14 +471,8 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
-  int result = RES_OK;
-  if (height > graphics->getHeight() * SIZE_LIMIT) {
-    result -= 1;
-  } else {
-    Canvas *drawable = (Canvas *)maHandle;
-    drawable->create(width, height);
-  }
-  return result;
+  Canvas *drawable = (Canvas *)maHandle;
+  return drawable->create(width, height) ? RES_OK : -1;
 }
 
 MAHandle maCreatePlaceholder(void) {

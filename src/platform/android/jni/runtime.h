@@ -40,7 +40,7 @@ struct Runtime :
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void showKeypad();
-  void screenChanged();
+  void onResize(int w, int h);
   void loadConfig();
   void saveConfig();
 

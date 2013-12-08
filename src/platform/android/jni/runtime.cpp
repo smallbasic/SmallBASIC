@@ -103,8 +103,14 @@ extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivi
   return true;
 }
 
-void onConfigChanged(ANativeActivity *ac) {
-  runtime->screenChanged();
+void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
+  logEntered();
+  runtime->onResize(rect->right, rect->bottom);
+}
+
+void onNativeWindowRedrawNeeded(ANativeActivity *activity, ANativeWindow *window) {
+  logEntered();
+  //  runtime->redraw();
 }
 
 Runtime::Runtime(android_app *app) : 
@@ -113,7 +119,6 @@ Runtime::Runtime(android_app *app) :
   _app->userData = NULL;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
-  _app->activity->callbacks->onConfigurationChanged = onConfigChanged;
   runtime = this;
   pthread_mutex_init(&_mutex, NULL);
 }
@@ -206,6 +211,9 @@ void Runtime::runShell() {
   opt_command[0] = 0;
   opt_usevmt = 0;
   os_graphics = 1;
+
+  _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
+  _app->activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
 
   loadConfig();
   runMain(MAIN_BAS);
@@ -389,10 +397,17 @@ MAEvent Runtime::processEvents(bool waitFlag) {
     event.type = 0;
   }
 
-  if (event.type == EVENT_TYPE_KEY_PRESSED) {
+  switch (event.type) {
+  case EVENT_TYPE_SCREEN_CHANGED:
+    _graphics->resize();
+    resize();
+    break;
+  case EVENT_TYPE_KEY_PRESSED:
     handleKeyEvent(event);
-  } else {
+    break;
+  default:
     handleEvent(event);
+    break;
   }
   return event;
 }
@@ -418,8 +433,9 @@ void Runtime::showKeypad() {
   _app->activity->vm->DetachCurrentThread();
 }
 
-void Runtime::screenChanged() {
+void Runtime::onResize(int width, int height) {
   logEntered();
+  ANativeWindow_setBuffersGeometry(_app->window, width, height, WINDOW_FORMAT_RGB_565);
   ALooper_acquire(_app->looper);
   MAEvent *maEvent = new MAEvent();
   maEvent->type = EVENT_TYPE_SCREEN_CHANGED;

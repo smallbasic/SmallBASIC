@@ -35,7 +35,7 @@ public class MainActivity extends NativeActivity {
         builder.setItems(items, new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialog, int index) {
-            Log.v(TAG, "items clicked = " + index);
+            Log.i(TAG, "items clicked = " + index);
             optionSelected(index);
           }
         });

@@ -74,6 +74,7 @@ struct Graphics {
   int getHeight();
   int getWidth();
   void redraw();
+  void resize();
   void setClip(int x, int y, int w, int h);
   void setColor(pixel_t color) {  _drawColor = color; }
   void setFont(Font *font) { _font = font; }

@@ -761,7 +761,7 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
              _front->overlaps(event.point.x, event.point.y)) {
     int hscroll = _front->_scrollX + (_xMove - event.point.x);
     int vscroll = _front->_scrollY + (_yMove - event.point.y);
-    int maxHScroll = _front->getMaxHScroll();
+    int maxHScroll = max(0, _front->getMaxHScroll());
     int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
     if (hscroll < 0) {
       hscroll = 0;

@@ -122,7 +122,7 @@ void Screen::drawOverlay(bool vscroll) {
       maLine(_x + _width - 4, _y + barTop, _x + _width - 4, barBottom);
     }
   }
-  
+
   // draw any visible shapes
   List_each(Shape*, it, _shapes) {
     Shape *rect = (*it);
