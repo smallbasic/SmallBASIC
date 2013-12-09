@@ -37,7 +37,14 @@ public class MainActivity extends NativeActivity {
   public static native void runFile(String fileName);
 
   public int getUnicodeChar(int keyCode, int metaState) {
-    return InputDevice.getDevice(0).getKeyCharacterMap().get(keyCode, metaState);
+    int result = 0;
+    InputDevice device = InputDevice.getDevice(InputDevice.getDeviceIds()[0]);
+    if (device != null) {
+      result = device.getKeyCharacterMap().get(keyCode, metaState);
+    } else {
+      Log.i(TAG, "Device not found");
+    }
+    return result;
   }
 
   public void optionsBox(final String[] items) {
