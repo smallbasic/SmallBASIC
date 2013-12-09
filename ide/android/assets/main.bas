@@ -105,7 +105,7 @@ sub main
   bn_back = "_back"
   bn_about= "_about"
   bn_online = "http://smallbasic.sourceforge.net/?q=export/code/1102"
-  y_height = txth(about_button) + 5
+  y_height = txth(about_button) + 10
 
   sub make_ui(path, welcome)
     color 10, 8

@@ -95,7 +95,7 @@ void handleCommand(android_app *app, int32_t cmd) {
 
 // callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
-  (JNIEnv *env, jclass jclazz , jint index) {
+  (JNIEnv *env, jclass jclazz, jint index) {
   MAEvent *maEvent = new MAEvent();
   maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
   maEvent->optionsBoxButtonIndex = index;
@@ -103,17 +103,19 @@ extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivi
   return true;
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_runFile
+  (JNIEnv *env, jclass jclazz, jstring path) {
+  const char *fileName = env->GetStringUTFChars(path, JNI_FALSE);
+  runtime->runPath(fileName);
+  env->ReleaseStringUTFChars(path, fileName);
+}
+
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
   runtime->onResize(rect->right, rect->bottom);
 }
 
-void onNativeWindowRedrawNeeded(ANativeActivity *activity, ANativeWindow *window) {
-  logEntered();
-  //  runtime->redraw();
-}
-
-Runtime::Runtime(android_app *app) : 
+Runtime::Runtime(android_app *app) :
   System(),
   _app(app) {
   _app->userData = NULL;
@@ -121,6 +123,7 @@ Runtime::Runtime(android_app *app) :
   _app->onInputEvent = handleInput;
   runtime = this;
   pthread_mutex_init(&_mutex, NULL);
+  _looper = ALooper_forThread();
 }
 
 Runtime::~Runtime() {
@@ -213,8 +216,6 @@ void Runtime::runShell() {
   os_graphics = 1;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
-  _app->activity->callbacks->onNativeWindowRedrawNeeded = onNativeWindowRedrawNeeded;
-
   loadConfig();
   runMain(MAIN_BAS);
   saveConfig();
@@ -271,6 +272,14 @@ void Runtime::saveConfig() {
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
     fclose(fp);
   }
+}
+
+void Runtime::runPath(const char *path) {
+  pthread_mutex_lock(&_mutex);
+  buttonClicked(path);
+  setExit(false);
+  ALooper_wake(_looper);
+  pthread_mutex_unlock(&_mutex);
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {

@@ -43,12 +43,14 @@ struct Runtime :
   void onResize(int w, int h);
   void loadConfig();
   void saveConfig();
+  void runPath(const char *path);
 
 private:
   Graphics *_graphics;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;
   pthread_mutex_t _mutex;
+  ALooper *_looper;
 };
 
 #endif
