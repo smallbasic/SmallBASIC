@@ -102,7 +102,7 @@ char *System::getText(char *dest, int maxSize) {
   int y = _output->getY();
   int w = EXTENT_X(maGetTextSize("YNM"));
   int h = _output->textHeight();
-  trace("dest=%s", dest);
+
   dest[0] = '\0';
   _state = kModalState;
   IFormWidget *formWidget = _output->createLineInput(dest, maxSize, x, y, w, h);

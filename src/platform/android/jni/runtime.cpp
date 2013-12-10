@@ -351,6 +351,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     event.key = SB_KEY_RIGHT;
     break;
   case AKEYCODE_CLEAR:
+  case AKEYCODE_DEL:
     event.key = MAK_CLEAR;
     break;
   case AKEYCODE_ENTER:

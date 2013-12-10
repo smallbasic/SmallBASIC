@@ -49,19 +49,20 @@ sub about()
 end
 
 sub setup()
-  color 7, 0
+  color 3,0
   print "Enter the socket listen port number to allow ";
   print "desktop SmallBASIC to export programs to this device. "
   print "Enter -1 to diable this feature, or press <enter> to leave ";
   print "this screen without making any changes."
-  print
-  print "NOTE: change requires restart."
+  print "Note: You must restart SmallBASIC for changes to take effect. ";
   print "The current setting is: " + env("listenSocket")
   print
+  color 15,3
   input socket
   if (len(socket) > 0) then
     env("listenSocket=" + socket)
   endif
+  color 7, 0
   cls
 end
 
