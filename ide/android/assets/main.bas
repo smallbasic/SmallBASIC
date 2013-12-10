@@ -48,6 +48,23 @@ sub about()
   cls
 end
 
+sub setup()
+  color 7, 0
+  print "Enter the socket listen port number to allow ";
+  print "desktop SmallBASIC to export programs to this device. "
+  print "Enter -1 to diable this feature, or press <enter> to leave ";
+  print "this screen without making any changes."
+  print
+  print "NOTE: change requires restart."
+  print "The current setting is: " + env("listenSocket")
+  print
+  input socket
+  if (len(socket) > 0) then
+    env("listenSocket=" + socket)
+  endif
+  cls
+end
+
 sub listFiles(path, byref basList, byref dirList)
   local fileList, ent, esc, name, lastItem
 
@@ -104,6 +121,7 @@ sub main
   form_var = ""
   bn_back = "_back"
   bn_about= "_about"
+  bn_setup= "_setup"
   bn_online = "http://smallbasic.sourceforge.net/?q=export/code/1102"
   y_height = txth(about_button) + 10
 
@@ -111,6 +129,7 @@ sub main
     color 10, 8
     button 0,  0, 0, 0, bn_back,   "Go up"
     button -4, 0, 0, 0, bn_online, "Online", exitButtonType
+    button -4, 0, 0, 0, bn_setup,  "Setup",
     button -4, 0, 0, 0, bn_about,  "About"
     at 0, y_height
     if (welcome) then
@@ -155,6 +174,9 @@ sub main
       make_ui path, false
     elif form_var == "About" then
       about
+      make_ui path, false
+    elif form_var == "Setup" then
+      setup
       make_ui path, false
     elif form_var == "Go up" then
       go_back

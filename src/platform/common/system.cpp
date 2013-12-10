@@ -102,7 +102,7 @@ char *System::getText(char *dest, int maxSize) {
   int y = _output->getY();
   int w = EXTENT_X(maGetTextSize("YNM"));
   int h = _output->textHeight();
-
+  trace("dest=%s", dest);
   dest[0] = '\0';
   _state = kModalState;
   IFormWidget *formWidget = _output->createLineInput(dest, maxSize, x, y, w, h);
@@ -125,6 +125,7 @@ char *System::getText(char *dest, int maxSize) {
 
   // paint the widget result onto the backing screen
   if (dest[0]) {
+    _output->setXY(x, y);
     _output->print(dest);
   }
 
@@ -593,23 +594,6 @@ char *dev_gets(char *dest, int maxSize) {
 
 char *dev_read(const char *fileName) {
   return g_system->readSource(fileName);
-}
-
-//
-// common form_ui implementation
-//
-bool form_ui::isRunning() {
-  return g_system->isRunning();
-}
-
-bool form_ui::isBreak() {
-  return g_system->isBreak();
-}
-
-void form_ui::processEvents() {
-  if (!isBreak()) {
-    g_system->processEvents(true);
-  }
 }
 
 

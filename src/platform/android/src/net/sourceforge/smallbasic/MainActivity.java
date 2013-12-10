@@ -67,9 +67,10 @@ public class MainActivity extends NativeActivity {
   public void showKeypad() {
     runOnUiThread(new Runnable() {
       public void run() {
-        InputMethodManager imm = (InputMethodManager)
-          getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+        InputMethodManager imm = (InputMethodManager) 
+            getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(getWindow().getDecorView(),
+            InputMethodManager.SHOW_IMPLICIT);
       }
     });
   }
@@ -119,7 +120,7 @@ public class MainActivity extends NativeActivity {
     try {
       Properties p = new Properties();
       p.load(getApplication().openFileInput("settings.txt"));
-      int socket = Integer.valueOf(p.getProperty("listenSocket", "8888"));
+      int socket = Integer.valueOf(p.getProperty("listenSocket", "-1"));
       if (socket != -1) {
         createListenSocket(socket);
       }

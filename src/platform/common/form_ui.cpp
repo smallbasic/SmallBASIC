@@ -23,8 +23,10 @@
 
 #include "platform/common/utils.h"
 #include "platform/common/form_ui.h"
+#include "platform/common/system.h"
 
 Form *form;
+extern System *g_system;
 
 //
 // ListModel
@@ -193,7 +195,7 @@ bool Form::execute() {
   };
   
   // apply any variable changes onto attached widgets
-  if (form_ui::isRunning()) {
+  if (g_system->isRunning()) {
     List_each(WidgetDataPtr, it, _items) {
       (*it)->updateGui();
     }
@@ -208,11 +210,10 @@ bool Form::execute() {
   }
 
   // process events
-  while (form_ui::isRunning() && _mode == m_active) {
-    form_ui::processEvents();
-    if (_kbHandle && keymap_kbhit()) {
-      int key = keymap_kbpeek();
-      if (key != SB_KEY_MK_PUSH && key != SB_KEY_MK_RELEASE) {
+  while (g_system->isRunning() && _mode == m_active) {
+    MAEvent event = g_system->processEvents(true);
+    if (_kbHandle && event.type == EVENT_TYPE_KEY_PRESSED) {
+      if (event.key != SB_KEY_MK_PUSH && event.key != SB_KEY_MK_RELEASE) {
         // avoid exiting on "mouse" keyboard keys
         break;
       }
@@ -220,7 +221,7 @@ bool Form::execute() {
   }
 
   // return whether to close the form
-  return form_ui::isBreak();
+  return g_system->isBreak();
 }
 
 void Form::invoke(WidgetDataPtr widgetData) {
@@ -304,7 +305,7 @@ void WidgetData::updateVarFlag() {
 // callback for the widget info called when the widget has been invoked
 void WidgetData::buttonClicked(const char *action) {
   logEntered();
-  if (form_ui::isRunning()) {
+  if (g_system->isRunning()) {
     if (!updateGui()) {
       transferData();
     }

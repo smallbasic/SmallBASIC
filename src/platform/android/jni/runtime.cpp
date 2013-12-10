@@ -29,6 +29,7 @@
 #define CONFIG_FILE "/settings.txt"
 #define PATH_KEY "path"
 #define FONT_SCALE_KEY "fontScale"
+#define LISTEN_SOCKET_KEY "listenSocket"
 
 Runtime *runtime;
 
@@ -257,6 +258,14 @@ void Runtime::loadConfig() {
       trace("path = %s", s->c_str());
       chdir(s->c_str());
     }
+    s = profile.get(LISTEN_SOCKET_KEY);
+    if (s) {
+      trace("listenSocket = %s", s->c_str());
+      String env = LISTEN_SOCKET_KEY;
+      env += "=";
+      env += s->c_str();
+      dev_putenv(env.c_str());
+    }
   }
 }
 
@@ -270,6 +279,12 @@ void Runtime::saveConfig() {
     getcwd(path, FILENAME_MAX);
     fprintf(fp, "%s='%s'\n", PATH_KEY, path);
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
+    for (int i = 0; environ[i] != NULL; i++) {
+      char *env = environ[i];
+      if (strstr(env, LISTEN_SOCKET_KEY) != NULL) {
+        fprintf(fp, "%s\n", env);
+      }
+    }
     fclose(fp);
   }
 }
