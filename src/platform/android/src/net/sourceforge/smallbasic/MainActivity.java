@@ -178,7 +178,9 @@ public class MainActivity extends NativeActivity {
       }
       input.close();
     } catch (FileNotFoundException e) {
+      Log.i(TAG, "Failed: " + e.toString());
     } catch (IOException e) {
+      Log.i(TAG, "Failed: " + e.toString());
     }
     return result.toString();
   }
