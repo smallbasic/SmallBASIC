@@ -1,16 +1,21 @@
 package net.sourceforge.smallbasic;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import android.app.Activity;
@@ -31,7 +36,6 @@ import android.view.inputmethod.InputMethodManager;
 public class MainActivity extends NativeActivity {
   private static final String BUFFER_BAS = "web.bas";
   private static final String TAG = "smallbasic";
-  private String buffer = "";
 
   static {
     System.loadLibrary("smallbasic");
@@ -87,6 +91,7 @@ public class MainActivity extends NativeActivity {
       p.load(getApplication().openFileInput("settings.txt"));
       int socket = Integer.valueOf(p.getProperty("listenSocket", "-1"));
       if (socket != -1) {
+        readBuffer();
         startServer(socket);
       }
     } catch (Exception e) {
@@ -94,24 +99,27 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private String buildResponse() {
+  private String buildResponse(String buffer) {
     String response = new StringBuilder()
       .append("<form method=post>")
       .append("<textarea cols=60 rows=30 name=src>")
-      .append(this.buffer)
+      .append(buffer)
       .append("</textarea>")
-      .append("<input value=Run type=submit style='vertical-align:top'>")
+      .append("<input value=Run name=run type=submit style='vertical-align:top'>")
+      .append("<input value=Save name=save type=submit style='vertical-align:top'>")
       .append("</form>").toString();
     return response;
   }
 
-  private void execBuffer() throws IOException {
+  private void execBuffer(String buffer, boolean run) throws IOException {
     File outputFile = getApplication().getFileStreamPath(BUFFER_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
-    output.write(this.buffer);
+    output.write(buffer);
     output.close();
-    Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
-    runFile(outputFile.getAbsolutePath());
+    if (run) {
+      Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
+      runFile(outputFile.getAbsolutePath());
+    }
   }
 
   private void execStream(String line, DataInputStream inputStream) throws IOException {
@@ -125,8 +133,8 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
   }
-  
-  private String getPostData(DataInputStream inputStream, String line, String field)
+
+  private Map<String, String> getPostData(DataInputStream inputStream, String line)
       throws IOException, UnsupportedEncodingException {
     int length = 0;
     final String lengthHeader = "content-length: ";
@@ -146,14 +154,33 @@ public class MainActivity extends NativeActivity {
       }
     }
     String[] fields = postData.toString().split("&");
-    String result = "";
+    Map<String, String> result = new HashMap<String, String>();
     for (String nextField : fields) {
-      int eq = nextField.indexOf(field + "=");
+      int eq = nextField.indexOf("=");
       if (eq != -1) {
-        result = nextField.substring(eq + field.length() + 1);
+        String key = nextField.substring(0, eq);
+        String value = URLDecoder.decode(nextField.substring(eq + 1), "utf-8");
+        result.put(key, value);
       }
     }
-    return URLDecoder.decode(result, "utf-8");
+    return result;
+  }
+  
+  private String readBuffer() {
+    StringBuilder result = new StringBuilder();
+    try {
+      File inputFile = getApplication().getFileStreamPath(BUFFER_BAS);
+      BufferedReader input = new BufferedReader(new FileReader(inputFile));
+      String line = input.readLine();
+      while (line != null) {
+        result.append(line).append("\n");
+        line = input.readLine();
+      }
+      input.close();
+    } catch (FileNotFoundException e) {
+    } catch (IOException e) {
+    }
+    return result.toString();
   }
 
   private String readLine(DataInputStream inputReader) throws IOException {
@@ -177,17 +204,20 @@ public class MainActivity extends NativeActivity {
         Log.i(TAG, "Accepted connection from " + socket.getRemoteSocketAddress().toString());
         inputStream = new DataInputStream(socket.getInputStream());
         String line = readLine(inputStream);
-        String[] fields = line.split("\\s");
-        if ("GET".equals(fields[0])) {
-          Log.i(TAG, line);
-          sendResponse(socket, buildResponse());
-        } else if ("POST".equals(fields[0])) {
-          this.buffer = getPostData(inputStream, line, "src");
-          execBuffer();
-          sendResponse(socket, buildResponse());
-          Log.i(TAG, "Sent POST response");
-        } else {
-          execStream(line, inputStream);
+        if (line != null) {
+          String[] fields = line.split("\\s");
+          if ("GET".equals(fields[0])) {
+            Log.i(TAG, line);
+            sendResponse(socket, buildResponse(readBuffer()));
+          } else if ("POST".equals(fields[0])) {
+            Map<String, String> postData = getPostData(inputStream, line);
+            String buffer = postData.get("src");
+            execBuffer(buffer, postData.get("run") != null);
+            sendResponse(socket, buildResponse(buffer));
+            Log.i(TAG, "Sent POST response");
+          } else {
+            execStream(line, inputStream);
+          }
         }
       }
       catch (IOException e) {

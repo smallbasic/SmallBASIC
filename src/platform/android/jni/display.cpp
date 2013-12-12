@@ -15,6 +15,7 @@
 
 #define FONT_FACE_REGULAR "Envy Code R.ttf"
 #define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
+#define SIZE_LIMIT 10
 
 Graphics *graphics;
 
@@ -179,7 +180,11 @@ void Graphics::deleteFont(Font *font) {
 void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
   if (_drawTarget && _drawTarget != src) {
     int destY = dstPoint->y;
-    for (int y = 0; y < srcRect->height; y++, destY++) {
+    int srcH = srcRect->height;
+    if (srcRect->top + srcRect->height > src->_h) {
+      srcH = src->_h - srcRect->top;
+    }
+    for (int y = 0; y < srcH && destY < _drawTarget->_h; y++, destY++) {
       pixel_t *line = src->getLine(y + srcRect->top) + srcRect->left;
       pixel_t *dstLine = _drawTarget->getLine(destY) + dstPoint->x;
       memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
@@ -471,8 +476,14 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
-  Canvas *drawable = (Canvas *)maHandle;
-  return drawable->create(width, height) ? RES_OK : -1;
+  int result = RES_OK;
+  if (height > graphics->getHeight() * SIZE_LIMIT) {
+    result -= 1;
+  } else {
+    Canvas *drawable = (Canvas *)maHandle;
+    result = drawable->create(width, height) ? RES_OK : -1;
+  }
+  return result;
 }
 
 MAHandle maCreatePlaceholder(void) {
