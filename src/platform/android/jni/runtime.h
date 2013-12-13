@@ -42,6 +42,7 @@ struct Runtime :
   void showKeypad();
   void onResize(int w, int h);
   void loadConfig();
+  void loadEnvConfig(Properties &profile, const char *key);
   void saveConfig();
   void runPath(const char *path);
 

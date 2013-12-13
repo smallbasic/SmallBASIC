@@ -50,17 +50,24 @@ end
 
 sub setup()
   color 3,0
-  print "Enter the socket listen port number to allow ";
-  print "desktop SmallBASIC to export programs to this device. "
+  print cat(1) + "Setup web service port number." + cat(0)
+  print
+  print "Enter a port number to allow web browser or desktop IDE access. ";
   print "Enter -1 to diable this feature, or press <enter> to leave ";
   print "this screen without making any changes."
   print "Note: You must restart SmallBASIC for changes to take effect. ";
-  print "The current setting is: " + env("listenSocket")
+  print "The current setting is: " + env("serverSocket")
   print
   color 15,3
   input socket
   if (len(socket) > 0) then
-    env("listenSocket=" + socket)
+    env("serverSocket=" + socket)
+    randomize timer
+    token = ""
+    for i = 0 to 8
+      token += chr (asc("A") + ((rnd * 1000) % 20))
+    next i
+    env("serverToken=" + token)
   endif
   color 7, 0
   cls
@@ -135,6 +142,14 @@ sub main
     at 0, y_height
     if (welcome) then
       intro
+      
+      serverSocket = env("serverSocket")
+      if (len(serverSocket) > 0) then
+        print cat(0)
+        print "Web Service port: " + cat(1) + serverSocket + cat(0)
+        print "Access token: " + cat(1) + env("serverToken") + cat(0)
+        print
+      fi
     fi
     listFiles path, basList, dirList        
   end

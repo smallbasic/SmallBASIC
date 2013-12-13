@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -89,24 +90,36 @@ public class MainActivity extends NativeActivity {
     try {
       Properties p = new Properties();
       p.load(getApplication().openFileInput("settings.txt"));
-      int socket = Integer.valueOf(p.getProperty("listenSocket", "-1"));
+      int socket = Integer.valueOf(p.getProperty("serverSocket", "-1"));
+      String token = p.getProperty("serverToken", new Date().toString());
       if (socket != -1) {
-        readBuffer();
-        startServer(socket);
+        startServer(socket, token);
       }
     } catch (Exception e) {
       Log.i(TAG, "Failed: " + e.toString());
     }
   }
 
-  private String buildResponse(String buffer) {
+  private String buildRunForm(String buffer, String token) {
     String response = new StringBuilder()
       .append("<form method=post>")
-      .append("<textarea cols=60 rows=30 name=src>")
+      .append("<input type=hidden name=token value='")
+      .append(token)
+      .append("'><textarea cols=60 rows=30 name=src>")
       .append(buffer)
       .append("</textarea>")
       .append("<input value=Run name=run type=submit style='vertical-align:top'>")
       .append("<input value=Save name=save type=submit style='vertical-align:top'>")
+      .append("</form>").toString();
+    return response;
+  }
+
+  private String buildTokenForm() {
+    String response = new StringBuilder()
+      .append("<p>Enter access token:</p>")
+      .append("<form method=post>")
+      .append("<input type=text name=token>")
+      .append("<input value=OK name=okay type=submit style='vertical-align:top'>")
       .append("</form>").toString();
     return response;
   }
@@ -133,7 +146,7 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
   }
-
+  
   private Map<String, String> getPostData(DataInputStream inputStream, String line)
       throws IOException, UnsupportedEncodingException {
     int length = 0;
@@ -165,7 +178,7 @@ public class MainActivity extends NativeActivity {
     }
     return result;
   }
-  
+
   private String readBuffer() {
     StringBuilder result = new StringBuilder();
     try {
@@ -195,9 +208,10 @@ public class MainActivity extends NativeActivity {
     return out.size() == 0 ? null : out.toString();
   }
 
-  private void runServer(final int socketNum) throws IOException {
+  private void runServer(final int socketNum, final String token) throws IOException {
     ServerSocket serverSocket = new ServerSocket(socketNum);
     Log.i(TAG, "Listening :" + socketNum);
+    Log.i(TAG, "Token :" + token);
     while (true) {
       Socket socket = null;
       DataInputStream inputStream = null;
@@ -210,15 +224,28 @@ public class MainActivity extends NativeActivity {
           String[] fields = line.split("\\s");
           if ("GET".equals(fields[0])) {
             Log.i(TAG, line);
-            sendResponse(socket, buildResponse(readBuffer()));
+            sendResponse(socket, buildTokenForm());
           } else if ("POST".equals(fields[0])) {
             Map<String, String> postData = getPostData(inputStream, line);
-            String buffer = postData.get("src");
-            execBuffer(buffer, postData.get("run") != null);
-            sendResponse(socket, buildResponse(buffer));
+            String userToken = postData.get("token");
+            Log.i(TAG, "userToken="+ userToken);
+            if (token.equals(userToken)) {
+              String buffer = postData.get("src");
+              if (buffer != null) {
+                execBuffer(buffer, postData.get("run") != null);
+                sendResponse(socket, buildRunForm(buffer, token));
+              } else { 
+                sendResponse(socket, buildRunForm(readBuffer(), token));
+              }
+            } else {
+              // invalid token
+              sendResponse(socket, buildTokenForm());
+            }
             Log.i(TAG, "Sent POST response");
-          } else {
+          } else if (line.indexOf(token) != -1) {
             execStream(line, inputStream);
+          } else {
+            Log.i(TAG, "Invalid request");
           }
         }
       }
@@ -234,7 +261,6 @@ public class MainActivity extends NativeActivity {
       }
     }
   }
-
   private void sendResponse(Socket socket, String content) throws IOException {
     Log.i(TAG, "sendResponse() entered");
     String contentLength ="Content-length: " + content.length() + "\r\n"; 
@@ -248,11 +274,11 @@ public class MainActivity extends NativeActivity {
     out.close();
   }
   
-  private void startServer(final int socketNum) {
+  private void startServer(final int socketNum, final String token) {
     Thread socketThread = new Thread(new Runnable() {
       public void run() {
         try {
-          runServer(socketNum);
+          runServer(socketNum, token);
         }
         catch (IOException e) {
           Log.i(TAG, "Failed: " + e.toString());

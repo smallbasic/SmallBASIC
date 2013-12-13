@@ -29,7 +29,8 @@
 #define CONFIG_FILE "/settings.txt"
 #define PATH_KEY "path"
 #define FONT_SCALE_KEY "fontScale"
-#define LISTEN_SOCKET_KEY "listenSocket"
+#define SERVER_SOCKET_KEY "serverSocket"
+#define SERVER_TOKEN_KEY "serverToken"
 
 Runtime *runtime;
 
@@ -258,14 +259,19 @@ void Runtime::loadConfig() {
       trace("path = %s", s->c_str());
       chdir(s->c_str());
     }
-    s = profile.get(LISTEN_SOCKET_KEY);
-    if (s) {
-      trace("listenSocket = %s", s->c_str());
-      String env = LISTEN_SOCKET_KEY;
-      env += "=";
-      env += s->c_str();
-      dev_putenv(env.c_str());
-    }
+    loadEnvConfig(profile, SERVER_SOCKET_KEY);
+    loadEnvConfig(profile, SERVER_TOKEN_KEY);
+  }
+}
+
+void Runtime::loadEnvConfig(Properties &profile, const char *key) {
+  String *s = profile.get(key);
+  if (s) {
+    trace("%s = %s", key, s->c_str());
+    String env = key;
+    env += "=";
+    env += s->c_str();
+    dev_putenv(env.c_str());
   }
 }
 
@@ -281,7 +287,9 @@ void Runtime::saveConfig() {
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
     for (int i = 0; environ[i] != NULL; i++) {
       char *env = environ[i];
-      if (strstr(env, LISTEN_SOCKET_KEY) != NULL) {
+      if (strstr(env, SERVER_SOCKET_KEY) != NULL) {
+        fprintf(fp, "%s\n", env);
+      } else if (strstr(env, SERVER_TOKEN_KEY) != NULL) {
         fprintf(fp, "%s\n", env);
       }
     }
@@ -536,6 +544,7 @@ int maShowVirtualKeyboard(void) {
 
 void maAlert(const char *title, const char *message, const char *button1,
              const char *button2, const char *button3) {
+  // TODO - implement me
 }
 
 //
