@@ -466,6 +466,25 @@ void Runtime::showKeypad() {
   _app->activity->vm->DetachCurrentThread();
 }
 
+
+void Runtime::showAlert(const char *title, const char *message) {
+  logEntered();
+
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jstring titleString = env->NewStringUTF(title);
+  jstring messageString = env->NewStringUTF(message);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID method = env->GetMethodID(clazz, "showAlert", 
+                                      "(Ljava/lang/String;Ljava/lang/String;)V");
+  env->CallObjectMethod(_app->activity->clazz, method, titleString, messageString);
+
+  env->DeleteLocalRef(clazz);
+  env->DeleteLocalRef(messageString);
+  env->DeleteLocalRef(titleString);
+  _app->activity->vm->DetachCurrentThread();
+}
+
 void Runtime::onResize(int width, int height) {
   logEntered();
   ANativeWindow_setBuffersGeometry(_app->window, width, height, WINDOW_FORMAT_RGB_565);
@@ -544,7 +563,7 @@ int maShowVirtualKeyboard(void) {
 
 void maAlert(const char *title, const char *message, const char *button1,
              const char *button2, const char *button3) {
-  // TODO - implement me
+  runtime->showAlert(title, message);
 }
 
 //

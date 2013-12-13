@@ -40,6 +40,7 @@ struct Runtime :
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void showKeypad();
+  void showAlert(const char *title, const char *message);
   void onResize(int w, int h);
   void loadConfig();
   void loadEnvConfig(Properties &profile, const char *key);

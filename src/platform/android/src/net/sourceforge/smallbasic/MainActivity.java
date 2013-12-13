@@ -73,6 +73,21 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void showAlert(final String title, final String message) {
+    final Activity activity = this;
+    runOnUiThread(new Runnable() {
+      public void run() {
+        new AlertDialog.Builder(activity)
+          .setTitle(title)
+          .setMessage(message)
+          .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {}
+          })
+          .show();
+      }
+    });
+  }
+
   public void showKeypad() {
     runOnUiThread(new Runnable() {
       public void run() {

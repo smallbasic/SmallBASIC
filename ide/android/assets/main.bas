@@ -55,7 +55,6 @@ sub setup()
   print "Enter a port number to allow web browser or desktop IDE access. ";
   print "Enter -1 to diable this feature, or press <enter> to leave ";
   print "this screen without making any changes."
-  print "Note: You must restart SmallBASIC for changes to take effect. ";
   print "The current setting is: " + env("serverSocket")
   print
   color 15,3
@@ -64,10 +63,12 @@ sub setup()
     env("serverSocket=" + socket)
     randomize timer
     token = ""
-    for i = 0 to 8
+    for i = 1 to 6
       token += chr (asc("A") + ((rnd * 1000) % 20))
     next i
     env("serverToken=" + token)
+    msg = "You must restart SmallBASIC for this change to take effect"
+    ? chr(27) + "[ ARestart required|" + msg + ";"
   endif
   color 7, 0
   cls
