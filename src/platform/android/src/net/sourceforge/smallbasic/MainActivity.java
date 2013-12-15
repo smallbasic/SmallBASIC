@@ -13,17 +13,22 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NativeActivity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.InputDevice;
@@ -34,9 +39,11 @@ import android.view.inputmethod.InputMethodManager;
  *
  * @author chrisws
  */
+@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends NativeActivity {
   private static final String BUFFER_BAS = "web.bas";
   private static final String TAG = "smallbasic";
+  private String startupBas = null;
 
   static {
     System.loadLibrary("smallbasic");
@@ -44,6 +51,10 @@ public class MainActivity extends NativeActivity {
 
   public static native boolean optionSelected(int eventBuffer);
   public static native void runFile(String fileName);
+
+  public String getStartupBas() {
+    return this.startupBas;
+  }
 
   public int getUnicodeChar(int keyCode, int metaState) {
     int result = 0;
@@ -87,7 +98,7 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-
+  
   public void showKeypad() {
     runOnUiThread(new Runnable() {
       public void run() {
@@ -102,6 +113,11 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    Intent intent = getIntent();
+    Uri uri = intent.getData();
+    if (uri != null) {
+      startupBas = uri.getPath();
+    }
     try {
       Properties p = new Properties();
       p.load(getApplication().openFileInput("settings.txt"));
@@ -109,9 +125,11 @@ public class MainActivity extends NativeActivity {
       String token = p.getProperty("serverToken", new Date().toString());
       if (socket != -1) {
         startServer(socket, token);
+      } else {
+        Log.i(TAG, "Web service disabled");
       }
     } catch (Exception e) {
-      Log.i(TAG, "Failed: " + e.toString());
+      Log.i(TAG, "Failed to start web service: " + e.toString());
     }
   }
 

@@ -140,17 +140,26 @@ Runtime::~Runtime() {
   pthread_mutex_destroy(&_mutex);
 }
 
-void Runtime::buttonClicked(const char *url) {
-  _loadPath.empty();
-  _loadPath.append(url, strlen(url));
+String Runtime::getStartupBas() {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, "getStartupBas", "()Ljava/lang/String;");
+  jstring startupBasObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
+  const char *startupBas = env->GetStringUTFChars(startupBasObj, JNI_FALSE);
+  String result = startupBas;
+  env->ReleaseStringUTFChars(startupBasObj, startupBas);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
 }
 
 int Runtime::getUnicodeChar(int keyCode, int metaState) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID getUnicodeChar = env->GetMethodID(clazz, "getUnicodeChar", "(II)I");
-  jint result = env->CallIntMethod(_app->activity->clazz, getUnicodeChar, keyCode, metaState);
+  jmethodID methodId = env->GetMethodID(clazz, "getUnicodeChar", "(II)I");
+  jint result = env->CallIntMethod(_app->activity->clazz, methodId, keyCode, metaState);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -219,7 +228,9 @@ void Runtime::runShell() {
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
-  runMain(MAIN_BAS);
+
+  String startupBas = getStartupBas();
+  runMain(MAIN_BAS, startupBas.c_str());
   saveConfig();
 
   _state = kDoneState;
@@ -388,8 +399,8 @@ void Runtime::optionsBox(StringList *items) {
     env->SetObjectArrayElement(array, i, elem);
   }
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID optionsBox = env->GetMethodID(clazz, "optionsBox", "([Ljava/lang/String;)V");
-  env->CallObjectMethod(_app->activity->clazz, optionsBox, array);
+  jmethodID methodId = env->GetMethodID(clazz, "optionsBox", "([Ljava/lang/String;)V");
+  env->CallObjectMethod(_app->activity->clazz, methodId, array);
 
   for (int i = 0; i < items->size(); i++) {
     env->DeleteLocalRef(env->GetObjectArrayElement(array, i));
@@ -499,10 +510,6 @@ void Runtime::onResize(int width, int height) {
 //
 // form_ui implementation
 //
-void form_ui::buttonClicked(const char *url) {
-  runtime->buttonClicked(url);
-}
-
 AnsiWidget *form_ui::getOutput() {
   return runtime->_output;
 }

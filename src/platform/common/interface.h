@@ -45,7 +45,6 @@ struct IFormWidget {
 };
 
 namespace form_ui {
-  void buttonClicked(const char *url);
   void optionsBox(StringList *items);
 };
 

@@ -403,7 +403,7 @@ void WidgetData::transferData() {
 
   case ctrl_exit_link:
   case ctrl_exit_button:
-    form_ui::buttonClicked((const char *)_var->v.p.ptr);
+    g_system->buttonClicked((const char *)_var->v.p.ptr);
     brun_break();
     break;
     

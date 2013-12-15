@@ -12,10 +12,11 @@
 #include "platform/common/StringLib.h"
 #include "platform/common/ansiwidget.h"
 
-struct System {
+struct System : public IButtonListener {
   System();
   virtual ~System();
 
+  void buttonClicked(const char *action);
   int getPen(int code);
   char *getText(char *dest, int maxSize);
   bool isActive() { return _state != kInitState && _state != kDoneState; }
@@ -42,7 +43,7 @@ protected:
   void handleEvent(MAEvent event);
   void handleMenu(int menuId);
   void resize();
-  void runMain(const char *mainBasPath);
+  void runMain(const char *mainBasPath, const char *startupBas=NULL);
   void setPath(const char *filename);
   bool setParentPath();
   void showCompletion(bool success);

@@ -18,15 +18,12 @@
 
 #include <android_native_app_glue.h>
 
-struct Runtime :
-  public System,
-  public IButtonListener {
-
+struct Runtime : public System {
   Runtime(android_app *app);
   virtual ~Runtime();
 
   void construct();
-  void buttonClicked(const char *action);
+  String getStartupBas();
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);

@@ -2,11 +2,13 @@ const app = "main.bas?"
 const exitLinkType = "exit_link"
 const exitButtonType = "exit_button"
 const linkType = "link"
+const boldOn = chr(27) + "[1m"
+const boldOff = chr(27) + "[21m"
 
 sub space_print(s)
   local ch, len_s
   len_s = len(s)
-  for ch = 1 to len_s 
+  for ch = 1 to len_s
     print mid(s, ch, 1) + " ";
   next ch
 end
@@ -40,7 +42,8 @@ sub about()
   print "the Free Software Foundation." + chr(10)
   print "Envy Code R Font v0.8 used with permission ";
   print "http://damieng.com/envy-code-r" + chr(10)
-  print 
+  print
+  serverInfo
   color 10, 8
   button xmax / 2, ypos * txth("A"), 0, 0, bn_ok,  "OK"
   doform
@@ -50,8 +53,8 @@ end
 
 sub setup()
   color 3,0
-  print cat(1) + "Setup web service port number." + cat(0)
-  print
+  print boldOn + "Setup web service port number."
+  print boldOff
   print "Enter a port number to allow web browser or desktop IDE access. ";
   print "Enter -1 to diable this feature, or press <enter> to leave ";
   print "this screen without making any changes."
@@ -67,11 +70,20 @@ sub setup()
       token += chr (asc("A") + ((rnd * 1000) % 20))
     next i
     env("serverToken=" + token)
-    msg = "You must restart SmallBASIC for this change to take effect"
-    ? chr(27) + "[ ARestart required|" + msg + ";"
+    local msg = "You must restart SmallBASIC for this change to take effect"
+    print chr(27) + "[ ARestart required|" + msg + ";"
   endif
   color 7, 0
   cls
+end
+
+sub serverInfo()
+  serverSocket = env("serverSocket")
+  if (len(serverSocket) > 0) then
+    print boldOff + "Web Service port: " + boldOn + serverSocket
+    print boldOff + "Access token: " + boldOn + env("serverToken")
+    print boldOff
+  fi
 end
 
 sub listFiles(path, byref basList, byref dirList)
@@ -79,17 +91,17 @@ sub listFiles(path, byref basList, byref dirList)
 
   erase basList
   erase dirList
-  
+
   if (right(path, 1) != "/") then
     path += "/"
   endif
 
   color 7, 0
   print "Files in " + path
-  
+
   esc = chr(27) + "[ H"
   fileList = files(path)
-  
+
   for ent in fileList
     name = ent
     if (isdir(path + name)) then
@@ -98,7 +110,7 @@ sub listFiles(path, byref basList, byref dirList)
       basList << name
     endif
   next ent
-  
+
   sort dirList
   sort basList
 
@@ -143,16 +155,10 @@ sub main
     at 0, y_height
     if (welcome) then
       intro
-      
-      serverSocket = env("serverSocket")
-      if (len(serverSocket) > 0) then
-        print cat(0)
-        print "Web Service port: " + cat(1) + serverSocket + cat(0)
-        print "Access token: " + cat(1) + env("serverToken") + cat(0)
-        print
-      fi
+      print
+      serverInfo
     fi
-    listFiles path, basList, dirList        
+    listFiles path, basList, dirList
   end
 
   sub go_back
@@ -165,9 +171,9 @@ sub main
     if (index == 1) then
       index++
     fi
-    if (index > 0) 
+    if (index > 0)
       backPath = left(path, index - 1)
-    else 
+    else
       backPath = "/"
     endif
     path = backPath

@@ -47,11 +47,6 @@ RuntimeThread::~RuntimeThread() {
   _eventQueue = NULL;
 }
 
-void RuntimeThread::buttonClicked(const char *url) {
-  _loadPath.empty();
-  _loadPath.append(url, strlen(url));
-}
-
 result RuntimeThread::Construct(String &appRootPath, int w, int h) {
   logEntered();
   result r = Thread::Construct();
