@@ -43,7 +43,8 @@ protected:
   void handleEvent(MAEvent event);
   void handleMenu(int menuId);
   void resize();
-  void runMain(const char *mainBasPath, const char *startupBas=NULL);
+  void runMain(const char *mainBasPath);
+  void runOnce(const char *startupBas);
   void setPath(const char *filename);
   bool setParentPath();
   void showCompletion(bool success);

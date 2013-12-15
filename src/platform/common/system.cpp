@@ -279,25 +279,16 @@ void System::resize() {
   dev_pushkey(SB_PKEY_SIZE_CHG);
 }
 
-void System::runMain(const char *mainBasPath, const char *startupBas) {
+void System::runMain(const char *mainBasPath) {
   logEntered();
 
-  // hold the program name after termination
-  String activePath;
-
-  if (startupBas != NULL) {
-    activePath = startupBas;
-    _loadPath = startupBas;
-    _mainBas = false;
-    strcpy(opt_command, "welcome");
-  } else {
-    activePath = mainBasPath;
-    _loadPath = mainBasPath;
-    _mainBas = true;
-    strcpy(opt_command, "welcome");
-  }
-
+  // activePath provides the program name after termination
+  String activePath = mainBasPath;
+  _loadPath = mainBasPath;
+  _mainBas = true;
+  strcpy(opt_command, "welcome");
   sbasic_main(_loadPath);
+
   while (!isClosing()) {
     if (isRestart()) {
       _loadPath = activePath;
@@ -333,6 +324,19 @@ void System::runMain(const char *mainBasPath, const char *startupBas) {
         }
       }
     }
+  }
+}
+
+void System::runOnce(const char *startupBas) {
+  logEntered();
+
+  _loadPath = startupBas;
+  _mainBas = false;
+  bool success = sbasic_main(_loadPath);
+  showCompletion(success);
+  // press back to continue
+  while (!isBack() && !isClosing() && !isRestart()) {
+    getNextEvent();
   }
 }
 

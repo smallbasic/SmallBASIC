@@ -230,7 +230,11 @@ void Runtime::runShell() {
   loadConfig();
 
   String startupBas = getStartupBas();
-  runMain(MAIN_BAS, startupBas.c_str());
+  if (startupBas.length()) {
+    runOnce(startupBas.c_str());
+  } else {
+    runMain(MAIN_BAS);
+  }
   saveConfig();
 
   _state = kDoneState;
