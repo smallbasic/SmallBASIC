@@ -196,15 +196,27 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
   if (_drawTarget) {
     if (startY == endY) {
       // horizontal
+      int x1 = startX;
+      int x2 = endX;
+      if (x1 > endX) {
+        x1 = endX;
+        x2 = startX;
+      }
       pixel_t *line = _drawTarget->getLine(startY);
-      for (int x = startX; x < endX; x++) {
+      for (int x = x1; x < x2; x++) {
         if (x >= _drawTarget->x() && x <= _drawTarget->w()) {
           line[x] = _drawColor;
         }
       }
     } else if (startX == endX) {
       // vertical
-      for (int y = startY; y < endY; y++) {
+      int y1 = startY;
+      int y2 = endY;
+      if (y1 > y2) {
+        y1 = endY;
+        y2 = startY;
+      }
+      for (int y = y1; y < y2; y++) {
         if (y >= _drawTarget->y() && y <= _drawTarget->h()) {
           pixel_t *line = _drawTarget->getLine(y);
           line[startX] = _drawColor;

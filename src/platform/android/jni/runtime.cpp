@@ -95,6 +95,28 @@ void handleCommand(android_app *app, int32_t cmd) {
   }
 }
 
+// see http://stackoverflow.com/questions/15913080
+static void process_input(android_app *app, android_poll_source *source) {
+  AInputEvent* event = NULL;
+  while (AInputQueue_getEvent(app->inputQueue, &event) >= 0) {
+    if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_KEY &&
+        AKeyEvent_getKeyCode(event) == AKEYCODE_BACK) {
+      // prevent AInputQueue_preDispatchEvent from attempting to close
+      // the keypad here to avoid a crash in android 4.2 + 4.3.
+      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN &&
+          runtime->isActive()) {
+        MAEvent *maEvent = new MAEvent();
+        maEvent->nativeKey = AKEYCODE_BACK;
+        maEvent->type = EVENT_TYPE_KEY_PRESSED;
+        runtime->pushEvent(maEvent);
+      }
+      AInputQueue_finishEvent(app->inputQueue, event, true);
+    } else if (!AInputQueue_preDispatchEvent(app->inputQueue, event)) {
+      AInputQueue_finishEvent(app->inputQueue, event, handleInput(app, event));
+    }
+  }
+}
+
 // callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
   (JNIEnv *env, jclass jclazz, jint index) {
@@ -119,10 +141,12 @@ void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
 
 Runtime::Runtime(android_app *app) :
   System(),
+  _keypadActive(false),
   _app(app) {
   _app->userData = NULL;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
+  _app->inputPollSource.process = process_input;
   runtime = this;
   pthread_mutex_init(&_mutex, NULL);
   _looper = ALooper_forThread();
@@ -205,7 +229,7 @@ void Runtime::pushEvent(MAEvent *event) {
   pthread_mutex_unlock(&_mutex);
 }
 
-MAEvent *Runtime::popEvent() { 
+MAEvent *Runtime::popEvent() {
   pthread_mutex_lock(&_mutex);
   MAEvent *result = _eventQueue->pop();
   pthread_mutex_unlock(&_mutex);
@@ -322,10 +346,13 @@ void Runtime::runPath(const char *path) {
 
 void Runtime::handleKeyEvent(MAEvent &event) {
   trace("key = %d %d", event.nativeKey, event.key);
-
   switch (event.nativeKey) {
   case AKEYCODE_BACK:
-    setBack();
+    if (_keypadActive) {
+      showKeypad(false);
+    } else {
+      setBack();
+    }
     break;
   case AKEYCODE_MENU:
     showMenu();
@@ -469,18 +496,18 @@ void Runtime::setExit(bool quit) {
   }
 }
 
-void Runtime::showKeypad() {
+void Runtime::showKeypad(bool show) {
   logEntered();
+  _keypadActive = show;
 
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID showKeypad = env->GetMethodID(clazz, "showKeypad", "()V");
-  env->CallObjectMethod(_app->activity->clazz, showKeypad);
+  jmethodID methodId = env->GetMethodID(clazz, "showKeypad", "(Z)V");
+  env->CallObjectMethod(_app->activity->clazz, methodId, show);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
-
 
 void Runtime::showAlert(const char *title, const char *message) {
   logEntered();
@@ -490,7 +517,7 @@ void Runtime::showAlert(const char *title, const char *message) {
   jstring titleString = env->NewStringUTF(title);
   jstring messageString = env->NewStringUTF(message);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showAlert", 
+  jmethodID method = env->GetMethodID(clazz, "showAlert",
                                       "(Ljava/lang/String;Ljava/lang/String;)V");
   env->CallObjectMethod(_app->activity->clazz, method, titleString, messageString);
 
@@ -568,7 +595,7 @@ int maGetMilliSecondCount(void) {
 }
 
 int maShowVirtualKeyboard(void) {
-  runtime->showKeypad();
+  runtime->showKeypad(true);
   return 0;
 }
 
@@ -606,5 +633,3 @@ int dev_image_width(int handle, int index) {
 int dev_image_height(int handle, int index) {
   return 0;
 }
-
-

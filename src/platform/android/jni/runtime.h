@@ -36,7 +36,7 @@ struct Runtime : public System {
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
-  void showKeypad();
+  void showKeypad(bool show);
   void showAlert(const char *title, const char *message);
   void onResize(int w, int h);
   void loadConfig();
@@ -45,6 +45,7 @@ struct Runtime : public System {
   void runPath(const char *path);
 
 private:
+  bool _keypadActive;
   Graphics *_graphics;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;

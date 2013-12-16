@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.util.Date;
 import java.util.HashMap;
@@ -32,6 +31,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.InputDevice;
+import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
 /**
@@ -83,33 +83,37 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-
+  
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
       public void run() {
         new AlertDialog.Builder(activity)
-          .setTitle(title)
-          .setMessage(message)
+          .setTitle(title).setMessage(message)
           .setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {}
-          })
-          .show();
-      }
-    });
-  }
-  
-  public void showKeypad() {
-    runOnUiThread(new Runnable() {
-      public void run() {
-        InputMethodManager imm = (InputMethodManager) 
-            getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.showSoftInput(getWindow().getDecorView(),
-            InputMethodManager.SHOW_IMPLICIT);
+          }).show();
       }
     });
   }
 
+  public void showKeypad(final boolean show) {
+    Log.i(TAG, "showKeypad: " + show);
+    final View view = getWindow().getDecorView();
+    runOnUiThread(new Runnable() {
+      public void run() {
+        InputMethodManager imm = (InputMethodManager)
+            getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (show) {
+          imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+        } else {
+          imm.hideSoftInputFromWindow(view.getWindowToken(),
+              InputMethodManager.HIDE_NOT_ALWAYS);
+        }
+      }
+    });
+  }
+  
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
