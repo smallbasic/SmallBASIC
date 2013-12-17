@@ -28,7 +28,7 @@ struct Runtime : public System {
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   MAEvent processEvents(bool waitFlag);
-  bool hasEvent() { _eventQueue && _eventQueue->size() > 0; }
+  bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);

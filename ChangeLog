@@ -1,3 +1,10 @@
+2013-12-18
+	Android version 0.11.4
+	Built with android NDK for huge performance increase
+	Web service for remote file edit/run
+	Can now launch .bas files from Android file browser
+	Added program restart command
+
 2013-02-09
 	Added support for empty parentheses in sub/func calls
 
