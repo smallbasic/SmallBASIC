@@ -17,6 +17,7 @@
 #include "common/osd.h"
 #include "common/device.h"
 #include "common/blib_ui.h"
+#include "common/fs_socket_client.h"
 
 #define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source|Restart"
 #define MENU_CONSOLE  0
@@ -30,6 +31,8 @@
 #define FONT_MAX 200
 #define EVENT_CHECK_EVERY 2000
 #define EVENT_MAX_BURN_TIME 30
+
+System *g_system;
 
 System::System() :
   _output(NULL),
@@ -47,10 +50,16 @@ System::System() :
   _systemScreen(false),
   _mainBas(false),
   _programSrc(NULL) {
+  g_system = this;
 }
 
 System::~System() {
   delete [] _programSrc;
+}
+
+void System::buttonClicked(const char *url) {
+  _loadPath.empty();
+  _loadPath.append(url, strlen(url));
 }
 
 int System::getPen(int code) {
@@ -121,6 +130,7 @@ char *System::getText(char *dest, int maxSize) {
 
   // paint the widget result onto the backing screen
   if (dest[0]) {
+    _output->setXY(x, y);
     _output->print(dest);
   }
 
@@ -176,6 +186,90 @@ void System::handleMenu(int menuId) {
   }
 }
 
+void System::handleEvent(MAEvent event) {
+  switch (event.type) {
+  case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
+    if (_systemMenu) {
+      handleMenu(event.optionsBoxButtonIndex);
+    } else if (isRunning()) {
+      if (!_output->optionSelected(event.optionsBoxButtonIndex)) {
+        dev_pushkey(event.optionsBoxButtonIndex);
+      }
+    }
+    break;
+  case EVENT_TYPE_SCREEN_CHANGED:
+    resize();
+    break;
+  case EVENT_TYPE_POINTER_PRESSED:
+    _touchX = _touchCurX = event.point.x;
+    _touchY = _touchCurY = event.point.y;
+    dev_pushkey(SB_KEY_MK_PUSH);
+    _output->pointerTouchEvent(event);
+    break;
+  case EVENT_TYPE_POINTER_DRAGGED:
+    _touchCurX = event.point.x;
+    _touchCurY = event.point.y;
+    _output->pointerMoveEvent(event);
+    break;
+  case EVENT_TYPE_POINTER_RELEASED:
+    _touchX = _touchY = _touchCurX = _touchCurY = -1;
+    _output->pointerReleaseEvent(event);
+    break;
+  default:
+    // no event
+    _output->flush(false);
+    break;
+  }
+}
+
+char *System::loadResource(const char *fileName) {
+  char *buffer = NULL;
+  if (strstr(fileName, "://") != NULL) {
+    int handle = 1;
+    var_t *var_p = v_new();
+    dev_file_t *f = dev_getfileptr(handle);
+    systemPrint(fileName);
+    _output->print("\033[ LLoading...");
+    if (dev_fopen(handle, fileName, 0)) {
+      http_read(f, var_p, 0);
+      int len = var_p->v.p.size;
+      buffer = (char *)tmp_alloc(len + 1);
+      memcpy(buffer, var_p->v.p.ptr, len);
+      buffer[len] = '\0';
+    } else {
+      systemPrint("\nfailed");
+    }
+    dev_fclose(handle);
+    v_free(var_p);
+    tmp_free(var_p);
+  }
+  return buffer;
+}
+
+char *System::readSource(const char *fileName) {
+  char *buffer = loadResource(fileName);
+  if (!buffer) {
+    int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
+    if (h != -1) {
+      int len = lseek(h, 0, SEEK_END);
+      lseek(h, 0, SEEK_SET);
+      buffer = (char *)tmp_alloc(len + 1);
+      read(h, buffer, len);
+      buffer[len] = '\0';
+      close(h);
+    }
+  }
+  if (buffer != NULL) {
+    delete [] _programSrc;
+    int len = strlen(buffer);
+    _programSrc = new char[len + 1];
+    strncpy(_programSrc, buffer, len);
+    _programSrc[len] = 0;
+    systemPrint("Opened: %s %d bytes\n", fileName, len);
+  }
+  return buffer;
+}
+
 void System::resize() {
   MAExtent screenSize = maGetScrSize();
   logEntered();
@@ -188,6 +282,7 @@ void System::resize() {
 void System::runMain(const char *mainBasPath) {
   logEntered();
 
+  // activePath provides the program name after termination
   String activePath = mainBasPath;
   _loadPath = mainBasPath;
   _mainBas = true;
@@ -229,6 +324,19 @@ void System::runMain(const char *mainBasPath) {
         }
       }
     }
+  }
+}
+
+void System::runOnce(const char *startupBas) {
+  logEntered();
+
+  _loadPath = startupBas;
+  _mainBas = false;
+  bool success = sbasic_main(_loadPath);
+  showCompletion(success);
+  // press back to continue
+  while (!isBack() && !isClosing() && !isRestart()) {
+    getNextEvent();
   }
 }
 
@@ -372,14 +480,139 @@ void System::showSystemScreen(bool showSrc) {
   _systemScreen = true;
 }
 
+void System::systemPrint(const char *format, ...) {
+  char buf[4096], *p = buf;
+  va_list args;
 
-void System::systemPrint(const char *str) {
+  va_start(args, format);
+  p += vsnprintf(p, sizeof(buf) - 1, format, args);
+  va_end(args);
+  *p = '\0';
+
+  deviceLog("%s", buf);
+
   if (isSystemScreen()) {
-    _output->print(str);
+    _output->print(buf);
   } else {
     _output->print("\033[ SW7");
-    _output->print(str);
+    _output->print(buf);
     _output->print("\033[ Sw");
   }
 }
+
+//
+// common device implementation
+//
+void osd_cls(void) {
+  logEntered();
+  ui_reset();
+  g_system->_output->clearScreen();
+}
+
+int osd_devrestore(void) {
+  ui_reset();
+  g_system->setRunning(false);
+  return 0;
+}
+
+int osd_events(int wait_flag) {
+  int result;
+  if (g_system->isBreak()) {
+    result = -2;
+  } else {
+    g_system->processEvents(wait_flag);
+    result = 0;
+  }
+  return result;
+}
+
+int osd_getpen(int mode) {
+  return g_system->getPen(mode);
+}
+
+long osd_getpixel(int x, int y) {
+  return g_system->_output->getPixel(x, y);
+}
+
+int osd_getx(void) {
+  return g_system->_output->getX();
+}
+
+int osd_gety(void) {
+  return g_system->_output->getY();
+}
+
+void osd_line(int x1, int y1, int x2, int y2) {
+  g_system->_output->drawLine(x1, y1, x2, y2);
+}
+
+void osd_rect(int x1, int y1, int x2, int y2, int fill) {
+  if (fill) {
+    g_system->_output->drawRectFilled(x1, y1, x2, y2);
+  } else {
+    g_system->_output->drawRect(x1, y1, x2, y2);
+  }
+}
+
+void osd_refresh(void) {
+  if (!g_system->isClosing()) {
+    g_system->_output->flush(true);
+  }
+}
+
+void osd_setcolor(long color) {
+  if (!g_system->isClosing()) {
+    g_system->_output->setColor(color);
+  }
+}
+
+void osd_setpenmode(int enable) {
+  // touch mode is always active
+}
+
+void osd_setpixel(int x, int y) {
+  g_system->_output->setPixel(x, y, dev_fgcolor);
+}
+
+void osd_settextcolor(long fg, long bg) {
+  g_system->_output->setTextColor(fg, bg);
+}
+
+void osd_setxy(int x, int y) {
+  g_system->_output->setXY(x, y);
+}
+
+int osd_textheight(const char *str) {
+  return g_system->_output->textHeight();
+}
+
+int osd_textwidth(const char *str) {
+  MAExtent textSize = maGetTextSize(str);
+  return EXTENT_X(textSize);
+}
+
+void osd_write(const char *str) {
+  if (!g_system->isClosing()) {
+    g_system->_output->print(str);
+  }
+}
+
+void lwrite(const char *str) {
+  if (!g_system->isClosing()) {
+    g_system->systemPrint(str);
+  }
+}
+
+void dev_delay(dword ms) {
+  maWait(ms);
+}
+
+char *dev_gets(char *dest, int maxSize) {
+  return g_system->getText(dest, maxSize);
+}
+
+char *dev_read(const char *fileName) {
+  return g_system->readSource(fileName);
+}
+
 

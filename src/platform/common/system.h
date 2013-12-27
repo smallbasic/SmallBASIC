@@ -12,10 +12,11 @@
 #include "platform/common/StringLib.h"
 #include "platform/common/ansiwidget.h"
 
-struct System {
+struct System : public IButtonListener {
   System();
   virtual ~System();
 
+  void buttonClicked(const char *action);
   int getPen(int code);
   char *getText(char *dest, int maxSize);
   bool isActive() { return _state != kInitState && _state != kDoneState; }
@@ -27,19 +28,23 @@ struct System {
   bool isRestart() { return _state == kRestartState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
   bool isSystemScreen() { return _systemScreen; }
+  char *readSource(const char *fileName);
   void setBack();
   void setRunning(bool running);
-  void systemPrint(const char *msg);
+  void systemPrint(const char *msg, ...);
 
   AnsiWidget *_output;
+  virtual MAEvent processEvents(bool waitFlag) = 0;
+  virtual void setExit(bool quit) = 0;
+  virtual char *loadResource(const char *fileName);
 
 protected:
-  virtual void setExit(bool quit) = 0;
-  virtual MAEvent getNextEvent() = 0;
-
+  MAEvent getNextEvent() { return processEvents(true); }
+  void handleEvent(MAEvent event);
   void handleMenu(int menuId);
   void resize();
   void runMain(const char *mainBasPath);
+  void runOnce(const char *startupBas);
   void setPath(const char *filename);
   bool setParentPath();
   void showCompletion(bool success);
@@ -60,7 +65,6 @@ protected:
     kClosingState, // thread is terminating
     kDoneState     // thread has terminated
   } _state;
-
 
   strlib::String _loadPath;
   int _lastEventTime;

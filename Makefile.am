@@ -71,3 +71,10 @@ install-exec-hook:																	\
 	 cp plugins/*.* $(pkgdatadir)/plugins &&					\
 	 cp ide/*.* $(pkgdatadir)/ide)
 
+test:
+	(cd $(SUBDIRS) && make test)
+
+# produce a stack dump
+ndk-stack:
+	adb logcat | ${NDK}/ndk-stack -sym src/platform/android/obj/local/armeabi
+

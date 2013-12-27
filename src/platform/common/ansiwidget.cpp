@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <math.h>
 
 #include "platform/common/ansiwidget.h"
 #include "platform/common/utils.h"
@@ -47,12 +48,11 @@
 
 #define BUTTON_PADDING 10
 #define OVER_SCROLL 100
-#define SWIPE_MAX_TIMER 6000
-#define SWIPE_DELAY_STEP 250
-#define SWIPE_SCROLL_FAST 30
-#define SWIPE_SCROLL_SLOW 20
-#define SWIPE_TRIGGER_FAST 55
-#define SWIPE_TRIGGER_SLOW 80
+
+#define SWIPE_MAX_TIMER 3000
+#define SWIPE_DELAY_STEP 200
+#define SWIPE_MAX_DURATION 300
+#define SWIPE_MIN_DISTANCE 60
 #define FONT_FACTOR 30
 #define CHOICE_BN_W 6
 
@@ -60,7 +60,7 @@ char *options = NULL;
 FormList *clickedList = NULL;
 FormList *focusList = NULL;
 
-#if !defined(_FLTK) && !defined(_TIZEN)
+#if !defined(_FLTK) && !defined(_TIZEN) && !defined(_ANDROID)
 void form_ui::optionsBox(StringList *items) {
   if (items->size()) {
     // calculate the size of the options buffer
@@ -449,8 +449,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   _yTouch(-1),
   _xMove(-1),
   _yMove(-1),
-  _moveTime(0),
-  _moveDown(false),
+  _touchTime(0),
   _swipeExit(false),
   _buttonListener(listener),
   _activeButton(NULL) {
@@ -737,10 +736,12 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
   }
   // setup vars for page scrolling
   if (_front->overlaps(event.point.x, event.point.y)) {
+    _touchTime = maGetMilliSecondCount();
     _xTouch = _xMove = event.point.x;
     _yTouch = _yMove = event.point.y;
     result = true;
   }
+
   return result;
 }
 
@@ -756,25 +757,31 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
       drawActiveButton();
       result = true;
     }
-  } else if (!_swipeExit) {
-    // scroll up/down
-    if (_front->overlaps(event.point.x, event.point.y)) {
-      int vscroll = _front->_scrollY + (_yMove - event.point.y);
-      int maxScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
-      if (vscroll < 0) {
-        vscroll = 0;
-      }
-      if (vscroll != _front->_scrollY && maxScroll > 0 && 
-          vscroll < maxScroll + OVER_SCROLL) {
-        _moveTime = maGetMilliSecondCount();
-        _moveDown = (_front->_scrollY < vscroll);
-        _front->drawInto();
-        _front->_scrollY = vscroll;
-        _xMove = event.point.x;
-        _yMove = event.point.y;
-        flush(true, true);
-        result = true;
-      }
+  } else if (!_swipeExit && _xMove != -1 && _yMove != -1 &&
+             _front->overlaps(event.point.x, event.point.y)) {
+    int hscroll = _front->_scrollX + (_xMove - event.point.x);
+    int vscroll = _front->_scrollY + (_yMove - event.point.y);
+    int maxHScroll = max(0, _front->getMaxHScroll());
+    int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
+    if (hscroll < 0) {
+      hscroll = 0;
+    } else if (hscroll > maxHScroll) {
+      hscroll = maxHScroll;
+    }
+    if (vscroll < 0) {
+      vscroll = 0;
+    }
+    if ((hscroll != _front->_scrollX && maxHScroll > 0 &&
+         hscroll <= maxHScroll) ||
+        (vscroll != _front->_scrollY && maxVScroll > 0 &&
+         vscroll < maxVScroll + OVER_SCROLL)) {
+      _front->drawInto();
+      _front->_scrollX = hscroll;
+      _front->_scrollY = vscroll;
+      _xMove = event.point.x;
+      _yMove = event.point.y;
+      flush(true, true);
+      result = true;
     }
   }
   return result;
@@ -792,18 +799,22 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     int maxScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
     if (_yMove != -1 && maxScroll > 0) {
       _front->drawInto();
-      bool swiped = (abs(_xTouch - _xMove) > (_width / 3) ||
-                     abs(_yTouch - _yMove) > (_height / 3));
-      int start = maGetMilliSecondCount();
-      if (swiped && start - _moveTime < SWIPE_TRIGGER_SLOW) {
-        doSwipe(start, maxScroll);
+
+      // swipe test - min distance and not max duration
+      int deltaX = _xTouch - event.point.x;
+      int deltaY = _yTouch - event.point.y;
+      int distance = (int) fabs(sqrt(deltaX * deltaX + deltaY * deltaY));
+      int now = maGetMilliSecondCount();
+      if (distance >= SWIPE_MIN_DISTANCE && (now - _touchTime) < SWIPE_MAX_DURATION) {
+        bool moveDown = (deltaY >= SWIPE_MIN_DISTANCE);
+        doSwipe(now, moveDown, distance, maxScroll);
       } else if (_front->_scrollY > maxScroll) {
         _front->_scrollY = maxScroll;
       }
       // ensure the scrollbar is removed
       _front->_dirty = true;
       flush(true);
-      _moveTime = 0;
+      _touchTime = 0;
     }
   }
 
@@ -926,15 +937,14 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
 }
 
 // swipe handler for pointerReleaseEvent()
-void AnsiWidget::doSwipe(int start, int maxScroll) {
+void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) {
   MAEvent event;
   int elapsed = 0;
   int vscroll = _front->_scrollY;
-  int scrollSize = (start - _moveTime < SWIPE_TRIGGER_FAST) ? 
-                   SWIPE_SCROLL_FAST : SWIPE_SCROLL_SLOW;
+  int scrollSize = distance / 3;
   int swipeStep = SWIPE_DELAY_STEP;
   while (elapsed < SWIPE_MAX_TIMER) {
-    if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_PRESSED) {
+    if (maGetEvent(&event) && event.type == EVENT_TYPE_POINTER_RELEASED) {
       // ignore the next move and release events
       _swipeExit = true;
       break;
@@ -948,7 +958,7 @@ void AnsiWidget::doSwipe(int start, int maxScroll) {
     if (scrollSize == 1) {
       maWait(20);
     }
-    vscroll += _moveDown ? scrollSize : -scrollSize;
+    vscroll += moveDown ? scrollSize : -scrollSize;
     if (vscroll < 0) {
       vscroll = 0;
     } else if (vscroll > maxScroll) {
@@ -973,9 +983,9 @@ void AnsiWidget::drawActiveButton() {
   maUpdateScreen();
 #else
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
-  int x = _focus->x + _activeButton->x;
-  int y = _focus->y + _activeButton->y - _focus->_scrollY;
-  maSetClipRect(x, y, _activeButton->width, _activeButton->height + 2);
+  int x = _focus->_x + _activeButton->_x;
+  int y = _focus->_y + _activeButton->_y - _focus->_scrollY;
+  maSetClipRect(x, y, _activeButton->_width, _activeButton->_height + 2);
   _activeButton->draw(x, y);
   maUpdateScreen();
   maResetBacklight();

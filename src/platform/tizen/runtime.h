@@ -23,20 +23,17 @@ using namespace Tizen::Ui;
 
 struct RuntimeThread : 
   public System,
-  public IButtonListener,
   public Thread {
 
   RuntimeThread();
   ~RuntimeThread();
 
-  void buttonClicked(const char *action);
   result Construct(String &resourcePath, int w, int h);
   void handleKey(MAEvent &event);
   bool hasEvent();
   MAEvent popEvent();
   void pushEvent(MAEvent event);
   MAEvent processEvents(bool waitFlag);
-  char *readSource(const char *fileName);
   void setExit(bool quit);
 
 private:

@@ -54,6 +54,11 @@ AC_ARG_ENABLE(tizen,
   [ac_build_tizen="yes"],
   [ac_build_tizen="no"])
 
+AC_ARG_ENABLE(android,
+  AS_HELP_STRING([--enable-android],[build common library for Android(default=no)]),
+  [ac_build_android="yes"],
+  [ac_build_android="no"])
+
 AC_ARG_ENABLE(dist,
   AS_HELP_STRING([--enable-dist],[prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
@@ -106,6 +111,9 @@ function checkPCRE() {
      have_pcre="no"
    fi
    if test x$ac_build_tizen = xyes; then
+     have_pcre="no"
+   fi
+   if test x$ac_build_android = xyes; then
      have_pcre="no"
    fi
 
@@ -537,6 +545,28 @@ function buildTizen() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildAndroid() {
+   TARGET="Building common library for Android."
+
+   defaultConditionals
+
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_ANDROID, 1, [Defined for Android build.])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
+   AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
+   AC_DEFINE(CPU_BIGENDIAN, 1, [Tizen uses big-endian])
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+
+   BUILD_SUBDIRS="src/platform/android/common"
+   AC_SUBST(BUILD_SUBDIRS)
+}
+
 function buildConsole() {
    win32=no
    case "${host_os}" in
@@ -632,6 +662,8 @@ elif test x$ac_build_mosync = xyes; then
    buildMosync
 elif test x$ac_build_tizen = xyes; then
    buildTizen
+elif test x$ac_build_android = xyes; then
+   buildAndroid
 else
    buildConsole
 fi  
@@ -657,6 +689,7 @@ src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/mosync/common/Makefile
 src/platform/tizen/common/Makefile
+src/platform/android/common/Makefile
 ])
 AC_OUTPUT
 

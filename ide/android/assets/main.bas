@@ -2,11 +2,13 @@ const app = "main.bas?"
 const exitLinkType = "exit_link"
 const exitButtonType = "exit_button"
 const linkType = "link"
+const boldOn = chr(27) + "[1m"
+const boldOff = chr(27) + "[21m"
 
 sub space_print(s)
   local ch, len_s
   len_s = len(s)
-  for ch = 1 to len_s 
+  for ch = 1 to len_s
     print mid(s, ch, 1) + " ";
   next ch
 end
@@ -24,9 +26,9 @@ end
 sub about()
   local bn_ok
   cls
-  print " __           _      _____ _"
-  print "(_ ._ _  _.|||_) /\ (_  | / "
-  print "__)| | |(_||||_)/--\__)_|_\_"
+  print " __           _      ___ _"
+  print "(_ ._ _  _.|||_) /\ (_ |/ "
+  print "__)| | |(_||||_)/--\__)|\_"
   print
   print "Version 0.11.4"
   print
@@ -40,7 +42,8 @@ sub about()
   print "the Free Software Foundation." + chr(10)
   print "Envy Code R Font v0.8 used with permission ";
   print "http://damieng.com/envy-code-r" + chr(10)
-  print 
+  print
+  serverInfo
   color 10, 8
   button xmax / 2, ypos * txth("A"), 0, 0, bn_ok,  "OK"
   doform
@@ -48,22 +51,57 @@ sub about()
   cls
 end
 
+sub setup()
+  color 3,0
+  print boldOn + "Setup web service port number."
+  print boldOff
+  print "Enter a port number to allow web browser or desktop IDE access. ";
+  print "Enter -1 to diable this feature, or press <enter> to leave ";
+  print "this screen without making any changes."
+  print "The current setting is: " + env("serverSocket")
+  print
+  color 15,3
+  input socket
+  if (len(socket) > 0) then
+    env("serverSocket=" + socket)
+    randomize timer
+    token = ""
+    for i = 1 to 6
+      token += chr (asc("A") + ((rnd * 1000) % 20))
+    next i
+    env("serverToken=" + token)
+    local msg = "You must restart SmallBASIC for this change to take effect"
+    print chr(27) + "[ ARestart required|" + msg + ";"
+  endif
+  color 7, 0
+  cls
+end
+
+sub serverInfo()
+  serverSocket = env("serverSocket")
+  if (len(serverSocket) > 0) then
+    print boldOff + "Web Service port: " + boldOn + serverSocket
+    print boldOff + "Access token: " + boldOn + env("serverToken")
+    print boldOff
+  fi
+end
+
 sub listFiles(path, byref basList, byref dirList)
   local fileList, ent, esc, name, lastItem
 
   erase basList
   erase dirList
-  
+
   if (right(path, 1) != "/") then
     path += "/"
   endif
 
   color 7, 0
   print "Files in " + path
-  
+
   esc = chr(27) + "[ H"
   fileList = files(path)
-  
+
   for ent in fileList
     name = ent
     if (isdir(path + name)) then
@@ -72,7 +110,7 @@ sub listFiles(path, byref basList, byref dirList)
       basList << name
     endif
   next ent
-  
+
   sort dirList
   sort basList
 
@@ -104,19 +142,23 @@ sub main
   form_var = ""
   bn_back = "_back"
   bn_about= "_about"
+  bn_setup= "_setup"
   bn_online = "http://smallbasic.sourceforge.net/?q=export/code/1102"
-  y_height = txth(about_button) + 5
+  y_height = txth(about_button) + 10
 
   sub make_ui(path, welcome)
     color 10, 8
     button 0,  0, 0, 0, bn_back,   "Go up"
     button -4, 0, 0, 0, bn_online, "Online", exitButtonType
+    button -4, 0, 0, 0, bn_setup,  "Setup",
     button -4, 0, 0, 0, bn_about,  "About"
     at 0, y_height
     if (welcome) then
       intro
+      print
+      serverInfo
     fi
-    listFiles path, basList, dirList        
+    listFiles path, basList, dirList
   end
 
   sub go_back
@@ -129,9 +171,9 @@ sub main
     if (index == 1) then
       index++
     fi
-    if (index > 0) 
+    if (index > 0)
       backPath = left(path, index - 1)
-    else 
+    else
       backPath = "/"
     endif
     path = backPath
@@ -150,11 +192,14 @@ sub main
     cls
 
     if (isdir(form_var)) then
-      path = form_var    
+      path = form_var
       chdir path
       make_ui path, false
     elif form_var == "About" then
       about
+      make_ui path, false
+    elif form_var == "Setup" then
+      setup
       make_ui path, false
     elif form_var == "Go up" then
       go_back

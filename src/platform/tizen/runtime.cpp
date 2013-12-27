@@ -47,11 +47,6 @@ RuntimeThread::~RuntimeThread() {
   _eventQueue = NULL;
 }
 
-void RuntimeThread::buttonClicked(const char *url) {
-  _loadPath.empty();
-  _loadPath.append(url, strlen(url));
-}
-
 result RuntimeThread::Construct(String &appRootPath, int w, int h) {
   logEntered();
   result r = Thread::Construct();
@@ -237,49 +232,6 @@ MAEvent RuntimeThread::processEvents(bool waitFlag) {
   return event;
 }
 
-char *RuntimeThread::readSource(const char *fileName) {
-  char *buffer = NULL;
-  bool networkFile = (strstr(fileName, "://") != NULL);
-
-  if (networkFile) {
-    int handle = 1;
-    var_t *var_p = v_new();
-    dev_file_t *f = dev_getfileptr(handle);
-    systemPrint(fileName);
-    _output->print("\033[ LLoading...");
-    if (dev_fopen(handle, fileName, 0)) {
-      http_read(f, var_p, 0);
-      int len = var_p->v.p.size;
-      buffer = (char *)tmp_alloc(len + 1);
-      memcpy(buffer, var_p->v.p.ptr, len);
-      buffer[len] = '\0';
-    } else {
-      systemPrint("\nfailed");
-    }
-    dev_fclose(handle);
-    v_free(var_p);
-    tmp_free(var_p);
-  } else {
-    int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
-    if (h != -1) {
-      int len = lseek(h, 0, SEEK_END);
-      lseek(h, 0, SEEK_SET);
-      buffer = (char *)tmp_alloc(len + 1);
-      read(h, buffer, len);
-      buffer[len] = '\0';
-      close(h);
-    }
-  }
-  if (buffer != NULL) {
-    delete [] _programSrc;
-    int len = strlen(buffer);
-    _programSrc = new char[len + 1];
-    strncpy(_programSrc, buffer, len);
-    _programSrc[len] = 0;
-  }
-  return buffer;
-}
-
 void RuntimeThread::setExit(bool quit) {
   if (!isClosing()) {
     _eventQueueLock->Acquire();
@@ -322,27 +274,9 @@ Tizen::Base::Object *RuntimeThread::Run() {
   return 0;
 }
 
-MAEvent RuntimeThread::getNextEvent() {
-  return processEvents(true);
-}
-
 //
 // form_ui implementation
 //
-bool form_ui::isRunning() {
-  return thread->isRunning();
-}
-
-bool form_ui::isBreak() {
-  return thread->isBreak();
-}
-
-void form_ui::processEvents() {
-  if (!isBreak()) {
-    thread->processEvents(true);
-  }
-}
-
 void form_ui::buttonClicked(const char *url) {
   thread->buttonClicked(url);
 }
@@ -395,111 +329,11 @@ void osd_clear_sound_queue() {
 void osd_beep(void) {
 }
 
-void osd_cls(void) {
-  logEntered();
-  ui_reset();
-  thread->_output->clearScreen();
-}
-
 int osd_devinit(void) {
   logEntered();
   thread->setRunning(true);
   setsysvar_str(SYSVAR_OSNAME, "Tizen");
   return 1;
-}
-
-int osd_devrestore(void) {
-  ui_reset();
-  thread->setRunning(false);
-  return 0;
-}
-
-int osd_events(int wait_flag) {
-  int result;
-  if (thread->isBreak()) {
-    result = -2;
-  } else {
-    thread->processEvents(wait_flag);
-    result = 0;
-  }
-  return result;
-}
-
-int osd_getpen(int mode) {
-  return thread->getPen(mode);
-}
-
-long osd_getpixel(int x, int y) {
-  return thread->_output->getPixel(x, y);
-}
-
-int osd_getx(void) {
-  return thread->_output->getX();
-}
-
-int osd_gety(void) {
-  return thread->_output->getY();
-}
-
-void osd_line(int x1, int y1, int x2, int y2) {
-  thread->_output->drawLine(x1, y1, x2, y2);
-}
-
-void osd_rect(int x1, int y1, int x2, int y2, int fill) {
-  if (fill) {
-    thread->_output->drawRectFilled(x1, y1, x2, y2);
-  } else {
-    thread->_output->drawRect(x1, y1, x2, y2);
-  }
-}
-
-void osd_refresh(void) {
-  if (!thread->isClosing()) {
-    thread->_output->flush(true);
-  }
-}
-
-void osd_setcolor(long color) {
-  if (!thread->isClosing()) {
-    thread->_output->setColor(color);
-  }
-}
-
-void osd_setpenmode(int enable) {
-  // touch mode is always active
-}
-
-void osd_setpixel(int x, int y) {
-  thread->_output->setPixel(x, y, dev_fgcolor);
-}
-
-void osd_settextcolor(long fg, long bg) {
-  thread->_output->setTextColor(fg, bg);
-}
-
-void osd_setxy(int x, int y) {
-  thread->_output->setXY(x, y);
-}
-
-int osd_textheight(const char *str) {
-  return thread->_output->textHeight();
-}
-
-int osd_textwidth(const char *str) {
-  MAExtent textSize = maGetTextSize(str);
-  return EXTENT_X(textSize);
-}
-
-void osd_write(const char *str) {
-  if (!thread->isClosing()) {
-    thread->_output->print(str);
-  }
-}
-
-void lwrite(const char *str) {
-  if (!thread->isClosing()) {
-    thread->systemPrint(str);
-  }
 }
 
 void dev_image(int handle, int index,
@@ -514,14 +348,3 @@ int dev_image_height(int handle, int index) {
   return 0;
 }
 
-void dev_delay(dword ms) {
-  maWait(ms);
-}
-
-char *dev_gets(char *dest, int maxSize) {
-  return thread->getText(dest, maxSize);
-}
-
-char *dev_read(const char *fileName) {
-  return thread->readSource(fileName);
-}
