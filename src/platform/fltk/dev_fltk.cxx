@@ -215,12 +215,8 @@ int osd_getpen(int code) {
 
   switch (code) {
   case 0:
-    // UNTIL PEN(0) - wait until move click or move
-    //    if (form_event()) {
-    //      // clicked a form widget
-    //      get_mouse_xy();
-    //      return 1;
-    //    }
+    // UNTIL PEN(0) - wait until click or move
+    wnd->_out->flush(false);
     fltk::wait();               // fallthru to re-test 
 
   case 3:                      // returns true if the pen is down (and save curpos)

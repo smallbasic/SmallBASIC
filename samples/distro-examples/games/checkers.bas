@@ -149,8 +149,9 @@ Sub DisplayBoard (Board)
     Local x, y, FillColor
 
     ' Clear screen
+    color 0,15
     Cls
-
+    
     ' Draw the background squares
     For x = 1 to Squares
         For y = 1 to Squares
