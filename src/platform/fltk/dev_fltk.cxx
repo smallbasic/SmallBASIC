@@ -24,6 +24,7 @@
 #include "platform/fltk/HelpWidget.h"
 #include "platform/fltk/TtyWidget.h"
 #include "platform/fltk/utils.h"
+#include "platform/fltk/system.h"
 #include "platform/common/utils.h"
 #include "platform/common/interface.h"
 #include "common/fs_socket_client.h"
@@ -47,6 +48,7 @@ String eventName;
 bool saveForm = false;
 clock_t lastEventTime;
 dword eventsPerTick;
+System *g_system = new System();
 
 #define EVT_MAX_BURN_TIME (CLOCKS_PER_SEC / 4)
 #define EVT_PAUSE_TIME 0.005
@@ -662,19 +664,25 @@ C_LINKAGE_END
 
 //--FORM------------------------------------------------------------------------
 
-bool form_ui::isRunning() { 
+bool System::isRunning() { 
   return wnd->isRunning(); 
 }
 
-bool form_ui::isBreak() { 
+bool System::isBreak() { 
   return wnd->isBreakExec(); 
 }
 
-void form_ui::processEvents() { 
-  osd_events(1);
+MAEvent System::processEvents(bool wait) {
+  osd_events(wait);
+  MAEvent event;
+  if (keymap_kbhit()) {
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = keymap_kbpeek();
+  }
+  return event;
 }
 
-void form_ui::buttonClicked(const char *url) { 
+void System::buttonClicked(const char *url) { 
 }
 
 //--HTML Utils------------------------------------------------------------------

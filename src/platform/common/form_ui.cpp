@@ -23,7 +23,12 @@
 
 #include "platform/common/utils.h"
 #include "platform/common/form_ui.h"
-#include "platform/common/system.h"
+
+#if defined(_FLTK)
+  #include "platform/fltk/system.h"
+#else
+  #include "platform/common/system.h"
+#endif
 
 Form *form;
 extern System *g_system;

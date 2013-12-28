@@ -214,7 +214,8 @@ sub main
   rect 0, 0, xmax, ymax, 1 FILLED
   createForm
   showResult result  
-
+  b_eq = "="
+  
   ' turn on keyboard mode
   doform 1
 
@@ -225,6 +226,8 @@ sub main
     if (len(k) == 1) then
       if (asc(k) == 127) then
         form_var = b_bs
+      else if (asc(k) == 13) then
+        form_var = b_eq
       else
         form_var = k
       fi

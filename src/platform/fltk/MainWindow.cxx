@@ -1051,7 +1051,7 @@ MainWindow::MainWindow(int w, int h) :
   _outputGroup->hide();
   _outputGroup->user_data((void *)gw_output);
   _outputGroup->begin();
-  _out = new MosyncWidget(2, 2, w - 4, h - 4, DEF_FONT_SIZE);
+  _out = new DisplayWidget(2, 2, w - 4, h - 4, DEF_FONT_SIZE);
   _outputGroup->resizable(_out);
   _outputGroup->end();
 

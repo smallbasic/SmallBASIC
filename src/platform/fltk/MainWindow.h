@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 
-#include "platform/fltk/MosyncWidget.h"
+#include "platform/fltk/display.h"
 #include "platform/fltk/EditorWidget.h"
 #include "platform/fltk/HelpWidget.h"
 #include "platform/fltk/Profile.h"
@@ -164,7 +164,7 @@ struct MainWindow : public BaseWindow {
   strlib::String _exportFile;
 
   // main output
-  MosyncWidget *_out;
+  DisplayWidget *_out;
   Group *_outputGroup;
 
   EditorWidget *_runEditWidget;

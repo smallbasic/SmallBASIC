@@ -6,8 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
 
-#ifndef MOSYNC_WIDGET
-#define MOSYNC_WIDGET
+#ifndef DISPLAY_WIDGET_H
+#define DISPLAY_WIDGET_H
 
 #include <fltk/Widget.h>
 #include <fltk/Image.h>
@@ -42,10 +42,10 @@ struct Canvas {
   bool _isScreen;
 };
 
-class MosyncWidget : public fltk::Widget, IButtonListener {
+class DisplayWidget : public fltk::Widget, IButtonListener {
 public:
-  MosyncWidget(int x, int y, int w, int h, int defsize);
-  virtual ~MosyncWidget();
+  DisplayWidget(int x, int y, int w, int h, int defsize);
+  virtual ~DisplayWidget();
 
   void clearScreen();
   void print(const char *str);

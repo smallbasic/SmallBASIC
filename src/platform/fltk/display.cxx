@@ -18,8 +18,9 @@
 #include <fltk/run.h>
 
 #include <time.h>
-#include "platform/fltk/MosyncWidget.h"
+#include "platform/fltk/display.h"
 #include "platform/fltk/utils.h"
+#include "platform/fltk/system.h"
 #include "platform/common/ansiwidget.h"
 #include "platform/common/form_ui.h"
 
@@ -27,11 +28,12 @@ using namespace fltk;
 
 #define SIZE_LIMIT 4
 
-MosyncWidget *widget;
+DisplayWidget *widget;
 Canvas *drawTarget;
 bool mouseActive;
 Color drawColor;
 int drawColorRaw;
+extern System *g_system;
 
 //
 // Canvas
@@ -199,9 +201,9 @@ void Canvas::setFont() {
 }
 
 //
-// MosyncWidget
+// DisplayWidget
 //
-MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
+DisplayWidget::DisplayWidget(int x, int y, int w, int h, int defsize) :
   Widget(x, y, w, h, 0),
   _ansiWidget(NULL),
   _screen(NULL),
@@ -212,12 +214,12 @@ MosyncWidget::MosyncWidget(int x, int y, int w, int h, int defsize) :
   widget = this;
 }
 
-MosyncWidget::~MosyncWidget() {
+DisplayWidget::~DisplayWidget() {
   delete _ansiWidget;
   delete _screen;
 }
 
-void MosyncWidget::createScreen() {
+void DisplayWidget::createScreen() {
   if (!_screen) {
     _screen = new Canvas(_defsize);
     _screen->create(w(), h());
@@ -231,7 +233,7 @@ void MosyncWidget::createScreen() {
   }
 }
 
-void MosyncWidget::layout() {
+void DisplayWidget::layout() {
   if (_screen != NULL && _ansiWidget != NULL &&
       (layout_damage() & LAYOUT_WH)) {
     // can't use GSave here in X
@@ -240,7 +242,7 @@ void MosyncWidget::layout() {
   Widget::layout();
 }
 
-void MosyncWidget::draw() {
+void DisplayWidget::draw() {
   if (_resized) {
     // resize the backing screens
     _screen->resize(w(), h());
@@ -265,18 +267,18 @@ void MosyncWidget::draw() {
   }
 }
 
-void MosyncWidget::flush(bool force) {
+void DisplayWidget::flush(bool force) {
   _ansiWidget->flush(force);
 }
 
-void MosyncWidget::reset() {
+void DisplayWidget::reset() {
   createScreen();
   _ansiWidget->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _ansiWidget->setFontSize(_defsize);
   _ansiWidget->reset();
 }
 
-int MosyncWidget::handle(int e) {
+int DisplayWidget::handle(int e) {
   MAEvent event;
 
   switch (e) {
@@ -317,71 +319,71 @@ int MosyncWidget::handle(int e) {
   return Widget::handle(e);
 }
 
-void MosyncWidget::buttonClicked(const char *action) {
+void DisplayWidget::buttonClicked(const char *action) {
 }
 
-void MosyncWidget::clearScreen() {
+void DisplayWidget::clearScreen() {
   createScreen();
   _ansiWidget->clearScreen();
 }
 
-void MosyncWidget::print(const char *str) {
+void DisplayWidget::print(const char *str) {
   _ansiWidget->print(str);
 }
 
-void MosyncWidget::drawLine(int x1, int y1, int x2, int y2) {
+void DisplayWidget::drawLine(int x1, int y1, int x2, int y2) {
   _ansiWidget->drawLine(x1, y1, x2, y2);
 }
 
-void MosyncWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
+void DisplayWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   _ansiWidget->drawRectFilled(x1, y1, x2, y2);
 }
 
-void MosyncWidget::drawRect(int x1, int y1, int x2, int y2) {
+void DisplayWidget::drawRect(int x1, int y1, int x2, int y2) {
   _ansiWidget->drawRect(x1, y1, x2, y2);
 }
 
-void MosyncWidget::drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h) {
+void DisplayWidget::drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h) {
   _ansiWidget->drawImage((MAHandle) img, x, y, sx, sy, w, h);
 }
 
-void MosyncWidget::saveImage(const char *fn, int x, int y, int w, int h) {
+void DisplayWidget::saveImage(const char *fn, int x, int y, int w, int h) {
   // TODO
 }
 
-void MosyncWidget::setTextColor(long fg, long bg) {
+void DisplayWidget::setTextColor(long fg, long bg) {
   _ansiWidget->setTextColor(fg, bg);
 }
 
-void MosyncWidget::setColor(long color) {
+void DisplayWidget::setColor(long color) {
   _ansiWidget->setColor(color);
 }
 
-int MosyncWidget::getX() {
+int DisplayWidget::getX() {
   return _ansiWidget->getX();
 }
 
-int MosyncWidget::getY() {
+int DisplayWidget::getY() {
   return _ansiWidget->getY();
 }
 
-void MosyncWidget::setPixel(int x, int y, int c) {
+void DisplayWidget::setPixel(int x, int y, int c) {
   _ansiWidget->setPixel(x, y, c);
 }
 
-int MosyncWidget::getPixel(int x, int y) {
+int DisplayWidget::getPixel(int x, int y) {
   return _ansiWidget->getPixel(x, y);
 }
 
-void MosyncWidget::setXY(int x, int y) {
+void DisplayWidget::setXY(int x, int y) {
   _ansiWidget->setXY(x, y);
 }
 
-int MosyncWidget::textHeight(void) {
+int DisplayWidget::textHeight(void) {
   return _ansiWidget->textHeight();
 }
 
-int MosyncWidget::textWidth(const char *str) {
+int DisplayWidget::textWidth(const char *str) {
   int result;
   if (drawTarget && str && str[0]) {
     drawTarget->setFont();
@@ -392,15 +394,15 @@ int MosyncWidget::textWidth(const char *str) {
   return result;
 }
 
-void MosyncWidget::setFontSize(float i) {
+void DisplayWidget::setFontSize(float i) {
   _ansiWidget->setFontSize(i);
 }
 
-int MosyncWidget::getFontSize() {
+int DisplayWidget::getFontSize() {
   return _ansiWidget->getFontSize();
 }
 
-int MosyncWidget::getBackgroundColor() {
+int DisplayWidget::getBackgroundColor() {
   return _ansiWidget->getBackgroundColor();
 }
 
@@ -605,10 +607,10 @@ void form_ui::optionsBox(StringList *items) {
     item->setListener(&listener);
     y += 24;
   }
-  while (form_ui::isRunning() && !listener._action.length()) {
-    form_ui::processEvents();
+  while (g_system->isRunning() && !listener._action.length()) {
+    g_system->processEvents(true);
   }
-  if (!form_ui::isBreak()) {
+  if (!g_system->isBreak()) {
     int index = 0;
     List_each(String *, it, *items) {
       char *str = (char *)(* it)->c_str();

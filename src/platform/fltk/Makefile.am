@@ -26,7 +26,7 @@ sbasici_SOURCES =                             \
   ../common/screen.cpp                        \
   ../common/form_ui.cpp                       \
   ../common/StringLib.cpp                     \
-  MosyncWidget.cxx MosyncWidget.h             \
+  display.cxx display.h                       \
   HelpWidget.cxx HelpWidget.h                 \
   TtyWidget.cxx TtyWidget.h                   \
   MainWindow.cxx MainWindow.h                 \
