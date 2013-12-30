@@ -307,8 +307,7 @@ void System::runMain(const char *mainBasPath) {
     opt_command[0] = '\0';
     bool success = sbasic_main(_loadPath);
     if (!isClosing() && _overruns) {
-      systemPrint("\nOverruns: %d\n\n", _overruns);
-      success = false;
+      systemPrint("\nOverruns: %d\n", _overruns);
     }
     if (!isBack() && !isClosing()) {
       // load the next network file without displaying the previous result
@@ -438,7 +437,7 @@ void System::showError() {
 }
 
 // detect when we have been called too frequently
-void System::showLoadError() {
+void System::checkLoadError() {
   int now = maGetMilliSecondCount();
   _eventTicks++;
   if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
@@ -521,7 +520,7 @@ int osd_events(int wait_flag) {
     result = -2;
   } else {
     g_system->processEvents(wait_flag);
-    result = 0;
+    result = g_system->isBreak() ? -2 : 0;
   }
   return result;
 }

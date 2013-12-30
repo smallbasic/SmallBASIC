@@ -49,7 +49,7 @@ protected:
   bool setParentPath();
   void showCompletion(bool success);
   void showError();
-  void showLoadError();
+  void checkLoadError();
   void showSystemScreen(bool showSrc);
   void showMenu();
 

@@ -172,7 +172,7 @@ MAEvent RuntimeThread::processEvents(bool waitFlag) {
   MAEvent event;
 
   if (!waitFlag) {
-    showLoadError();
+    checkLoadError();
   } else {
     // wait for an event
     _output->flush(true);
