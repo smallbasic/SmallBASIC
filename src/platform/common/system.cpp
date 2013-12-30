@@ -45,7 +45,7 @@ System::System() :
   _touchCurY(-1),
   _initialFontSize(0),
   _fontScale(100),
-  _drainError(false),
+  _overruns(0),
   _systemMenu(false),
   _systemScreen(false),
   _mainBas(false),
@@ -306,6 +306,10 @@ void System::runMain(const char *mainBasPath) {
     }
     opt_command[0] = '\0';
     bool success = sbasic_main(_loadPath);
+    if (!isClosing() && _overruns) {
+      systemPrint("\nOverruns: %d\n\n", _overruns);
+      success = false;
+    }
     if (!isBack() && !isClosing()) {
       // load the next network file without displaying the previous result
       bool networkFile = (_loadPath.indexOf("://", 1) != -1);
@@ -412,7 +416,7 @@ void System::setRunning(bool running) {
     _loadPath.empty();
     _lastEventTime = maGetMilliSecondCount();
     _eventTicks = 0;
-    _drainError = false;
+    _overruns = 0;
   } else if (!isClosing() && !isRestart() && !isBack()) {
     _state = kActiveState;
   }
@@ -440,11 +444,7 @@ void System::showLoadError() {
   if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
     // next time inspection interval
     if (_eventTicks >= EVENT_MAX_BURN_TIME) {
-      _output->print("\033[ LBattery drain");
-      _drainError = true;
-    } else if (_drainError) {
-      _output->print("\033[ L");
-      _drainError = false;
+      _overruns++;
     }
     _lastEventTime = now;
     _eventTicks = 0;
@@ -466,7 +466,7 @@ void System::showMenu() {
 
 void System::showSystemScreen(bool showSrc) {
   if (showSrc) {
-    // screen command write screen 2 (\014=CLS)
+    // screen command write screen 6 (\014=CLS)
     _output->print("\033[ SW6\014");
     if (_programSrc) {
       _output->print(_programSrc);

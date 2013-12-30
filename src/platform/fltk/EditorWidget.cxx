@@ -788,6 +788,9 @@ int EditorWidget::getFontSize() {
  * use the input control as the INPUT basic command handler
  */
 void EditorWidget::getInput(char *result, int size) {
+  if (result && result[0]) {
+    commandText->value(result);
+  }
   setCommand(cmd_input_text);
   wnd->setModal(true);
   while (wnd->isModal()) {

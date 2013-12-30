@@ -41,7 +41,6 @@ typedef signed long    S32;
  #define _DEBUG
 #endif
 
-
 #if defined(MAPIP)
  #include <mavsprintf.h>
  #define deviceLog lprintfln

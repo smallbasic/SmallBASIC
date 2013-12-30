@@ -75,7 +75,7 @@ protected:
   int _touchCurY;
   int _initialFontSize;
   int _fontScale;
-  bool _drainError;
+  int _overruns;
   bool _systemMenu;
   bool _systemScreen;
   bool _mainBas;

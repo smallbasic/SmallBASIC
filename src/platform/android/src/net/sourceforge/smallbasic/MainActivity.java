@@ -175,8 +175,9 @@ public class MainActivity extends NativeActivity {
   private void execStream(String line, DataInputStream inputStream) throws IOException {
     File outputFile = getApplication().getFileStreamPath(BUFFER_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
+    Log.i(TAG, "execStream() entered");
     while (line != null) {
-      output.write(line);  
+      output.write(line + "\n");
       line = readLine(inputStream);
     }
     output.close();
@@ -188,7 +189,7 @@ public class MainActivity extends NativeActivity {
       throws IOException, UnsupportedEncodingException {
     int length = 0;
     final String lengthHeader = "content-length: ";
-    while (line != null) {
+    while (line != null && line.length() > 0) {
       if (line.toLowerCase().startsWith(lengthHeader)) {
         length = Integer.valueOf(line.substring(lengthHeader.length()));
       }
@@ -237,12 +238,13 @@ public class MainActivity extends NativeActivity {
 
   private String readLine(DataInputStream inputReader) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream(128);
-    for (int b = inputReader.read(); b != -1 && b != '\n'; b = inputReader.read()) {
+    int b;
+    for (b = inputReader.read(); b != -1 && b != '\n'; b = inputReader.read()) {
       if (b != '\r') {
         out.write(b);
       }
     }
-    return out.size() == 0 ? null : out.toString();
+    return b == -1 ? null : out.size() == 0 ? "" : out.toString();
   }
 
   private void runServer(final int socketNum, final String token) throws IOException {

@@ -1161,7 +1161,7 @@ Screen *AnsiWidget::selectScreen(char *&p) {
   }
   
   if (result == NULL) {
-    if (n > 1) {
+    if (n > 1 && n != MAX_SCREENS - 1) {
       result = new TextScreen(_width, _height, _fontSize, x, y, w, h);
     } else {
       result = new GraphicScreen(_width, _height, _fontSize);
