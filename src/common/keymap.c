@@ -136,14 +136,17 @@ void dev_pushkey(word key) {
  * returns true if there is an key in keyboard buffer
  */
 int dev_kbhit() {
-  int result = keytail != keyhead;
-  if (!result) {
-    if (dev_events(0) < 0) {
-      brun_break();
-    }
-    result = keytail != keyhead;
+  if (keytail != keyhead) {
+    return 1;
   }
-  return result;
+
+  // conserve battery power
+  int code = dev_events(2);
+
+  if (code < 0) {
+    brun_break();
+  }
+  return (keytail != keyhead);
 }
 
 /**

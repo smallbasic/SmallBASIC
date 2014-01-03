@@ -168,7 +168,7 @@ void RuntimeThread::pushEvent(MAEvent maEvent) {
   _eventQueueLock->Release();
 }
 
-MAEvent RuntimeThread::processEvents(bool waitFlag) {
+MAEvent RuntimeThread::processEvents(int waitFlag) {
   MAEvent event;
 
   if (!waitFlag) {

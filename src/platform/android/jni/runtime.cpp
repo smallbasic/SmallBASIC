@@ -455,13 +455,21 @@ void Runtime::pollEvents(bool blocking) {
   }
 }
 
-MAEvent Runtime::processEvents(bool waitFlag) {
-  if (!waitFlag) {
-    checkLoadError();
-  } else {
+MAEvent Runtime::processEvents(int waitFlag) {
+  switch (waitFlag) {
+  case 1:
+    // wait for an event
     _output->flush(true);
+    pollEvents(true);
+    break;
+  case 2:
+    // pause
+    maWait(WAIT_INTERVAL);
+    break;
+  default:
+    pollEvents(false);
+    checkLoadError();
   }
-  pollEvents(waitFlag);
 
   MAEvent event;
   if (hasEvent()) {
@@ -569,10 +577,7 @@ int maGetEvent(MAEvent *event) {
 void maWait(int timeout) {
   if (timeout == -1) {
     runtime->pollEvents(true);
-  } else if (timeout < 1000) {
-    usleep(timeout * 1000);
   } else {
-    // wait for 1 second or longer
     int slept = 0;
     while (1) {
       runtime->pollEvents(false);

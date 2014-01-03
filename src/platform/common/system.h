@@ -34,12 +34,12 @@ struct System : public IButtonListener {
   void systemPrint(const char *msg, ...);
 
   AnsiWidget *_output;
-  virtual MAEvent processEvents(bool waitFlag) = 0;
+  virtual MAEvent processEvents(int waitFlag) = 0;
   virtual void setExit(bool quit) = 0;
   virtual char *loadResource(const char *fileName);
 
 protected:
-  MAEvent getNextEvent() { return processEvents(true); }
+  MAEvent getNextEvent() { return processEvents(1); }
   void handleEvent(MAEvent event);
   void handleMenu(int menuId);
   void resize();

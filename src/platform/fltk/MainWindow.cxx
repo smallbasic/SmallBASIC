@@ -426,7 +426,7 @@ void MainWindow::export_file(fltk::Widget *w, void *eventData) {
       editWidget->statusMsg("Enter address:  For mobile SmallBASIC use SOCL:<IP>:<Port>");
       editWidget->getInput(buffer, PATH_MAX);
       if (buffer[0]) {
-        if (strncmp(buffer, "SOCL:", 5) == 0) {
+        if (strncasecmp(buffer, "SOCL:", 5) == 0) {
           editWidget->statusMsg("Enter token:");
           editWidget->getInput(token, PATH_MAX);
         } else {

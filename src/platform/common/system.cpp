@@ -306,6 +306,7 @@ void System::runMain(const char *mainBasPath) {
     }
     opt_command[0] = '\0';
     bool success = sbasic_main(_loadPath);
+    _output->flush(true);
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }

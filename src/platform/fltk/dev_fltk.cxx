@@ -591,6 +591,7 @@ void dev_delay(dword ms) {
   if (!wnd->isBreakExec()) {
     add_timeout(((float)ms) / 1000, timeout_callback, 0);
     wnd->setModal(true);
+    wnd->_out->flush(true);
     while (wnd->isModal()) {
       fltk::wait(0.1);
     }

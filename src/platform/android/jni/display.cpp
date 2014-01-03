@@ -203,8 +203,8 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         x2 = startX;
       }
       pixel_t *line = _drawTarget->getLine(startY);
-      for (int x = x1; x < x2; x++) {
-        if (x >= _drawTarget->x() && x <= _drawTarget->w()) {
+      for (int x = x1; x <= x2; x++) {
+        if (x >= _drawTarget->x() && x < _drawTarget->w()) {
           line[x] = _drawColor;
         }
       }
@@ -216,8 +216,8 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         y1 = endY;
         y2 = startY;
       }
-      for (int y = y1; y < y2; y++) {
-        if (y >= _drawTarget->y() && y <= _drawTarget->h()) {
+      for (int y = y1; y <= y2; y++) {
+        if (y >= _drawTarget->y() && y < _drawTarget->h()) {
           pixel_t *line = _drawTarget->getLine(y);
           line[startX] = _drawColor;
         }
