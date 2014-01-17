@@ -111,8 +111,8 @@ void Canvas::setClip(int x, int y, int w, int h) {
     _clip = new ARect();
     _clip->left = x;
     _clip->top = y;
-    _clip->right = w;
-    _clip->bottom = h;
+    _clip->right = x + w;
+    _clip->bottom = y + h;
   } else {
     _clip = NULL;
   }
@@ -203,8 +203,8 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         x2 = startX;
       }
       pixel_t *line = _drawTarget->getLine(startY);
-      for (int x = x1; x < x2; x++) {
-        if (x >= _drawTarget->x() && x <= _drawTarget->w()) {
+      for (int x = x1; x <= x2; x++) {
+        if (x >= _drawTarget->x() && x < _drawTarget->w()) {
           line[x] = _drawColor;
         }
       }
@@ -216,8 +216,8 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         y1 = endY;
         y2 = startY;
       }
-      for (int y = y1; y < y2; y++) {
-        if (y >= _drawTarget->y() && y <= _drawTarget->h()) {
+      for (int y = y1; y <= y2; y++) {
+        if (y >= _drawTarget->y() && y < _drawTarget->h()) {
           pixel_t *line = _drawTarget->getLine(y);
           line[startX] = _drawColor;
         }
@@ -244,11 +244,11 @@ void Graphics::drawRectFilled(int left, int top, int width, int height) {
   if (_drawTarget) {
     int w = _drawTarget->w();
     int h = _drawTarget->h();
-    for (int y = _drawTarget->y(); y < height; y++) {
+    for (int y = 0; y < height; y++) {
       int posY = y + top;
       if (posY >= _drawTarget->y() && posY < h) {
         pixel_t *line = _drawTarget->getLine(posY);
-        for (int x = _drawTarget->x(); x < width; x++) {
+        for (int x = 0; x < width; x++) {
           int posX = x + left;
           if (posX >= _drawTarget->x() && posX < w) {
             line[posX] = _drawColor;

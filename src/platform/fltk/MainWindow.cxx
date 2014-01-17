@@ -413,7 +413,7 @@ void MainWindow::set_flag(fltk::Widget *w, void *eventData) {
 
 void MainWindow::export_file(fltk::Widget *w, void *eventData) {
   EditorWidget *editWidget = getEditor();
-  static bool exportHelp = false;
+  static char token[PATH_MAX];
   if (editWidget) {
     if (runMode == edit_state) {
       int handle = 1;
@@ -423,19 +423,23 @@ void MainWindow::export_file(fltk::Widget *w, void *eventData) {
       } else {
         buffer[0] = 0;
       }
-      if (!exportHelp) {
-        editWidget->statusMsg("To export and run on Android SmallBASIC:");
-        editWidget->statusMsg(" - ensure the first line is a comment with the access token");
-        editWidget->statusMsg(" - enter SOCL:<IP Address>:<Port>");
-        exportHelp = true;
-      }
-      editWidget->statusMsg("Enter export file name:");
+      editWidget->statusMsg("Enter address:  For mobile SmallBASIC use SOCL:<IP>:<Port>");
       editWidget->getInput(buffer, PATH_MAX);
       if (buffer[0]) {
+        if (strncasecmp(buffer, "SOCL:", 5) == 0) {
+          editWidget->statusMsg("Enter token:");
+          editWidget->getInput(token, PATH_MAX);
+        } else {
+          token[0] = 0;
+        }
         _exportFile = buffer;
         if (dev_fopen(handle, _exportFile, DEV_FILE_OUTPUT)) {
           TextBuffer *textbuf = editWidget->editor->buffer();
           const char *data = textbuf->text();
+          if (token[0]) {
+            sprintf(buffer, "# %s\n", token);
+            dev_fwrite(handle, (byte *)buffer, strlen(buffer));
+          }
           if (!dev_fwrite(handle, (byte *)data, textbuf->length())) {
             sprintf(buffer, "Failed to write: %s", _exportFile.c_str());
             statusMsg(rs_err, buffer);

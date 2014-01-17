@@ -27,7 +27,7 @@ struct Runtime : public System {
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
-  MAEvent processEvents(bool waitFlag);
+  MAEvent processEvents(int waitFlag);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void pollEvents(bool blocking);
   MAEvent *popEvent();

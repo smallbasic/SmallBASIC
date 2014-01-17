@@ -34,12 +34,12 @@ struct System : public IButtonListener {
   void systemPrint(const char *msg, ...);
 
   AnsiWidget *_output;
-  virtual MAEvent processEvents(bool waitFlag) = 0;
+  virtual MAEvent processEvents(int waitFlag) = 0;
   virtual void setExit(bool quit) = 0;
   virtual char *loadResource(const char *fileName);
 
 protected:
-  MAEvent getNextEvent() { return processEvents(true); }
+  MAEvent getNextEvent() { return processEvents(1); }
   void handleEvent(MAEvent event);
   void handleMenu(int menuId);
   void resize();
@@ -49,7 +49,7 @@ protected:
   bool setParentPath();
   void showCompletion(bool success);
   void showError();
-  void showLoadError();
+  void checkLoadError();
   void showSystemScreen(bool showSrc);
   void showMenu();
 
@@ -75,7 +75,7 @@ protected:
   int _touchCurY;
   int _initialFontSize;
   int _fontScale;
-  bool _drainError;
+  int _overruns;
   bool _systemMenu;
   bool _systemScreen;
   bool _mainBas;

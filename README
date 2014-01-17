@@ -38,7 +38,11 @@ Then use it to cross-compile the tools:
 
 $ cd src/platform/andoid/jni && $NDK/ndk-build
 
-5. Complete the packaging process using Android eclipse.
+$ cd - && cd ide/android/ && ant release install
+
+Useful adb commands for debugging:
+adb shell dumpsys cpuinfo
+adb shell top -m 10
 
 == Building the TIZEN port
 

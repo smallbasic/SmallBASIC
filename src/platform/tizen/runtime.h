@@ -33,7 +33,7 @@ struct RuntimeThread :
   bool hasEvent();
   MAEvent popEvent();
   void pushEvent(MAEvent event);
-  MAEvent processEvents(bool waitFlag);
+  MAEvent processEvents(int waitFlag);
   void setExit(bool quit);
 
 private:
