@@ -15,14 +15,14 @@
 
 const char *configFile = "config.txt";
 const char *pathKey = "path";
-const char *_indentLevelKey = "_indentLevel";
+const char *indentLevelKey = "_indentLevel";
 const char *fontNameKey = "fontName";
-const char *_fontSizeKey = "_fontSize";
+const char *fontSizeKey = "_fontSize";
 const char *windowPosKey = "windowPos";
 const char *activeTabKey = "activeTab";
-const char *_createBackupsKey = "_createBackups";
-const char *_lineNumbersKey = "_lineNumbers";
-const char *_appPositionKey = "_appPosition";
+const char *createBackupsKey = "_createBackups";
+const char *lineNumbersKey = "_lineNumbers";
+const char *appPositionKey = "_appPosition";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];
@@ -69,13 +69,13 @@ void Profile::restore(MainWindow *wnd) {
     fclose(fp);
     profile.load(buffer.toString(), buffer.length());
 
-    restoreValue(&profile, _indentLevelKey, &_indentLevel);
-    restoreValue(&profile, _createBackupsKey, &_createBackups);
-    restoreValue(&profile, _lineNumbersKey, &_lineNumbers);
+    restoreValue(&profile, indentLevelKey, &_indentLevel);
+    restoreValue(&profile, createBackupsKey, &_createBackups);
+    restoreValue(&profile, lineNumbersKey, &_lineNumbers);
     restoreStyles(&profile);
 
     Rectangle rc;
-    rc = restoreRect(&profile, _appPositionKey);
+    rc = restoreRect(&profile, appPositionKey);
     if (!rc.empty()) {
       _appPosition = rc;
     }
@@ -112,12 +112,12 @@ void Profile::save(MainWindow *wnd) {
     // prevent overwriting config when not initially used
     FILE *fp = wnd->openConfig(configFile);
     if (fp) {
-      saveValue(fp, _indentLevelKey, _indentLevel);
-      saveValue(fp, _createBackupsKey, _createBackups);
-      saveValue(fp, _lineNumbersKey, _lineNumbers);
+      saveValue(fp, indentLevelKey, _indentLevel);
+      saveValue(fp, createBackupsKey, _createBackups);
+      saveValue(fp, lineNumbersKey, _lineNumbers);
       saveStyles(fp);
       saveTabs(fp, wnd);
-      saveRect(fp, _appPositionKey, &_appPosition);
+      saveRect(fp, appPositionKey, &_appPosition);
       saveRect(fp, windowPosKey, wnd);
       fclose(fp);
     }
@@ -163,7 +163,7 @@ Rectangle Profile::restoreRect(Properties *profile, const char *key) {
 //
 void Profile::restoreStyles(Properties *profile) {
   // restore size and face
-  restoreValue(profile, _fontSizeKey, &_fontSize);
+  restoreValue(profile, fontSizeKey, &_fontSize);
   String *fontName = profile->get(fontNameKey);
   if (fontName) {
     _font = fltk::font(fontName->toString());
@@ -280,7 +280,7 @@ void Profile::saveRect(FILE *fp, const char *key, Rectangle *rc) {
 void Profile::saveStyles(FILE *fp) {
   uchar r, g, b;
 
-  saveValue(fp, _fontSizeKey, (int)styletable[0].size);
+  saveValue(fp, fontSizeKey, (int)styletable[0].size);
   saveValue(fp, fontNameKey, styletable[0].font->name());
 
   for (int i = 0; i <= st_background; i++) {

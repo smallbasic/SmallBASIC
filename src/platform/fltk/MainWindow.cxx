@@ -11,6 +11,7 @@
 #endif
 
 #include <dirent.h>
+#include <unistd.h>
 
 #include <fltk/Item.h>
 #include <fltk/MenuBar.h>
@@ -42,6 +43,7 @@ int recentPosition[NUM_RECENT_ITEMS];
 MainWindow *wnd;
 ExecState runMode = init_state;
 
+const char *fontCache = "fonts.txt";
 const char *untitledFile = "untitled.bas";
 const char *fileTabName = "File";
 const char *helpTabName = "Help";
@@ -71,33 +73,130 @@ bool isFormActive();
 
 // scan for fixed pitch fonts in the background
 struct ScanFont {
-  ScanFont(Menu *argMenu) : menu(argMenu), index(0) {
-    numfonts = fltk::list_fonts(fonts);
+  ScanFont(MainWindow *main, MenuBar *menu) :
+    _main(main),
+    _menu(menu), 
+    _fp(0),
+    _scanFonts(false), 
+    _index(0) {
+    _numfonts = fltk::list_fonts(_fonts);
+
+    _fp = main->openConfig(fontCache, "r");
+    if (!_fp) {
+      _fp = _main->openConfig(fontCache, "w");
+      _scanFonts = true;
+    }
     fltk::add_idle(ScanFont::scan_font_cb, this);
-  } 
-  static void scan_font_cb(void *eventData) {
-    ((ScanFont *)eventData)->scanNext();
   }
-  void scanNext() {
-    if (index < numfonts) {
-      char label[256];
-      sprintf(label, "&View/Font/%s", fonts[index]->system_name());
-      setfont(font(fonts[index]->name()), 12);
-      if (getdescent() < MAX_DESCENT && (getwidth("QW#@") == getwidth("il:("))) {
-        fltk::Widget *w = menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
-        w->textfont(getfont());
+
+  static void scan_font_cb(void *eventData) {
+    ((ScanFont *)eventData)->readFonts();
+  }
+
+  bool addFont(Font *nextFont, bool accept) {
+    int t = nextFont->attributes_;
+    char label[256];
+    const char *name = nextFont->system_name();
+    if (!(t & fltk::ITALIC) && name[0] != '@') {
+      if (t & fltk::BOLD) {
+        sprintf(label, "&View/Font (Bold)/%s", name);
+      } else {
+        sprintf(label, "&View/Font/%s", name);
       }
-      index++;
+      if (!accept) {
+        Font *saveFont = getfont();
+        int saveSize = getsize();
+
+        setfont(nextFont, 4);
+        int descent = getdescent();
+        if (descent > 0 && descent < MAX_DESCENT
+            && fltk::getwidth("|") > 1
+            && fltk::getwidth("QW#@") == fltk::getwidth("il:(")) {
+          accept = true;
+        }
+        setfont(saveFont, saveSize);
+      }
+      if (accept) {
+        fltk::Widget *w = _menu->add(label, 0, (Callback *)EditorWidget::font_name_cb);
+        w->textfont(nextFont);
+      }
+    }
+    return accept;
+  }
+
+  // end of iteration
+  void finalise() {
+    if (_fp) {
+      fclose(_fp);
+    }
+
+    _menu->add("&View/Font/_", 0, (Callback *)null);
+    _menu->add("&View/Font/Clear cache", 0, (Callback *)MainWindow::font_cache_clear_cb);
+    _menu->redraw_label();
+    fltk::remove_idle(scan_font_cb, this);
+    delete this;
+  }
+
+  void readFontCache() {
+    Font *nextFont;
+    bool done = false;
+    char label[256];
+    int n = 0;
+    label[0] = 0;
+    for (char c = fgetc(_fp); 
+         !done && n < (int)sizeof(label);
+         c = fgetc(_fp)) {
+      switch (c) {
+      case EOF:
+        done = true;
+        break;
+      case '\n':
+        label[n] = '\0';
+        nextFont = font(label);
+        if (nextFont) {
+          addFont(nextFont, true);
+        }
+        label[0] = 0;
+        n = 0;
+        break;
+      default:
+        label[n++] = c;
+      }
+    }
+    finalise();
+  }
+
+  void readNextFont() {
+    if (_index < _numfonts) {
+      Font *nextFont = _fonts[_index];
+      if (addFont(nextFont, false)) {
+        // update the font cache for selected font
+        fprintf(_fp, "%s\n", nextFont->system_name());
+      }
+      _index++;
     } else {
-      fltk::remove_idle(scan_font_cb, this);
-      delete this;
+      finalise();
     }
   }
-  Menu *menu;
-  Font **fonts;
-  int numfonts;
-  int index;
+
+  void readFonts() {
+    if (_scanFonts) {
+      readNextFont();
+    }
+    else {
+      readFontCache();
+    }
+  }
+
+  MainWindow *_main;
+  Menu *_menu;
+  Font **_fonts;
+  FILE *_fp;
+  bool _scanFonts;
+  int _numfonts;
+  int _index;
 };
+
 
 //--EditWindow functions--------------------------------------------------------
 
@@ -522,6 +621,14 @@ void MainWindow::font_size_decr(fltk::Widget *w, void *eventData) {
   } else {
     handle(EVENT_DECREASE_FONT);
   }
+}
+
+void MainWindow::font_cache_clear(fltk::Widget *w, void *eventData) {
+  char path[MAX_PATH];
+  getHomeDir(path);
+  strcat(path, fontCache);
+  unlink(path);
+  statusMsg(rs_err, "Restart SmallBASIC to load new fonts");
 }
 
 void MainWindow::run(fltk::Widget *w, void *eventData) {
@@ -1027,7 +1134,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&View/Text Color/Operators", 0, EditorWidget::set_color_cb, (void *)st_operators);
   m->add("&View/Text Color/Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
 
-  new ScanFont(m);
+  new ScanFont(this, m);
   scanPlugIns(m);
 
   m->add("&Program/&Run", F9Key, run_cb);
