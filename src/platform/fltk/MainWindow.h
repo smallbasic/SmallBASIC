@@ -136,6 +136,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(export_file);
   CALLBACK_METHOD(font_size_decr);
   CALLBACK_METHOD(font_size_incr);
+  CALLBACK_METHOD(font_cache_clear);
   CALLBACK_METHOD(help_about);
   CALLBACK_METHOD(help_app);
   CALLBACK_METHOD(help_contents);
