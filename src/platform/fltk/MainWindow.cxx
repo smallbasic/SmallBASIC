@@ -402,10 +402,12 @@ void MainWindow::quit(fltk::Widget *w, void *eventData) {
     exit(0);
   } else {
     switch (choice("Terminate running program?", "*Exit", "Break", "Cancel")) {
-    case 2:
+    case 0:
       exit(0);
     case 1:
       setBreak();
+    default:
+      break;
     }
   }
 }
