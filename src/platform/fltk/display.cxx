@@ -395,6 +395,7 @@ int DisplayWidget::textWidth(const char *str) {
 }
 
 void DisplayWidget::setFontSize(float i) {
+  createScreen();
   _ansiWidget->setFontSize(i);
 }
 
@@ -482,6 +483,7 @@ MAHandle maFontLoadDefault(int type, int style, int size) {
   MAHandle result;
   if (drawTarget) {
     drawTarget->_style = style;
+    drawTarget->_size = size;
     result = (MAHandle)drawTarget;
   } else {
     result = (MAHandle)NULL;
