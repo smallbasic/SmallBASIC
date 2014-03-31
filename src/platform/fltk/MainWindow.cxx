@@ -44,6 +44,7 @@ MainWindow *wnd;
 ExecState runMode = init_state;
 
 const char *fontCache = "fonts.txt";
+const char *endFont = ".";
 const char *untitledFile = "untitled.bas";
 const char *fileTabName = "File";
 const char *helpTabName = "Help";
@@ -76,7 +77,7 @@ struct ScanFont {
   ScanFont(MainWindow *main, MenuBar *menu) :
     _main(main),
     _menu(menu), 
-    _fp(0),
+    _fp(NULL),
     _scanFonts(false), 
     _index(0) {
     _numfonts = fltk::list_fonts(_fonts);
@@ -85,6 +86,16 @@ struct ScanFont {
     if (!_fp) {
       _fp = _main->openConfig(fontCache, "w");
       _scanFonts = true;
+    } else {
+      // check to ensure end of file marker exists
+      fseek(_fp, -1, SEEK_END);
+      if (fgetc(_fp) != *endFont) {
+        fclose(_fp);
+        _fp = _main->openConfig(fontCache, "w");
+        _scanFonts = true;
+      } else {
+        rewind(_fp);
+      }
     }
     fltk::add_idle(ScanFont::scan_font_cb, this);
   }
@@ -127,6 +138,7 @@ struct ScanFont {
   // end of iteration
   void finalise() {
     if (_fp) {
+      fprintf(_fp, endFont);
       fclose(_fp);
     }
 
@@ -152,12 +164,16 @@ struct ScanFont {
         break;
       case '\n':
         label[n] = '\0';
-        nextFont = font(label);
-        if (nextFont) {
-          addFont(nextFont, true);
+        if (strcmp(label, endFont) == 0) {
+          done = true;
+        } else {
+          nextFont = font(label);
+          if (nextFont) {
+            addFont(nextFont, true);
+          }
+          label[0] = 0;
+          n = 0;
         }
-        label[0] = 0;
-        n = 0;
         break;
       default:
         label[n++] = c;
