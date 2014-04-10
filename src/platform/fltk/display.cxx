@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -184,7 +184,11 @@ void Canvas::resize(int w, int h) {
 
 void Canvas::setClip(int x, int y, int w, int h) {
   delete _clip;
-  _clip = new fltk::Rectangle(x, y, w, h);
+  if (x != 0 || y != 0 || _img->w() != w || _img->h() != h) {
+    _clip = new fltk::Rectangle(x, y, w, h);
+  } else {
+    _clip = NULL;
+  }
 }
 
 void Canvas::setFont() {
@@ -223,6 +227,7 @@ void DisplayWidget::createScreen() {
   if (!_screen) {
     _screen = new Canvas(_defsize);
     _screen->create(w(), h());
+    _screen->_isScreen = true;
     drawTarget = _screen;
   }
   if (!_ansiWidget) {
@@ -251,16 +256,12 @@ void DisplayWidget::draw() {
   }
 
   if (_screen->_img) {
-    int xScroll, yScroll;
-    _ansiWidget->getScroll(xScroll, yScroll);
-    fltk::Rectangle from = fltk::Rectangle(xScroll, yScroll, w(), h());
-    fltk::Rectangle to = fltk::Rectangle(0, 0, w(), h());
-    drawTarget->_img->draw(from, to);
+    _screen->_img->draw(0, 0);
     // draw the overlay onto the screen
-    bool isScreen = drawTarget->_isScreen;
-    drawTarget->_isScreen = true;
+    Canvas *oldTarget = drawTarget;
+    drawTarget = _screen;
     _ansiWidget->drawOverlay(mouseActive);
-    drawTarget->_isScreen = isScreen;
+    drawTarget = oldTarget;
   } else {
     setcolor(drawColor);
     fillrect(fltk::Rectangle(w(), h()));
@@ -498,7 +499,7 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
   Canvas *canvas = (Canvas *)maHandle;
-  if (!drawTarget->_isScreen && drawTarget != canvas) {
+  if (drawTarget != canvas) {
     canvas->drawImageRegion(drawTarget, dstPoint, srcRect);
   }
 }
@@ -533,13 +534,14 @@ void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int sca
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
   if (maHandle == (MAHandle) HANDLE_SCREEN) {
+    drawTarget = widget->getScreen();
     drawTarget->_isScreen = true;
   } else if (maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
     drawTarget = widget->getScreen();
     drawTarget->_isScreen = false;
   } else {
     drawTarget = (Canvas *)maHandle;
-    drawTarget->_isScreen = false;
+    widget->getScreen()->_isScreen = true;
   }
   delete drawTarget->_clip;
   drawTarget->_clip = NULL;
