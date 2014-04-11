@@ -191,6 +191,21 @@ struct List {
     add(new String(s, strlen(s))); 
   }
 
+  /**
+   * Returns whether string exists in the list
+   */
+  bool exists(const char *s) {
+    bool result = false;
+    for (TP it = begin(); it != end(); it++) {
+      T next = (*it);
+      if (next->equals(s)) {
+        result = true;
+        break;
+      }
+    }    
+    return result;
+  }
+
   void sort(int(*compareFunc)(const void *p1, const void *p2)) {
     if (_size > 1) {
       qsort(_head, _count, sizeof(TP), compareFunc);

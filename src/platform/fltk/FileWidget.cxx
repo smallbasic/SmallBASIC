@@ -42,6 +42,12 @@ struct FileNode {
   bool isdir;
 };
 
+int stringCompare(const void *a, const void *b) {
+  String *s1 = ((String **) a)[0];
+  String *s2 = ((String **) b)[0];
+  return strcasecmp(s1->toString(), s2->toString());
+}
+
 int fileNodeCompare(const void *a, const void *b) {
   FileNode *n1 = ((FileNode **) a)[0];
   FileNode *n2 = ((FileNode **) b)[0];
@@ -101,13 +107,13 @@ const char CMD_SORT_NAME = '$';
 FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h) {
   callback(anchorClick_cb);
   fileWidget = this;
-  saveEditorAs = 0;
+  _saveEditorAs = 0;
   sortDesc = false;
   sortBy = e_name;
 }
 
 FileWidget::~FileWidget() {
-  fileWidget = 0;
+  fileWidget = NULL;
 }
 
 //
@@ -222,10 +228,10 @@ void FileWidget::anchorClick() {
       docHome.append(base, len);
     }
   } else {
-    docHome.append(path);
+    docHome.append(_path);
   }
 
-  if (saveEditorAs) {
+  if (_saveEditorAs) {
     Input *input = (Input *) getInput("saveas");
     input->value(target);
   } else {
@@ -241,22 +247,31 @@ void FileWidget::anchorClick() {
 //
 // open file
 //
-void FileWidget::fileOpen(EditorWidget *saveEditorAs) {
-  this->saveEditorAs = saveEditorAs;
+void FileWidget::fileOpen(EditorWidget *_saveEditorAs) {
+  this->_saveEditorAs = _saveEditorAs;
   displayPath();
 }
 
 //
 // display the given path
 //
-void FileWidget::openPath(const char *newPath) {
+void FileWidget::openPath(const char *newPath, strlib::List<String *> &paths) {
   if (newPath && access(newPath, R_OK) == 0) {
-    strcpy(path, newPath);
+    strcpy(_path, newPath);
   } else {
-    getcwd(path, sizeof(path));
+    getcwd(_path, sizeof(_path));
   }
 
-  forwardSlash(path);
+  paths.sort(stringCompare);
+  _paths.empty();
+  _paths.append("<br>");
+  List_each(String*, it, paths) {
+    String *nextPath = (*it);
+    fprintf(stderr,"np=%s\n",nextPath->toString());
+    _paths.append(nextPath).append("<br>");
+  }
+
+  forwardSlash(_path);
   displayPath();
   redraw();
 }
@@ -267,7 +282,7 @@ void FileWidget::openPath(const char *newPath) {
 void FileWidget::changeDir(const char *target) {
   char newPath[PATH_MAX + 1];
 
-  strcpy(newPath, path);
+  strcpy(newPath, _path);
 
   // file browser window
   if (strcmp(target + 1, "..") == 0) {
@@ -287,7 +302,7 @@ void FileWidget::changeDir(const char *target) {
   }
 
   if (chdir(newPath) == 0) {
-    strcpy(path, newPath);
+    strcpy(_path, newPath);
     displayPath();
   } else {
     message("Invalid path '%s'", newPath);
@@ -304,11 +319,11 @@ void FileWidget::displayPath() {
   char modifedTime[100];
   String html;
 
-  if (chdir(path) != 0) {
+  if (chdir(_path) != 0) {
     return;
   }
 
-  DIR *dp = opendir(path);
+  DIR *dp = opendir(_path);
   if (dp == 0) {
     return;
   }
@@ -321,7 +336,7 @@ void FileWidget::displayPath() {
     }
 
     if (strcmp(name, "..") == 0) {
-      if (strcmp(path, "/") != 0 && strcmp(path + 1, ":/") != 0) {
+      if (strcmp(_path, "/") != 0 && strcmp(_path + 1, ":/") != 0) {
         // not "/" or "C:/"
         files.add(new FileNode("..", stbuf.st_mtime, stbuf.st_size, true));
       }
@@ -338,8 +353,8 @@ void FileWidget::displayPath() {
 
   files.sort(fileNodeCompare);
 
-  if (saveEditorAs) {
-    const char *path = saveEditorAs->getFilename();
+  if (_saveEditorAs) {
+    const char *path = _saveEditorAs->getFilename();
     const char *slash = strrchr(path, '/');
     html.append("<p><b>Save ").append(slash ? slash + 1 : path).append(" as:<br>")
         .append("<input size=220 type=text value='").append(slash ? slash + 1 : path)
@@ -348,9 +363,9 @@ void FileWidget::displayPath() {
   }
 
   html.append("<br><b>Files in: <a href=")
-      .append(CMD_ENTER_PATH).append(">").append(path)
+      .append(CMD_ENTER_PATH).append(">").append(_path)
       .append("</a></b><br>");
-
+  html.append(_paths);
   html.append("<table><tr bgcolor=#e1e1e1>")
       .append("<td><a href=").append(CMD_SORT_NAME).append("><b><u>Name</u></b></a></td>")
       .append("<td><a href=").append(CMD_SORT_SIZE).append("><b><u>Size</u></b></a></td>")
@@ -392,10 +407,10 @@ void FileWidget::displayPath() {
 // open the path
 //
 void FileWidget::enterPath() {
-  const char *newPath = fltk::input("Enter path:", path);
+  const char *newPath = fltk::input("Enter path:", _path);
   if (newPath != 0) {
     if (chdir(newPath) == 0) {
-      strcpy(path, newPath);
+      strcpy(_path, newPath);
       displayPath();
     } else {
       message("Invalid path '%s'", newPath);
@@ -412,8 +427,8 @@ int FileWidget::handle(int e) {
 
   switch (e) {
   case SHOW:
-    if (saveEditorAs) {
-      saveEditorAs = 0;
+    if (_saveEditorAs) {
+      _saveEditorAs = 0;
       displayPath();
     }
     break;
@@ -450,7 +465,7 @@ int FileWidget::handle(int e) {
 // save the buffer with a new name
 //
 void FileWidget::saveAs() {
-  if (saveEditorAs) {
+  if (_saveEditorAs) {
     const char *enteredPath = getInputValue(getInput("saveas"));
     if (enteredPath && enteredPath[0]) {
       // a path has been entered
@@ -468,13 +483,13 @@ void FileWidget::saveAs() {
         // absolute path given
         strcpy(savepath, enteredPath);
       } else {
-        strcpy(savepath, path);
+        strcpy(savepath, _path);
         strcat(savepath, "/");
         strcat(savepath, enteredPath);
       }
       const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
       if (access(savepath, 0) != 0 || ask(msg, savepath)) {
-        saveEditorAs->doSaveFile(savepath);
+        _saveEditorAs->doSaveFile(savepath);
       }
     }
   }

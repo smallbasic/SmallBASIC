@@ -1289,8 +1289,16 @@ void MainWindow::open_file(fltk::Widget *w, void *eventData) {
     }
   }
 
-  fileWidget->openPath(path);
+  strlib::List<String *> paths;
+  for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+    char nextPath[MAX_PATH];
+    FileWidget::splitPath(recentPath[i].toString(), nextPath);
+    if (!paths.exists(nextPath)) {
+      paths.add(nextPath);
+    }
+  }
 
+  fileWidget->openPath(path, paths);
   _tabGroup->selected_child(openFileGroup);
 }
 
