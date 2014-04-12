@@ -23,10 +23,11 @@ struct FileWidget:public HelpWidget {
 
   void anchorClick();
   void fileOpen(EditorWidget *saveEditorAs);
-  void openPath(const char *newPath, strlib::List<String *> &paths);
+  void openPath(const char *newPath, StringList *recentPaths);
 
 private:
   void changeDir(const char *target);
+  void setDir(const char *target);
   void displayPath();
   void enterPath();
   int handle(int e);
@@ -34,7 +35,7 @@ private:
 
   char _path[PATH_MAX + 1];
   EditorWidget *_saveEditorAs;
-  String _paths;
+  StringList *_recentPaths;
 };
 
 #endif

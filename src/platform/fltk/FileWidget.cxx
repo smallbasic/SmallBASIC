@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -97,6 +97,7 @@ static void anchorClick_cb(Widget *w, void *v) {
   }
 }
 
+const char CMD_SET_DIR = '+';
 const char CMD_CHG_DIR = '!';
 const char CMD_ENTER_PATH = '@';
 const char CMD_SAVE_AS = '~';
@@ -104,16 +105,19 @@ const char CMD_SORT_DATE = '#';
 const char CMD_SORT_SIZE = '^';
 const char CMD_SORT_NAME = '$';
 
-FileWidget::FileWidget(int x, int y, int w, int h) : HelpWidget(x, y, w, h) {
+FileWidget::FileWidget(int x, int y, int w, int h) : 
+  HelpWidget(x, y, w, h),
+  _saveEditorAs(0),
+  _recentPaths(NULL) {
   callback(anchorClick_cb);
   fileWidget = this;
-  _saveEditorAs = 0;
   sortDesc = false;
   sortBy = e_name;
 }
 
 FileWidget::~FileWidget() {
   fileWidget = NULL;
+  delete _recentPaths;
 }
 
 //
@@ -181,7 +185,11 @@ void FileWidget::anchorClick() {
 
   switch (target[0]) {
   case CMD_CHG_DIR:
-    changeDir(target);
+    changeDir(target + 1);
+    return;
+
+  case CMD_SET_DIR:
+    setDir(target + 1);
     return;
 
   case CMD_SAVE_AS:
@@ -255,21 +263,15 @@ void FileWidget::fileOpen(EditorWidget *_saveEditorAs) {
 //
 // display the given path
 //
-void FileWidget::openPath(const char *newPath, strlib::List<String *> &paths) {
+void FileWidget::openPath(const char *newPath, strlib::List<String *> *recentPaths) {
   if (newPath && access(newPath, R_OK) == 0) {
     strcpy(_path, newPath);
   } else {
     getcwd(_path, sizeof(_path));
   }
 
-  paths.sort(stringCompare);
-  _paths.empty();
-  _paths.append("<br>");
-  List_each(String*, it, paths) {
-    String *nextPath = (*it);
-    fprintf(stderr,"np=%s\n",nextPath->toString());
-    _paths.append(nextPath).append("<br>");
-  }
+  delete _recentPaths;
+  _recentPaths = recentPaths;
 
   forwardSlash(_path);
   displayPath();
@@ -285,7 +287,7 @@ void FileWidget::changeDir(const char *target) {
   strcpy(newPath, _path);
 
   // file browser window
-  if (strcmp(target + 1, "..") == 0) {
+  if (strcmp(target, "..") == 0) {
     // go up a level c:/src/foo or /src/foo
     char *p = strrchr(newPath, '/');
     if (strchr(newPath, '/') != p) {
@@ -298,14 +300,20 @@ void FileWidget::changeDir(const char *target) {
     if (newPath[strlen(newPath) - 1] != '/') {
       strcat(newPath, "/");
     }
-    strcat(newPath, target + 1);
+    strcat(newPath, target);
   }
+  setDir(newPath);
+}
 
-  if (chdir(newPath) == 0) {
-    strcpy(_path, newPath);
+//
+// set to the given dir
+//
+void FileWidget::setDir(const char *target) {
+  if (chdir(target) == 0) {
+    strcpy(_path, target);
     displayPath();
   } else {
-    message("Invalid path '%s'", newPath);
+    message("Invalid path '%s'", target);
   }
 }
 
@@ -362,10 +370,24 @@ void FileWidget::displayPath() {
         .append(CMD_SAVE_AS).append("' value='Save As'><br>");
   }
 
+  _recentPaths->sort(stringCompare);
+  html.append("<b>Recent places:</b><br>");
+  List_each(String*, it, *_recentPaths) {
+    String *nextPath = (*it);
+    if (!nextPath->equals(_path)) {
+      html.append("<a href='")
+          .append(CMD_SET_DIR)
+          .append(nextPath)
+          .append("'> [ ")
+          .append(nextPath)
+          .append(" ]</a><br>");
+    }
+  }
+
   html.append("<br><b>Files in: <a href=")
       .append(CMD_ENTER_PATH).append(">").append(_path)
-      .append("</a></b><br>");
-  html.append(_paths);
+      .append("</a></b>");
+
   html.append("<table><tr bgcolor=#e1e1e1>")
       .append("<td><a href=").append(CMD_SORT_NAME).append("><b><u>Name</u></b></a></td>")
       .append("<td><a href=").append(CMD_SORT_SIZE).append("><b><u>Size</u></b></a></td>")
@@ -379,11 +401,11 @@ void FileWidget::displayPath() {
     }
     html.append(fileNode->name).append("'>");
     if (fileNode->isdir) {
-      html.append("[");
+      html.append("[ ");
     }
     html.append(fileNode->name);
     if (fileNode->isdir) {
-      html.append("]");
+      html.append(" ]");
     }
     html.append("</a></td>");
     html.append("<td>");

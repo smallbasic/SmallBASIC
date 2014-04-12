@@ -1289,12 +1289,12 @@ void MainWindow::open_file(fltk::Widget *w, void *eventData) {
     }
   }
 
-  strlib::List<String *> paths;
+  StringList *paths = new StringList();
   for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
     char nextPath[MAX_PATH];
     FileWidget::splitPath(recentPath[i].toString(), nextPath);
-    if (!paths.exists(nextPath)) {
-      paths.add(nextPath);
+    if (!paths->exists(nextPath)) {
+      paths->add(nextPath);
     }
   }
 

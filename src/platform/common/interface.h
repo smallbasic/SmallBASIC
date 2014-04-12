@@ -11,8 +11,6 @@
 
 #include "platform/common/StringLib.h"
 
-typedef strlib::List<strlib::String *> StringList;
-
 struct IButtonListener {
   virtual ~IButtonListener() {}
   virtual void buttonClicked(const char *action) = 0;

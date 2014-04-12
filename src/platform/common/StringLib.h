@@ -258,5 +258,7 @@ struct Properties : public List<String *> {
 
 }
 
+typedef strlib::List<strlib::String *> StringList;
+
 #endif
 
