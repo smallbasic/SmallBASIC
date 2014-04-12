@@ -263,7 +263,7 @@ void FileWidget::fileOpen(EditorWidget *_saveEditorAs) {
 //
 // display the given path
 //
-void FileWidget::openPath(const char *newPath, strlib::List<String *> *recentPaths) {
+void FileWidget::openPath(const char *newPath, StringList *recentPaths) {
   if (newPath && access(newPath, R_OK) == 0) {
     strcpy(_path, newPath);
   } else {
@@ -364,10 +364,10 @@ void FileWidget::displayPath() {
   if (_saveEditorAs) {
     const char *path = _saveEditorAs->getFilename();
     const char *slash = strrchr(path, '/');
-    html.append("<p><b>Save ").append(slash ? slash + 1 : path).append(" as:<br>")
+    html.append("<b>Save ").append(slash ? slash + 1 : path).append(" as:<br>")
         .append("<input size=220 type=text value='").append(slash ? slash + 1 : path)
         .append("' name=saveas>&nbsp;<input type=button onclick='")
-        .append(CMD_SAVE_AS).append("' value='Save As'><br>");
+        .append(CMD_SAVE_AS).append("' value='Save As'><br><br>");
   }
 
   _recentPaths->sort(stringCompare);

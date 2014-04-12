@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -55,7 +55,7 @@ const char *keywordsFile = "keywords.txt";
 const char *aboutText =
   "<b>About SmallBASIC...</b><br><br>"
   "Version " SB_STR_VER "<br>"
-  "Copyright (c) 2002-2013 Chris Warren-Smith.<br><br>"
+  "Copyright (c) 2002-2014 Chris Warren-Smith.<br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
   "<a href=http://smallbasic.sourceforge.net>"
   "http://smallbasic.sourceforge.net</a><br><br>"
