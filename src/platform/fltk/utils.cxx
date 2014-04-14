@@ -11,6 +11,30 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#if defined(WIN32)
+#include <fltk/win32.h>
+#include <wingdi.h>
+extern HDC fl_bitmap_dc;
+#else
+#include <fltk/x.h>
+#endif
+
+int x_get_pixel(int x, int y) {
+  int result = 0;
+
+#if defined(WIN32)
+  result = -int(::GetPixel(fl_bitmap_dc, x, y));
+#else
+  XImage *image = XGetImage(fltk::xdisplay, fltk::xwindow, x, y, 1, 1, AllPlanes, ZPixmap);
+  if (image) {
+    int color = XGetPixel(image, 0, 0);
+    XDestroyImage(image);
+    result = -color;
+  }
+#endif
+  return result;
+}
+
 //--Debug support---------------------------------------------------------------
 
 #if defined(WIN32)

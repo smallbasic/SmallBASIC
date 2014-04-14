@@ -158,13 +158,19 @@ void Canvas::endDraw() {
 }
 
 int Canvas::getPixel(int x, int y) {
-  int result = 0;
+  int result;
+#if defined(WIN32)
   if (x > -1 && x < _img->w() &&
-      y > -1 && y < _img->h()) {
+        y > -1 && y < _img->h()) {
     int delta = _img->buffer_linedelta();
     U32 *row = (U32 *) (_img->buffer() + (y * delta));
     result = row[x];
   }
+#else
+  GSave gsave;
+  _img->make_current();
+  result = ::x_get_pixel(x, y);
+#endif
   return result;
 }
 
@@ -372,10 +378,6 @@ void DisplayWidget::setPixel(int x, int y, int c) {
   _ansiWidget->setPixel(x, y, c);
 }
 
-int DisplayWidget::getPixel(int x, int y) {
-  return _ansiWidget->getPixel(x, y);
-}
-
 void DisplayWidget::setXY(int x, int y) {
   _ansiWidget->setXY(x, y);
 }
@@ -406,6 +408,10 @@ int DisplayWidget::getFontSize() {
 
 int DisplayWidget::getBackgroundColor() {
   return _ansiWidget->getBackgroundColor();
+}
+
+extern "C" long osd_getpixel(int x, int y) {
+  return drawTarget->getPixel(x, y);
 }
 
 //

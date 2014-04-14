@@ -210,13 +210,14 @@ int osd_getpen(int code) {
   }
 
   if (wnd->_penMode == PEN_OFF) {
+    wnd->_out->flush(true);
     fltk::wait();
   }
 
   switch (code) {
   case 0:
     // UNTIL PEN(0) - wait until click or move
-    wnd->_out->flush(false);
+    wnd->_out->flush(true);
     fltk::wait();               // fallthru to re-test 
 
   case 3:                      // returns true if the pen is down (and save curpos)
@@ -288,10 +289,6 @@ int osd_textheight(const char *str) {
 
 void osd_setpixel(int x, int y) {
   wnd->_out->setPixel(x, y, dev_fgcolor);
-}
-
-long osd_getpixel(int x, int y) {
-  return wnd->_out->getPixel(x, y);
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
