@@ -257,6 +257,9 @@ void DisplayWidget::draw() {
   if (_resized) {
     // resize the backing screens
     _screen->resize(w(), h());
+    if (_screen != drawTarget) {
+      drawTarget->resize(w(), h());
+    }
     _ansiWidget->resize(w(), h());
     _resized = false;
   }

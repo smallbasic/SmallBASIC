@@ -72,6 +72,14 @@ void updateForm(const char *s);
 void closeForm();
 bool isFormActive();
 
+#if defined(WIN32)
+#define CHOICE_EXIT  2
+#define CHOICE_BREAK 1
+#else
+#define CHOICE_EXIT  0 
+#define CHOICE_BREAK 1
+#endif
+
 // scan for fixed pitch fonts in the background
 struct ScanFont {
   ScanFont(MainWindow *main, MenuBar *menu) :
@@ -440,9 +448,9 @@ void MainWindow::quit(fltk::Widget *w, void *eventData) {
     exit(0);
   } else {
     switch (choice("Terminate running program?", "*Exit", "Break", "Cancel")) {
-    case 0:
+    case CHOICE_EXIT:
       exit(0);
-    case 1:
+    case CHOICE_BREAK:
       setBreak();
     default:
       break;
@@ -562,7 +570,7 @@ void MainWindow::export_file(fltk::Widget *w, void *eventData) {
       } else {
         buffer[0] = 0;
       }
-      editWidget->statusMsg("Enter address:  For mobile SmallBASIC use SOCL:<IP>:<Port>");
+      editWidget->statusMsg("Enter file/address:  For mobile SmallBASIC use SOCL:<IP>:<Port>");
       editWidget->getInput(buffer, PATH_MAX);
       if (buffer[0]) {
         if (strncasecmp(buffer, "SOCL:", 5) == 0) {

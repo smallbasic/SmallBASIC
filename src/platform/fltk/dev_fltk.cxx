@@ -88,7 +88,10 @@ int osd_devinit() {
   // show the output-group in case it's the full-screen container. a possible
   // bug with fltk on x11 prevents resize after the window has been shown
   if (wnd->isInteractive() && !wnd->logPrint()) {
+    int w = wnd->_out->w();
+    int h = wnd->_out->h();
     wnd->_outputGroup->show();
+    wnd->_out->resize(w, h);
   }
 
   dev_fgcolor = -DEFAULT_FOREGROUND;
