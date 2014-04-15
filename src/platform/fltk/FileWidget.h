@@ -23,17 +23,19 @@ struct FileWidget:public HelpWidget {
 
   void anchorClick();
   void fileOpen(EditorWidget *saveEditorAs);
-  void openPath(const char *newPath);
+  void openPath(const char *newPath, StringList *recentPaths);
 
 private:
   void changeDir(const char *target);
+  void setDir(const char *target);
   void displayPath();
   void enterPath();
   int handle(int e);
   void saveAs();
 
-  char path[PATH_MAX + 1];
-  EditorWidget *saveEditorAs;
+  char _path[PATH_MAX + 1];
+  EditorWidget *_saveEditorAs;
+  StringList *_recentPaths;
 };
 
 #endif

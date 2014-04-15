@@ -130,6 +130,7 @@ struct MainWindow : public BaseWindow {
   TtyWidget *tty();
 
   CALLBACK_METHOD(close_tab);
+  CALLBACK_METHOD(close_other_tabs);
   CALLBACK_METHOD(copy_text);
   CALLBACK_METHOD(cut_text);
   CALLBACK_METHOD(editor_plugin);

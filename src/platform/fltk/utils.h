@@ -9,6 +9,8 @@
 #ifndef FLTK_UTILS_H
 #define FLTK_UTILS_H
 
+int x_get_pixel(int x, int y);
+
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
 

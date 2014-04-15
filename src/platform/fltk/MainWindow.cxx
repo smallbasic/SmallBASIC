@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -55,7 +55,7 @@ const char *keywordsFile = "keywords.txt";
 const char *aboutText =
   "<b>About SmallBASIC...</b><br><br>"
   "Version " SB_STR_VER "<br>"
-  "Copyright (c) 2002-2013 Chris Warren-Smith.<br><br>"
+  "Copyright (c) 2002-2014 Chris Warren-Smith.<br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
   "<a href=http://smallbasic.sourceforge.net>"
   "http://smallbasic.sourceforge.net</a><br><br>"
@@ -384,6 +384,28 @@ void MainWindow::close_tab(fltk::Widget *w, void *eventData) {
       }
       _tabGroup->remove(group);
       delete group;
+    }
+  }
+}
+
+void MainWindow::close_other_tabs(fltk::Widget *w, void *eventData) {
+  Group *selected = getSelectedTab();
+  int n = _tabGroup->children();
+  Group *items[n];
+  for (int c = 0; c < n; c++) {
+    items[c] = NULL;
+    Group *child = (Group *)_tabGroup->child(c);
+    if (child != selected && gw_editor == getGroupWidget(child)) {
+      EditorWidget *editWidget = (EditorWidget *)child->child(0);
+      if (editWidget != _runEditWidget && editWidget->checkSave(true)) {
+        items[c] = child;
+      }
+    }
+  }
+  for (int c = 0; c < n; c++) {
+    if (items[c] != NULL) {
+      _tabGroup->remove(items[c]);
+      delete items[c];
     }
   }
 }
@@ -1118,8 +1140,10 @@ MainWindow::MainWindow(int w, int h) :
   MenuBar *m = new MenuBar(0, 0, w, MNU_HEIGHT);
   m->add("&File/&New File", CTRL + 'n', new_file_cb);
   m->add("&File/&Open File", CTRL + 'o', open_file_cb);
+  m->add("&File/_Open Recent File/", 0, (Callback *)null);
   scanRecentFiles(m);
-  m->add("&File/_&Close", CTRL + F4Key, close_tab_cb);
+  m->add("&File/&Close", CTRL + F4Key, close_tab_cb);
+  m->add("&File/_&Close Others", 0, close_other_tabs_cb);
   m->add("&File/&Save File", CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", CTRL + SHIFT + 'S', save_file_as_cb);
   addPlugin(m, "&File/Publish Online", "publish.bas");
@@ -1289,8 +1313,16 @@ void MainWindow::open_file(fltk::Widget *w, void *eventData) {
     }
   }
 
-  fileWidget->openPath(path);
+  StringList *paths = new StringList();
+  for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+    char nextPath[MAX_PATH];
+    FileWidget::splitPath(recentPath[i].toString(), nextPath);
+    if (!paths->exists(nextPath)) {
+      paths->add(nextPath);
+    }
+  }
 
+  fileWidget->openPath(path, paths);
   _tabGroup->selected_child(openFileGroup);
 }
 
