@@ -25,9 +25,8 @@
 #include "EditorWidget.h"
 #include "HelpWidget.h"
 #include "FileWidget.h"
-#include "common/sbapp.h"
 #include "platform/common/StringLib.h"
-
+#include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/fs_socket_client.h"
 
@@ -1325,7 +1324,7 @@ void MainWindow::open_file(fltk::Widget *w, void *eventData) {
   for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
     char nextPath[MAX_PATH];
     FileWidget::splitPath(recentPath[i].toString(), nextPath);
-    if (!paths->exists(nextPath)) {
+    if (nextPath[0] && !paths->exists(nextPath)) {
       paths->add(nextPath);
     }
   }

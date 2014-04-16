@@ -147,7 +147,8 @@ const char *FileWidget::splitPath(const char *filename, char *path) {
   if (!result) {
     result = filename;
   } else {
-    result++;                   // skip slash
+    // skip slash
+    result++; 
   }
 
   if (path) {
@@ -155,6 +156,10 @@ const char *FileWidget::splitPath(const char *filename, char *path) {
     int len = result - filename - 1;
     if (len > 0) {
       strncpy(path, filename, len);
+      // snip any double slashes
+      while (len > 0 && path[len - 1] == '/') {
+        len--;
+      }
       path[len] = 0;
     } else {
       path[0] = 0;
