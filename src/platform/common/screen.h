@@ -99,10 +99,12 @@ struct GraphicScreen : public Screen {
   void clear();
   void drawBase(bool vscroll);
   void drawInto(bool background=false);
-  void newLine(int lineHeight);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
+  void imageScroll();
+  void imageAppend(MAHandle newImage);
+  void newLine(int lineHeight);
   int  print(const char *p, int lineHeight, bool allChars=false);
   void reset(int fontSize = -1);
   bool setGraphicsRendition(char c, int escValue, int lineHeight);

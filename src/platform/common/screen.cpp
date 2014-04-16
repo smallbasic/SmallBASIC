@@ -355,6 +355,66 @@ int GraphicScreen::getPixel(int x, int y) {
   return result;
 }
 
+// extend the image to allow for additioal content on the newline
+void GraphicScreen::imageAppend(MAHandle newImage) {
+  MARect srcRect;
+  MAPoint2d dstPoint;
+  
+  srcRect.left = 0;
+  srcRect.top = 0;
+  srcRect.width = _imageWidth;
+  srcRect.height = _imageHeight;
+  dstPoint.x = 0;
+  dstPoint.y = 0;
+  
+  maSetDrawTarget(newImage);
+  maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
+  
+  // clear the new segment
+  maSetColor(_bg);
+  maFillRect(0, _imageHeight, _imageWidth, _imageHeight + _height);
+  _imageHeight += _height;
+  
+  // cleanup the old image
+  maDestroyPlaceholder(_image);
+  _image = newImage;
+}
+
+// scroll back the image to allow for additioal content on the newline
+void GraphicScreen::imageScroll() {
+  MAHandle newImage = maCreatePlaceholder();
+  int newHeight = _imageHeight;
+  if (maCreateDrawableImage(newImage, _imageWidth, newHeight) == RES_OK) {
+    MARect srcRect;
+    MAPoint2d dstPoint;
+    int scrollBack = _height;
+    int copiedHeight = _imageHeight - scrollBack;
+
+    srcRect.left = 0;
+    srcRect.top = scrollBack;
+    srcRect.width = _imageWidth;
+    srcRect.height = copiedHeight;
+    dstPoint.x = 0;
+    dstPoint.y = 0;
+
+    maSetDrawTarget(newImage);
+    maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
+  
+    // clear the new segment
+    maSetColor(_bg);
+    maFillRect(0, copiedHeight, _imageWidth, scrollBack);
+    
+    // cleanup the old image
+    maDestroyPlaceholder(_image);
+    _image = newImage;
+    _scrollY -= scrollBack;
+    _curY -= scrollBack;
+  } else {
+    // unable to create duplicate
+    clear();
+  }
+}
+
 // handles the \n character
 void GraphicScreen::newLine(int lineHeight) {
   lineHeight += _linePadding;
@@ -368,31 +428,12 @@ void GraphicScreen::newLine(int lineHeight) {
         MAHandle newImage = maCreatePlaceholder();
         int newHeight = _imageHeight + _height;
         if (maCreateDrawableImage(newImage, _imageWidth, newHeight) != RES_OK) {
-          // failed to create image
-          clear();
+          // maximum image size reached
+          maDestroyPlaceholder(newImage);
+          imageScroll();
           lineHeight = 0;
         } else {
-          MARect srcRect;
-          MAPoint2d dstPoint;
-          
-          srcRect.left = 0;
-          srcRect.top = 0;
-          srcRect.width = _imageWidth;
-          srcRect.height = _imageHeight;
-          dstPoint.x = 0;
-          dstPoint.y = 0;
-          
-          maSetDrawTarget(newImage);
-          maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
-
-          // clear the new segment
-          maSetColor(_bg);
-          maFillRect(0, _imageHeight, _imageWidth, _imageHeight + _height);
-          _imageHeight += _height;
-          
-          // cleanup the old image
-          maDestroyPlaceholder(_image);
-          _image = newImage;
+          imageAppend(newImage);
         }
       }
       _scrollY += lineHeight;
