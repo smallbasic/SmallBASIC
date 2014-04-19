@@ -218,7 +218,9 @@ DisplayWidget::DisplayWidget(int x, int y, int w, int h, int defsize) :
   _ansiWidget(NULL),
   _screen(NULL),
   _resized(false),
-  _defsize(defsize) {
+  _defsize(defsize),
+  _startW(-1),
+  _startH(-1) {
   drawColorRaw = DEFAULT_BACKGROUND;
   drawColor = maSetColor(drawColorRaw);
   widget = this;
@@ -231,6 +233,9 @@ DisplayWidget::~DisplayWidget() {
 
 void DisplayWidget::createScreen() {
   if (!_screen) {
+    if (_startW != -1 && _startH != -1) {
+      resize(_startW, _startH);
+    }
     _screen = new Canvas(_defsize);
     _screen->create(w(), h());
     _screen->_isScreen = true;

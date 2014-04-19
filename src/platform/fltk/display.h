@@ -60,6 +60,7 @@ public:
   int  getY();
   void setPixel(int x, int y, int c);
   void setXY(int x, int y);
+  void setStartSize(int w, int h) { _startW=w; _startH=h; }
   int  textWidth(const char *s);
   int  textHeight(void);
   void setFontSize(float i);
@@ -83,6 +84,7 @@ private:
   Canvas *_screen;
   bool _resized;
   int _defsize;
+  int _startW, _startH;
 };
 
 #endif

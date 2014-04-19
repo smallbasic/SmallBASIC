@@ -15,14 +15,14 @@
 
 const char *configFile = "config.txt";
 const char *pathKey = "path";
-const char *indentLevelKey = "_indentLevel";
+const char *indentLevelKey = "indentLevel";
 const char *fontNameKey = "fontName";
-const char *fontSizeKey = "_fontSize";
+const char *fontSizeKey = "fontSize";
 const char *windowPosKey = "windowPos";
 const char *activeTabKey = "activeTab";
-const char *createBackupsKey = "_createBackups";
-const char *lineNumbersKey = "_lineNumbers";
-const char *appPositionKey = "_appPosition";
+const char *createBackupsKey = "createBackups";
+const char *lineNumbersKey = "lineNumbers";
+const char *appPositionKey = "appPosition";
 
 // in BasicEditor.cxx
 extern TextDisplay::StyleTableEntry styletable[];

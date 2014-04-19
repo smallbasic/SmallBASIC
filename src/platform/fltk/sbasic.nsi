@@ -38,8 +38,11 @@
 ;--------------------------------
 ;Installer Sections
 
+RequestExecutionLevel admin
+
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcut"
+  SetShellVarContext all
   CreateDirectory "$SMPROGRAMS\SmallBASIC 0.11.5"
   SetOutPath $INSTDIR
   CreateShortCut "$SMPROGRAMS\SmallBASIC 0.11.5\SmallBASIC.lnk" "$INSTDIR\sbasici.exe"
@@ -103,6 +106,7 @@ SectionEnd
 ;Uninstaller Section
 
 Section "Uninstall"
+  SetShellVarContext all
   ; Remove registry keys
   DeleteRegKey /ifempty HKCU "Software\SmallBASIC\FLTK_0.11.5"
 
