@@ -41,8 +41,10 @@ import android.view.inputmethod.InputMethodManager;
  */
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends NativeActivity {
-  private static final String BUFFER_BAS = "web.bas";
+  private static final String WEB_BAS = "web.bas";
+  private static final String SCHEME_BAS = "scheme.bas";
   private static final String TAG = "smallbasic";
+  private static final String SCHEME = "smallbasic://x/";
   private String startupBas = null;
 
   static {
@@ -120,7 +122,14 @@ public class MainActivity extends NativeActivity {
     Intent intent = getIntent();
     Uri uri = intent.getData();
     if (uri != null) {
-      startupBas = uri.getPath();
+      String data = intent.getDataString();
+      if (data.startsWith(SCHEME)) {
+        execScheme(data);
+        Log.i(TAG, "data="+ data);
+      } else {
+        startupBas = uri.getPath();
+      }
+      Log.i(TAG, "startupBas="+ startupBas);
     }
     try {
       Properties p = new Properties();
@@ -161,8 +170,8 @@ public class MainActivity extends NativeActivity {
     return response;
   }
 
-  private void execBuffer(String buffer, boolean run) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(BUFFER_BAS);
+  private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
+    File outputFile = getApplication().getFileStreamPath(name);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     output.write(buffer);
     output.close();
@@ -170,10 +179,20 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
       runFile(outputFile.getAbsolutePath());
     }
+    return outputFile.getAbsolutePath();
+  }
+
+  private void execScheme(final String data) {
+    try {
+      String bas = URLDecoder.decode(data.substring(SCHEME.length()), "utf-8");
+      startupBas = execBuffer(bas, SCHEME_BAS, false);
+    } catch (IOException e) {
+      Log.i(TAG, "saveSchemeData failed: ", e);
+    }
   }
 
   private void execStream(String line, DataInputStream inputStream) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(BUFFER_BAS);
+    File outputFile = getApplication().getFileStreamPath(WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
     while (line != null) {
@@ -184,7 +203,7 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
   }
-  
+
   private Map<String, String> getPostData(DataInputStream inputStream, String line)
       throws IOException, UnsupportedEncodingException {
     int length = 0;
@@ -220,7 +239,7 @@ public class MainActivity extends NativeActivity {
   private String readBuffer() {
     StringBuilder result = new StringBuilder();
     try {
-      File inputFile = getApplication().getFileStreamPath(BUFFER_BAS);
+      File inputFile = getApplication().getFileStreamPath(WEB_BAS);
       BufferedReader input = new BufferedReader(new FileReader(inputFile));
       String line = input.readLine();
       while (line != null) {
@@ -271,7 +290,7 @@ public class MainActivity extends NativeActivity {
             if (token.equals(userToken)) {
               String buffer = postData.get("src");
               if (buffer != null) {
-                execBuffer(buffer, postData.get("run") != null);
+                execBuffer(buffer, WEB_BAS, postData.get("run") != null);
                 sendResponse(socket, buildRunForm(buffer, token));
               } else { 
                 sendResponse(socket, buildRunForm(readBuffer(), token));
@@ -300,6 +319,7 @@ public class MainActivity extends NativeActivity {
       }
     }
   }
+
   private void sendResponse(Socket socket, String content) throws IOException {
     Log.i(TAG, "sendResponse() entered");
     String contentLength ="Content-length: " + content.length() + "\r\n"; 

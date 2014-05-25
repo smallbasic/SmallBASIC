@@ -30,7 +30,7 @@ sub about()
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.11.5"
+  print "Version 0.11.6"
   print
   print "Copyright (c) 2002-2013 Chris Warren-Smith"
   print "Copyright (c) 2000-2006 Nic Christopoulos" + chr(10)
