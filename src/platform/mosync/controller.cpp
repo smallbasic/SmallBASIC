@@ -68,6 +68,7 @@ bool Controller::construct() {
   opt_quiet = true;
   opt_command[0] = 0;
   opt_usevmt = 0;
+  opt_file_permitted = 1;
   os_graphics = 1;
 
   // restore the selected font scale and path

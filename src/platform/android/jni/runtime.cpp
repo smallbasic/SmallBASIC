@@ -442,6 +442,18 @@ void Runtime::optionsBox(StringList *items) {
   _app->activity->vm->DetachCurrentThread();
 }
 
+void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
+  logEntered();
+
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(IIIZ)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol, bgplay);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
 void Runtime::pollEvents(bool blocking) {
   int events;
   android_poll_source *source;
@@ -603,6 +615,7 @@ int maGetMilliSecondCount(void) {
 }
 
 int maShowVirtualKeyboard(void) {
+  osd_beep();
   runtime->showKeypad(true);
   return 0;
 }
@@ -622,12 +635,15 @@ int osd_devinit(void) {
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
+  runtime->playTone(frq, dur, vol, bgplay);
 }
 
 void osd_clear_sound_queue() {
 }
 
 void osd_beep(void) {
+  osd_sound(1000, 30, 100, 1);
+  osd_sound(500, 30, 100, 0);
 }
 
 void dev_image(int handle, int index,

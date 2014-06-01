@@ -257,6 +257,7 @@ Tizen::Base::Object *RuntimeThread::Run() {
   opt_command[0] = 0;
   opt_usevmt = 0;
   os_graphics = 1;
+  opt_file_permitted = 1;
 
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);

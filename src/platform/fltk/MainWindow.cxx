@@ -1041,8 +1041,9 @@ bool initialise(int argc, char **argv) {
   opt_nosave = 1;
   opt_ide = IDE_LINKED;
   opt_pref_bpp = 0;
-  os_graphics = 1;
   opt_interactive = 1;
+  opt_file_permitted = 1;
+  os_graphics = 1;
 
   int i = 0;
   if (args(argc, argv, i, arg_cb) < argc) {

@@ -29,6 +29,7 @@ struct Runtime : public System {
   void handleKeyEvent(MAEvent &event);
   MAEvent processEvents(int waitFlag);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
+  void playTone(int frq, int dur, int vol, bool bgplay);
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);

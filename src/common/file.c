@@ -92,17 +92,24 @@ int dev_freefilehandle() {
 }
 
 /**
- *
+ * returns a file pointer for the given BASIC handle
  */
-dev_file_t *dev_getfileptr(int handle) {
-  handle--;     // Warning: BASIC's handles starting from 1
-
-  if (handle < 0 || handle >= OS_FILEHANDLES) {
-    rt_raise(FSERR_HANDLE);
-    return NULL;
+dev_file_t *dev_getfileptr(const int handle) {
+  dev_file_t *result;
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    result = NULL;
+  } else {
+    // BASIC handles start from 1
+    int hnd = handle - 1;     
+    if (hnd < 0 || hnd >= OS_FILEHANDLES) {
+      rt_raise(FSERR_HANDLE);
+      result = NULL;
+    } else {
+      result = &file_table[hnd];
+    }
   }
-
-  return &file_table[handle];
+  return result;
 }
 
 /**
@@ -154,6 +161,11 @@ int select_unix_serial_speed(int n) {
 int dev_fopen(int sb_handle, const char *name, int flags) {
   dev_file_t *f;
   int i;
+
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return 0;
+  }
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
@@ -427,6 +439,11 @@ int dev_feof(int sb_handle) {
 int dev_fremove(const char *file) {
   int success, vfslib;
 
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return 0;
+  }
+
   // common for all, execute driver's function
   if ((vfslib = sblmgr_getvfs(file)) != -1) {
     success = sblmgr_vfsdirexec(lib_vfs_remove, vfslib, file + 5);
@@ -445,6 +462,11 @@ int dev_fremove(const char *file) {
 int dev_fexists(const char *file) {
   int vfslib;
 
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return 0;
+  }
+
   // common for all, execute driver's function
   if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_exist, vfslib, file + 5);
@@ -461,6 +483,11 @@ int dev_fcopy(const char *file, const char *newfile) {
   int src, dst;
   byte *buf;
   dword i, block_size, block_num, remain, file_len;
+
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return 0;
+  }
 
   if (dev_fexists(file)) {
     if (dev_fexists(newfile)) {
@@ -539,6 +566,10 @@ int dev_fcopy(const char *file, const char *newfile) {
  * returns true on success
  */
 int dev_frename(const char *file, const char *newname) {
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return 0;
+  }
   if (dev_fcopy(file, newname)) {
     return dev_fremove(file);
   }
@@ -550,6 +581,10 @@ int dev_frename(const char *file, const char *newname) {
  * BUG: no drivers supported
  */
 void dev_mkdir(const char *dir) {
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return;
+  }
 #if (defined(_Win32) || defined(__MINGW32__)) && !defined(__CYGWIN__)
   if (mkdir(dir) != 0) {
     err_file(errno);
@@ -566,6 +601,10 @@ void dev_mkdir(const char *dir) {
  * BUG: no drivers supported
  */
 void dev_rmdir(const char *dir) {
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return;
+  }
   if (rmdir(dir) != 0) {
     err_file(errno);
   }
@@ -723,6 +762,11 @@ int dev_fattr(const char *file) {
 int dev_faccess(const char *file) {
   int vfslib;
   struct stat st;
+
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return 0;
+  }
 
   // common for all, execute driver's function
   if ((vfslib = sblmgr_getvfs(file)) != -1) {

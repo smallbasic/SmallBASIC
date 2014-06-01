@@ -119,6 +119,7 @@ MainWindow::MainWindow(QWidget *parent) :
   opt_verbose = false;
   opt_quiet = true;
   opt_command[0] = 0;
+  opt_file_permitted = 1;
   os_graphics = 1;
 
   // setup history
