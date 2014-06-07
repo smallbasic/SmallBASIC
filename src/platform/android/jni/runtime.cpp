@@ -134,6 +134,11 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
   env->ReleaseStringUTFChars(path, fileName);
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
+  (JNIEnv *env, jclass jclazz, jint width, jint height) {
+  runtime->onResize(width, height);
+}
+
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
   runtime->onResize(rect->right, rect->bottom);
@@ -162,6 +167,17 @@ Runtime::~Runtime() {
   _eventQueue = NULL;
   _graphics = NULL;
   pthread_mutex_destroy(&_mutex);
+}
+
+bool Runtime::getUntrusted() {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, "getUntrusted", "()Z");
+  jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
 }
 
 String Runtime::getStartupBas() {
@@ -249,12 +265,16 @@ void Runtime::runShell() {
   opt_command[0] = 0;
   opt_usevmt = 0;
   os_graphics = 1;
+  opt_file_permitted = 1;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
   String startupBas = getStartupBas();
   if (startupBas.length()) {
+    if (getUntrusted()) {
+      opt_file_permitted = 0;
+    }
     runOnce(startupBas.c_str());
   } else {
     runMain(MAIN_BAS);
@@ -549,13 +569,18 @@ void Runtime::showAlert(const char *title, const char *message) {
 
 void Runtime::onResize(int width, int height) {
   logEntered();
-  ANativeWindow_setBuffersGeometry(_app->window, width, height, WINDOW_FORMAT_RGB_565);
-  ALooper_acquire(_app->looper);
-  MAEvent *maEvent = new MAEvent();
-  maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
-  runtime->pushEvent(maEvent);
-  ALooper_wake(_app->looper);
-  ALooper_release(_app->looper);
+  int w = ANativeWindow_getWidth(_app->window);
+  int h = ANativeWindow_getHeight(_app->window);
+  if (w != width || h != height) {
+    trace("Resized from %d %d to %d %d", w, h, width, height);
+    ANativeWindow_setBuffersGeometry(_app->window, width, height, WINDOW_FORMAT_RGB_565);
+    ALooper_acquire(_app->looper);
+    MAEvent *maEvent = new MAEvent();
+    maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
+    runtime->pushEvent(maEvent);
+    ALooper_wake(_app->looper);
+    ALooper_release(_app->looper);
+  }
 }
 
 //

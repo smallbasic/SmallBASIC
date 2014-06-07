@@ -23,6 +23,7 @@ struct Runtime : public System {
   virtual ~Runtime();
 
   void construct();
+  bool getUntrusted();
   String getStartupBas();
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }

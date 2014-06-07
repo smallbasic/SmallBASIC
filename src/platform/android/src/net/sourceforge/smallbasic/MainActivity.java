@@ -26,13 +26,13 @@ import android.app.NativeActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.InputDevice;
 import android.view.View;
@@ -51,12 +51,14 @@ public class MainActivity extends NativeActivity {
   private static final String SCHEME = "smallbasic://x/";
   private static final int AUDIO_SAMPLE_RATE = 8000;
   private String startupBas = null;
+  private boolean untrusted = false;
 
   static {
     System.loadLibrary("smallbasic");
   }
 
-  public static native boolean optionSelected(int eventBuffer);
+  public static native boolean optionSelected(int index);
+  public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
 
   public String getStartupBas() {
@@ -72,6 +74,19 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "Device not found");
     }
     return result;
+  }
+
+  public Boolean getUntrusted() {
+    return this.untrusted;
+  }
+
+  @Override
+  public void onGlobalLayout() {
+    super.onGlobalLayout();
+    // find the visible coordinates of our view
+    Rect rect = new Rect();
+    findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
+    onResize(rect.width(), rect.height());
   }
 
   public void optionsBox(final String[] items) {
@@ -90,7 +105,7 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-  
+
   public void playTone(final int frq, final int dur, final int vol, final boolean bgplay) {
     Log.i(TAG, "playTone: " + frq + " " + dur);
     new Thread(new Runnable() {
@@ -112,7 +127,7 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-  
+
   public void showKeypad(final boolean show) {
     Log.i(TAG, "showKeypad: " + show);
     final View view = getWindow().getDecorView();
@@ -129,7 +144,7 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-  
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -200,6 +215,7 @@ public class MainActivity extends NativeActivity {
     try {
       String bas = URLDecoder.decode(data.substring(SCHEME.length()), "utf-8");
       startupBas = execBuffer(bas, SCHEME_BAS, false);
+      untrusted = true;
     } catch (IOException e) {
       Log.i(TAG, "saveSchemeData failed: ", e);
     }
@@ -226,7 +242,7 @@ public class MainActivity extends NativeActivity {
     double sample[] = new double[numSamples];
     byte result[] = new byte[2 * numSamples];
 
-    for (int i = 0; i < numSamples; ++i) { 
+    for (int i = 0; i < numSamples; ++i) {
       // Fill the sample array
       sample[i] = Math.sin(freqOfTone * 2 * Math.PI * i / AUDIO_SAMPLE_RATE);
     }
@@ -236,9 +252,9 @@ public class MainActivity extends NativeActivity {
     int i = 0;
 
     // Amplitude ramp as a percent of sample count
-    int ramp = numSamples / 20; 
+    int ramp = numSamples / 20;
 
-    while (i < ramp) { 
+    while (i < ramp) {
       // Ramp amplitude up (to avoid clicks)
       double dVal = sample[i];
       // Ramp up to maximum
@@ -249,7 +265,7 @@ public class MainActivity extends NativeActivity {
       i++;
     }
 
-    while (i < numSamples - ramp) { 
+    while (i < numSamples - ramp) {
       // Max amplitude for most of the samples
       double dVal = sample[i];
       // scale to maximum amplitude
@@ -260,7 +276,7 @@ public class MainActivity extends NativeActivity {
       i++;
     }
 
-    while (i < numSamples) { 
+    while (i < numSamples) {
       // Ramp amplitude down
       double dVal = sample[i];
       // Ramp down to zero
@@ -313,7 +329,7 @@ public class MainActivity extends NativeActivity {
     audioTrack.write(generatedSnd, 0, generatedSnd.length);
     audioTrack.play();
   }
-  
+
   private String readBuffer() {
     StringBuilder result = new StringBuilder();
     try {
@@ -370,7 +386,7 @@ public class MainActivity extends NativeActivity {
               if (buffer != null) {
                 execBuffer(buffer, WEB_BAS, postData.get("run") != null);
                 sendResponse(socket, buildRunForm(buffer, token));
-              } else { 
+              } else {
                 sendResponse(socket, buildRunForm(readBuffer(), token));
               }
             } else {
@@ -400,7 +416,7 @@ public class MainActivity extends NativeActivity {
 
   private void sendResponse(Socket socket, String content) throws IOException {
     Log.i(TAG, "sendResponse() entered");
-    String contentLength ="Content-length: " + content.length() + "\r\n"; 
+    String contentLength ="Content-length: " + content.length() + "\r\n";
     BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
     out.write("HTTP/1.0 200 OK\r\n".getBytes());
     out.write("Content-type: text/html\r\n".getBytes());
@@ -410,7 +426,7 @@ public class MainActivity extends NativeActivity {
     out.flush();
     out.close();
   }
-  
+
   private void startServer(final int socketNum, final String token) {
     Thread socketThread = new Thread(new Runnable() {
       public void run() {
