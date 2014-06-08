@@ -20,6 +20,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -52,7 +55,8 @@ public class MainActivity extends NativeActivity {
   private boolean untrusted = false;
   private Queue<Sound> sounds = new ConcurrentLinkedQueue<Sound>();
   private boolean soundPlaying = false;
-  
+  private ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
+
   static {
     System.loadLibrary("smallbasic");
   }
@@ -65,7 +69,7 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "clearSoundQueue");
     sounds.clear();
   }
-  
+
   public String getStartupBas() {
     return this.startupBas;
   }
@@ -111,10 +115,10 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  public void playTone(final int frq, final int dur, final int vol) {
+  public void playTone(int frq, int dur, int vol, boolean bgPlay) {
     Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol);
     final Sound sound = new Sound(frq, dur, vol);
-    new Thread(new Runnable() {
+    audioExecutor.execute(new Runnable() {
       @Override
       public void run() {
         if (soundPlaying) {
@@ -123,15 +127,22 @@ public class MainActivity extends NativeActivity {
           soundPlaying = true;
           sound.play();
           while (!sounds.isEmpty()) {
-            Sound sound = sounds.remove(); 
+            Sound sound = sounds.remove();
             sound.play();
           }
           soundPlaying = false;
         }
       }
-    }).start();
+    });
+    while (!bgPlay && soundPlaying) {
+      try {
+        Thread.sleep(20);
+      } catch (InterruptedException e) {
+        Log.e(TAG, "Sleep failed: ", e);
+      }
+    }
   }
-  
+
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {

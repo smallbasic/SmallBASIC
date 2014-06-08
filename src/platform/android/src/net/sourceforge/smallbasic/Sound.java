@@ -31,18 +31,7 @@ public class Sound {
         AudioFormat.ENCODING_PCM_16BIT, sound.length, AudioTrack.MODE_STATIC);
     audioTrack.setStereoVolume(volume, volume);
     if (audioTrack.write(sound, 0, sound.length) == sound.length) {
-      audioTrack.play();
-      int frame;
-      int frames = sound.length / 2;
-      do {
-        try {
-          Thread.sleep(dur / 2);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        frame = audioTrack.getPlaybackHeadPosition();
-      } while (frame < frames);
-      audioTrack.release();
+      playTrack(audioTrack);
     } else {
       Log.i(MainActivity.TAG, "Failed to write audio: " + sound.length);
     }
@@ -101,5 +90,20 @@ public class Sound {
       i++;
     }
     return result;
+  }
+
+  private void playTrack(AudioTrack audioTrack) {
+    int frame;
+    int frames = sound.length / 2;
+    audioTrack.play();
+    do {
+      try {
+        Thread.sleep(dur / 2);
+      } catch (InterruptedException e) {
+        Log.e(MainActivity.TAG, "Sleep failed: ", e);
+      }
+      frame = audioTrack.getPlaybackHeadPosition();
+    } while (frame < frames);
+    audioTrack.release();
   }
 }

@@ -476,8 +476,8 @@ void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(III)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol);
+  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(IIIZ)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol, bgplay);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
@@ -663,6 +663,7 @@ void maAlert(const char *title, const char *message, const char *button1,
 //
 int osd_devinit(void) {
   setsysvar_str(SYSVAR_OSNAME, "Android");
+  runtime->clearSoundQueue();
   runtime->setRunning(true);
   return 1;
 }
@@ -676,7 +677,7 @@ void osd_clear_sound_queue() {
 }
 
 void osd_beep(void) {
-  osd_sound(1000, 30, 100, 1);
+  osd_sound(1000, 30, 100, 0);
   osd_sound(500, 30, 100, 0);
 }
 
