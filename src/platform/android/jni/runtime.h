@@ -22,6 +22,7 @@ struct Runtime : public System {
   Runtime(android_app *app);
   virtual ~Runtime();
 
+  void clearSoundQueue();
   void construct();
   bool getUntrusted();
   String getStartupBas();

@@ -136,7 +136,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  runtime->onResize(width, height);
+  // runtime->onResize(width, height);
 }
 
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
@@ -167,6 +167,33 @@ Runtime::~Runtime() {
   _eventQueue = NULL;
   _graphics = NULL;
   pthread_mutex_destroy(&_mutex);
+}
+
+void Runtime::clearSoundQueue() {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, "clearSoundQueue", "()V");
+  env->CallVoidMethod(_app->activity->clazz, methodId);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
+void Runtime::construct() {
+  logEntered();
+  _state = kClosingState;
+  _graphics = new Graphics(_app);
+  if (_graphics && _graphics->construct()) {
+    int w = ANativeWindow_getWidth(_app->window);
+    int h = ANativeWindow_getHeight(_app->window);
+    _output = new AnsiWidget(this, w, h);
+    if (_output && _output->construct()) {
+      _eventQueue = new Stack<MAEvent *>();
+      if (_eventQueue) {
+        _state = kActiveState;
+      }
+    }
+  }
 }
 
 bool Runtime::getUntrusted() {
@@ -203,23 +230,6 @@ int Runtime::getUnicodeChar(int keyCode, int metaState) {
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
-}
-
-void Runtime::construct() {
-  logEntered();
-  _state = kClosingState;
-  _graphics = new Graphics(_app);
-  if (_graphics && _graphics->construct()) {
-    int w = ANativeWindow_getWidth(_app->window);
-    int h = ANativeWindow_getHeight(_app->window);
-    _output = new AnsiWidget(this, w, h);
-    if (_output && _output->construct()) {
-      _eventQueue = new Stack<MAEvent *>();
-      if (_eventQueue) {
-        _state = kActiveState;
-      }
-    }
-  }
 }
 
 char *Runtime::loadResource(const char *fileName) {
@@ -463,13 +473,11 @@ void Runtime::optionsBox(StringList *items) {
 }
 
 void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
-  logEntered();
-
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(IIIZ)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol, bgplay);
+  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(III)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
@@ -664,6 +672,7 @@ void osd_sound(int frq, int dur, int vol, int bgplay) {
 }
 
 void osd_clear_sound_queue() {
+  runtime->clearSoundQueue();
 }
 
 void osd_beep(void) {

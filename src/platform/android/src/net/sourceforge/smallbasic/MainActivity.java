@@ -18,6 +18,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -27,9 +29,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Rect;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -45,14 +44,15 @@ import android.view.inputmethod.InputMethodManager;
  */
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends NativeActivity {
+  protected static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "scheme.bas";
-  private static final String TAG = "smallbasic";
   private static final String SCHEME = "smallbasic://x/";
-  private static final int AUDIO_SAMPLE_RATE = 8000;
   private String startupBas = null;
   private boolean untrusted = false;
-
+  private Queue<Sound> sounds = new ConcurrentLinkedQueue<Sound>();
+  private boolean soundPlaying = false;
+  
   static {
     System.loadLibrary("smallbasic");
   }
@@ -61,6 +61,11 @@ public class MainActivity extends NativeActivity {
   public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
 
+  public void clearSoundQueue() {
+    Log.i(TAG, "clearSoundQueue");
+    sounds.clear();
+  }
+  
   public String getStartupBas() {
     return this.startupBas;
   }
@@ -106,15 +111,27 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  public void playTone(final int frq, final int dur, final int vol, final boolean bgplay) {
-    Log.i(TAG, "playTone: " + frq + " " + dur);
+  public void playTone(final int frq, final int dur, final int vol) {
+    Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol);
+    final Sound sound = new Sound(frq, dur, vol);
     new Thread(new Runnable() {
+      @Override
       public void run() {
-        playTone(generateTone(frq, dur));
+        if (soundPlaying) {
+          sounds.add(sound);
+        } else {
+          soundPlaying = true;
+          sound.play();
+          while (!sounds.isEmpty()) {
+            Sound sound = sounds.remove(); 
+            sound.play();
+          }
+          soundPlaying = false;
+        }
       }
     }).start();
   }
-
+  
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
@@ -234,61 +251,6 @@ public class MainActivity extends NativeActivity {
     runFile(outputFile.getAbsolutePath());
   }
 
-  /**
-   * http://stackoverflow.com/questions/2413426/playing-an-arbitrary-tone-with-android
-   */
-  private byte[] generateTone(int freqOfTone, int durationMillis) {
-    int numSamples = durationMillis * AUDIO_SAMPLE_RATE / 1000;
-    double sample[] = new double[numSamples];
-    byte result[] = new byte[2 * numSamples];
-
-    for (int i = 0; i < numSamples; ++i) {
-      // Fill the sample array
-      sample[i] = Math.sin(freqOfTone * 2 * Math.PI * i / AUDIO_SAMPLE_RATE);
-    }
-
-    // convert to 16 bit pcm sound array assumes the sample buffer is normalised.
-    int idx = 0;
-    int i = 0;
-
-    // Amplitude ramp as a percent of sample count
-    int ramp = numSamples / 20;
-
-    while (i < ramp) {
-      // Ramp amplitude up (to avoid clicks)
-      double dVal = sample[i];
-      // Ramp up to maximum
-      final short val = (short) ((dVal * 32767 * i / ramp));
-      // in 16 bit wav PCM, first byte is the low order byte
-      result[idx++] = (byte) (val & 0x00ff);
-      result[idx++] = (byte) ((val & 0xff00) >>> 8);
-      i++;
-    }
-
-    while (i < numSamples - ramp) {
-      // Max amplitude for most of the samples
-      double dVal = sample[i];
-      // scale to maximum amplitude
-      final short val = (short) ((dVal * 32767));
-      // in 16 bit wav PCM, first byte is the low order byte
-      result[idx++] = (byte) (val & 0x00ff);
-      result[idx++] = (byte) ((val & 0xff00) >>> 8);
-      i++;
-    }
-
-    while (i < numSamples) {
-      // Ramp amplitude down
-      double dVal = sample[i];
-      // Ramp down to zero
-      final short val = (short) ((dVal * 32767 * (numSamples - i) / ramp));
-      // in 16 bit wav PCM, first byte is the low order byte
-      result[idx++] = (byte) (val & 0x00ff);
-      result[idx++] = (byte) ((val & 0xff00) >>> 8);
-      i++;
-    }
-    return result;
-  }
-
   private Map<String, String> getPostData(DataInputStream inputStream, String line)
       throws IOException, UnsupportedEncodingException {
     int length = 0;
@@ -319,15 +281,6 @@ public class MainActivity extends NativeActivity {
       }
     }
     return result;
-  }
-
-  private void playTone(byte[] generatedSnd) {
-    final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-        AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
-        AudioFormat.ENCODING_PCM_16BIT, generatedSnd.length,
-        AudioTrack.MODE_STATIC);
-    audioTrack.write(generatedSnd, 0, generatedSnd.length);
-    audioTrack.play();
   }
 
   private String readBuffer() {
