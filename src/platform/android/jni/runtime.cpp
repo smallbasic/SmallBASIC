@@ -476,8 +476,16 @@ void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(IIIZ)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol, bgplay);
+  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(III)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol);
+
+  if (!bgplay && !isBreak()) {
+    methodId = env->GetMethodID(clazz, "getSoundPlaying", "()Z");
+    //while (!isBreak() && env->CallBooleanMethod(_app->activity->clazz, methodId)) {
+    //maWait(WAIT_INTERVAL);
+    //}
+  }
+  
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }

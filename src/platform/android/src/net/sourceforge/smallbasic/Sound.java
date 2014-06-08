@@ -18,23 +18,39 @@ public class Sound {
   private byte[] sound;
   private float volume;
   private int dur;
+  private boolean silent;
   
   public Sound(int frq, int dur, int vol) {
     this.sound = generateTone(frq, dur);
     this.volume = vol * AudioTrack.getMaxVolume() / 100;
     this.dur = dur;
+    this.silent = false;
   }
   
+  public boolean isSilent() {
+    return silent;
+  }
+
   public void play() {
-    AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-        AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
-        AudioFormat.ENCODING_PCM_16BIT, sound.length, AudioTrack.MODE_STATIC);
-    audioTrack.setStereoVolume(volume, volume);
-    if (audioTrack.write(sound, 0, sound.length) == sound.length) {
-      playTrack(audioTrack);
-    } else {
-      Log.i(MainActivity.TAG, "Failed to write audio: " + sound.length);
+    if (!silent) {
+      try {
+        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+            AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT, sound.length, AudioTrack.MODE_STATIC);
+        audioTrack.setStereoVolume(volume, volume);
+        if (audioTrack.write(sound, 0, sound.length) == sound.length) {
+          playTrack(audioTrack);
+        } else {
+          Log.i(MainActivity.TAG, "Failed to write audio: " + sound.length);
+        }
+      } catch (Exception e) {
+        Log.i(MainActivity.TAG, "play failed: ", e);
+      }
     }
+  }
+
+  public void setSilent(boolean silent) {
+    this.silent = silent;
   }
 
   /**
@@ -92,16 +108,12 @@ public class Sound {
     return result;
   }
 
-  private void playTrack(AudioTrack audioTrack) {
+  private void playTrack(AudioTrack audioTrack) throws InterruptedException {
     int frame;
     int frames = sound.length / 2;
     audioTrack.play();
     do {
-      try {
-        Thread.sleep(dur / 2);
-      } catch (InterruptedException e) {
-        Log.e(MainActivity.TAG, "Sleep failed: ", e);
-      }
+      Thread.sleep(dur / 2);
       frame = audioTrack.getPlaybackHeadPosition();
     } while (frame < frames);
     audioTrack.release();

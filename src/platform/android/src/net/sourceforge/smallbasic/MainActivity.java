@@ -22,7 +22,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -51,23 +50,30 @@ public class MainActivity extends NativeActivity {
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "scheme.bas";
   private static final String SCHEME = "smallbasic://x/";
+  public static native void onResize(int width, int height);
+  public static native void runFile(String fileName);
   private String startupBas = null;
   private boolean untrusted = false;
-  private Queue<Sound> sounds = new ConcurrentLinkedQueue<Sound>();
-  private boolean soundPlaying = false;
   private ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
+  private Queue<Sound> sounds = new ConcurrentLinkedQueue<Sound>();
 
   static {
     System.loadLibrary("smallbasic");
   }
-
+  
   public static native boolean optionSelected(int index);
-  public static native void onResize(int width, int height);
-  public static native void runFile(String fileName);
 
   public void clearSoundQueue() {
     Log.i(TAG, "clearSoundQueue");
-    sounds.clear();
+    for (Sound sound : sounds) {
+      sound.setSilent(true);
+    }
+  }
+
+  public boolean getSoundPlaying() {
+    boolean result = this.sounds.size() > 0;
+    Log.i(TAG, "getSoundPlaying = " + result);
+    return result;
   }
 
   public String getStartupBas() {
@@ -85,10 +91,11 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  public Boolean getUntrusted() {
+  public boolean getUntrusted() {
+    Log.i(TAG, "getUntrusted");
     return this.untrusted;
   }
-
+  
   @Override
   public void onGlobalLayout() {
     super.onGlobalLayout();
@@ -115,32 +122,17 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  public void playTone(int frq, int dur, int vol, boolean bgPlay) {
+  public void playTone(int frq, int dur, int vol) {
     Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol);
     final Sound sound = new Sound(frq, dur, vol);
+    sounds.add(sound);
     audioExecutor.execute(new Runnable() {
       @Override
       public void run() {
-        if (soundPlaying) {
-          sounds.add(sound);
-        } else {
-          soundPlaying = true;
-          sound.play();
-          while (!sounds.isEmpty()) {
-            Sound sound = sounds.remove();
-            sound.play();
-          }
-          soundPlaying = false;
-        }
+        sound.play();
+        sounds.remove(sound);
       }
     });
-    while (!bgPlay && soundPlaying) {
-      try {
-        Thread.sleep(20);
-      } catch (InterruptedException e) {
-        Log.e(TAG, "Sleep failed: ", e);
-      }
-    }
   }
 
   public void showAlert(final String title, final String message) {
