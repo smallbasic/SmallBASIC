@@ -136,7 +136,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  // runtime->onResize(width, height);
+  runtime->onResize(width, height);
 }
 
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
@@ -478,14 +478,6 @@ void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "playTone", "(III)V");
   env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol);
-
-  if (!bgplay && !isBreak()) {
-    methodId = env->GetMethodID(clazz, "getSoundPlaying", "()Z");
-    //while (!isBreak() && env->CallBooleanMethod(_app->activity->clazz, methodId)) {
-    //maWait(WAIT_INTERVAL);
-    //}
-  }
-  
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
@@ -585,17 +577,19 @@ void Runtime::showAlert(const char *title, const char *message) {
 
 void Runtime::onResize(int width, int height) {
   logEntered();
-  int w = ANativeWindow_getWidth(_app->window);
-  int h = ANativeWindow_getHeight(_app->window);
-  if (w != width || h != height) {
-    trace("Resized from %d %d to %d %d", w, h, width, height);
-    ANativeWindow_setBuffersGeometry(_app->window, width, height, WINDOW_FORMAT_RGB_565);
-    ALooper_acquire(_app->looper);
-    MAEvent *maEvent = new MAEvent();
-    maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
-    runtime->pushEvent(maEvent);
-    ALooper_wake(_app->looper);
-    ALooper_release(_app->looper);
+  if (_graphics != NULL) {
+    int w = _graphics->getWidth();
+    int h = _graphics->getHeight();
+    if (w != width || h != height) {
+      trace("Resized from %d %d to %d %d", w, h, width, height);
+      _graphics->setSize(width, height);
+      ALooper_acquire(_app->looper);
+      MAEvent *maEvent = new MAEvent();
+      maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
+      runtime->pushEvent(maEvent);
+      ALooper_wake(_app->looper);
+      ALooper_release(_app->looper);
+    }
   }
 }
 
@@ -656,7 +650,6 @@ int maGetMilliSecondCount(void) {
 }
 
 int maShowVirtualKeyboard(void) {
-  osd_beep();
   runtime->showKeypad(true);
   return 0;
 }

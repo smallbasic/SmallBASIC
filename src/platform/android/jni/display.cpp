@@ -146,6 +146,10 @@ Graphics::~Graphics() {
 
 bool Graphics::construct() {
   logEntered();
+
+  _w = ANativeWindow_getWidth(_app->window);
+  _h = ANativeWindow_getHeight(_app->window);
+
   bool result = false;
   if (loadFonts()) {
     _screen = new Canvas();
@@ -202,10 +206,12 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         x1 = endX;
         x2 = startX;
       }
-      pixel_t *line = _drawTarget->getLine(startY);
-      for (int x = x1; x <= x2; x++) {
-        if (x >= _drawTarget->x() && x < _drawTarget->w()) {
-          line[x] = _drawColor;
+      if (startY < _h) {
+        pixel_t *line = _drawTarget->getLine(startY);
+        for (int x = x1; x <= x2; x++) {
+          if (x >= _drawTarget->x() && x < _drawTarget->w()) {
+            line[x] = _drawColor;
+          }
         }
       }
     } else if (startX == endX) {
@@ -333,14 +339,6 @@ MAExtent Graphics::getTextSize(const char *str, int len) {
     height = _font->_spacing;
   }
   return (MAExtent)((width << 16) + height);
-}
-
-int Graphics::getHeight() {
-  return ANativeWindow_getHeight(_app->window);
-}
-
-int Graphics::getWidth() {
-  return ANativeWindow_getWidth(_app->window);
 }
 
 void Graphics::redraw() {

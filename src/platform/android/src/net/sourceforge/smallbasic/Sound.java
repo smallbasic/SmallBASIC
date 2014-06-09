@@ -1,6 +1,7 @@
 package net.sourceforge.smallbasic;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -14,15 +15,16 @@ import android.util.Log;
  */
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class Sound {
+  private static final String TAG = "smallbasic";
   static final int AUDIO_SAMPLE_RATE = 8000;
   private byte[] sound;
   private float volume;
   private int dur;
   private boolean silent;
   
-  public Sound(int frq, int dur, int vol) {
+  public Sound(int frq, int dur, float vol) {
     this.sound = generateTone(frq, dur);
-    this.volume = vol * AudioTrack.getMaxVolume() / 100;
+    this.volume = vol;
     this.dur = dur;
     this.silent = false;
   }
@@ -37,14 +39,14 @@ public class Sound {
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
             AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
             AudioFormat.ENCODING_PCM_16BIT, sound.length, AudioTrack.MODE_STATIC);
-        audioTrack.setStereoVolume(volume, volume);
         if (audioTrack.write(sound, 0, sound.length) == sound.length) {
+          audioTrack.setStereoVolume(volume, volume);
           playTrack(audioTrack);
         } else {
-          Log.i(MainActivity.TAG, "Failed to write audio: " + sound.length);
+          Log.i(TAG, "Failed to write audio: " + sound.length);
         }
       } catch (Exception e) {
-        Log.i(MainActivity.TAG, "play failed: ", e);
+        Log.i(TAG, "play failed: ", e);
       }
     }
   }

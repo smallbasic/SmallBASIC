@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Rect;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -46,12 +47,10 @@ import android.view.inputmethod.InputMethodManager;
  */
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends NativeActivity {
-  protected static final String TAG = "smallbasic";
+  private static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "scheme.bas";
   private static final String SCHEME = "smallbasic://x/";
-  public static native void onResize(int width, int height);
-  public static native void runFile(String fileName);
   private String startupBas = null;
   private boolean untrusted = false;
   private ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
@@ -62,6 +61,8 @@ public class MainActivity extends NativeActivity {
   }
   
   public static native boolean optionSelected(int index);
+  public static native void onResize(int width, int height);
+  public static native void runFile(String fileName);
 
   public void clearSoundQueue() {
     Log.i(TAG, "clearSoundQueue");
@@ -123,8 +124,13 @@ public class MainActivity extends NativeActivity {
   }
 
   public void playTone(int frq, int dur, int vol) {
-    Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol);
-    final Sound sound = new Sound(frq, dur, vol);
+    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    float ringVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+    float maxRingVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
+    float volume = (vol / 100f) * (ringVolume / maxRingVolume);
+    Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol + " " + volume);
+    
+    final Sound sound = new Sound(frq, dur, volume);
     sounds.add(sound);
     audioExecutor.execute(new Runnable() {
       @Override
