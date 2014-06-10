@@ -18,6 +18,7 @@ import java.net.Socket;
 import java.net.URLDecoder;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
@@ -59,6 +60,7 @@ public class MainActivity extends NativeActivity {
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
+  private float _ringVolume;
 
   static {
     System.loadLibrary("smallbasic");
@@ -128,10 +130,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public void playTone(int frq, int dur, int vol) {
-    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-    float ringVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
-    float maxRingVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
-    float volume = (vol / 100f) * (ringVolume / maxRingVolume);
+    float volume = (vol / 100f) * _ringVolume;
     Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol + " " + volume);
     
     final Sound sound = new Sound(frq, dur, volume);
@@ -203,6 +202,11 @@ public class MainActivity extends NativeActivity {
     } catch (Exception e) {
       Log.i(TAG, "Failed to start web service: ", e);
     }
+    
+    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    float ringVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+    float maxRingVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
+    _ringVolume = ringVolume / maxRingVolume;
   }
 
   private String buildRunForm(String buffer, String token) {
@@ -285,7 +289,7 @@ public class MainActivity extends NativeActivity {
     int length = 0;
     final String lengthHeader = "content-length: ";
     while (line != null && line.length() > 0) {
-      if (line.toLowerCase().startsWith(lengthHeader)) {
+      if (line.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
         length = Integer.valueOf(line.substring(lengthHeader.length()));
       }
       line = readLine(inputStream);
