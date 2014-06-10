@@ -3,6 +3,7 @@ package net.sourceforge.smallbasic;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -10,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -22,6 +24,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPInputStream;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -35,6 +38,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.InputDevice;
 import android.view.View;
@@ -51,10 +55,10 @@ public class MainActivity extends NativeActivity {
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "scheme.bas";
   private static final String SCHEME = "smallbasic://x/";
-  private String startupBas = null;
-  private boolean untrusted = false;
-  private ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
-  private Queue<Sound> sounds = new ConcurrentLinkedQueue<Sound>();
+  private String _startupBas = null;
+  private boolean _untrusted = false;
+  private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
+  private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
 
   static {
     System.loadLibrary("smallbasic");
@@ -66,19 +70,19 @@ public class MainActivity extends NativeActivity {
 
   public void clearSoundQueue() {
     Log.i(TAG, "clearSoundQueue");
-    for (Sound sound : sounds) {
+    for (Sound sound : _sounds) {
       sound.setSilent(true);
     }
   }
 
   public boolean getSoundPlaying() {
-    boolean result = this.sounds.size() > 0;
+    boolean result = this._sounds.size() > 0;
     Log.i(TAG, "getSoundPlaying = " + result);
     return result;
   }
 
   public String getStartupBas() {
-    return this.startupBas;
+    return this._startupBas;
   }
 
   public int getUnicodeChar(int keyCode, int metaState) {
@@ -94,7 +98,7 @@ public class MainActivity extends NativeActivity {
 
   public boolean getUntrusted() {
     Log.i(TAG, "getUntrusted");
-    return this.untrusted;
+    return this._untrusted;
   }
   
   @Override
@@ -131,12 +135,12 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol + " " + volume);
     
     final Sound sound = new Sound(frq, dur, volume);
-    sounds.add(sound);
-    audioExecutor.execute(new Runnable() {
+    _sounds.add(sound);
+    _audioExecutor.execute(new Runnable() {
       @Override
       public void run() {
         sound.play();
-        sounds.remove(sound);
+        _sounds.remove(sound);
       }
     });
   }
@@ -182,9 +186,9 @@ public class MainActivity extends NativeActivity {
         execScheme(data);
         Log.i(TAG, "data="+ data);
       } else {
-        startupBas = uri.getPath();
+        _startupBas = uri.getPath();
       }
-      Log.i(TAG, "startupBas="+ startupBas);
+      Log.i(TAG, "startupBas="+ _startupBas);
     }
     try {
       Properties p = new Properties();
@@ -239,9 +243,25 @@ public class MainActivity extends NativeActivity {
 
   private void execScheme(final String data) {
     try {
-      String bas = URLDecoder.decode(data.substring(SCHEME.length()), "utf-8");
-      startupBas = execBuffer(bas, SCHEME_BAS, false);
-      untrusted = true;
+      String input = data.substring(SCHEME.length());
+      byte[] decodedBytes = Base64.decode(input, Base64.DEFAULT);
+      int magic = (decodedBytes[1] & 0xFF) << 8 | decodedBytes[0];
+      BufferedReader reader;
+      String bas;
+      if (magic == GZIPInputStream.GZIP_MAGIC) {
+        GZIPInputStream zipStream = new GZIPInputStream(new ByteArrayInputStream(decodedBytes));
+        reader = new BufferedReader(new InputStreamReader(zipStream));
+        StringBuilder out = new StringBuilder();
+        String s;
+        while ((s = reader.readLine()) != null) {
+          out.append(s).append('\n');
+        }
+        bas = out.toString();
+      } else {
+        bas = URLDecoder.decode(input, "utf-8");
+      }
+      _startupBas = execBuffer(bas, SCHEME_BAS, false);
+      _untrusted = true;
     } catch (IOException e) {
       Log.i(TAG, "saveSchemeData failed: ", e);
     }

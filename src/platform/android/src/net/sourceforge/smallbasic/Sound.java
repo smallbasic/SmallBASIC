@@ -1,7 +1,6 @@
 package net.sourceforge.smallbasic;
 
 import android.annotation.TargetApi;
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -17,33 +16,33 @@ import android.util.Log;
 public class Sound {
   private static final String TAG = "smallbasic";
   static final int AUDIO_SAMPLE_RATE = 8000;
-  private byte[] sound;
-  private float volume;
-  private int dur;
-  private boolean silent;
+  private byte[] _sound;
+  private float _volume;
+  private int _dur;
+  private boolean _silent;
   
   public Sound(int frq, int dur, float vol) {
-    this.sound = generateTone(frq, dur);
-    this.volume = vol;
-    this.dur = dur;
-    this.silent = false;
+    this._sound = generateTone(frq, dur);
+    this._volume = vol;
+    this._dur = dur;
+    this._silent = false;
   }
   
   public boolean isSilent() {
-    return silent;
+    return _silent;
   }
 
   public void play() {
-    if (!silent) {
+    if (!_silent) {
       try {
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
             AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
-            AudioFormat.ENCODING_PCM_16BIT, sound.length, AudioTrack.MODE_STATIC);
-        if (audioTrack.write(sound, 0, sound.length) == sound.length) {
-          audioTrack.setStereoVolume(volume, volume);
+            AudioFormat.ENCODING_PCM_16BIT, _sound.length, AudioTrack.MODE_STATIC);
+        if (audioTrack.write(_sound, 0, _sound.length) == _sound.length) {
+          audioTrack.setStereoVolume(_volume, _volume);
           playTrack(audioTrack);
         } else {
-          Log.i(TAG, "Failed to write audio: " + sound.length);
+          Log.i(TAG, "Failed to write audio: " + _sound.length);
         }
       } catch (Exception e) {
         Log.i(TAG, "play failed: ", e);
@@ -52,7 +51,7 @@ public class Sound {
   }
 
   public void setSilent(boolean silent) {
-    this.silent = silent;
+    this._silent = silent;
   }
 
   /**
@@ -112,10 +111,10 @@ public class Sound {
 
   private void playTrack(AudioTrack audioTrack) throws InterruptedException {
     int frame;
-    int frames = sound.length / 2;
+    int frames = _sound.length / 2;
     audioTrack.play();
     do {
-      Thread.sleep(dur / 2);
+      Thread.sleep(_dur / 2);
       frame = audioTrack.getPlaybackHeadPosition();
     } while (frame < frames);
     audioTrack.release();
