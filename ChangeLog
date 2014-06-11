@@ -1,3 +1,9 @@
+2014-06-11
+	Android changes:
+	- Run by URL/QrCode.
+	- Implemented BEEP/SOUND
+	- Screen layout adjusts when virtual keypad displayed
+
 2014-04-20
 	Released Windows version 0.11.5
 

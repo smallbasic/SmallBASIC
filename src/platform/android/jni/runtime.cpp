@@ -409,9 +409,10 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     //  case AKEYCODE_NUMPAD_SUBTRACT:
     //    event.key = SB_KEY_KP_MINUS;
     //    break;
-  case AKEYCODE_SLASH:
-    event.key = SB_KEY_KP_DIV;
-    break;
+    // AKEYCODE_SLASH is '?'
+    //  case AKEYCODE_SLASH:
+    //    event.key = SB_KEY_KP_DIV;
+    //    break;
   case AKEYCODE_PAGE_UP:
     event.key = SB_KEY_PGUP;
     break;

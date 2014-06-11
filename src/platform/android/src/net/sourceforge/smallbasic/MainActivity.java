@@ -35,7 +35,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Rect;
-import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -54,13 +53,12 @@ import android.view.inputmethod.InputMethodManager;
 public class MainActivity extends NativeActivity {
   private static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
-  private static final String SCHEME_BAS = "scheme.bas";
+  private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
   private String _startupBas = null;
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
-  private float _ringVolume;
 
   static {
     System.loadLibrary("smallbasic");
@@ -130,9 +128,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public void playTone(int frq, int dur, int vol) {
-    float volume = (vol / 100f) * _ringVolume;
-    Log.i(TAG, "playTone: " + frq + " " + dur + " " + vol + " " + volume);
-    
+    float volume = (vol / 100f);
     final Sound sound = new Sound(frq, dur, volume);
     _sounds.add(sound);
     _audioExecutor.execute(new Runnable() {
@@ -202,11 +198,6 @@ public class MainActivity extends NativeActivity {
     } catch (Exception e) {
       Log.i(TAG, "Failed to start web service: ", e);
     }
-    
-    AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-    float ringVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
-    float maxRingVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
-    _ringVolume = ringVolume / maxRingVolume;
   }
 
   private String buildRunForm(String buffer, String token) {
