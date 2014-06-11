@@ -40,9 +40,14 @@ public class QrEncoder {
   }
 
   protected String cleanupCode(String fileText) {
+    // remove quotes
     String result = fileText.replaceAll("(?mi)^\\s*?rem.*[\\r\\n]", "");
     result = result.replaceAll("(?mi)^\\s*?'.*[\\r\\n]", "");
     result = result.replaceAll("(?mi)^\\s*?#.*[\\r\\n]", "");
+    
+    // remove extra white space
+    result = result.replaceAll("[ \t]{2,}", " ");
+
     return result.trim();
   }
   
@@ -99,7 +104,7 @@ public class QrEncoder {
     String zipText = zipBase64(fileText);
 
     // encode the zipped data into a qrcode
-    byte[] out = createQRCode(zipText, 512);
+    byte[] out = createQRCode("smallbasic://x/" + zipText, 512);
     
     writeOutput(out, fileName + ".png");
   }

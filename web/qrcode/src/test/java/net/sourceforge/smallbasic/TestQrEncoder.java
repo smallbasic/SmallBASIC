@@ -14,7 +14,8 @@ public class TestQrEncoder {
   @Test
   public void testCleanup() {
     QrEncoder inst = new QrEncoder();
-    String fileText = " 'quote comments\r\n# hash comments\nREM remarks\r\n? 'hello'\n? 10";
+    String fileText = " 'quote comments\r\n# hash comments\nREM remarks"
+        + "\r\n?    'hello'\n?   10";
     String expectedText = "? 'hello'\n? 10";
     String result = inst.cleanupCode(fileText);
     Assert.assertEquals(expectedText, result);
