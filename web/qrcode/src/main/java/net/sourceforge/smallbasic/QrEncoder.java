@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -30,24 +31,44 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
  * @author chrisws
  */
 public class QrEncoder {
+  private static final int DEF_SIZE = 500;
+
   /**
    * @param args
    * @throws IOException 
    * @throws WriterException 
    */
   public static void main(String[] args) throws IOException, WriterException {
-    new QrEncoder().process(args[0]);
+    File input = new File(args[0]);
+    if (!input.exists() || !input.canRead() || !input.isFile()) {
+      System.err.println("Invalid input: " + input.toString());
+    } else {
+      int size = DEF_SIZE;
+      if (args.length > 1) {
+        size = Integer.valueOf(args[1]);
+      }
+      new QrEncoder().process(input, size);
+    }
   }
 
   protected String cleanupCode(String fileText) {
+    // convert DOS line endings to UNIX
+    String result = fileText.replaceAll("\\r\\n", "\n");
+
     // remove quotes
-    String result = fileText.replaceAll("(?mi)^\\s*?rem.*[\\r\\n]", "");
-    result = result.replaceAll("(?mi)^\\s*?'.*[\\r\\n]", "");
-    result = result.replaceAll("(?mi)^\\s*?#.*[\\r\\n]", "");
+    result = fileText.replaceAll("(?mi)^\\s*?rem.*[\\r\\n]", "");
+    result = result.replaceAll("(?m)^\\s*?'.*[\\r\\n]", "");
+    result = result.replaceAll("(?m)^\\s*?#.*[\\r\\n]", "");
+
+    // remove leading white space
+    result = result.replaceAll("(?m)^\\s*", "");
     
-    // remove extra white space
+    // remove double spaces
     result = result.replaceAll("[ \t]{2,}", " ");
 
+    // remove empty blank lines
+    result = result.replaceAll("[\\r\\n]{2,}", "\n");
+    
     return result.trim();
   }
   
@@ -78,9 +99,9 @@ public class QrEncoder {
     return output.toByteArray();
   }
 
-  protected String getFileText(String fileName) throws IOException {
+  protected String getFileText(File input) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
-    try (DataInputStream is = new DataInputStream(new FileInputStream(fileName));) {
+    try (DataInputStream is = new DataInputStream(new FileInputStream(input));) {
       byte[] buf = new byte[1024];
       int len = is.read(buf);
       while (len != -1) {
@@ -91,11 +112,11 @@ public class QrEncoder {
     return out.toString("utf-8");
   }
 
-  protected void process(String fileName) throws IOException,
+  protected void process(File input, int size) throws IOException,
       FileNotFoundException, WriterException {
 
     // load the file text
-    String fileText = getFileText(fileName);
+    String fileText = getFileText(input);
     
     // remove comments and empty white space
     fileText = cleanupCode(fileText);
@@ -104,9 +125,9 @@ public class QrEncoder {
     String zipText = zipBase64(fileText);
 
     // encode the zipped data into a qrcode
-    byte[] out = createQRCode("smallbasic://x/" + zipText, 512);
+    byte[] out = createQRCode("smallbasic://x/" + zipText, size);
     
-    writeOutput(out, fileName + ".png");
+    writeOutput(out, input + ".png");
   }
 
   protected void writeOutput(byte[] bytes, String fileName) throws FileNotFoundException, IOException {
