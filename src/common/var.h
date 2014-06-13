@@ -708,6 +708,16 @@ void v_input2var(const char *str, var_t *var);
  */
 char *v_getstr(var_t *v);
 
+/**
+ * @ingroup var
+ *
+ * returns whether the variable is of the given type
+ *
+ * @param v is the variable
+ * @return whether the variable is of the given type
+ */
+int v_is_type(var_t *v, int type);
+
 /*
  * low-level byte-code parsing
  *
