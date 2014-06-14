@@ -374,12 +374,24 @@ void DisplayWidget::setColor(long color) {
   _ansiWidget->setColor(color);
 }
 
-int DisplayWidget::getX() {
-  return _ansiWidget->getX();
+int DisplayWidget::getX(bool offset) {
+  int result = _ansiWidget->getX();
+  if (offset) {
+    int x, y;
+    _ansiWidget->getScroll(x, y);
+    result -= x;
+  }
+  return result;
 }
 
-int DisplayWidget::getY() {
-  return _ansiWidget->getY();
+int DisplayWidget::getY(bool offset) {
+  int result = _ansiWidget->getY();
+  if (offset) {
+    int x, y;
+    _ansiWidget->getScroll(x, y);
+    result -= y;
+  }
+  return result;
 }
 
 void DisplayWidget::setPixel(int x, int y, int c) {

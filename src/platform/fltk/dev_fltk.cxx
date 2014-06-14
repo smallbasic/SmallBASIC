@@ -617,8 +617,8 @@ char *dev_gets(char *dest, int size) {
   wnd->_tabGroup->selected_child(wnd->_outputGroup);
   wnd->_outputGroup->begin();
 
-  LineInput *in = new LineInput(wnd->_out->getX() + 2,
-                                wnd->_out->getY() + 1,
+  LineInput *in = new LineInput(wnd->_out->getX(true) + 2,
+                                wnd->_out->getY(true) + 1,
                                 20, wnd->_out->textHeight() + 4);
   wnd->_outputGroup->end();
   in->callback(enter_cb);
