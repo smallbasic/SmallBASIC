@@ -207,11 +207,11 @@ bool Runtime::getUntrusted() {
   return result;
 }
 
-String Runtime::getStartupBas() {
+String Runtime::getString(const char *methodName) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "getStartupBas", "()Ljava/lang/String;");
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()Ljava/lang/String;");
   jstring startupBasObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
   const char *startupBas = env->GetStringUTFChars(startupBasObj, JNI_FALSE);
   String result = startupBas;
@@ -280,7 +280,14 @@ void Runtime::runShell() {
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
-  String startupBas = getStartupBas();
+  String ipAddress = getString("getIPAddress");
+  if (ipAddress.length()) {
+    String env = "IP_ADDR=";
+    env += ipAddress;
+    dev_putenv(env.c_str());
+  }
+
+  String startupBas = getString("getStartupBas");
   if (startupBas.length()) {
     if (getUntrusted()) {
       opt_file_permitted = 0;

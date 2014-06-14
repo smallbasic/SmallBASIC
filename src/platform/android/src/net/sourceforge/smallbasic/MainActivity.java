@@ -13,10 +13,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URLDecoder;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -63,7 +67,7 @@ public class MainActivity extends NativeActivity {
   static {
     System.loadLibrary("smallbasic");
   }
-  
+
   public static native boolean optionSelected(int index);
   public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
@@ -73,6 +77,25 @@ public class MainActivity extends NativeActivity {
     for (Sound sound : _sounds) {
       sound.setSilent(true);
     }
+  }
+
+  public String getIPAddress() {
+    String result = null;
+    try {
+      for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+        NetworkInterface intf = en.nextElement();
+        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+          InetAddress inetAddress = enumIpAddr.nextElement();
+          if (!inetAddress.isLoopbackAddress()) {
+            result = inetAddress.getHostAddress().toString();
+          }
+        }
+      }
+    } catch (SocketException e) {
+      Log.i(TAG, "getIPAddress failed: ", e);
+    }
+    Log.i(TAG, "getIPAddress: " + result);
+    return result;
   }
 
   public boolean getSoundPlaying() {
@@ -100,7 +123,7 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "getUntrusted");
     return this._untrusted;
   }
-  
+
   @Override
   public void onGlobalLayout() {
     super.onGlobalLayout();

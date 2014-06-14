@@ -78,9 +78,12 @@ sub setup()
 end
 
 sub serverInfo()
-  serverSocket = env("serverSocket")
-  if (len(serverSocket) > 0) then
-    print boldOff + "Web Service port: " + boldOn + serverSocket
+  local serverSocket = env("serverSocket")
+  local ipAddr = env("IP_ADDR")
+
+  if (len(serverSocket) > 0 && len(ipAddr)) then
+    serverSocket = ipAddr + ":" + serverSocket
+    print boldOff + "Web Service: " + boldOn + serverSocket
     print boldOff + "Access token: " + boldOn + env("serverToken")
     print boldOff
   fi

@@ -25,7 +25,7 @@ struct Runtime : public System {
   void clearSoundQueue();
   void construct();
   bool getUntrusted();
-  String getStartupBas();
+  String getString(const char *method);
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
