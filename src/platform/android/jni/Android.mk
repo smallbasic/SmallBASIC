@@ -9,7 +9,7 @@
 
 LOCAL_PATH := $(call my-dir)
 SB_HOME := $(LOCAL_PATH)/../../../..
-PNG_HOME := $(HOME)/android-sdk/libpng-1.6.10/png
+PNG_HOME := $(HOME)/android-sdk/libpng-1.6.12/png
 FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.3/freetype
 
 include $(CLEAR_VARS)

@@ -20,12 +20,12 @@ First, prepare the cross-compiler from the NDK:
       --platform=$NDK_PLATFORM --install-dir=$PLATFORM_PREFIX
 
 Then use it to cross-compile the tools:
-  cd libpng-1.6.6/
+  cd libpng-1.6.12/
   CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/png
   make
   make install DESTDIR=$(pwd)
 
-  cd freetype-2.4.10/
+  cd freetype-2.5.3/
   CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/freetype --without-zlib --without-png --without-harfbuzz
   make
   make install DESTDIR=$(pwd)
