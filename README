@@ -5,11 +5,11 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
 1. Setup .bashrc:
 
 export PATH=$PATH:~/android-sdk/adt-bundle-linux-x86_64-20131030/sdk/platform-tools
-export ANDROID_SDK_ROOT=~/android-sdk/adt-bundle-linux-x86_64-20131030/sdk
+export ANDROID_SDK_ROOT=~/android-sdk/adt-bundle-linux-x86_64-20140321/sdk
 export TARGET_DEVICE=arm
 export PLATFORM_PREFIX=~/android-sdk/android-ext/
 export PATH=${PLATFORM_PREFIX}/bin:${PATH}
-export NDK=~/android-sdk/android-ndk-r9b
+export NDK=~/android-sdk/android-ndk-r9d
 export NDK_PLATFORM=android-9
 export ANDROID_LOG_TAGS="DEBUG:I smallbasic:I AndroidRuntime:E *:S"
 
@@ -20,13 +20,13 @@ First, prepare the cross-compiler from the NDK:
       --platform=$NDK_PLATFORM --install-dir=$PLATFORM_PREFIX
 
 Then use it to cross-compile the tools:
-  cd libpng-1.6.6/
+  cd libpng-1.6.12/
   CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/png
   make
   make install DESTDIR=$(pwd)
 
-  cd freetype-2.4.10/
-  CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/freetype --without-zlib --without-png
+  cd freetype-2.5.3/
+  CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/freetype --without-zlib --without-png --without-harfbuzz
   make
   make install DESTDIR=$(pwd)
 
@@ -117,27 +117,18 @@ alias adebug="adb -d logcat -c && adb -d logcat"
 
 == Setup instructions for building FLTK version under a fresh ubuntu system
 
-1. Install tools using synaptic package manager. Be sure to accept all included 
-   dependencies. Note, some of these are only required for building FLTK to 
-   completion but are not actually used in SmallBASIC:
+1. Install tools. Be sure to accept all included dependencies. Note, some 
+   of these are only required for building FLTK to completion but are not 
+   actually used in SmallBASIC:
 
- * subversion
- * autotools-dev
- * autogen
- * autoconf
- * libxft-dev
- * g++
- * libxi-dev
- * libgl1-mesa-dev
- * libglut3-dev
- * libsdl1.2-dev
- * libreadline-dev
+   sudo apt-get install subversion autotools-dev autogen autoconf \
+     libxft-dev g++ libxi-dev libgl1-mesa-dev libglut3-dev libsdl1.2-dev libreadline-dev
 
 2. Download code from subversion:
 
  $ mkdir src && cd src
- $ svn co http://svn.easysw.com/public/fltk/fltk/trunk fltk-2.0
- $ svn co https://smallbasic.svn.sourceforge.net/svnroot/smallbasic/trunk/smallbasic
+ $ svn co http://seriss.com/public/fltk/fltk/trunk fltk-2.0 <press enter for username+password>
+ $ git clone git://git.code.sf.net/p/smallbasic/git smallbasic-git
  $ cd fltk-2.0 
  $ make (needs to complete at least up to building tests)
  $ sudo make install

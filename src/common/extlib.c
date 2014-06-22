@@ -277,7 +277,7 @@ int slib_llopen(slib_t * lib) {
   return (lib->handle != NULL);
 #elif defined(__CYGWIN__)
   char win32Path[1024];
-  cygwin_conv_to_full_win32_path(lib->fullname, win32Path);
+  cygwin_conv_path(CCP_POSIX_TO_WIN_A, lib->fullname, win32Path, sizeof(win32Path));
   lib->handle = LoadLibrary(win32Path);
   if (lib->handle == NULL)
   panic("SB-LibMgr: error on loading %s\n", win32Path);

@@ -3,6 +3,7 @@ package net.sourceforge.smallbasic;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -10,14 +11,25 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URLDecoder;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.zip.GZIPInputStream;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -26,9 +38,11 @@ import android.app.NativeActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.InputDevice;
 import android.view.View;
@@ -41,19 +55,57 @@ import android.view.inputmethod.InputMethodManager;
  */
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MainActivity extends NativeActivity {
-  private static final String BUFFER_BAS = "web.bas";
   private static final String TAG = "smallbasic";
-  private String startupBas = null;
+  private static final String WEB_BAS = "web.bas";
+  private static final String SCHEME_BAS = "qrcode.bas";
+  private static final String SCHEME = "smallbasic://x/";
+  private String _startupBas = null;
+  private boolean _untrusted = false;
+  private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
+  private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
 
   static {
     System.loadLibrary("smallbasic");
   }
 
-  public static native boolean optionSelected(int eventBuffer);
+  public static native boolean optionSelected(int index);
+  public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
 
+  public void clearSoundQueue() {
+    Log.i(TAG, "clearSoundQueue");
+    for (Sound sound : _sounds) {
+      sound.setSilent(true);
+    }
+  }
+
+  public String getIPAddress() {
+    String result = null;
+    try {
+      for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+        NetworkInterface intf = en.nextElement();
+        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+          InetAddress inetAddress = enumIpAddr.nextElement();
+          if (!inetAddress.isLoopbackAddress()) {
+            result = inetAddress.getHostAddress().toString();
+          }
+        }
+      }
+    } catch (SocketException e) {
+      Log.i(TAG, "getIPAddress failed: ", e);
+    }
+    Log.i(TAG, "getIPAddress: " + result);
+    return result;
+  }
+
+  public boolean getSoundPlaying() {
+    boolean result = this._sounds.size() > 0;
+    Log.i(TAG, "getSoundPlaying = " + result);
+    return result;
+  }
+
   public String getStartupBas() {
-    return this.startupBas;
+    return this._startupBas;
   }
 
   public int getUnicodeChar(int keyCode, int metaState) {
@@ -65,6 +117,20 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "Device not found");
     }
     return result;
+  }
+
+  public boolean getUntrusted() {
+    Log.i(TAG, "getUntrusted");
+    return this._untrusted;
+  }
+
+  @Override
+  public void onGlobalLayout() {
+    super.onGlobalLayout();
+    // find the visible coordinates of our view
+    Rect rect = new Rect();
+    findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
+    onResize(rect.width(), rect.height());
   }
 
   public void optionsBox(final String[] items) {
@@ -83,7 +149,20 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-  
+
+  public void playTone(int frq, int dur, int vol) {
+    float volume = (vol / 100f);
+    final Sound sound = new Sound(frq, dur, volume);
+    _sounds.add(sound);
+    _audioExecutor.execute(new Runnable() {
+      @Override
+      public void run() {
+        sound.play();
+        _sounds.remove(sound);
+      }
+    });
+  }
+
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
@@ -113,14 +192,21 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-  
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     Intent intent = getIntent();
     Uri uri = intent.getData();
     if (uri != null) {
-      startupBas = uri.getPath();
+      String data = intent.getDataString();
+      if (data.startsWith(SCHEME)) {
+        execScheme(data);
+        Log.i(TAG, "data="+ data);
+      } else {
+        _startupBas = uri.getPath();
+      }
+      Log.i(TAG, "startupBas="+ _startupBas);
     }
     try {
       Properties p = new Properties();
@@ -133,7 +219,7 @@ public class MainActivity extends NativeActivity {
         Log.i(TAG, "Web service disabled");
       }
     } catch (Exception e) {
-      Log.i(TAG, "Failed to start web service: " + e.toString());
+      Log.i(TAG, "Failed to start web service: ", e);
     }
   }
 
@@ -161,8 +247,8 @@ public class MainActivity extends NativeActivity {
     return response;
   }
 
-  private void execBuffer(String buffer, boolean run) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(BUFFER_BAS);
+  private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
+    File outputFile = getApplication().getFileStreamPath(name);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     output.write(buffer);
     output.close();
@@ -170,10 +256,37 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
       runFile(outputFile.getAbsolutePath());
     }
+    return outputFile.getAbsolutePath();
+  }
+
+  private void execScheme(final String data) {
+    try {
+      String input = data.substring(SCHEME.length());
+      byte[] decodedBytes = Base64.decode(input, Base64.DEFAULT);
+      int magic = (decodedBytes[1] & 0xFF) << 8 | decodedBytes[0];
+      BufferedReader reader;
+      String bas;
+      if (magic == GZIPInputStream.GZIP_MAGIC) {
+        GZIPInputStream zipStream = new GZIPInputStream(new ByteArrayInputStream(decodedBytes));
+        reader = new BufferedReader(new InputStreamReader(zipStream));
+        StringBuilder out = new StringBuilder();
+        String s;
+        while ((s = reader.readLine()) != null) {
+          out.append(s).append('\n');
+        }
+        bas = out.toString();
+      } else {
+        bas = URLDecoder.decode(input, "utf-8");
+      }
+      _startupBas = execBuffer(bas, SCHEME_BAS, false);
+      _untrusted = true;
+    } catch (IOException e) {
+      Log.i(TAG, "saveSchemeData failed: ", e);
+    }
   }
 
   private void execStream(String line, DataInputStream inputStream) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(BUFFER_BAS);
+    File outputFile = getApplication().getFileStreamPath(WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
     while (line != null) {
@@ -184,13 +297,13 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
   }
-  
+
   private Map<String, String> getPostData(DataInputStream inputStream, String line)
       throws IOException, UnsupportedEncodingException {
     int length = 0;
     final String lengthHeader = "content-length: ";
     while (line != null && line.length() > 0) {
-      if (line.toLowerCase().startsWith(lengthHeader)) {
+      if (line.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
         length = Integer.valueOf(line.substring(lengthHeader.length()));
       }
       line = readLine(inputStream);
@@ -220,7 +333,7 @@ public class MainActivity extends NativeActivity {
   private String readBuffer() {
     StringBuilder result = new StringBuilder();
     try {
-      File inputFile = getApplication().getFileStreamPath(BUFFER_BAS);
+      File inputFile = getApplication().getFileStreamPath(WEB_BAS);
       BufferedReader input = new BufferedReader(new FileReader(inputFile));
       String line = input.readLine();
       while (line != null) {
@@ -271,9 +384,9 @@ public class MainActivity extends NativeActivity {
             if (token.equals(userToken)) {
               String buffer = postData.get("src");
               if (buffer != null) {
-                execBuffer(buffer, postData.get("run") != null);
+                execBuffer(buffer, WEB_BAS, postData.get("run") != null);
                 sendResponse(socket, buildRunForm(buffer, token));
-              } else { 
+              } else {
                 sendResponse(socket, buildRunForm(readBuffer(), token));
               }
             } else {
@@ -300,9 +413,10 @@ public class MainActivity extends NativeActivity {
       }
     }
   }
+
   private void sendResponse(Socket socket, String content) throws IOException {
     Log.i(TAG, "sendResponse() entered");
-    String contentLength ="Content-length: " + content.length() + "\r\n"; 
+    String contentLength ="Content-length: " + content.length() + "\r\n";
     BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
     out.write("HTTP/1.0 200 OK\r\n".getBytes());
     out.write("Content-type: text/html\r\n".getBytes());
@@ -312,7 +426,7 @@ public class MainActivity extends NativeActivity {
     out.flush();
     out.close();
   }
-  
+
   private void startServer(final int socketNum, final String token) {
     Thread socketThread = new Thread(new Runnable() {
       public void run() {

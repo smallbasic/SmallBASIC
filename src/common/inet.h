@@ -14,13 +14,9 @@
 #include <config.h>
 #endif
 
-#if defined(_Win32)
-#include <winsock.h>
-#else
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
-#endif
 
 typedef int socket_t;
 

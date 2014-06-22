@@ -1,3 +1,16 @@
+2014-06-14
+	Fix crash evaluating "a \\ b"
+	Fix INPUT command in FLTK for scrolled display
+
+2014-06-11
+	Android changes:
+	- Run by URL/QrCode.
+	- Implemented BEEP/SOUND
+	- Screen layout adjusts when virtual keypad displayed
+
+2014-04-20
+	Released Windows version 0.11.5
+
 2013-12-30
 	Fix android display clip handling
 	Fix android import from IDE

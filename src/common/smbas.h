@@ -125,6 +125,7 @@ EXTERN byte opt_pref_bpp; /**< prefered graphics mode bits-per-pixel (0 = undefi
 EXTERN byte opt_nosave; /**< do not create .sbx files                                   @ingroup sys */
 EXTERN byte opt_interactive; /**< interactive mode                                           @ingroup sys */
 EXTERN byte opt_usepcre; /**< OPTION PREDEF PCRE                                         @ingroup sys */
+EXTERN byte opt_file_permitted; /**< file system permission */
 
 #define IDE_NONE        0
 #define IDE_LINKED      1

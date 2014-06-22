@@ -426,38 +426,38 @@ void eval(var_t *r) {
       op = CODE(IP);
       IP++;
 
-      if (r->type == V_INT && left->type == V_INT) {
+      if (r->type == V_INT && v_is_type(left, V_INT)) {
         if (op == '+') {
           r->v.i += left->v.i;
         } else {
           r->v.i = left->v.i - r->v.i;
         }
-      } else if (r->type == V_NUM && left->type == V_NUM) {
+      } else if (r->type == V_NUM && v_is_type(left, V_NUM)) {
         r->type = V_NUM;
         if (op == '+') {
           r->v.n += left->v.n;
         } else {
           r->v.n = left->v.n - r->v.n;
         }
-      } else if (r->type == V_INT && left->type == V_NUM) {
+      } else if (r->type == V_INT && v_is_type(left, V_NUM)) {
         r->type = V_NUM;
         if (op == '+') {
           r->v.n = r->v.i + left->v.n;
         } else {
           r->v.n = left->v.n - r->v.i;
         }
-      } else if (r->type == V_NUM && left->type == V_INT) {
+      } else if (r->type == V_NUM && v_is_type(left, V_INT)) {
         if (op == '+') {
           r->v.n += left->v.i;
         } else {
           r->v.n = left->v.i - r->v.n;
         }
       } else {
-        if (r->type == V_ARRAY || left->type == V_ARRAY) {
+        if (r->type == V_ARRAY || v_is_type(left, V_ARRAY)) {
           // 
           // ARRAYS
           // 
-          if (r->type == V_ARRAY && left->type == V_ARRAY) {
+          if (r->type == V_ARRAY && v_is_type(left, V_ARRAY)) {
             if (op == '+') {
               mat_add(r, left);
             } else {
@@ -499,11 +499,11 @@ void eval(var_t *r) {
       op = CODE(IP);
       IP++;
 
-      if (r->type == V_ARRAY || left->type == V_ARRAY) {
+      if (r->type == V_ARRAY || v_is_type(left, V_ARRAY)) {
         // 
         // ARRAYS
         // 
-        if (r->type == V_ARRAY && left->type == V_ARRAY) {
+        if (r->type == V_ARRAY && v_is_type(left, V_ARRAY)) {
           if (op == '*') {
             mat_mul(left, r);
           } else {
@@ -769,13 +769,13 @@ void eval(var_t *r) {
             }
           }
         } else if (r->type == V_STR) {
-          if (left->type == V_STR) {
+          if (v_is_type(left, V_STR)) {
             if (left->v.p.ptr[0] != '\0') {
               ri = (strstr(r->v.p.ptr, left->v.p.ptr) != NULL);
             } else {
               ri = 0;
             }
-          } else if (left->type == V_NUM || left->type == V_INT) {
+          } else if (v_is_type(left, V_NUM) || v_is_type(left, V_INT)) {
             var_t *v;
 
             v = v_clone(left);

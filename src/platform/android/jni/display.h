@@ -71,10 +71,11 @@ struct Graphics {
   void drawText(int left, int top, const char *str, int len);
   int  getPixel(int x, int y);
   MAExtent getTextSize(const char *str, int len);
-  int getHeight();
-  int getWidth();
+  int getHeight() { return _h; }
+  int getWidth() { return _w; }
   void redraw();
   void resize();
+  void setSize(int w, int h) { _w = w; _h = h; }
   void setClip(int x, int y, int w, int h);
   void setColor(pixel_t color) {  _drawColor = color; }
   void setFont(Font *font) { _font = font; }
@@ -95,6 +96,7 @@ private:
   Font *_font;
   android_app *_app;
   pixel_t _drawColor;
+  int _w, _h;
 };
 
 #endif

@@ -372,6 +372,7 @@ int MAIN_FUNC(int argc, char *argv[]) {
   opt_nosave = 1;
   opt_pref_width = opt_pref_height = opt_pref_bpp = 0;
   opt_verbose = 0;
+  opt_file_permitted = 1;
 
   // init strings
   opt_command[0] = 0;

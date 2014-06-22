@@ -56,8 +56,8 @@ public:
   void saveImage(const char *fn, int x, int y, int w, int h);
   void setTextColor(long fg, long bg);
   void setColor(long color);
-  int  getX();
-  int  getY();
+  int  getX(bool offset=false);
+  int  getY(bool offset=false);
   void setPixel(int x, int y, int c);
   void setXY(int x, int y);
   void setStartSize(int w, int h) { _startW=w; _startH=h; }

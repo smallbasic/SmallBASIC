@@ -30,9 +30,9 @@ sub about()
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.11.5"
+  print "Version 0.11.6"
   print
-  print "Copyright (c) 2002-2013 Chris Warren-Smith"
+  print "Copyright (c) 2002-2014 Chris Warren-Smith"
   print "Copyright (c) 2000-2006 Nic Christopoulos" + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
@@ -78,9 +78,12 @@ sub setup()
 end
 
 sub serverInfo()
-  serverSocket = env("serverSocket")
-  if (len(serverSocket) > 0) then
-    print boldOff + "Web Service port: " + boldOn + serverSocket
+  local serverSocket = env("serverSocket")
+  local ipAddr = env("IP_ADDR")
+
+  if (len(serverSocket) > 0 && len(ipAddr)) then
+    serverSocket = ipAddr + ":" + serverSocket
+    print boldOff + "Web Service: " + boldOn + serverSocket
     print boldOff + "Access token: " + boldOn + env("serverToken")
     print boldOff
   fi

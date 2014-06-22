@@ -134,6 +134,11 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
   env->ReleaseStringUTFChars(path, fileName);
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
+  (JNIEnv *env, jclass jclazz, jint width, jint height) {
+  runtime->onResize(width, height);
+}
+
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
   runtime->onResize(rect->right, rect->bottom);
@@ -164,11 +169,49 @@ Runtime::~Runtime() {
   pthread_mutex_destroy(&_mutex);
 }
 
-String Runtime::getStartupBas() {
+void Runtime::clearSoundQueue() {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "getStartupBas", "()Ljava/lang/String;");
+  jmethodID methodId = env->GetMethodID(clazz, "clearSoundQueue", "()V");
+  env->CallVoidMethod(_app->activity->clazz, methodId);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
+void Runtime::construct() {
+  logEntered();
+  _state = kClosingState;
+  _graphics = new Graphics(_app);
+  if (_graphics && _graphics->construct()) {
+    int w = ANativeWindow_getWidth(_app->window);
+    int h = ANativeWindow_getHeight(_app->window);
+    _output = new AnsiWidget(this, w, h);
+    if (_output && _output->construct()) {
+      _eventQueue = new Stack<MAEvent *>();
+      if (_eventQueue) {
+        _state = kActiveState;
+      }
+    }
+  }
+}
+
+bool Runtime::getUntrusted() {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, "getUntrusted", "()Z");
+  jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
+}
+
+String Runtime::getString(const char *methodName) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()Ljava/lang/String;");
   jstring startupBasObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
   const char *startupBas = env->GetStringUTFChars(startupBasObj, JNI_FALSE);
   String result = startupBas;
@@ -187,23 +230,6 @@ int Runtime::getUnicodeChar(int keyCode, int metaState) {
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
-}
-
-void Runtime::construct() {
-  logEntered();
-  _state = kClosingState;
-  _graphics = new Graphics(_app);
-  if (_graphics && _graphics->construct()) {
-    int w = ANativeWindow_getWidth(_app->window);
-    int h = ANativeWindow_getHeight(_app->window);
-    _output = new AnsiWidget(this, w, h);
-    if (_output && _output->construct()) {
-      _eventQueue = new Stack<MAEvent *>();
-      if (_eventQueue) {
-        _state = kActiveState;
-      }
-    }
-  }
 }
 
 char *Runtime::loadResource(const char *fileName) {
@@ -249,12 +275,23 @@ void Runtime::runShell() {
   opt_command[0] = 0;
   opt_usevmt = 0;
   os_graphics = 1;
+  opt_file_permitted = 1;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
-  String startupBas = getStartupBas();
+  String ipAddress = getString("getIPAddress");
+  if (ipAddress.length()) {
+    String env = "IP_ADDR=";
+    env += ipAddress;
+    dev_putenv(env.c_str());
+  }
+
+  String startupBas = getString("getStartupBas");
   if (startupBas.length()) {
+    if (getUntrusted()) {
+      opt_file_permitted = 0;
+    }
     runOnce(startupBas.c_str());
   } else {
     runMain(MAIN_BAS);
@@ -379,9 +416,10 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     //  case AKEYCODE_NUMPAD_SUBTRACT:
     //    event.key = SB_KEY_KP_MINUS;
     //    break;
-  case AKEYCODE_SLASH:
-    event.key = SB_KEY_KP_DIV;
-    break;
+    // AKEYCODE_SLASH is '?'
+    //  case AKEYCODE_SLASH:
+    //    event.key = SB_KEY_KP_DIV;
+    //    break;
   case AKEYCODE_PAGE_UP:
     event.key = SB_KEY_PGUP;
     break;
@@ -439,6 +477,16 @@ void Runtime::optionsBox(StringList *items) {
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(array);
   env->DeleteLocalRef(stringClass);
+  _app->activity->vm->DetachCurrentThread();
+}
+
+void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(III)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol);
+  env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
 
@@ -537,13 +585,20 @@ void Runtime::showAlert(const char *title, const char *message) {
 
 void Runtime::onResize(int width, int height) {
   logEntered();
-  ANativeWindow_setBuffersGeometry(_app->window, width, height, WINDOW_FORMAT_RGB_565);
-  ALooper_acquire(_app->looper);
-  MAEvent *maEvent = new MAEvent();
-  maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
-  runtime->pushEvent(maEvent);
-  ALooper_wake(_app->looper);
-  ALooper_release(_app->looper);
+  if (_graphics != NULL) {
+    int w = _graphics->getWidth();
+    int h = _graphics->getHeight();
+    if (w != width || h != height) {
+      trace("Resized from %d %d to %d %d", w, h, width, height);
+      _graphics->setSize(width, height);
+      ALooper_acquire(_app->looper);
+      MAEvent *maEvent = new MAEvent();
+      maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
+      runtime->pushEvent(maEvent);
+      ALooper_wake(_app->looper);
+      ALooper_release(_app->looper);
+    }
+  }
 }
 
 //
@@ -617,17 +672,22 @@ void maAlert(const char *title, const char *message, const char *button1,
 //
 int osd_devinit(void) {
   setsysvar_str(SYSVAR_OSNAME, "Android");
+  runtime->clearSoundQueue();
   runtime->setRunning(true);
   return 1;
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
+  runtime->playTone(frq, dur, vol, bgplay);
 }
 
 void osd_clear_sound_queue() {
+  runtime->clearSoundQueue();
 }
 
 void osd_beep(void) {
+  osd_sound(1000, 30, 100, 0);
+  osd_sound(500, 30, 100, 0);
 }
 
 void dev_image(int handle, int index,

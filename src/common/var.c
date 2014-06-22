@@ -925,3 +925,10 @@ void v_input2var(const char *str, var_t *var) {
     tmp_free(sb);
   }
 }
+
+/*
+ * null safe variable type check
+ */
+int v_is_type(var_t *v, int type) { 
+  return (v != NULL && v->type == type);
+}

@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
   opt_pref_width = 0;
   opt_pref_height = 0;
   opt_pref_bpp = 0;
+  opt_file_permitted = 1;
 
   if (argc == 2 && access(argv[1], R_OK) == 0) {
     sbasic_main(argv[1]);

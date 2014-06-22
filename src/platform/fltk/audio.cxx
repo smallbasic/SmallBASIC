@@ -117,6 +117,10 @@ void osd_sound(int frq, int ms, int vol, int bgplay) {
   }
 }
 
+void osd_clear_sound_queue() {
+  flush_queue();
+}
+
 #else
 
 #include <fltk/ask.h>
@@ -143,7 +147,8 @@ void open_audio() {
 void close_audio() {
 }
 
-#endif
-
 void osd_clear_sound_queue() {
 }
+
+#endif
+
