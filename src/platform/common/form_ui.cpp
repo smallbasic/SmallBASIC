@@ -8,10 +8,10 @@
 
 #include "config.h"
 
-#if defined(_FLTK) || defined(_TIZEN) || defined(_ANDROID)
-  #include "platform/common/maapi.h"
-#else
+#if defined(_MOSYNC)
   #include <maapi.h>
+#else
+  #include "platform/common/maapi.h"
 #endif
 
 #include "common/sbapp.h"

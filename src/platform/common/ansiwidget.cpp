@@ -60,7 +60,7 @@ char *options = NULL;
 FormList *clickedList = NULL;
 FormList *focusList = NULL;
 
-#if !defined(_FLTK) && !defined(_TIZEN) && !defined(_ANDROID)
+#if defined(_MOSYNC)
 void form_ui::optionsBox(StringList *items) {
   if (items->size()) {
     // calculate the size of the options buffer
