@@ -21,6 +21,7 @@
 #include "platform/sdl/keymap.h"
 
 #define WAIT_INTERVAL 10
+#define MAIN_BAS "__main_bas__"
 
 Runtime *runtime;
 
@@ -66,23 +67,36 @@ MAEvent *Runtime::popEvent() {
   return _eventQueue->pop();
 }
 
-void Runtime::runShell() {
+void Runtime::runShell(const char *startupBas) {
   logEntered();
 
+  os_graphics = 1;
+  opt_interactive = true;
+  opt_usevmt = 0;
+  opt_file_permitted = 1;
   opt_ide = IDE_NONE;
   opt_graphics = true;
   opt_pref_bpp = 0;
   opt_nosave = true;
-  opt_interactive = true;
-  opt_verbose = false;
-  opt_quiet = true;
-  opt_command[0] = 0;
-  opt_usevmt = 0;
-  os_graphics = 1;
-  opt_file_permitted = 1;
+
+  if (startupBas != NULL) {
+    runOnce(startupBas);
+  } else {
+    runMain(MAIN_BAS);
+  }
 
   _state = kDoneState;
   logLeaving();
+}
+
+char *Runtime::loadResource(const char *fileName) {
+  logEntered();
+  char *buffer = System::loadResource(fileName);
+  if (buffer == NULL && strcmp(fileName, MAIN_BAS) == 0) {
+    
+  }
+  trace("f=%s", comp_file_name);
+  return buffer;
 }
 
 void Runtime::showAlert(const char *title, const char *message) {

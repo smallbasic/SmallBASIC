@@ -80,6 +80,7 @@ Graphics::~Graphics() {
 bool Graphics::construct(const char *font, const char *boldFont) {
   logEntered();
 
+  _surface = SDL_GetWindowSurface(_window);
   SDL_GetWindowSize(_window, &_w, &_h);
   bool result = false;
   if (loadFonts(font, boldFont)) {
@@ -94,10 +95,21 @@ bool Graphics::construct(const char *font, const char *boldFont) {
 }
 
 void Graphics::redraw() {
-  // SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
-  // SDL_RenderClear(sdlRenderer);
-  // SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
-  // SDL_RenderPresent(sdlRenderer);
+  SDL_Surface *src = ((Canvas *)_screen)->_canvas;
+  SDL_Rect srcrect;
+  srcrect.x = 0;
+  srcrect.y = 0;
+  srcrect.w = _screen->_w;
+  srcrect.h = _screen->_h;
+
+  SDL_Rect dstrect;
+  dstrect.x = 0;
+  dstrect.y = 0;
+  dstrect.w = _w;
+  dstrect.h = _h;
+
+  SDL_BlitSurface(src, &srcrect, _surface, &dstrect);
+  SDL_UpdateWindowSurface(_window);
 }
 
 void Graphics::resize() {

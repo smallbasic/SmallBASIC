@@ -1,13 +1,13 @@
 dnl 
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2012 Chris Warren-Smith.
+dnl Copyright(C) 2001-2014 Chris Warren-Smith.
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.6])
+AC_INIT([smallbasic], [0.11.7])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET

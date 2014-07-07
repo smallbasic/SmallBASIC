@@ -31,7 +31,8 @@ struct Runtime : public System {
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
   void setExit(bool quit);
-  void runShell();
+  void runShell(const char *startupBas);
+  char *loadResource(const char *fileName);
   void showAlert(const char *title, const char *message);
   void optionsBox(StringList *items);
   void onResize(int w, int h);

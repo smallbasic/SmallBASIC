@@ -8,11 +8,13 @@
 
 #include "config.h"
 #include <SDL.h>
+#include <getopt.h>
 #include <fontconfig/fontconfig.h>
 
 #include "platform/common/utils.h"
 #include "platform/common/StringLib.h"
 #include "platform/sdl/runtime.h"
+#include "common/smbas.h"
 
 using namespace strlib;
 
@@ -24,6 +26,16 @@ const char* FONTS[] = {
   "TlwgMono",
   "Courier New",
   NULL
+};
+
+static struct option OPTIONS[] = {
+  {"help",    no_argument,       NULL, 'h'},
+  {"verbose", no_argument,       NULL, 'v'},
+  {"command", optional_argument, NULL, 'c'},
+  {"font",    optional_argument, NULL, 'f'},
+  {"run",     optional_argument, NULL, 'r'},
+  {"module",  optional_argument, NULL, 'm'},
+  {0, 0, 0, 0}
 };
 
 void appLog(const char *format, ...) {
@@ -103,8 +115,77 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
   return result;
 }
 
+void showHelp() {
+  fprintf(stdout,
+          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n\n",
+          SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
+          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)));
+  fprintf(stdout, "usage: sbasicg [options]\n");
+  int i = 0;
+  while (OPTIONS[i].name != NULL) {
+    fprintf(stdout, "  -%c, --%s\n", OPTIONS[i].val, OPTIONS[i].name);
+    i++;
+  }
+  fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
+}
+
 int main(int argc, char* argv[]) {
   logEntered();
+
+  opt_command[0] = 0;
+  opt_verbose = false;
+  opt_quiet = true;
+
+  char *fontFamily = NULL;
+  char *runFile = NULL;
+
+  while (1) {
+    int option_index = 0;
+    int c = getopt_long(argc, argv, "vhc:f:r:m:", OPTIONS, &option_index);
+    if (c == -1) {
+      // no more options
+      if (!option_index) {
+        for (int i = 1; i < argc; i++) {
+          const char *s = argv[i];
+          int len = strlen(s);
+          if (runFile == NULL
+              && strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0) {
+            runFile = strdup(s);
+          } else {
+            strcpy(opt_command, s);
+          }
+        }
+      }
+      break;
+    }
+    switch (c) {
+    case 'v':
+      opt_verbose = true;
+      opt_quiet = false;
+      break;
+    case 'c':
+      strcpy(opt_command, optarg);
+      break;
+    case 'f':
+      fontFamily = strdup(optarg);
+      break;
+    case 'r':
+      runFile = strdup(optarg);
+      break;
+    case 'm':
+      opt_loadmod = 1;
+      strcpy(opt_modlist, optarg);
+      break;
+    case 'h':
+      showHelp();
+      exit(1);
+      break;
+    default:
+      exit(1);
+      break;
+    }
+  }
+
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         SDL_WINDOWPOS_UNDEFINED,
@@ -113,23 +194,24 @@ int main(int argc, char* argv[]) {
                                         SDL_WINDOW_SHOWN | 
                                         SDL_WINDOW_INPUT_FOCUS |
                                         SDL_WINDOW_MOUSE_FOCUS);
-  if (window == NULL) {
-    trace("Could not create window: %s\n", SDL_GetError());
-  } else {
+  if (window != NULL) {
     String font, fontBold;
-    if (!getFontFiles(NULL, font, fontBold)) {
-      trace("Failed to locate display font\n");
-    }
-    else {
+    if (getFontFiles(fontFamily, font, fontBold)) {
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      runtime->runShell();
+      runtime->runShell(runFile);
       delete runtime;
+    } else {
+      trace("Failed to locate display font\n");
     }
-    // cleanup
     SDL_DestroyWindow(window);
-    SDL_Quit();
+  } else {
+    trace("Could not create window: %s\n", SDL_GetError());
   }
+
+  SDL_Quit();
+  free(fontFamily);
+  free(runFile);
   logLeaving();
   return 0;
 }
