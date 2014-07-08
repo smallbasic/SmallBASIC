@@ -2722,17 +2722,14 @@ void sb_bubble(var_t * var_p, addr_t use_ip, int n) {
   }                             // i
 }
 
-#if !defined(OS_LIMITED)
 // using C's qsort()
 static addr_t static_qsort_last_use_ip;
 
 int qs_cmp(const void *a, const void *b) {
   var_t *ea = (var_t *) a;
   var_t *eb = (var_t *) b;
-
   return sb_qcmp(ea, eb, static_qsort_last_use_ip);
 }
-#endif
 
 void cmd_sort() {
   addr_t use_ip, exit_ip;
@@ -2760,12 +2757,8 @@ void cmd_sort() {
   // sort
   if (!errf) {
     if (var_p->v.a.size > 1) {
-#if defined(OS_LIMITED)
-      sb_bubble(var_p, use_ip, var_p->v.a.size - 1);
-#else
       static_qsort_last_use_ip = use_ip;
       qsort(var_p->v.a.ptr, var_p->v.a.size, sizeof(var_t), qs_cmp);
-#endif
     }
   }
   // NO RTE anymore... there is no meaning on this because of empty

@@ -15,27 +15,11 @@
 #define PCKBSIZE 256
 
 // Keyboard codes
-// PalmOS - SB H/W KEYS
-#define SB_KEY_PALM_PGUP  0xFF01
-#define SB_KEY_PALM_PGDN  0xFF02
-#define SB_KEY_PALM_BTN1  0xFF03
-#define SB_KEY_PALM_BTN2  0xFF04
-#define SB_KEY_PALM_BTN3  0xFF05
-#define SB_KEY_PALM_BTN4  0xFF06
-#define SB_KEY_PALM_FIND  0xFF07
-#define SB_KEY_PALM_CALC  0xFF08
-
 #define SB_KEY_BACKSPACE  127
 #define SB_KEY_DELETE     8 
-
-#if defined(_PalmOS)
-#define SB_KEY_BREAK    SB_KEY_PALM_BTN4  // MemoPad
-#else
-#define SB_KEY_BREAK    0x3     // Ctrl+C
-#endif
-
-#define SB_KEY_TAB      9
-#define SB_KEY_ENTER    '\n'
+#define SB_KEY_BREAK      0x3     // Ctrl+C
+#define SB_KEY_TAB        9
+#define SB_KEY_ENTER      '\n'
 
 // first 16 - common with handhelds any extra key will be there
 #define SB_KEY_PGUP     0xFF01

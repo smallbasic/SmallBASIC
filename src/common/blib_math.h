@@ -16,11 +16,11 @@
 
 #include "common/sys.h"
 
-var_num_t fint(var_num_t x) SEC(BMATH);
-var_num_t frac(var_num_t x) SEC(BMATH);
-int sgn(var_num_t x) SEC(BMATH);
-int zsgn(var_num_t x) SEC(BMATH);
-var_num_t fround(var_num_t x, int dig) SEC(BMATH);
+var_num_t fint(var_num_t x);
+var_num_t frac(var_num_t x);
+int sgn(var_num_t x);
+int zsgn(var_num_t x);
+var_num_t fround(var_num_t x, int dig);
 
 #define SEGLEN(Ax,Ay,Bx,By)     line_length(Ax,Ay,Bx,By)
 #define PTSIGN(Ax,Ay,Bx,By,Qx,Qy) (ZSGN((Qx) * ((Ay) - (By)) + (Qy) * \
@@ -39,7 +39,7 @@ var_num_t fround(var_num_t x, int dig) SEC(BMATH);
  * @param n is the number of the rows
  * @param toler is the smallest acceptable number
  */
-void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) SEC(BMATH2);
+void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler);
 
 /**
  * @ingroup math
@@ -49,10 +49,10 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) SEC(BMATH
  * @param a is the matrix
  * @param n is the number of rows/cols
  */
-void mat_inverse(var_num_t *a, int n) SEC(BMATH2);
+void mat_inverse(var_num_t *a, int n);
 
 void mat_det2(var_num_t t, int m, int k, var_num_t *a, int *done, var_num_t *v, int n, double toler)
-    SEC(BMATH2);
+   ;
 
 /**
  * @ingroup math
@@ -64,24 +64,24 @@ void mat_det2(var_num_t t, int m, int k, var_num_t *a, int *done, var_num_t *v, 
  * @param toler is the smallest acceptable number
  * @return the determinant of A
  */
-var_num_t mat_determ(var_num_t *a, int n, double toler) SEC(BMATH2);
+var_num_t mat_determ(var_num_t *a, int n, double toler);
 
 /**
  * @ingroup math
  * todo: statmeandev
  */
-var_num_t statmeandev(var_num_t *e, int count) SEC(BMATH2);
+var_num_t statmeandev(var_num_t *e, int count);
 
 /**
  * @ingroup math
  * todo: statspreads
  */
-var_num_t statspreads(var_num_t *e, int count) SEC(BMATH2);
+var_num_t statspreads(var_num_t *e, int count);
 
 /**
  * @ingroup math
  * todo: statspreadp
  */
-var_num_t statspreadp(var_num_t *e, int count) SEC(BMATH2);
+var_num_t statspreadp(var_num_t *e, int count);
 
 #endif

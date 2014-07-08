@@ -22,14 +22,14 @@
 #define V_FREE(v)    if ( (v) ) { if ( (v)->type == V_STR || (v)->type == V_ARRAY ) v_free((v)); }
 
 void eval(var_t *result);
-void mat_op1(var_t *l, int op, var_num_t n) SEC(BMATH);
-void mat_antithetos(var_t *v) SEC(BMATH);
-void mat_mulN(var_t *v, var_num_t N) SEC(BMATH);
-void mat_op2(var_t *l, var_t *r, int op) SEC(BMATH);
-void mat_add(var_t *l, var_t *r) SEC(BMATH);
-void mat_sub(var_t *l, var_t *r) SEC(BMATH);
-void mat_mul(var_t *l, var_t *r) SEC(BMATH);
-int v_wc_match(var_t* vwc, var_t *v) SEC(BMATH);
+void mat_op1(var_t *l, int op, var_num_t n);
+void mat_antithetos(var_t *v);
+void mat_mulN(var_t *v, var_num_t N);
+void mat_op2(var_t *l, var_t *r, int op);
+void mat_add(var_t *l, var_t *r);
+void mat_sub(var_t *l, var_t *r);
+void mat_mul(var_t *l, var_t *r);
+int v_wc_match(var_t* vwc, var_t *v);
 
 /**
  * matrix: convert var_t to double[r][c]

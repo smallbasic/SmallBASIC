@@ -25,7 +25,7 @@ extern "C" {
  * @param x is the number
  * @param dest is the string buffer
  */
-void fptoa(var_num_t x, char *dest) SEC(BLIB);
+void fptoa(var_num_t x, char *dest);
 
 /**
  * @ingroup str
@@ -35,7 +35,7 @@ void fptoa(var_num_t x, char *dest) SEC(BLIB);
  * @param x is the number
  * @param dest is the string buffer
  */
-void bestfta(var_num_t x, char *dest) SEC(BLIB);
+void bestfta(var_num_t x, char *dest);
 
 /**
  * @ingroup str
@@ -45,7 +45,7 @@ void bestfta(var_num_t x, char *dest) SEC(BLIB);
  * @param x is the number
  * @param dest is the string buffer
  */
-void expfta(var_num_t x, char *dest) SEC(BLIB);
+void expfta(var_num_t x, char *dest);
 
 /**
  * @ingroup str
@@ -67,7 +67,7 @@ void expfta(var_num_t x, char *dest) SEC(BLIB);
  * @param fmt_cnst is the format string
  * @param x is the number
  */
-void format_num(char *dest, const char *fmt_cnst, var_num_t x) SEC(BLIB);
+void format_num(char *dest, const char *fmt_cnst, var_num_t x);
 
 /**
  * @ingroup str
@@ -85,7 +85,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) SEC(BLIB);
  * @param fmt_cnst is the format string
  * @param str is the source string
  */
-void format_str(char *dest, const char *fmt_cnst, const char *str) SEC(BLIB);
+void format_str(char *dest, const char *fmt_cnst, const char *str);
 
 /**
  * @ingroup str
@@ -96,7 +96,7 @@ void format_str(char *dest, const char *fmt_cnst, const char *str) SEC(BLIB);
  *
  * @param fmt_cnst is the format
  */
-void build_format(const char *fmt_cnst) SEC(BLIB);
+void build_format(const char *fmt_cnst);
 
 /**
  * @ingroup str
@@ -105,7 +105,7 @@ void build_format(const char *fmt_cnst) SEC(BLIB);
  *
  * @note part of USING
  */
-void free_format(void) SEC(BLIB);
+void free_format(void);
 
 /**
  * @ingroup str
@@ -118,7 +118,7 @@ void free_format(void) SEC(BLIB);
  * @param output is the output-set-of-routines code (see PV_xxx macros)
  * @param handle is the output handle (depented on output-code)
  */
-void fmt_printN(var_num_t x, int output, int handle) SEC(BLIB);
+void fmt_printN(var_num_t x, int output, int handle);
 
 /**
  * @ingroup str
@@ -131,7 +131,7 @@ void fmt_printN(var_num_t x, int output, int handle) SEC(BLIB);
  * @param output is the output-set-of-routines code (see PV_xxx macros)
  * @param handle is the output handle (depented on output-code)
  */
-void fmt_printS(const char *str, int output, int handle) SEC(BLIB);
+void fmt_printS(const char *str, int output, int handle);
 
 #if defined(__cplusplus)
 }

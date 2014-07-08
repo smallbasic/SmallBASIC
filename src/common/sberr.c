@@ -95,28 +95,6 @@ void err_file(dword code) {
   rt_raise(FSERR_FMT, code, buf);
 }
 
-#if defined(OS_LIMITED)
-void err_missing_rp(void) {
-  rt_raise(ERR_MISSING_RP);
-}
-
-void err_matdim(void) {
-  rt_raise(ERR_MATRIX_DIM);
-}
-
-void err_syntax(void) {
-  rt_raise(ERR_SYNTAX);
-}
-
-void err_syntaxsep(int c) {
-  rt_raise(ERR_MISSING_SEP, c);
-}
-
-void err_parm_num(void) {
-  rt_raise(ERR_PARCOUNT);
-}
-#endif
-
 void err_stackoverflow(void) {
   rt_raise(ERR_STACK_OVERFLOW);
 }

@@ -19,6 +19,7 @@
 #include "platform/common/form_ui.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/keymap.h"
+#include "platform/sdl/main_bas.h"
 
 #define WAIT_INTERVAL 10
 #define MAIN_BAS "__main_bas__"
@@ -93,9 +94,10 @@ char *Runtime::loadResource(const char *fileName) {
   logEntered();
   char *buffer = System::loadResource(fileName);
   if (buffer == NULL && strcmp(fileName, MAIN_BAS) == 0) {
-    
+    buffer = (char *)tmp_alloc(main_bas_len + 1);
+    memcpy(buffer, main_bas, main_bas_len);
+    buffer[main_bas_len] = '\0';
   }
-  trace("f=%s", comp_file_name);
   return buffer;
 }
 

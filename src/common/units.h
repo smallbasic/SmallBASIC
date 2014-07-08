@@ -50,7 +50,6 @@ typedef struct {
 typedef enum {
   unit_undefined, /**< unused record */
   unit_loaded, /**< unit is loaded */
-
   unit_nil
 } unit_status_t;
 
@@ -62,9 +61,8 @@ typedef enum {
 typedef struct {
   dword sign[4]; /**< Always "SBUn" */
   int version; /**< version of this structure, always 1 */
-
   char base[SB_KEYWORD_SIZE + 1]; /**< unit-base name */
-int  sym_count; /**< number of symbols */
+  int  sym_count; /**< number of symbols */
 } unit_file_t;
 
 /**
@@ -86,14 +84,14 @@ typedef struct {
  *
  * initialization
  */
-void unit_mgr_init() SEC(BIO2);
+void unit_mgr_init();
 
 /**
  * @ingroup exec
  *
  * close up
  */
-void unit_mgr_close() SEC(BIO2);
+void unit_mgr_close();
 
 /**
  * @ingroup exec
@@ -104,7 +102,7 @@ void unit_mgr_close() SEC(BIO2);
  * @param file buffer to store the filename
  * @return non-zero on success
  */
-int find_unit(const char *name, char *file) SEC(BIO2);
+int find_unit(const char *name, char *file);
 
 /**
  * @ingroup exec
@@ -114,7 +112,7 @@ int find_unit(const char *name, char *file) SEC(BIO2);
  * @param file is the filename
  * @return the unit handle or -1 on error
  */
-int open_unit(const char *file) SEC(BIO2);
+int open_unit(const char *file);
 
 /**
  * @ingroup exec
@@ -124,7 +122,7 @@ int open_unit(const char *file) SEC(BIO2);
  * @param uid is the unit's handle
  * @return 0 on success
  */
-int close_unit(int uid) SEC(BIO2);
+int close_unit(int uid);
 
 /**
  * @ingroup exec
@@ -134,14 +132,14 @@ int close_unit(int uid) SEC(BIO2);
  * @param uid unit's handle
  * @return 0 on success
  */
-int import_unit(int uid) SEC(BIO2);
+int import_unit(int uid);
 
 /**
  * @ingroup exec
  *
  * execute
  */
-int unit_exec(int lib_id, int index, var_t * ret) SEC(BIO2);
+int unit_exec(int lib_id, int index, var_t *ret);
 
 #if defined(__cplusplus)
 }

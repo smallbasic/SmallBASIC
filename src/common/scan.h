@@ -186,7 +186,7 @@ extern struct proc_keyword_s proc_table[]; /**< buildin procedures table   @ingr
  *
  * clears all external-func/proc/var entries
  */
-void comp_reset_externals(void) SEC(BCSC2);
+void comp_reset_externals(void);
 
 /**
  * @ingroup scan
@@ -197,7 +197,7 @@ void comp_reset_externals(void) SEC(BCSC2);
  * @param lib_id is the ID of the library
  * @return the ID which will used in the compiler (and later on BC)
  */
-int comp_add_external_proc(const char *proc_name, int lib_id) SEC(BCSC2);
+int comp_add_external_proc(const char *proc_name, int lib_id);
 
 /**
  * @ingroup scan
@@ -208,7 +208,7 @@ int comp_add_external_proc(const char *proc_name, int lib_id) SEC(BCSC2);
  * @param lib_id is the ID of the library
  * @return the ID which will used in the compiler (and later on BC)
  */
-int comp_add_external_func(const char *func_name, int lib_id) SEC(BCSC2);
+int comp_add_external_func(const char *func_name, int lib_id);
 
 /**
  * @ingroup scan
@@ -219,7 +219,7 @@ int comp_add_external_func(const char *func_name, int lib_id) SEC(BCSC2);
  * @param lib_id is the ID of the library
  * @return the ID which will used in the compiler (and later on BC)
  */
-int comp_add_external_var(const char *name, int lib_id) SEC(BCSC2);
+int comp_add_external_var(const char *name, int lib_id);
 
 /**
  * @ingroup scan
@@ -229,7 +229,7 @@ int comp_add_external_var(const char *name, int lib_id) SEC(BCSC2);
  * @param name is the procedure name
  * @return non-zero if found
  */
-int comp_is_external_proc(const char *name) SEC(BCSC2);
+int comp_is_external_proc(const char *name);
 
 /**
  * @ingroup scan
@@ -239,7 +239,7 @@ int comp_is_external_proc(const char *name) SEC(BCSC2);
  * @param name is the function name
  * @return non-zero if found
  */
-int comp_is_external_func(const char *name) SEC(BCSC2);
+int comp_is_external_func(const char *name);
 
 /**
  * @ingroup scan
@@ -249,7 +249,7 @@ int comp_is_external_func(const char *name) SEC(BCSC2);
  * @param name is the keyword name
  * @return non-zero if found
  */
-int comp_is_keyword(const char *name) SEC(BCSC2);
+int comp_is_keyword(const char *name);
 
 /**
  * @ingroup scan
@@ -259,7 +259,7 @@ int comp_is_keyword(const char *name) SEC(BCSC2);
  * @param name is the function name
  * @return non-zero if found
  */
-fcode_t comp_is_func(const char *name) SEC(BCSC2);
+fcode_t comp_is_func(const char *name);
 
 /**
  * @ingroup scan
@@ -269,7 +269,7 @@ fcode_t comp_is_func(const char *name) SEC(BCSC2);
  * @param name is the procedure name
  * @return non-zero if found
  */
-pcode_t comp_is_proc(const char *name) SEC(BCSC2);
+pcode_t comp_is_proc(const char *name);
 
 /**
  * @ingroup scan
@@ -279,7 +279,7 @@ pcode_t comp_is_proc(const char *name) SEC(BCSC2);
  * @param name is the string
  * @return non-zero if found
  */
-int comp_is_special_operator(const char *name) SEC(BCSC2);
+int comp_is_special_operator(const char *name);
 
 /**
  * @ingroup scan
@@ -289,7 +289,7 @@ int comp_is_special_operator(const char *name) SEC(BCSC2);
  * @param name is the string
  * @return non-zero if found
  */
-long comp_is_operator(const char *name) SEC(BCSC2);
+long comp_is_operator(const char *name);
 
 /**
  * @ingroup scan
@@ -301,7 +301,7 @@ long comp_is_operator(const char *name) SEC(BCSC2);
  * @param sb_file_name the SB source file-name
  * @return non-zero on success
  */
-int comp_compile(const char *sb_file_name) SEC(BCSC2);
+int comp_compile(const char *sb_file_name);
 
 /**
  * compiler - main
@@ -309,7 +309,7 @@ int comp_compile(const char *sb_file_name) SEC(BCSC2);
  * @param source buffer
  * @return non-zero on success
  */
-int comp_compile_buffer(const char *source) SEC(BCSC2);
+int comp_compile_buffer(const char *source);
 
 /**
  * @ingroup scan
@@ -319,21 +319,21 @@ int comp_compile_buffer(const char *source) SEC(BCSC2);
  * @param fileName the file
  * @return the text (newly allocated string)
  */
-char *comp_load(const char *sb_file_name) SEC(BCSC2);
+char *comp_load(const char *sb_file_name);
 
 /**
  * @ingroup scan
  *
  * initialize compiler
  */
-void comp_init() SEC(BCSC2);
+void comp_init();
 
 /**
  * @ingroup scan
  *
  * clean-up compiler
  */
-void comp_close() SEC(BCSC2);
+void comp_close();
 
 /**
  * @ingroup scan
@@ -342,7 +342,7 @@ void comp_close() SEC(BCSC2);
  *
  * @return true if there is a compile-error
  */
-int comp_geterror(void) SEC(BCSC2);
+int comp_geterror(void);
 
 /**
  * @ingroup scan
@@ -351,7 +351,7 @@ int comp_geterror(void) SEC(BCSC2);
  *
  * @return a memory handle with the binary
  */
-mem_t comp_create_bin(void) SEC(BCSC2);
+mem_t comp_create_bin(void);
 
 /**
  * @ingroup scan
@@ -361,14 +361,14 @@ mem_t comp_create_bin(void) SEC(BCSC2);
  * @param section is the section's name (use NULL for "main")
  * @param text is the text of the file
  */
-int comp_pass1(const char *section, const char *text) SEC(BCSC2);
+int comp_pass1(const char *section, const char *text);
 
 /**
  * @ingroup scan
  *
  * PASS-2
  */
-int comp_pass2(void) SEC(BCSC2);
+int comp_pass2(void);
 
 /**
  * @ingroup scan
@@ -378,7 +378,7 @@ int comp_pass2(void) SEC(BCSC2);
  * @param basfile the filename
  * @return non-zero if SB-source file 'basfile' exists
  */
-int comp_bas_exist(const char *basfile) SEC(BCSC3);
+int comp_bas_exist(const char *basfile);
 
 /**
  * @ingroup scan
@@ -387,7 +387,7 @@ int comp_bas_exist(const char *basfile) SEC(BCSC3);
  *
  * @param source is a string of form "WIDTHxHEIGHT[xBPP]"
  */
-void comp_preproc_grmode(const char *source) SEC(PALMFS);
+void comp_preproc_grmode(const char *source);
 
 #if defined(__cplusplus)
 }

@@ -11,15 +11,7 @@
 #include "common/sys.h"
 #include "common/device.h"
 
-#if defined(OS_LIMITED)
-#if defined(_PalmOS)
-#define QUEUESIZE   160         /* The size of Queue (400=VGA) */
-#else
-#define QUEUESIZE   320         /* The size of Queue (400=VGA) */
-#endif
-#else
-#define QUEUESIZE   2048
-#endif
+#define QUEUESIZE 2048
 
 struct tagParams {
   word xl; /* leftmost pixel in run */
@@ -45,11 +37,11 @@ typedef struct tagQUEUE QUEUE;
 #define SCAN_UNTIL  0
 #define SCAN_WHILE  1
 
-word ff_scan_left(word, word, long, int) SEC(BIO);
-word ff_scan_right(word, word, long, int) SEC(BIO);
-word ff_next_branch(word, word, int) SEC(BIO);
-void ff_add_queue(QUEUE *, word, word, int, int) SEC(BIO);
-int ff_in_queue(QUEUE *, word, word, int) SEC(BIO);
+word ff_scan_left(word, word, long, int);
+word ff_scan_right(word, word, long, int);
+word ff_next_branch(word, word, int);
+void ff_add_queue(QUEUE *, word, word, int, int);
+int ff_in_queue(QUEUE *, word, word, int);
 
 static struct tagParams ff_buf1[QUEUESIZE];
 static struct tagParams ff_buf2[QUEUESIZE];

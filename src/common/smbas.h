@@ -93,13 +93,8 @@ typedef struct {
 #define EXTERN  extern
 #endif
 
-#if defined(OS_LIMITED)
-#define OPT_CMD_SZ  128
-#define OPT_MOD_SZ  128
-#else
 #define OPT_CMD_SZ  1024
 #define OPT_MOD_SZ  1024
-#endif
 
 EXTERN byte opt_graphics; /**< command-line option: start in graphics mode                @ingroup sys */
 EXTERN byte opt_cstr; /**< C-style special characters by default                      @ingroup sys */
@@ -253,15 +248,13 @@ void brun_stop(void);
  */
 int brun_status(void);
 
-#if !defined(OS_LIMITED)
 /**
  *   decompiler,
  *   dumps the code in the current task
  *
  *   @param output the output stream (FILE*)
  */
-void dump_bytecode(FILE * output);
-#endif
+void dump_bytecode(FILE *output);
 
 /**
  *   returns the last-modified time of the file
@@ -280,13 +273,12 @@ time_t sys_filetime(const char *file);
  *   @param retbuf a buffer to store the full-path-name file (can be NULL)
  *   @return non-zero if found
  */
-
 int sys_search_path(const char *path, const char *file, char *retbuf);
 
 /**
  *   synchronize exported variables
  */
-void exec_sync_variables(int dir) SEC(TRASH);
+void exec_sync_variables(int dir);
 
 #if defined(__cplusplus)
 }

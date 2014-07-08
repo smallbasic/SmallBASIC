@@ -13,14 +13,14 @@
 #include "common/device.h"
 #include "common/blib.h"
 
-void plot_array_exr(var_t *var_p, var_num_t *xmin, var_num_t *xmax) SEC(BIO2);
-void plot_draw_x_axis(var_num_t xmin, var_num_t xmax, int left, int right, int y) SEC(BIO2);
-void plot_draw_y_axis(var_num_t ymin, var_num_t ymax, int top, int bottom, int x) SEC(BIO2);
+void plot_array_exr(var_t *var_p, var_num_t *xmin, var_num_t *xmax);
+void plot_draw_x_axis(var_num_t xmin, var_num_t xmax, int left, int right, int y);
+void plot_draw_y_axis(var_num_t ymin, var_num_t ymax, int top, int bottom, int x);
 
 /*
  * returns the min & max value of the array
  */
-void plot_array_exr(var_t* var_p, var_num_t *xmin, var_num_t *xmax) {
+void plot_array_exr(var_t *var_p, var_num_t *xmin, var_num_t *xmax) {
   var_int_t count, i;
   var_t *elem_p;
   var_num_t x;

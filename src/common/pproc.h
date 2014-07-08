@@ -24,14 +24,10 @@
 #include "common/sberr.h"
 #include "common/smbas.h"
 
-#if !defined(PI)
-#define PI  3.14159265358979323846  /**< isn't the � ? :) @ingroup sys */
-#endif
-
 /*
  * known also, as 'output' or 'method' for pv_* functions
  */
-#define PV_CONSOLE        0
+#define PV_CONSOLE      0
 #define PV_FILE         1
 #define PV_LOG          2
 #define PV_STRING       3
@@ -48,10 +44,6 @@ extern "C" {
 /**< simple macro for free() 3 ptrs @ingroup par */
 #define pfree4(a,b,c,d) { pfree3((a),(b),(c)); pfree((d)); }
 /**< simple macro for free() 4 ptrs @ingroup par */
-
-/*
- * low-level
- */
 
 /**
  * @ingroup exec
@@ -96,12 +88,7 @@ void eval_free_stack(void);
  * sets the data-p. the data-p is used for READ/DATA commands.
  * actually it is points to the next position of which the READ will use.
  */
-void set_dataip(word label_id) SEC(BLIB);
-
-#if defined(_PalmOS)
-void pv_write(char *str, int method, unsigned long int handle) SEC(BIO2);
-void pv_writevar(var_t *var, int method, unsigned long int handle) SEC(BIO2);
-#else
+void set_dataip(word label_id);
 
 /**
  * @ingroup exec
@@ -110,7 +97,7 @@ void pv_writevar(var_t *var, int method, unsigned long int handle) SEC(BIO2);
  *
  * @note avoid to use it
  */
-void pv_write(char *str, int method, int handle) SEC(BIO2);
+void pv_write(char *str, int method, int handle);
 
 /**
  * @ingroup exec
@@ -119,8 +106,7 @@ void pv_write(char *str, int method, int handle) SEC(BIO2);
  *
  * @note avoid to use it
  */
-void pv_writevar(var_t *var, int method, int handle) SEC(BIO2);
-#endif
+void pv_writevar(var_t *var, int method, int handle);
 
 /**
  * @ingroup exec
@@ -129,7 +115,7 @@ void pv_writevar(var_t *var, int method, int handle) SEC(BIO2);
  *
  * @param var is the variable
  */
-void print_var(var_t *var) SEC(BIO2);
+void print_var(var_t *var);
 
 /**
  * @ingroup exec
@@ -139,7 +125,7 @@ void print_var(var_t *var) SEC(BIO2);
  * @param var is the variable
  * @param handle is the file-handle
  */
-void fprint_var(int handle, var_t *var) SEC(BIO2);
+void fprint_var(int handle, var_t *var);
 
 /**
  * @ingroup exec
@@ -148,7 +134,7 @@ void fprint_var(int handle, var_t *var) SEC(BIO2);
  *
  * @param var is the variable
  */
-void logprint_var(var_t *var) SEC(BIO2);
+void logprint_var(var_t *var);
 
 /*
  * Parameter's API
@@ -175,10 +161,6 @@ typedef struct {
 /**< pat_t::flags,  parameter was an expression 
  (var = the temporary copy of the result) @ingroup par */
 
-/*
- * low-level parameters parser
- */
-
 /**
  * @ingroup par
  *
@@ -187,7 +169,7 @@ typedef struct {
  *
  * @param var the variable to copy the data
  */
-void par_getvar(var_t *var) SEC(BLIB);
+void par_getvar(var_t *var);
 
 /**
  * @ingroup par
@@ -197,7 +179,7 @@ void par_getvar(var_t *var) SEC(BLIB);
  *
  * @return the var_t pointer
  */
-var_t *par_getvar_ptr(void) SEC(BLIB);
+var_t *par_getvar_ptr(void);
 
 /**
  * @ingroup par
@@ -207,7 +189,7 @@ var_t *par_getvar_ptr(void) SEC(BLIB);
  *
  * @param var the variable to copy the data
  */
-void par_getstr(var_t *var) SEC(BLIB);
+void par_getstr(var_t *var);
 
 /**
  * @ingroup par
@@ -217,7 +199,7 @@ void par_getstr(var_t *var) SEC(BLIB);
  *
  * @return the integer
  */
-var_int_t par_getint(void) SEC(BLIB);
+var_int_t par_getint(void);
 
 /**
  * @ingroup par
@@ -227,7 +209,8 @@ var_int_t par_getint(void) SEC(BLIB);
  *
  * @return the number
  */
-var_num_t par_getnum(void) SEC(BLIB);
+var_num_t par_getnum(void);
+
 #define par_getreal()   par_getnum()
 
 /**
@@ -238,7 +221,7 @@ var_num_t par_getnum(void) SEC(BLIB);
  *
  * @return the separator
  */
-int par_getsep(void) SEC(BLIB);
+int par_getsep(void);
 
 /**
  * @ingroup par
@@ -246,7 +229,7 @@ int par_getsep(void) SEC(BLIB);
  * no-error if the next byte is the separator ','.
  * moves IP to the next position.
  */
-void par_getcomma(void) SEC(BLIB);
+void par_getcomma(void);
 
 /**
  * @ingroup par
@@ -254,7 +237,7 @@ void par_getcomma(void) SEC(BLIB);
  * no-error if the next byte is the separator '#'.
  * moves IP to the next position.
  */
-void par_getsharp(void) SEC(BLIB);
+void par_getsharp(void);
 
 /**
  * @ingroup par
@@ -262,7 +245,7 @@ void par_getsharp(void) SEC(BLIB);
  * no-error if the next byte is the separator ';'.
  * moves IP to the next position.
  */
-void par_getsemicolon(void) SEC(BLIB);
+void par_getsemicolon(void);
 
 /**
  * @ingroup par
@@ -272,7 +255,7 @@ void par_getsemicolon(void) SEC(BLIB);
  *
  * @return the var_t pointer
  */
-var_t *par_getvarray(void) SEC(BLIB);
+var_t *par_getvarray(void);
 
 /**
  * @ingroup par
@@ -284,7 +267,7 @@ var_t *par_getvarray(void) SEC(BLIB);
  * @note ignore it for now
  * @return true if the following code is descibing one var code
  */
-int par_isonevar(void) SEC(BLIB);
+int par_isonevar(void);
 
 /**
  * @ingroup par
@@ -292,11 +275,7 @@ int par_isonevar(void) SEC(BLIB);
  * skip parameter.
  * moves IP to the next position.
  */
-void par_skip(void) SEC(BLIB);
-
-/*
- * high-level parameters parser
- */
+void par_skip(void);
 
 /**
  * @ingroup par
@@ -318,7 +297,7 @@ void par_skip(void) SEC(BLIB);
  * @return on success the number of the parameters; otherwise -1
  * @see par_freepartable, par_massget
  */
-int par_getpartable(par_t ** ptable_pp, const char *valid_sep) SEC(BLIB);
+int par_getpartable(par_t **ptable_pp, const char *valid_sep);
 
 /**
  * @ingroup par
@@ -329,7 +308,7 @@ int par_getpartable(par_t ** ptable_pp, const char *valid_sep) SEC(BLIB);
  * @param pcount the number of the parameters
  * @see par_getpartable, par_massget
  */
-void par_freepartable(par_t ** ptable_pp, int pcount) SEC(BLIB);
+void par_freepartable(par_t **ptable_pp, int pcount);
 
 /**
  * @ingroup par
@@ -379,7 +358,7 @@ void par_freepartable(par_t ** ptable_pp, int pcount) SEC(BLIB);
  * @param ... the format's parameters
  * @return on success the parameter-count; otherwise -1
  */
-int par_massget(const char *fmt, ...) SEC(BLIB);
+int par_massget(const char *fmt, ...);
 
 /**
  * @ingroup par
@@ -392,87 +371,78 @@ int par_massget(const char *fmt, ...) SEC(BLIB);
  * @param var the variable (the X)
  * @param ip the expression's address
  */
-void exec_usefunc(var_t *var, addr_t ip) SEC(BLIB);  // one parameter (x)
+void exec_usefunc(var_t *var, addr_t ip);
 
-    /**
-     * @ingroup par
-     *
-     * execute a user's expression (using two variables).
-     * the result will be stored in 'var1'.
-     *
-     * @note the keyword USE
-     *
-     * @param var1 the variable (the X)
-     * @param var2 the variable (the Y)
-     * @param ip the expression's address
-     */
-    void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip) SEC(BLIB);  // two
-// parameters
-// (x,y)
+/**
+ * @ingroup par
+ *
+ * execute a user's expression (using two variables).
+ * the result will be stored in 'var1'.
+ *
+ * @note the keyword USE
+ *
+ * @param var1 the variable (the X)
+ * @param var2 the variable (the Y)
+ * @param ip the expression's address
+ */
+void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip);
 
-    /**
-     * @ingroup par
-     *
-     * execute a user's expression (using three variables).
-     * the result will be stored in 'var1'.
-     *
-     * @note the keyword USE
-     *
-     * @param var1 the variable (the X)
-     * @param var2 the variable (the Y)
-     * @param var3 the variable (the Z)
-     * @param ip the expression's address
-     */
-    void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip) SEC(BLIB);  // three
-//
-// parameters
-// (x,y,z)
+/**
+ * @ingroup par
+ *
+ * execute a user's expression (using three variables).
+ * the result will be stored in 'var1'.
+ *
+ * @note the keyword USE
+ *
+ * @param var1 the variable (the X)
+ * @param var2 the variable (the Y)
+ * @param var3 the variable (the Z)
+ * @param ip the expression's address
+ */
+void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip);
 
-    /*
-     * Special parameters
-     */
+/**
+ * @ingroup par
+ *
+ * retrieve a 2D point (double).
+ * moves IP to the next position.
+ *
+ * @return a pt_t point structure
+ */
+pt_t par_getpt(void);
 
-    /**
-     * @ingroup par
-     *
-     * retrieve a 2D point (double).
-     * moves IP to the next position.
-     *
-     * @return a pt_t point structure
-     */
-    pt_t par_getpt(void) SEC(BIO2); // get a point parameter
+/**
+ * @ingroup par
+ *
+ * retrieve a 2D polyline (double).
+ * moves IP to the next position.
+ *
+ * @param poly pointer to a table of real-points
+ * @return on success the number of points; otherwise 0
+ */
+int par_getpoly(pt_t **poly);
 
-    /**
-     * @ingroup par
-     *
-     * retrieve a 2D polyline (double).
-     * moves IP to the next position.
-     *
-     * @param poly pointer to a table of real-points
-     * @return on success the number of points; otherwise 0
-     */
-    int par_getpoly(pt_t ** poly) SEC(BIO2);  // get a polyline
+/**
+ * @ingroup par
+ *
+ * retrieve a 2D point (integer).
+ * moves IP to the next position.
+ *
+ * @return a ipt_t point structure
+ */
+ipt_t par_getipt(void);
 
-    /**
-     * @ingroup par
-     *
-     * retrieve a 2D point (integer).
-     * moves IP to the next position.
-     *
-     * @return a ipt_t point structure
-     */
-    ipt_t par_getipt(void) SEC(BIO2);
-
-    /**
-     * @ingroup par
-     *
-     * retrieve a 2D polyline (integers).
-     * moves IP to the next position.
-     *
-     * @param poly pointer to a table of integer-points
-     * @return on success the number of points; otherwise 0
-     */
-    int par_getipoly(ipt_t ** poly) SEC(BIO2);  // get a polyline (integers)
+/**
+ * @ingroup par
+ *
+ * retrieve a 2D polyline (integers).
+ * moves IP to the next position.
+ *
+ * @param poly pointer to a table of integer-points
+ * @return on success the number of points; otherwise 0
+ */
+int par_getipoly(ipt_t **poly);
 
 #if defined(__cplusplus)
   }

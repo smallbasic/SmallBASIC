@@ -68,8 +68,7 @@ dword code_getnext32() {
 /**
  * returns the next 64bit and moves the instruction pointer to the next instruction
  */
-var_int_t code_getnext64i()
-{
+var_int_t code_getnext64i() {
   var_int_t v;
 
   memcpy(&v, prog_source + prog_ip, sizeof(var_int_t));
@@ -94,8 +93,7 @@ double code_getnext64f() {
 /**
  * returns the next 128bit and moves the instruction pointer to the next instruction
  */
-var_num_t code_getnext128f()
-{
+var_num_t code_getnext128f() {
   var_num_t v;
 
   memcpy(&v, prog_source + prog_ip, sizeof(var_num_t));
@@ -866,9 +864,7 @@ void bc_loop(int isf) {
   addr_t next_ip;
   int proc_level = 0;
   pcode_t pcode;
-#if !defined(OS_LIMITED)
   int i;
-#endif
 
   /**
    *   DO NOT CREATE FUNCTION-PTR-TABLE
@@ -1273,13 +1269,11 @@ void bc_loop(int isf) {
         case kwEXPRSEQ:
           cmd_exprseq();
           break;
-#if !defined(OS_LIMITED)
         case kwSTKDUMP:
           dev_print("\nSTKDUMP:\n");
           dump_stack();
           prog_error = -1;      // end of program
           break;
-#endif
         case kwHTML:
           cmd_html();
           break;
@@ -1419,9 +1413,7 @@ void bc_loop(int isf) {
         break;
 
       default:
-#if !defined(OS_LIMITED)
         rt_raise("SEG:CODE[%d]=%02x", prog_ip, prog_source[prog_ip]);
-        // ////////
         dev_printf("OUT OF ADDRESS SPACE\n");
         for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
           if (prog_source[prog_ip] == keyword_table[i].code) {
@@ -1429,24 +1421,16 @@ void bc_loop(int isf) {
             break;
           }
         }
-#else
-        err_gpf(prog_ip, prog_source[prog_ip]);
-#endif
-        // ////////
       }
     }
     // too many parameters
     code = prog_source[prog_ip];
     if (code != kwTYPE_EOC && code != kwTYPE_LINE && !prog_error) {
-#if !defined(OS_LIMITED)
       if (code == kwTYPE_SEP) {
         rt_raise("COMMAND SEPARATOR '%c' FOUND!", prog_source[prog_ip + 1]);
       } else {
         rt_raise("PARAM COUNT ERROR @%d=%X %d", prog_ip, prog_source[prog_ip], code);
       }
-#else
-      err_invkw(prog_ip, code);
-#endif
     } else {
       prog_ip++;
       if (code == kwTYPE_LINE) {
@@ -1466,7 +1450,6 @@ void bc_loop(int isf) {
  * debug info
  * stack dump
  */
-#if !defined(OS_LIMITED)        // save some bytes
 void dump_stack() {
   stknode_t node;
   int i;
@@ -1493,7 +1476,6 @@ void dump_stack() {
       break;
   } while (1);
 }
-#endif
 
 /*
  * RUN byte-code
@@ -1892,14 +1874,6 @@ void exec_sync_variables(int dir) {
  * system specific things - before compilation
  */
 void sys_before_comp() {
-  // opt_nosave is a user controlled variable (chris 4/7/04)
-  // #if defined(OS_LIMITED)
-  // opt_nosave = 0; // create .sbx;
-  // #else
-  // opt_nosave = 1; // don't create .sbx; however it will create any
-  // unit file (.sbu)
-  // #endif
-
   // setup prefered screen mode variables
   if (dev_getenv("SBGRAF")) {
     if (dev_getenv("SBGRAF"))
@@ -1978,8 +1952,6 @@ int sbasic_recursive_exec(int tid) {
   return success;
 }
 
-#if !defined(OS_LIMITED)
-
 /**
  * dump-taskinfo
  */
@@ -2019,7 +1991,6 @@ void sbasic_dump_bytecode(int tid, FILE * output) {
   dump_bytecode(output);
   activate_task(prev_tid);
 }
-#endif
 
 /**
  * TODO add comment
@@ -2121,7 +2092,6 @@ int sbasic_exec(const char *file) {
   if (opt_syntaxcheck)          // this is a command-line flag to
     // syntax-check only
     exec_rq = 0;
-#if !defined(OS_LIMITED)
   else if (opt_decomp && success) {
     sbasic_exec_prepare(file);  // load everything
     sbasic_dump_taskinfo(stdout);
@@ -2129,7 +2099,6 @@ int sbasic_exec(const char *file) {
     exec_close(exec_tid);       // clean up executor's garbages
     exec_rq = 0;
   }
-#endif
   else if (!success) {          // there was some errors; do not continue
     exec_rq = 0;
     gsb_last_error = 1;
@@ -2157,7 +2126,6 @@ int sbasic_exec(const char *file) {
 
     sys_after_run();            // system specific things; after run
   }
-#if !defined(OS_LIMITED)
   // update IDE when it used as external
   if (opt_ide == IDE_EXTERNAL) {
     char fn[OS_PATHNAME_SIZE + 1];FILE *fp;
@@ -2174,7 +2142,6 @@ int sbasic_exec(const char *file) {
       fclose(fp);
     }
   }
-#endif
 
   // cdw-s 22/11/2004 return as failure for compilation errors
   return !success ? 0 : !gsb_last_error;

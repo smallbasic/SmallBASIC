@@ -24,15 +24,6 @@ struct HLineList {
 
 struct EdgeState {
   struct EdgeState *NextEdge;
-#if defined(OS_LIMITED)
-  int16 X, StartY;
-  int16 WholePixelXMove;
-  int16 XDirection;
-  int16 ErrorTerm;
-  int16 ErrorTermAdjUp;
-  int16 ErrorTermAdjDown;
-  int16 Count;
-#else
   int X, StartY;
   int WholePixelXMove;
   int XDirection;
@@ -40,15 +31,14 @@ struct EdgeState {
   int ErrorTermAdjUp;
   int ErrorTermAdjDown;
   int Count;
-#endif
 };
 // 18bytes
 
-void pf_build_GET(ipt_t *, int, struct EdgeState *) SEC(BIO);
-void pf_move_xsorted_AET(int) SEC(BIO);
-void pf_scan_out_AET(int) SEC(BIO);
-void pf_advance_AET(void) SEC(BIO);
-void pf_xsort_AET(void) SEC(BIO);
+void pf_build_GET(ipt_t *, int, struct EdgeState *);
+void pf_move_xsorted_AET(int);
+void pf_scan_out_AET(int);
+void pf_advance_AET(void);
+void pf_xsort_AET(void);
 
 /* 
  *	Pointers to global edge table (GET) and active edge table (AET) 

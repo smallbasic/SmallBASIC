@@ -249,11 +249,9 @@ bid_t comp_label_getID(const char *label_name) {
   }
 
   if (idx == -1) {
-#if !defined(OS_LIMITED)
     if (opt_verbose) {
       log_printf(MSG_NEW_LABEL, comp_line, name, comp_labcount);
     }
-#endif
     strcpy(label.name, name);
     label.ip = INVALID_ADDR;
     label.dp = INVALID_ADDR;
@@ -381,11 +379,9 @@ bid_t comp_add_udp(const char *proc_name) {
     if (!(is_alpha(name[0]) || name[0] == '_')) {
       err_wrongproc(name);
     } else {
-#if !defined(OS_LIMITED)
       if (opt_verbose) {
         log_printf(MSG_NEW_UDP, comp_line, name, comp_udpcount);
       }
-#endif
       comp_udptable[comp_udpcount].name = tmp_alloc(strlen(name) + 1);
       comp_udptable[comp_udpcount].ip = INVALID_ADDR; // bc_prog.count;
       comp_udptable[comp_udpcount].level = comp_block_level;
@@ -573,11 +569,9 @@ int comp_create_var(const char *name) {
       comp_varsize += GROWSIZE;
       comp_vartable = tmp_realloc(comp_vartable, comp_varsize * sizeof(comp_var_t));
     }
-#if !defined(OS_LIMITED)
     if (opt_verbose) {
       log_printf(MSG_NEW_VAR, comp_line, name, comp_varcount);
     }
-#endif
     comp_vartable[comp_varcount].name = tmp_alloc(strlen(name) + 1);
     strcpy(comp_vartable[comp_varcount].name, name);
     comp_vartable[comp_varcount].dolar_sup = 0;
@@ -1766,11 +1760,7 @@ int comp_error_if_keyword(const char *name) {
  * stores export symbols (in pass2 will be checked again)
  */
 void bc_store_exports(const char *slist) {
-#if defined(OS_LIMITED)
-  char_p_t pars[32];
-#else
   char_p_t pars[256];
-#endif
   int count = 0, i;
   char *newlist;
   unit_sym_t sym;
@@ -1780,11 +1770,7 @@ void bc_store_exports(const char *slist) {
   strcat(newlist, slist);
   strcat(newlist, ")");
 
-#if defined(OS_LIMITED)
-  comp_getlist_insep(newlist, pars, "()", ",", 32, &count);
-#else
   comp_getlist_insep(newlist, pars, "()", ",", 256, &count);
-#endif
 
   for (i = 0; i < count; i++) {
     strcpy(sym.symbol, pars[i]);
@@ -2011,11 +1997,7 @@ void comp_text_line(char *text) {
     }
   } else {
     // add generic command
-#if defined(OS_LIMITED)
-    char_p_t pars[32];
-#else
     char_p_t pars[256];
-#endif
     char *lpar_ptr, *eq_ptr, *p, *p_do;
     int keep_ip, udp, count, i;
 
@@ -2116,11 +2098,7 @@ void comp_text_line(char *text) {
             if (lpar_ptr) {
               int i;
               *lpar_ptr = '(';
-#if defined(OS_LIMITED)
-              comp_getlist_insep(comp_bc_parm, pars, "()", ",", 32, &count);
-#else
               comp_getlist_insep(comp_bc_parm, pars, "()", ",", 256, &count);
-#endif
               bc_add_code(&comp_prog, kwTYPE_PARAM);
               bc_add_code(&comp_prog, count);
 
@@ -2176,11 +2154,7 @@ void comp_text_line(char *text) {
 
     case kwLOCAL:
       // local variables
-#if defined(OS_LIMITED)
-      count = comp_getlist(comp_bc_parm, pars, ",", 32);
-#else
       count = comp_getlist(comp_bc_parm, pars, ",", 256);
-#endif
       bc_add_code(&comp_prog, kwTYPE_CRVAR);
       bc_add_code(&comp_prog, count);
       for (i = 0; i < count; i++) {
@@ -2265,11 +2239,7 @@ void comp_text_line(char *text) {
         // the counter
 
         // count = bc_scan_label_list(p);
-#if defined(OS_LIMITED)
-        count = comp_getlist(p, pars, ",", 32);
-#else
         count = comp_getlist(p, pars, ",", 256);
-#endif
         for (i = 0; i < count; i++) {
           bc_add_addr(&comp_prog, comp_label_getID(pars[i])); // IDs
         }
@@ -2292,11 +2262,7 @@ void comp_text_line(char *text) {
         // the counter
 
         // count = bc_scan_label_list(p);
-#if defined(OS_LIMITED)
-        count = comp_getlist(p, pars, ",", 32);
-#else
         count = comp_getlist(p, pars, ",", 256);
-#endif
         for (i = 0; i < count; i++) {
           bc_add_addr(&comp_prog, comp_label_getID(pars[i]));
         }
@@ -2764,9 +2730,7 @@ addr_t comp_next_bc_peek(addr_t start) {
  * Analyze LOOP-END errors
  */
 void print_pass2_stack(addr_t pos, code_t lcode, int level) {
-#if !defined(OS_LIMITED)
   addr_t ip;
-#endif
   addr_t i;
   int j, cs_idx;
   char cmd[16], cmd2[16];
@@ -2776,16 +2740,13 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
   int cs_count;
   code_t start_code[] = { kwWHILE, kwREPEAT, kwIF, kwFOR, kwFUNC, 0 };
   code_t end_code[] = { kwWEND, kwUNTIL, kwENDIF, kwNEXT, kwTYPE_RET, 0 };
-#if !defined(OS_LIMITED)
   int details = 1;
-#endif
   char buff[256];
   code = lcode;
 
   kw_getcmdname(code, cmd);
 
   // search for closest keyword (forward)
-#if !defined(OS_LIMITED)
   buff[0] = 0;
 
 #if !defined(NO_SCAN_ERROR_PROMPT)
@@ -2819,11 +2780,9 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
       log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, level - 1, node.pos, level, pos);
     }
   }
-#endif
 
   // print stack
   cs_count = 0;
-#if !defined(OS_LIMITED)
   if (details) {
     log_printf("\n");
     log_printf("--- Pass 2 - stack ------------------------------------------------------\n");
@@ -2831,7 +2790,6 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
         "Level", "BlkID", "Count");
     log_printf("-------------------------------------------------------------------------\n");
   }
-#endif
   for (i = 0; i < comp_sp; i++) {
     dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
 
@@ -2856,17 +2814,14 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
       ccode[cs_idx] = code;
       csum[cs_idx] = 1;
     }
-#if !defined(OS_LIMITED)
     if (details) {
       // info
       log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n", ((i == pos) ? ">>" : "  "), i, cmd, node.sec, node.pos,
                  node.line, node.level, node.block_id, csum[cs_idx]);
     }
-#endif
   }
 
   // sum
-#if !defined(OS_LIMITED)
   if (details) {
     log_printf("\n");
     log_printf("--- Sum -----------------------------------------------------------------\n");
@@ -2877,7 +2832,6 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
       log_printf("%16s - %5d\n", cmd, csum[i]);
     }
   }
-#endif
 
   // decide
   log_printf("\n");
@@ -3574,9 +3528,7 @@ char *comp_format_text(const char *source) {
  */
 void err_grmode() {
   // log_printf() instead of sc_raise()... it is just a warning...
-#if !defined(OS_LIMITED)
   log_printf(MSG_GRMODE_ERR);
-#endif
 }
 
 void comp_preproc_grmode(const char *source) {

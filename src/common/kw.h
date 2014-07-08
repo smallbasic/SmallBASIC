@@ -443,8 +443,7 @@ int kw_check_evexit(code_t code);
  * @param dest is the buffer to store the keyword
  * @return non-zero on success
  */
-int kw_getcmdname(code_t code, char *dest)
-SEC(TRASH);
+int kw_getcmdname(code_t code, char *dest);
 
 /**
  * @ingroup sys
@@ -455,8 +454,7 @@ SEC(TRASH);
  * @param dest is the buffer to store the keyword
  * @return non-zero on success
  */
-int kw_getfuncname(fcode_t code, char *dest)
-SEC(TRASH);
+int kw_getfuncname(fcode_t code, char *dest);
 
 /**
  * @ingroup sys
@@ -467,8 +465,7 @@ SEC(TRASH);
  * @param dest is the buffer to store the keyword
  * @return non-zero on success
  */
-int kw_getprocname(pcode_t code, char *dest)
-SEC(TRASH);
+int kw_getprocname(pcode_t code, char *dest);
 
 /**
  * @ingroup sys
@@ -488,10 +485,13 @@ int kw_iscommand(const char *name);
  */
 int kw_isproc(const char *name);
 
-#if !defined(_PalmOS)
+/**
+ */
 void prcmd(code_t code);
+
+/**
+ */
 void prfunc(long code);
-#endif
 
 #define OPTION_BASE                     1
 #define OPTION_UICS                     2

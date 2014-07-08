@@ -40,11 +40,7 @@
 
 #include <dirent.h>
 
-#if defined(OS_LIMITED)
-#define MAX_SLIB_N  16
-#else
 #define MAX_SLIB_N  256
-#endif
 
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
 /* --- Global Symbol Table ----------------------------------------------------------------------------------------------- */

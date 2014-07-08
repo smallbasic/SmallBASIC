@@ -33,20 +33,16 @@
 #endif
 
 // PRINT USING; format-list
-#if defined(_PalmOS)
-#define MAX_FMT_N       32
-#else
 #define MAX_FMT_N       128
-#endif
 
-void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) SEC(BLIB);
-void fmt_nmap(int dir, char *dest, char *fmt, char *src) SEC(BLIB);
-void fmt_omap(char *dest, const char *fmt) SEC(BLIB);
-int fmt_cdig(char *fmt) SEC(BLIB);
-char *fmt_getnumfmt(char *dest, char *source) SEC(BLIB);
-char *fmt_getstrfmt(char *dest, char *source) SEC(BLIB);
-void fmt_addfmt(const char *fmt, int type) SEC(BLIB);
-void fmt_printL(int output, int handle) SEC(BLIB);
+void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx);
+void fmt_nmap(int dir, char *dest, char *fmt, char *src);
+void fmt_omap(char *dest, const char *fmt);
+int fmt_cdig(char *fmt);
+char *fmt_getnumfmt(char *dest, char *source);
+char *fmt_getstrfmt(char *dest, char *source);
+void fmt_addfmt(const char *fmt, int type);
+void fmt_printL(int output, int handle);
 
 typedef struct {
   char *fmt;                    // the format or a string
@@ -717,11 +713,7 @@ void build_format(const char *fmt_cnst) {
   char *fmt;
   char *p;
   int nc;
-#if     defined(OS_LIMITED)
-  char buf[128], *b;
-#else
   char buf[1024], *b;
-#endif
 
   free_format();
 

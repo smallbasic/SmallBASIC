@@ -48,8 +48,8 @@
 #define OVECCOUNT 30            /* should be a multiple of 3 */
 #endif
 
-int reg_match_after_star(const char *p, char *t) SEC(BIO);
-int reg_match_jk(const char *p, char *t) SEC(BIO);
+int reg_match_after_star(const char *p, char *t);
+int reg_match_jk(const char *p, char *t);
 
 int reg_match_jk(const char *p, char *t) {
   char range_start, range_end; /* start and end in range */
