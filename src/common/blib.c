@@ -2691,37 +2691,6 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) {
   }
 }
 
-/**
- * bubble sort
- */
-void sb_bubble(var_t * var_p, addr_t use_ip, int n) {
-  int i, j;
-  var_t *p;
-
-  p = (var_t *) var_p->v.a.ptr;
-
-  for (i = n; i > 1; --i) {
-    for (j = 1; j < i; ++j) {
-      if (sb_qcmp(&p[j], &p[j + 1], use_ip) > 0) {
-        // swap - with copy
-        // var_t tmp;
-        // v_init(&tmp);
-        // v_set(&tmp, &p[j]);
-        // v_set(&p[j], &p[j+1]);
-        // v_set(&p[j+1], &tmp);
-        // v_free(&tmp);
-
-        // fast swap
-        // (contents of ptrs does not need to be copied)
-        var_t tmp;
-        tmp = p[j];
-        p[j] = p[j + 1];
-        p[j + 1] = tmp;
-      }
-    }                           // j
-  }                             // i
-}
-
 // using C's qsort()
 static addr_t static_qsort_last_use_ip;
 

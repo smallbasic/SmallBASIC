@@ -223,11 +223,6 @@ void err_bfn_err(long code) {
   rt_raise(ERR_CRITICAL_MISSING_FUNC, code);
 }
 
-void err_gpf(addr_t addr, int bc) {
-  dev_printf(ERR_GPF);
-  rt_raise("SEG:CODE[%d]=%02X", addr, bc);
-}
-
 void err_pcode_err(long pcode) {
   rt_raise(ERR_CRITICAL_MISSING_PROC, pcode);
 }
@@ -238,10 +233,6 @@ void err_chain_err(const char *file) {
 
 void err_run_err(const char *file) {
   rt_raise(ERR_RUN_FILE, file);
-}
-
-void err_invkw(addr_t addr, byte code) {
-  rt_raise(ERR_PARCOUNT_SP, addr, (int) code);
 }
 
 /**

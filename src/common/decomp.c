@@ -11,19 +11,6 @@
 
 /**
  *
- */
-void prcmd(code_t code) {
-  char cmd[16];
-
-  if (kw_getcmdname(code, cmd)) {
-    fprintf(stderr, "{%s}", cmd);
-  } else {
-    fprintf(stderr, "{N/A:%d}", code);
-  }
-}
-
-/**
- *
  * decompiler
  *
  */
