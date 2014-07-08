@@ -19,11 +19,11 @@
 using namespace strlib;
 
 const char* FONTS[] = {
+  "Envy Code R",
   "Ubuntu Mono",
   "DejaVu Sans Mono",
   "FreeMono",
   "Liberation Mono",
-  "TlwgMono",
   "Courier New",
   NULL
 };
@@ -120,10 +120,12 @@ void showHelp() {
           "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n\n",
           SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
           (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)));
-  fprintf(stdout, "usage: sbasicg [options]\n");
+  fprintf(stdout, "usage: sbasicg [options]... [BAS] [OPTION]\n");
   int i = 0;
   while (OPTIONS[i].name != NULL) {
-    fprintf(stdout, "  -%c, --%s\n", OPTIONS[i].val, OPTIONS[i].name);
+    fprintf(stdout, OPTIONS[i].has_arg ?
+            "  -%c, --%s='<argument>'\n" : "  -%c, --%s\n",
+            OPTIONS[i].val, OPTIONS[i].name);
     i++;
   }
   fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
@@ -157,6 +159,10 @@ int main(int argc, char* argv[]) {
         }
       }
       break;
+    }
+    if (OPTIONS[option_index].has_arg && !optarg) {
+      showHelp();
+      exit(1);
     }
     switch (c) {
     case 'v':

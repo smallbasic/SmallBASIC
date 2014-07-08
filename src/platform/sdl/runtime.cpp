@@ -132,8 +132,8 @@ void Runtime::handleKeyEvent(MAEvent &event) {
 MAEvent *getMotionEvent(int type, SDL_Event *event) {
   MAEvent *result = new MAEvent();
   result->type = type;
-  result->point.x = event->window.data1;
-  result->point.y = event->window.data2;
+  result->point.x = event->motion.x;
+  result->point.y = event->motion.y;
   return result;
 }
 
