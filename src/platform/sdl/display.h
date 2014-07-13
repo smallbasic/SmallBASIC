@@ -15,27 +15,6 @@
 #include "platform/common/StringLib.h"
 #include "platform/common/graphics.h"
 
-struct Canvas : public common::Canvas {
-  Canvas();
-  virtual ~Canvas();
-
-  bool create(int w, int h);
-  void freeClip();
-  void setClip(int x, int y, int w, int h);
-  pixel_t *getLine(int y);
-  int x() { return _clip ? _clip->x : 0; }
-  int y() { return _clip ? _clip->y : 0; }
-  int w() { return _clip ? _clip->w : _w; }
-  int h() { return _clip ? _clip->h : _h; }
-  int width()  { return _w; }
-  int height() { return _h; }
-
-  int _w;
-  int _h;
-  SDL_Surface *_canvas;
-  SDL_Rect *_clip;
-};
-
 struct Graphics : common::Graphics {
   Graphics(SDL_Window *window);
   virtual ~Graphics();

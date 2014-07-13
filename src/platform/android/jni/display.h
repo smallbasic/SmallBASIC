@@ -18,27 +18,6 @@
 
 using namespace strlib;
 
-struct Canvas : public common::Canvas {
-  Canvas();
-  virtual ~Canvas();
-
-  bool create(int w, int h);
-  void freeClip();
-  void setClip(int x, int y, int w, int h);
-  pixel_t *getLine(int y);
-  int x() { return _clip ? _clip->left : 0; }
-  int y() { return _clip ? _clip->top : 0; }
-  int w() { return _clip ? _clip->right : _w; }
-  int h() { return _clip ? _clip->bottom : _h; }
-  int width()  { return _w; }
-  int height() { return _h; }
-
-  int _w;
-  int _h;
-  pixel_t *_canvas;
-  ARect *_clip;
-};
-
 struct Graphics : common::Graphics {
   Graphics(android_app *app);
   virtual ~Graphics();

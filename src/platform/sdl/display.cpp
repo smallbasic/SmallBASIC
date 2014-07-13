@@ -20,7 +20,7 @@ extern common::Graphics *graphics;
 //
 // Canvas implementation
 //
-Canvas::Canvas() : common::Canvas(),
+Canvas::Canvas() :
   _canvas(NULL),
   _clip(NULL) {
 }
@@ -29,8 +29,9 @@ Canvas::~Canvas() {
   if (_canvas != NULL) {
     SDL_FreeSurface(_canvas);
   }
+  delete _clip;
   _canvas = NULL;
-  freeClip();
+  _clip = NULL;
 }
 
 bool Canvas::create(int w, int h) {
@@ -43,11 +44,6 @@ bool Canvas::create(int w, int h) {
                              &bpp, &rmask, &gmask, &bmask, &amask);
   _canvas = SDL_CreateRGBSurface(0, w, h, bpp, rmask, gmask, bmask, amask);
   return _canvas != NULL;
-}
-
-void Canvas::freeClip() {
-  delete _clip;
-  _clip = NULL;
 }
 
 pixel_t *Canvas::getLine(int y) { 
@@ -101,8 +97,8 @@ void Graphics::redraw() {
   SDL_Rect srcrect;
   srcrect.x = 0;
   srcrect.y = 0;
-  srcrect.w = _screen->width();
-  srcrect.h = _screen->height();
+  srcrect.w = _screen->_w;
+  srcrect.h = _screen->_h;
 
   SDL_Rect dstrect;
   dstrect.x = 0;
@@ -138,11 +134,6 @@ bool Graphics::loadFont(const char *filename, FT_Face &face) {
 //
 void maUpdateScreen(void) {
   ((::Graphics *)graphics)->redraw();
-}
-
-MAHandle maCreatePlaceholder(void) {
-  MAHandle maHandle = (MAHandle) new ::Canvas();
-  return maHandle;
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {

@@ -11,6 +11,7 @@
 
 #include "platform/common/maapi.h"
 #include "platform/common/StringLib.h"
+#include "platform/common/canvas.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -19,8 +20,6 @@
 #define MAX_GLYPHS 256
 
 using namespace strlib;
-
-typedef uint16_t pixel_t;
 
 namespace common {
 
@@ -36,22 +35,6 @@ struct Font {
   int _spacing;
   FT_Face _face;
   Glyph _glyph[MAX_GLYPHS];
-};
-
-struct Canvas {
-  Canvas();
-  virtual ~Canvas();
-
-  virtual bool create(int w, int h) = 0;
-  virtual pixel_t *getLine(int y) = 0;
-  virtual void setClip(int x, int y, int w, int h) = 0;
-  virtual void freeClip() = 0;
-  virtual int x() = 0;
-  virtual int y() = 0;
-  virtual int w() = 0;
-  virtual int h() = 0;
-  virtual int width() = 0;
-  virtual int height() = 0;
 };
 
 struct Graphics {

@@ -7,6 +7,7 @@
 //
 
 #include "config.h"
+
 #include "platform/common/graphics.h"
 #include "platform/common/utils.h"
 #include "common/device.h"
@@ -72,15 +73,6 @@ Font::~Font() {
 }
 
 //
-// Canvas implementation
-//
-Canvas::Canvas() {
-}
-
-Canvas::~Canvas() {
-}
-
-//
 // Graphics implementation
 //
 Graphics::Graphics() :
@@ -121,11 +113,10 @@ void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MAR
   if (_drawTarget && _drawTarget != src) {
     int destY = dstPoint->y;
     int srcH = srcRect->height;
-    if (srcRect->top + srcRect->height > src->height()) {
-      srcH = src->height() - srcRect->top;
+    if (srcRect->top + srcRect->height > src->_h) {
+      srcH = src->_h - srcRect->top;
     }
-    int targetH = _drawTarget->height();
-    for (int y = 0; y < srcH && destY < targetH; y++, destY++) {
+    for (int y = 0; y < srcH && destY < _drawTarget->_h; y++, destY++) {
       pixel_t *line = src->getLine(y + srcRect->top) + srcRect->left;
       pixel_t *dstLine = _drawTarget->getLine(destY) + dstPoint->x;
       memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
@@ -257,8 +248,8 @@ int Graphics::getPixel(int posX, int posY) {
   if (_drawTarget
       && posX > -1 
       && posY > -1
-      && posX < _drawTarget->width()
-      && posY < _drawTarget->height() - 1) {
+      && posX < _drawTarget->_w
+      && posY < _drawTarget->_h - 1) {
     pixel_t *line = _drawTarget->getLine(posY);
     result = line[posX];
   }
@@ -291,13 +282,19 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
   } else {
     _drawTarget = (Canvas *)maHandle;
   }
-  _drawTarget->freeClip();
+  delete _drawTarget->_clip;
+  _drawTarget->_clip = NULL;
   return (MAHandle) _drawTarget;
 }
 
 //
 // maapi implementation
 //
+MAHandle maCreatePlaceholder(void) {
+  MAHandle maHandle = (MAHandle) new Canvas();
+  return maHandle;
+}
+
 int maFontDelete(MAHandle maHandle) {
   if (maHandle != -1) {
     graphics->deleteFont((Font *)maHandle);

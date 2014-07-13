@@ -22,7 +22,7 @@ extern common::Graphics *graphics;
 //
 // Canvas implementation
 //
-Canvas::Canvas() : common::Canvas(),
+Canvas::Canvas() :
   _canvas(NULL),
   _clip(NULL) {
 }
@@ -47,15 +47,6 @@ bool Canvas::create(int w, int h) {
     result = false;
   }
   return result;
-}
-
-void Canvas::freeClip() {
-  delete _clip;
-  _clip = NULL;
-}
-
-pixel_t *Canvas::getLine(int y) {
-  return _canvas + (y * _w);
 }
 
 void Canvas::setClip(int x, int y, int w, int h) {
@@ -115,8 +106,8 @@ void Graphics::redraw() {
       trace("Unable to lock window buffer");
     } else {
       void *pixels = buffer.bits;
-      int width = min(_w, min(buffer.width, _screen->width()));
-      int height = min(_h, min(buffer.height, _screen->height()));
+      int width = min(_w, min(buffer.width, _screen->_w));
+      int height = min(_h, min(buffer.height, _screen->_h));
       for (int y = 0; y < height; y++) {
         pixel_t *line = _screen->getLine(y);
         memcpy((pixel_t *)pixels, line, width * sizeof(pixel_t));
@@ -163,11 +154,6 @@ bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {
 //
 void maUpdateScreen(void) {
   ((Graphics *)graphics)->redraw();
-}
-
-MAHandle maCreatePlaceholder(void) {
-  MAHandle maHandle = (MAHandle) new Canvas();
-  return maHandle;
 }
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
