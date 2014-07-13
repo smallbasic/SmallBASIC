@@ -35,7 +35,7 @@ public class Sound {
   public void play() {
     if (!_silent) {
       try {
-        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_RING,
+        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
             AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
             AudioFormat.ENCODING_PCM_16BIT, _sound.length, AudioTrack.MODE_STATIC);
         if (audioTrack.write(_sound, 0, _sound.length) == _sound.length) {
