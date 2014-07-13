@@ -22,13 +22,16 @@
 #include "platform/sdl/main_bas.h"
 
 #define WAIT_INTERVAL 10
+#define DEFAULT_FONT_SIZE 16
 #define MAIN_BAS "__main_bas__"
 
 Runtime *runtime;
 
 Runtime::Runtime(SDL_Window *window) :
   System(),
-  _window(window) {
+  _window(window),
+  _cursorHand(NULL),
+  _cursorArrow(NULL) {
   runtime = this;
 }
 
@@ -41,12 +44,21 @@ Runtime::~Runtime() {
   _output = NULL;
   _eventQueue = NULL;
   _graphics = NULL;
+
+  SDL_FreeCursor(_cursorHand);
+  SDL_FreeCursor(_cursorArrow);
+  _cursorHand = NULL;
+  _cursorArrow = NULL;
 }
 
 void Runtime::construct(const char *font, const char *boldFont) {
   logEntered();
   _state = kClosingState;
   _graphics = new Graphics(_window);
+
+  _cursorHand = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+  _cursorArrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+
   if (_graphics && _graphics->construct(font, boldFont)) {
     int w, h;
     SDL_GetWindowSize(_window, &w, &h);
@@ -68,7 +80,7 @@ MAEvent *Runtime::popEvent() {
   return _eventQueue->pop();
 }
 
-void Runtime::runShell(const char *startupBas) {
+int Runtime::runShell(const char *startupBas, int fontScale) {
   logEntered();
 
   os_graphics = 1;
@@ -80,6 +92,15 @@ void Runtime::runShell(const char *startupBas) {
   opt_pref_bpp = 0;
   opt_nosave = true;
 
+  _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
+  _output->setFontSize(DEFAULT_FONT_SIZE);
+  _initialFontSize = _output->getFontSize();
+  if (fontScale != 100) {
+    _fontScale = fontScale;
+    int fontSize = (_initialFontSize * _fontScale / 100);
+    _output->setFontSize(fontSize);
+  }
+
   if (startupBas != NULL) {
     runOnce(startupBas);
   } else {
@@ -88,6 +109,7 @@ void Runtime::runShell(const char *startupBas) {
 
   _state = kDoneState;
   logLeaving();
+  return _fontScale;
 }
 
 char *Runtime::loadResource(const char *fileName) {
@@ -166,6 +188,7 @@ void Runtime::pollEvents(bool blocking) {
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, &ev);
         break;
       case SDL_MOUSEBUTTONUP:
+        SDL_SetCursor(_cursorArrow);
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_RELEASED, &ev);
         break;
       case SDL_WINDOWEVENT_SIZE_CHANGED:
@@ -217,6 +240,9 @@ MAEvent Runtime::processEvents(int waitFlag) {
     break;
   default:
     handleEvent(event);
+    if (event.type == EVENT_TYPE_POINTER_PRESSED && _buttonPressed) {
+      SDL_SetCursor(_cursorHand);
+    }
     break;
   }
   return event;

@@ -79,6 +79,7 @@ protected:
   bool _systemMenu;
   bool _systemScreen;
   bool _mainBas;
+  bool _buttonPressed;
   char *_programSrc;
 };
 

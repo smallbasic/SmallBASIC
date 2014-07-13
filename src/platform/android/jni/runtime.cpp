@@ -136,7 +136,9 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  runtime->onResize(width, height);
+  if (runtime != NULL && runtime->isActive()) {
+    runtime->onResize(width, height);
+  }
 }
 
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {

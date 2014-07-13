@@ -14,6 +14,7 @@
 #include "platform/common/utils.h"
 #include "platform/common/StringLib.h"
 #include "platform/sdl/runtime.h"
+#include "platform/sdl/settings.h"
 #include "common/smbas.h"
 
 using namespace strlib;
@@ -37,6 +38,8 @@ static struct option OPTIONS[] = {
   {"module",  optional_argument, NULL, 'm'},
   {0, 0, 0, 0}
 };
+
+const char *CONFIG_NAME = "SmallBASIC";
 
 void appLog(const char *format, ...) {
   char buf[4096], *p = buf;
@@ -192,12 +195,15 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  int fontScale;
+  SDL_Rect rect;
+
+  restoreSettings(CONFIG_NAME, rect, fontScale);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-  SDL_Window *window = SDL_CreateWindow("SmallBASIC",
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        640, 480,
+  SDL_Window *window = SDL_CreateWindow("SmallBASIC", 
+                                        rect.x, rect.y, rect.w, rect.h,
                                         SDL_WINDOW_SHOWN | 
+                                        SDL_WINDOW_RESIZABLE |
                                         SDL_WINDOW_INPUT_FOCUS |
                                         SDL_WINDOW_MOUSE_FOCUS);
   if (window != NULL) {
@@ -205,14 +211,15 @@ int main(int argc, char* argv[]) {
     if (getFontFiles(fontFamily, font, fontBold)) {
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      runtime->runShell(runFile);
+      fontScale = runtime->runShell(runFile, fontScale);
       delete runtime;
     } else {
-      trace("Failed to locate display font\n");
+      fprintf(stderr, "Failed to locate display font\n");
     }
+    saveSettings(CONFIG_NAME, window, fontScale);
     SDL_DestroyWindow(window);
   } else {
-    trace("Could not create window: %s\n", SDL_GetError());
+    fprintf(stderr, "Could not create window: %s\n", SDL_GetError());
   }
 
   SDL_Quit();

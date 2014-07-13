@@ -49,6 +49,7 @@ System::System() :
   _systemMenu(false),
   _systemScreen(false),
   _mainBas(false),
+  _buttonPressed(false),
   _programSrc(NULL) {
   g_system = this;
 }
@@ -204,7 +205,7 @@ void System::handleEvent(MAEvent event) {
     _touchX = _touchCurX = event.point.x;
     _touchY = _touchCurY = event.point.y;
     dev_pushkey(SB_KEY_MK_PUSH);
-    _output->pointerTouchEvent(event);
+    _buttonPressed = _output->pointerTouchEvent(event);
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
     _touchCurX = event.point.x;
@@ -212,6 +213,7 @@ void System::handleEvent(MAEvent event) {
     _output->pointerMoveEvent(event);
     break;
   case EVENT_TYPE_POINTER_RELEASED:
+    _buttonPressed = false;
     _touchX = _touchY = _touchCurX = _touchCurY = -1;
     _output->pointerReleaseEvent(event);
     break;

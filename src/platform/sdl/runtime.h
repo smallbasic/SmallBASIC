@@ -31,7 +31,7 @@ struct Runtime : public System {
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
   void setExit(bool quit);
-  void runShell(const char *startupBas);
+  int runShell(const char *startupBas, int fontScale);
   char *loadResource(const char *fileName);
   void showAlert(const char *title, const char *message);
   void optionsBox(StringList *items);
@@ -42,6 +42,8 @@ private:
   Graphics *_graphics;
   Stack<MAEvent *> *_eventQueue;
   SDL_Window *_window;
+  SDL_Cursor *_cursorHand;
+  SDL_Cursor *_cursorArrow;
 };
 
 #endif

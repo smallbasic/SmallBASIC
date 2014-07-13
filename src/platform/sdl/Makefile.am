@@ -15,7 +15,7 @@ EXTRA_DIST =																		\
 bin_PROGRAMS = sbasicg
 
 sbasicg_SOURCES =																\
-  ../common/graphics.cpp  											\
+  ../common/graphics.cpp												\
   ../common/ansiwidget.cpp											\
   ../common/screen.cpp													\
   ../common/system.cpp													\
@@ -23,7 +23,8 @@ sbasicg_SOURCES =																\
   ../common/StringLib.cpp												\
   main.cpp																			\
   display.cpp																		\
-  runtime.cpp
+  runtime.cpp																		\
+  settings.cpp																		
 
 sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
