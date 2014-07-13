@@ -27,7 +27,11 @@ struct Canvas : public common::Canvas {
   int y() { return _clip ? _clip->y : 0; }
   int w() { return _clip ? _clip->w : _w; }
   int h() { return _clip ? _clip->h : _h; }
+  int width()  { return _w; }
+  int height() { return _h; }
 
+  int _w;
+  int _h;
   SDL_Surface *_canvas;
   SDL_Rect *_clip;
 };

@@ -11,8 +11,6 @@
 #include "platform/common/utils.h"
 #include "common/device.h"
 
-#define SIZE_LIMIT 10
-
 using namespace common;
 
 Graphics *graphics;
@@ -123,10 +121,11 @@ void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MAR
   if (_drawTarget && _drawTarget != src) {
     int destY = dstPoint->y;
     int srcH = srcRect->height;
-    if (srcRect->top + srcRect->height > src->_h) {
-      srcH = src->_h - srcRect->top;
+    if (srcRect->top + srcRect->height > src->height()) {
+      srcH = src->height() - srcRect->top;
     }
-    for (int y = 0; y < srcH && destY < _drawTarget->_h; y++, destY++) {
+    int targetH = _drawTarget->height();
+    for (int y = 0; y < srcH && destY < targetH; y++, destY++) {
       pixel_t *line = src->getLine(y + srcRect->top) + srcRect->left;
       pixel_t *dstLine = _drawTarget->getLine(destY) + dstPoint->x;
       memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
@@ -258,8 +257,8 @@ int Graphics::getPixel(int posX, int posY) {
   if (_drawTarget
       && posX > -1 
       && posY > -1
-      && posX < _drawTarget->_w
-      && posY < _drawTarget->_h - 1) {
+      && posX < _drawTarget->width()
+      && posY < _drawTarget->height() - 1) {
     pixel_t *line = _drawTarget->getLine(posY);
     result = line[posX];
   }
@@ -366,17 +365,6 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
   graphics->drawImageRegion((Canvas *)maHandle, dstPoint, srcRect);
-}
-
-int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
-  int result = RES_OK;
-  if (height > graphics->getHeight() * SIZE_LIMIT) {
-    result -= 1;
-  } else {
-    Canvas *drawable = (Canvas *)maHandle;
-    result = drawable->create(width, height) ? RES_OK : -1;
-  }
-  return result;
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {

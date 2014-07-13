@@ -22,7 +22,7 @@ typedef signed long    S32;
  #define MIN(a,b) ((a>b) ? (b) : (a))
 #endif
 
-#if defined(_FLTK) || defined(_SDL)
+#if defined(_FLTK)
  #define DEFAULT_FOREGROUND 0
  #define DEFAULT_BACKGROUND 0xecedef
  #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN + 1

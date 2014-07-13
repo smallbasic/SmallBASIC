@@ -13,6 +13,8 @@
 #include "platform/sdl/display.h"
 #include "common/device.h"
 
+#define SIZE_LIMIT 10
+
 extern common::Graphics *graphics;
 
 //
@@ -99,8 +101,8 @@ void Graphics::redraw() {
   SDL_Rect srcrect;
   srcrect.x = 0;
   srcrect.y = 0;
-  srcrect.w = _screen->_w;
-  srcrect.h = _screen->_h;
+  srcrect.w = _screen->width();
+  srcrect.h = _screen->height();
 
   SDL_Rect dstrect;
   dstrect.x = 0;
@@ -143,4 +145,14 @@ MAHandle maCreatePlaceholder(void) {
   return maHandle;
 }
 
+int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
+  int result = RES_OK;
+  if (height > graphics->getHeight() * SIZE_LIMIT) {
+    result -= 1;
+  } else {
+    Canvas *drawable = (Canvas *)maHandle;
+    result = drawable->create(width, height) ? RES_OK : -1;
+  }
+  return result;
+}
 
