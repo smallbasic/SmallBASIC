@@ -78,7 +78,9 @@ Font::~Font() {
 Graphics::Graphics() :
   _screen(NULL),
   _drawTarget(NULL),
-  _font(NULL) {
+  _font(NULL),
+  _w(0),
+  _h(0) {
   graphics = this;
 }
 

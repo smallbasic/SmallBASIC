@@ -105,7 +105,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public String getStartupBas() {
-    return this._startupBas;
+    return this._startupBas == null ? "" : this._startupBas;
   }
 
   public int getUnicodeChar(int keyCode, int metaState) {

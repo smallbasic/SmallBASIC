@@ -251,12 +251,12 @@ char *System::loadResource(const char *fileName) {
 char *System::readSource(const char *fileName) {
   char *buffer = loadResource(fileName);
   if (!buffer) {
-    int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
+    int h = open(fileName, O_BINARY | O_RDONLY, 0644);
     if (h != -1) {
       int len = lseek(h, 0, SEEK_END);
       lseek(h, 0, SEEK_SET);
       buffer = (char *)tmp_alloc(len + 1);
-      read(h, buffer, len);
+      len = read(h, buffer, len);
       buffer[len] = '\0';
       close(h);
     }

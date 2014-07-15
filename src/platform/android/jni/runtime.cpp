@@ -214,10 +214,10 @@ String Runtime::getString(const char *methodName) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()Ljava/lang/String;");
-  jstring startupBasObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
-  const char *startupBas = env->GetStringUTFChars(startupBasObj, JNI_FALSE);
-  String result = startupBas;
-  env->ReleaseStringUTFChars(startupBasObj, startupBas);
+  jstring resultObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
+  const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
+  String result = resultStr;
+  env->ReleaseStringUTFChars(resultObj, resultStr);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -471,7 +471,7 @@ void Runtime::optionsBox(StringList *items) {
   }
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "optionsBox", "([Ljava/lang/String;)V");
-  env->CallObjectMethod(_app->activity->clazz, methodId, array);
+  env->CallVoidMethod(_app->activity->clazz, methodId, array);
 
   for (int i = 0; i < items->size(); i++) {
     env->DeleteLocalRef(env->GetObjectArrayElement(array, i));
@@ -562,7 +562,7 @@ void Runtime::showKeypad(bool show) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "showKeypad", "(Z)V");
-  env->CallObjectMethod(_app->activity->clazz, methodId, show);
+  env->CallVoidMethod(_app->activity->clazz, methodId, show);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
@@ -577,7 +577,7 @@ void Runtime::showAlert(const char *title, const char *message) {
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID method = env->GetMethodID(clazz, "showAlert",
                                       "(Ljava/lang/String;Ljava/lang/String;)V");
-  env->CallObjectMethod(_app->activity->clazz, method, titleString, messageString);
+  env->CallVoidMethod(_app->activity->clazz, method, titleString, messageString);
 
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(messageString);

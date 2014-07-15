@@ -134,11 +134,13 @@ void Runtime::runPath(const char *path) {
 
 void Runtime::handleKeyEvent(MAEvent &event) {
   if (isRunning()) {
+    trace("key=%d scanCode=%d", event.key, event.nativeKey);
     int key = event.key;
     for (int i = 0; keymap[i] != 0; i += 2) {
       if (keymap[i] == key) {
         if (keymap[i + 1] != -1) {
           dev_pushkey(keymap[i + 1]);
+          event.key = keymap[i + 1];
         }
         key = -1;
         break;
@@ -172,13 +174,17 @@ void Runtime::pollEvents(bool blocking) {
         runtime->setExit(true);
         break;
       case SDL_KEYDOWN:
-        if ((ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL))) {
+        if (ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) {
           runtime->setExit(true);
+        } else if (ev.key.keysym.sym == SDLK_HOME && (ev.key.keysym.mod & KMOD_CTRL)) {
+          showMenu();
+        } else if (ev.key.keysym.sym == SDLK_BACKSPACE && (ev.key.keysym.mod & KMOD_CTRL)) {
+          setBack();
         } else {
           maEvent = new MAEvent();
           maEvent->type = EVENT_TYPE_KEY_PRESSED;
-          maEvent->nativeKey = (ev.key.keysym.scancode & 0xFF);
           maEvent->key = ev.key.keysym.sym;
+          maEvent->nativeKey = ev.key.keysym.scancode;
         }
         break;
       case SDL_MOUSEBUTTONDOWN:
@@ -272,6 +278,33 @@ void Runtime::onResize(int width, int height) {
   }
 }
 
+void Runtime::optionsBox(StringList *items) {
+  SDL_MessageBoxButtonData buttons[items->size()];
+  int index = 0;
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    buttons[index].text = str;
+    buttons[index].buttonid = index;
+    buttons[index].flags = 0;
+    index++;
+  }
+
+  SDL_MessageBoxData data;
+  data.window = _window;
+  data.title = "SmallBASIC";
+  data.message = "Menu";
+  data.flags = SDL_MESSAGEBOX_INFORMATION;
+  data.numbuttons = items->size();
+  data.buttons = buttons;
+
+  int buttonid;
+  SDL_ShowMessageBox(&data, &buttonid);
+  MAEvent *maEvent = new MAEvent();
+  maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
+  maEvent->optionsBoxButtonIndex = buttonid;
+  pushEvent(maEvent);
+}
+
 //
 // form_ui implementation
 //
@@ -280,7 +313,7 @@ AnsiWidget *form_ui::getOutput() {
 }
 
 void form_ui::optionsBox(StringList *items) {
-  // TODO: see fltk
+  runtime->optionsBox(items);
 }
 
 //
