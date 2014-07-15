@@ -51,12 +51,7 @@ typedef struct {
   } args;
 } ui_node_t;
 
-#if defined(OS_LIMITED)
-#define UI_MAX_ELEMENTS   8
-#else
 #define UI_MAX_ELEMENTS   256
-#endif
-
 static ui_node_t ui_list[UI_MAX_ELEMENTS];
 static int ui_count;
 static int ui_nx, ui_ny;

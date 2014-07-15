@@ -52,13 +52,13 @@ typedef struct {
    */
   union {
     struct {
-      ext_proc_node_t *extproctable; /**< external procedure table       */
-      int extprocsize; /**< ext-proc table allocated size  */
-      int extproccount; /**< ext-proc table count           */
+      ext_proc_node_t *extproctable; /**< external procedure table  */
+      int extprocsize; /**< ext-proc table allocated size           */
+      int extproccount; /**< ext-proc table count                   */
 
-      ext_func_node_t *extfunctable; /**< external function table        */
-      int extfuncsize; /**< ext-func table allocated size  */
-      int extfunccount; /**< ext-func table count           */
+      ext_func_node_t *extfunctable; /**< external function table   */
+      int extfuncsize; /**< ext-func table allocated size           */
+      int extfunccount; /**< ext-func table count                   */
 
       char file_name[OS_PATHNAME_SIZE + 1];
       char unit_name[OS_PATHNAME_SIZE + 1];
@@ -71,18 +71,18 @@ typedef struct {
       dbt_t exptable;
       int expcount;
 
-      int block_level;        // block level (FOR-NEXT,IF-FI,etc)
-      int block_id;// unique ID for blocks (FOR-NEXT,IF-FI,etc)
+      int block_level; // block level (FOR-NEXT,IF-FI,etc)
+      int block_id;   // unique ID for blocks (FOR-NEXT,IF-FI,etc)
 
       addr_t first_data_ip;
 
       // buffers... needed for devices with limited memory
       char *bc_name;
       char *bc_parm;
-      char *bc_temp;// primary all-purpose buffer
-      char *bc_tmp2;// secondary all-purpose buffer
+      char *bc_temp; // primary all-purpose buffer
+      char *bc_tmp2; // secondary all-purpose buffer
       char *bc_proc;
-      char *bc_sec;// used by sberr.c
+      char *bc_sec;  // used by sberr.c
 
       int proc_level;
       // flag - uses global variable-table for the next commands
@@ -115,27 +115,26 @@ typedef struct {
       // pass2 stack
       dbt_t stack;
       bid_t stack_count;
-
-    }comp;
+    } comp;
 
     /*
      * --- executor ---
      */
     struct {
       addr_t length; /**< The byte-code length (program length in bytes) */
-      addr_t ip; /**< Register IP; the instruction pointer           */
-      byte *bytecode; /**< The byte-code itself                           */
+      addr_t ip; /**< Register IP; the instruction pointer               */
+      byte *bytecode; /**< The byte-code itself                          */
 
-      addr_t dp; /**< Register DP; READ/DATA current position        */
-      addr_t org; /**< READ/DATA beginning position                   */
+      addr_t dp; /**< Register DP; READ/DATA current position            */
+      addr_t org; /**< READ/DATA beginning position                      */
 
-      stknode_t *stack; /**< The program stack                            */
-      dword stack_alloc; /**< The stack size                               */
-      dword sp; /**< Register SP; The stack pointer               */
+      stknode_t *stack; /**< The program stack                           */
+      dword stack_alloc; /**< The stack size                             */
+      dword sp; /**< Register SP; The stack pointer                      */
 
       var_t *eval_stk; /**< eval's stack                                 */
-      word eval_stk_size; /**< eval's stack size                            */
-      word eval_sp; /**< Register ESP; eval's stack pointer           */
+      word eval_stk_size; /**< eval's stack size                         */
+      word eval_sp; /**< Register ESP; eval's stack pointer              */
 
       /*
        * Register R; no need
@@ -144,29 +143,19 @@ typedef struct {
        * Register L; no need
        */
 
-      dword varcount; /**< number of global-variables                     */
-      dword labcount; /**< number of labels                               */
-      dword libcount; /**< number of linked libraries                     */
-      dword symcount; /**< number of linked symbols                       */
-      dword expcount; /**< number of exported symbols                     */
+      dword varcount; /**< number of global-variables                    */
+      dword labcount; /**< number of labels                              */
+      dword libcount; /**< number of linked libraries                    */
+      dword symcount; /**< number of linked symbols                      */
+      dword expcount; /**< number of exported symbols                    */
 
-      var_t **vartable; /**< The table of variables                         */
-      lab_t *labtable; /**< The table of labels                            */
-      bc_lib_rec_t *libtable; /**< import-libraries table                         */
-      bc_symbol_rec_t *symtable; /**< import-symbols table                        */
-      unit_sym_t *exptable; /**< export-symbols table                      */
-
-#if defined(_PalmOS)
-      DmOpenRef bytecode_fp;
-      word bytecode_recidx;
-#elif defined (_FRANKLIN_EBM)
-      int bytecode_fp;
-#endif
-
-    }exec;
-
-  }sbe;
-
+      var_t **vartable; /**< The table of variables                      */
+      lab_t *labtable; /**< The table of labels                          */
+      bc_lib_rec_t *libtable; /**< import-libraries table                */
+      bc_symbol_rec_t *symtable; /**< import-symbols table               */
+      unit_sym_t *exptable; /**< export-symbols table                    */
+    } exec;
+  } sbe;
 } task_t;
 
 EXTERN task_t *ctask; /**< current task pointer  */
@@ -178,7 +167,7 @@ EXTERN task_t *ctask; /**< current task pointer  */
  *
  *   @return the number of the tasks
  */
-int count_tasks() SEC(BEXEC);
+int count_tasks();
 
 /**
  *   @ingroup sys
@@ -187,7 +176,7 @@ int count_tasks() SEC(BEXEC);
  *
  *   @return the active task-id
  */
-int current_tid() SEC(BEXEC);
+int current_tid();
 
 /**
  *   @ingroup sys
@@ -196,21 +185,21 @@ int current_tid() SEC(BEXEC);
  *
  *   @return the active task-structure
  */
-task_t *current_task() SEC(BEXEC);
+task_t *current_task();
 
 /**
  *   @ingroup sys
  *
  *   initialize tasks manager
  */
-int init_tasks() SEC(BEXEC);
+int init_tasks();
 
 /**
  *   @ingroup sys
  *
  *   destroys tasks and closes task manager
  */
-void destroy_tasks() SEC(BEXEC);
+void destroy_tasks();
 
 /**
  *   @ingroup sys
@@ -220,14 +209,14 @@ void destroy_tasks() SEC(BEXEC);
  *   @param name is the task name
  *   @return the task-id
  */
-int create_task(const char *name) SEC(BEXEC);
+int create_task(const char *name);
 
 /**
  *   @ingroup sys
  *
  *   closes a task and activate the next
  */
-void close_task(int tid) SEC(BEXEC);
+void close_task(int tid);
 
 /**
  *   @ingroup sys
@@ -237,7 +226,7 @@ void close_task(int tid) SEC(BEXEC);
  *   @param tid the task-id
  *   @return the previous task-id
  */
-int activate_task(int tid) SEC(BEXEC);
+int activate_task(int tid);
 
 /**
  *   @ingroup sys
@@ -256,7 +245,7 @@ task_t *taskinfo(int n);
  *   @param task_name the name of the task
  *   @return the task-id; or -1 on error
  */
-int search_task(const char *task_name) SEC(BEXEC);
+int search_task(const char *task_name);
 
 #if defined(__cplusplus)
 }

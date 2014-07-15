@@ -984,11 +984,7 @@ int par_getpartable(par_t ** ptable_pp, const char *valid_sep) {
   /*
    *      initialize
    */
-#if defined(OS_LIMITED)
-  ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 32);
-#else
   ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 256);
-#endif
 
   if (valid_sep)
     strcpy(vsep, valid_sep);

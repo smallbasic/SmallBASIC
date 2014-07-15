@@ -30,11 +30,7 @@
 #include "common/vmt.h"
 #include "common/smbas.h"
 
-#if defined(OS_LIMITED)
-#define  MAX_VMT_FILES 16
-#else
 #define  MAX_VMT_FILES 256
-#endif
 
 static vmt_t vmt[MAX_VMT_FILES];  // table of VMTs
 

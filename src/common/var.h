@@ -67,14 +67,10 @@
  * @ingroup var
  * @def MAXDIM Maxium number of array-dimensions
  */
-#if defined(OS_LIMITED)
-#define MAXDIM      3     // think before increase this, (possible stack overflow)
-#else
 #if defined(OS_ADDR16)
 #define MAXDIM      3     // think before increase this, (possible stack overflow)
 #else
 #define MAXDIM      6     // that's large enough
-#endif
 #endif
 
 #include "common/scan.h"  // compiler structures
@@ -580,7 +576,6 @@ void v_setstrn(var_t *var, const char *string, int len);
  *
  * Sets a string value to variable 'var'.
  * printf() style. Avoid to use on low-memory systems (like PalmOS 3.3).
- * The buffer size is limited to 1KB for OS_LIMITED, otherwise 64KB.
  *
  * @param var is the variable
  * @param fmt is the the format
@@ -696,7 +691,7 @@ void v_input2var(const char *str, var_t *var);
 
 /**< returns the real value of variable v
    @ingroup var */
-#define v_getreal(v)    v_getval((v))
+#define v_getreal(v)  v_getval((v))
 
 /**
  * @ingroup var

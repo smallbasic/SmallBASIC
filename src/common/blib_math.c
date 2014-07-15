@@ -69,8 +69,9 @@ var_num_t m_div(var_num_t n, var_num_t d) {
   return result;
 }
 
-void root_iterate(var_num_t xl, var_num_t xh, var_num_t fl, var_num_t fh, var_t * res_vp, var_num_t maxerr,
-    var_t *err_vp, addr_t use_ip) SEC(BMATH2);
+void root_iterate(var_num_t xl, var_num_t xh, var_num_t fl, 
+                  var_num_t fh, var_t *res_vp, var_num_t maxerr,
+                  var_t *err_vp, addr_t use_ip);
 
 /*
  * length of line

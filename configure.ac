@@ -1,13 +1,13 @@
 dnl 
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2012 Chris Warren-Smith.
+dnl Copyright(C) 2001-2014 Chris Warren-Smith.
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.6])
+AC_INIT([smallbasic], [0.11.8])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -347,81 +347,49 @@ function buildSDL() {
    TARGET="Building SDL version."
    defaultConditionals
 
-   dnl The following code was taken from the SDL test/configure.ac
-   dnl Figure out which math library to use
-   MATHLIB=""
-   SYS_GL_LIBS=""
+   AC_CHECK_PROG(have_sdl, sdl2-config, [yes], [no])
+   if test "${have_sdl}" = "no" ; then
+     AC_MSG_ERROR([libsdl2-dev not installed: configure failed.])
+   fi
 
-   case "$host" in
-    *-*-cygwin* | *-*-mingw32*)
-        SYS_GL_LIBS="-lopengl32"
-        PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields -mno-cygwin"
-        PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32"
-        ;;
-    *)
-        MATHLIB="-lm"
-        SYS_GL_LIBS="-lGL"
-        ;;
-   esac
+   AC_CHECK_PROG(have_freetype2, freetype-config, [yes], [no])
+   if test "${have_freetype2}" = "no" ; then
+     AC_MSG_ERROR([libfreetype6-dev not installed: configure failed.])
+   fi
 
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl-config --cflags`"
-   PACKAGE_LIBS="${PACKAGE_LIBS} `sdl-config --libs` ${MATHLIB}"
-
-   dnl Check for OpenGL
-   AC_MSG_CHECKING(for OpenGL support)
-   have_opengl=no
+   AC_MSG_CHECKING(for SDL_image)
    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-     #include "SDL/SDL_opengl.h"
-     ]], [[
-     ]])],[
-     have_opengl=yes
-   ],[])
-   AC_MSG_RESULT($have_opengl)
-   if test x$have_opengl = xyes; then
-     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -DHAVE_OPENGL "
-     PACKAGE_LIBS="${PACKAGE_LIBS} ${SYS_GL_LIBS}"
-   fi
+     #include "SDL2/SDL_image.h"
+     ]], [[]])],
+    [AC_MSG_RESULT([yes])],
+    [AC_MSG_ERROR([libsdl2-image-dev not installed: configure failed])])
 
-   dnl Check for SDL_Image
-   AC_MSG_CHECKING(for SDL_Image support)
-   have_sdl_image=no
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-     #include "SDL/SDL_image.h"
-     ]], [[
-     ]])],[
-     have_sdl_image=yes
-   ],[])
-   AC_MSG_RESULT($have_sdl_image)
-   if test x$have_sdl_image = xyes; then
-      AC_DEFINE(HAVE_SDL_IMAGE, 1, [SDL Image header is present.])
-      AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
-      PACKAGE_LIBS="${PACKAGE_LIBS} -lSDL_image"
-   fi
+   # Check fontconfig configuration
+   PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.2)
+   AC_SUBST(FONTCONFIG_CFLAGS)
+   AC_SUBST(FONTCONFIG_LIBS)
 
-   dnl Check for guichan.hpp
-   dnl see http://guichan.sourceforge.net/wiki/index.php"
-   AC_MSG_CHECKING(for guichan forms support)
-   have_guichan="maybe"
-   AC_LANG_PUSH(C++)
-   AC_CHECK_HEADER(guichan.hpp, [have_guichan="yes"], [have_guichan="no"])
-   AC_LANG_POP(C++)
-   AC_MSG_RESULT($have_guichan)
-   if test x$have_guichan = xyes && test x$have_sdl_image = xyes; then
-      dnl need SDL_Image as well
-      AC_DEFINE(IMPL_UI, 1, [Guichan forms support found])
-      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -DGUICHAN_BUILD -I/usr/local/include"
-      PACKAGE_LIBS="-lguichan_sdl -lguichan ${PACKAGE_LIBS}"
-   fi
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
+   PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS} `sdl2-config --libs` `freetype-config --libs` -ldl"
 
    dnl preconfigured values for SDL build
-   AC_DEFINE(KBHIT_PWR_CONSERVE, 1, [Conserve power in dev_kbhit()])
+   AC_DEFINE(_SDL, 1, [Defined when building SDL version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(_SDL, 1, [Defined when building SDL version])
+   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()]) 
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
+   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
+   AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
 
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
+   (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
 }
 
 function buildQT() {
@@ -429,12 +397,8 @@ function buildQT() {
  
    dnl Checks for qmake
    AC_CHECK_PROG(have_qt, qmake, [yes], [no])
- 
-   if test "${HAVE_API_VERSION}" = "no" ; then
-       AC_MSG_ERROR([
-     You need QT version 4.*
-     configure failed.
-   ])
+   if test "${have_qt}" = "no" ; then
+     AC_MSG_ERROR([You need QT version 4.* configure failed.])
    fi
  
    dnl avoid using MSCRT versions of printf for long double
@@ -494,6 +458,7 @@ function buildMosync() {
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(NONSTANDARD_PORT, 1, [sys.h should include portdefs.h])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+   AC_DEFINE(_MOSYNC, 1, [Defined for Mosync build.])
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
@@ -558,7 +523,7 @@ function buildAndroid() {
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
-   AC_DEFINE(CPU_BIGENDIAN, 1, [Tizen uses big-endian])
+   AC_DEFINE(CPU_BIGENDIAN, 1, [Android uses big-endian])
    AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])

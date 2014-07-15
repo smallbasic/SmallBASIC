@@ -55,7 +55,7 @@ extern "C" {
  * @param ch the character
  * @return non-zero if the character is an alphabet symbol
  */
-int is_alpha(int ch) SEC(BCSCAN);
+int is_alpha(int ch);
 
 /**
  * @ingroup str
@@ -65,7 +65,7 @@ int is_alpha(int ch) SEC(BCSCAN);
  * @param ch the character
  * @return non-zero if the character is an alphanumeric symbol
  */
-int is_alnum(int ch) SEC(BCSCAN);
+int is_alnum(int ch);
 
 /**
  * @ingroup str
@@ -75,7 +75,7 @@ int is_alnum(int ch) SEC(BCSCAN);
  * @param ch the character
  * @return non-zero if the character is a 'space'
  */
-int is_space(int ch) SEC(BCSCAN);
+int is_space(int ch);
 
 /**
  * @ingroup str
@@ -85,7 +85,7 @@ int is_space(int ch) SEC(BCSCAN);
  * @param ch the character
  * @return non-zero if the character is a white-space character
  */
-int is_wspace(int c) SEC(BCSCAN);
+int is_wspace(int c);
 
 /**
  * @ingroup str
@@ -95,7 +95,7 @@ int is_wspace(int c) SEC(BCSCAN);
  * @param text the text
  * @return true if all the characters of the string are digits
  */
-int is_all_digits(const char *text) SEC(BCSCAN);
+int is_all_digits(const char *text);
 
 /**
  * @ingroup str
@@ -105,7 +105,7 @@ int is_all_digits(const char *text) SEC(BCSCAN);
  * @param name the string
  * @return true if the string 'name' can be a keyword
  */
-int is_keyword(const char *name) SEC(BCSCAN);
+int is_keyword(const char *name);
 
 /**
  * @ingroup str
@@ -115,7 +115,7 @@ int is_keyword(const char *name) SEC(BCSCAN);
  * @param name the string
  * @return true if the string is a number
  */
-int is_number(const char *str) SEC(BCSCAN);
+int is_number(const char *str);
 
 /**
  * @ingroup str
@@ -125,7 +125,7 @@ int is_number(const char *str) SEC(BCSCAN);
  * @param str the string
  * @return the str
  */
-char *strupper(char *str) SEC(BIO3);
+char *strupper(char *str);
 
 /**
  * @ingroup str
@@ -135,7 +135,7 @@ char *strupper(char *str) SEC(BIO3);
  * @param str the string
  * @return the str
  */
-char *strlower(char *str) SEC(BIO3);
+char *strlower(char *str);
 
 /**
  * @ingroup str
@@ -146,7 +146,7 @@ char *strlower(char *str) SEC(BIO3);
  * @param dest the buffer to store the keyword
  * @return a pointer in 'text' that points to the next position
  */
-char *get_keyword(char *text, char *dest) SEC(BCSCAN);
+char *get_keyword(char *text, char *dest);
 
 /**
  * @ingroup str
@@ -166,7 +166,7 @@ char *get_keyword(char *text, char *dest) SEC(BCSCAN);
  * @param dv the real value
  * @return a pointer in 'text' that points to the next position
  */
-char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *dv) SEC(BCSCAN);
+char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *dv);
 
 /**
  * @ingroup str
@@ -180,7 +180,7 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
  *
  * @param str the string
  */
-void str_alltrim(char *str) SEC(BIO3);
+void str_alltrim(char *str);
 
 /**
  * @ingroup str
@@ -190,7 +190,7 @@ void str_alltrim(char *str) SEC(BIO3);
  * @param str the string
  * @return the number
  */
-long bintol(const char *str) SEC(BIO3);
+long bintol(const char *str);
 
 /**
  * @ingroup str
@@ -200,7 +200,7 @@ long bintol(const char *str) SEC(BIO3);
  * @param str the string
  * @return the number
  */
-long octtol(const char *str) SEC(BIO3);
+long octtol(const char *str);
 
 /**
  * @ingroup str
@@ -210,7 +210,7 @@ long octtol(const char *str) SEC(BIO3);
  * @param str the string
  * @return the number
  */
-long hextol(const char *str) SEC(BIO3);
+long hextol(const char *str);
 
 /**
  * @ingroup str
@@ -220,7 +220,7 @@ long hextol(const char *str) SEC(BIO3);
  * @param str the string
  * @return the number
  */
-var_num_t sb_strtof(const char *str) SEC(BIO3);
+var_num_t sb_strtof(const char *str);
 #define xsb_strtof(s) sb_strtof((s))
 
 /**
@@ -231,7 +231,7 @@ var_num_t sb_strtof(const char *str) SEC(BIO3);
  * @param str the string
  * @return the number
  */
-long xstrtol(const char *str) SEC(BIO3);
+long xstrtol(const char *str);
 
 /**
  * @ingroup str
@@ -242,7 +242,7 @@ long xstrtol(const char *str) SEC(BIO3);
  * @param dest is the buffer to store the string
  * @return a pointer to dest
  */
-char *ftostr(var_num_t num, char *dest) SEC(BIO3);
+char *ftostr(var_num_t num, char *dest);
 
 /**
  * @ingroup str
@@ -253,10 +253,10 @@ char *ftostr(var_num_t num, char *dest) SEC(BIO3);
  * @param dest is the buffer to store the string
  * @return a pointer to dest
  */
-char *ltostr(var_int_t num, char *dest) SEC(BIO3);
+char *ltostr(var_int_t num, char *dest);
 
-int strcaseless(const char *s1, const char *s2) SEC(BIO3);
-int strcaselessn(const char *s1, const char *s2, int len) SEC(BIO3);
+int strcaseless(const char *s1, const char *s2);
+int strcaselessn(const char *s1, const char *s2, int len);
 
 /**
  * @ingroup str
@@ -270,7 +270,7 @@ int strcaselessn(const char *s1, const char *s2, int len) SEC(BIO3);
  * @param s2 the substring
  * @return on success a pointer to 's1' in the place which the 's2' is starting; otherwise NULL
  */
-char *stristr(const char *s1, const char *s2) SEC(BIO3);
+char *stristr(const char *s1, const char *s2);
 
 /**
  * @ingroup str
@@ -291,20 +291,7 @@ char *stristr(const char *s1, const char *s2) SEC(BIO3);
  * @param pairs ignore the string that is included in any of that pairs
  * @return on success a pointer to 's1' in the place which the 's2' is starting; otherwise NULL
  */
-char *q_strstr(const char *s1, const char *s2, const char *pairs) SEC(BIO3);
-
-#if defined(_PalmOS)
-/**
- * @ingroup str
- *
- * searches for the last occurence of the character 'ch' in the string 'source'
- *
- * @param source the string
- * @param ch the character
- * @return on success a pointer in 'source' of the last occurence of 'ch'; otherwise returns NULL
- */
-char *strrchr(const char *source, int ch) SEC(BIO3);
-#endif
+char *q_strstr(const char *s1, const char *s2, const char *pairs);
 
 /**
  * @ingroup str
@@ -314,7 +301,7 @@ char *strrchr(const char *source, int ch) SEC(BIO3);
  * @param source is the text
  * @returns the real-number
  */
-var_num_t numexpr_sb_strtof(char *source) SEC(BIO3);
+var_num_t numexpr_sb_strtof(char *source);
 
 /**
  * @ingroup str
@@ -324,7 +311,7 @@ var_num_t numexpr_sb_strtof(char *source) SEC(BIO3);
  * @param source is the text
  * @returns the real-number
  */
-var_int_t numexpr_strtol(char *source) SEC(BIO3);
+var_int_t numexpr_strtol(char *source);
 
 /**
  * @ingroup str
@@ -335,7 +322,7 @@ var_int_t numexpr_strtol(char *source) SEC(BIO3);
  * @param pairs the pair
  * @return a newly allocated string of the enclosed result
  */
-char *encldup(const char *source, const char *pairs) SEC(BIO3);
+char *encldup(const char *source, const char *pairs);
 
 /**
  * @ingroup str
@@ -347,7 +334,7 @@ char *encldup(const char *source, const char *pairs) SEC(BIO3);
  * @param ignpairs ignore the string that is included in any of that pairs
  * @return a newly allocated string of the disclosed result
  */
-char *discldup(const char *source, const char *pairs, const char *ignpairs) SEC(BIO3);
+char *discldup(const char *source, const char *pairs, const char *ignpairs);
 
 /**
  * @ingroup str
@@ -362,7 +349,7 @@ char *discldup(const char *source, const char *pairs, const char *ignpairs) SEC(
  * @param source is the source string
  * @return a newly created string
  */
-char *sqzdup(const char *source) SEC(BIO3);
+char *sqzdup(const char *source);
 
 /**
  * @ingroup str
@@ -374,7 +361,7 @@ char *sqzdup(const char *source) SEC(BIO3);
  * @param with is what to replace with
  * @return a newly created string
  */
-char *transdup(const char *src, const char *what, const char *with) SEC(BIO3);
+char *transdup(const char *src, const char *what, const char *with);
 
 /**
  * @ingroup str
@@ -389,7 +376,7 @@ char *transdup(const char *src, const char *what, const char *with) SEC(BIO3);
  * @param source is the source string
  * @return a newly created string
  */
-char *trimdup(const char *str) SEC(BIO3);
+char *trimdup(const char *str);
 
 /**
  * @ingroup str
@@ -405,7 +392,7 @@ char *trimdup(const char *str) SEC(BIO3);
  * @return a pointer to dest
  */
 char *chgfilename(char *dest, char *source, char *newdir, char *prefix, char *new_ext, char *suffix)
-    SEC(BIO3);
+   ;
 
 /**
  * @ingroup str
@@ -417,7 +404,7 @@ char *chgfilename(char *dest, char *source, char *newdir, char *prefix, char *ne
  * @param source is the filename
  * @return a pointer to dest
  */
-char *xbasename(char *dest, const char *source) SEC(BIO3);
+char *xbasename(char *dest, const char *source);
 
 /**
  * @ingroup str
@@ -428,7 +415,7 @@ char *xbasename(char *dest, const char *source) SEC(BIO3);
  * @param source the string
  * @return a newly created string
  */
-char *cstrdup(const char *source) SEC(BIO3);
+char *cstrdup(const char *source);
 
 /**
  * @ingroup str
@@ -438,7 +425,7 @@ char *cstrdup(const char *source) SEC(BIO3);
  * @param source the string
  * @return a newly created string
  */
-char *bstrdup(const char *source) SEC(BIO3);
+char *bstrdup(const char *source);
 
 /**
  * @ingroup str
@@ -449,11 +436,11 @@ char *bstrdup(const char *source) SEC(BIO3);
  * @param delim the delimiter
  * @return pointer to base
  */
-const char *baseof(const char *source, int delim) SEC(BIO3);
+const char *baseof(const char *source, int delim);
 
 /*
  */
-char char_table_replace(const char *what_table, int ch, const char *replace_table) SEC(BIO3);
+char char_table_replace(const char *what_table, int ch, const char *replace_table);
 
 #if defined(_WinBCB)
 #define strncasecmp(a,b,n)  strnicmp(a,b,n)

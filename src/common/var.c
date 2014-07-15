@@ -786,11 +786,7 @@ void v_setstrf(var_t *var, const char *fmt, ...) {
   va_list ap;
 
   va_start(ap, fmt);
-#if defined(OS_LIMITED)
-    buf = tmp_alloc(1024);
-#else
-    buf = tmp_alloc(0x10000);
-#endif
+  buf = tmp_alloc(0x10000);
   vsnprintf(buf, 1024, fmt, ap);
   v_setstr(var, buf);
   tmp_free(buf);

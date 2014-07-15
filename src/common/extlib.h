@@ -94,7 +94,6 @@ extern "C" {
 typedef enum {
   lib_lang_ext, /**< Language extention */
   lib_vfs_driver, /**< VFS driver */
-
   lib_null
 } slib_tp;
 
@@ -105,12 +104,8 @@ typedef enum {
  */
 typedef struct {
   int id; /**< library ID */
-#if defined(OS_LIMITED)
-  char name[32]; /**< name of library (basename) */
-#else
   char name[256]; /**< name of library (basename) */
   char fullname[1024]; /**< full pathname */
-#endif
   void *handle; /**< handle to the lib */
   slib_tp type; /**< type of the API */
   dword flags; /**< flags */
@@ -118,7 +113,6 @@ typedef struct {
   /*
    * ------------------ Language ------------------
    */
-
   int proc_count; /**< if lang.ext.; number of procedures */
   int func_count; /**< if lang.ext.; number of functions */
   int first_proc;
@@ -138,11 +132,9 @@ typedef struct {
  * function 'index' values for VFS drivers
  */
 enum slib_vfs_idx_t {
-
   /*
    * ---- required ----
    */
-
   lib_vfs_open,               // open a file
   lib_vfs_close,              // close a file
   lib_vfs_read,               // read
@@ -152,23 +144,18 @@ enum slib_vfs_idx_t {
   /*
    * ---- optional ----
    */
-
   lib_vfs_tell,               // position in file
   lib_vfs_length,             // length of file
   lib_vfs_seek,               // seek
-
   lib_vfs_chmod,              // chmod
   lib_vfs_access,             // returns the file attributes
   lib_vfs_attr,               //
   lib_vfs_exist,              //
   lib_vfs_remove,             // remove a file
-
   lib_vfs_list,               // returns array of filenames
-
   lib_vfs_chdir,              // change current directory
   lib_vfs_mkdir,              // create a new directory
   lib_vfs_rmdir,              // remove a directory
-
   lib_vfs_null
 // not used
 };
@@ -187,14 +174,14 @@ enum slib_vfs_idx_t {
  * @param mcount non-zero for check for modules
  * @param list the list of the modules or "" for auto-search/load-all
  */
-void sblmgr_init(int mcount, const char *list) SEC(TRASH);
+void sblmgr_init(int mcount, const char *list);
 
 /**
  * @ingroup mod
  *
  * close module manager
  */
-void sblmgr_close(void) SEC(TRASH);
+void sblmgr_close(void);
 
 /**
  * @ingroup mod
@@ -204,21 +191,21 @@ void sblmgr_close(void) SEC(TRASH);
  * @param name is the name of the library (without the file-extention)
  * @return the id or -1 for error
  */
-int slib_get_module_id(const char *name) SEC(TRASH);
+int slib_get_module_id(const char *name);
 
 /**
  * @ingroup mod
  *
  * updates the compiler with the module (mid) keywords
  */
-void slib_setup_comp(int mid) SEC(TRASH);
+void slib_setup_comp(int mid);
 
 /**
  * @ingroup mod
  *
  * returns the ID of the keyword. used at run-time to assign BCs ID with slib_mgr's one
  */
-int slib_get_kid(const char *name) SEC(TRASH);
+int slib_get_kid(const char *name);
 
 /**
  * @ingroup mod
@@ -230,7 +217,7 @@ int slib_get_kid(const char *name) SEC(TRASH);
  * @param buf is the buffer to store the name
  * @return non-zero on success
  */
-int sblmgr_getfuncname(int lib, int index, char *buf) SEC(TRASH);
+int sblmgr_getfuncname(int lib, int index, char *buf);
 
 /**
  * @ingroup mod
@@ -242,7 +229,7 @@ int sblmgr_getfuncname(int lib, int index, char *buf) SEC(TRASH);
  * @param buf is the buffer to store the name
  * @return non-zero on success
  */
-int sblmgr_getprocname(int lib, int index, char *buf) SEC(TRASH);
+int sblmgr_getprocname(int lib, int index, char *buf);
 
 /**
  * @ingroup mod
@@ -253,7 +240,7 @@ int sblmgr_getprocname(int lib, int index, char *buf) SEC(TRASH);
  * @param index is the index of the procedure
  * @return non-zero on success
  */
-int sblmgr_procexec(int lib, int index) SEC(TRASH);
+int sblmgr_procexec(int lib, int index);
 
 /**
  * @ingroup mod
@@ -265,7 +252,7 @@ int sblmgr_procexec(int lib, int index) SEC(TRASH);
  * @param ret is the variable to store the result
  * @return non-zero on success
  */
-int sblmgr_funcexec(int lib, int index, var_t * ret) SEC(TRASH);
+int sblmgr_funcexec(int lib, int index, var_t * ret);
 
 /**
  * @ingroup mod
@@ -275,7 +262,7 @@ int sblmgr_funcexec(int lib, int index, var_t * ret) SEC(TRASH);
  * @param name the name of the driver (char[6], like "COM1:")
  * @return lib-id on success; otherwise -1
  */
-int sblmgr_getvfs(const char *name) SEC(TRASH);
+int sblmgr_getvfs(const char *name);
 
 /**
  * @ingroup mod
@@ -286,7 +273,7 @@ int sblmgr_getvfs(const char *name) SEC(TRASH);
  * @param f the file structure
  * @return it is depended on 'func'
  */
-long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...) SEC(TRASH);
+long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...);
 
 /**
  * @ingroup mod
@@ -297,7 +284,7 @@ long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...) SEC(TRASH);
  * @param lib the lib's id
  * @return it is depended on 'func'
  */
-long sblmgr_vfsdirexec(enum slib_vfs_idx_t func, int lib, ...) SEC(TRASH);
+long sblmgr_vfsdirexec(enum slib_vfs_idx_t func, int lib, ...);
 
 /* ---------- Common interface ---------- */
 
@@ -310,7 +297,7 @@ long sblmgr_vfsdirexec(enum slib_vfs_idx_t func, int lib, ...) SEC(TRASH);
 typedef struct {
   var_t *var_p; /**< the parameter itself */
   byte byref; /**< parameter can be used as byref */
-}slib_par_t;
+} slib_par_t;
 
 /**
  * @ingroup modstd
@@ -335,47 +322,44 @@ void sblib_close(void);
  *
  * @return the type of the library
  */
-int sblib_type(void);         // returns the 'slib_tp' value (type of API)
+int sblib_type(void);
 
-    /* -------------  Language  ------------- */
+/**
+ * @ingroup modlib
+ *
+ * returns the number of procedures that are supported by the library
+ *
+ * @return the number of the procedures
+ */
+int sblib_proc_count(void);
 
-    /**
-     * @ingroup modlib
-     *
-     * returns the number of procedures that are supported by the library
-     *
-     * @return the number of the procedures
-     */
-    int sblib_proc_count(void);
+/**
+ * @ingroup modlib
+ *
+ * returns the name of the procedure 'index'
+ *
+ * @param index the procedure's index
+ * @param proc_name the buffer to store the name
+ * @return non-zero on success
+ */
+int sblib_proc_getname(int index, char *proc_name);
 
-    /**
-     * @ingroup modlib
-     *
-     * returns the name of the procedure 'index'
-     *
-     * @param index the procedure's index
-     * @param proc_name the buffer to store the name
-     * @return non-zero on success
-     */
-    int sblib_proc_getname(int index, char *proc_name);
-
-    /**
-     * @ingroup modlib
-     *
-     * executes a procedure
-     *
-     * the retval can be used to returns an error-message
-     * in case of an error.
-     *
-     * @param index the procedure's index
-     * @param param_count the number of the parameters
-     * @param params the parameters table
-     * @param retval a var_t object to set the return value
-     * @return non-zero on success
-     */
-    int sblib_proc_exec(int index, int param_count, // executes the 'index'
-    // procedure
-    slib_par_t * params, var_t * retval);
+/**
+ * @ingroup modlib
+ *
+ * executes a procedure
+ *
+ * the retval can be used to returns an error-message
+ * in case of an error.
+ *
+ * @param index the procedure's index
+ * @param param_count the number of the parameters
+ * @param params the parameters table
+ * @param retval a var_t object to set the return value
+ * @return non-zero on success
+ */
+int sblib_proc_exec(int index, int param_count, 
+                    slib_par_t *params, var_t *retval);
 
 /**
  * @ingroup modlib
@@ -395,8 +379,7 @@ int sblib_func_count(void);
  * @param func_name the buffer to store the name
  * @return non-zero on success
  */
-int sblib_func_getname(int index, char *func_name); // returns the 'index'
-// function name
+int sblib_func_getname(int index, char *func_name);
 
 /**
  * @ingroup modlib
@@ -409,9 +392,8 @@ int sblib_func_getname(int index, char *func_name); // returns the 'index'
  * @param retval a var_t object to set the return value
  * @return non-zero on success
  */
-int sblib_func_exec(int index, int param_count, // executes the 'index'
-    // function
-    slib_par_t * params, var_t * retval);
+int sblib_func_exec(int index, int param_count,
+                    slib_par_t *params, var_t *retval);
 
 /* ------------- VFS Driver ------------- */
 
@@ -436,9 +418,8 @@ void sblib_vfsname(char *dest);
  * @param retval a var_t object to set the return value
  * @return non-zero on success
  */
-int sblib_vfs_exec(int index, int param_count,  // executes the 'index'
-    // function
-    slib_par_t * params, slib_par_t * retval);
+int sblib_vfs_exec(int index, int param_count,
+                   slib_par_t *params, slib_par_t *retval);
 
 #if defined(__cplusplus)
   }

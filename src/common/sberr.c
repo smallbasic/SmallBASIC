@@ -95,28 +95,6 @@ void err_file(dword code) {
   rt_raise(FSERR_FMT, code, buf);
 }
 
-#if defined(OS_LIMITED)
-void err_missing_rp(void) {
-  rt_raise(ERR_MISSING_RP);
-}
-
-void err_matdim(void) {
-  rt_raise(ERR_MATRIX_DIM);
-}
-
-void err_syntax(void) {
-  rt_raise(ERR_SYNTAX);
-}
-
-void err_syntaxsep(int c) {
-  rt_raise(ERR_MISSING_SEP, c);
-}
-
-void err_parm_num(void) {
-  rt_raise(ERR_PARCOUNT);
-}
-#endif
-
 void err_stackoverflow(void) {
   rt_raise(ERR_STACK_OVERFLOW);
 }
@@ -245,11 +223,6 @@ void err_bfn_err(long code) {
   rt_raise(ERR_CRITICAL_MISSING_FUNC, code);
 }
 
-void err_gpf(addr_t addr, int bc) {
-  dev_printf(ERR_GPF);
-  rt_raise("SEG:CODE[%d]=%02X", addr, bc);
-}
-
 void err_pcode_err(long pcode) {
   rt_raise(ERR_CRITICAL_MISSING_PROC, pcode);
 }
@@ -260,10 +233,6 @@ void err_chain_err(const char *file) {
 
 void err_run_err(const char *file) {
   rt_raise(ERR_RUN_FILE, file);
-}
-
-void err_invkw(addr_t addr, byte code) {
-  rt_raise(ERR_PARCOUNT_SP, addr, (int) code);
 }
 
 /**

@@ -6,33 +6,29 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 // 
 
-#ifndef ANDROID_DISPLAY
-#define ANDROID_DISPLAY
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
-#include <android/rect.h>
-#include <android_native_app_glue.h>
+#include <SDL.h>
 
 #include "platform/common/maapi.h"
 #include "platform/common/StringLib.h"
 #include "platform/common/graphics.h"
 
-using namespace strlib;
-
 struct Graphics : common::Graphics {
-  Graphics(android_app *app);
+  Graphics(SDL_Window *window);
   virtual ~Graphics();
 
-  bool construct();
+  bool construct(const char *font, const char *boldFont);
   void redraw();
   void resize();
 
 private:
-  bool loadFonts();
-  bool loadFont(const char *name, FT_Face &face, FT_Byte **buffer);
+  bool loadFonts(const char *font, const char *boldFont);
+  bool loadFont(const char *filename, FT_Face &face);
 
-  FT_Byte *_fontBuffer;
-  FT_Byte *_fontBufferB;
-  android_app *_app;
+  SDL_Window *_window;
+  SDL_Surface *_surface;
 };
 
 #endif

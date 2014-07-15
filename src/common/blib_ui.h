@@ -16,11 +16,10 @@
 extern "C" {
 #endif
 
-void ui_reset(void) SEC(BLIB);
-
-void cmd_button(void) SEC(BLIB);
-void cmd_text(void) SEC(BLIB);
-void cmd_doform(void) SEC(BLIB);
+void ui_reset(void);
+void cmd_button(void);
+void cmd_text(void);
+void cmd_doform(void);
 
 #if defined(__cplusplus)
 }

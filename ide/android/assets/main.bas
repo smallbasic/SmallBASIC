@@ -30,7 +30,7 @@ sub about()
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.11.6"
+  print "Version 0.11.8"
   print
   print "Copyright (c) 2002-2014 Chris Warren-Smith"
   print "Copyright (c) 2000-2006 Nic Christopoulos" + chr(10)
@@ -56,7 +56,7 @@ sub setup()
   print boldOn + "Setup web service port number."
   print boldOff
   print "Enter a port number to allow web browser or desktop IDE access. ";
-  print "Enter -1 to diable this feature, or press <enter> to leave ";
+  print "Enter -1 to disable this feature, or press <enter> to leave ";
   print "this screen without making any changes."
   print "The current setting is: " + env("serverSocket")
   print

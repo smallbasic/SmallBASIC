@@ -64,7 +64,6 @@
  * @param t is the text
  * @return 0 on success
  */
-
-int reg_match(const char *p, char *t) SEC(BIO);
+int reg_match(const char *p, char *t);
 
 #endif

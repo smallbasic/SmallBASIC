@@ -549,15 +549,9 @@ void cmd_mkdir() {
  *
  *   TLOAD filename, variable [, type]
  */
-#if defined(OS_LIMITED)
-#define LDLN_INC    16
-#define GROW_SIZE    128
-#define BUFMAX       128
-#else
 #define LDLN_INC    256
 #define GROW_SIZE   1024
 #define BUFMAX       256
-#endif
 
 #define CHK_ERR_CLEANUP(s)                      \
   if (prog_error) {                             \

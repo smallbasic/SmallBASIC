@@ -28,21 +28,21 @@
  * @param Ay the point B
  * @return the length of a line-segment
  */
-double geo_seglen(double Ax, double Ay, double Bx, double By) SEC(BMATH2);
+double geo_seglen(double Ax, double Ay, double Bx, double By);
 
 /**
  * @ingroup math
  *
  * distance of point C from line (A,B)
  */
-double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx, double Cy) SEC(BMATH2);
+double geo_distfromline(double Ax, double Ay, double Bx, double By, double Cx, double Cy);
 
 /**
  * @ingroup math
  *
  * distance of point C from line segment (A->B)
  */
-double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx, double Cy) SEC(BMATH2);
+double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx, double Cy);
 
 /**
  * @ingroup math
@@ -56,7 +56,7 @@ double geo_distfromseg(double Ax, double Ay, double Bx, double By, double Cx, do
  * @param Bdy the second vector (dy)
  * @return the cosine or the sine of two vectors
  */
-double geo_segangle(int type, double Adx, double Ady, double Bdx, double Bdy) SEC(BMATH2);
+double geo_segangle(int type, double Adx, double Ady, double Bdx, double Bdy);
 
 /**
  * @ingroup math
@@ -72,7 +72,6 @@ double geo_segangle(int type, double Adx, double Ady, double Bdx, double Bdy) SE
  * degenerate (number of vertices < 3);  and 2 if area = 0 (and the
  * centroid is undefined).
  */
-int geo_polycentroid(pt_t * poly, int n, var_num_t *xCentroid, var_num_t *yCentroid, var_num_t *area)
-    SEC(BMATH2);
+int geo_polycentroid(pt_t * poly, int n, var_num_t *xCentroid, var_num_t *yCentroid, var_num_t *area);
 
 #endif

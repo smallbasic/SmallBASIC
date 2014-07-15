@@ -10,50 +10,40 @@
 #define RUNTIME_H
 
 #include "config.h"
+#include <SDL.h>
+
 #include "platform/common/maapi.h"
 #include "platform/common/interface.h"
 #include "platform/common/ansiwidget.h"
 #include "platform/common/system.h"
-#include "platform/android/jni/display.h"
-
-#include <android_native_app_glue.h>
+#include "platform/sdl/display.h"
 
 struct Runtime : public System {
-  Runtime(android_app *app);
+  Runtime(SDL_Window *window);
   virtual ~Runtime();
 
-  void clearSoundQueue();
-  void construct();
-  bool getUntrusted();
-  String getString(const char *method);
-  int getUnicodeChar(int keyCode, int metaState);
+  void construct(const char *font, const char *boldFont);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   MAEvent processEvents(int waitFlag);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
-  void playTone(int frq, int dur, int vol, bool bgplay);
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
   void setExit(bool quit);
-  void runShell();
+  int runShell(const char *startupBas, int fontScale);
   char *loadResource(const char *fileName);
-  void optionsBox(StringList *items);
-  void showKeypad(bool show);
   void showAlert(const char *title, const char *message);
+  void optionsBox(StringList *items);
   void onResize(int w, int h);
-  void loadConfig();
-  void loadEnvConfig(Properties &profile, const char *key);
-  void saveConfig();
   void runPath(const char *path);
 
 private:
-  bool _keypadActive;
   Graphics *_graphics;
-  android_app *_app;
   Stack<MAEvent *> *_eventQueue;
-  pthread_mutex_t _mutex;
-  ALooper *_looper;
+  SDL_Window *_window;
+  SDL_Cursor *_cursorHand;
+  SDL_Cursor *_cursorArrow;
 };
 
 #endif

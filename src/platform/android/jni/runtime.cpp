@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -136,7 +136,9 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  runtime->onResize(width, height);
+  if (runtime != NULL && runtime->isActive()) {
+    runtime->onResize(width, height);
+  }
 }
 
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
@@ -212,10 +214,10 @@ String Runtime::getString(const char *methodName) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()Ljava/lang/String;");
-  jstring startupBasObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
-  const char *startupBas = env->GetStringUTFChars(startupBasObj, JNI_FALSE);
-  String result = startupBas;
-  env->ReleaseStringUTFChars(startupBasObj, startupBas);
+  jstring resultObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
+  const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
+  String result = resultStr;
+  env->ReleaseStringUTFChars(resultObj, resultStr);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -469,7 +471,7 @@ void Runtime::optionsBox(StringList *items) {
   }
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "optionsBox", "([Ljava/lang/String;)V");
-  env->CallObjectMethod(_app->activity->clazz, methodId, array);
+  env->CallVoidMethod(_app->activity->clazz, methodId, array);
 
   for (int i = 0; i < items->size(); i++) {
     env->DeleteLocalRef(env->GetObjectArrayElement(array, i));
@@ -560,7 +562,7 @@ void Runtime::showKeypad(bool show) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "showKeypad", "(Z)V");
-  env->CallObjectMethod(_app->activity->clazz, methodId, show);
+  env->CallVoidMethod(_app->activity->clazz, methodId, show);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
@@ -575,7 +577,7 @@ void Runtime::showAlert(const char *title, const char *message) {
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID method = env->GetMethodID(clazz, "showAlert",
                                       "(Ljava/lang/String;Ljava/lang/String;)V");
-  env->CallObjectMethod(_app->activity->clazz, method, titleString, messageString);
+  env->CallVoidMethod(_app->activity->clazz, method, titleString, messageString);
 
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(messageString);

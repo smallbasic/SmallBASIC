@@ -100,8 +100,7 @@ typedef struct {
  * @param flags is the open-mode flags
  * @return a handle to the table
  */
-dbt_t dbt_create(const char *fileName, int flags)
-SEC(PALMFS);
+dbt_t dbt_create(const char *fileName, int flags);
 
 /**
  * @ingroup mem
@@ -110,8 +109,7 @@ SEC(PALMFS);
  *
  * @param f the table's handle
  */
-void dbt_close(dbt_t f)
-SEC(PALMFS);
+void dbt_close(dbt_t f);
 
 /**
  * @ingroup mem
@@ -123,8 +121,7 @@ SEC(PALMFS);
  * @param ptr is the data pointer
  * @param size is the size of the data
  */
-void dbt_write(dbt_t f, int index, void *ptr, int size)
-SEC(PALMFS);
+void dbt_write(dbt_t f, int index, void *ptr, int size);
 
 /**
  * @ingroup mem
@@ -136,8 +133,7 @@ SEC(PALMFS);
  * @param ptr is the data pointer
  * @param size is the size of the data
  */
-void dbt_read(dbt_t f, int index, void *ptr, int size)
-SEC(PALMFS);
+void dbt_read(dbt_t f, int index, void *ptr, int size);
 
 /**
  * @ingroup mem
@@ -148,8 +144,7 @@ SEC(PALMFS);
  * @param index is the index of the element
  * @return the size of the record
  */
-int dbt_recsize(dbt_t f, int index)
-SEC(PALMFS);
+int dbt_recsize(dbt_t f, int index);
 
 /**
  * @ingroup mem
@@ -161,8 +156,7 @@ SEC(PALMFS);
  * @param num is the number of the elements
  * @param size is the size per element
  */
-void dbt_prealloc(dbt_t f, int num, int size)
-SEC(PALMFS);
+void dbt_prealloc(dbt_t f, int num, int size);
 
 /**
  * @ingroup mem
@@ -172,8 +166,7 @@ SEC(PALMFS);
  * @param f the table's handle
  * @return the number of records in VMT
  */
-int dbt_count(dbt_t f)
-SEC(PALMFS);
+int dbt_count(dbt_t f);
 
 /**
  * @ingroup mem
@@ -183,8 +176,7 @@ SEC(PALMFS);
  * @param f the table's handle
  * @param index is the index of the element
  */
-void dbt_remove(dbt_t f, int index)
-SEC(PALMFS);
+void dbt_remove(dbt_t f, int index);
 
 /**
  * @ingroup mem
@@ -199,8 +191,7 @@ SEC(PALMFS);
  * @param varvalue the variable's value
  * @return always 0
  */
-int dbt_setvar(dbt_t f, const char *varname, const char *varvalue)
-SEC(PALMFS);
+int dbt_setvar(dbt_t f, const char *varname, const char *varvalue);
 
 /**
  * @ingroup mem
@@ -213,8 +204,7 @@ SEC(PALMFS);
  * @param varname the variable's name
  * @return if variable not found, returns NULL otherwise returns a newly allocated string with the value
  */
-char *dbt_getvar(dbt_t f, const char *varname)
-SEC(PALMFS);
+char *dbt_getvar(dbt_t f, const char *varname);
 
 #if defined(__cplusplus)
 }

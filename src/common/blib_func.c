@@ -589,10 +589,10 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = (x < 0) ? x + floor(-x) : x - floor(x);
     break;
   case kwDEG:
-    r = x * 180.0 / PI;
+    r = x * 180.0 / SB_PI;
     break;
   case kwRAD:
-    r = x * PI / 180.0;
+    r = x * SB_PI / 180.0;
     break;
   case kwCDBL:
     r = x;

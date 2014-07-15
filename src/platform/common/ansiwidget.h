@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2012 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -13,10 +13,10 @@
 #include <config.h>
 #endif
 
-#if defined(_FLTK) || defined(_TIZEN) || defined(_ANDROID)
-  #include "platform/common/maapi.h"
-#else
+#if defined(_MOSYNC)
   #include <maapi.h>
+#else
+  #include "platform/common/maapi.h"
 #endif
 
 #include "platform/common/StringLib.h"

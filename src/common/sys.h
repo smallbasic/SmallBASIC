@@ -17,8 +17,6 @@
  *
  * CPU_LITTLEENDIAN    The words are stored normal; first the high-byte followed by low-byte (Motorola 68K)
  *
- * CPU_CODESEG64K      64KB code size limit
- *
  * CPU_REG16           16bit registers (64KB code|data segments)
  *
  * <b>OS FLAGS</b>
@@ -30,14 +28,6 @@
  * OS_NAME             OS name!
  *
  * OS_DIRSEP           OS directory separator (unix=/, win=\\)
- *
- * OS_LIMITED          Use few resources.
- *                     SB runs on handhelds but also runs on linux.
- *                     On linux to create a static array of 256 elements
- *                      (like the one for the file-handles) is a joke,
- *                     but on handhelds that is a real pain.
- *                     Also, there are speed optimized code that uses a lot of memory for favour of speed.
- *                     Use this macro for handhelds to reduce the use of memory.
  *
  * OS_FILEHANDLES      Number of file handles to use.
  *                     Because there is a static array with information about each handle,
@@ -131,47 +121,18 @@ typedef long int var_int_t;
 #define OS_PATHNAME_SIZE    1024
 #define OS_FILENAME_SIZE    256
 #define OS_FILEHANDLES      256
-
 #define OS_DIRSEP   '/'
 
-#if defined(CPU_CODESEG64K) && !defined(SMART_LINKER)
-#define SEC(x)  __attribute__((section(#x)))
-#else
-#define SEC(x)
-#endif
-
 // SB's constants
-#define SB_STR_VER VERSION
-#define SB_DWORD_VER  0x908   // 00 (major) 08 (minor) 03 (patch)
-
-#if defined(OS_LIMITED)
-#define SB_PANICMSG_SIZE    255
-#else
+#define SB_STR_VER          VERSION
+#define SB_DWORD_VER        0x908   // 00 (major) 08 (minor) 03 (patch)
 #define SB_PANICMSG_SIZE    1023
-#endif
-
-#if defined(OS_LIMITED)
-#define SB_ERRMSG_SIZE  256
-#else
-#define SB_ERRMSG_SIZE  2048
-#endif
-
-#if defined(OS_LIMITED)
-#define SB_KEYWORD_SIZE     64
-#else
+#define SB_ERRMSG_SIZE      2048
 #define SB_KEYWORD_SIZE     128
-#endif
-
-#if defined(OS_LIMITED)
-#define SB_SOURCELINE_SIZE  511 // compiler - max. text line
-#define SB_TEXTLINE_SIZE    255 // RTL
-#else
 #define SB_SOURCELINE_SIZE  65536 // compiler
 #define SB_TEXTLINE_SIZE    8192  // RTL
-#endif
-
 #define SB_EXEC_STACK_SIZE  256 // executor's stack size
-#define SB_PI   3.14159265358979323846
+#define SB_PI               3.14159265358979323846
 
 // STD MACROS
 #define ABS(x)    ( ((x) < 0) ? -(x) : (x) )            // absolute value

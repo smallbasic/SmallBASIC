@@ -54,6 +54,9 @@ typedef signed long    S32;
  #include <android/log.h>
  #define deviceLog(...) __android_log_print(ANDROID_LOG_INFO, \
                         "smallbasic", __VA_ARGS__)
+#elif defined (_SDL)
+ void appLog(const char *format, ...);
+ #define deviceLog(...) appLog(__VA_ARGS__)
 #endif
 
 #if defined(_DEBUG)
