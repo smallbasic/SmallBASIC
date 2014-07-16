@@ -136,7 +136,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  if (runtime != NULL && runtime->isActive()) {
+  if (runtime != NULL && runtime->isActive() && os_graphics) {
     runtime->onResize(width, height);
   }
 }
@@ -592,8 +592,8 @@ void Runtime::onResize(int width, int height) {
     int h = _graphics->getHeight();
     if (w != width || h != height) {
       trace("Resized from %d %d to %d %d", w, h, width, height);
-      _graphics->setSize(width, height);
       ALooper_acquire(_app->looper);
+      _graphics->setSize(width, height);
       MAEvent *maEvent = new MAEvent();
       maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
       runtime->pushEvent(maEvent);
