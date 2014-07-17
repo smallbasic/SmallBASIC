@@ -885,7 +885,7 @@ bool AnsiWidget::doEscape(char *&p, int textHeight) {
   int escValue = 0;
 
   while (isdigit(*p)) {
-    escValue = (escValue *10) + (*p - '0');
+    escValue = (escValue * 10) + (*p - '0');
     p++;
   }
 

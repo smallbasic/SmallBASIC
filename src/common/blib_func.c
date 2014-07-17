@@ -621,14 +621,84 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
   return r;
 }
 
+//
+// QB-standard:
+// int <- FRE(0) // free memory
+// int <- FRE(-1) // largest block of integers
+// int <- FRE(-2) // free stack
+// int <- FRE(-3) // largest free block
+//
+// Our standard (it is optional for now):
+// int <- FRE(-10) // total ram
+// int <- FRE(-11) // used
+// int <- FRE(-12) // free
+//
+// Optional-set #1: memory related info (-1x)
+// int <- FRE(-13) // shared
+// int <- FRE(-14) // buffers
+// int <- FRE(-15) // cached
+// int <- FRE(-16) // total virtual memory size
+// int <- FRE(-17) // used virtual memory
+// int <- FRE(-18) // free virtual memory
+//
+// Optional-set #2: system related info (-2x)
+//
+// Optional-set #3: file-system related info (-3x)
+//
+// Optional-set #4: battery related info (-4x)
+// int <- FRE(-40) // battery voltage * 1000
+// int <- FRE(-41) // battery percent
+// int <- FRE(-42) // battery critical voltage value * 1000
+// int <- FRE(-43) // battery warning voltage value * 1000
+//
+var_int_t cmd_fre(var_int_t arg) {
+  var_int_t r = 0;
+#if defined(_UnixOS)
+  int memfd = open("/proc/meminfo", O_RDONLY);
+  if (memfd) {
+    ssize_t n;
+    int i_val = 0;
+    char ch;
+
+    for (n = read(memfd, &ch, sizeof(ch));
+         r == 0 && n != 0; n = read(memfd, &ch, sizeof(ch))) {
+      if (ch == ':') {
+        // skip leading white space
+        n = read(memfd, &ch, sizeof(ch));
+        while (n != 0 && ch == ' ') {
+          n = read(memfd, &ch, sizeof(ch));
+        }
+        
+        // read the value
+        long long val = 0;
+        while (n != 0 && isdigit(ch)) {
+          val = (val * 10) + (ch - '0');
+          n = read(memfd, &ch, sizeof(ch));
+        }
+
+        // assumes the first two items are MemTotal, MemFree
+        if (arg == i_val
+            || (arg == -10 && i_val == 0)
+            || (arg == -12 && i_val == 2)) {
+          r = val * 1024 / 1000;
+        }
+        i_val++;
+      }
+    }
+    close(memfd);
+  }
+#endif
+  return r;
+}
+
 /*
  * i <- FUNC (f|i)
  */
 var_int_t cmd_imath1(long funcCode, var_t *arg) {
-  var_int_t r = 0, x;
+  var_int_t r = 0;
 
   IF_ERR_RETURN;
-  x = v_getint(arg);
+  var_int_t x = v_getint(arg);
 
   switch (funcCode) {
   case kwTIMER:
@@ -724,161 +794,11 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     break;
   case kwFRE:
     //
-    // QB-standard:
-    // int <- FRE(0) // free memory
-    // int <- FRE(-1) // largest block of integers
-    // int <- FRE(-2) // free stack
-    // int <- FRE(-3) // largest free block
+    // int <- FRE(n)
     //
-    // Our standard (it is optional for now):
-    // int <- FRE(-10) // total ram
-    // int <- FRE(-11) // used
-    // int <- FRE(-12) // free
-    //
-    // Optional-set #1: memory related info (-1x)
-    // int <- FRE(-13) // shared
-    // int <- FRE(-14) // buffers
-    // int <- FRE(-15) // cached
-    // int <- FRE(-16) // total virtual memory size
-    // int <- FRE(-17) // used virtual memory
-    // int <- FRE(-18) // free virtual memory
-    //
-    // Optional-set #2: system related info (-2x)
-    //
-    // Optional-set #3: file-system related info (-3x)
-    //
-    // Optional-set #4: battery related info (-4x)
-    // int <- FRE(-40) // battery voltage * 1000
-    // int <- FRE(-41) // battery percent
-    // int <- FRE(-42) // battery critical voltage value * 1000
-    // int <- FRE(-43) // battery warning voltage value * 1000
-    //
-  {
-#if defined(_UnixOS)
-    int memfd;
-
-    memfd = open("/proc/meminfo", O_RDONLY);
-    r = 0;
-    if (memfd) {
-      char tmp[1024];
-      char *p, *ps;
-      // total, used, free, shared, buffs, cached;
-      long long vals[6];
-      int i;
-
-      read(memfd, tmp, 1024);
-      if ((p = strstr(tmp, "Mem: ")) != NULL) {
-        p += 4;
-
-        for (i = 0; i < 6; i++) {
-          // word
-          while (*p == ' ' || *p == '\t')
-          p++;
-          ps = p;
-          while (is_digit(*p))
-          p++;
-          *p = '\0';
-          p++;
-
-#if defined(__CYGWIN__)
-          vals[i] = atol(ps);
-#else
-          vals[i] = atoll(ps);
-#endif
-        }
-
-        switch (x) {
-          case 0:
-          r = (vals[2] + vals[4] + vals[5]);
-          break;
-          case -1:
-          r = (vals[2] + vals[4] + vals[5]) / 4;
-          break;
-          case -2:
-          r = (vals[2] + vals[4] + vals[5]);
-          break;
-          case -3:
-          r = (vals[2] + vals[4] + vals[5]);
-          break;
-          default:
-          if ((x <= -10) && (x >= -15))
-          r = vals[(-x) - 10];
-          else
-          r = 0;
-        };
-      }
-      close(memfd);
-    }
-#elif defined (_FRANKLIN_EBM)
-    switch (x) {
-      case 0:
-      case -3:
-      case -12:
-      r = Sigma_GetAvailableMem();
-      break;
-      case -1:
-      r = Sigma_GetAvailableMem() / 4L;
-      break;
-      case -10:
-      r = Sigma_GetPhysicalMemSize();
-      break;
-      case -11:
-      r = Sigma_GetPhysicalMemSize() - Sigma_GetAvailableMem();
-      break;
-      case -40:
-      r = BAT_GetVoltage() * 10;
-      break;
-      case -41:
-      r = BAT_GetPercent();
-      break;
-      default:
-      r = 0;
-    }
-#elif defined(_DOS)
-    switch (x) {
-      case 0:                  // free mem
-      case -12:
-      r = _go32_dpmi_remaining_physical_memory();
-      break;
-      case -1: {
-        __dpmi_free_mem_info mi;
-        _go32_dpmi_get_free_memory_information(&mi);
-        r = mi.largest_available_free_block_in_bytes / 4L;
-      }
-      break;
-      case -2:                 // stk
-      r = stackavail();
-      break;
-      case -3: {
-        __dpmi_free_mem_info mi;
-        _go32_dpmi_get_free_memory_information(&mi);
-        r = mi.largest_available_free_block_in_bytes;
-      }
-      break;
-    }
-#elif defined(_WinBCB)
-    MEMORYSTATUS ms;
-    ms.dwLength = sizeof(MEMORYSTATUS);
-    GlobalMemoryStatus(&ms);
-
-    switch (x) {
-      case 0:                  // free mem
-      case -3:// largest block
-      case -12:// free mem
-      r = ms.dwAvailPhys;
-      break;
-      case -1:// int
-      r = ms.dwAvailPhys / 4L;
-      break;
-      case -2:// stk
-      r = 0x120000;
-      break;
-    }
-#else
-    r = 0;
-#endif
-  }
+    r = cmd_fre(x);
     break;
+
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (3)", funcCode);
   };
@@ -887,7 +807,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
 }
 
 //
-//      i|f <- FUNC (str)
+// i|f <- FUNC (str)
 //
 void cmd_ns1(long funcCode, var_t * arg, var_t * r) {
   IF_ERR_RETURN;
