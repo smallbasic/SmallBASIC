@@ -654,10 +654,14 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
 var_int_t cmd_fre(var_int_t arg) {
   var_int_t r = 0;
 #if defined(_UnixOS)
+  // assumes first two items are total + free
+  #define I_MEM_TOTAL 0
+  #define I_MEM_FREE  1
   int memfd = open("/proc/meminfo", O_RDONLY);
   if (memfd) {
-    ssize_t n;
     int i_val = 0;
+    var_int_t total = 0;
+    ssize_t n;
     char ch;
 
     for (n = read(memfd, &ch, sizeof(ch));
@@ -676,11 +680,17 @@ var_int_t cmd_fre(var_int_t arg) {
           n = read(memfd, &ch, sizeof(ch));
         }
 
-        // assumes the first two items are MemTotal, MemFree
         if (arg == i_val
-            || (arg == -10 && i_val == 0)
-            || (arg == -12 && i_val == 2)) {
+            || (arg == -10 && i_val == I_MEM_TOTAL)
+            || (arg == -12 && i_val == I_MEM_FREE)) {
           r = val * 1024 / 1000;
+        }
+        if (i_val == I_MEM_TOTAL) {
+          total = val;
+        }
+        else if (i_val == I_MEM_FREE && arg == -11) {
+          // return used memory
+          r = (total - val) * 1024 / 1000;
         }
         i_val++;
       }

@@ -176,9 +176,9 @@ void Runtime::pollEvents(bool blocking) {
       case SDL_KEYDOWN:
         if (ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) {
           runtime->setExit(true);
-        } else if (ev.key.keysym.sym == SDLK_HOME && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (ev.key.keysym.sym == SDLK_m && (ev.key.keysym.mod & KMOD_CTRL)) {
           showMenu();
-        } else if (ev.key.keysym.sym == SDLK_BACKSPACE && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
           setBack();
         } else {
           maEvent = new MAEvent();
