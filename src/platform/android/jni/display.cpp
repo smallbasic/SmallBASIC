@@ -15,7 +15,6 @@
 
 #define FONT_FACE_REGULAR "Envy Code R.ttf"
 #define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
-#define SIZE_LIMIT 10
 
 extern common::Graphics *graphics;
 
@@ -155,16 +154,4 @@ bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {
 void maUpdateScreen(void) {
   ((Graphics *)graphics)->redraw();
 }
-
-int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
-  int result = RES_OK;
-  if (height > graphics->getHeight() * SIZE_LIMIT) {
-    result -= 1;
-  } else {
-    Canvas *drawable = (Canvas *)maHandle;
-    result = drawable->create(width, height) ? RES_OK : -1;
-  }
-  return result;
-}
-
 

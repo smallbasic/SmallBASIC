@@ -7,7 +7,7 @@
   <!-- This is the platform API where NativeActivity was introduced. -->
   <uses-sdk android:minSdkVersion="9" />
 
-  <!-- This .apk has no Java code itself, so set hasCode to false. -->
+  <!-- This .apk has Java code, so set hasCode to true. -->
   <application android:label="@string/app_name"
                android:hasCode="true"
                android:hardwareAccelerated="true"

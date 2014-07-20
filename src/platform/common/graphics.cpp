@@ -381,3 +381,14 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
   return graphics->setDrawTarget(maHandle);
 }
 
+int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
+  int result = RES_OK;
+  int maxSize = max(graphics->getWidth(), graphics->getHeight());
+  if (height > maxSize * MAX_CANVAS_SIZE) {
+    result -= 1;
+  } else {
+    Canvas *drawable = (Canvas *)maHandle;
+    result = drawable->create(width, height) ? RES_OK : -1;
+  }
+  return result;
+}

@@ -12,8 +12,9 @@
 typedef uint16_t pixel_t;
 
 #if defined(_SDL)
-
 #include <SDL.h>
+#define MAX_CANVAS_SIZE 10
+
 struct Canvas {
   Canvas();
   virtual ~Canvas();
@@ -33,8 +34,9 @@ struct Canvas {
 };
 
 #else
-
 #include <android/rect.h>
+#define MAX_CANVAS_SIZE 10
+
 struct Canvas {
   Canvas();
   virtual ~Canvas();

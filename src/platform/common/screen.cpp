@@ -498,12 +498,17 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
     dstPoint.x = 0;
     dstPoint.y = 0;
 
-    maCreateDrawableImage(newImage, newImageWidth, newImageHeight);
-    maSetDrawTarget(newImage);
-    maSetColor(_bg);
-    maFillRect(0, 0, newImageWidth, newImageHeight);
-    maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
-    maDestroyPlaceholder(_image);
+    if (maCreateDrawableImage(newImage, newImageWidth, newImageHeight) == RES_OK) {
+      maSetDrawTarget(newImage);
+      maSetColor(_bg);
+      maFillRect(0, 0, newImageWidth, newImageHeight);
+      maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
+      maDestroyPlaceholder(_image);
+    } else {
+      // cannot resize - alert and abort
+      deviceLog("Failed to resize to %d %d", newImageWidth, newImageHeight);
+      abort();
+    }
 
     _image = newImage;
     _imageWidth = newImageWidth;
