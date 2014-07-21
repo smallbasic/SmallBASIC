@@ -140,14 +140,12 @@ void Widget::drawButton(const char *caption, int dx, int dy,
 
 void Widget::drawLink(const char *caption, int dx, int dy, int sw, int chw) {
   maSetColor(_fg);
-
   int len = strlen(caption);
   int width = min(sw, _width) - dx;
-  if ((len * chw) > sw - width) {
+  if ((len * chw) > width) {
     int len = width / chw;
     char *buffer = new char[len + 1];
-    strncpy(buffer, caption, len - 2);
-    buffer[len - 2] = '~';
+    strncpy(buffer, caption, len - 1);
     buffer[len - 1] = '~';
     buffer[len] = 0;
     maDrawText(dx, dy, buffer);
