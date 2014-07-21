@@ -128,7 +128,7 @@ void Screen::drawOverlay(bool vscroll) {
     Shape *rect = (*it);
     if (rect->_y >= _scrollY && 
         rect->_y + rect->_height <= _scrollY + _height) {
-      rect->draw(_x + rect->_x, _y + rect->_y - _scrollY);
+      rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), _charWidth);
     }
   }
 

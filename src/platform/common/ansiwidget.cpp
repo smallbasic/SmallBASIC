@@ -138,11 +138,25 @@ void Widget::drawButton(const char *caption, int dx, int dy,
   }
 }
 
-void Widget::drawLink(const char *caption, int dx, int dy) {
+void Widget::drawLink(const char *caption, int dx, int dy, int sw, int chw) {
   maSetColor(_fg);
-  maDrawText(dx, dy, caption);
+
+  int len = strlen(caption);
+  int width = min(sw, _width) - dx;
+  if ((len * chw) > sw - width) {
+    int len = width / chw;
+    char *buffer = new char[len + 1];
+    strncpy(buffer, caption, len - 2);
+    buffer[len - 2] = '~';
+    buffer[len - 1] = '~';
+    buffer[len] = 0;
+    maDrawText(dx, dy, buffer);
+    delete [] buffer;
+  } else {
+    maDrawText(dx, dy, caption);
+  }
   maSetColor(_pressed ? _fg : _bg);
-  maLine(dx + 2, dy + _height + 1, dx + _width, dy + _height + 1);
+  maLine(dx + 2, dy + _height - 1, dx + min(sw, _width), dy + _height - 1);
 }
 
 bool Widget::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
@@ -218,7 +232,7 @@ FormLineInput::FormLineInput(Screen *screen, char *buffer, int maxSize,
   _scroll(0) {
 }
 
-void FormLineInput::draw(int dx, int dy) {
+void FormLineInput::draw(int dx, int dy, int sw, int chw) {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(dx, dy, _width, _height);
   maSetColor(_fg);
@@ -856,11 +870,11 @@ Widget *AnsiWidget::createLink(const char *action, const char *text,
     _back->_linePadding = BUTTON_PADDING;
   }
   if (_back->_curX + w >= _width) {
-    w = _width - _back->_curX; // clipped
-    _back->newLine(EXTENT_Y(textSize) + LINE_SPACING);
-  } else {
-    _back->_curX += w;
+    // clipped
+    w = _width - _back->_curX - BUTTON_PADDING;
   }
+  _back->_curX += w;
+
   Widget *result;
   if (formLink) {
     result = new FormLink(_back, action, x, y, w, h);
@@ -986,7 +1000,7 @@ void AnsiWidget::drawActiveButton() {
   int x = _focus->_x + _activeButton->_x;
   int y = _focus->_y + _activeButton->_y - _focus->_scrollY;
   maSetClipRect(x, y, _activeButton->_width, _activeButton->_height + 2);
-  _activeButton->draw(x, y);
+  _activeButton->draw(x, y, _front->w(), _front->_charWidth);
   maUpdateScreen();
   maResetBacklight();
   maSetDrawTarget(currentHandle);

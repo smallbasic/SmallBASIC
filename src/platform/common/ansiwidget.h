@@ -4,7 +4,7 @@
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-// 
+//
 
 #ifndef ANSIWIDGET_H
 #define ANSIWIDGET_H
@@ -37,7 +37,7 @@ struct Widget : public Shape {
   virtual void clicked(IButtonListener *listener, int x, int y) = 0;
   virtual bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   void drawButton(const char *caption, int x, int y, int w, int h, bool pressed);
-  void drawLink(const char *caption, int x, int y);
+  void drawLink(const char *caption, int x, int y, int sw, int chw);
   int getBackground(int buttonColor);
 
   bool _pressed;
@@ -60,7 +60,9 @@ struct TextButton : public Button {
   TextButton(Screen *screen, const char *action, const char *label,
              int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {}
-  void draw(int x, int y) { drawLink(_label.c_str(), x, y); }
+  void draw(int x, int y, int bw, int cw) {
+    drawLink(_label.c_str(), x, y, bw, cw);
+  }
 };
 
 // internal block button
@@ -68,8 +70,8 @@ struct BlockButton : public Button {
   BlockButton(Screen *screen, const char *action, const char *label,
               int x, int y, int w, int h) :
   Button(screen, action, label, x, y, w, h) {}
-  void draw(int x, int y) { 
-    drawButton(_label.c_str(), x, y, _width, _height, _pressed); 
+  void draw(int x, int y, int bw, int cw) {
+    drawButton(_label.c_str(), x, y, _width, _height, _pressed);
   }
 };
 
@@ -105,8 +107,8 @@ struct FormButton : public FormWidget {
   virtual ~FormButton() {}
 
   const char *getText() const { return _caption.c_str(); }
-  void draw(int x, int y) { 
-    drawButton(_caption.c_str(), x, y, _width, _height, _pressed); 
+  void draw(int x, int y, int sw, int chw) {
+    drawButton(_caption.c_str(), x, y, _width, _height, _pressed);
   }
   void clicked(IButtonListener *listener, int x, int y);
   void setText(const char *text) { _caption = text; }
@@ -120,7 +122,7 @@ struct FormLabel : public FormWidget {
   virtual ~FormLabel() {}
 
   const char *getText() const { return _caption.c_str(); }
-  void draw(int x, int y) { 
+  void draw(int x, int y, int sw, int chw) {
     drawButton(_caption.c_str(), x, y, _width, _height, false);
   }
   void setText(const char *text) { _caption = text; }
@@ -134,19 +136,21 @@ struct FormLink : public FormWidget {
   virtual ~FormLink() {}
 
   const char *getText() const { return _link.c_str(); }
-  void draw(int x, int y) { drawLink(_link.c_str(), x, y); }
+  void draw(int x, int y, int sw, int chw) {
+    drawLink(_link.c_str(), x, y, sw, chw);
+  }
 
 private:
   String _link;
 };
 
 struct FormLineInput : public FormWidget {
-  FormLineInput(Screen *screen, char *buffer, int maxSize, 
+  FormLineInput(Screen *screen, char *buffer, int maxSize,
                 int x, int y, int w, int h);
   virtual ~FormLineInput() {}
 
   void close();
-  void draw(int x, int y);
+  void draw(int x, int y, int sw, int chw);
   bool edit(int key);
   const char *getText() const { return _buffer; }
   void setText(const char *text) {}
@@ -158,7 +162,7 @@ private:
 };
 
 struct FormList : public FormWidget {
-  FormList(Screen *screen, IFormWidgetListModel *model, 
+  FormList(Screen *screen, IFormWidgetListModel *model,
            int x, int y, int w, int h);
   virtual ~FormList() {}
 
@@ -173,7 +177,7 @@ protected:
 };
 
 struct FormDropList : public FormList {
-  FormDropList(Screen *screen, IFormWidgetListModel *model, 
+  FormDropList(Screen *screen, IFormWidgetListModel *model,
                int x, int y, int w, int h);
   void clicked(IButtonListener *listener, int x, int y);
   void draw(int dx, int dy);
@@ -189,7 +193,7 @@ private:
 };
 
 struct FormListBox : public FormList {
-  FormListBox(Screen *screen, IFormWidgetListModel *model, 
+  FormListBox(Screen *screen, IFormWidgetListModel *model,
               int x, int y, int w, int h);
   void clicked(IButtonListener *listener, int x, int y);
   void draw(int dx, int dy);
@@ -264,7 +268,7 @@ private:
 
   Screen *_screens[MAX_SCREENS];
   Screen *_back;   // screen being painted/written
-  Screen *_front;  // screen to display 
+  Screen *_front;  // screen to display
   Screen *_focus;  // screen with the active button
   int _width;      // device screen width
   int _height;     // device screen height
