@@ -7,6 +7,10 @@
   <!-- This is the platform API where NativeActivity was introduced. -->
   <uses-sdk android:minSdkVersion="9" />
 
+  <!-- support large + xlarge screens to avoid compatibility mode -->
+  <supports-screens android:largeScreens="true" />
+  <supports-screens android:xlargeScreens="true" />
+
   <!-- This .apk has Java code, so set hasCode to true. -->
   <application android:label="@string/app_name"
                android:hasCode="true"

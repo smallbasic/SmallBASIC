@@ -24,11 +24,10 @@
 #include "common/fs_socket_client.h"
 
 #define WAIT_INTERVAL 10
-#define DEFAULT_FONT_SIZE 30
 #define MAIN_BAS "__main_bas__"
 #define CONFIG_FILE "/settings.txt"
 #define PATH_KEY "path"
-#define FONT_SCALE_KEY "fontScale"
+#define FONT_SCALE_KEY "fontScale2"
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
 
@@ -223,6 +222,17 @@ String Runtime::getString(const char *methodName) {
   return result;
 }
 
+int Runtime::getInteger(const char *methodName) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()I");
+  jint result = env->CallIntMethod(_app->activity->clazz, methodId);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
+}
+
 int Runtime::getUnicodeChar(int keyCode, int metaState) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
@@ -309,8 +319,11 @@ void Runtime::loadConfig() {
   String path;
   Properties profile;
 
+  int fontSize = getInteger("getStartupFontSize");
+  trace("fontSize = %d", fontSize);
+
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  _output->setFontSize(DEFAULT_FONT_SIZE);
+  _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
 
   path.append(_app->activity->internalDataPath);

@@ -48,7 +48,7 @@
 
 #define BUTTON_PADDING 10
 #define OVER_SCROLL 100
-
+#define H_SCROLL_SIZE 5
 #define SWIPE_MAX_TIMER 3000
 #define SWIPE_DELAY_STEP 200
 #define SWIPE_MAX_DURATION 300
@@ -783,8 +783,9 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
     if (vscroll < 0) {
       vscroll = 0;
     }
-    if ((hscroll != _front->_scrollX && maxHScroll > 0 &&
-         hscroll <= maxHScroll) ||
+    if ((abs(hscroll - _front->_scrollX) > H_SCROLL_SIZE
+         && maxHScroll > 0
+         && hscroll <= maxHScroll) ||
         (vscroll != _front->_scrollY && maxVScroll > 0 &&
          vscroll < maxVScroll + OVER_SCROLL)) {
       _front->drawInto();

@@ -38,12 +38,15 @@ import android.app.NativeActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.InputDevice;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -59,6 +62,7 @@ public class MainActivity extends NativeActivity {
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
+  private static final int BASE_FONT_SIZE = 20;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -106,6 +110,11 @@ public class MainActivity extends NativeActivity {
 
   public String getStartupBas() {
     return this._startupBas == null ? "" : this._startupBas;
+  }
+
+  public int getStartupFontSize() {
+    DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+    return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, BASE_FONT_SIZE, metrics);
   }
 
   public int getUnicodeChar(int keyCode, int metaState) {
