@@ -2,10 +2,10 @@
 <project name="SmallBASIC" default="help">
 
   <!-- Build requires the following setup:
-       ln -s jni -> ../../src/platform/android/jni
-       ln -s libs -> ../../src/platform/android/libs/
-       ln -s obj -> ../../src/platform/android/obj/
-       src -> ../../src/platform/android/src/
+       ln -s ../../src/platform/android/jni jni
+       ln -s ../../src/platform/android/libs libs
+       ln -s ../../src/platform/android/obj obj
+       ln -s ../../src/platform/android/src src
   -->
   
   <!-- The local.properties file is created and updated by the 'android' tool.

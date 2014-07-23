@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.10])
+AC_INIT([smallbasic], [0.11.11])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -511,7 +511,7 @@ function buildTizen() {
 }
 
 function buildAndroid() {
-   TARGET="Building common library for Android."
+   TARGET="Building for Android."
 
    defaultConditionals
 
@@ -528,7 +528,7 @@ function buildAndroid() {
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
 
-   BUILD_SUBDIRS="src/platform/android/common"
+   BUILD_SUBDIRS="src/platform/android"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -654,7 +654,7 @@ src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/mosync/common/Makefile
 src/platform/tizen/common/Makefile
-src/platform/android/common/Makefile
+src/platform/android/Makefile
 ])
 AC_OUTPUT
 

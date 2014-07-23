@@ -5,17 +5,13 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-# see: ~/android-sdk/android-ndk-r9b/docs/ANDROID-MK.html
-
-LOCAL_PATH := $(call my-dir)
-SB_HOME := $(LOCAL_PATH)/../../../..
+JNI_PATH := $(call my-dir)
+SB_HOME := $(JNI_PATH)/../../../..
 PNG_HOME := $(HOME)/android-sdk/libpng-1.6.12/png
 FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.3/freetype
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := sb_common
-LOCAL_SRC_FILES := ../common/libsb_common.a
-include $(PREBUILT_STATIC_LIBRARY)
+include $(call all-subdir-makefiles)
+LOCAL_PATH := $(JNI_PATH)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := png
