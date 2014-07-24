@@ -8,7 +8,7 @@
 JNI_PATH := $(call my-dir)
 SB_HOME := $(JNI_PATH)/../../../..
 PNG_HOME := $(HOME)/android-sdk/libpng-1.6.12/png
-FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.3/freetype
+FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.3
 
 include $(call all-subdir-makefiles)
 LOCAL_PATH := $(JNI_PATH)
@@ -19,16 +19,11 @@ LOCAL_SRC_FILES := $(PNG_HOME)/lib/libpng.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := freetype
-LOCAL_SRC_FILES := $(FREETYPE_HOME)/lib/libfreetype.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE     := smallbasic
 LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1
 LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src \
-                    $(FREETYPE_HOME)/include \
-                    $(FREETYPE_HOME)/include/freetype2
+                    $(FREETYPE_HOME)/freetype/include \
+                    $(FREETYPE_HOME)/freetype/include/freetype2
 LOCAL_SRC_FILES  := main.cpp \
                     display.cpp \
                     runtime.cpp \

@@ -12,9 +12,7 @@
 #include "common/var.h"
 #include "common/smbas.h"
 #include "common/var_hash.h"
-
-#if defined(HAVE_SEARCH_H)
-#include <search.h>
+#include "common/search.h"
 
 /**
  * Globals for callback access
@@ -45,35 +43,6 @@ typedef struct Element {
 typedef struct Node {
   Element *element;
 } Node;
-
-#if !defined(tdestroy) && !defined(HAVE_TDESTROY)
-// tdestroy() is missing from MingW. include code from gnu clib _search.c
-
-typedef struct node_t {
-  void *key;
-  struct node_t *left, *right;
-} node;
-
-typedef void (*__free_fn_t) (void *__nodep);
-
-tdestroy_recurse(node *root, __free_fn_t freefct) {
-  if (root->left != NULL) {
-    tdestroy_recurse(root->left, freefct);
-  }
-  if (root->right != NULL) {
-    tdestroy_recurse(root->right, freefct);
-  }
-  (*freefct) ((void *) root->key);
-  free(root);
-}
-
-void tdestroy(void *vroot, __free_fn_t freefct) {
-  node *root = (node *) vroot;
-  if (root != NULL) {
-    tdestroy_recurse (root, freefct);
-  }
-}
-#endif
 
 /**
  * Returns a new Element 
@@ -292,32 +261,4 @@ void hash_write(const var_p_t var_p, int method, int handle) {
     pv_write("]", method, handle);
   }
 }
-
-#else
-
-// search.h not supported on this platform
-int hash_compare(const var_p_t var_a, const var_p_t var_b) {
-}
-int hash_is_empty(const var_p_t var_p) {
-}
-int hash_to_int(const var_p_t var_p) {
-}
-int hash_length(const var_p_t var_p) {
-}
-var_p_t hash_elem(const var_p_t var_p, int index) {
-}
-void hash_clear(const var_p_t var_p) {
-}
-void hash_free_var(var_p_t var_p) {
-}
-void hash_get_value(var_p_t base, var_p_t key, var_p_t *result) {
-}
-void hash_set(var_p_t dest, const var_p_t src) {
-}
-void hash_to_str(const var_p_t var_p, char *out, int max_len) {
-}
-void hash_write(const var_p_t var_p, int method, int handle) {
-}
-
-#endif
 

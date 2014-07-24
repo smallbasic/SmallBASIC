@@ -51,6 +51,7 @@ LOCAL_SRC_FILES  :=															\
     $(COMMON)/scan.c														\
     $(COMMON)/str.c															\
     $(COMMON)/tasks.c														\
+    $(COMMON)/search.c													\
     $(COMMON)/var_uds.c													\
     $(COMMON)/var_hash.c												\
     $(COMMON)/keymap.c													\

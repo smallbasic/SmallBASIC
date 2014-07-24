@@ -123,14 +123,6 @@ function checkPCRE() {
    fi
 }
 
-function checkSearch() {
-   have_saerch="maybe"
-   AC_CHECK_HEADER(search.h, [have_search="yes"], [have_search="no"])
-   if test x$have_search = xyes ; then
-      AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
-   fi
-}
-
 function defaultConditionals() {
    AM_CONDITIONAL(WITH_HILDON, false)
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
@@ -633,7 +625,6 @@ else
    buildConsole
 fi  
 
-checkSearch
 checkPCRE
 checkDebugMode
 checkForWindows

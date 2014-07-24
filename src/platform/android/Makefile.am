@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-all-am: Makefile ant-build
+all-am: Makefile ndk-build-test
 
 ndk-build-test:
 	(cd jni && ${NDK}/ndk-build NDK_DEBUG=1)
@@ -18,3 +18,7 @@ test: ant-build-test
    adb -a logcat -c && \
    adb -a shell am start net.sourceforge.smallbasic/net.sourceforge.smallbasic.MainActivity && \
    adb -a logcat)
+
+clean-am: 
+	(cd jni && ${NDK}/ndk-build clean)
+
