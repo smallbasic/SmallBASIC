@@ -65,6 +65,9 @@ deb:
 test:
 	(cd $(SUBDIRS) && make test)
 
+release:
+	(cd $(SUBDIRS) && make release)
+
 # produce a stack dump
 ndk-stack:
 	adb logcat | ${NDK}/ndk-stack -sym src/platform/android/obj/local/armeabi

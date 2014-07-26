@@ -22,3 +22,9 @@ test: ant-build-test
 clean-am: 
 	(cd jni && ${NDK}/ndk-build clean)
 
+ndk-build-release:
+	(cd jni && ${NDK}/ndk-build NDK_DEBUG=0)
+
+release: ndk-build-release
+	(cd ../../../ide/android && ant release install)
+

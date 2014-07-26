@@ -15,7 +15,8 @@ import android.util.Log;
 @TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class Sound {
   private static final String TAG = "smallbasic";
-  static final int AUDIO_SAMPLE_RATE = 8000;
+  private static final int AUDIO_SAMPLE_RATE = 8000;
+  private static final int WAVE_MAX = 32000;
   private byte[] _sound;
   private float _volume;
   private int _dur;
@@ -78,7 +79,7 @@ public class Sound {
       // Ramp amplitude up (to avoid clicks)
       double dVal = sample[i];
       // Ramp up to maximum
-      final short val = (short) ((dVal * 32767 * i / ramp));
+      final short val = (short) ((dVal * WAVE_MAX * i / ramp));
       // in 16 bit wav PCM, first byte is the low order byte
       result[idx++] = (byte) (val & 0x00ff);
       result[idx++] = (byte) ((val & 0xff00) >>> 8);
@@ -89,7 +90,7 @@ public class Sound {
       // Max amplitude for most of the samples
       double dVal = sample[i];
       // scale to maximum amplitude
-      final short val = (short) ((dVal * 32767));
+      final short val = (short) ((dVal * WAVE_MAX));
       // in 16 bit wav PCM, first byte is the low order byte
       result[idx++] = (byte) (val & 0x00ff);
       result[idx++] = (byte) ((val & 0xff00) >>> 8);
@@ -100,7 +101,7 @@ public class Sound {
       // Ramp amplitude down
       double dVal = sample[i];
       // Ramp down to zero
-      final short val = (short) ((dVal * 32767 * (numSamples - i) / ramp));
+      final short val = (short) ((dVal * WAVE_MAX * (numSamples - i) / ramp));
       // in 16 bit wav PCM, first byte is the low order byte
       result[idx++] = (byte) (val & 0x00ff);
       result[idx++] = (byte) ((val & 0xff00) >>> 8);

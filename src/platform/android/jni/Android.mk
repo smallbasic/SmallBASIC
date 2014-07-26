@@ -13,10 +13,10 @@ FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.3
 include $(call all-subdir-makefiles)
 LOCAL_PATH := $(JNI_PATH)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := png
-LOCAL_SRC_FILES := $(PNG_HOME)/lib/libpng.a
-include $(PREBUILT_STATIC_LIBRARY)
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := png
+#LOCAL_SRC_FILES := $(PNG_HOME)/lib/libpng.a
+#include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE     := smallbasic

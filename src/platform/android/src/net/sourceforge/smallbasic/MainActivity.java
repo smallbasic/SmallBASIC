@@ -48,8 +48,11 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.InputDevice;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
@@ -67,6 +70,7 @@ public class MainActivity extends NativeActivity {
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
+  private String[] options = null;
 
   static {
     System.loadLibrary("smallbasic");
@@ -142,19 +146,38 @@ public class MainActivity extends NativeActivity {
     onResize(rect.width(), rect.height());
   }
 
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    if (this.options != null) {
+      int index = 0;
+      while (index < this.options.length) {
+        if (options[index].equals(item.toString())) {
+          break;
+        }
+        index++;
+      }
+      Log.i(TAG, "items clicked = " + index);
+      optionSelected(index);
+    }
+    return true;
+  }
+  
+  @Override
+  public boolean onPrepareOptionsMenu(Menu menu) {
+    if (this.options != null) {
+      menu.clear();
+      for (String option : this.options) {
+        menu.add(option);
+      }
+    }
+    return super.onPrepareOptionsMenu(menu);
+  }
+
   public void optionsBox(final String[] items) {
-    final Activity activity = this;
+    this.options = items;
     runOnUiThread(new Runnable() {
       public void run() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int index) {
-            Log.i(TAG, "items clicked = " + index);
-            optionSelected(index);
-          }
-        });
-        builder.create().show();
+        openOptionsMenu();
       }
     });
   }
