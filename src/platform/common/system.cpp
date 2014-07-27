@@ -19,7 +19,7 @@
 #include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
 
-#define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source|Restart"
+#define SYSTEM_MENU   "\033[ OConsole|Show keypad|View source|Restart"
 #define MENU_CONSOLE  0
 #define MENU_KEYPAD   1
 #define MENU_SOURCE   2
