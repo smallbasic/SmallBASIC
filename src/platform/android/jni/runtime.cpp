@@ -24,11 +24,10 @@
 #include "common/fs_socket_client.h"
 
 #define WAIT_INTERVAL 10
-#define DEFAULT_FONT_SIZE 30
 #define MAIN_BAS "__main_bas__"
 #define CONFIG_FILE "/settings.txt"
 #define PATH_KEY "path"
-#define FONT_SCALE_KEY "fontScale"
+#define FONT_SCALE_KEY "fontScale2"
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
 
@@ -136,7 +135,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  if (runtime != NULL && runtime->isActive()) {
+  if (runtime != NULL && runtime->isActive() && os_graphics) {
     runtime->onResize(width, height);
   }
 }
@@ -218,6 +217,17 @@ String Runtime::getString(const char *methodName) {
   const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
   String result = resultStr;
   env->ReleaseStringUTFChars(resultObj, resultStr);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
+}
+
+int Runtime::getInteger(const char *methodName) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()I");
+  jint result = env->CallIntMethod(_app->activity->clazz, methodId);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -309,8 +319,11 @@ void Runtime::loadConfig() {
   String path;
   Properties profile;
 
+  int fontSize = getInteger("getStartupFontSize");
+  trace("fontSize = %d", fontSize);
+
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  _output->setFontSize(DEFAULT_FONT_SIZE);
+  _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
 
   path.append(_app->activity->internalDataPath);
@@ -592,8 +605,8 @@ void Runtime::onResize(int width, int height) {
     int h = _graphics->getHeight();
     if (w != width || h != height) {
       trace("Resized from %d %d to %d %d", w, h, width, height);
-      _graphics->setSize(width, height);
       ALooper_acquire(_app->looper);
+      _graphics->setSize(width, height);
       MAEvent *maEvent = new MAEvent();
       maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
       runtime->pushEvent(maEvent);

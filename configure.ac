@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.8])
+AC_INIT([smallbasic], [0.11.11])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -120,14 +120,6 @@ function checkPCRE() {
    if test "${have_pcre}" = "yes" ; then
      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])
      PACKAGE_LIBS="${PACKAGE_LIBS} `pcre-config --libs`"
-   fi
-}
-
-function checkSearch() {
-   have_saerch="maybe"
-   AC_CHECK_HEADER(search.h, [have_search="yes"], [have_search="no"])
-   if test x$have_search = xyes ; then
-      AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
    fi
 }
 
@@ -511,7 +503,7 @@ function buildTizen() {
 }
 
 function buildAndroid() {
-   TARGET="Building common library for Android."
+   TARGET="Building for Android."
 
    defaultConditionals
 
@@ -528,7 +520,7 @@ function buildAndroid() {
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
 
-   BUILD_SUBDIRS="src/platform/android/common"
+   BUILD_SUBDIRS="src/platform/android"
    AC_SUBST(BUILD_SUBDIRS)
 }
 
@@ -633,7 +625,6 @@ else
    buildConsole
 fi  
 
-checkSearch
 checkPCRE
 checkDebugMode
 checkForWindows
@@ -654,7 +645,7 @@ src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/mosync/common/Makefile
 src/platform/tizen/common/Makefile
-src/platform/android/common/Makefile
+src/platform/android/Makefile
 ])
 AC_OUTPUT
 

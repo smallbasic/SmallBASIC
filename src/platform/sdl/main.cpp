@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
 
   restoreSettings(CONFIG_NAME, rect, fontScale);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-  SDL_Window *window = SDL_CreateWindow("SmallBASIC", 
+  SDL_Window *window = SDL_CreateWindow("SmallBASIC - [Break=Ctrl+c] [Menu=Ctrl+m] [Back=Ctrl+b]", 
                                         rect.x, rect.y, rect.w, rect.h,
                                         SDL_WINDOW_SHOWN | 
                                         SDL_WINDOW_RESIZABLE |

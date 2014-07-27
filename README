@@ -30,13 +30,13 @@ Then use it to cross-compile the tools:
   make
   make install DESTDIR=$(pwd)
 
-3. Build common
+3. setup config.h
 
-./configure --enable-android --host=arm-linux-androideabi
+./configure --enable-android
 
 4. Build the native activity
 
-$ cd src/platform/andoid/jni && $NDK/ndk-build
+$ cd src/platform/andoid/jni && $NDK/ndk-build NDK_DEBUG=0
 
 $ cd - && cd ide/android/ && ant release install
 

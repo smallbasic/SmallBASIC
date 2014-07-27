@@ -38,15 +38,21 @@ import android.app.NativeActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.InputDevice;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
@@ -59,10 +65,12 @@ public class MainActivity extends NativeActivity {
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
+  private static final int BASE_FONT_SIZE = 18;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
+  private String[] options = null;
 
   static {
     System.loadLibrary("smallbasic");
@@ -108,6 +116,11 @@ public class MainActivity extends NativeActivity {
     return this._startupBas == null ? "" : this._startupBas;
   }
 
+  public int getStartupFontSize() {
+    DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+    return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, BASE_FONT_SIZE, metrics);
+  }
+
   public int getUnicodeChar(int keyCode, int metaState) {
     int result = 0;
     InputDevice device = InputDevice.getDevice(InputDevice.getDeviceIds()[0]);
@@ -133,19 +146,38 @@ public class MainActivity extends NativeActivity {
     onResize(rect.width(), rect.height());
   }
 
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    if (this.options != null) {
+      int index = 0;
+      while (index < this.options.length) {
+        if (options[index].equals(item.toString())) {
+          break;
+        }
+        index++;
+      }
+      Log.i(TAG, "items clicked = " + index);
+      optionSelected(index);
+    }
+    return true;
+  }
+  
+  @Override
+  public boolean onPrepareOptionsMenu(Menu menu) {
+    if (this.options != null) {
+      menu.clear();
+      for (String option : this.options) {
+        menu.add(option);
+      }
+    }
+    return super.onPrepareOptionsMenu(menu);
+  }
+
   public void optionsBox(final String[] items) {
-    final Activity activity = this;
+    this.options = items;
     runOnUiThread(new Runnable() {
       public void run() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int index) {
-            Log.i(TAG, "items clicked = " + index);
-            optionSelected(index);
-          }
-        });
-        builder.create().show();
+        openOptionsMenu();
       }
     });
   }

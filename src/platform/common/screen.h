@@ -34,7 +34,7 @@ using namespace strlib;
 struct Shape {
   Shape(int x, int y, int w, int h) : _x(x), _y(y), _width(w), _height(h) {}
   virtual ~Shape() {}
-  virtual void draw(int x, int y) {}
+  virtual void draw(int x, int y, int bw, int cw) {}
 
   int w() { return _width; }
   int h() { return _height; }

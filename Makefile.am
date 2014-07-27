@@ -62,17 +62,11 @@ EXTRA_DIST =																		\
 deb:
 	fakeroot dpkg-buildpackage
 
-install-exec-hook:																	\
-	(mkdir -p $(pkgdatadir) &&												\
-	 mkdir -p $(pkgdatadir)/plugins &&								\
-	 mkdir -p $(pkgdatadir)/ide &&										\
-	 mkdir -p $(pkgdatadir)/samples &&								\
-	 cp documentation/sbasic_ref.csv $(pkgdatadir) &&	\
-	 cp plugins/*.* $(pkgdatadir)/plugins &&					\
-	 cp ide/*.* $(pkgdatadir)/ide)
-
 test:
 	(cd $(SUBDIRS) && make test)
+
+release:
+	(cd $(SUBDIRS) && make release)
 
 # produce a stack dump
 ndk-stack:

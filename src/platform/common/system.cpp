@@ -19,7 +19,7 @@
 #include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
 
-#define SYSTEM_MENU   "\033[ OConsole|Show Keypad|View Source|Restart"
+#define SYSTEM_MENU   "\033[ OConsole|Show keypad|View source|Restart"
 #define MENU_CONSOLE  0
 #define MENU_KEYPAD   1
 #define MENU_SOURCE   2
@@ -230,7 +230,6 @@ char *System::loadResource(const char *fileName) {
     int handle = 1;
     var_t *var_p = v_new();
     dev_file_t *f = dev_getfileptr(handle);
-    systemPrint(fileName);
     _output->print("\033[ LLoading...");
     if (dev_fopen(handle, fileName, 0)) {
       http_read(f, var_p, 0);
