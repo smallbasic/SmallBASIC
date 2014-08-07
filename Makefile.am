@@ -63,7 +63,7 @@ deb:
 	fakeroot dpkg-buildpackage
 
 test:
-	(cd $(SUBDIRS) && make test)
+	(cd @TEST_DIR@ && make test)
 
 release:
 	(cd $(SUBDIRS) && make release)

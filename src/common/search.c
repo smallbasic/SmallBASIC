@@ -29,7 +29,7 @@ tdestroy_recurse(node_t *root, tdestroy_cb freefct) {
   if (root->right != NULL) {
     tdestroy_recurse(root->right, freefct);
   }
-  (*freefct) ((void *) root->key);
+  freefct((void *) root->key);
   free(root);
 }
 
@@ -55,7 +55,7 @@ void *tfind(const void *vkey, void **vrootp, tcompare_cb compar) {
   node_t **rootp = (node_t **)vrootp;
 
   while (rootp != NULL && *rootp != NULL) {
-    int r = (*compar)(vkey, (*rootp)->key);
+    int r = compar(vkey, (*rootp)->key);
     if (r == 0) {
       // found
       return *rootp;

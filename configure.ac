@@ -522,6 +522,9 @@ function buildAndroid() {
 
    BUILD_SUBDIRS="src/platform/android"
    AC_SUBST(BUILD_SUBDIRS)
+
+   TEST_DIR="src/platform/android"
+   AC_SUBST(TEST_DIR)
 }
 
 function buildConsole() {
@@ -582,6 +585,8 @@ function buildConsole() {
       AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline"
       BUILD_SUBDIRS="src/common src/platform/unix"
+      TEST_DIR="src/platform/unix"
+      AC_SUBST(TEST_DIR)
    fi
 
    AC_SUBST(BUILD_SUBDIRS)
