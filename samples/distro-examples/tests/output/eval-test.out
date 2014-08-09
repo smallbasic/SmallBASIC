@@ -1,0 +1,43 @@
+[1mGeneric[0m
+0.6: ERROR (acceptable?) <> 0.6
+
+[1mAuto type convertion[0m
+n=i+n = 2.2  = 2.2
+n=n+i = 2.2  = 2.2
+n=n+n = 2.2  = 2.2
+i=i+i = 2    = 2
+n=i+s = 2.2  = 2.2
+n=i+s = -.1  = -0.1
+n=n+s = 2.2  = 2.2
+n=s+i = 2    = 2
+n=s+n = 2.2  = 2.2
+s=i+s = 1a   = 1a
+s=n+s = 1.1a = 1.1a
+s=s+i = a1   = a1
+s=s+n = a1.1 = a1.1
+s=s+s = 11   = 11
+
+[1mCompare[0m
+s=s   = 1    = 1
+s=i   = 1    = 1
+s=n   = 1    = 1
+i=s   = 1    = 1
+n=s   = 1    = 1
+n=n   = 1    = 1
+n=i   = 1    = 1
+i=n   = 1    = 1
+i=i   = 1    = 1
+i>i   = 1    = 1
+i>=i  = 1    = 1
+i<=i  = 1    = 1
+i<>i  = 1    = 1
+
+[1mArray[0m
+
+[1mNested arrays[0m
+true
+true
+
+[1mTesting base-convertion...[0m
+[1mScientific notation[0m = 2E+.3 = 3.99052462993776 --- 2E-2 = 0.02 = 0.02
+[1mBob's bug[0m = -30 = -30

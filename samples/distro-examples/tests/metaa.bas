@@ -1,5 +1,3 @@
-#!/usr/bin/sbasic
-#inc:"metac.bas"
-
+INCLUDE "metac.bas"
 ? "Module: Meta-A"
 

@@ -1,3 +1,10 @@
+2014-08-09
+	Renamed command "#UNIT-PATH:" to "UNITPATH"
+	Renamed command "#INC:" to "INCLUDE"
+	Fixed/implemented INCLUDE command
+	Refactored comp_pass_1 function is scan.c breaking into
+	smaller helper functions
+
 2014-07-07
 	Update SDL to use SDL2 and common widget
 

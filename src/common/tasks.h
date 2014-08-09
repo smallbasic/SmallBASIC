@@ -40,11 +40,10 @@ typedef struct {
    */
   int line; /**< The current source code line               */
   int error; /**< The last RTL error code (its work as flag) */
-  char errmsg[SB_ERRMSG_SIZE + 1];char file[OS_PATHNAME_SIZE + 1];
-  /**< The program file name (task name)                           */
+  char errmsg[SB_ERRMSG_SIZE + 1];
+  char file[OS_PATHNAME_SIZE + 1];  /**< The program file name (task name)                           */
   mem_t bytecode_h; /**< BC's memory handle                         */
   int bc_type; /**< BC type (1=executable, 2=unit)             */
-
   int has_sysvars; /**< true if the task has system-variables      */
 
   /*

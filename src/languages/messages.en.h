@@ -97,6 +97,7 @@
 #define MSG_MANY_UNIT_DECL      "Use 'Unit' keyword only once"
 #define MSG_INC_MIS_DQ          "#INC: Missing \""
 #define MSG_INC_FILE_DNE        "File %s: File %s does not exist"
+#define MSG_INC_FILE_INC        "File %s: File cannot include itself"
 #define MSG_UDP_ALREADY_DECL    "SUB/FUNC %s already defined"
 #define MSG_UDP_MIS_END_2       "File %s: SUB/FUNC: Missing END (possibly in %s)"
 #define MSG_PASS1               "Pass1...\n"
