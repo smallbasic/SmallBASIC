@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.11])
+AC_INIT([smallbasic], [0.11.12])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -88,12 +88,12 @@ function checkDebugMode() {
    AC_MSG_RESULT([$with_debug])
    if test "$with_debug" = "yes" || test "$with_debug" = "full"
    then
-     CFLAGS="-g -O0"
-     CXXFLAGS="-g -O0"
+     CFLAGS="${CFLAGS} -g -O0"
+     CXXFLAGS="${CXXFLAGS} -g -O0"
      AC_DEFINE(_DEBUG, 1, [debugging build enabled])
    else
-     CFLAGS="-O3 -Os"
-     CXXFLAGS="-O3 -Os"
+     CFLAGS="${CFLAGS} -O3 -Os"
+     CXXFLAGS="${CXXFLAGS} -O3 -Os"
    fi
    AC_SUBST(CFLAGS)
 }

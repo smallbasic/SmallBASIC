@@ -52,6 +52,6 @@ test: ${bin_PROGRAMS}
       echo $${utest} ✓;                                      \
     else                                                      \
       echo $${utest} ✘;                                      \
-	    cat test.out;                                           \
+      cat test.out;                                           \
     fi ;                                                      \
   done;
