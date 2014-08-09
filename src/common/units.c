@@ -54,7 +54,6 @@ void unit_mgr_close() {
 int find_unit_path(const char *name, char *file) {
   strcpy(file, name);
   strcat(file, ".bas");
-  strlower(file);
 
   // find in unitpath
   if (getenv("UNITPATH")) {
@@ -74,7 +73,6 @@ int find_unit_path(const char *name, char *file) {
     strcpy(file, bas_dir);
     strcat(file, name);
     strcat(file, ".bas");
-    strlower(file);
 
     if (access(file, R_OK) == 0) {
       return 1;

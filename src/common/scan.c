@@ -17,6 +17,25 @@
 #include "common/units.h"
 #include "common/extlib.h"
 #include "common/messages.h"
+#include "languages/keywords.en.c"
+
+#define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
+#define LEN_OPTION     STRLEN(LCN_OPTION)
+#define LEN_IMPORT     STRLEN(LCN_IMPORT_WRS)
+#define LEN_UNIT       STRLEN(LCN_UNIT_WRS)
+#define LEN_UNIT_PATH  STRLEN(LCN_UNIT_PATH)
+#define LEN_INC        STRLEN(LCN_INC)
+#define LEN_SUB_WRS    STRLEN(LCN_SUB_WRS)
+#define LEN_FUNC_WRS   STRLEN(LCN_FUNC_WRS)
+#define LEN_DEF_WRS    STRLEN(LCN_DEF_WRS)
+#define LEN_END_WRS    STRLEN(LCN_END_WRS)
+#define LEN_END_SELECT STRLEN(LCN_END_SELECT)
+#define LEN_PREDEF     STRLEN(LCN_PREDEF)
+#define LEN_QUIET      STRLEN(LCN_QUIET)
+#define LEN_GRMODE     STRLEN(LCN_GRMODE)
+#define LEN_TEXTMODE   STRLEN(LCN_TEXTMODE)
+#define LEN_CSTR       STRLEN(LCN_CSTR)
+#define LEN_COMMAND    STRLEN(LCN_COMMAND)
 
 char *comp_array_uds_field(char *p, bc_t * bc);
 void comp_text_line(char *text);
@@ -49,8 +68,6 @@ void err_comp_missing_lp() {
 void err_comp_label_not_def(const char *name) {
   sc_raise(MSG_LABEL_NOT_DEFINED, name);
 }
-
-#include "languages/keywords.en.c"
 
 /*
  * reset the external proc/func lists
@@ -2886,18 +2903,12 @@ void comp_pass2_scan() {
   comp_label_t label;
 
   if (!opt_quiet && !opt_interactive) {
-#if defined(_UnixOS)
-    if (isatty(STDOUT_FILENO))
-#endif
-      log_printf(MSG_PASS2_COUNT, i, comp_sp);
+    log_printf(MSG_PASS2_COUNT, i, comp_sp);
   }
 
   // for each node in stack
   for (i = 0; i < comp_sp; i++) {
     if (!opt_quiet && !opt_interactive) {
-#if defined(_UnixOS)
-      if (isatty(STDOUT_FILENO))
-#endif
       if ((i % SB_KEYWORD_SIZE) == 0) {
         log_printf(MSG_PASS2_COUNT, i, comp_sp);
       }
@@ -3337,31 +3348,6 @@ void comp_close() {
 }
 
 /*
- * returns true if the 'fileName' exists
- */
-int comp_bas_exist(const char *basfile) {
-  int check = 0;
-  char *p, *fileName;
-
-  fileName = tmp_alloc(strlen(basfile) + 5);
-  strcpy(fileName, basfile);
-
-  p = strchr(fileName, '.');
-  if (!p) {
-    strcat(fileName, ".bas");
-  }
-
-#if !defined(_UnixOS)
-  check = (access(fileName, 0) == 0);
-#else
-  check = (access(fileName, R_OK) == 0);
-#endif
-
-  tmp_free(fileName);
-  return check;
-}
-
-/*
  * load a source file
  */
 char *comp_load(const char *file_name) {
@@ -3660,8 +3646,8 @@ const char *get_unit_name(const char *p, char *buf_p) {
  */
 void comp_preproc_import(const char *slist) {
   const char *p;
-  char buf[OS_PATHNAME_SIZE + 1];int
-  uid;
+  char buf[OS_PATHNAME_SIZE + 1];
+  int uid;
   bc_lib_rec_t imlib;
 
   p = slist;
@@ -3757,244 +3743,242 @@ void comp_preproc_unit(char *name) {
 }
 
 /**
- * PASS 1
+ * Prepare compiler for INCLUDE source
  */
-int comp_pass1(const char *section, const char *text) {
-  char *ps, *p, lc = 0;
-  int i;
-  char pname[SB_KEYWORD_SIZE + 1];char
-  *code_line;
-  char *new_text;
-  int len_option, len_import, len_unit, len_unit_path, len_inc;
-  int len_sub, len_func, len_def, len_end, len_end_select;
+void comp_preproc_include(char *p) {
+  char fileName[OS_PATHNAME_SIZE];
+  char path[OS_PATHNAME_SIZE];
 
-  code_line = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-  memset(comp_bc_sec, 0, SB_KEYWORD_SIZE + 1);
-  if (section) {
-    strncpy(comp_bc_sec, section, SB_KEYWORD_SIZE);
-  } else {
-    strncpy(comp_bc_sec, SYS_MAIN_SECTION_NAME, SB_KEYWORD_SIZE);
+  SKIP_SPACES(p);
+  if (*p == '\"') {
+    p++;
   }
-  new_text = comp_format_text(text);
+  char *fp = fileName;
+  int size = 0;
+  while (*p != '\n' && 
+         *p != '\"' && 
+         *p != '\0' && 
+         ++size < OS_PATHNAME_SIZE) {
+    *fp++ = *p++;
+  }
+  *fp = '\0';
 
-  // second (we can change it to support preprocessor)
-  // Check for:
-  // include (#inc:)
-  // units-dir (#unit-path:)
-  // IMPORT
-  // UDF and UDP declarations
-  // PREDEF OPTIONS
-  p = ps = new_text;
-  comp_proc_level = 0;
-  *comp_bc_proc = '\0';
+  str_alltrim(fileName);
+  strcpy(path, fileName);
 
-  len_option = strlen(LCN_OPTION);
-  len_import = strlen(LCN_IMPORT_WRS);
-  len_unit = strlen(LCN_UNIT_WRS);
-  len_unit_path = strlen(LCN_UNIT_PATH);
-  len_inc = strlen(LCN_INC);
+  int basExists = (access(path, R_OK) == 0);
+  if (!basExists) {
+    char *bas_dir = getenv("BASDIR");
+    if (bas_dir) {
+      strcpy(path, bas_dir);
+      strcat(path, fileName);
+      basExists = (access(path, R_OK) == 0);
+    }
+  }
+  if (!basExists) {
+    sc_raise(MSG_INC_FILE_DNE, comp_file_name, path);
+  } else if (strcmp(comp_file_name, path) == 0) {
+    sc_raise(MSG_INC_FILE_INC, comp_file_name, path);
+  } else {
+    char oldFileName[1024];
+    char oldSec[SB_KEYWORD_SIZE + 1];
+    strcpy(oldSec, comp_bc_sec);
+    strcpy(oldFileName, comp_file_name);
+    char *source = comp_load(path);
+    if (source) {
+      comp_pass1(NULL, source);
+      tmp_free(source);
+    }
+    strcpy(comp_file_name, oldFileName);
+    strcpy(comp_bc_sec, oldSec);
+  }
+}
 
-  len_sub = strlen(LCN_SUB_WRS);
-  len_func = strlen(LCN_FUNC_WRS);
-  len_def = strlen(LCN_DEF_WRS);
-  len_end = strlen(LCN_END_WRS);
-  len_end_select = strlen(LCN_END_SELECT);
-
-  while (*p) {
-    // OPTION environment parameters
-    if (strncmp(LCN_OPTION, p, len_option) == 0) {
-      p += len_option;
+/**
+ * Handle OPTION environment parameters
+ */
+char *comp_preproc_options(char *p) {
+  SKIP_SPACES(p);
+  if (strncmp(LCN_PREDEF, p, LEN_PREDEF) == 0) {
+    p += LEN_PREDEF;
+    SKIP_SPACES(p);
+    if (strncmp(LCN_QUIET, p, LEN_QUIET) == 0) {
+      opt_quiet = 1;
+    } else if (strncmp(LCN_GRMODE, p, LEN_GRMODE) == 0) {
+      p += LEN_GRMODE;
+      comp_preproc_grmode(p);
+      opt_graphics = 1;
+    } else if (strncmp(LCN_TEXTMODE, p, LEN_TEXTMODE) == 0) {
+      opt_graphics = 0;
+    } else if (strncmp(LCN_CSTR, p, LEN_CSTR) == 0) {
+      opt_cstr = 1;
+    } else if (strncmp(LCN_COMMAND, p, LEN_COMMAND) == 0) {
+      p += LEN_COMMAND;
       SKIP_SPACES(p);
-      if (strncmp(LCN_PREDEF, p, strlen(LCN_PREDEF)) == 0) {
-        p += strlen(LCN_PREDEF);
-        SKIP_SPACES(p);
-        if (strncmp(LCN_QUIET, p, strlen(LCN_QUIET)) == 0) {
-          opt_quiet = 1;
-        } else if (strncmp(LCN_GRMODE, p, strlen(LCN_GRMODE)) == 0) {
-          p += strlen(LCN_GRMODE);
-          comp_preproc_grmode(p);
-          opt_graphics = 1;
-        } else if (strncmp(LCN_TEXTMODE, p, strlen(LCN_TEXTMODE)) == 0) {
-          opt_graphics = 0;
-        } else if (strncmp(LCN_CSTR, p, strlen(LCN_CSTR)) == 0) {
-          opt_cstr = 1;
-        } else if (strncmp(LCN_COMMAND, p, strlen(LCN_COMMAND)) == 0) {
-          char *pe;
-          p += strlen(LCN_COMMAND);
-          SKIP_SPACES(p);
-          pe = p;
-          while (*pe != '\0' && *pe != '\n') {
-            pe++;
-          }
-          lc = *pe;
-          *pe = '\0';
-          if (strlen(p) < OPT_CMD_SZ) {
-            strcpy(opt_command, p);
-          } else {
-            memcpy(opt_command, p, OPT_CMD_SZ - 1);
-            opt_command[OPT_CMD_SZ - 1] = '\0';
-          }
-
-          *pe = lc;
-        } else {
-          sc_raise(MSG_OPT_PREDEF_ERR, p);
-        }
+      char *pe = p;
+      while (*pe != '\0' && *pe != '\n') {
+        pe++;
       }
-    } else if (strncmp(LCN_IMPORT_WRS, p, len_import) == 0) {
-      // IMPORT units
-      comp_preproc_import(p + len_import);
-      comp_preproc_remove_line(p, 1);
-    } else if (strncmp(LCN_UNIT_WRS, p, len_unit) == 0) {
-      // UNIT name
-      if (comp_unit_flag) {
-        sc_raise(MSG_MANY_UNIT_DECL);
+      char lc = *pe;
+      *pe = '\0';
+      if (strlen(p) < OPT_CMD_SZ) {
+        strcpy(opt_command, p);
       } else {
-        comp_preproc_unit(p + len_unit);
+        memcpy(opt_command, p, OPT_CMD_SZ - 1);
+        opt_command[OPT_CMD_SZ - 1] = '\0';
       }
-      comp_preproc_remove_line(p, 1);
-    } else if (strncmp(LCN_UNIT_PATH, p, len_unit_path) == 0) {
-      // UNIT-PATH name
-#if defined(_UnixOS) || defined(_DOS) || defined(_Win32)
-      char upath[SB_SOURCELINE_SIZE + 1], *up;
-      char *ps;
+      *pe = lc;
+    } else {
+      sc_raise(MSG_OPT_PREDEF_ERR, p);
+    }
+  }
+  return p;
+}
 
-      ps = p;
-      p += len_unit_path;
-      SKIP_SPACES(p);
-      if (*p == '\"') {
-        p++;
-      }
-      up = upath;
+/**
+ * Setup the UNITPATH environment variable.
+ */
+void comp_preproc_unit_path(char *p) {
+  SKIP_SPACES(p);
+  if (*p == '=') {
+    p++;
+    SKIP_SPACES(p);
+    if (*p == '\"') {
+      p++;
+      char upath[SB_SOURCELINE_SIZE + 1];
+      char *up = upath;
       while (*p != '\n' && *p != '\"') {
         *up++ = *p++;
       }
       *up = '\0';
-
-      sprintf(comp_bc_temp, "SB_UNIT_PATH=%s", upath);
+      sprintf(comp_bc_temp, "UNITPATH=%s", upath);
       putenv(strdup(comp_bc_temp));
-      p = ps;
-      comp_preproc_remove_line(p, 0);
-#else // supported OSes
-      comp_preproc_remove_line(p, 0);
-#endif
+    }
+  }
+}
+
+/**
+ * SUB/FUNC/DEF - Automatic declaration - BEGIN
+ */
+char *comp_preproc_func_begin(char *p) {
+  char *dp;
+  int single_line_f = 0;
+  char pname[SB_KEYWORD_SIZE + 1];
+      
+  if (strncmp(LCN_SUB_WRS, p, LEN_SUB_WRS) == 0) {
+    p += LEN_SUB_WRS;
+  } else if (strncmp(LCN_FUNC_WRS, p, LEN_FUNC_WRS) == 0) {
+    p += LEN_FUNC_WRS;
+  } else {
+    p += LEN_DEF_WRS;
+  }
+  SKIP_SPACES(p);
+  
+  // copy proc/func name
+  dp = pname;
+  while (is_alnum(*p) || *p == '_') {
+    *dp++ = *p++;
+  }
+  *dp = '\0';
+  
+  // search for '='
+  while (*p != '\n' && *p != '=') {
+    p++;
+  }
+  if (*p == '=') {
+    single_line_f = 1;
+    while (*p != '\n') {
+      p++;
+    }
+  }
+  
+  // add declaration
+  if (comp_udp_getip(pname) == INVALID_ADDR) {
+    comp_add_udp(pname);
+  } else {
+    sc_raise(MSG_UDP_ALREADY_DECL, pname);
+  }
+
+  // func/proc name (also, update comp_bc_proc)
+  if (comp_proc_level) {
+    strcat(comp_bc_proc, "/");
+    strcat(comp_bc_proc, baseof(pname, '/'));
+  } else {
+    strcpy(comp_bc_proc, pname);
+  }
+  
+  if (!single_line_f) {
+    comp_proc_level++;
+  } else {
+    // inline (DEF FN)
+    char *dol = strrchr(comp_bc_proc, '/');
+    if (dol) {
+      *dol = '\0';
     } else {
-      // INCLUDE FILE
-      // this is not a normal way but needs less memory
-      if (strncmp(LCN_INC, p, len_inc) == 0) {
-        char *crp = NULL;
-        p += len_inc;
-        if (*p == '\"') {
-          p++;
+      *comp_bc_proc = '\0';
+    }
+  }
+  return p;
+}
 
-          crp = p;
-          while (*crp != '\0' && *crp != '\"') {
-            crp++;
-          }
-          if (*crp == '\0') {
-            sc_raise(MSG_INC_MIS_DQ);
-            break;
-          }
+/**
+ * SUB/FUNC/DEF - Automatic declaration - END
+ */
+void comp_preproc_func_end(char *p) {
+  // avoid seeing "END SELECT" which doesn't end a SUB/FUNC
+  if (strncmp(p, LCN_END_SELECT, LEN_END_SELECT) != 0) {
+    char *dol = strrchr(comp_bc_proc, '/');
+    if (dol) {
+      *dol = '\0';
+    } else {
+      *comp_bc_proc = '\0';
+    }
+    comp_proc_level--;
+  }
+}
 
-          (lc = *crp, *crp = '\0');
-        } else {
-          crp = strchr(p, '\n');
-          *crp = '\0';
-          lc = '\n';
-        }
+/**
+ * Preprocess handler for pass1
+ */
+void comp_preproc_pass1(char *p) {
+  comp_proc_level = 0;
+  *comp_bc_proc = '\0';
 
-        strcpy(code_line, p);
-        *crp = lc;
-        str_alltrim(code_line);
-        if (!comp_bas_exist(code_line)) {
-          sc_raise(MSG_INC_FILE_DNE, comp_file_name, code_line);
-        } else {
-          char fileName[1024];
-          char sec[SB_KEYWORD_SIZE + 1];
-          strcpy(sec, comp_bc_sec);
-          strcpy(fileName, comp_file_name);
-          if (strchr(code_line, '.') == NULL) {
-            strcat(code_line, ".bas");
-          }
-          comp_load(code_line);
-          strcpy(comp_file_name, fileName);
-          strcpy(comp_bc_sec, sec);
-        }
+  while (*p) {
+    if (strncmp(LCN_OPTION, p, LEN_OPTION) == 0) {
+      // options
+      p = comp_preproc_options(p + LEN_OPTION); 
+    } else if (strncmp(LCN_IMPORT_WRS, p, LEN_IMPORT) == 0) {
+      // import
+      comp_preproc_import(p + LEN_IMPORT);
+      comp_preproc_remove_line(p, 1);
+    } else if (strncmp(LCN_UNIT_WRS, p, LEN_UNIT) == 0) {
+      // unit
+      if (comp_unit_flag) {
+        sc_raise(MSG_MANY_UNIT_DECL);
+      } else {
+        comp_preproc_unit(p + LEN_UNIT);
       }
-      if ((strncmp(LCN_SUB_WRS, p, len_sub) == 0) || 
-          (strncmp(LCN_FUNC_WRS, p, len_func) == 0)
-          || (strncmp(LCN_DEF_WRS, p, len_def) == 0)) {
-        // SUB/FUNC/DEF - Automatic declaration - BEGIN
-        char *dp;
-        int single_line_f = 0;
-
-        if (strncmp(LCN_SUB_WRS, p, len_sub) == 0) {
-          p += len_sub;
-        } else if (strncmp(LCN_FUNC_WRS, p, len_func) == 0) {
-          p += len_func;
-        } else {
-          p += len_def;
-        }
-        SKIP_SPACES(p);
-
-        // copy proc/func name
-        dp = pname;
-        while (is_alnum(*p) || *p == '_') {
-          *dp++ = *p++;
-        }
-        *dp = '\0';
-
-        // search for '='
-        while (*p != '\n' && *p != '=') {
-          p++;
-        }
-        if (*p == '=') {
-          single_line_f = 1;
-          while (*p != '\n') {
-            p++;
-          }
-        }
-
-        // add declaration
-        if (comp_udp_getip(pname) == INVALID_ADDR) {
-          comp_add_udp(pname);
-        } else {
-          sc_raise(MSG_UDP_ALREADY_DECL, pname);
-        }
-        // func/proc name (also, update comp_bc_proc)
-        if (comp_proc_level) {
-          strcat(comp_bc_proc, "/");
-          strcat(comp_bc_proc, baseof(pname, '/'));
-        } else {
-          strcpy(comp_bc_proc, pname);
-        }
-
-        if (!single_line_f) {
-          comp_proc_level++;
-        } else {
-          // inline (DEF FN)
-          char *dol = strrchr(comp_bc_proc, '/');
-          if (dol) {
-            *dol = '\0';
-          } else {
-            *comp_bc_proc = '\0';
-          }
-        }
-      } else if (comp_proc_level) {
-        // SUB/FUNC/DEF - Automatic declaration - END
-        if (strncmp(LCN_END_WRS, p, len_end) == 0 || strncmp(LCN_END_WNL, p, len_end) == 0) {
-          // avoid seeing "END SELECT" which doesn't end a SUB/F
-          if (strncmp(p, LCN_END_SELECT, len_end_select) != 0) {
-            char *dol = strrchr(comp_bc_proc, '/');
-            if (dol) {
-              *dol = '\0';
-            } else {
-              *comp_bc_proc = '\0';
-            }
-            comp_proc_level--;
-          }
-        }
-      }
-    }  // OPTION
+      comp_preproc_remove_line(p, 1);
+    } else if (strncmp(LCN_UNIT_PATH, p, LEN_UNIT_PATH) == 0) {
+      // unitpath
+      comp_preproc_unit_path(p + LEN_UNIT_PATH);
+      comp_preproc_remove_line(p, 0);
+    } else if (strncmp(LCN_INC, p, LEN_INC) == 0) {
+      // include
+      comp_preproc_include(p + LEN_INC);
+      comp_preproc_remove_line(p, 0);
+    } else if ((strncmp(LCN_SUB_WRS, p, LEN_SUB_WRS) == 0) ||
+               (strncmp(LCN_FUNC_WRS, p, LEN_FUNC_WRS) == 0) ||
+               (strncmp(LCN_DEF_WRS, p, LEN_DEF_WRS) == 0)) {
+      // sub/func
+      p = comp_preproc_func_begin(p);
+    } else if (comp_proc_level &&
+               (strncmp(LCN_END_WRS, p, LEN_END_WRS) == 0 ||
+                strncmp(LCN_END_WNL, p, LEN_END_WRS) == 0)) {
+      // end sub/func
+      comp_preproc_func_end(p);
+    }
 
     // skip text line
     while (*p != '\0' && *p != '\n') {
@@ -4013,67 +3997,50 @@ int comp_pass1(const char *section, const char *text) {
   *comp_bc_proc = '\0';
 
   if (!opt_quiet && !opt_interactive) {
-#if defined(_UnixOS)
-    if (!isatty(STDOUT_FILENO)) {
-      fprintf(stdout, "%s: %s\n", WORD_FILE, comp_file_name);
-    }
-    else {
-      log_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
-    }
-#elif defined(_PalmOS)          // if (code-sections)
-    log_printf
-    ("%s: \033[1m%s\033[0m\n\033[80m%s: \033[1m%s\033[0m\033[80m\n",
-        WORD_FILE, comp_file_name, WORD_SECTION, comp_bc_sec);
-#else
     log_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
-#endif
   }
-  // Start
+}
+
+/**
+ * PASS 1
+ *
+ * Check for:
+ *  INCLUDE
+ *  UNITS-DIR (#unit-path:)
+ *  IMPORT
+ *  UDF and UDP declarations
+ *  PREDEF OPTIONS
+ */
+int comp_pass1(const char *section, const char *text) {
+  memset(comp_bc_sec, 0, SB_KEYWORD_SIZE + 1);
+  if (section) {
+    strncpy(comp_bc_sec, section, SB_KEYWORD_SIZE);
+  } else {
+    strncpy(comp_bc_sec, SYS_MAIN_SECTION_NAME, SB_KEYWORD_SIZE);
+  }
+
+  char *code_line = tmp_alloc(SB_SOURCELINE_SIZE + 1);
+  char *new_text = comp_format_text(text);
+  
+  comp_preproc_pass1(new_text);
+
   if (!comp_error) {
     comp_line = 0;
     if (!opt_quiet && !opt_interactive) {
-#if defined(_UnixOS)
-      if (!isatty(STDOUT_FILENO)) {
-        fprintf(stdout, MSG_PASS1);
-      }
-      else {
-#endif
       log_printf(MSG_PASS1_COUNT, comp_line + 1);
-
-#if defined(_UnixOS)
-    }
-#endif
     }
 
-    ps = p = new_text;
+    char *ps = new_text;
+    char *p = ps;
     while (*p) {
       if (*p == '\n') {
         // proceed
         *p = '\0';
         comp_line++;
         if (!opt_quiet && !opt_interactive) {
-#if defined(_UnixOS)
-          if (isatty(STDOUT_FILENO)) {
-#endif
-
-#if defined(_PalmOS)
-          if ((comp_line % 16) == 0) {
-            if ((comp_line % 64) == 0)
-            log_printf(MSG_PASS1_COUNT, comp_line);
-            if (dev_events(0) < 0) {
-              dev_print("\n\n\a*** interrupted ***\n");
-              comp_error = -1;
-            }
-          }
-#else
           if ((comp_line % 256) == 0) {
             log_printf(MSG_PASS1_COUNT, comp_line);
           }
-#endif
-
-#if defined(_UnixOS)
-        }
-#endif
         }
 
         // add debug info: line-number
@@ -4097,9 +4064,9 @@ int comp_pass1(const char *section, const char *text) {
   tmp_free(code_line);
   tmp_free(new_text);
 
-  // undefined keywords... by default are UDP, but if there is no
-  // UDP-body then ring the bell
+  // undefined keywords by default are UDP - error if no UDP-body
   if (!comp_error) {
+    int i;
     for (i = 0; i < comp_udpcount; i++) {
       if (comp_udptable[i].ip == INVALID_ADDR) {
         comp_line = comp_udptable[i].pline;
@@ -4110,11 +4077,9 @@ int comp_pass1(const char *section, const char *text) {
 
   bc_eoc(&comp_prog);
   bc_resize(&comp_prog, comp_prog.count);
-  if (!comp_error) {
-    if (!opt_quiet && !opt_interactive) {
-      log_printf(MSG_PASS1_FIN, comp_line + 1);
-      log_printf("\n");
-    }
+  if (!comp_error && !opt_quiet && !opt_interactive) {
+    log_printf(MSG_PASS1_FIN, comp_line + 1);
+    log_printf("\n");
   }
 
   return (comp_error == 0);
@@ -4172,16 +4137,7 @@ int comp_pass2_exports() {
  */
 int comp_pass2() {
   if (!opt_quiet && !opt_interactive) {
-#if defined(_UnixOS)
-    if (!isatty(STDOUT_FILENO)) {
-      fprintf(stdout, "Pass2...\n");
-    }
-    else {
-#endif
     log_printf(MSG_PASS2);
-#if defined(_UnixOS)
-  }
-#endif
   }
 
   if (comp_proc_level) {

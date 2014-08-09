@@ -43,14 +43,15 @@ endif
 sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 
 TEST_DIR=../../../samples/distro-examples/tests
-UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto uds
+UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto uds pass1 call_tau
 
 test: ${bin_PROGRAMS}
 	@for utest in $(UNIT_TESTS); do                             \
-    ${bin_PROGRAMS} ${TEST_DIR}/$${utest}.bas > test.out;     \
+    ./${bin_PROGRAMS} ${TEST_DIR}/$${utest}.bas > test.out;   \
     if cmp -s test.out ${TEST_DIR}/output/$${utest}.out; then \
       echo $${utest} ✓;                                      \
     else                                                      \
-      echo $${utest} ✘;                                       \
+      echo $${utest} ✘;                                      \
+	    cat test.out;                                           \
     fi ;                                                      \
   done;
