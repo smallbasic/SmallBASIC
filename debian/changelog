@@ -1,3 +1,8 @@
+smallbasic (0.11.12) unstable; urgency=low
+  * Fixed/implemented INCLUDE command
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 11 August 2014 09:45:25 +1000
+
 smallbasic (0.11.11) unstable; urgency=low
   * Built using common code from the android project and SDL
 

@@ -19,6 +19,12 @@
 #include "common/messages.h"
 #include "languages/keywords.en.c"
 
+char *comp_array_uds_field(char *p, bc_t * bc);
+void comp_text_line(char *text);
+addr_t comp_search_bc(addr_t ip, code_t code);
+extern void expr_parser(bc_t * bc);
+extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
+
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
 #define LEN_OPTION     STRLEN(LCN_OPTION)
 #define LEN_IMPORT     STRLEN(LCN_IMPORT_WRS)
@@ -36,12 +42,6 @@
 #define LEN_TEXTMODE   STRLEN(LCN_TEXTMODE)
 #define LEN_CSTR       STRLEN(LCN_CSTR)
 #define LEN_COMMAND    STRLEN(LCN_COMMAND)
-
-char *comp_array_uds_field(char *p, bc_t * bc);
-void comp_text_line(char *text);
-addr_t comp_search_bc(addr_t ip, code_t code);
-extern void expr_parser(bc_t * bc);
-extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 
 #define SKIP_SPACES(p) \
   while (*p == ' ' || *p == '\t') { \

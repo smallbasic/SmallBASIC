@@ -591,32 +591,16 @@ void setsysvar_str(int index, const char *value) {
  */
 void exec_setup_predefined_variables() {
   char homedir[OS_PATHNAME_SIZE + 1];
-#if defined(_UnixOS)
-  int l;
-#endif
 
   // needed here (otherwise task will not updated)
   ctask->has_sysvars = 1;
 
-  setsysvar_int(SYSVAR_OSVER, os_ver);
   setsysvar_str(SYSVAR_OSNAME, OS_NAME);
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
   setsysvar_num(SYSVAR_PI, SB_PI);
-
-  // Change from Haraszti - 30/3/2007 Thanks Atilla :)
-  // setsysvar_int(SYSVAR_XMAX, 159);
-  // setsysvar_int(SYSVAR_YMAX, 159);
-  // setsysvar_int(SYSVAR_BPP, 1);
   setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
   setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
-  if (os_graphics) {
-    setsysvar_int(SYSVAR_BPP, os_color_depth);
-  }
-  else {
-    setsysvar_int(SYSVAR_BPP, 4);
-  }
-  // end of change
-
+  setsysvar_int(SYSVAR_BPP, os_graphics ? os_color_depth : 4);
   setsysvar_int(SYSVAR_TRUE, -1);
   setsysvar_int(SYSVAR_FALSE, 0);
   setsysvar_int(SYSVAR_LINECHART, 1);
@@ -631,7 +615,7 @@ void exec_setup_predefined_variables() {
   else {
     strcpy(homedir, "/tmp/");
   }
-  l = strlen(homedir);
+  int l = strlen(homedir);
   if (homedir[l - 1] != OS_DIRSEP) {
     homedir[l] = OS_DIRSEP;
     homedir[l + 1] = '\0';

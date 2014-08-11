@@ -71,13 +71,8 @@ void updateForm(const char *s);
 void closeForm();
 bool isFormActive();
 
-#if defined(WIN32)
 #define CHOICE_EXIT  2
 #define CHOICE_BREAK 1
-#else
-#define CHOICE_EXIT  0 
-#define CHOICE_BREAK 1
-#endif
 
 // scan for fixed pitch fonts in the background
 struct ScanFont {
@@ -446,7 +441,8 @@ void MainWindow::quit(fltk::Widget *w, void *eventData) {
     }
     exit(0);
   } else {
-    switch (choice("Terminate running program?", "*Exit", "Break", "Cancel")) {
+    int n = choice("Terminate running program?", "*Exit", "Break", "Cancel");
+    switch (n) {
     case CHOICE_EXIT:
       exit(0);
     case CHOICE_BREAK:

@@ -53,11 +53,6 @@ void termination_handler(int signum) {
  * initialize all drivers
  */
 int dev_init(int mode, int flags) {
-#if defined(_UnixOS)
-  int verfd;
-  //      struct utsname uts;
-#endif
-
 #if defined(DRV_SOUND)
   drvsound_ok = drvsound_init();
 #endif
@@ -73,21 +68,6 @@ int dev_init(int mode, int flags) {
   os_graphics = mode;
   term_init();                  // by default
   if (mode) {
-#if defined(_UnixOS)
-    char buf[256];
-
-    if (term_israw()) {
-      setsysvar_str(SYSVAR_OSNAME, "Unix/RAW");
-    } else {
-      if (getenv("TERM")) {
-        strcpy(buf, "Unix/Terminal:");
-        strcat(buf, getenv("TERM"));
-        setsysvar_str(SYSVAR_OSNAME, buf);
-      } else {
-        setsysvar_str(SYSVAR_OSNAME, "Unix/Stream");
-      }
-    }
-#endif
     if (osd_devinit() == 0) {
       panic("osd_devinit() failed");
     }
@@ -107,95 +87,6 @@ int dev_init(int mode, int flags) {
   } else {
     dev_fgcolor = 7;
     dev_bgcolor = 0;
-#if USE_TERM_IO
-    //              term_settextcolor(dev_fgcolor, dev_bgcolor);
-#endif
-  }
-
-#if defined(_UnixOS)
-  /*
-   if  ( uname(&uts) == 0 )  {
-   // will use the POSIX's uname()
-   strcpy(tmp, "Unix/");
-   strcat(tmp, uts.machine);
-   strcat(tmp, "/");
-   strcat(tmp, uts.sysname);
-   setsysvar_str(SYSVAR_OSNAME, tmp);
-   }
-   else  {
-   */
-  // will try to read /proc/version
-  verfd = open("/proc/version", O_RDONLY);
-  if (verfd != -1) {
-    char *p;
-    char verstr[256];
-    char tmp[300];
-    int bytes;
-
-    memset(verstr, 0, 256);
-    bytes = read(verfd, verstr, 255);
-    verstr[(bytes < 256) ? bytes : 255] = '\0';
-    p = strchr(verstr, '\n');
-    if (p) {
-      *p = '\0';
-    }
-    close(verfd);
-
-    // store name to system constant
-    strcpy(tmp, "Unix/");
-    strcat(tmp, verstr);
-    setsysvar_str(SYSVAR_OSNAME, tmp);
-
-    // build OSVER
-    if ((p = strstr(verstr, "ersion")) != NULL) {
-      long vi = 0;
-      int dg = 0;
-
-      p += 6;
-      while (*p == ' ' || *p == '\t') {
-        p++;
-      }
-      while (*p) {
-        if (is_digit(*p)) {
-          vi = (vi << 4) + (*p - '0');
-          dg++;
-        }  else if (*p == '.') {
-          switch (dg) {
-            case 0:
-            vi = vi << 8;
-            break;
-            case 1:
-            vi = vi << 4;
-            break;
-          };
-
-          dg = 0;
-        }
-        else {
-          break;
-        }
-
-        p++;
-      }                         // while (*p)
-
-      os_ver = vi;
-    }                           // if ver
-  }                             // verfd
-
-  setsysvar_int(SYSVAR_OSVER, os_ver);
-#elif defined(_DOS)
-  os_ver = ((_osmajor << 16) | (_osminor)) << 8;
-  setsysvar_int(SYSVAR_OSVER, os_ver);
-#else
-  setsysvar_int(SYSVAR_OSVER, os_ver);
-#endif
-
-  setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
-  setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
-  if (os_graphics) {
-    setsysvar_int(SYSVAR_BPP, os_color_depth);
-  } else {
-    setsysvar_int(SYSVAR_BPP, 4);
   }
 
 #if USE_TERM_IO && !defined(__MINGW32__)

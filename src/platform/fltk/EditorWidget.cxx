@@ -632,7 +632,7 @@ bool EditorWidget::checkSave(bool discard) {
 
   const char *msg = "The current file has not been saved.\n" "Would you like to save it now?";
   int r = discard ? choice(msg, "Save", "Discard", "Cancel") : choice(msg, "Save", "Cancel", 0);
-  if (r == 0) {
+  if (discard ? (r == 2) : (r == 1)) {
     save_file();                // Save the file
     return !dirty;
   }

@@ -1,3 +1,6 @@
+2014-08-11
+	Cleanup system var handling, removed os_ver
+
 2014-08-09
 	Renamed command "#UNIT-PATH:" to "UNITPATH"
 	Renamed command "#INC:" to "INCLUDE"
