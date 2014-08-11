@@ -100,13 +100,7 @@ void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
  * Globals are needed for speed and for memory-usage optimization
  *
  * @code
- * dword os_ver;     // OS version (ex: 0x330 for PalmOS 3.3)
- *
  * byte  os_charset;   // System's charset (see os_charset_codes)
- *
- * byte  use_sony_clie;  // True if the program runs under a Sony CLIE
- *
- * UInt16 sony_refHR;    // Sony's HiRes lib ref
  *
  * byte  os_color;   // True if the output has real colors (256+ colors)
  *
@@ -144,18 +138,11 @@ enum os_charset_codes {
 };
 
 #if !defined(DEVICE_MODULE)
-extern dword os_ver;          // OS version (ex: 0x330 for PalmOS 3.3)
 extern byte os_charset;
 
-#if defined(SONY_CLIE)
-extern byte use_sony_clie;    // true if the program runs under a Sony CLIE
-extern UInt16 sony_refHR;     // Sony's HiRes lib ref
-#endif
-
-extern byte os_color;         // true if the output has real colors (256+
-// colors)
+extern byte os_color;         // true if the output has real colors (256+ colors)
 extern dword os_color_depth;  // the number of bits of the supported colors
-// (ex: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
+                              // (ex: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
 extern byte os_graphics;      // non-zero if the driver supports graphics
 extern int os_graf_mx;        // graphic mode: maximum x
 extern int os_graf_my;        // graphic mode: maximum y

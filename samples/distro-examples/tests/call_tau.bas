@@ -20,5 +20,3 @@ rem check system-variables
 predef.prsys
 
 
-
-

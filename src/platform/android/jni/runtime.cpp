@@ -686,7 +686,6 @@ void maAlert(const char *title, const char *message, const char *button1,
 // sbasic implementation
 //
 int osd_devinit(void) {
-  setsysvar_str(SYSVAR_OSNAME, "Android");
   runtime->clearSoundQueue();
   runtime->setRunning(true);
   return 1;

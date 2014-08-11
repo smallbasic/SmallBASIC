@@ -96,10 +96,8 @@ int osd_devinit() {
 
   os_graf_mx = wnd->_out->w();
   os_graf_my = wnd->_out->h();
-  os_ver = FL_MAJOR_VERSION + FL_MINOR_VERSION + FL_PATCH_VERSION;
   os_color = 1;
   os_color_depth = 16;
-  setsysvar_str(SYSVAR_OSNAME, "FLTK");
   if (SharedImage::first_image) {
     SharedImage::first_image->clear_cache();
   }

@@ -10,11 +10,4 @@ message from main
 message from tau
 [1,2,3,4]
 [1mPredefined Variables[0m
-OS VER =0x0
-OS NAME=Unix/Linux version 3.13.0-32-generic (buildd@kissel) (gcc version 4.8.2 (Ubuntu 4.8.2-19ubuntu1) ) #57-Ubuntu SMP Tue Jul 15 03:51:08 UTC 2014
-SB VER =0x0
 PI     =3.14159265358979
-XMAX   =161
-YMAX   =42
-CWD    =/home/chrisws/src/SmallBASIC/src/platform/unix/
-HOME   =/home/chrisws/
