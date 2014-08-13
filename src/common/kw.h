@@ -253,6 +253,7 @@ enum proc_keywords {
   kwHTML,
   kwIMAGE,
   kwDEFINEKEY,
+  kwSHOWPAGE,
   kwNULLPROC
 };
 

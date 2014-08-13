@@ -42,6 +42,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_TEXTMODE   STRLEN(LCN_TEXTMODE)
 #define LEN_CSTR       STRLEN(LCN_CSTR)
 #define LEN_COMMAND    STRLEN(LCN_COMMAND)
+#define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
 
 #define SKIP_SPACES(p) \
   while (*p == ' ' || *p == '\t') { \
@@ -3291,7 +3292,6 @@ void comp_init() {
   dbt_prealloc(comp_stack, os_ccpass2, sizeof(comp_pass_node_t));
 
   // create system variables
-  comp_var_getID(LCN_SV_OSVER);
   comp_vartable[comp_var_getID(LCN_SV_OSNAME)].dolar_sup = 1;
   comp_var_getID(LCN_SV_SBVER);
   comp_var_getID(LCN_SV_PI);
@@ -3978,6 +3978,8 @@ void comp_preproc_pass1(char *p) {
                 strncmp(LCN_END_WNL, p, LEN_END_WRS) == 0)) {
       // end sub/func
       comp_preproc_func_end(p);
+    } else if (strncmp(LCN_SHOWPAGE, p, LEN_SHOWPAGE) == 0) {
+      opt_show_page = 1;
     }
 
     // skip text line

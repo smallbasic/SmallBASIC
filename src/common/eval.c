@@ -19,7 +19,8 @@
 #define IP           prog_ip
 #define CODE(x)      prog_source[(x)]
 #define CODE_PEEK()  CODE(IP)
-#define V_FREE(v)    if ( (v) ) { if ( (v)->type == V_STR || (v)->type == V_ARRAY ) v_free((v)); }
+#define V_FREE(v)    if ((v)) { if ((v)->type == V_STR || (v)->type == V_ARRAY) v_free((v)); }
+#define V_IS_TYPE(v,t) (v != NULL && v->type == t)
 
 void eval(var_t *result);
 void mat_op1(var_t *l, int op, var_num_t n);
@@ -209,9 +210,9 @@ void mat_mul(var_t *l, var_t *r) {
   if (m1) {
     m2 = mat_toc(r, &rr, &rc);
     if (m2) {
-      if (lc != rr)
+      if (lc != rr) {
         err_matdim();
-      else {
+      } else {
         mr = lr;
         mc = rc;
         m = (var_num_t*) tmp_alloc(sizeof(var_num_t) * mr * mc);
@@ -353,7 +354,7 @@ void eval(var_t *r) {
       V_FREE(r);
 
       IP--;
-      var_p = code_getvarptr();
+      var_p = code_getvarptr_parens(0);
 
       if (prog_error) {
         return;
@@ -426,38 +427,38 @@ void eval(var_t *r) {
       op = CODE(IP);
       IP++;
 
-      if (r->type == V_INT && v_is_type(left, V_INT)) {
+      if (r->type == V_INT && V_IS_TYPE(left, V_INT)) {
         if (op == '+') {
           r->v.i += left->v.i;
         } else {
           r->v.i = left->v.i - r->v.i;
         }
-      } else if (r->type == V_NUM && v_is_type(left, V_NUM)) {
+      } else if (r->type == V_NUM && V_IS_TYPE(left, V_NUM)) {
         r->type = V_NUM;
         if (op == '+') {
           r->v.n += left->v.n;
         } else {
           r->v.n = left->v.n - r->v.n;
         }
-      } else if (r->type == V_INT && v_is_type(left, V_NUM)) {
+      } else if (r->type == V_INT && V_IS_TYPE(left, V_NUM)) {
         r->type = V_NUM;
         if (op == '+') {
           r->v.n = r->v.i + left->v.n;
         } else {
           r->v.n = left->v.n - r->v.i;
         }
-      } else if (r->type == V_NUM && v_is_type(left, V_INT)) {
+      } else if (r->type == V_NUM && V_IS_TYPE(left, V_INT)) {
         if (op == '+') {
           r->v.n += left->v.i;
         } else {
           r->v.n = left->v.i - r->v.n;
         }
       } else {
-        if (r->type == V_ARRAY || v_is_type(left, V_ARRAY)) {
+        if (r->type == V_ARRAY || V_IS_TYPE(left, V_ARRAY)) {
           // 
           // ARRAYS
           // 
-          if (r->type == V_ARRAY && v_is_type(left, V_ARRAY)) {
+          if (r->type == V_ARRAY && V_IS_TYPE(left, V_ARRAY)) {
             if (op == '+') {
               mat_add(r, left);
             } else {
@@ -499,11 +500,11 @@ void eval(var_t *r) {
       op = CODE(IP);
       IP++;
 
-      if (r->type == V_ARRAY || v_is_type(left, V_ARRAY)) {
+      if (r->type == V_ARRAY || V_IS_TYPE(left, V_ARRAY)) {
         // 
         // ARRAYS
         // 
-        if (r->type == V_ARRAY && v_is_type(left, V_ARRAY)) {
+        if (r->type == V_ARRAY && V_IS_TYPE(left, V_ARRAY)) {
           if (op == '*') {
             mat_mul(left, r);
           } else {
@@ -769,13 +770,13 @@ void eval(var_t *r) {
             }
           }
         } else if (r->type == V_STR) {
-          if (v_is_type(left, V_STR)) {
+          if (V_IS_TYPE(left, V_STR)) {
             if (left->v.p.ptr[0] != '\0') {
               ri = (strstr(r->v.p.ptr, left->v.p.ptr) != NULL);
             } else {
               ri = 0;
             }
-          } else if (v_is_type(left, V_NUM) || v_is_type(left, V_INT)) {
+          } else if (V_IS_TYPE(left, V_NUM) || V_IS_TYPE(left, V_INT)) {
             var_t *v;
 
             v = v_clone(left);
@@ -866,7 +867,7 @@ void eval(var_t *r) {
           var_t *vp;
 
           IP++;
-          vp = code_getvarptr();
+          vp = code_getvarptr_parens(0);
           if (!prog_error) {
             r->type = V_INT;
             r->v.i = (intptr_t) vp->v.p.ptr;

@@ -1,3 +1,6 @@
+2014-08-14
+	Added SHOWPAGE. code cleanup
+
 2014-08-11
 	Cleanup system var handling, removed os_ver
 

@@ -225,8 +225,6 @@ int osd_devinit() {
   os_graf_mx = dev_width;
   os_graf_my = dev_height;
   os_color_depth = dev_depth;
-  os_color = 1;
-  setsysvar_str(SYSVAR_OSNAME, "Unix/FB");
 
   gfb_init(dev_width, dev_height, dev_depth);
 
@@ -351,6 +349,10 @@ int osd_events(int wait_flag) {
   if ((r = term_events()) != 0) // keyboard events
     return r;
   return 0;
+}
+
+void dev_show_page() {
+  // empty
 }
 
 //////////

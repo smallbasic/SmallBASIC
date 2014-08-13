@@ -104,7 +104,6 @@ EXTERN byte opt_decomp; /**< decompile                                          
 EXTERN byte opt_syntaxcheck; /**< syntax check only                                          @ingroup sys */
 EXTERN char opt_command[OPT_CMD_SZ];
 /**< command-line parameters (COMMAND$)                         @ingroup sys */
-EXTERN byte opt_safedraw; /**< using safest drawing routines (PalmOS: Use API for draw)   @ingroup sys */
 EXTERN byte opt_usevmt; /**< using VMT on compilation by default                        @ingroup sys */
 EXTERN int opt_base; /**< OPTION BASE x                                              @ingroup sys */
 EXTERN byte opt_uipos; /**< OPTION UICS {CHARS|PIXELS}                                 @ingroup sys */
@@ -121,6 +120,7 @@ EXTERN byte opt_nosave; /**< do not create .sbx files                           
 EXTERN byte opt_interactive; /**< interactive mode                                           @ingroup sys */
 EXTERN byte opt_usepcre; /**< OPTION PREDEF PCRE                                         @ingroup sys */
 EXTERN byte opt_file_permitted; /**< file system permission */
+EXTERN byte opt_show_page; /**< SHOWPAGE graphics flush mode */
 
 #define IDE_NONE        0
 #define IDE_LINKED      1

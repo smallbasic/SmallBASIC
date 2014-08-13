@@ -1267,6 +1267,9 @@ void bc_loop(int isf) {
         case kwDEFINEKEY:
           cmd_definekey();
           break;
+        case kwSHOWPAGE:
+          dev_show_page();
+          break;
         default:
           err_pcode_err(pcode);
         }

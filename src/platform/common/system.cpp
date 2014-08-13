@@ -405,14 +405,11 @@ void System::setRunning(bool running) {
     os_graf_mx = _output->getWidth();
     os_graf_my = _output->getHeight();
 
-    os_ver = 1;
-    os_color = 1;
-    os_color_depth = 16;
-
     dev_clrkb();
     ui_reset();
 
     _output->reset();
+    _output->setAutoflush(!opt_show_page);
     _state = kRunState;
     _loadPath.empty();
     _lastEventTime = maGetMilliSecondCount();
@@ -616,4 +613,6 @@ char *dev_read(const char *fileName) {
   return g_system->readSource(fileName);
 }
 
-
+void dev_show_page() {
+  g_system->_output->flushNow();
+}

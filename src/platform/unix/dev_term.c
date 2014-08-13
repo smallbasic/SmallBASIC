@@ -468,7 +468,6 @@ int term_init() {
    */
   os_graf_mx = scr_w;
   os_graf_my = scr_h;
-  os_color = 1;
 
   /*
    * build VRAM 

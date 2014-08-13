@@ -222,6 +222,7 @@ struct AnsiWidget {
   void drawRectFilled(int x1, int y1, int x2, int y2);
   void edit(IFormWidget *formWidget, int c);
   void flush(bool force, bool vscroll=false, int maxPending = MAX_PENDING);
+  void flushNow() { if (_front) _front->drawBase(false); }
   int  getBackgroundColor() { return _back->_bg; }
   int  getColor() { return _back->_fg; }
   int  getFontSize() { return _fontSize; }
@@ -239,6 +240,7 @@ struct AnsiWidget {
   void resize(int width, int height);
   void setColor(long color);
   void setDirty() { _back->setDirty(); }
+  void setAutoflush(bool autoflush) { _autoflush = autoflush; }
   void setFontSize(int fontSize);
   void setPixel(int x, int y, int c);
   void setTextColor(long fg, long bg);
@@ -279,6 +281,7 @@ private:
   int _yMove;      // touch move y value
   int _touchTime;  // last move time
   bool _swipeExit; // last touch-down was swipe exit
+  bool _autoflush; // flush internally
   IButtonListener *_buttonListener;
   Widget *_activeButton;
 };

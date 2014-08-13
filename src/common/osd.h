@@ -305,48 +305,6 @@ void osd_beep(void);
  */
 void osd_refresh(void);
 
-/**
- * @ingroup lgraf
- *
- * return the required size in bytes of the screen image
- *
- * @param x1 upper-left corner
- * @param y1 upper-left corner
- * @param x2 lower-right corner
- * @param y2 lower-right corner
- * @return the image's size in bytes
- */
-long osd_bmpsize(int x1, int y1, int x2, int y2);
-
-/**
- * @ingroup lgraf
- *
- * copy an image from screen to buf
- *
- * @param x1 upper-left corner
- * @param y1 upper-left corner
- * @param x2 lower-right corner
- * @param y2 lower-right corner
- * @param buf the memory block to store the image
- */
-void osd_bmpget(int x1, int y1, int x2, int y2, char *buf);
-
-/**
- * @ingroup lgraf
- *
- * copy an image from memory to screen
- *
- * there is a c-module to do all the basics,
- * like combine images using the specified write_mode.
- * see g_bmp.h
- *
- * @param x upper-left corner
- * @param y upper-left corner
- * @param write_mode the write-mode
- * @param buf the image
- */
-void osd_bmpput(int x, int y, int write_mode, char *buf);
-
 #if defined(__cplusplus)
 }
 #endif
