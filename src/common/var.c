@@ -18,15 +18,6 @@
 #define ARR_ALLOC       256
 
 /*
- * initialize a variable
- */
-void v_init(var_t *v) {
-  v->type = V_INT;
-  v->const_flag = 0;
-  v->v.i = 0;
-}
-
-/*
  * creates and returns a new variable
  */
 var_t *v_new() {
@@ -920,11 +911,4 @@ void v_input2var(const char *str, var_t *var) {
     }
     tmp_free(sb);
   }
-}
-
-/*
- * null safe variable type check
- */
-int v_is_type(var_t *v, int type) { 
-  return (v != NULL && v->type == type);
 }

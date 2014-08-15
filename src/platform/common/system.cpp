@@ -417,6 +417,7 @@ void System::setRunning(bool running) {
     _overruns = 0;
   } else if (!isClosing() && !isRestart() && !isBack()) {
     _state = kActiveState;
+    _output->setAutoflush(true);
   }
 }
 

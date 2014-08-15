@@ -262,7 +262,8 @@ int v_is_nonzero(var_t *v);
  * @return the numeric value of a variable
  */
 var_num_t v_getval(var_t *v);
-#define v_getnum(a) v_getval((a)) /* @ingroup var */
+
+#define v_getnum(a) v_getval((a))
 
 /**
  * @ingroup var
@@ -315,7 +316,11 @@ void v_add(var_t *result, var_t *a, var_t *b);
  *
  * @param v the variable
  */
-void v_init(var_t *v);
+static inline void v_init(var_t *v) {
+  v->type = V_INT;
+  v->const_flag = 0;
+  v->v.i = 0;
+}
 
 /**
  * @ingroup var
@@ -710,7 +715,7 @@ char *v_getstr(var_t *v);
  * @param v is the variable
  * @return whether the variable is of the given type
  */
-int v_is_type(var_t *v, int type);
+#define v_is_type(v, t) (v != NULL && v->type == t)
 
 /*
  * low-level byte-code parsing
@@ -719,33 +724,6 @@ int v_is_type(var_t *v, int type);
  * try the parameters API.
  */
   
-/**
- * @ingroup exec
- *
- * returns the next integer and moves the IP 4 bytes forward.
- *
- * R(long int) <- Code[IP]; IP+=4
- *
- * @return the integer
- */
-dword code_getnext32(void);
-
-/**
- * @ingroup exec
- *
- * returns the next double and moves the IP 8 bytes forward.
- *
- * R(double)   <- Code[IP]; IP+=8
- *
- * @return the double-number
- */
-double code_getnext64f(void);
-
-#if defined(OS_PREC64)
-  var_int_t code_getnext64i(void);  // R(long long) <- Code[IP]; IP+=8
-  var_num_t code_getnext128f(void);// R(long double) <- Code[IP]; IP+=16
-#endif
-
 int code_checkop(byte op);
 int code_checkop_s(byte *str);
 void code_jump_label(word label_id);  // IP <- LABEL_IP_TABLE[label_id]
@@ -858,6 +836,14 @@ stknode_t *code_stackpeek();
 #define code_getint()   code_getnext32()  /**< get integer    (kwTYPE_INT)   @ingroup exec */
 #define code_getreal()  code_getnext64f() /**< get real       (kwTYPE_NUM)   @ingroup exec */
 #endif
+
+/**
+ * @ingroup var
+ *
+ * Returns the varptr of the next variable. if the variable is an array 
+ * returns the element ptr
+ */
+#define code_getvarptr() code_getvarptr_parens(0)
 
 /**
  * @ingroup var

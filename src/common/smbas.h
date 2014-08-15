@@ -224,6 +224,62 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #undef EXTERN
 
 /**
+ * @ingroup var
+ *
+ * returns the next integer and moves the IP 4 bytes forward.
+ *
+ * R(long int) <- Code[IP]; IP+=4
+ */
+static inline dword code_getnext32(void) {
+  dword v;
+  memcpy(&v, prog_source + prog_ip, 4);
+  prog_ip += 4;
+  return v;
+}
+
+/**
+ * @ingroup var
+ *
+ * returns the next 64bit and moves the instruction pointer to the next instruction
+ *
+ * R(double)   <- Code[IP]; IP+=8
+ */
+static inline double code_getnext64f() {
+  double v;
+  memcpy(&v, prog_source + prog_ip, sizeof(double));
+  prog_ip += sizeof(double);
+  return v;
+}
+
+#if defined(OS_PREC64)
+
+/**
+ * @ingroup var
+ *
+ * returns the next 64bit and moves the instruction pointer to the next instruction
+ */
+static inline var_int_t code_getnext64i() {
+  var_int_t v;
+  memcpy(&v, prog_source + prog_ip, sizeof(var_int_t));
+  prog_ip += sizeof(var_int_t);
+  return v;
+}
+
+/**
+ * @ingroup var
+ *
+ * returns the next 128bit and moves the instruction pointer to the next instruction
+ */
+static inline var_num_t code_getnext128f() {
+  var_num_t v;
+  memcpy(&v, prog_source + prog_ip, sizeof(var_num_t));
+  prog_ip += sizeof(var_num_t);
+  return v;
+}
+
+#endif
+
+/**
  *   @ingroup exec
  *
  *   create a 'break' - display message, too

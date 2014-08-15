@@ -1,3 +1,0 @@
-# settings dialog
-print "Settings"
-

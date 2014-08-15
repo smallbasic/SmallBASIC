@@ -53,56 +53,6 @@ static int main_tid;
 static int exec_tid;
 
 /**
- * returns the next 32bit and moves the instruction pointer to the next instruction
- */
-dword code_getnext32() {
-  dword v;
-
-  memcpy(&v, prog_source + prog_ip, 4);
-  prog_ip += 4;
-  return v;
-}
-
-#if defined(OS_PREC64)
-
-/**
- * returns the next 64bit and moves the instruction pointer to the next instruction
- */
-var_int_t code_getnext64i() {
-  var_int_t v;
-
-  memcpy(&v, prog_source + prog_ip, sizeof(var_int_t));
-  prog_ip += sizeof(var_int_t);
-  return v;
-}
-#endif
-
-/**
- * returns the next 64bit and moves the instruction pointer to the next instruction
- */
-double code_getnext64f() {
-  double v;
-
-  memcpy(&v, prog_source + prog_ip, sizeof(double));
-  prog_ip += sizeof(double);
-  return v;
-}
-
-#if defined(OS_PREC64)
-
-/**
- * returns the next 128bit and moves the instruction pointer to the next instruction
- */
-var_num_t code_getnext128f() {
-  var_num_t v;
-
-  memcpy(&v, prog_source + prog_ip, sizeof(var_num_t));
-  prog_ip += sizeof(var_num_t);
-  return v;
-}
-#endif
-
-/**
  * jump to label
  */
 void code_jump_label(word label_id) {
@@ -379,14 +329,6 @@ var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
     }
   }
   return var_p;
-}
-
-/**
- * returns the varptr of the next variable. if the variable is an array 
- * returns the element ptr
- */
-var_t *code_getvarptr() {
-  return code_getvarptr_parens(0);
 }
 
 /**
