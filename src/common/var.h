@@ -726,28 +726,6 @@ void code_pop(stknode_t *node);
 /**
  * @ingroup exec
  *
- * returns the next var_t* and moves the IP 2 bytes forward.
- *
- * R(var_t*) <- Code[IP]; IP += 2;
- *
- * @return the var_t*
- */
-var_t *code_getvarptr();
-
-/**
- * @ingroup exec
- *
- * variant of code_getvarptr() derefence until left parenthesis found
- *
- * R(var_t*) <- Code[IP]; IP += 2;
- *
- * @return the var_t*
- */
-var_t *code_getvarptr_parens(int until_parens);
-
-/**
- * @ingroup exec
- *
  * returns true if the next code is a single variable
  *
  * @return non-zero if the following code is a variable
@@ -812,14 +790,6 @@ stknode_t *code_stackpeek();
 #define code_getint()   code_getnext32()  /**< get integer    (kwTYPE_INT)   @ingroup exec */
 #define code_getreal()  code_getnext64f() /**< get real       (kwTYPE_NUM)   @ingroup exec */
 #endif
-
-/**
- * @ingroup var
- *
- * Returns the varptr of the next variable. if the variable is an array 
- * returns the element ptr
- */
-#define code_getvarptr() code_getvarptr_parens(0)
 
 /**
  * @ingroup var

@@ -332,43 +332,6 @@ var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
 }
 
 /**
- * helper for code_getvarptr
- */
-var_t* code_getvarptr_parens(int until_parens) {
-  var_t *var_p = NULL;
-
-  switch (code_peek()) {
-  case kwTYPE_VAR:
-    code_skipnext();
-    var_p = tvar[code_getaddr()];
-    switch (var_p->type) {
-    case V_HASH:
-    case V_ARRAY:
-      var_p = code_resolve_varptr(var_p, until_parens);
-      break;
-    default:
-      if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
-        err_varisnotarray();
-      }
-    }
-    break;
-
-  case kwTYPE_UDS:
-    code_skipnext();
-    var_p = tvar[code_getaddr()];
-    var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
-    break;
-  }
-
-  if (var_p == NULL && !prog_error) {
-    err_notavar();
-    return tvar[0];
-  }
-
-  return var_p;
-}
-
-/**
  * Used by code_isvar() to retrieve an element ptr of an array
  */
 var_t *code_isvar_arridx(var_t * basevar_p) {

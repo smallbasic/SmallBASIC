@@ -278,6 +278,9 @@ static inline var_num_t code_getnext128f() {
 
 void err_evsyntax(void);
 void err_varisarray(void);
+void err_varisnotarray(void);
+void err_notavar(void);
+var_t *code_resolve_varptr(var_t* var_p, int until_parens);
 
 /**
  * @ingroup var
@@ -346,6 +349,57 @@ static inline var_int_t v_igetval(var_t *v) {
   }
   return 0;
 }
+
+/**
+ * @ingroup exec
+ *
+ * variant of code_getvarptr() derefence until left parenthesis found
+ *
+ * R(var_t*) <- Code[IP]; IP += 2;
+ *
+ * @return the var_t*
+ */
+static inline var_t* code_getvarptr_parens(int until_parens) {
+  var_t *var_p = NULL;
+
+  switch (code_peek()) {
+  case kwTYPE_VAR:
+    code_skipnext();
+    var_p = tvar[code_getaddr()];
+    switch (var_p->type) {
+    case V_HASH:
+    case V_ARRAY:
+      var_p = code_resolve_varptr(var_p, until_parens);
+      break;
+    default:
+      if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
+        err_varisnotarray();
+      }
+    }
+    break;
+
+  case kwTYPE_UDS:
+    code_skipnext();
+    var_p = tvar[code_getaddr()];
+    var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
+    break;
+  }
+
+  if (var_p == NULL && !prog_error) {
+    err_notavar();
+    return tvar[0];
+  }
+
+  return var_p;
+}
+
+/**
+ * @ingroup var
+ *
+ * Returns the varptr of the next variable. if the variable is an array 
+ * returns the element ptr
+ */
+#define code_getvarptr() code_getvarptr_parens(0)
 
 /**
  * @ingroup exec
