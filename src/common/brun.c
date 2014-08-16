@@ -772,16 +772,15 @@ void bc_loop(int isf) {
     proc_level++;
   }
   while (prog_ip < prog_length) {
-
+    if (code != kwTYPE_LINE) {
 #if defined(_Win32)
-    now = GetTickCount();
+      now = GetTickCount();
 #else
-    now = clock();
+      now = clock();
 #endif
+    }
 
-    // events
-    // every ~50ms, check events (on some drivers that redraws the
-    // screen)
+    // check events every ~50ms
     if (now >= next_check) {
       next_check = now + evt_check_every;
 
