@@ -15,7 +15,7 @@
 #include "common/var_uds.h"
 #include "common/var_hash.h"
 
-#define ARR_ALLOC       256
+#define ARR_ALLOC 256
 
 /*
  * creates and returns a new variable
@@ -120,60 +120,6 @@ int v_length(var_t *var) {
   }
 
   return 1;
-}
-
-/*
- * returns the floating-point value of the variable v
- */
-var_num_t v_getval(var_t *v) {
-  if (v == NULL) {
-    err_evsyntax();
-  } else {
-    switch (v->type) {
-    case V_UDS:
-      return uds_to_int(v);
-    case V_HASH:
-      return hash_to_int(v);
-    case V_PTR:
-      return v->v.ap.p;
-    case V_INT:
-      return v->v.i;
-    case V_NUM:
-      return v->v.n;
-    case V_STR:
-      return numexpr_sb_strtof((char *) v->v.p.ptr);
-    default:
-      err_varisarray();
-    }
-  }
-  return 0;
-}
-
-/*
- * returns the integer value of the variable v
- */
-var_int_t v_igetval(var_t *v) {
-  if (v == 0) {
-    err_evsyntax();
-  } else {
-    switch (v->type) {
-    case V_UDS:
-      return uds_to_int(v);
-    case V_HASH:
-      return hash_to_int(v);
-    case V_PTR:
-      return v->v.ap.p;
-    case V_INT:
-      return v->v.i;
-    case V_NUM:
-      return v->v.n;
-    case V_STR:
-      return numexpr_strtol((char *) v->v.p.ptr);
-    default:
-      err_varisarray();
-    }
-  }
-  return 0;
 }
 
 /*

@@ -255,30 +255,6 @@ int v_is_nonzero(var_t *v);
 /**
  * @ingroup var
  *
- * returns the floating-point value of a var.
- * if v is string it will converted to double.
- *
- * @param v the variable
- * @return the numeric value of a variable
- */
-var_num_t v_getval(var_t *v);
-
-#define v_getnum(a) v_getval((a))
-
-/**
- * @ingroup var
- *
- * returns the integer value of a var.
- * if v is string it will converted to integer.
- *
- * @param v the variable
- * @return the integer value of a variable
- */
-var_int_t v_igetval(var_t *v);
-
-/**
- * @ingroup var
- *
  * compares two variables
  *
  * @param a the left-side variable

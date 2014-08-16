@@ -43,7 +43,7 @@ endif
 sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 
 TEST_DIR=../../../samples/distro-examples/tests
-UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto uds pass1 call_tau
+UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto uds pass1 call_tau short-circuit
 
 test: ${bin_PROGRAMS}
 	@for utest in $(UNIT_TESTS); do                             \
