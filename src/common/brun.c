@@ -772,7 +772,13 @@ void bc_loop(int isf) {
     proc_level++;
   }
   while (prog_ip < prog_length) {
-    if (code != kwTYPE_LINE) {
+    switch (code) {
+    case kwLABEL:
+    case kwREM:
+    case kwTYPE_EOC:
+    case kwTYPE_LINE:
+      break;
+    default:
 #if defined(_Win32)
       now = GetTickCount();
 #else

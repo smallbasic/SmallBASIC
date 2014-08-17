@@ -1274,7 +1274,7 @@ void eval(var_t *r) {
       break;
 
     default:
-      if (kw_check_evexit(code)) {
+      if (code == kwTYPE_EOC || kw_check_evexit(code)) {
         IP--;
         // restore stack pointer
         eval_sp = eval_pos;
