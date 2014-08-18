@@ -19,4 +19,12 @@ tau.build_ta
 rem check system-variables
 predef.prsys
 
+x=PI
+foyer.name= "PI"
+tau.addRoom(foyer,x)
 
+sub addRoom(the_thing, d)
+  print the_thing.name, d
+end
+
+addRoom(foyer,x)

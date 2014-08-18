@@ -2546,10 +2546,14 @@ void comp_text_line(char *text) {
       if (udp > -1) {
         bc_add_extpcode(&comp_prog, comp_extproctable[udp].lib_id, 
                         comp_extproctable[udp].symbol_index);
-        bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
         char *next = trim_empty_parentheses(comp_bc_parm);
-        comp_expression(next, 0);
-        bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+        if (comp_is_parenthesized(next)) {
+          comp_expression(next, 0);
+        } else {
+          bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
+          comp_expression(next, 0);
+          bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+        }
       } else {
         udp = comp_udp_id(comp_bc_name, 1);
         if (udp == -1) {
