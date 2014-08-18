@@ -1033,6 +1033,25 @@ int comp_is_function(char *name) {
 }
 
 /*
+ * return whether the name is enclosed with parenthesis characters
+ */
+int comp_is_parenthesized(char *name) {
+  int result = 0;
+  char *p = comp_next_char(name);
+  if (*p == '(') {
+    char last = *p;
+    while (*p) {
+      if (*p != ' ') {
+        last = *p;
+      }
+      p++;
+    }
+    result = (last == ')');
+  }
+  return result;
+}
+
+/*
  * scan expression
  */
 void comp_expression(char *expr, byte no_parser) {
@@ -2538,10 +2557,14 @@ void comp_text_line(char *text) {
         }
         comp_push(comp_prog.count);
         bc_add_ctrl(&comp_prog, kwTYPE_CALL_UDP, udp, 0);
-        bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
         char *next = trim_empty_parentheses(comp_bc_parm);
-        comp_expression(next, 0);
-        bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+        if (comp_is_parenthesized(next)) {
+          comp_expression(next, 0);
+        } else {
+          bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
+          comp_expression(next, 0);
+          bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+        }
       }
       break;
 

@@ -275,8 +275,7 @@ void System::resize() {
   MAExtent screenSize = maGetScrSize();
   logEntered();
   _output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
-  os_graf_mx = _output->getWidth();
-  os_graf_my = _output->getHeight();
+  setDimensions();
   dev_pushkey(SB_PKEY_SIZE_CHG);
 }
 
@@ -398,13 +397,18 @@ void System::setPath(const char *filename) {
   }
 }
 
+void System::setDimensions() {
+  os_graf_mx = _output->getWidth();
+  os_graf_my = _output->getHeight();
+  setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
+  setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
+}
+
 void System::setRunning(bool running) {
   if (running) {
     dev_fgcolor = -DEFAULT_FOREGROUND;
     dev_bgcolor = -DEFAULT_BACKGROUND;
-    os_graf_mx = _output->getWidth();
-    os_graf_my = _output->getHeight();
-
+    setDimensions();
     dev_clrkb();
     ui_reset();
 

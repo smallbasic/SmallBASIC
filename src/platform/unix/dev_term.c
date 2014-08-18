@@ -1207,3 +1207,7 @@ void term_recalc_size() {
 // scr_h = peekb(0, 0x449);
 #endif
 }
+
+void dev_show_page() {
+  // empty
+}

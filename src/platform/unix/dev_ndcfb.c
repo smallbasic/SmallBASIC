@@ -351,10 +351,6 @@ int osd_events(int wait_flag) {
   return 0;
 }
 
-void dev_show_page() {
-  // empty
-}
-
 //////////
 
 #if !defined(DRV_SOUND)
