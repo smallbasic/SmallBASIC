@@ -159,6 +159,8 @@ var_p_t uds_resolve_fields(const var_p_t var_p) {
 void var_free(uds_field_s* element) {
   if (element->var_owner_flag) {
     v_free(element->var);
+    tmp_free(element->var);
+    element->var = NULL;
   }
 }
 
