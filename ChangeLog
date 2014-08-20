@@ -1,5 +1,7 @@
 2014-08-15
-	Performance tweaks
+	Improved runtime performance
+	Fixed memory leak with UDS variables
+	Fixed FUNC call with parenthesis
 
 2014-08-14
 	Added SHOWPAGE. code cleanup

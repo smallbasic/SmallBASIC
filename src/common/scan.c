@@ -1560,7 +1560,7 @@ int comp_single_line_if(char *text) {
   char *pthen, *pelse;
   char buf[SB_SOURCELINE_SIZE + 1];
 
-if(  comp_error) {
+  if (comp_error) {
     return 0;
   }
   pthen = p;
