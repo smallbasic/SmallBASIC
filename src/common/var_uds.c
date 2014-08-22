@@ -118,8 +118,13 @@ var_p_t uds_resolve_fields(const var_p_t var_p) {
     addr_t field_id = code_getaddr();
 
     if (var_p->type != V_UDS) {
-      v_free(var_p);
-      var_p->type = V_UDS;
+      if (v_is_nonzero(var_p)) {
+        err_typemismatch();
+        return NULL;
+      } else {
+        v_free(var_p);
+        var_p->type = V_UDS;
+      }
     }
 
     uds_field_s *next = var_p->v.uds;

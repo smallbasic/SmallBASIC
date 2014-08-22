@@ -100,7 +100,6 @@ int stream_write(dev_file_t *f, byte *data, dword size) {
 
   r = write(f->handle, data, size);
   if (r != (int) size) {
-    fprintf(stderr, "error result =%d %d\n", r, size);
     err_file((f->last_error = errno));
   }
   return (r == (int) size);

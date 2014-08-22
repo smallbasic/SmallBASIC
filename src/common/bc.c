@@ -114,7 +114,7 @@ void bc_add2i(bc_t *bc, byte code, word p1) {
 /*
  * add one command and one long int (32 bits)
  */
-void bc_add2l(bc_t * bc, byte code, long p1) {
+void bc_add2l(bc_t *bc, byte code, long p1) {
   if (bc->count >= bc->size - 8) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
@@ -207,19 +207,17 @@ void bc_add_creal(bc_t *bc, var_num_t v) {
 /*
  * add one command and one string (see: bc_store_string)
  */
-void bc_add2s(bc_t *bc, byte code, const char *p1) {
-  int l = strlen(p1);
-  if (l > BC_MAX_STORE_SIZE) {
+void bc_add_strn(bc_t *bc, const char *str, int len) {
+  if (len > BC_MAX_STORE_SIZE) {
     sc_raise("STRING TOO BIG");
   } else {
-    bc_add_code(bc, code);
-    bc_add_dword(bc, l);
-
-    if (bc->count >= bc->size - l) {
+    bc_add_code(bc, kwTYPE_STR);
+    bc_add_dword(bc, len);
+    if (bc->count >= bc->size - len) {
       bc_resize(bc, bc->size + BC_ALLOC_INCR);
     }
-    memcpy(bc->ptr + bc->count, p1, l);
-    bc->count += l;
+    memcpy(bc->ptr + bc->count, str, len);
+    bc->count += len;
   }
 }
 
@@ -255,11 +253,11 @@ char *bc_store_string(bc_t *bc, char *src) {
         char *cstr;
         cstr = cstrdup(np);
         tmp_free(np);
-        bc_add2s(bc, kwTYPE_STR, cstr);
+        bc_add_strn(bc, cstr, strlen(cstr));
         tmp_free(cstr);
       } else {
         // normal
-        bc_add2s(bc, kwTYPE_STR, np);
+        bc_add_strn(bc, np, strlen(np));
         tmp_free(np);
       }
       p++;
@@ -285,7 +283,7 @@ char *bc_store_macro(bc_t *bc, char *src) {
       np = tmp_alloc(l + 1);
       strncpy(np, src + 1, l);
       np[l - 1] = '\0';
-      bc_add2s(bc, kwTYPE_STR, np);
+      bc_add_strn(bc, np, strlen(np));
       tmp_free(np);
 
       p++;

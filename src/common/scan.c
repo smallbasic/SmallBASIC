@@ -19,10 +19,10 @@
 #include "common/messages.h"
 #include "languages/keywords.en.c"
 
-char *comp_array_uds_field(char *p, bc_t * bc);
+char *comp_array_uds_field(char *p, bc_t *bc);
 void comp_text_line(char *text);
 addr_t comp_search_bc(addr_t ip, code_t code);
-extern void expr_parser(bc_t * bc);
+extern void expr_parser(bc_t *bc);
 extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
@@ -574,14 +574,14 @@ int comp_check_lib(const char *name) {
   return 0;
 }
 
-/*
+/**
+ * create a new variable
  */
 int comp_create_var(const char *name) {
   int idx = -1;
-
-  if (!(is_alpha(name[0]) || name[0] == '_'))
+  if (!(is_alpha(name[0]) || name[0] == '_')) {
     sc_raise(MSG_WRONG_VARNAME, name);
-  else {
+  } else {
     // realloc table if it is needed
     if (comp_varcount >= comp_varsize) {
       comp_varsize += GROWSIZE;
@@ -600,7 +600,8 @@ int comp_create_var(const char *name) {
   return idx;
 }
 
-/*
+/**
+ * add external variable
  */
 int comp_add_external_var(const char *name, int lib_id) {
   int idx;
@@ -729,13 +730,19 @@ int comp_get_uds_field_id(const char *field_name, int len) {
     }
   }
 
+  int result;
   strncpy(uds.name, field_name, len);
-  uds.name[len] = 0;
-  uds.field_id = ++comp_next_field_id;
-  dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
-  comp_udscount++;
-
-  return uds.field_id;
+  if (!(is_alpha(uds.name[0]) || uds.name[0] == '_')) {
+    sc_raise(MSG_WRONG_VARNAME, uds.name);
+    result = -1;
+  } else {
+    uds.name[len] = 0;
+    uds.field_id = ++comp_next_field_id;
+    dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
+    comp_udscount++;
+    result = uds.field_id;
+  }
+  return result;
 }
 
 /*
@@ -745,7 +752,7 @@ int comp_get_uds_field_id(const char *field_name, int len) {
  * then the foo variable is added as kwTYPE_UDS.
  * 
  */
-void comp_add_variable(bc_t * bc, const char *var_name) {
+void comp_add_variable(bc_t *bc, const char *var_name) {
   char *dot = strchr(var_name, '.');
 
   if (dot != 0 && !comp_check_lib(var_name)) {
@@ -779,7 +786,6 @@ void comp_add_variable(bc_t * bc, const char *var_name) {
       bc_add_code(bc, kwTYPE_UDS_EL);
       bc_add_addr(bc, var_id);
     }
-
   } else if (comp_check_uds(var_name)) {
     // uds-container
     // all of var_name same as dot-less portion of existing variable

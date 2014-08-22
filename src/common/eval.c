@@ -27,7 +27,7 @@
 /**
  * matrix: convert var_t to double[r][c]
  */
-var_num_t* mat_toc(var_t *v, int32 *rows, int32 *cols) {
+var_num_t *mat_toc(var_t *v, int32 *rows, int32 *cols) {
   int i, j, pos;
   var_t *e;
   var_num_t *m;
@@ -69,7 +69,7 @@ var_num_t* mat_toc(var_t *v, int32 *rows, int32 *cols) {
 /**
  * matrix: conv. double[nr][nc] to var_t
  */
-void mat_tov(var_t * v, var_num_t *m, int rows, int cols, int protect_col1) {
+void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
   var_t *e;
   int i, j, pos;
 

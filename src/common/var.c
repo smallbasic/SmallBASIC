@@ -499,7 +499,6 @@ void v_set(var_t *dest, const var_t *src) {
     return;
   } else if (dest->type == V_HASH) {
     // lvalue struct assigned to non-struct rvalue
-    fprintf(stderr, "hash_clear\n");
     hash_clear(dest);
     return;
   }
