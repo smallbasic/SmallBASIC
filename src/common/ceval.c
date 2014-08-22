@@ -63,7 +63,6 @@ void cev_prim() {
     IP += OS_STRLEN;
     bc_add_dword(bc_out, len);
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, len);
-
     IP += len;
     break;
   case kwTYPE_CALL_UDP:
