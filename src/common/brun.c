@@ -223,8 +223,8 @@ addr_t getarrayidx(var_t *array, var_t **var_hash_val) {
     eval(&var);
     IF_ERR_RETURN_0;
 
-    if (var.type == V_STR) {
-      // array elemement is a string - convert array to hash
+    if (var.type == V_STR || array->type == V_HASH) {
+      // array elemement is a string or element is addressing a hash
       hash_get_value(array, &var, var_hash_val);
 
       if (code_peek() == kwTYPE_LEVEL_END) {

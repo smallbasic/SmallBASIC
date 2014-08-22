@@ -55,9 +55,9 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
 #else
     p = strchr(ps, ';');
 #endif
-    if (!p)
+    if (!p) {
       strcpy(cur_path, ps);
-    else {
+    } else {
       strncpy(cur_path, ps, p - ps);
       cur_path[p - ps] = '\0';
       ps = p + 1;
@@ -72,10 +72,11 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
 #if defined(_UnixOS)
       sprintf(cur_path, "%s/%s", getenv("HOME"), old_path);
 #else
-      if (getenv("HOME"))
+      if (getenv("HOME")) {
         sprintf(cur_path, "%s\\%s", getenv("HOME"), old_path);
-      else
+      } else {
         sprintf(cur_path, "%s\\%s", getenv("HOMEPATH"), old_path);
+      }
 #endif
       tmp_free(old_path);
     }
@@ -87,11 +88,6 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
 #endif
     strcat(cur_path, file);
 
-    // TODO: probably in DOS/Win we must remove double dir-seps
-    // (c:\\home\\\\user)
-
-    // check it
-//              printf("sp:[%s]\n", cur_path);
     if (access(cur_path, R_OK) == 0) {
       if (retbuf) {
         strcpy(retbuf, cur_path);
@@ -111,7 +107,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
  * var - the variable (the X)
  * ip  - expression's address 
  */
-void exec_usefunc(var_t * var, addr_t ip) {
+void exec_usefunc(var_t *var, addr_t ip) {
   var_t *old_x;
 
   // save X
@@ -136,7 +132,7 @@ void exec_usefunc(var_t * var, addr_t ip) {
  * var2 - the second variable (the Y)
  * ip   - expression's address 
  */
-void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip) {
+void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip) {
   var_t *old_x, *old_y;
 
   // save X
@@ -168,7 +164,7 @@ void exec_usefunc2(var_t * var1, var_t * var2, addr_t ip) {
  * var3 - the thrid variable (the Z)
  * ip   - expression's address 
  */
-void exec_usefunc3(var_t * var1, var_t * var2, var_t * var3, addr_t ip) {
+void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip) {
   var_t *old_x, *old_y, *old_z;
 
   // save X
@@ -207,7 +203,6 @@ void lwrite(const char *buf) {
   int log_dev; /* logfile file handle */
   char log_name[OS_PATHNAME_SIZE + 1]; /* LOGFILE filename */
 
-  // //////
   // open
 #if defined(_Win32) || defined(__MINGW32__)
   if (getenv("SBLOG")) {
@@ -229,7 +224,6 @@ void lwrite(const char *buf) {
     panic("LOG: Error on creating log file");
   }
 
-  // /////////
   // write
   if (write(log_dev, buf, strlen(buf)) == -1) {
     panic("LOG: write failed");
@@ -248,7 +242,7 @@ void pv_write(char *str, int method, int handle) {
 
   switch (method) {
   case PV_FILE:
-    dev_fwrite(handle, (byte *) str, strlen(str));
+    dev_fwrite(handle, (byte *)str, strlen(str));
     break;
   case PV_LOG:
     lwrite(str);
@@ -270,7 +264,7 @@ void pv_write(char *str, int method, int handle) {
 /*
  * just prints the value of variable 'var'
  */
-void pv_writevar(var_t * var, int method, int handle) {
+void pv_writevar(var_t *var, int method, int handle) {
   char tmpsb[64];
 
   // start with a clean buffer
@@ -278,7 +272,7 @@ void pv_writevar(var_t * var, int method, int handle) {
 
   switch (var->type) {
   case V_STR:
-    pv_write((char *) var->v.p.ptr, method, handle);
+    pv_write((char *)var->v.p.ptr, method, handle);
     break;
   case V_UDS:
     uds_write(var, method, handle);
@@ -302,7 +296,6 @@ void pv_writevar(var_t * var, int method, int handle) {
     // open array
     pv_write("[", method, handle);
 
-    // 
     if (var->v.a.maxdim == 2) {
       int rows, cols;
       var_t *e;
@@ -317,13 +310,14 @@ void pv_writevar(var_t * var, int method, int handle) {
           pos = i * cols + j;
           e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
           pv_writevar(e, method, handle);
-          if (j != cols - 1)
+          if (j != cols - 1) {
             pv_write(",", method, handle);  // add space?
+          }
         }
-        if (i != rows - 1)
+        if (i != rows - 1) {
           pv_write(";", method, handle);  // add space?
+        }
       }
-
     } else {
       var_t *e;
       int i;
@@ -331,8 +325,9 @@ void pv_writevar(var_t * var, int method, int handle) {
       for (i = 0; i < var->v.a.size; i++) {
         e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * i));
         pv_writevar(e, method, handle);
-        if (i != var->v.a.size - 1)
+        if (i != var->v.a.size - 1) {
           pv_write(",", method, handle);  // add space?
+        }
       }
     }
 
@@ -345,21 +340,21 @@ void pv_writevar(var_t * var, int method, int handle) {
 /*
  * write a variable to console
  */
-void print_var(var_t * v) {
+void print_var(var_t *v) {
   pv_writevar(v, PV_CONSOLE, 0);
 }
 
 /*
  * write a variable to a file
  */
-void fprint_var(int handle, var_t * v) {
+void fprint_var(int handle, var_t *v) {
   pv_writevar(v, PV_FILE, handle);
 }
 
 /*
  * write a variable to log-file
  */
-void logprint_var(var_t * v) {
+void logprint_var(var_t *v) {
   pv_writevar(v, PV_LOG, 0);
 }
 
@@ -368,11 +363,7 @@ void logprint_var(var_t * v) {
  */
 void par_skip() {
   byte exitf = 0, code;
-#if defined(ADDR16)
-  word len;
-#else
   dword len;
-#endif
   int level = 0;
 
   do {
@@ -437,14 +428,12 @@ void par_skip() {
       prog_ip++;
     }
   } while (!exitf);
-
-//      printf("exit at %d\n", prog_ip);
 }
 
 /*
  * get next parameter as var_t
  */
-void par_getvar(var_t * var) {
+void par_getvar(var_t *var) {
   byte code;
 
   code = code_peek();
@@ -503,7 +492,7 @@ var_t *par_getvar_ptr() {
 /*
  * get next parameter as var_t
  */
-void par_getstr(var_t * var) {
+void par_getstr(var_t *var) {
   byte code;
 
   code = code_peek();
@@ -713,7 +702,7 @@ ipt_t par_getipt() {
 /*
  * retrieve a 2D polyline
  */
-int par_getpoly(pt_t ** poly_pp) {
+int par_getpoly(pt_t **poly_pp) {
   pt_t *poly = NULL;
   var_t *var, *el;
   int count = 0;
@@ -799,9 +788,9 @@ int par_getpoly(pt_t ** poly_pp) {
 
     for (i = j = 0; i < count; i++, j += 2) {
       // error check
-      if (prog_error)
+      if (prog_error) {
         break;
-
+      }
       // store point
       poly[i].x = v_getreal(v_elem(var, j));
       poly[i].y = v_getreal(v_elem(var, j + 1));
@@ -824,7 +813,7 @@ int par_getpoly(pt_t ** poly_pp) {
 /*
  * retrieve a 2D polyline (integers)
  */
-int par_getipoly(ipt_t ** poly_pp) {
+int par_getipoly(ipt_t **poly_pp) {
   ipt_t *poly = NULL;
   var_t *var, *el;
   int count = 0;
@@ -944,7 +933,7 @@ int par_isonevar() {
 /*
  * destroy a parameter-table which was created by par_getparlist
  */
-void par_freepartable(par_t ** ptable_pp, int pcount) {
+void par_freepartable(par_t **ptable_pp, int pcount) {
   int i;
   par_t *ptable;
 
@@ -973,7 +962,7 @@ void par_freepartable(par_t ** ptable_pp, int pcount) {
  * YOU MUST FREE THAT TABLE BY USING par_freepartable()
  * IF THERE IS NO ERROR, CALL TO par_freepartable IS NOT NEEDED
  */
-int par_getpartable(par_t ** ptable_pp, const char *valid_sep) {
+int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
   byte ready, last_sep = 0;
   par_t *ptable;
   addr_t ofs;
@@ -986,11 +975,11 @@ int par_getpartable(par_t ** ptable_pp, const char *valid_sep) {
    */
   ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 256);
 
-  if (valid_sep)
+  if (valid_sep) {
     strcpy(vsep, valid_sep);
-  else
+  } else {
     strcpy(vsep, ",");
-
+  }
   /*
    *      start
    */
@@ -1008,18 +997,18 @@ int par_getpartable(par_t ** ptable_pp, const char *valid_sep) {
 
       // check parameters separator
       if (strchr(vsep, (last_sep = code_getnext())) == NULL) {
-        if (strlen(vsep) <= 1)
+        if (strlen(vsep) <= 1) {
           err_syntaxsep(',');
-        else
+        } else {
           err_syntaxanysep(vsep);
-
+        }
         par_freepartable(ptable_pp, pcount);
         return -1;
       }
       // update par.next_sep
-      if (pcount)
+      if (pcount) {
         ptable[pcount - 1].next_sep = last_sep;
-
+      }
       break;
     case kwTYPE_VAR:           // variable
       ofs = prog_ip;            // store IP
@@ -1063,7 +1052,7 @@ int par_getpartable(par_t ** ptable_pp, const char *valid_sep) {
 
 /*
  */
-int par_massget_type_check(char fmt, par_t * par) {
+int par_massget_type_check(char fmt, par_t *par) {
   switch (fmt) {
   case 'S':
   case 's':
@@ -1137,10 +1126,11 @@ int par_massget(const char *fmt, ...) {
   fmt_p = (char *)fmt;
   rqcount = optcount = 0;
   while (*fmt_p) {
-    if (*fmt_p >= 'a')
+    if (*fmt_p >= 'a') {
       optcount++;
-    else
+    } else {
       rqcount++;
+    }
     fmt_p++;
   }
   
@@ -1237,7 +1227,6 @@ int par_massget(const char *fmt, ...) {
     va_end(ap);
   }
 
-  // 
   par_freepartable(&ptable, pcount);
   if (prog_error) {
     return -1;

@@ -50,7 +50,18 @@ typedef struct Node {
 Element *create_element(var_p_t key) {
   Element *element = (Element *) tmp_alloc(sizeof (Element));
   element->key = v_new();
-  v_createstr(element->key, key->v.p.ptr);
+  v_set(element->key, key);
+  element->value = NULL;
+  return element;
+}
+
+/**
+ * Returns a new Element using the integer based key
+ */
+Element *create_int_element(int key) {
+  Element *element = (Element *) tmp_alloc(sizeof (Element));
+  element->key = v_new();
+  v_setint(element->key, key);
   element->value = NULL;
   return element;
 }
@@ -165,7 +176,7 @@ void hash_free_cb(void *nodep) {
 void hash_free_var(var_p_t var_p) {
   if (var_p->type == V_HASH) {
     tdestroy(var_p->v.hash, hash_free_cb);
-    var_p->v.hash = 0;
+    var_p->v.hash = NULL;
   }
 }
 
@@ -174,11 +185,31 @@ void hash_free_var(var_p_t var_p) {
  * an empty variable that will be returned in a further call
  */
 void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
-  if (base->type != V_HASH) {
+  if (base->type == V_ARRAY && base->v.a.size) {
+    // convert the non-empty array to a hash
+    int i;
+    var_t *clone = v_clone(base);
+
+    v_free(base);
+    base->type = V_HASH;
+    base->v.hash = NULL;
+
+    for (i = 0; i < clone->v.a.size; i++) {
+      const var_t *element = (var_t *)(clone->v.a.ptr + (sizeof(var_t) * i));
+      Element *key = create_int_element(i);
+      key->value = v_new();
+      v_set(key->value, element);
+      tsearch(key, &base->v.hash, cmp_fn);
+    }
+
+    // free the clone
+    v_free(clone);
+    tmp_free(clone);
+  } else if (base->type != V_HASH) {
     // initialise as hash
     v_free(base);
     base->type = V_HASH;
-    base->v.hash = 0;
+    base->v.hash = NULL;
   }
 
   // create a key which will hold our name and value pairs
@@ -242,7 +273,7 @@ void hash_write_cb(const void *nodep, VISIT value, int level) {
       pv_write(",", cb.method, cb.handle);
     }
     cb.firstElement = 0;
-    pv_write(element->key->v.p.ptr, cb.method, cb.handle);
+    pv_writevar(element->key, cb.method, cb.handle);
     pv_write("=", cb.method, cb.handle);
     pv_writevar(element->value, cb.method, cb.handle);
   }

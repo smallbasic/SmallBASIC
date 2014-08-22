@@ -415,8 +415,8 @@ void v_add(var_t *result, var_t *a, var_t *b) {
 
   if (a->type == V_STR && b->type == V_STR) {
     result->type = V_STR;
-    result->v.p.ptr = (byte *) tmp_alloc(strlen((char *)a->v.p.ptr) + strlen((char *)b->v.p.ptr) +
-        1);
+    result->v.p.ptr = (byte *)tmp_alloc(strlen((char *)a->v.p.ptr) + 
+                                        strlen((char *)b->v.p.ptr) + 1);
     strcpy((char *) result->v.p.ptr, (char *) a->v.p.ptr);
     strcat((char *) result->v.p.ptr, (char *) b->v.p.ptr);
     result->v.p.size = strlen((char *) result->v.p.ptr) + 1;
@@ -509,7 +509,8 @@ void v_set(var_t *dest, const var_t *src) {
   dest->const_flag = 0;
   switch (src->type) {
   case V_STR:
-    dest->v.p.ptr = (byte *) tmp_alloc(strlen((char *)src->v.p.ptr) + 1);
+    dest->v.p.size = strlen((char *)src->v.p.ptr) + 1;
+    dest->v.p.ptr = (byte *) tmp_alloc(dest->v.p.size);
     strcpy((char *) dest->v.p.ptr, (char *) src->v.p.ptr);
     break;
 
