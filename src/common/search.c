@@ -76,6 +76,7 @@ void *tsearch(const void *vkey, void **vrootp, tcompare_cb compar) {
     // key not found. make new node and link to old
     q = malloc(sizeof(node_t));
     if (q != 0) {
+      rootp = (node_t **)vrootp;
       *rootp = q;
       q->key = (void *)vkey;
       q->left = q->right = NULL;

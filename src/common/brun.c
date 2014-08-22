@@ -34,9 +34,6 @@ void code_pop_until(int type);
 void code_pop_and_free(stknode_t *node);
 stknode_t *code_stackpeek();
 void sys_before_comp();
-void sys_after_comp();
-void sys_before_run();
-void sys_after_run();
 int sbasic_exec_task(int tid);
 int sbasic_recursive_exec(int tid);
 void sbasic_exec_prepare(const char *filename);
@@ -45,7 +42,7 @@ int sbasic_main(const char *file);
 int exec_close(int tid);
 int sbasic_exec(const char *file);
 void cmd_options(void);
-var_t *code_resolve_varptr(var_t* var_p, int until_parens);
+var_t *code_resolve_varptr(var_t *var_p, int until_parens);
 
 static dword evt_check_every;
 static char fileName[OS_FILENAME_SIZE + 1];
@@ -62,7 +59,7 @@ void code_jump_label(word label_id) {
 /**
  * Put the node 'node' in stack (PUSH)
  */
-void code_push(stknode_t * node) {
+void code_push(stknode_t *node) {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
   int i;
 #endif
@@ -88,7 +85,7 @@ void code_push(stknode_t * node) {
 /**
  * Returns and deletes the topmost node from stack (POP)
  */
-void code_pop(stknode_t * node) {
+void code_pop(stknode_t *node) {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
   int i;
 #endif
@@ -116,7 +113,7 @@ void code_pop(stknode_t * node) {
 /**
  * Returns and deletes the topmost node from stack (POP)
  */
-void code_pop_and_free(stknode_t * node) {
+void code_pop_and_free(stknode_t *node) {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
   int i;
 #endif
@@ -212,11 +209,14 @@ stknode_t *code_stackpeek() {
 /**
  * Convertion multi-dim index to one-dim index
  */
-addr_t getarrayidx(var_t* array, var_t** var_hash_val) {
+addr_t getarrayidx(var_t *array, var_t **var_hash_val) {
+  addr_t idx = 0;
+  addr_t lev = 0;
+  addr_t m = 0;
   byte code;
   var_t var;
-  addr_t idx = 0, lev = 0, m = 0;
-  addr_t idim, i;
+  addr_t idim;
+  addr_t i;
 
   do {
     v_init(&var);
@@ -271,7 +271,7 @@ addr_t getarrayidx(var_t* array, var_t** var_hash_val) {
 /**
  * Used by code_getvarptr() to retrieve an element ptr of an array
  */
-var_t *code_getvarptr_arridx(var_t* basevar_p) {
+var_t *code_getvarptr_arridx(var_t *basevar_p) {
   addr_t array_index;
   var_t *var_p = NULL;
 
@@ -315,7 +315,7 @@ var_t *code_getvarptr_arridx(var_t* basevar_p) {
 /**
  * resolve a composite variable reference, eg: ar.ch(0).foo
  */
-var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
+var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
   if (var_p) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -334,7 +334,7 @@ var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
 /**
  * Used by code_isvar() to retrieve an element ptr of an array
  */
-var_t *code_isvar_arridx(var_t * basevar_p) {
+var_t *code_isvar_arridx(var_t *basevar_p) {
   addr_t array_index;
   var_t *var_p = NULL;
 
@@ -381,7 +381,8 @@ var_t *code_isvar_arridx(var_t * basevar_p) {
  * returns false
  */
 int code_isvar() {
-  var_t *basevar_p, *var_p = NULL;
+  var_t *basevar_p;
+  var_t *var_p = NULL;
   addr_t cur_ip;
 
   cur_ip = prog_ip;             // store IP
@@ -658,7 +659,6 @@ void cmd_chain(void) {
   // compile the buffer
   sys_before_comp();
   success = comp_compile_buffer(code);
-  sys_after_comp();
 
   v_free(&var);
   if (code_alloc) {
@@ -672,7 +672,6 @@ void cmd_chain(void) {
   }
 
   tid_main = brun_create_task("CH_MAIN", bytecode_h, 0);
-  sys_before_run();
 
   dev_init(opt_graphics, 0);
   exec_sync_variables(0);
@@ -680,7 +679,6 @@ void cmd_chain(void) {
   bc_loop(0);
   success = prog_error;         // save tid_main status
 
-  sys_after_run();
   exec_close_task();            // cleanup task data - tid_main
   close_task(tid_main);         // cleanup task container
   close_task(tid_base);         // cleanup task container
@@ -977,15 +975,11 @@ void bc_loop(int isf) {
         pcode = code_getaddr();
         switch (pcode) {
         case kwCLS:
-          // cdw-s 19/11/2004
-          // dev_cls(); called in graph_reset()
           graph_reset();
           break;
         case kwRTE:
           cmd_RTE();
           break;
-          // case kwSHELL:
-          // break;
         case kwENVIRON:
           cmd_environ();
           break;
@@ -1230,20 +1224,12 @@ void bc_loop(int isf) {
         IF_ERR_BREAK;
         continue;
 
-        // //////////////
       case kwLINE:
         cmd_line();
         break;
-
-        // third class
       case kwCOLOR:
         cmd_color();
         break;
-        // case kwINTEGRAL:
-        // cmd_integral();
-        // break;
-
-        // --- at end ---
       case kwOPEN:
         cmd_fopen();
         break;
@@ -1283,7 +1269,6 @@ void bc_loop(int isf) {
       case kwTROFF:
         trace_flag = 0;
         continue;
-
       case kwSTOP:
       case kwEND:
         if ((prog_length - 1) > prog_ip) {
@@ -1369,8 +1354,9 @@ void dump_stack() {
           break;
         }
       }
-    } else
+    } else {
       break;
+    }
   } while (1);
 }
 
@@ -1449,7 +1435,6 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   }
 
   // create task
-
   tid = create_task(fname);     // create a task
   activate_task(tid);           // make it active
   bytecode_h = bc_h;
@@ -1541,7 +1526,6 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   prog_source = cp;
   prog_ip = 0;
 
-  // 
   exec_setup_predefined_variables();
 
   // init the keyboard map
@@ -1652,7 +1636,8 @@ int exec_close_task() {
     // clean up - prog stack
     while (prog_stack_count > 0) {
       code_pop_and_free(&node);
-    }tmp_free(prog_stack);
+    }
+    tmp_free(prog_stack);
     // clean up - variables
     for (i = 0; i < (int) prog_varcount; i++) {
       int j, shared;
@@ -1773,28 +1758,11 @@ void exec_sync_variables(int dir) {
 void sys_before_comp() {
   // setup prefered screen mode variables
   if (dev_getenv("SBGRAF")) {
-    if (dev_getenv("SBGRAF"))
+    if (dev_getenv("SBGRAF")) {
       comp_preproc_grmode(dev_getenv("SBGRAF"));
+    }
     opt_graphics = 2;
   }
-}
-
-/**
- * system specific things - after compilation
- */
-void sys_after_comp() {
-}
-
-/**
- * system specific things - before execution
- */
-void sys_before_run() {
-}
-
-/**
- * system specific things - after execution
- */
-void sys_after_run() {
 }
 
 /**
@@ -1868,7 +1836,7 @@ void sbasic_dump_taskinfo(FILE * output) {
 /**
  * dump-bytecode
  */
-void sbasic_dump_bytecode(int tid, FILE * output) {
+void sbasic_dump_bytecode(int tid, FILE *output) {
   int i;
   int prev_tid;
 
@@ -1941,7 +1909,6 @@ int sbasic_compile(const char *file) {
   if (comp_rq) {
     sys_before_comp();  // system specific preparations for compilation
     success = comp_compile(file);
-    sys_after_comp();   // system specific things; after compilation
   }
   return success;
 }
@@ -2005,7 +1972,6 @@ int sbasic_exec(const char *file) {
     // load everything
     sbasic_exec_prepare(file);
 
-    sys_before_run();           // system specific things; before run
     dev_init(opt_graphics, 0);  // initialize output device for graphics
     evt_check_every = (50 * CLOCKS_PER_SEC) / 1000; // setup event checker time = 50ms
     srand(clock());             // randomize
@@ -2020,8 +1986,6 @@ int sbasic_exec(const char *file) {
 
     exec_close(exec_tid);       // clean up executor's garbages
     dev_restore();              // restore device
-
-    sys_after_run();            // system specific things; after run
   }
   // update IDE when it used as external
   if (opt_ide == IDE_EXTERNAL) {
@@ -2040,7 +2004,7 @@ int sbasic_exec(const char *file) {
     }
   }
 
-  // cdw-s 22/11/2004 return as failure for compilation errors
+  // return compilation errors as failure
   return !success ? 0 : !gsb_last_error;
 }
 

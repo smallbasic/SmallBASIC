@@ -156,7 +156,7 @@ var_p_t uds_resolve_fields(const var_p_t var_p) {
 /**
  * free any owned variable in element
  */
-void var_free(uds_field_s* element, int erase) {
+void var_free(uds_field_s *element, int erase) {
   if (element->var_owner_flag) {
     v_free(element->var);
     if (erase) {
@@ -180,7 +180,7 @@ void uds_clear(const var_p_t var) {
 /**
  * Helper for uds_free
  */
-void uds_free_element(uds_field_s* element) {
+void uds_free_element(uds_field_s *element) {
   if (element) {
     uds_free_element(element->next);
     var_free(element, 1);

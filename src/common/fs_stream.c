@@ -29,7 +29,7 @@
 /*
  * open a file
  */
-int stream_open(dev_file_t * f) {
+int stream_open(dev_file_t *f) {
   int osflags, osshare;
 
   if (f->open_flags == DEV_FILE_OUTPUT) {
@@ -82,7 +82,7 @@ int stream_open(dev_file_t * f) {
 /*
  *   close the stream
  */
-int stream_close(dev_file_t * f) {
+int stream_close(dev_file_t *f) {
   int r;
 
   r = close(f->handle);
@@ -95,7 +95,7 @@ int stream_close(dev_file_t * f) {
 
 /*
  */
-int stream_write(dev_file_t * f, byte * data, dword size) {
+int stream_write(dev_file_t *f, byte *data, dword size) {
   int r;
 
   r = write(f->handle, data, size);
@@ -108,7 +108,7 @@ int stream_write(dev_file_t * f, byte * data, dword size) {
 
 /*
  */
-int stream_read(dev_file_t * f, byte * data, dword size) {
+int stream_read(dev_file_t *f, byte *data, dword size) {
   int r;
 
   r = read(f->handle, data, size);
@@ -121,14 +121,14 @@ int stream_read(dev_file_t * f, byte * data, dword size) {
 /*
  * returns the current position
  */
-dword stream_tell(dev_file_t * f) {
+dword stream_tell(dev_file_t *f) {
   return lseek(f->handle, 0, SEEK_CUR);
 }
 
 /*
  * returns the file-length
  */
-dword stream_length(dev_file_t * f) {
+dword stream_length(dev_file_t *f) {
   long pos, endpos;
 
   pos = lseek(f->handle, 0, SEEK_CUR);
@@ -144,13 +144,13 @@ dword stream_length(dev_file_t * f) {
 
 /*
  */
-dword stream_seek(dev_file_t * f, dword offset) {
+dword stream_seek(dev_file_t *f, dword offset) {
   return lseek(f->handle, offset, SEEK_SET);
 }
 
 /*
  */
-int stream_eof(dev_file_t * f) {
+int stream_eof(dev_file_t *f) {
   long pos, endpos;
 
   pos = lseek(f->handle, 0, SEEK_CUR);

@@ -47,8 +47,8 @@ typedef struct Node {
 /**
  * Returns a new Element 
  */
-Element* create_element(var_p_t key) {
-  Element* element = (Element*) tmp_alloc(sizeof (Element));
+Element *create_element(var_p_t key) {
+  Element *element = (Element *) tmp_alloc(sizeof (Element));
   element->key = v_new();
   v_createstr(element->key, key->v.p.ptr);
   element->value = NULL;
@@ -58,7 +58,7 @@ Element* create_element(var_p_t key) {
 /**
  * cleanup the given element
  */
-void delete_element(Element* element) {
+void delete_element(Element *element) {
   v_free(element->key);
   tmp_free(element->key); // cleanup v_new
 
@@ -73,8 +73,8 @@ void delete_element(Element* element) {
  * Callback to compare Element's
  */
 int cmp_fn(const void *a, const void *b) {
-  Element* el_a = (Element*) a;
-  Element* el_b = (Element*) b;
+  Element *el_a = (Element *)a;
+  Element *el_b = (Element *)b;
   return strcasecmp(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
 }
 
@@ -125,7 +125,7 @@ int hash_length(const var_p_t var_p) {
 void hash_elem_cb(const void *nodep, VISIT value, int level) {
   if (value == leaf || value == endorder) {
     if (cb.count++ == cb.index) {
-      Element* element = ((Node*) nodep)->element;
+      Element *element = ((Node *) nodep)->element;
       cb.var = element->key;
     }
   }
@@ -155,7 +155,7 @@ void hash_clear(const var_p_t var) {
  * Helper for hash_free_var
  */
 void hash_free_cb(void *nodep) {
-  Element* element = (Element*) nodep;
+  Element *element = (Element *) nodep;
   delete_element(element);
 }
 
@@ -182,8 +182,8 @@ void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
   }
 
   // create a key which will hold our name and value pairs
-  Element* key = create_element(var_key);
-  Node* node = tfind(key, &base->v.hash, cmp_fn);
+  Element *key = create_element(var_key);
+  Node *node = tfind(key, &base->v.hash, cmp_fn);
   if (node != NULL) {
     // item already exists
     *result = node->element->value;
@@ -202,8 +202,8 @@ void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
 void hash_set_cb(const void *nodep, VISIT value, int level) {
   if (value == leaf || value == endorder) {
     // copy the element and insert it into the destination
-    Element* element = ((Node*) nodep)->element;
-    Element* key = create_element(element->key);
+    Element *element = ((Node *) nodep)->element;
+    Element *key = create_element(element->key);
     key->value = v_new();
     v_set(key->value, element->value);
     tsearch(key, &cb.hash, cmp_fn);
@@ -237,7 +237,7 @@ void hash_to_str(const var_p_t var_p, char *out, int max_len) {
  */
 void hash_write_cb(const void *nodep, VISIT value, int level) {
   if (value == leaf || value == endorder) {
-    Element* element = ((Node*) nodep)->element;
+    Element *element = ((Node *) nodep)->element;
     if (!cb.firstElement) {
       pv_write(",", cb.method, cb.handle);
     }
