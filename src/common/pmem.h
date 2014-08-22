@@ -51,20 +51,6 @@ typedef unsigned int dword;
 // code
 typedef byte code_t; /**< basic code unit      (unsigned)    @ingroup mem */
 
-#if defined(OS_ADDR16)          // work with 16bits
-#define ADDR16                  // just for short defs
-typedef int16 fcode_t;          // buildin function code (signed)
-typedef int16 pcode_t;          // buildin procedure code (signed)
-typedef word addr_t;            // memory address (unsigned)
-#define INVALID_ADDR    0xFFFF  // invalid address value (unsigned)
-typedef int16 bid_t;            // IDs (labels, variables, etc) (signed)
-#define OS_ADDRSZ   2           // size of address pointer (always 2
-                                // for 16b mode)
-#define OS_CODESZ   2           // size of buildin func/proc ptrs
-                                // (always 2 for 16b mode)
-#define OS_STRLEN   2           // size of strings
-#else
-
 typedef int32 fcode_t;
 typedef int32 pcode_t;
 typedef int32 bid_t;
@@ -77,7 +63,6 @@ typedef dword addr_t;
 #define OS_ADDRSZ   4   // size of address pointer (always 4 for 32b addresses)
 #define OS_CODESZ   4   // size of buildin func/proc ptrs (always 4 for 32b mode)
 #define OS_STRLEN   4   // size of strings
-#endif
 
 #define ADDRSZ      OS_ADDRSZ
 #define CODESZ      OS_CODESZ

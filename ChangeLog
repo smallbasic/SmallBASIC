@@ -1,3 +1,7 @@
+2014-08-22
+	Fix HASH var crash
+	Fix HASH var handling of mixed types
+
 2014-08-15
 	Improved runtime performance
 	Fixed memory leak with UDS variables

@@ -125,12 +125,7 @@ int v_length(var_t *var) {
 /*
  * return array element pointer
  */
-#if defined(OS_ADDR16)
-var_t *v_getelemptr(var_t *v, word index)
-#else
-var_t *v_getelemptr(var_t *v, dword index)
-#endif
-{
+var_t *v_getelemptr(var_t *v, dword index) {
   if (v->type == V_ARRAY) {
     if (index < v->v.a.size)
       return (var_t *) (v->v.a.ptr + (index * sizeof(var_t)));
@@ -147,19 +142,10 @@ var_t *v_getelemptr(var_t *v, dword index)
 /*
  * resize an existing array
  */
-#if defined(OS_ADDR16)
-void v_resize_array(var_t *v, word size)
-#else
-void v_resize_array(var_t *v, dword size)
-#endif
-{
+void v_resize_array(var_t *v, dword size) {
   byte *prev;
   var_t *elem;
-#if defined(OS_ADDR16)
-  word i;
-#else
   dword i;
-#endif
 
   if (v->type == V_ARRAY) {
     if (size < 0) {
@@ -183,15 +169,9 @@ void v_resize_array(var_t *v, dword size)
         v_free(elem);
       }
 
-#if defined(OS_ADDR32)
       // do not resize array
       prev = NULL;
-#else
-      // resize & copy
-      prev = v->v.a.ptr;
-      v->v.a.ptr = tmp_alloc(size * sizeof(var_t));
-      memcpy(v->v.a.ptr, prev, size * sizeof(var_t));
-#endif
+
       // array data
       v->v.a.size = size;
       v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
@@ -203,8 +183,6 @@ void v_resize_array(var_t *v, dword size)
       }
     } else if (v->v.a.size < size) {
       // resize up
-
-#if defined(OS_ADDR32)
       // if there is space do not resize 
       if (v->v.a.size == 0) {
         prev = v->v.a.ptr;
@@ -216,17 +194,10 @@ void v_resize_array(var_t *v, dword size)
           v->v.a.ptr = tmp_alloc((size + ARR_ALLOC) * sizeof(var_t));
           if (v->v.a.size > 0)
             memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
-        } else
+        } else {
           prev = NULL;
+        }
       }
-#else
-      // resize & copy
-      prev = v->v.a.ptr;
-      v->v.a.ptr = tmp_alloc(size * sizeof(var_t));
-      if (v->v.a.size > 0) {
-        memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
-      }
-#endif
 
       // init vars
       for (i = v->v.a.size; i < size; i++) {
@@ -289,18 +260,9 @@ var_t *v_new_matrix(int r, int c) {
 /*
  * create array
  */
-#if defined(OS_ADDR16)
-void v_toarray1(var_t *v, word r)
-#else
-void v_toarray1(var_t *v, dword r)
-#endif
-{
+void v_toarray1(var_t *v, dword r) {
   var_t *e;
-#if defined(OS_ADDR16)
-  word i;
-#else
   dword i;
-#endif
 
   v_free(v);
   v->type = V_ARRAY;
@@ -308,11 +270,7 @@ void v_toarray1(var_t *v, dword r)
   if (r > 0) {
     // create data
     v->v.a.size = r;
-#if defined(OS_ADDR32)
     v->v.a.ptr = tmp_alloc(sizeof(var_t) * (v->v.a.size + ARR_ALLOC));
-#else
-    v->v.a.ptr = tmp_alloc(sizeof(var_t) * v->v.a.size);
-#endif
     for (i = 0; i < r; i++) {
       e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
       v_init(e);

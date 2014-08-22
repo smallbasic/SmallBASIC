@@ -1825,11 +1825,7 @@ void comp_text_line(char *text) {
   char *p;
   char *lb_end;
   char *last_cmd;
-#if defined(OS_ADDR16)
-  int idx;
-#else
   long idx;
-#endif
   int sharp, ladd, linc, ldec, decl = 0, vattr;
   int leqop;
   char pname[SB_KEYWORD_SIZE + 1];
@@ -2592,11 +2588,7 @@ void comp_text_line(char *text) {
  */
 addr_t comp_next_bc_cmd(addr_t ip) {
   code_t code;
-#if defined(ADDR16)
-  word len;
-#else
   dword len;
-#endif
 
   code = comp_prog.ptr[ip];
   ip++;
@@ -4217,13 +4209,9 @@ mem_t comp_create_bin() {
 #else
   hdr.flags = 0;
 #endif
-#if defined(OS_ADDR16)
-  hdr.flags |= 2;
-#elif defined(OS_ADDR32)
-  hdr.flags |= 4;
-#endif
 
   // executable header
+  hdr.flags |= 4;
   hdr.bc_count = comp_prog.count;
   hdr.var_count = comp_varcount;
   hdr.lab_count = comp_labcount;

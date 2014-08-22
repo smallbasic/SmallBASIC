@@ -2049,12 +2049,7 @@ void cmd_read() {
           prog_dp += OS_REALSZ;
           break;
         case kwTYPE_STR: {
-#if defined(OS_ADDR16)
-          word len;
-#else
           dword len;
-#endif
-
           prog_dp++;
 
           vp->type = V_STR;

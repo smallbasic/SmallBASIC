@@ -66,11 +66,7 @@
  * @ingroup var
  * @def MAXDIM Maxium number of array-dimensions
  */
-#if defined(OS_ADDR16)
-#define MAXDIM      3     // think before increase this, (possible stack overflow)
-#else
-#define MAXDIM      6     // that's large enough
-#endif
+#define MAXDIM 6     // think before increase this, (possible stack overflow)
 
 #include "common/scan.h"  // compiler structures
 #if defined(__cplusplus)
@@ -110,27 +106,16 @@ struct var_s {
     // generic ptr (string)
     struct {
       byte *ptr; /**< data ptr (possibly, string pointer) */
-#if defined(OS_ADDR16)
-      int16 size; /**< the size of the string */
-      int16 pos; /**< position in string (used by pv_* functions) */
-#else
       int32 size; /**< the size of string */
       int32 pos; /**< position in string (used by pv_* functions) */
-#endif
     } p;
 
     // array
     struct {
       byte *ptr; /**< array data ptr (sizeof(var_t) * size) */
-#if defined(OS_ADDR16)
-      int16 size; /**< the number of elements */
-      int16 lbound[MAXDIM]; /**< lower bound */
-      int16 ubound[MAXDIM]; /**< upper bound */
-#else
       int32 size; /**< the number of elements */
       int32 lbound[MAXDIM]; /**< lower bound */
       int32 ubound[MAXDIM]; /**< upper bound */
-#endif
       byte maxdim; /**< number of dimensions */
     } a;
   } v;
@@ -349,11 +334,7 @@ int v_sign(var_t *x);
  * @param index is the element's index number
  * @return the var_t pointer of an array element
  */
-#if defined(OS_ADDR16)
-var_t *v_getelemptr(var_t *v, word index);
-#else
 var_t *v_getelemptr(var_t *v, dword index);
-#endif
 
 /**
  * @ingroup var
@@ -413,11 +394,7 @@ var_t *v_clone(const var_t *source);
  * @param v the variable
  * @param size the number of the elements
  */
-#if defined(OS_ADDR16)
-void v_resize_array(var_t *v, word size);
-#else
 void v_resize_array(var_t *v, dword size);
-#endif
 
 /**
  * @ingroup var
@@ -450,11 +427,7 @@ var_t *v_new_matrix(int r, int c);
  * @param v the variable
  * @param r the number of the elements
  */
-#if defined(OS_ADDR16)
-void v_toarray1(var_t *v, word r);
-#else
 void v_toarray1(var_t *v, dword r);
-#endif
 
 /**
  * @ingroup var
@@ -652,25 +625,29 @@ void v_zerostr(var_t *var);
  */
 void v_input2var(const char *str, var_t *var);
   
-/**< returns the var_t pointer of the element i
-   on the array x. i is a zero-based, one dim, index.
-   @ingroup var */
+/**
+ *< returns the var_t pointer of the element i
+ * on the array x. i is a zero-based, one dim, index.
+ * @ingroup var 
+*/
 #define v_elem(x,i)     (var_t *) ( (x)->v.a.ptr + (sizeof(var_t) * (i)))
 
-/**< the number of the elements of the array (x)
-   @ingroup var */
-
+/**
+ * < the number of the elements of the array (x)
+ * @ingroup var
+ */
 #define v_asize(x)      ((x)->v.a.size)
 
-/*
- * new api (dec 2001) - get value
+/**
+ * < returns the integer value of variable v
+ * @ingroup var
  */
-/**< returns the integer value of variable v
-   @ingroup var */
 #define v_getint(v)  v_igetval((v))
 
-/**< returns the real value of variable v
-   @ingroup var */
+/**
+ * < returns the real value of variable v
+ * @ingroup var
+ */
 #define v_getreal(v)  v_getval((v))
 
 /**
@@ -771,17 +748,10 @@ stknode_t *code_stackpeek();
 #define code_getsep()    (prog_ip ++, prog_source[prog_ip++])
 #define code_peeksep()   (prog_source[prog_ip+1])
 
-#if defined(OS_ADDR16)
-#define code_getaddr()   code_getnext16()
-#define code_skipaddr()  code_skipnext16()
-#define code_getstrlen() code_getnext16()
-#define code_peekaddr(i) code_peek16((i))
-#else
 #define code_getaddr()   code_getnext32()  /**< get address value and advance        @ingroup exec */
 #define code_skipaddr()  code_skipnext32() /**< skip address field                   @ingroup exec */
 #define code_getstrlen() code_getnext32()  /**< get strlen (kwTYPE_STR) and advance  @ingroup exec */
 #define code_peekaddr(i) code_peek32((i))  /**< peek address field at offset i       @ingroup exec */
-#endif
 
 #if defined(OS_PREC64)
 #define code_getint()   code_getnext64i()
@@ -840,10 +810,12 @@ void setsysvar_str(int index, const char *value);
  * in eval.c
  */
 var_num_t *mat_toc(var_t *v, int32 *rows, int32 *cols);
+
 void mat_tov(var_t *v, var_num_t *m, int32 rows, int32 cols,
              int protect_col1);
 
 #if defined(__cplusplus)
   }
 #endif
+
 #endif

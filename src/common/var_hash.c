@@ -75,7 +75,7 @@ void delete_element(Element *element) {
 int cmp_fn(const void *a, const void *b) {
   Element *el_a = (Element *)a;
   Element *el_b = (Element *)b;
-  return strcasecmp(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
+  return v_compare(el_a->key, el_b->key);
 }
 
 /**

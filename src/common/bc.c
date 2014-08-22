@@ -128,22 +128,14 @@ void bc_add2l(bc_t * bc, byte code, long p1) {
  * add buildin function call
  */
 void bc_add_fcode(bc_t *bc, long idx) {
-#if defined(OS_ADDR16)
-  bc_add2i(bc, kwTYPE_CALLF, idx);
-#else
   bc_add2l(bc, kwTYPE_CALLF, idx);
-#endif
 }
 
 /*
  * add buildin procedure call
  */
 void bc_add_pcode(bc_t *bc, long idx) {
-#if defined(OS_ADDR16)
-  bc_add2i(bc, kwTYPE_CALLP, idx);
-#else
   bc_add2l(bc, kwTYPE_CALLP, idx);
-#endif
 }
 
 /*
@@ -151,13 +143,8 @@ void bc_add_pcode(bc_t *bc, long idx) {
  */
 void bc_add_extfcode(bc_t *bc, int lib, long idx) {
   bc_add_code(bc, kwTYPE_CALLEXTF);
-#if defined(OS_ADDR16)
-  bc_add_word(bc, lib);
-  bc_add_word(bc, idx);
-#else
   bc_add_dword(bc, lib);
   bc_add_dword(bc, idx);
-#endif
 }
 
 /*
@@ -165,13 +152,8 @@ void bc_add_extfcode(bc_t *bc, int lib, long idx) {
  */
 void bc_add_extpcode(bc_t *bc, int lib, long idx) {
   bc_add_code(bc, kwTYPE_CALLEXTP);
-#if defined(OS_ADDR16)
-  bc_add_word(bc, lib);
-  bc_add_word(bc, idx);
-#else
   bc_add_dword(bc, lib);
   bc_add_dword(bc, idx);
-#endif
 }
 
 /*
@@ -181,13 +163,8 @@ void bc_add_addr(bc_t *bc, addr_t idx) {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
-#if defined(OS_ADDR16)
-  memcpy(bc->ptr + bc->count, &idx, 2);
-  bc->count += 2;
-#else
   memcpy(bc->ptr + bc->count, &idx, 4);
   bc->count += 4;
-#endif
 }
 
 /*
@@ -236,15 +213,11 @@ void bc_add2s(bc_t *bc, byte code, const char *p1) {
     sc_raise("STRING TOO BIG");
   } else {
     bc_add_code(bc, code);
-#if defined(OS_ADDR16)
-    bc_add_word(bc, l);
-#else
     bc_add_dword(bc, l);
-#endif
 
-    if (bc->count >= bc->size - l)
+    if (bc->count >= bc->size - l) {
       bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
+    }
     memcpy(bc->ptr + bc->count, p1, l);
     bc->count += l;
   }

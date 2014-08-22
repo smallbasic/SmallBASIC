@@ -15,11 +15,7 @@
 #include "common/kw.h"
 
 #define BC_ALLOC_INCR     1024
-#if defined(OS_ADDR16)
-#define BC_MAX_STORE_SIZE   0x7FFF
-#else
 #define BC_MAX_STORE_SIZE   0x7FFFFFFF
-#endif
 
 /**
  * @ingroup scan

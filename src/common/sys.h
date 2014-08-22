@@ -32,11 +32,6 @@
  * OS_FILEHANDLES      Number of file handles to use.
  *                     Because there is a static array with information about each handle,
  *                     use small numbers on limited systems (a value of 16 is good enough).
- *
- * OS_ADDR32           Use 32bit code, in anycase
- *
- * OS_ADDR16           Use 16bit code, in anycase
- *
  */
 
 #if !defined(SB_SYS_H)
@@ -94,7 +89,6 @@ typedef long int var_int_t;
 
 #define OS_INTSZ  sizeof(var_int_t)  // size of integer
 #define OS_REALSZ sizeof(var_num_t)  // size of real
-#define OS_ADDR32
 
 #define mem_lock(h) (void *)(h)
 #define mem_unlock(h)
