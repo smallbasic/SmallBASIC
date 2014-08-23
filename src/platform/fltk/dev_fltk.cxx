@@ -96,6 +96,10 @@ int osd_devinit() {
 
   os_graf_mx = wnd->_out->w();
   os_graf_my = wnd->_out->h();
+
+  setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
+  setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
+
   os_color_depth = 32;
   if (SharedImage::first_image) {
     SharedImage::first_image->clear_cache();
