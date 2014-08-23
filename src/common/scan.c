@@ -642,7 +642,7 @@ bid_t comp_var_getID(const char *var_name) {
   comp_prepare_name(tmp, baseof(var_name, '/'), SB_KEYWORD_SIZE);
 
   char *dot = strchr(tmp, '.');
-  if (dot != 0 && *(dot + 1) == 0) {
+  if (dot != NULL && *(dot + 1) == 0) {
     // name ends with dot
     sc_raise(MSG_MEMBER_DOES_NOT_EXISTS, tmp);
     return 0;
@@ -654,7 +654,7 @@ bid_t comp_var_getID(const char *var_name) {
   //
   // If the name is not found in comp_libtable then it
   // is treated as a structure reference
-  if (dot != 0 && comp_check_lib(tmp)) {
+  if (dot != NULL && comp_check_lib(tmp)) {
     for (i = 0; i < comp_varcount; i++) {
       if (strcmp(comp_vartable[i].name, tmp) == 0) {
         return i;
@@ -709,7 +709,7 @@ bid_t comp_var_getID(const char *var_name) {
 void comp_add_variable(bc_t *bc, const char *var_name) {
   char *dot = strchr(var_name, '.');
 
-  if (dot != 0 && !comp_check_lib(var_name)) {
+  if (dot != NULL && !comp_check_lib(var_name)) {
     // uds-element (or sub-element eg foo.x.y.z)
     // record the uds-parent
 
@@ -4038,7 +4038,13 @@ int comp_pass1(const char *section, const char *text) {
     for (i = 0; i < comp_udpcount; i++) {
       if (comp_udptable[i].ip == INVALID_ADDR) {
         comp_line = comp_udptable[i].pline;
-        sc_raise(MSG_UNDEFINED_UDP, comp_udptable[i].name);
+        char *dot = strchr(comp_udptable[i].name, '.');
+        if (dot) {
+          sc_raise(MSG_UNDEFINED_HASH, comp_udptable[i].name);
+        } else {
+          sc_raise(MSG_UNDEFINED_UDP, comp_udptable[i].name);
+        }
+        break;
       }
     }
   }

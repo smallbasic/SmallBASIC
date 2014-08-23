@@ -72,9 +72,6 @@
 extern "C" {
 #endif
 
-// the following prototype is declared later below
-typedef struct uds_field_s uds_field_s;
-
 /**
  * @ingroup var
  * @typedef var_s
@@ -95,9 +92,6 @@ struct var_s {
       addr_t p; /** address pointer */
       addr_t v; /** return-var ID */
     } ap;
-
-    // user defined structure
-    uds_field_s *uds; /** pointer to the "structure" */
 
     // hash map
     void* hash; /** pointer the hash structure */
@@ -122,16 +116,6 @@ struct var_s {
 
 typedef struct var_s var_t;
 typedef var_t *var_p_t;
-
-/*
- * user defined structures
- */
-struct uds_field_s {
-  uds_field_s *next;          // next structure element
-  addr_t field_id;            // the element id
-  var_p_t var;                // the variable
-  byte var_owner_flag;        // whether var is owned by this node
-};
 
 /*
  * label

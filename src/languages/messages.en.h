@@ -103,6 +103,7 @@
 #define MSG_PASS1               "Pass1...\n"
 #define MSG_PASS1_COUNT         "\rPASS1: Line %d"
 #define MSG_UNDEFINED_UDP       "Undefined SUB/FUNC code: %s"
+#define MSG_UNDEFINED_HASH      "Undefined HASH: %s, (Use DIM)"
 #define MSG_PASS1_FIN           "\rPASS1: Line %d; finished\n"
 #define MSG_EXP_SYM_NOT_FOUND   "Export symbol '%s' not found"
 #define MSG_PASS2               "PASS2..."
