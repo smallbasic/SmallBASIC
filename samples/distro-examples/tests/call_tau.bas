@@ -20,8 +20,18 @@ rem check system-variables
 predef.prsys
 
 x=PI
-foyer.name= "PI"
+dim foyer
+foyer.name= "my name is PI"
+? "test"
+?  foyer("NAME")
+?  foyer("name")
+?  foyer.Name
+?  foyer.name
+
+? "end"
+
 tau.addRoom(foyer,x)
+
 
 sub addRoom(the_thing, d)
   print the_thing.name, d

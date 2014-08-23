@@ -5,7 +5,7 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2007 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2007-2014 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
 #include "common/var.h"
 
@@ -21,6 +21,7 @@ int hash_is_empty(const var_p_t var_p);
 int hash_to_int(const var_p_t var_p);
 int hash_length(const var_p_t var_p);
 var_p_t hash_elem(const var_p_t var_p, int index);
+var_p_t hash_resolve_fields(const var_p_t base);
 void hash_clear(const var_p_t var_p);
 void hash_free_var(var_p_t var_p);
 void hash_get_value(var_p_t base, var_p_t key, var_p_t *result);

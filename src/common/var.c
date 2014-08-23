@@ -415,7 +415,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
 
   if (a->type == V_STR && b->type == V_STR) {
     result->type = V_STR;
-    result->v.p.ptr = (byte *)tmp_alloc(strlen((char *)a->v.p.ptr) + 
+    result->v.p.ptr = (byte *)tmp_alloc(strlen((char *)a->v.p.ptr) +
                                         strlen((char *)b->v.p.ptr) + 1);
     strcpy((char *) result->v.p.ptr, (char *) a->v.p.ptr);
     strcat((char *) result->v.p.ptr, (char *) b->v.p.ptr);
@@ -805,3 +805,14 @@ void v_input2var(const char *str, var_t *var) {
     tmp_free(sb);
   }
 }
+
+void v_eval_str(var_p_t v) {
+  int len = code_getstrlen();
+  v->type = V_STR;
+  v->v.p.size = len;
+  v->v.p.ptr = tmp_alloc(len + 1);
+  memcpy(v->v.p.ptr, &prog_source[prog_ip], len);
+  *((char *)(v->v.p.ptr + len)) = '\0';
+  prog_ip += len;
+}
+

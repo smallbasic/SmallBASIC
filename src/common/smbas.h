@@ -196,8 +196,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_udptable       ctask->sbe.comp.udptable
 #define comp_udpcount       ctask->sbe.comp.udpcount
 #define comp_udpsize        ctask->sbe.comp.udpsize
-#define comp_udstable       ctask->sbe.comp.udstable
-#define comp_udscount       ctask->sbe.comp.udscount
 #define comp_next_field_id  ctask->sbe.comp.next_field_id
 #define comp_uds_tab_ip     ctask->sbe.comp.uds_tab_ip
 #define comp_use_global_vartable    ctask->sbe.comp.use_global_vartable

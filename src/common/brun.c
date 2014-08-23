@@ -324,7 +324,7 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
       }
       break;
     case kwTYPE_UDS_EL:
-      var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
+      var_p = code_resolve_varptr(hash_resolve_fields(var_p), until_parens);
       break;
     }
   }
@@ -383,15 +383,13 @@ var_t *code_isvar_arridx(var_t *basevar_p) {
 int code_isvar() {
   var_t *basevar_p;
   var_t *var_p = NULL;
-  addr_t cur_ip;
 
-  cur_ip = prog_ip;             // store IP
+  // store IP
+  addr_t cur_ip = prog_ip;
 
-  switch (code_peek()) {
-  case kwTYPE_VAR:
+  if (code_peek() == kwTYPE_VAR) {
     code_skipnext();
     var_p = basevar_p = tvar[code_getaddr()];
-
     switch (basevar_p->type) {
     case V_HASH:
     case V_ARRAY:
@@ -403,23 +401,18 @@ int code_isvar() {
         var_p = NULL;
       }
     }
-    break;
-
-  case kwTYPE_UDS:
-    code_skipnext();
-    var_p = tvar[code_getaddr()];
-    var_p = code_resolve_varptr(uds_resolve_fields(var_p), 0);
-    break;
   }
 
   if (var_p) {
     if (kw_check_evexit(code_peek()) || code_peek() == kwTYPE_LEVEL_END) {
-      prog_ip = cur_ip;         // restore IP
+      // restore IP
+      prog_ip = cur_ip;
       return 1;
     }
   }
 
-  prog_ip = cur_ip;             // restore IP
+  // restore IP
+  prog_ip = cur_ip;
   return 0;
 }
 
@@ -552,7 +545,7 @@ void exec_setup_predefined_variables() {
 
   {
     static char stupid_os_envsblog[1024]; // it must be static at
-    // least by default on DOS 
+    // least by default on DOS
     // or Win32(BCB)
     sprintf(stupid_os_envsblog, "SBLOG=%s%csb.log", homedir, OS_DIRSEP);
     putenv(stupid_os_envsblog);
@@ -805,10 +798,10 @@ void bc_loop(int isf) {
 
       // debug
       /*
-       * fprintf(stderr, "\t%d: %d = ", prog_ip, code); for ( i = 0; 
+       * fprintf(stderr, "\t%d: %d = ", prog_ip, code); for ( i = 0;
        * keyword_table[i].name[0] != '\0'; i ++) { if ( code ==
        * keyword_table[i].code ) { fprintf(stderr,"%s ",
-       * keyword_table[i].name); break; } } fprintf(stderr,"\n"); 
+       * keyword_table[i].name); break; } } fprintf(stderr,"\n");
        */
 
       switch (code) {
@@ -948,7 +941,7 @@ void bc_loop(int isf) {
 
         /*
          * ----------------------------------------- * external
-         * procedures 
+         * procedures
          */
       case kwTYPE_CALLEXTP:    // [lib][index]
       {
@@ -969,7 +962,7 @@ void bc_loop(int isf) {
         break;
         /*
          * ----------------------------------------- * buildin
-         * procedures -- BEGIN 
+         * procedures -- BEGIN
          */
       case kwTYPE_CALLP:
         pcode = code_getaddr();
@@ -1362,7 +1355,7 @@ void dump_stack() {
 
 /*
  * RUN byte-code
- * 
+ *
  * ByteCode Structure (executables, not units):
  *
  * [header (bc_head_t)]
@@ -1606,14 +1599,14 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
     // for ( i = 0; i < prog_symcount; i ++ ) {
     // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 1 )
     // panic("Symbol (unit) '%s' missing\n", prog_symtable[i].symbol);
-    // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 0 ) { 
+    // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 0 ) {
     // if ( prog_symtable[j].exp_idx == -1 )
     // panic("Symbol (module) '%s' missing\n", prog_symtable[i].symbol);
     // }
     // }
     // }
   }
-  // 
+  //
   return tid;
 }
 
@@ -1949,9 +1942,9 @@ int sbasic_exec(const char *file) {
   strcpy(gsb_last_file, file);
   strcpy(gsb_last_errmsg, "");
 
-  // compile it - if opt_nosave, bytecode_h is a 
+  // compile it - if opt_nosave, bytecode_h is a
   // memory handle of BC; otherwise you must run the file
-  success = sbasic_compile(file); 
+  success = sbasic_compile(file);
 
   if (opt_syntaxcheck)          // this is a command-line flag to
     // syntax-check only
@@ -1976,7 +1969,7 @@ int sbasic_exec(const char *file) {
     evt_check_every = (50 * CLOCKS_PER_SEC) / 1000; // setup event checker time = 50ms
     srand(clock());             // randomize
 
-    // run 
+    // run
     sbasic_recursive_exec(exec_tid);
 
     // normal exit

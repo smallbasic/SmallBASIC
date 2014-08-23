@@ -6,7 +6,7 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2010 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2010-2014 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
 #include "common/sys.h"
 #include "common/var.h"
@@ -45,7 +45,7 @@ typedef struct Node {
 } Node;
 
 /**
- * Returns a new Element 
+ * Returns a new Element
  */
 Element *create_element(var_p_t key) {
   Element *element = (Element *) tmp_alloc(sizeof (Element));
@@ -77,7 +77,7 @@ void delete_element(Element *element) {
     v_free(element->value);
     tmp_free(element->value); // cleanup v_new
   }
-  tmp_free(element); // cleanup create_element() 
+  tmp_free(element); // cleanup create_element()
 }
 
 /**
@@ -86,7 +86,14 @@ void delete_element(Element *element) {
 int cmp_fn(const void *a, const void *b) {
   Element *el_a = (Element *)a;
   Element *el_b = (Element *)b;
-  return v_compare(el_a->key, el_b->key);
+
+  int result;
+  if (el_a->key->type == V_STR && el_b->key->type == V_STR) {
+    result = strcasecmp(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
+  } else {
+    result = v_compare(el_a->key, el_b->key);
+  }
+  return result;
 }
 
 /**
@@ -181,6 +188,65 @@ void hash_free_var(var_p_t var_p) {
 }
 
 /**
+ * Inserts the variable into the b-tree, set result to the key value
+ */
+void hash_insert_key(var_p_t base, var_p_t var_key, var_p_t *result) {
+  Element *key = create_element(var_key);
+  Node *node = tfind(key, &(base->v.hash), cmp_fn);
+  if (node != NULL) {
+    // item already exists
+    *result = node->element->value;
+    delete_element(key);
+  }
+  else {
+    key->value = *result = v_new();
+    tsearch(key, &(base->v.hash), cmp_fn);
+  }
+}
+
+/**
+ * Returns the final element eg z in foo.x.y.z
+ *
+ * Scan byte code for node kwTYPE_UDS_EL and attach as field elements
+ * if they don't already exist.
+ */
+var_p_t hash_resolve_fields(const var_p_t base) {
+  var_p_t field = 0;
+  if (code_peek() == kwTYPE_UDS_EL) {
+    code_skipnext();
+    if (code_peek() != kwTYPE_STR) {
+      err_stackmess();
+      return NULL;
+    } else {
+      code_skipnext();
+    }
+
+    if (base->type != V_HASH) {
+      if (v_is_nonzero(base)) {
+        err_typemismatch();
+        return NULL;
+      } else {
+        v_free(base);
+        base->type = V_HASH;
+        base->v.hash = NULL;
+      }
+    }
+
+    // evaluate the variable 'key' name
+    var_t key;
+    v_eval_str(&key);
+    hash_insert_key(base, &key, &field);
+    v_free(&key);
+
+    // evaluate the next sub-element
+    field = hash_resolve_fields(field);
+  } else {
+    field = base;
+  }
+  return field;
+}
+
+/**
  * Return the variable in base keyed by key, if not found then creates
  * an empty variable that will be returned in a further call
  */
@@ -206,25 +272,18 @@ void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
     v_free(clone);
     tmp_free(clone);
   } else if (base->type != V_HASH) {
-    // initialise as hash
-    v_free(base);
-    base->type = V_HASH;
-    base->v.hash = NULL;
+    if (v_is_nonzero(base)) {
+      err_typemismatch();
+      return;
+    } else {
+      // initialise as hash
+      v_free(base);
+      base->type = V_HASH;
+      base->v.hash = NULL;
+    }
   }
 
-  // create a key which will hold our name and value pairs
-  Element *key = create_element(var_key);
-  Node *node = tfind(key, &base->v.hash, cmp_fn);
-  if (node != NULL) {
-    // item already exists
-    *result = node->element->value;
-    delete_element(key);
-  }
-  else {
-    // add key to the tree
-    key->value = *result = v_new();
-    tsearch(key, &base->v.hash, cmp_fn);
-  }
+  hash_insert_key(base, var_key, result);
 }
 
 /**
@@ -260,7 +319,7 @@ void hash_set(var_p_t dest, const var_p_t src) {
  * Return the contents of the structure as a string
  */
 void hash_to_str(const var_p_t var_p, char *out, int max_len) {
-  sprintf(out, "HASH:%d", hash_to_int(var_p));
+  sprintf(out, "UDS:%d", hash_to_int(var_p));
 }
 
 /**

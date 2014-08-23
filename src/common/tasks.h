@@ -106,11 +106,6 @@ typedef struct {
       bid_t udpcount;
       bid_t udpsize;
 
-      // user defined structures
-      dbt_t udstable;
-      bid_t udscount;
-      int next_field_id;
-
       // pass2 stack
       dbt_t stack;
       bid_t stack_count;

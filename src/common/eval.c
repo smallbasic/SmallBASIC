@@ -1164,7 +1164,6 @@ void eval(var_t *r) {
       r->v.ap.v = code_getaddr();
       break;
 
-    case kwTYPE_UDS:
     case kwTYPE_VAR:
       // variable
       V_FREE(r);

@@ -670,6 +670,15 @@ char *v_getstr(var_t *v);
  */
 #define v_is_type(v, t) (v != NULL && v->type == t)
 
+/**
+ * @ingroup var
+ *
+ * populates the var to string from bytecode
+ *
+ * @param v is the variable
+ */
+void v_eval_str(var_p_t v);
+
 /*
  * low-level byte-code parsing
  *

@@ -77,7 +77,6 @@ void cev_prim() {
     break;
 
   case kwTYPE_UDS_EL:
-  case kwTYPE_UDS:
   case kwTYPE_VAR:
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // 1 addr
     IP += ADDRSZ;
@@ -366,17 +365,17 @@ void expr_parser(bc_t *bc_src) {
 
   code = CODE_PEEK();
 
-  // 
+  //
   // empty!
-  // 
+  //
   if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
     bc_destroy(bc_out);
     tmp_free(bc_out);
     return;
   }
-  // 
+  //
   // LET|CONST special code
-  // 
+  //
   if (code == kwTYPE_CMPOPR) {
     IP++;
     if (CODE(IP) != '=') {

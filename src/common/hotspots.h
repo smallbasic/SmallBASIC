@@ -152,8 +152,7 @@ static inline var_int_t v_igetval(var_t *v) {
 static inline var_t* code_getvarptr_parens(int until_parens) {
   var_t *var_p = NULL;
 
-  switch (code_peek()) {
-  case kwTYPE_VAR:
+  if (code_peek() == kwTYPE_VAR) {
     code_skipnext();
     var_p = tvar[code_getaddr()];
     switch (var_p->type) {
@@ -166,13 +165,6 @@ static inline var_t* code_getvarptr_parens(int until_parens) {
         err_varisnotarray();
       }
     }
-    break;
-
-  case kwTYPE_UDS:
-    code_skipnext();
-    var_p = tvar[code_getaddr()];
-    var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
-    break;
   }
 
   if (var_p == NULL && !prog_error) {

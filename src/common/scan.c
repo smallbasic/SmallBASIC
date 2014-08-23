@@ -377,7 +377,7 @@ bid_t comp_add_udp(const char *proc_name) {
    * #if !defined(OS_LIMITED) // check variables for conflict for ( i =
    * 0; i < comp_varcount; i ++ ) { if ( strcmp(comp_vartable[i].name,
    * name) == 0 ) { sc_raise("User-defined function/procedure name,
-   * '%s', conflicts with variable", name); break; } } #endif 
+   * '%s', conflicts with variable", name); break; } } #endif
    */
 
   // search
@@ -632,7 +632,7 @@ int comp_add_external_var(const char *name, int lib_id) {
  *
  * if there is no such variable then creates a new one
  *
- * if a new variable must created then if the var_name includes the path then 
+ * if a new variable must created then if the var_name includes the path then
  * the new variable created at local space otherwise at globale space
  */
 bid_t comp_var_getID(const char *var_name) {
@@ -648,12 +648,12 @@ bid_t comp_var_getID(const char *var_name) {
     sc_raise(MSG_MEMBER_DOES_NOT_EXISTS, tmp);
     return 0;
   }
-  // 
+  //
   // check for external
   // external variables are recognized by the 'class' name
   // example: my_unit.my_var
-  // 
-  // If the name is not found in comp_libtable then it 
+  //
+  // If the name is not found in comp_libtable then it
   // is treated as a structure reference
   if (dot != 0 && comp_check_lib(tmp)) {
     for (i = 0; i < comp_varcount; i++) {
@@ -665,12 +665,12 @@ bid_t comp_var_getID(const char *var_name) {
     sc_raise(MSG_MEMBER_DOES_NOT_EXISTS, tmp);
     return 0;
   }
-  // 
+  //
   // search in global name-space
-  // 
+  //
   // Note: local space is dynamic,
   // however a global var-ID per var-name is required
-  // 
+  //
   strcpy(name, tmp);
 
   for (i = 0; i < comp_varcount; i++) {
@@ -701,73 +701,26 @@ bid_t comp_var_getID(const char *var_name) {
 }
 
 /*
- * returns true if 'name' is a user defined structure
- */
-int comp_check_uds(const char *name) {
-  int i;
-  comp_struct_t uds;
-
-  for (i = 0; i < comp_udscount; i++) {
-    dbt_read(comp_udstable, i, &uds, sizeof(comp_struct_t));
-    if (uds.field_id == -1 && strcasecmp(uds.name, name) == 0) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-/*
- * returns the shared field_id for the given field name
- */
-int comp_get_uds_field_id(const char *field_name, int len) {
-  int i;
-  comp_struct_t uds;
-
-  for (i = 0; i < comp_udscount; i++) {
-    dbt_read(comp_udstable, i, &uds, sizeof(comp_struct_t));
-    if (uds.field_id != -1 && strlen(uds.name) == len && strncasecmp(uds.name, field_name, len) == 0) {
-      return uds.field_id;
-    }
-  }
-
-  int result;
-  strncpy(uds.name, field_name, len);
-  if (!(is_alpha(uds.name[0]) || uds.name[0] == '_')) {
-    sc_raise(MSG_WRONG_VARNAME, uds.name);
-    result = -1;
-  } else {
-    uds.name[len] = 0;
-    uds.field_id = ++comp_next_field_id;
-    dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
-    comp_udscount++;
-    result = uds.field_id;
-  }
-  return result;
-}
-
-/*
  * add the named variable to the current position in the byte code stream
- * 
+ *
  * if the name 'foo' has already been used in a struct context, eg 'foo.x'
  * then the foo variable is added as kwTYPE_UDS.
- * 
+ *
  */
 void comp_add_variable(bc_t *bc, const char *var_name) {
   char *dot = strchr(var_name, '.');
 
   if (dot != 0 && !comp_check_lib(var_name)) {
-    // uds-element (or sub-element eg foo.x.y.z) 
+    // uds-element (or sub-element eg foo.x.y.z)
     // record the uds-parent
+
     int len = dot - var_name;
     comp_struct_t uds;
     strncpy(uds.name, var_name, len);
     uds.name[len] = 0;
-    uds.field_id = -1;
-    dbt_write(comp_udstable, comp_udscount, &uds, sizeof(comp_struct_t));
-    comp_udscount++;
 
     bid_t var_id = comp_var_getID(uds.name);
-    bc_add_code(bc, kwTYPE_UDS);
+    bc_add_code(bc, kwTYPE_VAR);
     bc_add_addr(bc, var_id);
 
     while (dot && dot[0]) {
@@ -775,24 +728,22 @@ void comp_add_variable(bc_t *bc, const char *var_name) {
       if (dot_end) {
         // next sub-element
         len = (dot_end - dot) - 1;
-        var_id = comp_get_uds_field_id(dot + 1, len);
-        dot = dot_end;
       } else {
         // final element
         len = strlen(dot + 1);
-        var_id = comp_get_uds_field_id(dot + 1, len);
-        dot = 0;
       }
+
       bc_add_code(bc, kwTYPE_UDS_EL);
-      bc_add_addr(bc, var_id);
+      bc_add_strn(bc, dot + 1, len);
+
+      if (dot_end) {
+        dot = dot_end;
+      } else {
+        dot = NULL;
+      }
     }
-  } else if (comp_check_uds(var_name)) {
-    // uds-container
-    // all of var_name same as dot-less portion of existing variable
-    bc_add_code(bc, kwTYPE_UDS);
-    bc_add_addr(bc, comp_var_getID(var_name));
   } else {
-    // regular variable
+    // regular variable or uds-container
     bc_add_code(bc, kwTYPE_VAR);
     bc_add_addr(bc, comp_var_getID(var_name));
   }
@@ -814,7 +765,7 @@ void comp_push(addr_t ip) {
 }
 
 /*
- * returns the keyword code 
+ * returns the keyword code
  */
 int comp_is_keyword(const char *name) {
   int i, idx;
@@ -953,7 +904,7 @@ char *comp_prev_char(const char *root, const char *ptr) {
  *   get next word
  *   if buffer's len is zero, then the next element is not a word
  *
- *   @param text the source 
+ *   @param text the source
  *   @param dest the buffer to store the result
  *   @return pointer of text to the next element
  */
@@ -995,7 +946,7 @@ const char *comp_next_word(const char *text, char *dest) {
     }
   }
   // Code to kill the $
-  // if ( *p == '$' ) 
+  // if ( *p == '$' )
   // p ++;
   // Code to enable the $
   if (*p == '$') {
@@ -1097,7 +1048,7 @@ void comp_expression(char *expr, byte no_parser) {
     } else if (*ptr == '\'' /* || *ptr == '#' */) {  // remarks
       break;
     } else if (is_alpha(*ptr) || *ptr == '?' || *ptr == '_') {
-      // A NAME 
+      // A NAME
       ptr = (char *)comp_next_word(ptr, comp_bc_name);
       idx = comp_is_func(comp_bc_name);
       // special case for INPUT
@@ -1285,7 +1236,7 @@ void comp_expression(char *expr, byte no_parser) {
         break;
       } else if (strncmp(ptr, "==", 2) == 0) {
         // support == syntax to prevent java or c programmers
-        // getting used to single = thus causing embarrasing 
+        // getting used to single = thus causing embarrasing
         // coding errors in their normal work :)
         bc_add_code(&bc, kwTYPE_CMPOPR);
         bc_add_code(&bc, *ptr);
@@ -1456,7 +1407,7 @@ void comp_data_seg(char *source) {
 }
 
 /*
- * Scans the 'source' for "names" separated by 'delims' and returns 
+ * Scans the 'source' for "names" separated by 'delims' and returns
  * the elements (pointer in source) into args array.
  *
  * Returns the number of items
@@ -1598,7 +1549,7 @@ int comp_single_line_if(char *text) {
         bc_add_code(&comp_prog, kwTYPE_EOC);
         // bc_eoc();
 
-        // auto-goto 
+        // auto-goto
         p = pthen + 6;
         SKIP_SPACES(p);
 
@@ -1637,7 +1588,7 @@ int comp_single_line_if(char *text) {
               } else
                 strcat(buf, p);
 
-              // 
+              //
               break;
             } else {
               pelse = strstr(pelse + 1, LCN_ELSE);
@@ -1669,7 +1620,7 @@ int comp_single_line_if(char *text) {
 /**
  * Referencing a UDS field via array, eg foo(10).x
  */
-char *comp_array_uds_field(char *p, bc_t * bc) {
+char *comp_array_uds_field(char *p, bc_t *bc) {
   char *p_begin = p;
 
   while (1) {
@@ -1677,7 +1628,7 @@ char *comp_array_uds_field(char *p, bc_t * bc) {
       int len = (p - p_begin);
       if (len) {
         bc_add_code(bc, kwTYPE_UDS_EL);
-        bc_add_addr(bc, comp_get_uds_field_id(p_begin, len));
+        bc_add_strn(bc, p_begin, len);
       }
       if (*p == '.') {
         p_begin = p + 1;
@@ -1692,7 +1643,7 @@ char *comp_array_uds_field(char *p, bc_t * bc) {
 }
 
 /*
- * array's args 
+ * array's args
  */
 void comp_array_params(char *src) {
   char *p = src;
@@ -1736,7 +1687,7 @@ void comp_array_params(char *src) {
     p++;
   }
 
-  // 
+  //
   if (level > 0) {
     sc_raise(MSG_ARRAY_MIS_RP);
   } else if (level < 0) {
@@ -1782,7 +1733,7 @@ void comp_cmd_option(char *src) {
     bc_add_code(&comp_prog, OPTION_MATCH);
     bc_add_addr(&comp_prog, 0);
   } else if (CHKOPT(LCN_PREDEF_WRS) || CHKOPT(LCN_IMPORT_WRS)) {
-    ;                           // ignore it 
+    ;                           // ignore it
   } else {
     sc_raise(MSG_OPTION_ERR, src);
   }
@@ -1862,7 +1813,7 @@ void comp_text_line(char *text) {
   last_cmd = p;
   p = get_param_sect(p, ":", comp_bc_parm);
 
-  // check old style labels 
+  // check old style labels
   if (is_all_digits(comp_bc_name)) {
     str_alltrim(comp_bc_name);
     idx = comp_label_getID(comp_bc_name);
@@ -1882,7 +1833,7 @@ void comp_text_line(char *text) {
     }
     p = get_param_sect(p, ":", comp_bc_parm);
   }
-  // what's this ? 
+  // what's this ?
   idx = comp_is_keyword(comp_bc_name);
   if (idx == kwREM) {
     return;                     // remarks... return
@@ -1942,7 +1893,7 @@ void comp_text_line(char *text) {
   }
 
   sharp = (comp_bc_parm[0] == '#'); // if # -> file commands
-  ladd = (strncmp(comp_bc_parm, "<<", 2) == 0); // if << -> array, 
+  ladd = (strncmp(comp_bc_parm, "<<", 2) == 0); // if << -> array,
 
   // append
   linc = (strncmp(comp_bc_parm, "++", 2) == 0);
@@ -1958,13 +1909,13 @@ void comp_text_line(char *text) {
     return;
   }
 
-  if ((idx == kwCONST) || 
-      ((comp_bc_parm[0] == '=' || 
+  if ((idx == kwCONST) ||
+      ((comp_bc_parm[0] == '=' ||
         (comp_bc_parm[0] == '(' && !comp_is_function(comp_bc_name)) ||
         ladd || linc || ldec || leqop) && (idx == -1))) {
-    // 
+    //
     // LET/CONST commands
-    // 
+    //
     char *parms = comp_bc_parm;
     if (idx == kwCONST) {
       // const a=10: b=10
@@ -2067,9 +2018,9 @@ void comp_text_line(char *text) {
 
     case kwPROC:
     case kwFUNC:
-      // 
+      //
       // USER-DEFINED PROCEDURES/FUNCTIONS
-      // 
+      //
       // single-line function (DEF FN)
       if ((eq_ptr = strchr(comp_bc_parm, '='))) {
         *eq_ptr = '\0';
@@ -2097,7 +2048,7 @@ void comp_text_line(char *text) {
             pidx = comp_add_udp(pname);
             comp_udp_setip(pname, comp_prog.count);
           }
-          // put JMP to the next command after the END 
+          // put JMP to the next command after the END
           // (now we just keep the rq space, pass2 will
           // update that)
           bc_add_code(&comp_prog, kwGOTO);
@@ -2261,9 +2212,9 @@ void comp_text_line(char *text) {
       break;
 
     case kwON:
-      // 
+      //
       // ON x GOTO|GOSUB ...
-      // 
+      //
       idx = kwONJMP;            // WARNING!
       comp_push(comp_prog.count);
       bc_add_ctrl(&comp_prog, idx, 0, 0);
@@ -2318,9 +2269,9 @@ void comp_text_line(char *text) {
       break;
 
     case kwFOR:
-      // 
+      //
       // FOR
-      // 
+      //
       p = strchr(comp_bc_parm, '=');
       p_do = strstr(comp_bc_parm, LCN_DO_WS);
 
@@ -2401,7 +2352,7 @@ void comp_text_line(char *text) {
       break;
 
     case kwREPEAT:
-      // WHILE & REPEAT DOES NOT USE STACK 
+      // WHILE & REPEAT DOES NOT USE STACK
       comp_block_level++;
       comp_block_id++;
       comp_push(comp_prog.count);
@@ -2546,7 +2497,7 @@ void comp_text_line(char *text) {
       // EXTERNAL OR USER-DEFINED PROCEDURE
       udp = comp_is_external_proc(comp_bc_name);
       if (udp > -1) {
-        bc_add_extpcode(&comp_prog, comp_extproctable[udp].lib_id, 
+        bc_add_extpcode(&comp_prog, comp_extproctable[udp].lib_id,
                         comp_extproctable[udp].symbol_index);
         char *next = trim_empty_parentheses(comp_bc_parm);
         if (comp_is_parenthesized(next)) {
@@ -2635,7 +2586,6 @@ addr_t comp_next_bc_cmd(addr_t ip) {
   case kwGOSUB:
   case kwTYPE_LINE:
   case kwTYPE_VAR:             // [addr|id]
-  case kwTYPE_UDS:
   case kwTYPE_UDS_EL:
     ip += ADDRSZ;
     break;
@@ -2953,15 +2903,15 @@ void comp_pass2_scan() {
     // if (node.pos == 360 || node.pos == 361)
     // trace("=== stack code %d\n", code);
 
-    if (code != kwGOTO && 
-        code != kwRESTORE && 
-        code != kwSELECT && 
-        code != kwONJMP && 
-        code != kwTYPE_PTR && 
-        code != kwTYPE_CALL_UDP && 
-        code != kwTYPE_CALL_UDF && 
-        code != kwPROC && 
-        code != kwFUNC && 
+    if (code != kwGOTO &&
+        code != kwRESTORE &&
+        code != kwSELECT &&
+        code != kwONJMP &&
+        code != kwTYPE_PTR &&
+        code != kwTYPE_CALL_UDP &&
+        code != kwTYPE_CALL_UDF &&
+        code != kwPROC &&
+        code != kwFUNC &&
         code != kwTYPE_RET) {
       // default - calculate true-ip
       true_ip = comp_search_bc_eoc(node.pos + (BC_CTRLSZ + 1));
@@ -3033,7 +2983,7 @@ void comp_pass2_scan() {
         // number of POPs
         comp_prog.ptr[node.pos + (ADDRSZ + 1)] = level - label.level;
       } else {
-        // number of POPs 
+        // number of POPs
         comp_prog.ptr[node.pos + (ADDRSZ + 1)] = 0;
       }
       break;
@@ -3186,7 +3136,7 @@ void comp_pass2_scan() {
 
       // avoid finding another CASE or CASE ELSE on the same level, but after END SELECT
       j = comp_search_bc_stack(i + 1, kwENDSELECT, node.level, node.block_id);
-      
+
       if (false_ip == INVALID_ADDR || false_ip > j) {
         false_ip = comp_search_bc_stack(i + 1, kwCASE_ELSE, node.level, node.block_id);
         if (false_ip == INVALID_ADDR || false_ip > j) {
@@ -3265,8 +3215,6 @@ void comp_init() {
   comp_impcount = 0;
   comp_libcount = 0;
   comp_varcount = 0;
-  comp_udscount = 0;
-  comp_next_field_id = 0;
   comp_sp = 0;
   comp_udpcount = 0;
   comp_block_level = 0;
@@ -3289,8 +3237,6 @@ void comp_init() {
   comp_imptable = dbt_create(comp_bc_temp, 0);
   sprintf(comp_bc_temp, "SBI-EXP%d", ctask->tid);
   comp_exptable = dbt_create(comp_bc_temp, 0);
-  sprintf(comp_bc_temp, "SBI-UDS%d", ctask->tid);
-  comp_udstable = dbt_create(comp_bc_temp, 0);
 
   comp_varsize = comp_udpsize = GROWSIZE;
   comp_varcount = comp_labcount = comp_sp = comp_udpcount = 0;
@@ -3310,7 +3256,6 @@ void comp_init() {
   assert(comp_labtable != -1);
   assert(comp_udptable != 0);
   assert(comp_stack != -1);
-  assert(comp_udstable != -1);
 #endif
 
   dbt_prealloc(comp_labtable, os_cclabs1, sizeof(comp_label_t));
@@ -3357,7 +3302,6 @@ void comp_close() {
   dbt_close(comp_imptable);
   dbt_close(comp_libtable);
   dbt_close(comp_stack);
-  dbt_close(comp_udstable);
   tmp_free(comp_udptable);
 
   comp_varcount = comp_labcount = comp_sp = comp_udpcount = 0;
@@ -3382,7 +3326,7 @@ char *comp_load(const char *file_name) {
   strcpy(comp_file_name, file_name);
 #if defined(IMPL_DEV_READ)
   buf = dev_read(file_name);
-#else 
+#else
   h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
   if (h == -1) {
     buf = NULL;
@@ -3559,7 +3503,7 @@ void comp_preproc_grmode(const char *source) {
   while (*p) {                  // while *p is not '\0'
     if (*p == '\n' || *p == ':') {  // yeap, we must close the string
       // here (enter or
-      // command-seperator) 
+      // command-seperator)
       // it is supposed that remarks had already removed from source
       *p = '\0';                // terminate the string
       break;
@@ -3575,9 +3519,9 @@ void comp_preproc_grmode(const char *source) {
   v = p;                        // 'v' points to first letter of 'width',
   // (1024x768)
   // ........................................^ <- p, v
-  p = strchr(v, 'X');           // search for the end of 'width' parameter 
-  // 
-  // 
+  p = strchr(v, 'X');           // search for the end of 'width' parameter
+  //
+  //
   // (1024x768). Remeber that the string is
   // in upper-case
   // .............................................^ <- p
@@ -3590,9 +3534,9 @@ void comp_preproc_grmode(const char *source) {
   *p = '\0';                    // we close the string at X position
   // (example: "1024x768" it will be
   // "1024\0768")
-  x = xstrtol(v);               // now the v points to a string-of-digits, 
-  // 
-  // 
+  x = xstrtol(v);               // now the v points to a string-of-digits,
+  //
+  //
   // we can perform atoi()
   // (xstrtol()=atoi())
   p++;
@@ -3609,9 +3553,9 @@ void comp_preproc_grmode(const char *source) {
     // different path
     *p = '\0';                  // we close the string at second's X
     // position
-    y = xstrtol(v);             // now the v points to a string-of-digits, 
-    // 
-    // 
+    y = xstrtol(v);             // now the v points to a string-of-digits,
+    //
+    //
     // we can perform atoi()
     // (xstrtol()=atoi())
 
@@ -3635,9 +3579,9 @@ void comp_preproc_grmode(const char *source) {
     // trimmed
   } else {                        // there was no 'X' delimiter after the
     // 'height', so, bpp is undefined
-    y = xstrtol(v);             // now the v points to a string-of-digits, 
-    // 
-    // 
+    y = xstrtol(v);             // now the v points to a string-of-digits,
+    //
+    //
     // we can perform atoi()
     // (xstrtol()=atoi())
     b = 0;                      // bpp is undefined (value 0)
@@ -3780,9 +3724,9 @@ void comp_preproc_include(char *p) {
   }
   char *fp = fileName;
   int size = 0;
-  while (*p != '\n' && 
-         *p != '\"' && 
-         *p != '\0' && 
+  while (*p != '\n' &&
+         *p != '\"' &&
+         *p != '\0' &&
          ++size < OS_PATHNAME_SIZE) {
     *fp++ = *p++;
   }
@@ -3889,7 +3833,7 @@ char *comp_preproc_func_begin(char *p) {
   char *dp;
   int single_line_f = 0;
   char pname[SB_KEYWORD_SIZE + 1];
-      
+
   if (strncmp(LCN_SUB_WRS, p, LEN_SUB_WRS) == 0) {
     p += LEN_SUB_WRS;
   } else if (strncmp(LCN_FUNC_WRS, p, LEN_FUNC_WRS) == 0) {
@@ -3898,14 +3842,14 @@ char *comp_preproc_func_begin(char *p) {
     p += LEN_DEF_WRS;
   }
   SKIP_SPACES(p);
-  
+
   // copy proc/func name
   dp = pname;
   while (is_alnum(*p) || *p == '_') {
     *dp++ = *p++;
   }
   *dp = '\0';
-  
+
   // search for '='
   while (*p != '\n' && *p != '=') {
     p++;
@@ -3916,7 +3860,7 @@ char *comp_preproc_func_begin(char *p) {
       p++;
     }
   }
-  
+
   // add declaration
   if (comp_udp_getip(pname) == INVALID_ADDR) {
     comp_add_udp(pname);
@@ -3931,7 +3875,7 @@ char *comp_preproc_func_begin(char *p) {
   } else {
     strcpy(comp_bc_proc, pname);
   }
-  
+
   if (!single_line_f) {
     comp_proc_level++;
   } else {
@@ -3972,7 +3916,7 @@ void comp_preproc_pass1(char *p) {
   while (*p) {
     if (strncmp(LCN_OPTION, p, LEN_OPTION) == 0) {
       // options
-      p = comp_preproc_options(p + LEN_OPTION); 
+      p = comp_preproc_options(p + LEN_OPTION);
     } else if (strncmp(LCN_IMPORT_WRS, p, LEN_IMPORT) == 0) {
       // import
       comp_preproc_import(p + LEN_IMPORT);
@@ -4048,7 +3992,7 @@ int comp_pass1(const char *section, const char *text) {
 
   char *code_line = tmp_alloc(SB_SOURCELINE_SIZE + 1);
   char *new_text = comp_format_text(text);
-  
+
   comp_preproc_pass1(new_text);
 
   if (!comp_error) {
@@ -4134,7 +4078,7 @@ int comp_pass2_exports() {
       sym.address = comp_udptable[pid].ip;
       sym.vid = comp_udptable[pid].vid;
     } else {
-      // look on variables 
+      // look on variables
       pid = -1;
       for (j = 0; j < comp_varcount; j++) {
         if (strcmp(comp_vartable[j].name, sym.symbol) == 0) {
@@ -4206,7 +4150,7 @@ mem_t comp_create_bin() {
       log_printf(MSG_CREATING_BC);
     }
   }
-  // 
+  //
   memcpy(&hdr.sign, "SBEx", 4);
   hdr.ver = 2;
   hdr.sbver = SB_DWORD_VER;

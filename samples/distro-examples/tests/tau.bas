@@ -37,7 +37,7 @@ sub cerr
 end
 
 sub addRoom(the_thing,d)
-  print the_thing.name,d
+
 end
 
 rem initialization
