@@ -15,11 +15,7 @@
 #include "common/kw.h"
 
 #define BC_ALLOC_INCR     1024
-#if defined(OS_ADDR16)
-#define BC_MAX_STORE_SIZE   0x7FFF
-#else
 #define BC_MAX_STORE_SIZE   0x7FFFFFFF
-#endif
 
 /**
  * @ingroup scan
@@ -52,7 +48,7 @@ void sc_raise(const char *fmt, ...);
  *
  * @param bc the bc structure
  */
-void bc_create(bc_t * bc);
+void bc_create(bc_t *bc);
 
 /**
  * @ingroup scan
@@ -61,7 +57,7 @@ void bc_create(bc_t * bc);
  *
  * @param bc the bc structure
  */
-void bc_destroy(bc_t * bc);
+void bc_destroy(bc_t *bc);
 
 /**
  * @ingroup scan
@@ -71,7 +67,7 @@ void bc_destroy(bc_t * bc);
  * @param bc the bc structure
  * @param newsize the new size
  */
-void bc_resize(bc_t * bc, dword newsize);
+void bc_resize(bc_t *bc, dword newsize);
 
 /**
  * @ingroup scan
@@ -81,7 +77,7 @@ void bc_resize(bc_t * bc, dword newsize);
  * @param bc the bc structure
  * @param code the byte
  */
-void bc_add1(bc_t * bc, byte code);
+void bc_add1(bc_t *bc, byte code);
 
 /**
  * @ingroup scan
@@ -91,7 +87,7 @@ void bc_add1(bc_t * bc, byte code);
  * @param bc the bc structure
  * @param code the byte
  */
-void bc_store1(bc_t * bc, addr_t offset, byte code);
+void bc_store1(bc_t *bc, addr_t offset, byte code);
 
 /**
  * @ingroup scan
@@ -101,7 +97,7 @@ void bc_store1(bc_t * bc, addr_t offset, byte code);
  * @param bc the bc structure
  * @param code the word
  */
-void bc_add_word(bc_t * bc, word code);
+void bc_add_word(bc_t *bc, word code);
 
 /**
  * @ingroup scan
@@ -111,7 +107,14 @@ void bc_add_word(bc_t * bc, word code);
  * @param bc the bc structure
  * @param code the dword
  */
-void bc_add_dword(bc_t * bc, dword code);
+void bc_add_dword(bc_t *bc, dword code);
+
+/**
+ * @ingroup scan
+ *
+ * adds a string of the given length
+ */
+void bc_add_strn(bc_t *bc, const char *str, int len);
 
 /**
  * @ingroup scan
@@ -122,7 +125,7 @@ void bc_add_dword(bc_t * bc, dword code);
  * @param str the raw-string. the string must starts with \". the string must also contains the ending \".
  * @return a pointer of src to the next character after the second \"
  */
-char *bc_store_string(bc_t * bc, char *src);
+char *bc_store_string(bc_t *bc, char *src);
 
 /**
  * @ingroup scan
@@ -133,7 +136,7 @@ char *bc_store_string(bc_t * bc, char *src);
  * @param str the raw-string. the string must starts with `. the string must also contains the ending `.
  * @return a pointer of src to the next character after the second `
  */
-char *bc_store_macro(bc_t * bc, char *src);
+char *bc_store_macro(bc_t *bc, char *src);
 
 /**
  * @ingroup scan
@@ -142,7 +145,7 @@ char *bc_store_macro(bc_t * bc, char *src);
  *
  * @param bc the bc structure
  */
-void bc_eoc(bc_t * bc);
+void bc_eoc(bc_t *bc);
 
 /**
  * @ingroup scan
@@ -152,7 +155,7 @@ void bc_eoc(bc_t * bc);
  * @param dest the destination
  * @param src the code to be appended to dest
  */
-void bc_append(bc_t * dest, bc_t * src);
+void bc_append(bc_t *dest, bc_t *src);
 
 /**
  * @ingroup scan
@@ -163,7 +166,7 @@ void bc_append(bc_t * dest, bc_t * src);
  * @param src the code to be appended to dest
  * @param n the size of the src to be copied
  */
-void bc_add_n(bc_t * dest, byte * src, dword n);
+void bc_add_n(bc_t *dest, byte *src, dword n);
 
 /**
  * @ingroup scan
@@ -179,7 +182,7 @@ void bc_add_n(bc_t * dest, byte * src, dword n);
  * @param dest the bc segment
  * @param idx the index of the function
  */
-void bc_add_fcode(bc_t * dest, long idx);
+void bc_add_fcode(bc_t *dest, long idx);
 
 /**
  * @ingroup scan
@@ -189,7 +192,7 @@ void bc_add_fcode(bc_t * dest, long idx);
  * @param dest the bc segment
  * @param idx the index of the procedure
  */
-void bc_add_pcode(bc_t * dest, long idx);
+void bc_add_pcode(bc_t *dest, long idx);
 
 /**
  * @ingroup scan
@@ -200,7 +203,7 @@ void bc_add_pcode(bc_t * dest, long idx);
  * @param lib the index of the library
  * @param idx the index of the function
  */
-void bc_add_extfcode(bc_t * dest, int lib, long idx);
+void bc_add_extfcode(bc_t *dest, int lib, long idx);
 
 /**
  * @ingroup scan
@@ -211,7 +214,7 @@ void bc_add_extfcode(bc_t * dest, int lib, long idx);
  * @param lib the index of the library
  * @param idx the index of the procedure
  */
-void bc_add_extpcode(bc_t * dest, int lib, long idx);
+void bc_add_extpcode(bc_t *dest, int lib, long idx);
 
 /**
  * @ingroup scan
@@ -221,7 +224,7 @@ void bc_add_extpcode(bc_t * dest, int lib, long idx);
  * @param bc the bc segment
  * @param idx the address
  */
-void bc_add_addr(bc_t * bc, addr_t idx);
+void bc_add_addr(bc_t *bc, addr_t idx);
 
 /**
  * @ingroup scan
@@ -233,7 +236,7 @@ void bc_add_addr(bc_t * bc, addr_t idx);
  * @param true_ip the jump-address when on true
  * @param false_ip the jump-address when on false
  */
-void bc_add_ctrl(bc_t * bc, code_t code, addr_t true_ip, addr_t false_ip);
+void bc_add_ctrl(bc_t *bc, code_t code, addr_t true_ip, addr_t false_ip);
 
 /**
  * @ingroup scan
@@ -243,7 +246,7 @@ void bc_add_ctrl(bc_t * bc, code_t code, addr_t true_ip, addr_t false_ip);
  * @param bc the bc segment
  * @param v the number
  */
-void bc_add_creal(bc_t * bc, var_num_t v);
+void bc_add_creal(bc_t *bc, var_num_t v);
 
 /**
  * @ingroup scan
@@ -253,6 +256,6 @@ void bc_add_creal(bc_t * bc, var_num_t v);
  * @param bc the bc segment
  * @param v the number
  */
-void bc_add_cint(bc_t * bc, var_int_t v);
+void bc_add_cint(bc_t *bc, var_int_t v);
 
 #endif

@@ -11,7 +11,6 @@
 #include "common/kw.h"
 #include "common/var.h"
 #include "common/var_hash.h"
-#include "common/var_uds.h"
 #include "common/device.h"
 #include "common/blib.h"
 #include "common/pproc.h"
@@ -285,7 +284,7 @@ void cmd_lins() {
       // move all form idx one down
       for (i = var_p->v.a.size - 1; i > idx; i--) {
         // A(i) = A(i-1)
-        v_set((var_t *) (var_p->v.a.ptr + (sizeof(var_t) * i)), 
+        v_set((var_t *) (var_p->v.a.ptr + (sizeof(var_t) * i)),
         (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (i - 1))));
       }
       elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * idx));
@@ -1038,7 +1037,6 @@ void cmd_udp(int cmd) {
         ready = 1;              // finish flag
         break;
 
-      case kwTYPE_UDS:
       case kwTYPE_VAR:         // the parameter is a variable
         ofs = prog_ip;          // keep expression's IP
 
@@ -1149,7 +1147,6 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid) {
         // parameters
         ready = 1;              // finish flag
         break;
-      case kwTYPE_UDS:
       case kwTYPE_VAR:         // the parameter is a variable
         ofs = prog_ip;          // keep expression's IP
 
@@ -1607,7 +1604,7 @@ void cmd_endif() {
     code_pop(&node);
     IF_ERR_BREAK;
   }
-  
+
   if (!prog_error) {
     prog_ip += (ADDRSZ + ADDRSZ);
   }
@@ -1752,10 +1749,6 @@ void cmd_for() {
       switch (array_p->type) {
       case V_HASH:
         var_elem_ptr = hash_elem(array_p, 0);
-        break;
-
-      case V_UDS:
-        var_elem_ptr = uds_elem(array_p, 0);
         break;
 
       case V_ARRAY:
@@ -1952,11 +1945,6 @@ void cmd_next() {
       var_elem_ptr = hash_elem(array_p, node.x.vfor.step_expr_ip);
       break;
 
-    case V_UDS:
-      node.x.vfor.step_expr_ip++; // element-index
-      var_elem_ptr = uds_elem(array_p, node.x.vfor.step_expr_ip);
-      break;
-
     case V_ARRAY:
       node.x.vfor.step_expr_ip++; // element-index
 
@@ -2049,12 +2037,7 @@ void cmd_read() {
           prog_dp += OS_REALSZ;
           break;
         case kwTYPE_STR: {
-#if defined(OS_ADDR16)
-          word len;
-#else
           dword len;
-#endif
-
           prog_dp++;
 
           vp->type = V_STR;
@@ -2168,7 +2151,7 @@ void cmd_pause() {
   long start, now;
 
   code = code_peek();
-  if (code == kwTYPE_VAR || code == kwTYPE_UDS) {
+  if (code == kwTYPE_VAR) {
     x = par_getint();
     if (prog_error) {
       return;

@@ -47,6 +47,7 @@ protected:
   void runOnce(const char *startupBas);
   void setPath(const char *filename);
   bool setParentPath();
+  void setDimensions();
   void showCompletion(bool success);
   void showError();
   void checkLoadError();

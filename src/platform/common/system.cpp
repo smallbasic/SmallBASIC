@@ -275,8 +275,7 @@ void System::resize() {
   MAExtent screenSize = maGetScrSize();
   logEntered();
   _output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
-  os_graf_mx = _output->getWidth();
-  os_graf_my = _output->getHeight();
+  setDimensions();
   dev_pushkey(SB_PKEY_SIZE_CHG);
 }
 
@@ -398,21 +397,23 @@ void System::setPath(const char *filename) {
   }
 }
 
+void System::setDimensions() {
+  os_graf_mx = _output->getWidth();
+  os_graf_my = _output->getHeight();
+  setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
+  setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
+}
+
 void System::setRunning(bool running) {
   if (running) {
     dev_fgcolor = -DEFAULT_FOREGROUND;
     dev_bgcolor = -DEFAULT_BACKGROUND;
-    os_graf_mx = _output->getWidth();
-    os_graf_my = _output->getHeight();
-
-    os_ver = 1;
-    os_color = 1;
-    os_color_depth = 16;
-
+    setDimensions();
     dev_clrkb();
     ui_reset();
 
     _output->reset();
+    _output->setAutoflush(!opt_show_page);
     _state = kRunState;
     _loadPath.empty();
     _lastEventTime = maGetMilliSecondCount();
@@ -420,6 +421,7 @@ void System::setRunning(bool running) {
     _overruns = 0;
   } else if (!isClosing() && !isRestart() && !isBack()) {
     _state = kActiveState;
+    _output->setAutoflush(true);
   }
 }
 
@@ -616,4 +618,6 @@ char *dev_read(const char *fileName) {
   return g_system->readSource(fileName);
 }
 
-
+void dev_show_page() {
+  g_system->_output->flushNow();
+}

@@ -286,8 +286,9 @@ void Runtime::runShell() {
   opt_quiet = true;
   opt_command[0] = 0;
   opt_usevmt = 0;
-  os_graphics = 1;
   opt_file_permitted = 1;
+  os_graphics = 1;
+  os_color_depth = 16;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();

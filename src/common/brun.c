@@ -24,7 +24,6 @@
 #include "common/messages.h"
 #include "common/device.h"
 #include "common/pproc.h"
-#include "common/var_uds.h"
 
 int brun_create_task(const char *filename, mem_t preloaded_bc, int libf);
 int exec_close_task();
@@ -34,9 +33,6 @@ void code_pop_until(int type);
 void code_pop_and_free(stknode_t *node);
 stknode_t *code_stackpeek();
 void sys_before_comp();
-void sys_after_comp();
-void sys_before_run();
-void sys_after_run();
 int sbasic_exec_task(int tid);
 int sbasic_recursive_exec(int tid);
 void sbasic_exec_prepare(const char *filename);
@@ -45,62 +41,12 @@ int sbasic_main(const char *file);
 int exec_close(int tid);
 int sbasic_exec(const char *file);
 void cmd_options(void);
-var_t *code_resolve_varptr(var_t* var_p, int until_parens);
+var_t *code_resolve_varptr(var_t *var_p, int until_parens);
 
 static dword evt_check_every;
 static char fileName[OS_FILENAME_SIZE + 1];
 static int main_tid;
 static int exec_tid;
-
-/**
- * returns the next 32bit and moves the instruction pointer to the next instruction
- */
-dword code_getnext32() {
-  dword v;
-
-  memcpy(&v, prog_source + prog_ip, 4);
-  prog_ip += 4;
-  return v;
-}
-
-#if defined(OS_PREC64)
-
-/**
- * returns the next 64bit and moves the instruction pointer to the next instruction
- */
-var_int_t code_getnext64i() {
-  var_int_t v;
-
-  memcpy(&v, prog_source + prog_ip, sizeof(var_int_t));
-  prog_ip += sizeof(var_int_t);
-  return v;
-}
-#endif
-
-/**
- * returns the next 64bit and moves the instruction pointer to the next instruction
- */
-double code_getnext64f() {
-  double v;
-
-  memcpy(&v, prog_source + prog_ip, sizeof(double));
-  prog_ip += sizeof(double);
-  return v;
-}
-
-#if defined(OS_PREC64)
-
-/**
- * returns the next 128bit and moves the instruction pointer to the next instruction
- */
-var_num_t code_getnext128f() {
-  var_num_t v;
-
-  memcpy(&v, prog_source + prog_ip, sizeof(var_num_t));
-  prog_ip += sizeof(var_num_t);
-  return v;
-}
-#endif
 
 /**
  * jump to label
@@ -112,7 +58,7 @@ void code_jump_label(word label_id) {
 /**
  * Put the node 'node' in stack (PUSH)
  */
-void code_push(stknode_t * node) {
+void code_push(stknode_t *node) {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
   int i;
 #endif
@@ -138,7 +84,7 @@ void code_push(stknode_t * node) {
 /**
  * Returns and deletes the topmost node from stack (POP)
  */
-void code_pop(stknode_t * node) {
+void code_pop(stknode_t *node) {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
   int i;
 #endif
@@ -166,7 +112,7 @@ void code_pop(stknode_t * node) {
 /**
  * Returns and deletes the topmost node from stack (POP)
  */
-void code_pop_and_free(stknode_t * node) {
+void code_pop_and_free(stknode_t *node) {
 #if defined(_UnixOS) && defined(_CHECK_STACK)
   int i;
 #endif
@@ -262,19 +208,22 @@ stknode_t *code_stackpeek() {
 /**
  * Convertion multi-dim index to one-dim index
  */
-addr_t getarrayidx(var_t* array, var_t** var_hash_val) {
+addr_t getarrayidx(var_t *array, var_t **var_hash_val) {
+  addr_t idx = 0;
+  addr_t lev = 0;
+  addr_t m = 0;
   byte code;
   var_t var;
-  addr_t idx = 0, lev = 0, m = 0;
-  addr_t idim, i;
+  addr_t idim;
+  addr_t i;
 
   do {
     v_init(&var);
     eval(&var);
     IF_ERR_RETURN_0;
 
-    if (var.type == V_STR) {
-      // array elemement is a string - convert array to hash
+    if (var.type == V_STR || array->type == V_HASH) {
+      // array elemement is a string or element is addressing a hash
       hash_get_value(array, &var, var_hash_val);
 
       if (code_peek() == kwTYPE_LEVEL_END) {
@@ -321,7 +270,7 @@ addr_t getarrayidx(var_t* array, var_t** var_hash_val) {
 /**
  * Used by code_getvarptr() to retrieve an element ptr of an array
  */
-var_t *code_getvarptr_arridx(var_t* basevar_p) {
+var_t *code_getvarptr_arridx(var_t *basevar_p) {
   addr_t array_index;
   var_t *var_p = NULL;
 
@@ -365,7 +314,7 @@ var_t *code_getvarptr_arridx(var_t* basevar_p) {
 /**
  * resolve a composite variable reference, eg: ar.ch(0).foo
  */
-var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
+var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
   if (var_p) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -374,62 +323,17 @@ var_t* code_resolve_varptr(var_t* var_p, int until_parens) {
       }
       break;
     case kwTYPE_UDS_EL:
-      var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
+      var_p = code_resolve_varptr(hash_resolve_fields(var_p), until_parens);
       break;
     }
   }
-  return var_p;
-}
-
-/**
- * returns the varptr of the next variable. if the variable is an array 
- * returns the element ptr
- */
-var_t *code_getvarptr() {
-  return code_getvarptr_parens(0);
-}
-
-/**
- * helper for code_getvarptr
- */
-var_t* code_getvarptr_parens(int until_parens) {
-  var_t *var_p = NULL;
-
-  switch (code_peek()) {
-  case kwTYPE_VAR:
-    code_skipnext();
-    var_p = tvar[code_getaddr()];
-    switch (var_p->type) {
-    case V_HASH:
-    case V_ARRAY:
-      var_p = code_resolve_varptr(var_p, until_parens);
-      break;
-    default:
-      if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
-        err_varisnotarray();
-      }
-    }
-    break;
-
-  case kwTYPE_UDS:
-    code_skipnext();
-    var_p = tvar[code_getaddr()];
-    var_p = code_resolve_varptr(uds_resolve_fields(var_p), until_parens);
-    break;
-  }
-
-  if (var_p == NULL && !prog_error) {
-    err_notavar();
-    return tvar[0];
-  }
-
   return var_p;
 }
 
 /**
  * Used by code_isvar() to retrieve an element ptr of an array
  */
-var_t *code_isvar_arridx(var_t * basevar_p) {
+var_t *code_isvar_arridx(var_t *basevar_p) {
   addr_t array_index;
   var_t *var_p = NULL;
 
@@ -476,16 +380,15 @@ var_t *code_isvar_arridx(var_t * basevar_p) {
  * returns false
  */
 int code_isvar() {
-  var_t *basevar_p, *var_p = NULL;
-  addr_t cur_ip;
+  var_t *basevar_p;
+  var_t *var_p = NULL;
 
-  cur_ip = prog_ip;             // store IP
+  // store IP
+  addr_t cur_ip = prog_ip;
 
-  switch (code_peek()) {
-  case kwTYPE_VAR:
+  if (code_peek() == kwTYPE_VAR) {
     code_skipnext();
     var_p = basevar_p = tvar[code_getaddr()];
-
     switch (basevar_p->type) {
     case V_HASH:
     case V_ARRAY:
@@ -497,23 +400,18 @@ int code_isvar() {
         var_p = NULL;
       }
     }
-    break;
-
-  case kwTYPE_UDS:
-    code_skipnext();
-    var_p = tvar[code_getaddr()];
-    var_p = code_resolve_varptr(uds_resolve_fields(var_p), 0);
-    break;
   }
 
   if (var_p) {
     if (kw_check_evexit(code_peek()) || code_peek() == kwTYPE_LEVEL_END) {
-      prog_ip = cur_ip;         // restore IP
+      // restore IP
+      prog_ip = cur_ip;
       return 1;
     }
   }
 
-  prog_ip = cur_ip;             // restore IP
+  // restore IP
+  prog_ip = cur_ip;
   return 0;
 }
 
@@ -646,7 +544,7 @@ void exec_setup_predefined_variables() {
 
   {
     static char stupid_os_envsblog[1024]; // it must be static at
-    // least by default on DOS 
+    // least by default on DOS
     // or Win32(BCB)
     sprintf(stupid_os_envsblog, "SBLOG=%s%csb.log", homedir, OS_DIRSEP);
     putenv(stupid_os_envsblog);
@@ -753,7 +651,6 @@ void cmd_chain(void) {
   // compile the buffer
   sys_before_comp();
   success = comp_compile_buffer(code);
-  sys_after_comp();
 
   v_free(&var);
   if (code_alloc) {
@@ -767,7 +664,6 @@ void cmd_chain(void) {
   }
 
   tid_main = brun_create_task("CH_MAIN", bytecode_h, 0);
-  sys_before_run();
 
   dev_init(opt_graphics, 0);
   exec_sync_variables(0);
@@ -775,7 +671,6 @@ void cmd_chain(void) {
   bc_loop(0);
   success = prog_error;         // save tid_main status
 
-  sys_after_run();
   exec_close_task();            // cleanup task data - tid_main
   close_task(tid_main);         // cleanup task container
   close_task(tid_base);         // cleanup task container
@@ -867,16 +762,21 @@ void bc_loop(int isf) {
     proc_level++;
   }
   while (prog_ip < prog_length) {
-
+    switch (code) {
+    case kwLABEL:
+    case kwREM:
+    case kwTYPE_EOC:
+    case kwTYPE_LINE:
+      break;
+    default:
 #if defined(_Win32)
-    now = GetTickCount();
+      now = GetTickCount();
 #else
-    now = clock();
+      now = clock();
 #endif
+    }
 
-    // events
-    // every ~50ms, check events (on some drivers that redraws the
-    // screen)
+    // check events every ~50ms
     if (now >= next_check) {
       next_check = now + evt_check_every;
 
@@ -897,10 +797,10 @@ void bc_loop(int isf) {
 
       // debug
       /*
-       * fprintf(stderr, "\t%d: %d = ", prog_ip, code); for ( i = 0; 
+       * fprintf(stderr, "\t%d: %d = ", prog_ip, code); for ( i = 0;
        * keyword_table[i].name[0] != '\0'; i ++) { if ( code ==
        * keyword_table[i].code ) { fprintf(stderr,"%s ",
-       * keyword_table[i].name); break; } } fprintf(stderr,"\n"); 
+       * keyword_table[i].name); break; } } fprintf(stderr,"\n");
        */
 
       switch (code) {
@@ -1040,7 +940,7 @@ void bc_loop(int isf) {
 
         /*
          * ----------------------------------------- * external
-         * procedures 
+         * procedures
          */
       case kwTYPE_CALLEXTP:    // [lib][index]
       {
@@ -1061,21 +961,17 @@ void bc_loop(int isf) {
         break;
         /*
          * ----------------------------------------- * buildin
-         * procedures -- BEGIN 
+         * procedures -- BEGIN
          */
       case kwTYPE_CALLP:
         pcode = code_getaddr();
         switch (pcode) {
         case kwCLS:
-          // cdw-s 19/11/2004
-          // dev_cls(); called in graph_reset()
           graph_reset();
           break;
         case kwRTE:
           cmd_RTE();
           break;
-          // case kwSHELL:
-          // break;
         case kwENVIRON:
           cmd_environ();
           break;
@@ -1267,6 +1163,9 @@ void bc_loop(int isf) {
         case kwDEFINEKEY:
           cmd_definekey();
           break;
+        case kwSHOWPAGE:
+          dev_show_page();
+          break;
         default:
           err_pcode_err(pcode);
         }
@@ -1317,20 +1216,12 @@ void bc_loop(int isf) {
         IF_ERR_BREAK;
         continue;
 
-        // //////////////
       case kwLINE:
         cmd_line();
         break;
-
-        // third class
       case kwCOLOR:
         cmd_color();
         break;
-        // case kwINTEGRAL:
-        // cmd_integral();
-        // break;
-
-        // --- at end ---
       case kwOPEN:
         cmd_fopen();
         break;
@@ -1370,7 +1261,6 @@ void bc_loop(int isf) {
       case kwTROFF:
         trace_flag = 0;
         continue;
-
       case kwSTOP:
       case kwEND:
         if ((prog_length - 1) > prog_ip) {
@@ -1456,14 +1346,15 @@ void dump_stack() {
           break;
         }
       }
-    } else
+    } else {
       break;
+    }
   } while (1);
 }
 
 /*
  * RUN byte-code
- * 
+ *
  * ByteCode Structure (executables, not units):
  *
  * [header (bc_head_t)]
@@ -1536,7 +1427,6 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   }
 
   // create task
-
   tid = create_task(fname);     // create a task
   activate_task(tid);           // make it active
   bytecode_h = bc_h;
@@ -1628,7 +1518,6 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   prog_source = cp;
   prog_ip = 0;
 
-  // 
   exec_setup_predefined_variables();
 
   // init the keyboard map
@@ -1709,14 +1598,14 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
     // for ( i = 0; i < prog_symcount; i ++ ) {
     // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 1 )
     // panic("Symbol (unit) '%s' missing\n", prog_symtable[i].symbol);
-    // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 0 ) { 
+    // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 0 ) {
     // if ( prog_symtable[j].exp_idx == -1 )
     // panic("Symbol (module) '%s' missing\n", prog_symtable[i].symbol);
     // }
     // }
     // }
   }
-  // 
+  //
   return tid;
 }
 
@@ -1739,7 +1628,8 @@ int exec_close_task() {
     // clean up - prog stack
     while (prog_stack_count > 0) {
       code_pop_and_free(&node);
-    }tmp_free(prog_stack);
+    }
+    tmp_free(prog_stack);
     // clean up - variables
     for (i = 0; i < (int) prog_varcount; i++) {
       int j, shared;
@@ -1860,28 +1750,11 @@ void exec_sync_variables(int dir) {
 void sys_before_comp() {
   // setup prefered screen mode variables
   if (dev_getenv("SBGRAF")) {
-    if (dev_getenv("SBGRAF"))
+    if (dev_getenv("SBGRAF")) {
       comp_preproc_grmode(dev_getenv("SBGRAF"));
+    }
     opt_graphics = 2;
   }
-}
-
-/**
- * system specific things - after compilation
- */
-void sys_after_comp() {
-}
-
-/**
- * system specific things - before execution
- */
-void sys_before_run() {
-}
-
-/**
- * system specific things - after execution
- */
-void sys_after_run() {
 }
 
 /**
@@ -1955,7 +1828,7 @@ void sbasic_dump_taskinfo(FILE * output) {
 /**
  * dump-bytecode
  */
-void sbasic_dump_bytecode(int tid, FILE * output) {
+void sbasic_dump_bytecode(int tid, FILE *output) {
   int i;
   int prev_tid;
 
@@ -2028,7 +1901,6 @@ int sbasic_compile(const char *file) {
   if (comp_rq) {
     sys_before_comp();  // system specific preparations for compilation
     success = comp_compile(file);
-    sys_after_comp();   // system specific things; after compilation
   }
   return success;
 }
@@ -2069,9 +1941,9 @@ int sbasic_exec(const char *file) {
   strcpy(gsb_last_file, file);
   strcpy(gsb_last_errmsg, "");
 
-  // compile it - if opt_nosave, bytecode_h is a 
+  // compile it - if opt_nosave, bytecode_h is a
   // memory handle of BC; otherwise you must run the file
-  success = sbasic_compile(file); 
+  success = sbasic_compile(file);
 
   if (opt_syntaxcheck)          // this is a command-line flag to
     // syntax-check only
@@ -2092,12 +1964,11 @@ int sbasic_exec(const char *file) {
     // load everything
     sbasic_exec_prepare(file);
 
-    sys_before_run();           // system specific things; before run
     dev_init(opt_graphics, 0);  // initialize output device for graphics
     evt_check_every = (50 * CLOCKS_PER_SEC) / 1000; // setup event checker time = 50ms
     srand(clock());             // randomize
 
-    // run 
+    // run
     sbasic_recursive_exec(exec_tid);
 
     // normal exit
@@ -2107,8 +1978,6 @@ int sbasic_exec(const char *file) {
 
     exec_close(exec_tid);       // clean up executor's garbages
     dev_restore();              // restore device
-
-    sys_after_run();            // system specific things; after run
   }
   // update IDE when it used as external
   if (opt_ide == IDE_EXTERNAL) {
@@ -2127,7 +1996,7 @@ int sbasic_exec(const char *file) {
     }
   }
 
-  // cdw-s 22/11/2004 return as failure for compilation errors
+  // return compilation errors as failure
   return !success ? 0 : !gsb_last_error;
 }
 

@@ -3,7 +3,7 @@ OPTION PREDEF TEXTMODE
 OPTION PREDEF COMMAND FOO
 
 if (command <> "FOO") then
-  print "ERROR"
+  print "ERROR"; " "; command
 else 
   print "OK"
 end if

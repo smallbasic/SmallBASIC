@@ -84,6 +84,7 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
   logEntered();
 
   os_graphics = 1;
+  os_color_depth = 16;
   opt_interactive = true;
   opt_usevmt = 0;
   opt_file_permitted = 1;

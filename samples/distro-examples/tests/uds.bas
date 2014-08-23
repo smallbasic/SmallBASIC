@@ -32,6 +32,7 @@ sub passByVal(udsVal)
 end
 
 'test with formal+actual arguments having differing names
+dim _udsRef
 _udsRef.field1 = "initField1"
 _udsRef.field2 = "initField2"
 _udsRef.field3 = 3.0
@@ -50,6 +51,7 @@ if (_udsRef.field2 != "updatedField2") then
 fi
 
 'test with formal+actual arguments with global names
+dim udsRef
 udsRef.field1 = "initField1"
 udsRef.field2 = "initField2"
 udsRef.field3 = 3.0
@@ -68,6 +70,7 @@ if (udsRef.field2 != "updatedField2") then
 fi
 
 'test complex structures - this is pretty cool :)
+dim animal
 animal.pet.cat.legs = 4
 animal.pet.cat.color = "black"
 

@@ -1,2 +1,0 @@
-# process bookmarks
-print "Bookmarks"

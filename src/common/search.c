@@ -13,6 +13,7 @@
 #include <sys/cdefs.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "search.h"
 
@@ -67,19 +68,22 @@ void *tfind(const void *vkey, void **vrootp, tcompare_cb compar) {
 
 /* find or insert datum into search tree */
 void *tsearch(const void *vkey, void **vrootp, tcompare_cb compar) {
-  node_t **rootp = (node_t **) tfind(vkey, vrootp, compar);
-  node_t *q;
-
-  if (rootp != NULL) {
-    q = *rootp;
-  } else {
-    // key not found. make new node and link to old
-    q = malloc(sizeof(node_t));
-    if (q != 0) {
-      *rootp = q;
-      q->key = (void *)vkey;
-      q->left = q->right = NULL;
+  node_t **rootp = (node_t **)vrootp;
+  if (rootp == NULL) {
+    return NULL;
+  }
+  while (*rootp != NULL) {
+    int r;
+    if ((r = compar(vkey, (*rootp)->key)) == 0) {
+      return *rootp;
     }
+    rootp = (r < 0) ? &(*rootp)->left : &(*rootp)->right;
+  }
+  node_t *q = malloc(sizeof(node_t));
+  if (q != 0) {
+    *rootp = q;
+    q->key = (void *)vkey;
+    q->left = q->right = NULL;
   }
   return q;
 }

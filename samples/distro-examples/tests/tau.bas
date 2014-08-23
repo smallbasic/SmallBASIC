@@ -2,6 +2,7 @@ Unit Tau
 Import TauChild
 
 Export expvar, foof, foop
+export addRoom
 export print_expvar, ta, build_ta, cerr
 
 expvar = "Tau's exported variable"
@@ -33,6 +34,10 @@ end
 
 sub cerr
 	rte 2
+end
+
+sub addRoom(the_thing,d)
+
 end
 
 rem initialization

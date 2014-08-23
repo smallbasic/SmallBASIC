@@ -114,7 +114,7 @@ void bc_add2i(bc_t *bc, byte code, word p1) {
 /*
  * add one command and one long int (32 bits)
  */
-void bc_add2l(bc_t * bc, byte code, long p1) {
+void bc_add2l(bc_t *bc, byte code, long p1) {
   if (bc->count >= bc->size - 8) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
@@ -128,22 +128,14 @@ void bc_add2l(bc_t * bc, byte code, long p1) {
  * add buildin function call
  */
 void bc_add_fcode(bc_t *bc, long idx) {
-#if defined(OS_ADDR16)
-  bc_add2i(bc, kwTYPE_CALLF, idx);
-#else
   bc_add2l(bc, kwTYPE_CALLF, idx);
-#endif
 }
 
 /*
  * add buildin procedure call
  */
 void bc_add_pcode(bc_t *bc, long idx) {
-#if defined(OS_ADDR16)
-  bc_add2i(bc, kwTYPE_CALLP, idx);
-#else
   bc_add2l(bc, kwTYPE_CALLP, idx);
-#endif
 }
 
 /*
@@ -151,13 +143,8 @@ void bc_add_pcode(bc_t *bc, long idx) {
  */
 void bc_add_extfcode(bc_t *bc, int lib, long idx) {
   bc_add_code(bc, kwTYPE_CALLEXTF);
-#if defined(OS_ADDR16)
-  bc_add_word(bc, lib);
-  bc_add_word(bc, idx);
-#else
   bc_add_dword(bc, lib);
   bc_add_dword(bc, idx);
-#endif
 }
 
 /*
@@ -165,13 +152,8 @@ void bc_add_extfcode(bc_t *bc, int lib, long idx) {
  */
 void bc_add_extpcode(bc_t *bc, int lib, long idx) {
   bc_add_code(bc, kwTYPE_CALLEXTP);
-#if defined(OS_ADDR16)
-  bc_add_word(bc, lib);
-  bc_add_word(bc, idx);
-#else
   bc_add_dword(bc, lib);
   bc_add_dword(bc, idx);
-#endif
 }
 
 /*
@@ -181,13 +163,8 @@ void bc_add_addr(bc_t *bc, addr_t idx) {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
-#if defined(OS_ADDR16)
-  memcpy(bc->ptr + bc->count, &idx, 2);
-  bc->count += 2;
-#else
   memcpy(bc->ptr + bc->count, &idx, 4);
   bc->count += 4;
-#endif
 }
 
 /*
@@ -230,23 +207,17 @@ void bc_add_creal(bc_t *bc, var_num_t v) {
 /*
  * add one command and one string (see: bc_store_string)
  */
-void bc_add2s(bc_t *bc, byte code, const char *p1) {
-  int l = strlen(p1);
-  if (l > BC_MAX_STORE_SIZE) {
+void bc_add_strn(bc_t *bc, const char *str, int len) {
+  if (len > BC_MAX_STORE_SIZE) {
     sc_raise("STRING TOO BIG");
   } else {
-    bc_add_code(bc, code);
-#if defined(OS_ADDR16)
-    bc_add_word(bc, l);
-#else
-    bc_add_dword(bc, l);
-#endif
-
-    if (bc->count >= bc->size - l)
+    bc_add_code(bc, kwTYPE_STR);
+    bc_add_dword(bc, len);
+    if (bc->count >= bc->size - len) {
       bc_resize(bc, bc->size + BC_ALLOC_INCR);
-
-    memcpy(bc->ptr + bc->count, p1, l);
-    bc->count += l;
+    }
+    memcpy(bc->ptr + bc->count, str, len);
+    bc->count += len;
   }
 }
 
@@ -256,39 +227,30 @@ void bc_add2s(bc_t *bc, byte code, const char *p1) {
  */
 char *bc_store_string(bc_t *bc, char *src) {
   char *p = src;
-  char *np = 0;
+  char *np = NULL;
   char *base = src + 1;
-  int l = 0;                    // total length
-  int seglen = 0;               // length of segment between escapes
+  int len = 0;
 
-  p++;                          // == '\"'
+  // skip past opening quotes
+  p++;
   while (*p) {
     if (*p == '\\' && ((*(p + 1) == '\"') || *(p + 1) == '\\')) {
       // escaped quote " or escaped escape
-      seglen = p - base;
-      np = np ? tmp_realloc(np, l + seglen + 1) : tmp_alloc(seglen + 1);
-      strncpy(np + l, base, seglen);
-      l += seglen;              // add next segment
-      np[l] = 0;
-      base = ++p;               // include " (or \ ) in next segment
+      int seglen = p - base;
+      np = np ? tmp_realloc(np, len + seglen + 1) : tmp_alloc(seglen + 1);
+      strncpy(np + len, base, seglen);
+      // add next segment
+      len += seglen;
+      np[len] = 0;
+      // include " (or \ ) in next segment
+      base = ++p;
     } else if (*p == '\"') {
       // end of string detected
-      seglen = p - base;
-      np = np ? tmp_realloc(np, l + seglen + 1) : tmp_alloc(seglen + 1);
-      strncpy(np + l, base, seglen);
-      np[l + seglen] = 0;
-      if (opt_cstr) {
-        // c-style special char syntax
-        char *cstr;
-        cstr = cstrdup(np);
-        tmp_free(np);
-        bc_add2s(bc, kwTYPE_STR, cstr);
-        tmp_free(cstr);
-      } else {
-        // normal
-        bc_add2s(bc, kwTYPE_STR, np);
-        tmp_free(np);
-      }
+      int seglen = p - base;
+      np = np ? tmp_realloc(np, len + seglen + 1) : tmp_alloc(seglen + 1);
+      memcpy(np + len, base, seglen);
+      bc_add_strn(bc, np, len + seglen);
+      tmp_free(np);
       p++;
       return p;
     }
@@ -312,7 +274,7 @@ char *bc_store_macro(bc_t *bc, char *src) {
       np = tmp_alloc(l + 1);
       strncpy(np, src + 1, l);
       np[l - 1] = '\0';
-      bc_add2s(bc, kwTYPE_STR, np);
+      bc_add_strn(bc, np, strlen(np));
       tmp_free(np);
 
       p++;
@@ -328,10 +290,7 @@ char *bc_store_macro(bc_t *bc, char *src) {
  * adds an EOC mark at the current position
  */
 void bc_eoc(bc_t *bc) {
-  //      if      ( bc->count )   {
-  //              if      ( bc->ptr[bc->count-1] != kwTYPE_EOC )
   bc_add1(bc, kwTYPE_EOC);
-  //              }
 }
 
 /*

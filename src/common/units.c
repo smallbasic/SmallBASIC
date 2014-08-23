@@ -128,13 +128,15 @@ int open_unit(const char *file) {
   unitname[strlen(bas_file) - 4] = 0;
   strcat(unitname, ".sbu");
 
-  if ((ut = sys_filetime(unitname)) == 0L) {  // binary not found
-    comp_rq = 1;                // compile it
+  if ((ut = sys_filetime(unitname)) == 0L) {
+    // binary not found - compile
+    comp_rq = 1;
   } else {
-    if ((st = sys_filetime(bas_file))) {  // source found
+    if ((st = sys_filetime(bas_file))) {
+      // source found
       if (ut < st) {
-        comp_rq = 1;            // executable is older than source;
-        // compile it
+        // executable is older than source - compile
+        comp_rq = 1;
       }
     }
   }
@@ -281,7 +283,7 @@ int unit_exec(int lib_id, int index, var_t * ret) {
   ps = &prog_symtable[index];
   us = &(taskinfo(ps->task_id)->sbe.exec.exptable[ps->exp_idx]);
 
-  // 
+  //
   switch (ps->type) {
   case stt_variable:
     break;
@@ -333,7 +335,7 @@ int unit_exec(int lib_id, int index, var_t * ret) {
       tmp_free(udf_rv.x.vdvar.vptr);
     }
 
-    // 
+    //
     activate_task(my_tid);
     exec_sync_variables(0);
     break;

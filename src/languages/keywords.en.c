@@ -423,6 +423,7 @@ struct proc_keyword_s proc_table[] = {
 { "HTML",               kwHTML },
 { "IMAGE",              kwIMAGE },
 { "DEFINEKEY",          kwDEFINEKEY },
+{ "SHOWPAGE",           kwSHOWPAGE },
 
 #if !defined(OS_LIMITED)
 { "STKDUMP",    kwSTKDUMP },
@@ -473,7 +474,6 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_QUIET               "QUIET"
 #define LCN_GRMODE              "GRMODE"
 #define LCN_TEXTMODE            "TEXTMODE"
-#define LCN_CSTR                "CSTR"
 #define LCN_UNIT_PATH           "UNITPATH"
 #define LCN_COMMAND             "COMMAND"
 #define LCN_INC                 "INCLUDE"
@@ -482,9 +482,9 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_DEF_WRS             "DEF "
 #define LCN_END_WRS             "END "
 #define LCN_END_WNL             "END\n"
+#define LCN_SHOWPAGE            "SHOWPAGE"
 
 /* system variables */
-#define LCN_SV_OSVER            "OSVER"
 #define LCN_SV_OSNAME           "OSNAME"
 #define LCN_SV_SBVER            "SBVER"
 #define LCN_SV_PI               "PI"

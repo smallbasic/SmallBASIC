@@ -69,7 +69,6 @@ typedef struct {
  * @param dotproc setpixel() function
  */
 void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
-#include "common/g_bmp.h"
 
 /*
  *
@@ -89,7 +88,6 @@ void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
 #define CLR_MAGENTA 5
 #define CLR_BROWN 6
 #define CLR_GRAY  7
-
 #define CLR_WHITE 15
 
 /**
@@ -101,8 +99,6 @@ void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
  *
  * @code
  * byte  os_charset;   // System's charset (see os_charset_codes)
- *
- * byte  os_color;   // True if the output has real colors (256+ colors)
  *
  * dword os_color_depth; // The number of bits of the supported colors
  *             // (i.e.: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
@@ -313,8 +309,7 @@ void dev_delay(dword ms);
  * @param code is the information code
  * @return a value based on 'code'
  */
-int dev_getpen(int code);  // returns the pen/mouse status
-// (PEN(code))
+int dev_getpen(int code);
 
 /**
  * @ingroup dev_i
@@ -327,8 +322,7 @@ int dev_getpen(int code);  // returns the pen/mouse status
  *
  * @param enable non-zero to enable pen/mouse driver.
  */
-void dev_setpenmode(int enable); // enables or disables pen/mouse
-// driver (PEN ON|OFF)
+void dev_setpenmode(int enable);
 
 /*
  *
@@ -343,7 +337,7 @@ void dev_setpenmode(int enable); // enables or disables pen/mouse
  *
  * @param str the string
  */
-void dev_print(const char *str); // write a string to the console
+void dev_print(const char *str);
 
 /**
  * @ingroup dev_g
@@ -370,15 +364,14 @@ void log_printf(const char *fmt, ...);
  *
  * clear screen
  */
-void dev_cls(void);  // clear the screen
+void dev_cls(void);
 
 /**
  * @ingroup dev_g
  *
  * clear from cursor to end-of-line
  */
-void dev_clreol(void); // clear the console line from the current
-// pos. until the end of the line
+void dev_clreol(void);
 
 /**
  * @ingroup dev_g
@@ -390,7 +383,7 @@ void dev_clreol(void); // clear the console line from the current
  * @param x the x in pixels
  * @param y the y in pixels
  */
-void dev_setxy(int x, int y, int transform);  // set cursor position. parameters in pixels.
+void dev_setxy(int x, int y, int transform);
 
 /**
  * @ingroup dev_g
@@ -399,7 +392,7 @@ void dev_setxy(int x, int y, int transform);  // set cursor position. parameters
  *
  * @return the current x position
  */
-int dev_getx(void);  // returns the current cursor x position (in pixels)
+int dev_getx(void);
 
 /**
  * @ingroup dev_g
@@ -408,7 +401,7 @@ int dev_getx(void);  // returns the current cursor x position (in pixels)
  *
  * @return the current y position
  */
-int dev_gety(void);  // returns the current cursor y position (in pixels)
+int dev_gety(void);
 
 /**
  * @ingroup dev_g
@@ -418,16 +411,16 @@ int dev_gety(void);  // returns the current cursor y position (in pixels)
  * @param fg the standard VGA foreground color
  * @param bg the standard VGA foreground color
  */
-void dev_settextcolor(long fg, long bg); // set the text colors. (fg = foreground, bg = background)
+void dev_settextcolor(long fg, long bg);
 
 /**
  * @ingroup dev_i
  *
- * waits for a key
+ * waits until a key is pressed and returns its code
  *
  * @return the key-code
  */
-long int dev_getch(void);  // waits until a key is pressed and returns its code
+long int dev_getch(void);
 
 /**
  * @ingroup dev_i
@@ -440,7 +433,7 @@ long int dev_getch(void);  // waits until a key is pressed and returns its code
  * @param size the size of the buffer
  * @return the buf or NULL on ESCAPE
  */
-char *dev_gets(char *buf, int size); // the real INPUT command. Gets a string from the console
+char *dev_gets(char *buf, int size);
 
 /*
  *
@@ -633,6 +626,14 @@ void dev_ffill(word x0, word y0, long fill_color, long border_color);
  * @param ptNum is the number of the points to use
  */
 void dev_pfill(ipt_t *pts, int ptNum);
+
+/**
+ * @ingroup dev_g
+ *
+ * Refreshes the graphic output. When used, the drawing to the graphic
+ * output window or screen is not visible until SHOWPAGE is performed
+ */
+void dev_show_page();
 
 /*
  *
@@ -1052,8 +1053,7 @@ void dev_destroy_file_list(char_p_t *list, int count);
  * @param h
  *
  */
-void dev_html(const char *html, const char *title, int x, int y, int w,
-              int h);
+void dev_html(const char *html, const char *title, int x, int y, int w, int h);
 
 /**
  * @image
@@ -1066,8 +1066,7 @@ void dev_html(const char *html, const char *title, int x, int y, int w,
  * @param y
  *
  */
-void dev_image(int handle, int index, int x, int y, int sx, int sy, int w,
-               int h);
+void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h);
 
 /**
  * @imagew

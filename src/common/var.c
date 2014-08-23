@@ -12,27 +12,15 @@
 #include "common/var.h"
 #include "common/smbas.h"
 #include "common/sberr.h"
-#include "common/var_uds.h"
 #include "common/var_hash.h"
 
-#define ARR_ALLOC       256
-
-/*
- * initialize a variable
- */
-void v_init(var_t *v) {
-  v->type = V_INT;
-  v->const_flag = 0;
-  v->v.i = 0;
-}
+#define ARR_ALLOC 256
 
 /*
  * creates and returns a new variable
  */
 var_t *v_new() {
-  var_t *ptr;
-
-  ptr = (var_t *) tmp_alloc(sizeof(var_t));
+  var_t *ptr = (var_t *)tmp_alloc(sizeof(var_t));
   v_init(ptr);
   return ptr;
 }
@@ -66,9 +54,6 @@ void v_free(var_t *v) {
       }
     }
     break;
-  case V_UDS:
-    uds_free(v);
-    break;
   case V_HASH:
     hash_free_var(v);
     break;
@@ -87,8 +72,6 @@ int v_isempty(var_t *var) {
     return (strlen((char *) var->v.p.ptr) == 0);
   case V_INT:
     return (var->v.i == 0);
-  case V_UDS:
-    return uds_is_empty(var);
   case V_HASH:
     return hash_is_empty(var);
   case V_PTR:
@@ -111,8 +94,6 @@ int v_length(var_t *var) {
   switch (var->type) {
   case V_STR:
     return strlen((char *) var->v.p.ptr);
-  case V_UDS:
-    return uds_length(var);
   case V_HASH:
     return hash_length(var);
   case V_PTR:
@@ -132,68 +113,9 @@ int v_length(var_t *var) {
 }
 
 /*
- * returns the floating-point value of the variable v
- */
-var_num_t v_getval(var_t *v) {
-  if (v == NULL) {
-    err_evsyntax();
-  } else {
-    switch (v->type) {
-    case V_UDS:
-      return uds_to_int(v);
-    case V_HASH:
-      return hash_to_int(v);
-    case V_PTR:
-      return v->v.ap.p;
-    case V_INT:
-      return v->v.i;
-    case V_NUM:
-      return v->v.n;
-    case V_STR:
-      return numexpr_sb_strtof((char *) v->v.p.ptr);
-    default:
-      err_varisarray();
-    }
-  }
-  return 0;
-}
-
-/*
- * returns the integer value of the variable v
- */
-var_int_t v_igetval(var_t *v) {
-  if (v == 0) {
-    err_evsyntax();
-  } else {
-    switch (v->type) {
-    case V_UDS:
-      return uds_to_int(v);
-    case V_HASH:
-      return hash_to_int(v);
-    case V_PTR:
-      return v->v.ap.p;
-    case V_INT:
-      return v->v.i;
-    case V_NUM:
-      return v->v.n;
-    case V_STR:
-      return numexpr_strtol((char *) v->v.p.ptr);
-    default:
-      err_varisarray();
-    }
-  }
-  return 0;
-}
-
-/*
  * return array element pointer
  */
-#if defined(OS_ADDR16)
-var_t *v_getelemptr(var_t *v, word index)
-#else
-var_t *v_getelemptr(var_t *v, dword index)
-#endif
-{
+var_t *v_getelemptr(var_t *v, dword index) {
   if (v->type == V_ARRAY) {
     if (index < v->v.a.size)
       return (var_t *) (v->v.a.ptr + (index * sizeof(var_t)));
@@ -210,19 +132,10 @@ var_t *v_getelemptr(var_t *v, dword index)
 /*
  * resize an existing array
  */
-#if defined(OS_ADDR16)
-void v_resize_array(var_t *v, word size)
-#else
-void v_resize_array(var_t *v, dword size)
-#endif
-{
+void v_resize_array(var_t *v, dword size) {
   byte *prev;
   var_t *elem;
-#if defined(OS_ADDR16)
-  word i;
-#else
   dword i;
-#endif
 
   if (v->type == V_ARRAY) {
     if (size < 0) {
@@ -246,29 +159,20 @@ void v_resize_array(var_t *v, dword size)
         v_free(elem);
       }
 
-#if defined(OS_ADDR32)
       // do not resize array
       prev = NULL;
-#else
-      // resize & copy
-      prev = v->v.a.ptr;
-      v->v.a.ptr = tmp_alloc(size * sizeof(var_t));
-      memcpy(v->v.a.ptr, prev, size * sizeof(var_t));
-#endif
+
       // array data
       v->v.a.size = size;
       v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
       v->v.a.maxdim = 1;
 
-      // 
       if (prev) {
         tmp_free(prev);
       }
     } else if (v->v.a.size < size) {
       // resize up
-
-#if defined(OS_ADDR32)
-      // if there is space do not resize 
+      // if there is space do not resize
       if (v->v.a.size == 0) {
         prev = v->v.a.ptr;
         v->v.a.ptr = tmp_alloc((size + ARR_ALLOC) * sizeof(var_t));
@@ -279,17 +183,10 @@ void v_resize_array(var_t *v, dword size)
           v->v.a.ptr = tmp_alloc((size + ARR_ALLOC) * sizeof(var_t));
           if (v->v.a.size > 0)
             memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
-        } else
+        } else {
           prev = NULL;
+        }
       }
-#else
-      // resize & copy
-      prev = v->v.a.ptr;
-      v->v.a.ptr = tmp_alloc(size * sizeof(var_t));
-      if (v->v.a.size > 0) {
-        memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
-      }
-#endif
 
       // init vars
       for (i = v->v.a.size; i < size; i++) {
@@ -302,7 +199,6 @@ void v_resize_array(var_t *v, dword size)
       v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
       v->v.a.maxdim = 1;
 
-      // 
       if (prev) {
         tmp_free(prev);
       }
@@ -352,18 +248,9 @@ var_t *v_new_matrix(int r, int c) {
 /*
  * create array
  */
-#if defined(OS_ADDR16)
-void v_toarray1(var_t *v, word r)
-#else
-void v_toarray1(var_t *v, dword r)
-#endif
-{
+void v_toarray1(var_t *v, dword r) {
   var_t *e;
-#if defined(OS_ADDR16)
-  word i;
-#else
   dword i;
-#endif
 
   v_free(v);
   v->type = V_ARRAY;
@@ -371,11 +258,7 @@ void v_toarray1(var_t *v, dword r)
   if (r > 0) {
     // create data
     v->v.a.size = r;
-#if defined(OS_ADDR32)
     v->v.a.ptr = tmp_alloc(sizeof(var_t) * (v->v.a.size + ARR_ALLOC));
-#else
-    v->v.a.ptr = tmp_alloc(sizeof(var_t) * v->v.a.size);
-#endif
     for (i = 0; i < r; i++) {
       e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
       v_init(e);
@@ -405,8 +288,6 @@ int v_is_nonzero(var_t *v) {
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
     return (v->v.p.size != 0);
-  case V_UDS:
-    return !uds_is_empty(v);
   case V_HASH:
     return !hash_is_empty(v);
   case V_PTR:
@@ -450,32 +331,36 @@ int v_compare(var_t *a, var_t *b) {
     return strcmp(a->v.p.ptr, b->v.p.ptr);
   }
   if ((a->type == V_STR) && (b->type == V_NUM)) {
-    if (a->v.p.ptr[0] == '\0' || is_number((char *) a->v.p.ptr)) { // compare 
-      // nums
+    if (a->v.p.ptr[0] == '\0' || is_number((char *) a->v.p.ptr)) {
+      // compare nums
       dt = v_getval(a);
-      return (dt < b->v.n) ? -1 : ((dt == b->v.n) ? 0 : 1);}
-return    1;
+      return (dt < b->v.n) ? -1 : ((dt == b->v.n) ? 0 : 1);
+    }
+    return 1;
   }
   if ((a->type == V_NUM) && (b->type == V_STR)) {
-    if (b->v.p.ptr[0] == '\0' || is_number((char *) b->v.p.ptr)) { // compare 
-      // nums
+    if (b->v.p.ptr[0] == '\0' || is_number((char *) b->v.p.ptr)) {
+      // compare nums
       dt = v_getval(b);
-      return (dt < a->v.n) ? 1 : ((dt == a->v.n) ? 0 : -1);}return
--    1;
+      return (dt < a->v.n) ? 1 : ((dt == a->v.n) ? 0 : -1);
+    }
+    return - 1;
   }
   if ((a->type == V_STR) && (b->type == V_INT)) {
-    if (a->v.p.ptr[0] == '\0' || is_number((char *) a->v.p.ptr)) { // compare 
-      // nums
+    if (a->v.p.ptr[0] == '\0' || is_number((char *) a->v.p.ptr)) {
+      // compare nums
       di = v_igetval(a);
-      return (di < b->v.i) ? -1 : ((di == b->v.i) ? 0 : 1);}
-return    1;
+      return (di < b->v.i) ? -1 : ((di == b->v.i) ? 0 : 1);
+    }
+    return 1;
   }
   if ((a->type == V_INT) && (b->type == V_STR)) {
-    if (b->v.p.ptr[0] == '\0' || is_number((char *) b->v.p.ptr)) { // compare 
-      // nums
+    if (b->v.p.ptr[0] == '\0' || is_number((char *) b->v.p.ptr)) {
+      // compare nums
       di = v_igetval(b);
-      return (di < a->v.i) ? 1 : ((di == a->v.i) ? 0 : -1);}return
--    1;
+      return (di < a->v.i) ? 1 : ((di == a->v.i) ? 0 : -1);
+    }
+    return - 1;
   }
   if ((a->type == V_ARRAY) && (b->type == V_ARRAY)) {
     // check size
@@ -493,35 +378,16 @@ return    1;
         return ci;
       }
     }
-
-    return 0;                   // equal
-  }
-
-  if (a->type == V_UDS && b->type == V_UDS) {
-    return uds_compare(a, b);
+    // equal
+    return 0;
   }
 
   if (a->type == V_HASH && b->type == V_HASH) {
     return hash_compare(a, b);
   }
 
-  err_evtype();                 // ndc 01/08/2001
+  err_evtype();
   return 1;
-}
-
-/*
- */
-int v_addtype(var_t *a, var_t *b) {
-  if (a->type == V_STR) {
-    return V_STR;
-  }
-  if (a->type == V_NUM || b->type == V_NUM) {
-    return V_NUM;
-  }
-  if (a->type == V_INT || b->type == V_STR) {
-    return V_NUM;
-  }
-  return V_INT;
 }
 
 /*
@@ -533,8 +399,8 @@ void v_add(var_t *result, var_t *a, var_t *b) {
 
   if (a->type == V_STR && b->type == V_STR) {
     result->type = V_STR;
-    result->v.p.ptr = (byte *) tmp_alloc(strlen((char *)a->v.p.ptr) + strlen((char *)b->v.p.ptr) +
-        1);
+    result->v.p.ptr = (byte *)tmp_alloc(strlen((char *)a->v.p.ptr) +
+                                        strlen((char *)b->v.p.ptr) + 1);
     strcpy((char *) result->v.p.ptr, (char *) a->v.p.ptr);
     strcat((char *) result->v.p.ptr, (char *) b->v.p.ptr);
     result->v.p.size = strlen((char *) result->v.p.ptr) + 1;
@@ -605,14 +471,7 @@ void v_set(var_t *dest, const var_t *src) {
   int i;
   var_t *dest_vp, *src_vp;
 
-  if (src->type == V_UDS) {
-    uds_set(dest, (const var_p_t) src);
-    return;
-  } else if (dest->type == V_UDS) {
-    // lvalue struct assigned to non-struct rvalue
-    uds_clear(dest);
-    return;
-  } else if (src->type == V_HASH) {
+  if (src->type == V_HASH) {
     hash_set(dest, (const var_p_t) src);
     return;
   } else if (dest->type == V_HASH) {
@@ -626,7 +485,8 @@ void v_set(var_t *dest, const var_t *src) {
   dest->const_flag = 0;
   switch (src->type) {
   case V_STR:
-    dest->v.p.ptr = (byte *) tmp_alloc(strlen((char *)src->v.p.ptr) + 1);
+    dest->v.p.size = strlen((char *)src->v.p.ptr) + 1;
+    dest->v.p.ptr = (byte *) tmp_alloc(dest->v.p.size);
     strcpy((char *) dest->v.p.ptr, (char *) src->v.p.ptr);
     break;
 
@@ -690,8 +550,8 @@ void v_inc(var_t *a, var_t *b) {
  */
 int v_sign(var_t *x) {
   if (x->type == V_INT) {
-    return (x->v.i < 0) ? -1 : ((x->v.i == 0) ? 0 : 1);}
-else  if (x->type == V_NUM) {
+    return (x->v.i < 0) ? -1 : ((x->v.i == 0) ? 0 : 1);
+  } else if (x->type == V_NUM) {
     return (x->v.n < 0) ? -1 : ((x->v.n == 0) ? 0 : 1);
   }
   err_varnotnum();
@@ -716,16 +576,10 @@ void v_createstr(var_t *v, const char *src) {
  */
 void v_tostr(var_t *arg) {
   if (arg->type != V_STR) {
-    char *tmp;
     int l;
-
-    tmp = tmp_alloc(64);
+    char *tmp = tmp_alloc(64);
 
     switch (arg->type) {
-    case V_UDS:
-      uds_to_str(arg, tmp, 64);
-      uds_free(arg);
-      break;
     case V_HASH:
       hash_to_str(arg, tmp, 64);
       hash_free_var(arg);
@@ -899,7 +753,8 @@ void v_zerostr(var_t *r) {
 void v_input2var(const char *str, var_t *var) {
   v_free(var);
 
-  if (strlen(str) == 0) {       // no data
+  if (strlen(str) == 0) {
+    // no data
     v_setstr(var, str);
   } else {
     char *np, *sb;
@@ -923,8 +778,15 @@ void v_input2var(const char *str, var_t *var) {
 }
 
 /*
- * null safe variable type check
+ * evaluate the pcode string
  */
-int v_is_type(var_t *v, int type) { 
-  return (v != NULL && v->type == type);
+void v_eval_str(var_p_t v) {
+  int len = code_getstrlen();
+  v->type = V_STR;
+  v->v.p.size = len;
+  v->v.p.ptr = tmp_alloc(len + 1);
+  memcpy(v->v.p.ptr, &prog_source[prog_ip], len);
+  *((char *)(v->v.p.ptr + len)) = '\0';
+  prog_ip += len;
 }
+

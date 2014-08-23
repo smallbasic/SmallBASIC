@@ -14,7 +14,6 @@
 
 // initialize driver
 int osd_devinit() {
-  os_color = 0;                 // color support = false
   os_color_depth = 1;           // bits per pixel = monochrome
   os_graf_mx = 80;              // screen width in "pixels" (characters =
   // os_graf_mx / textwidth("Q"))

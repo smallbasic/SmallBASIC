@@ -468,7 +468,6 @@ int term_init() {
    */
   os_graf_mx = scr_w;
   os_graf_my = scr_h;
-  os_color = 1;
 
   /*
    * build VRAM 
@@ -1207,4 +1206,8 @@ void term_recalc_size() {
 // scr_w = peekb(0, 0x449);
 // scr_h = peekb(0, 0x449);
 #endif
+}
+
+void dev_show_page() {
+  // empty
 }

@@ -21,10 +21,10 @@ extern "C" {
 #endif
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   @typedef bc_head_t
- *   byte-code header
+ * @typedef bc_head_t
+ * byte-code header
  */
 typedef struct {
   char sign[4]; /**< always "SBEx" */
@@ -46,16 +46,14 @@ typedef struct {
   // ver 2
   word lib_count; /**< libraries count (needed units) */
   dword sym_count; /**< symbol count (linked-symbols) */
-
-  //
   char reserved[26];
 } bc_head_t;
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   @typedef bc_unit_rec_t
- *   byte-code linked-unit record
+ * @typedef bc_unit_rec_t
+ * byte-code linked-unit record
  */
 typedef struct {
   char lib[OS_FILENAME_SIZE + 1]; /**< library name */
@@ -65,10 +63,10 @@ typedef struct {
 } bc_lib_rec_t;
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   @typedef bc_symbol_rec_t
- *   byte-code linked-symbol record
+ * @typedef bc_symbol_rec_t
+ * byte-code linked-symbol record
  */
 typedef struct {
   char symbol[SB_KEYWORD_SIZE + 1]; /**< symbol name */
@@ -85,7 +83,7 @@ typedef struct {
 #define BRUN_STOPPED    1       /**< brun_status(), an error or 'break' has already stoped the program @ingroup exec */
 
 /*
- *   compiler options
+ * compiler options
  */
 #if defined(BRUN_MODULE)
 #define EXTERN
@@ -97,14 +95,12 @@ typedef struct {
 #define OPT_MOD_SZ  1024
 
 EXTERN byte opt_graphics; /**< command-line option: start in graphics mode                @ingroup sys */
-EXTERN byte opt_cstr; /**< C-style special characters by default                      @ingroup sys */
 EXTERN byte opt_quiet; /**< command-line option: quiet                                 @ingroup sys */
 EXTERN int opt_retval; /**< return-value (ERRORLEVEL)                                  @ingroup sys */
 EXTERN byte opt_decomp; /**< decompile                                                  @ingroup sys */
 EXTERN byte opt_syntaxcheck; /**< syntax check only                                          @ingroup sys */
 EXTERN char opt_command[OPT_CMD_SZ];
 /**< command-line parameters (COMMAND$)                         @ingroup sys */
-EXTERN byte opt_safedraw; /**< using safest drawing routines (PalmOS: Use API for draw)   @ingroup sys */
 EXTERN byte opt_usevmt; /**< using VMT on compilation by default                        @ingroup sys */
 EXTERN int opt_base; /**< OPTION BASE x                                              @ingroup sys */
 EXTERN byte opt_uipos; /**< OPTION UICS {CHARS|PIXELS}                                 @ingroup sys */
@@ -121,6 +117,7 @@ EXTERN byte opt_nosave; /**< do not create .sbx files                           
 EXTERN byte opt_interactive; /**< interactive mode                                           @ingroup sys */
 EXTERN byte opt_usepcre; /**< OPTION PREDEF PCRE                                         @ingroup sys */
 EXTERN byte opt_file_permitted; /**< file system permission */
+EXTERN byte opt_show_page; /**< SHOWPAGE graphics flush mode */
 
 #define IDE_NONE        0
 #define IDE_LINKED      1
@@ -144,7 +141,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_file           prog_file
 #define comp_errmsg         ctask->errmsg
 #define prog_errmsg         ctask->errmsg
-
 #define bytecode_h          ctask->bytecode_h
 #define prog_length         ctask->sbe.exec.length
 #define prog_ip             ctask->sbe.exec.ip
@@ -168,7 +164,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define prog_symtable       ctask->sbe.exec.symtable
 #define prog_exptable       ctask->sbe.exec.exptable
 #define prog_uds_tab_ip     ctask->sbe.exec.uds_tab_ip
-
 #define comp_extfunctable   ctask->sbe.comp.extfunctable
 #define comp_extfunccount   ctask->sbe.comp.extfunccount
 #define comp_extfuncsize    ctask->sbe.comp.extfuncsize
@@ -200,8 +195,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_udptable       ctask->sbe.comp.udptable
 #define comp_udpcount       ctask->sbe.comp.udpcount
 #define comp_udpsize        ctask->sbe.comp.udpsize
-#define comp_udstable       ctask->sbe.comp.udstable
-#define comp_udscount       ctask->sbe.comp.udscount
 #define comp_next_field_id  ctask->sbe.comp.next_field_id
 #define comp_uds_tab_ip     ctask->sbe.comp.uds_tab_ip
 #define comp_use_global_vartable    ctask->sbe.comp.use_global_vartable
@@ -212,7 +205,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_unit_name      ctask->sbe.comp.unit_name
 #define comp_first_data_ip  ctask->sbe.comp.first_data_ip
 #define comp_file_name      ctask->sbe.comp.file_name
-
 #define tlab                prog_labtable
 #define tvar                prog_vartable
 #define eval_size           eval_stk_size
@@ -223,55 +215,57 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 
 #undef EXTERN
 
+#include "common/hotspots.h"
+
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   create a 'break' - display message, too
+ * create a 'break' - display message, too
  *
- *   the 'break' will stops the program's execution
+ * the 'break' will stops the program's execution
  */
 void brun_break(void);
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   stops the program's execution
+ * stops the program's execution
  */
 void brun_stop(void);
 
 /**
- *   @ingroup exec
+ * @ingroup exec
  *
- *   returns the execution status (runing or stopped)
+ * returns the execution status (runing or stopped)
  *
- *   @return BRUN_STOPPED or BRUN_RUNNING
+ * @return BRUN_STOPPED or BRUN_RUNNING
  */
 int brun_status(void);
 
 /**
- *   decompiler,
- *   dumps the code in the current task
+ * decompiler,
+ * dumps the code in the current task
  *
- *   @param output the output stream (FILE*)
+ * @param output the output stream (FILE*)
  */
 void dump_bytecode(FILE *output);
 
 /**
- *   returns the last-modified time of the file
+ * returns the last-modified time of the file
  *
- *   @param file the filename
- *   @return the last-modified time of the file; on error returns 0L
+ * @param file the filename
+ * @return the last-modified time of the file; on error returns 0L
  */
 time_t sys_filetime(const char *file);
 
-/*
- *   search a set of directories for the given file
- *   directories on path must be separated with symbol ':'
+/**
+ * search a set of directories for the given file
+ * directories on path must be separated with symbol ':'
  *
- *   @param path the path
- *   @param file the file
- *   @param retbuf a buffer to store the full-path-name file (can be NULL)
- *   @return non-zero if found
+ * @param path the path
+ * @param file the file
+ * @param retbuf a buffer to store the full-path-name file (can be NULL)
+ * @return non-zero if found
  */
 int sys_search_path(const char *path, const char *file, char *retbuf);
 

@@ -1,3 +1,17 @@
+2014-08-22
+	Fix HASH var crash
+	Fix HASH var handling of mixed types
+	Fix illegal UDS field variable names
+	Unitfy HASH and UDS
+
+2014-08-15
+	Improved runtime performance
+	Fixed memory leak with UDS variables
+	Fixed FUNC call with parenthesis
+
+2014-08-14
+	Added SHOWPAGE. code cleanup
+
 2014-08-11
 	Cleanup system var handling, removed os_ver
 

@@ -463,6 +463,7 @@ AnsiWidget::AnsiWidget(IButtonListener *listener, int width, int height) :
   _yMove(-1),
   _touchTime(0),
   _swipeExit(false),
+  _autoflush(true),
   _buttonListener(listener),
   _activeButton(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
@@ -573,8 +574,8 @@ void AnsiWidget::edit(IFormWidget *formWidget, int c) {
 
 // display and pending images changed
 void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
-  bool update = false;
-  if (_front != NULL) {
+  if (_front != NULL && _autoflush) {
+    bool update = false;
     if (force) {
       update = _front->_dirty;
     } else if (_front->_dirty) {

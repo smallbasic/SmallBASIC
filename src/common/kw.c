@@ -54,12 +54,13 @@ fcode_t kw_noarg_func_table[] = {
 };
 
 //
-int kw_check(code_t * table, code_t code) {
+int kw_check(code_t *table, code_t code) {
   register int i;
 
   for (i = 0; table[i] != 0; i++) {
-    if (code == table[i])
+    if (code == table[i]) {
       return 1;
+    }
   }
   return 0;
 }

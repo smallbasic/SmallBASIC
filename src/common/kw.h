@@ -63,7 +63,6 @@ enum keyword {                // line 50
   kwTYPE_POWOPR, /* POW(x,y) operator */
   kwTYPE_UNROPR, /* Unary operator */
   kwTYPE_VAR, /* Variable */
-  kwTYPE_UDS, /* Structure */
   kwTYPE_UDS_EL, /* Structure element */
   kwTYPE_SEP, /* Separator */
   kwTYPE_LINE, /* Debug info: SOURCE LINE */
@@ -253,6 +252,7 @@ enum proc_keywords {
   kwHTML,
   kwIMAGE,
   kwDEFINEKEY,
+  kwSHOWPAGE,
   kwNULLPROC
 };
 

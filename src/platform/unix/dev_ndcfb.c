@@ -225,8 +225,6 @@ int osd_devinit() {
   os_graf_mx = dev_width;
   os_graf_my = dev_height;
   os_color_depth = dev_depth;
-  os_color = 1;
-  setsysvar_str(SYSVAR_OSNAME, "Unix/FB");
 
   gfb_init(dev_width, dev_height, dev_depth);
 

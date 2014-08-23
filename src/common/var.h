@@ -38,48 +38,39 @@
 #define V_ARRAY     4 /**< variable type, array of variables           @ingroup var */
 #define V_PTR       5 /**< variable type, pointer to UDF or label      @ingroup var */
 #define V_LIST      6 /**< variable type, dynamic list - N/A           @ingroup var */
-#define V_UDS       7 /**< variable type, user defined structure       @ingroup var */
-#define V_HASH      8 /**< variable type, hash                         @ingroup var */
+#define V_HASH      7 /**< variable type, hash                         @ingroup var */
 
 /*
  *   predefined system variables - index
  */
-#define SYSVAR_OSVER        0  /**< system variable, OSVER     @ingroup var */
-#define SYSVAR_OSNAME       1  /**< system variable, OSNAME$   @ingroup var */
-#define SYSVAR_SBVER        2  /**< system variable, SBVER     @ingroup var */
-#define SYSVAR_PI           3  /**< system variable, PI        @ingroup var */
-#define SYSVAR_XMAX         4  /**< system variable, XMAX      @ingroup var */
-#define SYSVAR_YMAX         5  /**< system variable, YMAX      @ingroup var */
-#define SYSVAR_BPP          6  /**< system variable, BPP       @ingroup var */
-#define SYSVAR_TRUE         7  /**< system variable, TRUE      @ingroup var */
-#define SYSVAR_FALSE        8  /**< system variable, FALSE     @ingroup var */
-#define SYSVAR_LINECHART    9  /**< system variable, LINECHART @ingroup var */
-#define SYSVAR_BARCHART     10 /**< system variable, BARCHART  @ingroup var */
-#define SYSVAR_PWD          11 /**< system variable, PWD$      @ingroup var */
-#define SYSVAR_HOME         12 /**< system variable, HOME$     @ingroup var */
-#define SYSVAR_COMMAND      13 /**< system variable, COMMAND$  @ingroup var */
-#define SYSVAR_X            14 /**< system variable, X         @ingroup var */
-#define SYSVAR_Y            15 /**< system variable, Y         @ingroup var */
-#define SYSVAR_Z            16 /**< system variable, Z         @ingroup var */
-#define SYSVAR_VIDADR       17 /**< system variable, VIDADR    @ingroup var */
+#define SYSVAR_OSNAME       0  /**< system variable, OSNAME$   @ingroup var */
+#define SYSVAR_SBVER        1  /**< system variable, SBVER     @ingroup var */
+#define SYSVAR_PI           2  /**< system variable, PI        @ingroup var */
+#define SYSVAR_XMAX         3  /**< system variable, XMAX      @ingroup var */
+#define SYSVAR_YMAX         4  /**< system variable, YMAX      @ingroup var */
+#define SYSVAR_BPP          5  /**< system variable, BPP       @ingroup var */
+#define SYSVAR_TRUE         6  /**< system variable, TRUE      @ingroup var */
+#define SYSVAR_FALSE        7  /**< system variable, FALSE     @ingroup var */
+#define SYSVAR_LINECHART    8  /**< system variable, LINECHART @ingroup var */
+#define SYSVAR_BARCHART     9 /**< system variable, BARCHART  @ingroup var */
+#define SYSVAR_PWD          10 /**< system variable, PWD$      @ingroup var */
+#define SYSVAR_HOME         11 /**< system variable, HOME$     @ingroup var */
+#define SYSVAR_COMMAND      12 /**< system variable, COMMAND$  @ingroup var */
+#define SYSVAR_X            13 /**< system variable, X         @ingroup var */
+#define SYSVAR_Y            14 /**< system variable, Y         @ingroup var */
+#define SYSVAR_Z            15 /**< system variable, Z         @ingroup var */
+#define SYSVAR_VIDADR       16 /**< system variable, VIDADR    @ingroup var */
 
 /**
  * @ingroup var
  * @def MAXDIM Maxium number of array-dimensions
  */
-#if defined(OS_ADDR16)
-#define MAXDIM      3     // think before increase this, (possible stack overflow)
-#else
-#define MAXDIM      6     // that's large enough
-#endif
+#define MAXDIM 6     // think before increase this, (possible stack overflow)
 
 #include "common/scan.h"  // compiler structures
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-// the following prototype is declared later below
-typedef struct uds_field_s uds_field_s;
 
 /**
  * @ingroup var
@@ -102,36 +93,22 @@ struct var_s {
       addr_t v; /** return-var ID */
     } ap;
 
-    // user defined structure
-    uds_field_s *uds; /** pointer to the "structure" */
-
     // hash map
     void* hash; /** pointer the hash structure */
 
     // generic ptr (string)
     struct {
       byte *ptr; /**< data ptr (possibly, string pointer) */
-#if defined(OS_ADDR16)
-      int16 size; /**< the size of the string */
-      int16 pos; /**< position in string (used by pv_* functions) */
-#else
       int32 size; /**< the size of string */
       int32 pos; /**< position in string (used by pv_* functions) */
-#endif
     } p;
 
     // array
     struct {
       byte *ptr; /**< array data ptr (sizeof(var_t) * size) */
-#if defined(OS_ADDR16)
-      int16 size; /**< the number of elements */
-      int16 lbound[MAXDIM]; /**< lower bound */
-      int16 ubound[MAXDIM]; /**< upper bound */
-#else
       int32 size; /**< the number of elements */
       int32 lbound[MAXDIM]; /**< lower bound */
       int32 ubound[MAXDIM]; /**< upper bound */
-#endif
       byte maxdim; /**< number of dimensions */
     } a;
   } v;
@@ -139,16 +116,6 @@ struct var_s {
 
 typedef struct var_s var_t;
 typedef var_t *var_p_t;
-
-/*
- * user defined structures
- */
-struct uds_field_s {
-  uds_field_s *next;          // next structure element
-  addr_t field_id;            // the element id
-  var_p_t var;                // the variable
-  byte var_owner_flag;        // whether var is owned by this node
-};
 
 /*
  * label
@@ -256,29 +223,6 @@ int v_is_nonzero(var_t *v);
 /**
  * @ingroup var
  *
- * returns the floating-point value of a var.
- * if v is string it will converted to double.
- *
- * @param v the variable
- * @return the numeric value of a variable
- */
-var_num_t v_getval(var_t *v);
-#define v_getnum(a) v_getval((a)) /* @ingroup var */
-
-/**
- * @ingroup var
- *
- * returns the integer value of a var.
- * if v is string it will converted to integer.
- *
- * @param v the variable
- * @return the integer value of a variable
- */
-var_int_t v_igetval(var_t *v);
-
-/**
- * @ingroup var
- *
  * compares two variables
  *
  * @param a the left-side variable
@@ -316,7 +260,11 @@ void v_add(var_t *result, var_t *a, var_t *b);
  *
  * @param v the variable
  */
-void v_init(var_t *v);
+static inline void v_init(var_t *v) {
+  v->type = V_INT;
+  v->const_flag = 0;
+  v->v.i = 0;
+}
 
 /**
  * @ingroup var
@@ -369,11 +317,7 @@ int v_sign(var_t *x);
  * @param index is the element's index number
  * @return the var_t pointer of an array element
  */
-#if defined(OS_ADDR16)
-var_t *v_getelemptr(var_t *v, word index);
-#else
 var_t *v_getelemptr(var_t *v, dword index);
-#endif
 
 /**
  * @ingroup var
@@ -433,11 +377,7 @@ var_t *v_clone(const var_t *source);
  * @param v the variable
  * @param size the number of the elements
  */
-#if defined(OS_ADDR16)
-void v_resize_array(var_t *v, word size);
-#else
 void v_resize_array(var_t *v, dword size);
-#endif
 
 /**
  * @ingroup var
@@ -470,11 +410,7 @@ var_t *v_new_matrix(int r, int c);
  * @param v the variable
  * @param r the number of the elements
  */
-#if defined(OS_ADDR16)
-void v_toarray1(var_t *v, word r);
-#else
 void v_toarray1(var_t *v, dword r);
-#endif
 
 /**
  * @ingroup var
@@ -672,25 +608,29 @@ void v_zerostr(var_t *var);
  */
 void v_input2var(const char *str, var_t *var);
   
-/**< returns the var_t pointer of the element i
-   on the array x. i is a zero-based, one dim, index.
-   @ingroup var */
+/**
+ *< returns the var_t pointer of the element i
+ * on the array x. i is a zero-based, one dim, index.
+ * @ingroup var 
+*/
 #define v_elem(x,i)     (var_t *) ( (x)->v.a.ptr + (sizeof(var_t) * (i)))
 
-/**< the number of the elements of the array (x)
-   @ingroup var */
-
+/**
+ * < the number of the elements of the array (x)
+ * @ingroup var
+ */
 #define v_asize(x)      ((x)->v.a.size)
 
-/*
- * new api (dec 2001) - get value
+/**
+ * < returns the integer value of variable v
+ * @ingroup var
  */
-/**< returns the integer value of variable v
-   @ingroup var */
 #define v_getint(v)  v_igetval((v))
 
-/**< returns the real value of variable v
-   @ingroup var */
+/**
+ * < returns the real value of variable v
+ * @ingroup var
+ */
 #define v_getreal(v)  v_getval((v))
 
 /**
@@ -711,7 +651,16 @@ char *v_getstr(var_t *v);
  * @param v is the variable
  * @return whether the variable is of the given type
  */
-int v_is_type(var_t *v, int type);
+#define v_is_type(v, t) (v != NULL && v->type == t)
+
+/**
+ * @ingroup var
+ *
+ * populates the var to string from bytecode
+ *
+ * @param v is the variable
+ */
+void v_eval_str(var_p_t v);
 
 /*
  * low-level byte-code parsing
@@ -720,33 +669,6 @@ int v_is_type(var_t *v, int type);
  * try the parameters API.
  */
   
-/**
- * @ingroup exec
- *
- * returns the next integer and moves the IP 4 bytes forward.
- *
- * R(long int) <- Code[IP]; IP+=4
- *
- * @return the integer
- */
-dword code_getnext32(void);
-
-/**
- * @ingroup exec
- *
- * returns the next double and moves the IP 8 bytes forward.
- *
- * R(double)   <- Code[IP]; IP+=8
- *
- * @return the double-number
- */
-double code_getnext64f(void);
-
-#if defined(OS_PREC64)
-  var_int_t code_getnext64i(void);  // R(long long) <- Code[IP]; IP+=8
-  var_num_t code_getnext128f(void);// R(long double) <- Code[IP]; IP+=16
-#endif
-
 int code_checkop(byte op);
 int code_checkop_s(byte *str);
 void code_jump_label(word label_id);  // IP <- LABEL_IP_TABLE[label_id]
@@ -769,28 +691,6 @@ void code_push(stknode_t *node);
  * @param node the stack node
  */
 void code_pop(stknode_t *node);
-
-/**
- * @ingroup exec
- *
- * returns the next var_t* and moves the IP 2 bytes forward.
- *
- * R(var_t*) <- Code[IP]; IP += 2;
- *
- * @return the var_t*
- */
-var_t *code_getvarptr();
-
-/**
- * @ingroup exec
- *
- * variant of code_getvarptr() derefence until left parenthesis found
- *
- * R(var_t*) <- Code[IP]; IP += 2;
- *
- * @return the var_t*
- */
-var_t *code_getvarptr_parens(int until_parens);
 
 /**
  * @ingroup exec
@@ -840,17 +740,10 @@ stknode_t *code_stackpeek();
 #define code_getsep()    (prog_ip ++, prog_source[prog_ip++])
 #define code_peeksep()   (prog_source[prog_ip+1])
 
-#if defined(OS_ADDR16)
-#define code_getaddr()   code_getnext16()
-#define code_skipaddr()  code_skipnext16()
-#define code_getstrlen() code_getnext16()
-#define code_peekaddr(i) code_peek16((i))
-#else
 #define code_getaddr()   code_getnext32()  /**< get address value and advance        @ingroup exec */
 #define code_skipaddr()  code_skipnext32() /**< skip address field                   @ingroup exec */
 #define code_getstrlen() code_getnext32()  /**< get strlen (kwTYPE_STR) and advance  @ingroup exec */
 #define code_peekaddr(i) code_peek32((i))  /**< peek address field at offset i       @ingroup exec */
-#endif
 
 #if defined(OS_PREC64)
 #define code_getint()   code_getnext64i()
@@ -909,10 +802,12 @@ void setsysvar_str(int index, const char *value);
  * in eval.c
  */
 var_num_t *mat_toc(var_t *v, int32 *rows, int32 *cols);
+
 void mat_tov(var_t *v, var_num_t *m, int32 rows, int32 cols,
              int protect_col1);
 
 #if defined(__cplusplus)
   }
 #endif
+
 #endif
