@@ -1623,7 +1623,7 @@ char *comp_array_uds_field(char *p, bc_t *bc) {
   char *p_begin = p;
 
   while (1) {
-    if (*p == 0 || !isalnum(*p)) {
+    if (*p == 0 || (*p != '_' && !isalnum(*p))) {
       int len = (p - p_begin);
       if (len) {
         bc_add_code(bc, kwTYPE_UDS_EL);

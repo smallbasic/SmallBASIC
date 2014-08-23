@@ -70,14 +70,18 @@ Element *create_int_element(int key) {
  * cleanup the given element
  */
 void delete_element(Element *element) {
+  // cleanup v_new
   v_free(element->key);
-  tmp_free(element->key); // cleanup v_new
+  tmp_free(element->key);
 
+  // cleanup v_new
   if (element->value) {
     v_free(element->value);
-    tmp_free(element->value); // cleanup v_new
+    tmp_free(element->value);
   }
-  tmp_free(element); // cleanup create_element()
+
+  // cleanup create_element()
+  tmp_free(element);
 }
 
 /**
@@ -107,7 +111,7 @@ int hash_compare(const var_p_t var_a, const var_p_t var_b) {
  * Return true if the structure is empty
  */
 int hash_is_empty(const var_p_t var_p) {
-  return (var_p->v.hash == 0);
+  return (var_p->v.hash == NULL);
 }
 
 /**
@@ -155,7 +159,7 @@ void hash_elem_cb(const void *nodep, VISIT value, int level) {
 var_p_t hash_elem(const var_p_t var_p, int index) {
   cb.count = 0;
   cb.index = index;
-  cb.var = 0;
+  cb.var = NULL;
   if (var_p->type == V_HASH) {
     twalk(var_p->v.hash, hash_elem_cb);
   }
@@ -211,7 +215,7 @@ void hash_insert_key(var_p_t base, var_p_t var_key, var_p_t *result) {
  * if they don't already exist.
  */
 var_p_t hash_resolve_fields(const var_p_t base) {
-  var_p_t field = 0;
+  var_p_t field = NULL;
   if (code_peek() == kwTYPE_UDS_EL) {
     code_skipnext();
     if (code_peek() != kwTYPE_STR) {
@@ -265,7 +269,7 @@ void hash_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
       Element *key = create_int_element(i);
       key->value = v_new();
       v_set(key->value, element);
-      tsearch(key, &base->v.hash, cmp_fn);
+      tsearch(key, &(base->v.hash), cmp_fn);
     }
 
     // free the clone
@@ -296,23 +300,25 @@ void hash_set_cb(const void *nodep, VISIT value, int level) {
     Element *key = create_element(element->key);
     key->value = v_new();
     v_set(key->value, element->value);
-    tsearch(key, &cb.hash, cmp_fn);
+    tsearch(key, &(cb.hash), cmp_fn);
   }
 }
 
 /**
- * Reference values from one structure to another
+ * copy values from one structure to another
  */
 void hash_set(var_p_t dest, const var_p_t src) {
-  v_free(dest);
-  cb.hash = 0;
+  if (dest != src) {
+    v_free(dest);
+    cb.hash = NULL;
 
-  if (src->type == V_HASH) {
-    twalk(src->v.hash, hash_set_cb);
+    if (src->type == V_HASH) {
+      twalk(src->v.hash, hash_set_cb);
+    }
+
+    dest->type = V_HASH;
+    dest->v.hash = cb.hash;
   }
-
-  dest->type = V_HASH;
-  dest->v.hash = cb.hash;
 }
 
 /**
