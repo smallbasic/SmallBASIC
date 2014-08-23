@@ -11,7 +11,6 @@
 #include "common/kw.h"
 #include "common/var.h"
 #include "common/var_hash.h"
-#include "common/var_uds.h"
 #include "common/device.h"
 #include "common/blib.h"
 #include "common/pproc.h"
@@ -1752,10 +1751,6 @@ void cmd_for() {
         var_elem_ptr = hash_elem(array_p, 0);
         break;
 
-      case V_UDS:
-        var_elem_ptr = uds_elem(array_p, 0);
-        break;
-
       case V_ARRAY:
         if (array_p->v.a.size > 0) {
           var_elem_ptr = v_elem(array_p, 0);
@@ -1948,11 +1943,6 @@ void cmd_next() {
     case V_HASH:
       node.x.vfor.step_expr_ip++; // element-index
       var_elem_ptr = hash_elem(array_p, node.x.vfor.step_expr_ip);
-      break;
-
-    case V_UDS:
-      node.x.vfor.step_expr_ip++; // element-index
-      var_elem_ptr = uds_elem(array_p, node.x.vfor.step_expr_ip);
       break;
 
     case V_ARRAY:

@@ -227,39 +227,30 @@ void bc_add_strn(bc_t *bc, const char *str, int len) {
  */
 char *bc_store_string(bc_t *bc, char *src) {
   char *p = src;
-  char *np = 0;
+  char *np = NULL;
   char *base = src + 1;
-  int l = 0;                    // total length
-  int seglen = 0;               // length of segment between escapes
+  int len = 0;
 
-  p++;                          // == '\"'
+  // skip past opening quotes
+  p++;
   while (*p) {
     if (*p == '\\' && ((*(p + 1) == '\"') || *(p + 1) == '\\')) {
       // escaped quote " or escaped escape
-      seglen = p - base;
-      np = np ? tmp_realloc(np, l + seglen + 1) : tmp_alloc(seglen + 1);
-      strncpy(np + l, base, seglen);
-      l += seglen;              // add next segment
-      np[l] = 0;
-      base = ++p;               // include " (or \ ) in next segment
+      int seglen = p - base;
+      np = np ? tmp_realloc(np, len + seglen + 1) : tmp_alloc(seglen + 1);
+      strncpy(np + len, base, seglen);
+      // add next segment
+      len += seglen;
+      np[len] = 0;
+      // include " (or \ ) in next segment
+      base = ++p;
     } else if (*p == '\"') {
       // end of string detected
-      seglen = p - base;
-      np = np ? tmp_realloc(np, l + seglen + 1) : tmp_alloc(seglen + 1);
-      strncpy(np + l, base, seglen);
-      np[l + seglen] = 0;
-      if (opt_cstr) {
-        // c-style special char syntax
-        char *cstr;
-        cstr = cstrdup(np);
-        tmp_free(np);
-        bc_add_strn(bc, cstr, strlen(cstr));
-        tmp_free(cstr);
-      } else {
-        // normal
-        bc_add_strn(bc, np, strlen(np));
-        tmp_free(np);
-      }
+      int seglen = p - base;
+      np = np ? tmp_realloc(np, len + seglen + 1) : tmp_alloc(seglen + 1);
+      memcpy(np + len, base, seglen);
+      bc_add_strn(bc, np, len + seglen);
+      tmp_free(np);
       p++;
       return p;
     }
@@ -299,10 +290,7 @@ char *bc_store_macro(bc_t *bc, char *src) {
  * adds an EOC mark at the current position
  */
 void bc_eoc(bc_t *bc) {
-  //      if      ( bc->count )   {
-  //              if      ( bc->ptr[bc->count-1] != kwTYPE_EOC )
   bc_add1(bc, kwTYPE_EOC);
-  //              }
 }
 
 /*

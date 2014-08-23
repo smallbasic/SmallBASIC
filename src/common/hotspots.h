@@ -7,7 +7,6 @@
 //
 // Copyright(C) 2014 Chris Warren-Smith
 
-#include "common/var_uds.h"
 #include "common/var_hash.h"
 
 void err_evsyntax(void);
@@ -83,8 +82,6 @@ static inline var_num_t code_getnext128f() {
  */
 static inline var_num_t v_getval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_UDS:
-    return uds_to_int(v);
   case V_HASH:
     return hash_to_int(v);
   case V_PTR:
@@ -118,8 +115,6 @@ static inline var_num_t v_getval(var_t *v) {
  */
 static inline var_int_t v_igetval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_UDS:
-    return uds_to_int(v);
   case V_HASH:
     return hash_to_int(v);
   case V_PTR:

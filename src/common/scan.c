@@ -40,7 +40,6 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_QUIET      STRLEN(LCN_QUIET)
 #define LEN_GRMODE     STRLEN(LCN_GRMODE)
 #define LEN_TEXTMODE   STRLEN(LCN_TEXTMODE)
-#define LEN_CSTR       STRLEN(LCN_CSTR)
 #define LEN_COMMAND    STRLEN(LCN_COMMAND)
 #define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
 
@@ -3779,8 +3778,6 @@ char *comp_preproc_options(char *p) {
       opt_graphics = 1;
     } else if (strncmp(LCN_TEXTMODE, p, LEN_TEXTMODE) == 0) {
       opt_graphics = 0;
-    } else if (strncmp(LCN_CSTR, p, LEN_CSTR) == 0) {
-      opt_cstr = 1;
     } else if (strncmp(LCN_COMMAND, p, LEN_COMMAND) == 0) {
       p += LEN_COMMAND;
       SKIP_SPACES(p);

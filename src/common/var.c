@@ -12,7 +12,6 @@
 #include "common/var.h"
 #include "common/smbas.h"
 #include "common/sberr.h"
-#include "common/var_uds.h"
 #include "common/var_hash.h"
 
 #define ARR_ALLOC 256
@@ -21,9 +20,7 @@
  * creates and returns a new variable
  */
 var_t *v_new() {
-  var_t *ptr;
-
-  ptr = (var_t *) tmp_alloc(sizeof(var_t));
+  var_t *ptr = (var_t *)tmp_alloc(sizeof(var_t));
   v_init(ptr);
   return ptr;
 }
@@ -57,9 +54,6 @@ void v_free(var_t *v) {
       }
     }
     break;
-  case V_UDS:
-    uds_free(v);
-    break;
   case V_HASH:
     hash_free_var(v);
     break;
@@ -78,8 +72,6 @@ int v_isempty(var_t *var) {
     return (strlen((char *) var->v.p.ptr) == 0);
   case V_INT:
     return (var->v.i == 0);
-  case V_UDS:
-    return uds_is_empty(var);
   case V_HASH:
     return hash_is_empty(var);
   case V_PTR:
@@ -102,8 +94,6 @@ int v_length(var_t *var) {
   switch (var->type) {
   case V_STR:
     return strlen((char *) var->v.p.ptr);
-  case V_UDS:
-    return uds_length(var);
   case V_HASH:
     return hash_length(var);
   case V_PTR:
@@ -298,8 +288,6 @@ int v_is_nonzero(var_t *v) {
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
     return (v->v.p.size != 0);
-  case V_UDS:
-    return !uds_is_empty(v);
   case V_HASH:
     return !hash_is_empty(v);
   case V_PTR:
@@ -394,10 +382,6 @@ int v_compare(var_t *a, var_t *b) {
     return 0;
   }
 
-  if (a->type == V_UDS && b->type == V_UDS) {
-    return uds_compare(a, b);
-  }
-
   if (a->type == V_HASH && b->type == V_HASH) {
     return hash_compare(a, b);
   }
@@ -487,14 +471,7 @@ void v_set(var_t *dest, const var_t *src) {
   int i;
   var_t *dest_vp, *src_vp;
 
-  if (src->type == V_UDS) {
-    uds_set(dest, (const var_p_t) src);
-    return;
-  } else if (dest->type == V_UDS) {
-    // lvalue struct assigned to non-struct rvalue
-    uds_clear(dest);
-    return;
-  } else if (src->type == V_HASH) {
+  if (src->type == V_HASH) {
     hash_set(dest, (const var_p_t) src);
     return;
   } else if (dest->type == V_HASH) {
@@ -599,16 +576,10 @@ void v_createstr(var_t *v, const char *src) {
  */
 void v_tostr(var_t *arg) {
   if (arg->type != V_STR) {
-    char *tmp;
     int l;
-
-    tmp = tmp_alloc(64);
+    char *tmp = tmp_alloc(64);
 
     switch (arg->type) {
-    case V_UDS:
-      uds_to_str(arg, tmp, 64);
-      uds_free(arg);
-      break;
     case V_HASH:
       hash_to_str(arg, tmp, 64);
       hash_free_var(arg);
@@ -806,6 +777,9 @@ void v_input2var(const char *str, var_t *var) {
   }
 }
 
+/*
+ * evaluate the pcode string
+ */
 void v_eval_str(var_p_t v) {
   int len = code_getstrlen();
   v->type = V_STR;

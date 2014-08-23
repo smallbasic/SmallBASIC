@@ -670,7 +670,6 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     v_set(r, var_p);
     break;
   case V_ARRAY:
-  case V_UDS:
   case V_HASH:
     v_set(r, var_p);
     break;
@@ -1146,13 +1145,7 @@ void eval(var_t *r) {
     case kwTYPE_STR:
       // string - constant
       V_FREE(r);
-      r->type = V_STR;
-      len = code_getstrlen();
-      r->v.p.ptr = tmp_alloc(len + 1);
-      memcpy(r->v.p.ptr, &prog_source[prog_ip], len);
-      *((char *) (r->v.p.ptr + len)) = '\0';
-      r->v.p.size = len;
-      IP += len;
+      v_eval_str(r);
       break;
 
     case kwTYPE_PTR:

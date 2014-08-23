@@ -24,7 +24,6 @@
 #include "common/messages.h"
 #include "common/device.h"
 #include "common/pproc.h"
-#include "common/var_uds.h"
 
 int brun_create_task(const char *filename, mem_t preloaded_bc, int libf);
 int exec_close_task();

@@ -38,8 +38,7 @@
 #define V_ARRAY     4 /**< variable type, array of variables           @ingroup var */
 #define V_PTR       5 /**< variable type, pointer to UDF or label      @ingroup var */
 #define V_LIST      6 /**< variable type, dynamic list - N/A           @ingroup var */
-#define V_UDS       7 /**< variable type, user defined structure       @ingroup var */
-#define V_HASH      8 /**< variable type, hash                         @ingroup var */
+#define V_HASH      7 /**< variable type, hash                         @ingroup var */
 
 /*
  *   predefined system variables - index

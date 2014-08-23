@@ -10,7 +10,6 @@
 #include "common/sys.h"
 #include "common/pproc.h"
 #include "common/messages.h"
-#include "common/var_uds.h"
 #include "common/var_hash.h"
 #include <limits.h>
 
@@ -262,6 +261,51 @@ void pv_write(char *str, int method, int handle) {
 }
 
 /*
+ * print the array variable
+ */
+void pv_write_array(var_t *var, int method, int handle) {
+  pv_write("[", method, handle);
+
+  if (var->v.a.maxdim == 2) {
+    int rows, cols;
+    var_t *e;
+    int i, j, pos;
+    
+    // NxN
+    rows = ABS(var->v.a.ubound[0] - var->v.a.lbound[0]) + 1;
+    cols = ABS(var->v.a.ubound[1] - var->v.a.lbound[1]) + 1;
+    
+    for (i = 0; i < rows; i++) {
+      for (j = 0; j < cols; j++) {
+        pos = i * cols + j;
+        e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
+        pv_writevar(e, method, handle);
+        if (j != cols - 1) {
+          pv_write(",", method, handle);  // add space?
+        }
+      }
+      if (i != rows - 1) {
+        pv_write(";", method, handle);  // add space?
+      }
+    }
+  } else {
+    var_t *e;
+    int i;
+    
+    for (i = 0; i < var->v.a.size; i++) {
+      e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * i));
+      pv_writevar(e, method, handle);
+      if (i != var->v.a.size - 1) {
+        pv_write(",", method, handle);  // add space?
+      }
+    }
+  }
+  
+  // close array
+  pv_write("]", method, handle);
+}
+
+/*
  * just prints the value of variable 'var'
  */
 void pv_writevar(var_t *var, int method, int handle) {
@@ -273,9 +317,6 @@ void pv_writevar(var_t *var, int method, int handle) {
   switch (var->type) {
   case V_STR:
     pv_write((char *)var->v.p.ptr, method, handle);
-    break;
-  case V_UDS:
-    uds_write(var, method, handle);
     break;
   case V_HASH:
     hash_write(var, method, handle);
@@ -293,46 +334,7 @@ void pv_writevar(var_t *var, int method, int handle) {
     pv_write(tmpsb, method, handle);
     break;
   case V_ARRAY:
-    // open array
-    pv_write("[", method, handle);
-
-    if (var->v.a.maxdim == 2) {
-      int rows, cols;
-      var_t *e;
-      int i, j, pos;
-
-      // NxN
-      rows = ABS(var->v.a.ubound[0] - var->v.a.lbound[0]) + 1;
-      cols = ABS(var->v.a.ubound[1] - var->v.a.lbound[1]) + 1;
-
-      for (i = 0; i < rows; i++) {
-        for (j = 0; j < cols; j++) {
-          pos = i * cols + j;
-          e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
-          pv_writevar(e, method, handle);
-          if (j != cols - 1) {
-            pv_write(",", method, handle);  // add space?
-          }
-        }
-        if (i != rows - 1) {
-          pv_write(";", method, handle);  // add space?
-        }
-      }
-    } else {
-      var_t *e;
-      int i;
-
-      for (i = 0; i < var->v.a.size; i++) {
-        e = (var_t *) (var->v.a.ptr + (sizeof(var_t) * i));
-        pv_writevar(e, method, handle);
-        if (i != var->v.a.size - 1) {
-          pv_write(",", method, handle);  // add space?
-        }
-      }
-    }
-
-    // close array
-    pv_write("]", method, handle);
+    pv_write_array(var, method, handle);
     break;
   }
 }
