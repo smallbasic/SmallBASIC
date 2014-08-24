@@ -8,7 +8,7 @@
 
 ' No way to test these except print them!
 ? "String functions"
-? date$,time$
+rem ? date$,time$
 
 ' Comparisons
 if "abc" != "abc" then:? "!=":fi

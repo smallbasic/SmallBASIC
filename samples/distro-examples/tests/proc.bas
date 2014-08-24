@@ -128,7 +128,7 @@ fi
 end
 
 func fillarray
-local v(),i
+local v,i
 
 dim v(16)
 
