@@ -1,4 +1,4 @@
-dnl 
+dnl
 dnl Configure script for SmallBASIC
 dnl
 dnl Copyright(C) 2001-2014 Chris Warren-Smith.
@@ -116,30 +116,30 @@ function defaultConditionals() {
 
 function buildFLTK() {
    TARGET="Building FLTK version."
- 
+
    dnl Checks for FLTK 2.x
    AC_CHECK_PROG(have_fltk, fltk2-config, [yes], [no])
- 
+
    dnl do we HAVE the needed FLTK API VERSION ?
    HAVE_API_VERSION=no
- 
+
    if test "${have_fltk}" = "yes" ; then
      FLTK_API_VERSION="`fltk2-config --api-version`"
      if test "${FLTK_API_VERSION}" = "2.0" ; then
        HAVE_API_VERSION=yes
      fi
    fi
- 
+
    if test "${HAVE_API_VERSION}" = "no" ; then
        AC_MSG_ERROR([
      You need FLTK version 2.* installed with
      the program fltk2-config in your PATH in order to build sbfltk
-     See the FLTK homepage at http://www.fltk.org/. 
-   
+     See the FLTK homepage at http://www.fltk.org/.
+
      configure failed.
    ])
    fi
- 
+
    dnl avoid using MSCRT versions of printf for long double
    case "${host_os}" in
      *mingw* | cygwin*)
@@ -167,7 +167,7 @@ function buildFLTK() {
      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl-config --libs`"
      AC_DEFINE(HAVE_SDL, 1, [Windows build])
    fi
- 
+
    dnl preconfigured values for FLTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
@@ -181,9 +181,8 @@ function buildFLTK() {
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
-   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
-   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()]) 
+   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()])
 
    BUILD_SUBDIRS="src/common src/platform/fltk"
    AC_SUBST(BUILD_SUBDIRS)
@@ -234,9 +233,8 @@ function buildSDL() {
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()]) 
+   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
    AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
 
@@ -263,7 +261,6 @@ function buildMosync() {
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
    AC_DEFINE(CPU_BIGENDIAN, 1, [Mosync uses big-endian])
-   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(NONSTANDARD_PORT, 1, [sys.h should include portdefs.h])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
@@ -271,7 +268,7 @@ function buildMosync() {
 
    dnl Checks for mosync
    AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
- 
+
    PACKAGE_CFLAGS="-MMD -S -DMAPIP -O2 -MF "
 
    dnl find out where mosync is installed
@@ -311,7 +308,6 @@ function buildTizen() {
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
    AC_DEFINE(CPU_BIGENDIAN, 1, [Tizen uses big-endian])
-   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
 
@@ -333,7 +329,6 @@ function buildAndroid() {
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
    AC_DEFINE(CPU_BIGENDIAN, 1, [Android uses big-endian])
-   AC_DEFINE(NO_SCAN_ERROR_PROMPT, 1, [No prompt for detailed scan report])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
 
@@ -389,7 +384,7 @@ function buildConsole() {
       fi
       AC_DEFINE(_Win32, 1, [Windows build])
       AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
-   else 
+   else
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -439,7 +434,7 @@ elif test x$ac_build_android = xyes; then
    buildAndroid
 else
    buildConsole
-fi  
+fi
 
 checkPCRE
 checkDebugMode

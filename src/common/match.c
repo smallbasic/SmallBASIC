@@ -263,7 +263,6 @@ int reg_match_pcre(const char *p, char *t)
   }
   else {
     int rc;
-    int erroffset;
     int ovector[OVECCOUNT];
 
     rc = pcre_exec(re, NULL, t, strlen(t), 0, 0, ovector, OVECCOUNT);

@@ -26,43 +26,6 @@ var_t *v_new() {
 }
 
 /*
- * release variable
- */
-void v_free(var_t *v) {
-  int i;
-  var_t *elem;
-
-  switch (v->type) {
-  case V_STR:
-    if (v->v.p.ptr) {
-      tmp_free(v->v.p.ptr);
-    }
-    v->v.p.ptr = NULL;
-    v->v.p.size = 0;
-    break;
-  case V_ARRAY:
-    if (v->v.a.size) {
-      if (v->v.a.ptr) {
-        for (i = 0; i < v->v.a.size; i++) {
-          elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
-          v_free(elem);
-        }
-
-        tmp_free(v->v.a.ptr);
-        v->v.a.ptr = NULL;
-        v->v.a.size = 0;
-      }
-    }
-    break;
-  case V_HASH:
-    hash_free_var(v);
-    break;
-  }
-
-  v_init(v);
-}
-
-/*
  * returns true if the user's program must use this var as an empty var
  * this is usefull for arrays
  */

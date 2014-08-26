@@ -205,6 +205,7 @@ void cmd_ladd() {
       v_resize_array(var_p, var_p->v.a.size + 1);
       elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
     }
+    
     v_set(elem_p, arg_p);
 
     // next parameter
@@ -312,7 +313,7 @@ void cmd_lins() {
  */
 void cmd_ldel() {
   var_t *var_p, *arg_p;
-  int idx, count = 1, flags;
+  int idx, count = 1;
   int i, j;
 
   var_p = code_getvarptr();
@@ -337,12 +338,6 @@ void cmd_ldel() {
   if ((idx >= var_p->v.a.size) || (idx < 0)) {
     err_out_of_range();
     return;
-  } else if (idx == var_p->v.a.size - 1) {
-    flags = 2;                  // last element
-  } else if (idx == 0) {
-    flags = 1;                  // first element
-  } else {
-    flags = 0;                  // somewhere inside
   }
   // get 'count'
   if (code_peek() == kwTYPE_SEP) {

@@ -7,7 +7,7 @@
 
 # see: http://www.cygwin.com/ml/cygwin/2004-03/msg00289.html
 if !WITH_CYGWIN_CONSOLE
-  AM_CFLAGS = @PACKAGE_CFLAGS@ -Wno-unused-result
+  AM_CFLAGS = @PACKAGE_CFLAGS@ -Wunused -Wno-unused-result
 endif
 
 AM_CPPFLAGS = -I$(top_builddir)/src -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"

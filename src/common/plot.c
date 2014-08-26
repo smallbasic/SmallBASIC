@@ -118,15 +118,14 @@ void plot_draw_y_axis(var_num_t ymin, var_num_t ymax, int top, int bottom, int x
  */
 void cmd_plot2(void) {
   var_t *vx = NULL, *vy = NULL;
-  addr_t use_ip, exit_ip;
 
   par_massget("pp", &vx, &vy);
   if (!prog_error) {
     // is there a use keyword ?
     if (code_peek() == kwUSE) {
       code_skipnext();
-      use_ip = code_getaddr();
-      exit_ip = code_getaddr();
+      code_getaddr();
+      code_getaddr();
     } else {
       rt_raise("PLOT: Missing USE keyword");
       return;

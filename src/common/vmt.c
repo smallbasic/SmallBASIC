@@ -43,7 +43,7 @@ static vmt_t vmt[MAX_VMT_FILES];  // table of VMTs
  */
 void dbt_file_write_header(dbt_t t) {
   lseek(vmt[t].i_handle, 0, SEEK_SET);
-  int n = write(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
+  write(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
 }
 
 /**
@@ -51,7 +51,7 @@ void dbt_file_write_header(dbt_t t) {
  */
 void dbt_file_read_header(dbt_t t) {
   lseek(vmt[t].i_handle, 0, SEEK_SET);
-  int n = read(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
+  read(vmt[t].i_handle, &vmt[t], sizeof(vmt_t));
 }
 
 /**
@@ -59,7 +59,7 @@ void dbt_file_read_header(dbt_t t) {
  */
 void dbt_file_read_rec_t(dbt_t t, int index, vmt_rec_t * rec) {
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  int n = read(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
+  read(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
 }
 
 /**
@@ -67,7 +67,7 @@ void dbt_file_read_rec_t(dbt_t t, int index, vmt_rec_t * rec) {
  */
 void dbt_file_write_rec_t(dbt_t t, int index, vmt_rec_t * rec) {
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  int n = write(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
+  write(vmt[t].i_handle, rec, sizeof(vmt_rec_t));
 }
 
 /**
@@ -77,9 +77,9 @@ void dbt_file_read_data(dbt_t t, int index, char *data, int size) {
   vmt_rec_t rec;
 
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  int n = read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+  read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
   lseek(vmt[t].f_handle, rec.offset, SEEK_SET);
-  n = read(vmt[t].f_handle, data, size);
+  read(vmt[t].f_handle, data, size);
 
 //      printf("\nvmt %d read: %d, %d\n", t, index, size);
 //      hex_dump(data, size);
@@ -90,32 +90,26 @@ void dbt_file_read_data(dbt_t t, int index, char *data, int size) {
  */
 void dbt_file_write_data(dbt_t t, int index, char *data, int size) {
   vmt_rec_t rec;
-  int n;
 
 //      printf("\nvmt %d write: %d, %d\n", t, index, size);
 //      hex_dump(data, size);
 
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
-  n = read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+  read(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
   lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * index + sizeof(vmt_t), SEEK_SET);
 
   if (rec.size >= size) {
     // it is fits on that space
     rec.size = size;
-    n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
-
+    write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
     lseek(vmt[t].f_handle, rec.offset, SEEK_SET);
-//              printf("\noffset=%d\n", rec.offset);
-    n = write(vmt[t].f_handle, data, size);
+    write(vmt[t].f_handle, data, size);
   } else {
     // new allocation required
     rec.offset = lseek(vmt[t].f_handle, 0, SEEK_END);
     rec.size = size;
-    n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
-//              printf("\noffset(new)=%d\n", rec.offset);
-
-//              lseek(vmt[t].f_handle, rec.offset, SEEK_SET);   // not needed
-    n = write(vmt[t].f_handle, data, size);
+    write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+    write(vmt[t].f_handle, data, size);
   }
 }
 
@@ -125,7 +119,6 @@ void dbt_file_write_data(dbt_t t, int index, char *data, int size) {
 int dbt_file_append(dbt_t t, int recs, int recsize) {
   vmt_rec_t rec;
   int i;
-  int n;
 
   rec.ver = 1;
   rec.size = recsize;
@@ -142,8 +135,8 @@ int dbt_file_append(dbt_t t, int recs, int recsize) {
     for (i = vmt[t].size; i < newsize; i++) {
       lseek(vmt[t].i_handle, sizeof(vmt_rec_t) * i + sizeof(vmt_t), SEEK_SET);
       rec.offset = lseek(vmt[t].f_handle, 0, SEEK_END);
-      n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
-      n = write(vmt[t].f_handle, data, recsize);
+      write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+      write(vmt[t].f_handle, data, recsize);
     }
 
     tmp_free(data);
@@ -162,7 +155,7 @@ int dbt_file_append(dbt_t t, int recs, int recsize) {
  */
 void dbt_file_pack(dbt_t t) {
   vmt_rec_t rec;
-  int i, idx_offset, new_h, new_offset, n;
+  int i, idx_offset, new_h, new_offset;
   char *data;
   char old_db_name[OS_PATHNAME_SIZE];
   char new_db_name[OS_PATHNAME_SIZE];
@@ -178,16 +171,16 @@ void dbt_file_pack(dbt_t t) {
     // read data
     data = tmp_alloc(rec.size);
     lseek(vmt[t].f_handle, rec.offset, rec.size);
-    n = read(vmt[t].f_handle, data, rec.size);
+    read(vmt[t].f_handle, data, rec.size);
 
     // copy record
     new_offset = lseek(new_h, 0, SEEK_END);
     rec.offset = new_offset;
-    n = write(new_h, data, rec.size);
+    write(new_h, data, rec.size);
     tmp_free(data);
 
     // update index
-    n = write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
+    write(vmt[t].i_handle, &rec, sizeof(vmt_rec_t));
   }
 
   // swap databases and reopen
@@ -478,7 +471,7 @@ int dbt_setvar(dbt_t fh, const char *varname, const char *varvalue) {
 
   // find if already exists
   for (i = 0; i < dbt_count(fh); i++) {
-    char *nd_var, *nd_val;
+    char *nd_var;
 
     // load the record
     dbt_read(fh, i, &nd, sizeof(nd));
@@ -486,7 +479,6 @@ int dbt_setvar(dbt_t fh, const char *varname, const char *varvalue) {
       buf = tmp_alloc(nd.node_len);
       dbt_read(fh, i, buf, nd.node_len);
       nd_var = buf + sizeof(nd);
-      nd_val = buf + sizeof(nd) + nd.var_len;
 
       // check varname
       if (strcmp(nd_var, varname) == 0) {

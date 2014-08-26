@@ -57,25 +57,6 @@ static int extfuncsize; /**< ext-func table allocated size  */
 static int extfunccount; /**< ext-func table count           */
 
 /*
- * reset the external proc/func lists
- */
-static void slib_reset_externals(void) {
-  // reset functions
-  if (extfunctable) {
-    tmp_free(extfunctable);
-  }
-  extfunctable = NULL;
-  extfunccount = extfuncsize = 0;
-
-  // reset procedures
-  if (extproctable) {
-    tmp_free(extproctable);
-  }
-  extproctable = NULL;
-  extproccount = extprocsize = 0;
-}
-
-/*
  * add an external procedure to the list
  */
 static int slib_add_external_proc(const char *proc_name, int lib_id) {
@@ -143,32 +124,6 @@ static int slib_add_external_func(const char *func_name, int lib_id) {
 
   extfunccount++;
   return extfunccount - 1;
-}
-
-/*
- * returns the external procedure id
- */
-static int slib_is_external_proc(const char *name) {
-  int i;
-
-  for (i = 0; i < extproccount; i++) {
-    if (strcmp(extproctable[i].name, name) == 0)
-    return i;
-  }
-  return -1;
-}
-
-/*
- * returns the external function id
- */
-static int slib_is_external_func(const char *name) {
-  int i;
-
-  for (i = 0; i < extfunccount; i++) {
-    if (strcmp(extfunctable[i].name, name) == 0)
-    return i;
-  }
-  return -1;
 }
 
 #endif

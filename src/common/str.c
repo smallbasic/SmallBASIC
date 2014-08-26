@@ -357,7 +357,7 @@ char *get_keyword(char *text, char *dest) {
   }
 
   // Code to kill the $
-  // if ( *p == '$' ) 
+  // if ( *p == '$' )
   // p ++;
 
   if (*p == '$') {
@@ -389,7 +389,7 @@ char *get_keyword(char *text, char *dest) {
 char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *dv) {
   char *p = (char *) text;
   char *d = dest;
-  char *epos = NULL, *epos_on_text = NULL;
+  char *epos = NULL;
   byte base = 10;
   byte dpc = 0, stupid_e_fmt = 0, eop = '+';
   int sign = 1;
@@ -410,14 +410,15 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
   }
   // sign
   if ((*p == '-' || *p == '+') && strchr("0123456789.", *(p + 1)) &&
-  *(p + 1) != '\0'){if (*p == '-') {
-    sign = -1;
+      *(p + 1) != '\0'){if (*p == '-') {
+      sign = -1;
+    }
+    p++;                        // don't copy it
   }
-  p++;                        // don't copy it
-}
-  // 
+
+  //
   // resolve the base (hex, octal and binary)
-  // 
+  //
   if ((*p == '&') || (*p == '0' && (*(p + 1) != '\0' && strchr("HXBO", to_upper(*(p + 1))) != NULL))) {
 
     p++;
@@ -443,9 +444,9 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
 
     p++;
   }
-  // 
+  //
   // copy parts of number
-  // 
+  //
   if (base == 16) {
     // copy hex
     while (is_hexdigit(*p)) {
@@ -455,8 +456,9 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
     }
   } else if (base != 10) {
     // copy octal | bin
-    while (is_digit(*p))
+    while (is_digit(*p)) {
       *d++ = *p++;
+    }
   } else if (is_digit(*p) || *p == '.') {
     // copy number (first part)
     while (is_digit(*p) || *p == '.') {
@@ -474,7 +476,6 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
     // check second part
     if ((*p == 'E' || *p == 'e') && (*type == 0)) {
       epos = d;
-      epos_on_text = p;
       *d++ = *p++;              // E
 
       if (*p == '+' || *p == '-' || is_digit(*p) || *p == '.') {
@@ -483,7 +484,7 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
         // copy second part (power)
         if (*p == '+' || *p == '-') {
           *d++ = *p++;
-          if (strchr("+-*/\\^", *p) != 0) { // stupid E format 
+          if (strchr("+-*/\\^", *p) != 0) { // stupid E format
             // (1E--9 ||
             // 1E++9)
             stupid_e_fmt = 1;
@@ -505,7 +506,7 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
           *d++ = *p++;
         }                       // after E
 
-      }                         // 
+      }                         //
       else {
         *type = -3;             // E+- ERROR
       }
@@ -515,9 +516,9 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
 
   *d = '\0';
 
-  // 
+  //
   // finaly, calculate the number
-  // 
+  //
   if (*type == 0) {
     switch (base) {
     case 10:
@@ -533,11 +534,11 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
 
             /*
              * if ( *p == 'E' || *p == 'e' ) { long r_lv; double r_dv;
-             * 
+             *
              * p = get_numexpr(epos_on_text+3, dest, &r_type, &r_lv, &r_dv);
-             * 
-             * switch ( r_type ) { case 1: power = r_lv; break; case 2: power = 
-             * r_dv; break; default: // error *type = r_type; } } else 
+             *
+             * switch ( r_type ) { case 1: power = r_lv; break; case 2: power =
+             * r_dv; break; default: // error *type = r_type; } } else
              */
             power = sb_strtof(epos + 3);
 
@@ -603,7 +604,7 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
       break;
     }
   }
-  // 
+  //
   if (is_alpha(*p))
     *type = -9;                 // ITS NOT A NUMBER
   while (is_space(*p))
