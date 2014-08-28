@@ -28,28 +28,31 @@
  * CONST v[(x)] = any
  */
 void cmd_let(int allowConst) {
-  var_t *var_p;
-  var_t arg;
-
-  var_p = code_getvarptr();
+  var_t *v_left = code_getvarptr();
 
   if (!prog_error) {
-    if (var_p->const_flag && !allowConst) {
+    if (v_left->const_flag && !allowConst) {
       err_const();
       return;
     }
 
-    if (prog_source[prog_ip] == kwTYPE_CMPOPR && prog_source[prog_ip + 1] == '=') {
+    if (prog_source[prog_ip] == kwTYPE_CMPOPR && 
+        prog_source[prog_ip + 1] == '=') {
       code_skipopr();
     }
 
-    v_init(&arg);
-    eval(&arg);
-
-    if (!prog_error) {
-      v_set(var_p, &arg);
-      v_free(&arg);
-      var_p->const_flag = allowConst;
+    if (code_peek() == kwBYREF) {
+      code_skipnext();
+      v_eval_ref(v_left);
+    } else {
+      var_t v_right;
+      v_init(&v_right);
+      eval(&v_right);
+      if (!prog_error) {
+        v_set(v_left, &v_right);
+        v_left->const_flag = allowConst;
+      }
+      v_free(&v_right);
     }
   }
 }
@@ -192,21 +195,27 @@ void cmd_ladd() {
   do {
     // get parameter on arg_p
     v_free(arg_p);
-    eval(arg_p);
-    if (prog_error) {
-      break;
-    }
 
-    // append data
-    if (var_p->type != V_ARRAY) {
-      v_toarray1(var_p, 1);
-      elem_p = (var_t *) var_p->v.a.ptr;
+    if (code_peek() == kwBYREF) {
+      code_skipnext();
+      v_eval_ref(var_p);
     } else {
-      v_resize_array(var_p, var_p->v.a.size + 1);
-      elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+      eval(arg_p);
+      if (prog_error) {
+        break;
+      }
+      
+      // append data
+      if (var_p->type != V_ARRAY) {
+        v_toarray1(var_p, 1);
+        elem_p = (var_t *) var_p->v.a.ptr;
+      } else {
+        v_resize_array(var_p, var_p->v.a.size + 1);
+        elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+      }
+      
+      v_set(elem_p, arg_p);
     }
-    
-    v_set(elem_p, arg_p);
 
     // next parameter
     if (code_peek() != kwTYPE_SEP) {

@@ -36,6 +36,7 @@
 #define V_ARRAY     3 /**< variable type, array of variables           @ingroup var */
 #define V_PTR       4 /**< variable type, pointer to UDF or label      @ingroup var */
 #define V_HASH      5 /**< variable type, hash                         @ingroup var */
+#define V_REF       6 /**< variable type, reference another var        @ingroup var */
 
 /*
  *   predefined system variables - index
@@ -76,8 +77,8 @@ extern "C" {
  * VARIANT DATA TYPE
  */
 struct var_s {
-  byte type: 7; /**< variable's type */
-  byte const_flag: 1; /**< non-zero if constants */
+  byte type; /**< variable's type */
+  byte const_flag; /**< non-zero if constants */
 
   // value
   union {
@@ -91,7 +92,10 @@ struct var_s {
     } ap;
 
     // hash map
-    void* hash; /** pointer the hash structure */
+    void *hash; /** pointer the hash structure */
+
+    // reference variable
+    void *ref;
 
     // generic ptr (string)
     struct {
@@ -634,6 +638,13 @@ char *v_getstr(var_t *v);
  * @param v is the variable
  */
 void v_eval_str(var_p_t v);
+
+/**
+ * @ingroup var
+ *
+ * evaluate variable reference assignment
+ */
+void v_eval_ref(var_t *l_value);
 
 /*
  * low-level byte-code parsing

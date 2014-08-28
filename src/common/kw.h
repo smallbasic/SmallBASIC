@@ -76,12 +76,10 @@ enum keyword {                // line 50
   kwTYPE_CALLP, /* Call a build-in procedure */
   kwTYPE_CALL_UDF, /* Call user defined function */
   kwTYPE_CALL_UDP, /* Call user defined procedure */
-  kwTYPE_CALL_PTR, /* Call user defined procedure or function from
-   * address pointer */
+  kwTYPE_CALL_PTR, /* Call user defined procedure or function from address pointer */
   kwTYPE_CALLEXTF, /* Call an external function */
   kwTYPE_CALLEXTP, /* Call an external procedure */
-  kwTYPE_CRVAR, /* Create dynamic variable (PARAMETERS OR
-   * LOCALS) */
+  kwTYPE_CRVAR, /* Create dynamic variable (PARAMETERS OR LOCALS) */
   kwTYPE_RET, /* Return from UDF|UDP */
   kwTYPE_PARAM, /* Parameters */
   kwTYPE_PTR, /* Address pointer, eg f=@foo */

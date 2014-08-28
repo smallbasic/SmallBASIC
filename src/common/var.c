@@ -43,6 +43,8 @@ int v_isempty(var_t *var) {
     return (var->v.n == 0.0);
   case V_ARRAY:
     return (var->v.a.size == 0);
+  case V_REF:
+    return v_isempty(var->v.ref);
   }
 
   return 1;
@@ -70,6 +72,8 @@ int v_length(var_t *var) {
     return strlen(tmpsb);
   case V_ARRAY:
     return var->v.a.size;
+  case V_REF:
+    return v_length(var->v.ref);
   }
 
   return 1;
@@ -257,6 +261,8 @@ int v_is_nonzero(var_t *v) {
     return (v->v.ap.p != 0);
   case V_ARRAY:
     return (v->v.a.size != 0);
+  case V_REF:
+    return v_is_nonzero(v->v.ref);
   };
   return 0;
 }
@@ -349,6 +355,11 @@ int v_compare(var_t *a, var_t *b) {
     return hash_compare(a, b);
   }
 
+  if (a->type == V_REF || b->type == V_REF) {
+    return v_compare(a->type == V_REF ? a->v.ref : a,
+                     b->type == V_REF ? b->v.ref : b);
+  }
+
   err_evtype();
   return 1;
 }
@@ -407,11 +418,11 @@ void v_add(var_t *result, var_t *a, var_t *b) {
   } else if ((a->type == V_INT || a->type == V_NUM) && b->type == V_STR) {
     if (is_number((char *) b->v.p.ptr)) {
       result->type = V_NUM;
-      if (a->type == V_INT
-        )
+      if (a->type == V_INT) {
         result->v.n = a->v.i + v_getval(b);
-      else
+      } else {
         result->v.n = a->v.n + v_getval(b);
+      }
     } else {
       result->type = V_STR;
       result->v.p.ptr = (byte *) tmp_alloc(strlen((char *)b->v.p.ptr) + 64);
@@ -424,6 +435,9 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       strcat((char *) result->v.p.ptr, (char *) b->v.p.ptr);
       result->v.p.size = strlen((char *) result->v.p.ptr) + 1;
     }
+  } else if (a->type == V_REF || b->type == V_REF) {
+    v_add(result, a->type == V_REF ? a->v.ref : a,
+          b->type == V_REF ? b->v.ref : b);
   }
 }
 
@@ -556,6 +570,10 @@ void v_tostr(var_t *arg) {
     case V_NUM:
       ftostr(arg->v.n, tmp);
       break;
+    case V_REF:
+      v_tostr(arg->v.ref);
+      tmp_free(tmp);
+      return;
     default:
       err_varisarray();
       tmp_free(tmp);
@@ -753,3 +771,39 @@ void v_eval_str(var_p_t v) {
   prog_ip += len;
 }
 
+/*
+ * evaluate variable reference assignment
+ */
+void v_eval_ref(var_t *v_left) {
+  var_t *v_right = NULL;
+  // can only reference regular non-dynamic variable
+  if (code_peek() == kwTYPE_VAR) {
+    code_skipnext();
+    v_right = tvar[code_getaddr()];
+    switch (v_right->type) {
+    case V_REF:
+      // multiple levels not supported
+      v_right = NULL;
+      break;
+    case V_ARRAY:
+    case V_HASH:
+      switch (code_peek()) {
+      case kwTYPE_LEVEL_BEGIN:
+      case kwTYPE_UDS_EL:
+        // base variable only supported
+        v_right = NULL;
+        break;
+      }
+      break;
+    default:
+      break;
+    }
+  }
+  if (v_right == NULL) {
+    rt_raise("Invalid variable reference");
+  } else {
+    v_free(v_left);
+    v_left->type = V_REF;
+    v_left->v.ref = v_right;
+  }
+}
