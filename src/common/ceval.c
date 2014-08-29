@@ -101,7 +101,6 @@ void cev_prim() {
         }
 
         if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          fprintf(stderr, "1\n");
           cev_missing_rp();
         } else {
           cev_add1(kwTYPE_LEVEL_END);
