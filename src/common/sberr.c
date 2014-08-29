@@ -235,6 +235,10 @@ void err_run_err(const char *file) {
   rt_raise(ERR_RUN_FILE, file);
 }
 
+void err_ref_var() {
+  rt_raise(ERR_REF_VAR);
+}
+
 /**
  * the DONE message
  */

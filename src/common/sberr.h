@@ -71,6 +71,7 @@ void err_const(void);
 void err_notavar(void);
 void err_run_err(const char *file);
 void err_invkw(addr_t addr, byte code);
+void err_ref_var();
 
 #define err_type_mismatch()         err_typemismatch()
 #define err_syntax_error()          err_syntax()

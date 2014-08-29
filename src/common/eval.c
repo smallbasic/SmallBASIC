@@ -651,7 +651,23 @@ static inline void eval_shortc(var_t *r, addr_t addr, byte op) {
   }
 }
 
+var_t *eval_ref_var(var_t *var_p) {
+  var_t *result = var_p;
+  while (result->type == V_REF) {
+    if (result->v.ref == var_p) {
+      // circular referance error
+      result = NULL;
+      err_ref_var();
+      break;
+    } else {
+      result = result->v.ref;
+    }
+  }
+  return result;
+}
+
 static inline void eval_var(var_t *r, var_t *var_p) {
+  var_t *var_deref;
   switch (var_p->type) {
   case V_PTR:
     r->type = var_p->type;
@@ -670,6 +686,12 @@ static inline void eval_var(var_t *r, var_t *var_p) {
   case V_ARRAY:
   case V_HASH:
     v_set(r, var_p);
+    break;
+  case V_REF:
+    var_deref = eval_ref_var(var_p);
+    if (var_deref != NULL) {
+      eval_var(r, var_deref);
+    }
     break;
   }
 }

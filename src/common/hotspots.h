@@ -227,7 +227,7 @@ static inline void v_free(var_t *v) {
     }
     break;
   case V_HASH:
-    hash_free_var(v);
+    hash_free(v);
     break;
   }
 

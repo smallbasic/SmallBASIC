@@ -1093,8 +1093,7 @@ void comp_expression(char *expr, byte no_parser) {
             bc_add_addr(&bc, 0);
             bc_add_addr(&bc, 0);
             comp_use_global_vartable = 1;
-            // all the next variables are global (needed for
-            // X)
+            // all the next variables are global (needed for X)
             check_udf++;
           } else if (idx == kwDO) {
             SKIP_SPACES(ptr);

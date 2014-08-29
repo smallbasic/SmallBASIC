@@ -45,7 +45,7 @@ sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 TEST_DIR=../../../samples/distro-examples/tests
 UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto \
 	         uds hash pass1 call_tau short-circuit strings stack-test \
-           replace-test read-data proc optchk letbug
+           replace-test read-data proc optchk letbug ref
 
 test: ${bin_PROGRAMS}
 	@for utest in $(UNIT_TESTS); do                             \

@@ -36,7 +36,7 @@ void cmd_let(int allowConst) {
       return;
     }
 
-    if (prog_source[prog_ip] == kwTYPE_CMPOPR && 
+    if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
         prog_source[prog_ip + 1] == '=') {
       code_skipopr();
     }
@@ -173,12 +173,11 @@ void cmd_redim() {
  * A << x1 [, x2, ...]
  */
 void cmd_ladd() {
-  var_t *var_p, *elem_p, *arg_p;
-
-  var_p = code_getvarptr();
+  var_t *var_p = code_getvarptr();
   if (prog_error) {
     return;
   }
+
   if (code_peek() == kwTYPE_CMPOPR && prog_source[prog_ip + 1] == '=') {
     // compatible with LET, operator format
     code_skipopr();
@@ -190,30 +189,37 @@ void cmd_ladd() {
     return;
   }
 
-  // data
-  arg_p = v_new();
+  // for each argument to append
+  var_t *arg_p = v_new();
   do {
-    // get parameter on arg_p
+    // get the value to append
     v_free(arg_p);
 
+    int byref = 0;
     if (code_peek() == kwBYREF) {
       code_skipnext();
-      v_eval_ref(var_p);
+      byref = 1;
     } else {
       eval(arg_p);
-      if (prog_error) {
-        break;
-      }
-      
-      // append data
-      if (var_p->type != V_ARRAY) {
-        v_toarray1(var_p, 1);
-        elem_p = (var_t *) var_p->v.a.ptr;
-      } else {
-        v_resize_array(var_p, var_p->v.a.size + 1);
-        elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
-      }
-      
+    }
+    if (prog_error) {
+      break;
+    }
+
+    // find the array element
+    var_t *elem_p;
+    if (var_p->type != V_ARRAY) {
+      v_toarray1(var_p, 1);
+      elem_p = (var_t *)var_p->v.a.ptr;
+    } else {
+      v_resize_array(var_p, var_p->v.a.size + 1);
+      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+    }
+
+    // set the value onto the element
+    if (byref) {
+      v_eval_ref(elem_p);
+    } else {
       v_set(elem_p, arg_p);
     }
 
@@ -226,7 +232,6 @@ void cmd_ladd() {
         break;
       }
     }
-
   } while (1);
 
   // cleanup
@@ -238,10 +243,7 @@ void cmd_ladd() {
  * INSERT A, index, v1 [, vN]
  */
 void cmd_lins() {
-  var_t *var_p, *elem_p, *arg_p;
-  int idx, ladd, i;
-
-  var_p = code_getvarptr();
+  var_t *var_p = code_getvarptr();
   if (prog_error) {
     return;
   }
@@ -249,12 +251,14 @@ void cmd_lins() {
   if (prog_error) {
     return;
   }
+
   // convert to array
   if (var_p->type != V_ARRAY) {
     v_toarray1(var_p, 0);
   }
+
   // get 'index'
-  idx = par_getint();
+  int idx = par_getint();
   if (prog_error) {
     return;
   }
@@ -264,42 +268,59 @@ void cmd_lins() {
   if (prog_error) {
     return;
   }
-  // if ( (idx > var_p->v.a.size) || (idx < 0) ) {
-  // err_out_of_range();
-  // return;
-  // }
 
-  ladd = 0;
+  int ladd = 0;
   if (idx >= var_p->v.a.size) {
-    ladd = 1;                   // append
+    // append
+    ladd = 1;
     idx = var_p->v.a.size;
   } else if (idx <= 0) {
-    idx = 0;                    // insert at top
+    // insert at top
+    idx = 0;
   }
-  // data
-  arg_p = v_new();
+
+  // for each argument to insert
+  var_t *arg_p = v_new();
   do {
-    // get parameter on arg_p
+    // get the value to append
     v_free(arg_p);
-    eval(arg_p);
+
+    int byref = 0;
+    if (code_peek() == kwBYREF) {
+      code_skipnext();
+      byref = 1;
+    } else {
+      eval(arg_p);
+    }
     if (prog_error) {
       break;
     }
+
     // resize +1
     v_resize_array(var_p, var_p->v.a.size + 1);
 
-    if (ladd) {                 // append
-      elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+    // find the array element
+    var_t *elem_p;
+    if (ladd) {
+      // append
+      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
     } else {
       // move all form idx one down
+      int i;
       for (i = var_p->v.a.size - 1; i > idx; i--) {
         // A(i) = A(i-1)
-        v_set((var_t *) (var_p->v.a.ptr + (sizeof(var_t) * i)),
-        (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * (i - 1))));
+        v_set((var_t *)(var_p->v.a.ptr + (sizeof(var_t) * i)),
+              (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (i - 1))));
       }
-      elem_p = (var_t *) (var_p->v.a.ptr + (sizeof(var_t) * idx));
+      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * idx));
     }
-    v_set(elem_p, arg_p);
+
+    // set the value onto the element
+    if (byref) {
+      v_eval_ref(elem_p);
+    } else {
+      v_set(elem_p, arg_p);
+    }
 
     // next parameter
     if (code_peek() != kwTYPE_SEP) {

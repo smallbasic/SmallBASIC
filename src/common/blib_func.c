@@ -2163,8 +2163,9 @@ void cmd_genfunc(long funcCode, var_t * r) {
           v_set(r, &arg);       // set the false value
           v_free(&arg);
         }
-      } else
+      } else {
         par_skip();
+      }
     }
     break;
     //

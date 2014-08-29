@@ -68,15 +68,12 @@ void cev_prim() {
   case kwTYPE_CALL_UDP:
     cev_udp();
     break;
-
   case kwTYPE_PTR:
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // addr
     IP += ADDRSZ;
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // return var
     IP += ADDRSZ;
     break;
-
-  case kwTYPE_UDS_EL:
   case kwTYPE_VAR:
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // 1 addr
     IP += ADDRSZ;
@@ -104,6 +101,7 @@ void cev_prim() {
         }
 
         if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+          fprintf(stderr, "1\n");
           cev_missing_rp();
         } else {
           cev_add1(kwTYPE_LEVEL_END);
@@ -149,6 +147,9 @@ void cev_prim() {
       }
 
       if (CODE_PEEK() == kwTYPE_UDS_EL) {
+        // code + string
+        cev_add1(CODE(IP));
+        IP++;
         cev_prim();
       } else if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         cev_missing_rp();
@@ -183,6 +184,9 @@ void cev_parenth() {
       cev_add1(CODE(IP));
       IP++;
     } else if (CODE_PEEK() == kwTYPE_UDS_EL) {
+      // code + string
+      cev_add1(CODE(IP));
+      IP++;
       cev_prim();
     } else if (CODE_PEEK() != kwTYPE_LEVEL_END) {
       cev_missing_rp();

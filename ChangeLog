@@ -1,3 +1,7 @@
+2014-08-30
+	Added reference variable type
+	Fixed HASH var handling with parenthesis
+
 2014-08-22
 	Fix HASH var crash
 	Fix HASH var handling of mixed types

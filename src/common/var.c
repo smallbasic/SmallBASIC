@@ -32,7 +32,7 @@ var_t *v_new() {
 int v_isempty(var_t *var) {
   switch (var->type) {
   case V_STR:
-    return (strlen((char *) var->v.p.ptr) == 0);
+    return (strlen((char *)var->v.p.ptr) == 0);
   case V_INT:
     return (var->v.i == 0);
   case V_HASH:
@@ -58,7 +58,7 @@ int v_length(var_t *var) {
 
   switch (var->type) {
   case V_STR:
-    return strlen((char *) var->v.p.ptr);
+    return strlen((char *)var->v.p.ptr);
   case V_HASH:
     return hash_length(var);
   case V_PTR:
@@ -85,7 +85,7 @@ int v_length(var_t *var) {
 var_t *v_getelemptr(var_t *v, dword index) {
   if (v->type == V_ARRAY) {
     if (index < v->v.a.size)
-      return (var_t *) (v->v.a.ptr + (index * sizeof(var_t)));
+      return (var_t *)(v->v.a.ptr + (index * sizeof(var_t)));
     else {
       err_vararridx(index, v->v.a.size);
       return NULL;
@@ -122,7 +122,7 @@ void v_resize_array(var_t *v, dword size) {
 
       // free vars
       for (i = size; i < v->v.a.size; i++) {
-        elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
+        elem = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
         v_free(elem);
       }
 
@@ -157,7 +157,7 @@ void v_resize_array(var_t *v, dword size) {
 
       // init vars
       for (i = v->v.a.size; i < size; i++) {
-        elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
+        elem = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
         v_init(elem);
       }
 
@@ -189,7 +189,7 @@ void v_tomatrix(var_t *v, int r, int c) {
   v->v.a.size = r * c;
   v->v.a.ptr = tmp_alloc(sizeof(var_t) * v->v.a.size);
   for (i = 0; i < r * c; i++) {
-    e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
+    e = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
     v_init(e);
   }
 
@@ -227,7 +227,7 @@ void v_toarray1(var_t *v, dword r) {
     v->v.a.size = r;
     v->v.a.ptr = tmp_alloc(sizeof(var_t) * (v->v.a.size + ARR_ALLOC));
     for (i = 0; i < r; i++) {
-      e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
+      e = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
       v_init(e);
     }
 
@@ -261,8 +261,6 @@ int v_is_nonzero(var_t *v) {
     return (v->v.ap.p != 0);
   case V_ARRAY:
     return (v->v.a.size != 0);
-  case V_REF:
-    return v_is_nonzero(v->v.ref);
   };
   return 0;
 }
@@ -289,7 +287,8 @@ int v_compare(var_t *a, var_t *b) {
     di = (a->v.i - b->v.i);
     i = di < 0 ? -1 : di > 0 ? 1 : 0;
     return i;
-  } else if ((a->type == V_INT || a->type == V_NUM) && (b->type == V_INT || b->type == V_NUM)) {
+  } else if ((a->type == V_INT || a->type == V_NUM) && 
+             (b->type == V_INT || b->type == V_NUM)) {
     var_num_t left = (a->type == V_NUM) ? a->v.n : a->v.i;
     var_num_t right = (b->type == V_NUM) ? b->v.n : b->v.i;
     dt = (left - right);
@@ -300,7 +299,7 @@ int v_compare(var_t *a, var_t *b) {
     return strcmp(a->v.p.ptr, b->v.p.ptr);
   }
   if ((a->type == V_STR) && (b->type == V_NUM)) {
-    if (a->v.p.ptr[0] == '\0' || is_number((char *) a->v.p.ptr)) {
+    if (a->v.p.ptr[0] == '\0' || is_number((char *)a->v.p.ptr)) {
       // compare nums
       dt = v_getval(a);
       return (dt < b->v.n) ? -1 : ((dt == b->v.n) ? 0 : 1);
@@ -308,7 +307,7 @@ int v_compare(var_t *a, var_t *b) {
     return 1;
   }
   if ((a->type == V_NUM) && (b->type == V_STR)) {
-    if (b->v.p.ptr[0] == '\0' || is_number((char *) b->v.p.ptr)) {
+    if (b->v.p.ptr[0] == '\0' || is_number((char *)b->v.p.ptr)) {
       // compare nums
       dt = v_getval(b);
       return (dt < a->v.n) ? 1 : ((dt == a->v.n) ? 0 : -1);
@@ -316,7 +315,7 @@ int v_compare(var_t *a, var_t *b) {
     return - 1;
   }
   if ((a->type == V_STR) && (b->type == V_INT)) {
-    if (a->v.p.ptr[0] == '\0' || is_number((char *) a->v.p.ptr)) {
+    if (a->v.p.ptr[0] == '\0' || is_number((char *)a->v.p.ptr)) {
       // compare nums
       di = v_igetval(a);
       return (di < b->v.i) ? -1 : ((di == b->v.i) ? 0 : 1);
@@ -324,7 +323,7 @@ int v_compare(var_t *a, var_t *b) {
     return 1;
   }
   if ((a->type == V_INT) && (b->type == V_STR)) {
-    if (b->v.p.ptr[0] == '\0' || is_number((char *) b->v.p.ptr)) {
+    if (b->v.p.ptr[0] == '\0' || is_number((char *)b->v.p.ptr)) {
       // compare nums
       di = v_igetval(b);
       return (di < a->v.i) ? 1 : ((di == a->v.i) ? 0 : -1);
@@ -341,8 +340,8 @@ int v_compare(var_t *a, var_t *b) {
     }
     // check every element
     for (i = 0; i < a->v.a.size; i++) {
-      ea = (var_t *) (a->v.a.ptr + sizeof(var_t) * i);
-      eb = (var_t *) (b->v.a.ptr + sizeof(var_t) * i);
+      ea = (var_t *)(a->v.a.ptr + sizeof(var_t) * i);
+      eb = (var_t *)(b->v.a.ptr + sizeof(var_t) * i);
       if ((ci = v_compare(ea, eb)) != 0) {
         return ci;
       }
@@ -353,11 +352,6 @@ int v_compare(var_t *a, var_t *b) {
 
   if (a->type == V_HASH && b->type == V_HASH) {
     return hash_compare(a, b);
-  }
-
-  if (a->type == V_REF || b->type == V_REF) {
-    return v_compare(a->type == V_REF ? a->v.ref : a,
-                     b->type == V_REF ? b->v.ref : b);
   }
 
   err_evtype();
@@ -375,9 +369,9 @@ void v_add(var_t *result, var_t *a, var_t *b) {
     result->type = V_STR;
     result->v.p.ptr = (byte *)tmp_alloc(strlen((char *)a->v.p.ptr) +
                                         strlen((char *)b->v.p.ptr) + 1);
-    strcpy((char *) result->v.p.ptr, (char *) a->v.p.ptr);
-    strcat((char *) result->v.p.ptr, (char *) b->v.p.ptr);
-    result->v.p.size = strlen((char *) result->v.p.ptr) + 1;
+    strcpy((char *)result->v.p.ptr, (char *)a->v.p.ptr);
+    strcat((char *)result->v.p.ptr, (char *)b->v.p.ptr);
+    result->v.p.size = strlen((char *)result->v.p.ptr) + 1;
     return;
   } else if (a->type == V_INT && b->type == V_INT) {
     result->type = V_INT;
@@ -396,7 +390,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
     result->v.n = a->v.i + b->v.n;
     return;
   } else if (a->type == V_STR && (b->type == V_INT || b->type == V_NUM)) {
-    if (is_number((char *) a->v.p.ptr)) {
+    if (is_number((char *)a->v.p.ptr)) {
       result->type = V_NUM;
       if (b->type == V_INT) {
         result->v.n = b->v.i + v_getval(a);
@@ -405,18 +399,18 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
     } else {
       result->type = V_STR;
-      result->v.p.ptr = (byte *) tmp_alloc(strlen((char *)a->v.p.ptr) + 64);
-      strcpy((char *) result->v.p.ptr, (char *) a->v.p.ptr);
+      result->v.p.ptr = (byte *)tmp_alloc(strlen((char *)a->v.p.ptr) + 64);
+      strcpy((char *)result->v.p.ptr, (char *)a->v.p.ptr);
       if (b->type == V_INT) {
         ltostr(b->v.i, tmpsb);
       } else {
         ftostr(b->v.n, tmpsb);
       }
-      strcat((char *) result->v.p.ptr, tmpsb);
-      result->v.p.size = strlen((char *) result->v.p.ptr) + 1;
+      strcat((char *)result->v.p.ptr, tmpsb);
+      result->v.p.size = strlen((char *)result->v.p.ptr) + 1;
     }
   } else if ((a->type == V_INT || a->type == V_NUM) && b->type == V_STR) {
-    if (is_number((char *) b->v.p.ptr)) {
+    if (is_number((char *)b->v.p.ptr)) {
       result->type = V_NUM;
       if (a->type == V_INT) {
         result->v.n = a->v.i + v_getval(b);
@@ -425,19 +419,16 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
     } else {
       result->type = V_STR;
-      result->v.p.ptr = (byte *) tmp_alloc(strlen((char *)b->v.p.ptr) + 64);
+      result->v.p.ptr = (byte *)tmp_alloc(strlen((char *)b->v.p.ptr) + 64);
       if (a->type == V_INT) {
         ltostr(a->v.i, tmpsb);
       } else {
         ftostr(a->v.n, tmpsb);
       }
-      strcpy((char *) result->v.p.ptr, tmpsb);
-      strcat((char *) result->v.p.ptr, (char *) b->v.p.ptr);
-      result->v.p.size = strlen((char *) result->v.p.ptr) + 1;
+      strcpy((char *)result->v.p.ptr, tmpsb);
+      strcat((char *)result->v.p.ptr, (char *)b->v.p.ptr);
+      result->v.p.size = strlen((char *)result->v.p.ptr) + 1;
     }
-  } else if (a->type == V_REF || b->type == V_REF) {
-    v_add(result, a->type == V_REF ? a->v.ref : a,
-          b->type == V_REF ? b->v.ref : b);
   }
 }
 
@@ -445,15 +436,8 @@ void v_add(var_t *result, var_t *a, var_t *b) {
  * assign (dest = src)
  */
 void v_set(var_t *dest, const var_t *src) {
-  int i;
-  var_t *dest_vp, *src_vp;
-
   if (src->type == V_HASH) {
     hash_set(dest, (const var_p_t) src);
-    return;
-  } else if (dest->type == V_HASH) {
-    // lvalue struct assigned to non-struct rvalue
-    hash_clear(dest);
     return;
   }
 
@@ -463,8 +447,8 @@ void v_set(var_t *dest, const var_t *src) {
   switch (src->type) {
   case V_STR:
     dest->v.p.size = strlen((char *)src->v.p.ptr) + 1;
-    dest->v.p.ptr = (byte *) tmp_alloc(dest->v.p.size);
-    strcpy((char *) dest->v.p.ptr, (char *) src->v.p.ptr);
+    dest->v.p.ptr = (byte *)tmp_alloc(dest->v.p.size);
+    strcpy((char *)dest->v.p.ptr, (char *)src->v.p.ptr);
     break;
 
   case V_ARRAY:
@@ -472,9 +456,12 @@ void v_set(var_t *dest, const var_t *src) {
       dest->v.a.ptr = tmp_alloc(src->v.a.size * sizeof(var_t));
 
       // copy each element
+      int i;
+      var_t *dest_vp, *src_vp;
+
       for (i = 0; i < src->v.a.size; i++) {
-        src_vp = (var_t *) (src->v.a.ptr + (sizeof(var_t) * i));
-        dest_vp = (var_t *) (dest->v.a.ptr + (sizeof(var_t) * i));
+        src_vp = (var_t *)(src->v.a.ptr + (sizeof(var_t) * i));
+        dest_vp = (var_t *)(dest->v.a.ptr + (sizeof(var_t) * i));
         v_init(dest_vp);
         v_set(dest_vp, src_vp);
       }
@@ -485,11 +472,6 @@ void v_set(var_t *dest, const var_t *src) {
       dest->v.a.maxdim = 1;
     }
     break;
-
-  case V_PTR:
-    dest->v.ap = src->v.ap;
-    dest->type = src->type;
-    break;
   }
 }
 
@@ -499,7 +481,7 @@ void v_set(var_t *dest, const var_t *src) {
 var_t *v_clone(const var_t *source) {
   var_t *vnew;
 
-  vnew = (var_t *) tmp_alloc(sizeof(var_t));
+  vnew = (var_t *)tmp_alloc(sizeof(var_t));
   v_init(vnew);
   v_set(vnew, source);
   return vnew;
@@ -559,7 +541,7 @@ void v_tostr(var_t *arg) {
     switch (arg->type) {
     case V_HASH:
       hash_to_str(arg, tmp, 64);
-      hash_free_var(arg);
+      hash_free(arg);
       break;
     case V_PTR:
       ltostr(arg->v.ap.p, tmp);
@@ -570,10 +552,6 @@ void v_tostr(var_t *arg) {
     case V_NUM:
       ftostr(arg->v.n, tmp);
       break;
-    case V_REF:
-      v_tostr(arg->v.ref);
-      tmp_free(tmp);
-      return;
     default:
       err_varisarray();
       tmp_free(tmp);
@@ -636,9 +614,9 @@ void v_strcat(var_t *var, const char *string) {
     v_tostr(var);
   }
   if (var->type == V_STR) {
-    var->v.p.size = strlen((char *) var->v.p.ptr) + strlen(string) + 1;
+    var->v.p.size = strlen((char *)var->v.p.ptr) + strlen(string) + 1;
     var->v.p.ptr = tmp_realloc(var->v.p.ptr, var->v.p.size);
-    strcat((char *) var->v.p.ptr, string);
+    strcat((char *)var->v.p.ptr, string);
   } else {
     err_typemismatch();
   }
@@ -669,7 +647,7 @@ char *v_getstr(var_t *var) {
   if (var->type != V_STR) {
     v_tostr(var);
   }
-  return (char *) var->v.p.ptr;
+  return (char *)var->v.p.ptr;
 }
 
 /*
@@ -681,7 +659,7 @@ void v_setintarray(var_t *var, int32 *itable, int count) {
 
   v_toarray1(var, count);
   for (i = 0; i < count; i++) {
-    elem_p = (var_t *) (var->v.a.ptr + sizeof(var_t) * i);
+    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
     v_setint(elem_p, itable[i]);
   }
 }
@@ -695,7 +673,7 @@ void v_setrealarray(var_t *var, var_num_t *ntable, int count) {
 
   v_toarray1(var, count);
   for (i = 0; i < count; i++) {
-    elem_p = (var_t *) (var->v.a.ptr + sizeof(var_t) * i);
+    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
     v_setreal(elem_p, ntable[i]);
   }
 }
@@ -709,7 +687,7 @@ void v_setstrarray(var_t *var, char **ctable, int count) {
 
   v_toarray1(var, count);
   for (i = 0; i < count; i++) {
-    elem_p = (var_t *) (var->v.a.ptr + sizeof(var_t) * i);
+    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
     v_setstr(elem_p, ctable[i]);
   }
 }
@@ -781,10 +759,6 @@ void v_eval_ref(var_t *v_left) {
     code_skipnext();
     v_right = tvar[code_getaddr()];
     switch (v_right->type) {
-    case V_REF:
-      // multiple levels not supported
-      v_right = NULL;
-      break;
     case V_ARRAY:
     case V_HASH:
       switch (code_peek()) {
@@ -800,7 +774,7 @@ void v_eval_ref(var_t *v_left) {
     }
   }
   if (v_right == NULL) {
-    rt_raise("Invalid variable reference");
+    err_ref_var();
   } else {
     v_free(v_left);
     v_left->type = V_REF;
