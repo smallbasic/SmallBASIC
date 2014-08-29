@@ -12,7 +12,6 @@
 // add-on drivers
 #if defined(DRV_SOUND)
 #include "common/drvsound.h"
-static int drvsound_ok;
 #endif
 
 #include <stdio.h>

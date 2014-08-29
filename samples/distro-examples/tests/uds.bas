@@ -82,4 +82,9 @@ if (my_pet.color != "black") then
    ? "error assigning structure 11"
 fi 
 
+my_pet.x = 10
+if ((my_pet.x + 1) < 10) then
+  ? "wrong !"
+fi
+
 ? "end of test"

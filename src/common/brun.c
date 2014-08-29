@@ -728,6 +728,245 @@ void cmd_options(void) {
   };
 }
 
+static inline void bc_loop_call_proc() {
+  pcode_t pcode = code_getaddr();
+  switch (pcode) {
+  case kwCLS:
+    graph_reset();
+    break;
+  case kwRTE:
+    cmd_RTE();
+    break;
+  case kwENVIRON:
+    cmd_environ();
+    break;
+  case kwLOCATE:
+    cmd_locate();
+    break;
+  case kwAT:
+    cmd_at();
+    break;
+  case kwPEN:
+    cmd_pen();
+    break;
+  case kwDATEDMY:
+    cmd_datedmy();
+    break;
+  case kwTIMEHMS:
+    cmd_timehms();
+    break;
+  case kwBEEP:
+    cmd_beep();
+    break;
+  case kwSOUND:
+    cmd_sound();
+    break;
+  case kwNOSOUND:
+    cmd_nosound();
+    break;
+  case kwPSET:
+    cmd_pset();
+    break;
+  case kwRECT:
+    cmd_rect();
+    break;
+  case kwCIRCLE:
+    cmd_circle();
+    break;
+  case kwRANDOMIZE:
+    cmd_randomize();
+    break;
+  case kwWSPLIT:
+    cmd_wsplit();
+    break;
+  case kwSPLIT:
+    cmd_split();
+    break;
+  case kwWJOIN:
+    cmd_wjoin();
+    break;
+  case kwPAUSE:
+    cmd_pause();
+    break;
+  case kwDELAY:
+    cmd_delay();
+    break;
+  case kwARC:
+    cmd_arc();
+    break;
+  case kwDRAW:
+    cmd_draw();
+    break;
+  case kwPAINT:
+    cmd_paint();
+    break;
+  case kwPLAY:
+    cmd_play();
+    break;
+  case kwSORT:
+    cmd_sort();
+    break;
+  case kwSEARCH:
+    cmd_search();
+    break;
+  case kwROOT:
+    cmd_root();
+    break;
+  case kwDIFFEQ:
+    cmd_diffeq();
+    break;
+  case kwCHART:
+    cmd_chart();
+    break;
+  case kwWINDOW:
+    cmd_window();
+    break;
+  case kwVIEW:
+    cmd_view();
+    break;
+  case kwDRAWPOLY:
+    cmd_drawpoly();
+    break;
+  case kwM3IDENT:
+    cmd_m3ident();
+    break;
+  case kwM3ROTATE:
+    cmd_m3rotate();
+    break;
+  case kwM3SCALE:
+    cmd_m3scale();
+    break;
+  case kwM3TRANSLATE:
+    cmd_m3translate();
+    break;
+  case kwM3APPLY:
+    cmd_m3apply();
+    break;
+  case kwSEGINTERSECT:
+    cmd_intersect();
+    break;
+  case kwPOLYEXT:
+    cmd_polyext();
+    break;
+  case kwDERIV:
+    cmd_deriv();
+    break;
+  case kwLOADLN:
+    cmd_floadln();
+    break;
+  case kwSAVELN:
+    cmd_fsaveln();
+    break;
+  case kwKILL:
+    cmd_fkill();
+    break;
+  case kwRENAME:
+    cmd_filecp(1);
+    break;
+  case kwCOPY:
+    cmd_filecp(0);
+    break;
+  case kwCHDIR:
+    cmd_chdir();
+    break;
+  case kwMKDIR:
+    cmd_mkdir();
+    break;
+  case kwRMDIR:
+    cmd_rmdir();
+    break;
+  case kwFLOCK:
+    cmd_flock();
+    break;
+  case kwCHMOD:
+    cmd_chmod();
+    break;
+  case kwPLOT2:
+    cmd_plot2();
+    break;
+  case kwPLOT:
+    cmd_plot();
+    break;
+  case kwSWAP:
+    cmd_swap();
+    break;
+  case kwBUTTON:
+    cmd_button();
+    break;
+  case kwTEXT:
+    cmd_text();
+    break;
+  case kwDOFORM:
+    cmd_doform();
+    break;
+  case kwDIRWALK:
+    cmd_dirwalk();
+    break;
+  case kwBPUTC:
+    cmd_bputc();
+    break;
+  case kwBSAVE:
+    cmd_bsave();
+    break;
+  case kwBLOAD:
+    cmd_bload();
+    break;
+  case kwEXPRSEQ:
+    cmd_exprseq();
+    break;
+  case kwSTKDUMP:
+    dev_print("\nSTKDUMP:\n");
+    dump_stack();
+    // end of program
+    prog_error = -1;
+    break;
+  case kwHTML:
+    cmd_html();
+    break;
+  case kwIMAGE:
+    cmd_image();
+    break;
+  case kwDEFINEKEY:
+    cmd_definekey();
+    break;
+  case kwSHOWPAGE:
+    dev_show_page();
+    break;
+  default:
+    err_pcode_err(pcode);
+  }
+}
+
+static inline void bc_loop_call_extp() {
+  addr_t lib = code_getaddr();
+  addr_t idx = code_getaddr();
+  if (lib & UID_UNIT_BIT) {
+    unit_exec(lib & (~UID_UNIT_BIT), idx, NULL);
+    if (gsb_last_error) {
+      prog_error = gsb_last_error;
+    }
+  } else {
+    sblmgr_procexec(lib, prog_symtable[idx].exp_idx);
+  }
+}
+
+static inline void bc_loop_end() {
+  if ((prog_length - 1) > prog_ip) {
+    if (code_peek() != kwTYPE_EOC && code_peek() != kwTYPE_LINE) {
+      var_t ec;
+      
+      v_init(&ec);
+      eval(&ec);
+      opt_retval = v_igetval(&ec);
+      v_free(&ec);
+    } else {
+      opt_retval = 0;
+    }
+  }
+  // end of program
+  prog_error = -1;
+}
+
 /**
  * execute commands (loop)
  *
@@ -736,28 +975,23 @@ void cmd_options(void) {
  * if 2; like 1, but increase the proc_level because UDF call it was executed internaly
  */
 void bc_loop(int isf) {
+  int proc_level = 0;
+  byte trace_flag = 0;
   dword now;
   static dword next_check;
-  byte code, pops;
-  byte trace_flag = 0;
+  byte code;
+  byte pops;
   addr_t next_ip;
-  int proc_level = 0;
-  pcode_t pcode;
   int i;
 
   /**
-   *   DO NOT CREATE FUNCTION-PTR-TABLE
-   *   function tables didn't work on multi-segment version
+   * For commands that change the IP use
    *
-   *   For commands witch changes the IP use
-   *
-   *   case mycommand:
-   *       command();
-   *       if  ( prog_error )  break;
-   *       continue;
+   * case mycommand:
+   *   command();
+   *   if  ( prog_error )  break;
+   *   continue;
    */
-
-  // printf("task #%d; bc_loop(%d)\n", ctask->tid, isf);
   if (isf == 2) {
     proc_level++;
   }
@@ -782,16 +1016,17 @@ void bc_loop(int isf) {
 
       switch (dev_events(0)) {
       case -1:
-        break;                  // break event
+        // break event
+        break;
       case -2:
         prog_error = -2;
         inf_break(prog_line);
         break;
       };
     }
+
     // proceed to the next command
     if (!prog_error) {
-      // next command
       code = prog_source[prog_ip];
       prog_ip++;
 
@@ -937,252 +1172,21 @@ void bc_loop(int isf) {
       case kwOPTION:
         cmd_options();
         break;
-
-        /*
-         * ----------------------------------------- * external
-         * procedures
-         */
-      case kwTYPE_CALLEXTP:    // [lib][index]
-      {
-        addr_t lib, idx;
-
-        lib = code_getaddr();
-        idx = code_getaddr();
-        if (lib & UID_UNIT_BIT) {
-          unit_exec(lib & (~UID_UNIT_BIT), idx, NULL);
-          if (gsb_last_error) {
-            prog_error = gsb_last_error;
-          }
-          IF_ERR_BREAK;
-        } else {
-          sblmgr_procexec(lib, prog_symtable[idx].exp_idx);
-        }
-      }
-        break;
-        /*
-         * ----------------------------------------- * buildin
-         * procedures -- BEGIN
-         */
+      case kwTYPE_CALLEXTP:
+        bc_loop_call_extp();
+        IF_ERR_BREAK;
+        continue;
       case kwTYPE_CALLP:
-        pcode = code_getaddr();
-        switch (pcode) {
-        case kwCLS:
-          graph_reset();
-          break;
-        case kwRTE:
-          cmd_RTE();
-          break;
-        case kwENVIRON:
-          cmd_environ();
-          break;
-        case kwLOCATE:
-          cmd_locate();
-          break;
-        case kwAT:
-          cmd_at();
-          break;
-        case kwPEN:
-          cmd_pen();
-          break;
-        case kwDATEDMY:
-          cmd_datedmy();
-          break;
-        case kwTIMEHMS:
-          cmd_timehms();
-          break;
-        case kwBEEP:
-          cmd_beep();
-          break;
-        case kwSOUND:
-          cmd_sound();
-          break;
-        case kwNOSOUND:
-          cmd_nosound();
-          break;
-        case kwPSET:
-          cmd_pset();
-          break;
-        case kwRECT:
-          cmd_rect();
-          break;
-        case kwCIRCLE:
-          cmd_circle();
-          break;
-        case kwRANDOMIZE:
-          cmd_randomize();
-          break;
-        case kwWSPLIT:
-          cmd_wsplit();
-          break;
-        case kwSPLIT:
-          cmd_split();
-          break;
-        case kwWJOIN:
-          cmd_wjoin();
-          break;
-        case kwPAUSE:
-          cmd_pause();
-          break;
-        case kwDELAY:
-          cmd_delay();
-          break;
-        case kwARC:
-          cmd_arc();
-          break;
-        case kwDRAW:
-          cmd_draw();
-          break;
-        case kwPAINT:
-          cmd_paint();
-          break;
-        case kwPLAY:
-          cmd_play();
-          break;
-        case kwSORT:
-          cmd_sort();
-          break;
-        case kwSEARCH:
-          cmd_search();
-          break;
-        case kwROOT:
-          cmd_root();
-          break;
-        case kwDIFFEQ:
-          cmd_diffeq();
-          break;
-        case kwCHART:
-          cmd_chart();
-          break;
-        case kwWINDOW:
-          cmd_window();
-          break;
-        case kwVIEW:
-          cmd_view();
-          break;
-        case kwDRAWPOLY:
-          cmd_drawpoly();
-          break;
-        case kwM3IDENT:
-          cmd_m3ident();
-          break;
-        case kwM3ROTATE:
-          cmd_m3rotate();
-          break;
-        case kwM3SCALE:
-          cmd_m3scale();
-          break;
-        case kwM3TRANSLATE:
-          cmd_m3translate();
-          break;
-        case kwM3APPLY:
-          cmd_m3apply();
-          break;
-        case kwSEGINTERSECT:
-          cmd_intersect();
-          break;
-        case kwPOLYEXT:
-          cmd_polyext();
-          break;
-        case kwDERIV:
-          cmd_deriv();
-          break;
-        case kwLOADLN:
-          cmd_floadln();
-          break;
-        case kwSAVELN:
-          cmd_fsaveln();
-          break;
-        case kwKILL:
-          cmd_fkill();
-          break;
-        case kwRENAME:
-          cmd_filecp(1);
-          break;
-        case kwCOPY:
-          cmd_filecp(0);
-          break;
-        case kwCHDIR:
-          cmd_chdir();
-          break;
-        case kwMKDIR:
-          cmd_mkdir();
-          break;
-        case kwRMDIR:
-          cmd_rmdir();
-          break;
-        case kwFLOCK:
-          cmd_flock();
-          break;
-        case kwCHMOD:
-          cmd_chmod();
-          break;
-        case kwPLOT2:
-          cmd_plot2();
-          break;
-        case kwPLOT:
-          cmd_plot();
-          break;
-        case kwSWAP:
-          cmd_swap();
-          break;
-        case kwBUTTON:
-          cmd_button();
-          break;
-        case kwTEXT:
-          cmd_text();
-          break;
-        case kwDOFORM:
-          cmd_doform();
-          break;
-        case kwDIRWALK:
-          cmd_dirwalk();
-          break;
-        case kwBPUTC:
-          cmd_bputc();
-          break;
-        case kwBSAVE:
-          cmd_bsave();
-          break;
-        case kwBLOAD:
-          cmd_bload();
-          break;
-        case kwEXPRSEQ:
-          cmd_exprseq();
-          break;
-        case kwSTKDUMP:
-          dev_print("\nSTKDUMP:\n");
-          dump_stack();
-          prog_error = -1;      // end of program
-          break;
-        case kwHTML:
-          cmd_html();
-          break;
-        case kwIMAGE:
-          cmd_image();
-          break;
-        case kwDEFINEKEY:
-          cmd_definekey();
-          break;
-        case kwSHOWPAGE:
-          dev_show_page();
-          break;
-        default:
-          err_pcode_err(pcode);
-        }
+        bc_loop_call_proc();
         break;
-
-        /*
-         *      buildin procedures -- END
-         * ----------------------------------------- */
-
-      case kwTYPE_CALL_UDP:    // user defined procedure
+      case kwTYPE_CALL_UDP:
         cmd_udp(kwPROC);
         if (isf) {
           proc_level++;
         }
         IF_ERR_BREAK;
         continue;
-      case kwTYPE_CALL_UDF:    // user defined function
+      case kwTYPE_CALL_UDF:
         if (isf) {
           cmd_udp(kwFUNC);
           proc_level++;
@@ -1210,12 +1214,12 @@ void bc_loop(int isf) {
         pops = cmd_exit();
         if (isf && pops) {
           proc_level--;
-          if (proc_level == 0)
+          if (proc_level == 0) {
             return;
+          }
         }
         IF_ERR_BREAK;
         continue;
-
       case kwLINE:
         cmd_line();
         break;
@@ -1263,18 +1267,7 @@ void bc_loop(int isf) {
         continue;
       case kwSTOP:
       case kwEND:
-        if ((prog_length - 1) > prog_ip) {
-          if (code_peek() != kwTYPE_EOC && code_peek() != kwTYPE_LINE) {
-            var_t ec;
-
-            v_init(&ec);
-            eval(&ec);
-            opt_retval = v_igetval(&ec);
-            v_free(&ec);
-          } else
-            opt_retval = 0;
-        }
-        prog_error = -1;        // end of program
+        bc_loop_end();
         break;
       case kwCHAIN:
         cmd_chain();
@@ -1285,7 +1278,6 @@ void bc_loop(int isf) {
       case kwEXEC:
         cmd_run(0);
         break;
-
       default:
         rt_raise("SEG:CODE[%d]=%02x", prog_ip, prog_source[prog_ip]);
         dev_printf("OUT OF ADDRESS SPACE\n");

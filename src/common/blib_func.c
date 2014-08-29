@@ -933,7 +933,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r) {
     r->v.p.ptr = tmp_alloc(64);
     if (arg->type == V_INT) {
       ltostr(arg->v.i, (char *) r->v.p.ptr);
-    } else if (arg->type == V_REAL) {
+    } else if (arg->type == V_NUM) {
       ftostr(arg->v.n, (char *) r->v.p.ptr);
     } else if (arg->type == V_STR) {
       tmp_free(r->v.p.ptr);
@@ -1760,7 +1760,6 @@ void cmd_strN(long funcCode, var_t * r) {
 // int <- FUNC (...)
 //
 void cmd_intN(long funcCode, var_t * r) {
-  int pc;
   char *s1 = NULL, *s2 = NULL, *s3 = NULL;
   var_int_t start;
 
@@ -1782,7 +1781,7 @@ void cmd_intN(long funcCode, var_t * r) {
     //
     r->v.i = 0;
     start = 1;
-    pc = par_massget("iSS", &start, &s1, &s2);
+    par_massget("iSS", &start, &s1, &s2);
     if (!prog_error) {
       l = strlen(s1);
       if (l) {
@@ -1977,7 +1976,7 @@ void cmd_intN(long funcCode, var_t * r) {
     var_num_t rc, gc, bc;
     int code;
 
-    pc = par_massget("FFF", &rc, &gc, &bc);
+    par_massget("FFF", &rc, &gc, &bc);
     IF_ERR_RETURN;
     code = 0;
     if (funcCode == kwRGBF) {
@@ -2164,8 +2163,9 @@ void cmd_genfunc(long funcCode, var_t * r) {
           v_set(r, &arg);       // set the false value
           v_free(&arg);
         }
-      } else
+      } else {
         par_skip();
+      }
     }
     break;
     //

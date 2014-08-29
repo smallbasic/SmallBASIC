@@ -167,14 +167,7 @@ var_p_t hash_elem(const var_p_t var_p, int index) {
 }
 
 /**
- * Empty struct values
- */
-void hash_clear(const var_p_t var) {
-  hash_free_var(var);
-}
-
-/**
- * Helper for hash_free_var
+ * Helper for hash_free
  */
 void hash_free_cb(void *nodep) {
   Element *element = (Element *) nodep;
@@ -182,12 +175,12 @@ void hash_free_cb(void *nodep) {
 }
 
 /**
- * Delete the given structure
+ * Free the hash data
  */
-void hash_free_var(var_p_t var_p) {
+void hash_free(var_p_t var_p) {
   if (var_p->type == V_HASH) {
     tdestroy(var_p->v.hash, hash_free_cb);
-    var_p->v.hash = NULL;
+    v_init(var_p);
   }
 }
 

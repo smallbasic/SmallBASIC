@@ -219,6 +219,7 @@
 #define ERR_DRAW_SEP            "DRAW: Missing separator (,)"
 #define ERR_DRAW_CMD            "DRAW: Command '%c' unsupported"
 #define ERR_FILE_PERM           "File IO permission error"
+#define ERR_REF_VAR             "Invalid variable reference"
 
 // memory manager
 #define MEM_OUT_OF_MEM          "OUT OF MEMORY"

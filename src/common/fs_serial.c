@@ -156,7 +156,6 @@ dword serial_length(dev_file_t * f) {
 #if defined(_UnixOS) && !defined(SERIAL_UNSUP)
   fd_set readfs;
   struct timeval tv;
-  int res;
 
   FD_ZERO(&readfs);
   FD_SET(f->handle, &readfs);
@@ -164,7 +163,7 @@ dword serial_length(dev_file_t * f) {
   tv.tv_usec = 250; /* milliseconds */
   tv.tv_sec = 0; /* seconds */
 
-  res = select(f->handle + 1, &readfs, NULL, NULL, &tv);
+  select(f->handle + 1, &readfs, NULL, NULL, &tv);
   if (FD_ISSET(f->handle, &readfs))
   return 1;
 

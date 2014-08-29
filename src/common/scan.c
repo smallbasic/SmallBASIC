@@ -1093,8 +1093,7 @@ void comp_expression(char *expr, byte no_parser) {
             bc_add_addr(&bc, 0);
             bc_add_addr(&bc, 0);
             comp_use_global_vartable = 1;
-            // all the next variables are global (needed for
-            // X)
+            // all the next variables are global (needed for X)
             check_udf++;
           } else if (idx == kwDO) {
             SKIP_SPACES(ptr);
@@ -1149,9 +1148,7 @@ void comp_expression(char *expr, byte no_parser) {
                 } else {
                   // VARIABLE
                   if (addr_opr != 0) {
-                    sc_raise("PTR to invalid SUB/FUNC");
-                    kw_exec_more = level = 0;
-                    break;
+                    bc_add_code(&bc, kwBYREF);
                   }
                   SKIP_SPACES(ptr);
                   if (*ptr == '(') {
@@ -2727,61 +2724,48 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
   int j, cs_idx;
   char cmd[16], cmd2[16];
   comp_pass_node_t node;
-  code_t ccode[256], code;
+  code_t ccode[256];
   int csum[256];
   int cs_count;
   code_t start_code[] = { kwWHILE, kwREPEAT, kwIF, kwFOR, kwFUNC, 0 };
   code_t end_code[] = { kwWEND, kwUNTIL, kwENDIF, kwNEXT, kwTYPE_RET, 0 };
-  int details = 1;
-  char buff[256];
-  code = lcode;
+  code_t code = lcode;
 
   kw_getcmdname(code, cmd);
 
-  // search for closest keyword (forward)
-  buff[0] = 0;
-
-#if !defined(NO_SCAN_ERROR_PROMPT)
-  log_printf(MSG_DETAILED_REPORT_Q);
-  dev_gets(buff, sizeof(buff));
-  details = (buff[0] == 'y' || buff[0] == 'Y');
-#endif
-
-  if (details) {
-    ip = comp_search_bc_stack(pos + 1, code, level - 1, -1);
+  ip = comp_search_bc_stack(pos + 1, code, level - 1, -1);
+  if (ip == INVALID_ADDR) {
+    ip = comp_search_bc_stack(pos + 1, code, level + 1, -1);
     if (ip == INVALID_ADDR) {
-      ip = comp_search_bc_stack(pos + 1, code, level + 1, -1);
-      if (ip == INVALID_ADDR) {
-        int cnt = 0;
-        for (i = pos + 1; i < comp_sp; i++) {
-          dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-          if (comp_prog.ptr[node.pos] == code) {
-            log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, node.level, node.pos,
-                level, pos);
-            cnt++;
-            if (cnt > 3) {
-              break;
-            }
+      int cnt = 0;
+      for (i = pos + 1; i < comp_sp; i++) {
+        dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
+        if (comp_prog.ptr[node.pos] == code) {
+          log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", 
+                     cmd, node.level, node.pos, level, pos);
+          cnt++;
+          if (cnt > 3) {
+            break;
           }
         }
-      } else {
-        log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, level + 1, node.pos, level,
-            pos);
       }
     } else {
-      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", cmd, level - 1, node.pos, level, pos);
+      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", 
+                 cmd, level + 1, node.pos, level, pos);
     }
+  } else {
+    log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", 
+               cmd, level - 1, node.pos, level, pos);
   }
 
   // print stack
   cs_count = 0;
-  if (details) {
-    log_printf("\n");
-    log_printf("--- Pass 2 - stack ------------------------------------------------------\n");
-    log_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i", "Command", "Section", "Addr", "Line",
-        "Level", "BlkID", "Count");
-    log_printf("-------------------------------------------------------------------------\n");
-  }
+  log_printf("\n");
+  log_printf("--- Pass 2 - stack ------------------------------------------------------\n");
+  log_printf("%s%4s  %16s %16s %6s %6s %5s %5s %5s\n", "  ", "   i", "Command", "Section", "Addr", "Line",
+             "Level", "BlkID", "Count");
+  log_printf("-------------------------------------------------------------------------\n");
+
   for (i = 0; i < comp_sp; i++) {
     dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
 
@@ -2806,23 +2790,19 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
       ccode[cs_idx] = code;
       csum[cs_idx] = 1;
     }
-    if (details) {
-      // info
-      log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n", ((i == pos) ? ">>" : "  "), i, cmd, node.sec, node.pos,
-                 node.line, node.level, node.block_id, csum[cs_idx]);
-    }
+    // info
+    log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n", ((i == pos) ? ">>" : "  "), 
+               i, cmd, node.sec, node.pos, node.line, node.level, node.block_id, csum[cs_idx]);
   }
 
   // sum
-  if (details) {
-    log_printf("\n");
-    log_printf("--- Sum -----------------------------------------------------------------\n");
-    for (i = 0; i < cs_count; i++) {
-      code = ccode[i];
-      if (!kw_getcmdname(code, cmd))
-        sprintf(cmd, "(%d)", code);
-      log_printf("%16s - %5d\n", cmd, csum[i]);
-    }
+  log_printf("\n");
+  log_printf("--- Sum -----------------------------------------------------------------\n");
+  for (i = 0; i < cs_count; i++) {
+    code = ccode[i];
+    if (!kw_getcmdname(code, cmd))
+      sprintf(cmd, "(%d)", code);
+    log_printf("%16s - %5d\n", cmd, csum[i]);
   }
 
   // decide

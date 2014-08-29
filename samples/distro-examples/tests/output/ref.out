@@ -1,0 +1,12 @@
+cat=	cat
+dog=	dog
+3=	3
+1=	1
+a=b	a=b
+a<>b	a<>b
+[NAME=kitchen]
+[NAME=hall]
+[NAME=Kitchen,FRIDGE=empty]
+[NAME=toilet,OCCUPIED=-1]
+[NAME=Kitchen,FRIDGE=empty]
+[NAME=hall]

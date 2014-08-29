@@ -178,3 +178,59 @@ static inline var_t* code_getvarptr_parens(int until_parens) {
  */
 #define code_getvarptr() code_getvarptr_parens(0)
 
+/**
+ * @ingroup var
+ *
+ * initialize a variable
+ *
+ * @param v the variable
+ */
+static inline void v_init(var_t *v) {
+  v->type = V_INT;
+  v->const_flag = 0;
+  v->v.i = 0;
+}
+
+/**
+ * @ingroup var
+ *
+ * free variable's data.
+ *
+ * @warning it frees only the data, not the variable
+ *
+ * @param v the variable
+ */
+static inline void v_free(var_t *v) {
+  int i;
+  var_t *elem;
+
+  switch (v->type) {
+  case V_STR:
+    if (v->v.p.ptr) {
+      tmp_free(v->v.p.ptr);
+    }
+    v->v.p.ptr = NULL;
+    v->v.p.size = 0;
+    break;
+  case V_ARRAY:
+    if (v->v.a.size) {
+      if (v->v.a.ptr) {
+        for (i = 0; i < v->v.a.size; i++) {
+          elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
+          v_free(elem);
+        }
+
+        tmp_free(v->v.a.ptr);
+        v->v.a.ptr = NULL;
+        v->v.a.size = 0;
+      }
+    }
+    break;
+  case V_HASH:
+    hash_free(v);
+    break;
+  }
+
+  v_init(v);
+}
+

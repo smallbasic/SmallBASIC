@@ -651,7 +651,23 @@ static inline void eval_shortc(var_t *r, addr_t addr, byte op) {
   }
 }
 
+var_t *eval_ref_var(var_t *var_p) {
+  var_t *result = var_p;
+  while (result->type == V_REF) {
+    if (result->v.ref == var_p) {
+      // circular referance error
+      result = NULL;
+      err_ref_var();
+      break;
+    } else {
+      result = result->v.ref;
+    }
+  }
+  return result;
+}
+
 static inline void eval_var(var_t *r, var_t *var_p) {
+  var_t *var_deref;
   switch (var_p->type) {
   case V_PTR:
     r->type = var_p->type;
@@ -667,11 +683,15 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     r->v.n = var_p->v.n;
     break;
   case V_STR:
-    v_set(r, var_p);
-    break;
   case V_ARRAY:
   case V_HASH:
     v_set(r, var_p);
+    break;
+  case V_REF:
+    var_deref = eval_ref_var(var_p);
+    if (var_deref != NULL) {
+      eval_var(r, var_deref);
+    }
     break;
   }
 }
@@ -711,7 +731,6 @@ static inline void eval_push(var_t *r) {
 static inline void eval_extf(var_t *r) {
   addr_t lib;
   addr_t idx;
-  var_int_t li;
 
   lib = code_getaddr();
   idx = code_getaddr();
@@ -1112,7 +1131,6 @@ static inline void eval_call_udf(var_t *r) {
 void eval(var_t *r) {
   code_t code;
   byte op;
-  addr_t len;
   var_t *var_p;
   addr_t addr;
 
@@ -1263,6 +1281,11 @@ void eval(var_t *r) {
 
     case kwTYPE_CALL_UDF:
       eval_call_udf(r);
+      break;
+
+    case kwBYREF:
+      // unexpected code
+      err_evsyntax();
       break;
 
     default:

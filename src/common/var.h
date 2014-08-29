@@ -30,15 +30,13 @@
 /*
  * Variable - types
  */
-#define V_NULL      0 /**< variable type, none/error                   @ingroup var */
 #define V_INT       0 /**< variable type, 32bit integer                @ingroup var */
-#define V_REAL      2 /**< variable type, 64bit float                  @ingroup var */
-#define V_NUM       2 /**< variable type, 64bit float (same as V_NUM)  @ingroup var */
-#define V_STR       3 /**< variable type, string                       @ingroup var */
-#define V_ARRAY     4 /**< variable type, array of variables           @ingroup var */
-#define V_PTR       5 /**< variable type, pointer to UDF or label      @ingroup var */
-#define V_LIST      6 /**< variable type, dynamic list - N/A           @ingroup var */
-#define V_HASH      7 /**< variable type, hash                         @ingroup var */
+#define V_NUM       1 /**< variable type, 64bit float (same as V_NUM)  @ingroup var */
+#define V_STR       2 /**< variable type, string                       @ingroup var */
+#define V_ARRAY     3 /**< variable type, array of variables           @ingroup var */
+#define V_PTR       4 /**< variable type, pointer to UDF or label      @ingroup var */
+#define V_HASH      5 /**< variable type, hash                         @ingroup var */
+#define V_REF       6 /**< variable type, reference another var        @ingroup var */
 
 /*
  *   predefined system variables - index
@@ -94,7 +92,10 @@ struct var_s {
     } ap;
 
     // hash map
-    void* hash; /** pointer the hash structure */
+    void *hash; /** pointer the hash structure */
+
+    // reference variable
+    void *ref;
 
     // generic ptr (string)
     struct {
@@ -256,31 +257,7 @@ void v_add(var_t *result, var_t *a, var_t *b);
 /**
  * @ingroup var
  *
- * initialize a variable
- *
- * @param v the variable
- */
-static inline void v_init(var_t *v) {
-  v->type = V_INT;
-  v->const_flag = 0;
-  v->v.i = 0;
-}
-
-/**
- * @ingroup var
- *
- * free variable's data.
- *
- * @warning it frees only the data, not the variable
- *
- * @param v the variable
- */
-void v_free(var_t *v);
-
-/**
- * @ingroup var
- *
- * assing: dest = src
+ * assigning: dest = src
  *
  * @param dest the destination-var
  * @param src the source-var
@@ -661,6 +638,13 @@ char *v_getstr(var_t *v);
  * @param v is the variable
  */
 void v_eval_str(var_p_t v);
+
+/**
+ * @ingroup var
+ *
+ * evaluate variable reference assignment
+ */
+void v_eval_ref(var_t *l_value);
 
 /*
  * low-level byte-code parsing
