@@ -150,14 +150,18 @@ static inline var_t* code_getvarptr_parens(int until_parens) {
   if (code_peek() == kwTYPE_VAR) {
     code_skipnext();
     var_p = tvar[code_getaddr()];
-    switch (var_p->type) {
-    case V_HASH:
-    case V_ARRAY:
+    if (code_peek() == kwTYPE_UDS_EL) {
       var_p = code_resolve_varptr(var_p, until_parens);
-      break;
-    default:
-      if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
-        err_varisnotarray();
+    } else {
+      switch (var_p->type) {
+      case V_HASH:
+      case V_ARRAY:
+        var_p = code_resolve_varptr(var_p, until_parens);
+        break;
+      default:
+        if (!until_parens && code_peek() == kwTYPE_LEVEL_BEGIN) {
+          err_varisnotarray();
+        }
       }
     }
   }
