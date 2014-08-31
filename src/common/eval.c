@@ -1297,7 +1297,8 @@ void eval(var_t *r) {
         // normal exit
         return;
       }
-      rt_raise("UNKNOWN FUNC=%d", code);
+      rt_raise("UNKNOWN ERROR. IP:%d=0x%02X", IP, code);
+      hex_dump(prog_source, prog_length);
     };
 
     // run-time error check

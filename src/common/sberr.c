@@ -103,6 +103,7 @@ void err_stackunderflow(void) {
   rt_raise(ERR_STACK_UNDERFLOW);
 }
 
+// generic stack error
 void err_stackmess() {
   rt_raise(ERR_STACK);
 }
@@ -123,6 +124,7 @@ void err_typemismatch(void) {
   rt_raise(ERR_TYPE);
 }
 
+// parameter with wrong value
 void err_argerr(void) {
   rt_raise(ERR_PARAM);
 }
@@ -199,6 +201,7 @@ void err_parfmt(const char *fmt) {
   rt_raise(ERR_PARFMT, fmt);
 }
 
+// UDP/F: parameter is 'by reference' so const not allowed
 void err_parm_byref(int n) {
   rt_raise(ERR_BYREF, n);
 }
@@ -211,6 +214,7 @@ void err_fopen(void) {
   rt_raise(ERR_BAD_FILE_HANDLE);
 }
 
+// no separator found
 void err_syntaxanysep(const char *seps) {
   rt_raise(ERR_SEP_FMT, seps);
 }
