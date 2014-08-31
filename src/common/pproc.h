@@ -67,20 +67,11 @@ void eval(var_t *result);
 /**
  * @ingroup exec
  *
- * allocate stack for eval(). used only by brun().
+ * resolve the variable reference
  *
- * @note avoid to use it
+ * @param var_t
  */
-void eval_alloc_stack(void);
-
-/**
- * @ingroup exec
- *
- * free eval()'s stack. used only by brun().
- *
- * @note avoid to use it
- */
-void eval_free_stack(void);
+var_t *eval_ref_var(var_t *var_p);
 
 /**
  * @ingroup exec
@@ -157,8 +148,8 @@ typedef struct {
 } par_t;
 
 /* par_t flags */
-#define PAR_BYVAL 1 
-/**< pat_t::flags,  parameter was an expression 
+#define PAR_BYVAL 1
+/**< pat_t::flags,  parameter was an expression
  (var = the temporary copy of the result) @ingroup par */
 
 /**

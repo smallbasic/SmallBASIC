@@ -11,10 +11,10 @@
 
 #include <FBase.h>
 
-#include "platform/common/maapi.h"
-#include "platform/common/interface.h"
-#include "platform/common/ansiwidget.h"
-#include "platform/common/system.h"
+#include "ui/maapi.h"
+#include "ui/interface.h"
+#include "ui/ansiwidget.h"
+#include "ui/system.h"
 
 using namespace Tizen::App;
 using namespace Tizen::Base::Collection;

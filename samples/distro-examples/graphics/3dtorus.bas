@@ -47,6 +47,7 @@ repeat
     anglez = (anglez + 1) mod 360
     RotateAndProject Model(), anglex, angley, anglez
     DrawModel Model() ,  Poly()
+    SHOWPAGE
 until
 
 end

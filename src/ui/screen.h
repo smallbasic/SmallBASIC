@@ -17,12 +17,12 @@
   #include <maapi.h>
   #define LINE_SPACING 6
 #else
-  #include "platform/common/maapi.h"
+  #include "ui/maapi.h"
   #define LINE_SPACING 0
 #endif
 
-#include "platform/common/StringLib.h"
-#include "platform/common/utils.h"
+#include "ui/StringLib.h"
+#include "ui/utils.h"
 
 using namespace strlib;
 

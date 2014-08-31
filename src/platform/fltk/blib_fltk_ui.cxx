@@ -30,7 +30,7 @@
 #include <fltk/run.h>
 
 #include "platform/fltk/MainWindow.h"
-#include "platform/common/StringLib.h"
+#include "ui/StringLib.h"
 
 extern MainWindow *wnd;
 

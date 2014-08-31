@@ -25,7 +25,7 @@
 #include "EditorWidget.h"
 #include "HelpWidget.h"
 #include "FileWidget.h"
-#include "platform/common/StringLib.h"
+#include "ui/StringLib.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/fs_socket_client.h"

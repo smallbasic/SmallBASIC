@@ -30,7 +30,6 @@ void cmd_udpret(void);
 void cmd_crvar(void);
 void cmd_param(void);
 int cmd_exit(void);
-void cmd_RTE(void);
 void cmd_let(int);
 void cmd_dim(int);
 void cmd_redim(void);
@@ -72,6 +71,7 @@ void cmd_poke16(void);
 void cmd_poke32(void);
 void cmd_bcopy(void);
 void cmd_calladr(void);
+void cmd_catch();
 
 var_num_t cmd_math1(long funcCode, var_t *arg);
 var_int_t cmd_imath1(long funcCode, var_t *arg);
@@ -167,7 +167,6 @@ void cmd_dirwalk(void);
 void cmd_bputc(void);
 void cmd_bload(void);
 void cmd_bsave(void);
-void cmd_html(void);
 void cmd_image(void);
 void cmd_definekey(void);
 

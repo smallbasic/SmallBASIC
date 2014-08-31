@@ -8,7 +8,7 @@
 
 #include "config.h"
 #include "platform/tizen/form.h"
-#include "platform/common/utils.h"
+#include "ui/utils.h"
 
 using namespace Tizen::App;
 using namespace Tizen::Base::Collection;

@@ -9,8 +9,8 @@
 #include "config.h"
 #include <time.h>
 #include "platform/android/jni/display.h"
-#include "platform/common/form_ui.h"
-#include "platform/common/utils.h"
+#include "ui/form_ui.h"
+#include "ui/utils.h"
 #include "common/device.h"
 
 #define FONT_FACE_REGULAR "Envy Code R.ttf"

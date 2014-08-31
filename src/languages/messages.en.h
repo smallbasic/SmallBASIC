@@ -118,6 +118,8 @@
 #define MSG_MISSING_END_SELECT  "SELECT/CASE without 'END SELECT'"
 #define MSG_MISSING_SELECT      "END SELECT without SELECT"
 #define MSG_MISSING_CASE        "SELECT without CASE"
+#define MSG_MISSING_CATCH       "TRY without CATCH"
+#define MSG_MISSING_ENDTRY      "TRY without END TRY"
 
 // executor
 #define WORD_ERROR_AT           "ERROR AT"

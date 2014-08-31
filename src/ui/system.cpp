@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "platform/common/system.h"
+#include "ui/system.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"

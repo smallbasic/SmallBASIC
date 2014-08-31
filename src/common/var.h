@@ -159,6 +159,14 @@ struct stknode_s {
     } vif;
 
     /**
+     *  SELECT CASE
+     */
+    struct {
+      var_t *var_ptr;
+      byte flags;
+    } vcase;
+
+    /**
      *  GOSUB
      */
     struct {
@@ -193,7 +201,6 @@ struct stknode_s {
       word vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
       var_t *res; /**< variable pointer (for BYVAL this is a clone) */
     } param;
-
   } x;
 };
 typedef struct stknode_s stknode_t;

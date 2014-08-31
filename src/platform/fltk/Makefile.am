@@ -22,10 +22,10 @@ EXTRA_DIST =                                  \
 bin_PROGRAMS = sbasici
 
 sbasici_SOURCES =                             \
-  ../common/ansiwidget.cpp                    \
-  ../common/screen.cpp                        \
-  ../common/form_ui.cpp                       \
-  ../common/StringLib.cpp                     \
+  ../../ui/ansiwidget.cpp                     \
+  ../../ui/screen.cpp                         \
+  ../../ui/form_ui.cpp                        \
+  ../../ui/StringLib.cpp                      \
   display.cxx display.h                       \
   HelpWidget.cxx HelpWidget.h                 \
   TtyWidget.cxx TtyWidget.h                   \

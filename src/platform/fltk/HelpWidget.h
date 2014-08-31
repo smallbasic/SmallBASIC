@@ -16,7 +16,7 @@
 #include <fltk/Group.h>
 #include <fltk/Scrollbar.h>
 
-#include "platform/common/StringLib.h"
+#include "ui/StringLib.h"
 
 #define ID_BUTTON   1
 #define ID_TEXTBOX  2

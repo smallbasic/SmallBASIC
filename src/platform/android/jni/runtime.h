@@ -10,10 +10,10 @@
 #define RUNTIME_H
 
 #include "config.h"
-#include "platform/common/maapi.h"
-#include "platform/common/interface.h"
-#include "platform/common/ansiwidget.h"
-#include "platform/common/system.h"
+#include "ui/maapi.h"
+#include "ui/interface.h"
+#include "ui/ansiwidget.h"
+#include "ui/system.h"
 #include "platform/android/jni/display.h"
 
 #include <android_native_app_glue.h>

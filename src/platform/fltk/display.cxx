@@ -21,8 +21,8 @@
 #include "platform/fltk/display.h"
 #include "platform/fltk/utils.h"
 #include "platform/fltk/system.h"
-#include "platform/common/ansiwidget.h"
-#include "platform/common/form_ui.h"
+#include "ui/ansiwidget.h"
+#include "ui/form_ui.h"
 
 using namespace fltk;
 
@@ -429,6 +429,15 @@ int DisplayWidget::getFontSize() {
 int DisplayWidget::getBackgroundColor() {
   return _ansiWidget->getBackgroundColor();
 }
+
+void DisplayWidget::setAutoflush(bool autoflush) {
+  _ansiWidget->setAutoflush(autoflush);
+}
+
+void DisplayWidget::flushNow() {
+  _ansiWidget->flushNow();
+}
+
 
 extern "C" long osd_getpixel(int x, int y) {
   return drawTarget->getPixel(x, y);

@@ -8,8 +8,8 @@
 
 #include "config.h"
 
-#include "platform/common/graphics.h"
-#include "platform/common/utils.h"
+#include "ui/graphics.h"
+#include "ui/utils.h"
 #include "common/device.h"
 
 using namespace common;

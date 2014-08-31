@@ -25,8 +25,8 @@
 #include "platform/fltk/TtyWidget.h"
 #include "platform/fltk/utils.h"
 #include "platform/fltk/system.h"
-#include "platform/common/utils.h"
-#include "platform/common/interface.h"
+#include "ui/utils.h"
+#include "ui/interface.h"
 #include "common/fs_socket_client.h"
 
 #ifdef WIN32
@@ -113,6 +113,7 @@ int osd_devinit() {
   ui_reset();
   wnd->_out->reset();
   open_audio();
+  wnd->_out->setAutoflush(!opt_show_page);
 
   return 1;
 }
@@ -131,6 +132,7 @@ void osd_refresh() {
 }
 
 int osd_devrestore() {
+  wnd->_out->setAutoflush(true);
   ui_reset();
   close_audio();
   return 1;
@@ -319,7 +321,7 @@ void lwrite(const char *s) {
 }
 
 void dev_show_page() {
-  
+  wnd->_out->flushNow();
 }
 
 //--ENV-------------------------------------------------------------------------

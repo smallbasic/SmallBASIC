@@ -1,7 +1,0 @@
-.res MAIN_BAS
-.bin
-.include "resources/main.bas"
-
-
-
-

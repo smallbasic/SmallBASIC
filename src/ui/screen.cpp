@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#include "platform/common/screen.h"
+#include "ui/screen.h"
 
 #define WHITE 15
 #define SCROLL_IND 4

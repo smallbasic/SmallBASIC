@@ -7,23 +7,23 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I. @PACKAGE_CFLAGS@
 
-EXTRA_DIST =																		\
-  fixedfont.xpm																	\
-  sbasic.nsi																		\
+EXTRA_DIST =								\
+  fixedfont.xpm							\
+  sbasic.nsi							  \
   welcome.bas
 
 bin_PROGRAMS = sbasicg
 
-sbasicg_SOURCES =																\
-  ../common/graphics.cpp												\
-  ../common/ansiwidget.cpp											\
-  ../common/screen.cpp													\
-  ../common/system.cpp													\
-  ../common/form_ui.cpp													\
-  ../common/StringLib.cpp												\
-  main.cpp																			\
-  display.cpp																		\
-  runtime.cpp																		\
+sbasicg_SOURCES =         	\
+  ../../ui/graphics.cpp  		\
+  ../../ui/ansiwidget.cpp 	\
+  ../../ui/screen.cpp				\
+  ../../ui/system.cpp				\
+  ../../ui/form_ui.cpp			\
+  ../../ui/StringLib.cpp		\
+  main.cpp									\
+  display.cpp								\
+  runtime.cpp								\
   settings.cpp																		
 
 sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@

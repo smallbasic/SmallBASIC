@@ -894,50 +894,6 @@ void cmd_input(int input) {
 }
 
 /**
- * RTE ...
- */
-void cmd_RTE() {
-  code_t code;
-  byte last_op = 0, exitf = 0;
-  var_t var;
-
-  dev_printf("\n\a%s %s:%d: ", WORD_ERROR_AT, prog_file, prog_line);
-  do {
-    code = code_peek();
-    switch (code) {
-    case kwTYPE_LINE:
-    case kwTYPE_EOC:
-      exitf = 1;
-      break;
-    case kwTYPE_SEP:
-      code_skipnext();
-      last_op = code_getnext();
-      if (last_op == ',') {
-        dev_print("\t");
-      }
-      break;
-    default:
-      last_op = 0;
-      v_init(&var);
-      eval(&var);
-      if (!prog_error) {
-        print_var(&var);
-      }
-      v_free(&var);
-    };
-
-    if (prog_error) {
-      return;
-    }
-  } while (exitf == 0);
-
-  if (last_op == 0) {
-    dev_print("\n");
-  }
-  prog_error = 0x1000;
-}
-
-/**
  * ON x GOTO|GOSUB ...
  */
 void cmd_on_go() {
@@ -2907,23 +2863,6 @@ void cmd_exprseq(void) {
 }
 
 /**
- * HTML html, [title,] [x,y,w,h]
- * Display html text
- */
-void cmd_html() {
-  char *html = 0;
-  char *title = 0;
-  var_int_t x, y, w, h;
-
-  x = y = w = h = 0;
-  par_massget("Ssiiii", &html, &title, &x, &y, &w, &h);
-  if (!prog_error) {
-    dev_html(html, title, x, y, w, h);
-  }
-  pfree2(html, title);
-}
-
-/**
  * IMAGE #handle, index, x, y [,sx,sy [,w,h]]
  * Display html text
  */
@@ -2963,8 +2902,8 @@ void cmd_select() {
   v_init(expr);
   eval(expr);
 
-  node.x.vfor.var_ptr = expr;
-  node.x.vfor.flags = 0;
+  node.x.vcase.var_ptr = expr;
+  node.x.vcase.flags = 0;
   node.type = kwSELECT;
   code_push(&node);
 }
@@ -2992,13 +2931,13 @@ void cmd_case() {
     return;
   }
 
-  if (node->x.vfor.flags) {
+  if (node->x.vcase.flags) {
     // previous case already matches.
     code_jump(false_ip);
   } else {
     // compare select expr with case expr
-    node->x.vfor.flags = v_compare(node->x.vfor.var_ptr, &var_p) == 0 ? 1 : 0;
-    code_jump(node->x.vfor.flags ? true_ip : false_ip);
+    node->x.vcase.flags = v_compare(node->x.vcase.var_ptr, &var_p) == 0 ? 1 : 0;
+    code_jump(node->x.vcase.flags ? true_ip : false_ip);
   }
 
   v_free(&var_p);
@@ -3014,7 +2953,7 @@ void cmd_case_else() {
   true_ip = code_getaddr();     // default block
   false_ip = code_getaddr();    // end-select
   node = code_stackpeek();
-  code_jump(node->x.vfor.flags ? false_ip : true_ip);
+  code_jump(node->x.vcase.flags ? false_ip : true_ip);
 }
 
 /**
@@ -3026,10 +2965,10 @@ void cmd_end_select() {
   code_pop(&node);
 
   // if v_new() was string or array release the allocated memory
-  v_free(node.x.vfor.var_ptr);
+  v_free(node.x.vcase.var_ptr);
 
   // cleanup v_new()
-  tmp_free(node.x.vfor.var_ptr);
+  tmp_free(node.x.vcase.var_ptr);
   code_jump(code_getaddr());
 }
 
@@ -3057,5 +2996,16 @@ void cmd_definekey(void) {
     }
   }
   v_free(&var);
+}
+
+void cmd_catch() {
+  addr_t end_try_ip = code_getaddr();
+  addr_t outer_catch_ip = code_getaddr();
+
+  // cleanup the catch address, then skip to end-try
+  code_jump(end_try_ip);
+
+  // restore outer try/catch level
+  prog_catch_ip = outer_catch_ip;
 }
 

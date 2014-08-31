@@ -13,9 +13,9 @@
 #include "common/sys.h"
 #include "common/var.h"
 
-#include "platform/common/StringLib.h"
-#include "platform/common/ansiwidget.h"
-#include "platform/common/interface.h"
+#include "ui/StringLib.h"
+#include "ui/ansiwidget.h"
+#include "ui/interface.h"
 
 namespace form_ui {
   AnsiWidget *getOutput();

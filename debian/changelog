@@ -1,3 +1,8 @@
+smallbasic (0.11.15) unstable; urgency=low
+  * RTE renamed THROW
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 6 Sept 2014 09:45:25 +1000
+
 smallbasic (0.11.14) unstable; urgency=low
   * Added reference variable type
 

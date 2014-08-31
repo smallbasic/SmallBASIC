@@ -12,10 +12,10 @@
 #include "config.h"
 #include <SDL.h>
 
-#include "platform/common/maapi.h"
-#include "platform/common/interface.h"
-#include "platform/common/ansiwidget.h"
-#include "platform/common/system.h"
+#include "ui/maapi.h"
+#include "ui/interface.h"
+#include "ui/ansiwidget.h"
+#include "ui/system.h"
 #include "platform/sdl/display.h"
 
 struct Runtime : public System {

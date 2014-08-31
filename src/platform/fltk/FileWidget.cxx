@@ -20,7 +20,7 @@
 #include "MainWindow.h"
 #include "HelpWidget.h"
 #include "FileWidget.h"
-#include "platform/common/StringLib.h"
+#include "ui/StringLib.h"
 #include "common/device.h"
 
 FileWidget *fileWidget;

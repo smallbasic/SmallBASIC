@@ -12,9 +12,9 @@
 #include <jni.h>
 
 #include "platform/android/jni/runtime.h"
-#include "platform/common/maapi.h"
-#include "platform/common/utils.h"
-#include "platform/common/form_ui.h"
+#include "ui/maapi.h"
+#include "ui/utils.h"
+#include "ui/form_ui.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"

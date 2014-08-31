@@ -26,22 +26,7 @@
 #include "common/pproc.h"
 
 int brun_create_task(const char *filename, mem_t preloaded_bc, int libf);
-int exec_close_task();
-void exec_setup_predefined_variables();
-var_t *code_isvar_arridx(var_t *basevar_p);
-void code_pop_until(int type);
-void code_pop_and_free(stknode_t *node);
-stknode_t *code_stackpeek();
 void sys_before_comp();
-int sbasic_exec_task(int tid);
-int sbasic_recursive_exec(int tid);
-void sbasic_exec_prepare(const char *filename);
-int sbasic_exec(const char *file);
-int sbasic_main(const char *file);
-int exec_close(int tid);
-int sbasic_exec(const char *file);
-void cmd_options(void);
-var_t *code_resolve_varptr(var_t *var_p, int until_parens);
 
 static dword evt_check_every;
 static char fileName[OS_FILENAME_SIZE + 1];
@@ -223,7 +208,7 @@ addr_t getarrayidx(var_t *array, var_t **var_hash_val) {
     IF_ERR_RETURN_0;
 
     if (var.type == V_STR || array->type == V_HASH) {
-      // array elemement is a string or element is addressing a hash
+      // array element is a string or element is addressing a hash
       hash_get_value(array, &var, var_hash_val);
 
       if (code_peek() == kwTYPE_LEVEL_END) {
@@ -315,6 +300,9 @@ var_t *code_getvarptr_arridx(var_t *basevar_p) {
  * resolve a composite variable reference, eg: ar.ch(0).foo
  */
 var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
+  if (var_p && var_p->type == V_REF) {
+    var_p = eval_ref_var(var_p);
+  }
   if (var_p) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -734,8 +722,8 @@ static inline void bc_loop_call_proc() {
   case kwCLS:
     graph_reset();
     break;
-  case kwRTE:
-    cmd_RTE();
+  case kwTHROW:
+    cmd_throw();
     break;
   case kwENVIRON:
     cmd_environ();
@@ -919,9 +907,6 @@ static inline void bc_loop_call_proc() {
     dump_stack();
     // end of program
     prog_error = -1;
-    break;
-  case kwHTML:
-    cmd_html();
     break;
   case kwIMAGE:
     cmd_image();
@@ -1278,6 +1263,16 @@ void bc_loop(int isf) {
       case kwEXEC:
         cmd_run(0);
         break;
+      case kwTRY:
+        prog_catch_ip = code_getaddr();
+        IF_ERR_BREAK;
+        continue;
+      case kwCATCH:
+        cmd_catch();
+        IF_ERR_BREAK;
+        continue;
+      case kwENDTRY:
+        continue;
       default:
         rt_raise("SEG:CODE[%d]=%02x", prog_ip, prog_source[prog_ip]);
         dev_printf("OUT OF ADDRESS SPACE\n");
@@ -1438,18 +1433,14 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
         cp += sizeof(unit_sym_t);
       }
     }
-  } else if (memcmp(source, "SBEx", 4) == 0) {  // load an executable
-    ;
-  } else {                        // signature error
+  } else if (memcmp(source, "SBEx", 4) == 0) {  
+    // load an executable
+  } else {
+    // signature error
     panic("Wrong bytecode signature");
   }
 
-  /*
-   *      ---------------------
-   *      build executor's task
-   *      ---------------------
-   */
-
+  // build executor's task
   memcpy(&hdr, cp, sizeof(bc_head_t));
   cp += sizeof(bc_head_t);
 
@@ -1495,6 +1486,7 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   prog_stack_alloc = SB_EXEC_STACK_SIZE;
   prog_stack = tmp_alloc(sizeof(stknode_t) * prog_stack_alloc);
   prog_stack_count = 0;
+  prog_catch_ip = INVALID_ADDR;
 
   // create eval's stack
   eval_size = 64;
@@ -1923,8 +1915,12 @@ int sbasic_exec(const char *file) {
   int success = 0;
   int exec_rq = 1;
 
-  // setup some default options
-  opt_pref_width = opt_pref_height = opt_pref_bpp = 0;
+  // init compile-time options 
+  opt_pref_bpp = 0;
+  opt_pref_width = 0;
+  opt_pref_height = 0;
+  opt_show_page = 0;
+
   if (opt_decomp) {
     opt_nosave = 1;
   }
