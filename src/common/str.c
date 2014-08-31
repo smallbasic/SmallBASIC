@@ -52,10 +52,11 @@ char *trimdup(const char *str) {
  */
 void str_alltrim(char *str) {
   char *buf;
-
-  buf = trimdup(str);
-  strcpy(str, buf);
-  tmp_free(buf);
+  if (str && str[0]) {
+    buf = trimdup(str);
+    strcpy(str, buf);
+    tmp_free(buf);
+  }
 }
 
 /**
@@ -237,13 +238,12 @@ char *q_strstr(const char *s1, const char *s2, const char *pairs) {
  *
  */
 int is_alpha(int ch) {
-  if (ch == 0)
+  if (ch == 0) {
     return 0;
-  if ((ch > 64 && ch < 91) || (ch > 96 && ch < 123))
+  }
+  if ((ch > 64 && ch < 91) || (ch > 96 && ch < 123)) {
     return -1;
-  // return
-  // (strchr("_���������������������������������������������������������", ch)
-  // != NULL); // Greek
+  }
   return (ch & 0x80);           // +foreign
 }
 

@@ -2582,7 +2582,6 @@ addr_t comp_next_bc_cmd(addr_t ip) {
   case kwGOSUB:
   case kwTYPE_LINE:
   case kwTYPE_VAR:             // [addr|id]
-  case kwTYPE_UDS_EL:
     ip += ADDRSZ;
     break;
   case kwTYPE_PTR:

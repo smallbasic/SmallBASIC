@@ -28,11 +28,11 @@ void cev_udp(void) {
 }
 
 void cev_missing_rp(void) {
-  sc_raise("(EXPR): MISSING ')' %d", IP);
+  sc_raise("(EXPR): MISSING ')'");
 }
 
 void cev_opr_err(void) {
-  sc_raise("(EXPR): SYNTAX ERROR (1st OP)");
+  sc_raise("(EXPR): SYNTAX ERROR");
 }
 
 void cev_prim_str() {
@@ -42,6 +42,96 @@ void cev_prim_str() {
   bc_add_dword(bc_out, len);
   bc_add_n(bc_out, bc_in->ptr + bc_in->cp, len);
   IP += len;
+}
+
+void cev_prim_uds() {
+  while (CODE_PEEK() == kwTYPE_UDS_EL) {
+    cev_add1(kwTYPE_UDS_EL);
+    cev_add1(kwTYPE_STR);
+    IP += 2;
+    cev_prim_str();
+  }
+}
+
+void cev_prim_var() {
+  bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
+  IP += ADDRSZ;
+
+  cev_prim_uds();
+
+  // support multiple ()
+  while (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
+    cev_add1(kwTYPE_LEVEL_BEGIN);
+    IP++;
+    if (CODE_PEEK() == kwTYPE_LEVEL_END) {
+      // NULL ARRAYS
+      cev_add1(kwTYPE_LEVEL_END);
+      IP++;
+    } else {
+      cev_log();
+
+      while (CODE_PEEK() == kwTYPE_SEP || CODE_PEEK() == kwTO) {
+        // DIM X(A TO B)
+        if (CODE_PEEK() == kwTYPE_SEP) {
+          cev_add1(CODE(IP));
+          IP++;
+        }
+        cev_add1(CODE(IP));
+        IP++;
+
+        cev_log();
+      }
+
+      if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+        cev_missing_rp();
+      } else {
+        cev_add1(kwTYPE_LEVEL_END);
+        IP++;
+      }
+    }
+  }
+}
+
+// function [(...)]
+void cev_prim_args() {
+  cev_add1(kwTYPE_LEVEL_BEGIN);
+  IP++;
+
+  if (CODE_PEEK() == kwTYPE_CALL_PTR) {
+    cev_add1(CODE(IP));
+    IP++;
+  }
+
+  if (CODE_PEEK() != kwTYPE_SEP) {
+    // empty parameter
+    cev_log();
+  }
+  while (CODE_PEEK() == kwTYPE_SEP) {
+    // while parameters
+    cev_add1(CODE(IP));
+    IP++;
+    cev_add1(CODE(IP));
+    IP++;
+
+    if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+      if (CODE_PEEK() != kwTYPE_SEP) {
+        cev_log();
+      }
+    }
+  }
+
+  // after (), check for UDS field, eg foo(10).x
+  if (CODE_PEEK() == kwTYPE_UDS_EL) {
+    cev_prim_uds();
+    cev_log();
+  }
+
+  if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+    cev_missing_rp();
+  } else {
+    cev_add1(kwTYPE_LEVEL_END);
+    IP++;
+  }
 }
 
 /*
@@ -74,90 +164,20 @@ void cev_prim() {
     IP += ADDRSZ;
     break;
   case kwTYPE_VAR:
-    bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // 1 addr
-    IP += ADDRSZ;
-
-    while (CODE_PEEK() == kwTYPE_UDS_EL) {
-      cev_add1(kwTYPE_UDS_EL);
-      cev_add1(kwTYPE_STR);
-      IP += 2;
-      cev_prim_str();
-    }
-
-    // support multiple ()
-    while (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-      cev_add1(kwTYPE_LEVEL_BEGIN);
-      IP++;
-      if (CODE_PEEK() == kwTYPE_LEVEL_END) {  // NULL ARRAYS
-        cev_add1(kwTYPE_LEVEL_END);
-        IP++;
-      } else {
-        cev_log();
-
-        while (CODE_PEEK() == kwTYPE_SEP || CODE_PEEK() == kwTO) {
-          // DIM X(A TO B)
-          if (CODE_PEEK() == kwTYPE_SEP) {
-            cev_add1(CODE(IP));
-            IP++;
-          }
-          cev_add1(CODE(IP));
-          IP++;
-
-          cev_log();
-        }
-
-        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          cev_missing_rp();
-        } else {
-          cev_add1(kwTYPE_LEVEL_END);
-          IP++;
-        }
-      }
-    }
+    cev_prim_var();
     break;
   case kwTYPE_CALL_UDF:        // [udf1][addr2]
   case kwTYPE_CALLEXTF:        // [lib][index]
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
-    IP += ADDRSZ;
-    // no break here
+    IP += ADDRSZ;              // no break here
   case kwTYPE_CALLF:           // [code]
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
-    IP += ADDRSZ;
-    // no break here
+    IP += ADDRSZ;              // no break here
   default:
-    // function [(...)]
     if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-      cev_add1(kwTYPE_LEVEL_BEGIN);
-      IP++;
-
-      if (CODE_PEEK() == kwTYPE_CALL_PTR) {
-        cev_add1(CODE(IP));
-        IP++;
-      }
-
-      if (CODE_PEEK() != kwTYPE_SEP) {    // empty parameter
-        cev_log();
-      }
-      while (CODE_PEEK() == kwTYPE_SEP) { // while parameters
-        cev_add1(CODE(IP));
-        IP++;
-        cev_add1(CODE(IP));
-        IP++;
-
-        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          if (CODE_PEEK() != kwTYPE_SEP) {
-            cev_log();
-          }
-        }
-      }
-
-      if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-        cev_missing_rp();
-      } else {
-        cev_add1(kwTYPE_LEVEL_END);
-        IP++;
-      }
+      cev_prim_args();
     }
+    break;
   };
 }
 
@@ -167,24 +187,7 @@ void cev_prim() {
 void cev_parenth() {
   IF_ERR_RTN;
   if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-    cev_add1(kwTYPE_LEVEL_BEGIN);
-    IP++;
-
-    cev_log();                  // R = cev_log
-    IF_ERR_RTN;
-
-    if (CODE_PEEK() == kwTYPE_SEP) {
-      cev_add1(kwTYPE_SEP);
-      IP++;
-      cev_add1(CODE(IP));
-      IP++;
-    } else if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-      cev_missing_rp();
-      return;
-    } else {
-      cev_add1(kwTYPE_LEVEL_END);
-      IP++;
-    }
+    cev_prim_args();
   } else {
     cev_prim();
   }
