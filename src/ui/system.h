@@ -9,8 +9,8 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#include "platform/common/StringLib.h"
-#include "platform/common/ansiwidget.h"
+#include "ui/StringLib.h"
+#include "ui/ansiwidget.h"
 
 struct System : public IButtonListener {
   System();

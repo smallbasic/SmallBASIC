@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.14])
+AC_INIT([smallbasic], [0.11.15])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -33,11 +33,6 @@ AC_ARG_ENABLE(sdl,
   AS_HELP_STRING([--enable-sdl],[build SDL version(default=no)]),
   [ac_build_sdl="yes"],
   [ac_build_sdl="no"])
-
-AC_ARG_ENABLE(mosync,
-  AS_HELP_STRING([--enable-mosync],[build common library for Mosync(default=no)]),
-  [ac_build_mosync="yes"],
-  [ac_build_mosync="no"])
 
 AC_ARG_ENABLE(tizen,
   AS_HELP_STRING([--enable-tizen],[build common library for Tizen(default=no)]),
@@ -94,9 +89,6 @@ function checkPCRE() {
      have_pcre="no"
    esac
 
-   if test x$ac_build_mosync = xyes; then
-     have_pcre="no"
-   fi
    if test x$ac_build_tizen = xyes; then
      have_pcre="no"
    fi
@@ -175,7 +167,6 @@ function buildFLTK() {
    AC_DEFINE(USE_CLIB, 1, [Implements clibmgr.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
-   AC_DEFINE(IMPL_HTML, 1, [Driver implements the html command])
    AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
@@ -241,55 +232,6 @@ function buildSDL() {
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
    (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
-}
-
-function buildMosync() {
-   TARGET="Building common library for Mosync."
-
-   defaultConditionals
-
-   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
-   AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
-   AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
-   AC_DEFINE(RUN_UNSUP, 1, [run not supported.])
-   AC_DEFINE(SERIAL_UNSUP, 1, [serial not supported.])
-   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
-   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
-   AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
-   AC_DEFINE(CPU_BIGENDIAN, 1, [Mosync uses big-endian])
-   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(NONSTANDARD_PORT, 1, [sys.h should include portdefs.h])
-   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
-   AC_DEFINE(_MOSYNC, 1, [Defined for Mosync build.])
-
-   dnl Checks for mosync
-   AC_CHECK_PROG(have_mosync, pipe-tool, [yes], [no])
-
-   PACKAGE_CFLAGS="-MMD -S -DMAPIP -O2 -MF "
-
-   dnl find out where mosync is installed
-   win32=no
-   case "${host_os}" in
-     *mingw* | pw32* | cygwin*)
-        win32="yes"
-   esac
-   if test $win32 = yes; then
-     MOSYNC_HOME="`which xgcc | cygpath -m -f - | sed 's/\/bin\/xgcc//'`"
-     EXTN=".exe"
-   else
-     dnl see: http://www.mosync.com/documentation/manualpages/building-mosync-source-linux
-     MOSYNC_HOME=${MOSYNCDIR}
-     EXTN=""
-   fi
-   AC_SUBST(MOSYNC_HOME)
-   AC_SUBST(EXTN)
-
-   BUILD_SUBDIRS="src/platform/mosync/common"
-   AC_SUBST(BUILD_SUBDIRS)
 }
 
 function buildTizen() {
@@ -426,8 +368,6 @@ elif test x$ac_build_fltk = xyes; then
    buildFLTK
 elif test x$ac_build_sdl = xyes; then
    buildSDL
-elif test x$ac_build_mosync = xyes; then
-   buildMosync
 elif test x$ac_build_tizen = xyes; then
    buildTizen
 elif test x$ac_build_android = xyes; then
@@ -451,7 +391,6 @@ src/platform/sdl/Makefile
 src/platform/cygwin/Makefile
 src/platform/mingw/Makefile
 src/platform/unix/Makefile
-src/platform/mosync/common/Makefile
 src/platform/tizen/common/Makefile
 src/platform/android/Makefile
 ])

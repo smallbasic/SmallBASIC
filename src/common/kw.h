@@ -170,6 +170,9 @@ enum keyword {                // line 50
   kwCASE,
   kwCASE_ELSE,
   kwENDSELECT,
+  kwTRY,
+  kwCATCH,
+  kwENDTRY,
   kwNULL
 };
 
@@ -181,7 +184,6 @@ enum keyword {                // line 50
  */
 enum proc_keywords {
   kwCLS = 0x100,              // 256 (generic keywords)
-  kwRTE,
   kwSHELL,
   kwENVIRON,
   kwLOCATE,
@@ -241,16 +243,14 @@ enum proc_keywords {
   kwBPUTC,
   kwBLOAD,
   kwBSAVE,
-  kwIMGGET,
-  kwIMGPUT,
   kwTIMEHMS,
   kwEXPRSEQ,
   kwUNLOADLIB,
   kwCALLCP,
-  kwHTML,
   kwIMAGE,
   kwDEFINEKEY,
   kwSHOWPAGE,
+  kwTHROW,
   kwNULLPROC
 };
 
@@ -405,7 +405,6 @@ enum func_keywords {
   kwSEQ,
   kwCBS,
   kwBCS,
-  kwLOADLIB,
   kwCALLCF,
   kwIMGW,
   kwIMGH,

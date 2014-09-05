@@ -451,7 +451,7 @@ int dev_fremove(const char *file) {
     success = (remove(file) == 0);
   }
   if (!success) {
-    rt_raise(FSERR_ACCESS);
+    err_throw(FSERR_ACCESS);
   }
   return success;
 }
@@ -598,7 +598,6 @@ void dev_mkdir(const char *dir) {
 
 /**
  * removes a directory
- * BUG: no drivers supported
  */
 void dev_rmdir(const char *dir) {
   if (!opt_file_permitted) {
@@ -612,7 +611,6 @@ void dev_rmdir(const char *dir) {
 
 /**
  * changes the current directory
- * BUG: no drivers supported
  */
 void dev_chdir(const char *dir) {
   if (chdir(dir) != 0) {

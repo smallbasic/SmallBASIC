@@ -8,12 +8,7 @@
 
 #include "config.h"
 
-#if defined(_MOSYNC)
-  #include <maapi.h>
-#else
-  #include "platform/common/maapi.h"
-#endif
-
+#include "ui/maapi.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -21,13 +16,13 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 
-#include "platform/common/utils.h"
-#include "platform/common/form_ui.h"
+#include "ui/utils.h"
+#include "ui/form_ui.h"
 
 #if defined(_FLTK)
   #include "platform/fltk/system.h"
 #else
-  #include "platform/common/system.h"
+  #include "ui/system.h"
 #endif
 
 Form *form;

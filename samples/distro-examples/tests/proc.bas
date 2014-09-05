@@ -9,7 +9,7 @@ next
 vn()=va()
 for i=0 to 4
 	if ( va(i) <> vn(i) )
-		rte "array copy error"
+		throw "array copy error"
 	fi
 next
 

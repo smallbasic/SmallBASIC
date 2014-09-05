@@ -9,9 +9,9 @@
 #ifndef COMMON_GRAPHICS
 #define COMMON_GRAPHICS
 
-#include "platform/common/maapi.h"
-#include "platform/common/StringLib.h"
-#include "platform/common/canvas.h"
+#include "ui/maapi.h"
+#include "ui/StringLib.h"
+#include "ui/canvas.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

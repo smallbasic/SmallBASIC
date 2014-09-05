@@ -1128,7 +1128,9 @@ void comp_expression(char *expr, byte no_parser) {
               if (idx == -1) {
                 idx = comp_is_proc(comp_bc_name);
               }
-              if (idx != -1) {
+              if (idx == kwBYREF) {
+                bc_add_code(&bc, kwBYREF);
+              } else if (idx != -1) {
                 sc_raise(MSG_STATEMENT_ON_RIGHT, comp_bc_name);
               } else {
                 // UDF OR VARIABLE
@@ -2378,6 +2380,21 @@ void comp_text_line(char *text) {
       }
       break;
 
+    case kwTRY:
+      comp_block_level++;
+      comp_block_id++;
+      comp_push(comp_prog.count);
+      bc_add_code(&comp_prog, idx);
+      bc_add_addr(&comp_prog, 0);
+      comp_expression(comp_bc_parm, 0);
+      break;
+
+    case kwCATCH:
+      comp_push(comp_prog.count);
+      bc_add_ctrl(&comp_prog, idx, 0, 0);
+      comp_expression(comp_bc_parm, 0);
+      break;
+
     case kwELSE:
     case kwELIF: {
       int index = 0;
@@ -2432,10 +2449,17 @@ void comp_text_line(char *text) {
       break;
 
     case kwEND:
-      if (strncmp(comp_bc_parm, LCN_IF, 2) == 0 || strncmp(comp_bc_parm, LCN_SELECT, 6) == 0) {
-        idx = strncmp(comp_bc_parm, LCN_IF, 2) == 0 ? kwENDIF : kwENDSELECT;
+      if (strncmp(comp_bc_parm, LCN_IF, 2) == 0 ||
+          strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ||
+          strncmp(comp_bc_parm, LCN_SELECT, 6) == 0) {
+        idx = strncmp(comp_bc_parm, LCN_IF, 2) == 0 ? kwENDIF :
+              strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ? kwENDTRY : kwENDSELECT;
         comp_push(comp_prog.count);
-        bc_add_ctrl(&comp_prog, idx, 0, 0);
+        if (idx == kwENDTRY) {
+          bc_add_code(&comp_prog, idx);
+        } else {
+          bc_add_ctrl(&comp_prog, idx, 0, 0);
+        }
         comp_block_level--;
         comp_block_id--;
       } else if (comp_proc_level) {
@@ -2578,6 +2602,7 @@ addr_t comp_next_bc_cmd(addr_t ip) {
     ip++;
     break;
 
+  case kwTRY:
   case kwRESTORE:
   case kwGOSUB:
   case kwTYPE_LINE:
@@ -2622,6 +2647,7 @@ addr_t comp_next_bc_cmd(addr_t ip) {
   case kwCASE:
   case kwCASE_ELSE:
   case kwENDSELECT:
+  case kwCATCH:
     ip += BC_CTRLSZ;
     break;
 
@@ -2674,7 +2700,6 @@ addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_i
 
   for (i = start; i < comp_sp; i++) {
     dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-
     if (comp_prog.ptr[node.pos] == code) {
       if (node.level == level && (block_id == -1 || block_id == node.block_id)) {
         return node.pos;
@@ -2702,6 +2727,34 @@ addr_t comp_search_bc_stack_backward(addr_t start, code_t code, byte level, bid_
     }
   }
   return INVALID_ADDR;
+}
+
+/*
+ * search stack for the next inner catch
+ */
+addr_t comp_search_inner_catch(addr_t start, byte level) {
+  addr_t result = INVALID_ADDR;
+  if (level > 1) {
+    byte nextLevel = level - 1;
+    do {
+      addr_t i;
+      comp_pass_node_t node;
+      for (i = start; i < comp_sp; i++) {
+        dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
+        if (node.level == nextLevel) {
+          if (comp_prog.ptr[node.pos] == kwTRY) {
+            // next CATCH has own block
+            break;
+          } else if (comp_prog.ptr[node.pos] == kwCATCH) {
+            result = node.pos;
+            break;
+          }
+        }
+      }
+      --nextLevel;
+    } while (result == INVALID_ADDR && nextLevel > 0);
+  }
+  return result;
 }
 
 /*
@@ -2740,7 +2793,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
       for (i = pos + 1; i < comp_sp; i++) {
         dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
         if (comp_prog.ptr[node.pos] == code) {
-          log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", 
+          log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                      cmd, node.level, node.pos, level, pos);
           cnt++;
           if (cnt > 3) {
@@ -2749,11 +2802,11 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
         }
       }
     } else {
-      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", 
+      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                  cmd, level + 1, node.pos, level, pos);
     }
   } else {
-    log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n", 
+    log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
                cmd, level - 1, node.pos, level, pos);
   }
 
@@ -2790,7 +2843,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
       csum[cs_idx] = 1;
     }
     // info
-    log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n", ((i == pos) ? ">>" : "  "), 
+    log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n", ((i == pos) ? ">>" : "  "),
                i, cmd, node.sec, node.pos, node.line, node.level, node.block_id, csum[cs_idx]);
   }
 
@@ -2890,6 +2943,9 @@ void comp_pass2_scan() {
         code != kwTYPE_CALL_UDF &&
         code != kwPROC &&
         code != kwFUNC &&
+        code != kwTRY &&
+        code != kwCATCH &&
+        code != kwENDTRY &&
         code != kwTYPE_RET) {
       // default - calculate true-ip
       true_ip = comp_search_bc_eoc(node.pos + (BC_CTRLSZ + 1));
@@ -3165,6 +3221,36 @@ void comp_pass2_scan() {
         return;
       }
       break;
+
+    case kwTRY:
+      true_ip = comp_search_bc_stack(i + 1, kwCATCH, node.level, node.block_id);
+      if (true_ip == INVALID_ADDR) {
+        sc_raise(MSG_MISSING_CATCH);
+        print_pass2_stack(i, kwTRY, node.level);
+        return;
+      }
+      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
+      break;
+
+    case kwCATCH:
+      true_ip = comp_search_bc_stack(i + 1, kwENDTRY, node.level, node.block_id);
+      if (true_ip == INVALID_ADDR) {
+        sc_raise(MSG_MISSING_ENDTRY);
+        print_pass2_stack(i, kwENDTRY, node.level);
+        return;
+      }
+      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
+
+      false_ip = comp_search_bc_stack(i + 1, kwCATCH, node.level, node.block_id);
+      if (false_ip != INVALID_ADDR && false_ip < true_ip) {
+        // another catch in the same block
+        memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      } else {
+        // store the address of the next outer catch (or store INVALID_ADDR if not found)
+        false_ip = comp_search_inner_catch(i + 1, node.level);
+        memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      }
+      break;
     };
   }
 
@@ -3299,13 +3385,12 @@ void comp_close() {
  */
 char *comp_load(const char *file_name) {
   char *buf;
-  int h;
 
   strcpy(comp_file_name, file_name);
 #if defined(IMPL_DEV_READ)
   buf = dev_read(file_name);
 #else
-  h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
+  int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
   if (h == -1) {
     buf = NULL;
 #if defined(__CYGWIN__)

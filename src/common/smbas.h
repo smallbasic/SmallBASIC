@@ -164,6 +164,7 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define prog_symtable       ctask->sbe.exec.symtable
 #define prog_exptable       ctask->sbe.exec.exptable
 #define prog_uds_tab_ip     ctask->sbe.exec.uds_tab_ip
+#define prog_catch_ip       ctask->sbe.exec.catch_ip
 #define comp_extfunctable   ctask->sbe.comp.extfunctable
 #define comp_extfunccount   ctask->sbe.comp.extfunccount
 #define comp_extfuncsize    ctask->sbe.comp.extfuncsize

@@ -336,6 +336,9 @@ void pv_writevar(var_t *var, int method, int handle) {
   case V_ARRAY:
     pv_write_array(var, method, handle);
     break;
+  case V_REF:
+    pv_writevar(var->v.ref, method, handle);
+    break;
   }
 }
 

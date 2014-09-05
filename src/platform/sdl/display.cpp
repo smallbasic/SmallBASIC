@@ -8,8 +8,8 @@
 
 #include "config.h"
 #include <time.h>
-#include "platform/common/form_ui.h"
-#include "platform/common/utils.h"
+#include "ui/form_ui.h"
+#include "ui/utils.h"
 #include "platform/sdl/display.h"
 #include "common/device.h"
 

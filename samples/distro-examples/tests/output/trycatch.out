@@ -1,0 +1,6 @@
+start
+inner try
+open failed	FS(2): NO SUCH FILE OR DIRECTORY
+after try
+catch by error name
+outer after try

@@ -9,7 +9,7 @@
 #include "config.h"
 #include "platform/tizen/form.h"
 #include "platform/tizen/application.h"
-#include "platform/common/utils.h"
+#include "ui/utils.h"
 
 Application *TizenApp::createInstance() {
   logEntered();

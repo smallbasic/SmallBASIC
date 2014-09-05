@@ -1,3 +1,9 @@
+2014-09-06
+	RTE command renamed THROW
+
+2014-09-01
+	Added try/catch
+
 2014-08-30
 	Added reference variable type
 	Fixed HASH var handling with parenthesis

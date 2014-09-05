@@ -9,8 +9,8 @@
 #include "config.h"
 #include <time.h>
 #include "platform/tizen/display.h"
-#include "platform/common/form_ui.h"
-#include "platform/common/utils.h"
+#include "ui/form_ui.h"
+#include "ui/utils.h"
 
 #define SIZE_LIMIT 4
 #define FONT_FACE_NAME "Envy Code R.ttf"

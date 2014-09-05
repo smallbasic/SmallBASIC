@@ -13,8 +13,8 @@
 #include <fltk/Image.h>
 #include <fltk/draw.h>
 
-#include "platform/common/maapi.h"
-#include "platform/common/interface.h"
+#include "ui/maapi.h"
+#include "ui/interface.h"
 
 struct AnsiWidget;
 
@@ -68,6 +68,8 @@ public:
   int  getBackgroundColor();
   void flush(bool force);
   void reset();
+  void setAutoflush(bool autoflush);
+  void flushNow();
 
   Canvas *getScreen() { return _screen; }
   int getDefaultSize() { return _defsize; }

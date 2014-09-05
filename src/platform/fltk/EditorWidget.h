@@ -22,7 +22,7 @@
 #include <fltk/Choice.h>
 #include <limits.h>
 
-#include "platform/common/StringLib.h"
+#include "ui/StringLib.h"
 #include "TtyWidget.h"
 #include "BasicEditor.h"
 

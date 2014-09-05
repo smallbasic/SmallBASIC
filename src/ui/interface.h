@@ -9,7 +9,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#include "platform/common/StringLib.h"
+#include "ui/StringLib.h"
 
 struct IButtonListener {
   virtual ~IButtonListener() {}

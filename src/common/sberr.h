@@ -72,14 +72,11 @@ void err_ref_var();
 #define err_type_mismatch() err_typemismatch()
 #define err_syntax_error()  err_syntax()
 
-// --- inf_xxx: information messages
-
 void inf_done(void);
 void inf_break(int pline);
-void inf_comprq_dv(void);
-void inf_comprq_dt(void);
-void inf_comprq_prq(void);
-void inf_low_battery(void);
+
+void err_throw(const char *fmt, ...);
+void cmd_throw();
 
 #if defined(__cplusplus)
   }

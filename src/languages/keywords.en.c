@@ -90,6 +90,9 @@ struct keyword_s keyword_table[] = {
 { "WRITE",              kwFILEWRITE },
 { "INSERT",             kwINSERT },
 { "DELETE",             kwDELETE },
+{ "TRY",                kwTRY },
+{ "CATCH",              kwCATCH },
+{ "END TRY",            kwENDTRY },
 
 /* DEBUG */
 { "TRON",               kwTRON },
@@ -343,7 +346,6 @@ struct func_keyword_s func_table[] = {
 { "SEQ",                        kwSEQ },
 { "CBS",                        kwCBS },
 { "BCS",                        kwBCS },
-{ "LOADLIB",                    kwLOADLIB },
 { "CALL",                       kwCALLCF },
 { "IMAGEW",                     kwIMGW },
 { "IMAGEH",                     kwIMGH },
@@ -355,7 +357,7 @@ struct func_keyword_s func_table[] = {
  */
 struct proc_keyword_s proc_table[] = {
 { "CLS",                kwCLS },
-{ "RTE",                kwRTE },
+{ "THROW",              kwTHROW },
 { "ENVIRON",            kwENVIRON },
 { "ENV",                kwENVIRON },
 { "LOCATE",             kwLOCATE },
@@ -414,13 +416,10 @@ struct proc_keyword_s proc_table[] = {
 { "BPUTC",              kwBPUTC },
 { "BLOAD",              kwBLOAD },
 { "BSAVE",              kwBSAVE },
-{ "IMGGET",             kwIMGGET },
-{ "IMGPUT",             kwIMGPUT },
 { "TIMEHMS",            kwTIMEHMS },
 { "EXPRSEQ",            kwEXPRSEQ },
 { "UNLOADLIB",          kwUNLOADLIB },
 { "CALL",               kwCALLCP },
-{ "HTML",               kwHTML },
 { "IMAGE",              kwIMAGE },
 { "DEFINEKEY",          kwDEFINEKEY },
 { "SHOWPAGE",           kwSHOWPAGE },
@@ -483,6 +482,9 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_END_WRS             "END "
 #define LCN_END_WNL             "END\n"
 #define LCN_SHOWPAGE            "SHOWPAGE"
+#define LCN_TRY                 "TRY"
+#define LCN_CATCH               "CATCH"
+#define LCN_END_TRY             "END TRY"
 
 /* system variables */
 #define LCN_SV_OSNAME           "OSNAME"

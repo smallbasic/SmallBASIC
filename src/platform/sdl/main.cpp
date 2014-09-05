@@ -11,8 +11,8 @@
 #include <getopt.h>
 #include <fontconfig/fontconfig.h>
 
-#include "platform/common/utils.h"
-#include "platform/common/StringLib.h"
+#include "ui/utils.h"
+#include "ui/StringLib.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
 #include "common/smbas.h"

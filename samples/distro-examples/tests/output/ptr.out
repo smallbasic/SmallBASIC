@@ -1,0 +1,4 @@
+foo: called from ptr @foo
+foo: called from ptr p
+in bar
+in bar

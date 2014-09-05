@@ -11,9 +11,9 @@
 
 #include <SDL.h>
 
-#include "platform/common/maapi.h"
-#include "platform/common/StringLib.h"
-#include "platform/common/graphics.h"
+#include "ui/maapi.h"
+#include "ui/StringLib.h"
+#include "ui/graphics.h"
 
 struct Graphics : common::Graphics {
   Graphics(SDL_Window *window);

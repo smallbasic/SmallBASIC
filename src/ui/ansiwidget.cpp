@@ -14,8 +14,8 @@
 #include <wchar.h>
 #include <math.h>
 
-#include "platform/common/ansiwidget.h"
-#include "platform/common/utils.h"
+#include "ui/ansiwidget.h"
+#include "ui/utils.h"
 
 /* class AnsiWidget
 
@@ -303,7 +303,7 @@ void FormListBox::clicked(IButtonListener *listener, int x, int y) {
   }
 }
 
-void FormListBox::draw(int dx, int dy) {
+void FormListBox::draw(int dx, int dy, int sw, int chw) {
   if (_model) {
     maSetColor(getBackground(GRAY_BG_COL));
     maFillRect(dx, dy, _width, _height);
@@ -373,7 +373,7 @@ void FormDropList::clicked(IButtonListener *listener, int x, int y) {
   _listActive = !_listActive;
 }
 
-void FormDropList::draw(int dx, int dy) {
+void FormDropList::draw(int dx, int dy, int sw, int chw) {
   if (_model) {
     bool pressed = _listActive ? false : _pressed;
     drawButton(getText(), dx, dy, _width - CHOICE_BN_W, _height, pressed);

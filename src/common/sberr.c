@@ -92,7 +92,7 @@ void err_file(dword code) {
     *p = to_upper(*p);
     p++;
   }
-  rt_raise(FSERR_FMT, code, buf);
+  err_throw(FSERR_FMT, code, buf);
 }
 
 void err_stackoverflow(void) {
@@ -261,9 +261,7 @@ void inf_done() {
 #endif
 }
 
-/**
- * the BREAK message
- */
+// the BREAK message
 void inf_break(int pline) {
   gsb_last_line = pline;
   gsb_last_error = prog_error;
@@ -274,36 +272,78 @@ void inf_break(int pline) {
   log_printf("\n\033[0m\033[80m\a\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT, pline);
 }
 
-/**
- * if bytecode files are keeped; messages of the compiler why recompile is needed
- */
-void inf_comprq_dv() {
-  if (!opt_quiet) {
-    dev_print("Recompile: different version\n");
-  } else {
-    dev_print("(ver)\n");
+// assign error to variable or match with next expression
+int err_throw_catch(const char *err) {
+  int caught = 1;
+  byte code = code_peek();
+  
+  if (code != kwTYPE_EOC && code != kwTYPE_LINE) {
+    if (code_peek() == kwTYPE_VAR) {
+      var_t *arg = code_getvarptr();
+      v_setstr(arg, err);
+    } else {
+      var_t v_catch;
+      v_init(&v_catch);
+      eval(&v_catch);
+      // catch is conditional on matching error
+      caught = (v_catch.type == V_STR && strstr(err, v_catch.v.p.ptr) != NULL);
+      v_free(&v_catch);
+    }
+  }
+  return caught;
+}
+
+// throw string
+void err_throw_str(const char *err) {
+  int caught = 0;
+  if (!prog_error && prog_catch_ip != INVALID_ADDR && prog_catch_ip > prog_ip) {
+    // position after kwCATCH
+    code_jump(prog_catch_ip + 1);
+    // skip "end try" address
+    code_getaddr();
+    // restore outer level
+    prog_catch_ip = code_getaddr();
+    
+    caught = err_throw_catch(err);
+    while (!caught && prog_catch_ip != INVALID_ADDR) {
+      code_jump(prog_catch_ip + 1);
+      code_getaddr();
+      prog_catch_ip = code_getaddr();
+      caught = err_throw_catch(err);
+    }
+  }
+  if (!caught) {
+    prog_error = 0x80;
+    err_common_msg(WORD_RTE, prog_file, prog_line, err);
   }
 }
 
-void inf_comprq_dt() {
-  if (!opt_quiet) {
-    dev_print("Recompile: source is newer\n");
-  } else {
-    dev_print("(mod)\n");
+// throw internal error
+void err_throw(const char *fmt, ...) {
+  if (!gsb_last_error) {
+    va_list ap;
+    va_start(ap, fmt);
+    char *err = tmp_alloc(SB_TEXTLINE_SIZE + 1);
+    vsprintf(err, fmt, ap);
+    va_end(ap);
+    err_throw_str(err);
+    tmp_free(err);
   }
 }
 
-void inf_comprq_prq() {
-  if (!opt_quiet) {
-    dev_print("Recompile: no binary file\n");
-  } else {
-    dev_print("(bin)\n");
+// throw user error
+void cmd_throw() {
+  var_t v_throw;
+  v_init(&v_throw);
+  const char *err = "";
+  byte code = code_peek();
+  if (code != kwTYPE_EOC && code != kwTYPE_LINE) {
+    eval(&v_throw);
+    if (v_throw.type == V_STR) {
+      err = v_throw.v.p.ptr;
+    }
   }
+  err_throw_str(err);
+  v_free(&v_throw);
 }
 
-/**
- * Low-battery event/signal
- */
-void inf_low_battery() {
-  dev_print("\n\n\a* ALARM: LOW BATTERY *\a\n\n");
-}

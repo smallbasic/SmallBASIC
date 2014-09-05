@@ -16,12 +16,12 @@
 #if defined(_MOSYNC)
   #include <maapi.h>
 #else
-  #include "platform/common/maapi.h"
+  #include "ui/maapi.h"
 #endif
 
-#include "platform/common/StringLib.h"
-#include "platform/common/screen.h"
-#include "platform/common/interface.h"
+#include "ui/StringLib.h"
+#include "ui/screen.h"
+#include "ui/interface.h"
 
 #define MAX_PENDING 250
 #define MAX_PENDING_GRAPHICS 25
@@ -180,7 +180,7 @@ struct FormDropList : public FormList {
   FormDropList(Screen *screen, IFormWidgetListModel *model,
                int x, int y, int w, int h);
   void clicked(IButtonListener *listener, int x, int y);
-  void draw(int dx, int dy);
+  void draw(int dx, int dy, int sw, int chw);
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   virtual ~FormDropList() {}
 
@@ -196,7 +196,7 @@ struct FormListBox : public FormList {
   FormListBox(Screen *screen, IFormWidgetListModel *model,
               int x, int y, int w, int h);
   void clicked(IButtonListener *listener, int x, int y);
-  void draw(int dx, int dy);
+  void draw(int dx, int dy, int sw, int chw);
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   virtual ~FormListBox() {}
 };
