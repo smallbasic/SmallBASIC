@@ -1040,55 +1040,68 @@ char_p_t *dev_create_file_list(const char *wc, int *count);
  */
 void dev_destroy_file_list(char_p_t *list, int count);
 
-/**
- * @html
- *
- * displays html text
- *
- * @param html code
- * @param title display title
- * @param x window coordinates
- * @param y
- * @param w
- * @param h
- *
- */
-void dev_html(const char *html, const char *title, int x, int y, int w, int h);
+typedef struct var_image {
+  int x;
+  int y;
+  int offsetTop;
+  int offsetLeft;
+  int width;
+  int height;
+  int zIndex;
+  int opacity;
+  int handle;
+  int id;
+} var_image;
 
 /**
  * @image
  *
- * displays an image from an image library
+ * loads an image
  *
  * @param file handle
- * @param image index
- * @param x window coordinates
- * @param y
  *
  */
-void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h);
+int dev_image_load(int handle);
 
 /**
- * @imagew
+ * @image
  *
  * return the width of an image in an image library
  *
  * @param file handle
- * @param image index
  *
  */
-int dev_image_width(int handle, int index);
+int dev_image_width(int handle);
 
 /**
- * @imageh
+ * @image
  *
  * return the height of an image in an image library
  *
  * @param file handle
- * @param image index
  *
  */
-int dev_image_height(int handle, int index);
+int dev_image_height(int handle);
+
+/**
+ * @image
+ *
+ * displays the image
+ *
+ * @param file handle
+ *
+ */
+void dev_image_show(var_image *image);
+
+/**
+ * @image
+ *
+ * hides the image
+ *
+ * @param file handle
+ *
+ */
+void dev_image_hide(int handle);
 
 #if defined(__cplusplus)
 }

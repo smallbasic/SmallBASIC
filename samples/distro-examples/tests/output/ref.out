@@ -4,9 +4,10 @@ dog=	dog
 1=	1
 a=b	a=b
 a<>b	a<>b
-[NAME=kitchen]
-[NAME=hall]
-[NAME=Kitchen,FRIDGE=empty]
-[NAME=toilet,OCCUPIED=-1]
-[NAME=Kitchen,FRIDGE=empty]
-[NAME=hall]
+{"NAME":"kitchen"}
+{"NAME":"hall"}
+{"FRIDGE":"empty","NAME":"Kitchen"}
+{"NAME":"toilet","OCCUPIED":-1}
+{"FRIDGE":"empty","NAME":"Kitchen"}
+{"NAME":"hall"}
+toilet

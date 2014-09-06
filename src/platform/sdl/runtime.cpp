@@ -14,6 +14,7 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
+#include "common/keymap.h"
 #include "ui/maapi.h"
 #include "ui/utils.h"
 #include "ui/form_ui.h"

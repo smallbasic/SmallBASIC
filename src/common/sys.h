@@ -17,8 +17,6 @@
  *
  * CPU_LITTLEENDIAN    The words are stored normal; first the high-byte followed by low-byte (Motorola 68K)
  *
- * CPU_REG16           16bit registers (64KB code|data segments)
- *
  * <b>OS FLAGS</b>
  *
  * OS_PATHNAME_SIZE    Maximum full-path name size (DOS=64,Unix/Win32=1024)

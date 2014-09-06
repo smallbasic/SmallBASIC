@@ -33,7 +33,7 @@ sub build_ta
 end
 
 sub cerr
-	rte 2
+	throw 2
 end
 
 sub addRoom(the_thing,d)

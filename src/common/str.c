@@ -48,11 +48,23 @@ char *trimdup(const char *str) {
 }
 
 /**
+ * whether the string contains any whitespace characters
+ */
+int has_wspace(const char *s) {
+  int result = 0;
+  int i;
+  for (i = 0; s != NULL && s[i] && !result; i++) {
+    result |= is_wspace(s[i]);
+  }
+  return result;
+}
+
+/**
  * removes spaces
  */
 void str_alltrim(char *str) {
   char *buf;
-  if (str && str[0]) {
+  if (str && has_wspace(str)) {
     buf = trimdup(str);
     strcpy(str, buf);
     tmp_free(buf);
@@ -605,10 +617,12 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
     }
   }
   //
-  if (is_alpha(*p))
+  if (is_alpha(*p)) {
     *type = -9;                 // ITS NOT A NUMBER
-  while (is_space(*p))
+  }
+  while (is_space(*p)) {
     p++;
+  }
   return p;
 }
 
@@ -661,8 +675,10 @@ long bintol(const char *str) {
     return 0;
   }
   while (*p) {
-    if (*p == 48 || *p == 49)   // 01
+    if (*p == 48 || *p == 49) {
+      // 01
       r = (r << 1) + ((*p) - 48);
+    }
     p++;
   }
   return r;
@@ -679,8 +695,10 @@ long octtol(const char *str) {
     return 0;
   }
   while (*p) {
-    if (*p >= 48 && *p <= 55)   // 01234567
+    if (*p >= 48 && *p <= 55) {
+      // 01234567
       r = (r << 3) + ((*p) - 48);
+    }
     p++;
   }
   return r;
@@ -697,12 +715,16 @@ long hextol(const char *str) {
     return 0;
   }
   while (*p) {
-    if (is_digit(*p))           // 0123456789
+    if (is_digit(*p)) {
+      // 0123456789
       r = (r << 4) + ((*p) - 48);
-    else if (*p >= 65 && *p <= 70)  // ABCDEF
+    } else if (*p >= 65 && *p <= 70) {
+      // ABCDEF
       r = (r << 4) + ((*p) - 55);
-    else if (*p >= 97 && *p <= 102) // abcdef
+    } else if (*p >= 97 && *p <= 102) {
+      // abcdef
       r = (r << 4) + ((*p) - 87);
+    }
     p++;
   }
   return r;
@@ -724,26 +746,25 @@ var_num_t sb_strtof(const char *str) {
   if (*p == '-') {
     sign = -1;
     p++;
-  } else if (*p == '+')
+  } else if (*p == '+') {
     p++;
-
+  }
   while (*p) {
     if (is_digit(*p)) {
-      if (!decp)
+      if (!decp) {
         r = (r * 10) + ((*p) - 48);
-      else {
+      } else {
         r += (((*p) - 48) * 1 / d);
         d *= 10;
       }
-    } else if (*p == '.')
+    } else if (*p == '.') {
       decp = 1;
-    else if (*p == ' ')
+    } else if (*p == ' ') {
       break;
-    else {
+    } else {
       r = 0;
       break;
     }
-
     p++;
   }
 
@@ -761,7 +782,7 @@ long xstrtol(const char *str) {
 }
 
 /**
- *
+ * whether the string is a number
  */
 int is_number(const char *str) {
   char *p = (char *) str;
@@ -770,25 +791,26 @@ int is_number(const char *str) {
   if (str == NULL) {
     return 0;
   }
-  if (*p == '+' || *p == '-')
+  if (*p == '+' || *p == '-') {
     p++;
-
+  }
   while (*p) {
-    if (strchr("0123456789.", *p) == NULL
-      )
+    if (strchr("0123456789.", *p) == NULL) {
       return 0;
-    else
+    } else {
       cnt++;
+    }
     if (*p == '.') {
       dpc++;
-      if (dpc > 1)
+      if (dpc > 1) {
         return 0;
+      }
     }
     p++;
   }
-
-  if (cnt)
+  if (cnt) {
     return 1;
+  }
   return 0;
 }
 
@@ -856,20 +878,21 @@ char *xbasename(char *dest, const char *source) {
   char *p;
 
   p = strrchr(source, OS_DIRSEP);
-  if (!p)
+  if (!p) {
     p = (char *) source;
-  else
+  } else {
     p++;
-
+  }
   strcpy(dest, p);
   return dest;
 }
 
 /**
- *
+ * returns whether the character is whitespace
  */
 int is_wspace(int c) {
-  return (c != 0 && strchr(" \t\n\r\v\f", c));
+  return (c != 0 && (c == ' ' || c == '\t' || c == '\r' || 
+                     c == '\n' || c == '\v' || c == '\f'));
 }
 
 /**
@@ -905,16 +928,17 @@ char *sqzdup(const char *source) {
           }
         }
       }
-    } else
+    } else {
       (lc = 0, *d++ = *p);
-
+    }
     p++;
   }
 
   *d = '\0';
   if (d > rp) {
-    if (is_wspace(*(d - 1)))
+    if (is_wspace(*(d - 1))) {
       *(d - 1) = '\0';
+    }
   }
 
   return rp;

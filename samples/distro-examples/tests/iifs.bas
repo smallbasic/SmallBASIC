@@ -1,4 +1,15 @@
 '
+' Test for refactoring regression
+'
+blue=1
+red=2
+green=3
+
+if false then blue=4:red=5:green=6
+
+if (1 <> blue OR red <> 2 OR green <> 3) then
+  throw "Inline IF error: blue=" + blue + " red=" + red + " green=" + green
+endif
 
 ' normal if
 if 1 then:? "Normal IF - Ok":else:? "ERROR":fi
@@ -24,5 +35,4 @@ goto 200
 600
 ? "label 600 - Ok"
 goto 210
-
 

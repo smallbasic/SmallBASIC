@@ -17,6 +17,11 @@ typedef enum {
   leaf
 } VISIT;
 
+typedef struct node {
+  void *key;
+  struct node *left, *right;
+} node_t;
+
 typedef void (*twalk_cb) (const void *nodep, VISIT value, int level);
 typedef void (*tdestroy_cb) (void *__nodep);
 typedef int (*tcompare_cb) (const void *, const void *);

@@ -40,4 +40,33 @@ end try
 
 ? "outer after try"
 
+rem
+rem Test whether the stack is unwound correctly
+rem
+
+iter = 100
+cnt = 0
+i = 0
+
+while (i < iter)
+  try
+    while (true)
+      if (true)
+        if (true)
+           throw "foo"
+        end if
+      end if
+    wend
+  catch err
+    select case err
+    case "foo"
+      cnt++
+    end select
+  end try
+  i++
+wend
+
+if (cnt <> iter) then
+  print "Test failed: "; cnt; " <> "; iter
+end if
 

@@ -10,9 +10,7 @@
 #if !defined(__sb_tasks_h)
 #define __sb_tasks_h
 
-#include "common/smbas.h"
 #include "common/bc.h"
-#include "common/keymap.h"
 
 #if defined(__cplusplus)
 extern "C" {

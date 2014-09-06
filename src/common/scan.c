@@ -900,12 +900,12 @@ char *comp_prev_char(const char *root, const char *ptr) {
 }
 
 /**
- *   get next word
- *   if buffer's len is zero, then the next element is not a word
+ * get next word
+ * if buffer's len is zero, then the next element is not a word
  *
- *   @param text the source
- *   @param dest the buffer to store the result
- *   @return pointer of text to the next element
+ * @param text the source
+ * @param dest the buffer to store the result
+ * @return pointer of text to the next element
  */
 const char *comp_next_word(const char *text, char *dest) {
   const char *p = text;
@@ -1053,8 +1053,8 @@ void comp_expression(char *expr, byte no_parser) {
       // special case for INPUT
       if (idx == kwINPUTF) {
         if (*comp_next_char(ptr) != '(') {
-          idx = -1;             // INPUT is SPECIAL SEPARATOR (OPEN...FOR
-          // INPUT...)
+          // INPUT is SPECIAL SEPARATOR (OPEN...FOR INPUT...)
+          idx = -1;
         }
       }
 
@@ -1072,8 +1072,7 @@ void comp_expression(char *expr, byte no_parser) {
           bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
           bc_add_code(&bc, kwTYPE_CALL_PTR);
           // next is address
-          // skip next ( since we already added
-          // kwTYPE_LEVEL_BEGIN
+          // skip next '(' since we already added kwTYPE_LEVEL_BEGIN
           // to allow kwTYPE_CALL_PTR to be the next code
           char *par = comp_next_char(ptr);
           if (*par == '(') {
@@ -1161,11 +1160,11 @@ void comp_expression(char *expr, byte no_parser) {
                   }
                   comp_add_variable(&bc, comp_bc_name);
                 }
-              }                 // kw
-            }                   // extf
-          }                     // opr
-        }                       // sp. sep
-      }                         // check sep
+              }
+            }
+          }
+        }
+      }
       addr_opr = 0;
       // end isalpha block
     } else if (*ptr == ',' || *ptr == ';' || *ptr == '#') {
@@ -1643,9 +1642,10 @@ char *comp_array_uds_field(char *p, bc_t *bc) {
 /*
  * array's args
  */
-void comp_array_params(char *src) {
+char *comp_array_params(char *src, char exitChar) {
   char *p = src;
-  char *ss = NULL, *se = NULL;
+  char *ss = NULL;
+  char *se = NULL;
   int level = 0;
 
   while (*p) {
@@ -1678,19 +1678,21 @@ void comp_array_params(char *src) {
         if (*(p + 1) == '.') {
           p = comp_array_uds_field(p + 2, &comp_prog);
         }
-      }                         // lev = 0
+      }
       break;
     };
-
     p++;
+    if (*p == exitChar) {
+      p++;
+      break;
+    }
   }
-
-  //
   if (level > 0) {
     sc_raise(MSG_ARRAY_MIS_RP);
   } else if (level < 0) {
     sc_raise(MSG_ARRAY_MIS_LP);
   }
+  return p;
 }
 
 /*
@@ -1773,24 +1775,756 @@ void bc_store_exports(const char *slist) {
   tmp_free(newlist);
 }
 
-/*
- * PASS1: scan source line
- */
-void comp_text_line(char *text) {
+void comp_get_unary(const char *p, int *ladd, int *linc, int *ldec, int *leqop) {
+  *ladd = (strncmp(p, "<<", 2) == 0);
+  *linc = (strncmp(p, "++", 2) == 0);
+  *ldec = (strncmp(p, "--", 2) == 0);
+  if (p[1] == '=' && strchr("-+/\\*^%&|", p[0])) {
+    *leqop = p[0];
+  } else {
+    *leqop = 0;
+  }
+}
+
+void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
   char *p;
-  char *lb_end;
-  char *last_cmd;
-  long idx;
-  int sharp, ladd, linc, ldec, decl = 0, vattr;
-  int leqop;
+  char *parms = comp_bc_parm;
+  char *array_index = NULL;
+  int v_func = 0;
+
+  if (parms[0] == '(') {
+    int level = 0;
+    p = parms;
+    while (*p) {
+      switch(*p) {
+      case '(':
+        level++;
+        break;
+      case ')':
+        level--;
+        break;
+      case '.':
+        // advance beyond UDS element
+        p++;
+        while (*p == '_' || isalnum(*p)) {
+          p++;
+        }
+        p--;
+        break;
+      }
+      p++;
+      if (level == 0 && *p != '(' && *p != '.') {
+        break;
+      }
+    }
+    if (level == 0) {
+      p = comp_next_char(p);
+      if (*p != '=') {
+        // array(n) unary-operator
+        int len = (p - parms) + 1;
+        array_index = tmp_alloc(len);
+        strncpy(array_index, parms, len);
+        array_index[len - 1] = '\0';
+
+        // store plain operator in comp_bc_parm
+        strcpy(comp_bc_parm, p);
+        comp_get_unary(comp_bc_parm, &ladd, &linc, &ldec, &leqop);
+      }
+    }
+  }
+
+  if (idx == kwCONST) {
+    // const a=10: b=10
+    p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
+    p = get_param_sect(p, ":", comp_bc_parm);
+    parms = comp_bc_parm;
+    bc_add_code(&comp_prog, kwCONST);
+  } else if (ladd) {
+    bc_add_code(&comp_prog, kwAPPEND);
+    parms += 2;
+  } else if (linc) {
+    bc_add_code(&comp_prog, kwLET);
+    strcpy(comp_bc_parm, "=");
+    strcat(comp_bc_parm, comp_bc_name);
+    if (array_index) {
+      strcat(comp_bc_parm, array_index);
+    }
+    strcat(comp_bc_parm, "+1");
+  } else if (ldec) {
+    bc_add_code(&comp_prog, kwLET);
+    strcpy(comp_bc_parm, "=");
+    strcat(comp_bc_parm, comp_bc_name);
+    if (array_index) {
+      strcat(comp_bc_parm, array_index);
+    }
+    strcat(comp_bc_parm, "-1");
+  } else if (leqop) {
+    // a += 10: b -= 10 etc
+    char *buf;
+    bc_add_code(&comp_prog, kwLET);
+    int len = strlen(comp_bc_parm) + strlen(comp_bc_name) + 1;
+    if (array_index) {
+      len += strlen(array_index);
+    }
+    buf = tmp_alloc(len);
+    memset(buf, 0, len);
+    strcpy(buf, "=");
+    strcat(buf, comp_bc_name);
+    if (array_index) {
+      strcat(buf, array_index);
+    }
+    buf[strlen(buf)] = leqop;
+    strcat(buf, comp_bc_parm + 2);
+    strcpy(comp_bc_parm, buf);
+    tmp_free(buf);
+  } else if (idx != kwLET
+             && array_index != NULL
+             && strchr(comp_bc_name, '.') != NULL) {
+    // no unary operator found with array index
+    v_func = 1;
+    bc_add_pcode(&comp_prog, kwTYPE_CALL_VFUNC);
+  } else {
+    bc_add_code(&comp_prog, kwLET);
+  }
+
+  comp_error_if_keyword(comp_bc_name);
+  comp_add_variable(&comp_prog, comp_bc_name);
+
+  if (!comp_error) {
+    if (v_func) {
+      // a.b.c()
+      if (strlen(array_index) > 2) {
+        // more than empty brackets
+        comp_array_params(array_index, 0);
+      }
+    }
+    else if (parms[0] == '(') {
+      if (*comp_next_char(parms + 1) == ')') {
+        // vn()=fillarray
+        p = strchr(parms, '=');
+        comp_expression(p, 0);
+      } else {
+        // array(n) = expr
+        p = comp_array_params(parms, '=');
+        if (!comp_error) {
+          bc_add_code(&comp_prog, kwTYPE_CMPOPR);
+          bc_add_code(&comp_prog, '=');
+          comp_expression(p, 0);
+        }
+      }
+    } else {
+      if (array_index != NULL) {
+        comp_array_params(array_index, 0);
+      }
+      bc_add_code(&comp_prog, kwTYPE_CMPOPR);
+      bc_add_code(&comp_prog, '=');
+      comp_expression(parms + 1, 0);
+    }
+  }
+  if (array_index != NULL) {
+    tmp_free(array_index);
+  }
+}
+
+// User-defined procedures/functions
+void comp_text_line_func(long idx, int decl) {
+  char *lpar_ptr, *eq_ptr;
+  char_p_t pars[256];
+  int count;
   char pname[SB_KEYWORD_SIZE + 1];
   char vname[SB_KEYWORD_SIZE + 1];
+
+  // single-line function (DEF FN)
+  if ((eq_ptr = strchr(comp_bc_parm, '='))) {
+    *eq_ptr = '\0';
+  }
+  // parameters start
+  if ((lpar_ptr = strchr(comp_bc_parm, '('))) {
+    *lpar_ptr = '\0';
+  }
+
+  comp_prepare_name(pname, baseof(comp_bc_parm, '/'), SB_KEYWORD_SIZE);
+  comp_error_if_keyword(baseof(comp_bc_parm, '/'));
+
+  if (decl) {
+    // its only a declaration (DECLARE)
+    if (comp_udp_getip(pname) == INVALID_ADDR) {
+      comp_add_udp(pname);
+    }
+  } else {
+    // func/sub
+    if (comp_udp_getip(pname) != INVALID_ADDR) {
+      sc_raise(MSG_UDP_ALREADY_EXISTS, pname);
+    } else {
+      // setup routine's address (and get an id)
+      int pidx;
+      if ((pidx = comp_udp_setip(pname, comp_prog.count)) == -1) {
+        pidx = comp_add_udp(pname);
+        comp_udp_setip(pname, comp_prog.count);
+      }
+      // put JMP to the next command after the END
+      // (now we just keep the rq space, pass2 will
+      // update that)
+      bc_add_code(&comp_prog, kwGOTO);
+      bc_add_addr(&comp_prog, 0);
+      bc_add_code(&comp_prog, 0);
+
+      comp_block_level++;
+      comp_block_id++;
+      // keep it in stack for 'pass2'
+      comp_push(comp_prog.count);
+      // store (FUNC/PROC) code
+      bc_add_code(&comp_prog, idx);
+
+      // func/proc name (also, update comp_bc_proc)
+      if (comp_proc_level) {
+        strcat(comp_bc_proc, "/");
+        strcat(comp_bc_proc, baseof(pname, '/'));
+      } else {
+        strcpy(comp_bc_proc, pname);
+      }
+
+      if (!comp_error) {
+        comp_proc_level++;
+
+        // if its a function,
+        // setup the code for the return-value
+        // (vid={F}/{F})
+        if (idx == kwFUNC) {
+          strcpy(comp_bc_tmp2, baseof(pname, '/'));
+          comp_udptable[pidx].vid = comp_var_getID(comp_bc_tmp2);
+        } else {
+          // procedure, no return value here
+          comp_udptable[pidx].vid = INVALID_ADDR;
+        }
+
+        // parameters
+        if (lpar_ptr) {
+          int i;
+          int vattr;
+
+          *lpar_ptr = '(';
+          comp_getlist_insep(comp_bc_parm, pars, "()", ",", 256, &count);
+          bc_add_code(&comp_prog, kwTYPE_PARAM);
+          bc_add_code(&comp_prog, count);
+
+          for (i = 0; i < count; i++) {
+            if ((strncmp(pars[i], LCN_BYREF_WRS, 6) == 0) || (pars[i][0] == '@')) {
+              if (pars[i][0] == '@') {
+                comp_prepare_name(vname, pars[i] + 1, SB_KEYWORD_SIZE);
+              } else {
+                comp_prepare_name(vname, pars[i] + 6, SB_KEYWORD_SIZE);
+              }
+              vattr = 0x80;
+            } else {
+              comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+              vattr = 0;
+            }
+            if (strchr(pars[i], '(')) {
+              vattr |= 1;
+            }
+
+            bc_add_code(&comp_prog, vattr);
+            bc_add_addr(&comp_prog, comp_var_getID(vname));
+          }
+        } else {
+          // no parameters
+          bc_add_code(&comp_prog, kwTYPE_PARAM);
+          // params
+          bc_add_code(&comp_prog, 0);
+          // pcount = 0
+        }
+
+        bc_eoc(&comp_prog); // EOC
+        // scan for single-line function (DEF FN format)
+        if (eq_ptr && idx == kwFUNC) {
+          eq_ptr++;         // *eq_ptr was '\0'
+          SKIP_SPACES(eq_ptr);
+          if (strlen(eq_ptr)) {
+            char *macro = tmp_alloc(SB_SOURCELINE_SIZE + 1);
+            sprintf(macro, "%s=%s:%s", pname, eq_ptr, LCN_END);
+            // run comp_text_line again
+            comp_text_line(macro);
+            tmp_free(macro);
+          } else {
+            sc_raise(MSG_MISSING_UDP_BODY);
+          }
+        }
+      }
+    }
+  }
+}
+
+void comp_text_line_on() {
+  char *p;
+  int count, i, keep_ip;
+  char_p_t pars[256];
+
+  comp_push(comp_prog.count);
+  bc_add_ctrl(&comp_prog, kwONJMP, 0, 0);
+
+  if ((p = strstr(comp_bc_parm, LCN_GOTO_WS)) != NULL) {
+    bc_add_code(&comp_prog, kwGOTO);
+    // the command
+    *p = '\0';
+    p += 6;
+    keep_ip = comp_prog.count;
+    bc_add_code(&comp_prog, 0);
+    count = comp_getlist(p, pars, ",", 256);
+    for (i = 0; i < count; i++) {
+      bc_add_addr(&comp_prog, comp_label_getID(pars[i])); // IDs
+    }
+
+    if (count == 0) {
+      sc_raise(MSG_ON_GOTO_ERR);
+    } else {
+      comp_prog.ptr[keep_ip] = count;
+    }
+
+    comp_expression(comp_bc_parm, 0); // the expression
+    bc_eoc(&comp_prog);
+  } else if ((p = strstr(comp_bc_parm, LCN_GOSUB_WS)) != NULL) {
+    bc_add_code(&comp_prog, kwGOSUB);
+    // the command
+    *p = '\0';
+    p += 7;
+    keep_ip = comp_prog.count;
+    bc_add_code(&comp_prog, 0);
+    // the counter
+
+    // count = bc_scan_label_list(p);
+    count = comp_getlist(p, pars, ",", 256);
+    for (i = 0; i < count; i++) {
+      bc_add_addr(&comp_prog, comp_label_getID(pars[i]));
+    }
+    if (count == 0) {
+      sc_raise(MSG_ON_GOSUB_ERR);
+    } else {
+      comp_prog.ptr[keep_ip] = count;
+    }
+    comp_expression(comp_bc_parm, 0); // the expression
+    bc_eoc(&comp_prog);
+  } else {
+    sc_raise(MSG_ON_NOTHING);
+  }
+}
+
+void comp_text_line_for() {
+  char *p = strchr(comp_bc_parm, '=');
+  char *p_do = strstr(comp_bc_parm, LCN_DO_WS);
+
+  // fix DO bug
+  if (p_do) {
+    if (p > p_do) {
+      p = NULL;
+    }
+  }
+  strcpy(comp_do_close_cmd, LCN_NEXT);
+  comp_block_level++;
+  comp_block_id++;
+  comp_push(comp_prog.count);
+  bc_add_ctrl(&comp_prog, kwFOR, 0, 0);
+
+  if (!p) {
+    // FOR [EACH] X IN Y
+    if ((p = strstr(comp_bc_parm, LCN_IN_WS)) == NULL) {
+      sc_raise(MSG_FOR_NOTHING);
+    } else {
+      *p = '\0';
+      char *n = p;
+      strcpy(comp_bc_name, comp_bc_parm);
+      str_alltrim(comp_bc_name);
+      if (!is_alpha(*comp_bc_name)) {
+        sc_raise(MSG_FOR_COUNT_ERR, comp_bc_name);
+      } else {
+        char *p_lev = comp_bc_name;
+        while (is_alnum(*p_lev) || *p_lev == ' ') {
+          p_lev++;
+        }
+        if (*p_lev == '(') {
+          sc_raise(MSG_FOR_ARR_COUNT, comp_bc_name);
+        } else {
+          if (!comp_error_if_keyword(comp_bc_name)) {
+            comp_add_variable(&comp_prog, comp_bc_name);
+            *n = ' ';
+            bc_add_code(&comp_prog, kwIN);
+            comp_expression(n + 4, 0);
+          }
+        }
+      }
+    }
+  } else {
+    // FOR X=Y TO Z [STEP L]
+    *p = '\0';
+    char *n = p;
+
+    strcpy(comp_bc_name, comp_bc_parm);
+    str_alltrim(comp_bc_name);
+    if (!is_alpha(*comp_bc_name)) {
+      sc_raise(MSG_FOR_COUNT_ERR, comp_bc_name);
+    } else {
+      char *p_lev = comp_bc_name;
+      while (is_alnum(*p_lev) || *p_lev == ' ') {
+        p_lev++;
+      }
+      if (*p_lev == '(') {
+        sc_raise(MSG_FOR_ARR_COUNT, comp_bc_name);
+      } else {
+        if (!comp_error_if_keyword(comp_bc_name)) {
+          comp_add_variable(&comp_prog, comp_bc_name);
+          *n = '=';
+          comp_expression(n + 1, 0);
+        }
+      }
+    }
+  }
+}
+
+void comp_text_line_end(long idx) {
+  if (strncmp(comp_bc_parm, LCN_IF, 2) == 0 ||
+      strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ||
+      strncmp(comp_bc_parm, LCN_SELECT, 6) == 0) {
+    idx = strncmp(comp_bc_parm, LCN_IF, 2) == 0 ? kwENDIF :
+          strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ? kwENDTRY : kwENDSELECT;
+    comp_push(comp_prog.count);
+    if (idx == kwENDTRY) {
+      bc_add_code(&comp_prog, idx);
+    } else {
+      bc_add_ctrl(&comp_prog, idx, 0, 0);
+    }
+    comp_block_level--;
+    comp_block_id--;
+  } else if (comp_proc_level) {
+    char *dol;
+
+    // UDP/F RETURN
+    dol = strrchr(comp_bc_proc, '/');
+    if (dol) {
+      *dol = '\0';
+    } else {
+      *comp_bc_proc = '\0';
+    }
+    comp_push(comp_prog.count);
+    bc_add_code(&comp_prog, kwTYPE_RET);
+    comp_proc_level--;
+    comp_block_level--;
+    comp_block_id++; // advance to next block
+  } else {
+    // END OF PROG
+    bc_add_code(&comp_prog, idx);
+  }
+}
+
+// External or user-defined procedure
+void comp_text_line_ext_func() {
+  int udp = comp_is_external_proc(comp_bc_name);
+  if (udp > -1) {
+    bc_add_extpcode(&comp_prog, comp_extproctable[udp].lib_id,
+                    comp_extproctable[udp].symbol_index);
+    char *next = trim_empty_parentheses(comp_bc_parm);
+    if (comp_is_parenthesized(next)) {
+      comp_expression(next, 0);
+    } else {
+      bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
+      comp_expression(next, 0);
+      bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+    }
+  } else {
+    udp = comp_udp_id(comp_bc_name, 1);
+    if (udp == -1) {
+      udp = comp_add_udp(comp_bc_name);
+    }
+    comp_push(comp_prog.count);
+    bc_add_ctrl(&comp_prog, kwTYPE_CALL_UDP, udp, 0);
+    char *next = trim_empty_parentheses(comp_bc_parm);
+    if (comp_is_parenthesized(next)) {
+      comp_expression(next, 0);
+    } else {
+      bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
+      comp_expression(next, 0);
+      bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+    }
+  }
+}
+
+int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
+  char_p_t pars[256];
+  int count, i, index;
+  char vname[SB_KEYWORD_SIZE + 1];
+  int result = 1;
+
+  switch (idx) {
+  case kwLABEL:
+    str_alltrim(comp_bc_parm);
+    idx = comp_label_getID(comp_bc_parm);
+    comp_label_setip(idx);
+    break;
+
+  case kwEXIT:
+    bc_add_code(&comp_prog, idx);
+    str_alltrim(comp_bc_parm);
+    if (strlen(comp_bc_parm) && comp_bc_parm[0] != '\'') {
+      idx = comp_is_special_operator(comp_bc_parm);
+      if (idx == kwFORSEP || idx == kwLOOPSEP || idx == kwPROCSEP || idx == kwFUNCSEP) {
+        bc_add_code(&comp_prog, idx);
+      } else {
+        sc_raise(MSG_EXIT_ERR);
+      }
+    } else {
+      bc_add_code(&comp_prog, 0);
+    }
+    break;
+
+  case kwDECLARE:
+    break;
+
+  case kwPROC:
+  case kwFUNC:
+    comp_text_line_func(idx, decl);
+    break;
+
+  case kwLOCAL:
+    // local variables
+    count = comp_getlist(comp_bc_parm, pars, ",", 256);
+    bc_add_code(&comp_prog, kwTYPE_CRVAR);
+    bc_add_code(&comp_prog, count);
+    for (i = 0; i < count; i++) {
+      comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+      bc_add_addr(&comp_prog, comp_var_getID(vname));
+    }
+    // handle same line variable assignment, eg local blah = foo
+    for (i = 0; i < count; i++) {
+      comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+      if (strlen(vname) != strlen(pars[i])) {
+        // kwTYPE_LINE is required for executor
+        bc_add_code(&comp_prog, kwTYPE_LINE);
+        bc_add_addr(&comp_prog, comp_line);
+        comp_text_line(pars[i]);
+      }
+    }
+    break;
+
+  case kwREM:
+    result = 0;
+    break;
+
+  case kwEXPORT:             // export
+    if (comp_unit_flag) {
+      bc_store_exports(comp_bc_parm);
+    } else {
+      sc_raise(MSG_UNIT_NAME_MISSING);
+    }
+    break;
+
+  case kwOPTION:
+    comp_cmd_option(comp_bc_parm);
+    break;
+
+  case kwGOTO:
+    str_alltrim(comp_bc_parm);
+    comp_push(comp_prog.count);
+    bc_add_code(&comp_prog, idx);
+    bc_add_addr(&comp_prog, comp_label_getID(comp_bc_parm));
+    bc_add_code(&comp_prog, comp_block_level);
+    break;
+
+  case kwGOSUB:
+    str_alltrim(comp_bc_parm);
+    bc_add_code(&comp_prog, idx);
+    bc_add_addr(&comp_prog, comp_label_getID(comp_bc_parm));
+    break;
+
+  case kwIF:
+    strcpy(comp_do_close_cmd, LCN_ENDIF);
+
+    // from here, we can scan for inline IF
+    if (comp_single_line_if(last_cmd)) {
+      // inline-IFs
+      result = 0;
+    } else {
+      comp_block_level++;
+      comp_block_id++;
+      comp_push(comp_prog.count);
+      bc_add_ctrl(&comp_prog, idx, 0, 0);
+      comp_expression(comp_bc_parm, 0);
+      bc_add_code(&comp_prog, kwTYPE_EOC);
+    }
+    break;
+
+  case kwON:
+    comp_text_line_on();
+    break;
+
+  case kwFOR:
+    comp_text_line_for();
+    break;
+
+  case kwWHILE:
+    strcpy(comp_do_close_cmd, LCN_WEND);
+    comp_block_level++;
+    comp_block_id++;
+    comp_push(comp_prog.count);
+    bc_add_ctrl(&comp_prog, idx, 0, 0);
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwREPEAT:
+    // WHILE & REPEAT DOES NOT USE STACK
+    comp_block_level++;
+    comp_block_id++;
+    comp_push(comp_prog.count);
+    bc_add_ctrl(&comp_prog, idx, 0, 0);
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwSELECT:
+    comp_block_level++;
+    comp_block_id++;
+    comp_push(comp_prog.count);
+    bc_add_code(&comp_prog, idx);
+    // if comp_bc_parm starts with "CASE ", then skip first 5 chars
+    index = strncasecmp("CASE ", comp_bc_parm, 5) == 0 ? 5 : 0;
+    comp_expression(comp_bc_parm + index, 0);
+    break;
+
+  case kwCASE:
+    // link to matched block or next CASE/END-SELECT
+    if (!comp_bc_parm || !comp_bc_parm[0] || strncasecmp(LCN_ELSE, comp_bc_parm, 4) == 0) {
+      comp_push(comp_prog.count);
+      bc_add_ctrl(&comp_prog, kwCASE_ELSE, 0, 0);
+    } else {
+      comp_push(comp_prog.count);
+      bc_add_ctrl(&comp_prog, idx, 0, 0);
+      comp_expression(comp_bc_parm, 0);
+    }
+    break;
+
+  case kwTRY:
+    comp_block_level++;
+    comp_block_id++;
+    comp_push(comp_prog.count);
+    bc_add_code(&comp_prog, idx);
+    bc_add_addr(&comp_prog, 0);
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwCATCH:
+    comp_push(comp_prog.count);
+    bc_add_ctrl(&comp_prog, idx, 0, 0);
+    bc_add_code(&comp_prog, comp_block_level);
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwELSE:
+  case kwELIF:
+    index = 0;
+    // handle "ELSE IF"
+    if (idx == kwELSE && strncasecmp(LCN_IF, comp_bc_parm, 2) == 0) {
+      idx = kwELIF;
+      index = 2;
+    }
+    // handle error for ELSE xxxx
+    if (idx == kwELSE && comp_bc_parm[0]) {
+      sc_raise(ERR_SYNTAX);
+      break;
+    }
+    comp_push(comp_prog.count);
+    bc_add_ctrl(&comp_prog, idx, 0, 0);
+    comp_expression(comp_bc_parm + index, 0);
+    break;
+
+  case kwENDIF:
+  case kwNEXT:
+    comp_push(comp_prog.count);
+    bc_add_ctrl(&comp_prog, idx, 0, 0);
+    comp_block_level--;
+    comp_block_id--;
+    break;
+
+  case kwWEND:
+  case kwUNTIL:
+    comp_push(comp_prog.count);
+    bc_add_ctrl(&comp_prog, idx, 0, 0);
+    comp_block_level--;
+    comp_block_id--;
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwSTEP:
+  case kwTO:
+  case kwIN:
+  case kwTHEN:
+  case kwCOS:
+  case kwSIN:
+  case kwLEN:
+  case kwLOOP:               // functions...
+    sc_raise(MSG_SPECIAL_KW_ERR, comp_bc_name);
+    break;
+
+  case kwRESTORE:
+    comp_push(comp_prog.count);
+    bc_add_code(&comp_prog, idx);
+    bc_add_addr(&comp_prog, comp_label_getID(comp_bc_parm));
+    break;
+
+  case kwEND:
+    comp_text_line_end(idx);
+    break;
+
+  case kwDATA:
+    comp_data_seg(comp_bc_parm);
+    break;
+
+  case kwREAD:
+    bc_add_code(&comp_prog, sharp ? kwFILEREAD : idx);
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwINPUT:
+    bc_add_code(&comp_prog, sharp ? kwFILEINPUT : idx);
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwPRINT:
+    bc_add_code(&comp_prog, sharp ? kwFILEPRINT : idx);
+    comp_expression(comp_bc_parm, 0);
+    break;
+
+  case kwLINE:
+    if (strncmp(comp_bc_parm, LCN_INPUT_WRS, 6) == 0) {
+      bc_add_code(&comp_prog, kwLINEINPUT);
+      comp_expression(comp_bc_parm + 6, 0);
+    } else {
+      bc_add_code(&comp_prog, idx);
+      comp_expression(comp_bc_parm, 0);
+    }
+    break;
+
+  case -1:
+    comp_text_line_ext_func();
+    break;
+
+  default:
+    // something else
+    bc_add_code(&comp_prog, idx);
+    comp_expression(comp_bc_parm, 0);
+  }
+
+  return result;
+}
+
+/*
+ * Pass 1: scan source line
+ */
+void comp_text_line(char *text) {
+  long idx;
+  int decl = 0;
 
   if (comp_error) {
     return;
   }
   str_alltrim(text);
-  p = text;
+  char *p = text;
 
   // EOL
   if (*p == ':') {
@@ -1807,9 +2541,9 @@ void comp_text_line(char *text) {
     return;
   }
 
-  lb_end = p = (char *)comp_next_word(text, comp_bc_name);
-  last_cmd = p;
-  p = get_param_sect(p, ":", comp_bc_parm);
+  char *lb_end = (char *)comp_next_word(text, comp_bc_name);
+  char *last_cmd = lb_end;
+  p = get_param_sect(lb_end, ":", comp_bc_parm);
 
   // check old style labels
   if (is_all_digits(comp_bc_name)) {
@@ -1831,10 +2565,10 @@ void comp_text_line(char *text) {
     }
     p = get_param_sect(p, ":", comp_bc_parm);
   }
-  // what's this ?
+
   idx = comp_is_keyword(comp_bc_name);
   if (idx == kwREM) {
-    return;                     // remarks... return
+    return;
   }
   if (idx == -1) {
     idx = comp_is_proc(comp_bc_name);
@@ -1857,7 +2591,6 @@ void comp_text_line(char *text) {
         char *next = trim_empty_parentheses(comp_bc_parm);
         comp_expression(next, 0);
       }
-
       if (*p == ':') {          // command separator
         bc_eoc(&comp_prog);
         p++;
@@ -1866,7 +2599,6 @@ void comp_text_line(char *text) {
       return;
     }
   }
-
   if (idx == kwLET) {           // old-style keyword LET
     char *p;
     idx = -1;
@@ -1890,669 +2622,25 @@ void comp_text_line(char *text) {
     return;
   }
 
+  int sharp, ladd,linc, ldec, leqop;
   sharp = (comp_bc_parm[0] == '#'); // if # -> file commands
-  ladd = (strncmp(comp_bc_parm, "<<", 2) == 0); // if << -> array,
+  comp_get_unary(comp_bc_parm, &ladd, &linc, &ldec, &leqop);
 
-  // append
-  linc = (strncmp(comp_bc_parm, "++", 2) == 0);
-  ldec = (strncmp(comp_bc_parm, "--", 2) == 0);
-
-  if (comp_bc_parm[1] == '=' && strchr("-+/\\*^%&|", comp_bc_parm[0])) {
-    leqop = comp_bc_parm[0];
-  } else {
-    leqop = 0;
-  }
   if ((comp_bc_parm[0] == '=' || ladd || linc || ldec || leqop) && (idx != -1)) {
     sc_raise(MSG_IT_IS_KEYWORD, comp_bc_name);
     return;
   }
-
   if ((idx == kwCONST) ||
       ((comp_bc_parm[0] == '=' ||
         (comp_bc_parm[0] == '(' && !comp_is_function(comp_bc_name)) ||
         ladd || linc || ldec || leqop) && (idx == -1))) {
-    //
-    // LET/CONST commands
-    //
-    char *parms = comp_bc_parm;
-    if (idx == kwCONST) {
-      // const a=10: b=10
-      p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
-      p = get_param_sect(p, ":", comp_bc_parm);
-      parms = comp_bc_parm;
-      bc_add_code(&comp_prog, kwCONST);
-    } else if (ladd) {
-      bc_add_code(&comp_prog, kwAPPEND);
-      parms += 2;
-    } else if (linc) {
-      bc_add_code(&comp_prog, kwLET);
-      strcpy(comp_bc_parm, "=");
-      strcat(comp_bc_parm, comp_bc_name);
-      strcat(comp_bc_parm, "+1");
-    } else if (ldec) {
-      bc_add_code(&comp_prog, kwLET);
-      strcpy(comp_bc_parm, "=");
-      strcat(comp_bc_parm, comp_bc_name);
-      strcat(comp_bc_parm, "-1");
-    } else if (leqop) {
-      char *buf;
-      int l;
-
-      // a += 10: b -= 10 etc
-      bc_add_code(&comp_prog, kwLET);
-      l = strlen(comp_bc_parm) + strlen(comp_bc_name) + 1;
-      buf = tmp_alloc(l);
-      memset(buf, 0, l);
-      strcpy(buf, "=");
-      strcat(buf, comp_bc_name);
-      buf[strlen(buf)] = leqop;
-      strcat(buf, comp_bc_parm + 2);
-      strcpy(comp_bc_parm, buf);
-      tmp_free(buf);
-    } else {
-      bc_add_code(&comp_prog, kwLET);
-    }
-
-    comp_error_if_keyword(comp_bc_name);
-    comp_add_variable(&comp_prog, comp_bc_name);
-
-    if (!comp_error) {
-      if (parms[0] == '(') {
-        char *p = strchr(parms, '=');
-        if (!p) {
-          sc_raise(MSG_LET_MISSING_EQ);
-        } else {
-          if (*comp_next_char(parms + 1) == ')') {
-            // its the variable's name only
-            comp_expression(p, 0);
-          } else {
-            // ARRAY (LEFT)
-            *p = '\0';
-            comp_array_params(parms);
-            *p = '=';
-            if (!comp_error) {
-              bc_add_code(&comp_prog, kwTYPE_CMPOPR);
-              bc_add_code(&comp_prog, '=');
-              comp_expression(p + 1, 0);
-            }
-          }
-        }
-      } else {
-        bc_add_code(&comp_prog, kwTYPE_CMPOPR);
-        bc_add_code(&comp_prog, '=');
-        comp_expression(parms + 1, 0);
-      }
-    }
+    comp_text_line_let(idx, ladd, linc, ldec, leqop);
   } else {
-    // add generic command
-    char_p_t pars[256];
-    char *lpar_ptr, *eq_ptr, *p, *p_do;
-    int keep_ip, udp, count, i;
-
-    switch (idx) {
-    case kwLABEL:
-      str_alltrim(comp_bc_parm);
-      idx = comp_label_getID(comp_bc_parm);
-      comp_label_setip(idx);
-      break;
-
-    case kwEXIT:
-      bc_add_code(&comp_prog, idx);
-      str_alltrim(comp_bc_parm);
-      if (strlen(comp_bc_parm) && comp_bc_parm[0] != '\'') {
-        idx = comp_is_special_operator(comp_bc_parm);
-        if (idx == kwFORSEP || idx == kwLOOPSEP || idx == kwPROCSEP || idx == kwFUNCSEP) {
-          bc_add_code(&comp_prog, idx);
-        } else {
-          sc_raise(MSG_EXIT_ERR);
-        }
-      } else {
-        bc_add_code(&comp_prog, 0);
-      }
-      break;
-
-    case kwDECLARE:
-      break;
-
-    case kwPROC:
-    case kwFUNC:
-      //
-      // USER-DEFINED PROCEDURES/FUNCTIONS
-      //
-      // single-line function (DEF FN)
-      if ((eq_ptr = strchr(comp_bc_parm, '='))) {
-        *eq_ptr = '\0';
-      }
-      // parameters start
-      if ((lpar_ptr = strchr(comp_bc_parm, '('))) {
-        *lpar_ptr = '\0';
-      }
-      comp_prepare_name(pname, baseof(comp_bc_parm, '/'), SB_KEYWORD_SIZE);
-      comp_error_if_keyword(baseof(comp_bc_parm, '/'));
-
-      if (decl) {
-        // its only a declaration (DECLARE)
-        if (comp_udp_getip(pname) == INVALID_ADDR) {
-          comp_add_udp(pname);
-        }
-      } else {
-        // func/sub
-        if (comp_udp_getip(pname) != INVALID_ADDR) {
-          sc_raise(MSG_UDP_ALREADY_EXISTS, pname);
-        } else {
-          // setup routine's address (and get an id)
-          int pidx;
-          if ((pidx = comp_udp_setip(pname, comp_prog.count)) == -1) {
-            pidx = comp_add_udp(pname);
-            comp_udp_setip(pname, comp_prog.count);
-          }
-          // put JMP to the next command after the END
-          // (now we just keep the rq space, pass2 will
-          // update that)
-          bc_add_code(&comp_prog, kwGOTO);
-          bc_add_addr(&comp_prog, 0);
-          bc_add_code(&comp_prog, 0);
-
-          comp_block_level++;
-          comp_block_id++;
-          // keep it in stack for 'pass2'
-          comp_push(comp_prog.count);
-          // store (FUNC/PROC) code
-          bc_add_code(&comp_prog, idx);
-
-          // func/proc name (also, update comp_bc_proc)
-          if (comp_proc_level) {
-            strcat(comp_bc_proc, "/");
-            strcat(comp_bc_proc, baseof(pname, '/'));
-          } else {
-            strcpy(comp_bc_proc, pname);
-          }
-
-          if (!comp_error) {
-            comp_proc_level++;
-
-            // if its a function,
-            // setup the code for the return-value
-            // (vid={F}/{F})
-            if (idx == kwFUNC) {
-              strcpy(comp_bc_tmp2, baseof(pname, '/'));
-              comp_udptable[pidx].vid = comp_var_getID(comp_bc_tmp2);
-            } else {
-              // procedure, no return value here
-              comp_udptable[pidx].vid = INVALID_ADDR;
-            }
-
-            // parameters
-            if (lpar_ptr) {
-              int i;
-              *lpar_ptr = '(';
-              comp_getlist_insep(comp_bc_parm, pars, "()", ",", 256, &count);
-              bc_add_code(&comp_prog, kwTYPE_PARAM);
-              bc_add_code(&comp_prog, count);
-
-              for (i = 0; i < count; i++) {
-                if ((strncmp(pars[i], LCN_BYREF_WRS, 6) == 0) || (pars[i][0] == '@')) {
-                  if (pars[i][0] == '@') {
-                    comp_prepare_name(vname, pars[i] + 1, SB_KEYWORD_SIZE);
-                  } else {
-                    comp_prepare_name(vname, pars[i] + 6, SB_KEYWORD_SIZE);
-                  }
-                  vattr = 0x80;
-                } else {
-                  comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
-                  vattr = 0;
-                }
-                if (strchr(pars[i], '(')) {
-                  vattr |= 1;
-                }
-
-                bc_add_code(&comp_prog, vattr);
-                bc_add_addr(&comp_prog, comp_var_getID(vname));
-              }
-            } else {
-              // no parameters
-              bc_add_code(&comp_prog, kwTYPE_PARAM);
-              // params
-              bc_add_code(&comp_prog, 0);
-              // pcount = 0
-            }
-
-            bc_eoc(&comp_prog); // EOC
-            // -----------------------------------------------
-            // scan for single-line function (DEF FN
-            // format)
-            if (eq_ptr && idx == kwFUNC) {
-              eq_ptr++;         // *eq_ptr was '\0'
-              SKIP_SPACES(eq_ptr);
-              if (strlen(eq_ptr)) {
-                char *macro = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-                sprintf(macro, "%s=%s:%s", pname, eq_ptr, LCN_END);
-
-                // run comp_text_line again
-                comp_text_line(macro);
-                tmp_free(macro);
-              } else {
-                sc_raise(MSG_MISSING_UDP_BODY);
-              }
-            }
-          }
-        }
-      }
-      break;
-
-    case kwLOCAL:
-      // local variables
-      count = comp_getlist(comp_bc_parm, pars, ",", 256);
-      bc_add_code(&comp_prog, kwTYPE_CRVAR);
-      bc_add_code(&comp_prog, count);
-      for (i = 0; i < count; i++) {
-        comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
-        bc_add_addr(&comp_prog, comp_var_getID(vname));
-      }
-      // handle same line variable assignment, eg local blah = foo
-      for (i = 0; i < count; i++) {
-        comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
-        if (strlen(vname) != strlen(pars[i])) {
-          // kwTYPE_LINE is required for executor
-          bc_add_code(&comp_prog, kwTYPE_LINE);
-          bc_add_addr(&comp_prog, comp_line);
-          comp_text_line(pars[i]);
-        }
-      }
-
-      break;
-
-    case kwREM:
-      return;
-
-    case kwEXPORT:             // export
-      if (comp_unit_flag) {
-        bc_store_exports(comp_bc_parm);
-      } else {
-        sc_raise(MSG_UNIT_NAME_MISSING);
-      }
-      break;
-
-    case kwOPTION:
-      comp_cmd_option(comp_bc_parm);
-      break;
-
-    case kwGOTO:
-      str_alltrim(comp_bc_parm);
-      comp_push(comp_prog.count);
-      bc_add_code(&comp_prog, idx);
-      bc_add_addr(&comp_prog, comp_label_getID(comp_bc_parm));
-      bc_add_code(&comp_prog, comp_block_level);
-      break;
-
-    case kwGOSUB:
-      str_alltrim(comp_bc_parm);
-      bc_add_code(&comp_prog, idx);
-      bc_add_addr(&comp_prog, comp_label_getID(comp_bc_parm));
-      break;
-
-    case kwIF:
-      strcpy(comp_do_close_cmd, LCN_ENDIF);
-
-      // from here, we can scan for inline IF
-      if (comp_single_line_if(last_cmd)) {
-        // inline-IFs
-        return;
-      } else {
-        comp_block_level++;
-        comp_block_id++;
-        comp_push(comp_prog.count);
-        bc_add_ctrl(&comp_prog, idx, 0, 0);
-        comp_expression(comp_bc_parm, 0);
-        bc_add_code(&comp_prog, kwTYPE_EOC);
-        // bc_eoc();
-      }
-      break;
-
-    case kwON:
-      //
-      // ON x GOTO|GOSUB ...
-      //
-      idx = kwONJMP;            // WARNING!
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-
-      if ((p = strstr(comp_bc_parm, LCN_GOTO_WS)) != NULL) {
-        bc_add_code(&comp_prog, kwGOTO);
-        // the command
-        *p = '\0';
-        p += 6;
-        keep_ip = comp_prog.count;
-        bc_add_code(&comp_prog, 0);
-        // the counter
-
-        // count = bc_scan_label_list(p);
-        count = comp_getlist(p, pars, ",", 256);
-        for (i = 0; i < count; i++) {
-          bc_add_addr(&comp_prog, comp_label_getID(pars[i])); // IDs
-        }
-
-        if (count == 0) {
-          sc_raise(MSG_ON_GOTO_ERR);
-        } else {
-          comp_prog.ptr[keep_ip] = count;
-        }
-
-        comp_expression(comp_bc_parm, 0); // the expression
-        bc_eoc(&comp_prog);
-      } else if ((p = strstr(comp_bc_parm, LCN_GOSUB_WS)) != NULL) {
-        bc_add_code(&comp_prog, kwGOSUB);
-        // the command
-        *p = '\0';
-        p += 7;
-        keep_ip = comp_prog.count;
-        bc_add_code(&comp_prog, 0);
-        // the counter
-
-        // count = bc_scan_label_list(p);
-        count = comp_getlist(p, pars, ",", 256);
-        for (i = 0; i < count; i++) {
-          bc_add_addr(&comp_prog, comp_label_getID(pars[i]));
-        }
-        if (count == 0) {
-          sc_raise(MSG_ON_GOSUB_ERR);
-        } else {
-          comp_prog.ptr[keep_ip] = count;
-        }
-        comp_expression(comp_bc_parm, 0); // the expression
-        bc_eoc(&comp_prog);
-      } else {
-        sc_raise(MSG_ON_NOTHING);
-      }
-      break;
-
-    case kwFOR:
-      //
-      // FOR
-      //
-      p = strchr(comp_bc_parm, '=');
-      p_do = strstr(comp_bc_parm, LCN_DO_WS);
-
-      // fix DO bug
-      if (p_do) {
-        if (p > p_do) {
-          p = NULL;
-        }
-      }
-      strcpy(comp_do_close_cmd, LCN_NEXT);
-      comp_block_level++;
-      comp_block_id++;
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, kwFOR, 0, 0);
-
-      if (!p) {
-        // FOR [EACH] X IN Y
-        if ((p = strstr(comp_bc_parm, LCN_IN_WS)) == NULL) {
-          sc_raise(MSG_FOR_NOTHING);
-        } else {
-          *p = '\0';
-          char *n = p;
-          strcpy(comp_bc_name, comp_bc_parm);
-          str_alltrim(comp_bc_name);
-          if (!is_alpha(*comp_bc_name)) {
-            sc_raise(MSG_FOR_COUNT_ERR, comp_bc_name);
-          } else {
-            char *p_lev = comp_bc_name;
-            while (is_alnum(*p_lev) || *p_lev == ' ') {
-              p_lev++;
-            }
-            if (*p_lev == '(') {
-              sc_raise(MSG_FOR_ARR_COUNT, comp_bc_name);
-            } else {
-              if (!comp_error_if_keyword(comp_bc_name)) {
-                comp_add_variable(&comp_prog, comp_bc_name);
-                *n = ' ';
-                bc_add_code(&comp_prog, kwIN);
-                comp_expression(n + 4, 0);
-              }
-            }
-          }
-        }
-      } else {
-        // FOR X=Y TO Z [STEP L]
-        *p = '\0';
-        char *n = p;
-
-        strcpy(comp_bc_name, comp_bc_parm);
-        str_alltrim(comp_bc_name);
-        if (!is_alpha(*comp_bc_name)) {
-          sc_raise(MSG_FOR_COUNT_ERR, comp_bc_name);
-        } else {
-          char *p_lev = comp_bc_name;
-          while (is_alnum(*p_lev) || *p_lev == ' ') {
-            p_lev++;
-          }
-          if (*p_lev == '(') {
-            sc_raise(MSG_FOR_ARR_COUNT, comp_bc_name);
-          } else {
-            if (!comp_error_if_keyword(comp_bc_name)) {
-              comp_add_variable(&comp_prog, comp_bc_name);
-              *n = '=';
-              comp_expression(n + 1, 0);
-            }
-          }
-        }
-      }
-      break;
-
-    case kwWHILE:
-      strcpy(comp_do_close_cmd, LCN_WEND);
-      comp_block_level++;
-      comp_block_id++;
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwREPEAT:
-      // WHILE & REPEAT DOES NOT USE STACK
-      comp_block_level++;
-      comp_block_id++;
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwSELECT:
-      comp_block_level++;
-      comp_block_id++;
-      comp_push(comp_prog.count);
-      bc_add_code(&comp_prog, idx);
-      // if comp_bc_parm starts with "CASE ", then skip first 5 chars
-      int index = strncasecmp("CASE ", comp_bc_parm, 5) == 0 ? 5 : 0;
-      comp_expression(comp_bc_parm + index, 0);
-      break;
-
-    case kwCASE:
-      // link to matched block or next CASE/END-SELECT
-      if (!comp_bc_parm || !comp_bc_parm[0] || strncasecmp(LCN_ELSE, comp_bc_parm, 4) == 0) {
-        comp_push(comp_prog.count);
-        bc_add_ctrl(&comp_prog, kwCASE_ELSE, 0, 0);
-      } else {
-        comp_push(comp_prog.count);
-        bc_add_ctrl(&comp_prog, idx, 0, 0);
-        comp_expression(comp_bc_parm, 0);
-      }
-      break;
-
-    case kwTRY:
-      comp_block_level++;
-      comp_block_id++;
-      comp_push(comp_prog.count);
-      bc_add_code(&comp_prog, idx);
-      bc_add_addr(&comp_prog, 0);
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwCATCH:
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwELSE:
-    case kwELIF: {
-      int index = 0;
-      // handle "ELSE IF"
-      if (idx == kwELSE && strncasecmp(LCN_IF, comp_bc_parm, 2) == 0) {
-        idx = kwELIF;
-        index = 2;
-      }
-      // handle error for ELSE xxxx
-      if (idx == kwELSE && comp_bc_parm[0]) {
-        sc_raise(ERR_SYNTAX);
-        break;
-      }
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-      comp_expression(comp_bc_parm + index, 0);
-    }
-      break;
-
-    case kwENDIF:
-    case kwNEXT:
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-      comp_block_level--;
-      comp_block_id--;
-      break;
-
-    case kwWEND:
-    case kwUNTIL:
-      comp_push(comp_prog.count);
-      bc_add_ctrl(&comp_prog, idx, 0, 0);
-      comp_block_level--;
-      comp_block_id--;
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwSTEP:
-    case kwTO:
-    case kwIN:
-    case kwTHEN:
-    case kwCOS:
-    case kwSIN:
-    case kwLEN:
-    case kwLOOP:               // functions...
-      sc_raise(MSG_SPECIAL_KW_ERR, comp_bc_name);
-      break;
-
-    case kwRESTORE:
-      comp_push(comp_prog.count);
-      bc_add_code(&comp_prog, idx);
-      bc_add_addr(&comp_prog, comp_label_getID(comp_bc_parm));
-      break;
-
-    case kwEND:
-      if (strncmp(comp_bc_parm, LCN_IF, 2) == 0 ||
-          strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ||
-          strncmp(comp_bc_parm, LCN_SELECT, 6) == 0) {
-        idx = strncmp(comp_bc_parm, LCN_IF, 2) == 0 ? kwENDIF :
-              strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ? kwENDTRY : kwENDSELECT;
-        comp_push(comp_prog.count);
-        if (idx == kwENDTRY) {
-          bc_add_code(&comp_prog, idx);
-        } else {
-          bc_add_ctrl(&comp_prog, idx, 0, 0);
-        }
-        comp_block_level--;
-        comp_block_id--;
-      } else if (comp_proc_level) {
-        char *dol;
-
-        // UDP/F RETURN
-        dol = strrchr(comp_bc_proc, '/');
-        if (dol) {
-          *dol = '\0';
-        } else {
-          *comp_bc_proc = '\0';
-        }
-        comp_push(comp_prog.count);
-        bc_add_code(&comp_prog, kwTYPE_RET);
-
-        comp_proc_level--;
-        comp_block_level--;
-        comp_block_id++; // advance to next block
-      } else {
-        // END OF PROG
-        bc_add_code(&comp_prog, idx);
-      }
-      break;
-
-    case kwDATA:
-      comp_data_seg(comp_bc_parm);
-      break;
-
-    case kwREAD:
-      bc_add_code(&comp_prog, sharp ? kwFILEREAD : idx);
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwINPUT:
-      bc_add_code(&comp_prog, sharp ? kwFILEINPUT : idx);
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwPRINT:
-      bc_add_code(&comp_prog, sharp ? kwFILEPRINT : idx);
-      comp_expression(comp_bc_parm, 0);
-      break;
-
-    case kwLINE:
-      if (strncmp(comp_bc_parm, LCN_INPUT_WRS, 6) == 0) {
-        bc_add_code(&comp_prog, kwLINEINPUT);
-        comp_expression(comp_bc_parm + 6, 0);
-      } else {
-        bc_add_code(&comp_prog, idx);
-        comp_expression(comp_bc_parm, 0);
-      }
-      break;
-
-    case -1:
-      // EXTERNAL OR USER-DEFINED PROCEDURE
-      udp = comp_is_external_proc(comp_bc_name);
-      if (udp > -1) {
-        bc_add_extpcode(&comp_prog, comp_extproctable[udp].lib_id,
-                        comp_extproctable[udp].symbol_index);
-        char *next = trim_empty_parentheses(comp_bc_parm);
-        if (comp_is_parenthesized(next)) {
-          comp_expression(next, 0);
-        } else {
-          bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
-          comp_expression(next, 0);
-          bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
-        }
-      } else {
-        udp = comp_udp_id(comp_bc_name, 1);
-        if (udp == -1) {
-          udp = comp_add_udp(comp_bc_name);
-        }
-        comp_push(comp_prog.count);
-        bc_add_ctrl(&comp_prog, kwTYPE_CALL_UDP, udp, 0);
-        char *next = trim_empty_parentheses(comp_bc_parm);
-        if (comp_is_parenthesized(next)) {
-          comp_expression(next, 0);
-        } else {
-          bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
-          comp_expression(next, 0);
-          bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
-        }
-      }
-      break;
-
-    default:
-      // something else
-      bc_add_code(&comp_prog, idx);
-      comp_expression(comp_bc_parm, 0);
+    if (!comp_text_line_command(idx, decl, sharp, last_cmd)) {
+      p = NULL;
     }
   }
-
-  if (*p == ':') {
+  if (p != NULL && *p == ':') {
     // command separator
     bc_eoc(&comp_prog);
     p++;
@@ -2586,7 +2674,6 @@ addr_t comp_next_bc_cmd(addr_t ip) {
   case kwTYPE_CALLP:           // [fcode_t]
     ip += CODESZ;
     break;
-
   case kwTYPE_CALLEXTF:
   case kwTYPE_CALLEXTP:        // [lib][index]
     ip += (ADDRSZ * 2);
@@ -2601,7 +2688,6 @@ addr_t comp_next_bc_cmd(addr_t ip) {
   case kwTYPE_UNROPR:          // [1B data]
     ip++;
     break;
-
   case kwTRY:
   case kwRESTORE:
   case kwGOSUB:
@@ -2647,10 +2733,11 @@ addr_t comp_next_bc_cmd(addr_t ip) {
   case kwCASE:
   case kwCASE_ELSE:
   case kwENDSELECT:
-  case kwCATCH:
     ip += BC_CTRLSZ;
     break;
-
+  case kwCATCH:
+    ip += BC_CTRLSZ + 1;
+    break;
   case kwTYPE_EVAL_SC:
     ip += 2;                    // kwTYPE_LOGOPR+op
     ip += ADDRSZ;               // the shortcut address
@@ -3504,20 +3591,22 @@ char *comp_format_text(const char *source) {
 
           // skip the rest line
           while (*p) {
-            if (*p == '\n')
+            if (*p == '\n') {
               break;
+            }
             p++;
           }
           break;
         } else {
-          if ((*p > ' ') || (*p < 0)) { // simple
-            // code-character
+          if ((*p > ' ') || (*p < 0)) {
+            // simple code-character
             last_nonsp_ptr = ps;
             *ps++ = last_ch = to_upper(*p);
             p++;
-          } else
+          } else {
+            // else ignore it
             p++;
-          // else ignore it
+          }
         }
       }
     } else {                      // in quotes

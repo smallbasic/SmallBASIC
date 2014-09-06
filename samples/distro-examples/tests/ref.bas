@@ -15,7 +15,7 @@ print "a<>b", iFF(a==b, "a=b", "a<>b")
 
 dim rooms
 sub addRoom(byref room)
-  rooms << @room
+  rooms << byref room
 end
 
 dim kitchen,hall,toilet
@@ -40,3 +40,5 @@ print rooms(0)
 print rooms(1)
 print rooms(2)
 
+roomref = byref rooms(0)
+print roomref.name

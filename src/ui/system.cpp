@@ -18,6 +18,7 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
+#include "common/keymap.h"
 
 #define SYSTEM_MENU   "\033[ OConsole|Show keypad|View source|Restart"
 #define MENU_CONSOLE  0
@@ -621,3 +622,22 @@ char *dev_read(const char *fileName) {
 void dev_show_page() {
   g_system->_output->flushNow();
 }
+
+int dev_image_load(int handle) {
+  return -1;
+}
+
+int dev_image_width(int handle) {
+  return -1;
+}
+
+int dev_image_height(int handle) {
+  return -1;
+}
+
+void dev_image_show(var_image *image) {
+}
+
+void dev_image_hide(int handle) {
+}
+

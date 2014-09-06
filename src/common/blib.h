@@ -72,6 +72,7 @@ void cmd_poke32(void);
 void cmd_bcopy(void);
 void cmd_calladr(void);
 void cmd_catch();
+void cmd_call_vfunc();
 
 var_num_t cmd_math1(long funcCode, var_t *arg);
 var_int_t cmd_imath1(long funcCode, var_t *arg);
@@ -167,7 +168,6 @@ void cmd_dirwalk(void);
 void cmd_bputc(void);
 void cmd_bload(void);
 void cmd_bsave(void);
-void cmd_image(void);
 void cmd_definekey(void);
 
 /**

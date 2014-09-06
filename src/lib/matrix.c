@@ -27,18 +27,18 @@
 #include "common/blib_math.h"
 
 // creates a matrix of the given size
-var_num_t** mat_create(int row, int col) {
-  var_num_t** m = (var_num_t**) tmp_alloc(sizeof(var_num_t*) * row);
+var_num_t **mat_create(int row, int col) {
+  var_num_t **m = (var_num_t **)tmp_alloc(sizeof(var_num_t *) * row);
   int i;
   for (i = 0; i < row; i++) {
-    m[i] = (var_num_t*) tmp_alloc(sizeof(var_num_t) * col);
+    m[i] = (var_num_t *)tmp_alloc(sizeof(var_num_t) * col);
   }
 
   return m;
 }
 
 // free an allocated matrix
-void mat_free(var_num_t** m, int n) {
+void mat_free(var_num_t **m, int n) {
   int i;
   for (i = 0; i < n; i++) {
     tmp_free(m[i]);
@@ -47,7 +47,7 @@ void mat_free(var_num_t** m, int n) {
 }
 
 // fill the matrix with zero values
-void mat_fill(var_num_t** A, int row, int col) {
+void mat_fill(var_num_t **A, int row, int col) {
   int i, j;
 
   for (i = 0; i < row; i++) {
@@ -72,7 +72,7 @@ void mat_fill(var_num_t** A, int row, int col) {
  *               rows interchanged matrix.
  *-----------------------------------------------------------------------------
  */
-int mat_lu(var_num_t** A, var_num_t** P, int n) {
+int mat_lu(var_num_t **A, var_num_t **P, int n) {
   int i, j, k, maxi, tmp, p;
   var_num_t c, c1;
 
@@ -140,7 +140,7 @@ int mat_lu(var_num_t** A, var_num_t** P, int n) {
  *       comen:  B will be overwritten
  *-----------------------------------------------------------------------------
  */
-var_num_t** mat_backsubs1(var_num_t** A, var_num_t** B, var_num_t** X, var_num_t** P, int xcol, int n) {
+var_num_t **mat_backsubs1(var_num_t **A, var_num_t **B, var_num_t **X, var_num_t **P, int xcol, int n) {
   int i, j, k;
   var_num_t sum;
 
@@ -171,11 +171,11 @@ var_num_t** mat_backsubs1(var_num_t** A, var_num_t** B, var_num_t** X, var_num_t
  *              NULL = fails, singular matrix, or malloc() fails
  *-----------------------------------------------------------------------------
  */
-void mat_inverse(var_num_t* a, const int n) {
-  var_num_t** A = mat_create(n, n);
-  var_num_t** B = mat_create(n, 1);
-  var_num_t** C = mat_create(n, n);
-  var_num_t** P = mat_create(n, 1);
+void mat_inverse(var_num_t *a, const int n) {
+  var_num_t **A = mat_create(n, n);
+  var_num_t **B = mat_create(n, 1);
+  var_num_t **C = mat_create(n, n);
+  var_num_t **P = mat_create(n, 1);
 
   int i, j;
 

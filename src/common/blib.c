@@ -10,7 +10,7 @@
 #include "common/sys.h"
 #include "common/kw.h"
 #include "common/var.h"
-#include "common/var_hash.h"
+#include "common/var_map.h"
 #include "common/device.h"
 #include "common/blib.h"
 #include "common/pproc.h"
@@ -452,21 +452,18 @@ void cmd_print(int output) {
   var_t var, *vuser_p;
   int handle = 0;
 
-  /*
-   *   prefix - # (file)
-   */
+  // prefix - # (file)
   if (output == PV_FILE) {
     par_getsharp();
     if (prog_error) {
       return;
     }
     handle = par_getint();
-    if (prog_error)
+    if (prog_error) {
       return;
-    if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {  // There
-      // are
-      // no
-      // parameters
+    }
+    if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {
+      // There are no parameters
       if (dev_fstatus(handle)) {
         dev_fwrite(handle, (byte *) "\n", 1);
       } else {
@@ -485,9 +482,7 @@ void cmd_print(int output) {
     }
   }
 
-  /*
-   *   prefix: memory variable
-   */
+  // prefix: memory variable
   if (output == PV_STRING) {
     if (!code_isvar()) {
       err_argerr();
@@ -507,9 +502,7 @@ void cmd_print(int output) {
     handle = (mem_t)vuser_p;
   }
 
-  /*
-   *   prefix - USING
-   */
+  // prefix - USING
   code = code_peek();
   if (code == kwUSING) {
     code_skipnext();
@@ -537,9 +530,7 @@ void cmd_print(int output) {
     use_format = 1;
   }
 
-  /*
-   *   PRINT
-   */
+  // PRINT
   do {
     code = code_peek();
     if (code == kwTYPE_SEP) {
@@ -601,13 +592,14 @@ void cmd_logprint() {
  */
 void cmd_input(int input) {
   byte code;
-  byte print_crlf = 1, next_is_const = 0;
+  byte print_crlf = 1;
+  byte next_is_const = 0;
   byte input_is_finished = 0;
-
-  var_t prompt, *vuser_p = NULL;
-
+  var_t prompt;
+  var_t *vuser_p = NULL;
   int handle = 0;
-  int cur_par_idx, unused_vars;
+  int cur_par_idx;
+  int unused_vars;
   char *inps = NULL, *inp_p;
   int pcount = 0, redo = 0;
   par_t *ptable = NULL;
@@ -615,9 +607,7 @@ void cmd_input(int input) {
   char *p, lc;
 
   v_init(&prompt);
-  /*
-   *      prefix - # (file)
-   */
+  // prefix - # (file)
   if (input == PV_FILE) {
     par_getsharp();
     if (prog_error) {
@@ -637,9 +627,7 @@ void cmd_input(int input) {
     }
   }
 
-  /*
-   *      prefix: memory variable
-   */
+  // prefix: memory variable
   if (input == PV_STRING) {
     if (!code_isvar()) {
       err_argerr();
@@ -663,9 +651,7 @@ void cmd_input(int input) {
     handle = (mem_t) vuser_p;
   }
 
-  /*
-   *      prefix: prompt
-   */
+  // prefix: prompt
   if (input == PV_CONSOLE) {
     v_setstr(&prompt, "");
 
@@ -683,33 +669,30 @@ void cmd_input(int input) {
           v_strcat(&prompt, "? ");
         }
       }
-    } else { /* no prompt */
+    } else {
+      // no prompt
       v_setstr(&prompt, "? ");
     }
   } else {
     print_crlf = 0;
   }
-  /*
-   *      get list of parameters
-   */
+
+  // get list of parameters
   pcount = par_getpartable(&ptable, ",;");
   if (pcount == 0) {
     rt_raise(ERR_INPUT_NO_VARS);
   }
-  /*
-   *      the INPUT itself
-   */
+  // the INPUT itself
   if (!prog_error) {
-    do {                        // "redo from start"
+    do {
+      // "redo from start"
       if (input == PV_CONSOLE) {  // prompt
         if (prompt.v.p.ptr) {
           pv_write((char *) prompt.v.p.ptr, input, handle);
         }
       }
 
-      /*
-       *      get user's input
-       */
+      // get user's input
       switch (input) {
       case PV_CONSOLE:
         // console
@@ -781,7 +764,7 @@ void cmd_input(int input) {
             v_setstr(par->var, "");
             unused_vars++;
           }
-        } else {                  // we are continue to read
+        } else {             // we continue to read
           if (par->flags & PAR_BYVAL) {
             // no constants are allowed
             err_typemismatch();
@@ -792,7 +775,7 @@ void cmd_input(int input) {
             next_is_const = 0;
             if (cur_par_idx < (pcount - 1)) {
               if (ptable[cur_par_idx + 1].flags & PAR_BYVAL) {
-                cur_par_idx++;  // <-- WARNING
+                cur_par_idx++;
                 // par = previous parameter
                 // ptable[cur_par_idx] = the constant
                 next_is_const = 1;
@@ -843,9 +826,7 @@ void cmd_input(int input) {
         redo = 1;
         tmp_free(inps);
 #if USE_TERM_IO
-        /*
-         * standard input case
-         */
+        // standard input case
         if (!os_graphics) {
           if (term_israw()) {
             fprintf(stdout, "\n\a* %s *\n", WORD_INPUT_REDO);
@@ -867,15 +848,11 @@ void cmd_input(int input) {
     } while (redo && !prog_error);
   }
 
-  /*
-   *      exit
-   */
+  // exit
   if (input == PV_CONSOLE) {
     if (print_crlf && (prog_error == 0)) {
 #if USE_TERM_IO
-      /*
-       * standard input case
-       */
+      // standard input case
       if (!os_graphics) {
         if (!term_israw())
         pv_write("\n", input, handle);
@@ -897,28 +874,24 @@ void cmd_input(int input) {
  * ON x GOTO|GOSUB ...
  */
 void cmd_on_go() {
-  addr_t next_ip, expr_ip, table_ip, dest_ip;
-  code_t command;
-  byte count;
+  addr_t dest_ip;
   var_t var;
-  addr_t index;
   stknode_t node;
 
-  next_ip = code_getaddr();
+  addr_t next_ip = code_getaddr();
   code_skipaddr();
-  command = code_getnext();
-  count = code_getnext();
-  table_ip = prog_ip;
-  expr_ip = prog_ip + (count * ADDRSZ);
+  code_t command = code_getnext();
+  byte count = code_getnext();
+  addr_t table_ip = prog_ip;
+  addr_t expr_ip = prog_ip + (count * ADDRSZ);
 
   v_init(&var);
   prog_ip = expr_ip;
   eval(&var);
 
-  index = (v_igetval(&var) - 1);
+  addr_t index = (v_igetval(&var) - 1);
   if (((int) index == -1) || ((int) index >= (int) count)) {
-    // index == -1 (0 on BASIC) || index >= count
-    // do nothing
+    // index == -1 (0 on BASIC) || index >= count do nothing
     command = kwNULL;
     prog_ip = next_ip;
   } else if ((int) index < 0) {
@@ -951,9 +924,7 @@ void cmd_on_go() {
  */
 void cmd_gosub() {
   stknode_t node;
-  bid_t goto_label;
-
-  goto_label = code_getaddr();
+  bid_t goto_label = code_getaddr();
   node.type = kwGOSUB;
   node.x.vgosub.ret_ip = prog_ip;
   code_jump_label(goto_label);
@@ -973,25 +944,22 @@ void cmd_gosub() {
  * cmd_param is the first UDP/F's command
  *
  * @param cmd is the type of the udp (function or procedure)
+ * @param target sub/func
+ * @param return-variable ID
  */
-void cmd_udp(int cmd) {
+addr_t cmd_push_args(int cmd, addr_t goto_addr, addr_t rvid) {
   stknode_t param;
-  addr_t pcount = 0, rvid;
-  var_t *arg = NULL;
-  byte ready, code;
   addr_t ofs;
-  var_t var_ptr;
-  addr_t goto_addr;
-
-  goto_addr = code_getaddr();   // target sub/func
-  rvid = code_getaddr();        // return-variable ID
+  addr_t pcount = 0;
+  var_t *arg = NULL;
 
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-    code_skipnext();            // kwTYPE_LEVEL_BEGIN (which means
-    // left-parenthesis)
+    // kwTYPE_LEVEL_BEGIN (which means left-parenthesis)
+    code_skipnext();
 
     if (code_peek() == kwTYPE_CALL_PTR) {
       // replace call address with address in first arg
+      var_t var_ptr;
       code_skipnext();
       v_init(&var_ptr);
       eval(&var_ptr);
@@ -1003,93 +971,88 @@ void cmd_udp(int cmd) {
       rvid = var_ptr.v.ap.v;
     }
 
-    ready = 0;
+    byte ready = 0;
     do {
-      code = code_peek();       // get next BC
+      byte code = code_peek();  // get next BC
       switch (code) {
-      case kwTYPE_EOC:         // end of an expression (parameter)
-        code_skipnext();        // ignore it
+      case kwTYPE_EOC:       // end of an expression (parameter)
+        code_skipnext();     // ignore it
         break;
-      case kwTYPE_SEP:         // separator (comma or semi-colon)
-        code_skipsep();         // ignore it
+      case kwTYPE_SEP:       // separator (comma or semi-colon)
+        code_skipsep();      // ignore it
         break;
-      case kwTYPE_LEVEL_END:   // (right-parenthesis) which means: end of
-        // parameters
-        ready = 1;              // finish flag
+      case kwTYPE_LEVEL_END: // (right-parenthesis) which means: end of parameters
+        code_skipnext();
+        if (code_peek() == kwTYPE_SEP) {
+          // another set of arguments - foo(a+1), (b+1)
+          code_skipsep();
+          if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+            code_skipnext();
+          }
+        } else {
+          ready = 1;         // finish flag
+        }
         break;
 
-      case kwTYPE_VAR:         // the parameter is a variable
-        ofs = prog_ip;          // keep expression's IP
-
-        if (code_isvar()) {     // this parameter is a single variable (it is
-          // not an
-          // expression)
-          param.type = kwTYPE_VAR;  //
-          param.x.param.res = code_getvarptr(); // var_t pointer; the variable
-          // itself
-          param.x.param.vcheck = 0x3; // parameter can be used 'by value' or
-          // 'by
-          // reference'
-          code_push(&param);    // push parameter
+      case kwTYPE_VAR:       // the parameter is a variable
+        ofs = prog_ip;       // keep expression's IP
+        if (code_isvar()) {  // this parameter is a single variable (it is not an expression)
+          param.type = kwTYPE_VAR;
+          param.x.param.res = code_getvarptr(); // var_t pointer; the variable itself
+          param.x.param.vcheck = 0x3; // parameter can be used 'by value' or 'by reference'
+          code_push(&param); // push parameter
           pcount++;
-          break;                // we finished with this parameter
+          break;             // we finished with this parameter
         }
 
-        prog_ip = ofs;          // back to the start of the expression
+        prog_ip = ofs;       // back to the start of the expression
         // now we are sure, this parameter is not a single variable
-
         // no 'break' here
 
       default:
-        // *** default: the parameter is an expression ***
-
-        arg = v_new();          // create a new temporary variable; it is the
-        // by-val value
-        // 'arg' will be freed at udp's return
-
-        eval(arg);              // execute the expression and store the result
-        // to 'arg'
+        // default: the parameter is an expression
+        arg = v_new();       // create a new temporary variable; it is the
+        // by-val value 'arg' will be freed at udp's return
+        eval(arg);           // execute the expression and store the result to 'arg'
 
         if (!prog_error) {
-          param.type = kwTYPE_VAR;  //
+          param.type = kwTYPE_VAR;
           param.x.param.res = arg;  // var_t pointer; the variable itself
-          param.x.param.vcheck = 1; // parameter can be used only as 'by
-          // value'
-          code_push(&param);    // push parameter
+          param.x.param.vcheck = 1; // parameter can be used only as 'by value'
+          code_push(&param); // push parameter
           pcount++;
-        } else {                  // error; clean up and return
+        } else {             // error; clean up and return
           v_free(arg);
           tmp_free(arg);
           return;
         }
-
       }
-
     } while (!ready);
-
-    // /
-    code_skipnext();            // right-parenthesis; kwTYPE_LEVEL_END
   }
-  // store call-info
-  param.type = cmd;             // type of call (procedure or function)
-  param.x.vcall.pcount = pcount;  // number of parameters which passed on
-  // (the number of
-  // parameter-nodes in the stack)
-  param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's
-  // next address)
-  param.x.vcall.rvid = rvid;    // return-variable ID
 
-  if (rvid != INVALID_ADDR) {   // if we call a function
+  // store call-info
+  param.type = cmd;          // type of call (procedure or function)
+  param.x.vcall.pcount = pcount;  // number parameter-nodes in the stack
+  param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
+  param.x.vcall.rvid = rvid; // return-variable ID
+
+  if (rvid != INVALID_ADDR) {
+    // if we call a function
     param.x.vcall.retvar = tvar[rvid];  // store previous data of RVID
-    tvar[rvid] = v_new();       // create a temporary variable to store the
-    // function's result
+    tvar[rvid] = v_new();    // create a temporary variable to store the function's result
     // value will be restored on udp-return
   }
 
   param.x.vcall.task_id = -1;
-  code_push(&param);            // store it to stack
+  code_push(&param);         // store it to stack
 
-  prog_ip = goto_addr;          // jump to udp's code
+  return goto_addr;
+}
+
+void cmd_udp(int cmd) {
+  addr_t goto_addr = code_getaddr();
+  addr_t rvid = code_getaddr();
+  prog_ip = cmd_push_args(cmd, goto_addr, rvid);
 }
 
 /**
@@ -1102,122 +1065,103 @@ void cmd_udp(int cmd) {
  */
 void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid) {
   stknode_t param;
-  addr_t pcount = 0;
-  var_t *arg = NULL;
-  byte ready, code;
   addr_t ofs;
-  int my_tid;
-
-  my_tid = ctask->tid;
+  var_t *arg = NULL;
+  addr_t pcount = 0;
+  int my_tid = ctask->tid;
 
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-    code_skipnext();            // kwTYPE_LEVEL_BEGIN (which means
-    // left-parenthesis)
+    code_skipnext();         // kwTYPE_LEVEL_BEGIN (which means left-parenthesis)
 
-    ready = 0;
+    byte ready = 0;
     do {
-      code = code_peek();       // get next BC
+      byte code = code_peek();    // get next BC
       switch (code) {
-      case kwTYPE_EOC:         // end of an expression (parameter)
-        code_skipnext();        // ignore it
+      case kwTYPE_EOC:       // end of an expression (parameter)
+        code_skipnext();     // ignore it
         break;
-      case kwTYPE_SEP:         // separator (comma or semi-colon)
-        code_skipsep();         // ignore it
+      case kwTYPE_SEP:       // separator (comma or semi-colon)
+        code_skipsep();      // ignore it
         break;
-      case kwTYPE_LEVEL_END:   // (right-parenthesis) which means: end of
-        // parameters
-        ready = 1;              // finish flag
+      case kwTYPE_LEVEL_END: // (right-parenthesis) which means: end of parameters
+        code_skipnext();
+        if (code_peek() == kwTYPE_SEP) {
+          // another set of arguments - foo(a+1), (b+1)
+          code_skipsep();
+          if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+            code_skipnext();
+          }
+        } else {
+          ready = 1;         // finish flag
+        }
         break;
-      case kwTYPE_VAR:         // the parameter is a variable
-        ofs = prog_ip;          // keep expression's IP
+      case kwTYPE_VAR:       // the parameter is a variable
+        ofs = prog_ip;       // keep expression's IP
 
-        if (code_isvar()) {     // this parameter is a single variable (it is
-          // not an
-          // expression)
-          param.type = kwTYPE_VAR;  //
+        if (code_isvar()) {  // this parameter is a single variable (not an expression)
+          param.type = kwTYPE_VAR;
           param.x.param.res = code_getvarptr();
           // var_t pointer; the variable itself
 
-          param.x.param.vcheck = 0x3; // parameter can be used 'by value' or
-          // 'by
-          // reference'
+          param.x.param.vcheck = 0x3; // parameter can be used 'by value' or 'by reference'
 
           activate_task(udp_tid);
-          code_push(&param);    // push parameter, on unit's task
+          code_push(&param); // push parameter, on unit's task
           activate_task(my_tid);
 
           pcount++;
-          break;                // we finished with this parameter
+          break;             // we finished with this parameter
         }
 
-        prog_ip = ofs;          // back to the start of the expression
+        prog_ip = ofs;       // back to the start of the expression
         // now we are sure, this parameter is not a single variable
-
         // no 'break' here
 
       default:
-        // *** default: the parameter is an expression ***
-
-        arg = v_new();          // create a new temporary variable; it is the
-        // by-val value
-        // 'arg' will be freed at udp's return
-
-        eval(arg);              // execute the expression and store the result
-        // to 'arg'
+        // default: the parameter is an expression
+        arg = v_new();       // create a new temporary variable; it is the by-val value
+                             // 'arg' will be freed at udp's return
+        eval(arg);           // execute the expression and store the result to 'arg'
 
         if (!prog_error) {
-          param.type = kwTYPE_VAR;  //
+          param.type = kwTYPE_VAR;
           param.x.param.res = arg;  // var_t pointer; the variable itself
-          param.x.param.vcheck = 1; // parameter can be used only as 'by
-          // value'
-
+          param.x.param.vcheck = 1; // parameter can be used only as 'by value'
           activate_task(udp_tid);
           code_push(&param);    // push parameter, on unit's task
           activate_task(my_tid);
-
           pcount++;
-        } else {                  // error; clean up and return
+        } else {             // error; clean up and return
           v_free(arg);
           tmp_free(arg);
           return;
         }
-
       }
-
     } while (!ready);
-
-    // /
-    code_skipnext();            // right-parenthesis; kwTYPE_LEVEL_END
   }
-  //
+
   if (prog_error) {
     return;
   }
   // store call-info
-
   activate_task(udp_tid);
-  //
   if (prog_error) {
     return;
   }
-  param.type = cmd;             // type of call (procedure or function)
+  param.type = cmd;          // type of call (procedure or function)
   param.x.vcall.pcount = pcount;  // number of parameters which passed on
-  // (the number of
-  // parameter-nodes in the stack)
-  param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's
-  // next address)
-  param.x.vcall.rvid = rvid;    // return-variable ID
+  // (the number of parameter-nodes in the stack)
+  param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
+  param.x.vcall.rvid = rvid; // return-variable ID
 
-  if (rvid != INVALID_ADDR) {   // if we call a function
+  if (rvid != INVALID_ADDR) {// if we call a function
     param.x.vcall.retvar = tvar[rvid];  // store previous data of RVID
-    tvar[rvid] = v_new();       // create a temporary variable to store the
-    // function's result
-    // value will be restored on udp-return
+    tvar[rvid] = v_new();    // create a temporary variable to store the
+    // function's result value will be restored on udp-return
   }
 
   param.x.vcall.task_id = my_tid;
-
-  code_push(&param);            // store it to stack, on unit's task
+  code_push(&param);         // store it to stack, on unit's task
   prog_ip = goto_addr + ADDRSZ + 3; // jump to udp's code
 }
 
@@ -1228,14 +1172,11 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid) {
  * The global's one.
  */
 void cmd_crvar() {
-  int i, count;
-  addr_t vid;
-  stknode_t node;
-
-  count = code_getnext();       // number of variables to create
+  int i;
+  int count = code_getnext();    // number of variables to create
   for (i = 0; i < count; i++) {
-    vid = code_getaddr();       // an ID on global-variable-table is used
-    // because ... it is a patch :(
+    addr_t vid = code_getaddr();    // an ID on global-variable-table is used
+    stknode_t node;
 
     // store previous variable to stack
     // we will restore it at 'return'
@@ -1260,76 +1201,64 @@ void cmd_crvar() {
  * 'by reference' parameters are stored as local variables in the stack (kwTYPE_BYREF)
  */
 void cmd_param() {
-  int i, pcount;
-  bid_t vid;
-  byte vattr;
-  stknode_t ncall, *param, node;
-  var_t *param_var;
-
-  code_pop(&ncall);             // get caller's info-node
+  stknode_t ncall;
+  code_pop(&ncall);          // get caller's info-node
 
   if ((ncall.type != kwPROC) && (ncall.type != kwFUNC)) {
     err_stackmess();
     return;
   }
-  pcount = code_getnext();
+  int pcount = code_getnext();
 
-  if (pcount != ncall.x.vcall.pcount) { // the number of the parameters that
-    // are
-    // required by this procedure/function
+  if (pcount != ncall.x.vcall.pcount) {
+    // the number of the parameters that are required by this procedure/function
     // are different from the number that was passed by the caller
     err_parm_num();
     return;
   }
 
-  if (pcount) {                 // get parameters
-    param = (stknode_t *) tmp_alloc(sizeof(stknode_t) * pcount);
+  if (pcount) {              // get parameters
+    int i;
+    stknode_t *param = (stknode_t *) tmp_alloc(sizeof(stknode_t) * pcount);
     for (i = pcount - 1; i > -1; i--) {
       code_pop(&param[i]);
     }
-    code_push(&ncall);          // push call's pars (again); we will needed at
-    // 'return'
+    code_push(&ncall);       // push call's pars (again); we will needed at 'return'
 
     for (i = 0; i < pcount; i++) {  // check parameters one-by-one
-      vattr = code_getnext();
-      vid = code_getaddr();
-      param_var = param[i].x.param.res;
+      byte vattr = code_getnext();
+      bid_t vid = code_getaddr();
+      var_t *param_var = param[i].x.param.res;
+      stknode_t node;
 
-      if ((vattr & 0x80) == 0) {  // UDP requires a 'by value' parameter;
-        // any value is
-        // good
+      if ((vattr & 0x80) == 0) {  // UDP requires a 'by value' parameter
         node.type = kwTYPE_CRVAR;
         node.x.vdvar.vid = vid;
         node.x.vdvar.vptr = tvar[vid];
-        code_push(&node);       // store previous variable (with the same ID)
-        // to stack
+        code_push(&node);    // store previous variable (with the same ID) to stack
 
         // assign
         if (param[i].x.param.vcheck == 1) {
-          tvar[vid] = param_var;  // its already cloned by the CALL
-          // (expr)
+          tvar[vid] = param_var;  // its already cloned by the CALL (expr)
         } else {
           tvar[vid] = v_clone(param_var);
         }
-      } else {                    // UDP requires 'by reference' parameter
+      } else {               // UDP requires 'by reference' parameter
         if (param[i].x.param.vcheck == 1) {
-          err_parm_byref(i);    // error; the parameter can be used only 'by
-          // value'
+          err_parm_byref(i); // error; the parameter can be used only 'by value'
           break;
         } else {
           node.type = kwBYREF;
           node.x.vdvar.vid = vid;
           node.x.vdvar.vptr = tvar[vid];
-          code_push(&node);     // store previous variable to stack (with the
-          // same ID)
+          code_push(&node);  // store previous variable to stack (with the same ID)
           tvar[vid] = param_var;  // use the 'var_t'
         }
       }
     }
-
     tmp_free(param);
   } else {
-    code_push(&ncall);          // push caller's info node
+    code_push(&ncall);       // push caller's info node
   }
 }
 
@@ -1340,15 +1269,13 @@ void cmd_udpret() {
   stknode_t node, rval;
 
   code_pop(&node);
-  while ((node.type != kwPROC) && (node.type != kwFUNC)) {  // pop from
-    // stack until
-    // caller's node found
+  while ((node.type != kwPROC) && (node.type != kwFUNC)) {
+    // pop from stack until caller's node found
     if (node.type == kwTYPE_CRVAR) {  // local variable - cleanup
       v_free(tvar[node.x.vdvar.vid]); // free local variable data
       tmp_free(tvar[node.x.vdvar.vid]);
-      tvar[node.x.vdvar.vid] = node.x.vdvar.vptr; // restore ptr (replace
-      // to pre-call
-      // variable)
+      tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
+      // restore ptr (replace to pre-call variable)
     } else if (node.type == kwBYREF) {  // variable 'by reference'
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr; // restore ptr
     }
@@ -1364,8 +1291,8 @@ void cmd_udpret() {
     dump_stack();
   } else {
     // restore return value
-    if (node.x.vcall.rvid != (bid_t) INVALID_ADDR) {  // it is a function
-      // store value to stack
+    if (node.x.vcall.rvid != (bid_t) INVALID_ADDR) {
+      // it is a function store value to stack
       rval.type = kwTYPE_RET;
       rval.x.vdvar.vptr = tvar[node.x.vcall.rvid];
       code_push(&rval);
@@ -1728,8 +1655,8 @@ void cmd_for() {
       var_p_t var_elem_ptr = 0;
 
       switch (array_p->type) {
-      case V_HASH:
-        var_elem_ptr = hash_elem(array_p, 0);
+      case V_MAP:
+        var_elem_ptr = map_elem(array_p, 0);
         break;
 
       case V_ARRAY:
@@ -1819,15 +1746,15 @@ void cmd_until() {
   stknode_t node;
 
   code_pop(&node);
-
   code_skipaddr();
   jump_ip = code_getaddr();
 
   // expression
   v_init(&var);
   eval(&var);
-  if (!v_sign(&var))
+  if (!v_sign(&var)) {
     code_jump(jump_ip);
+  }
   v_free(&var);
 }
 
@@ -1907,23 +1834,22 @@ void cmd_next() {
       if (check) {
         code_push(&node);
         code_jump(jump_ip);
-      } else
+      } else {
         code_jump(next_ip);
+      }
     }
-
     v_free(&var_to);
   } else {
     //
     // FOR [EACH] v1 IN v2
     //
-
     array_p = node.x.vfor.arr_ptr;
     var_elem_ptr = 0;
 
     switch (array_p->type) {
-    case V_HASH:
+    case V_MAP:
       node.x.vfor.step_expr_ip++; // element-index
-      var_elem_ptr = hash_elem(array_p, node.x.vfor.step_expr_ip);
+      var_elem_ptr = map_elem(array_p, node.x.vfor.step_expr_ip);
       break;
 
     case V_ARRAY:
@@ -1955,7 +1881,6 @@ void cmd_next() {
     } else {
       code_jump(next_ip);
     }
-
   }
 
   // clean up
@@ -1989,7 +1914,6 @@ void cmd_read() {
       if (prog_error) {
         return;
       }
-      // ////
       if (!prog_error) {
         v_free(vp);
 
@@ -2005,14 +1929,12 @@ void cmd_read() {
           break;
         case kwTYPE_INT:
           prog_dp++;
-
           vp->type = V_INT;
           memcpy(&vp->v.i, prog_source + prog_dp,OS_INTSZ);
           prog_dp += OS_INTSZ;
           break;
         case kwTYPE_NUM:
           prog_dp++;
-
           vp->type = V_NUM;
           memcpy(&vp->v.n, &prog_source[prog_dp], OS_REALSZ);
           prog_dp += OS_REALSZ;
@@ -2020,7 +1942,6 @@ void cmd_read() {
         case kwTYPE_STR: {
           dword len;
           prog_dp++;
-
           vp->type = V_STR;
           memcpy(&len, prog_source + prog_dp, OS_STRLEN);
           prog_dp += OS_STRLEN;
@@ -2036,10 +1957,9 @@ void cmd_read() {
           rt_raise(ERR_READ_DATA_INDEX_FMT, prog_dp);
           return;
         }
-
-        if (prog_source[prog_dp] == kwTYPE_EOC)
+        if (prog_source[prog_dp] == kwTYPE_EOC) {
           prog_dp++;
-
+        }
       }
     };
   } while (!exitf);
@@ -2049,8 +1969,7 @@ void cmd_read() {
  * DATA ...
  */
 void cmd_data() {
-  rt_raise("CANNOT EXECUTE DATA");  // if you see it, I did something
-  // stupid
+  rt_raise("CANNOT EXECUTE DATA");
 }
 
 /**
@@ -2064,10 +1983,9 @@ void cmd_restore() {
  * RANDOMIZE [num]
  */
 void cmd_randomize() {
-  byte code;
   long seed;
 
-  code = code_peek();
+  byte code = code_peek();
   switch (code) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
@@ -2085,9 +2003,7 @@ void cmd_randomize() {
  * DELAY
  */
 void cmd_delay() {
-  dword ms;
-
-  ms = par_getint();
+  dword ms = par_getint();
   if (prog_error) {
     return;
   }
@@ -2128,10 +2044,9 @@ void cmd_locate() {
  */
 void cmd_pause() {
   int x = 0, evc;
-  byte code;
   long start, now;
 
-  code = code_peek();
+  byte code = code_peek();
   if (code == kwTYPE_VAR) {
     x = par_getint();
     if (prog_error) {
@@ -2221,84 +2136,6 @@ void cmd_color() {
   dev_settextcolor(fg, bg);
 }
 
-/*
- * SPLIT string, delimiters, array()
- void    cmd_split()
- {
- int     count, i;
- char    *p, *ps, *new_text;
- var_t   *var_p, *elem_p;
- addr_t  use_ip, exit_ip = INVALID_ADDR;
- char    *str = NULL, *del = NULL;
-
- par_massget("SSP", &str, &del, &var_p);
-
- if  ( !prog_error ) {
- // is there a use keyword ?
- if  ( code_peek() == kwUSE )    {
- code_skipnext();
- use_ip  = code_getaddr();
- exit_ip = code_getaddr();
- }
- else
- use_ip = INVALID_ADDR;
-
- //
- v_toarray1(var_p, 1);
-
- // reformat
- new_text = tmp_strdup(str);
- count = 0;
- ps = p = new_text;
- while ( *p )    {
- if  ( strchr(del, *p) ) {
- *p = '\0';
-
- // add element (ps)
- if  ( var_p->v.a.size <= count )        // resize array
- v_resize_array(var_p, count+16);
-
- // store string
- elem_p = v_elem(var_p, count);
- v_setstr(elem_p, ps);
- count ++;
-
- // next word
- ps = p+1;
- }
-
- p ++;
- }
-
- if  ( *ps ) {
- // add the last element (ps)
- if  ( v_asize(var_p) <= count )     // resize array
- v_resize_array(var_p, count+1);
-
- elem_p = v_elem(var_p, count);
- v_setstr(elem_p, ps);
-
- count ++;
- }
- v_resize_array(var_p, count);   // final resize
-
- //  execute user's expression for each element
- if  ( use_ip != INVALID_ADDR )  {
- for ( i = 0; i < v_asize(var_p) && !prog_error; i ++ )  {
- elem_p = v_elem(var_p, i);
- exec_usefunc(elem_p, use_ip);
- }
- // jmp to correct location
- code_jump(exit_ip);
- }
-
- // cleanup
- pfree2(str, del);
- tmp_free(new_text);
- }
- }
- */
-
 void cmd_split() {
   cmd_wsplit();
 }
@@ -2330,9 +2167,7 @@ void cmd_wsplit() {
     }
     v_toarray1(var_p, 1);
 
-    /*
-     *      reformat
-     */
+    // reformat
     new_text = tmp_strdup(str);
     count = 0;
     wait_q = 0;
@@ -2457,8 +2292,9 @@ void cmd_wjoin() {
     strcat((char *) str->v.p.ptr, (char *) e_str.v.p.ptr);
     v_free(&e_str);
 
-    if (i != var_p->v.p.size - 1)
+    if (i != var_p->v.p.size - 1) {
       strcat((char *) str->v.p.ptr, (char *) del.v.p.ptr);
+    }
   }
 
   // todo: realloc down or not
@@ -2606,40 +2442,6 @@ int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) {
   if (use_ip == INVALID_ADDR) {
     return v_compare(a, b);
   } else {
-    /*
-     * int r;
-     */
-    /*
-     * var_t result;
-     */
-    /*
-     * v_set(tvar[SYSVAR_X], a);
-     */
-    /*
-     * v_set(tvar[SYSVAR_Y], b);
-     */
-    /*
-     * code_jump(use_ip);
-     */
-    /*
-     * // evaluate the function result left on the stack
-     */
-    /*
-     * v_init(&result);
-     */
-    /*
-     * eval(&result);
-     */
-    /*
-     * r = v_igetval(&result);
-     */
-    /*
-     * v_free(&result);
-     */
-    /*
-     * return r;
-     */
-
     var_t v1, v2;
     int r;
 
@@ -2696,10 +2498,6 @@ void cmd_sort() {
   }
   // NO RTE anymore... there is no meaning on this because of empty
   // arrays/variables (example: TLOAD "data", V:SORT V)
-  // else
-  // rt_raise("SORT: Not an array");
-
-  // return
   if (exit_ip != INVALID_ADDR) {
     code_jump(exit_ip);
   }
@@ -2791,9 +2589,9 @@ void cmd_search() {
 void cmd_swap(void) {
   var_t *va, *vb, *vc;
 
-  if (code_isvar())
+  if (code_isvar()) {
     va = code_getvarptr();
-  else {
+  } else {
     err_typemismatch();
     return;
   }
@@ -2863,26 +2661,6 @@ void cmd_exprseq(void) {
 }
 
 /**
- * IMAGE #handle, index, x, y [,sx,sy [,w,h]]
- * Display html text
- */
-void cmd_image() {
-  var_int_t h, i, x, y;
-  var_int_t sx, sy, iw, ih;
-  sx = sy = iw = ih = 0;
-
-  par_getsharp();
-  if (prog_error) {
-    return;
-  }
-
-  par_massget("IIIIiiii", &h, &i, &x, &y, &sx, &sy, &iw, &ih);
-  if (!prog_error) {
-    dev_image(h, i, x, y, sx, sy, iw, ih);
-  }
-}
-
-/**
  * evaluate the select expression and then store it on the stack
  * syntax is:
  * select expr
@@ -2896,9 +2674,8 @@ void cmd_image() {
  */
 void cmd_select() {
   stknode_t node;
-  var_t *expr;
 
-  expr = v_new();
+  var_t *expr = v_new();
   v_init(expr);
   eval(expr);
 
@@ -2914,17 +2691,14 @@ void cmd_select() {
  * which could either be another case line or "end select"
  */
 void cmd_case() {
-  stknode_t *node;
-  addr_t true_ip, false_ip;
   var_t var_p;
-
-  true_ip = code_getaddr();     // matching case
-  false_ip = code_getaddr();    // non-matching case
+  addr_t true_ip = code_getaddr();     // matching case
+  addr_t false_ip = code_getaddr();    // non-matching case
 
   v_init(&var_p);
   eval(&var_p);
 
-  node = code_stackpeek();
+  stknode_t *node = code_stackpeek();
 
   if (node->type != kwSELECT) {
     rt_raise(ERR_SYNTAX);
@@ -2947,12 +2721,9 @@ void cmd_case() {
  * skip to cmd_end_select if a previous case was true
  */
 void cmd_case_else() {
-  stknode_t *node;
-  addr_t true_ip, false_ip;
-
-  true_ip = code_getaddr();     // default block
-  false_ip = code_getaddr();    // end-select
-  node = code_stackpeek();
+  addr_t true_ip = code_getaddr();     // default block
+  addr_t false_ip = code_getaddr();    // end-select
+  stknode_t *node = code_stackpeek();
   code_jump(node->x.vcase.flags ? false_ip : true_ip);
 }
 
@@ -2998,14 +2769,31 @@ void cmd_definekey(void) {
   v_free(&var);
 }
 
+/**
+ * Handler for unthrown/uncaught exceptions
+ */
 void cmd_catch() {
   addr_t end_try_ip = code_getaddr();
   addr_t outer_catch_ip = code_getaddr();
 
-  // cleanup the catch address, then skip to end-try
+  // skip level code
+  prog_ip += 1;
+
+  // skip to end-try
   code_jump(end_try_ip);
 
   // restore outer try/catch level
   prog_catch_ip = outer_catch_ip;
 }
 
+/**
+ * Call to object method
+ */
+void cmd_call_vfunc() {
+  var_t *v_func = code_getvarptr_parens(1);
+  if (v_func == NULL || v_func->type != V_FUNC) {
+    sc_raise(ERR_NO_FUNC);
+  } else {
+    v_func->v.fn.cb(v_func->v.fn.self);
+  }
+}

@@ -14,13 +14,16 @@ LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src
 LOCAL_MODULE     := sb_common
 LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1
 LOCAL_SRC_FILES  :=                             \
+    $(COMMON)/../lib/matrix.c                   \
+    $(COMMON)/../lib/search.c                   \
+    $(COMMON)/../lib/match.c                    \
+    $(COMMON)/../lib/jsmn.c                     \
     $(COMMON)/bc.c                              \
     $(COMMON)/blib.c                            \
     $(COMMON)/blib_db.c                         \
     $(COMMON)/blib_func.c                       \
     $(COMMON)/blib_graph.c                      \
     $(COMMON)/blib_math.c                       \
-    $(COMMON)/matrix.c                          \
     $(COMMON)/blib_sound.c                      \
     $(COMMON)/brun.c                            \
     $(COMMON)/ceval.c                           \
@@ -41,7 +44,6 @@ LOCAL_SRC_FILES  :=                             \
     $(COMMON)/geom.c                            \
     $(COMMON)/inet.c                            \
     $(COMMON)/kw.c                              \
-    $(COMMON)/match.c                           \
     $(COMMON)/mem.c                             \
     $(COMMON)/panic.c                           \
     $(COMMON)/pfill.c                           \
@@ -51,8 +53,9 @@ LOCAL_SRC_FILES  :=                             \
     $(COMMON)/scan.c                            \
     $(COMMON)/str.c                             \
     $(COMMON)/tasks.c                           \
-    $(COMMON)/search.c                          \
-    $(COMMON)/var_hash.c                        \
+    $(COMMON)/var_map.c                         \
+    $(COMMON)/var_obj.c                         \
+    $(COMMON)/var_eval.c                        \
     $(COMMON)/keymap.c                          \
     $(COMMON)/units.c                           \
     $(COMMON)/var.c                             \

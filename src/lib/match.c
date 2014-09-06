@@ -39,7 +39,7 @@
  *  and RegMatch the character exactly, precede it with a `\'.
  */
 
-#include "common/match.h"
+#include "lib/match.h"
 #include "common/smbas.h"
 #include "common/sberr.h"
 
