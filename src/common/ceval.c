@@ -87,6 +87,7 @@ void cev_prim_var() {
       } else {
         cev_add1(kwTYPE_LEVEL_END);
         IP++;
+        cev_prim_uds();
       }
     }
   }

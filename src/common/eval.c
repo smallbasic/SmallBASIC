@@ -15,13 +15,16 @@
 #include "common/blib.h"
 #include "common/device.h"
 #include "common/extlib.h"
+#include "common/var_eval.h"
 
 #define IP           prog_ip
 #define CODE(x)      prog_source[(x)]
 #define CODE_PEEK()  CODE(IP)
-#define V_FREE(v)                                             \
-  if ((v) && ((v)->type == V_STR || (v)->type == V_ARRAY)) {  \
-    v_free((v));                                              \
+#define V_FREE(v)                       \
+  if ((v) && ((v)->type == V_STR ||     \
+              (v)->type == V_MAP ||    \
+              (v)->type == V_ARRAY)) {  \
+    v_free((v));                        \
   }
 
 /**
@@ -651,21 +654,6 @@ static inline void eval_shortc(var_t *r, addr_t addr, byte op) {
   }
 }
 
-var_t *eval_ref_var(var_t *var_p) {
-  var_t *result = var_p;
-  while (result->type == V_REF) {
-    if (result->v.ref == var_p) {
-      // circular referance error
-      result = NULL;
-      err_ref_var();
-      break;
-    } else {
-      result = result->v.ref;
-    }
-  }
-  return result;
-}
-
 static inline void eval_var(var_t *r, var_t *var_p) {
   var_t *var_deref;
   switch (var_p->type) {
@@ -684,7 +672,7 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     break;
   case V_STR:
   case V_ARRAY:
-  case V_HASH:
+  case V_MAP:
     v_set(r, var_p);
     break;
   case V_REF:
@@ -892,12 +880,12 @@ static inline void eval_callf(var_t *r) {
   case kwLEN:
   case kwEMPTY:
   case kwISARRAY:
+  case kwISMAP:
+  case kwISREF:
   case kwISNUMBER:
   case kwISSTRING:
   case kwRGB:
   case kwRGBF:
-  case kwIMGW:
-  case kwIMGH:
     // int FUNC(...)
     V_FREE(r);
     if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
@@ -1103,6 +1091,30 @@ static inline void eval_callf(var_t *r) {
     r->v.i = dev_freefilehandle();
     break;
 
+  case kwARRAY:
+    V_FREE(r);
+    map_from_str(r);
+    break;
+
+  case kwIMAGE:
+    V_FREE(r);
+    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+      err_missing_lp();
+    } else {
+      IP++;
+      par_getsharp();
+      if (!prog_error) {
+        int handle = par_getint();
+        if (!prog_error) {
+          var_create_image(r, handle);
+          if (!prog_error && CODE_PEEK() == kwTYPE_LEVEL_END) {
+            IP++;
+          }
+        }
+      }
+    }
+    break;
+
   default:
     err_bfn_err(fcode);
   }
@@ -1298,7 +1310,9 @@ void eval(var_t *r) {
         return;
       }
       rt_raise("UNKNOWN ERROR. IP:%d=0x%02X", IP, code);
-      hex_dump(prog_source, prog_length);
+      if (!opt_quiet) {
+        hex_dump(prog_source, prog_length);
+      }
     };
 
     // run-time error check

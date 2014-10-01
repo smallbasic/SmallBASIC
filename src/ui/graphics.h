@@ -48,7 +48,7 @@ struct Graphics {
   void drawPixel(int posX, int posY);
   void drawRectFilled(int left, int top, int width, int height);
   void drawText(int left, int top, const char *str, int len);
-  int  getPixel(int x, int y);
+  int  getPixel(Canvas *canvas, int x, int y);
   MAExtent getTextSize(const char *str, int len);
   int getHeight() { return _h; }
   int getWidth() { return _w; }

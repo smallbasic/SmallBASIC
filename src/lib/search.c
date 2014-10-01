@@ -17,11 +17,6 @@
 
 #include "search.h"
 
-typedef struct node {
-  void *key;
-  struct node *left, *right;
-} node_t;
-
 /* Walk the nodes of a tree */
 tdestroy_recurse(node_t *root, tdestroy_cb freefct) {
   if (root->left != NULL) {

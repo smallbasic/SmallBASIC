@@ -1,3 +1,21 @@
+2014-09-28
+	Refactor image handling to use system object
+
+2014-09-22
+	Implemented ARRAY command to read JSON into a map variable
+
+2014-09-19
+	Fix STR(v) support for map variables
+
+2014-09-12
+	Add support for unary operators on array elements
+	Fix printing UDS vars
+
+2014-09-08
+	Fix call FUNC with (arg1), (arg2)
+	Fix INKEY Backspace in FLTK
+	Fix FOR/NEXT using float increments
+
 2014-09-06
 	RTE command renamed THROW
 

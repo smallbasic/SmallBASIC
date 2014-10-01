@@ -243,6 +243,14 @@ void err_ref_var() {
   rt_raise(ERR_REF_VAR);
 }
 
+void err_ref_circ_var() {
+  rt_raise(ERR_REF_CIRC_VAR);
+}
+
+void err_array() {
+  rt_raise(MSG_ARRAY_SE);
+}
+
 /**
  * the DONE message
  */
@@ -274,21 +282,28 @@ void inf_break(int pline) {
 
 // assign error to variable or match with next expression
 int err_throw_catch(const char *err) {
+  var_t *arg;
+  var_t v_catch;
   int caught = 1;
-  byte code = code_peek();
   
-  if (code != kwTYPE_EOC && code != kwTYPE_LINE) {
-    if (code_peek() == kwTYPE_VAR) {
-      var_t *arg = code_getvarptr();
-      v_setstr(arg, err);
-    } else {
-      var_t v_catch;
-      v_init(&v_catch);
-      eval(&v_catch);
-      // catch is conditional on matching error
-      caught = (v_catch.type == V_STR && strstr(err, v_catch.v.p.ptr) != NULL);
-      v_free(&v_catch);
-    }
+  switch (code_peek()) {
+  case kwTYPE_VAR:
+    arg = code_getvarptr();
+    v_setstr(arg, err);
+    break;
+  case kwTYPE_STR:
+    v_init(&v_catch);
+    eval(&v_catch);
+    // catch is conditional on matching error
+    caught = (v_catch.type == V_STR && strstr(err, v_catch.v.p.ptr) != NULL);
+    v_free(&v_catch);
+    break;
+  case kwTYPE_EOC:
+  case kwTYPE_LINE:
+    break;
+  default:
+    rt_raise(ERR_INVALID_CATCH);
+    break;
   }
   return caught;
 }
@@ -303,13 +318,21 @@ void err_throw_str(const char *err) {
     code_getaddr();
     // restore outer level
     prog_catch_ip = code_getaddr();
+    // get the stack level
+    byte level = code_getnext();
     
     caught = err_throw_catch(err);
     while (!caught && prog_catch_ip != INVALID_ADDR) {
       code_jump(prog_catch_ip + 1);
       code_getaddr();
       prog_catch_ip = code_getaddr();
+      level = code_getnext();
       caught = err_throw_catch(err);
+    }
+
+    // cleanup the stack
+    while (prog_stack_count > level) {
+      code_pop_and_free(NULL);      
     }
   }
   if (!caught) {
@@ -333,17 +356,19 @@ void err_throw(const char *fmt, ...) {
 
 // throw user error
 void cmd_throw() {
-  var_t v_throw;
-  v_init(&v_throw);
-  const char *err = "";
-  byte code = code_peek();
-  if (code != kwTYPE_EOC && code != kwTYPE_LINE) {
-    eval(&v_throw);
-    if (v_throw.type == V_STR) {
-      err = v_throw.v.p.ptr;
+  if (!gsb_last_error) {
+    var_t v_throw;
+    v_init(&v_throw);
+    const char *err = "";
+    byte code = code_peek();
+    if (code != kwTYPE_EOC && code != kwTYPE_LINE) {
+      eval(&v_throw);
+      if (v_throw.type == V_STR) {
+        err = v_throw.v.p.ptr;
+      }
     }
+    err_throw_str(err);
+    v_free(&v_throw);
   }
-  err_throw_str(err);
-  v_free(&v_throw);
 }
 

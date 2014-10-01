@@ -1,5 +1,5 @@
 '
-' This is a test for user-defined structures
+' This is a test for the MAP variable type
 '
 
 ? "start of test"
@@ -87,4 +87,27 @@ if ((my_pet.x + 1) < 10) then
   ? "wrong !"
 fi
 
-? "end of test"
+a.xcat = "cat"
+a.xdog = "dog"
+a.xfish.big = "big"
+a.xfish.small = "small"
+
+? "a:"
+? a
+
+? "In a:"
+for i in a
+ ? "a." + i + "="; a(i)
+next i
+
+? "In a.xfish:"
+for i in a.xfish
+ ? "a.xfish." + i + "="; a.xfish(i)
+next i
+
+? len(a)
+? len(a.xfish)
+
+inner.foo="bar"
+m.b << inner
+s = " " + m.b(0).foo

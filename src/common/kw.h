@@ -77,6 +77,7 @@ enum keyword {                // line 50
   kwTYPE_CALL_UDF, /* Call user defined function */
   kwTYPE_CALL_UDP, /* Call user defined procedure */
   kwTYPE_CALL_PTR, /* Call user defined procedure or function from address pointer */
+  kwTYPE_CALL_VFUNC, /* Call virtual function */
   kwTYPE_CALLEXTF, /* Call an external function */
   kwTYPE_CALLEXTP, /* Call an external procedure */
   kwTYPE_CRVAR, /* Create dynamic variable (PARAMETERS OR LOCALS) */
@@ -247,7 +248,6 @@ enum proc_keywords {
   kwEXPRSEQ,
   kwUNLOADLIB,
   kwCALLCP,
-  kwIMAGE,
   kwDEFINEKEY,
   kwSHOWPAGE,
   kwTHROW,
@@ -299,6 +299,8 @@ enum func_keywords {
   kwISARRAY,
   kwISNUMBER,
   kwISSTRING,
+  kwISMAP,
+  kwISREF,
   kwATAN2,
   kwPOW,
   kwROUND,
@@ -406,8 +408,8 @@ enum func_keywords {
   kwCBS,
   kwBCS,
   kwCALLCF,
-  kwIMGW,
-  kwIMGH,
+  kwARRAY,
+  kwIMAGE,
   kwNULLFUNC
 };
 
@@ -420,7 +422,7 @@ enum func_keywords {
  * @param table the table of codes to scan
  * @return non-zero on success
  */
-int kw_check(code_t * table, code_t code);
+int kw_check(code_t *table, code_t code);
 
 /**
  * @ingroup sys

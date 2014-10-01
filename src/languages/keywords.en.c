@@ -234,6 +234,8 @@ struct func_keyword_s func_table[] = {
 { "ISARRAY",                    kwISARRAY },
 { "ISNUMBER",                   kwISNUMBER },
 { "ISSTRING",                   kwISSTRING },
+{ "ISMAP",                      kwISMAP },
+{ "ISREF",                      kwISREF },
 { "ATAN2",                      kwATAN2 },
 { "POW",                        kwPOW },
 { "ROUND",                      kwROUND },
@@ -306,7 +308,6 @@ struct func_keyword_s func_table[] = {
 { "XPOS",                       kwXPOS },
 { "YPOS",                       kwYPOS },
 { "INPUT",                      kwINPUTF },
-{ "ARRAY",                      kwCODEARRAY }, 
 { "LINEQN",                     kwGAUSSJORDAN },
 { "FILES",                      kwFILES },
 { "INVERSE",                    kwINVERSE },
@@ -347,8 +348,8 @@ struct func_keyword_s func_table[] = {
 { "CBS",                        kwCBS },
 { "BCS",                        kwBCS },
 { "CALL",                       kwCALLCF },
-{ "IMAGEW",                     kwIMGW },
-{ "IMAGEH",                     kwIMGH },
+{ "IMAGE",                      kwIMAGE },
+{ "ARRAY",                      kwARRAY },
 { "", 0 }
 };
 
@@ -420,7 +421,6 @@ struct proc_keyword_s proc_table[] = {
 { "EXPRSEQ",            kwEXPRSEQ },
 { "UNLOADLIB",          kwUNLOADLIB },
 { "CALL",               kwCALLCP },
-{ "IMAGE",              kwIMAGE },
 { "DEFINEKEY",          kwDEFINEKEY },
 { "SHOWPAGE",           kwSHOWPAGE },
 

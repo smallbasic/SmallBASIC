@@ -5,7 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I. @PACKAGE_CFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src -I. @PACKAGE_CFLAGS@ -Wunused -Wno-unused-result
 
 EXTRA_DIST =								\
   fixedfont.xpm							\

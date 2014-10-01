@@ -12,7 +12,7 @@
 #include "common/var.h"
 #include "common/smbas.h"
 #include "common/sberr.h"
-#include "common/var_hash.h"
+#include "common/var_map.h"
 
 #define ARR_ALLOC 256
 
@@ -35,8 +35,8 @@ int v_isempty(var_t *var) {
     return (strlen((char *)var->v.p.ptr) == 0);
   case V_INT:
     return (var->v.i == 0);
-  case V_HASH:
-    return hash_is_empty(var);
+  case V_MAP:
+    return map_is_empty(var);
   case V_PTR:
     return (var->v.ap.p == 0);
   case V_NUM:
@@ -59,8 +59,8 @@ int v_length(var_t *var) {
   switch (var->type) {
   case V_STR:
     return strlen((char *)var->v.p.ptr);
-  case V_HASH:
-    return hash_length(var);
+  case V_MAP:
+    return map_length(var);
   case V_PTR:
     ltostr(var->v.ap.p, tmpsb);
     return strlen(tmpsb);
@@ -84,9 +84,9 @@ int v_length(var_t *var) {
  */
 var_t *v_getelemptr(var_t *v, dword index) {
   if (v->type == V_ARRAY) {
-    if (index < v->v.a.size)
+    if (index < v->v.a.size) {
       return (var_t *)(v->v.a.ptr + (index * sizeof(var_t)));
-    else {
+    } else {
       err_vararridx(index, v->v.a.size);
       return NULL;
     }
@@ -148,8 +148,9 @@ void v_resize_array(var_t *v, dword size) {
           // resize & copy
           prev = v->v.a.ptr;
           v->v.a.ptr = tmp_alloc((size + ARR_ALLOC) * sizeof(var_t));
-          if (v->v.a.size > 0)
+          if (v->v.a.size > 0) {
             memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
+          }
         } else {
           prev = NULL;
         }
@@ -255,8 +256,8 @@ int v_is_nonzero(var_t *v) {
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
     return (v->v.p.size != 0);
-  case V_HASH:
-    return !hash_is_empty(v);
+  case V_MAP:
+    return !map_is_empty(v);
   case V_PTR:
     return (v->v.ap.p != 0);
   case V_ARRAY:
@@ -275,8 +276,6 @@ int v_is_nonzero(var_t *v) {
 int v_compare(var_t *a, var_t *b) {
   var_num_t dt;
   var_int_t di;
-  int i, ci;
-  var_t *ea, *eb;
 
   if (a == 0 || b == 0) {
     err_evsyntax();
@@ -285,15 +284,13 @@ int v_compare(var_t *a, var_t *b) {
 
   if (a->type == V_INT && b->type == V_INT) {
     di = (a->v.i - b->v.i);
-    i = di < 0 ? -1 : di > 0 ? 1 : 0;
-    return i;
+    return (di < 0 ? -1 : di > 0 ? 1 : 0);
   } else if ((a->type == V_INT || a->type == V_NUM) && 
              (b->type == V_INT || b->type == V_NUM)) {
     var_num_t left = (a->type == V_NUM) ? a->v.n : a->v.i;
     var_num_t right = (b->type == V_NUM) ? b->v.n : b->v.i;
     dt = (left - right);
-    i = dt < 0.0 ? -1 : dt > 0.0 ? 1 : 0;
-    return i;
+    return (dt < 0.0 ? -1 : dt < 0.0000000000000000001f ? 0 : 1);
   }
   if ((a->type == V_STR) && (b->type == V_STR)) {
     return strcmp(a->v.p.ptr, b->v.p.ptr);
@@ -339,9 +336,10 @@ int v_compare(var_t *a, var_t *b) {
       return 1;
     }
     // check every element
+    int i, ci;
     for (i = 0; i < a->v.a.size; i++) {
-      ea = (var_t *)(a->v.a.ptr + sizeof(var_t) * i);
-      eb = (var_t *)(b->v.a.ptr + sizeof(var_t) * i);
+      var_t *ea = (var_t *)(a->v.a.ptr + sizeof(var_t) * i);
+      var_t *eb = (var_t *)(b->v.a.ptr + sizeof(var_t) * i);
       if ((ci = v_compare(ea, eb)) != 0) {
         return ci;
       }
@@ -350,8 +348,8 @@ int v_compare(var_t *a, var_t *b) {
     return 0;
   }
 
-  if (a->type == V_HASH && b->type == V_HASH) {
-    return hash_compare(a, b);
+  if (a->type == V_MAP && b->type == V_MAP) {
+    return map_compare(a, b);
   }
 
   err_evtype();
@@ -436,8 +434,8 @@ void v_add(var_t *result, var_t *a, var_t *b) {
  * assign (dest = src)
  */
 void v_set(var_t *dest, const var_t *src) {
-  if (src->type == V_HASH) {
-    hash_set(dest, (const var_p_t) src);
+  if (src->type == V_MAP) {
+    map_set(dest, (const var_p_t) src);
     return;
   }
 
@@ -531,37 +529,48 @@ void v_createstr(var_t *v, const char *src) {
 }
 
 /*
+ * returns the string representation of the variable
+ */
+char *v_str(var_t *arg) {
+  char *buffer;
+  switch (arg->type) {
+  case V_INT:
+    buffer = tmp_alloc(64);
+    ltostr(arg->v.i, (char *)buffer);
+    break;
+  case V_NUM:
+    buffer = tmp_alloc(64);
+    ftostr(arg->v.n, (char *)buffer);
+    break;
+  case V_STR:
+    buffer = (byte *)tmp_strdup((char *)arg->v.p.ptr);
+    break;
+  case V_ARRAY:
+  case V_MAP:
+    buffer = map_to_str(arg);
+    break;
+  case V_FUNC:
+    buffer = tmp_alloc(5);
+    strcpy(buffer, "func");
+    break;
+  default:
+    buffer = tmp_alloc(1);
+    buffer[0] = '\0';
+    break;
+  }
+  return buffer;
+}
+
+/*
  * converts the variable to string-variable
  */
 void v_tostr(var_t *arg) {
   if (arg->type != V_STR) {
-    int l;
-    char *tmp = tmp_alloc(64);
-
-    switch (arg->type) {
-    case V_HASH:
-      hash_to_str(arg, tmp, 64);
-      hash_free(arg);
-      break;
-    case V_PTR:
-      ltostr(arg->v.ap.p, tmp);
-      break;
-    case V_INT:
-      ltostr(arg->v.i, tmp);
-      break;
-    case V_NUM:
-      ftostr(arg->v.n, tmp);
-      break;
-    default:
-      err_varisarray();
-      tmp_free(tmp);
-      return;
-    }
-
-    l = strlen(tmp) + 1;
+    char *tmp = v_str(arg);
+    int len = strlen(tmp) + 1;
     arg->type = V_STR;
-    arg->v.p.ptr = tmp_alloc(l);
-    arg->v.p.size = l;
+    arg->v.p.ptr = tmp_alloc(len);
+    arg->v.p.size = len;
     strcpy(arg->v.p.ptr, tmp);
     tmp_free(tmp);
   }
@@ -587,7 +596,7 @@ void v_setstrn(var_t *var, const char *string, int len) {
     var->v.p.size = len + 1;
     var->v.p.ptr = tmp_alloc(var->v.p.size);
     strncpy(var->v.p.ptr, string, len);
-    var->v.p.ptr[len] = 0;
+    var->v.p.ptr[len] = '\0';
   }
 }
 
@@ -736,48 +745,3 @@ void v_input2var(const char *str, var_t *var) {
   }
 }
 
-/*
- * evaluate the pcode string
- */
-void v_eval_str(var_p_t v) {
-  int len = code_getstrlen();
-  v->type = V_STR;
-  v->v.p.size = len;
-  v->v.p.ptr = tmp_alloc(len + 1);
-  memcpy(v->v.p.ptr, &prog_source[prog_ip], len);
-  *((char *)(v->v.p.ptr + len)) = '\0';
-  prog_ip += len;
-}
-
-/*
- * evaluate variable reference assignment
- */
-void v_eval_ref(var_t *v_left) {
-  var_t *v_right = NULL;
-  // can only reference regular non-dynamic variable
-  if (code_peek() == kwTYPE_VAR) {
-    code_skipnext();
-    v_right = tvar[code_getaddr()];
-    switch (v_right->type) {
-    case V_ARRAY:
-    case V_HASH:
-      switch (code_peek()) {
-      case kwTYPE_LEVEL_BEGIN:
-      case kwTYPE_UDS_EL:
-        // base variable only supported
-        v_right = NULL;
-        break;
-      }
-      break;
-    default:
-      break;
-    }
-  }
-  if (v_right == NULL) {
-    err_ref_var();
-  } else {
-    v_free(v_left);
-    v_left->type = V_REF;
-    v_left->v.ref = v_right;
-  }
-}

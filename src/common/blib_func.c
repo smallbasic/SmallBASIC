@@ -225,7 +225,7 @@ void date_str2dmy(char *str, long *d, long *m, long *y) {
 }
 
 /*
- *   TIME hh:mm:ss string to ints
+ * TIME hh:mm:ss string to ints
  */
 void date_str2hms(char *str, long *h, long *m, long *s) {
   char *p;
@@ -819,7 +819,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
 //
 // i|f <- FUNC (str)
 //
-void cmd_ns1(long funcCode, var_t * arg, var_t * r) {
+void cmd_ns1(long funcCode, var_t *arg, var_t *r) {
   IF_ERR_RETURN;
   if (arg->type != V_STR) {
     v_tostr(arg);
@@ -898,7 +898,7 @@ void cmd_ns1(long funcCode, var_t * arg, var_t * r) {
 //
 // str <- FUNC (any)
 //
-void cmd_str1(long funcCode, var_t * arg, var_t * r) {
+void cmd_str1(long funcCode, var_t *arg, var_t *r) {
   byte *p, *wp;
   byte *tb;
   var_int_t l, i;
@@ -930,15 +930,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r) {
     //
     // str <- STR$(n)
     //
-    r->v.p.ptr = tmp_alloc(64);
-    if (arg->type == V_INT) {
-      ltostr(arg->v.i, (char *) r->v.p.ptr);
-    } else if (arg->type == V_NUM) {
-      ftostr(arg->v.n, (char *) r->v.p.ptr);
-    } else if (arg->type == V_STR) {
-      tmp_free(r->v.p.ptr);
-      r->v.p.ptr = (byte *) tmp_strdup((char *)arg->v.p.ptr);
-    }
+    r->v.p.ptr = v_str(arg);
     r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
     break;
   case kwCBS:
@@ -959,8 +951,7 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r) {
     // convert BASIC-Style string to C-style string
     //
     v_tostr(arg);
-    IF_ERR_RETURN
-    ;
+    IF_ERR_RETURN;
 
     r->v.p.ptr = (byte *) bstrdup((char *) arg->v.p.ptr);
     r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
@@ -1217,9 +1208,9 @@ void cmd_str1(long funcCode, var_t * arg, var_t * r) {
 }
 
 //
-//      str <- FUNC (void)
+// str <- FUNC (void)
 //
-void cmd_str0(long funcCode, var_t * r) {
+void cmd_str0(long funcCode, var_t *r) {
   word ch;
   char tmp[3];
   struct tm tms;
@@ -1235,9 +1226,8 @@ void cmd_str0(long funcCode, var_t * r) {
       dev_events(2);
     }
     if (dev_kbhit()) {
-      ch = dev_getch();         // MultiByte - dev_getchr() must return the
-      // extended code (2
-      // bytes char)
+      ch = dev_getch();
+      // MultiByte - dev_getchr() must return the extended code (2 bytes char)
       if ((ch & 0xFF00) == 0xFF00) {  // extra code - hardware keys
         tmp[0] = '\033';
         tmp[1] = ch & 0xFF;
@@ -1288,10 +1278,10 @@ void cmd_str0(long funcCode, var_t * r) {
           tmp[1] = '\0';
         };
       }
-
       v_createstr(r, tmp);
-    } else
+    } else {
       v_createstr(r, "");
+    }
     break;
   case kwDATE:
     //
@@ -1323,7 +1313,7 @@ void cmd_str0(long funcCode, var_t * r) {
 //
 // str <- FUNC (...)
 //
-void cmd_strN(long funcCode, var_t * r) {
+void cmd_strN(long funcCode, var_t *r) {
   var_t arg1;
   var_int_t i, count, lsrc, len, start, pc;
   char tmp[2], *tmp_p;
@@ -1756,10 +1746,23 @@ void cmd_strN(long funcCode, var_t * r) {
   pfree3(s1, s2, s3);
 }
 
+void cmd_is_var_type(byte type, var_t *arg1, var_t *r) {
+  var_t *var_p;
+  if (code_isvar()) {
+    var_p = code_getvarptr();
+  } else {
+    eval(arg1);
+    var_p = arg1;
+  }
+  if (!prog_error) {
+    r->v.i = (var_p->type == type);
+  }
+}
+
 //
 // int <- FUNC (...)
 //
-void cmd_intN(long funcCode, var_t * r) {
+void cmd_intN(long funcCode, var_t *r) {
   char *s1 = NULL, *s2 = NULL, *s3 = NULL;
   var_int_t start;
 
@@ -1806,19 +1809,13 @@ void cmd_intN(long funcCode, var_t * r) {
     }                           // error
     break;
   case kwISARRAY:
-    //
-    // bool <- ISARRAY(v)
-    //
-    if (code_isvar()) {
-      var_p = code_getvarptr();
-    } else {
-      eval(&arg1);
-      var_p = &arg1;
-    }
-
-    if (!prog_error) {
-      r->v.i = (var_p->type == V_ARRAY);
-    }
+    cmd_is_var_type(V_ARRAY, &arg1, r);
+    break;
+  case kwISMAP:
+    cmd_is_var_type(V_MAP, &arg1, r);
+    break;
+  case kwISREF:
+    cmd_is_var_type(V_REF, &arg1, r);
     break;
   case kwISSTRING:
     //
@@ -1989,7 +1986,6 @@ void cmd_intN(long funcCode, var_t * r) {
       }
     }
 
-    // ////
     switch (code) {
     case 1:
       r->v.i = (r2int(rc * 255.0, 0, 255) << 16) | (r2int(gc * 255.0, 0, 255) << 8)
@@ -2003,43 +1999,6 @@ void cmd_intN(long funcCode, var_t * r) {
     }
 
     r->v.i = -r->v.i;
-  }
-    break;
-
-  case kwIMGW: {
-    // image width
-    int h, i;
-    par_getsharp();
-    IF_ERR_RETURN;
-
-    h = par_getint();
-    IF_ERR_RETURN;
-
-    par_getcomma();
-    IF_ERR_RETURN;
-
-    i = par_getint();
-    IF_ERR_RETURN;
-    r->v.i = dev_image_width(h, i);
-  }
-    break;
-
-  case kwIMGH: {
-    // image height
-    int h, i;
-    par_getsharp();
-    IF_ERR_RETURN;
-
-    h = par_getint();
-    IF_ERR_RETURN;
-
-    par_getcomma();
-    IF_ERR_RETURN;
-
-    i = par_getint();
-    IF_ERR_RETURN;
-
-    r->v.i = dev_image_height(h, i);
   }
     break;
 
@@ -2117,7 +2076,7 @@ void cmd_numN(long funcCode, var_t *r) {
 /*
  * any <- FUNC (...)
  */
-void cmd_genfunc(long funcCode, var_t * r) {
+void cmd_genfunc(long funcCode, var_t *r) {
   byte code, ready, first;
   int count, tcount, handle, i, len, ch;
   addr_t ofs;
@@ -2191,14 +2150,13 @@ void cmd_genfunc(long funcCode, var_t * r) {
           case V_STR:
             format_str(buf, (char *) arg.v.p.ptr, (char *) arg2.v.p.ptr);
           case V_INT:
-            if (arg2.type == V_INT
-              )
+            if (arg2.type == V_INT) {
               format_num(buf, (char *) arg.v.p.ptr, arg2.v.i);
+            }
           case V_NUM:
-            if (arg2.type == V_NUM
-              )
+            if (arg2.type == V_NUM) {
               format_num(buf, (char *) arg.v.p.ptr, arg2.v.n);
-
+            }
             r->type = V_STR;
             r->v.p.size = strlen(buf) + 1;
             r->v.p.ptr = tmp_alloc(r->v.p.size);

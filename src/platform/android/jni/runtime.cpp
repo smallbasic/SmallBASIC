@@ -22,6 +22,7 @@
 #include "common/device.h"
 #include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
+#include "common/keymap.h"
 
 #define WAIT_INTERVAL 10
 #define MAIN_BAS "__main_bas__"

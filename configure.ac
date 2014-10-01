@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.15])
+AC_INIT([smallbasic], [0.11.16])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -226,6 +226,7 @@ function buildSDL() {
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
    AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
 

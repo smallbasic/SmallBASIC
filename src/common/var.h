@@ -35,8 +35,9 @@
 #define V_STR       2 /**< variable type, string                       @ingroup var */
 #define V_ARRAY     3 /**< variable type, array of variables           @ingroup var */
 #define V_PTR       4 /**< variable type, pointer to UDF or label      @ingroup var */
-#define V_HASH      5 /**< variable type, hash                         @ingroup var */
+#define V_MAP       5 /**< variable type, associative array            @ingroup var */
 #define V_REF       6 /**< variable type, reference another var        @ingroup var */
+#define V_FUNC      7 /**< variable type, object method                @ingroup var */
 
 /*
  *   predefined system variables - index
@@ -70,6 +71,8 @@
 extern "C" {
 #endif
 
+typedef void (*method) (const void *self);
+
 /**
  * @ingroup var
  * @typedef var_s
@@ -91,11 +94,17 @@ struct var_s {
       addr_t v; /** return-var ID */
     } ap;
 
-    // hash map
-    void *hash; /** pointer the hash structure */
+    // associative array/map
+    void *map; /** pointer the map structure */
 
     // reference variable
     void *ref;
+
+    // object method
+    struct {
+      method cb;
+      void *self;
+    } fn;
 
     // generic ptr (string)
     struct {
@@ -312,6 +321,15 @@ var_t *v_getelemptr(var_t *v, dword index);
  * @param src is the string
  */
 void v_createstr(var_t *v, const char *src);
+
+/**
+ * @ingroup var
+ *
+ * print variable as string
+ *
+ * @param arg is the variable
+ */
+char *v_str(var_t *arg);
 
 /**
  * @ingroup var
@@ -640,29 +658,14 @@ char *v_getstr(var_t *v);
 /**
  * @ingroup var
  *
- * populates the var to string from bytecode
+ * creates an image object
  *
  * @param v is the variable
  */
-void v_eval_str(var_p_t v);
+void v_create_image(var_p_t var);
 
-/**
- * @ingroup var
- *
- * evaluate variable reference assignment
- */
-void v_eval_ref(var_t *l_value);
-
-/*
- * low-level byte-code parsing
- *
- * Usually you must not use these functions (except the rt_raise)
- * try the parameters API.
- */
-  
-int code_checkop(byte op);
-int code_checkop_s(byte *str);
 void code_jump_label(word label_id);  // IP <- LABEL_IP_TABLE[label_id]
+
 #define code_jump(newip) prog_ip=(newip) /**< IP <- NewIP @ingroup exec */
 
 /**
@@ -682,15 +685,6 @@ void code_push(stknode_t *node);
  * @param node the stack node
  */
 void code_pop(stknode_t *node);
-
-/**
- * @ingroup exec
- *
- * returns true if the next code is a single variable
- *
- * @return non-zero if the following code is a variable
- */
-int code_isvar(void);
 
 /**
  * @ingroup exec

@@ -67,15 +67,6 @@ void eval(var_t *result);
 /**
  * @ingroup exec
  *
- * resolve the variable reference
- *
- * @param var_t
- */
-var_t *eval_ref_var(var_t *var_p);
-
-/**
- * @ingroup exec
- *
  * sets the data-p. the data-p is used for READ/DATA commands.
  * actually it is points to the next position of which the READ will use.
  */

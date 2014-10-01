@@ -29,6 +29,7 @@
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/fs_socket_client.h"
+#include "common/keymap.h"
 
 using namespace fltk;
 
@@ -1914,8 +1915,10 @@ bool BaseWindow::handleKeyEvent() {
     dev_pushkey(SB_KEY_RIGHT);
     break;
   case BackSpaceKey:
-  case DeleteKey:
     dev_pushkey(SB_KEY_BACKSPACE);
+    break;
+  case DeleteKey:
+    dev_pushkey(SB_KEY_DELETE);
     break;
   case ReturnKey:
     dev_pushkey(13);

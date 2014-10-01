@@ -68,6 +68,8 @@ void err_notavar(void);
 void err_run_err(const char *file);
 void err_invkw(addr_t addr, byte code);
 void err_ref_var();
+void err_ref_circ_var();
+void err_array();
 
 #define err_type_mismatch() err_typemismatch()
 #define err_syntax_error()  err_syntax()

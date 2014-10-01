@@ -12,6 +12,10 @@
 #ifndef KEYMAP_H
 #define KEYMAP_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #define PCKBSIZE 256
 
 // Keyboard codes
@@ -88,6 +92,8 @@ int keymap_invoke(word key);
 int keymap_kbhit();
 int keymap_kbpeek();
 
+#if defined(__cplusplus)
+}
 #endif
 
-
+#endif

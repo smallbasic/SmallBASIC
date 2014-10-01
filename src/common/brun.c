@@ -158,6 +158,12 @@ void code_pop_and_free(stknode_t *node) {
           tmp_free(cur_node->x.vfor.arr_ptr);
         }
       }
+      break;
+
+    case kwSELECT:
+      v_free(cur_node->x.vcase.var_ptr);
+      tmp_free(cur_node->x.vcase.var_ptr);
+      break;
     }
   } else {
     if (node) {
@@ -188,219 +194,6 @@ stknode_t *code_stackpeek() {
     return &prog_stack[prog_stack_count - 1];
   }
   return NULL;
-}
-
-/**
- * Convertion multi-dim index to one-dim index
- */
-addr_t getarrayidx(var_t *array, var_t **var_hash_val) {
-  addr_t idx = 0;
-  addr_t lev = 0;
-  addr_t m = 0;
-  byte code;
-  var_t var;
-  addr_t idim;
-  addr_t i;
-
-  do {
-    v_init(&var);
-    eval(&var);
-    IF_ERR_RETURN_0;
-
-    if (var.type == V_STR || array->type == V_HASH) {
-      // array element is a string or element is addressing a hash
-      hash_get_value(array, &var, var_hash_val);
-
-      if (code_peek() == kwTYPE_LEVEL_END) {
-        code_skipnext();
-      } else {
-        err_missing_sep();
-      }
-      v_free(&var);
-      return 0;
-    } else {
-      idim = v_getint(&var);
-      v_free(&var);
-      IF_ERR_RETURN_0;
-
-      idim = idim - array->v.a.lbound[lev];
-
-      m = idim;
-      for (i = lev + 1; i < array->v.a.maxdim; i++) {
-        m = m * (ABS(array->v.a.ubound[i] - array->v.a.lbound[i]) + 1);
-      }
-      idx += m;
-
-      // skip separator
-      code = code_peek();
-      if (code == kwTYPE_SEP) {
-        code_skipnext();
-        if (code_getnext() != ',') {
-          err_syntax_error();
-        }
-      }
-      // next
-      lev++;
-    }
-  } while (code_peek() != kwTYPE_LEVEL_END);
-
-  if (!prog_error) {
-    if ((int) array->v.a.maxdim != lev) {
-      err_missing_sep();
-    }
-  }
-  return idx;
-}
-
-/**
- * Used by code_getvarptr() to retrieve an element ptr of an array
- */
-var_t *code_getvarptr_arridx(var_t *basevar_p) {
-  addr_t array_index;
-  var_t *var_p = NULL;
-
-  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
-    err_arrmis_lp();
-  } else {
-    code_skipnext();            // '('
-    array_index = getarrayidx(basevar_p, &var_p);
-
-    if (var_p != NULL) {
-      // hash map value
-      return var_p;
-    }
-
-    if (!prog_error) {
-      if ((int) array_index < basevar_p->v.a.size && (int) array_index >= 0) {
-        var_p = (var_t *)(basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
-
-        if (code_peek() == kwTYPE_LEVEL_END) {
-          code_skipnext();      // ')', ')' level
-          if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-            // there is a second array inside
-            if (var_p->type != V_ARRAY) {
-              err_varisnotarray();
-            } else {
-              return code_getvarptr_arridx(var_p);
-            }
-          }
-        } else {
-          err_arrmis_rp();
-        }
-      } else {
-        err_arridx(array_index, basevar_p->v.a.size);
-      }
-    }
-  }
-
-  return var_p;
-}
-
-/**
- * resolve a composite variable reference, eg: ar.ch(0).foo
- */
-var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
-  if (var_p && var_p->type == V_REF) {
-    var_p = eval_ref_var(var_p);
-  }
-  if (var_p) {
-    switch (code_peek()) {
-    case kwTYPE_LEVEL_BEGIN:
-      if (!until_parens) {
-        var_p = code_resolve_varptr(code_getvarptr_arridx(var_p), until_parens);
-      }
-      break;
-    case kwTYPE_UDS_EL:
-      var_p = code_resolve_varptr(hash_resolve_fields(var_p), until_parens);
-      break;
-    }
-  }
-  return var_p;
-}
-
-/**
- * Used by code_isvar() to retrieve an element ptr of an array
- */
-var_t *code_isvar_arridx(var_t *basevar_p) {
-  addr_t array_index;
-  var_t *var_p = NULL;
-
-  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
-    return NULL;
-  } else {
-    code_skipnext();            // '('
-    array_index = getarrayidx(basevar_p, &var_p);
-
-    if (var_p != NULL) {
-      // hash map value
-      return var_p;
-    }
-
-    if (!prog_error) {
-      if ((int) array_index < basevar_p->v.a.size) {
-        var_p = (var_t *)(basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
-
-        if (code_peek() == kwTYPE_LEVEL_END) {
-          code_skipnext();      // ')', ')' level
-          if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-            // there is a second array inside
-            if (var_p->type != V_ARRAY) {
-              return NULL;
-            } else {
-              return code_isvar_arridx(var_p);
-            }
-          }
-        } else {
-          return NULL;
-        }
-      } else {
-        return NULL;
-      }
-    }
-  }
-
-  return var_p;
-}
-
-/**
- * returns true if the next code is a variable.
- * if the following code is an expression (no matter if the first item is a variable),
- * returns false
- */
-int code_isvar() {
-  var_t *basevar_p;
-  var_t *var_p = NULL;
-
-  // store IP
-  addr_t cur_ip = prog_ip;
-
-  if (code_peek() == kwTYPE_VAR) {
-    code_skipnext();
-    var_p = basevar_p = tvar[code_getaddr()];
-    switch (basevar_p->type) {
-    case V_HASH:
-    case V_ARRAY:
-      // variable is an array or hash
-      var_p = code_resolve_varptr(var_p, 0);
-      break;
-    default:
-      if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-        var_p = NULL;
-      }
-    }
-  }
-
-  if (var_p) {
-    if (kw_check_evexit(code_peek()) || code_peek() == kwTYPE_LEVEL_END) {
-      // restore IP
-      prog_ip = cur_ip;
-      return 1;
-    }
-  }
-
-  // restore IP
-  prog_ip = cur_ip;
-  return 0;
 }
 
 /**
@@ -908,14 +701,14 @@ static inline void bc_loop_call_proc() {
     // end of program
     prog_error = -1;
     break;
-  case kwIMAGE:
-    cmd_image();
-    break;
   case kwDEFINEKEY:
     cmd_definekey();
     break;
   case kwSHOWPAGE:
     dev_show_page();
+    break;
+  case kwTYPE_CALL_VFUNC:
+    cmd_call_vfunc();
     break;
   default:
     err_pcode_err(pcode);
@@ -1291,6 +1084,9 @@ void bc_loop(int isf) {
         rt_raise("COMMAND SEPARATOR '%c' FOUND!", prog_source[prog_ip + 1]);
       } else {
         rt_raise("PARAM COUNT ERROR @%d=%X %d", prog_ip, prog_source[prog_ip], code);
+        if (!opt_quiet) {
+          hex_dump(prog_source, prog_length);
+        }
       }
     } else {
       prog_ip++;

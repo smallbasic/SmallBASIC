@@ -28,6 +28,7 @@
 #include "ui/utils.h"
 #include "ui/interface.h"
 #include "common/fs_socket_client.h"
+#include "common/keymap.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -532,55 +533,27 @@ Image *getImage(dev_file_t *filep, int index) {
   return image;
 }
 
-void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h) {
-  int imgw = -1;
-  int imgh = -1;
-  dev_file_t *filep = dev_getfileptr(handle);
-  if (filep == 0) {
-    return;
-  }
-
-  if (filep->open_flags == DEV_FILE_INPUT) {
-    Image *img = getImage(filep, index);
-    if (img != 0) {
-      // input/read image and display
-      img->measure(imgw, imgh);
-      wnd->_out->drawImage(img, x, y, sx, sy, (w == 0 ? imgw : w), (h == 0 ? imgh : h));
-    }
-  } else {
-    // output screen area image to jpeg
-    wnd->_out->saveImage(filep->name, x, y, sx, sy);
-  }
+int dev_load_image(int handle) {
+  // TODO
+  return -1;
 }
 
-int dev_image_width(int handle, int index) {
-  int imgw = -1;
-  int imgh = -1;
-  dev_file_t *filep = dev_getfileptr(handle);
-  if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
-    return 0;
-  }
-
-  Image *img = getImage(filep, index);
-  if (img) {
-    img->measure(imgw, imgh);
-  }
-  return imgw;
+int dev_image_width(int handle) {
+  // TODO
+  return -1;
 }
 
-int dev_image_height(int handle, int index) {
-  int imgw = -1;
-  int imgh = -1;
-  dev_file_t *filep = dev_getfileptr(handle);
-  if (filep == 0 || filep->open_flags != DEV_FILE_INPUT) {
-    return 0;
-  }
+int dev_image_height(int handle) {
+  // TODO
+  return -1;
+}
 
-  Image *img = getImage(filep, index);
-  if (img) {
-    img->measure(imgw, imgh);
-  }
-  return imgh;
+void dev_image_show(var_image *image) {
+  // TODO
+}
+
+void dev_image_hide(int handle) {
+  // TODO
 }
 
 //--DELAY-----------------------------------------------------------------------

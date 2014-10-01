@@ -10,6 +10,7 @@
 #include "common/device.h"
 #include "common/smbas.h"
 #include "common/messages.h"
+#include "common/keymap.h"
 
 // add-on drivers
 #if defined(DRV_SOUND)
@@ -698,14 +699,22 @@ void log_printf(const char *format, ...) {
 }
 
 #ifndef IMPL_IMAGE
-void dev_image(int handle, int index, int x, int y, int sx, int sy, int w, int h) {
+int dev_image_load(int handle) {
+  return -1;
 }
 
-int dev_image_width(int handle, int index) {
+int dev_image_width(int handle) {
   return -1;
 }
-int dev_image_height(int handle, int index) {
+
+int dev_image_height(int handle) {
   return -1;
+}
+
+void dev_image_show(var_image *image) {
+}
+
+void dev_image_hide(int handle) {
 }
 #endif
 

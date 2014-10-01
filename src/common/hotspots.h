@@ -7,13 +7,13 @@
 //
 // Copyright(C) 2014 Chris Warren-Smith
 
-#include "common/var_hash.h"
+#include "common/var_map.h"
+#include "common/var_eval.h"
 
 void err_evsyntax(void);
 void err_varisarray(void);
 void err_varisnotarray(void);
 void err_notavar(void);
-var_t *code_resolve_varptr(var_t* var_p, int until_parens);
 
 /**
  * @ingroup var
@@ -82,8 +82,8 @@ static inline var_num_t code_getnext128f() {
  */
 static inline var_num_t v_getval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_HASH:
-    return hash_to_int(v);
+  case V_MAP:
+    return map_to_int(v);
   case V_PTR:
     return v->v.ap.p;
   case V_INT:
@@ -115,8 +115,8 @@ static inline var_num_t v_getval(var_t *v) {
  */
 static inline var_int_t v_igetval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_HASH:
-    return hash_to_int(v);
+  case V_MAP:
+    return map_to_int(v);
   case V_PTR:
     return v->v.ap.p;
   case V_INT:
@@ -144,7 +144,7 @@ static inline var_int_t v_igetval(var_t *v) {
  *
  * @return the var_t*
  */
-static inline var_t* code_getvarptr_parens(int until_parens) {
+static inline var_t *code_getvarptr_parens(int until_parens) {
   var_t *var_p = NULL;
 
   if (code_peek() == kwTYPE_VAR) {
@@ -154,7 +154,7 @@ static inline var_t* code_getvarptr_parens(int until_parens) {
       var_p = code_resolve_varptr(var_p, until_parens);
     } else {
       switch (var_p->type) {
-      case V_HASH:
+      case V_MAP:
       case V_ARRAY:
         var_p = code_resolve_varptr(var_p, until_parens);
         break;
@@ -205,9 +205,6 @@ static inline void v_init(var_t *v) {
  * @param v the variable
  */
 static inline void v_free(var_t *v) {
-  int i;
-  var_t *elem;
-
   switch (v->type) {
   case V_STR:
     if (v->v.p.ptr) {
@@ -219,22 +216,20 @@ static inline void v_free(var_t *v) {
   case V_ARRAY:
     if (v->v.a.size) {
       if (v->v.a.ptr) {
+        int i;
         for (i = 0; i < v->v.a.size; i++) {
-          elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
+          var_t *elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
           v_free(elem);
         }
-
         tmp_free(v->v.a.ptr);
         v->v.a.ptr = NULL;
         v->v.a.size = 0;
       }
     }
     break;
-  case V_HASH:
-    hash_free(v);
+  case V_MAP:
+    map_free(v);
     break;
   }
-
   v_init(v);
 }
-

@@ -196,7 +196,6 @@ void Graphics::drawRectFilled(int left, int top, int width, int height) {
 }
 
 void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
-  FT_Int p, q;
   FT_Int xMax = x + bitmap->width;
   FT_Int yMax = y + bitmap->rows;
 
@@ -245,14 +244,14 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
   }
 }
 
-int Graphics::getPixel(int posX, int posY) {
+int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
   int result = 0;
-  if (_drawTarget
+  if (canvas
       && posX > -1 
       && posY > -1
       && posX < _drawTarget->_w
       && posY < _drawTarget->_h - 1) {
-    pixel_t *line = _drawTarget->getLine(posY);
+    pixel_t *line = canvas->getLine(posY);
     result = line[posX];
   }
   return result;
@@ -374,7 +373,7 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
   Canvas *holder = (Canvas *)maHandle;
   // maGetImageData is only used for getPixel()
-  *((int *)dst) = graphics->getPixel(srcRect->left, srcRect->top);
+  *((int *)dst) = graphics->getPixel(holder, srcRect->left, srcRect->top);
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {

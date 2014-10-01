@@ -15,6 +15,7 @@
 #include "common/osd.h"
 #include "common/device.h"
 #include "common/blib_ui.h"
+#include "common/keymap.h"
 
 #include "ui/utils.h"
 #include "ui/form_ui.h"
