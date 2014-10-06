@@ -28,10 +28,10 @@
 
 // creates a matrix of the given size
 var_num_t **mat_create(int row, int col) {
-  var_num_t **m = (var_num_t **)tmp_alloc(sizeof(var_num_t *) * row);
+  var_num_t **m = (var_num_t **)malloc(sizeof(var_num_t *) * row);
   int i;
   for (i = 0; i < row; i++) {
-    m[i] = (var_num_t *)tmp_alloc(sizeof(var_num_t) * col);
+    m[i] = (var_num_t *)malloc(sizeof(var_num_t) * col);
   }
 
   return m;
@@ -41,9 +41,9 @@ var_num_t **mat_create(int row, int col) {
 void mat_free(var_num_t **m, int n) {
   int i;
   for (i = 0; i < n; i++) {
-    tmp_free(m[i]);
+    free(m[i]);
   }
-  tmp_free(m);
+  free(m);
 }
 
 // fill the matrix with zero values

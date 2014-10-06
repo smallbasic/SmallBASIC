@@ -12,7 +12,6 @@
 #include <FBase.h>
 
 #include "ui/maapi.h"
-#include "ui/interface.h"
 #include "ui/ansiwidget.h"
 #include "ui/system.h"
 

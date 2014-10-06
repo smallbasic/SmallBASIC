@@ -4,18 +4,16 @@
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-// 
+//
 
 #include "common/sys.h"
 #include "common/device.h"
 #include "common/smbas.h"
 #include "common/osd.h"
-#include "common/blib_ui.h"
 
 #include <fltk/ask.h>
 #include <fltk/run.h>
 #include <fltk/events.h>
-#include <fltk/SharedImage.h>
 #include <fltk/FL_VERSION.h>
 #include <fltk/Rectangle.h>
 #include <fltk/damage.h>
@@ -25,8 +23,9 @@
 #include "platform/fltk/TtyWidget.h"
 #include "platform/fltk/utils.h"
 #include "platform/fltk/system.h"
+#include "ui/image.h"
 #include "ui/utils.h"
-#include "ui/interface.h"
+#include "ui/inputs.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"
 
@@ -56,7 +55,6 @@ System *g_system = new System();
 #define EVT_CHECK_EVERY ((50 * CLOCKS_PER_SEC) / 1000)
 
 void getHomeDir(char *fileName, bool appendSlash = true);
-bool cacheLink(dev_file_t *df, char *localFile);
 void updateForm(const char *s);
 void closeForm();
 void clearOutput();
@@ -102,16 +100,12 @@ int osd_devinit() {
   setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
 
   os_color_depth = 32;
-  if (SharedImage::first_image) {
-    SharedImage::first_image->clear_cache();
-  }
   if (saveForm == false) {
     closeForm();
   }
   osd_cls();
   saveForm = false;
   dev_clrkb();
-  ui_reset();
   wnd->_out->reset();
   open_audio();
   wnd->_out->setAutoflush(!opt_show_page);
@@ -134,7 +128,6 @@ void osd_refresh() {
 
 int osd_devrestore() {
   wnd->_out->setAutoflush(true);
-  ui_reset();
   close_audio();
   return 1;
 }
@@ -142,7 +135,7 @@ int osd_devrestore() {
 /**
  * system event-loop
  * return value:
- *   0 continue 
+ *   0 continue
  *  -1 close sbpad application
  *  -2 stop running basic application
  */
@@ -222,7 +215,7 @@ int osd_getpen(int code) {
   case 0:
     // UNTIL PEN(0) - wait until click or move
     wnd->_out->flush(true);
-    fltk::wait();               // fallthru to re-test 
+    fltk::wait();               // fallthru to re-test
 
   case 3:                      // returns true if the pen is down (and save curpos)
     if (event_state() & ANY_BUTTON) {
@@ -321,10 +314,6 @@ void lwrite(const char *s) {
   }
 }
 
-void dev_show_page() {
-  wnd->_out->flushNow();
-}
-
 //--ENV-------------------------------------------------------------------------
 
 int dev_putenv(const char *s) {
@@ -335,8 +324,8 @@ int dev_putenv(const char *s) {
   envs.empty();
   envs.append(s);
 
-  String lv = envs.lvalue();
-  String rv = envs.rvalue();
+  String lv = envs.leftOf('=');
+  String rv = envs.rightOf('=');
 
   env.put(lv, rv);
   return 1;
@@ -350,7 +339,7 @@ char *dev_getenv(const char *s) {
     }
   }
   String *str = env.get(s);
-  return str ? (char *)str->toString() : getenv(s);
+  return str ? (char *)str->c_str() : getenv(s);
 }
 
 char *dev_getenv_n(int n) {
@@ -364,7 +353,7 @@ char *dev_getenv_n(int n) {
     envs.append(env.getKey(n));
     envs.append("=");
     envs.append(env.get(n));
-    return (char *)envs.toString();
+    return (char *)envs.c_str();
   }
 
   while (environ[count]) {
@@ -387,173 +376,6 @@ int dev_env_count() {
     count++;
   }
   return count;
-}
-
-//--HTML------------------------------------------------------------------------
-
-void doEvent(void *) {
-  fltk::remove_check(doEvent);
-  if (eventName[0] == '|') {
-    // user flag to indicate UI should remain
-    // for next program execution
-    const char *filename = eventName.toString();
-    int len = strlen(filename);
-    if (strcasecmp(filename + len - 4, ".htm") == 0 || 
-        strcasecmp(filename + len - 5, ".html") == 0) {
-      // "execute" a html file
-      formView->loadFile(filename + 1, true);
-      return;
-    }
-    saveForm = true;
-  } else if (wnd->_siteHome.length() == 0) {
-    // not currently visiting a remote site
-    if (wnd->getEditor() && wnd->getEditor()->checkSave(true) == false) {
-      return;
-    }
-  }
-  wnd->execLink(eventName);
-}
-
-void modeless_cb(Widget *w, void *v) {
-  if (wnd->isEdit()) {
-    // create a full url path from the given relative path
-    const String & path = formView->getEventName();
-    eventName.empty();
-    if (path[0] != '!' && path[0] != '|' && path.startsWith("http://") == false && 
-        wnd->_siteHome.length() > 0) {
-      int i = wnd->_siteHome.indexOf('/', 7);    // siteHome root
-      if (path[0] == '/' && i != -1) {
-        // add to absolute path from http://hostname/
-        eventName.append(wnd->_siteHome.substring(0, i));
-      } else {
-        // append path to siteHome
-        eventName.append(wnd->_siteHome);
-      }
-      if (eventName[eventName.length() - 1] != '/') {
-        eventName.append("/");
-      }
-      eventName.append(path[0] == '/' ? path.substring(1) : path);
-    } else {
-      eventName.append(path);
-    }
-
-    fltk::add_check(doEvent);   // post message
-  }
-}
-
-void modal_cb(Widget *w, void *v) {
-  fltk::exit_modal();
-  dev_putenv(((HelpWidget *)w)->getEventName());
-}
-
-void dev_html(const char *html, const char *t, int x, int y, int w, int h) {
-  if (html == 0 || html[0] == 0) {
-    closeForm();
-  } else if (strncmp(html, "file:///", 8) == 0 || 
-             strncmp(html, "http://", 7) == 0) {
-    browseFile(html);
-  } else if (t && t[0]) {
-    // offset from main window
-    x += wnd->x();
-    y += wnd->y();
-    Group::current(0);
-    Window window(x, y, w, h, t);
-    window.begin();
-    HelpWidget out(0, 0, w, h);
-    out.loadBuffer(html);
-    out.callback(modal_cb);
-    window.resizable(&out);
-    window.end();
-    window.exec(wnd);
-    out.getInputProperties(&env);
-  } else {
-    // fit within output window
-    if (x < wnd->_out->x()) {
-      x = wnd->_out->x();
-    }
-    if (y < wnd->_out->y()) {
-      y = wnd->_out->y();
-    }
-    int wmax = wnd->_out->x() + wnd->_out->w() - x;
-    int hmax = wnd->_out->y() + wnd->_out->h() - y;
-    if (w > wmax || w == 0) {
-      w = wmax;
-    }
-    if (h > hmax || h == 0) {
-      h = hmax;
-    }
-    closeForm();
-    wnd->_outputGroup->begin();
-    formView = new HelpWidget(x, y, w, h);
-    wnd->_outputGroup->end();
-    formView->callback(modeless_cb);
-    formView->loadBuffer(html);
-    formView->show();
-    formView->take_focus();
-
-    // update the window title using the html <title> tag contents
-    const char *s = formView->getTitle();
-    if (s && s[0]) {
-      String title;
-      title.append(s);
-      title.append(" - SmallBASIC");
-      wnd->copy_label(title);
-    }
-  }
-}
-
-//--IMAGE-----------------------------------------------------------------------
-
-Image *getImage(dev_file_t *filep, int index) {
-  // check for cached imaged
-  SharedImage *image = loadImage(filep->name, 0);
-  char localFile[PATH_MAX];
-
-  // read image from web server
-  switch (filep->type) {
-  case ft_http_client:
-    // open "http://localhost/image1.gif" as #1
-    if (cacheLink(filep, localFile) == false) {
-      return 0;
-    }
-    strcpy(filep->name, localFile);
-    image = loadImage(filep->name, 0);
-    break;
-  case ft_stream:
-    // loaded in SharedImage
-    break;
-  default:
-    return 0;
-  }
-
-  if (image) {
-    image->fetch_if_needed();
-  }
-
-  return image;
-}
-
-int dev_load_image(int handle) {
-  // TODO
-  return -1;
-}
-
-int dev_image_width(int handle) {
-  // TODO
-  return -1;
-}
-
-int dev_image_height(int handle) {
-  // TODO
-  return -1;
-}
-
-void dev_image_show(var_image *image) {
-  // TODO
-}
-
-void dev_image_hide(int handle) {
-  // TODO
 }
 
 //--DELAY-----------------------------------------------------------------------
@@ -638,17 +460,21 @@ C_LINKAGE_END
 
 //--FORM------------------------------------------------------------------------
 
-bool System::isRunning() { 
-  return wnd->isRunning(); 
+bool System::isRunning() {
+  return wnd->isRunning();
 }
 
-bool System::isBreak() { 
-  return wnd->isBreakExec(); 
+bool System::isBreak() {
+  return wnd->isBreakExec();
 }
 
 MAEvent System::processEvents(bool wait) {
   osd_events(wait);
   MAEvent event;
+  event.type = 0;
+  event.key = 0;
+  event.nativeKey = 0;
+
   if (keymap_kbhit()) {
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = keymap_kbpeek();
@@ -656,7 +482,14 @@ MAEvent System::processEvents(bool wait) {
   return event;
 }
 
-void System::buttonClicked(const char *url) { 
+void System::setLoadPath(const char *path) {
+}
+
+void System::setLoadBreak(const char *path) {
+}
+
+AnsiWidget *System::getOutput() {
+  return wnd->_out->_ansiWidget;
 }
 
 //--HTML Utils------------------------------------------------------------------
@@ -701,11 +534,10 @@ void closeForm() {
 
 void clearOutput() {
   closeForm();
-  ui_reset();
 }
 
 bool isFormActive() {
-  return formView != null;
+  return formView != NULL;
 }
 
 // copy the url into the local cache
@@ -799,7 +631,7 @@ bool cacheLink(dev_file_t *df, char *localFile) {
           httpOK = true;
         }
 //                 if (strncmp(rxbuff+iattr, "Last-Modified: ", 15) == 0) {
-//                     // Last-Modified: Tue, 29 Jul 2003 20:19:10 GMT 
+//                     // Last-Modified: Tue, 29 Jul 2003 20:19:10 GMT
 //                     if (access(localFile, 0) == 0) {
 //                         fclose(fp);
 //                         shutdown(df->handle, df->handle);
@@ -836,7 +668,5 @@ void updateForm(const char *s) {
     formView->loadBuffer(s);
     formView->show();
     formView->take_focus();
-  } else {
-    dev_html(s, 0, 0, 0, 0, 0);
   }
 }

@@ -1,6 +1,4 @@
 '
-' $Id$
-'
 ' falling blocks - tetris clone
 '
 
@@ -56,6 +54,7 @@ sub draw_block(b, r, pos_x, pos_y, c)
       fi
     next y
   next x
+  SHOWPAGE
 end
 
 '

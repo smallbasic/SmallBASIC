@@ -16,7 +16,8 @@
 #include <fltk/Group.h>
 #include <fltk/Scrollbar.h>
 
-#include "ui/StringLib.h"
+#include "ui/strlib.h"
+#include "platform/fltk/utils.h"
 
 #define ID_BUTTON   1
 #define ID_TEXTBOX  2
@@ -183,6 +184,7 @@ static const char *broken_xpm[] = {
 
 static xpmImage brokenImage(broken_xpm);
 
+#pragma GCC diagnostic ignored "-Wnarrowing"
 struct ENTITY_MAP {
   const char *ent;
   int elen;

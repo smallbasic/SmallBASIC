@@ -22,7 +22,7 @@
 #define CODE_PEEK()  CODE(IP)
 #define V_FREE(v)                       \
   if ((v) && ((v)->type == V_STR ||     \
-              (v)->type == V_MAP ||    \
+              (v)->type == V_MAP ||     \
               (v)->type == V_ARRAY)) {  \
     v_free((v));                        \
   }
@@ -57,7 +57,7 @@ var_num_t *mat_toc(var_t *v, int32 *rows, int32 *cols) {
     *rows = 1;
   }
 
-  m = (var_num_t*) tmp_alloc(((*rows) * (*cols)) * sizeof(var_num_t));
+  m = (var_num_t*) malloc(((*rows) * (*cols)) * sizeof(var_num_t));
   for (i = 0; i < *rows; i++) {
     for (j = 0; j < *cols; j++) {
       pos = i * (*cols) + j;
@@ -102,7 +102,7 @@ void mat_op1(var_t *l, int op, var_num_t n) {
 
   m1 = mat_toc(l, &lr, &lc);
   if (m1) {
-    m = (var_num_t*) tmp_alloc(sizeof(var_num_t) * lr * lc);
+    m = (var_num_t*) malloc(sizeof(var_num_t) * lr * lc);
     for (i = 0; i < lr; i++) {
       for (j = 0; j < lc; j++) {
         pos = i * lc + j;
@@ -118,8 +118,8 @@ void mat_op1(var_t *l, int op, var_num_t n) {
     }
 
     mat_tov(l, m, lr, lc, 1);
-    tmp_free(m1);
-    tmp_free(m);
+    free(m1);
+    free(m);
   }
 }
 
@@ -152,7 +152,7 @@ void mat_op2(var_t *l, var_t *r, int op) {
       if (rc != lc || lr != rr) {
         err_matdim();
       } else {
-        m = (var_num_t*) tmp_alloc(sizeof(var_num_t) * lr * lc);
+        m = (var_num_t*) malloc(sizeof(var_num_t) * lr * lc);
         for (i = 0; i < lr; i++) {
           for (j = 0; j < lc; j++) {
             pos = i * lc + j;
@@ -167,17 +167,17 @@ void mat_op2(var_t *l, var_t *r, int op) {
         }
       }
 
-      tmp_free(m1);
-      tmp_free(m2);
+      free(m1);
+      free(m2);
       if (m) {
         if (r->v.a.maxdim == 1)
           mat_tov(l, m, lc, 1, 0);
         else
           mat_tov(l, m, lr, lc, 1);
-        tmp_free(m);
+        free(m);
       }
     } else {
-      tmp_free(m1);
+      free(m1);
     }
   }
 }
@@ -208,7 +208,7 @@ void mat_mul(var_t *l, var_t *r) {
       } else {
         mr = lr;
         mc = rc;
-        m = (var_num_t*) tmp_alloc(sizeof(var_num_t) * mr * mc);
+        m = (var_num_t*) malloc(sizeof(var_num_t) * mr * mc);
 
         for (i = 0; i < mr; i++) {
           for (j = 0; j < mc; j++) {
@@ -221,14 +221,14 @@ void mat_mul(var_t *l, var_t *r) {
       }
 
       // /
-      tmp_free(m1);
-      tmp_free(m2);
+      free(m1);
+      free(m2);
       if (m) {
         mat_tov(r, m, mr, mc, 1);
-        tmp_free(m);
+        free(m);
       }
     } else {
-      tmp_free(m1);
+      free(m1);
     }
   }
 }
@@ -263,15 +263,13 @@ int v_wc_match(var_t *vwc, var_t *v) {
   } else if (v->type == V_STR) {
     ri = wc_match((char *) vwc->v.p.ptr, (char *) v->v.p.ptr);
   } else if (v->type == V_NUM || v->type == V_INT) {
-    var_t *vt;
-
-    vt = v_clone(v);
+    var_t *vt = v_clone(v);
     v_tostr(vt);
     if (!prog_error) {
       ri = wc_match((char *) vwc->v.p.ptr, (char *) vt->v.p.ptr);
     }
     v_free(vt);
-    tmp_free(vt);
+    free(vt);
   }
   return ri;
 }
@@ -334,7 +332,7 @@ static inline void oper_add(var_t *r, var_t *left, byte op) {
         break;
       }
       v_set(r, &vtmp);
-      V_FREE(&vtmp);
+      v_free(&vtmp);
     }
     V_FREE(left);
   }
@@ -587,7 +585,7 @@ static inline void oper_cmp(var_t *r, var_t *left, byte op) {
         v_tostr(v);
         ri = (strstr(r->v.p.ptr, v->v.p.ptr) != NULL);
         v_free(v);
-        tmp_free(v);
+        free(v);
       }
     } else if (r->type == V_NUM || r->type == V_INT) {
       ri = (v_compare(left, r) == 0);
@@ -595,6 +593,9 @@ static inline void oper_cmp(var_t *r, var_t *left, byte op) {
     break;
   case OPLOG_LIKE:
     ri = v_wc_match(r, left);
+    break;
+  default:
+    ri = 0;
     break;
   }
 
@@ -699,7 +700,7 @@ static inline void eval_push(var_t *r) {
   case V_STR:
     len = r->v.p.size;
     eval_stk[eval_sp].type = V_STR;
-    eval_stk[eval_sp].v.p.ptr = tmp_alloc(len + 1);
+    eval_stk[eval_sp].v.p.ptr = malloc(len + 1);
     strcpy(eval_stk[eval_sp].v.p.ptr, r->v.p.ptr);
     eval_stk[eval_sp].v.p.size = len;
     break;
@@ -711,7 +712,7 @@ static inline void eval_push(var_t *r) {
   eval_sp++;
   if (eval_sp == eval_size) {
     eval_size += 64;
-    eval_stk = tmp_realloc(eval_stk, sizeof(var_t) * eval_size);
+    eval_stk = realloc(eval_stk, sizeof(var_t) * eval_size);
     // rt_raise("EVAL: STACK OVERFLOW");
   }
 }
@@ -777,8 +778,7 @@ static inline void eval_callf(var_t *r) {
       eval(&vtmp);
       if (!prog_error) {
         cmd_ns1(fcode, &vtmp, r);
-        V_FREE(&vtmp);
-
+        v_free(&vtmp);
         if (CODE_PEEK() != kwTYPE_LEVEL_END) {
           err_missing_rp();
         } else {
@@ -817,7 +817,7 @@ static inline void eval_callf(var_t *r) {
         r->type = V_STR;
         r->v.p.ptr = NULL;
         cmd_str1(fcode, &vtmp, r);
-        V_FREE(&vtmp);
+        v_free(&vtmp);
 
         if (CODE_PEEK() != kwTYPE_LEVEL_END) {
           err_missing_rp();
@@ -977,7 +977,7 @@ static inline void eval_callf(var_t *r) {
       if (!prog_error) {
         r->type = V_NUM;
         r->v.n = cmd_math1(fcode, &vtmp);
-        V_FREE(&vtmp);
+        v_free(&vtmp);
         if (!prog_error) {
           if (CODE_PEEK() != kwTYPE_LEVEL_END) {
             err_missing_rp();
@@ -1058,6 +1058,9 @@ static inline void eval_callf(var_t *r) {
   case kwFORMAT:
   case kwBGETC:
   case kwSEQ:
+  case kwIMAGE:
+  case kwFORM:
+  case kwWINDOW:
     // any FUNC(...)
     V_FREE(r);
     if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
@@ -1065,10 +1068,8 @@ static inline void eval_callf(var_t *r) {
     } else {
       IP++;
       cmd_genfunc(fcode, r);
-      if (!prog_error) {
-        if (CODE_PEEK() == kwTYPE_LEVEL_END) {
-          IP++;
-        }
+      if (!prog_error && CODE_PEEK() == kwTYPE_LEVEL_END) {
+        IP++;
       }
     }
     break;
@@ -1096,25 +1097,6 @@ static inline void eval_callf(var_t *r) {
     map_from_str(r);
     break;
 
-  case kwIMAGE:
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      IP++;
-      par_getsharp();
-      if (!prog_error) {
-        int handle = par_getint();
-        if (!prog_error) {
-          var_create_image(r, handle);
-          if (!prog_error && CODE_PEEK() == kwTYPE_LEVEL_END) {
-            IP++;
-          }
-        }
-      }
-    }
-    break;
-
   default:
     err_bfn_err(fcode);
   }
@@ -1125,14 +1107,14 @@ static inline void eval_call_udf(var_t *r) {
   bc_loop(1);
   if (!prog_error) {
     stknode_t udf_rv;
-    code_pop(&udf_rv);
-    if (udf_rv.type != kwTYPE_RET)
+    code_pop(&udf_rv, kwTYPE_RET);
+    if (udf_rv.type != kwTYPE_RET) {
       err_stackmess();
-    else {
+    } else {
       v_set(r, udf_rv.x.vdvar.vptr);
       // free ret-var
       v_free(udf_rv.x.vdvar.vptr);
-      tmp_free(udf_rv.x.vdvar.vptr);
+      free(udf_rv.x.vdvar.vptr);
     }
   }
 }

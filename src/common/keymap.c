@@ -11,6 +11,7 @@
 #include "common/sys.h"
 #include "common/var.h"
 #include "common/smbas.h"
+#include "common/pproc.h"
 #include "common/keymap.h"
 
 //  Keyboard buffer
@@ -44,7 +45,7 @@ void keymap_init() {
 void keymap_delete(key_map_s* km) {
   if (km) {
     keymap_delete(km->next);
-    tmp_free(km);
+    free(km);
   }
 }
 
@@ -60,7 +61,7 @@ void keymap_free() {
  * DEFINEKEY command handler to add a keymap 
  */
 void keymap_add(int key, addr_t ip) {
-  key_map_s* km = (key_map_s*) tmp_alloc(sizeof (key_map_s));
+  key_map_s* km = (key_map_s*) malloc(sizeof (key_map_s));
   km->next = 0;
   km->ip = ip;
   km->key = key;
@@ -168,3 +169,51 @@ long int dev_getch() {
   return ch;
 }
 
+void timer_free(timer_s *timer) {
+  if (timer) {
+    timer_free(timer->next);
+    free(timer);
+  }
+}
+
+void timer_add(var_num_t interval, addr_t ip) {
+  timer_s* timer = (timer_s*) malloc(sizeof (timer_s));
+  timer->next = NULL;
+  timer->ip = ip;
+  timer->interval = interval;
+  timer->value = 0;
+  timer->active = 0;
+
+  // add the new timer onto the linked list
+  timer_s* head = prog_timer;
+  if (!head) {
+    prog_timer = timer;
+  } else {
+    while (head->next) {
+      head = head->next;
+    }
+    head->next = timer;
+  }
+}
+
+void timer_run(dword now) {
+  timer_s* timer = prog_timer;
+  while (timer) {
+    if (timer->value == 0) {
+      // start timer
+      timer->value = now + timer->interval;
+    } else if (now > timer->value && !timer->active) {
+      // timer expired
+      timer->active = 1;
+      addr_t ip = prog_ip;
+      prog_ip = timer->ip;
+      bc_loop(1);
+      prog_ip = ip;
+
+      // reset for next interval
+      timer->value = now + timer->interval;
+      timer->active = 0;
+    }
+    timer = timer->next;
+  }
+}

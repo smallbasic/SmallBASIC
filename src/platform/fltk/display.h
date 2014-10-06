@@ -13,8 +13,8 @@
 #include <fltk/Image.h>
 #include <fltk/draw.h>
 
-#include "ui/maapi.h"
-#include "ui/interface.h"
+#include "lib/maapi.h"
+#include "ui/inputs.h"
 
 struct AnsiWidget;
 
@@ -28,7 +28,9 @@ struct Canvas {
   void drawLine(int startX, int startY, int endX, int endY);
   void drawPixel(int posX, int posY);
   void drawRectFilled(int left, int top, int width, int height);
-  void drawText(int left, int top, const char *str);
+  void drawRGB(const MAPoint2d *dstPoint, const void *src,
+               const MARect *srcRect, int scanlength);
+  void drawText(int left, int top, const char *str, int length);
   void endDraw();
   int  getPixel(int x, int y);
   void resize(int w, int h);
@@ -52,8 +54,6 @@ public:
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
-  void drawImage(fltk::Image *img, int x, int y, int sx, int sy, int w, int h);
-  void saveImage(const char *fn, int x, int y, int w, int h);
   void setTextColor(long fg, long bg);
   void setColor(long color);
   int  getX(bool offset=false);

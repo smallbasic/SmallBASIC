@@ -9,7 +9,6 @@
 #include "config.h"
 #include <time.h>
 #include "platform/android/jni/display.h"
-#include "ui/form_ui.h"
 #include "ui/utils.h"
 #include "common/device.h"
 
@@ -91,9 +90,18 @@ bool Graphics::construct() {
     if (_screen && _screen->create(getWidth(), getHeight())) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
-      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, WINDOW_FORMAT_RGB_565);
+#if defined(PIXELFORMAT_RGBA8888)
+      int format = WINDOW_FORMAT_RGBA_8888;
+#else
+      int format = WINDOW_FORMAT_RGB_565;
+#endif
+      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, format);
       result = true;
+    } else {
+      trace("Failed to create canvas");
     }
+  } else {
+    trace("Failed to load font resources");
   }
   return result;
 }
@@ -105,8 +113,8 @@ void Graphics::redraw() {
       trace("Unable to lock window buffer");
     } else {
       void *pixels = buffer.bits;
-      int width = min(_w, min(buffer.width, _screen->_w));
-      int height = min(_h, min(buffer.height, _screen->_h));
+      int width = MIN(_w, MIN(buffer.width, _screen->_w));
+      int height = MIN(_h, MIN(buffer.height, _screen->_h));
       for (int y = 0; y < height; y++) {
         pixel_t *line = _screen->getLine(y);
         memcpy((pixel_t *)pixels, line, width * sizeof(pixel_t));

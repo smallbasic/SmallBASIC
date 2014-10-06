@@ -40,7 +40,7 @@ void unit_mgr_close() {
   }
   unit_count = 0;
   if (units) {
-    tmp_free(units);
+    free(units);
   }
 }
 
@@ -68,9 +68,8 @@ int find_unit_path(const char *name, char *file) {
   }
 
   // find in program launch directory
-  char *bas_dir = getenv("BASDIR");
-  if (bas_dir) {
-    strcpy(file, bas_dir);
+  if (gsb_bas_dir[0]) {
+    strcpy(file, gsb_bas_dir);
     strcat(file, name);
     strcat(file, ".bas");
 
@@ -162,7 +161,7 @@ int open_unit(const char *file) {
   }
 
   // load symbol-table
-  u.symbols = (unit_sym_t *) tmp_alloc(u.hdr.sym_count * sizeof(unit_sym_t));
+  u.symbols = (unit_sym_t *) malloc(u.hdr.sym_count * sizeof(unit_sym_t));
   read(h, u.symbols, u.hdr.sym_count * sizeof(unit_sym_t));
 
   // setup the rest
@@ -174,7 +173,7 @@ int open_unit(const char *file) {
     // this is the first unit
     uid = unit_count;
     unit_count++;
-    units = (unit_t *) tmp_alloc(unit_count * sizeof(unit_t));
+    units = (unit_t *) malloc(unit_count * sizeof(unit_t));
   } else {
     // search for an empty entry
     for (i = 0; i < unit_count; i++) {
@@ -188,7 +187,7 @@ int open_unit(const char *file) {
     if (uid == -1) {
       uid = unit_count;
       unit_count++;
-      units = (unit_t *) tmp_realloc(units, unit_count * sizeof(unit_t));
+      units = (unit_t *) realloc(units, unit_count * sizeof(unit_t));
     }
   }
 
@@ -213,7 +212,7 @@ int close_unit(int uid) {
     u = &units[uid];
     if (u->status == unit_loaded) {
       u->status = unit_undefined;
-      tmp_free(u->symbols);
+      free(u->symbols);
     } else {
       return -2;
     }
@@ -326,16 +325,15 @@ int unit_exec(int lib_id, int index, var_t * ret) {
       return 0;
     }
     // get last variable from stack
-    code_pop(&udf_rv);
+    code_pop(&udf_rv, kwTYPE_RET);
     if (udf_rv.type != kwTYPE_RET) {
       err_stackmess();
     } else {
       v_set(ret, udf_rv.x.vdvar.vptr);
       v_free(udf_rv.x.vdvar.vptr);  // free ret-var
-      tmp_free(udf_rv.x.vdvar.vptr);
+      free(udf_rv.x.vdvar.vptr);
     }
 
-    //
     activate_task(my_tid);
     exec_sync_variables(0);
     break;

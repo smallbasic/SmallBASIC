@@ -23,12 +23,11 @@ extern "C" {
 void sc_raise2(const char *sec, int scline, const char *buff);
 void rt_raise(const char *fmt, ...);
 
-#define err_syntax()     rt_raise("%s (%d): Syntax error!\n", __FILE__, __LINE__)
-#define err_syntaxsep(c) rt_raise("%s (%d): Syntax error. Missing separator '%c'.\n", __FILE__, __LINE__, (c))
 #define err_missing_rp() rt_raise("%s (%d): Missing ')'.\n", __FILE__, __LINE__)
 #define err_matdim()     rt_raise("%s (%d): Dimension error.\n", __FILE__, __LINE__)
-#define err_parm_num()   rt_raise("%s (%d): Parameters error.\n", __FILE__, __LINE__)
 
+void err_syntax(int keyword, const char *fmt);
+void err_parm_num(int found, int expected);
 void err_typemismatch(void);
 void err_stackmess(void);
 void err_parm_byref(int n);
@@ -36,6 +35,7 @@ void err_notarray(void);
 void err_out_of_range(void);
 void err_missing_lp(void);
 void err_missing_sep(void);
+void err_missing_comma(void);
 void err_division_by_zero(void);
 void err_matop(void);
 void err_argerr(void);
@@ -57,7 +57,7 @@ void err_matsig(void);
 void err_stridx(int n);
 void err_parfmt(const char *fmt);
 void err_fopen(void);
-void err_syntaxanysep(const char *seps);
+void err_syntaxsep(const char *seps);
 void err_parsepoly(int idx, int mark);
 void err_bfn_err(long code);
 void err_gpf(addr_t addr, int bc);
@@ -70,9 +70,9 @@ void err_invkw(addr_t addr, byte code);
 void err_ref_var();
 void err_ref_circ_var();
 void err_array();
+void err_form_input();
 
 #define err_type_mismatch() err_typemismatch()
-#define err_syntax_error()  err_syntax()
 
 void inf_done(void);
 void inf_break(int pline);

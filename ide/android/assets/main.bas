@@ -1,39 +1,65 @@
 const app = "main.bas?"
-const exitLinkType = "exit_link"
-const exitButtonType = "exit_button"
-const linkType = "link"
 const boldOn = chr(27) + "[1m"
 const boldOff = chr(27) + "[21m"
+const lineSpacing = 2 + txth("Q")
+const onlineUrl = "http://smallbasic.sourceforge.net/?q=export/code/1243"
 
-sub space_print(s)
+func spaced(s)
   local ch, len_s
   len_s = len(s)
+  local out = ""
   for ch = 1 to len_s
-    print mid(s, ch, 1) + " ";
+    out += mid(s, ch, 1) + " "
   next ch
+  spaced = out
 end
 
-sub intro()
-  local i
+func mk_bn(value, lab, fg)
+  local bn
+  bn.x = 0
+  bn.y = -lineSpacing
+  bn.value = value
+  bn.label = lab
+  bn.color = fg
+  bn.backgroundColor = 0
+  mk_bn = bn
+end
+
+func mk_menu(value, lab, x)
+  local bn
+  bn.x = x
+  bn.y = 0
+  bn.value = value
+  bn.label = lab
+  bn.color = 7
+  bn.backgroundColor = 1
+  bn.type = "tab"
+  mk_menu = bn
+end
+
+sub intro(byref frm)
+  local i, bn
   for i = 1 to 4
-    color i, 0: print "Welcome to SmallBASIC"
+    bn = mk_bn(0, "Welcome to SmallBASIC", i)
+    bn.type = "label"
+    frm.inputs << bn
   next i
-  color 7, 0
-  space_print "Welcome to SmallBASIC"
-  print ""
+  bn = mk_bn(0, spaced("Welcome to SmallBASIC"), 7)
+  bn.type = "label"
+  frm.inputs << bn
 end
 
-sub about()
-  local bn_ok
+sub do_about()
+  local frm, button
   cls
   print " __           _      ___ _"
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.11.12"
+  print "Version 0.11.17"
   print
-  print "Copyright (c) 2002-2014 Chris Warren-Smith"
-  print "Copyright (c) 2000-2006 Nic Christopoulos" + chr(10)
+  print "Copyright (c) 2002-2015 Chris Warren-Smith"
+  print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
@@ -44,15 +70,21 @@ sub about()
   print "http://damieng.com/envy-code-r" + chr(10)
   print
   serverInfo
-  color 10, 8
-  button xmax / 2, ypos * txth("A"), 0, 0, bn_ok,  "OK"
-  doform
-  color 7, 0
+
+  button.x = xmax / 2
+  button.y = ypos * lineSpacing
+  button.label = "Close"
+  button.backgroundColor = 8
+  button.color = 10
+  frm.inputs << button
+  frm = form(frm)
+  frm.doEvents()
   cls
 end
 
-sub setup()
-  color 3,0
+sub do_setup()
+  color 3, 0
+  cls
   print boldOn + "Setup web service port number."
   print boldOff
   print "Enter a port number to allow web browser or desktop IDE access. ";
@@ -60,7 +92,7 @@ sub setup()
   print "this screen without making any changes."
   print "The current setting is: " + env("serverSocket")
   print
-  color 15,3
+  color 15, 3
   input socket
   if (len(socket) > 0) then
     env("serverSocket=" + socket)
@@ -71,7 +103,8 @@ sub setup()
     next i
     env("serverToken=" + token)
     local msg = "You must restart SmallBASIC for this change to take effect"
-    print chr(27) + "[ ARestart required|" + msg + ";"
+    local wnd = window()
+    wnd.alert(msg, "Restart required")
   endif
   color 7, 0
   cls
@@ -89,8 +122,8 @@ sub serverInfo()
   fi
 end
 
-sub listFiles(path, byref basList, byref dirList)
-  local fileList, ent, esc, name, lastItem
+sub listFiles(byref frm, path, byref basList, byref dirList)
+  local fileList, ent, name, lastItem, bn, bn_back
 
   erase basList
   erase dirList
@@ -99,10 +132,18 @@ sub listFiles(path, byref basList, byref dirList)
     path += "/"
   endif
 
-  color 7, 0
-  print "Files in " + path
+  bn = mk_bn(0, "Files in " + path, 7)
+  bn.type = "label"
+  bn.x = 0
+  bn.y = -lineSpacing
+  frm.inputs << bn
 
-  esc = chr(27) + "[ H"
+  bn_back = mk_bn("_back", "[Go up]", 3)
+  bn_back.type = "link"
+  bn_back.x = 0
+  bn_back.y = -lineSpacing
+  frm.inputs << bn_back
+
   fileList = files(path)
 
   for ent in fileList
@@ -117,51 +158,54 @@ sub listFiles(path, byref basList, byref dirList)
   sort dirList
   sort basList
 
-  color 3, 0
   lastItem = len(dirList) - 1
+
   for i = 0 to lastItem
-    button 0, -1, 0, 0, dirList(i), "[" + dirList(i) + "]", linkType
-    dirList(i) = path + dirList(i)
-    print
+    bn = mk_bn(path + dirList(i), "[" + dirList(i) + "]", 3)
+    bn.type = "link"
+    frm.inputs << bn
   next ent
 
-  color 2, 0
   lastItem = len(basList) - 1
   for i = 0 to lastItem
-    button 0, -1, 0, 0, basList(i), basList(i), exitLinkType
-    basList(i) = path + basList(i)
-    print
+    bn = mk_bn(path + basList(i), basList(i), 2)
+    bn.type = "link"
+    bn.isExit = true
+    frm.inputs << bn
   next ent
 end
 
 sub main
   local basList, dirList, path
-  local form_var, bn_back, bn_about, bn_online
-  local y_height, do_intro
+  local frm, bn_about, bn_online
+  local do_intro
 
   dim basList
   dim dirList
 
-  form_var = ""
-  bn_back = "_back"
-  bn_about= "_about"
-  bn_setup= "_setup"
-  bn_online = "http://smallbasic.sourceforge.net/?q=export/code/1102"
-  y_height = txth(about_button) + 10
+  bn_setup = mk_menu("_setup", "Setup", -1)
+  bn_about = mk_menu("_about", "About", -1)
+  bn_online = mk_menu(onlineUrl, "Online", 0)
+  bn_online.isExit = true
 
-  sub make_ui(path, welcome)
-    color 10, 8
-    button 0,  0, 0, 0, bn_back,   "Go up"
-    button -4, 0, 0, 0, bn_online, "Online", exitButtonType
-    button -4, 0, 0, 0, bn_setup,  "Setup",
-    button -4, 0, 0, 0, bn_about,  "About"
-    at 0, y_height
+  func make_ui(path, welcome)
+    local frm
+    frm.inputs << bn_online
+    if (osname != "SDL") then
+     frm.inputs << bn_setup
+    endif
+    frm.inputs << bn_about
+
     if (welcome) then
-      intro
-      print
-      serverInfo
+      intro(frm)
     fi
-    listFiles path, basList, dirList
+
+    listFiles frm, path, basList, dirList
+    frm.color = 10
+    frm.backgroundColor = 0
+    rect 0, 0, xmax, lineSpacing COLOR 1 filled
+    at 0, 0
+    make_ui = form(frm)
   end
 
   sub go_back
@@ -187,26 +231,28 @@ sub main
     do_intro = true
   fi
   path = cwd
-
-  make_ui path, do_intro
+  frm = make_ui(path, do_intro)
 
   while 1
-    doform form_var
-    cls
+    frm.doEvents()
 
-    if (isdir(form_var)) then
-      path = form_var
+    if (isdir(frm.value)) then
+      frm.close()
+      path = frm.value
       chdir path
-      make_ui path, false
-    elif form_var == "About" then
-      about
-      make_ui path, false
-    elif form_var == "Setup" then
-      setup
-      make_ui path, false
-    elif form_var == "Go up" then
+      frm = make_ui(path, false)
+    elif frm.value == "_about" then
+      frm.close()
+      do_about()
+      frm = make_ui(path, false)
+    elif frm.value == "_setup" then
+      frm.close()
+      do_setup()
+      frm = make_ui(path, false)
+    elif frm.value == "_back" then
+      frm.close()
       go_back
-      make_ui path, false
+      frm = make_ui(path, false)
     fi
   wend
 end

@@ -89,7 +89,7 @@ void cmd_play_reset() {
 //
 // PLAY str-cmds
 //
-#define CPLERR(c,a) { if ( (c) ) { rt_raise((a)); tmp_free(str); return; } }
+#define CPLERR(c,a) { if ( (c) ) { rt_raise((a)); free(str); return; } }
 void cmd_play() {
   char *p;
   var_t var;
@@ -101,7 +101,7 @@ void cmd_play() {
   par_getstr(&var);
   if (prog_error)
     return;
-  str = (char *) tmp_alloc(var.v.p.size + 1);
+  str = (char *) malloc(var.v.p.size + 1);
 
   // copy without spaces
   p = (char *) var.v.p.ptr;
@@ -355,7 +355,7 @@ void cmd_play() {
       break;
     default:
       rt_raise("PLAY: '%c' UNSUPPORTED", *p);
-      tmp_free(str);
+      free(str);
       return;
     }
 
@@ -364,6 +364,6 @@ void cmd_play() {
       p++;
   }
 
-  tmp_free(str);
+  free(str);
 }
 #undef CPLERR

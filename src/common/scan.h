@@ -84,7 +84,7 @@ struct proc_keyword_s {
  */
 typedef struct {
   char name[SB_KEYWORD_SIZE + 1]; /**< keyword name */
-int  lib_id; /**< library id */
+  int  lib_id; /**< library id */
   pcode_t pcode; /**< keyword code */
   int symbol_index; /**< symbol index on symbol-table */
 } ext_proc_node_t;
@@ -100,7 +100,7 @@ typedef struct {
   int lib_id; /**< library id */
   fcode_t fcode; /**< keyword code */
   int symbol_index; /**< symbol index on symbol-table */
-}ext_func_node_t;
+} ext_func_node_t;
 
 /**
  * @ingroup scan
@@ -129,7 +129,14 @@ struct comp_label_s {
   bid_t block_id; /**< block_id (FOR-NEXT,IF-FI,etc) used for GOTOs @ingroup scan */
   addr_t dp; /**< data pointer @ingroup scan */
 };
+
 typedef struct comp_label_s comp_label_t;
+
+typedef struct {
+  int count;
+  int size;
+  comp_label_t **elem;
+} comp_label_table_t;
 
 /**
  * @ingroup scan
@@ -145,6 +152,7 @@ struct comp_proc_s {
   bid_t block_id; /**< block_id (FOR-NEXT,IF-FI,etc) used for GOTOs @ingroup scan */
   int pline; /**< source code line number      @ingroup scan */
 };
+
 typedef struct comp_proc_s comp_udp_t;
 
 /*
@@ -160,7 +168,14 @@ struct comp_pass_node_s {
   byte level; /**< block level             @ingroup scan */
   bid_t block_id; /**< block ID                @ingroup scan */
 };
+
 typedef struct comp_pass_node_s comp_pass_node_t;
+
+typedef struct {
+  int count;
+  int size;
+  comp_pass_node_t **elem;
+} comp_pass_node_table_t;
 
 /**
  * compiler's struct node
@@ -170,13 +185,13 @@ struct comp_struct_s {
   char name[SB_KEYWORD_SIZE + 1];
   addr_t field_id;            // -1 == is_container
 };
+
 typedef struct comp_struct_s comp_struct_t;
 
 #if !defined(SCAN_MODULE)       // actually static data
 extern struct keyword_s keyword_table[]; /**< basic keywords             @ingroup scan */
 extern struct opr_keyword_s opr_table[]; /**< operators table            @ingroup scan */
 extern struct spopr_keyword_s spopr_table[]; /**< special operators table    @ingroup scan */
-
 extern struct func_keyword_s func_table[]; /**< buildin functions table    @ingroup scan */
 extern struct proc_keyword_s proc_table[]; /**< buildin procedures table   @ingroup scan */
 #endif
@@ -343,15 +358,6 @@ void comp_close();
  * @return true if there is a compile-error
  */
 int comp_geterror(void);
-
-/**
- * @ingroup scan
- *
- * creates the final binary and returns it
- *
- * @return a memory handle with the binary
- */
-mem_t comp_create_bin(void);
 
 /**
  * @ingroup scan

@@ -67,6 +67,12 @@ int stream_open(dev_file_t *f) {
   }
   else {
     f->handle = open(f->name, osflags, osshare);
+    if (f->handle < 0 && gsb_bas_dir[0]) {
+      char file[OS_PATHNAME_SIZE];
+      strcpy(file, gsb_bas_dir);
+      strcat(file, f->name);
+      f->handle = open(file, osflags, osshare);
+    }
   }
 #else
   f->handle = open(f->name, osflags);

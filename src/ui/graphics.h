@@ -9,8 +9,8 @@
 #ifndef COMMON_GRAPHICS
 #define COMMON_GRAPHICS
 
-#include "ui/maapi.h"
-#include "ui/StringLib.h"
+#include "lib/maapi.h"
+#include "ui/strlib.h"
 #include "ui/canvas.h"
 
 #include <ft2build.h>
@@ -47,6 +47,8 @@ struct Graphics {
   void drawLine(int startX, int startY, int endX, int endY);
   void drawPixel(int posX, int posY);
   void drawRectFilled(int left, int top, int width, int height);
+  void drawRGB(const MAPoint2d *dstPoint, const void *src,
+               const MARect *srcRect, int opacity, int bytesPerLine);
   void drawText(int left, int top, const char *str, int len);
   int  getPixel(Canvas *canvas, int x, int y);
   MAExtent getTextSize(const char *str, int len);
@@ -54,12 +56,14 @@ struct Graphics {
   int getWidth() { return _w; }
   void setSize(int w, int h) { _w = w; _h = h; }
   void setClip(int x, int y, int w, int h);
-  void setColor(pixel_t color) {  _drawColor = color; }
+  void setColor(pixel_t color) { _drawColor = color; }
   void setFont(Font *font) { _font = font; }
   MAHandle setDrawTarget(MAHandle maHandle);
 
 protected:
   void drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y);
+  void wuLine(int x0, int y0, int x1, int y1);
+  void wuPlot(int x, int y, double c);
 
   FT_Library _fontLibrary;
   FT_Face _fontFace;

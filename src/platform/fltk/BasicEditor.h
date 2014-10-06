@@ -14,7 +14,7 @@
 #define BASIC_EDITOR_H
 
 #include <fltk/TextEditor.h>
-#include "ui/StringLib.h"
+#include "ui/strlib.h"
 
 using namespace fltk;
 

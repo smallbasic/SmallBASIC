@@ -9,10 +9,11 @@
 
 #define BRUN_MODULE
 
+#include "config.h"
+
 #include "common/sys.h"
 #include "common/panic.h"
 #include "common/blib.h"
-#include "common/blib_ui.h"
 #include "common/str.h"
 #include "common/fmt.h"
 #include "common/extlib.h"
@@ -24,14 +25,16 @@
 #include "common/messages.h"
 #include "common/device.h"
 #include "common/pproc.h"
+#include "common/keymap.h"
 
-int brun_create_task(const char *filename, mem_t preloaded_bc, int libf);
+int brun_create_task(const char *filename, byte *preloaded_bc, int libf);
+int exec_close_task();
 void sys_before_comp();
 
-static dword evt_check_every;
 static char fileName[OS_FILENAME_SIZE + 1];
-static int main_tid;
 static int exec_tid;
+
+#define EVT_CHECK_EVERY 50
 
 /**
  * jump to label
@@ -44,9 +47,6 @@ void code_jump_label(word label_id) {
  * Put the node 'node' in stack (PUSH)
  */
 void code_push(stknode_t *node) {
-#if defined(_UnixOS) && defined(_CHECK_STACK)
-  int i;
-#endif
   if (prog_stack_count + 1 >= prog_stack_alloc) {
     err_stackoverflow();
     return;
@@ -55,6 +55,7 @@ void code_push(stknode_t *node) {
   prog_stack[prog_stack_count] = *node;
   prog_stack[prog_stack_count].line = prog_line;
 #if defined(_UnixOS) && defined(_CHECK_STACK)
+  int i;
   for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
     if (node->type == keyword_table[i].code) {
       printf("%3d: PUSH %s (%d)\n", prog_stack_count,
@@ -66,22 +67,72 @@ void code_push(stknode_t *node) {
   prog_stack_count++;
 }
 
+void free_node(stknode_t *node) {
+  switch (node->type) {
+  case kwTYPE_CRVAR:
+    v_free(tvar[node->x.vdvar.vid]);  // free local variable data
+    free(tvar[node->x.vdvar.vid]);
+    tvar[node->x.vdvar.vid] = node->x.vdvar.vptr; // restore ptr
+    break;
+
+  case kwBYREF:
+    tvar[node->x.vdvar.vid] = node->x.vdvar.vptr;
+    break;
+
+  case kwTYPE_VAR:
+    if ((node->x.param.vcheck == 1) || (node->x.param.vcheck == 0x81)) {
+      v_free(node->x.param.res);
+      free(node->x.param.res);
+    }
+    break;
+
+  case kwTYPE_RET:
+    v_free(node->x.vdvar.vptr); // free ret-var
+    free(node->x.vdvar.vptr);
+    break;
+
+  case kwFUNC:
+    if (node->x.vcall.rvid != INVALID_ADDR) {
+      tvar[node->x.vcall.rvid] = node->x.vcall.retvar;  // restore ptr
+    }
+    break;
+
+  case kwFOR:
+    if (node->x.vfor.subtype == kwIN) {
+      if (node->x.vfor.flags & 1) {
+        // allocated in for
+        v_free(node->x.vfor.arr_ptr);
+        free(node->x.vfor.arr_ptr);
+      }
+    }
+    break;
+
+  case kwSELECT:
+    v_free(node->x.vcase.var_ptr);
+    free(node->x.vcase.var_ptr);
+    break;
+  }
+}
+
 /**
  * Returns and deletes the topmost node from stack (POP)
  */
-void code_pop(stknode_t *node) {
-#if defined(_UnixOS) && defined(_CHECK_STACK)
-  int i;
-#endif
+void code_pop(stknode_t *node, int expected_type) {
   if (prog_stack_count) {
     prog_stack_count--;
-    if (node)
+    if (node) {
       *node = prog_stack[prog_stack_count];
+    }
+    if (expected_type != 0 && node->type != expected_type) {
+      free_node(node);
+    }
+
 #if defined(_UnixOS) && defined(_CHECK_STACK)
+    int i;
     for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
       if (prog_stack[prog_stack_count].type == keyword_table[i].code) {
         printf("%3d: POP %s (%d)\n", prog_stack_count,
-            keyword_table[i].name, prog_line);
+               keyword_table[i].name, prog_line);
         break;
       }
     }
@@ -98,18 +149,15 @@ void code_pop(stknode_t *node) {
  * Returns and deletes the topmost node from stack (POP)
  */
 void code_pop_and_free(stknode_t *node) {
-#if defined(_UnixOS) && defined(_CHECK_STACK)
-  int i;
-#endif
-
   if (prog_stack_count) {
     stknode_t *cur_node;
 
     prog_stack_count--;
-    if (node)
+    if (node) {
       *node = prog_stack[prog_stack_count];
-
+    }
 #if defined(_UnixOS) && defined(_CHECK_STACK)
+    int i;
     for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
       if (prog_stack[prog_stack_count].type == keyword_table[i].code) {
         printf("%3d: POP %s (%d)\n", prog_stack_count,
@@ -118,53 +166,8 @@ void code_pop_and_free(stknode_t *node) {
       }
     }
 #endif
-
-    // free node's data
     cur_node = &prog_stack[prog_stack_count];
-    switch (cur_node->type) {
-    case kwTYPE_CRVAR:
-      v_free(tvar[cur_node->x.vdvar.vid]);  // free local variable data
-      tmp_free(tvar[cur_node->x.vdvar.vid]);
-      tvar[cur_node->x.vdvar.vid] = cur_node->x.vdvar.vptr; // restore ptr
-      break;
-
-    case kwBYREF:
-      tvar[cur_node->x.vdvar.vid] = cur_node->x.vdvar.vptr;
-      break;
-
-    case kwTYPE_VAR:
-      if ((cur_node->x.param.vcheck == 1) || (cur_node->x.param.vcheck == 0x81)) {
-        v_free(cur_node->x.param.res);
-        tmp_free(cur_node->x.param.res);
-      }
-      break;
-
-    case kwTYPE_RET:
-      v_free(cur_node->x.vdvar.vptr); // free ret-var
-      tmp_free(cur_node->x.vdvar.vptr);
-      break;
-
-    case kwFUNC:
-      if (cur_node->x.vcall.rvid != INVALID_ADDR) {
-        tvar[cur_node->x.vcall.rvid] = cur_node->x.vcall.retvar;  // restore ptr
-      }
-      break;
-
-    case kwFOR:
-      if (cur_node->x.vfor.subtype == kwIN) {
-        if (cur_node->x.vfor.flags & 1) {
-          // allocated in for
-          v_free(cur_node->x.vfor.arr_ptr);
-          tmp_free(cur_node->x.vfor.arr_ptr);
-        }
-      }
-      break;
-
-    case kwSELECT:
-      v_free(cur_node->x.vcase.var_ptr);
-      tmp_free(cur_node->x.vcase.var_ptr);
-      break;
-    }
+    free_node(cur_node);
   } else {
     if (node) {
       err_stackunderflow();
@@ -179,9 +182,9 @@ void code_pop_and_free(stknode_t *node) {
 void code_pop_until(int type) {
   stknode_t node;
 
-  code_pop(&node);
+  code_pop(&node, type);
   while (node.type != type) {
-    code_pop(&node);
+    code_pop(&node, type);
     IF_ERR_RETURN;
   }
 }
@@ -253,11 +256,11 @@ void setsysvar_str(int index, const char *value) {
       var_t *var_p = tvar[index];
 
       if (var_p->type == V_STR) {
-        tmp_free(var_p->v.p.ptr);
+        free(var_p->v.p.ptr);
       }
       var_p->type = V_STR;
       var_p->const_flag = 1;
-      var_p->v.p.ptr = tmp_alloc(l);
+      var_p->v.p.ptr = malloc(l);
       strcpy(var_p->v.p.ptr, value);
       var_p->v.p.size = l;
     }
@@ -274,7 +277,6 @@ void exec_setup_predefined_variables() {
   // needed here (otherwise task will not updated)
   ctask->has_sysvars = 1;
 
-  setsysvar_str(SYSVAR_OSNAME, OS_NAME);
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
   setsysvar_num(SYSVAR_PI, SB_PI);
   setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
@@ -367,9 +369,8 @@ void brun_break() {
  */
 void cmd_chain(void) {
   var_t var;
-  int success, tid_main, tid_base, tid_prev;
-  const char *code = 0;
-  char *code_alloc = 0;
+  const char *code = NULL;
+  char *code_alloc = NULL;
 
   v_init(&var);
   eval(&var);
@@ -387,7 +388,7 @@ void cmd_chain(void) {
         int len = ftell(f);
         fseek(f, 0, SEEK_SET);
         if (len) {
-          code_alloc = tmp_alloc(len + 1);
+          code_alloc = malloc(len + 1);
           fgets(code_alloc, len, f);
           code = code_alloc;
         }
@@ -403,13 +404,13 @@ void cmd_chain(void) {
     for (el = 0; el < var.v.a.size; el++) {
       var_t *el_p = (var_t *)(var.v.a.ptr + sizeof(var_t) * el);
       if (el_p->type == V_STR) {
-        int str_len = strlen(el_p->v.a.ptr) + 2;
+        int str_len = strlen(el_p->v.p.ptr) + 2;
         if (len) {
-          code_alloc = tmp_realloc(code_alloc, len + str_len);
-          strcat(code_alloc, el_p->v.a.ptr);
+          code_alloc = realloc(code_alloc, len + str_len);
+          strcat(code_alloc, el_p->v.p.ptr);
         } else {
-          code_alloc = tmp_alloc(str_len);
-          strcpy(code_alloc, el_p->v.a.ptr);
+          code_alloc = malloc(str_len);
+          strcpy(code_alloc, el_p->v.p.ptr);
         }
         strcat(code_alloc, "\n");
         len += str_len + 1;
@@ -420,22 +421,22 @@ void cmd_chain(void) {
     }
   }
 
-  if (code == 0) {
+  if (code == NULL) {
     v_free(&var);
     err_typemismatch();
     return;
   }
 
-  tid_base = create_task("CH_BASE");
-  tid_prev = activate_task(tid_base);
+  int tid_base = create_task("CH_BASE");
+  int tid_prev = activate_task(tid_base);
 
   // compile the buffer
   sys_before_comp();
-  success = comp_compile_buffer(code);
+  int success = comp_compile_buffer(code);
 
   v_free(&var);
   if (code_alloc) {
-    tmp_free(code_alloc);
+    free(code_alloc);
   }
   if (success == 0) {
     close_task(tid_base);
@@ -444,14 +445,11 @@ void cmd_chain(void) {
     return;
   }
 
-  tid_main = brun_create_task("CH_MAIN", bytecode_h, 0);
-
-  dev_init(opt_graphics, 0);
+  int tid_main = brun_create_task("CH_MAIN", ctask->bytecode, 0);
   exec_sync_variables(0);
 
   bc_loop(0);
   success = prog_error;         // save tid_main status
-
   exec_close_task();            // cleanup task data - tid_main
   close_task(tid_main);         // cleanup task container
   close_task(tid_base);         // cleanup task container
@@ -459,13 +457,11 @@ void cmd_chain(void) {
 
   if (success == 0) {
     prog_error = 1;
-    return;
   }
 }
 
 /**
  * RUN "program"
- *
  */
 void cmd_run(int retf) {
   var_t var;
@@ -671,15 +667,6 @@ static inline void bc_loop_call_proc() {
   case kwSWAP:
     cmd_swap();
     break;
-  case kwBUTTON:
-    cmd_button();
-    break;
-  case kwTEXT:
-    cmd_text();
-    break;
-  case kwDOFORM:
-    cmd_doform();
-    break;
   case kwDIRWALK:
     cmd_dirwalk();
     break;
@@ -710,8 +697,16 @@ static inline void bc_loop_call_proc() {
   case kwTYPE_CALL_VFUNC:
     cmd_call_vfunc();
     break;
+  case kwTIMER:
+    cmd_timer();
+    break;
   default:
     err_pcode_err(pcode);
+  }
+
+  if (!prog_error && prog_source[prog_ip] == kwTYPE_LEVEL_END) {
+    // allow redundant close bracket around function call
+    prog_ip++;
   }
 }
 
@@ -732,7 +727,7 @@ static inline void bc_loop_end() {
   if ((prog_length - 1) > prog_ip) {
     if (code_peek() != kwTYPE_EOC && code_peek() != kwTYPE_LINE) {
       var_t ec;
-      
+
       v_init(&ec);
       eval(&ec);
       opt_retval = v_igetval(&ec);
@@ -753,14 +748,16 @@ static inline void bc_loop_end() {
  * if 2; like 1, but increase the proc_level because UDF call it was executed internaly
  */
 void bc_loop(int isf) {
-  int proc_level = 0;
-  byte trace_flag = 0;
-  dword now;
-  static dword next_check;
-  byte code;
   byte pops;
   addr_t next_ip;
   int i;
+  int proc_level = 0;
+  byte trace_flag = 0;
+  byte code = 0;
+
+  // setup event checker time = 50ms
+  dword now = dev_get_millisecond_count();
+  dword next_check = now + EVT_CHECK_EVERY;
 
   /**
    * For commands that change the IP use
@@ -781,16 +778,13 @@ void bc_loop(int isf) {
     case kwTYPE_LINE:
       break;
     default:
-#if defined(_Win32)
-      now = GetTickCount();
-#else
-      now = clock();
-#endif
+      now = dev_get_millisecond_count();
+      break;
     }
 
     // check events every ~50ms
     if (now >= next_check) {
-      next_check = now + evt_check_every;
+      next_check = now + EVT_CHECK_EVERY;
 
       switch (dev_events(0)) {
       case -1:
@@ -800,6 +794,10 @@ void bc_loop(int isf) {
         prog_error = -2;
         inf_break(prog_line);
         break;
+      default:
+        if (prog_timer) {
+          timer_run(now);
+        }
       };
     }
 
@@ -969,7 +967,7 @@ void bc_loop(int isf) {
           cmd_udp(kwFUNC);
           proc_level++;
         } else {
-          err_syntax();
+          err_syntax(kwTYPE_CALL_UDF, "%G");
         }
         IF_ERR_BREAK;
         continue;
@@ -977,8 +975,9 @@ void bc_loop(int isf) {
         cmd_udpret();
         if (isf) {
           proc_level--;
-          if (proc_level == 0)
+          if (proc_level == 0) {
             return;
+          }
         }
         IF_ERR_BREAK;
         continue;
@@ -1067,37 +1066,40 @@ void bc_loop(int isf) {
       case kwENDTRY:
         continue;
       default:
-        rt_raise("SEG:CODE[%d]=%02x", prog_ip, prog_source[prog_ip]);
-        dev_printf("OUT OF ADDRESS SPACE\n");
+        log_printf("OUT OF ADDRESS SPACE\n");
         for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
           if (prog_source[prog_ip] == keyword_table[i].code) {
-            dev_printf("OR ILLEGAL CALL TO '%s'\n", keyword_table[i].name);
+            log_printf("OR ILLEGAL CALL TO '%s'\n", keyword_table[i].name);
             break;
+          }
+        }
+        if (!opt_quiet) {
+          hex_dump(prog_source, prog_length);
+        }
+        rt_raise("SEG:CODE[%x]=%02x", prog_ip, prog_source[prog_ip]);
+      }
+    }
+    if (prog_ip < prog_length) {
+      code = prog_source[prog_ip];
+      if (code != kwTYPE_EOC && code != kwTYPE_LINE && !prog_error) {
+        if (!opt_quiet) {
+          hex_dump(prog_source, prog_length);
+        }
+        if (code == kwTYPE_SEP) {
+          rt_raise("COMMAND SEPARATOR '%c' FOUND!", prog_source[prog_ip + 1]);
+        } else {
+          rt_raise("PARAM COUNT ERROR @%d=%X %d", prog_ip, prog_source[prog_ip], code);
+        }
+      } else {
+        prog_ip++;
+        if (code == kwTYPE_LINE) {
+          prog_line = code_getaddr();
+          if (trace_flag) {
+            dev_printf("<%d>", prog_line);
           }
         }
       }
     }
-    // too many parameters
-    code = prog_source[prog_ip];
-    if (code != kwTYPE_EOC && code != kwTYPE_LINE && !prog_error) {
-      if (code == kwTYPE_SEP) {
-        rt_raise("COMMAND SEPARATOR '%c' FOUND!", prog_source[prog_ip + 1]);
-      } else {
-        rt_raise("PARAM COUNT ERROR @%d=%X %d", prog_ip, prog_source[prog_ip], code);
-        if (!opt_quiet) {
-          hex_dump(prog_source, prog_length);
-        }
-      }
-    } else {
-      prog_ip++;
-      if (code == kwTYPE_LINE) {
-        prog_line = code_getaddr();
-        if (trace_flag) {
-          dev_printf("<%d>", prog_line);
-        }
-      }
-    }
-
     // quit on error
     IF_ERR_BREAK;
   }
@@ -1112,7 +1114,7 @@ void dump_stack() {
   int i;
 
   do {
-    code_pop(&node);
+    code_pop(&node, 0);
     if (node.type != 0xFF) {
       for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
         if (node.type == keyword_table[i].code) {
@@ -1154,18 +1156,17 @@ void dump_stack() {
  * exec_close()
  * ...exec_close_task()
  */
-int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
+int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   unit_file_t uft;
   bc_head_t hdr;
   byte *cp;
   int tid, i, h;
   byte *source;
-  char fname[OS_PATHNAME_SIZE + 1];mem_t
-  bc_h = 0;
+  char fname[OS_PATHNAME_SIZE + 1];
 
   if (preloaded_bc) {
     // I have already BC
-    bc_h = preloaded_bc;
+    source = preloaded_bc;
     strcpy(fname, filename);
   } else {
     // prepare filename
@@ -1199,23 +1200,18 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
     }
     read(h, &hdr, sizeof(bc_head_t));
 
-    bc_h = mem_alloc(hdr.size + 4);
-    source = (byte *)mem_lock(bc_h);
-
+    source = malloc(hdr.size + 4);
     lseek(h, 0, SEEK_SET);
     read(h, source, hdr.size);
     close(h);
-
-    mem_unlock(bc_h);
   }
 
   // create task
   tid = create_task(fname);     // create a task
   activate_task(tid);           // make it active
-  bytecode_h = bc_h;
-  source = mem_lock(bc_h);
-
+  ctask->bytecode = source;
   cp = source;
+
   if (memcmp(source, "SBUn", 4) == 0) { // load a unit
     memcpy(&uft, cp, sizeof(unit_file_t));
     cp += sizeof(unit_file_t);
@@ -1223,13 +1219,13 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
 
     // copy export-symbols from BC
     if (prog_expcount) {
-      prog_exptable = (unit_sym_t *)tmp_alloc(prog_expcount * sizeof(unit_sym_t));
+      prog_exptable = (unit_sym_t *)malloc(prog_expcount * sizeof(unit_sym_t));
       for (i = 0; i < prog_expcount; i++) {
         memcpy(&prog_exptable[i], cp, sizeof(unit_sym_t));
         cp += sizeof(unit_sym_t);
       }
     }
-  } else if (memcmp(source, "SBEx", 4) == 0) {  
+  } else if (memcmp(source, "SBEx", 4) == 0) {
     // load an executable
   } else {
     // signature error
@@ -1249,13 +1245,13 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   if (prog_varcount == 0) {
     prog_varcount++;
   }
-  tvar = tmp_alloc(sizeof(var_t *) * prog_varcount);
+  tvar = malloc(sizeof(var_t *) * prog_varcount);
   for (i = 0; i < prog_varcount; i++) {
     tvar[i] = v_new();
   }
   // create label-table
   if (prog_labcount) {
-    tlab = tmp_alloc(sizeof(lab_t) * prog_labcount);
+    tlab = malloc(sizeof(lab_t) * prog_labcount);
     for (i = 0; i < prog_labcount; i++) {
       // copy labels from BC
       memcpy(&tlab[i].ip, cp, ADDRSZ);
@@ -1264,7 +1260,7 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   }
   // build import-lib table
   if (prog_libcount) {
-    prog_libtable = (bc_lib_rec_t *)tmp_alloc(prog_libcount * sizeof(bc_lib_rec_t));
+    prog_libtable = (bc_lib_rec_t *)malloc(prog_libcount * sizeof(bc_lib_rec_t));
     for (i = 0; i < prog_libcount; i++) {
       memcpy(&prog_libtable[i], cp, sizeof(bc_lib_rec_t));
       cp += sizeof(bc_lib_rec_t);
@@ -1272,7 +1268,7 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   }
   // build import-symbol table
   if (prog_symcount) {
-    prog_symtable = (bc_symbol_rec_t *)tmp_alloc(prog_symcount * sizeof(bc_symbol_rec_t));
+    prog_symtable = (bc_symbol_rec_t *)malloc(prog_symcount * sizeof(bc_symbol_rec_t));
     for (i = 0; i < prog_symcount; i++) {
       memcpy(&prog_symtable[i], cp, sizeof(bc_symbol_rec_t));
       cp += sizeof(bc_symbol_rec_t);
@@ -1280,13 +1276,14 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   }
   // create system stack
   prog_stack_alloc = SB_EXEC_STACK_SIZE;
-  prog_stack = tmp_alloc(sizeof(stknode_t) * prog_stack_alloc);
+  prog_stack = malloc(sizeof(stknode_t) * prog_stack_alloc);
   prog_stack_count = 0;
   prog_catch_ip = INVALID_ADDR;
+  prog_timer = NULL;
 
   // create eval's stack
   eval_size = 64;
-  eval_stk = tmp_alloc(sizeof(var_t) * eval_size);
+  eval_stk = malloc(sizeof(var_t) * eval_size);
   eval_sp = 0;
 
   // initialize the rest tasks globals
@@ -1299,9 +1296,6 @@ int brun_create_task(const char *filename, mem_t preloaded_bc, int libf) {
   prog_ip = 0;
 
   exec_setup_predefined_variables();
-
-  // init the keyboard map
-  keymap_init();
 
   /*
    *      --------------
@@ -1396,12 +1390,12 @@ int exec_close_task() {
   word i;
   stknode_t node;
 
-  if (bytecode_h) {
+  if (ctask->bytecode) {
     // clean up - format list
     free_format();
 
     // clean up - eval stack
-    tmp_free(eval_stk);
+    free(eval_stk);
     eval_size = 0;
     eval_sp = 0;
 
@@ -1409,7 +1403,7 @@ int exec_close_task() {
     while (prog_stack_count > 0) {
       code_pop_and_free(&node);
     }
-    tmp_free(prog_stack);
+    free(prog_stack);
     // clean up - variables
     for (i = 0; i < (int) prog_varcount; i++) {
       int j, shared;
@@ -1427,32 +1421,37 @@ int exec_close_task() {
       // free this variable
       if (shared == -1) {
         v_free(tvar[i]);
-        tmp_free(tvar[i]);
+        free(tvar[i]);
       }
     }
 
-    tmp_free(tvar);
+    free(tvar);
     ctask->has_sysvars = 0;
 
     // clean up - rest tables
     if (prog_expcount) {
-      tmp_free(prog_exptable);
+      free(prog_exptable);
     }
     if (prog_libcount) {
-      tmp_free(prog_libtable);
+      free(prog_libtable);
     }
     if (prog_symcount) {
-      tmp_free(prog_symtable);
+      free(prog_symtable);
     }
     if (prog_labcount) {
-      tmp_free(tlab);
+      free(tlab);
     }
+
     // clean up - the rest
-    mem_unlock(bytecode_h);mem_free(bytecode_h);
-    bytecode_h = 0;
+    free(ctask->bytecode);
+    ctask->bytecode = NULL;
 
     // cleanup the keyboard map
     keymap_free();
+
+    // cleanup timers
+    timer_free(prog_timer);
+    prog_timer = NULL;
   }
 
   if (prog_error != -1 && prog_error != 0) {
@@ -1509,8 +1508,7 @@ void exec_sync_variables(int dir) {
         vp = tvar[us->vid];
 
         activate_task(tid);
-        tvar[ps->var_id] = vp;  // pointer assignment (shared
-        // var_t pointer)
+        tvar[ps->var_id] = vp;  // pointer assignment (shared var_t pointer)
       } else {
         activate_task(tid);
         vp = tvar[ps->var_id];
@@ -1690,14 +1688,40 @@ int sbasic_compile(const char *file) {
  */
 void sbasic_exec_prepare(const char *filename) {
   // load source
-  if (opt_nosave)
-    exec_tid = brun_create_task(filename, bytecode_h, 0);
-  else
+  if (opt_nosave) {
+    exec_tid = brun_create_task(filename, ctask->bytecode, 0);
+  } else {
     exec_tid = brun_create_task(filename, 0, 0);
-
+  }
   // reset system
   cmd_play_reset();
-  ui_reset();
+}
+
+/*
+ * remember the directory location of the running program
+ */
+void sbasic_set_bas_dir(const char *bas_file) {
+  int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
+  char cwd[OS_PATHNAME_SIZE + 1];
+
+  cwd[0] = '\0';;
+  gsb_bas_dir[0] = '\0';
+  getcwd(cwd, sizeof(cwd) - 1);
+
+  if (bas_file[0] == OS_DIRSEP) {
+    // full path
+    strncat(gsb_bas_dir, bas_file, path_len + 1);
+  } else if (path_len > 0) {
+    // relative path
+    // append the non file part of bas_file to cwd
+    strcat(gsb_bas_dir, cwd);
+    strcat(gsb_bas_dir, "/");
+    strncat(gsb_bas_dir, bas_file, path_len + 1);
+  } else {
+    // in current dir
+    strcat(gsb_bas_dir, cwd);
+    strcat(gsb_bas_dir, "/");
+  }
 }
 
 /**
@@ -1711,7 +1735,7 @@ int sbasic_exec(const char *file) {
   int success = 0;
   int exec_rq = 1;
 
-  // init compile-time options 
+  // init compile-time options
   opt_pref_bpp = 0;
   opt_pref_width = 0;
   opt_pref_height = 0;
@@ -1724,15 +1748,13 @@ int sbasic_exec(const char *file) {
   gsb_last_line = gsb_last_error = 0;
   strcpy(gsb_last_file, file);
   strcpy(gsb_last_errmsg, "");
-
-  // compile it - if opt_nosave, bytecode_h is a
-  // memory handle of BC; otherwise you must run the file
+  sbasic_set_bas_dir(file);
   success = sbasic_compile(file);
 
-  if (opt_syntaxcheck)          // this is a command-line flag to
+  if (opt_syntaxcheck) {         // this is a command-line flag to
     // syntax-check only
     exec_rq = 0;
-  else if (opt_decomp && success) {
+  } else if (opt_decomp && success) {
     sbasic_exec_prepare(file);  // load everything
     sbasic_dump_taskinfo(stdout);
     sbasic_dump_bytecode(exec_tid, stdout);
@@ -1749,7 +1771,6 @@ int sbasic_exec(const char *file) {
     sbasic_exec_prepare(file);
 
     dev_init(opt_graphics, 0);  // initialize output device for graphics
-    evt_check_every = (50 * CLOCKS_PER_SEC) / 1000; // setup event checker time = 50ms
     srand(clock());             // randomize
 
     // run
@@ -1762,22 +1783,6 @@ int sbasic_exec(const char *file) {
 
     exec_close(exec_tid);       // clean up executor's garbages
     dev_restore();              // restore device
-  }
-  // update IDE when it used as external
-  if (opt_ide == IDE_EXTERNAL) {
-    char fn[OS_PATHNAME_SIZE + 1];FILE *fp;
-
-#  if defined(_UnixOS)
-    sprintf(fn, "%s/.sbide/.lastmsg", getenv("HOME"));
-#  else
-    strcpy(fn, "sbide.out");
-#  endif
-    fp = fopen(fn, "w");
-    if (fp) {
-      fprintf(fp, "Error: %d\nLine: %d\nFile: %s\nMessage: %s\n",
-          gsb_last_error, gsb_last_line, gsb_last_file, gsb_last_errmsg);
-      fclose(fp);
-    }
   }
 
   // return compilation errors as failure
@@ -1794,7 +1799,7 @@ int sbasic_main(const char *file) {
   int success;
 
   // initialize task manager
-  main_tid = init_tasks();
+  init_tasks();
 
   // initialize SB's units manager
   unit_mgr_init();

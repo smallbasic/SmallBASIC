@@ -350,6 +350,8 @@ struct func_keyword_s func_table[] = {
 { "CALL",                       kwCALLCF },
 { "IMAGE",                      kwIMAGE },
 { "ARRAY",                      kwARRAY },
+{ "FORM",                       kwFORM },
+{ "WINDOW",                     kwWINDOW },
 { "", 0 }
 };
 
@@ -410,9 +412,6 @@ struct proc_keyword_s proc_table[] = {
 { "PLOT2",              kwPLOT2 },
 { "PLOT",               kwPLOT },
 { "SWAP",               kwSWAP },
-{ "BUTTON",             kwBUTTON },
-{ "TEXT",               kwTEXT },
-{ "DOFORM",             kwDOFORM },
 { "DIRWALK",            kwDIRWALK },
 { "BPUTC",              kwBPUTC },
 { "BLOAD",              kwBLOAD },
@@ -423,6 +422,7 @@ struct proc_keyword_s proc_table[] = {
 { "CALL",               kwCALLCP },
 { "DEFINEKEY",          kwDEFINEKEY },
 { "SHOWPAGE",           kwSHOWPAGE },
+{ "TIMER",              kwTIMER }, 
 
 #if !defined(OS_LIMITED)
 { "STKDUMP",    kwSTKDUMP },
@@ -485,6 +485,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_TRY                 "TRY"
 #define LCN_CATCH               "CATCH"
 #define LCN_END_TRY             "END TRY"
+#define LCN_ANTIALIAS           "ANTIALIAS"
 
 /* system variables */
 #define LCN_SV_OSNAME           "OSNAME"

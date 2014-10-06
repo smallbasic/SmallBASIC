@@ -9,16 +9,13 @@
 
 #include "common/device.h"
 
-// add-on drivers
-#if defined(DRV_SOUND)
-#include "common/drvsound.h"
-#endif
-
 #include <stdio.h>
+#include <time.h>
+
 #if defined(_UnixOS)
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <unistd.h>
 #elif defined(_Win32)
 #include <windows.h>
@@ -29,8 +26,6 @@
 extern char **environ;
 
 #define BUFSIZE 1024
-
-#ifndef IMPL_DEV_RUN
 
 #if defined(_Win32)
 
@@ -89,9 +84,9 @@ char *pw_shell(const char *cmd) {
       OemToCharBuff(buf, cv_buf, bytes);
       block_count++;
       if (result) {
-        result = (char *)tmp_realloc(result, block_count * BUFSIZE + 1);
+        result = (char *)realloc(result, block_count * BUFSIZE + 1);
       } else {
-        result = (char *)tmp_alloc(BUFSIZE + 1);
+        result = (char *)malloc(BUFSIZE + 1);
         *result = '\0';
       }
       strcat(result, cv_buf);
@@ -119,15 +114,13 @@ char *pw_shell(const char *cmd) {
  * run a program (if retflg wait and return; otherwise just exec())
  */
 int dev_run(const char *src, int retflg) {
-#if defined(RUN_UNSUP)
-  return 0;
-#elif defined(_Win32)
+#if defined(_Win32)
   int r;
   char *out;
 
   r = ((out = pw_shell(src)) != NULL);
   if (r) {
-    tmp_free(out);
+    free(out);
   }
 
   if (r && !retflg) {
@@ -150,26 +143,13 @@ int dev_run(const char *src, int retflg) {
     memset(src1, '\0', strlen(src) + 3);
     *src1 = '"';
     strcat(src1, src);
-    *(src1 + strlen(src) + 1) = '"';  // we need a doublequote around the
-    // command
-#if defined(_SDL)
-    if (os_graphics) {
-      dev_settextcolor(0, 0);
-      dev_printf("\n");         // in SDL version a new line with black on
-      // black color means no wait on quit
-      osd_devrestore();// we have to close the graphical screen before
-                       //
-      // call the program
-    }
-#endif
+    *(src1 + strlen(src) + 1) = '"';  // we need a doublequote around the command
     execlp("sh", "sh", "-c", src1, NULL);
     exit(-1);
     // o.k. some error happens - what to do??? we already closed the screen!!
   }
 #endif
 }
-
-#endif // IMPL_DEV_RUN
 
 #ifndef IMPL_DEV_ENV
 
@@ -225,3 +205,25 @@ char *dev_getenv_n(int n) {
 }
 
 #endif // IMPL_DEV_ENV
+
+dword dev_get_millisecond_count(void) {
+#if defined(__MACH__)
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  return (dword) (1000L * t.tv_sec + (t.tv_usec / 1000.0));
+#elif defined(_Win32)
+  return GetTickCount();
+#else
+  struct timespec t;
+  t.tv_sec = t.tv_nsec = 0;
+  if (0 == clock_gettime(CLOCK_MONOTONIC, &t)) {
+    return (dword) (1000L * t.tv_sec + (t.tv_nsec / 1e6));
+  } else {
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    return (dword) (1000L * now.tv_sec + (now.tv_usec / 1000.0));
+  }
+#endif
+}
+
+

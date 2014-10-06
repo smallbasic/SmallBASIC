@@ -19,6 +19,7 @@
 #include "common/fmt.h"
 #include "common/geom.h"
 #include "common/messages.h"
+#include "common/keymap.h"
 
 #if defined(_UnixOS)
 #include <unistd.h>
@@ -75,7 +76,7 @@ void cmd_pen() {
   } else if (code == kwON) {
     dev_setpenmode(1);
   } else {
-    err_syntax();
+    rt_raise(ERR_SYNTAX);
   }
 }
 
@@ -463,7 +464,7 @@ void date_tim2hms(long t, long *h, long *m, long *s) {
 var_num_t cmd_math1(long funcCode, var_t *arg) {
   var_num_t r = 0.0, x;
 
-  IF_ERR_RETURN;
+  IF_ERR_RETURN_0;
   x = v_getval(arg);
 
   switch (funcCode) {
@@ -707,7 +708,7 @@ var_int_t cmd_fre(var_int_t arg) {
 var_int_t cmd_imath1(long funcCode, var_t *arg) {
   var_int_t r = 0;
 
-  IF_ERR_RETURN;
+  IF_ERR_RETURN_0;
   var_int_t x = v_getint(arg);
 
   switch (funcCode) {
@@ -839,56 +840,56 @@ void cmd_ns1(long funcCode, var_t *arg, var_t *r) {
     // float <- VAL(s)
     //
     r->type = V_NUM;
-    r->v.n = numexpr_sb_strtof((char *) arg->v.p.ptr);
+    r->v.n = numexpr_sb_strtof(arg->v.p.ptr);
     break;
   case kwTEXTWIDTH:
     //
     // int <- TXTW(s)
     //
     r->type = V_INT;
-    r->v.i = dev_textwidth((char *) arg->v.p.ptr);
+    r->v.i = dev_textwidth(arg->v.p.ptr);
     break;
   case kwTEXTHEIGHT:
     //
     // int <- TXTH(s)
     //
     r->type = V_INT;
-    r->v.i = dev_textheight((char *) arg->v.p.ptr);
+    r->v.i = dev_textheight(arg->v.p.ptr);
     break;
   case kwEXIST:
     //
     // int <- EXIST(s)
     //
     r->type = V_INT;
-    r->v.i = dev_fexists((char *) arg->v.p.ptr);
+    r->v.i = dev_fexists(arg->v.p.ptr);
     break;
   case kwACCESSF:
     //
     // int <- ACCESS(s)
     //
     r->type = V_INT;
-    r->v.i = dev_faccess((char *) arg->v.p.ptr);
+    r->v.i = dev_faccess(arg->v.p.ptr);
     break;
   case kwISFILE:
     //
     // int <- ISFILE(s)
     //
     r->type = V_INT;
-    r->v.i = dev_fattr((char *) arg->v.p.ptr) & VFS_ATTR_FILE;
+    r->v.i = dev_fattr(arg->v.p.ptr) & VFS_ATTR_FILE;
     break;
   case kwISDIR:
     //
     // int <- ISDIR(s)
     //
     r->type = V_INT;
-    r->v.i = dev_fattr((char *) arg->v.p.ptr) & VFS_ATTR_DIR;
+    r->v.i = dev_fattr(arg->v.p.ptr) & VFS_ATTR_DIR;
     break;
   case kwISLINK:
     //
     // int <- ISLINK(s)
     //
     r->type = V_INT;
-    r->v.i = dev_fattr((char *) arg->v.p.ptr) & VFS_ATTR_LINK;
+    r->v.i = dev_fattr(arg->v.p.ptr) & VFS_ATTR_LINK;
     break;
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (4)", funcCode);
@@ -899,8 +900,9 @@ void cmd_ns1(long funcCode, var_t *arg, var_t *r) {
 // str <- FUNC (any)
 //
 void cmd_str1(long funcCode, var_t *arg, var_t *r) {
-  byte *p, *wp;
-  byte *tb;
+  char *tb;
+  char *wp;
+  char *p;
   var_int_t l, i;
 
   switch (funcCode) {
@@ -910,7 +912,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     l = v_getint(arg);
     if (l > 0) {
-      r->v.p.ptr = tmp_alloc(l);
+      r->v.p.ptr = malloc(l);
       memset(r->v.p.ptr, 0, l);
       r->v.p.size = l;
     } else {
@@ -921,7 +923,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- CHR$(n)
     //
-    wp = r->v.p.ptr = (byte *) tmp_alloc(2);
+    wp = r->v.p.ptr = (char *)malloc(2);
     wp[0] = v_getint(arg);
     wp[1] = '\0';
     r->v.p.size = 2;
@@ -931,7 +933,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- STR$(n)
     //
     r->v.p.ptr = v_str(arg);
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
   case kwCBS:
     //
@@ -939,10 +941,9 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // convert C-Style string to BASIC-style string
     //
     v_tostr(arg);
-    IF_ERR_RETURN
-    ;
-    r->v.p.ptr = (byte *) cstrdup((char *) arg->v.p.ptr);
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    IF_ERR_RETURN;
+    r->v.p.ptr = cstrdup(arg->v.p.ptr);
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
 
   case kwBCS:
@@ -953,54 +954,53 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     v_tostr(arg);
     IF_ERR_RETURN;
 
-    r->v.p.ptr = (byte *) bstrdup((char *) arg->v.p.ptr);
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.ptr = bstrdup(arg->v.p.ptr);
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
 
   case kwOCT:
     //
     // str <- OCT$(n)
     //
-    r->v.p.ptr = (byte *) tmp_alloc(64);
-    sprintf((char *) r->v.p.ptr, "%lo", (unsigned long) v_getint(arg));
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.ptr = (char *)malloc(64);
+    sprintf(r->v.p.ptr, "%lo", (unsigned long) v_getint(arg));
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
     //
     // str <- BIN$(n)
     //
   case kwBIN:
     l = v_getint(arg);
-    IF_ERR_RETURN
-    ;
-    tb = tmp_alloc(33);
+    IF_ERR_RETURN;
+    tb = malloc(33);
     memset(tb, 0, 33);
     for (i = 0; i < 32; i++) {
-      if (l & (1 << i))
+      if (l & (1 << i)) {
         tb[31 - i] = '1';
-      else
+      } else {
         tb[31 - i] = '0';
+      }
     }
 
     r->v.p.ptr = tb;
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
   case kwHEX:
     //
     // str <- HEX$(n)
     //
-    r->v.p.ptr = (byte *) tmp_alloc(64);
-    sprintf((char *) r->v.p.ptr, "%lX", (unsigned long) v_getint(arg));
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.ptr = (char *)malloc(64);
+    sprintf(r->v.p.ptr, "%lX", (unsigned long) v_getint(arg));
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
   case kwLCASE:
     //
     // str <- LCASE$(s)
     //
     v_tostr(arg);
-    IF_ERR_RETURN
-    ;
-    r->v.p.ptr = (byte *) tmp_alloc(strlen((char *)arg->v.p.ptr) + 1);
-    strcpy((char *) r->v.p.ptr, (char *) arg->v.p.ptr);
+    IF_ERR_RETURN;
+    r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
+    strcpy(r->v.p.ptr, arg->v.p.ptr);
     p = r->v.p.ptr;
     while (*p) {
       *p = to_lower(*p);
@@ -1013,10 +1013,9 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- UCASE$(s)
     //
     v_tostr(arg);
-    IF_ERR_RETURN
-    ;
-    r->v.p.ptr = (byte *) tmp_alloc(strlen((char *)arg->v.p.ptr) + 1);
-    strcpy((char *) r->v.p.ptr, (char *) arg->v.p.ptr);
+    IF_ERR_RETURN;
+    r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
+    strcpy(r->v.p.ptr, arg->v.p.ptr);
     p = r->v.p.ptr;
     while (*p) {
       *p = to_upper(*p);
@@ -1029,14 +1028,14 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- LTRIM$(s)
     //
     v_tostr(arg);
-    IF_ERR_RETURN
-    ;
+    IF_ERR_RETURN;
     p = arg->v.p.ptr;
-    while (is_wspace(*p))
+    while (is_wspace(*p)) {
       p++;
-    r->v.p.ptr = (byte *) tmp_alloc(strlen((char *)p) + 1);
-    strcpy((char *) r->v.p.ptr, (char *) p);
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    }
+    r->v.p.ptr = (char *)malloc(strlen(p) + 1);
+    strcpy(r->v.p.ptr, p);
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
   case kwTRIM:
     //
@@ -1047,39 +1046,38 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- RTRIM$(s)
     //
     v_tostr(arg);
-    IF_ERR_RETURN
-    ;
+    IF_ERR_RETURN;
     p = arg->v.p.ptr;
-    if (*p != '\0') {           // ndc: 20/2/2001
-      while (*p)
+    if (*p != '\0') {
+      while (*p) {
         p++;
+      }
       p--;
-      while (p >= arg->v.p.ptr && (is_wspace(*p)))
+      while (p >= arg->v.p.ptr && (is_wspace(*p))) {
         p--;
+      }
       p++;
       *p = '\0';
     }
-    r->v.p.ptr = (byte *) tmp_alloc(strlen((char *)arg->v.p.ptr) + 1);
-    strcpy((char *) r->v.p.ptr, (char *) arg->v.p.ptr);
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
+    strcpy(r->v.p.ptr, arg->v.p.ptr);
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
 
     // alltrim
     if (funcCode == kwTRIM) {
-      byte *tmp_p;
-
-      tmp_p = p = r->v.p.ptr;
-      while (is_wspace(*p))
+      char *tmp_p = p = r->v.p.ptr;
+      while (is_wspace(*p)) {
         p++;
-      r->v.p.ptr = (byte *) tmp_alloc(strlen((char *)p) + 1);
-      strcpy((char *) r->v.p.ptr, (char *) p);
-      r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
-
-      tmp_free(tmp_p);
+      }
+      r->v.p.ptr = (char *)malloc(strlen(p) + 1);
+      strcpy(r->v.p.ptr, p);
+      r->v.p.size = strlen(r->v.p.ptr) + 1;
+      free(tmp_p);
     }
     break;
   case kwCAT:
     // we can add color codes
-    r->v.p.ptr = tmp_alloc(8);
+    r->v.p.ptr = malloc(8);
     strcpy(r->v.p.ptr, "");
     l = v_getint(arg);
     switch (l) {
@@ -1114,7 +1112,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     case 87:
     case 88:
     case 89:
-      sprintf((char *) r->v.p.ptr, "\033[8%dm", (int) l - 80);
+      sprintf(r->v.p.ptr, "\033[8%dm", (int) l - 80);
       break;
     case 90:                   // select custom font
     case 91:
@@ -1127,15 +1125,15 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     case 98:
     case 99:
       if (os_charset == 0)
-        sprintf((char *) r->v.p.ptr, "\033[9%dm", (int) l - 90);
+        sprintf(r->v.p.ptr, "\033[9%dm", (int) l - 90);
       break;
     }
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
   case kwTAB:
     // TODO: use calctab
     l = v_igetval(arg);
-    r->v.p.ptr = tmp_alloc(16);
+    r->v.p.ptr = malloc(16);
     *r->v.p.ptr = '\0';
     r->v.p.size = 16;
 
@@ -1144,7 +1142,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // move to the n/80th pixel of screen
     sprintf(r->v.p.ptr, "\033[%dT", (int)l);
 #else
-    sprintf((char *) r->v.p.ptr, "\033[%dG", (int) l);
+    sprintf(r->v.p.ptr, "\033[%dG", (int) l);
 #endif
     break;
   case kwSPACE:
@@ -1152,32 +1150,32 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- SPACE$(n)
     //
     l = v_getint(arg);
-    wp = r->v.p.ptr = tmp_alloc(l + 1);
-    for (i = 0; i < l; i++)
+    wp = r->v.p.ptr = (char *)malloc(l + 1);
+    for (i = 0; i < l; i++) {
       wp[i] = ' ';
+    }
     wp[l] = '\0';
-    r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+    r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
   case kwENVIRONF:
     //
     // str <- ENVIRON$(str)
     //
     v_tostr(arg);
-    IF_ERR_RETURN
-    ;
+    IF_ERR_RETURN;
     if (*arg->v.p.ptr != '\0') {
       // return the variable
       char *v;
       int l;
 
-      v = dev_getenv((char *) arg->v.p.ptr);
+      v = dev_getenv(arg->v.p.ptr);
       if (v) {
         l = strlen(v) + 1;
-        r->v.p.ptr = tmp_alloc(l);
+        r->v.p.ptr = malloc(l);
         strcpy(r->v.p.ptr, v);
         r->v.p.size = l;
       } else {
-        r->v.p.ptr = tmp_alloc(2);
+        r->v.p.ptr = malloc(2);
         *r->v.p.ptr = '\0';
         r->v.p.size = 1;
       }
@@ -1192,14 +1190,14 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
         v_toarray1(r, count);
         for (i = 0; i < count; i++) {
           elem_p = (var_t *) (r->v.a.ptr + (sizeof(var_t) * i));
-
           elem_p->type = V_STR;
-          elem_p->v.p.ptr = (byte *) tmp_strdup((char *)dev_getenv_n(i));
-          elem_p->v.p.size = strlen((char *) elem_p->v.p.ptr) + 1;
+          elem_p->v.p.ptr = strdup((char *)dev_getenv_n(i));
+          elem_p->v.p.size = strlen(elem_p->v.p.ptr) + 1;
         }
-      } else
+      } else {
         // no vars found
         v_toarray1(r, 0);
+      }
     }
     break;
   default:
@@ -1228,8 +1226,21 @@ void cmd_str0(long funcCode, var_t *r) {
     if (dev_kbhit()) {
       ch = dev_getch();
       // MultiByte - dev_getchr() must return the extended code (2 bytes char)
-      if ((ch & 0xFF00) == 0xFF00) {  // extra code - hardware keys
+      if ((ch & 0xFF00) == 0xFF00) {
+        // hardware keys
         tmp[0] = '\033';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_CTRL(0)) == SB_KEY_CTRL(0)) {
+        tmp[0] = '\1';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_ALT(0)) == SB_KEY_ALT(0)) {
+        tmp[0] = '\2';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_CTRL_ALT(0)) == SB_KEY_CTRL_ALT(0)) {
+        tmp[0] = '\3';
         tmp[1] = ch & 0xFF;
         tmp[2] = '\0';
       } else {
@@ -1290,9 +1301,9 @@ void cmd_str0(long funcCode, var_t *r) {
     time(&now);
     tms = *localtime(&now);
     r->type = V_STR;
-    r->v.p.ptr = tmp_alloc(32);
+    r->v.p.ptr = malloc(32);
     r->v.p.size = 32;
-    sprintf((char *) r->v.p.ptr, "%02d/%02d/%04d", tms.tm_mday, tms.tm_mon + 1, tms.tm_year + 1900);
+    sprintf(r->v.p.ptr, "%02d/%02d/%04d", tms.tm_mday, tms.tm_mon + 1, tms.tm_year + 1900);
     break;
   case kwTIME:
     //
@@ -1301,9 +1312,9 @@ void cmd_str0(long funcCode, var_t *r) {
     time(&now);
     tms = *localtime(&now);
     r->type = V_STR;
-    r->v.p.ptr = tmp_alloc(32);
+    r->v.p.ptr = malloc(32);
     r->v.p.size = 32;
-    sprintf((char *) r->v.p.ptr, "%02d:%02d:%02d", tms.tm_hour, tms.tm_min, tms.tm_sec);
+    sprintf(r->v.p.ptr, "%02d:%02d:%02d", tms.tm_hour, tms.tm_min, tms.tm_sec);
     break;
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (6)", funcCode);
@@ -1320,8 +1331,6 @@ void cmd_strN(long funcCode, var_t *r) {
   char *s1 = NULL, *s2 = NULL, *s3 = NULL;
 
   v_init(&arg1);
-  //      r->type = V_STR;
-
   IF_ERR_RETURN;
   switch (funcCode) {
   case kwTRANSLATEF:
@@ -1330,13 +1339,13 @@ void cmd_strN(long funcCode, var_t *r) {
     //
     par_massget("SSs", &s1, &s2, &s3);
     if (!prog_error) {
-      if (s3)
-        r->v.p.ptr = (byte *) transdup(s1, s2, s3);
-      else
-        r->v.p.ptr = (byte *) transdup(s1, s2, "");
-
+      if (s3) {
+        r->v.p.ptr = transdup(s1, s2, s3);
+      } else {
+        r->v.p.ptr = transdup(s1, s2, "");
+      }
       r->type = V_STR;
-      r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+      r->v.p.size = strlen(r->v.p.ptr) + 1;
     }
     break;
   case kwCHOP:
@@ -1346,10 +1355,10 @@ void cmd_strN(long funcCode, var_t *r) {
     par_massget("S", &s1);
     if (!prog_error) {
       if (strlen(s1)) {
-        r->v.p.ptr = (byte *) tmp_strdup(s1);
-        r->v.p.ptr[strlen((char *) r->v.p.ptr) - 1] = '\0';
+        r->v.p.ptr = strdup(s1);
+        r->v.p.ptr[strlen(r->v.p.ptr) - 1] = '\0';
         r->type = V_STR;
-        r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+        r->v.p.size = strlen(r->v.p.ptr) + 1;
       } else
         v_zerostr(r);
     }
@@ -1379,11 +1388,12 @@ void cmd_strN(long funcCode, var_t *r) {
         err_argerr();
         r->type = V_INT;        // dont try to free
       } else {
-        r->v.p.ptr = tmp_alloc(count * len + 1);
-        *((char *) (r->v.p.ptr)) = '\0';
-        for (i = 0; i < count; i++)
-          strcat((char *) r->v.p.ptr, tmp_p);
-        r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+        r->v.p.ptr = malloc(count * len + 1);
+        *((r->v.p.ptr)) = '\0';
+        for (i = 0; i < count; i++) {
+          strcat(r->v.p.ptr, tmp_p);
+        }
+        r->v.p.size = strlen(r->v.p.ptr) + 1;
       }
     }
     break;
@@ -1395,8 +1405,8 @@ void cmd_strN(long funcCode, var_t *r) {
     par_massget("S", &s1);
     if (!prog_error) {
       r->type = V_STR;
-      r->v.p.ptr = (byte *) sqzdup(s1);
-      r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+      r->v.p.ptr = sqzdup(s1);
+      r->v.p.size = strlen(r->v.p.ptr) + 1;
     }
     break;
     //
@@ -1406,11 +1416,12 @@ void cmd_strN(long funcCode, var_t *r) {
     par_massget("Ss", &s1, &s2);
     if (!prog_error) {
       r->type = V_STR;
-      if (s2)
-        r->v.p.ptr = (byte *) encldup(s1, s2);
-      else
-        r->v.p.ptr = (byte *) encldup(s1, "\"\"");
-      r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+      if (s2) {
+        r->v.p.ptr = encldup(s1, s2);
+      } else {
+        r->v.p.ptr = encldup(s1, "\"\"");
+      }
+      r->v.p.size = strlen(r->v.p.ptr) + 1;
     }
     break;
     //
@@ -1421,41 +1432,41 @@ void cmd_strN(long funcCode, var_t *r) {
     if (!prog_error) {
       r->type = V_STR;
       if (s2) {
-        if (s3)
-          r->v.p.ptr = (byte *) discldup(s1, s2, s3);
-        else
-          r->v.p.ptr = (byte *) discldup(s1, s2, "");
+        if (s3) {
+          r->v.p.ptr = discldup(s1, s2, s3);
+        } else {
+          r->v.p.ptr = discldup(s1, s2, "");
+        }
       } else {
         // auto-mode
         char *p = s1;
-
-        while (is_wspace(*p))
+        while (is_wspace(*p)) {
           p++;
+        }
         switch (*p) {
         case '\"':
-          r->v.p.ptr = (byte *) discldup(s1, "\"\"", "''");
+          r->v.p.ptr = discldup(s1, "\"\"", "''");
           break;
         case '\'':
-          r->v.p.ptr = (byte *) discldup(s1, "''", "\"\"");
+          r->v.p.ptr = discldup(s1, "''", "\"\"");
           break;
         case '(':
-          r->v.p.ptr = (byte *) discldup(s1, "()", "\"\"''");
+          r->v.p.ptr = discldup(s1, "()", "\"\"''");
           break;
         case '[':
-          r->v.p.ptr = (byte *) discldup(s1, "[]", "\"\"''");
+          r->v.p.ptr = discldup(s1, "[]", "\"\"''");
           break;
         case '{':
-          r->v.p.ptr = (byte *) discldup(s1, "{}", "\"\"''");
+          r->v.p.ptr = discldup(s1, "{}", "\"\"''");
           break;
         case '<':
-          r->v.p.ptr = (byte *) discldup(s1, "<>", "\"\"''");
+          r->v.p.ptr = discldup(s1, "<>", "\"\"''");
           break;
         default:
-          r->v.p.ptr = (byte *) discldup(s1, "\"\"", "''");
+          r->v.p.ptr = discldup(s1, "\"\"", "''");
         }
       }
-
-      r->v.p.size = strlen((char *) r->v.p.ptr) + 1;
+      r->v.p.size = strlen(r->v.p.ptr) + 1;
     }
     break;
 
@@ -1467,13 +1478,6 @@ void cmd_strN(long funcCode, var_t *r) {
     par_getstr(&arg1);
 
     if (!prog_error) {
-#if defined(RUN_UNSUP)
-      err_unsup();
-      r->type = V_STR;
-      r->v.p.ptr = tmp_alloc(2);
-      r->v.p.ptr[0] = '\0';
-#else
-      FILE *fin;
 #if defined(_Win32)
       char *buf;
 #else
@@ -1492,21 +1496,20 @@ void cmd_strN(long funcCode, var_t *r) {
        *   default popen/pclose
        */
       r->type = V_STR;
-      r->v.p.ptr = tmp_alloc(256);
+      r->v.p.ptr = malloc(256);
       *r->v.p.ptr = '\0';
       r->v.p.size = 256;
 
-      fin = popen((char *) arg1.v.p.ptr, "r");
+      FILE *fin = popen(arg1.v.p.ptr, "r");
       if (fin) {
-
         while (!feof(fin)) {
           bytes = fread(buf, 1, 255, fin);
           total += bytes;
           buf[bytes] = '\0';
-          strcat((char *) r->v.p.ptr, buf);
+          strcat(r->v.p.ptr, buf);
           if (total + 256 >= r->v.p.size) {
             r->v.p.size += 256;
-            r->v.p.ptr = tmp_realloc(r->v.p.ptr, r->v.p.size);
+            r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.size);
           }
         }
         pclose(fin);
@@ -1516,7 +1519,6 @@ void cmd_strN(long funcCode, var_t *r) {
         v_zerostr(r);
         rt_raise(ERR_RUNFUNC_FILE, arg1.v.p.ptr);
       }
-#endif // non palmos
     }
     break;
 
@@ -1534,7 +1536,7 @@ void cmd_strN(long funcCode, var_t *r) {
       if (count < 0) {
         err_stridx(count);
       } else {
-        r->v.p.ptr = tmp_alloc(count + 1);
+        r->v.p.ptr = malloc(count + 1);
         if (count) {
           memcpy(r->v.p.ptr, s1, count);
         }
@@ -1557,7 +1559,7 @@ void cmd_strN(long funcCode, var_t *r) {
         lc = *p;
         *p = '\0';
         l = strlen(s1) + 1;
-        r->v.p.ptr = tmp_alloc(l);
+        r->v.p.ptr = malloc(l);
         strcpy(r->v.p.ptr, s1);
         r->v.p.size = l;
         *p = lc;
@@ -1580,7 +1582,7 @@ void cmd_strN(long funcCode, var_t *r) {
       if (count < 0) {
         err_stridx(count);
       } else {
-        r->v.p.ptr = tmp_alloc(count + 1);
+        r->v.p.ptr = malloc(count + 1);
         if (count) {
           memcpy(r->v.p.ptr, s1 + (len - count), count + 1);
         }
@@ -1602,7 +1604,7 @@ void cmd_strN(long funcCode, var_t *r) {
       if ((p = strstr(s1, s2)) != NULL) {
         p += strlen(s2);
         l = strlen(p) + 1;
-        r->v.p.ptr = tmp_alloc(l);
+        r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, p, l);
         r->v.p.size = l;
       } else {
@@ -1633,7 +1635,7 @@ void cmd_strN(long funcCode, var_t *r) {
         lc = *p;
         *p = '\0';
         l = strlen(s1) + 1;
-        r->v.p.ptr = tmp_alloc(l);
+        r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, s1, l);
         r->v.p.size = l;
         *p = lc;
@@ -1663,7 +1665,7 @@ void cmd_strN(long funcCode, var_t *r) {
       if (p) {
         p += l2;
         l = strlen(p) + 1;
-        r->v.p.ptr = tmp_alloc(l);
+        r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, p, l);
         r->v.p.size = l;
       } else {
@@ -1690,7 +1692,7 @@ void cmd_strN(long funcCode, var_t *r) {
         break;
       }
 
-      r->v.p.ptr = tmp_alloc(ls1 + ls2 + 1);
+      r->v.p.ptr = malloc(ls1 + ls2 + 1);
 
       // copy the left-part
       if (start > 0) {
@@ -1700,14 +1702,14 @@ void cmd_strN(long funcCode, var_t *r) {
         *r->v.p.ptr = '\0';
 
       // insert the string
-      strcat((char *) r->v.p.ptr, s2);
+      strcat(r->v.p.ptr, s2);
 
       // add the right-part
       if (count == -1) {
         count = ls2;
       }
       if (start + count < ls1) {
-        strcat((char *) r->v.p.ptr, (char *) (s1 + start + count));
+        strcat(r->v.p.ptr, (s1 + start + count));
       }
       r->v.p.ptr[ls1 + ls2] = '\0';
       r->v.p.size = ls1 + ls2 + 1;
@@ -1730,7 +1732,7 @@ void cmd_strN(long funcCode, var_t *r) {
         if (len < 0 || len + start >= lsrc) {
           len = lsrc - start;
         }
-        r->v.p.ptr = tmp_alloc(len + 1);
+        r->v.p.ptr = malloc(len + 1);
         memcpy(r->v.p.ptr, s1 + start, len);
         r->v.p.ptr[len] = '\0';
         r->v.p.size = len + 1;
@@ -1797,7 +1799,7 @@ void cmd_intN(long funcCode, var_t *r) {
 
           while (*p) {
             if (strncmp(p, s2, l) == 0) {
-              r->v.i = (p - (char *) s1) + 1;
+              r->v.i = (p - s1) + 1;
               if (funcCode == kwINSTR) {
                 break;
               }
@@ -1841,7 +1843,7 @@ void cmd_intN(long funcCode, var_t *r) {
         var_int_t lv = 0;
         var_num_t dv = 0;
 
-        np = get_numexpr((char *) var_p->v.p.ptr, buf, &type, &lv, &dv);
+        np = get_numexpr(var_p->v.p.ptr, buf, &type, &lv, &dv);
 
         if (type == 1 && *np == '\0') {
           r->v.i = (funcCode == kwISSTRING) ? 0 : 1;
@@ -2142,25 +2144,25 @@ void cmd_genfunc(long funcCode, var_t *r) {
       } else {
         char *buf;
 
-        buf = tmp_alloc(1024);
+        buf = malloc(1024);
         v_init(&arg2);
         eval(&arg2);
         if (!prog_error) {
           switch (arg2.type) {
           case V_STR:
-            format_str(buf, (char *) arg.v.p.ptr, (char *) arg2.v.p.ptr);
+            format_str(buf, arg.v.p.ptr, arg2.v.p.ptr);
           case V_INT:
             if (arg2.type == V_INT) {
-              format_num(buf, (char *) arg.v.p.ptr, arg2.v.i);
+              format_num(buf, arg.v.p.ptr, arg2.v.i);
             }
           case V_NUM:
             if (arg2.type == V_NUM) {
-              format_num(buf, (char *) arg.v.p.ptr, arg2.v.n);
+              format_num(buf, arg.v.p.ptr, arg2.v.n);
             }
             r->type = V_STR;
             r->v.p.size = strlen(buf) + 1;
-            r->v.p.ptr = tmp_alloc(r->v.p.size);
-            strcpy((char *) r->v.p.ptr, buf);
+            r->v.p.ptr = malloc(r->v.p.size);
+            strcpy(r->v.p.ptr, buf);
             break;
           default:
             err_typemismatch();
@@ -2169,7 +2171,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
         v_free(&arg);
         v_free(&arg2);
-        tmp_free(buf);
+        free(buf);
       }                         // arg.type = V_STR
     }                           // !prog_error
     break;
@@ -2186,7 +2188,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     IF_ERR_RETURN;
 
     if (arg.type == V_STR) {
-      date_str2dmy((char *) arg.v.p.ptr, &d, &m, &y);
+      date_str2dmy(arg.v.p.ptr, &d, &m, &y);
       v_free(&arg);
     } else {
       d = v_igetval(&arg);
@@ -2234,7 +2236,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     v_init(&arg2);
     eval(&arg2);
     if (arg2.type == V_STR) {
-      date_str2dmy((char *) arg2.v.p.ptr, &d, &m, &y);
+      date_str2dmy(arg2.v.p.ptr, &d, &m, &y);
       v_free(&arg2);
     } else {
       d = v_igetval(&arg2);
@@ -2269,8 +2271,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
     if (funcCode == kwDATEFMT) {  // format
       r->type = V_STR;
       r->v.p.size = 96;
-      r->v.p.ptr = tmp_alloc(r->v.p.size);
-      date_fmt((char *) arg.v.p.ptr, (char *) r->v.p.ptr, d, m, y);
+      r->v.p.ptr = malloc(r->v.p.size);
+      date_fmt(arg.v.p.ptr, r->v.p.ptr, d, m, y);
       v_free(&arg);
     } else {                    // weekday
       r->v.i = date_weekday(d, m, y);
@@ -2298,7 +2300,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     if (handle == -1) {
       // keyboard
       r->type = V_STR;
-      r->v.p.ptr = tmp_alloc((count << 1) + 1);
+      r->v.p.ptr = malloc((count << 1) + 1);
       r->v.p.ptr[0] = '\0';
       len = 0;
       for (i = 0; i < count; i++) {
@@ -2324,7 +2326,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
           len++;
         }
 
-        strcat((char *) r->v.p.ptr, tmp);
+        strcat(r->v.p.ptr, tmp);
       }
 
       r->v.p.size = len + 1;
@@ -2332,9 +2334,9 @@ void cmd_genfunc(long funcCode, var_t *r) {
     } else {
       // file
       r->type = V_STR;
-      r->v.p.ptr = tmp_alloc(count + 1);
+      r->v.p.ptr = malloc(count + 1);
       r->v.p.size = count + 1;
-      dev_fread(handle, r->v.p.ptr, count);
+      dev_fread(handle, (byte *)r->v.p.ptr, count);
       r->v.p.ptr[count] = '\0';
     }
 
@@ -2370,7 +2372,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     }
 
     // hmm.... closed ?
-    tmp_free(poly);
+    free(poly);
   }
     break;
 
@@ -2398,7 +2400,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     }
 
     // hmm.... closed ?
-    tmp_free(poly);
+    free(poly);
   }
     break;
 
@@ -2660,11 +2662,10 @@ void cmd_genfunc(long funcCode, var_t *r) {
   case kwSTATMEANDEV:
   case kwSTATSPREADS:
   case kwSTATSPREADP:
-
     ready = 0;
     tcount = 0;
     len = 64;
-    dar = (var_num_t*) tmp_alloc(sizeof(var_num_t) * len);
+    dar = (var_num_t*) malloc(sizeof(var_num_t) * len);
 
     do {
       code = code_peek();
@@ -2686,13 +2687,13 @@ void cmd_genfunc(long funcCode, var_t *r) {
               if (!prog_error) {
                 if (tcount >= len) {
                   len += 64;
-                  dar = (var_num_t*) tmp_realloc(dar, sizeof(var_num_t) * len);
+                  dar = (var_num_t*) realloc(dar, sizeof(var_num_t) * len);
                 }
 
                 dar[tcount] = v_getval(elem_p);
                 tcount++;
               } else {
-                tmp_free(dar);
+                free(dar);
                 return;
               }
             }
@@ -2708,13 +2709,13 @@ void cmd_genfunc(long funcCode, var_t *r) {
         if (!prog_error) {
           if (tcount >= len) {
             len += 64;
-            dar = (var_num_t*) tmp_realloc(dar, sizeof(var_num_t) * len);
+            dar = (var_num_t*) realloc(dar, sizeof(var_num_t) * len);
           }
 
           dar[tcount] = v_getval(&arg);
           tcount++;
         } else {
-          tmp_free(dar);
+          free(dar);
           return;
         }
         v_free(&arg);
@@ -2738,7 +2739,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         break;
       }
 
-      tmp_free(dar);
+      free(dar);
     }
 
     break;
@@ -2759,7 +2760,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     m1 = mat_toc(a, &rows, &cols);
     if (rows != cols || cols < 2) {
       if (m1) {
-        tmp_free(m1);
+        free(m1);
       }
       rt_raise(ERR_LINEEQN_ADIM, rows, cols);
     } else {
@@ -2767,7 +2768,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       par_getcomma();
       if (prog_error) {
         if (m1) {
-          tmp_free(m1);
+          free(m1);
         }
         return;
       }
@@ -2775,7 +2776,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       b = par_getvarray();
       if (prog_error) {
         if (m1) {
-          tmp_free(m1);
+          free(m1);
         }
         return;
       }
@@ -2783,10 +2784,10 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
       if (rows != n || cols != 1) {
         if (m1) {
-          tmp_free(m1);
+          free(m1);
         }
         if (m2) {
-          tmp_free(m2);
+          free(m2);
         }
         rt_raise(ERR_LINEEQN_BDIM, rows, cols);
         return;
@@ -2803,9 +2804,9 @@ void cmd_genfunc(long funcCode, var_t *r) {
       }
 
       if (m1)
-        tmp_free(m1);
+        free(m1);
       if (m2)
-        tmp_free(m2);
+        free(m2);
     }
   }
     break;
@@ -2824,14 +2825,14 @@ void cmd_genfunc(long funcCode, var_t *r) {
     m1 = mat_toc(a, &rows, &cols);
     if (rows != cols || cols < 2) {
       if (m1) {
-        tmp_free(m1);
+        free(m1);
       }
       rt_raise(ERR_WRONG_MAT, rows, cols);
     } else {
       n = rows;
       mat_inverse(m1, n);
       mat_tov(r, m1, n, n, 1);
-      tmp_free(m1);
+      free(m1);
     }
   }
     break;
@@ -2855,14 +2856,14 @@ void cmd_genfunc(long funcCode, var_t *r) {
     m1 = mat_toc(a, &rows, &cols);
     if (rows != cols || cols < 2) {
       if (m1) {
-        tmp_free(m1);
+        free(m1);
       }
       rt_raise(ERR_WRONG_MAT, rows, cols);
     } else {
       n = rows;
       r->type = V_NUM;
       r->v.n = mat_determ(m1, n, toler);
-      tmp_free(m1);
+      free(m1);
     }
   }
     break;
@@ -2936,7 +2937,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       e = (var_t *) (r->v.a.ptr + (sizeof(var_t) * pos));
       v_set(e, tp->v);
       v_free(tp->v);
-      tmp_free(tp->v);
+      free(tp->v);
       cur = cur->next;
     }
 
@@ -2956,7 +2957,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     v_init(&arg);
     if (code_peek() != kwTYPE_LEVEL_END) {
       par_getstr(&arg);
-      wc = (char *) arg.v.p.ptr;
+      wc = arg.v.p.ptr;
     }
 
     if (!prog_error) {
@@ -2973,7 +2974,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
           elem_p->type = V_STR;
           elem_p->v.p.size = strlen(list[i]) + 1;
-          elem_p->v.p.ptr = tmp_alloc(elem_p->v.p.size);
+          elem_p->v.p.ptr = malloc(elem_p->v.p.size);
           strcpy(elem_p->v.p.ptr, list[i]);
         }
       } else {
@@ -3018,8 +3019,20 @@ void cmd_genfunc(long funcCode, var_t *r) {
       v_toarray1(r, 0);
     }
   }
-
     break;
+
+  case kwIMAGE:
+    v_create_image(r);
+    break;
+
+  case kwFORM:
+    v_create_form(r);
+    break;
+
+  case kwWINDOW:
+    v_create_window(r);
+    break;
+
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (11)", funcCode);
   };

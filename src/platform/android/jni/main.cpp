@@ -33,5 +33,8 @@ void android_main(android_app *app) {
 
   delete runtime;
   logLeaving();
-  exit(0);
+
+  // underscore version does not invoke atExit functions
+  // if these are defined (as per kitkat) an error would occur
+  _exit(0);
 }

@@ -24,7 +24,6 @@
  * byte-code segment
  */
 typedef struct {
-  MemHandle mem_h; /**< memory handle (if it is used) */
   code_t *ptr; /**< pointer to byte-code */
   addr_t cp; /**< current position (used by readers not writers) */
   addr_t size; /**< allocation size (optimization) */

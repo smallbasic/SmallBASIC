@@ -29,12 +29,15 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NativeActivity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -52,14 +55,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
  *
  * @author chrisws
  */
-@TargetApi(Build.VERSION_CODES.GINGERBREAD)
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class MainActivity extends NativeActivity {
   private static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
@@ -70,7 +72,7 @@ public class MainActivity extends NativeActivity {
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
-  private String[] options = null;
+  private String[] _options = null;
 
   static {
     System.loadLibrary("smallbasic");
@@ -85,6 +87,35 @@ public class MainActivity extends NativeActivity {
     for (Sound sound : _sounds) {
       sound.setSilent(true);
     }
+  }
+
+  public String getClipboardText() {
+    final StringBuilder result = new StringBuilder();
+    final Context context = this;
+    final Semaphore mutex = new Semaphore(0);
+    final Runnable runnable = new Runnable() {
+      public void run() {
+        ClipboardManager clipboard =
+          (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = clipboard.getPrimaryClip();
+        if (clip != null && clip.getItemCount() > 0) {
+          ClipData.Item item = clip.getItemAt(0);
+          if (item != null) {
+            String data = item.coerceToText(context).toString();
+            result.append(data == null ? "" : data);
+          }
+        }
+        mutex.release();
+      }
+    };
+    runOnUiThread(runnable);
+    try {
+      mutex.acquire();
+    } catch (InterruptedException e) {
+      Log.i(TAG, "getClipboardText failed: ", e);
+      e.printStackTrace();
+    }
+    return result.toString();
   }
 
   public String getIPAddress() {
@@ -148,15 +179,15 @@ public class MainActivity extends NativeActivity {
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    if (this.options != null) {
+    if (this._options != null) {
       int index = 0;
-      while (index < this.options.length) {
-        if (options[index].equals(item.toString())) {
+      while (index < this._options.length) {
+        if (_options[index].equals(item.toString())) {
           break;
         }
         index++;
       }
-      Log.i(TAG, "items clicked = " + index);
+      Log.i(TAG, "item clicked = " + index);
       optionSelected(index);
     }
     return true;
@@ -164,9 +195,9 @@ public class MainActivity extends NativeActivity {
   
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
-    if (this.options != null) {
+    if (this._options != null) {
       menu.clear();
-      for (String option : this.options) {
+      for (String option : this._options) {
         menu.add(option);
       }
     }
@@ -174,7 +205,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public void optionsBox(final String[] items) {
-    this.options = items;
+    this._options = items;
     runOnUiThread(new Runnable() {
       public void run() {
         openOptionsMenu();
@@ -195,6 +226,17 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void setClipboardText(final String text) {
+    runOnUiThread(new Runnable() {
+      public void run() {
+        ClipboardManager clipboard =
+         (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText("text", text);
+       clipboard.setPrimaryClip(clip);
+      }
+    });
+  }
+  
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {

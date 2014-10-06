@@ -17,7 +17,7 @@
 #if !defined(_sb_cvm_h)
 #define _sb_cvm_h
 
-#include "common/pmem.h"
+#include "common/sys.h"
 
 #ifdef V_INT
 #undef V_INT
@@ -51,7 +51,7 @@
 #define SYSVAR_TRUE         6  /**< system variable, TRUE      @ingroup var */
 #define SYSVAR_FALSE        7  /**< system variable, FALSE     @ingroup var */
 #define SYSVAR_LINECHART    8  /**< system variable, LINECHART @ingroup var */
-#define SYSVAR_BARCHART     9 /**< system variable, BARCHART  @ingroup var */
+#define SYSVAR_BARCHART     9  /**< system variable, BARCHART  @ingroup var */
 #define SYSVAR_PWD          10 /**< system variable, PWD$      @ingroup var */
 #define SYSVAR_HOME         11 /**< system variable, HOME$     @ingroup var */
 #define SYSVAR_COMMAND      12 /**< system variable, COMMAND$  @ingroup var */
@@ -59,6 +59,7 @@
 #define SYSVAR_Y            14 /**< system variable, Y         @ingroup var */
 #define SYSVAR_Z            15 /**< system variable, Z         @ingroup var */
 #define SYSVAR_VIDADR       16 /**< system variable, VIDADR    @ingroup var */
+#define SYSVAR_COUNT        17 /**< number of system variables @ingroup var */
 
 /**
  * @ingroup var
@@ -66,12 +67,12 @@
  */
 #define MAXDIM 6     // think before increase this, (possible stack overflow)
 
-#include "common/scan.h"  // compiler structures
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-typedef void (*method) (const void *self);
+struct var_s;
+typedef void (*method) (struct var_s *self);
 
 /**
  * @ingroup var
@@ -95,20 +96,23 @@ struct var_s {
     } ap;
 
     // associative array/map
-    void *map; /** pointer the map structure */
+    struct {
+      void *map; /** pointer the map structure */
+      int32 size;
+    } m;
 
     // reference variable
-    void *ref;
+    struct var_s *ref;
 
     // object method
     struct {
       method cb;
-      void *self;
+      struct var_s *self;
     } fn;
 
     // generic ptr (string)
     struct {
-      byte *ptr; /**< data ptr (possibly, string pointer) */
+      char *ptr; /**< data ptr (possibly, string pointer) */
       int32 size; /**< the size of string */
       int32 pos; /**< position in string (used by pv_* functions) */
     } p;
@@ -475,13 +479,13 @@ int v_length(var_t *v);
  v_setint(myvar_p, 0x100);        // Variable will be cleared automatically
  ...
  v_free(myvar_p);             // clear variable's data
- tmp_free(myvar_p);               // free the variable
+ free(myvar_p);               // free the variable
  }
 
  Old API routines that is good to use them:
 
  v_init(), v_free()                  --- basic
- v_new(), v_clone(), v_new_matrix()  --- create vars in heap, dont forget the tmp_free()
+ v_new(), v_clone(), v_new_matrix()  --- create vars in heap, dont forget the free()
 
  v_resize_array()                    --- resize an 1-dim array
  v_tomatrix(), v_toarray1()          --- convertion to matrix (RxC) or 1D array
@@ -548,7 +552,7 @@ void v_setreal(var_t *var, var_num_t number);
  * @param var is the variable
  * @param integer is the integer
  */
-void v_setint(var_t *var, int32 integer);
+void v_setint(var_t *var, var_int_t integer);
 
 /**
  * @ingroup var
@@ -658,11 +662,29 @@ char *v_getstr(var_t *v);
 /**
  * @ingroup var
  *
- * creates an image object
+ * creates an system image object
  *
  * @param v is the variable
  */
 void v_create_image(var_p_t var);
+
+/**
+ * @ingroup var
+ *
+ * creates an system form object
+ *
+ * @param v is the variable
+ */
+void v_create_form(var_p_t var);
+
+/**
+ * @ingroup var
+ *
+ * creates an system window object
+ *
+ * @param v is the variable
+ */
+void v_create_window(var_p_t var);
 
 void code_jump_label(word label_id);  // IP <- LABEL_IP_TABLE[label_id]
 
@@ -684,7 +706,16 @@ void code_push(stknode_t *node);
  *
  * @param node the stack node
  */
-void code_pop(stknode_t *node);
+void code_pop(stknode_t *node, int expected_type);
+
+/**
+ * @ingroup exec
+ *
+ * Returns and deletes the topmost node from stack (POP)
+ *
+ * @param node the stack node
+ */
+void code_pop_and_free(stknode_t *node);
 
 /**
  * @ingroup exec
@@ -792,7 +823,7 @@ void mat_tov(var_t *v, var_num_t *m, int32 rows, int32 cols,
              int protect_col1);
 
 #if defined(__cplusplus)
-  }
+}
 #endif
 
 #endif

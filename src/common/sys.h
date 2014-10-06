@@ -7,31 +7,6 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-/**
- * @ingroup sys
- * @page sbsys System macros (SB/OS/CPU) and Memory manager
- *
- * <b>CPU's FLAGS</b>
- *
- * CPU_BIGENDIAN       The words are stored reversed; first the low-byte followed by high-byte (Intel x86)
- *
- * CPU_LITTLEENDIAN    The words are stored normal; first the high-byte followed by low-byte (Motorola 68K)
- *
- * <b>OS FLAGS</b>
- *
- * OS_PATHNAME_SIZE    Maximum full-path name size (DOS=64,Unix/Win32=1024)
- *
- * OS_FILENAME_SIZE    Maximum filename size (DOS=12,Unix/Win32=256)
- *
- * OS_NAME             OS name!
- *
- * OS_DIRSEP           OS directory separator (unix=/, win=\\)
- *
- * OS_FILEHANDLES      Number of file handles to use.
- *                     Because there is a static array with information about each handle,
- *                     use small numbers on limited systems (a value of 16 is good enough).
- */
-
 #if !defined(SB_SYS_H)
 #define SB_SYS_H
 
@@ -87,29 +62,6 @@ typedef long int var_int_t;
 
 #define OS_INTSZ  sizeof(var_int_t)  // size of integer
 #define OS_REALSZ sizeof(var_num_t)  // size of real
-
-#define mem_lock(h) (void *)(h)
-#define mem_unlock(h)
-
-#if !HAVE_MALLOC_USABLE_SIZE && !defined(HAVE_MALLOC_USABLE_SIZE)
-
-#define HAVE_MALLOC_USABLE_SIZE 1
-
-#if defined(__MINGW32__)
-#define malloc_usable_size _msize
-#endif
-
-// simplified versions of functions in mem.c
-#define tmp_alloc(s) malloc(s)
-#define tmp_realloc(ptr, size) realloc(ptr, size)
-#define tmp_free(p)  free(p)
-#define tmp_strdup(str) strdup(str)
-#define mem_alloc(p) (mem_t)malloc(p)
-#define mem_realloc(ptr, size) (mem_t)realloc((void *)ptr, size)
-#define mem_free(h)  free((void *)h)
-#define mem_handle_size(p) malloc_usable_size((void *)p)
-#endif
-
 #define OS_PATHNAME_SIZE    1024
 #define OS_FILENAME_SIZE    256
 #define OS_FILEHANDLES      256
@@ -142,10 +94,6 @@ typedef long int var_int_t;
 #include "common/pmem.h"
 #include "common/panic.h"
 #include "common/str.h"
-
-// global command-line args
-extern char **g_argv; /**< global pointer to **argv   @ingroup sys */
-extern int g_argc; /**< global to argc             @ingroup sys */
 
 #if !defined(O_BINARY)
 #define O_BINARY 0

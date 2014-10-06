@@ -17,10 +17,10 @@
 #include <fltk/events.h>
 #include <fltk/run.h>
 
-#include "MainWindow.h"
-#include "HelpWidget.h"
-#include "FileWidget.h"
-#include "ui/StringLib.h"
+#include "platform/fltk/MainWindow.h"
+#include "platform/fltk/HelpWidget.h"
+#include "platform/fltk/FileWidget.h"
+#include "ui/strlib.h"
 #include "common/device.h"
 
 FileWidget *fileWidget;
@@ -45,7 +45,7 @@ struct FileNode {
 int stringCompare(const void *a, const void *b) {
   String *s1 = ((String **) a)[0];
   String *s2 = ((String **) b)[0];
-  return strcasecmp(s1->toString(), s2->toString());
+  return strcasecmp(s1->c_str(), s2->c_str());
 }
 
 int fileNodeCompare(const void *a, const void *b) {
@@ -59,7 +59,7 @@ int fileNodeCompare(const void *a, const void *b) {
     } else if (!n1->isdir && n2->isdir) {
       result = 1;
     } else {
-      result = strcasecmp(n1->name.toString(), n2->name.toString());
+      result = strcasecmp(n1->name.c_str(), n2->name.c_str());
     }
     break;
   case e_size:
@@ -186,7 +186,7 @@ const char *FileWidget::trimEOL(char *buffer) {
 // anchor link clicked
 //
 void FileWidget::anchorClick() {
-  const char *target = click.toString();
+  const char *target = click.c_str();
 
   switch (target[0]) {
   case CMD_CHG_DIR:
@@ -250,10 +250,10 @@ void FileWidget::anchorClick() {
   } else {
     setDocHome(docHome);
     String fullPath;
-    fullPath.append(docHome.toString());
+    fullPath.append(docHome.c_str());
     fullPath.append("/");
     fullPath.append(target[0] == '/' ? target + 1 : target);
-    wnd->editFile(fullPath.toString());
+    wnd->editFile(fullPath.c_str());
   }
 }
 

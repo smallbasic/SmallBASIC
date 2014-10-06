@@ -65,7 +65,7 @@ void dev_pfill(ipt_t * pts, int ptNum) {
   if (ptNum < 3)
     return;
 
-  EdgeTableBuffer = (struct EdgeState *) tmp_alloc(sizeof(struct EdgeState) * (ptNum + 1));
+  EdgeTableBuffer = (struct EdgeState *) malloc(sizeof(struct EdgeState) * (ptNum + 1));
 
   /*
    * Build the global edge table. 
@@ -78,9 +78,11 @@ void dev_pfill(ipt_t * pts, int ptNum) {
    *      so long as at least one edge remains in either the GET or AET 
    */
   AETPtr = NULL; /* initialize the active edge table to empty */
-  if (GETPtr != NULL
-    )
+  if (GETPtr != NULL) {
     CurrentY = GETPtr->StartY; /* start at the top polygon vertex */
+  } else {
+    CurrentY = 0;
+  }
   while ((GETPtr != NULL) || (AETPtr != NULL)) {
     pf_move_xsorted_AET(CurrentY); /* update AET for this scan line */
     pf_scan_out_AET(CurrentY); /* draw this scan line from AET */
@@ -89,7 +91,7 @@ void dev_pfill(ipt_t * pts, int ptNum) {
     CurrentY++; /* advance to the next scan line */
   }
 
-  tmp_free(EdgeTableBuffer);
+  free(EdgeTableBuffer);
 }
 
 /* 

@@ -4,51 +4,34 @@
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-// 
+//
 
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#if defined(HAVE_CONFIG_H)
 #include <config.h>
-#endif
 
-#if defined(_MOSYNC)
-  #include <maapi.h>
-  #define LINE_SPACING 6
-#else
-  #include "ui/maapi.h"
-  #define LINE_SPACING 0
-#endif
-
-#include "ui/StringLib.h"
+#include "lib/maapi.h"
+#include "ui/strlib.h"
 #include "ui/utils.h"
+#include "ui/shape.h"
+#include "ui/image.h"
+#include "ui/inputs.h"
 
 using namespace strlib;
 
+#define LINE_SPACING 0
 #define INITXY 2
 #define NO_COLOR -1
-#define GRAY_BG_COL    0x383f42
-#define LABEL_TEXT_COL 0xebebeb
-
-struct Shape {
-  Shape(int x, int y, int w, int h) : _x(x), _y(y), _width(w), _height(h) {}
-  virtual ~Shape() {}
-  virtual void draw(int x, int y, int bw, int cw) {}
-
-  int w() { return _width; }
-  int h() { return _height; }
-  int _x, _y, _width, _height;
-};
 
 struct Screen : public Shape {
   Screen(int x, int y, int width, int height, int fontSize);
   virtual ~Screen();
-  
+
   virtual void calcTab() = 0;
   virtual bool construct() = 0;
   virtual void clear();
-  virtual void drawBase(bool vscroll) = 0;
+  virtual void drawBase(bool vscroll, bool update=true) = 0;
   virtual void drawInto(bool background=false);
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
@@ -56,27 +39,39 @@ struct Screen : public Shape {
   virtual int  getPixel(int x, int y) = 0;
   virtual void newLine(int lineHeight) = 0;
   virtual int  print(const char *p, int lineHeight, bool allChars=false);
-  virtual bool setGraphicsRendition(char c, int escValue, int lineHeight) = 0;
+  virtual bool setGraphicsRendition(const char c, int escValue, int lineHeight) = 0;
   virtual void setPixel(int x, int y, int c) = 0;
-  virtual void reset(int fontSize = -1);
-  virtual void resize(int newWidth, int newHeight, int oldWidth, 
+  virtual void reset(int fontSize);
+  virtual void resize(int newWidth, int newHeight, int oldWidth,
                       int oldHeight, int lineHeight) = 0;
   virtual void updateFont() = 0;
   virtual int  getMaxHScroll() = 0;
 
-  int ansiToMosync(long c);
   void add(Shape *button);
+  void addImage(ImageDisplay &image);
+  int  ansiToMosync(long c);
+  void drawShape(Shape *button);
   void drawOverlay(bool vscroll);
+  FormInput *getMenu(FormInput *prev, int px, int py);
+  FormInput *getNextField(FormInput *field);
+  void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
   bool overlaps(int px, int py);
   void remove(Shape *button);
+  void removeImage(unsigned imageId);
+  void removeInput(FormInput *input);
+  void removeInputs() { _inputs.removeAll(); }
+  void replaceFont(int type = FONT_TYPE_MONOSPACE);
+  void resetScroll() { _scrollX = 0; _scrollY = 0; }
   void setColor(long color);
   void setDirty() { if (!_dirty) { _dirty = maGetMilliSecondCount(); } }
+  void setFont(bool bold, bool italic, int size);
+  void setScroll(int x, int y) { _scrollX = x; _scrollY = y; }
   void setTextColor(long fg, long bg);
-  void setFont(bool bold, bool italic);
-  void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
+  void updateInputs(var_p_t form);
 
   MAHandle _font;
   int _fontSize;
+  int _fontStyle;
   int _charWidth;
   int _charHeight;
   int _scrollX;
@@ -86,8 +81,10 @@ struct Screen : public Shape {
   int _curY;
   int _dirty;
   int _linePadding;
-  strlib::List<Shape *> _shapes;
   String _label;
+  strlib::List<Shape *> _shapes;
+  strlib::List<FormInput *> _inputs;
+  strlib::List<ImageDisplay *> _images;
 };
 
 struct GraphicScreen : public Screen {
@@ -97,7 +94,7 @@ struct GraphicScreen : public Screen {
   void calcTab();
   bool construct();
   void clear();
-  void drawBase(bool vscroll);
+  void drawBase(bool vscroll, bool update=true);
   void drawInto(bool background=false);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
@@ -106,11 +103,12 @@ struct GraphicScreen : public Screen {
   void imageAppend(MAHandle newImage);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight, bool allChars=false);
-  void reset(int fontSize = -1);
-  bool setGraphicsRendition(char c, int escValue, int lineHeight);
+  void reset(int fontSize);
+  bool setGraphicsRendition(const char c, int escValue, int lineHeight);
   void setPixel(int x, int y, int c);
-  void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight);
-  void updateFont() { setFont(_bold, _italic); }
+  void resize(int newWidth, int newHeight, int oldWidth, 
+              int oldHeight, int lineHeight);
+  void updateFont() { replaceFont(); }
   int  getPixel(int x, int y);
   int  getMaxHScroll() { return 0; }
 
@@ -141,7 +139,7 @@ struct TextSeg {
     _flags(0),
     _color(NO_COLOR),
     _next(0) {}
-  
+
   ~TextSeg() {
     if (_str) {
       delete[]_str;
@@ -149,14 +147,14 @@ struct TextSeg {
   }
 
   // sets the reset flag
-  void reset() { 
-    set(RESET, true); 
+  void reset() {
+    set(RESET, true);
   }
 
   // returns whether the reset flag is set
-  bool isReset() const { 
-    return set(RESET); 
-  } 
+  bool isReset() const {
+    return set(RESET);
+  }
 
   void setText(const char *str, int n) {
     if ((!str || !n)) {
@@ -186,8 +184,8 @@ struct TextSeg {
   }
 
   // return whether the flag was set (to true or false)
-  bool set(int f) const { 
-    return (_flags & (f << 16)); 
+  bool set(int f) const {
+    return (_flags & (f << 16));
   }
 
   // return the flag value if set, otherwise return value
@@ -206,8 +204,8 @@ struct TextSeg {
   }
 
   // number of chars in this segment
-  int numChars() const { 
-    return !_str ? 0 : strlen(_str); 
+  int numChars() const {
+    return !_str ? 0 : strlen(_str);
   }
 
   // update font and state variables when set in this segment
@@ -226,7 +224,7 @@ struct TextSeg {
 };
 
 struct Row {
-  Row() : _head(0) {} 
+  Row() : _head(0) {}
   ~Row() {
     clear();
   }
@@ -308,24 +306,25 @@ struct Row {
 };
 
 struct TextScreen : public Screen {
-  TextScreen(int width, int height, int fontSize, 
-             int x, int y, int w, int h);
+  TextScreen(int width, int height, int fontSize);
   virtual ~TextScreen();
 
   void calcTab();
   bool construct();
   void clear();
-  void drawBase(bool vscroll);
+  void drawBase(bool vscroll, bool update=true);
   void drawText(const char *text, int len, int x, int lineHeight);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
   int  getPixel(int x, int y) { return 0; }
+  void inset(int x, int y, int w, int h, Screen *over);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight, bool allChars=false);
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
-  bool setGraphicsRendition(char c, int escValue, int lineHeight);
+  bool setGraphicsRendition(const char c, int escValue, int lineHeight);
+  void setOver(Screen *over) { _over = over; }
   void setPixel(int x, int y, int c) {}
   void updateFont() {}
   int  getMaxHScroll() { return (_cols * _charWidth) - w(); }
@@ -343,9 +342,8 @@ private:
     return (_height - 1) / _charHeight;
   }
 
-  void setSizes(int screenW, int screenH);
-
-  Shape _rectangle;  // relative screen size (percentage)
+  Screen *_over;     // inset over screen
+  Shape _inset;      // relative screen size
   Row *_buffer;      // buffer management
   int _head;         // current head of buffer
   int _tail;         // buffer last line

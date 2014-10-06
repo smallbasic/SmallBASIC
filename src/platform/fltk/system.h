@@ -6,14 +6,17 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef FLTK_SYSTEM_H
+#define FLTK_SYSTEM_H
 
 struct System {
   bool isBreak();
   bool isRunning();
-  void buttonClicked(const char *url);
+  void setLoadPath(const char *url);
+  void setLoadBreak(const char *url);
   MAEvent processEvents(bool wait);
+  void optionsBox(StringList *items);
+  AnsiWidget *getOutput();
 };
 
 #endif

@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#define pfree(a)    { if ((a))    tmp_free((a)); }
+#define pfree(a)    { if ((a))    free((a)); }
 /**< simple macro for free() @ingroup par */
 #define pfree2(a,b)   { pfree((a)); pfree((b));  }
 /**< simple macro for free() 2 ptrs @ingroup par */

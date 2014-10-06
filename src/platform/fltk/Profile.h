@@ -13,7 +13,7 @@
 #include <fltk/Font.h>
 #include <fltk/Rectangle.h>
 
-#include "ui/StringLib.h"
+#include "ui/strlib.h"
 
 using namespace fltk;
 using namespace strlib;

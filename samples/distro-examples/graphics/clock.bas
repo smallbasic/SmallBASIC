@@ -1,3 +1,5 @@
+option predef antialias off
+
 ' draw an analogical-clock
 ' inachus@freemail.gr
 color 0, 15

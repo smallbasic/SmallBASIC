@@ -16,7 +16,7 @@
 #include <FUiContainer.h>
 
 #include "ui/maapi.h"
-#include "ui/StringLib.h"
+#include "ui/strlib.h"
 
 #define MSG_ID_REDRAW 5001
 #define MSG_ID_SHOW_KEYPAD 5002

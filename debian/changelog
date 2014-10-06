@@ -1,3 +1,9 @@
+smallbasic (0.11.17) unstable; urgency=low
+  * Fix compiler ignoring unused assignment values
+  * Implement  IMAGE
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 4 October 2014 09:45:25 +1000
+
 smallbasic (0.11.16) unstable; urgency=low
   * Add support for unary operators on array elements
   * Fix call FUNC with (arg1), (arg2)

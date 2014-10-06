@@ -64,7 +64,6 @@ libsb_common_a_SOURCES =                                      \
     $(COMMON)/keymap.c $(COMMON)/keymap.h                     \
     $(COMMON)/units.c $(COMMON)/units.h                       \
     $(COMMON)/var.c $(COMMON)/var.h                           \
-    $(COMMON)/vmt.c $(COMMON)/vmt.h                           \
     $(COMMON)/messages.h                                      \
     $(COMMON)/osd.h                                           \
     $(COMMON)/pdb.h                                           \

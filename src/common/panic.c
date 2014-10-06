@@ -13,6 +13,7 @@
 
 #include "common/sys.h"
 #include "common/panic.h"
+#include "common/device.h"
 #include <assert.h>
 
 static char preload_panic_buffer[SB_PANICMSG_SIZE + 1];
@@ -37,7 +38,6 @@ void panic(const char *fmt, ...) {
   fprintf(stderr, "\n\nPANIC: %s\a\n\n", preload_panic_buffer);
   fflush(stderr);
   assert(0);
-  memmgr_setabort(1);
   exit(1);
 #endif
 }
@@ -89,9 +89,9 @@ void hex_dump(const unsigned char *block, int size) {
   printf("\n---HexDump---\n\t");
   for (i = 0; i < size; i++) {
     printf("%02X ", block[i]);
-    if (((i + 1) % 8) == 0 || (i == size - 1)) {
-      printf("  ");
-      for (j = ((i - 7 <= 0) ? 0 : i - 7); j <= i; j++) {
+    if (((i + 1) % 16) == 0 || (i == size - 1)) {
+      printf(" %04x ", i);
+      for (j = ((i - 15 <= 0) ? 0 : i - 15); j <= i; j++) {
         if (block[j] < 32) {
           printf(".");
         } else {

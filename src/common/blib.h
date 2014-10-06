@@ -25,6 +25,7 @@ void dump_stack(void);
 
 // first class
 void cmd_udp(int);
+addr_t cmd_push_args(int cmd, addr_t goto_addr, addr_t rvid);
 void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid);
 void cmd_udpret(void);
 void cmd_crvar(void);
@@ -73,6 +74,7 @@ void cmd_bcopy(void);
 void cmd_calladr(void);
 void cmd_catch();
 void cmd_call_vfunc();
+void cmd_timer();
 
 var_num_t cmd_math1(long funcCode, var_t *arg);
 var_int_t cmd_imath1(long funcCode, var_t *arg);

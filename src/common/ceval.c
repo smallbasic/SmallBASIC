@@ -93,6 +93,12 @@ void cev_prim_var() {
   }
 }
 
+void cev_empty_args() {
+  cev_add1(kwTYPE_LEVEL_BEGIN);
+  cev_add1(kwTYPE_LEVEL_END);
+  IP += 2;
+}
+
 // function [(...)]
 void cev_prim_args() {
   cev_add1(kwTYPE_LEVEL_BEGIN);
@@ -176,7 +182,11 @@ void cev_prim() {
     IP += ADDRSZ;              // no break here
   default:
     if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-      cev_prim_args();
+      if (CODE(IP + 1) == kwTYPE_LEVEL_END) {
+        cev_empty_args();
+      } else {
+        cev_prim_args();
+      }
     }
     break;
   };
@@ -188,7 +198,11 @@ void cev_prim() {
 void cev_parenth() {
   IF_ERR_RTN;
   if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
-    cev_prim_args();
+    if (CODE(IP + 1) == kwTYPE_LEVEL_END) {
+      cev_empty_args();
+    } else {
+      cev_prim_args();
+    }
   } else {
     cev_prim();
   }
@@ -334,7 +348,7 @@ void cev_log(void) {
 void expr_parser(bc_t *bc_src) {
   // init
   bc_in = bc_src;
-  bc_out = tmp_alloc(sizeof(bc_t));
+  bc_out = malloc(sizeof(bc_t));
   bc_create(bc_out);
 
   byte code = CODE_PEEK();
@@ -344,7 +358,7 @@ void expr_parser(bc_t *bc_src) {
   //
   if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
     bc_destroy(bc_out);
-    tmp_free(bc_out);
+    free(bc_out);
     return;
   }
   //
@@ -355,7 +369,7 @@ void expr_parser(bc_t *bc_src) {
     if (CODE(IP) != '=') {
       cev_opr_err();
       bc_destroy(bc_out);
-      tmp_free(bc_out);
+      free(bc_out);
       return;
     } else {
       IP++;
@@ -400,5 +414,5 @@ void expr_parser(bc_t *bc_src) {
   }
 
   bc_destroy(bc_out);
-  tmp_free(bc_out);
+  free(bc_out);
 }

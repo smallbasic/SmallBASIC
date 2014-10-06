@@ -10,8 +10,8 @@
 #include <ctype.h>
 #include <fltk/Monitor.h>
 
-#include "Profile.h"
-#include "MainWindow.h"
+#include "platform/fltk/Profile.h"
+#include "platform/fltk/MainWindow.h"
 
 const char *configFile = "config.txt";
 const char *pathKey = "path";
@@ -67,7 +67,7 @@ void Profile::restore(MainWindow *wnd) {
     rewind(fp);
     buffer.append(fp, len);
     fclose(fp);
-    profile.load(buffer.toString(), buffer.length());
+    profile.load(buffer.c_str(), buffer.length());
 
     restoreValue(&profile, indentLevelKey, &_indentLevel);
     restoreValue(&profile, createBackupsKey, &_createBackups);
@@ -145,8 +145,8 @@ int Profile::nextInteger(const char *s, int len, int &index) {
 Rectangle Profile::restoreRect(Properties *profile, const char *key) {
   Rectangle result(0, 0, 0, 0);
   String *value = profile->get(key);
-  if (value != null) {
-    const char *buffer = value->toString();
+  if (value != NULL) {
+    const char *buffer = value->c_str();
     int index = 0;
     int len = strlen(buffer);
 
@@ -166,7 +166,7 @@ void Profile::restoreStyles(Properties *profile) {
   restoreValue(profile, fontSizeKey, &_fontSize);
   String *fontName = profile->get(fontNameKey);
   if (fontName) {
-    _font = fltk::font(fontName->toString());
+    _font = fltk::font(fontName->c_str());
   }
 
   for (int i = 0; i <= st_background; i++) {
@@ -174,7 +174,7 @@ void Profile::restoreStyles(Properties *profile) {
     sprintf(buffer, "%02d", i);
     String *color = profile->get(buffer);
     if (color) {
-      Color c = fltk::color(color->toString());
+      Color c = fltk::color(color->c_str());
       if (c != NO_COLOR) {
         if (i == st_background) {
           this->_color = c;
@@ -196,7 +196,7 @@ void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
 
   List_each(String*, it, paths) {
     String *nextString = (*it);
-    const char *buffer = nextString->toString();
+    const char *buffer = nextString->c_str();
     int index = 0;
     int len = strlen(buffer);
     int logPrint = nextInteger(buffer, len, index);
@@ -232,8 +232,8 @@ void Profile::restoreTabs(MainWindow *wnd, Properties *profile) {
 
   // restore the active tab
   String *activeTab = profile->get(activeTabKey);
-  if (activeTab != null) {
-    EditorWidget *editWidget = wnd->getEditor(activeTab->toString());
+  if (activeTab != NULL) {
+    EditorWidget *editWidget = wnd->getEditor(activeTab->c_str());
     if (editWidget) {
       wnd->showEditTab(editWidget);
     }

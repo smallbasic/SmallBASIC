@@ -137,6 +137,18 @@ func eval(byref expr)
   eval = result
 end
 
+sub mk_bn(byref f, fgc, bgc, x, y, w, h, caption)
+  local button
+  button.x = x
+  button.y = y
+  button.width = w
+  button.height = h
+  button.label = caption
+  button.color = fgc
+  button.backgroundColor = bgc
+  f.inputs << button
+end
+
 func createForm
   local w = 60
   local h = 60
@@ -152,37 +164,40 @@ func createForm
 
   out_x = x + 3
   out_y = 5
-  
-  color fcf, fcb: button  x, y, w, h, b_mc,   "MC"
-  color ncf, ncb: button -1, y, w, h, b_7,    "7"
-  color ncf, ncb: button -1, y, w, h, b_8,    "8"
-  color ncf, ncb: button -1, y, w, h, b_9,    "9"
-  color ocf, ocb: button -1, y, w, h, b_add,  "+"
-  color ocf, ocb: button -1, y, w, h, b_sub,  "-"
+
+  mk_bn(f, fcf, fcb, x, y, w, h, "MC")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "7")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "8")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "9")
+  mk_bn(f, ocf, ocb, -1, y, w, h, "+")
+  mk_bn(f, ocf, ocb, -1, y, w, h, "-")
 
   y += h
-  color fcf, fcb: button  x, y, w, h, b_mr,   "MR"
-  color ncf, ncb: button -1, y, w, h, b_4,    "4"
-  color ncf, ncb: button -1, y, w, h, b_5,    "5"
-  color ncf, ncb: button -1, y, w, h, b_6,    "6"
-  color ocf, ocb: button -1, y, w, h, b_mul,  "*"
-  color ocf, ocb: button -1, y, w, h, b_div,  "/"
+  mk_bn(f, fcf, fcb,  x, y, w, h, "MR")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "4")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "5")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "6")
+  mk_bn(f, ocf, ocb, -1, y, w, h, "*")
+  mk_bn(f, ocf, ocb, -1, y, w, h, "/")
 
   y += h
-  color fcf, fcb: button  x, y, w, h, b_ms,   "MS"
-  color ncf, ncb: button -1, y, w, h, b_1,    "1"
-  color ncf, ncb: button -1, y, w, h, b_2,    "2"
-  color ncf, ncb: button -1, y, w, h, b_3,    "3"
-  color ocf, ocb: button -1, y, w, h, b_ob,   "("
-  color ocf, ocb: button -1, y, w, h, b_cb,   ")"
+  mk_bn(f, fcf, fcb,  x, y, w, h, "MS")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "1")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "2")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "3")
+  mk_bn(f, ocf, ocb, -1, y, w, h, "(")
+  mk_bn(f, ocf, ocb, -1, y, w, h, ")")
 
   y += h
-  color fcf, fcb: button  x, y, w, h, b_ex,   "EXIT"
-  color ncf, ncb: button -1, y, w, h, b_0,    "0"
-  color ncf, ncb: button -1, y, w, h, b_dot,  "."
-  color fcf, fcb: button -1, y, w, h, b_bs,   "BS
-  color fcf, fcb: button -1, y, w, h, b_ce,   "CE"
-  color ocf, ocb: button -1, y, w, h, b_eq,   "="
+  mk_bn(f, fcf, fcb,  x, y, w, h, "EXIT")
+  mk_bn(f, ncf, ncb, -1, y, w, h, "0")
+  mk_bn(f, ncf, ncb, -1, y, w, h, ".")
+  mk_bn(f, fcf, fcb, -1, y, w, h, "BS")
+  mk_bn(f, fcf, fcb, -1, y, w, h, "CE")
+  mk_bn(f, ocf, ocb, -1, y, w, h, "=")
+
+  f = form(f)
+  createForm = f
 end
 
 func showResult(result)
@@ -212,53 +227,48 @@ sub main
   local mem = ""
 
   rect 0, 0, xmax, ymax, 1 FILLED
-  createForm
+  f = createForm
   showResult result  
-  b_eq = "="
   
-  ' turn on keyboard mode
-  doform 1
-
   while 1
-    doform form_var
-    
+    f.doEvents()
     k = inkey
+    form_var = f.value
     if (len(k) == 1) then
-      if (asc(k) == 127) then
-        form_var = b_bs
-      else if (asc(k) == 13) then
-        form_var = b_eq
+      if (asc(k) == 8) then
+        form_var = "BS"
+      else if (asc(k) == 127) then
+        form_var = "CE"
       else
         form_var = k
       fi
     fi
-    
     select case form_var
-    case b_ce
+    case "CE"
       ' clear all
       result = "0"
-    case b_bs
+    case "BS"
       ' back space
       if len(result) > 1 then
         result = left(result, len(result)-1)
       else 
         result = "0"
       fi
-    case b_mc
+    case "MC"
       mem = ""
-    case b_mr
+    case "MR"
       if (mem != "") then
         result = mem
       fi
-    case b_ms
+    case "MS"
       mem = result
-    case b_ex
+    case "EXIT"
       exit loop
-    case b_dot
+    case "."
       if len(result) > 0 && right(result, 1) != "." then
         result += "."
       fi
-    case b_eq
+    case "="
       if (instr(result, "=") == 0) then
         result = result + form_var + eval(result)
       fi

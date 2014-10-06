@@ -11,8 +11,8 @@
 
 #include <SDL.h>
 
-#include "ui/maapi.h"
-#include "ui/StringLib.h"
+#include "lib/maapi.h"
+#include "ui/strlib.h"
 #include "ui/graphics.h"
 
 struct Graphics : common::Graphics {

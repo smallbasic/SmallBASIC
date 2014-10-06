@@ -89,7 +89,7 @@ void destroy_tasks() {
   task_count = 0;
   task_index = 0;
   ctask = NULL;
-  tmp_free(tasks);
+  free(tasks);
   tasks = NULL;
 }
 
@@ -109,7 +109,7 @@ int create_task(const char *name) {
     // this is the first task
     tid = task_count;
     task_count++;
-    tasks = (task_t *) tmp_alloc(sizeof(task_t) * task_count);
+    tasks = (task_t *) malloc(sizeof(task_t) * task_count);
   } else {
     // search for an available free entry
     for (i = 0; i < task_count; i++) {
@@ -123,7 +123,7 @@ int create_task(const char *name) {
     if (tid == -1) {
       tid = task_count;
       task_count++;
-      tasks = (task_t *) tmp_realloc(tasks, sizeof(task_t) * task_count);
+      tasks = (task_t *) realloc(tasks, sizeof(task_t) * task_count);
     }
   }
 

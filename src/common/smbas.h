@@ -62,6 +62,11 @@ typedef struct {
   int tid; /**< task id (updated on loading) */
 } bc_lib_rec_t;
 
+typedef struct {
+  int count;
+  bc_lib_rec_t **elem;
+} bc_lib_rec_table_t;
+
 /**
  * @ingroup exec
  *
@@ -76,8 +81,12 @@ typedef struct {
   int var_id; /**< related variable-id in this byte-code */
   int task_id; /**< task id which library is loaded (updated on loading) */
   int exp_idx; /**< export symbol-index in librarys space (updated on loading) */
-
 } bc_symbol_rec_t;
+
+typedef struct {
+  int count;
+  bc_symbol_rec_t **elem;
+} bc_symbol_rec_table_t;
 
 #define BRUN_RUNNING    0       /**< brun_status(), the program is still running  @ingroup exec */
 #define BRUN_STOPPED    1       /**< brun_status(), an error or 'break' has already stoped the program @ingroup exec */
@@ -94,40 +103,41 @@ typedef struct {
 #define OPT_CMD_SZ  1024
 #define OPT_MOD_SZ  1024
 
-EXTERN byte opt_graphics; /**< command-line option: start in graphics mode                @ingroup sys */
-EXTERN byte opt_quiet; /**< command-line option: quiet                                 @ingroup sys */
-EXTERN int opt_retval; /**< return-value (ERRORLEVEL)                                  @ingroup sys */
-EXTERN byte opt_decomp; /**< decompile                                                  @ingroup sys */
-EXTERN byte opt_syntaxcheck; /**< syntax check only                                          @ingroup sys */
-EXTERN char opt_command[OPT_CMD_SZ];
-/**< command-line parameters (COMMAND$)                         @ingroup sys */
-EXTERN byte opt_usevmt; /**< using VMT on compilation by default                        @ingroup sys */
-EXTERN int opt_base; /**< OPTION BASE x                                              @ingroup sys */
-EXTERN byte opt_uipos; /**< OPTION UICS {CHARS|PIXELS}                                 @ingroup sys */
-EXTERN byte opt_loadmod; /**< load all modules                                           @ingroup sys */
-EXTERN char opt_modlist[OPT_MOD_SZ];
-/**< Modules list                                               @ingroup sys */
-EXTERN int opt_verbose; /**< print some additional infos                                @ingroup sys */
-EXTERN int opt_ide; /**< SB runs through an IDE, store somewhere the last-error (0=no IDE, 1=IDE is linked, 2=IDE is external executable)   @ingroup sys */
-EXTERN byte os_charset; /**< use charset encoding                                       @ingroup sys */
-EXTERN int opt_pref_width; /**< prefered graphics mode width (0 = undefined)               @ingroup sys */
-EXTERN int opt_pref_height; /**< prefered graphics mode height (0 = undefined)              @ingroup sys */
-EXTERN byte opt_pref_bpp; /**< prefered graphics mode bits-per-pixel (0 = undefined)      @ingroup sys */
-EXTERN byte opt_nosave; /**< do not create .sbx files                                   @ingroup sys */
-EXTERN byte opt_interactive; /**< interactive mode                                           @ingroup sys */
-EXTERN byte opt_usepcre; /**< OPTION PREDEF PCRE                                         @ingroup sys */
-EXTERN byte opt_file_permitted; /**< file system permission */
-EXTERN byte opt_show_page; /**< SHOWPAGE graphics flush mode */
+EXTERN byte opt_graphics; /**< command-line option: start in graphics mode   */
+EXTERN byte opt_quiet; /**< command-line option: quiet                       */
+EXTERN int opt_retval; /**< return-value (ERRORLEVEL)                        */
+EXTERN byte opt_decomp; /**< decompile                                       */
+EXTERN byte opt_syntaxcheck; /**< syntax check only                          */
+EXTERN char opt_command[OPT_CMD_SZ]; /**< command-line parameters (COMMAND$) */
+EXTERN byte opt_usevmt; /**< using VMT on compilation by default             */
+EXTERN int opt_base; /**< OPTION BASE x                                      */
+EXTERN byte opt_uipos; /**< OPTION UICS {CHARS|PIXELS}                       */
+EXTERN byte opt_loadmod; /**< load all modules                               */
+EXTERN char opt_modlist[OPT_MOD_SZ]; /**< Modules list                       */
+EXTERN int opt_verbose; /**< print some additional infos                     */
+EXTERN int opt_ide; /**< 0=no IDE, 1=IDE is linked, 2=IDE is external exe)   */
+EXTERN byte os_charset; /**< use charset encoding                            */
+EXTERN int opt_pref_width; /**< prefered graphics mode width (0 = undefined) */
+EXTERN int opt_pref_height; /**< prefered graphics mode height               */
+EXTERN byte opt_pref_bpp; /**< prefered graphics mode bits-per-pixel )       */
+EXTERN byte opt_nosave; /**< do not create .sbx files                        */
+EXTERN byte opt_interactive; /**< interactive mode                           */
+EXTERN byte opt_usepcre; /**< OPTION PREDEF PCRE                             */
+EXTERN byte opt_file_permitted; /**< file system permission                  */
+EXTERN byte opt_show_page; /**< SHOWPAGE graphics flush mode                 */
+EXTERN byte opt_mute_audio; /**< whether to mute sounds                      */
+EXTERN byte opt_antialias; /**< OPTION ANTIALIAS OFF                          */
 
 #define IDE_NONE        0
 #define IDE_LINKED      1
 #define IDE_EXTERNAL    2
 
 // globals
-EXTERN int gsb_last_line; /**< source code line of the last error         @ingroup sys */
-EXTERN int gsb_last_error; /**< error code, 0 = no error,  < 0 = local messages (i.e. break), > 0 = error      @ingroup sys */
-EXTERN char gsb_last_file[OS_PATHNAME_SIZE + 1]; /**< source code file-name of the last error    @ingroup sys */
-EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message                         @ingroup sys */
+EXTERN int gsb_last_line; /**< source code line of the last error            */
+EXTERN int gsb_last_error; /**< error code, 0 = no error,  < 0 = local messages (i.e. break), > 0 = error       */
+EXTERN char gsb_last_file[OS_PATHNAME_SIZE + 1]; /**< source code file-name of the last error     */
+EXTERN char gsb_bas_dir[OS_PATHNAME_SIZE + 1]; /**< source code home dir     */
+EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 
 #include "common/units.h"
 #include "common/tasks.h"
@@ -141,7 +151,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_file           prog_file
 #define comp_errmsg         ctask->errmsg
 #define prog_errmsg         ctask->errmsg
-#define bytecode_h          ctask->bytecode_h
 #define prog_length         ctask->sbe.exec.length
 #define prog_ip             ctask->sbe.exec.ip
 #define prog_source         ctask->sbe.exec.bytecode
@@ -165,6 +174,7 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define prog_exptable       ctask->sbe.exec.exptable
 #define prog_uds_tab_ip     ctask->sbe.exec.uds_tab_ip
 #define prog_catch_ip       ctask->sbe.exec.catch_ip
+#define prog_timer          ctask->sbe.exec.timer
 #define comp_extfunctable   ctask->sbe.comp.extfunctable
 #define comp_extfunccount   ctask->sbe.comp.extfunccount
 #define comp_extfuncsize    ctask->sbe.comp.extfuncsize
@@ -175,13 +185,13 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_varcount       ctask->sbe.comp.varcount
 #define comp_varsize        ctask->sbe.comp.varsize
 #define comp_imptable       ctask->sbe.comp.imptable
-#define comp_impcount       ctask->sbe.comp.impcount
+#define comp_impcount       ctask->sbe.comp.imptable.count
 #define comp_exptable       ctask->sbe.comp.exptable
-#define comp_expcount       ctask->sbe.comp.expcount
+#define comp_expcount       ctask->sbe.comp.exptable.count
 #define comp_libtable       ctask->sbe.comp.libtable
-#define comp_libcount       ctask->sbe.comp.libcount
+#define comp_libcount       ctask->sbe.comp.libtable.count
 #define comp_labtable       ctask->sbe.comp.labtable
-#define comp_labcount       ctask->sbe.comp.labcount
+#define comp_labcount       ctask->sbe.comp.labtable.count
 #define comp_bc_sec         ctask->sbe.comp.bc_sec
 #define comp_block_level    ctask->sbe.comp.block_level
 #define comp_block_id       ctask->sbe.comp.block_id
@@ -200,7 +210,7 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message        
 #define comp_uds_tab_ip     ctask->sbe.comp.uds_tab_ip
 #define comp_use_global_vartable    ctask->sbe.comp.use_global_vartable
 #define comp_stack          ctask->sbe.comp.stack
-#define comp_sp             ctask->sbe.comp.stack_count
+#define comp_sp             ctask->sbe.comp.stack.count
 #define comp_do_close_cmd   ctask->sbe.comp.do_close_cmd
 #define comp_unit_flag      ctask->sbe.comp.unit_flag
 #define comp_unit_name      ctask->sbe.comp.unit_name

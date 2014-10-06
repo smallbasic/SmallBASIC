@@ -10,6 +10,7 @@
 #include "common/smbas.h"
 #include "common/pproc.h"
 #include "common/messages.h"
+#include "common/var.h"
 #include <string.h>
 #include <errno.h>
 
@@ -23,7 +24,6 @@ void err_common_msg(const char *seg, const char *file, int line, const char *des
   strncpy(prog_errmsg, descr, SB_ERRMSG_SIZE);
   prog_errmsg[SB_ERRMSG_SIZE] = '\0';
   strcpy(gsb_last_errmsg, prog_errmsg);
-
   log_printf("\n\033[0m\033[80m\n");
   log_printf("\033[7m * %s-%s %s:%d * \033[0m\a\n\n", seg, WORD_ERROR_AT, file, line);
   log_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
@@ -50,12 +50,12 @@ void rt_raise(const char *fmt, ...) {
     prog_error = 0x80;
 
     va_start(ap, fmt);
-    buff = tmp_alloc(SB_TEXTLINE_SIZE + 1);
+    buff = malloc(SB_TEXTLINE_SIZE + 1);
     vsprintf(buff, fmt, ap);
     va_end(ap);
 
     err_common_msg(WORD_RTE, prog_file, prog_line, buff);
-    tmp_free(buff);
+    free(buff);
 
     if (prog_stack_count) {
       log_printf("\033[4mStack:\033[0m\n");
@@ -79,10 +79,72 @@ void rt_raise(const char *fmt, ...) {
         }
       }
     }
+    if (prog_stack_count) {
+      log_printf("\n");
+    }
   }
 }
 
-/* ERROR MESSAGES */
+/**
+ * run-time syntax error
+ */
+void err_syntax(int keyword, const char *fmt) {
+  if (!gsb_last_error) {
+    char *buff = malloc(SB_TEXTLINE_SIZE + 1);
+    char *fmt_p = (char *)fmt;
+
+    prog_error = 0x80;
+    buff[0] = '\0';
+    if (keyword != -1) {
+      if (kw_getfuncname(keyword, buff) ||
+          kw_getprocname(keyword, buff) ||
+          kw_getcmdname(keyword, buff)) {
+        strcpy(buff, " ");
+      }
+    }
+
+    while (*fmt_p) {
+      if (*fmt_p == '%') {
+        fmt_p++;
+        switch (*fmt_p) {
+        case 'S':
+          strcat(buff, "STRING");
+          break;
+        case 'I':
+          strcat(buff, "INTEGER");
+          break;
+        case 'F':
+          strcat(buff, "REAL");
+          break;
+        case 'P':
+          strcat(buff, "VARIABLE");
+          break;
+        case 'G':
+          strcat(buff, "FUNC");
+          break;
+        case 'N':
+          strcat(buff, "NUM");
+          break;
+        }
+      } else {
+        int len = strlen(buff);
+        buff[len] = *fmt_p;
+        buff[len + 1] = '\0';
+      }
+      fmt_p++;
+    }
+    err_common_msg(WORD_RTE, prog_file, prog_line, ERR_SYNTAX);
+    log_printf("Expected:");
+    log_printf(buff);
+    log_printf("\n");
+    free(buff);
+  }
+}
+
+void err_parm_num(int found, int expected) {
+  rt_raise(ERR_PARAM_NUM, found, expected);
+}
+
 void err_file(dword code) {
   char buf[1024], *p;
 
@@ -215,8 +277,12 @@ void err_fopen(void) {
 }
 
 // no separator found
-void err_syntaxanysep(const char *seps) {
+void err_syntaxsep(const char *seps) {
   rt_raise(ERR_SEP_FMT, seps);
+}
+
+void err_missing_comma(void) {
+  rt_raise(ERR_SEP_FMT, ",");
 }
 
 void err_parsepoly(int idx, int mark) {
@@ -249,6 +315,10 @@ void err_ref_circ_var() {
 
 void err_array() {
   rt_raise(MSG_ARRAY_SE);
+}
+
+void err_form_input() {
+  err_throw(ERR_FORM_INPUT);
 }
 
 /**
@@ -285,7 +355,7 @@ int err_throw_catch(const char *err) {
   var_t *arg;
   var_t v_catch;
   int caught = 1;
-  
+
   switch (code_peek()) {
   case kwTYPE_VAR:
     arg = code_getvarptr();
@@ -320,7 +390,7 @@ void err_throw_str(const char *err) {
     prog_catch_ip = code_getaddr();
     // get the stack level
     byte level = code_getnext();
-    
+
     caught = err_throw_catch(err);
     while (!caught && prog_catch_ip != INVALID_ADDR) {
       code_jump(prog_catch_ip + 1);
@@ -332,7 +402,7 @@ void err_throw_str(const char *err) {
 
     // cleanup the stack
     while (prog_stack_count > level) {
-      code_pop_and_free(NULL);      
+      code_pop_and_free(NULL);
     }
   }
   if (!caught) {
@@ -346,11 +416,11 @@ void err_throw(const char *fmt, ...) {
   if (!gsb_last_error) {
     va_list ap;
     va_start(ap, fmt);
-    char *err = tmp_alloc(SB_TEXTLINE_SIZE + 1);
+    char *err = malloc(SB_TEXTLINE_SIZE + 1);
     vsprintf(err, fmt, ap);
     va_end(ap);
     err_throw_str(err);
-    tmp_free(err);
+    free(err);
   }
 }
 

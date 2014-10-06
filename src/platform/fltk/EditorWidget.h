@@ -22,9 +22,10 @@
 #include <fltk/Choice.h>
 #include <limits.h>
 
-#include "ui/StringLib.h"
-#include "TtyWidget.h"
-#include "BasicEditor.h"
+#include "ui/strlib.h"
+#include "platform/fltk/TtyWidget.h"
+#include "platform/fltk/BasicEditor.h"
+#include "platform/fltk/utils.h"
 
 using namespace fltk;
 

@@ -9,8 +9,8 @@
 #ifndef FILE_WIDGET_H
 #define FILE_WIDGET_H
 
-#include "HelpWidget.h"
-#include "EditorWidget.h"
+#include "platform/fltk/HelpWidget.h"
+#include "platform/fltk/EditorWidget.h"
 #include <limits.h>
 
 struct FileWidget:public HelpWidget {

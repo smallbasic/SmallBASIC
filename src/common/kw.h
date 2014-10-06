@@ -237,9 +237,6 @@ enum proc_keywords {
   kwPLOT,
   kwSTKDUMP,
   kwSWAP,
-  kwBUTTON,
-  kwTEXT,
-  kwDOFORM,
   kwDIRWALK,
   kwBPUTC,
   kwBLOAD,
@@ -410,6 +407,7 @@ enum func_keywords {
   kwCALLCF,
   kwARRAY,
   kwIMAGE,
+  kwFORM,
   kwNULLFUNC
 };
 

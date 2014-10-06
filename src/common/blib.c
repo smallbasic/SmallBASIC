@@ -16,11 +16,7 @@
 #include "common/pproc.h"
 #include "common/smbas.h"
 #include "common/fmt.h"
-
-#if USE_TERM_IO
-#include "common/dev_term.h"
-#endif
-
+#include "common/keymap.h"
 #include "common/messages.h"
 
 /**
@@ -77,7 +73,7 @@ void cmd_dim(int preserve) {
       if (code_peek() == kwTYPE_SEP) {
         code_skipnext();
         if (code_getnext() != ',') {
-          err_syntax();
+          err_missing_comma();
         }
       }
 
@@ -111,7 +107,7 @@ void cmd_dim(int preserve) {
             if (code_peek() == kwTYPE_SEP) {
               code_skipnext();
               if (code_getnext() != ',') {
-                err_syntax();
+                err_missing_comma();
               }
             }
 
@@ -122,7 +118,7 @@ void cmd_dim(int preserve) {
           zaf = 1;              // zero-length array
         }
       } else {
-        err_syntax();
+        rt_raise(ERR_SYNTAX);
       }
 
       //
@@ -185,7 +181,7 @@ void cmd_ladd() {
     // command style
     code_skipsep();
   } else {
-    err_syntax();
+    err_missing_comma();
     return;
   }
 
@@ -236,7 +232,7 @@ void cmd_ladd() {
 
   // cleanup
   v_free(arg_p);
-  tmp_free(arg_p);
+  free(arg_p);
 }
 
 /**
@@ -335,7 +331,7 @@ void cmd_lins() {
 
   // cleanup
   v_free(arg_p);
-  tmp_free(arg_p);
+  free(arg_p);
 }
 
 /**
@@ -402,7 +398,7 @@ void cmd_ldel() {
   }
   // cleanup
   v_free(arg_p);
-  tmp_free(arg_p);
+  free(arg_p);
 }
 
 /**
@@ -497,7 +493,7 @@ void cmd_print(int output) {
     v_free(vuser_p);
     vuser_p->type = V_STR;
     vuser_p->v.p.size = 256;
-    vuser_p->v.p.ptr = tmp_alloc(vuser_p->v.p.size);
+    vuser_p->v.p.ptr = malloc(vuser_p->v.p.size);
     vuser_p->v.p.ptr[0] = '\0';
     handle = (mem_t)vuser_p;
   }
@@ -696,7 +692,7 @@ void cmd_input(int input) {
       switch (input) {
       case PV_CONSOLE:
         // console
-        inps = tmp_alloc(SB_TEXTLINE_SIZE + 1);
+        inps = malloc(SB_TEXTLINE_SIZE + 1);
         if (prompt.v.p.ptr) {
           // prime output buffer with prompt text
           int prompt_len = strlen(prompt.v.p.ptr);
@@ -708,7 +704,7 @@ void cmd_input(int input) {
         break;
       case PV_STRING:
         // string (SINPUT)
-        inps = tmp_strdup((char *)vuser_p->v.p.ptr);
+        inps = strdup((char *)vuser_p->v.p.ptr);
         break;
       case PV_FILE:
         // file (INPUT#)
@@ -717,7 +713,7 @@ void cmd_input(int input) {
         byte ch, quotes;
 
         size = 256;
-        inps = tmp_alloc(size);
+        inps = malloc(size);
         index = 0;
         quotes = 0;
 
@@ -731,7 +727,7 @@ void cmd_input(int input) {
             // store char
             if (index == (size - 2)) {
               size += 256;
-              inps = tmp_realloc(inps, size);
+              inps = realloc(inps, size);
             }
 
             inps[index] = ch;
@@ -824,23 +820,8 @@ void cmd_input(int input) {
       if (input_is_finished && (input == PV_CONSOLE) && (!prog_error)
           && (((pcount > 1) && (*inp_p || unused_vars)))) {
         redo = 1;
-        tmp_free(inps);
-#if USE_TERM_IO
-        // standard input case
-        if (!os_graphics) {
-          if (term_israw()) {
-            fprintf(stdout, "\n\a* %s *\n", WORD_INPUT_REDO);
-          }
-          else {
-            dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
-          }
-        }
-        else {
-#endif
+        free(inps);
         dev_printf("\n\a\033[7m * %s * \033[0m\n", WORD_INPUT_REDO);
-#if USE_TERM_IO
-      }
-#endif
       } else {
         redo = 0;
       }
@@ -851,20 +832,12 @@ void cmd_input(int input) {
   // exit
   if (input == PV_CONSOLE) {
     if (print_crlf && (prog_error == 0)) {
-#if USE_TERM_IO
-      // standard input case
-      if (!os_graphics) {
-        if (!term_israw())
-        pv_write("\n", input, handle);
-      }
-      else
-#endif
       pv_write("\n", input, handle);
     }
   }
 
   if (inps) {
-    tmp_free(inps);
+    free(inps);
   }
   par_freepartable(&ptable, pcount);
   v_free(&prompt);
@@ -894,9 +867,11 @@ void cmd_on_go() {
     // index == -1 (0 on BASIC) || index >= count do nothing
     command = kwNULL;
     prog_ip = next_ip;
+    dest_ip = 0;
   } else if ((int) index < 0) {
     // QB: run-time-error on < 0 or > 255
     rt_raise(ERR_ONGOTO_RANGE, (command == kwGOTO) ? WORD_GOTO : WORD_GOSUB);
+    dest_ip = 0;
   } else {
     // default
     memcpy(&dest_ip, prog_source + table_ip + (index * ADDRSZ), ADDRSZ);
@@ -965,7 +940,7 @@ addr_t cmd_push_args(int cmd, addr_t goto_addr, addr_t rvid) {
       eval(&var_ptr);
       if (var_ptr.type != V_PTR || var_ptr.v.ap.p == 0) {
         rt_raise("Invalid %s pointer variable", cmd == kwPROC ? "SUB" : "FUNC");
-        return;
+        return 0;
       }
       goto_addr = var_ptr.v.ap.p;
       rvid = var_ptr.v.ap.v;
@@ -983,15 +958,7 @@ addr_t cmd_push_args(int cmd, addr_t goto_addr, addr_t rvid) {
         break;
       case kwTYPE_LEVEL_END: // (right-parenthesis) which means: end of parameters
         code_skipnext();
-        if (code_peek() == kwTYPE_SEP) {
-          // another set of arguments - foo(a+1), (b+1)
-          code_skipsep();
-          if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-            code_skipnext();
-          }
-        } else {
-          ready = 1;         // finish flag
-        }
+        ready = 1;           // finish flag
         break;
 
       case kwTYPE_VAR:       // the parameter is a variable
@@ -1023,8 +990,8 @@ addr_t cmd_push_args(int cmd, addr_t goto_addr, addr_t rvid) {
           pcount++;
         } else {             // error; clean up and return
           v_free(arg);
-          tmp_free(arg);
-          return;
+          free(arg);
+          return 0;
         }
       }
     } while (!ready);
@@ -1085,15 +1052,7 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid) {
         break;
       case kwTYPE_LEVEL_END: // (right-parenthesis) which means: end of parameters
         code_skipnext();
-        if (code_peek() == kwTYPE_SEP) {
-          // another set of arguments - foo(a+1), (b+1)
-          code_skipsep();
-          if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-            code_skipnext();
-          }
-        } else {
-          ready = 1;         // finish flag
-        }
+        ready = 1;           // finish flag
         break;
       case kwTYPE_VAR:       // the parameter is a variable
         ofs = prog_ip;       // keep expression's IP
@@ -1133,7 +1092,7 @@ void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid) {
           pcount++;
         } else {             // error; clean up and return
           v_free(arg);
-          tmp_free(arg);
+          free(arg);
           return;
         }
       }
@@ -1202,7 +1161,7 @@ void cmd_crvar() {
  */
 void cmd_param() {
   stknode_t ncall;
-  code_pop(&ncall);          // get caller's info-node
+  code_pop(&ncall, 0);          // get caller's info-node
 
   if ((ncall.type != kwPROC) && (ncall.type != kwFUNC)) {
     err_stackmess();
@@ -1213,15 +1172,15 @@ void cmd_param() {
   if (pcount != ncall.x.vcall.pcount) {
     // the number of the parameters that are required by this procedure/function
     // are different from the number that was passed by the caller
-    err_parm_num();
+    err_parm_num(ncall.x.vcall.pcount, pcount);
     return;
   }
 
   if (pcount) {              // get parameters
     int i;
-    stknode_t *param = (stknode_t *) tmp_alloc(sizeof(stknode_t) * pcount);
+    stknode_t *param = (stknode_t *) malloc(sizeof(stknode_t) * pcount);
     for (i = pcount - 1; i > -1; i--) {
-      code_pop(&param[i]);
+      code_pop(&param[i], 0);
     }
     code_push(&ncall);       // push call's pars (again); we will needed at 'return'
 
@@ -1256,7 +1215,7 @@ void cmd_param() {
         }
       }
     }
-    tmp_free(param);
+    free(param);
   } else {
     code_push(&ncall);       // push caller's info node
   }
@@ -1268,26 +1227,26 @@ void cmd_param() {
 void cmd_udpret() {
   stknode_t node, rval;
 
-  code_pop(&node);
+  code_pop(&node, 0);
   while ((node.type != kwPROC) && (node.type != kwFUNC)) {
     // pop from stack until caller's node found
     if (node.type == kwTYPE_CRVAR) {  // local variable - cleanup
       v_free(tvar[node.x.vdvar.vid]); // free local variable data
-      tmp_free(tvar[node.x.vdvar.vid]);
+      free(tvar[node.x.vdvar.vid]);
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
       // restore ptr (replace to pre-call variable)
     } else if (node.type == kwBYREF) {  // variable 'by reference'
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr; // restore ptr
     }
     // pop next node
-    code_pop(&node);
+    code_pop(&node, 0);
     if (prog_error) {
       return;
     }
   }
 
   if ((node.type != kwPROC) && (node.type != kwFUNC)) {
-    err_syntax();
+    rt_raise(ERR_SYNTAX);
     dump_stack();
   } else {
     // restore return value
@@ -1315,7 +1274,7 @@ int cmd_exit() {
 
   code = code_getnext();
   do {
-    code_pop(&node);
+    code_pop(&node, 0);
     if (prog_error) {
       return 0;
     }
@@ -1335,7 +1294,7 @@ int cmd_exit() {
         if (node.x.vfor.subtype == kwIN) {
           if (node.x.vfor.flags & 1) {  // allocated in for
             v_free(node.x.vfor.arr_ptr);
-            tmp_free(node.x.vfor.arr_ptr);
+            free(node.x.vfor.arr_ptr);
           }
         }
       }
@@ -1351,6 +1310,11 @@ int cmd_exit() {
         addr = node.exit_ip;
         ready = 1;
       }
+      break;
+    case kwSELECT:
+      // exiting loop from within select statement
+      v_free(node.x.vcase.var_ptr);
+      free(node.x.vcase.var_ptr);
       break;
     case kwPROC:
     case kwFUNC:
@@ -1387,18 +1351,18 @@ void cmd_return() {
   stknode_t node;
 
   // get return-address and remove any other item (sub items) from stack
-  code_pop(&node);
+  code_pop(&node, kwGOSUB);
 
   // 'GOTO'
   while (node.type != kwGOSUB) {
-    code_pop(&node);
+    code_pop(&node, kwGOSUB);
     if (prog_error) {
       return;
     }
   }
 
   if (node.type != kwGOSUB) {
-    err_syntax();
+    rt_raise(ERR_SYNTAX);
     dump_stack();
   }
 
@@ -1438,18 +1402,18 @@ void cmd_else() {
   true_ip = code_getaddr();
   false_ip = code_getaddr();
 
-  code_pop(&node);
+  code_pop(&node, kwIF);
 
   // 'GOTO'
   while (node.type != kwIF) {
-    code_pop(&node);
+    code_pop(&node, kwIF);
     if (prog_error) {
       return;
     }
   }
 
   if (node.type != kwIF) {
-    err_syntax();
+    rt_raise(ERR_SYNTAX);
     dump_stack();
     return;
   }
@@ -1470,18 +1434,18 @@ void cmd_elif() {
   false_ip = code_getaddr();
 
   // else cond
-  code_pop(&node);
+  code_pop(&node, kwIF);
 
   // 'GOTO'
   while (node.type != kwIF) {
-    code_pop(&node);
+    code_pop(&node, kwIF);
     if (prog_error) {
       return;
     }
   }
 
   if (node.type != kwIF) {
-    err_syntax();
+    rt_raise(ERR_SYNTAX);
     dump_stack();
     return;
   }
@@ -1507,9 +1471,9 @@ void cmd_elif() {
 void cmd_endif() {
   stknode_t node;
 
-  code_pop(&node);
+  code_pop(&node, kwIF);
   while (node.type != kwIF) {
-    code_pop(&node);
+    code_pop(&node, kwIF);
     IF_ERR_BREAK;
   }
 
@@ -1584,7 +1548,7 @@ void cmd_for() {
             eval(&varstep);
             if (!(varstep.type == V_NUM || varstep.type == V_INT)) {
               if (!prog_error) {
-                err_syntax();
+                err_syntax(kwFOR, "%N");
               }
             }
           } else {
@@ -1594,11 +1558,11 @@ void cmd_for() {
           }                     // STEP kw
         } else {                  // str for TO
           if (!prog_error) {
-            err_syntax();
+            rt_raise(ERR_SYNTAX);
           }
         }
       } else {                    // TO keyword
-        err_syntax();
+        rt_raise(ERR_SYNTAX);
       }
     }
     //
@@ -1635,12 +1599,12 @@ void cmd_for() {
       new_var = v_new();
       eval(new_var);
       if (prog_error) {
-        tmp_free(new_var);
+        free(new_var);
         return;
       }
       if (new_var->type != V_ARRAY) {
         v_free(new_var);
-        tmp_free(new_var);
+        free(new_var);
         err_typemismatch();
         return;
       }
@@ -1656,7 +1620,7 @@ void cmd_for() {
 
       switch (array_p->type) {
       case V_MAP:
-        var_elem_ptr = map_elem(array_p, 0);
+        var_elem_ptr = map_elem_key(array_p, 0);
         break;
 
       case V_ARRAY:
@@ -1720,7 +1684,7 @@ void cmd_wend() {
   code_skipaddr();
   jump_ip = code_getaddr();
   code_jump(jump_ip);
-  code_pop(&node);
+  code_pop(&node, kwWHILE);
 }
 
 /**
@@ -1745,7 +1709,7 @@ void cmd_until() {
   var_t var;
   stknode_t node;
 
-  code_pop(&node);
+  code_pop(&node, kwREPEAT);
   code_skipaddr();
   jump_ip = code_getaddr();
 
@@ -1771,18 +1735,18 @@ void cmd_next() {
   next_ip = code_getaddr();
   jump_ip = code_getaddr();
 
-  code_pop(&node);
+  code_pop(&node, kwFOR);
 
   // 'GOTO'
   while (node.type != kwFOR) {
-    code_pop(&node);
+    code_pop(&node, kwFOR);
     if (prog_error) {
       return;
     }
   }
 
   if (node.type != kwFOR) {
-    err_syntax();
+    rt_raise(ERR_SYNTAX);
     dump_stack();
     return;
   }
@@ -1849,7 +1813,7 @@ void cmd_next() {
     switch (array_p->type) {
     case V_MAP:
       node.x.vfor.step_expr_ip++; // element-index
-      var_elem_ptr = map_elem(array_p, node.x.vfor.step_expr_ip);
+      var_elem_ptr = map_elem_key(array_p, node.x.vfor.step_expr_ip);
       break;
 
     case V_ARRAY:
@@ -1860,7 +1824,7 @@ void cmd_next() {
       } else {
         if (node.x.vfor.flags & 1) {  // allocated in for
           v_free(node.x.vfor.arr_ptr);
-          tmp_free(node.x.vfor.arr_ptr);
+          free(node.x.vfor.arr_ptr);
         }
       }
       break;
@@ -1869,7 +1833,7 @@ void cmd_next() {
       // if ( !prog_error ) rt_raise("FOR-IN: IN var IS NOT ARRAY");
       if (node.x.vfor.flags & 1) {  // allocated in for
         v_free(node.x.vfor.arr_ptr);
-        tmp_free(node.x.vfor.arr_ptr);
+        free(node.x.vfor.arr_ptr);
       }
       break;
     }
@@ -1946,7 +1910,7 @@ void cmd_read() {
           memcpy(&len, prog_source + prog_dp, OS_STRLEN);
           prog_dp += OS_STRLEN;
 
-          vp->v.p.ptr = tmp_alloc(len + 1);
+          vp->v.p.ptr = malloc(len + 1);
           memcpy(vp->v.p.ptr, prog_source + prog_dp, len);
           *((char *) (vp->v.p.ptr + len)) = '\0';
           vp->v.p.size = len;
@@ -2059,7 +2023,6 @@ void cmd_pause() {
     code_skipnext();
     x = code_getreal();
   }
-
   if (x == 0) {
     while (dev_kbhit() == 0) {
       switch (dev_events(2)) {
@@ -2073,6 +2036,8 @@ void cmd_pause() {
       dev_delay(CMD_PAUSE_DELAY);
     }
     dev_getch();
+  } else if (x < 0) {
+    dev_events(1);
   } else {
     struct tm tms;
     time_t timenow;
@@ -2163,12 +2128,12 @@ void cmd_wsplit() {
     }
     //
     if (!pairs) {
-      pairs = tmp_strdup("");
+      pairs = strdup("");
     }
     v_toarray1(var_p, 1);
 
     // reformat
-    new_text = tmp_strdup(str);
+    new_text = strdup(str);
     count = 0;
     wait_q = 0;
     ps = p = new_text;
@@ -2195,9 +2160,9 @@ void cmd_wsplit() {
         }
         // store string
         elem_p = v_elem(var_p, count);
-        buf = tmp_strdup(ps);   // trimdup
+        buf = strdup(ps);   // trimdup
         v_setstr(elem_p, buf);
-        tmp_free(buf);
+        free(buf);
         count++;
 
         // next word
@@ -2213,9 +2178,9 @@ void cmd_wsplit() {
         v_resize_array(var_p, count + 1);
       }
       elem_p = v_elem(var_p, count);
-      buf = tmp_strdup(ps);     // trimdup
+      buf = strdup(ps);     // trimdup
       v_setstr(elem_p, buf);
-      tmp_free(buf);
+      free(buf);
 
       count++;
     }
@@ -2233,7 +2198,7 @@ void cmd_wsplit() {
     }
     // cleanup
     pfree3(str, del, pairs);
-    tmp_free(new_text);
+    free(new_text);
   }
 }
 
@@ -2263,7 +2228,7 @@ void cmd_wjoin() {
     return;
   }
   if (!code_isvar()) {
-    err_syntax();
+    err_syntax(kwWJOIN, "%P,%P");
     v_free(&del);
     return;
   }
@@ -2272,7 +2237,7 @@ void cmd_wjoin() {
 
   //
   str->type = V_STR;
-  str->v.p.ptr = tmp_alloc(256);
+  str->v.p.ptr = malloc(256);
   str->v.p.size = 256;
   str->v.p.ptr[0] = '\0';
 
@@ -2285,7 +2250,7 @@ void cmd_wjoin() {
       v_tostr(&e_str);
     }
     while ((e_str.v.p.size + del.v.p.size + 1) >= str->v.p.size) {
-      str->v.p.ptr = tmp_realloc(str->v.p.ptr, str->v.p.size + 256);
+      str->v.p.ptr = realloc(str->v.p.ptr, str->v.p.size + 256);
       str->v.p.size += 256;
     }
 
@@ -2438,7 +2403,7 @@ void cmd_timehms() {
 /**
  * SORT array [USE ...]
  */
-int sb_qcmp(var_t * a, var_t * b, addr_t use_ip) {
+int sb_qcmp(var_t *a, var_t *b, addr_t use_ip) {
   if (use_ip == INVALID_ADDR) {
     return v_compare(a, b);
   } else {
@@ -2613,7 +2578,7 @@ void cmd_swap(void) {
   v_set(va, vb);
   v_set(vb, vc);
   v_free(vc);
-  tmp_free(vc);
+  free(vc);
 }
 
 /**
@@ -2733,14 +2698,12 @@ void cmd_case_else() {
 void cmd_end_select() {
   stknode_t node;
 
-  code_pop(&node);
-
-  // if v_new() was string or array release the allocated memory
-  v_free(node.x.vcase.var_ptr);
-
-  // cleanup v_new()
-  tmp_free(node.x.vcase.var_ptr);
-  code_jump(code_getaddr());
+  code_pop_and_free(&node);
+  if (node.type != kwSELECT) {
+    err_stackmess();
+  } else {
+    code_jump(code_getaddr());
+  }
 }
 
 /**
@@ -2758,7 +2721,7 @@ void cmd_definekey(void) {
     par_getcomma();
 
     if (code_peek() != kwTYPE_CALL_UDF) {
-      rt_raise(ERR_SYNTAX);
+      err_syntax(kwDEFINEKEY, "%I,%G");
     } else {
       keymap_add(key, prog_ip);
 
@@ -2792,8 +2755,29 @@ void cmd_catch() {
 void cmd_call_vfunc() {
   var_t *v_func = code_getvarptr_parens(1);
   if (v_func == NULL || v_func->type != V_FUNC) {
-    sc_raise(ERR_NO_FUNC);
+    rt_raise(ERR_NO_FUNC);
   } else {
     v_func->v.fn.cb(v_func->v.fn.self);
   }
+}
+
+/**
+ * Adds a timer
+ */
+void cmd_timer() {
+  var_t var;
+  v_init(&var);
+  eval(&var);
+
+  var_num_t interval = v_getval(&var);
+  if (!prog_error) {
+    par_getcomma();
+    if (code_peek() != kwTYPE_CALL_UDF) {
+      err_syntax(kwTIMER, "%F,%G");
+    } else {
+      timer_add(interval, prog_ip);
+      prog_ip += BC_CTRLSZ + 1;
+    }
+  }
+  v_free(&var);
 }

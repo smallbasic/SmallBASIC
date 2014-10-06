@@ -4,7 +4,7 @@
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-// 
+//
 
 #include <unistd.h>
 #include <errno.h>
@@ -19,9 +19,9 @@
 #include <fltk/events.h>
 #include <fltk/run.h>
 
-#include "MainWindow.h"
-#include "EditorWidget.h"
-#include "FileWidget.h"
+#include "platform/fltk/MainWindow.h"
+#include "platform/fltk/EditorWidget.h"
+#include "platform/fltk/FileWidget.h"
 #include "common/smbas.h"
 
 using namespace fltk;
@@ -57,13 +57,27 @@ EditorWidget *get_editor() {
 //--EditorWidget----------------------------------------------------------------
 
 EditorWidget::EditorWidget(int x, int y, int w, int h) :
-  Group(x, y, w, h) {
-  filename[0] = 0;
-  dirty = false;
-  loading = false;
-  modifiedTime = 0;
-  box(NO_BOX);
+  Group(x, y, w, h),
+  editor(NULL),
+  tty(NULL),
+  dirty(false),
+  loading(false),
+  modifiedTime(0),
+  commandText(NULL),
+  rowStatus(NULL),
+  colStatus(NULL),
+  runStatus(NULL),
+  modStatus(NULL),
+  funcList(NULL),
+  logPrintBn(NULL),
+  lockBn(NULL),
+  hideIdeBn(NULL),
+  gotoLineBn(NULL),
+  commandOpt(cmd_find),
+  commandChoice(NULL) {
 
+  filename[0] = 0;
+  box(NO_BOX);
   begin();
 
   int tileHeight = h - (MNU_HEIGHT + 8);
@@ -292,8 +306,8 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
   int wordPos = 0;
 
   // scan for expandWord from within the current text buffer
-  if (completionIndex != -1 && searchBackward(text, start - 1, 
-                                              expandWord, expandWordLen, 
+  if (completionIndex != -1 && searchBackward(text, start - 1,
+                                              expandWord, expandWordLen,
                                               &wordPos)) {
     int matchPos = -1;
     if (textbuf->selected() == 0) {
@@ -315,7 +329,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
           index++;
         }
 
-        if (searchBackward(text, wordPos - 1, expandWord, 
+        if (searchBackward(text, wordPos - 1, expandWord,
                            expandWordLen, &wordPos) == 0) {
           matchPos = -1;
           break;                // no more partial matches
@@ -351,7 +365,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
   int curIndex = -1;
   int numWords = keywords.size();
   for (int i = 0; i < numWords; i++) {
-    const char *keyword = ((String *)keywords.get(i))->toString();
+    const char *keyword = ((String *)keywords.get(i))->c_str();
     if (strncasecmp(expandWord, keyword, expandWordLen) == 0) {
       if (firstIndex == -1) {
         firstIndex = i;
@@ -379,7 +393,7 @@ void EditorWidget::expand_word(Widget *w, void *eventData) {
       lastIndex = curIndex + 1;
     }
 
-    const char *keyword = ((String *)keywords.get(lastIndex))->toString();
+    const char *keyword = ((String *)keywords.get(lastIndex))->c_str();
     // updated the segment of the replacement text
     // that completes the current selection
     if (textbuf->selected()) {
@@ -714,7 +728,7 @@ void EditorWidget::fileChanged(bool loadfile) {
       bool found = false;
 
       for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-        if (strcmp(filename, recentPath[i].toString()) == 0) {
+        if (strcmp(filename, recentPath[i].c_str()) == 0) {
           found = true;
           break;
         }
@@ -728,7 +742,7 @@ void EditorWidget::fileChanged(bool loadfile) {
           recentPath[i].append(recentPath[i - 1]);
         }
         // create new item in first position
-        const char *label = FileWidget::splitPath(filename, null);
+        const char *label = FileWidget::splitPath(filename, NULL);
         recentPath[0].empty();
         recentPath[0].append(filename);
         recentMenu[0]->copy_label(label);
@@ -756,8 +770,8 @@ bool EditorWidget::focusWidget() {
   case 'f':
     if (strlen(commandText->value()) > 0 && commandOpt == cmd_find) {
       // continue search - shift -> backward else forward
-      command(0, (void *)((event_key_state(LeftShiftKey) || 
-                           event_key_state(RightShiftKey)) ? 0 : 1));
+      command(0, (void *)(intptr_t)((event_key_state(LeftShiftKey) ||
+                                     event_key_state(RightShiftKey)) ? 0 : 1));
     }
     setCommand(cmd_find);
     return true;
@@ -975,13 +989,12 @@ void EditorWidget::runState(RunMessage runMessage) {
  * Saves the selected text to the given file path
  */
 void EditorWidget::saveSelection(const char *path) {
-  int err;
   FILE *fp = fopen(path, "w");
   if (fp) {
     Rectangle rc;
     char *selection = getSelection(&rc);
     if (selection) {
-      err = fwrite(selection, strlen(selection), 1, fp);
+      fwrite(selection, strlen(selection), 1, fp);
       free((void *)selection);
     } else {
       // save as an empty file
@@ -1148,9 +1161,8 @@ void EditorWidget::addHistory(const char *filename) {
 
   fp = fopen(path, "a");
   if (fp) {
-    int err;
-    err = fwrite(filename, strlen(filename), 1, fp);
-    err = fwrite("\n", 1, 1, fp);
+    fwrite(filename, strlen(filename), 1, fp);
+    fwrite("\n", 1, 1, fp);
     fclose(fp);
   }
 }
@@ -1200,9 +1212,9 @@ void EditorWidget::createFuncList() {
         if (i > i_begin) {
           String s(text + i_begin, i - i_begin);
           if (j < 2) {
-            menuGroup = funcList->add_group(s.toString(), 0, (void *)curLine);
+            menuGroup = funcList->add_group(s.c_str(), 0, (void *)(intptr_t)curLine);
           } else {
-            funcList->add_leaf(s.toString(), menuGroup, (void *)curLine);
+            funcList->add_leaf(s.c_str(), menuGroup, (void *)(intptr_t)curLine);
           }
         }
         break;
@@ -1291,7 +1303,7 @@ void EditorWidget::layout() {
   Group::layout();
 
   // when set to editor the tile is not resizable using the mouse
-  tile->resizable(null);
+  tile->resizable(NULL);
 }
 
 /**

@@ -10,28 +10,82 @@
 
 #include "ui/graphics.h"
 #include "ui/utils.h"
+#include <math.h>
+
+#include "common/smbas.h"
 #include "common/device.h"
 
 using namespace common;
 
 Graphics *graphics;
 
-pixel_t RGB888_to_RGB565(unsigned rgb) {
-  return ((((rgb >> 19) & 0x1f) << 11) |
-          (((rgb >> 10) & 0x3f) <<  5) |
-          (((rgb >>  3) & 0x1f)));
-}
-
-void RGB565_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
+inline void RGB565_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
   r = (c >> 11) & 0x1f;
   g = (c >> 5) & 0x3f;
   b = (c) & 0x1f;
 }
 
+inline pixel_t RGB888_to_RGB565(unsigned rgb) {
+  return ((((rgb >> 19) & 0x1f) << 11) |
+          (((rgb >> 10) & 0x3f) <<  5) |
+          (((rgb >>  3) & 0x1f)));
+}
+
+inline void RGBA8888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
+  r = (c & 0xff0000) >> 16;
+  g = (c & 0xff00) >> 8;
+  b = (c & 0xff);
+}
+
+inline void RGB888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
+  r = (c & 0xff0000) >> 16;
+  g = (c & 0xff00) >> 8;
+  b = (c & 0xff);
+}
+
+inline pixel_t RGB888_to_RGBA8888(unsigned c) {
+  uint8_t r = (c & 0xff0000) >> 16;
+  uint8_t g = (c & 0xff00) >> 8;
+  uint8_t b = (c & 0xff);
+  return ((0xff000000) | (b << 16) | (g << 8) | (r));
+}
+
+#if defined(PIXELFORMAT_RGB565)
+  #define SET_RGB(r, g, b) ((r << 11) | (g << 5) | (b))
+  #define GET_RGB RGB565_to_RGB
+  #define GET_FROM_RGB888 RGB888_to_RGB565
+#elif defined(PIXELFORMAT_RGBA8888)
+  #define SET_RGB(r, g, b) ((0xff000000) | (r << 16) | (g << 8) | (b))
+  #define GET_RGB RGBA8888_to_RGB
+  #define GET_FROM_RGB888 RGB888_to_RGBA8888
+#else
+  #define SET_RGB(r, g, b) ((r << 16) | (g << 8) | (b))
+  #define GET_RGB RGB888_to_RGB
+  #define GET_FROM_RGB888(c) (c)
+#endif
+
+// fractional part of x
+inline double fpart(double x) {
+  double result;
+  if (x < 0) {
+    result = 1 - (x - floor(x));
+  } else {
+    result = x - floor(x);
+  }
+  return result;
+}
+
+inline double rfpart(double x) {
+  return 1 - fpart(x);
+}
+
+#define _SWAP(a, b) \
+  { __typeof__(a) tmp; tmp = a; a = b; b = tmp; }
+
 Font::Font(FT_Face face, int size, bool italic) :
   _face(face) {
   FT_Set_Pixel_Sizes(face, 0, size);
-  _spacing = FT_MulFix(_face->height, _face->size->metrics.x_scale) / 64;
+  _spacing = 1 + (FT_MulFix(_face->height, _face->size->metrics.x_scale) / 64);
   _h = (FT_MulFix(_face->ascender, _face->size->metrics.x_scale) / 64) +
        (FT_MulFix(_face->descender, _face->size->metrics.x_scale) / 64);
   FT_Matrix  matrix;
@@ -136,7 +190,13 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         x1 = endX;
         x2 = startX;
       }
-      if (startY < _h) {
+      if (x1 < 0) {
+        x1 = 0;
+      }
+      if (x2 >= _w) {
+        x2 = _w -1;
+      }
+      if (startY >= 0 && startY < _h) {
         pixel_t *line = _drawTarget->getLine(startY);
         for (int x = x1; x <= x2; x++) {
           if (x >= _drawTarget->x() && x < _drawTarget->w()) {
@@ -152,14 +212,24 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         y1 = endY;
         y2 = startY;
       }
-      for (int y = y1; y <= y2; y++) {
-        if (y >= _drawTarget->y() && y < _drawTarget->h()) {
-          pixel_t *line = _drawTarget->getLine(y);
-          line[startX] = _drawColor;
+      if (y1 < 0) {
+        y1 = 0;
+      }
+      if (y2 >= _h) {
+        y2 = _h - 1;
+      }
+      if (startX >= 0 && startX < _w) {
+        for (int y = y1; y <= y2; y++) {
+          if (y >= _drawTarget->y() && y < _drawTarget->h()) {
+            pixel_t *line = _drawTarget->getLine(y);
+            line[startX] = _drawColor;
+          }
         }
       }
-    } else {
+    } else if (opt_antialias) {
       // gradient
+      wuLine(startX, startY, endX, endY);
+    } else {
       g_line(startX, startY, endX, endY, maPlot);
     }
   }
@@ -167,7 +237,7 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
 
 void Graphics::drawPixel(int posX, int posY) {
   if (_drawTarget
-      && posX >= _drawTarget->x() 
+      && posX >= _drawTarget->x()
       && posY >= _drawTarget->y()
       && posX < _drawTarget->w()
       && posY < _drawTarget->h()) {
@@ -180,15 +250,75 @@ void Graphics::drawRectFilled(int left, int top, int width, int height) {
   if (_drawTarget) {
     int w = _drawTarget->w();
     int h = _drawTarget->h();
-    for (int y = 0; y < height; y++) {
-      int posY = y + top;
-      if (posY >= _drawTarget->y() && posY < h) {
-        pixel_t *line = _drawTarget->getLine(posY);
-        for (int x = 0; x < width; x++) {
-          int posX = x + left;
-          if (posX >= _drawTarget->x() && posX < w) {
-            line[posX] = _drawColor;
+    int dtX = _drawTarget->x();
+    int dtY = _drawTarget->y();
+    uint8_t dR, dG, dB;
+
+    GET_RGB(_drawColor, dR, dG, dB);
+    if (left == 0 && w == width && top < h && top > -1 &&
+        dR == dG && dR == dB) {
+      // contiguous block of uniform colour
+      unsigned blockH = height;
+      if (top + height > h) {
+        blockH = height - top;
+      }
+      memset(_drawTarget->getLine(top), dR, 4 * width * blockH);
+    } else {
+      for (int y = 0; y < height; y++) {
+        int posY = y + top;
+        if (posY == h) {
+          break;
+        } else if (posY >= dtY) {
+          pixel_t *line = _drawTarget->getLine(posY);
+          for (int x = 0; x < width; x++) {
+            int posX = x + left;
+            if (posX == w) {
+              break;
+            } else if (posX >= dtX) {
+              line[posX] = _drawColor;
+            }
           }
+        }
+      }
+    }
+  }
+}
+
+void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
+                       const MARect *srcRect, int opacity, int bytesPerLine) {
+  uint8_t *image = (uint8_t *)src;
+  size_t scale = 1;
+  int w = bytesPerLine;
+
+  for (int y = srcRect->top; y < srcRect->height; y += scale) {
+    int dY = dstPoint->y + y;
+    if (dY >= _drawTarget->y() &&
+        dY <  _drawTarget->h()) {
+      pixel_t *line = _drawTarget->getLine(dY);
+      for (int x = srcRect->left; x < srcRect->width; x += scale) {
+        int dX = dstPoint->x + x;
+        if (dX >= _drawTarget->x() &&
+            dX <  _drawTarget->w()) {
+          // get RGBA components
+          uint8_t r,g,b,a;
+          r = image[4 * y * w + 4 * x + 0]; // red
+          g = image[4 * y * w + 4 * x + 1]; // green
+          b = image[4 * y * w + 4 * x + 2]; // blue
+          a = image[4 * y * w + 4 * x + 3]; // alpha
+
+          uint8_t dR, dG, dB;
+          GET_RGB(line[dX], dR, dG, dB);
+          if (opacity > 0 && opacity < 100 && a > 64) {
+            float op = opacity / 100.0f;
+            dR = ((1-op) * r) + (op * dR);
+            dG = ((1-op) * g) + (op * dG);
+            dB = ((1-op) * b) + (op * dB);
+          } else {
+            dR = dR + ((r - dR) * a / 255);
+            dG = dG + ((g - dG) * a / 255);
+            dB = dB + ((b - dB) * a / 255);
+          }
+          line[dX] = SET_RGB(dR, dG, dB);
         }
       }
     }
@@ -200,26 +330,30 @@ void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
   FT_Int yMax = y + bitmap->rows;
 
   uint8_t sR, sG, sB;
-  RGB565_to_RGB(_drawColor, sR, sG, sB);
+  GET_RGB(_drawColor, sR, sG, sB);
 
-  for (FT_Int i = x, p = 0; i < xMax; i++, p++) {
-    for (FT_Int j = y, q = 0; j < yMax; j++, q++) {
-      if (i >= _drawTarget->x() &&
-          i <  _drawTarget->w() &&
-          j >= _drawTarget->y() &&
-          j <  _drawTarget->h()) {
-        pixel_t *line = _drawTarget->getLine(j);
-        uint8_t a = bitmap->buffer[q * bitmap->width + p];
-        if (a == 255) {
-          line[i] = _drawColor;
-        } else {
-          // blend drawColor to the background
-          uint8_t dR, dG, dB;
-          RGB565_to_RGB(line[i], dR, dG, dB);
-          dR = dR + ((sR - dR) * a / 255);
-          dG = dG + ((sG - dG) * a / 255);
-          dB = dB + ((sB - dB) * a / 255);
-          line[i] = ((dR << 11) | (dG << 5) | dB);
+  int dtX = _drawTarget->x();
+  int dtY = _drawTarget->y();
+  int dtW = _drawTarget->w();
+  int dtH = _drawTarget->h();
+
+  for (FT_Int j = y, q = 0; j < yMax; j++, q++) {
+    if (j >= dtY && j < dtH) {
+      pixel_t *line = _drawTarget->getLine(j);
+      for (FT_Int i = x, p = 0; i < xMax; i++, p++) {
+        if (i >= dtX && i < dtW) {
+          uint8_t a = bitmap->buffer[q * bitmap->width + p];
+          if (a == 255) {
+            line[i] = _drawColor;
+          } else {
+            // blend drawColor to the background
+            uint8_t dR, dG, dB;
+            GET_RGB(line[i], dR, dG, dB);
+            dR = dR + ((sR - dR) * a / 255);
+            dG = dG + ((sG - dG) * a / 255);
+            dB = dB + ((sB - dB) * a / 255);
+            line[i] = SET_RGB(dR, dG, dB);
+          }
         }
       }
     }
@@ -233,13 +367,11 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
     pen.y = top + _font->_h + ((_font->_spacing - _font->_h) / 2);
     for (int i = 0; i < len; i++) {
       uint8_t ch = str[i];
-      if (ch < MAX_GLYPHS) {
-        FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;
-        drawChar(&glyph->bitmap,
-                 pen.x + glyph->left,
-                 pen.y - glyph->top);
-        pen.x += _font->_glyph[ch]._w;
-      }
+      FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;
+      drawChar(&glyph->bitmap,
+               pen.x + glyph->left,
+               pen.y - glyph->top);
+      pen.x += _font->_glyph[ch]._w;
     }
   }
 }
@@ -247,7 +379,7 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
 int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
   int result = 0;
   if (canvas
-      && posX > -1 
+      && posX > -1
       && posY > -1
       && posX < _drawTarget->_w
       && posY < _drawTarget->_h - 1) {
@@ -288,6 +420,87 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
   return (MAHandle) _drawTarget;
 }
 
+// see: http://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
+void Graphics::wuLine(int x0, int y0, int x1, int y1) {
+  int steep = abs(y1 - y0) > abs(x1 - x0);
+
+  if (steep) {
+    _SWAP(x0, y0);
+    _SWAP(x1, y1);
+  }
+  if (x0 > x1) {
+    _SWAP(x0, x1);
+    _SWAP(y0, y1);
+  }
+
+  double dx = x1 - x0;
+  double dy = y1 - y0;
+  double gradient = dy / dx;
+
+  // handle first endpoint
+  double xend = round(x0);
+  double yend = y0 + gradient * (xend - x0);
+  double xgap = rfpart(x0 + 0.5);
+
+  int xpxl1 = (int)xend; // this will be used in the main loop
+  int ypxl1 = (int)yend;
+
+  if (steep) {
+    wuPlot(ypxl1,   xpxl1, rfpart(yend) * xgap);
+    wuPlot(ypxl1+1, xpxl1,  fpart(yend) * xgap);
+  } else {
+    wuPlot(xpxl1, ypxl1  , rfpart(yend) * xgap);
+    wuPlot(xpxl1, ypxl1+1,  fpart(yend) * xgap);
+  }
+
+  double intery = yend + gradient; // first y-intersection for the main loop
+
+  // handle second endpoint
+  xend = round(x1);
+  yend = y1 + gradient * (xend - x1);
+  xgap = fpart(x1 + 0.5);
+
+  int xpxl2 = (int)xend;
+  int ypxl2 = (int)yend;
+  if (steep) {
+    wuPlot(ypxl2  , xpxl2, rfpart(yend) * xgap);
+    wuPlot(ypxl2+1, xpxl2,  fpart(yend) * xgap);
+    for (int x = xpxl1 + 1; x < xpxl2; x++) {
+      wuPlot((int)intery,   x, rfpart(intery));
+      wuPlot((int)intery+1, x, fpart(intery));
+      intery += gradient;
+    }
+  } else {
+    wuPlot(xpxl2, ypxl2,  rfpart(yend) * xgap);
+    wuPlot(xpxl2, ypxl2+1, fpart(yend) * xgap);
+    for (int x = xpxl1 + 1; x < xpxl2; x++) {
+      wuPlot(x, (int)intery,   rfpart(intery));
+      wuPlot(x, (int)intery+1, fpart(intery));
+      intery += gradient;
+    }
+  }
+}
+
+void Graphics::wuPlot(int posX, int posY, double c) {
+  if (_drawTarget
+      && posX >= _drawTarget->x()
+      && posY >= _drawTarget->y()
+      && posX < _drawTarget->w()
+      && posY < _drawTarget->h()) {
+    pixel_t *line = _drawTarget->getLine(posY);
+    uint8_t sR, sG, sB;
+    uint8_t dR, dG, dB;
+
+    GET_RGB(_drawColor, sR, sG, sB);
+    GET_RGB(line[posX], dR, dG, dB);
+
+    dR = (uint8_t)(sR * c + dR * (1 - c));
+    dG = (uint8_t)(sG * c + dG * (1 - c));
+    dB = (uint8_t)(sB * c + dB * (1 - c));
+    line[posX] = SET_RGB(dR, dG, dB);
+  }
+}
+
 //
 // maapi implementation
 //
@@ -304,7 +517,7 @@ int maFontDelete(MAHandle maHandle) {
 }
 
 int maSetColor(int c) {
-  graphics->setColor(RGB888_to_RGB565(c));
+  graphics->setColor(GET_FROM_RGB888(c));
   return c;
 }
 
@@ -324,10 +537,15 @@ void maFillRect(int left, int top, int width, int height) {
   graphics->drawRectFilled(left, top, width, height);
 }
 
-void maDrawText(int left, int top, const char *str) {
+void maDrawText(int left, int top, const char *str, int length) {
   if (str && str[0]) {
-    graphics->drawText(left, top, str, strlen(str));
+    graphics->drawText(left, top, str, length);
   }
+}
+
+void maDrawRGB(const MAPoint2d *dstPoint, const void *src,
+               const MARect *srcRect, int opacity, int bytesPerLine) {
+  graphics->drawRGB(dstPoint, src, srcRect, opacity, bytesPerLine);
 }
 
 void maResetBacklight(void) {
@@ -382,7 +600,7 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
 
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   int result = RES_OK;
-  int maxSize = max(graphics->getWidth(), graphics->getHeight());
+  int maxSize = MAX(graphics->getWidth(), graphics->getHeight());
   if (height > maxSize * MAX_CANVAS_SIZE) {
     result -= 1;
   } else {

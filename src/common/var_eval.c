@@ -9,6 +9,7 @@
 
 #include "common/sys.h"
 #include "common/kw.h"
+#include "common/pproc.h"
 #include "common/sberr.h"
 #include "common/smbas.h"
 #include "common/var.h"
@@ -58,7 +59,7 @@ addr_t getarrayidx(var_t *array, var_t **var_map_val) {
       if (code == kwTYPE_SEP) {
         code_skipnext();
         if (code_getnext() != ',') {
-          err_syntax_error();
+          err_missing_comma();
         }
       }
       // next
@@ -332,7 +333,7 @@ void v_eval_str(var_p_t v) {
   int len = code_getstrlen();
   v->type = V_STR;
   v->v.p.size = len;
-  v->v.p.ptr = tmp_alloc(len + 1);
+  v->v.p.ptr = malloc(len + 1);
   memcpy(v->v.p.ptr, &prog_source[prog_ip], len);
   *((char *)(v->v.p.ptr + len)) = '\0';
   prog_ip += len;

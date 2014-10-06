@@ -94,9 +94,9 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) {
   int *indxc, *indxr, *ipiv;
 
   //
-  indxc = (int *) tmp_alloc(sizeof(int) * n);
-  indxr = (int *) tmp_alloc(sizeof(int) * n);
-  ipiv = (int *) tmp_alloc(sizeof(int) * n);
+  indxc = (int *) malloc(sizeof(int) * n);
+  indxr = (int *) malloc(sizeof(int) * n);
+  ipiv = (int *) malloc(sizeof(int) * n);
 
   //
   irow = 0;
@@ -117,9 +117,9 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) {
             }
           } else if (ipiv[k] > 1) {
             err_matsig();
-            tmp_free(indxc);
-            tmp_free(indxr);
-            tmp_free(ipiv);
+            free(indxc);
+            free(indxr);
+            free(ipiv);
             return;
           }
         }
@@ -140,9 +140,9 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) {
 
     if (a[icol * n + icol] < toler) {
       err_matsig();
-      tmp_free(indxc);
-      tmp_free(indxr);
-      tmp_free(ipiv);
+      free(indxc);
+      free(indxr);
+      free(ipiv);
       return;
     }
 
@@ -174,9 +174,9 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) {
   }
 
   // ///////////////
-  tmp_free(indxc);
-  tmp_free(indxr);
-  tmp_free(ipiv);
+  free(indxc);
+  free(indxr);
+  free(ipiv);
 }
 
 /*
@@ -214,14 +214,14 @@ var_num_t mat_determ(var_num_t *a, int n, double toler) {
   int i;
   var_num_t v;
 
-  done = tmp_alloc(n * sizeof(int));
+  done = malloc(n * sizeof(int));
   for (i = 0; i < n; i++) {
     done[i] = 0;
   }
   v = 0;
   mat_det2(1, 0, 0, a, done, &v, n, toler);
 
-  tmp_free(done);
+  free(done);
   return v;
 }
 

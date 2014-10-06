@@ -11,14 +11,19 @@
 
 int x_get_pixel(int x, int y);
 
+typedef unsigned char U8;
+typedef unsigned short U16;
+typedef signed short S16;
+typedef unsigned long U32;
+
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }
 
-#ifndef max
-#define max(a,b) ((a<b) ? (b) : (a))
+#ifndef MAX
+#define MAX(a,b) ((a<b) ? (b) : (a))
 #endif
-#ifndef min
-#define min(a,b) ((a>b) ? (b) : (a))
+#ifndef MIN
+#define MIN(a,b) ((a>b) ? (b) : (a))
 #endif
 
 #if defined(__MINGW32__)

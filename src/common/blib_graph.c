@@ -335,7 +335,7 @@ void cmd_drawpoly() {
     }
 
     if (prog_error) {
-      tmp_free(poly);
+      free(poly);
       return;
     }
 
@@ -356,7 +356,7 @@ void cmd_drawpoly() {
     }
 
     if (prog_error) {
-      tmp_free(poly);
+      free(poly);
       return;
     }
   }
@@ -366,7 +366,7 @@ void cmd_drawpoly() {
     code_skipnext();
     color = par_getint();
     if (prog_error) {
-      tmp_free(poly);
+      free(poly);
       return;
     }
   }
@@ -403,7 +403,7 @@ void cmd_drawpoly() {
     dev_pfill(poly, count);
 
   // cleanup
-  tmp_free(poly);
+  free(poly);
 
   if (color != prev_color)
     dev_setcolor(prev_color);
@@ -909,7 +909,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
 
   // ready
   dev_settextcolor(0, 15);
-  pts = (int *) tmp_alloc(sizeof(int) * count * 2);
+  pts = (int *) malloc(sizeof(int) * count * 2);
 
   if (marks & 0x2) {            // ruler
     x1 += dev_textwidth("00000") + 1;
@@ -1167,7 +1167,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
   };
 
   //
-  tmp_free(pts);
+  free(pts);
 }
 
 //
@@ -1239,11 +1239,11 @@ void cmd_chart() {
   }
 
   // get array's values
-  vals = (var_num_t *) tmp_alloc(sizeof(var_num_t) * count);
+  vals = (var_num_t *) malloc(sizeof(var_num_t) * count);
   for (i = 0; i < count; i++) {
     elem_p = v_getelemptr(var_p, i);
     if (prog_error) {
-      tmp_free(vals);
+      free(vals);
       return;
     }
 
@@ -1259,7 +1259,7 @@ void cmd_chart() {
       break;
     default:
       err_typemismatch();
-      tmp_free(vals);
+      free(vals);
       return;
     }
   }
@@ -1268,7 +1268,7 @@ void cmd_chart() {
   chart_draw(x1, y1, x2, y2, vals, count, NULL, 0, chart, marks);
 
   //
-  tmp_free(vals);
+  free(vals);
   dev_settextcolor(prev_fgcolor, prev_bgcolor);
 }
 
@@ -1671,7 +1671,7 @@ void cmd_polyext() {
 
   par_massget("PPPP", &xmin, &ymin, &xmax, &ymax);
   if (prog_error) {
-    tmp_free(poly);
+    free(poly);
     return;
   }
 
@@ -1687,7 +1687,7 @@ void cmd_polyext() {
 
   if (count == 0) {
     xmin->v.n = ymin->v.n = xmax->v.n = ymax->v.n = 0.0;
-    tmp_free(poly);
+    free(poly);
     return;
   }
 
@@ -1705,5 +1705,5 @@ void cmd_polyext() {
       ymin->v.n = poly[i].y;
   }
 
-  tmp_free(poly);
+  free(poly);
 }

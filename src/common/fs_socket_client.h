@@ -21,7 +21,7 @@ int sockcl_read(dev_file_t *f, byte *data, dword size);
 int sockcl_eof(dev_file_t *f);
 int sockcl_length(dev_file_t *f);
 int http_open(dev_file_t *f);
-int http_read(dev_file_t *f, var_t *var_p, int type);
+int http_read(dev_file_t *f, var_t *var_p);
 
 #if defined(__cplusplus)
 }

@@ -65,7 +65,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
     if (cur_path[0] == '~') {
       char *old_path;
 
-      old_path = tmp_alloc(strlen(cur_path));
+      old_path = malloc(strlen(cur_path));
       strcpy(old_path, cur_path + 1);
 #if defined(_UnixOS)
       sprintf(cur_path, "%s/%s", getenv("HOME"), old_path);
@@ -76,7 +76,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
         sprintf(cur_path, "%s\\%s", getenv("HOMEPATH"), old_path);
       }
 #endif
-      tmp_free(old_path);
+      free(old_path);
     }
     // build the final file-name
 #if defined(_UnixOS)
@@ -120,7 +120,7 @@ void exec_usefunc(var_t *var, addr_t ip) {
   // restore X
   v_set(tvar[SYSVAR_X], old_x);
   v_free(old_x);
-  tmp_free(old_x);
+  free(old_x);
 }
 
 /*
@@ -148,10 +148,10 @@ void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip) {
   // restore X,Y
   v_set(tvar[SYSVAR_X], old_x);
   v_free(old_x);
-  tmp_free(old_x);
+  free(old_x);
   v_set(tvar[SYSVAR_Y], old_y);
   v_free(old_y);
-  tmp_free(old_y);
+  free(old_y);
 }
 
 /*
@@ -183,13 +183,13 @@ void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip) {
   // restore X,Y
   v_set(tvar[SYSVAR_X], old_x);
   v_free(old_x);
-  tmp_free(old_x);
+  free(old_x);
   v_set(tvar[SYSVAR_Y], old_y);
   v_free(old_y);
-  tmp_free(old_y);
+  free(old_y);
   v_set(tvar[SYSVAR_Z], old_z);
   v_free(old_z);
-  tmp_free(old_z);
+  free(old_z);
 }
 
 #ifndef IMPL_LOG_WRITE
@@ -250,7 +250,7 @@ void pv_write(char *str, int method, int handle) {
     l = strlen(str) + strlen(str) + 1;
     if (vp->v.p.size <= l) {
       vp->v.p.size = l + 128;
-      vp->v.p.ptr = tmp_realloc(vp->v.p.ptr, vp->v.p.size);
+      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.size);
     }
     strcat((char *) vp->v.p.ptr, str);
     break;
@@ -398,7 +398,7 @@ void par_getvar(var_t *var) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
-    err_syntax();
+    err_syntax(-1, "%P");
     return;
   default:
     eval(var);
@@ -418,7 +418,7 @@ var_t *par_getvarray() {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
-    err_syntax();
+    err_syntax(-1, "%P");
     return NULL;
   case kwTYPE_VAR:
     var = code_getvarptr();
@@ -440,7 +440,7 @@ var_t *par_getvarray() {
  */
 var_t *par_getvar_ptr() {
   if (code_peek() != kwTYPE_VAR) {
-    err_syntax();
+    err_syntax(-1, "%P");
     return NULL;
   }
   return code_getvarptr();
@@ -457,7 +457,7 @@ void par_getstr(var_t *var) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
-    err_syntax();
+    err_syntax(-1, "%S");
     return;
   default:
     eval(var);
@@ -514,7 +514,7 @@ int par_getsep() {
     last_op = code_getnext();
     return last_op;
   default:
-    err_syntax();
+    err_missing_sep();
   };
 
   return 0;
@@ -526,7 +526,7 @@ int par_getsep() {
 void par_getcomma() {
   if (par_getsep() != ',') {
     if (!prog_error) {
-      err_syntaxsep(',');
+      err_missing_comma();
     }
   }
 }
@@ -537,7 +537,7 @@ void par_getcomma() {
 void par_getsemicolon() {
   if (par_getsep() != ';') {
     if (!prog_error) {
-      err_syntaxsep(';');
+      err_syntaxsep(";");
     }
   }
 }
@@ -548,7 +548,7 @@ void par_getsemicolon() {
 void par_getsharp() {
   if (par_getsep() != '#') {
     if (!prog_error) {
-      err_syntaxsep('#');
+      err_syntaxsep("#");
     }
   }
 }
@@ -599,7 +599,7 @@ pt_t par_getpt() {
   // clean-up
   if (alloc) {
     v_free(var);
-    tmp_free(var);
+    free(var);
   }
 
   return pt;
@@ -650,7 +650,7 @@ ipt_t par_getipt() {
   // clean-up
   if (alloc) {
     v_free(var);
-    tmp_free(var);
+    free(var);
   }
 
   return pt;
@@ -681,7 +681,7 @@ int par_getpoly(pt_t **poly_pp) {
   if (var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
-      tmp_free(var);
+      free(var);
     }
     return 0;
   }
@@ -699,7 +699,7 @@ int par_getpoly(pt_t **poly_pp) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
-        tmp_free(var);
+        free(var);
       }
       return 0;
     }
@@ -710,7 +710,7 @@ int par_getpoly(pt_t **poly_pp) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
-        tmp_free(var);
+        free(var);
       }
       return 0;
     }
@@ -718,7 +718,7 @@ int par_getpoly(pt_t **poly_pp) {
     count = var->v.a.size >> 1;
   }
   // build array
-  *poly_pp = poly = tmp_alloc(sizeof(pt_t) * count);
+  *poly_pp = poly = malloc(sizeof(pt_t) * count);
 
   if (style == 1) {
     int i;
@@ -755,13 +755,13 @@ int par_getpoly(pt_t **poly_pp) {
   }
   // clean-up
   if (prog_error) {
-    tmp_free(poly);
+    free(poly);
     *poly_pp = NULL;
     count = 0;
   }
   if (alloc) {
     v_free(var);
-    tmp_free(var);
+    free(var);
   }
 
   return count;
@@ -792,7 +792,7 @@ int par_getipoly(ipt_t **poly_pp) {
   if (var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
-      tmp_free(var);
+      free(var);
     }
     return 0;
   }
@@ -810,7 +810,7 @@ int par_getipoly(ipt_t **poly_pp) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
-        tmp_free(var);
+        free(var);
       }
       return 0;
     }
@@ -821,7 +821,7 @@ int par_getipoly(ipt_t **poly_pp) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
-        tmp_free(var);
+        free(var);
       }
       return 0;
     }
@@ -829,7 +829,7 @@ int par_getipoly(ipt_t **poly_pp) {
     count = var->v.a.size >> 1;
   }
   // build array
-  *poly_pp = poly = tmp_alloc(sizeof(ipt_t) * count);
+  *poly_pp = poly = malloc(sizeof(ipt_t) * count);
 
   if (style == 1) {
     int i;
@@ -866,13 +866,13 @@ int par_getipoly(ipt_t **poly_pp) {
   }
   // clean-up
   if (prog_error) {
-    tmp_free(poly);
+    free(poly);
     *poly_pp = NULL;
     count = 0;
   }
   if (alloc) {
     v_free(var);
-    tmp_free(var);
+    free(var);
   }
 
   return count;
@@ -899,11 +899,11 @@ void par_freepartable(par_t **ptable_pp, int pcount) {
     for (i = 0; i < pcount; i++) {
       if (ptable[i].flags & PAR_BYVAL) {
         v_free(ptable[i].var);
-        tmp_free(ptable[i].var);
+        free(ptable[i].var);
       }
     }
 
-    tmp_free(ptable);
+    free(ptable);
   }
   *ptable_pp = NULL;
 }
@@ -930,7 +930,7 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
   /*
    *      initialize
    */
-  ptable = *ptable_pp = tmp_alloc(sizeof(par_t) * 256);
+  ptable = *ptable_pp = malloc(sizeof(par_t) * 256);
 
   if (valid_sep) {
     strcpy(vsep, valid_sep);
@@ -955,9 +955,9 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
       // check parameters separator
       if (strchr(vsep, (last_sep = code_getnext())) == NULL) {
         if (strlen(vsep) <= 1) {
-          err_syntaxsep(',');
+          err_missing_comma();
         } else {
-          err_syntaxanysep(vsep);
+          err_syntaxsep(vsep);
         }
         par_freepartable(ptable_pp, pcount);
         return -1;
@@ -996,7 +996,7 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
         pcount++;
       } else {
         v_free(par);
-        tmp_free(par);
+        free(par);
         par_freepartable(ptable_pp, pcount);
         return -1;
       }
@@ -1074,6 +1074,7 @@ int par_massget(const char *fmt, ...) {
   // get ptable
   pcount = par_getpartable(&ptable, NULL);
   if (pcount == -1) {
+    free(ptable);
     return -1;
   }
   
@@ -1133,7 +1134,7 @@ int par_massget(const char *fmt, ...) {
       case 'S':
         // string
         s = va_arg(ap, char**);
-        *s = tmp_strdup(v_getstr(ptable[curpar].var));
+        *s = strdup(v_getstr(ptable[curpar].var));
         curpar++;
         break;
       case 'i':
@@ -1172,7 +1173,7 @@ int par_massget(const char *fmt, ...) {
         if (ptable[curpar].flags == 0)// byref 
           *vt = ptable[curpar].var;
         else {
-          err_syntax();
+          err_syntax(-1, "%P");
           break;
         }
         curpar++;

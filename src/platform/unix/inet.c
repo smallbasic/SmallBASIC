@@ -18,13 +18,14 @@
 #if defined(_Win32)
 static int inetlib_init = 0;
 #else
+#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #endif
 
-#ifndef socklen_t
-#define socklen_t int
+#if !defined(socklen_t)
+#define socklen_t unsigned
 #endif
 
 // the length of time (usec) to block waiting for an event
@@ -281,7 +282,11 @@ socket_t net_listen(int server_port) {
       }
     } else if (FD_ISSET(listener, &readfds)) {
       // connection is ready
+#if defined(Win32)
+      int remoteaddr_len = sizeof(remoteaddr);
+#else
       socklen_t remoteaddr_len = sizeof(remoteaddr);
+#endif
       s = accept(listener, (struct sockaddr *)&remoteaddr, &remoteaddr_len);
       break;
     }

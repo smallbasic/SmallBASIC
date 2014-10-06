@@ -1,3 +1,27 @@
+2015-01-25
+	Added timer func support
+	Improved syntax error messages
+	Remove dependence on malloc_usable_size
+	Pass TRUE as an argument to PAUSE to wait for an event
+
+2015-01-18
+	Anti-aliased line drawing
+	Improved INPUT with clipboard handling
+	Improved graphics display performance
+
+2014-12-03
+	File-open now uses .bas DIR to locate files
+
+2014-11-06
+	Added WINDOW system object to control the ansiwidget
+	Added sound support to SDL port
+
+2014-10-28
+	Update INKEY to return ALT, CTRL, ALT+CTRL key information
+
+2014-10-20
+	Refactor FORM handling to use system object
+
 2014-09-28
 	Refactor image handling to use system object
 

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -10,23 +10,31 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "ui/system.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
 #include "common/osd.h"
 #include "common/device.h"
-#include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"
+#include "ui/system.h"
+#include "ui/inputs.h"
 
-#define SYSTEM_MENU   "\033[ OConsole|Show keypad|View source|Restart"
-#define MENU_CONSOLE  0
-#define MENU_KEYPAD   1
-#define MENU_SOURCE   2
-#define MENU_RESTART  3
-#define MENU_ZOOM_UP  4
-#define MENU_ZOOM_DN  5
+#define MENU_CONSOLE   0
+#define MENU_SOURCE    1
+#define MENU_BACK      2
+#define MENU_RESTART   3
+#define MENU_KEYPAD    4
+#define MENU_ZOOM_UP   5
+#define MENU_ZOOM_DN   6
+#define MENU_CUT       7
+#define MENU_COPY      8
+#define MENU_PASTE     9
+#define MENU_CTRL_MODE 10
+#define MENU_LIVEMODE  11
+#define MENU_AUDIO     12
+#define MENU_SIZE      13
+
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
 #define FONT_MAX 200
@@ -47,38 +55,64 @@ System::System() :
   _initialFontSize(0),
   _fontScale(100),
   _overruns(0),
-  _systemMenu(false),
-  _systemScreen(false),
+  _userScreenId(-1),
+  _systemMenu(NULL),
   _mainBas(false),
   _buttonPressed(false),
-  _programSrc(NULL) {
+  _liveMode(false),
+  _srcRendered(false),
+  _menuActive(false),
+  _programSrc(NULL),
+  _modifiedTime(0) {
   g_system = this;
 }
 
 System::~System() {
+  delete [] _systemMenu;
   delete [] _programSrc;
+
+  _systemMenu = NULL;
+  _programSrc = NULL;
 }
 
-void System::buttonClicked(const char *url) {
-  _loadPath.empty();
-  _loadPath.append(url, strlen(url));
+void System::checkModifiedTime() {
+  if (_liveMode && _activeFile.length() > 0 &&
+      _modifiedTime != getModifiedTime()) {
+    setRestart();
+  }
+}
+
+bool System::execute(const char *bas) {
+  _output->reset();
+
+  // reset program controlled options
+  opt_antialias = true;
+  opt_show_page = false;
+  opt_quiet = true;
+  opt_pref_width = _output->getWidth();
+  opt_pref_height = _output->getHeight();
+
+  bool result = ::sbasic_main(bas);
+
+  opt_command[0] = '\0';
+  _output->flush(true);
+  return result;
 }
 
 int System::getPen(int code) {
   int result = 0;
-  MAEvent event;
   if (!isClosing()) {
     switch (code) {
     case 0:
       // UNTIL PEN(0) - wait until click or move
-      event = getNextEvent();
+      processEvents(1);
       // fallthru
 
     case 3:   // returns true if the pen is down (and save curpos)
       if (_touchX != -1 && _touchY != -1) {
         result = 1;
       } else {
-        osd_events(0);
+        processEvents(0);
       }
       break;
 
@@ -109,11 +143,13 @@ char *System::getText(char *dest, int maxSize) {
   int y = _output->getY();
   int w = EXTENT_X(maGetTextSize("YNM"));
   int h = _output->textHeight();
+  int charWidth = _output->getCharWidth();
 
-  dest[0] = '\0';
-  _state = kModalState;
-  IFormWidget *formWidget = _output->createLineInput(dest, maxSize, x, y, w, h);
+  FormInput *widget = new FormLineInput(NULL, maxSize, true, x, y, w, h);
+  widget->setFocus();
+  _output->addInput(widget);
   _output->redraw();
+  _state = kModalState;
   maShowVirtualKeyboard();
 
   while (isModal()) {
@@ -121,13 +157,27 @@ char *System::getText(char *dest, int maxSize) {
     if (event.type == EVENT_TYPE_KEY_PRESSED) {
       dev_clrkb();
       if (isModal()) {
-        if (event.key == SB_KEY_ENTER) {
+        int sw = _output->getScreenWidth();
+        switch (event.key) {
+        case SB_KEY_ENTER:
           _state = kRunState;
-        } else {
-          _output->edit(formWidget, event.key);
+          break;
+        case SB_KEY_MENU:
+          break;
+        default:
+          if (widget->edit(event.key, sw, charWidth)) {
+            _output->redraw();
+          }
         }
       }
     }
+  }
+
+  const char *result = widget->getText();
+  if (result) {
+    strcpy(dest, result);
+  } else {
+    dest[0] = '\0';
   }
 
   // paint the widget result onto the backing screen
@@ -136,15 +186,29 @@ char *System::getText(char *dest, int maxSize) {
     _output->print(dest);
   }
 
-  delete formWidget;
+  _output->removeInput(widget);
+  delete widget;
   return dest;
+}
+
+uint32_t System::getModifiedTime() {
+  uint32_t result = 0;
+  if (_activeFile.length() > 0) {
+    struct stat st_file;
+    if (!stat(_activeFile.c_str(), &st_file)) {
+      result = st_file.st_mtime;
+    }
+  }
+  return result;
 }
 
 void System::handleMenu(int menuId) {
   int fontSize = _output->getFontSize();
-  _systemMenu = false;
+  int menuItem = _systemMenu[menuId];
+  delete [] _systemMenu;
+  _systemMenu = NULL;
 
-  switch (menuId) {
+  switch (menuItem) {
   case MENU_SOURCE:
     showSystemScreen(true);
     break;
@@ -155,10 +219,10 @@ void System::handleMenu(int menuId) {
     maShowVirtualKeyboard();
     break;
   case MENU_RESTART:
-    if (isRunning()) {
-      brun_break();
-    }
-    _state = kRestartState;
+    setRestart();
+    break;
+  case MENU_BACK:
+    setBack();
     break;
   case MENU_ZOOM_UP:
     if (_fontScale > FONT_MIN) {
@@ -172,15 +236,43 @@ void System::handleMenu(int menuId) {
       fontSize = (_initialFontSize * _fontScale / 100);
     }
     break;
+  case MENU_COPY:
+  case MENU_CUT:
+    if (get_focus_edit() != NULL) {
+      char *text = get_focus_edit()->copy(menuItem == MENU_CUT);
+      if (text) {
+        setClipboardText(text);
+        free(text);
+        _output->redraw();
+      }
+    }
+    break;
+  case MENU_PASTE:
+    if (get_focus_edit() != NULL) {
+      char *text = getClipboardText();
+      get_focus_edit()->paste(text);
+      _output->redraw();
+      free(text);
+    }
+    break;
+  case MENU_CTRL_MODE:
+    if (get_focus_edit() != NULL) {
+      bool controlMode = get_focus_edit()->getControlMode();
+      get_focus_edit()->setControlMode(!controlMode);
+    }
+    break;
+  case MENU_LIVEMODE:
+    _liveMode = !_liveMode;
+    break;
+  case MENU_AUDIO:
+    opt_mute_audio = !opt_mute_audio;
+    break;
   }
 
   if (fontSize != _output->getFontSize()) {
     // restart the shell
     _output->setFontSize(fontSize);
-    if (isRunning()) {
-      brun_break();
-    }
-    _state = kRestartState;
+    setRestart();
   }
 
   if (!isRunning()) {
@@ -188,13 +280,13 @@ void System::handleMenu(int menuId) {
   }
 }
 
-void System::handleEvent(MAEvent event) {
+void System::handleEvent(MAEvent &event) {
   switch (event.type) {
   case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
-    if (_systemMenu) {
+    if (_systemMenu != NULL) {
       handleMenu(event.optionsBoxButtonIndex);
     } else if (isRunning()) {
-      if (!_output->optionSelected(event.optionsBoxButtonIndex)) {
+      if (!form_ui::optionSelected(event.optionsBoxButtonIndex)) {
         dev_pushkey(event.optionsBoxButtonIndex);
       }
     }
@@ -223,6 +315,9 @@ void System::handleEvent(MAEvent event) {
     _output->flush(false);
     break;
   }
+  if (_liveMode) {
+    checkModifiedTime();
+  }
 }
 
 char *System::loadResource(const char *fileName) {
@@ -231,34 +326,39 @@ char *System::loadResource(const char *fileName) {
     int handle = 1;
     var_t *var_p = v_new();
     dev_file_t *f = dev_getfileptr(handle);
-    _output->print("\033[ LLoading...");
+    _output->setStatus("Loading...");
+    _output->redraw();
     if (dev_fopen(handle, fileName, 0)) {
-      http_read(f, var_p, 0);
+      http_read(f, var_p);
       int len = var_p->v.p.size;
-      buffer = (char *)tmp_alloc(len + 1);
+      buffer = (char *)malloc(len + 1);
       memcpy(buffer, var_p->v.p.ptr, len);
       buffer[len] = '\0';
     } else {
       systemPrint("\nfailed");
     }
+    _output->setStatus(NULL);
     dev_fclose(handle);
     v_free(var_p);
-    tmp_free(var_p);
+    free(var_p);
   }
   return buffer;
 }
 
 char *System::readSource(const char *fileName) {
+  _activeFile.empty();
   char *buffer = loadResource(fileName);
   if (!buffer) {
     int h = open(fileName, O_BINARY | O_RDONLY, 0644);
     if (h != -1) {
       int len = lseek(h, 0, SEEK_END);
       lseek(h, 0, SEEK_SET);
-      buffer = (char *)tmp_alloc(len + 1);
+      buffer = (char *)malloc(len + 1);
       len = read(h, buffer, len);
       buffer[len] = '\0';
       close(h);
+      _activeFile = fileName;
+      _modifiedTime = getModifiedTime();
     }
   }
   if (buffer != NULL) {
@@ -266,7 +366,8 @@ char *System::readSource(const char *fileName) {
     int len = strlen(buffer);
     _programSrc = new char[len + 1];
     strncpy(_programSrc, buffer, len);
-    _programSrc[len] = 0;
+    _programSrc[len] = '\0';
+    _srcRendered = false;
     systemPrint("Opened: %s %d bytes\n", fileName, len);
   }
   return buffer;
@@ -276,8 +377,10 @@ void System::resize() {
   MAExtent screenSize = maGetScrSize();
   logEntered();
   _output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
-  setDimensions();
-  dev_pushkey(SB_PKEY_SIZE_CHG);
+  if (isRunning()) {
+    setDimensions();
+    dev_pushkey(SB_PKEY_SIZE_CHG);
+  }
 }
 
 void System::runMain(const char *mainBasPath) {
@@ -288,9 +391,14 @@ void System::runMain(const char *mainBasPath) {
   _loadPath = mainBasPath;
   _mainBas = true;
   strcpy(opt_command, "welcome");
-  sbasic_main(_loadPath);
 
-  while (!isClosing()) {
+  bool started = execute(_loadPath);
+  if (!started) {
+    maAlert("", gsb_last_errmsg, NULL, NULL, NULL);
+    _state = kClosingState;
+  }
+
+  while (!isClosing() && started) {
     if (isRestart()) {
       _loadPath = activePath;
       _state = kActiveState;
@@ -305,9 +413,8 @@ void System::runMain(const char *mainBasPath) {
         activePath = mainBasPath;
       }
     }
-    opt_command[0] = '\0';
-    bool success = sbasic_main(_loadPath);
-    _output->flush(true);
+
+    bool success = execute(_loadPath);
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }
@@ -333,11 +440,11 @@ void System::runMain(const char *mainBasPath) {
 }
 
 void System::runOnce(const char *startupBas) {
+  // startupBas must not be _loadPath.c_str()
   logEntered();
-
-  _loadPath = startupBas;
   _mainBas = false;
-  bool success = sbasic_main(_loadPath);
+
+  bool success = execute(startupBas);
   showCompletion(success);
   // press back to continue
   while (!isBack() && !isClosing() && !isRestart()) {
@@ -346,14 +453,25 @@ void System::runOnce(const char *startupBas) {
 }
 
 void System::setBack() {
-  if (_systemScreen) {
-    // restore user screens00
-    _output->print("\033[ SR");
-    _systemScreen = false;
+  if (_userScreenId != -1) {
+    // restore user screen
+    _output->selectBackScreen(_userScreenId);
+    _output->selectFrontScreen(_userScreenId);
+    _userScreenId = -1;
   } else {
     // quit app when shell is active
     setExit(_mainBas);
   }
+}
+
+void System::setLoadBreak(const char *path) {
+  _loadPath = path;
+  _state = kBreakState;
+  brun_break();
+}
+
+void System::setLoadPath(const char *path) {
+  _loadPath = path;
 }
 
 bool System::setParentPath() {
@@ -411,15 +529,14 @@ void System::setRunning(bool running) {
     dev_bgcolor = -DEFAULT_BACKGROUND;
     setDimensions();
     dev_clrkb();
-    ui_reset();
 
-    _output->reset();
     _output->setAutoflush(!opt_show_page);
     _state = kRunState;
     _loadPath.empty();
     _lastEventTime = maGetMilliSecondCount();
     _eventTicks = 0;
     _overruns = 0;
+    _userScreenId = -1;
   } else if (!isClosing() && !isRestart() && !isBack()) {
     _state = kActiveState;
     _output->setAutoflush(true);
@@ -428,9 +545,11 @@ void System::setRunning(bool running) {
 
 void System::showCompletion(bool success) {
   if (success) {
-    _output->print("\033[ LDone - press back [<-]");
+    _output->setStatus("Done - press back [<-]");
   } else {
-    _output->print("\033[ LError - see console");
+    printErrorLine();
+    _output->setStatus("Error - see console");
+    showSystemScreen(true);
   }
   _output->flush(true);
 }
@@ -456,32 +575,221 @@ void System::checkLoadError() {
 }
 
 void System::showMenu() {
-  _systemMenu = true;
-  if (_mainBas) {
-    char buffer[128];
-    sprintf(buffer, "%s|Zoom %d%%|Zoom %d%%", SYSTEM_MENU, 
-            _fontScale - FONT_SCALE_INTERVAL,
-            _fontScale + FONT_SCALE_INTERVAL);
-    _output->print(buffer);
-  } else {
-    _output->print(SYSTEM_MENU);
+  logEntered();
+
+  if (!_menuActive) {
+    _menuActive = true;
+    char buffer[64];
+    if (_systemMenu != NULL) {
+      delete [] _systemMenu;
+    }
+
+    StringList *items = new StringList();
+    _systemMenu = new int[MENU_SIZE];
+    int index = 0;
+    if (get_focus_edit() != NULL) {
+      items->add(new String("Cut"));
+      items->add(new String("Copy"));
+      items->add(new String("Paste"));
+      _systemMenu[index++] = MENU_CUT;
+      _systemMenu[index++] = MENU_COPY;
+      _systemMenu[index++] = MENU_PASTE;
+#if defined(_SDL)
+      items->add(new String("Back"));
+      _systemMenu[index++] = MENU_BACK;
+#else
+      items->add(new String("Show keypad"));
+      _systemMenu[index++] = MENU_KEYPAD;
+      bool controlMode = get_focus_edit()->getControlMode();
+      sprintf(buffer, "Control Mode [%s]", (controlMode ? "ON" : "OFF"));
+      items->add(new String(buffer));
+      _systemMenu[index++] = MENU_CTRL_MODE;
+#endif
+    } else {
+      if (_overruns == 0) {
+        items->add(new String("Console"));
+        items->add(new String("View source"));
+        _systemMenu[index++] = MENU_CONSOLE;
+        _systemMenu[index++] = MENU_SOURCE;
+      }
+#if defined(_SDL)
+      items->add(new String("Back"));
+      _systemMenu[index++] = MENU_BACK;
+#endif
+      items->add(new String("Restart"));
+      _systemMenu[index++] = MENU_RESTART;
+#if !defined(_SDL)
+      items->add(new String("Show keypad"));
+      _systemMenu[index++] = MENU_KEYPAD;
+#endif
+      if (_mainBas) {
+        sprintf(buffer, "Zoom %d%%", _fontScale - FONT_SCALE_INTERVAL);
+        items->add(new String(buffer));
+        sprintf(buffer, "Zoom %d%%", _fontScale + FONT_SCALE_INTERVAL);
+        items->add(new String(buffer));
+        _systemMenu[index++] = MENU_ZOOM_UP;
+        _systemMenu[index++] = MENU_ZOOM_DN;
+      }
+
+#if defined(_SDL)
+      sprintf(buffer, "Live Update [%s]", (_liveMode ? "ON" : "OFF"));
+      items->add(new String(buffer));
+      _systemMenu[index++] = MENU_LIVEMODE;
+#endif
+
+      sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
+      items->add(new String(buffer));
+      _systemMenu[index++] = MENU_AUDIO;
+    }
+    optionsBox(items);
+    delete items;
+    _menuActive = false;
   }
 }
 
-void System::showSystemScreen(bool showSrc) {
-  if (showSrc) {
-    // screen command write screen 6 (\014=CLS)
-    _output->print("\033[ SW6\014");
-    if (_programSrc) {
-      _output->print(_programSrc);
+void System::printErrorLine() {
+  if (_programSrc) {
+    int line = 1;
+    char *errLine = _programSrc;
+    char *ch = _programSrc;
+    while (line < gsb_last_line) {
+      while (*ch && *ch != '\n') {
+        ch++;
+      }
+      if (*ch) {
+        errLine = ++ch;
+      }
+      line++;
     }
-    // restore write screen, display screen 6 (source)
-    _output->print("\033[ Sw; SD6");
-  } else {
-    // screen command display screen 7 (console)
-    _output->print("\033[ SD7");
+    while (*ch && *ch != '\n') {
+      ch++;
+    }
+    char end;
+    if (*ch == '\n') {
+      ch++;
+      end = *ch;
+      *ch = '\0';
+    } else {
+      end = *ch;
+    }
+    while (*errLine && (IS_WHITE(*errLine))) {
+      errLine++;
+    }
+
+    int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+    _output->print("\033[4mError line:\033[0m\n");
+    _output->print(errLine);
+    *ch = end;
+    _output->selectBackScreen(prevScreen);
   }
-  _systemScreen = true;
+}
+
+void System::printSourceLine(char *text, int line, bool last) {
+  char lineMargin[32];
+  sprintf(lineMargin, "\033[7m%03d\033[0m ", line);
+  _output->print(lineMargin);
+  if (line == gsb_last_line && gsb_last_error) {
+    _output->print("\033[7m");
+    _output->print(text);
+    if (last) {
+      _output->print("\n");
+    }
+    _output->print("\033[27;31m  --^\n");
+    _output->print(gsb_last_errmsg);
+    _output->print("\033[0m\n");
+  } else {
+    _output->print(text);
+  }
+}
+
+void System::printSource() {
+  if (_programSrc && !_srcRendered) {
+    _srcRendered = true;
+    _output->clearScreen();
+    int line = 1;
+    char *ch = _programSrc;
+    char *nextLine = _programSrc;
+    int errorLine = gsb_last_error ? gsb_last_line : -1;
+    int charHeight = _output->getCharHeight();
+    int height = _output->getHeight();
+    int pageLines = height / charHeight;
+
+    while (*ch) {
+      while (*ch && *ch != '\n') {
+        ch++;
+      }
+      if (*ch == '\n') {
+        ch++;
+        char end = *ch;
+        *ch = '\0';
+        printSourceLine(nextLine, line, false);
+        *ch = end;
+        nextLine = ch;
+      } else {
+        printSourceLine(nextLine, line, true);
+      }
+      line++;
+
+      if (errorLine != -1 && line == errorLine + pageLines) {
+        // avoid scrolling past the error line
+        if (*ch) {
+          _output->print("... \n");
+        }
+        break;
+      }
+    }
+
+    // scroll to the error line
+    if (errorLine != -1) {
+      int displayLines = _output->getY() / charHeight;
+      if (line > displayLines) {
+        // printed more than displayed due to scrolling
+        errorLine -= (line - displayLines);
+      }
+      int yScroll = charHeight * (errorLine - (pageLines / 2));
+      int maxScroll = ((displayLines * charHeight) - height);
+      if (yScroll < 0) {
+        yScroll = 0;
+      }
+      if (yScroll < maxScroll) {
+        _output->setScroll(0, yScroll);
+      }
+    } else {
+      _output->setScroll(0, 0);
+    }
+  }
+}
+
+void System::setExit(bool quit) {
+  if (!isClosing()) {
+    bool running = isRunning();
+    _state = quit ? kClosingState : kBackState;
+    if (running) {
+      brun_break();
+    }
+  }
+}
+
+void System::setRestart() {
+  if (isRunning()) {
+    brun_break();
+  }
+  _state = kRestartState;
+}
+
+void System::showSystemScreen(bool showSrc) {
+  int prevScreenId;
+  if (showSrc) {
+    prevScreenId = _output->selectBackScreen(SOURCE_SCREEN);
+    printSource();
+    _output->selectBackScreen(prevScreenId);
+    _output->selectFrontScreen(SOURCE_SCREEN);
+  } else {
+    prevScreenId = _output->selectFrontScreen(CONSOLE_SCREEN);
+  }
+  if (_userScreenId == -1) {
+    _userScreenId = prevScreenId;
+  }
 }
 
 void System::systemPrint(const char *format, ...) {
@@ -498,9 +806,9 @@ void System::systemPrint(const char *format, ...) {
   if (isSystemScreen()) {
     _output->print(buf);
   } else {
-    _output->print("\033[ SW7");
+    int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
     _output->print(buf);
-    _output->print("\033[ Sw");
+    _output->selectBackScreen(prevScreen);
   }
 }
 
@@ -509,14 +817,7 @@ void System::systemPrint(const char *format, ...) {
 //
 void osd_cls(void) {
   logEntered();
-  ui_reset();
-  g_system->_output->clearScreen();
-}
-
-int osd_devrestore(void) {
-  ui_reset();
-  g_system->setRunning(false);
-  return 0;
+  g_system->getOutput()->clearScreen();
 }
 
 int osd_events(int wait_flag) {
@@ -535,38 +836,38 @@ int osd_getpen(int mode) {
 }
 
 long osd_getpixel(int x, int y) {
-  return g_system->_output->getPixel(x, y);
+  return g_system->getOutput()->getPixel(x, y);
 }
 
 int osd_getx(void) {
-  return g_system->_output->getX();
+  return g_system->getOutput()->getX();
 }
 
 int osd_gety(void) {
-  return g_system->_output->getY();
+  return g_system->getOutput()->getY();
 }
 
 void osd_line(int x1, int y1, int x2, int y2) {
-  g_system->_output->drawLine(x1, y1, x2, y2);
+  g_system->getOutput()->drawLine(x1, y1, x2, y2);
 }
 
 void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   if (fill) {
-    g_system->_output->drawRectFilled(x1, y1, x2, y2);
+    g_system->getOutput()->drawRectFilled(x1, y1, x2, y2);
   } else {
-    g_system->_output->drawRect(x1, y1, x2, y2);
+    g_system->getOutput()->drawRect(x1, y1, x2, y2);
   }
 }
 
 void osd_refresh(void) {
   if (!g_system->isClosing()) {
-    g_system->_output->flush(true);
+    g_system->getOutput()->flush(true);
   }
 }
 
 void osd_setcolor(long color) {
   if (!g_system->isClosing()) {
-    g_system->_output->setColor(color);
+    g_system->getOutput()->setColor(color);
   }
 }
 
@@ -575,19 +876,19 @@ void osd_setpenmode(int enable) {
 }
 
 void osd_setpixel(int x, int y) {
-  g_system->_output->setPixel(x, y, dev_fgcolor);
+  g_system->getOutput()->setPixel(x, y, dev_fgcolor);
 }
 
 void osd_settextcolor(long fg, long bg) {
-  g_system->_output->setTextColor(fg, bg);
+  g_system->getOutput()->setTextColor(fg, bg);
 }
 
 void osd_setxy(int x, int y) {
-  g_system->_output->setXY(x, y);
+  g_system->getOutput()->setXY(x, y);
 }
 
 int osd_textheight(const char *str) {
-  return g_system->_output->textHeight();
+  return g_system->getOutput()->textHeight();
 }
 
 int osd_textwidth(const char *str) {
@@ -597,12 +898,12 @@ int osd_textwidth(const char *str) {
 
 void osd_write(const char *str) {
   if (!g_system->isClosing()) {
-    g_system->_output->print(str);
+    g_system->getOutput()->print(str);
   }
 }
 
 void lwrite(const char *str) {
-  if (!g_system->isClosing()) {
+  if (!(str[0] == '\n' && str[1] == '\0') && !g_system->isClosing()) {
     g_system->systemPrint(str);
   }
 }
@@ -619,25 +920,7 @@ char *dev_read(const char *fileName) {
   return g_system->readSource(fileName);
 }
 
-void dev_show_page() {
-  g_system->_output->flushNow();
-}
-
-int dev_image_load(int handle) {
-  return -1;
-}
-
-int dev_image_width(int handle) {
-  return -1;
-}
-
-int dev_image_height(int handle) {
-  return -1;
-}
-
-void dev_image_show(var_image *image) {
-}
-
-void dev_image_hide(int handle) {
+int maGetMilliSecondCount(void) {
+  return dev_get_millisecond_count();
 }
 

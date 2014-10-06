@@ -12,7 +12,7 @@
 #include "platform/tizen/runtime.h"
 #include "ui/maapi.h"
 #include "ui/utils.h"
-#include "ui/form_ui.h"
+#include "ui/form.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -335,17 +335,5 @@ int osd_devinit(void) {
   thread->setRunning(true);
   setsysvar_str(SYSVAR_OSNAME, "Tizen");
   return 1;
-}
-
-void dev_image(int handle, int index,
-               int x, int y, int sx, int sy, int w, int h) {
-}
-
-int dev_image_width(int handle, int index) {
-  return 0;
-}
-
-int dev_image_height(int handle, int index) {
-  return 0;
 }
 

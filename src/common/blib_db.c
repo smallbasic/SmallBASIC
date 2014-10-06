@@ -52,7 +52,7 @@ void cmd_fopen() {
       flags = DEV_FILE_APPEND;
       break;
     default:
-      err_syntax();
+      rt_raise(ERR_SYNTAX);
       v_free(&file_name);
       return;
     }
@@ -77,7 +77,7 @@ void cmd_fopen() {
       }
     }
   } else {
-    err_syntax();
+    rt_raise(ERR_SYNTAX);
   }
   v_free(&file_name);
 }
@@ -209,13 +209,13 @@ int read_encoded_var(int handle, var_t * var) {
     break;
   case V_STR:
     var->type = V_STR;
-    var->v.p.ptr = tmp_alloc(fv.size + 1);
+    var->v.p.ptr = malloc(fv.size + 1);
     dev_fread(handle, (byte *)var->v.p.ptr, fv.size);
     var->v.p.ptr[fv.size] = '\0';
     break;
   case V_ARRAY:
     var->type = V_ARRAY;
-    var->v.a.ptr = tmp_alloc(fv.size * sizeof(var_t));
+    var->v.a.ptr = malloc(fv.size * sizeof(var_t));
     var->v.a.size = fv.size;
 
     // read additional data about array
@@ -376,7 +376,7 @@ void cmd_flineinput() {
             // get the variable
             code = code_peek();
             if (code != kwTYPE_VAR) {
-              err_syntax();
+              err_syntax(kwLINEINPUT, "%P");
               return;
             }
             var_p = code_getvarptr();
@@ -386,7 +386,7 @@ void cmd_flineinput() {
               size = 256;
               index = 0;
               var_p->type = V_STR;
-              var_p->v.p.ptr = tmp_alloc(size);
+              var_p->v.p.ptr = malloc(size);
 
               // READ IT
               while (!dev_feof(handle)) {
@@ -402,7 +402,7 @@ void cmd_flineinput() {
                   // store char
                   if (index == (size - 1)) {
                     size += 256;
-                    var_p->v.p.ptr = tmp_realloc(var_p->v.p.ptr, size);
+                    var_p->v.p.ptr = realloc(var_p->v.p.ptr, size);
                   }
                   var_p->v.p.ptr[index] = ch;
                   index++;
@@ -428,7 +428,7 @@ void cmd_flineinput() {
     if (!prog_error) {
       v_free(var_p);
       var_p->type = V_STR;
-      var_p->v.p.ptr = tmp_alloc(SB_TEXTLINE_SIZE + 1);
+      var_p->v.p.ptr = malloc(SB_TEXTLINE_SIZE + 1);
       var_p->v.p.size = SB_TEXTLINE_SIZE + 1;
       ((char *)var_p->v.p.ptr)[0] = 0;
       dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
@@ -593,7 +593,7 @@ void cmd_floadln() {
 
     dev_file_t *f = dev_getfileptr(handle);
     if (f->type == ft_http_client) {
-      http_read(f, var_p, type);  // TLOAD #1, html_str
+      http_read(f, var_p);  // TLOAD #1, html_str
       return;
     }
   } else {
@@ -638,7 +638,7 @@ void cmd_floadln() {
       var_p = (var_t *)(array_p->v.a.ptr + (sizeof(var_t) * index));
       size = GROW_SIZE;
       var_p->type = V_STR;
-      var_p->v.p.ptr = tmp_alloc(size);
+      var_p->v.p.ptr = malloc(size);
       index++;
 
       // process the next line
@@ -668,7 +668,7 @@ void cmd_floadln() {
         } else if (ch != '\r') {  // store char
           if (bcount >= (size - 1)) {
             size += GROW_SIZE;
-            var_p->v.p.ptr = tmp_realloc(var_p->v.p.ptr, size);
+            var_p->v.p.ptr = realloc(var_p->v.p.ptr, size);
           }
           var_p->v.p.ptr[bcount] = ch;
           bcount++;
@@ -684,7 +684,7 @@ void cmd_floadln() {
       // store text-line
       var_p->v.p.ptr[bcount] = '\0';
       var_p->v.p.size = bcount + 1;
-      var_p->v.p.ptr = tmp_realloc(var_p->v.p.ptr, var_p->v.p.size);
+      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.size);
 
       // resize array
       if (index >= (array_size - 1)) {
@@ -703,9 +703,9 @@ void cmd_floadln() {
     v_free(var_p);
     var_p->type = V_STR;
     var_p->v.p.size = dev_flength(handle) + 1;
-    var_p->v.p.ptr = tmp_alloc(var_p->v.p.size);
+    var_p->v.p.ptr = malloc(var_p->v.p.size);
     if (var_p->v.p.size > 1) {
-      dev_fread(handle, var_p->v.p.ptr, var_p->v.p.size - 1);
+      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.size - 1);
     }
     var_p->v.p.ptr[var_p->v.p.size - 1] = '\0';
   }
@@ -857,7 +857,7 @@ void dirwalk(char *dir, char *wc, addr_t use_ip) {
         exec_usefunc(var, use_ip);
         contf = v_getint(var);
         v_free(var);
-        tmp_free(var);
+        free(var);
       }
       if (!contf) {
         break;

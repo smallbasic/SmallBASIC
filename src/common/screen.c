@@ -11,6 +11,8 @@
 
 #include "common/device.h"
 #include "common/messages.h"
+#include "common/osd.h"
+#include "common/sberr.h"
 
 #define W2X(x) (((((x) - dev_Wx1) * dev_Vdx) / dev_Wdx) + dev_Vx1)
 #define W2Y(y) (((((y) - dev_Wy1) * dev_Vdy) / dev_Wdy) + dev_Vy1)
@@ -29,10 +31,6 @@ dword os_color_depth = 16;
 byte os_graphics = 0; // CONSOLE
 int os_graf_mx = 80;
 int os_graf_my = 25;
-
-// cache
-word os_cclabs1 = 256;
-word os_ccpass2 = 256;
 
 // graphics - viewport
 int32 dev_Vx1;
@@ -97,28 +95,14 @@ void dev_clreol() {
  * returns the x position of cursor (in pixels)
  */
 int dev_getx() {
-#if USE_TERM_IO
-  if (os_graphics) {
-    return osd_getx();
-  }
-  return term_getx();
-#else
   return osd_getx();
-#endif
 }
 
 /**
  * returns the y position of cursor (in pixels)
  */
 int dev_gety() {
-#if USE_TERM_IO
-  if (os_graphics) {
-    return osd_gety();
-  }
-  return term_gety();
-#else
   return osd_gety();
-#endif
 }
 
 /**
@@ -138,15 +122,7 @@ void dev_setxy(int x, int y, int transform) {
     y = W2Y(y);
   }
 
-#if USE_TERM_IO
-  if (os_graphics) {
-    osd_setxy(x, y);
-  } else {
-    term_setxy(x, y);
-  }
-#else
   osd_setxy(x, y);
-#endif
 }
 
 /**
@@ -154,57 +130,32 @@ void dev_setxy(int x, int y, int transform) {
  * the background color is used only for texts
  */
 void dev_settextcolor(long fg, long bg) {
-#if USE_TERM_IO
-  if (os_graphics) {
-#endif
-    if (bg == -1) {
-      bg = dev_bgcolor;
-    }
-
-    if ((fg <= 15) && (bg <= 15) && (fg >= 0) && (bg >= 0)) { // VGA
-      if (bg != -1) {
-        dev_bgcolor = bg;
-      }
-      osd_settextcolor(dev_fgcolor = fg, dev_bgcolor);
-    } else {
-      osd_settextcolor((dev_fgcolor = fg), (dev_bgcolor = bg));
-    }
-
-#if USE_TERM_IO
-  } else {
-    term_settextcolor(fg, bg);
+  if (bg == -1) {
+    bg = dev_bgcolor;
   }
-#endif
+  
+  if ((fg <= 15) && (bg <= 15) && (fg >= 0) && (bg >= 0)) { // VGA
+    if (bg != -1) {
+      dev_bgcolor = bg;
+    }
+    osd_settextcolor(dev_fgcolor = fg, dev_bgcolor);
+  } else {
+    osd_settextcolor((dev_fgcolor = fg), (dev_bgcolor = bg));
+  }
 }
 
 /**
  * prints a string
  */
 void dev_print(const char *str) {
-#if USE_TERM_IO
-  if (os_graphics) {
-    osd_write(str);
-  } else {
-    term_print(str);
-  }
-#else
   osd_write(str);
-#endif
 }
 
 /**
  * clears the screen
  */
 void dev_cls() {
-#if USE_TERM_IO
-  if (os_graphics) {
-    osd_cls();
-  } else {
-    term_cls();
-  }
-#else
   osd_cls();
-#endif
 }
 
 /**
@@ -231,21 +182,11 @@ int dev_textheight(const char *str) {
  * changes the current foreground color
  */
 void dev_setcolor(long color) {
-#if USE_TERM_IO
-  if (os_graphics) {
-#endif
-    if (color <= 15 && color >= 0) {
-      osd_setcolor(dev_fgcolor = color);
-    } else if (color < 0) {
-      osd_setcolor((dev_fgcolor = color));
-    }
-#if USE_TERM_IO
-  } else {
-    if (color <= 15 && color >= 0) {
-      term_settextcolor(color, -1);
-    }
+  if (color <= 15 && color >= 0) {
+    osd_setcolor(dev_fgcolor = color);
+  } else if (color < 0) {
+    osd_setcolor((dev_fgcolor = color));
   }
-#endif
 }
 
 /**
@@ -256,16 +197,7 @@ void dev_setpixel(int x, int y) {
   y = W2Y(y);
   if (x >= dev_Vx1 && x <= dev_Vx2) {
     if (y >= dev_Vy1 && y <= dev_Vy2) {
-#if USE_TERM_IO
-      if (os_graphics) {
-        osd_setpixel(x, y);
-      }
-      else {
-        term_drawpoint(x, y);
-      }
-#else
       osd_setpixel(x, y);
-#endif
     }
   }
 }
@@ -278,16 +210,7 @@ long dev_getpixel(int x, int y) {
   y = W2Y(y);
   if (x >= dev_Vx1 && x <= dev_Vx2) {
     if (y >= dev_Vy1 && y <= dev_Vy2) {
-#if USE_TERM_IO
-      if (os_graphics) {
-        return osd_getpixel(x, y);
-      }
-      else {
-        return term_getpoint(x, y);
-      }
-#else
       return osd_getpixel(x, y);
-#endif
     }
   }
   return 0;
@@ -361,16 +284,7 @@ void dev_line(int x1, int y1, int x2, int y2) {
   // clip_line
   dev_clipline(&x1, &y1, &x2, &y2, &visible);
   if (visible) {
-#if USE_TERM_IO
-    if (os_graphics) {
-      osd_line(x1, y1, x2, y2);
-    }
-    else {
-      term_drawline(x1, y1, x2, y2);
-    }
-#else
     osd_line(x1, y1, x2, y2);
-#endif
   }
 }
 
@@ -408,17 +322,7 @@ void dev_rect(int x1, int y1, int x2, int y2, int fill) {
     /*
      *      its inside
      */
-
-#if USE_TERM_IO
-    if (os_graphics) {
-      osd_rect(x1, y1, x2, y2, fill);
-    }
-    else {
-      term_drawrect(x1, y1, x2, y2, fill);
-    }
-#else
     osd_rect(x1, y1, x2, y2, fill);
-#endif
   } else {
     /*
      *      partial inside
