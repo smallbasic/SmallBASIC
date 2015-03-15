@@ -17,8 +17,7 @@
  * Create a bytecode segment
  */
 void bc_create(bc_t *bc) {
-  bc->mem_h = mem_alloc(BC_ALLOC_INCR);
-  bc->ptr = mem_lock(bc->mem_h);
+  bc->ptr = malloc(BC_ALLOC_INCR);
   bc->size = BC_ALLOC_INCR;
   bc->count = 0;
   bc->cp = 0;
@@ -28,7 +27,7 @@ void bc_create(bc_t *bc) {
  * Destroy a bytecode segment
  */
 void bc_destroy(bc_t *bc) {
-  mem_unlock(bc->mem_h);mem_free(bc->mem_h);
+  free(bc->ptr);
   bc->ptr = NULL;
   bc->size = 0;
   bc->count = 0;
@@ -39,10 +38,8 @@ void bc_destroy(bc_t *bc) {
  * Resize a bytecode segment
  */
 void bc_resize(bc_t *bc, dword new_size) {
-  mem_unlock(bc->mem_h);
-  bc->mem_h = mem_realloc(bc->mem_h, new_size);
+  bc->ptr = realloc(bc->ptr, new_size);
   bc->size = new_size;
-  bc->ptr = mem_lock(bc->mem_h);
 }
 
 /*
@@ -237,7 +234,7 @@ char *bc_store_string(bc_t *bc, char *src) {
     if (*p == '\\' && ((*(p + 1) == '\"') || *(p + 1) == '\\')) {
       // escaped quote " or escaped escape
       int seglen = p - base;
-      np = np ? tmp_realloc(np, len + seglen + 1) : tmp_alloc(seglen + 1);
+      np = np ? realloc(np, len + seglen + 1) : malloc(seglen + 1);
       strncpy(np + len, base, seglen);
       // add next segment
       len += seglen;
@@ -247,10 +244,10 @@ char *bc_store_string(bc_t *bc, char *src) {
     } else if (*p == '\"') {
       // end of string detected
       int seglen = p - base;
-      np = np ? tmp_realloc(np, len + seglen + 1) : tmp_alloc(seglen + 1);
+      np = np ? realloc(np, len + seglen + 1) : malloc(seglen + 1);
       memcpy(np + len, base, seglen);
       bc_add_strn(bc, np, len + seglen);
-      tmp_free(np);
+      free(np);
       p++;
       return p;
     }
@@ -271,11 +268,11 @@ char *bc_store_macro(bc_t *bc, char *src) {
   while (*p) {
     if (*p == '`') {
       l = p - src;
-      np = tmp_alloc(l + 1);
+      np = malloc(l + 1);
       strncpy(np, src + 1, l);
       np[l - 1] = '\0';
       bc_add_strn(bc, np, strlen(np));
-      tmp_free(np);
+      free(np);
 
       p++;
       return p;

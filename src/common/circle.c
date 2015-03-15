@@ -35,16 +35,14 @@ void simple_ellipse(int xc, int yc, int rx, int ry, int fill) {
   int x = 0;
   int y = ry;
 
-  long a = rx; /* use 32-bit precision */
-  long b = ry;
-
-  long Asquared = a * a; /* initialize values outside */
-  long TwoAsquared = 2 * Asquared; /* of loops */
-  long Bsquared = b * b;
-  long TwoBsquared = 2 * Bsquared;
-
-  long d;
-  long dx, dy;
+  double a = rx; /* use 32-bit precision */
+  double b = ry;
+  double Asquared = a * a; /* initialize values outside */
+  double TwoAsquared = 2 * Asquared; /* of loops */
+  double Bsquared = b * b;
+  double TwoBsquared = 2 * Bsquared;
+  double d;
+  double dx, dy;
 
   d = Bsquared - Asquared * b + Asquared / 4L;
   dx = 0;

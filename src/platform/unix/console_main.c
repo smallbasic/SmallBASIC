@@ -21,13 +21,6 @@
 #include "platform/unix/help_subsys.h"
 #endif
 
-#if defined(_SDL)
-// sb prefix used to avoid name conflict with SDL
-#define MAIN_FUNC sb_console_main
-#else
-#define MAIN_FUNC main
-#endif
-
 // global filename (its needed for CTRL+C signal - delete temporary)
 char g_file[OS_PATHNAME_SIZE + 1];
 
@@ -39,35 +32,6 @@ char g_file[OS_PATHNAME_SIZE + 1];
  */
 void remove_temp_file(void) {
   unlink(g_file);
-}
-
-/*
- * sets the BASDIR environment variable from the input file and
- * current working directory. BASDIR indicates the directory
- * location of the running program
- */
-void set_bas_dir(const char *cwd, const char *bas_file) {
-  char bas_dir[OS_PATHNAME_SIZE + 10];
-  int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
-
-  bas_dir[0] = 0;
-  strcat(bas_dir, "BASDIR=");
-
-  if (bas_file[0] == OS_DIRSEP) {
-    // full path
-    strncat(bas_dir, bas_file, path_len + 1);
-  } else if (path_len > 0) {
-    // relative path
-    // append the non file part of bas_file to cwd
-    strcat(bas_dir, cwd);
-    strcat(bas_dir, "/");
-    strncat(bas_dir, bas_file, path_len + 1);
-  } else {
-    // in current dir
-    strcat(bas_dir, cwd);
-    strcat(bas_dir, "/");
-  }
-  dev_putenv(bas_dir);
 }
 
 /*
@@ -359,14 +323,10 @@ int process_options(int argc, char *argv[]) {
 /*
  * program entry point
  */
-int MAIN_FUNC(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   char prev_cwd[OS_PATHNAME_SIZE + 1];
 
-#ifdef _SDL
-  opt_graphics = 2;             // we need to set default options here for SDL
-#else
   opt_graphics = 0;
-#endif
   opt_quiet = 1;
   opt_ide = 0;
   opt_nosave = 1;
@@ -385,8 +345,6 @@ int MAIN_FUNC(int argc, char *argv[]) {
   opt_retval = process_options(argc, argv);
 
   if (!opt_retval) {
-    set_bas_dir(prev_cwd, g_file);
-
     if (!opt_quiet) {
       printf("SmallBASIC version %s, use -h for help\n", SB_STR_VER);
     }

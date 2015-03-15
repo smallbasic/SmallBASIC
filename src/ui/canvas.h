@@ -4,16 +4,20 @@
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-// 
+//
 
 #ifndef COMMON_CANVAS
 #define COMMON_CANVAS
 
-typedef uint16_t pixel_t;
+#if defined(PIXELFORMAT_RGB565)
+  typedef uint16_t pixel_t;
+#else
+  typedef uint32_t pixel_t;
+#endif
 
 #if defined(_SDL)
 #include <SDL.h>
-#define MAX_CANVAS_SIZE 10
+#define MAX_CANVAS_SIZE 20
 
 struct Canvas {
   Canvas();
@@ -35,7 +39,7 @@ struct Canvas {
 
 #else
 #include <android/rect.h>
-#define MAX_CANVAS_SIZE 10
+#define MAX_CANVAS_SIZE 20
 
 struct Canvas {
   Canvas();

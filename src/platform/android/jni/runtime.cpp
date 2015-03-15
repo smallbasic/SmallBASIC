@@ -12,15 +12,13 @@
 #include <jni.h>
 
 #include "platform/android/jni/runtime.h"
-#include "ui/maapi.h"
+#include "lib/maapi.h"
 #include "ui/utils.h"
-#include "ui/form_ui.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
 #include "common/osd.h"
 #include "common/device.h"
-#include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"
 
@@ -31,6 +29,7 @@
 #define FONT_SCALE_KEY "fontScale2"
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
+#define MUTE_AUDIO_KEY "muteAudio"
 
 Runtime *runtime;
 
@@ -149,7 +148,9 @@ void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
 Runtime::Runtime(android_app *app) :
   System(),
   _keypadActive(false),
-  _app(app) {
+  _graphics(NULL),
+  _app(app),
+  _eventQueue(NULL) {
   _app->userData = NULL;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
@@ -188,7 +189,7 @@ void Runtime::construct() {
   if (_graphics && _graphics->construct()) {
     int w = ANativeWindow_getWidth(_app->window);
     int h = ANativeWindow_getHeight(_app->window);
-    _output = new AnsiWidget(this, w, h);
+    _output = new AnsiWidget(w, h);
     if (_output && _output->construct()) {
       _eventQueue = new Stack<MAEvent *>();
       if (_eventQueue) {
@@ -251,7 +252,7 @@ char *Runtime::loadResource(const char *fileName) {
     AAssetManager *assetManager = _app->activity->assetManager;
     AAsset *mainBasFile = AAssetManager_open(assetManager, "main.bas", AASSET_MODE_BUFFER);
     off_t len = AAsset_getLength(mainBasFile);
-    buffer = (char *)tmp_alloc(len + 1);
+    buffer = (char *)malloc(len + 1);
     if (AAsset_read(mainBasFile, buffer, len) < 0) {
       trace("failed to read main.bas");
     }
@@ -290,6 +291,7 @@ void Runtime::runShell() {
   opt_file_permitted = 1;
   os_graphics = 1;
   os_color_depth = 16;
+  opt_mute_audio = 0;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
@@ -337,7 +339,7 @@ void Runtime::loadConfig() {
     rewind(fp);
     buffer.append(fp, len);
     fclose(fp);
-    profile.load(buffer.toString(), buffer.length());
+    profile.load(buffer.c_str(), buffer.length());
     String *s = profile.get(FONT_SCALE_KEY);
     if (s) {
       _fontScale = s->toInteger();
@@ -351,6 +353,10 @@ void Runtime::loadConfig() {
     if (s) {
       trace("path = %s", s->c_str());
       chdir(s->c_str());
+    }
+    s = profile.get(MUTE_AUDIO_KEY);
+    if (s && s->toInteger() == 1) {
+      opt_mute_audio = 1;
     }
     loadEnvConfig(profile, SERVER_SOCKET_KEY);
     loadEnvConfig(profile, SERVER_TOKEN_KEY);
@@ -378,6 +384,7 @@ void Runtime::saveConfig() {
     getcwd(path, FILENAME_MAX);
     fprintf(fp, "%s='%s'\n", PATH_KEY, path);
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
+    fprintf(fp, "%s=%d\n", MUTE_AUDIO_KEY, opt_mute_audio);
     for (int i = 0; environ[i] != NULL; i++) {
       char *env = environ[i];
       if (strstr(env, SERVER_SOCKET_KEY) != NULL) {
@@ -392,15 +399,18 @@ void Runtime::saveConfig() {
 
 void Runtime::runPath(const char *path) {
   pthread_mutex_lock(&_mutex);
-  buttonClicked(path);
+  setLoadPath(path);
   setExit(false);
   ALooper_wake(_looper);
   pthread_mutex_unlock(&_mutex);
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {
-  trace("key = %d %d", event.nativeKey, event.key);
   switch (event.nativeKey) {
+  case AKEYCODE_ENDCALL:
+    delete [] _systemMenu;
+    _systemMenu = NULL;
+    break;
   case AKEYCODE_BACK:
     if (_keypadActive) {
       showKeypad(false);
@@ -410,6 +420,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     break;
   case AKEYCODE_MENU:
     showMenu();
+    event.key = SB_KEY_MENU;
     break;
   case AKEYCODE_TAB:
     event.key = SB_KEY_TAB;
@@ -417,26 +428,24 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case AKEYCODE_HOME:
     event.key = SB_KEY_KP_HOME;
     break;
-    // These are not available in android-9
-    //  case AKEYCODE_MOVE_END:
-    //    event.key = SB_KEY_END;
-    //    break;
-    //  case AKEYCODE_INSERT:
-    //    event.key = SB_KEY_INSERT;
-    //    break;
-    //  case AKEYCODE_NUMPAD_MULTIPLY:
-    //    event.key = SB_KEY_KP_MUL;
-    //    break;
-    //  case AKEYCODE_NUMPAD_ADD:
-    //    event.key = SB_KEY_KP_PLUS;
-    //    break;
-    //  case AKEYCODE_NUMPAD_SUBTRACT:
-    //    event.key = SB_KEY_KP_MINUS;
-    //    break;
-    // AKEYCODE_SLASH is '?'
-    //  case AKEYCODE_SLASH:
-    //    event.key = SB_KEY_KP_DIV;
-    //    break;
+  case AKEYCODE_MOVE_END:
+    event.key = SB_KEY_END;
+    break;
+  case AKEYCODE_INSERT:
+    event.key = SB_KEY_INSERT;
+    break;
+  case AKEYCODE_NUMPAD_MULTIPLY:
+    event.key = SB_KEY_KP_MUL;
+    break;
+  case AKEYCODE_NUMPAD_ADD:
+    event.key = SB_KEY_KP_PLUS;
+    break;
+  case AKEYCODE_NUMPAD_SUBTRACT:
+    event.key = SB_KEY_KP_MINUS;
+    break;
+  case AKEYCODE_SLASH:
+    event.key = SB_KEY_KP_DIV;
+    break;
   case AKEYCODE_PAGE_UP:
     event.key = SB_KEY_PGUP;
     break;
@@ -456,8 +465,10 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     event.key = SB_KEY_RIGHT;
     break;
   case AKEYCODE_CLEAR:
+    event.key = SB_KEY_DELETE;
+    break;
   case AKEYCODE_DEL:
-    event.key = MAK_CLEAR;
+    event.key = SB_KEY_BACKSPACE;
     break;
   case AKEYCODE_ENTER:
     event.key = SB_KEY_ENTER;
@@ -466,6 +477,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     event.key = getUnicodeChar(event.nativeKey, event.key);
     break;
   }
+  trace("native:%d sb:%d", event.nativeKey, event.key);
   if (isRunning() && event.key) {
     dev_pushkey(event.key);
   }
@@ -507,6 +519,34 @@ void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   _app->activity->vm->DetachCurrentThread();
 }
 
+void Runtime::pause(int timeout) {
+  if (timeout == -1) {
+    pollEvents(true);
+    if (hasEvent()) {
+      MAEvent *event = popEvent();
+      processEvent(*event);
+      delete event;
+    }
+  } else {
+    int slept = 0;
+    while (1) {
+      pollEvents(false);
+      if (isBreak()) {
+        break;
+      } else if (hasEvent()) {
+        MAEvent *event = popEvent();
+        processEvent(*event);
+        delete event;
+      }
+      usleep(WAIT_INTERVAL * 1000);
+      slept += WAIT_INTERVAL;
+      if (timeout > 0 && slept > timeout) {
+        break;
+      }
+    }
+  }
+}
+
 void Runtime::pollEvents(bool blocking) {
   int events;
   android_poll_source *source;
@@ -528,8 +568,8 @@ MAEvent Runtime::processEvents(int waitFlag) {
     pollEvents(true);
     break;
   case 2:
-    // pause
-    maWait(WAIT_INTERVAL);
+    _output->flush(false);
+    pause(WAIT_INTERVAL);
     break;
   default:
     pollEvents(false);
@@ -539,12 +579,16 @@ MAEvent Runtime::processEvents(int waitFlag) {
   MAEvent event;
   if (hasEvent()) {
     MAEvent *nextEvent = popEvent();
+    processEvent(*nextEvent);
     event = *nextEvent;
     delete nextEvent;
   } else {
     event.type = 0;
   }
+  return event;
+}
 
+void Runtime::processEvent(MAEvent &event) {
   switch (event.type) {
   case EVENT_TYPE_SCREEN_CHANGED:
     _graphics->resize();
@@ -557,16 +601,20 @@ MAEvent Runtime::processEvents(int waitFlag) {
     handleEvent(event);
     break;
   }
-  return event;
 }
 
-void Runtime::setExit(bool quit) {
-  if (!isClosing()) {
-    _state = quit ? kClosingState : kBackState;
-    if (isRunning()) {
-      brun_break();
-    }
-  }
+void Runtime::setString(const char *methodName, const char *value) {
+  logEntered();
+
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jstring valueString = env->NewStringUTF(value);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "(Ljava/lang/String;)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, valueString);
+  env->DeleteLocalRef(valueString);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
 }
 
 void Runtime::showKeypad(bool show) {
@@ -618,15 +666,19 @@ void Runtime::onResize(int width, int height) {
   }
 }
 
-//
-// form_ui implementation
-//
-AnsiWidget *form_ui::getOutput() {
-  return runtime->_output;
+void Runtime::setClipboardText(const char *text) {
+  setString("setClipboardText", text);
 }
 
-void form_ui::optionsBox(StringList *items) {
-  runtime->optionsBox(items);
+char *Runtime::getClipboardText() {
+  char *result;
+  String text = getString("getClipboardText");
+  if (text.length()) {
+    result = strdup(text.c_str());
+  } else {
+    result = NULL;
+  }
+  return result;
 }
 
 //
@@ -647,31 +699,7 @@ int maGetEvent(MAEvent *event) {
 }
 
 void maWait(int timeout) {
-  if (timeout == -1) {
-    runtime->pollEvents(true);
-  } else {
-    int slept = 0;
-    while (1) {
-      runtime->pollEvents(false);
-      if (runtime->hasEvent()
-          || runtime->isBack()
-          || runtime->isClosing()) {
-        break;
-      }
-      usleep(WAIT_INTERVAL * 1000);
-      slept += WAIT_INTERVAL;
-      if (timeout > 0 && slept > timeout) {
-        break;
-      }
-    }
-  }
-}
-
-int maGetMilliSecondCount(void) {
-  timespec t;
-  t.tv_sec = t.tv_nsec = 0;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  return (int) (1000L * t.tv_sec + ((double) t.tv_nsec / 1e6));
+  runtime->pause(timeout);
 }
 
 int maShowVirtualKeyboard(void) {
@@ -693,6 +721,11 @@ int osd_devinit(void) {
   return 1;
 }
 
+int osd_devrestore(void) {
+  runtime->setRunning(false);
+  return 0;
+}
+
 void osd_sound(int frq, int dur, int vol, int bgplay) {
   runtime->playTone(frq, dur, vol, bgplay);
 }
@@ -704,16 +737,4 @@ void osd_clear_sound_queue() {
 void osd_beep(void) {
   osd_sound(1000, 30, 100, 0);
   osd_sound(500, 30, 100, 0);
-}
-
-void dev_image(int handle, int index,
-               int x, int y, int sx, int sy, int w, int h) {
-}
-
-int dev_image_width(int handle, int index) {
-  return 0;
-}
-
-int dev_image_height(int handle, int index) {
-  return 0;
 }

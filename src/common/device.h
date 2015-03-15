@@ -99,25 +99,16 @@ void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
  *
  * @code
  * byte  os_charset;   // System's charset (see os_charset_codes)
- *
  * dword os_color_depth; // The number of bits of the supported colors
  *             // (i.e.: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
- *
  * byte  os_graphics;  // Non-zero if the driver supports graphics
- *
  * int   os_graf_mx;   // Graphic mode: screen width
- *
  * int   os_graf_my;   // Graphic mode: screen height
- *
  * int32 dev_Vx1, dev_Vy1, dev_Vx2, dev_Vy2;
  * int32 dev_Vdx, dev_Vdy; // Graphics - viewport
- *
  * int32 dev_Wx1, dev_Wy1, dev_Wx2, dev_Wy2;
  * int32 dev_Wdx, dev_Wdy; // Graphics - window world coordinates
- *
  * long  dev_fgcolor, dev_bgcolor; // Graphics - current colors
- *
- * word  os_cclabs1, os_ccpass2; // Compiler's cache
  * @endcode
  */
 
@@ -165,9 +156,6 @@ extern int32 dev_Wdy;
 extern long dev_fgcolor;
 extern long dev_bgcolor;
 
-// cache
-extern word os_cclabs1;
-extern word os_ccpass2;
 #endif
 
 /*
@@ -1040,68 +1028,13 @@ char_p_t *dev_create_file_list(const char *wc, int *count);
  */
 void dev_destroy_file_list(char_p_t *list, int count);
 
-typedef struct var_image {
-  int x;
-  int y;
-  int offsetTop;
-  int offsetLeft;
-  int width;
-  int height;
-  int zIndex;
-  int opacity;
-  int handle;
-  int id;
-} var_image;
-
 /**
- * @image
+ * @ingroup dev_f
  *
- * loads an image
- *
- * @param file handle
- *
+ * Returns the number of milliseconds that has passed since
+ * some unknown point in time.
  */
-int dev_image_load(int handle);
-
-/**
- * @image
- *
- * return the width of an image in an image library
- *
- * @param file handle
- *
- */
-int dev_image_width(int handle);
-
-/**
- * @image
- *
- * return the height of an image in an image library
- *
- * @param file handle
- *
- */
-int dev_image_height(int handle);
-
-/**
- * @image
- *
- * displays the image
- *
- * @param file handle
- *
- */
-void dev_image_show(var_image *image);
-
-/**
- * @image
- *
- * hides the image
- *
- * @param file handle
- *
- */
-void dev_image_hide(int handle);
+dword dev_get_millisecond_count();
 
 #if defined(__cplusplus)
 }

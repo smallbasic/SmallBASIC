@@ -28,6 +28,7 @@ typedef int FileHand;
 #include "common/fs_stream.h"
 #include "common/fs_serial.h"
 #include "common/fs_socket_client.h"
+#include "lib/match.h"
 
 // FILE TABLE
 static dev_file_t file_table[OS_FILEHANDLES];
@@ -517,17 +518,17 @@ int dev_fcopy(const char *file, const char *newfile) {
       block_size = 1024;
       block_num = file_len / block_size;
       remain = file_len - (block_num * block_size);
-      buf = tmp_alloc(block_size);
+      buf = malloc(block_size);
 
       for (i = 0; i < block_num; i++) {
         dev_fread(src, buf, block_size);
         if (prog_error) {
-          tmp_free(buf);
+          free(buf);
           return 0;
         }
         dev_fwrite(dst, buf, block_size);
         if (prog_error) {
-          tmp_free(buf);
+          free(buf);
           return 0;
         }
       }
@@ -535,16 +536,16 @@ int dev_fcopy(const char *file, const char *newfile) {
       if (remain) {
         dev_fread(src, buf, remain);
         if (prog_error) {
-          tmp_free(buf);
+          free(buf);
           return 0;
         }
         dev_fwrite(dst, buf, remain);
         if (prog_error) {
-          tmp_free(buf);
+          free(buf);
           return 0;
         }
       }
-      tmp_free(buf);
+      free(buf);
     }
 
     dev_fclose(src);
@@ -665,7 +666,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
   
   *count = 0;
   size = 256;
-  list = tmp_alloc(sizeof(char_p_t) * size);
+  list = malloc(sizeof(char_p_t) * size);
   
   if ((dp = opendir(path)) == NULL) {
     return list;
@@ -679,9 +680,9 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
     if (wc_match(wc2, name)) {
       if ((*count + 1) == size) {
         size += 256;
-        list = tmp_realloc(list, sizeof(char_p_t) * size);
+        list = realloc(list, sizeof(char_p_t) * size);
       }
-      list[*count] = (char *) tmp_alloc(strlen(name) + 1);
+      list[*count] = (char *) malloc(strlen(name) + 1);
       strcpy(list[*count], name);
       *count = *count + 1;
     }
@@ -692,7 +693,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
   // common for all, if there are no files, return NULL
   if (*count == 0) {
     if (list) {
-      tmp_free(list);
+      free(list);
     }
     list = NULL;
   }
@@ -706,9 +707,9 @@ void dev_destroy_file_list(char_p_t *list, int count) {
   int i;
 
   for (i = 0; i < count; i++) {
-    tmp_free(list[i]);
+    free(list[i]);
   }
-  tmp_free(list);
+  free(list);
 }
 
 /**
@@ -717,15 +718,20 @@ void dev_destroy_file_list(char_p_t *list, int count) {
  */
 char *dev_getcwd() {
   static char retbuf[OS_PATHNAME_SIZE + 1];
-
-  int  l;
-
   getcwd(retbuf, OS_PATHNAME_SIZE);
-  l = strlen(retbuf);
+  int l = strlen(retbuf);
   if (retbuf[l - 1] != OS_DIRSEP) {
     retbuf[l] = OS_DIRSEP;
     retbuf[l + 1] = '\0';
   }
+#if defined(_Win32)
+  int i;
+  for (i = 0; i < l; i++) {
+    if (retbuf[i] == '\\') {
+      retbuf[i] = OS_DIRSEP;
+    }
+  }
+#endif
   return retbuf;
 }
 

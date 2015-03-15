@@ -37,6 +37,7 @@ typedef MemHandle mem_t;
 #if !defined(byte)
   #define byte unsigned char
 #endif
+
 typedef byte *byte_p_t;
 typedef char *char_p_t;
 
@@ -78,7 +79,7 @@ void *tmp_alloc(dword size);
 /**
  * Free allocated memory
  */
-void tmp_free(void *ptr);
+void free(void *ptr);
 
 /**
  * @ingroup mem
@@ -225,5 +226,5 @@ void lprintf(const char *fmt, ...);
 #if defined(__cplusplus)
 }
 #endif
-#include "common/vmt.h"
+
 #endif

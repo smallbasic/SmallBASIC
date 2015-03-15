@@ -12,8 +12,7 @@
 #include "config.h"
 #include <SDL.h>
 
-#include "ui/maapi.h"
-#include "ui/interface.h"
+#include "lib/maapi.h"
 #include "ui/ansiwidget.h"
 #include "ui/system.h"
 #include "platform/sdl/display.h"
@@ -25,20 +24,24 @@ struct Runtime : public System {
   void construct(const char *font, const char *boldFont);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
-  MAEvent processEvents(int waitFlag);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
+  void pause(int timeout);
   void pollEvents(bool blocking);
   MAEvent *popEvent();
+  MAEvent processEvents(int waitFlag);
+  void processEvent(MAEvent &event);
   void pushEvent(MAEvent *event);
-  void setExit(bool quit);
+  void setWindowTitle(const char *title);
   int runShell(const char *startupBas, int fontScale);
   char *loadResource(const char *fileName);
   void showAlert(const char *title, const char *message);
   void optionsBox(StringList *items);
   void onResize(int w, int h);
-  void runPath(const char *path);
+  void setClipboardText(const char *text);
+  char *getClipboardText();
 
 private:
+  int _menuX, _menuY;
   Graphics *_graphics;
   Stack<MAEvent *> *_eventQueue;
   SDL_Window *_window;

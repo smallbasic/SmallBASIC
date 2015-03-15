@@ -54,7 +54,7 @@ end
 sub draw_soko(x, y, direction)
   local bx = bl_x + (x * bl_w)
   local by = bl_y + (y * bl_h)
-  local dx, dy, PolyArray  
+  local dx, dy, PolyArray
 
   dx = bl_w / 5
   dy = bl_w / 5
@@ -78,12 +78,12 @@ end
 '
 sub game_status(byref game)
   local help, num_over
-  
+
   ' count the number of blocks over the targts
   local bl_len = len(game.blocks) - 1
-  
+
   num_over = 0
-  
+
   for i = 0 to bl_len
     local block = game.blocks(i)
     local x = block(0)
@@ -92,10 +92,10 @@ sub game_status(byref game)
       num_over++
     fi
   next i
-  
+
   if (num_over == bl_len + 1) then
     local y_loc = 5 + txth("T")
-    for i = 0 to 10 
+    for i = 0 to 10
       at 10, y_loc
       if (i mod 2 == 0) then
         ? "*** GAME OVER ***"
@@ -104,9 +104,9 @@ sub game_status(byref game)
       fi
       delay 300
     next i
-    game.game_over = true    
+    game.game_over = true
   fi
-  
+
   color 1,8
   help = "  [e]=exit, [u]=undo"
   at 10, 5: ? cat(1); "Moves: "; game.moves; " Pushes: "; game.pushes; cat(-1); help ; spc(20)
@@ -119,15 +119,15 @@ func get_block(byref blocks, x, y)
   local i
   local result = false
   local bl_len = len(game.blocks) - 1
-  
+
   for i = 0 to bl_len
     local block = game.blocks(i)
     if (block(0) = x && block(1) = y) then
       result = true
-      i = bl_len      
+      i = bl_len
     fi
   next i
-  
+
   get_block = result
 end
 
@@ -137,7 +137,7 @@ end
 sub init_game(grid, byref game)
   local row, col, row_len, x, y, ch
   dim blocks
-  
+
   ' cls
   rect 0, 0, xmax, ymax, 8 filled
 
@@ -160,7 +160,7 @@ sub init_game(grid, byref game)
       case "$" ' moveable block
         draw_block x, y
         blocks << [x,y]
-      end select 
+      end select
     next i
     y++
   next row
@@ -168,14 +168,14 @@ sub init_game(grid, byref game)
   game.blocks = blocks
   game.grid = grid
   game.undo_top = 0
-  
+
   dim game.undo
 end
 
 '
 ' return whether the x/y location touches the border
 '
-func is_border(byref grid, x, y) 
+func is_border(byref grid, x, y)
   is_border = mid(grid(y), x, 1) == "#"
 end
 
@@ -200,7 +200,7 @@ func loadGame(filename)
 
   dim nextGame
   dim games
-  
+
   for i = 0 to buffLen
     nextLine = buffer(i)
     firstChar = left(trim(nextLine), 1)
@@ -230,16 +230,30 @@ func loadGame(filename)
     ' store the last game block
     games(gameName) = nextGame
   fi
-  
+
   loadGame = games
+end
+
+sub mk_button(byref f, fgc, bgc, x, y, w, h, type)
+  local button
+  button.foreground = fgc
+  button.background = bgc
+  button.x = x
+  button.y = y
+  button.width = w
+  button.height = h
+  button.type = type
+  f.inputs << button
 end
 
 '
 ' returns a selected file name
 '
 func openFile
-  local dir_list, file_list, form_var, selected_file
-  
+  local dir_list, file_list, frm, form_var, selected_file
+
+  selected_file = ""
+
   '
   ' get the file list using the current directory
   '
@@ -249,11 +263,11 @@ func openFile
     ' empty the arrays
     erase dir_list
     erase file_list
-    
+
     ' re-create as arrays
     dim dir_list
     dim file_list
-  
+
     if (exist(cwd + "/..")) then
       dir_list << ".."
     fi
@@ -269,34 +283,53 @@ func openFile
 
     sort dir_list
     sort file_list
-    
+
     ' sync with first pre-selected file list item
     selected_file = iff(empty(file_list), "", file_list(0))
   end
-  
+
+  sub refresh_form
+    get_files
+    frm.inputs(0).label = cwd
+    frm.inputs(1).value = dir_list
+    frm.inputs(2).value = file_list
+    frm.refresh()
+  end
+
   ' prime the initial files arrays
   get_files
-  
+
   ' define the interface
-  color 1,7
-  button  35, 10, 345, -1, cwd, "", "label"
-  button  35, 35, 150, 200, dir_list, "", "listbox"
-  button -5, 35, 150, 200, file_list, "", "listbox"
-  button -5, 35, -5,  -5,  up_button, "OK"
+  mk_button(frm, 1, 7, 35,  10, 600,  -1, "label")
+  mk_button(frm, 1, 7, 35,  35, 150, 200, "listbox")
+  mk_button(frm, 1, 7, -5,  35, 150, 200, "listbox")
+  mk_button(frm, 1, 7, -5,  35,  -5,  -5, "button")
+  mk_button(frm, 1, 7, -5,  35,  -5,  -5, "button")
+  frm.inputs(0).label = cwd
+  frm.inputs(1).value = dir_list
+  frm.inputs(2).value = file_list
+  frm.inputs(3).label = "OK"
+  frm.inputs(4).label = "Cancel"
+  frm = form(frm)
 
   ' run the interface
   while 1
-    doform form_var
+    frm.doEvents()
+    form_var = frm.value
+
     select case form_var
     case "OK"
       exit loop
+    case "Cancel"
+      selected_file = ""
+      exit loop
     case ".."
       chdir cwd + "/.."
-      get_files
+      refresh_form
     case else
       if (isdir(form_var)) then
         chdir form_var
-        get_files
+        refresh_form
       else
         selected_file = form_var
       fi
@@ -304,21 +337,21 @@ func openFile
   wend
 
   ' close the form
-  doform 0
-  
+  frm.close()
+
   ' apply result
-  openFile = cwd + selected_file
+  openFile = selected_file
 end
 
 '
 ' main game loop
 '
 sub main
-  local filename, games, sel_game, game, game_names, i, form_var, game_file, start_dir
+  local filename, games, sel_game, game, game_names, i, frm, game_file, start_dir
 
   ' remember the starting directory
   start_dir = cwd
-  
+
   sub open_game
     games = loadGame(game_file)
 
@@ -337,37 +370,44 @@ sub main
         game_names << i
       next i
       sort game_names
-      
+
       sel_game = game_names(0)
       init_game games(sel_game), game
     fi
-    
+
     ' build the gui
-    color 1,7
-    button 5,  1, 100, 20, game_names, "", "choice"
-    button -1, 1, -1,  20, ok_open,    "Open", "button"  
-    button -1, 1, -1,  20, ok_play,    "Play", "button"
-  end 
+    erase frm
+    mk_button(frm, 1, 7, 5,  1, 100, 20, "choice")
+    mk_button(frm, 1, 7, -1, 1, -1,  20, "button")
+    mk_button(frm, 1, 7, -1, 1, -1,  20, "button")
+    frm.inputs(0).value = game_names
+    frm.inputs(1).label = "Open"
+    frm.inputs(2).label = "Play"
+    frm = form(frm)
+  end
 
   cls
   game_file = "sokoban.levels"
   open_game
 
   while 1
-    doform form_var
-    select case form_var
+    frm.doEvents()
+    select case frm.value
     case "Open"
-      doform 0
-      rect 0, 0, xmax, ymax, 8 filled      
-      game_file = openFile
+      frm.close()
+      rect 0, 0, xmax, ymax, 8 filled
+      new_file = openFile
+      if (len(new_file) > 0 && exist(cwd + new_file)) then
+        game_file = cwd + new_file
+      end if
       open_game
     case "Play"
-      doform 0
+      frm.close()
       play_game game
       open_game
     case else
-      sel_game = form_var
-      init_game games(sel_game), game      
+      sel_game = frm.value
+      init_game games(sel_game), game
     end select
   wend
 
@@ -379,7 +419,7 @@ end
 sub move_block(byref game, xdir, ydir, x, y)
   local i
   local bl_len = len(game.blocks) - 1
-  
+
   for i = 0 to bl_len
     local block = game.blocks(i)
     if (block(0) = x && block(1) = y) then
@@ -411,11 +451,11 @@ sub move_up(byref game, is_push)
   move_erase game
   game.soko_y--
   move_erase game
-  game.moves++  
+  game.moves++
   draw_soko game.soko_x, game.soko_y, 1
   if is_push then
     move_block game, 0, -1, game.soko_x, game.soko_y
-    game.pushes++    
+    game.pushes++
   fi
 end
 
@@ -441,11 +481,11 @@ sub move_left(byref game, is_push)
   move_erase game
   game.soko_x--
   move_erase game
-  game.moves++  
+  game.moves++
   draw_soko game.soko_x, game.soko_y, 3
   if is_push then
     move_block game, -1, 0, game.soko_x, game.soko_y
-    game.pushes++    
+    game.pushes++
   fi
 end
 
@@ -456,11 +496,11 @@ sub move_right(byref game, is_push)
   move_erase game
   game.soko_x++
   move_erase game
-  game.moves++  
+  game.moves++
   draw_soko game.soko_x, game.soko_y, 4
   if is_push then
     move_block game, 1, 0, game.soko_x, game.soko_y
-    game.pushes++    
+    game.pushes++
   fi
 end
 
@@ -469,12 +509,12 @@ end
 '
 sub play_game(byref game)
   local k, ch
-  
+
   repeat: until len(inkey) = 0
-  
+
   game.game_over = false
   while game.game_over = false
-    delay 25: k = inkey
+    pause true: k = inkey
     if len(k) = 2 then
       ch = asc(right(k,1))
       select case ch
@@ -535,7 +575,7 @@ sub play_game(byref game)
         undo game
       case "e"
         game.game_over = true
-      end select  
+      end select
     fi
     game_status game
   wend
@@ -569,7 +609,7 @@ sub undo(byref game)
 
     if (block_x != 0 && block_y != 0) then
       ' erase the previous cell
-      if (is_target(game, block_x, block_y)) then      
+      if (is_target(game, block_x, block_y)) then
         draw_target block_x, block_y
       else
         draw_space block_x, block_y

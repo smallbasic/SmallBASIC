@@ -379,7 +379,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
   int rsz, lsz;
 
   // backup of format
-  fmt = tmp_alloc(strlen(fmt_cnst) + 1);
+  fmt = malloc(strlen(fmt_cnst) + 1);
   strcpy(fmt, fmt_cnst);
 
   // check sign
@@ -399,7 +399,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
     lc = fmt_cdig(fmt);
     if (lc < 4) {
       fmt_omap(dest, fmt);
-      tmp_free(fmt);
+      free(fmt);
       return;
     }
 
@@ -417,7 +417,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
 
       if (lc < rsz + 1) {
         fmt_omap(dest, fmt);
-        tmp_free(fmt);
+        free(fmt);
         return;
       }
 
@@ -449,7 +449,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
     bestfta(x, dest);
     if (strchr(dest, 'E')) {
       fmt_omap(dest, fmt);
-      tmp_free(fmt);
+      free(fmt);
       return;
     }
 
@@ -474,7 +474,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
     lc = fmt_cdig(fmt);
     if (lc < strlen(left)) {
       fmt_omap(dest, fmt_cnst);
-      tmp_free(fmt);
+      free(fmt);
       return;
     }
     fmt_nmap(-1, lbuf, fmt, left);
@@ -513,7 +513,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
   }
 
   // cleanup
-  tmp_free(fmt);
+  free(fmt);
 }
 
 /*
@@ -683,7 +683,7 @@ void fmt_addfmt(const char *fmt, int type) {
   if (fmt_count >= MAX_FMT_N) {
     panic("Maximum format-node reached");
   }
-  node->fmt = tmp_alloc(strlen(fmt) + 1);
+  node->fmt = malloc(strlen(fmt) + 1);
   strcpy(node->fmt, fmt);
   node->type = type;
 }
@@ -697,7 +697,7 @@ void free_format() {
 
   for (i = 0; i < fmt_count; i++) {
     node = &fmt_stack[i];
-    tmp_free(node->fmt);
+    free(node->fmt);
   }
 
   fmt_count = fmt_cur = 0;
@@ -718,7 +718,7 @@ void build_format(const char *fmt_cnst) {
   free_format();
 
   // backup of format
-  fmt = tmp_alloc(strlen(fmt_cnst) + 1);
+  fmt = malloc(strlen(fmt_cnst) + 1);
   strcpy(fmt, fmt_cnst);
 
   p = fmt;
@@ -788,7 +788,7 @@ void build_format(const char *fmt_cnst) {
     fmt_addfmt(buf, 0);
   }
   // cleanup
-  tmp_free(fmt);
+  free(fmt);
 }
 
 /*

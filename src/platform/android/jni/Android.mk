@@ -7,20 +7,15 @@
 
 JNI_PATH := $(call my-dir)
 SB_HOME := $(JNI_PATH)/../../../..
-PNG_HOME := $(HOME)/android-sdk/libpng-1.6.12/png
-FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.3
+FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.5
 
 include $(call all-subdir-makefiles)
 LOCAL_PATH := $(JNI_PATH)
 
-#include $(CLEAR_VARS)
-#LOCAL_MODULE := png
-#LOCAL_SRC_FILES := $(PNG_HOME)/lib/libpng.a
-#include $(PREBUILT_STATIC_LIBRARY)
-
 include $(CLEAR_VARS)
 LOCAL_MODULE     := smallbasic
-LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1
+LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1 -DLODEPNG_NO_COMPILE_CPP \
+	                  -DPIXELFORMAT_RGBA8888
 LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src                   \
                     $(FREETYPE_HOME)/freetype/include           \
                     $(FREETYPE_HOME)/freetype/include/freetype2
@@ -29,12 +24,15 @@ LOCAL_SRC_FILES  := main.cpp                   \
                     runtime.cpp                \
                     ../../../ui/screen.cpp     \
                     ../../../ui/ansiwidget.cpp \
-                    ../../../ui/form_ui.cpp    \
-                    ../../../ui/StringLib.cpp  \
+                    ../../../ui/window.cpp     \
+                    ../../../ui/form.cpp       \
+                    ../../../ui/image.cpp      \
+                    ../../../ui/inputs.cpp     \
+                    ../../../ui/strlib.cpp     \
                     ../../../ui/graphics.cpp   \
                     ../../../ui/system.cpp
 LOCAL_LDLIBS     := -llog -landroid -ljnigraphics
-LOCAL_STATIC_LIBRARIES := sb_common png freetype android_native_app_glue 
+LOCAL_STATIC_LIBRARIES := sb_common freetype android_native_app_glue
 include $(BUILD_SHARED_LIBRARY)
 
 $(call import-module, android/native_app_glue)

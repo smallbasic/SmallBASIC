@@ -8,6 +8,7 @@
 #include "common/sys.h"
 #include "common/kw.h"
 #include "common/var.h"
+#include "common/scan.h"
 
 /*
  * valid exit codes from eval

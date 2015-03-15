@@ -18,7 +18,7 @@
 #include "search.h"
 
 /* Walk the nodes of a tree */
-tdestroy_recurse(node_t *root, tdestroy_cb freefct) {
+void tdestroy_recurse(node_t *root, tdestroy_cb freefct) {
   if (root->left != NULL) {
     tdestroy_recurse(root->left, freefct);
   }

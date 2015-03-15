@@ -3,11 +3,11 @@
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
-# 
+#
 
-all-am: Makefile ndk-build-test
+all-am: Makefile
 
-ndk-build-test:
+ndk-build-test: all-am
 	(cd jni && ${NDK}/ndk-build NDK_DEBUG=1)
 
 ant-build-test: ndk-build-test
@@ -19,7 +19,13 @@ test: ant-build-test
    adb -a shell am start net.sourceforge.smallbasic/net.sourceforge.smallbasic.MainActivity && \
    adb -a logcat)
 
-clean-am: 
+clean-ant:
+	(cd ../../../ide/android && ant -quiet clean)
+
+clean-objs: clean-ant
+	(rm -rf obj/ libs/)
+
+clean-am: clean-objs
 	(cd jni && ${NDK}/ndk-build clean)
 
 ndk-build-release:

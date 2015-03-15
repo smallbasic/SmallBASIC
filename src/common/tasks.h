@@ -16,17 +16,24 @@
 extern "C" {
 #endif
 
-/*
- */
 typedef enum {
   tsk_free, tsk_ready, tsk_nil
 } task_status_t;
 
+typedef struct timer_s timer_s;
+struct timer_s {
+  timer_s *next; // next timer
+  addr_t ip;     // handler location
+  long value;    // time for next event
+  long interval; // interval ms
+  int active;    // whether IP is being invoked
+};
+
 /**
- *   @ingroup sys
+ * @ingroup sys
  *
- *   @typedef task_t
- *   Task data
+ * @typedef task_t
+ * Task data
  */
 typedef struct {
   int status;
@@ -39,9 +46,9 @@ typedef struct {
   int line; /**< The current source code line               */
   int error; /**< The last RTL error code (its work as flag) */
   char errmsg[SB_ERRMSG_SIZE + 1];
-  char file[OS_PATHNAME_SIZE + 1];  /**< The program file name (task name)                           */
-  mem_t bytecode_h; /**< BC's memory handle                         */
-  int bc_type; /**< BC type (1=executable, 2=unit)             */
+  char file[OS_PATHNAME_SIZE + 1];  /**< The program file name (task name) */
+  byte *bytecode; /**< BC's memory handle                          */
+  int bc_type; /**< BC type (1=executable, 2=unit)                 */
   int has_sysvars; /**< true if the task has system-variables      */
 
   /*
@@ -61,12 +68,9 @@ typedef struct {
       char unit_name[OS_PATHNAME_SIZE + 1];
       int unit_flag;
 
-      dbt_t libtable;
-      int libcount;
-      dbt_t imptable;
-      int impcount;
-      dbt_t exptable;
-      int expcount;
+      bc_lib_rec_table_t libtable;
+      bc_symbol_rec_table_t imptable;
+      unit_sym_table_t exptable;
 
       int block_level; // block level (FOR-NEXT,IF-FI,etc)
       int block_id;   // unique ID for blocks (FOR-NEXT,IF-FI,etc)
@@ -96,8 +100,7 @@ typedef struct {
       bid_t varsize;
 
       // label table
-      dbt_t labtable;
-      bid_t labcount;
+      comp_label_table_t labtable;
 
       // user defined proc/func table
       comp_udp_t *udptable;
@@ -105,8 +108,7 @@ typedef struct {
       bid_t udpsize;
 
       // pass2 stack
-      dbt_t stack;
-      bid_t stack_count;
+      comp_pass_node_table_t stack;
     } comp;
 
     /*
@@ -147,6 +149,7 @@ typedef struct {
       bc_symbol_rec_t *symtable; /**< import-symbols table               */
       unit_sym_t *exptable; /**< export-symbols table                    */
       addr_t catch_ip; /** try/catch ip                                  */
+      timer_s *timer;  /** timer linked list                             */
     } exec;
   } sbe;
 } task_t;

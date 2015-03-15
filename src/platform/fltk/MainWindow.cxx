@@ -21,11 +21,11 @@
 #include <fltk/events.h>
 #include <fltk/run.h>
 
-#include "MainWindow.h"
-#include "EditorWidget.h"
-#include "HelpWidget.h"
-#include "FileWidget.h"
-#include "ui/StringLib.h"
+#include "platform/fltk/MainWindow.h"
+#include "platform/fltk/EditorWidget.h"
+#include "platform/fltk/HelpWidget.h"
+#include "platform/fltk/FileWidget.h"
+#include "ui/strlib.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/fs_socket_client.h"
@@ -79,9 +79,9 @@ bool isFormActive();
 struct ScanFont {
   ScanFont(MainWindow *main, MenuBar *menu) :
     _main(main),
-    _menu(menu), 
+    _menu(menu),
     _fp(NULL),
-    _scanFonts(false), 
+    _scanFonts(false),
     _index(0) {
     _numfonts = fltk::list_fonts(_fonts);
 
@@ -141,11 +141,11 @@ struct ScanFont {
   // end of iteration
   void finalise() {
     if (_fp) {
-      fprintf(_fp, endFont);
+      fprintf(_fp, "%s", endFont);
       fclose(_fp);
     }
 
-    _menu->add("&View/Font/_", 0, (Callback *)null);
+    _menu->add("&View/Font/_", 0, (Callback *)NULL);
     _menu->add("&View/Font/Clear cache", 0, (Callback *)MainWindow::font_cache_clear_cb);
     _menu->redraw_label();
     fltk::remove_idle(scan_font_cb, this);
@@ -158,7 +158,7 @@ struct ScanFont {
     char label[256];
     int n = 0;
     label[0] = 0;
-    for (char c = fgetc(_fp); 
+    for (char c = fgetc(_fp);
          !done && n < (int)sizeof(label);
          c = fgetc(_fp)) {
       switch (c) {
@@ -250,13 +250,13 @@ void MainWindow::showEditTab(EditorWidget *editWidget) {
 /**
  * run the give file. returns whether break was hit
  */
-bool MainWindow::basicMain(EditorWidget *editWidget, 
+bool MainWindow::basicMain(EditorWidget *editWidget,
                            const char *fullpath, bool toolExec) {
   int len = strlen(fullpath);
   char path[MAX_PATH];
-  bool breakToLine = false;     // whether to restore the editor cursor 
+  bool breakToLine = false;     // whether to restore the editor cursor
 
-  if (strcasecmp(fullpath + len - 4, ".htm") == 0 || 
+  if (strcasecmp(fullpath + len - 4, ".htm") == 0 ||
       strcasecmp(fullpath + len - 5, ".html") == 0) {
     // render html edit buffer
     sprintf(path, "file:%s", fullpath);
@@ -587,7 +587,7 @@ void MainWindow::export_file(fltk::Widget *w, void *eventData) {
             sprintf(buffer, "Failed to write: %s", _exportFile.c_str());
             statusMsg(rs_err, buffer);
           } else {
-            sprintf(buffer, "Exported %s to %s", editWidget->getFilename(), 
+            sprintf(buffer, "Exported %s to %s", editWidget->getFilename(),
                     _exportFile.c_str());
             statusMsg(rs_ready, buffer);
           }
@@ -598,7 +598,7 @@ void MainWindow::export_file(fltk::Widget *w, void *eventData) {
         dev_fclose(handle);
       }
       // cancel setModal() from editWidget->getInput()
-      runMode = edit_state; 
+      runMode = edit_state;
     } else {
       busyMessage();
     }
@@ -742,7 +742,7 @@ void MainWindow::editor_plugin(fltk::Widget *w, void *eventData) {
         editWidget->getRowCol(&row, &col);
         editWidget->getSelStartRowCol(&s1r, &s1c);
         editWidget->getSelEndRowCol(&s2r, &s2c);
-        sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d", 
+        sprintf(opt_command, "%s|%d|%d|%d|%d|%d|%d",
                 filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
         runMode = run_state;
         editWidget->runState(rs_run);
@@ -784,9 +784,9 @@ void MainWindow::tool_plugin(fltk::Widget *w, void *eventData) {
   }
 }
 
-void MainWindow::load_file(fltk::Widget * w, void *eventData) {
+void MainWindow::load_file(fltk::Widget *w, void *eventData) {
   int pathIndex = ((intptr_t) eventData) - 1;
-  const char *path = recentPath[pathIndex].toString();
+  const char *path = recentPath[pathIndex].c_str();
   EditorWidget *editWidget = getEditor(path);
   if (!editWidget) {
     editWidget = getEditor(createEditor(path));
@@ -852,7 +852,7 @@ void MainWindow::scanRecentFiles(Menu *menu) {
         }
         sprintf(label, "&File/Open Recent File/%s", fileLabel);
         recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
-                                  load_file_cb, (void *)(i + 1), RAW_LABEL);
+                                  load_file_cb, (void *)(intptr_t)(i + 1), RAW_LABEL);
         recentPath[i].append(buffer);
         if (++i == NUM_RECENT_ITEMS) {
           break;
@@ -864,7 +864,7 @@ void MainWindow::scanRecentFiles(Menu *menu) {
   while (i < NUM_RECENT_ITEMS) {
     sprintf(label, "&File/Open Recent File/%s", untitledFile);
     recentMenu[i] = menu->add(label, CTRL + '1' + i, (Callback *)
-                              load_file_cb, (void *)(i + 1));
+                              load_file_cb, (void *)(intptr_t)(i + 1));
     recentPath[i].append(untitledFile);
     i++;
   }
@@ -1041,14 +1041,15 @@ bool initialise(int argc, char **argv) {
   opt_interactive = 1;
   opt_file_permitted = 1;
   os_graphics = 1;
+  opt_mute_audio = 0;
 
   int i = 0;
   if (args(argc, argv, i, arg_cb) < argc) {
     fatal("Options are:\n"
           " -e[dit] file.bas\n"
-          " -r[un] file.bas\n" 
-          " -v[erbose]\n" 
-          " -n[on]-interactive\n" 
+          " -r[un] file.bas\n"
+          " -v[erbose]\n"
+          " -n[on]-interactive\n"
           " -m[odule]-home\n\n%s", help);
   }
   // package home contains installed components
@@ -1134,7 +1135,7 @@ int main(int argc, char **argv) {
 
 //--MainWindow methods----------------------------------------------------------
 
-MainWindow::MainWindow(int w, int h) : 
+MainWindow::MainWindow(int w, int h) :
   BaseWindow(w, h) {
   _runEditWidget = 0;
   _profile = new Profile();
@@ -1145,7 +1146,7 @@ MainWindow::MainWindow(int w, int h) :
   MenuBar *m = new MenuBar(0, 0, w, MNU_HEIGHT);
   m->add("&File/&New File", CTRL + 'n', new_file_cb);
   m->add("&File/&Open File", CTRL + 'o', open_file_cb);
-  m->add("&File/_Open Recent File/", 0, (Callback *)null);
+  m->add("&File/_Open Recent File/", 0, (Callback *)NULL);
   scanRecentFiles(m);
   m->add("&File/&Close", CTRL + F4Key, close_tab_cb);
   m->add("&File/_&Close Others", 0, close_other_tabs_cb);
@@ -1279,7 +1280,7 @@ void MainWindow::new_file(fltk::Widget *w, void *eventData) {
 }
 
 void MainWindow::open_file(fltk::Widget *w, void *eventData) {
-  FileWidget *fileWidget = null;
+  FileWidget *fileWidget = NULL;
   Group *openFileGroup = findTab(gw_file);
   if (!openFileGroup) {
     int w = _tabGroup->w();
@@ -1321,7 +1322,7 @@ void MainWindow::open_file(fltk::Widget *w, void *eventData) {
   StringList *paths = new StringList();
   for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
     char nextPath[MAX_PATH];
-    FileWidget::splitPath(recentPath[i].toString(), nextPath);
+    FileWidget::splitPath(recentPath[i].c_str(), nextPath);
     if (nextPath[0] && !paths->exists(nextPath)) {
       paths->add(nextPath);
     }
@@ -1610,7 +1611,7 @@ void MainWindow::execLink(strlib::String &link) {
     return;
   }
 
-  char *file = (char *)link.toString();
+  char *file = (char *)link.c_str();
   EditorWidget *editWidget = getEditor(true);
   _siteHome.empty();
   bool execFile = false;
@@ -1646,14 +1647,14 @@ void MainWindow::execLink(strlib::String &link) {
       // display as html
       int len = strlen(localFile);
       if (strcasecmp(localFile + len - 4, ".gif") == 0 ||
-          strcasecmp(localFile + len - 4, ".jpeg") == 0 || 
+          strcasecmp(localFile + len - 4, ".jpeg") == 0 ||
           strcasecmp(localFile + len - 4, ".jpg") == 0) {
         sprintf(path, "<img src=%s>", localFile);
       } else {
         sprintf(path, "file:%s", localFile);
       }
       _siteHome.append(df.name, df.drv_dw[1]);
-      statusMsg(rs_ready, _siteHome.toString());
+      statusMsg(rs_ready, _siteHome.c_str());
       updateForm(path);
     }
     return;
@@ -1665,7 +1666,7 @@ void MainWindow::execLink(strlib::String &link) {
   }
 
   char *extn = strrchr(file, '.');
-  if (extn && (0 == strncasecmp(extn, ".bas ", 5) || 
+  if (extn && (0 == strncasecmp(extn, ".bas ", 5) ||
                0 == strncasecmp(extn, ".sbx ", 5))) {
     strcpy(opt_command, extn + 5);
     extn[4] = 0;                // make args available to bas program
@@ -1942,16 +1943,26 @@ bool BaseWindow::handleKeyEvent() {
 
   default:
     if (k >= LeftShiftKey && k <= RightAltKey) {
+      // avoid pushing meta-keys
       key_pushed = false;
-      break;                    // ignore caps+shift+ctrl+alt
+      break;
     }
-    dev_pushkey(event_text()[0]);
+    if ((event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) &&
+        (event_key_state(LeftAltKey) || event_key_state(RightAltKey))) {
+      dev_pushkey(SB_KEY_CTRL_ALT(k));
+    } else if (event_key_state(LeftCtrlKey) || event_key_state(RightCtrlKey)) {
+      dev_pushkey(SB_KEY_CTRL(k));
+    } else if (event_key_state(LeftAltKey) || event_key_state(RightAltKey)) {
+      dev_pushkey(SB_KEY_ALT(k));
+    } else {
+      dev_pushkey(event_text()[0]);
+    }
     break;
   }
   return key_pushed;
 }
 
-LineInput::LineInput(int x, int y, int w, int h) : 
+LineInput::LineInput(int x, int y, int w, int h) :
   fltk::Input(x, y, w, h) {
   this->orig_x = x;
   this->orig_y = y;

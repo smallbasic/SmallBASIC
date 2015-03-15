@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -8,12 +8,6 @@
 
 #ifndef UTILS_H
 #define UTILS_H
-
-typedef unsigned char  U8;
-typedef unsigned short U16;
-typedef signed short   S16;
-typedef unsigned long  U32;
-typedef signed long    S32;
 
 #ifndef MAX
  #define MAX(a,b) ((a<b) ? (b) : (a))

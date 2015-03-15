@@ -111,7 +111,8 @@ int http_open(dev_file_t *f) {
   if (f->drv_dw[2]) {
     // If-Modified-Since: Sun, 03 Apr 2005 04:45:47 GMT
     strcat(txbuf, "If-Modified-Since: ");
-    strftime(txbuf + strlen(txbuf), 60, "%a, %d %b %Y %T %Z\r\n", localtime((time_t *) &f->drv_dw[2]));
+    strftime(txbuf + strlen(txbuf), 60, "%a, %d %b %Y %H:%M:%S %Z\r\n",
+             localtime((time_t *) &f->drv_dw[2]));
   }
   strcat(txbuf, "\r\n");
   net_print(s, txbuf);
@@ -119,7 +120,7 @@ int http_open(dev_file_t *f) {
 }
 
 // read from a web server connection
-int http_read(dev_file_t *f, var_t *var_p, int type) {
+int http_read(dev_file_t *f, var_t *var_p) {
   char rxbuff[1024];
   int inHeader = 1;
   int httpOK = 0;
@@ -148,7 +149,7 @@ int http_read(dev_file_t *f, var_t *var_p, int type) {
         }
         if (rxbuff[i + 2] == '\n') {
           var_p->v.p.size = bytes - i - 3;
-          var_p->v.p.ptr = tmp_alloc(var_p->v.p.size + 1);
+          var_p->v.p.ptr = malloc(var_p->v.p.size + 1);
           memcpy(var_p->v.p.ptr, rxbuff + i + 3, var_p->v.p.size);
           var_p->v.p.ptr[var_p->v.p.size] = 0;
           inHeader = 0;
@@ -171,7 +172,7 @@ int http_read(dev_file_t *f, var_t *var_p, int type) {
         }
       }
     } else {
-      var_p->v.p.ptr = tmp_realloc(var_p->v.p.ptr, var_p->v.p.size + bytes + 1);
+      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.size + bytes + 1);
       memcpy(var_p->v.p.ptr + var_p->v.p.size, rxbuff, bytes);
       var_p->v.p.size += bytes;
       var_p->v.p.ptr[var_p->v.p.size] = 0;
@@ -192,7 +193,7 @@ int sockcl_close(dev_file_t *f) {
  * write to a socket
  */
 int sockcl_write(dev_file_t *f, byte *data, dword size) {
-  net_print((socket_t) (long) f->handle, data);
+  net_print((socket_t) (long) f->handle, (char *)data);
   return size;
 }
 
@@ -200,7 +201,7 @@ int sockcl_write(dev_file_t *f, byte *data, dword size) {
  * read from a socket
  */
 int sockcl_read(dev_file_t *f, byte *data, dword size) {
-  f->drv_dw[0] = (dword) net_input((socket_t) (long) f->handle, data, size, NULL);
+  f->drv_dw[0] = (dword) net_input((socket_t) (long) f->handle, (char *)data, size, NULL);
   return (((long) f->drv_dw[0]) <= 0) ? 0 : (long) f->drv_dw[0];
 }
 

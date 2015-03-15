@@ -12,8 +12,8 @@
 #include <android/rect.h>
 #include <android_native_app_glue.h>
 
-#include "ui/maapi.h"
-#include "ui/StringLib.h"
+#include "lib/maapi.h"
+#include "ui/strlib.h"
 #include "ui/graphics.h"
 
 using namespace strlib;

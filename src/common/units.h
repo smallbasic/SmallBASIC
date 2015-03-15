@@ -42,6 +42,11 @@ typedef struct {
   addr_t vid; /**< return Variable-ID if func; or Variable-ID if variable */
 } unit_sym_t;
 
+typedef struct {
+  int count;
+  unit_sym_t **elem;
+} unit_sym_table_t;
+
 /**
  * @ingroup exec
  *

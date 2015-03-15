@@ -11,8 +11,8 @@
 #include <fltk/damage.h>
 #include <fltk/events.h>
 
-#include "BasicEditor.h"
-#include "kwp.h"
+#include "platform/fltk/BasicEditor.h"
+#include "platform/fltk/kwp.h"
 
 using namespace fltk;
 using namespace strlib;
@@ -87,12 +87,6 @@ void style_update_cb(int pos,   // I - Position of update
                      int /* nRestyled */ ,      // I - Number of restyled chars
                      const char * /* deletedText */ ,   // I - Text that was deleted
                      void *cbArg) {     // I - Callback data
-  int start;                    // Start of text
-  int end;                      // End of text
-  char last;                    // Last style on line
-  char *text_range;             // Text data
-  char *style_range;            // Text data
-
   BasicEditor *editor = (BasicEditor *) cbArg;
   TextBuffer *stylebuf = editor->stylebuf;
   TextBuffer *textbuf = editor->textbuf;
@@ -123,32 +117,38 @@ void style_update_cb(int pos,   // I - Position of update
   // the line of the changed region Then we check the last
   // style character and keep updating if we have a multi-line
   // comment character
-  start = textbuf->line_start(pos);
-  end = textbuf->line_end(pos + nInserted);
-  text_range = textbuf->text_range(start, end);
-  style_range = stylebuf->text_range(start, end);
-  last = style_range[end - start - 1];
+  if (nInserted > 0) {
+    int start;                    // Start of text
+    int end;                      // End of text
+    char last;                    // Last style on line
+    char *text_range = NULL;      // Text data
+    char *style_range = NULL;     // Text data
 
-  editor->styleParse(text_range, style_range, end - start);
-  stylebuf->replace(start, end, style_range);
-  editor->redisplay_range(start, end);
-
-  if (last != style_range[end - start - 1]) {
-    // the last character on the line changed styles,
-    // so reparse the remainder of the buffer
-    free(text_range);
-    free(style_range);
-
-    end = textbuf->length();
+    start = textbuf->line_start(pos);
+    end = textbuf->line_end(pos + nInserted);
     text_range = textbuf->text_range(start, end);
     style_range = stylebuf->text_range(start, end);
+    last = style_range[end - start - 1];
+
     editor->styleParse(text_range, style_range, end - start);
     stylebuf->replace(start, end, style_range);
     editor->redisplay_range(start, end);
-  }
 
-  free(text_range);
-  free(style_range);
+    if (last != style_range[end - start - 1]) {
+      // the last character on the line changed styles,
+      // so reparse the remainder of the buffer
+      free(text_range);
+      free(style_range);
+      end = textbuf->length();
+      text_range = textbuf->text_range(start, end);
+      style_range = stylebuf->text_range(start, end);
+      editor->styleParse(text_range, style_range, end - start);
+      stylebuf->replace(start, end, style_range);
+      editor->redisplay_range(start, end);
+    }
+    free(text_range);
+    free(style_range);
+  }
 }
 
 //--BasicEditor------------------------------------------------------------------
@@ -165,7 +165,7 @@ BasicEditor::BasicEditor(int x, int y, int w, int h, StatusBar *status) :
   stylebuf = new TextBuffer();
   search[0] = 0;
   highlight_data(stylebuf, styletable,
-                 sizeof(styletable) / sizeof(styletable[0]), 
+                 sizeof(styletable) / sizeof(styletable[0]),
                  PLAIN, style_unfinished_cb, 0);
   textbuf->add_modify_callback(style_update_cb, this);
 }

@@ -31,15 +31,15 @@ void dump_bytecode(FILE * output) {
       char buf[512];
 
       lsize = 1024;
-      source = tmp_alloc(lsize * sizeof(char_p_t));
+      source = malloc(lsize * sizeof(char_p_t));
       lcount = 0;
       while (fgets(buf, 511, fp)) {
-        source[lcount] = tmp_alloc(strlen(buf) + 1);
+        source[lcount] = malloc(strlen(buf) + 1);
         strcpy(source[lcount], buf);
         lcount++;
         if (lcount >= lsize) {
           lsize += 1024;
-          source = tmp_realloc(source, lsize * sizeof(char_p_t));
+          source = realloc(source, lsize * sizeof(char_p_t));
         }
       }
       fclose(fp);
@@ -370,8 +370,8 @@ void dump_bytecode(FILE * output) {
   // delete source
   if (source) {
     for (i = 0; i < lcount; i++) {
-      tmp_free(source[i]);
+      free(source[i]);
     }
-    tmp_free(source);
+    free(source);
   }
 }

@@ -11,7 +11,7 @@
 #include <fltk/run.h>
 #include <fltk/CheckButton.h>
 
-#include "TtyWidget.h"
+#include "platform/fltk/TtyWidget.h"
 
 //
 // TtyWidget constructor
@@ -87,7 +87,7 @@ void TtyWidget::draw() {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setfont(bold, italic);
       }
-      drawSelection(seg, null, row, x, y);
+      drawSelection(seg, NULL, row, x, y);
       int width = seg->width();
       if (seg->str) {
         if (invert) {
@@ -323,7 +323,7 @@ bool TtyWidget::copySelection() {
 
   bool result = selection.length() > 0;
   if (result) {
-    const char *copy = selection.toString();
+    const char *copy = selection.c_str();
     fltk::copy(copy, strlen(copy), true);
   }
   return result;

@@ -12,24 +12,50 @@
 #include "common/smbas.h"
 #include "common/osd.h"
 #include "common/device.h"
-#include "common/blib_ui.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"
-#include "ui/maapi.h"
+#include "lib/maapi.h"
 #include "ui/utils.h"
-#include "ui/form_ui.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/keymap.h"
 #include "platform/sdl/main_bas.h"
 
-#define WAIT_INTERVAL 10
-#define DEFAULT_FONT_SIZE 16
+#include <SDL_clipboard.h>
+#include <SDL_audio.h>
+#include <queue>
+#include <cmath>
+
+#define WAIT_INTERVAL 25
+#define DEFAULT_FONT_SIZE 12
 #define MAIN_BAS "__main_bas__"
+#define AMPLITUDE 22000
+#define FREQUENCY 44100
 
 Runtime *runtime;
 
+struct SoundObject {
+  double v;
+  double freq;
+  int samplesLeft;
+};
+
+std::queue<SoundObject> sounds;
+void audio_callback(void *beeper, Uint8 *stream8, int length);
+
+MAEvent *getMotionEvent(int type, SDL_Event *event) {
+  MAEvent *result = new MAEvent();
+  result->type = type;
+  result->point.x = event->motion.x;
+  result->point.y = event->motion.y;
+  return result;
+}
+
 Runtime::Runtime(SDL_Window *window) :
   System(),
+  _menuX(2),
+  _menuY(2),
+  _graphics(NULL),
+  _eventQueue(NULL),
   _window(window),
   _cursorHand(NULL),
   _cursorArrow(NULL) {
@@ -63,7 +89,7 @@ void Runtime::construct(const char *font, const char *boldFont) {
   if (_graphics && _graphics->construct(font, boldFont)) {
     int w, h;
     SDL_GetWindowSize(_window, &w, &h);
-    _output = new AnsiWidget(this, w, h);
+    _output = new AnsiWidget(w, h);
     if (_output && _output->construct()) {
       _eventQueue = new Stack<MAEvent *>();
       if (_eventQueue) {
@@ -103,12 +129,34 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
     _output->setFontSize(fontSize);
   }
 
+  SDL_Init(SDL_INIT_AUDIO);
+  SDL_AudioSpec desiredSpec;
+  desiredSpec.freq = FREQUENCY;
+  desiredSpec.format = AUDIO_S16SYS;
+  desiredSpec.channels = 1;
+  desiredSpec.samples = 2048;
+  desiredSpec.callback = audio_callback;
+
+  SDL_AudioSpec obtainedSpec;
+  SDL_OpenAudio(&desiredSpec, &obtainedSpec);
+
   if (startupBas != NULL) {
-    runOnce(startupBas);
+    String bas = startupBas;
+    setWindowTitle(bas.c_str());
+    runOnce(bas.c_str());
+    while (_state == kRestartState) {
+      _state = kActiveState;
+      if (_loadPath.length() != 0) {
+        bas = _loadPath;
+      }
+      setWindowTitle(bas.c_str());
+      runOnce(bas.c_str());
+    }
   } else {
     runMain(MAIN_BAS);
   }
 
+  SDL_CloseAudio();
   _state = kDoneState;
   logLeaving();
   return _fontScale;
@@ -118,7 +166,7 @@ char *Runtime::loadResource(const char *fileName) {
   logEntered();
   char *buffer = System::loadResource(fileName);
   if (buffer == NULL && strcmp(fileName, MAIN_BAS) == 0) {
-    buffer = (char *)tmp_alloc(main_bas_len + 1);
+    buffer = (char *)malloc(main_bas_len + 1);
     memcpy(buffer, main_bas, main_bas_len);
     buffer[main_bas_len] = '\0';
   }
@@ -129,42 +177,77 @@ void Runtime::showAlert(const char *title, const char *message) {
   SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
 }
 
-void Runtime::runPath(const char *path) {
-  buttonClicked(path);
-  setExit(false);
-}
-
 void Runtime::handleKeyEvent(MAEvent &event) {
   if (isRunning()) {
-    trace("key=%d scanCode=%d", event.key, event.nativeKey);
     int key = event.key;
-    for (int i = 0; keymap[i] != 0; i += 2) {
-      if (keymap[i] == key) {
-        if (keymap[i + 1] != -1) {
-          dev_pushkey(keymap[i + 1]);
-          event.key = keymap[i + 1];
+    int lenMap = sizeof(keymap) / sizeof(keymap[0]);
+    for (int i = 0; i < lenMap && key != -1; i++) {
+      if (keymap[i][0] == key) {
+        if (keymap[i][1] != -1) {
+          event.key = keymap[i][1];
+          dev_pushkey(event.key);
         }
         key = -1;
         break;
       }
     }
-    // not found
-    if (key > 0 && event.nativeKey) {
-      dev_pushkey(event.nativeKey);
+    if (key != -1) {
+      // mapping not found
+      if ((event.nativeKey & KMOD_CTRL) &&
+          (event.nativeKey & KMOD_ALT)) {
+        event.key = SB_KEY_CTRL_ALT(event.key);
+      } else if (event.nativeKey & KMOD_CTRL) {
+        event.key = SB_KEY_CTRL(event.key);
+      } else if (event.nativeKey & KMOD_ALT) {
+        event.key = SB_KEY_ALT(event.key);
+      } else if (event.nativeKey & KMOD_SHIFT) {
+        if (event.key >= SDLK_a && event.key <= SDLK_z) {
+          event.key = 'A' + (event.key - SDLK_a);
+        } else {
+          lenMap = sizeof(shiftmap) / sizeof(shiftmap[0]);
+          for (int i = 0; i < lenMap; i++) {
+            if (shiftmap[i][0] == event.key) {
+              event.key = shiftmap[i][1];
+              break;
+            }
+          }
+        }
+      }
+      dev_pushkey(event.key);
     }
   }
 }
 
-MAEvent *getMotionEvent(int type, SDL_Event *event) {
-  MAEvent *result = new MAEvent();
-  result->type = type;
-  result->point.x = event->motion.x;
-  result->point.y = event->motion.y;
-  return result;
+void Runtime::pause(int timeout) {
+  if (timeout == -1) {
+    pollEvents(true);
+    if (hasEvent()) {
+      MAEvent *event = popEvent();
+      processEvent(*event);
+      delete event;
+    }
+  } else {
+    int slept = 0;
+    while (1) {
+      pollEvents(false);
+      if (isBreak()) {
+        break;
+      } else if (hasEvent()) {
+        MAEvent *event = popEvent();
+        processEvent(*event);
+        delete event;
+      }
+      usleep(WAIT_INTERVAL * 1000);
+      slept += WAIT_INTERVAL;
+      if (timeout > 0 && slept > timeout) {
+        break;
+      }
+    }
+  }
 }
 
 void Runtime::pollEvents(bool blocking) {
-  if (runtime && runtime->isActive()) {
+  if (isActive() && !isRestart()) {
     if (blocking) {
       SDL_WaitEvent(NULL);
     }
@@ -173,11 +256,11 @@ void Runtime::pollEvents(bool blocking) {
       MAEvent *maEvent = NULL;
       switch (ev.type) {
       case SDL_QUIT:
-        runtime->setExit(true);
+        setExit(true);
         break;
       case SDL_KEYDOWN:
         if (ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) {
-          runtime->setExit(true);
+          setExit(true);
         } else if (ev.key.keysym.sym == SDLK_m && (ev.key.keysym.mod & KMOD_CTRL)) {
           showMenu();
         } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
@@ -186,11 +269,17 @@ void Runtime::pollEvents(bool blocking) {
           maEvent = new MAEvent();
           maEvent->type = EVENT_TYPE_KEY_PRESSED;
           maEvent->key = ev.key.keysym.sym;
-          maEvent->nativeKey = ev.key.keysym.scancode;
+          maEvent->nativeKey = ev.key.keysym.mod;
         }
         break;
       case SDL_MOUSEBUTTONDOWN:
-        maEvent = getMotionEvent(EVENT_TYPE_POINTER_PRESSED, &ev);
+        if (ev.button.button == SDL_BUTTON_RIGHT) {
+          _menuX = ev.motion.x;
+          _menuY = ev.motion.y;
+          showMenu();
+        } else {
+          maEvent = getMotionEvent(EVENT_TYPE_POINTER_PRESSED, &ev);
+        }
         break;
       case SDL_MOUSEMOTION:
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, &ev);
@@ -199,15 +288,26 @@ void Runtime::pollEvents(bool blocking) {
         SDL_SetCursor(_cursorArrow);
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_RELEASED, &ev);
         break;
-      case SDL_WINDOWEVENT_SIZE_CHANGED:
-        maEvent = new MAEvent();
-        maEvent->point.x = ev.window.data1;
-        maEvent->point.y = ev.window.data2;
-        maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
+      case SDL_WINDOWEVENT:
+        switch (ev.window.event) {
+        case SDL_WINDOWEVENT_RESIZED:
+          onResize(ev.window.data1, ev.window.data2);
+          break;
+        case SDL_WINDOWEVENT_EXPOSED:
+          _graphics->redraw();
+          break;
+        }
+        break;
+      case SDL_DROPFILE:
+        setLoadPath(ev.drop.file);
+        SDL_free(ev.drop.file);
+        break;
+      case SDL_MOUSEWHEEL:
+        _output->scroll(ev.wheel.y == 1);
         break;
       }
       if (maEvent != NULL) {
-        runtime->pushEvent(maEvent);
+        pushEvent(maEvent);
       }
     }
   }
@@ -221,8 +321,8 @@ MAEvent Runtime::processEvents(int waitFlag) {
     pollEvents(true);
     break;
   case 2:
-    // pause
-    maWait(WAIT_INTERVAL);
+    _output->flush(false);
+    pause(WAIT_INTERVAL);
     break;
   default:
     pollEvents(false);
@@ -232,17 +332,17 @@ MAEvent Runtime::processEvents(int waitFlag) {
   MAEvent event;
   if (hasEvent()) {
     MAEvent *nextEvent = popEvent();
+    processEvent(*nextEvent);
     event = *nextEvent;
     delete nextEvent;
   } else {
     event.type = 0;
   }
+  return event;
+}
 
+void Runtime::processEvent(MAEvent &event) {
   switch (event.type) {
-  case EVENT_TYPE_SCREEN_CHANGED:
-    _graphics->resize();
-    resize();
-    break;
   case EVENT_TYPE_KEY_PRESSED:
     handleKeyEvent(event);
     break;
@@ -253,16 +353,20 @@ MAEvent Runtime::processEvents(int waitFlag) {
     }
     break;
   }
-  return event;
 }
 
-void Runtime::setExit(bool quit) {
-  if (!isClosing()) {
-    _state = quit ? kClosingState : kBackState;
-    if (isRunning()) {
-      brun_break();
-    }
+void Runtime::setWindowTitle(const char *title) {
+  const char *slash = strrchr(title, '/');
+  if (slash == NULL) {
+    slash = title;
+  } else {
+    slash++;
   }
+  int len = strlen(slash) + 16;
+  char *buffer = new char[len];
+  sprintf(buffer, "%s - SmallBASIC", slash);
+  SDL_SetWindowTitle(_window, buffer);
+  delete [] buffer;
 }
 
 void Runtime::onResize(int width, int height) {
@@ -273,49 +377,102 @@ void Runtime::onResize(int width, int height) {
     if (w != width || h != height) {
       trace("Resized from %d %d to %d %d", w, h, width, height);
       _graphics->setSize(width, height);
-      MAEvent *maEvent = new MAEvent();
-      maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
-      runtime->pushEvent(maEvent);
+      _graphics->resize();
+      resize();
     }
   }
 }
 
 void Runtime::optionsBox(StringList *items) {
-  SDL_MessageBoxButtonData buttons[items->size()];
-  int index = 0;
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    buttons[index].text = str;
-    buttons[index].buttonid = index;
-    buttons[index].flags = 0;
-    index++;
+  int width = 0;
+  int textHeight = 0;
+
+  if (!_menuX) {
+    _menuX = 2;
+  }
+  if (!_menuY) {
+    _menuY = 2;
   }
 
-  SDL_MessageBoxData data;
-  data.window = _window;
-  data.title = "SmallBASIC";
-  data.message = "Menu";
-  data.flags = SDL_MESSAGEBOX_INFORMATION;
-  data.numbuttons = items->size();
-  data.buttons = buttons;
+  _output->registerScreen(MENU_SCREEN);
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    MAExtent extent = maGetTextSize(str);
+    int w = EXTENT_X(extent);
+    int h = EXTENT_Y(extent);
+    if (w > width) {
+      width = w + 48;
+    }
+    textHeight = h + 8;
+  }
+  int height = textHeight * items->size();
+  if (_menuX + width >= _output->getWidth()) {
+    _menuX = _output->getWidth() - width;
+  }
+  if (_menuY + height >= _output->getHeight()) {
+    _menuY = _output->getHeight() - height;
+  }
 
-  int buttonid;
-  SDL_ShowMessageBox(&data, &buttonid);
-  MAEvent *maEvent = new MAEvent();
-  maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
-  maEvent->optionsBoxButtonIndex = buttonid;
-  pushEvent(maEvent);
+  int screenId = _output->insetMenuScreen(_menuX, _menuY, width, height);
+  int y = 0;
+  int index = 0;
+  int selectedIndex = -1;
+  int releaseCount = 0;
+
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    FormInput *item = new MenuButton(index, selectedIndex, str, 0, y, width, textHeight);
+    _output->addInput(item);
+    item->setColor(0xd2d1d0, 0x3e3f3e);
+    index++;
+    y += textHeight;
+  }
+
+  _output->redraw();
+  while (selectedIndex == -1) {
+    MAEvent ev = processEvents(true);
+    if (ev.type == EVENT_TYPE_KEY_PRESSED &&
+        ev.key == 27) {
+      break;
+    }
+    if (ev.type == EVENT_TYPE_POINTER_RELEASED &&
+        ++releaseCount == 2) {
+      break;
+    }
+  }
+
+  _output->removeInputs();
+  _output->selectScreen(screenId);
+  _menuX = 2;
+  _menuY = 2;
+
+  if (selectedIndex != -1) {
+    MAEvent *maEvent = new MAEvent();
+    maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
+    maEvent->optionsBoxButtonIndex = selectedIndex;
+    pushEvent(maEvent);
+  } else {
+    delete [] _systemMenu;
+    _systemMenu = NULL;
+  }
+
+  _output->redraw();
 }
 
-//
-// form_ui implementation
-//
-AnsiWidget *form_ui::getOutput() {
-  return runtime->_output;
+void Runtime::setClipboardText(const char *text) {
+  SDL_SetClipboardText(text);
 }
 
-void form_ui::optionsBox(StringList *items) {
-  runtime->optionsBox(items);
+char *Runtime::getClipboardText() {
+  char *result;
+  char *text = SDL_GetClipboardText();
+  if (text && text[0]) {
+    result = strdup(text);
+    SDL_free(text);
+  } else {
+    result = NULL;
+  }
+  return result;
 }
 
 //
@@ -336,35 +493,7 @@ int maGetEvent(MAEvent *event) {
 }
 
 void maWait(int timeout) {
-  if (timeout == -1) {
-    runtime->pollEvents(true);
-  } else {
-    int slept = 0;
-    while (1) {
-      runtime->pollEvents(false);
-      if (runtime->hasEvent()
-          || runtime->isBack()
-          || runtime->isClosing()) {
-        break;
-      }
-      usleep(WAIT_INTERVAL * 1000);
-      slept += WAIT_INTERVAL;
-      if (timeout > 0 && slept > timeout) {
-        break;
-      }
-    }
-  }
-}
-
-int maGetMilliSecondCount(void) {
-  timespec t;
-  t.tv_sec = t.tv_nsec = 0;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  return (int) (1000L * t.tv_sec + ((double) t.tv_nsec / 1e6));
-}
-
-int maShowVirtualKeyboard(void) {
-  return 0;
+  runtime->pause(timeout);
 }
 
 void maAlert(const char *title, const char *message, const char *button1,
@@ -373,23 +502,95 @@ void maAlert(const char *title, const char *message, const char *button1,
 }
 
 //
+// audio
+//
+void audio_callback(void *beeper, Uint8 *stream8, int length) {
+  Sint16 *stream = (Sint16 *)stream8;
+  int samples = length / 2;
+  int i = 0;
+  while (i < samples) {
+    if (sounds.empty()) {
+      while (i < samples) {
+        stream[i] = 0;
+        i++;
+      }
+      return;
+    }
+
+    SoundObject &sound = sounds.front();
+    int samplesToDo = std::min(i + sound.samplesLeft, samples);
+    sound.samplesLeft -= samplesToDo - i;
+
+    while (i < samplesToDo) {
+      stream[i] = AMPLITUDE * std::sin(sound.v * 2 * M_PI / FREQUENCY);
+      sound.v += sound.freq;
+      i++;
+    }
+    if (sound.samplesLeft == 0) {
+      sounds.pop();
+    }
+  }
+}
+
+void do_beep(double freq, int duration) {
+  SoundObject sound;
+  sound.freq = freq;
+  sound.samplesLeft = duration * FREQUENCY / 1000;
+  sound.v = 0;
+
+  SDL_LockAudio();
+  sounds.push(sound);
+  SDL_UnlockAudio();
+}
+
+void flush_queue() {
+  int size;
+  int last_size = 0;
+  int unplayed = 0;
+
+  do {
+    SDL_Delay(20);
+    SDL_LockAudio();
+    size = sounds.size();
+    if (size != last_size) {
+      unplayed++;
+    } else {
+      last_size = size;
+    }
+    SDL_UnlockAudio();
+  } while (size > 0 && unplayed < 50);
+}
+
+//
 // sbasic implementation
 //
 int osd_devinit(void) {
   setsysvar_str(SYSVAR_OSNAME, "SDL");
-  osd_clear_sound_queue();
   runtime->setRunning(true);
+  osd_clear_sound_queue();
   return 1;
 }
 
-void osd_sound(int frq, int dur, int vol, int bgplay) {
+int osd_devrestore(void) {
+  runtime->setRunning(false);
+  return 0;
+}
+
+void osd_beep() {
+  SDL_PauseAudio(0);
+  do_beep(1000, 30);
+  do_beep(500, 30);
+  flush_queue();
+}
+
+void osd_sound(int frq, int ms, int vol, int bgplay) {
+  SDL_PauseAudio(0);
+  do_beep(frq, ms);
+  if (!bgplay) {
+    flush_queue();
+  }
 }
 
 void osd_clear_sound_queue() {
+  flush_queue();
 }
-
-void osd_beep(void) {
-  osd_sound(1000, 30, 100, 0);
-  osd_sound(500, 30, 100, 0);
-}
-

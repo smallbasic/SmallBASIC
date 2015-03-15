@@ -1,7 +1,5 @@
 'app-plug-in
 'menu Memory Test
-REM $Id: memoryTest.bas,v 1.4 2005/09/02 06:54:52 zeeb90au Exp $
-REM Copyright (c) 2005 Chris Warren-Smith 
 REM Game idea taken from this site:
 REM http://milov.nl/iambald/20.html
 
@@ -16,11 +14,9 @@ const st_init = 1
 const st_ready = 2
 const st_active = 3
 const st_done = 4
+const lineHeight = 15 + txth("Q")
 
-skillFactor = 5
-bn_start = 0
-bn_generate = 0
-txt = ""
+numCorrect = 0
 
 func createGrid(skillFactor)
   local x,y
@@ -57,7 +53,7 @@ func numMatches(byref g1, byref g2)
     next y
   next x
   numMatches=n
-end  
+end
 
 func numCells(byref g1)
   local x,y,n
@@ -70,7 +66,7 @@ func numCells(byref g1)
     next y
   next x
   numCells=n
-end  
+end
 
 sub drawGrid(byref grid)
   local x,y,x1,y1
@@ -98,31 +94,36 @@ sub clickCell(byref grid, cell)
 end
 
 sub display(s)
-  txt += s
-  html txt, "", 170,1
-end
-
-# Convert mouse coordinates into grid coordinates
-func getCell
-  repeat
-  until pen(0)
-  getCell = [1+Int(Pen(1)/cellSize), 1+Int(Pen(2)/cellSize)]
+  at 170, 200
+  print chr(27)+"[K" + s
 end
 
 sub intro
-  local s
-  s= "<b>Objective</b><br>"
-  s+="To view a pattern and reproduce it entirely from memory.<br>"
-  s+="Instructions<br>"
-  s+="1. Choose a difficulty-level from the menu.<br>"
-  s+="2. Click on 'Generate!' to generate a random pattern.<br>"
-  s+="   If you're not happy with the result, simply click it again.<br>"
-  s+="3. Click on 'Start!' to hide the generated pattern, then start<br>"
-  s+="   rebuilding the pattern by clicking on the<br>"
-  s+="   blocks where you think they belong.<br>"
-  s+="4. Click 'Check' to find out the results, and to unhide<br>"
-  s+="   the original pattern so you can compare it with your guess.<br>"
-  display s
+  local h = txtw("Z") + 10
+  local x = 170
+  local y = 0
+
+  at x, y: y += h: ? cat(3) + "Objective:" + cat(0)
+  at x, y: y += h: ? "To view a pattern and reproduce it entirely from memory."
+  at x, y: y += h: ? cat(3) + "Instructions:" + cat(0)
+  at x, y: y += h: ? "1. Choose a difficulty-level from the menu."
+  at x, y: y += h: ? "2. Click on 'Generate!' to generate a random pattern."
+  at x, y: y += h: ? "   If you're not happy with the result, simply click it again."
+  at x, y: y += h: ? "3. Click on 'Start!' to hide the generated pattern, then start"
+  at x, y: y += h: ? "   rebuilding the pattern by clicking on the"
+  at x, y: y += h: ? "   blocks where you think they belong."
+  at x, y: y += h: ? "4. Click 'Check' to find out the results, and to unhide"
+  at x, y: y += h: ? "   the original pattern so you can compare it with your guess."
+end
+
+func button(x, y, w, h)
+  button.x = x
+  button.y = y
+  button.width = w
+  button.height = h
+  button.type = "button"
+  button.color = "blue"
+  button.backgroundColor = "green"
 end
 
 sub getOptions
@@ -130,31 +131,40 @@ sub getOptions
   local w = 10
   local h = -1
   local y = (cellSize*rows)+3
-  
+  local frm, bn_opt
+  local skillFactor
+  local selected
+
   color 11,0
-  button x, y, 80, 20, bn_opt, "Easy|Medium|Hard", "choice"
-  button x, -3, -1, -5, bn_generate, "Generate @->"    
+  frm.inputs << button(x, y, 80, 20)
+  frm.inputs << button(x, -lineHeight, -1, -5)
+  frm.inputs(0).value = "Easy|Medium|Hard"
+  frm.inputs(0).type = "choice"
+  frm.inputs(1).label = "Generate"
 
   local start_ready = false
+  frm = form(frm)
 
   ' display the form until either generate or start has been clicked
   repeat
-    doform form_var
+    frm.doEvents()
 
-    if (form_var == bn_generate) then
-      skillFactor = if (bn_opt = "Easy", 9, if (bn_opt="Medium", 7, 5))
+    if (frm.value == "Generate") then
+      selected = frm.inputs(0).selectedIndex 
+      skillFactor = iff(selected==0, 9, iff(selected==1, 7, 5))
       test = createGrid(skillFactor)
       drawGrid test
       if (start_ready == false)
-        button x, -3, -1, -5, bn_start, "Start @->"
+        frm.close()
+        frm.inputs << button(x, -lineHeight, -1, -5)
+        frm.inputs(2).label = "Start"
+        frm = form(frm)
         start_ready = true
       fi
     fi
-  until form_var = bn_start
- 
-  ' close the form
-  doform 0
-end  
+  until frm.value = "Start"
+  frm.close()
+end
 
 sub init
   local emptyGrid
@@ -165,68 +175,87 @@ sub init
   drawGrid emptyGrid
 end
 
-sub main
-  local test,guess,emptyGrid
+sub play_game
+  local test, guess, emptyGrid, frm, clicked
 
-  'get the user skillFactor  
+  'get the user skillFactor
   emptyGrid = createGrid(0)
 
   getOptions
- 
+
   'run the memory test
   drawGrid emptyGrid
   guess = createGrid(0)
   drawGrid guess
-  
+
   color 8,0
   local y = (cellSize*rows)+3
 
+  local is_check_click = false
+  sub check_click
+    is_check_click = true
+  end
+
+  local is_clear_click = false
+  sub clear_click
+    is_clear_click = true
+  end
+
   ' this shows how to create a combine pen/form loop
-  bn_check = "Check @->"
-  bn_reset = "Clear"
-  form_var = 0
-  
-  button 10, y, -1, -5, bn_check, bn_check
-  button 10, -3, -1, -5, bn_reset, bn_reset
+  frm.inputs << button(10, y, -1, -5)
+  frm.inputs << button(10, -lineHeight, -1, -5)
+  frm.inputs(0).label = "Check"
+  frm.inputs(1).label = "Clear"
+
+  frm.inputs(0).onclick = @check_click
+  frm.inputs(1).onclick = @clear_click
+  frm = form(frm)
 
   pen on
-  while 1
-    ' handle mouse actions
-    clickCell guess, getCell
-    drawGrid guess
-   
-    ' handle form actions
-    doform form_var
-    if (form_var != 0) then
-      select case form_var
-      case bn_check
-        exit loop
-      case bn_reset
-        guess = createGrid(0)
-        drawGrid guess
-      end select
-      form_var = 0
-    fi
+  while is_check_click == false
+    repeat
+    until pen(0) || is_check_click || is_clear_click
+    if (is_clear_click) then
+      guess = createGrid(0)
+      drawGrid guess
+      is_clear_click = false
+    else if (is_check_click == false) then
+      clicked = [1+Int(Pen(1)/cellSize), 1+Int(Pen(2)/cellSize)]
+      clickCell guess, clicked
+      drawGrid guess
+    end if
   wend
   pen off
-
-  ' close the form
-  doform 0
+  frm.close()
 
   'test completed
   if isEqual(guess, test) then
-    display, "<br><font color=green>Correct!</font>"
+    numCorrect++
+    display, "Correct [" + numCorrect + "]"
   else
-    matches = numMatches(guess,test)
+    matches = numMatches(guess, test)
     cells = numCells(test)
-    display "<br>You guessed "+matches+" of the "+cells+" cells."
+    display "You guessed " + matches + " of the " +cells + " cells."
   fi
 
-  drawGrid test
+  local x,y,x1,y1
+  x1 = xoffs
+  for x = 1 to cols
+    y1 = yoffs
+    for y = 1 to rows
+      if (test(x,y) == 1) then
+        rect x1,y1,x1+size,y1+size, 3 filled
+      else if (guess(x,y) == 1) then
+        rect x1,y1,x1+size,y1+size, 4 filled
+      end if
+      y1 += size+gap
+    next y
+    x1 += size+gap
+  next x
 end
 
 init
 while 1
-  main
+  play_game
 wend
 

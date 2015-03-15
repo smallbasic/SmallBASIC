@@ -71,3 +71,17 @@ if (&b11 <> 3 ) then ? "&b11<>3"
 ? cat(1);"Bob's bug";cat(0);" = -30 = ";
 k=30
 ? "-"+k
+
+func func2(a,b)
+ func2 = a
+end
+func func3(a,b,c)
+ func3 = 22
+end
+if (func2(func3(Board,Move,False),b) <> 22) then
+  throw "nested func call failed"
+endif
+rem NOTE: allowing: func2 (arg1), (arg2) broken nested funcs
+if (func2((98+1), (2)) <> 99) then
+  throw "bracketed args failed"
+endif

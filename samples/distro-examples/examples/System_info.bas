@@ -7,8 +7,8 @@ t$=chr$(9)
 ?b1;"System Information";b0
 ?
 if sbver>=0x506
-	? "OS:",osname;" ";hex$(osver)
-	? "SB:",hex$(sbver)
+	? "OS:",osname;
+	? "SB:",sbver
 	? "Display",xmax+1;"x";ymax+1
 	? "Colors",2^bpp
 	? "Font:", txtw("a");"x";txth("a")

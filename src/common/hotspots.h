@@ -208,7 +208,7 @@ static inline void v_free(var_t *v) {
   switch (v->type) {
   case V_STR:
     if (v->v.p.ptr) {
-      tmp_free(v->v.p.ptr);
+      free(v->v.p.ptr);
     }
     v->v.p.ptr = NULL;
     v->v.p.size = 0;
@@ -221,7 +221,7 @@ static inline void v_free(var_t *v) {
           var_t *elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
           v_free(elem);
         }
-        tmp_free(v->v.a.ptr);
+        free(v->v.a.ptr);
         v->v.a.ptr = NULL;
         v->v.a.size = 0;
       }

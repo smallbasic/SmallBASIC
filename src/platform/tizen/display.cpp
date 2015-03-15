@@ -9,7 +9,7 @@
 #include "config.h"
 #include <time.h>
 #include "platform/tizen/display.h"
-#include "ui/form_ui.h"
+#include "ui/form.h"
 #include "ui/utils.h"
 
 #define SIZE_LIMIT 4

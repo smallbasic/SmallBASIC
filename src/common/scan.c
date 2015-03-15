@@ -42,16 +42,22 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_TEXTMODE   STRLEN(LCN_TEXTMODE)
 #define LEN_COMMAND    STRLEN(LCN_COMMAND)
 #define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
+#define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
 
-#define SKIP_SPACES(p) \
-  while (*p == ' ' || *p == '\t') { \
-    p++; \
+#define SKIP_SPACES(p)                          \
+  while (*p == ' ' || *p == '\t') {             \
+    p++;                                        \
   }
 
-#define CHKOPT(x) \
-   (strncmp(p, (x), strlen((x))) == 0)
+#define CHKOPT(x)                               \
+  (strncmp(p, (x), strlen((x))) == 0)
 
 #define GROWSIZE 128
+
+typedef struct  {
+  byte *code;
+  long size;
+} byte_code;
 
 void err_wrongproc(const char *name) {
   sc_raise(MSG_WRONG_PROCNAME, name);
@@ -75,17 +81,57 @@ void err_comp_label_not_def(const char *name) {
 void comp_reset_externals(void) {
   // reset functions
   if (comp_extfunctable) {
-    tmp_free(comp_extfunctable);
+    free(comp_extfunctable);
   }
   comp_extfunctable = NULL;
   comp_extfunccount = comp_extfuncsize = 0;
 
   // reset procedures
   if (comp_extproctable) {
-    tmp_free(comp_extproctable);
+    free(comp_extproctable);
   }
   comp_extproctable = NULL;
   comp_extproccount = comp_extprocsize = 0;
+}
+
+// update imports table
+bc_symbol_rec_t *add_imptable_rec(const char *proc_name, int lib_id, int symbol_type) {
+  bc_symbol_rec_t *sym = (bc_symbol_rec_t *)malloc(sizeof(bc_symbol_rec_t));
+  memset(sym, 0, sizeof(bc_symbol_rec_t));
+
+  strcpy(sym->symbol, proc_name);  // symbol name
+  sym->type = symbol_type;         // symbol type
+  sym->lib_id = lib_id;            // library id
+  sym->sym_id = comp_impcount;     // symbol index
+
+  if (comp_imptable.count) {
+    comp_imptable.elem = (bc_symbol_rec_t **)realloc(comp_imptable.elem,
+                                                     (comp_imptable.count + 1) * sizeof(bc_symbol_rec_t **));
+  } else {
+    comp_imptable.elem = (bc_symbol_rec_t **)malloc(comp_imptable.count * sizeof(bc_symbol_rec_t **));
+  }
+  comp_imptable.elem[comp_imptable.count] = sym;
+  comp_imptable.count++;
+  return sym;
+}
+
+// store lib-record
+void add_libtable_rec(const char *lib, int uid, int type) {
+  bc_lib_rec_t *imlib = (bc_lib_rec_t *)malloc(sizeof(bc_lib_rec_t));
+  memset(imlib, 0, sizeof(bc_lib_rec_t));
+
+  strcpy(imlib->lib, lib);
+  imlib->id = uid;
+  imlib->type = type;
+
+  if (comp_libtable.count) {
+    comp_libtable.elem = (bc_lib_rec_t **)realloc(comp_libtable.elem,
+                                                 (comp_libtable.count + 1) * sizeof(bc_lib_rec_t **));
+  } else {
+    comp_libtable.elem = (bc_lib_rec_t **)malloc(comp_libtable.count * sizeof(bc_lib_rec_t **));
+  }
+  comp_libtable.elem[comp_libtable.count] = imlib;
+  comp_libtable.count++;
 }
 
 /*
@@ -95,30 +141,20 @@ int comp_add_external_proc(const char *proc_name, int lib_id) {
   // TODO: scan for conflicts
   if (comp_extproctable == NULL) {
     comp_extprocsize = 16;
-    comp_extproctable = (ext_proc_node_t *)tmp_alloc(sizeof(ext_proc_node_t) * comp_extprocsize);
+    comp_extproctable = (ext_proc_node_t *)malloc(sizeof(ext_proc_node_t) * comp_extprocsize);
   } else if (comp_extprocsize <= (comp_extproccount + 1)) {
     comp_extprocsize += 16;
-    comp_extproctable = (ext_proc_node_t *)tmp_realloc(comp_extproctable,
-                                                       sizeof(ext_proc_node_t) * comp_extprocsize);
+    comp_extproctable = (ext_proc_node_t *)realloc(comp_extproctable,
+                                                   sizeof(ext_proc_node_t) * comp_extprocsize);
   }
 
   comp_extproctable[comp_extproccount].lib_id = lib_id;
   comp_extproctable[comp_extproccount].symbol_index = comp_impcount;
   strcpy(comp_extproctable[comp_extproccount].name, proc_name);
   strupper(comp_extproctable[comp_extproccount].name);
-
-  // update imports table
-  bc_symbol_rec_t sym;
-
-  strcpy(sym.symbol, proc_name);  // symbol name
-  sym.type = stt_procedure;     // symbol type
-  sym.lib_id = lib_id;          // library id
-  sym.sym_id = comp_impcount;   // symbol index
-
-  // store it
-  dbt_write(comp_imptable, comp_impcount, &sym, sizeof(bc_symbol_rec_t));
-  comp_impcount++;
   comp_extproccount++;
+
+  add_imptable_rec(proc_name, lib_id, stt_procedure);
   return comp_extproccount - 1;
 }
 
@@ -129,30 +165,20 @@ int comp_add_external_func(const char *func_name, int lib_id) {
   // TODO: scan for conflicts
   if (comp_extfunctable == NULL) {
     comp_extfuncsize = 16;
-    comp_extfunctable = (ext_func_node_t *)tmp_alloc(sizeof(ext_func_node_t) * comp_extfuncsize);
+    comp_extfunctable = (ext_func_node_t *)malloc(sizeof(ext_func_node_t) * comp_extfuncsize);
   } else if (comp_extfuncsize <= (comp_extfunccount + 1)) {
     comp_extfuncsize += 16;
-    comp_extfunctable = (ext_func_node_t *)tmp_realloc(comp_extfunctable,
-                                                       sizeof(ext_func_node_t) * comp_extfuncsize);
+    comp_extfunctable = (ext_func_node_t *)realloc(comp_extfunctable,
+                                                   sizeof(ext_func_node_t) * comp_extfuncsize);
   }
 
   comp_extfunctable[comp_extfunccount].lib_id = lib_id;
   comp_extfunctable[comp_extfunccount].symbol_index = comp_impcount;
   strcpy(comp_extfunctable[comp_extfunccount].name, func_name);
   strupper(comp_extfunctable[comp_extfunccount].name);
-
-  // update imports table
-  bc_symbol_rec_t sym;
-
-  strcpy(sym.symbol, func_name);  // symbol name
-  sym.type = stt_function;      // symbol type
-  sym.lib_id = lib_id;          // library id
-  sym.sym_id = comp_impcount;   // symbol index
-
-  // store it
-  dbt_write(comp_imptable, comp_impcount, &sym, sizeof(bc_symbol_rec_t));
-  comp_impcount++;
   comp_extfunccount++;
+
+  add_imptable_rec(func_name, lib_id, stt_function);
   return comp_extfunccount - 1;
 }
 
@@ -163,7 +189,7 @@ int comp_is_external_proc(const char *name) {
   int i;
 
   for (i = 0; i < comp_extproccount; i++) {
-    if (strcmp(comp_extproctable[i].name, name) == 0) {
+    if (strcasecmp(comp_extproctable[i].name, name) == 0) {
       return i;
     }
   }
@@ -177,7 +203,7 @@ int comp_is_external_func(const char *name) {
   int i;
 
   for (i = 0; i < comp_extfunccount; i++) {
-    if (strcmp(comp_extfunctable[i].name, name) == 0) {
+    if (strcasecmp(comp_extfunctable[i].name, name) == 0) {
       return i;
     }
   }
@@ -185,26 +211,27 @@ int comp_is_external_func(const char *name) {
 }
 
 /*
- *   Notes:
- *       block_level = the depth of nested block
- *       block_id    = unique number of each block (based on stack use)
+ * Notes:
+ *  block_level = the depth of nested block
+ *  block_id    = unique number of each block (based on stack use)
  *
- *       Example:
- *       ? xxx           ' level 0, id 0
- *       for i=1 to 20   ' level 1, id 1
- *           ? yyy       ' level 1, id 1
- *           if a=1      ' level 2, id 2 (our IF uses stack)
- *               ...     ' level 2, id 2
- *           else        ' level 2, id 2 // not 3
- *               ...     ' level 2, id 2
- *           fi          ' level 2, id 2
- *           if a=2      ' level 2, id 3
- *               ...     ' level 2, id 3
- *           fi          ' level 2, id 3
- *           ? zzz       ' level 1, id 1
- *       next            ' level 1, id 1
- *       ? ooo           ' level 0, id 0
+ * Example:
+ *  ? xxx           ' level 0, id 0
+ *  for i=1 to 20   ' level 1, id 1
+ *      ? yyy       ' level 1, id 1
+ *      if a=1      ' level 2, id 2 (our IF uses stack)
+ *          ...     ' level 2, id 2
+ *      else        ' level 2, id 2 // not 3
+ *          ...     ' level 2, id 2
+ *      fi          ' level 2, id 2
+ *      if a=2      ' level 2, id 3
+ *          ...     ' level 2, id 3
+ *      fi          ' level 2, id 3
+ *      ? zzz       ' level 1, id 1
+ *  next            ' level 1, id 1
+ *  ? ooo           ' level 0, id 0
  */
+
 /*
  * error messages
  */
@@ -213,19 +240,14 @@ void sc_raise(const char *fmt, ...) {
   va_list ap;
 
   va_start(ap, fmt);
-
   comp_error = 1;
 
-  buff = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-#if defined(_DOS)
-  vsprintf(buff, fmt, ap);
-#else
+  buff = malloc(SB_SOURCELINE_SIZE + 1);
   vsnprintf(buff, SB_SOURCELINE_SIZE, fmt, ap);
-#endif
   va_end(ap);
 
   sc_raise2(comp_bc_sec, comp_line, buff);  // sberr.h
-  tmp_free(buff);
+  free(buff);
 }
 
 /*
@@ -253,13 +275,11 @@ char *comp_prepare_name(char *dest, const char *source, int size) {
 bid_t comp_label_getID(const char *label_name) {
   bid_t idx = -1, i;
   char name[SB_KEYWORD_SIZE + 1];
-  comp_label_t label;
 
   comp_prepare_name(name, label_name, SB_KEYWORD_SIZE);
 
-  for (i = 0; i < comp_labcount; i++) {
-    dbt_read(comp_labtable, i, &label, sizeof(comp_label_t));
-    if (strcmp(label.name, name) == 0) {
+  for (i = 0; i < comp_labtable.count; i++) {
+    if (strcmp(comp_labtable.elem[i]->name, name) == 0) {
       idx = i;
       break;
     }
@@ -269,15 +289,23 @@ bid_t comp_label_getID(const char *label_name) {
     if (opt_verbose) {
       log_printf(MSG_NEW_LABEL, comp_line, name, comp_labcount);
     }
-    strcpy(label.name, name);
-    label.ip = INVALID_ADDR;
-    label.dp = INVALID_ADDR;
-    label.level = comp_block_level;
-    label.block_id = comp_block_id;
 
-    dbt_write(comp_labtable, comp_labcount, &label, sizeof(comp_label_t));
-    idx = comp_labcount;
-    comp_labcount++;
+    comp_label_t *label = (comp_label_t *)malloc(sizeof(comp_label_t));
+    memset(label, 0, sizeof(comp_label_t));
+    strcpy(label->name, name);
+    label->ip = INVALID_ADDR;
+    label->dp = INVALID_ADDR;
+    label->level = comp_block_level;
+    label->block_id = comp_block_id;
+
+    if (comp_labtable.count == comp_labtable.size) {
+      comp_labtable.size += GROWSIZE;
+      comp_labtable.elem = realloc(comp_labtable.elem, comp_labtable.size * sizeof(comp_label_t *));
+    }
+
+    comp_labtable.elem[comp_labtable.count] = label;
+    idx = comp_labtable.count;
+    comp_labtable.count++;
   }
 
   return idx;
@@ -287,14 +315,12 @@ bid_t comp_label_getID(const char *label_name) {
  * set LABEL's position (IP)
  */
 void comp_label_setip(bid_t idx) {
-  comp_label_t label;
-
-  dbt_read(comp_labtable, idx, &label, sizeof(comp_label_t));
-  label.ip = comp_prog.count;
-  label.dp = comp_data.count;
-  label.level = comp_block_level;
-  label.block_id = comp_block_id;
-  dbt_write(comp_labtable, idx, &label, sizeof(comp_label_t));
+  if (idx < comp_labtable.count) {
+    comp_labtable.elem[idx]->ip = comp_prog.count;
+    comp_labtable.elem[idx]->dp = comp_data.count;
+    comp_labtable.elem[idx]->level = comp_block_level;
+    comp_labtable.elem[idx]->block_id = comp_block_id;
+  }
 }
 
 /*
@@ -323,7 +349,7 @@ bid_t comp_udp_id(const char *proc_name, int scan_tree) {
 
   if (scan_tree) {
     comp_prepare_name(base, baseof(proc_name, '/'), SB_KEYWORD_SIZE);
-    root = tmp_strdup(comp_bc_proc);
+    root = strdup(comp_bc_proc);
     do {
       // (nested procs) move root down
       if ((len = strlen(root)) != 0) {
@@ -340,14 +366,14 @@ bid_t comp_udp_id(const char *proc_name, int scan_tree) {
       // search on local
       for (i = 0; i < comp_udpcount; i++) {
         if (strcmp(comp_udptable[i].name, name) == 0) {
-          tmp_free(root);
+          free(root);
           return i;
         }
       }
     } while (len);
 
     // not found
-    tmp_free(root);
+    free(root);
   } else {
     comp_prepare_udp_name(name, proc_name);
 
@@ -390,7 +416,7 @@ bid_t comp_add_udp(const char *proc_name) {
   if (idx == -1) {
     if (comp_udpcount >= comp_udpsize) {
       comp_udpsize += GROWSIZE;
-      comp_udptable = tmp_realloc(comp_udptable, comp_udpsize * sizeof(comp_udp_t));
+      comp_udptable = realloc(comp_udptable, comp_udpsize * sizeof(comp_udp_t));
     }
 
     if (!(is_alpha(name[0]) || name[0] == '_')) {
@@ -399,7 +425,7 @@ bid_t comp_add_udp(const char *proc_name) {
       if (opt_verbose) {
         log_printf(MSG_NEW_UDP, comp_line, name, comp_udpcount);
       }
-      comp_udptable[comp_udpcount].name = tmp_alloc(strlen(name) + 1);
+      comp_udptable[comp_udpcount].name = malloc(strlen(name) + 1);
       comp_udptable[comp_udpcount].ip = INVALID_ADDR; // bc_prog.count;
       comp_udptable[comp_udpcount].level = comp_block_level;
       comp_udptable[comp_udpcount].block_id = comp_block_id;
@@ -533,12 +559,10 @@ int comp_geterror() {
  */
 int comp_check_labels() {
   bid_t i;
-  comp_label_t label;
 
   for (i = 0; i < comp_labcount; i++) {
-    dbt_read(comp_labtable, i, &label, sizeof(comp_label_t));
-    if (label.ip == INVALID_ADDR) {
-      err_comp_label_not_def(label.name);
+    if (comp_labtable.elem[i]->ip == INVALID_ADDR) {
+      err_comp_label_not_def(comp_labtable.elem[i]->name);
       return 0;
     }
   }
@@ -558,12 +582,11 @@ int comp_check_lib(const char *name) {
   if (p) {
     *p = '\0';
     for (i = 0; i < comp_libcount; i++) {
-      bc_lib_rec_t lib;
-      dbt_read(comp_libtable, i, &lib, sizeof(bc_lib_rec_t));
+      bc_lib_rec_t *lib = comp_libtable.elem[i];
 
       // remove any file path component from the name
-      char *dir_sep = strrchr(lib.lib, OS_DIRSEP);
-      char *lib_name = dir_sep ? dir_sep + 1 : lib.lib;
+      char *dir_sep = strrchr(lib->lib, OS_DIRSEP);
+      char *lib_name = dir_sep ? dir_sep + 1 : lib->lib;
 
       if (strcasecmp(lib_name, tmp) == 0) {
         return 1;
@@ -584,12 +607,12 @@ int comp_create_var(const char *name) {
     // realloc table if it is needed
     if (comp_varcount >= comp_varsize) {
       comp_varsize += GROWSIZE;
-      comp_vartable = tmp_realloc(comp_vartable, comp_varsize * sizeof(comp_var_t));
+      comp_vartable = realloc(comp_vartable, comp_varsize * sizeof(comp_var_t));
     }
     if (opt_verbose) {
       log_printf(MSG_NEW_VAR, comp_line, name, comp_varcount);
     }
-    comp_vartable[comp_varcount].name = tmp_alloc(strlen(name) + 1);
+    comp_vartable[comp_varcount].name = malloc(strlen(name) + 1);
     strcpy(comp_vartable[comp_varcount].name, name);
     comp_vartable[comp_varcount].dolar_sup = 0;
     comp_vartable[comp_varcount].lib_id = -1;
@@ -610,17 +633,8 @@ int comp_add_external_var(const char *name, int lib_id) {
 
   if (lib_id & UID_UNIT_BIT) {
     // update imports table
-    bc_symbol_rec_t sym;
-
-    strcpy(sym.symbol, name);   // symbol name
-    sym.type = stt_variable;    // symbol type
-    sym.lib_id = lib_id;        // library id
-    sym.sym_id = comp_impcount; // symbol index
-    sym.var_id = idx;           // variable index
-
-    // store it
-    dbt_write(comp_imptable, comp_impcount, &sym, sizeof(bc_symbol_rec_t));
-    comp_impcount++;
+    bc_symbol_rec_t *sym = add_imptable_rec(name, lib_id, stt_variable);
+    sym->var_id = idx;
   }
 
   return idx;
@@ -644,7 +658,7 @@ bid_t comp_var_getID(const char *var_name) {
   char *dot = strchr(tmp, '.');
   if (dot != NULL && *(dot + 1) == 0) {
     // name ends with dot
-    sc_raise(MSG_MEMBER_DOES_NOT_EXISTS, tmp);
+    sc_raise(MSG_MEMBER_DOES_NOT_EXIST, tmp);
     return 0;
   }
   //
@@ -656,12 +670,12 @@ bid_t comp_var_getID(const char *var_name) {
   // is treated as a structure reference
   if (dot != NULL && comp_check_lib(tmp)) {
     for (i = 0; i < comp_varcount; i++) {
-      if (strcmp(comp_vartable[i].name, tmp) == 0) {
+      if (strcasecmp(comp_vartable[i].name, tmp) == 0) {
         return i;
       }
     }
 
-    sc_raise(MSG_MEMBER_DOES_NOT_EXISTS, tmp);
+    sc_raise(MSG_MEMBER_DOES_NOT_EXIST, tmp);
     return 0;
   }
   //
@@ -680,15 +694,15 @@ bid_t comp_var_getID(const char *var_name) {
 
     if (comp_vartable[i].dolar_sup) {
       // system variables must be visible with or without '$' suffix
-      char *dollar_name = tmp_alloc(strlen(comp_vartable[i].name) + 2);
+      char *dollar_name = malloc(strlen(comp_vartable[i].name) + 2);
       strcpy(dollar_name, comp_vartable[i].name);
       strcat(dollar_name, "$");
       if (strcmp(dollar_name, name) == 0) {
         idx = i;
-        tmp_free(dollar_name);
+        free(dollar_name);
         break;
       }
-      tmp_free(dollar_name);
+      free(dollar_name);
     }
   }
 
@@ -752,15 +766,22 @@ void comp_add_variable(bc_t *bc, const char *var_name) {
  * adds a mark in stack at the current code position
  */
 void comp_push(addr_t ip) {
-  comp_pass_node_t node;
+  comp_pass_node_t *node = (comp_pass_node_t *)malloc(sizeof(comp_pass_node_t));
+  memset(node, 0, sizeof(comp_pass_node_t));
 
-  strcpy(node.sec, comp_bc_sec);
-  node.pos = ip;
-  node.level = comp_block_level;
-  node.block_id = comp_block_id;
-  node.line = comp_line;
-  dbt_write(comp_stack, comp_sp, &node, sizeof(comp_pass_node_t));
-  comp_sp++;
+  strcpy(node->sec, comp_bc_sec);
+  node->pos = ip;
+  node->level = comp_block_level;
+  node->block_id = comp_block_id;
+  node->line = comp_line;
+
+  if (comp_stack.count == comp_stack.size) {
+    comp_stack.size += GROWSIZE;
+    comp_stack.elem = realloc(comp_stack.elem, comp_stack.size * sizeof(comp_pass_node_t *));
+  }
+
+  comp_stack.elem[comp_stack.count] = node;
+  comp_stack.count++;
 }
 
 /*
@@ -1757,22 +1778,34 @@ void bc_store_exports(const char *slist) {
   char_p_t pars[256];
   int count = 0, i;
   char *newlist;
-  unit_sym_t sym;
 
-  newlist = (char *)tmp_alloc(strlen(slist) + 3);
+  newlist = (char *)malloc(strlen(slist) + 3);
   strcpy(newlist, "(");
   strcat(newlist, slist);
   strcat(newlist, ")");
 
   comp_getlist_insep(newlist, pars, "()", ",", 256, &count);
 
-  for (i = 0; i < count; i++) {
-    strcpy(sym.symbol, pars[i]);
-    dbt_write(comp_exptable, comp_expcount, &sym, sizeof(unit_sym_t));
-    comp_expcount++;
+  int offset;
+  if (comp_exptable.count) {
+    offset = comp_exptable.count;
+    comp_exptable.count += count;
+    comp_exptable.elem = (unit_sym_t **)realloc(comp_exptable.elem, 
+                                                comp_exptable.count * sizeof(unit_sym_t **));
+  } else {
+    offset = 0;
+    comp_exptable.count = count;
+    comp_exptable.elem = (unit_sym_t **)malloc(comp_exptable.count * sizeof(unit_sym_t **));
   }
 
-  tmp_free(newlist);
+  for (i = 0; i < count; i++) {
+    unit_sym_t *sym = (unit_sym_t *)malloc(sizeof(unit_sym_t));
+    memset(sym, 0, sizeof(unit_sym_t));
+    strcpy(sym->symbol, pars[i]);
+    comp_exptable.elem[offset + i] = sym;
+  }
+
+  free(newlist);
 }
 
 void comp_get_unary(const char *p, int *ladd, int *linc, int *ldec, int *leqop) {
@@ -1790,6 +1823,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
   char *p;
   char *parms = comp_bc_parm;
   char *array_index = NULL;
+  int array_index_len = 0;
   int v_func = 0;
 
   if (parms[0] == '(') {
@@ -1821,13 +1855,16 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
       p = comp_next_char(p);
       if (*p != '=') {
         // array(n) unary-operator
-        int len = (p - parms) + 1;
-        array_index = tmp_alloc(len);
-        strncpy(array_index, parms, len);
-        array_index[len - 1] = '\0';
+        array_index_len = (p - parms);
+        array_index = malloc(array_index_len + 1);
+        memcpy(array_index, parms, array_index_len);
+        array_index[array_index_len] = '\0';
 
         // store plain operator in comp_bc_parm
-        strcpy(comp_bc_parm, p);
+        int len = strlen(p);
+        memcpy(comp_bc_parm, p, len);
+        comp_bc_parm[len] = '\0';
+
         comp_get_unary(comp_bc_parm, &ladd, &linc, &ldec, &leqop);
       }
     }
@@ -1846,7 +1883,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
     bc_add_code(&comp_prog, kwLET);
     strcpy(comp_bc_parm, "=");
     strcat(comp_bc_parm, comp_bc_name);
-    if (array_index) {
+    if (array_index != NULL) {
       strcat(comp_bc_parm, array_index);
     }
     strcat(comp_bc_parm, "+1");
@@ -1854,29 +1891,28 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
     bc_add_code(&comp_prog, kwLET);
     strcpy(comp_bc_parm, "=");
     strcat(comp_bc_parm, comp_bc_name);
-    if (array_index) {
+    if (array_index != NULL) {
       strcat(comp_bc_parm, array_index);
     }
     strcat(comp_bc_parm, "-1");
   } else if (leqop) {
     // a += 10: b -= 10 etc
-    char *buf;
     bc_add_code(&comp_prog, kwLET);
     int len = strlen(comp_bc_parm) + strlen(comp_bc_name) + 1;
-    if (array_index) {
-      len += strlen(array_index);
+    if (array_index != NULL) {
+      len += array_index_len;
     }
-    buf = tmp_alloc(len);
+    char *buf = malloc(len + 1);
     memset(buf, 0, len);
     strcpy(buf, "=");
     strcat(buf, comp_bc_name);
-    if (array_index) {
+    if (array_index != NULL) {
       strcat(buf, array_index);
     }
     buf[strlen(buf)] = leqop;
     strcat(buf, comp_bc_parm + 2);
     strcpy(comp_bc_parm, buf);
-    tmp_free(buf);
+    free(buf);
   } else if (idx != kwLET
              && array_index != NULL
              && strchr(comp_bc_name, '.') != NULL) {
@@ -1893,7 +1929,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
   if (!comp_error) {
     if (v_func) {
       // a.b.c()
-      if (strlen(array_index) > 2) {
+      if (array_index != NULL && array_index_len > 2) {
         // more than empty brackets
         comp_array_params(array_index, 0);
       }
@@ -1922,7 +1958,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
     }
   }
   if (array_index != NULL) {
-    tmp_free(array_index);
+    free(array_index);
   }
 }
 
@@ -2041,11 +2077,11 @@ void comp_text_line_func(long idx, int decl) {
           eq_ptr++;         // *eq_ptr was '\0'
           SKIP_SPACES(eq_ptr);
           if (strlen(eq_ptr)) {
-            char *macro = tmp_alloc(SB_SOURCELINE_SIZE + 1);
+            char *macro = malloc(SB_SOURCELINE_SIZE + 1);
             sprintf(macro, "%s=%s:%s", pname, eq_ptr, LCN_END);
             // run comp_text_line again
             comp_text_line(macro);
-            tmp_free(macro);
+            free(macro);
           } else {
             sc_raise(MSG_MISSING_UDP_BODY);
           }
@@ -2751,14 +2787,17 @@ addr_t comp_next_bc_cmd(addr_t ip) {
  */
 addr_t comp_search_bc(addr_t ip, code_t code) {
   addr_t i = ip;
-
+  addr_t result = INVALID_ADDR;
   do {
-    if (code == comp_prog.ptr[i]) {
-      return i;
+    if (i >= comp_prog.count) {
+      break;
+    } else if (code == comp_prog.ptr[i]) {
+      result = i;
+      break;
     }
     i = comp_next_bc_cmd(i);
   } while (i < comp_prog.count);
-  return INVALID_ADDR;
+  return result;
 }
 
 /*
@@ -2783,13 +2822,13 @@ addr_t comp_search_bc_eoc(addr_t ip) {
  */
 addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_id) {
   addr_t i;
-  comp_pass_node_t node;
+  comp_pass_node_t *node;
 
   for (i = start; i < comp_sp; i++) {
-    dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-    if (comp_prog.ptr[node.pos] == code) {
-      if (node.level == level && (block_id == -1 || block_id == node.block_id)) {
-        return node.pos;
+    node = comp_stack.elem[i];
+    if (comp_prog.ptr[node->pos] == code) {
+      if (node->level == level && (block_id == -1 || block_id == node->block_id)) {
+        return node->pos;
       }
     }
   }
@@ -2801,15 +2840,15 @@ addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_i
  */
 addr_t comp_search_bc_stack_backward(addr_t start, code_t code, byte level, bid_t block_id) {
   addr_t i = start;
-  comp_pass_node_t node;
+  comp_pass_node_t *node;
 
   for (; i < comp_sp; i--) {
     // WARNING: ITS UNSIGNED, SO WE'LL SEARCH
     // IN RANGE [0..STK_COUNT]
-    dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-    if (comp_prog.ptr[node.pos] == code) {
-      if (node.level == level && (block_id == -1 || block_id == node.block_id)) {
-        return node.pos;
+    node = comp_stack.elem[i];
+    if (comp_prog.ptr[node->pos] == code) {
+      if (node->level == level && (block_id == -1 || block_id == node->block_id)) {
+        return node->pos;
       }
     }
   }
@@ -2825,15 +2864,15 @@ addr_t comp_search_inner_catch(addr_t start, byte level) {
     byte nextLevel = level - 1;
     do {
       addr_t i;
-      comp_pass_node_t node;
+      comp_pass_node_t *node;
       for (i = start; i < comp_sp; i++) {
-        dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-        if (node.level == nextLevel) {
-          if (comp_prog.ptr[node.pos] == kwTRY) {
+        node = comp_stack.elem[i];
+        if (node->level == nextLevel) {
+          if (comp_prog.ptr[node->pos] == kwTRY) {
             // next CATCH has own block
             break;
-          } else if (comp_prog.ptr[node.pos] == kwCATCH) {
-            result = node.pos;
+          } else if (comp_prog.ptr[node->pos] == kwCATCH) {
+            result = node->pos;
             break;
           }
         }
@@ -2848,9 +2887,14 @@ addr_t comp_search_inner_catch(addr_t start, byte level) {
  * inspect the byte-code at the given location
  */
 addr_t comp_next_bc_peek(addr_t start) {
-  comp_pass_node_t node;
-  dbt_read(comp_stack, start, &node, sizeof(comp_pass_node_t));
-  return comp_prog.ptr[node.pos];
+  addr_t result;
+  if (start < comp_stack.count) {
+    comp_pass_node_t *node = comp_stack.elem[start];
+    result = comp_prog.ptr[node->pos];
+  } else {
+    result = -1;
+  }
+  return result;
 }
 
 /*
@@ -2862,7 +2906,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
   addr_t i;
   int j, cs_idx;
   char cmd[16], cmd2[16];
-  comp_pass_node_t node;
+  comp_pass_node_t *node;
   code_t ccode[256];
   int csum[256];
   int cs_count;
@@ -2878,10 +2922,10 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
     if (ip == INVALID_ADDR) {
       int cnt = 0;
       for (i = pos + 1; i < comp_sp; i++) {
-        dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-        if (comp_prog.ptr[node.pos] == code) {
+        node = comp_stack.elem[i];
+        if (comp_prog.ptr[node->pos] == code) {
           log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
-                     cmd, node.level, node.pos, level, pos);
+                     cmd, node->level, node->pos, level, pos);
           cnt++;
           if (cnt > 3) {
             break;
@@ -2889,12 +2933,12 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
         }
       }
     } else {
-      log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
-                 cmd, level + 1, node.pos, level, pos);
+      log_printf("\n%s found on level %d instead of %d (@%d+)\n",
+                 cmd, level + 1, level, pos);
     }
   } else {
-    log_printf("\n%s found on level %d (@%d) instead of %d (@%d+)\n",
-               cmd, level - 1, node.pos, level, pos);
+    log_printf("\n%s found on level %d instead of %d (@%d+)\n",
+               cmd, level - 1, level, pos);
   }
 
   // print stack
@@ -2906,10 +2950,9 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
   log_printf("-------------------------------------------------------------------------\n");
 
   for (i = 0; i < comp_sp; i++) {
-    dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-
-    code = comp_prog.ptr[node.pos];
-    if (node.pos != INVALID_ADDR) {
+    node = comp_stack.elem[i];
+    code = comp_prog.ptr[node->pos];
+    if (node->pos != INVALID_ADDR) {
       kw_getcmdname(code, cmd);
     } else {
       strcpy(cmd, "---");
@@ -2931,7 +2974,7 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
     }
     // info
     log_printf("%s%4d: %16s %16s %6d %6d %5d %5d %5d\n", ((i == pos) ? ">>" : "  "),
-               i, cmd, node.sec, node.pos, node.line, node.level, node.block_id, csum[cs_idx]);
+               i, cmd, node->sec, node->pos, node->line, node->level, node->block_id, csum[cs_idx]);
   }
 
   // sum
@@ -2993,8 +3036,8 @@ void comp_pass2_scan() {
   addr_t a_ip, b_ip, c_ip, count;
   code_t code;
   byte level;
-  comp_pass_node_t node;
-  comp_label_t label;
+  comp_pass_node_t *node;
+  comp_label_t *label;
 
   if (!opt_quiet && !opt_interactive) {
     log_printf(MSG_PASS2_COUNT, i, comp_sp);
@@ -3008,17 +3051,17 @@ void comp_pass2_scan() {
       }
     }
 
-    dbt_read(comp_stack, i, &node, sizeof(comp_pass_node_t));
-    comp_line = node.line;
-    strcpy(comp_bc_sec, node.sec);
-    code = comp_prog.ptr[node.pos];
+    node = comp_stack.elem[i];
+    comp_line = node->line;
+    strcpy(comp_bc_sec, node->sec);
+    code = comp_prog.ptr[node->pos];
     if (code == kwTYPE_EOC || code == kwTYPE_LINE) {
       continue;
     }
 
-    // debug (node.pos = the address of the error)
+    // debug (node->pos = the address of the error)
     //
-    // if (node.pos == 360 || node.pos == 361)
+    // if (node->pos == 360 || node->pos == 361)
     // trace("=== stack code %d\n", code);
 
     if (code != kwGOTO &&
@@ -3035,29 +3078,29 @@ void comp_pass2_scan() {
         code != kwENDTRY &&
         code != kwTYPE_RET) {
       // default - calculate true-ip
-      true_ip = comp_search_bc_eoc(node.pos + (BC_CTRLSZ + 1));
-      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
+      true_ip = comp_search_bc_eoc(node->pos + (BC_CTRLSZ + 1));
+      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
     }
 
     switch (code) {
     case kwPROC:
     case kwFUNC:
       // update start's GOTO
-      true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, node.level, -1) + 1;
+      true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, node->level, -1) + 1;
       if (true_ip == INVALID_ADDR) {
         sc_raise(MSG_UDP_MISSING_END);
-        print_pass2_stack(i, kwTYPE_RET, node.level);
+        print_pass2_stack(i, kwTYPE_RET, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos - (ADDRSZ + 1), &true_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos - (ADDRSZ + 1), &true_ip, ADDRSZ);
       break;
 
     case kwRESTORE:
       // replace the label ID with the real IP
-      memcpy(&label_id, comp_prog.ptr + node.pos + 1, ADDRSZ);
-      dbt_read(comp_labtable, label_id, &label, sizeof(comp_label_t));
-      count = comp_first_data_ip + label.dp;
-      memcpy(comp_prog.ptr + node.pos + 1, &count, ADDRSZ);
+      memcpy(&label_id, comp_prog.ptr + node->pos + 1, ADDRSZ);
+      label = comp_labtable.elem[label_id];
+      count = comp_first_data_ip + label->dp;
+      memcpy(comp_prog.ptr + node->pos + 1, &count, ADDRSZ);
       // change LABEL-ID with DataPointer
       break;
 
@@ -3065,63 +3108,63 @@ void comp_pass2_scan() {
     case kwTYPE_CALL_UDP:
     case kwTYPE_CALL_UDF:
       // update real IP
-      memcpy(&label_id, comp_prog.ptr + node.pos + 1, ADDRSZ);
+      memcpy(&label_id, comp_prog.ptr + node->pos + 1, ADDRSZ);
       true_ip = comp_udptable[label_id].ip + (ADDRSZ + 3);
-      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
 
       // update return-var ID
       true_ip = comp_udptable[label_id].vid;
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &true_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &true_ip, ADDRSZ);
       break;
 
     case kwONJMP:
       // kwONJMP:1 trueip:2 falseip:2 command:1 count:1 label1:2
       // label2:2 ...
-      count = comp_prog.ptr[node.pos + (ADDRSZ + ADDRSZ + 2)];
+      count = comp_prog.ptr[node->pos + (ADDRSZ + ADDRSZ + 2)];
 
-      true_ip = comp_search_bc_eoc(node.pos + BC_CTRLSZ + (count * ADDRSZ) + 3);
-      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
+      true_ip = comp_search_bc_eoc(node->pos + BC_CTRLSZ + (count * ADDRSZ) + 3);
+      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
 
       // change label IDs with the real IPs
       for (j = 0; j < count; j++) {
-        memcpy(&label_id, comp_prog.ptr + node.pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), ADDRSZ);
-        dbt_read(comp_labtable, label_id, &label, sizeof(comp_label_t));
-        w = label.ip;
-        memcpy(comp_prog.ptr + node.pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), &w, ADDRSZ);
+        memcpy(&label_id, comp_prog.ptr + node->pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), ADDRSZ);
+        label = comp_labtable.elem[label_id];
+        w = label->ip;
+        memcpy(comp_prog.ptr + node->pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), &w, ADDRSZ);
       }
       break;
 
     case kwGOTO:               // LONG JUMPS
-      memcpy(&label_id, comp_prog.ptr + node.pos + 1, ADDRSZ);
-      dbt_read(comp_labtable, label_id, &label, sizeof(comp_label_t));
-      w = label.ip;
-      memcpy(comp_prog.ptr + node.pos + 1, &w, ADDRSZ);
+      memcpy(&label_id, comp_prog.ptr + node->pos + 1, ADDRSZ);
+      label = comp_labtable.elem[label_id];
+      w = label->ip;
+      memcpy(comp_prog.ptr + node->pos + 1, &w, ADDRSZ);
       // change LABEL-ID with IP
-      level = comp_prog.ptr[node.pos + (ADDRSZ + 1)];
-      comp_prog.ptr[node.pos + (ADDRSZ + 1)] = 0; // number of POPs
+      level = comp_prog.ptr[node->pos + (ADDRSZ + 1)];
+      comp_prog.ptr[node->pos + (ADDRSZ + 1)] = 0; // number of POPs
 
-      if (level >= label.level) {
+      if (level >= label->level) {
         // number of POPs
-        comp_prog.ptr[node.pos + (ADDRSZ + 1)] = level - label.level;
+        comp_prog.ptr[node->pos + (ADDRSZ + 1)] = level - label->level;
       } else {
         // number of POPs
-        comp_prog.ptr[node.pos + (ADDRSZ + 1)] = 0;
+        comp_prog.ptr[node->pos + (ADDRSZ + 1)] = 0;
       }
       break;
 
     case kwFOR:
-      a_ip = comp_search_bc(node.pos + (ADDRSZ + ADDRSZ + 1), kwTO);
-      b_ip = comp_search_bc(node.pos + (ADDRSZ + ADDRSZ + 1), kwIN);
+      a_ip = comp_search_bc(node->pos + (ADDRSZ + ADDRSZ + 1), kwTO);
+      b_ip = comp_search_bc(node->pos + (ADDRSZ + ADDRSZ + 1), kwIN);
       if (a_ip < b_ip) {
         b_ip = INVALID_ADDR;
       } else if (a_ip > b_ip) {
         a_ip = b_ip;
       }
-      false_ip = comp_search_bc_stack(i + 1, kwNEXT, node.level, -1);
+      false_ip = comp_search_bc_stack(i + 1, kwNEXT, node->level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_NEXT);
-        print_pass2_stack(i, kwNEXT, node.level);
+        print_pass2_stack(i, kwNEXT, node->level);
         return;
       }
       if (a_ip > false_ip || a_ip == INVALID_ADDR) {
@@ -3132,43 +3175,43 @@ void comp_pass2_scan() {
         }
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwWHILE:
-      false_ip = comp_search_bc_stack(i + 1, kwWEND, node.level, -1);
+      false_ip = comp_search_bc_stack(i + 1, kwWEND, node->level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_WEND);
-        print_pass2_stack(i, kwWEND, node.level);
+        print_pass2_stack(i, kwWEND, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwREPEAT:
-      false_ip = comp_search_bc_stack(i + 1, kwUNTIL, node.level, -1);
+      false_ip = comp_search_bc_stack(i + 1, kwUNTIL, node->level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_UNTIL);
-        print_pass2_stack(i, kwUNTIL, node.level);
+        print_pass2_stack(i, kwUNTIL, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwUSE:
-      true_ip = node.pos + (ADDRSZ + ADDRSZ + 1);
+      true_ip = node->pos + (ADDRSZ + ADDRSZ + 1);
       false_ip = comp_search_bc_eoc(true_ip);
-      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwIF:
     case kwELIF:
-      a_ip = comp_search_bc_stack(i + 1, kwENDIF, node.level, -1);
-      b_ip = comp_search_bc_stack(i + 1, kwELSE, node.level, -1);
-      c_ip = comp_search_bc_stack(i + 1, kwELIF, node.level, -1);
+      a_ip = comp_search_bc_stack(i + 1, kwENDIF, node->level, -1);
+      b_ip = comp_search_bc_stack(i + 1, kwELSE, node->level, -1);
+      c_ip = comp_search_bc_stack(i + 1, kwELIF, node->level, -1);
 
       false_ip = a_ip;
       if (b_ip != INVALID_ADDR && b_ip < false_ip) {
@@ -3179,66 +3222,66 @@ void comp_pass2_scan() {
       }
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_ENDIF_OR_ELSE);
-        print_pass2_stack(i, kwENDIF, node.level);
+        print_pass2_stack(i, kwENDIF, node->level);
         return;
       }
 
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwELSE:
-      false_ip = comp_search_bc_stack(i + 1, kwENDIF, node.level, -1);
+      false_ip = comp_search_bc_stack(i + 1, kwENDIF, node->level, -1);
 
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_ENDIF);
-        print_pass2_stack(i, kwENDIF, node.level);
+        print_pass2_stack(i, kwENDIF, node->level);
         return;
       }
 
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwTYPE_RET:
       break;
 
     case kwWEND:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwWHILE, node.level, -1);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwWHILE, node->level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_WHILE);
-        print_pass2_stack(i, kwWHILE, node.level);
+        print_pass2_stack(i, kwWHILE, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwUNTIL:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwREPEAT, node.level, -1);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwREPEAT, node->level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_REPEAT);
-        print_pass2_stack(i, kwREPEAT, node.level);
+        print_pass2_stack(i, kwREPEAT, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwNEXT:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwFOR, node.level, -1);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwFOR, node->level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_FOR);
-        print_pass2_stack(i, kwFOR, node.level);
+        print_pass2_stack(i, kwFOR, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwENDIF:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwIF, node.level, -1);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwIF, node->level, -1);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_IF);
-        print_pass2_stack(i, kwIF, node.level);
+        print_pass2_stack(i, kwIF, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwSELECT:
@@ -3246,96 +3289,96 @@ void comp_pass2_scan() {
       false_ip = comp_next_bc_peek(i + 1);
       if (false_ip != kwCASE && false_ip != kwCASE_ELSE) {
         sc_raise(MSG_MISSING_CASE);
-        print_pass2_stack(i, kwCASE, node.level);
+        print_pass2_stack(i, kwCASE, node->level);
         return;
       }
       break;
 
     case kwCASE:
       // false path is either next case statement or "end select"
-      false_ip = comp_search_bc_stack(i + 1, kwCASE, node.level, node.block_id);
+      false_ip = comp_search_bc_stack(i + 1, kwCASE, node->level, node->block_id);
 
       // avoid finding another CASE or CASE ELSE on the same level, but after END SELECT
-      j = comp_search_bc_stack(i + 1, kwENDSELECT, node.level, node.block_id);
+      j = comp_search_bc_stack(i + 1, kwENDSELECT, node->level, node->block_id);
 
       if (false_ip == INVALID_ADDR || false_ip > j) {
-        false_ip = comp_search_bc_stack(i + 1, kwCASE_ELSE, node.level, node.block_id);
+        false_ip = comp_search_bc_stack(i + 1, kwCASE_ELSE, node->level, node->block_id);
         if (false_ip == INVALID_ADDR || false_ip > j) {
           false_ip = j;
           if (false_ip == INVALID_ADDR) {
             sc_raise(MSG_MISSING_END_SELECT);
-            print_pass2_stack(i, kwCASE, node.level);
+            print_pass2_stack(i, kwCASE, node->level);
             return;
           }
         }
       }
 
       // if expression returns false jump to the next case
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwCASE_ELSE:
       // check for END SELECT statement
-      false_ip = comp_search_bc_stack(i + 1, kwENDSELECT, node.level, node.block_id);
+      false_ip = comp_search_bc_stack(i + 1, kwENDSELECT, node->level, node->block_id);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_END_SELECT);
-        print_pass2_stack(i, kwCASE, node.level);
+        print_pass2_stack(i, kwCASE, node->level);
         return;
       }
       // validate no futher CASE expr statements
-      j = comp_search_bc_stack(i + 1, kwCASE, node.level, node.block_id);
+      j = comp_search_bc_stack(i + 1, kwCASE, node->level, node->block_id);
       if (j != INVALID_ADDR && j < false_ip) {
         sc_raise(MSG_CASE_CASE_ELSE);
-        print_pass2_stack(i, kwCASE, node.level);
+        print_pass2_stack(i, kwCASE, node->level);
         return;
       }
       // validate no futher CASE ELSE expr statements
-      j = comp_search_bc_stack(i + 1, kwCASE_ELSE, node.level, node.block_id);
+      j = comp_search_bc_stack(i + 1, kwCASE_ELSE, node->level, node->block_id);
       if (j != INVALID_ADDR && j < false_ip) {
         sc_raise(MSG_CASE_CASE_ELSE);
-        print_pass2_stack(i, kwCASE_ELSE, node.level);
+        print_pass2_stack(i, kwCASE_ELSE, node->level);
         return;
       }
       // if the expression is false jump to the end-select
-      memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
 
     case kwENDSELECT:
-      false_ip = comp_search_bc_stack_backward(i - 1, kwSELECT, node.level, node.block_id);
+      false_ip = comp_search_bc_stack_backward(i - 1, kwSELECT, node->level, node->block_id);
       if (false_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_SELECT);
-        print_pass2_stack(i, kwSELECT, node.level);
+        print_pass2_stack(i, kwSELECT, node->level);
         return;
       }
       break;
 
     case kwTRY:
-      true_ip = comp_search_bc_stack(i + 1, kwCATCH, node.level, node.block_id);
+      true_ip = comp_search_bc_stack(i + 1, kwCATCH, node->level, node->block_id);
       if (true_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_CATCH);
-        print_pass2_stack(i, kwTRY, node.level);
+        print_pass2_stack(i, kwTRY, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
       break;
 
     case kwCATCH:
-      true_ip = comp_search_bc_stack(i + 1, kwENDTRY, node.level, node.block_id);
+      true_ip = comp_search_bc_stack(i + 1, kwENDTRY, node->level, node->block_id);
       if (true_ip == INVALID_ADDR) {
         sc_raise(MSG_MISSING_ENDTRY);
-        print_pass2_stack(i, kwENDTRY, node.level);
+        print_pass2_stack(i, kwENDTRY, node->level);
         return;
       }
-      memcpy(comp_prog.ptr + node.pos + 1, &true_ip, ADDRSZ);
+      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
 
-      false_ip = comp_search_bc_stack(i + 1, kwCATCH, node.level, node.block_id);
+      false_ip = comp_search_bc_stack(i + 1, kwCATCH, node->level, node->block_id);
       if (false_ip != INVALID_ADDR && false_ip < true_ip) {
         // another catch in the same block
-        memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       } else {
         // store the address of the next outer catch (or store INVALID_ADDR if not found)
-        false_ip = comp_search_inner_catch(i + 1, node.level);
-        memcpy(comp_prog.ptr + node.pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+        false_ip = comp_search_inner_catch(i + 1, node->level);
+        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       }
       break;
     };
@@ -3351,13 +3394,13 @@ void comp_pass2_scan() {
  * initialize compiler
  */
 void comp_init() {
-  comp_bc_sec = tmp_alloc(SB_KEYWORD_SIZE + 1);
+  comp_bc_sec = malloc(SB_KEYWORD_SIZE + 1);
   memset(comp_bc_sec, 0, SB_KEYWORD_SIZE + 1);
-  comp_bc_name = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-  comp_bc_parm = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-  comp_bc_temp = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-  comp_bc_tmp2 = tmp_alloc(SB_SOURCELINE_SIZE + 1);
-  comp_bc_proc = tmp_alloc(SB_SOURCELINE_SIZE + 1);
+  comp_bc_name = malloc(SB_SOURCELINE_SIZE + 1);
+  comp_bc_parm = malloc(SB_SOURCELINE_SIZE + 1);
+  comp_bc_temp = malloc(SB_SOURCELINE_SIZE + 1);
+  comp_bc_tmp2 = malloc(SB_SOURCELINE_SIZE + 1);
+  comp_bc_proc = malloc(SB_SOURCELINE_SIZE + 1);
 
   comp_line = 0;
   comp_error = 0;
@@ -3375,42 +3418,31 @@ void comp_init() {
   comp_proc_level = 0;
   comp_bc_proc[0] = '\0';
 
-  comp_vartable = (comp_var_t *)tmp_alloc(GROWSIZE * sizeof(comp_var_t));
-  comp_udptable = (comp_udp_t *)tmp_alloc(GROWSIZE * sizeof(comp_udp_t));
+  comp_vartable = (comp_var_t *)malloc(GROWSIZE * sizeof(comp_var_t));
+  comp_udptable = (comp_udp_t *)malloc(GROWSIZE * sizeof(comp_udp_t));
 
-  sprintf(comp_bc_temp, "SBI-LBL%d", ctask->tid);
-  comp_labtable = dbt_create(comp_bc_temp, 0);
-  sprintf(comp_bc_temp, "SBI-STK%d", ctask->tid);
-  comp_stack = dbt_create(comp_bc_temp, 0);
-  sprintf(comp_bc_temp, "SBI-ILB%d", ctask->tid);
-  comp_libtable = dbt_create(comp_bc_temp, 0);
-  sprintf(comp_bc_temp, "SBI-IMP%d", ctask->tid);
-  comp_imptable = dbt_create(comp_bc_temp, 0);
-  sprintf(comp_bc_temp, "SBI-EXP%d", ctask->tid);
-  comp_exptable = dbt_create(comp_bc_temp, 0);
+  comp_labtable.count = 0;
+  comp_labtable.size = 256;
+  comp_labtable.elem = (comp_label_t **)malloc(comp_labtable.size * sizeof(comp_label_t **));
+
+  comp_stack.count = 0;
+  comp_stack.size = 256;
+  comp_stack.elem = (comp_pass_node_t **)malloc(comp_stack.size * sizeof(comp_pass_node_t **));
+
+  comp_libtable.count = 0;
+  comp_libtable.elem = NULL;
+
+  comp_imptable.count = 0;
+  comp_imptable.elem = NULL;
+
+  comp_exptable.count = 0;
+  comp_exptable.elem = NULL;
 
   comp_varsize = comp_udpsize = GROWSIZE;
   comp_varcount = comp_labcount = comp_sp = comp_udpcount = 0;
 
   bc_create(&comp_prog);
   bc_create(&comp_data);
-
-#if !defined(_UnixOS)
-  if (!comp_vartable || comp_imptable == -1 || comp_libtable == -1 || comp_exptable == -1
-      || comp_udstable == -1 || comp_labtable == -1 || !comp_udptable || comp_stack == -1)
-    panic("comp_init(): OUT OF MEMORY");
-#else
-  assert(comp_vartable != 0);
-  assert(comp_imptable != -1);
-  assert(comp_libtable != -1);
-  assert(comp_exptable != -1);
-  assert(comp_labtable != -1);
-  assert(comp_udptable != 0);
-  assert(comp_stack != -1);
-#endif
-
-  dbt_prealloc(comp_labtable, os_cclabs1, sizeof(comp_label_t));
-  dbt_prealloc(comp_stack, os_ccpass2, sizeof(comp_pass_node_t));
 
   // create system variables
   comp_vartable[comp_var_getID(LCN_SV_OSNAME)].dolar_sup = 1;
@@ -3442,28 +3474,49 @@ void comp_close() {
   bc_destroy(&comp_data);
 
   for (i = 0; i < comp_varcount; i++) {
-    tmp_free(comp_vartable[i].name);
+    free(comp_vartable[i].name);
   }
+  free(comp_vartable);
+
   for (i = 0; i < comp_udpcount; i++) {
-    tmp_free(comp_udptable[i].name);
+    free(comp_udptable[i].name);
   }
-  tmp_free(comp_vartable);
-  dbt_close(comp_labtable);
-  dbt_close(comp_exptable);
-  dbt_close(comp_imptable);
-  dbt_close(comp_libtable);
-  dbt_close(comp_stack);
-  tmp_free(comp_udptable);
+  free(comp_udptable);
+
+  for (i = 0; i < comp_labtable.count; i++) {
+    free(comp_labtable.elem[i]);
+  }
+  free(comp_labtable.elem);
+
+  for (i = 0; i < comp_exptable.count; i++) {
+    free(comp_exptable.elem[i]);
+  }
+  free(comp_exptable.elem);
+
+  for (i = 0; i < comp_imptable.count; i++) {
+    free(comp_imptable.elem[i]);
+  }
+  free(comp_imptable.elem);
+
+  for (i = 0; i < comp_libtable.count; i++) {
+    free(comp_libtable.elem[i]);
+  }
+  free(comp_libtable.elem);
+
+  for (i = 0; i < comp_stack.count; i++) {
+    free(comp_stack.elem[i]);
+  }
+  free(comp_stack.elem);
 
   comp_varcount = comp_labcount = comp_sp = comp_udpcount = 0;
   comp_libcount = comp_impcount = comp_expcount = 0;
 
-  tmp_free(comp_bc_proc);
-  tmp_free(comp_bc_tmp2);
-  tmp_free(comp_bc_temp);
-  tmp_free(comp_bc_parm);
-  tmp_free(comp_bc_name);
-  tmp_free(comp_bc_sec);
+  free(comp_bc_proc);
+  free(comp_bc_tmp2);
+  free(comp_bc_temp);
+  free(comp_bc_parm);
+  free(comp_bc_name);
+  free(comp_bc_sec);
   comp_reset_externals();
 }
 
@@ -3493,7 +3546,7 @@ char *comp_load(const char *file_name) {
     size = lseek(h, 0, SEEK_END);
     lseek(h, 0, SEEK_SET);
 
-    buf = (char *)tmp_alloc(size + 1);
+    buf = (char *)malloc(size + 1);
     read(h, buf, size);
     buf[size] = '\0';
     close(h);
@@ -3524,7 +3577,7 @@ char *comp_format_text(const char *source) {
   int adj_line_num = 0;
 
   sl = strlen(source);
-  new_text = tmp_alloc(sl + 2);
+  new_text = malloc(sl + 2);
   memset(new_text, 0, sl + 2);
 
   comp_line = 0;
@@ -3584,11 +3637,22 @@ char *comp_format_text(const char *source) {
         *ps++ = last_ch = *p++;
         break;
 
+      case '.':
+        // advance beyond UDS element, copy same character case
+        last_ch = *p;
+        last_nonsp_ptr = ps;
+        *ps++ = *p++;
+        while (*p == '_' || isalnum(*p)) {
+          last_ch = *p;
+          last_nonsp_ptr = ps;
+          *ps++ = *p++;
+        }
+        break;
+
       default:
         if ((strcaselessn(p, LCN_REM_1, 5) == 0) || (strcaselessn(p, LCN_REM_2, 5) == 0)
             || (strcaselessn(p, LCN_REM_3, 4) == 0 && last_ch == '\n')
             || (strcaselessn(p, LCN_REM_4, 4) == 0 && last_ch == '\n')) {
-
           // skip the rest line
           while (*p) {
             if (*p == '\n') {
@@ -3609,7 +3673,8 @@ char *comp_format_text(const char *source) {
           }
         }
       }
-    } else {                      // in quotes
+    } else {
+      // in quotes
       if (*p == '\\' && *(p + 1) == '\"') {
         // add the escaped quote and continue
         *ps++ = *p++;
@@ -3769,7 +3834,6 @@ void comp_preproc_import(const char *slist) {
   const char *p;
   char buf[OS_PATHNAME_SIZE + 1];
   int uid;
-  bc_lib_rec_t imlib;
 
   p = slist;
 
@@ -3782,14 +3846,9 @@ void comp_preproc_import(const char *slist) {
     // import name
     strlower(buf);
     if ((uid = slib_get_module_id(buf)) != -1) {  // C module
-      // store lib-record
-      strcpy(imlib.lib, buf);
-      imlib.id = uid;
-      imlib.type = 0;           // C module
-
+      // store C module lib-record
       slib_setup_comp(uid);
-      dbt_write(comp_libtable, comp_libcount, &imlib, sizeof(bc_lib_rec_t));
-      comp_libcount++;
+      add_libtable_rec(buf, uid, 0);
     } else {                      // SB unit
       uid = open_unit(buf);
       if (uid < 0) {
@@ -3803,13 +3862,7 @@ void comp_preproc_import(const char *slist) {
         return;
       }
       // store lib-record
-      strcpy(imlib.lib, buf);
-
-      imlib.id = uid;
-      imlib.type = 1;           // unit
-
-      dbt_write(comp_libtable, comp_libcount, &imlib, sizeof(bc_lib_rec_t));
-      comp_libcount++;
+      add_libtable_rec(buf, uid, 1);
 
       // clean up
       close_unit(uid);
@@ -3888,13 +3941,10 @@ void comp_preproc_include(char *p) {
   strcpy(path, fileName);
 
   int basExists = (access(path, R_OK) == 0);
-  if (!basExists) {
-    char *bas_dir = getenv("BASDIR");
-    if (bas_dir) {
-      strcpy(path, bas_dir);
-      strcat(path, fileName);
-      basExists = (access(path, R_OK) == 0);
-    }
+  if (!basExists && gsb_bas_dir[0]) {
+    strcpy(path, gsb_bas_dir);
+    strcat(path, fileName);
+    basExists = (access(path, R_OK) == 0);
   }
   if (!basExists) {
     sc_raise(MSG_INC_FILE_DNE, comp_file_name, path);
@@ -3908,7 +3958,7 @@ void comp_preproc_include(char *p) {
     char *source = comp_load(path);
     if (source) {
       comp_pass1(NULL, source);
-      tmp_free(source);
+      free(source);
     }
     strcpy(comp_file_name, oldFileName);
     strcpy(comp_bc_sec, oldSec);
@@ -3924,13 +3974,19 @@ char *comp_preproc_options(char *p) {
     p += LEN_PREDEF;
     SKIP_SPACES(p);
     if (strncmp(LCN_QUIET, p, LEN_QUIET) == 0) {
-      opt_quiet = 1;
+      p += LEN_QUIET;
+      SKIP_SPACES(p);
+      opt_quiet = (strncmp("OFF", p, 3) != 0);
     } else if (strncmp(LCN_GRMODE, p, LEN_GRMODE) == 0) {
       p += LEN_GRMODE;
       comp_preproc_grmode(p);
       opt_graphics = 1;
     } else if (strncmp(LCN_TEXTMODE, p, LEN_TEXTMODE) == 0) {
       opt_graphics = 0;
+    } else if (strncmp(LCN_ANTIALIAS, p, LEN_ANTIALIAS) == 0) {
+      p += LEN_ANTIALIAS;
+      SKIP_SPACES(p);
+      opt_antialias = (strncmp("OFF", p, 3) != 0);
     } else if (strncmp(LCN_COMMAND, p, LEN_COMMAND) == 0) {
       p += LEN_COMMAND;
       SKIP_SPACES(p);
@@ -4097,7 +4153,7 @@ void comp_preproc_pass1(char *p) {
                 strncmp(LCN_END_WNL, p, LEN_END_WRS) == 0)) {
       // end sub/func
       comp_preproc_func_end(p);
-    } else if (strncmp(LCN_SHOWPAGE, p, LEN_SHOWPAGE) == 0) {
+    } else if (strncasecmp(LCN_SHOWPAGE, p, LEN_SHOWPAGE) == 0) {
       opt_show_page = 1;
     }
 
@@ -4140,7 +4196,7 @@ int comp_pass1(const char *section, const char *text) {
     strncpy(comp_bc_sec, SYS_MAIN_SECTION_NAME, SB_KEYWORD_SIZE);
   }
 
-  char *code_line = tmp_alloc(SB_SOURCELINE_SIZE + 1);
+  char *code_line = malloc(SB_SOURCELINE_SIZE + 1);
   char *new_text = comp_format_text(text);
 
   comp_preproc_pass1(new_text);
@@ -4182,8 +4238,8 @@ int comp_pass1(const char *section, const char *text) {
     }
   }
 
-  tmp_free(code_line);
-  tmp_free(new_text);
+  free(code_line);
+  free(new_text);
 
   // undefined keywords by default are UDP - error if no UDP-body
   if (!comp_error) {
@@ -4193,7 +4249,7 @@ int comp_pass1(const char *section, const char *text) {
         comp_line = comp_udptable[i].pline;
         char *dot = strchr(comp_udptable[i].name, '.');
         if (dot) {
-          sc_raise(MSG_UNDEFINED_HASH, comp_udptable[i].name);
+          sc_raise(MSG_UNDEFINED_MAP, comp_udptable[i].name);
         } else {
           sc_raise(MSG_UNDEFINED_UDP, comp_udptable[i].name);
         }
@@ -4219,41 +4275,37 @@ int comp_pass2_exports() {
   int i, j;
 
   for (i = 0; i < comp_expcount; i++) {
-    unit_sym_t sym;
     bid_t pid;
-
-    dbt_read(comp_exptable, i, &sym, sizeof(unit_sym_t));
+    unit_sym_t *sym = comp_exptable.elem[i];
 
     // look on procedures/functions
-    if ((pid = comp_udp_id(sym.symbol, 0)) != -1) {
+    if ((pid = comp_udp_id(sym->symbol, 0)) != -1) {
       if (comp_udptable[pid].vid == INVALID_ADDR) {
-        sym.type = stt_procedure;
+        sym->type = stt_procedure;
       } else {
-        sym.type = stt_function;
+        sym->type = stt_function;
       }
-      sym.address = comp_udptable[pid].ip;
-      sym.vid = comp_udptable[pid].vid;
+      sym->address = comp_udptable[pid].ip;
+      sym->vid = comp_udptable[pid].vid;
     } else {
       // look on variables
       pid = -1;
       for (j = 0; j < comp_varcount; j++) {
-        if (strcmp(comp_vartable[j].name, sym.symbol) == 0) {
+        if (strcmp(comp_vartable[j].name, sym->symbol) == 0) {
           pid = j;
           break;
         }
       }
 
       if (pid != -1) {
-        sym.type = stt_variable;
-        sym.address = 0;
-        sym.vid = j;
+        sym->type = stt_variable;
+        sym->address = 0;
+        sym->vid = j;
       } else {
-        sc_raise(MSG_EXP_SYM_NOT_FOUND, sym.symbol);
+        sc_raise(MSG_EXP_SYM_NOT_FOUND, sym->symbol);
         return 0;
       }
     }
-
-    dbt_write(comp_exptable, i, &sym, sizeof(unit_sym_t));
   }
 
   return (comp_error == 0);
@@ -4290,14 +4342,13 @@ int comp_pass2() {
 /*
  * final, create bytecode
  */
-mem_t comp_create_bin() {
+byte_code comp_create_bin() {
   int i;
-  mem_t buff_h;
-  byte *buff, *cp;
+  byte_code bc;
+  byte *cp;
   bc_head_t hdr;
   dword size;
   unit_file_t uft;
-  unit_sym_t sym;
 
   if (!opt_quiet && !opt_interactive) {
     if (comp_unit_flag) {
@@ -4306,7 +4357,7 @@ mem_t comp_create_bin() {
       log_printf(MSG_CREATING_BC);
     }
   }
-  //
+
   memcpy(&hdr.sign, "SBEx", 4);
   hdr.ver = 2;
   hdr.sbver = SB_DWORD_VER;
@@ -4323,8 +4374,8 @@ mem_t comp_create_bin() {
   hdr.lab_count = comp_labcount;
   hdr.data_ip = comp_first_data_ip;
   hdr.size = sizeof(bc_head_t) + comp_prog.count + (comp_labcount * ADDRSZ)
-      + sizeof(unit_sym_t) * comp_expcount + sizeof(bc_lib_rec_t) * comp_libcount
-      + sizeof(bc_symbol_rec_t) * comp_impcount;
+             + sizeof(unit_sym_t) * comp_expcount + sizeof(bc_lib_rec_t) * comp_libcount
+             + sizeof(bc_symbol_rec_t) * comp_impcount;
 
   if (comp_unit_flag) {
     hdr.size += sizeof(unit_file_t);
@@ -4335,8 +4386,8 @@ mem_t comp_create_bin() {
 
   if (comp_unit_flag) {
     // it is a unit... add more info
-    buff_h = mem_alloc(hdr.size + 4); // +4
-    buff = mem_lock(buff_h);
+    bc.size = hdr.size + 4;
+    bc.code = malloc(bc.size);
 
     // unit header
     memcpy(&uft.sign, "SBUn", 4);
@@ -4344,14 +4395,14 @@ mem_t comp_create_bin() {
     strcpy(uft.base, comp_unit_name);
     uft.sym_count = comp_expcount;
 
-    cp = buff;
+    cp = bc.code;
     memcpy(cp, &uft, sizeof(unit_file_t));
     cp += sizeof(unit_file_t);
 
     // unit symbol table (export)
     for (i = 0; i < uft.sym_count; i++) {
-      dbt_read(comp_exptable, i, &sym, sizeof(unit_sym_t));
-      memcpy(cp, &sym, sizeof(unit_sym_t));
+      unit_sym_t *sym = comp_exptable.elem[i];
+      memcpy(cp, sym, sizeof(unit_sym_t));
       cp += sizeof(unit_sym_t);
     }
 
@@ -4360,46 +4411,38 @@ mem_t comp_create_bin() {
     cp += sizeof(bc_head_t);
   } else {
     // simple executable
-    buff_h = mem_alloc(hdr.size + 4); // +4
-    buff = mem_lock(buff_h);
-
-    cp = buff;
+    bc.size = hdr.size + 4;
+    bc.code = malloc(bc.size);
+    cp = bc.code;
     memcpy(cp, &hdr, sizeof(bc_head_t));
     cp += sizeof(bc_head_t);
   }
 
   // append label table
   for (i = 0; i < comp_labcount; i++) {
-    comp_label_t label;
-
-    dbt_read(comp_labtable, i, &label, sizeof(comp_label_t));
-    memcpy(cp, &label.ip, ADDRSZ);
+    comp_label_t *label = comp_labtable.elem[i];
+    memcpy(cp, &label->ip, ADDRSZ);
     cp += ADDRSZ;
   }
 
   // append library table
   for (i = 0; i < comp_libcount; i++) {
-    bc_lib_rec_t lib;
-
-    dbt_read(comp_libtable, i, &lib, sizeof(bc_lib_rec_t));
-    memcpy(cp, &lib, sizeof(bc_lib_rec_t));
+    bc_lib_rec_t *lib = comp_libtable.elem[i];
+    memcpy(cp, lib, sizeof(bc_lib_rec_t));
     cp += sizeof(bc_lib_rec_t);
   }
 
   // append symbol table
   for (i = 0; i < comp_impcount; i++) {
-    bc_symbol_rec_t sym;
-
-    dbt_read(comp_imptable, i, &sym, sizeof(bc_symbol_rec_t));
-    memcpy(cp, &sym, sizeof(bc_symbol_rec_t));
+    bc_symbol_rec_t *sym = comp_imptable.elem[i];
+    memcpy(cp, sym, sizeof(bc_symbol_rec_t));
     cp += sizeof(bc_symbol_rec_t);
   }
 
-  size = cp - buff;
+  size = cp - bc.code;
 
   // the program itself
   memcpy(cp, comp_prog.ptr, comp_prog.count);
-  mem_unlock(buff_h);
 
   size += comp_prog.count;
 
@@ -4420,7 +4463,7 @@ mem_t comp_create_bin() {
     log_printf("\n");
   }
 
-  return buff_h;
+  return bc;
 }
 
 /**
@@ -4429,10 +4472,9 @@ mem_t comp_create_bin() {
  * @param h_bc is the memory-handle of the bytecode (created by create_bin)
  * @return non-zero on success
  */
-int comp_save_bin(mem_t h_bc) {
+int comp_save_bin(byte_code bc) {
   int h;
   char fname[OS_FILENAME_SIZE + 1];
-  char *buf;
   char *p;
   int result = 1;
 
@@ -4449,10 +4491,8 @@ int comp_save_bin(mem_t h_bc) {
 
   h = open(fname, O_BINARY | O_RDWR | O_TRUNC | O_CREAT, 0660);
   if (h != -1) {
-    buf = (char *)mem_lock(h_bc);
-    write(h, buf, mem_handle_size(h_bc));
+    write(h, (char *)bc.code, bc.size);
     close(h);
-    mem_unlock(h_bc);
     if (!opt_quiet && !opt_interactive) {
       log_printf(MSG_BC_FILE_CREATED, fname);
     }
@@ -4474,7 +4514,10 @@ int comp_compile(const char *sb_file_name) {
   char *source;
   int tid, prev_tid;
   int success = 0;
-  mem_t h_bc = 0;
+  byte_code bc;
+
+  bc.code = NULL;
+  bc.size = 0;
 
   tid = create_task(sb_file_name);
   prev_tid = activate_task(tid);
@@ -4485,7 +4528,7 @@ int comp_compile(const char *sb_file_name) {
   source = comp_load(sb_file_name); // load file and run pre-processor
   if (source) {
     success = comp_pass1(NULL, source); // PASS1
-    tmp_free(source);
+    free(source);
     if (success) {
       success = comp_pass2();   // PASS2
     }
@@ -4493,10 +4536,8 @@ int comp_compile(const char *sb_file_name) {
       success = comp_check_labels();
     }
     if (success) {
-      success = ((h_bc = comp_create_bin()) != 0);
-    }
-    if (success) {
-      success = comp_save_bin(h_bc);
+      bc = comp_create_bin();
+      success = comp_save_bin(bc);
     }
   }
 
@@ -4505,9 +4546,9 @@ int comp_compile(const char *sb_file_name) {
   activate_task(prev_tid);
 
   if (opt_nosave) {
-    bytecode_h = h_bc;          // update task's bytecode
-  } else if (h_bc) {
-    mem_free(h_bc);
+    ctask->bytecode = bc.code;
+  } else if (bc.code) {
+    free(bc.code);
   }
 
   return success;
@@ -4529,8 +4570,9 @@ int comp_compile_buffer(const char *source) {
     success = comp_check_labels();
   }
   if (success) {
-    bytecode_h = comp_create_bin(); // update task's bytecode
+    byte_code bc = comp_create_bin(); // update task's bytecode
+    ctask->bytecode = bc.code;
   }
   comp_close();
-  return (success && bytecode_h);
+  return success;
 }

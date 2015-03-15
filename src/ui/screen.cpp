@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2013 Chris Warren-Smith.
+// Copyright(C) 2001-2014 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -15,46 +15,23 @@
 #define MAX_HEIGHT 10000
 #define TEXT_ROWS 1000
 
-static int colors[] = {
-  0x000000, // 0 black
-  0x000080, // 1 blue
-  0x008000, // 2 green
-  0x008080, // 3 cyan
-  0x800000, // 4 red
-  0x800080, // 5 magenta
-  0x808000, // 6 yellow
-  0xC0C0C0, // 7 white
-  0x808080, // 8 gray
-  0x0000FF, // 9 light blue
-  0x00FF00, // 10 light green
-  0x00FFFF, // 11 light cyan
-  0xFF0000, // 12 light red
-  0xFF00FF, // 13 light magenta
-  0xFFFF00, // 14 light yellow
-  0xFFFFFF  // 15 bright white
-};
+#define DRAW_SHAPE \
+  Shape *rect = (*it); \
+  if (rect->_y >= _scrollY && \
+      rect->_y + rect->_height <= _scrollY + _height) \
+    rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), h(), _charWidth)
 
-// Workaround for API's which don't take a length argument
-struct TextBuffer {
-  TextBuffer(const char *s, int len) :
-    str(s), len(len) {
-    c = str[len];
-    ((char *)str)[len] = 0;
-  }
-
-  ~TextBuffer() {
-    ((char *)str)[len] = c;
-  }
-
-  const char *str;
-  char c;
-  int len;
-};
+int compareZIndex(const void *p1, const void *p2) {
+  ImageDisplay **i1 = (ImageDisplay **)p1;
+  ImageDisplay **i2 = (ImageDisplay **)p2;
+  return (*i1)->_zIndex < (*i2)->_zIndex ? -1 : (*i1)->_zIndex == (*i2)->_zIndex ? 0 : 1;
+}
 
 Screen::Screen(int x, int y, int width, int height, int fontSize) :
   Shape(x, y, width, height),
   _font(0),
   _fontSize(fontSize),
+  _fontStyle(0),
   _charWidth(0),
   _charHeight(0),
   _scrollX(0),
@@ -84,8 +61,8 @@ int Screen::ansiToMosync(long c) {
   return result;
 }
 
-void Screen::add(Shape *button) { 
-  _shapes.add(button); 
+void Screen::add(Shape *button) {
+  _shapes.add(button);
   if (button->_x + button->_width > _curX) {
     _curX = button->_x + button->_width;
   }
@@ -94,17 +71,71 @@ void Screen::add(Shape *button) {
   }
 }
 
+void Screen::addImage(ImageDisplay &image) {
+  bool exists = false;
+  List_each(ImageDisplay *, it, _images) {
+    ImageDisplay *next = (*it);
+    if (next->_id == image._id) {
+      exists = true;
+      next->copyImage(image);
+      break;
+    }
+  }
+  if (!exists) {
+    _images.add(new ImageDisplay(image));
+  }
+  _images.sort(compareZIndex);
+  setDirty();
+}
+
 void Screen::clear() {
   _curX = INITXY;
   _curY = INITXY;
+  _scrollX = 0;
   _scrollY = 0;
 
   // cleanup any shapes
   _shapes.removeAll();
+  _inputs.removeAll();
+  _images.removeAll();
   _label.empty();
 }
 
+void Screen::drawShape(Shape *rect) {
+  if (rect != NULL &&
+      rect->_y >= _scrollY &&
+      rect->_y + rect->_height <= _scrollY + _height) {
+    rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), h(), _charWidth);
+  }
+}
+
 void Screen::drawOverlay(bool vscroll) {
+  // draw any visible shapes
+  List_each(Shape *, it, _shapes) {
+    DRAW_SHAPE;
+  }
+
+  List_each(ImageDisplay *, it, _images) {
+    DRAW_SHAPE;
+  }
+
+  FormInput *drawTop = NULL;
+  List_each(FormInput *, it, _inputs) {
+    FormInput *input = (*it);
+    if (input->_y >= _scrollY - _height &&
+        input->_y + input->_height <= _scrollY + _height &&
+        input->isVisible()) {
+      if (input->isDrawTop()) {
+        drawTop = input;
+      } else {
+        input->draw(_x + input->_x, _y + input->_y - _scrollY, w(), h(), _charWidth);
+      }
+    }
+  }
+  if (drawTop != NULL) {
+    drawTop->draw(_x + drawTop->_x, _y + drawTop->_y - _scrollY, w(), h(), _charWidth);
+  }
+
   if (vscroll && _curY) {
     // display the vertical scrollbar
     int pageHeight = _curY + _charHeight + _charHeight;
@@ -123,31 +154,27 @@ void Screen::drawOverlay(bool vscroll) {
     }
   }
 
-  // draw any visible shapes
-  List_each(Shape*, it, _shapes) {
-    Shape *rect = (*it);
-    if (rect->_y >= _scrollY && 
-        rect->_y + rect->_height <= _scrollY + _height) {
-      rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), _charWidth);
-    }
-  }
-
   // display the label
   if (_label.length()) {
-    MAExtent extent = maGetTextSize(_label.c_str());
     MAExtent screenSize = maGetScrSize();
     int screenW = EXTENT_X(screenSize);
     int screenH = EXTENT_Y(screenSize);
-    int w = EXTENT_X(extent);
-    int h = EXTENT_Y(extent);
-    int top = screenH - h - h;
+    int w = _charWidth * (_label.length() + 2);
+    int h = _charHeight + 2;
+    int top = screenH - h;
     int left = (screenW - w) / 2;
+    int textY = top + ((h - _charHeight) / 2);
 
     maSetClipRect(0, 0, screenW, screenH);
-    maSetColor(GRAY_BG_COL);
-    maFillRect(left - 6, top, w + 14, h + 8);
-    maSetColor(LABEL_TEXT_COL);
-    maDrawText(left, top + 2, _label.c_str());
+    maSetColor(0xbfbfbf);
+    maFillRect(left, top, w, h);
+    maSetColor(0xe5e5e5);
+    maLine(left, top, left + w, top);
+    maSetColor(0x737373);
+    maLine(left, top + h - 1, left + w, top + h - 1);
+    maLine(left + w, top + 1, left + w, top + h - 1);
+    maSetColor(0x403c44);
+    maDrawText(left + _charWidth, textY, _label.c_str(), _label.length());
   }
 
   maResetBacklight();
@@ -156,6 +183,30 @@ void Screen::drawOverlay(bool vscroll) {
 void Screen::drawInto(bool background) {
   maSetColor(background ? _bg : _fg);
   setDirty();
+}
+
+FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
+  FormInput *result = _inputs[0];
+  if (result != NULL && overlaps(px, py)) {
+    int item = (py - _y) / result->_height;
+    result = _inputs[item];
+  } else {
+    result = NULL;
+  }
+  if (result != prev) {
+    MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+    if (prev != NULL) {
+      prev->_pressed = false;
+      drawShape(prev);
+    }
+    if (result != NULL) {
+      result->_pressed = true;
+      drawShape(result);
+    }
+    maUpdateScreen();
+    maSetDrawTarget(currentHandle);
+  }
+  return result;
 }
 
 int Screen::print(const char *p, int lineHeight, bool allChars) {
@@ -186,7 +237,7 @@ bool Screen::overlaps(int px, int py) {
 
 // remove the button from the list
 void Screen::remove(Shape *button) {
-  List_each(Shape*, it, _shapes) {
+  List_each(Shape *, it, _shapes) {
     Shape *next = (*it);
     if (next == button) {
       _shapes.remove(it);
@@ -196,13 +247,48 @@ void Screen::remove(Shape *button) {
   }
 }
 
-void Screen::reset(int argFontSize) {
+// remove the image from the list
+void Screen::removeInput(FormInput *input) {
+  List_each(FormInput *, it, _inputs) {
+    FormInput *next = (*it);
+    if (next == input) {
+      _inputs.remove(it);
+      break;
+    }
+  }
+}
+
+// remove the image from the list
+void Screen::removeImage(unsigned imageId) {
+  List_each(ImageDisplay *, it, _images) {
+    ImageDisplay *next = (*it);
+    if (next->_id == imageId) {
+      _images.remove(it);
+      setDirty();
+      break;
+    }
+  }
+}
+
+void Screen::replaceFont(int type) {
+  if (_font) {
+    maFontDelete(_font);
+  }
+  _font = maFontLoadDefault(type, _fontStyle, _fontSize);
+  if (_font != -1) {
+    maFontSetCurrent(_font);
+    MAExtent extent = maGetTextSize("W");
+    _charWidth = EXTENT_X(extent);
+    _charHeight = EXTENT_Y(extent) + LINE_SPACING;
+  } else {
+    trace("maFontLoadDefault failed: style=%d size=%d", _fontStyle, _fontSize);
+  }
+}
+
+void Screen::reset(int fontSize) {
   _fg = DEFAULT_FOREGROUND;
   _bg = DEFAULT_BACKGROUND;
-  if (argFontSize != -1) {
-    _fontSize = argFontSize;
-  }
-  setFont(false, false);
+  setFont(false, false, fontSize);
 }
 
 void Screen::setColor(long color) {
@@ -215,13 +301,10 @@ void Screen::setTextColor(long foreground, long background) {
 }
 
 // updated the current font according to accumulated flags
-void Screen::setFont(bool bold, bool italic) {
+void Screen::setFont(bool bold, bool italic, int size) {
   int style = FONT_STYLE_NORMAL;
   int type = FONT_TYPE_MONOSPACE;
 
-  if (_font) {
-    maFontDelete(_font);
-  }
   if (italic) {
     style |= FONT_STYLE_ITALIC;
     type = FONT_TYPE_SERIF;
@@ -233,15 +316,49 @@ void Screen::setFont(bool bold, bool italic) {
     }
   }
 
-  _font = maFontLoadDefault(type, style, _fontSize);
+  if ((style != _fontStyle || size != _fontSize) || !_font) {
+    _fontStyle = style;
+    _fontSize = size;
+    replaceFont(type);
+  }
+}
 
-  if (_font != -1) {
-    maFontSetCurrent(_font);
-    MAExtent extent = maGetTextSize("W");
-    _charWidth = EXTENT_X(extent);
-    _charHeight = EXTENT_Y(extent) + LINE_SPACING;
-  } else {
-    trace("maFontLoadDefault failed: style=%d size=%d", style, _fontSize);
+FormInput *Screen::getNextField(FormInput *field) {
+  FormInput *result = NULL;
+  bool setNext = false;
+  List_each(FormInput *, it, _inputs) {
+    FormInput *next = (*it);
+    if (!next->isNoFocus()) {
+      if (result == NULL) {
+        // set result to first item
+        result = next;
+        if (field == NULL) {
+          // no next item
+          break;
+        }
+      }
+      if (setNext) {
+        result = next;
+        break;
+      } else if (next == field) {
+        setNext = true;
+      }
+    }
+  }
+  return result;
+}
+
+void Screen::updateInputs(var_p_t form) {
+  List_each(FormInput *, it, _inputs) {
+    FormInput *next = (*it);
+    var_p_t field = next->getField(form);
+    if (field == NULL) {
+      _inputs.remove(it);
+      delete next;
+      setDirty();
+    } else if (next->updateUI(form, field)) {
+      setDirty();
+    }
   }
 }
 
@@ -283,7 +400,7 @@ bool GraphicScreen::construct() {
   bool result = true;
   _image = maCreatePlaceholder();
   if (maCreateDrawableImage(_image, _imageWidth, _imageHeight) == RES_OK) {
-    reset();
+    reset(_fontSize);
   } else {
     result = false;
   }
@@ -297,7 +414,7 @@ void GraphicScreen::clear() {
   Screen::clear();
 }
 
-void GraphicScreen::drawBase(bool vscroll) {
+void GraphicScreen::drawBase(bool vscroll, bool update) {
   MARect srcRect;
   MAPoint2d dstPoint;
   srcRect.left = 0;
@@ -309,11 +426,14 @@ void GraphicScreen::drawBase(bool vscroll) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetClipRect(_x, _y, _width, _height);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
+
 #if !defined(_FLTK)
   drawOverlay(vscroll);
 #endif
   _dirty = 0;
-  maUpdateScreen();
+  if (update) {
+    maUpdateScreen();
+  }
   maSetDrawTarget(currentHandle);
 }
 
@@ -340,6 +460,7 @@ void GraphicScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
   maFillRect(x1, y1, x2 - x1, y2 - y1);
 }
 
+// returns the color of the pixel at the given xy location
 int GraphicScreen::getPixel(int x, int y) {
   MARect rc;
   rc.left = x;
@@ -355,26 +476,26 @@ int GraphicScreen::getPixel(int x, int y) {
   return result;
 }
 
-// extend the image to allow for additioal content on the newline
+// extend the image to allow for additional content on the newline
 void GraphicScreen::imageAppend(MAHandle newImage) {
   MARect srcRect;
   MAPoint2d dstPoint;
-  
+
   srcRect.left = 0;
   srcRect.top = 0;
   srcRect.width = _imageWidth;
   srcRect.height = _imageHeight;
   dstPoint.x = 0;
   dstPoint.y = 0;
-  
+
   maSetDrawTarget(newImage);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
-  
+
   // clear the new segment
   maSetColor(_bg);
   maFillRect(0, _imageHeight, _imageWidth, _imageHeight + _height);
   _imageHeight += _height;
-  
+
   // cleanup the old image
   maDestroyPlaceholder(_image);
   _image = newImage;
@@ -399,11 +520,11 @@ void GraphicScreen::imageScroll() {
 
     maSetDrawTarget(newImage);
     maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
-  
+
     // clear the new segment
     maSetColor(_bg);
     maFillRect(0, copiedHeight, _imageWidth, scrollBack);
-    
+
     // cleanup the old image
     maDestroyPlaceholder(_image);
     _image = newImage;
@@ -459,12 +580,12 @@ int GraphicScreen::print(const char *p, int lineHeight, bool allChars) {
 
   // draw the text buffer
   maSetColor(_invert ? _bg : _fg);
-  maDrawText(cx, _curY, TextBuffer(p, numChars).str);
+  maDrawText(cx, _curY, p, numChars);
 
   if (_underline) {
     maLine(cx, _curY + lineHeight - 2, _curX, _curY + lineHeight - 2);
   }
- 
+
   return numChars;
 }
 
@@ -480,7 +601,8 @@ void GraphicScreen::reset(int fontSize) {
 }
 
 // update the widget to new dimensions
-void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight) {
+void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth,
+                           int oldHeight, int lineHeight) {
   logEntered();
   bool fullscreen = ((_width - _x) == oldWidth && (_height - _y) == oldHeight);
   if (fullscreen && (newWidth > _imageWidth || newHeight > _imageHeight)) {
@@ -530,7 +652,7 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth, int oldHei
 }
 
 // handles the given escape character. Returns whether the font has changed
-bool GraphicScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
+bool GraphicScreen::setGraphicsRendition(const char c, int escValue, int lineHeight) {
   switch (c) {
   case 'K':
     maSetColor(_bg);            // \e[K - clear to eol
@@ -554,7 +676,7 @@ bool GraphicScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
   case 'm':                    // \e[...m - ANSI terminal
     switch (escValue) {
     case 0:                    // reset
-      reset();
+      reset(_fontSize);
       break;
     case 1:                    // set bold on
       _bold = true;
@@ -654,14 +776,14 @@ void GraphicScreen::setPixel(int x, int y, int c) {
 
 struct LineShape : Shape {
   LineShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
-  void draw(int ax, int ay) {
+  void draw(int ax, int ay, int, int, int) {
     maLine(_x, _y, _width, _height);
   }
 };
 
 struct RectShape : Shape {
   RectShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
-  void draw(int ax, int ay) {
+  void draw(int ax, int ay, int, int, int) {
     int x1 = _x;
     int y1 = _y;
     int x2 = _x + _width;
@@ -675,7 +797,7 @@ struct RectShape : Shape {
 
 struct RectFilledShape : Shape {
   RectFilledShape(int x, int y, int w, int h) : Shape(x, y, w, h) {}
-  void draw(int ax, int ay) {
+  void draw(int ax, int ay, int, int, int) {
     maFillRect(_x, _y, _width, _height);
   }
 };
@@ -683,16 +805,14 @@ struct RectFilledShape : Shape {
 //
 // Text based screen with a large scrollback buffer
 //
-TextScreen::TextScreen(int width, int height, int fontSize,
-                       int x, int y, int w, int h) :
+TextScreen::TextScreen(int width, int height, int fontSize) :
   Screen(0, 0, width, height, fontSize),
-  _rectangle(x, y, w, h),
+  _inset(0, 0, 0, 0),
   _buffer(NULL),
   _head(0),
   _tail(0),
   _rows(TEXT_ROWS),
   _cols(0) {
-  setSizes(width, height);
 }
 
 TextScreen::~TextScreen() {
@@ -701,11 +821,11 @@ TextScreen::~TextScreen() {
 
 void TextScreen::calcTab() {
   Row *line = getLine(_head);  // pointer to current line
-  line->tab();  
+  line->tab();
 }
 
 bool TextScreen::construct() {
-  reset();
+  reset(_fontSize);
   _buffer = new Row[_rows];
   return (_buffer != NULL);
 }
@@ -722,7 +842,7 @@ void TextScreen::clear() {
 //
 // draw the text
 //
-void TextScreen::drawBase(bool vscroll) {
+void TextScreen::drawBase(bool vscroll, bool update) {
   // prepare escape state variables
   bool bold = false;
   bool italic = false;
@@ -742,6 +862,10 @@ void TextScreen::drawBase(bool vscroll) {
     numRows = textRows - firstRow;
   }
 
+  if (_over != NULL && _over != this) {
+    _over->drawBase(vscroll, false);
+  }
+
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN_BUFFER);
   maSetClipRect(_x, _y, _width, _height);
@@ -759,9 +883,9 @@ void TextScreen::drawBase(bool vscroll) {
     int px = (_x + INITXY) - _scrollX;
     while (seg != NULL) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
-        setFont(bold, italic);
+        setFont(bold, italic, _fontSize);
       } else if (seg->isReset()) {
-        reset();
+        reset(_fontSize);
         bold = false;
         italic = false;
         underline = false;
@@ -779,10 +903,10 @@ void TextScreen::drawBase(bool vscroll) {
           maSetColor(_fg);
           maFillRect(px, py, width, _charHeight);
           maSetColor(_bg);
-          maDrawText(px, py, seg->_str);
+          maDrawText(px, py, seg->_str, seg->numChars());
           maSetColor(color);
         } else {
-          maDrawText(px, py, seg->_str);
+          maDrawText(px, py, seg->_str, seg->numChars());
         }
         if (underline) {
           maLine(px, py + _charHeight, width, py + _charHeight);
@@ -815,7 +939,7 @@ void TextScreen::drawRect(int x1, int y1, int x2, int y2) {
 }
 
 void TextScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
-  add(new RectFilledShape(x1, y1, x2, y2));
+  add(new RectFilledShape(x1, y1, x2 - x1, y2 - y1));
 }
 
 //
@@ -832,13 +956,26 @@ Row *TextScreen::getLine(int pos) {
   return &_buffer[pos];
 }
 
+void TextScreen::inset(int x, int y, int w, int h, Screen *over) {
+  _x = over->_x;
+  _y = over->_y;
+  _width = over->_width;
+  _height = over->_height;
+  _inset._x = x;
+  _inset._y = y;
+  _inset._width = w;
+  _inset._height = h;
+  _over = over;
+  resize(_width, _height, 0, 0, 0);
+}
+
 void TextScreen::newLine(int lineHeight) {
   // scroll by moving logical last line
   if (getTextRows() == _rows) {
     _tail = (_tail + 1 >= _rows) ? 0 : _tail + 1;
   }
   _head = (_head + 1 >= _rows) ? 0 : _head + 1;
-  
+
   // clear the new line
   Row* line = getLine(_head);
   line->clear();
@@ -848,6 +985,18 @@ void TextScreen::newLine(int lineHeight) {
 
   _curX = INITXY;
   _curY += lineHeight;
+}
+
+void TextScreen::resize(int newWidth, int newHeight, int, int, int) {
+  if (_inset._width != 0 && _inset._height != 0) {
+    _x = newWidth * _inset._x / 100;
+    _y = newHeight * _inset._y / 100;
+    _width = (newWidth * _inset._width / 100) - _x;
+    _height = (newHeight * _inset._height / 100) - _y;
+  } else {
+    _width = newWidth;
+    _height = newHeight;
+  }
 }
 
 //
@@ -871,22 +1020,10 @@ int TextScreen::print(const char *p, int lineHeight, bool allChars) {
   return numChars;
 }
 
-void TextScreen::resize(int newWidth, int newHeight, int oldWidth, 
-                        int oldHeight, int lineHeight) {
-  setSizes(newWidth, newHeight);
-}
-
-void TextScreen::setSizes(int screenW, int screenH) {
-  _x = screenW * _rectangle._x / 100;
-  _y = screenH * _rectangle._y / 100;
-  _width = (screenW * _rectangle._width / 100) - _x;
-  _height = (screenH * _rectangle._height / 100) - _y;
-}
-
 //
 // performs the ANSI text SGI function.
 //
-bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
+bool TextScreen::setGraphicsRendition(const char c, int escValue, int lineHeight) {
   if (c == ';' || c == 'm') {
     Row *line = getLine(_head);
     TextSeg *segment = line->next();
@@ -900,7 +1037,7 @@ bool TextScreen::setGraphicsRendition(char c, int escValue, int lineHeight) {
     switch (escValue) {
     case 0:
       segment->reset();
-      reset();
+      reset(_fontSize);
       break;
 
     case 1:                      // Bold on

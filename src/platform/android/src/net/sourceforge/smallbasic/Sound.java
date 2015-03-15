@@ -12,7 +12,7 @@ import android.util.Log;
  * 
  * @author chrisws
  */
-@TargetApi(Build.VERSION_CODES.GINGERBREAD)
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class Sound {
   private static final String TAG = "smallbasic";
   private static final int AUDIO_SAMPLE_RATE = 8000;

@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.16])
+AC_INIT([smallbasic], [0.11.17])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -55,13 +55,14 @@ function checkForWindows() {
      *mingw* | pw32* | cygwin*)
      win32="yes"
      AC_CHECK_TOOL(WINDRES, windres, :)
+     ;;
+     *darwin*)
+     ;;
+     *)
+     dnl backlinking support for modules
+     LDFLAGS="${LDFLAGS} -export-dynamic"
    esac
    AM_CONDITIONAL(WITH_WIN32, test x"$win32" = "xyes")
-
-   dnl backlinking support for modules
-   if test $win32 = no; then
-     LDFLAGS="${LDFLAGS} -export-dynamic"
-   fi
 }
 
 function checkDebugMode() {
@@ -138,7 +139,7 @@ function buildFLTK() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
    esac
 
-   FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -Wall -Wunused -fno-exceptions"
+   FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -fno-exceptions"
    PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldflags --use-images`"
 
    dnl do not depend on cygwin.dll under cygwin build
@@ -163,17 +164,12 @@ function buildFLTK() {
    dnl preconfigured values for FLTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
-   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(USE_CLIB, 1, [Implements clibmgr.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
-   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
-   AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
-   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()])
 
    BUILD_SUBDIRS="src/common src/platform/fltk"
    AC_SUBST(BUILD_SUBDIRS)
@@ -200,39 +196,47 @@ function buildSDL() {
      AC_MSG_ERROR([libfreetype6-dev not installed: configure failed.])
    fi
 
-   AC_MSG_CHECKING(for SDL_image)
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-     #include "SDL2/SDL_image.h"
-     ]], [[]])],
-    [AC_MSG_RESULT([yes])],
-    [AC_MSG_ERROR([libsdl2-image-dev not installed: configure failed])])
+   case "${host_os}" in
+     *mingw* | cygwin*)
+     dnl avoid using MSCRT versions of printf for long double
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
 
-   # Check fontconfig configuration
-   PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.2)
-   AC_SUBST(FONTCONFIG_CFLAGS)
-   AC_SUBST(FONTCONFIG_LIBS)
+     dnl do not depend on cygwin.dll under cygwin build
+     PACKAGE_CFLAGS="-I`cygpath -m /usr/local/include` ${PACKAGE_CFLAGS} -mms-bitfields"
+     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -static-libgcc -static-libstdc++"
+     AC_DEFINE(_Win32, 1, [Windows build])
+     AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
+     FONTCONFIG_CFLAGS=""
+     FONTCONFIG_LIBS=""
+     ;;
+
+     *)
+     # Unix - Check fontconfig configuration
+     PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.2)
+     AC_SUBST(FONTCONFIG_CFLAGS)
+     AC_SUBST(FONTCONFIG_LIBS)
+
+     dnl backlinking support for modules
+     PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
+   esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
-   PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS} `sdl2-config --libs` `freetype-config --libs` -ldl"
+   PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS} `sdl2-config --libs` `freetype-config --libs`"
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_OSD_SOUND, 1, [Driver implements osd_sound()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
    AC_DEFINE(OS_PREC64, 1, [64 bit variables])
-   AC_DEFINE(DRV_BEEP, 1, [Use the driver based beep function])
 
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
    (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
+   (cd ide/android/res/drawable-hdpi && xxd -i ic_launcher.png > ../../../../src/platform/sdl/icon.h)
 }
 
 function buildTizen() {
@@ -243,16 +247,10 @@ function buildTizen() {
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_TIZEN, 1, [Defined for Tizen build.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(HAVE_SEARCH_H, 1, [Found GNU search.h])
-   AC_DEFINE(HAVE_TDESTROY, 1, [Found GNU search.h])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
-   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
-   AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
    AC_DEFINE(CPU_BIGENDIAN, 1, [Tizen uses big-endian])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
 
    BUILD_SUBDIRS="src/platform/tizen/common"
    AC_SUBST(BUILD_SUBDIRS)
@@ -265,15 +263,11 @@ function buildAndroid() {
 
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_ANDROID, 1, [Defined for Android build.])
-   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(IMPL_DEV_GETS, 1, [Driver implements dev_gets()])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
-   AC_DEFINE(IMPL_IMAGE, 1, [Driver implements image commands])
-   AC_DEFINE(HAVE_MALLOC_USABLE_SIZE, 0, [Newlib version causes mosync stack panic])
-   AC_DEFINE(CPU_BIGENDIAN, 1, [Android uses big-endian])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
+   AC_DEFINE(CPU_BIGENDIAN, 1, [Android uses big-endian])
 
    BUILD_SUBDIRS="src/platform/android"
    AC_SUBST(BUILD_SUBDIRS)
@@ -290,6 +284,7 @@ function buildConsole() {
    esac
 
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, test $win32 = yes)
+   AC_DEFINE(BUILD_CONSOLE, 1, [Building a console based system.])
 
    if test $win32 = yes; then
       dnl test whether to build using mingw
@@ -305,25 +300,21 @@ function buildConsole() {
       if test x$have_cygwin = xyes; then
          dnl preconfigured values for cygwin console build (depends on cygwin.dll)
          TARGET="Building Cygwin console version."
-         AC_CHECK_HEADER(ncurses/termcap.h, [], [AC_MSG_ERROR("install libncurses-dev")])
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-         AC_DEFINE(USE_TERM_IO, 1, [Uses terminal-io functions.])
          AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
          AC_DEFINE(OS_PREC64, 1, [64 bit variables])
          AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
-         PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc -lncurses"
-         BUILD_SUBDIRS="src/common src/platform/cygwin"
+         PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc"
+         BUILD_SUBDIRS="src/common src/platform/unix"
       else
          dnl preconfigured values for cygwin mingw console build
          TARGET="Building Cygwin MinGW console version."
          AC_DEFINE(__MINGW32__, 1, [as above])
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-         AC_DEFINE(USE_TERM_IO, 0, [Does not use terminal-io functions.])
-         AC_DEFINE(IMPL_EMPTY_TERM_EVENTS, 1, [Implement a dummy term_events()])
-         PACKAGE_LIBS="${PACKAGE_LIBS} -mconsole -lmingw32"
-         BUILD_SUBDIRS="src/common src/platform/mingw"
+         PACKAGE_LIBS="${PACKAGE_LIBS} -mconsole -lmingw32 -lwsock32"
+         BUILD_SUBDIRS="src/common src/platform/unix"
       fi
       AC_DEFINE(_Win32, 1, [Windows build])
       AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
@@ -331,13 +322,10 @@ function buildConsole() {
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-      AC_DEFINE(USE_TERM_IO, 1, [Uses terminal-io functions.])
+      AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
       AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
-      AC_DEFINE(DRV_SOUND, 1, [Driver implements functions in drvsound.h])
-      AC_DEFINE(UNIX_MEMMGR, 1, [Unix memory manager])
       AC_DEFINE(OS_PREC64, 1, [64 bit variables])
-      AC_CHECK_HEADER(readline/readline.h, [], [AC_MSG_ERROR("install libreadline-dev")])
-      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lncurses -lreadline"
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread"
       BUILD_SUBDIRS="src/common src/platform/unix"
       TEST_DIR="src/platform/unix"
       AC_SUBST(TEST_DIR)
@@ -352,16 +340,9 @@ function buildDist() {
    BUILD_SUBDIRS="src/common src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/fltk"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/sdl"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/cygwin"
    BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/unix"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/mingw"
    AC_SUBST(BUILD_SUBDIRS)
 }
-
-OS_NAME=`uname -a`
-
-AC_DEFINE_UNQUOTED(OS_NAME, "${OS_NAME}", [SB system variable])
-AC_DEFINE(HAVE_C_MALLOC, 1, [allocate memory with regular malloc calls])
 
 if test x$ac_build_dist = xyes; then
    buildDist
@@ -381,6 +362,8 @@ checkPCRE
 checkDebugMode
 checkForWindows
 
+PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Wno-unused-result"
+
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
 
@@ -389,8 +372,6 @@ Makefile
 src/common/Makefile
 src/platform/fltk/Makefile
 src/platform/sdl/Makefile
-src/platform/cygwin/Makefile
-src/platform/mingw/Makefile
 src/platform/unix/Makefile
 src/platform/tizen/common/Makefile
 src/platform/android/Makefile

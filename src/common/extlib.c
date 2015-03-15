@@ -69,12 +69,12 @@ static int slib_add_external_proc(const char *proc_name, int lib_id) {
   if (extproctable == NULL) {
     extprocsize = 16;
     extproctable =
-    (ext_proc_node_t *) tmp_alloc(sizeof(ext_proc_node_t) * extprocsize);
+    (ext_proc_node_t *) malloc(sizeof(ext_proc_node_t) * extprocsize);
   }
   else if (extprocsize <= (extproccount + 1)) {
     extprocsize += 16;
     extproctable =
-    (ext_proc_node_t *) tmp_realloc(extproctable,
+    (ext_proc_node_t *) realloc(extproctable,
         sizeof(ext_proc_node_t) * extprocsize);
   }
 
@@ -104,12 +104,12 @@ static int slib_add_external_func(const char *func_name, int lib_id) {
   if (extfunctable == NULL) {
     extfuncsize = 16;
     extfunctable =
-    (ext_func_node_t *) tmp_alloc(sizeof(ext_func_node_t) * extfuncsize);
+    (ext_func_node_t *) malloc(sizeof(ext_func_node_t) * extfuncsize);
   }
   else if (extfuncsize <= (extfunccount + 1)) {
     extfuncsize += 16;
     extfunctable =
-    (ext_func_node_t *) tmp_realloc(extfunctable,
+    (ext_func_node_t *) realloc(extfunctable,
         sizeof(ext_func_node_t) * extfuncsize);
   }
 
@@ -610,7 +610,7 @@ int slib_build_ptable(slib_par_t * ptable) {
         }
         else {
           v_free(arg);
-          tmp_free(arg);
+          free(arg);
           return pcount;
         }
 
@@ -637,7 +637,7 @@ void slib_free_ptable(slib_par_t * ptable, int pcount) {
   for (i = 0; i < pcount; i++) {
     if (ptable[i].byref == 0) {
       v_free(ptable[i].var_p);
-      tmp_free(ptable[i].var_p);
+      free(ptable[i].var_p);
     }
   }
 #endif
@@ -671,10 +671,11 @@ int sblmgr_procexec(int lib_id, int index) {
   }
 
   // build parameter table
-  ptable = tmp_alloc(sizeof(slib_par_t) * 64);// 64 = maximum parameter
+  ptable = malloc(sizeof(slib_par_t) * 64);// 64 = maximum parameter
   pcount = slib_build_ptable(ptable);
   if (prog_error) {
     slib_free_ptable(ptable, pcount);
+    free(ptable);
     return 0;
   }
 
@@ -693,7 +694,7 @@ int sblmgr_procexec(int lib_id, int index) {
   // clean-up
   if (ptable) {
     slib_free_ptable(ptable, pcount);
-    tmp_free(ptable);
+    free(ptable);
   }
 
   v_free(&ret);
@@ -731,10 +732,11 @@ int sblmgr_funcexec(int lib_id, int index, var_t * ret) {
   }
 
   // build parameter table
-  ptable = tmp_alloc(sizeof(slib_par_t) * 64);// 64 = maximum parameter
+  ptable = malloc(sizeof(slib_par_t) * 64);// 64 = maximum parameter
   pcount = slib_build_ptable(ptable);
   if (prog_error) {
     slib_free_ptable(ptable, pcount);
+    free(ptable);
     return 0;
   }
 
@@ -753,7 +755,7 @@ int sblmgr_funcexec(int lib_id, int index, var_t * ret) {
   // clean-up
   if (ptable) {
     slib_free_ptable(ptable, pcount);
-    tmp_free(ptable);
+    free(ptable);
   }
 
   return success;
@@ -814,10 +816,10 @@ long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...)
           size = va_arg(ap, dword);
           func = slib_getoptptr(lib->handle, "vfs_read");
           if (func)
-          retval = (func(f->handle, data, size) == size);
+            retval = (func(f->handle, (char*)data, size) == size);
         }
         break;
-        case lib_vfs_write:
+      case lib_vfs_write:
         {
           long (*func) (int handle, char *data, long size);
           byte *data;
@@ -827,7 +829,7 @@ long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...)
           size = va_arg(ap, dword);
           func = slib_getoptptr(lib->handle, "vfs_write");
           if (func)
-          retval = (func(f->handle, data, size) == size);
+            retval = (func(f->handle, (char*)data, size) == size);
         }
         break;
         case lib_vfs_eof:
@@ -835,7 +837,7 @@ long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...)
           int (*func) (int handle);
           func = slib_getoptptr(lib->handle, "vfs_eof");
           if (func)
-          retval = func(f->handle);
+            retval = func(f->handle);
         }
         case lib_vfs_tell:
         {
@@ -849,7 +851,7 @@ long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...)
           long (*func) (int handle);
           func = slib_getoptptr(lib->handle, "vfs_length");
           if (func)
-          retval = func(f->handle);
+            retval = func(f->handle);
         }
         case lib_vfs_seek:
         {
@@ -859,7 +861,7 @@ long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...)
           offset = va_arg(ap, dword);
           func = slib_getoptptr(lib->handle, "vfs_seek");
           if (func)
-          retval = func(f->handle, offset);
+            retval = func(f->handle, offset);
         }
         default:
         // error

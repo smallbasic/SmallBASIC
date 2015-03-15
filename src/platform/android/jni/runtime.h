@@ -10,9 +10,8 @@
 #define RUNTIME_H
 
 #include "config.h"
-#include "ui/maapi.h"
-#include "ui/interface.h"
-#include "ui/ansiwidget.h"
+#include "lib/maapi.h"
+#include "ui/inputs.h"
 #include "ui/system.h"
 #include "platform/android/jni/display.h"
 
@@ -30,13 +29,15 @@ struct Runtime : public System {
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
+  void pause(int timeout);
   MAEvent processEvents(int waitFlag);
+  void processEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void playTone(int frq, int dur, int vol, bool bgplay);
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
-  void setExit(bool quit);
+  void setString(const char *methodName, const char *value);
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
@@ -47,6 +48,8 @@ struct Runtime : public System {
   void loadEnvConfig(Properties &profile, const char *key);
   void saveConfig();
   void runPath(const char *path);
+  void setClipboardText(const char *text);
+  char *getClipboardText();
 
 private:
   bool _keypadActive;

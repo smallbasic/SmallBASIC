@@ -7,32 +7,11 @@
 
 AM_CPPFLAGS = -I$(top_builddir)/src -I. @PACKAGE_CFLAGS@
 
-EXTRA_DIST =																		\
-    chr2c.c																			\
-    el-928.c																		\
-    lnx928.fnt																	\
-    mgr928.fnt																	\
-    mod928.fnt																	\
-    mugr928.fnt																	\
-    nar928-2.fnt																\
-    nar928.fnt																	\
-    ndc928.c																		\
-    ndc928.fnt																	\
-    rlgr928.fnt																	\
-    rom16.c																			\
-    inet.c
-
 bin_PROGRAMS = sbasic
 
-sbasic_SOURCES =																\
-		dev_ndcfb.c																	\
-	  dev_genfb.c																	\
-		dev_oss.c																		\
-		dev_term.c																	\
-	  console_main.c															\
-		../../common/device.c												\
-    ../../common/g_line.c												\
-	  ../../common/decomp.c
+sbasic_SOURCES =          \
+  ../unix/console_main.c	\
+  ../unix/dev_null.c
 
 sbasic_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
@@ -45,7 +24,8 @@ sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 TEST_DIR=../../../samples/distro-examples/tests
 UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto \
 	         uds hash pass1 call_tau short-circuit strings stack-test \
-           replace-test read-data proc optchk letbug ref ptr trycatch
+           replace-test read-data proc optchk letbug ref ptr \
+           trycatch chain
 
 test: ${bin_PROGRAMS}
 	@for utest in $(UNIT_TESTS); do                             \

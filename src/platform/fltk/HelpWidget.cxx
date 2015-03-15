@@ -38,7 +38,7 @@
 #include <fltk/Monitor.h>
 
 #define FL_HELP_WIDGET_RESOURCES
-#include "HelpWidget.h"
+#include "platform/fltk/HelpWidget.h"
 
 #define FOREGROUND_COLOR Widget::default_style->textcolor()
 #define BACKGROUND_COLOR Widget::default_style->color()
@@ -239,7 +239,7 @@ struct Attributes : public Properties {
 
 int Attributes::getIntValue(const char *attr, int def) {
   strlib::String *s = get(attr);
-  return (s != null ? s->toInteger() : def);
+  return (s != NULL ? s->toInteger() : def);
 }
 
 Value Attributes::getValue(const char *attr, int def) {
@@ -491,7 +491,7 @@ ImageNode::ImageNode(const Style *style, strlib::String *docHome, Attributes *a)
   fixed(false),
   valign(0) {
   makePath(a->getSrc(), docHome);
-  image = loadImage(path.toString());
+  image = loadImage(path.c_str());
   w = a->getWidth(image->w());
   h = a->getHeight(image->h());
 }
@@ -503,7 +503,7 @@ ImageNode::ImageNode(const Style *style, strlib::String *docHome, strlib::String
   fixed(false),
   valign(0) {
   makePath(src, docHome);
-  image = loadImage(path.toString());
+  image = loadImage(path.c_str());
   image->measure(w.value, h.value);
   w.relative = 0;
   h.relative = 0;
@@ -537,7 +537,7 @@ void ImageNode::makePath(strlib::String *src, strlib::String *docHome) {
 
 void ImageNode::reload() {
   int iw, ih;
-  image = loadImage(path.toString());
+  image = loadImage(path.c_str());
   image->measure(iw, ih);
   if (w.relative == 0) {
     w.value = iw;
@@ -1217,7 +1217,7 @@ void TdEndNode::display(Display *out) {
 struct NamedInput {
   NamedInput(InputNode *node, strlib::String *name) {
     this->input = node;
-    this->name.append(name->toString());
+    this->name.append(name->c_str());
   }
   ~NamedInput() {
   }
@@ -1256,28 +1256,28 @@ InputNode::InputNode(Group *parent, Attributes *a) :
   BaseNode() {
   parent->begin();
   strlib::String *type = a->getType();
-  if (type != null && type->equals("text")) {
+  if (type != NULL && type->equals("text")) {
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_TEXTBOX);
-  } else if (type != null && type->equals("readonly")) {
+  } else if (type != NULL && type->equals("readonly")) {
     button = new Widget(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_READONLY);
-  } else if (type != null && type->equals("checkbox")) {
+  } else if (type != NULL && type->equals("checkbox")) {
     button = new CheckButton(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_CHKBOX);
-  } else if (type != null && type->equals("radio")) {
+  } else if (type != NULL && type->equals("radio")) {
     button = new RadioButton(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RADIO);
-  } else if (type != null && type->equals("slider")) {
+  } else if (type != NULL && type->equals("slider")) {
     button = new Slider(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RANGEVAL);
-  } else if (type != null && type->equals("valueinput")) {
+  } else if (type != NULL && type->equals("valueinput")) {
     button = new ValueInput(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RANGEVAL);
-  } else if (type != null && type->equals("thumbwheel")) {
+  } else if (type != NULL && type->equals("thumbwheel")) {
     button = new ThumbWheel(0, 0, BUTTON_WIDTH, 0);
     button->argument(ID_RANGEVAL);
-  } else if (type != null && type->equals("hidden")) {
+  } else if (type != NULL && type->equals("hidden")) {
     button = new Widget(0, 0, 0, 0);
     button->argument(ID_HIDDEN);
   } else {
@@ -1297,7 +1297,7 @@ InputNode::InputNode(Group *parent, Attributes *a, const char *s, int len) :
     str.append(s, len);
     button = new Widget(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_READONLY);
-    button->copy_label(str.toString());
+    button->copy_label(str.c_str());
   } else {
     button = new Input(0, 0, INPUT_WIDTH, 0);
     button->argument(ID_TEXTAREA);
@@ -1322,7 +1322,7 @@ void createDropList(InputNode *node, strlib::List<String *> *options) {
   List_each(String*, it, *options) {
     String *s = (*it);
     Item *item = new Item();
-    item->copy_label(s->toString());
+    item->copy_label(s->c_str());
   }
   menu->end();
 }
@@ -1335,7 +1335,7 @@ void InputNode::update(strlib::List<NamedInput *> *names, Properties *env, Attri
   strlib::String *value = a->getValue();
   strlib::String *align = a->getAlign();
 
-  if (name != null) {
+  if (name != NULL) {
     names->add(new NamedInput(this, name));
   }
 
@@ -1344,14 +1344,14 @@ void InputNode::update(strlib::List<NamedInput *> *names, Properties *env, Attri
   }
   // value uses environment/external attributes
   if (value == 0 && name != 0 && env) {
-    value = env->get(name->toString());
+    value = env->get(name->c_str());
   }
 
   switch (button->argument()) {
   case ID_READONLY:
     button->align(ALIGN_INSIDE_LEFT | ALIGN_CLIP);
     if (value && value->length()) {
-      button->copy_label(value->toString());
+      button->copy_label(value->c_str());
     }
     // fallthru
   case ID_TEXTAREA:
@@ -1376,19 +1376,19 @@ void InputNode::update(strlib::List<NamedInput *> *names, Properties *env, Attri
     button->box(NO_BOX);
     input = (Input *) button;
     if (value && value->length()) {
-      input->value(value->toString());
+      input->value(value->c_str());
     }
     break;
   case ID_BUTTON:
     if (value && value->length()) {
-      button->copy_label(value->toString());
+      button->copy_label(value->c_str());
     } else {
       button->copy_label(" ");
     }
     break;
   case ID_HIDDEN:
     if (value && value->length()) {
-      button->copy_label(value->toString());
+      button->copy_label(value->c_str());
     }
     break;
   }
@@ -1505,13 +1505,13 @@ struct EnvNode : public TextNode {
     var.append(s, textlen);
     var.trim();
     if (p) {
-      strlib::String *s = p->get(var.toString());
+      strlib::String *s = p->get(var.c_str());
       value.append(s);
     }
     if (value.length() == 0) {
-      value.append(getenv(var.toString()));
+      value.append(getenv(var.c_str()));
     }
-    this->s = value.toString();
+    this->s = value.c_str();
     this->textlen = value.length();
   }
   // here to provide value cleanup
@@ -1606,13 +1606,13 @@ Widget *HelpWidget::getInput(const char *name) {
       return ni->input->button;
     }
   }
-  return null;
+  return NULL;
 }
 
 // return the value of the given control
 const char *HelpWidget::getInputValue(Widget *widget) {
   if (widget == 0) {
-    return null;
+    return NULL;
   }
   switch (widget->argument()) {
   case ID_TEXTBOX:
@@ -1623,7 +1623,7 @@ const char *HelpWidget::getInputValue(Widget *widget) {
     return ((RadioButton *) widget)->value()? truestr : falsestr;
   case ID_SELECT:
     widget = ((Choice *) widget)->item();
-    return widget ? widget->label() : null;
+    return widget ? widget->label() : NULL;
   case ID_RANGEVAL:
     sprintf(rangeValue, "%f", ((Valuator *) widget)->value());
     return rangeValue;
@@ -1631,7 +1631,7 @@ const char *HelpWidget::getInputValue(Widget *widget) {
   case ID_READONLY:
     return widget->label();
   }
-  return null;
+  return NULL;
 }
 
 // return the nth form value
@@ -1649,10 +1649,10 @@ const char *HelpWidget::getInputName(Widget *button) {
   List_each(NamedInput*, it, namedInputs) {
     NamedInput *ni = (*it);
     if (ni->input->button == button) {
-      return ni->name.toString();
+      return ni->name.c_str();
     }
   }
-  return null;
+  return NULL;
 }
 
 // return all of the forms names and values - except hidden ones
@@ -1662,7 +1662,7 @@ void HelpWidget::getInputProperties(Properties *p) {
       NamedInput *ni = (*it);
       const char *value = getInputValue(ni->input->button);
       if (value) {
-        p->put(ni->name.toString(), value);
+        p->put(ni->name.c_str(), value);
       }
     }
   }
@@ -1672,8 +1672,8 @@ void HelpWidget::getInputProperties(Properties *p) {
 // assignment statement, eg val=1000
 bool HelpWidget::setInputValue(const char *assignment) {
   strlib::String s = assignment;
-  strlib::String name = s.lvalue();
-  strlib::String value = s.rvalue();
+  strlib::String name = s.leftOf('=');
+  strlib::String value = s.rightOf('=');
   Choice *choice;
   Widget *item;
 
@@ -1689,7 +1689,7 @@ bool HelpWidget::setInputValue(const char *assignment) {
       switch (button->argument()) {
       case ID_TEXTBOX:
       case ID_TEXTAREA:
-        ((Input *) button)->value(value.toString());
+        ((Input *) button)->value(value.c_str());
         break;
       case ID_RADIO:
       case ID_CHKBOX:
@@ -1697,7 +1697,7 @@ bool HelpWidget::setInputValue(const char *assignment) {
         break;
       case ID_SELECT:
         choice = (Choice *) button;
-        item = choice->find(value.toString());
+        item = choice->find(value.c_str());
         if (item) {
           choice->set_focus(item);
         }
@@ -1706,7 +1706,7 @@ bool HelpWidget::setInputValue(const char *assignment) {
         ((Valuator *) button)->value(value.toNumber());
         break;
       case ID_READONLY:
-        button->copy_label(value.toString());
+        button->copy_label(value.c_str());
         break;
       }
       return true;
@@ -1873,7 +1873,7 @@ void HelpWidget::draw() {
       scrollbar->value(value, 1, 0, SCROLL_SIZE);
       scrollbar->pagesize(SCROLL_SIZE * height / scrollH);
       scrollbar->linesize(SCROLL_SIZE * out.lineHeight / scrollH);
-      scrollbar->slider_size(max(10, min(sliderH, height - 40)));
+      scrollbar->slider_size(MAX(10, MIN(sliderH, height - 40)));
       if (height - vscroll > pageHeight) {
         vscroll = -(pageHeight - height);
       }
@@ -1923,7 +1923,7 @@ void HelpWidget::compile() {
   BaseNode *node;
   InputNode *inputNode;
 
-  const char *text = htmlStr.toString();
+  const char *text = htmlStr.c_str();
   const char *tagBegin = text;
   const char *tagEnd = text;
   const char *tag;
@@ -2012,7 +2012,7 @@ void HelpWidget::compile() {
             padlines = false;   // don't add consequtive spacestrs
           }
           // skip white space
-          while (i < textlen && (isWhite(text[i + 1]))) {
+          while (i < textlen && (IS_WHITE(text[i + 1]))) {
             i++;                // ends on final white-char
           }
 
@@ -2208,7 +2208,7 @@ void HelpWidget::compile() {
           node = new FontNode(font, fontSize, 0, bold, italic);
           nodeList.add(node);
           prop = p.getBackground();
-          if (prop != null) {
+          if (prop != NULL) {
             node = new ImageNode(style(), &docHome, prop, false);
             nodeList.add(node);
             images.add((ImageNode *)node);
@@ -2238,19 +2238,19 @@ void HelpWidget::compile() {
           p.load(tag + 5, taglen - 5);
           color = getColor(p.get("color"), 0);
           prop = p.get("font-size");
-          if (prop != null) {
+          if (prop != NULL) {
             // convert from points to pixels
             const fltk::Monitor &monitor = fltk::Monitor::all();
             fontSize = (int)(prop->toInteger() * monitor.dpi_y() / 72.0);
           } else {
             prop = p.get("size");
-            if (prop != null) {
+            if (prop != NULL) {
               fontSize = 7 + (prop->toInteger() * 2);
             }
           }
           prop = p.get("face");
-          if (prop != null) {
-            font = fltk::font(*prop->toString());
+          if (prop != NULL) {
+            font = fltk::font(*prop->c_str());
           }
           node = new FontNode(font, fontSize, color, bold, italic);
           nodeList.add(node);
@@ -2295,7 +2295,7 @@ void HelpWidget::compile() {
           foreground = getColor(p.getFgColor(), foreground);
           background = getColor(p.getBgColor(), background);
           prop = p.getBackground();
-          if (prop != null) {
+          if (prop != NULL) {
             node = new ImageNode(style(), &docHome, prop, true);
             nodeList.add(node);
             images.add((ImageNode *)node);
@@ -2335,8 +2335,8 @@ void HelpWidget::onclick(Widget *button) {
     InputNode *p = (*it);
     if (p->button == button) {
       this->event.empty();
-      this->event.append(p->onclick.toString());
-      user_data((void *)this->event.toString());
+      this->event.append(p->onclick.c_str());
+      user_data((void *)this->event.c_str());
       do_callback();
       return;
     }
@@ -2564,10 +2564,10 @@ int HelpWidget::handle(int event) {
       redraw(DAMAGE_PUSHED);
       if (pushed) {
         this->event.empty();
-        this->event.append(pushedAnchor->href.toString());
+        this->event.append(pushedAnchor->href.c_str());
         if (this->event.length()) {
           // href has been set
-          user_data((void *)this->event.toString());
+          user_data((void *)this->event.c_str());
           do_callback();
         }
       }
@@ -2612,7 +2612,7 @@ bool HelpWidget::find(const char *s, bool matchCase) {
 }
 
 void HelpWidget::copySelection() {
-  fltk::copy(selection.toString(), selection.length(), true);
+  fltk::copy(selection.c_str(), selection.length(), true);
 }
 
 void HelpWidget::selectAll() {
@@ -2641,7 +2641,7 @@ void HelpWidget::navigateTo(const char *s) {
   } else {
     path.append(s);
   }
-  loadFile(path.toString());
+  loadFile(path.c_str());
 }
 
 void HelpWidget::loadBuffer(const char *str) {
@@ -2670,7 +2670,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
   }
 
   const char *target = strrchr(f, '#');
-  len = target != null ? target - f : strlen(f);
+  len = target != NULL ? target - f : strlen(f);
   fileName.append(f, len);
   fileName.replaceAll('\\', '/');
 
@@ -2686,7 +2686,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
       docHome.append("/");
     }
   }
-  if ((fp = fopen(fileName.toString(), "rb")) != NULL) {
+  if ((fp = fopen(fileName.c_str(), "rb")) != NULL) {
     fseek(fp, 0, SEEK_END);
     len = ftell(fp);
     rewind(fp);
@@ -2694,7 +2694,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
     fclose(fp);
   } else {
     htmlStr.append("File not found: \"");
-    htmlStr.append(fileName.toString());
+    htmlStr.append(fileName.c_str());
     htmlStr.append("\" - ");
     htmlStr.append(strerror(errno));
   }
@@ -2729,9 +2729,9 @@ void HelpWidget::setDocHome(const char *s) {
 const char *HelpWidget::getAnchor(int index) {
   int len = anchors.size();
   if (index < len && index > -1) {
-    return anchors[index]->href.toString();
+    return anchors[index]->href.c_str();
   }
-  return null;
+  return NULL;
 }
 
 void HelpWidget::getText(strlib::String *s) {
@@ -2742,7 +2742,7 @@ void HelpWidget::getText(strlib::String *s) {
 }
 
 bool HelpWidget::isHtmlFile() {
-  const char *filename = fileName.toString();
+  const char *filename = fileName.c_str();
   if (!fileName || !fileName[0]) {
     return false;
   }
@@ -2853,7 +2853,7 @@ const char *skipWhite(const char *s) {
   if (s == 0 || s[0] == 0) {
     return 0;
   }
-  while (isWhite(*s)) {
+  while (IS_WHITE(*s)) {
     s++;
   }
   return s;
@@ -2864,7 +2864,7 @@ Color getColor(strlib::String *s, Color def) {
     return def;
   }
 
-  const char *n = s->toString();
+  const char *n = s->c_str();
   if (n[0] == '#') {
     // do hex color lookup
     int rgb = strtol(n + 1, NULL, 16);

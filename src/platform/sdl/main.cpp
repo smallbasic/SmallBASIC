@@ -9,13 +9,21 @@
 #include "config.h"
 #include <SDL.h>
 #include <getopt.h>
-#include <fontconfig/fontconfig.h>
 
 #include "ui/utils.h"
-#include "ui/StringLib.h"
+#include "ui/strlib.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
+#include "platform/sdl/icon.h"
 #include "common/smbas.h"
+
+#if !defined(_Win32)
+#include <fontconfig/fontconfig.h>
+#endif
+
+extern "C" unsigned
+  lodepng_decode32(unsigned char** out, unsigned* w, unsigned* h,
+                   const unsigned char* in, size_t insize);
 
 using namespace strlib;
 
@@ -56,9 +64,21 @@ void appLog(const char *format, ...) {
   *p++ = '\r';
   *p++ = '\n';
   *p = '\0';
+
+#if defined(WIN32)
+  OutputDebugString(buf);
+#else
   fprintf(stderr, buf, 0);
+#endif
 }
 
+#if defined(_Win32)
+bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold) {
+  fontFile = "Envy Code R.ttf";
+  fontFileBold = "Envy Code R Bold.ttf";
+  return true;
+}
+#else
 bool getFont(FcFontSet *fs, const char *familyName, int fontWeight, String &name) {
   bool result = false;
   for (int i=0; fs && i < fs->nfont; i++) {
@@ -117,6 +137,7 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
   }
   return result;
 }
+#endif
 
 void showHelp() {
   fprintf(stdout,
@@ -132,6 +153,20 @@ void showHelp() {
     i++;
   }
   fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
+}
+
+void loadIcon(SDL_Window *window) {
+  unsigned w, h;
+  unsigned char *image;
+  unsigned error = lodepng_decode32(&image, &w, &h, ic_launcher_png, ic_launcher_png_len);
+  if (!error) {
+    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(image, w, h, 32, w * 4,
+                                                 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+    SDL_SetWindowIcon(window, icon);
+    SDL_FreeSurface(icon);
+  } else {
+    fprintf(stderr, "Failed to decode icon image\n");
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -200,7 +235,7 @@ int main(int argc, char* argv[]) {
 
   restoreSettings(CONFIG_NAME, rect, fontScale);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-  SDL_Window *window = SDL_CreateWindow("SmallBASIC - [Break=Ctrl+c] [Menu=Ctrl+m] [Back=Ctrl+b]", 
+  SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
                                         SDL_WINDOW_SHOWN | 
                                         SDL_WINDOW_RESIZABLE |
@@ -209,6 +244,7 @@ int main(int argc, char* argv[]) {
   if (window != NULL) {
     String font, fontBold;
     if (getFontFiles(fontFamily, font, fontBold)) {
+      loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
       fontScale = runtime->runShell(runFile, fontScale);

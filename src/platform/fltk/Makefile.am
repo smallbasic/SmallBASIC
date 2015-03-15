@@ -10,31 +10,34 @@ AM_CPPFLAGS =                                                 \
   -DPACKAGE_PREFIX=\""$(prefix)"\"                            \
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"                      \
   -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"  \
-  @FLTK_CXXFLAGS@
+  @PACKAGE_CFLAGS@ @FLTK_CXXFLAGS@
 
-EXTRA_DIST =                                  \
-  README.TXT                                  \
-  sbfltk.rc                                   \
-  sbasic.nsi                                  \
-  build_kwp.cxx                               \
+EXTRA_DIST =                      \
+  README.TXT                      \
+  sbfltk.rc                       \
+  sbasic.nsi                      \
+  build_kwp.cxx                   \
   $(desktopentry_DATA)
 
 bin_PROGRAMS = sbasici
 
-sbasici_SOURCES =                             \
-  ../../ui/ansiwidget.cpp                     \
-  ../../ui/screen.cpp                         \
-  ../../ui/form_ui.cpp                        \
-  ../../ui/StringLib.cpp                      \
-  display.cxx display.h                       \
-  HelpWidget.cxx HelpWidget.h                 \
-  TtyWidget.cxx TtyWidget.h                   \
-  MainWindow.cxx MainWindow.h                 \
-  BasicEditor.cxx BasicEditor.h               \
-  EditorWidget.cxx EditorWidget.h             \
-  FileWidget.cxx FileWidget.h                 \
-  Profile.cxx Profile.h                       \
-  dev_fltk.cxx audio.cxx                      \
+sbasici_SOURCES =                 \
+  ../../ui/ansiwidget.cpp         \
+  ../../ui/window.cpp             \
+  ../../ui/screen.cpp             \
+  ../../ui/form.cpp               \
+  ../../ui/inputs.cpp             \
+  ../../ui/image.cpp              \
+  ../../ui/strlib.cpp             \
+  display.cxx display.h           \
+  HelpWidget.cxx HelpWidget.h     \
+  TtyWidget.cxx TtyWidget.h       \
+  MainWindow.cxx MainWindow.h     \
+  BasicEditor.cxx BasicEditor.h   \
+  EditorWidget.cxx EditorWidget.h \
+  FileWidget.cxx FileWidget.h     \
+  Profile.cxx Profile.h           \
+  dev_fltk.cxx audio.cxx          \
   utils.cxx utils.h
 
 sbasici_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@

@@ -4,27 +4,22 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
 
 1. Setup .bashrc:
 
-export PATH=$PATH:~/android-sdk/adt-bundle-linux-x86_64-20131030/sdk/platform-tools
-export ANDROID_SDK_ROOT=~/android-sdk/adt-bundle-linux-x86_64-20140321/sdk
+export PATH=$PATH:~/android-sdk/depot_tools:~/android-sdk/android-sdk-linux/platform-tools/
+export ANDROID_SDK_ROOT=~/android-sdk/android-sdk-linux
 export TARGET_DEVICE=arm
 export PLATFORM_PREFIX=~/android-sdk/android-ext/
 export PATH=${PLATFORM_PREFIX}/bin:${PATH}
-export NDK=~/android-sdk/android-ndk-r9d
-export NDK_PLATFORM=android-9
+export NDK=~/android-sdk/android-ndk-r10d
+export NDK_PLATFORM=android-19
 export ANDROID_LOG_TAGS="DEBUG:I smallbasic:I AndroidRuntime:E *:S"
 
-2. Build PNG + FreeType:
+2. Build FreeType:
 
 First, prepare the cross-compiler from the NDK:
   $NDK_PATH/build/tools/make-standalone-toolchain.sh \
-      --platform=$NDK_PLATFORM --install-dir=$PLATFORM_PREFIX
+      --platform=$NDK_PLATFORM --install-dir=$PLATFORM_PREFIX --arch=arm
 
 Then use it to cross-compile the tools:
-  cd libpng-1.6.12/
-  CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/png
-  make
-  make install DESTDIR=$(pwd)
-
   cd freetype-2.5.3/
   CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/freetype --without-zlib --without-png --without-harfbuzz
   make
@@ -180,9 +175,13 @@ RANLIB		= /cygdrive/c/cygwin/bin/ranlib
 
 == Building the SDL version
 
-Optionally install guichan - see http://guichan.sourceforge.net/wiki/index.php
-
  $ ./configure --enable-sdl
+ $ make
+
+ On windows, install tools:
+ http://www.gtk.org/download/win32.php
+
+ $ ./configure --host=i686-w64-mingw32 --enable-sdl
  $ make
 
 == Building the non-graphical console version (cygwin or linux)

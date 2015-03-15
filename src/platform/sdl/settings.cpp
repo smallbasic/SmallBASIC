@@ -13,14 +13,18 @@
 #include <ctype.h>
 #include <sys/stat.h>
 
-#include "settings.h"
+#include "platform/sdl/settings.h"
 #include "ui/utils.h"
+#include "common/smbas.h"
 
 static const char *ENV_VARS[] = {
   "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
 };
 
-#define PATH_MAX 256
+#if !defined(PATH_MAX)
+  #define PATH_MAX 256
+#endif
+
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 #define DEFAULT_SCALE 100
@@ -82,6 +86,7 @@ void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale) {
     rect.w = nextInteger(fp, DEFAULT_WIDTH);
     rect.h = nextInteger(fp, DEFAULT_HEIGHT);
     fontScale = nextInteger(fp, DEFAULT_SCALE);
+    opt_mute_audio = nextInteger(fp, 0);
     fclose(fp);
   } else {
     rect.x = SDL_WINDOWPOS_UNDEFINED;
@@ -101,7 +106,8 @@ void saveSettings(const char *configName, SDL_Window *window, int fontScale) {
     int x, y, w, h;
     SDL_GetWindowPosition(window, &x, &y);
     SDL_GetWindowSize(window, &w, &h);
-    fprintf(fp, "%d,%d,%d,%d,%d\n", x, y, w, h, fontScale);
+    fprintf(fp, "%d,%d,%d,%d,%d,%d\n", x, y, w, h, fontScale, opt_mute_audio);
+    fclose(fp);
   }
 }
 

@@ -19,7 +19,7 @@ char *trimdup(const char *str) {
   char *buf;
   char *p;
 
-  buf = tmp_alloc(strlen(str) + 1);
+  buf = malloc(strlen(str) + 1);
   strcpy(buf, str);
 
   if (*str == '\0') {
@@ -67,7 +67,7 @@ void str_alltrim(char *str) {
   if (str && has_wspace(str)) {
     buf = trimdup(str);
     strcpy(str, buf);
-    tmp_free(buf);
+    free(buf);
   }
 }
 
@@ -163,7 +163,7 @@ char *transdup(const char *src, const char *what, const char *with) {
   lwith = strlen(with);
 
   size = 256;
-  dest = tmp_alloc(size);
+  dest = malloc(size);
   d = dest;
   *d = '\0';
 
@@ -172,7 +172,7 @@ char *transdup(const char *src, const char *what, const char *with) {
       if ((d - dest) + lwith >= size - 1) {
         len = d - dest;
         size += 256;
-        dest = tmp_realloc(dest, size);
+        dest = realloc(dest, size);
         d = dest + len;
       }
 
@@ -183,7 +183,7 @@ char *transdup(const char *src, const char *what, const char *with) {
       if ((d - dest) + 1 >= size - 1) {
         len = d - dest;
         size += 256;
-        dest = tmp_realloc(dest, size);
+        dest = realloc(dest, size);
         d = dest + len;
       }
 
@@ -902,7 +902,7 @@ char *sqzdup(const char *source) {
   char *rp, *p, *d;
   int lc = 0;
 
-  rp = tmp_alloc(strlen(source) + 1);
+  rp = malloc(strlen(source) + 1);
   p = (char *) source;
   d = rp;
 
@@ -952,7 +952,7 @@ char *encldup(const char *source, const char *pairs) {
   int l;
 
   l = strlen(source);
-  rp = tmp_alloc(l + 3);
+  rp = malloc(l + 3);
   memcpy(rp + 1, source, l);
   *(rp) = pairs[0];
   if (pairs[1])
@@ -973,7 +973,7 @@ char *discldup(const char *source, const char *pairs, const char *ignpairs) {
   int wait_q = 0, open_q = 0, level_q = 0;
   int record = 0;
 
-  rp = tmp_strdup(source);
+  rp = strdup(source);
   r = rp;
 
   p = (char *) source;
@@ -1038,8 +1038,8 @@ char *discldup(const char *source, const char *pairs, const char *ignpairs) {
   }
 
   *r = '\0';
-  np = tmp_strdup(rp);          // actually, resize down
-  tmp_free(rp);
+  np = strdup(rp);          // actually, resize down
+  free(rp);
 
   return np;
 }
@@ -1050,7 +1050,7 @@ char *discldup(const char *source, const char *pairs, const char *ignpairs) {
 char *cstrdup(const char *source) {
   char *buf, *p, *d;
 
-  buf = tmp_alloc(strlen(source) + 1);
+  buf = malloc(strlen(source) + 1);
   p = (char *) source;
   d = buf;
   while (*p) {
@@ -1150,7 +1150,7 @@ char *cstrdup(const char *source) {
 char *bstrdup(const char *source) {
   char *buf, *p, *d;
 
-  buf = tmp_alloc(strlen(source) * 4 + 1);
+  buf = malloc(strlen(source) * 4 + 1);
   p = (char *) source;
   d = buf;
   while (*p) {

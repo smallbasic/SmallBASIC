@@ -8,10 +8,8 @@
 
 #include "config.h"
 #include <time.h>
-#include "ui/form_ui.h"
 #include "ui/utils.h"
 #include "platform/sdl/display.h"
-#include "common/device.h"
 
 extern common::Graphics *graphics;
 
@@ -38,8 +36,12 @@ bool Canvas::create(int w, int h) {
   _h = h;
   int bpp;
   Uint32 rmask, gmask, bmask, amask;
-  SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGB565, 
-                             &bpp, &rmask, &gmask, &bmask, &amask);
+#if defined(PIXELFORMAT_RGB565)
+  Uint32 format = SDL_PIXELFORMAT_RGB565;
+#else
+  Uint32 format = SDL_PIXELFORMAT_RGB888;
+#endif
+  SDL_PixelFormatEnumToMasks(format, &bpp, &rmask, &gmask, &bmask, &amask);
   _canvas = SDL_CreateRGBSurface(0, w, h, bpp, rmask, gmask, bmask, amask);
   return _canvas != NULL;
 }
@@ -109,10 +111,13 @@ void Graphics::redraw() {
 }
 
 void Graphics::resize() {
+  logEntered();
+  bool drawScreen = (_drawTarget == _screen);
   delete _screen;
   _screen = new ::Canvas();
   _screen->create(getWidth(), getHeight());
-  _drawTarget = NULL;
+  _drawTarget = drawScreen ? _screen : NULL;
+  _surface = SDL_GetWindowSurface(_window);
 }
 
 bool Graphics::loadFonts(const char *font, const char *boldFont) {
@@ -134,4 +139,6 @@ void maUpdateScreen(void) {
   ((::Graphics *)graphics)->redraw();
 }
 
-
+int maShowVirtualKeyboard(void) {
+  return 0;
+}

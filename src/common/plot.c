@@ -178,8 +178,8 @@ void cmd_plot() {
   }
   xstep = dx / (var_num_t) count;
 
-  yt = (var_num_t*) tmp_alloc(sizeof(var_num_t) * count);
-  xt = (var_num_t*) tmp_alloc(sizeof(var_num_t) * count);
+  yt = (var_num_t*) malloc(sizeof(var_num_t) * count);
+  xt = (var_num_t*) malloc(sizeof(var_num_t) * count);
 
   // execute user's expression for each element
   // get y values
@@ -207,7 +207,7 @@ void cmd_plot() {
 //              dev_setpixel(i, (yt[i] - ymin) * ystep);
   }
 
-  tmp_free(xt);
-  tmp_free(yt);
+  free(xt);
+  free(yt);
   dev_settextcolor(prev_fgcolor, prev_bgcolor);
 }

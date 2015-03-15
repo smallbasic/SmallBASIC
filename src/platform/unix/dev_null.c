@@ -10,19 +10,14 @@
 #include "common/device.h"
 #include "common/osd.h"
 #include "common/str.h"
-#include "common/dev_term.h"
 
 // initialize driver
 int osd_devinit() {
   os_color_depth = 1;           // bits per pixel = monochrome
   os_graf_mx = 80;              // screen width in "pixels" (characters =
-  // os_graf_mx / textwidth("Q"))
   os_graf_my = 25;              // screen height in "pixels" (characters =
-  // os_graf_my / textheight("Q"))
-
-  setsysvar_str(SYSVAR_OSNAME, "ANY/NULL");
+  setsysvar_str(SYSVAR_OSNAME, "CONSOLE");
   osd_cls();
-
   return 1;
 }
 
@@ -71,7 +66,7 @@ void osd_write(const char *str) {
   int len = strlen(str);
   if (len) {
     int i, index = 0, escape = 0;
-    char *buffer = (char *)malloc(len);
+    char *buffer = (char *)malloc(len + 1);
     for (i = 0; i < len; i++) {
       if (i + 1 < len && str[i] == '\033' && str[i + 1] == '[') {
         escape = 1;
@@ -91,10 +86,7 @@ void osd_write(const char *str) {
 
 // events loop (called from main, every 50ms)
 int osd_events(int wait_flag) {
-  int evc = 0;
-
-  evc = term_events();          // keyboard events
-  return evc;
+  return 0;
 }
 
 // sets foreground color

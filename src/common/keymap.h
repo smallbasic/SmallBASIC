@@ -19,11 +19,12 @@ extern "C" {
 #define PCKBSIZE 256
 
 // Keyboard codes
-#define SB_KEY_BACKSPACE  127
-#define SB_KEY_DELETE     8 
-#define SB_KEY_BREAK      0x3     // Ctrl+C
+#define SB_KEY_BACKSPACE  8
+#define SB_KEY_DELETE     127 
+#define SB_KEY_BREAK      3
 #define SB_KEY_TAB        9
-#define SB_KEY_ENTER      '\n'
+#define SB_KEY_ENTER      13
+#define SB_KEY_SPACE      32
 
 // first 16 - common with handhelds any extra key will be there
 #define SB_KEY_PGUP     0xFF01
@@ -49,8 +50,9 @@ extern "C" {
 #define SB_KEY_SF(x)    (0xFFE0+(x))
 
 // Control & Alt keys (parameter = capital character)
-#define SB_KEY_CTRL(x)    ((x)-'@')
-#define SB_KEY_ALT(x)     (0xFF20+(((x)>='a') ? (x)-57 : (x)-31))
+#define SB_KEY_CTRL(c)     (0xF100 + (c))
+#define SB_KEY_ALT(c)      (0xF200 + (c))
+#define SB_KEY_CTRL_ALT(c) (0xF400 + (c))
 
 // keypad
 #define SB_KEY_KP_DIV     0xFFDA
@@ -58,30 +60,23 @@ extern "C" {
 #define SB_KEY_KP_MINUS   0xFFDC
 #define SB_KEY_KP_PLUS    0xFFDD
 #define SB_KEY_KP_ENTER   0xFFDE
-
 #define SB_KEY_KP_HOME    0xFFD7
 #define SB_KEY_KP_UP      0xFFD8
 #define SB_KEY_KP_PGUP    0xFFD9
-
 #define SB_KEY_KP_LEFT    0xFFD4
 #define SB_KEY_KP_CENTER  0xFFD5
 #define SB_KEY_KP_RIGHT   0xFFD6
-
 #define SB_KEY_KP_END     0xFFD1
 #define SB_KEY_KP_DOWN    0xFFD2
 #define SB_KEY_KP_PGDN    0xFFD3
-
 #define SB_KEY_KP_INS     0xFFD0
 #define SB_KEY_KP_DEL     0xFFDF
-
 #define SB_KEY_MK_PUSH    0xFFC0
 #define SB_KEY_MK_DRAG    0xFFC1
 #define SB_KEY_MK_MOVE    0xFFC2
 #define SB_KEY_MK_RELEASE 0xFFC3
 #define SB_KEY_MK_WHEEL   0xFFC4
-
 #define SB_PKEY_SIZE_CHG  0xFFC5
-
 #define SB_KEY_MK_FIRST   SB_KEY_MK_PUSH
 #define SB_KEY_MK_LAST    SB_PKEY_SIZE_CHG
 
@@ -91,6 +86,10 @@ void keymap_add(int key, addr_t ip);
 int keymap_invoke(word key);
 int keymap_kbhit();
 int keymap_kbpeek();
+
+void timer_free(timer_s *timer);
+void timer_add(var_num_t timer, addr_t ip);
+void timer_run(dword now);
 
 #if defined(__cplusplus)
 }
