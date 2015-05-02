@@ -488,7 +488,7 @@ void cmd_run(int retf) {
  */
 void cmd_options(void) {
   byte c;
-  addr_t data;
+  bcip_t data;
 
   c = code_getnext();
   data = code_getaddr();
@@ -711,8 +711,8 @@ static inline void bc_loop_call_proc() {
 }
 
 static inline void bc_loop_call_extp() {
-  addr_t lib = code_getaddr();
-  addr_t idx = code_getaddr();
+  bcip_t lib = code_getaddr();
+  bcip_t idx = code_getaddr();
   if (lib & UID_UNIT_BIT) {
     unit_exec(lib & (~UID_UNIT_BIT), idx, NULL);
     if (gsb_last_error) {
@@ -749,7 +749,7 @@ static inline void bc_loop_end() {
  */
 void bc_loop(int isf) {
   byte pops;
-  addr_t next_ip;
+  bcip_t next_ip;
   int i;
   int proc_level = 0;
   byte trace_flag = 0;
@@ -1720,7 +1720,9 @@ void sbasic_set_bas_dir(const char *bas_file) {
   } else {
     // in current dir
     strcat(gsb_bas_dir, cwd);
-    strcat(gsb_bas_dir, "/");
+    if (!(cwd[0] == '/' && cwd[1] == '\0')) {
+      strcat(gsb_bas_dir, "/");
+    }
   }
 }
 

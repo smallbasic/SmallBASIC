@@ -85,7 +85,7 @@ int mat_lu(var_num_t **A, var_num_t **P, int n) {
      * --- partial pivoting ---
      */
     for (i = k, maxi = k, c = 0.0; i < n; i++) {
-      c1 = fabs(A[(int) P[i][0]][k]);
+      c1 = fabsl(A[(int) P[i][0]][k]);
       if (c1 > c) {
         c = c1;
         maxi = i;

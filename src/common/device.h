@@ -54,7 +54,7 @@ typedef struct {
  * point of integers
  */
 typedef struct {
-  int32 x, y;
+  int32_t x, y;
 } ipt_t;
 
 /**
@@ -104,10 +104,10 @@ void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
  * byte  os_graphics;  // Non-zero if the driver supports graphics
  * int   os_graf_mx;   // Graphic mode: screen width
  * int   os_graf_my;   // Graphic mode: screen height
- * int32 dev_Vx1, dev_Vy1, dev_Vx2, dev_Vy2;
- * int32 dev_Vdx, dev_Vdy; // Graphics - viewport
- * int32 dev_Wx1, dev_Wy1, dev_Wx2, dev_Wy2;
- * int32 dev_Wdx, dev_Wdy; // Graphics - window world coordinates
+ * int32_t dev_Vx1, dev_Vy1, dev_Vx2, dev_Vy2;
+ * int32_t dev_Vdx, dev_Vdy; // Graphics - viewport
+ * int32_t dev_Wx1, dev_Wy1, dev_Wx2, dev_Wy2;
+ * int32_t dev_Wdx, dev_Wdy; // Graphics - window world coordinates
  * long  dev_fgcolor, dev_bgcolor; // Graphics - current colors
  * @endcode
  */
@@ -135,22 +135,22 @@ extern int os_graf_mx;        // graphic mode: maximum x
 extern int os_graf_my;        // graphic mode: maximum y
 
 // graphics - viewport
-extern int32 dev_Vx1;
-extern int32 dev_Vy1;
-extern int32 dev_Vx2;
-extern int32 dev_Vy2;
+extern int32_t dev_Vx1;
+extern int32_t dev_Vy1;
+extern int32_t dev_Vx2;
+extern int32_t dev_Vy2;
 
-extern int32 dev_Vdx;
-extern int32 dev_Vdy;
+extern int32_t dev_Vdx;
+extern int32_t dev_Vdy;
 
 // graphics - window world coordinates
-extern int32 dev_Wx1;
-extern int32 dev_Wy1;
-extern int32 dev_Wx2;
-extern int32 dev_Wy2;
+extern int32_t dev_Wx1;
+extern int32_t dev_Wy1;
+extern int32_t dev_Wx2;
+extern int32_t dev_Wy2;
 
-extern int32 dev_Wdx;
-extern int32 dev_Wdy;
+extern int32_t dev_Wdx;
+extern int32_t dev_Wdy;
 
 // graphics - current colors
 extern long dev_fgcolor;

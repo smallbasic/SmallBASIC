@@ -31,10 +31,10 @@ inline pixel_t RGB888_to_RGB565(unsigned rgb) {
           (((rgb >>  3) & 0x1f)));
 }
 
-inline void RGBA8888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
-  r = (c & 0xff0000) >> 16;
+inline void BGR888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
+  b = (c & 0xff0000) >> 16;
   g = (c & 0xff00) >> 8;
-  b = (c & 0xff);
+  r = (c & 0xff);
 }
 
 inline void RGB888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
@@ -56,11 +56,13 @@ inline pixel_t RGB888_to_RGBA8888(unsigned c) {
   #define GET_FROM_RGB888 RGB888_to_RGB565
 #elif defined(PIXELFORMAT_RGBA8888)
   #define SET_RGB(r, g, b) ((0xff000000) | (r << 16) | (g << 8) | (b))
-  #define GET_RGB RGBA8888_to_RGB
+  #define GET_RGB RGB888_to_RGB
+  #define GET_RGB2 BGR888_to_RGB
   #define GET_FROM_RGB888 RGB888_to_RGBA8888
 #else
   #define SET_RGB(r, g, b) ((r << 16) | (g << 8) | (b))
   #define GET_RGB RGB888_to_RGB
+  #define GET_RGB2 RGB888_to_RGB
   #define GET_FROM_RGB888(c) (c)
 #endif
 
@@ -376,13 +378,38 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
   }
 }
 
+void Graphics::getImageData(Canvas *canvas, uint8_t *image,
+                            const MARect *srcRect, int bytesPerLine) {
+  size_t scale = 1;
+  int w = bytesPerLine;
+  if (canvas == HANDLE_SCREEN) {
+    canvas = _screen;
+  }
+  for (int dy = 0, y = srcRect->top; y < srcRect->height; y += scale, dy++) {
+    if (y >= canvas->y() && y <  canvas->h()) {
+      pixel_t *line = canvas->getLine(y);
+      for (int dx = 0, x = srcRect->left; x < srcRect->width; x += scale, dx++) {
+        if (x >= canvas->x() && x < canvas->w()) {
+          uint8_t r,g,b;
+          GET_RGB2(line[x], r, g, b);
+          int offs = (4 * dy * w) + (4 * dx);
+          image[offs + 0] = r;
+          image[offs + 1] = g;
+          image[offs + 2] = b;
+          image[offs + 3] = 255;
+        }
+      }
+    }
+  }
+}
+
 int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
   int result = 0;
   if (canvas
       && posX > -1
       && posY > -1
-      && posX < _drawTarget->_w
-      && posY < _drawTarget->_h - 1) {
+      && posX < canvas->_w
+      && posY < canvas->_h - 1) {
     pixel_t *line = canvas->getLine(posY);
     result = line[posX];
   }
@@ -588,10 +615,14 @@ void maDestroyPlaceholder(MAHandle maHandle) {
   delete holder;
 }
 
-void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int scanlength) {
+void maGetImageData(MAHandle maHandle, void *dst,
+                    const MARect *srcRect, int bytesPerLine) {
   Canvas *holder = (Canvas *)maHandle;
-  // maGetImageData is only used for getPixel()
-  *((int *)dst) = graphics->getPixel(holder, srcRect->left, srcRect->top);
+  if (srcRect->width == 1 && srcRect->height == 1) {
+    *((int *)dst) = graphics->getPixel(holder, srcRect->left, srcRect->top);
+  } else {
+    graphics->getImageData(holder, (uint8_t *)dst, srcRect, bytesPerLine);
+  }
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {

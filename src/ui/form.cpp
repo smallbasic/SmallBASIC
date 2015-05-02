@@ -56,7 +56,7 @@ void FormInput::setFocus() {
 void FormInput::clicked(int x, int y, bool pressed) {
   if (!pressed && g_system->isRunning()) {
     if (_onclick) {
-      addr_t ip = prog_ip;
+      bcip_t ip = prog_ip;
       prog_ip = _onclick;
       cmd_push_args(kwPROC, prog_ip, INVALID_ADDR);
       bc_loop(2);

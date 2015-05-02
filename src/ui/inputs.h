@@ -142,7 +142,7 @@ protected:
   bool _noFocus;
   int _bg;
   int _fg;
-  addr_t _onclick;
+  bcip_t _onclick;
 };
 
 struct FormButton : public FormInput {

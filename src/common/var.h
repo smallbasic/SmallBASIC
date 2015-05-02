@@ -91,14 +91,14 @@ struct var_s {
 
     // pointer to sub/func variable
     struct {
-      addr_t p; /** address pointer */
-      addr_t v; /** return-var ID */
+      bcip_t p; /** address pointer */
+      bcip_t v; /** return-var ID */
     } ap;
 
     // associative array/map
     struct {
       void *map; /** pointer the map structure */
-      int32 size;
+      int32_t size;
     } m;
 
     // reference variable
@@ -113,16 +113,16 @@ struct var_s {
     // generic ptr (string)
     struct {
       char *ptr; /**< data ptr (possibly, string pointer) */
-      int32 size; /**< the size of string */
-      int32 pos; /**< position in string (used by pv_* functions) */
+      int32_t size; /**< the size of string */
+      int32_t pos; /**< position in string (used by pv_* functions) */
     } p;
 
     // array
     struct {
       byte *ptr; /**< array data ptr (sizeof(var_t) * size) */
-      int32 size; /**< the number of elements */
-      int32 lbound[MAXDIM]; /**< lower bound */
-      int32 ubound[MAXDIM]; /**< upper bound */
+      int32_t size; /**< the number of elements */
+      int32_t lbound[MAXDIM]; /**< lower bound */
+      int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */
     } a;
   } v;
@@ -135,7 +135,7 @@ typedef var_t *var_p_t;
  * label
  */
 struct lab_s {
-  addr_t ip;
+  bcip_t ip;
 };
 typedef struct lab_s lab_t;
 
@@ -147,7 +147,7 @@ typedef struct lab_s lab_t;
  */
 struct stknode_s {
   code_t type; /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
-  addr_t exit_ip; /**< EXIT command IP to go */
+  bcip_t exit_ip; /**< EXIT command IP to go */
   int line; /** line number of current execution **/
 
   union {
@@ -158,9 +158,9 @@ struct stknode_s {
       code_t subtype; /**< kwTO | kwIN */
       var_t *var_ptr; /**< 'FOR' variable */
       var_t *arr_ptr; /**< FOR-IN array-variable */
-      addr_t to_expr_ip; /**< IP of 'TO' expression */
-      addr_t step_expr_ip; /**< IP of 'STEP' expression (FOR-IN = current element) */
-      addr_t jump_ip; /**< code block IP */
+      bcip_t to_expr_ip; /**< IP of 'TO' expression */
+      bcip_t step_expr_ip; /**< IP of 'STEP' expression (FOR-IN = current element) */
+      bcip_t jump_ip; /**< code block IP */
       byte flags; /**< ... */
     } vfor;
 
@@ -168,7 +168,7 @@ struct stknode_s {
      *  IF/ELIF
      */
     struct {
-      addr_t lcond; /**< result of the last condition */
+      bcip_t lcond; /**< result of the last condition */
     } vif;
 
     /**
@@ -183,14 +183,14 @@ struct stknode_s {
      *  GOSUB
      */
     struct {
-      addr_t ret_ip; /**< return ip */
+      bcip_t ret_ip; /**< return ip */
     } vgosub;
 
     /**
      *  CALL UDP/F
      */
     struct {
-      addr_t ret_ip; /**< return ip */
+      bcip_t ret_ip; /**< return ip */
       word pcount; /**< number of parameters */
       bid_t rvid; /**< return-variable ID */
       var_t *retvar; /**< return-variable data */
@@ -349,7 +349,7 @@ void v_tostr(var_t *arg);
  *
  * copies data from one user defined structure to another
  */
-void v_set_uds(addr_t dst_ip, addr_t src_ip);
+void v_set_uds(bcip_t dst_ip, bcip_t src_ip);
 
 /**
  * @ingroup var
@@ -358,12 +358,12 @@ void v_set_uds(addr_t dst_ip, addr_t src_ip);
  * replaced variables onto the stack for later clean
  *
  */
-void v_clone_uds(addr_t dst_ip, addr_t src_ip);
+void v_clone_uds(bcip_t dst_ip, bcip_t src_ip);
 
 /*
  * returns the starting address for the uds of the given id
  */
-addr_t v_get_uds_ip(addr_t var_id);
+bcip_t v_get_uds_ip(bcip_t var_id);
 
 /**
  * @ingroup var
@@ -563,7 +563,7 @@ void v_setint(var_t *var, var_int_t integer);
  * @param itable is the table of integers
  * @param count the number of the elements
  */
-void v_setintarray(var_t *var, int32 *itable, int count);
+void v_setintarray(var_t *var, int32_t *itable, int count);
 
 /**
  * @ingroup var
@@ -737,7 +737,7 @@ stknode_t *code_stackpeek();
 #define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1])
 #define code_peeknext16()   ((prog_source[prog_ip]<<8)|prog_source[prog_ip+1])
 #define code_peek16(o)      ((prog_source[(o)]<<8)|prog_source[(o)+1])
-#define code_peek32(o)      (((addr_t)code_peek16((o)) << 16) + (addr_t)code_peek16((o)+2))
+#define code_peek32(o)      (((bcip_t)code_peek16((o)) << 16) + (bcip_t)code_peek16((o)+2))
 #else
 #define code_getnext16()    (*((word *)(prog_source+(prog_ip+=2)-2)))
 #define code_peeknext16()   (*((word *)(prog_source+prog_ip)))
@@ -817,9 +817,9 @@ void setsysvar_str(int index, const char *value);
 /*
  * in eval.c
  */
-var_num_t *mat_toc(var_t *v, int32 *rows, int32 *cols);
+var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols);
 
-void mat_tov(var_t *v, var_num_t *m, int32 rows, int32 cols,
+void mat_tov(var_t *v, var_num_t *m, int32_t rows, int32_t cols,
              int protect_col1);
 
 #if defined(__cplusplus)

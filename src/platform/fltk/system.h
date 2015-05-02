@@ -16,6 +16,7 @@ struct System {
   void setLoadBreak(const char *url);
   MAEvent processEvents(bool wait);
   void optionsBox(StringList *items);
+  void systemPrint(const char *message, ...);
   AnsiWidget *getOutput();
 };
 

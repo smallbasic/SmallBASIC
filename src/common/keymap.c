@@ -26,7 +26,7 @@ typedef struct key_map_s key_map_s;
  */
 struct key_map_s {
   key_map_s *next; // next structure element
-  addr_t ip;       // handler location
+  bcip_t ip;       // handler location
   int key;         // key definition
 };
 
@@ -60,7 +60,7 @@ void keymap_free() {
 /**
  * DEFINEKEY command handler to add a keymap 
  */
-void keymap_add(int key, addr_t ip) {
+void keymap_add(int key, bcip_t ip) {
   key_map_s* km = (key_map_s*) malloc(sizeof (key_map_s));
   km->next = 0;
   km->ip = ip;
@@ -86,7 +86,7 @@ int keymap_invoke(word key) {
   key_map_s* head = keymap;
   while (head) {
     if (head->key == key) {
-      addr_t ip = prog_ip; // store current ip
+      bcip_t ip = prog_ip; // store current ip
       prog_ip = head->ip;  // jump to keymap ip
       bc_loop(1);          // invoke the keymap code
       prog_ip = ip;        // restore the current ip
@@ -176,7 +176,7 @@ void timer_free(timer_s *timer) {
   }
 }
 
-void timer_add(var_num_t interval, addr_t ip) {
+void timer_add(var_num_t interval, bcip_t ip) {
   timer_s* timer = (timer_s*) malloc(sizeof (timer_s));
   timer->next = NULL;
   timer->ip = ip;
@@ -205,7 +205,7 @@ void timer_run(dword now) {
     } else if (now > timer->value && !timer->active) {
       // timer expired
       timer->active = 1;
-      addr_t ip = prog_ip;
+      bcip_t ip = prog_ip;
       prog_ip = timer->ip;
       bc_loop(1);
       prog_ip = ip;

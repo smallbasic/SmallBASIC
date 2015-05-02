@@ -25,9 +25,9 @@
  */
 typedef struct {
   code_t *ptr; /**< pointer to byte-code */
-  addr_t cp; /**< current position (used by readers not writers) */
-  addr_t size; /**< allocation size (optimization) */
-  addr_t count; /**< current size (used by writers as the current position) */
+  bcip_t cp; /**< current position (used by readers not writers) */
+  bcip_t size; /**< allocation size (optimization) */
+  bcip_t count; /**< current size (used by writers as the current position) */
 } bc_t;
 
 /**
@@ -86,7 +86,7 @@ void bc_add1(bc_t *bc, byte code);
  * @param bc the bc structure
  * @param code the byte
  */
-void bc_store1(bc_t *bc, addr_t offset, byte code);
+void bc_store1(bc_t *bc, bcip_t offset, byte code);
 
 /**
  * @ingroup scan
@@ -223,7 +223,7 @@ void bc_add_extpcode(bc_t *dest, int lib, long idx);
  * @param bc the bc segment
  * @param idx the address
  */
-void bc_add_addr(bc_t *bc, addr_t idx);
+void bc_add_addr(bc_t *bc, bcip_t idx);
 
 /**
  * @ingroup scan
@@ -235,7 +235,7 @@ void bc_add_addr(bc_t *bc, addr_t idx);
  * @param true_ip the jump-address when on true
  * @param false_ip the jump-address when on false
  */
-void bc_add_ctrl(bc_t *bc, code_t code, addr_t true_ip, addr_t false_ip);
+void bc_add_ctrl(bc_t *bc, code_t code, bcip_t true_ip, bcip_t false_ip);
 
 /**
  * @ingroup scan

@@ -18,12 +18,12 @@
 /**
  * Convertion multi-dim index to one-dim index
  */
-addr_t getarrayidx(var_t *array, var_t **var_map_val) {
-  addr_t idx = 0;
-  addr_t lev = 0;
-  addr_t m = 0;
+bcip_t getarrayidx(var_t *array, var_t **var_map_val) {
+  bcip_t idx = 0;
+  bcip_t lev = 0;
+  bcip_t m = 0;
   var_t var;
-  addr_t i;
+  bcip_t i;
 
   do {
     v_init(&var);
@@ -42,7 +42,7 @@ addr_t getarrayidx(var_t *array, var_t **var_map_val) {
       v_free(&var);
       return 0;
     } else {
-      addr_t idim = v_getint(&var);
+      bcip_t idim = v_getint(&var);
       v_free(&var);
       IF_ERR_RETURN_0;
 
@@ -79,7 +79,7 @@ addr_t getarrayidx(var_t *array, var_t **var_map_val) {
  * Used by code_getvarptr() to retrieve an element ptr of an array
  */
 var_t *code_getvarptr_arridx(var_t *basevar_p) {
-  addr_t array_index;
+  bcip_t array_index;
   var_t *var_p = NULL;
 
   if (code_peek() != kwTYPE_LEVEL_BEGIN) {
@@ -148,7 +148,7 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
  * Used by code_isvar() to retrieve an element ptr of an array
  */
 var_t *code_isvar_arridx(var_t *basevar_p) {
-  addr_t array_index;
+  bcip_t array_index;
   var_t *var_p = NULL;
 
   if (code_peek() != kwTYPE_LEVEL_BEGIN) {
@@ -197,7 +197,7 @@ int code_isvar() {
   var_t *var_p = NULL;
 
   // store IP
-  addr_t cur_ip = prog_ip;
+  bcip_t cur_ip = prog_ip;
 
   if (code_peek() == kwTYPE_VAR) {
     code_skipnext();

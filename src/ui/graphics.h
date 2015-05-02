@@ -50,6 +50,8 @@ struct Graphics {
   void drawRGB(const MAPoint2d *dstPoint, const void *src,
                const MARect *srcRect, int opacity, int bytesPerLine);
   void drawText(int left, int top, const char *str, int len);
+  void getImageData(Canvas *canvas, uint8_t *image, 
+                    const MARect *srcRect, int bytesPerLine);
   int  getPixel(Canvas *canvas, int x, int y);
   MAExtent getTextSize(const char *str, int len);
   int getHeight() { return _h; }

@@ -21,7 +21,7 @@
 
 char *comp_array_uds_field(char *p, bc_t *bc);
 void comp_text_line(char *text);
-addr_t comp_search_bc(addr_t ip, code_t code);
+bcip_t comp_search_bc(bcip_t ip, code_t code);
 extern void expr_parser(bc_t *bc);
 extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 
@@ -442,7 +442,7 @@ bid_t comp_add_udp(const char *proc_name) {
 /*
  * sets the IP of the user-defined-procedure (or function)
  */
-bid_t comp_udp_setip(const char *proc_name, addr_t ip) {
+bid_t comp_udp_setip(const char *proc_name, bcip_t ip) {
   bid_t idx;
   char *name = comp_bc_temp;
 
@@ -460,7 +460,7 @@ bid_t comp_udp_setip(const char *proc_name, addr_t ip) {
 /*
  * Returns the IP of an UDP/UDF
  */
-addr_t comp_udp_getip(const char *proc_name) {
+bcip_t comp_udp_getip(const char *proc_name) {
   bid_t idx;
   char *name = comp_bc_temp;
 
@@ -765,7 +765,7 @@ void comp_add_variable(bc_t *bc, const char *var_name) {
 /*
  * adds a mark in stack at the current code position
  */
-void comp_push(addr_t ip) {
+void comp_push(bcip_t ip) {
   comp_pass_node_t *node = (comp_pass_node_t *)malloc(sizeof(comp_pass_node_t));
   memset(node, 0, sizeof(comp_pass_node_t));
 
@@ -1037,7 +1037,7 @@ void comp_expression(char *expr, byte no_parser) {
   int level = 0, check_udf = 0;
   int kw_exec_more = 0;
   int tp;
-  addr_t stip, cip;
+  bcip_t stip, cip;
   var_int_t lv = 0;
   var_num_t dv = 0;
   bc_t bc;
@@ -2687,7 +2687,7 @@ void comp_text_line(char *text) {
 /*
  * skip command bytes
  */
-addr_t comp_next_bc_cmd(addr_t ip) {
+bcip_t comp_next_bc_cmd(bcip_t ip) {
   code_t code;
   dword len;
 
@@ -2785,9 +2785,9 @@ addr_t comp_next_bc_cmd(addr_t ip) {
 /*
  * search for command (in byte-code)
  */
-addr_t comp_search_bc(addr_t ip, code_t code) {
-  addr_t i = ip;
-  addr_t result = INVALID_ADDR;
+bcip_t comp_search_bc(bcip_t ip, code_t code) {
+  bcip_t i = ip;
+  bcip_t result = INVALID_ADDR;
   do {
     if (i >= comp_prog.count) {
       break;
@@ -2803,8 +2803,8 @@ addr_t comp_search_bc(addr_t ip, code_t code) {
 /*
  * search for End-Of-Command mark
  */
-addr_t comp_search_bc_eoc(addr_t ip) {
-  addr_t i = ip;
+bcip_t comp_search_bc_eoc(bcip_t ip) {
+  bcip_t i = ip;
   code_t code;
 
   do {
@@ -2820,8 +2820,8 @@ addr_t comp_search_bc_eoc(addr_t ip) {
 /*
  * search stack
  */
-addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_id) {
-  addr_t i;
+bcip_t comp_search_bc_stack(bcip_t start, code_t code, byte level, bid_t block_id) {
+  bcip_t i;
   comp_pass_node_t *node;
 
   for (i = start; i < comp_sp; i++) {
@@ -2838,8 +2838,8 @@ addr_t comp_search_bc_stack(addr_t start, code_t code, byte level, bid_t block_i
 /*
  * search stack backward
  */
-addr_t comp_search_bc_stack_backward(addr_t start, code_t code, byte level, bid_t block_id) {
-  addr_t i = start;
+bcip_t comp_search_bc_stack_backward(bcip_t start, code_t code, byte level, bid_t block_id) {
+  bcip_t i = start;
   comp_pass_node_t *node;
 
   for (; i < comp_sp; i--) {
@@ -2858,12 +2858,12 @@ addr_t comp_search_bc_stack_backward(addr_t start, code_t code, byte level, bid_
 /*
  * search stack for the next inner catch
  */
-addr_t comp_search_inner_catch(addr_t start, byte level) {
-  addr_t result = INVALID_ADDR;
+bcip_t comp_search_inner_catch(bcip_t start, byte level) {
+  bcip_t result = INVALID_ADDR;
   if (level > 1) {
     byte nextLevel = level - 1;
     do {
-      addr_t i;
+      bcip_t i;
       comp_pass_node_t *node;
       for (i = start; i < comp_sp; i++) {
         node = comp_stack.elem[i];
@@ -2886,8 +2886,8 @@ addr_t comp_search_inner_catch(addr_t start, byte level) {
 /*
  * inspect the byte-code at the given location
  */
-addr_t comp_next_bc_peek(addr_t start) {
-  addr_t result;
+bcip_t comp_next_bc_peek(bcip_t start) {
+  bcip_t result;
   if (start < comp_stack.count) {
     comp_pass_node_t *node = comp_stack.elem[start];
     result = comp_prog.ptr[node->pos];
@@ -2901,9 +2901,9 @@ addr_t comp_next_bc_peek(addr_t start) {
  * Advanced error messages:
  * Analyze LOOP-END errors
  */
-void print_pass2_stack(addr_t pos, code_t lcode, int level) {
-  addr_t ip;
-  addr_t i;
+void print_pass2_stack(bcip_t pos, code_t lcode, int level) {
+  bcip_t ip;
+  bcip_t i;
   int j, cs_idx;
   char cmd[16], cmd2[16];
   comp_pass_node_t *node;
@@ -3032,8 +3032,8 @@ void print_pass2_stack(addr_t pos, code_t lcode, int level) {
  * PASS 2 (write jumps for IF,FOR,WHILE,REPEAT,etc)
  */
 void comp_pass2_scan() {
-  addr_t i = 0, j, true_ip, false_ip, label_id, w;
-  addr_t a_ip, b_ip, c_ip, count;
+  bcip_t i = 0, j, true_ip, false_ip, label_id, w;
+  bcip_t a_ip, b_ip, c_ip, count;
   code_t code;
   byte level;
   comp_pass_node_t *node;

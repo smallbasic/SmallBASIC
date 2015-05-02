@@ -27,7 +27,7 @@ var_num_t fint(var_num_t x) {
  * FRAC(x)
  */
 var_num_t frac(var_num_t x) {
-  return fabs(fabs(x) - fint(fabs(x)));
+  return fabsl(fabsl(x) - fint(fabsl(x)));
 }
 
 /*
@@ -71,7 +71,7 @@ var_num_t m_div(var_num_t n, var_num_t d) {
 
 void root_iterate(var_num_t xl, var_num_t xh, var_num_t fl, 
                   var_num_t fh, var_t *res_vp, var_num_t maxerr,
-                  var_t *err_vp, addr_t use_ip);
+                  var_t *err_vp, bcip_t use_ip);
 
 /*
  * length of line
@@ -243,7 +243,7 @@ var_num_t statmeandev(var_num_t *e, int count) {
 
   sum = 0.0;
   for (i = 0; i < count; i++) {
-    sum += fabs(e[i] - mean);
+    sum += fabsl(e[i] - mean);
   }
 
   return sum / count;
@@ -290,8 +290,8 @@ var_num_t statspreadp(var_num_t *e, int count) {
 //
 
 /*
- double  simpson(double low, double high, int nseg, addr_t use_ip) SEC(BMATH2);
- double  simpson(double low, double high, int nseg, addr_t use_ip)
+ double  simpson(double low, double high, int nseg, bcip_t use_ip) SEC(BMATH2);
+ double  simpson(double low, double high, int nseg, bcip_t use_ip)
  {
  double  width, t, sum, x;
  int   m, j;
@@ -343,7 +343,7 @@ var_num_t statspreadp(var_num_t *e, int count) {
  var_t *res_vp, *err_vp;
  double  low, high, maxerr, errval, oldval;
  int   maxseg, nseg;
- addr_t  use_ip, exit_ip = INVALID_ADDR;
+ bcip_t  use_ip, exit_ip = INVALID_ADDR;
 
  low = par_getnum();   if  ( prog_error )  return;
  par_getcomma();     if  ( prog_error )  return;
@@ -401,7 +401,7 @@ var_num_t statspreadp(var_num_t *e, int count) {
 // ROOT low, high, maxseg, maxerr, BYREF result, BYREF errcode USE ...
 //
 void root_iterate(var_num_t xl, var_num_t xh, var_num_t fl, var_num_t fh, var_t *res_vp, var_num_t maxerr,
-    var_t *err_vp, addr_t use_ip) {
+    var_t *err_vp, bcip_t use_ip) {
   var_num_t t, x;
   var_t var;
 
@@ -436,7 +436,7 @@ void cmd_root() {
   var_t *res_vp, *err_vp;
   var_num_t low, high, maxerr;
   int maxseg, nseg;
-  addr_t use_ip, exit_ip = INVALID_ADDR;
+  bcip_t use_ip, exit_ip = INVALID_ADDR;
   var_t var;
 
   int j;
@@ -568,7 +568,7 @@ void cmd_deriv() {
   var_t *res_vp, *err_vp;
   double maxerr, x;
   int maxseg, nseg;
-  addr_t use_ip, exit_ip = INVALID_ADDR;
+  bcip_t use_ip, exit_ip = INVALID_ADDR;
   var_t var;
 
   double delta = 0.01, f1, f2, f3, fp, op = 0.0, errval;
@@ -678,7 +678,7 @@ void cmd_diffeq() {
   var_t *res_vp, *err_vp;
   double maxerr;
   int maxseg, nseg, j;
-  addr_t use_ip, exit_ip = INVALID_ADDR;
+  bcip_t use_ip, exit_ip = INVALID_ADDR;
   var_t var, var2;
 
   double x0, x1, y0, width, hw, ka, kb, kc, kd, xi, yi;

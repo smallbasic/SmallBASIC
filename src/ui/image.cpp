@@ -5,7 +5,7 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2007-2014 Chris Warren-Smith.
+// Copyright(C) 2002-2015 Chris Warren-Smith.
 
 #include "common/sys.h"
 #include "common/messages.h"
@@ -173,6 +173,21 @@ ImageBuffer *load_xpm_image(char **data) {
   return result;
 }
 
+uint8_t *get_image_data(int x, int y, int w, int h) {
+  MARect rc;
+  rc.left = x;
+  rc.top = y;
+  rc.width = w;
+  rc.height = h;
+  int size = w * 4 * h * 4;
+  uint8_t *result = (uint8_t *)malloc(size);
+  if (result != NULL) {
+    g_system->getOutput()->flushNow();
+    maGetImageData(HANDLE_SCREEN, result, &rc, w);
+  }
+  return result;
+}
+
 void cmd_image_show(var_s *self) {
   ImageDisplay image;
   image._bid = map_get_int(self, IMG_BID, -1);
@@ -229,10 +244,47 @@ void cmd_image_hide(var_s *self) {
 }
 
 void cmd_image_save(var_s *self) {
-  //  int id = map_get_int((var_p_t)arg, IMG_ID);
-  //  int handle = map_get_int((var_p_t)arg, IMG_HANDLE);
-  // lodepng_save_file(const unsigned char* buffer, size_t buffersize, const char* filename);
-  // TODO
+  var_int_t x, y, w, h;
+  int count = par_massget("iiii", &x, &y, &w, &h);
+  int width = g_system->getOutput()->getWidth();
+  int height = g_system->getOutput()->getHeight();
+
+  if (count == 0 && !prog_error) {
+    // save entire screen
+    x = 0;
+    y = 0;
+    w = width;
+    h = height;
+  } else if (count == 2) {
+    // save width + height at 0, 0
+    w = MIN(x, width);
+    h = MIN(y, height);
+    x = 0;
+    y = 0;
+  } else if (count == 4) {
+    w = MIN(w, width);
+    h = MIN(h, height);
+  } else {
+    err_throw(ERR_PARAM);
+  }
+
+  bool saved = false;
+  int handle = map_get_int((var_p_t)self, IMG_HANDLE, -1);
+  if (!prog_error && handle != -1) {
+    dev_file_t *filep = dev_getfileptr(handle);
+    if (filep != NULL) {
+      uint8_t* image = get_image_data(x, y, w, h);
+      if (image != NULL) {
+        if (!lodepng_encode32_file(filep->name, image, w, h)) {
+          saved = true;
+        }
+        free(image);
+      }
+    }
+  }
+  if (!saved) {
+    err_throw(ERR_IMAGE_SAVE);
+  }
 }
 
 void create_image(var_p_t var, ImageBuffer *image) {
@@ -297,6 +349,28 @@ ImageDisplay *create_display_image(var_p_t var, const char *name) {
     }
   }
   return result;
+}
+
+void screen_dump() {
+  int width = g_system->getOutput()->getWidth();
+  int height = g_system->getOutput()->getHeight();
+  uint8_t* image = get_image_data(0, 0, width, height);
+  if (image != NULL) {
+    const char *path = gsb_bas_dir;
+#if defined(_ANDROID)
+    path = "/sdcard/";
+#endif
+    for (int i = 0; i < 1000; i++) {
+      char file[OS_PATHNAME_SIZE];
+      sprintf(file, "%ssbasic_dump_%d.png", path, i);
+      if (access(file, R_OK) != 0) {
+        g_system->systemPrint("Saving screen to %s\n", file);
+        lodepng_encode32_file(file, image, width, height);
+        break;
+      }
+    }
+    free(image);
+  }
 }
 
 extern "C" void v_create_image(var_p_t var) {

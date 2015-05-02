@@ -226,6 +226,7 @@
 #define ERR_INVALID_CATCH       "Invalid catch argument"
 #define ERR_NO_FUNC             "Not a function"
 #define ERR_IMAGE_LOAD          "Failed to load image: '%s'"
+#define ERR_IMAGE_SAVE          "Failed to save image"
 #define ERR_FORM_INPUT          "Form has no inputs"
 #define ERR_PARAM_NUM           "Incorrect number of parameters: %d. Expected %d."
 

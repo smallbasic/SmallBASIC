@@ -154,7 +154,7 @@ char *get_keyword(char *text, char *dest);
  * Returns the number of a complex constant numeric expression
  *
  * type  <=0 = error
- *       1 = int32
+ *       1 = int32_t
  *           2 = double
  *
  * Warning: octals are different from C (QB compatibility: 009 = 9)

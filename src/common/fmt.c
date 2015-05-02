@@ -108,7 +108,7 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
 
   memset(buf, 0, sizeof(buf));
 
-  if (fabs(x) == 0.0) {
+  if (fabsl(x) == 0.0) {
     strcpy(dest, "0");
     return;
   }
@@ -118,7 +118,7 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
   if (sign < 0) {
     *d++ = '-';
   }
-  x = fabs(x);
+  x = fabsl(x);
 
   if (x >= 1E308) {
     *d = '\0';
@@ -162,7 +162,7 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
   }
 
   // format left part
-  ipart = fabs(fint(x));
+  ipart = fabsl(fint(x));
   fpart = fround(frac(x), FMT_RND) * FMT_xRND;
   if (fpart >= FMT_xRND) {      // rounding bug
     ipart = ipart + 1.0;

@@ -319,8 +319,8 @@ void cev_log(void) {
   IF_ERR_RTN;
   while (CODE(IP) == kwTYPE_LOGOPR) {
     char op;
-    addr_t shortcut;
-    addr_t shortcut_offs;
+    bcip_t shortcut;
+    bcip_t shortcut_offs;
 
     IP++;
     op = CODE(IP);

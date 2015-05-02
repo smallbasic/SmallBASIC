@@ -305,7 +305,7 @@ void par_freepartable(par_t **ptable_pp, int pcount);
  * capital character = the parameter is required
  * small character   = optional parameter
  *
- * I = integer     (int32  )
+ * I = integer     (int32_t  )
  * F = double      (double*)
  * S = string      (char*  )
  * P = variable's ptr  (var_t* )
@@ -314,7 +314,7 @@ void par_freepartable(par_t **ptable_pp, int pcount);
  * <b>Example</b>
  *
  @code
- int32 i1, i2 = -1;  // -1 is the default value for i2
+ int32_t i1, i2 = -1;  // -1 is the default value for i2
  char  *s1 = NULL;   // NULL is the default value for s1
  var_t *v  = NULL;   // NULL is the default value for v
 
@@ -353,7 +353,7 @@ int par_massget(const char *fmt, ...);
  * @param var the variable (the X)
  * @param ip the expression's address
  */
-void exec_usefunc(var_t *var, addr_t ip);
+void exec_usefunc(var_t *var, bcip_t ip);
 
 /**
  * @ingroup par
@@ -367,7 +367,7 @@ void exec_usefunc(var_t *var, addr_t ip);
  * @param var2 the variable (the Y)
  * @param ip the expression's address
  */
-void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip);
+void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip);
 
 /**
  * @ingroup par
@@ -382,7 +382,7 @@ void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip);
  * @param var3 the variable (the Z)
  * @param ip the expression's address
  */
-void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip);
+void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip);
 
 /**
  * @ingroup par

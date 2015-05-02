@@ -151,7 +151,7 @@ void cmd_plot() {
   var_num_t x, xmin = 0, xmax = 0, dx, xstep;
   var_num_t *yt, *xt;
   var_int_t count = 0, i, border;
-  addr_t use_ip, exit_ip;
+  bcip_t use_ip, exit_ip;
   int prev_fgcolor = dev_fgcolor;
   int prev_bgcolor = dev_bgcolor;
 
