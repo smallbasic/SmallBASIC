@@ -56,7 +56,7 @@ void bc_add1(bc_t *bc, byte code) {
 /*
  * change one command
  */
-void bc_store1(bc_t *bc, addr_t offset, byte code) {
+void bc_store1(bc_t *bc, bcip_t offset, byte code) {
   bc->ptr[offset] = code;
 }
 
@@ -156,7 +156,7 @@ void bc_add_extpcode(bc_t *bc, int lib, long idx) {
 /*
  * add an address
  */
-void bc_add_addr(bc_t *bc, addr_t idx) {
+void bc_add_addr(bc_t *bc, bcip_t idx) {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
@@ -167,9 +167,9 @@ void bc_add_addr(bc_t *bc, addr_t idx) {
 /*
  * add a control code
  *
- * Control codes are followed by 2 addr_t elements (jump on true, jump on false)
+ * Control codes are followed by 2 bcip_t elements (jump on true, jump on false)
  */
-void bc_add_ctrl(bc_t *bc, code_t code, addr_t true_ip, addr_t false_ip) {
+void bc_add_ctrl(bc_t *bc, code_t code, bcip_t true_ip, bcip_t false_ip) {
   bc_add1(bc, code);
   bc_add_addr(bc, true_ip);
   bc_add_addr(bc, false_ip);

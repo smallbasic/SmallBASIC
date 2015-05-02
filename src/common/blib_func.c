@@ -100,7 +100,7 @@ void dar_first(long funcCode, var_t *r, var_t *elem_p) {
     switch (funcCode) {
     case kwABSMAX:
     case kwABSMIN:
-      r->v.n = fabs(n);
+      r->v.n = fabsl(n);
     case kwSUM:
     case kwSTATMEAN:
       r->v.n = n;
@@ -136,13 +136,13 @@ void dar_next(long funcCode, var_t *r, var_t *elem_p) {
 
     switch (funcCode) {
     case kwABSMIN:
-      n = fabs(n);
+      n = fabsl(n);
       if (r->v.n < n) {
         r->v.n = n;
       }
       break;
     case kwABSMAX:
-      n = fabs(n);
+      n = fabsl(n);
       if (r->v.n > n) {
         r->v.n = n;
       }
@@ -2081,7 +2081,7 @@ void cmd_numN(long funcCode, var_t *r) {
 void cmd_genfunc(long funcCode, var_t *r) {
   byte code, ready, first;
   int count, tcount, handle, i, len, ch;
-  addr_t ofs;
+  bcip_t ofs;
   var_t *basevar_p, *elem_p;
   var_t arg, arg2;
   char tmp[3];
@@ -2751,7 +2751,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     var_num_t toler = 0.0;
     var_num_t *m1;
     var_num_t *m2 = NULL;
-    int32 n, rows, cols;
+    int32_t n, rows, cols;
     var_t *a, *b;
 
     v_init(r);
@@ -2815,7 +2815,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwINVERSE: {
     var_num_t *m1;
-    int32 n, rows, cols;
+    int32_t n, rows, cols;
     var_t *a;
 
     v_init(r);
@@ -2841,7 +2841,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwDETERM: {
     var_num_t *m1 = NULL, toler = 0;
-    int32 n, rows, cols;
+    int32_t n, rows, cols;
     var_t *a;
 
     v_init(r);
@@ -2875,7 +2875,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
   case kwCODEARRAY: {
     var_int_t curcol, ready, count, pos;
     var_t *e;
-    int32 rows, cols;
+    int32_t rows, cols;
     tmplist_t lst;
     canode_t tnode, *tp;
     tmpnode_t *cur;

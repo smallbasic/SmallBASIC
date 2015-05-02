@@ -265,6 +265,8 @@ void Runtime::pollEvents(bool blocking) {
           showMenu();
         } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
           setBack();
+        } else if (ev.key.keysym.sym == SDLK_p && (ev.key.keysym.mod & KMOD_CTRL)) {
+          ::screen_dump();
         } else {
           maEvent = new MAEvent();
           maEvent->type = EVENT_TYPE_KEY_PRESSED;

@@ -31,9 +31,9 @@ void graph_reset() {
 //
 void cmd_view() {
   ipt_t p1, p2;
-  int32 prev_color = dev_fgcolor;
-  int32 color = dev_bgcolor;
-  int32 bcolor = -1;
+  int32_t prev_color = dev_fgcolor;
+  int32_t color = dev_bgcolor;
+  int32_t bcolor = -1;
 
   if (code_peek() != kwTYPE_EOC && code_peek() != kwTYPE_LINE) {
     p1 = par_getipt();
@@ -102,7 +102,7 @@ void cmd_window() {
 //  PSET [STEP] x, y [, color | COLOR color]
 //
 void cmd_pset() {
-  int32 color = dev_fgcolor, step1 = 0;
+  int32_t color = dev_fgcolor, step1 = 0;
   ipt_t pt;
 
   /*
@@ -151,7 +151,7 @@ void cmd_pset() {
 void cmd_line() {
   ipt_t p1, p2;
   byte step = 0;
-  int32 color = dev_fgcolor;
+  int32_t color = dev_fgcolor;
 
   /*
    * [STEP] x, y
@@ -211,7 +211,7 @@ void cmd_line() {
   gra_y = p2.y;
 
   if (color != dev_fgcolor) {
-    int32 prev_color = dev_fgcolor;
+    int32_t prev_color = dev_fgcolor;
 
     dev_setcolor(color);
     dev_line(p1.x, p1.y, p2.x, p2.y);
@@ -225,7 +225,7 @@ void cmd_line() {
 //
 void cmd_rect() {
   ipt_t p1, p2;
-  int32 color = dev_fgcolor;
+  int32_t color = dev_fgcolor;
   byte fill = 0, step = 0;
 
   /*
@@ -309,8 +309,8 @@ void cmd_rect() {
 void cmd_drawpoly() {
   int i, count;
   var_num_t xorg = 0, yorg = 0;
-  int32 prev_color = dev_fgcolor;
-  int32 color = dev_fgcolor;
+  int32_t prev_color = dev_fgcolor;
+  int32_t color = dev_fgcolor;
   byte filled = 0, scalef = 0;
   var_num_t scale = 1.0;
   ipt_t *poly;
@@ -413,7 +413,7 @@ void cmd_drawpoly() {
 //  CIRCLE [STEP] x, y, r [, aspect[, color]] [COLOR color] [FILLED]
 //
 void cmd_circle() {
-  int32 color = dev_fgcolor;
+  int32_t color = dev_fgcolor;
   byte fill = 0, step = 0;
   ipt_t pt;
   int r;
@@ -477,7 +477,7 @@ void cmd_circle() {
   }
 
   if (color != dev_fgcolor) {
-    int32 prev_color = dev_fgcolor;
+    int32_t prev_color = dev_fgcolor;
 
     dev_setcolor(color);
     dev_ellipse(pt.x, pt.y, r, r, aspect, fill);
@@ -490,7 +490,7 @@ void cmd_circle() {
 //  ARC [STEP] x, y, r, start, end [, aspect[, color]] [COLOR color]
 //
 void cmd_arc() {
-  int32 color = dev_fgcolor;
+  int32_t color = dev_fgcolor;
   byte step = 0;
   int r;
   var_num_t as, ae, aspect = 1.0;
@@ -565,7 +565,7 @@ void cmd_arc() {
   }
 
   if (color != dev_fgcolor) {
-    int32 prev_color = dev_fgcolor;
+    int32_t prev_color = dev_fgcolor;
 
     dev_setcolor(color);
     dev_arc(pt.x, pt.y, r, as, ae, aspect);
@@ -579,10 +579,10 @@ void cmd_arc() {
 //  PAINT [STEP] x, y [, fillcolor [, bordercolor]]
 //
 void cmd_paint() {
-  int32 prev_color = dev_fgcolor;
-  int32 color = dev_fgcolor;
+  int32_t prev_color = dev_fgcolor;
+  int32_t color = dev_fgcolor;
   byte step = 0;
-  int32 fc = dev_fgcolor, bc = -1;
+  int32_t fc = dev_fgcolor, bc = -1;
   byte code;
   ipt_t pt;
 
@@ -661,7 +661,7 @@ char *draw_getval(const char *src, int *c) {
 void cmd_draw() {
   register int draw = 1, update = 1;
   int x, y, r;
-  int32 prev_color = dev_fgcolor;
+  int32_t prev_color = dev_fgcolor;
   char *p;
   var_t var;
 
@@ -857,7 +857,7 @@ void cmd_draw() {
 //      2 = ruler
 //
 void cmd_chart_fstr(var_num_t v, char *buf) {
-  if (fabs(v) >= 10E+9) {
+  if (fabsl(v) >= 10E+9) {
     ftostr(v / 1E+9, buf);
     if (buf[3] == '.') {
       buf[3] = '\0';
@@ -865,7 +865,7 @@ void cmd_chart_fstr(var_num_t v, char *buf) {
       buf[4] = '\0';
     }
     strcat(buf, "G");
-  } else if (fabs(v) >= 10E+6) {
+  } else if (fabsl(v) >= 10E+6) {
     ftostr(v / 1E+6, buf);
     if (buf[3] == '.') {
       buf[3] = '\0';
@@ -873,7 +873,7 @@ void cmd_chart_fstr(var_num_t v, char *buf) {
       buf[4] = '\0';
     }
     strcat(buf, "M");
-  } else if (fabs(v) >= 10E+3) {
+  } else if (fabsl(v) >= 10E+3) {
     ftostr(v / 1E+3, buf);
     if (buf[3] == '.') {
       buf[3] = '\0';
@@ -903,7 +903,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
   int rx1, dx, dy, i;
   var_num_t vmin, vmax, lx, ly;
   char buf[32];
-  int32 color = 0;
+  int32_t color = 0;
 
   rx1 = x1;
 
@@ -1177,8 +1177,8 @@ void cmd_chart() {
   var_t *var_p, *elem_p;
   int i, count;
   var_num_t *vals;
-  int32 prev_fgcolor = dev_fgcolor;
-  int32 prev_bgcolor = dev_bgcolor;
+  int32_t prev_fgcolor = dev_fgcolor;
+  int32_t prev_bgcolor = dev_bgcolor;
 
   // parameters
   int chart;

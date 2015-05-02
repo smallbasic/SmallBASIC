@@ -20,20 +20,21 @@
 #include "ui/system.h"
 #include "ui/inputs.h"
 
-#define MENU_CONSOLE   0
-#define MENU_SOURCE    1
-#define MENU_BACK      2
-#define MENU_RESTART   3
-#define MENU_KEYPAD    4
-#define MENU_ZOOM_UP   5
-#define MENU_ZOOM_DN   6
-#define MENU_CUT       7
-#define MENU_COPY      8
-#define MENU_PASTE     9
-#define MENU_CTRL_MODE 10
-#define MENU_LIVEMODE  11
-#define MENU_AUDIO     12
-#define MENU_SIZE      13
+#define MENU_CONSOLE    0
+#define MENU_SOURCE     1
+#define MENU_BACK       2
+#define MENU_RESTART    3
+#define MENU_KEYPAD     4
+#define MENU_ZOOM_UP    5
+#define MENU_ZOOM_DN    6
+#define MENU_CUT        7
+#define MENU_COPY       8
+#define MENU_PASTE      9
+#define MENU_CTRL_MODE  10
+#define MENU_LIVEMODE   11
+#define MENU_AUDIO      12
+#define MENU_SCREENSHOT 13
+#define MENU_SIZE       14
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -266,6 +267,9 @@ void System::handleMenu(int menuId) {
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
+    break;
+  case MENU_SCREENSHOT:
+    ::screen_dump();
     break;
   }
 
@@ -640,6 +644,9 @@ void System::showMenu() {
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;
+
+      items->add(new String("Screenshot"));
+      _systemMenu[index++] = MENU_SCREENSHOT;
     }
     optionsBox(items);
     delete items;
@@ -803,13 +810,9 @@ void System::systemPrint(const char *format, ...) {
 
   deviceLog("%s", buf);
 
-  if (isSystemScreen()) {
-    _output->print(buf);
-  } else {
-    int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
-    _output->print(buf);
-    _output->selectBackScreen(prevScreen);
-  }
+  int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+  _output->print(buf);
+  _output->selectBackScreen(prevScreen);
 }
 
 //

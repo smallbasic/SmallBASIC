@@ -567,7 +567,7 @@ int slib_build_ptable(slib_par_t * ptable) {
   int pcount = 0;
   var_t *arg = NULL;
   byte ready, code;
-  addr_t ofs;
+  bcip_t ofs;
 
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
     code_skipnext();            // kwTYPE_LEVEL_BEGIN

@@ -105,7 +105,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
  * var - the variable (the X)
  * ip  - expression's address 
  */
-void exec_usefunc(var_t *var, addr_t ip) {
+void exec_usefunc(var_t *var, bcip_t ip) {
   var_t *old_x;
 
   // save X
@@ -130,7 +130,7 @@ void exec_usefunc(var_t *var, addr_t ip) {
  * var2 - the second variable (the Y)
  * ip   - expression's address 
  */
-void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip) {
+void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
   var_t *old_x, *old_y;
 
   // save X
@@ -162,7 +162,7 @@ void exec_usefunc2(var_t *var1, var_t *var2, addr_t ip) {
  * var3 - the thrid variable (the Z)
  * ip   - expression's address 
  */
-void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, addr_t ip) {
+void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip) {
   var_t *old_x, *old_y, *old_z;
 
   // save X
@@ -922,7 +922,7 @@ void par_freepartable(par_t **ptable_pp, int pcount) {
 int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
   byte ready, last_sep = 0;
   par_t *ptable;
-  addr_t ofs;
+  bcip_t ofs;
   char vsep[8];
   var_t *par = NULL;
   int pcount = 0;

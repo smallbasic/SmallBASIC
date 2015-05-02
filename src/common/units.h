@@ -38,8 +38,8 @@ typedef enum {
 typedef struct {
   char symbol[SB_KEYWORD_SIZE]; /**< symbol name */
   sym_type_t type; /**< type of symbol (function, procedure, variable) */
-  addr_t address; /**< code address if proc/func */
-  addr_t vid; /**< return Variable-ID if func; or Variable-ID if variable */
+  bcip_t address; /**< code address if proc/func */
+  bcip_t vid; /**< return Variable-ID if func; or Variable-ID if variable */
 } unit_sym_t;
 
 typedef struct {

@@ -82,13 +82,13 @@ extern "C" {
 
 void keymap_init();
 void keymap_free();
-void keymap_add(int key, addr_t ip);
+void keymap_add(int key, bcip_t ip);
 int keymap_invoke(word key);
 int keymap_kbhit();
 int keymap_kbpeek();
 
 void timer_free(timer_s *timer);
-void timer_add(var_num_t timer, addr_t ip);
+void timer_add(var_num_t timer, bcip_t ip);
 void timer_run(dword now);
 
 #if defined(__cplusplus)

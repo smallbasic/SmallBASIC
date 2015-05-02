@@ -30,7 +30,7 @@
 /**
  * matrix: convert var_t to double[r][c]
  */
-var_num_t *mat_toc(var_t *v, int32 *rows, int32 *cols) {
+var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
   int i, j, pos;
   var_t *e;
   var_num_t *m;
@@ -619,7 +619,7 @@ static inline void oper_powr(var_t *r, var_t *left) {
   V_FREE(left);
 }
 
-static inline void eval_shortc(var_t *r, addr_t addr, byte op) {
+static inline void eval_shortc(var_t *r, bcip_t addr, byte op) {
   var_int_t li;
   var_int_t ri;
 
@@ -686,7 +686,7 @@ static inline void eval_var(var_t *r, var_t *var_p) {
 }
 
 static inline void eval_push(var_t *r) {
-  addr_t len;
+  bcip_t len;
 
   switch (r->type) {
   case V_INT:
@@ -718,8 +718,8 @@ static inline void eval_push(var_t *r) {
 }
 
 static inline void eval_extf(var_t *r) {
-  addr_t lib;
-  addr_t idx;
+  bcip_t lib;
+  bcip_t idx;
 
   lib = code_getaddr();
   idx = code_getaddr();
@@ -1126,10 +1126,10 @@ void eval(var_t *r) {
   code_t code;
   byte op;
   var_t *var_p;
-  addr_t addr;
+  bcip_t addr;
 
   var_t *left = NULL;
-  addr_t eval_pos = eval_sp;
+  bcip_t eval_pos = eval_sp;
   byte level = 0;
 
   r->const_flag = 0;

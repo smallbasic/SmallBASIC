@@ -393,7 +393,7 @@ char *get_keyword(char *text, char *dest) {
  * Returns the number of a string (constant numeric expression)
  *
  * type  <=0 = error
- *         1 = int32
+ *         1 = int32_t
  *         2 = double
  *
  * Warning: octals are different from C (QB compatibility: 009 = 9)
@@ -598,20 +598,20 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
         }
       } else {
         // dpc = 0 && epos = 0
-        *type = 1;              // int32
+        *type = 1;              // int32_t
         *lv = xstrtol(dest) * sign;
       }
       break;
     case 16:
-      *type = 1;                // int32
+      *type = 1;                // int32_t
       *lv = hextol(dest);
       break;
     case 8:
-      *type = 1;                // int32
+      *type = 1;                // int32_t
       *lv = octtol(dest);
       break;
     case 2:
-      *type = 1;                // int32
+      *type = 1;                // int32_t
       *lv = bintol(dest);
       break;
     }

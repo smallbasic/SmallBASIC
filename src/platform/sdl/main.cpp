@@ -29,6 +29,7 @@ using namespace strlib;
 
 const char* FONTS[] = {
   "Envy Code R",
+  "Source Code Pro",
   "Ubuntu Mono",
   "DejaVu Sans Mono",
   "FreeMono",
@@ -119,6 +120,10 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
         getFont(fs, familyName, FC_WEIGHT_REGULAR, fontFile) && 
         getFont(fs, familyName, FC_WEIGHT_BOLD, fontFileBold)) {
       result = true;
+    }
+
+    if (familyName != NULL && !result) {
+      fprintf(stderr, "Failed to load %s\n", familyName);
     }
     
     int i = 0;

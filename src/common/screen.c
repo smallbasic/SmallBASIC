@@ -33,20 +33,20 @@ int os_graf_mx = 80;
 int os_graf_my = 25;
 
 // graphics - viewport
-int32 dev_Vx1;
-int32 dev_Vy1;
-int32 dev_Vx2;
-int32 dev_Vy2;
-int32 dev_Vdx;
-int32 dev_Vdy;
+int32_t dev_Vx1;
+int32_t dev_Vy1;
+int32_t dev_Vx2;
+int32_t dev_Vy2;
+int32_t dev_Vdx;
+int32_t dev_Vdy;
 
 // graphics - window world coordinates
-int32 dev_Wx1;
-int32 dev_Wy1;
-int32 dev_Wx2;
-int32 dev_Wy2;
-int32 dev_Wdx;
-int32 dev_Wdy;
+int32_t dev_Wx1;
+int32_t dev_Wy1;
+int32_t dev_Wx2;
+int32_t dev_Wy2;
+int32_t dev_Wdx;
+int32_t dev_Wdy;
 long dev_fgcolor = 0;
 long dev_bgcolor = 15;
 

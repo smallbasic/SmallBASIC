@@ -23,7 +23,7 @@ typedef enum {
 typedef struct timer_s timer_s;
 struct timer_s {
   timer_s *next; // next timer
-  addr_t ip;     // handler location
+  bcip_t ip;     // handler location
   long value;    // time for next event
   long interval; // interval ms
   int active;    // whether IP is being invoked
@@ -75,7 +75,7 @@ typedef struct {
       int block_level; // block level (FOR-NEXT,IF-FI,etc)
       int block_id;   // unique ID for blocks (FOR-NEXT,IF-FI,etc)
 
-      addr_t first_data_ip;
+      bcip_t first_data_ip;
 
       // buffers... needed for devices with limited memory
       char *bc_name;
@@ -115,12 +115,12 @@ typedef struct {
      * --- executor ---
      */
     struct {
-      addr_t length; /**< The byte-code length (program length in bytes) */
-      addr_t ip; /**< Register IP; the instruction pointer               */
+      bcip_t length; /**< The byte-code length (program length in bytes) */
+      bcip_t ip; /**< Register IP; the instruction pointer               */
       byte *bytecode; /**< The byte-code itself                          */
 
-      addr_t dp; /**< Register DP; READ/DATA current position            */
-      addr_t org; /**< READ/DATA beginning position                      */
+      bcip_t dp; /**< Register DP; READ/DATA current position            */
+      bcip_t org; /**< READ/DATA beginning position                      */
 
       stknode_t *stack; /**< The program stack                           */
       dword stack_alloc; /**< The stack size                             */
@@ -148,7 +148,7 @@ typedef struct {
       bc_lib_rec_t *libtable; /**< import-libraries table                */
       bc_symbol_rec_t *symtable; /**< import-symbols table               */
       unit_sym_t *exptable; /**< export-symbols table                    */
-      addr_t catch_ip; /** try/catch ip                                  */
+      bcip_t catch_ip; /** try/catch ip                                  */
       timer_s *timer;  /** timer linked list                             */
     } exec;
   } sbe;

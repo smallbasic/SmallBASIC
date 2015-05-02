@@ -124,10 +124,10 @@ typedef struct comp_var_s comp_var_t;
  */
 struct comp_label_s {
   char name[SB_KEYWORD_SIZE + 1]; /**< label name    @ingroup scan */
-  addr_t ip; /**< address in BC @ingroup scan */
+  bcip_t ip; /**< address in BC @ingroup scan */
   byte level; /**< block level (used for GOTOs) @ingroup scan */
   bid_t block_id; /**< block_id (FOR-NEXT,IF-FI,etc) used for GOTOs @ingroup scan */
-  addr_t dp; /**< data pointer @ingroup scan */
+  bcip_t dp; /**< data pointer @ingroup scan */
 };
 
 typedef struct comp_label_s comp_label_t;
@@ -146,7 +146,7 @@ typedef struct {
  */
 struct comp_proc_s {
   char *name; /**< procedure/function name  @ingroup scan */
-  addr_t ip; /**< address in BC            @ingroup scan */
+  bcip_t ip; /**< address in BC            @ingroup scan */
   bid_t vid; /**< variable index (return variable-id; for functions) @ingroup scan */
   byte level; /**< block level (used for GOTOs) @ingroup scan */
   bid_t block_id; /**< block_id (FOR-NEXT,IF-FI,etc) used for GOTOs @ingroup scan */
@@ -163,7 +163,7 @@ typedef struct comp_proc_s comp_udp_t;
  */
 struct comp_pass_node_s {
   char sec[SB_KEYWORD_SIZE + 1]; /**< section-name (PalmOS) @ingroup scan */
-  addr_t pos; /**< address in BC         @ingroup scan */
+  bcip_t pos; /**< address in BC         @ingroup scan */
   int line; /**< source code line number @ingroup scan */
   byte level; /**< block level             @ingroup scan */
   bid_t block_id; /**< block ID                @ingroup scan */
@@ -183,7 +183,7 @@ typedef struct {
  */
 struct comp_struct_s {
   char name[SB_KEYWORD_SIZE + 1];
-  addr_t field_id;            // -1 == is_container
+  bcip_t field_id;            // -1 == is_container
 };
 
 typedef struct comp_struct_s comp_struct_t;

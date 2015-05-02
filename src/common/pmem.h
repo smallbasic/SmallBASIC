@@ -31,34 +31,28 @@ extern "C" {
 /*
  * data-types
  */
-typedef intptr_t MemHandle;
-typedef MemHandle mem_t;
+typedef intptr_t mem_t;
 
 #if !defined(byte)
-  #define byte unsigned char
+  typedef unsigned char byte;
 #endif
 
 typedef byte *byte_p_t;
 typedef char *char_p_t;
 
 // 16-bit integer
-typedef int short int16;
 typedef unsigned short word;
 
 // 32-bit integer
-typedef int int32;
 typedef unsigned int dword;
 
-// code
-typedef byte code_t; /**< basic code unit      (unsigned)    @ingroup mem */
+// basic code unit
+typedef byte code_t;
 
-typedef int32 fcode_t;
-typedef int32 pcode_t;
-typedef int32 bid_t;
-
-#ifndef __CYGWIN__
-typedef dword addr_t;
-#endif
+typedef int32_t fcode_t;
+typedef int32_t pcode_t;
+typedef int32_t bid_t;
+typedef dword bcip_t;
 
 #define INVALID_ADDR    0xFFFFFFFF
 #define OS_ADDRSZ   4   // size of address pointer (always 4 for 32b addresses)

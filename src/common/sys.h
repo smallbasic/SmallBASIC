@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 #if defined(__CYGWIN__)
-typedef unsigned int addr_t;
+typedef unsigned int bcip_t;
 #endif
 
 #include <stdio.h>

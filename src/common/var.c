@@ -674,7 +674,7 @@ char *v_getstr(var_t *var) {
 /*
  * set the value of 'var' to 'itable' integer array
  */
-void v_setintarray(var_t *var, int32 *itable, int count) {
+void v_setintarray(var_t *var, int32_t *itable, int count) {
   int i;
   var_t *elem_p;
 

@@ -16,7 +16,7 @@
 struct tagParams {
   word xl; /* leftmost pixel in run */
   word xr; /* rightmost pixel in run */
-  int16 y; /* y-coordinate of run */
+  int16_t y; /* y-coordinate of run */
   byte f; /* TRUE if run is filled (blocked) */
 };
 

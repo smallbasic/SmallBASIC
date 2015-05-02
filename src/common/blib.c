@@ -847,22 +847,22 @@ void cmd_input(int input) {
  * ON x GOTO|GOSUB ...
  */
 void cmd_on_go() {
-  addr_t dest_ip;
+  bcip_t dest_ip;
   var_t var;
   stknode_t node;
 
-  addr_t next_ip = code_getaddr();
+  bcip_t next_ip = code_getaddr();
   code_skipaddr();
   code_t command = code_getnext();
   byte count = code_getnext();
-  addr_t table_ip = prog_ip;
-  addr_t expr_ip = prog_ip + (count * ADDRSZ);
+  bcip_t table_ip = prog_ip;
+  bcip_t expr_ip = prog_ip + (count * ADDRSZ);
 
   v_init(&var);
   prog_ip = expr_ip;
   eval(&var);
 
-  addr_t index = (v_igetval(&var) - 1);
+  bcip_t index = (v_igetval(&var) - 1);
   if (((int) index == -1) || ((int) index >= (int) count)) {
     // index == -1 (0 on BASIC) || index >= count do nothing
     command = kwNULL;
@@ -922,10 +922,10 @@ void cmd_gosub() {
  * @param target sub/func
  * @param return-variable ID
  */
-addr_t cmd_push_args(int cmd, addr_t goto_addr, addr_t rvid) {
+bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
   stknode_t param;
-  addr_t ofs;
-  addr_t pcount = 0;
+  bcip_t ofs;
+  bcip_t pcount = 0;
   var_t *arg = NULL;
 
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -1017,8 +1017,8 @@ addr_t cmd_push_args(int cmd, addr_t goto_addr, addr_t rvid) {
 }
 
 void cmd_udp(int cmd) {
-  addr_t goto_addr = code_getaddr();
-  addr_t rvid = code_getaddr();
+  bcip_t goto_addr = code_getaddr();
+  bcip_t rvid = code_getaddr();
   prog_ip = cmd_push_args(cmd, goto_addr, rvid);
 }
 
@@ -1030,11 +1030,11 @@ void cmd_udp(int cmd) {
  * @param goto_addr address of UDP
  * @param rvid return-var-id on callers task (this task)
  */
-void cmd_call_unit_udp(int cmd, int udp_tid, addr_t goto_addr, addr_t rvid) {
+void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
   stknode_t param;
-  addr_t ofs;
+  bcip_t ofs;
   var_t *arg = NULL;
-  addr_t pcount = 0;
+  bcip_t pcount = 0;
   int my_tid = ctask->tid;
 
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -1134,7 +1134,7 @@ void cmd_crvar() {
   int i;
   int count = code_getnext();    // number of variables to create
   for (i = 0; i < count; i++) {
-    addr_t vid = code_getaddr();    // an ID on global-variable-table is used
+    bcip_t vid = code_getaddr();    // an ID on global-variable-table is used
     stknode_t node;
 
     // store previous variable to stack
@@ -1269,7 +1269,7 @@ void cmd_udpret() {
 int cmd_exit() {
   stknode_t node;
   int ready = 0, exit_from_udp = 0;
-  addr_t addr = INVALID_ADDR;
+  bcip_t addr = INVALID_ADDR;
   code_t code;
 
   code = code_getnext();
@@ -1373,7 +1373,7 @@ void cmd_return() {
  * IF expr [THEN]
  */
 void cmd_if() {
-  addr_t true_ip, false_ip;
+  bcip_t true_ip, false_ip;
   var_t var;
   stknode_t node;
 
@@ -1396,7 +1396,7 @@ void cmd_if() {
  * ELSE
  */
 void cmd_else() {
-  addr_t true_ip, false_ip;
+  bcip_t true_ip, false_ip;
   stknode_t node;
 
   true_ip = code_getaddr();
@@ -1426,7 +1426,7 @@ void cmd_else() {
  * ELIF
  */
 void cmd_elif() {
-  addr_t true_ip, false_ip;
+  bcip_t true_ip, false_ip;
   var_t var;
   stknode_t node;
 
@@ -1487,7 +1487,7 @@ void cmd_endif() {
  */
 void cmd_for() {
   byte code;
-  addr_t true_ip, false_ip;
+  bcip_t true_ip, false_ip;
   stknode_t node;
   var_t var, varstep;
   var_p_t array_p, var_p;
@@ -1653,7 +1653,7 @@ void cmd_for() {
  * WHILE expr
  */
 void cmd_while() {
-  addr_t true_ip, false_ip;
+  bcip_t true_ip, false_ip;
   var_t var;
   stknode_t node;
 
@@ -1679,7 +1679,7 @@ void cmd_while() {
  */
 void cmd_wend() {
   stknode_t node;
-  addr_t jump_ip;
+  bcip_t jump_ip;
 
   code_skipaddr();
   jump_ip = code_getaddr();
@@ -1692,7 +1692,7 @@ void cmd_wend() {
  */
 void cmd_repeat() {
   stknode_t node;
-  addr_t next_ip;
+  bcip_t next_ip;
 
   node.type = kwREPEAT;
   code_skipaddr();
@@ -1705,7 +1705,7 @@ void cmd_repeat() {
  * UNTIL expr
  */
 void cmd_until() {
-  addr_t jump_ip;
+  bcip_t jump_ip;
   var_t var;
   stknode_t node;
 
@@ -1726,7 +1726,7 @@ void cmd_until() {
  * NEXT
  */
 void cmd_next() {
-  addr_t next_ip, jump_ip;
+  bcip_t next_ip, jump_ip;
   var_t var_to, var_step, *var_p, *array_p;
   var_t *var_elem_ptr;
   int check = 0;
@@ -2112,7 +2112,7 @@ void cmd_wsplit() {
   int count, i, wait_q;
   char *p, *ps, *new_text, *buf, *z;
   var_t *var_p, *elem_p;
-  addr_t use_ip, exit_ip = INVALID_ADDR;
+  bcip_t use_ip, exit_ip = INVALID_ADDR;
   char *str = NULL, *del = NULL, *pairs = NULL;
 
   par_massget("SSPs", &str, &del, &var_p, &pairs);
@@ -2403,7 +2403,7 @@ void cmd_timehms() {
 /**
  * SORT array [USE ...]
  */
-int sb_qcmp(var_t *a, var_t *b, addr_t use_ip) {
+int sb_qcmp(var_t *a, var_t *b, bcip_t use_ip) {
   if (use_ip == INVALID_ADDR) {
     return v_compare(a, b);
   } else {
@@ -2423,7 +2423,7 @@ int sb_qcmp(var_t *a, var_t *b, addr_t use_ip) {
 }
 
 // using C's qsort()
-static addr_t static_qsort_last_use_ip;
+static bcip_t static_qsort_last_use_ip;
 
 int qs_cmp(const void *a, const void *b) {
   var_t *ea = (var_t *) a;
@@ -2432,7 +2432,7 @@ int qs_cmp(const void *a, const void *b) {
 }
 
 void cmd_sort() {
-  addr_t use_ip, exit_ip;
+  bcip_t use_ip, exit_ip;
   var_t *var_p;
   int errf = 0;
 
@@ -2472,7 +2472,7 @@ void cmd_sort() {
  * SEARCH A(), key, BYREF ridx [USE ...]
  */
 void cmd_search() {
-  addr_t use_ip, exit_ip;
+  bcip_t use_ip, exit_ip;
   int i, bcmp;
   var_t *var_p, *elem_p, *rv_p;
   var_t vkey;
@@ -2586,7 +2586,7 @@ void cmd_swap(void) {
  */
 void cmd_exprseq(void) {
   var_t *var_p, *elem_p;
-  addr_t use_ip, exit_ip = INVALID_ADDR;
+  bcip_t use_ip, exit_ip = INVALID_ADDR;
   var_num_t xmin, xmax, dx, x;
   var_int_t count, i;
 
@@ -2657,8 +2657,8 @@ void cmd_select() {
  */
 void cmd_case() {
   var_t var_p;
-  addr_t true_ip = code_getaddr();     // matching case
-  addr_t false_ip = code_getaddr();    // non-matching case
+  bcip_t true_ip = code_getaddr();     // matching case
+  bcip_t false_ip = code_getaddr();    // non-matching case
 
   v_init(&var_p);
   eval(&var_p);
@@ -2686,8 +2686,8 @@ void cmd_case() {
  * skip to cmd_end_select if a previous case was true
  */
 void cmd_case_else() {
-  addr_t true_ip = code_getaddr();     // default block
-  addr_t false_ip = code_getaddr();    // end-select
+  bcip_t true_ip = code_getaddr();     // default block
+  bcip_t false_ip = code_getaddr();    // end-select
   stknode_t *node = code_stackpeek();
   code_jump(node->x.vcase.flags ? false_ip : true_ip);
 }
@@ -2736,8 +2736,8 @@ void cmd_definekey(void) {
  * Handler for unthrown/uncaught exceptions
  */
 void cmd_catch() {
-  addr_t end_try_ip = code_getaddr();
-  addr_t outer_catch_ip = code_getaddr();
+  bcip_t end_try_ip = code_getaddr();
+  bcip_t outer_catch_ip = code_getaddr();
 
   // skip level code
   prog_ip += 1;

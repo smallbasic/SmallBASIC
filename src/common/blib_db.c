@@ -815,7 +815,7 @@ void cmd_chmod() {
 /*
  * walk on dirs
  */
-void dirwalk(char *dir, char *wc, addr_t use_ip) {
+void dirwalk(char *dir, char *wc, bcip_t use_ip) {
   char name[OS_PATHNAME_SIZE];
   struct dirent *dp;
   DIR *dfd;
@@ -882,7 +882,7 @@ void dirwalk(char *dir, char *wc, addr_t use_ip) {
  * DIRWALK "/home" [, "*"] USE MYPRN(x)
  */
 void cmd_dirwalk() {
-  addr_t use_ip, exit_ip;
+  bcip_t use_ip, exit_ip;
   char *dir = NULL, *wc = NULL;
 
   par_massget("Ss", &dir, &wc);

@@ -492,6 +492,9 @@ AnsiWidget *System::getOutput() {
   return wnd->_out->_ansiWidget;
 }
 
+void System::systemPrint(const char *message, ...) {
+}
+
 //--HTML Utils------------------------------------------------------------------
 
 void getHomeDir(char *fileName, bool appendSlash) {
