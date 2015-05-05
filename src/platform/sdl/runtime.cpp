@@ -96,6 +96,10 @@ void Runtime::construct(const char *font, const char *boldFont) {
         _state = kActiveState;
       }
     }
+  } else {
+    showAlert("Unable to start", "Font resource not loaded");
+    fprintf(stderr, "failed to load: [%s] [%s]\n", font, boldFont);
+    exit(1);
   }
 }
 
@@ -265,6 +269,14 @@ void Runtime::pollEvents(bool blocking) {
           showMenu();
         } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
           setBack();
+        } else if (ev.key.keysym.sym == SDLK_PAGEUP && (ev.key.keysym.mod & KMOD_CTRL)) {
+          _output->scroll(true, true);
+        } else if (ev.key.keysym.sym == SDLK_PAGEDOWN && (ev.key.keysym.mod & KMOD_CTRL)) {
+          _output->scroll(false, true);
+        } else if (ev.key.keysym.sym == SDLK_UP && (ev.key.keysym.mod & KMOD_CTRL)) {
+          _output->scroll(true, false);
+        } else if (ev.key.keysym.sym == SDLK_DOWN && (ev.key.keysym.mod & KMOD_CTRL)) {
+          _output->scroll(false, false);
         } else if (ev.key.keysym.sym == SDLK_p && (ev.key.keysym.mod & KMOD_CTRL)) {
           ::screen_dump();
         } else {
@@ -305,7 +317,7 @@ void Runtime::pollEvents(bool blocking) {
         SDL_free(ev.drop.file);
         break;
       case SDL_MOUSEWHEEL:
-        _output->scroll(ev.wheel.y == 1);
+        _output->scroll(ev.wheel.y == 1, false);
         break;
       }
       if (maEvent != NULL) {

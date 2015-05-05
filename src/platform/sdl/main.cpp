@@ -14,11 +14,12 @@
 #include "ui/strlib.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
-#include "platform/sdl/icon.h"
 #include "common/smbas.h"
 
 #if !defined(_Win32)
 #include <fontconfig/fontconfig.h>
+#else
+#include <SDL_syswm.h>
 #endif
 
 extern "C" unsigned
@@ -67,6 +68,9 @@ void appLog(const char *format, ...) {
   *p = '\0';
 
 #if defined(WIN32)
+  if (opt_verbose) {
+    fprintf(stderr, buf, 0);
+  }
   OutputDebugString(buf);
 #else
   fprintf(stderr, buf, 0);
@@ -77,6 +81,20 @@ void appLog(const char *format, ...) {
 bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold) {
   fontFile = "Envy Code R.ttf";
   fontFileBold = "Envy Code R Bold.ttf";
+  if (access(fontFile.c_str(), 0) != 0) {
+    fontFile = "SourceCodePro-Regular.ttf";
+    fontFileBold = "SourceCodePro-Bold.ttf";
+  }
+  if ((familyName != NULL && strcasecmp(familyName, "consola") == 0)
+      || access(fontFile.c_str(), 0) != 0) {
+    fontFile = "c:/Windows/Fonts/consola.ttf";
+    fontFileBold = "c:/Windows/Fonts/consolab.ttf";
+  }
+  if ((familyName != NULL && strcasecmp(familyName, "courier") == 0)
+      || access(fontFile.c_str(), 0) != 0) {
+    fontFile = "c:/Windows/Fonts/cour.ttf";
+    fontFileBold = "c:/Windows/Fonts/courbd.ttf";
+  }
   return true;
 }
 #else
@@ -95,7 +113,7 @@ bool getFont(FcFontSet *fs, const char *familyName, int fontWeight, String &name
       int len = strlen(filename);
       if (spacing == FC_MONO
           && weight == fontWeight
-          && slant == 0 
+          && slant == 0
           && strcasecmp(filename + len - 4, ".ttf") == 0
           && strcasecmp(familyName, (const char *)family) == 0) {
         name.empty();
@@ -115,9 +133,9 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
     FcPattern *pat = FcPatternCreate();
     FcObjectSet *os = FcObjectSetBuild(FC_SPACING, FC_WEIGHT, FC_SLANT, FC_FAMILY, FC_FILE, (char *) 0);
     FcFontSet *fs = FcFontList(config, pat, os);
-    
+
     if (familyName != NULL &&
-        getFont(fs, familyName, FC_WEIGHT_REGULAR, fontFile) && 
+        getFont(fs, familyName, FC_WEIGHT_REGULAR, fontFile) &&
         getFont(fs, familyName, FC_WEIGHT_BOLD, fontFileBold)) {
       result = true;
     }
@@ -125,16 +143,16 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
     if (familyName != NULL && !result) {
       fprintf(stderr, "Failed to load %s\n", familyName);
     }
-    
+
     int i = 0;
     while (!result && FONTS[i] != NULL) {
-      if (getFont(fs, FONTS[i], FC_WEIGHT_REGULAR, fontFile) && 
+      if (getFont(fs, FONTS[i], FC_WEIGHT_REGULAR, fontFile) &&
           getFont(fs, FONTS[i], FC_WEIGHT_BOLD, fontFileBold)) {
         result = true;
       }
       i++;
     }
-    
+
     FcFontSetDestroy(fs);
     FcObjectSetDestroy(os);
     FcPatternDestroy(pat);
@@ -161,17 +179,18 @@ void showHelp() {
 }
 
 void loadIcon(SDL_Window *window) {
-  unsigned w, h;
-  unsigned char *image;
-  unsigned error = lodepng_decode32(&image, &w, &h, ic_launcher_png, ic_launcher_png_len);
-  if (!error) {
-    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(image, w, h, 32, w * 4,
-                                                 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-    SDL_SetWindowIcon(window, icon);
-    SDL_FreeSurface(icon);
-  } else {
-    fprintf(stderr, "Failed to decode icon image\n");
+#if defined(_Win32)
+  HINSTANCE handle = ::GetModuleHandle(NULL);
+  HICON icon = ::LoadIcon(handle, MAKEINTRESOURCE(101));
+  if (icon != NULL) {
+    SDL_SysWMinfo wminfo;
+    SDL_VERSION(&wminfo.version);
+    if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
+      HWND hwnd = wminfo.info.win.window;
+      ::SetClassLong(hwnd, GCL_HICON, reinterpret_cast<LONG>(icon));
+    }
   }
+#endif
 }
 
 int main(int argc, char* argv[]) {
@@ -194,7 +213,8 @@ int main(int argc, char* argv[]) {
           const char *s = argv[i];
           int len = strlen(s);
           if (runFile == NULL
-              && strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0) {
+              && ((strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0)
+                  || (strstr(s, "://") != NULL))) {
             runFile = strdup(s);
           } else {
             strcpy(opt_command, s);
@@ -242,7 +262,7 @@ int main(int argc, char* argv[]) {
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
-                                        SDL_WINDOW_SHOWN | 
+                                        SDL_WINDOW_SHOWN |
                                         SDL_WINDOW_RESIZABLE |
                                         SDL_WINDOW_INPUT_FOCUS |
                                         SDL_WINDOW_MOUSE_FOCUS);

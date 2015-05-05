@@ -184,6 +184,10 @@ RANLIB		= /cygdrive/c/cygwin/bin/ranlib
  $ ./configure --host=i686-w64-mingw32 --enable-sdl
  $ make
 
+ or for cross-compiling under linux:
+ ./configure --host=i686-w64-mingw32 --prefix=/devsw/mingw --enable-sdl
+ Note: requires building SDL2 and freetype-2 into the prefix folder
+
 == Building the non-graphical console version (cygwin or linux)
  $ ./configure && make
 

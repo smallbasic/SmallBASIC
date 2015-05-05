@@ -244,10 +244,18 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
   _height = newHeight;
 }
 
-void AnsiWidget::scroll(bool up) {
-  int h = _front->_charHeight;
+void AnsiWidget::scroll(bool up, bool page) {
+  int h = page ? _front->_height - _front->_charHeight : _front->_charHeight;
   int vscroll = _front->_scrollY + (up ? - h : h);
   int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
+
+  if (page) {
+    if (vscroll < 0 && _front->_scrollY > 0) {
+      vscroll = 0;
+    } else if (vscroll >= maxVScroll) {
+      vscroll = maxVScroll - _front->_charHeight;
+    }
+  }
 
   if (vscroll >= 0 && vscroll < maxVScroll) {
     _front->drawInto();
