@@ -67,6 +67,9 @@ void appLog(const char *format, ...) {
   *p = '\0';
 
 #if defined(WIN32)
+  if (opt_verbose) {
+    fprintf(stderr, buf, 0);
+  }
   OutputDebugString(buf);
 #else
   fprintf(stderr, buf, 0);
@@ -77,6 +80,18 @@ void appLog(const char *format, ...) {
 bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold) {
   fontFile = "Envy Code R.ttf";
   fontFileBold = "Envy Code R Bold.ttf";
+  if (access(fontFile.c_str(), 0) != 0) {
+    fontFile = "SourceCodePro-Regular.ttf";
+    fontFileBold = "SourceCodePro-Bold.ttf";
+  }
+  if (strcasecmp(familyName, "consola") == 0 || access(fontFile.c_str(), 0) != 0) {
+    fontFile = "c:/Windows/Fonts/consola.ttf";
+    fontFileBold = "c:/Windows/Fonts/consolab.ttf";
+  }
+  if (strcasecmp(familyName, "courier") == 0 || access(fontFile.c_str(), 0) != 0) {
+    fontFile = "c:/Windows/Fonts/cour.ttf";
+    fontFileBold = "c:/Windows/Fonts/courbd.ttf";
+  }
   return true;
 }
 #else

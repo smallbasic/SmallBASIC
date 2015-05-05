@@ -96,6 +96,9 @@ void Runtime::construct(const char *font, const char *boldFont) {
         _state = kActiveState;
       }
     }
+  } else {
+    fprintf(stderr, "failed to load: [%s] [%s]\n", font, boldFont);
+    exit(1);
   }
 }
 
