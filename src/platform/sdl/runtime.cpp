@@ -97,6 +97,7 @@ void Runtime::construct(const char *font, const char *boldFont) {
       }
     }
   } else {
+    showAlert("Unable to start", "Font resource not loaded");
     fprintf(stderr, "failed to load: [%s] [%s]\n", font, boldFont);
     exit(1);
   }

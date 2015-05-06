@@ -235,7 +235,6 @@ function buildSDL() {
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
    (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
-   (cd ide/android/res/drawable-hdpi && xxd -i ic_launcher.png > ../../../../src/platform/sdl/icon.h)
 }
 
 function buildTizen() {

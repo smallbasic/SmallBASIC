@@ -32,3 +32,10 @@ sbasicg_SOURCES =           \
 sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
 sbasicg_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
+
+if WITH_WIN32
+sbasicg_LDADD += win.res
+sbasicg_DEPENDENCIES += win.res
+win.res : win.rc
+	$(WINDRES) $< -O coff -o $@
+endif

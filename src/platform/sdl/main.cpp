@@ -8,13 +8,13 @@
 
 #include "config.h"
 #include <SDL.h>
+#include <SDL_syswm.h>
 #include <getopt.h>
 
 #include "ui/utils.h"
 #include "ui/strlib.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
-#include "platform/sdl/icon.h"
 #include "common/smbas.h"
 
 #if !defined(_Win32)
@@ -84,11 +84,13 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
     fontFile = "SourceCodePro-Regular.ttf";
     fontFileBold = "SourceCodePro-Bold.ttf";
   }
-  if (strcasecmp(familyName, "consola") == 0 || access(fontFile.c_str(), 0) != 0) {
+  if ((familyName != NULL && strcasecmp(familyName, "consola") == 0)
+      || access(fontFile.c_str(), 0) != 0) {
     fontFile = "c:/Windows/Fonts/consola.ttf";
     fontFileBold = "c:/Windows/Fonts/consolab.ttf";
   }
-  if (strcasecmp(familyName, "courier") == 0 || access(fontFile.c_str(), 0) != 0) {
+  if ((familyName != NULL && strcasecmp(familyName, "courier") == 0)
+      || access(fontFile.c_str(), 0) != 0) {
     fontFile = "c:/Windows/Fonts/cour.ttf";
     fontFileBold = "c:/Windows/Fonts/courbd.ttf";
   }
@@ -176,17 +178,18 @@ void showHelp() {
 }
 
 void loadIcon(SDL_Window *window) {
-  unsigned w, h;
-  unsigned char *image;
-  unsigned error = lodepng_decode32(&image, &w, &h, ic_launcher_png, ic_launcher_png_len);
-  if (!error) {
-    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(image, w, h, 32, w * 4,
-                                                 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-    SDL_SetWindowIcon(window, icon);
-    SDL_FreeSurface(icon);
-  } else {
-    fprintf(stderr, "Failed to decode icon image\n");
+#if defined(_Win32)
+  HINSTANCE handle = ::GetModuleHandle(NULL);
+  HICON icon = ::LoadIcon(handle, MAKEINTRESOURCE(101));
+  if (icon != NULL) {
+    SDL_SysWMinfo wminfo;
+    SDL_VERSION(&wminfo.version);
+    if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
+      HWND hwnd = wminfo.info.win.window;
+      ::SetClassLong(hwnd, GCL_HICON, reinterpret_cast<LONG>(icon));
+    }
   }
+#endif
 }
 
 int main(int argc, char* argv[]) {
