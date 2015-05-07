@@ -282,7 +282,7 @@ socket_t net_listen(int server_port) {
       }
     } else if (FD_ISSET(listener, &readfds)) {
       // connection is ready
-#if defined(Win32)
+#if defined(_Win32)
       int remoteaddr_len = sizeof(remoteaddr);
 #else
       socklen_t remoteaddr_len = sizeof(remoteaddr);

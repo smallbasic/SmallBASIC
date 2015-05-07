@@ -8,7 +8,6 @@
 
 #include "config.h"
 #include <SDL.h>
-#include <SDL_syswm.h>
 #include <getopt.h>
 
 #include "ui/utils.h"
@@ -19,6 +18,8 @@
 
 #if !defined(_Win32)
 #include <fontconfig/fontconfig.h>
+#else
+#include <SDL_syswm.h>
 #endif
 
 extern "C" unsigned
@@ -112,7 +113,7 @@ bool getFont(FcFontSet *fs, const char *familyName, int fontWeight, String &name
       int len = strlen(filename);
       if (spacing == FC_MONO
           && weight == fontWeight
-          && slant == 0 
+          && slant == 0
           && strcasecmp(filename + len - 4, ".ttf") == 0
           && strcasecmp(familyName, (const char *)family) == 0) {
         name.empty();
@@ -132,9 +133,9 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
     FcPattern *pat = FcPatternCreate();
     FcObjectSet *os = FcObjectSetBuild(FC_SPACING, FC_WEIGHT, FC_SLANT, FC_FAMILY, FC_FILE, (char *) 0);
     FcFontSet *fs = FcFontList(config, pat, os);
-    
+
     if (familyName != NULL &&
-        getFont(fs, familyName, FC_WEIGHT_REGULAR, fontFile) && 
+        getFont(fs, familyName, FC_WEIGHT_REGULAR, fontFile) &&
         getFont(fs, familyName, FC_WEIGHT_BOLD, fontFileBold)) {
       result = true;
     }
@@ -142,16 +143,16 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
     if (familyName != NULL && !result) {
       fprintf(stderr, "Failed to load %s\n", familyName);
     }
-    
+
     int i = 0;
     while (!result && FONTS[i] != NULL) {
-      if (getFont(fs, FONTS[i], FC_WEIGHT_REGULAR, fontFile) && 
+      if (getFont(fs, FONTS[i], FC_WEIGHT_REGULAR, fontFile) &&
           getFont(fs, FONTS[i], FC_WEIGHT_BOLD, fontFileBold)) {
         result = true;
       }
       i++;
     }
-    
+
     FcFontSetDestroy(fs);
     FcObjectSetDestroy(os);
     FcPatternDestroy(pat);
@@ -212,7 +213,8 @@ int main(int argc, char* argv[]) {
           const char *s = argv[i];
           int len = strlen(s);
           if (runFile == NULL
-              && strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0) {
+              && ((strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0)
+                  || (strstr(s, "://") != NULL))) {
             runFile = strdup(s);
           } else {
             strcpy(opt_command, s);
@@ -260,7 +262,7 @@ int main(int argc, char* argv[]) {
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
-                                        SDL_WINDOW_SHOWN | 
+                                        SDL_WINDOW_SHOWN |
                                         SDL_WINDOW_RESIZABLE |
                                         SDL_WINDOW_INPUT_FOCUS |
                                         SDL_WINDOW_MOUSE_FOCUS);
