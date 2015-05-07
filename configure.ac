@@ -221,7 +221,6 @@ function buildSDL() {
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
-
    case "${host_os}" in
      *darwin*)
       PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
@@ -230,8 +229,6 @@ function buildSDL() {
      *)
       PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` -Wl,-Bdynamic `freetype-config --libs`"
     esac
-
-   PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` -Wl,-Bdynamic `freetype-config --libs`"
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
