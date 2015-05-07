@@ -221,7 +221,14 @@ function buildSDL() {
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
-   PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` -Wl,-Bdynamic `freetype-config --libs`"
+   case "${host_os}" in
+     *darwin*)
+      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
+     ;;
+
+     *)
+      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` -Wl,-Bdynamic `freetype-config --libs`"
+    esac
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
@@ -379,6 +386,7 @@ echo
 echo ${TARGET}
 echo "CFLAGS=${CFLAGS}"
 echo "CXXFLAGS=${CXXFLAGS}"
+echo "PACKAGE_LIBS=${PACKAGE_LIBS}"
 echo
 
 if test x$ac_build_dist = xyes; then
