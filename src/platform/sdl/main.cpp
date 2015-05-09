@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
               && ((strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0)
                   || (strstr(s, "://") != NULL))) {
             runFile = strdup(s);
-          } else {
+          } else if (chdir(s) != 0) {
             strcpy(opt_command, s);
           }
         }
