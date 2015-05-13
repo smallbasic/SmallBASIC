@@ -269,6 +269,9 @@ void Runtime::pollEvents(bool blocking) {
           showMenu();
         } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
           setBack();
+        } else if (ev.key.keysym.sym == SDLK_BACKSPACE &&
+                   ((ev.key.keysym.mod & KMOD_CTRL) || !isRunning())) {
+          setBack();
         } else if (ev.key.keysym.sym == SDLK_PAGEUP && (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(true, true);
         } else if (ev.key.keysym.sym == SDLK_PAGEDOWN && (ev.key.keysym.mod & KMOD_CTRL)) {

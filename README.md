@@ -1,5 +1,32 @@
 SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes. SmallBASIC includes trigonometric, matrices and algebra functions, a built in IDE, a powerful string library, system, sound, and graphic commands along with structured programming syntax
 
+## Building the SDL version
+```
+ $ ./configure --enable-sdl
+ $ make
+```
+ On windows, install tools:
+ http://www.gtk.org/download/win32.php
+```
+ $ ./configure --host=i686-w64-mingw32 --enable-sdl
+ $ make
+```
+ or for cross-compiling under linux:
+ ./configure --host=i686-w64-mingw32 --prefix=/devsw/mingw --enable-sdl
+ Note: requires building SDL2 and freetype-2 into the prefix folder
+
+## Building the non-graphical console version (cygwin or linux)
+```
+ $ ./configure && make
+```
+ Windows 32 bit mingw console:
+```
+ $./configure --host=i686-w64-mingw32 && make
+```
+ Windows 64 bit mingw console:
+
+ $./configure --host=x86_64-w64-mingw32 && make
+
 ## Building the Android port
 
 1. Setup .bashrc:
@@ -65,90 +92,8 @@ export CFLAGS=${CPPFLAGS}
 ```
 4. Build the project using Tizen IDE
 
-## Setup instructions for building FLTK version under a fresh ubuntu system
-
-1. Install tools. Be sure to accept all included dependencies. Note, some 
-   of these are only required for building FLTK to completion but are not 
-   actually used in SmallBASIC:
-
-   sudo apt-get install subversion autotools-dev autogen autoconf \
-     libxft-dev g++ libxi-dev libgl1-mesa-dev libglut3-dev libsdl1.2-dev libreadline-dev
-
-2. Download code from subversion:
-```
- $ mkdir src && cd src
- $ svn co http://seriss.com/public/fltk/fltk/trunk fltk-2.0 <press enter for username+password>
- $ git clone git://git.code.sf.net/p/smallbasic/git smallbasic-git
- $ cd fltk-2.0 
- $ make (needs to complete at least up to building tests)
- $ sudo make install
- $ cd ../smallbasic
- $ sh autogen.sh
- $ configure --enable-fltk
- $ make
- $ sudo make install
-```
-## Setup instructions for building FLTK version under cygwin
-
-Install cygwin along with mingw-gcc
-```
-./configure --host=i686-w64-mingw32 --enable-fltk
-```
-For 64 bit build:
-```
-./configure --host=x86_64-w64-mingw32 --enable-fltk
-```
---- Old instructions ---
-
-Download and install cygwin
---> http://www.cygwin.com/
-
-Download and install MingW
---> http://sourceforge.net/projects/mingw/
-
-Setup $HOME/.bash_profile:
-
---cut-here--
- export PATH="/cygdrive/c/MinGW/bin:/usr/local/bin:/bin:"
- alias make=mingw32-make
---cut-here--
-
-Obtain and install FLTK as per the ubuntu instructions, then update
-the fltk makeinclude file:
-```
-STRIP		= /cygdrive/c/cygwin/bin/strip
-LIBCOMMAND	= /cygdrive/c/cygwin/bin/ar cr
-RANLIB		= /cygdrive/c/cygwin/bin/ranlib
-```
-## Building the SDL version
-```
- $ ./configure --enable-sdl
- $ make
-```
- On windows, install tools:
- http://www.gtk.org/download/win32.php
-```
- $ ./configure --host=i686-w64-mingw32 --enable-sdl
- $ make
-```
- or for cross-compiling under linux:
- ./configure --host=i686-w64-mingw32 --prefix=/devsw/mingw --enable-sdl
- Note: requires building SDL2 and freetype-2 into the prefix folder
-
-## Building the non-graphical console version (cygwin or linux)
-```
- $ ./configure && make
-```
- Windows 32 bit mingw console:
-```
- $./configure --host=i686-w64-mingw32 && make 
-```
- Windows 64 bit mingw console:
-
- $./configure --host=x86_64-w64-mingw32 && make 
-
 ### .indent.pro settings
 ```
  -brf -nbap -br -brs -cdb -cdw -ce -cli0 -fca -i2 -l110 -lc110 -lp
- -nbbo -nbc -ncs -nip -npcs -npsl -nut -ppi0 -sc 
+ -nbbo -nbc -ncs -nip -npcs -npsl -nut -ppi0 -sc
 ```
