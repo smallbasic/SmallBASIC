@@ -41,6 +41,7 @@ struct Runtime : public System {
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
+  void setWindowTitle(const char *title) {}
   void showKeypad(bool show);
   void showAlert(const char *title, const char *message);
   void onResize(int w, int h);

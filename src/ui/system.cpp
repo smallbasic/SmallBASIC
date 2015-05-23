@@ -96,6 +96,7 @@ bool System::execute(const char *bas) {
   opt_uipos = 0;
   opt_usepcre = 0;
 
+  setWindowTitle(bas);
   bool result = ::sbasic_main(bas);
 
   opt_command[0] = '\0';

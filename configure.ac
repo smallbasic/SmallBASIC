@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.17])
+AC_INIT([smallbasic], [0.11.18])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -222,12 +222,12 @@ function buildSDL() {
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
    case "${host_os}" in
-     *darwin*)
-      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
+     *mingw*)
+     PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
      ;;
 
      *)
-      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` -Wl,-Bdynamic `freetype-config --libs`"
+      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
     esac
 
    dnl preconfigured values for SDL build

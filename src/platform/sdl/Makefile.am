@@ -27,7 +27,8 @@ sbasicg_SOURCES =           \
   main.cpp                  \
   display.cpp               \
   runtime.cpp               \
-  settings.cpp                                    
+  settings.cpp              \
+  syswm.cpp
 
 sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
