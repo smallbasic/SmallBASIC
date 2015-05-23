@@ -17,6 +17,7 @@
 #include "lib/maapi.h"
 #include "ui/utils.h"
 #include "platform/sdl/runtime.h"
+#include "platform/sdl/syswm.h"
 #include "platform/sdl/keymap.h"
 #include "platform/sdl/main_bas.h"
 
@@ -26,7 +27,6 @@
 #include <cmath>
 
 #define WAIT_INTERVAL 25
-#define DEFAULT_FONT_SIZE 12
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000
 #define FREQUENCY 44100
@@ -125,7 +125,7 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
   opt_nosave = true;
 
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  _output->setFontSize(DEFAULT_FONT_SIZE);
+  _output->setFontSize(getStartupFontSize(_window));
   _initialFontSize = _output->getFontSize();
   if (fontScale != 100) {
     _fontScale = fontScale;
@@ -146,14 +146,12 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
 
   if (startupBas != NULL) {
     String bas = startupBas;
-    setWindowTitle(bas.c_str());
     runOnce(bas.c_str());
     while (_state == kRestartState) {
       _state = kActiveState;
       if (_loadPath.length() != 0) {
         bas = _loadPath;
       }
-      setWindowTitle(bas.c_str());
       runOnce(bas.c_str());
     }
   } else {
@@ -294,7 +292,8 @@ void Runtime::pollEvents(bool blocking) {
           _menuX = ev.motion.x;
           _menuY = ev.motion.y;
           showMenu();
-        } else {
+        } else if (ev.motion.x != 0 && ev.motion.y != 0) {
+          // avoid phantom down message when launching in windows
           maEvent = getMotionEvent(EVENT_TYPE_POINTER_PRESSED, &ev);
         }
         break;
@@ -373,17 +372,21 @@ void Runtime::processEvent(MAEvent &event) {
 }
 
 void Runtime::setWindowTitle(const char *title) {
-  const char *slash = strrchr(title, '/');
-  if (slash == NULL) {
-    slash = title;
+  if (strcmp(title, MAIN_BAS) == 0) {
+    SDL_SetWindowTitle(_window, "SmallBASIC");
   } else {
-    slash++;
+    const char *slash = strrchr(title, '/');
+    if (slash == NULL) {
+      slash = title;
+    } else {
+      slash++;
+    }
+    int len = strlen(slash) + 16;
+    char *buffer = new char[len];
+    sprintf(buffer, "%s - SmallBASIC", slash);
+    SDL_SetWindowTitle(_window, buffer);
+    delete [] buffer;
   }
-  int len = strlen(slash) + 16;
-  char *buffer = new char[len];
-  sprintf(buffer, "%s - SmallBASIC", slash);
-  SDL_SetWindowTitle(_window, buffer);
-  delete [] buffer;
 }
 
 void Runtime::onResize(int width, int height) {

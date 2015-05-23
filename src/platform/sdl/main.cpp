@@ -14,12 +14,11 @@
 #include "ui/strlib.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
+#include "platform/sdl/syswm.h"
 #include "common/smbas.h"
 
 #if !defined(_Win32)
 #include <fontconfig/fontconfig.h>
-#else
-#include <SDL_syswm.h>
 #endif
 
 extern "C" unsigned
@@ -176,21 +175,6 @@ void showHelp() {
     i++;
   }
   fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
-}
-
-void loadIcon(SDL_Window *window) {
-#if defined(_Win32)
-  HINSTANCE handle = ::GetModuleHandle(NULL);
-  HICON icon = ::LoadIcon(handle, MAKEINTRESOURCE(101));
-  if (icon != NULL) {
-    SDL_SysWMinfo wminfo;
-    SDL_VERSION(&wminfo.version);
-    if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
-      HWND hwnd = wminfo.info.win.window;
-      ::SetClassLong(hwnd, GCL_HICON, reinterpret_cast<LONG>(icon));
-    }
-  }
-#endif
 }
 
 int main(int argc, char* argv[]) {
