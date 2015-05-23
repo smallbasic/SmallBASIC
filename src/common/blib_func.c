@@ -654,7 +654,25 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
 //
 var_int_t cmd_fre(var_int_t arg) {
   var_int_t r = 0;
-#if defined(_UnixOS)
+#if defined(_Win32)
+  MEMORYSTATUS ms;
+  ms.dwLength = sizeof(MEMORYSTATUS);
+  GlobalMemoryStatus(&ms);
+
+  switch (arg) {
+  case 0:   // free mem
+  case -3:  // largest block
+  case -12: // free mem
+    r = ms.dwAvailPhys;
+    break;
+  case -1:  // int
+    r = ms.dwAvailPhys / 4L;
+    break;
+  case -2:  // stk
+    r = 0x120000;
+    break;
+  }
+#elif defined(_UnixOS)
   // assumes first two items are total + free
   #define I_MEM_TOTAL 0
   #define I_MEM_FREE  1

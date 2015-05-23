@@ -143,7 +143,6 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
 
   SDL_AudioSpec obtainedSpec;
   SDL_OpenAudio(&desiredSpec, &obtainedSpec);
-  SDL_SetCursor(_cursorArrow);
 
   if (startupBas != NULL) {
     String bas = startupBas;
@@ -293,7 +292,8 @@ void Runtime::pollEvents(bool blocking) {
           _menuX = ev.motion.x;
           _menuY = ev.motion.y;
           showMenu();
-        } else {
+        } else if (ev.motion.x != 0 && ev.motion.y != 0) {
+          // avoid phantom down message when launching in windows
           maEvent = getMotionEvent(EVENT_TYPE_POINTER_PRESSED, &ev);
         }
         break;
