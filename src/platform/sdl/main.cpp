@@ -39,12 +39,13 @@ const char* FONTS[] = {
 };
 
 static struct option OPTIONS[] = {
-  {"help",    no_argument,       NULL, 'h'},
-  {"verbose", no_argument,       NULL, 'v'},
-  {"command", optional_argument, NULL, 'c'},
-  {"font",    optional_argument, NULL, 'f'},
-  {"run",     optional_argument, NULL, 'r'},
-  {"module",  optional_argument, NULL, 'm'},
+  {"help",     no_argument,       NULL, 'h'},
+  {"verbose",  no_argument,       NULL, 'v'},
+  {"command",  optional_argument, NULL, 'c'},
+  {"font",     optional_argument, NULL, 'f'},
+  {"run",      optional_argument, NULL, 'r'},
+  {"module",   optional_argument, NULL, 'm'},
+  {"keywords", no_argument,       NULL, 'k'},
   {0, 0, 0, 0}
 };
 
@@ -161,6 +162,49 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
 }
 #endif
 
+void printKeywords() {
+  printf("SmallBASIC keywords table\n");
+  printf("::':#:rem:\"\n");     // ted's format
+  printf("$$$-remarks\n");
+  printf("'\n");
+  printf("REM\n");
+
+  // operators
+  printf("$$$-operators\n");
+  printf("() \"\"\n");
+  printf("%s\n", "+ - * / \\ % ^");
+  printf("%s\n", "= <= =< >= => <> != !");
+  printf("%s\n", "&& & || | ~");
+  for (int j = 0; opr_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", opr_table[j].name);
+  }
+
+  // print keywords
+  printf("$$$-keywords\n");
+  for (int j = 0; keyword_table[j].name[0] != '\0'; j++) {
+    if (keyword_table[j].name[0] != '$') {
+      printf("%s\n", keyword_table[j].name);
+    }
+  }
+
+  // special separators
+  for (int j = 0; spopr_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", spopr_table[j].name);
+  }
+
+  // functions
+  printf("$$$-functions\n");
+  for (int j = 0; func_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", func_table[j].name);
+  }
+
+  // procedures
+  printf("$$$-procedures\n");
+  for (int j = 0; proc_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", proc_table[j].name);
+  }
+}
+
 void showHelp() {
   fprintf(stdout,
           "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n\n",
@@ -189,7 +233,7 @@ int main(int argc, char* argv[]) {
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vhc:f:r:m:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "vhc:f:r:m:k", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -231,6 +275,10 @@ int main(int argc, char* argv[]) {
       break;
     case 'h':
       showHelp();
+      exit(1);
+      break;
+    case 'k':
+      printKeywords();
       exit(1);
       break;
     default:
