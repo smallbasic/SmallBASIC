@@ -92,7 +92,11 @@ bool System::execute(const char *bas) {
   opt_quiet = true;
   opt_pref_width = _output->getWidth();
   opt_pref_height = _output->getHeight();
+  opt_base = 0;
+  opt_uipos = 0;
+  opt_usepcre = 0;
 
+  setWindowTitle(bas);
   bool result = ::sbasic_main(bas);
 
   opt_command[0] = '\0';
@@ -432,6 +436,11 @@ void System::runMain(const char *mainBasPath) {
       if (!success) {
         // highlight the error
         showError();
+        if (_mainBas) {
+          // unexpected error in main.bas
+          maAlert("", gsb_last_errmsg, NULL, NULL, NULL);
+          _state = kClosingState;
+        }
       }
       if (!_mainBas && !networkFile) {
         // press back to continue

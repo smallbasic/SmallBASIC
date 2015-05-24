@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.17])
+AC_INIT([smallbasic], [0.11.18])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -148,7 +148,6 @@ function buildFLTK() {
      FLTK_CXXFLAGS="-I`cygpath -m /usr/local/include` ${FLTK_CXXFLAGS} -mms-bitfields"
      PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -static-libgcc"
      AC_DEFINE(_Win32, 1, [Windows build])
-     AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
    esac
 
    defaultConditionals
@@ -203,11 +202,8 @@ function buildSDL() {
 
      dnl do not depend on cygwin.dll under cygwin build
      PACKAGE_CFLAGS="-I`cygpath -m /usr/local/include` ${PACKAGE_CFLAGS} -mms-bitfields"
-     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -static-libgcc -static-libstdc++"
+     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
      AC_DEFINE(_Win32, 1, [Windows build])
-     AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
-     FONTCONFIG_CFLAGS=""
-     FONTCONFIG_LIBS=""
      ;;
 
      *)
@@ -215,13 +211,24 @@ function buildSDL() {
      PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.2)
      AC_SUBST(FONTCONFIG_CFLAGS)
      AC_SUBST(FONTCONFIG_LIBS)
+     AC_DEFINE(OS_PREC64, 1, [64 bit variables])
+
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
+     PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
    esac
 
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
-   PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS} `sdl2-config --libs` `freetype-config --libs`"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
+   case "${host_os}" in
+     *mingw*)
+     PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
+     ;;
+
+     *)
+      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
+    esac
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
@@ -231,12 +238,10 @@ function buildSDL() {
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
 
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
    (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
-   (cd ide/android/res/drawable-hdpi && xxd -i ic_launcher.png > ../../../../src/platform/sdl/icon.h)
 }
 
 function buildTizen() {
@@ -317,7 +322,6 @@ function buildConsole() {
          BUILD_SUBDIRS="src/common src/platform/unix"
       fi
       AC_DEFINE(_Win32, 1, [Windows build])
-      AC_DEFINE(__addr_t_defined, 1, [Avoid conflict in cygwin/types.h])
    else
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."
@@ -382,6 +386,7 @@ echo
 echo ${TARGET}
 echo "CFLAGS=${CFLAGS}"
 echo "CXXFLAGS=${CXXFLAGS}"
+echo "PACKAGE_LIBS=${PACKAGE_LIBS}"
 echo
 
 if test x$ac_build_dist = xyes; then

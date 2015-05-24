@@ -44,6 +44,7 @@ struct System {
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
+  virtual void setWindowTitle(const char *title) = 0;
 
 protected:
   void checkModifiedTime();
