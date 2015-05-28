@@ -138,6 +138,9 @@ int System::getPen(int code) {
     case 11:
       result = _touchCurY;
       break;
+
+    case 12:  // true if left button pressed
+      return _buttonPressed;
     }
   }
   return result;
