@@ -94,6 +94,7 @@ private:
   bool doEscape(const char *&p, int textHeight);
   void doSwipe(int start, bool moveDown, int distance, int maxScroll);
   void drawActiveButton();
+  bool drawHoverLink(MAEvent &event);
   void handleEscape(const char *&p, int textHeight);
   bool setActiveButton(MAEvent &event, Screen *screen);
 
@@ -112,6 +113,7 @@ private:
   bool _swipeExit; // last touch-down was swipe exit
   bool _autoflush; // flush internally
   FormInput *_activeButton;
+  FormInput *_hoverInput;
 };
 
 #endif // ANSIWIDGET_H

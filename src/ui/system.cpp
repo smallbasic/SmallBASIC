@@ -639,9 +639,9 @@ void System::showMenu() {
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
       if (_mainBas) {
-        sprintf(buffer, "Zoom %d%%", _fontScale - FONT_SCALE_INTERVAL);
+        sprintf(buffer, "Font Size %d%%", _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
-        sprintf(buffer, "Zoom %d%%", _fontScale + FONT_SCALE_INTERVAL);
+        sprintf(buffer, "Font Size %d%%", _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;

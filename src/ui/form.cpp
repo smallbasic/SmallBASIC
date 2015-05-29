@@ -105,8 +105,8 @@ void FormLineInput::clicked(int x, int y, bool pressed) {
   }
 }
 
-bool FormLineInput::overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  bool result = FormInput::overlaps(pt, scrollX, scrollY, redraw);
+bool FormLineInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
+  bool result = FormInput::overlaps(pt, scrollX, scrollY);
   if (result) {
     int x = pt.x - (_x + scrollX);
     int charWidth = g_system->getOutput()->getCharWidth();

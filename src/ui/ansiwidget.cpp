@@ -71,7 +71,8 @@ AnsiWidget::AnsiWidget(int width, int height) :
   _touchTime(0),
   _swipeExit(false),
   _autoflush(true),
-  _activeButton(NULL) {
+  _activeButton(NULL),
+  _hoverInput(NULL) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     _screens[i] = NULL;
   }
@@ -380,7 +381,7 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
     _yTouch = _yMove = event.point.y;
     result = true;
   }
-
+  _hoverInput = NULL;
   return result;
 }
 
@@ -391,7 +392,7 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
     _activeButton = _front->getMenu(_activeButton, event.point.x, event.point.y);
   } else if (_activeButton != NULL) {
     bool redraw = false;
-    bool pressed = _activeButton->overlaps(event.point, _focus->_x,
+    bool pressed = _activeButton->selected(event.point, _focus->_x,
                                            _focus->_y - _focus->_scrollY, redraw);
     if (redraw || (pressed != _activeButton->_pressed)) {
       _activeButton->_pressed = pressed;
@@ -425,6 +426,8 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
       flush(true, true);
       result = true;
     }
+  } else if (drawHoverLink(event)) {
+    result = true;
   }
   return result;
 }
@@ -547,7 +550,7 @@ void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) 
 
 // draws the focus screen
 void AnsiWidget::drawActiveButton() {
-  if (_focus != NULL) {
+  if (_focus != NULL && !_activeButton->hasHover()) {
 #if defined(_FLTK)
     maUpdateScreen();
 #else
@@ -557,6 +560,41 @@ void AnsiWidget::drawActiveButton() {
     maSetDrawTarget(currentHandle);
 #endif
   }
+}
+
+bool AnsiWidget::drawHoverLink(MAEvent &event) {
+  bool result = false;
+#if !defined(_ANDROID)
+  if (_front != _screens[MENU_SCREEN] &&
+      _front->overlaps(event.point.x, event.point.y)) {
+    int dx = _front->_x;
+    int dy = _front->_y - _front->_scrollY;
+    FormInput *active = NULL;
+    List_each(FormInput*, it, _front->_inputs) {
+      FormInput *widget = (FormInput *)(*it);
+      if (widget->hasHover() &&
+          widget->overlaps(event.point, dx, dy)) {
+        active = widget;
+        break;
+      }
+    }
+    if (active && active != _hoverInput) {
+      if (_hoverInput) {
+        // remove old hover
+        _hoverInput->drawHover(dx, dy, false);
+      }
+      // display new hover
+      _hoverInput = active;
+      _hoverInput->drawHover(dx, dy, true);
+      result = true;
+    } else if (!active && _hoverInput) {
+      // no new hover, erase old hover
+      _hoverInput->drawHover(dx, dy, false);
+      _hoverInput = NULL;
+    }
+  }
+#endif
+  return result;
 }
 
 // print() helper
@@ -577,7 +615,7 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
     List_each(FormInput*, it, screen->_inputs) {
       FormInput *widget = (FormInput *)(*it);
       bool redraw = false;
-      if (widget->overlaps(event.point, screen->_x,
+      if (widget->selected(event.point, screen->_x,
                            screen->_y - screen->_scrollY, redraw)) {
         _activeButton = widget;
         _activeButton->_pressed = true;
