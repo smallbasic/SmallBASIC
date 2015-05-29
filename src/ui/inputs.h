@@ -109,7 +109,7 @@ struct FormInput : public Shape {
   FormInput(int x, int y, int w, int h);
   virtual ~FormInput();
 
-  virtual bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  virtual bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   virtual const char *getText() const { return NULL; }
   virtual void setText(const char *text) {}
   virtual bool edit(int key, int screenWidth, int charWidth) { return false; }
@@ -119,13 +119,16 @@ struct FormInput : public Shape {
   virtual int padding(bool vert) const { return vert ? BN_H : BN_W; }
   virtual void clicked(int x, int y, bool pressed);
   virtual bool isDrawTop() { return false; }
+  virtual bool hasHover() { return false; }
   virtual void setFocus();
 
   void construct(var_p_t form, var_p_t field, int id);
   void drawButton(const char *caption, int x, int y, int w, int h, bool pressed);
+  void drawHover(int dx, int dy, bool selected);
   void drawLink(const char *caption, int x, int y, int sw, int chw);
   void drawText(const char *text, int x, int y, int sw, int chw);
   void draw(int x, int y, int w, int h, int chw);
+  bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   bool hasFocus() const;
   int  getBackground(int buttonColor) const;
   int  getId() { return _id; }
@@ -169,7 +172,7 @@ struct FormLabel : public FormInput {
   void setText(const char *text) { _label = text; }
   int padding(bool vert) const { return 0; }
   void clicked(int x, int y, bool pressed) {}
-  bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) { return false; }
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) { return false; }
 
 private:
   String _label;
@@ -180,25 +183,24 @@ struct FormLink : public FormInput {
   virtual ~FormLink() {}
 
   const char *getText() const { return _link.c_str(); }
+#if defined(_SDL)
+  bool hasHover() { return true; }
+#endif
   void draw(int x, int y, int w, int h, int chw) {
     drawLink(_link.c_str(), x, y, w, chw);
   }
   int padding(bool vert) const { return vert ? LN_H : 0; }
 
-private:
+protected:
   String _link;
 };
 
-struct FormTab : public FormInput {
+struct FormTab : public FormLink {
   FormTab(const char *link, int x, int y, int w, int h);
   virtual ~FormTab() {}
 
-  const char *getText() const { return _link.c_str(); }
   void draw(int x, int y, int w, int h, int chw);
   int padding(bool vert) const { return vert ? 0 : BN_W; }
-
-private:
-  String _link;
 };
 
 struct FormLineInput : public FormInput {
@@ -216,7 +218,7 @@ struct FormLineInput : public FormInput {
   void setFocus();
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);
-  bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   int padding(bool) const { return 0; }
   char *copy(bool cut);
   void cut();
@@ -255,7 +257,7 @@ struct FormDropList : public FormList {
 
   void clicked(int x, int y, bool pressed);
   void draw(int dx, int dy, int w, int h, int chw);
-  bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   void updateForm(var_p_t form);
   bool isDrawTop() { return _listActive; }
   int getListHeight() const { return _listHeight; }
@@ -272,7 +274,7 @@ struct FormListBox : public FormList {
   FormListBox(ListModel *model, int x, int y, int w, int h);
   void clicked(int x, int y, bool pressed);
   void draw(int x, int y, int w, int h, int chw);
-  bool overlaps(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   virtual ~FormListBox() {}
 };
 

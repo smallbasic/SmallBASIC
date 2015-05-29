@@ -364,9 +364,6 @@ void Runtime::processEvent(MAEvent &event) {
     break;
   default:
     handleEvent(event);
-    if (event.type == EVENT_TYPE_POINTER_PRESSED && _buttonPressed) {
-      SDL_SetCursor(_cursorHand);
-    }
     break;
   }
 }
@@ -387,6 +384,10 @@ void Runtime::setWindowTitle(const char *title) {
     SDL_SetWindowTitle(_window, buffer);
     delete [] buffer;
   }
+}
+
+void Runtime::showCursor(bool hand) {
+  SDL_SetCursor(hand ? _cursorHand : _cursorArrow);
 }
 
 void Runtime::onResize(int width, int height) {

@@ -200,11 +200,18 @@ void FormInput::drawButton(const char *caption, int dx, int dy,
   }
 }
 
+void FormInput::drawHover(int dx, int dy, bool selected) {
+  MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+  maSetColor(selected ? _fg : _bg);
+  int y = _y + dy + _height - 2;
+  maLine(dx + _x, y, dx + _x + _width, y);
+  maUpdateScreen();
+  maSetDrawTarget(currentHandle);
+}
+
 void FormInput::drawLink(const char *caption, int dx, int dy, int sw, int chw) {
   maSetColor(_fg);
   drawText(caption, dx, dy, sw, chw);
-  maSetColor(_pressed ? _fg : _bg);
-  maLine(dx, dy + _height - 2, dx + MIN(sw, _width), dy + _height - 2);
 }
 
 void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {
@@ -232,8 +239,12 @@ void FormInput::draw(int x, int y, int w, int h, int chw) {
   drawButton(getText(), x, y, _width, _height, _pressed);
 }
 
-bool FormInput::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+bool FormInput::overlaps(MAPoint2d pt, int offsX, int offsY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, _x + offsX, _y + offsY, _width, _height));
+}
+
+bool FormInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
+  return FormInput::overlaps(pt, scrollX, scrollY);
 }
 
 // returns the field var attached to the field
@@ -360,8 +371,7 @@ FormLink::FormLink(const char *link, int x, int y, int w, int h) :
 // FormTab
 //
 FormTab::FormTab(const char *link, int x, int y, int w, int h) :
-  FormInput(x, y, w, h),
-  _link(link) {
+  FormLink(link, x, y, w, h) {
 }
 
 void FormTab::draw(int x, int y, int w, int h, int chw) {
@@ -847,8 +857,8 @@ void FormListBox::draw(int x, int y, int w, int h, int chw) {
   }
 }
 
-bool FormListBox::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
-  bool result = FormInput::overlaps(pt, offsX, offsY, redraw);
+bool FormListBox::selected(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+  bool result = FormInput::overlaps(pt, offsX, offsY);
   MAExtent textSize = maGetTextSize(_model->getTextAt(0));
   int rowHeight = EXTENT_Y(textSize) + 1;
   int visibleRows = _height / rowHeight;
@@ -931,7 +941,7 @@ void FormDropList::drawList(int dx, int dy, int sh) {
   }
 }
 
-bool FormDropList::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+bool FormDropList::selected(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
   bool result;
   if (_listActive) {
     result = true;
@@ -954,7 +964,7 @@ bool FormDropList::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
       redraw = true;
     }
   } else {
-    result = FormInput::overlaps(pt, offsX, offsY, redraw);
+    result = FormInput::overlaps(pt, offsX, offsY);
   }
   return result;
 }

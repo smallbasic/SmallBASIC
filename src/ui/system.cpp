@@ -292,6 +292,8 @@ void System::handleMenu(int menuId) {
 }
 
 void System::handleEvent(MAEvent &event) {
+  bool hasHover;
+
   switch (event.type) {
   case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
     if (_systemMenu != NULL) {
@@ -310,11 +312,18 @@ void System::handleEvent(MAEvent &event) {
     _touchY = _touchCurY = event.point.y;
     dev_pushkey(SB_KEY_MK_PUSH);
     _buttonPressed = _output->pointerTouchEvent(event);
+    if (_buttonPressed) {
+      showCursor(true);
+    }
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
     _touchCurX = event.point.x;
     _touchCurY = event.point.y;
+    hasHover = _output->hasHover();
     _output->pointerMoveEvent(event);
+    if (hasHover != _output->hasHover()) {
+      showCursor(!hasHover);
+    }
     break;
   case EVENT_TYPE_POINTER_RELEASED:
     _buttonPressed = false;
@@ -639,9 +648,9 @@ void System::showMenu() {
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
       if (_mainBas) {
-        sprintf(buffer, "Zoom %d%%", _fontScale - FONT_SCALE_INTERVAL);
+        sprintf(buffer, "Font Size %d%%", _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
-        sprintf(buffer, "Zoom %d%%", _fontScale + FONT_SCALE_INTERVAL);
+        sprintf(buffer, "Font Size %d%%", _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
