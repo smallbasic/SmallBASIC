@@ -204,7 +204,7 @@ void FormInput::drawHover(int dx, int dy, bool selected) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetColor(selected ? _fg : _bg);
   int y = _y + dy + _height - 2;
-  maLine(dx + _x, y, dx + _width, y);
+  maLine(dx + _x, y, dx + _x + _width, y);
   maUpdateScreen();
   maSetDrawTarget(currentHandle);
 }
@@ -212,8 +212,6 @@ void FormInput::drawHover(int dx, int dy, bool selected) {
 void FormInput::drawLink(const char *caption, int dx, int dy, int sw, int chw) {
   maSetColor(_fg);
   drawText(caption, dx, dy, sw, chw);
-  maSetColor(_pressed ? _fg : _bg);
-  maLine(dx, dy + _height - 2, dx + MIN(sw, _width), dy + _height - 2);
 }
 
 void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {

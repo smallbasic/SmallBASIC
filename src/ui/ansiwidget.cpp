@@ -381,7 +381,6 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
     _yTouch = _yMove = event.point.y;
     result = true;
   }
-  _hoverInput = NULL;
   return result;
 }
 
@@ -465,6 +464,13 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     }
   }
 
+  if (_hoverInput) {
+    int dx = _front->_x;
+    int dy = _front->_y - _front->_scrollY;
+    _hoverInput->drawHover(dx, dy, false);
+    _hoverInput = NULL;
+  }
+  
   _xTouch = _xMove = -1;
   _yTouch = _yMove = -1;
   _activeButton = NULL;
