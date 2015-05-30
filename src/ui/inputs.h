@@ -183,7 +183,9 @@ struct FormLink : public FormInput {
   virtual ~FormLink() {}
 
   const char *getText() const { return _link.c_str(); }
+#if defined(_SDL)
   bool hasHover() { return true; }
+#endif
   void draw(int x, int y, int w, int h, int chw) {
     drawLink(_link.c_str(), x, y, w, chw);
   }

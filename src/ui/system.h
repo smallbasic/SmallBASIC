@@ -45,6 +45,7 @@ struct System {
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
   virtual void setWindowTitle(const char *title) = 0;
+  virtual void showCursor(bool hand) = 0;
 
 protected:
   void checkModifiedTime();

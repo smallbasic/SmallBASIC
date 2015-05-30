@@ -58,6 +58,7 @@ struct AnsiWidget {
   int  getWidth()  { return _width; }
   int  getX() { return _back->_curX; }
   int  getY() { return _back->_curY; }
+  bool hasHover() { return _hoverInput != NULL; }
   int  insetMenuScreen(int x, int y, int w, int h);
   int  insetTextScreen(int x, int y, int w, int h);
   bool pointerTouchEvent(MAEvent &event);

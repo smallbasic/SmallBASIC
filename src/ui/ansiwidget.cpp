@@ -426,8 +426,8 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
       flush(true, true);
       result = true;
     }
-  } else if (drawHoverLink(event)) {
-    result = true;
+  } else {
+    result = drawHoverLink(event);
   }
   return result;
 }
@@ -563,8 +563,7 @@ void AnsiWidget::drawActiveButton() {
 }
 
 bool AnsiWidget::drawHoverLink(MAEvent &event) {
-  bool result = false;
-#if !defined(_ANDROID)
+#if defined(_SDL)
   if (_front != _screens[MENU_SCREEN] &&
       _front->overlaps(event.point.x, event.point.y)) {
     int dx = _front->_x;
@@ -586,7 +585,6 @@ bool AnsiWidget::drawHoverLink(MAEvent &event) {
       // display new hover
       _hoverInput = active;
       _hoverInput->drawHover(dx, dy, true);
-      result = true;
     } else if (!active && _hoverInput) {
       // no new hover, erase old hover
       _hoverInput->drawHover(dx, dy, false);
@@ -594,7 +592,7 @@ bool AnsiWidget::drawHoverLink(MAEvent &event) {
     }
   }
 #endif
-  return result;
+  return _hoverInput != NULL;
 }
 
 // print() helper
