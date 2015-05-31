@@ -2676,6 +2676,19 @@ void cmd_case() {
   } else {
     // compare select expr with case expr
     node->x.vcase.flags = v_compare(node->x.vcase.var_ptr, &var_p) == 0 ? 1 : 0;
+    while (code_peek() == kwTYPE_SEP && node->x.vcase.flags == 0) {
+      // evaluate futher comma separated items until there is a match
+      code_skipnext();
+      if (code_getnext() != ',') {
+        err_missing_comma();
+        break;
+      }
+      var_t vp_next;
+      v_init(&vp_next);
+      eval(&vp_next);
+      node->x.vcase.flags = v_compare(node->x.vcase.var_ptr, &vp_next) == 0 ? 1 : 0;
+      v_free(&vp_next);
+    }
     code_jump(node->x.vcase.flags ? true_ip : false_ip);
   }
 
