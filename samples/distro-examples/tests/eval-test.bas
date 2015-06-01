@@ -5,7 +5,11 @@ a=1+1.2
 if a<>2.2 then ? "2.2: ERROR!"
 a=fre(0)
 if 0.5<>1/2 then ? "0.5: ERROR!"
-if .6<>(1+2-3*4/5) then ? "0.6: ERROR (acceptable?) <> ";(1+2-3*4/5)
+if .6<>(1+2-3*4/5) then ? "0.6 <> ";(1+2-3*4/5)
+
+if -.6<>-.6 then throw "-.6 not -.6"
+if ("0.001" <> str(1/1000)) then throw "0.001 not " + str(1/1000)
+if ("0.001" <> str(0.001)) then throw "0.001 not " + str(1/1000)
 
 ?
 ? cat(1);"Auto type convertion";cat(0)
@@ -46,7 +50,8 @@ for i=1 to 10
 next
 for i=1 to 10
 	let b(i)=10-i
-	333 let c(10-(i-1))=i
+  ii = 10-(i-1)
+  let c(ii)=i
 	z=10-(i-1)
 	if c(z)<>i then ? "error"
 next

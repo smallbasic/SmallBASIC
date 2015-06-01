@@ -27,7 +27,7 @@
 // limits for use with 32bit integer algorithm
 #define FMT_xMIN        1e-8          // lowest limit to use the exp. format
 #define FMT_xMAX        1e+9          // highest limit to use the exp. format
-#define FMT_RND         9             // rounding on x digits
+#define FMT_RND         7             // rounding on x digits
 #define FMT_xRND        1e+9          // 1 * 10 ^ FMT_RND
 #define FMT_xRND2       1e+8          // 1 * 10 ^ (FMT_RND-1)
 #endif

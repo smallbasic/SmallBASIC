@@ -8,13 +8,14 @@
 
 #include "config.h"
 #include "platform/sdl/syswm.h"
-#include <SDL_syswm.h>
 
 #define DEFAULT_FONT_SIZE 12
 #define DEFAULT_FONT_SIZE_PTS 11
 
-void loadIcon(SDL_Window *window) {
 #if defined(_Win32)
+#include <SDL_syswm.h>
+
+void loadIcon(SDL_Window *window) {
   HINSTANCE handle = ::GetModuleHandle(NULL);
   HICON icon = ::LoadIcon(handle, MAKEINTRESOURCE(101));
   if (icon != NULL) {
@@ -25,12 +26,10 @@ void loadIcon(SDL_Window *window) {
       ::SetClassLong(hwnd, GCL_HICON, reinterpret_cast<LONG>(icon));
     }
   }
-#endif
 }
 
 int getStartupFontSize(SDL_Window *window) {
   int result = DEFAULT_FONT_SIZE;
-#if defined(_Win32)
   SDL_SysWMinfo wminfo;
   SDL_VERSION(&wminfo.version);
   if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
@@ -39,6 +38,16 @@ int getStartupFontSize(SDL_Window *window) {
     result = MulDiv(DEFAULT_FONT_SIZE_PTS, GetDeviceCaps(hdc, LOGPIXELSY), 72);
     ReleaseDC(hwnd, hdc);
   }
-#endif
   return result;
 }
+
+#else
+
+void loadIcon(SDL_Window *window) {
+}
+
+int getStartupFontSize(SDL_Window *window) {
+  return DEFAULT_FONT_SIZE;
+}
+
+#endif
