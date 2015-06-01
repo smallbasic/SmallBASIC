@@ -287,10 +287,12 @@ int v_compare(var_t *a, var_t *b) {
     return (di < 0 ? -1 : di > 0 ? 1 : 0);
   } else if ((a->type == V_INT || a->type == V_NUM) &&
              (b->type == V_INT || b->type == V_NUM)) {
+    double left_int, right_int;
     var_num_t left = (a->type == V_NUM) ? a->v.n : a->v.i;
     var_num_t right = (b->type == V_NUM) ? b->v.n : b->v.i;
-    dt = (left - right);
-    return (dt < 0.0 ? -1 : dt < 0.0000000000000000001f ? 0 : 1);
+    var_num_t fract = modf(left, &left_int) - modf(right, &right_int);
+    dt = (left_int - right_int);
+    return dt < 0.0 ? -1 : dt > 0 ? 1 : (fract < FLOAT_ERR ? 0 : 1);
   }
   if ((a->type == V_STR) && (b->type == V_STR)) {
     return strcmp(a->v.p.ptr, b->v.p.ptr);

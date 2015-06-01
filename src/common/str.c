@@ -144,8 +144,9 @@ char *stristr(const char *s1, const char *s2) {
   p = (char *) s1;
   l2 = strlen(s2);
   while (*p) {
-    if (strcaselessn(p, s2, l2) == 0)
+    if (strcaselessn(p, s2, l2) == 0) {
       return p;
+    }
     p++;
   }
   return NULL;
@@ -175,7 +176,6 @@ char *transdup(const char *src, const char *what, const char *with) {
         dest = realloc(dest, size);
         d = dest + len;
       }
-
       memcpy(d, with, lwith);
       d += lwith;
       p += (lwhat - 1);
@@ -186,7 +186,6 @@ char *transdup(const char *src, const char *what, const char *with) {
         dest = realloc(dest, size);
         d = dest + len;
       }
-
       *d = *p;
       d++;
     }
@@ -210,7 +209,6 @@ char *q_strstr(const char *s1, const char *s2, const char *pairs) {
   wait_q = open_q = level_q = 0;
 
   while (*p) {
-
     if (*p == wait_q) {         // i am waiting that. level down
       level_q--;
       if (level_q <= 0) {       // level = 0
@@ -236,8 +234,9 @@ char *q_strstr(const char *s1, const char *s2, const char *pairs) {
         }
       }
     } else if (wait_q == 0) {     // it is a regular character
-      if (strncmp(p, s2, l2) == 0)
+      if (strncmp(p, s2, l2) == 0) {
         return p;
+      }
     }
     // next
     p++;
@@ -432,7 +431,6 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
   // resolve the base (hex, octal and binary)
   //
   if ((*p == '&') || (*p == '0' && (*(p + 1) != '\0' && strchr("HXBO", to_upper(*(p + 1))) != NULL))) {
-
     p++;
     switch (*p) {
     case 'H':
@@ -481,7 +479,6 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
           break;
         }
       }
-
       *d++ = *p++;
     }
 
@@ -502,8 +499,9 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
             stupid_e_fmt = 1;
             eop = *p;
             *d++ = *p++;
-            if (*p == '+' || *p == '-')
+            if (*p == '+' || *p == '-') {
               *d++ = *p++;
+            }
           }
         }
         // power
@@ -517,15 +515,14 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
           }
           *d++ = *p++;
         }                       // after E
-
       }                         //
       else {
         *type = -3;             // E+- ERROR
       }
     }
-  } else
+  } else {
     *type = -9;                 // NOT A NUMBER
-
+  }
   *d = '\0';
 
   //
@@ -566,10 +563,11 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
                 *dv = num * power;
                 break;
               case '/':
-                if (ABS(power) != 0.0)
+                if (ABS(power) != 0.0) {
                   *dv = num / power;
-                else
+                } else {
                   *dv = 0;
+                }
                 // else if(comp) sc_raise() else rt_raise
                 break;
               case '\\':
@@ -736,39 +734,41 @@ long hextol(const char *str) {
 var_num_t sb_strtof(const char *str) {
   char *p = (char *) str;
   var_num_t r = 0.0;
-  var_num_t d = 10.0;
-  var_num_t sign = 1;
-  int decp = 0;
+  int negate = 0;
+  int places = 0;
+  int dot = 0;
 
-  if (p == NULL) {
-    return 0;
-  }
-  if (*p == '-') {
-    sign = -1;
-    p++;
-  } else if (*p == '+') {
-    p++;
-  }
-  while (*p) {
-    if (is_digit(*p)) {
-      if (!decp) {
-        r = (r * 10) + ((*p) - 48);
-      } else {
-        r += (((*p) - 48) * 1 / d);
-        d *= 10;
-      }
-    } else if (*p == '.') {
-      decp = 1;
-    } else if (*p == ' ') {
-      break;
-    } else {
-      r = 0;
-      break;
+  if (p != NULL) {
+    if (*p == '-') {
+      negate = 1;
+      p++;
+    } else if (*p == '+') {
+      p++;
     }
-    p++;
+    while (*p) {
+      if (is_digit(*p)) {
+        r = r * 10.0f + (*p - '0');
+        if (dot) {
+          places++;
+        }
+      } else if (*p == '.') {
+        dot = 1;
+      } else if (*p == ' ') {
+        break;
+      } else {
+        r = 0;
+        break;
+      }
+      p++;
+    }
   }
-
-  return r * sign;
+  if (places) {
+    r /= pow(10, places);
+    if (places >= 3) {
+      r += FLOAT_ERR;
+    }
+  }
+  return negate ? -r : r;
 }
 
 /**
@@ -891,7 +891,7 @@ char *xbasename(char *dest, const char *source) {
  * returns whether the character is whitespace
  */
 int is_wspace(int c) {
-  return (c != 0 && (c == ' ' || c == '\t' || c == '\r' || 
+  return (c != 0 && (c == ' ' || c == '\t' || c == '\r' ||
                      c == '\n' || c == '\v' || c == '\f'));
 }
 

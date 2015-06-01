@@ -7,6 +7,8 @@ a=fre(0)
 if 0.5<>1/2 then ? "0.5: ERROR!"
 if .6<>(1+2-3*4/5) then ? "0.6: ERROR (acceptable?) <> ";(1+2-3*4/5)
 
+if -.6<>-.6 then throw "oh no..."
+
 ?
 ? cat(1);"Auto type convertion";cat(0)
 ? "n=i+n = 2.2  = ";1+1.2

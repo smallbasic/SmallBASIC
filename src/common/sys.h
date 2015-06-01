@@ -60,6 +60,9 @@ typedef long int var_int_t;
 #define VAR_INT_NUM_FMT "%.0f"
 #endif
 
+// a tiny value only slightly larger than zero to correct rounding errors
+#define FLOAT_ERR 0.0000000000000000001f
+
 #define OS_INTSZ  sizeof(var_int_t)  // size of integer
 #define OS_REALSZ sizeof(var_num_t)  // size of real
 #define OS_PATHNAME_SIZE    1024
