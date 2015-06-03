@@ -38,5 +38,5 @@ true
 true
 
 Testing base-convertion...
-Scientific notation = 2E+.3 = 3.99052463 --- 2E-2 = 0.02 = 0.02
+Scientific notation = 2E+.3 = 3.99052462993776 --- 2E-2 = 0.02 = 0.02
 Bob's bug = -30 = -30

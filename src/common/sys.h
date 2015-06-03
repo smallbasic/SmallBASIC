@@ -52,7 +52,9 @@ typedef long int var_int_t;
 #define VAR_INT_NUM_FMT "%.0f"
 
 // error value for comparing doubles
-#define EPSILON 0.0000000000000002220446
+#define DBL_EPSILON 0.0000000000000002220446
+#define FLT_EPSILON 0.0000001192092895507812
+#define EPSILON DBL_EPSILON
   
 #define OS_INTSZ  sizeof(var_int_t)  // size of integer
 #define OS_REALSZ sizeof(var_num_t)  // size of real

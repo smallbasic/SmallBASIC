@@ -5,9 +5,11 @@ a=1+1.2
 if a<>2.2 then ? "2.2: ERROR!"
 a=fre(0)
 if 0.5<>1/2 then ? "0.5: ERROR!"
-if .6<>(1+2-3*4/5) then ? "0.6: ERROR (acceptable?) <> ";(1+2-3*4/5)
+if .6<>(1+2-3*4/5) then ? "0.6 <> ";(1+2-3*4/5)
 
-if -.6<>-.6 then throw "oh no..."
+if -.6<>-.6 then throw "-.6 not -.6"
+if ("0.001" <> str(1/1000)) then throw "0.001 not " + str(1/1000)
+if ("0.001" <> str(0.001)) then throw "0.001 not " + str(1/1000)
 
 ?
 ? cat(1);"Auto type convertion";cat(0)
