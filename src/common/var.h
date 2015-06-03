@@ -613,11 +613,11 @@ void v_zerostr(var_t *var);
  * @param var is the variable
  */
 void v_input2var(const char *str, var_t *var);
-  
+
 /**
  *< returns the var_t pointer of the element i
  * on the array x. i is a zero-based, one dim, index.
- * @ingroup var 
+ * @ingroup var
 */
 #define v_elem(x,i)     (var_t *) ( (x)->v.a.ptr + (sizeof(var_t) * (i)))
 
@@ -745,11 +745,6 @@ stknode_t *code_stackpeek();
 #define code_peek32(o)      (*((dword *)(prog_source+(o))))
 #endif
 
-/*
- * New API (Dec 2001, 16 & 32 bit support)
- *
- * Use these code_x instead of old ones
- */
 #define code_skipopr()   code_skipnext16()    /**< skip operator  @ingroup exec */
 #define code_skipsep()   code_skipnext16()    /**< skip separator @ingroup exec */
   /**< returns the separator and advance (IP) to next command @ingroup exec */
@@ -760,14 +755,8 @@ stknode_t *code_stackpeek();
 #define code_skipaddr()  code_skipnext32() /**< skip address field                   @ingroup exec */
 #define code_getstrlen() code_getnext32()  /**< get strlen (kwTYPE_STR) and advance  @ingroup exec */
 #define code_peekaddr(i) code_peek32((i))  /**< peek address field at offset i       @ingroup exec */
-
-#if defined(OS_PREC64)
-#define code_getint()   code_getnext64i()
-#define code_getreal()  code_getnext128f()
-#else
-#define code_getint()   code_getnext32()  /**< get integer    (kwTYPE_INT)   @ingroup exec */
-#define code_getreal()  code_getnext64f() /**< get real       (kwTYPE_NUM)   @ingroup exec */
-#endif
+#define code_getint()    code_getnext64i()
+#define code_getreal()   code_getnext64f()
 
 /**
  * @ingroup var
@@ -779,11 +768,11 @@ stknode_t *code_stackpeek();
  * a) here (see in first lines) - (variable's index)
  * b) in scan.c (variable's name)
  * c) in brun.c or device.c (variable's value)
- * 
+ *
  * DO NOT LOSE THE ORDER
  * @endcode
  */
-  
+
 /**
  * @ingroup var
  *

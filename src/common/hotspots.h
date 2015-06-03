@@ -43,8 +43,6 @@ static inline double code_getnext64f() {
   return v;
 }
 
-#if defined(OS_PREC64)
-
 /**
  * @ingroup var
  *
@@ -68,8 +66,6 @@ static inline var_num_t code_getnext128f() {
   prog_ip += sizeof(var_num_t);
   return v;
 }
-
-#endif
 
 /**
  * @ingroup var

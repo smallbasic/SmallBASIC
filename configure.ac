@@ -168,7 +168,6 @@ function buildFLTK() {
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
 
    BUILD_SUBDIRS="src/common src/platform/fltk"
    AC_SUBST(BUILD_SUBDIRS)
@@ -211,7 +210,6 @@ function buildSDL() {
      PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.2)
      AC_SUBST(FONTCONFIG_CFLAGS)
      AC_SUBST(FONTCONFIG_LIBS)
-     AC_DEFINE(OS_PREC64, 1, [64 bit variables])
 
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
@@ -309,7 +307,6 @@ function buildConsole() {
          AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
-         AC_DEFINE(OS_PREC64, 1, [64 bit variables])
          AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
          PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc"
          BUILD_SUBDIRS="src/common src/platform/unix"
@@ -328,7 +325,6 @@ function buildConsole() {
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
       AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
       AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
-      AC_DEFINE(OS_PREC64, 1, [64 bit variables])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread"
       BUILD_SUBDIRS="src/common src/platform/unix"
       TEST_DIR="src/platform/unix"

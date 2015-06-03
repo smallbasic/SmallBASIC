@@ -10,11 +10,11 @@ message from main
 message from tau
 [1,2,3,4]
 Predefined Variables
-PI     =3.14159265358979
+PI     =3.141592654
 test
 my name is PI
 my name is PI
 my name is PI
 my name is PI
 end
-my name is PI	3.14159265358979
+my name is PI	3.141592654

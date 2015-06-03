@@ -764,9 +764,6 @@ var_num_t sb_strtof(const char *str) {
   }
   if (places) {
     r /= pow(10, places);
-    if (places >= 3) {
-      r += FLOAT_ERR;
-    }
   }
   return negate ? -r : r;
 }

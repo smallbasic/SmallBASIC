@@ -276,7 +276,6 @@ int v_is_nonzero(var_t *v) {
 int v_compare(var_t *a, var_t *b) {
   var_num_t dt;
   var_int_t di;
-
   if (a == 0 || b == 0) {
     err_evsyntax();
     return 0;
@@ -289,17 +288,10 @@ int v_compare(var_t *a, var_t *b) {
              (b->type == V_INT || b->type == V_NUM)) {
     var_num_t left = (a->type == V_NUM) ? a->v.n : a->v.i;
     var_num_t right = (b->type == V_NUM) ? b->v.n : b->v.i;
-    dt = (left - right);
-    if (dt < 0.0f) {
-      return -1;
-    } else if (dt > 0.1f) {
-      return 1;
+    if (fabs(left - right) < EPSILON) {
+      return 0;
     } else {
-      // fuzzy float detect zero or one
-      double left_int, right_int;
-      var_num_t fract = modf(left, &left_int) - modf(right, &right_int);
-      dt = (left_int - right_int);
-      return fract < FLOAT_ERR ? 0 : 1;
+      return (left - right) < 0.0 ? -1 : 1;
     }
   }
   if ((a->type == V_STR) && (b->type == V_STR)) {

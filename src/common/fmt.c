@@ -16,21 +16,12 @@
 #include "common/messages.h"
 #include "common/blib_math.h"
 
-#if defined OS_PREC64
-// limits for use with 64bit integer or 64bit fp algorithm
-#define FMT_xMIN        1e-8
-#define FMT_xMAX        1e+14
-#define FMT_RND         14
-#define FMT_xRND        1e+14
-#define FMT_xRND2       1e+13
-#else
-// limits for use with 32bit integer algorithm
+// limits for use with 64bit integer algorithm
 #define FMT_xMIN        1e-8          // lowest limit to use the exp. format
 #define FMT_xMAX        1e+9          // highest limit to use the exp. format
 #define FMT_RND         9             // rounding on x digits
 #define FMT_xRND        1e+9          // 1 * 10 ^ FMT_RND
 #define FMT_xRND2       1e+8          // 1 * 10 ^ (FMT_RND-1)
-#endif
 
 // PRINT USING; format-list
 #define MAX_FMT_N       128
