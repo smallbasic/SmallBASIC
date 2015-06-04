@@ -755,8 +755,6 @@ stknode_t *code_stackpeek();
 #define code_skipaddr()  code_skipnext32() /**< skip address field                   @ingroup exec */
 #define code_getstrlen() code_getnext32()  /**< get strlen (kwTYPE_STR) and advance  @ingroup exec */
 #define code_peekaddr(i) code_peek32((i))  /**< peek address field at offset i       @ingroup exec */
-#define code_getint()    code_getnext64i()
-#define code_getreal()   code_getnext64f()
 
 /**
  * @ingroup var

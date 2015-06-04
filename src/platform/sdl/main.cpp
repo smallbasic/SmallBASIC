@@ -164,7 +164,7 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
 
 void printKeywords() {
   printf("SmallBASIC keywords table\n");
-  printf("::':#:rem:\"\n");     // ted's format
+  printf("::':#:rem:\"\n");
   printf("$$$-remarks\n");
   printf("'\n");
   printf("REM\n");
@@ -207,9 +207,10 @@ void printKeywords() {
 
 void showHelp() {
   fprintf(stdout,
-          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n\n",
+          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
           SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
-          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)));
+          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)),
+          sizeof(var_int_t), sizeof(var_num_t));
   fprintf(stdout, "usage: sbasicg [options]... [BAS] [OPTION]\n");
   int i = 0;
   while (OPTIONS[i].name != NULL) {
