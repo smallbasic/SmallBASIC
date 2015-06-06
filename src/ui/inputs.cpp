@@ -204,7 +204,7 @@ void FormInput::drawHover(int dx, int dy, bool selected) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetColor(selected ? _fg : _bg);
   int y = _y + dy + _height - 2;
-  maLine(dx + _x, y, dx + _x + _width, y);
+  maLine(dx + _x + 2, y, dx + _x + _width - 2, y);
   maUpdateScreen();
   maSetDrawTarget(currentHandle);
 }

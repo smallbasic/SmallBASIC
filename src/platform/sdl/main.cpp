@@ -210,7 +210,7 @@ void showHelp() {
           "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
           SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
           (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)),
-          sizeof(var_int_t), sizeof(var_num_t));
+          (int)sizeof(var_int_t), (int)sizeof(var_num_t));
   fprintf(stdout, "usage: sbasicg [options]... [BAS] [OPTION]\n");
   int i = 0;
   while (OPTIONS[i].name != NULL) {

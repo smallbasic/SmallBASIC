@@ -67,6 +67,7 @@ struct AnsiWidget {
   void print(const char *str);
   void redraw();
   void registerScreen(int screenId) { createScreen(screenId); }
+  void removeHover();
   void removeImage(int imageId) { _back->removeImage(imageId); }
   void removeInput(FormInput *input) { _back->removeInput(input); }
   void removeInputs() { _back->removeInputs(); _activeButton = NULL; }
