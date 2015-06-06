@@ -312,6 +312,9 @@ void Runtime::pollEvents(bool blocking) {
         case SDL_WINDOWEVENT_EXPOSED:
           _graphics->redraw();
           break;
+        case SDL_WINDOWEVENT_LEAVE:
+          _output->removeHover();
+          break;
         }
         break;
       case SDL_DROPFILE:

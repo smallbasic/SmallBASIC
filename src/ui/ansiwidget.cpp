@@ -245,6 +245,15 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
   _height = newHeight;
 }
 
+void AnsiWidget::removeHover() {
+  if ( _hoverInput) {
+    int dx = _front->_x;
+    int dy = _front->_y - _front->_scrollY;
+    _hoverInput->drawHover(dx, dy, false);
+    _hoverInput = NULL;
+  }
+}
+
 void AnsiWidget::scroll(bool up, bool page) {
   int h = page ? _front->_height - _front->_charHeight : _front->_charHeight;
   int vscroll = _front->_scrollY + (up ? - h : h);
@@ -570,17 +579,18 @@ void AnsiWidget::drawActiveButton() {
 
 bool AnsiWidget::drawHoverLink(MAEvent &event) {
 #if defined(_SDL)
-  if (_front != _screens[MENU_SCREEN] &&
-      _front->overlaps(event.point.x, event.point.y)) {
+  if (_front != _screens[MENU_SCREEN]) {
     int dx = _front->_x;
     int dy = _front->_y - _front->_scrollY;
     FormInput *active = NULL;
-    List_each(FormInput*, it, _front->_inputs) {
-      FormInput *widget = (FormInput *)(*it);
-      if (widget->hasHover() &&
-          widget->overlaps(event.point, dx, dy)) {
+    if ( _front->overlaps(event.point.x, event.point.y)) {
+      List_each(FormInput*, it, _front->_inputs) {
+        FormInput *widget = (FormInput *)(*it);
+        if (widget->hasHover() &&
+            widget->overlaps(event.point, dx, dy)) {
         active = widget;
         break;
+        }
       }
     }
     if (active && active != _hoverInput) {

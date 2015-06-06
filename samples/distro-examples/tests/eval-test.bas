@@ -50,8 +50,7 @@ for i=1 to 10
 next
 for i=1 to 10
 	let b(i)=10-i
-  ii = 10-(i-1)
-  let c(ii)=i
+	let c(10-(i-1))=i
 	z=10-(i-1)
 	if c(z)<>i then ? "error"
 next
