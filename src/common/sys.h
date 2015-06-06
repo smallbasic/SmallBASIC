@@ -46,9 +46,8 @@ typedef unsigned int bcip_t;
 #include <portdefs.h>
 #endif
 
-// error value for comparing floats
-#define DBL_EPSILON 0.0000000000000002220446
-#define FLT_EPSILON 0.0000001192092895507813
+#define DBL_EPSILON 0.00000000000001
+#define FLT_EPSILON 0.0000001
 
 #if UINT_MAX != 0xffffffffU
 #define OS_PREC64

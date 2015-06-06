@@ -89,3 +89,13 @@ rem NOTE: allowing: func2 (arg1), (arg2) broken nested funcs
 if (func2((98+1), (2)) <> 99) then
   throw "bracketed args failed"
 endif
+
+rem test fix for http://sourceforge.net/p/smallbasic/bugs/34/
+steps = 0
+end_el = 100
+for i = 1 to end_el step 0.1
+rem  ? i
+  steps++
+next
+expected = 1 + ((end_el-1) * 10)
+if (expected != steps) then throw "incorrect step count:" + steps + " " + expected
