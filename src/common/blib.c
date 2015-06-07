@@ -651,9 +651,11 @@ void cmd_input(int input) {
   if (input == PV_CONSOLE) {
     v_setstr(&prompt, "");
 
-    print_crlf = (code_peeksep() != ';');
-    if (!print_crlf) {
-      code_skipsep();
+    if (code_peek() != kwTYPE_STR) {
+      print_crlf = (code_peeksep() != ';');
+      if (!print_crlf) {
+        code_skipsep();
+      }
     }
     if (!code_isvar()) {
       v_free(&prompt);

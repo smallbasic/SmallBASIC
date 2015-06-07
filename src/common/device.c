@@ -136,17 +136,6 @@ void dev_delay(dword ms) {
 #if defined(BUILD_CONSOLE)
 
 /**
- * draw the cursor
- */
-void dev_drawcursor(int x, int y) {
-  if (os_graphics) {
-    osd_setpixel(x, y);
-    osd_setpixel(x, y + 1);
-    osd_setpixel(x, y + 2);
-  }
-}
-
-/**
  * return the character (multibyte charsets support)
  */
 int dev_input_char2str(int ch, byte * cstr) {
@@ -269,175 +258,81 @@ int dev_input_remove_char(char *dest, int pos) {
 }
 
 /**
- * clears right of the cursor
- */
-void dev_input_clreol(int cx, int cy) {
-  int x, y;
-  int color = dev_fgcolor;
-
-  x = dev_getx();
-  y = dev_gety();
-  if (x + cx + 1 >= os_graf_mx) {
-    dev_clreol();
-  } else {
-    if (os_graphics) {
-      osd_setcolor(dev_bgcolor);
-      osd_rect(x, y, x + cx + 1, y + cy, 1);
-      osd_setcolor(color);
-    } else {
-      dev_clreol();
-    }
-  }
-}
-
-/**
  * gets a string (INPUT)
  */
 char *dev_gets(char *dest, int size) {
   long int ch = 0;
   word pos, len = 0;
-  int prev_x = 1, prev_y = 1;
-  int tmp_lines, lines = 0, disp_x, disp_y;
-  int lpp = 24, cy = 1, w, replace_mode = 0;
-  char prev_ch;
-  int code;
-  int cx = 1;
+  int replace_mode = 0;
 
-  /*
-   * the 'input'
-   *
-   * warning: getx/y routines are required
-   */
   *dest = '\0';
-
-  if (os_graphics) {
-    prev_x = dev_getx();
-    prev_y = dev_gety();
-    cx = dev_textwidth("W");
-    cy = dev_textheight("Q");
-    lpp = os_graf_my / cy;
-  }
-
-  dev_clrkb();
-
   pos = 0;
   do {
     len = strlen(dest);
-
-    // draw
-    dev_setxy(prev_x, prev_y, 0);
-    dev_print(dest);
-    dev_input_clreol(cx, cy);
-    
-    //
-    tmp_lines = (prev_x + dev_textwidth(dest)) / os_graf_mx;
-    if (tmp_lines > lines) {
-      lines = tmp_lines;
-      while ((lines * cy) + prev_y >= (lpp * cy)) {
-        prev_y -= cy;
-      }
-    }
-    
-    //
-    prev_ch = dest[pos];
-    dest[pos] = '\0';
-    w = dev_textwidth(dest);
-    dest[pos] = prev_ch;
-    
-    tmp_lines = (prev_x + w) / os_graf_mx;
-    
-    disp_y = prev_y + tmp_lines * cy;
-    disp_x = (prev_x + w) - (tmp_lines * os_graf_mx) + (tmp_lines * dev_textwidth(" ")); 
-    
-    // TODO:
-    // + width of chars at the end of prev lines
-    
-    dev_setxy(disp_x, disp_y, 0);
-    dev_drawcursor(disp_x, disp_y);
-
-    // wait for event
-    code = dev_events(1);
-
-    // remove cursor
-    // ...
-
-    if (code < 0) {             // BREAK event
-      *dest = '\0';
-      brun_break();
+    ch = fgetc(stdin);
+    switch (ch) {
+    case -1:
+    case -2:
+    case 0xFFFF:
+      dest[pos] = '\0';
       return dest;
-    }
-
-    while (dev_kbhit()) {       // we have keys
-      ch = dev_getch();
-
-      switch (ch) {
-      case -1:
-      case -2:
-      case 0xFFFF:
-        dest[pos] = '\0';
-        return dest;
-      case 0:
-      case 10:
-      case 13:                 // ignore
-        break;
-      case SB_KEY_HOME:
-        pos = 0;
-        break;
-      case SB_KEY_END:
-        pos = len;
-        break;
-      case SB_KEY_BACKSPACE:   // backspace
-        if (pos > 0) {
-          pos -= dev_input_remove_char(dest, pos - 1);
-          len = strlen(dest);
-        } else {
-          dev_beep();
-        }
-        break;
-      case SB_KEY_DELETE:      // delete
-        if (pos < len) {
-          dev_input_remove_char(dest, pos);
-          len = strlen(dest);
-        } else
-          dev_beep();
-        break;
-      case SB_KEY_INSERT:
-        replace_mode = !replace_mode;
-        break;
-      case SB_KEY_LEFT:
-        if (pos > 0) {
-          pos -= dev_input_count_char((byte *)dest, pos);
-        } else {
-          dev_beep();
-        }
-        break;
-      case SB_KEY_RIGHT:
-        if (pos < len) {
-          pos += dev_input_count_char((byte *)dest, pos);
-        } else {
-          dev_beep();
-        }
-        break;
-      default:
-        if ((ch & 0xFF00) != 0xFF00) { // Not an hardware key
-          pos += dev_input_insert_char(ch, dest, pos, replace_mode);
-        } else {
-          ch = 0;
-        }
-        // check the size
+    case 0:
+    case 10:
+    case 13:                 // ignore
+      break;
+    case SB_KEY_HOME:
+      pos = 0;
+      break;
+    case SB_KEY_END:
+      pos = len;
+      break;
+    case SB_KEY_BACKSPACE:   // backspace
+      if (pos > 0) {
+        pos -= dev_input_remove_char(dest, pos - 1);
         len = strlen(dest);
-        if (len >= (size - 2)) {
-          break;
-        }
+      } else {
+        dev_beep();
       }
-    }                           // dev_kbhit() loop
-
+      break;
+    case SB_KEY_DELETE:      // delete
+      if (pos < len) {
+        dev_input_remove_char(dest, pos);
+        len = strlen(dest);
+      } else
+        dev_beep();
+      break;
+    case SB_KEY_INSERT:
+      replace_mode = !replace_mode;
+      break;
+    case SB_KEY_LEFT:
+      if (pos > 0) {
+        pos -= dev_input_count_char((byte *)dest, pos);
+      } else {
+        dev_beep();
+      }
+      break;
+    case SB_KEY_RIGHT:
+      if (pos < len) {
+        pos += dev_input_count_char((byte *)dest, pos);
+      } else {
+        dev_beep();
+      }
+      break;
+    default:
+      if ((ch & 0xFF00) != 0xFF00) { // Not an hardware key
+        pos += dev_input_insert_char(ch, dest, pos, replace_mode);
+      } else {
+        ch = 0;
+      }
+      // check the size
+      len = strlen(dest);
+      if (len >= (size - 2)) {
+        break;
+      }
+    }
   } while (ch != '\n' && ch != '\r');
-  
   dest[len] = '\0';
-  dev_setxy(prev_x, prev_y, 0);
   dev_print(dest);
-  dev_input_clreol(cx, cy);
   return dest;
 }
 
