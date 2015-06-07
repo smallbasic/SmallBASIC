@@ -1,7 +1,8 @@
-2015-05-31
-	Added multi-item case selection (suggestion by James Grimaldi)
-	Fixed PRINT 1/1000
+2015-06-07
+	Fixed PRINT 1/1000 and other floating point round issues
+	Fixed problem with 59 char INPUT prompt
 	Added missing PEN(12) support
+	Added multi-item case selection (suggestion by James Grimaldi)
 	SDL: Updated display of file anchor links
 
 2015-01-25
