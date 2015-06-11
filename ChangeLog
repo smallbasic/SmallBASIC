@@ -1,9 +1,10 @@
 2015-06-07
-	Fixed PRINT 1/1000 and other floating point round issues
+	Fixed PRINT 1/1000 and other floating point rounding issues
 	Fixed problem with 59 char INPUT prompt
 	Added missing PEN(12) support
 	Added multi-item case selection (suggestion by James Grimaldi)
 	SDL: Updated display of file anchor links
+	SDL: Fix drag-drop from explorer to launch programs
 
 2015-01-25
 	Added timer func support

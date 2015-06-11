@@ -319,6 +319,7 @@ void Runtime::pollEvents(bool blocking) {
         break;
       case SDL_DROPFILE:
         setLoadPath(ev.drop.file);
+        setExit(false);
         SDL_free(ev.drop.file);
         break;
       case SDL_MOUSEWHEEL:
