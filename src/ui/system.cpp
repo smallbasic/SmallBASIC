@@ -96,6 +96,7 @@ bool System::execute(const char *bas) {
   opt_uipos = 0;
   opt_usepcre = 0;
 
+  _state = kRunState;
   setWindowTitle(bas);
   bool result = ::sbasic_main(bas);
 
@@ -556,7 +557,6 @@ void System::setRunning(bool running) {
     dev_clrkb();
 
     _output->setAutoflush(!opt_show_page);
-    _state = kRunState;
     _loadPath.empty();
     _lastEventTime = maGetMilliSecondCount();
     _eventTicks = 0;

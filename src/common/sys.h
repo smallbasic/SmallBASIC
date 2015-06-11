@@ -47,7 +47,7 @@ typedef unsigned int bcip_t;
 #endif
 
 #define DBL_EPSILON 0.00000000000001
-#define FLT_EPSILON 0.0000001
+#define FLT_EPSILON 0.0000002
 
 #if UINT_MAX != 0xffffffffU
 #define OS_PREC64
