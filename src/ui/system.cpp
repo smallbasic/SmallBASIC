@@ -100,6 +100,10 @@ bool System::execute(const char *bas) {
   setWindowTitle(bas);
   bool result = ::sbasic_main(bas);
 
+  if (isRunning()) {
+    _state = kActiveState;
+  }
+
   opt_command[0] = '\0';
   _output->flush(true);
   return result;
@@ -470,11 +474,17 @@ void System::runOnce(const char *startupBas) {
   logEntered();
   _mainBas = false;
 
-  bool success = execute(startupBas);
-  showCompletion(success);
-  // press back to continue
-  while (!isBack() && !isClosing() && !isRestart()) {
-    getNextEvent();
+  bool restart = true;
+  while (restart) {
+    bool success = execute(startupBas);
+    if (_state == kActiveState) {
+      showCompletion(success);
+    }
+    // press back to continue
+    while (!isBack() && !isClosing() && !isRestart()) {
+      getNextEvent();
+    }
+    restart = isRestart();
   }
 }
 
