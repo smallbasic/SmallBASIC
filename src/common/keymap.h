@@ -25,6 +25,7 @@ extern "C" {
 #define SB_KEY_TAB        9
 #define SB_KEY_ENTER      13
 #define SB_KEY_SPACE      32
+#define SB_KEY_ESCAPE     27
 
 // first 16 - common with handhelds any extra key will be there
 #define SB_KEY_PGUP     0xFF01
@@ -50,9 +51,10 @@ extern "C" {
 #define SB_KEY_SF(x)    (0xFFE0+(x))
 
 // Control & Alt keys (parameter = capital character)
-#define SB_KEY_CTRL(c)     (0xF100 + (c))
-#define SB_KEY_ALT(c)      (0xF200 + (c))
-#define SB_KEY_CTRL_ALT(c) (0xF400 + (c))
+#define SB_KEY_CTRL(c)     (0xF1000000 + (c))
+#define SB_KEY_ALT(c)      (0xF2000000 + (c))
+#define SB_KEY_CTRL_ALT(c) (0xF4000000 + (c))
+#define SB_KEY_SHIFT(c)    (0xF8000000 + (c))
 
 // keypad
 #define SB_KEY_KP_DIV     0xFFDA

@@ -21,6 +21,8 @@ struct Runtime : public System {
   Runtime(SDL_Window *window);
   virtual ~Runtime();
 
+  void alert(const char *title, const char *message);
+  int ask(const char *title, const char *prompt, bool cancel);
   void construct(const char *font, const char *boldFont);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
@@ -35,7 +37,6 @@ struct Runtime : public System {
   void showCursor(bool hand);
   int runShell(const char *startupBas, int fontScale);
   char *loadResource(const char *fileName);
-  void showAlert(const char *title, const char *message);
   void optionsBox(StringList *items);
   void onResize(int w, int h);
   void setClipboardText(const char *text);

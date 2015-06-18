@@ -74,7 +74,7 @@ struct AnsiWidget {
   void resetScroll() { _back->resetScroll(); }
   void reset();
   void resize(int width, int height);
-  void scroll(bool up, bool page);
+  bool scroll(bool up, bool page);
   int  selectBackScreen(int screenId);
   int  selectFrontScreen(int screenId);
   int  selectScreen(int screenId);

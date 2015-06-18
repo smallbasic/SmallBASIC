@@ -106,6 +106,16 @@ void Screen::drawShape(Shape *rect) {
       rect->_y >= _scrollY &&
       rect->_y + rect->_height <= _scrollY + _height) {
     rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), h(), _charWidth);
+
+    List_each(FormInput *, it, _inputs) {
+      FormInput *input = (*it);
+      if (input->isVisible() &&
+          input->isDrawTop() &&
+          input->_y >= _scrollY - _height &&
+          input->_y + input->_height <= _scrollY + _height) {
+        input->draw(_x + input->_x, _y + input->_y - _scrollY, w(), h(), _charWidth);
+      }
+    }
   }
 }
 
@@ -648,6 +658,10 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth,
   _height = newHeight;
   if (!fullscreen) {
     drawBase(false);
+  }
+  List_each(FormInput *, it, _inputs) {
+    FormInput *next = (*it);
+    next->resize(newWidth, newHeight);
   }
 }
 

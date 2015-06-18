@@ -20,9 +20,9 @@ extern System *g_system;
 
 FormList *activeList = NULL;
 FormInput *focusInput = NULL;
-FormLineInput *focusEdit = NULL;
+FormEditInput *focusEdit = NULL;
 
-FormLineInput *get_focus_edit() {
+FormEditInput *get_focus_edit() {
   return focusEdit;
 }
 
@@ -310,6 +310,15 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
   return updated;
 }
 
+bool FormInput::edit(int key, int screenWidth, int charWidth) {
+  bool result = false;
+  if (key == SB_KEY_ENTER) {
+    clicked(-1, -1, false);
+    result = true;
+  }
+  return result;
+}
+
 // set the widget value onto the form value
 void FormInput::updateForm(var_p_t form) {
   var_p_t field = getField(form);
@@ -318,6 +327,19 @@ void FormInput::updateForm(var_p_t form) {
     var_p_t value = map_get(form, FORM_VALUE);
     if (value != NULL && inputValue != NULL) {
       v_set(value, inputValue);
+    }
+  }
+}
+
+bool FormInput::hasFocus() const {
+  return (focusInput == this);
+}
+
+void FormInput::setFocus() {
+  if (!isNoFocus()) {
+    if (focusInput != this) {
+      focusInput = this;
+      g_system->getOutput()->setDirty();
     }
   }
 }
@@ -387,18 +409,77 @@ void FormTab::draw(int x, int y, int w, int h, int chw) {
 }
 
 //
+// FormEditInput
+//
+FormEditInput::FormEditInput(int x, int y, int w, int h) :
+  FormInput(x, y, w, h),
+  _controlMode(false) {
+}
+
+FormEditInput::~FormEditInput() {
+  if (focusEdit == this) {
+    focusEdit = NULL;
+  }
+}
+
+int FormEditInput::getControlKey(int key) {
+  int result = key;
+  if (_controlMode) {
+    switch (key) {
+    case 'x':
+      g_system->setClipboardText(copy(true));
+      result = -1;
+      break;
+    case 'c':
+      g_system->setClipboardText(copy(false));
+      result = -1;
+      break;
+    case 'v':
+      paste(g_system->getClipboardText());
+      result = -1;
+      break;
+    case 'h':
+      result = SB_KEY_LEFT;
+      break;
+    case 'l':
+      result = SB_KEY_RIGHT;
+      break;
+    case 'j':
+      result = SB_KEY_HOME;
+      break;
+    case 'k':
+      result = SB_KEY_END;
+      break;
+    case 'a':
+      selectAll();
+      break;
+    }
+  }
+  return result;
+}
+
+void FormEditInput::setFocus() {
+  if (!isNoFocus()) {
+    if (focusInput != this) {
+      focusInput = this;
+      focusEdit = this;
+      g_system->getOutput()->setDirty();
+    }
+  }
+}
+
+//
 // FormLineInput
 //
 FormLineInput::FormLineInput(const char *value, int size, bool grow,
                              int x, int y, int w, int h) :
-  FormInput(x, y, w, h),
+  FormEditInput(x, y, w, h),
   _buffer(NULL),
   _size(size),
   _scroll(0),
   _mark(-1),
   _point(0),
-  _grow(grow),
-  _controlMode(false) {
+  _grow(grow) {
   _buffer = new char[_size + 1];
   _buffer[0] = '\0';
   if (value != NULL && value[0]) {
@@ -410,9 +491,6 @@ FormLineInput::FormLineInput(const char *value, int size, bool grow,
 }
 
 FormLineInput::~FormLineInput() {
-  if (focusEdit == this) {
-    focusEdit = NULL;
-  }
   delete [] _buffer;
   _buffer = NULL;
 }
@@ -420,8 +498,8 @@ FormLineInput::~FormLineInput() {
 void FormLineInput::draw(int x, int y, int w, int h, int chw) {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, _width, _height);
-
   maSetColor(_fg);
+
   int len = strlen(_buffer + _scroll);
   if (len * chw >= _width) {
     len = _width / chw;
@@ -540,33 +618,9 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
   return true;
 }
 
-int FormLineInput::getControlKey(int key) {
-  int result = key;
-  if (_controlMode) {
-    switch (key) {
-    case 'x':
-      result = SB_KEY_DELETE;
-      break;
-    case 'h':
-      result = SB_KEY_LEFT;
-      break;
-    case 'l':
-      result = SB_KEY_RIGHT;
-      break;
-    case 'j':
-      result = SB_KEY_HOME;
-      break;
-    case 'k':
-      result = SB_KEY_END;
-      break;
-    case 'a':
-      _point = 0;
-      _mark = _buffer == NULL ? -0 : strlen(_buffer);
-      result = -1;
-      break;
-    }
-  }
-  return result;
+void FormLineInput::selectAll() {
+  _point = 0;
+  _mark = _buffer == NULL ? -0 : strlen(_buffer);
 }
 
 void FormLineInput::updateField(var_p_t form) {
@@ -610,7 +664,7 @@ void FormLineInput::cut() {
   }
 }
 
-void FormLineInput::paste(char *text) {
+void FormLineInput::paste(const char *text) {
   int len = strlen(_buffer);
   int avail = _size - (len + 1);
   if (text != NULL && avail > 0) {
@@ -821,7 +875,8 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
         _activeIndex++;
       }
     }
-
+  } else if (key == SB_KEY_ENTER) {
+    clicked(-1, -1, false);
   }
   return true;
 }

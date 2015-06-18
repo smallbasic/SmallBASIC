@@ -240,6 +240,7 @@ function buildSDL() {
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
    (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
+   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildTizen() {
@@ -277,6 +278,8 @@ function buildAndroid() {
 
    TEST_DIR="src/platform/android"
    AC_SUBST(TEST_DIR)
+
+   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildConsole() {

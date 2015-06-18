@@ -10,6 +10,7 @@
 #include "common/sbapp.h"
 #include "common/keymap.h"
 #include "ui/system.h"
+#include "ui/textedit.h"
 
 extern System *g_system;
 extern FormInput *focusInput;
@@ -40,17 +41,6 @@ int FormInput::getBackground(int buttonColor) const {
     result = hasFocus() ? focusColor : buttonColor;
   }
   return result;
-}
-
-bool FormInput::hasFocus() const {
-  return (focusInput == this);
-}
-
-void FormInput::setFocus() {
-  if (!isNoFocus()) {
-    focusInput = this;
-    g_system->getOutput()->setDirty();
-  }
 }
 
 void FormInput::clicked(int x, int y, bool pressed) {
@@ -120,14 +110,6 @@ bool FormLineInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
   return result;
 }
 
-void FormLineInput::setFocus() {
-  if (!isNoFocus()) {
-    focusInput = this;
-    focusEdit = this;
-    g_system->getOutput()->setDirty();
-  }
-}
-
 void FormDropList::clicked(int x, int y, bool pressed) {
   if (form != NULL && !pressed && g_system->isRunning()) {
     set_focus(this);
@@ -171,6 +153,7 @@ void cmd_form_do_events(var_s *self) {
     dev_clrkb();
 
     int charWidth = out->getCharWidth();
+    int sw = out->getScreenWidth();
 
     // process events
     while (g_system->isRunning() && mode == m_active) {
@@ -180,13 +163,9 @@ void cmd_form_do_events(var_s *self) {
           dev_clrkb();
           focusInput = out->getNextField(focusInput);
           out->setDirty();
-        } else if (focusInput != NULL && (event.key == SB_KEY_ENTER)) {
-          dev_clrkb();
-          focusInput->clicked(-1, -1, false);
-          out->setDirty();
         } else if (focusInput != NULL &&
                    event.key != SB_KEY_MENU &&
-                   focusInput->edit(event.key, focusInput->_width, charWidth)) {
+                   focusInput->edit(event.key, sw, charWidth)) {
           dev_clrkb();
           out->setDirty();
         } else if (event.key == SB_KEY_MK_PUSH || event.key == SB_KEY_MK_RELEASE) {
@@ -252,6 +231,8 @@ FormInput *create_input(var_p_t v_field) {
       widget = new FormDropList(model, x, y, w, h);
     } else if (strcasecmp("text", type) == 0) {
       int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
+      int charHeight = g_system->getOutput()->getCharHeight();
+      int charWidth = g_system->getOutput()->getCharWidth();
       if (maxSize < 1 || maxSize > 1024) {
         maxSize = 100;
       }
@@ -259,7 +240,11 @@ FormInput *create_input(var_p_t v_field) {
       if (value->type == V_STR) {
         text = value->v.p.ptr;
       }
-      widget = new FormLineInput(text, maxSize, false, x, y, w, h);
+      if (h * 2 >= charHeight) {
+        widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
+      } else {
+        widget = new FormLineInput(text, maxSize, false, x, y, w, h);
+      }
     } else if (strcasecmp("image", type) == 0) {
       const char *name = map_get_str(v_field, FORM_INPUT_NAME);
       ImageDisplay *image = create_display_image(v_field, name);

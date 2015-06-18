@@ -41,11 +41,12 @@ const char* FONTS[] = {
 static struct option OPTIONS[] = {
   {"help",     no_argument,       NULL, 'h'},
   {"verbose",  no_argument,       NULL, 'v'},
+  {"keywords", no_argument,       NULL, 'k'},
   {"command",  optional_argument, NULL, 'c'},
   {"font",     optional_argument, NULL, 'f'},
   {"run",      optional_argument, NULL, 'r'},
   {"module",   optional_argument, NULL, 'm'},
-  {"keywords", no_argument,       NULL, 'k'},
+  {"edit",     optional_argument, NULL, 'e'},
   {0, 0, 0, 0}
 };
 
@@ -225,16 +226,20 @@ void showHelp() {
 int main(int argc, char* argv[]) {
   logEntered();
 
-  opt_command[0] = 0;
+  opt_command[0] = '\0';
   opt_verbose = false;
   opt_quiet = true;
 
   char *fontFamily = NULL;
   char *runFile = NULL;
+  int fontScale;
+  SDL_Rect rect;
+
+  restoreSettings(CONFIG_NAME, rect, fontScale);
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vhc:f:r:m:k", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -269,6 +274,11 @@ int main(int argc, char* argv[]) {
       break;
     case 'r':
       runFile = strdup(optarg);
+      opt_ide = IDE_NONE;
+      break;
+    case 'e':
+      runFile = strdup(optarg);
+      opt_ide = IDE_INTERNAL;
       break;
     case 'm':
       opt_loadmod = 1;
@@ -288,10 +298,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  int fontScale;
-  SDL_Rect rect;
-
-  restoreSettings(CONFIG_NAME, rect, fontScale);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,

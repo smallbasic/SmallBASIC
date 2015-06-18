@@ -27,6 +27,7 @@ struct System {
   bool isBack() { return _state == kBackState; }
   bool isBreak() { return _state >= kBreakState; }
   bool isClosing() { return _state >= kClosingState; }
+  bool isEditing() { return _state == kEditState; }
   bool isInitial() { return _state == kInitState; }
   bool isModal() { return _state == kModalState; }
   bool isRestart() { return _state == kRestartState; }
@@ -41,20 +42,27 @@ struct System {
   void systemPrint(const char *msg, ...);
   AnsiWidget *getOutput() { return _output; }
 
+  virtual void alert(const char *title, const char *message) = 0;
+  virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
   virtual void setWindowTitle(const char *title) = 0;
   virtual void showCursor(bool hand) = 0;
+  virtual void setClipboardText(const char *text) = 0;
+  virtual char *getClipboardText() = 0;
 
 protected:
   void checkModifiedTime();
+  void editSource(strlib::String &loadPath);
   bool execute(const char *bas);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
   void handleMenu(int menuId);
+  bool loadSource(const char *fileName);
   void resize();
+  void runEdit(const char *startupBas);
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
   void setPath(const char *filename);
@@ -67,16 +75,15 @@ protected:
   void printSource();
   void printSourceLine(char *text, int line, bool last);
   void setRestart();
-  void showSystemScreen(bool showSrc);
   void showMenu();
+  void showSystemScreen(bool showSrc);
+  void waitForBack();
   AnsiWidget *_output;
-
-  virtual void setClipboardText(const char *text) = 0;
-  virtual char *getClipboardText() = 0;
 
   enum {
     kInitState = 0,// thread not active
     kActiveState,  // thread activated
+    kEditState,    // program editor is active
     kRunState,     // program is running
     kModalState,   // retrieving user input inside program
     kConnState,    // retrieving remote program source
@@ -102,7 +109,6 @@ protected:
   int *_systemMenu;
   bool _mainBas;
   bool _buttonPressed;
-  bool _liveMode;
   bool _srcRendered;
   bool _menuActive;
   char *_programSrc;
