@@ -10,6 +10,7 @@
 #include "common/sbapp.h"
 #include "common/keymap.h"
 #include "ui/system.h"
+#include "ui/textedit.h"
 
 extern System *g_system;
 extern FormInput *focusInput;
@@ -250,6 +251,12 @@ FormInput *create_input(var_p_t v_field) {
                strcasecmp("dropdown", type) == 0) {
       ListModel *model = new ListModel(get_selected_index(v_field), value);
       widget = new FormDropList(model, x, y, w, h);
+    } else if (strcasecmp("edit", type) == 0) {
+      const char *text = NULL;
+      if (value->type == V_STR) {
+        text = value->v.p.ptr;
+      }
+      widget = new TextEditInput(text, x, y, w, h);
     } else if (strcasecmp("text", type) == 0) {
       int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
       if (maxSize < 1 || maxSize > 1024) {
