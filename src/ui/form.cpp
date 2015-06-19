@@ -251,14 +251,9 @@ FormInput *create_input(var_p_t v_field) {
                strcasecmp("dropdown", type) == 0) {
       ListModel *model = new ListModel(get_selected_index(v_field), value);
       widget = new FormDropList(model, x, y, w, h);
-    } else if (strcasecmp("edit", type) == 0) {
-      const char *text = NULL;
-      if (value->type == V_STR) {
-        text = value->v.p.ptr;
-      }
-      widget = new TextEditInput(text, x, y, w, h);
     } else if (strcasecmp("text", type) == 0) {
       int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
+      int charHeight = g_system->getOutput()->getCharHeight();
       if (maxSize < 1 || maxSize > 1024) {
         maxSize = 100;
       }
@@ -266,7 +261,11 @@ FormInput *create_input(var_p_t v_field) {
       if (value->type == V_STR) {
         text = value->v.p.ptr;
       }
-      widget = new FormLineInput(text, maxSize, false, x, y, w, h);
+      if (h * 2 >= charHeight) {
+        widget = new TextEditInput(text, x, y, w, h);
+      } else {
+        widget = new FormLineInput(text, maxSize, false, x, y, w, h);
+      }
     } else if (strcasecmp("image", type) == 0) {
       const char *name = map_get_str(v_field, FORM_INPUT_NAME);
       ImageDisplay *image = create_display_image(v_field, name);

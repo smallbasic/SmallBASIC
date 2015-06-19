@@ -420,8 +420,8 @@ FormLineInput::~FormLineInput() {
 void FormLineInput::draw(int x, int y, int w, int h, int chw) {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, _width, _height);
-
   maSetColor(_fg);
+
   int len = strlen(_buffer + _scroll);
   if (len * chw >= _width) {
     len = _width / chw;

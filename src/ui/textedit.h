@@ -9,7 +9,7 @@
 #ifndef TEXTEDIT_H
 #define TEXTEDIT_H
 
-#define STB_TEXTEDIT_CHARTYPE   char
+#define STB_TEXTEDIT_CHARTYPE char
 
 #include <config.h>
 #include <stdlib.h>
@@ -18,12 +18,12 @@
 #include "lib/stb_textedit.h"
 #include "ui/inputs.h"
 
-struct EditString {
+struct EditBuffer {
   char *_buffer;
   int _len;
 
-  EditString(const char *text);
-  virtual ~EditString();
+  EditBuffer(const char *text);
+  virtual ~EditBuffer();
   
   void layout(StbTexteditRow *row, int start_i);
   int deleteChars(int pos, int num);
@@ -52,7 +52,7 @@ struct TextEditInput : public FormInput {
   void paste(char *text);
   
 private:
-  EditString _str;
+  EditBuffer _str;
   STB_TexteditState _state;
   int _scroll;
   int _mark;
@@ -61,7 +61,7 @@ private:
   bool _controlMode;
 };
 
-#define STB_TEXTEDIT_STRING      EditString
+#define STB_TEXTEDIT_STRING      EditBuffer
 #define KEYDOWN_BIT              0x80000000
 #define STB_TEXTEDIT_K_LEFT      (KEYDOWN_BIT | 1) // actually use VK_LEFT, SDLK_LEFT, etc
 #define STB_TEXTEDIT_K_RIGHT     (KEYDOWN_BIT | 2) // VK_RIGHT
