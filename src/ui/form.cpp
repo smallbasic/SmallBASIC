@@ -172,6 +172,7 @@ void cmd_form_do_events(var_s *self) {
     dev_clrkb();
 
     int charWidth = out->getCharWidth();
+    int sw = out->getScreenWidth();
 
     // process events
     while (g_system->isRunning() && mode == m_active) {
@@ -187,7 +188,7 @@ void cmd_form_do_events(var_s *self) {
           out->setDirty();
         } else if (focusInput != NULL &&
                    event.key != SB_KEY_MENU &&
-                   focusInput->edit(event.key, focusInput->_width, charWidth)) {
+                   focusInput->edit(event.key, sw, charWidth)) {
           dev_clrkb();
           out->setDirty();
         } else if (event.key == SB_KEY_MK_PUSH || event.key == SB_KEY_MK_RELEASE) {
@@ -254,6 +255,7 @@ FormInput *create_input(var_p_t v_field) {
     } else if (strcasecmp("text", type) == 0) {
       int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
       int charHeight = g_system->getOutput()->getCharHeight();
+      int charWidth = g_system->getOutput()->getCharWidth();
       if (maxSize < 1 || maxSize > 1024) {
         maxSize = 100;
       }
@@ -262,7 +264,7 @@ FormInput *create_input(var_p_t v_field) {
         text = value->v.p.ptr;
       }
       if (h * 2 >= charHeight) {
-        widget = new TextEditInput(text, x, y, w, h);
+        widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
       } else {
         widget = new FormLineInput(text, maxSize, false, x, y, w, h);
       }

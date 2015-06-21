@@ -21,7 +21,7 @@
 //
 // EditBuffer
 //
-EditBuffer::EditBuffer(const char *text) {
+EditBuffer::EditBuffer(TextEditInput *in, const char *text) : _in(in) {
   if (text != NULL && text[0]) {
     _len = strlen(text);
     _buffer = new char[_len + 1];
@@ -36,16 +36,6 @@ EditBuffer::EditBuffer(const char *text) {
 EditBuffer::~EditBuffer() {
   delete _buffer;
   _buffer = NULL;
-}
-
-void EditBuffer::layout(StbTexteditRow *row, int start_i) {
-  int remaining_chars = _len - start_i;
-  row->num_chars = remaining_chars > 20 ? 20 : remaining_chars; // should do real word wrap here
-  row->x0 = 0;
-  row->x1 = 20; // need to account for actual size of characters
-  row->baseline_y_delta = 1.25;
-  row->ymin = -1;
-  row->ymax =  0;
 }
 
 int EditBuffer::deleteChars(int pos, int num) {
@@ -65,12 +55,12 @@ int EditBuffer::insertChars(int pos, char *newtext, int num) {
 //
 // TextEditInput
 //
-TextEditInput::TextEditInput(const char *text, int x, int y, int w, int h) :
+TextEditInput::TextEditInput(const char *text, int chW, int chH,
+                             int x, int y, int w, int h) :
   FormInput(x, y, w, h),
-  _str(text),
-  _scroll(0),
-  _mark(-1),
-  _point(0),
+  _buf(this, text),
+  _charWidth(chW),
+  _charHeight(chH),
   _controlMode(false) {
   stb_textedit_initialize_state(&_state, false);
 }
@@ -82,10 +72,29 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, _width, _height);
   maSetColor(_fg);
+
+  StbTexteditRow r;
+  int len = _buf._len;
+  int i = 0;
+  int baseY = 0;
+  while (i < len) {
+    layout(&r, i);
+
+    if (baseY + r.ymax > h) {
+      break;
+    }
+
+    if (r.num_chars) {
+      maDrawText(x, y + baseY, _buf._buffer + i, r.num_chars);
+    }
+
+    i += r.num_chars;
+    baseY += _charHeight;
+  }
 }
 
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
-  stb_textedit_key(&_str, &_state, key);
+  stb_textedit_key(&_buf, &_state, key);
   return true;
 }
 
@@ -100,27 +109,52 @@ void TextEditInput::setFocus() {
 }
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
-  stb_textedit_click(&_str, &_state, x, y);
+  stb_textedit_click(&_buf, &_state, x, y);
 }
 
 void TextEditInput::updateField(var_p_t form) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  stb_textedit_drag(&_str, &_state, pt.x, pt.y);
+  stb_textedit_drag(&_buf, &_state, pt.x, pt.y);
   return 1;
 }
 
 char *TextEditInput::copy(bool cut) {
-  // static int stb_textedit_cut(STB_TEXTEDIT_STRING *str, STB_TexteditState *state)
+  if (cut) {
+    stb_textedit_cut(&_buf, &_state);
+  }
   return 0;
 }
 
 void TextEditInput::cut() {
-  stb_textedit_cut(&_str, &_state);
+  stb_textedit_cut(&_buf, &_state);
 }
 
 void TextEditInput::paste(char *text) {
-  stb_textedit_paste(&_str, &_state, text, strlen(text));
+  stb_textedit_paste(&_buf, &_state, text, strlen(text));
 }
 
+void TextEditInput::layout(StbTexteditRow *row, int start) {
+  int i = start;
+  int x2 = _width - _charWidth;
+  row->x1 = 0;
+  row->num_chars = 0;
+
+  // advance over newlines
+  while (i < _buf._len
+         && _buf._buffer[i] == STB_TEXTEDIT_NEWLINE) {
+    i++;
+    row->num_chars++;
+  }
+  while (i < _buf._len
+         && (int)row->x1 < x2
+         && _buf._buffer[i] != STB_TEXTEDIT_NEWLINE) {
+    row->x1 += _charWidth;
+    row->num_chars++;
+    i++;
+  }
+  row->x0 = 0.0f;
+  row->ymin = 0.0f;
+  row->ymax = row->baseline_y_delta = _charHeight;
+}
