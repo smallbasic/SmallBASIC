@@ -310,6 +310,15 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
   return updated;
 }
 
+bool FormInput::edit(int key, int screenWidth, int charWidth) {
+  bool result = false;
+  if (key == SB_KEY_ENTER) {
+    clicked(-1, -1, false);
+    result = true;
+  }
+  return result;
+}
+
 // set the widget value onto the form value
 void FormInput::updateForm(var_p_t form) {
   var_p_t field = getField(form);
@@ -545,7 +554,16 @@ int FormLineInput::getControlKey(int key) {
   if (_controlMode) {
     switch (key) {
     case 'x':
-      result = SB_KEY_DELETE;
+      g_system->setClipboardText(copy(true));
+      result = -1;
+      break;
+    case 'c':
+      g_system->setClipboardText(copy(false));
+      result = -1;
+      break;
+    case 'v':
+      paste(g_system->getClipboardText());
+      result = -1;
       break;
     case 'h':
       result = SB_KEY_LEFT;
@@ -821,7 +839,8 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
         _activeIndex++;
       }
     }
-
+  } else if (key == SB_KEY_ENTER) {
+    clicked(-1, -1, false);
   }
   return true;
 }

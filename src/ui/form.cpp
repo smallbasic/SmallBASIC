@@ -182,10 +182,6 @@ void cmd_form_do_events(var_s *self) {
           dev_clrkb();
           focusInput = out->getNextField(focusInput);
           out->setDirty();
-        } else if (focusInput != NULL && (event.key == SB_KEY_ENTER)) {
-          dev_clrkb();
-          focusInput->clicked(-1, -1, false);
-          out->setDirty();
         } else if (focusInput != NULL &&
                    event.key != SB_KEY_MENU &&
                    focusInput->edit(event.key, sw, charWidth)) {

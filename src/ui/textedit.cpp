@@ -88,6 +88,20 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       maDrawText(x, y + baseY, _buf._buffer + i, r.num_chars);
     }
 
+    if (_state.select_start != _state.select_end) {
+      // draw selection
+    } else if ((_state.cursor >= i && _state.cursor < i + r.num_chars) ||
+               (i + r.num_chars == _buf._len && _state.cursor == _buf._len)) {
+      // draw cursor
+      int px = x + ((_state.cursor - i) * chw);
+      maFillRect(px, y + baseY, chw, _charHeight);
+      if (_state.cursor < _buf._len) {
+        maSetColor(getBackground(GRAY_BG_COL));
+        maDrawText(px, y + baseY, _buf._buffer + _state.cursor, 1);
+        maSetColor(_fg);
+      }
+    }
+
     i += r.num_chars;
     baseY += _charHeight;
   }

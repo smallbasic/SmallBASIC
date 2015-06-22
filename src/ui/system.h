@@ -46,6 +46,8 @@ struct System {
   virtual void optionsBox(StringList *items) = 0;
   virtual void setWindowTitle(const char *title) = 0;
   virtual void showCursor(bool hand) = 0;
+  virtual void setClipboardText(const char *text) = 0;
+  virtual char *getClipboardText() = 0;
 
 protected:
   void checkModifiedTime();
@@ -70,9 +72,6 @@ protected:
   void showSystemScreen(bool showSrc);
   void showMenu();
   AnsiWidget *_output;
-
-  virtual void setClipboardText(const char *text) = 0;
-  virtual char *getClipboardText() = 0;
 
   enum {
     kInitState = 0,// thread not active

@@ -322,30 +322,31 @@ void create_image(var_p_t var, ImageBuffer *image) {
 // loads an image for the form image input type
 ImageDisplay *create_display_image(var_p_t var, const char *name) {
   ImageDisplay *result = NULL;
-  dev_file_t file;
-  strcpy(file.name, name);
-  file.type = ft_stream;
+  if (name != NULL && var != NULL) {
+    dev_file_t file;
+    strcpy(file.name, name);
+    file.type = ft_stream;
+    ImageBuffer *buffer = load_image(&file);
+    if (buffer != NULL) {
+      result = new ImageDisplay();
+      result->_buffer = buffer;
+      result->_bid = buffer->_bid;
+      result->_width = buffer->_width;
+      result->_height = buffer->_height;
+      result->_zIndex = 0;
+      result->_offsetLeft = map_get_int(var, IMG_OFFSET_LEFT, -1);
+      result->_offsetTop = map_get_int(var, IMG_OFFSET_TOP, -1);
+      result->_opacity = map_get_int(var, IMG_OPACITY, -1);
 
-  ImageBuffer *buffer = load_image(&file);
-  if (buffer != NULL) {
-    result = new ImageDisplay();
-    result->_buffer = buffer;
-    result->_bid = buffer->_bid;
-    result->_width = buffer->_width;
-    result->_height = buffer->_height;
-    result->_zIndex = 0;
-    result->_offsetLeft = map_get_int(var, IMG_OFFSET_LEFT, -1);
-    result->_offsetTop = map_get_int(var, IMG_OFFSET_TOP, -1);
-    result->_opacity = map_get_int(var, IMG_OPACITY, -1);
-
-    if (result->_offsetLeft == -1) {
-      result->_offsetLeft = 0;
-    }
-    if (result->_offsetTop == -1) {
-      result->_offsetTop = 0;
-    }
-    if (result->_opacity == -1) {
-      result->_opacity = 0;
+      if (result->_offsetLeft == -1) {
+        result->_offsetLeft = 0;
+      }
+      if (result->_offsetTop == -1) {
+        result->_offsetTop = 0;
+      }
+      if (result->_opacity == -1) {
+        result->_opacity = 0;
+      }
     }
   }
   return result;

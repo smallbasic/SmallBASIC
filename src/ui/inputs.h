@@ -112,7 +112,7 @@ struct FormInput : public Shape {
   virtual bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   virtual const char *getText() const { return NULL; }
   virtual void setText(const char *text) {}
-  virtual bool edit(int key, int screenWidth, int charWidth) { return false; }
+  virtual bool edit(int key, int screenWidth, int charWidth);
   virtual void updateField(var_p_t form) {};
   virtual void updateForm(var_p_t form);
   virtual bool updateUI(var_p_t form, var_p_t field);
