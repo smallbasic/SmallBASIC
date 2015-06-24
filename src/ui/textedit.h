@@ -25,6 +25,7 @@ struct TextEditInput;
 struct EditBuffer {
   char *_buffer;
   int _len;
+  int _size;
   TextEditInput *_in;
 
   EditBuffer(TextEditInput *in, const char *text);
@@ -54,10 +55,12 @@ struct TextEditInput : public FormInput {
   char *copy(bool cut);
   void cut();
   void paste(char *text);
-  void layout(StbTexteditRow *row, int start_i);
-  int charWidth(int k, int i) { return _charWidth; }
+  void layout(StbTexteditRow *row, int start_i) const;
+  int charWidth(int k, int i) const { return _charWidth; }
 
 private:
+  int getScroll() const;
+  
   EditBuffer _buf;
   STB_TexteditState _state;
   int _charWidth;
@@ -83,10 +86,10 @@ private:
 #define STB_TEXTEDIT_K_WORDRIGHT  SB_KEY_CTRL(SB_KEY_RIGHT)
 #define STB_TEXTEDIT_K_PGUP       SB_KEY_PGUP
 #define STB_TEXTEDIT_K_PGDOWN     SB_KEY_PGDN
-#define STB_TEXTEDIT_K_SHIFT      0x40000000
-#define STB_TEXTEDIT_K_CONTROL    0xF100
+#define STB_TEXTEDIT_NEWLINE      SB_KEY_ENTER
+#define STB_TEXTEDIT_K_CONTROL    0xF1000000
+#define STB_TEXTEDIT_K_SHIFT      0xF8000000
 #define STB_TEXTEDIT_KEYTOTEXT(k) k
-#define STB_TEXTEDIT_NEWLINE      '\n'
 #define STB_TEXTEDIT_STRINGLEN(o) o->_len
 #define STB_TEXTEDIT_GETCHAR(o,i) o->_buffer[i]
 #define STB_TEXTEDIT_GETWIDTH(o,n,i)      o->_in->charWidth(n, i)

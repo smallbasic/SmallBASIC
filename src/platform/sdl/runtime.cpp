@@ -185,14 +185,20 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     int lenMap = sizeof(keymap) / sizeof(keymap[0]);
     for (int i = 0; i < lenMap && key != -1; i++) {
       if (keymap[i][0] == key) {
+        event.key = keymap[i][1];
         if (keymap[i][1] != -1) {
-          event.key = keymap[i][1];
+          if (event.nativeKey & KMOD_SHIFT) {
+            event.key = SB_KEY_SHIFT(event.key);
+          } else if (event.nativeKey & KMOD_CTRL) {
+            event.key = SB_KEY_CTRL(event.key);
+          }
           dev_pushkey(event.key);
         }
         key = -1;
         break;
       }
     }
+
     if (key != -1) {
       // mapping not found
       if ((event.nativeKey & KMOD_CTRL) &&

@@ -18,24 +18,29 @@
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
+#define GROW_SIZE 128
+
 //
 // EditBuffer
 //
-EditBuffer::EditBuffer(TextEditInput *in, const char *text) : _in(in) {
+EditBuffer::EditBuffer(TextEditInput *in, const char *text) :
+  _buffer(NULL),
+  _len(0),
+  _size(0),
+  _in(in) {
   if (text != NULL && text[0]) {
     _len = strlen(text);
-    _buffer = new char[_len + 1];
+    _size = _len + 1;
+    _buffer = (char *)malloc(_size);
     memcpy(_buffer, text, _len);
     _buffer[_len] = '\0';
-  } else {
-    _len = 0;
-    _buffer = NULL;
   }
 }
 
 EditBuffer::~EditBuffer() {
   delete _buffer;
   _buffer = NULL;
+  _len = _size = 0;
 }
 
 int EditBuffer::deleteChars(int pos, int num) {
@@ -45,10 +50,15 @@ int EditBuffer::deleteChars(int pos, int num) {
 }
 
 int EditBuffer::insertChars(int pos, char *newtext, int num) {
-  _buffer = (char *)realloc(_buffer, _len + num);
-  memmove(&_buffer[pos+num], &_buffer[pos], _len - pos);
+  int required = _len + num + 1;
+  if (required >= _size) {
+    _size += (required + GROW_SIZE);
+    _buffer = (char *)realloc(_buffer, _size);
+  }
+  memmove(&_buffer[pos + num], &_buffer[pos], _len - pos);
   memcpy(&_buffer[pos], newtext, num);
   _len += num;
+  _buffer[_len] = '\0';
   return 1;
 }
 
@@ -77,33 +87,56 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   int len = _buf._len;
   int i = 0;
   int baseY = 0;
+  int cursorX = x;
+  int cursorY = y;
+  int row = 0;
+  int scroll = getScroll();
+  
   while (i < len) {
     layout(&r, i);
 
-    if (baseY + r.ymax > h) {
+    if (baseY + r.ymax > _height) {
       break;
     }
 
-    if (r.num_chars) {
-      maDrawText(x, y + baseY, _buf._buffer + i, r.num_chars);
-    }
-
-    if (_state.select_start != _state.select_end) {
-      // draw selection
-    } else if ((_state.cursor >= i && _state.cursor < i + r.num_chars) ||
-               (i + r.num_chars == _buf._len && _state.cursor == _buf._len)) {
-      // draw cursor
-      int px = x + ((_state.cursor - i) * chw);
-      maFillRect(px, y + baseY, chw, _charHeight);
-      if (_state.cursor < _buf._len) {
-        maSetColor(getBackground(GRAY_BG_COL));
-        maDrawText(px, y + baseY, _buf._buffer + _state.cursor, 1);
-        maSetColor(_fg);
+    if (row++ >= scroll) {
+      int numChars = r.num_chars;
+      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) { 
+        numChars--;
       }
+      
+      if (numChars) {
+        if (_state.select_start != _state.select_end) {
+          // draw selection
+          
+        } else {
+          maDrawText(x, y + baseY, _buf._buffer + i, numChars);
+        }
+      }
+      
+      if ((_state.cursor >= i && _state.cursor < i + r.num_chars) ||
+          (i + r.num_chars == _buf._len && _state.cursor == _buf._len)) {
+        // set cursor position
+        if (_state.cursor == i + r.num_chars && 
+            _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
+          // place cursor on newline
+          cursorX = x;
+          cursorY = y + baseY + _charHeight;
+        } else {
+          cursorX = x + ((_state.cursor - i) * chw);
+          cursorY = y + baseY;
+        }
+      }
+      baseY += _charHeight;
     }
-
     i += r.num_chars;
-    baseY += _charHeight;
+  }
+
+  // draw cursor
+  maFillRect(cursorX, cursorY, chw, _charHeight);
+  if (_state.cursor < _buf._len) {
+    maSetColor(getBackground(GRAY_BG_COL));
+    maDrawText(cursorX, cursorY, _buf._buffer + _state.cursor, 1);
   }
 }
 
@@ -149,26 +182,49 @@ void TextEditInput::paste(char *text) {
   stb_textedit_paste(&_buf, &_state, text, strlen(text));
 }
 
-void TextEditInput::layout(StbTexteditRow *row, int start) {
+void TextEditInput::layout(StbTexteditRow *row, int start) const {
   int i = start;
+  int len = _buf._len;
   int x2 = _width - _charWidth;
   row->x1 = 0;
   row->num_chars = 0;
 
-  // advance over newlines
-  while (i < _buf._len
-         && _buf._buffer[i] == STB_TEXTEDIT_NEWLINE) {
-    i++;
-    row->num_chars++;
-  }
-  while (i < _buf._len
+  // advance to newline or rectangle edge
+  while (i < len
          && (int)row->x1 < x2
          && _buf._buffer[i] != STB_TEXTEDIT_NEWLINE) {
     row->x1 += _charWidth;
     row->num_chars++;
     i++;
   }
+  if (_buf._buffer[i] == STB_TEXTEDIT_NEWLINE) {
+    // advance over newline
+    row->num_chars++;
+  }
   row->x0 = 0.0f;
   row->ymin = 0.0f;
   row->ymax = row->baseline_y_delta = _charHeight;
+}
+
+int TextEditInput::getScroll() const {
+  StbTexteditRow r;
+  int len = _buf._len;
+  int i = 0;
+  int row = 0;
+  
+  while (i < len) {
+    layout(&r, i);
+    row++;
+    if (_state.cursor == i + r.num_chars && 
+        _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
+      row++;
+      break;
+    } else if (_state.cursor >= i && _state.cursor < i + r.num_chars) {
+      break;
+    }
+    i += r.num_chars;
+  }
+
+  int rows = _height / _charHeight;
+  return row < rows ? 0 : (row - rows);
 }
