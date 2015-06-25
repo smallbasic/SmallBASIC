@@ -108,36 +108,38 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       }
       
       if (numChars) {
-        if (selectStart != selectEnd && i >= selectStart && i < selectEnd) {
+        if (selectStart != selectEnd && i + numChars > selectStart && i < selectEnd) {
           // draw selection
-          int start = selectStart - i;
+          int pos = selectStart - i;
           int baseX = _marginWidth;
-          if (start > 0) {
+          if (pos > 0) {
             // initial non-selected chars
-            maDrawText(x, y + baseY, _buf._buffer + i, start);
-            baseX += start * _charWidth;
-          } else if (start < 0) {
+            maDrawText(x, y + baseY, _buf._buffer + i, pos);
+            baseX += pos * _charWidth;
+          } else if (pos < 0) {
             // started on previous row
             selectStart = i;
-            start = 0;
+            pos = 0;
           }
 
           int count = selectEnd - selectStart;
-          if (count > numChars) {
-            count = numChars;
+          if (count > numChars - pos) {
+            // fill to end of row
+            count = numChars - pos;
+            numChars = 0;
           }
           
           maSetColor(_fg);
           maFillRect(x + baseX, y + baseY, count * _charWidth, _charHeight);
           maSetColor(getBackground(GRAY_BG_COL));
-          maDrawText(x + baseX, y + baseY, _buf._buffer + i + start, count);
+          maDrawText(x + baseX, y + baseY, _buf._buffer + i + pos, count);
           maSetColor(_fg);
 
           if (count < numChars) {
             // trailing non-selected chars
             baseX += count * _charWidth;
-            start += count;
-            maDrawText(x + baseX, y + baseY, _buf._buffer + i + start, numChars - count);
+            pos += count;
+            maDrawText(x + baseX, y + baseY, _buf._buffer + i + pos, numChars - count);
           }
         } else {
           maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
@@ -198,7 +200,9 @@ void TextEditInput::setFocus() {
 }
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
-  stb_textedit_click(&_buf, &_state, x, y);
+  if (pressed) {
+    stb_textedit_click(&_buf, &_state, x, y);
+  }
 }
 
 void TextEditInput::updateField(var_p_t form) {
@@ -206,6 +210,7 @@ void TextEditInput::updateField(var_p_t form) {
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
   stb_textedit_drag(&_buf, &_state, pt.x, pt.y);
+  redraw = true;
   return 1;
 }
 
