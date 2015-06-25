@@ -71,6 +71,8 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _buf(this, text),
   _charWidth(chW),
   _charHeight(chH),
+  _marginWidth(0),
+  _scroll(0),
   _controlMode(false) {
   stb_textedit_initialize_state(&_state, false);
 }
@@ -79,10 +81,6 @@ void TextEditInput::close() {
 }
 
 void TextEditInput::draw(int x, int y, int w, int h, int chw) {
-  maSetColor(getBackground(GRAY_BG_COL));
-  maFillRect(x, y, _width, _height);
-  maSetColor(_fg);
-
   StbTexteditRow r;
   int len = _buf._len;
   int i = 0;
@@ -90,27 +88,59 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   int cursorX = x;
   int cursorY = y;
   int row = 0;
-  int scroll = getScroll();
+  int selectStart = MIN(_state.select_start, _state.select_end);
+  int selectEnd = MAX(_state.select_start, _state.select_end);
+
+  maSetColor(getBackground(GRAY_BG_COL));
+  maFillRect(x, y, _width, _height);
+  maSetColor(_fg);
   
   while (i < len) {
     layout(&r, i);
-
     if (baseY + r.ymax > _height) {
       break;
     }
 
-    if (row++ >= scroll) {
+    if (row++ >= _scroll) {
       int numChars = r.num_chars;
       if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) { 
         numChars--;
       }
       
       if (numChars) {
-        if (_state.select_start != _state.select_end) {
+        if (selectStart != selectEnd && i >= selectStart && i < selectEnd) {
           // draw selection
+          int start = selectStart - i;
+          int baseX = _marginWidth;
+          if (start > 0) {
+            // initial non-selected chars
+            maDrawText(x, y + baseY, _buf._buffer + i, start);
+            baseX += start * _charWidth;
+          } else if (start < 0) {
+            // started on previous row
+            selectStart = i;
+            start = 0;
+          }
+
+          int count = selectEnd - selectStart;
+          if (count > numChars) {
+            count = numChars;
+          }
           
+          maSetColor(_fg);
+          maFillRect(x + baseX, y + baseY, count * _charWidth, _charHeight);
+          maSetColor(getBackground(GRAY_BG_COL));
+          maDrawText(x + baseX, y + baseY, _buf._buffer + i + start, count);
+          maSetColor(_fg);
+
+          if (count < numChars) {
+            // trailing non-selected chars
+            baseX += count * _charWidth;
+            start += count;
+            maDrawText(x + baseX, y + baseY, _buf._buffer + i + start, numChars - count);
+          }
         } else {
-          maDrawText(x, y + baseY, _buf._buffer + i, numChars);
+          maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
         }
       }
       
@@ -133,16 +163,28 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   }
 
   // draw cursor
-  maFillRect(cursorX, cursorY, chw, _charHeight);
+  maFillRect(cursorX + _marginWidth, cursorY, chw, _charHeight);
   if (_state.cursor < _buf._len) {
     maSetColor(getBackground(GRAY_BG_COL));
-    maDrawText(cursorX, cursorY, _buf._buffer + _state.cursor, 1);
+    maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
   }
 }
 
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
-  stb_textedit_key(&_buf, &_state, key);
-  return true;
+  bool result = true;
+  switch (key) {
+  case SB_KEY_PGUP:
+    break;
+  case SB_KEY_PGDN:
+    break;
+  case -1:
+    result = false;
+    break;
+  default:
+    stb_textedit_key(&_buf, &_state, key);
+    _scroll = getScroll();
+  }
+  return result;
 }
 
 int TextEditInput::getControlKey(int key) {
@@ -185,7 +227,7 @@ void TextEditInput::paste(char *text) {
 void TextEditInput::layout(StbTexteditRow *row, int start) const {
   int i = start;
   int len = _buf._len;
-  int x2 = _width - _charWidth;
+  int x2 = _width - _charWidth - _marginWidth;
   row->x1 = 0;
   row->num_chars = 0;
 

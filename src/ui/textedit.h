@@ -65,6 +65,8 @@ private:
   STB_TexteditState _state;
   int _charWidth;
   int _charHeight;
+  int _marginWidth;
+  int _scroll;
   bool _controlMode;
 };
 
