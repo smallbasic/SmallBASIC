@@ -20,6 +20,15 @@
 
 #define GROW_SIZE 128
 
+#define THEME_FOREGROUND 0xa7aebc
+#define THEME_BACKGROUND 0x272b33
+#define THEME_SELECTION_BACKGROUND 0x3d4350
+#define THEME_NUMBER_SELECTION_BACKGROUND 0x2b3039
+#define THEME_NUMBER_SELECTION 0xabb2c0
+#define THEME_NUMBER 0x484f5f
+#define THEME_CURSOR 0xa7aebc
+#define THEME_CURSOR_BACKGROUND 0x3875ed
+
 //
 // EditBuffer
 //
@@ -69,6 +78,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
                              int x, int y, int w, int h) :
   FormInput(x, y, w, h),
   _buf(this, text),
+  _theme(NULL),
   _charWidth(chW),
   _charHeight(chH),
   _marginWidth(0),
@@ -91,10 +101,10 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   int selectStart = MIN(_state.select_start, _state.select_end);
   int selectEnd = MAX(_state.select_start, _state.select_end);
 
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_theme->_background);
   maFillRect(x, y, _width, _height);
-  maSetColor(_fg);
-  
+  maSetColor(_theme->_color);
+
   while (i < len) {
     layout(&r, i);
     if (baseY + r.ymax > _height) {
@@ -103,13 +113,13 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
 
     if (row++ >= _scroll) {
       int numChars = r.num_chars;
-      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) { 
+      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
         numChars--;
       }
-      
-      if (numChars) {
-        if (selectStart != selectEnd && i + numChars > selectStart && i < selectEnd) {
-          // draw selection
+
+      if (selectStart != selectEnd && i + numChars > selectStart && i < selectEnd) {
+        if (numChars) {
+          // draw selected text
           int pos = selectStart - i;
           int baseX = _marginWidth;
           if (pos > 0) {
@@ -128,12 +138,12 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
             count = numChars - pos;
             numChars = 0;
           }
-          
-          maSetColor(_fg);
+
+          maSetColor(_theme->_selection_background);
           maFillRect(x + baseX, y + baseY, count * _charWidth, _charHeight);
-          maSetColor(getBackground(GRAY_BG_COL));
+          maSetColor(_theme->_selection_color);
           maDrawText(x + baseX, y + baseY, _buf._buffer + i + pos, count);
-          maSetColor(_fg);
+          maSetColor(_theme->_color);
 
           if (count < numChars) {
             // trailing non-selected chars
@@ -142,14 +152,18 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
             maDrawText(x + baseX, y + baseY, _buf._buffer + i + pos, numChars - count);
           }
         } else {
-          maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
+          // draw empty row selection
+          maSetColor(_theme->_selection_background);
+          maFillRect(x + _marginWidth, y + baseY, _charWidth / 2, _charHeight);
         }
+      } else if (numChars) {
+        maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
       }
-      
+
       if ((_state.cursor >= i && _state.cursor < i + r.num_chars) ||
           (i + r.num_chars == _buf._len && _state.cursor == _buf._len)) {
         // set cursor position
-        if (_state.cursor == i + r.num_chars && 
+        if (_state.cursor == i + r.num_chars &&
             _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
           // place cursor on newline
           cursorX = x;
@@ -165,9 +179,10 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   }
 
   // draw cursor
+  maSetColor(_theme->_cursor_background);
   maFillRect(cursorX + _marginWidth, cursorY, chw, _charHeight);
   if (_state.cursor < _buf._len) {
-    maSetColor(getBackground(GRAY_BG_COL));
+    maSetColor(_theme->_cursor_color);
     maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
   }
 }
@@ -184,7 +199,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     break;
   default:
     stb_textedit_key(&_buf, &_state, key);
-    _scroll = getScroll();
+    updateScroll();
   }
   return result;
 }
@@ -206,6 +221,33 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
 }
 
 void TextEditInput::updateField(var_p_t form) {
+}
+
+bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
+  bool updated = (form && field) ? FormInput::updateUI(form, field) : false;
+  if (!_theme) {
+    _theme = new EditTheme();
+    updated = true;
+    if (_fg && _bg) {
+      _theme->_color = _fg;
+      _theme->_background = _bg;
+      _theme->_selection_color = _bg;
+      _theme->_selection_background = _fg;
+      _theme->_cursor_color = _bg;
+      _theme->_cursor_background = _fg;
+    } else {
+      _theme->_color = THEME_FOREGROUND;
+      _theme->_background = THEME_BACKGROUND;
+      _theme->_selection_color = THEME_FOREGROUND;
+      _theme->_selection_background = THEME_SELECTION_BACKGROUND;
+      _theme->_number_color = THEME_NUMBER;
+      _theme->_number_selection_color = THEME_FOREGROUND;
+      _theme->_number_selection_background = THEME_NUMBER_SELECTION_BACKGROUND;
+      _theme->_cursor_color = THEME_CURSOR;
+      _theme->_cursor_background = THEME_CURSOR_BACKGROUND;
+    }
+  }
+  return updated;
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
@@ -253,25 +295,38 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->ymax = row->baseline_y_delta = _charHeight;
 }
 
-int TextEditInput::getScroll() const {
+int TextEditInput::cursorRow() const {
   StbTexteditRow r;
   int len = _buf._len;
-  int i = 0;
   int row = 0;
-  
-  while (i < len) {
+
+  for (int i = 0; i < len;) {
     layout(&r, i);
-    row++;
-    if (_state.cursor == i + r.num_chars && 
+    if (_state.cursor == i + r.num_chars &&
         _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
+      // at end of line
       row++;
       break;
     } else if (_state.cursor >= i && _state.cursor < i + r.num_chars) {
+      // within line
       break;
     }
     i += r.num_chars;
+    if (i < len) {
+      row++;
+    }
   }
-
-  int rows = _height / _charHeight;
-  return row < rows ? 0 : (row - rows);
+  return row + 1;
 }
+
+void TextEditInput::updateScroll() {
+  int cursor = cursorRow();
+  int pageRows = _height / _charHeight;
+  if (cursor + 1 < pageRows) {
+    _scroll = 0;
+  } else if (cursor > _scroll + pageRows || cursor <= _scroll) {
+    // cursor outside current view
+    _scroll = cursor - (pageRows / 2);
+  }
+}
+

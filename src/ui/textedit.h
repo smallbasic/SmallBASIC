@@ -22,6 +22,18 @@
 
 struct TextEditInput;
 
+struct EditTheme {
+  int _color;
+  int _background;
+  int _selection_color;
+  int _selection_background;
+  int _number_color;
+  int _number_selection_color;
+  int _number_selection_background;
+  int _cursor_color;
+  int _cursor_background;
+};
+
 struct EditBuffer {
   char *_buffer;
   int _len;
@@ -48,8 +60,10 @@ struct TextEditInput : public FormInput {
   void setControlMode(bool cursorMode) { _controlMode = cursorMode; }
   void setText(const char *text);
   void setFocus();
+  void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);
+  bool updateUI(var_p_t form, var_p_t field);
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   int padding(bool) const { return 0; }
   char *copy(bool cut);
@@ -59,10 +73,12 @@ struct TextEditInput : public FormInput {
   int charWidth(int k, int i) const { return _charWidth; }
 
 private:
-  int getScroll() const;
+  int cursorRow() const;
+  void updateScroll();
   
   EditBuffer _buf;
   STB_TexteditState _state;
+  EditTheme *_theme;
   int _charWidth;
   int _charHeight;
   int _marginWidth;
