@@ -96,7 +96,7 @@ void System::editSource() {
 
   TextEditInput *widget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   widget->updateUI(NULL, NULL);
-  set_focus(widget);
+  widget->setFocus();
   _srcRendered = false;
   _output->clearScreen();
   _output->addInput(widget);

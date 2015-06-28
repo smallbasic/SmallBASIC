@@ -43,17 +43,6 @@ int FormInput::getBackground(int buttonColor) const {
   return result;
 }
 
-bool FormInput::hasFocus() const {
-  return (focusInput == this);
-}
-
-void FormInput::setFocus() {
-  if (!isNoFocus()) {
-    focusInput = this;
-    g_system->getOutput()->setDirty();
-  }
-}
-
 void FormInput::clicked(int x, int y, bool pressed) {
   if (!pressed && g_system->isRunning()) {
     if (_onclick) {
@@ -119,14 +108,6 @@ bool FormLineInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
     }
   }
   return result;
-}
-
-void FormLineInput::setFocus() {
-  if (!isNoFocus()) {
-    focusInput = this;
-    focusEdit = this;
-    g_system->getOutput()->setDirty();
-  }
 }
 
 void FormDropList::clicked(int x, int y, bool pressed) {

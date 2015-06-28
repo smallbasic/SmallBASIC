@@ -59,7 +59,6 @@ struct TextEditInput : public FormEditInput {
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buf._buffer; }
   void setText(const char *text);
-  void setFocus();
   void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);

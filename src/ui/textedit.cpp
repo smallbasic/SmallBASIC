@@ -242,9 +242,6 @@ void TextEditInput::selectAll() {
 void TextEditInput::setText(const char *text) {
 }
 
-void TextEditInput::setFocus() {
-}
-
 void TextEditInput::clicked(int x, int y, bool pressed) {
   if (pressed) {
     stb_textedit_click(&_buf, &_state, x, y);

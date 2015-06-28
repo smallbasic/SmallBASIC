@@ -20,7 +20,7 @@ extern System *g_system;
 
 FormList *activeList = NULL;
 FormInput *focusInput = NULL;
-FormLineInput *focusEdit = NULL;
+FormEditInput *focusEdit = NULL;
 
 FormEditInput *get_focus_edit() {
   return focusEdit;
@@ -331,6 +331,17 @@ void FormInput::updateForm(var_p_t form) {
   }
 }
 
+bool FormInput::hasFocus() const {
+  return (focusInput == this);
+}
+
+void FormInput::setFocus() {
+ if (!isNoFocus()) {
+   focusInput = this;
+   g_system->getOutput()->setDirty();
+ }
+}
+
 //
 // FormButton
 //
@@ -400,7 +411,13 @@ void FormTab::draw(int x, int y, int w, int h, int chw) {
 //
 FormEditInput::FormEditInput(int x, int y, int w, int h) :
   FormInput(x, y, w, h),
- _controlMode(false) {
+  _controlMode(false) {
+}
+
+FormEditInput::~FormEditInput() {
+  if (focusEdit == this) {
+    focusEdit = NULL;
+  }
 }
 
 int FormEditInput::getControlKey(int key) {
@@ -439,6 +456,14 @@ int FormEditInput::getControlKey(int key) {
   return result;
 }
 
+void FormEditInput::setFocus() {
+  if (!isNoFocus()) {
+    focusInput = this;
+    focusEdit = this;
+    g_system->getOutput()->setDirty();
+  }
+}
+
 //
 // FormLineInput
 //
@@ -462,9 +487,6 @@ FormLineInput::FormLineInput(const char *value, int size, bool grow,
 }
 
 FormLineInput::~FormLineInput() {
-  if (focusEdit == this) {
-    focusEdit = NULL;
-  }
   delete [] _buffer;
   _buffer = NULL;
 }

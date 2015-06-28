@@ -204,14 +204,17 @@ struct FormTab : public FormLink {
 
 struct FormEditInput : public FormInput {
   FormEditInput(int x, int y, int w, int h);
-  virtual ~FormEditInput() {}
+  virtual ~FormEditInput();
 
   virtual char *copy(bool cut) = 0;
   virtual void paste(char *text) = 0;
   virtual void selectAll() = 0;
+  void setFocus();
   int  getControlKey(int key);
   bool getControlMode() const { return _controlMode; }
   void setControlMode(bool cursorMode) { _controlMode = cursorMode; }
+
+protected:  
   bool _controlMode;
 };
 
@@ -224,7 +227,6 @@ struct FormLineInput : public FormEditInput {
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buffer; }
   void setText(const char *text) {}
-  void setFocus();
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
@@ -307,6 +309,5 @@ struct MenuButton : public FormButton {
 };
 
 FormEditInput *get_focus_edit();
-void set_focus(FormInput *focus);
 
 #endif
