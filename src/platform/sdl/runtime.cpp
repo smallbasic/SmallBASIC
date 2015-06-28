@@ -180,47 +180,48 @@ void Runtime::showAlert(const char *title, const char *message) {
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {
-  if (isRunning()) {
-    int key = event.key;
-    int lenMap = sizeof(keymap) / sizeof(keymap[0]);
-    for (int i = 0; i < lenMap && key != -1; i++) {
-      if (keymap[i][0] == key) {
-        event.key = keymap[i][1];
-        if (keymap[i][1] != -1) {
-          if (event.nativeKey & KMOD_SHIFT) {
-            event.key = SB_KEY_SHIFT(event.key);
-          } else if (event.nativeKey & KMOD_CTRL) {
-            event.key = SB_KEY_CTRL(event.key);
-          }
+  int key = event.key;
+  int lenMap = sizeof(keymap) / sizeof(keymap[0]);
+  for (int i = 0; i < lenMap && key != -1; i++) {
+    if (keymap[i][0] == key) {
+      event.key = keymap[i][1];
+      if (keymap[i][1] != -1) {
+        if (event.nativeKey & KMOD_SHIFT) {
+          event.key = SB_KEY_SHIFT(event.key);
+        } else if (event.nativeKey & KMOD_CTRL) {
+          event.key = SB_KEY_CTRL(event.key);
+        }
+        if (isRunning()) {
           dev_pushkey(event.key);
         }
-        key = -1;
-        break;
       }
+      key = -1;
+      break;
     }
-
-    if (key != -1) {
-      // mapping not found
-      if ((event.nativeKey & KMOD_CTRL) &&
-          (event.nativeKey & KMOD_ALT)) {
-        event.key = SB_KEY_CTRL_ALT(event.key);
-      } else if (event.nativeKey & KMOD_CTRL) {
-        event.key = SB_KEY_CTRL(event.key);
-      } else if (event.nativeKey & KMOD_ALT) {
-        event.key = SB_KEY_ALT(event.key);
-      } else if (event.nativeKey & KMOD_SHIFT) {
-        if (event.key >= SDLK_a && event.key <= SDLK_z) {
-          event.key = 'A' + (event.key - SDLK_a);
-        } else {
-          lenMap = sizeof(shiftmap) / sizeof(shiftmap[0]);
-          for (int i = 0; i < lenMap; i++) {
-            if (shiftmap[i][0] == event.key) {
-              event.key = shiftmap[i][1];
-              break;
-            }
+  }
+  if (key != -1) {
+    // mapping not found
+    if ((event.nativeKey & KMOD_CTRL) &&
+        (event.nativeKey & KMOD_ALT)) {
+      event.key = SB_KEY_CTRL_ALT(event.key);
+    } else if (event.nativeKey & KMOD_CTRL) {
+      event.key = SB_KEY_CTRL(event.key);
+    } else if (event.nativeKey & KMOD_ALT) {
+      event.key = SB_KEY_ALT(event.key);
+    } else if (event.nativeKey & KMOD_SHIFT) {
+      if (event.key >= SDLK_a && event.key <= SDLK_z) {
+        event.key = 'A' + (event.key - SDLK_a);
+      } else {
+        lenMap = sizeof(shiftmap) / sizeof(shiftmap[0]);
+        for (int i = 0; i < lenMap; i++) {
+          if (shiftmap[i][0] == event.key) {
+            event.key = shiftmap[i][1];
+            break;
           }
         }
       }
+    }
+    if (isRunning()) {
       dev_pushkey(event.key);
     }
   }
@@ -274,6 +275,7 @@ void Runtime::pollEvents(bool blocking) {
         } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
           setBack();
         } else if (ev.key.keysym.sym == SDLK_BACKSPACE &&
+                   get_focus_edit() == NULL &&
                    ((ev.key.keysym.mod & KMOD_CTRL) || !isRunning())) {
           setBack();
         } else if (ev.key.keysym.sym == SDLK_PAGEUP && (ev.key.keysym.mod & KMOD_CTRL)) {

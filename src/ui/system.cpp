@@ -19,6 +19,7 @@
 #include "common/keymap.h"
 #include "ui/system.h"
 #include "ui/inputs.h"
+#include "ui/textedit.h"
 
 #define MENU_CONSOLE    0
 #define MENU_SOURCE     1
@@ -34,7 +35,8 @@
 #define MENU_LIVEMODE   11
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
-#define MENU_SIZE       14
+#define MENU_EDIT_SRC   14
+#define MENU_SIZE       15
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -81,6 +83,42 @@ void System::checkModifiedTime() {
       _modifiedTime != getModifiedTime()) {
     setRestart();
   }
+}
+
+void System::editSource() {
+  logEntered();
+
+  int w = _output->getWidth();
+  int h = _output->getHeight();
+  int charWidth = _output->getCharWidth();
+  int charHeight = _output->getCharHeight();
+  int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
+
+  TextEditInput *widget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  widget->updateUI(NULL, NULL);
+  set_focus(widget);
+  _srcRendered = false;
+  _output->clearScreen();
+  _output->addInput(widget);
+  _output->redraw();
+  maShowVirtualKeyboard();
+
+  while (!isClosing()) {
+    MAEvent event = getNextEvent();
+    if (event.type == EVENT_TYPE_KEY_PRESSED) {
+      dev_clrkb();
+      int sw = _output->getScreenWidth();
+      if (widget->edit(event.key, sw, charWidth)) {
+        _output->redraw();
+      }
+    }
+  }
+
+  if (!isClosing()) {
+    _output->removeInput(widget);
+    _output->selectScreen(prevScreenId);
+  }
+  logLeaving();
 }
 
 bool System::execute(const char *bas) {
@@ -282,6 +320,9 @@ void System::handleMenu(int menuId) {
     break;
   case MENU_SCREENSHOT:
     ::screen_dump();
+    break;
+  case MENU_EDIT_SRC:
+    editSource();
     break;
   }
 
@@ -643,9 +684,15 @@ void System::showMenu() {
     } else {
       if (_overruns == 0) {
         items->add(new String("Console"));
-        items->add(new String("View source"));
         _systemMenu[index++] = MENU_CONSOLE;
-        _systemMenu[index++] = MENU_SOURCE;
+
+        if (!_mainBas && _activeFile.length() > 0) {
+          items->add(new String("Edit source"));
+          _systemMenu[index++] = MENU_EDIT_SRC;
+        } else {
+          items->add(new String("View source"));
+          _systemMenu[index++] = MENU_SOURCE;
+        }
       }
 #if defined(_SDL)
       items->add(new String("Back"));

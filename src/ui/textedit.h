@@ -23,6 +23,9 @@
 struct TextEditInput;
 
 struct EditTheme {
+  EditTheme();
+  EditTheme(int fg, int bg);
+
   int _color;
   int _background;
   int _selection_color;
@@ -47,7 +50,7 @@ struct EditBuffer {
   int insertChars(int pos, char *newtext, int num);
 };
 
-struct TextEditInput : public FormInput {
+struct TextEditInput : public FormEditInput {
   TextEditInput(const char *text, int chW, int chH, int x, int y, int w, int h);
   virtual ~TextEditInput() {}
 
@@ -55,9 +58,6 @@ struct TextEditInput : public FormInput {
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buf._buffer; }
-  int  getControlKey(int key);
-  bool getControlMode() const { return _controlMode; }
-  void setControlMode(bool cursorMode) { _controlMode = cursorMode; }
   void setText(const char *text);
   void setFocus();
   void setTheme(EditTheme *theme) { _theme = theme; }
@@ -66,16 +66,16 @@ struct TextEditInput : public FormInput {
   bool updateUI(var_p_t form, var_p_t field);
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   int padding(bool) const { return 0; }
-  char *copy(bool cut);
-  void cut();
-  void paste(char *text);
   void layout(StbTexteditRow *row, int start_i) const;
   int charWidth(int k, int i) const { return _charWidth; }
+  char *copy(bool cut);
+  void paste(char *text);
+  void selectAll();
 
 private:
   int cursorRow() const;
   void updateScroll();
-  
+
   EditBuffer _buf;
   STB_TexteditState _state;
   EditTheme *_theme;
@@ -83,7 +83,6 @@ private:
   int _charHeight;
   int _marginWidth;
   int _scroll;
-  bool _controlMode;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer
@@ -104,7 +103,7 @@ private:
 #define STB_TEXTEDIT_K_WORDRIGHT  SB_KEY_CTRL(SB_KEY_RIGHT)
 #define STB_TEXTEDIT_K_PGUP       SB_KEY_PGUP
 #define STB_TEXTEDIT_K_PGDOWN     SB_KEY_PGDN
-#define STB_TEXTEDIT_NEWLINE      SB_KEY_ENTER
+#define STB_TEXTEDIT_NEWLINE      '\n'
 #define STB_TEXTEDIT_K_CONTROL    0xF1000000
 #define STB_TEXTEDIT_K_SHIFT      0xF8000000
 #define STB_TEXTEDIT_KEYTOTEXT(k) k

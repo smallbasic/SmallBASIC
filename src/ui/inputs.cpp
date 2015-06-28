@@ -22,7 +22,7 @@ FormList *activeList = NULL;
 FormInput *focusInput = NULL;
 FormLineInput *focusEdit = NULL;
 
-FormLineInput *get_focus_edit() {
+FormEditInput *get_focus_edit() {
   return focusEdit;
 }
 
@@ -396,18 +396,61 @@ void FormTab::draw(int x, int y, int w, int h, int chw) {
 }
 
 //
+// FormEditInput
+//
+FormEditInput::FormEditInput(int x, int y, int w, int h) :
+  FormInput(x, y, w, h),
+ _controlMode(false) {
+}
+
+int FormEditInput::getControlKey(int key) {
+  int result = key;
+  if (_controlMode) {
+    switch (key) {
+    case 'x':
+      g_system->setClipboardText(copy(true));
+      result = -1;
+      break;
+    case 'c':
+      g_system->setClipboardText(copy(false));
+      result = -1;
+      break;
+    case 'v':
+      paste(g_system->getClipboardText());
+      result = -1;
+      break;
+    case 'h':
+      result = SB_KEY_LEFT;
+      break;
+    case 'l':
+      result = SB_KEY_RIGHT;
+      break;
+    case 'j':
+      result = SB_KEY_HOME;
+      break;
+    case 'k':
+      result = SB_KEY_END;
+      break;
+    case 'a':
+      selectAll();
+      break;
+    }
+  }
+  return result;
+}
+
+//
 // FormLineInput
 //
 FormLineInput::FormLineInput(const char *value, int size, bool grow,
                              int x, int y, int w, int h) :
-  FormInput(x, y, w, h),
+  FormEditInput(x, y, w, h),
   _buffer(NULL),
   _size(size),
   _scroll(0),
   _mark(-1),
   _point(0),
-  _grow(grow),
-  _controlMode(false) {
+  _grow(grow) {
   _buffer = new char[_size + 1];
   _buffer[0] = '\0';
   if (value != NULL && value[0]) {
@@ -549,42 +592,9 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
   return true;
 }
 
-int FormLineInput::getControlKey(int key) {
-  int result = key;
-  if (_controlMode) {
-    switch (key) {
-    case 'x':
-      g_system->setClipboardText(copy(true));
-      result = -1;
-      break;
-    case 'c':
-      g_system->setClipboardText(copy(false));
-      result = -1;
-      break;
-    case 'v':
-      paste(g_system->getClipboardText());
-      result = -1;
-      break;
-    case 'h':
-      result = SB_KEY_LEFT;
-      break;
-    case 'l':
-      result = SB_KEY_RIGHT;
-      break;
-    case 'j':
-      result = SB_KEY_HOME;
-      break;
-    case 'k':
-      result = SB_KEY_END;
-      break;
-    case 'a':
-      _point = 0;
-      _mark = _buffer == NULL ? -0 : strlen(_buffer);
-      result = -1;
-      break;
-    }
-  }
-  return result;
+void FormLineInput::selectAll() {
+  _point = 0;
+  _mark = _buffer == NULL ? -0 : strlen(_buffer);
 }
 
 void FormLineInput::updateField(var_p_t form) {

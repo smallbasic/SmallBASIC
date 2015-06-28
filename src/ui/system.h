@@ -51,6 +51,7 @@ struct System {
 
 protected:
   void checkModifiedTime();
+  void editSource();
   bool execute(const char *bas);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();

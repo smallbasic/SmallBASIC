@@ -30,6 +30,30 @@
 #define THEME_CURSOR_BACKGROUND 0x3875ed
 
 //
+// EditTheme
+//
+EditTheme::EditTheme() :
+  _color(THEME_FOREGROUND),
+  _background(THEME_BACKGROUND),
+  _selection_color(THEME_FOREGROUND),
+  _selection_background(THEME_SELECTION_BACKGROUND),
+  _number_color(THEME_NUMBER),
+  _number_selection_color(THEME_FOREGROUND),
+  _number_selection_background(THEME_NUMBER_SELECTION_BACKGROUND),
+  _cursor_color(THEME_CURSOR),
+  _cursor_background(THEME_CURSOR_BACKGROUND) {
+}
+
+EditTheme::EditTheme(int fg, int bg) :
+  _color(fg),
+  _background(bg),
+  _selection_color(bg),
+  _selection_background(fg),
+  _cursor_color(bg),
+  _cursor_background(fg) {
+}
+
+//
 // EditBuffer
 //
 EditBuffer::EditBuffer(TextEditInput *in, const char *text) :
@@ -76,14 +100,13 @@ int EditBuffer::insertChars(int pos, char *newtext, int num) {
 //
 TextEditInput::TextEditInput(const char *text, int chW, int chH,
                              int x, int y, int w, int h) :
-  FormInput(x, y, w, h),
+  FormEditInput(x, y, w, h),
   _buf(this, text),
   _theme(NULL),
   _charWidth(chW),
   _charHeight(chH),
   _marginWidth(0),
-  _scroll(0),
-  _controlMode(false) {
+  _scroll(0) {
   stb_textedit_initialize_state(&_state, false);
 }
 
@@ -113,43 +136,45 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
 
     if (row++ >= _scroll) {
       int numChars = r.num_chars;
-      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
+      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == '\r') {
         numChars--;
       }
-
+      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == '\n') {
+        numChars--;
+      }
       if (selectStart != selectEnd && i + numChars > selectStart && i < selectEnd) {
         if (numChars) {
           // draw selected text
-          int pos = selectStart - i;
+          int begin = selectStart - i;
           int baseX = _marginWidth;
-          if (pos > 0) {
+          if (begin > 0) {
             // initial non-selected chars
-            maDrawText(x, y + baseY, _buf._buffer + i, pos);
-            baseX += pos * _charWidth;
-          } else if (pos < 0) {
+            maDrawText(x, y + baseY, _buf._buffer + i, begin);
+            baseX += begin * _charWidth;
+          } else if (begin < 0) {
             // started on previous row
             selectStart = i;
-            pos = 0;
+            begin = 0;
           }
 
           int count = selectEnd - selectStart;
-          if (count > numChars - pos) {
+          if (count > numChars - begin) {
             // fill to end of row
-            count = numChars - pos;
+            count = numChars - begin;
             numChars = 0;
           }
 
           maSetColor(_theme->_selection_background);
           maFillRect(x + baseX, y + baseY, count * _charWidth, _charHeight);
           maSetColor(_theme->_selection_color);
-          maDrawText(x + baseX, y + baseY, _buf._buffer + i + pos, count);
+          maDrawText(x + baseX, y + baseY, _buf._buffer + i + begin, count);
           maSetColor(_theme->_color);
 
-          if (count < numChars) {
+          int end = numChars - (begin + count);
+          if (end) {
             // trailing non-selected chars
             baseX += count * _charWidth;
-            pos += count;
-            maDrawText(x + baseX, y + baseY, _buf._buffer + i + pos, numChars - count);
+            maDrawText(x + baseX, y + baseY, _buf._buffer + i + begin + count, end);
           }
         } else {
           // draw empty row selection
@@ -194,18 +219,24 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     break;
   case SB_KEY_PGDN:
     break;
+  case SB_KEY_ENTER:
+    stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_NEWLINE);
+    break;
   case -1:
     result = false;
     break;
   default:
     stb_textedit_key(&_buf, &_state, key);
+  }
+  if (result) {
     updateScroll();
   }
   return result;
 }
 
-int TextEditInput::getControlKey(int key) {
-  return 0;
+void TextEditInput::selectAll() {
+  _state.select_start = 0;
+  _state.select_end = _buf._len;
 }
 
 void TextEditInput::setText(const char *text) {
@@ -226,26 +257,12 @@ void TextEditInput::updateField(var_p_t form) {
 bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
   bool updated = (form && field) ? FormInput::updateUI(form, field) : false;
   if (!_theme) {
-    _theme = new EditTheme();
-    updated = true;
-    if (_fg && _bg) {
-      _theme->_color = _fg;
-      _theme->_background = _bg;
-      _theme->_selection_color = _bg;
-      _theme->_selection_background = _fg;
-      _theme->_cursor_color = _bg;
-      _theme->_cursor_background = _fg;
+    if (_fg == DEFAULT_FOREGROUND && _bg == DEFAULT_BACKGROUND) {
+      _theme = new EditTheme();
     } else {
-      _theme->_color = THEME_FOREGROUND;
-      _theme->_background = THEME_BACKGROUND;
-      _theme->_selection_color = THEME_FOREGROUND;
-      _theme->_selection_background = THEME_SELECTION_BACKGROUND;
-      _theme->_number_color = THEME_NUMBER;
-      _theme->_number_selection_color = THEME_FOREGROUND;
-      _theme->_number_selection_background = THEME_NUMBER_SELECTION_BACKGROUND;
-      _theme->_cursor_color = THEME_CURSOR;
-      _theme->_cursor_background = THEME_CURSOR_BACKGROUND;
+      _theme = new EditTheme(_fg, _bg);
     }
+    updated = true;
   }
   return updated;
 }
@@ -263,10 +280,6 @@ char *TextEditInput::copy(bool cut) {
   return 0;
 }
 
-void TextEditInput::cut() {
-  stb_textedit_cut(&_buf, &_state);
-}
-
 void TextEditInput::paste(char *text) {
   stb_textedit_paste(&_buf, &_state, text, strlen(text));
 }
@@ -281,12 +294,19 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   // advance to newline or rectangle edge
   while (i < len
          && (int)row->x1 < x2
-         && _buf._buffer[i] != STB_TEXTEDIT_NEWLINE) {
+         && _buf._buffer[i] != '\r'
+         && _buf._buffer[i] != '\n') {
     row->x1 += _charWidth;
     row->num_chars++;
     i++;
   }
-  if (_buf._buffer[i] == STB_TEXTEDIT_NEWLINE) {
+
+  if (_buf._buffer[i] == '\r') {
+    // advance over DOS newline
+    row->num_chars++;
+    i++;
+  }
+  if (_buf._buffer[i] == '\n') {
     // advance over newline
     row->num_chars++;
   }

@@ -202,7 +202,20 @@ struct FormTab : public FormLink {
   int padding(bool vert) const { return vert ? 0 : BN_W; }
 };
 
-struct FormLineInput : public FormInput {
+struct FormEditInput : public FormInput {
+  FormEditInput(int x, int y, int w, int h);
+  virtual ~FormEditInput() {}
+
+  virtual char *copy(bool cut) = 0;
+  virtual void paste(char *text) = 0;
+  virtual void selectAll() = 0;
+  int  getControlKey(int key);
+  bool getControlMode() const { return _controlMode; }
+  void setControlMode(bool cursorMode) { _controlMode = cursorMode; }
+  bool _controlMode;
+};
+
+struct FormLineInput : public FormEditInput {
   FormLineInput(const char *text, int maxSize, bool grow, int x, int y, int w, int h);
   virtual ~FormLineInput();
 
@@ -210,9 +223,6 @@ struct FormLineInput : public FormInput {
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buffer; }
-  int  getControlKey(int key);
-  bool getControlMode() const { return _controlMode; }
-  void setControlMode(bool cursorMode) { _controlMode = cursorMode; }
   void setText(const char *text) {}
   void setFocus();
   void clicked(int x, int y, bool pressed);
@@ -220,8 +230,9 @@ struct FormLineInput : public FormInput {
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   int padding(bool) const { return 0; }
   char *copy(bool cut);
-  void cut();
   void paste(char *text);
+  void cut();
+  void selectAll();
 
 private:
   char *_buffer;
@@ -230,7 +241,6 @@ private:
   int _mark;
   int _point;
   bool _grow;
-  bool _controlMode;
 };
 
 struct FormList : public FormInput {
@@ -296,6 +306,7 @@ struct MenuButton : public FormButton {
   int &_selectedIndex;
 };
 
-FormLineInput *get_focus_edit();
+FormEditInput *get_focus_edit();
+void set_focus(FormInput *focus);
 
 #endif
