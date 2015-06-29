@@ -48,6 +48,7 @@ struct EditBuffer {
 
   int deleteChars(int pos, int num);
   int insertChars(int pos, char *newtext, int num);
+  char *textRange(int start, int end);
 };
 
 struct TextEditInput : public FormEditInput {
@@ -72,7 +73,14 @@ struct TextEditInput : public FormEditInput {
   void selectAll();
 
 private:
-  int cursorRow() const;
+  void editTab();
+  void findMatchingBrace();
+  int getCursorRow() const;
+  int getIndent(char *spaces, int len, int pos);
+  char *lineText(int pos);
+  int lineEnd(int pos) { return linePos(pos, true); }
+  int linePos(int pos, bool end);
+  int lineStart(int pos) { return linePos(pos, false); }
   void updateScroll();
 
   EditBuffer _buf;
@@ -82,6 +90,8 @@ private:
   int _charHeight;
   int _marginWidth;
   int _scroll;
+  int _indentLevel;
+  int _matchingBrace;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer

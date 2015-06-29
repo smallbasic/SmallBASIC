@@ -19,7 +19,8 @@
 #include "lib/stb_textedit.h"
 
 #define GROW_SIZE 128
-
+#define LINE_BUFFER_SIZE 200
+#define INDENT_LEVEL 2
 #define THEME_FOREGROUND 0xa7aebc
 #define THEME_BACKGROUND 0x272b33
 #define THEME_SELECTION_BACKGROUND 0x3d4350
@@ -95,6 +96,24 @@ int EditBuffer::insertChars(int pos, char *newtext, int num) {
   return 1;
 }
 
+char *EditBuffer::textRange(int start, int end) {
+  char *result;
+  int len;
+  if (start < 0 || start > _len || end < start) {
+    len = 0;
+    result = (char*)malloc(len + 1);
+  } else {
+    if (end > _len) {
+      end = _len;
+    }
+    len = end - start;
+    result = (char*)malloc(len + 1);
+    memcpy(result, &_buffer[start], len);
+  }
+  result[len] = '\0';
+  return result;
+}
+
 //
 // TextEditInput
 //
@@ -106,7 +125,9 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _charWidth(chW),
   _charHeight(chH),
   _marginWidth(0),
-  _scroll(0) {
+  _scroll(0),
+  _indentLevel(INDENT_LEVEL),
+  _matchingBrace(-1) {
   stb_textedit_initialize_state(&_state, false);
 }
 
@@ -180,6 +201,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
           // draw empty row selection
           maSetColor(_theme->_selection_background);
           maFillRect(x + _marginWidth, y + baseY, _charWidth / 2, _charHeight);
+          maSetColor(_theme->_color);
         }
       } else if (numChars) {
         maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
@@ -210,16 +232,39 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     maSetColor(_theme->_cursor_color);
     maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
   }
+  if (_matchingBrace != -1) {
+    // highlight the matching brace
+    //    int X, Y;
+    //    int cursor = cursor_style_;
+    //    cursor_style_ = BLOCK_CURSOR;
+    //    if (position_to_xy(matchingBrace, &X, &Y)) {
+    //      draw_cursor(X, Y);
+    //    }
+    //    cursor_style_ = cursor;
+  }
 }
 
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   bool result = true;
   switch (key) {
+  case SB_KEY_TAB:
+    editTab();
+    break;
   case SB_KEY_PGUP:
     break;
   case SB_KEY_PGDN:
     break;
   case SB_KEY_ENTER:
+  /*
+  if (event_key() == ReturnKey) {
+      indent = getIndent(spaces, sizeof(spaces), cursorPos);
+      if (indent) {
+        buffer()->insert(cursor_pos_, spaces);
+        cursor_pos_ += indent;
+        redraw(DAMAGE_ALL);
+      }
+    }
+  */
     stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_NEWLINE);
     break;
   case -1:
@@ -312,7 +357,140 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->ymax = row->baseline_y_delta = _charHeight;
 }
 
-int TextEditInput::cursorRow() const {
+void TextEditInput::editTab() {
+  char spaces[LINE_BUFFER_SIZE];
+  int indent;
+
+  // get the desired indent based on the previous line
+  int start = lineStart(_state.cursor);
+  int prevLineStart = lineStart(start - 1);
+
+  if (prevLineStart && prevLineStart + 1 == start) {
+    // allows for a single blank line between statements
+    prevLineStart = lineStart(prevLineStart - 1);
+  }
+  // note - spaces not used in this context
+  indent = prevLineStart == 0 ? 0 : getIndent(spaces, sizeof(spaces), prevLineStart);
+
+  // get the current lines indent
+  char *buf = lineText(start);
+  int curIndent = 0;
+  while (buf && buf[curIndent] == ' ') {
+    curIndent++;
+  }
+
+  // adjust indent for statement terminators
+  if (strncasecmp(buf + curIndent, "wend", 4) == 0 ||
+      strncasecmp(buf + curIndent, "fi", 2) == 0 ||
+      strncasecmp(buf + curIndent, "endif", 5) == 0 ||
+      strncasecmp(buf + curIndent, "elseif ", 7) == 0 ||
+      strncasecmp(buf + curIndent, "elif ", 5) == 0 ||
+      strncasecmp(buf + curIndent, "else", 4) == 0 ||
+      strncasecmp(buf + curIndent, "next", 4) == 0 ||
+      strncasecmp(buf + curIndent, "case", 4) == 0 ||
+      strncasecmp(buf + curIndent, "end", 3) == 0 ||
+      strncasecmp(buf + curIndent, "until ", 6) == 0) {
+    if (indent >= _indentLevel) {
+      indent -= _indentLevel;
+    }
+  }
+  if (curIndent < indent) {
+    // insert additional spaces
+    int len = indent - curIndent;
+    if (len > (int)sizeof(spaces) - 1) {
+      len = (int)sizeof(spaces) - 1;
+    }
+    memset(spaces, ' ', len);
+    spaces[len] = 0;
+    _buf.insertChars(start, spaces, len);
+    if (_state.cursor - start < indent) {
+      // jump cursor to start of text
+      _state.cursor = start + indent;
+    } else {
+      // move cursor along with text movement, staying on same line
+      int maxpos = lineEnd(start);
+      if (_state.cursor + len <= maxpos) {
+        _state.cursor += len;
+      }
+    }
+  } else if (curIndent > indent) {
+    // remove excess spaces
+    _buf.deleteChars(start, curIndent - indent);
+  } else {
+    // already have ideal indent - soft-tab to indent
+    // TODO
+    // insert_position(lineStart + indent);
+  }
+  free((void *)buf);
+}
+
+void TextEditInput::findMatchingBrace() {
+  char cursorChar = _buf._buffer[_state.cursor - 1];
+  char cursorMatch = 0;
+  int pair = -1;
+  int iter = -1;
+  int pos = _state.cursor - 2;
+
+  switch (cursorChar) {
+  case ']':
+    cursorMatch = '[';
+    break;
+  case ')':
+    cursorMatch = '(';
+    break;
+  case '(':
+    cursorMatch = ')';
+    pos = _state.cursor;
+    iter = 1;
+    break;
+  case '[':
+    cursorMatch = ']';
+    iter = 1;
+    pos = _state.cursor;
+    break;
+  }
+  if (cursorMatch != -0) {
+    // scan for matching opening on the same line
+    int level = 1;
+    int len = _buf._len;
+    int gap = 0;
+    while (pos > 0 && pos < len) {
+      char nextChar = _buf._buffer[pos];
+      if (nextChar == 0 || nextChar == '\n') {
+        break;
+      }
+      if (nextChar == cursorChar) {
+        level++;                // nested char
+      } else if (nextChar == cursorMatch) {
+        level--;
+        if (level == 0) {
+          // found matching char at pos
+          if (gap > 1) {
+            pair = pos;
+          }
+          break;
+        }
+      }
+      pos += iter;
+      gap++;
+    }
+  }
+
+  if (_matchingBrace != -1) {
+    // TODO
+    //int lineStart = _buf.lineStart(_matchingBrace);
+    //int lineEnd = _buf.lineEnd(_matchingBrace);
+    // redisplay_range(lineStart, lineEnd);
+    _matchingBrace = -1;
+  }
+  if (pair != -1) {
+    // TODO
+    // redisplay_range(pair, pair);
+    _matchingBrace = pair;
+  }
+}
+
+int TextEditInput::getCursorRow() const {
   StbTexteditRow r;
   int len = _buf._len;
   int row = 0;
@@ -336,8 +514,82 @@ int TextEditInput::cursorRow() const {
   return row + 1;
 }
 
+int TextEditInput::getIndent(char *spaces, int len, int pos) {
+  // count the indent level and find the start of text
+  char *buf = lineText(pos);
+  int i = 0;
+  while (buf && buf[i] == ' ' && i < len) {
+    spaces[i] = buf[i];
+    i++;
+  }
+
+  if (strncasecmp(buf + i, "while ", 6) == 0 ||
+      strncasecmp(buf + i, "if ", 3) == 0 ||
+      strncasecmp(buf + i, "elseif ", 7) == 0 ||
+      strncasecmp(buf + i, "elif ", 5) == 0 ||
+      strncasecmp(buf + i, "else", 4) == 0 ||
+      strncasecmp(buf + i, "repeat", 6) == 0 ||
+      strncasecmp(buf + i, "for ", 4) == 0 ||
+      strncasecmp(buf + i, "select ", 7) == 0 ||
+      strncasecmp(buf + i, "case ", 5) == 0 ||
+      strncasecmp(buf + i, "sub ", 4) == 0 ||
+      strncasecmp(buf + i, "func ", 5) == 0) {
+
+    // handle if-then-blah on same line
+    if (strncasecmp(buf + i, "if ", 3) == 0) {
+      // find the end of line index
+      int j = i + 4;
+      while (buf[j] != 0 && buf[j] != '\n') {
+        // line also 'ends' at start of comments
+        if (strncasecmp(buf + j, "rem", 3) == 0 || buf[j] == '\'') {
+          break;
+        }
+        j++;
+      }
+      // right trim trailing spaces
+      while (buf[j - 1] == ' ' && j > i) {
+        j--;
+      }
+      if (strncasecmp(buf + j - 4, "then", 4) != 0) {
+        // 'then' is not final text on line
+        spaces[i] = 0;
+        return i;
+      }
+    }
+    // indent new line
+    for (int j = 0; j < _indentLevel; j++, i++) {
+      spaces[i] = ' ';
+    }
+  }
+  spaces[i] = 0;
+  free((void *)buf);
+  return i;
+}
+
+char *TextEditInput::lineText(int pos) {
+  return _buf.textRange(lineStart(pos), lineEnd(pos));
+}
+
+int TextEditInput::linePos(int pos, bool end) {
+  StbTexteditRow r;
+  int len = _buf._len;
+  int start = 0;
+  for (int i = 0; i < len;) {
+    layout(&r, i);
+    if (pos >= i && pos < i + r.num_chars) {
+      start = i;
+      if (end) {
+        start += r.num_chars;
+      }
+      break;
+    }
+    i += r.num_chars;
+  }
+  return start;
+}
+
 void TextEditInput::updateScroll() {
-  int cursor = cursorRow();
+  int cursor = getCursorRow();
   int pageRows = _height / _charHeight;
   if (cursor + 1 < pageRows) {
     _scroll = 0;
@@ -346,4 +598,3 @@ void TextEditInput::updateScroll() {
     _scroll = cursor - (pageRows / 2);
   }
 }
-
