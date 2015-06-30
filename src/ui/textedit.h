@@ -73,8 +73,9 @@ struct TextEditInput : public FormEditInput {
   void selectAll();
 
 private:
+  void editDeleteLine();
   void editEnter();
-  void editPage(bool down);
+  void editNavigate(bool pageDown);
   void editTab();
   void findMatchingBrace();
   int getCursorRow() const;
@@ -82,7 +83,7 @@ private:
   int getLineChars(StbTexteditRow *row, int pos);
   char *lineText(int pos);
   int lineEnd(int pos) { return linePos(pos, true); }
-  int linePos(int pos, bool end);
+  int linePos(int pos, bool end, bool excludeBreak=true);
   int lineStart(int pos) { return linePos(pos, false); }
   void updateScroll();
 

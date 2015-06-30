@@ -77,6 +77,7 @@ protected:
   enum {
     kInitState = 0,// thread not active
     kActiveState,  // thread activated
+    kEditState,    // program editor is active
     kRunState,     // program is running
     kModalState,   // retrieving user input inside program
     kConnState,    // retrieving remote program source
@@ -86,6 +87,12 @@ protected:
     kClosingState, // thread is terminating
     kDoneState     // thread has terminated
   } _state;
+
+  enum EditMode {
+    kNone,
+    kIDE,
+    kLiveMode
+  };
 
   strlib::String _loadPath;
   strlib::String _activeFile;
@@ -100,9 +107,9 @@ protected:
   int _overruns;
   int _userScreenId;
   int *_systemMenu;
+  EditMode _editMode;
   bool _mainBas;
   bool _buttonPressed;
-  bool _liveMode;
   bool _srcRendered;
   bool _menuActive;
   char *_programSrc;

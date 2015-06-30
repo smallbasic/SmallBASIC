@@ -241,14 +241,17 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   bool result = true;
   switch (key) {
+  case SB_KEY_CTRL('k'):
+    editDeleteLine();
+    break;
   case SB_KEY_TAB:
     editTab();
     break;
   case SB_KEY_PGUP:
-    editPage(false);
+    editNavigate(false);
     break;
   case SB_KEY_PGDN:
-    editPage(true);
+    editNavigate(true);
     break;
   case SB_KEY_ENTER:
     editEnter();
@@ -344,6 +347,14 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->ymax = row->baseline_y_delta = _charHeight;
 }
 
+void TextEditInput::editDeleteLine() {
+  int start = lineStart(_state.cursor);
+  int end = linePos(_state.cursor, true, false);
+  if (end > start) {
+    stb_textedit_delete(&_buf, &_state, start, end - start);
+  }
+}
+
 void TextEditInput::editEnter() {
   stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_NEWLINE);
   char spaces[LINE_BUFFER_SIZE];
@@ -353,12 +364,13 @@ void TextEditInput::editEnter() {
     int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
     if (indent) {
       _buf.insertChars(_state.cursor, spaces, indent);
+      stb_text_makeundo_insert(&_state, _state.cursor, indent);
       _state.cursor += indent;
     }
   }
 }
 
-void TextEditInput::editPage(bool down) {
+void TextEditInput::editNavigate(bool pageDown) {
 
 }
 
@@ -408,6 +420,8 @@ void TextEditInput::editTab() {
     memset(spaces, ' ', len);
     spaces[len] = 0;
     _buf.insertChars(start, spaces, len);
+    stb_text_makeundo_insert(&_state, start, len);
+
     if (_state.cursor - start < indent) {
       // jump cursor to start of text
       _state.cursor = start + indent;
@@ -420,7 +434,7 @@ void TextEditInput::editTab() {
     }
   } else if (curIndent > indent) {
     // remove excess spaces
-    _buf.deleteChars(start, curIndent - indent);
+    stb_textedit_delete(&_buf, &_state, start, curIndent - indent);
     _state.cursor = start + indent;
   } else {
     // already have ideal indent - soft-tab to indent
@@ -597,7 +611,7 @@ char *TextEditInput::lineText(int pos) {
   return _buf.textRange(start, end);
 }
 
-int TextEditInput::linePos(int pos, bool end) {
+int TextEditInput::linePos(int pos, bool end, bool excludeBreak) {
   StbTexteditRow r;
   int len = _buf._len;
   int start = 0;
@@ -605,7 +619,11 @@ int TextEditInput::linePos(int pos, bool end) {
     layout(&r, i);
     if (pos >= i && pos < i + r.num_chars) {
       if (end) {
-        start = i + getLineChars(&r, i);
+        if (excludeBreak) {
+          start = i + getLineChars(&r, i);
+        } else {
+          start = i + r.num_chars;
+        }
       } else {
         start = i;
       }

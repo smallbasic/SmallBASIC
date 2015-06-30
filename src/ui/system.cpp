@@ -32,11 +32,10 @@
 #define MENU_COPY       8
 #define MENU_PASTE      9
 #define MENU_CTRL_MODE  10
-#define MENU_LIVEMODE   11
+#define MENU_EDITMODE   11
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
-#define MENU_EDIT_SRC   14
-#define MENU_SIZE       15
+#define MENU_SIZE       14
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -60,9 +59,9 @@ System::System() :
   _overruns(0),
   _userScreenId(-1),
   _systemMenu(NULL),
+  _editMode(kNone),
   _mainBas(false),
   _buttonPressed(false),
-  _liveMode(false),
   _srcRendered(false),
   _menuActive(false),
   _programSrc(NULL),
@@ -79,7 +78,7 @@ System::~System() {
 }
 
 void System::checkModifiedTime() {
-  if (_liveMode && _activeFile.length() > 0 &&
+  if (_editMode == kLiveMode && _activeFile.length() > 0 &&
       _modifiedTime != getModifiedTime()) {
     setRestart();
   }
@@ -101,9 +100,11 @@ void System::editSource() {
   _output->clearScreen();
   _output->addInput(widget);
   _output->redraw();
+  _state = kEditState;
+
   maShowVirtualKeyboard();
 
-  while (!isClosing()) {
+  while (_state == kEditState) {
     MAEvent event = getNextEvent();
     if (event.type == EVENT_TYPE_KEY_PRESSED) {
       dev_clrkb();
@@ -114,8 +115,8 @@ void System::editSource() {
     }
   }
 
+  _output->removeInputs();
   if (!isClosing()) {
-    _output->removeInput(widget);
     _output->selectScreen(prevScreenId);
   }
   logLeaving();
@@ -136,7 +137,7 @@ bool System::execute(const char *bas) {
 
   _state = kRunState;
   setWindowTitle(bas);
-  bool result = ::sbasic_main(bas);
+  int result = ::sbasic_main(bas);
 
   if (isRunning()) {
     _state = kActiveState;
@@ -312,17 +313,15 @@ void System::handleMenu(int menuId) {
       get_focus_edit()->setControlMode(!controlMode);
     }
     break;
-  case MENU_LIVEMODE:
-    _liveMode = !_liveMode;
+  case MENU_EDITMODE:
+		_editMode = (_editMode == kNone ? kIDE :
+                 _editMode == kIDE ? kLiveMode : kNone);
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
     break;
   case MENU_SCREENSHOT:
     ::screen_dump();
-    break;
-  case MENU_EDIT_SRC:
-    editSource();
     break;
   }
 
@@ -381,7 +380,7 @@ void System::handleEvent(MAEvent &event) {
     _output->flush(false);
     break;
   }
-  if (_liveMode) {
+  if (_editMode == kLiveMode) {
     checkModifiedTime();
   }
 }
@@ -477,6 +476,18 @@ void System::runMain(const char *mainBasPath) {
         _mainBas = true;
         _loadPath = mainBasPath;
         activePath = mainBasPath;
+      }
+    }
+
+    if (!_mainBas && _editMode == kIDE && !isRestart() &&
+        readSource(_loadPath) != NULL) {
+      editSource();
+      if (isBack()) {
+        _loadPath.empty();
+        _state = kActiveState;
+        continue;
+      } else if (isClosing()) {
+        break;
       }
     }
 
@@ -684,15 +695,9 @@ void System::showMenu() {
     } else {
       if (_overruns == 0) {
         items->add(new String("Console"));
+        items->add(new String("View source"));
         _systemMenu[index++] = MENU_CONSOLE;
-
-        if (!_mainBas && _activeFile.length() > 0) {
-          items->add(new String("Edit source"));
-          _systemMenu[index++] = MENU_EDIT_SRC;
-        } else {
-          items->add(new String("View source"));
-          _systemMenu[index++] = MENU_SOURCE;
-        }
+        _systemMenu[index++] = MENU_SOURCE;
       }
 #if defined(_SDL)
       items->add(new String("Back"));
@@ -714,9 +719,10 @@ void System::showMenu() {
       }
 
 #if defined(_SDL)
-      sprintf(buffer, "Live Update [%s]", (_liveMode ? "ON" : "OFF"));
+      sprintf(buffer, "Edit [%s]", (_editMode == kNone ? "OFF" :
+                                    _editMode == kLiveMode ? "Live Mode" : "IDE"));
       items->add(new String(buffer));
-      _systemMenu[index++] = MENU_LIVEMODE;
+      _systemMenu[index++] = MENU_EDITMODE;
 #endif
 
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
