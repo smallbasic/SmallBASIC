@@ -99,7 +99,7 @@ int EditBuffer::insertChars(int pos, char *newtext, int num) {
 char *EditBuffer::textRange(int start, int end) {
   char *result;
   int len;
-  if (start < 0 || start > _len || end < start) {
+  if (start < 0 || start > _len || end <= start) {
     len = 0;
     result = (char*)malloc(len + 1);
   } else {
@@ -156,13 +156,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     }
 
     if (row++ >= _scroll) {
-      int numChars = r.num_chars;
-      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == '\r') {
-        numChars--;
-      }
-      if (numChars > 0 && _buf._buffer[i + r.num_chars - 1] == '\n') {
-        numChars--;
-      }
+      int numChars = getLineChars(&r, i);
       if (selectStart != selectEnd && i + numChars > selectStart && i < selectEnd) {
         if (numChars) {
           // draw selected text
@@ -251,21 +245,13 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     editTab();
     break;
   case SB_KEY_PGUP:
+    editPage(false);
     break;
   case SB_KEY_PGDN:
+    editPage(true);
     break;
   case SB_KEY_ENTER:
-  /*
-  if (event_key() == ReturnKey) {
-      indent = getIndent(spaces, sizeof(spaces), cursorPos);
-      if (indent) {
-        buffer()->insert(cursor_pos_, spaces);
-        cursor_pos_ += indent;
-        redraw(DAMAGE_ALL);
-      }
-    }
-  */
-    stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_NEWLINE);
+    editEnter();
     break;
   case -1:
     result = false;
@@ -274,6 +260,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     stb_textedit_key(&_buf, &_state, key);
   }
   if (result) {
+    findMatchingBrace();
     updateScroll();
   }
   return result;
@@ -357,6 +344,24 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->ymax = row->baseline_y_delta = _charHeight;
 }
 
+void TextEditInput::editEnter() {
+  stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_NEWLINE);
+  char spaces[LINE_BUFFER_SIZE];
+  int start = lineStart(_state.cursor);
+  int prevLineStart = lineStart(start - 1);
+  if (prevLineStart) {
+    int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
+    if (indent) {
+      _buf.insertChars(_state.cursor, spaces, indent);
+      _state.cursor += indent;
+    }
+  }
+}
+
+void TextEditInput::editPage(bool down) {
+
+}
+
 void TextEditInput::editTab() {
   char spaces[LINE_BUFFER_SIZE];
   int indent;
@@ -416,17 +421,17 @@ void TextEditInput::editTab() {
   } else if (curIndent > indent) {
     // remove excess spaces
     _buf.deleteChars(start, curIndent - indent);
+    _state.cursor = start + indent;
   } else {
     // already have ideal indent - soft-tab to indent
-    // TODO
-    // insert_position(lineStart + indent);
+    _state.cursor = start + indent;
   }
   free((void *)buf);
 }
 
 void TextEditInput::findMatchingBrace() {
   char cursorChar = _buf._buffer[_state.cursor - 1];
-  char cursorMatch = 0;
+  char cursorMatch = '\0';
   int pair = -1;
   int iter = -1;
   int pos = _state.cursor - 2;
@@ -449,7 +454,7 @@ void TextEditInput::findMatchingBrace() {
     pos = _state.cursor;
     break;
   }
-  if (cursorMatch != -0) {
+  if (cursorMatch != '\0') {
     // scan for matching opening on the same line
     int level = 1;
     int len = _buf._len;
@@ -566,24 +571,46 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
   return i;
 }
 
+int TextEditInput::getLineChars(StbTexteditRow *row, int pos) {
+  int numChars = row->num_chars;
+  if (numChars > 0 && _buf._buffer[pos + row->num_chars - 1] == '\r') {
+    numChars--;
+  }
+  if (numChars > 0 && _buf._buffer[pos + row->num_chars - 1] == '\n') {
+    numChars--;
+  }
+  return numChars;
+}
+
 char *TextEditInput::lineText(int pos) {
-  return _buf.textRange(lineStart(pos), lineEnd(pos));
+  StbTexteditRow r;
+  int len = _buf._len;
+  int start, end = 0;
+  for (int i = 0; i < len; i += r.num_chars) {
+    layout(&r, i);
+    if (pos >= i && pos < i + r.num_chars) {
+      start = i;
+      end = i + getLineChars(&r, i);
+      break;
+    }
+  }
+  return _buf.textRange(start, end);
 }
 
 int TextEditInput::linePos(int pos, bool end) {
   StbTexteditRow r;
   int len = _buf._len;
   int start = 0;
-  for (int i = 0; i < len;) {
+  for (int i = 0; i < len; i += r.num_chars) {
     layout(&r, i);
     if (pos >= i && pos < i + r.num_chars) {
-      start = i;
       if (end) {
-        start += r.num_chars;
+        start = i + getLineChars(&r, i);
+      } else {
+        start = i;
       }
       break;
     }
-    i += r.num_chars;
   }
   return start;
 }

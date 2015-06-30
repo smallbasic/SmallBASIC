@@ -73,10 +73,13 @@ struct TextEditInput : public FormEditInput {
   void selectAll();
 
 private:
+  void editEnter();
+  void editPage(bool down);
   void editTab();
   void findMatchingBrace();
   int getCursorRow() const;
   int getIndent(char *spaces, int len, int pos);
+  int getLineChars(StbTexteditRow *row, int pos);
   char *lineText(int pos);
   int lineEnd(int pos) { return linePos(pos, true); }
   int linePos(int pos, bool end);
