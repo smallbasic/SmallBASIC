@@ -30,6 +30,11 @@
 #define THEME_CURSOR 0xa7aebc
 #define THEME_CURSOR_BACKGROUND 0x3875ed
 
+const char *helpText =
+  "C+x cut\n"
+  "C+c copy\n"
+  "C+v paste\n";
+
 //
 // EditTheme
 //
@@ -80,6 +85,7 @@ EditBuffer::~EditBuffer() {
 int EditBuffer::deleteChars(int pos, int num) {
   memmove(&_buffer[pos], &_buffer[pos+num], _len - (pos + num));
   _len -= num;
+  _in->setDirty(true);
   return 1;
 }
 
@@ -93,6 +99,7 @@ int EditBuffer::insertChars(int pos, char *newtext, int num) {
   memcpy(&_buffer[pos], newtext, num);
   _len += num;
   _buffer[_len] = '\0';
+  _in->setDirty(true);
   return 1;
 }
 
@@ -128,7 +135,8 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _scroll(0),
   _cursorRow(0),
   _indentLevel(INDENT_LEVEL),
-  _matchingBrace(-1) {
+  _matchingBrace(-1),
+  _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
 }
 
@@ -288,9 +296,6 @@ void TextEditInput::selectAll() {
   _state.select_end = _buf._len;
 }
 
-void TextEditInput::setText(const char *text) {
-}
-
 void TextEditInput::clicked(int x, int y, bool pressed) {
   if (pressed) {
     stb_textedit_click(&_buf, &_state, x, y);
@@ -413,7 +418,12 @@ void TextEditInput::editNavigate(bool pageDown, bool shift) {
   }
 
   if (shift) {
+    if (_state.select_start == _state.select_end) {
+      _state.select_start = _state.cursor;
+    }
     _state.select_end = i;
+  } else {
+    _state.select_start = _state.select_end;
   }
   _state.cursor = i;
   _cursorRow = row;
@@ -688,4 +698,35 @@ void TextEditInput::updateScroll() {
     // cursor outside current view
     _scroll = _cursorRow - (pageRows / 2);
   }
+}
+
+//
+// TextEditHelpWidget
+//
+TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
+  TextEditInput(helpText, chW, chH, editor->_x + chW, editor->_y + chW,
+                editor->_width / 2, editor->_height / 4),
+  _editor(editor) {
+  _theme = new EditTheme(_fg, _bg);
+  hide();
+}
+
+bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
+  switch (key) {
+  case STB_TEXTEDIT_K_LEFT:
+  case STB_TEXTEDIT_K_RIGHT:
+  case STB_TEXTEDIT_K_UP:
+  case STB_TEXTEDIT_K_DOWN:
+  case STB_TEXTEDIT_K_LINESTART:
+  case STB_TEXTEDIT_K_LINEEND:
+  case STB_TEXTEDIT_K_TEXTSTART:
+  case STB_TEXTEDIT_K_TEXTEND:
+  case STB_TEXTEDIT_K_WORDLEFT:
+  case STB_TEXTEDIT_K_WORDRIGHT:
+    stb_textedit_key(&_buf, &_state, key);
+    return true;
+  default:
+    break;
+  }
+  return false;
 }

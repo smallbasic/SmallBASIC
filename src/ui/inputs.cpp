@@ -336,10 +336,12 @@ bool FormInput::hasFocus() const {
 }
 
 void FormInput::setFocus() {
- if (!isNoFocus()) {
-   focusInput = this;
-   g_system->getOutput()->setDirty();
- }
+  if (!isNoFocus()) {
+    if (focusInput != this) {
+      focusInput = this;
+      g_system->getOutput()->setDirty();
+    }
+  }
 }
 
 //
@@ -458,9 +460,11 @@ int FormEditInput::getControlKey(int key) {
 
 void FormEditInput::setFocus() {
   if (!isNoFocus()) {
-    focusInput = this;
-    focusEdit = this;
-    g_system->getOutput()->setDirty();
+    if (focusInput != this) {
+      focusInput = this;
+      focusEdit = this;
+      g_system->getOutput()->setDirty();
+    }
   }
 }
 

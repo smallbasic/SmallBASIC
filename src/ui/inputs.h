@@ -130,12 +130,14 @@ struct FormInput : public Shape {
   void draw(int x, int y, int w, int h, int chw);
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   bool hasFocus() const;
+  void hide() { _visible = false; }
   int  getBackground(int buttonColor) const;
   int  getId() { return _id; }
   var_p_t getField(var_p_t form);
   bool isVisible() { return _visible; }
   bool isNoFocus() { return _noFocus; }
   void setColor(int bg, int fg) { _bg = bg; _fg = fg; }
+  void show() { _visible = true; }
   bool _pressed;
 
 protected:

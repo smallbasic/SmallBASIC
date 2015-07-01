@@ -87,41 +87,69 @@ void System::checkModifiedTime() {
 void System::editSource() {
   logEntered();
 
+  strlib::String fileName;
+  int i = _loadPath.lastIndexOf('/', 0);
+  if (i != -1) {
+    fileName = _loadPath.substring(i + 1);
+  } else {
+    fileName = _loadPath;
+  }
+
   strlib::String dirtyFile;
   dirtyFile.append(" *- ");
-  dirtyFile.append(_loadPath);
+  dirtyFile.append(fileName);
+  dirtyFile.append(" F1=Help");
   strlib::String cleanFile;
   cleanFile.append(" -- ");
-  cleanFile.append(_loadPath);
+  cleanFile.append(fileName);
+  cleanFile.append(" F1=Help");
 
   int w = _output->getWidth();
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *widget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
-  widget->updateUI(NULL, NULL);
-  widget->setFocus();
+  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
+  editWidget->updateUI(NULL, NULL);
+  editWidget->setFocus();
   _srcRendered = false;
   _output->clearScreen();
-  _output->addInput(widget);
+  _output->addInput(editWidget);
+  _output->addInput(helpWidget);
   _output->setStatus(cleanFile);
   _output->redraw();
   _state = kEditState;
+  TextEditInput *widget = editWidget;
 
   maShowVirtualKeyboard();
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
-    if (event.type == EVENT_TYPE_KEY_PRESSED) {
+    if (event.type == EVENT_TYPE_KEY_PRESSED &&
+        _userScreenId == -1) {
       dev_clrkb();
       int sw = _output->getScreenWidth();
       bool redraw = true;
+      bool dirty = widget->isDirty();
       char *text;
 
       switch (event.key) {
+      case SB_KEY_F(1):
+        if (widget == helpWidget) {
+          widget = editWidget;
+          helpWidget->hide();
+        } else {
+          widget = helpWidget;
+          helpWidget->show();
+        }
+        break;
       case SB_KEY_CTRL('s'):
         // save buffer
+
+        break;
+      case SB_KEY_CTRL('r'):
+        _state = kRunState;
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -140,8 +168,12 @@ void System::editSource() {
         redraw = widget->edit(event.key, sw, charWidth);
         break;
       }
-      if (redraw) {
+      if (widget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);
+      } else if (!widget->isDirty() && dirty) {
+        _output->setStatus(cleanFile);
+      }
+      if (redraw) {
         _output->redraw();
       }
     }

@@ -60,7 +60,6 @@ struct TextEditInput : public FormEditInput {
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buf._buffer; }
-  void setText(const char *text);
   void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);
@@ -72,8 +71,10 @@ struct TextEditInput : public FormEditInput {
   char *copy(bool cut);
   void paste(char *text);
   void selectAll();
+  bool isDirty() { return _dirty && _state.undostate.undo_point > 0; }
+  void setDirty(bool dirty) { _dirty = dirty; }
 
-private:
+protected:
   void editDeleteLine();
   void editEnter();
   void editNavigate(bool pageDown, bool shift);
@@ -98,6 +99,19 @@ private:
   int _cursorRow;
   int _indentLevel;
   int _matchingBrace;
+  bool _dirty;
+};
+
+struct TextEditHelpWidget : public TextEditInput {
+  TextEditHelpWidget(TextEditInput *editor, int chW, int chH);
+
+  bool edit(int key, int screenWidth, int charWidth);
+  char *copy(bool cut) { return NULL; }
+  void paste(char *text) {}
+  bool isDrawTop() { return true; }
+
+private:
+  TextEditInput *_editor;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer
