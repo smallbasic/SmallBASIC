@@ -228,6 +228,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
   }
   if (_matchingBrace != -1) {
+    trace("match %d\n", _matchingBrace);
     // highlight the matching brace
     //    int X, Y;
     //    int cursor = cursor_style_;
@@ -241,6 +242,16 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
 
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   switch (key) {
+  case SB_KEY_CTRL('a'):
+    _state.select_start = 0;
+    _state.select_end = _buf._len;
+    break;
+  case SB_KEY_ALT('a'):
+    stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_LINESTART);
+    break;
+  case SB_KEY_ALT('e'):
+    stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_LINEEND);
+    break;
   case SB_KEY_CTRL('k'):
     editDeleteLine();
     break;
@@ -306,10 +317,18 @@ bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
 }
 
 char *TextEditInput::copy(bool cut) {
-  if (cut) {
-    stb_textedit_cut(&_buf, &_state);
+  int selectStart = MIN(_state.select_start, _state.select_end);
+  int selectEnd = MAX(_state.select_start, _state.select_end);
+  char *result;
+  if (selectEnd > selectStart) {
+    result = _buf.textRange(selectStart, selectEnd);
+    if (cut) {
+      stb_textedit_cut(&_buf, &_state);
+    }
+  } else {
+    result = NULL;
   }
-  return 0;
+  return result;
 }
 
 void TextEditInput::paste(char *text) {
@@ -348,11 +367,13 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
 }
 
 void TextEditInput::editDeleteLine() {
-  int start = lineStart(_state.cursor);
-  int end = linePos(_state.cursor, true, false);
+  int start = _state.cursor;
+  int end = linePos(_state.cursor, true, true);
   if (end > start) {
     stb_textedit_delete(&_buf, &_state, start, end - start);
     _state.cursor = start;
+  } else if (start == end) {
+    stb_textedit_delete(&_buf, &_state, start, 1);
   }
 }
 
@@ -497,7 +518,8 @@ void TextEditInput::findMatchingBrace() {
         break;
       }
       if (nextChar == cursorChar) {
-        level++;                // nested char
+        // nested char
+        level++;
       } else if (nextChar == cursorMatch) {
         level--;
         if (level == 0) {

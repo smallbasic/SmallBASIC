@@ -1017,6 +1017,9 @@ retry:
          stb_textedit_find_charpos(&find, str, state->cursor, state->single_line);
          state->cursor = state->select_end = find.first_char + find.length;
          state->has_preferred_x = 0;
+         if (STB_TEXTEDIT_GETCHAR(str, state->cursor - 1) == STB_TEXTEDIT_NEWLINE) {
+           state->cursor--;
+         }
          break;
       }
 

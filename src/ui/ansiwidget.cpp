@@ -338,7 +338,6 @@ int AnsiWidget::insetMenuScreen(int x, int y, int w, int h) {
   menuScreen->setOver(_front);
   _front = _back = menuScreen;
   _front->_dirty = true;
-  flush(true);
   return result;
 }
 

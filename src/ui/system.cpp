@@ -109,7 +109,31 @@ void System::editSource() {
     if (event.type == EVENT_TYPE_KEY_PRESSED) {
       dev_clrkb();
       int sw = _output->getScreenWidth();
-      if (widget->edit(event.key, sw, charWidth)) {
+      bool redraw = true;
+      char *text;
+
+      switch (event.key) {
+      case SB_KEY_CTRL('s'):
+        // save buffer
+        break;
+      case SB_KEY_CTRL('c'):
+      case SB_KEY_CTRL('x'):
+        text = widget->copy(SB_KEY_CTRL('x') == (unsigned)event.key);
+        if (text) {
+          setClipboardText(text);
+          free(text);
+        }
+        break;
+      case SB_KEY_CTRL('v'):
+        text = getClipboardText();
+        widget->paste(text);
+        free(text);
+        break;
+      default:
+        redraw = widget->edit(event.key, sw, charWidth);
+        break;
+      }
+      if (redraw) {
         _output->redraw();
       }
     }

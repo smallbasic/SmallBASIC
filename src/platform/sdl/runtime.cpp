@@ -180,31 +180,19 @@ void Runtime::showAlert(const char *title, const char *message) {
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {
-  int key = event.key;
   int lenMap = sizeof(keymap) / sizeof(keymap[0]);
-  for (int i = 0; i < lenMap && key != -1; i++) {
-    if (keymap[i][0] == key) {
+  for (int i = 0; i < lenMap && event.key != -1; i++) {
+    if (event.key == keymap[i][0]) {
       event.key = keymap[i][1];
-      if (keymap[i][1] != -1) {
-        if (event.nativeKey & KMOD_SHIFT) {
-          event.key = SB_KEY_SHIFT(event.key);
-        } else if (event.nativeKey & KMOD_CTRL) {
-          event.key = SB_KEY_CTRL(event.key);
-        }
-        if (isRunning()) {
-          dev_pushkey(event.key);
-        }
-      }
-      key = -1;
       break;
     }
   }
-  if (key != -1) {
-    // mapping not found
+
+  // handle keypad keys
+  if (event.key != -1) {
     if (event.key == SDLK_NUMLOCKCLEAR) {
       event.key = -1;
-    }
-    else if (event.key == SDLK_KP_1) {
+    } else if (event.key == SDLK_KP_1) {
       event.key = event.nativeKey == KMOD_NUM ? '1' : SB_KEY_END;
     } else if (event.key == SDLK_KP_2) {
       event.key = event.nativeKey == KMOD_NUM ? '2' : SB_KEY_DN;
@@ -222,29 +210,42 @@ void Runtime::handleKeyEvent(MAEvent &event) {
       event.key = event.nativeKey == KMOD_NUM ? '8' : SB_KEY_UP;
     } else if (event.key == SDLK_KP_9) {
       event.key = event.nativeKey == KMOD_NUM ? '9' : SB_KEY_PGUP;
-    } else if ((event.nativeKey & KMOD_CTRL) &&
-             (event.nativeKey & KMOD_ALT)) {
+    }
+  }
+
+  // handle ALT/SHIFT/CTRL states
+  if (event.key != -1) {
+    if ((event.nativeKey & KMOD_CTRL) &&
+        (event.nativeKey & KMOD_ALT)) {
       event.key = SB_KEY_CTRL_ALT(event.key);
     } else if (event.nativeKey & KMOD_CTRL) {
       event.key = SB_KEY_CTRL(event.key);
     } else if (event.nativeKey & KMOD_ALT) {
       event.key = SB_KEY_ALT(event.key);
     } else if (event.nativeKey & KMOD_SHIFT) {
+      bool shifted = false;
       if (event.key >= SDLK_a && event.key <= SDLK_z) {
         event.key = 'A' + (event.key - SDLK_a);
+        shifted = true;
       } else {
         lenMap = sizeof(shiftmap) / sizeof(shiftmap[0]);
         for (int i = 0; i < lenMap; i++) {
           if (shiftmap[i][0] == event.key) {
             event.key = shiftmap[i][1];
+            shifted = true;
             break;
           }
         }
       }
+      if (!shifted) {
+        event.key = SB_KEY_SHIFT(event.key);
+      }
     }
-    if (isRunning()) {
-      dev_pushkey(event.key);
-    }
+  }
+
+  // push to runtime queue
+  if (event.key != -1 && isRunning()) {
+    dev_pushkey(event.key);
   }
 }
 
