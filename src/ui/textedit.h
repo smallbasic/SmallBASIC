@@ -10,6 +10,7 @@
 #define TEXTEDIT_H
 
 #define STB_TEXTEDIT_CHARTYPE char
+#define STB_TEXTEDIT_UNDOCHARCOUNT 2000
 
 #include <config.h>
 #include <stdlib.h>
@@ -75,7 +76,7 @@ struct TextEditInput : public FormEditInput {
 private:
   void editDeleteLine();
   void editEnter();
-  void editNavigate(bool pageDown);
+  void editNavigate(bool pageDown, bool shift);
   void editTab();
   void findMatchingBrace();
   int getCursorRow() const;

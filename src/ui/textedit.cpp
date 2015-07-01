@@ -243,6 +243,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   switch (key) {
   case SB_KEY_CTRL('a'):
+    _state.cursor = 0;
     _state.select_start = 0;
     _state.select_end = _buf._len;
     break;
@@ -258,11 +259,13 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_TAB:
     editTab();
     break;
+  case SB_KEY_SHIFT(SB_KEY_PGUP):
   case SB_KEY_PGUP:
-    editNavigate(false);
+    editNavigate(false, key == (int)SB_KEY_SHIFT(SB_KEY_PGUP));
     return true;
+  case SB_KEY_SHIFT(SB_KEY_PGDN):
   case SB_KEY_PGDN:
-    editNavigate(true);
+    editNavigate(true, key == (int)SB_KEY_SHIFT(SB_KEY_PGDN));
     return true;
   case SB_KEY_ENTER:
     editEnter();
@@ -325,6 +328,7 @@ char *TextEditInput::copy(bool cut) {
     if (cut) {
       stb_textedit_cut(&_buf, &_state);
     }
+    _state.select_start = _state.select_end;
   } else {
     result = NULL;
   }
@@ -392,7 +396,7 @@ void TextEditInput::editEnter() {
   }
 }
 
-void TextEditInput::editNavigate(bool pageDown) {
+void TextEditInput::editNavigate(bool pageDown, bool shift) {
   int pageRows = (_height / _charHeight) + 1;
   int nextRow = _cursorRow + (pageDown ? pageRows : -pageRows);
   if (nextRow < 0) {
@@ -408,6 +412,9 @@ void TextEditInput::editNavigate(bool pageDown) {
     layout(&r, i);
   }
 
+  if (shift) {
+    _state.select_end = i;
+  }
   _state.cursor = i;
   _cursorRow = row;
   updateScroll();

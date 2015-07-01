@@ -87,18 +87,25 @@ void System::checkModifiedTime() {
 void System::editSource() {
   logEntered();
 
+  strlib::String dirtyFile;
+  dirtyFile.append(" *- ");
+  dirtyFile.append(_loadPath);
+  strlib::String cleanFile;
+  cleanFile.append(" -- ");
+  cleanFile.append(_loadPath);
+
   int w = _output->getWidth();
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-
   TextEditInput *widget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   widget->updateUI(NULL, NULL);
   widget->setFocus();
   _srcRendered = false;
   _output->clearScreen();
   _output->addInput(widget);
+  _output->setStatus(cleanFile);
   _output->redraw();
   _state = kEditState;
 
@@ -118,7 +125,7 @@ void System::editSource() {
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
-        text = widget->copy(SB_KEY_CTRL('x') == (unsigned)event.key);
+        text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
         if (text) {
           setClipboardText(text);
           free(text);
@@ -134,6 +141,7 @@ void System::editSource() {
         break;
       }
       if (redraw) {
+        _output->setStatus(dirtyFile);
         _output->redraw();
       }
     }
