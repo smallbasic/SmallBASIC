@@ -94,6 +94,7 @@ private:
   int _charHeight;
   int _marginWidth;
   int _scroll;
+  int _cursorRow;
   int _indentLevel;
   int _matchingBrace;
 };

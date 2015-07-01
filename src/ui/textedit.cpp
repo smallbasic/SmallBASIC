@@ -126,6 +126,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _charHeight(chH),
   _marginWidth(0),
   _scroll(0),
+  _cursorRow(0),
   _indentLevel(INDENT_LEVEL),
   _matchingBrace(-1) {
   stb_textedit_initialize_state(&_state, false);
@@ -239,7 +240,6 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
 }
 
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
-  bool result = true;
   switch (key) {
   case SB_KEY_CTRL('k'):
     editDeleteLine();
@@ -249,24 +249,24 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     break;
   case SB_KEY_PGUP:
     editNavigate(false);
-    break;
+    return true;
   case SB_KEY_PGDN:
     editNavigate(true);
-    break;
+    return true;
   case SB_KEY_ENTER:
     editEnter();
     break;
   case -1:
-    result = false;
+    return false;
     break;
   default:
     stb_textedit_key(&_buf, &_state, key);
+    break;
   }
-  if (result) {
-    findMatchingBrace();
-    updateScroll();
-  }
-  return result;
+  _cursorRow = getCursorRow();
+  updateScroll();
+  findMatchingBrace();
+  return true;
 }
 
 void TextEditInput::selectAll() {
@@ -352,6 +352,7 @@ void TextEditInput::editDeleteLine() {
   int end = linePos(_state.cursor, true, false);
   if (end > start) {
     stb_textedit_delete(&_buf, &_state, start, end - start);
+    _state.cursor = start;
   }
 }
 
@@ -371,7 +372,24 @@ void TextEditInput::editEnter() {
 }
 
 void TextEditInput::editNavigate(bool pageDown) {
+  int pageRows = (_height / _charHeight) + 1;
+  int nextRow = _cursorRow + (pageDown ? pageRows : -pageRows);
+  if (nextRow < 0) {
+    nextRow = 0;
+  }
 
+  StbTexteditRow r;
+  int len = _buf._len;
+  int row = 0;
+  int i = 0;
+
+  for (; i < len && row != nextRow; i += r.num_chars, row++) {
+    layout(&r, i);
+  }
+
+  _state.cursor = i;
+  _cursorRow = row;
+  updateScroll();
 }
 
 void TextEditInput::editTab() {
@@ -634,12 +652,11 @@ int TextEditInput::linePos(int pos, bool end, bool excludeBreak) {
 }
 
 void TextEditInput::updateScroll() {
-  int cursor = getCursorRow();
   int pageRows = _height / _charHeight;
-  if (cursor + 1 < pageRows) {
+  if (_cursorRow + 1 < pageRows) {
     _scroll = 0;
-  } else if (cursor > _scroll + pageRows || cursor <= _scroll) {
+  } else if (_cursorRow > _scroll + pageRows || _cursorRow <= _scroll) {
     // cursor outside current view
-    _scroll = cursor - (pageRows / 2);
+    _scroll = _cursorRow - (pageRows / 2);
   }
 }

@@ -347,7 +347,7 @@ void inf_break(int pline) {
   sprintf(gsb_last_errmsg, "%s %d", WORD_BREAK_AT, pline);
 
   dev_settextcolor(15, 0);
-  log_printf("\n\033[0m\033[80m\a\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT, pline);
+  log_printf("\n\033[0m\033[80m\033[7m * %s %d * \033[0m\n", WORD_BREAK_AT, pline);
 }
 
 // assign error to variable or match with next expression
