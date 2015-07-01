@@ -987,6 +987,9 @@ retry:
          stb_textedit_move_to_first(state);
          stb_textedit_find_charpos(&find, str, state->cursor, state->single_line);
          state->cursor = find.first_char + find.length;
+         if (STB_TEXTEDIT_GETCHAR(str, state->cursor - 1) == STB_TEXTEDIT_NEWLINE) {
+           state->cursor--;
+         }
          state->has_preferred_x = 0;
          break;
       }

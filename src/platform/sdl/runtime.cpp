@@ -201,8 +201,29 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   }
   if (key != -1) {
     // mapping not found
-    if ((event.nativeKey & KMOD_CTRL) &&
-        (event.nativeKey & KMOD_ALT)) {
+    if (event.key == SDLK_NUMLOCKCLEAR) {
+      event.key = -1;
+    }
+    else if (event.key == SDLK_KP_1) {
+      event.key = event.nativeKey == KMOD_NUM ? '1' : SB_KEY_END;
+    } else if (event.key == SDLK_KP_2) {
+      event.key = event.nativeKey == KMOD_NUM ? '2' : SB_KEY_DN;
+    } else if (event.key == SDLK_KP_3) {
+      event.key = event.nativeKey == KMOD_NUM ? '3' : SB_KEY_PGDN;
+    } else if (event.key == SDLK_KP_4) {
+      event.key = event.nativeKey == KMOD_NUM ? '4' : SB_KEY_LEFT;
+    } else if (event.key == SDLK_KP_5) {
+      event.key = '5';
+    } else if (event.key == SDLK_KP_6) {
+      event.key = event.nativeKey == KMOD_NUM ? '6' : SB_KEY_RIGHT;
+    } else if (event.key == SDLK_KP_7) {
+      event.key = event.nativeKey == KMOD_NUM ? '7' : SB_KEY_HOME;
+    } else if (event.key == SDLK_KP_8) {
+      event.key = event.nativeKey == KMOD_NUM ? '8' : SB_KEY_UP;
+    } else if (event.key == SDLK_KP_9) {
+      event.key = event.nativeKey == KMOD_NUM ? '9' : SB_KEY_PGUP;
+    } else if ((event.nativeKey & KMOD_CTRL) &&
+             (event.nativeKey & KMOD_ALT)) {
       event.key = SB_KEY_CTRL_ALT(event.key);
     } else if (event.nativeKey & KMOD_CTRL) {
       event.key = SB_KEY_CTRL(event.key);
@@ -268,7 +289,7 @@ void Runtime::pollEvents(bool blocking) {
         setExit(true);
         break;
       case SDL_KEYDOWN:
-        if (ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) {
+        if (ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL) && !isEditing()) {
           setExit(true);
         } else if (ev.key.keysym.sym == SDLK_m && (ev.key.keysym.mod & KMOD_CTRL)) {
           showMenu();

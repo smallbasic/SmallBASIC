@@ -27,6 +27,7 @@ struct System {
   bool isBack() { return _state == kBackState; }
   bool isBreak() { return _state >= kBreakState; }
   bool isClosing() { return _state >= kClosingState; }
+  bool isEditing() { return _state == kEditState; }
   bool isInitial() { return _state == kInitState; }
   bool isModal() { return _state == kModalState; }
   bool isRestart() { return _state == kRestartState; }
