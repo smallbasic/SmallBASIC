@@ -60,6 +60,7 @@ struct TextEditInput : public FormEditInput {
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buf._buffer; }
+  bool save(const char *filePath);
   void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);

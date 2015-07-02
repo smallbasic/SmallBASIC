@@ -25,6 +25,7 @@ extern "C" {
 #define SB_KEY_TAB        9
 #define SB_KEY_ENTER      13
 #define SB_KEY_SPACE      32
+#define SB_KEY_ESCAPE     27
 
 // first 16 - common with handhelds any extra key will be there
 #define SB_KEY_PGUP     0xFF01

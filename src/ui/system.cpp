@@ -111,6 +111,7 @@ void System::editSource() {
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
   TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
+  TextEditInput *widget = editWidget;
   editWidget->updateUI(NULL, NULL);
   editWidget->setFocus();
   _srcRendered = false;
@@ -120,7 +121,6 @@ void System::editSource() {
   _output->setStatus(cleanFile);
   _output->redraw();
   _state = kEditState;
-  TextEditInput *widget = editWidget;
 
   maShowVirtualKeyboard();
 
@@ -131,25 +131,38 @@ void System::editSource() {
       dev_clrkb();
       int sw = _output->getScreenWidth();
       bool redraw = true;
-      bool dirty = widget->isDirty();
+      bool dirty = editWidget->isDirty();
       char *text;
 
       switch (event.key) {
+      case SB_KEY_F(2):
+      case SB_KEY_F(3):
+      case SB_KEY_F(4):
+      case SB_KEY_F(5):
+      case SB_KEY_F(6):
+      case SB_KEY_F(7):
+      case SB_KEY_F(8):
+      case SB_KEY_F(10):
+      case SB_KEY_F(11):
+      case SB_KEY_F(12):
+        redraw = false;
+        break;
+      case SB_KEY_ESCAPE:
+        widget = editWidget;
+        helpWidget->hide();
+        break;
       case SB_KEY_F(1):
-        if (widget == helpWidget) {
-          widget = editWidget;
-          helpWidget->hide();
-        } else {
-          widget = helpWidget;
-          helpWidget->show();
-        }
+        widget = helpWidget;
+        helpWidget->show();
         break;
-      case SB_KEY_CTRL('s'):
-        // save buffer
-
-        break;
+      case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
         _state = kRunState;
+        // fallthrough
+      case SB_KEY_CTRL('s'):
+        if (!editWidget->save(_loadPath)) {
+          maAlert("", "Failed to save file", NULL, NULL, NULL);
+        }
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -168,9 +181,9 @@ void System::editSource() {
         redraw = widget->edit(event.key, sw, charWidth);
         break;
       }
-      if (widget->isDirty() && !dirty) {
+      if (editWidget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);
-      } else if (!widget->isDirty() && dirty) {
+      } else if (!editWidget->isDirty() && dirty) {
         _output->setStatus(cleanFile);
       }
       if (redraw) {
@@ -683,7 +696,9 @@ void System::setRunning(bool running) {
     dev_clrkb();
 
     _output->setAutoflush(!opt_show_page);
-    _loadPath.empty();
+    if (_mainBas || _editMode != kIDE) {
+      _loadPath.empty();
+    }
     _lastEventTime = maGetMilliSecondCount();
     _eventTicks = 0;
     _overruns = 0;
@@ -707,7 +722,9 @@ void System::showCompletion(bool success) {
 
 void System::showError() {
   _state = kActiveState;
-  _loadPath.empty();
+  if (_mainBas || _editMode != kIDE) {
+    _loadPath.empty();
+  }
   showSystemScreen(false);
 }
 

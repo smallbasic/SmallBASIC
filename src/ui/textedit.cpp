@@ -29,11 +29,24 @@
 #define THEME_NUMBER 0x484f5f
 #define THEME_CURSOR 0xa7aebc
 #define THEME_CURSOR_BACKGROUND 0x3875ed
+#define HELP_WIDTH 16
+#define HELP_HEIGHT 14
 
 const char *helpText =
-  "C+x cut\n"
-  "C+c copy\n"
-  "C+v paste\n";
+  "C+A-a start\n"
+  "C+A-e end\n"
+  "A-a home\n"
+  "A-e end\n"
+  "C-a select-all\n"
+  "C-b back\n"
+  "C-k delete line\n"
+  "C-r run\n"
+  "C-s save\n"
+  "C-x cut\n"
+  "C-c copy\n"
+  "C-v paste\n"
+  "F9  run\n"
+  "ESC close help";
 
 //
 // EditTheme
@@ -236,7 +249,6 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
   }
   if (_matchingBrace != -1) {
-    trace("match %d\n", _matchingBrace);
     // highlight the matching brace
     //    int X, Y;
     //    int cursor = cursor_style_;
@@ -291,6 +303,19 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   return true;
 }
 
+bool TextEditInput::save(const char *filePath) {
+  bool result = true;
+  FILE *fp = fopen(filePath, "w");
+  if (fp) {
+    fwrite(_buf._buffer, sizeof(char), _buf._len, fp);
+    fclose(fp);
+    _dirty = false;
+  } else {
+    result = false;
+  }
+  return result;
+}
+
 void TextEditInput::selectAll() {
   _state.select_start = 0;
   _state.select_end = _buf._len;
@@ -303,6 +328,11 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
 }
 
 void TextEditInput::updateField(var_p_t form) {
+  var_p_t field = getField(form);
+  if (field != NULL) {
+    var_p_t value = map_get(field, FORM_INPUT_VALUE);
+    v_setstrn(value, _buf._buffer, _buf._len);
+  }
 }
 
 bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
@@ -705,9 +735,11 @@ void TextEditInput::updateScroll() {
 //
 TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
   TextEditInput(helpText, chW, chH, editor->_x + chW, editor->_y + chW,
-                editor->_width / 2, editor->_height / 4),
+                chW * HELP_WIDTH, chH * HELP_HEIGHT),
   _editor(editor) {
   _theme = new EditTheme(_fg, _bg);
+  _width = MIN(_width, _editor->_width);
+  _height = MIN(_height, _editor->_height);
   hide();
 }
 
