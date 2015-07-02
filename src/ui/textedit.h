@@ -36,6 +36,7 @@ struct EditTheme {
   int _number_selection_background;
   int _cursor_color;
   int _cursor_background;
+  int _match_background;
 };
 
 struct EditBuffer {
@@ -74,6 +75,7 @@ struct TextEditInput : public FormEditInput {
   void selectAll();
   bool isDirty() { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
+  void resize(int w, int h) { _width = w; _height = h; }
 
 protected:
   void editDeleteLine();
@@ -110,6 +112,7 @@ struct TextEditHelpWidget : public TextEditInput {
   char *copy(bool cut) { return NULL; }
   void paste(char *text) {}
   bool isDrawTop() { return true; }
+  void resize(int w, int h) { _x = w - _width; _height = h; }
 
 private:
   TextEditInput *_editor;

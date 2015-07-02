@@ -29,6 +29,7 @@
 #define THEME_NUMBER 0x484f5f
 #define THEME_CURSOR 0xa7aebc
 #define THEME_CURSOR_BACKGROUND 0x3875ed
+#define THEME_MATCH_BACKGROUND 0x373b88
 #define HELP_WIDTH 16
 #define HELP_HEIGHT 14
 
@@ -60,7 +61,8 @@ EditTheme::EditTheme() :
   _number_selection_color(THEME_FOREGROUND),
   _number_selection_background(THEME_NUMBER_SELECTION_BACKGROUND),
   _cursor_color(THEME_CURSOR),
-  _cursor_background(THEME_CURSOR_BACKGROUND) {
+  _cursor_background(THEME_CURSOR_BACKGROUND),
+  _match_background(THEME_MATCH_BACKGROUND) {
 }
 
 EditTheme::EditTheme(int fg, int bg) :
@@ -69,7 +71,8 @@ EditTheme::EditTheme(int fg, int bg) :
   _selection_color(bg),
   _selection_background(fg),
   _cursor_color(bg),
-  _cursor_background(fg) {
+  _cursor_background(fg),
+  _match_background(fg) {
 }
 
 //
@@ -163,6 +166,8 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   int baseY = 0;
   int cursorX = x;
   int cursorY = y;
+  int cursorMatchX = x;
+  int cursorMatchY = y;
   int row = 0;
   int selectStart = MIN(_state.select_start, _state.select_end);
   int selectEnd = MAX(_state.select_start, _state.select_end);
@@ -222,6 +227,10 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       } else if (numChars) {
         maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
       }
+      if (_matchingBrace != -1 && _matchingBrace >= i && _matchingBrace < i + r.num_chars) {
+        cursorMatchX = x + ((_matchingBrace - i) * chw);
+        cursorMatchY = y + baseY;
+      }
 
       if ((_state.cursor >= i && _state.cursor < i + r.num_chars) ||
           (i + r.num_chars == _buf._len && _state.cursor == _buf._len)) {
@@ -249,14 +258,12 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
   }
   if (_matchingBrace != -1) {
-    // highlight the matching brace
-    //    int X, Y;
-    //    int cursor = cursor_style_;
-    //    cursor_style_ = BLOCK_CURSOR;
-    //    if (position_to_xy(matchingBrace, &X, &Y)) {
-    //      draw_cursor(X, Y);
-    //    }
-    //    cursor_style_ = cursor;
+    maSetColor(_theme->_match_background);
+    maFillRect(cursorMatchX + _marginWidth, cursorMatchY, chw, _charHeight);
+    if (_matchingBrace < _buf._len) {
+      maSetColor(_theme->_cursor_color);
+      maDrawText(cursorMatchX + _marginWidth, cursorMatchY, _buf._buffer + _matchingBrace, 1);
+    }
   }
 }
 
@@ -530,28 +537,30 @@ void TextEditInput::editTab() {
 }
 
 void TextEditInput::findMatchingBrace() {
-  char cursorChar = _buf._buffer[_state.cursor - 1];
+  char cursorChar = _buf._buffer[_state.cursor];
   char cursorMatch = '\0';
   int pair = -1;
   int iter = -1;
-  int pos = _state.cursor - 2;
+  int pos;
 
   switch (cursorChar) {
   case ']':
     cursorMatch = '[';
+    pos = _state.cursor - 1;
     break;
   case ')':
     cursorMatch = '(';
+    pos = _state.cursor - 1;
     break;
   case '(':
     cursorMatch = ')';
-    pos = _state.cursor;
+    pos = _state.cursor + 1;
     iter = 1;
     break;
   case '[':
     cursorMatch = ']';
     iter = 1;
-    pos = _state.cursor;
+    pos = _state.cursor + 1;
     break;
   }
   if (cursorMatch != '\0') {
@@ -561,7 +570,7 @@ void TextEditInput::findMatchingBrace() {
     int gap = 0;
     while (pos > 0 && pos < len) {
       char nextChar = _buf._buffer[pos];
-      if (nextChar == 0 || nextChar == '\n') {
+      if (nextChar == '\0' || nextChar == '\n') {
         break;
       }
       if (nextChar == cursorChar) {
@@ -571,7 +580,7 @@ void TextEditInput::findMatchingBrace() {
         level--;
         if (level == 0) {
           // found matching char at pos
-          if (gap > 1) {
+          if (gap > 0) {
             pair = pos;
           }
           break;
@@ -581,19 +590,7 @@ void TextEditInput::findMatchingBrace() {
       gap++;
     }
   }
-
-  if (_matchingBrace != -1) {
-    // TODO
-    //int lineStart = _buf.lineStart(_matchingBrace);
-    //int lineEnd = _buf.lineEnd(_matchingBrace);
-    // redisplay_range(lineStart, lineEnd);
-    _matchingBrace = -1;
-  }
-  if (pair != -1) {
-    // TODO
-    // redisplay_range(pair, pair);
-    _matchingBrace = pair;
-  }
+  _matchingBrace = pair;
 }
 
 int TextEditInput::getCursorRow() const {
@@ -734,12 +731,10 @@ void TextEditInput::updateScroll() {
 // TextEditHelpWidget
 //
 TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
-  TextEditInput(helpText, chW, chH, editor->_x + chW, editor->_y + chW,
-                chW * HELP_WIDTH, chH * HELP_HEIGHT),
+  TextEditInput(helpText, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
+                chW * HELP_WIDTH, editor->_height),
   _editor(editor) {
   _theme = new EditTheme(_fg, _bg);
-  _width = MIN(_width, _editor->_width);
-  _height = MIN(_height, _editor->_height);
   hide();
 }
 

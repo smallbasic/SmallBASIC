@@ -649,6 +649,10 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth,
   if (!fullscreen) {
     drawBase(false);
   }
+  List_each(FormInput *, it, _inputs) {
+    FormInput *next = (*it);
+    next->resize(newWidth, newHeight);
+  }
 }
 
 // handles the given escape character. Returns whether the font has changed
