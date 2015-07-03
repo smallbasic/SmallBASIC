@@ -51,6 +51,7 @@ struct EditBuffer {
   int deleteChars(int pos, int num);
   int insertChars(int pos, char *newtext, int num);
   char *textRange(int start, int end);
+  void replaceChars(const char *replace, int start, int end);
 };
 
 struct TextEditInput : public FormEditInput {
@@ -69,7 +70,7 @@ struct TextEditInput : public FormEditInput {
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   int padding(bool) const { return 0; }
   void layout(StbTexteditRow *row, int start_i) const;
-  int charWidth(int k, int i) const { return _charWidth; }
+  int charWidth(int k, int i) const;
   char *copy(bool cut);
   void paste(char *text);
   void selectAll();
@@ -78,6 +79,7 @@ struct TextEditInput : public FormEditInput {
   void resize(int w, int h) { _width = w; _height = h; }
 
 protected:
+  void changeCase();
   void editDeleteLine();
   void editEnter();
   void editNavigate(bool pageDown, bool shift);
@@ -86,6 +88,7 @@ protected:
   int getCursorRow() const;
   int getIndent(char *spaces, int len, int pos);
   int getLineChars(StbTexteditRow *row, int pos);
+  char *getSelection(int *start, int *end);
   char *lineText(int pos);
   int lineEnd(int pos) { return linePos(pos, true); }
   int linePos(int pos, bool end, bool excludeBreak=true);
@@ -113,9 +116,6 @@ struct TextEditHelpWidget : public TextEditInput {
   void paste(char *text) {}
   bool isDrawTop() { return true; }
   void resize(int w, int h) { _x = w - _width; _height = h; }
-
-private:
-  TextEditInput *_editor;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer
@@ -125,10 +125,10 @@ private:
 #define STB_TEXTEDIT_K_DOWN       SB_KEY_DOWN
 #define STB_TEXTEDIT_K_LINESTART  SB_KEY_HOME
 #define STB_TEXTEDIT_K_LINEEND    SB_KEY_END
-#define STB_TEXTEDIT_K_TEXTSTART  SB_KEY_CTRL_ALT('a')
-#define STB_TEXTEDIT_K_TEXTEND    SB_KEY_CTRL_ALT('e')
 #define STB_TEXTEDIT_K_DELETE     SB_KEY_DELETE
 #define STB_TEXTEDIT_K_BACKSPACE  SB_KEY_BACKSPACE
+#define STB_TEXTEDIT_K_TEXTSTART  SB_KEY_ALT('s')
+#define STB_TEXTEDIT_K_TEXTEND    SB_KEY_ALT('r')
 #define STB_TEXTEDIT_K_UNDO       SB_KEY_CTRL('z')
 #define STB_TEXTEDIT_K_REDO       SB_KEY_CTRL('y')
 #define STB_TEXTEDIT_K_INSERT     SB_KEY_INSERT
@@ -139,6 +139,7 @@ private:
 #define STB_TEXTEDIT_NEWLINE      '\n'
 #define STB_TEXTEDIT_K_CONTROL    0xF1000000
 #define STB_TEXTEDIT_K_SHIFT      0xF8000000
+#define STB_TEXTEDIT_GETWIDTH_NEWLINE 0.0f
 #define STB_TEXTEDIT_KEYTOTEXT(k) k
 #define STB_TEXTEDIT_STRINGLEN(o) o->_len
 #define STB_TEXTEDIT_GETCHAR(o,i) o->_buffer[i]

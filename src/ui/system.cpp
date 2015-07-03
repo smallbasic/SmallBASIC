@@ -96,13 +96,13 @@ void System::editSource() {
   }
 
   strlib::String dirtyFile;
-  dirtyFile.append(" *- ");
+  dirtyFile.append(" * ");
   dirtyFile.append(fileName);
-  dirtyFile.append(" F1=Help");
+  dirtyFile.append(" C-h=Help");
   strlib::String cleanFile;
-  cleanFile.append(" -- ");
+  cleanFile.append(" - ");
   cleanFile.append(fileName);
-  cleanFile.append(" F1=Help");
+  cleanFile.append(" C-h=Help");
 
   int w = _output->getWidth();
   int h = _output->getHeight();
@@ -152,6 +152,7 @@ void System::editSource() {
         helpWidget->hide();
         break;
       case SB_KEY_F(1):
+      case SB_KEY_CTRL('h'):
         widget = helpWidget;
         helpWidget->show();
         break;

@@ -8,13 +8,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "ui/textedit.h"
 #include "ui/inputs.h"
 #include "ui/utils.h"
+#include "ui/strlib.h"
 
-#define STB_TEXTEDIT_IS_SPACE(ch) isspace(ch)
+#define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
@@ -34,10 +34,6 @@
 #define HELP_HEIGHT 14
 
 const char *helpText =
-  "C+A-a start\n"
-  "C+A-e end\n"
-  "A-a home\n"
-  "A-e end\n"
   "C-a select-all\n"
   "C-b back\n"
   "C-k delete line\n"
@@ -46,6 +42,13 @@ const char *helpText =
   "C-x cut\n"
   "C-c copy\n"
   "C-v paste\n"
+  "C-z undo\n"
+  "C-y redo\n"
+  "A-a home\n"
+  "A-e end\n"
+  "A-c change case\n"
+  "A-s start\n"
+  "A-r end\n"
   "F9  run\n"
   "ESC close help";
 
@@ -135,6 +138,12 @@ char *EditBuffer::textRange(int start, int end) {
   }
   result[len] = '\0';
   return result;
+}
+
+void EditBuffer::replaceChars(const char *replace, int start, int end) {
+  for (int i = start, j = 0; i < end && replace[j] != '\0'; i++, j++) {
+    _buffer[i] = replace[j];
+  }
 }
 
 //
@@ -283,6 +292,9 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_CTRL('k'):
     editDeleteLine();
     break;
+  case SB_KEY_ALT('c'):
+    changeCase();
+    break;
   case SB_KEY_TAB:
     editTab();
     break;
@@ -410,6 +422,51 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->x0 = 0.0f;
   row->ymin = 0.0f;
   row->ymax = row->baseline_y_delta = _charHeight;
+}
+
+int TextEditInput::charWidth(int k, int i) const {
+  int result = 0;
+  if (k + i < _buf._len && _buf._buffer[k + i] != '\n') {
+    result = _charWidth;
+  }
+  return result;
+}
+
+void TextEditInput::changeCase() {
+  int start, end;
+  char *selection = getSelection(&start, &end);
+  int len = strlen(selection);
+  enum { up, down, mixed } curcase = isupper(selection[0]) ? up : down;
+
+  for (int i = 1; i < len; i++) {
+    if (isalpha(selection[i])) {
+      bool isup = isupper(selection[i]);
+      if ((curcase == up && isup == false) || (curcase == down && isup)) {
+        curcase = mixed;
+        break;
+      }
+    }
+  }
+
+  // transform pattern: Foo -> FOO, FOO -> foo, foo -> Foo
+  for (int i = 0; i < len; i++) {
+    selection[i] = curcase == mixed ? toupper(selection[i]) : tolower(selection[i]);
+  }
+  if (curcase == down) {
+    selection[0] = toupper(selection[0]);
+    // upcase chars following non-alpha chars
+    for (int i = 1; i < len; i++) {
+      if (isalpha(selection[i]) == false && i + 1 < len) {
+        selection[i + 1] = toupper(selection[i + 1]);
+      }
+    }
+  }
+  if (selection[0]) {
+    _buf.replaceChars(selection, start, end);
+    _state.select_start = start;
+    _state.select_end = end;
+  }
+  free((void *)selection);
 }
 
 void TextEditInput::editDeleteLine() {
@@ -680,10 +737,27 @@ int TextEditInput::getLineChars(StbTexteditRow *row, int pos) {
   return numChars;
 }
 
+char *TextEditInput::getSelection(int *start, int *end) {
+  char *result;
+
+  if (_state.select_start != _state.select_end) {
+    result = _buf.textRange(_state.select_start,  _state.select_end);
+    *start = _state.select_start;
+    *end = _state.select_end;
+  } else {
+    *start = is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
+             stb_textedit_move_to_word_previous(&_buf, &_state);
+    *end = stb_textedit_move_to_word_next(&_buf, &_state) - 1;
+    result = _buf.textRange(*start, *end);
+  }
+  return result;
+}
+
 char *TextEditInput::lineText(int pos) {
   StbTexteditRow r;
   int len = _buf._len;
-  int start, end = 0;
+  int start = 0;
+  int end = 0;
   for (int i = 0; i < len; i += r.num_chars) {
     layout(&r, i);
     if (pos >= i && pos < i + r.num_chars) {
@@ -732,8 +806,7 @@ void TextEditInput::updateScroll() {
 //
 TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
   TextEditInput(helpText, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
-                chW * HELP_WIDTH, editor->_height),
-  _editor(editor) {
+                chW * HELP_WIDTH, editor->_height) {
   _theme = new EditTheme(_fg, _bg);
   hide();
 }
