@@ -30,8 +30,7 @@
 #define THEME_CURSOR 0xa7aebc
 #define THEME_CURSOR_BACKGROUND 0x3875ed
 #define THEME_MATCH_BACKGROUND 0x373b88
-#define HELP_WIDTH 16
-#define HELP_HEIGHT 14
+#define HELP_WIDTH 22
 
 const char *helpText =
   "C-a select-all\n"
@@ -44,8 +43,9 @@ const char *helpText =
   "C-v paste\n"
   "C-z undo\n"
   "C-y redo\n"
+  "C-o outline\n"
   "A-a home\n"
-  "A-e end\n"
+  "A-d end\n"
   "A-c change case\n"
   "A-s start\n"
   "A-r end\n"
@@ -96,6 +96,10 @@ EditBuffer::EditBuffer(TextEditInput *in, const char *text) :
 }
 
 EditBuffer::~EditBuffer() {
+  clear();
+}
+
+void EditBuffer::clear() {
   delete _buffer;
   _buffer = NULL;
   _len = _size = 0;
@@ -108,14 +112,14 @@ int EditBuffer::deleteChars(int pos, int num) {
   return 1;
 }
 
-int EditBuffer::insertChars(int pos, char *newtext, int num) {
+int EditBuffer::insertChars(int pos, const char *text, int num) {
   int required = _len + num + 1;
   if (required >= _size) {
     _size += (required + GROW_SIZE);
     _buffer = (char *)realloc(_buffer, _size);
   }
   memmove(&_buffer[pos + num], &_buffer[pos], _len - pos);
-  memcpy(&_buffer[pos], newtext, num);
+  memcpy(&_buffer[pos], text, num);
   _len += num;
   _buffer[_len] = '\0';
   _in->setDirty(true);
@@ -141,7 +145,7 @@ char *EditBuffer::textRange(int start, int end) {
 }
 
 void EditBuffer::replaceChars(const char *replace, int start, int end) {
-  for (int i = start, j = 0; i < end && replace[j] != '\0'; i++, j++) {
+  for (int i = start, j = 0; i < end && i < _len && replace[j] != '\0'; i++, j++) {
     _buffer[i] = replace[j];
   }
 }
@@ -163,9 +167,6 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _matchingBrace(-1),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
-}
-
-void TextEditInput::close() {
 }
 
 void TextEditInput::draw(int x, int y, int w, int h, int chw) {
@@ -747,7 +748,11 @@ char *TextEditInput::getSelection(int *start, int *end) {
   } else {
     *start = is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
              stb_textedit_move_to_word_previous(&_buf, &_state);
-    *end = stb_textedit_move_to_word_next(&_buf, &_state) - 1;
+    int i = _state.cursor;
+    while (!IS_WHITE(_buf._buffer[i]) && i < _buf._len) {
+      i++;
+    }
+    *end = i;
     result = _buf.textRange(*start, *end);
   }
   return result;
@@ -805,7 +810,7 @@ void TextEditInput::updateScroll() {
 // TextEditHelpWidget
 //
 TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
-  TextEditInput(helpText, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
+  TextEditInput(NULL, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
                 chW * HELP_WIDTH, editor->_height) {
   _theme = new EditTheme(_fg, _bg);
   hide();
@@ -817,16 +822,84 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   case STB_TEXTEDIT_K_RIGHT:
   case STB_TEXTEDIT_K_UP:
   case STB_TEXTEDIT_K_DOWN:
+  case STB_TEXTEDIT_K_PGUP:
+  case STB_TEXTEDIT_K_PGDOWN:
   case STB_TEXTEDIT_K_LINESTART:
   case STB_TEXTEDIT_K_LINEEND:
   case STB_TEXTEDIT_K_TEXTSTART:
   case STB_TEXTEDIT_K_TEXTEND:
   case STB_TEXTEDIT_K_WORDLEFT:
   case STB_TEXTEDIT_K_WORDRIGHT:
-    stb_textedit_key(&_buf, &_state, key);
-    return true;
+    return TextEditInput::edit(key, screenWidth, charWidth);
   default:
     break;
   }
   return false;
 }
+
+void TextEditHelpWidget::createHelp() {
+  _buf.clear();
+  _buf.append(helpText, strlen(helpText));
+}
+
+void TextEditHelpWidget::createOutline(TextEditInput *editor) {
+  const char *text = editor->getText();
+  int len = editor->getTextLength();
+  int curLine = 1;
+  const char *keywords[] = {
+    "sub ", "func ", "def ", "label ", "const ", "local ", "dim "
+  };
+  int keywords_length = sizeof(keywords) / sizeof(keywords[0]);
+  int keywords_len[keywords_length];
+  for (int j = 0; j < keywords_length; j++) {
+    keywords_len[j] = strlen(keywords[j]);
+  }
+
+  _buf.clear();
+
+  for (int i = 0; i < len; i++) {
+    // skip to the newline start
+    while (i < len && i != 0 && text[i] != '\n') {
+      i++;
+    }
+
+    // skip any successive newlines
+    while (i < len && text[i] == '\n') {
+      curLine++;
+      i++;
+    }
+
+    // skip any leading whitespace
+    while (i < len && (text[i] == ' ' || text[i] == '\t')) {
+      i++;
+    }
+
+    for (int j = 0; j < keywords_length; j++) {
+      if (!strncasecmp(text + i, keywords[j], keywords_len[j])) {
+        i += keywords_len[j];
+        int i_begin = i;
+        while (i < len && text[i] != '=' && text[i] != '\r' && text[i] != '\n') {
+          i++;
+        }
+        if (i > i_begin) {
+          int numChars = i - i_begin;
+          if (numChars > HELP_WIDTH - 2) {
+            numChars = HELP_WIDTH - 2;
+          }
+          if (j > 1) {
+            _buf.append(" >", 2);
+            numChars -= 2;
+          }
+          _buf.append(text + i_begin, numChars);
+          _buf.append("\n", 1);
+        }
+        break;
+      }
+    }
+    if (text[i] == '\n') {
+      // avoid eating the entire next line
+      i--;
+    }
+  }
+}
+

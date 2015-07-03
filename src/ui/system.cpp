@@ -154,6 +154,7 @@ void System::editSource() {
       case SB_KEY_F(1):
       case SB_KEY_CTRL('h'):
         widget = helpWidget;
+        helpWidget->createHelp();
         helpWidget->show();
         break;
       case SB_KEY_F(9):
@@ -177,6 +178,11 @@ void System::editSource() {
         text = getClipboardText();
         widget->paste(text);
         free(text);
+        break;
+      case SB_KEY_CTRL('o'):
+        widget = helpWidget;
+        helpWidget->createOutline(editWidget);
+        helpWidget->show();
         break;
       default:
         redraw = widget->edit(event.key, sw, charWidth);

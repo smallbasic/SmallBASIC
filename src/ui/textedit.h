@@ -48,8 +48,10 @@ struct EditBuffer {
   EditBuffer(TextEditInput *in, const char *text);
   virtual ~EditBuffer();
 
+  void clear();
+  void append(const char *text, int len) { insertChars(_len, text, len); }
   int deleteChars(int pos, int num);
-  int insertChars(int pos, char *newtext, int num);
+  int insertChars(int pos, const char *text, int num);
   char *textRange(int start, int end);
   void replaceChars(const char *replace, int start, int end);
 };
@@ -58,10 +60,10 @@ struct TextEditInput : public FormEditInput {
   TextEditInput(const char *text, int chW, int chH, int x, int y, int w, int h);
   virtual ~TextEditInput() {}
 
-  void close();
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buf._buffer; }
+  int  getTextLength() const { return _buf._len; }
   bool save(const char *filePath);
   void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);
@@ -111,6 +113,8 @@ protected:
 struct TextEditHelpWidget : public TextEditInput {
   TextEditHelpWidget(TextEditInput *editor, int chW, int chH);
 
+  void createHelp();
+  void createOutline(TextEditInput *edit);
   bool edit(int key, int screenWidth, int charWidth);
   char *copy(bool cut) { return NULL; }
   void paste(char *text) {}
@@ -128,7 +132,7 @@ struct TextEditHelpWidget : public TextEditInput {
 #define STB_TEXTEDIT_K_DELETE     SB_KEY_DELETE
 #define STB_TEXTEDIT_K_BACKSPACE  SB_KEY_BACKSPACE
 #define STB_TEXTEDIT_K_TEXTSTART  SB_KEY_ALT('s')
-#define STB_TEXTEDIT_K_TEXTEND    SB_KEY_ALT('r')
+#define STB_TEXTEDIT_K_TEXTEND    SB_KEY_ALT('d')
 #define STB_TEXTEDIT_K_UNDO       SB_KEY_CTRL('z')
 #define STB_TEXTEDIT_K_REDO       SB_KEY_CTRL('y')
 #define STB_TEXTEDIT_K_INSERT     SB_KEY_INSERT
