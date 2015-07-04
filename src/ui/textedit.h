@@ -79,6 +79,7 @@ struct TextEditInput : public FormEditInput {
   char *copy(bool cut);
   void paste(char *text);
   void selectAll();
+  void insertText(const char *text);
   bool isDirty() { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
   void resize(int w, int h) { _width = w; _height = h; }
@@ -117,6 +118,12 @@ struct TextEditHelpWidget : public TextEditInput {
   TextEditHelpWidget(TextEditInput *editor, int chW, int chH);
   virtual ~TextEditHelpWidget();
 
+  enum HelpMode {
+    kHelp,
+    kKeywords,
+    kOutline
+  };
+
   void createHelp();
   void createKeywordHelp();
   void createOutline();
@@ -125,9 +132,10 @@ struct TextEditHelpWidget : public TextEditInput {
   void paste(char *text) {}
   bool isDrawTop() { return true; }
   void resize(int w, int h) { _x = w - _width; _height = h; }
-  void reset();
+  void reset(HelpMode mode);
 
 private:
+  HelpMode _helpMode;
   strlib::List<int *> _outline;
   TextEditInput *_editor;
 };

@@ -347,6 +347,12 @@ void TextEditInput::selectAll() {
   _state.select_end = _buf._len;
 }
 
+void TextEditInput::insertText(const char *text) {
+  int len = strlen(text);
+  _buf.insertChars(_state.cursor, text, len);
+  _state.cursor += len;
+}
+
 void TextEditInput::setCursor(int cursor) {
   _state.cursor = lineStart(cursor);
   _cursorRow = getCursorRow();
@@ -851,9 +857,21 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   case STB_TEXTEDIT_K_WORDLEFT:
   case STB_TEXTEDIT_K_WORDRIGHT:
     result = TextEditInput::edit(key, screenWidth, charWidth);
-    if (_outline.size()) {
+    if (_helpMode == kOutline && _outline.size()) {
       int cursor = (intptr_t)_outline[_cursorRow - 1];
       _editor->setCursor(cursor);
+    }
+    break;
+  case SB_KEY_ENTER:
+    if (_helpMode == kKeywords) {
+      // paste the keyword into the editor
+      char *text = lineText(_state.cursor);
+      if (text[0] != '\0' && text[0] != '[') {
+        _editor->insertText(text);
+        _editor->insertText(" ");
+      }
+      free((void *)text);
+      result = true;
     }
     break;
   default:
@@ -864,12 +882,12 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
 }
 
 void TextEditHelpWidget::createHelp() {
-  reset();
+  reset(kHelp);
   _buf.append(helpText, strlen(helpText));
 }
 
 void TextEditHelpWidget::createKeywordHelp() {
-  reset();
+  reset(kKeywords);
   _buf.append("[Keywords]\n");
   for (int i = 0; i < code_keywords_length; i++) {
     _buf.append(code_keywords[i]);
@@ -899,7 +917,7 @@ void TextEditHelpWidget::createOutline() {
     keywords_len[j] = strlen(keywords[j]);
   }
 
-  reset();
+  reset(kOutline);
 
   for (int i = 0; i < len; i++) {
     // skip to the newline start
@@ -949,8 +967,9 @@ void TextEditHelpWidget::createOutline() {
   }
 }
 
-void TextEditHelpWidget::reset() {
+void TextEditHelpWidget::reset(HelpMode mode) {
   stb_textedit_clear_state(&_state, false);
+  _helpMode = mode;
   _outline.emptyList();
   _buf.clear();
   _scroll = 0;
