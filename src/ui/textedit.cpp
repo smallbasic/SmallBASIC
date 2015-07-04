@@ -13,6 +13,7 @@
 #include "ui/inputs.h"
 #include "ui/utils.h"
 #include "ui/strlib.h"
+#include "ui/kwp.h"
 
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
 #define STB_TEXTEDIT_IMPLEMENTATION
@@ -36,6 +37,7 @@ const char *helpText =
   "C-a select-all\n"
   "C-b back\n"
   "C-k delete line\n"
+  "C-d delete char\n"
   "C-r run\n"
   "C-s save\n"
   "C-x cut\n"
@@ -44,6 +46,7 @@ const char *helpText =
   "C-z undo\n"
   "C-y redo\n"
   "C-o outline\n"
+  "C-j keywords\n"
   "A-a home\n"
   "A-d end\n"
   "A-c change case\n"
@@ -287,14 +290,17 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_ALT('a'):
     stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_LINESTART);
     break;
+  case SB_KEY_ALT('c'):
+    changeCase();
+    break;
+  case SB_KEY_CTRL('d'):
+    stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_DELETE);
+    break;
   case SB_KEY_ALT('e'):
     stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_LINEEND);
     break;
   case SB_KEY_CTRL('k'):
     editDeleteLine();
-    break;
-  case SB_KEY_ALT('c'):
-    changeCase();
     break;
   case SB_KEY_TAB:
     editTab();
@@ -339,6 +345,13 @@ bool TextEditInput::save(const char *filePath) {
 void TextEditInput::selectAll() {
   _state.select_start = 0;
   _state.select_end = _buf._len;
+}
+
+void TextEditInput::setCursor(int cursor) {
+  _state.cursor = lineStart(cursor);
+  _cursorRow = getCursorRow();
+  _matchingBrace = -1;
+  updateScroll();
 }
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
@@ -811,12 +824,19 @@ void TextEditInput::updateScroll() {
 //
 TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
   TextEditInput(NULL, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
-                chW * HELP_WIDTH, editor->_height) {
+                chW * HELP_WIDTH, editor->_height),
+  _editor(editor) {
   _theme = new EditTheme(_fg, _bg);
   hide();
 }
 
+TextEditHelpWidget::~TextEditHelpWidget() {
+  _outline.emptyList();
+}
+
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
+  bool result;
+
   switch (key) {
   case STB_TEXTEDIT_K_LEFT:
   case STB_TEXTEDIT_K_RIGHT:
@@ -830,22 +850,46 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   case STB_TEXTEDIT_K_TEXTEND:
   case STB_TEXTEDIT_K_WORDLEFT:
   case STB_TEXTEDIT_K_WORDRIGHT:
-    return TextEditInput::edit(key, screenWidth, charWidth);
+    result = TextEditInput::edit(key, screenWidth, charWidth);
+    if (_outline.size()) {
+      int cursor = (intptr_t)_outline[_cursorRow - 1];
+      _editor->setCursor(cursor);
+    }
+    break;
   default:
+    result = false;
     break;
   }
-  return false;
+  return result;
 }
 
 void TextEditHelpWidget::createHelp() {
-  _buf.clear();
+  reset();
   _buf.append(helpText, strlen(helpText));
 }
 
-void TextEditHelpWidget::createOutline(TextEditInput *editor) {
-  const char *text = editor->getText();
-  int len = editor->getTextLength();
-  int curLine = 1;
+void TextEditHelpWidget::createKeywordHelp() {
+  reset();
+  _buf.append("[Keywords]\n");
+  for (int i = 0; i < code_keywords_length; i++) {
+    _buf.append(code_keywords[i]);
+    _buf.append("\n", 1);
+  }
+  _buf.append("\n[Procedures]\n");
+  for (int i = 0; i < code_procedures_length; i++) {
+    _buf.append(code_procedures[i]);
+    _buf.append("\n", 1);
+  }
+  _buf.append("\n[Functions]\n");
+  for (int i = 0; i < code_functions_length; i++) {
+    _buf.append(code_functions[i]);
+    _buf.append("\n", 1);
+  }
+}
+
+void TextEditHelpWidget::createOutline() {
+  const char *text = _editor->getText();
+  int len = _editor->getTextLength();
   const char *keywords[] = {
     "sub ", "func ", "def ", "label ", "const ", "local ", "dim "
   };
@@ -855,7 +899,7 @@ void TextEditHelpWidget::createOutline(TextEditInput *editor) {
     keywords_len[j] = strlen(keywords[j]);
   }
 
-  _buf.clear();
+  reset();
 
   for (int i = 0; i < len; i++) {
     // skip to the newline start
@@ -865,7 +909,6 @@ void TextEditHelpWidget::createOutline(TextEditInput *editor) {
 
     // skip any successive newlines
     while (i < len && text[i] == '\n') {
-      curLine++;
       i++;
     }
 
@@ -883,15 +926,18 @@ void TextEditHelpWidget::createOutline(TextEditInput *editor) {
         }
         if (i > i_begin) {
           int numChars = i - i_begin;
-          if (numChars > HELP_WIDTH - 2) {
-            numChars = HELP_WIDTH - 2;
+          int padding = j > 1 ? 4 : 2;
+          if (numChars > HELP_WIDTH - padding) {
+            numChars = HELP_WIDTH - padding;
           }
-          if (j > 1) {
-            _buf.append(" >", 2);
-            numChars -= 2;
+          if (numChars > 0) {
+            if (j > 1) {
+              _buf.append(" .", 2);
+            }
+            _buf.append(text + i_begin, numChars);
+            _buf.append("\n", 1);
+            _outline.add((int *)(intptr_t)i);
           }
-          _buf.append(text + i_begin, numChars);
-          _buf.append("\n", 1);
         }
         break;
       }
@@ -903,3 +949,10 @@ void TextEditHelpWidget::createOutline(TextEditInput *editor) {
   }
 }
 
+void TextEditHelpWidget::reset() {
+  stb_textedit_clear_state(&_state, false);
+  _outline.emptyList();
+  _buf.clear();
+  _scroll = 0;
+  _matchingBrace = -1;
+}

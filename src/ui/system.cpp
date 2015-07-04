@@ -174,15 +174,20 @@ void System::editSource() {
           free(text);
         }
         break;
+      case SB_KEY_CTRL('o'):
+        widget = helpWidget;
+        helpWidget->createOutline();
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL('j'):
+        widget = helpWidget;
+        helpWidget->createKeywordHelp();
+        helpWidget->show();
+        break;
       case SB_KEY_CTRL('v'):
         text = getClipboardText();
         widget->paste(text);
         free(text);
-        break;
-      case SB_KEY_CTRL('o'):
-        widget = helpWidget;
-        helpWidget->createOutline(editWidget);
-        helpWidget->show();
         break;
       default:
         redraw = widget->edit(event.key, sw, charWidth);

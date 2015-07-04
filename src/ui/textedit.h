@@ -50,6 +50,7 @@ struct EditBuffer {
 
   void clear();
   void append(const char *text, int len) { insertChars(_len, text, len); }
+  void append(const char *text) { insertChars(_len, text, strlen(text)); }
   int deleteChars(int pos, int num);
   int insertChars(int pos, const char *text, int num);
   char *textRange(int start, int end);
@@ -62,9 +63,11 @@ struct TextEditInput : public FormEditInput {
 
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
+  void expandWord();
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
   bool save(const char *filePath);
+  void setCursor(int cursor);
   void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);
@@ -112,14 +115,21 @@ protected:
 
 struct TextEditHelpWidget : public TextEditInput {
   TextEditHelpWidget(TextEditInput *editor, int chW, int chH);
+  virtual ~TextEditHelpWidget();
 
   void createHelp();
-  void createOutline(TextEditInput *edit);
+  void createKeywordHelp();
+  void createOutline();
   bool edit(int key, int screenWidth, int charWidth);
   char *copy(bool cut) { return NULL; }
   void paste(char *text) {}
   bool isDrawTop() { return true; }
   void resize(int w, int h) { _x = w - _width; _height = h; }
+  void reset();
+
+private:
+  strlib::List<int *> _outline;
+  TextEditInput *_editor;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer
