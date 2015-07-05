@@ -78,6 +78,34 @@ Runtime::~Runtime() {
   _cursorArrow = NULL;
 }
 
+void Runtime::alert(const char *title, const char *message) {
+  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
+}
+
+bool Runtime::ask(const char *prompt, const char *accept, const char *cancel) {
+  SDL_MessageBoxButtonData buttons[2];
+  memset(&buttons[0], 0, sizeof(SDL_MessageBoxButtonData));
+  memset(&buttons[1], 0, sizeof(SDL_MessageBoxButtonData));
+  buttons[0].text = accept;
+  buttons[0].buttonid = 0;
+  buttons[1].text = cancel;
+  buttons[1].buttonid = 1;
+
+  SDL_MessageBoxData data;
+  memset(&data, 0, sizeof(SDL_MessageBoxData));
+  data.window = _window;
+  data.title = "SmallBASIC";
+  data.message = prompt;
+  data.flags = SDL_MESSAGEBOX_INFORMATION;
+  data.numbuttons = 2;
+  data.buttons = buttons;
+
+  int buttonid;
+  SDL_ShowMessageBox(&data, &buttonid);
+
+  return buttonid == 0;
+}
+
 void Runtime::construct(const char *font, const char *boldFont) {
   logEntered();
   _state = kClosingState;
@@ -97,7 +125,7 @@ void Runtime::construct(const char *font, const char *boldFont) {
       }
     }
   } else {
-    showAlert("Unable to start", "Font resource not loaded");
+    alert("Unable to start", "Font resource not loaded");
     fprintf(stderr, "failed to load: [%s] [%s]\n", font, boldFont);
     exit(1);
   }
@@ -173,10 +201,6 @@ char *Runtime::loadResource(const char *fileName) {
     buffer[main_bas_len] = '\0';
   }
   return buffer;
-}
-
-void Runtime::showAlert(const char *title, const char *message) {
-  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {
@@ -549,11 +573,6 @@ int maGetEvent(MAEvent *event) {
 
 void maWait(int timeout) {
   runtime->pause(timeout);
-}
-
-void maAlert(const char *title, const char *message, const char *button1,
-             const char *button2, const char *button3) {
-  runtime->showAlert(title, message);
 }
 
 //

@@ -172,6 +172,38 @@ Runtime::~Runtime() {
   pthread_mutex_destroy(&_mutex);
 }
 
+void Runtime::alert(const char *title, const char *message) {
+  logEntered();
+
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jstring titleString = env->NewStringUTF(title);
+  jstring messageString = env->NewStringUTF(message);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID method = env->GetMethodID(clazz, "showAlert",
+                                      "(Ljava/lang/String;Ljava/lang/String;)V");
+  env->CallVoidMethod(_app->activity->clazz, method, titleString, messageString);
+
+  env->DeleteLocalRef(clazz);
+  env->DeleteLocalRef(messageString);
+  env->DeleteLocalRef(titleString);
+  _app->activity->vm->DetachCurrentThread();
+}
+
+bool Runtime::ask(const char *prompt, const char *accept, const char *cancel) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, "ask",
+                         "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z");
+  jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId,
+                                                      prompt, accept, cancel);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+
+  return result;
+}
+
 void Runtime::clearSoundQueue() {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
@@ -627,24 +659,6 @@ void Runtime::showKeypad(bool show) {
   _app->activity->vm->DetachCurrentThread();
 }
 
-void Runtime::showAlert(const char *title, const char *message) {
-  logEntered();
-
-  JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jstring titleString = env->NewStringUTF(title);
-  jstring messageString = env->NewStringUTF(message);
-  jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showAlert",
-                                      "(Ljava/lang/String;Ljava/lang/String;)V");
-  env->CallVoidMethod(_app->activity->clazz, method, titleString, messageString);
-
-  env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(messageString);
-  env->DeleteLocalRef(titleString);
-  _app->activity->vm->DetachCurrentThread();
-}
-
 void Runtime::onResize(int width, int height) {
   logEntered();
   if (_graphics != NULL) {
@@ -702,11 +716,6 @@ void maWait(int timeout) {
 int maShowVirtualKeyboard(void) {
   runtime->showKeypad(true);
   return 0;
-}
-
-void maAlert(const char *title, const char *message, const char *button1,
-             const char *button2, const char *button3) {
-  runtime->showAlert(title, message);
 }
 
 //

@@ -45,13 +45,13 @@ const char *helpText =
   "C-v paste\n"
   "C-z undo\n"
   "C-y redo\n"
-  "C-o outline\n"
+  "C-l outline\n"
   "C-j keywords\n"
-  "A-a home\n"
-  "A-d end\n"
   "A-c change case\n"
-  "A-s start\n"
-  "A-r end\n"
+  "A-a home\n"
+  "A-e end\n"
+  "A-s top\n"
+  "A-d bottom\n"
   "F9  run\n"
   "ESC close help";
 
@@ -323,6 +323,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     stb_textedit_key(&_buf, &_state, key);
     break;
   }
+
   _cursorRow = getCursorRow();
   updateScroll();
   findMatchingBrace();
@@ -614,7 +615,7 @@ void TextEditInput::editTab() {
 }
 
 void TextEditInput::findMatchingBrace() {
-  char cursorChar = _buf._buffer[_state.cursor];
+  char cursorChar = _state.cursor < _buf._len ? _buf._buffer[_state.cursor] : '\0';
   char cursorMatch = '\0';
   int pair = -1;
   int iter = -1;

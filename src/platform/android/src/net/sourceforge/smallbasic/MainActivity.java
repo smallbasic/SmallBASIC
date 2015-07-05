@@ -82,6 +82,35 @@ public class MainActivity extends NativeActivity {
   public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
 
+  public boolean ask(String prompt, String accept, String cancel) {
+    // TODO: fixme
+    boolean result = false;
+    final Context context = this;
+    final Semaphore mutex = new Semaphore(0);
+    final Runnable runnable = new Runnable() {
+      public void run() {
+        new AlertDialog.Builder(activity)
+          .setTitle(title).setMessage(message)
+          .setPositiveButton(accept, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            }
+          })
+          .setPositiveButton(cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {}
+          }).show();
+        mutex.release();
+      }
+    };
+    runOnUiThread(runnable);
+    try {
+      mutex.acquire();
+    } catch (InterruptedException e) {
+      Log.i(TAG, "getClipboardText failed: ", e);
+      e.printStackTrace();
+    }
+    return result;
+  }
+
   public void clearSoundQueue() {
     Log.i(TAG, "clearSoundQueue");
     for (Sound sound : _sounds) {

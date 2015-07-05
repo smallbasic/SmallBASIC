@@ -93,10 +93,7 @@ void cmd_window_alert(var_s *self) {
   if (!prog_error && items->size() > 0) {
     const char *message = items->size() > 0 ? (*items)[0]->c_str() : "";
     const char *title   = items->size() > 1 ? (*items)[1]->c_str() : "";
-    const char *button1 = items->size() > 2 ? (*items)[2]->c_str() : "";
-    const char *button2 = items->size() > 3 ? (*items)[3]->c_str() : "";
-    const char *button3 = items->size() > 4 ? (*items)[4]->c_str() : "";
-    maAlert(title, message, button1, button2, button3);
+    g_system->alert(title, message);
   }
   delete items;
 }

@@ -42,6 +42,9 @@ struct System {
   void systemPrint(const char *msg, ...);
   AnsiWidget *getOutput() { return _output; }
 
+  virtual void alert(const char *title, const char *message) = 0;
+  virtual bool ask(const char *prompt, const char *accept="Yes",
+                   const char *cancel="No") = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;

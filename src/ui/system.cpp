@@ -163,7 +163,7 @@ void System::editSource() {
         // fallthrough
       case SB_KEY_CTRL('s'):
         if (!editWidget->save(_loadPath)) {
-          maAlert("", "Failed to save file", NULL, NULL, NULL);
+          alert("", "Failed to save file");
         }
         break;
       case SB_KEY_CTRL('c'):
@@ -174,7 +174,7 @@ void System::editSource() {
           free(text);
         }
         break;
-      case SB_KEY_CTRL('o'):
+      case SB_KEY_CTRL('l'):
         widget = helpWidget;
         helpWidget->createOutline();
         helpWidget->show();
@@ -201,6 +201,12 @@ void System::editSource() {
       if (redraw) {
         _output->redraw();
       }
+    }
+  }
+
+  if (editWidget->isDirty() && ask("Save changes?")) {
+    if (!editWidget->save(_loadPath)) {
+      alert("", "Failed to save file");
     }
   }
 
@@ -548,7 +554,7 @@ void System::runMain(const char *mainBasPath) {
 
   bool started = execute(_loadPath);
   if (!started) {
-    maAlert("", gsb_last_errmsg, NULL, NULL, NULL);
+    alert("", gsb_last_errmsg);
     _state = kClosingState;
   }
 
@@ -596,7 +602,7 @@ void System::runMain(const char *mainBasPath) {
         showError();
         if (_mainBas) {
           // unexpected error in main.bas
-          maAlert("", gsb_last_errmsg, NULL, NULL, NULL);
+          alert("", gsb_last_errmsg);
           _state = kClosingState;
         }
       }
