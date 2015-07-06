@@ -37,6 +37,7 @@ struct EditTheme {
   int _cursor_color;
   int _cursor_background;
   int _match_background;
+  int _row_cursor;
 };
 
 struct EditBuffer {
@@ -86,6 +87,7 @@ struct TextEditInput : public FormEditInput {
 
 protected:
   void changeCase();
+  void drawLineNumber(int x, int y, int row, bool selected);
   void editDeleteLine();
   void editEnter();
   void editNavigate(bool pageDown, bool shift);
