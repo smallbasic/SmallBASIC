@@ -38,6 +38,7 @@ struct EditTheme {
   int _cursor_background;
   int _match_background;
   int _row_cursor;
+  int _syntax_comments;
 };
 
 struct EditBuffer {
@@ -63,6 +64,7 @@ struct TextEditInput : public FormEditInput {
   virtual ~TextEditInput() {}
 
   void draw(int x, int y, int w, int h, int chw);
+  void drawText(int x, int y, const char *str, int length);
   bool edit(int key, int screenWidth, int charWidth);
   void expandWord();
   const char *getText() const { return _buf._buffer; }

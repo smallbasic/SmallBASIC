@@ -34,6 +34,10 @@
 #define THEME_CURSOR_BACKGROUND 0x3875ed
 #define THEME_MATCH_BACKGROUND 0x373b88
 #define THEME_ROW_CURSOR 0x2b313a
+#define THEME_SYNTAX_COMMENTS 0x00bb00
+
+#define MATCH_STR(buf, i, len, str, num) \
+  (i <= len - num && strncasecmp(buf + i, str, num) == 0)
 
 const char *helpText =
   "C-a select-all\n"
@@ -71,7 +75,8 @@ EditTheme::EditTheme() :
   _cursor_color(THEME_CURSOR),
   _cursor_background(THEME_CURSOR_BACKGROUND),
   _match_background(THEME_MATCH_BACKGROUND),
-  _row_cursor(THEME_ROW_CURSOR) {
+  _row_cursor(THEME_ROW_CURSOR),
+  _syntax_comments(THEME_SYNTAX_COMMENTS) {
 }
 
 EditTheme::EditTheme(int fg, int bg) :
@@ -82,7 +87,8 @@ EditTheme::EditTheme(int fg, int bg) :
   _cursor_color(bg),
   _cursor_background(fg),
   _match_background(fg),
-  _row_cursor(bg) {
+  _row_cursor(bg),
+  _syntax_comments(bg) {
 }
 
 //
@@ -233,7 +239,8 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
           int baseX = _marginWidth;
           if (begin > 0) {
             // initial non-selected chars
-            maDrawText(x, y + baseY, _buf._buffer + i, begin);
+            maSetColor(_theme->_color);
+            maDrawText(x + baseX, y + baseY, _buf._buffer + i, begin);
             baseX += begin * _charWidth;
           } else if (begin < 0) {
             // started on previous row
@@ -252,12 +259,12 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
           maFillRect(x + baseX, y + baseY, count * _charWidth, _charHeight);
           maSetColor(_theme->_selection_color);
           maDrawText(x + baseX, y + baseY, _buf._buffer + i + begin, count);
-          maSetColor(_theme->_color);
 
           int end = numChars - (begin + count);
           if (end) {
             // trailing non-selected chars
             baseX += count * _charWidth;
+            maSetColor(_theme->_color);
             maDrawText(x + baseX, y + baseY, _buf._buffer + i + begin + count, end);
           }
         } else {
@@ -269,7 +276,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       } else {
         drawLineNumber(x, y + baseY, row, false);
         if (numChars) {
-          maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
+          drawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
         }
       }
       baseY += _charHeight;
@@ -294,6 +301,35 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       maDrawText(cursorMatchX + _marginWidth, cursorMatchY, _buf._buffer + _matchingBrace, 1);
     }
   }
+}
+
+void TextEditInput::drawText(int x, int y, const char *str, int length) {
+  maSetColor(_theme->_color);
+  int i_next = 0;
+
+  if (_marginWidth > 0) {
+    for (int i = 0; i < length; i++) {
+      if (str[i] == '\'' || MATCH_STR(str, i, length, "rem", 3)) {
+        maDrawText(x, y, str + i_next, i - i_next - 1);
+        maSetColor(_theme->_syntax_comments);
+        length -= i;
+        x += (i * _charWidth);
+        i_next = i;
+        break;
+        /*
+      } else if (MATCH_STR(str, i, length, "for", 3)) {
+        maDrawText(x, y, str + i_next, i - i_next - 1);
+        maSetColor(0xff00ff);
+        maDrawText(x, y, str + i, 3);
+        length -= 3;
+        x += (i * _charWidth);
+        i += 3;
+        i_next = i;
+        */
+      }
+    }
+  }
+  maDrawText(x, y, str + i_next, length);
 }
 
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
@@ -396,7 +432,7 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
   if (!_theme) {
     if (_fg == DEFAULT_FOREGROUND && _bg == DEFAULT_BACKGROUND) {
       _theme = new EditTheme();
-      _marginWidth = _charWidth * MARGIN_CHARS;
+      _marginWidth = 1 + (_charWidth * MARGIN_CHARS);
     } else {
       _theme = new EditTheme(_fg, _bg);
     }
@@ -406,7 +442,7 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  stb_textedit_drag(&_buf, &_state, pt.x, pt.y);
+  stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth, pt.y);
   redraw = true;
   return 1;
 }
@@ -526,7 +562,6 @@ void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
     sprintf(rowBuffer, "%d", row);
     maDrawText(x + offs, y, rowBuffer, places);
   }
-  maSetColor(_theme->_color);
 }
 
 void TextEditInput::editDeleteLine() {
