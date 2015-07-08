@@ -105,6 +105,7 @@ protected:
   int lineEnd(int pos) { return linePos(pos, true); }
   int linePos(int pos, bool end, bool excludeBreak=true);
   int lineStart(int pos) { return linePos(pos, false); }
+  int wordStart();
   void updateScroll();
 
   EditBuffer _buf;

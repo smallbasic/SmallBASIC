@@ -181,13 +181,16 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
 
 void TextEditInput::completeWord(const char *word) {
   if (_state.select_start == _state.select_end) {
-    int start = _buf._buffer[_state.cursor - 1] == '\n' ? _state.cursor :
-                is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
-                stb_textedit_move_to_word_previous(&_buf, &_state);
+    int start = wordStart();
     int end = _state.cursor;
     int len = end - start;
+    bool lastUpper = isupper(_buf._buffer[end - 1]);
+
     insertText(word + len);
-    changeCase();
+    for (int i = 0; i < len; i++) {
+      char c = _buf._buffer[i + end];
+      _buf._buffer[i + end] = lastUpper ? toupper(c) : tolower(c);
+    }
   }
 }
 
@@ -839,9 +842,7 @@ char *TextEditInput::getSelection(int *start, int *end) {
     *start = _state.select_start;
     *end = _state.select_end;
   } else {
-    *start = _buf._buffer[_state.cursor - 1] == '\n' ? _state.cursor :
-             is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
-             stb_textedit_move_to_word_previous(&_buf, &_state);
+    *start = wordStart();
     int i = _state.cursor;
     while (!IS_WHITE(_buf._buffer[i]) && i < _buf._len) {
       i++;
@@ -909,6 +910,12 @@ void TextEditInput::updateScroll() {
     // cursor outside current view
     _scroll = _cursorRow - (pageRows / 2);
   }
+}
+
+int TextEditInput::wordStart() {
+  return _buf._buffer[_state.cursor - 1] == '\n' ? _state.cursor :
+    is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
+    stb_textedit_move_to_word_previous(&_buf, &_state);
 }
 
 //
