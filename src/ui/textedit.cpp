@@ -36,9 +36,6 @@
 #define THEME_ROW_CURSOR 0x2b313a
 #define THEME_SYNTAX_COMMENTS 0x00bb00
 
-#define MATCH_STR(buf, i, len, str, num) \
-  (i <= len - num && strncasecmp(buf + i, str, num) == 0)
-
 const char *helpText =
   "C-a select-all\n"
   "C-b back\n"
@@ -52,7 +49,7 @@ const char *helpText =
   "C-z undo\n"
   "C-y redo\n"
   "C-l outline\n"
-  "C-j keywords\n"
+  "C-space complete\n"
   "A-c change case\n"
   "A-a home\n"
   "A-e end\n"
@@ -182,6 +179,18 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   stb_textedit_initialize_state(&_state, false);
 }
 
+void TextEditInput::completeWord(const char *word) {
+  if (_state.select_start == _state.select_end) {
+    int start = _buf._buffer[_state.cursor - 1] == '\n' ? _state.cursor :
+                is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
+                stb_textedit_move_to_word_previous(&_buf, &_state);
+    int end = _state.cursor;
+    int len = end - start;
+    insertText(word + len);
+    changeCase();
+  }
+}
+
 void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   StbTexteditRow r;
   int len = _buf._len;
@@ -309,23 +318,13 @@ void TextEditInput::drawText(int x, int y, const char *str, int length) {
 
   if (_marginWidth > 0) {
     for (int i = 0; i < length; i++) {
-      if (str[i] == '\'' || MATCH_STR(str, i, length, "rem", 3)) {
+      if (str[i] == '\'' || strncasecmp(str + i, "rem", 3) == 0) {
         maDrawText(x, y, str + i_next, i - i_next - 1);
         maSetColor(_theme->_syntax_comments);
         length -= i;
         x += (i * _charWidth);
         i_next = i;
         break;
-        /*
-      } else if (MATCH_STR(str, i, length, "for", 3)) {
-        maDrawText(x, y, str + i_next, i - i_next - 1);
-        maSetColor(0xff00ff);
-        maDrawText(x, y, str + i, 3);
-        length -= 3;
-        x += (i * _charWidth);
-        i += 3;
-        i_next = i;
-        */
       }
     }
   }
@@ -840,7 +839,8 @@ char *TextEditInput::getSelection(int *start, int *end) {
     *start = _state.select_start;
     *end = _state.select_end;
   } else {
-    *start = is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
+    *start = _buf._buffer[_state.cursor - 1] == '\n' ? _state.cursor :
+             is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
              stb_textedit_move_to_word_previous(&_buf, &_state);
     int i = _state.cursor;
     while (!IS_WHITE(_buf._buffer[i]) && i < _buf._len) {
@@ -848,6 +848,17 @@ char *TextEditInput::getSelection(int *start, int *end) {
     }
     *end = i;
     result = _buf.textRange(*start, *end);
+  }
+  return result;
+}
+
+char *TextEditInput::getWordBeforeCursor() {
+  char *result;
+  if (_state.select_start == _state.select_end) {
+    int start, end;
+    result = getSelection(&start, &end);
+  } else {
+    result = NULL;
   }
   return result;
 }
@@ -916,7 +927,7 @@ TextEditHelpWidget::~TextEditHelpWidget() {
 }
 
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
-  bool result;
+  bool result = false;
 
   switch (key) {
   case STB_TEXTEDIT_K_LEFT:
@@ -932,18 +943,17 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   case STB_TEXTEDIT_K_WORDLEFT:
   case STB_TEXTEDIT_K_WORDRIGHT:
     result = TextEditInput::edit(key, screenWidth, charWidth);
-    if (_helpMode == kOutline && _outline.size()) {
+    if (_mode == kOutline && _outline.size()) {
       int cursor = (intptr_t)_outline[_cursorRow - 1];
       _editor->setCursor(cursor);
     }
     break;
   case SB_KEY_ENTER:
-    if (_helpMode == kKeywords) {
+    if (_mode == kKeywords) {
       // paste the keyword into the editor
       char *text = lineText(_state.cursor);
       if (text[0] != '\0' && text[0] != '[') {
-        _editor->insertText(text);
-        _editor->insertText(" ");
+        _editor->completeWord(text);
       }
       free((void *)text);
       result = true;
@@ -963,20 +973,45 @@ void TextEditHelpWidget::createHelp() {
 
 void TextEditHelpWidget::createKeywordHelp() {
   reset(kKeywords);
-  _buf.append("[Keywords]\n");
-  for (int i = 0; i < code_keywords_length; i++) {
-    _buf.append(code_keywords[i]);
-    _buf.append("\n", 1);
-  }
-  _buf.append("\n[Procedures]\n");
-  for (int i = 0; i < code_procedures_length; i++) {
-    _buf.append(code_procedures[i]);
-    _buf.append("\n", 1);
-  }
-  _buf.append("\n[Functions]\n");
-  for (int i = 0; i < code_functions_length; i++) {
-    _buf.append(code_functions[i]);
-    _buf.append("\n", 1);
+
+  char *selection = _editor->getWordBeforeCursor();
+  int len = selection != NULL ? strlen(selection) : 0;
+  if (len > 0) {
+    for (int i = 0; i < code_keywords_length; i++) {
+      if (strncasecmp(selection, code_keywords[i], len) == 0) {
+        _buf.append(code_keywords[i]);
+        _buf.append("\n", 1);
+      }
+    }
+    for (int i = 0; i < code_procedures_length; i++) {
+      if (strncasecmp(selection, code_procedures[i], len) == 0) {
+        _buf.append(code_procedures[i]);
+        _buf.append("\n", 1);
+      }
+    }
+    for (int i = 0; i < code_functions_length; i++) {
+      if (strncasecmp(selection, code_functions[i], len) == 0) {
+        _buf.append(code_functions[i]);
+        _buf.append("\n", 1);
+      }
+    }
+    free(selection);
+  } else {
+    _buf.append("[Keywords]\n");
+    for (int i = 0; i < code_keywords_length; i++) {
+      _buf.append(code_keywords[i]);
+      _buf.append("\n", 1);
+    }
+    _buf.append("\n[Procedures]\n");
+    for (int i = 0; i < code_procedures_length; i++) {
+      _buf.append(code_procedures[i]);
+      _buf.append("\n", 1);
+    }
+    _buf.append("\n[Functions]\n");
+    for (int i = 0; i < code_functions_length; i++) {
+      _buf.append(code_functions[i]);
+      _buf.append("\n", 1);
+    }
   }
 }
 
@@ -1044,7 +1079,7 @@ void TextEditHelpWidget::createOutline() {
 
 void TextEditHelpWidget::reset(HelpMode mode) {
   stb_textedit_clear_state(&_state, false);
-  _helpMode = mode;
+  _mode = mode;
   _outline.emptyList();
   _buf.clear();
   _scroll = 0;

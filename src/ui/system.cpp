@@ -179,7 +179,7 @@ void System::editSource() {
         helpWidget->createOutline();
         helpWidget->show();
         break;
-      case SB_KEY_CTRL('j'):
+      case SB_KEY_CTRL(' '):
         widget = helpWidget;
         helpWidget->createKeywordHelp();
         helpWidget->show();
@@ -192,6 +192,11 @@ void System::editSource() {
       default:
         redraw = widget->edit(event.key, sw, charWidth);
         break;
+      }
+      if (event.key == SB_KEY_ENTER && helpWidget->keywordMode() &&
+          helpWidget->isVisible()) {
+        widget = editWidget;
+        helpWidget->hide();
       }
       if (editWidget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);
