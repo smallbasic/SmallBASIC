@@ -114,8 +114,12 @@ void System::editSource() {
   TextEditInput *widget = editWidget;
 
   editWidget->updateUI(NULL, NULL);
+  editWidget->setLineNumbers();
   editWidget->setFocus();
-  if (gsb_last_error) {
+  if (strcmp(gsb_last_file, _loadPath.c_str()) == 0) {
+    editWidget->setCursorRow(gsb_last_line - 1);
+  }
+  if (gsb_last_error && !isBack()) {
     editWidget->setCursorRow(gsb_last_line - 1);
     helpWidget->setText(gsb_last_errmsg);
     widget = helpWidget;

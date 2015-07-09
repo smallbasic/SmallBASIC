@@ -11,6 +11,7 @@
 
 #define STB_TEXTEDIT_CHARTYPE char
 #define STB_TEXTEDIT_UNDOCHARCOUNT 2000
+#define MARGIN_CHARS 4
 
 #include <config.h>
 #include <stdlib.h>
@@ -73,6 +74,7 @@ struct TextEditInput : public FormEditInput {
   bool save(const char *filePath);
   void setCursor(int pos);
   void setCursorRow(int row);
+  void setLineNumbers() { _marginWidth = 1 + (_charWidth * MARGIN_CHARS); }
   void setText(const char *text) { _buf.clear(); _buf.append(text); }
   void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);

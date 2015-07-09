@@ -23,7 +23,6 @@
 #define LINE_BUFFER_SIZE 200
 #define INDENT_LEVEL 2
 #define HELP_WIDTH   22
-#define MARGIN_CHARS 4
 #define THEME_FOREGROUND 0xa7aebc
 #define THEME_BACKGROUND 0x272b33
 #define THEME_SELECTION_BACKGROUND 0x3d4350
@@ -407,6 +406,7 @@ void TextEditInput::insertText(const char *text) {
   int len = strlen(text);
   _buf.insertChars(_state.cursor, text, len);
   _state.cursor += len;
+  stb_text_makeundo_insert(&_state, _state.cursor, len);
 }
 
 void TextEditInput::setCursor(int cursor) {
@@ -450,7 +450,6 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
   if (!_theme) {
     if (_fg == DEFAULT_FOREGROUND && _bg == DEFAULT_BACKGROUND) {
       _theme = new EditTheme();
-      _marginWidth = 1 + (_charWidth * MARGIN_CHARS);
     } else {
       _theme = new EditTheme(_fg, _bg);
     }
@@ -941,7 +940,7 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) 
   TextEditInput(NULL, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
                 chW * HELP_WIDTH, editor->_height),
   _editor(editor) {
-  _theme = new EditTheme(_fg, _bg);
+  _theme = new EditTheme(0x73c990, 0x20242a);
   hide();
 }
 
