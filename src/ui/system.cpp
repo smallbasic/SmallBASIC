@@ -112,8 +112,15 @@ void System::editSource() {
   TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
+
   editWidget->updateUI(NULL, NULL);
   editWidget->setFocus();
+  if (gsb_last_error) {
+    editWidget->setCursorRow(gsb_last_line - 1);
+    helpWidget->setText(gsb_last_errmsg);
+    widget = helpWidget;
+    helpWidget->show();
+  }
   _srcRendered = false;
   _output->clearScreen();
   _output->addInput(editWidget);
@@ -193,10 +200,10 @@ void System::editSource() {
         redraw = widget->edit(event.key, sw, charWidth);
         break;
       }
-      if (event.key == SB_KEY_ENTER && helpWidget->keywordMode() &&
-          helpWidget->isVisible()) {
+      if (event.key == SB_KEY_ENTER && helpWidget->isVisible()) {
         widget = editWidget;
         helpWidget->hide();
+        redraw = true;
       }
       if (editWidget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);
@@ -209,7 +216,7 @@ void System::editSource() {
     }
   }
 
-  if (editWidget->isDirty() && ask("Save changes?")) {
+  if (editWidget->isDirty() && ask("Save changes?", "File has changed")) {
     if (!editWidget->save(_loadPath)) {
       alert("", "Failed to save file");
     }
@@ -595,7 +602,7 @@ void System::runMain(const char *mainBasPath) {
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }
-    if (!isBack() && !isClosing()) {
+    if (!isBack() && !isClosing() && _editMode != kIDE) {
       // load the next network file without displaying the previous result
       bool networkFile = (_loadPath.indexOf("://", 1) != -1);
       if (!_mainBas && !networkFile) {
@@ -745,7 +752,7 @@ void System::showCompletion(bool success) {
 
 void System::showError() {
   _state = kActiveState;
-  if (_mainBas || _editMode != kIDE) {
+  if (_mainBas) {
     _loadPath.empty();
   }
   showSystemScreen(false);

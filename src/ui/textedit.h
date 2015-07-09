@@ -71,7 +71,9 @@ struct TextEditInput : public FormEditInput {
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
   bool save(const char *filePath);
-  void setCursor(int cursor);
+  void setCursor(int pos);
+  void setCursorRow(int row);
+  void setText(const char *text) { _buf.clear(); _buf.append(text); }
   void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);

@@ -49,14 +49,14 @@ const char *helpText =
   "C-z undo\n"
   "C-y redo\n"
   "C-l outline\n"
-  "C-space complete\n"
+  "C-SPC complete\n"
   "A-c change case\n"
   "A-a home\n"
   "A-e end\n"
   "A-s top\n"
   "A-d bottom\n"
   "F9  run\n"
-  "ESC close help";
+  "RET,ESC close help";
 
 //
 // EditTheme
@@ -184,10 +184,11 @@ void TextEditInput::completeWord(const char *word) {
     int start = wordStart();
     int end = _state.cursor;
     int len = end - start;
+    int insertLen = strlen(word) - len;
     bool lastUpper = isupper(_buf._buffer[end - 1]);
 
     insertText(word + len);
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < insertLen; i++) {
       char c = _buf._buffer[i + end];
       _buf._buffer[i + end] = lastUpper ? toupper(c) : tolower(c);
     }
@@ -238,7 +239,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
 
         if (_marginWidth > 0 && selectStart == selectEnd) {
           maSetColor(_theme->_row_cursor);
-          maFillRect(x + _marginWidth, y + baseY, _width, _charHeight);
+          maFillRect(x + _marginWidth, cursorY, _width, _charHeight);
           maSetColor(_theme->_color);
         }
       }
@@ -322,7 +323,7 @@ void TextEditInput::drawText(int x, int y, const char *str, int length) {
   if (_marginWidth > 0) {
     for (int i = 0; i < length; i++) {
       if (str[i] == '\'' || strncasecmp(str + i, "rem", 3) == 0) {
-        maDrawText(x, y, str + i_next, i - i_next - 1);
+        maDrawText(x, y, str + i_next, i - i_next);
         maSetColor(_theme->_syntax_comments);
         length -= i;
         x += (i * _charWidth);
@@ -411,6 +412,21 @@ void TextEditInput::insertText(const char *text) {
 void TextEditInput::setCursor(int cursor) {
   _state.cursor = lineStart(cursor);
   _cursorRow = getCursorRow();
+  _matchingBrace = -1;
+  updateScroll();
+}
+
+void TextEditInput::setCursorRow(int row) {
+  int len = _buf._len;
+  StbTexteditRow r;
+  for (int i = 0, nextRow = 0; i < len; i += r.num_chars, nextRow++) {
+    layout(&r, i);
+    if (row == nextRow) {
+      _state.cursor = i;
+      break;
+    }
+  }
+  _cursorRow = row;
   _matchingBrace = -1;
   updateScroll();
 }

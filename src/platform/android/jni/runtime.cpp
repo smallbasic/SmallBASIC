@@ -190,7 +190,8 @@ void Runtime::alert(const char *title, const char *message) {
   _app->activity->vm->DetachCurrentThread();
 }
 
-bool Runtime::ask(const char *prompt, const char *accept, const char *cancel) {
+bool Runtime::ask(const char *prompt, const char *title,
+                  const char *accept, const char *cancel) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);

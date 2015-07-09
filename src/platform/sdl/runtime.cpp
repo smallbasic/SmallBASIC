@@ -82,7 +82,8 @@ void Runtime::alert(const char *title, const char *message) {
   SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
 }
 
-bool Runtime::ask(const char *prompt, const char *accept, const char *cancel) {
+bool Runtime::ask(const char *prompt, const char *title,
+                  const char *accept, const char *cancel) {
   SDL_MessageBoxButtonData buttons[2];
   memset(&buttons[0], 0, sizeof(SDL_MessageBoxButtonData));
   memset(&buttons[1], 0, sizeof(SDL_MessageBoxButtonData));
@@ -94,7 +95,7 @@ bool Runtime::ask(const char *prompt, const char *accept, const char *cancel) {
   SDL_MessageBoxData data;
   memset(&data, 0, sizeof(SDL_MessageBoxData));
   data.window = _window;
-  data.title = "SmallBASIC";
+  data.title = title;
   data.message = prompt;
   data.flags = SDL_MESSAGEBOX_INFORMATION;
   data.numbuttons = 2;
