@@ -98,19 +98,20 @@ protected:
   void drawLineNumber(int x, int y, int row, bool selected);
   void editDeleteLine();
   void editEnter();
-  void editNavigate(bool pageDown, bool shift);
   void editTab();
   void findMatchingBrace();
-  int getCursorRow() const;
-  int getIndent(char *spaces, int len, int pos);
-  int getLineChars(StbTexteditRow *row, int pos);
+  int  getCursorRow() const;
+  int  getIndent(char *spaces, int len, int pos);
+  int  getLineChars(StbTexteditRow *row, int pos);
   char *getSelection(int *start, int *end);
+  void lineNavigate(bool lineDown);
   char *lineText(int pos);
-  int lineEnd(int pos) { return linePos(pos, true); }
-  int linePos(int pos, bool end, bool excludeBreak=true);
-  int lineStart(int pos) { return linePos(pos, false); }
-  int wordStart();
+  int  lineEnd(int pos) { return linePos(pos, true); }
+  int  linePos(int pos, bool end, bool excludeBreak=true);
+  int  lineStart(int pos) { return linePos(pos, false); }
+  void pageNavigate(bool pageDown, bool shift);
   void updateScroll();
+  int wordStart();
 
   EditBuffer _buf;
   STB_TexteditState _state;

@@ -22,8 +22,7 @@ struct Runtime : public System {
   virtual ~Runtime();
 
   void alert(const char *title, const char *message);
-  bool ask(const char *prompt, const char *title,
-           const char *accept, const char *cancel);
+  bool ask(const char *title, const char *prompt);
   void construct(const char *font, const char *boldFont);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
@@ -36,7 +35,7 @@ struct Runtime : public System {
   void pushEvent(MAEvent *event);
   void setWindowTitle(const char *title);
   void showCursor(bool hand);
-  int runShell(const char *startupBas, int fontScale);
+  int runShell(const char *startupBas, bool editMode, int fontScale);
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void onResize(int w, int h);

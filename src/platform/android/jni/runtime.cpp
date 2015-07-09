@@ -183,25 +183,22 @@ void Runtime::alert(const char *title, const char *message) {
   jmethodID method = env->GetMethodID(clazz, "showAlert",
                                       "(Ljava/lang/String;Ljava/lang/String;)V");
   env->CallVoidMethod(_app->activity->clazz, method, titleString, messageString);
-
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(messageString);
   env->DeleteLocalRef(titleString);
   _app->activity->vm->DetachCurrentThread();
 }
 
-bool Runtime::ask(const char *prompt, const char *title,
-                  const char *accept, const char *cancel) {
+bool Runtime::ask(const char *title, const char *prompt) {,
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "ask",
-                         "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z");
+                                        "(Ljava/lang/String;Ljava/lang/String;)Z");
   jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId,
-                                                      prompt, accept, cancel);
+                                                      title, prompt);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
-
   return result;
 }
 

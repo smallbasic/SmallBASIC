@@ -361,11 +361,17 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     break;
   case SB_KEY_SHIFT(SB_KEY_PGUP):
   case SB_KEY_PGUP:
-    editNavigate(false, key == (int)SB_KEY_SHIFT(SB_KEY_PGUP));
+    pageNavigate(false, key == (int)SB_KEY_SHIFT(SB_KEY_PGUP));
     return true;
   case SB_KEY_SHIFT(SB_KEY_PGDN):
   case SB_KEY_PGDN:
-    editNavigate(true, key == (int)SB_KEY_SHIFT(SB_KEY_PGDN));
+    pageNavigate(true, key == (int)SB_KEY_SHIFT(SB_KEY_PGDN));
+    return true;
+  case SB_KEY_ALT(SB_KEY_UP):
+    lineNavigate(false);
+    return true;
+  case SB_KEY_ALT(SB_KEY_DN):
+    lineNavigate(true);
     return true;
   case SB_KEY_ENTER:
     editEnter();
@@ -605,35 +611,6 @@ void TextEditInput::editEnter() {
       _state.cursor += indent;
     }
   }
-}
-
-void TextEditInput::editNavigate(bool pageDown, bool shift) {
-  int pageRows = (_height / _charHeight) + 1;
-  int nextRow = _cursorRow + (pageDown ? pageRows : -pageRows);
-  if (nextRow < 0) {
-    nextRow = 0;
-  }
-
-  StbTexteditRow r;
-  int len = _buf._len;
-  int row = 0;
-  int i = 0;
-
-  for (; i < len && row != nextRow; i += r.num_chars, row++) {
-    layout(&r, i);
-  }
-
-  if (shift) {
-    if (_state.select_start == _state.select_end) {
-      _state.select_start = _state.cursor;
-    }
-    _state.select_end = i;
-  } else {
-    _state.select_start = _state.select_end;
-  }
-  _state.cursor = i;
-  _cursorRow = row;
-  updateScroll();
 }
 
 void TextEditInput::editTab() {
@@ -879,6 +856,12 @@ char *TextEditInput::getWordBeforeCursor() {
   return result;
 }
 
+void TextEditInput::lineNavigate(bool lineDown) {
+  // TODO
+  //_cursorRow += lineDown ? 1 : (_cursorRow > 0 ? 1 : 0);
+  updateScroll();
+}
+
 char *TextEditInput::lineText(int pos) {
   StbTexteditRow r;
   int len = _buf._len;
@@ -915,6 +898,35 @@ int TextEditInput::linePos(int pos, bool end, bool excludeBreak) {
     }
   }
   return start;
+}
+
+void TextEditInput::pageNavigate(bool pageDown, bool shift) {
+  int pageRows = (_height / _charHeight) + 1;
+  int nextRow = _cursorRow + (pageDown ? pageRows : -pageRows);
+  if (nextRow < 0) {
+    nextRow = 0;
+  }
+
+  StbTexteditRow r;
+  int len = _buf._len;
+  int row = 0;
+  int i = 0;
+
+  for (; i < len && row != nextRow; i += r.num_chars, row++) {
+    layout(&r, i);
+  }
+
+  if (shift) {
+    if (_state.select_start == _state.select_end) {
+      _state.select_start = _state.cursor;
+    }
+    _state.select_end = i;
+  } else {
+    _state.select_start = _state.select_end;
+  }
+  _state.cursor = i;
+  _cursorRow = row;
+  updateScroll();
 }
 
 void TextEditInput::updateScroll() {

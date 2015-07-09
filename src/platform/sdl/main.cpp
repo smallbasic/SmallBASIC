@@ -41,11 +41,12 @@ const char* FONTS[] = {
 static struct option OPTIONS[] = {
   {"help",     no_argument,       NULL, 'h'},
   {"verbose",  no_argument,       NULL, 'v'},
+  {"keywords", no_argument,       NULL, 'k'},
   {"command",  optional_argument, NULL, 'c'},
   {"font",     optional_argument, NULL, 'f'},
   {"run",      optional_argument, NULL, 'r'},
   {"module",   optional_argument, NULL, 'm'},
-  {"keywords", no_argument,       NULL, 'k'},
+  {"edit",     optional_argument, NULL, 'e'},
   {0, 0, 0, 0}
 };
 
@@ -231,10 +232,11 @@ int main(int argc, char* argv[]) {
 
   char *fontFamily = NULL;
   char *runFile = NULL;
+  bool editMode = false;
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vhc:f:r:m:k", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -269,6 +271,10 @@ int main(int argc, char* argv[]) {
       break;
     case 'r':
       runFile = strdup(optarg);
+      break;
+    case 'e':
+      runFile = strdup(optarg);
+      editMode = true;
       break;
     case 'm':
       opt_loadmod = 1;
@@ -305,7 +311,7 @@ int main(int argc, char* argv[]) {
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      fontScale = runtime->runShell(runFile, fontScale);
+      fontScale = runtime->runShell(runFile, editMode, fontScale);
       delete runtime;
     } else {
       fprintf(stderr, "Failed to locate display font\n");

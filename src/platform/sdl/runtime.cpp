@@ -82,14 +82,13 @@ void Runtime::alert(const char *title, const char *message) {
   SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
 }
 
-bool Runtime::ask(const char *prompt, const char *title,
-                  const char *accept, const char *cancel) {
+bool Runtime::ask(const char *title, const char *prompt) {
   SDL_MessageBoxButtonData buttons[2];
   memset(&buttons[0], 0, sizeof(SDL_MessageBoxButtonData));
   memset(&buttons[1], 0, sizeof(SDL_MessageBoxButtonData));
-  buttons[0].text = accept;
+  buttons[0].text = "Yes";
   buttons[0].buttonid = 0;
-  buttons[1].text = cancel;
+  buttons[1].text = "No";
   buttons[1].buttonid = 1;
 
   SDL_MessageBoxData data;
@@ -140,7 +139,7 @@ MAEvent *Runtime::popEvent() {
   return _eventQueue->pop();
 }
 
-int Runtime::runShell(const char *startupBas, int fontScale) {
+int Runtime::runShell(const char *startupBas, bool editMode, int fontScale) {
   logEntered();
 
   os_graphics = 1;
@@ -175,7 +174,11 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
 
   if (startupBas != NULL) {
     String bas = startupBas;
-    runOnce(bas.c_str());
+    if (editMode) {
+      runEdit(bas.c_str());
+    } else {
+      runOnce(bas.c_str());
+    }
     while (_state == kRestartState) {
       _state = kActiveState;
       if (_loadPath.length() != 0) {

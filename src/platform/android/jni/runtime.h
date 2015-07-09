@@ -22,8 +22,7 @@ struct Runtime : public System {
   virtual ~Runtime();
 
   void alert(const char *title, const char *message);
-  bool ask(const char *prompt, const char *title,
-           const char *accept, const char *cancel);
+  bool ask(const char *title, const char *prompt);
   void clearSoundQueue();
   void construct();
   bool getUntrusted();

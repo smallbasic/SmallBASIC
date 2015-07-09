@@ -43,8 +43,7 @@ struct System {
   AnsiWidget *getOutput() { return _output; }
 
   virtual void alert(const char *title, const char *message) = 0;
-  virtual bool ask(const char *prompt, const char *title="SmallBASIC",
-                   const char *accept="Yes", const char *cancel="No") = 0;
+  virtual bool ask(const char *title, const char *prompt) = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
@@ -55,13 +54,14 @@ struct System {
 
 protected:
   void checkModifiedTime();
-  void editSource();
+  void editSource(strlib::String &loadPath);
   bool execute(const char *bas);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
   void handleMenu(int menuId);
   void resize();
+  void runEdit(const char *startupBas);
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
   void setPath(const char *filename);

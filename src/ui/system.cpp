@@ -84,15 +84,15 @@ void System::checkModifiedTime() {
   }
 }
 
-void System::editSource() {
+void System::editSource(strlib::String &loadPath) {
   logEntered();
 
   strlib::String fileName;
-  int i = _loadPath.lastIndexOf('/', 0);
+  int i = loadPath.lastIndexOf('/', 0);
   if (i != -1) {
-    fileName = _loadPath.substring(i + 1);
+    fileName = loadPath.substring(i + 1);
   } else {
-    fileName = _loadPath;
+    fileName = loadPath;
   }
 
   strlib::String dirtyFile;
@@ -116,7 +116,7 @@ void System::editSource() {
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
   editWidget->setFocus();
-  if (strcmp(gsb_last_file, _loadPath.c_str()) == 0) {
+  if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
     editWidget->setCursorRow(gsb_last_line - 1);
   }
   if (gsb_last_error && !isBack()) {
@@ -173,7 +173,7 @@ void System::editSource() {
         _state = kRunState;
         // fallthrough
       case SB_KEY_CTRL('s'):
-        if (!editWidget->save(_loadPath)) {
+        if (!editWidget->save(loadPath)) {
           alert("", "Failed to save file");
         }
         break;
@@ -221,7 +221,7 @@ void System::editSource() {
   }
 
   if (editWidget->isDirty() && ask("Save changes?", "File has changed")) {
-    if (!editWidget->save(_loadPath)) {
+    if (!editWidget->save(loadPath)) {
       alert("", "Failed to save file");
     }
   }
@@ -559,6 +559,28 @@ void System::resize() {
   }
 }
 
+void System::runEdit(const char *startupBas) {
+  logEntered();
+  _mainBas = false;
+  String loadPath = startupBas;
+
+  while (true) {
+    if (readSource(startupBas) != NULL) {
+      editSource(loadPath);
+      if (isBack() || isClosing()) {
+        break;
+      } else {
+        do {
+          execute(startupBas);
+        } while (isRestart());
+      }
+    } else {
+      alert("Error", "Failed to load file");
+      break;
+    }
+  }
+}
+
 void System::runMain(const char *mainBasPath) {
   logEntered();
 
@@ -570,7 +592,7 @@ void System::runMain(const char *mainBasPath) {
 
   bool started = execute(_loadPath);
   if (!started) {
-    alert("", gsb_last_errmsg);
+    alert("Error", gsb_last_errmsg);
     _state = kClosingState;
   }
 
@@ -592,7 +614,7 @@ void System::runMain(const char *mainBasPath) {
 
     if (!_mainBas && _editMode == kIDE && !isRestart() &&
         readSource(_loadPath) != NULL) {
-      editSource();
+      editSource(_loadPath);
       if (isBack()) {
         _loadPath.empty();
         _state = kActiveState;

@@ -21,6 +21,8 @@ extern System *g_system;
 #define WINDOW_SCREEN2  "graphicsScreen2"
 #define WINDOW_SCREEN3  "textScreen"
 #define WINDOW_ALERT    "alert"
+#define WINDOW_ASK      "ask"
+#define WINDOW_ASK_RTN  "answer"
 #define WINDOW_MENU     "menu"
 #define WINDOW_MESSAGE  "message"
 #define WINDOW_VKEYPAD  "showKeypad"
@@ -98,6 +100,16 @@ void cmd_window_alert(var_s *self) {
   delete items;
 }
 
+void cmd_window_ask(var_s *self) {
+  StringList *items = get_items();
+  if (!prog_error && items->size() > 0) {
+    const char *message = items->size() > 0 ? (*items)[0]->c_str() : "";
+    const char *title   = items->size() > 1 ? (*items)[1]->c_str() : "";
+    map_set_int(self, WINDOW_ASK_RTN, g_system->ask(title, message));
+  }
+  delete items;
+}
+
 void cmd_window_menu(var_s *self) {
   StringList *items = get_items();
   if (!prog_error && items->size() > 0) {
@@ -138,6 +150,11 @@ extern "C" void v_create_window(var_p_t var) {
   v_alert->type = V_FUNC;
   v_alert->v.fn.self = var;
   v_alert->v.fn.cb = cmd_window_alert;
+
+  var_p_t v_ask = map_add_var(var, WINDOW_ASK, 0);
+  v_ask->type = V_FUNC;
+  v_ask->v.fn.self = var;
+  v_ask->v.fn.cb = cmd_window_ask;
 
   var_p_t v_message = map_add_var(var, WINDOW_MESSAGE, 0);
   v_message->type = V_FUNC;
