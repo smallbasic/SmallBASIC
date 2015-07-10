@@ -318,7 +318,8 @@ void Runtime::pollEvents(bool blocking) {
         setExit(true);
         break;
       case SDL_KEYDOWN:
-        if (ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL) && !isEditing()) {
+        if (!isEditing() && ev.key.keysym.sym == SDLK_c
+            && (ev.key.keysym.mod & KMOD_CTRL)) {
           setExit(true);
         } else if (ev.key.keysym.sym == SDLK_m && (ev.key.keysym.mod & KMOD_CTRL)) {
           showMenu();
@@ -328,13 +329,17 @@ void Runtime::pollEvents(bool blocking) {
                    get_focus_edit() == NULL &&
                    ((ev.key.keysym.mod & KMOD_CTRL) || !isRunning())) {
           setBack();
-        } else if (ev.key.keysym.sym == SDLK_PAGEUP && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_PAGEUP &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(true, true);
-        } else if (ev.key.keysym.sym == SDLK_PAGEDOWN && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_PAGEDOWN &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(false, true);
-        } else if (ev.key.keysym.sym == SDLK_UP && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_UP &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(true, false);
-        } else if (ev.key.keysym.sym == SDLK_DOWN && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_DOWN &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(false, false);
         } else if (ev.key.keysym.sym == SDLK_p && (ev.key.keysym.mod & KMOD_CTRL)) {
           ::screen_dump();

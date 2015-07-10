@@ -37,25 +37,23 @@
 
 const char *helpText =
   "C-a select-all\n"
-  "C-b back\n"
+  "C-b back, exit\n"
   "C-k delete line\n"
   "C-d delete char\n"
-  "C-r run\n"
   "C-s save\n"
   "C-x cut\n"
   "C-c copy\n"
   "C-v paste\n"
   "C-z undo\n"
   "C-y redo\n"
+  "C-f find, find-next\n"
   "C-l outline\n"
   "C-SPC complete\n"
+  "C-home top\n"
+  "C-end bottom\n"
   "A-c change case\n"
-  "A-a home\n"
-  "A-e end\n"
-  "A-s top\n"
-  "A-d bottom\n"
-  "F9  run\n"
-  "RET,ESC close help";
+  "SHIFT-<arrow> select\n"
+  "F9, C-r run\n";
 
 //
 // EditTheme
@@ -117,6 +115,7 @@ void EditBuffer::clear() {
 int EditBuffer::deleteChars(int pos, int num) {
   memmove(&_buffer[pos], &_buffer[pos+num], _len - (pos + num));
   _len -= num;
+  _buffer[_len] = '\0';
   _in->setDirty(true);
   return 1;
 }
@@ -341,17 +340,11 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     _state.select_start = 0;
     _state.select_end = _buf._len;
     break;
-  case SB_KEY_ALT('a'):
-    stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_LINESTART);
-    break;
   case SB_KEY_ALT('c'):
     changeCase();
     break;
   case SB_KEY_CTRL('d'):
     stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_DELETE);
-    break;
-  case SB_KEY_ALT('e'):
-    stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_LINEEND);
     break;
   case SB_KEY_CTRL('k'):
     editDeleteLine();
@@ -388,6 +381,27 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   updateScroll();
   findMatchingBrace();
   return true;
+}
+
+void TextEditInput::find(const char *word, bool next) {
+  if (_buf._buffer != NULL && word != NULL) {
+    const char *found = strstr(_buf._buffer + _state.cursor, word);
+    if (next && found != NULL) {
+      // skip to next word
+      found = strstr(found + strlen(word), word);
+    }
+    if (found == NULL) {
+      // start over
+      found = strstr(_buf._buffer, word);
+    }
+    if (found != NULL) {
+      _state.cursor = found - _buf._buffer;
+      _state.select_start = _state.cursor;
+      _state.select_end = _state.cursor + strlen(word);
+      _cursorRow = getCursorRow();
+      updateScroll();
+    }
+  }
 }
 
 bool TextEditInput::save(const char *filePath) {
@@ -963,39 +977,43 @@ TextEditHelpWidget::~TextEditHelpWidget() {
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   bool result = false;
 
-  switch (key) {
-  case STB_TEXTEDIT_K_LEFT:
-  case STB_TEXTEDIT_K_RIGHT:
-  case STB_TEXTEDIT_K_UP:
-  case STB_TEXTEDIT_K_DOWN:
-  case STB_TEXTEDIT_K_PGUP:
-  case STB_TEXTEDIT_K_PGDOWN:
-  case STB_TEXTEDIT_K_LINESTART:
-  case STB_TEXTEDIT_K_LINEEND:
-  case STB_TEXTEDIT_K_TEXTSTART:
-  case STB_TEXTEDIT_K_TEXTEND:
-  case STB_TEXTEDIT_K_WORDLEFT:
-  case STB_TEXTEDIT_K_WORDRIGHT:
+  if (_mode == kSearch) {
     result = TextEditInput::edit(key, screenWidth, charWidth);
-    if (_mode == kOutline && _outline.size()) {
-      int cursor = (intptr_t)_outline[_cursorRow - 1];
-      _editor->setCursor(cursor);
-    }
-    break;
-  case SB_KEY_ENTER:
-    if (_mode == kKeywords) {
-      // paste the keyword into the editor
-      char *text = lineText(_state.cursor);
-      if (text[0] != '\0' && text[0] != '[') {
-        _editor->completeWord(text);
+    _editor->find(_buf._buffer, key == SB_KEY_ENTER);
+  } else {
+    switch (key) {
+    case STB_TEXTEDIT_K_LEFT:
+    case STB_TEXTEDIT_K_RIGHT:
+    case STB_TEXTEDIT_K_UP:
+    case STB_TEXTEDIT_K_DOWN:
+    case STB_TEXTEDIT_K_PGUP:
+    case STB_TEXTEDIT_K_PGDOWN:
+    case STB_TEXTEDIT_K_LINESTART:
+    case STB_TEXTEDIT_K_LINEEND:
+    case STB_TEXTEDIT_K_TEXTSTART:
+    case STB_TEXTEDIT_K_TEXTEND:
+    case STB_TEXTEDIT_K_WORDLEFT:
+    case STB_TEXTEDIT_K_WORDRIGHT:
+      result = TextEditInput::edit(key, screenWidth, charWidth);
+      if (_mode == kOutline && _outline.size()) {
+        int cursor = (intptr_t)_outline[_cursorRow - 1];
+        _editor->setCursor(cursor);
       }
-      free((void *)text);
-      result = true;
+      break;
+    case SB_KEY_ENTER:
+      if (_mode == kKeywords) {
+        // paste the keyword into the editor
+        char *text = lineText(_state.cursor);
+        if (text[0] != '\0' && text[0] != '[') {
+          _editor->completeWord(text);
+        }
+        free((void *)text);
+        result = true;
+      }
+      break;
+    default:
+      break;
     }
-    break;
-  default:
-    result = false;
-    break;
   }
   return result;
 }
@@ -1111,10 +1129,18 @@ void TextEditHelpWidget::createOutline() {
   }
 }
 
+void TextEditHelpWidget::createSearch() {
+  if (_mode == kSearch) {
+    _editor->find(_buf._buffer, true);
+  } else {
+    reset(kSearch);
+  }
+}
+
 void TextEditHelpWidget::reset(HelpMode mode) {
-  stb_textedit_clear_state(&_state, false);
-  _mode = mode;
+  stb_textedit_clear_state(&_state, mode == kSearch);
   _outline.emptyList();
+  _mode = mode;
   _buf.clear();
   _scroll = 0;
   _matchingBrace = -1;

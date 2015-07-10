@@ -161,12 +161,7 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_ESCAPE:
         widget = editWidget;
         helpWidget->hide();
-        break;
-      case SB_KEY_F(1):
-      case SB_KEY_CTRL('h'):
-        widget = helpWidget;
-        helpWidget->createHelp();
-        helpWidget->show();
+        dirty = true;
         break;
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
@@ -185,12 +180,27 @@ void System::editSource(strlib::String &loadPath) {
           free(text);
         }
         break;
+      case SB_KEY_F(1):
+      case SB_KEY_CTRL('h'):
+        _output->setStatus("Keystroke help. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createHelp();
+        helpWidget->show();
+        break;
       case SB_KEY_CTRL('l'):
+        _output->setStatus("Program outline. Esc=Close");
         widget = helpWidget;
         helpWidget->createOutline();
         helpWidget->show();
         break;
+      case SB_KEY_CTRL('f'):
+        _output->setStatus("Find in buffer. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createSearch();
+        helpWidget->show();
+        break;
       case SB_KEY_CTRL(' '):
+        _output->setStatus("Keyword help. Esc=Close");
         widget = helpWidget;
         helpWidget->createKeywordHelp();
         helpWidget->show();
@@ -204,10 +214,12 @@ void System::editSource(strlib::String &loadPath) {
         redraw = widget->edit(event.key, sw, charWidth);
         break;
       }
-      if (event.key == SB_KEY_ENTER && helpWidget->isVisible()) {
+      if (event.key == SB_KEY_ENTER && !helpWidget->searchMode()
+          && helpWidget->isVisible()) {
         widget = editWidget;
         helpWidget->hide();
         redraw = true;
+        dirty = true;
       }
       if (editWidget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);

@@ -68,7 +68,7 @@ struct TextEditInput : public FormEditInput {
   void draw(int x, int y, int w, int h, int chw);
   void drawText(int x, int y, const char *str, int length);
   bool edit(int key, int screenWidth, int charWidth);
-  void expandWord();
+  void find(const char *word, bool next);
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
   bool save(const char *filePath);
@@ -133,12 +133,14 @@ struct TextEditHelpWidget : public TextEditInput {
   enum HelpMode {
     kHelp,
     kKeywords,
-    kOutline
+    kOutline,
+    kSearch
   };
 
   void createHelp();
   void createKeywordHelp();
   void createOutline();
+  void createSearch();
   bool edit(int key, int screenWidth, int charWidth);
   char *copy(bool cut) { return NULL; }
   void paste(char *text) {}
@@ -146,6 +148,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void resize(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);
   bool keywordMode() const { return _mode == kKeywords; }
+  bool searchMode() const { return _mode == kSearch; }
 
 private:
   HelpMode _mode;
@@ -162,8 +165,8 @@ private:
 #define STB_TEXTEDIT_K_LINEEND    SB_KEY_END
 #define STB_TEXTEDIT_K_DELETE     SB_KEY_DELETE
 #define STB_TEXTEDIT_K_BACKSPACE  SB_KEY_BACKSPACE
-#define STB_TEXTEDIT_K_TEXTSTART  SB_KEY_ALT('s')
-#define STB_TEXTEDIT_K_TEXTEND    SB_KEY_ALT('d')
+#define STB_TEXTEDIT_K_TEXTSTART  SB_KEY_CTRL(SB_KEY_HOME)
+#define STB_TEXTEDIT_K_TEXTEND    SB_KEY_CTRL(SB_KEY_END)
 #define STB_TEXTEDIT_K_UNDO       SB_KEY_CTRL('z')
 #define STB_TEXTEDIT_K_REDO       SB_KEY_CTRL('y')
 #define STB_TEXTEDIT_K_INSERT     SB_KEY_INSERT
