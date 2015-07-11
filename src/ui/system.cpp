@@ -188,7 +188,7 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_CTRL('l'):
-        _output->setStatus("Program outline. Esc=Close");
+        _output->setStatus("Outline. Esc=Close");
         widget = helpWidget;
         helpWidget->createOutline();
         helpWidget->show();
@@ -210,6 +210,14 @@ void System::editSource(strlib::String &loadPath) {
         widget->paste(text);
         free(text);
         break;
+      case SB_KEY_CTRL('o'):
+        _output->selectScreen(USER_SCREEN1);
+        showCompletion(true);
+        _output->redraw();
+        waitForBack();
+        _output->selectScreen(SOURCE_SCREEN);
+        _state = kEditState;
+        break;
       default:
         redraw = widget->edit(event.key, sw, charWidth);
         break;
@@ -230,11 +238,19 @@ void System::editSource(strlib::String &loadPath) {
         _output->redraw();
       }
     }
-  }
 
-  if (editWidget->isDirty() && ask("Save changes?", "File has changed")) {
-    if (!editWidget->save(loadPath)) {
-      alert("", "Failed to save file");
+    if ((isBack() || isClosing()) && editWidget->isDirty()) {
+      const char *message = "The current file has not been saved.\n"
+                            "Would you like to save it now?";
+      int choice = ask("Save changes?", message, isBack());
+      if (choice == 0) {
+        if (!editWidget->save(loadPath)) {
+          alert("", "Failed to save file");
+        }
+      } else if (choice == 2) {
+        // cancel
+        _state = kEditState;
+      }
     }
   }
 
@@ -657,10 +673,7 @@ void System::runMain(const char *mainBasPath) {
         }
       }
       if (!_mainBas && !networkFile) {
-        // press back to continue
-        while (!isBack() && !isClosing() && !isRestart()) {
-          getNextEvent();
-        }
+        waitForBack();
       }
     }
   }
@@ -677,10 +690,7 @@ void System::runOnce(const char *startupBas) {
     if (_state == kActiveState) {
       showCompletion(success);
     }
-    // press back to continue
-    while (!isBack() && !isClosing() && !isRestart()) {
-      getNextEvent();
-    }
+    waitForBack();
     restart = isRestart();
   }
 }
@@ -887,6 +897,27 @@ void System::showMenu() {
   }
 }
 
+void System::showSystemScreen(bool showSrc) {
+  int prevScreenId;
+  if (showSrc) {
+    prevScreenId = _output->selectBackScreen(SOURCE_SCREEN);
+    printSource();
+    _output->selectBackScreen(prevScreenId);
+    _output->selectFrontScreen(SOURCE_SCREEN);
+  } else {
+    prevScreenId = _output->selectFrontScreen(CONSOLE_SCREEN);
+  }
+  if (_userScreenId == -1) {
+    _userScreenId = prevScreenId;
+  }
+}
+
+void System::waitForBack() {
+  while (!isBack() && !isClosing() && !isRestart()) {
+    getNextEvent();
+  }
+}
+
 void System::printErrorLine() {
   if (_programSrc) {
     int line = 1;
@@ -1015,21 +1046,6 @@ void System::setRestart() {
     brun_break();
   }
   _state = kRestartState;
-}
-
-void System::showSystemScreen(bool showSrc) {
-  int prevScreenId;
-  if (showSrc) {
-    prevScreenId = _output->selectBackScreen(SOURCE_SCREEN);
-    printSource();
-    _output->selectBackScreen(prevScreenId);
-    _output->selectFrontScreen(SOURCE_SCREEN);
-  } else {
-    prevScreenId = _output->selectFrontScreen(CONSOLE_SCREEN);
-  }
-  if (_userScreenId == -1) {
-    _userScreenId = prevScreenId;
-  }
 }
 
 void System::systemPrint(const char *format, ...) {

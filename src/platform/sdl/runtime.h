@@ -22,7 +22,7 @@ struct Runtime : public System {
   virtual ~Runtime();
 
   void alert(const char *title, const char *message);
-  bool ask(const char *title, const char *prompt);
+  int ask(const char *title, const char *prompt, bool cancel);
   void construct(const char *font, const char *boldFont);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);

@@ -82,14 +82,19 @@ void Runtime::alert(const char *title, const char *message) {
   SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
 }
 
-bool Runtime::ask(const char *title, const char *prompt) {
-  SDL_MessageBoxButtonData buttons[2];
+int Runtime::ask(const char *title, const char *prompt, bool cancel) {
+  SDL_MessageBoxButtonData buttons[cancel ? 3: 2];
   memset(&buttons[0], 0, sizeof(SDL_MessageBoxButtonData));
   memset(&buttons[1], 0, sizeof(SDL_MessageBoxButtonData));
   buttons[0].text = "Yes";
   buttons[0].buttonid = 0;
   buttons[1].text = "No";
   buttons[1].buttonid = 1;
+  if (cancel) {
+    memset(&buttons[2], 0, sizeof(SDL_MessageBoxButtonData));
+    buttons[2].text = "Cancel";
+    buttons[2].buttonid = 2;
+  }
 
   SDL_MessageBoxData data;
   memset(&data, 0, sizeof(SDL_MessageBoxData));
@@ -97,13 +102,12 @@ bool Runtime::ask(const char *title, const char *prompt) {
   data.title = title;
   data.message = prompt;
   data.flags = SDL_MESSAGEBOX_INFORMATION;
-  data.numbuttons = 2;
+  data.numbuttons = cancel ? 3 : 2;
   data.buttons = buttons;
 
-  int buttonid;
-  SDL_ShowMessageBox(&data, &buttonid);
-
-  return buttonid == 0;
+  int buttonId;
+  SDL_ShowMessageBox(&data, &buttonId);
+  return buttonId;
 }
 
 void Runtime::construct(const char *font, const char *boldFont) {

@@ -43,7 +43,7 @@ struct System {
   AnsiWidget *getOutput() { return _output; }
 
   virtual void alert(const char *title, const char *message) = 0;
-  virtual bool ask(const char *title, const char *prompt) = 0;
+  virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
@@ -74,8 +74,9 @@ protected:
   void printSource();
   void printSourceLine(char *text, int line, bool last);
   void setRestart();
-  void showSystemScreen(bool showSrc);
   void showMenu();
+  void showSystemScreen(bool showSrc);
+  void waitForBack();
   AnsiWidget *_output;
 
   enum {
