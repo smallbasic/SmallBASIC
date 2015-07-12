@@ -361,10 +361,10 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_PGDN:
     pageNavigate(true, key == (int)SB_KEY_SHIFT(SB_KEY_PGDN));
     return true;
-  case SB_KEY_ALT(SB_KEY_UP):
+  case SB_KEY_CTRL(SB_KEY_UP):
     lineNavigate(false);
     return true;
-  case SB_KEY_ALT(SB_KEY_DN):
+  case SB_KEY_CTRL(SB_KEY_DN):
     lineNavigate(true);
     return true;
   case SB_KEY_ENTER:
@@ -872,9 +872,26 @@ char *TextEditInput::getWordBeforeCursor() {
 }
 
 void TextEditInput::lineNavigate(bool lineDown) {
-  // TODO
-  //_cursorRow += lineDown ? 1 : (_cursorRow > 0 ? 1 : 0);
-  updateScroll();
+  if (lineDown) {
+    for (int i = _state.cursor; i < _buf._len; i++) {
+      if (_buf._buffer[i] == '\n' && i + 1 < _buf._len) {
+        _state.cursor = i + 1;
+        _scroll += 1;
+        break;
+      }
+    }
+  } else if (_scroll > 0) {
+    int newLines = 0;
+    int i = _state.cursor - 1;
+    while (i > 0) {
+      if (_buf._buffer[i] == '\n' && ++newLines == 2) {
+        break;
+      }
+      i--;
+    }
+    _state.cursor = i == 0 ? 0 : i + 1;
+    _scroll -= 1;
+  }
 }
 
 char *TextEditInput::lineText(int pos) {

@@ -200,7 +200,7 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_CTRL(' '):
-        _output->setStatus("Keyword help. Esc=Close");
+        _output->setStatus("Auto-complete. Esc=Close");
         widget = helpWidget;
         helpWidget->createKeywordHelp();
         helpWidget->show();
