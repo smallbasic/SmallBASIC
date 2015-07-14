@@ -87,6 +87,7 @@ void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale) {
     rect.h = nextInteger(fp, DEFAULT_HEIGHT);
     fontScale = nextInteger(fp, DEFAULT_SCALE);
     opt_mute_audio = nextInteger(fp, 0);
+    opt_ide = nextInteger(fp, 0);
     fclose(fp);
   } else {
     rect.x = SDL_WINDOWPOS_UNDEFINED;
@@ -94,6 +95,8 @@ void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale) {
     rect.w = DEFAULT_WIDTH;
     rect.h = DEFAULT_HEIGHT;
     fontScale = DEFAULT_SCALE;
+    opt_mute_audio = 0;
+    opt_ide = IDE_NONE;
   }
 }
 
@@ -106,7 +109,7 @@ void saveSettings(const char *configName, SDL_Window *window, int fontScale) {
     int x, y, w, h;
     SDL_GetWindowPosition(window, &x, &y);
     SDL_GetWindowSize(window, &w, &h);
-    fprintf(fp, "%d,%d,%d,%d,%d,%d\n", x, y, w, h, fontScale, opt_mute_audio);
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d\n", x, y, w, h, fontScale, opt_mute_audio, opt_ide);
     fclose(fp);
   }
 }

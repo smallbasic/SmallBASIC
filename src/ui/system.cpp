@@ -59,7 +59,6 @@ System::System() :
   _overruns(0),
   _userScreenId(-1),
   _systemMenu(NULL),
-  _editMode(kNone),
   _mainBas(false),
   _buttonPressed(false),
   _srcRendered(false),
@@ -78,7 +77,7 @@ System::~System() {
 }
 
 void System::checkModifiedTime() {
-  if (_editMode == kLiveMode && _activeFile.length() > 0 &&
+  if (opt_ide == IDE_EXTERNAL && _activeFile.length() > 0 &&
       _modifiedTime != getModifiedTime()) {
     setRestart();
   }
@@ -453,8 +452,8 @@ void System::handleMenu(int menuId) {
     }
     break;
   case MENU_EDITMODE:
-		_editMode = (_editMode == kNone ? kIDE :
-                 _editMode == kIDE ? kLiveMode : kNone);
+    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
+               opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
@@ -519,7 +518,7 @@ void System::handleEvent(MAEvent &event) {
     _output->flush(false);
     break;
   }
-  if (_editMode == kLiveMode) {
+  if (opt_ide == IDE_EXTERNAL) {
     checkModifiedTime();
   }
 }
@@ -640,7 +639,7 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
-    if (!_mainBas && _editMode == kIDE && !isRestart() &&
+    if (!_mainBas && opt_ide == IDE_INTERNAL && !isRestart() &&
         readSource(_loadPath) != NULL) {
       editSource(_loadPath);
       if (isBack()) {
@@ -656,7 +655,7 @@ void System::runMain(const char *mainBasPath) {
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }
-    if (!isBack() && !isClosing() && _editMode != kIDE) {
+    if (!isBack() && !isClosing() && opt_ide != IDE_INTERNAL) {
       // load the next network file without displaying the previous result
       bool networkFile = (_loadPath.indexOf("://", 1) != -1);
       if (!_mainBas && !networkFile) {
@@ -774,7 +773,7 @@ void System::setRunning(bool running) {
     dev_clrkb();
 
     _output->setAutoflush(!opt_show_page);
-    if (_mainBas || _editMode != kIDE) {
+    if (_mainBas || opt_ide != IDE_INTERNAL) {
       _loadPath.empty();
     }
     _lastEventTime = maGetMilliSecondCount();
@@ -877,12 +876,10 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_ZOOM_DN;
       }
 
-#if defined(_SDL)
-      sprintf(buffer, "Edit [%s]", (_editMode == kNone ? "OFF" :
-                                    _editMode == kLiveMode ? "Live Mode" : "IDE"));
+      sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
+                                   opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_EDITMODE;
-#endif
 
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));

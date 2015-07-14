@@ -454,7 +454,7 @@ void TextEditInput::setCursorRow(int row) {
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
   if (pressed) {
-    stb_textedit_click(&_buf, &_state, x, y);
+    stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
   }
 }
 
@@ -480,7 +480,7 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth, pt.y);
+  stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth, pt.y + scrollY + (_scroll * _charHeight));
   redraw = true;
   return 1;
 }

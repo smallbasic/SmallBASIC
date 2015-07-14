@@ -151,7 +151,6 @@ int Runtime::runShell(const char *startupBas, bool editMode, int fontScale) {
   opt_interactive = true;
   opt_usevmt = 0;
   opt_file_permitted = 1;
-  opt_ide = IDE_NONE;
   opt_graphics = true;
   opt_pref_bpp = 0;
   opt_nosave = true;
@@ -390,7 +389,12 @@ void Runtime::pollEvents(bool blocking) {
         SDL_free(ev.drop.file);
         break;
       case SDL_MOUSEWHEEL:
-        _output->scroll(ev.wheel.y == 1, false);
+        if (!_output->scroll(ev.wheel.y == 1, false)) {
+          maEvent = new MAEvent();
+          maEvent->type = EVENT_TYPE_KEY_PRESSED;
+          maEvent->key = ev.wheel.y == 1 ? SDLK_UP : SDLK_DOWN;
+          maEvent->nativeKey = 0;
+        }
         break;
       }
       if (maEvent != NULL) {

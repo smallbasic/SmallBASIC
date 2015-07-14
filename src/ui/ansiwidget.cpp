@@ -254,10 +254,11 @@ void AnsiWidget::removeHover() {
   }
 }
 
-void AnsiWidget::scroll(bool up, bool page) {
+bool AnsiWidget::scroll(bool up, bool page) {
   int h = page ? _front->_height - _front->_charHeight : _front->_charHeight;
   int vscroll = _front->_scrollY + (up ? - h : h);
   int maxVScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
+  bool result;
 
   if (page) {
     if (vscroll < 0 && _front->_scrollY > 0) {
@@ -271,7 +272,11 @@ void AnsiWidget::scroll(bool up, bool page) {
     _front->drawInto();
     _front->_scrollY = vscroll;
     flush(true, true);
+    result = true;
+  } else {
+    result = false;
   }
+  return result;
 }
 
 // sets the current drawing color

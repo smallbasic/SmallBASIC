@@ -93,12 +93,6 @@ protected:
     kDoneState     // thread has terminated
   } _state;
 
-  enum EditMode {
-    kNone,
-    kIDE,
-    kLiveMode
-  };
-
   strlib::String _loadPath;
   strlib::String _activeFile;
   int _lastEventTime;
@@ -112,7 +106,6 @@ protected:
   int _overruns;
   int _userScreenId;
   int *_systemMenu;
-  EditMode _editMode;
   bool _mainBas;
   bool _buttonPressed;
   bool _srcRendered;
