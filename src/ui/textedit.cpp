@@ -53,6 +53,7 @@ const char *helpText =
   "C-home top\n"
   "C-end bottom\n"
   "A-c change case\n"
+  "A-g goto line\n"
   "SHIFT-<arrow> select\n"
   "F9, C-r run\n";
 
@@ -402,6 +403,12 @@ void TextEditInput::find(const char *word, bool next) {
       _cursorRow = getCursorRow();
       updateScroll();
     }
+  }
+}
+
+void TextEditInput::gotoLine(const char *buffer) {
+  if (_buf._buffer != NULL && buffer != NULL) {
+    setCursorRow(atoi(buffer) - 1);
   }
 }
 
@@ -995,10 +1002,17 @@ TextEditHelpWidget::~TextEditHelpWidget() {
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   bool result = false;
 
-  if (_mode == kSearch) {
+  switch (_mode) {
+  case kSearch:
     result = TextEditInput::edit(key, screenWidth, charWidth);
     _editor->find(_buf._buffer, key == SB_KEY_ENTER);
-  } else {
+    break;
+  case kGotoLine:
+    result = TextEditInput::edit(key, screenWidth, charWidth);
+    if (key == SB_KEY_ENTER) {
+      _editor->gotoLine(_buf._buffer);
+    }
+  default:
     switch (key) {
     case STB_TEXTEDIT_K_LEFT:
     case STB_TEXTEDIT_K_RIGHT:
@@ -1034,6 +1048,10 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     }
   }
   return result;
+}
+
+void TextEditHelpWidget::createGotoLine() {
+  reset(kGotoLine);
 }
 
 void TextEditHelpWidget::createHelp() {

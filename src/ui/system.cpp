@@ -198,6 +198,12 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->createSearch();
         helpWidget->show();
         break;
+      case SB_KEY_ALT('g'):
+        _output->setStatus("Goto line. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createGotoLine();
+        helpWidget->show();
+        break;
       case SB_KEY_CTRL(' '):
         _output->setStatus("Auto-complete. Esc=Close");
         widget = helpWidget;

@@ -71,6 +71,7 @@ struct TextEditInput : public FormEditInput {
   void find(const char *word, bool next);
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
+  void gotoLine(const char *buffer);
   bool save(const char *filePath);
   void setCursor(int pos);
   void setCursorRow(int row);
@@ -134,9 +135,11 @@ struct TextEditHelpWidget : public TextEditInput {
     kHelp,
     kKeywords,
     kOutline,
-    kSearch
+    kSearch,
+    kGotoLine
   };
 
+  void createGotoLine();
   void createHelp();
   void createKeywordHelp();
   void createOutline();
