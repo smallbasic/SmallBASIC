@@ -47,6 +47,7 @@ const char *helpText =
   "C-z undo\n"
   "C-y redo\n"
   "C-f find, find-next\n"
+  "C-n find, replace\n"
   "C-l outline\n"
   "C-o show output\n"
   "C-SPC auto-complete\n"
@@ -322,7 +323,7 @@ void TextEditInput::drawText(int x, int y, const char *str, int length) {
 
   if (_marginWidth > 0) {
     for (int i = 0; i < length; i++) {
-      if (str[i] == '\'' || strncasecmp(str + i, "rem", 3) == 0) {
+      if (str[i] == '\'' || strncasecmp(str + i, "rem ", 4) == 0) {
         maDrawText(x, y, str + i_next, i - i_next);
         maSetColor(_theme->_syntax_comments);
         length -= i;
@@ -385,7 +386,8 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   return true;
 }
 
-void TextEditInput::find(const char *word, bool next) {
+bool TextEditInput::find(const char *word, bool next) {
+  bool result = false;
   if (_buf._buffer != NULL && word != NULL) {
     const char *found = strstr(_buf._buffer + _state.cursor, word);
     if (next && found != NULL) {
@@ -397,6 +399,7 @@ void TextEditInput::find(const char *word, bool next) {
       found = strstr(_buf._buffer, word);
     }
     if (found != NULL) {
+      result = true;
       _state.cursor = found - _buf._buffer;
       _state.select_start = _state.cursor;
       _state.select_end = _state.cursor + strlen(word);
@@ -404,6 +407,7 @@ void TextEditInput::find(const char *word, bool next) {
       updateScroll();
     }
   }
+  return result;
 }
 
 void TextEditInput::gotoLine(const char *buffer) {
@@ -878,6 +882,19 @@ char *TextEditInput::getWordBeforeCursor() {
   return result;
 }
 
+bool TextEditInput::replaceNext(const char *buffer) {
+  bool changed = false;
+  if (_state.select_start != _state.select_end &&
+      _buf._buffer != NULL && buffer != NULL) {
+    int start, end;
+    char *selection = getSelection(&start, &end);
+    stb_textedit_paste(&_buf, &_state, buffer, strlen(buffer));
+    changed = find(selection, false);
+    free(selection);
+  }
+  return changed;
+}
+
 void TextEditInput::lineNavigate(bool lineDown) {
   if (lineDown) {
     for (int i = _state.cursor; i < _buf._len; i++) {
@@ -1007,6 +1024,24 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     result = TextEditInput::edit(key, screenWidth, charWidth);
     _editor->find(_buf._buffer, key == SB_KEY_ENTER);
     break;
+  case kSearchReplace:
+    result = TextEditInput::edit(key, screenWidth, charWidth);
+    if (key == SB_KEY_ENTER) {
+      _buf.clear();
+      _mode = kReplace;
+    } else {
+      _editor->find(_buf._buffer, false);
+    }
+    break;
+  case kReplace:
+    if (key == SB_KEY_ENTER) {
+      if (!_editor->replaceNext(_buf._buffer)) {
+        _mode = kReplaceDone;
+      }
+    } else {
+      result = TextEditInput::edit(key, screenWidth, charWidth);
+    }
+    break;
   case kGotoLine:
     result = TextEditInput::edit(key, screenWidth, charWidth);
     if (key == SB_KEY_ENTER) {
@@ -1117,6 +1152,8 @@ void TextEditHelpWidget::createOutline() {
 
   reset(kOutline);
 
+  int cursorPos = _editor->getCursorPos();
+
   for (int i = 0; i < len; i++) {
     // skip to the newline start
     while (i < len && i != 0 && text[i] != '\n') {
@@ -1133,15 +1170,17 @@ void TextEditHelpWidget::createOutline() {
       i++;
     }
 
+    int iNext = i;
+
     for (int j = 0; j < keywords_length; j++) {
       if (!strncasecmp(text + i, keywords[j], keywords_len[j])) {
         i += keywords_len[j];
-        int i_begin = i;
+        int iBegin = i;
         while (i < len && text[i] != '=' && text[i] != '\r' && text[i] != '\n') {
           i++;
         }
-        if (i > i_begin) {
-          int numChars = i - i_begin;
+        if (i > iBegin) {
+          int numChars = i - iBegin;
           int padding = j > 1 ? 4 : 2;
           if (numChars > HELP_WIDTH - padding) {
             numChars = HELP_WIDTH - padding;
@@ -1150,7 +1189,7 @@ void TextEditHelpWidget::createOutline() {
             if (j > 1) {
               _buf.append(" .", 2);
             }
-            _buf.append(text + i_begin, numChars);
+            _buf.append(text + iBegin, numChars);
             _buf.append("\n", 1);
             _outline.add((int *)(intptr_t)i);
           }
@@ -1158,18 +1197,27 @@ void TextEditHelpWidget::createOutline() {
         break;
       }
     }
+
+    if (iNext < i && cursorPos < i && !_state.cursor) {
+      _state.cursor = _buf._len - 1;
+    }
+
     if (text[i] == '\n') {
       // avoid eating the entire next line
       i--;
     }
   }
+
+  _state.cursor = lineStart(_state.cursor);
+  _cursorRow = getCursorRow();
+  updateScroll();
 }
 
-void TextEditHelpWidget::createSearch() {
+void TextEditHelpWidget::createSearch(bool replace) {
   if (_mode == kSearch) {
     _editor->find(_buf._buffer, true);
   } else {
-    reset(kSearch);
+    reset(replace ? kSearchReplace : kSearch);
   }
 }
 

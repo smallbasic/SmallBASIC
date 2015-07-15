@@ -195,7 +195,13 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_CTRL('f'):
         _output->setStatus("Find in buffer. Esc=Close");
         widget = helpWidget;
-        helpWidget->createSearch();
+        helpWidget->createSearch(false);
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL('n'):
+        _output->setStatus("Replace string. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createSearch(true);
         helpWidget->show();
         break;
       case SB_KEY_ALT('g'):
@@ -227,17 +233,25 @@ void System::editSource(strlib::String &loadPath) {
         redraw = widget->edit(event.key, sw, charWidth);
         break;
       }
-      if (event.key == SB_KEY_ENTER && !helpWidget->searchMode()
-          && helpWidget->isVisible()) {
-        widget = editWidget;
-        helpWidget->hide();
-        redraw = true;
-        dirty = true;
+      if (event.key == SB_KEY_ENTER) {
+        if (helpWidget->replaceMode()) {
+          _output->setStatus("Replace string with. Esc=Close");
+        } else if (!helpWidget->searchMode() && helpWidget->isVisible()) {
+          if (helpWidget->replaceDoneMode()) {
+            _output->setStatus(dirtyFile);
+          }
+          widget = editWidget;
+          helpWidget->hide();
+          redraw = true;
+          dirty = true;
+        }
       }
-      if (editWidget->isDirty() && !dirty) {
-        _output->setStatus(dirtyFile);
-      } else if (!editWidget->isDirty() && dirty) {
-        _output->setStatus(cleanFile);
+      if (!helpWidget->replaceMode()) {
+        if (editWidget->isDirty() && !dirty) {
+          _output->setStatus(dirtyFile);
+        } else if (!editWidget->isDirty() && dirty) {
+          _output->setStatus(cleanFile);
+        }
       }
       if (redraw) {
         _output->redraw();
@@ -608,8 +622,14 @@ void System::runEdit(const char *startupBas) {
         } while (isRestart());
       }
     } else {
-      alert("Error", "Failed to load file");
-      break;
+      FILE *fp = fopen(startupBas, "w");
+      if (fp) {
+        fprintf(fp, "rem Welcome to SmallBASIC\n");
+        fclose(fp);
+      } else {
+        alert("Error", "Failed to load file");
+        break;
+      }
     }
   }
 }

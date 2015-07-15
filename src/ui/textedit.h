@@ -68,7 +68,8 @@ struct TextEditInput : public FormEditInput {
   void draw(int x, int y, int w, int h, int chw);
   void drawText(int x, int y, const char *str, int length);
   bool edit(int key, int screenWidth, int charWidth);
-  void find(const char *word, bool next);
+  bool find(const char *word, bool next);
+  int  getCursorPos() const { return _state.cursor; }
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
   void gotoLine(const char *buffer);
@@ -82,9 +83,9 @@ struct TextEditInput : public FormEditInput {
   void updateField(var_p_t form);
   bool updateUI(var_p_t form, var_p_t field);
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
-  int padding(bool) const { return 0; }
+  int  padding(bool) const { return 0; }
   void layout(StbTexteditRow *row, int start_i) const;
-  int charWidth(int k, int i) const;
+  int  charWidth(int k, int i) const;
   char *copy(bool cut);
   void paste(char *text);
   void selectAll();
@@ -93,6 +94,7 @@ struct TextEditInput : public FormEditInput {
   void setDirty(bool dirty) { _dirty = dirty; }
   void resize(int w, int h) { _width = w; _height = h; }
   char *getWordBeforeCursor();
+  bool replaceNext(const char *text);
 
 protected:
   void changeCase();
@@ -136,6 +138,9 @@ struct TextEditHelpWidget : public TextEditInput {
     kKeywords,
     kOutline,
     kSearch,
+    kSearchReplace,
+    kReplace,
+    kReplaceDone,
     kGotoLine
   };
 
@@ -143,7 +148,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void createHelp();
   void createKeywordHelp();
   void createOutline();
-  void createSearch();
+  void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);
   char *copy(bool cut) { return NULL; }
   void paste(char *text) {}
@@ -152,6 +157,8 @@ struct TextEditHelpWidget : public TextEditInput {
   void reset(HelpMode mode);
   bool keywordMode() const { return _mode == kKeywords; }
   bool searchMode() const { return _mode == kSearch; }
+  bool replaceMode() const { return _mode == kReplace; }
+  bool replaceDoneMode() const { return _mode == kReplaceDone; }
 
 private:
   HelpMode _mode;
