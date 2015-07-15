@@ -160,7 +160,7 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_ESCAPE:
         widget = editWidget;
         helpWidget->hide();
-        dirty = true;
+        dirty = !editWidget->isDirty();
         break;
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
@@ -236,6 +236,7 @@ void System::editSource(strlib::String &loadPath) {
       if (event.key == SB_KEY_ENTER) {
         if (helpWidget->replaceMode()) {
           _output->setStatus("Replace string with. Esc=Close");
+          dirty = editWidget->isDirty();
         } else if (!helpWidget->searchMode() && helpWidget->isVisible()) {
           if (helpWidget->replaceDoneMode()) {
             _output->setStatus(dirtyFile);
@@ -243,15 +244,13 @@ void System::editSource(strlib::String &loadPath) {
           widget = editWidget;
           helpWidget->hide();
           redraw = true;
-          dirty = true;
+          dirty = !editWidget->isDirty();
         }
       }
-      if (!helpWidget->replaceMode()) {
-        if (editWidget->isDirty() && !dirty) {
-          _output->setStatus(dirtyFile);
-        } else if (!editWidget->isDirty() && dirty) {
-          _output->setStatus(cleanFile);
-        }
+      if (editWidget->isDirty() && !dirty) {
+        _output->setStatus(dirtyFile);
+      } else if (!editWidget->isDirty() && dirty) {
+        _output->setStatus(cleanFile);
       }
       if (redraw) {
         _output->redraw();
