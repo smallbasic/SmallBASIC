@@ -35,7 +35,7 @@ struct Runtime : public System {
   void pushEvent(MAEvent *event);
   void setWindowTitle(const char *title);
   void showCursor(bool hand);
-  int runShell(const char *startupBas, bool editMode, int fontScale);
+  int runShell(const char *startupBas, int fontScale);
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void onResize(int w, int h);

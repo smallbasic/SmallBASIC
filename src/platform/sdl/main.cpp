@@ -232,7 +232,6 @@ int main(int argc, char* argv[]) {
 
   char *fontFamily = NULL;
   char *runFile = NULL;
-  bool editMode = false;
 
   while (1) {
     int option_index = 0;
@@ -271,10 +270,11 @@ int main(int argc, char* argv[]) {
       break;
     case 'r':
       runFile = strdup(optarg);
+      opt_ide = IDE_NONE;
       break;
     case 'e':
       runFile = strdup(optarg);
-      editMode = true;
+      opt_ide = IDE_INTERNAL;
       break;
     case 'm':
       opt_loadmod = 1;
@@ -311,7 +311,7 @@ int main(int argc, char* argv[]) {
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      fontScale = runtime->runShell(runFile, editMode, fontScale);
+      fontScale = runtime->runShell(runFile, fontScale);
       delete runtime;
     } else {
       fprintf(stderr, "Failed to locate display font\n");

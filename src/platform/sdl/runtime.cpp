@@ -143,7 +143,7 @@ MAEvent *Runtime::popEvent() {
   return _eventQueue->pop();
 }
 
-int Runtime::runShell(const char *startupBas, bool editMode, int fontScale) {
+int Runtime::runShell(const char *startupBas, int fontScale) {
   logEntered();
 
   os_graphics = 1;
@@ -177,7 +177,7 @@ int Runtime::runShell(const char *startupBas, bool editMode, int fontScale) {
 
   if (startupBas != NULL) {
     String bas = startupBas;
-    if (editMode) {
+    if (opt_ide == IDE_INTERNAL) {
       runEdit(bas.c_str());
     } else {
       runOnce(bas.c_str());
