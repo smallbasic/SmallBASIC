@@ -56,8 +56,9 @@ struct EditBuffer {
   void append(const char *text) { insertChars(_len, text, strlen(text)); }
   int deleteChars(int pos, int num);
   int insertChars(int pos, const char *text, int num);
-  char *textRange(int start, int end);
+  void removeTrailingSpaces(STB_TexteditState *state);
   void replaceChars(const char *replace, int start, int end);
+  char *textRange(int start, int end);
 };
 
 struct TextEditInput : public FormEditInput {
@@ -113,6 +114,7 @@ protected:
   int  linePos(int pos, bool end, bool excludeBreak=true);
   int  lineStart(int pos) { return linePos(pos, false); }
   void pageNavigate(bool pageDown, bool shift);
+  void removeTrailingSpaces();
   void updateScroll();
   int wordStart();
 

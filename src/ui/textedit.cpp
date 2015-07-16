@@ -55,6 +55,7 @@ const char *helpText =
   "C-end bottom\n"
   "A-c change case\n"
   "A-g goto line\n"
+  "A-n trim line-endings\n"
   "SHIFT-<arrow> select\n"
   "F9, C-r run\n";
 
@@ -158,6 +159,36 @@ char *EditBuffer::textRange(int start, int end) {
 void EditBuffer::replaceChars(const char *replace, int start, int end) {
   for (int i = start, j = 0; i < end && i < _len && replace[j] != '\0'; i++, j++) {
     _buffer[i] = replace[j];
+  }
+}
+
+void EditBuffer::removeTrailingSpaces(STB_TexteditState *state) {
+  int lineEnd = _len - 1;
+  int lastChar = lineEnd;
+  bool atEnd = true;
+
+  for (int i = _len - 1; i >= 0; i--) {
+    if (_buffer[i] == '\n' || i == 0) {
+      // boundary - set new lineEnd
+      if (atEnd && lastChar < lineEnd) {
+        stb_textedit_delete(this, state, lastChar + 1, lineEnd - lastChar);
+      }
+      lineEnd = lastChar = i - 1;
+      atEnd = true;
+    } else if (atEnd) {
+      if (_buffer[i] == '\r' ||
+          _buffer[i] == '\t' ||
+          _buffer[i] == ' ') {
+        // whitespace
+        lastChar--;
+      } else {
+        // no more whitespace
+        if (lastChar < lineEnd) {
+          stb_textedit_delete(this, state, lastChar + 1, lineEnd - lastChar);
+        }
+        atEnd = false;
+      }
+    }
   }
 }
 
@@ -351,6 +382,9 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     break;
   case SB_KEY_CTRL('k'):
     editDeleteLine();
+    break;
+  case SB_KEY_ALT('n'):
+    removeTrailingSpaces();
     break;
   case SB_KEY_TAB:
     editTab();
@@ -983,6 +1017,12 @@ void TextEditInput::pageNavigate(bool pageDown, bool shift) {
   _state.cursor = i;
   _cursorRow = row;
   updateScroll();
+}
+
+void TextEditInput::removeTrailingSpaces() {
+  int row = getCursorRow();
+  _buf.removeTrailingSpaces(&_state);
+  setCursorRow(row - 1);
 }
 
 void TextEditInput::updateScroll() {
