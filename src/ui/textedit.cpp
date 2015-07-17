@@ -624,7 +624,7 @@ void TextEditInput::changeCase() {
     _state.select_start = start;
     _state.select_end = end;
   }
-  free((void *)selection);
+  free(selection);
 }
 
 void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
@@ -740,7 +740,7 @@ void TextEditInput::editTab() {
     // already have ideal indent - soft-tab to indent
     _state.cursor = start + indent;
   }
-  free((void *)buf);
+  free(buf);
 }
 
 void TextEditInput::findMatchingBrace() {
@@ -872,7 +872,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
     }
   }
   spaces[i] = 0;
-  free((void *)buf);
+  free(buf);
   return i;
 }
 
@@ -1116,19 +1116,34 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       }
       break;
     case SB_KEY_ENTER:
-      if (_mode == kCompletion) {
+      char *text;
+      switch (_mode) {
+      case kCompletion:
         // paste the keyword into the editor
-        char *text = lineText(_state.cursor);
+        text = lineText(_state.cursor);
         if (text[0] != '\0' && text[0] != '[') {
           _editor->completeWord(text);
         }
-        free((void *)text);
-      } else if (_mode == kKeywordIndex) {
+        free(text);
+        break;
+      case kKeywordIndex:
         createPackageIndex();
-      } else if (_mode == kKeywordPackageIndex) {
-        char *keyword = lineText(_state.cursor);
-        createKeywordHelp(keyword);
-        free(keyword);
+        break;
+      case kKeywordPackageIndex:
+        text = lineText(_state.cursor);
+        createKeywordHelp(text);
+        free(text);
+        break;
+      case kKeyword:
+        _mode = kHelp;
+        text = lineText(_state.cursor);
+        if (text[0] != '\0' && text[0] != '[') {
+          _editor->completeWord(text);
+        }
+        free(text);
+        break;
+      default:
+        break;
       }
       result = true;
       break;
@@ -1186,6 +1201,7 @@ void TextEditHelpWidget::createKeywordIndex() {
   }
   if (!foundKeyword) {
     reset(kKeywordIndex);
+    _buf.append("[Help Index]\n");
     const char *package = NULL;
     for (int i = 0; i < keyword_help_len; i++) {
       if (package == NULL || strcasecmp(package, keyword_help[i].package) != 0) {
@@ -1199,11 +1215,16 @@ void TextEditHelpWidget::createKeywordIndex() {
 
 void TextEditHelpWidget::createPackageIndex() {
   char *package = lineText(_state.cursor);
-  reset(kKeywordPackageIndex);
-  for (int i = 0; i < keyword_help_len; i++) {
-    if (strcasecmp(package, keyword_help[i].package) == 0) {
-      _buf.append(keyword_help[i].keyword);
-      _buf.append("\n", 1);
+  if (package[0] != '\0' && package[0] != '[') {
+    reset(kKeywordPackageIndex);
+    _buf.append("[", 1);
+    _buf.append(package);
+    _buf.append("]\n", 2);
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (strcasecmp(package, keyword_help[i].package) == 0) {
+        _buf.append(keyword_help[i].keyword);
+        _buf.append("\n", 1);
+      }
     }
   }
   free(package);
