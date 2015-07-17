@@ -21,6 +21,8 @@ struct Runtime : public System {
   Runtime(android_app *app);
   virtual ~Runtime();
 
+  void alert(const char *title, const char *message, bool cancel);
+  int ask(const char *title, const char *prompt);
   void clearSoundQueue();
   void construct();
   bool getUntrusted();
@@ -42,8 +44,8 @@ struct Runtime : public System {
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void setWindowTitle(const char *title) {}
+  void showCursor(bool hand) {}
   void showKeypad(bool show);
-  void showAlert(const char *title, const char *message);
   void onResize(int w, int h);
   void loadConfig();
   void loadEnvConfig(Properties &profile, const char *key);

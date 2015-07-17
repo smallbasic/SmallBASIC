@@ -78,6 +78,38 @@ Runtime::~Runtime() {
   _cursorArrow = NULL;
 }
 
+void Runtime::alert(const char *title, const char *message) {
+  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
+}
+
+int Runtime::ask(const char *title, const char *prompt, bool cancel) {
+  SDL_MessageBoxButtonData buttons[cancel ? 3: 2];
+  memset(&buttons[0], 0, sizeof(SDL_MessageBoxButtonData));
+  memset(&buttons[1], 0, sizeof(SDL_MessageBoxButtonData));
+  buttons[0].text = "Yes";
+  buttons[0].buttonid = 0;
+  buttons[1].text = "No";
+  buttons[1].buttonid = 1;
+  if (cancel) {
+    memset(&buttons[2], 0, sizeof(SDL_MessageBoxButtonData));
+    buttons[2].text = "Cancel";
+    buttons[2].buttonid = 2;
+  }
+
+  SDL_MessageBoxData data;
+  memset(&data, 0, sizeof(SDL_MessageBoxData));
+  data.window = _window;
+  data.title = title;
+  data.message = prompt;
+  data.flags = SDL_MESSAGEBOX_INFORMATION;
+  data.numbuttons = cancel ? 3 : 2;
+  data.buttons = buttons;
+
+  int buttonId;
+  SDL_ShowMessageBox(&data, &buttonId);
+  return buttonId;
+}
+
 void Runtime::construct(const char *font, const char *boldFont) {
   logEntered();
   _state = kClosingState;
@@ -97,7 +129,7 @@ void Runtime::construct(const char *font, const char *boldFont) {
       }
     }
   } else {
-    showAlert("Unable to start", "Font resource not loaded");
+    alert("Unable to start", "Font resource not loaded");
     fprintf(stderr, "failed to load: [%s] [%s]\n", font, boldFont);
     exit(1);
   }
@@ -119,7 +151,6 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
   opt_interactive = true;
   opt_usevmt = 0;
   opt_file_permitted = 1;
-  opt_ide = IDE_NONE;
   opt_graphics = true;
   opt_pref_bpp = 0;
   opt_nosave = true;
@@ -146,7 +177,11 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
 
   if (startupBas != NULL) {
     String bas = startupBas;
-    runOnce(bas.c_str());
+    if (opt_ide == IDE_INTERNAL) {
+      runEdit(bas.c_str());
+    } else {
+      runOnce(bas.c_str());
+    }
     while (_state == kRestartState) {
       _state = kActiveState;
       if (_loadPath.length() != 0) {
@@ -175,48 +210,73 @@ char *Runtime::loadResource(const char *fileName) {
   return buffer;
 }
 
-void Runtime::showAlert(const char *title, const char *message) {
-  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, message, _window);
-}
-
 void Runtime::handleKeyEvent(MAEvent &event) {
-  if (isRunning()) {
-    int key = event.key;
-    int lenMap = sizeof(keymap) / sizeof(keymap[0]);
-    for (int i = 0; i < lenMap && key != -1; i++) {
-      if (keymap[i][0] == key) {
-        if (keymap[i][1] != -1) {
-          event.key = keymap[i][1];
-          dev_pushkey(event.key);
-        }
-        key = -1;
-        break;
-      }
+  int lenMap = sizeof(keymap) / sizeof(keymap[0]);
+  for (int i = 0; i < lenMap && event.key != -1; i++) {
+    if (event.key == keymap[i][0]) {
+      event.key = keymap[i][1];
+      break;
     }
-    if (key != -1) {
-      // mapping not found
-      if ((event.nativeKey & KMOD_CTRL) &&
-          (event.nativeKey & KMOD_ALT)) {
-        event.key = SB_KEY_CTRL_ALT(event.key);
-      } else if (event.nativeKey & KMOD_CTRL) {
-        event.key = SB_KEY_CTRL(event.key);
-      } else if (event.nativeKey & KMOD_ALT) {
-        event.key = SB_KEY_ALT(event.key);
-      } else if (event.nativeKey & KMOD_SHIFT) {
-        if (event.key >= SDLK_a && event.key <= SDLK_z) {
-          event.key = 'A' + (event.key - SDLK_a);
-        } else {
-          lenMap = sizeof(shiftmap) / sizeof(shiftmap[0]);
-          for (int i = 0; i < lenMap; i++) {
-            if (shiftmap[i][0] == event.key) {
-              event.key = shiftmap[i][1];
-              break;
-            }
+  }
+
+  // handle keypad keys
+  if (event.key != -1) {
+    if (event.key == SDLK_NUMLOCKCLEAR) {
+      event.key = -1;
+    } else if (event.key == SDLK_KP_1) {
+      event.key = event.nativeKey == KMOD_NUM ? '1' : SB_KEY_END;
+    } else if (event.key == SDLK_KP_2) {
+      event.key = event.nativeKey == KMOD_NUM ? '2' : SB_KEY_DN;
+    } else if (event.key == SDLK_KP_3) {
+      event.key = event.nativeKey == KMOD_NUM ? '3' : SB_KEY_PGDN;
+    } else if (event.key == SDLK_KP_4) {
+      event.key = event.nativeKey == KMOD_NUM ? '4' : SB_KEY_LEFT;
+    } else if (event.key == SDLK_KP_5) {
+      event.key = '5';
+    } else if (event.key == SDLK_KP_6) {
+      event.key = event.nativeKey == KMOD_NUM ? '6' : SB_KEY_RIGHT;
+    } else if (event.key == SDLK_KP_7) {
+      event.key = event.nativeKey == KMOD_NUM ? '7' : SB_KEY_HOME;
+    } else if (event.key == SDLK_KP_8) {
+      event.key = event.nativeKey == KMOD_NUM ? '8' : SB_KEY_UP;
+    } else if (event.key == SDLK_KP_9) {
+      event.key = event.nativeKey == KMOD_NUM ? '9' : SB_KEY_PGUP;
+    }
+  }
+
+  // handle ALT/SHIFT/CTRL states
+  if (event.key != -1) {
+    if ((event.nativeKey & KMOD_CTRL) &&
+        (event.nativeKey & KMOD_ALT)) {
+      event.key = SB_KEY_CTRL_ALT(event.key);
+    } else if (event.nativeKey & KMOD_CTRL) {
+      event.key = SB_KEY_CTRL(event.key);
+    } else if (event.nativeKey & KMOD_ALT) {
+      event.key = SB_KEY_ALT(event.key);
+    } else if (event.nativeKey & KMOD_SHIFT) {
+      bool shifted = false;
+      if (event.key >= SDLK_a && event.key <= SDLK_z) {
+        event.key = 'A' + (event.key - SDLK_a);
+        shifted = true;
+      } else {
+        lenMap = sizeof(shiftmap) / sizeof(shiftmap[0]);
+        for (int i = 0; i < lenMap; i++) {
+          if (shiftmap[i][0] == event.key) {
+            event.key = shiftmap[i][1];
+            shifted = true;
+            break;
           }
         }
       }
-      dev_pushkey(event.key);
+      if (!shifted) {
+        event.key = SB_KEY_SHIFT(event.key);
+      }
     }
+  }
+
+  // push to runtime queue
+  if (event.key != -1 && isRunning()) {
+    dev_pushkey(event.key);
   }
 }
 
@@ -261,22 +321,28 @@ void Runtime::pollEvents(bool blocking) {
         setExit(true);
         break;
       case SDL_KEYDOWN:
-        if (ev.key.keysym.sym == SDLK_c && (ev.key.keysym.mod & KMOD_CTRL)) {
+        if (!isEditing() && ev.key.keysym.sym == SDLK_c
+            && (ev.key.keysym.mod & KMOD_CTRL)) {
           setExit(true);
         } else if (ev.key.keysym.sym == SDLK_m && (ev.key.keysym.mod & KMOD_CTRL)) {
           showMenu();
         } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
           setBack();
         } else if (ev.key.keysym.sym == SDLK_BACKSPACE &&
+                   get_focus_edit() == NULL &&
                    ((ev.key.keysym.mod & KMOD_CTRL) || !isRunning())) {
           setBack();
-        } else if (ev.key.keysym.sym == SDLK_PAGEUP && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_PAGEUP &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(true, true);
-        } else if (ev.key.keysym.sym == SDLK_PAGEDOWN && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_PAGEDOWN &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(false, true);
-        } else if (ev.key.keysym.sym == SDLK_UP && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_UP &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(true, false);
-        } else if (ev.key.keysym.sym == SDLK_DOWN && (ev.key.keysym.mod & KMOD_CTRL)) {
+        } else if (!isEditing() && ev.key.keysym.sym == SDLK_DOWN &&
+                   (ev.key.keysym.mod & KMOD_CTRL)) {
           _output->scroll(false, false);
         } else if (ev.key.keysym.sym == SDLK_p && (ev.key.keysym.mod & KMOD_CTRL)) {
           ::screen_dump();
@@ -312,14 +378,23 @@ void Runtime::pollEvents(bool blocking) {
         case SDL_WINDOWEVENT_EXPOSED:
           _graphics->redraw();
           break;
+        case SDL_WINDOWEVENT_LEAVE:
+          _output->removeHover();
+          break;
         }
         break;
       case SDL_DROPFILE:
         setLoadPath(ev.drop.file);
+        setExit(false);
         SDL_free(ev.drop.file);
         break;
       case SDL_MOUSEWHEEL:
-        _output->scroll(ev.wheel.y == 1, false);
+        if (!_output->scroll(ev.wheel.y == 1, false)) {
+          maEvent = new MAEvent();
+          maEvent->type = EVENT_TYPE_KEY_PRESSED;
+          maEvent->key = ev.wheel.y == 1 ? SDLK_UP : SDLK_DOWN;
+          maEvent->nativeKey = 0;
+        }
         break;
       }
       if (maEvent != NULL) {
@@ -364,9 +439,6 @@ void Runtime::processEvent(MAEvent &event) {
     break;
   default:
     handleEvent(event);
-    if (event.type == EVENT_TYPE_POINTER_PRESSED && _buttonPressed) {
-      SDL_SetCursor(_cursorHand);
-    }
     break;
   }
 }
@@ -387,6 +459,10 @@ void Runtime::setWindowTitle(const char *title) {
     SDL_SetWindowTitle(_window, buffer);
     delete [] buffer;
   }
+}
+
+void Runtime::showCursor(bool hand) {
+  SDL_SetCursor(hand ? _cursorHand : _cursorArrow);
 }
 
 void Runtime::onResize(int width, int height) {
@@ -514,11 +590,6 @@ int maGetEvent(MAEvent *event) {
 
 void maWait(int timeout) {
   runtime->pause(timeout);
-}
-
-void maAlert(const char *title, const char *message, const char *button1,
-             const char *button2, const char *button3) {
-  runtime->showAlert(title, message);
 }
 
 //

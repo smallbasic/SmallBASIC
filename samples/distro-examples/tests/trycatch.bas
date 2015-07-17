@@ -2,16 +2,16 @@
 try
   ? "inner try"
   if (1==1) then
-    try 
-    catch 
+    try
+    catch
       ? "should never be printed"
     end try
     if (2==2) then
       try
        open "com2000:" AS #1
-       try 
+       try
          ? "should never be printed"
-       catch 
+       catch
          ? "should never be printed"
        end try
        ? "should never be printed"
@@ -25,9 +25,9 @@ try
       ? "should never be printed"
     fi
   fi
-  try 
+  try
    ? "should never be printed"
-  catch 
+  catch
    ? "should never be printed"
   end try
   open "com2000:" AS #1
@@ -70,3 +70,21 @@ if (cnt <> iter) then
   print "Test failed: "; cnt; " <> "; iter
 end if
 
+REM Test for multi-item case catching
+select case "Cool"
+ case "null", 1,2,3,4,5,6,7,8,"Cool","blah"
+ case "not cool"
+   throw "epic fail"
+  case else
+   throw "FAIL"
+end select
+
+try
+ select case "Y"
+  case "YES", "yes", "y", "Y"
+    throw "okay"
+ end select
+ throw "bad"
+catch "okay"
+ REM okay
+end try

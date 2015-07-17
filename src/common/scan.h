@@ -27,7 +27,7 @@ extern "C" {
  * Generic keywords (basic bc-types & oldest code)
  */
 struct keyword_s {
-  char name[16]; /**< keyword name */
+  const char name[16]; /**< keyword name */
   code_t code; /**< byte-code */
 };
 
@@ -38,7 +38,7 @@ struct keyword_s {
  * Operators (not the symbols)
  */
 struct opr_keyword_s {
-  char name[16]; /**< keyword name */
+  const char name[16]; /**< keyword name */
   code_t code; /**< keyword code */
   code_t opr; /**< operator code */
 };
@@ -50,7 +50,7 @@ struct opr_keyword_s {
  * Special operators
  */
 struct spopr_keyword_s {
-  char name[16]; /**< keyword name */
+  const char name[16]; /**< keyword name */
   code_t code; /**< keyword code */
 };
 
@@ -61,7 +61,7 @@ struct spopr_keyword_s {
  * Buildin-functions
  */
 struct func_keyword_s {
-  char name[16]; /**< keyword name */
+  const char name[16]; /**< keyword name */
   fcode_t fcode; /**< keyword code */
 };
 
@@ -72,7 +72,7 @@ struct func_keyword_s {
  * Buildin procedures
  */
 struct proc_keyword_s {
-  char name[16]; /**< keyword name */
+  const char name[16]; /**< keyword name */
   pcode_t pcode; /**< keyword code */
 };
 

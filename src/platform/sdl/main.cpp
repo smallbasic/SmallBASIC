@@ -39,12 +39,14 @@ const char* FONTS[] = {
 };
 
 static struct option OPTIONS[] = {
-  {"help",    no_argument,       NULL, 'h'},
-  {"verbose", no_argument,       NULL, 'v'},
-  {"command", optional_argument, NULL, 'c'},
-  {"font",    optional_argument, NULL, 'f'},
-  {"run",     optional_argument, NULL, 'r'},
-  {"module",  optional_argument, NULL, 'm'},
+  {"help",     no_argument,       NULL, 'h'},
+  {"verbose",  no_argument,       NULL, 'v'},
+  {"keywords", no_argument,       NULL, 'k'},
+  {"command",  optional_argument, NULL, 'c'},
+  {"font",     optional_argument, NULL, 'f'},
+  {"run",      optional_argument, NULL, 'r'},
+  {"module",   optional_argument, NULL, 'm'},
+  {"edit",     optional_argument, NULL, 'e'},
   {0, 0, 0, 0}
 };
 
@@ -161,11 +163,55 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
 }
 #endif
 
+void printKeywords() {
+  printf("SmallBASIC keywords table\n");
+  printf("::':#:rem:\"\n");
+  printf("$$$-remarks\n");
+  printf("'\n");
+  printf("REM\n");
+
+  // operators
+  printf("$$$-operators\n");
+  printf("() \"\"\n");
+  printf("%s\n", "+ - * / \\ % ^");
+  printf("%s\n", "= <= =< >= => <> != !");
+  printf("%s\n", "&& & || | ~");
+  for (int j = 0; opr_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", opr_table[j].name);
+  }
+
+  // print keywords
+  printf("$$$-keywords\n");
+  for (int j = 0; keyword_table[j].name[0] != '\0'; j++) {
+    if (keyword_table[j].name[0] != '$') {
+      printf("%s\n", keyword_table[j].name);
+    }
+  }
+
+  // special separators
+  for (int j = 0; spopr_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", spopr_table[j].name);
+  }
+
+  // functions
+  printf("$$$-functions\n");
+  for (int j = 0; func_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", func_table[j].name);
+  }
+
+  // procedures
+  printf("$$$-procedures\n");
+  for (int j = 0; proc_table[j].name[0] != '\0'; j++) {
+    printf("%s\n", proc_table[j].name);
+  }
+}
+
 void showHelp() {
   fprintf(stdout,
-          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n\n",
+          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
           SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
-          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)));
+          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)),
+          (int)sizeof(var_int_t), (int)sizeof(var_num_t));
   fprintf(stdout, "usage: sbasicg [options]... [BAS] [OPTION]\n");
   int i = 0;
   while (OPTIONS[i].name != NULL) {
@@ -180,16 +226,20 @@ void showHelp() {
 int main(int argc, char* argv[]) {
   logEntered();
 
-  opt_command[0] = 0;
+  opt_command[0] = '\0';
   opt_verbose = false;
   opt_quiet = true;
 
   char *fontFamily = NULL;
   char *runFile = NULL;
+  int fontScale;
+  SDL_Rect rect;
+
+  restoreSettings(CONFIG_NAME, rect, fontScale);
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vhc:f:r:m:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -224,6 +274,11 @@ int main(int argc, char* argv[]) {
       break;
     case 'r':
       runFile = strdup(optarg);
+      opt_ide = IDE_NONE;
+      break;
+    case 'e':
+      runFile = strdup(optarg);
+      opt_ide = IDE_INTERNAL;
       break;
     case 'm':
       opt_loadmod = 1;
@@ -233,16 +288,16 @@ int main(int argc, char* argv[]) {
       showHelp();
       exit(1);
       break;
+    case 'k':
+      printKeywords();
+      exit(1);
+      break;
     default:
       exit(1);
       break;
     }
   }
 
-  int fontScale;
-  SDL_Rect rect;
-
-  restoreSettings(CONFIG_NAME, rect, fontScale);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
