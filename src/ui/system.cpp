@@ -19,6 +19,7 @@
 #include "common/keymap.h"
 #include "ui/system.h"
 #include "ui/inputs.h"
+#include "ui/textedit.h"
 
 #define MENU_CONSOLE    0
 #define MENU_SOURCE     1
@@ -31,7 +32,7 @@
 #define MENU_COPY       8
 #define MENU_PASTE      9
 #define MENU_CTRL_MODE  10
-#define MENU_LIVEMODE   11
+#define MENU_EDITMODE   11
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
 #define MENU_SIZE       14
@@ -60,7 +61,6 @@ System::System() :
   _systemMenu(NULL),
   _mainBas(false),
   _buttonPressed(false),
-  _liveMode(false),
   _srcRendered(false),
   _menuActive(false),
   _programSrc(NULL),
@@ -77,10 +77,211 @@ System::~System() {
 }
 
 void System::checkModifiedTime() {
-  if (_liveMode && _activeFile.length() > 0 &&
+  if (opt_ide == IDE_EXTERNAL && _activeFile.length() > 0 &&
       _modifiedTime != getModifiedTime()) {
     setRestart();
   }
+}
+
+void System::editSource(strlib::String &loadPath) {
+  logEntered();
+
+  strlib::String fileName;
+  int i = loadPath.lastIndexOf('/', 0);
+  if (i != -1) {
+    fileName = loadPath.substring(i + 1);
+  } else {
+    fileName = loadPath;
+  }
+
+  strlib::String dirtyFile;
+  dirtyFile.append(" * ");
+  dirtyFile.append(fileName);
+  dirtyFile.append(" C-h=Help");
+  strlib::String cleanFile;
+  cleanFile.append(" - ");
+  cleanFile.append(fileName);
+  cleanFile.append(" C-h=Help");
+
+  int w = _output->getWidth();
+  int h = _output->getHeight();
+  int charWidth = _output->getCharWidth();
+  int charHeight = _output->getCharHeight();
+  int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
+  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
+  TextEditInput *widget = editWidget;
+
+  editWidget->updateUI(NULL, NULL);
+  editWidget->setLineNumbers();
+  editWidget->setFocus();
+  if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
+    editWidget->setCursorRow(gsb_last_line - 1);
+  }
+  if (gsb_last_error && !isBack()) {
+    editWidget->setCursorRow(gsb_last_line - 1);
+    helpWidget->setText(gsb_last_errmsg);
+    widget = helpWidget;
+    helpWidget->show();
+  }
+  _srcRendered = false;
+  _output->clearScreen();
+  _output->addInput(editWidget);
+  _output->addInput(helpWidget);
+  _output->setStatus(cleanFile);
+  _output->redraw();
+  _state = kEditState;
+
+  maShowVirtualKeyboard();
+
+  while (_state == kEditState) {
+    MAEvent event = getNextEvent();
+    if (event.type == EVENT_TYPE_KEY_PRESSED &&
+        _userScreenId == -1) {
+      dev_clrkb();
+      int sw = _output->getScreenWidth();
+      bool redraw = true;
+      bool dirty = editWidget->isDirty();
+      char *text;
+
+      switch (event.key) {
+      case SB_KEY_F(2):
+      case SB_KEY_F(3):
+      case SB_KEY_F(4):
+      case SB_KEY_F(5):
+      case SB_KEY_F(6):
+      case SB_KEY_F(7):
+      case SB_KEY_F(8):
+      case SB_KEY_F(10):
+      case SB_KEY_F(11):
+      case SB_KEY_F(12):
+        redraw = false;
+        break;
+      case SB_KEY_ESCAPE:
+        widget = editWidget;
+        helpWidget->hide();
+        dirty = !editWidget->isDirty();
+        break;
+      case SB_KEY_F(9):
+      case SB_KEY_CTRL('r'):
+        _state = kRunState;
+        // fallthrough
+      case SB_KEY_CTRL('s'):
+        if (!editWidget->save(loadPath)) {
+          alert("", "Failed to save file");
+        }
+        break;
+      case SB_KEY_CTRL('c'):
+      case SB_KEY_CTRL('x'):
+        text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
+        if (text) {
+          setClipboardText(text);
+          free(text);
+        }
+        break;
+      case SB_KEY_F(1):
+        _output->setStatus("Keyword Help. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createKeywordIndex();
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL('h'):
+        _output->setStatus("Keystroke help. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createHelp();
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL('l'):
+        _output->setStatus("Outline. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createOutline();
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL('f'):
+        _output->setStatus("Find in buffer. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createSearch(false);
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL('n'):
+        _output->setStatus("Replace string. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createSearch(true);
+        helpWidget->show();
+        break;
+      case SB_KEY_ALT('g'):
+        _output->setStatus("Goto line. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createGotoLine();
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL(' '):
+        _output->setStatus("Auto-complete. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createCompletionHelp();
+        helpWidget->show();
+        break;
+      case SB_KEY_CTRL('v'):
+        text = getClipboardText();
+        widget->paste(text);
+        free(text);
+        break;
+      case SB_KEY_CTRL('o'):
+        _output->selectScreen(USER_SCREEN1);
+        showCompletion(true);
+        _output->redraw();
+        waitForBack();
+        _output->selectScreen(SOURCE_SCREEN);
+        _state = kEditState;
+        break;
+      default:
+        redraw = widget->edit(event.key, sw, charWidth);
+        break;
+      }
+      if (event.key == SB_KEY_ENTER) {
+        if (helpWidget->replaceMode()) {
+          _output->setStatus("Replace string with. Esc=Close");
+          dirty = editWidget->isDirty();
+        } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
+          if (helpWidget->replaceDoneMode()) {
+            _output->setStatus(dirtyFile);
+          }
+          widget = editWidget;
+          helpWidget->hide();
+          redraw = true;
+          dirty = !editWidget->isDirty();
+        }
+      }
+      if (editWidget->isDirty() && !dirty) {
+        _output->setStatus(dirtyFile);
+      } else if (!editWidget->isDirty() && dirty) {
+        _output->setStatus(cleanFile);
+      }
+      if (redraw) {
+        _output->redraw();
+      }
+    }
+
+    if ((isBack() || isClosing()) && editWidget->isDirty()) {
+      const char *message = "The current file has not been saved.\n"
+                            "Would you like to save it now?";
+      int choice = ask("Save changes?", message, isBack());
+      if (choice == 0) {
+        if (!editWidget->save(loadPath)) {
+          alert("", "Failed to save file");
+        }
+      } else if (choice == 2) {
+        // cancel
+        _state = kEditState;
+      }
+    }
+  }
+
+  _output->removeInputs();
+  if (!isClosing()) {
+    _output->selectScreen(prevScreenId);
+  }
+  logLeaving();
 }
 
 bool System::execute(const char *bas) {
@@ -96,8 +297,13 @@ bool System::execute(const char *bas) {
   opt_uipos = 0;
   opt_usepcre = 0;
 
+  _state = kRunState;
   setWindowTitle(bas);
-  bool result = ::sbasic_main(bas);
+  int result = ::sbasic_main(bas);
+
+  if (isRunning()) {
+    _state = kActiveState;
+  }
 
   opt_command[0] = '\0';
   _output->flush(true);
@@ -138,6 +344,9 @@ int System::getPen(int code) {
     case 11:
       result = _touchCurY;
       break;
+
+    case 12:  // true if left button pressed
+      return _buttonPressed;
     }
   }
   return result;
@@ -266,8 +475,9 @@ void System::handleMenu(int menuId) {
       get_focus_edit()->setControlMode(!controlMode);
     }
     break;
-  case MENU_LIVEMODE:
-    _liveMode = !_liveMode;
+  case MENU_EDITMODE:
+    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
+               opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
@@ -289,6 +499,8 @@ void System::handleMenu(int menuId) {
 }
 
 void System::handleEvent(MAEvent &event) {
+  bool hasHover;
+
   switch (event.type) {
   case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
     if (_systemMenu != NULL) {
@@ -307,11 +519,18 @@ void System::handleEvent(MAEvent &event) {
     _touchY = _touchCurY = event.point.y;
     dev_pushkey(SB_KEY_MK_PUSH);
     _buttonPressed = _output->pointerTouchEvent(event);
+    if (_buttonPressed) {
+      showCursor(true);
+    }
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
     _touchCurX = event.point.x;
     _touchCurY = event.point.y;
+    hasHover = _output->hasHover();
     _output->pointerMoveEvent(event);
+    if (hasHover != _output->hasHover()) {
+      showCursor(!hasHover);
+    }
     break;
   case EVENT_TYPE_POINTER_RELEASED:
     _buttonPressed = false;
@@ -323,7 +542,7 @@ void System::handleEvent(MAEvent &event) {
     _output->flush(false);
     break;
   }
-  if (_liveMode) {
+  if (opt_ide == IDE_EXTERNAL) {
     checkModifiedTime();
   }
 }
@@ -351,6 +570,16 @@ char *System::loadResource(const char *fileName) {
     free(var_p);
   }
   return buffer;
+}
+
+bool System::loadSource(const char *fileName) {
+  // loads _programSrc
+  char *source = readSource(fileName);
+  if (source != NULL) {
+    free(source);
+    return true;
+  }
+  return false;
 }
 
 char *System::readSource(const char *fileName) {
@@ -391,6 +620,34 @@ void System::resize() {
   }
 }
 
+void System::runEdit(const char *startupBas) {
+  logEntered();
+  _mainBas = false;
+  String loadPath = startupBas;
+
+  while (true) {
+    if (loadSource(startupBas)) {
+      editSource(loadPath);
+      if (isBack() || isClosing()) {
+        break;
+      } else {
+        do {
+          execute(startupBas);
+        } while (isRestart());
+      }
+    } else {
+      FILE *fp = fopen(startupBas, "w");
+      if (fp) {
+        fprintf(fp, "rem Welcome to SmallBASIC\n");
+        fclose(fp);
+      } else {
+        alert("Error", "Failed to load file");
+        break;
+      }
+    }
+  }
+}
+
 void System::runMain(const char *mainBasPath) {
   logEntered();
 
@@ -402,7 +659,7 @@ void System::runMain(const char *mainBasPath) {
 
   bool started = execute(_loadPath);
   if (!started) {
-    maAlert("", gsb_last_errmsg, NULL, NULL, NULL);
+    alert("Error", gsb_last_errmsg);
     _state = kClosingState;
   }
 
@@ -422,11 +679,23 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
+    if (!_mainBas && opt_ide == IDE_INTERNAL &&
+        !isRestart() && loadSource(_loadPath)) {
+      editSource(_loadPath);
+      if (isBack()) {
+        _loadPath.empty();
+        _state = kActiveState;
+        continue;
+      } else if (isClosing()) {
+        break;
+      }
+    }
+
     bool success = execute(_loadPath);
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }
-    if (!isBack() && !isClosing()) {
+    if (!isBack() && !isClosing() && opt_ide != IDE_INTERNAL) {
       // load the next network file without displaying the previous result
       bool networkFile = (_loadPath.indexOf("://", 1) != -1);
       if (!_mainBas && !networkFile) {
@@ -438,15 +707,12 @@ void System::runMain(const char *mainBasPath) {
         showError();
         if (_mainBas) {
           // unexpected error in main.bas
-          maAlert("", gsb_last_errmsg, NULL, NULL, NULL);
+          alert("", gsb_last_errmsg);
           _state = kClosingState;
         }
       }
       if (!_mainBas && !networkFile) {
-        // press back to continue
-        while (!isBack() && !isClosing() && !isRestart()) {
-          getNextEvent();
-        }
+        waitForBack();
       }
     }
   }
@@ -457,11 +723,14 @@ void System::runOnce(const char *startupBas) {
   logEntered();
   _mainBas = false;
 
-  bool success = execute(startupBas);
-  showCompletion(success);
-  // press back to continue
-  while (!isBack() && !isClosing() && !isRestart()) {
-    getNextEvent();
+  bool restart = true;
+  while (restart) {
+    bool success = execute(startupBas);
+    if (_state == kActiveState) {
+      showCompletion(success);
+    }
+    waitForBack();
+    restart = isRestart();
   }
 }
 
@@ -544,8 +813,9 @@ void System::setRunning(bool running) {
     dev_clrkb();
 
     _output->setAutoflush(!opt_show_page);
-    _state = kRunState;
-    _loadPath.empty();
+    if (_mainBas || opt_ide != IDE_INTERNAL) {
+      _loadPath.empty();
+    }
     _lastEventTime = maGetMilliSecondCount();
     _eventTicks = 0;
     _overruns = 0;
@@ -569,7 +839,9 @@ void System::showCompletion(bool success) {
 
 void System::showError() {
   _state = kActiveState;
-  _loadPath.empty();
+  if (_mainBas) {
+    _loadPath.empty();
+  }
   showSystemScreen(false);
 }
 
@@ -636,19 +908,18 @@ void System::showMenu() {
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
       if (_mainBas) {
-        sprintf(buffer, "Zoom %d%%", _fontScale - FONT_SCALE_INTERVAL);
+        sprintf(buffer, "Font Size %d%%", _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
-        sprintf(buffer, "Zoom %d%%", _fontScale + FONT_SCALE_INTERVAL);
+        sprintf(buffer, "Font Size %d%%", _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
       }
 
-#if defined(_SDL)
-      sprintf(buffer, "Live Update [%s]", (_liveMode ? "ON" : "OFF"));
+      sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
+                                   opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
       items->add(new String(buffer));
-      _systemMenu[index++] = MENU_LIVEMODE;
-#endif
+      _systemMenu[index++] = MENU_EDITMODE;
 
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
@@ -660,6 +931,27 @@ void System::showMenu() {
     optionsBox(items);
     delete items;
     _menuActive = false;
+  }
+}
+
+void System::showSystemScreen(bool showSrc) {
+  int prevScreenId;
+  if (showSrc) {
+    prevScreenId = _output->selectBackScreen(SOURCE_SCREEN);
+    printSource();
+    _output->selectBackScreen(prevScreenId);
+    _output->selectFrontScreen(SOURCE_SCREEN);
+  } else {
+    prevScreenId = _output->selectFrontScreen(CONSOLE_SCREEN);
+  }
+  if (_userScreenId == -1) {
+    _userScreenId = prevScreenId;
+  }
+}
+
+void System::waitForBack() {
+  while (!isBack() && !isClosing() && !isRestart()) {
+    getNextEvent();
   }
 }
 
@@ -791,21 +1083,6 @@ void System::setRestart() {
     brun_break();
   }
   _state = kRestartState;
-}
-
-void System::showSystemScreen(bool showSrc) {
-  int prevScreenId;
-  if (showSrc) {
-    prevScreenId = _output->selectBackScreen(SOURCE_SCREEN);
-    printSource();
-    _output->selectBackScreen(prevScreenId);
-    _output->selectFrontScreen(SOURCE_SCREEN);
-  } else {
-    prevScreenId = _output->selectFrontScreen(CONSOLE_SCREEN);
-  }
-  if (_userScreenId == -1) {
-    _userScreenId = prevScreenId;
-  }
 }
 
 void System::systemPrint(const char *format, ...) {

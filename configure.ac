@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.18])
+AC_INIT([smallbasic], [0.11.19])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -168,7 +168,6 @@ function buildFLTK() {
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(OS_PREC64, 1, [64 bit variables])
 
    BUILD_SUBDIRS="src/common src/platform/fltk"
    AC_SUBST(BUILD_SUBDIRS)
@@ -215,6 +214,8 @@ function buildSDL() {
 
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
+
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
@@ -242,6 +243,7 @@ function buildSDL() {
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
    (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
+   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildTizen() {
@@ -279,6 +281,8 @@ function buildAndroid() {
 
    TEST_DIR="src/platform/android"
    AC_SUBST(TEST_DIR)
+
+   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildConsole() {
@@ -309,7 +313,6 @@ function buildConsole() {
          AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
-         AC_DEFINE(OS_PREC64, 1, [64 bit variables])
          AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
          PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc"
          BUILD_SUBDIRS="src/common src/platform/unix"
@@ -328,7 +331,6 @@ function buildConsole() {
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
       AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
       AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
-      AC_DEFINE(OS_PREC64, 1, [64 bit variables])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread"
       BUILD_SUBDIRS="src/common src/platform/unix"
       TEST_DIR="src/platform/unix"

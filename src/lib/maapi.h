@@ -327,20 +327,4 @@ int maGetEvent(MAEvent* event);
  */
 void maWait(int timeout);
 
-/**
- * Displays a message to the user.
- * It contains optional title, message and 3 buttons for selection.
- * On Android the buttons point to a positive, negative or neutral action.
- * When one of the buttons are clicked the alert is automatically dismissed.
- * When a selection is made a #EVENT_TYPE_ALERT event is sent with the button index.
- * \param title The title of the message box shown.
- * \param message The message should be short, not more than 40 characters,
- * to ensure its visibility on all screen sizes.
- * \param button1 The text on the first button. On Android it indicates a positive selection.
- * \param button2 The text on the second button. On Android it indicates a neutral selection.
- * \param button3 The text on the third button. On Android it indicates that a negative selection.
- */
-void maAlert(const char *title, const char *message, const char *button1,
-             const char *button2, const char *button3);
-
 #endif

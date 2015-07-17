@@ -276,7 +276,6 @@ int v_is_nonzero(var_t *v) {
 int v_compare(var_t *a, var_t *b) {
   var_num_t dt;
   var_int_t di;
-
   if (a == 0 || b == 0) {
     err_evsyntax();
     return 0;
@@ -289,8 +288,11 @@ int v_compare(var_t *a, var_t *b) {
              (b->type == V_INT || b->type == V_NUM)) {
     var_num_t left = (a->type == V_NUM) ? a->v.n : a->v.i;
     var_num_t right = (b->type == V_NUM) ? b->v.n : b->v.i;
-    dt = (left - right);
-    return (dt < 0.0 ? -1 : dt < 0.0000000000000000001f ? 0 : 1);
+    if (fabs(left - right) < EPSILON) {
+      return 0;
+    } else {
+      return (left - right) < 0.0 ? -1 : 1;
+    }
   }
   if ((a->type == V_STR) && (b->type == V_STR)) {
     return strcmp(a->v.p.ptr, b->v.p.ptr);

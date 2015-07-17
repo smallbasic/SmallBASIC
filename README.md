@@ -12,8 +12,11 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
  $ make
 ```
  or for cross-compiling under linux:
- ./configure --host=i686-w64-mingw32 --prefix=/devsw/mingw --enable-sdl
- Note: requires building SDL2 and freetype-2 into the prefix folder
+```
+ $ sudo apt-get install mingw-w64
+ $ ./configure --host=i686-w64-mingw32 --prefix=/devsw/mingw --enable-sdl
+```
+Note: requires building SDL2 and freetype-2 into the prefix folder
 
 ## Building the non-graphical console version (cygwin or linux)
 ```
@@ -24,13 +27,12 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
  $./configure --host=i686-w64-mingw32 && make
 ```
  Windows 64 bit mingw console:
-
+```
  $./configure --host=x86_64-w64-mingw32 && make
-
+```
 ## Building the Android port
 
-1. Setup .bashrc:
-
+1. Setup .bashrc
 ```
 export PATH=$PATH:~/android-sdk/depot_tools:~/android-sdk/android-sdk-linux/platform-tools/
 export ANDROID_SDK_ROOT=~/android-sdk/android-sdk-linux
@@ -42,8 +44,7 @@ export NDK_PLATFORM=android-19
 export ANDROID_LOG_TAGS="DEBUG:I smallbasic:I AndroidRuntime:E *:S"
 ```
 
-2. Build FreeType:
-
+2. Build FreeType
 First, prepare the cross-compiler from the NDK:
 ```
   $NDK_PATH/build/tools/make-standalone-toolchain.sh \
@@ -56,10 +57,12 @@ Then use it to cross-compile the tools:
   make
   make install DESTDIR=$(pwd)
 ```
+
 3. setup config.h
 ```
 ./configure --enable-android
 ```
+
 4. Build the native activity
 ```
 $ cd src/platform/andoid/jni && $NDK/ndk-build NDK_DEBUG=0
