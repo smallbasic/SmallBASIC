@@ -20,9 +20,9 @@ extern System *g_system;
 
 FormList *activeList = NULL;
 FormInput *focusInput = NULL;
-FormLineInput *focusEdit = NULL;
+FormEditInput *focusEdit = NULL;
 
-FormLineInput *get_focus_edit() {
+FormEditInput *get_focus_edit() {
   return focusEdit;
 }
 
@@ -200,11 +200,18 @@ void FormInput::drawButton(const char *caption, int dx, int dy,
   }
 }
 
+void FormInput::drawHover(int dx, int dy, bool selected) {
+  MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+  maSetColor(selected ? _fg : _bg);
+  int y = _y + dy + _height - 2;
+  maLine(dx + _x + 2, y, dx + _x + _width - 2, y);
+  maUpdateScreen();
+  maSetDrawTarget(currentHandle);
+}
+
 void FormInput::drawLink(const char *caption, int dx, int dy, int sw, int chw) {
   maSetColor(_fg);
   drawText(caption, dx, dy, sw, chw);
-  maSetColor(_pressed ? _fg : _bg);
-  maLine(dx, dy + _height - 2, dx + MIN(sw, _width), dy + _height - 2);
 }
 
 void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {
@@ -232,8 +239,12 @@ void FormInput::draw(int x, int y, int w, int h, int chw) {
   drawButton(getText(), x, y, _width, _height, _pressed);
 }
 
-bool FormInput::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+bool FormInput::overlaps(MAPoint2d pt, int offsX, int offsY) {
   return !(OUTSIDE_RECT(pt.x, pt.y, _x + offsX, _y + offsY, _width, _height));
+}
+
+bool FormInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
+  return FormInput::overlaps(pt, scrollX, scrollY);
 }
 
 // returns the field var attached to the field
@@ -299,6 +310,15 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
   return updated;
 }
 
+bool FormInput::edit(int key, int screenWidth, int charWidth) {
+  bool result = false;
+  if (key == SB_KEY_ENTER) {
+    clicked(-1, -1, false);
+    result = true;
+  }
+  return result;
+}
+
 // set the widget value onto the form value
 void FormInput::updateForm(var_p_t form) {
   var_p_t field = getField(form);
@@ -307,6 +327,19 @@ void FormInput::updateForm(var_p_t form) {
     var_p_t value = map_get(form, FORM_VALUE);
     if (value != NULL && inputValue != NULL) {
       v_set(value, inputValue);
+    }
+  }
+}
+
+bool FormInput::hasFocus() const {
+  return (focusInput == this);
+}
+
+void FormInput::setFocus() {
+  if (!isNoFocus()) {
+    if (focusInput != this) {
+      focusInput = this;
+      g_system->getOutput()->setDirty();
     }
   }
 }
@@ -360,8 +393,7 @@ FormLink::FormLink(const char *link, int x, int y, int w, int h) :
 // FormTab
 //
 FormTab::FormTab(const char *link, int x, int y, int w, int h) :
-  FormInput(x, y, w, h),
-  _link(link) {
+  FormLink(link, x, y, w, h) {
 }
 
 void FormTab::draw(int x, int y, int w, int h, int chw) {
@@ -377,18 +409,77 @@ void FormTab::draw(int x, int y, int w, int h, int chw) {
 }
 
 //
+// FormEditInput
+//
+FormEditInput::FormEditInput(int x, int y, int w, int h) :
+  FormInput(x, y, w, h),
+  _controlMode(false) {
+}
+
+FormEditInput::~FormEditInput() {
+  if (focusEdit == this) {
+    focusEdit = NULL;
+  }
+}
+
+int FormEditInput::getControlKey(int key) {
+  int result = key;
+  if (_controlMode) {
+    switch (key) {
+    case 'x':
+      g_system->setClipboardText(copy(true));
+      result = -1;
+      break;
+    case 'c':
+      g_system->setClipboardText(copy(false));
+      result = -1;
+      break;
+    case 'v':
+      paste(g_system->getClipboardText());
+      result = -1;
+      break;
+    case 'h':
+      result = SB_KEY_LEFT;
+      break;
+    case 'l':
+      result = SB_KEY_RIGHT;
+      break;
+    case 'j':
+      result = SB_KEY_HOME;
+      break;
+    case 'k':
+      result = SB_KEY_END;
+      break;
+    case 'a':
+      selectAll();
+      break;
+    }
+  }
+  return result;
+}
+
+void FormEditInput::setFocus() {
+  if (!isNoFocus()) {
+    if (focusInput != this) {
+      focusInput = this;
+      focusEdit = this;
+      g_system->getOutput()->setDirty();
+    }
+  }
+}
+
+//
 // FormLineInput
 //
 FormLineInput::FormLineInput(const char *value, int size, bool grow,
                              int x, int y, int w, int h) :
-  FormInput(x, y, w, h),
+  FormEditInput(x, y, w, h),
   _buffer(NULL),
   _size(size),
   _scroll(0),
   _mark(-1),
   _point(0),
-  _grow(grow),
-  _controlMode(false) {
+  _grow(grow) {
   _buffer = new char[_size + 1];
   _buffer[0] = '\0';
   if (value != NULL && value[0]) {
@@ -400,9 +491,6 @@ FormLineInput::FormLineInput(const char *value, int size, bool grow,
 }
 
 FormLineInput::~FormLineInput() {
-  if (focusEdit == this) {
-    focusEdit = NULL;
-  }
   delete [] _buffer;
   _buffer = NULL;
 }
@@ -410,8 +498,8 @@ FormLineInput::~FormLineInput() {
 void FormLineInput::draw(int x, int y, int w, int h, int chw) {
   maSetColor(getBackground(GRAY_BG_COL));
   maFillRect(x, y, _width, _height);
-
   maSetColor(_fg);
+
   int len = strlen(_buffer + _scroll);
   if (len * chw >= _width) {
     len = _width / chw;
@@ -530,33 +618,9 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
   return true;
 }
 
-int FormLineInput::getControlKey(int key) {
-  int result = key;
-  if (_controlMode) {
-    switch (key) {
-    case 'x':
-      result = SB_KEY_DELETE;
-      break;
-    case 'h':
-      result = SB_KEY_LEFT;
-      break;
-    case 'l':
-      result = SB_KEY_RIGHT;
-      break;
-    case 'j':
-      result = SB_KEY_HOME;
-      break;
-    case 'k':
-      result = SB_KEY_END;
-      break;
-    case 'a':
-      _point = 0;
-      _mark = _buffer == NULL ? -0 : strlen(_buffer);
-      result = -1;
-      break;
-    }
-  }
-  return result;
+void FormLineInput::selectAll() {
+  _point = 0;
+  _mark = _buffer == NULL ? -0 : strlen(_buffer);
 }
 
 void FormLineInput::updateField(var_p_t form) {
@@ -600,7 +664,7 @@ void FormLineInput::cut() {
   }
 }
 
-void FormLineInput::paste(char *text) {
+void FormLineInput::paste(const char *text) {
   int len = strlen(_buffer);
   int avail = _size - (len + 1);
   if (text != NULL && avail > 0) {
@@ -811,7 +875,8 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
         _activeIndex++;
       }
     }
-
+  } else if (key == SB_KEY_ENTER) {
+    clicked(-1, -1, false);
   }
   return true;
 }
@@ -847,8 +912,8 @@ void FormListBox::draw(int x, int y, int w, int h, int chw) {
   }
 }
 
-bool FormListBox::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
-  bool result = FormInput::overlaps(pt, offsX, offsY, redraw);
+bool FormListBox::selected(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+  bool result = FormInput::overlaps(pt, offsX, offsY);
   MAExtent textSize = maGetTextSize(_model->getTextAt(0));
   int rowHeight = EXTENT_Y(textSize) + 1;
   int visibleRows = _height / rowHeight;
@@ -931,7 +996,7 @@ void FormDropList::drawList(int dx, int dy, int sh) {
   }
 }
 
-bool FormDropList::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
+bool FormDropList::selected(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
   bool result;
   if (_listActive) {
     result = true;
@@ -954,7 +1019,7 @@ bool FormDropList::overlaps(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
       redraw = true;
     }
   } else {
-    result = FormInput::overlaps(pt, offsX, offsY, redraw);
+    result = FormInput::overlaps(pt, offsX, offsY);
   }
   return result;
 }

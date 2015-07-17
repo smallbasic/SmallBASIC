@@ -1384,7 +1384,6 @@ void comp_data_seg(char *source) {
         sign = 1;
       }
       if (is_digit(*ptr) || *ptr == '.' || (*ptr == '&' && strchr("XHOB", *(ptr + 1)))) {
-
         // number - constant
         ptr = get_numexpr(ptr, tmp, &tp, &lv, &dv);
         switch (tp) {

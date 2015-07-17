@@ -30,6 +30,7 @@ typedef unsigned int bcip_t;
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdint.h>
 #include <math.h>
 #include <math.h>
 #include <time.h>
@@ -42,23 +43,25 @@ typedef unsigned int bcip_t;
 #include <stdlib.h>
 
 #if defined(NONSTANDARD_PORT)
-#  include <portdefs.h>
+#include <portdefs.h>
 #endif
 
-#if defined OS_PREC64
-typedef long double var_num_t;
-typedef long long int var_int_t;
-#define VAR_INT_FMT     "%lld"
-#define VAR_NUM_FMT     "%Lf"
-#define VAR_INT_NUM_FMT "%.0Lf" // convert float to int
-#else
-#define OS_PREC32
+#define DBL_EPSILON 0.00000000000001
+#define FLT_EPSILON 0.0000002
+
+#if UINT_MAX != 0xffffffffU
+#define OS_PREC64
 typedef double var_num_t;
-typedef long int var_int_t;
-#define VAR_INT_FMT     "%ld"
-#define VAR_NUM_FMT     "%f"
-#define VAR_INT_NUM_FMT "%.0f"
+#define EPSILON DBL_EPSILON
+#else
+typedef float var_num_t;
+#define EPSILON FLT_EPSILON
 #endif
+
+typedef long int var_int_t;
+#define VAR_NUM_FMT     "%f"
+#define VAR_INT_FMT     "%ld"
+#define VAR_INT_NUM_FMT "%.0f"
 
 #define OS_INTSZ  sizeof(var_int_t)  // size of integer
 #define OS_REALSZ sizeof(var_num_t)  // size of real

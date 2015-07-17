@@ -58,6 +58,7 @@ struct AnsiWidget {
   int  getWidth()  { return _width; }
   int  getX() { return _back->_curX; }
   int  getY() { return _back->_curY; }
+  bool hasHover() { return _hoverInput != NULL; }
   int  insetMenuScreen(int x, int y, int w, int h);
   int  insetTextScreen(int x, int y, int w, int h);
   bool pointerTouchEvent(MAEvent &event);
@@ -66,13 +67,14 @@ struct AnsiWidget {
   void print(const char *str);
   void redraw();
   void registerScreen(int screenId) { createScreen(screenId); }
+  void removeHover();
   void removeImage(int imageId) { _back->removeImage(imageId); }
   void removeInput(FormInput *input) { _back->removeInput(input); }
   void removeInputs() { _back->removeInputs(); _activeButton = NULL; }
   void resetScroll() { _back->resetScroll(); }
   void reset();
   void resize(int width, int height);
-  void scroll(bool up, bool page);
+  bool scroll(bool up, bool page);
   int  selectBackScreen(int screenId);
   int  selectFrontScreen(int screenId);
   int  selectScreen(int screenId);
@@ -94,6 +96,7 @@ private:
   bool doEscape(const char *&p, int textHeight);
   void doSwipe(int start, bool moveDown, int distance, int maxScroll);
   void drawActiveButton();
+  bool drawHoverLink(MAEvent &event);
   void handleEscape(const char *&p, int textHeight);
   bool setActiveButton(MAEvent &event, Screen *screen);
 
@@ -112,6 +115,7 @@ private:
   bool _swipeExit; // last touch-down was swipe exit
   bool _autoflush; // flush internally
   FormInput *_activeButton;
+  FormInput *_hoverInput;
 };
 
 #endif // ANSIWIDGET_H

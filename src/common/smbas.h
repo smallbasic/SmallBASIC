@@ -129,7 +129,7 @@ EXTERN byte opt_mute_audio; /**< whether to mute sounds                      */
 EXTERN byte opt_antialias; /**< OPTION ANTIALIAS OFF                          */
 
 #define IDE_NONE        0
-#define IDE_LINKED      1
+#define IDE_INTERNAL    1
 #define IDE_EXTERNAL    2
 
 // globals
