@@ -57,6 +57,7 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "SHIFT-<arrow> select\n"
+  "F1, keyword help\n"
   "F9, C-r run\n";
 
 //
@@ -1056,6 +1057,13 @@ TextEditHelpWidget::~TextEditHelpWidget() {
   _outline.emptyList();
 }
 
+bool TextEditHelpWidget::closeOnEnter() const {
+  return (_mode != kSearch &&
+          _mode != kKeyword &&
+          _mode != kKeywordIndex &&
+          _mode != kKeywordPackageIndex);
+}
+
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   bool result = false;
 
@@ -1108,21 +1116,56 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       }
       break;
     case SB_KEY_ENTER:
-      if (_mode == kKeywords) {
+      if (_mode == kCompletion) {
         // paste the keyword into the editor
         char *text = lineText(_state.cursor);
         if (text[0] != '\0' && text[0] != '[') {
           _editor->completeWord(text);
         }
         free((void *)text);
-        result = true;
+      } else if (_mode == kKeywordIndex) {
+        createPackageIndex();
+      } else if (_mode == kKeywordPackageIndex) {
+        char *keyword = lineText(_state.cursor);
+        createKeywordHelp(keyword);
+        free(keyword);
       }
+      result = true;
       break;
     default:
       break;
     }
   }
   return result;
+}
+
+void TextEditHelpWidget::createCompletionHelp() {
+  reset(kCompletion);
+
+  char *selection = _editor->getWordBeforeCursor();
+  int len = selection != NULL ? strlen(selection) : 0;
+  if (len > 0) {
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
+        _buf.append(keyword_help[i].keyword);
+        _buf.append("\n", 1);
+      }
+    }
+    free(selection);
+  } else {
+    const char *package = NULL;
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (package == NULL || strcasecmp(package, keyword_help[i].package) != 0) {
+        // next package
+        package = keyword_help[i].package;
+        _buf.append("[");
+        _buf.append(package);
+        _buf.append("]\n");
+      }
+      _buf.append(keyword_help[i].keyword);
+      _buf.append("\n", 1);
+    }
+  }
 }
 
 void TextEditHelpWidget::createGotoLine() {
@@ -1134,48 +1177,54 @@ void TextEditHelpWidget::createHelp() {
   _buf.append(helpText, strlen(helpText));
 }
 
-void TextEditHelpWidget::createKeywordHelp() {
-  reset(kKeywords);
-
+void TextEditHelpWidget::createKeywordIndex() {
   char *selection = _editor->getWordBeforeCursor();
-  int len = selection != NULL ? strlen(selection) : 0;
-  if (len > 0) {
-    for (int i = 0; i < code_keywords_length; i++) {
-      if (strncasecmp(selection, code_keywords[i], len) == 0) {
-        _buf.append(code_keywords[i]);
-        _buf.append("\n", 1);
-      }
-    }
-    for (int i = 0; i < code_procedures_length; i++) {
-      if (strncasecmp(selection, code_procedures[i], len) == 0) {
-        _buf.append(code_procedures[i]);
-        _buf.append("\n", 1);
-      }
-    }
-    for (int i = 0; i < code_functions_length; i++) {
-      if (strncasecmp(selection, code_functions[i], len) == 0) {
-        _buf.append(code_functions[i]);
-        _buf.append("\n", 1);
-      }
-    }
+  bool foundKeyword = false;
+  if (selection != NULL) {
+    foundKeyword = createKeywordHelp(selection);
     free(selection);
-  } else {
-    _buf.append("[Keywords]\n");
-    for (int i = 0; i < code_keywords_length; i++) {
-      _buf.append(code_keywords[i]);
-      _buf.append("\n", 1);
+  }
+  if (!foundKeyword) {
+    reset(kKeywordIndex);
+    const char *package = NULL;
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (package == NULL || strcasecmp(package, keyword_help[i].package) != 0) {
+        package = keyword_help[i].package;
+        _buf.append(package);
+        _buf.append("\n", 1);
+      }
     }
-    _buf.append("\n[Procedures]\n");
-    for (int i = 0; i < code_procedures_length; i++) {
-      _buf.append(code_procedures[i]);
-      _buf.append("\n", 1);
-    }
-    _buf.append("\n[Functions]\n");
-    for (int i = 0; i < code_functions_length; i++) {
-      _buf.append(code_functions[i]);
+  }
+}
+
+void TextEditHelpWidget::createPackageIndex() {
+  char *package = lineText(_state.cursor);
+  reset(kKeywordPackageIndex);
+  for (int i = 0; i < keyword_help_len; i++) {
+    if (strcasecmp(package, keyword_help[i].package) == 0) {
+      _buf.append(keyword_help[i].keyword);
       _buf.append("\n", 1);
     }
   }
+  free(package);
+}
+
+bool TextEditHelpWidget::createKeywordHelp(const char *keyword) {
+  bool found = false;
+  for (int i = 0; i < keyword_help_len; i++) {
+    if (strcasecmp(keyword, keyword_help[i].keyword) == 0) {
+      reset(kKeyword);
+      _buf.append(keyword);
+      _buf.append("\n\n", 2);
+      _buf.append(keyword_help[i].signature);
+      _buf.append("\n\n", 2);
+      _buf.append(keyword_help[i].help);
+      _buf.append("\n", 1);
+      found = true;
+      break;
+    }
+  }
+  return found;
 }
 
 void TextEditHelpWidget::createOutline() {

@@ -226,12 +226,16 @@ void showHelp() {
 int main(int argc, char* argv[]) {
   logEntered();
 
-  opt_command[0] = 0;
+  opt_command[0] = '\0';
   opt_verbose = false;
   opt_quiet = true;
 
   char *fontFamily = NULL;
   char *runFile = NULL;
+  int fontScale;
+  SDL_Rect rect;
+
+  restoreSettings(CONFIG_NAME, rect, fontScale);
 
   while (1) {
     int option_index = 0;
@@ -294,10 +298,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  int fontScale;
-  SDL_Rect rect;
-
-  restoreSettings(CONFIG_NAME, rect, fontScale);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,

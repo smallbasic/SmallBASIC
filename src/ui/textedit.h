@@ -137,7 +137,10 @@ struct TextEditHelpWidget : public TextEditInput {
 
   enum HelpMode {
     kHelp,
-    kKeywords,
+    kCompletion,
+    kKeyword,
+    kKeywordIndex,
+    kKeywordPackageIndex,
     kOutline,
     kSearch,
     kSearchReplace,
@@ -146,9 +149,10 @@ struct TextEditHelpWidget : public TextEditInput {
     kGotoLine
   };
 
+  void createCompletionHelp();
   void createGotoLine();
   void createHelp();
-  void createKeywordHelp();
+  void createKeywordIndex();
   void createOutline();
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);
@@ -157,12 +161,14 @@ struct TextEditHelpWidget : public TextEditInput {
   bool isDrawTop() { return true; }
   void resize(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);
-  bool keywordMode() const { return _mode == kKeywords; }
-  bool searchMode() const { return _mode == kSearch; }
+  bool closeOnEnter() const;
   bool replaceMode() const { return _mode == kReplace; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
 
 private:
+  void createPackageIndex();
+  bool createKeywordHelp(const char *keyword);
+
   HelpMode _mode;
   strlib::List<int *> _outline;
   TextEditInput *_editor;

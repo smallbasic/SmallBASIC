@@ -180,6 +180,11 @@ void System::editSource(strlib::String &loadPath) {
         }
         break;
       case SB_KEY_F(1):
+        _output->setStatus("Keyword Help. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createKeywordIndex();
+        helpWidget->show();
+        break;
       case SB_KEY_CTRL('h'):
         _output->setStatus("Keystroke help. Esc=Close");
         widget = helpWidget;
@@ -213,7 +218,7 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_CTRL(' '):
         _output->setStatus("Auto-complete. Esc=Close");
         widget = helpWidget;
-        helpWidget->createKeywordHelp();
+        helpWidget->createCompletionHelp();
         helpWidget->show();
         break;
       case SB_KEY_CTRL('v'):
@@ -237,7 +242,7 @@ void System::editSource(strlib::String &loadPath) {
         if (helpWidget->replaceMode()) {
           _output->setStatus("Replace string with. Esc=Close");
           dirty = editWidget->isDirty();
-        } else if (!helpWidget->searchMode() && helpWidget->isVisible()) {
+        } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
           if (helpWidget->replaceDoneMode()) {
             _output->setStatus(dirtyFile);
           }
