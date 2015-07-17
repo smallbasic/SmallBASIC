@@ -664,7 +664,7 @@ void FormLineInput::cut() {
   }
 }
 
-void FormLineInput::paste(char *text) {
+void FormLineInput::paste(const char *text) {
   int len = strlen(_buffer);
   int avail = _size - (len + 1);
   if (text != NULL && avail > 0) {

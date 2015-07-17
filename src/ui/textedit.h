@@ -88,9 +88,8 @@ struct TextEditInput : public FormEditInput {
   void layout(StbTexteditRow *row, int start_i) const;
   int  charWidth(int k, int i) const;
   char *copy(bool cut);
-  void paste(char *text);
+  void paste(const char *text);
   void selectAll();
-  void insertText(const char *text);
   bool isDirty() { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
   void resize(int w, int h) { _width = w; _height = h; }
@@ -166,6 +165,7 @@ struct TextEditHelpWidget : public TextEditInput {
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
 
 private:
+  void completeWord(int pos);
   void createPackageIndex();
   bool createKeywordHelp(const char *keyword);
 

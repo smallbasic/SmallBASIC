@@ -220,7 +220,7 @@ void TextEditInput::completeWord(const char *word) {
     int insertLen = strlen(word) - len;
     bool lastUpper = isupper(_buf._buffer[end - 1]);
 
-    insertText(word + len);
+    paste(word + len);
     for (int i = 0; i < insertLen; i++) {
       char c = _buf._buffer[i + end];
       _buf._buffer[i + end] = lastUpper ? toupper(c) : tolower(c);
@@ -371,9 +371,7 @@ void TextEditInput::drawText(int x, int y, const char *str, int length) {
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   switch (key) {
   case SB_KEY_CTRL('a'):
-    _state.cursor = 0;
-    _state.select_start = 0;
-    _state.select_end = _buf._len;
+    selectAll();
     break;
   case SB_KEY_ALT('c'):
     changeCase();
@@ -465,15 +463,8 @@ bool TextEditInput::save(const char *filePath) {
 }
 
 void TextEditInput::selectAll() {
-  _state.select_start = 0;
+  _state.cursor = _state.select_start = 0;
   _state.select_end = _buf._len;
-}
-
-void TextEditInput::insertText(const char *text) {
-  int len = strlen(text);
-  _buf.insertChars(_state.cursor, text, len);
-  _state.cursor += len;
-  stb_text_makeundo_insert(&_state, _state.cursor, len);
 }
 
 void TextEditInput::setCursor(int cursor) {
@@ -547,7 +538,7 @@ char *TextEditInput::copy(bool cut) {
   return result;
 }
 
-void TextEditInput::paste(char *text) {
+void TextEditInput::paste(const char *text) {
   stb_textedit_paste(&_buf, &_state, text, strlen(text));
 }
 
@@ -1119,12 +1110,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       char *text;
       switch (_mode) {
       case kCompletion:
-        // paste the keyword into the editor
-        text = lineText(_state.cursor);
-        if (text[0] != '\0' && text[0] != '[') {
-          _editor->completeWord(text);
-        }
-        free(text);
+        completeWord(_state.cursor);
         break;
       case kKeywordIndex:
         createPackageIndex();
@@ -1136,11 +1122,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
         break;
       case kKeyword:
         _mode = kHelp;
-        text = lineText(_state.cursor);
-        if (text[0] != '\0' && text[0] != '[') {
-          _editor->completeWord(text);
-        }
-        free(text);
+        completeWord(0);
         break;
       default:
         break;
@@ -1152,6 +1134,14 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     }
   }
   return result;
+}
+
+void TextEditHelpWidget::completeWord(int pos) {
+  char *text = lineText(pos);
+  if (text[0] != '\0' && text[0] != '[') {
+    _editor->completeWord(text);
+  }
+  free(text);
 }
 
 void TextEditHelpWidget::createCompletionHelp() {
@@ -1235,8 +1225,6 @@ bool TextEditHelpWidget::createKeywordHelp(const char *keyword) {
   for (int i = 0; i < keyword_help_len; i++) {
     if (strcasecmp(keyword, keyword_help[i].keyword) == 0) {
       reset(kKeyword);
-      _buf.append(keyword);
-      _buf.append("\n\n", 2);
       _buf.append(keyword_help[i].signature);
       _buf.append("\n\n", 2);
       _buf.append(keyword_help[i].help);

@@ -210,7 +210,7 @@ struct FormEditInput : public FormInput {
   virtual ~FormEditInput();
 
   virtual char *copy(bool cut) = 0;
-  virtual void paste(char *text) = 0;
+  virtual void paste(const char *text) = 0;
   virtual void selectAll() = 0;
   void setFocus();
   int  getControlKey(int key);
@@ -235,7 +235,7 @@ struct FormLineInput : public FormEditInput {
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   int padding(bool) const { return 0; }
   char *copy(bool cut);
-  void paste(char *text);
+  void paste(const char *text);
   void cut();
   void selectAll();
 
