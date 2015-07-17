@@ -63,7 +63,7 @@ struct EditBuffer {
 
 struct TextEditInput : public FormEditInput {
   TextEditInput(const char *text, int chW, int chH, int x, int y, int w, int h);
-  virtual ~TextEditInput() {}
+  virtual ~TextEditInput();
 
   void completeWord(const char *word);
   void draw(int x, int y, int w, int h, int chw);
@@ -135,6 +135,7 @@ struct TextEditHelpWidget : public TextEditInput {
   virtual ~TextEditHelpWidget();
 
   enum HelpMode {
+    kNone,
     kHelp,
     kCompletion,
     kKeyword,

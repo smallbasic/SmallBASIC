@@ -572,6 +572,16 @@ char *System::loadResource(const char *fileName) {
   return buffer;
 }
 
+bool System::loadSource(const char *fileName) {
+  // loads _programSrc
+  char *source = readSource(fileName);
+  if (source != NULL) {
+    free(source);
+    return true;
+  }
+  return false;
+}
+
 char *System::readSource(const char *fileName) {
   _activeFile.empty();
   char *buffer = loadResource(fileName);
@@ -616,7 +626,7 @@ void System::runEdit(const char *startupBas) {
   String loadPath = startupBas;
 
   while (true) {
-    if (readSource(startupBas) != NULL) {
+    if (loadSource(startupBas)) {
       editSource(loadPath);
       if (isBack() || isClosing()) {
         break;
@@ -669,8 +679,8 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
-    if (!_mainBas && opt_ide == IDE_INTERNAL && !isRestart() &&
-        readSource(_loadPath) != NULL) {
+    if (!_mainBas && opt_ide == IDE_INTERNAL &&
+        !isRestart() && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
         _loadPath.empty();

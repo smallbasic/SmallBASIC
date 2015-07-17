@@ -60,6 +60,7 @@ protected:
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
   void handleMenu(int menuId);
+  bool loadSource(const char *fileName);
   void resize();
   void runEdit(const char *startupBas);
   void runMain(const char *mainBasPath);

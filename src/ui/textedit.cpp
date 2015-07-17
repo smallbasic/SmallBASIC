@@ -112,7 +112,7 @@ EditBuffer::~EditBuffer() {
 }
 
 void EditBuffer::clear() {
-  delete _buffer;
+  free(_buffer);
   _buffer = NULL;
   _len = _size = 0;
 }
@@ -212,13 +212,19 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   stb_textedit_initialize_state(&_state, false);
 }
 
+TextEditInput::~TextEditInput() {
+  delete _theme;
+  _theme = NULL;
+}
+
 void TextEditInput::completeWord(const char *word) {
   if (_state.select_start == _state.select_end) {
     int start = wordStart();
     int end = _state.cursor;
     int len = end - start;
     int insertLen = strlen(word) - len;
-    bool lastUpper = isupper(_buf._buffer[end - 1]);
+    int index = end == 0 ? 0 : end - 1;
+    bool lastUpper = isupper(_buf._buffer[index]);
 
     paste(word + len);
     for (int i = 0; i < insertLen; i++) {
@@ -1028,9 +1034,10 @@ void TextEditInput::updateScroll() {
 }
 
 int TextEditInput::wordStart() {
-  return _buf._buffer[_state.cursor - 1] == '\n' ? _state.cursor :
-    is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
-    stb_textedit_move_to_word_previous(&_buf, &_state);
+  int cursor = _state.cursor == 0 ? 0 : _state.cursor - 1;
+  return (_buf._buffer[cursor] == '\n' ? _state.cursor :
+          is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
+          stb_textedit_move_to_word_previous(&_buf, &_state));
 }
 
 //
@@ -1039,6 +1046,7 @@ int TextEditInput::wordStart() {
 TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
   TextEditInput(NULL, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
                 chW * HELP_WIDTH, editor->_height),
+  _mode(kNone),
   _editor(editor) {
   _theme = new EditTheme(0x73c990, 0x20242a);
   hide();
@@ -1156,7 +1164,6 @@ void TextEditHelpWidget::createCompletionHelp() {
         _buf.append("\n", 1);
       }
     }
-    free(selection);
   } else {
     const char *package = NULL;
     for (int i = 0; i < keyword_help_len; i++) {
@@ -1171,6 +1178,7 @@ void TextEditHelpWidget::createCompletionHelp() {
       _buf.append("\n", 1);
     }
   }
+  free(selection);
 }
 
 void TextEditHelpWidget::createGotoLine() {
