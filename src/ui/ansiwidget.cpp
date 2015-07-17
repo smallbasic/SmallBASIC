@@ -268,14 +268,6 @@ bool AnsiWidget::scroll(bool up, bool page) {
     }
   }
 
-  if (page) {
-    if (vscroll < 0 && _front->_scrollY > 0) {
-      vscroll = 0;
-    } else if (vscroll >= maxVScroll) {
-      vscroll = maxVScroll - _front->_charHeight;
-    }
-  }
-
   if (vscroll >= 0 && vscroll < maxVScroll) {
     _front->drawInto();
     _front->_scrollY = vscroll;
