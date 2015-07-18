@@ -75,6 +75,8 @@ protected:
   Font *_font;
   pixel_t _drawColor;
   int _w, _h;
+  int _cacheY;
+  pixel_t *_cacheLine;
 };
 
 }

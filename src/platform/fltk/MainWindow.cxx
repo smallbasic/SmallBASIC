@@ -280,7 +280,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
       editWidget->readonly(true);
       editWidget->runState(rs_run);
       breakToLine = editWidget->isBreakToLine();
-      opt_ide = editWidget->isHideIDE()? IDE_NONE : IDE_LINKED;
+      opt_ide = editWidget->isHideIDE()? IDE_NONE : IDE_INTERNAL;
     }
   }
 
@@ -1024,7 +1024,7 @@ void run_mode_startup(void *data) {
       exit(0);
     }
     editWidget->editor->take_focus();
-    opt_ide = IDE_LINKED;
+    opt_ide = IDE_INTERNAL;
   }
 }
 
@@ -1036,7 +1036,7 @@ bool initialise(int argc, char **argv) {
   opt_quiet = 1;
   opt_verbose = 0;
   opt_nosave = 1;
-  opt_ide = IDE_LINKED;
+  opt_ide = IDE_INTERNAL;
   opt_pref_bpp = 0;
   opt_interactive = 1;
   opt_file_permitted = 1;

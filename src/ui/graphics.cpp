@@ -66,6 +66,17 @@ inline pixel_t RGB888_to_RGBA8888(unsigned c) {
   #define GET_FROM_RGB888(c) (c)
 #endif
 
+#define GET_LINE(y) \
+  pixel_t *line; \
+  if (_cacheY == y) { \
+    line = _cacheLine; \
+  } else { \
+    line = _drawTarget->getLine(y); \
+    _cacheLine = line; \
+    _cacheY = posY; \
+  }
+
+
 // fractional part of x
 inline double fpart(double x) {
   double result;
@@ -136,7 +147,9 @@ Graphics::Graphics() :
   _drawTarget(NULL),
   _font(NULL),
   _w(0),
-  _h(0) {
+  _h(0),
+  _cacheY(-1),
+  _cacheLine(NULL) {
   graphics = this;
 }
 
@@ -243,7 +256,7 @@ void Graphics::drawPixel(int posX, int posY) {
       && posY >= _drawTarget->y()
       && posX < _drawTarget->w()
       && posY < _drawTarget->h()) {
-    pixel_t *line = _drawTarget->getLine(posY);
+    GET_LINE(posY);
     line[posX] = _drawColor;
   }
 }

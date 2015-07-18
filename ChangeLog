@@ -1,3 +1,6 @@
+2015-07-18
+	Added IDE editor sdl/android
+
 2015-06-07
 	Fixed PRINT 1/1000 and other floating point rounding issues
 	Fixed problem with 59 char INPUT prompt

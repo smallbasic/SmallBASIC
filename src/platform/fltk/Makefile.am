@@ -29,6 +29,7 @@ sbasici_SOURCES =                 \
   ../../ui/inputs.cpp             \
   ../../ui/image.cpp              \
   ../../ui/strlib.cpp             \
+  ../../ui/textedit.cpp           \
   display.cxx display.h           \
   HelpWidget.cxx HelpWidget.h     \
   TtyWidget.cxx TtyWidget.h       \
