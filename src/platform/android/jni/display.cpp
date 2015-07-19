@@ -47,6 +47,19 @@ bool Canvas::create(int w, int h) {
   return result;
 }
 
+void Canvas::copy(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
+  int destY = dstPoint->y;
+  int srcH = srcRect->height;
+  if (srcRect->top + srcRect->height > src->_h) {
+    srcH = src->_h - srcRect->top;
+  }
+  for (int y = 0; y < srcH && destY < _h; y++, destY++) {
+    pixel_t *line = src->getLine(y + srcRect->top) + srcRect->left;
+    pixel_t *dstLine = getLine(destY) + dstPoint->x;
+    memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
+  }
+}
+
 void Canvas::setClip(int x, int y, int w, int h) {
   delete _clip;
   if (x != 0 || y != 0 || _w != w || _h != h) {

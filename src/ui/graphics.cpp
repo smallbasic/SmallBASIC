@@ -66,14 +66,13 @@ inline pixel_t RGB888_to_RGBA8888(unsigned c) {
   #define GET_FROM_RGB888(c) (c)
 #endif
 
-#define GET_LINE(y) \
-  pixel_t *line; \
-  if (_cacheY == y) { \
+#define GET_LINE(line, y) \
+  if (_cacheY == y && !_cacheLine) { \
     line = _cacheLine; \
   } else { \
     line = _drawTarget->getLine(y); \
     _cacheLine = line; \
-    _cacheY = posY; \
+    _cacheY = y; \
   }
 
 
@@ -146,10 +145,10 @@ Graphics::Graphics() :
   _screen(NULL),
   _drawTarget(NULL),
   _font(NULL),
-  _w(0),
-  _h(0),
+  _cacheLine(NULL),
   _cacheY(-1),
-  _cacheLine(NULL) {
+  _w(0),
+  _h(0) {
   graphics = this;
 }
 
@@ -182,16 +181,7 @@ void Graphics::deleteFont(Font *font) {
 
 void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
   if (_drawTarget && _drawTarget != src) {
-    int destY = dstPoint->y;
-    int srcH = srcRect->height;
-    if (srcRect->top + srcRect->height > src->_h) {
-      srcH = src->_h - srcRect->top;
-    }
-    for (int y = 0; y < srcH && destY < _drawTarget->_h; y++, destY++) {
-      pixel_t *line = src->getLine(y + srcRect->top) + srcRect->left;
-      pixel_t *dstLine = _drawTarget->getLine(destY) + dstPoint->x;
-      memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
-    }
+    _drawTarget->copy(src, srcRect, dstPoint->x, dstPoint->y);
   }
 }
 
@@ -212,7 +202,8 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         x2 = _w -1;
       }
       if (startY >= 0 && startY < _h) {
-        pixel_t *line = _drawTarget->getLine(startY);
+        pixel_t *line;
+        GET_LINE(line, startY);
         for (int x = x1; x <= x2; x++) {
           if (x >= _drawTarget->x() && x < _drawTarget->w()) {
             line[x] = _drawColor;
@@ -256,7 +247,8 @@ void Graphics::drawPixel(int posX, int posY) {
       && posY >= _drawTarget->y()
       && posX < _drawTarget->w()
       && posY < _drawTarget->h()) {
-    GET_LINE(posY);
+    pixel_t *line;
+    GET_LINE(line, posY);
     line[posX] = _drawColor;
   }
 }
@@ -423,7 +415,8 @@ int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
       && posY > -1
       && posX < canvas->_w
       && posY < canvas->_h - 1) {
-    pixel_t *line = canvas->getLine(posY);
+    pixel_t *line;
+    GET_LINE(line, posY);
     result = line[posX];
   }
   return result;
@@ -527,7 +520,8 @@ void Graphics::wuPlot(int posX, int posY, double c) {
       && posY >= _drawTarget->y()
       && posX < _drawTarget->w()
       && posY < _drawTarget->h()) {
-    pixel_t *line = _drawTarget->getLine(posY);
+    pixel_t *line;
+    GET_LINE(line, posY);
     uint8_t sR, sG, sB;
     uint8_t dR, dG, dB;
 

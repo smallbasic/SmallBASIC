@@ -24,6 +24,7 @@ struct Canvas {
   virtual ~Canvas();
 
   bool create(int w, int h);
+  void copy(Canvas *src, const MARect *srcRect, int dstx, int dsty);
   void setClip(int x, int y, int w, int h);
   pixel_t *getLine(int y);
   int x() { return _clip ? _clip->x : 0; }
@@ -46,6 +47,7 @@ struct Canvas {
   virtual ~Canvas();
 
   bool create(int w, int h);
+  void copy(Canvas *src, const MARect *srcRect, int dstx, int dsty);
   void setClip(int x, int y, int w, int h);
   pixel_t *getLine(int y) { return _canvas + (y * _w); }
   int x() { return _clip ? _clip->left : 0; }

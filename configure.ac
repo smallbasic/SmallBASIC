@@ -218,7 +218,7 @@ function buildSDL() {
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
    esac
 
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags`"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags` -fno-exceptions"
    case "${host_os}" in
      *mingw*)
      PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"

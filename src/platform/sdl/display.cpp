@@ -46,6 +46,22 @@ bool Canvas::create(int w, int h) {
   return _canvas != NULL;
 }
 
+void Canvas::copy(Canvas *src, const MARect *srcRect, int dstx, int dsty) {
+  SDL_Rect srcrect;
+  srcrect.x = srcRect->left;
+  srcrect.y = srcRect->top;
+  srcrect.w = srcRect->width;
+  srcrect.h = srcRect->height;
+
+  SDL_Rect dstrect;
+  dstrect.x = dstx;
+  dstrect.y = dsty;
+  dstrect.w = _w;
+  dstrect.h = _h;
+
+  SDL_BlitSurface(src->_canvas, &srcrect, _canvas, &dstrect);
+}
+
 pixel_t *Canvas::getLine(int y) { 
   pixel_t *pixels = (pixel_t *)_canvas->pixels;
   return pixels + (y * _w); 

@@ -21,8 +21,8 @@ struct Runtime : public System {
   Runtime(android_app *app);
   virtual ~Runtime();
 
-  void alert(const char *title, const char *message, bool cancel);
-  int ask(const char *title, const char *prompt);
+  void alert(const char *title, const char *message);
+  int ask(const char *title, const char *prompt, bool cancel);
   void clearSoundQueue();
   void construct();
   bool getUntrusted();

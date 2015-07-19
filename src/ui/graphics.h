@@ -74,9 +74,9 @@ protected:
   Canvas *_drawTarget;
   Font *_font;
   pixel_t _drawColor;
-  int _w, _h;
-  int _cacheY;
   pixel_t *_cacheLine;
+  int _cacheY;
+  int _w, _h;
 };
 
 }
