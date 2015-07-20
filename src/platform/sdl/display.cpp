@@ -46,6 +46,14 @@ bool Canvas::create(int w, int h) {
   return _canvas != NULL;
 }
 
+bool Canvas::create(int w, int h, SDL_Window *window) {
+  logEntered();
+  _w = w;
+  _h = h;
+  _canvas = SDL_GetWindowSurface(window);
+  return _canvas != NULL;
+}
+
 void Canvas::copy(Canvas *src, const MARect *srcRect, int dstx, int dsty) {
   SDL_Rect srcrect;
   srcrect.x = srcRect->left;
@@ -94,12 +102,11 @@ Graphics::~Graphics() {
 bool Graphics::construct(const char *font, const char *boldFont) {
   logEntered();
 
-  _surface = SDL_GetWindowSurface(_window);
   SDL_GetWindowSize(_window, &_w, &_h);
   bool result = false;
   if (loadFonts(font, boldFont)) {
     _screen = new Canvas();
-    if (_screen && _screen->create(getWidth(), getHeight())) {
+    if (_screen && _screen->create(getWidth(), getHeight(), _window)) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
       result = true;
@@ -109,20 +116,6 @@ bool Graphics::construct(const char *font, const char *boldFont) {
 }
 
 void Graphics::redraw() {
-  SDL_Surface *src = ((Canvas *)_screen)->_canvas;
-  SDL_Rect srcrect;
-  srcrect.x = 0;
-  srcrect.y = 0;
-  srcrect.w = _screen->_w;
-  srcrect.h = _screen->_h;
-
-  SDL_Rect dstrect;
-  dstrect.x = 0;
-  dstrect.y = 0;
-  dstrect.w = _w;
-  dstrect.h = _h;
-
-  SDL_BlitSurface(src, &srcrect, _surface, &dstrect);
   SDL_UpdateWindowSurface(_window);
 }
 
@@ -131,9 +124,8 @@ void Graphics::resize() {
   bool drawScreen = (_drawTarget == _screen);
   delete _screen;
   _screen = new ::Canvas();
-  _screen->create(getWidth(), getHeight());
+  _screen->create(getWidth(), getHeight(), _window);
   _drawTarget = drawScreen ? _screen : NULL;
-  _surface = SDL_GetWindowSurface(_window);
 }
 
 bool Graphics::loadFonts(const char *font, const char *boldFont) {

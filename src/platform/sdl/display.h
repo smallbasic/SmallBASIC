@@ -28,7 +28,6 @@ private:
   bool loadFont(const char *filename, FT_Face &face);
 
   SDL_Window *_window;
-  SDL_Surface *_surface;
 };
 
 #endif

@@ -914,12 +914,12 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
-      }
 
-      sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
-                                   opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
-      items->add(new String(buffer));
-      _systemMenu[index++] = MENU_EDITMODE;
+        sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
+                                        opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
+        items->add(new String(buffer));
+        _systemMenu[index++] = MENU_EDITMODE;
+      }
 
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
