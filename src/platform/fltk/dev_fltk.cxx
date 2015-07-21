@@ -468,7 +468,7 @@ int System::ask(const char *title, const char *prompt, bool cancel) {
   if (cancel) {
     return fltk::choice(prompt, "Yes", "No", "Cancel");
   } else {
-    return fltk::choice(prompt, "Yes", "No");
+    return fltk::choice(prompt, "Yes", "No", "");
   }
 }
 

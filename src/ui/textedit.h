@@ -157,7 +157,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);
   char *copy(bool cut) { return NULL; }
-  void paste(char *text) {}
+  void paste(const char *text) {}
   bool isDrawTop() { return true; }
   void resize(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);

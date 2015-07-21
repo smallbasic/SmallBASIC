@@ -1,5 +1,6 @@
 2015-07-18
 	Added IDE editor sdl/android
+	Made a few minor performance improvements (SDL)
 
 2015-06-07
 	Fixed PRINT 1/1000 and other floating point rounding issues

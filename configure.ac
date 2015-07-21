@@ -140,25 +140,27 @@ function buildFLTK() {
    esac
 
    FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk2-config --cxxflags` -fno-exceptions"
-   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldflags --use-images`"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk2-config --ldstaticflags --use-images`"
 
    dnl do not depend on cygwin.dll under cygwin build
    case "${host_os}" in
      *mingw* | cygwin*)
-     FLTK_CXXFLAGS="-I`cygpath -m /usr/local/include` ${FLTK_CXXFLAGS} -mms-bitfields"
-     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -static-libgcc"
+     FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -mms-bitfields"
+     PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
      AC_DEFINE(_Win32, 1, [Windows build])
+     ;;
+
+     *)
+     dnl check for sdl2-config for sound output
+     AC_CHECK_PROG(have_sdl, sdl2-config, [yes], [no])
+     if test "${have_sdl}" = "yes" ; then
+       FLTK_CXXFLAGS="${FLTK_CXXFLAGS} `sdl2-config --cflags`"
+       PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs`"
+       AC_DEFINE(HAVE_SDL, 1, [Windows build])
+     fi
    esac
 
    defaultConditionals
-
-   dnl check for sdl-config for sound output
-   AC_CHECK_PROG(have_sdl, sdl-config, [yes], [no])
-   if test "${have_sdl}" = "yes" ; then
-     FLTK_CXXFLAGS="${FLTK_CXXFLAGS} `sdl-config --cflags`"
-     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl-config --libs`"
-     AC_DEFINE(HAVE_SDL, 1, [Windows build])
-   fi
 
    dnl preconfigured values for FLTK build
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -200,8 +202,8 @@ function buildSDL() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
 
      dnl do not depend on cygwin.dll under cygwin build
-     PACKAGE_CFLAGS="-I`cygpath -m /usr/local/include` ${PACKAGE_CFLAGS} -mms-bitfields"
-     PACKAGE_LIBS="-L`cygpath -m /usr/local/lib` ${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
+     PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
      AC_DEFINE(_Win32, 1, [Windows build])
      ;;
 

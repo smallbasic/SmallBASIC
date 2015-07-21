@@ -110,7 +110,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
   ImageBuffer *result = NULL;
   List_each(ImageBuffer *, it, cache) {
     ImageBuffer *next = (*it);
-    if (strcmp(next->_filename, filep->name) == 0) {
+    if (next->_filename != NULL && strcmp(next->_filename, filep->name) == 0) {
       result = next;
       break;
     }
