@@ -27,6 +27,8 @@ private:
   bool loadFonts(const char *font, const char *boldFont);
   bool loadFont(const char *filename, FT_Face &face);
 
+  SDL_Renderer *_renderer;
+  SDL_Texture *_texture;
   SDL_Window *_window;
 };
 

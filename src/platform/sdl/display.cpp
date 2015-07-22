@@ -13,20 +13,26 @@
 
 extern common::Graphics *graphics;
 
+#if defined(PIXELFORMAT_RGB565)
+#define PIXEL_FORMAT SDL_PIXELFORMAT_RGB565
+#else
+#define PIXEL_FORMAT SDL_PIXELFORMAT_RGB888
+#endif
+
 //
 // Canvas implementation
 //
 Canvas::Canvas() :
-  _canvas(NULL),
+  _surface(NULL),
   _clip(NULL) {
 }
 
 Canvas::~Canvas() {
-  if (_canvas != NULL) {
-    SDL_FreeSurface(_canvas);
+  if (_surface != NULL) {
+    SDL_FreeSurface(_surface);
   }
   delete _clip;
-  _canvas = NULL;
+  _surface = NULL;
   _clip = NULL;
 }
 
@@ -36,25 +42,12 @@ bool Canvas::create(int w, int h) {
   _h = h;
   int bpp;
   Uint32 rmask, gmask, bmask, amask;
-#if defined(PIXELFORMAT_RGB565)
-  Uint32 format = SDL_PIXELFORMAT_RGB565;
-#else
-  Uint32 format = SDL_PIXELFORMAT_RGB888;
-#endif
-  SDL_PixelFormatEnumToMasks(format, &bpp, &rmask, &gmask, &bmask, &amask);
-  _canvas = SDL_CreateRGBSurface(0, w, h, bpp, rmask, gmask, bmask, amask);
-  return _canvas != NULL;
+  SDL_PixelFormatEnumToMasks(PIXEL_FORMAT, &bpp, &rmask, &gmask, &bmask, &amask);
+  _surface = SDL_CreateRGBSurface(0, w, h, bpp, rmask, gmask, bmask, amask);
+  return _surface != NULL;
 }
 
-bool Canvas::create(int w, int h, SDL_Window *window) {
-  logEntered();
-  _w = w;
-  _h = h;
-  _canvas = SDL_GetWindowSurface(window);
-  return _canvas != NULL;
-}
-
-void Canvas::copy(Canvas *src, const MARect *srcRect, int dstx, int dsty) {
+void Canvas::copy(Canvas *src, const MARect *srcRect, int destX, int destY) {
   SDL_Rect srcrect;
   srcrect.x = srcRect->left;
   srcrect.y = srcRect->top;
@@ -62,17 +55,17 @@ void Canvas::copy(Canvas *src, const MARect *srcRect, int dstx, int dsty) {
   srcrect.h = srcRect->height;
 
   SDL_Rect dstrect;
-  dstrect.x = dstx;
-  dstrect.y = dsty;
+  dstrect.x = destX;
+  dstrect.y = destY;
   dstrect.w = _w;
   dstrect.h = _h;
 
-  SDL_BlitSurface(src->_canvas, &srcrect, _canvas, &dstrect);
+  SDL_BlitSurface(src->_surface, &srcrect, _surface, &dstrect);
 }
 
-pixel_t *Canvas::getLine(int y) { 
-  pixel_t *pixels = (pixel_t *)_canvas->pixels;
-  return pixels + (y * _w); 
+pixel_t *Canvas::getLine(int y) {
+  pixel_t *pixels = (pixel_t *)_surface->pixels;
+  return pixels + (y * _w);
 }
 
 void Canvas::setClip(int x, int y, int w, int h) {
@@ -92,21 +85,30 @@ void Canvas::setClip(int x, int y, int w, int h) {
 // Graphics implementation
 //
 Graphics::Graphics(SDL_Window *window) : common::Graphics(),
+  _renderer(NULL),
+  _texture(NULL),
   _window(window) {
 }
 
 Graphics::~Graphics() {
   logEntered();
+  SDL_DestroyTexture(_texture);
+  SDL_DestroyRenderer(_renderer);
 }
 
 bool Graphics::construct(const char *font, const char *boldFont) {
   logEntered();
 
-  SDL_GetWindowSize(_window, &_w, &_h);
   bool result = false;
-  if (loadFonts(font, boldFont)) {
+  SDL_GetWindowSize(_window, &_w, &_h);
+  _renderer = SDL_CreateRenderer(_window, -1, 0);
+  if (_renderer != NULL) {
+    _texture = SDL_CreateTexture(_renderer, PIXEL_FORMAT,
+                                 SDL_TEXTUREACCESS_STREAMING, _w, _h);
+  }
+  if (_texture != NULL && loadFonts(font, boldFont)) {
     _screen = new Canvas();
-    if (_screen && _screen->create(getWidth(), getHeight(), _window)) {
+    if (_screen && _screen->create(getWidth(), getHeight())) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
       result = true;
@@ -116,7 +118,10 @@ bool Graphics::construct(const char *font, const char *boldFont) {
 }
 
 void Graphics::redraw() {
-  SDL_UpdateWindowSurface(_window);
+  SDL_UpdateTexture(_texture, NULL, _screen->_surface->pixels, _w * sizeof (pixel_t));
+  SDL_RenderClear(_renderer);
+  SDL_RenderCopy(_renderer, _texture, NULL, NULL);
+  SDL_RenderPresent(_renderer);
 }
 
 void Graphics::resize() {
@@ -124,8 +129,12 @@ void Graphics::resize() {
   bool drawScreen = (_drawTarget == _screen);
   delete _screen;
   _screen = new ::Canvas();
-  _screen->create(getWidth(), getHeight(), _window);
+  _screen->create(getWidth(), getHeight());
   _drawTarget = drawScreen ? _screen : NULL;
+
+  SDL_DestroyTexture(_texture);
+  _texture = SDL_CreateTexture(_renderer, PIXEL_FORMAT,
+                               SDL_TEXTUREACCESS_STREAMING, _w, _h);
 }
 
 bool Graphics::loadFonts(const char *font, const char *boldFont) {

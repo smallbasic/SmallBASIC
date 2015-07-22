@@ -24,7 +24,6 @@ struct Canvas {
   virtual ~Canvas();
 
   bool create(int w, int h);
-  bool create(int w, int h, SDL_Window *window);
   void copy(Canvas *src, const MARect *srcRect, int dstx, int dsty);
   void setClip(int x, int y, int w, int h);
   pixel_t *getLine(int y);
@@ -35,7 +34,7 @@ struct Canvas {
 
   int _w;
   int _h;
-  SDL_Surface *_canvas;
+  SDL_Surface *_surface;
   SDL_Rect *_clip;
 };
 

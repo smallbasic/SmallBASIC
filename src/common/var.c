@@ -366,12 +366,13 @@ void v_add(var_t *result, var_t *a, var_t *b) {
   char tmpsb[64];
 
   if (a->type == V_STR && b->type == V_STR) {
+    int length = strlen(a->v.p.ptr) + strlen(b->v.p.ptr);
     result->type = V_STR;
-    result->v.p.ptr = malloc(strlen(a->v.p.ptr) +
-                                        strlen(b->v.p.ptr) + 1);
+    result->v.p.ptr = malloc(length + 1);
     strcpy(result->v.p.ptr, a->v.p.ptr);
     strcat(result->v.p.ptr, b->v.p.ptr);
-    result->v.p.size = strlen(result->v.p.ptr) + 1;
+    result->v.p.ptr[length] = '\0';
+    result->v.p.size = length + 1;
     return;
   } else if (a->type == V_INT && b->type == V_INT) {
     result->type = V_INT;
