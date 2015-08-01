@@ -709,6 +709,9 @@ void System::runMain(const char *mainBasPath) {
           // unexpected error in main.bas
           alert("", gsb_last_errmsg);
           _state = kClosingState;
+        } else {
+          // don't reload
+          _loadPath.empty();
         }
       }
       if (!_mainBas && !networkFile) {
@@ -1198,6 +1201,7 @@ void lwrite(const char *str) {
 }
 
 void dev_delay(dword ms) {
+  g_system->getOutput()->redraw();
   maWait(ms);
 }
 

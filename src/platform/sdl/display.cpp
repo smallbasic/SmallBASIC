@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -122,10 +122,10 @@ bool Graphics::construct(const char *font, const char *boldFont) {
 
   if (loadFonts(font, boldFont)) {
     _screen = new Canvas();
-    result = _screen != NULL;
-    if (result) {
+    if (_screen != NULL) {
       if (_surface == NULL) {
         _screen->setSurface(SDL_GetWindowSurface(_window), w, h);
+        result = true;
       } else {
         result = _screen->create(w, h);
       }
