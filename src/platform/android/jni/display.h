@@ -18,13 +18,14 @@
 
 using namespace strlib;
 
-struct Graphics : common::Graphics {
+struct Graphics : ui::Graphics {
   Graphics(android_app *app);
   virtual ~Graphics();
 
   bool construct();
   void redraw();
   void resize();
+  void setSize(int w, int h) { _w = w; _h = h; }
 
 private:
   bool loadFonts();
@@ -33,6 +34,7 @@ private:
   FT_Byte *_fontBuffer;
   FT_Byte *_fontBufferB;
   android_app *_app;
+  int _w, _h;
 };
 
 #endif

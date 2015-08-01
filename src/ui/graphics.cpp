@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -15,66 +15,9 @@
 #include "common/smbas.h"
 #include "common/device.h"
 
-using namespace common;
+using namespace ui;
 
 Graphics *graphics;
-
-inline void RGB565_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
-  r = (c >> 11) & 0x1f;
-  g = (c >> 5) & 0x3f;
-  b = (c) & 0x1f;
-}
-
-inline pixel_t RGB888_to_RGB565(unsigned rgb) {
-  return ((((rgb >> 19) & 0x1f) << 11) |
-          (((rgb >> 10) & 0x3f) <<  5) |
-          (((rgb >>  3) & 0x1f)));
-}
-
-inline void BGR888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
-  b = (c & 0xff0000) >> 16;
-  g = (c & 0xff00) >> 8;
-  r = (c & 0xff);
-}
-
-inline void RGB888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
-  r = (c & 0xff0000) >> 16;
-  g = (c & 0xff00) >> 8;
-  b = (c & 0xff);
-}
-
-inline pixel_t RGB888_to_RGBA8888(unsigned c) {
-  uint8_t r = (c & 0xff0000) >> 16;
-  uint8_t g = (c & 0xff00) >> 8;
-  uint8_t b = (c & 0xff);
-  return ((0xff000000) | (b << 16) | (g << 8) | (r));
-}
-
-#if defined(PIXELFORMAT_RGB565)
-  #define SET_RGB(r, g, b) ((r << 11) | (g << 5) | (b))
-  #define GET_RGB RGB565_to_RGB
-  #define GET_FROM_RGB888 RGB888_to_RGB565
-#elif defined(PIXELFORMAT_RGBA8888)
-  #define SET_RGB(r, g, b) ((0xff000000) | (r << 16) | (g << 8) | (b))
-  #define GET_RGB RGB888_to_RGB
-  #define GET_RGB2 BGR888_to_RGB
-  #define GET_FROM_RGB888 RGB888_to_RGBA8888
-#else
-  #define SET_RGB(r, g, b) ((r << 16) | (g << 8) | (b))
-  #define GET_RGB RGB888_to_RGB
-  #define GET_RGB2 RGB888_to_RGB
-  #define GET_FROM_RGB888(c) (c)
-#endif
-
-#define GET_LINE(line, y) \
-  if (_cacheY == y && !_cacheLine) { \
-    line = _cacheLine; \
-  } else { \
-    line = _drawTarget->getLine(y); \
-    _cacheLine = line; \
-    _cacheY = y; \
-  }
-
 
 // fractional part of x
 inline double fpart(double x) {
@@ -144,11 +87,7 @@ Font::~Font() {
 Graphics::Graphics() :
   _screen(NULL),
   _drawTarget(NULL),
-  _font(NULL),
-  _cacheLine(NULL),
-  _cacheY(-1),
-  _w(0),
-  _h(0) {
+  _font(NULL) {
   graphics = this;
 }
 
@@ -179,12 +118,6 @@ void Graphics::deleteFont(Font *font) {
   delete font;
 }
 
-void Graphics::drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect) {
-  if (_drawTarget && _drawTarget != src) {
-    _drawTarget->copy(src, srcRect, dstPoint->x, dstPoint->y);
-  }
-}
-
 void Graphics::drawLine(int startX, int startY, int endX, int endY) {
   if (_drawTarget) {
     if (startY == endY) {
@@ -198,12 +131,11 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
       if (x1 < 0) {
         x1 = 0;
       }
-      if (x2 >= _w) {
-        x2 = _w -1;
+      if (x2 >= _drawTarget->_w) {
+        x2 = _drawTarget->_w -1;
       }
-      if (startY >= 0 && startY < _h) {
-        pixel_t *line;
-        GET_LINE(line, startY);
+      if (startY >= 0 && startY < _drawTarget->_h) {
+        pixel_t *line = _drawTarget->getLine(startY);
         for (int x = x1; x <= x2; x++) {
           if (x >= _drawTarget->x() && x < _drawTarget->w()) {
             line[x] = _drawColor;
@@ -221,10 +153,10 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
       if (y1 < 0) {
         y1 = 0;
       }
-      if (y2 >= _h) {
-        y2 = _h - 1;
+      if (y2 >= _drawTarget->_h) {
+        y2 = _drawTarget->_h - 1;
       }
-      if (startX >= 0 && startX < _w) {
+      if (startX >= 0 && startX < _drawTarget->_w) {
         for (int y = y1; y <= y2; y++) {
           if (y >= _drawTarget->y() && y < _drawTarget->h()) {
             pixel_t *line = _drawTarget->getLine(y);
@@ -247,47 +179,8 @@ void Graphics::drawPixel(int posX, int posY) {
       && posY >= _drawTarget->y()
       && posX < _drawTarget->w()
       && posY < _drawTarget->h()) {
-    pixel_t *line;
-    GET_LINE(line, posY);
+    pixel_t *line = _drawTarget->getLine(posY);
     line[posX] = _drawColor;
-  }
-}
-
-void Graphics::drawRectFilled(int left, int top, int width, int height) {
-  if (_drawTarget) {
-    int w = _drawTarget->w();
-    int h = _drawTarget->h();
-    int dtX = _drawTarget->x();
-    int dtY = _drawTarget->y();
-    uint8_t dR, dG, dB;
-
-    GET_RGB(_drawColor, dR, dG, dB);
-    if (left == 0 && w == width && top < h && top > -1 &&
-        dR == dG && dR == dB) {
-      // contiguous block of uniform colour
-      unsigned blockH = height;
-      if (top + height > h) {
-        blockH = height - top;
-      }
-      memset(_drawTarget->getLine(top), dR, 4 * width * blockH);
-    } else {
-      for (int y = 0; y < height; y++) {
-        int posY = y + top;
-        if (posY == h) {
-          break;
-        } else if (posY >= dtY) {
-          pixel_t *line = _drawTarget->getLine(posY);
-          for (int x = 0; x < width; x++) {
-            int posX = x + left;
-            if (posX == w) {
-              break;
-            } else if (posX >= dtX) {
-              line[posX] = _drawColor;
-            }
-          }
-        }
-      }
-    }
   }
 }
 
@@ -396,7 +289,7 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image,
       for (int dx = 0, x = srcRect->left; x < srcRect->width; x += scale, dx++) {
         if (x >= canvas->x() && x < canvas->w()) {
           uint8_t r,g,b;
-          GET_RGB2(line[x], r, g, b);
+          GET_RGB(line[x], r, g, b);
           int offs = (4 * dy * w) + (4 * dx);
           image[offs + 0] = r;
           image[offs + 1] = g;
@@ -415,8 +308,7 @@ int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
       && posY > -1
       && posX < canvas->_w
       && posY < canvas->_h - 1) {
-    pixel_t *line;
-    GET_LINE(line, posY);
+    pixel_t *line = canvas->getLine(posY);
     result = line[posX];
   }
   return result;
@@ -442,6 +334,7 @@ void Graphics::setClip(int x, int y, int w, int h) {
 }
 
 MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
+  MAHandle result = (MAHandle) _drawTarget;
   if (maHandle == (MAHandle) HANDLE_SCREEN ||
       maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
     _drawTarget = _screen;
@@ -450,7 +343,7 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
   }
   delete _drawTarget->_clip;
   _drawTarget->_clip = NULL;
-  return (MAHandle) _drawTarget;
+  return result;
 }
 
 // see: http://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
@@ -520,8 +413,7 @@ void Graphics::wuPlot(int posX, int posY, double c) {
       && posY >= _drawTarget->y()
       && posX < _drawTarget->w()
       && posY < _drawTarget->h()) {
-    pixel_t *line;
-    GET_LINE(line, posY);
+    pixel_t *line = _drawTarget->getLine(posY);
     uint8_t sR, sG, sB;
     uint8_t dR, dG, dB;
 
@@ -568,7 +460,10 @@ void maLine(int startX, int startY, int endX, int endY) {
 }
 
 void maFillRect(int left, int top, int width, int height) {
-  graphics->drawRectFilled(left, top, width, height);
+  Canvas *drawTarget = graphics->getDrawTarget();
+  if (drawTarget) {
+    drawTarget->fillRect(left, top, width, height, graphics->getDrawColor());
+  }
 }
 
 void maDrawText(int left, int top, const char *str, int length) {
@@ -580,9 +475,6 @@ void maDrawText(int left, int top, const char *str, int length) {
 void maDrawRGB(const MAPoint2d *dstPoint, const void *src,
                const MARect *srcRect, int opacity, int bytesPerLine) {
   graphics->drawRGB(dstPoint, src, srcRect, opacity, bytesPerLine);
-}
-
-void maResetBacklight(void) {
 }
 
 MAExtent maGetTextSize(const char *str) {
@@ -614,7 +506,11 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
-  graphics->drawImageRegion((Canvas *)maHandle, dstPoint, srcRect);
+  Canvas *drawTarget = graphics->getDrawTarget();
+  Canvas *src = (Canvas *)maHandle;
+  if (drawTarget && drawTarget != src) {
+    drawTarget->drawRegion(src, srcRect, dstPoint->x, dstPoint->y);
+  }
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {

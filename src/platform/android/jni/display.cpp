@@ -15,20 +15,20 @@
 #define FONT_FACE_REGULAR "Envy Code R.ttf"
 #define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
 
-extern common::Graphics *graphics;
+extern ui::Graphics *graphics;
 
 //
 // Canvas implementation
 //
 Canvas::Canvas() :
-  _canvas(NULL),
+  _pixels(NULL),
   _clip(NULL) {
 }
 
 Canvas::~Canvas() {
-  delete _canvas;
+  delete _pixels;
   delete _clip;
-  _canvas = NULL;
+  _pixels = NULL;
   _clip = NULL;
 }
 
@@ -37,9 +37,9 @@ bool Canvas::create(int w, int h) {
   bool result;
   _w = w;
   _h = h;
-  _canvas = new pixel_t[w * h];
-  if (_canvas) {
-    memset(_canvas, 0, w * h);
+  _pixels = new pixel_t[w * h];
+  if (_pixels) {
+    memset(_pixels, 0, w * h);
     result = true;
   } else {
     result = false;
@@ -47,7 +47,7 @@ bool Canvas::create(int w, int h) {
   return result;
 }
 
-void Canvas::copy(Canvas *src, const MARect *srcRect, int destX, int destY) {
+void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY) {
   int srcH = srcRect->height;
   if (srcRect->top + srcRect->height > src->_h) {
     srcH = src->_h - srcRect->top;
@@ -56,6 +56,40 @@ void Canvas::copy(Canvas *src, const MARect *srcRect, int destX, int destY) {
     pixel_t *line = src->getLine(y + srcRect->top) + srcRect->left;
     pixel_t *dstLine = getLine(destY) + destX;
     memcpy(dstLine, line, srcRect->width * sizeof(pixel_t));
+  }
+}
+
+void Canvas::fillRect(int left, int top, int width, int height, pixel_t drawColor) {
+  int dtX = x();
+  int dtY = y();
+  uint8_t dR, dG, dB;
+
+  GET_RGB(drawColor, dR, dG, dB);
+  if (left == 0 && _w == width && top < _h && top > -1 &&
+      dR == dG && dR == dB) {
+    // contiguous block of uniform colour
+    unsigned blockH = height;
+    if (top + height > _h) {
+      blockH = height - top;
+    }
+    memset(getLine(top), drawColor, width * blockH);
+  } else {
+    for (int y = 0; y < height; y++) {
+      int posY = y + top;
+      if (posY == _h) {
+        break;
+      } else if (posY >= dtY) {
+        pixel_t *line = getLine(posY);
+        for (int x = 0; x < width; x++) {
+          int posX = x + left;
+          if (posX == _w) {
+            break;
+          } else if (posX >= dtX) {
+            line[posX] = drawColor;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -75,10 +109,12 @@ void Canvas::setClip(int x, int y, int w, int h) {
 //
 // Graphics implementation
 //
-Graphics::Graphics(android_app *app) : common::Graphics(),
+Graphics::Graphics(android_app *app) : ui::Graphics(),
   _fontBuffer(NULL),
   _fontBufferB(NULL),
-  _app(app) {
+  _app(app),
+  _w(0),
+  _h(0) {
 }
 
 Graphics::~Graphics() {
@@ -99,7 +135,7 @@ bool Graphics::construct() {
   bool result = false;
   if (loadFonts()) {
     _screen = new Canvas();
-    if (_screen && _screen->create(getWidth(), getHeight())) {
+    if (_screen && _screen->create(_w, _h)) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
 #if defined(PIXELFORMAT_RGBA8888)
@@ -140,7 +176,7 @@ void Graphics::redraw() {
 void Graphics::resize() {
   delete _screen;
   _screen = new Canvas();
-  _screen->create(getWidth(), getHeight());
+  _screen->create(_w, _h);
   _drawTarget = NULL;
 }
 

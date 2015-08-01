@@ -472,8 +472,7 @@ void Runtime::onResize(int width, int height) {
     int h = _graphics->getHeight();
     if (w != width || h != height) {
       trace("Resized from %d %d to %d %d", w, h, width, height);
-      _graphics->setSize(width, height);
-      _graphics->resize();
+      _graphics->resize(width, height);
       resize();
     }
   }

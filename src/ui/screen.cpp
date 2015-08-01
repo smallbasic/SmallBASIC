@@ -175,7 +175,6 @@ void Screen::drawOverlay(bool vscroll) {
     int left = (screenW - w) / 2;
     int textY = top + ((h - _charHeight) / 2);
 
-    maSetClipRect(0, 0, screenW, screenH);
     maSetColor(0xbfbfbf);
     maFillRect(left, top, w, h);
     maSetColor(0xe5e5e5);
@@ -186,8 +185,6 @@ void Screen::drawOverlay(bool vscroll) {
     maSetColor(0x403c44);
     maDrawText(left + _charWidth, textY, _label.c_str(), _label.length());
   }
-
-  maResetBacklight();
 }
 
 void Screen::drawInto(bool background) {
@@ -434,7 +431,6 @@ void GraphicScreen::drawBase(bool vscroll, bool update) {
   dstPoint.x = _x;
   dstPoint.y = _y;
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
-  maSetClipRect(_x, _y, _width, _height);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
 
 #if !defined(_FLTK)
@@ -882,7 +878,6 @@ void TextScreen::drawBase(bool vscroll, bool update) {
 
   // setup the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN_BUFFER);
-  maSetClipRect(_x, _y, _width, _height);
   maSetColor(_bg);
   maFillRect(_x, _y, _width, _height);
   maSetColor(color);
