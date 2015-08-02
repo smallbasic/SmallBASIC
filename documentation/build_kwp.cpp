@@ -80,6 +80,19 @@ bool isKeyword(const char *keyword) {
       result = true;
     }
   }
+
+  for (int i = 0; !result && opr_table[i].name[0] != '\0'; i++) {
+    if (strcasecmp(opr_table[i].name, keyword) == 0) {
+      result = true;
+    }
+  }
+
+  for (int i = 0; !result && spopr_table[i].name[0] != '\0'; i++) {
+    if (strcasecmp(spopr_table[i].name, keyword) == 0) {
+      result = true;
+    }
+  }
+
   return result;
 }
 
