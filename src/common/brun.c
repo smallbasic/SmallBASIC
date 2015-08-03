@@ -553,9 +553,6 @@ static inline void bc_loop_call_proc() {
   case kwRANDOMIZE:
     cmd_randomize();
     break;
-  case kwWSPLIT:
-    cmd_wsplit();
-    break;
   case kwSPLIT:
     cmd_split();
     break;
@@ -657,9 +654,6 @@ static inline void bc_loop_call_proc() {
     break;
   case kwCHMOD:
     cmd_chmod();
-    break;
-  case kwPLOT2:
-    cmd_plot2();
     break;
   case kwPLOT:
     cmd_plot();

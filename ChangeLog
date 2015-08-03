@@ -1,5 +1,6 @@
 2015-08-02
 	Fix display output before DELAY
+	Removed obsolete/unimplemented keywords WSPLIT, PLOT2, UNLOADLIB
 
 2015-07-18
 	Added IDE editor sdl/android

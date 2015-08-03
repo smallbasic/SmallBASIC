@@ -499,7 +499,7 @@ void Runtime::optionsBox(StringList *items) {
   width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
 
   int charHeight = _output->getCharHeight();
-  int textHeight = charHeight + (charHeight / 3);
+  int textHeight = charHeight + (charHeight / 2);
   int height = textHeight * items->size();
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
