@@ -2634,20 +2634,30 @@ void comp_text_line(char *text) {
       return;
     }
   }
-  if (idx == kwLET) {           // old-style keyword LET
-    char *p;
+  if (idx == kwLET) {
+    // old-style keyword LET
     idx = -1;
-    p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
-    strcpy(comp_bc_parm, p);
-  } else if (idx == kwDECLARE) {  // declaration
-    char *p;
+    char *p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
+    if (p > comp_bc_parm) {
+      // p is an offset of comp_bc_parm
+      int len = strlen(p);
+      memmove(comp_bc_parm, p, len);
+      comp_bc_parm[len] = '\0';
+    }
+  } else if (idx == kwDECLARE) {
+    // declaration
     decl = 1;
-    p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
+    char *p = (char *)comp_next_word(comp_bc_parm, comp_bc_name);
     idx = comp_is_keyword(comp_bc_name);
     if (idx == -1) {
       idx = comp_is_proc(comp_bc_name);
     }
-    strcpy(comp_bc_parm, p);
+    if (p > comp_bc_parm) {
+      // p is an offset of comp_bc_parm
+      int len = strlen(p);
+      memmove(comp_bc_parm, p, len);
+      comp_bc_parm[len] = '\0';
+    }
     if (idx != kwPROC && idx != kwFUNC) {
       sc_raise(MSG_USE_DECL);
       return;
