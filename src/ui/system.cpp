@@ -177,7 +177,10 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
         _state = kRunState;
-        // fallthrough
+        if (!editWidget->isDirty()) {
+          break;
+        }
+        // otherwise fallthrough
       case SB_KEY_CTRL('s'):
         if (!editWidget->save(loadPath)) {
           alert("", "Failed to save file");

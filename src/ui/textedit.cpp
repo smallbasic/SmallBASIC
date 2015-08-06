@@ -343,7 +343,10 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   maFillRect(cursorX + _marginWidth, cursorY, chw, _charHeight);
   if (_state.cursor < _buf._len) {
     maSetColor(_theme->_cursor_color);
-    maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
+    if (_buf._buffer[_state.cursor] != '\r' &&
+        _buf._buffer[_state.cursor] != '\n') {
+      maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
+    }
   }
   if (_matchingBrace != -1) {
     maSetColor(_theme->_match_background);
@@ -463,7 +466,7 @@ void TextEditInput::reload(const char *text) {
 
 bool TextEditInput::save(const char *filePath) {
   bool result = true;
-  FILE *fp = fopen(filePath, "w");
+  FILE *fp = fopen(filePath, "wb");
   if (fp) {
     fwrite(_buf._buffer, sizeof(char), _buf._len, fp);
     fclose(fp);
