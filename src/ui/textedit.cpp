@@ -455,6 +455,12 @@ void TextEditInput::gotoLine(const char *buffer) {
   }
 }
 
+void TextEditInput::reload(const char *text) {
+  _buf.clear();
+  _buf.insertChars(0, text, strlen(text));
+  stb_textedit_initialize_state(&_state, false);
+}
+
 bool TextEditInput::save(const char *filePath) {
   bool result = true;
   FILE *fp = fopen(filePath, "w");

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -111,6 +111,7 @@ void System::editSource(strlib::String &loadPath) {
   TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
+  _modifiedTime = getModifiedTime();
 
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
@@ -144,6 +145,17 @@ void System::editSource(strlib::String &loadPath) {
       bool dirty = editWidget->isDirty();
       char *text;
 
+      if (_modifiedTime != 0 && _modifiedTime != getModifiedTime()) {
+        const char *msg = "Do you want to reload the file?";
+        if (ask("File has changed on disk", msg, false) == 0) {
+          loadSource(loadPath.c_str());
+          editWidget->reload(_programSrc);
+          dirty = !editWidget->isDirty();
+        }
+        _modifiedTime = getModifiedTime();
+        event.key = 0;
+      }
+
       switch (event.key) {
       case SB_KEY_F(2):
       case SB_KEY_F(3):
@@ -170,6 +182,7 @@ void System::editSource(strlib::String &loadPath) {
         if (!editWidget->save(loadPath)) {
           alert("", "Failed to save file");
         }
+        _modifiedTime = getModifiedTime();
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -186,9 +199,14 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_CTRL('h'):
-        _output->setStatus("Keystroke help. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createHelp();
+        if (widget == helpWidget) {
+          _output->setStatus("Keyword Help. Esc=Close");
+          helpWidget->createKeywordIndex();
+        } else {
+          _output->setStatus("Keystroke help. Esc=Close");
+          widget = helpWidget;
+          helpWidget->createHelp();
+        }
         helpWidget->show();
         break;
       case SB_KEY_CTRL('l'):
@@ -954,7 +972,11 @@ void System::showSystemScreen(bool showSrc) {
 
 void System::waitForBack() {
   while (!isBack() && !isClosing() && !isRestart()) {
-    getNextEvent();
+    MAEvent event = getNextEvent();
+    if (event.type == EVENT_TYPE_KEY_PRESSED &&
+        event.key == SB_KEY_BACKSPACE) {
+      break;
+    }
   }
 }
 

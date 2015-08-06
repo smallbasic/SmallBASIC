@@ -74,6 +74,7 @@ struct TextEditInput : public FormEditInput {
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
   void gotoLine(const char *buffer);
+  void reload(const char *text);
   bool save(const char *filePath);
   void setCursor(int pos);
   void setCursorRow(int row);
