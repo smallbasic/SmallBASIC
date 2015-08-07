@@ -57,7 +57,8 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "SHIFT-<arrow> select\n"
-  "F1, keyword help\n"
+  "TAB indent line\n"
+  "F1,A-h keyword help\n"
   "F9, C-r run\n";
 
 //

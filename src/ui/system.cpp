@@ -35,7 +35,8 @@
 #define MENU_EDITMODE   11
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
-#define MENU_SIZE       14
+#define MENU_SCRATCHPAD 14
+#define MENU_SIZE       15
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -196,20 +197,16 @@ void System::editSource(strlib::String &loadPath) {
         }
         break;
       case SB_KEY_F(1):
+      case SB_KEY_ALT('h'):
         _output->setStatus("Keyword Help. Esc=Close");
         widget = helpWidget;
         helpWidget->createKeywordIndex();
         helpWidget->show();
         break;
       case SB_KEY_CTRL('h'):
-        if (widget == helpWidget) {
-          _output->setStatus("Keyword Help. Esc=Close");
-          helpWidget->createKeywordIndex();
-        } else {
-          _output->setStatus("Keystroke help. Esc=Close");
-          widget = helpWidget;
-          helpWidget->createHelp();
-        }
+        _output->setStatus("Keystroke help. Esc=Close");
+        widget = helpWidget;
+        helpWidget->createHelp();
         helpWidget->show();
         break;
       case SB_KEY_CTRL('l'):
@@ -505,6 +502,9 @@ void System::handleMenu(int menuId) {
     break;
   case MENU_SCREENSHOT:
     ::screen_dump();
+    break;
+  case MENU_SCRATCHPAD:
+    scratchPad();
     break;
   }
 
@@ -932,10 +932,13 @@ void System::showMenu() {
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
       if (_mainBas) {
+        sprintf(buffer, "Scratchpad");
+        items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
+        _systemMenu[index++] = MENU_SCRATCHPAD;
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
 
@@ -1093,6 +1096,28 @@ void System::printSource() {
     } else {
       _output->setScroll(0, 0);
     }
+  }
+}
+
+void System::scratchPad() {
+  const char *path = gsb_bas_dir;
+#if defined(_ANDROID)
+  path = "/sdcard/";
+#endif
+  char file[OS_PATHNAME_SIZE];
+  sprintf(file, "%suntitled.bas", path);
+  bool ready = access(file, R_OK) == 0;
+  if (!ready) {
+    FILE *fp = fopen(file, "w");
+    if (fp) {
+      fprintf(fp, "REM scratch buffer\n");
+      fclose(fp);
+      ready = true;
+    }
+  }
+  if (ready) {
+    setLoadPath(file);
+    setExit(false);
   }
 }
 
