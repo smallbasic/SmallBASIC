@@ -101,6 +101,29 @@ void Screen::clear() {
   _label.empty();
 }
 
+void Screen::drawLabel() {
+  if (_label.length()) {
+    MAExtent screenSize = maGetScrSize();
+    int screenW = EXTENT_X(screenSize);
+    int screenH = EXTENT_Y(screenSize);
+    int w = _charWidth * (_label.length() + 2);
+    int h = _charHeight + 2;
+    int top = screenH - h;
+    int left = (screenW - w) / 2;
+    int textY = top + ((h - _charHeight) / 2);
+
+    maSetColor(0xbfbfbf);
+    maFillRect(left, top, w, h);
+    maSetColor(0xe5e5e5);
+    maLine(left, top, left + w, top);
+    maSetColor(0x737373);
+    maLine(left, top + h - 1, left + w, top + h - 1);
+    maLine(left + w, top + 1, left + w, top + h - 1);
+    maSetColor(0x403c44);
+    maDrawText(left + _charWidth, textY, _label.c_str(), _label.length());
+  }
+}
+
 void Screen::drawShape(Shape *rect) {
   if (rect != NULL &&
       rect->_y >= _scrollY &&
@@ -164,27 +187,7 @@ void Screen::drawOverlay(bool vscroll) {
     }
   }
 
-  // display the label
-  if (_label.length()) {
-    MAExtent screenSize = maGetScrSize();
-    int screenW = EXTENT_X(screenSize);
-    int screenH = EXTENT_Y(screenSize);
-    int w = _charWidth * (_label.length() + 2);
-    int h = _charHeight + 2;
-    int top = screenH - h;
-    int left = (screenW - w) / 2;
-    int textY = top + ((h - _charHeight) / 2);
-
-    maSetColor(0xbfbfbf);
-    maFillRect(left, top, w, h);
-    maSetColor(0xe5e5e5);
-    maLine(left, top, left + w, top);
-    maSetColor(0x737373);
-    maLine(left, top + h - 1, left + w, top + h - 1);
-    maLine(left + w, top + 1, left + w, top + h - 1);
-    maSetColor(0x403c44);
-    maDrawText(left + _charWidth, textY, _label.c_str(), _label.length());
-  }
+  drawLabel();
 }
 
 void Screen::drawInto(bool background) {

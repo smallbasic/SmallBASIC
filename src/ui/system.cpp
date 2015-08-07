@@ -138,8 +138,7 @@ void System::editSource(strlib::String &loadPath) {
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
-    if (event.type == EVENT_TYPE_KEY_PRESSED &&
-        _userScreenId == -1) {
+    if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
       dev_clrkb();
       int sw = _output->getScreenWidth();
       bool redraw = true;
@@ -1105,7 +1104,7 @@ void System::scratchPad() {
   path = "/sdcard/";
 #endif
   char file[OS_PATHNAME_SIZE];
-  sprintf(file, "%suntitled.bas", path);
+  sprintf(file, "%sscratch.bas", path);
   bool ready = access(file, R_OK) == 0;
   if (!ready) {
     FILE *fp = fopen(file, "w");

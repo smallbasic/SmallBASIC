@@ -555,7 +555,9 @@ char *TextEditInput::copy(bool cut) {
 }
 
 void TextEditInput::paste(const char *text) {
-  stb_textedit_paste(&_buf, &_state, text, strlen(text));
+  if (text != NULL) {
+    stb_textedit_paste(&_buf, &_state, text, strlen(text));
+  }
 }
 
 void TextEditInput::layout(StbTexteditRow *row, int start) const {
@@ -699,7 +701,7 @@ void TextEditInput::editTab() {
   // get the current lines indent
   char *buf = lineText(start);
   int curIndent = 0;
-  while (buf && buf[curIndent] == ' ') {
+  while (buf && (buf[curIndent] == ' ' || buf[curIndent] == '\t')) {
     curIndent++;
   }
 
