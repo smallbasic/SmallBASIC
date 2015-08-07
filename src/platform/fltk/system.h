@@ -10,6 +10,10 @@
 #define FLTK_SYSTEM_H
 
 struct System {
+  void alert(const char *title, const char *message);
+  int ask(const char *title, const char *prompt, bool cancel=true);
+  void setClipboardText(const char *text);
+  char *getClipboardText();
   bool isBreak();
   bool isRunning();
   void setLoadPath(const char *url);

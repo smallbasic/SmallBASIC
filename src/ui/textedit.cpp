@@ -57,7 +57,8 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "SHIFT-<arrow> select\n"
-  "F1, keyword help\n"
+  "TAB indent line\n"
+  "F1,A-h keyword help\n"
   "F9, C-r run\n";
 
 //
@@ -343,7 +344,10 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   maFillRect(cursorX + _marginWidth, cursorY, chw, _charHeight);
   if (_state.cursor < _buf._len) {
     maSetColor(_theme->_cursor_color);
-    maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
+    if (_buf._buffer[_state.cursor] != '\r' &&
+        _buf._buffer[_state.cursor] != '\n') {
+      maDrawText(cursorX + _marginWidth, cursorY, _buf._buffer + _state.cursor, 1);
+    }
   }
   if (_matchingBrace != -1) {
     maSetColor(_theme->_match_background);
@@ -455,9 +459,15 @@ void TextEditInput::gotoLine(const char *buffer) {
   }
 }
 
+void TextEditInput::reload(const char *text) {
+  _buf.clear();
+  _buf.insertChars(0, text, strlen(text));
+  stb_textedit_initialize_state(&_state, false);
+}
+
 bool TextEditInput::save(const char *filePath) {
   bool result = true;
-  FILE *fp = fopen(filePath, "w");
+  FILE *fp = fopen(filePath, "wb");
   if (fp) {
     fwrite(_buf._buffer, sizeof(char), _buf._len, fp);
     fclose(fp);
@@ -545,7 +555,9 @@ char *TextEditInput::copy(bool cut) {
 }
 
 void TextEditInput::paste(const char *text) {
-  stb_textedit_paste(&_buf, &_state, text, strlen(text));
+  if (text != NULL) {
+    stb_textedit_paste(&_buf, &_state, text, strlen(text));
+  }
 }
 
 void TextEditInput::layout(StbTexteditRow *row, int start) const {
@@ -689,7 +701,7 @@ void TextEditInput::editTab() {
   // get the current lines indent
   char *buf = lineText(start);
   int curIndent = 0;
-  while (buf && buf[curIndent] == ' ') {
+  while (buf && (buf[curIndent] == ' ' || buf[curIndent] == '\t')) {
     curIndent++;
   }
 

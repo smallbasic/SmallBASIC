@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -35,7 +35,8 @@
 #define MENU_EDITMODE   11
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
-#define MENU_SIZE       14
+#define MENU_SCRATCHPAD 14
+#define MENU_SIZE       15
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -111,6 +112,7 @@ void System::editSource(strlib::String &loadPath) {
   TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
+  _modifiedTime = getModifiedTime();
 
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
@@ -136,13 +138,23 @@ void System::editSource(strlib::String &loadPath) {
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
-    if (event.type == EVENT_TYPE_KEY_PRESSED &&
-        _userScreenId == -1) {
+    if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
       dev_clrkb();
       int sw = _output->getScreenWidth();
       bool redraw = true;
       bool dirty = editWidget->isDirty();
       char *text;
+
+      if (_modifiedTime != 0 && _modifiedTime != getModifiedTime()) {
+        const char *msg = "Do you want to reload the file?";
+        if (ask("File has changed on disk", msg, false) == 0) {
+          loadSource(loadPath.c_str());
+          editWidget->reload(_programSrc);
+          dirty = !editWidget->isDirty();
+        }
+        _modifiedTime = getModifiedTime();
+        event.key = 0;
+      }
 
       switch (event.key) {
       case SB_KEY_F(2):
@@ -165,11 +177,15 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
         _state = kRunState;
-        // fallthrough
+        if (!editWidget->isDirty()) {
+          break;
+        }
+        // otherwise fallthrough
       case SB_KEY_CTRL('s'):
         if (!editWidget->save(loadPath)) {
           alert("", "Failed to save file");
         }
+        _modifiedTime = getModifiedTime();
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -180,6 +196,7 @@ void System::editSource(strlib::String &loadPath) {
         }
         break;
       case SB_KEY_F(1):
+      case SB_KEY_ALT('h'):
         _output->setStatus("Keyword Help. Esc=Close");
         widget = helpWidget;
         helpWidget->createKeywordIndex();
@@ -485,6 +502,9 @@ void System::handleMenu(int menuId) {
   case MENU_SCREENSHOT:
     ::screen_dump();
     break;
+  case MENU_SCRATCHPAD:
+    scratchPad();
+    break;
   }
 
   if (fontSize != _output->getFontSize()) {
@@ -709,6 +729,9 @@ void System::runMain(const char *mainBasPath) {
           // unexpected error in main.bas
           alert("", gsb_last_errmsg);
           _state = kClosingState;
+        } else {
+          // don't reload
+          _loadPath.empty();
         }
       }
       if (!_mainBas && !networkFile) {
@@ -908,18 +931,21 @@ void System::showMenu() {
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
       if (_mainBas) {
+        sprintf(buffer, "Scratchpad");
+        items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
+        _systemMenu[index++] = MENU_SCRATCHPAD;
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
-      }
 
-      sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
-                                   opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
-      items->add(new String(buffer));
-      _systemMenu[index++] = MENU_EDITMODE;
+        sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
+                                        opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
+        items->add(new String(buffer));
+        _systemMenu[index++] = MENU_EDITMODE;
+      }
 
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
@@ -951,7 +977,11 @@ void System::showSystemScreen(bool showSrc) {
 
 void System::waitForBack() {
   while (!isBack() && !isClosing() && !isRestart()) {
-    getNextEvent();
+    MAEvent event = getNextEvent();
+    if (event.type == EVENT_TYPE_KEY_PRESSED &&
+        event.key == SB_KEY_BACKSPACE) {
+      break;
+    }
   }
 }
 
@@ -1065,6 +1095,28 @@ void System::printSource() {
     } else {
       _output->setScroll(0, 0);
     }
+  }
+}
+
+void System::scratchPad() {
+  const char *path = gsb_bas_dir;
+#if defined(_ANDROID)
+  path = "/sdcard/";
+#endif
+  char file[OS_PATHNAME_SIZE];
+  sprintf(file, "%sscratch.bas", path);
+  bool ready = access(file, R_OK) == 0;
+  if (!ready) {
+    FILE *fp = fopen(file, "w");
+    if (fp) {
+      fprintf(fp, "REM scratch buffer\n");
+      fclose(fp);
+      ready = true;
+    }
+  }
+  if (ready) {
+    setLoadPath(file);
+    setExit(false);
   }
 }
 
@@ -1198,6 +1250,7 @@ void lwrite(const char *str) {
 }
 
 void dev_delay(dword ms) {
+  g_system->getOutput()->redraw();
   maWait(ms);
 }
 

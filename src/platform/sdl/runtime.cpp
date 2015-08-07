@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -26,10 +26,13 @@
 #include <queue>
 #include <cmath>
 
-#define WAIT_INTERVAL 25
+#define WAIT_INTERVAL 5
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000
 #define FREQUENCY 44100
+#define OPTIONS_BOX_WIDTH_EXTRA 4
+#define OPTIONS_BOX_BG 0xd2d1d0
+#define OPTIONS_BOX_FG 0x3e3f3e
 
 Runtime *runtime;
 
@@ -310,11 +313,8 @@ void Runtime::pause(int timeout) {
 
 void Runtime::pollEvents(bool blocking) {
   if (isActive() && !isRestart()) {
-    if (blocking) {
-      SDL_WaitEvent(NULL);
-    }
     SDL_Event ev;
-    if (SDL_PollEvent(&ev)) {
+    if (blocking ? SDL_WaitEvent(&ev) : SDL_PollEvent(&ev)) {
       MAEvent *maEvent = NULL;
       switch (ev.type) {
       case SDL_QUIT:
@@ -472,17 +472,13 @@ void Runtime::onResize(int width, int height) {
     int h = _graphics->getHeight();
     if (w != width || h != height) {
       trace("Resized from %d %d to %d %d", w, h, width, height);
-      _graphics->setSize(width, height);
-      _graphics->resize();
+      _graphics->resize(width, height);
       resize();
     }
   }
 }
 
 void Runtime::optionsBox(StringList *items) {
-  int width = 0;
-  int textHeight = 0;
-
   if (!_menuX) {
     _menuX = 2;
   }
@@ -490,17 +486,20 @@ void Runtime::optionsBox(StringList *items) {
     _menuY = 2;
   }
 
+  int width = 0;
+  int charWidth = _output->getCharWidth();
   _output->registerScreen(MENU_SCREEN);
   List_each(String *, it, *items) {
     char *str = (char *)(* it)->c_str();
-    MAExtent extent = maGetTextSize(str);
-    int w = EXTENT_X(extent);
-    int h = EXTENT_Y(extent);
+    int w = (strlen(str) * charWidth);
     if (w > width) {
-      width = w + 48;
+      width = w;
     }
-    textHeight = h + 8;
   }
+  width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
+
+  int charHeight = _output->getCharHeight();
+  int textHeight = charHeight + (charHeight / 2);
   int height = textHeight * items->size();
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
@@ -519,7 +518,7 @@ void Runtime::optionsBox(StringList *items) {
     char *str = (char *)(* it)->c_str();
     FormInput *item = new MenuButton(index, selectedIndex, str, 0, y, width, textHeight);
     _output->addInput(item);
-    item->setColor(0xd2d1d0, 0x3e3f3e);
+    item->setColor(OPTIONS_BOX_BG, OPTIONS_BOX_FG);
     index++;
     y += textHeight;
   }

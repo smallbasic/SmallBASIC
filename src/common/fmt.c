@@ -27,7 +27,7 @@
 // limits for use with 32bit integer algorithm
 #define FMT_xMIN        1e-8          // lowest limit to use the exp. format
 #define FMT_xMAX        1e+9          // highest limit to use the exp. format
-#define FMT_RND         7             // rounding on x digits
+#define FMT_RND         9             // rounding on x digits
 #define FMT_xRND        1e+9          // 1 * 10 ^ FMT_RND
 #define FMT_xRND2       1e+8          // 1 * 10 ^ (FMT_RND-1)
 #endif
@@ -81,14 +81,15 @@ void fptoa(var_num_t x, char *dest) {
 }
 
 /*
- * remove rightest zeroes from the number
+ * Convert to text then remove righmost zeroes from the string
  */
-var_num_t rmzeros(var_num_t n) {
-  var_int_t i = fint(n);
-  while (i > 0 && i % 10 == 0) {
-    i /= 10;
+void fptoa_rmzeros(var_num_t x, char *dest) {
+  fptoa(x, dest);
+  int end = strlen(dest);
+  while (end > 0 && dest[end - 1] == '0') {
+    end--;
   }
-  return i;
+  dest[end] = '\0';
 }
 
 /*
@@ -192,7 +193,7 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
       *d++ = '0';
     }
 
-    fptoa(rmzeros(fpart), buf);
+    fptoa_rmzeros(fpart, buf);
     strcpy(d, buf);
     d += strlen(buf);
   }

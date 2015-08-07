@@ -460,6 +460,26 @@ C_LINKAGE_END
 
 //--FORM------------------------------------------------------------------------
 
+void System::alert(const char *title, const char *message) {
+  fltk::alert(message);
+}
+
+int System::ask(const char *title, const char *prompt, bool cancel) {
+  if (cancel) {
+    return fltk::choice(prompt, "Yes", "No", "Cancel");
+  } else {
+    return fltk::choice(prompt, "Yes", "No", "");
+  }
+}
+
+void System::setClipboardText(const char *text) {
+  fltk::copy(text, strlen(text), true);
+}
+
+char *System::getClipboardText() {
+  return NULL;
+}
+
 bool System::isRunning() {
   return wnd->isRunning();
 }

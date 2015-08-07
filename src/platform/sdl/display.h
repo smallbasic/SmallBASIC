@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -15,13 +15,13 @@
 #include "ui/strlib.h"
 #include "ui/graphics.h"
 
-struct Graphics : common::Graphics {
+struct Graphics : ui::Graphics {
   Graphics(SDL_Window *window);
   virtual ~Graphics();
 
   bool construct(const char *font, const char *boldFont);
   void redraw();
-  void resize();
+  void resize(int w, int h);
 
 private:
   bool loadFonts(const char *font, const char *boldFont);

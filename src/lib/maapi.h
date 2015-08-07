@@ -161,16 +161,6 @@ void maDrawText(int left, int top, const char *str, int length);
 void maUpdateScreen(void);
 
 /**
- * Normally, a phone's backlight turns itself off after
- * a few seconds of the user not pressing any keys.
- * To avoid this behaviour, call this function periodically.
- * As the timeout period is different for every device, and sometimes even user-configurable,
- * it's recommended that you call this function at least once every 500 milliseconds
- * to ensure that the light stays on at all times.
- */
-void maResetBacklight(void);
-
-/**
  * Returns the size in pixels of Latin-1 text as it would appear on-screen.
  */
 MAExtent maGetTextSize(const char *str);

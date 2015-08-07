@@ -218,6 +218,8 @@ int Canvas::getPixel(int x, int y) {
     int delta = _img->buffer_linedelta();
     U32 *row = (U32 *)(_img->buffer() + (y * delta));
     result = row[x];
+  } else {
+    result = 0;
   }
 #else
   GSave gsave;

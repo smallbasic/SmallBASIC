@@ -2942,7 +2942,7 @@ Image *loadImage(const char *imgSrc) {
 
 #if defined(WIN32)
 #include <windows.h>
-#include <fltk/window.h>
+#include <fltk/Window.h>
 #include <fltk/win32.h>
 #endif
 

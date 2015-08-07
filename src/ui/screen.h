@@ -50,6 +50,7 @@ struct Screen : public Shape {
   void add(Shape *button);
   void addImage(ImageDisplay &image);
   int  ansiToMosync(long c);
+  void drawLabel();
   void drawShape(Shape *button);
   void drawOverlay(bool vscroll);
   FormInput *getMenu(FormInput *prev, int px, int py);
