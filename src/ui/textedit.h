@@ -27,6 +27,7 @@ struct TextEditInput;
 struct EditTheme {
   EditTheme();
   EditTheme(int fg, int bg);
+  void selectTheme(const int theme[]);
 
   int _color;
   int _background;
@@ -99,6 +100,7 @@ struct TextEditInput : public FormEditInput {
 
 protected:
   void changeCase();
+  void cycleTheme();
   void drawLineNumber(int x, int y, int row, bool selected);
   void editDeleteLine();
   void editEnter();
@@ -167,6 +169,7 @@ struct TextEditHelpWidget : public TextEditInput {
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
 
 private:
+  void completeLine(int pos);
   void completeWord(int pos);
   void createPackageIndex();
   bool createKeywordHelp(const char *keyword);

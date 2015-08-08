@@ -17,6 +17,8 @@
 #include "ui/utils.h"
 #include "common/smbas.h"
 
+extern int g_themeId;
+
 static const char *ENV_VARS[] = {
   "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
 };
@@ -88,6 +90,7 @@ void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale) {
     fontScale = nextInteger(fp, DEFAULT_SCALE);
     opt_mute_audio = nextInteger(fp, 0);
     opt_ide = nextInteger(fp, 0);
+    g_themeId = nextInteger(fp, 0);
     fclose(fp);
   } else {
     rect.x = SDL_WINDOWPOS_UNDEFINED;
@@ -97,6 +100,7 @@ void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale) {
     fontScale = DEFAULT_SCALE;
     opt_mute_audio = 0;
     opt_ide = IDE_NONE;
+    g_themeId = 0;
   }
 }
 
@@ -109,7 +113,8 @@ void saveSettings(const char *configName, SDL_Window *window, int fontScale) {
     int x, y, w, h;
     SDL_GetWindowPosition(window, &x, &y);
     SDL_GetWindowSize(window, &w, &h);
-    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d\n", x, y, w, h, fontScale, opt_mute_audio, opt_ide);
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, w, h,
+            fontScale, opt_mute_audio, opt_ide, g_themeId);
     fclose(fp);
   }
 }

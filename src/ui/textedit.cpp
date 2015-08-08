@@ -22,18 +22,34 @@
 #define GROW_SIZE 128
 #define LINE_BUFFER_SIZE 200
 #define INDENT_LEVEL 2
-#define HELP_WIDTH   22
-#define THEME_FOREGROUND 0xa7aebc
-#define THEME_BACKGROUND 0x272b33
-#define THEME_SELECTION_BACKGROUND 0x3d4350
-#define THEME_NUMBER_SELECTION_BACKGROUND 0x2b3039
-#define THEME_NUMBER_SELECTION 0xabb2c0
-#define THEME_NUMBER 0x484f5f
-#define THEME_CURSOR 0xa7aebc
-#define THEME_CURSOR_BACKGROUND 0x3875ed
-#define THEME_MATCH_BACKGROUND 0x373b88
-#define THEME_ROW_CURSOR 0x2b313a
-#define THEME_SYNTAX_COMMENTS 0x00bb00
+#define HELP_WIDTH 22
+#define NUM_THEMES 4
+
+int g_themeId = 0;
+
+const int theme1[] = {
+  0xa7aebc, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
+};
+
+const int theme2[] = {
+  0xa7aebc, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0x002b36, 0x657b83, 0x073642, 0x9f7d18, 0x2b313a, 0x073642
+};
+
+const int theme3[] = {
+  0xa7aebc, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x000d1a,
+};
+
+const int theme4[] = {
+  0xa7aebc, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
+};
+
+const int* themes[] = {
+  theme1, theme2, theme3, theme4
+};
 
 const char *helpText =
   "C-a select-all\n"
@@ -56,6 +72,7 @@ const char *helpText =
   "A-c change case\n"
   "A-g goto line\n"
   "A-n trim line-endings\n"
+  "A-t select theme\n"
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
@@ -64,19 +81,8 @@ const char *helpText =
 //
 // EditTheme
 //
-EditTheme::EditTheme() :
-  _color(THEME_FOREGROUND),
-  _background(THEME_BACKGROUND),
-  _selection_color(THEME_FOREGROUND),
-  _selection_background(THEME_SELECTION_BACKGROUND),
-  _number_color(THEME_NUMBER),
-  _number_selection_color(THEME_FOREGROUND),
-  _number_selection_background(THEME_NUMBER_SELECTION_BACKGROUND),
-  _cursor_color(THEME_CURSOR),
-  _cursor_background(THEME_CURSOR_BACKGROUND),
-  _match_background(THEME_MATCH_BACKGROUND),
-  _row_cursor(THEME_ROW_CURSOR),
-  _syntax_comments(THEME_SYNTAX_COMMENTS) {
+EditTheme::EditTheme() {
+  selectTheme(themes[g_themeId]);
 }
 
 EditTheme::EditTheme(int fg, int bg) :
@@ -89,6 +95,21 @@ EditTheme::EditTheme(int fg, int bg) :
   _match_background(fg),
   _row_cursor(bg),
   _syntax_comments(bg) {
+}
+
+void EditTheme::selectTheme(const int theme[]) {
+  _color = theme[0];
+  _selection_color = theme[1];
+  _number_color = theme[2];
+  _number_selection_color = theme[3];
+  _cursor_color = theme[4];
+  _syntax_comments = theme[5];
+  _background = theme[6];
+  _selection_background = theme[7];
+  _number_selection_background = theme[8];
+  _cursor_background = theme[9];
+  _match_background = theme[10];
+  _row_cursor = theme[11];
 }
 
 //
@@ -395,6 +416,9 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_ALT('n'):
     removeTrailingSpaces();
     break;
+  case SB_KEY_ALT('t'):
+    cycleTheme();
+    break;
   case SB_KEY_TAB:
     editTab();
     break;
@@ -634,6 +658,11 @@ void TextEditInput::changeCase() {
     _state.select_end = end;
   }
   free(selection);
+}
+
+void TextEditInput::cycleTheme() {
+  g_themeId = (g_themeId + 1) % NUM_THEMES;
+  _theme->selectTheme(themes[g_themeId]);
 }
 
 void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
@@ -1142,7 +1171,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
         break;
       case kKeyword:
         _mode = kHelp;
-        completeWord(0);
+        completeLine(0);
         break;
       default:
         break;
@@ -1154,6 +1183,18 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     }
   }
   return result;
+}
+
+void TextEditHelpWidget::completeLine(int pos) {
+  int end = pos;
+  while (end < _buf._len && _buf._buffer[end] != '\n') {
+    end++;
+  }
+  char *text = _buf.textRange(pos, end);
+  if (text[0] != '\0' && text[0] != '[') {
+    _editor->completeWord(text);
+  }
+  free(text);
 }
 
 void TextEditHelpWidget::completeWord(int pos) {
