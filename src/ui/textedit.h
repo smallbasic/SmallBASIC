@@ -41,6 +41,7 @@ struct EditTheme {
   int _match_background;
   int _row_cursor;
   int _syntax_comments;
+  int _syntax_text;
 };
 
 struct EditBuffer {
@@ -68,7 +69,6 @@ struct TextEditInput : public FormEditInput {
 
   void completeWord(const char *word);
   void draw(int x, int y, int w, int h, int chw);
-  void drawText(int x, int y, const char *str, int length);
   bool edit(int key, int screenWidth, int charWidth);
   bool find(const char *word, bool next);
   int  getCursorPos() const { return _state.cursor; }
@@ -99,6 +99,13 @@ struct TextEditInput : public FormEditInput {
   bool replaceNext(const char *text);
 
 protected:
+  enum SyntaxState {
+    kReset = 0,
+    kComment,
+    kText,
+  };
+
+  void drawText(int x, int y, const char *str, int length, SyntaxState &state);
   void changeCase();
   void cycleTheme();
   void drawLineNumber(int x, int y, int row, bool selected);

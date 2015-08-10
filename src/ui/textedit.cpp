@@ -30,21 +30,25 @@ int g_themeId = 0;
 const int theme1[] = {
   0xa7aebc, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
+  0x0000c0
 };
 
 const int theme2[] = {
   0xa7aebc, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
-  0x002b36, 0x657b83, 0x073642, 0x9f7d18, 0x2b313a, 0x073642
+  0x002b36, 0x657b83, 0x073642, 0x9f7d18, 0x2b313a, 0x073642,
+  0x0000c0
 };
 
 const int theme3[] = {
   0xa7aebc, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x000d1a,
+  0x0000c0
 };
 
 const int theme4[] = {
   0xa7aebc, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
+  0x0000c0
 };
 
 const int* themes[] = {
@@ -94,7 +98,8 @@ EditTheme::EditTheme(int fg, int bg) :
   _cursor_background(fg),
   _match_background(fg),
   _row_cursor(bg),
-  _syntax_comments(bg) {
+  _syntax_comments(bg),
+  _syntax_text(fg) {
 }
 
 void EditTheme::selectTheme(const int theme[]) {
@@ -110,6 +115,7 @@ void EditTheme::selectTheme(const int theme[]) {
   _cursor_background = theme[9];
   _match_background = theme[10];
   _row_cursor = theme[11];
+  _syntax_text = theme[12];
 }
 
 //
@@ -257,6 +263,7 @@ void TextEditInput::completeWord(const char *word) {
 }
 
 void TextEditInput::draw(int x, int y, int w, int h, int chw) {
+  SyntaxState syntax = kReset;
   StbTexteditRow r;
   int len = _buf._len;
   int i = 0;
@@ -350,7 +357,12 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       } else {
         drawLineNumber(x, y + baseY, row, false);
         if (numChars) {
-          drawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
+          if (_marginWidth > 0) {
+            drawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars, syntax);
+          } else {
+            maSetColor(_theme->_color);
+            maDrawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars);
+          }
         }
       }
       baseY += _charHeight;
@@ -380,23 +392,67 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   }
 }
 
-void TextEditInput::drawText(int x, int y, const char *str, int length) {
-  maSetColor(_theme->_color);
-  int i_next = 0;
+void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxState &state) {
+  int i = 0;
+  int offs = 0;
 
-  if (_marginWidth > 0) {
-    for (int i = 0; i < length; i++) {
-      if (str[i] == '\'' || strncasecmp(str + i, "rem ", 4) == 0) {
-        maDrawText(x, y, str + i_next, i - i_next);
-        maSetColor(_theme->_syntax_comments);
-        length -= i;
-        x += (i * _charWidth);
-        i_next = i;
+  while (offs < length) {
+    SyntaxState nextState = state;
+    int count = 0;
+
+    // find the end of the current segment
+    while (i < length) {
+      if (state != kText &&
+          (str[i] == '\'' || strncasecmp(str + i, "rem ", 4) == 0)) {
+        nextState = kComment;
+        break;
+      } else if (str[i] == '\"') {
+        nextState = (state == kText ? kReset : kText);
+        i++;
         break;
       }
+      i++;
+      count++;
+    }
+
+    if (state == kText) {
+      count += 2;
+    }
+
+    if (count > 0) {
+      // draw the current segment
+      switch (state) {
+      case kComment:
+        maSetColor(_theme->_syntax_comments);
+        break;
+      case kText:
+        maSetColor(_theme->_syntax_text);
+        break;
+      default:
+        maSetColor(_theme->_color);
+        break;
+      }
+      maDrawText(x, y, str + offs, count);
+    }
+
+    state = nextState;
+    offs += count;
+    x += (count * _charWidth);
+
+    if (state == kComment) {
+      // comments continue to the end of line
+      maSetColor(_theme->_syntax_comments);
+      maDrawText(x, y, str + offs, length - offs);
+      break;
+    } else if (count == 0) {
+      break;
     }
   }
-  maDrawText(x, y, str + i_next, length);
+
+  char cend = str[length];
+  if (cend == '\r' || cend == '\n') {
+    state = kReset;
+  }
 }
 
 bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
