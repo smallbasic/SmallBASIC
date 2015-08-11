@@ -82,6 +82,16 @@ const char *helpText =
   "F1,A-h keyword help\n"
   "F9, C-r run\n";
 
+static inline bool match(const char *str, const char *pattern , int len) {
+  int i, j;
+  for (i = 0, j = 0; i < len; i++, j += 2) {
+    if (str[i] != pattern[j] && str[i] != pattern[j + 1]) {
+      break;
+    }
+  }
+  return i == len;
+}
+
 //
 // EditTheme
 //
@@ -394,17 +404,15 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   }
 }
 
-int TextEditInput::match(const char *str, const char *pattern , int len) {
-  int i, j;
-  for (i = 0, j = 0; i < len; i++, j += 2) {
-    if (str[i] != pattern[j] && str[i] != pattern[j + 1]) {
-      break;
+bool TextEditInput::matchKeyword(const char *str, int &count) {
+  for (int i = 0; i < keyword_syntax_len; i++) {
+    if (match(str, keyword_syntax[i].str, keyword_syntax[i].len) &&
+        (str[keyword_syntax[i].len] == ' ' || str[keyword_syntax[i].len] == '\n')) {
+      count = keyword_syntax[i].len;
+      return true;
     }
   }
-  if (str[i] != ' ') {
-    i = 0;
-  }
-  return i;
+  return false;
 }
 
 void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxState &state) {
@@ -419,12 +427,12 @@ void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxSt
 
     // find the end of the current segment
     while (i < length) {
-      if (str[i] == '\'' || match(str + i, "RrEeMm", 3) == 3) {
+      if (str[i] == '\'' || match(str + i, "RrEeMm  ", 3)) {
         next = length - i;
         nextState = kComment;
         break;
       } else if (str[i] == '\"') {
-        next++;
+        next = 1;
         while (i + next < length && str[i + next] != '\"') {
           next++;
         }
@@ -433,8 +441,7 @@ void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxSt
         }
         nextState = kText;
         break;
-      } else if (str[i] == '(' || str[i] == ')') {
-        next = 1;
+      } else if (state == kReset && matchKeyword(str + i, next)) {
         nextState = kKeyword;
         break;
       }

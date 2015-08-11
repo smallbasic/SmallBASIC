@@ -235,5 +235,28 @@ int main(int argc, char *argv[]) {
   }
   fprintf(stdout, "};\n");
   fprintf(stdout, "const int keyword_help_len = %d;\n", helpItems.size());
+
+  int languageCount = 0;
+  fprintf(stdout, "\nstruct KEYWORD_SYNTAX {\n");
+  fprintf(stdout, "  const char *str;\n");
+  fprintf(stdout, "  const int len;\n");
+  fprintf(stdout, "} keyword_syntax[] = {\n");
+  List_each(HelpItem *, it, helpItems) {
+    HelpItem *item = (*it);
+    if (strcasecmp(item->package, "Language") == 0) {
+      languageCount++;
+      fputc('{', stdout);
+      fputc('\"', stdout);
+      int len = strlen(item->keyword);
+      for (int i = 0; i < len; i++) {
+        fputc(toupper(item->keyword[i]), stdout);
+        fputc(tolower(item->keyword[i]), stdout);
+      }
+      fprintf(stdout, "\",%d},\n", len);
+    }
+  }
+  fprintf(stdout, "};\n");
+  fprintf(stdout, "const int keyword_syntax_len = %d;\n", languageCount);
+
   return 0;
 }
