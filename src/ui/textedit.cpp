@@ -404,15 +404,19 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   }
 }
 
-bool TextEditInput::matchKeyword(const char *str, int &count) {
-  for (int i = 0; i < keyword_syntax_len; i++) {
-    if (match(str, keyword_syntax[i].str, keyword_syntax[i].len) &&
-        (str[keyword_syntax[i].len] == ' ' || str[keyword_syntax[i].len] == '\n')) {
-      count = keyword_syntax[i].len;
-      return true;
+bool TextEditInput::matchKeyword(const char *str, int offs, int &count) {
+  bool result = false;
+  if (offs == 0 || (str[offs - 1] == ' ' || str[offs - 1] == '\n')) {
+    for (int i = 0; i < keyword_syntax_len; i++) {
+      if (match(str + offs, keyword_syntax[i].str, keyword_syntax[i].len) &&
+          (str[keyword_syntax[i].len] == ' ' || str[keyword_syntax[i].len] == '\n')) {
+        count = keyword_syntax[i].len;
+        result = true;
+        break;
+      }
     }
   }
-  return false;
+  return result;
 }
 
 void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxState &state) {
@@ -441,7 +445,7 @@ void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxSt
         }
         nextState = kText;
         break;
-      } else if (state == kReset && matchKeyword(str + i, next)) {
+      } else if (state == kReset && matchKeyword(str, i, next)) {
         nextState = kKeyword;
         break;
       }

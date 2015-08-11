@@ -124,7 +124,7 @@ protected:
   int  lineEnd(int pos) { return linePos(pos, true); }
   int  linePos(int pos, bool end, bool excludeBreak=true);
   int  lineStart(int pos) { return linePos(pos, false); }
-  bool matchKeyword(const char *str, int &count);
+  bool matchKeyword(const char *str, int offs, int &count);
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
   void setColor(SyntaxState &state);
