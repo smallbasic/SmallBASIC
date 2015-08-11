@@ -42,6 +42,7 @@ struct EditTheme {
   int _row_cursor;
   int _syntax_comments;
   int _syntax_text;
+  int _syntax_keywords;
 };
 
 struct EditBuffer {
@@ -103,6 +104,7 @@ protected:
     kReset = 0,
     kComment,
     kText,
+    kKeyword,
   };
 
   void drawText(int x, int y, const char *str, int length, SyntaxState &state);
@@ -122,8 +124,10 @@ protected:
   int  lineEnd(int pos) { return linePos(pos, true); }
   int  linePos(int pos, bool end, bool excludeBreak=true);
   int  lineStart(int pos) { return linePos(pos, false); }
+  int  match(const char *str, const char *pattern , int len);
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
+  void setColor(SyntaxState &state);
   void updateScroll();
   int wordStart();
 
