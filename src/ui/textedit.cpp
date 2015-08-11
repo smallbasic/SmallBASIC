@@ -30,7 +30,7 @@ int g_themeId = 0;
 const int theme1[] = {
   0xa7aebc, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
-  0x0083f8, 0x151c29
+  0x0083f8, 0xff8876
 };
 
 const int theme2[] = {
@@ -420,8 +420,8 @@ void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxSt
     // find the end of the current segment
     while (i < length) {
       if (str[i] == '\'' || match(str + i, "RrEeMm", 3) == 3) {
+        next = length - i;
         nextState = kComment;
-        next = length - offs;
         break;
       } else if (str[i] == '\"') {
         next++;
@@ -432,6 +432,10 @@ void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxSt
           next++;
         }
         nextState = kText;
+        break;
+      } else if (str[i] == '(' || str[i] == ')') {
+        next = 1;
+        nextState = kKeyword;
         break;
       }
       i++;
