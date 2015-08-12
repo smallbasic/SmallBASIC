@@ -299,7 +299,8 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     }
 
     if (row++ >= _scroll) {
-      if (_matchingBrace != -1 && _matchingBrace >= i && _matchingBrace < i + r.num_chars) {
+      if (_matchingBrace != -1 && _matchingBrace >= i &&
+          _matchingBrace < i + r.num_chars) {
         cursorMatchX = x + ((_matchingBrace - i) * chw);
         cursorMatchY = y + baseY;
       }
@@ -409,7 +410,8 @@ bool TextEditInput::matchKeyword(const char *str, int offs, int &count) {
   if (offs == 0 || (str[offs - 1] == ' ' || str[offs - 1] == '\n')) {
     for (int i = 0; i < keyword_syntax_len; i++) {
       if (match(str + offs, keyword_syntax[i].str, keyword_syntax[i].len) &&
-          (str[keyword_syntax[i].len] == ' ' || str[keyword_syntax[i].len] == '\n')) {
+          (str[offs + keyword_syntax[i].len] == ' ' ||
+           str[offs + keyword_syntax[i].len] == '\n')) {
         count = keyword_syntax[i].len;
         result = true;
         break;
@@ -419,7 +421,8 @@ bool TextEditInput::matchKeyword(const char *str, int offs, int &count) {
   return result;
 }
 
-void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxState &state) {
+void TextEditInput::drawText(int x, int y, const char *str,
+                             int length, SyntaxState &state) {
   int i = 0;
   int offs = 0;
   SyntaxState nextState = state;
@@ -435,7 +438,7 @@ void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxSt
         next = length - i;
         nextState = kComment;
         break;
-      } else if (str[i] == '\"') {
+      } else if (state == kReset && str[i] == '\"') {
         next = 1;
         while (i + next < length && str[i + next] != '\"') {
           next++;
@@ -638,7 +641,8 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth, pt.y + scrollY + (_scroll * _charHeight));
+  stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
+                    pt.y + scrollY + (_scroll * _charHeight));
   redraw = true;
   return 1;
 }
