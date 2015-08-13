@@ -28,27 +28,27 @@
 int g_themeId = 0;
 
 const int theme1[] = {
-  0xa7aebc, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xffffff, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
-  0x0083f8, 0xff8876
+  0x0083f8, 0xff9d00, 0x31ccac
 };
 
 const int theme2[] = {
-  0xa7aebc, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xffffff, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x002b36, 0x657b83, 0x073642, 0x9f7d18, 0x2b313a, 0x073642,
-  0x0083f8, 0xff8876
+  0x0083f8, 0xff9d00, 0x31ccac
 };
 
 const int theme3[] = {
-  0xa7aebc, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xffffff, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x022444,
-  0x0083f8, 0xff8876
+  0x0083f8, 0xff9d00, 0x31ccac
 };
 
 const int theme4[] = {
-  0xa7aebc, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xffffff, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
-  0x0083f8, 0xff8876
+  0x0083f8, 0xff9d00, 0x31ccac
 };
 
 const int* themes[] = {
@@ -110,7 +110,8 @@ EditTheme::EditTheme(int fg, int bg) :
   _row_cursor(bg),
   _syntax_comments(bg),
   _syntax_text(fg),
-  _syntax_keywords(fg) {
+  _syntax_command(fg),
+  _syntax_statement(fg) {
 }
 
 void EditTheme::selectTheme(const int theme[]) {
@@ -127,7 +128,8 @@ void EditTheme::selectTheme(const int theme[]) {
   _match_background = theme[10];
   _row_cursor = theme[11];
   _syntax_text = theme[12];
-  _syntax_keywords = theme[13];
+  _syntax_command = theme[13];
+  _syntax_statement = theme[14];
 }
 
 //
@@ -405,22 +407,6 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   }
 }
 
-bool TextEditInput::matchKeyword(const char *str, int offs, int &count) {
-  bool result = false;
-  if (offs == 0 || (str[offs - 1] == ' ' || str[offs - 1] == '\n')) {
-    for (int i = 0; i < keyword_syntax_len; i++) {
-      if (match(str + offs, keyword_syntax[i].str, keyword_syntax[i].len) &&
-          (str[offs + keyword_syntax[i].len] == ' ' ||
-           str[offs + keyword_syntax[i].len] == '\n')) {
-        count = keyword_syntax[i].len;
-        result = true;
-        break;
-      }
-    }
-  }
-  return result;
-}
-
 void TextEditInput::drawText(int x, int y, const char *str,
                              int length, SyntaxState &state) {
   int i = 0;
@@ -448,9 +434,23 @@ void TextEditInput::drawText(int x, int y, const char *str,
         }
         nextState = kText;
         break;
-      } else if (state == kReset && matchKeyword(str, i, next)) {
-        nextState = kKeyword;
-        break;
+      } else if (state == kReset) {
+        int size = 0;
+        uint32_t hash = getHash(str, i, size);
+        if (hash > 0) {
+          if (matchCommand(hash)) {
+            nextState = kCommand;
+            next = size;
+            break;
+          } else if (matchStatement(hash)) {
+            nextState = kStatement;
+            next = size;
+            break;
+          } else {
+            i += size - 1;
+            count += size - 1;
+          }
+        }
       }
       i++;
       count++;
@@ -947,6 +947,19 @@ int TextEditInput::getCursorRow() const {
   return row + 1;
 }
 
+uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
+  uint32_t result = 0;
+  if ((offs == 0 || str[offs - 1] == ' ' || str[offs - 1] == '\n')
+      && str[offs] != ' ' && str[offs] != '\n' && str[offs] != '\0') {
+    for (count = 0; count < keyword_max_len && isalpha(str[offs + count]); count++) {
+      result += tolower(str[offs + count]);
+      result += (result << 3);
+      result ^= (result >> 1);
+    }
+  }
+  return result;
+}
+
 int TextEditInput::getIndent(char *spaces, int len, int pos) {
   // count the indent level and find the start of text
   char *buf = lineText(pos);
@@ -1114,6 +1127,26 @@ int TextEditInput::linePos(int pos, bool end, bool excludeBreak) {
   return start;
 }
 
+bool TextEditInput::matchCommand(uint32_t hash) {
+  bool result = false;
+  for (int i = 0; i < keyword_hash_command_len && !result; i++) {
+    if (keyword_hash_command[i] == hash) {
+      result = true;
+    }
+  }
+  return result;
+}
+
+bool TextEditInput::matchStatement(uint32_t hash) {
+  bool result = false;
+  for (int i = 0; i < keyword_hash_statement_len && !result; i++) {
+    if (keyword_hash_statement[i] == hash) {
+      result = true;
+    }
+  }
+  return result;
+}
+
 void TextEditInput::pageNavigate(bool pageDown, bool shift) {
   int pageRows = (_height / _charHeight) + 1;
   int nextRow = _cursorRow + (pageDown ? pageRows : -pageRows);
@@ -1157,8 +1190,11 @@ void TextEditInput::setColor(SyntaxState &state) {
   case kText:
     maSetColor(_theme->_syntax_text);
     break;
-  case kKeyword:
-    maSetColor(_theme->_syntax_keywords);
+  case kCommand:
+    maSetColor(_theme->_syntax_command);
+    break;
+  case kStatement:
+    maSetColor(_theme->_syntax_statement);
     break;
   case kReset:
     maSetColor(_theme->_color);

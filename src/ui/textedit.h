@@ -42,7 +42,8 @@ struct EditTheme {
   int _row_cursor;
   int _syntax_comments;
   int _syntax_text;
-  int _syntax_keywords;
+  int _syntax_command;
+  int _syntax_statement;
 };
 
 struct EditBuffer {
@@ -104,7 +105,8 @@ protected:
     kReset = 0,
     kComment,
     kText,
-    kKeyword,
+    kCommand,
+    kStatement,
   };
 
   void drawText(int x, int y, const char *str, int length, SyntaxState &state);
@@ -116,6 +118,7 @@ protected:
   void editTab();
   void findMatchingBrace();
   int  getCursorRow() const;
+  uint32_t getHash(const char *str, int offs, int &count);
   int  getIndent(char *spaces, int len, int pos);
   int  getLineChars(StbTexteditRow *row, int pos);
   char *getSelection(int *start, int *end);
@@ -124,7 +127,8 @@ protected:
   int  lineEnd(int pos) { return linePos(pos, true); }
   int  linePos(int pos, bool end, bool excludeBreak=true);
   int  lineStart(int pos) { return linePos(pos, false); }
-  bool matchKeyword(const char *str, int offs, int &count);
+  bool matchCommand(uint32_t hash);
+  bool matchStatement(uint32_t hash);
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
   void setColor(SyntaxState &state);
