@@ -300,7 +300,13 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       break;
     }
 
-    if (row++ >= _scroll) {
+    if (i == 0 ||
+        _buf._buffer[i - 1] == '\r' ||
+        _buf._buffer[i - 1] == '\n') {
+      row++;
+    }
+
+    if (row >= _scroll) {
       if (_matchingBrace != -1 && _matchingBrace >= i &&
           _matchingBrace < i + r.num_chars) {
         cursorMatchX = x + ((_matchingBrace - i) * chw);
@@ -568,6 +574,8 @@ void TextEditInput::gotoLine(const char *buffer) {
 }
 
 void TextEditInput::reload(const char *text) {
+  _scroll = 0;
+  _cursorRow = 0;
   _buf.clear();
   _buf.insertChars(0, text, strlen(text));
   stb_textedit_initialize_state(&_state, false);
@@ -672,19 +680,22 @@ void TextEditInput::paste(const char *text) {
 void TextEditInput::layout(StbTexteditRow *row, int start) const {
   int i = start;
   int len = _buf._len;
+  int x1 = 0;
   int x2 = _width - _charWidth - _marginWidth;
-  row->x1 = 0;
-  row->num_chars = 0;
+  int numChars = 0;
 
   // advance to newline or rectangle edge
   while (i < len
          && (int)row->x1 < x2
          && _buf._buffer[i] != '\r'
          && _buf._buffer[i] != '\n') {
-    row->x1 += _charWidth;
-    row->num_chars++;
+    x1 += _charWidth;
+    numChars++;
     i++;
   }
+
+  row->num_chars = numChars;
+  row->x1 = x1;
 
   if (_buf._buffer[i] == '\r') {
     // advance over DOS newline
