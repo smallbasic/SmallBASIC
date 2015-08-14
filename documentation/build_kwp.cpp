@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
     HelpItem *item = (*it);
     if (strcasecmp(item->package, "Language") == 0) {
       count++;
-      fprintf(stdout, " %u,\n", getHash(item->keyword));
+      fprintf(stdout, " %uu,\n", getHash(item->keyword));
     }
   }
   fprintf(stdout, "};\n");
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
     HelpItem *item = (*it);
     if (strcasecmp(item->package, "Language") != 0) {
       count++;
-      fprintf(stdout, " %u,\n", getHash(item->keyword));
+      fprintf(stdout, " %uu,\n", getHash(item->keyword));
     }
   }
   fprintf(stdout, "};\n");

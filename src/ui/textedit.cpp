@@ -686,7 +686,7 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
 
   // advance to newline or rectangle edge
   while (i < len
-         && (int)row->x1 < x2
+         && x1 < x2
          && _buf._buffer[i] != '\r'
          && _buf._buffer[i] != '\n') {
     x1 += _charWidth;
