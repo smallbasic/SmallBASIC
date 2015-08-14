@@ -82,7 +82,7 @@ const char *helpText =
   "F1,A-h keyword help\n"
   "F9, C-r run\n";
 
-static inline bool match(const char *str, const char *pattern , int len) {
+inline bool match(const char *str, const char *pattern , int len) {
   int i, j;
   for (i = 0, j = 0; i < len; i++, j += 2) {
     if (str[i] != pattern[j] && str[i] != pattern[j + 1]) {
@@ -90,6 +90,10 @@ static inline bool match(const char *str, const char *pattern , int len) {
     }
   }
   return i == len;
+}
+
+inline bool is_comment(const char *str, int offs) {
+  return str[offs] == '\'' || str[offs] == '#' || match(str + offs, "RrEeMm  ", 3);
 }
 
 //
@@ -426,7 +430,7 @@ void TextEditInput::drawText(int x, int y, const char *str,
 
     // find the end of the current segment
     while (i < length) {
-      if (str[i] == '\'' || match(str + i, "RrEeMm  ", 3)) {
+      if (is_comment(str, i)) {
         next = length - i;
         nextState = kComment;
         break;
@@ -962,7 +966,11 @@ uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
   uint32_t result = 0;
   if ((offs == 0 || str[offs - 1] == ' ' || str[offs - 1] == '\n')
       && str[offs] != ' ' && str[offs] != '\n' && str[offs] != '\0') {
-    for (count = 0; count < keyword_max_len && isalpha(str[offs + count]); count++) {
+    for (count = 0; count < keyword_max_len; count++) {
+      char ch = str[offs + count];
+      if (!isalpha(ch) && ch != '_') {
+        break;
+      }
       result += tolower(str[offs + count]);
       result += (result << 3);
       result ^= (result >> 1);
@@ -998,7 +1006,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
       int j = i + 4;
       while (buf[j] != 0 && buf[j] != '\n') {
         // line also 'ends' at start of comments
-        if (strncasecmp(buf + j, "rem", 3) == 0 || buf[j] == '\'') {
+        if (is_comment(buf, j)) {
           break;
         }
         j++;
