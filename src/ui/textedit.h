@@ -62,7 +62,6 @@ struct EditBuffer {
   int deleteChars(int pos, int num);
   int insertChars(int pos, const char *text, int num);
   void removeTrailingSpaces(STB_TexteditState *state);
-  void replaceChars(const char *replace, int start, int end);
   char *textRange(int start, int end);
 };
 

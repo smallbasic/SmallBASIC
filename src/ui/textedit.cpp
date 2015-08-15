@@ -93,7 +93,8 @@ inline bool match(const char *str, const char *pattern , int len) {
 }
 
 inline bool is_comment(const char *str, int offs) {
-  return str[offs] == '\'' || str[offs] == '#' || match(str + offs, "RrEeMm  ", 3);
+  return (str[offs] == '\'' || (str[offs] == '#' && !isdigit(str[offs + 1]))
+          || match(str + offs, "RrEeMm  ", 3));
 }
 
 //
@@ -205,12 +206,6 @@ char *EditBuffer::textRange(int start, int end) {
   return result;
 }
 
-void EditBuffer::replaceChars(const char *replace, int start, int end) {
-  for (int i = start, j = 0; i < end && i < _len && replace[j] != '\0'; i++, j++) {
-    _buffer[i] = replace[j];
-  }
-}
-
 void EditBuffer::removeTrailingSpaces(STB_TexteditState *state) {
   int lineEnd = _len - 1;
   int lastChar = lineEnd;
@@ -293,6 +288,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   int cursorMatchX = x;
   int cursorMatchY = y;
   int row = 0;
+  int line = 0;
   int selectStart = MIN(_state.select_start, _state.select_end);
   int selectEnd = MAX(_state.select_start, _state.select_end);
 
@@ -309,10 +305,10 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     if (i == 0 ||
         _buf._buffer[i - 1] == '\r' ||
         _buf._buffer[i - 1] == '\n') {
-      row++;
+      line++;
     }
 
-    if (row >= _scroll) {
+    if (row++ >= _scroll) {
       if (_matchingBrace != -1 && _matchingBrace >= i &&
           _matchingBrace < i + r.num_chars) {
         cursorMatchX = x + ((_matchingBrace - i) * chw);
@@ -380,9 +376,9 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
           maSetColor(_theme->_selection_background);
           maFillRect(x + _marginWidth, y + baseY, _charWidth / 2, _charHeight);
         }
-        drawLineNumber(x, y + baseY, row, true);
+        drawLineNumber(x, y + baseY, line, true);
       } else {
-        drawLineNumber(x, y + baseY, row, false);
+        drawLineNumber(x, y + baseY, line, false);
         if (numChars) {
           if (_marginWidth > 0) {
             drawText(x + _marginWidth, y + baseY, _buf._buffer + i, numChars, syntax);
@@ -397,7 +393,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     i += r.num_chars;
   }
 
-  drawLineNumber(x, y + baseY, row + 1, false);
+  drawLineNumber(x, y + baseY, line + 1, false);
 
   // draw cursor
   maSetColor(_theme->_cursor_background);
@@ -432,13 +428,11 @@ void TextEditInput::drawText(int x, int y, const char *str,
 
     // find the end of the current segment
     while (i < length) {
-      if (is_comment(str, i)) {
+      if (state == kComment || is_comment(str, i)) {
         next = length - i;
         nextState = kComment;
         break;
-      } else if (state != kReset) {
-        break;
-      } else if (str[i] == '\"') {
+      } else if (state == kText || str[i] == '\"') {
         next = 1;
         while (i + next < length && str[i + next] != '\"') {
           next++;
@@ -448,7 +442,8 @@ void TextEditInput::drawText(int x, int y, const char *str,
         }
         nextState = kText;
         break;
-      } else if (isdigit(str[i]) && (i == 0 || !isalpha(str[i - 1]))) {
+      } else if (state == kReset && isdigit(str[i]) &&
+                 (i == 0 || !isalpha(str[i - 1]))) {
         next = 1;
         while (i + next < length && isdigit(str[i + next])) {
           next++;
@@ -459,7 +454,7 @@ void TextEditInput::drawText(int x, int y, const char *str,
         }
         nextState = kDigit;
         break;
-      } else {
+      } else if (state == kReset) {
         int size = 0;
         uint32_t hash = getHash(str, i, size);
         if (hash > 0) {
@@ -471,7 +466,7 @@ void TextEditInput::drawText(int x, int y, const char *str,
             nextState = kStatement;
             next = size;
             break;
-          } else {
+          } else if (size > 0) {
             i += size - 1;
             count += size - 1;
           }
@@ -768,9 +763,9 @@ void TextEditInput::changeCase() {
     }
   }
   if (selection[0]) {
-    _buf.replaceChars(selection, start, end);
     _state.select_start = start;
     _state.select_end = end;
+    stb_textedit_paste(&_buf, &_state, selection, strlen(selection));
   }
   free(selection);
 }
@@ -979,8 +974,8 @@ int TextEditInput::getCursorRow() const {
 
 uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
   uint32_t result = 0;
-  if ((offs == 0 || str[offs - 1] == ' ' || str[offs - 1] == '\n')
-      && str[offs] != ' ' && str[offs] != '\n' && str[offs] != '\0') {
+  if ((offs == 0 || IS_WHITE(str[offs - 1]))
+       && !IS_WHITE(str[offs]) && str[offs] != '\0') {
     for (count = 0; count < keyword_max_len; count++) {
       char ch = str[offs + count];
       if (!isalpha(ch) && ch != '_') {
