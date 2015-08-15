@@ -44,6 +44,7 @@ struct EditTheme {
   int _syntax_text;
   int _syntax_command;
   int _syntax_statement;
+  int _syntax_digit;
 };
 
 struct EditBuffer {
@@ -107,6 +108,7 @@ protected:
     kText,
     kCommand,
     kStatement,
+    kDigit,
   };
 
   void drawText(int x, int y, const char *str, int length, SyntaxState &state);

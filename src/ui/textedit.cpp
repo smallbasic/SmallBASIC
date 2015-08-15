@@ -28,27 +28,27 @@
 int g_themeId = 0;
 
 const int theme1[] = {
-  0xffffff, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
-  0x0083f8, 0xff9d00, 0x31ccac
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
 };
 
 const int theme2[] = {
-  0xffffff, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xc8cedb, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x002b36, 0x657b83, 0x073642, 0x9f7d18, 0x2b313a, 0x073642,
-  0x0083f8, 0xff9d00, 0x31ccac
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
 };
 
 const int theme3[] = {
-  0xffffff, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xc8cedb, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x022444,
-  0x0083f8, 0xff9d00, 0x31ccac
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
 };
 
 const int theme4[] = {
-  0xffffff, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
-  0x0083f8, 0xff9d00, 0x31ccac
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
 };
 
 const int* themes[] = {
@@ -115,7 +115,8 @@ EditTheme::EditTheme(int fg, int bg) :
   _syntax_comments(bg),
   _syntax_text(fg),
   _syntax_command(fg),
-  _syntax_statement(fg) {
+  _syntax_statement(fg),
+  _syntax_digit(fg) {
 }
 
 void EditTheme::selectTheme(const int theme[]) {
@@ -134,6 +135,7 @@ void EditTheme::selectTheme(const int theme[]) {
   _syntax_text = theme[12];
   _syntax_command = theme[13];
   _syntax_statement = theme[14];
+  _syntax_digit = theme[15];
 }
 
 //
@@ -434,7 +436,9 @@ void TextEditInput::drawText(int x, int y, const char *str,
         next = length - i;
         nextState = kComment;
         break;
-      } else if (state == kReset && str[i] == '\"') {
+      } else if (state != kReset) {
+        break;
+      } else if (str[i] == '\"') {
         next = 1;
         while (i + next < length && str[i + next] != '\"') {
           next++;
@@ -444,7 +448,18 @@ void TextEditInput::drawText(int x, int y, const char *str,
         }
         nextState = kText;
         break;
-      } else if (state == kReset) {
+      } else if (isdigit(str[i]) && (i == 0 || !isalpha(str[i - 1]))) {
+        next = 1;
+        while (i + next < length && isdigit(str[i + next])) {
+          next++;
+        }
+        if (i > 0 && str[i - 1] == '.') {
+          count--;
+          next++;
+        }
+        nextState = kDigit;
+        break;
+      } else {
         int size = 0;
         uint32_t hash = getHash(str, i, size);
         if (hash > 0) {
@@ -1190,6 +1205,7 @@ void TextEditInput::pageNavigate(bool pageDown, bool shift) {
   } else {
     _state.select_start = _state.select_end;
   }
+
   _state.cursor = i;
   _cursorRow = row;
   updateScroll();
@@ -1215,6 +1231,9 @@ void TextEditInput::setColor(SyntaxState &state) {
   case kStatement:
     maSetColor(_theme->_syntax_statement);
     break;
+  case kDigit:
+    maSetColor(_theme->_syntax_digit);
+    break;
   case kReset:
     maSetColor(_theme->_color);
     break;
@@ -1225,7 +1244,7 @@ void TextEditInput::updateScroll() {
   int pageRows = _height / _charHeight;
   if (_cursorRow + 1 < pageRows) {
     _scroll = 0;
-  } else if (_cursorRow > _scroll + pageRows || _cursorRow <= _scroll) {
+  } else if (_cursorRow >= _scroll + pageRows || _cursorRow <= _scroll) {
     // cursor outside current view
     _scroll = _cursorRow - (pageRows / 2);
   }
