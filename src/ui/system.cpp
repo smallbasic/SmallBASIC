@@ -95,14 +95,15 @@ void System::editSource(strlib::String &loadPath) {
     fileName = loadPath;
   }
 
+  const char *help = " Ctrl+h (C-h)=Help";
   strlib::String dirtyFile;
   dirtyFile.append(" * ");
   dirtyFile.append(fileName);
-  dirtyFile.append(" C-h=Help");
+  dirtyFile.append(help);
   strlib::String cleanFile;
   cleanFile.append(" - ");
   cleanFile.append(fileName);
-  cleanFile.append(" C-h=Help");
+  cleanFile.append(help);
 
   int w = _output->getWidth();
   int h = _output->getHeight();

@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 #include "../src/ui/strlib.h"
 
 #define code_t int
@@ -45,6 +46,7 @@ struct spopr_keyword_s {
 struct HelpItem {
   char package[20];
   char keyword[20];
+  char type[20];
   char id[20];
   char signature[128];
   char help[1024];
@@ -177,6 +179,8 @@ bool readHelpReference(strlib::List<HelpItem *> *helpItems) {
           break;
         case 1:
           // type
+          strncpy(item->type, lineBuffer + start, fieldLen);
+          item->type[fieldLen] = '\0';
           break;
         case 2:
           // keyword
@@ -215,6 +219,16 @@ bool readHelpReference(strlib::List<HelpItem *> *helpItems) {
   return true;
 }
 
+uint32_t getHash(const char *key) {
+  uint32_t hash, i;
+  for (hash = i = 0; key[i] != '\0'; i++) {
+    hash += tolower(key[i]);
+    hash += (hash << 3);
+    hash ^= (hash >> 1);
+  }
+  return hash;
+}
+
 int main(int argc, char *argv[]) {
   strlib::List<HelpItem *> helpItems;
   if (!readHelpReference(&helpItems)) {
@@ -228,12 +242,44 @@ int main(int argc, char *argv[]) {
   fprintf(stdout, "  const char *signature;\n");
   fprintf(stdout, "  const char *help;\n");
   fprintf(stdout, "} keyword_help[] = {\n");
+
+  int max_keyword_len = 0;
   List_each(HelpItem *, it, helpItems) {
     HelpItem *item = (*it);
     fprintf(stdout, "{\"%s\",\"%s\",\"%s\",\"%s\"},\n", item->package,
             item->keyword, item->signature, item->help);
+    int len = strlen(item->keyword);
+    if (len > max_keyword_len) {
+      max_keyword_len = len;
+    }
   }
   fprintf(stdout, "};\n");
   fprintf(stdout, "const int keyword_help_len = %d;\n", helpItems.size());
+  fprintf(stdout, "const int keyword_max_len = %d;\n", max_keyword_len);
+
+  int count = 0;
+  fprintf(stdout, "const uint32_t keyword_hash_statement[] = {\n");
+  List_each(HelpItem *, it, helpItems) {
+    HelpItem *item = (*it);
+    if (strcasecmp(item->package, "Language") == 0) {
+      count++;
+      fprintf(stdout, " %uu,\n", getHash(item->keyword));
+    }
+  }
+  fprintf(stdout, "};\n");
+  fprintf(stdout, "const int keyword_hash_statement_len = %d;\n", count);
+
+  count = 0;
+  fprintf(stdout, "const uint32_t keyword_hash_command[] = {\n");
+  List_each(HelpItem *, it, helpItems) {
+    HelpItem *item = (*it);
+    if (strcasecmp(item->package, "Language") != 0) {
+      count++;
+      fprintf(stdout, " %uu,\n", getHash(item->keyword));
+    }
+  }
+  fprintf(stdout, "};\n");
+  fprintf(stdout, "const int keyword_hash_command_len = %d;\n", count);
+
   return 0;
 }

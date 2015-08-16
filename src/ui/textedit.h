@@ -27,6 +27,7 @@ struct TextEditInput;
 struct EditTheme {
   EditTheme();
   EditTheme(int fg, int bg);
+  void selectTheme(const int theme[]);
 
   int _color;
   int _background;
@@ -40,6 +41,10 @@ struct EditTheme {
   int _match_background;
   int _row_cursor;
   int _syntax_comments;
+  int _syntax_text;
+  int _syntax_command;
+  int _syntax_statement;
+  int _syntax_digit;
 };
 
 struct EditBuffer {
@@ -57,7 +62,6 @@ struct EditBuffer {
   int deleteChars(int pos, int num);
   int insertChars(int pos, const char *text, int num);
   void removeTrailingSpaces(STB_TexteditState *state);
-  void replaceChars(const char *replace, int start, int end);
   char *textRange(int start, int end);
 };
 
@@ -67,7 +71,6 @@ struct TextEditInput : public FormEditInput {
 
   void completeWord(const char *word);
   void draw(int x, int y, int w, int h, int chw);
-  void drawText(int x, int y, const char *str, int length);
   bool edit(int key, int screenWidth, int charWidth);
   bool find(const char *word, bool next);
   int  getCursorPos() const { return _state.cursor; }
@@ -98,13 +101,25 @@ struct TextEditInput : public FormEditInput {
   bool replaceNext(const char *text);
 
 protected:
+  enum SyntaxState {
+    kReset = 0,
+    kComment,
+    kText,
+    kCommand,
+    kStatement,
+    kDigit,
+  };
+
+  void drawText(int x, int y, const char *str, int length, SyntaxState &state);
   void changeCase();
+  void cycleTheme();
   void drawLineNumber(int x, int y, int row, bool selected);
   void editDeleteLine();
   void editEnter();
   void editTab();
   void findMatchingBrace();
   int  getCursorRow() const;
+  uint32_t getHash(const char *str, int offs, int &count);
   int  getIndent(char *spaces, int len, int pos);
   int  getLineChars(StbTexteditRow *row, int pos);
   char *getSelection(int *start, int *end);
@@ -113,8 +128,11 @@ protected:
   int  lineEnd(int pos) { return linePos(pos, true); }
   int  linePos(int pos, bool end, bool excludeBreak=true);
   int  lineStart(int pos) { return linePos(pos, false); }
+  bool matchCommand(uint32_t hash);
+  bool matchStatement(uint32_t hash);
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
+  void setColor(SyntaxState &state);
   void updateScroll();
   int wordStart();
 
@@ -167,6 +185,7 @@ struct TextEditHelpWidget : public TextEditInput {
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
 
 private:
+  void completeLine(int pos);
   void completeWord(int pos);
   void createPackageIndex();
   bool createKeywordHelp(const char *keyword);
