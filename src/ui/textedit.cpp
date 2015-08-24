@@ -443,17 +443,24 @@ void TextEditInput::drawText(int x, int y, const char *str,
         nextState = kText;
         break;
       } else if (state == kReset && isdigit(str[i]) &&
-                 (i == 0 || !isalpha(str[i - 1]))) {
+                 (i == 0 || !isalnum(str[i - 1]))) {
         next = 1;
         while (i + next < length && isdigit(str[i + next])) {
           next++;
         }
-        if (i > 0 && str[i - 1] == '.') {
-          count--;
-          next++;
+        if (!isalnum(str[i + next])) {
+          if (i > 0 && str[i - 1] == '.') {
+            i--;
+            count--;
+            next++;
+          }
+          nextState = kDigit;
+          break;
+        } else {
+          i += next;
+          count += next;
+          next = 0;
         }
-        nextState = kDigit;
-        break;
       } else if (state == kReset) {
         int size = 0;
         uint32_t hash = getHash(str, i, size);

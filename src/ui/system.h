@@ -42,13 +42,17 @@ struct System {
   void systemPrint(const char *msg, ...);
   AnsiWidget *getOutput() { return _output; }
 
+  enum CursorType {
+    kHand, kArrow, kIBeam
+  };
+
   virtual void alert(const char *title, const char *message) = 0;
   virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
   virtual void setWindowTitle(const char *title) = 0;
-  virtual void showCursor(bool hand) = 0;
+  virtual void showCursor(CursorType cursorType) = 0;
   virtual void setClipboardText(const char *text) = 0;
   virtual char *getClipboardText() = 0;
 

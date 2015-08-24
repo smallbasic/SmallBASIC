@@ -61,7 +61,8 @@ Runtime::Runtime(SDL_Window *window) :
   _eventQueue(NULL),
   _window(window),
   _cursorHand(NULL),
-  _cursorArrow(NULL) {
+  _cursorArrow(NULL),
+  _cursorIBeam(NULL) {
   runtime = this;
 }
 
@@ -77,8 +78,10 @@ Runtime::~Runtime() {
 
   SDL_FreeCursor(_cursorHand);
   SDL_FreeCursor(_cursorArrow);
+  SDL_FreeCursor(_cursorIBeam);
   _cursorHand = NULL;
   _cursorArrow = NULL;
+  _cursorIBeam = NULL;
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -120,6 +123,7 @@ void Runtime::construct(const char *font, const char *boldFont) {
 
   _cursorHand = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
   _cursorArrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+  _cursorIBeam = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
 
   if (_graphics && _graphics->construct(font, boldFont)) {
     int w, h;
@@ -461,8 +465,18 @@ void Runtime::setWindowTitle(const char *title) {
   }
 }
 
-void Runtime::showCursor(bool hand) {
-  SDL_SetCursor(hand ? _cursorHand : _cursorArrow);
+void Runtime::showCursor(CursorType cursorType) {
+  switch (cursorType) {
+  case kHand:
+    SDL_SetCursor(_cursorHand);
+    break;
+  case kArrow:
+    SDL_SetCursor(_cursorArrow);
+    break;
+  case kIBeam:
+    SDL_SetCursor(_cursorIBeam);
+    break;
+  }
 }
 
 void Runtime::onResize(int width, int height) {

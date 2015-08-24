@@ -136,6 +136,7 @@ void System::editSource(strlib::String &loadPath) {
   _state = kEditState;
 
   maShowVirtualKeyboard();
+  showCursor(kIBeam);
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
@@ -540,9 +541,7 @@ void System::handleEvent(MAEvent &event) {
     _touchY = _touchCurY = event.point.y;
     dev_pushkey(SB_KEY_MK_PUSH);
     _buttonPressed = _output->pointerTouchEvent(event);
-    if (_buttonPressed) {
-      showCursor(true);
-    }
+    showCursor(get_focus_edit() != NULL ? kIBeam : kHand);
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
     _touchCurX = event.point.x;
@@ -550,13 +549,16 @@ void System::handleEvent(MAEvent &event) {
     hasHover = _output->hasHover();
     _output->pointerMoveEvent(event);
     if (hasHover != _output->hasHover()) {
-      showCursor(!hasHover);
+      showCursor(hasHover ? kArrow : kHand);
+    } else if (_output->hasMenu()) {
+      showCursor(kArrow);
     }
     break;
   case EVENT_TYPE_POINTER_RELEASED:
     _buttonPressed = false;
     _touchX = _touchY = _touchCurX = _touchCurY = -1;
     _output->pointerReleaseEvent(event);
+    showCursor(get_focus_edit() != NULL ? kIBeam : kArrow);
     break;
   default:
     // no event

@@ -44,7 +44,7 @@ struct Runtime : public System {
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void setWindowTitle(const char *title) {}
-  void showCursor(bool hand) {}
+  void showCursor(CursorType cursorType) {}
   void showKeypad(bool show);
   void onResize(int w, int h);
   void loadConfig();
