@@ -318,6 +318,7 @@ bool System::execute(const char *bas) {
 
   _state = kRunState;
   setWindowTitle(bas);
+  showCursor(kArrow);
   int result = ::sbasic_main(bas);
 
   if (isRunning()) {

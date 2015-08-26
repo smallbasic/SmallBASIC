@@ -16,6 +16,7 @@
 #include "ui/kwp.h"
 
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
+#define STB_TEXTEDIT_IS_PUNCT(ch) ispunct(ch)
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
@@ -559,7 +560,18 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   }
 
   _cursorRow = getCursorRow();
-  updateScroll();
+  if (key == STB_TEXTEDIT_K_UP) {
+    if (_cursorRow == _scroll) {
+      updateScroll();
+    }
+  } else if (key == STB_TEXTEDIT_K_DOWN) {
+    int pageRows = _height / _charHeight;
+    if (_cursorRow - _scroll > pageRows) {
+      updateScroll();
+    }
+  } else {
+    updateScroll();
+  }
   findMatchingBrace();
   return true;
 }
@@ -981,7 +993,7 @@ int TextEditInput::getCursorRow() const {
 
 uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
   uint32_t result = 0;
-  if ((offs == 0 || IS_WHITE(str[offs - 1]))
+  if ((offs == 0 || IS_WHITE(str[offs - 1]) || ispunct(str[offs - 1]))
        && !IS_WHITE(str[offs]) && str[offs] != '\0') {
     for (count = 0; count < keyword_max_len; count++) {
       char ch = str[offs + count];
@@ -1069,7 +1081,7 @@ char *TextEditInput::getSelection(int *start, int *end) {
   } else {
     *start = wordStart();
     int i = _state.cursor;
-    while (!IS_WHITE(_buf._buffer[i]) && i < _buf._len) {
+    while (!IS_WHITE(_buf._buffer[i]) && !ispunct(_buf._buffer[i]) && i < _buf._len) {
       i++;
     }
     *end = i;

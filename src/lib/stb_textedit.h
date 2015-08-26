@@ -604,7 +604,9 @@ static void stb_textedit_move_to_last(STB_TEXTEDIT_STRING *str, STB_TexteditStat
 #ifdef STB_TEXTEDIT_IS_SPACE
 static int is_word_boundary( STB_TEXTEDIT_STRING *_str, int _idx )
 {
-   return _idx > 0 ? (STB_TEXTEDIT_IS_SPACE( STB_TEXTEDIT_GETCHAR(_str,_idx-1) ) && !STB_TEXTEDIT_IS_SPACE( STB_TEXTEDIT_GETCHAR(_str, _idx) ) ) : 1;
+  return _idx > 0 ? ((STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str,_idx-1)) ||
+                      STB_TEXTEDIT_IS_PUNCT(STB_TEXTEDIT_GETCHAR(_str,_idx-1))) &&
+                     !STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str, _idx))) : 1;
 }
 
 static int stb_textedit_move_to_word_previous( STB_TEXTEDIT_STRING *_str, STB_TexteditState *_state )
