@@ -530,6 +530,7 @@ void System::handleEvent(MAEvent &event) {
       handleMenu(event.optionsBoxButtonIndex);
     } else if (isRunning()) {
       if (!form_ui::optionSelected(event.optionsBoxButtonIndex)) {
+        dev_clrkb();
         dev_pushkey(event.optionsBoxButtonIndex);
       }
     }

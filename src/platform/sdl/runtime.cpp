@@ -554,12 +554,17 @@ void Runtime::optionsBox(StringList *items) {
   _output->selectScreen(screenId);
   _menuX = 2;
   _menuY = 2;
-
   if (selectedIndex != -1) {
-    MAEvent *maEvent = new MAEvent();
-    maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
-    maEvent->optionsBoxButtonIndex = selectedIndex;
-    pushEvent(maEvent);
+    if (_systemMenu == NULL && isRunning() &&
+        !form_ui::optionSelected(selectedIndex)) {
+      dev_clrkb();
+      dev_pushkey(selectedIndex);
+    } else {
+      MAEvent *maEvent = new MAEvent();
+      maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
+      maEvent->optionsBoxButtonIndex = selectedIndex;
+      pushEvent(maEvent);
+    }
   } else {
     delete [] _systemMenu;
     _systemMenu = NULL;

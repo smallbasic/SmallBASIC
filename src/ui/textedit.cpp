@@ -903,7 +903,7 @@ void TextEditInput::editTab() {
     // remove excess spaces
     stb_textedit_delete(&_buf, &_state, start, curIndent - indent);
     _state.cursor = start + indent;
-  } else {
+  } else if (start + indent > 0) {
     // already have ideal indent - soft-tab to indent
     _state.cursor = start + indent;
   }

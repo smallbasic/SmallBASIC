@@ -1,7 +1,10 @@
 2015-08-26
-	Fix editor highlighting for numbers and keywords
-	Fix F1 editor key for keywords surrounded by punctuation
-	Fix page scrolling with up/down arrow keys
+	Editor fixes:
+	- now displays an i-beam/edit cursor
+	- highlighting for numbers and keywords
+	- F1 key for keywords surrounded by punctuation
+	- page scrolling with up/down arrow keys
+	- pressing tab at the bottom no longer jumps to the top
 
 2015-08-02
 	Fix display output before DELAY
