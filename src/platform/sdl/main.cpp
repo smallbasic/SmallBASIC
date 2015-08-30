@@ -47,6 +47,7 @@ static struct option OPTIONS[] = {
   {"run",      optional_argument, NULL, 'r'},
   {"module",   optional_argument, NULL, 'm'},
   {"edit",     optional_argument, NULL, 'e'},
+  {"debug",    optional_argument, NULL, 'd'},
   {0, 0, 0, 0}
 };
 
@@ -232,6 +233,7 @@ int main(int argc, char* argv[]) {
 
   char *fontFamily = NULL;
   char *runFile = NULL;
+  int debugPort = 0;
   int fontScale;
   SDL_Rect rect;
 
@@ -239,7 +241,7 @@ int main(int argc, char* argv[]) {
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:d:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -257,9 +259,17 @@ int main(int argc, char* argv[]) {
       }
       break;
     }
-    if (OPTIONS[option_index].has_arg && !optarg) {
-      showHelp();
-      exit(1);
+
+    int i = 0;
+    while (OPTIONS[i].name != NULL) {
+      if (OPTIONS[i].has_arg && OPTIONS[i].val == c &&
+          (!optarg || strcmp(OPTIONS[i].name + 1, optarg) == 0)) {
+        // no arg or passed single '-' for long form arg
+        showHelp();
+        exit(1);
+        break;
+      }
+      i++;
     }
     switch (c) {
     case 'v':
@@ -283,6 +293,9 @@ int main(int argc, char* argv[]) {
     case 'm':
       opt_loadmod = 1;
       strcpy(opt_modlist, optarg);
+      break;
+    case 'd':
+      debugPort = atoi(optarg);
       break;
     case 'h':
       showHelp();
@@ -311,7 +324,7 @@ int main(int argc, char* argv[]) {
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      fontScale = runtime->runShell(runFile, fontScale);
+      fontScale = runtime->runShell(runFile, fontScale, debugPort);
       delete runtime;
     } else {
       fprintf(stderr, "Failed to locate display font\n");

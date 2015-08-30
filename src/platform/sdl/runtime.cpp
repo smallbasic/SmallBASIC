@@ -14,6 +14,8 @@
 #include "common/device.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"
+#include "common/inet.h"
+#include "common/pproc.h"
 #include "lib/maapi.h"
 #include "ui/utils.h"
 #include "platform/sdl/runtime.h"
@@ -27,6 +29,7 @@
 #include <cmath>
 
 #define WAIT_INTERVAL 5
+#define COND_WAIT_TIME 250
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000
 #define FREQUENCY 44100
@@ -35,6 +38,11 @@
 #define OPTIONS_BOX_FG 0x3e3f3e
 
 Runtime *runtime;
+SDL_mutex *g_lock = NULL;
+SDL_cond *g_cond = NULL;
+SDL_bool g_condFlag = SDL_FALSE;
+SDL_bool g_debug = SDL_FALSE;
+strlib::List<int*> g_breakPoints;
 
 struct SoundObject {
   double v;
@@ -44,6 +52,7 @@ struct SoundObject {
 
 std::queue<SoundObject> sounds;
 void audio_callback(void *beeper, Uint8 *stream8, int length);
+int debugThread(void *data);
 
 MAEvent *getMotionEvent(int type, SDL_Event *event) {
   MAEvent *result = new MAEvent();
@@ -150,7 +159,7 @@ MAEvent *Runtime::popEvent() {
   return _eventQueue->pop();
 }
 
-int Runtime::runShell(const char *startupBas, int fontScale) {
+int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
   logEntered();
 
   os_graphics = 1;
@@ -182,6 +191,15 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
   SDL_AudioSpec obtainedSpec;
   SDL_OpenAudio(&desiredSpec, &obtainedSpec);
 
+  if (debugPort > 0) {
+    g_lock = SDL_CreateMutex();
+    g_cond = SDL_CreateCond();
+    opt_trace_on = 1;
+    SDL_Thread *thread =
+      SDL_CreateThread(debugThread, "DBg", (void *)(intptr_t)debugPort);
+    SDL_DetachThread(thread);
+  }
+
   if (startupBas != NULL) {
     String bas = startupBas;
     if (opt_ide == IDE_INTERNAL) {
@@ -198,6 +216,11 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
     }
   } else {
     runMain(MAIN_BAS);
+  }
+
+  if (debugPort > 0) {
+    SDL_DestroyCond(g_cond);
+    SDL_DestroyMutex(g_lock);
   }
 
   SDL_CloseAudio();
@@ -677,6 +700,12 @@ int osd_devinit(void) {
   setsysvar_str(SYSVAR_OSNAME, "SDL");
   runtime->setRunning(true);
   osd_clear_sound_queue();
+
+  SDL_LockMutex(g_lock);
+  g_condFlag = SDL_FALSE;
+  g_debug = SDL_FALSE;
+  SDL_UnlockMutex(g_lock);
+
   return 1;
 }
 
@@ -703,3 +732,88 @@ void osd_sound(int frq, int ms, int vol, int bgplay) {
 void osd_clear_sound_queue() {
   flush_queue();
 }
+
+//
+// debugging
+//
+void signalTrace(SDL_bool debug) {
+  SDL_LockMutex(g_lock);
+  g_condFlag = SDL_TRUE;
+  g_debug = debug;
+  SDL_CondSignal(g_cond);
+  SDL_UnlockMutex(g_lock);
+}
+
+int debugThread(void *data) {
+  int port = ((intptr_t) data);
+  socket_t socket = net_listen(port);
+  char buf[OS_PATHNAME_SIZE + 1];
+  net_print(socket, "SmallBASIC debugger\n");
+
+  while (socket != -1) {
+    int size = net_input(socket, buf, sizeof(buf), "\r\n");
+    if (size > 0) {
+      char cmd = buf[0];
+      switch (cmd) {
+      case 'n':
+        // step over next line
+        signalTrace(SDL_TRUE);
+        net_printf(socket, "%d\n", prog_line);
+        for (unsigned i = 0; i < prog_varcount; i++) {
+          pv_writevar(tvar[i], PV_NET, socket);
+          net_print(socket, "\n");
+        }
+        break;
+      case 'c':
+        // continue
+        signalTrace(SDL_FALSE);
+        break;
+      case 'b':
+        // set breakpoint
+        SDL_LockMutex(g_lock);
+        g_breakPoints.add(new int(atoi(buf + 2)));
+        SDL_UnlockMutex(g_lock);
+        break;
+      case 'q':
+        // quit
+        signalTrace(SDL_FALSE);
+        g_breakPoints.removeAll();
+        net_print(socket, "Bye\n");
+        net_disconnect(socket);
+        socket = -1;
+        break;
+      default:
+        // unknown command
+        net_printf(socket, "Unknown command '%s'\n", buf);
+        break;
+      };
+    } else fprintf(stderr,  ".");
+  }
+  return 0;
+}
+
+extern "C" void dev_trace_line(int lineNo) {
+  SDL_LockMutex(g_lock);
+  if (!g_debug) {
+    List_each(int *, it, g_breakPoints) {
+      int breakPoint = *(*it);
+      if (breakPoint == lineNo) {
+        runtime->systemPrint("Break point hit at line: %d", lineNo);
+        g_debug = SDL_TRUE;
+        break;
+      }
+    }
+  }
+  if (g_debug) {
+    g_condFlag = SDL_FALSE;
+    while (!g_condFlag) {
+      SDL_CondWaitTimeout(g_cond, g_lock, COND_WAIT_TIME);
+      runtime->processEvents(0);
+      if (!runtime->isRunning()) {
+        break;
+      }
+    }
+  }
+  SDL_UnlockMutex(g_lock);
+}
+

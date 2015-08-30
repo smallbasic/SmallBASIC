@@ -426,3 +426,9 @@ void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}
 void dev_show_page() {}
 #endif
+
+#if !defined(_SDL)
+void dev_trace_line(int lineNo) {
+  dev_printf("<%d>", lineNo);
+}
+#endif

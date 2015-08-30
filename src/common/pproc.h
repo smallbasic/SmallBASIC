@@ -31,6 +31,7 @@
 #define PV_FILE         1
 #define PV_LOG          2
 #define PV_STRING       3
+#define PV_NET          4
 
 #if defined(__cplusplus)
 extern "C" {

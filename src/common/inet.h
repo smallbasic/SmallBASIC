@@ -18,6 +18,10 @@
 #include <errno.h>
 #include <sys/types.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 typedef int socket_t;
 
 /**
@@ -126,5 +130,9 @@ void net_disconnect(socket_t s);
  * @return non-zero if something is waitting in input-buffer; otherwise returns 0
  */
 int net_peek(socket_t s);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

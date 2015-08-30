@@ -746,7 +746,6 @@ void bc_loop(int isf) {
   bcip_t next_ip;
   int i;
   int proc_level = 0;
-  byte trace_flag = 0;
   byte code = 0;
 
   // setup event checker time = 50ms
@@ -815,8 +814,8 @@ void bc_loop(int isf) {
         continue;
       case kwTYPE_LINE:
         prog_line = code_getaddr();
-        if (trace_flag) {
-          dev_printf("<%d>", prog_line);
+        if (opt_trace_on) {
+          dev_trace_line(prog_line);
         }
         continue;
       case kwLET:
@@ -1031,10 +1030,10 @@ void bc_loop(int isf) {
         cmd_fseek();
         break;
       case kwTRON:
-        trace_flag = 1;
+        opt_trace_on = 1;
         continue;
       case kwTROFF:
-        trace_flag = 0;
+        opt_trace_on = 0;
         continue;
       case kwSTOP:
       case kwEND:
@@ -1088,8 +1087,8 @@ void bc_loop(int isf) {
         prog_ip++;
         if (code == kwTYPE_LINE) {
           prog_line = code_getaddr();
-          if (trace_flag) {
-            dev_printf("<%d>", prog_line);
+          if (opt_trace_on) {
+            dev_trace_line(prog_line);
           }
         }
       }
