@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -11,8 +11,8 @@
 
 #include <SDL.h>
 
-void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale);
-void saveSettings(const char *configName, SDL_Window *window, int fontScale);
+void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug);
+void saveSettings(SDL_Window *window, int fontScale, bool debug);
 
 #endif
 

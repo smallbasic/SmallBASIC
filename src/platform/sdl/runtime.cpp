@@ -40,8 +40,9 @@
 Runtime *runtime;
 SDL_mutex *g_lock = NULL;
 SDL_cond *g_cond = NULL;
-SDL_bool g_condFlag = SDL_FALSE;
-SDL_bool g_debug = SDL_FALSE;
+SDL_bool g_debugPause = SDL_FALSE;
+SDL_bool g_debugBreak = SDL_FALSE;
+SDL_bool g_debugError = SDL_FALSE;
 strlib::List<int*> g_breakPoints;
 
 struct SoundObject {
@@ -192,9 +193,11 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
   SDL_OpenAudio(&desiredSpec, &obtainedSpec);
 
   if (debugPort > 0) {
+    appLog("Debug active on port %d\n", debugPort);
     g_lock = SDL_CreateMutex();
     g_cond = SDL_CreateCond();
     opt_trace_on = 1;
+    g_debugBreak = SDL_TRUE;
     SDL_Thread *thread =
       SDL_CreateThread(debugThread, "DBg", (void *)(intptr_t)debugPort);
     SDL_DetachThread(thread);
@@ -700,12 +703,6 @@ int osd_devinit(void) {
   setsysvar_str(SYSVAR_OSNAME, "SDL");
   runtime->setRunning(true);
   osd_clear_sound_queue();
-
-  SDL_LockMutex(g_lock);
-  g_condFlag = SDL_FALSE;
-  g_debug = SDL_FALSE;
-  SDL_UnlockMutex(g_lock);
-
   return 1;
 }
 
@@ -736,10 +733,11 @@ void osd_clear_sound_queue() {
 //
 // debugging
 //
-void signalTrace(SDL_bool debug) {
+void signalTrace(SDL_bool debugBreak, SDL_bool debugError = SDL_FALSE) {
   SDL_LockMutex(g_lock);
-  g_condFlag = SDL_TRUE;
-  g_debug = debug;
+  g_debugPause = SDL_FALSE;
+  g_debugBreak = debugBreak;
+  g_debugError = debugError;
   SDL_CondSignal(g_cond);
   SDL_UnlockMutex(g_lock);
 }
@@ -748,8 +746,13 @@ int debugThread(void *data) {
   int port = ((intptr_t) data);
   socket_t socket = net_listen(port);
   char buf[OS_PATHNAME_SIZE + 1];
-  net_print(socket, "SmallBASIC debugger\n");
 
+  if (socket == -1) {
+    signalTrace(SDL_FALSE, SDL_TRUE);
+    return -1;
+  }
+
+  net_print(socket, "SmallBASIC debugger\n");
   while (socket != -1) {
     int size = net_input(socket, buf, sizeof(buf), "\r\n");
     if (size > 0) {
@@ -758,6 +761,9 @@ int debugThread(void *data) {
       case 'n':
         // step over next line
         signalTrace(SDL_TRUE);
+        break;
+      case 's':
+        // status
         net_printf(socket, "%d\n", prog_line);
         for (unsigned i = 0; i < prog_varcount; i++) {
           pv_writevar(tvar[i], PV_NET, socket);
@@ -776,7 +782,7 @@ int debugThread(void *data) {
         break;
       case 'q':
         // quit
-        signalTrace(SDL_FALSE);
+        signalTrace(SDL_FALSE, SDL_TRUE);
         g_breakPoints.removeAll();
         net_print(socket, "Bye\n");
         net_disconnect(socket);
@@ -787,32 +793,37 @@ int debugThread(void *data) {
         net_printf(socket, "Unknown command '%s'\n", buf);
         break;
       };
-    } else fprintf(stderr,  ".");
+    }
   }
   return 0;
 }
 
 extern "C" void dev_trace_line(int lineNo) {
   SDL_LockMutex(g_lock);
-  if (!g_debug) {
-    List_each(int *, it, g_breakPoints) {
-      int breakPoint = *(*it);
-      if (breakPoint == lineNo) {
-        runtime->systemPrint("Break point hit at line: %d", lineNo);
-        g_debug = SDL_TRUE;
-        break;
+
+  if (!g_debugError) {
+    if (!g_debugBreak) {
+      List_each(int *, it, g_breakPoints) {
+        int breakPoint = *(*it);
+        if (breakPoint == lineNo) {
+          runtime->systemPrint("Break point hit at line: %d", lineNo);
+          g_debugBreak = SDL_TRUE;
+          break;
+        }
       }
     }
-  }
-  if (g_debug) {
-    g_condFlag = SDL_FALSE;
-    while (!g_condFlag) {
-      SDL_CondWaitTimeout(g_cond, g_lock, COND_WAIT_TIME);
-      runtime->processEvents(0);
-      if (!runtime->isRunning()) {
-        break;
+    if (g_debugBreak) {
+      g_debugPause = SDL_TRUE;
+      while (g_debugPause) {
+        SDL_CondWaitTimeout(g_cond, g_lock, COND_WAIT_TIME);
+        runtime->processEvents(0);
+        if (!runtime->isRunning()) {
+          break;
+        }
       }
     }
+  } else {
+    runtime->setExit(true);
   }
   SDL_UnlockMutex(g_lock);
 }

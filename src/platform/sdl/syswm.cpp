@@ -12,6 +12,9 @@
 #define DEFAULT_FONT_SIZE 12
 #define DEFAULT_FONT_SIZE_PTS 11
 
+extern const char *g_appPath;
+extern int g_debugPort;
+
 #if defined(_Win32)
 #include <SDL_syswm.h>
 
@@ -41,13 +44,37 @@ int getStartupFontSize(SDL_Window *window) {
   return result;
 }
 
+void launchDebug(const char *file) {
+  // TODO
+}
+
 #else
+#include <unistd.h>
 
 void loadIcon(SDL_Window *window) {
 }
 
 int getStartupFontSize(SDL_Window *window) {
   return DEFAULT_FONT_SIZE;
+}
+
+void launchDebug(const char *file) {
+  pid_t pid = fork();
+  char port[20];
+
+  switch (pid) {
+  case -1:
+    // failed
+    break;
+  case 0:
+    // child process
+    sprintf(port, "-p %d", g_debugPort);
+    execl(g_appPath, g_appPath, port, "-d", file, (char *)0);
+    break;
+  default:
+    // parent process - continue
+    break;
+  }
 }
 
 #endif

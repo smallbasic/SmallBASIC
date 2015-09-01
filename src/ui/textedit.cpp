@@ -81,6 +81,9 @@ const char *helpText =
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
+  "F5 debug\n"
+  "F6 debug step\n"
+  "F7 debug continue\n"
   "F9, C-r run\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
@@ -1325,6 +1328,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     if (key == SB_KEY_ENTER) {
       _editor->gotoLine(_buf._buffer);
     }
+    break;
   default:
     switch (key) {
     case STB_TEXTEDIT_K_LEFT:

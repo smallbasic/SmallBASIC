@@ -39,19 +39,21 @@ const char* FONTS[] = {
 };
 
 static struct option OPTIONS[] = {
-  {"help",     no_argument,       NULL, 'h'},
-  {"verbose",  no_argument,       NULL, 'v'},
-  {"keywords", no_argument,       NULL, 'k'},
-  {"command",  optional_argument, NULL, 'c'},
-  {"font",     optional_argument, NULL, 'f'},
-  {"run",      optional_argument, NULL, 'r'},
-  {"module",   optional_argument, NULL, 'm'},
-  {"edit",     optional_argument, NULL, 'e'},
-  {"debug",    optional_argument, NULL, 'd'},
+  {"help",      no_argument,       NULL, 'h'},
+  {"verbose",   no_argument,       NULL, 'v'},
+  {"keywords",  no_argument,       NULL, 'k'},
+  {"command",   optional_argument, NULL, 'c'},
+  {"font",      optional_argument, NULL, 'f'},
+  {"run",       optional_argument, NULL, 'r'},
+  {"module",    optional_argument, NULL, 'm'},
+  {"edit",      optional_argument, NULL, 'e'},
+  {"debug",     optional_argument, NULL, 'd'},
+  {"debugPort", optional_argument, NULL, 'p'},
   {0, 0, 0, 0}
 };
 
-const char *CONFIG_NAME = "SmallBASIC";
+const char *g_appPath;
+int g_debugPort = 4000;
 
 void appLog(const char *format, ...) {
   char buf[4096], *p = buf;
@@ -230,18 +232,17 @@ int main(int argc, char* argv[]) {
   opt_command[0] = '\0';
   opt_verbose = false;
   opt_quiet = true;
+  g_appPath = argv[0];
 
   char *fontFamily = NULL;
   char *runFile = NULL;
-  int debugPort = 0;
+  bool debug = false;
   int fontScale;
   SDL_Rect rect;
 
-  restoreSettings(CONFIG_NAME, rect, fontScale);
-
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:d:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:d:p:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -295,7 +296,12 @@ int main(int argc, char* argv[]) {
       strcpy(opt_modlist, optarg);
       break;
     case 'd':
-      debugPort = atoi(optarg);
+      runFile = strdup(optarg);
+      opt_ide = IDE_EXTERNAL;
+      debug = true;
+      break;
+    case 'p':
+      g_debugPort = atoi(optarg);
       break;
     case 'h':
       showHelp();
@@ -311,6 +317,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  restoreSettings(rect, fontScale, debug);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
@@ -324,12 +331,12 @@ int main(int argc, char* argv[]) {
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      fontScale = runtime->runShell(runFile, fontScale, debugPort);
+      fontScale = runtime->runShell(runFile, fontScale, debug ? g_debugPort : 0);
       delete runtime;
     } else {
       fprintf(stderr, "Failed to locate display font\n");
     }
-    saveSettings(CONFIG_NAME, window, fontScale);
+    saveSettings(window, fontScale, debug);
     SDL_DestroyWindow(window);
   } else {
     fprintf(stderr, "Could not create window: %s\n", SDL_GetError());

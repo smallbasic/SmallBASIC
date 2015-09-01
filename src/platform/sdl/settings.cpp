@@ -37,7 +37,7 @@ static const char *ENV_VARS[] = {
 #define makedir(f) mkdir(f, 0700)
 #endif
 
-FILE *openConfig(const char *configName, const char *flags) {
+FILE *openConfig(const char *flags, bool debug) {
   FILE *result = NULL;
   char path[PATH_MAX];
   int vars_len = sizeof(ENV_VARS) / sizeof(ENV_VARS[0]);
@@ -52,11 +52,13 @@ FILE *openConfig(const char *configName, const char *flags) {
         strcat(path, "/.config");
         makedir(path);
       }
-      strcat(path, "/");
-      strcat(path, configName);
+      strcat(path, "/SmallBASIC");
       makedir(path);
-
-      strcat(path, "/settings.txt");
+      if (debug) {
+        strcat(path, "/settings_debug.txt");
+      } else {
+        strcat(path, "/settings.txt");
+      }
       result = fopen(path, flags);
     }
   }
@@ -80,8 +82,8 @@ int nextInteger(FILE *fp, int def) {
 //
 // restore window position
 //
-void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale) {
-  FILE *fp = openConfig(configName, "r");
+void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug) {
+  FILE *fp = openConfig("r", debug);
   if (fp) {
     rect.x = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
     rect.y = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
@@ -107,8 +109,8 @@ void restoreSettings(const char *configName, SDL_Rect &rect, int &fontScale) {
 //
 // save the window position
 //
-void saveSettings(const char *configName, SDL_Window *window, int fontScale) {
-  FILE *fp = openConfig(configName, "w");
+void saveSettings(SDL_Window *window, int fontScale, bool debug) {
+  FILE *fp = openConfig("w", debug);
   if (fp) {
     int x, y, w, h;
     SDL_GetWindowPosition(window, &x, &y);
