@@ -605,7 +605,7 @@ void Runtime::optionsBox(StringList *items) {
   width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
 
   int charHeight = _output->getCharHeight();
-  int textHeight = charHeight + (charHeight / 2);
+  int textHeight = charHeight + (charHeight / 3);
   int height = textHeight * items->size();
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
@@ -855,7 +855,6 @@ int debugThread(void *data) {
         // quit
         signalTrace(SDL_FALSE, SDL_TRUE);
         g_breakPoints.removeAll();
-        net_print(socket, "Bye\n");
         net_disconnect(socket);
         socket = -1;
         break;
@@ -873,7 +872,6 @@ int debugThread(void *data) {
 }
 
 extern "C" void dev_trace_line(int lineNo) {
-  runtime->getOutput()->redraw();
   SDL_LockMutex(g_lock);
   g_debugLine = lineNo;
 
@@ -889,6 +887,7 @@ extern "C" void dev_trace_line(int lineNo) {
       }
     }
     if (g_debugBreak) {
+      runtime->getOutput()->redraw();
       g_debugPause = SDL_TRUE;
       while (g_debugPause) {
         SDL_CondWaitTimeout(g_cond, g_lock, COND_WAIT_TIME);

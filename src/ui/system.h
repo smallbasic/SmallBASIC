@@ -67,7 +67,7 @@ protected:
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
-  void handleMenu(int menuId);
+  void handleMenu(MAEvent &event);
   bool loadSource(const char *fileName);
   void resize();
   void runEdit(const char *startupBas);

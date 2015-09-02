@@ -45,7 +45,11 @@ int getStartupFontSize(SDL_Window *window) {
 }
 
 void launchDebug(const char *file) {
-  // TODO
+  STARTUPINFO info={sizeof(info)};
+  PROCESS_INFORMATION processInfo;
+  char cmd[1024];
+  sprintf(cmd, "-p %d -d %s", g_debugPort, file);
+  CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo);
 }
 
 #else

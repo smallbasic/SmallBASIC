@@ -35,7 +35,12 @@
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
 #define MENU_SCRATCHPAD 14
-#define MENU_SIZE       15
+#define MENU_UNDO       15
+#define MENU_REDO       16
+#define MENU_SAVE       17
+#define MENU_RUN        18
+#define MENU_DEBUG      19
+#define MENU_SIZE       20
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -216,7 +221,8 @@ uint32_t System::getModifiedTime() {
   return result;
 }
 
-void System::handleMenu(int menuId) {
+void System::handleMenu(MAEvent &event) {
+  int menuId = event.optionsBoxButtonIndex;
   int fontSize = _output->getFontSize();
   int menuItem = _systemMenu[menuId];
   delete [] _systemMenu;
@@ -288,6 +294,26 @@ void System::handleMenu(int menuId) {
   case MENU_SCRATCHPAD:
     scratchPad();
     break;
+  case MENU_UNDO:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('z');
+    break;
+  case MENU_REDO:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('y');
+    break;
+  case MENU_SAVE:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('s');
+    break;
+  case MENU_RUN:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_F(9);
+    break;
+  case MENU_DEBUG:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_F(5);
+    break;
   }
 
   if (fontSize != _output->getFontSize()) {
@@ -307,7 +333,7 @@ void System::handleEvent(MAEvent &event) {
   switch (event.type) {
   case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
     if (_systemMenu != NULL) {
-      handleMenu(event.optionsBoxButtonIndex);
+      handleMenu(event);
     } else if (isRunning()) {
       if (!form_ui::optionSelected(event.optionsBoxButtonIndex)) {
         dev_clrkb();
@@ -687,6 +713,20 @@ void System::showMenu() {
       _systemMenu[index++] = MENU_CUT;
       _systemMenu[index++] = MENU_COPY;
       _systemMenu[index++] = MENU_PASTE;
+
+      if (isEditing()) {
+        items->add(new String("Undo"));
+        items->add(new String("Redo"));
+        items->add(new String("Save"));
+        items->add(new String("Run"));
+        items->add(new String("Debug"));
+        _systemMenu[index++] = MENU_UNDO;
+        _systemMenu[index++] = MENU_REDO;
+        _systemMenu[index++] = MENU_SAVE;
+        _systemMenu[index++] = MENU_RUN;
+        _systemMenu[index++] = MENU_DEBUG;
+      }
+
 #if defined(_SDL)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
