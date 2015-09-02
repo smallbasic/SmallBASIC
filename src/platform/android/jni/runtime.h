@@ -25,6 +25,9 @@ struct Runtime : public System {
   int ask(const char *title, const char *prompt, bool cancel);
   void clearSoundQueue();
   void construct();
+  void debugStart(TextEditInput *edit, const char *file) {}
+  void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {}
+  void debugStop() {}
   bool getUntrusted();
   String getString(const char *methodName);
   int getInteger(const char *methodName);

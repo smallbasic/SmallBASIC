@@ -24,6 +24,9 @@ struct Runtime : public System {
   void alert(const char *title, const char *message);
   int ask(const char *title, const char *prompt, bool cancel);
   void construct(const char *font, const char *boldFont);
+  void debugStart(TextEditInput *edit, const char *file);
+  void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont);
+  void debugStop();
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }

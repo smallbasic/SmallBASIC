@@ -12,13 +12,10 @@
 #include "ui/system.h"
 #include "ui/textedit.h"
 
-void launchDebug(const char *file);
-
-void debugStepNext(TextEditInput *editWidget) {
-}
-
-void debugContinue(TextEditInput *editWidget) {
-}
+#define SAVE_FILE()                \
+  if (!editWidget->save(loadPath)) \
+    alert("", "Failed to save file"); \
+  else _modifiedTime = getModifiedTime();
 
 void System::editSource(strlib::String &loadPath) {
   logEntered();
@@ -108,19 +105,17 @@ void System::editSource(strlib::String &loadPath) {
         widget = editWidget;
         helpWidget->hide();
         dirty = !editWidget->isDirty();
+        debugStop();
         break;
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
         _state = kRunState;
-        if (!editWidget->isDirty()) {
-          break;
+        if (editWidget->isDirty()) {
+          SAVE_FILE();
         }
-        // otherwise fallthrough
+        break;
       case SB_KEY_CTRL('s'):
-        if (!editWidget->save(loadPath)) {
-          alert("", "Failed to save file");
-        }
-        _modifiedTime = getModifiedTime();
+        SAVE_FILE();
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -138,13 +133,18 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_F(5):
-        launchDebug(loadPath.c_str());
+        SAVE_FILE();
+        _output->setStatus("Debug. F6=Step, F7=Continue, Esc=Close");
+        widget = helpWidget;
+        helpWidget->createMessage();
+        helpWidget->show();
+        debugStart(editWidget, loadPath.c_str());
         break;
       case SB_KEY_F(6):
-        debugStepNext(editWidget);
+        debugStep(editWidget, helpWidget, false);
         break;
       case SB_KEY_F(7):
-        debugContinue(editWidget);
+        debugStep(editWidget, helpWidget, true);
         break;
       case SB_KEY_CTRL('h'):
         _output->setStatus("Keystroke help. Esc=Close");

@@ -165,13 +165,15 @@ struct TextEditHelpWidget : public TextEditInput {
     kSearchReplace,
     kReplace,
     kReplaceDone,
-    kGotoLine
+    kGotoLine,
+    kMessage
   };
 
   void createCompletionHelp();
   void createGotoLine();
   void createHelp();
   void createKeywordIndex();
+  void createMessage() { reset(kMessage); }
   void createOutline();
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);

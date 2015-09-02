@@ -82,8 +82,6 @@ const char *helpText =
   "TAB indent line\n"
   "F1,A-h keyword help\n"
   "F5 debug\n"
-  "F6 debug step\n"
-  "F7 debug continue\n"
   "F9, C-r run\n";
 
 inline bool match(const char *str, const char *pattern , int len) {

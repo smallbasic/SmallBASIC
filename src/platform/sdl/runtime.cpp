@@ -12,7 +12,6 @@
 #include "common/smbas.h"
 #include "common/osd.h"
 #include "common/device.h"
-#include "common/fs_socket_client.h"
 #include "common/keymap.h"
 #include "common/inet.h"
 #include "common/pproc.h"
@@ -30,6 +29,7 @@
 
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
+#define PAUSE_DEBUG_LAUNCH 250
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000
 #define FREQUENCY 44100
@@ -43,7 +43,10 @@ SDL_cond *g_cond = NULL;
 SDL_bool g_debugPause = SDL_FALSE;
 SDL_bool g_debugBreak = SDL_FALSE;
 SDL_bool g_debugError = SDL_FALSE;
+int g_debugLine = 0;
 strlib::List<int*> g_breakPoints;
+socket_t g_debugee = -1;
+extern int g_debugPort;
 
 struct SoundObject {
   double v;
@@ -152,6 +155,66 @@ void Runtime::construct(const char *font, const char *boldFont) {
   }
 }
 
+void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
+  char buf[OS_PATHNAME_SIZE + 1];
+  bool open;
+  int size;
+
+  if (g_debugee != -1) {
+    net_print(g_debugee, "l\n");
+    open = net_input(g_debugee, buf, sizeof(buf), "\r\n") > 0;
+  } else {
+    open = false;
+  }
+
+  if (!open) {
+    launchDebug(file);
+    pause(PAUSE_DEBUG_LAUNCH);
+    SDL_RaiseWindow(_window);
+
+    g_debugee = net_connect("localhost", g_debugPort);
+    if (g_debugee != -1) {
+      net_print(g_debugee, "l\n");
+      size = net_input(g_debugee, buf, sizeof(buf), "\r\n");
+      if (size > 0) {
+        editWidget->gotoLine(buf);
+        appLog("Debug session ready");
+      }
+    } else {
+      appLog("Failed to attach to debug window");
+    }
+  } else {
+    debugStop();
+  }
+}
+
+void Runtime::debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {
+  if (g_debugee != -1) {
+    char buf[OS_PATHNAME_SIZE + 1];
+    int size;
+    net_print(g_debugee, cont ? "c\n" : "n\n");
+    net_print(g_debugee, "l\n");
+    size = net_input(g_debugee, buf, sizeof(buf), "\r\n");
+    if (size > 0) {
+      edit->gotoLine(buf);
+      net_print(g_debugee, "v\n");
+      size = net_input(g_debugee, buf, sizeof(buf), "\1");
+      if (size > 0) {
+        help->reload(buf);
+      }
+    }
+  }
+}
+
+void Runtime::debugStop() {
+  if (g_debugee != -1) {
+    net_print(g_debugee, "q\n");
+    net_disconnect(g_debugee);
+    g_debugee = -1;
+    appLog("Closed debug session");
+  }
+}
+
 void Runtime::pushEvent(MAEvent *event) {
   _eventQueue->push(event);
 }
@@ -191,6 +254,7 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
 
   SDL_AudioSpec obtainedSpec;
   SDL_OpenAudio(&desiredSpec, &obtainedSpec);
+  net_init();
 
   if (debugPort > 0) {
     appLog("Debug active on port %d\n", debugPort);
@@ -226,6 +290,8 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     SDL_DestroyMutex(g_lock);
   }
 
+  debugStop();
+  net_close();
   SDL_CloseAudio();
   _state = kDoneState;
   logLeaving();
@@ -752,7 +818,6 @@ int debugThread(void *data) {
     return -1;
   }
 
-  net_print(socket, "SmallBASIC debugger\n");
   while (socket != -1) {
     int size = net_input(socket, buf, sizeof(buf), "\r\n");
     if (size > 0) {
@@ -762,17 +827,23 @@ int debugThread(void *data) {
         // step over next line
         signalTrace(SDL_TRUE);
         break;
-      case 's':
-        // status
-        net_printf(socket, "%d\n", prog_line);
-        for (unsigned i = 0; i < prog_varcount; i++) {
-          pv_writevar(tvar[i], PV_NET, socket);
-          net_print(socket, "\n");
-        }
-        break;
       case 'c':
         // continue
         signalTrace(SDL_FALSE);
+        break;
+      case 'l':
+        // current line number
+        SDL_LockMutex(g_lock);
+        net_printf(socket, "%d\n", g_debugLine);
+        SDL_UnlockMutex(g_lock);
+        break;
+      case 'v':
+        // variables
+        for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
+          pv_writevar(tvar[i], PV_NET, socket);
+          net_print(socket, "\n");
+        }
+        net_print(socket, "\1");
         break;
       case 'b':
         // set breakpoint
@@ -788,6 +859,9 @@ int debugThread(void *data) {
         net_disconnect(socket);
         socket = -1;
         break;
+      case 'h':
+        net_print(socket, "SmallBASIC debugger\n");
+        break;
       default:
         // unknown command
         net_printf(socket, "Unknown command '%s'\n", buf);
@@ -799,7 +873,9 @@ int debugThread(void *data) {
 }
 
 extern "C" void dev_trace_line(int lineNo) {
+  runtime->getOutput()->redraw();
   SDL_LockMutex(g_lock);
+  g_debugLine = lineNo;
 
   if (!g_debugError) {
     if (!g_debugBreak) {
@@ -827,4 +903,3 @@ extern "C" void dev_trace_line(int lineNo) {
   }
   SDL_UnlockMutex(g_lock);
 }
-
