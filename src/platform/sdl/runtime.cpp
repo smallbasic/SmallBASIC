@@ -162,7 +162,7 @@ void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
 
   if (g_debugee != -1) {
     net_print(g_debugee, "l\n");
-    open = net_input(g_debugee, buf, sizeof(buf), "\r\n") > 0;
+    open = net_input(g_debugee, buf, sizeof(buf), "\n") > 0;
   } else {
     open = false;
   }
@@ -175,7 +175,7 @@ void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
     g_debugee = net_connect("localhost", g_debugPort);
     if (g_debugee != -1) {
       net_print(g_debugee, "l\n");
-      size = net_input(g_debugee, buf, sizeof(buf), "\r\n");
+      size = net_input(g_debugee, buf, sizeof(buf), "\n");
       if (size > 0) {
         editWidget->gotoLine(buf);
         appLog("Debug session ready");
@@ -194,14 +194,21 @@ void Runtime::debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont
     int size;
     net_print(g_debugee, cont ? "c\n" : "n\n");
     net_print(g_debugee, "l\n");
-    size = net_input(g_debugee, buf, sizeof(buf), "\r\n");
+    size = net_input(g_debugee, buf, sizeof(buf), "\n");
     if (size > 0) {
       edit->gotoLine(buf);
       net_print(g_debugee, "v\n");
-      size = net_input(g_debugee, buf, sizeof(buf), "\1");
-      if (size > 0) {
-        help->reload(buf);
-      }
+      help->reload(NULL);
+      do {
+        size = net_input(g_debugee, buf, sizeof(buf), "\1\n");
+        if (buf[0] == '\1') {
+          break;
+        }
+        if (size > 0) {
+          help->append(buf, size);
+          help->append("\n", 1);
+        }
+      } while (size > 0);
     }
   }
 }
@@ -630,7 +637,7 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   _output->redraw();
-  while (selectedIndex == -1) {
+  while (selectedIndex == -1 && !isClosing()) {
     MAEvent ev = processEvents(true);
     if (ev.type == EVENT_TYPE_KEY_PRESSED &&
         ev.key == 27) {

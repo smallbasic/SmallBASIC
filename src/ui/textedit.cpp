@@ -611,7 +611,9 @@ void TextEditInput::reload(const char *text) {
   _scroll = 0;
   _cursorRow = 0;
   _buf.clear();
-  _buf.insertChars(0, text, strlen(text));
+  if (text != NULL) {
+    _buf.insertChars(0, text, strlen(text));
+  }
   stb_textedit_initialize_state(&_state, false);
 }
 

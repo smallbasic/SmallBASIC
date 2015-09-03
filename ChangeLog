@@ -5,6 +5,8 @@
 	- F1 key for keywords surrounded by punctuation
 	- page scrolling with up/down arrow keys
 	- pressing tab at the bottom no longer jumps to the top
+	- display additional editor context menu items
+	Added a basic debugger
 
 2015-08-02
 	Fix display output before DELAY

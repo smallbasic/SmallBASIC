@@ -69,6 +69,7 @@ struct TextEditInput : public FormEditInput {
   TextEditInput(const char *text, int chW, int chH, int x, int y, int w, int h);
   virtual ~TextEditInput();
 
+  void append(const char *text, int len) { _buf.append(text, len); }
   void completeWord(const char *word);
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);

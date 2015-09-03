@@ -124,10 +124,10 @@ void net_disconnect(socket_t s);
 /**
  * @ingroup net
  *
- * returns true if something is waitting in input-buffer
+ * returns true if something is waiting in input-buffer
  *
  * @param s the socket
- * @return non-zero if something is waitting in input-buffer; otherwise returns 0
+ * @return non-zero if something is waiting in input-buffer; otherwise returns 0
  */
 int net_peek(socket_t s);
 

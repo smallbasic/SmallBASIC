@@ -1079,7 +1079,16 @@ void MenuButton::draw(int x, int y, int w, int h, int chw) {
     if (len * chw >= _width) {
       len = _width / chw;
     }
+    int charHeight = g_system->getOutput()->getCharHeight();
+    int textY = y + (_height - charHeight) / 2;
+
     maSetColor(_pressed ? _fg : _bg);
-    maDrawText(x + 4, y + 4, _label.c_str(), len);
+    maDrawText(x + 4, textY, _label.c_str(), len);
+    if (!_pressed && _index > 0 && _index % 2 == 0) {
+      maSetColor(0x3b3a36);
+      maLine(x + 2, y, x + _width - 2, y);
+      maSetColor(0x46453f);
+      maLine(x + 2, y - 1, x + _width - 2, y - 1);
+    }
   }
 }

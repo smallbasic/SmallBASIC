@@ -40,7 +40,8 @@
 #define MENU_SAVE       17
 #define MENU_RUN        18
 #define MENU_DEBUG      19
-#define MENU_SIZE       20
+#define MENU_OUTPUT     20
+#define MENU_SIZE       21
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -313,6 +314,10 @@ void System::handleMenu(MAEvent &event) {
   case MENU_DEBUG:
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_F(5);
+    break;
+  case MENU_OUTPUT:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('o');
     break;
   }
 
@@ -720,11 +725,13 @@ void System::showMenu() {
         items->add(new String("Save"));
         items->add(new String("Run"));
         items->add(new String("Debug"));
+        items->add(new String("Output"));
         _systemMenu[index++] = MENU_UNDO;
         _systemMenu[index++] = MENU_REDO;
         _systemMenu[index++] = MENU_SAVE;
         _systemMenu[index++] = MENU_RUN;
         _systemMenu[index++] = MENU_DEBUG;
+        _systemMenu[index++] = MENU_OUTPUT;
       }
 
 #if defined(_SDL)
