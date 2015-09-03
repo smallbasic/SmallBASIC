@@ -191,6 +191,7 @@ void System::editSource(strlib::String &loadPath) {
         _output->selectScreen(USER_SCREEN1);
         showCompletion(true);
         _output->redraw();
+        _state = kActiveState;
         waitForBack();
         _output->selectScreen(SOURCE_SCREEN);
         _state = kEditState;

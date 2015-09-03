@@ -712,28 +712,33 @@ void System::showMenu() {
     _systemMenu = new int[MENU_SIZE];
     int index = 0;
     if (get_focus_edit() != NULL) {
-      items->add(new String("Cut"));
-      items->add(new String("Copy"));
-      items->add(new String("Paste"));
-      _systemMenu[index++] = MENU_CUT;
-      _systemMenu[index++] = MENU_COPY;
-      _systemMenu[index++] = MENU_PASTE;
-
       if (isEditing()) {
         items->add(new String("Undo"));
         items->add(new String("Redo"));
+        items->add(new String("Cut"));
+        items->add(new String("Copy"));
+        items->add(new String("Paste"));
         items->add(new String("Save"));
         items->add(new String("Run"));
         items->add(new String("Debug"));
-        items->add(new String("Output"));
+        items->add(new String("Show output"));
         _systemMenu[index++] = MENU_UNDO;
         _systemMenu[index++] = MENU_REDO;
+        _systemMenu[index++] = MENU_CUT;
+        _systemMenu[index++] = MENU_COPY;
+        _systemMenu[index++] = MENU_PASTE;
         _systemMenu[index++] = MENU_SAVE;
         _systemMenu[index++] = MENU_RUN;
         _systemMenu[index++] = MENU_DEBUG;
         _systemMenu[index++] = MENU_OUTPUT;
+      } else {
+        items->add(new String("Cut"));
+        items->add(new String("Copy"));
+        items->add(new String("Paste"));
+        _systemMenu[index++] = MENU_CUT;
+        _systemMenu[index++] = MENU_COPY;
+        _systemMenu[index++] = MENU_PASTE;
       }
-
 #if defined(_SDL)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
@@ -752,12 +757,10 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_CONSOLE;
         _systemMenu[index++] = MENU_SOURCE;
       }
-#if defined(_SDL)
-      items->add(new String("Back"));
-      _systemMenu[index++] = MENU_BACK;
-#endif
-      items->add(new String("Restart"));
-      _systemMenu[index++] = MENU_RESTART;
+      if (!isEditing()) {
+        items->add(new String("Restart"));
+        _systemMenu[index++] = MENU_RESTART;
+      }
 #if !defined(_SDL)
       items->add(new String("Show keypad"));
       _systemMenu[index++] = MENU_KEYPAD;
@@ -785,6 +788,10 @@ void System::showMenu() {
 
       items->add(new String("Screenshot"));
       _systemMenu[index++] = MENU_SCREENSHOT;
+#if defined(_SDL)
+      items->add(new String("Back"));
+      _systemMenu[index++] = MENU_BACK;
+#endif
     }
     optionsBox(items);
     delete items;
