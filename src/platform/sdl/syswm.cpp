@@ -12,7 +12,7 @@
 #define DEFAULT_FONT_SIZE 12
 #define DEFAULT_FONT_SIZE_PTS 11
 
-extern const char *g_appPath;
+extern char g_appPath[];
 extern int g_debugPort;
 
 #if defined(_Win32)
@@ -54,6 +54,7 @@ void launchDebug(const char *file) {
 
 #else
 #include <unistd.h>
+#include <errno.h>
 
 void loadIcon(SDL_Window *window) {
 }
@@ -73,7 +74,10 @@ void launchDebug(const char *file) {
   case 0:
     // child process
     sprintf(port, "-p %d", g_debugPort);
-    execl(g_appPath, g_appPath, port, "-d", file, (char *)0);
+    if (execl(g_appPath, g_appPath, port, "-d", file, (char *)0) == -1) {
+      fprintf(stderr, "exec failed %s\n", strerror(errno));
+      exit(1);
+    }
     break;
   default:
     // parent process - continue

@@ -731,7 +731,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_RUN;
         _systemMenu[index++] = MENU_DEBUG;
         _systemMenu[index++] = MENU_OUTPUT;
-      } else {
+      } else if (isRunning()) {
         items->add(new String("Cut"));
         items->add(new String("Copy"));
         items->add(new String("Paste"));

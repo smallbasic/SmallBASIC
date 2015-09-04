@@ -52,7 +52,7 @@ static struct option OPTIONS[] = {
   {0, 0, 0, 0}
 };
 
-const char *g_appPath;
+char g_appPath[OS_PATHNAME_SIZE + 1];
 int g_debugPort = 4000;
 
 void appLog(const char *format, ...) {
@@ -209,6 +209,22 @@ void printKeywords() {
   }
 }
 
+void setupAppPath(const char *path) {
+  g_appPath[0] = '\0';
+  if (path[0] == '/' || (path[1] == ':' && path[2] == '/')) {
+    // full path or C:/
+    strcpy(g_appPath, path);
+  } else {
+    // relative path
+    char cwd[OS_PATHNAME_SIZE + 1];
+    cwd[0] = '\0';
+    getcwd(cwd, sizeof(cwd) - 1);
+    strcat(g_appPath, cwd);
+    strcat(g_appPath, "/");
+    strcat(g_appPath, path);
+  }
+}
+
 void showHelp() {
   fprintf(stdout,
           "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
@@ -229,10 +245,10 @@ void showHelp() {
 int main(int argc, char* argv[]) {
   logEntered();
 
+  setupAppPath(argv[0]);
   opt_command[0] = '\0';
   opt_verbose = false;
   opt_quiet = true;
-  g_appPath = argv[0];
 
   char *fontFamily = NULL;
   char *runFile = NULL;
