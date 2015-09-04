@@ -94,7 +94,6 @@ void System::editSource(strlib::String &loadPath) {
       switch (event.key) {
       case SB_KEY_F(2):
       case SB_KEY_F(3):
-      case SB_KEY_F(4):
       case SB_KEY_F(8):
       case SB_KEY_F(10):
       case SB_KEY_F(11):

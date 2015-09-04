@@ -219,7 +219,7 @@ void setupAppPath(const char *path) {
     char cwd[OS_PATHNAME_SIZE + 1];
     cwd[0] = '\0';
     getcwd(cwd, sizeof(cwd) - 1);
-    strcat(g_appPath, cwd);
+    strcpy(g_appPath, cwd);
     strcat(g_appPath, "/");
     strcat(g_appPath, path);
   }

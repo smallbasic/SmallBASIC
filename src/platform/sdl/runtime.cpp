@@ -177,6 +177,12 @@ void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
       net_print(g_debugee, "l\n");
       size = net_input(g_debugee, buf, sizeof(buf), "\n");
       if (size > 0) {
+        int *marker = editWidget->getMarkers();
+        for (int i = 0; i < MAX_MARKERS; i++) {
+          if (marker[i] != -1) {
+            net_printf(g_debugee, "b %d\n", marker[i]);
+          }
+        }
         editWidget->gotoLine(buf);
         appLog("Debug session ready");
       }

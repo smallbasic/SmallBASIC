@@ -12,6 +12,7 @@
 #define STB_TEXTEDIT_CHARTYPE char
 #define STB_TEXTEDIT_UNDOCHARCOUNT 2000
 #define MARGIN_CHARS 4
+#define MAX_MARKERS 10
 
 #include <config.h>
 #include <stdlib.h>
@@ -45,6 +46,7 @@ struct EditTheme {
   int _syntax_command;
   int _syntax_statement;
   int _syntax_digit;
+  int _row_marker;
 };
 
 struct EditBuffer {
@@ -77,6 +79,7 @@ struct TextEditInput : public FormEditInput {
   int  getCursorPos() const { return _state.cursor; }
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
+  int *getMarkers() { return _lineMarker; }
   void gotoLine(const char *buffer);
   void reload(const char *text);
   bool save(const char *filePath);
@@ -134,6 +137,7 @@ protected:
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
   void setColor(SyntaxState &state);
+  void toggleMarker();
   void updateScroll();
   int wordStart();
 
@@ -147,6 +151,7 @@ protected:
   int _cursorRow;
   int _indentLevel;
   int _matchingBrace;
+  int _lineMarker[MAX_MARKERS];
   bool _dirty;
 };
 
