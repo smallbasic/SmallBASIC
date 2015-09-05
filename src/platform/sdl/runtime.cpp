@@ -821,6 +821,20 @@ void signalTrace(SDL_bool debugBreak, SDL_bool debugError = SDL_FALSE) {
   SDL_UnlockMutex(g_lock);
 }
 
+void dumpStack(socket_t socket) {
+  for (int i = prog_stack_count - 1;  i > -1; i--) {
+    stknode_t node = prog_stack[i];
+    switch (node.type) {
+    case kwFUNC:
+      net_print(socket, "FUNC\n");
+      break;
+    case kwPROC:
+      net_print(socket, "SUB\n");
+      break;
+    }
+  }
+}
+
 int debugThread(void *data) {
   int port = ((intptr_t) data);
   socket_t socket = net_listen(port);
@@ -852,10 +866,15 @@ int debugThread(void *data) {
         break;
       case 'v':
         // variables
+        net_print(socket, "Variables:\n");
         for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
-          pv_writevar(tvar[i], PV_NET, socket);
-          net_print(socket, "\n");
+          if (!v_isempty(tvar[i])) {
+            pv_writevar(tvar[i], PV_NET, socket);
+            net_print(socket, "\n");
+          }
         }
+        net_print(socket, "Stack:\n");
+        dumpStack(socket);
         net_print(socket, "\1");
         break;
       case 'b':
