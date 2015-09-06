@@ -30,6 +30,7 @@
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
 #define PAUSE_DEBUG_LAUNCH 250
+#define PAUSE_DEBUG_STEP 50
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000
 #define FREQUENCY 44100
@@ -199,6 +200,7 @@ void Runtime::debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont
     char buf[OS_PATHNAME_SIZE + 1];
     int size;
     net_print(g_debugee, cont ? "c\n" : "n\n");
+    pause(PAUSE_DEBUG_STEP);
     net_print(g_debugee, "l\n");
     size = net_input(g_debugee, buf, sizeof(buf), "\n");
     if (size > 0) {
