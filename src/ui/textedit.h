@@ -127,6 +127,7 @@ protected:
   int  getIndent(char *spaces, int len, int pos);
   int  getLineChars(StbTexteditRow *row, int pos);
   char *getSelection(int *start, int *end);
+  void gotoNextMarker();
   void lineNavigate(bool lineDown);
   char *lineText(int pos);
   int  lineEnd(int pos) { return linePos(pos, true); }
@@ -149,6 +150,7 @@ protected:
   int _marginWidth;
   int _scroll;
   int _cursorRow;
+  int _cursorLine;
   int _indentLevel;
   int _matchingBrace;
   int _lineMarker[MAX_MARKERS];
