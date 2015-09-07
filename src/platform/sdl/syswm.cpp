@@ -15,6 +15,8 @@
 extern char g_appPath[];
 extern int g_debugPort;
 
+void appLog(const char *format, ...);
+
 #if defined(_Win32)
 #include <SDL_syswm.h>
 
@@ -49,7 +51,9 @@ void launchDebug(const char *file) {
   PROCESS_INFORMATION processInfo;
   char cmd[1024];
   sprintf(cmd, "-p %d -d %s", g_debugPort, file);
-  CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo);
+  if (!CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
+  }
 }
 
 #else
