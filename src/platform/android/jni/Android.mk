@@ -31,6 +31,7 @@ LOCAL_SRC_FILES  := main.cpp                   \
                     ../../../ui/textedit.cpp   \
                     ../../../ui/strlib.cpp     \
                     ../../../ui/graphics.cpp   \
+                    ../../../ui/editor.cpp     \
                     ../../../ui/system.cpp
 LOCAL_LDLIBS     := -llog -landroid -ljnigraphics
 LOCAL_STATIC_LIBRARIES := sb_common freetype android_native_app_glue

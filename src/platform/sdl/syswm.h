@@ -13,5 +13,6 @@
 
 void loadIcon(SDL_Window *window);
 int getStartupFontSize(SDL_Window *window);
+void launchDebug(const char *file);
 
 #endif

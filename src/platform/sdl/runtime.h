@@ -24,6 +24,9 @@ struct Runtime : public System {
   void alert(const char *title, const char *message);
   int ask(const char *title, const char *prompt, bool cancel);
   void construct(const char *font, const char *boldFont);
+  void debugStart(TextEditInput *edit, const char *file);
+  void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont);
+  void debugStop();
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
@@ -34,8 +37,8 @@ struct Runtime : public System {
   void processEvent(MAEvent &event);
   void pushEvent(MAEvent *event);
   void setWindowTitle(const char *title);
-  void showCursor(bool hand);
-  int runShell(const char *startupBas, int fontScale);
+  void showCursor(CursorType cursorType);
+  int runShell(const char *startupBas, int fontScale, int debugPort);
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void onResize(int w, int h);
@@ -49,6 +52,7 @@ private:
   SDL_Window *_window;
   SDL_Cursor *_cursorHand;
   SDL_Cursor *_cursorArrow;
+  SDL_Cursor *_cursorIBeam;
 };
 
 #endif

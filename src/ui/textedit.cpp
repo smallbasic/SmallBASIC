@@ -16,6 +16,7 @@
 #include "ui/kwp.h"
 
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
+#define STB_TEXTEDIT_IS_PUNCT(ch) ispunct(ch)
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
@@ -30,25 +31,25 @@ int g_themeId = 0;
 const int theme1[] = {
   0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
 const int theme2[] = {
   0xc8cedb, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x002b36, 0x657b83, 0x073642, 0x9f7d18, 0x2b313a, 0x073642,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
 const int theme3[] = {
   0xc8cedb, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x022444,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
 const int theme4[] = {
   0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
 const int* themes[] = {
@@ -68,6 +69,8 @@ const char *helpText =
   "C-y redo\n"
   "C-f find, find-next\n"
   "C-n find, replace\n"
+  "C-t toggle marker\n"
+  "C-g goto marker\n"
   "C-l outline\n"
   "C-o show output\n"
   "C-SPC auto-complete\n"
@@ -80,6 +83,7 @@ const char *helpText =
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
+  "F5 debug\n"
   "F9, C-r run\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
@@ -95,6 +99,12 @@ inline bool match(const char *str, const char *pattern , int len) {
 inline bool is_comment(const char *str, int offs) {
   return (str[offs] == '\'' || (str[offs] == '#' && !isdigit(str[offs + 1]))
           || match(str + offs, "RrEeMm  ", 3));
+}
+
+int compareIntegers(const void *p1, const void *p2) {
+  int i1 = *((int *)p1);
+  int i2 = *((int *)p2);
+  return i1 < i2 ? -1 : i1 == i2 ? 0 : 1;
 }
 
 //
@@ -117,7 +127,8 @@ EditTheme::EditTheme(int fg, int bg) :
   _syntax_text(fg),
   _syntax_command(fg),
   _syntax_statement(fg),
-  _syntax_digit(fg) {
+  _syntax_digit(fg),
+  _row_marker(fg) {
 }
 
 void EditTheme::selectTheme(const int theme[]) {
@@ -137,6 +148,7 @@ void EditTheme::selectTheme(const int theme[]) {
   _syntax_command = theme[13];
   _syntax_statement = theme[14];
   _syntax_digit = theme[15];
+  _row_marker = theme[16];
 }
 
 //
@@ -249,10 +261,12 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _marginWidth(0),
   _scroll(0),
   _cursorRow(0),
+  _cursorLine(0),
   _indentLevel(INDENT_LEVEL),
   _matchingBrace(-1),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
+  memset(_lineMarker, -1, sizeof(_lineMarker));
 }
 
 TextEditInput::~TextEditInput() {
@@ -327,6 +341,8 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
           cursorX = x + ((_state.cursor - i) * chw);
           cursorY = y + baseY;
         }
+        // the logical line, will be < _cursorRow when there are wrapped lines
+        _cursorLine = line;
 
         if (_marginWidth > 0 && selectStart == selectEnd) {
           maSetColor(_theme->_row_cursor);
@@ -443,17 +459,24 @@ void TextEditInput::drawText(int x, int y, const char *str,
         nextState = kText;
         break;
       } else if (state == kReset && isdigit(str[i]) &&
-                 (i == 0 || !isalpha(str[i - 1]))) {
+                 (i == 0 || !isalnum(str[i - 1]))) {
         next = 1;
         while (i + next < length && isdigit(str[i + next])) {
           next++;
         }
-        if (i > 0 && str[i - 1] == '.') {
-          count--;
-          next++;
+        if (!isalnum(str[i + next])) {
+          if (i > 0 && str[i - 1] == '.') {
+            i--;
+            count--;
+            next++;
+          }
+          nextState = kDigit;
+          break;
+        } else {
+          i += next;
+          count += next;
+          next = 0;
         }
-        nextState = kDigit;
-        break;
       } else if (state == kReset) {
         int size = 0;
         uint32_t hash = getHash(str, i, size);
@@ -526,6 +549,12 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_TAB:
     editTab();
     break;
+  case SB_KEY_CTRL('t'):
+    toggleMarker();
+    break;
+  case SB_KEY_CTRL('g'):
+    gotoNextMarker();
+    break;
   case SB_KEY_SHIFT(SB_KEY_PGUP):
   case SB_KEY_PGUP:
     pageNavigate(false, key == (int)SB_KEY_SHIFT(SB_KEY_PGUP));
@@ -552,7 +581,18 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   }
 
   _cursorRow = getCursorRow();
-  updateScroll();
+  if (key == STB_TEXTEDIT_K_UP) {
+    if (_cursorRow == _scroll) {
+      updateScroll();
+    }
+  } else if (key == STB_TEXTEDIT_K_DOWN) {
+    int pageRows = _height / _charHeight;
+    if (_cursorRow - _scroll > pageRows) {
+      updateScroll();
+    }
+  } else {
+    updateScroll();
+  }
   findMatchingBrace();
   return true;
 }
@@ -591,7 +631,9 @@ void TextEditInput::reload(const char *text) {
   _scroll = 0;
   _cursorRow = 0;
   _buf.clear();
-  _buf.insertChars(0, text, strlen(text));
+  if (text != NULL) {
+    _buf.insertChars(0, text, strlen(text));
+  }
   stb_textedit_initialize_state(&_state, false);
 }
 
@@ -777,7 +819,15 @@ void TextEditInput::cycleTheme() {
 
 void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
   if (_marginWidth > 0) {
-    if (selected) {
+    bool markerRow = false;
+    for (int i = 0; i < MAX_MARKERS && !markerRow; i++) {
+      if (row == _lineMarker[i]) {
+        markerRow = true;
+      }
+    }
+    if (markerRow) {
+      maSetColor(_theme->_row_marker);
+    } else if (selected) {
       maSetColor(_theme->_number_selection_background);
       maFillRect(x, y, _marginWidth, _charHeight);
       maSetColor(_theme->_number_selection_color);
@@ -884,7 +934,7 @@ void TextEditInput::editTab() {
     // remove excess spaces
     stb_textedit_delete(&_buf, &_state, start, curIndent - indent);
     _state.cursor = start + indent;
-  } else {
+  } else if (start + indent > 0) {
     // already have ideal indent - soft-tab to indent
     _state.cursor = start + indent;
   }
@@ -974,7 +1024,7 @@ int TextEditInput::getCursorRow() const {
 
 uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
   uint32_t result = 0;
-  if ((offs == 0 || IS_WHITE(str[offs - 1]))
+  if ((offs == 0 || IS_WHITE(str[offs - 1]) || ispunct(str[offs - 1]))
        && !IS_WHITE(str[offs]) && str[offs] != '\0') {
     for (count = 0; count < keyword_max_len; count++) {
       char ch = str[offs + count];
@@ -1062,7 +1112,7 @@ char *TextEditInput::getSelection(int *start, int *end) {
   } else {
     *start = wordStart();
     int i = _state.cursor;
-    while (!IS_WHITE(_buf._buffer[i]) && i < _buf._len) {
+    while (!IS_WHITE(_buf._buffer[i]) && !ispunct(_buf._buffer[i]) && i < _buf._len) {
       i++;
     }
     *end = i;
@@ -1093,6 +1143,30 @@ bool TextEditInput::replaceNext(const char *buffer) {
     free(selection);
   }
   return changed;
+}
+
+void TextEditInput::gotoNextMarker() {
+  int next = 0;
+  int first = -1;
+  for (int i = 0; i < MAX_MARKERS; i++) {
+    if (_lineMarker[i] != -1) {
+      if (first == -1) {
+        first = i;
+      }
+      if (_lineMarker[i] == _cursorLine) {
+        next = i + 1 == MAX_MARKERS ? first : i + 1;
+        break;
+      }
+    }
+  }
+  if (first != -1) {
+    if (_lineMarker[next] == -1) {
+      next = first;
+    }
+    if (_lineMarker[next] != -1) {
+      setCursorRow(_lineMarker[next] - 1);
+    }
+  }
 }
 
 void TextEditInput::lineNavigate(bool lineDown) {
@@ -1235,6 +1309,29 @@ void TextEditInput::setColor(SyntaxState &state) {
   }
 }
 
+void TextEditInput::toggleMarker() {
+  bool found = false;
+  for (int i = 0; i < MAX_MARKERS && !found; i++) {
+    if (_cursorLine == _lineMarker[i]) {
+      _lineMarker[i] = -1;
+      found = true;
+    }
+  }
+  if (!found) {
+    for (int i = 0; i < MAX_MARKERS && !found; i++) {
+      if (_lineMarker[i] == -1) {
+        _lineMarker[i] = _cursorLine;
+        found = true;
+        break;
+      }
+    }
+  }
+  if (!found) {
+    _lineMarker[0] = _cursorLine;
+  }
+  qsort(_lineMarker, MAX_MARKERS, sizeof(int), compareIntegers);
+}
+
 void TextEditInput::updateScroll() {
   int pageRows = _height / _charHeight;
   if (_cursorRow + 1 < pageRows) {
@@ -1306,6 +1403,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     if (key == SB_KEY_ENTER) {
       _editor->gotoLine(_buf._buffer);
     }
+    break;
   default:
     switch (key) {
     case STB_TEXTEDIT_K_LEFT:

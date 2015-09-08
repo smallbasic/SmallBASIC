@@ -12,6 +12,7 @@
 #include "config.h"
 #include "ui/strlib.h"
 #include "ui/ansiwidget.h"
+#include "ui/textedit.h"
 
 #if defined(_FLTK)
   #include "platform/fltk/system.h"
@@ -42,13 +43,20 @@ struct System {
   void systemPrint(const char *msg, ...);
   AnsiWidget *getOutput() { return _output; }
 
+  enum CursorType {
+    kHand, kArrow, kIBeam
+  };
+
   virtual void alert(const char *title, const char *message) = 0;
   virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
+  virtual void debugStart(TextEditInput *edit, const char *file) = 0;
+  virtual void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) = 0;
+  virtual void debugStop() = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
   virtual void setWindowTitle(const char *title) = 0;
-  virtual void showCursor(bool hand) = 0;
+  virtual void showCursor(CursorType cursorType) = 0;
   virtual void setClipboardText(const char *text) = 0;
   virtual char *getClipboardText() = 0;
 
@@ -59,7 +67,7 @@ protected:
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
-  void handleMenu(int menuId);
+  void handleMenu(MAEvent &event);
   bool loadSource(const char *fileName);
   void resize();
   void runEdit(const char *startupBas);

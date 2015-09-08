@@ -20,6 +20,7 @@ sbasicg_SOURCES =           \
   ../../ui/window.cpp       \
   ../../ui/screen.cpp       \
   ../../ui/system.cpp       \
+  ../../ui/editor.cpp       \
   ../../ui/form.cpp         \
   ../../ui/inputs.cpp       \
   ../../ui/textedit.cpp     \

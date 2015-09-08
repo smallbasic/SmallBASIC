@@ -10,6 +10,7 @@
 #include "common/sys.h"
 #include "common/pproc.h"
 #include "common/messages.h"
+#include "common/inet.h"
 #include <limits.h>
 
 /*
@@ -253,6 +254,9 @@ void pv_write(char *str, int method, int handle) {
       vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.size);
     }
     strcat((char *) vp->v.p.ptr, str);
+    break;
+  case PV_NET:
+    net_print((socket_t) handle, (const char *)str);
     break;
   default:
     dev_print(str);

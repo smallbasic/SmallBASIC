@@ -12,8 +12,9 @@
 #include "common/smbas.h"
 #include "common/osd.h"
 #include "common/device.h"
-#include "common/fs_socket_client.h"
 #include "common/keymap.h"
+#include "common/inet.h"
+#include "common/pproc.h"
 #include "lib/maapi.h"
 #include "ui/utils.h"
 #include "platform/sdl/runtime.h"
@@ -27,6 +28,9 @@
 #include <cmath>
 
 #define WAIT_INTERVAL 5
+#define COND_WAIT_TIME 250
+#define PAUSE_DEBUG_LAUNCH 250
+#define PAUSE_DEBUG_STEP 50
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000
 #define FREQUENCY 44100
@@ -35,6 +39,15 @@
 #define OPTIONS_BOX_FG 0x3e3f3e
 
 Runtime *runtime;
+SDL_mutex *g_lock = NULL;
+SDL_cond *g_cond = NULL;
+SDL_bool g_debugPause = SDL_FALSE;
+SDL_bool g_debugBreak = SDL_FALSE;
+SDL_bool g_debugError = SDL_FALSE;
+int g_debugLine = 0;
+strlib::List<int*> g_breakPoints;
+socket_t g_debugee = -1;
+extern int g_debugPort;
 
 struct SoundObject {
   double v;
@@ -44,6 +57,7 @@ struct SoundObject {
 
 std::queue<SoundObject> sounds;
 void audio_callback(void *beeper, Uint8 *stream8, int length);
+int debugThread(void *data);
 
 MAEvent *getMotionEvent(int type, SDL_Event *event) {
   MAEvent *result = new MAEvent();
@@ -61,7 +75,8 @@ Runtime::Runtime(SDL_Window *window) :
   _eventQueue(NULL),
   _window(window),
   _cursorHand(NULL),
-  _cursorArrow(NULL) {
+  _cursorArrow(NULL),
+  _cursorIBeam(NULL) {
   runtime = this;
 }
 
@@ -77,8 +92,10 @@ Runtime::~Runtime() {
 
   SDL_FreeCursor(_cursorHand);
   SDL_FreeCursor(_cursorArrow);
+  SDL_FreeCursor(_cursorIBeam);
   _cursorHand = NULL;
   _cursorArrow = NULL;
+  _cursorIBeam = NULL;
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -120,6 +137,7 @@ void Runtime::construct(const char *font, const char *boldFont) {
 
   _cursorHand = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
   _cursorArrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+  _cursorIBeam = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
 
   if (_graphics && _graphics->construct(font, boldFont)) {
     int w, h;
@@ -138,6 +156,80 @@ void Runtime::construct(const char *font, const char *boldFont) {
   }
 }
 
+void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
+  char buf[OS_PATHNAME_SIZE + 1];
+  bool open;
+  int size;
+
+  if (g_debugee != -1) {
+    net_print(g_debugee, "l\n");
+    open = net_input(g_debugee, buf, sizeof(buf), "\n") > 0;
+  } else {
+    open = false;
+  }
+
+  if (!open) {
+    launchDebug(file);
+    pause(PAUSE_DEBUG_LAUNCH);
+    SDL_RaiseWindow(_window);
+
+    g_debugee = net_connect("localhost", g_debugPort);
+    if (g_debugee != -1) {
+      net_print(g_debugee, "l\n");
+      size = net_input(g_debugee, buf, sizeof(buf), "\n");
+      if (size > 0) {
+        int *marker = editWidget->getMarkers();
+        for (int i = 0; i < MAX_MARKERS; i++) {
+          if (marker[i] != -1) {
+            net_printf(g_debugee, "b %d\n", marker[i]);
+          }
+        }
+        editWidget->gotoLine(buf);
+        appLog("Debug session ready");
+      }
+    } else {
+      appLog("Failed to attach to debug window");
+    }
+  } else {
+    debugStop();
+  }
+}
+
+void Runtime::debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {
+  if (g_debugee != -1) {
+    char buf[OS_PATHNAME_SIZE + 1];
+    int size;
+    net_print(g_debugee, cont ? "c\n" : "n\n");
+    pause(PAUSE_DEBUG_STEP);
+    net_print(g_debugee, "l\n");
+    size = net_input(g_debugee, buf, sizeof(buf), "\n");
+    if (size > 0) {
+      edit->gotoLine(buf);
+      net_print(g_debugee, "v\n");
+      help->reload(NULL);
+      do {
+        size = net_input(g_debugee, buf, sizeof(buf), "\1\n");
+        if (buf[0] == '\1') {
+          break;
+        }
+        if (size > 0) {
+          help->append(buf, size);
+          help->append("\n", 1);
+        }
+      } while (size > 0);
+    }
+  }
+}
+
+void Runtime::debugStop() {
+  if (g_debugee != -1) {
+    net_print(g_debugee, "q\n");
+    net_disconnect(g_debugee);
+    g_debugee = -1;
+    appLog("Closed debug session");
+  }
+}
+
 void Runtime::pushEvent(MAEvent *event) {
   _eventQueue->push(event);
 }
@@ -146,7 +238,7 @@ MAEvent *Runtime::popEvent() {
   return _eventQueue->pop();
 }
 
-int Runtime::runShell(const char *startupBas, int fontScale) {
+int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
   logEntered();
 
   os_graphics = 1;
@@ -177,6 +269,18 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
 
   SDL_AudioSpec obtainedSpec;
   SDL_OpenAudio(&desiredSpec, &obtainedSpec);
+  net_init();
+
+  if (debugPort > 0) {
+    appLog("Debug active on port %d\n", debugPort);
+    g_lock = SDL_CreateMutex();
+    g_cond = SDL_CreateCond();
+    opt_trace_on = 1;
+    g_debugBreak = SDL_TRUE;
+    SDL_Thread *thread =
+      SDL_CreateThread(debugThread, "DBg", (void *)(intptr_t)debugPort);
+    SDL_DetachThread(thread);
+  }
 
   if (startupBas != NULL) {
     String bas = startupBas;
@@ -196,6 +300,13 @@ int Runtime::runShell(const char *startupBas, int fontScale) {
     runMain(MAIN_BAS);
   }
 
+  if (debugPort > 0) {
+    SDL_DestroyCond(g_cond);
+    SDL_DestroyMutex(g_lock);
+  }
+
+  debugStop();
+  net_close();
   SDL_CloseAudio();
   _state = kDoneState;
   logLeaving();
@@ -461,8 +572,18 @@ void Runtime::setWindowTitle(const char *title) {
   }
 }
 
-void Runtime::showCursor(bool hand) {
-  SDL_SetCursor(hand ? _cursorHand : _cursorArrow);
+void Runtime::showCursor(CursorType cursorType) {
+  switch (cursorType) {
+  case kHand:
+    SDL_SetCursor(_cursorHand);
+    break;
+  case kArrow:
+    SDL_SetCursor(_cursorArrow);
+    break;
+  case kIBeam:
+    SDL_SetCursor(_cursorIBeam);
+    break;
+  }
 }
 
 void Runtime::onResize(int width, int height) {
@@ -499,7 +620,7 @@ void Runtime::optionsBox(StringList *items) {
   width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
 
   int charHeight = _output->getCharHeight();
-  int textHeight = charHeight + (charHeight / 2);
+  int textHeight = charHeight + (charHeight / 3);
   int height = textHeight * items->size();
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
@@ -524,7 +645,7 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   _output->redraw();
-  while (selectedIndex == -1) {
+  while (selectedIndex == -1 && !isClosing()) {
     MAEvent ev = processEvents(true);
     if (ev.type == EVENT_TYPE_KEY_PRESSED &&
         ev.key == 27) {
@@ -540,12 +661,17 @@ void Runtime::optionsBox(StringList *items) {
   _output->selectScreen(screenId);
   _menuX = 2;
   _menuY = 2;
-
   if (selectedIndex != -1) {
-    MAEvent *maEvent = new MAEvent();
-    maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
-    maEvent->optionsBoxButtonIndex = selectedIndex;
-    pushEvent(maEvent);
+    if (_systemMenu == NULL && isRunning() &&
+        !form_ui::optionSelected(selectedIndex)) {
+      dev_clrkb();
+      dev_pushkey(selectedIndex);
+    } else {
+      MAEvent *maEvent = new MAEvent();
+      maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
+      maEvent->optionsBoxButtonIndex = selectedIndex;
+      pushEvent(maEvent);
+    }
   } else {
     delete [] _systemMenu;
     _systemMenu = NULL;
@@ -683,4 +809,130 @@ void osd_sound(int frq, int ms, int vol, int bgplay) {
 
 void osd_clear_sound_queue() {
   flush_queue();
+}
+
+//
+// debugging
+//
+void signalTrace(SDL_bool debugBreak, SDL_bool debugError = SDL_FALSE) {
+  SDL_LockMutex(g_lock);
+  g_debugPause = SDL_FALSE;
+  g_debugBreak = debugBreak;
+  g_debugError = debugError;
+  SDL_CondSignal(g_cond);
+  SDL_UnlockMutex(g_lock);
+}
+
+void dumpStack(socket_t socket) {
+  for (int i = prog_stack_count - 1;  i > -1; i--) {
+    stknode_t node = prog_stack[i];
+    switch (node.type) {
+    case kwFUNC:
+      net_print(socket, "FUNC\n");
+      break;
+    case kwPROC:
+      net_print(socket, "SUB\n");
+      break;
+    }
+  }
+}
+
+int debugThread(void *data) {
+  int port = ((intptr_t) data);
+  socket_t socket = net_listen(port);
+  char buf[OS_PATHNAME_SIZE + 1];
+
+  if (socket == -1) {
+    signalTrace(SDL_FALSE, SDL_TRUE);
+    return -1;
+  }
+
+  while (socket != -1) {
+    int size = net_input(socket, buf, sizeof(buf), "\r\n");
+    if (size > 0) {
+      char cmd = buf[0];
+      switch (cmd) {
+      case 'n':
+        // step over next line
+        signalTrace(SDL_TRUE);
+        break;
+      case 'c':
+        // continue
+        signalTrace(SDL_FALSE);
+        break;
+      case 'l':
+        // current line number
+        SDL_LockMutex(g_lock);
+        net_printf(socket, "%d\n", g_debugLine);
+        SDL_UnlockMutex(g_lock);
+        break;
+      case 'v':
+        // variables
+        net_print(socket, "Variables:\n");
+        for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
+          if (!v_isempty(tvar[i])) {
+            pv_writevar(tvar[i], PV_NET, socket);
+            net_print(socket, "\n");
+          }
+        }
+        net_print(socket, "Stack:\n");
+        dumpStack(socket);
+        net_print(socket, "\1");
+        break;
+      case 'b':
+        // set breakpoint
+        SDL_LockMutex(g_lock);
+        g_breakPoints.add(new int(atoi(buf + 2)));
+        SDL_UnlockMutex(g_lock);
+        break;
+      case 'q':
+        // quit
+        signalTrace(SDL_FALSE, SDL_TRUE);
+        g_breakPoints.removeAll();
+        net_disconnect(socket);
+        socket = -1;
+        break;
+      case 'h':
+        net_print(socket, "SmallBASIC debugger\n");
+        break;
+      default:
+        // unknown command
+        net_printf(socket, "Unknown command '%s'\n", buf);
+        break;
+      };
+    }
+  }
+  return 0;
+}
+
+extern "C" void dev_trace_line(int lineNo) {
+  SDL_LockMutex(g_lock);
+  g_debugLine = lineNo;
+
+  if (!g_debugError) {
+    if (!g_debugBreak) {
+      List_each(int *, it, g_breakPoints) {
+        int breakPoint = *(*it);
+        if (breakPoint == lineNo) {
+          runtime->systemPrint("Break point hit at line: %d", lineNo);
+          g_debugBreak = SDL_TRUE;
+          break;
+        }
+      }
+    }
+    if (g_debugBreak) {
+      runtime->getOutput()->redraw();
+      g_debugPause = SDL_TRUE;
+      while (g_debugPause) {
+        SDL_CondWaitTimeout(g_cond, g_lock, COND_WAIT_TIME);
+        runtime->processEvents(0);
+        if (!runtime->isRunning()) {
+          break;
+        }
+      }
+    }
+  } else {
+    runtime->setExit(true);
+  }
+  SDL_UnlockMutex(g_lock);
 }

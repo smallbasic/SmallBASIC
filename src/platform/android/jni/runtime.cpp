@@ -33,6 +33,8 @@
 
 Runtime *runtime;
 
+void launchDebug(const char *file) {}
+
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
   MAEvent *result = new MAEvent();
   result->type = type;

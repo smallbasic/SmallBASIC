@@ -22,6 +22,7 @@ static int inetlib_init = 0;
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
 #endif
 
 #if !defined(socklen_t)
@@ -44,6 +45,12 @@ int net_init() {
     }
     return 1;
   }
+#else
+  struct sigaction sa;
+  sa.sa_handler = SIG_IGN;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  sigaction(SIGPIPE, &sa, 0);
 #endif
   return 1;
 }

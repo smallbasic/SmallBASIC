@@ -1036,6 +1036,13 @@ void dev_destroy_file_list(char_p_t *list, int count);
  */
 dword dev_get_millisecond_count();
 
+/**
+ * @ingroup dev_f
+ *
+ * Trace or debug at the given line number
+ */
+void dev_trace_line(int lineNo);
+
 #if defined(__cplusplus)
 }
 #endif

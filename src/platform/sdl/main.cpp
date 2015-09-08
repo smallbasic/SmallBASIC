@@ -39,18 +39,21 @@ const char* FONTS[] = {
 };
 
 static struct option OPTIONS[] = {
-  {"help",     no_argument,       NULL, 'h'},
-  {"verbose",  no_argument,       NULL, 'v'},
-  {"keywords", no_argument,       NULL, 'k'},
-  {"command",  optional_argument, NULL, 'c'},
-  {"font",     optional_argument, NULL, 'f'},
-  {"run",      optional_argument, NULL, 'r'},
-  {"module",   optional_argument, NULL, 'm'},
-  {"edit",     optional_argument, NULL, 'e'},
+  {"help",      no_argument,       NULL, 'h'},
+  {"verbose",   no_argument,       NULL, 'v'},
+  {"keywords",  no_argument,       NULL, 'k'},
+  {"command",   optional_argument, NULL, 'c'},
+  {"font",      optional_argument, NULL, 'f'},
+  {"run",       optional_argument, NULL, 'r'},
+  {"module",    optional_argument, NULL, 'm'},
+  {"edit",      optional_argument, NULL, 'e'},
+  {"debug",     optional_argument, NULL, 'd'},
+  {"debugPort", optional_argument, NULL, 'p'},
   {0, 0, 0, 0}
 };
 
-const char *CONFIG_NAME = "SmallBASIC";
+char g_appPath[OS_PATHNAME_SIZE + 1];
+int g_debugPort = 4000;
 
 void appLog(const char *format, ...) {
   char buf[4096], *p = buf;
@@ -206,6 +209,22 @@ void printKeywords() {
   }
 }
 
+void setupAppPath(const char *path) {
+  g_appPath[0] = '\0';
+  if (path[0] == '/' || (path[1] == ':' && path[2] == '\\')) {
+    // full path or C:/
+    strcpy(g_appPath, path);
+  } else {
+    // relative path
+    char cwd[OS_PATHNAME_SIZE + 1];
+    cwd[0] = '\0';
+    getcwd(cwd, sizeof(cwd) - 1);
+    strcpy(g_appPath, cwd);
+    strcat(g_appPath, "/");
+    strcat(g_appPath, path);
+  }
+}
+
 void showHelp() {
   fprintf(stdout,
           "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
@@ -226,20 +245,20 @@ void showHelp() {
 int main(int argc, char* argv[]) {
   logEntered();
 
+  setupAppPath(argv[0]);
   opt_command[0] = '\0';
   opt_verbose = false;
   opt_quiet = true;
 
   char *fontFamily = NULL;
   char *runFile = NULL;
+  bool debug = false;
   int fontScale;
   SDL_Rect rect;
 
-  restoreSettings(CONFIG_NAME, rect, fontScale);
-
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:d:p:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -257,9 +276,17 @@ int main(int argc, char* argv[]) {
       }
       break;
     }
-    if (OPTIONS[option_index].has_arg && !optarg) {
-      showHelp();
-      exit(1);
+
+    int i = 0;
+    while (OPTIONS[i].name != NULL) {
+      if (OPTIONS[i].has_arg && OPTIONS[i].val == c &&
+          (!optarg || strcmp(OPTIONS[i].name + 1, optarg) == 0)) {
+        // no arg or passed single '-' for long form arg
+        showHelp();
+        exit(1);
+        break;
+      }
+      i++;
     }
     switch (c) {
     case 'v':
@@ -284,6 +311,14 @@ int main(int argc, char* argv[]) {
       opt_loadmod = 1;
       strcpy(opt_modlist, optarg);
       break;
+    case 'd':
+      runFile = strdup(optarg);
+      opt_ide = IDE_EXTERNAL;
+      debug = true;
+      break;
+    case 'p':
+      g_debugPort = atoi(optarg);
+      break;
     case 'h':
       showHelp();
       exit(1);
@@ -298,6 +333,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  restoreSettings(rect, fontScale, debug);
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
@@ -311,12 +347,12 @@ int main(int argc, char* argv[]) {
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      fontScale = runtime->runShell(runFile, fontScale);
+      fontScale = runtime->runShell(runFile, fontScale, debug ? g_debugPort : 0);
       delete runtime;
     } else {
       fprintf(stderr, "Failed to locate display font\n");
     }
-    saveSettings(CONFIG_NAME, window, fontScale);
+    saveSettings(window, fontScale, debug);
     SDL_DestroyWindow(window);
   } else {
     fprintf(stderr, "Could not create window: %s\n", SDL_GetError());

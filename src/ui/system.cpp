@@ -6,20 +6,19 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 
 #include "common/sbapp.h"
-#include "common/sys.h"
-#include "common/smbas.h"
 #include "common/osd.h"
 #include "common/device.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"
 #include "ui/system.h"
 #include "ui/inputs.h"
-#include "ui/textedit.h"
 
 #define MENU_CONSOLE    0
 #define MENU_SOURCE     1
@@ -36,7 +35,13 @@
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
 #define MENU_SCRATCHPAD 14
-#define MENU_SIZE       15
+#define MENU_UNDO       15
+#define MENU_REDO       16
+#define MENU_SAVE       17
+#define MENU_RUN        18
+#define MENU_DEBUG      19
+#define MENU_OUTPUT     20
+#define MENU_SIZE       21
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -84,224 +89,6 @@ void System::checkModifiedTime() {
   }
 }
 
-void System::editSource(strlib::String &loadPath) {
-  logEntered();
-
-  strlib::String fileName;
-  int i = loadPath.lastIndexOf('/', 0);
-  if (i != -1) {
-    fileName = loadPath.substring(i + 1);
-  } else {
-    fileName = loadPath;
-  }
-
-  const char *help = " Ctrl+h (C-h)=Help";
-  strlib::String dirtyFile;
-  dirtyFile.append(" * ");
-  dirtyFile.append(fileName);
-  dirtyFile.append(help);
-  strlib::String cleanFile;
-  cleanFile.append(" - ");
-  cleanFile.append(fileName);
-  cleanFile.append(help);
-
-  int w = _output->getWidth();
-  int h = _output->getHeight();
-  int charWidth = _output->getCharWidth();
-  int charHeight = _output->getCharHeight();
-  int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
-  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
-  TextEditInput *widget = editWidget;
-  _modifiedTime = getModifiedTime();
-
-  editWidget->updateUI(NULL, NULL);
-  editWidget->setLineNumbers();
-  editWidget->setFocus();
-  if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
-    editWidget->setCursorRow(gsb_last_line - 1);
-  }
-  if (gsb_last_error && !isBack()) {
-    editWidget->setCursorRow(gsb_last_line - 1);
-    helpWidget->setText(gsb_last_errmsg);
-    widget = helpWidget;
-    helpWidget->show();
-  }
-  _srcRendered = false;
-  _output->clearScreen();
-  _output->addInput(editWidget);
-  _output->addInput(helpWidget);
-  _output->setStatus(cleanFile);
-  _output->redraw();
-  _state = kEditState;
-
-  maShowVirtualKeyboard();
-
-  while (_state == kEditState) {
-    MAEvent event = getNextEvent();
-    if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
-      dev_clrkb();
-      int sw = _output->getScreenWidth();
-      bool redraw = true;
-      bool dirty = editWidget->isDirty();
-      char *text;
-
-      if (_modifiedTime != 0 && _modifiedTime != getModifiedTime()) {
-        const char *msg = "Do you want to reload the file?";
-        if (ask("File has changed on disk", msg, false) == 0) {
-          loadSource(loadPath.c_str());
-          editWidget->reload(_programSrc);
-          dirty = !editWidget->isDirty();
-        }
-        _modifiedTime = getModifiedTime();
-        event.key = 0;
-      }
-
-      switch (event.key) {
-      case SB_KEY_F(2):
-      case SB_KEY_F(3):
-      case SB_KEY_F(4):
-      case SB_KEY_F(5):
-      case SB_KEY_F(6):
-      case SB_KEY_F(7):
-      case SB_KEY_F(8):
-      case SB_KEY_F(10):
-      case SB_KEY_F(11):
-      case SB_KEY_F(12):
-        redraw = false;
-        break;
-      case SB_KEY_ESCAPE:
-        widget = editWidget;
-        helpWidget->hide();
-        dirty = !editWidget->isDirty();
-        break;
-      case SB_KEY_F(9):
-      case SB_KEY_CTRL('r'):
-        _state = kRunState;
-        if (!editWidget->isDirty()) {
-          break;
-        }
-        // otherwise fallthrough
-      case SB_KEY_CTRL('s'):
-        if (!editWidget->save(loadPath)) {
-          alert("", "Failed to save file");
-        }
-        _modifiedTime = getModifiedTime();
-        break;
-      case SB_KEY_CTRL('c'):
-      case SB_KEY_CTRL('x'):
-        text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-        if (text) {
-          setClipboardText(text);
-          free(text);
-        }
-        break;
-      case SB_KEY_F(1):
-      case SB_KEY_ALT('h'):
-        _output->setStatus("Keyword Help. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createKeywordIndex();
-        helpWidget->show();
-        break;
-      case SB_KEY_CTRL('h'):
-        _output->setStatus("Keystroke help. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createHelp();
-        helpWidget->show();
-        break;
-      case SB_KEY_CTRL('l'):
-        _output->setStatus("Outline. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createOutline();
-        helpWidget->show();
-        break;
-      case SB_KEY_CTRL('f'):
-        _output->setStatus("Find in buffer. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createSearch(false);
-        helpWidget->show();
-        break;
-      case SB_KEY_CTRL('n'):
-        _output->setStatus("Replace string. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createSearch(true);
-        helpWidget->show();
-        break;
-      case SB_KEY_ALT('g'):
-        _output->setStatus("Goto line. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createGotoLine();
-        helpWidget->show();
-        break;
-      case SB_KEY_CTRL(' '):
-        _output->setStatus("Auto-complete. Esc=Close");
-        widget = helpWidget;
-        helpWidget->createCompletionHelp();
-        helpWidget->show();
-        break;
-      case SB_KEY_CTRL('v'):
-        text = getClipboardText();
-        widget->paste(text);
-        free(text);
-        break;
-      case SB_KEY_CTRL('o'):
-        _output->selectScreen(USER_SCREEN1);
-        showCompletion(true);
-        _output->redraw();
-        waitForBack();
-        _output->selectScreen(SOURCE_SCREEN);
-        _state = kEditState;
-        break;
-      default:
-        redraw = widget->edit(event.key, sw, charWidth);
-        break;
-      }
-      if (event.key == SB_KEY_ENTER) {
-        if (helpWidget->replaceMode()) {
-          _output->setStatus("Replace string with. Esc=Close");
-          dirty = editWidget->isDirty();
-        } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
-          if (helpWidget->replaceDoneMode()) {
-            _output->setStatus(dirtyFile);
-          }
-          widget = editWidget;
-          helpWidget->hide();
-          redraw = true;
-          dirty = !editWidget->isDirty();
-        }
-      }
-      if (editWidget->isDirty() && !dirty) {
-        _output->setStatus(dirtyFile);
-      } else if (!editWidget->isDirty() && dirty) {
-        _output->setStatus(cleanFile);
-      }
-      if (redraw) {
-        _output->redraw();
-      }
-    }
-
-    if ((isBack() || isClosing()) && editWidget->isDirty()) {
-      const char *message = "The current file has not been saved.\n"
-                            "Would you like to save it now?";
-      int choice = ask("Save changes?", message, isBack());
-      if (choice == 0) {
-        if (!editWidget->save(loadPath)) {
-          alert("", "Failed to save file");
-        }
-      } else if (choice == 2) {
-        // cancel
-        _state = kEditState;
-      }
-    }
-  }
-
-  _output->removeInputs();
-  if (!isClosing()) {
-    _output->selectScreen(prevScreenId);
-  }
-  logLeaving();
-}
-
 bool System::execute(const char *bas) {
   _output->reset();
 
@@ -317,6 +104,7 @@ bool System::execute(const char *bas) {
 
   _state = kRunState;
   setWindowTitle(bas);
+  showCursor(kArrow);
   int result = ::sbasic_main(bas);
 
   if (isRunning()) {
@@ -434,7 +222,8 @@ uint32_t System::getModifiedTime() {
   return result;
 }
 
-void System::handleMenu(int menuId) {
+void System::handleMenu(MAEvent &event) {
+  int menuId = event.optionsBoxButtonIndex;
   int fontSize = _output->getFontSize();
   int menuItem = _systemMenu[menuId];
   delete [] _systemMenu;
@@ -506,6 +295,30 @@ void System::handleMenu(int menuId) {
   case MENU_SCRATCHPAD:
     scratchPad();
     break;
+  case MENU_UNDO:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('z');
+    break;
+  case MENU_REDO:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('y');
+    break;
+  case MENU_SAVE:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('s');
+    break;
+  case MENU_RUN:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_F(9);
+    break;
+  case MENU_DEBUG:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_F(5);
+    break;
+  case MENU_OUTPUT:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('o');
+    break;
   }
 
   if (fontSize != _output->getFontSize()) {
@@ -525,9 +338,10 @@ void System::handleEvent(MAEvent &event) {
   switch (event.type) {
   case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
     if (_systemMenu != NULL) {
-      handleMenu(event.optionsBoxButtonIndex);
+      handleMenu(event);
     } else if (isRunning()) {
       if (!form_ui::optionSelected(event.optionsBoxButtonIndex)) {
+        dev_clrkb();
         dev_pushkey(event.optionsBoxButtonIndex);
       }
     }
@@ -540,9 +354,7 @@ void System::handleEvent(MAEvent &event) {
     _touchY = _touchCurY = event.point.y;
     dev_pushkey(SB_KEY_MK_PUSH);
     _buttonPressed = _output->pointerTouchEvent(event);
-    if (_buttonPressed) {
-      showCursor(true);
-    }
+    showCursor(get_focus_edit() != NULL ? kIBeam : kHand);
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
     _touchCurX = event.point.x;
@@ -550,13 +362,16 @@ void System::handleEvent(MAEvent &event) {
     hasHover = _output->hasHover();
     _output->pointerMoveEvent(event);
     if (hasHover != _output->hasHover()) {
-      showCursor(!hasHover);
+      showCursor(hasHover ? kArrow : kHand);
+    } else if (_output->hasMenu()) {
+      showCursor(kArrow);
     }
     break;
   case EVENT_TYPE_POINTER_RELEASED:
     _buttonPressed = false;
     _touchX = _touchY = _touchCurX = _touchCurY = -1;
     _output->pointerReleaseEvent(event);
+    showCursor(get_focus_edit() != NULL ? kIBeam : kArrow);
     break;
   default:
     // no event
@@ -897,12 +712,33 @@ void System::showMenu() {
     _systemMenu = new int[MENU_SIZE];
     int index = 0;
     if (get_focus_edit() != NULL) {
-      items->add(new String("Cut"));
-      items->add(new String("Copy"));
-      items->add(new String("Paste"));
-      _systemMenu[index++] = MENU_CUT;
-      _systemMenu[index++] = MENU_COPY;
-      _systemMenu[index++] = MENU_PASTE;
+      if (isEditing()) {
+        items->add(new String("Undo"));
+        items->add(new String("Redo"));
+        items->add(new String("Cut"));
+        items->add(new String("Copy"));
+        items->add(new String("Paste"));
+        items->add(new String("Save"));
+        items->add(new String("Run"));
+        items->add(new String("Debug"));
+        items->add(new String("Show output"));
+        _systemMenu[index++] = MENU_UNDO;
+        _systemMenu[index++] = MENU_REDO;
+        _systemMenu[index++] = MENU_CUT;
+        _systemMenu[index++] = MENU_COPY;
+        _systemMenu[index++] = MENU_PASTE;
+        _systemMenu[index++] = MENU_SAVE;
+        _systemMenu[index++] = MENU_RUN;
+        _systemMenu[index++] = MENU_DEBUG;
+        _systemMenu[index++] = MENU_OUTPUT;
+      } else if (isRunning()) {
+        items->add(new String("Cut"));
+        items->add(new String("Copy"));
+        items->add(new String("Paste"));
+        _systemMenu[index++] = MENU_CUT;
+        _systemMenu[index++] = MENU_COPY;
+        _systemMenu[index++] = MENU_PASTE;
+      }
 #if defined(_SDL)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
@@ -921,12 +757,10 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_CONSOLE;
         _systemMenu[index++] = MENU_SOURCE;
       }
-#if defined(_SDL)
-      items->add(new String("Back"));
-      _systemMenu[index++] = MENU_BACK;
-#endif
-      items->add(new String("Restart"));
-      _systemMenu[index++] = MENU_RESTART;
+      if (!isEditing()) {
+        items->add(new String("Restart"));
+        _systemMenu[index++] = MENU_RESTART;
+      }
 #if !defined(_SDL)
       items->add(new String("Show keypad"));
       _systemMenu[index++] = MENU_KEYPAD;
@@ -954,6 +788,10 @@ void System::showMenu() {
 
       items->add(new String("Screenshot"));
       _systemMenu[index++] = MENU_SCREENSHOT;
+#if defined(_SDL)
+      items->add(new String("Back"));
+      _systemMenu[index++] = MENU_BACK;
+#endif
     }
     optionsBox(items);
     delete items;

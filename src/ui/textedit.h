@@ -12,6 +12,7 @@
 #define STB_TEXTEDIT_CHARTYPE char
 #define STB_TEXTEDIT_UNDOCHARCOUNT 2000
 #define MARGIN_CHARS 4
+#define MAX_MARKERS 10
 
 #include <config.h>
 #include <stdlib.h>
@@ -45,6 +46,7 @@ struct EditTheme {
   int _syntax_command;
   int _syntax_statement;
   int _syntax_digit;
+  int _row_marker;
 };
 
 struct EditBuffer {
@@ -69,6 +71,7 @@ struct TextEditInput : public FormEditInput {
   TextEditInput(const char *text, int chW, int chH, int x, int y, int w, int h);
   virtual ~TextEditInput();
 
+  void append(const char *text, int len) { _buf.append(text, len); }
   void completeWord(const char *word);
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
@@ -76,6 +79,7 @@ struct TextEditInput : public FormEditInput {
   int  getCursorPos() const { return _state.cursor; }
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
+  int *getMarkers() { return _lineMarker; }
   void gotoLine(const char *buffer);
   void reload(const char *text);
   bool save(const char *filePath);
@@ -123,6 +127,7 @@ protected:
   int  getIndent(char *spaces, int len, int pos);
   int  getLineChars(StbTexteditRow *row, int pos);
   char *getSelection(int *start, int *end);
+  void gotoNextMarker();
   void lineNavigate(bool lineDown);
   char *lineText(int pos);
   int  lineEnd(int pos) { return linePos(pos, true); }
@@ -133,6 +138,7 @@ protected:
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
   void setColor(SyntaxState &state);
+  void toggleMarker();
   void updateScroll();
   int wordStart();
 
@@ -144,8 +150,10 @@ protected:
   int _marginWidth;
   int _scroll;
   int _cursorRow;
+  int _cursorLine;
   int _indentLevel;
   int _matchingBrace;
+  int _lineMarker[MAX_MARKERS];
   bool _dirty;
 };
 
@@ -165,13 +173,15 @@ struct TextEditHelpWidget : public TextEditInput {
     kSearchReplace,
     kReplace,
     kReplaceDone,
-    kGotoLine
+    kGotoLine,
+    kMessage
   };
 
   void createCompletionHelp();
   void createGotoLine();
   void createHelp();
   void createKeywordIndex();
+  void createMessage() { reset(kMessage); }
   void createOutline();
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);

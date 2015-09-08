@@ -12,6 +12,11 @@
 #define DEFAULT_FONT_SIZE 12
 #define DEFAULT_FONT_SIZE_PTS 11
 
+extern char g_appPath[];
+extern int g_debugPort;
+
+void appLog(const char *format, ...);
+
 #if defined(_Win32)
 #include <SDL_syswm.h>
 
@@ -41,13 +46,47 @@ int getStartupFontSize(SDL_Window *window) {
   return result;
 }
 
+void launchDebug(const char *file) {
+  STARTUPINFO info={sizeof(info)};
+  PROCESS_INFORMATION processInfo;
+  char cmd[1024];
+  sprintf(cmd, "-p %d -d %s", g_debugPort, file);
+  if (!CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
+  }
+}
+
 #else
+#include <unistd.h>
+#include <errno.h>
 
 void loadIcon(SDL_Window *window) {
 }
 
 int getStartupFontSize(SDL_Window *window) {
   return DEFAULT_FONT_SIZE;
+}
+
+void launchDebug(const char *file) {
+  pid_t pid = fork();
+  char port[20];
+
+  switch (pid) {
+  case -1:
+    // failed
+    break;
+  case 0:
+    // child process
+    sprintf(port, "-p %d", g_debugPort);
+    if (execl(g_appPath, g_appPath, port, "-d", file, (char *)0) == -1) {
+      fprintf(stderr, "exec failed %s\n", strerror(errno));
+      exit(1);
+    }
+    break;
+  default:
+    // parent process - continue
+    break;
+  }
 }
 
 #endif
