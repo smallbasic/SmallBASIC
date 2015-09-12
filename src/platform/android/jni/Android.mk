@@ -7,7 +7,7 @@
 
 JNI_PATH := $(call my-dir)
 SB_HOME := $(JNI_PATH)/../../../..
-FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.5
+FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.6
 
 include $(call all-subdir-makefiles)
 LOCAL_PATH := $(JNI_PATH)

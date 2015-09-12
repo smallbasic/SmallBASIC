@@ -30,6 +30,7 @@
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
+#define OPT_IDE_KEY "optIde"
 
 Runtime *runtime;
 
@@ -195,11 +196,15 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jstring titleString = env->NewStringUTF(title);
+  jstring promptString = env->NewStringUTF(prompt);
   jmethodID methodId = env->GetMethodID(clazz, "ask",
-                                        "(Ljava/lang/String;Ljava/lang/String;)Z");
-  jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId,
-                                                      title, prompt);
+                                        "(Ljava/lang/String;Ljava/lang/String;Z)I");
+  jint result = (jint) env->CallIntMethod(_app->activity->clazz, methodId,
+                                          titleString, promptString, cancel);
   env->DeleteLocalRef(clazz);
+  env->DeleteLocalRef(titleString);
+  env->DeleteLocalRef(promptString);
   _app->activity->vm->DetachCurrentThread();
   return result;
 }
@@ -390,6 +395,10 @@ void Runtime::loadConfig() {
     if (s && s->toInteger() == 1) {
       opt_mute_audio = 1;
     }
+    s = profile.get(OPT_IDE_KEY);
+    if (s) {
+      opt_ide = s->toInteger();
+    }
     loadEnvConfig(profile, SERVER_SOCKET_KEY);
     loadEnvConfig(profile, SERVER_TOKEN_KEY);
   }
@@ -417,6 +426,7 @@ void Runtime::saveConfig() {
     fprintf(fp, "%s='%s'\n", PATH_KEY, path);
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
     fprintf(fp, "%s=%d\n", MUTE_AUDIO_KEY, opt_mute_audio);
+    fprintf(fp, "%s=%d\n", OPT_IDE_KEY, opt_ide);
     for (int i = 0; environ[i] != NULL; i++) {
       char *env = environ[i];
       if (strstr(env, SERVER_SOCKET_KEY) != NULL) {

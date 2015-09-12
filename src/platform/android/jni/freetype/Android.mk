@@ -31,7 +31,6 @@ LOCAL_SRC_FILES:=                               \
   $(FREETYPE_HOME)/src/base/ftbitmap.c          \
   $(FREETYPE_HOME)/src/base/ftglyph.c           \
   $(FREETYPE_HOME)/src/base/ftstroke.c          \
-  $(FREETYPE_HOME)/src/base/ftxf86.c            \
   $(FREETYPE_HOME)/src/base/ftbase.c            \
   $(FREETYPE_HOME)/src/base/ftsystem.c          \
   $(FREETYPE_HOME)/src/base/ftinit.c            \
