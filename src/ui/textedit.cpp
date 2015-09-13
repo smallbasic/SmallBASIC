@@ -264,6 +264,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _cursorLine(0),
   _indentLevel(INDENT_LEVEL),
   _matchingBrace(-1),
+  _ptY(-1),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
   memset(_lineMarker, -1, sizeof(_lineMarker));
@@ -705,9 +706,17 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
-                    pt.y + scrollY + (_scroll * _charHeight));
-  redraw = true;
+  if (pt.x < _marginWidth) {
+    if (_ptY == -1 || (abs(pt.y - _ptY) > (_charHeight / 4))) {
+      lineNavigate(pt.y > _ptY);
+      redraw = true;
+      _ptY = pt.y;
+    }
+  } else {
+    stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
+                      pt.y + scrollY + (_scroll * _charHeight));
+    redraw = true;
+  }
   return 1;
 }
 

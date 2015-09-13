@@ -587,6 +587,7 @@ void AnsiWidget::drawActiveButton() {
   } else if (_focus != NULL) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
+    _focus->drawLabel();
     maUpdateScreen();
     maSetDrawTarget(currentHandle);
   }

@@ -154,6 +154,7 @@ protected:
   int _indentLevel;
   int _matchingBrace;
   int _lineMarker[MAX_MARKERS];
+  int _ptY;
   bool _dirty;
 };
 

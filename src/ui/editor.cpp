@@ -98,6 +98,7 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_F(10):
       case SB_KEY_F(11):
       case SB_KEY_F(12):
+      case SB_KEY_MENU:
         redraw = false;
         break;
       case SB_KEY_ESCAPE:
