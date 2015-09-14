@@ -679,7 +679,9 @@ void TextEditInput::setCursorRow(int row) {
 }
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
-  if (pressed) {
+  if (x < _marginWidth) {
+    _ptY = -1;
+  } else if (pressed) {
     stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
   }
 }
@@ -707,8 +709,12 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
   if (pt.x < _marginWidth) {
-    if (_ptY == -1 || (abs(pt.y - _ptY) > (_charHeight / 4))) {
-      lineNavigate(pt.y > _ptY);
+    int size = abs(pt.y - _ptY);
+    int minSize = _charHeight / 4;
+    if (_ptY == -1) {
+      _ptY = pt.y;
+    } else if (size > minSize) {
+      lineNavigate(pt.y < _ptY);
       redraw = true;
       _ptY = pt.y;
     }

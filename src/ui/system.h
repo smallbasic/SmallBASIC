@@ -82,7 +82,6 @@ protected:
   void printErrorLine();
   void printSource();
   void printSourceLine(char *text, int line, bool last);
-  void scratchPad();
   void setRestart();
   void showMenu();
   void showSystemScreen(bool showSrc);

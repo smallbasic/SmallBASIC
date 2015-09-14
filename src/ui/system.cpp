@@ -34,14 +34,13 @@
 #define MENU_EDITMODE   11
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
-#define MENU_SCRATCHPAD 14
-#define MENU_UNDO       15
-#define MENU_REDO       16
-#define MENU_SAVE       17
-#define MENU_RUN        18
-#define MENU_DEBUG      19
-#define MENU_OUTPUT     20
-#define MENU_SIZE       21
+#define MENU_UNDO       14
+#define MENU_REDO       15
+#define MENU_SAVE       16
+#define MENU_RUN        17
+#define MENU_DEBUG      18
+#define MENU_OUTPUT     19
+#define MENU_SIZE       20
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -117,6 +116,7 @@ bool System::execute(const char *bas) {
 }
 
 int System::getPen(int code) {
+  _output->flush(true);
   int result = 0;
   if (!isClosing()) {
     switch (code) {
@@ -129,7 +129,11 @@ int System::getPen(int code) {
       if (_touchX != -1 && _touchY != -1) {
         result = 1;
       } else {
+        // get mouse
         processEvents(0);
+        if (_touchX != -1 && _touchY != -1) {
+          result = 1;
+        }
       }
       break;
 
@@ -291,9 +295,6 @@ void System::handleMenu(MAEvent &event) {
     break;
   case MENU_SCREENSHOT:
     ::screen_dump();
-    break;
-  case MENU_SCRATCHPAD:
-    scratchPad();
     break;
   case MENU_UNDO:
     event.type = EVENT_TYPE_KEY_PRESSED;
@@ -765,29 +766,23 @@ void System::showMenu() {
       items->add(new String("Show keypad"));
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
+      items->add(new String("Screenshot"));
+      _systemMenu[index++] = MENU_SCREENSHOT;
       if (_mainBas) {
-        sprintf(buffer, "Scratchpad");
-        items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
-        _systemMenu[index++] = MENU_SCRATCHPAD;
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
-
         sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
                                         opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
-
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;
-
-      items->add(new String("Screenshot"));
-      _systemMenu[index++] = MENU_SCREENSHOT;
 #if defined(_SDL)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
@@ -937,28 +932,6 @@ void System::printSource() {
   }
 }
 
-void System::scratchPad() {
-  const char *path = gsb_bas_dir;
-#if defined(_ANDROID)
-  path = "/sdcard/";
-#endif
-  char file[OS_PATHNAME_SIZE];
-  sprintf(file, "%sscratch.bas", path);
-  bool ready = access(file, R_OK) == 0;
-  if (!ready) {
-    FILE *fp = fopen(file, "w");
-    if (fp) {
-      fprintf(fp, "REM scratch buffer\n");
-      fclose(fp);
-      ready = true;
-    }
-  }
-  if (ready) {
-    setLoadPath(file);
-    setExit(false);
-  }
-}
-
 void System::setExit(bool quit) {
   if (!isClosing()) {
     bool running = isRunning();
@@ -1089,7 +1062,7 @@ void lwrite(const char *str) {
 }
 
 void dev_delay(dword ms) {
-  g_system->getOutput()->redraw();
+  g_system->getOutput()->flush(true);
   maWait(ms);
 }
 

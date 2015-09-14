@@ -90,6 +90,13 @@ void System::editSource(strlib::String &loadPath) {
         _modifiedTime = getModifiedTime();
         event.key = 0;
       }
+      if (editWidget->getControlMode()) {
+        if (event.key == 'e') {
+          event.key = SB_KEY_ESCAPE;
+        } else {
+          event.key = SB_KEY_CTRL(event.key);
+        }
+      }
 
       switch (event.key) {
       case SB_KEY_F(2):
