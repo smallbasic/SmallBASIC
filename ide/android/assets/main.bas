@@ -21,7 +21,6 @@ func mk_bn(value, lab, fg)
   bn.value = value
   bn.label = lab
   bn.color = fg
-  bn.backgroundColor = 0
   mk_bn = bn
 end
 
@@ -56,7 +55,7 @@ sub do_about()
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.11.20"
+  print "Version 0.11.21"
   print
   print "Copyright (c) 2002-2015 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
@@ -202,7 +201,6 @@ sub main
 
     listFiles frm, path, basList, dirList
     frm.color = 10
-    frm.backgroundColor = 0
     rect 0, 0, xmax, lineSpacing COLOR 1 filled
     at 0, 0
     make_ui = form(frm)

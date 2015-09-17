@@ -1700,7 +1700,12 @@ void sbasic_set_bas_dir(const char *bas_file) {
   cwd[0] = '\0';;
   gsb_bas_dir[0] = '\0';
   getcwd(cwd, sizeof(cwd) - 1);
-
+  char *ch;
+  for (ch = cwd; *ch != '\0'; ch++) {
+    if (*ch == '\\') {
+      *ch = '/';
+    }
+  }
   if (bas_file[0] == OS_DIRSEP) {
     // full path
     strncat(gsb_bas_dir, bas_file, path_len + 1);
@@ -1708,12 +1713,14 @@ void sbasic_set_bas_dir(const char *bas_file) {
     // relative path
     // append the non file part of bas_file to cwd
     strcat(gsb_bas_dir, cwd);
-    strcat(gsb_bas_dir, "/");
+    if (gsb_bas_dir[strlen(gsb_bas_dir) - 1] != '/') {
+      strcat(gsb_bas_dir, "/");
+    }
     strncat(gsb_bas_dir, bas_file, path_len + 1);
   } else {
     // in current dir
     strcat(gsb_bas_dir, cwd);
-    if (!(cwd[0] == '/' && cwd[1] == '\0')) {
+    if (gsb_bas_dir[strlen(gsb_bas_dir) - 1] != '/') {
       strcat(gsb_bas_dir, "/");
     }
   }

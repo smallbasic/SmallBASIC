@@ -1,13 +1,13 @@
 dnl
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2014 Chris Warren-Smith.
+dnl Copyright(C) 2001-2015 Chris Warren-Smith.
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.11.20])
+AC_INIT([smallbasic], [0.11.21])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -204,6 +204,7 @@ function buildSDL() {
      dnl do not depend on cygwin.dll under cygwin build
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
+     PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
      AC_DEFINE(_Win32, 1, [Windows build])
      ;;
 
@@ -218,17 +219,10 @@ function buildSDL() {
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
+     PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags` -fno-exceptions"
-   case "${host_os}" in
-     *mingw*)
-     PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
-     ;;
-
-     *)
-      PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
-    esac
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
@@ -339,19 +333,7 @@ function buildConsole() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
-function buildDist() {
-   TARGET="Building source code release."
-   defaultConditionals
-   BUILD_SUBDIRS="src/common src/platform/gtk/src src/platform/gtk/data src/platform/gtk/icons"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/fltk"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/sdl"
-   BUILD_SUBDIRS="${BUILD_SUBDIRS} src/platform/unix"
-   AC_SUBST(BUILD_SUBDIRS)
-}
-
-if test x$ac_build_dist = xyes; then
-   buildDist
-elif test x$ac_build_fltk = xyes; then
+if test x$ac_build_fltk = xyes; then
    buildFLTK
 elif test x$ac_build_sdl = xyes; then
    buildSDL

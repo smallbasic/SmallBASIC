@@ -1,3 +1,7 @@
+2015-09-15
+	SDL Update PEN(3) to work more like FLTK
+	Fix display output before PEN
+
 2015-08-26
 	Editor fixes:
 	- now displays an i-beam/edit cursor

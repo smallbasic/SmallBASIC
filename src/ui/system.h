@@ -88,6 +88,9 @@ protected:
   void waitForBack();
   AnsiWidget *_output;
 
+  // virtual:
+  bool getPen3();
+
   enum {
     kInitState = 0,// thread not active
     kActiveState,  // thread activated

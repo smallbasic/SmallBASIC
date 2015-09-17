@@ -703,6 +703,23 @@ char *Runtime::getClipboardText() {
 }
 
 //
+// System platform methods
+//
+bool System::getPen3() {
+  bool result = false;
+  if (_touchX != -1 && _touchY != -1) {
+    result = true;
+  } else {
+    // get mouse
+    processEvents(0);
+    if (_touchX != -1 && _touchY != -1) {
+      result = true;
+    }
+  }
+  return result;
+}
+
+//
 // ma event handling
 //
 int maGetEvent(MAEvent *event) {

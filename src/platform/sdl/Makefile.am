@@ -1,5 +1,5 @@
 # SmallBASIC for SDL
-# Copyright(C) 2001-2014 Chris Warren-Smith.
+# Copyright(C) 2001-2015 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
@@ -7,10 +7,7 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I. @PACKAGE_CFLAGS@
 
-EXTRA_DIST =                \
-  fixedfont.xpm             \
-  sbasic.nsi                \
-  welcome.bas
+EXTRA_DIST = $(desktopentry_DATA)
 
 bin_PROGRAMS = sbasicg
 
@@ -35,6 +32,11 @@ sbasicg_SOURCES =           \
 sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
 sbasicg_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
+
+iconsdir = $(datadir)/icons/hicolor/48x48/apps
+icons_DATA = ../../../images/sb-desktop-48x48.png
+desktopdir = $(datadir)/applications
+desktop_DATA = smallbasic.desktop
 
 if WITH_WIN32
 sbasicg_LDADD += win.res

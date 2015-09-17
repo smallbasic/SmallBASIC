@@ -120,7 +120,7 @@ struct FormInput : public Shape {
   virtual void clicked(int x, int y, bool pressed);
   virtual bool isDrawTop() { return false; }
   virtual bool hasHover() { return false; }
-  virtual void setFocus();
+  virtual void setFocus(bool focus);
   virtual void resize(int w, int h) {}
 
   void construct(var_p_t form, var_p_t field, int id);
@@ -212,7 +212,7 @@ struct FormEditInput : public FormInput {
   virtual char *copy(bool cut) = 0;
   virtual void paste(const char *text) = 0;
   virtual void selectAll() = 0;
-  void setFocus();
+  void setFocus(bool focus);
   int  getControlKey(int key);
   bool getControlMode() const { return _controlMode; }
   void setControlMode(bool cursorMode) { _controlMode = cursorMode; }

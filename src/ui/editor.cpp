@@ -50,7 +50,7 @@ void System::editSource(strlib::String &loadPath) {
 
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
-  editWidget->setFocus();
+  editWidget->setFocus(true);
   if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
     editWidget->setCursorRow(gsb_last_line - 1);
   }
@@ -221,6 +221,10 @@ void System::editSource(strlib::String &loadPath) {
           dirty = !editWidget->isDirty();
         }
       }
+
+      helpWidget->setFocus(widget == helpWidget);
+      editWidget->setFocus(widget == editWidget);
+
       if (editWidget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);
       } else if (!editWidget->isDirty() && dirty) {

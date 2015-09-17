@@ -708,22 +708,25 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  if (pt.x < _marginWidth) {
-    int size = abs(pt.y - _ptY);
-    int minSize = _charHeight / 4;
-    if (_ptY == -1) {
-      _ptY = pt.y;
-    } else if (size > minSize) {
-      lineNavigate(pt.y < _ptY);
+  bool focus = hasFocus();
+  if (focus) {
+    if (pt.x < _marginWidth) {
+      int size = abs(pt.y - _ptY);
+      int minSize = _charHeight / 4;
+      if (_ptY == -1) {
+        _ptY = pt.y;
+      } else if (size > minSize) {
+        lineNavigate(pt.y < _ptY);
+        redraw = true;
+        _ptY = pt.y;
+      }
+    } else {
+      stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
+                        pt.y + scrollY + (_scroll * _charHeight));
       redraw = true;
-      _ptY = pt.y;
     }
-  } else {
-    stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
-                      pt.y + scrollY + (_scroll * _charHeight));
-    redraw = true;
   }
-  return 1;
+  return focus;
 }
 
 char *TextEditInput::copy(bool cut) {

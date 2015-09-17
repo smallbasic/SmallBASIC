@@ -126,15 +126,7 @@ int System::getPen(int code) {
       // fallthru
 
     case 3:   // returns true if the pen is down (and save curpos)
-      if (_touchX != -1 && _touchY != -1) {
-        result = 1;
-      } else {
-        // get mouse
-        processEvents(0);
-        if (_touchX != -1 && _touchY != -1) {
-          result = 1;
-        }
-      }
+      result = getPen3();
       break;
 
     case 1:   // last pen-down x
@@ -170,7 +162,7 @@ char *System::getText(char *dest, int maxSize) {
   int charWidth = _output->getCharWidth();
 
   FormInput *widget = new FormLineInput(NULL, maxSize, true, x, y, w, h);
-  widget->setFocus();
+  widget->setFocus(true);
   _output->addInput(widget);
   _output->redraw();
   _state = kModalState;

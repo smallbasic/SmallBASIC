@@ -3,7 +3,7 @@
           package="net.sourceforge.smallbasic"
           android:installLocation="preferExternal"
           android:versionCode="15"
-          android:versionName="0.11.19">
+          android:versionName="0.11.21">
   <!-- This is the platform API where NativeActivity was introduced. -->
   <uses-sdk android:minSdkVersion="9"/>
 
