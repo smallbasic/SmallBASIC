@@ -93,6 +93,7 @@ void handleCommand(android_app *app, int32_t cmd) {
     }
     break;
   case APP_CMD_LOST_FOCUS:
+    // display menu or exit
     break;
   }
 }
