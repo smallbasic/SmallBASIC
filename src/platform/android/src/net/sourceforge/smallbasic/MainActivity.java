@@ -56,6 +56,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Toast;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
@@ -296,6 +297,15 @@ public class MainActivity extends NativeActivity {
           .setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {}
           }).show();
+      }
+    });
+  }
+
+  public void showToast(final String message, final int duration) {
+    final Activity activity = this;
+    runOnUiThread(new Runnable() {
+      public void run() {
+        Toast.makeText(activity, message, duration).show();
       }
     });
   }

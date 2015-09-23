@@ -704,6 +704,12 @@ bool System::getPen3() {
   return (SDL_BUTTON(SDL_BUTTON_LEFT) && SDL_GetMouseState(&_touchCurX, &_touchCurY));
 }
 
+void System::completeKeyword(int index) {
+  if (get_focus_edit() && isEditing()) {
+    get_focus_edit()->completeKeyword(index);
+  }
+}
+
 //
 // ma event handling
 //

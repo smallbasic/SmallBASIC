@@ -73,6 +73,7 @@ struct TextEditInput : public FormEditInput {
 
   void append(const char *text, int len) { _buf.append(text, len); }
   void completeWord(const char *word);
+  const char *completeKeyword(int index);
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   bool find(const char *word, bool next);
@@ -103,6 +104,7 @@ struct TextEditInput : public FormEditInput {
   void resize(int w, int h) { _width = w; _height = h; }
   char *getWordBeforeCursor();
   bool replaceNext(const char *text);
+  int  getCompletions(StringList *list, int max);
 
 protected:
   enum SyntaxState {

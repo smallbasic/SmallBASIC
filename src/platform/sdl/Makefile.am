@@ -17,7 +17,6 @@ sbasicg_SOURCES =           \
   ../../ui/window.cpp       \
   ../../ui/screen.cpp       \
   ../../ui/system.cpp       \
-  ../../ui/editor.cpp       \
   ../../ui/form.cpp         \
   ../../ui/inputs.cpp       \
   ../../ui/textedit.cpp     \
@@ -27,6 +26,7 @@ sbasicg_SOURCES =           \
   display.cpp               \
   runtime.cpp               \
   settings.cpp              \
+  editor.cpp                \
   syswm.cpp
 
 sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@

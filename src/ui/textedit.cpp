@@ -292,6 +292,27 @@ void TextEditInput::completeWord(const char *word) {
   }
 }
 
+const char *TextEditInput::completeKeyword(int index) {
+  const char *help = NULL;
+  char *selection = getWordBeforeCursor();
+  if (selection != NULL) {
+    int len = strlen(selection);
+    int count = 0;
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (strncasecmp(selection, keyword_help[i].keyword, len) == 0 &&
+          count++ == index) {
+        if (IS_WHITE(_buf._buffer[_state.cursor])) {
+          completeWord(keyword_help[i].keyword);
+        }
+        help = keyword_help[i].help;
+        break;
+      }
+    }
+    free(selection);
+  }
+  return help;
+}
+
 void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   SyntaxState syntax = kReset;
   StbTexteditRow r;
@@ -1014,6 +1035,22 @@ void TextEditInput::findMatchingBrace() {
     }
   }
   _matchingBrace = pair;
+}
+
+int TextEditInput::getCompletions(StringList *list, int max) {
+  int count = 0;
+  char *selection = getWordBeforeCursor();
+  int len = selection != NULL ? strlen(selection) : 0;
+  if (len > 0) {
+    for (int i = 0; i < keyword_help_len && count < max; i++) {
+      if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
+        list->add(keyword_help[i].keyword);
+        count++;
+      }
+    }
+  }
+  free(selection);
+  return count;
 }
 
 int TextEditInput::getCursorRow() const {

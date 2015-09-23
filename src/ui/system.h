@@ -73,6 +73,7 @@ protected:
   void runEdit(const char *startupBas);
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
+  void saveFile(TextEditInput *edit, strlib::String &path);
   void setPath(const char *filename);
   bool setParentPath();
   void setDimensions();
@@ -88,8 +89,9 @@ protected:
   void waitForBack();
   AnsiWidget *_output;
 
-  // virtual:
+  // platform static virtual
   bool getPen3();
+  void completeKeyword(int index);
 
   enum {
     kInitState = 0,// thread not active

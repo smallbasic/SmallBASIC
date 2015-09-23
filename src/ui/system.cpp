@@ -41,6 +41,11 @@
 #define MENU_DEBUG      18
 #define MENU_OUTPUT     19
 #define MENU_SIZE       20
+#define MENU_COMPETION_0  (MENU_SIZE + 1)
+#define MENU_COMPETION_1  (MENU_SIZE + 2)
+#define MENU_COMPETION_2  (MENU_SIZE + 3)
+#define MENU_COMPETION_3  (MENU_SIZE + 4)
+#define MAX_COMPLETIONS 4
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -312,6 +317,18 @@ void System::handleMenu(MAEvent &event) {
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_CTRL('o');
     break;
+  case MENU_COMPETION_0:
+    completeKeyword(0);
+    break;
+  case MENU_COMPETION_1:
+    completeKeyword(1);
+    break;
+  case MENU_COMPETION_2:
+    completeKeyword(2);
+    break;
+  case MENU_COMPETION_3:
+    completeKeyword(3);
+    break;
   }
 
   if (fontSize != _output->getFontSize()) {
@@ -566,6 +583,14 @@ void System::runOnce(const char *startupBas) {
   }
 }
 
+void System::saveFile(TextEditInput *edit, strlib::String &path) {
+  if (!edit->save(path)) {
+    alert("", "Failed to save file");
+  } else {
+    _modifiedTime = getModifiedTime();
+  }
+}
+
 void System::setBack() {
   if (_userScreenId != -1) {
     // restore user screen
@@ -702,7 +727,14 @@ void System::showMenu() {
     }
 
     StringList *items = new StringList();
-    _systemMenu = new int[MENU_SIZE];
+    int completions = 0;
+
+    if (get_focus_edit() && isEditing()) {
+      completions = get_focus_edit()->getCompletions(items, MAX_COMPLETIONS);
+    }
+
+    _systemMenu = new int[MENU_SIZE + completions];
+
     int index = 0;
     if (get_focus_edit() != NULL) {
       if (isEditing()) {
@@ -713,8 +745,13 @@ void System::showMenu() {
         items->add(new String("Paste"));
         items->add(new String("Save"));
         items->add(new String("Run"));
+#if defined(_SDL)
         items->add(new String("Debug"));
+#endif
         items->add(new String("Show output"));
+        for (int i = 0; i < completions; i++) {
+          _systemMenu[index++] = MENU_COMPETION_0 + i;
+        }
         _systemMenu[index++] = MENU_UNDO;
         _systemMenu[index++] = MENU_REDO;
         _systemMenu[index++] = MENU_CUT;
@@ -722,7 +759,9 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_PASTE;
         _systemMenu[index++] = MENU_SAVE;
         _systemMenu[index++] = MENU_RUN;
+#if defined(_SDL)
         _systemMenu[index++] = MENU_DEBUG;
+#endif
         _systemMenu[index++] = MENU_OUTPUT;
       } else if (isRunning()) {
         items->add(new String("Cut"));
@@ -738,10 +777,12 @@ void System::showMenu() {
 #else
       items->add(new String("Show keypad"));
       _systemMenu[index++] = MENU_KEYPAD;
-      bool controlMode = get_focus_edit()->getControlMode();
-      sprintf(buffer, "Control Mode [%s]", (controlMode ? "ON" : "OFF"));
-      items->add(new String(buffer));
-      _systemMenu[index++] = MENU_CTRL_MODE;
+      if (!isEditing()) {
+        bool controlMode = get_focus_edit()->getControlMode();
+        sprintf(buffer, "Control Mode [%s]", (controlMode ? "ON" : "OFF"));
+        items->add(new String(buffer));
+        _systemMenu[index++] = MENU_CTRL_MODE;
+      }
 #endif
     } else {
       if (_overruns == 0) {

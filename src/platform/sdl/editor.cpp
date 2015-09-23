@@ -12,11 +12,6 @@
 #include "ui/system.h"
 #include "ui/textedit.h"
 
-#define SAVE_FILE()                \
-  if (!editWidget->save(loadPath)) \
-    alert("", "Failed to save file"); \
-  else _modifiedTime = getModifiedTime();
-
 void System::editSource(strlib::String &loadPath) {
   logEntered();
 
@@ -68,7 +63,6 @@ void System::editSource(strlib::String &loadPath) {
   _output->redraw();
   _state = kEditState;
 
-  maShowVirtualKeyboard();
   showCursor(kIBeam);
 
   while (_state == kEditState) {
@@ -89,13 +83,6 @@ void System::editSource(strlib::String &loadPath) {
         }
         _modifiedTime = getModifiedTime();
         event.key = 0;
-      }
-      if (editWidget->getControlMode()) {
-        if (event.key == 'e') {
-          event.key = SB_KEY_ESCAPE;
-        } else {
-          event.key = SB_KEY_CTRL(event.key);
-        }
       }
 
       switch (event.key) {
@@ -118,11 +105,11 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_CTRL('r'):
         _state = kRunState;
         if (editWidget->isDirty()) {
-          SAVE_FILE();
+          saveFile(editWidget, loadPath);
         }
         break;
       case SB_KEY_CTRL('s'):
-        SAVE_FILE();
+        saveFile(editWidget, loadPath);
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -140,7 +127,7 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_F(5):
-        SAVE_FILE();
+        saveFile(editWidget, loadPath);
         _output->setStatus("Debug. F6=Step, F7=Continue, Esc=Close");
         widget = helpWidget;
         helpWidget->createMessage();
@@ -233,6 +220,8 @@ void System::editSource(strlib::String &loadPath) {
       if (redraw) {
         _output->redraw();
       }
+    } else if (event.type == EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED) {
+      _output->redraw();
     }
 
     if ((isBack() || isClosing()) && editWidget->isDirty()) {
