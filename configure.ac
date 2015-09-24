@@ -208,6 +208,20 @@ function buildSDL() {
      AC_DEFINE(_Win32, 1, [Windows build])
      ;;
 
+     *darwin*)
+     # OSX Check fontconfig configuration
+     PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.2)
+     AC_SUBST(FONTCONFIG_CFLAGS)
+     AC_SUBST(FONTCONFIG_LIBS)
+
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
+
+     dnl backlinking support for modules
+     PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
+     PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
+     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
+     ;;
+
      *)
      # Unix - Check fontconfig configuration
      PKG_CHECK_MODULES(FONTCONFIG, fontconfig >= 2.2)
