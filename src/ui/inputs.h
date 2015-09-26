@@ -73,11 +73,6 @@ namespace form_ui {
 
 int get_color(var_p_t value, int def);
 
-struct IButtonListener {
-  virtual ~IButtonListener() {}
-  virtual void buttonClicked(const char *action) = 0;
-};
-
 struct IFormWidgetListModel {
   virtual ~IFormWidgetListModel() {}
   virtual const char *getTextAt(int index) = 0;

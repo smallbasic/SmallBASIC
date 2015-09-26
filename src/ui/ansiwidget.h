@@ -74,6 +74,7 @@ struct AnsiWidget {
   void removeInputs() { _back->removeInputs(); _activeButton = NULL; }
   void resetScroll() { _back->resetScroll(); }
   void reset();
+  void resetFont() { _back->reset(_fontSize); _back->updateFont(); }
   void resize(int width, int height);
   bool scroll(bool up, bool page);
   int  selectBackScreen(int screenId);

@@ -281,6 +281,7 @@ void Screen::removeImage(unsigned imageId) {
 }
 
 void Screen::replaceFont(int type) {
+  logEntered();
   if (_font) {
     maFontDelete(_font);
   }

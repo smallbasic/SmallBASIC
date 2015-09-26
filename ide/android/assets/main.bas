@@ -81,6 +81,36 @@ sub do_about()
   cls
 end
 
+sub do_newfile()
+  color 3, 0
+  cls
+  print boldOn + "Create new program."
+  print boldOff + "To enable editing, right click then select Editor [ON]"
+  print
+  local valid_file = false
+  while (!valid_file)
+    input "Enter file name: ", file
+    if (leftoflast(file, ".bas") == 0) then
+      file += ".bas"
+    endif
+    try
+      if (exist(file)) then
+        print "File " + file + " already exists"
+      else
+        dim text
+        text << "REM SmallBASIC"
+        text << "REM created: " + date
+        tsave file, text
+        valid_file = true
+      endif
+    catch e
+      print "Error creating file: " e
+    end try
+  wend
+  color 7, 0
+  cls
+end
+
 sub do_setup()
   color 3, 0
   cls
@@ -176,13 +206,14 @@ end
 
 sub main
   local basList, dirList, path
-  local frm, bn_about, bn_online
+  local frm, bn_about, bn_online, bn_new
   local do_intro
 
   dim basList
   dim dirList
 
   bn_setup = mk_menu("_setup", "Setup", -1)
+  bn_new = mk_menu("_new", "New", -1)
   bn_about = mk_menu("_about", "About", -1)
   bn_online = mk_menu(onlineUrl, "Online", 0)
   bn_online.isExit = true
@@ -193,6 +224,7 @@ sub main
     if (osname != "SDL") then
      frm.inputs << bn_setup
     endif
+    frm.inputs << bn_new
     frm.inputs << bn_about
 
     if (welcome) then
@@ -246,6 +278,10 @@ sub main
     elif frm.value == "_setup" then
       frm.close()
       do_setup()
+      frm = make_ui(path, false)
+    elif frm.value == "_new" then
+      frm.close()
+      do_newfile()
       frm = make_ui(path, false)
     elif frm.value == "_back" then
       frm.close()

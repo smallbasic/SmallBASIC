@@ -109,7 +109,7 @@ struct GraphicScreen : public Screen {
   void setPixel(int x, int y, int c);
   void resize(int newWidth, int newHeight, int oldWidth, 
               int oldHeight, int lineHeight);
-  void updateFont() { replaceFont(); }
+  void updateFont() { setFont(_bold, _italic, _fontSize); }
   int  getPixel(int x, int y);
   int  getMaxHScroll() { return 0; }
 

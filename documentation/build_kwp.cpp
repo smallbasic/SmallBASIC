@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   }
 
   fprintf(stdout, "/* automagicaly generated file */\n");
-  fprintf(stdout, "struct KEYWORD_HELP {\n");
+  fprintf(stdout, "static struct KEYWORD_HELP {\n");
   fprintf(stdout, "  const char *package;\n");
   fprintf(stdout, "  const char *keyword;\n");
   fprintf(stdout, "  const char *signature;\n");

@@ -116,6 +116,7 @@ bool System::execute(const char *bas) {
   }
 
   opt_command[0] = '\0';
+  _output->resetFont();
   _output->flush(true);
   return result;
 }

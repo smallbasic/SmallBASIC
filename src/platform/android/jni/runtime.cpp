@@ -737,7 +737,10 @@ bool System::getPen3() {
 
 void System::completeKeyword(int index) {
   if (get_focus_edit() && isEditing()) {
-    get_focus_edit()->completeKeyword(index);
+    const char *help = get_focus_edit()->completeKeyword(index);
+    if (help) {
+      runtime->alert(help);
+    }
   }
 }
 
@@ -764,39 +767,33 @@ void System::editSource(strlib::String &loadPath) {
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
-  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
-  TextEditInput *widget = editWidget;
+  TextEditInput *widget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   _modifiedTime = getModifiedTime();
-
-  editWidget->updateUI(NULL, NULL);
-  editWidget->setLineNumbers();
-  editWidget->setFocus(true);
+  widget->updateUI(NULL, NULL);
+  widget->setLineNumbers();
+  widget->setFocus(true);
   if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
-    editWidget->setCursorRow(gsb_last_line - 1);
+    widget->setCursorRow(gsb_last_line - 1);
   }
   if (gsb_last_error && !isBack()) {
-    editWidget->setCursorRow(gsb_last_line - 1);
+    widget->setCursorRow(gsb_last_line - 1);
     runtime->alert(gsb_last_errmsg);
   }
   _srcRendered = false;
   _output->clearScreen();
-  _output->addInput(editWidget);
-  _output->addInput(helpWidget);
+  _output->addInput(widget);
   _output->setStatus(cleanFile);
   _output->redraw();
   _state = kEditState;
 
   maShowVirtualKeyboard();
-  showCursor(kIBeam);
-
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
     if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
       dev_clrkb();
       int sw = _output->getScreenWidth();
       bool redraw = true;
-      bool dirty = editWidget->isDirty();
+      bool dirty = widget->isDirty();
       char *text;
 
       switch (event.key) {
@@ -805,12 +802,12 @@ void System::editSource(strlib::String &loadPath) {
         break;
       case SB_KEY_F(9):
         _state = kRunState;
-        if (editWidget->isDirty()) {
-          saveFile(editWidget, loadPath);
+        if (widget->isDirty()) {
+          saveFile(widget, loadPath);
         }
         break;
       case SB_KEY_CTRL('s'):
-        saveFile(editWidget, loadPath);
+        saveFile(widget, loadPath);
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -839,18 +836,9 @@ void System::editSource(strlib::String &loadPath) {
         redraw = widget->edit(event.key, sw, charWidth);
         break;
       }
-      if (isBack() && widget == helpWidget) {
-        widget = editWidget;
-        helpWidget->hide();
-        redraw = true;
-        dirty = !editWidget->isDirty();
-      }
-      helpWidget->setFocus(widget == helpWidget);
-      editWidget->setFocus(widget == editWidget);
-
-      if (editWidget->isDirty() && !dirty) {
+      if (widget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);
-      } else if (!editWidget->isDirty() && dirty) {
+      } else if (!widget->isDirty() && dirty) {
         _output->setStatus(cleanFile);
       }
       if (redraw) {
@@ -860,7 +848,7 @@ void System::editSource(strlib::String &loadPath) {
       _output->redraw();
     }
 
-    if (editWidget->isDirty()) {
+    if (widget->isDirty()) {
       int choice = -1;
       if (isClosing()) {
         choice = 0;
@@ -870,7 +858,7 @@ void System::editSource(strlib::String &loadPath) {
         choice = ask("Save changes?", message, isBack());
       }
       if (choice == 0) {
-        editWidget->save(loadPath);
+        widget->save(loadPath);
       } else if (choice == 2) {
         // cancel
         _state = kEditState;
