@@ -25,10 +25,10 @@
 #define INDENT_LEVEL 2
 #define HELP_WIDTH 22
 #define NUM_THEMES 4
-#define TWISTY1_OPEN  "| "
-#define TWISTY1_CLOSE "|_"
-#define TWISTY2_OPEN  "  | "
-#define TWISTY2_CLOSE "  |_"
+#define TWISTY1_OPEN  "> "
+#define TWISTY1_CLOSE "< "
+#define TWISTY2_OPEN  "  > "
+#define TWISTY2_CLOSE "  < "
 #define TWISTY1_LEN 2
 #define TWISTY2_LEN 4
 
