@@ -25,6 +25,12 @@
 #define INDENT_LEVEL 2
 #define HELP_WIDTH 22
 #define NUM_THEMES 4
+#define TWISTY1_OPEN  "| "
+#define TWISTY1_CLOSE "|_"
+#define TWISTY2_OPEN  "  | "
+#define TWISTY2_CLOSE "  |_"
+#define TWISTY1_LEN 2
+#define TWISTY2_LEN 4
 
 int g_themeId = 0;
 
@@ -453,6 +459,18 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
   }
 }
 
+void TextEditInput::dragPage(int y, bool &redraw) {
+  int size = abs(y - _ptY);
+  int minSize = _charHeight / 4;
+  if (_ptY == -1) {
+    _ptY = y;
+  } else if (size > minSize) {
+    lineNavigate(y < _ptY);
+    redraw = true;
+    _ptY = y;
+  }
+}
+
 void TextEditInput::drawText(int x, int y, const char *str,
                              int length, SyntaxState &state) {
   int i = 0;
@@ -732,15 +750,7 @@ bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
   bool focus = hasFocus();
   if (focus) {
     if (pt.x < _marginWidth) {
-      int size = abs(pt.y - _ptY);
-      int minSize = _charHeight / 4;
-      if (_ptY == -1) {
-        _ptY = pt.y;
-      } else if (size > minSize) {
-        lineNavigate(pt.y < _ptY);
-        redraw = true;
-        _ptY = pt.y;
-      }
+      dragPage(pt.y, redraw);
     } else {
       stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
                         pt.y + scrollY + (_scroll * _charHeight));
@@ -1411,7 +1421,8 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) 
   TextEditInput(NULL, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
                 chW * HELP_WIDTH, editor->_height),
   _mode(kNone),
-  _editor(editor) {
+  _editor(editor),
+  _openPackage(NULL) {
   _theme = new EditTheme(0x73c990, 0x20242a);
   hide();
 }
@@ -1423,8 +1434,7 @@ TextEditHelpWidget::~TextEditHelpWidget() {
 bool TextEditHelpWidget::closeOnEnter() const {
   return (_mode != kSearch &&
           _mode != kKeyword &&
-          _mode != kKeywordIndex &&
-          _mode != kKeywordPackageIndex);
+          _mode != kKeywordIndex);
 }
 
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
@@ -1480,18 +1490,12 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       }
       break;
     case SB_KEY_ENTER:
-      char *text;
       switch (_mode) {
       case kCompletion:
         completeWord(_state.cursor);
         break;
       case kKeywordIndex:
-        createPackageIndex();
-        break;
-      case kKeywordPackageIndex:
-        text = lineText(_state.cursor);
-        createKeywordHelp(text);
-        free(text);
+        toggleKeyword();
         break;
       case kKeyword:
         _mode = kHelp;
@@ -1527,6 +1531,16 @@ void TextEditHelpWidget::completeWord(int pos) {
     _editor->completeWord(text);
   }
   free(text);
+}
+
+void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
+  _ptY = -1;
+  if (pressed) {
+    stb_textedit_click(&_buf, &_state, 0, y + (_scroll * _charHeight));
+    if (_mode == kKeywordIndex && x - _x <= _charWidth * 3) {
+      toggleKeyword();
+    }
+  }
 }
 
 void TextEditHelpWidget::createCompletionHelp() {
@@ -1576,33 +1590,16 @@ void TextEditHelpWidget::createKeywordIndex() {
   }
   if (!foundKeyword) {
     reset(kKeywordIndex);
-    _buf.append("[Help Index]\n");
     const char *package = NULL;
     for (int i = 0; i < keyword_help_len; i++) {
       if (package == NULL || strcasecmp(package, keyword_help[i].package) != 0) {
         package = keyword_help[i].package;
+        _buf.append(TWISTY1_OPEN, TWISTY1_LEN);
         _buf.append(package);
         _buf.append("\n", 1);
       }
     }
   }
-}
-
-void TextEditHelpWidget::createPackageIndex() {
-  char *package = lineText(_state.cursor);
-  if (package[0] != '\0' && package[0] != '[') {
-    reset(kKeywordPackageIndex);
-    _buf.append("[", 1);
-    _buf.append(package);
-    _buf.append("]\n", 2);
-    for (int i = 0; i < keyword_help_len; i++) {
-      if (strcasecmp(package, keyword_help[i].package) == 0) {
-        _buf.append(keyword_help[i].keyword);
-        _buf.append("\n", 1);
-      }
-    }
-  }
-  free(package);
 }
 
 bool TextEditHelpWidget::createKeywordHelp(const char *keyword) {
@@ -1712,3 +1709,68 @@ void TextEditHelpWidget::reset(HelpMode mode) {
   _scroll = 0;
   _matchingBrace = -1;
 }
+
+bool TextEditHelpWidget::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
+  bool result = hasFocus();
+  if (result) {
+    dragPage(pt.y, redraw);
+  }
+  return result;
+}
+
+void TextEditHelpWidget::toggleKeyword() {
+  char *line = lineText(_state.cursor);
+  bool open1 = strncmp(line, TWISTY1_OPEN, TWISTY1_LEN) == 0;
+  bool open2 = strncmp(line, TWISTY2_OPEN, TWISTY2_LEN) == 0;
+  bool close1 = strncmp(line, TWISTY1_CLOSE, TWISTY1_LEN) == 0;
+  bool close2 = strncmp(line, TWISTY2_CLOSE, TWISTY2_LEN) == 0;
+  if (open1 || open2 || close1 || close2) {
+    const char *nextLine = line + TWISTY1_LEN;
+    const char *package = (open2 || close2) && _openPackage != NULL ? _openPackage : nextLine;
+    const char *nextPackage = NULL;
+    _buf.clear();
+    _matchingBrace = -1;
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (nextPackage == NULL || strcasecmp(nextPackage, keyword_help[i].package) != 0) {
+        nextPackage = keyword_help[i].package;
+        if (strcasecmp(package, nextPackage) == 0) {
+          // selected item
+          _buf.append(open1 || open2 || close2 ? TWISTY1_CLOSE : TWISTY1_OPEN, TWISTY1_LEN);
+          _buf.append(nextPackage);
+          _buf.append("\n", 1);
+          if (open1) {
+            _openPackage = nextPackage;
+          } else if (open2) {
+            nextLine = line + TWISTY2_LEN;
+          }
+          if (open1 || open2 || close2) {
+            while (i < keyword_help_len &&
+                   strcasecmp(nextPackage, keyword_help[i].package) == 0) {
+              if (open2 && strcasecmp(nextLine, keyword_help[i].keyword) == 0) {
+                _buf.append(TWISTY2_CLOSE, TWISTY2_LEN);
+                _buf.append(keyword_help[i].keyword);
+                _buf.append("\n\n", 2);
+                _buf.append(keyword_help[i].signature);
+                _buf.append("\n\n", 2);
+                _buf.append(keyword_help[i].help);
+                _buf.append("\n\n", 2);
+              } else {
+                _buf.append(TWISTY2_OPEN, TWISTY2_LEN);
+                _buf.append(keyword_help[i].keyword);
+                _buf.append("\n", 1);
+              }
+              i++;
+            }
+          }
+        } else {
+          // next item
+          _buf.append(TWISTY1_OPEN, TWISTY1_LEN);
+          _buf.append(nextPackage);
+          _buf.append("\n", 1);
+        }
+      }
+    }
+  }
+  free(line);
+}
+

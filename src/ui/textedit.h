@@ -116,6 +116,7 @@ protected:
     kDigit,
   };
 
+  void dragPage(int y, bool &redraw);
   void drawText(int x, int y, const char *str, int length, SyntaxState &state);
   void changeCase();
   void cycleTheme();
@@ -170,7 +171,6 @@ struct TextEditHelpWidget : public TextEditInput {
     kCompletion,
     kKeyword,
     kKeywordIndex,
-    kKeywordPackageIndex,
     kOutline,
     kSearch,
     kSearchReplace,
@@ -180,6 +180,7 @@ struct TextEditHelpWidget : public TextEditInput {
     kMessage
   };
 
+  void clicked(int x, int y, bool pressed);
   void createCompletionHelp();
   void createGotoLine();
   void createHelp();
@@ -196,6 +197,8 @@ struct TextEditHelpWidget : public TextEditInput {
   bool closeOnEnter() const;
   bool replaceMode() const { return _mode == kReplace; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  void toggleKeyword();
 
 private:
   void completeLine(int pos);
@@ -206,6 +209,7 @@ private:
   HelpMode _mode;
   strlib::List<int *> _outline;
   TextEditInput *_editor;
+  const char *_openPackage;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer
