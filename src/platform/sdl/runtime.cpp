@@ -706,7 +706,15 @@ bool System::getPen3() {
 
 void System::completeKeyword(int index) {
   if (get_focus_edit() && isEditing()) {
-    get_focus_edit()->completeKeyword(index);
+    TextEditInput *editWidget = (TextEditInput *)get_focus_edit();
+    char *preWord = editWidget->getWordBeforeCursor();
+    const char *help = get_focus_edit()->completeKeyword(index);
+    char *word = editWidget->getWordBeforeCursor();
+    if (help && (preWord != NULL && strlen(preWord) == strlen(word))) {
+      runtime->alert("", help);
+    }
+    free(preWord);
+    free(word);
   }
 }
 

@@ -1,6 +1,10 @@
 2015-09-15
 	SDL Update PEN(3) to work more like FLTK
 	Fix display output before PEN
+	Fix BOLD and ITALIC font display
+	Context menu edit keyword completion
+	Updated program icon
+	Editor line number widget can be used for scrolling
 
 2015-08-26
 	Editor fixes:

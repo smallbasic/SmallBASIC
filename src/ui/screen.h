@@ -107,7 +107,7 @@ struct GraphicScreen : public Screen {
   void reset(int fontSize);
   bool setGraphicsRendition(const char c, int escValue, int lineHeight);
   void setPixel(int x, int y, int c);
-  void resize(int newWidth, int newHeight, int oldWidth, 
+  void resize(int newWidth, int newHeight, int oldWidth,
               int oldHeight, int lineHeight);
   void updateFont() { setFont(_bold, _italic, _fontSize); }
   int  getPixel(int x, int y);
@@ -322,7 +322,7 @@ struct TextScreen : public Screen {
   void inset(int x, int y, int w, int h, Screen *over);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight, bool allChars=false);
-  void resize(int newWidth, int newHeight, int oldWidth, 
+  void resize(int newWidth, int newHeight, int oldWidth,
               int oldHeight, int lineHeight);
   bool setGraphicsRendition(const char c, int escValue, int lineHeight);
   void setOver(Screen *over) { _over = over; }

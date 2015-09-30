@@ -307,7 +307,7 @@ const char *TextEditInput::completeKeyword(int index) {
     for (int i = 0; i < keyword_help_len; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0 &&
           count++ == index) {
-        if (IS_WHITE(_buf._buffer[_state.cursor])) {
+        if (IS_WHITE(_buf._buffer[_state.cursor]) || _buf._buffer[_state.cursor] == '\0') {
           completeWord(keyword_help[i].keyword);
         }
         help = keyword_help[i].help;
@@ -1050,7 +1050,7 @@ void TextEditInput::findMatchingBrace() {
 int TextEditInput::getCompletions(StringList *list, int max) {
   int count = 0;
   char *selection = getWordBeforeCursor();
-  int len = selection != NULL ? strlen(selection) : 0;
+  unsigned len = selection != NULL ? strlen(selection) : 0;
   if (len > 0) {
     for (int i = 0; i < keyword_help_len && count < max; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
@@ -1422,7 +1422,8 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) 
                 chW * HELP_WIDTH, editor->_height),
   _mode(kNone),
   _editor(editor),
-  _openPackage(NULL) {
+  _openPackage(NULL),
+  _openKeyword(-1) {
   _theme = new EditTheme(0x73c990, 0x20242a);
   hide();
 }
@@ -1432,9 +1433,7 @@ TextEditHelpWidget::~TextEditHelpWidget() {
 }
 
 bool TextEditHelpWidget::closeOnEnter() const {
-  return (_mode != kSearch &&
-          _mode != kKeyword &&
-          _mode != kKeywordIndex);
+  return (_mode != kSearch && _mode != kKeyword && _mode != kKeywordIndex);
 }
 
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
@@ -1497,16 +1496,15 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       case kKeywordIndex:
         toggleKeyword();
         break;
-      case kKeyword:
-        _mode = kHelp;
-        completeLine(0);
-        break;
       default:
         break;
       }
       result = true;
       break;
     default:
+      if (_mode == kKeywordIndex && _openKeyword != -1 && key < 0) {
+        result = TextEditInput::edit(key, screenWidth, charWidth);
+      }
       break;
     }
   }
@@ -1730,6 +1728,7 @@ void TextEditHelpWidget::toggleKeyword() {
     const char *nextPackage = NULL;
     _buf.clear();
     _matchingBrace = -1;
+    _openKeyword = -1;
     for (int i = 0; i < keyword_help_len; i++) {
       if (nextPackage == NULL || strcasecmp(nextPackage, keyword_help[i].package) != 0) {
         nextPackage = keyword_help[i].package;
@@ -1747,6 +1746,7 @@ void TextEditHelpWidget::toggleKeyword() {
             while (i < keyword_help_len &&
                    strcasecmp(nextPackage, keyword_help[i].package) == 0) {
               if (open2 && strcasecmp(nextLine, keyword_help[i].keyword) == 0) {
+                _openKeyword = i;
                 _buf.append(TWISTY2_CLOSE, TWISTY2_LEN);
                 _buf.append(keyword_help[i].keyword);
                 _buf.append("\n\n", 2);
@@ -1773,4 +1773,3 @@ void TextEditHelpWidget::toggleKeyword() {
   }
   free(line);
 }
-

@@ -189,7 +189,6 @@ struct TextEditHelpWidget : public TextEditInput {
   void createOutline();
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);
-  char *copy(bool cut) { return NULL; }
   void paste(const char *text) {}
   bool isDrawTop() { return true; }
   void resize(int w, int h) { _x = w - _width; _height = h; }
@@ -210,6 +209,7 @@ private:
   strlib::List<int *> _outline;
   TextEditInput *_editor;
   const char *_openPackage;
+  int _openKeyword;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer
