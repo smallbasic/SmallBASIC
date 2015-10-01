@@ -221,9 +221,6 @@ void System::editSource(strlib::String &loadPath) {
         _output->redraw();
       }
     } else if (event.type == EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED) {
-      if (editWidget->isDirty()) {
-        _output->setStatus(dirtyFile);
-      }
       _output->redraw();
     }
 

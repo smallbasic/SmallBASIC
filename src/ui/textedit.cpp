@@ -1433,7 +1433,7 @@ TextEditHelpWidget::~TextEditHelpWidget() {
 }
 
 bool TextEditHelpWidget::closeOnEnter() const {
-  return (_mode != kSearch && _mode != kKeyword && _mode != kKeywordIndex);
+  return (_mode != kSearch && _mode != kHelpKeyword);
 }
 
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
@@ -1493,7 +1493,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       case kCompletion:
         completeWord(_state.cursor);
         break;
-      case kKeywordIndex:
+      case kHelpKeyword:
         toggleKeyword();
         break;
       default:
@@ -1502,7 +1502,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       result = true;
       break;
     default:
-      if (_mode == kKeywordIndex && _openKeyword != -1 && key < 0) {
+      if (_mode == kHelpKeyword && _openKeyword != -1 && key < 0) {
         result = TextEditInput::edit(key, screenWidth, charWidth);
       }
       break;
@@ -1535,7 +1535,7 @@ void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   _ptY = -1;
   if (pressed) {
     stb_textedit_click(&_buf, &_state, 0, y + (_scroll * _charHeight));
-    if (_mode == kKeywordIndex && x - _x <= _charWidth * 3) {
+    if (_mode == kHelpKeyword && x - _x <= _charWidth * 3) {
       toggleKeyword();
     }
   }
@@ -1580,14 +1580,25 @@ void TextEditHelpWidget::createHelp() {
 }
 
 void TextEditHelpWidget::createKeywordIndex() {
-  char *selection = _editor->getWordBeforeCursor();
-  bool foundKeyword = false;
-  if (selection != NULL) {
-    foundKeyword = createKeywordHelp(selection);
-    free(selection);
+  char *keyword = _editor->getWordBeforeCursor();
+  reset(kHelpKeyword);
+
+  bool keywordFound = false;
+  if (keyword != NULL) {
+    for (int i = 0; i < keyword_help_len && !keywordFound; i++) {
+      if (strcasecmp(keyword, keyword_help[i].keyword) == 0) {
+        _buf.append(TWISTY2_OPEN, TWISTY2_LEN);
+        _buf.append(keyword_help[i].keyword);
+        _openPackage = keyword_help[i].package;
+        keywordFound = true;
+        toggleKeyword();
+        break;
+      }
+    }
+    free(keyword);
   }
-  if (!foundKeyword) {
-    reset(kKeywordIndex);
+
+  if (!keywordFound) {
     const char *package = NULL;
     for (int i = 0; i < keyword_help_len; i++) {
       if (package == NULL || strcasecmp(package, keyword_help[i].package) != 0) {
@@ -1598,22 +1609,6 @@ void TextEditHelpWidget::createKeywordIndex() {
       }
     }
   }
-}
-
-bool TextEditHelpWidget::createKeywordHelp(const char *keyword) {
-  bool found = false;
-  for (int i = 0; i < keyword_help_len; i++) {
-    if (strcasecmp(keyword, keyword_help[i].keyword) == 0) {
-      reset(kKeyword);
-      _buf.append(keyword_help[i].signature);
-      _buf.append("\n\n", 2);
-      _buf.append(keyword_help[i].help);
-      _buf.append("\n", 1);
-      found = true;
-      break;
-    }
-  }
-  return found;
 }
 
 void TextEditHelpWidget::createOutline() {
@@ -1729,6 +1724,7 @@ void TextEditHelpWidget::toggleKeyword() {
     _buf.clear();
     _matchingBrace = -1;
     _openKeyword = -1;
+    _state.select_start = _state.select_end = 0;
     for (int i = 0; i < keyword_help_len; i++) {
       if (nextPackage == NULL || strcasecmp(nextPackage, keyword_help[i].package) != 0) {
         nextPackage = keyword_help[i].package;
@@ -1750,6 +1746,7 @@ void TextEditHelpWidget::toggleKeyword() {
                 _buf.append(TWISTY2_CLOSE, TWISTY2_LEN);
                 _buf.append(keyword_help[i].keyword);
                 _buf.append("\n\n", 2);
+                _state.cursor = _buf._len;
                 _buf.append(keyword_help[i].signature);
                 _buf.append("\n\n", 2);
                 _buf.append(keyword_help[i].help);

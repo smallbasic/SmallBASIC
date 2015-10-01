@@ -168,9 +168,8 @@ struct TextEditHelpWidget : public TextEditInput {
   enum HelpMode {
     kNone,
     kHelp,
+    kHelpKeyword,
     kCompletion,
-    kKeyword,
-    kKeywordIndex,
     kOutline,
     kSearch,
     kSearchReplace,
@@ -203,7 +202,6 @@ private:
   void completeLine(int pos);
   void completeWord(int pos);
   void createPackageIndex();
-  bool createKeywordHelp(const char *keyword);
 
   HelpMode _mode;
   strlib::List<int *> _outline;
