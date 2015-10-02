@@ -90,6 +90,9 @@ sub do_newfile()
   local valid_file = false
   while (!valid_file)
     input "Enter file name: ", file
+    if (len(file) == 0) then
+      exit loop
+    endif
     if (leftoflast(file, ".bas") == 0) then
       file += ".bas"
     endif

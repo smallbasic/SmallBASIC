@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -33,8 +33,6 @@
 #define OPT_IDE_KEY "optIde"
 
 Runtime *runtime;
-
-void launchDebug(const char *file) {}
 
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
   MAEvent *result = new MAEvent();
@@ -767,47 +765,57 @@ void System::editSource(strlib::String &loadPath) {
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *widget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
+  TextEditInput *widget = editWidget;
   _modifiedTime = getModifiedTime();
-  widget->updateUI(NULL, NULL);
-  widget->setLineNumbers();
-  widget->setFocus(true);
+  editWidget->updateUI(NULL, NULL);
+  editWidget->setLineNumbers();
+  editWidget->setFocus(true);
   if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
-    widget->setCursorRow(gsb_last_line - 1);
+    editWidget->setCursorRow(gsb_last_line - 1);
   }
   if (gsb_last_error && !isBack()) {
-    widget->setCursorRow(gsb_last_line - 1);
+    editWidget->setCursorRow(gsb_last_line - 1);
     runtime->alert(gsb_last_errmsg);
   }
   _srcRendered = false;
   _output->clearScreen();
-  _output->addInput(widget);
+  _output->addInput(editWidget);
+  _output->addInput(helpWidget);
   _output->setStatus(cleanFile);
   _output->redraw();
   _state = kEditState;
+  runtime->showKeypad(true);
 
-  maShowVirtualKeyboard();
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
     if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
       dev_clrkb();
       int sw = _output->getScreenWidth();
       bool redraw = true;
-      bool dirty = widget->isDirty();
+      bool dirty = editWidget->isDirty();
       char *text;
 
       switch (event.key) {
       case SB_KEY_MENU:
         redraw = false;
         break;
+      case SB_KEY_F(1):
+        widget = helpWidget;
+        helpWidget->createKeywordIndex();
+        helpWidget->show();
+        helpWidget->setFocus(true);
+        runtime->showKeypad(false);
+        break;
       case SB_KEY_F(9):
         _state = kRunState;
-        if (widget->isDirty()) {
-          saveFile(widget, loadPath);
+        if (editWidget->isDirty()) {
+          saveFile(editWidget, loadPath);
         }
         break;
       case SB_KEY_CTRL('s'):
-        saveFile(widget, loadPath);
+        saveFile(editWidget, loadPath);
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
@@ -828,7 +836,7 @@ void System::editSource(strlib::String &loadPath) {
         _output->redraw();
         _state = kActiveState;
         waitForBack();
-        maShowVirtualKeyboard();
+        runtime->showKeypad(true);
         _output->selectScreen(SOURCE_SCREEN);
         _state = kEditState;
         break;
@@ -845,6 +853,15 @@ void System::editSource(strlib::String &loadPath) {
         _output->redraw();
       }
     } else if (event.type == EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED) {
+      _output->redraw();
+    }
+
+    if (isBack() && widget == helpWidget) {
+      runtime->showKeypad(true);
+      widget = editWidget;
+      helpWidget->hide();
+      editWidget->setFocus(true);
+      _state = kEditState;
       _output->redraw();
     }
 

@@ -40,7 +40,8 @@
 #define MENU_RUN        17
 #define MENU_DEBUG      18
 #define MENU_OUTPUT     19
-#define MENU_SIZE       20
+#define MENU_HELP       20
+#define MENU_SIZE       21
 #define MENU_COMPETION_0  (MENU_SIZE + 1)
 #define MENU_COMPETION_1  (MENU_SIZE + 2)
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
@@ -285,8 +286,12 @@ void System::handleMenu(MAEvent &event) {
     }
     break;
   case MENU_EDITMODE:
+#if defined(_SDL)
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
                opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
+#else
+    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
+#endif
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
@@ -317,6 +322,10 @@ void System::handleMenu(MAEvent &event) {
   case MENU_OUTPUT:
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_CTRL('o');
+    break;
+  case MENU_HELP:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_F(1);
     break;
   case MENU_COMPETION_0:
     completeKeyword(0);
@@ -542,7 +551,7 @@ void System::runMain(const char *mainBasPath) {
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }
-    if (!isBack() && !isClosing() && opt_ide != IDE_INTERNAL) {
+    if (!isBack() && !isClosing() && (opt_ide != IDE_INTERNAL || success)) {
       // load the next network file without displaying the previous result
       bool networkFile = (_loadPath.indexOf("://", 1) != -1);
       if (!_mainBas && !networkFile) {
@@ -748,8 +757,9 @@ void System::showMenu() {
         items->add(new String("Run"));
 #if defined(_SDL)
         items->add(new String("Debug"));
-#endif
         items->add(new String("Show output"));
+#endif
+        items->add(new String("Help"));
         for (int i = 0; i < completions; i++) {
           _systemMenu[index++] = MENU_COMPETION_0 + i;
         }
@@ -762,8 +772,9 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_RUN;
 #if defined(_SDL)
         _systemMenu[index++] = MENU_DEBUG;
-#endif
         _systemMenu[index++] = MENU_OUTPUT;
+#endif
+        _systemMenu[index++] = MENU_HELP;
       } else if (isRunning()) {
         items->add(new String("Cut"));
         items->add(new String("Copy"));
@@ -810,7 +821,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
         sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
-                                        opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
+                                        opt_ide == IDE_INTERNAL ? "ON" : "Live Mode"));
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
