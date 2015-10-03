@@ -220,8 +220,6 @@ void System::editSource(strlib::String &loadPath) {
       if (redraw) {
         _output->redraw();
       }
-    } else if (event.type == EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED) {
-      _output->redraw();
     }
 
     if ((isBack() || isClosing()) && editWidget->isDirty()) {

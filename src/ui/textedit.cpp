@@ -1721,32 +1721,46 @@ void TextEditHelpWidget::toggleKeyword() {
     const char *nextLine = line + TWISTY1_LEN;
     const char *package = (open2 || close2) && _openPackage != NULL ? _openPackage : nextLine;
     const char *nextPackage = NULL;
+    int pageRows = _height / _charHeight;
+    int open1Count = 0;
+    int open2Count = 0;
     _buf.clear();
     _matchingBrace = -1;
     _openKeyword = -1;
     _state.select_start = _state.select_end = 0;
+
     for (int i = 0; i < keyword_help_len; i++) {
       if (nextPackage == NULL || strcasecmp(nextPackage, keyword_help[i].package) != 0) {
         nextPackage = keyword_help[i].package;
         if (strcasecmp(package, nextPackage) == 0) {
           // selected item
+          if (open1 || close1) {
+            _state.cursor = _buf._len;
+            _cursorRow = open1Count;
+          }
+
           _buf.append(open1 || open2 || close2 ? TWISTY1_CLOSE : TWISTY1_OPEN, TWISTY1_LEN);
           _buf.append(nextPackage);
           _buf.append("\n", 1);
+
           if (open1) {
             _openPackage = nextPackage;
+            open1Count++;
           } else if (open2) {
             nextLine = line + TWISTY2_LEN;
+            open2Count++;
           }
           if (open1 || open2 || close2) {
             while (i < keyword_help_len &&
                    strcasecmp(nextPackage, keyword_help[i].package) == 0) {
+              open2Count++;
               if (open2 && strcasecmp(nextLine, keyword_help[i].keyword) == 0) {
                 _openKeyword = i;
+                _state.cursor = _buf._len;
+                _cursorRow = open1Count + open2Count;
                 _buf.append(TWISTY2_CLOSE, TWISTY2_LEN);
                 _buf.append(keyword_help[i].keyword);
                 _buf.append("\n\n", 2);
-                _state.cursor = _buf._len;
                 _buf.append(keyword_help[i].signature);
                 _buf.append("\n\n", 2);
                 _buf.append(keyword_help[i].help);
@@ -1760,12 +1774,18 @@ void TextEditHelpWidget::toggleKeyword() {
             }
           }
         } else {
-          // next item
+          // next package item (level 1)
           _buf.append(TWISTY1_OPEN, TWISTY1_LEN);
           _buf.append(nextPackage);
           _buf.append("\n", 1);
+          open1Count++;
         }
       }
+    }
+    if (_cursorRow + 4 < pageRows) {
+      _scroll = 0;
+    } else {
+      _scroll = _cursorRow - (pageRows / 4);
     }
   }
   free(line);
