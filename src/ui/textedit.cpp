@@ -310,7 +310,7 @@ const char *TextEditInput::completeKeyword(int index) {
         if (IS_WHITE(_buf._buffer[_state.cursor]) || _buf._buffer[_state.cursor] == '\0') {
           completeWord(keyword_help[i].keyword);
         }
-        help = keyword_help[i].help;
+        help = keyword_help[i].signature;
         break;
       }
     }
@@ -1417,15 +1417,18 @@ int TextEditInput::wordStart() {
 //
 // TextEditHelpWidget
 //
-TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH) :
-  TextEditInput(NULL, chW, chH, editor->_width - (chW * HELP_WIDTH), editor->_y,
-                chW * HELP_WIDTH, editor->_height),
+TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, bool overlay) :
+  TextEditInput(NULL, chW, chH, editor->_x, editor->_y, editor->_width, editor->_height),
   _mode(kNone),
   _editor(editor),
   _openPackage(NULL),
   _openKeyword(-1) {
   _theme = new EditTheme(0x73c990, 0x20242a);
   hide();
+  if (overlay) {
+    _x = editor->_width - (chW * HELP_WIDTH);
+    _width = chW * HELP_WIDTH;
+  }
 }
 
 TextEditHelpWidget::~TextEditHelpWidget() {

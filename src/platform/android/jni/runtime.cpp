@@ -766,7 +766,7 @@ void System::editSource(strlib::String &loadPath) {
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
   TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
-  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
+  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight, false);
   TextEditInput *widget = editWidget;
   _modifiedTime = getModifiedTime();
   editWidget->updateUI(NULL, NULL);
@@ -852,8 +852,6 @@ void System::editSource(strlib::String &loadPath) {
       if (redraw) {
         _output->redraw();
       }
-    } else if (event.type == EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED) {
-      _output->redraw();
     }
 
     if (isBack() && widget == helpWidget) {

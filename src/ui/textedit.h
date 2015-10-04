@@ -162,7 +162,7 @@ protected:
 };
 
 struct TextEditHelpWidget : public TextEditInput {
-  TextEditHelpWidget(TextEditInput *editor, int chW, int chH);
+  TextEditHelpWidget(TextEditInput *editor, int chW, int chH, bool overlay=true);
   virtual ~TextEditHelpWidget();
 
   enum HelpMode {
