@@ -347,6 +347,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     if (i == 0 ||
         _buf._buffer[i - 1] == '\r' ||
         _buf._buffer[i - 1] == '\n') {
+      syntax = kReset;
       line++;
     }
 
@@ -433,6 +434,19 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
         }
       }
       baseY += _charHeight;
+    } else if (row <= _scroll && syntax == kReset) {
+      int end = i + r.num_chars - 1;
+      if (_buf._buffer[end] != '\r' &&
+          _buf._buffer[end] != '\n') {
+        // line continues
+        for (int j = i; j < end; j++) {
+          // line also 'ends' at start of comments
+          if (is_comment(_buf._buffer, j)) {
+            syntax = kComment;
+            break;
+          }
+        }
+      }
     }
     i += r.num_chars;
   }
