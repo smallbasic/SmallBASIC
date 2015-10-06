@@ -438,11 +438,13 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       int end = i + r.num_chars - 1;
       if (_buf._buffer[end] != '\r' &&
           _buf._buffer[end] != '\n') {
-        // line continues
+        // scrolled line continues to next line
         for (int j = i; j < end; j++) {
-          // line also 'ends' at start of comments
           if (is_comment(_buf._buffer, j)) {
             syntax = kComment;
+            break;
+          } else if (_buf._buffer[j] == '\"') {
+            syntax = kText;
             break;
           }
         }
