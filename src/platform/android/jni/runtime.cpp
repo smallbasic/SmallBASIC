@@ -738,6 +738,7 @@ void System::completeKeyword(int index) {
     const char *help = get_focus_edit()->completeKeyword(index);
     if (help) {
       runtime->alert(help);
+      runtime->getOutput()->redraw();
     }
   }
 }
