@@ -80,7 +80,7 @@ struct TextEditInput : public FormEditInput {
   int  getCursorPos() const { return _state.cursor; }
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
-  int *getMarkers() { return _lineMarker; }
+  int *getMarkers();
   void gotoLine(const char *buffer);
   void reload(const char *text);
   bool save(const char *filePath);
@@ -156,7 +156,6 @@ protected:
   int _cursorLine;
   int _indentLevel;
   int _matchingBrace;
-  int _lineMarker[MAX_MARKERS];
   int _ptY;
   bool _dirty;
 };

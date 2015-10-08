@@ -33,6 +33,9 @@
 #define TWISTY2_LEN 4
 
 int g_themeId = 0;
+int g_lineMarker[MAX_MARKERS] = {
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
 
 const int theme1[] = {
   0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
@@ -111,6 +114,10 @@ int compareIntegers(const void *p1, const void *p2) {
   int i1 = *((int *)p1);
   int i2 = *((int *)p2);
   return i1 < i2 ? -1 : i1 == i2 ? 0 : 1;
+}
+
+void init_edit_markers() {
+
 }
 
 //
@@ -273,7 +280,6 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _ptY(-1),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
-  memset(_lineMarker, -1, sizeof(_lineMarker));
 }
 
 TextEditInput::~TextEditInput() {
@@ -444,8 +450,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
             syntax = kComment;
             break;
           } else if (_buf._buffer[j] == '\"') {
-            syntax = kText;
-            break;
+            syntax = (syntax == kText) ? kReset : kText;
           }
         }
       }
@@ -677,6 +682,10 @@ bool TextEditInput::find(const char *word, bool next) {
   return result;
 }
 
+int *TextEditInput::getMarkers() {
+  return g_lineMarker;
+}
+
 void TextEditInput::gotoLine(const char *buffer) {
   if (_buf._buffer != NULL && buffer != NULL) {
     setCursorRow(atoi(buffer) - 1);
@@ -886,7 +895,7 @@ void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
   if (_marginWidth > 0) {
     bool markerRow = false;
     for (int i = 0; i < MAX_MARKERS && !markerRow; i++) {
-      if (row == _lineMarker[i]) {
+      if (row == g_lineMarker[i]) {
         markerRow = true;
       }
     }
@@ -1230,22 +1239,22 @@ void TextEditInput::gotoNextMarker() {
   int next = 0;
   int first = -1;
   for (int i = 0; i < MAX_MARKERS; i++) {
-    if (_lineMarker[i] != -1) {
+    if (g_lineMarker[i] != -1) {
       if (first == -1) {
         first = i;
       }
-      if (_lineMarker[i] == _cursorLine) {
+      if (g_lineMarker[i] == _cursorLine) {
         next = i + 1 == MAX_MARKERS ? first : i + 1;
         break;
       }
     }
   }
   if (first != -1) {
-    if (_lineMarker[next] == -1) {
+    if (g_lineMarker[next] == -1) {
       next = first;
     }
-    if (_lineMarker[next] != -1) {
-      setCursorRow(_lineMarker[next] - 1);
+    if (g_lineMarker[next] != -1) {
+      setCursorRow(g_lineMarker[next] - 1);
     }
   }
 }
@@ -1393,24 +1402,24 @@ void TextEditInput::setColor(SyntaxState &state) {
 void TextEditInput::toggleMarker() {
   bool found = false;
   for (int i = 0; i < MAX_MARKERS && !found; i++) {
-    if (_cursorLine == _lineMarker[i]) {
-      _lineMarker[i] = -1;
+    if (_cursorLine == g_lineMarker[i]) {
+      g_lineMarker[i] = -1;
       found = true;
     }
   }
   if (!found) {
     for (int i = 0; i < MAX_MARKERS && !found; i++) {
-      if (_lineMarker[i] == -1) {
-        _lineMarker[i] = _cursorLine;
+      if (g_lineMarker[i] == -1) {
+        g_lineMarker[i] = _cursorLine;
         found = true;
         break;
       }
     }
   }
   if (!found) {
-    _lineMarker[0] = _cursorLine;
+    g_lineMarker[0] = _cursorLine;
   }
-  qsort(_lineMarker, MAX_MARKERS, sizeof(int), compareIntegers);
+  qsort(g_lineMarker, MAX_MARKERS, sizeof(int), compareIntegers);
 }
 
 void TextEditInput::updateScroll() {

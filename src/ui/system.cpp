@@ -757,7 +757,7 @@ void System::showMenu() {
         items->add(new String("Run"));
 #if defined(_SDL)
         items->add(new String("Debug"));
-        items->add(new String("Show output"));
+        items->add(new String("Show Output"));
 #endif
         items->add(new String("Help"));
         for (int i = 0; i < completions; i++) {
