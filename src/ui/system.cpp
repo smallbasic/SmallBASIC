@@ -535,8 +535,8 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
-    if (!_mainBas && opt_ide == IDE_INTERNAL &&
-        !isRestart() && loadSource(_loadPath)) {
+    if (!_mainBas && opt_ide == IDE_INTERNAL && !isRestart() &&
+        _loadPath.indexOf("://", 1) == -1 && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
         _loadPath.empty();
@@ -680,7 +680,8 @@ void System::setRunning(bool running) {
     dev_clrkb();
 
     _output->setAutoflush(!opt_show_page);
-    if (_mainBas || opt_ide != IDE_INTERNAL) {
+    if (_mainBas || opt_ide != IDE_INTERNAL ||
+        _loadPath.indexOf("://", 1) != -1) {
       _loadPath.empty();
     }
     _lastEventTime = maGetMilliSecondCount();
