@@ -6,6 +6,7 @@
 	Updated program icon
 	Editor line number widget can be used for scrolling
 	Updated editor help display
+	Fix TSAVE with try/catch
 
 2015-08-26
 	Editor fixes:

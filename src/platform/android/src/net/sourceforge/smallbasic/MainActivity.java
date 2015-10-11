@@ -170,7 +170,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public String getIPAddress() {
-    String result = null;
+    String result = "";
     try {
       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
         NetworkInterface intf = en.nextElement();

@@ -10,8 +10,8 @@ include $(CLEAR_VARS)
 
 LOCAL_C_INCLUDES := $(FREETYPE_HOME)/include \
                     $(FREETYPE_HOME)/builds \
-                    $(FREETYPE_HOME)/include/config \
-                    $(FREETYPE_HOME)/include/freetype2
+                    $(FREETYPE_HOME)/include/freetype/config \
+                    $(FREETYPE_HOME)/include/freetype
 LOCAL_MODULE     := freetype
 LOCAL_CFLAGS     := -Wall -std=gnu99 \
                     "-DFT_CONFIG_CONFIG_H=<ftconfig.h>" \

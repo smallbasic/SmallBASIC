@@ -85,7 +85,7 @@ sub do_newfile()
   color 3, 0
   cls
   print boldOn + "Create new program."
-  print boldOff + "To enable editing, right click then select Editor [ON]"
+  print boldOff + "To enable editing, display the menu then select Editor [ON]"
   print
   local valid_file = false
   while (!valid_file)
