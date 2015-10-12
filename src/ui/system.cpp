@@ -418,7 +418,7 @@ char *System::loadResource(const char *fileName) {
       memcpy(buffer, var_p->v.p.ptr, len);
       buffer[len] = '\0';
     } else {
-      systemPrint("\nfailed");
+      systemPrint("\nfailed to open %s", fileName);
     }
     _output->setStatus(NULL);
     dev_fclose(handle);
@@ -548,12 +548,14 @@ void System::runMain(const char *mainBasPath) {
     }
 
     bool success = execute(_loadPath);
+    bool networkFile = (_loadPath.indexOf("://", 1) != -1);
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }
-    if (!isBack() && !isClosing() && (opt_ide != IDE_INTERNAL || success)) {
-      // load the next network file without displaying the previous result
-      bool networkFile = (_loadPath.indexOf("://", 1) != -1);
+    if (!isBack() && !isClosing() &&
+        (opt_ide != IDE_INTERNAL || success || networkFile)) {
+      // when editing, only pause here when successful, otherwise the editor shows
+      // the error. load the next network file without displaying the previous result
       if (!_mainBas && !networkFile) {
         // display an indication the program has completed
         showCompletion(success);
