@@ -642,17 +642,16 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   }
 
   _cursorRow = getCursorRow();
-  if (key == STB_TEXTEDIT_K_UP) {
+  if (key == STB_TEXTEDIT_K_UP ||
+      key == (int)SB_KEY_SHIFT(STB_TEXTEDIT_K_UP)) {
     if (_cursorRow == _scroll) {
       updateScroll();
     }
-  } else if (key == STB_TEXTEDIT_K_DOWN) {
+  } else {
     int pageRows = _height / _charHeight;
     if (_cursorRow - _scroll > pageRows) {
       updateScroll();
     }
-  } else {
-    updateScroll();
   }
   findMatchingBrace();
   return true;
