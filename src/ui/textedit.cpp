@@ -31,6 +31,8 @@
 #define TWISTY2_CLOSE "  < "
 #define TWISTY1_LEN 2
 #define TWISTY2_LEN 4
+#define HELP_BG 0x73c990
+#define HELP_FG 0x20242a
 
 int g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
@@ -1447,7 +1449,7 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, 
   _editor(editor),
   _openPackage(NULL),
   _openKeyword(-1) {
-  _theme = new EditTheme(0x73c990, 0x20242a);
+  _theme = new EditTheme(HELP_BG, HELP_FG);
   hide();
   if (overlay) {
     _x = editor->_width - (chW * HELP_WIDTH);
@@ -1574,11 +1576,30 @@ void TextEditHelpWidget::createCompletionHelp() {
   char *selection = _editor->getWordBeforeCursor();
   int len = selection != NULL ? strlen(selection) : 0;
   if (len > 0) {
+    StringList words;
     for (int i = 0; i < keyword_help_len; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
+        words.add(keyword_help[i].keyword);
         _buf.append(keyword_help[i].keyword);
         _buf.append("\n", 1);
       }
+    }
+    const char *found = strstr(_editor->getText(), selection);
+    while (found != NULL) {
+      const char *end = found;
+      while (!IS_WHITE(*end) && *end != '\0') {
+        end++;
+      }
+      if (end - found > len) {
+        String next;
+        next.append(found, end - found);
+        if (!words.exists(next)) {
+          words.add(next);
+          _buf.append(found, end - found);
+          _buf.append("\n", 1);
+        }
+      }
+      found = strstr(found + len, selection);
     }
   } else {
     const char *package = NULL;
