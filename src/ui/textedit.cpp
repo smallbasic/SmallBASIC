@@ -1587,7 +1587,7 @@ void TextEditHelpWidget::createCompletionHelp() {
     const char *found = strstr(_editor->getText(), selection);
     while (found != NULL) {
       const char *end = found;
-      while (!IS_WHITE(*end) && *end != '\0') {
+      while (!IS_WHITE(*end) && !ispunct(*end) && *end != '\0') {
         end++;
       }
       if (end - found > len) {
