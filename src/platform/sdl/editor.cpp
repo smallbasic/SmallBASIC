@@ -113,6 +113,7 @@ void System::editSource(strlib::String &loadPath) {
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
+      case SB_KEY_CTRL(SB_KEY_INSERT):
         text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
         if (text) {
           setClipboardText(text);
@@ -177,6 +178,7 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_CTRL('v'):
+      case SB_KEY_SHIFT(SB_KEY_INSERT):
         text = getClipboardText();
         widget->paste(text);
         free(text);
