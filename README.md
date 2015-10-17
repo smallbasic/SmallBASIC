@@ -1,6 +1,15 @@
 SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes. SmallBASIC includes trigonometric, matrices and algebra functions, a built in IDE, a powerful string library, system, sound, and graphic commands along with structured programming syntax
 
 ## Building the SDL version
+
+Initial setup on linux
+```
+ $ sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev
+ $ git clone https://github.com/smallbasic/SmallBASIC.git
+ $ cd SmallBASIC
+ $ sh autogen.sh
+```
+Build in linux
 ```
  $ ./configure --enable-sdl
  $ make
