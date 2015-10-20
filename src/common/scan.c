@@ -1701,7 +1701,9 @@ char *comp_array_params(char *src, char exitChar) {
       }
       break;
     };
-    p++;
+    if (*p != exitChar) {
+      p++;
+    }
     if (*p == exitChar) {
       p++;
       break;

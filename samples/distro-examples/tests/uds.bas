@@ -111,3 +111,28 @@ next i
 inner.foo="bar"
 m.b << inner
 s = " " + m.b(0).foo
+
+rem ------------------------------------
+
+dim bar.x(2), foo(2)
+bar.x(0).barx = 1024
+foo(0).fooY = 999
+if (bar.x(0).barx <> 1024) then
+  throw "Error 1"
+fi
+
+if (foo(0).fooY <> 999) then
+  throw "Error 2"
+fi
+
+if (1024 <> bar.x(0).barx) then
+  throw "Error 3"
+fi
+
+if (999 <> foo(0).fooY) then
+  throw "Error 4"
+fi
+
+bar.x(1).barx=bar.x(0).barx+976
+bar.x(1).barx/=1000
+if bar.x(1).barx <> 2 then throw "Yuck, I can't read red print on black background."

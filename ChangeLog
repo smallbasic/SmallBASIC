@@ -1,3 +1,6 @@
+2015-10-20
+	Fix LET when assigning a value to a MAP/ARRAY field
+
 2015-09-15
 	SDL Update PEN(3) to work more like FLTK
 	Fix display output before PEN
