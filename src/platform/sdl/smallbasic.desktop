@@ -1,11 +1,11 @@
 [Desktop Entry]
+Encoding=UTF-8
 Name=SmallBASIC
 Comment=SmallBASIC
-Exec=sbasici
-Icon=/usr/share/icons/hicolor/32x32/apps/sb-desktop-32x32.png
+Exec=sbasicg
+Icon=sb-desktop-128x128.png
 Terminal=false
 Type=Application
 Categories=Application;Development;
 MimeType=application/bas
-
-
+NoDisplay=false

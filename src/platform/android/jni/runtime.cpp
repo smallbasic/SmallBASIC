@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2015 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -30,10 +30,9 @@
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
+#define OPT_IDE_KEY "optIde"
 
 Runtime *runtime;
-
-void launchDebug(const char *file) {}
 
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
   MAEvent *result = new MAEvent();
@@ -92,6 +91,7 @@ void handleCommand(android_app *app, int32_t cmd) {
     }
     break;
   case APP_CMD_LOST_FOCUS:
+    // display menu or exit
     break;
   }
 }
@@ -191,15 +191,34 @@ void Runtime::alert(const char *title, const char *message) {
   _app->activity->vm->DetachCurrentThread();
 }
 
+void Runtime::alert(const char *title, int duration) {
+  logEntered();
+
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jstring titleString = env->NewStringUTF(title);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID method = env->GetMethodID(clazz, "showToast",
+                                      "(Ljava/lang/String;I)V");
+  env->CallVoidMethod(_app->activity->clazz, method, titleString, duration);
+  env->DeleteLocalRef(clazz);
+  env->DeleteLocalRef(titleString);
+  _app->activity->vm->DetachCurrentThread();
+}
+
 int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jstring titleString = env->NewStringUTF(title);
+  jstring promptString = env->NewStringUTF(prompt);
   jmethodID methodId = env->GetMethodID(clazz, "ask",
-                                        "(Ljava/lang/String;Ljava/lang/String;)Z");
-  jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId,
-                                                      title, prompt);
+                                        "(Ljava/lang/String;Ljava/lang/String;Z)I");
+  jint result = (jint) env->CallIntMethod(_app->activity->clazz, methodId,
+                                          titleString, promptString, cancel);
   env->DeleteLocalRef(clazz);
+  env->DeleteLocalRef(titleString);
+  env->DeleteLocalRef(promptString);
   _app->activity->vm->DetachCurrentThread();
   return result;
 }
@@ -390,6 +409,10 @@ void Runtime::loadConfig() {
     if (s && s->toInteger() == 1) {
       opt_mute_audio = 1;
     }
+    s = profile.get(OPT_IDE_KEY);
+    if (s) {
+      opt_ide = s->toInteger();
+    }
     loadEnvConfig(profile, SERVER_SOCKET_KEY);
     loadEnvConfig(profile, SERVER_TOKEN_KEY);
   }
@@ -417,6 +440,7 @@ void Runtime::saveConfig() {
     fprintf(fp, "%s='%s'\n", PATH_KEY, path);
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
     fprintf(fp, "%s=%d\n", MUTE_AUDIO_KEY, opt_mute_audio);
+    fprintf(fp, "%s=%d\n", OPT_IDE_KEY, opt_ide);
     for (int i = 0; environ[i] != NULL; i++) {
       char *env = environ[i];
       if (strstr(env, SERVER_SOCKET_KEY) != NULL) {
@@ -690,6 +714,179 @@ char *Runtime::getClipboardText() {
     result = NULL;
   }
   return result;
+}
+
+//
+// System platform methods
+//
+bool System::getPen3() {
+  bool result = false;
+  if (_touchX != -1 && _touchY != -1) {
+    result = true;
+  } else {
+    // get mouse
+    processEvents(0);
+    if (_touchX != -1 && _touchY != -1) {
+      result = true;
+    }
+  }
+  return result;
+}
+
+void System::completeKeyword(int index) {
+  if (get_focus_edit() && isEditing()) {
+    const char *help = get_focus_edit()->completeKeyword(index);
+    if (help) {
+      runtime->alert(help);
+      runtime->getOutput()->redraw();
+    }
+  }
+}
+
+void System::editSource(strlib::String &loadPath) {
+  logEntered();
+
+  strlib::String fileName;
+  int i = loadPath.lastIndexOf('/', 0);
+  if (i != -1) {
+    fileName = loadPath.substring(i + 1);
+  } else {
+    fileName = loadPath;
+  }
+
+  strlib::String dirtyFile;
+  dirtyFile.append(" * ");
+  dirtyFile.append(fileName);
+  strlib::String cleanFile;
+  cleanFile.append(" - ");
+  cleanFile.append(fileName);
+
+  int w = _output->getWidth();
+  int h = _output->getHeight();
+  int charWidth = _output->getCharWidth();
+  int charHeight = _output->getCharHeight();
+  int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
+  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight, false);
+  TextEditInput *widget = editWidget;
+  _modifiedTime = getModifiedTime();
+  editWidget->updateUI(NULL, NULL);
+  editWidget->setLineNumbers();
+  editWidget->setFocus(true);
+  if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
+    editWidget->setCursorRow(gsb_last_line - 1);
+  }
+  if (gsb_last_error && !isBack()) {
+    editWidget->setCursorRow(gsb_last_line - 1);
+    runtime->alert(gsb_last_errmsg);
+  }
+  _srcRendered = false;
+  _output->clearScreen();
+  _output->addInput(editWidget);
+  _output->addInput(helpWidget);
+  _output->setStatus(cleanFile);
+  _output->redraw();
+  _state = kEditState;
+  runtime->showKeypad(true);
+
+  while (_state == kEditState) {
+    MAEvent event = getNextEvent();
+    if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
+      dev_clrkb();
+      int sw = _output->getScreenWidth();
+      bool redraw = true;
+      bool dirty = editWidget->isDirty();
+      char *text;
+
+      switch (event.key) {
+      case SB_KEY_MENU:
+        redraw = false;
+        break;
+      case SB_KEY_F(1):
+        widget = helpWidget;
+        helpWidget->createKeywordIndex();
+        helpWidget->show();
+        helpWidget->setFocus(true);
+        runtime->showKeypad(false);
+        break;
+      case SB_KEY_F(9):
+        _state = kRunState;
+        if (editWidget->isDirty()) {
+          saveFile(editWidget, loadPath);
+        }
+        break;
+      case SB_KEY_CTRL('s'):
+        saveFile(editWidget, loadPath);
+        break;
+      case SB_KEY_CTRL('c'):
+      case SB_KEY_CTRL('x'):
+        text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
+        if (text) {
+          setClipboardText(text);
+          free(text);
+        }
+        break;
+      case SB_KEY_CTRL('v'):
+        text = getClipboardText();
+        widget->paste(text);
+        free(text);
+        break;
+      case SB_KEY_CTRL('o'):
+        _output->selectScreen(USER_SCREEN1);
+        showCompletion(true);
+        _output->redraw();
+        _state = kActiveState;
+        waitForBack();
+        runtime->showKeypad(true);
+        _output->selectScreen(SOURCE_SCREEN);
+        _state = kEditState;
+        break;
+      default:
+        redraw = widget->edit(event.key, sw, charWidth);
+        break;
+      }
+      if (widget->isDirty() && !dirty) {
+        _output->setStatus(dirtyFile);
+      } else if (!widget->isDirty() && dirty) {
+        _output->setStatus(cleanFile);
+      }
+      if (redraw) {
+        _output->redraw();
+      }
+    }
+
+    if (isBack() && widget == helpWidget) {
+      runtime->showKeypad(true);
+      widget = editWidget;
+      helpWidget->hide();
+      editWidget->setFocus(true);
+      _state = kEditState;
+      _output->redraw();
+    }
+
+    if (widget->isDirty()) {
+      int choice = -1;
+      if (isClosing()) {
+        choice = 0;
+      } else if (isBack()) {
+        const char *message = "The current file has not been saved.\n"
+                              "Would you like to save it now?";
+        choice = ask("Save changes?", message, isBack());
+      }
+      if (choice == 0) {
+        widget->save(loadPath);
+      } else if (choice == 2) {
+        // cancel
+        _state = kEditState;
+      }
+    }
+  }
+
+  _output->removeInputs();
+  if (!isClosing()) {
+    _output->selectScreen(prevScreenId);
+  }
+  logLeaving();
 }
 
 //

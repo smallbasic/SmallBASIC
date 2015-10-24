@@ -149,7 +149,7 @@ Language,keyword,SUB,657,"SUB foo (a, b)","Declare a sub procedure. Sub's do not
 Language,keyword,THEN,658,"THEN","foo = 1: if foo==1 THEN: ? ""one"": fi"
 Language,keyword,UNIT,659,"UNIT name","Units are a set of procedures, functions and/or variables that can be used by another program or unit."
 Language,keyword,UNTIL,660,"UNTIL","a = 0: repeat: a++: ? a: UNTIL a = 10"
-Language,keyword,USE,661,"USE","Used with various commands for passing a user-defined expression. eg SPLIT s," ",v USE TRIM(x). Trim each element of v."
+Language,keyword,USE,661,"USE","Used with various commands for passing a user-defined expression. eg SPLIT s,"" "",v USE TRIM(x). Trim each element of v."
 Language,operator,AND,662,"a AND b","Logical AND. Right side is not evaluated if left side evaluates to False."
 Language,operator,BAND,663,"a BAND b","Bitwise AND."
 Language,operator,BOR,664,"a BOR b","Bitwise OR."

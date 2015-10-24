@@ -7,7 +7,7 @@
 
 JNI_PATH := $(call my-dir)
 SB_HOME := $(JNI_PATH)/../../../..
-FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.5.5
+FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.6.1
 
 include $(call all-subdir-makefiles)
 LOCAL_PATH := $(JNI_PATH)
@@ -16,9 +16,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE     := smallbasic
 LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1 -DLODEPNG_NO_COMPILE_CPP \
 	                  -DPIXELFORMAT_RGBA8888
-LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src                   \
-                    $(FREETYPE_HOME)/freetype/include           \
-                    $(FREETYPE_HOME)/freetype/include/freetype2
+LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src  \
+                    $(FREETYPE_HOME)/freetype/include/freetype2   \
+                    $(FREETYPE_HOME)/freetype/include/freetype2/freetype
 LOCAL_SRC_FILES  := main.cpp                   \
                     display.cpp                \
                     runtime.cpp                \
@@ -31,7 +31,6 @@ LOCAL_SRC_FILES  := main.cpp                   \
                     ../../../ui/textedit.cpp   \
                     ../../../ui/strlib.cpp     \
                     ../../../ui/graphics.cpp   \
-                    ../../../ui/editor.cpp     \
                     ../../../ui/system.cpp
 LOCAL_LDLIBS     := -llog -landroid -ljnigraphics
 LOCAL_STATIC_LIBRARIES := sb_common freetype android_native_app_glue

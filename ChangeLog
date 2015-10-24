@@ -1,3 +1,16 @@
+2015-10-20
+	Fix LET when assigning a value to a MAP/ARRAY field
+
+2015-09-15
+	SDL Update PEN(3) to work more like FLTK
+	Fix display output before PEN
+	Fix BOLD and ITALIC font display
+	Context menu edit keyword completion
+	Updated program icon
+	Editor line number widget can be used for scrolling
+	Updated editor help display
+	Fix TSAVE with try/catch
+
 2015-08-26
 	Editor fixes:
 	- now displays an i-beam/edit cursor

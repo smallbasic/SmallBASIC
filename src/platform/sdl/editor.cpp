@@ -12,11 +12,6 @@
 #include "ui/system.h"
 #include "ui/textedit.h"
 
-#define SAVE_FILE()                \
-  if (!editWidget->save(loadPath)) \
-    alert("", "Failed to save file"); \
-  else _modifiedTime = getModifiedTime();
-
 void System::editSource(strlib::String &loadPath) {
   logEntered();
 
@@ -50,7 +45,7 @@ void System::editSource(strlib::String &loadPath) {
 
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
-  editWidget->setFocus();
+  editWidget->setFocus(true);
   if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
     editWidget->setCursorRow(gsb_last_line - 1);
   }
@@ -68,7 +63,6 @@ void System::editSource(strlib::String &loadPath) {
   _output->redraw();
   _state = kEditState;
 
-  maShowVirtualKeyboard();
   showCursor(kIBeam);
 
   while (_state == kEditState) {
@@ -98,6 +92,7 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_F(10):
       case SB_KEY_F(11):
       case SB_KEY_F(12):
+      case SB_KEY_MENU:
         redraw = false;
         break;
       case SB_KEY_ESCAPE:
@@ -110,14 +105,15 @@ void System::editSource(strlib::String &loadPath) {
       case SB_KEY_CTRL('r'):
         _state = kRunState;
         if (editWidget->isDirty()) {
-          SAVE_FILE();
+          saveFile(editWidget, loadPath);
         }
         break;
       case SB_KEY_CTRL('s'):
-        SAVE_FILE();
+        saveFile(editWidget, loadPath);
         break;
       case SB_KEY_CTRL('c'):
       case SB_KEY_CTRL('x'):
+      case SB_KEY_CTRL(SB_KEY_INSERT):
         text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
         if (text) {
           setClipboardText(text);
@@ -132,7 +128,7 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_F(5):
-        SAVE_FILE();
+        saveFile(editWidget, loadPath);
         _output->setStatus("Debug. F6=Step, F7=Continue, Esc=Close");
         widget = helpWidget;
         helpWidget->createMessage();
@@ -182,6 +178,7 @@ void System::editSource(strlib::String &loadPath) {
         helpWidget->show();
         break;
       case SB_KEY_CTRL('v'):
+      case SB_KEY_SHIFT(SB_KEY_INSERT):
         text = getClipboardText();
         widget->paste(text);
         free(text);
@@ -213,6 +210,10 @@ void System::editSource(strlib::String &loadPath) {
           dirty = !editWidget->isDirty();
         }
       }
+
+      helpWidget->setFocus(widget == helpWidget);
+      editWidget->setFocus(widget == editWidget);
+
       if (editWidget->isDirty() && !dirty) {
         _output->setStatus(dirtyFile);
       } else if (!editWidget->isDirty() && dirty) {

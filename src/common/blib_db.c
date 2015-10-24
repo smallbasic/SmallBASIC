@@ -751,9 +751,12 @@ void cmd_fsaveln() {
       return;
     }
 
-    dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+    int success = dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
+    if (!success) {
+      return;
+    }
   }
 
   if (var_p->type == V_ARRAY) {

@@ -40,6 +40,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Rect;
@@ -55,6 +56,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Toast;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
@@ -82,33 +84,53 @@ public class MainActivity extends NativeActivity {
   public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
 
-  public boolean ask(String prompt, String accept, String cancel) {
-    // TODO: fixme
-    boolean result = false;
-    final Context context = this;
+  public int ask(final String title, final String prompt, final boolean cancel) {
+    final AskResult result = new AskResult();
+    final Activity activity = this;
     final Semaphore mutex = new Semaphore(0);
     final Runnable runnable = new Runnable() {
       public void run() {
-        new AlertDialog.Builder(activity)
-          .setTitle(title).setMessage(message)
-          .setPositiveButton(accept, new DialogInterface.OnClickListener() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(title).setMessage(prompt);
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface dialog, int which) {
+            result.setYes();
+            mutex.release();
+          }
+        });
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+          public void onClick(DialogInterface dialog, int which) {
+            result.setNo();
+            mutex.release();
+          }
+        });
+        builder.setOnCancelListener(new OnCancelListener() {
+          @Override
+          public void onCancel(DialogInterface dialog) {
+            result.setCancel();
+            mutex.release();
+          }
+        });
+        if (cancel) {
+          builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
+              result.setCancel();
+              mutex.release();
             }
-          })
-          .setPositiveButton(cancel, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {}
-          }).show();
-        mutex.release();
+          });
+        }
+        builder.show();
       }
     };
     runOnUiThread(runnable);
     try {
       mutex.acquire();
     } catch (InterruptedException e) {
-      Log.i(TAG, "getClipboardText failed: ", e);
+      Log.i(TAG, "ask failed: ", e);
       e.printStackTrace();
     }
-    return result;
+    Log.i(TAG, "ask result=" + result);
+    return result.value;
   }
 
   public void clearSoundQueue() {
@@ -148,7 +170,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public String getIPAddress() {
-    String result = null;
+    String result = "";
     try {
       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
         NetworkInterface intf = en.nextElement();
@@ -221,7 +243,7 @@ public class MainActivity extends NativeActivity {
     }
     return true;
   }
-  
+
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
     if (this._options != null) {
@@ -265,7 +287,7 @@ public class MainActivity extends NativeActivity {
       }
     });
   }
-  
+
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
@@ -275,6 +297,15 @@ public class MainActivity extends NativeActivity {
           .setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {}
           }).show();
+      }
+    });
+  }
+
+  public void showToast(final String message, final int duration) {
+    final Activity activity = this;
+    runOnUiThread(new Runnable() {
+      public void run() {
+        Toast.makeText(activity, message, duration).show();
       }
     });
   }

@@ -73,6 +73,7 @@ protected:
   void runEdit(const char *startupBas);
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
+  void saveFile(TextEditInput *edit, strlib::String &path);
   void setPath(const char *filename);
   bool setParentPath();
   void setDimensions();
@@ -82,12 +83,15 @@ protected:
   void printErrorLine();
   void printSource();
   void printSourceLine(char *text, int line, bool last);
-  void scratchPad();
   void setRestart();
   void showMenu();
   void showSystemScreen(bool showSrc);
   void waitForBack();
   AnsiWidget *_output;
+
+  // platform static virtual
+  bool getPen3();
+  void completeKeyword(int index);
 
   enum {
     kInitState = 0,// thread not active

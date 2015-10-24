@@ -47,7 +47,6 @@ sbasici_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 
 iconsdir = $(datadir)/icons/hicolor/32x32/apps
 icons_DATA = ../../../images/sb-desktop-32x32.png
-desktopentry_DATA = smallbasic.desktop
 
 if WITH_WIN32
 sbasici_LDADD += sbfltk.res

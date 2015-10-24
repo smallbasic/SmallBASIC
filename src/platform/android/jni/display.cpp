@@ -72,7 +72,7 @@ void Canvas::fillRect(int left, int top, int width, int height, pixel_t drawColo
     if (top + height > _h) {
       blockH = height - top;
     }
-    memset(getLine(top), drawColor, width * blockH);
+    memset(getLine(top), drawColor, 4 * width * blockH);
   } else {
     for (int y = 0; y < height; y++) {
       int posY = y + top;
@@ -138,12 +138,7 @@ bool Graphics::construct() {
     if (_screen && _screen->create(_w, _h)) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
-#if defined(PIXELFORMAT_RGBA8888)
-      int format = WINDOW_FORMAT_RGBA_8888;
-#else
-      int format = WINDOW_FORMAT_RGB_565;
-#endif
-      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, format);
+      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, WINDOW_FORMAT_RGBA_8888);
       result = true;
     } else {
       trace("Failed to create canvas");

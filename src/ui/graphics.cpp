@@ -289,7 +289,7 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image,
       for (int dx = 0, x = srcRect->left; x < srcRect->width; x += scale, dx++) {
         if (x >= canvas->x() && x < canvas->w()) {
           uint8_t r,g,b;
-          GET_RGB(line[x], r, g, b);
+          GET_RGB2(line[x], r, g, b);
           int offs = (4 * dy * w) + (4 * dx);
           image[offs + 0] = r;
           image[offs + 1] = g;

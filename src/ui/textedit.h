@@ -73,13 +73,14 @@ struct TextEditInput : public FormEditInput {
 
   void append(const char *text, int len) { _buf.append(text, len); }
   void completeWord(const char *word);
+  const char *completeKeyword(int index);
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   bool find(const char *word, bool next);
   int  getCursorPos() const { return _state.cursor; }
   const char *getText() const { return _buf._buffer; }
   int  getTextLength() const { return _buf._len; }
-  int *getMarkers() { return _lineMarker; }
+  int *getMarkers();
   void gotoLine(const char *buffer);
   void reload(const char *text);
   bool save(const char *filePath);
@@ -103,6 +104,7 @@ struct TextEditInput : public FormEditInput {
   void resize(int w, int h) { _width = w; _height = h; }
   char *getWordBeforeCursor();
   bool replaceNext(const char *text);
+  int  getCompletions(StringList *list, int max);
 
 protected:
   enum SyntaxState {
@@ -114,6 +116,7 @@ protected:
     kDigit,
   };
 
+  void dragPage(int y, bool &redraw);
   void drawText(int x, int y, const char *str, int length, SyntaxState &state);
   void changeCase();
   void cycleTheme();
@@ -153,21 +156,19 @@ protected:
   int _cursorLine;
   int _indentLevel;
   int _matchingBrace;
-  int _lineMarker[MAX_MARKERS];
+  int _ptY;
   bool _dirty;
 };
 
 struct TextEditHelpWidget : public TextEditInput {
-  TextEditHelpWidget(TextEditInput *editor, int chW, int chH);
+  TextEditHelpWidget(TextEditInput *editor, int chW, int chH, bool overlay=true);
   virtual ~TextEditHelpWidget();
 
   enum HelpMode {
     kNone,
     kHelp,
+    kHelpKeyword,
     kCompletion,
-    kKeyword,
-    kKeywordIndex,
-    kKeywordPackageIndex,
     kOutline,
     kSearch,
     kSearchReplace,
@@ -177,6 +178,7 @@ struct TextEditHelpWidget : public TextEditInput {
     kMessage
   };
 
+  void clicked(int x, int y, bool pressed);
   void createCompletionHelp();
   void createGotoLine();
   void createHelp();
@@ -185,7 +187,6 @@ struct TextEditHelpWidget : public TextEditInput {
   void createOutline();
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);
-  char *copy(bool cut) { return NULL; }
   void paste(const char *text) {}
   bool isDrawTop() { return true; }
   void resize(int w, int h) { _x = w - _width; _height = h; }
@@ -193,16 +194,19 @@ struct TextEditHelpWidget : public TextEditInput {
   bool closeOnEnter() const;
   bool replaceMode() const { return _mode == kReplace; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  void toggleKeyword();
 
 private:
   void completeLine(int pos);
   void completeWord(int pos);
   void createPackageIndex();
-  bool createKeywordHelp(const char *keyword);
 
   HelpMode _mode;
   strlib::List<int *> _outline;
   TextEditInput *_editor;
+  const char *_openPackage;
+  int _openKeyword;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer

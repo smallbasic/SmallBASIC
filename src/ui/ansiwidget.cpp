@@ -141,7 +141,7 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
   flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
-// display and pending images changed
+// display any pending images changed
 void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
   if (_front != NULL && _autoflush) {
     bool update = false;
@@ -587,6 +587,7 @@ void AnsiWidget::drawActiveButton() {
   } else if (_focus != NULL) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
+    _focus->drawLabel();
     maUpdateScreen();
     maSetDrawTarget(currentHandle);
   }

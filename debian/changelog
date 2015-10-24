@@ -1,3 +1,8 @@
+smallbasic (0.12.0) unstable; urgency=low
+  * Various - see web site
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 17 Sept 2015 09:45:25 +1000
+
 smallbasic (0.11.17) unstable; urgency=low
   * Fix compiler ignoring unused assignment values
   * Implement  IMAGE

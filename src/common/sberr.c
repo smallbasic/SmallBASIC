@@ -413,7 +413,7 @@ void err_throw_str(const char *err) {
 
 // throw internal error
 void err_throw(const char *fmt, ...) {
-  if (!gsb_last_error) {
+  if (!gsb_last_error && prog_source) {
     va_list ap;
     va_start(ap, fmt);
     char *err = malloc(SB_TEXTLINE_SIZE + 1);

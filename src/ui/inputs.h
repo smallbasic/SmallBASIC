@@ -73,11 +73,6 @@ namespace form_ui {
 
 int get_color(var_p_t value, int def);
 
-struct IButtonListener {
-  virtual ~IButtonListener() {}
-  virtual void buttonClicked(const char *action) = 0;
-};
-
 struct IFormWidgetListModel {
   virtual ~IFormWidgetListModel() {}
   virtual const char *getTextAt(int index) = 0;
@@ -120,7 +115,7 @@ struct FormInput : public Shape {
   virtual void clicked(int x, int y, bool pressed);
   virtual bool isDrawTop() { return false; }
   virtual bool hasHover() { return false; }
-  virtual void setFocus();
+  virtual void setFocus(bool focus);
   virtual void resize(int w, int h) {}
 
   void construct(var_p_t form, var_p_t field, int id);
@@ -212,12 +207,15 @@ struct FormEditInput : public FormInput {
   virtual char *copy(bool cut) = 0;
   virtual void paste(const char *text) = 0;
   virtual void selectAll() = 0;
-  void setFocus();
+  virtual const char *completeKeyword(int index) = 0;
+  virtual int getCompletions(StringList *list, int max) = 0;
+
+  void setFocus(bool focus);
   int  getControlKey(int key);
   bool getControlMode() const { return _controlMode; }
   void setControlMode(bool cursorMode) { _controlMode = cursorMode; }
 
-protected:  
+protected:
   bool _controlMode;
 };
 
@@ -238,6 +236,8 @@ struct FormLineInput : public FormEditInput {
   void paste(const char *text);
   void cut();
   void selectAll();
+  const char *completeKeyword(int index) { return NULL; }
+  int getCompletions(StringList *list, int max) { return 0; }
 
 private:
   char *_buffer;

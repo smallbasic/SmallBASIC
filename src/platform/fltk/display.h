@@ -44,7 +44,7 @@ struct Canvas {
   bool _isScreen;
 };
 
-class DisplayWidget : public fltk::Widget, IButtonListener {
+class DisplayWidget : public fltk::Widget {
 public:
   DisplayWidget(int x, int y, int w, int h, int defsize);
   virtual ~DisplayWidget();

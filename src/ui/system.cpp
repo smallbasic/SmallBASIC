@@ -34,14 +34,19 @@
 #define MENU_EDITMODE   11
 #define MENU_AUDIO      12
 #define MENU_SCREENSHOT 13
-#define MENU_SCRATCHPAD 14
-#define MENU_UNDO       15
-#define MENU_REDO       16
-#define MENU_SAVE       17
-#define MENU_RUN        18
-#define MENU_DEBUG      19
-#define MENU_OUTPUT     20
+#define MENU_UNDO       14
+#define MENU_REDO       15
+#define MENU_SAVE       16
+#define MENU_RUN        17
+#define MENU_DEBUG      18
+#define MENU_OUTPUT     19
+#define MENU_HELP       20
 #define MENU_SIZE       21
+#define MENU_COMPETION_0  (MENU_SIZE + 1)
+#define MENU_COMPETION_1  (MENU_SIZE + 2)
+#define MENU_COMPETION_2  (MENU_SIZE + 3)
+#define MENU_COMPETION_3  (MENU_SIZE + 4)
+#define MAX_COMPLETIONS 4
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -112,11 +117,13 @@ bool System::execute(const char *bas) {
   }
 
   opt_command[0] = '\0';
+  _output->resetFont();
   _output->flush(true);
   return result;
 }
 
 int System::getPen(int code) {
+  _output->flush(true);
   int result = 0;
   if (!isClosing()) {
     switch (code) {
@@ -126,11 +133,7 @@ int System::getPen(int code) {
       // fallthru
 
     case 3:   // returns true if the pen is down (and save curpos)
-      if (_touchX != -1 && _touchY != -1) {
-        result = 1;
-      } else {
-        processEvents(0);
-      }
+      result = getPen3();
       break;
 
     case 1:   // last pen-down x
@@ -166,7 +169,7 @@ char *System::getText(char *dest, int maxSize) {
   int charWidth = _output->getCharWidth();
 
   FormInput *widget = new FormLineInput(NULL, maxSize, true, x, y, w, h);
-  widget->setFocus();
+  widget->setFocus(true);
   _output->addInput(widget);
   _output->redraw();
   _state = kModalState;
@@ -283,17 +286,18 @@ void System::handleMenu(MAEvent &event) {
     }
     break;
   case MENU_EDITMODE:
+#if defined(_SDL)
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
                opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
+#else
+    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
+#endif
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
     break;
   case MENU_SCREENSHOT:
     ::screen_dump();
-    break;
-  case MENU_SCRATCHPAD:
-    scratchPad();
     break;
   case MENU_UNDO:
     event.type = EVENT_TYPE_KEY_PRESSED;
@@ -318,6 +322,22 @@ void System::handleMenu(MAEvent &event) {
   case MENU_OUTPUT:
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_CTRL('o');
+    break;
+  case MENU_HELP:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_F(1);
+    break;
+  case MENU_COMPETION_0:
+    completeKeyword(0);
+    break;
+  case MENU_COMPETION_1:
+    completeKeyword(1);
+    break;
+  case MENU_COMPETION_2:
+    completeKeyword(2);
+    break;
+  case MENU_COMPETION_3:
+    completeKeyword(3);
     break;
   }
 
@@ -398,7 +418,7 @@ char *System::loadResource(const char *fileName) {
       memcpy(buffer, var_p->v.p.ptr, len);
       buffer[len] = '\0';
     } else {
-      systemPrint("\nfailed");
+      systemPrint("\nfailed to open %s", fileName);
     }
     _output->setStatus(NULL);
     dev_fclose(handle);
@@ -515,8 +535,8 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
-    if (!_mainBas && opt_ide == IDE_INTERNAL &&
-        !isRestart() && loadSource(_loadPath)) {
+    if (!_mainBas && opt_ide == IDE_INTERNAL && !isRestart() &&
+        _loadPath.indexOf("://", 1) == -1 && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
         _loadPath.empty();
@@ -528,12 +548,14 @@ void System::runMain(const char *mainBasPath) {
     }
 
     bool success = execute(_loadPath);
+    bool networkFile = (_loadPath.indexOf("://", 1) != -1);
     if (!isClosing() && _overruns) {
       systemPrint("\nOverruns: %d\n", _overruns);
     }
-    if (!isBack() && !isClosing() && opt_ide != IDE_INTERNAL) {
-      // load the next network file without displaying the previous result
-      bool networkFile = (_loadPath.indexOf("://", 1) != -1);
+    if (!isBack() && !isClosing() &&
+        (opt_ide != IDE_INTERNAL || success || networkFile)) {
+      // when editing, only pause here when successful, otherwise the editor shows
+      // the error. load the next network file without displaying the previous result
       if (!_mainBas && !networkFile) {
         // display an indication the program has completed
         showCompletion(success);
@@ -570,6 +592,14 @@ void System::runOnce(const char *startupBas) {
     }
     waitForBack();
     restart = isRestart();
+  }
+}
+
+void System::saveFile(TextEditInput *edit, strlib::String &path) {
+  if (!edit->save(path)) {
+    alert("", "Failed to save file");
+  } else {
+    _modifiedTime = getModifiedTime();
   }
 }
 
@@ -652,7 +682,8 @@ void System::setRunning(bool running) {
     dev_clrkb();
 
     _output->setAutoflush(!opt_show_page);
-    if (_mainBas || opt_ide != IDE_INTERNAL) {
+    if (_mainBas || opt_ide != IDE_INTERNAL ||
+        _loadPath.indexOf("://", 1) != -1) {
       _loadPath.empty();
     }
     _lastEventTime = maGetMilliSecondCount();
@@ -709,7 +740,14 @@ void System::showMenu() {
     }
 
     StringList *items = new StringList();
-    _systemMenu = new int[MENU_SIZE];
+    int completions = 0;
+
+    if (get_focus_edit() && isEditing()) {
+      completions = get_focus_edit()->getCompletions(items, MAX_COMPLETIONS);
+    }
+
+    _systemMenu = new int[MENU_SIZE + completions];
+
     int index = 0;
     if (get_focus_edit() != NULL) {
       if (isEditing()) {
@@ -720,8 +758,14 @@ void System::showMenu() {
         items->add(new String("Paste"));
         items->add(new String("Save"));
         items->add(new String("Run"));
+#if defined(_SDL)
         items->add(new String("Debug"));
-        items->add(new String("Show output"));
+        items->add(new String("Show Output"));
+#endif
+        items->add(new String("Help"));
+        for (int i = 0; i < completions; i++) {
+          _systemMenu[index++] = MENU_COMPETION_0 + i;
+        }
         _systemMenu[index++] = MENU_UNDO;
         _systemMenu[index++] = MENU_REDO;
         _systemMenu[index++] = MENU_CUT;
@@ -729,8 +773,11 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_PASTE;
         _systemMenu[index++] = MENU_SAVE;
         _systemMenu[index++] = MENU_RUN;
+#if defined(_SDL)
         _systemMenu[index++] = MENU_DEBUG;
         _systemMenu[index++] = MENU_OUTPUT;
+#endif
+        _systemMenu[index++] = MENU_HELP;
       } else if (isRunning()) {
         items->add(new String("Cut"));
         items->add(new String("Copy"));
@@ -745,10 +792,12 @@ void System::showMenu() {
 #else
       items->add(new String("Show keypad"));
       _systemMenu[index++] = MENU_KEYPAD;
-      bool controlMode = get_focus_edit()->getControlMode();
-      sprintf(buffer, "Control Mode [%s]", (controlMode ? "ON" : "OFF"));
-      items->add(new String(buffer));
-      _systemMenu[index++] = MENU_CTRL_MODE;
+      if (!isEditing()) {
+        bool controlMode = get_focus_edit()->getControlMode();
+        sprintf(buffer, "Control Mode [%s]", (controlMode ? "ON" : "OFF"));
+        items->add(new String(buffer));
+        _systemMenu[index++] = MENU_CTRL_MODE;
+      }
 #endif
     } else {
       if (_overruns == 0) {
@@ -765,29 +814,23 @@ void System::showMenu() {
       items->add(new String("Show keypad"));
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
+      items->add(new String("Screenshot"));
+      _systemMenu[index++] = MENU_SCREENSHOT;
       if (_mainBas) {
-        sprintf(buffer, "Scratchpad");
-        items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         sprintf(buffer, "Font Size %d%%", _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
-        _systemMenu[index++] = MENU_SCRATCHPAD;
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
-
         sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
-                                        opt_ide == IDE_EXTERNAL ? "Live Mode" : "ON"));
+                                        opt_ide == IDE_INTERNAL ? "ON" : "Live Mode"));
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
-
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;
-
-      items->add(new String("Screenshot"));
-      _systemMenu[index++] = MENU_SCREENSHOT;
 #if defined(_SDL)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
@@ -937,28 +980,6 @@ void System::printSource() {
   }
 }
 
-void System::scratchPad() {
-  const char *path = gsb_bas_dir;
-#if defined(_ANDROID)
-  path = "/sdcard/";
-#endif
-  char file[OS_PATHNAME_SIZE];
-  sprintf(file, "%sscratch.bas", path);
-  bool ready = access(file, R_OK) == 0;
-  if (!ready) {
-    FILE *fp = fopen(file, "w");
-    if (fp) {
-      fprintf(fp, "REM scratch buffer\n");
-      fclose(fp);
-      ready = true;
-    }
-  }
-  if (ready) {
-    setLoadPath(file);
-    setExit(false);
-  }
-}
-
 void System::setExit(bool quit) {
   if (!isClosing()) {
     bool running = isRunning();
@@ -1089,7 +1110,7 @@ void lwrite(const char *str) {
 }
 
 void dev_delay(dword ms) {
-  g_system->getOutput()->redraw();
+  g_system->getOutput()->flush(true);
   maWait(ms);
 }
 

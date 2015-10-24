@@ -254,6 +254,7 @@ int main(int argc, char* argv[]) {
   char *runFile = NULL;
   bool debug = false;
   int fontScale;
+  int ide_option = -1;
   SDL_Rect rect;
 
   while (1) {
@@ -301,11 +302,11 @@ int main(int argc, char* argv[]) {
       break;
     case 'r':
       runFile = strdup(optarg);
-      opt_ide = IDE_NONE;
+      ide_option = IDE_NONE;
       break;
     case 'e':
       runFile = strdup(optarg);
-      opt_ide = IDE_INTERNAL;
+      ide_option = IDE_INTERNAL;
       break;
     case 'm':
       opt_loadmod = 1;
@@ -313,7 +314,7 @@ int main(int argc, char* argv[]) {
       break;
     case 'd':
       runFile = strdup(optarg);
-      opt_ide = IDE_EXTERNAL;
+      ide_option = IDE_EXTERNAL;
       debug = true;
       break;
     case 'p':
@@ -334,6 +335,10 @@ int main(int argc, char* argv[]) {
   }
 
   restoreSettings(rect, fontScale, debug);
+  if (ide_option != -1) {
+    opt_ide = ide_option;
+  }
+
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,

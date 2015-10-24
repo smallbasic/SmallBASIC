@@ -504,7 +504,7 @@ void Runtime::pollEvents(bool blocking) {
           maEvent = new MAEvent();
           maEvent->type = EVENT_TYPE_KEY_PRESSED;
           maEvent->key = ev.wheel.y == 1 ? SDLK_UP : SDLK_DOWN;
-          maEvent->nativeKey = 0;
+          maEvent->nativeKey = KMOD_CTRL;
         }
         break;
       }
@@ -694,6 +694,24 @@ char *Runtime::getClipboardText() {
     result = NULL;
   }
   return result;
+}
+
+//
+// System platform methods
+//
+bool System::getPen3() {
+  SDL_PumpEvents();
+  return (SDL_BUTTON(SDL_BUTTON_LEFT) && SDL_GetMouseState(&_touchCurX, &_touchCurY));
+}
+
+void System::completeKeyword(int index) {
+  if (get_focus_edit() && isEditing()) {
+    const char *help = get_focus_edit()->completeKeyword(index);
+    if (help) {
+      runtime->getOutput()->setStatus(help);
+      runtime->getOutput()->redraw();
+    }
+  }
 }
 
 //
