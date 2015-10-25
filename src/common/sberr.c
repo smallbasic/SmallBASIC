@@ -25,7 +25,7 @@ void err_common_msg(const char *seg, const char *file, int line, const char *des
   prog_errmsg[SB_ERRMSG_SIZE] = '\0';
   strcpy(gsb_last_errmsg, prog_errmsg);
   log_printf("\n\033[0m\033[80m\n");
-  log_printf("\033[7m * %s-%s %s:%d * \033[0m\a\n\n", seg, WORD_ERROR_AT, file, line);
+  log_printf("\033[7m * %s-%s %s:%d * \033[0m\n\n", seg, WORD_ERROR_AT, file, line);
   log_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
   log_printf("\033[80m\033[0m");
 }
@@ -332,7 +332,7 @@ void inf_done() {
   else {
 #endif
 
-  dev_printf("\n\033[0m\033[80m\a\033[7m * %s * \033[0m\n", WORD_DONE);
+  dev_printf("\n\033[0m\033[80m\033[7m * %s * \033[0m\n", WORD_DONE);
 
 #if USE_TERM_IO
 }
